@@ -38,17 +38,15 @@ concurrency facilities are implemented on top of POSIX threads, many of
 the concepts from pthreads programming apply, with many simpler, more
 concise, or higher-level ways of doing things available.
 
-\subsubsection[Threads and Co{}-Expressions ]{Threads and Co-Expressions
-}
+\subsubsection[Threads and Co{}-Expressions ]{Threads and Co-Expressions}
 
 Co-expressions are independent execution contexts that are explicitly
-sequential. Only one
-co-expression is active at any given moment. When a co-expression
-is activated, the calling co-expression blocks until the child
-co-expression returns the execution to it or fails. Threads on the
-other hand,
-can run simultaneously and independently. Threads in Unicon
-are as special co-expressions that are marked to run asynchronously.
+sequential. Only one co-expression is active at any given moment. When
+a co-expression is activated, the calling co-expression blocks until
+the child co-expression returns the execution to it or fails. Threads
+on the other hand, can run simultaneously and independently. Threads
+in Unicon are as special co-expressions that are marked to run
+asynchronously.
 
 In a concurrent
 program that has two or more threads that execute simultaneously
@@ -77,6 +75,7 @@ thread ends the whole program ends. If there are any other threads
 running all of them will be terminated. 
 
 \subsubsection[Why Threads?]{Why Threads?}
+
 Since the emergence of the first computer, processors have been
 increasing in computational power. Central processing unit speeds grew
 faster than almost all of the other units in the computer, especially
@@ -91,6 +90,7 @@ computers. Multitasking however, could not help make a process run
 faster, even on multiprocessor systems.
 
 \subsection[First Look at Unicon Threads]{First Look at Unicon Threads}
+
 Unicon threads facilities give the programmer flexibility in choosing
 the programming styles that suit the problem in hand. In many
 situations the same problem can be solved in different ways, using
@@ -98,54 +98,61 @@ implicit features or explicit ones. The following sections cover the
 functions and features provided by the threads facilities in Unicon.
 
 \subsubsection{Thread Creation}
+
 Threads can be created in two ways in Unicon, using the
-\textstyleCodeStyleChar{thread} reserved word or using the function
-\textstyleCodeChar{spawn()}. The difference between the two is the
+\textsf{thread} reserved word or using the function
+\textsf{spawn()}. The difference between the two is the
 separation between creating a thread and running it. The thread
 reserved word creates a thread and starts its execution. The function
-\textstyleCodeStyleChar{spawn()} however takes a previously created
+\textsf{spawn()} however takes a previously created
 co-expression and turns it into a thread. In many cases the thread
-reserved word allows more concise code. \textstyleCodeChar{spawn()} on
+reserved word allows more concise code. \textsf{spawn()} on
 the other hand is useful in situations where several threads need to be
 created and initialized before running them.
-\textstyleCodeStyleChar{spawn()} also takes extra optional parameters
+\textsf{spawn()} also takes extra optional parameters
 to control some aspects of the newly created thread. The following code
 creates and runs a hello world thread.
 
+\iconcode{
 thread write({\textquotedblleft}Hello World!{\textquotedblright})
+}
 
 This is equivalent to:
 
-spawn( create write({\textquotedblleft}Hello World!{\textquotedblright})
-)
+\iconcode{
+spawn( create write({\textquotedblleft}Hello World!{\textquotedblright}))
+}
 
-Or:
+or
 
-co := create write({\textquotedblleft}Hello World!{\textquotedblright})
+\iconcode{
+co := create write({\textquotedblleft}Hello World!{\textquotedblright}) \\
 
 spawn(co)
+}
 
-Both thread and \textstyleCodeChar{spawn()} return a reference to the
+Both thread and \textsf{spawn()} return a reference to the
 new thread. The following program creates 10 threads: 
 
-procedure main() 
+\iconcode{
+procedure main() \\
 
 \ \ \ every i := !10 do thread write({\textquotedblleft}Hello World! I
-am thread: {\textquotedblright} , i )
+am thread: {\textquotedblright} , i ) \\
 
-\ \ \ write({\textquotedblleft}main : done{\textquotedblright})
-\ \ \ \ \ 
+\ \ \ write({\textquotedblleft}main : done{\textquotedblright}) \\
 
 end
+}
 
 In this example, the main thread continues to execute normally after
 firing 10 threads. Because of the non-deterministic nature of threads,
 there is no guarantee which thread gets to print out its hello world
 message first, or what order the messages are printed out including the
 message from the main thread
-\textstyleCodeChar{{\textquotedblleft}}\textstyleCodeChar{main}\textstyleCodeChar{
-}\textstyleCodeChar{:}\textstyleCodeChar{
-}\textstyleCodeChar{done}\textstyleCodeChar{{\textquotedblright}}\textstyleCodeChar{.}
+\textsf{{\textquotedblleft}}\textsf{main}\textsf{
+}\textsf{:}\textsf{
+}\textsf{done}\textsf{{\textquotedblright}}\textsf{.}
 \ All of the possible permutations are valid. No assumptions can be
 made about which one will continue running or finish first. It depends
 on the host OS CPU process/thread scheduler. The order is
@@ -155,29 +162,31 @@ Furthermore, the main thread might finish and terminate the program
 before some or all of the threads get executed or print out messages.
 To avoid such situations, the main thread needs to wait for other
 threads to finish before exiting the program. This is can be achieved
-using the function \textstyleCodeChar{wait()}, which blocks the calling
+using the function \textsf{wait()}, which blocks the calling
 thread until the target thread is done. The above program can be
 rewritten as the following:
 
-procedure main() 
+\iconcode{
+procedure main() \\
 
-\ \ \ L:=[ ]
+\ \ \ L:=[ ] \\
 
 \ \ \ every i := !10 do put(L , thread write({\textquotedblleft}Hello
-World! I am thread: {\textquotedblright} , i ))
+World! I am thread: {\textquotedblright} , i )) \\
 
-\ \ \ every wait(!L)
+\ \ \ every wait(!L) \\
 
-\ \ \ write({\textquotedblleft}main : done{\textquotedblright})
+\ \ \ write({\textquotedblleft}main : done{\textquotedblright}) \\
 
 end
+}
 
-\textstyleCodeStyleChar{wait(!L)} forces the main the thread to wait for
+\textsf{wait(!L)} forces the main the thread to wait for
 every thread to finish, causing the message {\textquotedblleft}main :
 done{\textquotedblright} to be the last thing printed out before the
-program ends. \textstyleCodeStyleChar{wait()} is very useful in cases
+program ends. \textsf{wait()} is very useful in cases
 where threads need to synchronize so that one thread blocks until
-another finishes. \textstyleCodeStyleChar{wait()} provides a very basic
+another finishes. \textsf{wait()} provides a very basic
 synchronization technique, but most concurrent programming tasks
 require synchronization beyond waiting for a thread to finish. More
 advanced synchronization mechanisms are discussed later in section 3.
@@ -185,16 +194,14 @@ advanced synchronization mechanisms are discussed later in section 3.
 
 \bigskip
 
-
-\bigskip
-
 \subsubsection[Thread Evaluation Context]{Thread Evaluation Context}
+
 Similar to co-expressions, threads have their own stack, starting from a
 snapshot of parameters and local variables at creation time. This
 allows co-expressions and threads to be used outside the scope where
 they are created. It also allows a thread to start evaluation using the
 values of variables at the time of creating the thread rather than when
-running it in the case of \textstyleCodeChar{spawn()}. Another
+running it in the case of \textsf{spawn()}. Another
 important side effect of this process is avoiding race conditions
 because each thread gets a copy of the variables instead of having all
 the threads competing on the same shared variables. Race conditions and
@@ -202,42 +209,46 @@ thread safe data will be covered in depth in the following section. The
 following example and its output demonstrate the idea of an evaluation
 context:
 
-procedure main()
+\iconcode{
+procedure main() \\
 
-\ \ \ local x:= 10, y:=20, z:=0
+\ \ \ local x:= 10, y:=20, z:=0 \\
 
 \ \ \ write( {\textquotedbl}Main thread: x={\textquotedbl}, x,
 {\textquotedbl}, y={\textquotedbl}, y, {\textquotedbl},
-z={\textquotedbl},z)
+z={\textquotedbl},z) \\
 
 \ \ \ thread (x:=100) \& write({\textquotedbl}Thread 1:
-x={\textquotedbl}, x)
+x={\textquotedbl}, x) \\
 
 \ \ \ thread (y:=200) \& write({\textquotedbl}Thread 2:
-y={\textquotedbl}, y)
+y={\textquotedbl}, y) \\
 
 \ \ \ thread (z:=x+y) \& write({\textquotedbl}Thread 3:
-z={\textquotedbl}, z)
+z={\textquotedbl}, z) \\
 
-\ \ \ delay(1000)
+\ \ \ delay(1000) \\
 
 \ \ \ write( {\textquotedbl}Main thread: x={\textquotedbl}, x,
 {\textquotedbl}, y={\textquotedbl}, y, {\textquotedbl},
-z={\textquotedbl},z)
+z={\textquotedbl},z) \\
 
 end
+}
 
 output:
 
-Main thread: x=10, y=20, z=0
+\iconcode{
+Main thread: x=10, y=20, z=0 \\
 
-Thread 3: z=30
+Thread 3: z=30 \\
 
-Thread 1: x=100
+Thread 1: x=100 \\
 
-Thread 2: y=200
+Thread 2: y=200 \\
 
-Main thread: x=10, y=20, z=0
+Main thread: x=10, y=20, z=0 \\
+}
 
 \ \ \textit{NOTE: the delay(1000) should give the threads enough time to
 run and finish before the main program finishes. Don{\textquoteright}t
@@ -253,60 +264,65 @@ types such as lists on the other hand are shared. Any change in the
 structure of such types is visible across all threads. Contrast the
 following example with the one above:
 
-procedure main()
+\iconcode{
+procedure main() \\
 
-\ \ \ local L
+\ \ \ local L \\
 
-\ \ \ L := [20, 10, 0]
+\ \ \ L := [20, 10, 0] \\
 
 \ \ \ write( {\textquotedbl}Main thread: L[1]={\textquotedbl}, L[1],
 {\textquotedbl}, L[2]={\textquotedbl}, L[2], {\textquotedbl},
-L[3]={\textquotedbl},L[3])
+L[3]={\textquotedbl},L[3]) \\
 
 \ \ \ thread (L[1]:=100) \& write({\textquotedbl}Thread 1:
-\ L[1]={\textquotedbl}, L[1])
+\ L[1]={\textquotedbl}, L[1]) \\
 
 \ \ \ thread (L[2]:=200) \& write({\textquotedbl}Thread 2:
-\ L[2]={\textquotedbl}, L[2])
+\ L[2]={\textquotedbl}, L[2]) \\
 
 \ \ \ thread (L[3]:=L[1]+L[2]) \& write({\textquotedbl}Thread 3:
-\ L[3]={\textquotedbl}, L[3])
+\ L[3]={\textquotedbl}, L[3]) \\
 
-\ \ \ delay(1000)
+\ \ \ delay(1000) \\
 
 \ \ \ write( {\textquotedbl}Main thread: L[1] ={\textquotedbl}, L[1],
 {\textquotedbl}, L[2]={\textquotedbl}, L[2], {\textquotedbl},
-L[3]={\textquotedbl},L[3])
+L[3]={\textquotedbl},L[3]) \\
 
 end
+}
 
 output:
 
-Main thread: L[1]=20, L[2]=10, L[3]=0
+\iconcode{
+Main thread: L[1]=20, L[2]=10, L[3]=0 \\
 
-Thread 2: \ L[2]=200
+Thread 2: \ L[2]=200 \\
 
-Thread 3: \ L[3]=300
+Thread 3: \ L[3]=300 \\
 
-Thread 1: \ L[1]=100
+Thread 1: \ L[1]=100 \\
 
-Main thread: L[1] =100, L[2]=200, L[3]=300
+Main thread: L[1] =100, L[2]=200, L[3]=300 \\
+}
 
-Instead of using three variables \textstyleCodeChar{x},
-\textstyleCodeChar{y} and \textstyleCodeChar{z}, a list of size three
-is used. \textstyleCodeChar{x} from the previous example maps to
-\textstyleCodeChar{L[1]}, \textstyleCodeChar{y} maps to
-\textstyleCodeChar{L[2]}, and z maps to \textstyleCodeChar{L[3]}. The
+Instead of using three variables \textsf{x},
+\textsf{y} and \textsf{z}, a list of size three
+is used. \textsf{x} from the previous example maps to
+\textsf{L[1]}, \textsf{y} maps to
+\textsf{L[2]}, and z maps to \textsf{L[3]}. The
 program does the same thing as before, the difference is that any
-change to the content of \textstyleCodeChar{L} is visible in other
+change to the content of \textsf{L} is visible in other
 threads. Unlike the output in the first case where the values of
-\textstyleCodeChar{x}, \textstyleCodeChar{y}, and \textstyleCodeChar{z}
+\textsf{x}, \textsf{y}, and \textsf{z}
 remained the same in the main thread, the output in the second example
 shows that the changes to the list elements in the other threads were
 visible in the main thread.
 
 \subsubsection[Passing Arguments to Threads]{Passing Arguments to
 Threads}
+
 When creating a new thread for a procedure, the parameters that are
 passed to the procedure at thread creation time can be thought of as a
 one-time one-way communication between the creator thread and the new
@@ -316,42 +332,34 @@ three threads in addition to the main thread. The main thread passes a
 list to each thread which in turn calculates the summation of the list
 elements and prints it out to the screen:
 
-procedure main()
-
-\ \ L1 := [1, 2, 3]
-
-\ \ L2 := [4, 5, 6]
-
-\ \ L3 := [7, 7, 9]
-
-\ \ t1 := thread sumlist( 1, L1)
-
-\ \ t2 := thread sumlist( 2, L2)
-
-\ \ t3 := thread sumlist( 3, L3)
-
-\ \ every wait(t1{\textbar}t2{\textbar}t3)
-
+\iconcode{
+procedure main() \\
+\>   L1 := [1, 2, 3] \\
+\>   L2 := [4, 5, 6] \\
+\>   L3 := [7, 7, 9] \\
+\>   t1 := thread sumlist(1, L1) \\
+\>   t2 := thread sumlist(2, L2) \\
+\>   t3 := thread sumlist(3, L3) \\
+\>   every wait(t1{\textbar}t2{\textbar}t3) \\
+end \\
+\ \\
+procedure sumlist(id, L) \\
+\>   s := 0 \\
+\>   every s +:= !L \\
+\>   write({\textquotedbl} Thread id={\textquotedbl}, id,
+{\textquotedbl} result={\textquotedbl}, s) \\
 end
-
-procedure sumlist(id, L)
-
-\ \ \ s:=0
-
-\ \ \ every s+:=!L
-
-\ \ \ write({\textquotedbl} Thread id={\textquotedbl}, id,
-{\textquotedbl} result={\textquotedbl}, s)
-
-end
+}
 
 output:
 
-\ Thread id=2 result=15
+\iconcode{
+\ Thread id=2 result=15 \\
 
-\ Thread id=1 result=6
+\ Thread id=1 result=6 \\
 
 \ Thread id=3 result=23
+}
 
 Since the lists are independent, there are no chances of a race
 condition. The example shows that the second thread was the first to
@@ -361,6 +369,7 @@ another thread, then a synchronization mechanism should be used. This
 is the subject of the next section.
 
 \subsection[Thread Synchronization]{Thread Synchronization}
+
 Thread synchronization can be done in many different ways. Some problems
 require more synchronization than others. Some may require using
 advanced synchronization mechanisms and rely on the language support to
@@ -371,14 +380,15 @@ multi-thread environment, and thread safe code.
 
 \subsubsection[The Non{}-Deterministic Behavior of Threads ]{The
 Non-Deterministic Behavior of Threads }
+
 Programming with threads introduces a whole new set of concepts and
 challenges that non-threaded programs do not have to deal with. \ In
 most multi-threaded programs, threads need to communicate through
 shared data. Because threads run in different non-deterministic order
 they access and update shared data in a non-deterministic fashion.
 Consider the following popular example where two threads try to
-increment a shared variable called \textstyleCodeChar{x} whose initial
-value is \textstyleCodeChar{0}.
+increment a shared variable called \textsf{x} whose initial
+value is \textsf{0}.
 
 \ \ \ \ \textit{Thread}\textit{ }\textit{1\ \ \ \ \ \ Thread2}\textit{
 }\textit{\ \ \ \ }
@@ -387,22 +397,22 @@ value is \textstyleCodeChar{0}.
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ x:=x+1
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
 
-While \textstyleCodeChar{x:=x+1} does not look like it would make a
+While \textsf{x:=x+1} does not look like it would make a
 problem, in reality it does. This happens because
-\textstyleCodeChar{x:=x+1} is not atomic. In many computer systems this
+\textsf{x:=x+1} is not atomic. In many computer systems this
 can be broken down to three operations: fetch the value of
-\textstyleCodeChar{x}, increment \textstyleCodeChar{x} and then store
-the new value back in \textstyleCodeStyleChar{x}. These three
+\textsf{x}, increment \textsf{x} and then store
+the new value back in \textsf{x}. These three
 operations might occur at different times in different threads.
 \textit{Thread}\textit{ }\textit{2} for example might fetch
-\textstyleCodeStyleChar{x}, followed by \textit{Thread}\textit{
+\textsf{x}, followed by \textit{Thread}\textit{
 }\textit{1} also fetching it but before \textit{Thread 2} stores back
-the new value of \textstyleCodeStyleChar{x}, leaving \textit{Thread 1
-}working on the old value of \textstyleCodeStyleChar{x}. \textit{Thread
+the new value of \textsf{x}, leaving \textit{Thread 1
+}working on the old value of \textsf{x}. \textit{Thread
 1 }should not be allowed to read the value of
-\textstyleCodeStyleChar{x} in the middle of an operation where another
+\textsf{x} in the middle of an operation where another
 thread is updating the value of the variable. \ Consider the following
-scenarios, starting with \ \textstyleCodeChar{x:=0}\textstyleCodeChar{
+scenarios, starting with \ \textsf{x:=0}\textsf{
 }
 
 
@@ -426,7 +436,7 @@ Scenario 1
 \ 
 
 \ \ \ {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-
-The final value of \textstyleCodeStyleChar{x} is \textstyleCodeChar{1}
+The final value of \textsf{x} is \textsf{1}
 
 
 \bigskip
@@ -450,15 +460,15 @@ Scenario 2
 \ \ \ \ \ \ \ \ store x \ \ (2)
 
 \ \ \ {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-
-The final value of \textstyleCodeStyleChar{x} is \textstyleCodeChar{2}
+The final value of \textsf{x} is \textsf{2}
 
 
 \bigskip
 
-In Scenario 1 the final value of \textstyleCodeChar{x} is
-\textstyleCodeChar{1}, even though there are two increments done by the
+In Scenario 1 the final value of \textsf{x} is
+\textsf{1}, even though there are two increments done by the
 two threads. In Scenario 2 however the final value is
-\textstyleCodeChar{2}. This unpredictable outcome does not necessarily
+\textsf{2}. This unpredictable outcome does not necessarily
 mean a problem or a bug that must be handled. \ Non-deterministic
 execution is part of multi-threaded programming culture that many
 programs can live with. For example, if one or more threads depend on a
@@ -472,57 +482,57 @@ comes into play.
 
 \subsubsection[User Defined Synchronization]{User Defined
 Synchronization}
+
 For some simple situations, synchronization can be achieved without
 relying on special synchronization primitives provided by the language.
 For example, if one thread is waiting for another thread to finish a
 task, a shared flag variable can be used in such case. In the following
 example, the main thread might finish before the child thread:
 
-procedure main()
-
-\ \ \ thread \ write({\textquotedbl}I am a thread: Hello
-World!{\textquotedbl})
-
+\iconcode{
+procedure main() \\
+\>   thread \ write({\textquotedbl}I am a thread: Hello
+World!{\textquotedbl}) \\
 end
+}
 
 As seen in the previous section, this can be handled using the
-\textstyleCodeChar{wait()} function or \textstyleCodeChar{delay()}. The
-\textstyleCodeChar{wait()} function is the best solution for this
-situation. The function \textstyleCodeChar{delay() }works but there are
+\textsf{wait()} function or \textsf{delay()}. The
+\textsf{wait()} function is the best solution for this
+situation. The function \textsf{delay() }works but there are
 two problems associated with it: it forces the program to wait a lot
 longer than necessary, and second, if the delay time is not long enough
 and depending on the system, the main thread might still finish before
 the child thread. Actually even with a long delay, there is no
 guarantee the child thread would be done. In a real application,
-\textstyleCodeChar{delay()} would be a poor choice. Here is an
-alternative solution other than using \textstyleCodeChar{wait()}:
+\textsf{delay()} would be a poor choice. Here is an
+alternative solution other than using \textsf{wait()}:
 
-global done
-
-procedure main()
-
+\iconcode{
+global done \\
+procedure main() \\
 \ \ \ thread \ (write({\textquotedbl}I am a thread: Hello
-World!{\textquotedbl}) \& done:={\textquotedbl}true{\textquotedbl})
-
-\ \ \ until {\textbackslash}done
-
+World!{\textquotedbl}) \& done:={\textquotedbl}true{\textquotedbl}) \\
+\ \ \ until {\textbackslash}done \\
 end
+}
 
-In this case, the loop \textstyleCodeChar{until
-{\textbackslash}}\textstyleCodeChar{done} ensures that the main thread
+In this case, the loop \textsf{until
+{\textbackslash}}\textsf{done} ensures that the main thread
 keeps spinning until the child thread set the variable
-\textstyleCodeChar{done} to a non-null value. It avoids the problems
+\textsf{done} to a non-null value. It avoids the problems
 with using delay(), at the expense of burning up 100\% of one CPU in a
-spin-lock. Note that declaring \textstyleCodeChar{done} to be global is
+spin-lock. Note that declaring \textsf{done} to be global is
 a key for the example above to work. If it were local, the main thread
 would spin indefinitely and never finish! That is because any change to
-\textstyleCodeChar{done} in the child thread would be invisible in the
+\textsf{done} in the child thread would be invisible in the
 main thread. If none of these approaches seems acceptable, that is a
 good sign. Use techniques from the following sections to avoid such
 inefficient synchronization.
 
 \subsubsection[Language Support for Synchronization]{Language Support
 for Synchronization}
+
 Using function wait() or global variables to synchronize between threads
 might be sufficient in some situations, but most problems require more
 sophisticated and efficient synchronization methods. The following
@@ -536,71 +546,58 @@ one thread may execute at a time or an error will occur. In the example
 discussed earlier at the beginning of this section, two threads compete
 to increment the variable x. The end result might not be what the
 programmer intended. In such cases a mutex may be used to protect
-access to the variable \textstyleCodeChar{x}. Any operation (including
+access to the variable \textsf{x}. Any operation (including
 data structure traversal) where more than one thread can execute
 non-deterministically, leading to data corruption or incorrect results
 is called \textit{thread} \textit{unsafe}. Thread unsafe code or data
 structures have to be handled correctly via synchronizations mechanisms
 to achieve correct behavior with correct results.
 
-A mutex object is created using the \textstyleCodeChar{mutex()}
+A mutex object is created using the \textsf{mutex()}
 function. The returned mutex object can be locked/unlocked via the
-functions \textstyleCodeChar{lock()} and \textstyleCodeChar{unlock()}
+functions \textsf{lock()} and \textsf{unlock()}
 to serialize execution in a critical region. The following example
 demonstrates the use of a mutex to protect increments to the global
-variable \textstyleCodeChar{x}:
+variable \textsf{x}:
 
-global x
-
-procedure main()
-
-\ \ \ mtx\_x := mutex()
-
-\ \ \ x := 0
-
-\ \ \ t1 := thread inc\_x(mtx\_x)
-
-\ \ \ t2 := thread inc\_x(mtx\_x)
-
-\ \ \ every wait(t1 {\textbar} t2)
-
-\ \ \ write({\textquotedbl}x={\textquotedbl}, x)
-
+\iconcode{
+global x \\
+procedure main() \\
+\>   mtx\_x := mutex() \\
+\>   x := 0 \\
+\>   t1 := thread inc\_x(mtx\_x) \\
+\>   t2 := thread inc\_x(mtx\_x) \\
+\>   every wait(t1 {\textbar} t2) \\
+\>   write({\textquotedbl}x={\textquotedbl}, x) \\
+end \\
+\ \\
+procedure inc\_x(region) \\
+\>   lock(region) \\
+\>   x := x + 1 \\
+\>   unlock(region) \\
 end
-
-
-\bigskip
-
-procedure inc\_x(region)
-
-\ \ \ lock(region) \ \ 
-
-\ \ \ x := x + 1
-
-\ \ \ unlock(region) \ \ 
-
-end
+}
 
 It is important to note that the mutex object has to be initialized only
 once and can then be shared between all of the threads
-(\textstyleCodeStyleChar{t1} and \textstyleCodeStyleChar{t2}) accessing
-the critical region (\textstyleCodeStyleChar{x := x + 1} ).
-\textstyleCodeStyleChar{lock(region)} marks the beginning of the
+(\textsf{t1} and \textsf{t2}) accessing
+the critical region (\textsf{x := x + 1} ).
+\textsf{lock(region)} marks the beginning of the
 critical region protected by the mutex region.
-\textstyleCodeStyleChar{unlock(region)} marks the end of the critical
-region. When a thread calls \textstyleCodeStyleChar{lock(region)}, it
-tries to acquire the mutex \textstyleCodeStyleChar{region}. If
-\textstyleCodeStyleChar{region} is not
+\textsf{unlock(region)} marks the end of the critical
+region. When a thread calls \textsf{lock(region)}, it
+tries to acquire the mutex \textsf{region}. If
+\textsf{region} is not
 {\textquotedblleft}owned{\textquotedblright} by any other thread,
-\textstyleCodeStyleChar{lock(region)} succeeds and the thread becomes
-the owner of the mutex \textstyleCodeStyleChar{region} and then enters
+\textsf{lock(region)} succeeds and the thread becomes
+the owner of the mutex \textsf{region} and then enters
 the critical region, otherwise the thread blocks until the current
 owner of the mutex leaves the critical region by calling
-\textstyleCodeStyleChar{unlock(region)}. Since there are two threads
-and \textstyleCodeChar{x:=x+1} is protected by a mutex, the output of
-the program is guaranteed to be \textstyleCodeChar{x=2}, unlike the
-case where a mutex is not used, in which case \textstyleCodeChar{x=1}
-or \textstyleCodeChar{x=2} are viable outputs.
+\textsf{unlock(region)}. Since there are two threads
+and \textsf{x:=x+1} is protected by a mutex, the output of
+the program is guaranteed to be \textsf{x=2}, unlike the
+case where a mutex is not used, in which case \textsf{x=1}
+or \textsf{x=2} are viable outputs.
 
 The more critical-regions/mutexes a concurrent program has, the slower
 it runs. The length of the critical region also affects the
@@ -615,26 +612,30 @@ are blocked, resources will not be freed, and the threads block
 indefinitely. 
 
 Unicon provides a special syntax for critical regions which is
-equivalent to a \textstyleCodeChar{lock()}/\textstyleCodeChar{unlock()}
+equivalent to a \textsf{lock()}/\textsf{unlock()}
 pair, that aims mainly to guarantee that a mutex is released at the end
 of a critical region, beside enhancing the readability of the program.
 Here is the syntax:
 
+\iconcode{
 critical mtx: expr
+}
 
 This is equivalent to:
 
-lock(mtx)
-
-expr
-
+\iconcode{
+lock(mtx) \\
+expr \\
 unlock(mtx)
+}
 
-Given a global variable named \textstyleCodeStyleChar{region} that has
+Given a global variable named \textsf{region} that has
 been initialized as a mutex, the code to increment
-\textstyleCodeChar{x} in the previous example can be written as:
+\textsf{x} in the previous example can be written as:
 
+\iconcode{
 critical region: x := x + 1
+}
 
 The critical region syntax only unlocks the mutex if it executes until
 the end. If there is a return or break in the critical region
@@ -642,65 +643,60 @@ expression body, then it is the programmer{\textquoteright}s
 responsibility to explicitly unlock the mutex of the critical region.
 For example:
 
-critical region: \{
-
-\ \ \ if x {\textgreater} 100 then \{ unlock(region); return \}
-
-\ \ \ x := x + 1
-
-\ \ \ \}
+\iconcode{
+critical region: \{ \\
+\>   if x {\textgreater} 100 then \{ unlock(region); return \} \\
+\>   x := x + 1 \\
+\>   \}
+}
 
 In some situations, a thread might have several tasks to finish and may
 not want to block waiting for a mutex that is possessed by another
 thread. For example, if a thread is creating items that can be inserted
 in one of several shared queues, the thread can insert every new item
-in the first queue that it acquires. \textstyleCodeStyleChar{trylock()}
-is an alternative function for \textstyleCodeStyleChar{lock()}. The
-only difference is that \textstyleCodeStyleChar{trylock()} is
+in the first queue that it acquires. \textsf{trylock()}
+is an alternative function for \textsf{lock()}. The
+only difference is that \textsf{trylock()} is
 non-blocking. If the thread cannot acquire the mutex immediately, the
 function fails. The most suitable way to use
-\textstyleCodeStyleChar{trylock()} is to combine it with an
-\textstyleCodeStyleChar{if} statement, where the
-\textstyleCodeStyleChar{then} body unlocks the mutex after finishing
+\textsf{trylock()} is to combine it with an
+\textsf{if} statement, where the
+\textsf{then} body unlocks the mutex after finishing
 the work on the protected object as follows:
 
-if trylock(mtx) then \{
-
-\ \ \ \ \ expr
-
-\ \ \ \ \ unlock(mtx) 
-
+\iconcode{
+if trylock(mtx) then \{ \\
+\ \ \ \ \ expr \\
+\ \ \ \ \ unlock(mtx) \\
 \ \ \ \ \ \}
+}
 
-Both \textstyleCodeChar{lock()} and \textstyleCodeStyleChar{trylock()}
+Both \textsf{lock()} and \textsf{trylock()}
 return a reference to the mutex or the object they acquired (upon
-succeeding in case of \textstyleCodeStyleChar{trylock()}). This makes
+succeeding in case of \textsf{trylock()}). This makes
 it very convenient to write code like the following assuming L1 and L2
 are both lists that are marked as shared:
 
-item := newitem()
-
-if L := trylock(L1 {\textbar} L2) then \{
-
-\ \ \ \ \ put(L, item)
-
-\ \ \ \ \ unlock(L) 
-
+\iconcode{
+item := newitem() \\
+if L := trylock(L1 {\textbar} L2) then \{ \\
+\ \ \ \ \ put(L, item) \\
+\ \ \ \ \ unlock(L) \\
 \ \ \ \ \ \}
+}
 
 Note that trylock() may fail to lock any of the lists leaving item
 unprocessed. Depending on what the code needs to do, if it is required
 to guarantee that it does not proceed before one of the locks to
-\textstyleCodeStyleChar{L1} or \textstyleCodeStyleChar{L2} succeeds
+\textsf{L1} or \textsf{L2} succeeds
 then it can be written as follows:
 
-item := newitem()
-
-until L := trylock(L1 {\textbar} L2) 
-
-put(L, item)
-
-unlock(L) 
+\iconcode{
+item := newitem() \\
+until L := trylock(L1 {\textbar} L2) \\
+put(L, item) \\
+unlock(L)
+}
 
 \paragraph[Initial clause]{Initial clause}
 A procedure in a Unicon program can have an initialization clause at the
@@ -711,17 +707,14 @@ procedure instead of relying on global variables and having to
 initialize them somewhere else. A procedure that produces a sequence of
 numbers one at each call can be written as:
 
-procedure seq()
-
-\ \ \ static i
-
-\ \ \ initial i:=0
-
-\ \ \ i := i+1
-
-\ \ \ return i
-
+\iconcode{
+procedure seq() \\
+\ \ \ static i \\
+\ \ \ initial i:=0 \\
+\ \ \ i := i+1 \\
+\ \ \ return i \\
 end
+}
 
 Initial clauses are thread-safe. They can be thought of as a built-in
 critical region that is run only once. No thread is allowed to enter
@@ -731,31 +724,27 @@ environment to do critical initialization such as creating a new mutex
 object instead of declaring a mutex variable to be global and
 initializing it somewhere else or passing it from one function to
 another where it will be actually used. A concurrent version of
-\textstyleCodeChar{seq()} would look like this:
+\textsf{seq()} would look like this:
 
-procedure seq()
+\iconcode{
+procedure seq() \\
+\ \ \ local n \\
+\ \ \ static i, region \\
+\ \ \ initial \{ i:=0; region:=mutex() \} \\
+\ \ \ critical region: n := i:= i+1 \\
+\ \ \ return n \\
+end
+}
 
-\ \ \ local n
-
-\ \ \ static i, region
-
-\ \ \ initial \{ i:=0; region:=mutex() \}
-
-\ \ \ critical region: n := i:= i+1
-
-\ \ \ return n
-
-end 
-
-With the use of the initial clause, \textstyleCodeChar{seq()} is
+With the use of the initial clause, \textsf{seq()} is
 self-contained and thread safe. Note the use of the local variable
-\textstyleCodeChar{n} to temporarily hold the value of the counter
-\textstyleCodeChar{i} while still in the critical region. That is
+\textsf{n} to temporarily hold the value of the counter
+\textsf{i} while still in the critical region. That is
 because once the thread leaves the critical region, there is no
-guarantee that the value of \textstyleCodeChar{i} would remain the same
-before returning the value of \textstyleCodeChar{i}. Using the variable
-\textstyleCodeChar{n} guarantees that the value returned is correct
-even if the value of \textstyleCodeChar{i} is changed by another
+guarantee that the value of \textsf{i} would remain the same
+before returning the value of \textsf{i}. Using the variable
+\textsf{n} guarantees that the value returned is correct
+even if the value of \textsf{i} is changed by another
 thread.
 
 \paragraph[Thread{}-safe Data Structures]{Thread-safe Data Structures}
@@ -774,141 +763,115 @@ value of implicit mutexes is made clear after considering the
 alternative. The following producer-consumer example uses a list to
 send and receive data and protects it using an explicit mutex: 
 
-procedure main()
-
-\ \ \ L := [ ]
-
-\ \ \ mtx := mutex()
-
-\ \ \ p := thread produce(L, mtx)
-
-\ \ \ c := thread consume(L, mtx)
-
-\ \ \ every wait(p {\textbar} c)
-
+\iconcode{
+procedure main() \\
+\ \ \ L := [ ] \\
+\ \ \ mtx := mutex() \\
+\ \ \ p := thread produce(L, mtx) \\
+\ \ \ c := thread consume(L, mtx) \\
+\ \ \ every wait(p {\textbar} c) \\
+end \\
+\ \\
+procedure produce(L, region) \\
+\ \ \ every i := !10 do \\
+\ \ \ \ \ \ critical region: put(L, i) \\
 end
-
-
-\bigskip
-
-procedure produce(L, region)
-
-\ \ \ every i := !10 do 
-
-\ \ \ \ \ \ critical region: put(L, i)
-
+\ \\
+procedure consume(L, region) \\
+i := 0 \\
+while i{\textless}10 \ do \\
+\ \ \ critical region: if x := get(L) then i+:=1 \& write(x) \\
 end
-
-
-\bigskip
-
-procedure consume(L, region)
-
-i := 0 \ \ \ 
-
-while i{\textless}10 \ do
-
-\ \ \ critical region: if x := get(L) then i+:=1 \& write(x)
-
-end
+}
 
 Using a thread-safe list results in less lines of code to do the same
 thing and also produces a more efficient program doing less locking and
 unlocking at the language level, or even not doing explicit locking at
 all. For example, the program above may be rewritten as the following: 
 
-procedure main()
-
-\ \ \ L := mutex([ ])
-
-\ \ \ p := thread produce(L)
-
-\ \ \ c := thread consume(L)
-
-\ \ \ every wait(p {\textbar} c)
-
+\iconcode{
+procedure main() \\
+\ \ \ L := mutex([ ]) \\
+\ \ \ p := thread produce(L) \\
+\ \ \ c := thread consume(L) \\
+\ \ \ every wait(p {\textbar} c) \\
+end \\
+\ \\
+procedure produce(L) \\
+\ \ \ every put(L, !10) \\
 end
-
-
-\bigskip
-
-procedure produce(L)
-
-\ \ \ every put(L, !10)
-
+\ \\
+procedure consume(L) \\
+\ \ \ i := 0 \\
+\ \ \ while i{\textless}10 \ do \\
+\ \ \ \ \ \ if x := get(L) then i+:=1 \& write(x) \\
 end
+}
 
-
-\bigskip
-
-procedure consume(L)
-
-\ \ \ i := 0 \ \ \ 
-
-\ \ \ while i{\textless}10 \ do 
-
-\ \ \ \ \ \ if x := get(L) then i+:=1 \& write(x)
-
-end
-
-The \textstyleCodeChar{produce()} and \textstyleCodeChar{consume()}
+The \textsf{produce()} and \textsf{consume()}
 \ procedures do not do any locking, making concurrent programming in
 such a case just as easy as writing a sequential program. The only
 needed step is notify the language at the beginning that the data
-structure is shared, by passing it to the \textstyleCodeChar{mutex()}
-function. The \textstyleCodeChar{mutex()} function takes a second
+structure is shared, by passing it to the \textsf{mutex()}
+function. The \textsf{mutex()} function takes a second
 optional parameter denoting an existing mutex object or an object that
 is already marked as shared (has a mutex attribute). Instead of
 creating a new mutex object for the data structure, the existing mutex
 is used as an attribute for the data structure. If the second object is
 a structure that is not marked as shared, a new mutex is created. This
 is useful when two objects needs to be protected by the same mutex. For
-example, the list \textstyleCodeChar{L} and the table
-\textstyleCodeChar{T} in the following example share the same mutex:
+example, the list \textsf{L} and the table
+\textsf{T} in the following example share the same mutex:
 
-mtx := mutex()
-
-L := mutex([ ], mtx)
-
+\iconcode{
+mtx := mutex() \\
+L := mutex([ ], mtx) \\
 T := mutex(table(), mtx)
+}
 
 which is equivalent to the following if the mutex does not need to be
 explicit:
 
-L := mutex([ ])
-
+\iconcode{
+L := mutex([ ]) \\
 T := mutex(table(0), L)
+}
 
 or
 
-L := [ ]
-
+\iconcode{
+L := [ ] \\
 T := mutex(table(0), L)
+}
 
-In all cases, \textstyleCodeChar{lock(L)} and
-\textstyleCodeChar{lock(T)} lock the same mutex, serializing execution
+In all cases, \textsf{lock(L)} and
+\textsf{lock(T)} lock the same mutex, serializing execution
 on both data structures. Not all operations on data structures produces
 correct results, only {\textquotedblleft}atomic{\textquotedblright}
 operations do. In other words, implicit locking/unlocking takes place
 per operation, which means even if each one of the two operations is
 safe, the combination might not be. A critical region is still needed
 to combine the two. For example, if
-\textstyleCodeChar{L}\textstyleCodeChar{[1]} has the value of 3 and two
-threads are trying to increment \textstyleCodeChar{L[1]}:
+\textsf{L}\textsf{[1]} has the value of 3 and two
+threads are trying to increment \textsf{L[1]}:
 
+\iconcode{
 L[1] := L[1] + 1
+}
 
-the result in \textstyleCodeChar{L[1]} could be 4 or 5. That is because
-reading \textstyleCodeChar{L[1]} (the right side of the assignment) and
-storing the result back in \textstyleCodeChar{L[1]} are two different
+the result in \textsf{L[1]} could be 4 or 5. That is because
+reading \textsf{L[1]} (the right side of the assignment) and
+storing the result back in \textsf{L[1]} are two different
 operations (not atomic) and are actually separated in time. The good
 news is that solving such an issue does not require an extra explicit
-mutex. If \textstyleCodeChar{L} is marked as shared (passed to the
-\textstyleCodeChar{mutex()} function ) it can be passed to
-\textstyleCodeChar{lock()}/\textstyleCodeChar{unlock()} functions. It
+mutex. If \textsf{L} is marked as shared (passed to the
+\textsf{mutex()} function ) it can be passed to
+\textsf{lock()}/\textsf{unlock()} functions. It
 can be used with the critical syntax like the following: \ 
 
+\iconcode{
 critical L: L[1] := L[1] + 1
+}
 
 \paragraph[Condition variables]{Condition variables}
 Mutexes are used to protect shared data in critical regions, and block
@@ -924,62 +887,68 @@ including producer threads could be using the resources doing something
 useful instead. The consumer needs to block until there is data to
 process in the list. This is where a condition variable comes into
 play. \ A condition variable is created using the function
-\textstyleCodeChar{condvar()}. The return object is a condition
-variable that can be used with \textstyleCodeChar{wait()} and
-\textstyleCodeChar{signal()} functions. \textstyleCodeChar{wait(cv)}
+\textsf{condvar()}. The return object is a condition
+variable that can be used with \textsf{wait()} and
+\textsf{signal()} functions. \textsf{wait(cv)}
 blocks the current thread on the condition variable
-\textstyleCodeStyleChar{cv}. The thread remains blocked until another
-thread does a \textstyleCodeChar{signal(cv)}, which wakes up one thread
-blocked on \textstyleCodeStyleChar{cv}. A very important aspect of
+\textsf{cv}. The thread remains blocked until another
+thread does a \textsf{signal(cv)}, which wakes up one thread
+blocked on \textsf{cv}. A very important aspect of
 using a condition variable is that the condition variable must always
 be associated with a mutex. More specifically, the
-\textstyleCodeChar{wait()} function has to be always protected by a
+\textsf{wait()} function has to be always protected by a
 mutex. Unicon provides a built-in mutex for condition variables which
 can be thought of as an attribute similar to thread safe data
 structures. This means a condition variable can also be used with
-\textstyleCodeChar{lock()}/\textstyleCodeChar{unlock()} functions or
+\textsf{lock()}/\textsf{unlock()} functions or
 the critical clause. It is important to realize that not only
-\textstyleCodeChar{wait()} has to be protected by a critical region,
+\textsf{wait()} has to be protected by a critical region,
 but also the condition or the test that leads a thread to wait on a
 condition variable. \ See the following example:
 
+\iconcode{
 if x=0 then wait(cv)
+}
 
-A thread wants to wait on \textstyleCodeChar{cv} if
-\textstyleCodeChar{x=0}, but what happens if the value of
-\textstyleCodeChar{x} has changed between the test and the call to
-\textstyleCodeChar{wait(cv)}? If a second thread changes the value of
-\textstyleCodeChar{x} and signals \textstyleCodeChar{cv} \ to wake up
+A thread wants to wait on \textsf{cv} if
+\textsf{x=0}, but what happens if the value of
+\textsf{x} has changed between the test and the call to
+\textsf{wait(cv)}? If a second thread changes the value of
+\textsf{x} and signals \textsf{cv} \ to wake up
 the first thread, while the first thread transitions from the test to
-\textstyleCodeChar{wait()}\textstyleCodeChar{,} it ends up missing the
+\textsf{wait()}\textsf{,} it ends up missing the
 wake up signal and might block indefinitely because it is waiting on a
 condition variable that it should not wait on. \ The correct way to use
-\textstyleCodeStyleChar{wait()} with a condition variable becomes:
+\textsf{wait()} with a condition variable becomes:
 
-lock(cv) 
-
-\ \ \ if x=0 then wait(cv)
-
+\iconcode{
+lock(cv) \\
+\ \ \ if x=0 then wait(cv) \\
 unlock(cv)
+}
 
 or :
 
+\iconcode{
 critical cv: if x=0 then wait(cv)
+}
 
 Because other threads might need to access the condition variable while
-some threads are waiting on it, the \textstyleCodeChar{wait()} function
+some threads are waiting on it, the \textsf{wait()} function
 atomically blocks the thread and releases its corresponding mutex.
 After receiving a wake up signal, the blocked thread wakes up, acquires
 the mutex (blocking if necessary) and continues executing and that is
-when \textstyleCodeChar{wait()} returns. It is a good practice to do
+when \textsf{wait()} returns. It is a good practice to do
 the condition variable test before assuming that it is in one state or
 another. This leads to a more correct way to use condition variables
-that ensures that a thread does not leave \textstyleCodeChar{wait()}
+that ensures that a thread does not leave \textsf{wait()}
 before guaranteeing the test is in a specific state as follows:
 
+\iconcode{
 \ critical cv: while x=0 do wait(cv)
+}
 
-Using a \textstyleCodeChar{while} in place of \textstyleCodeChar{if}
+Using a \textsf{while} in place of \textsf{if}
 will ensure the thread goes back to sleep if the thread happens to wake
 up and the condition outcome has not changed.
 
@@ -990,122 +959,80 @@ words), the state of the list needs to be guaranteed to remain the same
 while interacting with the condition variable for the same reason
 explained above (missing wake up signals). The list and the condition
 variable have to be protected by the same mutex.
-\textstyleCodeChar{condvar()} allows an optional argument that refers
+\textsf{condvar()} allows an optional argument that refers
 to an existing mutex to be associated with the condition variable. In
 the original example, using an independent mutex to protect the
 condition variable looks like this:
 
-procedure main()
-
-\ \ \ L := [ ]
-
-\ \ \ mtx := mutex()
-
-\ \ \ cv := condvar(mtx)
-
-\ \ \ p := thread produce(L, cv)
-
-\ \ \ c := thread consume(L, cv)
-
-\ \ \ every wait(p {\textbar} c)
-
-end
-
-
-\bigskip
-
-procedure produce(L, cv)
-
-\ \ \ every i:=!10 do \{
-
-\ \ \ \ \ \ critical cv: put(L, i)
-
-\ \ \ \ \ \ if *L=1 then signal(cv)
-
-\ \ \ \ \ \ \}
-
-end
-
-
-\bigskip
-
-procedure consume(L, cv)
-
-\ \ \ i := 0 \ \ \ 
-
-\ \ \ while i{\textless}10 \ do \{
-
+\iconcode{
+procedure main() \\
+\ \ \ L := [ ] \\
+\ \ \ mtx := mutex() \\
+\ \ \ cv := condvar(mtx) \\
+\ \ \ p := thread produce(L, cv) \\
+\ \ \ c := thread consume(L, cv) \\
+\ \ \ every wait(p {\textbar} c) \\
+end \\
+\ \\
+procedure produce(L, cv) \\
+\ \ \ every i:=!10 do \{ \\
+\ \ \ \ \ \ critical cv: put(L, i) \\
+\ \ \ \ \ \ if *L=1 then signal(cv) \\
+\ \ \ \ \ \ \} \\
+end \\
+\ \\
+procedure consume(L, cv) \\
+\ \ \ i := 0 \\
+\ \ \ while i{\textless}10 \ do \{ \\
 \ \ \ \ \ \ if *L=0 then critical cv: until *L{\textgreater}0 do
-wait(cv)
-
-\ \ \ \ \ \ if x := get(L) then i+:=1 \& write(x)
-
-\ \ \ \ \ \ \}
-
+wait(cv) \\
+\ \ \ \ \ \ if x := get(L) then i+:=1 \& write(x) \\
+\ \ \ \ \ \ \} \\
 end
+}
 
 Another way to implement this program is built on top of the thread safe
 list example. Since there is no explicit mutex to pass to the
-\textstyleCodeChar{condvar()} function in the original example, a mutex
+\textsf{condvar()} function in the original example, a mutex
 can be first created and then passed along with the list to the
-\textstyleCodeChar{mutex()} function. The same mutex then can be passed
-to \textstyleCodeChar{condvar()}. The function binds the mutex already
+\textsf{mutex()} function. The same mutex then can be passed
+to \textsf{condvar()}. The function binds the mutex already
 associated with the list to the condition variable. The final result is
 the same as the explicit mutex example, a list and a condition variable
 sharing the same mutex. Here is the example again with the shared list
 and a condition variable:
 
-procedure main()
-
-\ \ \ mtx := mutex()
-
-\ \ \ L := mutex([], mtx)
-
-\ \ \ cv := condvar(mtx)
-
-\ \ \ p := thread produce(L, cv)
-
-\ \ \ c := thread consume(L, cv)
-
-\ \ \ every wait(p {\textbar} c)
-
+\iconcode{
+procedure main() \\
+\ \ \ mtx := mutex() \\
+\ \ \ L := mutex([], mtx) \\
+\ \ \ cv := condvar(mtx) \\
+\ \ \ p := thread produce(L, cv) \\
+\ \ \ c := thread consume(L, cv) \\
+\ \ \ every wait(p {\textbar} c) \\
+end \\
+\ \\
+procedure produce(L, cv) \\
+\ \ \ every put(L, !10) \& *L=1 \& signal(cv) \\
+end \\
+\ \\
+procedure consume(L, cv) \\
+\ \ \ i := 0 \\
+\ \ \ while i{\textless}10 \ do \\
+\ \ \ \ \ \ if x := get(L) then \\
+\ \ i+:=1 \& write(x) \\
+\ \ \ \ \ \ else \\
+\ \ \ \ \ \ \ \ \ critical cv: until *L{\textgreater}0 do wait(cv) \\
 end
+}
 
-
-\bigskip
-
-procedure produce(L, cv)
-
-\ \ \ every put(L, !10) \& *L=1 \& signal(cv)
-
-end
-
-
-\bigskip
-
-procedure consume(L, cv)
-
-\ \ \ i := 0 \ \ \ 
-
-\ \ \ while i{\textless}10 \ do
-
-\ \ \ \ \ \ if x := get(L) then 
-
-\ \ i+:=1 \& write(x)
-
-\ \ \ \ \ \ else
-
-\ \ \ \ \ \ \ \ \ critical cv: until *L{\textgreater}0 do wait(cv)
-
-end
-
-In previous examples, calls to \textstyleCodeChar{signal()} are not
-protected by any mutex. \textstyleCodeChar{signal()} does not need
+In previous examples, calls to \textsf{signal()} are not
+protected by any mutex. \textsf{signal()} does not need
 protection, because it does not block the thread, and hence there is no
 worry about causing a deadlock. The worst thing that can happen is
 signaling a condition variable that does not have any thread waiting on
 it, which is not a problem. However protecting calls to
-\textstyleCodeChar{signal()} is not a problem either. Depending on the
+\textsf{signal()} is not a problem either. Depending on the
 problem, doing it one way or the other might be more or less efficient.
 There is no need to have a thread that spends a lot of time
 locking/unlocking a mutex if it is not necessary, creating contention
@@ -1113,54 +1040,56 @@ in the critical region. However, a thread that keeps wasting time
 signaling condition variables that have no threads waiting on them is
 undesirable either.
 
-The \textstyleCodeStyleChar{signal()} function takes a second optional
+The \textsf{signal()} function takes a second optional
 parameter denoting the number of threads to be woken up. By default,
 that number is one, but it can be any positive value. From example:
 
+\iconcode{
 every !4 do signal(cv)
+}
 
 can be written as:
 
+\iconcode{
 signal(cv, 4)
+}
 
 Furthermore, if all of the threads waiting on
-\textstyleCodeStyleChar{cv} needs to be woken up, a special
-\textstyleCodeStyleChar{0} ( or \textstyleCodeStyleChar{CV\_BROADCAST})
-value can be passed to \textstyleCodeStyleChar{signal()} causing it to
+\textsf{cv} needs to be woken up, a special
+\textsf{0} ( or \textsf{CV\_BROADCAST})
+value can be passed to \textsf{signal()} causing it to
 broadcast a wakeup call for all threads waiting on
-\textstyleCodeStyleChar{cv}:
+\textsf{cv}:
 
-signal(cv, 0) 
+\iconcode{
+signal(cv, 0)
+}
 
 or
 
-signal(cv, CV\_\textstyleCodeStyleChar{ BROADCAST}) 
+\iconcode{
+signal(cv, CV\_\textsf{ BROADCAST})
+}
 
-
-\bigskip
-
-
-\bigskip
 
 \subsection{Thread Communication}
 
-\bigskip
 
 Traditionally, co-expressions communicate implicitly, or explicitly
-using the \textstyleCodeChar{@} operator. All co-expression
+using the \textsf{@} operator. All co-expression
 communication is synchronous; at the two ends of the communication, the
 calling co-expression is blocked and the called co-expression runs.
 This simple communication model is called \textit{activation} in
-Unicon. A co-expression \textstyleCodeChar{C1} can activate another
-co-expression \textstyleCodeChar{C2} using the following syntax:
+Unicon. A co-expression \textsf{C1} can activate another
+co-expression \textsf{C2} using the following syntax:
 
 \ x@C2
 
-\textstyleCodeChar{x} is an optional value to be transmitted from
-\textstyleCodeChar{C1} to \textstyleCodeChar{C2}.
-\textstyleCodeChar{C1} waits until it gets activated by
-\textstyleCodeChar{C2} or any other co-expression directly or
-indirectly activated by \textstyleCodeChar{C2}. As mentioned earlier,
+\textsf{x} is an optional value to be transmitted from
+\textsf{C1} to \textsf{C2}.
+\textsf{C1} waits until it gets activated by
+\textsf{C2} or any other co-expression directly or
+indirectly activated by \textsf{C2}. As mentioned earlier,
 implicit activation takes place whenever a co-expression produces a
 value or falls off its end. With implicit activation, the co-expression
 activates its parent (the last co-expression to activate it).
@@ -1169,16 +1098,17 @@ Threads take communication to a completely new level with their dynamic
 nature. Threads run concurrently; in many cases, a running thread just
 wants to send a value to another thread without waiting for a reply, or
 receive a value from another thread if there is one without waiting.
-The \textstyleCodeChar{@} operator is not suitable for this kind of
+The \textsf{@} operator is not suitable for this kind of
 (asynchronous) communication. Unicon adds four operators dedicated for
 asynchronous communication. These are
-\textstyleCodeChar{@{\textgreater}},
-\textstyleCodeChar{@{\textgreater}{\textgreater}},
-\textstyleCodeChar{{\textless}@} and
-\textstyleCodeChar{{\textless}{\textless}@}. The operators correspond
+\textsf{@{\textgreater}},
+\textsf{@{\textgreater}{\textgreater}},
+\textsf{{\textless}@} and
+\textsf{{\textless}{\textless}@}. The operators correspond
 to send, blocking send, receive and blocking receive.
 
 \subsubsection{Thread Messaging Queues}
+
 Before presenting the communication operators and how they are used, it
 is first appropriate to look at messaging queues and how they are
 utilized to support the communication model between threads in Unicon.
@@ -1195,7 +1125,7 @@ following figure presents two threads with the inboxes and outboxes.
 \bigskip
 
 
-\includegraphics[width=5.989in,height=1.4807in]{UTR14-img/UTR14-img1.png}
+\includegraphics[width=5.989in,height=1.4807in]{ub-img/thread-fig1.png}
 
 
 
@@ -1220,28 +1150,33 @@ following figure presents two threads with the inboxes and outboxes.
 \bigskip
 
 \subsubsection{Send and Receive Operators}
-The first two operators are \textstyleCodeChar{@{\textgreater}} (send)
-and \textstyleCodeChar{{\textless}@} (receive). These operators
+
+The first two operators are \textsf{@{\textgreater}} (send)
+and \textsf{{\textless}@} (receive). These operators
 communicate messages containing arbitrary data between threads. The
 operators support co-expressions as well, with the same semantics. The
 send operator has the syntax 
 
+\iconcode{
 x @{\textgreater}T
+}
 
-\textstyleCodeChar{x} can be any data type including null which is
-equivalent to omitting it. \textstyleCodeChar{T} refers to a thread to
-which \textstyleCodeChar{x} is transmitted. \textstyleCodeChar{X} is
-placed in \textstyleCodeChar{T}{\textquoteright}s inbox.
-\textstyleCodeChar{X} can be picked by \textstyleCodeChar{T} using the
+\textsf{x} can be any data type including null which is
+equivalent to omitting it. \textsf{T} refers to a thread to
+which \textsf{x} is transmitted. \textsf{X} is
+placed in \textsf{T}{\textquoteright}s inbox.
+\textsf{X} can be picked by \textsf{T} using the
 receive operator which is presented later. The send operator can also
 have no destination such as:
 
+\iconcode{
 x @{\textgreater}
+}
 
-In this case \textstyleCodeChar{x} is sent to no one, instead it is
+In this case \textsf{x} is sent to no one, instead it is
 placed in the sender{\textquoteright}s outbox. The operator can be read
 as {\textquotedblleft}produce
-\textstyleCodeChar{x{\textquotedblright}}. \textstyleCodeChar{x} can
+\textsf{x{\textquotedblright}}. \textsf{x} can
 then be picked later by any thread wanting a value from this sender.
 For example the sender thread in this case might be a thread creating
 prime numbers and placing them in its outbox to be ready for other
@@ -1250,30 +1185,29 @@ worker threads.
 The receive operator is symmetric to the send operator and takes two
 forms, with explicit source or with no source as follows:
 
-{\textless}@T
-
-
-\bigskip
-
+\iconcode{
+{\textless}@T \\
+\ \\
 {\textless}@
+}
 
 The first case reads: receive a value from T, which gets a value from
-\textstyleCodeChar{T}{\textquoteright}s outbox, a value produced by
-\textstyleCodeChar{T}. Going back to the prime number example mentioned
-above, \textstyleCodeChar{{\textless}@T} would be the way to pick a
+\textsf{T}{\textquoteright}s outbox, a value produced by
+\textsf{T}. Going back to the prime number example mentioned
+above, \textsf{{\textless}@T} would be the way to pick a
 prime number produced by the prime number generator thread
-\textstyleCodeChar{T}. \textstyleCodeChar{{\textless}@} on the other
+\textsf{T}. \textsf{{\textless}@} on the other
 hand reads values directly from the receiver{\textquoteright}s inbox.
 It reads messages sent explicitly to the thread doing the receive
 operation.
 
-Both \textstyleCodeStyleChar{@{\textgreater}} and
-\textstyleCodeStyleChar{{\textless}@ }can succeed or fail. In the case
-of \textstyleCodeStyleChar{{\textless}@} the operator succeeds and
+Both \textsf{@{\textgreater}} and
+\textsf{{\textless}@ }can succeed or fail. In the case
+of \textsf{{\textless}@} the operator succeeds and
 returns a value from the corresponding queue (inbox/outbox) depending
 on the operand if the queue is not empty. If the queue is empty the
 operation fails directly. In the case of
-\textstyleCodeStyleChar{@{\textgreater}}, if the value is placed in the
+\textsf{@{\textgreater}}, if the value is placed in the
 corresponding queue the operation succeeds and returns the size of the
 queue. If the queue is full, the send operation fails. The inbox/outbox
 for each thread is initialized to have a limited size (it can hold up
@@ -1284,39 +1218,24 @@ communication/synchronization as explained later in following sections.
 \ Let us look at the producer/consumer example again written using the
 new operators:
 
-procedure main()
-
-\ \ \ p := thread produce()
-
-\ \ \ c := thread consume(p)
-
-\ \ \ every wait(p {\textbar} c)
-
+\iconcode{
+procedure main() \\
+\ \ \ p := thread produce() \\
+\ \ \ c := thread consume(p) \\
+\ \ \ every wait(p {\textbar} c) \\
+end \\
+\ \\
+procedure produce() \\
+\ \ \ every !10@{\textgreater} \ \ \# place values in my outbox \\
+end \\
+\ \\
+procedure consume(p) \\
+\ \ \ © := 0 \\
+\ \ \ while i{\textless}10 \ do \\
+\ \ \ \ \ \ if x := {\textless}@p then\ \ \# get values from p \\
+\ \ \ \ \ \ \ \ \ i+:=1 \& write(x) \\
 end
-
-
-\bigskip
-
-procedure produce()
-
-\ \ \ every !10@{\textgreater} \ \ \# place values in my outbox
-
-end
-
-
-\bigskip
-
-procedure consume(p)
-
-\ \ \ © := 0 \ \ \ 
-
-\ \ \ while i{\textless}10 \ do
-
-\ \ \ \ \ \ if x := {\textless}@p then\ \ \# get values from p
-
-\ \ \ \ \ \ \ \ \ i+:=1 \& write(x)
-
-end
+}
 
 Each thread has exactly one inbox and one outbox, and each operator call
 is mapped to only one of these inboxes or outboxes as seen in Figure 1.
@@ -1326,7 +1245,7 @@ A{\textquoteright}s outbox. Both the inbox and the outbox queues are
 public communications channels, and it is impossible to distinguish the
 source of a message if there are several threads sending messages to
 the same thread at the same time. Furthermore, if
-\textstyleCodeChar{{\textless}@} has an explicit source like A in
+\textsf{{\textless}@} has an explicit source like A in
 Figure 1, it only looks in A{\textquoteright}s outbox, and does not see
 messages from A coming directly to the inbox. Applications that require
 the sender{\textquoteright}s address can attach that information to
@@ -1337,7 +1256,8 @@ use of lists shared between the two communicating threads or the use of
 private communication channels discussed later in this document. 
 
 \subsubsection[Inbox/Outbox and the Attrib() Function ]{Inbox/Outbox and
-the \textstyleCodeStyleChar{Attrib()} Function }
+the \textsf{Attrib()} Function }
+
 As seen in previous sections, communications between threads is done
 though inbox/outbox queues which are governed by size limits. The size
 limit (defaults to1024) and the actual size dictate how synchronization
@@ -1345,35 +1265,45 @@ is melted with the communication. The size operator * can be used with
 a thread to query its actual outbox size (how many values it contains,
 not the maximum limit) and can be used as follows:
 
+\iconcode{
 outbox\_size := *T
+}
 
 But this is only a single attribute for one queue. To access or change
 other queue attributes, a new function is introduced to Unicon:
-\textstyleCodeStyleChar{Attrib()}. \textstyleCodeStyleChar{Attrib()}
-uses the form \textstyleCodeStyleChar{Attrib(handle, attribcode, value,
+\textsf{Attrib()}. \textsf{Attrib()}
+uses the form \textsf{Attrib(handle, attribcode, value,
 attribcode, value, ...)}.~The integer codes used by the
-\textstyleCodeStyleChar{Attrib()} function are supplied by an include
-file (\textstyleCodeStyleChar{thread.icn}) with
-\textstyleCodeStyleChar{\$define} symbols for the attributes. This
+\textsf{Attrib()} function are supplied by an include
+file (\textsf{thread.icn}) with
+\textsf{\$define} symbols for the attributes. This
 header file is part of a new thread package that is part of the Unicon
-distribution called package \textstyleCodeStyleChar{threads}. It can be
+distribution called package \textsf{threads}. It can be
 imported to a program via:
 
+\iconcode{
 import threads
+}
 
-When values are omitted, \textstyleCodeStyleChar{Attrib()} generally
+When values are omitted, \textsf{Attrib()} generally
 returns attribute values. To get the size of the outbox (the same as
 the * operator), the code is:
 
+\iconcode{
 outbox\_size := Attrib(T, OUTBOX\_SIZE)
+}
 
 similarly, 
 
+\iconcode{
 inbox\_size := Attrib(T, INBOX\_SIZE)
+}
 
 gets the current size \ of the inbox. On the other hand, 
 
+\iconcode{
 Attrib(T, INBOX\_LIMIT, 64, OUTBOX\_LIMIT, 32)
+}
 
 Sets the inbox and outbox size limits to 64 and 32 respectively. The
 following table summarizes of the available attributes and their
@@ -1409,17 +1339,18 @@ Read/Write\\
 \bigskip
 
 \subsubsection{Blocking Send and Receive}
+
 In many situations senders and receivers generate and consume messages
 at different speeds or based on needs. Instead of overloading slow
 receivers or busy waiting for slow senders, the two ends of
 communication needs a synchronizing mechanism to tell when to send new
 messages or when a new message is available. Two more send and receive
 operators provide such functionality, these are the blocking send
-operator \textstyleCodeStyleChar{@{\textgreater}{\textgreater}} and the
+operator \textsf{@{\textgreater}{\textgreater}} and the
 blocking receive operator
-\textstyleCodeStyleChar{{\textless}{\textless}@.} These operators can
-be used in the same way \textstyleCodeStyleChar{@{\textgreater}} and
-\textstyleCodeStyleChar{{\textless}@} are used, except that instead of
+\textsf{{\textless}{\textless}@.} These operators can
+be used in the same way \textsf{@{\textgreater}} and
+\textsf{{\textless}@} are used, except that instead of
 failing when the operation cannot be completed, the new operators block
 and wait until the operation succeeds. In the simple producer/consumer
 example, the producer is only producing 10 values, since the default
@@ -1429,50 +1360,51 @@ instead of spinning in some cases while the queue is empty and the
 original blocking receive just keeps failing. \ Take a closer look at
 the consumer code again:
 
-procedure consume(p)
-
-\ \ \ © := 0 \ \ \ 
-
-\ \ \ while i{\textless}10 \ do
-
-\ \ \ \ \ \ if x := {\textless}@p then\ \ \# get values from p
-
-\ \ \ \ \ \ \ \ \ i+:=1 \& write(x)
-
+\iconcode{
+procedure consume(p) \\
+\ \ \ © := 0 \\
+\ \ \ while i{\textless}10 \ do \\
+\ \ \ \ \ \ if x := {\textless}@p then\ \ \# get values from p \\
+\ \ \ \ \ \ \ \ \ i+:=1 \& write(x) \\
 end
+}
 
-Using an \textstyleCodeChar{if} statement with
-\textstyleCodeStyleChar{{\textless}@} is necessary to check if the
+Using an \textsf{if} statement with
+\textsf{{\textless}@} is necessary to check if the
 operation succeeds in receiving a value. A blocking receive is more
 suitable in this case and it simplifies the loop slightly since the
-\textstyleCodeStyleChar{if} can be dropped, and also the counter is not
+\textsf{if} can be dropped, and also the counter is not
 necessary anymore. The counter is necessary in the previous case
 because the loop needs to keep track of how many
-\textstyleCodeStyleChar{{\textless}@} succeeded to count to 10. The
+\textsf{{\textless}@} succeeded to count to 10. The
 consumer can be rewritten as:
 
-procedure consume(p)
-
-\ \ \ every !10 do write({\textless}{\textless}@p)\ \ \# get exactly 10
-values from p, block if necessary
-
+\iconcode{
+procedure consume(p) \\
+\ \ \# get exactly 10 values from p, block if necessary\\
+\ \ \ every !10 do write({\textless}{\textless}@p) \\
 end
+}
 
 In some cases, a thread might want to use a blocking receive to get
 values from a second thread, but it is not willing to block
 indefinitely; probably the thread can do some other useful work instead
-of waiting. The \textstyleCodeStyleChar{{\textless}{\textless}@}
+of waiting. The \textsf{{\textless}{\textless}@}
 \ operator accepts a timeout parameter to impose a limit on how long to
 wait for a result before giving up. Here is how
-\textstyleCodeStyleChar{{\textless}{\textless}@} would look like in
+\textsf{{\textless}{\textless}@} would look like in
 this case:
 
+\iconcode{
 result := timeout {\textless}{\textless}@ \ \ \ \ \# \ get from my inbox
+}
 
 or 
 
+\iconcode{
 result := timeout {\textless}{\textless}@ T\ \ \ \ \# get from
 T{\textquoteright}s outbox
+}
 
 The timeout operand is a non-negative integer denoting the maximum time
 to wait in milliseconds. Negative integers are treated as a null value,
@@ -1546,10 +1478,10 @@ Most applications do not need to use all of these options to operate;
 using a few modes would be sufficient. In a fast sender slow receiver
 application for example, the sender would block when the queue is full
 and unblock when the queue is empty (using
-\textstyleCodeStyleChar{@{\textgreater}{\textgreater}}). The receiver
+\textsf{@{\textgreater}{\textgreater}}). The receiver
 on the other hand would keep consuming messages from the queue until it
 is empty. In that case it blocks until there is a new message added to
-the queue (\textstyleCodeStyleChar{{\textless}{\textless}@}). For some
+the queue (\textsf{{\textless}{\textless}@}). For some
 applications however, this communication scheme might not be optimal,
 hence many options are provided. The different options in the table
 above give the programmer a wide range of control over when to block or
@@ -1559,6 +1491,7 @@ and provides simple ways to abstract some concurrent programming
 activities such as load balancing and efficient use of resources.
 
 \subsubsection{Private Communication Channels }
+
 As mentioned in the previous sections, inbox and outbox communication
 queues are visible by all threads all the time. In some scenarios two
 or more threads need to communicate with each other without worrying
@@ -1569,31 +1502,35 @@ it is simpler and more efficient to have the threads communicate
 privately. This kind of communication can be done by sharing a list
 between two threads and protecting it by an explicit mutex, or using a
 thread-safe list. A more formal way for such communication is to use
-the \textstyleCodeChar{channel()} function. 
+the \textsf{channel()} function. 
 
 Starting a private communication is similar to a network connection,
 except that this connection is taking place between two threads in the
 same process instead of two different processes that may be on
 different machines. A private communication channel between two threads
-and can be created using the function \textstyleCodeChar{channel()}.
-\textstyleCodeChar{Channel()} is part of the
-\textstyleCodeStyleChar{threads} package and takes one parameter, which
+and can be created using the function \textsf{channel()}.
+\textsf{Channel()} is part of the
+\textsf{threads} package and takes one parameter, which
 is the thread with which the connection will be initiated. If
-\textstyleCodeChar{channel()} succeeds, it returns a list representing
+\textsf{channel()} succeeds, it returns a list representing
 a communication channel between the two threads. Representing a
 bidirectional channel that can be used by the two threads, given that
-each thread calls the function \textstyleCodeChar{channel()} with the
+each thread calls the function \textsf{channel()} with the
 other thread as an argument. Here is an example.
 
 In thread A:
 
+\iconcode{
 \ \ \ \ \ \ \ \ chB := channel(B) \ {\textbar} {\textquotedblleft}failed
-to open a channel with B{\textquotedblright} \ \ \ \ \ \ \ \ \ \ 
+to open a channel with B{\textquotedblright}
+}
 
 In thread B:
 
+\iconcode{
 \ \ \ \ \ \ \ \ chA := channel(A) \ {\textbar} {\textquotedblleft}failed
 to open a channel with A{\textquotedblright}
+}
 
 This channel is meant to be a directional communication channel. In
 theory one thread would use it as an outbox, and the other would use it
@@ -1603,48 +1540,30 @@ channel can be used with the communication operators (all four of them)
 with the same semantics as before. The only difference in this case is
 that the right operand is a communication channel instead of a thread.
 
-Import threads
-
-procedure main()
-
-\ \ \ p := thread produce()
-
-\ \ \ c := thread consume(p)
-
-\ \ \ c @{\textgreater}p
-
-\ \ \ every wait(p {\textbar} c)
-
+\iconcode{
+import threads \\
+procedure main() \\
+\ \ \ p := thread produce() \\
+\ \ \ c := thread consume(p) \\
+\ \ \ c @{\textgreater}p \\
+\ \ \ every wait(p {\textbar} c) \\
+end \\
+\ \\
+procedure produce() \\
+\ \ \ c:={\textless}{\textless}@ \\
+\ \ \ chC := channel(c) \\
+\ \ \ every !10@{\textgreater}c \ \ \# place values in channel c \\
+end \\
+\ \\
+procedure consume(p) \\
+\ \ \ chP := channel(p) \\
+\ \ \ every !10 do write({\textless}{\textless}@chP) \\
 end
+}
 
 
-\bigskip
+\subsection*{Summary}
 
-procedure produce()
-
-\ \ \ c:={\textless}{\textless}@
-
-\ \ \ chC := channel(c)
-
-\ \ \ every !10@{\textgreater}c \ \ \# place values in channel c
-
-end
-
-
-\bigskip
-
-procedure consume(p)
-
-\ \ \ chP := channel(p)
-
-\ \ \ every !10 do write({\textless}{\textless}@chP)
-
-end
-
-
-\bigskip
-
-\subsection[Conclusions]{Conclusions}
 True concurrency opens up major new application domains for the Unicon
 language. More importantly, it enables the language to utilize more
 than the small fraction of modern processors utilized by traditional

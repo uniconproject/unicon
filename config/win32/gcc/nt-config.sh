@@ -5,7 +5,7 @@ echo
 rm -f ../../../makedefs
 echo ICONX=nt_iconx >../../../makedefs
 echo CONSOLE=NTConsole >>../../../makedefs
-echo MYICONT=icont >>../../../makedefs
+echo BUILDICONT=icont >>../../../makedefs
 
 rm -f ../../../src/runtime/nticonx.exe
 rm -f ../../../src/runtime/iconx.exe

@@ -19,12 +19,13 @@ COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		../common/filepart.$(O) ../common/strtbl.$(O)\
 		../common/mlocal.$(O) ../common/ipp.$(O)
 
-ICOBJS=   long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O)
+ICOBJS=   long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O) mlocal.$(O)
 
 WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
 
-all:            $(MYICONT)
+all:
+	$(MAKE) $(BUILDICONT)
 
 icont:        $(OBJS) common
 	$(CC) $(LDFLAGS) -o icont.exe $(OBJS) $(COBJS) $(NTOPTLIBS)

@@ -11,4 +11,4 @@
 #define Concurrent 1
 #define NoKeyword__Thread 1
 
-#define HAVE_STRUCT_TIMESPEC 1
+/*#define HAVE_STRUCT_TIMESPEC 1*/

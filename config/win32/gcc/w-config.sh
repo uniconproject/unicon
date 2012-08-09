@@ -10,7 +10,7 @@ cat ../../unix/Config/unicon.mak >>../../../uni/unicon/makefile
 rm -f ../../../makedefs
 echo ICONX=w_iconx >../../../makedefs
 echo CONSOLE=NOTHING >>../../../makedefs
-echo ICONT=wicont >>../../../makedefs
+echo BUILDICONT=wicont >>../../../makedefs
 echo DCONSOLE=../common/dconsole.o >>../../../makedefs
 
 rm -f ../../../src/runtime/wiconx.exe

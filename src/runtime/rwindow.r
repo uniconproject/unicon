@@ -4695,10 +4695,11 @@ int kbhit(void)
 int checkOpenConsole( wbp w, char *s)
 {
    int i;
-   if ((((FILE*)(w)) != ConsoleBinding) &&
-   	  ((((FILE*)(w)) == k_input.fd.fp) ||
-	   (((FILE*)(w)) == k_output.fd.fp) ||
-	   (((FILE*)(w)) == k_errout.fd.fp))) {
+   if ((((FILE*)(w)) != ConsoleBinding) && (
+       ((((FILE*)(w))==k_input.fd.fp )&&(!(ConsoleFlags & StdInRedirect)))||
+       ((((FILE*)(w))==k_output.fd.fp)&&(!(ConsoleFlags & StdOutRedirect)))||
+       ((((FILE*)(w))==k_errout.fd.fp)&&(!(ConsoleFlags & StdErrRedirect)))
+      )){
 	 (w) = (wbp)OpenConsole();
        if (s){
        	  register word l;
@@ -4798,9 +4799,12 @@ FILE *OpenConsole()
       if ((hp = alclist(0, MinListSlots)) == NULL) return NULL;
 
       ConsoleBinding = wopen(ConsoleTitle, hp, attrs, 3, &eindx,0);
-      k_input.fd.fp = ConsoleBinding;
-      k_output.fd.fp = ConsoleBinding;
-      k_errout.fd.fp = ConsoleBinding;
+      if ( !(ConsoleFlags & StdInRedirect ))
+         k_input.fd.fp = ConsoleBinding;
+      if ( !(ConsoleFlags & StdOutRedirect ))
+         k_output.fd.fp = ConsoleBinding;
+      if ( !(ConsoleFlags & StdErrRedirect ))
+         k_errout.fd.fp = ConsoleBinding;
 #ifdef ScrollingConsoleWin
 {
       wsp ws = ((wbp)ConsoleBinding)->window;

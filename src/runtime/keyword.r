@@ -395,7 +395,7 @@ keyword{1,*} features
 #endif					/* COMPILER */
 #include "../h/feature.h"
 
-#ifdef MSWindows
+#ifdef AAAMSWindows
       {
       int value = GetSystemMetrics(SM_DIGITIZER);
       if (value & NID_READY){ /* stack ready */

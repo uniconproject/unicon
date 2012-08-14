@@ -1641,7 +1641,12 @@ word getrandom()
 
    time(&t);
 
-#ifdef Concurrent
+/*
+ * Use localtime_r if appropriate. It is missing on some Windows compilers,
+ * and Windows localtime() was claimed thread-safe by somebody on the
+ * internet, so it must be true.
+ */
+#if defined(Concurrent) && !NT
    ct = localtime_r(&t, &ctstruct);
 #else					/* Concurrent */
    ct = localtime(&t);

@@ -1417,7 +1417,11 @@ int f(dptr dp1, dptr dp2, word i, word j)
 }
 #enddef
 
+#ifdef MultiThread
 cprealarray_macro(cprealarray_0, 0)
+#else					/* MultiThread */
+cprealarray_macro(cprealarray, 0)
+#endif					/* MultiThread */
 
 #begdef cpintarray_macro(f, e)
 /*
@@ -1472,6 +1476,10 @@ int f(dptr dp1, dptr dp2, word i, word j)
 }
 #enddef
 
+#ifdef MultiThread
 cpintarray_macro(cpintarray_0, 0)
+#else					/* MultiThread */
+cpintarray_macro(cpintarray, 0)
+#endif					/* MultiThread */
 
 #endif					/* Arrays */

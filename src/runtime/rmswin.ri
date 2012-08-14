@@ -892,7 +892,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       break;
    case WM_HSCROLL:
    case WM_VSCROLL:
-      for(n=0; n < ws->nChildren && ws->child[n].win != (HWND) LOWORD (lp); n++){
+      for(n=0; n < ws->nChildren && ws->child[n].win != (HWND)(word)(short)LOWORD (lp); n++){
          }
       if (n == ws->nChildren) break;
       i = GetScrollPos(ws->child[n].win, SB_CTL);      
@@ -1093,7 +1093,7 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       }
       break;
    case MM_MCINOTIFY:
-      mciSendCommand(LOWORD(lp), MCI_CLOSE, 0, (DWORD)NULL);
+      mciSendCommand( LOWORD (lp), MCI_CLOSE, 0, (DWORD_PTR) NULL);
       break;
    }
    return DefWindowProc(hwnd, msg, wp, lp);
@@ -1861,14 +1861,14 @@ char *s;
       || !strcmp(s, "stippled") || !strcmp(s, "patterned")) {
 	 wc->brush.lbStyle = wc->fillstyle = BS_PATTERN;
 	 wc->brush.lbColor = PALCLR(wc->fg);
-	 wc->brush.lbHatch = (LONG)wc->pattern;
+	 wc->brush.lbHatch = (word)wc->pattern;
          wc->bkmode = TRANSPARENT;
 	 }
       else if (!strcmp(s, "textured")
       || !strcmp(s, "opaquestippled") || !strcmp(s, "opaquepatterned")) {
 	 wc->brush.lbStyle = wc->fillstyle = BS_PATTERN;
 	 wc->brush.lbColor = PALCLR(wc->fg);
-	 wc->brush.lbHatch = (LONG)wc->pattern;
+	 wc->brush.lbHatch = (word)wc->pattern;
          wc->bkmode = OPAQUE;
 	 }
       else {
@@ -2044,7 +2044,7 @@ int setfg(wbp w, char *val)
       wc->pen.lopnColor = wc->brush.lbColor;
       wc->brush.lbStyle = wc->fillstyle;
       if (wc->fillstyle == BS_PATTERN)
-	 wc->brush.lbHatch = (LONG)wc->pattern;
+	 wc->brush.lbHatch = (word)wc->pattern;
       return Succeeded;
       }
    return Failed;
@@ -3931,7 +3931,7 @@ int len;
       if (wc->fillstyle == BS_PATTERN) {
 	 wc->brush.lbStyle = BS_PATTERN;
 	 wc->brush.lbColor = PALCLR(wc->fg);
-	 wc->brush.lbHatch = (LONG)p;
+	 wc->brush.lbHatch = (word)p;
 	 }     
       return Succeeded;
       }
@@ -3994,7 +3994,7 @@ int nbits;
    if (wc->fillstyle == BS_PATTERN) {
       wc->brush.lbStyle = BS_PATTERN;
       wc->brush.lbColor = PALCLR(wc->fg);
-      wc->brush.lbHatch = (LONG)p;
+      wc->brush.lbHatch = (word)p;
       }     
    return Succeeded;
    }
@@ -4126,7 +4126,7 @@ int status;
 
 DWORD playMIDIfile(HWND hWndNotify, LPSTR s)
 {
-   UINT wDeviceID;
+   uword wDeviceID;
    DWORD dwReturn;
    MCI_OPEN_PARMS mciOpenParms;
    MCI_PLAY_PARMS mciPlayParms;
@@ -4135,9 +4135,9 @@ DWORD playMIDIfile(HWND hWndNotify, LPSTR s)
 
    mciOpenParms.lpstrDeviceType = "sequencer";
    mciOpenParms.lpstrElementName = s;
-   if (dwReturn = mciSendCommand((UINT)NULL, MCI_OPEN,
+   if (dwReturn = mciSendCommand((uword)NULL, MCI_OPEN,
 				 MCI_OPEN_TYPE | MCI_OPEN_ELEMENT,
-				 (DWORD)(LPVOID) &mciOpenParms)) {
+				 (uword)(LPVOID) &mciOpenParms)) {
       return dwReturn;
       }
    wDeviceID = mciOpenParms.wDeviceID;
@@ -4145,14 +4145,14 @@ DWORD playMIDIfile(HWND hWndNotify, LPSTR s)
    /* attempt to select the MIDI mapper */
    mciSeqSetParms.dwPort = MIDI_MAPPER;
    if (dwReturn = mciSendCommand(wDeviceID, MCI_SET, MCI_SEQ_SET_PORT,
-				 (DWORD)(LPVOID) &mciSeqSetParms)) {
+				 (uword)(LPVOID) &mciSeqSetParms)) {
       /* could not select the MIDI mapper; play anyway */
       }
 
-   mciPlayParms.dwCallback = (DWORD) hWndNotify;
+   mciPlayParms.dwCallback = (uword) hWndNotify;
    if (dwReturn = mciSendCommand(wDeviceID, MCI_PLAY, MCI_NOTIFY,
-    				 (DWORD)(LPVOID) &mciPlayParms)) {
-      mciSendCommand(wDeviceID, MCI_CLOSE, 0, (DWORD)NULL);
+    				 (uword)(LPVOID) &mciPlayParms)) {
+      mciSendCommand(wDeviceID, MCI_CLOSE, 0, (uword)NULL);
       return dwReturn;
       }
 
@@ -4487,7 +4487,7 @@ void wfreersc()
       }
    if (wlhead)
       wlfree();
-   mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, 0, (DWORD)NULL);
+   mciSendCommand(MCI_ALL_DEVICE_ID, MCI_CLOSE, 0, (uword)NULL);
 }
 
 
@@ -4501,7 +4501,7 @@ void makebutton(wsp ws, childcontrol *cc, char *s)
    cc->id = salloc(s);
    cc->win = CreateWindow("button", cc->id,
 	         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		 0, 0, 0, 0, ws->iconwin, (HMENU)ws->nChildren, mswinInstance,
+		 0, 0, 0, 0, ws->iconwin, (HMENU) (uword) ws->nChildren, mswinInstance,
 		 NULL);
 }
 
@@ -4512,7 +4512,7 @@ void makescrollbar(wsp ws, childcontrol *cc, char *s, int i1, int i2)
    cc->font = 0;
    cc->win = CreateWindow("scrollbar", cc->id,
             WS_CHILD | WS_VISIBLE | SBS_VERT, 0, 0, 0, 0,
-	    ws->iconwin, (HMENU)ws->nChildren, mswinInstance, NULL);
+	    ws->iconwin, (HMENU)(uword)ws->nChildren, mswinInstance, NULL);
    SetScrollRange(cc->win, SB_CTL, i1, i2, FALSE);
 }
 
@@ -4552,7 +4552,7 @@ int nativemenubar(wbp w, int total, int argc, dptr argv, int warg, dptr d)
          ws->menuMap[total++] = s;
          c_put(&(argv[warg]), d);
          }
-      AppendMenu(ws->menuBar, MF_POPUP, (unsigned int)tempMenu, s2);
+      AppendMenu(ws->menuBar, MF_POPUP, (uword)tempMenu, s2);
       warg++;
       }
    /*
@@ -4579,7 +4579,7 @@ void makeeditregion(wbp w, childcontrol *cc, char *s)
 		WS_BORDER | ES_LEFT | ES_MULTILINE |
 		ES_AUTOHSCROLL | ES_AUTOVSCROLL,
 		0, 0, 0, 0, ws->iconwin,
-		(HMENU) ws->nChildren, mswinInstance, NULL);
+		(HMENU) (uword) ws->nChildren, mswinInstance, NULL);
    setchildfont(cc, w->context->font->name);
 }
 
@@ -5006,7 +5006,7 @@ char my_wmap(wbp w)
 		   ws->height == 0 ? 400: ws->height,
 			       /*		   NULL, NULL, mswinInstance, NULL); */
 		   ws->parent->window->win,
-			      (HMENU) (int) ws->no,
+			      (HMENU) (uword) ws->no,
 			      mswinInstance, NULL);
    hdc = GetDC(ws->iconwin);
    if ((GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) && (numColors == 0)){

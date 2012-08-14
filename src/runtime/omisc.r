@@ -128,7 +128,8 @@ operator{1} * size(x)
 	     * This ODBCVER version check probably doesn't work, since rtt
 	     * runs without sucking in system includes, on which it depends.
 	     */
-#if (ODBCVER >= 0x0351) || defined(MacOSX)
+
+#if (ODBCVER >= 0x0351) || defined(MacOSX) || defined(MSWIN64)
 	    SQLLEN numrows;
 #else					/* ODBCVER >= 0x0351 */
 	    SQLINTEGER numrows;

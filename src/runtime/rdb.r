@@ -113,15 +113,20 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
    UWORD i, p, orig;
    int rc;
    SWORD numcols, colsize;
+
    /*
     * SQLINTEGER, SQLLEN, or SDWORD? Depending on ODBC version and doc
     * you read.  SQLLEN tried, and did not magically fix on AMD64.
     */
+#ifdef MSWIN64
+   SQLLEN colsz, len, typesize;
+#else					/* MSWIN64 */
    SDWORD colsz, len;
+   UDWORD typesize;
+#endif					/* MSWIN64 */
    char buff[BUFF_SZ*2]; /* data buffer */
    UCHAR colname[MAX_COL_NAME+1];
    SWORD SQLType, scale, nullable;
-   UDWORD typesize;
    struct descrip *fieldname;
 
    /* record structures */

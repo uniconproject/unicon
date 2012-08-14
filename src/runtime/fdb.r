@@ -54,7 +54,11 @@ function{0,1} dbcolumns(f,table_name)
     SQLCHAR szCatalog[STR_LEN], szSchema[STR_LEN];
     SQLCHAR szTableName[STR_LEN], szColumnName[STR_LEN];
     SQLCHAR szTypeName[STR_LEN], szRemarks[REM_LEN];
+#ifdef MSWIN64
+    SQLLEN ColumnSize, BufferLength;
+#else					/* MSWIN64 */
     SQLINTEGER ColumnSize, BufferLength;
+#endif					/* MSWIN64 */
     SQLSMALLINT DataType, DecimalDigits, NumPrecRadix, Nullable;
    
     SQLRETURN retcode;
@@ -69,7 +73,7 @@ function{0,1} dbcolumns(f,table_name)
     
     HSTMT hstmt;
     
-    static const struct descrip colnames[] = {
+    static struct descrip colnames[] = {
        {7,(word)"catalog"}, {6,(word)"schema"}, {9,(word)"tablename"},
        {7,(word)"colname"}, {8,(word)"datatype"}, {8,(word)"typename"},
        {7,(word)"colsize"}, {6,(word)"buflen"}, {9,(word)"decdigits"},

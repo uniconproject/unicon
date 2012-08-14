@@ -61,7 +61,8 @@ struct descrip emptystr; 		/* zero-length empty string */
 #ifdef Concurrent
 #undef tend
 
-pthread_mutex_t static_mutexes[NUM_STATIC_MUTEXES];
+pthread_mutex_t **mutexes;
+struct threadstate *roottstatep;
 struct threadstate *get_tstate()
 {
    return curtstate;
@@ -83,6 +84,18 @@ void handle_thread_error(int val)
 {
 
 }
+
+void thread_control(int val)
+{
+
+}
+
+void init_threadstate(struct threadstate *ts)
+{
+
+}
+
+pthread_key_t tstate_key;
 
 #endif						/* Concurrent */
 
@@ -190,7 +203,7 @@ struct b_lelem *alclstb_0(uword nslots, uword first, uword nused)
    return blk;
    }
 
-
+#ifndef DescriptorDouble
 struct b_real *alcreal_0(double val)
    {
    register struct b_real *blk;
@@ -212,6 +225,7 @@ struct b_real *alcreal_0(double val)
    return blk;
    }
 
+#endif 					/* DescriptorDouble */
 char *alcstr_0(char *s, word len)
 {
    register char *s1;
@@ -256,9 +270,13 @@ void initalloc(word codesize)
 	 curtstring = curstring;
          {
 	   int i;
-         for(i=0; i<NUM_STATIC_MUTEXES; i++)
-            static_mutexes[i] = PTHREAD_MUTEX_INITIALIZER;
- 
+
+	   int maxmutexes = 1024;
+	   mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
+	   if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");
+
+	   for(i=0; i<NUM_STATIC_MUTEXES-1; i++)
+	      MUTEX_INITID(i, NULL);
 	 }
 	 /*init_threadstate(curtstate);*/  /* is this necessarry?  */
 #endif					/*Concurrent*/

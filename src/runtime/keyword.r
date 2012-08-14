@@ -395,7 +395,7 @@ keyword{1,*} features
 #endif					/* COMPILER */
 #include "../h/feature.h"
 
-#ifdef AAAMSWindows
+#if defined(MSWindows) && defined(SM_DIGITIZER)
       {
       int value = GetSystemMetrics(SM_DIGITIZER);
       if (value & NID_READY){ /* stack ready */
@@ -410,7 +410,7 @@ keyword{1,*} features
 	    }
       }
 }
-#endif					/* MSWindows */
+#endif					/* MSWindows && SM_DIGITIZER */
 
       if (refpath && strlen(refpath) > 0) {
 	 char *s;

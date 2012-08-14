@@ -369,9 +369,14 @@ class Dialog : Component(
          fire(CLOSE_BUTTON_EVENT, e)
       }
 
-      if (&control | &shift) & (e === (&lpress | &lrelease | &ldrag)) then {
-	 e -:= 2
-	 }
+$ifdef _MACOSX
+      #
+      # On Macs, substitute control-click for right-click and shift-click
+      # for middle-click.  Should we do this everywhere, for consistency?
+      #
+      if &control & (e === (&lpress | &ldrag | &lrelease)) then e -:= 2
+      else if &shift & (e === (&lpress | &ldrag | &lrelease)) then e -:= 1
+$endif
 
       if e === (&lpress | &rpress | &mpress) then {
          check_click_count(e)
@@ -426,24 +431,18 @@ class Dialog : Component(
             c.handle_accel(e)
       }
 
-$ifdef _MACOSX
-      #
-      # On Macs, substitute control-click for right-click and shift-click
-      # for middle-click.  Should we do this everywhere, for consistency?
-      #
-      if &control & (e === (&lpress | &ldrag | &lrelease)) then e -:= 2
-      else if &shift & (e === (&lpress | &ldrag | &lrelease)) then e -:= 1
-$endif
-
       do_handle_event(e)
 
-      if (e === ("\t" | Key_Right | Key_Down)) & ( /self.focus | not(self.focus.keeps(e))) then {
+      if (e === ("\t" | Key_Right | Key_Down)) &
+	 ( /self.focus | not(self.focus.keeps(e))) then {
          if c := find_next_focus() then
             self.set_focus(c, e)
-      } else if e === (Shift_Tab | Key_Left | Key_Up) & ( /self.focus | not(self.focus.keeps(e))) then {
+	 }
+      else if (e === (Shift_Tab | Key_Left | Key_Up)) &
+	      ( /self.focus | not(self.focus.keeps(e))) then {
          if c := find_previous_focus() then
             self.set_focus(c, e)
-      }
+	 }
 
       synch_pointer()
    end

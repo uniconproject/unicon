@@ -85,8 +85,8 @@ class SelectableScrollArea : LineBasedScrollArea(
 
    #
    # Get the checked lines.
-   # @return A list corresponding to the data.  If an element is not {&null}, then
-   # @ the corresponding line is checked.
+   # @return A list corresponding to the data.  If an element is not {&null},
+   # @ then the corresponding line is checked.
    #
    method get_checked()
       return self.checked
@@ -102,8 +102,8 @@ class SelectableScrollArea : LineBasedScrollArea(
    end
 
    #
-   # Configure the object so that drags move the cursor (precludes using d&d with the
-   # component).
+   # Configure the object so that drags move the cursor (precludes using d&d
+   # with the component).
    #
    method set_draggable_cursor()
       self.draggable_cursor := 1
@@ -368,7 +368,7 @@ class SelectableScrollArea : LineBasedScrollArea(
       row <:= 1
       row >:= *self.contents
       self.cursor := self.prev_cursor := row
-      if \self.selection_on_key_moves & (\self.select_one | \self.select_many) then {
+      if \selection_on_key_moves & (\select_one | \select_many) then {
          l := get_selections()
          if not (&shift & \select_many) then
             self.checked := list(*self.contents)
@@ -572,7 +572,10 @@ class SelectableScrollArea : LineBasedScrollArea(
          #
          # Clear flag, refresh, return event
          #
-         if (e === &lrelease) & (\self.select_one | \self.select_many) & (get_line_under_pointer() = self.cursor) then {
+         if (e === (&lrelease|&rrelease|&mrelease)) &
+	    (\self.select_one | \self.select_many) &
+	    (get_line_under_pointer() = self.cursor) then {
+
             l := get_selections()
             if \self.select_many & (&shift | &control) then {
                if &control then
@@ -589,15 +592,16 @@ class SelectableScrollArea : LineBasedScrollArea(
                   } else
                      self.checked[self.cursor] := 1
                }
-            } else {
+            }
+	    else {
                self.checked := list(*self.contents)
                self.checked[\self.cursor] := 1
             }
             self.refresh(1)
             if not lang::equals(get_selections(), l) then
                selchange := 1
-         }
-      }
+	    }
+	 }
       end_handle(e)
    end
 

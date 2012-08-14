@@ -13,14 +13,14 @@ $include "guih.icn"
 
 class DrawScrollAreaView : Component()
    method display(buffer_flag)
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      EraseRectangle(cbwin, x, y, w, h)
       # As we delegate drawing to the parent, we clip on the parent cbwin.
-      Clip(self.parent.cbwin, self.x, self.y, self.w, self.h)
-      parent.draw(parent.get_areax(), parent.get_areay(), self.x, self.y, self.w, self.h)
-      Clip(self.parent.cbwin)
-      self.do_shading(self.cbwin)
+      Clip(parent.cbwin, x, y, w, h)
+      parent.draw(parent.get_areax(), parent.get_areay(), x, y, w, h)
+      Clip(parent.cbwin)
+      self.do_shading(cbwin)
       if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+         CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
 end
 

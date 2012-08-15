@@ -72,7 +72,7 @@ word pc = 0;		/* simulated program counter */
 #define outop(n)	intout((int)(n))
 #define outchar(n)	charout((unsigned char)(n))
 #define outshort(n)	shortout((short)(n))
-#define CodeCheck(n) if ((long)codep + (n) > (long)((long)codeb + maxcode))\
+#define CodeCheck(n) if ((word)codep + (n) > (word)((word)codeb + maxcode))\
                      codeb = (char *) trealloc(codeb, &codep, &maxcode, 1,\
                        (n), "code buffer");
 

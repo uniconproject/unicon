@@ -725,7 +725,7 @@ Deliberate Syntax Error
  * Note, size of the hash table is a power of 2:
  */
 #define IHSize 128
-#define IHasher(x)	(((unsigned int)(unsigned long)(x))&(IHSize-1))
+#define IHasher(x)	(((unsigned int)(uword)(x))&(IHSize-1))
 
 #if COMPILER
 
@@ -882,7 +882,13 @@ Deliberate Syntax Error
 #endif					/* HAVE_LIBIODBC */
 #ifdef ISQL
 #ifndef SQL_LENORIND
-#define SQL_LENORIND SQLINTEGER
+
+#ifdef MSWIN64
+    #define SQL_LENORIND SQLLEN
+#else					/* MSWIN64 */
+    #define SQL_LENORIND SQLINTEGER
+#endif					/* MSWIN64 */
+
 #endif					/* SQL_LENORIND */
 #endif					/* ISQL */
 

@@ -21,7 +21,7 @@ static struct paste_lsts *paste_parse (struct token *t,
 static int               *cpy_image   (struct token *t, int *s);
 
 #define MacTblSz 149
-#define MHash(x) (((unsigned int)(unsigned long) (x)) % MacTblSz)
+#define MHash(x) (((unsigned int)(uword) (x)) % MacTblSz)
 
 static struct macro *m_table[MacTblSz];	/* hash table of macros */
 

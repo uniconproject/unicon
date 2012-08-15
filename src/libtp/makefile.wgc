@@ -1,20 +1,26 @@
 # Makefile for libtp library
 
-CC = gcc
+include ../../makedefs
 
-O=o
-RM = rm
-CP = cp
 AR = ar
 RANLIB = ranlib
 
 LIBS=
 
-INCLUDES = -Iuri
-DEFINES = -DHAVE_CONFIG_H -D_LIBTP_
-CFLAGS = $(WARNINGS) $(DEBUG) $(DEFINES) $(INCLUDES) $(CPPFLAGS)
+
+CPPFLAGS = 
+LIBS = -lnsl 
+
+DEBUG = 
+WARNINGS = 
 
 SUBDIRS = uri . tests
+
+
+INCLUDES = -Iuri
+DEFINES = -DHAVE_CONFIG_H -D_LIBTP_
+CFLAGS =  $(ISFLAG) $(WARNINGS) $(DEBUG) $(DEFINES) $(INCLUDES) $(CPPFLAGS)
+
 
 OBJS = tp.$(O) util.$(O) tpdunix.$(O) tpmdaytm.$(O) tpmfinge.$(O) tpmhttp.$(O)  \
        tpmpop.$(O) tpmsmtp.$(O)
@@ -32,7 +38,7 @@ clean:
 	$(RM) $(OBJS)
 
 config.h: config_h.win
-	-$(RM) config.h
+	$(RM) config.h
 	$(CP) config_h.win config.h
 
 config_h:

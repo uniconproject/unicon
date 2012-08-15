@@ -80,7 +80,7 @@ char *image;
    {
    register struct sym_entry *sym;
 
-   for (sym = sym_tbl[(unsigned int)(unsigned long)image % HashSize];
+   for (sym = sym_tbl[(unsigned int)(uword)image % HashSize];
 	sym != NULL;
 	sym = sym->next)
       if (sym->image == image)
@@ -102,7 +102,7 @@ int nest_lvl;
    register struct sym_entry **symp;
    register struct sym_entry *sym;
 
-   symp = &sym_tbl[(unsigned int)(unsigned long)image % HashSize];
+   symp = &sym_tbl[(unsigned int)(uword)image % HashSize];
    while (*symp != NULL && (*symp)->nest_lvl > nest_lvl)
       symp = &((*symp)->next);
    while (*symp != NULL && (*symp)->nest_lvl == nest_lvl) {

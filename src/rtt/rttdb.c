@@ -193,7 +193,7 @@ char *srcname;
     * See if the source file is already in the dependancy section of
     *  the data base.
     */
-   hashval = (unsigned int)(unsigned long)srcname % DHSize;
+   hashval = (unsigned int)(uword)srcname % DHSize;
    for (sfile = dhash[hashval]; sfile != NULL && sfile->name != srcname;
         sfile = sfile->next)
       ;
@@ -1288,7 +1288,7 @@ char *pre;
     */
    if ((ptr = db_ilkup(name_s, tbl)) == NULL) {
       ptr = NewStruct(implement);
-      hashval = IHasher(name_s);
+      hashval = (int) IHasher(name_s);
       ptr->blink = tbl[hashval];
       ptr->oper_typ = ((op_type == TokFunction) ? 'F' : 'K');
       nxt_pre(ptr->prefix, pre, 2);    /* allocate a unique prefix */
@@ -1393,7 +1393,7 @@ struct token *name;
     *  operator symbol and the number of arguments. If the operator is
     *  not there, create an entry.
     */
-   hashval = IHasher(op);
+   hashval = (int) IHasher(op);
    ptr = ohash[hashval];
    while (ptr != NULL && (ptr->op != op || ptr->nargs != nargs))
       ptr = ptr->blink;

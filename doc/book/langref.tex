@@ -105,8 +105,9 @@ that may be accessed via named fields.
 \subsubsection{Object}
 
 \index{object}Objects are ordered, fixed length sequences of elements
-that may be accessed via named fields and methods. Field access to
-object state is a widely deprecated practice.
+that may be accessed via named fields and methods. Accessing an object's
+fields from outside its methods (like it was a record)
+is a widely deprecated practice.
 
 \subsubsection[File]{File}
 
@@ -653,9 +654,8 @@ release event.
 
 \noindent
 \textsf{\&pick} generates the object IDs selected at point
-(\textsf{\&x},\textsf{\&y}) at the most recent \textsf{Event()}, if it
-was read from a 3D window with the attribute \textsf{pick=on} at the
-time.
+(\textsf{\&x},\textsf{\&y}) at the most recent \textsf{Event()}, if the
+event was read from a 3D window with the attribute \textsf{pick=on}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf \&rdrag : integer \hfill right mouse button drag}
@@ -761,7 +761,7 @@ The \index{case expression}\textsf{case} expression selects one of
 several branches of code to be executed.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{class} name [: superclass]*
+\noindent {\bf \textbf{class} name [: superclass]*
 (fields) methods [initially] end \hfill class declaration}
 
 \noindent
@@ -776,6 +776,17 @@ initially section.
 \noindent
 \index{create}The \textsf{create} expression produces a new
 co-expression to evaluate \textit{expr}.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf critical x : expr \hfill serialize on x}
+
+\noindent
+\index{critical section}The \textsf{critical} expression serializes the
+execution of \textit{expr} on value {\textit x}. Value {\textit x} must
+be a mutex or protected object that has a mutex. The critical section
+causes {\textit x} to be locked before evaluating {\textit expr} and
+unlocked afterward. Breaking, returning or failing out of {\textit expr} 
+does not automatically unlock {\textit x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf default : expr \hfill default case branch}
@@ -808,7 +819,7 @@ expression to be executed for each iteration of a preceding
 procedure, method, or class body.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{every} \textit{expr1} [do
+\noindent {\bf \textbf{every} \textit{expr1} [do
 \textit{expr2}] \hfill generate all results}
 
 \noindent
@@ -826,7 +837,7 @@ results. The invocation may not be resumed. See also the keyword
 \ \textsf{fail} is equivalent to \textsf{return \&fail}
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{global} \textit{var} [,
+\noindent {\bf \textbf{global} \textit{var} [,
 \textit{var}]* \hfill declare global variables}
 
 \noindent
@@ -834,7 +845,7 @@ results. The invocation may not be resumed. See also the keyword
 global variables.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{if} \textit{expr} then
+\noindent {\bf \textbf{if} \textit{expr} then
 \textit{expr2} [else \textit{expr3}] \hfill conditional expression}
 
 \noindent
@@ -842,7 +853,7 @@ global variables.
 \textit{expr1} produces a result.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{import} \textit{name} [,
+\noindent {\bf \textbf{import} \textit{name} [,
 \textit{name}]* \hfill import package}
 
 \noindent
@@ -858,7 +869,7 @@ with the package name.
 time a procedure or method is invoked.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{initially} [(parameters)] \hfill initialize object}
+\noindent {\bf \textbf{initially} [(parameters)] \hfill initialize object}
 
 \noindent
 \index{initially}The \textsf{initially} section defines a special method
@@ -868,8 +879,8 @@ the parameters of the \index{constructor!class}constructor for objects
 of that class.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{invocable} \textit{procedure} [, \textit{procedure}]* \hfill
-allow string invocation}
+\noindent {\bf \textbf{invocable} \textit{procedure} [, \textit{procedure}]*
+\hfill allow string invocation}
 
 \noindent
 \index{invocable}
@@ -880,7 +891,7 @@ The \textsf{invocable} declaration indicates that procedures may be used
 in string invocation.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{link} \textit{filename} [,
+\noindent {\bf \textbf{link} \textit{filename} [,
 \textit{filename}]* \hfill link code module}
 
 \noindent
@@ -890,7 +901,7 @@ linked. \textit{filename} may be an identifier or a string literal file
 path.
 
 \bigskip\hrule\vspace{0.1cm}
-{\bf \textbf{local}
+\noindent {\bf \textbf{local}
 \textit{var} \textit{[ }:=\textit{ initialize} \textit{\ r} ]
 \textit{[}, \textit{var }\ \textit{[}:=\textit{ initializer ]
 ]}* \hfill declare local variables}
@@ -1009,9 +1020,17 @@ evaluated each time the \textsf{suspend} is resumed.
 \noindent {\bf if expr1 then expr2 \hfill conditional expression}
 
 \noindent
-\index{then}The \textit{expr2} following a \textsf{then} is evaluated
+\index{then}The \textit{expr2} following a \textsf{\bf then} is evaluated
 only if \textit{expr1} following an \textsf{if} succeeds. In that case,
 the result of the whole expression is the result of \textit{expr2}.
+
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf thread expr \hfill create thread}
+
+\noindent
+\index{thread}The \textsf{\bf thread} expression creates and launches
+a concurrent thread to evaluate \textit{expr}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf expr1 to expr2 \hfill generate arithmetic sequence}
@@ -1285,6 +1304,26 @@ co-expression. The transmitted value is \textsf{x}, or \textsf{\&null}
 if no left operand is supplied. Activation may be augmented.
 
 \bigskip\hrule\vspace{0.1cm}
+\noindent {\bf [x] @$>$ [y] \hfill send message}
+\index{activate co-expression} \linebreak
+\noindent {\bf [x] @$>>$ [y] \hfill blocking send message}
+
+\noindent The send operator places a message in another thread's public
+inbox, or in the current thread's public outbox. The normal version fails
+if the box is full; the blocking version waits for space to become
+available.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf [x] $<$@ [y] \hfill receive message}
+\index{activate co-expression} \linebreak
+\noindent {\bf [x] $<<$@ [y] \hfill blocking receive message}
+
+\noindent The receive operator obtains a message from another thread's public
+outbox, or the current thread's public inbox. The normal version fails
+if the box is empty; the blocking version waits for a message to become
+available.
+
+\bigskip\hrule\vspace{0.1cm}
 \noindent {\bf string1 {\textbar}{\textbar} string2 \hfill concatenation}
 
 \noindent
@@ -1512,6 +1551,13 @@ length \textsf{i}. If \textsf{i {\textless} *s1} then the center
 \textsf{i} characters of \textsf{s1} are produced.
 
 \bigskip\hrule\vspace{0.1cm}
+\noindent {\bf channel(TH) : list \hfill communicationsl channel}
+
+\noindent
+\index{channel}\textsf{channel(TH)} creates a communications channel
+between the current thread and thread {\textit TH}.
+
+\bigskip\hrule\vspace{0.1cm}
 \noindent {\bf char(i) : string \hfill encode character}
 
 \noindent
@@ -1604,6 +1650,13 @@ co-expression ce, transmitting failure instead of a result.
 collector}garbage collector to ensure that i2 bytes are free in region
 i1. i1 can be 0 (no region in particular) 1 (static region) 2 (string
 region) or 3 (block region).
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf condvar() : condition variable \hfill create condition variable}
+
+\noindent
+\index{condition variable}condvar() creates
+a new condition variable.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf constructor(s, ...) : procedure \hfill record constructor}
@@ -2080,6 +2133,13 @@ names of local variables in co-expression \textsf{ce}, \textsf{i}
 levels up from the current procedure invocation.
 
 \bigskip\hrule\vspace{0.1cm}
+\noindent {\bf lock(x) : x \hfill lock mutex}
+
+\noindent
+\index{lock}\textsf{lock(x)} locks the mutex {\textit x} or the mutex
+associated with thread-safe object {\textit x}.
+
+\bigskip\hrule\vspace{0.1cm}
 \noindent {\bf log(r, r:\&e) : real \hfill logarithm}
 
 \noindent
@@ -2179,6 +2239,16 @@ characters from the current position and returns the substring of
 \textsf{\&subject} between the old and new positions. This function
 reverses its effects by resetting the position to its old value if it
 is resumed.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf mutex(x,y) : x \hfill create a mutex}
+
+\noindent
+\index{mutex()}\textsf{mutex()} creates a new mutex. For \textsf{mutex(x)}
+associates the new mutex with structure {\textit x}.
+The call {\textsf mutex(x,y)} associates an existing mutex \textit{y} (or
+mutex associated with protected object \textit{y}) with
+structure {\textit x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf name(v, CE:\&current) : string \hfill variable name}
@@ -2568,6 +2638,15 @@ are inserted into the new set, with the exception of lists.
 \textsf{s} in the operating system.
 
 \bigskip\hrule\vspace{0.1cm}
+\noindent {\bf signal(cv, i:1) : ?? \hfill signal a conditional variable}
+
+\noindent
+\index{signal}\textsf{signal(x, y)} signals the condition variable
+{\textit x}. If {\textit y} is supplied, the condition variable is
+signaled {\textit y} times. If {\textit y} is 0, a ``broadcast''
+signal is sent waking up all threads waiting on {\textit x}.
+
+\bigskip\hrule\vspace{0.1cm}
 \noindent {\bf sin(r) : real \hfill sine}
 
 \noindent
@@ -2595,6 +2674,16 @@ of \textsf{i}, and by table element values for even-values of
 Elements that don{\textquotesingle}t have an
 \textsf{i}{\textquotesingle}th field are sorted in standard order and
 come before those that do have an \textsf{i}{\textquotesingle}th field.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf spawn(CE, i, i) : thread \hfill launch asynchronous thread}
+
+\noindent
+\index{spawn()}\textsf{spawn(ce)} launches co-expression {\textit ce} as an
+asynchronous thread that will execute concurrently with the current
+co-expression. The two optional integers specify the memory in bytes
+allocated for the thread's block and string regions. The defaults are 10\%
+of the main thread heap size.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf sql(D, s) : integer \hfill execute SQL statement}
@@ -2751,11 +2840,25 @@ longer than length \textsf{len}. \textsf{truncate()} does not work on
 windows, network connections, pipes, or databases.
 
 \bigskip\hrule\vspace{0.1cm}
+\noindent {\bf trylock(x) : x? \hfill try locking mutex}
+
+\noindent
+\index{lock}\textsf{trylock(x)} locks the mutex {\textit x} or the mutex
+associated with thread-safe object {\textit x}, if it is not locked.
+
+\bigskip\hrule\vspace{0.1cm}
 \noindent {\bf type(x) : string \hfill type of value}
 
 \noindent
 \index{type(x)}\textsf{type(x)} returns a string that indicates the type
 of \textsf{x}.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf unlock(x) : x \hfill unlock mutex}
+
+\noindent
+\index{lock}\textsf{unlock(x)} unlocks the mutex {\textit x} or the mutex
+associated with thread-safe object {\textit x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf upto(c, s, i, i) : integer* \hfill find characters in set}
@@ -2786,6 +2889,15 @@ its value. The name \textsf{s} is searched for within co-expression
 \textsf{c}, starting with local variables \textsf{i} levels above the
 current procedure frame, and then among the global variables in the
 program that created \textsf{c}.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf wait(x) : ? \hfill wait for thread or condition variable}
+
+\noindent
+\index{wait()}\textsf{wait(x)} waits for {\textit x}. If {\textit x} is
+a thread, {\textsf wait()} waits for it to finish. If {\textit x} is
+is a condition variable {\textsf wait()} waits until that variable is
+signaled by another thread.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf where(f) : integer? \hfill file

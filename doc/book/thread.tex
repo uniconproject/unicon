@@ -5,7 +5,7 @@ Threads are the building blocks for concurrent (also known as
 instructions specify multiple things to compute at the same time,
 during some or most of the program run.  On a classic single processor
 system these computations will only happen one at a time, but on most
-modern multiprocessor and multicore systems, the harware is designed
+modern multiprocessor and multicore systems, the hardware is designed
 to do several computations at once, and if your program does not ask
 for as much, it is underutilizing (sometimes severely) the platform.
 
@@ -57,11 +57,10 @@ pieces of process-wide information. This enables very fast
 communication and cooperation between threads, which leads to less
 blocking, faster execution and more efficient use of resources. 
 
-Unicon Programs start execution in the
-{\textquotedblleft}main{\textquotedblright} procedure. In a
-multi-thread programming environment, the procedure main is
+Unicon programs start execution in the {\textsf main()} procedure. In a
+multi-thread programming environment, the procedure {\textsf main()} is
 the entry point for a special thread referred to as the
-{\textquotedblleft}main{\textquotedblright} thread. This main thread
+{\em main thread}. This main thread
 gets created by the operating system when the program first runs. The
 main thread can create new threads which can create even more threads.
 \ Each thread has an entry point of execution where the thread first
@@ -71,8 +70,8 @@ starts running in the entry point, it goes on its own execution path,
 separate from the thread that created it, which continues to run. A
 thread never returns. When it ends, it simply terminates; other threads
 continue to run. An important exception is the main thread; if the main
-thread ends the whole program ends. If there are any other threads
-running all of them will be terminated. 
+thread ends, the whole program ends. If there are any other threads
+running, all of them will be terminated. 
 
 \subsubsection[Why Threads?]{Why Threads?}
 
@@ -710,8 +709,8 @@ numbers one at each call can be written as:
 \iconcode{
 procedure seq() \\
 \ \ \ static i \\
-\ \ \ initial i:=0 \\
-\ \ \ i := i+1 \\
+\ \ \ initial i := 0 \\
+\ \ \ i := i + 1 \\
 \ \ \ return i \\
 end
 }
@@ -731,7 +730,7 @@ procedure seq() \\
 \ \ \ local n \\
 \ \ \ static i, region \\
 \ \ \ initial \{ i:=0; region:=mutex() \} \\
-\ \ \ critical region: n := i:= i+1 \\
+\ \ \ critical region: n := i := i + 1 \\
 \ \ \ return n \\
 end
 }
@@ -778,9 +777,9 @@ procedure produce(L, region) \\
 end
 \ \\
 procedure consume(L, region) \\
-i := 0 \\
-while i{\textless}10 \ do \\
-\ \ \ critical region: if x := get(L) then i+:=1 \& write(x) \\
+\> i := 0 \\
+\> while i {\textless} 10 \ do \\
+\> \> critical region: if x := get(L) then i +:= 1 \& write(x) \\
 end
 }
 
@@ -803,8 +802,8 @@ end
 \ \\
 procedure consume(L) \\
 \ \ \ i := 0 \\
-\ \ \ while i{\textless}10 \ do \\
-\ \ \ \ \ \ if x := get(L) then i+:=1 \& write(x) \\
+\ \ \ while i {\textless} 10 \ do \\
+\ \ \ \ \ \ if x := get(L) then i +:= 1 \& write(x) \\
 end
 }
 
@@ -975,7 +974,7 @@ procedure main() \\
 end \\
 \ \\
 procedure produce(L, cv) \\
-\ \ \ every i:=!10 do \{ \\
+\ \ \ every i := !10 do \{ \\
 \ \ \ \ \ \ critical cv: put(L, i) \\
 \ \ \ \ \ \ if *L=1 then signal(cv) \\
 \ \ \ \ \ \ \} \\
@@ -983,10 +982,10 @@ end \\
 \ \\
 procedure consume(L, cv) \\
 \ \ \ i := 0 \\
-\ \ \ while i{\textless}10 \ do \{ \\
+\ \ \ while i {\textless} 10 \ do \{ \\
 \ \ \ \ \ \ if *L=0 then critical cv: until *L{\textgreater}0 do
 wait(cv) \\
-\ \ \ \ \ \ if x := get(L) then i+:=1 \& write(x) \\
+\ \ \ \ \ \ if x := get(L) then i +:= 1 \& write(x) \\
 \ \ \ \ \ \ \} \\
 end
 }
@@ -1017,12 +1016,12 @@ procedure produce(L, cv) \\
 end \\
 \ \\
 procedure consume(L, cv) \\
-\ \ \ i := 0 \\
-\ \ \ while i{\textless}10 \ do \\
-\ \ \ \ \ \ if x := get(L) then \\
-\ \ i+:=1 \& write(x) \\
-\ \ \ \ \ \ else \\
-\ \ \ \ \ \ \ \ \ critical cv: until *L{\textgreater}0 do wait(cv) \\
+\>   i := 0 \\
+\>   while i {\textless} 10 \ do \\
+\> \>    if x := get(L) then \\
+\> \> \>    i +:= 1 \& write(x) \\
+\> \>    else \\
+\> \> \>    critical cv: until *L{\textgreater}0 do wait(cv) \\
 end
 }
 
@@ -1038,7 +1037,7 @@ There is no need to have a thread that spends a lot of time
 locking/unlocking a mutex if it is not necessary, creating contention
 in the critical region. However, a thread that keeps wasting time
 signaling condition variables that have no threads waiting on them is
-undesirable either.
+also undesirable.
 
 The \textsf{signal()} function takes a second optional
 parameter denoting the number of threads to be woken up. By default,
@@ -1055,7 +1054,7 @@ signal(cv, 4)
 }
 
 Furthermore, if all of the threads waiting on
-\textsf{cv} needs to be woken up, a special
+\textsf{cv} need to be woken up, a special
 \textsf{0} ( or \textsf{CV\_BROADCAST})
 value can be passed to \textsf{signal()} causing it to
 broadcast a wakeup call for all threads waiting on
@@ -1115,10 +1114,10 @@ utilized to support the communication model between threads in Unicon.
 Each thread maintains two queues called the inbox and outbox that are
 created with the thread. When a thread sends a message with an explicit
 destination, the message is queued in the destination{\textquoteright}s
-inbox. Otherwise it is queued into the sender{\textquoteright}s outbox.
+inbox. Otherwise, it is queued into the sender{\textquoteright}s outbox.
 A thread can receive messages from another thread by dequeuing messages
 from the source{\textquoteright}s outbox if there is an explicit
-source, otherwise it dequeues messages from its own inbox. The
+source; otherwise, it dequeues messages from its own inbox. The
 following figure presents two threads with the inboxes and outboxes.
 
 
@@ -1134,20 +1133,6 @@ following figure presents two threads with the inboxes and outboxes.
 
 \bigskip
 
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
 
 \subsubsection{Send and Receive Operators}
 
@@ -1213,7 +1198,7 @@ queue. If the queue is full, the send operation fails. The inbox/outbox
 for each thread is initialized to have a limited size (it can hold up
 to 1024 values by default). This limit can be increased or decreased
 depending on the application needs. The limits are useful so that queue
-sizes do not explode quickly by default and also to have an implicit
+sizes do not explode quickly by default. They also provide an implicit
 communication/synchronization as explained later in following sections.
 \ Let us look at the producer/consumer example again written using the
 new operators:
@@ -1226,14 +1211,14 @@ procedure main() \\
 end \\
 \ \\
 procedure produce() \\
-\ \ \ every !10@{\textgreater} \ \ \# place values in my outbox \\
+\ \ \ every !10 @{\textgreater} \ \ \# place values in my outbox \\
 end \\
 \ \\
 procedure consume(p) \\
-\ \ \ © := 0 \\
-\ \ \ while i{\textless}10 \ do \\
-\ \ \ \ \ \ if x := {\textless}@p then\ \ \# get values from p \\
-\ \ \ \ \ \ \ \ \ i+:=1 \& write(x) \\
+\ \ \ i := 0 \\
+\ \ \ while i {\textless} 10 do \\
+\ \ \ \ \ \ if x := {\textless}@ p then\ \ \# get values from p \\
+\ \ \ \ \ \ \ \ \ i +:= 1 \& write(x) \\
 end
 }
 
@@ -1260,7 +1245,7 @@ the \textsf{Attrib()} Function }
 
 As seen in previous sections, communications between threads is done
 though inbox/outbox queues which are governed by size limits. The size
-limit (defaults to1024) and the actual size dictate how synchronization
+limit (defaults to 1024) and the actual size dictate how synchronization
 is melted with the communication. The size operator * can be used with
 a thread to query its actual outbox size (how many values it contains,
 not the maximum limit) and can be used as follows:
@@ -1275,7 +1260,7 @@ other queue attributes, a new function is introduced to Unicon:
 uses the form \textsf{Attrib(handle, attribcode, value,
 attribcode, value, ...)}.~The integer codes used by the
 \textsf{Attrib()} function are supplied by an include
-file (\textsf{thread.icn}) with
+file (\textsf{threadh.icn}) with
 \textsf{\$define} symbols for the attributes. This
 header file is part of a new thread package that is part of the Unicon
 distribution called package \textsf{threads}. It can be
@@ -1293,7 +1278,7 @@ the * operator), the code is:
 outbox\_size := Attrib(T, OUTBOX\_SIZE)
 }
 
-similarly, 
+\noindent similarly, 
 
 \iconcode{
 inbox\_size := Attrib(T, INBOX\_SIZE)
@@ -1362,10 +1347,10 @@ the consumer code again:
 
 \iconcode{
 procedure consume(p) \\
-\ \ \ © := 0 \\
-\ \ \ while i{\textless}10 \ do \\
-\ \ \ \ \ \ if x := {\textless}@p then\ \ \# get values from p \\
-\ \ \ \ \ \ \ \ \ i+:=1 \& write(x) \\
+\ \ \ i := 0 \\
+\ \ \ while i {\textless} 10 \ do \\
+\ \ \ \ \ \ if x := {\textless}@ p then\ \ \# get values from p \\
+\ \ \ \ \ \ \ \ \ i +:= 1 \& write(x) \\
 end
 }
 
@@ -1382,7 +1367,7 @@ consumer can be rewritten as:
 \iconcode{
 procedure consume(p) \\
 \ \ \# get exactly 10 values from p, block if necessary\\
-\ \ \ every !10 do write({\textless}{\textless}@p) \\
+\ \ \ every !10 do write({\textless}{\textless}@ p) \\
 end
 }
 
@@ -1508,8 +1493,8 @@ Starting a private communication is similar to a network connection,
 except that this connection is taking place between two threads in the
 same process instead of two different processes that may be on
 different machines. A private communication channel between two threads
-and can be created using the function \textsf{channel()}.
-\textsf{Channel()} is part of the
+can be created using the function \textsf{channel()}.
+\textsf{channel()} is part of the
 \textsf{threads} package and takes one parameter, which
 is the thread with which the connection will be initiated. If
 \textsf{channel()} succeeds, it returns a list representing
@@ -1545,14 +1530,14 @@ import threads \\
 procedure main() \\
 \ \ \ p := thread produce() \\
 \ \ \ c := thread consume(p) \\
-\ \ \ c @{\textgreater}p \\
+\ \ \ c @{\textgreater} p \\
 \ \ \ every wait(p {\textbar} c) \\
 end \\
 \ \\
 procedure produce() \\
-\ \ \ c:={\textless}{\textless}@ \\
+\ \ \ c := {\textless}{\textless}@ \\
 \ \ \ chC := channel(c) \\
-\ \ \ every !10@{\textgreater}c \ \ \# place values in channel c \\
+\ \ \ every !10 @{\textgreater} c \ \ \# place values in channel c \\
 end \\
 \ \\
 procedure consume(p) \\

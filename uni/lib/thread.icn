@@ -49,27 +49,74 @@ class Shared_Variable(value)
 end
 
 
-procedure channel(x)
-   local ce, T, L
-   static chTable
-   initial chTable := mutex(table())
+procedure channel(x, port)
+   local ce, T, L, chnl
+   static chTable, chTableP, chTableN
+   initial{ 
+          chTable  := mutex(table())
+          chTableP := mutex(table())
+	  chTableN := mutex(table())
+      	  }
    
-   ce := &current
-   
-   critical chTable:{
-       if not(member(chTable, ce)) then chTable[ce] := table() 
-       if not(member(chTable, x)) then chTable[x] := table() 
-       
-       T := chTable[ce]
-
-       if member(T, x) then{
-          L := T[x]
-	  delete(T, x)
-          }
+   if string(x) then{ # the name of the channel is what matters
+       if member(chTableN, x) then 
+          chnl :=  chTableN[x]
        else
-          chTable[x][ce] :=  L := condvar([])
-       }
-    return L
+	  chTableN[x] := chnl := condvar([])
+
+       return chnl
+      }
+   else if /port then {   # connect channels based on order they were received
+      ce := &current
+      critical chTable:{
+         if not(member(chTable, ce)) then chTable[ce] := table() 
+         if not(member(chTable, x)) then chTable[x] := table() 
+       
+         T := chTable[ce]
+         if member(T, x) then{
+	    L := T[x]
+            if chnl := get(L) then{
+	       if *L=0 then delete(T, L)
+	       }
+	    else
+	       put(L, chnl := condvar([]))
+            }
+         else{
+	    L := []
+            put(L, chnl := condvar([]))
+            chTable[x][ce] := L
+	    }
+
+         } # critical
+      return chnl
+      }
+   else{
+      critical chTableP:{    # connect channels based on the supplied port
+         ce := &current
+
+         if not(member(chTableP, ce)) then chTableP[ce] := table() 
+         if not(member(chTableP, x)) then chTableP[x] := table() 
+       
+         T := chTableP[ce]
+         if member(T, x) then{
+	    TP := T[x]
+            if member(TP, port) then{
+               chnl := TP[port]
+	       delete(TP, port)
+	       if *TP=0 then delete(T, TP)
+	       }
+	    else
+	       TP[port] := chnl := condvar([])		
+            }
+         else{
+	    TP := table()
+            TP[port] := chnl := condvar([])
+            chTableP[x][ce] := TP
+	    }
+
+         } # critical
+      return chnl
+     }
 end
 
 

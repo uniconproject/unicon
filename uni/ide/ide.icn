@@ -817,18 +817,21 @@ $endif
             }
          }
 
-     if find(".icn",CurrentTabItem().label) then{
-       if /is_MSWindows then{
+     if find(".icn",CurrentTabItem().label) then {
+       if /is_MSWindows then {
          cmdargs := " " || targs || " " || arglist || " > " ||wiconlog||" 2>&1"
          cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs  
          }
-       else{
+       else {
          cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
          cmd := compile_cmd || cmdargs 
          }
-         system( cmd, lst,1,"Compiling...")
-         showanyerror(wiconlog, lst)
-         }
+       system( cmd, lst,1,"Compiling...")
+       showanyerror(wiconlog, lst)
+       }
+      else {
+	 \MsgBox.set_contents(["UI doesn't know how to compile non-.icn files"])
+      }
 
       fileCompiled :="TRUE"
    end
@@ -857,7 +860,8 @@ $endif
 	       (fn := ((tab(any(&letters))||=":")|"") || 
 			tab(many(&letters++&digits++' .\\/-'))) & =":" &
                ln := integer(tab(many(&digits))) & = ":" then {
-               handle_openfile( , fn)
+		  if CurrentTabItem().label ~=== fn then
+		     handle_openfile( , fn)
 #                 if not handle_openfile( , fn) then {
 #                    put(\MsgBox.contents,"[switch to file with error failed]")
 #                    \MsgBox.set_contents(MsgBox.contents)
@@ -1126,14 +1130,14 @@ $endif
    #
    method saveas(ev)
       local fd, filename, foo, index := i, warntxt, fexist := &null, L,
-            i, filelist, oldwindow, win, fileslist
+            i, oldwindow, win, fileslist, fext
 
       fileslist := []
       every put(fileslist,!open("."))
 
       chdir(current_dir)
 
-      if /is_MSWindows then{
+      if /is_MSWindows then {
          fd := HFileDialog()
          fd.set_attribs("label=Save File As:")
          fd.show_modal()
@@ -1144,14 +1148,23 @@ $endif
       else{
          current_dir := filedirectory
 
-         filename := WinSaveDialog(&window, "Save file As:", "", 50) | fail
+         filename := WinSaveDialog(&window, "Save File As:", "", 50) | fail
          ##if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
          }
 
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-         \MsgBox.set_contents(["Enter File Name to save"])
+         \MsgBox.set_contents(["Enter file name to save"])
          return
          }
+
+      # Append .icn under certain circumstances.  Probably need to fix
+      # circumstances.
+      fext := fd.file_extension
+      if (not find(".", file_name(filename))) &
+	  find("Unicon Files", fext.selection_list[fext.get_selection()])
+      then
+	  filename ||:= ".icn"
+
       every i := 1 to *fileslist do
          if file_name(filename) === fileslist[i] then {
             oldwindow := &window
@@ -1163,7 +1176,7 @@ $endif
             &window := oldwindow
             fexist := 1
          }
-      if overwrite === "OK" | /fexist then {
+      if (overwrite === "OK") | /fexist then {
          if \project then {
             # Resolve absolute versus relative paths and not add absolute
             # if relative is already in the project.

@@ -520,7 +520,7 @@ $ifdef _UNIX
 	 # filepath := chdir()
          filedirectory := fd.get_directory()
 $else
-         filename := WinOpenDialog(dialogself.win, "Open File ...", "", 5) | fail 
+         filename := WinOpenDialog(dialogself.win, "Open File ...", "", 5) | fail
 $endif
          }
       current_dir := filedirectory
@@ -1144,12 +1144,20 @@ $endif
          #fd.set_extra_attribs(["label=Save file As:"])
          filename := fd.get_result() | fail
          filedirectory := fd.get_directory()
+         # Append .icn under certain circumstances.  Probably need to fix
+         # circumstances.
+         fext := fd.file_extension
+         if (not find(".", file_name(filename))) &
+	    find("Unicon Files", fext.selection_list[fext.get_selection()])
+         then
+	    filename ||:= ".icn"
+
          }
       else{
          current_dir := filedirectory
 
          filename := WinSaveDialog(&window, "Save File As:", "", 50) | fail
-         ##if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
+         if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
          }
 
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
@@ -1157,13 +1165,6 @@ $endif
          return
          }
 
-      # Append .icn under certain circumstances.  Probably need to fix
-      # circumstances.
-      fext := fd.file_extension
-      if (not find(".", file_name(filename))) &
-	  find("Unicon Files", fext.selection_list[fext.get_selection()])
-      then
-	  filename ||:= ".icn"
 
       every i := 1 to *fileslist do
          if file_name(filename) === fileslist[i] then {

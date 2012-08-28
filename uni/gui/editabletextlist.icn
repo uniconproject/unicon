@@ -231,10 +231,12 @@ class EditableTextList : LineBasedScrollArea(
       i := TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width)
       j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
       l := self.get_left_pos()
+      if \self.hsb then {
       if self.view.x - l > \i then
 	 self.hsb.set_value(i)
       else if self.view.x - l + self.view.w < \j then
 	 self.hsb.set_value(j - self.view.w)
+      }
    end
 
    method handle_cut(e)

@@ -227,7 +227,7 @@ void Record_PE (struct b_pelem * E, struct b_pelem *RA[])
       return;
       }
    else {
-      DEBUGF(20, (stdout," recording %d\n",E->index));
+      DEBUGF(20, (stdout," recording %ld\n",E->index));
       RA[E->index] = E;
       Record_PE ((struct b_pelem *)E->pthen, RA);
       if (Has_Alt(E->pcode))
@@ -549,7 +549,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
 		}
 	}
     /* if it is not in table first resolve references */
-    phead = ResolveReferences(&(pat->pe->pelem));
+    phead = ResolveReferences(&(pat->pe->Pelem));
     val.dword = D_Pelem;
     BlkLoc(val) = (union block *)phead;
     /* get this now because can't tend pb */
@@ -1691,11 +1691,11 @@ if (is:list(Node->parameter)) {
 
    rp = (struct b_record *)BlkLoc(var);
    bptr = rp->recdesc;
-   nfields = bptr->proc.nfields;
+   nfields = bptr->Proc.nfields;
    for (i=0;i<nfields;i++) {
-      if ((StrLen(fieldptr) == StrLen(bptr->proc.lnames[i])) &&
+      if ((StrLen(fieldptr) == StrLen(bptr->Proc.lnames[i])) &&
 	  !strncmp(StrLoc(fieldptr),
-		   StrLoc(bptr->proc.lnames[i]),StrLen(fieldptr)))
+		   StrLoc(bptr->Proc.lnames[i]),StrLen(fieldptr)))
 	 break;
       }
    if (i<nfields)
@@ -1717,7 +1717,7 @@ else {
 
 static void ErrorDuringPatternMatch(char *x)
 {
-   fprintf(stdout, x);
+   fprintf(stdout, "%s", x);
    fatalerr(0, NULL);
 }
 
@@ -1798,9 +1798,9 @@ if (is:list(Node->parameter)) {
    methodptr = ep->lslots[1];
    rp = (struct b_record *)BlkLoc(var);
    bptr = rp->recdesc;
-   nfields = bptr->proc.nfields;
+   nfields = bptr->Proc.nfields;
    for( i = 0; i < nfields;i++) {
-      if (!strcmp(StrLoc(bptr->proc.lnames[i]), "__m")) {
+      if (!strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
 	 found__m = 1;
 	 break;
 	 }
@@ -1812,11 +1812,11 @@ if (is:list(Node->parameter)) {
    var = rp->fields[i];
    rp = (struct b_record *)BlkLoc(var);
    bptr = rp->recdesc;
-   nfields = bptr->proc.nfields;
+   nfields = bptr->Proc.nfields;
    for (i=0; i<nfields; i++) {
-      if ((StrLen(methodptr) == StrLen(bptr->proc.lnames[i])) &&
+      if ((StrLen(methodptr) == StrLen(bptr->Proc.lnames[i])) &&
 	  !strncmp(StrLoc(methodptr),
-		   StrLoc(bptr->proc.lnames[i]),StrLen(methodptr)))
+		   StrLoc(bptr->Proc.lnames[i]),StrLen(methodptr)))
 	 break;
       }
    if (i<nfields)

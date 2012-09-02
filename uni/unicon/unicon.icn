@@ -286,7 +286,6 @@ procedure iconc_yyparse(fname, tmplist)
    yylex_reinit()
    if /yydbg then {
       tmpname := tempname("uni",,,5)
-      # write("mdw: tmpname: " || tmpname)
       yyout := open(tmpname, "w") |
          stop("can't open temporary file ",tmpname," for writing")
       put(tmplist, tmpname)
@@ -715,12 +714,15 @@ procedure unicon(argv)
       # mdw: dbg only...
       # ca_dbg_dump()
       rv := mysystem(cmd)
-# mdw: want to look at tmp files...
-#      if rv = 0 then
-#          every remove(!tmpfnames)
-#      else
-#          errors +:= 1
-      if not (rv = 0) then errors +:= 1
+
+      # comment out if you want to look at tmp files...
+      # maybe add a command line argument to retain these someday.
+      every remove(!tmpfnames || "-iconc")
+      every remove(!tmpfnames)
+      remove(\ mw_tmpname)
+
+      if rv ~=== 0 then
+         errors +:= 1
       }
    else
 

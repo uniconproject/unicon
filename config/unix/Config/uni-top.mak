@@ -5,6 +5,8 @@ all :
 	cd unicon; $(MAKE)
 	cd lib; $(MAKE)
 	cd udb; $(MAKE)
+	cd udb; $(MAKE) tools
+	cd progs; $(MAKE)
 	cd gui; $(MAKE)
 	cd gui/ivib; $(MAKE)
 	cd xml; $(MAKE)

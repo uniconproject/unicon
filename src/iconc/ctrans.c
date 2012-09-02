@@ -226,8 +226,13 @@ char *filename;
 
    if (strcmp(filename,"-") == 0)
       filename = "stdin";
-   if (verbose > 0)
-      fprintf(stderr, "%s:\n",filename);
+   if (strstr(filename, "/uni") && strstr(filename, "-iconc")) {
+      if (verbose > 1)
+	 fprintf(stderr, "%s:\n",filename);
+      }
+   else
+      if (verbose > 0)
+	 fprintf(stderr, "%s:\n",filename);
 
    tok_loc.n_file = filename;
    in_line = 1;

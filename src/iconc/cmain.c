@@ -96,7 +96,8 @@ char **argv;
    int ret_code;
    struct fileparts *fp;
 
-   report("iconc build: " __DATE__" "__TIME__".\n");
+   if (verbose > 1)
+      report("iconc build of " __DATE__" "__TIME__);
 
 #ifdef ExpTools
    if (strlen(patchpath)>18) {

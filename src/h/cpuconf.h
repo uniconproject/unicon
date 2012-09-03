@@ -166,13 +166,8 @@
  */
 
 #ifndef HSlots
-   #if IntBits == 16
-      #define HSlots     4
-      #define LogHSlots  2
-   #else				/* IntBits */
-      #define HSlots     8
-      #define LogHSlots  3
-   #endif				/* IntBits */
+      #define HSlots     16
+      #define LogHSlots  4
 #endif					/* HSlots */
 
 #if ((1 << LogHSlots) != HSlots)
@@ -180,11 +175,7 @@
 #endif					/* HSlots / LogHSlots consistency */
 
 #ifndef HSegs
-   #if IntBits == 16
-      #define HSegs	  6
-   #else				/* IntBits */
-      #define HSegs	 12
-   #endif				/* IntBits */
+      #define HSegs	 18
 #endif					/* HSegs */
 
 #ifndef MinHLoad

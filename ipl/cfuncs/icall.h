@@ -124,7 +124,11 @@
 
 #define D_Null		(T_Null     | D_Typecode)
 #define D_Integer	(T_Integer  | D_Typecode)
+#ifdef DescriptorDouble
+#define D_Real		(T_Real     | D_Typecode)
+#else				    	/* Descriptor Double */
 #define D_Real		(T_Real     | D_Typecode | F_Ptr)
+#endif				    	/* Descriptor Double */
 #define D_File		(T_File     | D_Typecode | F_Ptr)
 #define D_List		((word)(T_List     | D_Typecode | F_Ptr))
 

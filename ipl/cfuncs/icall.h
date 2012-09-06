@@ -98,6 +98,10 @@
 #define WordSize 64
 #endif
 
+#if !defined(NoDescriptorDouble) && (WordSize == 64)
+#define DescriptorDouble
+#endif
+
 #if WordSize <= 32
 #define F_Nqual    0x80000000		/* set if NOT string qualifier */
 #define F_Var      0x40000000		/* set if variable */
@@ -135,6 +139,9 @@ typedef struct descrip {
    word dword;
    union {
       word integr;		/*   integer value */
+#if defined(DescriptorDouble)
+      double realval;
+#endif
       char *sptr;		/*   pointer to character string */
       union block *bptr;	/*   pointer to a block */
       struct descrip *descptr;	/*   pointer to a descriptor */
@@ -160,7 +167,9 @@ int cnv_c_str(descriptor *, descriptor *);
 int chmod();
 int umask(int);
 char *alcstr(char *s, word len);
+#if !defined(DescriptorDouble)
 realblock *alcreal(double v);
+#endif
 fileblock *alcfile(FILE *fp, int stat, descriptor *name);
 double getdbl(descriptor *d);
 void cpslots(descriptor *, descriptor *, word, word);
@@ -386,11 +395,17 @@ word mkRlist(int x[], int n);
   return (argv->dword = D_Integer, argv->vword.integr = n, 0)
 
 /* Given a C double "x", return an Icon real to the calling routine. */
+#if defined(DescriptorDouble)
+#define RetReal(x) do {  \
+  return (argv->dword = D_Real, argv->vword.realval = x);  \
+} while(0)
+#else
 #define RetReal(x) do {  \
   struct b_real *d;  \
   Protect(d = alcreal(x), Error(307));  \
   return (argv->dword = D_Real, argv->vword.bptr = (union block *)d, 0);  \
 } while(0)
+#endif
 
 /* Given a C string "s", return an Icon string to the calling routine. */
 #define RetString(s) do {  \

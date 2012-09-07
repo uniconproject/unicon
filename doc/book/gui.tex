@@ -37,7 +37,7 @@ application. When you finish this chapter you will know how to:
 \item Construct programs that employ a graphical user interface.
 \item Manipulate the attributes of objects such as buttons and
 scrollbars.
-\item Draw a program{\textquotesingle}s interface using ivib,
+\item Draw a program{\textquotesingle}s interface using
 Unicon{\textquotesingle}s improved visual interface builder.
 \end{itemize}
 \subsection[A Simple Dialog Example]{A Simple Dialog Example}
@@ -177,7 +177,7 @@ simply creates an instance of the dialog and invokes the method
 \iconcode{
 \>   d.show\_modal()}
 
-This call displays the dialog window and goes into the
+\noindent This call displays the dialog window and goes into the
 toolkit{\textquotesingle}s event handling loop. 
 
 \subsection{Positioning Objects}
@@ -280,17 +280,13 @@ import gui \\
 \# Second test program \\
 \# \\
 class SecondTest : Dialog( \\
-\>   \# \\
-\>   \# The class variables; each represents an object \\
-\>   \# in the dialog. \\
-\>   \# \\
+\>   \# Each class variable represents an object in the dialog. \\
 \>   text\_list,  \\
 \>   table,  \\
 \>   list,  \\
 \>   text\_field,  \\
-\>   \# \\
+\>    \\
 \>   \# Some data variables. \\
-\>   \# \\
 \>   oses,  \\
 \>   languages, \\
 \>   shares \\
@@ -311,17 +307,17 @@ class SecondTest : Dialog( \\
 \>   \# \\
 \ \\
 \>   method handle\_check\_box\_1(ev) \\
-\>   \ \ \ put\_line({\textquotedbl}Favourite o/s is {\textquotedbl}
+\>   \ \ \ put\_line({\textquotedbl}Favorite OS is {\textquotedbl}
 {\textbar}{\textbar} oses[1]) \\
 \>   end \\
 \ \\
 \>   method handle\_check\_box\_2(ev) \\
-\>   \ \ \ put\_line({\textquotedbl}Favourite o/s is {\textquotedbl}
+\>   \ \ \ put\_line({\textquotedbl}Favorite OS is {\textquotedbl}
 {\textbar}{\textbar} oses[2]) \\
 \>   end \\
 \ \\
 \>   method handle\_check\_box\_3(ev) \\
-\>   \ \ \ put\_line({\textquotedbl}Favourite o/s is {\textquotedbl}
+\>   \ \ \ put\_line({\textquotedbl}Favorite OS is {\textquotedbl}
 {\textbar}{\textbar} oses[3]) \\
 \>   end \\
 \ \\
@@ -332,8 +328,7 @@ class SecondTest : Dialog( \\
 \ \\
 \>   method handle\_list(ev) \\
 \>   \ \ \ put\_line({\textquotedbl}Favourite language is
-{\textquotedbl} {\textbar}{\textbar} \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ languages[list.get\_selection()]) \\
+{\textquotedbl} {\textbar}{\textbar} languages[list.get\_selection()]) \\
 \>   end \\
 \ \\
 \>   method handle\_text\_menu\_item\_2(ev) \\
@@ -365,10 +360,9 @@ is trading at {\textquotedbl} {\textbar}{\textbar} shares[i][2]) \\
 \>   end
 \ \\
 \>   \# \\
-\>   \# This method is invoked for a component which may  \\
-\>   \# potentially want to handle an event (by firing an \\
-\>   \# event to its listeners for example). \ A dialog \\
-\>   \# is just another custom component, and so it can \\
+\>   \# This method is invoked for a component which may potentially want \\
+\>   \# to handle an event (by firing an event to its listeners for\\
+\>   \# example). \ A dialog is just another custom component, and so it can\\
 \>   \# override this method to do any custom processing. \\
 \>   \# \\
 \>   method handle\_event(ev) \\
@@ -378,15 +372,11 @@ is trading at {\textquotedbl} {\textbar}{\textbar} shares[i][2]) \\
 \>   end \\
 \ \\
 \>   method component\_setup() \\
-\>   \ \ \ local menu\_bar, menu, panel\_1, panel\_2, panel\_3,  \\
-\>   \ \ \ \ \ \ \ \ \ panel\_4, panel\_5, label\_1, label\_2,
-label\_3,  \\
-\>   \ \ \ \ \ \ \ \ \ label\_4, label\_5, text\_menu\_item\_1,  \\
-\>   \ \ \ \ \ \ \ \ \ text\_menu\_item\_2, check\_box\_1,
-check\_box\_2, \\
-\>   \ \ \ \ \ \ \ \ \ check\_box\_3,table\_column\_1,
-table\_column\_2, \\
-\>   \ \ \ \ \ \ \ \ \ check\_box\_group \\
+\>   \ \ \ local menu\_bar, menu, panel\_1, panel\_2, panel\_3, panel\_4, panel\_5, \\
+\>   \ \ \ \ \ \ \ \ \ label\_1, label\_2, label\_3, label\_4, label\_5, \\
+\>   \ \ \ \ \ \ \ \ \ text\_menu\_item\_1, text\_menu\_item\_2, \\
+\>   \ \ \ \ \ \ \ \ \ check\_box\_1, check\_box\_2, check\_box\_3, \\
+\>   \ \ \ \ \ \ \ \ \ table\_column\_1, table\_column\_2, check\_box\_group \\
 \ \\
 \>   \ \ \ \# \\
 \>   \ \ \ \# Initialize some data for the objects. \\
@@ -402,12 +392,13 @@ table\_column\_2, \\
 [{\textquotedbl}Oracle{\textquotedbl},
 {\textquotedbl}32.52{\textquotedbl}],
 [{\textquotedbl}IBM{\textquotedbl},
-{\textquotedbl}13.22{\textquotedbl}],
+{\textquotedbl}13.22{\textquotedbl}], \\
+\>\>\>
 [{\textquotedbl}Intel{\textquotedbl},
 {\textquotedbl}142.00{\textquotedbl}]] \\
 \ \\
 \>   \ \ \ \# \\
-\>   \ \ \ \# Set the attribs \\
+\>   \ \ \ \# Set the attributes, then setup a simple menu system \\
 \>   \ \ \ \# \\
 \>   \ \ \ attrib({\textquotedbl}size=490,400{\textquotedbl},
 {\textquotedbl}min\_size=490,400{\textquotedbl},
@@ -415,10 +406,6 @@ table\_column\_2, \\
 \>   \ \ \ \ \ \ \ \ \ \ {\textquotedbl}bg=light
 gray{\textquotedbl},{\textquotedbl}label=Second example{\textquotedbl},
 {\textquotedbl}resize=on{\textquotedbl}) \\
-\ \\
-\>   \ \ \ \# \\
-\>   \ \ \ \# Set up a simple menu system \\
-\>   \ \ \ \# \\
 \>   \ \ \ menu\_bar := MenuBar() \\
 \>   \ \ \ menu := Menu({\textquotedbl}label=File{\textquotedbl}) \\
 \>   \ \ \ text\_menu\_item\_1 :=
@@ -444,7 +431,7 @@ ACTION\_EVENT) \\
 {\textquotedbl}size=130,130{\textquotedbl}) \\
 \>   \ \ \ label\_2 := Label({\textquotedbl}pos=0,0{\textquotedbl},
 {\textquotedbl}internal\_alignment=l{\textquotedbl},
-{\textquotedbl}label=Favorite o/s{\textquotedbl}) \\
+{\textquotedbl}label=Favorite OS{\textquotedbl}) \\
 \>   \ \ \ panel\_1.add(label\_2) \\
 \>   \ \ \ check\_box\_1 :=
 CheckBox({\textquotedbl}pos=0,30{\textquotedbl}) \\
@@ -592,7 +579,7 @@ handler methods.
 
 The next section sets up the three \index{check boxes.}check boxes. The
 check boxes are placed, together with the label {\textquotedbl}Favorite
-o/s{\textquotedbl} in a \textsf{Panel} object. This object simply
+OS{\textquotedbl} in a \textsf{Panel} object. This object simply
 serves as a container for other objects that logically can be treated
 as a whole. The most important thing to note about a \textsf{Panel} is
 that objects within it have their size and position computed relative
@@ -2900,15 +2887,15 @@ can just set a result \index{variable}variable that can be retrieved by
 the caller using one of the dialog{\textquotesingle}s methods.
 
 \subsection[Ivib]{Ivib}
-\index{Ivib}Creating a dialog window with many components can be hard
-work, involving repeated compiles and runs to get the components
-correctly sized and positioned. Furthermore, much of the code in a
-dialog is lengthy and tiresome to write. To help reduce the work
-involved for the programmer in creating a dialog, a visual
+\index{Ivib}Creating a dialog window with many components is hard
+work, involving many compiles and runs to get the components
+correctly sized and positioned. Also, much of the code in a
+dialog is lengthy and tiresome to write. To reduce the effort it
+takes to create a dialog, an
 \index{interface builder}interface builder is available, called Ivib.
-This program allows a user to interactively place and configure
-components in a window area. A program is then generated automatically
-that implements the interface. Ivib owes inspiration to VIB, a program
+Ivib allows a user to draw (interactively place and configure)
+components in a window area. Ivib's saved files are program source code
+that implement the interface. Ivib was inspired by VIB, a program
 written by Mary \index{Cameron, Mary}Cameron and greatly extended by
 Gregg \index{Townsend, Gregg}Townsend. The main window of Ivib, with a
 dialog under construction, is shown in Figure 17-11.
@@ -2916,7 +2903,7 @@ dialog under construction, is shown in Figure 17-11.
 
 
 \begin{center}
-\includegraphics[width=5.9957in,height=6.7866in]{ub-img/ub-img60.png}
+\includegraphics[width=5.2957in,height=6.0in]{ub-img/ub-img60.png}
 \end{center}
 
 {\sffamily\bfseries Figure 17-11:}

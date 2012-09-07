@@ -418,11 +418,11 @@ file, and then evolves the population for one generation. The method
 \iconcode{
 method evolve() \\
 \>   if /initialized := 1 then \{ \\
-\>   \ \ \ gen := 0 \\
-\>   \ \ \ init() \\
-\>   \ \ \ statistics(oldpop) \\
-\>   \ \ \ if {\textbackslash}log\_file then report(oldpop) \\
-\>   \} \\
+\>\>    gen := 0 \\
+\>\>    init() \\
+\>\>    statistics(oldpop) \\
+\>\>    if {\textbackslash}log\_file then report(oldpop) \\
+\>\>    \} \\
 \>   gen +:= 1 \\
 \>   generation() \\
 \>   statistics(newpop) \\
@@ -457,9 +457,8 @@ A method for producing \ a new generation.}
 
 \iconcode{
 method generation() \\
-\>   local j := 1, mate1, mate2, jcross, kids, x, \\
-\>   \ \ \ \ fitness1, fitness2, selected \\
-\ \\
+\>   local j := 1, mate1, mate2, jcross, kids, x, fitness1, fitness2, selected
+\\
 \>   newpop \ \ \ := list(popsize) \\
 \>   nmutation := ncross := 0 \\
 \>   selected \ := tselect() \\
@@ -467,16 +466,12 @@ method generation() \\
 \>   repeat \ \{ \\
 \>   \ \ \ mate1 := selected[j] \\
 \>   \ \ \ mate2 := selected[j+1] \\
-\>   \ \ \ kids := crossover2(oldpop[mate1].chrom, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ oldpop[mate2].chrom ) \\
+\>   \ \ \ kids := crossover2(oldpop[mate1].chrom, oldpop[mate2].chrom ) \\
 \>   \ \ \ fitness1 := fitness\_func(oldpop[mate1].chrom) \\
 \>   \ \ \ fitness2 := fitness\_func(oldpop[mate2].chrom) \\
-\>   \ \ \ newpop[j]:= individual(kids[1], fitness1, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ mate1, mate2,
-kids[3]) \\
-\>   \ \ \ newpop[j+1] := individual(kids[2], fitness2, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ mate1,
-mate2, kids[3]) \\
+\>   \ \ \ newpop[j]:= individual(kids[1], fitness1, mate1, mate2, kids[3]) \\
+\>   \ \ \ newpop[j+1] := individual(kids[2], fitness2, mate1, mate2, kids[3])
+\\
 \>   \ \ \ if j {\textgreater} popsize then break \\
 \>   \ \ \ j +:= 2 \\
 \>   \} \\
@@ -507,17 +502,14 @@ Using ga\_eng() for a simple test problem}
 \iconcode{
 procedure decode(chrom) \\
 \>   local i := 0 \\
-\>   every !chrom == {\textquotedbl}1{\textquotedbl} do  \\
-\>   \ \ \ i +:= 1 \\
+\>   every !chrom == {\textquotedbl}1{\textquotedbl} do i +:= 1 \\
 \>   return i \\
 end \\
 \ \\
-\# a simple test of the engine, fitness is based on number of \\
-\# 1 bits in chrom \\
+\# a simple test of the engine, fitness is based on number of 1 bits in chrom \\
 procedure main() \\
 \>   log\_file \ := open({\textquotedbl}test\_ga.log{\textquotedbl},
-{\textquotedbl}w{\textquotedbl}) {\textbar}  \\
-\>   \ \ \ stop({\textquotedbl}cannot open
+{\textquotedbl}w{\textquotedbl}) {\textbar} stop({\textquotedbl}cannot open
 log\_file.log{\textquotedbl}) \\
 \>   ga := ga\_eng(decode, 100, 20, 0.99, 1.0/real(20), log\_file) \\
 \>   every 1 to 100 do  \\
@@ -525,8 +517,7 @@ log\_file.log{\textquotedbl}) \\
 \>   write(log\_file, {\textquotedbl}best location ={\textgreater}
 {\textquotedbl}, ga.best) \\
 \>   write(log\_file, {\textquotedbl}best fitness \ ={\textgreater}
-{\textquotedbl}, \\
-\>   \ \ \ \ \ \ ga.newpop[ga.best].fitness) \\
+{\textquotedbl}, ga.newpop[ga.best].fitness) \\
 end
 }
 
@@ -632,8 +623,8 @@ ordinary blue; you want a blue that is like the blue you saw on the
 Mediterranean skyline on your last trip to Greece. \ 
 
 One option is to look at a color wheel and click on the part that
-represents the blue that you have in mind. The wheel has the drawback
-that the color you choose is typically only a very small part of the
+represents the blue that you have in mind. Unfortunately,
+the color you choose is typically only a very small part of the
 color wheel. Also the color is surrounded by many different colors that
 may be distracting or misleading in your evaluation. When you use the
 same color for the entire background, you get a different sense of the
@@ -684,7 +675,7 @@ different resolutions: 6x6, 8x8, and 10x10. In text mode, the
 foreground color is displayed as text on top of the background.
 
 \begin{center}
-\includegraphics[width=4.4571in,height=3.1807in]{ub-img/ub-img46.png}
+\includegraphics[width=4.0in,height=3.0in]{ub-img/ub-img46.png}
 \end{center}
 
 {\sffamily\bfseries Figure 16-2:}

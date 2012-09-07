@@ -38,7 +38,7 @@ concurrency facilities are implemented on top of POSIX threads, many of
 the concepts from pthreads programming apply, with many simpler, more
 concise, or higher-level ways of doing things available.
 
-\subsubsection[Threads and Co{}-Expressions ]{Threads and Co-Expressions}
+\subsection[Threads and Co{}-Expressions ]{Threads and Co-Expressions}
 
 Co-expressions are independent execution contexts that are explicitly
 sequential. Only one co-expression is active at any given moment. When
@@ -73,14 +73,14 @@ continue to run. An important exception is the main thread; if the main
 thread ends, the whole program ends. If there are any other threads
 running, all of them will be terminated. 
 
-\subsubsection[Why Threads?]{Why Threads?}
+
 
 Since the emergence of the first computer, processors have been
 increasing in computational power. Central processing unit speeds grew
 faster than almost all of the other units in the computer, especially
 the I/O units. This causes programs, especially those which are I/O
 bound, to spend most of their execution time blocked waiting for I/O to
-complete. \ On systems with multitasking support, several programs run
+complete. On systems with multitasking support, several programs run
 at the same time. When one program blocks for I/O for example, another
 program is scheduled to run allowing a better utilization of the system
 resources. Multitasking offered a way to increase the overall system
@@ -116,13 +116,13 @@ creates and runs a hello world thread.
 thread write({\textquotedblleft}Hello World!{\textquotedblright})
 }
 
-This is equivalent to:
+\noindent This is equivalent to:
 
 \iconcode{
 spawn( create write({\textquotedblleft}Hello World!{\textquotedblright}))
 }
 
-or
+\noindent or
 
 \iconcode{
 co := create write({\textquotedblleft}Hello World!{\textquotedblright}) \\
@@ -1349,7 +1349,7 @@ end
 }
 
 Using an \textsf{if} statement with
-\textsf{{\textless}@} is necessary to check if the
+\textsf{{\textless}@}  checks whether the
 operation succeeds in receiving a value. A blocking receive is more
 suitable in this case and it simplifies the loop slightly since the
 \textsf{if} can be dropped, and also the counter is not
@@ -1453,8 +1453,7 @@ messages to become available\\
 
 \bigskip
 
-Most applications do not need to use all of these options to operate;
-using a few modes would be sufficient. In a fast sender slow receiver
+Most applications use only a few of these modes. In a fast sender slow receiver
 application for example, the sender would block when the queue is full
 and unblock when the queue is empty (using
 \textsf{@{\textgreater}{\textgreater}}). The receiver

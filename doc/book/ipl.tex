@@ -19,25 +19,23 @@ extensions, while LPATH directories are searched for
 \$include{\textquotesingle}d \index{source code}source code files with
 the .icn extension.
 
-The complete Icon Program Library consists of approximately 20
+The Icon Program Library consists of approximately 20
 directories of code, data, and supporting documentation. This material
 is included in its entirety in the Unicon distributions. Documenting
-the entire library would require many hundreds of pages; furthermore,
-it is a moving target. New library modules are written all the time.
+the entire library would require many hundreds of pages.
 This appendix serves as a reference summary. It presents details for
-selected modules and programs that are among the most useful, general,
-and portable components the IPL has to offer. In our opinion they
-constitute a {\textquotedbl}Best of the Icon Program
-Library{\textquotedbl} collection worthy of greater attention, and we
-hope this appendix results in more use of the IPL. The initials of each
-author are included in the module description. A list of
-authors{\textquotesingle} names appears at the end of the appendix. We
-have no doubt overlooked some excellent library modules and programs in
-this selection process, and for that we apologize. \ The entries in
-this appendix loosely follow this template:
+the most useful, general,
+and portable components of the IPL, a sort of
+{\textquotedbl}Best of the Icon Program
+Library{\textquotedbl} collection of potential value to other programmers.
+Many modules were written by Icon creator Ralph Griswold; if he was not
+the author of a given module,
+the initials of authors are included in the module description. A list of
+authors{\textquotesingle} names appears at the end of the appendix. This
+appendix no doubt overlooks some excellent library modules and programs.
+The entries in this appendix loosely follow this template:
 
-{\sffamily\bfseries
-filename}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filename}}
 
 Each module has one or more paragraphs of general description, ending
 with the authors{\textquotesingle} initials in parentheses. After the
@@ -63,8 +61,7 @@ module in this directory is a collection of one or more procedures.
 Some modules also introduce record types or use global variables that
 are of interest to programmers that use the module.
 
-{\sffamily\bfseries
-adlutils}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{adlutils}}
 
 This module is for programs that process address lists: Addresses are
 represented using a record type \texttt{label}. Procedures for
@@ -77,60 +74,54 @@ input\\
 \textsf{get\_country(label) : string} produces the country from an
 address\\
 \textsf{get\_state(label) : string} produces the state from an address,
-or \textsf{{\textquotedbl}XX{\textquotedbl}} if no state is
-found\\
-\textsf{get\_city(label) : string} produces the city from an
-address\\
-\textsf{get\_zipcode(label) : string} produces the city from an
-address\\
+or \textsf{{\textquotedbl}XX{\textquotedbl}} if no state \\
+\ \ \ \ \ \ \ \ \ \ is found\\
+\textsf{get\_city(label) : string} produces the city from an address\\
+\textsf{get\_zipcode(label) : string} produces the city from an address\\
 \textsf{get\_lastname(label) : string} get last name\\
 \textsf{get\_namepfx(label) : string} get name prefix\\
 \textsf{get\_title(label) : string} get name title\\
 \textsf{format\_country(string) : string} format country name using
 initial capital letters.
 
-Links: lastname, io, namepfx, title (REG)
+Links: lastname, io, namepfx, title 
 
-{\sffamily\bfseries
-ansi }
+% {\sffamily\bfseries ansi }
+% 
+% This module implements a subset of the \index{ANSI terminal}ANSI
+% terminal control sequences. The procedures{\textquotesingle} names are
+% taken directly from the ANSI names. To use these routines with non-ANSI
+% devices, link in \textsf{iolib} and (optionally) \textsf{iscreen}. Not
+% all ANSI terminals support even the limited subset of control sequences
+% included in this file. (REG, RLG)
+% 
+% \textsf{CUB(i:integer)} moves the cursor left i columns\\
+% \textsf{CUD(i:integer)} moves the cursor down i rows\\
+% \textsf{CUF(i:integer)}\ \ moves the cursor right i columns\\
+% \textsf{CUP(i:integer,j:integer)} moves the cursor to row i, column
+% j\\
+% \textsf{CUU(i:integer)} moves the cursor up i rows\\
+% \textsf{ED(i:integer:2)} erases \index{screen}screen: i = 0: \ to end; i
+% = 1: from beginning; i = 2, all\\
+% \textsf{EL(i:integer:0)} erases current row: i = 0: to end; i = 1: from
+% beginning; i = 2, all\\
+% \textsf{SGR(i:integer:0)} sets \index{attribute!video}video attributes:
+% 0:off; 1:bold; 4:underline; 5:blink; 7:reverse 
 
-This module implements a subset of the \index{ANSI terminal}ANSI
-terminal control sequences. The procedures{\textquotesingle} names are
-taken directly from the ANSI names. To use these routines with non-ANSI
-devices, link in \textsf{iolib} and (optionally) \textsf{iscreen}. Not
-all ANSI terminals support even the limited subset of control sequences
-included in this file. (REG, RLG)
-
-\textsf{CUB(i:integer)} moves the cursor left i columns\\
-\textsf{CUD(i:integer)} moves the cursor down i rows\\
-\textsf{CUF(i:integer)}\ \ moves the cursor right i columns\\
-\textsf{CUP(i:integer,j:integer)} moves the cursor to row i, column
-j\\
-\textsf{CUU(i:integer)} moves the cursor up i rows\\
-\textsf{ED(i:integer:2)} erases \index{screen}screen: i = 0: \ to end; i
-= 1: from beginning; i = 2, all\\
-\textsf{EL(i:integer:0)} erases current row: i = 0: to end; i = 1: from
-beginning; i = 2, all\\
-\textsf{SGR(i:integer:0)} sets \index{attribute!video}video attributes:
-0:off; 1:bold; 4:underline; 5:blink; 7:reverse 
-
-{\sffamily\bfseries
-apply}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{apply}}
 
 \index{apply()}\textsf{apply(L:list, argument):any} applies a list of
 functions to an argument. An example is
 \textsf{apply([integer,log],10)} which is equivalent to
-\textsf{integer(log(10))}. (REG)
+\textsf{integer(log(10))}. 
 
-{\sffamily\bfseries
-argparse}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{argparse}}
 
 \textsf{argparse(s:string):list} parses \textsf{s} as if it was a
 command line and puts the components in a list, which is returned. At
-present, it does not accept any escape conventions. (REG)
+present, it does not accept any escape conventions. 
 
-{\sffamily\bfseries
-array}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{array}}
 
 This module provides a \index{multidimensional array}multidimensional
 array abstraction with programmer-supplied base indices.
@@ -140,16 +131,14 @@ n-dimensional array with specified lower bounds, upper bounds, and with
 each array element having the given initial value.
 
 \textsf{ref\_array(A, i1, i2, ...)} references the i1-th i2-th ...
-element of A. (REG)
+element of A. 
 
-{\sffamily\bfseries
-asciinam}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{asciinam}}
 
 \texttt{asciiname(s:string):string} returns the mnemonic name of the
 single unprintable ASCII character \texttt{s}. (RJA)
 
-{\sffamily\bfseries
-\index{base64}base64}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{base64}}
 
 This module provides base64 encodings for \index{MIME}MIME (RFC 2045).
 Among other things, this facilitates the writing of programs that read
@@ -160,8 +149,7 @@ its argument.\\
 \texttt{base64decode(string) : string?} returns a base64 decoding of its
 argument. It fails if the string is not base64 encoded. (DAG)
 
-{\sffamily\bfseries
-basename}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{basename}}
 
 \index{basename}\textsf{basename}\textsf{(name, suffix) : string} strips
 off any path information and removes the specified suffix, if present.
@@ -169,10 +157,9 @@ If no suffix is provided, the portion of the name up to the first
 {\textquotedbl}.{\textquotedbl} is returned. It works under at least
 UNIX, MS-DOS, and the Macintosh. (REG, CAS)
 
-{\sffamily\bfseries
-binary}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{binary}}
 
-This collection of procedures supports conversion of Icon data elements
+These procedures support conversion of Icon data elements
 to and from binary data formats. The control procedures \textsf{pack()}
 and \textsf{unpack()} take a format string that controls conversions of
 several values, similar to the \textsf{printf()} C library function.
@@ -233,8 +220,7 @@ data to the packed string.
 it out into a list of values. The template has mostly the same format
 as for \texttt{pack()}. (RJA)
 
-{\sffamily\bfseries
-bincvt}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{bincvt}}
 
 These procedures are for processing of \index{binary data}binary data
 read from a file.
@@ -253,17 +239,15 @@ overflow detection.
 of the raw bits in the low order \texttt{size} bytes of integer
 \texttt{i}. (RJA)
 
-{\sffamily\bfseries
-bitint}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{bitint}}
 
 \texttt{int2bit(i) : string} produces a string with the bit
 representation of \texttt{i}.
 
 \textsf{bit2int(s) : integer} produces an integer corresponding to the
-bit representation \texttt{i}. (REG)
+bit representation \texttt{i}. 
 
-{\sffamily\bfseries
-bitstr, bitstrm}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{bitstr,bitstrm}}
 
 These two modules operate on numeric values represented by strings of an
 arbitrary number of bits, stored without regard to character
@@ -273,75 +257,77 @@ facility can deal with bit strings of arbitrary size.
 record \index{BitString}BitString(s, buffer, bufferBits) represents bit
 strings internally.
 
-\texttt{BitStringPut(bitString, nbits, value:0)} is called with three
-arguments to put bits into a \texttt{BitString}, and called with a
-single argument to obtain the resulting string value. An example
-illustrates how \texttt{BitStringPut()} is used:
+See the header comments atop the source code for the public API and examples
+for these modules.
 
-\iconcode{
-record bit\_value(value, nbits) \\
-... \\
-bitString := BitString({\textquotedbl}{\textquotedbl}) \\
-while value := get\_new\_value() do \# loop to append to string \\
-\>   BitStringPut(bitString, value.nbits, value.value) \\
-resultString := BitStringPut(bitString) \# output any buffered bits
-}
+% \texttt{BitStringPut(bitString, nbits, value:0)} is called with three
+% arguments to put bits into a \texttt{BitString}, and called with a
+% single argument to obtain the resulting string value. An example
+% illustrates how \texttt{BitStringPut()} is used:
 
-\texttt{BitStringPut(bitString)}, as well as producing the complete
-string, pads the buffered string to an even character boundary. This
-can be done during construction of a bit string if the effect is
-desired. The {\textquotedbl}value{\textquotedbl} argument defaults to
-zero.
+% \iconcode{
+% record bit\_value(value, nbits) \\
+% ... \\
+% bitString := BitString({\textquotedbl}{\textquotedbl}) \\
+% while value := get\_new\_value() do \# loop to append to string \\
+% \>   BitStringPut(bitString, value.nbits, value.value) \\
+% resultString := BitStringPut(bitString) \# output any buffered bits
+% }
 
-\textsf{BitStringGet(bitString, n:integer):integer} extracts n bits from
-a BitString and returns them as an integer. An example is the best way
-to show how \textsf{BitStringGet()} is used:
+% \texttt{BitStringPut(bitString)}, as well as producing the complete
+% string, pads the buffered string to an even character boundary. This
+% can be done during construction of a bit string if the effect is
+% desired. The {\textquotedbl}value{\textquotedbl} argument defaults to
+% zero.
 
-\iconcode{
-record bit\_value(value, nbits) \\
-... \\
-bitString := BitString(string\_of\_bits) \\
-while value := BitStringGet(bitString, nbits) do \\
-\>   \# do something with value
-}
+% \textsf{BitStringGet(bitString, n:integer):integer} extracts n bits from
+% a BitString and returns them as an integer. An example is the best way
+% to show how \textsf{BitStringGet()} is used:
 
-\texttt{BitStringGet()} fails when too few bits remain to satisfy a
-request. However, if bits remain in the string, subsequent calls with
-fewer bits requested may succeed. A negative \textit{nbits} value gets
-the value of the entire remainder of the string, to the byte boundary
-at its end.
+% \iconcode{
+% record bit\_value(value, nbits) \\
+% ... \\
+% bitString := BitString(string\_of\_bits) \\
+% while value := BitStringGet(bitString, nbits) do \\
+% \>   \# do something with value
+% }
 
-Module \texttt{bitstrm} provides procedures for reading and writing
-integer values made up of an arbitrary number of bits, stored without
-regard to character boundaries. An example is the best way to show how
-\texttt{BitStreamWrite()} is used:
+% \texttt{BitStringGet()} fails when too few bits remain to satisfy a
+% request. However, if bits remain in the string, subsequent calls with
+% fewer bits requested may succeed. A negative \textit{nbits} value gets
+% the value of the entire remainder of the string, to the byte boundary
+% at its end.
 
-\iconcode{
-record bit\_value(value, nbits) \\
-... \\
-BitStreamWrite() \#initialize \\
-while value := get\_new\_value() do \# loop to output values \\
-BitStreamWrite(outfile, value.nbits, value.value) \\
-BitStreamWrite(outfile) \# output any buffered bits
-}
+% Module \texttt{bitstrm} provides procedures for reading and writing
+% integer values made up of an arbitrary number of bits, stored without
+% regard to character boundaries. An example is the best way to show how
+% \texttt{BitStreamWrite()} is used:
 
-\texttt{BitStreamWrite(outproc)} outputs the complete string and pads
-the output to an even character boundary. This can be done during
-construction of a bit string if the effect is desired. The
-\textit{value} argument defaults to zero. \texttt{BitStreamRead()} is
-illustrated by the following example:
+% \iconcode{
+% record bit\_value(value, nbits) \\
+% ... \\
+% BitStreamWrite() \#initialize \\
+% while value := get\_new\_value() do \# loop to output values \\
+% BitStreamWrite(outfile, value.nbits, value.value) \\
+% BitStreamWrite(outfile) \# output any buffered bits
+% }
 
-\iconcode{
-BitStreamRead() \\
-while value := BitStreamRead(infile, nbits) do \\
-\>   \# do something with value
-}
+% \texttt{BitStreamWrite(outproc)} outputs the complete string and pads
+% the output to an even character boundary. This can be done during
+% construction of a bit string if the effect is desired. The
+% \textit{value} argument defaults to zero. \texttt{BitStreamRead()} is
+% illustrated by the following example:
 
-\texttt{BitStringRead()} fails when too few bits remain to satisfy a
-request. (RJA)
+% \iconcode{
+% BitStreamRead() \\
+% while value := BitStreamRead(infile, nbits) do \\
+% \>   \# do something with value
+% }
 
-{\sffamily\bfseries
-bufread}
+% \texttt{BitStringRead()} fails when too few bits remain to satisfy a
+% request. (RJA)
+
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{bufread}}
 
 These procedures provide lookahead within an open file. The procedures
 \texttt{bufopen()}, \texttt{bufread()}, and \texttt{bufclose()} mirror
@@ -358,7 +344,7 @@ have previously called \texttt{bufopen()} on it.
 line from file \texttt{f} without changing the next record to be read
 by \texttt{bufread()}.
 
-bufclose(f:\&input): file close file f.
+\texttt{bufclose(f:\&input): file} close file f.
 
 In addition to processing the current line, one may process subsequent
 lines \textbf{before} they are logically read: Example:
@@ -382,8 +368,7 @@ bufclose(file)
 In the code above, calls to \texttt{bufnext()} do not affect subsequent
 \texttt{bufread()}{\textquotesingle}s. (CAS)
 
-{\sffamily\bfseries
-calls}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{calls}}
 
 These procedures deal with \index{procedure invocation}procedure
 invocations that are encapsulated in records.
@@ -406,24 +391,22 @@ table of calls (all to procedure p) out to a file. The format is
 \textsf{read\_calltable(f:file) : table} reads a call table file into a
 table.
 
-Links: \texttt{ivalue}, \texttt{procname}. (REG)
+Links: \texttt{ivalue}, \texttt{procname}. 
 
-{\sffamily\bfseries
-capture}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{capture}}
 
 \texttt{capture(f:file)} replaces \texttt{write()}, \texttt{writes()},
 and \texttt{stop()} with procedures that echo those elements that are
 sent to \texttt{\&output} to the file \texttt{f}.
 
 \texttt{uncaptured\_write(s:string...)},
-\texttt{uncaptured\_writes(s:string...)} and
+\texttt{uncaptured\_writes(s:string...)} and \linebreak
 \texttt{uncaptured\_stop(s:string...)} allow output to be directed to
 \texttt{\&output} without echoing to the capture file. These are handy
 for placing progress messages and other comforting information on the
 screen. (DAG)
 
-{\sffamily\bfseries
-caseless}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{caseless}}
 
 These procedures are analogous to the standard string-analysis functions
 except that uppercase letters are considered equivalent to lowercase
@@ -458,8 +441,7 @@ longest initial sequence of characters in \textsf{cset(map(c))} within
 positions in \texttt{s} preceding a character of \textsf{cset(map(c))}
 in \textsf{map(s[i1:i2])}. It fails if there is no such position.
 
-{\sffamily\bfseries
-cgi}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{cgi}}
 
 The cgi library provides support for development of Common Gateway
 Interface server side web based applications, commonly called
@@ -541,8 +523,7 @@ use the CGI library, its \texttt{main()} initializes things and then
 calls your \texttt{cgimain()} to generate the HTML content body for the
 client{\textquotesingle}s web page. 
 
-{\sffamily\bfseries
-codeobj}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{codeobj}}
 
 This module provides a way of storing Icon values as strings and
 retrieving them.
@@ -565,10 +546,9 @@ characters in a way that is safe to write to a file and read it back.
 
 Links: \textsf{escape}, \textsf{gener}, \textsf{procname},
 \textsf{typecode}. Requires: co-expressions. See also:
-\texttt{object.icn}. (REG)
+\texttt{object.icn}. 
 
-{\sffamily\bfseries
-colmize}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{colmize}}
 
 \texttt{colmize(L:list,mx:80,sp:2,mi:0,tag,tagsp:2,tagmi:0,roww,dist) :
 string*} arranges a number of data items (from list of strings
@@ -581,8 +561,7 @@ down the first column, then down the second, etc. \texttt{colmize()}
 goes to great lengths to print the items in as few vertical lines as
 possible. (RJA)
 
-{\sffamily\bfseries
-complete}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{complete}}
 
 \index{complete()}\texttt{complete(s:string,st) : string*} lets you
 supply a partial string, \texttt{s}, and get back those strings in
@@ -605,15 +584,14 @@ while line := read(\&input) do \{ \\
 \>   \}
 }
 
-{\sffamily\bfseries
-complex}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{complex}}
 
 The following procedures perform operations on \index{complex
-numbers}complex numbers. (REG)
+numbers}complex numbers. 
 
-\textsf{record complex(r,i)} creates a complex number with real part r
+\noindent \textsf{record complex(r,i)} creates a complex number with real part r
 and imaginary part i\\
-\textsf{cpxadd(x1,x2) : complex} add complex numbers \texttt{x1} and
+\texttt{cpxadd(x1,x2) : complex} add complex numbers \texttt{x1} and
 \texttt{x2}\\
 \texttt{cpxdiv(x1,x2) : complex} divide complex number \texttt{x1} by
 complex number \texttt{x2}\\
@@ -625,11 +603,10 @@ from \ \texttt{x1}\\
 representation\\
 \texttt{strcpx(s) : complex} convert string to complex number 
 
-{\sffamily\bfseries
-conffile}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{conffile}}
 
-This module supports the parsing of configuration files into Icon
-structures for easy access. The service is similar to standard
+This module parses configuration files into Icon
+structures for easy access. The service is similar to 
 command-line option handling, except that configuration files can
 contain structured data such as lists or tables. A configuration file
 supplies values for a set of named \textit{directives}. The directives
@@ -693,12 +670,11 @@ WOpen({\textquotedbl}label={\textquotedbl} {\textbar}{\textbar} (
 
 Links: lastc. (DAG)
 
-{\sffamily\bfseries
-convert}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{convert}}
 
 This module contains numeric conversions between
 \index{convert!base}bases. There are several other procedures related
-to conversion that are not yet part of this module. (REG)
+to conversion that are not yet part of this module. 
 
 \texttt{exbase10(i, j) : string} converts base-10 integer i to base
 j.\\
@@ -706,15 +682,13 @@ j.\\
 10.\\
 \texttt{radcon(s, i, j) : integer} converts base-i integer s to base j.
 
-{\sffamily\bfseries
-created}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{created}}
 
 \textsf{created(string) : integer} returns the number of structures of a
 given type that have been created. It artificially increments the
-count, and allocates garbage. Links: \textsf{serial}. (REG)
+count, and allocates garbage. Links: \textsf{serial}. 
 
-{\sffamily\bfseries
-currency}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{currency}}
 
 \textsf{currency(amt, wid:0, neg:{\textquotedbl}-{\textquotedbl},
 frac:2, whole:1, sign:{\textquotedbl}\${\textquotedbl},
@@ -732,8 +706,7 @@ decimal, respectively. The currency \texttt{sign} prefixes the returned
 string. The characters used for decimal point and comma may also be
 supplied. (RJA)
 
-{\sffamily\bfseries
-datecomp}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{datecomp}}
 
 These procedures do simple \index{date comparison}date comparisons. The
 parameters are strings of the form mm/dd/yyyy or
@@ -755,8 +728,7 @@ getday(date:string) : string\ \ \ \ returns the day portion of a
 date.\\
 getyear(date:string) : string\ \ \ \ returns the year portion of a date.
 
-{\sffamily\bfseries
-datefns}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{datefns}}
 
 These date and calendar procedures represent dates using the record type
 defined below. They are adaptations of C functions from
@@ -779,8 +751,7 @@ day number\\
 \textsf{wrdate(leadin, date)} writes a line to \textsf{\&output} with a
 basic date string preceded by a leadin 
 
-{\sffamily\bfseries
-datetime}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{datetime}}
 
 These procedures provide miscellaneous date and time operations. See
 also: \textsf{datefns.icn}. (RJA, REG)
@@ -842,8 +813,7 @@ program.
 \texttt{walltime() : integer} produces the number of seconds since
 midnight. Beware wrap-around when used in programs that span midnight.
 
-{\sffamily\bfseries
-db}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{db}}
 
 These procedures provide an interface to the ODBC database facilities
 that does not require knowledge of SQL. It also provides compatibility
@@ -868,8 +838,7 @@ dbclose(db) is an alias for close()\\
 dbfetch(db) is an alias for fetch()\\
 dbsql(db, query) is an alias for sql()
 
-{\sffamily\bfseries
-dif}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{dif}}
 
 \texttt{dif(strm:list,compare:{\textquotedbl}==={\textquotedbl},eof,group:groupfactor):list*}
 generates \index{diff}differences between input streams. Results are
@@ -912,24 +881,21 @@ items required for file synchronization to occur. The default
 (procedure \texttt{groupfactor()}) is the formula Trunc((2.0 * Log(M))
 + 2.0) where M is the number of unmatched items. (RJA)
 
-{\sffamily\bfseries
-digitcnt}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{digitcnt}}
 
 \texttt{digitcnt(file:\&input) : list} counts the number of each digit
-in a file and returns a ten-element list with the counts. (REG)
+in a file and returns a ten-element list with the counts. 
 
-{\sffamily\bfseries
-ebcdic}
+% \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ebcdic}}
 
-These procedures assist in use of the \index{ASCII}ASCII and
-\index{EBCDIC}EBCDIC character sets, regardless of the native character
-set of the host. For example, \texttt{Ascii128()} returns a 128-byte
-string of ASCII characters in numerical order, replacing
-\texttt{\&ascii} for applications which might run on an EBCDIC host.
-(AB)
+% These procedures assist in use of the \index{ASCII}ASCII and
+% \index{EBCDIC}EBCDIC character sets, regardless of the native character
+% set of the host. For example, \texttt{Ascii128()} returns a 128-byte
+% string of ASCII characters in numerical order, replacing
+% \texttt{\&ascii} for applications which might run on an EBCDIC host.
+% (AB)
 
-{\sffamily\bfseries
-equiv}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{equiv}}
 
 \texttt{equiv(x,y) : any?} tests the equivalence of two values. For
 non-structures, it returns \texttt{x1 === x2}. For structures, the test
@@ -940,10 +906,9 @@ is not quite right if their elements are themselves structures. There
 is no concept of order for tables and sets, yet it is impractical to
 test for equivalence of their elements without imposing an order. Since
 structures sort by {\textquotedbl}age{\textquotedbl}, there may be a
-mismatch between equivalent structures in two tables or sets. (REG)
+mismatch between equivalent structures in two tables or sets. 
 
-{\sffamily\bfseries
-escapesq}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{escapesq}}
 
 These procedures manipulate \index{escape sequence}escape sequences in
 Icon (or C) character string representations. (RJA)
@@ -958,8 +923,7 @@ string representation) to the string it represents. For example,
 produces the string \textsf{{\textquotedbl}cat{\textquotedbl}}.\\
 \textsf{quotedstring()} matches a complete quoted string.
 
-{\sffamily\bfseries
-eval}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{eval}}
 
 \index{eval()}\texttt{eval(string) : any*} analyzes a string
 representing an Icon function or procedure call and evaluates the
@@ -969,10 +933,9 @@ handle nested expressions or control structures. It assumes the string
 is well formed. The arguments can only be Icon literals. Escapes,
 commas, and parentheses in string literals are not handled. In the case
 of operators that are both unary and binary, the binary form is used.
-Links: \texttt{ivalue}. (REG)
+Links: \texttt{ivalue}. 
 
-{\sffamily\bfseries
-evallist}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{evallist}}
 
 \textsf{evallist(expr, n, ucode, ...) : list} takes an expression,
 produces a program encapsulating it, and puts the results written by
@@ -980,10 +943,9 @@ the program in a list. \textsf{expr} is an expression (normally a
 generator); \texttt{n} is the maximum size of the list, and the
 trailing arguments are ucode files to link with the expression.
 Requires: \texttt{system()}, \texttt{/tmp}, pipes. Links:
-\texttt{exprfile}. (REG)
+\texttt{exprfile}. 
 
-{\sffamily\bfseries
-everycat}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{everycat}}
 
 \textsf{everycat(x1, x2, ...) : string*} generates the concatenation of
 every string from !x1, !x2, ... For example, if first :=
@@ -997,10 +959,9 @@ Roberts. x1, x2, ... can be any values for which !x1, !x2, ... produce
 values convertible to strings. In the example above, the second
 argument is a one-character string \texttt{{\textquotedbl}
 {\textquotedbl}}, so that \texttt{!{\textquotedbl} {\textquotedbl}}
-generates a single blank. (REG)
+generates a single blank. 
 
-{\sffamily\bfseries
-exprfile}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{exprfile}}
 
 \texttt{exprfile(exp, link, ...) : file} produces a pipe to a program
 that writes all the results generated by \texttt{exp}. The trailing
@@ -1015,10 +976,9 @@ of executing the expression contained in the lists \texttt{expr\_list}
 with the specified links.
 
 Requires: \texttt{system()}, pipes, \texttt{/tmp}. Links: \texttt{io}.
-(REG)
 
-{\sffamily\bfseries
-factors}
+
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{factors}}
 
 This file contains procedures related to factorization and prime
 numbers.
@@ -1050,12 +1010,9 @@ Requires: Large-integer arithmetic and prime.lst for
 \texttt{primel()}.\\
 Links: \texttt{io}, \texttt{numbers}. (REG, GMT)
 
-{\sffamily\bfseries
-fastfncs}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fastfncs}}
 
-These procedures implement integer-values using the fastest method known
-to the author. {\textquotedbl}Fastest{\textquotedbl} does not mean
-{\textquotedbl}fast{\textquotedbl}.
+These procedures implement integer-values using a best known method.
 
 \texttt{acker(i, j)}\ \ Ackermann{\textquotesingle}s function\\
 \texttt{fib(i)}\ \ \ \ Fibonacci sequence\\
@@ -1065,20 +1022,18 @@ sequence\\
 \texttt{robbins(i)}\ \ Robbins numbers
 
 See also: iterfncs.icn, memrfncs.icn, recrfncs.icn. Links: factors,
-memrfncs. (REG)
+memrfncs. 
 
-{\sffamily\bfseries
-filedim}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filedim}}
 
 \texttt{filedim(s, p) : textdim} computes the number of rows and maximum
 column width of the file named \texttt{s}. The procedure \texttt{p},
 which defaults to \texttt{detab}, is applied to each line. For example,
 to have lines left as is, use \texttt{filedim(s, 1)}. The return value
 is a record that uses the declaration \texttt{record textdim(cols,
-rows)}. (REG)
+rows)}. 
 
-{\sffamily\bfseries
-filenseq}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filenseq}}
 
 \texttt{nextseqfilename(dir, pre, ext) : string?} is useful when you
 need to create the next file in a series of files (such as successive
@@ -1089,8 +1044,7 @@ returns the (non-existent) filename next in the sequence
 \texttt{.{\textbackslash}.*.log} (where the * represents 1, 2, 3, ...)
 or fails Requires: MS-DOS or a more congenial operating system. \ (DAG)
 
-{\sffamily\bfseries
-findre}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{findre}}
 
 \textsf{findre(s1,s2,i,j) : integer*} is like the built-in function
 \textsf{find()}, except its first argument is a \index{regular
@@ -1148,8 +1102,7 @@ or \textsf{{\textquotedbl}cde{\textquotedbl},}\\
 beginning with \textsf{{\textquotedbl}abc{\textquotedbl}} or ending in
 \textsf{{\textquotedbl}cde{\textquotedbl}})
 
-{\sffamily\bfseries
-gauss}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gauss}}
 
 \textsf{gauss\_random(x, f)} produces a \index{Gaussian
 distribution}Gaussian distribution about the value \texttt{x}.
@@ -1159,8 +1112,7 @@ value within a Gaussian distribution about 0.0. (Sum 12 random numbers
 between 0 and 1, (expected mean is 6.0) and subtract 6 to center on 0.0
 \ (SBW)
 
-{\sffamily\bfseries
-gdl, gdl2}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gdl, gdl2}}
 
 \texttt{gdl(dir:string) : list} returns a list containing everything in
 a directory. You\\
@@ -1174,10 +1126,9 @@ nonnull, the UNIX {\textquotedbl}find{\textquotedbl} program\\
  \ \ \ \ is used; otherwise the {\textquotedbl}ls{\textquotedbl} program
 is used. Requires: UNIX or MS-DOS. (RLG)
 
-{\sffamily\bfseries
-gener}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gener}}
 
-These procedures generate sequences of results. (REG)
+These procedures generate sequences of results. 
 
 \texttt{days() : string*} produces the \index{days of the week}days of
 the week, starting with
@@ -1197,8 +1148,7 @@ star(s)}\index{string!closure}closure of \texttt{s} starting with the
 empty string and\\
  \ \ \ \ continuing in lexical order as given in \texttt{s} 
 
-{\sffamily\bfseries
-genrfncs}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{genrfncs}}
 
 These procedures generate various mathematical
 \index{sequences}sequences of results. Too many are included to list
@@ -1230,10 +1180,9 @@ with the empty string and\\
  \ \ \ \ continuing in lexical order as given in s
 
 Requires: co-expressions. Links: \texttt{io}, \texttt{fastfncs},
-\texttt{partit}, \texttt{numbers}. (REG)
+\texttt{partit}, \texttt{numbers}. 
 
-{\sffamily\bfseries
-getmail}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{getmail}}
 
 \textsf{getmail(x):message\_rec*} reads an Internet \index{mail folder,
 read}mail folder and generates a sequence of records, one per message,
@@ -1249,8 +1198,7 @@ stored in a list, the records may be sorted by individual components
 (like sender, \_date, \_subject) using the \texttt{sortf()} function.
 (CS)
 
-{\sffamily\bfseries
-getpaths}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{getpaths}}
 
 \texttt{getpaths(args[]) : string*} generates the paths supplied as
 arguments followed by those paths in the PATH \index{environment
@@ -1265,8 +1213,7 @@ succeeds in finding an existing, readable file.
 
 Requires: UNIX or MS-DOS. (RLG)
 
-{\sffamily\bfseries
-graphpak}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{graphpak}}
 
 The procedures here use sets to represent directed \index{graph}graphs.
 See {\textquotedbl}The Icon Programming Language{\textquotedbl}, third
@@ -1289,10 +1236,9 @@ record graph(nodes:list, lookup:table) represents a graph\\
 read\_graph(f:file) : graph reads a graph from a file\\
 write\_graph(g:graph, f:file) : null writes a graph to a file\\
 closure(node) : set computes the transitive closure of a node.
-\ \ \ \ \ \ (REG)
+\ \ \ \ \ \ 
 
-{\sffamily\bfseries
-hexcvt}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{hexcvt}}
 
 \texttt{hex(s) : integer} converts a string of hex digits into an
 integer.\\
@@ -1302,8 +1248,7 @@ supplied, a minimum of n digits appears in the result; otherwise there
 is no minimum, and negative values are indicated by a minus sign. If lc
 is non-null, lowercase characters are used instead of uppercase. (RJA)
 
-{\sffamily\bfseries
-html}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{html}}
 
 These procedures assist in processing HTML files:
 
@@ -1321,8 +1266,7 @@ tag.\\
 \textsf{urlmerge(base,new) : string} interprets a new URL in the context
 of a base URL. (GMT)
 
-{\sffamily\bfseries
-ichartp}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ichartp}}
 
 \texttt{ichartp} implements a simple \index{chart parser}chart
 \index{parse}parser - a slow but easy-to-implement strategy for parsing
@@ -1345,15 +1289,13 @@ included along with BNF rules using the same notation as for Icon code
 Links: \textsf{trees, rewrap, scan, strip, stripcom, strings}. Requires:
 co-expressions. (RLG)
 
-{\sffamily\bfseries
-iftrace}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iftrace}}
 
 These procedures \index{trace}trace Icon functions by using procedure
 wrappers to call the functions. iftrace(fncs[]) sets tracing for a list
 of function names. Links: \texttt{ifncs}. (SBW, REG)
 
-{\sffamily\bfseries
-image}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{image}}
 
 \texttt{Image(x, style:1) : string} generalizes the function
 \texttt{image(x)}, providing detailed information about structures. The
@@ -1372,15 +1314,13 @@ is encountered, it is imaged as the tag followed by a colon, followed
 by a representation of the structure. If the same structure is
 encountered again, only the tag is given. (MG, REG, DY)
 
-{\sffamily\bfseries
-inbits}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{inbits}}
 
 \texttt{inbits(file,len:integer) : integer} re-imports data converted
 into writable form by \texttt{outbits()}. See also:
 \texttt{outbits.icn}. (RLG)
 
-{\sffamily\bfseries
-indices}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{indices}}
 
 \texttt{indices(spec:list, last) : list} produces a list of the integers
 given by the specification \texttt{spec}, which is a comma separated
@@ -1395,10 +1335,9 @@ indices need not be in order, as in \texttt{{\textquotedbl}3-10,
 1,...{\textquotedbl}}. Empty values, as in
 \texttt{{\textquotedbl}10,,12{\textquotedbl}} are ignored.
 \texttt{indices()} fails if the specification is syntactically
-erroneous or if it contains a value less than 1. (REG)
+erroneous or if it contains a value less than 1. 
 
-{\sffamily\bfseries
-inserts}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{inserts}}
 
 \texttt{inserts(table,key,value) : table} inserts values into a table in
 which the same key can have more than one value (i.e.,
@@ -1406,8 +1345,7 @@ which the same key can have more than one value (i.e.,
 list of inserted values. The table must be created with default value
 \texttt{\&null}. (RJA)
 
-{\sffamily\bfseries
-intstr}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{intstr}}
 
 \textsf{intstr(i:integer,size:integer) : string} produces a string
 consisting of the raw bits in the low order \texttt{size} bytes of
@@ -1418,8 +1356,7 @@ integers larger than the implementation defined word size due to the
 shifting in of zero-bits from the left in the right shift operation.
 (RJA)
 
-{\sffamily\bfseries
-io}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{io}}
 
 These procedures provide facilities for handling \index{input}input,
 \index{output}output, and \index{file}files. Some require
@@ -1514,8 +1451,7 @@ suffix:{\textquotedbl}{\textquotedbl},
 path:{\textquotedbl}.{\textquotedbl}, len:8)} produces the name of a
 temporary file.
 
-{\sffamily\bfseries
-iolib}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iolib}}
 
 This library provides control functions for text terminals, primarily
 ANSI and VT-100 devices under UNIX and MS-DOS. MS-DOS users must add
@@ -1565,8 +1501,7 @@ screen, \textsf{iputs(getval({\textquotedbl}cl{\textquotedbl}))}
 Requires: UNIX or MS-DOS, co-expressions. See also: iscreen.icn. (RLG,
 NA)
 
-{\sffamily\bfseries
-iscreen}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iscreen}}
 
 This file contains some rudimentary screen functions for use with
 \texttt{iolib.icn}.
@@ -1592,8 +1527,7 @@ left-, or right-justifies, depending on the value,
 
 Requires: UNIX or MS-DOS. Links: \texttt{iolib}. (RLG)
 
-{\sffamily\bfseries
-isort}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{isort}}
 
 \textsf{i}\index{sort}\textsf{sort}\textsf{(x,keyproc,y) : list} is a
 customizable sort procedure. \texttt{x} can be any Icon data type that
@@ -1610,8 +1544,7 @@ which case it specifies a subscript to be applied to each item to
 produce a key. \texttt{keyproc} will be called once for each element of
 structure \texttt{x}. (RJA)
 
-{\sffamily\bfseries
-itokens}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itokens}}
 
 \textsf{itokens(file, nostrip) : TOK*} breaks Icon source files up into
 tokens for use in things like pretty printers, preprocessors, code
@@ -1638,8 +1571,7 @@ identifier token.
 
 Links: \texttt{scan}. Requires: co-expressions. (RLG)
 
-{\sffamily\bfseries
-ivalue}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ivalue}}
 
 \textsf{ivalue(s):any} turns a string from \textsf{image()} into the
 corresponding Icon value. It can handle integers, real numbers,
@@ -1653,27 +1585,24 @@ The values produced for non-constant keywords are, of course, the
 values they have in the environment in which \textsf{ivalue()} is
 evaluated. \textsf{ivalue()} handles non-local variables
 (\textsf{image()} does not produce these), but they must be present in
-the environment in which \textsf{ivalue()} is evaluated. (REG)
+the environment in which \textsf{ivalue()} is evaluated. 
 
-{\sffamily\bfseries
-jumpque}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{jumpque}}
 
 \textsf{jumpque(}\index{queue}\textsf{queue}\textsf{:list,y):list} moves
 \textsf{y} to the head if it is in the queue; otherwise it adds
 \texttt{y} to the head of the queue. A copy of the queue is returned.
-(REG)
 
-{\sffamily\bfseries
-kmap}
+
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{kmap}}
 
 \textsf{kmap(string) : string} maps uppercase letters and the control
 modifier key in combination with letters into the corresponding
 lowercase letters. It is for graphic applications in which the modifier
 keys for shift and control are encoded in \index{keyboard}keyboard
-events. (REG)
+events. 
 
-{\sffamily\bfseries
-lastc}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lastc}}
 
 These string scanning functions follow standard conventions for
 defaulting the last three parameters to the current scanning
@@ -1695,24 +1624,21 @@ i2:integer) : integer*} generates the sequence of positions in
 preceded and followed by the empty string or a member of \textsf{c1}
 and \textsf{c2, respectively}.
 
-{\sffamily\bfseries
-lastname}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lastname}}
 
 \textsf{lastname(s:string) : string} produces the last name in string
 \textsf{s}, which must be a name in conventional form. Obviously, it
-doesn{\textquotesingle}t work for every possibility. (REG)
+doesn{\textquotesingle}t work for every possibility. 
 
-{\sffamily\bfseries
-list2tab}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{list2tab}}
 
 \textsf{list2tab(list) : null} writes a list as a tab-separated string
 to \textsf{\&output}. Carriage returns in files are converted to
 vertical tabs.
 
-See also: tab2list.icn, tab2rec.icn, rec2tab.icn. (REG)
+See also: tab2list.icn, tab2rec.icn, rec2tab.icn. 
 
-{\sffamily\bfseries
-lists}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lists}}
 
 Many of these procedures implement \index{list functions}list functions
 similar to string functions, including an implementation of
@@ -1881,8 +1807,7 @@ assign \textsf{L2 :=
 
 Links: \texttt{indices}. See also: \texttt{structs.icn}. (REG, RLG)
 
-{\sffamily\bfseries
-loadfile}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{loadfile}}
 
 \texttt{loadfile(exp, link,...)} creates and loads a program that
 generates the results of exp. The trailing arguments name link files
@@ -1890,10 +1815,9 @@ needed for the expression. \texttt{loadfile()} returns a procedure that
 generates the results.
 
 Requires: MT-Icon, \texttt{system()}, pipes, \texttt{/tmp}. Links:
-\texttt{io}. (REG)
+\texttt{io}. 
 
-{\sffamily\bfseries
-longstr}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{longstr}}
 
 String scanning function \texttt{longstr(l,s,i,j) : integer?} works like
 \texttt{any()}, except that instead of taking a cset as its first
@@ -1902,15 +1826,13 @@ Returns \texttt{i + *x}, where \texttt{x} is the \index{longest
 match}longest string in \texttt{l} for which \texttt{match(x,s,i,j)}
 succeeds, if there is such an \texttt{x}. (JN,SBW,KW,RJA,RLG)
 
-{\sffamily\bfseries
-lrgapprx}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lrgapprx}}
 
 \texttt{lrgapprx(i) : string} produces an approximate of an integer
 value in the form \texttt{i.jx10\^{}k}. It is primarily useful for
-large integers. (REG)
+large integers. 
 
-{\sffamily\bfseries
-lu}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lu}}
 
 \texttt{lu\_decomp(M, I) : real?} performs \index{LU decomposition}LU
 decomposition on the square matrix \texttt{M} using the vector
@@ -1931,19 +1853,17 @@ Acknowledgement: These procedures are based on algorithms given in
 {\textquotedbl}Numerical Recipes; The Art of Scientific
 Computing{\textquotedbl}; William H. Press, Brian P. Flannery, Saul A.
 Teukolsky, and William T. Vetterling; Cambridge University Press, 1986.
-(REG)
 
-{\sffamily\bfseries
-mapbit}
+
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mapbit}}
 
 \texttt{mapbit(s:string) : string} produces a string of zeros and ones
 corresponding to the bit patterns for the characters of s. For example,
 \texttt{mapbit({\textquotedbl}Axe{\textquotedbl})} produces
 \texttt{{\textquotedbl}010000010111100001100101{\textquotedbl}}. Links:
-\texttt{strings}. (REG)
+\texttt{strings}. 
 
-{\sffamily\bfseries
-mapstr}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mapstr}}
 
 \texttt{mapstrs(string, l1:list, l2:list) : string} works like
 \texttt{map()}, except that instead of taking ordered character
@@ -1972,8 +1892,7 @@ approach, so that replacing
 
 Links: \texttt{longstr}. (RLG)
 
-{\sffamily\bfseries
-math}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{math}}
 
 \texttt{binocoef(n:integer, k:integer) : integer?} produces the
 \index{binomial coefficient}binomial coefficient \texttt{n} over
@@ -1986,10 +1905,9 @@ functions}hyperbolic cosine of \texttt{r}.\\
 \texttt{tanh(r:real) : real} produces the hyperbolic tangent of
 \texttt{r}.
 
-Links: \texttt{factors}. (REG)
+Links: \texttt{factors}. 
 
-{\sffamily\bfseries
-matrix}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{matrix}}
 
 This file contains procedures for \index{matrix manipulation}matrix
 manipulation. Matrices (arguments beginning with M) are represented as
@@ -2019,8 +1937,7 @@ of \texttt{M1} and \texttt{M2.}\\
 
 Links: \texttt{lu}. (SBW, REG)
 
-{\sffamily\bfseries
-memlog}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{memlog}}
 
 \texttt{memlog(f:\&output) : integer} writes a message to file
 \texttt{f} recording the current memory usage in the string and block
@@ -2029,16 +1946,14 @@ reserved, and number of collections. \texttt{memlog()} does not perturb
 the figures: it requires no allocation itself. \texttt{memlog()}
 returns the total current usage. (GMT)
 
-{\sffamily\bfseries
-morse}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{morse}}
 
 \texttt{morse(s:string) : string} converts \texttt{s} to its
 \index{Morse code}Morse code equivalent. The version used is known both
 as International Morse Code and as Continental Code, and is used by
 radio amateurs (hams). (REG, RM)
 
-{\sffamily\bfseries
-mset}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mset}}
 
 \texttt{same\_value(d1,d2) : ? \ }\ \ \ compares \texttt{d1} and
 \texttt{d2} for structural equivalence.\\
@@ -2052,8 +1967,7 @@ equivalent) from \texttt{S}.
 The mset module implements set operations in which no two identical
 (structurally equivalent) values can be present in a set. (JPR)
 
-{\sffamily\bfseries
-namepfx}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{namepfx}}
 
 \texttt{namepfx(s:string) : string} produces the {\textquotedbl}name
 prefix{\textquotedbl} from a name in standard form -{}- omitting any
@@ -2061,10 +1975,9 @@ title, but picking up the first name and any initials.
 \texttt{namepfx()} only knows how to omit common titles found in module
 \texttt{titleset}. Obviously, it can{\textquotesingle}t always produce
 the {\textquotedbl}correct{\textquotedbl} result. Links:
-\texttt{lastname}, \texttt{titleset}. (REG)
+\texttt{lastname}, \texttt{titleset}. 
 
-{\sffamily\bfseries
-ngrams}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ngrams}}
 
 \texttt{ngrams(file,n,c:\&letters,t) : string*} generates a tabulation
 of the n-grams in the specified file. If \texttt{c} is non-null, it is
@@ -2072,10 +1985,9 @@ used as the set of characters from which \index{n-grams}n-grams are
 taken (other characters break n-grams). If \texttt{t} is non-null, the
 tabulation is given in order of frequency; otherwise in alphabetical
 order of n-grams. Note: This procedure is unsuitable if there are very
-many different n-grams. (REG)
+many different n-grams. 
 
-{\sffamily\bfseries
-numbers}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{numbers}}
 
 These procedures format numbers in various ways:
 
@@ -2130,16 +2042,14 @@ English.\\
 
 Links: \texttt{strings}. (REG, RJA, RLG, TK)
 
-{\sffamily\bfseries
-openchk}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{openchk}}
 
 \texttt{OpenCheck()} causes subsequent opens and closes to write
 diagnostic information to \texttt{\&errout}. Useful for diagnosing
 situations where many files are opened and closed and there is a
 possibility that some files are not always being closed. (DAG)
 
-{\sffamily\bfseries
-options}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{options}}
 
 \texttt{options(args:list, opt:string, err:stop) : table} separates,
 interprets, and removes UNIX-style \index{options, command-line}command
@@ -2206,8 +2116,7 @@ called, \texttt{options()} immediately returns the outcome of
 \texttt{errproc()}, without processing further arguments. Already
 processed arguments will have been removed from args.
 
-{\sffamily\bfseries
-outbits}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{outbits}}
 
 \texttt{outbits(i:integer, len:integer) string*} fits variable and/or
 non-byte-sized blocks into standard 8-bit bytes. \texttt{outbits()}
@@ -2244,8 +2153,7 @@ Note that \texttt{outbits()} is a \index{generator}generator, while
 
 See also: \texttt{inbits.icn}. (RLG)
 
-{\sffamily\bfseries
-packunpk}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{packunpk}}
 
 \texttt{pack(num:i,width:i):string} produces a binary-coded decimal
 representation\\
@@ -2261,8 +2169,7 @@ back into its\\
 
 Links: \texttt{convert.} (CT, RLG)
 
-{\sffamily\bfseries
-partit}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{partit}}
 
 \texttt{partit(i,min:i,max:i):L*} generates the partitions of
 \texttt{i}; that is the ways that \texttt{i\\
@@ -2273,10 +2180,9 @@ partitions.\\
 \texttt{fibpart(i):L} returns a list of Fibonacci numbers that is a
 partition of \texttt{i}.
 
-Links: \texttt{fastfncs}, \texttt{numbers}. (REG)
+Links: \texttt{fastfncs}, \texttt{numbers}. 
 
-{\sffamily\bfseries
-patterns}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{patterns}}
 
 This module provides string scanning procedure equivalents for most
 \index{SNOBOL4}SNOBOL4 \index{patterns, SNOBOL4}patterns and some
@@ -2345,33 +2251,29 @@ can be transliterated into
 {\textbar}{\textbar} (lit {\textless}- Len(n))}
 
 Concatenation of components is necessary to preserve the
-pattern-matching properties of SNOBOL4. (REG)
+pattern-matching properties of SNOBOL4. 
 
-{\sffamily\bfseries
-patword}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{patword}}
 
 \textsf{patword(s:string) : string} returns a letter pattern in which
 each different character in \texttt{s} is assigned a letter. For
 example, \textsf{patword({\textquotedbl}structural{\textquotedbl})}
 returns \textsf{{\textquotedbl}abcdebdcfg{\textquotedbl}}. (KW)
 
-{\sffamily\bfseries
-phoname}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{phoname}}
 
 \textsf{phoname(telno:string) : string*} generates the letter
 combinations corresponding to the digits in a telephone number. The
 number of possibilities is very large. This procedure should be used in
 a context that limits or filters its output. (TRH)
 
-{\sffamily\bfseries
-plural}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{plural}}
 
 \texttt{plural(word:string) : string} produces the \index{plural
 form}plural form of a singular English noun. The procedure here is
-rudimentary and is not correct in all cases. (REG)
+rudimentary and is not correct in all cases. 
 
-{\sffamily\bfseries
-polystuf}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{polystuf}}
 
 These procedures are for creating and performing operations on
 single-variable \index{polynomials}polynomials (like ax\^{}2 + bx + c).
@@ -2399,8 +2301,7 @@ pair into a string.\\
 \textsf{poly\_string(p) : string} returns the string representation of
 an entire polynomial. 
 
-{\sffamily\bfseries
-printcol}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printcol}}
 
 printcol(items, fields, title:{\textquotedbl}{\textquotedbl},
 pagelength:30000, linelength:80, auxdata) deals with the problem of
@@ -2467,8 +2368,7 @@ as a column heading (the item name).
 \textsf{auxdata}: arbitrary auxiliary data to be passed to the field
 procedures -{}- see {\textasciigrave}fields{\textquotesingle}, above.
 
-{\sffamily\bfseries
-printf}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printf}}
 
 This module provides Icon versions of the
 \index{printf()}\texttt{printf()} family of formatted output functions
@@ -2490,8 +2390,7 @@ than the largest integer plus one. Left or right justification and
 field width control are provided as in \texttt{printf()}. \texttt{\%s}
 and \texttt{\%r} handle precision specifications. (WHM, CW, PLT)
 
-{\sffamily\bfseries
-prockind}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{prockind}}
 
 \textsf{prockind(p:procedure) : string?} produces a code for the kind of
 the procedure p as follows: \texttt{{\textquotedbl}p{\textquotedbl}}
@@ -2499,10 +2398,9 @@ the procedure p as follows: \texttt{{\textquotedbl}p{\textquotedbl}}
 (built-in) function, \texttt{{\textquotedbl}o{\textquotedbl}} operator,
 \texttt{{\textquotedbl}c{\textquotedbl}} record
 \index{constructor}constructor. It fails if \texttt{p} is not of type
-procedure. (REG)
+procedure. 
 
-{\sffamily\bfseries
-procname}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{procname}}
 
 \textsf{procname(p:procedure, x) : string?} produces the name of a
 procedure (including functions, operators, and record
@@ -2511,10 +2409,9 @@ the result is derived from \textsf{image()} in a relatively
 straightforward way. In the case of operators, the number of arguments
 is appended to the operator symbol. If \texttt{x} is nonnull, the
 result is put in a form that resembles an Icon expression.
-\textsf{procname()} fails if \texttt{p} is not of type procedure. (REG)
+\textsf{procname()} fails if \texttt{p} is not of type procedure. 
 
-{\sffamily\bfseries
-pscript}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{pscript}}
 
 \textsf{epsheader(f, x, y, w, h, flags)} writes an Encapsulated
 PostScript file header and initializes the PostScript coordinate
@@ -2550,8 +2447,7 @@ write(f,x1, {\textquotedbl} {\textquotedbl}, y1, {\textquotedbl} moveto
 {\textquotedbl}showpage{\textquotedbl})
 }
 
-{\sffamily\bfseries
-random}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{random}}
 
 This file contains procedures related to pseudo-random numbers.
 
@@ -2586,8 +2482,7 @@ to hold the shuffled result.
 
 Links: \texttt{factors}. (REG, GMT)
 
-{\sffamily\bfseries
-rational}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{rational}}
 
 These procedures perform arithmetic on \index{rational numbers}rational
 numbers (\index{fractions}fractions):
@@ -2612,10 +2507,9 @@ number \texttt{r1} by \texttt{r2}.\\
 \textsf{reciprat(r:rational) : rational} produces the reciprocal of
 rational number \texttt{r}.
 
-Links: \texttt{numbers}. (REG)
+Links: \texttt{numbers}. 
 
-{\sffamily\bfseries
-readtbl}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{readtbl}}
 
 \texttt{readtbl(f:file) : table} reads \index{SGML}SGML mapping
 information from a file. This module is part of the \texttt{strpsgml}
@@ -2636,22 +2530,19 @@ SGML designator, just leave it blank.
 
 Links: \texttt{stripunb.} \ (RLG)
 
-{\sffamily\bfseries
-rec2tab}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{rec2tab}}
 
 \texttt{rec2tab(x) : null} writes fields of a record as tab-separated
 string. Carriage returns in files are converted to vertical tabs.
-(Works for lists too.) \ (REG)
+(Works for lists too.) \ 
 
-{\sffamily\bfseries
-records}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{records}}
 
 \texttt{field(R, i) : string?} returns the name of the \texttt{i}th
 field of \texttt{R}. Other record processing procedures may be added to
-this module in future editions. (REG)
+this module in future editions. 
 
-{\sffamily\bfseries
-recurmap}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{recurmap}}
 
 \texttt{recurmap(recur:list) : string} maps a recurrence declaration of
 the form\\
@@ -2663,19 +2554,17 @@ the form\\
 }The declaration is a list of strings. The result string is a
 declaration for an Icon procedure that computes corresponding values.
 At present there is no error checking and the most naive form of code
-is generated. (REG)
+is generated. 
 
-{\sffamily\bfseries
-reduce}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{reduce}}
 
 \index{reduce()}\texttt{reduce(op, init, args[])} applies the binary
 operation \texttt{op} to all the values in \texttt{args}, using
 \texttt{init} as the initial value. For example,
 \texttt{reduce({\textquotedbl}+{\textquotedbl}, 1, args[])} produces
-the sum of the values in args. (REG)
+the sum of the values in args. 
 
-{\sffamily\bfseries
-regexp}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{regexp}}
 
 This module implements UNIX-like \index{regular expression}regular
 expression patterns. These procedures are interesting partly because of
@@ -2870,16 +2759,14 @@ character.\\
 \texttt{{\textbackslash}d}, \texttt{{\textbackslash}D} can be used
 within \texttt{[string]} regular expressions.
 
-{\sffamily\bfseries
-repetit}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{repetit}}
 
 \texttt{repetit(L:list) : integer} returns the length of the smallest
 range of values that repeat in a list. For example, if L := [1, 2, 3,
 1, 2, 3, 1, 2, 3] , \textsf{repetit(L)} returns \texttt{3}. If there is
-no repetition, \textsf{repetit()} returns the length of the list. (REG)
+no repetition, \textsf{repetit()} returns the length of the list. 
 
-{\sffamily\bfseries
-re\index{wrap}wrap}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{re\index{wrap}wrap}}
 
 \textsf{rewrap(s:string,i:70) : string?} reformats text fed to it into
 strings \textsf{{\textless}i} in length. \textsf{rewrap()} utilizes a
@@ -2948,8 +2835,7 @@ be changed easily enough, by running its input through the Icon
 
 See also: \texttt{wrap.icn}. (RLG)
 
-{\sffamily\bfseries
-scan}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{scan}}
 
 This module contains procedures related to \index{string!scanning}string
 scanning: Where indicated by parameter names, they follow the string
@@ -3028,8 +2914,7 @@ delimiting the subject. Escape sequences are handled properly.
 
 (RLG, DAG, REG, RLS, CW)
 
-{\sffamily\bfseries
-scanset}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{scanset}}
 
 \textsf{scan\_setup(s, i1, i2) : scan\_setup\_result?} sets things up
 for user-written string-scanning procedures that are in the spirit of
@@ -3069,8 +2954,7 @@ procedure two\_words(s,i1,i2) \\
 end
 }
 
-{\sffamily\bfseries
-segment}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{segment}}
 
 These procedures segment a string \texttt{s} into consecutive substrings
 consisting of characters that respectively do/do not occur in
@@ -3089,8 +2973,7 @@ sentence.{\textquotedbl},\&letters)} produces a list of size six:
 {\textquotedbl},{\textquotedbl}a{\textquotedbl},{\textquotedbl}sentence{\textquotedbl},{\textquotedbl}.{\textquotedbl}]
 
 
-{\sffamily\bfseries
-sentence, senten1}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sentence, senten1}}
 
 Two alternative modules provide a function \texttt{sentence(f) :string*}
 that \index{generate sentences}generates sentences from file
@@ -3108,11 +2991,10 @@ Module \texttt{sentence} requires co-expressions, while module
 a {\textquotedbl}sentence{\textquotedbl} that is detailed in the module
 source code. (RLG, PAB)
 
-{\sffamily\bfseries
-seqimage}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{seqimage}}
 
 \textsf{Seqimage\{e,i,j\}: string} produces a string image of the result
-sequence for the expression \texttt{e}. (REG) The first \texttt{i}
+sequence for the expression \texttt{e}.  The first \texttt{i}
 results are printed. If \texttt{i} is omitted, there is no limit. If
 there are more than \texttt{i} results for \texttt{e}, ellipses are
 provided in the image after the first \texttt{i}. If \texttt{j} is
@@ -3137,8 +3019,7 @@ produce, respectively,
 If \texttt{j} is not omitted and \texttt{e} has an infinite result
 sequence, \textsf{Seqimage\{\}} does not terminate.
 
-{\sffamily\bfseries
-sername}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sername}}
 
 \textsf{sername(p:{\textquotedbl}file{\textquotedbl},
 s:{\textquotedbl}{\textquotedbl}, n:3, i:0) : string} produces a series
@@ -3156,10 +3037,9 @@ give the next name. For example,
 \textsf{{\textquotedbl}image001.gif{\textquotedbl}},
 \textsf{{\textquotedbl}image002.gif{\textquotedbl}}, and so on. If any
 argument changes on subsequent calls, all non-null arguments are reset.
-(REG)
 
-{\sffamily\bfseries
-sets}
+
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sets}}
 
 \texttt{cset2set(c:cset): set} returns a set that contains the
 individual characters in \texttt{c}.\\
@@ -3188,8 +3068,7 @@ of sets \texttt{S1} and \texttt{S2}.
 
 (AB, REG)
 
-{\sffamily\bfseries
-showtbl}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{showtbl}}
 
 \textsf{showtbl(title:{\textquotedbl}{\textquotedbl}, T, mode, limit,
 order, posit, w1:10, w2:10, gutter:3, f1:left, f2:right)} displays
@@ -3215,10 +3094,9 @@ column\\
 
 \texttt{showtbl()} returns a record with the first element being a count
 of the size of the table and the second element the number of lines
-written. (REG)
+written. 
 
-{\sffamily\bfseries
-shquote}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{shquote}}
 
 This module is useful for writing Icon programs that generate
 \index{shell commands}shell commands. Certain characters cannot appear
@@ -3246,16 +3124,14 @@ Macintosh Programmer{\textquotesingle}s Workshop shell (MPW Shell).
 any quoting characters removed. \texttt{s2} is the escape character
 required by the shell.
 
-{\sffamily\bfseries
-signed}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{signed}}
 
 \textsf{signed(s) : integer} puts raw bits of characters of string
 \texttt{s} into an integer. The value is taken as signed. This
 procedure is normally used for processing of binary data read from a
 file. (RJA)
 
-{\sffamily\bfseries
-sort}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sort}}
 
 \index{sort}\textsf{sort}\textsf{ff(L, fields[])} is like
 \textsf{sortf()}, except it takes an unlimited number of \index{sort by
@@ -3275,8 +3151,7 @@ order
 but produces a list of two-element records instead of a list of
 two-element lists. (RJA,RLG,REG)
 
-{\sffamily\bfseries
-\index{soundex}soundex, soundex1}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{\index{soundex}soundex, soundex1}}
 
 \texttt{soundex(name:string) : string} produces a code for a name that
 tends to bring together variant spellings. See Donald E. Knuth, The Art
@@ -3286,18 +3161,16 @@ of Computer Programming, Vol.3; Searching and Sorting, pp. 391-392.
 Module \texttt{soundex1} employs an approach proposed by Margaret K.
 Odell and Robert C. Russell; see the source code for details. (JDS)
 
-{\sffamily\bfseries
-statemap}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{statemap}}
 
 \texttt{statemap() : table} produces a
 {\textquotedbl}two-way{\textquotedbl} table to map \index{state names,
 U.S.}state names (in the postal sense) to their postal abbreviations
 and vice-versa. The list is done in two parts with auxiliary procedures
 so that this procedure can be used with the default constant-table size
-for the translator and linker. (REG)
+for the translator and linker. 
 
-{\sffamily\bfseries
-str2toks}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{str2toks}}
 
 String scanning procedure \texttt{str2toks(c:\~{}(\&letters++\&digits),
 s, i1, i2) : string*} suspends portions of \texttt{s[i1:i2]} delimited
@@ -3318,10 +3191,9 @@ Naturally, the beginning and end of the line count as delimiters. Note
 that if \texttt{i {\textgreater} 1} or \texttt{j {\textless} *s+1} some
 tokens may end up appearing truncated. (RLG)
 
-{\sffamily\bfseries
-strings}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{strings}}
 
-These procedures perform operations on \index{string}strings. (REG)
+These procedures perform operations on \index{string}strings. 
 
 \textsf{cat(s1, s2,...) : string} concatenates an arbitrary number of
 strings.\\
@@ -3422,8 +3294,7 @@ are at positions given in \texttt{L}.\\
 \textsf{transpose(s1, s2, s3) : string} transposes \texttt{s1} according
 to label \texttt{s2} and transposition \texttt{s3}.
 
-{\sffamily\bfseries
-stripcom}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripcom}}
 
 \texttt{stripcom(s) : string?} strips the commented-out portion of a
 line of Icon code. Fails on lines which, either stripped or otherwise,
@@ -3433,8 +3304,7 @@ literal, since \texttt{stripcom()} is not intended to be used on
 sequentially read files. It simply removes \index{comment}comments from
 individual lines. (RLG)
 
-{\sffamily\bfseries
-stripunb}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripunb}}
 
 \texttt{stripunb(c1,c2,s,i,j,t:table) : string} strips material from a
 line which is unbalanced with respect to the characters defined in
@@ -3471,8 +3341,7 @@ for the preceding \texttt{.on} string encountered.
 
 Links: \texttt{scan}. (RLG)
 
-{\sffamily\bfseries
-tab2list, tab2rec}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tab2list, tab2rec}}
 
 \texttt{tab2list(string):list} takes tab-separated strings and inserts
 them into a list.\\
@@ -3483,10 +3352,9 @@ them into fields of\\
  \ \ \ \ \ a record or list \texttt{x}. Vertical tabs in strings are
 converted to carriage returns.
 
-See also: list2tab.icn, rec2tab.icn. (REG)
+See also: list2tab.icn, rec2tab.icn. 
 
-{\sffamily\bfseries
-tables}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tables}}
 
 \texttt{keylist(T) : list} produces a list of keys in table
 \texttt{T}.\\
@@ -3517,15 +3385,13 @@ Where there is potential asymmetry, the procedures
 procedures that return tables return new tables and do not modify their
 arguments. (REG, AB)
 
-{\sffamily\bfseries
-tclass}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tclass}}
 
 \textsf{tclass(x) : string} returns {\textquotedbl}atomic{\textquotedbl}
 or {\textquotedbl}composite{\textquotedbl} depending on the type of
-\texttt{x}. (REG)
+\texttt{x}. 
 
-{\sffamily\bfseries
-title, titleset}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{title, titleset}}
 
 \texttt{title(name:string) : string} produces the title of a name, such
 as {\textquotedbl}Mr.{\textquotedbl} from\\
@@ -3534,10 +3400,9 @@ imperfect. Links \texttt{titleset}.
 
 \texttt{titleset() : set} produces a set of strings that commonly appear
 as titles in\\
- \ \ \ \ \ names. This set is (necessarily) incomplete. (REG)
+ \ \ \ \ \ names. This set is (necessarily) incomplete. 
 
-{\sffamily\bfseries
-trees}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{trees}}
 
 \texttt{depth(t) : integer} compute maximum depth of \index{tree}tree
 \texttt{t}\\
@@ -3555,10 +3420,9 @@ trees}
 
 This module provides tree operations that use a list representation of
 trees and directed acyclic graphs (DAGs). These procedures do not
-protect themselves from cycles. (REG)
+protect themselves from cycles. 
 
-{\sffamily\bfseries
-tuple}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tuple}}
 
 \texttt{tuple(tl:list) : list} implements a
 {\textquotedbl}tuple{\textquotedbl} feature that produces the effect of
@@ -3587,8 +3451,7 @@ case tuple([type(op1), type(op2)]) of \{ \\
 \>   \}
 }
 
-{\sffamily\bfseries
-typecode}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{typecode}}
 
 \texttt{typecode(x) : string} produces a one-letter string identifying
 the type of its argument. In most cases, the code is the first
@@ -3600,20 +3463,18 @@ have the code \texttt{{\textquotedbl}R{\textquotedbl}}. The code
 \texttt{{\textquotedbl}C{\textquotedbl}} is used for the co-expression
 type to avoid conflict for the \texttt{{\textquotedbl}c{\textquotedbl}}
 for the cset type. The code \texttt{{\textquotedbl}w{\textquotedbl}} is
-produced for windows. (REG)
+produced for windows. 
 
-{\sffamily\bfseries
-unsigned}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{unsigned}}
 
 \texttt{unsigned(s) : integer} puts raw bits of characters of string
 \texttt{s} into an integer. The value is taken as unsigned. This
 procedure is normally used for processing of binary data read from a
 file. (RJA)
 
-{\sffamily\bfseries
-usage}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{usage}}
 
-These procedures provide various common services: (REG)
+These procedures provide various common services: 
 
 \index{Usage(s)}\texttt{Usage(s)} stops execution with a message
 indicating the expected usage of a program.\\
@@ -3629,8 +3490,7 @@ available.\\
 the running\\
  \ \ \ \ \ implementation of Icon. 
 
-{\sffamily\bfseries
-varsub}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{varsub}}
 
 \texttt{varsub(s, varProc:getenv)} obtains a variable value from the
 procedure, \texttt{varProc}. As with the UNIX Bourne shell and C shell,
@@ -3644,15 +3504,13 @@ substituted. If username is supplied, the \texttt{/etc/passwd} file is
 searched to supply the home directory of username (this action is
 obviously not portable to non-UNIX environments). (RJA)
 
-{\sffamily\bfseries
-version}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{version}}
 
 \index{version}\texttt{version}\texttt{() : string?} produces the
 version number of Icon on which a program is running. It only works if
-the \texttt{\&version} is in the standard form. (REG)
+the \texttt{\&version} is in the standard form. 
 
-{\sffamily\bfseries
-vrml, vrml1lib, vrml2lib}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{vrml, vrml1lib, vrml2lib}}
 
 These modules contain procedures for producing \index{VRML}VRML files.
 
@@ -3685,19 +3543,17 @@ they must be specified in the order given in the record declarations
 that follow. Group nodes require list arguments for lists of nodes. 
 
 Links: \texttt{records}. Requires: Version 9 graphics for color
-conversion. (REG)
+conversion. 
 
-{\sffamily\bfseries
-wdiag}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wdiag}}
 
 \texttt{wdiag(s1, s2,...) : null} writes the values of the global
 variables named \texttt{s1, s2, ...} with \texttt{s1, s2, ...} as
 identifying labels. It writes a diagnostic message to standard error
 output if an argument is not the name of a global variable. Note that
-this procedure only works for global variables. (REG)
+this procedure only works for global variables. 
 
-{\sffamily\bfseries
-weighted}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{weighted}}
 
 \texttt{WeightedShuffle(sample, percentage) : list} returns the list
 \texttt{sample} with a portion of the elements switched. Examples:
@@ -3712,8 +3568,7 @@ shuffled\\
 The procedure will fail if the given percentage is not between 0 and
 100, inclusive, or if it is not a numeric value. (EE)
 
-{\sffamily\bfseries
-wildcard}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wildcard}}
 
 This is a kit of procedures to deal with UNIX-like filename
 \index{wild-card patterns}wild-card patterns containing *, ?, and
@@ -3748,8 +3603,7 @@ convert a pattern string to a pattern list, but it is faster to do the
 conversion explicitly if multiple operations are done using the same
 pattern. (RJA)
 
-{\sffamily\bfseries
-word}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{word}}
 
 String scanning function \texttt{word(s, i1, i2) : integer?} produces
 the position past a UNIX-style command line word, including quoted and
@@ -3760,8 +3614,7 @@ word \texttt{s} with any quoting characters removed.
 
 Links: \texttt{scanset}. (RJA)
 
-{\sffamily\bfseries
-wrap}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wrap}}
 
 \index{wrap}\texttt{wrap}\texttt{(s:{\textquotedbl}{\textquotedbl},i:0)
 : string?} facilitates accumulation of small strings into longer output
@@ -3790,8 +3643,7 @@ needed, \texttt{s}, preceded by a new-line character
 (\texttt{{\textquotedbl}{\textbackslash}n{\textquotedbl}}), is
 returned. (RJA)
 
-{\sffamily\bfseries
-xcodes}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xcodes}}
 
 This module provides procedures to save and restore Icon structures to
 disk. Module \index{xcodes}\texttt{xcodes} handles the encoding of
@@ -3881,8 +3733,7 @@ end
 Links: \texttt{escape}. See also: \texttt{object.icn},
 \texttt{codeobj.icn}. (RJA, REG)
 
-{\sffamily\bfseries
-xforms}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xforms}}
 
 These procedures produce matrices for affine transformation in two
 dimensions and transform point lists. A point list is a list of
@@ -3900,8 +3751,7 @@ translation\\
 
 Links: \texttt{gobject}. See also: \texttt{matrix}. (SBW, REG)
 
-{\sffamily\bfseries
-ximage}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ximage}}
 
 \texttt{ximage(x) : s} produces a string image of \texttt{x}.
 \texttt{ximage()} differs from \texttt{image()} in that it outputs all
@@ -3945,14 +3795,13 @@ L25[8] := 5
 
 (RJA)
 
-{\sffamily\bfseries
-xrotate}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xrotate}}
 
 \texttt{xrotate(X, i)} rotates the values in \texttt{X} right by one
 position. It works for lists and records. This procedure is mainly
 interesting as a recursive version of\\
  \ \ \ \ \ \texttt{x1 :=: x2 :=: x3 :=: ... xn\\
-}since a better method for lists is \texttt{push(L, pull(L))}. (REG)
+}since a better method for lists is \texttt{push(L, pull(L))}. 
 
 \clearpage\subsection{Application Programs, Examples, and Tools}
 
@@ -3961,9 +3810,8 @@ that are useful for demonstration, entertainment, and/or practical
 utility. When it is available, usage information is presented with
 [optional] and repeated* command-line arguments.
 
-{\sffamily\bfseries
-adlcheck, adlcount, adlfilter, adlfirst, adllist,
-adlsort\ \ \ \ \ \ (REG)}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{adlcheck, adlcount, adlfilter, adlfirst, adllist,
+adlsort}
 
 \textsf{adlcheck} checks address lists for correctness. There are five
 options:\\
@@ -4054,7 +3902,7 @@ for an ANSI screen. This version has been modified to work with the
 UNIX termcap database file.
 
 {\sffamily\bfseries
-blnk2tab\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+blnk2tab\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{blnk2tab} is a UNIX-style filter that converts strings of two or
 more blanks to tabs.
@@ -4070,7 +3918,7 @@ from ends of lines, reformats line-continued strings, changes
 \texttt{.} 
 
 {\sffamily\bfseries
-calc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+calc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{calc} is a simple Polish {\textquotedbl}desk
 calculator{\textquotedbl}. It accepts as values Icon integers, reals,
@@ -4138,13 +3986,13 @@ width.\\
 \ \ \textsf{{}-h}\texttt{\ \ \ \ }generates a help message.
 
 {\sffamily\bfseries
-comfiles\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+comfiles\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{comfiles} lists common file names in two directories given as
 command-line arguments. Requires: UNIX 
 
 {\sffamily\bfseries
-concord\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+concord\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{concord} produces a simple concordance from standard input to
 standard output. Words less than three characters long are ignored.
@@ -4212,7 +4060,7 @@ above works, but 1 furlong/fortnight in inches/hour gives a wrong
 answer. 
 
 {\sffamily\bfseries
-countlst\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+countlst\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{countlst} counts the number times each line of input occurs and
 writes a summary. With no option, the output is sorted first by
@@ -4241,7 +4089,7 @@ introduction to the field. As written, \textsf{crypt} uses UNIX-style
 console I/O.
 
 {\sffamily\bfseries
-csgen\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+csgen\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{csgen} accepts a context-sensitive production grammar and
 generates randomly selected sentences from the corresponding language.
@@ -4315,7 +4163,7 @@ cstrings\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (RJA)}
 source files. 
 
 {\sffamily\bfseries
-cwd\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+cwd\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{cwd} writes the current working directory, shorn of its path
 specification. For appropriately named directories, it can be used as
@@ -4338,7 +4186,7 @@ insensitive. The arguments are accepted as long as exactly one of them
 is an integer, and if there are exactly two arguments. 
 
 {\sffamily\bfseries
-deal\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+deal\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{deal} shuffles, deals, and displays hands in the game of bridge.
 Its utput looks like:
@@ -4390,7 +4238,7 @@ Options: The following options are available:
 Different seeds give different hands.
 
 {\sffamily\bfseries
-declchck\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+declchck\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{declchck} examines ucode files and reports declared identifiers
 that may conflict with function names. Requires: UNIX. 
@@ -4465,13 +4313,13 @@ diffu \ \textrm{\textmd{f1 f2\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \
 like the UNIX \textsf{diff(1)} file difference command.
 
 {\sffamily\bfseries
-diffword\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+diffword\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{diffword} lists the different words in the input text. The
 definition of {\textquotedbl}word{\textquotedbl} is naive. 
 
 {\sffamily\bfseries
-diskpack\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+diskpack\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{diskpack} is designed to produce a list of files to fit onto
 \index{diskettes}diskettes. It can be adapted to other uses. This
@@ -4484,7 +4332,7 @@ supported are:\\
 files to be packed, default {\textquotedbl}*.lzh{\textquotedbl}
 
 {\sffamily\bfseries
-duplfile\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+duplfile\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{duplfile} lists the file names that occur in more than one
 subdirectory and the subdirectories in which the names occur. This
@@ -4521,7 +4369,7 @@ envelope}. In vi, put the cursor on the first line of the address and
 do \textsf{:,+N w !envelope} where N = number-of-lines-in-address.
 
 {\sffamily\bfseries
-farb, farb2\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+farb, farb2\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 Dave \index{Farber, Dave}Farber, co-author of the original SNOBOL
 programming language, is noted for his creative use of the English
@@ -4559,7 +4407,7 @@ also works for the Atari ST\\
 works for the Amiga
 
 {\sffamily\bfseries
-fileprnt\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+fileprnt\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{fileprnt} reads the file specified as a command-line argument
 and writes out a representation of each character in several forms:
@@ -4571,7 +4419,7 @@ comparatively slow, it is not suitable for processing very large files.
 Requires: co-expressions.
 
 {\sffamily\bfseries
-filesect\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+filesect\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{filesect} writes the section of the input file starting at a
 specified line number and extending a specified number of lines. The
@@ -4645,7 +4493,7 @@ replacement to take place. This is dangerous in general but allows
 repairing an errant fixpath command. 
 
 {\sffamily\bfseries
-fnctab\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+fnctab\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{fnctab} processes an MVT token file and tabulates the usage of
 functions. Since function usage cannot be determined completely from
@@ -4675,7 +4523,7 @@ since new text can be entered without concern for comment formatting,
 which will be done automatically later.
 
 {\sffamily\bfseries
-former\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+former\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{former} takes a single line of input and outputs it in lines no
 greater than the number given on the command line (default 80). 
@@ -4848,7 +4696,7 @@ the associated records in bibkeys. Each output key line is of the form:
 actual key of the record.
 
 {\sffamily\bfseries
-headicon\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+headicon\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{headicon} prepends a standard header to an Icon program. It does
 not check to see if the program already has a header. The first
@@ -4885,7 +4733,7 @@ hr\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ (CT)}
 \textsf{hr} implements a horse-race game.
 
 {\sffamily\bfseries
-ibar\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+ibar\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{ibar} replaces \index{comment}comment bars in Icon programs by
 bars 76 characters long, the library standard. 
@@ -4946,7 +4794,7 @@ write(sin(pi/2)) }
 execution done as each line is entered. 
 
 {\sffamily\bfseries
-icalls\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+icalls\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{icalls} processes trace output and tabulates calls of
 procedures.
@@ -4983,7 +4831,7 @@ The program given in standard input is written in converted form to
 standard output. 
 
 {\sffamily\bfseries
-idepth\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+idepth\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{idepth} processes trace output and reports the maximum depth of
 \index{recursion}recursion. 
@@ -5013,7 +4861,7 @@ you{\textquotesingle}re worried, use the \textsf{{}-a} flag. See also:
 \textsf{gettext.icn}. 
 
 {\sffamily\bfseries
-ifilter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+ifilter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{ifilter} applies the operation given as a command-line argument
 to each line of standard input, writing out the results. For example,
@@ -5056,7 +4904,7 @@ with -E:
 
 
 {\sffamily\bfseries
-iheader\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+iheader\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{iheader} lists the headers of Icon files whose names are given
 on the command line. It complains if the header does not start
@@ -5150,7 +4998,7 @@ directories specified by the LPATH \index{environment
 variable!LPATH}environment variable are tried.
 
 {\sffamily\bfseries
-imagetyp\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+imagetyp\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{imagetyp} accepts file names from standard input and writes
 their image type to standard output. It relies on a procedure
@@ -5189,7 +5037,7 @@ expects environment variable LPATH to be set properly as for the Icon
 Compiler.
 
 {\sffamily\bfseries
-inter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+inter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{inter} lists lines common to two files. 
 
@@ -5223,7 +5071,7 @@ of such files are not designed to expand, a different form of header is
 written to accommodate a possibly longer path.
 
 {\sffamily\bfseries
-ipldoc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+ipldoc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{ipldoc} collects selected information from documentation headers
 for Icon procedure files named on the command line. The following
@@ -5346,7 +5194,7 @@ grouping), printing of blank lines at the top of the new page is
 suppressed. Line numbers will still be printed correctly. 
 
 {\sffamily\bfseries
-ipsort\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+ipsort\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{ipsort} reads an Icon program and writes an equivalent program
 with the procedures \index{sort source file procedures}sorted
@@ -5360,7 +5208,7 @@ interline white space between declarations may not come out as
 intended. One option is accepted: -v preserve VIB section at end.
 
 {\sffamily\bfseries
-ipsplit\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+ipsplit\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{ipsplit} reads an Icon program and writes each procedure to a
 separate file. The output file names consist of the procedure name with
@@ -5400,13 +5248,13 @@ example, it expects quotes be matched. Bugs: In some situations, the
 output is not properly formatted.
 
 {\sffamily\bfseries
-isrcline\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+isrcline\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{isrcline} counts the number of lines in an Icon program that
 actually contain code, as opposed to being comments or blank lines.
 
 {\sffamily\bfseries
-istrip\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+istrip\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{istrip} removes comments, empty lines, and leading whitespace
 from an Icon program.
@@ -5452,14 +5300,14 @@ index vgrind -x index}\texttt{\\
 \ \ {}-w}\ \ suppress warning diagnostics.
 
 {\sffamily\bfseries
-itrbksum\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+itrbksum\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{itrbksum} summarizes traceback information produced on error
 termination by filtering out the bulk of the procedure traceback
 information.
 
 {\sffamily\bfseries
-itrcfltr\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+itrcfltr\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{itrcfilter} filters trace output. If there are command-line
 arguments, they are taken as procedure names, and only those lines with
@@ -5473,7 +5321,7 @@ through. The following option is supported: \textsf{{}-a} list all
 trace messages; overrides any procedure names given.
 
 {\sffamily\bfseries
-itrcsum\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+itrcsum\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{itrcsum} provides a summary of Icon trace output.
 
@@ -5495,7 +5343,7 @@ such that the keywords {\textquotedbl}procedure{\textquotedbl} and
 respective lines. Requires: pipe support.
 
 {\sffamily\bfseries
-iwriter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+iwriter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{iwriter} reads standard input and produces Icon expressions,
 which when compiled and executed, write out the original input. This is
@@ -5536,7 +5384,7 @@ that the players can play the game over at its conclusion and see what
 actually happened, which is often quite amusing.
 
 {\sffamily\bfseries
-kross\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+kross\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{kross} accepts pairs of strings on successive lines. It diagrams
 all the intersections of the two strings in a common character. 
@@ -5560,7 +5408,7 @@ directory, the words in it are used instead.
 listings of the Icon program library. 
 
 {\sffamily\bfseries
-labels\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+labels\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{labels} produces mailing labels using coded information taken
 from the input file. In the input file, a line beginning with \# is a
@@ -5626,14 +5474,14 @@ latexidx\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (DSC)}
 \index{reference!page}references put into sorted order. 
 
 {\sffamily\bfseries
-lc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+lc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{lc} simply counts the number of lines in standard input and
 writes the result to standard output. Assumes UNIX-style line
 terminators, and uses lots of memory. 
 
 {\sffamily\bfseries
-lindcode\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+lindcode\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{lindcode} reads a file of L-system specifications and build Icon
 code that creates a table of records containing the specifications. If
@@ -5642,7 +5490,7 @@ included in the table with themselves as replacement. See also:
 \textsf{lindrec.icn}.
 
 {\sffamily\bfseries
-lineseq\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+lineseq\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{lineseq} reads values on separate lines and strings them
 together on a single line. The default separator is a blank; other
@@ -5695,14 +5543,14 @@ the last region in a symbol class is suspect and is usually given as
 rem. Output is not particularly exciting on a stripped file.
 
 {\sffamily\bfseries
-longest\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+longest\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{longest} writes the (last) longest line in the input file. If
 the command-line option -\# is given, the number of the longest line is
 written first. 
 
 {\sffamily\bfseries
-lower\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+lower\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{lower} maps the names of all files in the current directory to
 lowercase. Requires: UNIX. 
@@ -5799,7 +5647,7 @@ used to indicate the status of mail, is available with the H command.
 The program is oriented towards UNIX Internet mail processing.
 
 {\sffamily\bfseries
-newicon\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+newicon\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{newicon} creates a new file with a standard Icon program header
 and a skeleton mail procedure. The first command-line argument is taken
@@ -5854,7 +5702,7 @@ memory from the dump. You can invoke this program with both
 \textsf{show} and \textsf{save} at the same time.
 
 {\sffamily\bfseries
-oldicon\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+oldicon\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{oldicon} updates the date line in a standard Icon program
 header. The old file is saved with the suffix \textsf{.bak}. The file
@@ -5863,7 +5711,7 @@ then is brought up in the vi \index{editor}editor unless the
 \textsf{vi(1)}, UNIX.
 
 {\sffamily\bfseries
-pack\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+pack\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{pack} takes a list of file names on the command line and
 packages the files into a single file, which is written to standard
@@ -5879,7 +5727,7 @@ paginate\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ (PA)}
 feed}form feeds at appropriate places. 
 
 {\sffamily\bfseries
-papply\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+papply\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{papply} applies the procedure given as a command-line argument
 to each line of standard input, writing out the results. For example,
@@ -5889,7 +5737,7 @@ arguments. Except for use with (built-in) functions, this program needs
 to be linked with procedures that might be used with it. 
 
 {\sffamily\bfseries
-parens\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+parens\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{parens} produces parenthesis-balanced strings in which the
 parentheses are randomly distributed. The following options are
@@ -5913,7 +5761,7 @@ produce a variety of interesting patterns, depending on the strings
 specified by \textsf{{}-l} and \textsf{{}-r}.
 
 {\sffamily\bfseries
-pargen\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+pargen\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{pargen} reads a context-free BNF grammar and produces an Icon
 program that is a parser for the corresponding language. Nonterminal
@@ -5987,7 +5835,7 @@ See \textsf{diff(1)} in a UNIX manual for more details. Requires:
 co-expressions.
 
 {\sffamily\bfseries
-pdecomp\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+pdecomp\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{pdecomp} lists the prime factors of integers given in standard
 input.
@@ -6036,14 +5884,14 @@ desired. The LZW compression procedures in this program are general
 purpose and suitable for reuse in other programs.
 
 {\sffamily\bfseries
-procprep\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+procprep\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{procprep} is used to produce the data needed to index the
 {\textquotedbl}\#:{\textquotedbl} comments on procedure declarations
 that is needed to produces a permuted index to procedures. 
 
 {\sffamily\bfseries
-procwrap\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+procwrap\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{procwrap} takes procedure names from standard input and writes
 minimal procedure declarations for them. For example, the input line
@@ -6123,7 +5971,7 @@ the absence of an argument is 6. This program is worth reading for its
 programming techniques.
 
 {\sffamily\bfseries
-ranstars\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+ranstars\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{ranstars} displays a random field of
 {\textquotedbl}stars{\textquotedbl} on an ANSI terminal. It displays
@@ -6142,7 +5990,7 @@ character in \texttt{c} is used.\\
 Requires: co-expressions, ANSI terminal.
 
 {\sffamily\bfseries
-recgen\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+recgen\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{recgen} reads a context-free \index{BNF}BNF grammar and produces
 an Icon program that is a recognizer for the corresponding language.
@@ -6189,7 +6037,7 @@ repro\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ (KW)}
 \textsf{repro} is the shortest known self-reproducing Icon program. 
 
 {\sffamily\bfseries
-revsort\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+revsort\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{revsort} sorts strings with characters in reverse order. 
 
@@ -6203,10 +6051,10 @@ beginning of lines and does not attempt to unravel conditional
 constructions. Similarly, defined strings buried in disguised form in
 definitions are not recognized. Reference: Nroff/Troff
 User{\textquotesingle}s Manual, Joseph F. Ossana, Bell Laboratories,
-Murray Hill, New Jersey. October 11, 1976. (REG)
+Murray Hill, New Jersey. October 11, 1976. 
 
 {\sffamily\bfseries
-rsg\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+rsg\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{rsg} generates randomly selected strings
 ({\textquotedbl}sentences{\textquotedbl}) from a grammar specified by
@@ -6358,14 +6206,14 @@ shar
 \textsf{shar} creates Bourne shell archive of text files. 
 
 {\sffamily\bfseries
-shortest\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+shortest\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{shortest} writes the (last) shortest line in the input file. If
 the command-line option -\# is given, the number of the shortest line
 is written first. 
 
 {\sffamily\bfseries
-shuffile\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+shuffile\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{shuffile} writes a version of the input file with the lines
 shuffled. For example, the result of shuffling 
@@ -6435,13 +6283,13 @@ the VT100, determines the screen driver. For MS-DOS computers, the
 ANSI.SYS driver is needed.
 
 {\sffamily\bfseries
-sortname\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+sortname\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{sortname} sorts a list of person{\textquotesingle}s names by the
 last names. 
 
 {\sffamily\bfseries
-splitlit\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+splitlit\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{splitlit} creates a string literal with continuations in case
 it{\textquotesingle}s too long. Options:\\
@@ -6449,7 +6297,7 @@ it{\textquotesingle}s too long. Options:\\
 \ \ \textsf{{}-i i}\ \  indent, default 3
 
 {\sffamily\bfseries
-streamer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+streamer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{streamer} outputs one long line obtained by concatenating the
 lines of the input file. The supported options are:\\
@@ -6494,7 +6342,7 @@ those symbols. It is possible to change the default delimiters, but the
 option has not been thoroughly tested. (RLG)
 
 {\sffamily\bfseries
-tablc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+tablc\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{tablc} tabulates characters and lists each character and the
 number of times it occurs. Characters are written using
@@ -6508,7 +6356,7 @@ counts.\\
 \ \ \textsf{{}-u}\ \ Write only the characters that occur just once.
 
 {\sffamily\bfseries
-tablw\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+tablw\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{tablw} tabulates words and lists number of times each word
 occurs. A word is defined to be a string of consecutive upper- and
@@ -6528,7 +6376,7 @@ default tabulates all words.\\
 \ \ \textsf{{}-u}\ \ Write only the words that occur just once.
 
 {\sffamily\bfseries
-textcnt\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+textcnt\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{textcnt} tabulates the number of characters,
 {\textquotedbl}words{\textquotedbl}, and lines in standard input and
@@ -6549,7 +6397,7 @@ interrupted, the temporary file might still remain as
 {\textless}original name root{\textgreater}.tmp.
 
 {\sffamily\bfseries
-toktab\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+toktab\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{toktab} reads the token files given on the command line and
 summarizes them in a single file. The supported options are:\\
@@ -6559,7 +6407,7 @@ summarizes them in a single file. The supported options are:\\
 no limit
 
 {\sffamily\bfseries
-trim\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+trim\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{trim} copies lines from standard input to standard output,
 truncating the lines at n characters and removing any trailing blanks.
@@ -6632,13 +6480,13 @@ unique\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ (AVH, RJA)}
 file. 
 
 {\sffamily\bfseries
-unpack\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+unpack\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{unpack} unpackages files produced by \textsf{pack.icn}. See that
 program for limitations. 
 
 {\sffamily\bfseries
-upper\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+upper\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{upper} maps the names of all files in the current directory to
 uppercase. Requires: UNIX. 
@@ -6652,7 +6500,7 @@ vocabulary file specified on the command line; it looks for
 \textsf{verse.dat} by default. See that file for examples of form. 
 
 {\sffamily\bfseries
-versum\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+versum\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{versum} writes the versum sequence for an integer to a file of a
 specified name. If such a file exists, it picks up where it left off,
@@ -6671,7 +6519,7 @@ If both \texttt{{}-f} and \texttt{{}-F} are given, \texttt{{}-f}
 overrides.
 
 {\sffamily\bfseries
-webimage\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+webimage\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{webimage} takes the names of image files on the command line and
 writes a Web page that embeds each image. Requires: Version 9 graphics.
@@ -6728,7 +6576,7 @@ should run out of the box on DOS as long as you stay in the current
 directory. See the README file.
 
 {\sffamily\bfseries
-zipsort\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (REG)}
+zipsort\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
 
 \textsf{zipsort} sorts labels produced by labels in ascending order of
 their postal zip codes. Option: The option \textsf{{}-d n} sets the

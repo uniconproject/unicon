@@ -27,7 +27,7 @@ pure:
 
 skinnedmodelobject3d.u: skinnedmodelobject3d.icn modelobject3d.u skeleton.u
 
-modelobject3d.u: modelobject3d.icn basicanimationobject3d.u basicobject3d.u mesh.u bone.u xparse.u
+modelobject3d.u: modelobject3d.icn basicanimationobject3d.u basicobject3d.u mesh.u bone.u xparse.u s3dparse.u
 
 basicanimationobject3d.u: basicanimationobject3d.icn basicobject3d.u
 

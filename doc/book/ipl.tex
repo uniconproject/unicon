@@ -1113,8 +1113,8 @@ according to the needs\\
 \texttt{gdlrec(dir, findflag) : list} does same thing as gdl except it
 recursively\\
  \ \ \ \ descends through subdirectories. If \texttt{findflag} is
-nonnull, the UNIX {\textquotedbl}find{\textquotedbl} program\\
- \ \ \ \ is used; otherwise the {\textquotedbl}ls{\textquotedbl} program
+nonnull, the UNIX {\textquotedbl}find{\textquotedbl}\\
+ \ \ \ \ program is used; otherwise the {\textquotedbl}ls{\textquotedbl} program
 is used.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gener}}
@@ -1242,11 +1242,13 @@ is non-null, lowercase characters are used instead of uppercase.
 These procedures assist in processing HTML files:
 
 \texttt{htchunks(file) : string*} generates \index{HTML}HTML chunks in a
-file. Results beginning with {\textless}!-{}- are unclosed comments
-(legal comments are deleted); {\textless} begins tags; others are
-untagged text.\\
+file. Results beginning with\\
+ \ \ \ \ {\textless}!-{}- are unclosed comments
+(legal comments are deleted); {\textless} begins tags;\\
+ \ \ \ \ others are untagged text.\\
 \texttt{htrefs(f) : string*} generates the tagname/keyword/value
-combinations that \index{reference!HTML}reference other files. Tags and
+combinations that\\
+ \ \ \ \ \index{reference!HTML}reference other files. Tags and
 keywords are returned in upper case.\\
 \texttt{httag(string) : string} produces the name of a tag contained
 within a tag string.\\
@@ -1286,9 +1288,9 @@ of function names. Links: \texttt{ifncs}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{image}\hfill (MG, REG, DY)}
 
-\texttt{Image(x, style:1) : string} generalizes the function
+\texttt{Image(x, style:1) : string} generalizes
 \texttt{image(x)}, providing detailed information about structures. The
-value of \texttt{style} determines the formatting and order of
+\texttt{style} determines the formatting and order of
 processing. Style 1 is indented, with ] and ) at end of last item.
 Style 2 is also indented, with ] and ) on new line. Style 3 puts the
 whole image on one line. Style 4 is like style 3, with structures
@@ -1437,31 +1439,29 @@ longer needed.
 
 \texttt{tempname(prefix:{\textquotedbl}{\textquotedbl},
 suffix:{\textquotedbl}{\textquotedbl},
-path:{\textquotedbl}.{\textquotedbl}, len:8)} produces the name of a
-temporary file.
+path:{\textquotedbl}.{\textquotedbl}, len:8)} returns a
+temporary file name.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iolib}\hfill
 (RLG, NA)}
 
-This library provides control functions for text terminals, primarily
-ANSI and VT-100 devices under UNIX and MS-DOS. MS-DOS users must add
-{\textquotedbl}device=ansi.sys{\textquotedbl} (or a similar driver) to
-the config.sys file. The TERM and TERMCAP \index{environment
-variable!TERMCAP}environment variables must also be set in order to use
-this library. The TERM variable tells iolib what driver you are using,
-e.g. TERM=ansi-color for a typical MS-DOS user. The TERMCAP variable
+This library provides control functions for text terminals, based on
+legacy ANSI and VT-100 devices. The TERM and TERMCAP \index{environment
+variable!TERMCAP}environment variables must be set in order to use
+this library. TERM tells iolib what driver you are using,
+e.g. TERM=ansi-color. The TERMCAP variable
 gives the location of the termcap database file, as provided on your
-UNIX system or given in the included file termcap.dos for MS-DOS.
+UNIX system.
 
 Some useful termcap codes are {\textquotedbl}cl{\textquotedbl} (clear
 screen), {\textquotedbl}ce{\textquotedbl} (clear to end of line),
 {\textquotedbl}ho{\textquotedbl} (go to the top left square on the
 screen), {\textquotedbl}so{\textquotedbl} (begin standout mode), and
 {\textquotedbl}se{\textquotedbl} (end standout mode). The termcap
-database holds not only string-valued sequences, but numeric ones as
-well. The value of {\textquotedbl}li{\textquotedbl} tells you how many
-lines the terminal has ({\textquotedbl}co{\textquotedbl} tells you how
-many columns). To go to the beginning of the second-to-last line on the
+database holds both string- and numeric-valued sequences. The value
+of {\textquotedbl}li{\textquotedbl} tells how many
+lines the terminal has; {\textquotedbl}co{\textquotedbl} tells how
+many columns. To go to the beginning of the second-to-last line on the
 screen: iputs(igoto(getval({\textquotedbl}cm{\textquotedbl}), 1,
 getval({\textquotedbl}li{\textquotedbl})-1)). The
 {\textquotedbl}cm{\textquotedbl} capability is a special capability,
@@ -1469,7 +1469,7 @@ and needs to be output via igoto(cm,x,y), where cm is the sequence
 telling your computer to move the cursor to a specified spot, x is the
 column, and y is the row.
 
-\texttt{setname(term)} initializes the terminal as a term. Overrides
+\texttt{setname(term)} initializes the terminal. Overrides
 TERM environment variable.
 
 \texttt{getval(id)} returns the terminal code for the capability named
@@ -1488,7 +1488,7 @@ to the right starting from the location (1,1).
 \texttt{puts(s)} sends s out to the console. For example, to clear the
 screen, \texttt{iputs(getval({\textquotedbl}cl{\textquotedbl}))}
 
-Requires: UNIX or MS-DOS, co-expressions. See also: iscreen.icn.
+Requires: UNIX, co-expressions. See also: iscreen.icn.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iscreen}\hfill (RLG)}
 
@@ -1514,7 +1514,7 @@ left-, or right-justifies, depending on the value,
 \texttt{{\textquotedbl}l{\textquotedbl}}, or
 \texttt{{\textquotedbl}r{\textquotedbl}}.
 
-Requires: UNIX or MS-DOS. Links: \texttt{iolib}.
+Requires: UNIX. Links: \texttt{iolib}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{isort}\hfill (RJA)}
 
@@ -1584,8 +1584,8 @@ the environment in which \texttt{ivalue()} is evaluated.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{kmap}}
 
-\texttt{kmap(string) : string} maps uppercase letters and the control
-modifier key in combination with letters into the corresponding
+\texttt{kmap(string) : string} maps uppercase and control
+characters into the corresponding
 lowercase letters. It is for graphic applications in which the modifier
 keys for shift and control are encoded in \index{keyboard}keyboard
 events. 
@@ -1623,10 +1623,9 @@ doesn{\textquotesingle}t work for every possibility.
 \texttt{list2tab(list) : null} writes a list as a tab-separated string
 to \texttt{\&output}. Carriage returns in files are converted to
 vertical tabs.
+See also: tab2list, tab2rec, rec2tab. 
 
-See also: tab2list.icn, tab2rec.icn, rec2tab.icn. 
-
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lists}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lists}\hfill (REG, RLG)}
 
 Many of these procedures implement \index{list functions}list functions
 similar to string functions, including an implementation of
@@ -1636,8 +1635,7 @@ string scanning functions.
 \texttt{lcomb(L,i):L*} produces all sublist combinations of \texttt{L}
 that have \texttt{i} elements.\\
 \texttt{ldelete(L,spec:string):L} deletes values of \texttt{L} at
-indices given\\
- \ \ \ \ in \texttt{spec}; see \texttt{indices}.\\
+indices given in \texttt{spec}; see \texttt{indices}.\\
 \texttt{lequiv(L1,L2):L?} tests if \texttt{L1} and \texttt{L2} are
 structurally equivalent.\\
  \ \ \ \ lequiv() does not detect cycles.\\
@@ -1657,16 +1655,17 @@ its front (left) side.\\
 \texttt{L2} and \texttt{L3}, similar to the\\
  \ \ \ \ string-mapping function \texttt{map(s1, s2,s3)}. Elements in
 \texttt{L1} that are the same as\\
- \ \ \ \  elements in \texttt{L2} are mapped into the corresponding elements of \texttt{L3}.\\ For
-example, given the lists\\
- \ \texttt{\ \ \ }\texttt{L1 := [1,2,3,4]; L2 := [4,3,2,1]; L3 :=
+ \ \ \ \  elements in \texttt{L2} are mapped into the corresponding elements of \texttt{L3}. For
+example,\\
+ \ \ \ \ given the lists\\
+ \ \ \ \ \ \ \ \texttt{L1 := [1,2,3,4]; L2 := [4,3,2,1]; L3 :=
 [{\textquotedbl}a{\textquotedbl},{\textquotedbl}b{\textquotedbl},{\textquotedbl}c{\textquotedbl},{\textquotedbl}d{\textquotedbl}]}\\
- \texttt{lmap(L1, L2,L3)} produces a new list
+ \ \ \ \ \texttt{lmap(L1, L2,L3)} produces a new list
 \texttt{[{\textquotedbl}d{\textquotedbl},{\textquotedbl}c{\textquotedbl},{\textquotedbl}b{\textquotedbl},{\textquotedbl}a{\textquotedbl}]}.
-The lists can have any kinds\\
- \ \ \ \ of elements. The operation \texttt{x === y} is used to
-determine if elements \texttt{x} and \texttt{y}\\
- \ \ \ \ are equivalent. No defaults are provided for omitted arguments.\\
+The lists can have any\\
+ \ \ \ \ kinds of elements. The operation \texttt{x === y} is used to
+determine if elements \texttt{x}\\
+ \ \ \ \ and \texttt{y} are equivalent. No defaults are provided for omitted arguments.\\
  \ \ \ \ As
 with \texttt{map(), lmap()}, can be used for transposition as well as substitution.\\
  \ \ \ \ \textbf{Warning: }If \texttt{lmap()} is called with
@@ -1774,7 +1773,7 @@ l\_tab(l\_match([{\textquotedbl}h{\textquotedbl},{\textquotedbl}e{\textquotedbl}
 end
 }
 
-The above program writes {\textquotedbl}hello{\textquotedbl} and
+\noindent This program writes {\textquotedbl}hello{\textquotedbl} and
 {\textquotedbl}there{\textquotedbl} on successive lines to the standard
 output.
 
@@ -1793,8 +1792,7 @@ assign \texttt{L2 :=
 [[{\textquotedbl}hello{\textquotedbl}],{\textquotedbl}
 {\textquotedbl},[{\textquotedbl}there{\textquotedbl}]]}, then the
 \texttt{l\_find()} call needs to look like \texttt{l\_find([l2],l1)}.
-
-Links: \texttt{indices}. See also: \texttt{structs.icn}. (REG, RLG)
+Links: \texttt{indices}. See also: \texttt{structs.icn}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{loadfile}}
 
@@ -1802,8 +1800,7 @@ Links: \texttt{indices}. See also: \texttt{structs.icn}. (REG, RLG)
 generates the results of exp. The trailing arguments name link files
 needed for the expression. \texttt{loadfile()} returns a procedure that
 generates the results.
-
-Requires: MT-Icon, \texttt{system()}, pipes, \texttt{/tmp}. Links:
+Requires: \texttt{system()}, pipes, \texttt{/tmp}. Links:
 \texttt{io}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{longstr}\hfill
@@ -2791,9 +2788,7 @@ end
 to the output of rewrap:
 
 \iconcode{
-i := 70; fill\_prefix := {\textquotedbl} {\textgreater} {\textquotedbl}}
-
-\iconcode{
+i := 70; fill\_prefix := {\textquotedbl} {\textgreater} {\textquotedbl} \\
 while line := read(input\_file) do \{ \\
 \>   line ?:= (f\_bit := tab(many({\textquotesingle}{\textgreater}
 {\textquotesingle})) {\textbar} {\textquotedbl}{\textquotedbl},
@@ -3223,10 +3218,9 @@ integer} returns the length of the shortest\\
 a {\textquotedbl}length{\textquotedbl} procedure.
 
 \texttt{ochars(s) : string} produces unique characters in the order that
-they first appear in \texttt{s}.\\
-\texttt{palins(s, n) : string*} generates all the \texttt{n}{}-character
-\index{palindrome}palindromes from the characters in
-\texttt{s}.\\
+they appear in \texttt{s}.\\
+\texttt{palins(s, n) : string*} generates the \texttt{n}{}-character
+\index{palindrome}palindromes from characters in \texttt{s}.\\
 \texttt{permute(s) : string*} generates all the permutations of the
 string \texttt{s}.\\
 \texttt{pretrim(s, c:{\textquotesingle} {\textquotesingle}) : string}
@@ -3243,21 +3237,22 @@ don{\textquotesingle}t omit character.
 \texttt{replace(s1, s2, s3) : string} replaces all occurrences of
 \texttt{s2} in \texttt{s1} by \texttt{s3}.\\
 \texttt{replacem(s,...) : string} performs multiple \index{replacement,
-string}replacements in the style of \texttt{replace()}, where multiple
+string}replacements in the style of \texttt{replace()},\\
+ \ \ \ \ where multiple
 argument pairs may be given, as in\\
  \ \ \ \ \ \texttt{replacem(s, {\textquotedbl}a{\textquotedbl},
 {\textquotedbl}bc{\textquotedbl}, {\textquotedbl}d{\textquotedbl},
-{\textquotedbl}cd{\textquotedbl})} which replaced all
+{\textquotedbl}cd{\textquotedbl})} which replaces all
 a{\textquotesingle}s by
 \texttt{{\textquotedbl}bc{\textquotedbl}}\\
-\ \ \ \ \ and all d{\textquotesingle}s by
+\ \ \ \ and all d{\textquotesingle}s by
 \texttt{{\textquotedbl}cd{\textquotedbl}}. Replacements are performed
-one after another, not in parallel.
+sequentially, not in parallel.
 
-\texttt{replc(s, L) : string} replicates each character of \texttt{s} by
-the amount given by the values in \texttt{L}.\\
-\texttt{rotate(s, i:1) : string} rotates \texttt{s} by \texttt{i}
-characters to the left (negative \texttt{i} rotates to the
+\texttt{replc(s, L) : string} replicates characters of \texttt{s} by
+amounts given by the values in \texttt{L}.\\
+\texttt{rotate(s, i:1) : string} rotates \texttt{s} \texttt{i}
+characters left (negative \texttt{i} rotates to the
 right).\\
 \texttt{schars(s) : string} produces the unique characters of \texttt{s}
 in lexical order.\\
@@ -3265,10 +3260,10 @@ in lexical order.\\
 \texttt{s} randomly.\\
 \texttt{selectp(s, L) : string} selects characters of \texttt{s} that
 are at positions given in \texttt{L}.\\
-\texttt{transpose(s1, s2, s3) : string} transposes \texttt{s1} according
-to label \texttt{s2} and transposition \texttt{s3}.
+\texttt{transpose(s1, s2, s3) : string} transposes \texttt{s1} using
+label \texttt{s2} and transposition \texttt{s3}.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripcom}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripcom}\hfill (RLG)}
 
 \texttt{stripcom(s) : string?} strips the commented-out portion of a
 line of Icon code. Fails on lines which, either stripped or otherwise,
@@ -3276,9 +3271,9 @@ come out as an empty string. \texttt{stripcom()} can{\textquotesingle}t
 handle lines ending in an underscore as part of a broken string
 literal, since \texttt{stripcom()} is not intended to be used on
 sequentially read files. It simply removes \index{comment}comments from
-individual lines. (RLG)
+individual lines.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripunb}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripunb}\hfill (RLG)}
 
 \texttt{stripunb(c1,c2,s,i,j,t:table) : string} strips material from a
 line which is unbalanced with respect to the characters defined in
@@ -3293,14 +3288,12 @@ and if \texttt{t} is a table having the form
 \iconcode{
 key: {\textquotedbl}bold{\textquotedbl} value:
 outstr({\textquotedbl}{\textbackslash}e[2m{\textquotedbl},
-{\textquotedbl}{\textbackslash}e1m{\textquotedbl})}
-
-\iconcode{
+{\textquotedbl}{\textbackslash}e1m{\textquotedbl}) \\
 key: {\textquotedbl}underline{\textquotedbl} value:
 outstr({\textquotedbl}{\textbackslash}e[4m{\textquotedbl},
 {\textquotedbl}{\textbackslash}e1m{\textquotedbl}) etc.}
 
-then every instance of
+\noindent then every instance of
 \texttt{{\textquotedbl}{\textless}bold{\textgreater}{\textquotedbl}} in
 string s will be mapped to
 \texttt{{\textquotedbl}{\textbackslash}e2m,{\textquotedbl}} and every
@@ -3312,8 +3305,7 @@ table t must be records of type \texttt{outstr(on, off)}. When
 \texttt{{\textquotedbl}{\textless}/{\textgreater}{\textquotedbl}} is
 encountered, \texttt{stripunb()} will output the \texttt{.off} value
 for the preceding \texttt{.on} string encountered.
-
-Links: \texttt{scan}. (RLG)
+Links: \texttt{scan}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tab2list, tab2rec}}
 
@@ -3328,7 +3320,7 @@ converted to carriage returns.
 
 See also: list2tab.icn, rec2tab.icn. 
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tables}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tables}\hfill (REG, AB)}
 
 \texttt{keylist(T) : list} produces a list of keys in table
 \texttt{T}.\\
@@ -3357,7 +3349,7 @@ properties of the corresponding operations on sets. For example, table
 Where there is potential asymmetry, the procedures
 {\textquotedbl}favor{\textquotedbl} their first argument. The
 procedures that return tables return new tables and do not modify their
-arguments. (REG, AB)
+arguments.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tclass}}
 
@@ -3392,11 +3384,11 @@ as titles in\\
 \texttt{visit(t) : any*} visit, in preorder, the nodes of the tree
 \texttt{t} by suspending them all 
 
-This module provides tree operations that use a list representation of
-trees and directed acyclic graphs (DAGs). These procedures do not
+This module provides tree operations using a list representation of
+trees and directed acyclic graphs (DAGs). The procedures do not
 protect themselves from cycles. 
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tuple}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tuple}\hfill (WHM)}
 
 \texttt{tuple(tl:list) : list} implements a
 {\textquotedbl}tuple{\textquotedbl} feature that produces the effect of
@@ -3407,7 +3399,7 @@ is successful provided the values of expr1, expr2,..., exprn are the
 same (even if the lists containing them are not). For example, consider
 selecting an operation based on the types of two operands. The
 following expression uses \texttt{tuple()} to drive a case expression
-using value pairs. (WHM)
+using value pairs.
 
 \iconcode{
 case tuple([type(op1), type(op2)]) of \{ \\
@@ -3439,23 +3431,23 @@ type to avoid conflict for the \texttt{{\textquotedbl}c{\textquotedbl}}
 for the cset type. The code \texttt{{\textquotedbl}w{\textquotedbl}} is
 produced for windows. 
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{unsigned}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{unsigned}\hfill (RJA)}
 
 \texttt{unsigned(s) : integer} puts raw bits of characters of string
 \texttt{s} into an integer. The value is taken as unsigned. This
 procedure is normally used for processing of binary data read from a
-file. (RJA)
+file.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{usage}}
 
 These procedures provide various common services: 
 
 \index{Usage(s)}\texttt{Usage(s)} stops execution with a message
-indicating the expected usage of a program.\\
+indicating how to use a program.\\
 \texttt{Error(args?)} writes arguments to \texttt{\&errout} on a single
 line, preceded by \texttt{{\textquotedbl}*** {\textquotedbl}}.\\
 \texttt{ErrorCheck(l,f) : null} reports to \texttt{\&output} an error
-that has been converted to failure.\\
+that was converted to failure.\\
 \index{Feature(s)}\texttt{Feature(s)}\texttt{ : ?} \ succeeds if feature
 \texttt{s} is available in this implementation.\\
 \texttt{Requires(s)} terminates execution is feature \texttt{s} is not
@@ -3515,7 +3507,6 @@ nodes require list arguments for lists of nodes.
 Note: Although VRML 2.0 allows node fields to be given in any order,
 they must be specified in the order given in the record declarations
 that follow. Group nodes require list arguments for lists of nodes. 
-
 Links: \texttt{records}. Requires: Version 9 graphics for color
 conversion. 
 
@@ -3527,7 +3518,7 @@ identifying labels. It writes a diagnostic message to standard error
 output if an argument is not the name of a global variable. Note that
 this procedure only works for global variables. 
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{weighted}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{weighted}\hfill (EE)}
 
 \texttt{WeightedShuffle(sample, percentage) : list} returns the list
 \texttt{sample} with a portion of the elements switched. Examples:
@@ -3540,9 +3531,9 @@ shuffled\\
 \texttt{WeightedShuffle(X, 0)} - nothing is changed
 
 The procedure will fail if the given percentage is not between 0 and
-100, inclusive, or if it is not a numeric value. (EE)
+100, inclusive, or if it is not a numeric value.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wildcard}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wildcard}\hfill (RJA)}
 
 This is a kit of procedures to deal with UNIX-like filename
 \index{wild-card patterns}wild-card patterns containing *, ?, and
@@ -3575,9 +3566,9 @@ string \texttt{s}. A pattern element is needed by
 \texttt{wild\_match()} and \texttt{wild\_find()} will automatically
 convert a pattern string to a pattern list, but it is faster to do the
 conversion explicitly if multiple operations are done using the same
-pattern. (RJA)
+pattern.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{word}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{word}\hfill (RJA)}
 
 String scanning function \texttt{word(s, i1, i2) : integer?} produces
 the position past a UNIX-style command line word, including quoted and
@@ -3585,10 +3576,9 @@ escaped characters.
 
 \texttt{word\_dequote(s) : string} produces the UNIX-style command line
 word \texttt{s} with any quoting characters removed.
+Links: \texttt{scanset}.
 
-Links: \texttt{scanset}. (RJA)
-
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wrap}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wrap}\hfill (RJA)}
 
 \index{wrap}\texttt{wrap}\texttt{(s:{\textquotedbl}{\textquotedbl},i:0)
 : string?} facilitates accumulation of small strings into longer output
@@ -3615,7 +3605,7 @@ intended for use with \texttt{writes()}. If the string \texttt{s} did
 not necessitate a line-wrap, \texttt{s} is returned. If a line-wrap is
 needed, \texttt{s}, preceded by a new-line character
 (\texttt{{\textquotedbl}{\textbackslash}n{\textquotedbl}}), is
-returned. (RJA)
+returned.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xcodes}}
 
@@ -3627,10 +3617,9 @@ the original declarations are not available. \texttt{xcodes} also
 provides for procedures and files present in the encoded file that are
 not in the decoding program.
 
-These procedures provide a way of storing Icon values in files and
-retrieving them. \texttt{xencode(x,f)} stores \texttt{x} in file
+\texttt{xencode(x,f)} stores \texttt{x} in file
 \texttt{f} such that it can be converted back to \texttt{x} by
-\texttt{xdecode(f)}. These procedures handle several kinds of values,
+\texttt{xdecode(f)}. The procedures handle most kinds of values,
 including structures of arbitrary complexity and even loops. The
 following sequence will output \texttt{x} and recreate it as
 \texttt{y}:
@@ -3645,14 +3634,14 @@ open({\textquotedbl}xstore{\textquotedbl},{\textquotedbl}w{\textquotedbl}) \\
 \>   \ close(f)
 }
 
-For {\textquotedbl}scalar{\textquotedbl} types -{}- null, integer, real,
-cset, and string, the above sequence will result in the relationship x
-=== y. For structured types -{}- list, set, table, and record types
--{}- \texttt{y} is not identical to \texttt{x}, but it has the same
+\noindent For {\textquotedbl}scalar{\textquotedbl} types null, integer,
+real, cset, and string, this sequence will result in the relationship
+\texttt{x === y}. For structured types (list, set, table, record and object)
+\texttt{y} is not identical to \texttt{x}, but it has the same
 {\textquotedbl}shape{\textquotedbl} and its elements bear the same
 relation to the original as if they were encoded and decoded
-individually. Files, co-expressions, and windows cannot generally be
-restored in any way that makes much sense; they are restored as empty
+individually. Files, co-expressions, and windows are not handled;
+they are restored as empty
 lists so that (1) they will be unique objects and (2) will likely
 generate \index{run-time error}run-time errors if they are (probably
 erroneously) used in computation. However, the special files
@@ -3843,7 +3832,7 @@ Bonzo{\textquotedbl},
 {\textquotedbl}Reagan{\textquotedbl},{\textquotedbl}Lincoln{\textquotedbl})
 }
 
-can be substituted, the program works reasonably well, and could even
+\noindent can be substituted, the program works reasonably well, and could even
 pass as educational. The knowledge files will automatically be kept
 separate, too. Typing {\textquotedbl}list{\textquotedbl} at any yes/no
 prompt will show an inventory of animals known, and there are some
@@ -3851,9 +3840,8 @@ other commands too.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{banner \hfill (CT)}}
 
-\texttt{banner} is a utility inspired by the UNIX \texttt{banner(1)}
-command. It outputs enlarged letters (5x6 matrix) in portrait mode.
-With some fiddling you can change the scale or font. 
+\texttt{banner} is a utility that outputs enlarged letters (5x6 matrix) in
+portrait mode.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{bj \hfill (CT, RLG)}}
 
@@ -3868,9 +3856,9 @@ more blanks to tabs.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{c2icn \hfill (RJA)}}
 
-The \texttt{c2icn} filter does the easy work involved in porting a C
-program to Icon. It reformats \index{comment}comments, moving embedded
-comments to end of line, removes the {\textquotedbl};{\textquotedbl}
+The \texttt{c2icn} filter does easy work involved in porting a C
+program to Icon. It reformats \index{comment}comments, moves embedded
+comments to end of line, removes {\textquotedbl};{\textquotedbl}
 from ends of lines, reformats line-continued strings, changes
 \texttt{=} to \texttt{:=}, and changes \texttt{{}-{\textgreater}} to
 \texttt{.} 
@@ -3916,16 +3904,16 @@ The program also advises on the use of
 \texttt{{\textless}HEAD{\textgreater}}, and
 \texttt{{\textless}BODY{\textgreater}} tags. 
 
-{\sffamily\bfseries
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{
 colm \ \textrm{\textmd{[-w linewidth] [-s space] [-m min\_width] [-t
-tab\_width] [-x] [-d] file*}}}
+tab\_width] [-x] [-d] file*}} \hfill (RJA)}}
 
 \texttt{colm} arranges a number of data items, one per line, into
 multiple columns. Items are arranged in column-wise order, that is, the
 sequence runs down the first column, then down the second, etc. If a
 null line appears in the input stream, it signifies a break in the
 list, and the following line is taken as a title for the following data
-items. No title precedes the initial sequence of items. (RJA)
+items. No title precedes the initial sequence of items.
 
 \texttt{\ \ linewidth\ \ }the maximum width allowed for output lines
 (default: 80).\\
@@ -4809,7 +4797,7 @@ on the command line. It complains if the header does not start
 correctly but otherwise does not check the syntax of what follows. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ihelp \ \textrm{\textmd{[-f helpfile] [item] [keyword
-...]\ \ \ \ \ \ \ \ }}(RJA)}}
+...]}}\hfill (RJA)}}
 
 \texttt{ihelp} displays help information. The optional item name
 specifies the section of the help file that is to be displayed. If no
@@ -4841,7 +4829,7 @@ Sections are separated by lines containing a single
 following a separator line.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iidecode \ \textrm{\textmd{[infile] [-x]}}, iiencode
-\ \textrm{\textmd{[infile] [-x] remotefile [-o outfile]}}}}
+\ \textrm{\textmd{[infile] [-x] remotefile [-o outfile]}} \hfill (RLG, FJL)}}
 
 These are Icon ports of the UNIX/C uudecode/\index{uuencode,
 uudecode}uuencode utilities, based on freely distributable BSD code.
@@ -4867,7 +4855,7 @@ decoded. Extensions to the base uuencode command options include
 \texttt{{}-o} causes the following argument to be used as the file
 \texttt{iiencode} is to write its output to (default is
 \texttt{\&output}). On systems with newline translation (e.g. MS-DOS),
-the \texttt{{}-o} argument should always be used. (RLG, FJL)
+the \texttt{{}-o} argument should always be used.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ilnkxref \ \textrm{\textmd{[-options] {\textless}icon source
 file{\textgreater}... \hfill }}(RJA)}
@@ -4900,27 +4888,24 @@ named \texttt{s}. This is problematic and corrupted or fake files can
 easily fool it. Furthermore, examples of some image file types were not
 available for testing. The types presently recognized are:
 
-\ \ Value returned\ \ \ \ Image file type\\
-\ \ ps\ \ \ \ \ \ \index{PostScript}PostScript document\\
-\ \ cgm text\ \ \ \ Computer Graphics Metafil, text\\
-\ \ cgm binary\ \ \ \ Computer Graphics Metafil, binary\\
-\ \ cgm char\ \ \ \ Computer Graphics Metafil, character\\
-\ \ sundraw\ \ \ \ SunDraw document\\
-\ \ ras\ \ \ \ \ \ UNIX raster image\\
-\ \ iris\ \ \ \ \ \ Iris image\\
-\ \ rle\ \ \ \ \ \ UNIX RLE image\\
-\ \ pbm\ \ \ \ \ \ PBM image\\
-\ \ pgm\ \ \ \ \ \ PGM image\\
-\ \ ppm\ \ \ \ \ \ PPM image\\
-\ \ xwd\ \ \ \ \ \ X Window dump\\
-\ \ gif\ \ \ \ \ \ Compuserv GIF image\\
-\ \ bmp\ \ \ \ \ \ BMP image\\
-\ \ xmp\ \ \ \ \ \ XMP image\\
-\ \ xpm\ \ \ \ \ \ XPM image\\
-\ \ pcx\ \ \ \ \ \ PCX image\\
-\ \ tiff\ \ \ \ \ \ TIFF image\\
-\ \ iff\ \ \ \ \ \ IFF/ILBM image\\
-\ \ ?\ \ \ \ \ \ unknown type
+\vspace{0.15in}
+\begin{supertabular}{m{0.5in} m{1.2in} m{0.9in} m{3.1in}}
+Value & Image file type & Value & Image file type\\
+xpm &  XPM image & ps & \index{PostScript}PostScript document\\
+pgm &  PGM image & cgm char & Computer Graphics Metafil, character\\
+
+ ?  & unknown & cgm text & Computer Graphics Metafil, text \\
+iris &  Iris image &
+sundraw & SunDraw document \\
+
+pbm &  PBM image &
+cgm binary & Computer Graphics Metafil, binary \\
+ppm &  PPM image & xwd &  X Window dump \\
+bmp &  BMP image & gif &  Compuserv GIF image \\
+xmp &  XMP image & ras & UNIX raster image \\
+pcx &  PCX image &rle &  UNIX RLE image \\
+tiff &  TIFF image & iff &  IFF/ILBM image \\
+\end{supertabular}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ineeds \hfill (RJA)}}
 
@@ -5000,7 +4985,7 @@ Some noise words are omitted (see
 file named except.wrd is open and readable in the current directory,
 the words in it are used instead.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplweb \ \textrm{\textmd{[-ipl source] [dest]}}}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplweb \ \textrm{\textmd{[-ipl source] [dest]}}\hfill (JK)}}
 
 \index{iplweb}\texttt{iplweb} generates web pages from IPL header
 \index{comment}comments. It uses an \index{environment
@@ -5013,7 +4998,7 @@ Program Library as a default if \texttt{{}-ipl} is not specified,
 these directories is an \texttt{.html} file for each of the
 \texttt{.icn} files in the referenced directory. An index to all of
 these files is also generated. Each of the \texttt{.html} files
-contains the IPL standard comment header info inside. (JK)
+contains the IPL standard comment header info inside.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iprint \hfill (RJA)}}
 
@@ -5120,11 +5105,11 @@ number.\\
 of the line numbers.\\
 \ \ \texttt{{}-w n}\ \ The column width (default: 80) of the whole
 output line.\\
-Normally only alphanumerics are cross-referenced. These options expand
+\noindent Normally only alphanumerics are cross-referenced. These options expand
 what is considered:\\
 \ \ \texttt{{}-q}\ \ Include quoted strings.\\
 \ \ \texttt{{}-x}\ \ Include all non-alphanumerics.\\
-This program assumes the subject file is a valid Icon program. For
+\noindent This program assumes the subject file is a valid Icon program. For
 example, it expects quotes be matched. Bugs: In some situations, the
 output is not properly formatted.
 
@@ -5135,7 +5120,7 @@ actually contain code, as opposed to being comments or blank lines.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{istrip}}
 
-\texttt{istrip} removes comments, empty lines, and leading whitespace
+\texttt{istrip} removes comments, empty lines, and leading spaces
 from an Icon program.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itab \ \textrm{\textmd{[options]
@@ -5158,7 +5143,7 @@ are:\\
 \ \ \texttt{{}-B}\ \ use backward searching patterns (?...?).\\
 \ \ \texttt{{}-F}\ \ use forward searching patterns (/.../)
 (default).\\
-\ \ \texttt{{}-x}\ \ produce a list of object names, the line number and
+\ \ \texttt{{}-x}\ \ produce object names, the line number and
 file name on which each is\\
 \ \ \ \ defined, as well as the text of that line and prints this on the
 standard output.\\
@@ -5166,12 +5151,12 @@ standard output.\\
 function index.\\
 \ \ \texttt{{}-t}\ \ create tags for records.\\
 \ \ \texttt{{}-v}\ \ produce on the standard output an index of the form
-expected by vgrind(1). This\\
-\ \ \ \ listing contains the function name, file name, and page number
-(assuming 64 line\\
-\ \ \ \ pages). Since the output will be sorted into lexicographic
-order, it may be desired\\
-\ \ \ \ to run the output through sort -f. Sample use:\\
+expected by vgrind(1).\\
+\ \ \ \ This listing contains the function name, file name, and page number
+(assuming\\
+\ \ \ \ 64 line pages). Since the output will be sorted into lexicographic
+order,\\
+\ \ \ \ it may be desired to run the output through sort -f. Sample use:\\
 \ \ \ \  \ \ \ \texttt{itags -v files {\textbar} sort -f {\textgreater}
 index vgrind -x index}\texttt{\\
 \ \ {}-w}\ \ suppress warning diagnostics.
@@ -5355,14 +5340,14 @@ included in the table with themselves as replacement. See also:
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lineseq}}
 
 \texttt{lineseq} reads values on separate lines and strings them
-together on a single line. The default separator is a blank; other
-separating strings can be specified by the \texttt{{}-s} option.
+together on a single line. The separating strings is specified by
+the \texttt{{}-s} option (default: \texttt{{\textquotedbl} {\textquotedbl}}).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lisp\hfill (SBW, PLT)}}
 
 \texttt{lisp} is a simple interpreter for pure \index{Lisp}Lisp. It
 takes the name of the Lisp program as a command-line argument. The
-syntax and semantics are based on EV-LISP, as described in Laurent
+syntax and semantics are based on EV-LISP, as described in L.
 Siklossy{\textquotesingle}s {\textquotedbl}Let{\textquotesingle}s Talk
 LISP{\textquotedbl} (Prentice-Hall, 1976). Functions that have been
 predefined match those described in Chapters 1-4 of the book. No
@@ -5396,7 +5381,7 @@ The options are:\\
 \ \ \texttt{{}-d}\ \ Display the data segment symbols.\\
 \ \ \texttt{{}-t}\ \ Display the text segment symbols.\\
 \ \ \texttt{{}-u}\ \ Display the undefined symbols.\\
-If no options are specified, \texttt{{}-t} is assumed. If the address of
+\noindent If no options are specified, \texttt{{}-t} is assumed. If the address of
 a symbol cannot be determined, ???? is given in its place. The size of
 the last region in a symbol class is suspect and is usually given as
 rem. Output is not particularly exciting on a stripped file.
@@ -5410,17 +5395,17 @@ written first.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lower}}
 
 \texttt{lower} maps the names of all files in the current directory to
-lowercase. Requires: UNIX. 
+lowercase.
 
-{\sffamily\bfseries
-makepuzz \ \textrm{\textmd{[-f}}\textmd{
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{makepuzz
+ \ \textrm{\textmd{[-f}}\textmd{
 }\textrm{\textmd{infil]}}\textmd{ }\textrm{\textmd{[-o}}\textmd{
 }\textrm{\textmd{outfil]}}\textmd{ }\textrm{\textmd{[-h}}\textmd{
 }\textrm{\textmd{ht]}}\textmd{ }\textrm{\textmd{[-w}}\textmd{
 }\textrm{\textmd{wd]}}\textmd{ }\textrm{\textmd{[-t}}\textmd{
 }\textrm{\textmd{sec]}}\textmd{ }\textrm{\textmd{[-r}}\textmd{
 }\textrm{\textmd{reject]}}\textmd{ }\textrm{\textmd{[-s]}}\textmd{
-}\textrm{\textmd{[-d]}}}
+}\textrm{\textmd{[-d]}}}\hfill (RLG)}
 
 \texttt{makepuzz} takes a list of words, and constructs out of them one
 of those square find-the-word puzzles that some people like to bend
@@ -5445,7 +5430,7 @@ here is a combination of random insertions and mindless, brute-force
 iterations through possible insertion points and insertion directions.
 If you don{\textquotesingle}t like \texttt{makepuzz}{\textquotesingle}s
 performance on one run, run it again. If your puzzle is large, try
-increasing the timeout value (see \texttt{{}-t} above). (RLG)
+increasing the timeout value (see \texttt{{}-t} above).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{missile\hfill (CT)}}
 
@@ -5459,7 +5444,7 @@ game. Requires: \texttt{ansi.sys}.
 
 \texttt{miu} generates strings from the MIU string system. The number of
 generations is determined by the command-line argument; default is 7.
-Reference: Godel, Escher, and Bach: an Eternal Golden Braid, Douglas R.
+Reference: Godel, Escher, and Bach: an Eternal Golden Braid, D. R.
 Hofstadter, Basic Books, 1979. pp. 33-36. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mkpasswd\hfill (JK)}}
@@ -5584,16 +5569,16 @@ to be linked with procedures that might be used with it.
 \texttt{parens} produces parenthesis-balanced strings in which the
 parentheses are randomly distributed. The following options are
 available:\\
-\ \ \texttt{{}-b n}\ \ Bound the length of the strings to n left and
-right parentheses each. Default: 10.\\
+\ \ \texttt{{}-b n}\ \ Bound the length of the strings to n left and n
+right parentheses. Default: 10.\\
 \ \ \texttt{{}-n n}\ \ Produce n strings. Default: 10.\\
 \ \ \texttt{{}-l s}\ \ Use the string s for the left parenthesis.
 Default: \texttt{{\textquotedbl}({\textquotedbl}} .\\
 \ \ \texttt{{}-r s}\ \ Use the string s for the right parenthesis.
 Default: \texttt{{\textquotedbl}){\textquotedbl} }.\\
 \ \ \texttt{{}-v}\ \ Randomly vary the length of the strings between 0
-and the bound. In the absence\\
-\ \ \ \ of this option, all strings are the exactly as long as the
+and the bound.\\
+\ \ \ \ Otherwise, all strings are the exactly as long as the
 specified bound.\\
 This program was motivated by the need for test data for error repair
 schemes for block-structured programming languages. A useful extension
@@ -5660,7 +5645,7 @@ precedence level):\\
 {\textquotesingle}str{\textquotesingle}str{\textquotesingle} * / \& + -
 {\textless} {\textless}= {\textgreater} {\textgreater}= == != \&\&
 {\textbar}{\textbar}} \\
-All operators associate left to right unless () are present. The top -
+\noindent All operators associate left to right unless () are present. The top -
 is a unary minus. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{patchu\hfill (RM)}
@@ -5694,9 +5679,9 @@ defines the product as a third. (E)valuate - gives the result of
 setting x in a polynomial to a value (C)lear - deletes one polynomial
 (H)elp - lists all commands (Q)uit - end the demonstration.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{polydemo\hfill (EE)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{
 post \ \textrm{\textmd{[-n groups] [-s subj] [-d dist] [-f followup] [-p
-prefix] [file]}}
+prefix] [file]}} \hfill (RF)}
 
 \texttt{post} posts a \index{news}news article to Usenet. Given the name
 of a file (\texttt{{\textquotedbl}-{\textquotedbl}} for standard input)
@@ -5708,7 +5693,7 @@ specified on the command line. On systems posting via \texttt{inews},
 \texttt{post} validates newsgroups and distributions in the
 \texttt{active} and \texttt{distributions} files in the news library
 directory. Bugs: Newsgroup validation assumes the active file is
-sorted. (RF)
+sorted.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{press\hfill (RJA)}}
 
@@ -6158,7 +6143,7 @@ Icon{\textquotesingle}s escape conventions. Line termination and other
 control characters are included in the tabulation. The following
 options are available:\\
 \ \ \texttt{{}-a}\ \ Write the summary in alphabetical order of the
-characters. This is the default.\\
+characters (default).\\
 \ \ \texttt{{}-n}\ \ Write the summary in numerical order of the
 counts.\\
 \ \ \texttt{{}-u}\ \ Write only the characters that occur just once.
@@ -6178,8 +6163,8 @@ letters are mapped to corres-\\
 case distinctions.\\
 \ \ \texttt{{}-n}\ \ Write the summary in numerical order of the
 counts.\\
-\ \ \texttt{{}-l n}\ \ Tabulate only words longer than n characters. The
-default tabulates all words.\\
+\ \ \texttt{{}-l n}\ \ Tabulate words longer than n characters. By
+default tabulate all words.\\
 \ \ \texttt{{}-u}\ \ Write only the words that occur just once.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{textcnt}}
@@ -6219,8 +6204,8 @@ The default value for n is 80. For example,
 \iconcode{
 \ \ trim 70 {\textless}grade.txt {\textgreater}grade.fix}
 
-copies \texttt{grade.txt} to \texttt{grade.fix}, with lines longer than
-70 characters truncated to 70 characters and the trailing blanks
+\noindent copies \texttt{grade.txt} to \texttt{grade.fix}, with lines longer
+than 70 characters truncated to 70 characters and the trailing blanks
 removed from all lines. The \texttt{{}-f} option causes all lines to be
 n characters long by adding blanks to short lines; otherwise, short
 lines are left as is.
@@ -6393,37 +6378,24 @@ apologize for them.
 
 \bigskip
 
-Paul Abrahams\ \ \ \ Robert J. Alexander\ \ \ \ Allan J. Anderson
+\begin{supertabular}{m{1.8in} m{1.8in} m{1.8in}}
 
-Norman Azadian\ \ \ \ Alan Beale\ \ \ \ \ \ Phil Bewig
+Paul Abrahams & Robert J. Alexander & Allan J. Anderson \\
+Norman Azadian & Alan Beale & Phil Bewig \\
+Peter A. Bigot & David S. Cargo & Alex Cecil \\
+Alan D. Corre & Cary A. Coutant & William E. Drissel \\
+Erik Eid & Ronald Florence & David A. Gamey \\
+Michael Glass & Richard L. Goerwitz & Ralph E. Griswold \\
+Matthias Heesch & Charles Hethcoat & Anthony V. Hewitt \\
+Thomas R. Hicks & Clinton L. Jeffery & Jere K?pyaho \\
+Justin Kolb & Tim Korb & Frank J. Lhota \\
+Nevin J. Liber & William P. Malloy & C. Scott McArthur \\
+Will Menagarini & Joe van Meter & William H. Mitchell \\
+Rich Morin & Jerry Nowlin & Mark Otto \\
+Robert Parlett & Jan P. de Ruiter & Randal L. Schwartz \\
+Charles Shartsis & David J. Slate & John D. Stone \\
+Chris Tenaglia & Phillip L. Thomas & Gregg M. Townsend \\
+Kenneth Walker & Stephen B. Wampler & Beth Weiss \\
+Robert C. Wieland & Cheyenne Wills & David Yost\\
 
-Peter A. Bigot\ \ \ \ \ \ David S. Cargo\ \ \ \ Alex Cecil
-
-Alan D. Corre\ \ \ \ \ \ Cary A. Coutant\ \ \ \ William E. Drissel
-
-Erik Eid\ \ \ \ \ \ Ronald Florence\ \ \ \ David A. Gamey
-
-Michael Glass\ \ \ \ \ \ Richard L. Goerwitz\ \ \ \ Ralph E. Griswold
-
-Matthias Heesch\ \ \ \ Charles Hethcoat\ \ \ \ Anthony V. Hewitt
-
-Thomas R. Hicks\ \ \ \ Clinton L. Jeffery\ \ \ \ Jere K?pyaho
-
-Justin Kolb\ \ \ \ \ \ Tim Korb\ \ \ \ \ \ Frank J. Lhota
-
-Nevin J. Liber\ \ \ \ \ \ William P. Malloy\ \ \ \ C. Scott McArthur
-
-Will Menagarini\ \ \ \ Joe van Meter\ \ \ \ \ \ William H. Mitchell
-
-Rich Morin\ \ \ \ \ \ Jerry Nowlin\ \ \ \ \ \ Mark Otto
-
-Robert Parlett\ \ \ \ \ \ Jan P. de Ruiter\ \ \ \ Randal L. Schwartz
-
-Charles Shartsis\ \ \ \ David J. Slate\ \ \ \ \ \ John D. Stone
-
-Chris Tenaglia\ \ \ \ Phillip L. Thomas\ \ \ \ Gregg M. Townsend
-
-Kenneth Walker\ \ \ \ Stephen B. Wampler\ \ \ \ Beth Weiss
-
-Robert C. Wieland\ \ \ \ Cheyenne Wills\ \ \ \ David Yost
-
+\end{supertabular}

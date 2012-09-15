@@ -11,8 +11,8 @@ identifier is used, any type is allowed. For results,
 \index{generator}generator expressions are further annotated with an
 asterisk (\textsf{\textbf{*}}) and non-generators that can
 \index{expression failure}fail are annotated with a question mark
-(\textsf{?}). A question mark by itself is shorthand for \textsf{null?}
-and denotes a predicate whose success or failure is what matters; the
+(\textsf{?}). A question mark by itself (short for \textsf{null?})
+denotes a predicate whose success or failure is what matters; the
 predicate return value (\textsf{\&null}) is not significant.
 
 \subsection{Immutable Types}
@@ -27,7 +27,11 @@ only for immutable types. A literal value evaluates to itself.
 
 Integers are of arbitrary precision. Decimal \index{integer}integer
 literals are contiguous sequences of the digits 0 through 9, optionally
-preceded by a + or - sign. Radix integer literals use the format
+preceded by a + or - sign.  Suffixes K, M, G, T, or P multiply
+a literal by 1024, 1024\^{}2, 1024\^{}3, 1024\^{}4, and
+1024\^{}5, respectively.
+
+Radix integer literals use the format
 \textit{radix}R\textit{digits}, where \textit{radix} is a base in the
 range 2 through 36, and \textit{digits} consists of one or more
 numerals in the supplied radix. After values 0-9, the letters A-Z are
@@ -50,7 +54,6 @@ character is a value with a platform-dependent size and symbolic
 representation. On platforms with multi-byte character sets, multiple
 Icon characters represent a single symbol using a platform-dependent
 encoding.
-
 String literals consist of 0 or more characters enclosed in double
 quotes. A string literal may include escape sequences that use multiple
 characters to encode special characters. The escape sequences are given
@@ -69,13 +72,13 @@ sequences that use multiple characters to encode special characters.
 
 \subsection{Mutable Types}
 
-Mutable types have values that may be altered. Changes to a
+Mutable types' values may be altered. Changes to a
 \index{mutable value}mutable value affect its allocated memory or its
-associated persistent storage. Mutable types include lists, tables,
+associated OS resource. Mutable types include lists, tables,
 sets, records, objects, and files, including windows, network
 connections and \index{database}databases. These types are described in
-this Appendix in the entries for \index{constructor}constructors that
-create mutable values. \index{structure types}Structure types hold
+in the entries for \index{constructor}constructors that
+create them. \index{structure types}Structure types hold
 collections of elements that may be of arbitrary, mixed type.
 
 \subsubsection{List}
@@ -100,21 +103,21 @@ function.
 \subsubsection{Record}
 
 \index{record}Records are ordered, fixed length sequences of elements
-that may be accessed via named fields.
+accessed via named fields.
 
 \subsubsection{Object}
 
 \index{object}Objects are ordered, fixed length sequences of elements
 that may be accessed via named fields and methods. Accessing an object's
-fields from outside its methods (like it was a record)
-is a widely deprecated practice.
+fields from outside its methods (using it as a record) is legal but
+deprecated.
 
 \subsubsection[File]{File}
 
-\index{file}Files are system interface values that correspond to data on
+\index{file}Files are system resources corresponding to data on
 secondary storage, areas on users{\textquotesingle} displays, network
-connections, or \index{database}databases. Operations on files are
-input or output functions that cause side effects on the system outside
+connections, or \index{database}databases. Operations on files
+cause input or output side effects on the system outside
 of the program execution.
 
 \subsection{Variables}
@@ -136,10 +139,10 @@ reserved words (\textsf{global}, \textsf{local}, or \textsf{static})
 followed by a comma-separated list of variable names. Global variables
 are declared outside of any procedure or method body, while local and
 static variables are declared at the beginning of procedure and method
-bodies. Local and static variable names may optionally be followed by
-an assignment operator and an initial value; otherwise all variables
-other than procedure and class names begin with the null value,
-\textsf{\&null}.
+bodies. Local and static variable names may be followed by
+an assignment operator and an initial value; otherwise variables
+other than procedure and class names begin with the value
+\texttt{\&null}.
 
 \index{aliasing}\textit{Aliasing} occurs when two or more variables
 refer to the same value, such that operations on one variable might
@@ -151,19 +154,18 @@ aliased, because those types are immutable.
 
 Global variables are visible everywhere in the program, and exist at the
 same location for the entire program execution. Declaring a procedure
-declares a global variable and preinitializes it to the procedure value
+declares a global variable preinitialized to the procedure value
 that corresponds to the code for that procedure.
 
 \subsubsection{Local}
 
-Local variables are visible only within a single procedure or method,
-and exist at any particular location only for the duration of a single
+Local variables exist and are visible within a single procedure or method
+only for the duration of a single
 procedure invocation, including suspensions and resumptions, until the
 procedure returns, fails, or is \textit{vanquished} by the return or
-failure of one of its ancestor invocations. Variables that are
-undeclared in any \index{scope}scope are implicitly local, but this
-dangerous practice is deprecated and should be avoided in large
-programs.
+failure of an ancestor invocation while it is suspended.
+Undeclared variables in any \index{scope}scope are implicitly local, but this
+dangerous practice should be avoided in large programs.
 
 Variables that are declared as \textit{parameters} are local variables
 that are preinitialized to the values of actual parameters at the time
@@ -179,10 +181,10 @@ to the procedure in which it is declared.
 
 \subsubsection{Class}
 
-Class variables are visible within the methods of a declared class. A
-set of class variables is created for each
+Class variables are visible within the methods of a declared class.
+Class variables are created for each
 \index{instance!class}instance (object) of the class. The lifespan of
-class variables is the same as the life span of the instance to which
+class variables is the life span of the instance to which
 they belong. The value stored in a class variable is preserved between
 multiple calls to the methods of the class in which it is declared.
 
@@ -497,7 +499,7 @@ sizes}
 \noindent
 \index{region sizes}\textsf{\&regions} produces the sizes of the static
 region, the string region, and the block region. The first result is
-always zero and is included for backward compatibility reasons.
+zero; it is included for backward compatibility reasons.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf \&source : co{}-expression \hfill invoking co{}-expression}
@@ -530,7 +532,7 @@ value used in string scanning and analysis functions. Assigning to
 
 \noindent
 \textsf{\&syserr} controls whether a system error causes execution to
-halt with a runtime error. System errors cause expression failure by
+halt. System errors cause expression failure by
 default. If \textsf{\&syserr} is set to a non-zero value, system errors
 are converted to runtime errors and halt execution with an error
 traceback.
@@ -548,9 +550,9 @@ the program execution began. For wall clock time see \textsf{\&now} or
 \noindent {\bf \&trace := integer \hfill trace program}
 
 \noindent
-\textsf{\&trace} indicates the number of nesting levels to which the
-program execution should be traced. 0 means no \index{tracing}tracing.
-A negative value turns on tracing to an infinite depth.
+\textsf{\&trace} gives the number of nesting levels to which
+program execution will be traced. 0 means no \index{tracing}tracing.
+A negative value traces to an infinite depth.
 \textsf{\&trace} is set outside the program using the \textsf{TRACE}
 \index{environment variable!TRACE}environment variable or the
 \textsf{{}-t} compiler option.
@@ -624,8 +626,7 @@ release event.
 \noindent {\bf \&mdrag : integer \hfill  middle mouse button drag}
 
 \noindent
-\textsf{\&mdrag} produces the integer that \textsf{Event()} returns to
-indicate a middle button drag event.
+\textsf{\&mdrag} produces the integer that indicates a middle button drag event.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf \&meta : integer \hfill meta modifier flag}
@@ -767,7 +768,7 @@ several branches of code to be executed.
 \noindent
 \index{class!declaration}The \textsf{class} declaration introduces a new
 object type into the program. The \textsf{class} declaration may
-include a list of superclasses, fields, methods, and an optional
+include lists of superclasses, fields, methods, and an
 initially section.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -902,13 +903,13 @@ path.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf \textbf{local}
-\textit{var} \textit{[ }:=\textit{ initialize} \textit{\ r} ]
-\textit{[}, \textit{var }\ \textit{[}:=\textit{ initializer ]
+\textit{var} [:=\textit{initializer} ]
+[, \textit{var}\ [:=\textit{ initializer ]
 ]}* \hfill declare local variables}
 
 \noindent
-\index{local}The \textsf{local} declaration introduces one or more local
-variables into the current procedure or method body.
+\index{local}The \textsf{local} declaration introduces local
+variables into the current procedure or method.
 \index{variable}Variable declarations must be at the beginning of a
 procedure or method.
 
@@ -917,8 +918,8 @@ procedure or method.
 
 \noindent
 \index{method}The \textsf{method} declaration introduces a procedure
-that is only invoked with respect to \index{instance!class}instances of
-an enclosing class declaration. The \textit{params} and \textit{body}
+that is invoked with respect to \index{instance!class}instances of
+a given class. The \textit{params} and \textit{body}
 are as in procedures, described below.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -940,10 +941,10 @@ and succeeds (producing null) if \textit{expr} fails.
 \noindent {\bf case expr of \{ ? \}\ \hfill introduce case branches}
 
 \noindent
-\index{of}The \textsf{of} reserved word precedes a special compound
-expression consisting if a sequence of case branches of the form
+\index{of}The \texttt{of} reserved word precedes a special compound
+expression consisting of a sequence of case branches of the form
 \textit{expr} : \textit{expr}. Case branches are evaluated in sequence
-until one is found that matches the expression given between the word
+until one matches the expression given between the word
 \textsf{case} and the \textsf{of}.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -961,9 +962,9 @@ the package.
 
 \noindent
 \index{procedure}The \textsf{procedure} declaration specifies a
-procedure with the specified parameters and code body. The parameters
+procedure with parameters and code body. The parameters
 are a comma-separated list of zero or more variable names. The last
-parameter may optionally be suffixed by [ ] indicating that any
+parameter may be suffixed by [ ] to indicate that
 following parameters will be supplied to the procedure in a list. The
 body is an optional sequence of local and static variable declarations,
 followed by a sequence of zero or more expressions.
@@ -997,8 +998,9 @@ not be resumed.
 declare static variables}
 
 \noindent
-\index{static}The \textsf{static} declaration introduces one or more
-local variables into the current procedure or method body. Variable
+\index{static}The \textsf{static} declaration introduces 
+local variables that persist for the entire program execution
+into the current procedure or method body. Variable
 declarations must be at the beginning of a procedure or method.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1085,14 +1087,14 @@ operand types except as noted.
 
 \noindent
 \index{generate elements}The \index{generate operator "!x}generate
-operator produces the elements of \textsf{x}. It is a generator. If
-\textsf{x} is a string variable or refers to a structure value, the
-generated elements are variables that may be assigned. \ \textsf{!i} is
-equivalent to \textsf{(1 to i)} for integer \textsf{i}. List, record,
+operator produces the elements of \texttt{x}. If
+\texttt{x} is a string variable or refers to a structure value, the
+generated elements are variables that may be assigned. \ \texttt{!i} is
+equivalent to \texttt{(1 to i)} for integer \texttt{i}. List, record,
 string, and file elements are generated in order, with string elements
 consisting of one-letter substrings. Set and table elements are
-generated in an undefined order. If \textsf{x} is a messaging
-connection to a POP server, \textsf{!x} produces complete messages as
+generated in an undefined order. If \texttt{x} is a messaging
+connection to a POP server, \texttt{!x} produces complete messages as
 strings. Other types of files, including network connections, produce
 elements consisting of text lines.
 
@@ -1123,28 +1125,28 @@ required numeric type.
 
 \noindent
 \index{tab/match ( =s )}The tab/match operator is equivalent to calling
-\textsf{tab(match(s))} on its operand.
+\texttt{tab(match(s))} on its operand.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf * x : integer \hfill size}
 
 \noindent
 The \index{size operator}size operator returns the number of elements in
-string, cset or structure \textsf{x}.
+string, cset or structure \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf . x : x \hfill dereference}
 
 \noindent
 The \index{dereference}dereference operator returns the value
-\textsf{x}.
+\texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ? x : any \hfill random element}
 
 \noindent
 The \index{random!operator, ?x}random operator produces a random element
-from \textsf{x}. If \textsf{x} is a string, \textsf{?x} produces a
+from \texttt{x}. If \texttt{x} is a string, \texttt{?x} produces a
 random one-letter substring. The result is a variable that may be
 assigned.
 
@@ -1160,7 +1162,7 @@ loop.
 \noindent {\bf \~{} cset \hfill cset complement}
 
 \noindent
-The \index{complement, cset}complement operator produces a cset
+The \index{complement, cset}complement operator returns a cset
 consisting of all characters not in its operand.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1175,11 +1177,11 @@ first result.
 
 \index{binary operator}Most binary operators may be augmented with an
 \index{assignment!augmented}assignment. If such an operator is followed
-by a \textsf{:=} the left operand must be a variable, and the
-expression \textsf{x }\textsf{\textit{op}}\textsf{:= y} is equivalent
-to \textsf{x := x }\textsf{\textit{op}}\textsf{ y}. For example,
-\textsf{x +:= 5} is equivalent but faster than the expression
-\ \textsf{x := x+5.}
+by a \texttt{:=} the left operand must be a variable, and the
+expression \texttt{x }\texttt{\textit{op}}\texttt{:= y} is equivalent
+to \texttt{x := x }\texttt{\textit{op}}\texttt{ y}. For example,
+\texttt{x +:= 5} is equivalent but faster than the expression
+\ \texttt{x := x+5.}
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf \textit{number1} \^{} \textit{number2} \hfill power}
@@ -1291,7 +1293,7 @@ operators also require variables for their right operands.
 
 \noindent
 \index{scan string}The string scanning operator evaluates \textit{expr}
-with \textsf{\&subject} equal to string and \textsf{\&pos} starting at
+with \texttt{\&subject} equal to string and \texttt{\&pos} starting at
 1. It may be augmented.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1300,7 +1302,7 @@ with \textsf{\&subject} equal to string and \textsf{\&pos} starting at
 
 \noindent The activate operator transfers execution
 control from the current co-expression to its right operand
-co-expression. The transmitted value is \textsf{x}, or \textsf{\&null}
+co-expression. The transmitted value is \texttt{x}, or \texttt{\&null}
 if no left operand is supplied. Activation may be augmented.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1340,10 +1342,10 @@ operand. They may be augmented.
 {\bf expr1 {\textbar} expr2 \hfill alternation}
 
 \noindent
-The \index{conjunction \&}conjunction operator produces \textsf{x2} if
-\textsf{x1} succeeds. The \index{alternation operator ( {\textbar}
-)}alternation operator produces the results of \textsf{expr1} followed
-by the results of \textsf{expr2}; it is a \index{generator}generator.
+The \index{conjunction \&}conjunction operator produces \texttt{x2} if
+\texttt{x1} succeeds. The \index{alternation operator ( {\textbar}
+)}alternation operator produces the results of \texttt{expr1} followed
+by the results of \texttt{expr2}; it is a \index{generator}generator.
 These operators may be augmented.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1398,7 +1400,7 @@ With no preceding operand, square brackets create and initialize lists.
 When preceded by an operand, square brackets form a subscript or
 subsection. Multiple comma-separated subscript operands are equivalent
 to separate subscript operations with repeating square brackets, so
-\textsf{x[y,z]} is equivalent to \textsf{x[y][z]}.
+\texttt{x[y,z]} is equivalent to \texttt{x[y][z]}.
 
 Subscripting selects an element from a structure and allows that element
 to be assigned or for its value to be used. Lists and strings are
@@ -1410,17 +1412,19 @@ connections may also be subscripted by 1-based integer message numbers.
 
 Subsectioning works on strings and lists. For strings, the subsection is
 a variable if the string was a variable, and
-\index{assignment!substring}assignment to the subsection modifies the
-original \index{variable}variable. For lists, a subsection is a new
+\index{assignment!substring}assignment to the subsection makes the
+\index{variable}
+variable hold the new, modified string constructed by replacing the subsection.
+For lists, a subsection is a new
 list that contains a copy of the elements from the original list.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf expr1 ; expr2 \hfill bound expression}
 
 \noindent
-A semicolon bounds \textsf{expr1}. Once \textsf{expr2} is entered,
-\textsf{expr1} cannot be resumed for more results. The result of
-\textsf{expr2} is the result of the entire expression. \index{semicolon
+A semicolon bounds \texttt{expr1}. Once \texttt{expr2} is entered,
+\texttt{expr1} cannot be resumed for more results. The result of
+\texttt{expr2} is the result of the entire expression. \index{semicolon
 insertion}Semicolons are automatically inserted at ends of lines
 wherever it is syntactically allowable to do so. This results in many
 \textit{implicitly }\index{bounded expressions}\textit{bounded}
@@ -1455,7 +1459,7 @@ extensive use of optional parameters with default values. Default
 values are indicated in the function descriptions, with the exception
 of string scanning functions. \index{default parameters!string scanning
 functions}String scanning functions end with three parameters that
-default to the string \textsf{\&subject}, the integer \textsf{\&pos},
+default to the string \texttt{\&subject}, the integer \texttt{\&pos},
 and the end of string (0) respectively. The position argument defaults
 to 1 when the string argument is supplied rather than defaulted.
 
@@ -1464,8 +1468,8 @@ to 1 when the string argument is supplied rather than defaulted.
 \hrule\vspace{0.1cm}
 \noindent {\bf abs(N) : number \hfill absolute value}
 
-\noindent \index{absolute value}\textsf{abs(N)} produces the maximum of
-\textsf{N} or \textsf{{}-N}.
+\noindent \index{absolute value}\texttt{abs(N)} produces the maximum of
+\texttt{N} or \texttt{{}-N}.
 
 \bigskip
 
@@ -1473,8 +1477,8 @@ to 1 when the string argument is supplied rather than defaulted.
 \noindent {\bf acos(r) : real \hfill arc cosine}
 
 \noindent
-\index{arc cosine}\textsf{acos(r)} produces the arc cosine of
-\textsf{r}. The argument is given in radians.
+\index{arc cosine}\texttt{acos(r)} produces the arc cosine of
+\texttt{r}. The argument is given in radians.
 
 \bigskip
 
@@ -1483,8 +1487,8 @@ to 1 when the string argument is supplied rather than defaulted.
 
 \noindent
 \index{any()}\index{cset membership}String scanning function
-\textsf{any(c,s,i1,i2)} produces \textsf{i1+1} if \textsf{s[i1:i2][1]}
-is in cset \textsf{c}, but fails otherwise.
+\texttt{any(c,s,i1,i2)} produces \texttt{i1+1} if \texttt{s[i1:i2][1]}
+is in cset \texttt{c}, but fails otherwise.
 
 \bigskip
 
@@ -1492,15 +1496,15 @@ is in cset \textsf{c}, but fails otherwise.
 \noindent {\bf args(x,i) : integer \hfill number of arguments}
 
 \noindent
-\index{args(p)}\textsf{args(p)} produces the number of arguments
-expected by procedure \textsf{p}. If \textsf{p} takes a variable number
-of arguments, \textsf{args(p)} returns a negative number to indicate
+\index{args(p)}\texttt{args(p)} produces the number of arguments
+expected by procedure \texttt{p}. If \texttt{p} takes a variable number
+of arguments, \texttt{args(p)} returns a negative number to indicate
 that the final argument is a list conversion of an arbitrary number of
-arguments. For example, \textsf{args(p)} for a procedure \textsf{p}
-with formal parameters \textsf{(x, y, z[ ])} returns a \textsf{{}-3}.
-\textsf{args(C)} produces the number of arguments in the current
-operation in co-expression \textsf{C}, and \textsf{args(C,i)} produces
-argument number \textsf{i} within co-expression \textsf{C}.
+arguments. For example, \texttt{args(p)} for a procedure \texttt{p}
+with formal parameters \texttt{(x, y, z[ ])} returns a \texttt{{}-3}.
+\texttt{args(C)} produces the number of arguments in the current
+operation in co-expression \texttt{C}, and \texttt{args(C,i)} produces
+argument number \texttt{i} within co-expression \texttt{C}.
 
 \bigskip
 
@@ -1508,7 +1512,7 @@ argument number \textsf{i} within co-expression \textsf{C}.
 \noindent {\bf asin(real) : real \hfill arc sine}
 
 \noindent
-\index{arc sine}\textsf{asin(r1)} produces the arc sine of \textsf{r1}.
+\index{arc sine}\texttt{asin(r1)} produces the arc sine of \texttt{r1}.
 The argument is given in radians.
 
 \bigskip
@@ -1517,16 +1521,16 @@ The argument is given in radians.
 \noindent {\bf atan(r, r:1.0) : real \hfill arc tangent}
 
 \noindent
-\index{arc tangent}\textsf{atan(r1)} produces the arc tangent of
-\textsf{r1}. \textsf{atan(r1,r2)} produces the arc tangent of
-\textsf{r1} and \textsf{r2}. Arguments are given in radians.
+\index{arc tangent}\texttt{atan(r1)} produces the arc tangent of
+\texttt{r1}. \texttt{atan(r1,r2)} produces the arc tangent of
+\texttt{r1} and \texttt{r2}. Arguments are given in radians.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf atanh(r) : real \hfill inverse hyperbolic tangent}
 
 \noindent
-\index{inverse hyperbolic tangent}\textsf{atanh(r)} produces the inverse
-hyperbolic tangent of \textsf{r}. Arguments are given in radians.
+\index{inverse hyperbolic tangent}\texttt{atanh(r)} produces the inverse
+hyperbolic tangent of \texttt{r}. Arguments are given in radians.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf bal(cs:\&cset, cs:{\textquotesingle}({\textquotesingle},
@@ -1535,41 +1539,41 @@ integer* \hfill balance string}
 
 \noindent
 \index{balance string}\index{string!balance}String scanning function
-\textsf{bal(c1,c2,c3,s,i1,i2)} generates the integer positions in
-\textsf{s} at which a member of \textsf{c1} in \textsf{s[i1:i2]} is
-balanced with respect to characters in \textsf{c2} and \textsf{c3}.
+\texttt{bal(c1,c2,c3,s,i1,i2)} generates the integer positions in
+\texttt{s} at which a member of \texttt{c1} in \texttt{s[i1:i2]} is
+balanced with respect to characters in \texttt{c2} and \texttt{c3}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf center(s, i:1, s:{\textquotedbl} {\textquotedbl}) :
 string \hfill center string}
 
 \noindent
-\index{center()}\index{string!center}\textsf{center(s1,i,s2)} produces a
-string of \textsf{i} characters. If \textsf{i {\textgreater} *s1} then
-\textsf{s1} is padded equally on the left and right with \textsf{s2} to
-length \textsf{i}. If \textsf{i {\textless} *s1} then the center
-\textsf{i} characters of \textsf{s1} are produced.
+\index{center()}\index{string!center}\texttt{center(s1,i,s2)} produces a
+string of \texttt{i} characters. If \texttt{i {\textgreater} *s1} then
+\texttt{s1} is padded equally on the left and right with \texttt{s2} to
+length \texttt{i}. If \texttt{i {\textless} *s1} then the center
+\texttt{i} characters of \texttt{s1} are produced.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf channel(TH) : list \hfill communicationsl channel}
 
 \noindent
-\index{channel}\textsf{channel(TH)} creates a communications channel
+\index{channel}\texttt{channel(TH)} creates a communications channel
 between the current thread and thread {\textit TH}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf char(i) : string \hfill encode character}
 
 \noindent
-\index{character}\textsf{char(i)} produces a string consisting of the
-character encoded by integer \textsf{i}.
+\index{character}\texttt{char(i)} produces a string consisting of the
+character encoded by integer \texttt{i}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf chdir(s) : string \hfill change directory}
 
 \noindent
-\index{directory}\index{chdir()}\textsf{chdir(s)} changes the current
-working directory to \textsf{s}. \textsf{chdir()} returns the current
+\index{directory}\index{chdir()}\texttt{chdir(s)} changes the current
+working directory to \texttt{s}. \texttt{chdir()} returns the current
 working directory.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1577,38 +1581,38 @@ working directory.
 
 \noindent
 \index{permissions, file}\index{permissions,
-file}\index{file!permissions}\index{file!permissions}\index{chmod()}\textsf{chmod(f,
+file}\index{file!permissions}\index{file!permissions}\index{chmod()}\texttt{chmod(f,
 m)} sets the access permissions ({\textquotedbl}mode{\textquotedbl}) of
-a string filename (or on UNIX systems, an open file) \textsf{f} to a
-string or integer mode \textsf{m}. The mode indicates the change to be
+a string filename (or on UNIX systems, an open file) \texttt{f} to a
+string or integer mode \texttt{m}. The mode indicates the change to be
 performed. The string is of the form
 
 \iconcode{
 \>   [ugoa]*[+-=][rwxRWXstugo]* }
 
-The first group describes the set of mode bits to be changed: \textsf{u}
-is the owner set, \textsf{g} is the group and \textsf{o} is the set of
-all others. The character \textsf{a} designates all the fields. The
-operator (\textsf{+-=}) describes the operation to be performed:
-\textsf{+} adds a permission, \textsf{{}-} removes a permission, and
-\textsf{=} sets a permission. The permissions themselves are: 
+The first group describes the set of mode bits to be changed: \texttt{u}
+is the owner set, \texttt{g} is the group and \texttt{o} is the set of
+all others. The character \texttt{a} designates all the fields. The
+operator (\texttt{+-=}) describes the operation to be performed:
+\texttt{+} adds a permission, \texttt{{}-} removes a permission, and
+\texttt{=} sets a permission. The permissions themselves are: 
 
-\ \ \ \ \ \textsf{r} \ \ \ \ \ \ \ \ read\\
- \ \ \ \ \textsf{w} \ \ \ \ \ \ \ write\\
- \ \ \ \ \textsf{x} \ \ \ \ \ \ \ \ execute\\
- \ \ \ \ \textsf{R} \ \ \ \ \ \ \ read if any other set already has
+\ \ \ \ \ \texttt{r} \ \ \ \ \ \ \ \ read\\
+ \ \ \ \ \texttt{w} \ \ \ \ \ \ \ write\\
+ \ \ \ \ \texttt{x} \ \ \ \ \ \ \ \ execute\\
+ \ \ \ \ \texttt{R} \ \ \ \ \ \ \ read if any other set already has
 r\\
- \ \ \ \ \textsf{W} \ \ \ \ \ \ write if any other set already has
+ \ \ \ \ \texttt{W} \ \ \ \ \ \ write if any other set already has
 w\\
- \ \ \ \ \textsf{X} \ \ \ \ \ \ \ execute if any other set already has
+ \ \ \ \ \texttt{X} \ \ \ \ \ \ \ execute if any other set already has
 x\\
- \ \ \ \ \textsf{s} \ \ \ \ \ \ \ \ setuid (if the first part contains u
+ \ \ \ \ \texttt{s} \ \ \ \ \ \ \ \ setuid (if the first part contains u
 and/or setgid if the first part contains g\\
- \ \ \ \ \textsf{t} \ \ \ \ \ \ \ \ sticky if the first part has
+ \ \ \ \ \texttt{t} \ \ \ \ \ \ \ \ sticky if the first part has
 o\\
- \ \ \ \ \textsf{u} \ \ \ \ \ \ \ the u bits on the same file\\
- \ \ \ \ \textsf{g} \ \ \ \ \ \ \ the g bits on the same file\\
- \ \ \ \ \textsf{o} \ \ \ \ \ \ \ the o bits on the same file
+ \ \ \ \ \texttt{u} \ \ \ \ \ \ \ the u bits on the same file\\
+ \ \ \ \ \texttt{g} \ \ \ \ \ \ \ the g bits on the same file\\
+ \ \ \ \ \texttt{o} \ \ \ \ \ \ \ the o bits on the same file
 
 If the first group is missing, then it is treated as
 {\textquotedbl}all{\textquotedbl} except that any bits in the
@@ -1620,14 +1624,14 @@ are used is a property of the filesystem on which the file resides.
 \noindent {\bf classname(r) : string \hfill class name}
 
 \noindent
-\textsf{classname(r)} produces the name of \textsf{r}{\textquotesingle}s
+\texttt{classname(r)} produces the name of \texttt{r}{\textquotesingle}s
 class.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf close(f) : file {\textbar} integer \hfill close file}
 
 \noindent
-\index{file!close}\index{close file}\textsf{close(f)} closes file, pipe,
+\index{file!close}\index{close file}\texttt{close(f)} closes file, pipe,
 window, network or message connection, or \index{database}database f
 and returns any resources associated with it to the operating system.
 If f was a window, close(f) causes it to disappear, but the window can
@@ -1663,7 +1667,7 @@ a new condition variable.
 
 \noindent
 \index{record constructor}constructor(label, field, field, ...) creates
-a new record type named \textsf{label} with fields named by its
+a new record type named \texttt{label} with fields named by its
 subsequent arguments, and returns a constructor procedure for this
 record type.
 
@@ -1705,13 +1709,13 @@ the local timezone. See also keywords \&clock and \&dateline.
 \index{column!ODBC}dbcolumns(db, tablename) produces a list of record
 (catalog, schema, tablename, colname, datatype, typename, colsize,
 buflen, decdigits, numprecradix, nullable, remarks) entries. Fields
-\textsf{datatype} and \textsf{typename} are SQL-dependent and data
-source dependent, respectively. Field \textsf{colsize} gives the
+\texttt{datatype} and \texttt{typename} are SQL-dependent and data
+source dependent, respectively. Field \texttt{colsize} gives the
 maximum length in characters for SQL\_CHAR or SQL\_VARCHAR columns..
-Field \textsf{decdigits} gives the number of significant digits right
-of the decimal. Field \textsf{numprecradix} specifies whether
-\textsf{colsize} and \textsf{decdigits} are specified in bits or
-decimal digits. Field \textsf{nullable} is 0 if the column does not
+Field \texttt{decdigits} gives the number of significant digits right
+of the decimal. Field \texttt{numprecradix} specifies whether
+\texttt{colsize} and \texttt{decdigits} are specified in bits or
+decimal digits. Field \texttt{nullable} is 0 if the column does not
 accept null values, 1 if it does accept null values, and 2 if it is not
 known whether the column accepts null values.
 
@@ -1723,8 +1727,8 @@ known whether the column accepts null values.
 odbcver, connections, statements, dsn) that describes the details of
 the \index{ODBC}ODBC driver used to connect to database db. Connections
 and statements are the maximums the driver can support. Fields
-\textsf{ver} and \textsf{odbcver} are the driver and ODBC version
-numbers. Fields \textsf{name} and \textsf{dsn} are the driver filename
+\texttt{ver} and \texttt{odbcver} are the driver and ODBC version
+numbers. Fields \texttt{name} and \texttt{dsn} are the driver filename
 and Windows Data Source Name associated with the connection.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1739,11 +1743,11 @@ primary keys in tablename.
 \noindent {\bf dblimits(D) : record \hfill ODBC operation limits}
 
 \noindent
-dblimits(db) produces a record with fields \textsf{maxbinlitlen,
+dblimits(db) produces a record with fields \texttt{maxbinlitlen,
 maxcharlitlen, maxcolnamelen, maxgroupbycols, maxorderbycols,
 maxindexcols, maxselectcols, maxtblcols, maxcursnamelen, maxindexsize,
 maxrownamelen, maxprocnamelen, maxqualnamelen, maxrowsize,
-maxrowsizelong, maxstmtlen, maxtblnamelen, maxselecttbls,} and\textsf{
+maxrowsizelong, maxstmtlen, maxtblnamelen, maxselecttbls,} and\texttt{
 maxusernamelen} that contains the upper bounds of the database for many
 parameters.
 
@@ -1912,28 +1916,28 @@ file may not simultaneously have shared and exclusive locks.
 \noindent {\bf flush(f) : file \hfill flush file}
 
 \noindent
-\index{flush(f)}\textsf{flush(f)} flushes all pending or buffered output
-to file \textsf{f}.
+\index{flush(f)}\texttt{flush(f)} flushes all pending or buffered output
+to file \texttt{f}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf function() : string* \hfill name the functions}
 
 \noindent
-\textsf{function()} generates the names of the built-in functions.
+\texttt{function()} generates the names of the built-in functions.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf get(L,i:1) : any? \hfill get element from queue}
 
 \noindent
-\textsf{get(L)} returns an element which is removed from the head of the
-\index{queue}queue \textsf{L}. \textsf{get(L, i)} removes \textsf{i}
+\texttt{get(L)} returns an element which is removed from the head of the
+\index{queue}queue \texttt{L}. \texttt{get(L, i)} removes \texttt{i}
 elements, returning the last one removed.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf getch() : string? \hfill get character from console}
 
 \noindent
-\textsf{getch()} waits for (if necessary) and returns a character typed
+\texttt{getch()} waits for (if necessary) and returns a character typed
 at the \index{keyboard}keyboard, even if standard input was redirected.
 The character is not displayed.
 
@@ -1941,7 +1945,7 @@ The character is not displayed.
 \noindent {\bf getche() : string? \hfill get and echo character from console}
 
 \noindent
-\textsf{getche()} waits for (if necessary) and returns a character typed
+\texttt{getche()} waits for (if necessary) and returns a character typed
 at the console keyboard, even if standard input was redirected. The
 character is echoed to the \index{screen}screen.
 
@@ -1949,25 +1953,25 @@ character is echoed to the \index{screen}screen.
 \noindent {\bf getenv(s) : string? \hfill get environment variable}
 
 \noindent
-\textsf{getenv(s)} returns the value of \index{environment
-variable}environment variable \textsf{s} from the operating system.
+\texttt{getenv(s)} returns the value of \index{environment
+variable}environment variable \texttt{s} from the operating system.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf gettimeofday() : record \hfill time of day}
 
 \noindent
 \index{time!of day}Returns the current time in seconds and microseconds
-since the epoch, Jan 1, 1970 00:00:00. The \textsf{sec} value may be
+since the epoch, Jan 1, 1970 00:00:00. The \texttt{sec} value may be
 converted to a date string with ctime or gtime. See also keywords
-\textsf{\&now}, \textsf{\&clock}, and \textsf{\&dateline}. Return
-value: \textsf{record posix\_timeval(sec, usec)} 
+\texttt{\&now}, \texttt{\&clock}, and \texttt{\&dateline}. Return
+value: \texttt{record posix\_timeval(sec, usec)} 
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf globalnames(CE) : string* \hfill name the global variables}
 
 \noindent
-\index{global}\textsf{globalnames(ce)} generates the names of the global
-variables in the program that created co-expression \textsf{ce}.
+\index{global}\texttt{globalnames(ce)} generates the names of the global
+variables in the program that created co-expression \texttt{ce}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf gtime(i) : string \hfill format a time value into UTC }
@@ -1980,93 +1984,93 @@ Converts an integer time in seconds since the epoch, Jan 1, 1970
 \noindent {\bf iand(i, i) : integer \hfill bitwise and}
 
 \noindent
-\index{bitwise and}\textsf{iand(i1, i2)} produces the bitwise AND of
-\textsf{i1} and \textsf{i2}.
+\index{bitwise and}\texttt{iand(i1, i2)} produces the bitwise AND of
+\texttt{i1} and \texttt{i2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf icom(i) : integer \hfill bitwise complement}
 
 \noindent
-\textsf{icom(i)} produces the bitwise complement (one{\textquotesingle}s
-complement) of \textsf{i}.
+\texttt{icom(i)} produces the bitwise complement (one{\textquotesingle}s
+complement) of \texttt{i}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf image(any) : integer \hfill string image}
 
 \noindent
-\index{image(x)}\textsf{image(x)} returns the string image of the value
-\textsf{x}.
+\index{image(x)}\texttt{image(x)} returns the string image of the value
+\texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf insert(x1, x2, x3:\&null) : x1 \hfill insert element}
 
 \noindent
-\textsf{insert(x1, x2, x3)} inserts element \textsf{x2} into set, table,
-or list or DBM database \textsf{x1} if not already there. Unless
-\textsf{x1} is a set, the assigned value for element \textsf{x2} is
-\textsf{x3}. For lists, \textsf{x2} is an integer index; for other
-types, it is a key. \index{insert()}\textsf{insert()} always succeeds
-and returns \textsf{x1}.
+\texttt{insert(x1, x2, x3)} inserts element \texttt{x2} into set, table,
+or list or DBM database \texttt{x1} if not already there. Unless
+\texttt{x1} is a set, the assigned value for element \texttt{x2} is
+\texttt{x3}. For lists, \texttt{x2} is an integer index; for other
+types, it is a key. \index{insert()}\texttt{insert()} always succeeds
+and returns \texttt{x1}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf integer(any) : integer? \hfill convert to integer}
 
 \noindent
-\index{convert!to integer}\textsf{integer(x)} converts value \textsf{x}
+\index{convert!to integer}\texttt{integer(x)} converts value \texttt{x}
 to an integer, or fails if the conversion cannot be performed.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ior(i, i) : integer \hfill bitwise or}
 
 \noindent
-\index{bitwise or}\textsf{ior(i1, i2)} produces the bitwise OR of
-\textsf{i1} and \textsf{i2}.
+\index{bitwise or}\texttt{ior(i1, i2)} produces the bitwise OR of
+\texttt{i1} and \texttt{i2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ishift(i, i) : integer \hfill bitwise shift}
 
 \noindent
-\index{shift}\textsf{ishift(i, j)} produces the value obtained by
-shifting \textsf{i} by \textsf{j} bit positions. Shifting is to the
-left if \textsf{j{\textless}0}, or to the right if
-\textsf{j{\textgreater}0}. \textsf{j} zero bits are introduced at the
+\index{shift}\texttt{ishift(i, j)} produces the value obtained by
+shifting \texttt{i} by \texttt{j} bit positions. Shifting is to the
+left if \texttt{j{\textless}0}, or to the right if
+\texttt{j{\textgreater}0}. \texttt{j} zero bits are introduced at the
 end opposite the shift direction.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf istate(CE, s) : integer \hfill interpreter state}
 
 \noindent
-\textsf{istate(ce, attrib)} reports selected virtual machine interpreter
-state information. \textsf{attrib} must be one of:
-\textsf{{\textquotedblleft}count{\textquotedblright}},
-\textsf{{\textquotedblleft}ilevel{\textquotedblright}},
-\textsf{{\textquotedblleft}ipc{\textquotedblright}},
-\textsf{{\textquotedblleft}ipc\_offset{\textquotedblright}},
-\textsf{{\textquotedblleft}sp{\textquotedblright}},
-\textsf{{\textquotedblleft}efp{\textquotedblright}},
-\textsf{{\textquotedblleft}gfp{\textquotedblright}}. Used by monitors.
+\texttt{istate(ce, attrib)} reports selected virtual machine interpreter
+state information. \texttt{attrib} must be one of:
+\texttt{{\textquotedblleft}count{\textquotedblright}},
+\texttt{{\textquotedblleft}ilevel{\textquotedblright}},
+\texttt{{\textquotedblleft}ipc{\textquotedblright}},
+\texttt{{\textquotedblleft}ipc\_offset{\textquotedblright}},
+\texttt{{\textquotedblleft}sp{\textquotedblright}},
+\texttt{{\textquotedblleft}efp{\textquotedblright}},
+\texttt{{\textquotedblleft}gfp{\textquotedblright}}. Used by monitors.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ixor(i, i) : integer \hfill bitwise xor}
 
 \noindent
-\textsf{ixor(i1, i2)} produces the bitwise \index{exclusive or}exclusive
-or of \textsf{i1} and \textsf{i2}.
+\texttt{ixor(i1, i2)} produces the bitwise \index{exclusive or}exclusive
+or of \texttt{i1} and \texttt{i2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf kbhit() : ? \hfill check for console input}
 
 \noindent
-\index{kbhit()}\textsf{kbhit()} checks to see if there is a
+\index{kbhit()}\texttt{kbhit()} checks to see if there is a
 \index{keyboard}keyboard character waiting to be read.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf key(x) : any* \hfill table keys}
 
 \noindent
-\index{key(x)}\textsf{key(T)} generates the key (entry) values from
-table \textsf{T}. \textsf{key(L)} generates the indices from 1 to
-\textsf{*L} in list \textsf{L}. \textsf{key(R)} generates the string
+\index{key(x)}\texttt{key(T)} generates the key (entry) values from
+table \texttt{T}. \texttt{key(L)} generates the indices from 1 to
+\texttt{*L} in list \texttt{L}. \texttt{key(R)} generates the string
 field names of record R.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2074,9 +2078,9 @@ field names of record R.
 {\bf keyword(s,CE:\&current,i:0) : any* \hfill produce keyword value}
 
 \noindent
-\index{keyword()}\textsf{keyword(s,ce,i)} produces the value of keyword
-\textsf{s} in the context of \textsf{ce}{\textquotesingle}s execution,
-\textsf{i} levels up in the stack from the current point of execution.
+\index{keyword()}\texttt{keyword(s,ce,i)} produces the value of keyword
+\texttt{s} in the context of \texttt{ce}{\textquotesingle}s execution,
+\texttt{i} levels up in the stack from the current point of execution.
 Used in execution monitors.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2084,18 +2088,18 @@ Used in execution monitors.
 string \hfill left format string}
 
 \noindent
-\index{left()}\textsf{left(s1,i,s2)} formats \textsf{s1} to be a string
-of length \textsf{i}. If \textsf{s1} is more than \textsf{i}
-characters, it is truncated. If \textsf{s1} is fewer than \textsf{i}
-characters it is padded on the right with as many copies of \textsf{s2}
-as needed to increase it to length \textsf{i}.
+\index{left()}\texttt{left(s1,i,s2)} formats \texttt{s1} to be a string
+of length \texttt{i}. If \texttt{s1} is more than \texttt{i}
+characters, it is truncated. If \texttt{s1} is fewer than \texttt{i}
+characters it is padded on the right with as many copies of \texttt{s2}
+as needed to increase it to length \texttt{i}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf list(integer:0, any:\&null) : list \hfill create list}
 
 \noindent
-\index{list(i, x)}\textsf{list(i, x)} creates a list of size \textsf{i},
-in which all elements have the initial value \textsf{x}. If \textsf{x}
+\index{list(i, x)}\texttt{list(i, x)} creates a list of size \texttt{i},
+in which all elements have the initial value \texttt{x}. If \texttt{x}
 is a mutable value such as a list, all elements refer to the
 \textit{same} value, not a separate copy of the value for each element.
 
@@ -2105,22 +2109,22 @@ co-expression \hfill load Unicon program}
 
 \noindent
 \index{load!Unicon
-program}\index{load()}\textsf{load(s,arglist,input,output,error,blocksize,stringsize,stacksize)}
-loads the icode file named \textsf{s} and returns that
+program}\index{load()}\texttt{load(s,arglist,input,output,error,blocksize,stringsize,stacksize)}
+loads the icode file named \texttt{s} and returns that
 program{\textquotesingle}s execution as a co-expression ready to start
-its \textsf{main()} procedure with parameter \textsf{arglist} as its
+its \texttt{main()} procedure with parameter \texttt{arglist} as its
 command line arguments. The three file parameters are used as that
-program{\textquotesingle}s \textsf{\&input}, \textsf{\&output}, and
-\textsf{\&errout}. The three integers are used as its initial memory
+program{\textquotesingle}s \texttt{\&input}, \texttt{\&output}, and
+\texttt{\&errout}. The three integers are used as its initial memory
 region sizes.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf loadfunc(s, s) : procedure \hfill load C function}
 
 \noindent
-\index{load!C function}\textsf{loadfunc(filename,funcname)} dynamically
+\index{load!C function}\texttt{loadfunc(filename,funcname)} dynamically
 loads a compiled C function from the object library file given by
-\textsf{filename}. \textsf{funcname} must be a specially written
+\texttt{filename}. \texttt{funcname} must be a specially written
 interface function that handles Icon data representations and calling
 conventions.
 
@@ -2128,73 +2132,73 @@ conventions.
 \noindent {\bf localnames(CE, i) : string* \hfill local variable names}
 
 \noindent
-\index{local}\index{variable}\textsf{localnames(ce,i)} generates the
-names of local variables in co-expression \textsf{ce}, \textsf{i}
+\index{local}\index{variable}\texttt{localnames(ce,i)} generates the
+names of local variables in co-expression \texttt{ce}, \texttt{i}
 levels up from the current procedure invocation.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf lock(x) : x \hfill lock mutex}
 
 \noindent
-\index{lock}\textsf{lock(x)} locks the mutex {\textit x} or the mutex
+\index{lock}\texttt{lock(x)} locks the mutex {\textit x} or the mutex
 associated with thread-safe object {\textit x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf log(r, r:\&e) : real \hfill logarithm}
 
 \noindent
-\index{logarithm}\textsf{log(r1,r2)} produces the logarithm of
-\textsf{r1} to base \textsf{r2}.
+\index{logarithm}\texttt{log(r1,r2)} produces the logarithm of
+\texttt{r1} to base \texttt{r2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf many(c, s, i, i) : integer? \hfill many characters}
 
 \noindent
-\index{many()}String scanning function \textsf{many(c,s,i1,i2)} produces
-the position in \textsf{s} after the longest initial sequence of
-members of \textsf{c} within \textsf{s[i1:i2]}.
+\index{many()}String scanning function \texttt{many(c,s,i1,i2)} produces
+the position in \texttt{s} after the longest initial sequence of
+members of \texttt{c} within \texttt{s[i1:i2]}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf map(s, s:\&ucase, s:\&lcase) : string \hfill map string}
 
 \noindent
-\index{map string}\textsf{map(s1,s2,s3)} maps \textsf{s1}, using
-\textsf{s2} and \textsf{s3}. The resulting string will be a copy of
-\textsf{s1}, with the exception that any of
-\textsf{s1}{\textquotesingle}s characters that appear in \textsf{s2}
-are replaced by characters at the same position in \textsf{s3}.
+\index{map string}\texttt{map(s1,s2,s3)} maps \texttt{s1}, using
+\texttt{s2} and \texttt{s3}. The resulting string will be a copy of
+\texttt{s1}, with the exception that any of
+\texttt{s1}{\textquotesingle}s characters that appear in \texttt{s2}
+are replaced by characters at the same position in \texttt{s3}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf match(s, s:\&subject, i:\&pos, i:0) : integer \hfill
 match string}
 
 \noindent
-\index{match string}String scanning function \textsf{match(s1,s2,i1,i2)}
-produces \textsf{i1+*s1} if \textsf{s1==s2[i1+:*s1]}, but fails
+\index{match string}String scanning function \texttt{match(s1,s2,i1,i2)}
+produces \texttt{i1+*s1} if \texttt{s1==s2[i1+:*s1]}, but fails
 otherwise.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf max(n, ...) : number \hfill largest value}
 
 \noindent
-\index{max()}\textsf{max(x, ...)} returns the largest value among its
+\index{max()}\texttt{max(x, ...)} returns the largest value among its
 arguments, which must be numeric.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf member(x, ...) : x? \hfill test membership}
 
 \noindent
-\index{member()}\textsf{member(x, ...)} returns \textsf{x} if its second
+\index{member()}\texttt{member(x, ...)} returns \texttt{x} if its second
 and subsequent arguments are all members of set, cset, list or table
-\textsf{x} but fails otherwise. \ If \textsf{x} is a cset, all of the
-characters in subsequent string arguments must be present in \textsf{x}
+\texttt{x} but fails otherwise. \ If \texttt{x} is a cset, all of the
+characters in subsequent string arguments must be present in \texttt{x}
 in order to succeed.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf membernames(x) : list \hfill class member names}
 
 \noindent
-\textsf{membernames(x)} produces a list containing the string names of
+\texttt{membernames(x)} produces a list containing the string names of
 the fields of x, where x is either an object or a string name of a
 class.
 
@@ -2202,15 +2206,15 @@ class.
 \noindent {\bf methodnames(x) : list \hfill class method names}
 
 \noindent
-\textsf{methodnames(x)} produces a list containing the string names of
-the methods defined in class \textsf{x}, where \textsf{x} is either an
+\texttt{methodnames(x)} produces a list containing the string names of
+the methods defined in class \texttt{x}, where \texttt{x} is either an
 object or a string name of a class.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf methods(x) : list \hfill class method list}
 
 \noindent
-\textsf{methods(x)} produces a list containing the procedure values of
+\texttt{methods(x)} produces a list containing the procedure values of
 the methods of x, where x is either an object or a string name of a
 class.
 
@@ -2218,25 +2222,25 @@ class.
 \noindent {\bf min(n, ...) : number \hfill smallest value}
 
 \noindent
-\index{min()}\textsf{min(x, ...)} returns the smallest value among its
+\index{min()}\texttt{min(x, ...)} returns the smallest value among its
 arguments, which must be numeric.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf mkdir(s, s?) : ? \hfill create directory}
 
 \noindent
-\index{directory!create}\index{create!directory}\index{mkdir()}\textsf{mkdir(path,
-mode)} creates a new directory named \textsf{path} with mode
-\textsf{mode}. The optional \textsf{mode} parameter can be numeric or a
-string of the form accepted by \textsf{chmod()}.
+\index{directory!create}\index{create!directory}\index{mkdir()}\texttt{mkdir(path,
+mode)} creates a new directory named \texttt{path} with mode
+\texttt{mode}. The optional \texttt{mode} parameter can be numeric or a
+string of the form accepted by \texttt{chmod()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf move(i:1) : string \hfill move scanning position}
 
 \noindent
-\index{move(i)}\textsf{move(i)} moves \textsf{\&pos} \textsf{i}
+\index{move(i)}\texttt{move(i)} moves \texttt{\&pos} \texttt{i}
 characters from the current position and returns the substring of
-\textsf{\&subject} between the old and new positions. This function
+\texttt{\&subject} between the old and new positions. This function
 reverses its effects by resetting the position to its old value if it
 is resumed.
 
@@ -2244,9 +2248,9 @@ is resumed.
 \noindent {\bf mutex(x,y) : x \hfill create a mutex}
 
 \noindent
-\index{mutex()}\textsf{mutex()} creates a new mutex. For \textsf{mutex(x)}
+\index{mutex()}\texttt{mutex()} creates a new mutex. For \texttt{mutex(x)}
 associates the new mutex with structure {\textit x}.
-The call {\textsf mutex(x,y)} associates an existing mutex \textit{y} (or
+The call {\texttt mutex(x,y)} associates an existing mutex \textit{y} (or
 mutex associated with protected object \textit{y}) with
 structure {\textit x}.
 
@@ -2254,9 +2258,9 @@ structure {\textit x}.
 \noindent {\bf name(v, CE:\&current) : string \hfill variable name}
 
 \noindent
-\index{name(v)}\textsf{name(v)} returns the name of variable \textsf{v}
-within the program that created co-expression \textsf{c}. Keyword
-variables are recognized and named correctly. \textsf{name()} returns
+\index{name(v)}\texttt{name(v)} returns the name of variable \texttt{v}
+within the program that created co-expression \texttt{c}. Keyword
+variables are recognized and named correctly. \texttt{name()} returns
 the base type and subscript or field information for variables that are
 elements within other values, but does not produce the source code
 variable name for such variables. 
@@ -2265,8 +2269,8 @@ variable name for such variables.
 \noindent {\bf numeric(any) : number \hfill convert to number}
 
 \noindent
-\index{convert!to number}\textsf{numeric(x)} produces an integer or real
-number resulting from the type conversion of \textsf{x}, but fails if
+\index{convert!to number}\texttt{numeric(x)} produces an integer or real
+number resulting from the type conversion of \texttt{x}, but fails if
 the conversion is not possible.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2274,68 +2278,68 @@ the conversion is not possible.
 file? \hfill open file}
 
 \noindent
-\index{open file}\textsf{open(s1, s2, ...)} opens a file named
-\textsf{s1} with mode \textsf{s2} and attributes given in trailing
-arguments. The modes recognized by \textsf{open()} are: 
+\index{open file}\texttt{open(s1, s2, ...)} opens a file named
+\texttt{s1} with mode \texttt{s2} and attributes given in trailing
+arguments. The modes recognized by \texttt{open()} are: 
 
-\ \ \ \ \ \textsf{{\textquotedbl}a{\textquotedbl}\ \ \ \ }append; write
+\ \ \ \ \ \texttt{{\textquotedbl}a{\textquotedbl}\ \ \ \ }append; write
 after current contents\\
- \ \ \ \ \textsf{{\textquotedbl}b{\textquotedbl}\ \ \ \ }open for both
+ \ \ \ \ \texttt{{\textquotedbl}b{\textquotedbl}\ \ \ \ }open for both
 reading and writing (b does not mean binary mode!)\\
- \ \ \ \ \textsf{{\textquotedbl}c{\textquotedbl}\ \ \ \ }create a new
+ \ \ \ \ \texttt{{\textquotedbl}c{\textquotedbl}\ \ \ \ }create a new
 file and open it\\
- \ \ \ \ \textsf{{\textquotedbl}d{\textquotedbl}\ \ \ \ }open a
+ \ \ \ \ \texttt{{\textquotedbl}d{\textquotedbl}\ \ \ \ }open a
 [NG]\index{DBM}DBM database\\
- \ \ \ \ \textsf{{\textquotedbl}g{\textquotedbl}\ \ \ \ }create a 2D
+ \ \ \ \ \texttt{{\textquotedbl}g{\textquotedbl}\ \ \ \ }create a 2D
 graphics window\\
- \ \ \ \ \textsf{{\textquotedbl}gl{\textquotedbl}\ \ \ \ }create a 3D
+ \ \ \ \ \texttt{{\textquotedbl}gl{\textquotedbl}\ \ \ \ }create a 3D
 graphics window\\
- \ \ \ \ \textsf{{\textquotedbl}n{\textquotedbl}\ \ \ \ }connect to a
+ \ \ \ \ \texttt{{\textquotedbl}n{\textquotedbl}\ \ \ \ }connect to a
 remote TCP network socket\\
- \ \ \ \ \textsf{{\textquotedbl}na{\textquotedbl}\ \ \ \ }accept a
+ \ \ \ \ \texttt{{\textquotedbl}na{\textquotedbl}\ \ \ \ }accept a
 connection from a TCP network socket \\
- \ \ \ \ \textsf{{\textquotedbl}nau{\textquotedbl}\ \ }accept a
+ \ \ \ \ \texttt{{\textquotedbl}nau{\textquotedbl}\ \ }accept a
 connection from a UDP network socket\\
- \ \ \ \ \textsf{{\textquotedbl}nl{\textquotedbl}\ \ \ \ }listen on a
+ \ \ \ \ \texttt{{\textquotedbl}nl{\textquotedbl}\ \ \ \ }listen on a
 TCP network socket \\
- \ \ \ \ \textsf{{\textquotedbl}nu{\textquotedbl}\ \ \ \ }connect to a
+ \ \ \ \ \texttt{{\textquotedbl}nu{\textquotedbl}\ \ \ \ }connect to a
 UDP network socket\\
- \ \ \ \ \textsf{{\textquotedbl}m{\textquotedbl}\ \ \ \ }connect to a
+ \ \ \ \ \texttt{{\textquotedbl}m{\textquotedbl}\ \ \ \ }connect to a
 messaging server (HTTP, SMTP, POP, ...)\\
- \ \ \ \ \textsf{{\textquotedbl}o{\textquotedbl}\ \ \ \ }open an
+ \ \ \ \ \texttt{{\textquotedbl}o{\textquotedbl}\ \ \ \ }open an
 \index{ODBC}ODBC connection to a (typically \index{SQL}SQL)
 database\\
- \ \ \ \ \textsf{{\textquotedbl}p{\textquotedbl}\ \ \ \ }execute a
+ \ \ \ \ \texttt{{\textquotedbl}p{\textquotedbl}\ \ \ \ }execute a
 program given by command line s1 and open a pipe to it\\
- \ \ \ \ \textsf{{\textquotedbl}r{\textquotedbl}\ \ \ \ }read\\
- \ \ \ \ \textsf{{\textquotedbl}t{\textquotedbl}\ \ \ \ }use text mode,
+ \ \ \ \ \texttt{{\textquotedbl}r{\textquotedbl}\ \ \ \ }read\\
+ \ \ \ \ \texttt{{\textquotedbl}t{\textquotedbl}\ \ \ \ }use text mode,
 with newlines translated\\
- \ \ \ \ \textsf{{\textquotedbl}u{\textquotedbl}\ \ \ \ }use a binary
+ \ \ \ \ \texttt{{\textquotedbl}u{\textquotedbl}\ \ \ \ }use a binary
 untranslated mode\\
- \ \ \ \ \textsf{{\textquotedbl}w{\textquotedbl}\ \ \ \ }write
+ \ \ \ \ \texttt{{\textquotedbl}w{\textquotedbl}\ \ \ \ }write
 
 Directories may only be opened for reading, and produce the names of all
 files, one per line. Pipes may be opened for reading or writing, but
 not both.
 
-When opening a network socket: the first argument \textsf{s1} is the
-name of the socket to connect. If \textsf{s1} is of the form
+When opening a network socket: the first argument \texttt{s1} is the
+name of the socket to connect. If \texttt{s1} is of the form
 {\textquotedbl}s:i{\textquotedbl}, it is an Internet domain socket on
 host s and port i; otherwise, it is the name of a Unix
 domain socket. If the host name is null, it represents the current
 host. Mode "n" allows an optional third parameter,
-an integer timeout (in milliseconds) after which \textsf{open()} fails
+an integer timeout (in milliseconds) after which \texttt{open()} fails
 if no connection has been established by that time.
 
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address
 doesn{\textquotesingle}t have to be specified each time. Also,
-\textsf{read()} or \textsf{reads()} cannot be performed on a UDP
+\texttt{read()} or \texttt{reads()} cannot be performed on a UDP
 socket; use receive. UDP sockets must be in the INET domain; the
 address must have a colon. 
 
 For a DBM database, only one modifier character may be used: if
-\textsf{s1} is \textsf{{\textquotedbl}dr{\textquotedbl}} it indicates
+\texttt{s1} is \texttt{{\textquotedbl}dr{\textquotedbl}} it indicates
 that the database should be opened in read-only mode. 
 
 The filename argument is a Uniform Resource Indicator (URI) when opening
@@ -2347,7 +2351,7 @@ indicated in the URI. The SMTP From: header obtains its default from a
 UNICON\_USERADDRESS environment variable if it is present.
 
 For 2D and 3D windows, attribute values may be specified in the
-following arguments to \textsf{open()}. \ \textsf{open()} fails if a
+following arguments to \texttt{open()}. \ \texttt{open()} fails if a
 window cannot be opened or an attribute cannot be set to a requested
 value.
 
@@ -2355,57 +2359,57 @@ value.
 \noindent {\bf opmask(CE, c) : cset \hfill opcode mask}
 
 \noindent
-\textsf{opmask(ce)} gets \textsf{ce}{\textquotesingle}s
+\texttt{opmask(ce)} gets \texttt{ce}{\textquotesingle}s
 program{\textquotesingle}s opcode mask. The function returns
-\textsf{\&null} if there is no opcode mask. \textsf{opmask(ce,cs)} sets
-\textsf{ce}{\textquotesingle}s program{\textquotesingle}s opcode mask
-to \textsf{cs}. This function is part of the execution monitoring
+\texttt{\&null} if there is no opcode mask. \texttt{opmask(ce,cs)} sets
+\texttt{ce}{\textquotesingle}s program{\textquotesingle}s opcode mask
+to \texttt{cs}. This function is part of the execution monitoring
 facilities.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf oprec(x) : record \hfill get methods vector}
 
 \noindent
-\textsf{oprec(r)} produces a variable reference for
-\textsf{r}{\textquotesingle}s class{\textquotesingle} methods vector.
+\texttt{oprec(r)} produces a variable reference for
+\texttt{r}{\textquotesingle}s class{\textquotesingle} methods vector.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ord(s) : integer \hfill ordinal value}
 
 \noindent
-\index{ordinal value}\textsf{ord(s)} produces the integer ordinal
-(value) of \textsf{s}, which must be of size 1.
+\index{ordinal value}\texttt{ord(s)} produces the integer ordinal
+(value) of \texttt{s}, which must be of size 1.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf paramnames(CE, i:0) : string* \hfill parameter names}
 
 \noindent
-\index{parameter names}\textsf{paramnames(ce,i)} produces the names of
-the parameters in the procedure activation \textsf{i} levels above the
-current activation in \textsf{ce}.
+\index{parameter names}\texttt{paramnames(ce,i)} produces the names of
+the parameters in the procedure activation \texttt{i} levels above the
+current activation in \texttt{ce}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf parent(CE) : co{}-expression \hfill parent program}
 
 \noindent
-\textsf{parent(ce)} returns \textsf{\&main} for ce{\textquotesingle}s
+\texttt{parent(ce)} returns \texttt{\&main} for ce{\textquotesingle}s
 parent program. This is interesting only when programs are dynamically
-loaded using the \textsf{load()} function.
+loaded using the \texttt{load()} function.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf pipe() : list \hfill create pipe}
 
 \noindent
-\index{pipe()}\textsf{pipe()} creates a pipe and returns a list of two
+\index{pipe()}\texttt{pipe()} creates a pipe and returns a list of two
 file objects. The first is for reading, the second is for writing. See
-also function \textsf{filepair()}.
+also function \texttt{filepair()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf pop(L {\textbar} Message) : any? \hfill pop from stack}
 
 \noindent
-\index{pop(L)}\textsf{pop(L)} removes an element from the top of the
-\index{stack}stack (\textsf{L[1]}) and returns it. \textsf{pop(M)}
+\index{pop(L)}\texttt{pop(L)} removes an element from the top of the
+\index{stack}stack (\texttt{L[1]}) and returns it. \texttt{pop(M)}
 removes and returns the first message in POP mailbox connection M; the
 actual deletion occurs when the messaging connection is closed.
 
@@ -2413,69 +2417,69 @@ actual deletion occurs when the messaging connection is closed.
 \noindent {\bf pos(i) : integer? \hfill test scanning position}
 
 \noindent
-\index{pos(i)}\textsf{pos(i)} tests whether \textsf{\&pos} is at
-position \textsf{i} in \textsf{\&subject}.
+\index{pos(i)}\texttt{pos(i)} tests whether \texttt{\&pos} is at
+position \texttt{i} in \texttt{\&subject}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf proc(any, i:1, C) : procedure? \hfill convert to procedure}
 
 \noindent
-\index{proc(s,i)}\textsf{proc(s,i)} converts \textsf{s} to a procedure
-if that is possible. Parameter \textsf{i} is used to resolve ambiguous
-string names; it must be either 0, 1, 2, or 3. \ If \textsf{i} is 0, a
+\index{proc(s,i)}\texttt{proc(s,i)} converts \texttt{s} to a procedure
+if that is possible. Parameter \texttt{i} is used to resolve ambiguous
+string names; it must be either 0, 1, 2, or 3. \ If \texttt{i} is 0, a
 built-in function is returned if it is available, even if the global
-identifier by that name has been assigned differently. If \textsf{i} is
+identifier by that name has been assigned differently. If \texttt{i} is
 1, 2, or 3, the procedure for an operator with that number of operands
 is produced. For example,
-\textsf{proc({\textquotedbl}-{\textquotedbl},2)} produces the procedure
+\texttt{proc({\textquotedbl}-{\textquotedbl},2)} produces the procedure
 for subtraction, while
-\ \ \textsf{proc({\textquotedbl}-{\textquotedbl})} produces the
-procedure for unary negation. \textsf{proc(C,i)} returns the procedure
-activated \textsf{i} levels up with \textsf{C}. \textsf{proc(p, i, C)}
-returns procedure \textsf{p} if it belongs to the program which created
-co-expression \textsf{C}.
+\ \ \texttt{proc({\textquotedbl}-{\textquotedbl})} produces the
+procedure for unary negation. \texttt{proc(C,i)} returns the procedure
+activated \texttt{i} levels up with \texttt{C}. \texttt{proc(p, i, C)}
+returns procedure \texttt{p} if it belongs to the program which created
+co-expression \texttt{C}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf pull(L,i:1) : any? \hfill remove from list end}
 
 \noindent
-\index{pull(L)}\textsf{pull(L)} removes and produces an element from the
-end of a nonempty list \textsf{L.} \textsf{pull(L, i)} removes
-\textsf{i} elements, producing the last one removed.
+\index{pull(L)}\texttt{pull(L)} removes and produces an element from the
+end of a nonempty list \texttt{L.} \texttt{pull(L, i)} removes
+\texttt{i} elements, producing the last one removed.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf push(L, any, ...) : list \hfill push on to stack}
 
 \noindent
-\textsf{push(L, x1, ..., xN)} pushes elements onto the beginning of list
-\textsf{L}. The order of the elements added to the list is the reverse
+\texttt{push(L, x1, ..., xN)} pushes elements onto the beginning of list
+\texttt{L}. The order of the elements added to the list is the reverse
 of the order they are supplied as parameters to the call to
-\index{push()}\textsf{push()}. \textsf{push()} returns the list that is
+\index{push()}\texttt{push()}. \texttt{push()} returns the list that is
 passed as its first parameter, with the new elements added.
 
 \hrule\vspace{0.1cm}
 \noindent {\bf put(L, x1, ..., xN) : list \hfill add to list end}
 
 \noindent
-\index{put()}\textsf{put(L, x1, ..., xN)} puts elements onto the end of
-list \textsf{L}.
+\index{put()}\texttt{put(L, x1, ..., xN)} puts elements onto the end of
+list \texttt{L}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf read(f:\&input) : string? \hfill read line}
 
 \noindent
-\index{read(f)}\textsf{read(f)} reads a line from file \textsf{f}. The
+\index{read(f)}\texttt{read(f)} reads a line from file \texttt{f}. The
 end of line marker is discarded.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf reads(f:\&input, i:1) : string? \hfill read characters}
 
 \noindent
-\index{reads(f,i)}\textsf{reads(f,i)} reads up to \textsf{i} characters
-from file \textsf{f}. It fails on end of file. If \textsf{f} is a
-network connection, \textsf{reads()} returns as soon as it has input
-available, even if fewer than \textsf{i} characters were delivered. If
-\textsf{i} is -1, \textsf{reads()} reads and produces the entire file
+\index{reads(f,i)}\texttt{reads(f,i)} reads up to \texttt{i} characters
+from file \texttt{f}. It fails on end of file. If \texttt{f} is a
+network connection, \texttt{reads()} returns as soon as it has input
+available, even if fewer than \texttt{i} characters were delivered. If
+\texttt{i} is -1, \texttt{reads()} reads and produces the entire file
 as a string. Care should be exercised when using this feature to read
 very large files.
 
@@ -2483,9 +2487,9 @@ very large files.
 \noindent {\bf ready(f:\&input, i:0) : string? \hfill non{}-blocking read}
 
 \noindent
-\index{ready(f,i)}\textsf{ready(f,i)} reads up to \textsf{i} characters
-from file \textsf{f}. It returns immediately with available data and
-fails if no data is available. If \textsf{i} is 0, \textsf{ready()}
+\index{ready(f,i)}\texttt{ready(f,i)} reads up to \texttt{i} characters
+from file \texttt{f}. It returns immediately with available data and
+fails if no data is available. If \texttt{i} is 0, \texttt{ready()}
 returns all available input. It is not currently implemented for window
 values.
 
@@ -2493,16 +2497,16 @@ values.
 \noindent {\bf real(any) : real? \hfill convert to real}
 
 \noindent
-\index{convert!to real}\textsf{real(x)} converts \textsf{x} to a real,
+\index{convert!to real}\texttt{real(x)} converts \texttt{x} to a real,
 or fails if the conversion cannot be performed.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf receive(f) : record \hfill receive datagram}
 
 \noindent
-\index{receive datagram}\textsf{receive(f)} reads a datagram addressed
-to the port associated with \textsf{f}, waiting if necessary. The
-returned value is a record of type \textsf{posix\_message(addr, msg)},
+\index{receive datagram}\texttt{receive(f)} reads a datagram addressed
+to the port associated with \texttt{f}, waiting if necessary. The
+returned value is a record of type \texttt{posix\_message(addr, msg)},
 containing the address of the sender and the contents of the message
 respectively. 
 
@@ -2510,138 +2514,138 @@ respectively.
 \noindent {\bf remove(s) : ? \hfill remove file}
 
 \noindent
-\index{remove file}\index{file!remove}\textsf{remove(s)} removes the
-file named \textsf{s}.
+\index{remove file}\index{file!remove}\texttt{remove(s)} removes the
+file named \texttt{s}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf rename(s, s) : ? \hfill rename file}
 
 \noindent
-\index{file!rename}\textsf{rename(s1,s2)} renames the file named
-\textsf{s1} to have the name \textsf{s2}.
+\index{file!rename}\texttt{rename(s1,s2)} renames the file named
+\texttt{s1} to have the name \texttt{s2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf repl(x, i) : x \hfill replicate}
 
 \noindent
-\index{replicate string}\textsf{repl(x, i)} concatenates and returns
-\textsf{i} copies of string or list \textsf{x}.
+\index{replicate string}\texttt{repl(x, i)} concatenates and returns
+\texttt{i} copies of string or list \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf reverse(x) : x \hfill reverse sequence}
 
 \noindent
-\index{reverse(x)}\textsf{reverse(x)} returns a value that is the
-reverse of string or list \textsf{x}.
+\index{reverse(x)}\texttt{reverse(x)} returns a value that is the
+reverse of string or list \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf right(s, i:1, s:{\textquotedbl} {\textquotedbl}) :
 string \hfill right format string}
 
 \noindent
-\index{right()}\textsf{right(s1,i,s2)} produces a string of length
-\textsf{i}. If \textsf{i{\textless}*s1}, \textsf{s1} is truncated.
-Otherwise, the function pads \textsf{s1} on left with \textsf{s2} to
-length \textsf{i}.
+\index{right()}\texttt{right(s1,i,s2)} produces a string of length
+\texttt{i}. If \texttt{i{\textless}*s1}, \texttt{s1} is truncated.
+Otherwise, the function pads \texttt{s1} on left with \texttt{s2} to
+length \texttt{i}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf rmdir(s) : ? \hfill remove directory}
 
 \noindent
-\index{remove directory}\textsf{rmdir(d)} removes the directory named
-\textsf{d}. \textsf{rmdir()} fails if \textsf{d} is not empty or does
+\index{remove directory}\texttt{rmdir(d)} removes the directory named
+\texttt{d}. \texttt{rmdir()} fails if \texttt{d} is not empty or does
 not exist.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf rtod(r) : real \hfill convert radians to degrees}
 
 \noindent
-\index{convert!radians to degrees}\textsf{rtod(r)} produces the
-equivalent of \textsf{r} radians, expressed in degrees.
+\index{convert!radians to degrees}\texttt{rtod(r)} produces the
+equivalent of \texttt{r} radians, expressed in degrees.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf runerr(i, any) \hfill runtime error}
 
 \noindent
-\index{runtime error}\textsf{runerr(i,x)} produces runtime error
-\textsf{i} with value \textsf{x}. Program execution is terminated.
+\index{runtime error}\texttt{runerr(i,x)} produces runtime error
+\texttt{i} with value \texttt{x}. Program execution is terminated.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf seek(f, any) : file? \hfill seek to file offset}
 
 \noindent
-\index{seek(f,i)}\textsf{seek(f,i)} seeks to offset \textsf{i} in file
-\textsf{f}, if it is possible. If \textsf{f} is a regular file,
-\textsf{i} must be an integer. If \textsf{f} is a database, \textsf{i}
+\index{seek(f,i)}\texttt{seek(f,i)} seeks to offset \texttt{i} in file
+\texttt{f}, if it is possible. If \texttt{f} is a regular file,
+\texttt{i} must be an integer. If \texttt{f} is a database, \texttt{i}
 seeks a position within the current set of selected rows. The position
-is selected numerically if \textsf{i} is convertible to an integer;
-otherwise \textsf{i} must be convertible to a string and the position
+is selected numerically if \texttt{i} is convertible to an integer;
+otherwise \texttt{i} must be convertible to a string and the position
 is selected associatively by the primary key.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf select(x1, x2, ?) : list \hfill files with available input}
 
 \noindent
-\textsf{select(files?, timeout)} waits for a input to become available
+\texttt{select(files?, timeout)} waits for a input to become available
 on any of several files, typically network connections or windows. Its
 arguments may be files or lists of files, ending with an optional
 integer timeout value in milliseconds. It returns a list of those files
 among its arguments that have input waiting.
 
-If the final argument to \index{select()}\textsf{select()} is an
+If the final argument to \index{select()}\texttt{select()} is an
 integer, it is an upper bound on the time elapsed before select
-returns. A timeout of 0 causes \textsf{select()} to return immediately
+returns. A timeout of 0 causes \texttt{select()} to return immediately
 with a list of files on which input is currently pending. If no files
-are given, \textsf{select()} waits for its timeout to expire. If no
-timeout is given, \textsf{select()} waits forever for available input
+are given, \texttt{select()} waits for its timeout to expire. If no
+timeout is given, \texttt{select()} waits forever for available input
 on one of its file arguments. Directories and databases cannot be
-arguments to \textsf{select()}.
+arguments to \texttt{select()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf send(s, s) : ? \hfill send datagram}
 
 \noindent
-\index{send datagram}\textsf{send(s1, s2)} sends a UDP datagram to the
-address \textsf{s1} (in host:port format) with the contents
-\textsf{s2}.
+\index{send datagram}\texttt{send(s1, s2)} sends a UDP datagram to the
+address \texttt{s1} (in host:port format) with the contents
+\texttt{s2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf seq(i:1, i:1) : integer* \hfill generate sequence}
 
 \noindent
-\index{sequence, generate numeric}\textsf{seq(i, j)} generates the
-infinite sequence \textsf{i}, \textsf{i+j}, \textsf{i+2*j}, ... .
-\textsf{j} may not be 0.
+\index{sequence, generate numeric}\texttt{seq(i, j)} generates the
+infinite sequence \texttt{i}, \texttt{i+j}, \texttt{i+2*j}, ... .
+\texttt{j} may not be 0.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf serial(x) : integer? \hfill structure serial number}
 
 \noindent
-\index{serial(x)}\textsf{serial(x)} returns the serial number for
-structure \textsf{x}, if it has one. Serial numbers uniquely identify
+\index{serial(x)}\texttt{serial(x)} returns the serial number for
+structure \texttt{x}, if it has one. Serial numbers uniquely identify
 structure values.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf set(x, ...) : set \hfill create set}
 
 \noindent
-\index{create!set}\index{set()}\textsf{set()} creates a set. Arguments
+\index{create!set}\index{set()}\texttt{set()} creates a set. Arguments
 are inserted into the new set, with the exception of lists.
-\textsf{set(L)} creates a set whose members are the elements of list
-\textsf{L}.
+\texttt{set(L)} creates a set whose members are the elements of list
+\texttt{L}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf setenv(s) : ? \hfill set environment variable}
 
 \noindent
-\index{setenv()}\textsf{setenv()} sets an environment variable
-\textsf{s} in the operating system.
+\index{setenv()}\texttt{setenv()} sets an environment variable
+\texttt{s} in the operating system.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf signal(cv, i:1) : ?? \hfill signal a conditional variable}
 
 \noindent
-\index{signal}\textsf{signal(x, y)} signals the condition variable
+\index{signal}\texttt{signal(x, y)} signals the condition variable
 {\textit x}. If {\textit y} is supplied, the condition variable is
 signaled {\textit y} times. If {\textit y} is 0, a ``broadcast''
 signal is sent waking up all threads waiting on {\textit x}.
@@ -2657,29 +2661,29 @@ radians.
 \noindent {\bf sort(x, i:1) : list \hfill sort structure}
 
 \noindent
-\index{sort(x, i)}\textsf{sort(x, i)} sorts structure \textsf{x}. If
-\textsf{x} is a table, parameter \textsf{i} is the sort method. If
-\textsf{i} is 1 or 2, the table is sorted into a list of lists of the
-form [key, value]. If \textsf{i} is 3 or 4, the table is sorted into a
+\index{sort(x, i)}\texttt{sort(x, i)} sorts structure \texttt{x}. If
+\texttt{x} is a table, parameter \texttt{i} is the sort method. If
+\texttt{i} is 1 or 2, the table is sorted into a list of lists of the
+form [key, value]. If \texttt{i} is 3 or 4, the table is sorted into a
 list of alternating keys and values. Sorting is by keys for odd-values
-of \textsf{i}, and by table element values for even-values of
-\textsf{i}.
+of \texttt{i}, and by table element values for even-values of
+\texttt{i}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf sortf(x, i:1) : list \hfill sort by field}
 
 \noindent
-\index{sort by field}\textsf{sortf(x,i)} sorts a list, record, or set
-\textsf{x} using field \textsf{i} of each element that has one.
+\index{sort by field}\texttt{sortf(x,i)} sorts a list, record, or set
+\texttt{x} using field \texttt{i} of each element that has one.
 Elements that don{\textquotesingle}t have an
-\textsf{i}{\textquotesingle}th field are sorted in standard order and
-come before those that do have an \textsf{i}{\textquotesingle}th field.
+\texttt{i}{\textquotesingle}th field are sorted in standard order and
+come before those that do have an \texttt{i}{\textquotesingle}th field.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf spawn(CE, i, i) : thread \hfill launch asynchronous thread}
 
 \noindent
-\index{spawn()}\textsf{spawn(ce)} launches co-expression {\textit ce} as an
+\index{spawn()}\texttt{spawn(ce)} launches co-expression {\textit ce} as an
 asynchronous thread that will execute concurrently with the current
 co-expression. The two optional integers specify the memory in bytes
 allocated for the thread's block and string regions. The defaults are 10\%
@@ -2689,65 +2693,65 @@ of the main thread heap size.
 \noindent {\bf sql(D, s) : integer \hfill execute SQL statement}
 
 \noindent
-\index{sql()}\textsf{sql(db, query)} executes arbitrary SQL code on
-\textsf{db}. This function allows the program to do vendor-specific SQL
+\index{sql()}\texttt{sql(db, query)} executes arbitrary SQL code on
+\texttt{db}. This function allows the program to do vendor-specific SQL
 and many SQL statements that cannot be expressed otherwise using the
-Unicon database facilities. \textsf{sql()} can leave the database in an
+Unicon database facilities. \texttt{sql()} can leave the database in an
 arbitrary state and should be used with care.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf sqrt(r) : real \hfill square root}
 
 \noindent
-\index{square root}\textsf{sqrt(r)} produces the square root of
-\textsf{r}.
+\index{square root}\texttt{sqrt(r)} produces the square root of
+\texttt{r}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf stat(f) : record? \hfill get file information}
 
 \noindent
-\index{file!information}\index{stat(f)}\textsf{stat(f)} returns a record
-with information about the file \textsf{f} which may be a path or a
-file object. The return value is of \ type: \textsf{record
+\index{file!information}\index{stat(f)}\texttt{stat(f)} returns a record
+with information about the file \texttt{f} which may be a path or a
+file object. The return value is of \ type: \texttt{record
 posix\_stat(dev, ino, mode, nlink, uid, gid, rdev, size, atime, mtime,
 ctime, blksize, blocks, symlink)}. Many of these fields are POSIX
 specific, but a number are supported across platforms, such as the
-\index{file size}file size in bytes (the \textsf{size} field), access
-permissions (the \textsf{mode} field), and the last modified time (the
-\textsf{mtime} field).
+\index{file size}file size in bytes (the \texttt{size} field), access
+permissions (the \texttt{mode} field), and the last modified time (the
+\texttt{mtime} field).
 
-The \textsf{atime}, \textsf{mtime}, and \textsf{ctime} fields are
-integers that may be formatted with the \textsf{ctime()} and
-\textsf{mtime()} functions. The mode is a string similar to the long
-listing option of the UNIX \textsf{ls(1)} command. For example,
-\textsf{{\textquotedbl}-rwxrwsr-x{\textquotedbl}} represents a plain
-file with a mode of 2775 (octal). \textsf{stat(f)} fails if filename or
-path \textsf{f} does not exist.
+The \texttt{atime}, \texttt{mtime}, and \texttt{ctime} fields are
+integers that may be formatted with the \texttt{ctime()} and
+\texttt{mtime()} functions. The mode is a string similar to the long
+listing option of the UNIX \texttt{ls(1)} command. For example,
+\texttt{{\textquotedbl}-rwxrwsr-x{\textquotedbl}} represents a plain
+file with a mode of 2775 (octal). \texttt{stat(f)} fails if filename or
+path \texttt{f} does not exist.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf staticnames(CE:\&current, i:0) : string* \hfill static variable names}
 
 \noindent
-\index{static}\textsf{staticnames(ce,i)} generates the names of static
-variables in the procedure \textsf{i} levels above the current
-activation in \textsf{ce}.
+\index{static}\texttt{staticnames(ce,i)} generates the names of static
+variables in the procedure \texttt{i} levels above the current
+activation in \texttt{ce}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf stop(s{\textbar}f, ...) : \hfill stop execution}
 
 \noindent
-\index{stop}\textsf{stop(args)} \index{halt}halts execution after
+\index{stop}\texttt{stop(args)} \index{halt}halts execution after
 writing out its string arguments, followed by a newline, to
-\textsf{\&errout}. If any argument is a file, subsequent string
-arguments are written to that file instead of \textsf{\&errout}. The
+\texttt{\&errout}. If any argument is a file, subsequent string
+arguments are written to that file instead of \texttt{\&errout}. The
 program exit status indicates that an error has occurred.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf string(x) : string? \hfill convert to string}
 
 \noindent
-\index{convert!to string}\index{string(x)}\textsf{string(x)} converts x
+\index{convert!to string}\index{string(x)}\texttt{string(x)} converts x
 to a string and returns the result, or fails if the value cannot be
 converted.
 
@@ -2757,8 +2761,8 @@ converted.
 execute system command}
 
 \noindent
-\index{system command}\textsf{system(x, f1, f2, f3, waitflag)} launches
-execution of a program in a separate process. \textsf{x} can be either
+\index{system command}\texttt{system(x, f1, f2, f3, waitflag)} launches
+execution of a program in a separate process. \texttt{x} can be either
 a string or a list of strings. In the former case, whitespace is used
 to separate the arguments and the command is processed by the
 platform{\textquotesingle}s command interpreter. In the second case,
@@ -2769,8 +2773,8 @@ element of the list.
 The three file arguments are files that will be used for the new
 process{\textquotesingle} standard input, standard output and standard
 error. The return value is the exit status from the process. If the
-\textsf{waitflag} argument is
-\textsf{{\textquotedbl}nowait{\textquotedbl}}, \textsf{system()}
+\texttt{waitflag} argument is
+\texttt{{\textquotedbl}nowait{\textquotedbl}}, \texttt{system()}
 returns immediately after spasyswning the new process, and the return
 value is then the process id of the new process.
 
@@ -2778,16 +2782,16 @@ value is then the process id of the new process.
 \noindent {\bf sys\_errstr(i) : string? \hfill system error string}
 
 \noindent
-\index{sys\_errstr(i)}\textsf{sys\_errstr(i)} produces the error string
-corresponding to \textsf{i}, a value obtained from \textsf{\&errno}.
+\index{sys\_errstr(i)}\texttt{sys\_errstr(i)} produces the error string
+corresponding to \texttt{i}, a value obtained from \texttt{\&errno}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf tab(i:0) : string? \hfill set scanning position}
 
 \noindent
-\index{tab(i)}\textsf{tab(i)} sets \textsf{\&pos} to \textsf{i} and
-returns the substring of \textsf{\&subject} spanned by the former and
-new positions. \textsf{tab(0)} moves the position to the end of the
+\index{tab(i)}\texttt{tab(i)} sets \texttt{\&pos} to \texttt{i} and
+returns the substring of \texttt{\&subject} spanned by the former and
+new positions. \texttt{tab(0)} moves the position to the end of the
 string. This function reverses its effects by resetting the position to
 its old value if it is resumed.
 
@@ -2795,27 +2799,27 @@ its old value if it is resumed.
 \noindent {\bf table(k,v, ..., x) : table \hfill create table}
 
 \noindent
-\index{table(x)}\textsf{table(x)} creates a table with default value
-\textsf{x}. If \textsf{x} is a mutable value such as a list, all
+\index{table(x)}\texttt{table(x)} creates a table with default value
+\texttt{x}. If \texttt{x} is a mutable value such as a list, all
 references to the default value refer to the \textit{same} value, not a
 separate copy for each key. Given more than one argument,
-\textsf{table(k,v,...x)} takes alternating keys and values and
+\texttt{table(k,v,...x)} takes alternating keys and values and
 populates the table with these initial contents.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf tan(r) : real \hfill tangent}
 
 \noindent
-\index{tangent}\textsf{tan(r)} produces the tangent of \textsf{r} in
+\index{tangent}\texttt{tan(r)} produces the tangent of \texttt{r} in
 radians.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf trap(s, p) : procedure \hfill trap or untrap signal}
 
 \noindent
-\index{trap signal}\textsf{trap(s, proc)} sets up a signal handler for
-the signal \textsf{s} (the name of the signal). The old handler (if
-any) is returned. If \textsf{proc} is null, the signal is reset to its
+\index{trap signal}\texttt{trap(s, proc)} sets up a signal handler for
+the signal \texttt{s} (the name of the signal). The old handler (if
+any) is returned. If \texttt{proc} is null, the signal is reset to its
 default value. 
 
 Caveat: This is not supported by the optimizing
@@ -2826,56 +2830,56 @@ Caveat: This is not supported by the optimizing
 string \hfill trim string}
 
 \noindent
-\index{trim(s,c,i)}\textsf{trim(s,c,i)} removes characters in \textsf{c}
-from \textsf{s} at the back (\textsf{i}=-1, the default), at the front
-(\textsf{i}=1), or at both ends (\textsf{i}=0).
+\index{trim(s,c,i)}\texttt{trim(s,c,i)} removes characters in \texttt{c}
+from \texttt{s} at the back (\texttt{i}=-1, the default), at the front
+(\texttt{i}=1), or at both ends (\texttt{i}=0).
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf truncate(f, i) : ? \hfill truncate file}
 
 \noindent
-\index{truncate file}\textsf{truncate(f, len)} changes the file
-\textsf{f} (which may be a string filename, or an open file) to be no
-longer than length \textsf{len}. \textsf{truncate()} does not work on
+\index{truncate file}\texttt{truncate(f, len)} changes the file
+\texttt{f} (which may be a string filename, or an open file) to be no
+longer than length \texttt{len}. \texttt{truncate()} does not work on
 windows, network connections, pipes, or databases.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf trylock(x) : x? \hfill try locking mutex}
 
 \noindent
-\index{lock}\textsf{trylock(x)} locks the mutex {\textit x} or the mutex
+\index{lock}\texttt{trylock(x)} locks the mutex {\textit x} or the mutex
 associated with thread-safe object {\textit x}, if it is not locked.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf type(x) : string \hfill type of value}
 
 \noindent
-\index{type(x)}\textsf{type(x)} returns a string that indicates the type
-of \textsf{x}.
+\index{type(x)}\texttt{type(x)} returns a string that indicates the type
+of \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf unlock(x) : x \hfill unlock mutex}
 
 \noindent
-\index{lock}\textsf{unlock(x)} unlocks the mutex {\textit x} or the mutex
+\index{lock}\texttt{unlock(x)} unlocks the mutex {\textit x} or the mutex
 associated with thread-safe object {\textit x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf upto(c, s, i, i) : integer* \hfill find characters in set}
 
 \noindent
-String scanning function \index{upto(c)}\textsf{upto(c,s,i1,i2)}
-generates the sequence of integer positions in \textsf{s} up to a
-character in \textsf{c} in \textsf{s[i2:i2]}, but fails if there is no
+String scanning function \index{upto(c)}\texttt{upto(c,s,i1,i2)}
+generates the sequence of integer positions in \texttt{s} up to a
+character in \texttt{c} in \texttt{s[i2:i2]}, but fails if there is no
 such position.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf utime(s, i, i) : null \hfill file access/modification times}
 
 \noindent
-\textsf{utime(f, atime, mtime)} sets the \index{access time, set}access
-time for a file named \textsf{f} to \textsf{atime} and the modification
-time to \textsf{mtime}. The \textsf{ctime} is set to the current time.
+\texttt{utime(f, atime, mtime)} sets the \index{access time, set}access
+time for a file named \texttt{f} to \texttt{atime} and the modification
+time to \texttt{mtime}. The \texttt{ctime} is set to the current time.
 The effects of this function are platform specific. Some file systems
 support only a subset of these times.
 
@@ -2883,20 +2887,20 @@ support only a subset of these times.
 \noindent {\bf variable(s, CE:\&current, i:0) : any? \hfill get variable}
 
 \noindent
-\index{variable(s,c,i)}\textsf{variable(s, c, i)} finds the variable
-with name \textsf{s} and returns a variable descriptor that refers to
-its value. The name \textsf{s} is searched for within co-expression
-\textsf{c}, starting with local variables \textsf{i} levels above the
+\index{variable(s,c,i)}\texttt{variable(s, c, i)} finds the variable
+with name \texttt{s} and returns a variable descriptor that refers to
+its value. The name \texttt{s} is searched for within co-expression
+\texttt{c}, starting with local variables \texttt{i} levels above the
 current procedure frame, and then among the global variables in the
-program that created \textsf{c}.
+program that created \texttt{c}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf wait(x) : ? \hfill wait for thread or condition variable}
 
 \noindent
-\index{wait()}\textsf{wait(x)} waits for {\textit x}. If {\textit x} is
-a thread, {\textsf wait()} waits for it to finish. If {\textit x} is
-is a condition variable {\textsf wait()} waits until that variable is
+\index{wait()}\texttt{wait(x)} waits for {\textit x}. If {\textit x} is
+a thread, {\texttt wait()} waits for it to finish. If {\textit x} is
+is a condition variable {\texttt wait()} waits until that variable is
 signaled by another thread.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2904,8 +2908,8 @@ signaled by another thread.
 position}
 
 \noindent
-\index{file!position}\index{where(f)}\textsf{where(f)} returns the
-current offset position in file \textsf{f}. It fails on windows and
+\index{file!position}\index{where(f)}\texttt{where(f)} returns the
+current offset position in file \texttt{f}. It fails on windows and
 networks. The beginning of the file is offset 1.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2913,21 +2917,21 @@ networks. The beginning of the file is offset 1.
 string{\textbar}file \hfill write text line}
 
 \noindent
-\textsf{write(args)} outputs strings, followed by a newline, to a file
+\texttt{write(args)} outputs strings, followed by a newline, to a file
 or files. Strings are written in order to their nearest preceding file,
-defaulting to \textsf{\&output}. A newline is output to the preceding
+defaulting to \texttt{\&output}. A newline is output to the preceding
 file after the last argument, as well as whenever a non-initial file
 argument directs output to a different file.
-\index{write()}\textsf{write()} returns its last argument.
+\index{write()}\texttt{write()} returns its last argument.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf writes(s{\textbar}f, ...) :
 string{\textbar}file \hfill write strings}
 
 \noindent
-\textsf{writes(args)} outputs strings to one or more files. Each string
+\texttt{writes(args)} outputs strings to one or more files. Each string
 argument is written to the nearest preceding file argument, defaulting
-to \textsf{\&output}. \index{writes()}\textsf{writes()} returns its
+to \texttt{\&output}. \index{writes()}\texttt{writes()} returns its
 last argument.
 
 \subsubsection{Graphics Functions}
@@ -2936,41 +2940,41 @@ The names of built-in graphics functions begin with upper case. The
 built-in graphics functions are listed here. These functions are more
 thoroughly described in [Griswold98]. Extensive procedure and class
 libraries for graphics are described in [Griswold98] and in Appendix B.
-In 2D, arguments named \textsf{x} and \textsf{y} are pixel locations in
+In 2D, arguments named \texttt{x} and \texttt{y} are pixel locations in
 zero-based integer coordinates. \ In 3D windows coordinates are given
 using real numbers, and functions by default take three coordinates
-(\textsf{x,y,z}) per vertex. Attribute \textsf{dim} can be set to 2 or
-4, changing most 3D functions to take vertices in a (\textsf{x,y}) or
-(\textsf{x,y,z,w}) format. Arguments named \textsf{row} and
-\textsf{col} are cursor locations in one-based integer text
+(\texttt{x,y,z}) per vertex. Attribute \texttt{dim} can be set to 2 or
+4, changing most 3D functions to take vertices in a (\texttt{x,y}) or
+(\texttt{x,y,z,w}) format. Arguments named \texttt{row} and
+\texttt{col} are cursor locations in one-based integer text
 coordinates. Most functions{\textquotesingle} first parameter named
-\textsf{w} defaults to \textsf{\&window} and the window argument can be
+\texttt{w} defaults to \texttt{\&window} and the window argument can be
 omitted in the default case.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Active() : window \hfill produce active window}
 
 \noindent
-\textsf{Active()} returns a window that has one or more events pending.
-If no window has an event pending, \textsf{Active()} blocks and waits
-for an event to occur. \ \textsf{Active()} starts with a different
+\texttt{Active()} returns a window that has one or more events pending.
+If no window has an event pending, \texttt{Active()} blocks and waits
+for an event to occur. \ \texttt{Active()} starts with a different
 window on each call in order to avoid window
-{\textquotedbl}starvation{\textquotedbl}. \ \textsf{Active()} fails if
+{\textquotedbl}starvation{\textquotedbl}. \ \texttt{Active()} fails if
 no windows are open.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Alert() : window \hfill alert the user}
 
 \noindent
-\textsf{Alert()} produces a visual flash or audible beep that signifies
+\texttt{Alert()} produces a visual flash or audible beep that signifies
 to the user the occurrence of some notable event in the application.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Bg(w,s) : string \hfill background color}
 
 \noindent
-\textsf{Bg(w)} retrieves the background color. \textsf{Bg(w,s)} sets the
-background color by name, rgb, or mutable color value. \textsf{Bg()}
+\texttt{Bg(w)} retrieves the background color. \texttt{Bg(w,s)} sets the
+background color by name, rgb, or mutable color value. \texttt{Bg()}
 fails if the background cannot be set to the requested color.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2978,44 +2982,44 @@ fails if the background cannot be set to the requested color.
 {\bf Clip(w,x:0,y:0,width:0,height:0) : window \hfill clip to rectangle}
 
 \noindent
-\textsf{Clip(w,x,y,width,height)} clips output to a rectangular area
-within the window. \ If \textsf{width} is 0, the clip region extends
-from \textsf{x} to the right side of the window. \ If \textsf{height}
-is 0, the clip region extends from \textsf{y} to the bottom of the
+\texttt{Clip(w,x,y,width,height)} clips output to a rectangular area
+within the window. \ If \texttt{width} is 0, the clip region extends
+from \texttt{x} to the right side of the window. \ If \texttt{height}
+is 0, the clip region extends from \texttt{y} to the bottom of the
 window.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Clone(w,s,...) : window \hfill clone context}
 
 \noindent
-\textsf{Clone(w)} produces a new window binding in which a new graphics
-context is copied from \textsf{w} and bound to
-\textsf{w}{\textquotesingle}s canvas. Additional string arguments
-specify attributes of the new binding, as in \textsf{WAttrib()}. If the
+\texttt{Clone(w)} produces a new window binding in which a new graphics
+context is copied from \texttt{w} and bound to
+\texttt{w}{\textquotesingle}s canvas. Additional string arguments
+specify attributes of the new binding, as in \texttt{WAttrib()}. If the
 first string argument is
-\textsf{{\textquotedblleft}g{\textquotedblright}} or
-\textsf{{\textquotedblleft}gl{\textquotedblright}}, \textsf{Clone()}
+\texttt{{\textquotedblleft}g{\textquotedblright}} or
+\texttt{{\textquotedblleft}gl{\textquotedblright}}, \texttt{Clone()}
 binds the new context to a subwindow with separate canvas and input
-queue inside of and relative to \textsf{w}. \textsf{Clone()} fails if
+queue inside of and relative to \texttt{w}. \texttt{Clone()} fails if
 an attribute cannot be set to a requested value.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Color(w, i, s,...) : window \hfill set mutable color}
 
 \noindent
-\textsf{Color(w,i)} produces the current setting of mutable color
-\textsf{i}. \textsf{Color(w,i,s,...)} sets the color map entries
-identified by \textsf{i[j]} to the corresponding colors \textsf{s[j]}.
+\texttt{Color(w,i)} produces the current setting of mutable color
+\texttt{i}. \texttt{Color(w,i,s,...)} sets the color map entries
+identified by \texttt{i[j]} to the corresponding colors \texttt{s[j]}.
 \ See [Griswold98].
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ColorValue(w, s) : string \hfill convert color name to rgb}
 
 \noindent
-\textsf{ColorValue(w,s)} converts the string color \textsf{s} into a
+\texttt{ColorValue(w,s)} converts the string color \texttt{s} into a
 string with three comma-separated 16-bit integer values denoting the
-color{\textquotesingle}s RGB components. \textsf{ColorValue()} fails if
-string \textsf{s} is not a valid name or recognized decimal or hex
+color{\textquotesingle}s RGB components. \texttt{ColorValue()} fails if
+string \texttt{s} is not a valid name or recognized decimal or hex
 encoding of a color.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3023,34 +3027,34 @@ encoding of a color.
 window \hfill copy area}
 
 \noindent
-\textsf{CopyArea(w1,w2,x,y,width,height,x2,y2)} copies a rectangular
-region within \textsf{w1} defined by
-\textsf{x},\textsf{y},\textsf{width},\textsf{height} to window
-\textsf{w2} at offset \textsf{x2},\textsf{y2}. \ \textsf{CopyArea()}
-returns \textsf{w1}. \textsf{\&window} is not a default for this
-function. The default copies all of \textsf{w1}.
+\texttt{CopyArea(w1,w2,x,y,width,height,x2,y2)} copies a rectangular
+region within \texttt{w1} defined by
+\texttt{x},\texttt{y},\texttt{width},\texttt{height} to window
+\texttt{w2} at offset \texttt{x2},\texttt{y2}. \ \texttt{CopyArea()}
+returns \texttt{w1}. \texttt{\&window} is not a default for this
+function. The default copies all of \texttt{w1}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Couple(w1, w2) : window \hfill couple window to context}
 
 \noindent
-\textsf{Couple(w1,w2)} produces a new value that binds the window
-associated with \textsf{w1} to the graphics context associated with
-\textsf{w2}.
+\texttt{Couple(w1,w2)} produces a new value that binds the window
+associated with \texttt{w1} to the graphics context associated with
+\texttt{w2}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf DrawArc(w, x, y, width, height:width, a1:0.0, a2:2*\&pi, ...)
 : window \hfill draw arc}
 
 \noindent
-\textsf{DrawArc(w,x,y,width,height,a1,a2,...)} draws arcs or ellipses.
-\ Each is defined by six integer coordinates. \ \textsf{x}, \textsf{y},
-\textsf{width} and \textsf{height} define a bounding rectangle around
+\texttt{DrawArc(w,x,y,width,height,a1,a2,...)} draws arcs or ellipses.
+\ Each is defined by six integer coordinates. \ \texttt{x}, \texttt{y},
+\texttt{width} and \texttt{height} define a bounding rectangle around
 the arc; the center of the arc is the point
-\textsf{(x+(width)/2,y+(height)/2)}. Angles are specified in radians.
-\ Angle \textsf{a1} is the starting position of the arc, where 0.0 is
+\texttt{(x+(width)/2,y+(height)/2)}. Angles are specified in radians.
+\ Angle \texttt{a1} is the starting position of the arc, where 0.0 is
 the 3 o{\textquotesingle}clock position and the positive direction is
-counter-clockwise. \ Angle \textsf{a2} is not the end position, but
+counter-clockwise. \ Angle \texttt{a2} is not the end position, but
 rather specifies the direction and extent of the arc.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3058,26 +3062,26 @@ rather specifies the direction and extent of the arc.
 window \hfill draw circle}
 
 \noindent
-\textsf{DrawCircle()} draws a circle or arc, centered at
-(\textsf{x},\textsf{y}) and otherwise similar to \textsf{DrawArc()}
-with \textsf{width=height}.
+\texttt{DrawCircle()} draws a circle or arc, centered at
+(\texttt{x},\texttt{y}) and otherwise similar to \texttt{DrawArc()}
+with \texttt{width=height}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf DrawCube(w, x, y, z, len ...) : record \hfill draw cube}
 
 \noindent
-\textsf{DrawCube(w, x, y, z, len{\dots}) \ }draws a cube with sides of
-length \textsf{len} at the position (\textsf{x}, \textsf{y},
-\textsf{z}) on the 3D window \textsf{w}. The display list element is
-returned. This procedure fails if the context attribute \textsf{dim} is
+\texttt{DrawCube(w, x, y, z, len{\dots}) \ }draws a cube with sides of
+length \texttt{len} at the position (\texttt{x}, \texttt{y},
+\texttt{z}) on the 3D window \texttt{w}. The display list element is
+returned. This procedure fails if the context attribute \texttt{dim} is
 set to 2. 
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf DrawCurve(w, x1, y1, ...) : window \hfill draw curve}
 
 \noindent
-\textsf{DrawCurve(w,x1,y1,...,xn,yn)} draws a smooth curve connecting
-each \textsf{x,y} pair in the argument list. \ \ If the first and last
+\texttt{DrawCurve(w,x1,y1,...,xn,yn)} draws a smooth curve connecting
+each \texttt{x,y} pair in the argument list. \ \ If the first and last
 point are the same, the curve is smooth and closed through that point.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3085,39 +3089,39 @@ point are the same, the curve is smooth and closed through that point.
 {\bf DrawCylinder(w, x, y, z, h, r1, r2, ...) : record \hfill draw cylinder}
 
 \noindent
-\textsf{DrawCylinder(w, x, y, z, h, r1, r2, {\dots})} \ draws a cylinder
-with a top of radius \textsf{r1}, a bottom with radius \textsf{r2}, and
-a height \textsf{h} on 3D window \textsf{w}. \ The disk is centered at
-the point (\textsf{x}, \textsf{y}, \textsf{z}). The display list
+\texttt{DrawCylinder(w, x, y, z, h, r1, r2, {\dots})} \ draws a cylinder
+with a top of radius \texttt{r1}, a bottom with radius \texttt{r2}, and
+a height \texttt{h} on 3D window \texttt{w}. \ The disk is centered at
+the point (\texttt{x}, \texttt{y}, \texttt{z}). The display list
 element is returned. This procedure fails if the context attribute
-\textsf{dim} is set to 2.
+\texttt{dim} is set to 2.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf DrawDisk(w, x, y, z, r1, r2, a1, a2, ...) : record \hfill draw disk}
 
 \noindent
-\textsf{DrawDisk(W, x, y, z, r1, r2, a1, a2, {\dots})}\texttt{ }draws a
-disk or partial disk centered at (\textsf{x}, \textsf{y}, \textsf{z})
-on 3D window \textsf{w}. The inner circle has radius \textsf{r1} and
-the outer circle has radius \textsf{r2}. The parameters \textsf{a1} and
-\textsf{a2} are optional. If they are specified, a partial disk is
-drawn with a starting angle \textsf{a1} and sweeping angle \textsf{a2}.
+\texttt{DrawDisk(W, x, y, z, r1, r2, a1, a2, {\dots})}\texttt{ }draws a
+disk or partial disk centered at (\texttt{x}, \texttt{y}, \texttt{z})
+on 3D window \texttt{w}. The inner circle has radius \texttt{r1} and
+the outer circle has radius \texttt{r2}. The parameters \texttt{a1} and
+\texttt{a2} are optional. If they are specified, a partial disk is
+drawn with a starting angle \texttt{a1} and sweeping angle \texttt{a2}.
 The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf DrawImage(w, x, y, s) : window \hfill draw bitmapped figure}
 
 \noindent
-\textsf{DrawImage(w,x,y, s)} draws an image specified in string
-\textsf{s} at location \textsf{x,y}.
+\texttt{DrawImage(w,x,y, s)} draws an image specified in string
+\texttt{s} at location \texttt{x,y}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf DrawLine(w, x1, y1, z1 ...) : window [list] \hfill draw line}
 
 \noindent
-\textsf{DrawLine(w,x1,y1,...,xn,yn)} draws lines between each adjacent
-\textsf{x,y} pair of arguments. In 3D, \textsf{DrawLine()} takes from
+\texttt{DrawLine(w,x1,y1,...,xn,yn)} draws lines between each adjacent
+\texttt{x,y} pair of arguments. In 3D, \texttt{DrawLine()} takes from
 2-4 coordinates per vertex and returns the list that represents the
 lines on the display list for refresh purposes.
 
@@ -3125,8 +3129,8 @@ lines on the display list for refresh purposes.
 \noindent {\bf DrawPoint(w, x1, y1, ...) : window [list] \hfill draw point}
 
 \noindent
-\textsf{DrawPoint(w,x1,y1,...,xn,yn)} draws points. In 3D,
-\textsf{DrawPoint()} takes from 2-4 coordinates per vertex and returns
+\texttt{DrawPoint(w,x1,y1,...,xn,yn)} draws points. In 3D,
+\texttt{DrawPoint()} takes from 2-4 coordinates per vertex and returns
 the list that represents the points on the display list for refresh
 purposes.
 
@@ -3135,7 +3139,7 @@ purposes.
 {\bf DrawPolygon(w, x1, y1, [z1,] ...) : window [list] \hfill draw polygon}
 
 \noindent
-\textsf{DrawPolygon(w,x1,y1,...,xn,yn)} draws a polygon. In 3D\textsf{,
+\texttt{DrawPolygon(w,x1,y1,...,xn,yn)} draws a polygon. In 3D\texttt{,
 DrawPolygon()} takes from 2-4 coordinates per vertex and returns the
 list that represents the polygon on the display list for refresh
 purposes.
@@ -3145,18 +3149,18 @@ purposes.
 draw rectangle}
 
 \noindent
-\textsf{DrawRectangle(w,x1,y1,width1,height1,...)} draws rectangles.
-Arguments \textsf{width} and \textsf{height} define the perceived size
-of the rectangle; the actual rectangle drawn is \textsf{width+1} pixels
-wide and \textsf{height+1} pixels high.
+\texttt{DrawRectangle(w,x1,y1,width1,height1,...)} draws rectangles.
+Arguments \texttt{width} and \texttt{height} define the perceived size
+of the rectangle; the actual rectangle drawn is \texttt{width+1} pixels
+wide and \texttt{height+1} pixels high.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf DrawSegment(w, x1, y1, [z1,] ...) : window [list] \hfill draw line segment}
 
 \noindent
-\textsf{DrawSegment(w,x1,y1,...,xn,yn)} draws lines between alternating
-\textsf{x,y} pairs in the argument list. In 3D, \textsf{DrawSegment()}
+\texttt{DrawSegment(w,x1,y1,...,xn,yn)} draws lines between alternating
+\texttt{x,y} pairs in the argument list. In 3D, \texttt{DrawSegment()}
 takes from 2-4 coordinates per vertex and returns the list that
 represents the segments on the display list for refresh purposes.
 
@@ -3164,24 +3168,24 @@ represents the segments on the display list for refresh purposes.
 \noindent {\bf DrawSphere(w, x, y, z, r, ...) : record \hfill draw sphere}
 
 \noindent
-\textsf{DrawSphere(w, x, y, z, r,{\dots})} \ draws a sphere with radius
+\texttt{DrawSphere(w, x, y, z, r,{\dots})} \ draws a sphere with radius
 r centered at (x, y, z) on 3D window w. The display list element is
-returned. This procedure fails if the context attribute \textsf{dim} is
+returned. This procedure fails if the context attribute \texttt{dim} is
 set to 2.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf DrawString(w, x1, y1, s1, ...) : window \hfill draw text}
 
 \noindent
-\textsf{DrawString(w,x,y,s)} draws text \textsf{s} at coordinates (x,
+\texttt{DrawString(w,x,y,s)} draws text \texttt{s} at coordinates (x,
 y). \ This function does not draw any background; only the
 characters{\textquotesingle} actual pixels are drawn. It is possible to
-use \textsf{{\textquotedbl}drawop=reverse{\textquotedbl}} with this
-function to draw erasable text. \textsf{DrawString()} does not affect
-the text cursor position. Newlines present in \textsf{s} cause
-subsequent characters to be drawn starting at (\textsf{x, current\_y +
-leading}), where \textsf{x} is the \textsf{x} supplied to the function,
-\textsf{current\_y} is the \textsf{y} coordinate the newline would have
+use \texttt{{\textquotedbl}drawop=reverse{\textquotedbl}} with this
+function to draw erasable text. \texttt{DrawString()} does not affect
+the text cursor position. Newlines present in \texttt{s} cause
+subsequent characters to be drawn starting at (\texttt{x, current\_y +
+leading}), where \texttt{x} is the \texttt{x} supplied to the function,
+\texttt{current\_y} is the \texttt{y} coordinate the newline would have
 been drawn on, and leading is the current leading associated with the
 binding.
 
@@ -3190,10 +3194,10 @@ binding.
 record \hfill draw torus}
 
 \noindent
-\textsf{DrawTorus(w, x, y, z, r1, r2,{\dots})} \ draws a torus with
-inner radius \textsf{r1}, outside radius \textsf{r2}, and centered at
-(\textsf{x,y,z}) on 3D window \textsf{w}. The display list element is
-returned. This procedure fails if the context attribute \textsf{dim} is
+\texttt{DrawTorus(w, x, y, z, r1, r2,{\dots})} \ draws a torus with
+inner radius \texttt{r1}, outside radius \texttt{r2}, and centered at
+(\texttt{x,y,z}) on 3D window \texttt{w}. The display list element is
+returned. This procedure fails if the context attribute \texttt{dim} is
 set to 2.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3201,11 +3205,11 @@ set to 2.
 erase rectangular area}
 
 \noindent
-\textsf{EraseArea(w,x,y,width,height,...)} erases rectangular areas
-within the window to the background color. \ If \textsf{width} is 0,
-the region cleared extends from \textsf{x} to the right side of the
-window. \ If \textsf{height} is 0, the region erased extends from
-\textsf{y} to the bottom of the window. In 3D, \textsf{EraseArea(W)}
+\texttt{EraseArea(w,x,y,width,height,...)} erases rectangular areas
+within the window to the background color. \ If \texttt{width} is 0,
+the region cleared extends from \texttt{x} to the right side of the
+window. \ If \texttt{height} is 0, the region erased extends from
+\texttt{y} to the bottom of the window. In 3D, \texttt{EraseArea(W)}
 clears the contents of the entire window.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3214,26 +3218,26 @@ clears the contents of the entire window.
  read event on window}
 
 \noindent
-\textsf{Event(w, i)} retrieves the next event available for window
-\textsf{w}. If no events are available, \textsf{Event()} waits for
-\textsf{i} milliseconds. Keystrokes are encoded as strings, while mouse
+\texttt{Event(w, i)} retrieves the next event available for window
+\texttt{w}. If no events are available, \texttt{Event()} waits for
+\texttt{i} milliseconds. Keystrokes are encoded as strings, while mouse
 events are encoded as integers. \ The retrieval of an event is
-accompanied by assignments to the keywords \textsf{\&x}, \textsf{\&y},
-\textsf{\&row}, \textsf{\&col}, \textsf{\&interval},
-\textsf{\&control}, \textsf{\&shift}, \textsf{\&meta}, and if 3D
-attribute \textsf{{\textquotedblleft}pick=on{\textquotedblright}},
-\textsf{\&pick}. \textsf{Event()} fails if the timeout expires before
+accompanied by assignments to the keywords \texttt{\&x}, \texttt{\&y},
+\texttt{\&row}, \texttt{\&col}, \texttt{\&interval},
+\texttt{\&control}, \texttt{\&shift}, \texttt{\&meta}, and if 3D
+attribute \texttt{{\textquotedblleft}pick=on{\textquotedblright}},
+\texttt{\&pick}. \texttt{Event()} fails if the timeout expires before
 an event occurs.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Fg(w, s) : string \hfill foreground color}
 
 \noindent
-\textsf{Fg(w)} retrieves the current foreground color. \textsf{Fg(w,s)}
-sets the foreground by name or value. \textsf{Fg()} fails if the
-foreground cannot be set to the requested color. In 3D, \textsf{Fg(w,
+\texttt{Fg(w)} retrieves the current foreground color. \texttt{Fg(w,s)}
+sets the foreground by name or value. \texttt{Fg()} fails if the
+foreground cannot be set to the requested color. In 3D, \texttt{Fg(w,
 s)} changes the material properties of subsequently drawn objects to
-the material properties specified by \textsf{s}. The string \textsf{s}
+the material properties specified by \texttt{s}. The string \texttt{s}
 must be one or more semi-colon separated material properties. A
 material property is of the form 
 
@@ -3242,7 +3246,7 @@ material property is of the form
 {\textquotedblleft}shininess n{\textquotedblright}, 0 {\textless}= n
 {\textless}= 128.
 
-If string \textsf{s} is omitted, the current values of the material
+If string \texttt{s} is omitted, the current values of the material
 properties will be returned.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3250,25 +3254,25 @@ properties will be returned.
 draw filled arc}
 
 \noindent
-\textsf{FillArc(w,x,y,width,height,a1,a2,...)} draws filled arcs,
-ellipses, and/or circles. \ Coordinates are as in \textsf{DrawArc()}.
+\texttt{FillArc(w,x,y,width,height,a1,a2,...)} draws filled arcs,
+ellipses, and/or circles. \ Coordinates are as in \texttt{DrawArc()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf FillCircle(w, x, y, radius, a1, a2, ...) : window \hfill
 draw filled circle}
 
 \noindent
-\textsf{FillCircle(w,x,y, radius,a1,a2,...)} draws filled circles.
-\ Coordinates are as in \textsf{DrawCircle()}.
+\texttt{FillCircle(w,x,y, radius,a1,a2,...)} draws filled circles.
+\ Coordinates are as in \texttt{DrawCircle()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf FillPolygon(w, x1, y1, [z1,] ...) : window \hfill draw filled polygon}
 
 \noindent
-\textsf{FillPolygon(w,x1,y1,...,xn,yn)} draws a filled polygon. \ The
+\texttt{FillPolygon(w,x1,y1,...,xn,yn)} draws a filled polygon. \ The
 beginning and ending points are connected if they are not the same. In
-3D\textsf{, FillPolygon()} takes from 2-4 coordinates per vertex and
+3D\texttt{, FillPolygon()} takes from 2-4 coordinates per vertex and
 returns the list that represents the polygon on the display list for
 refresh purposes. 
 
@@ -3277,28 +3281,28 @@ refresh purposes.
 window \hfill draw filled rectangle}
 
 \noindent
-\textsf{FillRectangle(w,x,y,width,height,...)} draws filled rectangles.
+\texttt{FillRectangle(w,x,y,width,height,...)} draws filled rectangles.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Font(w, s) : string \hfill font}
 
 \noindent
-\textsf{Font(w)} produces the name of the current font.
-\textsf{Font(w,s)} sets the window context{\textquotesingle}s font to
-\textsf{s} and produces its name or fails if the font name is invalid.
+\texttt{Font(w)} produces the name of the current font.
+\texttt{Font(w,s)} sets the window context{\textquotesingle}s font to
+\texttt{s} and produces its name or fails if the font name is invalid.
 \ The valid font names are largely system-dependent but follow the
-format \textsf{family[,styles],size}, where styles optionally add bold
-or italic or both. Four font names are portable: \textsf{serif} (Times
-or similar), \textsf{sans} (Helvetica or similar), \textsf{mono} (a
-mono spaced sans serif font) and \textsf{typewriter} (Courier or
-similar). \ \textsf{Font()} fails if the requested font name does not
+format \texttt{family[,styles],size}, where styles optionally add bold
+or italic or both. Four font names are portable: \texttt{serif} (Times
+or similar), \texttt{sans} (Helvetica or similar), \texttt{mono} (a
+mono spaced sans serif font) and \texttt{typewriter} (Courier or
+similar). \ \texttt{Font()} fails if the requested font name does not
 exist.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf FreeColor(w, s, ...) : window \hfill release colors}
 
 \noindent
-\textsf{FreeColor(w,s1,...,sn)} allows the window system to re-use the
+\texttt{FreeColor(w,s1,...,sn)} allows the window system to re-use the
 corresponding color map entries. \ Whether this call has an effect is
 dependent upon the particular implementation. \ If a freed color is
 still in use at the time it is freed, unpredictable results will occur.
@@ -3307,9 +3311,9 @@ still in use at the time it is freed, unpredictable results will occur.
 \noindent {\bf GotoRC(w, row:1, col:1) : window \hfill go to row,column}
 
 \noindent
-\textsf{GotoRC(w,row,col)} moves the text cursor to a particular row and
+\texttt{GotoRC(w,row,col)} moves the text cursor to a particular row and
 column, given in numbers of characters; the upper-left corner is
-coordinate (1,1). \ The column calculation used by \textsf{GotoRC()}
+coordinate (1,1). \ The column calculation used by \texttt{GotoRC()}
 assigns to each column the pixel width of the widest character in the
 current font. \ If the current font is of fixed width, this yields the
 usual interpretation.
@@ -3318,31 +3322,31 @@ usual interpretation.
 \noindent {\bf GotoXY(w, x:0, y:0) : window \hfill go to pixel}
 
 \noindent
-\textsf{GotoXY(w,x,y)} moves the text cursor to a specific cursor
+\texttt{GotoXY(w,x,y)} moves the text cursor to a specific cursor
 location in pixels.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf IdentityMatrix(w) : record \hfill load the identity matrix}
 
 \noindent
-\textsf{IdentityMatrix(w)} changes the current matrix to the identity
-matrix on 3D window \textsf{w}. The display list element is returned. 
+\texttt{IdentityMatrix(w)} changes the current matrix to the identity
+matrix on 3D window \texttt{w}. The display list element is returned. 
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Lower(w) : window \hfill lower window}
 
 \noindent
-\textsf{Lower(w)} moves window \textsf{w} to the bottom of the window
+\texttt{Lower(w)} moves window \texttt{w} to the bottom of the window
 stack.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf MatrixMode(w, s) : record \hfill set matrix mode}
 
 \noindent
-\textsf{MatrixMode(w, s)} changes the matrix mode to \textsf{s} on 3D
-window \textsf{w}. The string \textsf{s} must be either
-\textsf{{\textquotedblleft}projection{\textquotedblright}} or
-\textsf{{\textquotedblleft}modelview{\textquotedblright}}; otherwise
+\texttt{MatrixMode(w, s)} changes the matrix mode to \texttt{s} on 3D
+window \texttt{w}. The string \texttt{s} must be either
+\texttt{{\textquotedblleft}projection{\textquotedblright}} or
+\texttt{{\textquotedblleft}modelview{\textquotedblright}}; otherwise
 this procedure fails. The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3350,7 +3354,7 @@ this procedure fails. The display list element is returned.
 {\bf MultMatrix(w, L) : record \hfill multiply transformation matrix}
 
 \noindent
-\textsf{MultMatrix(w, L)} multiplies the current transformation matrix
+\texttt{MultMatrix(w, L)} multiplies the current transformation matrix
 used in 3D window w by the 4x4 matrix represented as a list of 16
 values L.
 
@@ -3358,18 +3362,18 @@ values L.
 \noindent {\bf NewColor(w, s) : integer \hfill allocate mutable color}
 
 \noindent
-\textsf{NewColor(w,s)} allocates an entry in the color map and returns a
+\texttt{NewColor(w,s)} allocates an entry in the color map and returns a
 small negative integer for this entry, usable in calls to routines that
-take a color specification, such as \textsf{Fg()}. \ If \textsf{s} is
+take a color specification, such as \texttt{Fg()}. \ If \texttt{s} is
 specified, the entry is initialized to the given color.
-\textsf{NewColor()} fails if it cannot allocate an entry.
+\texttt{NewColor()} fails if it cannot allocate an entry.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PaletteChars(w, s) : string \hfill pallete characters}
 
 \noindent
-\textsf{PaletteChars(w,s)} produces a string containing each of the
-letters in palette \textsf{s}. The palletes
+\texttt{PaletteChars(w,s)} produces a string containing each of the
+letters in palette \texttt{s}. The palletes
 {\textquotedblleft}c1{\textquotedblright} through
 {\textquotedblleft}c6{\textquotedblright} define different color
 encodings of images represented as string data; see [Griswold98].
@@ -3378,39 +3382,39 @@ encodings of images represented as string data; see [Griswold98].
 \noindent {\bf PaletteColor(w, p, s) : string \hfill pallete color}
 
 \noindent
-\textsf{PaletteColor(w,s)} returns the color of key \textsf{s} in
-palette \textsf{p} in
-\textsf{{\textquotedblleft}}\textsf{\textit{r}}\textsf{,}\textsf{\textit{g}}\textsf{,}\textsf{\textit{b}}\textsf{{\textquotedblright}}
+\texttt{PaletteColor(w,s)} returns the color of key \texttt{s} in
+palette \texttt{p} in
+\texttt{{\textquotedblleft}}\texttt{\textit{r}}\texttt{,}\texttt{\textit{g}}\texttt{,}\texttt{\textit{b}}\texttt{{\textquotedblright}}
 format.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PaletteKey(w, p, s) : integer \hfill pallete key}
 
 \noindent
-\textsf{PaletteKey(w,s)} returns the key of closest color to \textsf{s}
-in palette \textsf{p}.
+\texttt{PaletteKey(w,s)} returns the key of closest color to \texttt{s}
+in palette \texttt{p}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Pattern(w, s) : w \hfill define stipple pattern}
 
 \noindent
-\textsf{Pattern(w,s)} selects stipple pattern \textsf{s} for use during
-draw and fill operations. \ \textsf{s} may be either the name of a
+\texttt{Pattern(w,s)} selects stipple pattern \texttt{s} for use during
+draw and fill operations. \ \texttt{s} may be either the name of a
 system-dependent pattern or a literal of the form
 \textit{width},\textit{bits}. \ Patterns are only used when the
-\textsf{fillstyle} attribute is \textsf{stippled} or
-\textsf{opaquestippled}. \ \textsf{Pattern()} fails if a named pattern
-is not defined. An error occurs if \textsf{Pattern()} is given a
+\texttt{fillstyle} attribute is \texttt{stippled} or
+\texttt{opaquestippled}. \ \texttt{Pattern()} fails if a named pattern
+is not defined. An error occurs if \texttt{Pattern()} is given a
 malformed literal.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Pending(w, x, ...) : L \hfill produce event queue}
 
 \noindent
-\textsf{Pending(w)} produces the list of events waiting to be read from
-window \textsf{w}. \ If no events are available, the list is empty (its
-size is 0). \ \textsf{Pending(w,x1,...,xn)} adds \textsf{x1} through
-\textsf{xn} to the end of \textsf{w}{\textquotesingle}s pending list in
+\texttt{Pending(w)} produces the list of events waiting to be read from
+window \texttt{w}. \ If no events are available, the list is empty (its
+size is 0). \ \texttt{Pending(w,x1,...,xn)} adds \texttt{x1} through
+\texttt{xn} to the end of \texttt{w}{\textquotesingle}s pending list in
 guaranteed consecutive order.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3418,46 +3422,46 @@ guaranteed consecutive order.
 generate window pixels}
 
 \noindent
-\textsf{Pixel(w,x,y,width,height)} generates pixel contents from a
-rectangular area within window \textsf{w}. \ \textsf{width * height}
+\texttt{Pixel(w,x,y,width,height)} generates pixel contents from a
+rectangular area within window \texttt{w}. \ \texttt{width * height}
 results are generated starting from the upper-left corner and advancing
 down to the bottom of each column before the next one is visited.
 \ Pixels are returned in integer values; ordinary colors are encoded
 nonnegative integers, while mutable colors are negative integers that
-were previously returned by \textsf{NewColor()}. Ordinary colors are
+were previously returned by \texttt{NewColor()}. Ordinary colors are
 encoded with the most significant eight bits all zero, the next eight
 bits contain the red component, the next eight bits the green
 component, and the least significant eight bits contain the blue
-component. \textsf{Pixel()} fails if part of the requested rectangle
+component. \texttt{Pixel()} fails if part of the requested rectangle
 extends beyond the canvas.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PopMatrix(w) : record \hfill pop the matrix stack}
 
 \noindent
-\textsf{PopMatrix(w)} pops the top matrix from either the projection or
-modelview matrix stack on 3D window \textsf{w}, depending on the
-current matrix mode\textsf{.} This procedure fails if there is only one
+\texttt{PopMatrix(w)} pops the top matrix from either the projection or
+modelview matrix stack on 3D window \texttt{w}, depending on the
+current matrix mode\texttt{.} This procedure fails if there is only one
 matrix on the matrix stack. \ The display list element is returned. 
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PushMatrix(w) : record \hfill push the matrix stack}
 
 \noindent
-\textsf{PushMatrix(w)} pushes a copy of the current matrix onto the
-matrix stack on 3D window \textsf{w}. The current matrix mode
+\texttt{PushMatrix(w)} pushes a copy of the current matrix onto the
+matrix stack on 3D window \texttt{w}. The current matrix mode
 determines on what stack is pushed. This procedure fails if the stack
-is full. The \textsf{{\textquotedblleft}projection{\textquotedblright}}
+is full. The \texttt{{\textquotedblleft}projection{\textquotedblright}}
 stack is of size two; the
-\textsf{{\textquotedblleft}modelview{\textquotedblright}} stack is of
+\texttt{{\textquotedblleft}modelview{\textquotedblright}} stack is of
 size thirty two. The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PushRotate(w, a, x, y, z) : record \hfill push and rotate}
 
 \noindent
-\textsf{PushRotate()} is equivalent to \textsf{PushMatrix()} followed by
-\textsf{Rotate()}.
+\texttt{PushRotate()} is equivalent to \texttt{PushMatrix()} followed by
+\texttt{Rotate()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PushScale(w, x, y, z) : record \hfill push and scale}
@@ -3479,55 +3483,55 @@ by }Translate()\textrm{.}}
 \noindent {\bf QueryPointer(w) : x, y \hfill produce mouse position}
 
 \noindent
-\textsf{QueryPointer(w)} generates the \textsf{x} and \textsf{y}
-coordinates of the mouse relative to window \textsf{w}. \ If \textsf{w}
-is omitted, \textsf{QueryPointer()} generates the coordinates relative
+\texttt{QueryPointer(w)} generates the \texttt{x} and \texttt{y}
+coordinates of the mouse relative to window \texttt{w}. \ If \texttt{w}
+is omitted, \texttt{QueryPointer()} generates the coordinates relative
 to the upper-left corner of the entire screen.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Raise(w) : window \hfill raise window}
 
 \noindent
-\textsf{Raise(w)} moves window \textsf{w} to the top of the window
+\texttt{Raise(w)} moves window \texttt{w} to the top of the window
 stack, making it entirely visible and possibly obscuring other windows.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ReadImage(w, s, x:0, y:0) : integer \hfill load image file}
 
 \noindent
-\textsf{ReadImage(w,s,x,y)} loads an image from the file named by s into
-window w at offset \textsf{x,y}. \textsf{\ x} and \textsf{y} are
+\texttt{ReadImage(w,s,x,y)} loads an image from the file named by s into
+window w at offset \texttt{x,y}. \texttt{\ x} and \texttt{y} are
 optional and default to 0,0. GIF, JPG, and BMP formats are supported,
-along with platform-specific formats. If \textsf{ReadImage()} reads the
-image into \textsf{w}, it returns either an integer 0 indicating no
+along with platform-specific formats. If \texttt{ReadImage()} reads the
+image into \texttt{w}, it returns either an integer 0 indicating no
 errors occurred or a nonzero integer indicating that one or more colors
 required by the image could not be obtained from the window system.
-\ \textsf{ReadImage()} fails if file \textsf{s} cannot be opened for
+\ \texttt{ReadImage()} fails if file \texttt{s} cannot be opened for
 reading or is an invalid file format.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Refresh(w) : window \hfill redraw the window}
 
 \noindent
-\textsf{Refresh(w) }redraws the contents of window \textsf{w}. It is
+\texttt{Refresh(w) }redraws the contents of window \texttt{w}. It is
 used mainly when objects have been moved in a 3D scene. The window
-\textsf{w} is returned. 
+\texttt{w} is returned. 
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Rotate(w, a, x, y, z) : record \hfill rotate objects}
 
 \noindent
-\textsf{Rotate(w, a, x, y, z,{\dots})} rotates subsequent objects drawn
-on 3D window \textsf{w} by angle \textsf{a} degrees, in the direction
-(\textsf{x,y,z}). \ The display list element is returned.
+\texttt{Rotate(w, a, x, y, z,{\dots})} rotates subsequent objects drawn
+on 3D window \texttt{w} by angle \texttt{a} degrees, in the direction
+(\texttt{x,y,z}). \ The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Scale(w, x, y, z) : record \hfill\ scale
 objects}
 
 \noindent
-\textsf{Scale(w, x, y, z,{\dots})} scales subsequent objects drawn on 3D
-window \textsf{w} according to the given coordinates. The display list
+\texttt{Scale(w, x, y, z,{\dots})} scales subsequent objects drawn on 3D
+window \texttt{w} according to the given coordinates. The display list
 element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3535,18 +3539,18 @@ element is returned.
 {\bf Texcoord(w, x, y, ...) : list \hfill define texture coordinates}
 
 \noindent
-\textsf{Texcoord(W, x}\textsf{\textsubscript{1}}\textsf{,
-y}\textsf{\textsubscript{1}}\textsf{, {\dots},
-x}\textsf{\textsubscript{n}}\textsf{,
-y}\textsf{\textsubscript{n}}\textsf{) }sets the texture coordinates to
-\textsf{x}\textsf{\textsubscript{1}}\textsf{,
-y}\textsf{\textsubscript{1}}\textsf{, {\dots},
-x}\textsf{\textsubscript{n}}\textsf{, y}\textsf{\textsubscript{n}} in
+\texttt{Texcoord(W, x}\texttt{\textsubscript{1}}\texttt{,
+y}\texttt{\textsubscript{1}}\texttt{, {\dots},
+x}\texttt{\textsubscript{n}}\texttt{,
+y}\texttt{\textsubscript{n}}\texttt{) }sets the texture coordinates to
+\texttt{x}\texttt{\textsubscript{1}}\texttt{,
+y}\texttt{\textsubscript{1}}\texttt{, {\dots},
+x}\texttt{\textsubscript{n}}\texttt{, y}\texttt{\textsubscript{n}} in
 3D window w. Each x, y, pair forms one texture coordinate.
-\textsf{Texcoord(W, L)} sets the texture coordinates to those specified
-in the list \textsf{L}. \textsf{Texcoord(W, s) }sets the texture
-coordinates to those specified by \textsf{s}. The string \textsf{s}
-must be \textsf{{\textquotedblleft}auto{\textquotedblright}} otherwise
+\texttt{Texcoord(W, L)} sets the texture coordinates to those specified
+in the list \texttt{L}. \texttt{Texcoord(W, s) }sets the texture
+coordinates to those specified by \texttt{s}. The string \texttt{s}
+must be \texttt{{\textquotedblleft}auto{\textquotedblright}} otherwise
 the procedure will fail. \ In all cases the display list element is
 returned.
 
@@ -3554,38 +3558,38 @@ returned.
 \noindent {\bf TextWidth(w, s) : integer \hfill pixel width of text}
 
 \noindent
-\textsf{TextWidth(w,s)} computes the pixel width of string \textsf{s} in
-the font currently defined for window \textsf{w}.
+\texttt{TextWidth(w,s)} computes the pixel width of string \texttt{s} in
+the font currently defined for window \texttt{w}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Texture(w, s) : record \hfill apply texture}
 
 \noindent
-\textsf{Texture(w, s) }specifies a texture image that is applied to
-subsequent objects drawn on 3D window \textsf{w}. The string \textsf{s}
+\texttt{Texture(w, s) }specifies a texture image that is applied to
+subsequent objects drawn on 3D window \texttt{w}. The string \texttt{s}
 specifies the texture image as a filename, a string of the form
-\textsf{width,pallet,data} or \textsf{width,\#,data}, where pallet is a
+\texttt{width,pallet,data} or \texttt{width,\#,data}, where pallet is a
 pallet from the Unicon 2D graphics facilities and data is the
-hexadecimal representation of an image. \textsf{Texture(w1, w2)
-}specifies that the contents of 2D or 3D window \textsf{w2} be used as
+hexadecimal representation of an image. \texttt{Texture(w1, w2)
+}specifies that the contents of 2D or 3D window \texttt{w2} be used as
 a texture image that is applied to subsequent objects on the window
-\textsf{w1}. The display list element is returned.
+\texttt{w1}. The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf Translate(w, x, y, z, ...) : record \hfill translate object positions}
 
 \noindent
-\textsf{Translate(w, x, y, z,{\dots})} moves objects drawn subsequently
-on 3D window w in the direction (\textsf{x,y,z}). The display list
+\texttt{Translate(w, x, y, z,{\dots})} moves objects drawn subsequently
+on 3D window w in the direction (\texttt{x,y,z}). The display list
 element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Uncouple(w) : window \hfill release binding}
 
 \noindent
-\textsf{Uncouple(w)} releases the binding associated with file
-\textsf{w}. \textsf{Uncouple()} closes the window only if all other
+\texttt{Uncouple(w)} releases the binding associated with file
+\texttt{w}. \texttt{Uncouple()} closes the window only if all other
 bindings associated with that window are also closed.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3593,15 +3597,15 @@ bindings associated with that window are also closed.
 {\bf WAttrib(w, s1, ...) : x, ... \hfill generate or set attributes}
 
 \noindent
-\textsf{WAttrib(w, s1, ...)} retrieves and/or sets window and context
+\texttt{WAttrib(w, s1, ...)} retrieves and/or sets window and context
 attributes. If called with exactly one attribute, integers are produced
 for integer-value attributes; all other values are represented by
 strings. If called with more than one attribute argument,
-\textsf{WAttrib()} produces one string result per argument, prefixing
+\texttt{WAttrib()} produces one string result per argument, prefixing
 each value by the attribute name and an equals sign (=). \ If
-\textsf{xi} is a window, subsequent attributes apply to \textsf{xi}.
-\ \textsf{WAttrib()} fails if an attempt is made to set the attribute
-\textsf{font}, \textsf{fg}, \textsf{bg}, or \textsf{pattern} to a value
+\texttt{xi} is a window, subsequent attributes apply to \texttt{xi}.
+\ \texttt{WAttrib()} fails if an attempt is made to set the attribute
+\texttt{font}, \texttt{fg}, \texttt{bg}, or \texttt{pattern} to a value
 that is not supported. A run-time error occurs for an invalid attribute
 name or invalid value.
 
@@ -3610,30 +3614,30 @@ name or invalid value.
 {\bf WDefault(w, program, option) : string \hfill query user preference}
 
 \noindent
-\textsf{WDefault(w,program,option)} returns the value of option for
+\texttt{WDefault(w,program,option)} returns the value of option for
 program as registered with the X resource manager. In typical use this
 supplies the program with a default value for window attribute option
 from a program.option entry in an .XDefaults file.
-\ \textsf{WDefault()} fails if no user preference for the specified
+\ \texttt{WDefault()} fails if no user preference for the specified
 option is available.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf WFlush(w) : window \hfill flush window output}
 
 \noindent
-\textsf{WFlush(w)} flushes window output on window systems that buffer
+\texttt{WFlush(w)} flushes window output on window systems that buffer
 text and graphics output. \ Window output is automatically flushed
 whenever the program blocks on window input. \ When this behavior is
-not adequate, a call to \textsf{WFlush()} sends all window output
+not adequate, a call to \texttt{WFlush()} sends all window output
 immediately, but does not wait for all commands to be received and
-acted upon. \textsf{WFlush()} is a no-op on window systems that do not
+acted upon. \texttt{WFlush()} is a no-op on window systems that do not
 buffer output.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf WindowContents(w) : list \hfill window display list}
 
 \noindent
-\textsf{WindowContents(w)} returns a list of display elements, which are
+\texttt{WindowContents(w)} returns a list of display elements, which are
 records or lists. Each element has a function name followed by the
 parameters of the function, or an attribute followed by its value.
 
@@ -3643,38 +3647,38 @@ parameters of the function, or an attribute followed by its value.
 \hfill save image file}
 
 \noindent
-\textsf{WriteImage(w,s,x,y,width,height)} saves an image of dimensions
-width, height from window w at offset \textsf{x,y} to a file named
-\textsf{s}. \ \ The default is to write the entire window. \ The file
+\texttt{WriteImage(w,s,x,y,width,height)} saves an image of dimensions
+width, height from window w at offset \texttt{x,y} to a file named
+\texttt{s}. \ \ The default is to write the entire window. \ The file
 is written according to the filename extension, in either GIF, JPG,
 BMP, PNG, or a platform specific format such as XBM or XPM.
-\ \textsf{WriteImage()} fails if \textsf{s} cannot be opened for
+\ \texttt{WriteImage()} fails if \texttt{s} cannot be opened for
 writing.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf WSection(w, s) : record \hfill define window section}
 
 \noindent
-\textsf{WSection(w,s)} starts a new window section named \textsf{s} on
-3D window \textsf{w} and returns a display list section marker record.
+\texttt{WSection(w,s)} starts a new window section named \texttt{s} on
+3D window \texttt{w} and returns a display list section marker record.
 During window refreshes if the section marker{\textquotesingle}s
-\textsf{skip} field is 1, the section is skipped. The section name
-\textsf{s} is produced by \textsf{\&pick} if a primitive in the block
+\texttt{skip} field is 1, the section is skipped. The section name
+\texttt{s} is produced by \texttt{\&pick} if a primitive in the block
 is clicked on while attribute
-\textsf{{\textquotedblleft}pick=on{\textquotedblright}}.
-\textsf{WSection(w)} marks the end of a preceding section.
-\textsf{WSection()} blocks may be nested.
+\texttt{{\textquotedblleft}pick=on{\textquotedblright}}.
+\texttt{WSection(w)} marks the end of a preceding section.
+\texttt{WSection()} blocks may be nested.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf WSync(w, s) : w \hfill synchronize with window system server}
 
 \noindent
-\textsf{WSync(w,s)} synchronizes the program with the server attached to
-window \textsf{w} on those window systems that employ a client-server
-model. \ Output to the window is flushed, and \textsf{WSync()} waits
+\texttt{WSync(w,s)} synchronizes the program with the server attached to
+window \texttt{w} on those window systems that employ a client-server
+model. \ Output to the window is flushed, and \texttt{WSync()} waits
 for a reply from the server indicating all output has been processed.
-\ If \textsf{s} is \textsf{{\textquotedbl}yes{\textquotedbl}}, all
-events pending on \textsf{w} are discarded. \textsf{WSync()} is a no-op
+\ If \texttt{s} is \texttt{{\textquotedbl}yes{\textquotedbl}}, all
+events pending on \texttt{w} are discarded. \texttt{WSync()} is a no-op
 on window systems that do not use a client-server model.
 
 \subsection{Preprocessor}

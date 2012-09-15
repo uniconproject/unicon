@@ -1,36 +1,26 @@
 \clearpage\section{Chapter 17: Object-oriented User Interfaces}
 
-Most application programs interact with users through a graphical
-\index{user interface}user interface. To achieve this, programmers use
-toolkits such as Motif or class libraries such as Swing or MFC. While
-Icon{\textquotesingle}s platform-independent graphics facilities are
-excellent for drawing to the \index{screen}screen, manipulating
-windows, and so on, the standard elements of \index{graphical user
-interface}graphical user interfaces are not built-in to the language. A
-library of procedures called the vidgets library provides Motif-like
-buttons, menus, scroll bars, and so on. The vidgets library suffers
-from two drawbacks: it is missing many interface components that are
-used in modern applications, and it is not easily extended to include
-new components.
+Many applications interact with users through a graphical
+\index{user interface}user interface. While
+Unicon{\textquotesingle}s graphics facilities are
+excellent for drawing to the \index{screen}screen,
+the standard elements of \index{graphical user
+interface}graphical user interfaces are not built-in to the language.
 
-This chapter presents an alternative user interface class library that
-addresses these drawbacks. An object-oriented design is used to reduce
-complexity and increase the extensibility of the toolkit. The result is
-an elegant library, simply called {\textquotedbl}the GUI
-toolkit,{\textquotedbl} that is accessed by importing the package gui.
-The GUI toolkit is a class library, and as such it is specific to
-Unicon, and not intended to address the needs of Arizona Icon
-programmers, who can use the vidgets library. Unicon{\textquotesingle}s
-GUI toolkit offers many more interface components than does the vidgets
-library. Although this book describes the components provided by the
-GUI toolkit, you will probably need the book \textit{Graphics
+This chapter presents a user interface class library originally developed
+by the incomparable Robert Parlett, who wrote the first version of this
+chapter. Object-oriented design reduces the
+complexity and increases the extensibility of the toolkit. The result is
+an elegant library that is accessed by importing the package \texttt{gui}.
+Although this book describes the components provided by the
+GUI toolkit, you may need the book \textit{Graphics
 Programming in Icon} [Griswold98] to develop advanced custom user
 interfaces with application-specific graphics.
 
 The easiest way to use the GUI classes is with a program named
 \textit{Ivib} that allows you to design an interface by visually
-creating a dialog on the screen interactively. The program then
-generates an Unicon program that can be filled in to create a working
+creating a dialog on the screen interactively. Ivib
+generates a Unicon program that can be filled in to create a working
 application. When you finish this chapter you will know how to:
 
 \begin{itemize}
@@ -59,8 +49,7 @@ import gui \\
 \ \\
 class TestDialog : Dialog() \\
 \>   method component\_setup() \\
-\>   \ \ \ local l, b \\
-\>   \ \ \ l := Label({\textquotedbl}label=Click to
+\>   \ \ \ local b, l := Label({\textquotedbl}label=Click to
 close{\textquotedbl},{\textquotedbl}pos=50\%,33\%{\textquotedbl},
                     {\textquotedbl}align=c,c{\textquotedbl}) \\
 \>   \ \ \ add(l) \\
@@ -78,8 +67,7 @@ ACTION\_EVENT) \\
 end \\
 \ \\
 procedure main() \\
-\>   local d := TestDialog() \\
-\>   d.show\_modal() \\
+\>   TestDialog().show\_modal() \\
 end
 }
 
@@ -108,8 +96,8 @@ clicked.
 
 \bigskip
 
-It is worth examining this example program line by line. It begins by
-declaring a new class, \texttt{TestDialog}. The line
+This example program begins by
+declaring a class, \texttt{TestDialog}. The line
 
 \iconcode{
 \>   \ \ class TestDialog : Dialog()}
@@ -168,19 +156,16 @@ styles.
 {\textquotedbl}font=serif{\textquotedbl},
 {\textquotedbl}resize=on{\textquotedbl})}
 
-After the class comes a standard Icon \texttt{main} method. \ This
+After the class comes a standard Icon \texttt{main()} procedure. This
 simply creates an instance of the dialog and invokes the method
-
-\iconcode{
-\>   d.show\_modal()}
-
-\noindent This call displays the dialog window and goes into the
+\texttt{show\_modal()}.
+This call displays the dialog window and goes into the
 toolkit{\textquotesingle}s event handling loop. 
 
 \subsection{Positioning Objects}
 
-The button and the label were positioned in the example above by
-specifying percentages of the window size. An object can also be
+The button and label were positioned above using
+percentages of the window size. An object can also be
 positioned by giving an absolute position, or by giving a percentage
 plus or minus an offset. So the following are all valid position
 specifiers:
@@ -192,11 +177,11 @@ specifiers:
 \>   \ \ {\textquotedbl}33\%-10{\textquotedbl}
 }
 
-Positions are often specified in class \index{constructor}constructor
-strings, with x and y values separated by commas. By default, the
-position specified relates to the top left corner of the object
-concerned. You can use the \texttt{{\textquotedbl}align{\textquotedbl}}
-attribute, which takes two alignment specifiers, to change this
+Positions are often specified in class \index{constructor}constructors
+with x and y values separated by commas. By default, the
+position specified is relative to the top left corner of the object
+concerned. The \texttt{{\textquotedbl}align{\textquotedbl}}
+attribute, which takes two alignment specifiers, changes this
 default. The first alignment specifier is an
 \texttt{{\textquotedbl}l{\textquotedbl}},
 \texttt{{\textquotedbl}c{\textquotedbl}}\texttt{,} or
@@ -209,8 +194,8 @@ vertical alignment, respectively. There is one further attribute,
 \texttt{{\textquotedbl}size{\textquotedbl}}, whose specifiers take the
 same format as the position attribute. Most of the toolkit objects
 default to sensible sizes, and the size attribute can often be omitted.
-For example, a button{\textquotesingle}s size will default to a size
-based on the font in use and the string in the button.
+For example, a button{\textquotesingle}s size defaults fit its string label
+based on the font in use.
 
 The method \texttt{attrib(attribs...)} in utility class
 \texttt{SetFields} implements \index{attribute!GUI widget}attribute
@@ -272,16 +257,15 @@ SecondTest Program}
 \iconcode{
 import gui \\
 \$include {\textquotedbl}guih.icn{\textquotedbl} \\
-\ \\
 \# \\
 \# Second test program \\
 \# \\
 class SecondTest : Dialog( \\
-\>   \# Each class variable represents an object in the dialog. \\
+\>   \# Class variables representing objects in the dialog. \\
 \>   text\_list, table, list, text\_field, \\
 \>    \\
-\>   \# Some data variables. \\
-\>   oses, languages, shares \\
+\>   
+\>   oses, languages, shares \ \ \ \ \# Some data variables. \\
 \>   ) \\
 \ \\
 \>   \# \\
@@ -397,14 +381,14 @@ gray{\textquotedbl},{\textquotedbl}label=Second example{\textquotedbl},
 \>   \ \ \ text\_menu\_item\_1 :=
 TextMenuItem({\textquotedbl}label=Quit{\textquotedbl}) \\
 \>   \ \ \ text\_menu\_item\_1.connect(self,
-{\textquotedbl}handle\_text\_menu\_item\_1{\textquotedbl},
-ACTION\_EVENT) \\
+{\textquotedbl}handle\_text\_menu\_item\_1{\textquotedbl},\\
+\>\>\>\>\>ACTION\_EVENT) \\
 \>   \ \ \ menu.add(text\_menu\_item\_1) \\
 \>   \ \ \ text\_menu\_item\_2 :=
 TextMenuItem({\textquotedbl}label=Message{\textquotedbl}) \\
 \>   \ \ \ text\_menu\_item\_2.connect(self,
-{\textquotedbl}handle\_text\_menu\_item\_2{\textquotedbl},
-ACTION\_EVENT) \\
+{\textquotedbl}handle\_text\_menu\_item\_2{\textquotedbl},\\
+\>\>\>\>\>ACTION\_EVENT) \\
 \>   \ \ \ menu.add(text\_menu\_item\_2) \\
 \>   \ \ \ menu\_bar.add(menu) \\
 \>   \ \ \ add(menu\_bar) \\
@@ -529,17 +513,14 @@ TEXTFIELD\_CHANGED\_EVENT) \\
 \>   \ \ \ add(panel\_5) \\
 \>   end \\
 end \\
-\ \\
 \# \\
 \# Simple main procedure just creates the dialog. \\
 \# \\
 procedure main() \\
-\>   local d := SecondTest() \\
-\>   d.show\_modal() \\
+\>   SecondTest().show\_modal() \\
 end
 }
 
-\bigskip
 
 \begin{center}
 \includegraphics[width=4.0756in,height=3.6465in]{ub-img/ub-img51.jpg}
@@ -550,10 +531,10 @@ end
 
 \bigskip
 
-Start your look at this program with the \texttt{component\_setup()}
-method at the end. This method begins by initializing some data and
-setting the attributes. This includes several Icon graphics attributes,
-as well as the minimum size attribute, which is an attribute of the
+Start examing this program with the \texttt{component\_setup()}
+method at the end. This method initializes some data and
+sets attributes. This includes several Icon graphics attributes,
+as well as the minimum size, which is an attribute of the
 \texttt{Dialog} class.
 
 The next part creates a \index{menu bar}menu bar structure.
@@ -565,10 +546,10 @@ handler methods.
 
 The next section sets up the three \index{check boxes.}check boxes. The
 check boxes are placed, together with the label {\textquotedbl}Favorite
-OS{\textquotedbl} in a \texttt{Panel} object. This object simply
+OS{\textquotedbl} in a \texttt{Panel} object. This object
 serves as a container for other objects that logically can be treated
-as a whole. The most important thing to note about a \texttt{Panel} is
-that objects within it have their size and position computed relative
+as a whole. Note that for a \texttt{Panel},
+objects within it have their size and position computed relative
 to the \texttt{Panel} rather than the window. So, for example, the
 first \texttt{Label} object is positioned with
 \texttt{{\textquotedbl}pos=0,0{\textquotedbl}}. This places it at the
@@ -580,19 +561,19 @@ Each \texttt{CheckBox} is a separate object. To make the three check
 boxes coordinate themselves as a group so that when one is checked
 another is unchecked, they are placed together in a
 \texttt{CheckBoxGroup} object. This does no more than
-{\textquotedbl}bracket{\textquotedbl} them together. \ When grouped
+{\textquotedbl}bracket{\textquotedbl} them together. When grouped
 together in this way the checkboxes are also called \index{radio
 buttons}\textit{radio buttons} because they work similar to the set of
-tuner buttons found on old car radios. \ Note that each
+tuner buttons found on old car radios. Note that each
 \texttt{CheckBox} is added to the \texttt{CheckBoxGroup} \textit{and}
 the \texttt{Panel}.
 
-The next section is another \texttt{Panel} that holds another label
+The next section is a \texttt{Panel} that holds a label
 ({\textquotedbl}Messages{\textquotedbl}) and a \texttt{TextList}
-object. In this case the object is used to hold a list of message
+object. In this case the object holds a list of message
 strings that scroll by like a terminal window. A \texttt{TextList}
 object can also be used for selecting one or more items from a list of
-strings and there is and editable version, \texttt{EditableTextList},
+strings and there is an \texttt{EditableTextList},
 which can be used for editing text.
 
 The third panel contains a label ({\textquotedbl}Shares{\textquotedbl}),
@@ -617,10 +598,10 @@ label ({\textquotedbl}Enter a string{\textquotedbl}) and a
 from the \index{keyboard}keyboard.
 
 Several of the components are connected to event handlers in the class.
-\ Each handler method adds a line to the list of strings in the
+Each handler method adds a line to the list of strings in the
 \texttt{TextList} by calling the \texttt{put\_line()} method. The text
 list thus gives an idea of the events being produced by the toolkit.
-\ The exception is the menu item \texttt{Quit}, which exits the
+The exception is the menu item \texttt{Quit}, which exits the
 program.
 
 This dialog overrides the \texttt{handle\_event()} method that is
@@ -655,8 +636,8 @@ region.\\
 \noindent For any non-mouse events, the \texttt{Dialog} class fires an
 \texttt{ICON\_EVENT}.
 
-When an event occurs and is passed to a listener, an \texttt{Event}
-object is provided as a parameter. This object contains three fields,
+Event are passed to listeners in an \texttt{Event}
+object. This object contains three fields,
 with corresponding getter methods, as follows:
 
 \vspace{0.15in}
@@ -664,9 +645,8 @@ with corresponding getter methods, as follows:
 \texttt{get\_source()} & Returns the component which fired the event.\\
 \texttt{get\_type()} & Returns the type code, eg \texttt{ICON\_EVENT}\\
 \texttt{get\_param()} &
-Returns an arbitrary parameter depending on the type. \ However in
-nearly all cases this is the original underlying Icon graphics event;
-for example \texttt{\&rrelease}.\\
+Returns an arbitrary parameter depending on the type. In
+nearly all cases this is the original underlying Icon graphics event.\\
 \end{supertabular}
 \vspace{0.15in}
 
@@ -684,17 +664,17 @@ distinguish between a left mouse click and a right mouse click on a
 
 \subsection{Containers}
 
-Some components are \textit{containers}; they contain other components.
-In fact, the \texttt{Dialog} class itself is a container. We have
-already seen the \texttt{Panel} class in action in the last example.
-Now let{\textquotesingle}s look at two more useful \index{container,
-GUI class}container objects in the standard toolkit: \texttt{TabSet}
+\textit{Containers} are components that contain other components.
+The \texttt{Dialog} class is a container, as is
+the \texttt{Panel} class seen in the last example.
+Two other useful \index{container,
+GUI class}container objects in the standard toolkit are \texttt{TabSet}
 and \texttt{OverlaySet}.
 
 \subsubsection[TabSet]{\texttt{TabSet}}
-This class provides a container object that contains several \index{tab,
+This class contains several \index{tab,
 GUI class}tabbed panes, any one of which is displayed at any given
-time. The user switches between panes by clicking on the labeled tabs
+time. The user switches between panes by clicking on labeled tabs
 at the top of the object. The \texttt{TabSet} contains several
 \texttt{TabItems}, each of which contains the components for that
 particular pane. To illustrate this, Listing 17-3 presents a simple
@@ -704,15 +684,13 @@ each of which contains a single label.
 \bigskip
 
 {\sffamily\bfseries
-Listing 17-3}
+Listing 17-3
 
-{\sffamily\bfseries
 TabSet Program}
 
 \iconcode{
 import gui \\
 \$include {\textquotedbl}guih.icn{\textquotedbl} \\
-\ \\
 \# \\
 \# Simple example of a TabSet \\
 \# \\
@@ -766,7 +744,7 @@ example{\textquotedbl}, {\textquotedbl}resize=on{\textquotedbl}) \\
 SELECTION\_CHANGED\_EVENT) \\
 \>   \ \ \ add(tab\_set) \\
 \>   \ \ \ \# \\
-\>   \ \ \ \# Add a quit button;close the dialog when the window close button is pressed \\
+\>   \ \ \ \# Add a quit button; close the dialog when it is pressed \\
 \>   \ \ \ \# \\
 \>   \ \ \ quit\_button :=
 TextButton({\textquotedbl}pos=50\%,100\%-30{\textquotedbl},
@@ -775,12 +753,10 @@ TextButton({\textquotedbl}pos=50\%,100\%-30{\textquotedbl},
 \>   \ \ \ quit\_button.connect(self,
 {\textquotedbl}dispose{\textquotedbl}, ACTION\_EVENT) \\
 \>   \ \ \ add(quit\_button) \\
-\ \\
 \>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
 CLOSE\_BUTTON\_EVENT) \\
 \>   end \\
 end \\
-\ \\
 procedure main() \\
 \>   Tabs().show\_modal() \\
 end
@@ -798,16 +774,16 @@ The resulting window is shown in Figure 17-3:
 
 \bigskip
 
-One interesting point in this dialog is the following line :-
+\noindent One interesting point in this dialog is the line:
 
 \iconcode{
 \>   \ \ \ connect(self, {\textquotedbl}dispose{\textquotedbl},
 CLOSE\_BUTTON\_EVENT)}
 
 
-A dialog generates an event whenever the dialog close button is
-pressed. By connecting this event to the \texttt{dispose}
-method, the dialog is configured to close when this button is
+\noindent A dialog generates an event whenever the close button is
+pressed. Connecting this event to the \texttt{dispose}
+method configures the dialog to close when this button is
 pressed.
 
 \subsubsection[OverlaySet]{OverlaySet}
@@ -872,7 +848,6 @@ A Menu Example Program}
 \iconcode{
 import gui \\
 \$include {\textquotedbl}guih.icn{\textquotedbl} \\
-\ \\
 \# \\
 \# Menu example program. \\
 \# \\
@@ -885,7 +860,6 @@ class MenuDemo : Dialog() \\
 \>   \ \ \ attrib({\textquotedbl}size=426,270{\textquotedbl},
 {\textquotedbl}font=sans{\textquotedbl}, {\textquotedbl}bg=light
 gray{\textquotedbl}, {\textquotedbl}label=Menu example{\textquotedbl}) \\
-\ \\
 \>   \ \ \ check\_box\_group := CheckBoxGroup() \\
 \ \\
 \>   \ \ \ \# \\
@@ -927,9 +901,8 @@ Menu({\textquotedbl}label=Labels{\textquotedbl}) \\
 \>   \ \ \ images\_menu :=
 Menu({\textquotedbl}label=Images{\textquotedbl}) \\
 \>   \ \ \ \# \\
-\>   \ \ \ \# Add three text items with custom images. \ \ The rather \\
-\>   \ \ \ \# unwieldy strings create a triangle, a circle and a \\
-\>   \ \ \ \# rectangle. \\
+\>   \ \ \ \# Add three text items with custom images. The rather unwieldy \\
+\>   \ \ \ \# strings create a triangle, a circle and a rectangle. \\
 \>   \ \ \ \# \\
 \>   \ \ \ text\_menu\_item :=
 TextMenuItem({\textquotedbl}label=One{\textquotedbl}) \\
@@ -994,13 +967,11 @@ TextMenuItem({\textquotedbl}label=Three{\textquotedbl}) \\
 \>   \ \ \ \# \\
 \>   \ \ \ \# The third menu
 ({\textquotedbl}Checkboxes{\textquotedbl}) \\
-\>   \ \ \ \# \\
-\>   \ \ \ checkboxes\_menu :=
-Menu({\textquotedbl}label=Checkboxes{\textquotedbl}) \\
-\>   \ \ \ \# \\
 \>   \ \ \ \# Sub-menu - {\textquotedbl}Group{\textquotedbl} - two
 checkboxes in a checkbox group. \\
 \>   \ \ \ \# \\
+\>   \ \ \ checkboxes\_menu :=
+Menu({\textquotedbl}label=Checkboxes{\textquotedbl}) \\
 \>   \ \ \ group\_menu :=
 Menu({\textquotedbl}label=Group{\textquotedbl}) \\
 \>   \ \ \ check\_box\_menu\_item :=
@@ -1027,7 +998,6 @@ CheckBoxMenuItem({\textquotedbl}label=Four{\textquotedbl}) \\
 \>   \ \ \ checkboxes\_menu.add(alone\_menu) \\
 \>   \ \ \ menu\_bar.add(checkboxes\_menu) \\
 \>   \ \ \ add(menu\_bar) \\
-\ \\
 \>   \ \ \ \# \\
 \>   \ \ \ \# Finally, create a menu button - a mini floating menu with \\
 \>   \ \ \ \# one menu inside it. \\
@@ -1036,9 +1006,8 @@ CheckBoxMenuItem({\textquotedbl}label=Four{\textquotedbl}) \\
 MenuButton({\textquotedbl}pos=350,50\%{\textquotedbl},
 {\textquotedbl}align=c,c{\textquotedbl}) \\
 \>   \ \ \ \# \\
-\>   \ \ \ \# This is the menu, its label appears on the button. \ It \\
-\>   \ \ \ \# just contains a couple of text items for illustration \\
-\>   \ \ \ \# purposes. \\
+\>   \ \ \ \# This is the menu, its label appears on the button. \ It just\\
+\>   \ \ \ \# contains a couple of text items for illustration purposes. \\
 \>   \ \ \ \# \\
 \>   \ \ \ button\_menu :=
 Menu({\textquotedbl}label=Click{\textquotedbl}) \\
@@ -1076,8 +1045,7 @@ root := Node({\textquotedbl}label=Root{\textquotedbl}) \\
 child1 := Node({\textquotedbl}label=Child1{\textquotedbl}) \\
 child2 := Node({\textquotedbl}label=Child2{\textquotedbl}) \\
 root.add(child1) \\
-root.add(child2) \\
-...etc
+root.add(child2) \# ...etc
 }
 
 After setting up the tree of \texttt{Node}s, the root is passed

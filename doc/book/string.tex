@@ -21,9 +21,9 @@ Techniques for matching regular expressions and context free grammars
 
 You have already seen string literals delimited by double quotes, and
 the most common operators that work on strings: the size of a string is
-given by the unary \textsf{*} operator, substrings can be picked out
+given by the unary \texttt{*} operator, substrings can be picked out
 with indexes, and two strings can be concatenated with the
-\textsf{{\textbar}{\textbar}} operator. Now it is time to present a
+\texttt{{\textbar}{\textbar}} operator. Now it is time to present a
 deeper understanding of the meaning of indexes as they are used with
 strings and lists.
 
@@ -41,15 +41,15 @@ and negative indices count from the right side of the string:
 
 \bigskip
 
-The expression \index{slice!string s[i:j]}\textsf{s[i:j]} refers to the
-\index{substring}substring of \textsf{s} that lies between positions
-\textsf{i} and \textsf{j}. If either \textsf{i} or j is not a valid
-index into \textsf{s}, the expression fails. The expression
-\textsf{s[k]} is short for \textsf{s[k:k+1]} and refers to a single
-\index{character}character at position \textsf{k}. The expression
-\textsf{s[k+:n]} is the substring of length \textsf{n} starting at
-position \textsf{k}. If \textsf{s} is the string
-\textsf{{\textquotedbl}hello, world!{\textquotedbl}} then the
+The expression \index{slice!string s[i:j]}\texttt{s[i:j]} refers to the
+\index{substring}substring of \texttt{s} that lies between positions
+\texttt{i} and \texttt{j}. If either \texttt{i} or j is not a valid
+index into \texttt{s}, the expression fails. The expression
+\texttt{s[k]} is short for \texttt{s[k:k+1]} and refers to a single
+\index{character}character at position \texttt{k}. The expression
+\texttt{s[k+:n]} is the substring of length \texttt{n} starting at
+position \texttt{k}. If \texttt{s} is the string
+\texttt{{\textquotedbl}hello, world!{\textquotedbl}} then the
 expressions
 
 \iconcode{
@@ -58,14 +58,14 @@ s[13:18] := {\textquotedbl}earthlings{\textquotedbl}
 }
 
 \noindent
-change \textsf{s} into \textsf{{\textquotedbl}hello, puny
+change \texttt{s} into \texttt{{\textquotedbl}hello, puny
 earthlings!{\textquotedbl}}, illustrating the ease with which
 insertions and substitutions are made. The first assignment changes the
-string to \textsf{{\textquotedbl}hello, puny world!{\textquotedbl}},
+string to \texttt{{\textquotedbl}hello, puny world!{\textquotedbl}},
 replacing a single character with six characters and thereby increasing
 its length. The second assignment operates on the modified string,
-replacing \textsf{{\textquotedbl}world{\textquotedbl}} with
-\textsf{{\textquotedbl}earthlings{\textquotedbl}}.
+replacing \texttt{{\textquotedbl}world{\textquotedbl}} with
+\texttt{{\textquotedbl}earthlings{\textquotedbl}}.
 
 Strings are values, just like numbers; if you copy a string and then
 work on the copy, the original will be left unchanged:
@@ -76,12 +76,12 @@ new\_s := s \\
 new\_s[7] := {\textquotedbl}2{\textquotedbl}
 }
 
-Now the value of \textsf{new\_s} is
-{\textquotedbl}string2{\textquotedbl} but \textsf{s} is left unchanged.
+Now the value of \texttt{new\_s} is
+{\textquotedbl}string2{\textquotedbl} but \texttt{s} is left unchanged.
 
 As mentioned in Chapter 1, strings can be compared with string
 \index{comparison operator!string}comparison operators such as
-\textsf{==}.
+\texttt{==}.
 
 \iconcode{
 if line[1] == {\textquotedbl}\#{\textquotedbl} then ...}
@@ -104,8 +104,8 @@ c := {\textquotesingle}aeiou{\textquotesingle}}
 
 Since characters can only occur once in a cset, duplicates in a cset
 literal are ignored; for example,
-\textsf{{\textquotesingle}aaiiee{\textquotesingle}} is equivalent to
-\textsf{{\textquotesingle}aie{\textquotesingle}}. Strings can be
+\texttt{{\textquotesingle}aaiiee{\textquotesingle}} is equivalent to
+\texttt{{\textquotesingle}aie{\textquotesingle}}. Strings can be
 converted to csets and vice versa. Since csets do not contain
 duplicates, when a string is converted to a cset, all the duplicates
 are removed.
@@ -121,7 +121,7 @@ Or, to find the number of distinct characters in a string:
 \iconcode{
 n := *cset(s)}
 
-The \textsf{!} operator generates the members of a cset in sorted order;
+The \texttt{!} operator generates the members of a cset in sorted order;
 this is also useful in some situations.
 
 \subsection{Character Escapes}
@@ -131,16 +131,16 @@ within string literals. A backslash followed by an \index{escape
 codes}\textit{escape code} of one or more characters specifies a
 non-printable or control character. Escape codes may be specified by a
 numeric value given in hex or octal format - for example,
-\textsf{{\textquotedbl}{\textbackslash}x41{\textquotedbl}}.
+\texttt{{\textquotedbl}{\textbackslash}x41{\textquotedbl}}.
 Alternatively, any control character may be specified with an escape
-code consisting of the caret (\textsf{\^{}}) followed by the alphabetic
+code consisting of the caret (\texttt{\^{}}) followed by the alphabetic
 letter of the control character. A cset containing control-C,
 control-D, and control-Z could be specified as
-\textsf{{\textquotesingle}{\textbackslash}\^{}c{\textbackslash}\^{}d{\textbackslash}\^{}z{\textquotesingle}}.
+\texttt{{\textquotesingle}{\textbackslash}\^{}c{\textbackslash}\^{}d{\textbackslash}\^{}z{\textquotesingle}}.
 For the most common character escapes, a single-letter code is defined,
-such as \textsf{{\textquotedbl}{\textbackslash}t{\textquotedbl}} for
+such as \texttt{{\textquotedbl}{\textbackslash}t{\textquotedbl}} for
 the tab character, or
-\textsf{{\textquotedbl}{\textbackslash}n{\textquotedbl}} for the
+\texttt{{\textquotedbl}{\textbackslash}n{\textquotedbl}} for the
 newline. For all other characters, the character following the
 backslash is the character; this is how quotes or backslashes are
 included in literals. The escape codes are summarized in Table 3-1.
@@ -213,24 +213,24 @@ Icon{\textquotesingle}s string analysis facility is called
 integer \index{position,
 string}\index{string!position}\textit{position} within the subject at
 which scanning is to be performed. These values are held by the keyword
-variables \textsf{\&subject} and \textsf{\&pos}. Scanning environments
+variables \texttt{\&subject} and \texttt{\&pos}. Scanning environments
 are created by an expression of the form
 
 \iconcode{
 \textit{s} ? \textit{expr}}
 
-The binary \textsf{?} operator sets the subject to its left argument and
+The binary \texttt{?} operator sets the subject to its left argument and
 initializes the position to 1; then it executes the expression on the
 right side.
 
 The expression usually has \index{matching functions}\textit{matching
 functions} in it. Matching functions change the position, and return
 the substring between the old and new positions. For example:
-\textsf{move(j)}\textsf{ }moves the position \textsf{j} places to the
+\texttt{move(j)}\texttt{ }moves the position \texttt{j} places to the
 right and returns the substring between the old and new position. This
-string will have exactly \textsf{j} characters in it. When the position
+string will have exactly \texttt{j} characters in it. When the position
 cannot move as directed, for example because there are less than
-\textsf{j} characters to the right, \index{move(i)}\textsf{move()}
+\texttt{j} characters to the right, \index{move(i)}\texttt{move()}
 fails. Here is a simple example:
 
 \iconcode{
@@ -241,24 +241,24 @@ text ? \{ \\
 }
 
 This code writes out every other character of the string in variable
-\textsf{text}.
+\texttt{text}.
 
-Another function is \index{tab(i)}\textsf{tab(i)}, which sets the
-position \textsf{\&pos} to its argument and returns the substring that
-it passed over. So the expression \textsf{tab(0)} will return the
+Another function is \index{tab(i)}\texttt{tab(i)}, which sets the
+position \texttt{\&pos} to its argument and returns the substring that
+it passed over. So the expression \texttt{tab(0)} will return the
 substring from the current position to the end of the string, and set
 the position to the end of the string.
 
 String scanning functions examine a string and generate the interesting
-positions in it. We have already seen \index{find()}\textsf{find()},
+positions in it. We have already seen \index{find()}\texttt{find()},
 which looks for substrings. In addition to the other parameters that
 define what the function looks for, these string functions end with
 three optional parameters: a string to examine and two integers. These
 functions \index{default!scanning parameters}default their string
-parameter to \textsf{\&subject}, the string being scanned. The two
+parameter to \texttt{\&subject}, the string being scanned. The two
 integer positions specify where in the string the processing will be
 performed; they default to 1 and 0 (the entire string), or
-\textsf{\&pos} and 0 if the string defaulted to use \textsf{\&subject}.
+\texttt{\&pos} and 0 if the string defaulted to use \texttt{\&subject}.
 Here is a \index{generator}generator that produces the words from the
 input:
 
@@ -275,25 +275,25 @@ local wchar, line \\
 end
 }
 
-Variable \textsf{wchar}\textsf{ }is a cset of characters that are
+Variable \texttt{wchar}\texttt{ }is a cset of characters that are
 allowed in words, including apostrophe (which is escaped) and hyphen
-characters. \index{upto(c)}\textsf{upto(c)} returns the next position
-at which a character from the cset \textsf{c} occurs. The
-\index{many(c)}\textsf{many(c)} function returns the position after a
-sequence of characters from \textsf{c}, if one or more of them occur at
-the current position. The expression \textsf{tab(upto(wchar))} advances
-the position to a character from \textsf{wchar}; then
-\textsf{tab(many(wchar))} moves the position to the end of the word and
+characters. \index{upto(c)}\texttt{upto(c)} returns the next position
+at which a character from the cset \texttt{c} occurs. The
+\index{many(c)}\texttt{many(c)} function returns the position after a
+sequence of characters from \texttt{c}, if one or more of them occur at
+the current position. The expression \texttt{tab(upto(wchar))} advances
+the position to a character from \texttt{wchar}; then
+\texttt{tab(many(wchar))} moves the position to the end of the word and
 returns the word that is found. This is a generator, so when it is
 resumed, it takes up execution from where it left off and continues to
 look for words (reading the input as necessary).
 
-Notice the first line: the cset \textsf{wchar} is the set union of the
+Notice the first line: the cset \texttt{wchar} is the set union of the
 upper- and lowercase letters (the value of the keyword
-\textsf{\&letters}) and the digits (the keyword \textsf{\&digits}).
-This cset union is performed each time \textsf{getword()} is called,
+\texttt{\&letters}) and the digits (the keyword \texttt{\&digits}).
+This cset union is performed each time \texttt{getword()} is called,
 which is inefficient. Instead, the procedure ought to calculate the
-value and store it for all future calls to \textsf{getword()}.
+value and store it for all future calls to \texttt{getword()}.
 
 To do this, you declare the variable to be static, causing its value to
 persist across calls to the procedure. Normal local variables are
@@ -306,8 +306,8 @@ initial wchar := \&letters ++ \&digits ++
 {\textquotesingle}{\textbackslash}{\textquotesingle}-{\textquotesingle}
 }
 
-The \index{match(s)}\textsf{match(s)} function takes a string argument
-and succeeds if \textsf{s} is found at the current position in the
+The \index{match(s)}\texttt{match(s)} function takes a string argument
+and succeeds if \texttt{s} is found at the current position in the
 subject. If it succeeds, it produces the position at the end of the
 matched substring. This expression
 
@@ -317,35 +317,35 @@ if tab(match({\textquotedbl}-{\textquotedbl})) then sign := -1 else sign
 
 \noindent
 looks to see if there is a minus sign at the current position; if one is
-found, \textsf{\&pos} is moved past it and the variable \textsf{sign}
+found, \texttt{\&pos} is moved past it and the variable \texttt{sign}
 is assigned a -1; otherwise, it gets a 1. The expression
-\textsf{tab(match(s))} occurs quite often in string scanning, so it is
-given a shortcut: \textsf{=s} does the same thing.
+\texttt{tab(match(s))} occurs quite often in string scanning, so it is
+given a shortcut: \texttt{=s} does the same thing.
 
 The last two string scanning functions to round out
 Icon{\textquotesingle}s built-in repertoire are
-\index{any(c)}\textsf{any(c)} and \index{bal()}\textsf{bal(c1,c2,c3)}.
-\textsf{any(c)} is similar to \textsf{many()}, but only tests a single
-character being scanned to see if it is in cset \textsf{c}. The
-\textsf{bal()} function produces positions at which a character in
-\textsf{c1} occurs, similar to \textsf{upto()}, with the added
+\index{any(c)}\texttt{any(c)} and \index{bal()}\texttt{bal(c1,c2,c3)}.
+\texttt{any(c)} is similar to \texttt{many()}, but only tests a single
+character being scanned to see if it is in cset \texttt{c}. The
+\texttt{bal()} function produces positions at which a character in
+\texttt{c1} occurs, similar to \texttt{upto()}, with the added
 stipulation that the string up to those positions is \textit{balanced}
-with respect to characters in \textsf{c2} and \textsf{c3}. A string is
-balanced if it has the same number of characters from \textsf{c2} as
-from \textsf{c3} and there are at no point more \textsf{c3} characters
-present than \textsf{c2} characters. The \textsf{c1} argument defaults
-to \textsf{\&cset}. Since \textsf{c2} and \textsf{c3} default to
-\textsf{{\textquotesingle}({\textquotesingle}} and
-\textsf{{\textquotesingle}){\textquotesingle}}, \textsf{bal()} defaults
+with respect to characters in \texttt{c2} and \texttt{c3}. A string is
+balanced if it has the same number of characters from \texttt{c2} as
+from \texttt{c3} and there are at no point more \texttt{c3} characters
+present than \texttt{c2} characters. The \texttt{c1} argument defaults
+to \texttt{\&cset}. Since \texttt{c2} and \texttt{c3} default to
+\texttt{{\textquotesingle}({\textquotesingle}} and
+\texttt{{\textquotesingle}){\textquotesingle}}, \texttt{bal()} defaults
 to find balanced parentheses.
 
-The restriction that \textsf{bal()} only returns positions at which a
-character in \textsf{c1} occurs is a bit strange. Consider what you
+The restriction that \texttt{bal()} only returns positions at which a
+character in \texttt{c1} occurs is a bit strange. Consider what you
 would need to do in order to write an expression that tells whether a
-string \textsf{s} is balanced or not.
+string \texttt{s} is balanced or not.
 
-You might want to write it as \textsf{s ? (bal() = *s+1)} but
-\textsf{bal()} will never return that position. Concatenating an extra
+You might want to write it as \texttt{s ? (bal() = *s+1)} but
+\texttt{bal()} will never return that position. Concatenating an extra
 character solves this problem:
 
 \iconcode{
@@ -355,12 +355,12 @@ procedure isbalanced(s) \\
 end
 }
 
-If string \textsf{s} is very large, this solution is not cheap, since it
-creates a new copy of string \textsf{s}. You might write a version of
-\textsf{isbalanced()} that doesn{\textquotesingle}t use the
-\textsf{bal()} function, and see if you can make it run faster than
+If string \texttt{s} is very large, this solution is not cheap, since it
+creates a new copy of string \texttt{s}. You might write a version of
+\texttt{isbalanced()} that doesn{\textquotesingle}t use the
+\texttt{bal()} function, and see if you can make it run faster than
 this version. An example later in this chapter shows how to use
-\textsf{bal()} in a more elegant manner.
+\texttt{bal()} in a more elegant manner.
 
 \subsubsection{File Completion}
 
@@ -377,15 +377,15 @@ end
 }
 
 This procedure works fine for lists with just a few members and also for
-cases where \textsf{prefix} is fairly large.
+cases where \texttt{prefix} is fairly large.
 
 \subsubsection[Backtracking]{Backtracking}
 \index{backtracking}The matching functions we have seen so far,
-(\textsf{tab()} and \textsf{move()}), are actually
+(\texttt{tab()} and \texttt{move()}), are actually
 \index{generator}generators. That is, even though they only produce one
 value, they suspend instead of returning. If expression evaluation ever
 resumes one of these functions, they restore the old value of
-\textsf{\&pos}. This makes it easy to try alternative matches starting
+\texttt{\&pos}. This makes it easy to try alternative matches starting
 from the same position in the string:
 
 \iconcode{
@@ -395,17 +395,17 @@ s ? (={\textquotedbl}0x{\textquotedbl} \& tab(many(\&digits ++
 }
 
 This expression will match either a hexadecimal string in the format
-used by C or a decimal integer. Suppose \textsf{s} contains the string
-\textsf{{\textquotedbl}0xy{\textquotedbl}}. The first part of the
+used by C or a decimal integer. Suppose \texttt{s} contains the string
+\texttt{{\textquotedbl}0xy{\textquotedbl}}. The first part of the
 expression succeeds and matches the
-\textsf{{\textquotedbl}0x{\textquotedbl}}; but then the expression
-\textsf{tab(many(\&digits ++
+\texttt{{\textquotedbl}0x{\textquotedbl}}; but then the expression
+\texttt{tab(many(\&digits ++
 {\textquotesingle}abcdef{\textquotesingle}))} fails; this causes Unicon
-to resume the first \textsf{tab()}, which resets the position to the
+to resume the first \texttt{tab()}, which resets the position to the
 beginning of the string and fails. Unicon then evaluates the expression
-\textsf{tab(many(\&digits))} which succeeds (matching the string
-\textsf{{\textquotedbl}0{\textquotedbl}}); therefore the entire
-expression succeeds and leaves \textsf{\&pos} at 2.
+\texttt{tab(many(\&digits))} which succeeds (matching the string
+\texttt{{\textquotedbl}0{\textquotedbl}}); therefore the entire
+expression succeeds and leaves \texttt{\&pos} at 2.
 
 {\sffamily\bfseries
 Warning}
@@ -421,7 +421,7 @@ Listing 3-1 illustrates the above concepts and introduces a few more.
 Here is a program to read a file, and generate a
 \index{concordance}concordance that prints each word followed by a list
 of the lines on which it occurs. Short words like
-\textsf{{\textquotedbl}the{\textquotedbl}} aren{\textquotesingle}t
+\texttt{{\textquotedbl}the{\textquotedbl}} aren{\textquotesingle}t
 interesting, so the program only counts words longer than three
 characters. 
 
@@ -492,26 +492,26 @@ rode \ \ \ 4 \\
 valley \ 3
 }
 
-First, note that the \textsf{main()} procedure requires a command-line
+First, note that the \texttt{main()} procedure requires a command-line
 argument, the name of a file to open. Also, we pass all the lines read
-through the function \textsf{map()}. This is a function that takes
+through the function \texttt{map()}. This is a function that takes
 three arguments, the first being the string to map; and the second and
 third specifying how the string should be mapped on a character by
 character basis. The defaults for the second and third arguments are
 the uppercase letters and the lowercase letters, respectively;
-therefore, the call to \textsf{map()} converts the line just read in to
+therefore, the call to \texttt{map()} converts the line just read in to
 all \index{lower case}lowercase.
 
 \subsection{Regular Expressions}
 
 The Icon Program Library (included with the Unicon distribution)
 provides \index{regular expression}regular expression matching
-functions. To use it, add the line \textsf{link regexp} at the top of
+functions. To use it, add the line \texttt{link regexp} at the top of
 the program. Listing 3-2 is an example of a search-and-replace program
 called (somewhat inappropriately)
-\textsf{i}\index{grep}\textsf{grep}\textsf{.icn}: The actual searching
+\texttt{i}\index{grep}\texttt{grep}\texttt{.icn}: The actual searching
 and replacing is performed on each line of text by procedure
-\textsf{re\_sub()}. This procedure illustrates many classic aspects of
+\texttt{re\_sub()}. This procedure illustrates many classic aspects of
 string scanning. It marches through the string from right to left using
 a while loop. It builds up a result string, which by default would be a
 copy of its scanned string. At the start of each occurrence of the
@@ -590,18 +590,18 @@ S -{\textgreater} S S \\
 }
 
 This grammar has three productions. There are two kinds of symbols,
-\textit{non-terminals} like \textsf{S} that can be replaced by the
-string on the right side of the rule, and \textit{terminals} like
-\textsf{(} and \textsf{)}. An application of a replacement rule is called
+\textit{non-terminals} like \texttt{S} that can be replaced by the
+string on the right side of a rule, and \textit{terminals} like
+\texttt{(} and \texttt{)}. An application of a production rule is called
 a derivation. One special non-terminal is called the
-\textit{start symbol}; a string is matched by the grammar if there is a
+\textit{start symbol}; a string is accepted by the grammar if there is a
 sequence of derivations from the start symbol that leads to the string.
-By convention the start symbol is the one mentioned first in the
+By convention the start symbol is the first non-terminal in the
 definition of the grammar. (This grammar only has one non-terminal, and
 it is also the start symbol.)
 
 This grammar matches all strings of balanced parentheses. The string
-\textsf{(()(()()))} can be matched by this derivation:
+\texttt{(()(()()))} can be matched by this derivation:
 
 \iconcode{
 S -{\textgreater} (S) -{\textgreater} (SS) -{\textgreater} (()S)
@@ -611,7 +611,7 @@ S -{\textgreater} (S) -{\textgreater} (SS) -{\textgreater} (()S)
 
 \subsubsection{Parsing}
 
-Unicon programs can parse grammars in a very natural way using matching
+Unicon can parse grammars in a natural way using matching
 functions. A production
 
 \iconcode{
@@ -619,6 +619,7 @@ A -{\textgreater} B a D  \\
 \>   {\textbar} C E b
 }
 
+\noindent
 can be mapped to this matching function:
 
 \iconcode{
@@ -628,23 +629,24 @@ procedure A() \\
 end
 }
 
-This procedure first tries to match a string matched by \textsf{B},
-followed the character \textsf{a}, followed by a string matched by
-\textsf{D}. If \textsf{D} \index{expression failure}fails, execution
-backtracks across the \textsf{={\textquotedbl}a{\textquotedbl}}
-(resetting \textsf{\&pos}) and resume \textsf{B()}, which will attempt
+\noindent
+This procedure first tries to match a string matched by \texttt{B},
+followed the character \texttt{a}, followed by a string matched by
+\texttt{D}. If \texttt{D} \index{expression failure}fails, execution
+backtracks across the \texttt{={\textquotedbl}a{\textquotedbl}}
+(resetting \texttt{\&pos}) and resume \texttt{B()}, which will attempt
 the next match.
 
 If the sub-expression to the left of the \index{alternation operator (
 {\textbar} )}alternation fails, then execution will try the
-sub-expression on the right, \textsf{C() \& E() \&
+sub-expression on the right, \texttt{C() \& E() \&
 ={\textquotedbl}b{\textquotedbl}} until something matches - in which
-case \textsf{A} succeeds, or nothing matches - which will cause it to
+case \texttt{A} succeeds, or nothing matches - which will cause it to
 fail.
 
-Parsers for any CFG can be written in this way. However, this would be a
-very expensive way to do it! Notice that Icon{\textquotesingle}s
-expression evaluation will basically try all possible derivations
+Parsers for any CFG can be written in this way. However, this is an
+expensive way to do it! Unicon{\textquotesingle}s
+expression evaluation will try all possible derivations
 trying to match a string. This is not a good way to parse, especially
 if the grammar is amenable to lookahead methods. A more efficient
 method is given in the next section. For serious parsing jobs, Chapter
@@ -654,9 +656,9 @@ and yacc.
 
 \subsubsection[Doing It Better]{Doing It Better}
 
-Many grammars can be parsed much more efficiently by using the
+Many grammars can be parsed more efficiently using
 well-known techniques - consult a book on compilers for details. Here
-we present one way of parsing a grammar using some of the built-in
+is one way of parsing a grammar using some of the built-in
 functions. Consider this grammar for an arithmetic expression:
 
 \iconcode{
@@ -665,6 +667,7 @@ T -{\textgreater} F {\textbar} F * T \\
 F -{\textgreater} a {\textbar} b {\textbar} c {\textbar} ( E )
 }
 
+\noindent
 Listing 3-3 is an Unicon program that recognizes strings produced by
 this grammar:
 
@@ -676,8 +679,7 @@ this grammar:
 \iconcode{
 procedure main() \\
 \>   while line := read() do \\
-\>   \ \ \ if expr(line) == line then \\
-\>   \ \ \ \ \ \ write({\textquotedbl}Success!{\textquotedbl}) \\
+\>   \ \ \ if expr(line) == line then write({\textquotedbl}Success!{\textquotedbl}) \\
 \>   \ \ \ else write({\textquotedbl}Failure.{\textquotedbl}) \\
 end \\
 procedure expr(s) \\
@@ -705,33 +707,32 @@ end \\
 procedure factor(s) \\
 \>   s ? suspend ={\textquotedbl}a{\textquotedbl} {\textbar}
 ={\textquotedbl}b{\textquotedbl} {\textbar}
-={\textquotedbl}c{\textquotedbl} {\textbar}  \\
-\>   \ \ \ \ \ \ \ \ \ \ ( ={\textquotedbl}({\textquotedbl}
+={\textquotedbl}c{\textquotedbl} {\textbar}  ( ={\textquotedbl}({\textquotedbl}
 {\textbar}{\textbar}
 expr(tab(bal({\textquotesingle}){\textquotesingle})))
 {\textbar}{\textbar} ={\textquotedbl}){\textquotedbl} ) \\
 end
 }
 
-The interesting procedure here is \index{bal()}\textsf{bal()}. With
-\textsf{{\textquotesingle}){\textquotesingle}} as its first argument,
-\textsf{bal()} scans to the closing parenthesis, skipping over any
+The interesting procedure here is \index{bal()}\texttt{bal()}. With
+\texttt{{\textquotesingle}){\textquotesingle}} as its first argument,
+\texttt{bal()} scans to the closing parenthesis, skipping over any
 parentheses in nested subexpressions, which is exactly what is needed
 here.
 
-The procedure \textsf{factor()} is written according to the rule in the
-previous section. The procedures \textsf{expr()} and \textsf{term()}
-have the same structure. The \textsf{expr()} procedure skips any
-subexpressions (with balanced parentheses) and looks for a \textsf{+}.
+The procedure \texttt{factor()} is written according to the rule in the
+previous section. The procedures \texttt{expr()} and \texttt{term()}
+have the same structure. The \texttt{expr()} procedure skips any
+subexpressions (with balanced parentheses) and looks for a \texttt{+}.
 We know that this substring is a well-formed expression that is not a
-sum of terms, therefore, it must be a term. Similarly \textsf{term()}
-looks for \textsf{*} and it knows that the expression does not contain
-any \textsf{*} operators at the same nesting level; therefore it must
+sum of terms, therefore, it must be a term. Similarly \texttt{term()}
+looks for \texttt{*} and it knows that the expression does not contain
+any \texttt{*} operators at the same nesting level; therefore it must
 be a factor.
 
 Notice that the procedures return the strings that they matched. This
 allows us to check if the whole line matched the grammar rather than
-just an initial substring. Also, notice that \textsf{factor()} uses
+just an initial substring. Also, notice that \texttt{factor()} uses
 string concatenation instead of conjunction, so that it can return the
 matched substring.
 

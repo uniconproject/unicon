@@ -401,7 +401,7 @@ word mkRlist(int x[], int n);
 /* Given a C double "x", return an Icon real to the calling routine. */
 #if defined(DescriptorDouble)
 #define RetReal(x) do {  \
-  return (argv->dword = D_Real, argv->vword.realval = x);  \
+   return (argv->dword = D_Real, argv->vword.realval = x, 0);	\
 } while(0)
 #else
 #define RetReal(x) do {  \

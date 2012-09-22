@@ -820,8 +820,8 @@ filters. Warning: if the filter criteria are omitted, the
 columns defaults to {\textquotedbl}all{\textquotedbl}, condition
 defaults to unconditionally, and ordering defaults to unordered.
 
-\texttt{dbupdate(db:database,row:record)} updates the database tuple
-corresponding to row.
+\texttt{dbupdate(db:database,row:record)} updates the \texttt{db} tuple
+corresponding to \texttt{row}.
 
 \texttt{dbopen(dsn, table, user, password):f} is like
 \texttt{open(dsn,{\textquotedbl}o{\textquotedbl},...)}\\
@@ -832,10 +832,10 @@ corresponding to row.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{dif} \hfill (RJA)}
 
 \texttt{dif(strm:list,compare:{\textquotedbl}==={\textquotedbl},eof,group:groupfactor):list*}
-generates \index{diff}differences between input streams. Results are
-returned as a list of records, one for each input stream, with each
+generates \index{diff}differences between input streams. 
+Returns a list of records, one for each input stream, with each
 record containing a list of items that differ and their positions in
-the input stream. The record type is declared as: \texttt{record
+the input stream. The record type is as: \texttt{record
 diff\_rec(pos,diffs)}. \texttt{dif()} fails if there are no
 differences.
 
@@ -843,20 +843,19 @@ differences.
 extract its input {\textquotedbl}records{\textquotedbl}. The elements
 can be any of the following types, with corresponding actions:
 
-\begin{supertabular}{m{0.9in} m{4.4in}}
+\begin{supertabular}{m{1.0in} m{4.8in}}
 Type & Action \\
 
 file &  file is {\textquotedbl}read{\textquotedbl} to get records\\
 co-expression & co-expression is activated to get records\\
 list & records are {\textquotedbl}gotten{\textquotedbl}
 (\texttt{get()}) from the list\\
-diff\_proc & a record type defined in \texttt{dif} to allow
+diff\_proc & a record type that has two fields, a procedure
+to call and the argument to pass to it. Its definition is:
+ \texttt{record diff\_proc(proc,arg)}. It allows
 procedures supplied by \texttt{dif}{\textquotesingle}s
- caller to be called to get records. Diff\_proc has two
-fields, the procedure
- to call and the argument to pass to it. Its definition looks
-like this:
- \texttt{record diff\_proc(proc,arg)} \\
+ caller to be called to get records.
+\\
 \end{supertabular}
 
 \texttt{compare} is a procedure that succeeds if two records are
@@ -2854,29 +2853,22 @@ snapshot({\textquotedbl}example{\textquotedbl})\}}
 \noindent produces
 
 \iconcode{
-{}-{}-{}-example-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
+{}-{}-{}-example-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-\\
 {\textbar}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}}
-
-{\ttfamily
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+\\
 {\textbar}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}}
-
-{\ttfamily
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+\\
 {\textbar} \&subject =
-{\textquotedbl}((a+b)-delta)/(c*d)){\textquotedbl} {\textbar}}
-
-{\ttfamily
+{\textquotedbl}((a+b)-delta)/(c*d)){\textquotedbl} {\textbar}
+\\
 {\textbar} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
-\ \ \ \ \ \ \ {\textbar}}
-
-{\ttfamily
+\ \ \ \ \ \ \ {\textbar}
+\\
 {\textbar}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}}
-
-\iconcode{
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+\\
 {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
 
 Note that the bar showing \texttt{\&pos} is positioned under the
@@ -4124,10 +4116,10 @@ is an integer, and if there are exactly two arguments.
 \texttt{deal} shuffles, deals, and displays hands in the game of bridge.
 Its utput looks like:
 
-\noindent {\tt
+\noindent {\fontfamily{lmvtt}\selectfont
 {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-\\
 \ \ \ \ \ \ \ \ \ \ S: KQ987\\
- \ \ \ \ \ \ \ \ \ H: 52\\
+\ \ \ \ \ \ \ \ \ \ H: 52\\
 \ \ \ \ \ \ \ \ \ \ D: T94\\
 \ \ \ \ \ \ \ \ \ \ C: T82\\
 S: 3 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ S: JT4\\
@@ -4282,7 +4274,7 @@ file name {\textquotedbl}-{\textquotedbl} is taken to be standard input
 or output, depending on its position, although standard input/output
 has limited usefulness, since it translates line terminators according
 the system being used. The options are:
-
+
 \texttt{\ \ {}-i s1}\ \ input file has line termination for the system
 \texttt{\textit{s1}}. The default is
 {\textquotedbl}u{\textquotedbl}.\\

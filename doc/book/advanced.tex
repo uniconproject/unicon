@@ -1,12 +1,11 @@
 \clearpage\section{Chapter 4: Advanced Language Features}
 
 The previous chapters described a wide range of built-in computational
-facilities that comprise much of what makes Unicon a great language.
-This chapter delves into interesting features that help make Unicon
-more than just the sum of its parts. This chapter demonstrates the
-following tasks:
+facilities that help to make Unicon a great language.
+This chapter delves into interesting features that make Unicon
+more than just the sum of its parts. This chapter demonstrates:
 
-\begin{itemize}
+\begin{itemize}\itemsep0pt
 \item Controlling expressions more precisely
 \item Using list structures and procedure parameter lists
 interchangeably
@@ -20,83 +19,80 @@ its results can be used in different locations throughout the program
 Expression}
 \index{limiting an expression}Chapter 1 described generators and the
 expression mechanism without mentioning many methods for using them,
-other than \textsf{every} loops. Suppose you wish to generate five
+other than \texttt{every} loops. Suppose you wish to generate five
 elements from a table. If the table has thousands of elements, then you
 may want to generate just five elements precisely in a situation where
-generating all the table elements with \textsf{!T} is infeasible. You
-could write an \textsf{every} loop that breaks out after five
+generating all the table elements with \texttt{!T} is infeasible. You
+could write an \texttt{every} loop that breaks out after five
 iterations, but this solution isn{\textquotesingle}t easy to use within
 some more complex expressions. The binary backslash operator
-\textsf{\textit{expr}}\textsf{ {\textbackslash} }\textsf{\textit{i}}
-limits \textsf{\textit{expr}} to at most \textsf{\textit{i}} results.
-If \textsf{expr} has fewer results, the limitation operator has no
-effect; once \textsf{\textit{i}} results have been obtained, limitation
+\texttt{\textit{expr}}\texttt{ {\textbackslash} }\texttt{\textit{i}}
+limits \texttt{\textit{expr}} to at most \texttt{\textit{i}} results.
+If \texttt{expr} has fewer results, the limitation operator has no
+effect; once \texttt{\textit{i}} results have been obtained, limitation
 causes the expression to \index{expression failure}fail even if it
 could produce more results.
 
-Unicon does not have a boolean type, so it might not have surprised you
-that Chapter 1 downplayed the standard logical operators. The
+Unicon does not have a boolean type, so
+Chapter 1 downplayed the standard logical operators. The
 \index{alternation operator ( {\textbar} )}alternation operator
-(\textsf{{\textbar}}) resembles a short-circuit \index{OR operator}OR
+(\texttt{{\textbar}}) resembles a short-circuit \index{OR operator}OR
 operator, since it generates its left operand and only evaluates its
 right operand if the left operand or the surrounding expression fails.
-The conjunction operator (\textsf{\&}) resembles a short-circuit
-\index{AND operator}AND operator, since it evaluates its left operand,
-and if that operand succeeds, then the result of the conjunction is the
-result of its right operand. The reserved word \textsf{not} rounds out
-the boolean-like operators. If \textsf{\textit{expr}} produces no
-results, then \index{not}\textsf{not }\textsf{\textit{expr}} will
-succeed (and produce a null value); if \textsf{\textit{expr}} produces
-any results, then the \textsf{not} expression fails. The \textsf{not}
+The conjunction operator (\texttt{\&}) resembles a short-circuit
+\index{AND operator}AND operator; it evaluates its left operand,
+and if that operand succeeds, the result of the conjunction is the
+result of its right operand. The reserved word \texttt{not} rounds out
+the boolean-like operators. If \texttt{\textit{expr}} produces no
+results, then \index{not}\texttt{not }\texttt{\textit{expr}} will
+succeed (and produce a null value); if \texttt{\textit{expr}} produces
+any results, then the \texttt{not} expression fails. The \texttt{not}
 operator can remedy certain forms of generator confusion. Compare the
 following two expressions:
 
 \iconcode{
 if not (s ==
 ({\textquotedbl}good{\textquotedbl}{\textbar}{\textquotedbl}will{\textquotedbl}{\textbar}{\textquotedbl}hunting{\textquotedbl}))
-then write({\textquotedbl}nope{\textquotedbl})}
-
-\iconcode{
+then write({\textquotedbl}nope{\textquotedbl}) \\
 if (s \~{}==
 ({\textquotedbl}good{\textquotedbl}{\textbar}{\textquotedbl}will{\textquotedbl}{\textbar}{\textquotedbl}hunting{\textquotedbl}))
 then write({\textquotedbl}uh huh{\textquotedbl})}
 
-The first expression uses \textsf{not} to ensure that string \textsf{s}
+The first expression uses \texttt{not} to ensure that string \texttt{s}
 is none of the three words. The second expression always writes
-\textsf{{\textquotedbl}uh huh{\textquotedbl}}, because any string
-\textsf{s} that you pick will be not equal (\textsf{\~{}==}) to at
-least one of the three strings in the alternation. The \textsf{then}
+\texttt{{\textquotedbl}uh huh{\textquotedbl}}, because any string
+\texttt{s} that you pick will be not equal (\texttt{\~{}==}) to at
+least one of the three strings in the alternation. The \texttt{then}
 part will always execute, which is probably not what was intended.
 
-{\sffamily\bfseries
-Note}
+{\sffamily\bfseries Note}
 
 {\sffamily
-Negating an == operator is not the same as using a \~{}== operator. You
-have been warned!}
+Negating an == operator is not the same as using a \~{}== operator!}
 
 The \index{conjunction \&}conjunction operator
-\textsf{\textit{expr}}\textsf{\textit{\textsubscript{1}}}\textsf{ \&
-}\textsf{\textit{expr}}\textsf{\textit{\textsubscript{2}}} has an
+\texttt{\textit{expr}}\texttt{\textit{\textsubscript{1}}}\texttt{ \&
+}\texttt{\textit{expr}}\texttt{\textit{\textsubscript{2}}} has an
 alternate syntax, a comma-separated list of expressions in parentheses:
-\textsf{(}\textsf{\textit{expr}}\textsf{\textit{\textsubscript{1}}}\textsf{
-, }\textsf{\textit{expr}}\textsf{\textit{\textsubscript{2}}}\textsf{)}.
-Any number of expressions may be present, and the whole expression only
-succeeds if they all succeed. This looks similar to the syntax for a
-procedure call because it is similar: a procedure call mutually
+\texttt{(}\texttt{\textit{expr}}\texttt{\textit{\textsubscript{1}}}\texttt{
+, }\texttt{\textit{expr}}\texttt{\textit{\textsubscript{2}}}\texttt{)}.
+Any number of expressions may be present; the whole expression
+succeeds if they all succeed. This looks similar to procedure call syntax
+because it is similar: a procedure call mutually
 evaluates all the actual parameters before the procedure is invoked.
-Besides putting a procedure value in front of a parenthesized argument
-list, you can put a string or an integer. For a string value, as in
-\textsf{s(x)}, a procedure by the name given in \textsf{s} is called;
-if \textsf{s} had the value \textsf{{\textquotedbl}foo{\textquotedbl}},
-then \textsf{s(x)} is the same as \textsf{foo(x)}. For an integer value
-\textsf{i}, after all arguments are evaluated, the value of the entire
-expression is the value of the \textsf{i}{\textquotesingle}th argument.
+Invocation allows a string or integer in the ``procedure'' slot
+in front of a parenthesized argument
+list. For a string, as in
+\texttt{s(x)}, a procedure by the name given in \texttt{s} is called;
+if \texttt{s} had the value \texttt{{\textquotedbl}foo{\textquotedbl}},
+then \texttt{s(x)} is the same as \texttt{foo(x)}. For an integer value
+\texttt{i}, after all arguments are evaluated, the value of the entire
+expression is the value of the \texttt{i}{\textquotesingle}th argument.
 
 \subsection{List Structures and Parameter Lists}
 
-The functions \textsf{write()} and \textsf{put()} take any number of
-arguments; this flexibility helps make them powerful and convenient.
+The functions \texttt{write()} and \texttt{put()} take any number of
+arguments; this flexibility is powerful and convenient.
 You can write \index{variable!no. of arguments}variable argument
 procedures of your own by ending the last parameter in your procedure
 declaration with empty square brackets:
@@ -104,50 +100,51 @@ declaration with empty square brackets:
 \iconcode{
 procedure myfunc(x, y, z[])}
 
+\noindent
 In this case, instead of throwing away all arguments after the third,
 the third parameter and all parameters that follow are placed into a
-newly-constructed list. If you called the above procedure with
-\textsf{myfunc(1, 2, 3, 4, 5)}, then \textsf{z} would have the value
-\textsf{[3, 4, 5]}.
+newly-constructed list. A call to the above procedure with
+\texttt{myfunc(1, 2, 3, 4, 5)} causes \texttt{z} to have the value
+\texttt{[3, 4, 5]}.
 
-It is also useful to go the other direction and construct a list data
-structure of dynamic (or user-supplied) length, and then call a
+It is also useful to do the opposite and construct a list
+of dynamic (or user-supplied) length, and then call a
 procedure with that list as its parameter list. The
 \index{list!invocation}\index{apply operator}apply operator, binary
-\textsf{!} performs this feat. If you call \textsf{write ! L}, then all
-the elements of \textsf{L} are written contiguously on a single line
+\texttt{!} performs this feat. If you call \texttt{write ! L}, then all
+the elements of \texttt{L} are written contiguously on a single line
 (unless they contain newline characters).
 
 \subsection{Co-expressions}
 
 A \index{co-expression}co-expression is an independent, encapsulated
 \index{thread}thread{}-like context, where the results of an expression
-(hopefully a generator!) can be picked off one at a time. Let us
-consider an example. Suppose you are writing a program that generates
+(hopefully a generator!) can be picked off one at a time.
+Suppose you are writing a program that generates
 code, and you need something that will generate unique variable names.
 This expression will generate names:
 
 \iconcode{
 {\textquotedbl}name{\textquotedbl} {\textbar}{\textbar} seq()}
 
-The \index{seq()}\textsf{seq()} function produces an infinite sequence
+\noindent
+Function \index{seq()}\texttt{seq()} produces an infinite sequence
 of integers, by default starting at 1, so the whole expression
-generates the sequence \textsf{{\textquotedbl}name1{\textquotedbl}},
-\textsf{{\textquotedbl}name2{\textquotedbl}},
-\textsf{{\textquotedbl}name3{\textquotedbl}}, ... and so forth. You can
-put this expression at some point in your code; but you may need to use
-it from several different places.
+generates \texttt{{\textquotedbl}name1{\textquotedbl}},
+\texttt{{\textquotedbl}name2{\textquotedbl}},
+\texttt{{\textquotedbl}name3{\textquotedbl}}, ... You can
+use this expression anywhere in your code; but you may need
+it in several different places.
 
-There are times when you need to separate the evaluation of an
-expression from its textual position in the program. The normal
-mechanism to do this would be a procedure. You can make separate calls
+There are times when you need to separate the {\em evaluation\/} of an
+expression from its location in the program. The normal
+way to do this would be a procedure. You can make separate calls
 to a procedure from different locations in your program, but there is
 no easy way to use the results from a single \index{instance}instance
 of a generator in multiple locations. You can put all the results in a
 list (not a good idea for generators with infinite result sequences) or
 rewrite the procedure to produce the sequence using separate calls, but
-this requires static or global variables, and is awkward at best. Here
-is a crude effort
+this requires static or global variables, and is awkward at best:
 
 \iconcode{
 procedure nameseq() \\
@@ -161,7 +158,7 @@ end
 Now, consider the code generating program again. It may need not one
 name sequence, but two kinds of names: statement labels and
 temporary variables. It would be poor engineering to write a different
-procedure for each such sequence. The \textsf{nameseq()}
+procedure for each such sequence. The \texttt{nameseq()}
 procedure was already cumbersome for so simple a task, but generalizing
 it for multiple kinds of names makes it \textit{really} messy. By
 creating a pair of co-expressions, you can capture exactly what is
@@ -174,22 +171,23 @@ varname := create({\textquotedbl}\_V{\textquotedbl} {\textbar}{\textbar}
 seq())
 }
 
-In both cases, \index{create}\textsf{create}\textsf{
-}\textsf{\textit{expr}} allocates and initializes an evaluation context
+\noindent
+In both cases, \index{create}\texttt{create}\texttt{
+}\texttt{\textit{expr}} allocates and initializes an evaluation context
 plus the memory needed to evaluate expression \textit{expr}, but does
 not start to evaluate it. Since the co-expression value may be used
 outside the procedure call where it is created, the evaluation context
-has to include a copy of the local variables and parameters used in the
+includes a copy of the local variables and parameters used in the
 expression. When a co-expression is \textit{activated}, it produces the
-next value. A co-expression is activated by the @ operator. Each
-activation of \textsf{labelname} will produce the next string in the
-sequence \textsf{{\textquotedbl}\_L0{\textquotedbl}},
-\textsf{{\textquotedbl}\_L1{\textquotedbl}},
-\textsf{{\textquotedbl}\_L2{\textquotedbl}}, and so on. Similarly, each
-activation \textsf{@varname}\textsf{ }produces the next in the sequence
-\textsf{{\textquotedbl}\_V0{\textquotedbl}},
-\textsf{{\textquotedbl}\_V1{\textquotedbl}},
-\textsf{{\textquotedbl}\_V2{\textquotedbl}}, and so on. 
+next value. A co-expression is activated by the \texttt{@} operator. Each
+activation of \texttt{labelname} produces the next string in the
+sequence \texttt{{\textquotedbl}\_L0{\textquotedbl}},
+\texttt{{\textquotedbl}\_L1{\textquotedbl}},
+\texttt{{\textquotedbl}\_L2{\textquotedbl}}, and so on. Similarly, each
+activation \texttt{@varname}\texttt{ }produces the next in the sequence
+\texttt{{\textquotedbl}\_V0{\textquotedbl}},
+\texttt{{\textquotedbl}\_V1{\textquotedbl}},
+\texttt{{\textquotedbl}\_V2{\textquotedbl}}, and so on. 
 
 \iconcode{
 loop\_name := @labelname \\
@@ -197,7 +195,7 @@ tempvar\_name := @varname
 }
 
 After a co-expression has produced all its results, further evaluation
-with \textsf{@} will \index{fail!co-expression}fail. The \textsf{\^{}}
+with \texttt{@} will \index{fail!co-expression}fail. The \texttt{\^{}}
 operator produces a new co-expression with the same expression as its
 argument, but {\textquotedbl}rewound{\textquotedbl} to the beginning.
 
@@ -206,16 +204,15 @@ argument, but {\textquotedbl}rewound{\textquotedbl} to the beginning.
 
 \subsection[User{}-Defined Control Structures]{User-Defined Control
 Structures}
-\index{control structure}Control structures are those elements of a
-language that determine in what order, and how many times, expressions
-are executed. Co-expressions can be used to implement new
-\textit{control structures} in the sense that procedures that take
-co-expression arguments as parameters can control the order and number
-of times their arguments are activated.
-
+\index{control structure}\textit{Control structures} are language elements
+that determine in what order, and how many times, expressions
+are executed. Co-expressions are used to implement new
+control structures when procedures that take
+co-expression parameters control the order and number
+of times they are activated.
 Consider a control structure that selects values from the first
-expression at the positions specified by the second. This could be
-invoked as:
+expression at positions specified by the second. This could be
+called as:
 
 \iconcode{
 seqsel([create fibonacci(), create primes()])}
@@ -223,7 +220,7 @@ seqsel([create fibonacci(), create primes()])}
 Assuming that you have a pair of \index{generator}generator procedures
 that produce the Fibonacci numbers (1, 1, 2, 3, 5, 8, 13, \ ?) and the
 primes (2, 3, 5, 7, 11, ?), this expression produces the numbers 1, 2,
-5, 13, 89, .... Here is the implementation of \textsf{seqsel()}:
+5, 13, 89, .... Here is the implementation of \texttt{seqsel()}:
 
 \iconcode{
 procedure seqsel(a) \\
@@ -239,13 +236,14 @@ two arguments{\textquotedbl}) \\
 \ \ \ \ \ \ \# we get to the i{\textquotesingle}th one. If e1 cannot produce that \\
 \ \ \ \ \ \ \# many values, we fail. \\
 \>   \ \ \ every index to i do \\
-\>   \ \ \ (value := @e1) {\textbar} fail \\
+\>\>   \ \ \ (value := @e1) {\textbar} fail \\
 \>   \ \ \ suspend value \\
 \>   \ \ \ index := i+1 \\
 \>   \ \ \ \} \\
 end
 }
 
+\noindent
 Unicon provides a syntactic short-cut for this kind of usage:
 
 \iconcode{
@@ -262,7 +260,7 @@ proc\{e1, e2, ..., en\}
 \subsection[Parallel Evaluation]{Parallel Evaluation}
 
 \index{parallel evaluation}Co-expressions can be used to evaluate
-expressions {\textquotedbl}in parallel{\textquotedbl} or in lock-step.
+expressions {\textquotedbl}in parallel{\textquotedbl}.
 This program writes a table of \index{ASCII}ASCII characters with the
 hex, decimal, and octal equivalents:
 
@@ -280,22 +278,22 @@ procedure main() \\
 end
 }
 
-Co-expression \textsf{dec} produces the sequence 0, 1, 2, ... 255;
-\textsf{hex} the sequence \textsf{{\textquotedbl}00{\textquotedbl}},
-\textsf{{\textquotedbl}01{\textquotedbl}},
-\textsf{{\textquotedbl}03{\textquotedbl}}, ...
-\textsf{{\textquotedbl}ff{\textquotedbl}}; \textsf{oct}\textsf{ }the
-sequence \textsf{{\textquotedbl}001{\textquotedbl}},
-\textsf{{\textquotedbl}002{\textquotedbl}}, ...
-\textsf{{\textquotedbl}377{\textquotedbl}}; and \textsf{char}\textsf{
-}the sequence ..., \textsf{{\textquotedbl} {\textquotedbl}},
-\textsf{{\textquotedbl}!{\textquotedbl}}, ...,
-\textsf{{\textquotedbl}A{\textquotedbl}}, ...
-\textsf{{\textquotedbl}Z{\textquotedbl}}, ...,
-\textsf{{\textquotedbl}a{\textquotedbl}}, ...
-\textsf{{\textquotedbl}z{\textquotedbl}}, and so forth.
+Co-expression \texttt{dec} produces the sequence 0, 1, 2, ... 255;
+\texttt{hex} the sequence \texttt{{\textquotedbl}00{\textquotedbl}},
+\texttt{{\textquotedbl}01{\textquotedbl}},
+\texttt{{\textquotedbl}03{\textquotedbl}}, ...
+\texttt{{\textquotedbl}ff{\textquotedbl}}; \texttt{oct}\texttt{ }the
+sequence \texttt{{\textquotedbl}001{\textquotedbl}},
+\texttt{{\textquotedbl}002{\textquotedbl}}, ...
+\texttt{{\textquotedbl}377{\textquotedbl}}; and \texttt{char}\texttt{
+}the sequence ..., \texttt{{\textquotedbl} {\textquotedbl}},
+\texttt{{\textquotedbl}!{\textquotedbl}}, ...,
+\texttt{{\textquotedbl}A{\textquotedbl}}, ...
+\texttt{{\textquotedbl}Z{\textquotedbl}}, ...,
+\texttt{{\textquotedbl}a{\textquotedbl}}, ...
+\texttt{{\textquotedbl}z{\textquotedbl}}, and so forth.
 
-Every invocation of \textsf{write()} results in all the co-expressions
+Every invocation of \texttt{write()} results in all the co-expressions
 being activated once, so they are all run in lock-step, producing this
 table:
 
@@ -363,9 +361,6 @@ table:
 97 \ \ \ \ \ 141 \ \ \ \ 61 \ \ \ \ \ {\textquotedbl}a{\textquotedbl}}
 
 {\sffamily
-98 \ \ \ \ \ 142 \ \ \ \ 62 \ \ \ \ \ {\textquotedbl}b{\textquotedbl}}
-
-{\sffamily
 ...}
 
 {\sffamily
@@ -376,9 +371,7 @@ table:
 Parallel evaluation can also be used to assign to a set of variables:
 
 \iconcode{
-ce := create !stat(f)}
-
-\iconcode{
+ce := create !stat(f)
 every (dev {\textbar} ino {\textbar} mode {\textbar} lnk {\textbar} uid
 {\textbar} gid) := @ ce}
 
@@ -386,9 +379,10 @@ every (dev {\textbar} ino {\textbar} mode {\textbar} lnk {\textbar} uid
 Note}
 
 {\sffamily
-stat() returns file information. It is presented in the next chapter.}
+\texttt{stat()} returns file information. It is presented in the next chapter.}
 
-Coexpression creation can be quite expensive. This is probably not a
+\noindent
+Co-expressions can be expensive. This is probably not a
 good way to assign a series of values to a group of variables but it
 demonstrates an interesting technique.
 
@@ -416,6 +410,7 @@ procedures.
 
 \bigskip
 
+\noindent
 Can you tell what the next example computes from its integer
 command-line argument?
 
@@ -455,8 +450,8 @@ procedure consumer(limit) \\
 end
 }
 
-When producer resumes consumer, it passes \textsf{value}; the consumer
-passes a return code (\textsf{retval}) back. \textsf{\&source} is the
+When producer resumes consumer, it passes \texttt{value}; the consumer
+passes a return code (\texttt{retval}) back. \texttt{\&source} is the
 coexpression that activated the current co-expression.
 
 {\sffamily\bfseries
@@ -469,7 +464,7 @@ should always be done with coroutines!}
 \subsection[Permutations]{Permutations}
 
 \index{permutations}We have seen one usage of
-\index{map()}\textsf{map()}, where it transformed mixed-case strings to
+\index{map()}\texttt{map()}, where it transformed mixed-case strings to
 all lowercase. In that type of usage, the first string \ is the one
 that we are manipulating, and the other two arguments tell it how the
 string is to be modified. Interesting results can be achieved by
@@ -483,20 +478,20 @@ write(map({\textquotedbl}01234{\textquotedbl},
 }
 
 What does this code example do? The transformation is:
-\textsf{{\textquotedbl}4{\textquotedbl}} should be mapped to
-\textsf{{\textquotedbl}a{\textquotedbl}},
-\textsf{{\textquotedbl}3{\textquotedbl}} to
-\textsf{{\textquotedbl}b{\textquotedbl}},
-\textsf{{\textquotedbl}2{\textquotedbl}} to
-\textsf{{\textquotedbl}c{\textquotedbl}},
-\textsf{{\textquotedbl}0{\textquotedbl}} to
-\textsf{{\textquotedbl}d{\textquotedbl}}, and
-\textsf{{\textquotedbl}1{\textquotedbl}} to
-\textsf{{\textquotedbl}e{\textquotedbl}}. When this mapping is applied
-to \textsf{{\textquotedbl}01234{\textquotedbl}}, we get
-\textsf{{\textquotedbl}edcab{\textquotedbl}} - a permutation of the
-string \textsf{s}! It is exactly the permutation that is suggested by
-the first two arguments of \textsf{map()}. To arrange this sort of
+\texttt{{\textquotedbl}4{\textquotedbl}} should be mapped to
+\texttt{{\textquotedbl}a{\textquotedbl}},
+\texttt{{\textquotedbl}3{\textquotedbl}} to
+\texttt{{\textquotedbl}b{\textquotedbl}},
+\texttt{{\textquotedbl}2{\textquotedbl}} to
+\texttt{{\textquotedbl}c{\textquotedbl}},
+\texttt{{\textquotedbl}0{\textquotedbl}} to
+\texttt{{\textquotedbl}d{\textquotedbl}}, and
+\texttt{{\textquotedbl}1{\textquotedbl}} to
+\texttt{{\textquotedbl}e{\textquotedbl}}. When this mapping is applied
+to \texttt{{\textquotedbl}01234{\textquotedbl}}, we get
+\texttt{{\textquotedbl}edcab{\textquotedbl}} - a permutation of the
+string \texttt{s}! It is exactly the permutation that is suggested by
+the first two arguments of \texttt{map()}. To arrange this sort of
 permutation, all three strings must be the same size, and there must be
 no repeated letters in the second string.
 
@@ -520,14 +515,14 @@ map({\textquotedbl}Mm/Dd/XxYy{\textquotedbl},
 }
 
 Here is another example. Unicon has a built-in random facility, the
-\textsf{?} operator. Applied to a string or cset, it returns a random
+\texttt{?} operator. Applied to a string or cset, it returns a random
 character from the argument; applied to a structure, a random member of
 that structure; and applied to an integer, a random integer between 1
 and that number. This is a very useful feature and allows us to write
 programs that shuffle cards or run simulations of things like rolling
 dice.
 
-By default in Unicon, the random sequence generated by \textsf{?} is
+By default in Unicon, the random sequence generated by \texttt{?} is
 different for each run of the program. This is one of the few areas
 where Unicon is deliberately different from Icon, which uses the same
 seed each run by default. Icon{\textquotesingle}s semantics is good
@@ -535,7 +530,7 @@ when debugging, because we want the program to behave predictably while
 it is broken! However, in most applications that use random numbers,
 such as games, different runs of the program should create different
 numbers. The \index{random!number seed}random number seed is keyword
-\textsf{\&random.} It can be assigned a value at the start of main() in
+\texttt{\&random.} It can be assigned a value at the start of main() in
 order to get Icon-style repeatability. Here{\textquotesingle}s how to
 assign it a number based on the current date and time.
 Unicon{\textquotesingle}s default semantics do something similar.
@@ -547,16 +542,17 @@ Unicon{\textquotesingle}s default semantics do something similar.
 {\textquotedbl}YyXx/Mm/Dd{\textquotedbl}, \&date)
 }
 
-The calls to \textsf{map()} remove punctuation characters from the
-fixed-format strings produced by \textsf{\&clock} and \textsf{\&date}.
+\noindent
+The calls to \texttt{map()} remove punctuation characters from the
+fixed-format strings produced by \texttt{\&clock} and \texttt{\&date}.
 The resulting strings of digits are converted to integers, added, and
-stored as a seed in \textsf{\&random}. Now every time the program is
+stored as a seed in \texttt{\&random}. Now every time the program is
 run, the random number facility will be initialized with a different
 number.
 
 \subsection{Simulation}
 
-A Galton Box is a device that demonstrates how balls falling through a
+A Galton Box demonstrates how balls falling through a
 lattice of pegs will end up distributed binomially. A simulation of a
 Galton box combines several of the techniques described previously.
 \ Figure 4-3 is an illustration of the program{\textquotesingle}s
@@ -580,31 +576,31 @@ or the Icon graphics book (Griswold, Jeffery, Townsend 1998) contain
 substantial additional details. Graphics are part of the system
 interface. Some of the graphics functions used in this example include:
 
-\begin{itemize}
-\item \textsf{FillArc(x,y,width,height)} fills an ellipse defined by a
+\begin{itemize}\itemsep0pt
+\item \texttt{FillArc(x,y,width,height)} fills an ellipse defined by a
 bounding rectangle. The shape is filled by the current foreground color
 and/or fill pattern. The height defaults to be the same as the width,
-producing a circle. Given additional arguments, \textsf{FillArc()
+producing a circle. Given additional arguments, \texttt{FillArc()
 }fills parts of an ellipse similar to pieces of a pie in shape.
-\item \textsf{WAttrib({\textquotedbl}attr{\textquotedbl})} or
-\textsf{WAttrib({\textquotedbl}attr=value{\textquotedbl})}, the generic
-routine for getting or setting a window{\textquotesingle}s attributes.
-In this case the attributes \textsf{fg} (foreground color) and
-\textsf{drawop} (raster drawing operation) are set to various colors
+\item \texttt{WAttrib({\textquotedbl}attr{\textquotedbl})} or
+\texttt{WAttrib({\textquotedbl}attr=value{\textquotedbl})}, the generic
+getter/setter for window attributes.
+In this case the attributes \texttt{fg} (foreground color) and
+\texttt{drawop} (raster drawing operation) are set to various colors
 and reversible output.
-\item \textsf{Window({\textquotedbl}attr=value{\textquotedbl}, ...)}
-opens a window with initial characteristics as specified by a string of
-attribute values. The \textsf{WDelay(t)} function waits until
-\textsf{t} milliseconds have passed. The \textsf{WDone()} function
+\item \texttt{Window({\textquotedbl}attr=value{\textquotedbl}, ...)}
+opens a window with characteristics specified by string
+attribute values. The \texttt{WDelay(t)} function waits until
+\texttt{t} milliseconds have passed. The \texttt{WDone()} function
 waits for the user to dismiss the output window by pressing
-\textsf{{\textquotedbl}q{\textquotedbl}} and then terminates the
+\texttt{{\textquotedbl}q{\textquotedbl}} and then terminates the
 program and closes the window.
 \end{itemize}
 Listing 4-2 contains the code for a simplified version of the
 simulation. A couple elements of the image above are omitted in order
 to make the example easy to follow. (Both this program and the one that
 created the screen shot above are included on the
-book{\textquotesingle}s web site, http://unicon.sourceforge.net/book/)
+book{\textquotesingle}s web site, http://unicon.org/book/)
 
 {\sffamily\bfseries Listing 4-2}
 {\sffamily\bfseries A Simple Galton Box Simulation}
@@ -614,8 +610,7 @@ link graphics \\
 global pegsize, height, width, pegsize2 \\
 \ \\
 procedure main(args) \\
-local n, steps \\
-\>   steps := 10 \\
+local n, steps := 10 \\
 \>   pegsize := 10 \\
 \>   pegsize2 := pegsize * 2 \\
 \>   n := integer(args[1]) {\textbar} 100 \\
@@ -636,8 +631,7 @@ local max, xpos, ypos, i, j \\
 \>   height := width + n*n/2*pegsize \\
 \>   Window({\textquotedbl}size={\textquotedbl} {\textbar}{\textbar}
 width {\textbar}{\textbar} {\textquotedbl},{\textquotedbl}
-{\textbar}{\textbar} height, \\
-\>   \ \ \ \ \ \ \ {\textquotedbl}fg=grayish-white{\textquotedbl}) \\
+{\textbar}{\textbar} height, {\textquotedbl}fg=grayish-white{\textquotedbl}) \\
 \>   WAttrib({\textquotedbl}fg=dark-grey{\textquotedbl}) \\
 \>   every i := 1 to n do \{ \\
 \>   \ \ \ ypos := i * pegsize2 \\
@@ -659,18 +653,15 @@ local xpos, ypos, oldx, oldy \\
 \>   ypos := oldy := pegsize \\
 \>   \# For every ball... \\
 \>   every 1 to n do \{ \\
-\>   \ \ \ if ?2 = 1 then \\
-\>   \ \ \ \ \ \ xpos -:= pegsize \\
-\>   \ \ \ else \\
-\>   \ \ \ \ \ \ xpos +:= pegsize \\
+\>   \ \ \ if ?2 = 1 then xpos -:= pegsize \\
+\>   \ \ \ else xpos +:= pegsize \\
 \>   \ \ \ ypos +:= pegsize2 \\
 \>   \ \ \ animate(oldx, oldy, xpos, ypos) \\
-\>   \ \ \ oldx := xpos \\
-\>   \ \ \ oldy := ypos \\
+\>   \ \ \ oldx := xpos; oldy := ypos \\
 \>   \ \ \ \} \\
 \>   \# Now the ball falls to the floor \\
 \>   animate(xpos, ypos, xpos, ypos + 40) \\
-\ \ \ animate(xpos, ypos+40, xpos, ypos + 200) \\
+\>   animate(xpos, ypos+40, xpos, ypos + 200) \\
 \>   \# Record this ball \\
 \>   draw\_ball(xpos) \\
 end
@@ -683,19 +674,15 @@ end
 \# Drawing op is already set to {\textquotedbl}reverse{\textquotedbl},
 and fg colour is black. \\
 procedure animate\_actual(xfrom, yfrom, xto, yto, steps) \\
-local x, y, xstep, ystep, i, lastx, lasty \\
-\>   x := xfrom \\
-\>   y := yfrom \\
+local x := xfrom, y := yfrom, xstep, ystep, i, lastx, lasty \\
 \>   xstep := (xto - xfrom)/steps \\
 \>   ystep := (yto - yfrom)/steps \\
 \>   every i := 1 to steps do \{ \\
-\>   \ \ \ lastx := x \\
-\>   \ \ \ lasty := y \\
+\>   \ \ \ lastx := x; lasty := y \\
 \>   \ \ \ FillArc(x, y, pegsize, pegsize) \\
 \>   \ \ \ WDelay(1) \\
 \>   \ \ \ FillArc(x, y, pegsize, pegsize) \\
-\>   \ \ \ x +:= xstep \\
-\>   \ \ \ y +:= ystep \\
+\>   \ \ \ x +:= xstep; y +:= ystep \\
 \>   \ \ \ \} \\
 end
 \ \\
@@ -709,7 +696,7 @@ end
 
 \section*{Summary}
 
-Unicon is particularly powerful when different language features are
+Unicon is particularly powerful when language features are
 combined. The ability to combine features in interesting ways is the
 result of its novel expression semantics. Co-expressions add
 substantial value to the concept of \index{generator}generators,

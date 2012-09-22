@@ -1,16 +1,15 @@
 \clearpage
 \section{Chapter 1: Programs and Expressions}
 
-At Unicon{\textquotesingle}s heart are the core language features it
-shares with Icon. This chapter presents many of these key features of
-Unicon, starting with elements that it has in common with other popular
-languages. Detailed instructions show you how to \index{compile}compile
-and \index{run}run programs. Soon the examples start to focus on
+This chapter presents many of the key features of
+Unicon, starting with those it has in common with other popular
+languages. Detailed instructions show how to \index{compile}compile
+and \index{run}run programs. Soon the examples introduce
 important ways in which Unicon is different from other languages. These
 differences are more than skin deep. If you dig deeply, you can find
 dozens of details where Unicon provides just the right blend of
 simplicity, flexibility, and power.
-When you finish this chapter, you will know how to
+After this chapter, you will know how to
 
 \begin{itemize} \itemsep 0pt
 \item edit, compile, and execute Unicon programs
@@ -36,10 +35,10 @@ section. If you are completely new to programming, have no fear. Unicon
 is pretty easy to learn.
 
 All programs consist of commands that use hardware to obtain or present
-information to users, and perform internal calculations that transform
-or manipulate information into a more useful form. To program a
+information to users, and perform calculations that transform
+information into a more useful form. To program a
 computer you write a document containing instructions for the computer
-to carry out in some order. In Unicon a list of instructions is called
+to carry out. In Unicon a list of instructions is called
 a \index{procedure}\textit{procedure}, and a
 \index{program}\textit{program} is a collection of one or more
 procedures. In larger programs, groups of related procedures are
@@ -175,8 +174,8 @@ Add the following line, and run it:
 \>   write({\textquotedbl}7 + 12{\textquotedbl})
 }
 
-This illustrates what the quotes are for. Quoted text is taken
-literally; without quotes, the computer tries to simplify (that is, do
+This illustrates what quotes are for. Quoted text is taken
+literally; without quotes, the computer tries to simplify (do
 some arithmetic, or compute the value of what is written), which might
 be difficult if the material in question is not an expression!
 
@@ -240,7 +239,7 @@ following line will print?
 }
 
 The \texttt{read()} procedure is never executed because it is quoted!
-Quotes in effect say {\textquotedbl}take these letters literally, not
+Quotes say {\textquotedbl}take these letters literally, not
 as an equation or instruction to evaluate.{\textquotedbl} How about:
 
 \iconcode{
@@ -248,8 +247,8 @@ as an equation or instruction to evaluate.{\textquotedbl} How about:
 }
 
 \noindent Here the quotes enclose one big value, which is printed, comma
-and all. The term for directions one gives to a procedure is
-\textit{parameter}; when you give a procedure more than one parameter,
+and all. The directions one gives to a procedure are
+\textit{parameters}; when you give a procedure more than one parameter,
 separated by commas, you are giving it a
 \index{parameter list}\textit{parameter list}. For example,
 
@@ -308,9 +307,9 @@ a unique experience.
 
 \subsection{Command Line Options}
 
-Unicon comes with an IDE, but you can also edit programs using your own
+Unicon comes with an IDE, but you can edit programs with any
 editor, and compile and run them from your operating
-system{\textquotesingle}s command line. This section discusses the
+system{\textquotesingle}s command line. This section describes the
 Unicon command line tools along with several useful options. The Unicon
 compiler executable is named unicon, and to compile the program foo.icn
 you would type
@@ -360,12 +359,12 @@ files and release information for more details.
 
 \subsection{Expressions and Types}
 
-Each \index{procedure}procedure in an Unicon program is a sequence of
-\index{expression}\textit{expression}\textit{s.} All expressions are
+Each \index{procedure}procedure in a Unicon program is a sequence of
+\index{expression}\textit{expression}\textit{s.} Expressions are
 instructions for obtaining \index{value}values of some
 \index{type}type, such as a number or a word; some expressions also
-cause side effects, such as accessing a hardware device to read or
-write data. Simple expressions just read or write a value stored in
+cause side effects, such as sending data to a hardware device.
+Simple expressions just read or write a value stored in
 memory. More interesting expressions specify a computation that
 manipulates zero or more \index{argument}\textit{argument} values to
 obtain \index{result}\textit{result} values by some combination of
@@ -404,16 +403,14 @@ results in a value that is the sum of the values in the variables
 
 Some words may not be used as variable names because they have a special
 meaning in the language. These \index{reserved word}\textit{reserved
-word}\textit{s} include \texttt{procedure}, \texttt{end},
-\texttt{while}, and so on. Certain other special variables called
-\index{keyword}\textit{keyword}\textit{s} start with the ampersand
-character (\texttt{\&}) and denote special values. For example, normal
+words} include \texttt{procedure}, \texttt{end},
+\texttt{while}, and so on. Other special variables called
+\index{keyword}\textit{keywords} start with the ampersand
+character (\texttt{\&}) and denote special values. For example, global
 variables are initialized to the null value represented by the keyword
-\texttt{\&}\index{null value, \&null}\texttt{null}. Other keywords
-include \texttt{\&date}\texttt{, }\texttt{\&time}\texttt{,} and so on.
-Reserved words and keywords are defined when the corresponding language
-features are presented. Complete lists of reserved words and keywords
-are given in Appendix A.
+\texttt{\&null}\index{null value, \&null}. Other keywords
+include \texttt{\&date}, \texttt{\&time}, and so on.
+Complete lists of reserved words and keywords are given in Appendix A.
 
 Unlike many languages where you have to state up front
 (\textit{declare}) all the variables you are going to use\textit{ }and
@@ -425,9 +422,9 @@ checks its argument values to make sure they are compatible, converts
 them if necessary, and halts execution if they cannot be converted.
 
 \subsection[Numeric Computation]{Numeric Computation}
-Unicon supports the usual \index{arithmetic}arithmetic operators on two
-data types: \index{integer}integer and real. The integer type is a
-signed whole number of arbitrary magnitude. The real type is a signed
+Unicon supports the usual \index{arithmetic}arithmetic operators on
+data types \index{integer}integer and real. Integers are
+signed whole numbers of arbitrary magnitude. The real type is a signed
 \index{floating point}floating point decimal number whose size on any
 platform is the largest size supported by machine instructions,
 typically 64-bit double precision values. In addition to
@@ -511,24 +508,22 @@ value. The modulo operator (\texttt{\%}) is an important part of this
 program: \texttt{i \% j} is the \index{remainder}remainder when
 \texttt{i} is divided by \texttt{j}.
 
-The while \index{loop}loop in this program uses a reserved word
-\texttt{do} followed by an expression (really a compound expression
-enclosed in curly braces). The expression following the \texttt{do }is
-executed once each time the expression that controls the \texttt{while
-(r {\textgreater} 0)} succeeds. \ Inside the \texttt{while} loop, a
+While \index{loop}loops can use a reserved word
+\texttt{do} followed by an expression (often a compound expression
+in curly braces). The expression following the \texttt{do} is
+executed once each time the expression that controls the \texttt{while}
+succeeds. Inside the \texttt{while} loop, a
 \index{conditional expression}conditional
 \index{if-then-else}\texttt{if-then-else} expression is used to select
-one of two possible actions.
+from two possible actions.
 
 The names of the variables in this example are obscure, and there are no
-human readable comments in it, only the one telling you
-it{\textquotesingle}s a {\textquotedbl}mystery
-program{\textquotesingle}!{\textquotedbl} Can you guess what this
+comments in it other than the one at the top. Can you guess what this
 program does, without running it? If you give up, try running it with a
 few pairs of positive numbers.
 
 In addition to arithmetic operators, there are \index{augmented
-assignment}\textit{augmented assignment} operators. For instance, to
+assignment}\textit{augmented assignment} operators. To
 increment the value in a variable by 2, these two statements are
 equivalent:
 
@@ -544,9 +539,9 @@ operators, not just arithmetic. The expression \texttt{i
 
 \subsection{Strings and Csets}
 
-The non-numeric atomic types available in Unicon are character sequences
+The non-numeric atomic types in Unicon are character sequences
 (\index{string}strings) and \index{character set}character sets
-(\index{cset}csets). Icon originated in the domain of string
+(\index{cset}csets). Icon came from the domain of string
 processing, and from it Unicon inherits many sophisticated features for
 manipulating strings and performing \index{pattern matching}pattern
 matching. This section presents the simple and most common operations.
@@ -573,21 +568,21 @@ Several operators take string arguments. The \index{string!length
 (*s)}\texttt{*s} operator gives the \index{length operator (*x)}length
 of string \texttt{s}. The expression \index{string!concatenation s1
 {\textbar}{\textbar} s2}\texttt{s1{\textbar}{\textbar}s2} produces a
-string consisting of the characters in \texttt{s1} followed by those in
+string consisting of the characters in \texttt{s1} followed by
 \texttt{s2}. The \index{subscript operator}subscript operator
 \index{string!subscript (s[i])}\texttt{s[i]} produces a one-letter
 substring of \texttt{s} at the \texttt{i}th position.
 \index{string!indexes 1-based}Indices are counted starting from
-position 1. If \texttt{i} is negative, it is relative to the end of the
+position 1. If \texttt{i} is nonpositive, it is from the end of the
 string, for example \texttt{s[-2]} is the second to the last character
 in the string.
 
 Csets support set operators. \index{union (c1 ++ c2)}\texttt{c1++c2}
-produces a new cset that is the union of \texttt{c1} and \texttt{c2}.
+produces a cset that is the union of \texttt{c1} and \texttt{c2}.
 The expression \index{intersection (c1**c2)}\texttt{c1**c2} is the
 intersection, while \index{difference (c1 -{}- c2)}\texttt{c1-{}-c2} is
-the difference. In addition, several keywords denote commonly used
-csets. The keywords \ \index{letters,  \&letters}\texttt{\&letters},
+the difference. In addition, several keywords are commonly used
+csets. The keywords \index{letters,  \&letters}\texttt{\&letters},
 \texttt{\&lcase}, and \texttt{\&ucase} denote the alphabetic
 characters, \index{lower case}lower case characters a-z, and
 \index{upper case}upper case characters A-Z, respectively, while
@@ -607,11 +602,10 @@ values to strings automatically, and halt execution with a run-time
 error if given a value that cannot be converted to a string.
 
 \subsection[Goal{}-directed Evaluation]{Goal-directed Evaluation}
-\index{goal-directed evaluation}So far, the simple examples of how
+\index{goal-directed evaluation}So far, the examples of how
 expressions are evaluated have included nothing you
 wouldn{\textquotesingle}t find in ordinary programming languages. It is
 time to push past the ordinary.
-
 In most conventional languages, each expression always computes
 \textit{exactly one} result. If no valid result is possible, a
 \index{sentinel value}sentinel value such as -1, NULL, EOF
@@ -639,7 +633,7 @@ failure}fail and the surrounding expression cannot be performed and in
 turn fails.
 
 Now take a look at that loop again. If it weren{\textquotesingle}t for
-the termination condition, you would not have to save the value in the
+the termination condition, you would not need the
 intermediate variable \texttt{i}. If you would like to say:
 
 \iconcode{
@@ -647,7 +641,7 @@ intermediate variable \texttt{i}. If you would like to say:
 }
 
 \noindent
-then your wishes are answered by Unicon; you can indeed write your
+your wishes are answered by Unicon; you can indeed write your
 program like this. The expression \texttt{read()} tries to produce a
 value by reading the input. When it is successful, \texttt{process()}
 is called with the value; but when \texttt{read()} cannot get any more
@@ -806,14 +800,16 @@ compactly. For example,
 \>   x = (3 {\textbar} 5)
 }
 
-checks to see if the value of \texttt{x} is either 3 or 5; more complex
+\noindent
+checks to see if the value of \texttt{x} is 3 or 5. More complex
 expressions follow logically:
 
 \iconcode{
 \>   (x {\textbar} y) = (3 {\textbar} 5)
 }
 
-This checks to see if either \texttt{x} or \texttt{y} has the value 3 or
+\noindent
+checks to see if either \texttt{x} or \texttt{y} has the value 3 or
 5. It is the Unicon equivalent of C{\textquotesingle}s
 
 \iconcode{
@@ -821,7 +817,7 @@ This checks to see if either \texttt{x} or \texttt{y} has the value 3 or
 3) {\textbar}{\textbar} (y == 5)
 }
 
-In understanding any Unicon code you read, it helps if you identify the
+In understanding Unicon code, it helps if you identify the
 generators, if there are any. In addition to the alternation operator
 \texttt{{\textbar}} and the function \texttt{find()}, there are a few
 other generators in Icon{\textquotesingle}s built in repertoire of
@@ -872,16 +868,16 @@ all if an argument fails. In contrast, a control structure uses one of
 its arguments to decide whether (or how many times) to evaluate its
 other arguments.
 
-Since control structures are expressions, it is reasonable to ask what
-result they produce for any surrounding expression. For example, the
+Since control structures are expressions, they may produce a result
+for a surrounding expression. For example, the
 result of an \texttt{if} expression is the result of either its
 \texttt{then} part or its \texttt{else} part, whichever one was
 selected. On the other hand, a loop executes until its test fails,
-after which there is no meaningful result for it to produce, so \ loops
-always fail as far as surrounding expressions are concerned.
+after which there is no meaningful result for it to produce; loops
+usually fail as far as surrounding expressions are concerned.
 
 The \index{control structure}control structure
-\index{every}\texttt{every} is a mechanism for processing the entire
+\index{every}\texttt{every} processes the entire
 sequence of values produced by a generator. The expression 
 
 \iconcode{
@@ -912,21 +908,23 @@ languages these are called {\textquotedbl}for{\textquotedbl} loops. A
 \>   every i := 1 to 10 do write(i)
 }
 
-Of course, \texttt{every} and \texttt{to} are not limited to this basic
-type of for loop. Generators are more flexible. In fact, the for loop
+\noindent
+Of course, \texttt{every} and \texttt{to} are not limited to this BASIC-style
+for loop. Generators are more flexible; the for loop
 above looks clumsy when compared with the equivalent
 
 \iconcode{
 \>   every write(1 to 10)
 }
 
+\noindent
 A generator operand to a non-generator forms a generator. The enclosing
-non-generator (in this case, \texttt{write()}) executes repeatedly as
+non-generator (such as \texttt{write()}) is re-run each time
 the generator suspends and resumes.
 
 Unicon{\textquotesingle}s \texttt{every} keyword generalizes the concept
-of \index{iterator}\textit{iterator}\textit{s} found in languages such
-as Clu and C++. Iterators are special control structures that walk
+of \index{iterator}\textit{iterator}\textit{s} found in other languages.
+Iterators are special control structures that walk
 through a collection of data. Instead of being a special feature, in
 Unicon iterators are just one of many ways to utilize generators. The
 \index{sequence of results}sequence of results from an expression does
@@ -1087,7 +1085,7 @@ to not get these two mixed up, a slash pushes its operand
 {\textquotedbl}up{\textquotedbl} for non-null, and
 {\textquotedbl}down{\textquotedbl} for a null value.
 
-The preceding example of procedure \texttt{succ()} shows one way to
+The procedure \texttt{succ()} shows one way to
 specify a default value for a parameter. The built-in functions use
 such default values systematically to reduce the number of parameters
 needed; consistent defaults for entire families of functions make them
@@ -1121,10 +1119,10 @@ end
 \subsubsection{Variables and Scopes}
 
 \index{Variable}Variable names used as parameters are fundamentally
-different from procedure names. Parameter names have a
-\index{scope,}\textit{scope,} limited to the body of a single
+different from procedure names. The
+\index{scope,}\textit{scope} of parameters is limited to the body of a single
 procedure, while procedure names are visible to the entire program.
-Parameters and procedures are special forms of two of the basic kinds
+Parameters and procedures are special forms of two basic kinds
 of variables in Unicon: local variables and global variables.
 
 The scope of \index{global variables}global variables, including
@@ -1170,23 +1168,23 @@ end
 Each declared local variable name may be followed by a \texttt{:=} and
 an \textit{initializer} expression that specifies the
 variable{\textquotesingle}s initial value. Without an initializer,
-variables start with the null value, \texttt{\&null}\textit{. }Although
-you do not have to declare local variables, any large program and
-especially library procedures or multi-person projects should declare
+variables start with the value \texttt{\&null}. Although
+you do not have to declare local variables, large programs,
+library code or multi-person projects should declare
 all local variables. If you don{\textquotesingle}t, and some other part
 of the code introduces a global variable by the same name as your
 undeclared local, your variable will be interpreted as a
-\index{reference}reference to the global. To help you avoid this
+\index{reference}reference to the global. To help avoid this
 problem, the \texttt{{}-u} command line option to the
 \index{compiler}compiler causes \index{undeclared variables}undeclared
 local variables to produce a compilation error message.
 
-After procedure body can begin with an \index{initial
-clause}\texttt{initial} clause, which will execute only the first time
-the procedure is called. The \texttt{initial} clause is primarily used
+A procedure body can begin with an \index{initial
+clause}\texttt{initial} clause, which executes only the first time
+the procedure is called. The \texttt{initial} clause is mainly used
 to initialize static variables in ways that aren{\textquotesingle}t
-handled by initializers. As an example, the following procedure returns
-the next number in the Fibonacci number sequence each time it is
+handled by initializers. For example, the following procedure returns
+the next number in the Fibonacci sequence each time it is
 called, using static variables to remember previous results in the
 sequence between calls.
 
@@ -1249,8 +1247,8 @@ fails, \textrm{every} will always resume squares() for another result
 to try; squares() generates an infinite result sequence.)}
 
 The \index{expression failure}\texttt{fail} expression makes the
-procedure fail. Control goes back to the calling procedure without
-returning a value, and the procedure ceases to exist; it cannot be
+procedure fail. Control goes to the calling procedure, returning
+no value, and the procedure call ceases to exist; it cannot be
 resumed. A procedure also fails implicitly when control flows off the
 end of the procedure{\textquotesingle}s body.
 
@@ -1272,19 +1270,19 @@ end
 directly or indirectly. There are many cases where it is the most
 natural way of solving the problem. Consider the famous
 {\textquotedbl}Towers of \index{Hanoi}Hanoi{\textquotedbl} problem.
-Legend has it that when the universe was created, a group of monks in a
-temple were presented with a problem. In a temple in some remote place,
-there are three diamond needles, and on one of them is a
+Legend has it that when the universe was created, a group of monks
+in a temple in some remote place were presented with a problem.
+There are three diamond needles, and on one of them is a
 \index{stack}stack of 64 golden disks all of different sizes, placed in
 order with the largest one at the bottom and the smallest on top. All
 the disks are to be moved to a different needle under the conditions
 that only one disk may be moved at a time, and a larger disk can never
-be placed on a smaller disk. When the monks complete their task, the
+be placed on a smaller disk. When the monks finish this task, the
 universe will come to an end.
 
-How can you move the \textit{n} smallest disks? Well, if \textit{n} is
-1, it is simple; just move it. Since it{\textquotesingle}s the
-smallest, we will not be violating the condition. If \textit{n} is
+How can you move the \textit{n} smallest disks? If \textit{n} is
+1, just move it. Since it{\textquotesingle}s the
+smallest, this will not violate the condition. If \textit{n} is
 greater than 1, here{\textquotesingle}s what we can do: first, move the
 \textit{n-1} upper disks to the intermediate needle, then transfer the
 \textit{n}th disk, then move the \textit{n-1} upper disks to the
@@ -1296,11 +1294,11 @@ The first part is simple: if you have one disk, just move it.
 
 \iconcode{
 procedure hanoi(n, needle1:1, needle2:2) \\
-\>   if n = 1 then \\
-\>   \ \ \ write({\textquotedbl}Move disk from {\textquotedbl},
+\>   if n = 1 then write({\textquotedbl}Move disk from {\textquotedbl},
 needle1, {\textquotedbl} to {\textquotedbl}, needle2)
 }
 
+\noindent
 Otherwise, perform a recursive call with \textit{n-1}. First, to find
 the spare needle we have:
 
@@ -1319,7 +1317,8 @@ They are always two distinct values out of the set \{1, 2, 3\}.
 \>   hanoi(n-1, other, needle2)
 }
 
-And that{\textquotesingle}s it! You{\textquotesingle}re done. Listing
+\noindent
+That{\textquotesingle}s it! You{\textquotesingle}re done. Listing
 1-2 contains the complete program for you to try:
 
 \bigskip
@@ -1335,8 +1334,7 @@ Hanoi?{\textquotedbl}) \\
 end \\
 procedure hanoi(n:integer, needle1:1, needle2:2) \\
 local other \\
-\>   if n = 1 then \\
-\>   \ \ \ write({\textquotedbl}Move disk from {\textquotedbl},
+\>   if n = 1 then write({\textquotedbl}Move disk from {\textquotedbl},
 needle1, {\textquotedbl} to {\textquotedbl}, needle2) \\
 \>   else \{ \\
 \>   \ \ \ other := 6 - needle1 - needle2 \\
@@ -1348,20 +1346,20 @@ needle1, {\textquotedbl} to {\textquotedbl}, needle2) \\
 end
 }
 
-Try this out with \index{tracing}tracing turned on to see how it works.
+\noindent
+Turn on \index{tracing}tracing see how this program works.
 To enable tracing, \index{compile}compile your program with a
 \texttt{{}-t} option, or assign the keyword \texttt{\&trace} a non-zero
 number giving the depth of calls to trace. Setting \texttt{\&trace} to
 -1 will turn on tracing to an infinite depth.
 
-Incidentally, to move \textit{n} disks,
+To move \textit{n} disks,
 \textit{2}\textit{\textsuperscript{n}}\textit{ - 1} individual disk
-movements will be required. If the monks can move one disk a second, it
-will take them \textit{2}\textit{\textsuperscript{64}}\textit{ - 1}
-seconds, or about 60 trillion years. At present, Wikipedia has the age of
-the universe listed at around 13.75 billion years old. It seems unlikely
-that we would ever have to worry about the monks finishing their
-task!
+movements will be required. If the monks move one disk a second, it
+will take \textit{2}\textit{\textsuperscript{64}}\textit{ - 1}
+seconds, or about 60 trillion years. Wikipedia has listed the age of
+the universe at around 13.75 billion years. It seems unlikely
+that we need worry about the monks finishing their task!
 
 \section*{Summary}
 

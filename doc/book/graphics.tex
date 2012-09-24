@@ -54,7 +54,7 @@ sophisticated applications.
 \subsubsection{Window Basics}
 
 Windows are a special file opened with mode
-\textsf{{\textquotedbl}g{\textquotedbl},} appearing on-screen as a
+\texttt{{\textquotedbl}g{\textquotedbl},} appearing on-screen as a
 rectangular space for text and/or graphics. One can use windows with
 the usual file functions, much as one uses a text terminal. A simple
 Unicon graphics program might look like this:
@@ -70,11 +70,11 @@ Unicon graphics program might look like this:
 }
 
 Windows are open for both reading and writing, and support the usual
-file operations with the exceptions of \textsf{seek()} and
-\textsf{where()}. \ Unlike regular files, the \textsf{type()} of a
+file operations with the exceptions of \texttt{seek()} and
+\texttt{where()}. \ Unlike regular files, the \texttt{type()} of a
 window is {\textquotedbl}window{\textquotedbl}. Like other files,
 windows close automatically when the program terminates, so the call to
-\textsf{close()} in the above example is optional.
+\texttt{close()} in the above example is optional.
 
 Bit-mapped, or raster, graphics constitute a second programming model
 for windows. There are no programming
@@ -85,16 +85,16 @@ A and B.
 
 \paragraph{\&window: The Default Window Argument}
 
-The keyword \textsf{\&window} is a default window for graphics I/O.
-\ \textsf{\&window} starts out with a null value and is assigned using
-the assignment operator. Only window values (and \textsf{\&null}) may
-be assigned to \textsf{\&window}. \ \textsf{\&window} is as a default
+The keyword \texttt{\&window} is a default window for graphics I/O.
+\ \texttt{\&window} starts out with a null value and is assigned using
+the assignment operator. Only window values (and \texttt{\&null}) may
+be assigned to \texttt{\&window}. \ \texttt{\&window} is as a default
 argument to most graphics functions and is used implicitly by various
-operations. If a program uses \textsf{\&window}, the argument can be
-omitted from calls to functions such as \textsf{EraseArea()} and
-\textsf{WAttrib()}. \ The window argument is required for calls to file
-functions such as \textsf{write()} and \textsf{writes()} since these
-functions default to \textsf{\&output}, not \textsf{\&window}. \ The
+operations. If a program uses \texttt{\&window}, the argument can be
+omitted from calls to functions such as \texttt{EraseArea()} and
+\texttt{WAttrib()}. \ The window argument is required for calls to file
+functions such as \texttt{write()} and \texttt{writes()} since these
+functions default to \texttt{\&output}, not \texttt{\&window}. \ The
 default window shortens the code for graphics-oriented programs and
 makes it faster.
 
@@ -114,14 +114,14 @@ rectangular regions specified by x, y, width, and height components.
 \ Width and height values may be negative to extend the rectangle to
 the left or up from x and y. Screen output may be limited to a
 rectangular region in the window called the clipping region. The
-clipping region is set or unset using the function \textsf{Clip()}.
+clipping region is set or unset using the function \texttt{Clip()}.
 
 \paragraph{Window Attributes}
 A window{\textquotesingle}s state consists of many \textit{attributes}
 with associated values. \ Some values are defined by the system, while
 others are under program control. \ In the absence of program-supplied
 values, attributes are assigned default values. When opening a window,
-\textsf{open()} takes any number of string arguments after the file
+\texttt{open()} takes any number of string arguments after the file
 name and mode arguments. These arguments specify initial values of
 attributes when the window is created. \ For example, to say hello in
 italics on a blue background one may write:
@@ -137,18 +137,18 @@ italics on a blue background one may write:
  \ \ end}
 
 After a window is created, its attributes are inspected and set using
-the function \textsf{WAttrib(w,s1,s2,...)}. Arguments to
-\textsf{WAttrib()} that include an equals sign are assignments that set
-the given value if possible; \textsf{WAttrib()} fails otherwise.
-\ \textsf{open()} only contains such attribute assignments. \ Some
-attributes can only be read by \textsf{WAttrib()} and not set.
+the function \texttt{WAttrib(w,s1,s2,...)}. Arguments to
+\texttt{WAttrib()} that include an equals sign are assignments that set
+the given value if possible; \texttt{WAttrib()} fails otherwise.
+\ \texttt{open()} only contains such attribute assignments. \ Some
+attributes can only be read by \texttt{WAttrib()} and not set.
 
-String arguments to \textsf{WAttrib()} that have an attribute name but
+String arguments to \texttt{WAttrib()} that have an attribute name but
 no value are queries which return the attribute value.
-\textsf{WAttrib()} generates a string result for each argument; a query
+\texttt{WAttrib()} generates a string result for each argument; a query
 on a single argument produces just the value of that attribute; for
 multiple arguments and in the case of assignment, the result is the
-\textsf{\textit{attr}}\textsf{=}\textsf{\textit{val}} form attribute
+\texttt{\textit{attr}}\texttt{=}\texttt{\textit{val}} form attribute
 assignments take. \ Attributes are also frequently set implicitly by
 the user{\textquotesingle}s manipulation of the window; for instance,
 cursor or mouse location or window size.
@@ -224,10 +224,10 @@ WO\\\hline
 Although all attribute values are encoded as strings, they represent
 very different window system features. The attribute pointer refers to
 mouse pointer shapes that may be changed by the application during
-different operations. The attribute \textsf{pos} refers to the position
+different operations. The attribute \texttt{pos} refers to the position
 of the upper-left corner of the window on the screen. \ Screen position
 is specified by a string containing an x and a y coordinate separated
-by a comma, e.g. \textsf{{\textquotedbl}pos=200,200{\textquotedbl}}.
+by a comma, e.g. \texttt{{\textquotedbl}pos=200,200{\textquotedbl}}.
 
 \subsubsection{Graphics Contexts}
 
@@ -324,45 +324,45 @@ Graphics contexts can be shared among windows, and multiple graphics
 contexts can be used on the same window. \ An Unicon window value is a
 \textit{binding} of a canvas (an area that may be drawn upon) and a
 graphics context. A call
-\textsf{open(s,{\textquotedbl}g{\textquotedbl})} creates both a canvas,
+\texttt{open(s,{\textquotedbl}g{\textquotedbl})} creates both a canvas,
 and a context, and binds them together, producing the binding as its
 return value.
 
-\textsf{Clone(w)} creates a binding with the same canvas and attribute
-values as \textsf{w}, having a new graphics context that is manipulated
-independently from \textsf{w}. \textsf{Clone()} also accepts any number
+\texttt{Clone(w)} creates a binding with the same canvas and attribute
+values as \texttt{w}, having a new graphics context that is manipulated
+independently from \texttt{w}. \texttt{Clone()} also accepts any number
 of string attributes to apply to the new window value, as in
-\textsf{open()} and \textsf{WAttrib()}.
+\texttt{open()} and \texttt{WAttrib()}.
 
-After calling \textsf{Clone()}, two or more Unicon window values can
+After calling \texttt{Clone()}, two or more Unicon window values can
 write to the same canvas. \ The cursor location is stored in the
 canvas, not the graphics context. Writing to the windows produces
 concatenated (rather than overlapping) output. \ Closing one of those
 window values removes the canvas from the screen but does not destroy
 its contents; the remaining binding references an invisible pixmap.
 \ The canvas is destroyed after the last binding associated with it
-closes. Use of \textsf{Clone()} can significantly enhance performance
+closes. Use of \texttt{Clone()} can significantly enhance performance
 for applications that otherwise require frequent graphics context
 manipulations.
 
 \paragraph{Subwindows}
 The function Clone() can also be used to create explicit subwindows,
 which are canvases that physically reside within other windows.
-\ \textsf{Clone(w, {\textquotedblleft}g{\textquotedblright}, ...)}
-opens a 2D subwindow within \textsf{w}, and \textsf{Clone(w,
+\ \texttt{Clone(w, {\textquotedblleft}g{\textquotedblright}, ...)}
+opens a 2D subwindow within \texttt{w}, and \texttt{Clone(w,
 {\textquotedblleft}gl{\textquotedblright}, ...)} opens a 3D subwindow
-within \textsf{w}. \ Applications generally supply position and size
-attributes when the call \textsf{Clone()} in this way. \ Input events
+within \texttt{w}. \ Applications generally supply position and size
+attributes when the call \texttt{Clone()} in this way. \ Input events
 to a subwindow are not seen on the enclosing parent window and vice
-versa; both windows must be polled or supplied to \textsf{WActive()} or
-\textsf{select()} in order to handle input.
+versa; both windows must be polled or supplied to \texttt{WActive()} or
+\texttt{select()} in order to handle input.
 
 \paragraph{Coordinate Translation}
-In 2D, context attributes \textsf{dx} and \textsf{dy} perform output
-coordinate translation. \textsf{dx} and \textsf{dy} take integer values
+In 2D, context attributes \texttt{dx} and \texttt{dy} perform output
+coordinate translation. \texttt{dx} and \texttt{dy} take integer values
 and default to zero. \ These integers are added into the coordinates of
 all output operations that use the context; input coordinates in
-\textsf{\&x} and \textsf{\&y} are not translated.
+\texttt{\&x} and \texttt{\&y} are not translated.
 
 \subsubsection{Events}
 
@@ -371,25 +371,25 @@ User input such as keystrokes and mouse clicks are called
 of the programmer, including window redrawing and resizing, etc.
 \ Other events are put on a queue in the order they occur, for
 processing by the Unicon program. When reading from a window using file
-input functions such as \textsf{reads(w, 1)}, only keyboard events are
+input functions such as \texttt{reads(w, 1)}, only keyboard events are
 produced; mouse and other events are dropped.
 
-The primary input function for windows is \textsf{Event(w),} which
-produces the next event for window \textsf{w} and removes it from the
-queue. If the event queue is empty, \textsf{Event()} waits for an
+The primary input function for windows is \texttt{Event(w),} which
+produces the next event for window \texttt{w} and removes it from the
+queue. If the event queue is empty, \texttt{Event()} waits for an
 event. Keyboard events are returned as strings, while mouse events are
 returned as integers. \ Special keys, such as function and arrow keys,
-are also returned as integers, described below. \textsf{Event()} also
-removes the next two elements and assigns the keywords \textsf{\&x} and
-\textsf{\&y} the pixel coordinates of the mouse at the time of the
-event. The values of \textsf{\&x}, \textsf{\&y} remain available until
-a subsequent call to \textsf{Event()} again assigns to them.
-\textsf{Event()} sets the keyword \textsf{\&interval} to the number of
+are also returned as integers, described below. \texttt{Event()} also
+removes the next two elements and assigns the keywords \texttt{\&x} and
+\texttt{\&y} the pixel coordinates of the mouse at the time of the
+event. The values of \texttt{\&x}, \texttt{\&y} remain available until
+a subsequent call to \texttt{Event()} again assigns to them.
+\texttt{Event()} sets the keyword \texttt{\&interval} to the number of
 milliseconds that have elapsed since the last event (or to zero for the
-first event). \ Keywords \textsf{\&control}, \textsf{\&shift}, and
-\textsf{\&meta} are set by \textsf{Event()} to return the null value if
+first event). \ Keywords \texttt{\&control}, \texttt{\&shift}, and
+\texttt{\&meta} are set by \texttt{Event()} to return the null value if
 those modifier keys were pressed at the time of the event; otherwise
-they fail. \ For resize events, \textsf{\&interval} is set to zero and
+they fail. \ For resize events, \texttt{\&interval} is set to zero and
 modifier keywords fail. Keywords associated with event processing on
 windows are summarized in Table 7-3:
 
@@ -430,14 +430,14 @@ delete key. Modern keyboards have many additional keys, such as
 function keys, arrow keys, {\textquotedbl}page down{\textquotedbl},
 etc. \ Unicon produces integer events for these special keys. \ A
 collection of symbol definitions for special keys is available in the
-Icon Program Library include file \textsf{keysyms.icn}. The most common
-of these are \textsf{Key\_Down}, \textsf{Key\_Up}, \textsf{Key\_Left},
-\textsf{Key\_Right}, \textsf{Key\_Home}, \textsf{Key\_End},
-\textsf{Key\_PgUp}, \textsf{Key\_PgDn}, \textsf{Key\_F1...Key\_F12},
-and \textsf{Key\_Insert}.
+Icon Program Library include file \texttt{keysyms.icn}. The most common
+of these are \texttt{Key\_Down}, \texttt{Key\_Up}, \texttt{Key\_Left},
+\texttt{Key\_Right}, \texttt{Key\_Home}, \texttt{Key\_End},
+\texttt{Key\_PgUp}, \texttt{Key\_PgDn}, \texttt{Key\_F1...Key\_F12},
+and \texttt{Key\_Insert}.
 
 \paragraph{Mouse Events}
-Mouse events are returned from \textsf{Event()} as integers indicating
+Mouse events are returned from \texttt{Event()} as integers indicating
 the type of event, the button involved, etc. \ Keywords allow the
 programmer to treat mouse events symbolically. The event keywords are:
 
@@ -478,15 +478,15 @@ Window was resized \\\hline
 \end{center}
 The following program uses mouse events to draw a box that follows the
 mouse pointer around the screen when a mouse button is pressed. \ The
-attribute \textsf{drawop=reverse} allows drawing operations to serve as
-their own inverse; see [Griswold98] for more about the \textsf{drawop}
-attribute. \ Function \textsf{FillRectangle()} draws a filled rectangle
+attribute \texttt{drawop=reverse} allows drawing operations to serve as
+their own inverse; see [Griswold98] for more about the \texttt{drawop}
+attribute. \ Function \texttt{FillRectangle()} draws a filled rectangle
 on the window and is described in the reference section. \ Each time
 through the loop the program erases the box at its old location and
 redraws it at its new location; the first time through the loop there
-is no box to erase so the first call to \textsf{FillRectangle()} is
+is no box to erase so the first call to \texttt{FillRectangle()} is
 forced to fail by means of Unicon{\textquotesingle}s
-\textsf{{\textbackslash}} operator.
+\texttt{{\textbackslash}} operator.
 
 \iconcode{
 procedure main()\\
@@ -504,10 +504,10 @@ position\\
 end}
 
 The Unicon program can inspect the rest of the window{\textquotesingle}s
-state using \textsf{WAttrib()}. \ Between the time the mouse event
-occurs and the time it is produced by \textsf{Event()}, the mouse may
+state using \texttt{WAttrib()}. \ Between the time the mouse event
+occurs and the time it is produced by \texttt{Event()}, the mouse may
 have moved. \ In order to get the current mouse location, use
-\textsf{QueryPointer()} (see below).
+\texttt{QueryPointer()} (see below).
 
 When more than one button is depressed as the drag occurs, drag events
 are reported on the most recently pressed button. This behavior is
@@ -515,7 +515,7 @@ invariant over all combinations of presses and releases of all three
 buttons.
 
 Resize events are not mouse events, but they are reported in the same
-format. In addition to the event code, \textsf{\&x}, \&y, \&col and
+format. In addition to the event code, \texttt{\&x}, \&y, \&col and
 \&row are assigned integers that indicate the window{\textquotesingle}s
 new width and height in pixels and in text columns and rows,
 respectively. Resize events are produced when the window manager
@@ -713,7 +713,7 @@ stop({\textquotedbl}bad -size{\textquotedbl}) \\
 Following the size arguments, Pme checks for a filename specifying the
 bitmap to edit. \ If one is found, it is read into the regular scale
 image, and then the magnified scale image is constructed by reading
-each pixel using the function \textsf{Pixel()}, and filling an 8x8
+each pixel using the function \texttt{Pixel()}, and filling an 8x8
 rectangle with the corresponding color.
 
 \iconcode{
@@ -740,11 +740,11 @@ settings of the mouse buttons.
 }
 
 The main event processing loop of pme is simple: Each event is fetched
-with a call to \textsf{Event()} and immediately passed into a case
-expression. \ The keystroke \textsf{{\textquotedbl}q{\textquotedbl}}
+with a call to \texttt{Event()} and immediately passed into a case
+expression. \ The keystroke \texttt{{\textquotedbl}q{\textquotedbl}}
 exits the program; the keystroke
-\textsf{{\textquotedbl}s{\textquotedbl}} saves the bitmap in a file by
-calling \textsf{WriteImage()}, asking for a file name if one has not
+\texttt{{\textquotedbl}s{\textquotedbl}} saves the bitmap in a file by
+calling \texttt{WriteImage()}, asking for a file name if one has not
 yet been supplied.
 
 \iconcode{
@@ -1029,22 +1029,22 @@ specifications.
 
 In 2D, a user can draw points, lines, polygons, and circles. Functions
 from the 2D facilities that have been extended for 3D include
-DrawPoint()\textsf{, }DrawLine()\textsf{, }DrawSegment()\textsf{,
-}DrawPolygon()\textsf{, }and\textsf{ }FillPolygon(). The 3D facilities
+DrawPoint()\texttt{, }DrawLine()\texttt{, }DrawSegment()\texttt{,
+}DrawPolygon()\texttt{, }and\texttt{ }FillPolygon(). The 3D facilities
 introduce many new primitives, including cubes, spheres, tori,
 cylinders, and disks. These are described in Table 7-5 below.
 
 Many scenes are drawn using a mixture of 2D, 3D and 4D objects. The
-context attribute \textsf{dim} allows the program to switch between the
+context attribute \texttt{dim} allows the program to switch between the
 different dimensions when specifying the vertices an objects. A user
-can draw 2D, 3D, or 4D objects by assigning \textsf{dim} the values of
+can draw 2D, 3D, or 4D objects by assigning \texttt{dim} the values of
 2, 3, or 4. For primitives that take x, y, and z coordinates,
 specifying only x and y coordinate is not sufficient. For this reason,
-\textsf{{\textquotedblleft}dim = 2{\textquotedblright}} disallows the
+\texttt{{\textquotedblleft}dim = 2{\textquotedblright}} disallows the
 use of these primitives. These functions are
-\textsf{DrawSphere()}\textsf{, }\textsf{DrawTorus()}\textsf{,
-}\textsf{DrawCube()}\textsf{, and }\textsf{DrawCylinder()}.\texttt{ }By
-default the value of \textsf{dim} is three.
+\texttt{DrawSphere()}\texttt{, }\texttt{DrawTorus()}\texttt{,
+}\texttt{DrawCube()}\texttt{, and }\texttt{DrawCylinder()}.\texttt{ }By
+default the value of \texttt{dim} is three.
 
 \bigskip
 
@@ -1143,8 +1143,8 @@ Matrix multiplications are used to calculate transformations, such as
 rotations, translations, and scaling, on objects and the field of view.
 Functions to perform several matrix operations in support of coordinate
 transformation are available. The main transformation functions are
-\textsf{Translate(dx,dy,dz)}, \textsf{Scale(mx,my,mz)}, and
-\textsf{Rotate(a,x,y,z)}.
+\texttt{Translate(dx,dy,dz)}, \texttt{Scale(mx,my,mz)}, and
+\texttt{Rotate(a,x,y,z)}.
 
 In many 3D graphics applications, transformations are composed as the
 pieces of an object are drawn relative to one another. Transformations
@@ -1155,12 +1155,12 @@ OpenGL{\textquotesingle}s implementation of matrix stacks to implement
 transformations. 
 
 Several functions manipulate the matrix stack. The function
-\textsf{PushMatrix()} pushes a copy of the current matrix onto the
+\texttt{PushMatrix()} pushes a copy of the current matrix onto the
 stack. By doing this the user can compose several different
-transformations. The function \textsf{IdentityMatrix()} changes the
+transformations. The function \texttt{IdentityMatrix()} changes the
 current matrix to the identity matrix. To discard the top matrix and to
 return to the previous matrix, the function
-\textsf{PopMatrix()}\textsf{ }pops the top matrix off the matrix stack.
+\texttt{PopMatrix()}\texttt{ }pops the top matrix off the matrix stack.
 
 
 There are different matrix stacks for the projection and modelview. The
@@ -1176,7 +1176,7 @@ the matrix stack only effect the objects that a programmer desires. The
 maximum depth of this stack is 32. So, pushing more than 32 matrixes on
 the modelview stack will generate an error. Furthermore, only one
 matrix stack can be manipulated at any given time. The function
-\textsf{MatrixMode()}\textsf{ }switches between the two matrix stacks. 
+\texttt{MatrixMode()}\texttt{ }switches between the two matrix stacks. 
 
 \subsubsection{Lighting and Materials}
 
@@ -1191,10 +1191,10 @@ the object appears to be. Finally, specular light not only comes from
 one direction, but also tends to bounce off the objects in the scene.
 
 Applications control lighting using context attributes. For a 3D scene
-in Unicon, there are eight lights available. Attributes \textsf{light0}
-through \textsf{light7} control the eight lights. Each light is
-\textsf{on} or \textsf{off} and has the properties \textsf{diffuse},
-\textsf{ambient}, \textsf{specular}, and \textsf{position}. 
+in Unicon, there are eight lights available. Attributes \texttt{light0}
+through \texttt{light7} control the eight lights. Each light is
+\texttt{on} or \texttt{off} and has the properties \texttt{diffuse},
+\texttt{ambient}, \texttt{specular}, and \texttt{position}. 
 
 A scene not only has several lights, but the objects in scene may have
 several material properties. The material properties are ambient,
@@ -1210,7 +1210,7 @@ semi-colon separated list of material properties with the color that
 property should have. The values for each of the lights follow the same
 pattern. A programmer can specify colors as in the 2D graphics
 facilities, or by providing comma-separated red, green, and blue
-intensities as real numbers between \textsf{0.0} and \textsf{1.0}.
+intensities as real numbers between \texttt{0.0} and \texttt{1.0}.
 \ Examples of lighting and material properties can be found below.
 
 By extending the design of the 2D graphics facilities, the specification
@@ -1257,10 +1257,10 @@ in the first place. Examples of how to use textures specified in the
 different forms are given below.
 
 A programmer can specify a texture either by calling
-\textsf{WAttrib({\textquotedbl}texture=...{\textquotedbl})}\textsf{ }or
-using \textsf{Texture(t)}. These methods differ in one important way: a
-window cannot be used as a texture with \textsf{WAttrib(),} so
-\textsf{Texture()} must be called when a window is used as a texture.
+\texttt{WAttrib({\textquotedbl}texture=...{\textquotedbl})}\texttt{ }or
+using \texttt{Texture(t)}. These methods differ in one important way: a
+window cannot be used as a texture with \texttt{WAttrib(),} so
+\texttt{Texture()} must be called when a window is used as a texture.
 
 A program can specify how a texture is applied to particular object.
 This is done by specifying texture coordinates and vertices. Texture
@@ -1270,20 +1270,20 @@ texture image. Texture coordinates are mapped to the vertices of an
 object in the scene. Together, the texture coordinates and the vertices
 determine what the scene looks like after textures have been applied.
 Since texture coordinates are complex, defaults are provided. Assigning
-attribute \textsf{texcoord} the value \textsf{auto} causes system
+attribute \texttt{texcoord} the value \texttt{auto} causes system
 default texture coordinates to be used. The defaults are dependent on
 the type of primitive.
 
 Non-default texture coordinates are given in several ways, such as \linebreak
-\textsf{WAttrib({\textquotedbl}texcoord=}\textsf{\textit{s{\textquotedbl}}}\textsf{)}
-where \textsf{\textit{s}} is a comma separated string of real number
-values between \textsf{0.0} and \textsf{1.0}. \ Each pair of values is
+\texttt{WAttrib({\textquotedbl}texcoord=}\texttt{\textit{s{\textquotedbl}}}\texttt{)}
+where \texttt{\textit{s}} is a comma separated string of real number
+values between \texttt{0.0} and \texttt{1.0}. \ Each pair of values is
 taken as one texture coordinate; there must be an even number of
 decimal values or the assignment of texture coordinates will fail. One
-can assign texture coordinates by calling \textsf{Texcoord(x1,y1,...)}
-where each \textsf{x} and \textsf{y} are real number values between
-\textsf{0.0} and \textsf{1.0}. Finally one can use \textsf{Texcoord(L)}
-where \textsf{L} is a list of real number texture coordinates. The
+can assign texture coordinates by calling \texttt{Texcoord(x1,y1,...)}
+where each \texttt{x} and \texttt{y} are real number values between
+\texttt{0.0} and \texttt{1.0}. Finally one can use \texttt{Texcoord(L)}
+where \texttt{L} is a list of real number texture coordinates. The
 texture coordinates specified by the programmer are used differently
 depending on the type of primitive to be drawn. If the primitive is a
 point, line, line segment, polygon, or filled polygon, then a texture
@@ -1482,7 +1482,7 @@ yellow and ambient gold lighting properties.
 \ \ \ WAttrib(w, {\textquotedbl}light1=on, diffuse yellow; ambient
 gold{\textquotedbl})
 
-The following expression sets \textsf{light0} to the default values for
+The following expression sets \texttt{light0} to the default values for
 the lighting properties.
 
 \iconcode{
@@ -1640,9 +1640,9 @@ coordinates.
 \>   DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
 }
 
-Instead of using \textsf{WAttrib(w,
+Instead of using \texttt{WAttrib(w,
 {\textquotedbl}texture=map.gif{\textquotedbl})}\texttt{ }to specify the
-.gif file, a call to \textsf{Texture(w,
+.gif file, a call to \texttt{Texture(w,
 {\textquotedbl}map.gif{\textquotedbl})} could be used to obtain the
 same result.
 
@@ -1682,7 +1682,7 @@ FFFD9532248BFFFF{\textquotedbl} \\
 
 The next example shows the use of another Unicon window as a texture. A
 simple scene of a lamp is drawn on the first window in
-{\textquotedbl}\textsf{gl{\textquotedbl}} mode. This window is then
+{\textquotedbl}\texttt{gl{\textquotedbl}} mode. This window is then
 captured and used as a texture on a cylinder. The same method can be
 used to embed 2D window contents in 3D scenes. Note that in the
 following code the first window is opened with size 256 x 256. Texture
@@ -1735,10 +1735,10 @@ taken from Graphics Programming in Icon page 159. The first example
 uses the default texture coordinates for a filled polygon, which in
 this case is just a square with sides of length one. In this case the
 default texture coordinates are as follows. The coordinate (0.0,
-0.0)\textsf{ }of the texture image is mapped to the vertex\texttt{
-}(0.0, 0.0, -2.0) of the square, (0.0, 1.0)\textsf{ }is mapped to (0.0,
-1.0, -2.0)\textsf{, }(1.0, 1.0)\texttt{ }is mapped to (1.0, 1.0, -2.0),
-and (1.0, 0.0)\textsf{ }is mapped to (1.0, 0.0, -2.0).
+0.0)\texttt{ }of the texture image is mapped to the vertex\texttt{
+}(0.0, 0.0, -2.0) of the square, (0.0, 1.0)\texttt{ }is mapped to (0.0,
+1.0, -2.0)\texttt{, }(1.0, 1.0)\texttt{ }is mapped to (1.0, 1.0, -2.0),
+and (1.0, 0.0)\texttt{ }is mapped to (1.0, 0.0, -2.0).
 
 {\centering 
 \includegraphics[width=1.8335in,height=1.8335in]{ub-img/ub-img39.jpg}
@@ -1985,43 +1985,34 @@ by rebuilding the display list from scratch. At this point
 Unicon{\textquotesingle}s speed can be an issue, as discussed in the
 previous section.
 
-The function \textsf{WSection()} comes to the rescue. It plays two vital
+The function \texttt{WSection()} comes to the rescue. It plays two vital
 roles. First, it allows portions of the display list to be skipped
 during rendering, without having to rebuild the display list. Second,
 it forms the basis for specifying portions of the display list that the
 user may select (click on) when interacting with the scene. In both
-cases, calls to \textsf{WSection()} come in pairs, first a call
-\textsf{WSection(s)} identifies a portion of the display list of
+cases, calls to \texttt{WSection()} come in pairs, first a call
+\texttt{WSection(s)} identifies a portion of the display list of
 interest, then the sequence of 3D calls to render some object or
-portion of the scene, then a call to \textsf{WSection()} defines the
-end of that section. Parameter \textsf{s} must be a unique string name
+portion of the scene, then a call to \texttt{WSection()} defines the
+end of that section. Parameter \texttt{s} must be a unique string name
 or identifier for the section.
 
 The call to create a new section returns a record that contains a field
 named skip. Setting skip to a non-null value causes the section to be
 omitted whenever the scene is redrawn.
 
-Using \textsf{WSection()} for 3D user input is similar. A program calls
-\textsf{WAttrib({\textquotedblleft}pick=on{\textquotedblright})} to
-turn on 3D selection, after which keyword \textsf{\&pick} generates the
+Using \texttt{WSection()} for 3D user input is similar. A program calls
+\texttt{WAttrib({\textquotedblleft}pick=on{\textquotedblright})} to
+turn on 3D selection, after which keyword \texttt{\&pick} generates the
 identifying names for all objects intersected by the ray from the
 camera through the (x,y) screen location where the mouse was located on
-the last call to \textsf{Event()}.
+the last call to \texttt{Event()}.
 
 \section*{Summary}
 
 Graphics are ubiquitous in modern applications. Unicon provides 2D and
 3D graphics capabilities that are easy to use, portable building blocks
-for many programs. \ The 2D facilities are mature; the 3D interface is
+for many programs. The 2D facilities are mature; the 3D interface is
 new and will evolve. Many elements of the 2D graphics system are used
 in the 3D graphics interface. Further integration of the 2D and 3D
 graphics systems is likely in the future.
-
-
-\bigskip
-
-\clearpage
-\bigskip
-
-\clearpage
-\bigskip

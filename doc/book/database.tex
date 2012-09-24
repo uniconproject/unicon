@@ -31,9 +31,9 @@ on function calls, would be consonant with the difference in
 performance the programmer can expect to see when accessing data in
 files as opposed to memory-based data structures. However, the
 performance of operators already depends on the type of the operands.
-Consider the expression \textsf{!x}. If \textsf{x} is a structure, its
-elements are generated from memory, but if \textsf{x} is a file,
-\textsf{!x} reads and generates lines from the file. The goal for
+Consider the expression \texttt{!x}. If \texttt{x} is a structure, its
+elements are generated from memory, but if \texttt{x} is a file,
+\texttt{!x} reads and generates lines from the file. The goal for
 Unicon is to make databases just as easy to learn and use as the rest
 of the language, and to minimize the introduction of new concepts.
 
@@ -61,12 +61,12 @@ affordable, they may be the best choice for many or most applications.
 
 One easy way to implement a memory-based database is to build up your
 arbitrary structure in memory, and then use the Icon Program Library
-procedures in module \textsf{xcodes} to write them out and read them
-in. The \index{xcodes}\textsf{xcodes} procedures flatten structures
+procedures in module \texttt{xcodes} to write them out and read them
+in. The \index{xcodes}\texttt{xcodes} procedures flatten structures
 into a canonical string format that can be written to a file, and
 convert such strings back into the corresponding structure. If variable
-\textsf{db} contains such a structure, the following sequence saves the
-contents of \textsf{db} to a file named \textsf{db.dat.}
+\texttt{db} contains such a structure, the following sequence saves the
+contents of \texttt{db} to a file named \texttt{db.dat.}
 
 \iconcode{
 db := table() \\
@@ -111,22 +111,22 @@ eventually followed by compatible superset libraries called NDBM (New
 Data Base Manager) and GDBM (GNU Data Base Manager). Unicon uses GDBM
 on all platforms.
 
-DBM databases are opened by the \textsf{open()} function using mode
-\textsf{{\textquotedbl}d{\textquotedbl}}. By default, a database is
+DBM databases are opened by the \texttt{open()} function using mode
+\texttt{{\textquotedbl}d{\textquotedbl}}. By default, a database is
 opened for reading and writing; mode
-\textsf{{\textquotedbl}dr{\textquotedbl}} opens a database read-only.
+\texttt{{\textquotedbl}dr{\textquotedbl}} opens a database read-only.
 Once opened, DBM databases are treated as a special case of the table
 data type and are manipulated using table operations. For example, if
-\textsf{d} is a DBM file, \textsf{d[s]} performs a database
+\texttt{d} is a DBM file, \texttt{d[s]} performs a database
 insert/update or lookup, depending on whether the expression is
 assigned a new value, or just \index{dereference}dereferenced for its
 current value. For persons who do not like to use \index{subscript
 operator}subscript operators for everything, values can also be
 inserted into the database with \index{insert()!DBM
-database}\textsf{insert(d, k, v)} and read from it with
-\index{fetch()!DBM database}\textsf{fetch(d, k)}. \index{delete()!DBM
-database}\textsf{delete(d, k)} similarly deletes key \textsf{k} from
-the database. DBM databases are closed using the \textsf{close()}
+database}\texttt{insert(d, k, v)} and read from it with
+\index{fetch()!DBM database}\texttt{fetch(d, k)}. \index{delete()!DBM
+database}\texttt{delete(d, k)} similarly deletes key \texttt{k} from
+the database. DBM databases are closed using the \texttt{close()}
 function. The following example program takes a database and a key on
 the command line, and writes out the value corresponding to that key.
 
@@ -139,8 +139,8 @@ args[1]) \\
 end
 }
 
-If you are wondering why the call to \textsf{open()}
-isn{\textquotesingle}t followed by a call to \textsf{close()}, you are
+If you are wondering why the call to \texttt{open()}
+isn{\textquotesingle}t followed by a call to \texttt{close()}, you are
 right, it is proper to close files explicitly, although the system
 closes all files when the program terminates. How would you generalize
 this program to accept a third command-line argument, and insert the
@@ -171,13 +171,13 @@ table data type that you should know about. DBM databases are
 string-based. The keys and values you put in a DBM database get
 converted and written out as strings. This makes the semantics of DBM
 databases slightly different from tables. For example, a table can have
-two separate keys for the integer \textsf{1} and the string
-\textsf{{\textquotedbl}1{\textquotedbl}}, but a DBM database will treat
-both keys as the string \textsf{{\textquotedbl}1{\textquotedbl}}. This
+two separate keys for the integer \texttt{1} and the string
+\texttt{{\textquotedbl}1{\textquotedbl}}, but a DBM database will treat
+both keys as the string \texttt{{\textquotedbl}1{\textquotedbl}}. This
 limitation on DBM databases also means that you cannot use structure
 types such as lists as keys or values in the database. If the type is
 not convertible to string, it won{\textquotesingle}t work. You can use
-the functions \textsf{xencode()} and \textsf{xdecode()}, described in
+the functions \texttt{xencode()} and \texttt{xdecode()}, described in
 the previous section, to manually convert between strings and
 structures for storage in a DBM database if you really need this
 capability.
@@ -228,21 +228,21 @@ using SQL within a Unicon program, you build up string values
 containing SQL statements. In the following examples, the SQL is given
 unadorned by double quotes or other Unicon artifacts.
 
-New tables are created with a \textsf{CREATE TABLE} statement, such as
+New tables are created with a \texttt{CREATE TABLE} statement, such as
 
 \iconcode{
-create table addresses (name varchar(40), address varchar(40), phone
-varchar(15))}
+create table addresses (name varchar(40), address varchar(40),\\
+\>\>\>\> phone varchar(15))}
 
 Tables have a primary key, which must be unique among rows in the table.
-By default the primary key is the first one listed, so \textsf{name} is
-the primary key in table \textsf{addresses} above.
+By default the primary key is the first one listed, so \texttt{name} is
+the primary key in table \texttt{addresses} above.
 
 SQL{\textquotesingle}s data manipulation operations include
-\textsf{SELECT}, \textsf{INSERT}, \textsf{UPDATE}, and \textsf{DELETE}.
-\textsf{SELECT} allows you to refine the data set being operated on,
+\texttt{SELECT}, \texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE}.
+\texttt{SELECT} allows you to refine the data set being operated on,
 picking rows and columns that form some projection of the original
-table. Perhaps more importantly, \textsf{SELECT} allows you to combine
+table. Perhaps more importantly, \texttt{SELECT} allows you to combine
 information from multiple tables using relational algebra operations.
 Most databases are long-lived and evolve to include more columns of
 information over time. SQL{\textquotesingle}s ability to select and
@@ -250,8 +250,8 @@ operate on projections is an important feature, since code that works
 with a certain set of columns continues to work after the database is
 modified to include additional columns.
 
-\textsf{INSERT}, \textsf{UPDATE}, and \textsf{DELETE} all modify the
-table{\textquotesingle}s contents. \textsf{INSERT} adds new rows to a
+\texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE} all modify the
+table{\textquotesingle}s contents. \texttt{INSERT} adds new rows to a
 table. \ For example:
 
 \iconcode{
@@ -265,7 +265,7 @@ insert into addresses (name, address, phone) \\
 {\textquotesingle}(900)888-8888{\textquotesingle})
 }
 
-\textsf{UPDATE} and \textsf{DELETE} can modify or remove sets of rows
+\texttt{UPDATE} and \texttt{DELETE} can modify or remove sets of rows
 that match a particular criterion, as in
 
 \iconcode{
@@ -308,7 +308,7 @@ client programs that access typical database servers.
 \end{center}
 
 {\sffamily\bfseries Figure 6-1:}
-{\sffamily ODBC hides database architecture; Unicon hides ODBC from
+{\sffamily Unicon and ODBC hide underlying architecture from
  applications}
 
 \bigskip
@@ -317,8 +317,8 @@ To use Unicon{\textquotesingle}s SQL facilities, you must have several
 software components in place. First, you need a SQL server that
 supports ODBC. You could buy a commercial SQL server, or you may be
 able to use a free or low-cost server such as \index{MySQL}MySQL
-(\textsf{www.mysql.com}) or \index{PostgreSQL}PostgreSQL
-(\textsf{www.postgresql.org}).
+(\texttt{www.mysql.com}) or \index{PostgreSQL}PostgreSQL
+(\texttt{www.postgresql.org}).
 
 Second, you need an account, password, and permissions on the SQL
 server, so that you can connect to it. The details of this process are
@@ -335,14 +335,14 @@ writing the Unicon client program to connect to your database is
 straightforward.
 
 \subsubsection[Opening a SQL Database]{Opening a SQL Database}
-Connecting to a SQL database is performed by calling \textsf{open()}
-with mode \textsf{{\textquotedbl}o{\textquotedbl}}. This establishes a
-session with a data source. The filename argument to \textsf{open()} is
+Connecting to a SQL database is performed by calling \texttt{open()}
+with mode \texttt{{\textquotedbl}o{\textquotedbl}}. This establishes a
+session with a data source. The filename argument to \texttt{open()} is
 the data source to which you are connecting; it is associated with a
 particular ODBC driver, remote database server machine or IP number,
 and port within the ODBC driver manager. Mode
-\textsf{{\textquotedbl}o{\textquotedbl}} uses additional arguments to
-\textsf{open()} that specify the user name and password to use in
+\texttt{{\textquotedbl}o{\textquotedbl}} uses additional arguments to
+\texttt{open()} that specify the user name and password to use in
 connecting to the specified data source. Here is an example that
 establishes a connection to a database:
 
@@ -351,11 +351,11 @@ f := open({\textquotedbl}unicondb{\textquotedbl},
 {\textquotedbl}o{\textquotedbl}, {\textquotedbl}scott{\textquotedbl},
 {\textquotedbl}tiger{\textquotedbl})}
 
-The \textsf{open()} function returns a value that supports many of the
+The \texttt{open()} function returns a value that supports many of the
 operations of both a file and a table. If the connection
 can{\textquotesingle}t be established, the call fails. The underlying
 session information is maintained separately and may be shared by
-multiple calls to \textsf{open()} to the same database. In addition to
+multiple calls to \texttt{open()} to the same database. In addition to
 the network connection and SQL session information that is retained,
 each database file value maintains a current \textit{selection}
 consisting of a set of rows corresponding to the current query, and a
@@ -366,7 +366,7 @@ and no columns.
 \subsubsection{Querying and Modifying a SQL Database}
 
 Subsequent queries to the database can be made by calling
-\textsf{sql(db, sqlcmd)}. The \index{sql()}\textsf{sql()} function sets
+\texttt{sql(db, sqlcmd)}. The \index{sql()}\texttt{sql()} function sets
 the current selection within the database and places the cursor at the
 beginning of the set of selected rows. For example, to obtain Vic
 T{\textquotesingle}s phone number you might say
@@ -376,26 +376,26 @@ sql(f, {\textquotedbl}select phone from addresses where
 name={\textquotesingle}Vic T{\textquotesingle}{\textquotedbl})}
 
 Vic{\textquotesingle}s phone number is included if you use the original
-\textsf{select *} query, but the more specific your query, the less
+\texttt{select *} query, but the more specific your query, the less
 time and network bandwidth is wasted sending data that your client
 application must filter out. You should do as much work on the server
 (in SQL) as possible to make the client more efficient.
 
-Since the function \textsf{sql()} transmits arbitrary SQL statements to
+Since the function \texttt{sql()} transmits arbitrary SQL statements to
 the server, it can be used for many operations besides changing the
-current selection. The \textsf{sql()} function returns a null value
+current selection. The \texttt{sql()} function returns a null value
 when there is no return value from the operation, such as a
-\textsf{create table} statement. Its return value can be of varying
+\texttt{create table} statement. Its return value can be of varying
 type for other kinds of queries, and it can fail, for example if the
 SQL string is malformed or requests an impossible operation.
 
 \subsubsection{Traversing the Selected Rows}
 
 To walk through the rows of your current database selection, you call
-\index{fetch()!SQL}\textsf{fetch(db)}. The value returned is a
+\index{fetch()!SQL}\texttt{fetch(db)}. The value returned is a
 \textit{row} that has many of the operations of a record or a table,
 namely field access and subscripting operators. For example, if
-\textsf{fetch(db)} returns a row containing columns Name, Address, and
+\texttt{fetch(db)} returns a row containing columns Name, Address, and
 Phone, you can write
 
 \iconcode{
@@ -404,8 +404,8 @@ write(row.Name) \\
 write(row[{\textquotedbl}Address{\textquotedbl}])
 }
 
-Called with one argument, \textsf{fetch(db)} moves the cursor forward
-one position. With two arguments, \textsf{fetch(db, column)} fetches a
+Called with one argument, \texttt{fetch(db)} moves the cursor forward
+one position. With two arguments, \texttt{fetch(db, column)} fetches a
 single column from the current row, without advancing the cursor.
 
 \subsubsection[A SQL Example Application]{A SQL Example Application}
@@ -419,9 +419,11 @@ embedded within a string literal.
 
 \iconcode{
 sql(db, {\textquotedbl}create table employees (id varchar(11), name
-varchar(40), phone varchar(15)){\textquotedbl}) \\
+varchar(40),\\
+\>\>\>\> phone varchar(15)){\textquotedbl}) \\
 sql(db, {\textquotedbl}create table jobs (id varchar(11), payrate
-integer, is\_salaried char, title varchar(40)){\textquotedbl})
+integer, is\_salaried char,\\
+\>\>\>\> title varchar(40)){\textquotedbl})
 }
 
 \noindent
@@ -452,22 +454,22 @@ while write(fetch(db).Title)
 \subsubsection{SQL Types and Unicon Types}
 
 SQL has many data types, most of which correspond well to Unicon types.
-For example, \textsf{CHAR} and \textsf{VARCHAR} correspond to Icon
-strings, \textsf{INTEGER} and \textsf{SMALLINT} correspond to integers,
-\textsf{FLOAT} and \textsf{REAL} correspond to reals, and so on. The
+For example, \texttt{CHAR} and \texttt{VARCHAR} correspond to Icon
+strings, \texttt{INTEGER} and \texttt{SMALLINT} correspond to integers,
+\texttt{FLOAT} and \texttt{REAL} correspond to reals, and so on. The
 philosophy is to convert between Icon and SQL seamlessly and with
 minimal changes to the data format, but you should be aware that these
 are not exact matches. For example, it is possible to define a
-\textsf{FLOAT} with more precision than an Icon real, and it is easy to
+\texttt{FLOAT} with more precision than an Icon real, and it is easy to
 produce an Icon string that is longer than the maximum allowed
-\textsf{VARCHAR} size on most SQL servers. Unicon programmers writing
+\texttt{VARCHAR} size on most SQL servers. Unicon programmers writing
 SQL clients must be aware of the limitations of the SQL implementations
 they use.
 
 Unicon has structure types for which there is no SQL equivalent. Values
 of these types cannot be inserted into a SQL database unless you
 explicitly convert them to a SQL-compatible type (usually, a string)
-using a function such as \textsf{xencode()}.
+using a function such as \texttt{xencode()}.
 
 SQL also has types not found in Unicon. These types, such as bit
 strings, datetimes, timestamps, and BLOBS, are generally all
@@ -484,16 +486,16 @@ SQL databases are complicated enough, and feature-rich enough to warrant
 their own repertoire of functions in addition to the operations they
 share with other kinds of files and databases. These functions are
 described in detail in Appendix A, but a few of them deserve special
-mention. The function \textsf{dbtables(db)} is useful to obtain a
+mention. The function \texttt{dbtables(db)} is useful to obtain a
 listing of the data sources available within a particular database.
-Function \textsf{dbcolumns(db)} provides detailed information about the
+Function \texttt{dbcolumns(db)} provides detailed information about the
 current table that is useful in writing general tools for viewing or
 modifying arbitrary SQL databases.
 
-The functions \textsf{dbproduct(db)} and \textsf{dbdriver(db)} produce
+The functions \texttt{dbproduct(db)} and \texttt{dbdriver(db)} produce
 information about the DBMS to which db is connected, and the
 \index{ODBC}ODBC driver software used in the connection, respectively.
-The function \textsf{dblimits(db)} produces the upper bounds for many
+The function \texttt{dblimits(db)} produces the upper bounds for many
 DBMS system parameters, such as the maximum number of columns allowed
 in a table. All three of these functions return their results as either
 a record or list of records; the record field names and descriptions
@@ -518,10 +520,10 @@ are transmitted faster than many smaller tuples.
 \subsubsection{Use Multiple Connections to Nest Queries}
 
 It is common to use more than one table at once. Some times this is
-using SQL{\textquotesingle}s \textsf{JOIN} operation, but sometimes it
+using SQL{\textquotesingle}s \texttt{JOIN} operation, but sometimes it
 is not. If you try to nest a second query inside a first one, you will
-quickly find that on a given connection, only one \textsf{SELECT} and
-one row set is maintained at a time. The second \textsf{SELECT}
+quickly find that on a given connection, only one \texttt{SELECT} and
+one row set is maintained at a time. The second \texttt{SELECT}
 replaces the first, so for example:
 
 \iconcode{
@@ -560,23 +562,23 @@ fly are called \textit{dynamic records}, and they are useful in other
 contexts besides databases.
 
 The function \index{constructor!dynamic record
-type}\textsf{constructor(recordname, field, field, ?)} produces a
+type}\texttt{constructor(recordname, field, field, ?)} produces a
 Unicon record constructor procedure for records named
-\textsf{recordname} with the specified fields. The fields of dynamic
+\texttt{recordname} with the specified fields. The fields of dynamic
 records can be arbitrary strings, not just legal identifiers, but
-obviously the field operator (\textsf{.}) cannot be used for fields
+obviously the field operator (\texttt{.}) cannot be used for fields
 that are not identifiers.
 
 \subsubsection[The db Library]{The \texttt{db} Library}
-By adding \textsf{link db} to your program you can access a library that
+By adding \texttt{link db} to your program you can access a library that
 provides simplified access to SQL databases for non-SQL programmers.
 These procedures will not spare you the pain of learning SQL for long,
 but may ease the conversion from Unicon structure values into SQL
 strings for transmission over the network.
 
-The most useful of these procedures is \textsf{dbupdate()}, which sends
+The most useful of these procedures is \texttt{dbupdate()}, which sends
 a record (tuple) to the database. The following example updates two
-columns within a row returned by \textsf{fetch()}.
+columns within a row returned by \texttt{fetch()}.
 
 \iconcode{
 row := fetch(db) \\
@@ -587,12 +589,12 @@ dbupdate(db, row)
 }
 
 Of course, before a fetch can be performed, a row set must have been
-selected. The procedure \textsf{dbselect(db, columns, filter, order)}
+selected. The procedure \texttt{dbselect(db, columns, filter, order)}
 selects tuples containing columns from the database, with optional
 filter(s) and ordering rule(s).
 
 Inserting and deleting rows may be performed by the procedures
-\textsf{dbinsert()} and \textsf{dbdelete()}. The \textsf{dbinsert()}
+\texttt{dbinsert()} and \texttt{dbdelete()}. The \texttt{dbinsert()}
 function takes two parameters for each column being inserted, the
 column name and then the value.
 
@@ -601,9 +603,9 @@ column name and then the value.
 It is worth mentioning that many forms of SQL selections are read-only.
 The relational combination of columns from different tables is a
 powerful abstraction, but the resulting selections are non-updatable.
-Another example of a read-only query is a \textsf{GROUP BY} query,
+Another example of a read-only query is a \texttt{GROUP BY} query,
 which is usually applied before an aggregate count. Executing a
-\textsf{SELECT *} on a single table is guaranteed to be updatable, but
+\texttt{SELECT *} on a single table is guaranteed to be updatable, but
 if you do something fancier, you will have to know the semantics of SQL
 to tell whether the result may be modified.
 

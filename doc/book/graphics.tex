@@ -7,7 +7,7 @@ Unicon{\textquotesingle}s graphics are portable across multiple
 platforms. The most important characteristics of the graphics
 facilities are:
 
-\begin{itemize}
+\begin{itemize}\itemsep0pt
 \item Simplicity, ease of learning
 \item Windows are integrated with Unicon{\textquotesingle}s existing I/O
 functions
@@ -43,7 +43,7 @@ event-reading loop is the control mechanism driving the application.
 of its window at all times, it may not compute for long periods without
 checking for window events. The event-driven paradigm is used in the
 underlying implementation, but it is optional at the Unicon application
-level. \ Since Unicon windows handle many events automatically and
+level. Since Unicon windows handle many events automatically and
 {\textquotedbl}take care of themselves{\textquotedbl}, applications
 follow the event-driven paradigm only when it is needed and
 appropriate. Unicon{\textquotesingle}s facilities with their extensive
@@ -71,7 +71,7 @@ Unicon graphics program might look like this:
 
 Windows are open for both reading and writing, and support the usual
 file operations with the exceptions of \texttt{seek()} and
-\texttt{where()}. \ Unlike regular files, the \texttt{type()} of a
+\texttt{where()}. Unlike regular files, the \texttt{type()} of a
 window is {\textquotedbl}window{\textquotedbl}. Like other files,
 windows close automatically when the program terminates, so the call to
 \texttt{close()} in the above example is optional.
@@ -79,7 +79,7 @@ windows close automatically when the program terminates, so the call to
 Bit-mapped, or raster, graphics constitute a second programming model
 for windows. There are no programming
 {\textquotedbl}modes{\textquotedbl} and code that uses graphics may be
-freely intermixed with code that performs text operations. \ There are
+freely intermixed with code that performs text operations. There are
 many graphics functions and library procedures, detailed in Appendices
 A and B.
 
@@ -88,28 +88,28 @@ A and B.
 The keyword \texttt{\&window} is a default window for graphics I/O.
 \ \texttt{\&window} starts out with a null value and is assigned using
 the assignment operator. Only window values (and \texttt{\&null}) may
-be assigned to \texttt{\&window}. \ \texttt{\&window} is as a default
+be assigned to \texttt{\&window}. \texttt{\&window} is as a default
 argument to most graphics functions and is used implicitly by various
 operations. If a program uses \texttt{\&window}, the argument can be
 omitted from calls to functions such as \texttt{EraseArea()} and
-\texttt{WAttrib()}. \ The window argument is required for calls to file
+\texttt{WAttrib()}. The window argument is required for calls to file
 functions such as \texttt{write()} and \texttt{writes()} since these
-functions default to \texttt{\&output}, not \texttt{\&window}. \ The
+functions default to \texttt{\&output}, not \texttt{\&window}. The
 default window shortens the code for graphics-oriented programs and
 makes it faster.
 
 \paragraph{2D Graphics Coordinates}
 
 The 2D graphics functions use an integer coordinate system based on
-pixels \ (picture elements). \ Like the text coordinate system, 2D
+pixels \ (picture elements). Like the text coordinate system, 2D
 graphics coordinates start in the upper-left corner of the screen.
 \ From that corner the positive x direction lies to the right and the
-positive y direction moves down. \ Unlike text coordinates, the
+positive y direction moves down. Unlike text coordinates, the
 graphics coordinate axes are zero-based, which is to say that the very
 top leftmost pixel is (0,0) by default.
 
 Angles are real numbers given in radians, clockwise starting with the 3
-o{\textquotesingle}clock position. \ Many functions operate on
+o{\textquotesingle}clock position. Many functions operate on
 rectangular regions specified by x, y, width, and height components.
 \ Width and height values may be negative to extend the rectangle to
 the left or up from x and y. Screen output may be limited to a
@@ -118,12 +118,12 @@ clipping region is set or unset using the function \texttt{Clip()}.
 
 \paragraph{Window Attributes}
 A window{\textquotesingle}s state consists of many \textit{attributes}
-with associated values. \ Some values are defined by the system, while
-others are under program control. \ In the absence of program-supplied
+with associated values. Some values are defined by the system, while
+others are under program control. In the absence of program-supplied
 values, attributes are assigned default values. When opening a window,
 \texttt{open()} takes any number of string arguments after the file
 name and mode arguments. These arguments specify initial values of
-attributes when the window is created. \ For example, to say hello in
+attributes when the window is created. For example, to say hello in
 italics on a blue background one may write:
 
 \iconcode{
@@ -140,7 +140,7 @@ After a window is created, its attributes are inspected and set using
 the function \texttt{WAttrib(w,s1,s2,...)}. Arguments to
 \texttt{WAttrib()} that include an equals sign are assignments that set
 the given value if possible; \texttt{WAttrib()} fails otherwise.
-\ \texttt{open()} only contains such attribute assignments. \ Some
+\ \texttt{open()} only contains such attribute assignments. Some
 attributes can only be read by \texttt{WAttrib()} and not set.
 
 String arguments to \texttt{WAttrib()} that have an attribute name but
@@ -149,12 +149,12 @@ no value are queries which return the attribute value.
 on a single argument produces just the value of that attribute; for
 multiple arguments and in the case of assignment, the result is the
 \texttt{\textit{attr}}\texttt{=}\texttt{\textit{val}} form attribute
-assignments take. \ Attributes are also frequently set implicitly by
+assignments take. Attributes are also frequently set implicitly by
 the user{\textquotesingle}s manipulation of the window; for instance,
 cursor or mouse location or window size.
 
-The following attributes are maintained on a per-window basis. \ All
-attribute values are string encodings. \ Usage refers to whether the
+The following attributes are maintained on a per-window basis. All
+attribute values are string encodings. Usage refers to whether the
 attribute may be read, written or both. RWO and WO attributes can be
 assigned only when the window is \ opened.
 
@@ -225,7 +225,7 @@ Although all attribute values are encoded as strings, they represent
 very different window system features. The attribute pointer refers to
 mouse pointer shapes that may be changed by the application during
 different operations. The attribute \texttt{pos} refers to the position
-of the upper-left corner of the window on the screen. \ Screen position
+of the upper-left corner of the window on the screen. Screen position
 is specified by a string containing an x and a y coordinate separated
 by a comma, e.g. \texttt{{\textquotedbl}pos=200,200{\textquotedbl}}.
 
@@ -233,15 +233,15 @@ by a comma, e.g. \texttt{{\textquotedbl}pos=200,200{\textquotedbl}}.
 
 Some attributes are associated with the window itself, while others are
 associated with the \textit{graphics context}, the set of resources
-used by operations that write to windows. \ This distinction is not
+used by operations that write to windows. This distinction is not
 necessary in simple applications but is useful in more sophisticated
 applications that use multiple windows or draw many kinds of things in
-windows. \ A graphics context consists of the colors, patterns, line
+windows. A graphics context consists of the colors, patterns, line
 styles, and text fonts and sizes.
 
 Although they are called graphics contexts, text operations use these
 attributes too: Text is written using the foreground and background
-colors and the font defined in the graphics context. \ Table 7-2 lists
+colors and the font defined in the graphics context. Table 7-2 lists
 the attributes associated with a graphics context.
 
 \pagebreak
@@ -321,7 +321,7 @@ WO\\\hline
 \end{center}
 \paragraph{Binding Windows and Graphics Contexts Together}
 Graphics contexts can be shared among windows, and multiple graphics
-contexts can be used on the same window. \ An Unicon window value is a
+contexts can be used on the same window. An Unicon window value is a
 \textit{binding} of a canvas (an area that may be drawn upon) and a
 graphics context. A call
 \texttt{open(s,{\textquotedbl}g{\textquotedbl})} creates both a canvas,
@@ -335,9 +335,9 @@ of string attributes to apply to the new window value, as in
 \texttt{open()} and \texttt{WAttrib()}.
 
 After calling \texttt{Clone()}, two or more Unicon window values can
-write to the same canvas. \ The cursor location is stored in the
+write to the same canvas. The cursor location is stored in the
 canvas, not the graphics context. Writing to the windows produces
-concatenated (rather than overlapping) output. \ Closing one of those
+concatenated (rather than overlapping) output. Closing one of those
 window values removes the canvas from the screen but does not destroy
 its contents; the remaining binding references an invisible pixmap.
 \ The canvas is destroyed after the last binding associated with it
@@ -351,8 +351,8 @@ which are canvases that physically reside within other windows.
 \ \texttt{Clone(w, {\textquotedblleft}g{\textquotedblright}, ...)}
 opens a 2D subwindow within \texttt{w}, and \texttt{Clone(w,
 {\textquotedblleft}gl{\textquotedblright}, ...)} opens a 3D subwindow
-within \texttt{w}. \ Applications generally supply position and size
-attributes when the call \texttt{Clone()} in this way. \ Input events
+within \texttt{w}. Applications generally supply position and size
+attributes when the call \texttt{Clone()} in this way. Input events
 to a subwindow are not seen on the enclosing parent window and vice
 versa; both windows must be polled or supplied to \texttt{WActive()} or
 \texttt{select()} in order to handle input.
@@ -360,7 +360,7 @@ versa; both windows must be polled or supplied to \texttt{WActive()} or
 \paragraph{Coordinate Translation}
 In 2D, context attributes \texttt{dx} and \texttt{dy} perform output
 coordinate translation. \texttt{dx} and \texttt{dy} take integer values
-and default to zero. \ These integers are added into the coordinates of
+and default to zero. These integers are added into the coordinates of
 all output operations that use the context; input coordinates in
 \texttt{\&x} and \texttt{\&y} are not translated.
 
@@ -378,7 +378,7 @@ The primary input function for windows is \texttt{Event(w),} which
 produces the next event for window \texttt{w} and removes it from the
 queue. If the event queue is empty, \texttt{Event()} waits for an
 event. Keyboard events are returned as strings, while mouse events are
-returned as integers. \ Special keys, such as function and arrow keys,
+returned as integers. Special keys, such as function and arrow keys,
 are also returned as integers, described below. \texttt{Event()} also
 removes the next two elements and assigns the keywords \texttt{\&x} and
 \texttt{\&y} the pixel coordinates of the mouse at the time of the
@@ -386,10 +386,10 @@ event. The values of \texttt{\&x}, \texttt{\&y} remain available until
 a subsequent call to \texttt{Event()} again assigns to them.
 \texttt{Event()} sets the keyword \texttt{\&interval} to the number of
 milliseconds that have elapsed since the last event (or to zero for the
-first event). \ Keywords \texttt{\&control}, \texttt{\&shift}, and
+first event). Keywords \texttt{\&control}, \texttt{\&shift}, and
 \texttt{\&meta} are set by \texttt{Event()} to return the null value if
 those modifier keys were pressed at the time of the event; otherwise
-they fail. \ For resize events, \texttt{\&interval} is set to zero and
+they fail. For resize events, \texttt{\&interval} is set to zero and
 modifier keywords fail. Keywords associated with event processing on
 windows are summarized in Table 7-3:
 
@@ -428,7 +428,7 @@ approximately to the lower 128 characters of the ASCII character set.
 These characters include the control keys, the escape key, and the
 delete key. Modern keyboards have many additional keys, such as
 function keys, arrow keys, {\textquotedbl}page down{\textquotedbl},
-etc. \ Unicon produces integer events for these special keys. \ A
+etc. Unicon produces integer events for these special keys. A
 collection of symbol definitions for special keys is available in the
 Icon Program Library include file \texttt{keysyms.icn}. The most common
 of these are \texttt{Key\_Down}, \texttt{Key\_Up}, \texttt{Key\_Left},
@@ -438,7 +438,7 @@ and \texttt{Key\_Insert}.
 
 \paragraph{Mouse Events}
 Mouse events are returned from \texttt{Event()} as integers indicating
-the type of event, the button involved, etc. \ Keywords allow the
+the type of event, the button involved, etc. Keywords allow the
 programmer to treat mouse events symbolically. The event keywords are:
 
 {\centering\sffamily\bfseries
@@ -477,11 +477,11 @@ Window was resized \\\hline
 \end{supertabular}
 \end{center}
 The following program uses mouse events to draw a box that follows the
-mouse pointer around the screen when a mouse button is pressed. \ The
+mouse pointer around the screen when a mouse button is pressed. The
 attribute \texttt{drawop=reverse} allows drawing operations to serve as
 their own inverse; see [Griswold98] for more about the \texttt{drawop}
-attribute. \ Function \texttt{FillRectangle()} draws a filled rectangle
-on the window and is described in the reference section. \ Each time
+attribute. Function \texttt{FillRectangle()} draws a filled rectangle
+on the window and is described in the reference section. Each time
 through the loop the program erases the box at its old location and
 redraws it at its new location; the first time through the loop there
 is no box to erase so the first call to \texttt{FillRectangle()} is
@@ -504,9 +504,9 @@ position\\
 end}
 
 The Unicon program can inspect the rest of the window{\textquotesingle}s
-state using \texttt{WAttrib()}. \ Between the time the mouse event
+state using \texttt{WAttrib()}. Between the time the mouse event
 occurs and the time it is produced by \texttt{Event()}, the mouse may
-have moved. \ In order to get the current mouse location, use
+have moved. In order to get the current mouse location, use
 \texttt{QueryPointer()} (see below).
 
 When more than one button is depressed as the drag occurs, drag events
@@ -526,12 +526,12 @@ generated when an Unicon program resizes its window.
 The canvas attribute inputmask allows programs to request three kinds of
 additional input events on windows. These events pose enough
 performance or portability obstacles that they are not produced by
-default. \ An {\textquotedblleft}m{\textquotedblright} in the inputmask
+default. An {\textquotedblleft}m{\textquotedblright} in the inputmask
 value requests events for mouse motion events even when no mouse button
 is depressed; by default only
 {\textquotedblleft}drag{\textquotedblright} events are reported. If the
 inputmask contains a {\textquotedblleft}k{\textquotedblright}, events
-will be generated when keyboard keys are released. \ An inputmask
+will be generated when keyboard keys are released. An inputmask
 attribute containing a {\textquotedblleft}c{\textquotedblright} will
 receive an event when a window closure is externally requested or
 imposed, as in the case when a titlebar
@@ -539,7 +539,7 @@ imposed, as in the case when a titlebar
 
 \paragraph{Event Queue Manipulation}
 The event queue is an Unicon list that stores events until the program
-processes them. \ When a user presses a key, clicks or drags a mouse,
+processes them. When a user presses a key, clicks or drags a mouse,
 or resizes a window, three values are placed on the event queue: the
 event itself, followed by two integers containing associated event
 information.
@@ -547,14 +547,14 @@ information.
 Pending(w) produces the event queue for window w. If no events are
 pending, the list is empty. The list returned by Pending() \ remains
 attached to the window, and additional events may be added to it at any
-time during program execution. \ Otherwise it is an ordinary list and
+time during program execution. Otherwise it is an ordinary list and
 can be manipulated using Unicon{\textquotesingle}s list functions and
 operators.
 
 When several windows are open, the program may need to wait for activity
 on any of the windows and handle it appropriately. This can be
 implemented by checking each pending list until a nonempty list is
-found, but such a busy-waiting solution is wasteful of CPU time. \ The
+found, but such a busy-waiting solution is wasteful of CPU time. The
 function Active() waits for window activity, relinquishing the CPU
 until an event is pending on one of the open windows, and then returns
 a window with a pending event. A window is said to starve if its
@@ -564,9 +564,9 @@ on repeated calls in a way that avoids window starvation.
 \subsubsection{Colors}
 
 Unicon recognizes a set of string color names based loosely on a color
-naming system found in [Berk82]. \ These color names consist of simple
+naming system found in [Berk82]. These color names consist of simple
 English phrases that specify hue, lightness, and saturation values of
-the desired color. \ The syntax of these colors is
+the desired color. The syntax of these colors is
 
 [\textit{lightness}] [\textit{saturation}] [\textit{hue}[ish]]
 \textit{hue}
@@ -574,16 +574,16 @@ the desired color. \ The syntax of these colors is
 where lightness is one of pale, light, medium, dark, or deep; saturation
 is one of weak, moderate, strong, or vivid; and where hue is any of
 black, gray, grey, white, pink, violet, brown, red, orange, yellow,
-green, cyan, blue, purple, or magenta. \ A single space or hyphen
-separates each word from its neighbor. \ When two hues are supplied
+green, cyan, blue, purple, or magenta. A single space or hyphen
+separates each word from its neighbor. When two hues are supplied
 (and the first hue has no ish suffix), the hue that is specified is
-halfway in between the two named hues. \ When a hue with an ish suffix
+halfway in between the two named hues. When a hue with an ish suffix
 precedes a hue, the hue that is specified is three-fourths of the way
-from the ish hue to the main hue. \ When adding ish to a word ending in
+from the ish hue to the main hue. When adding ish to a word ending in
 e, the e is dropped (for example, purple becomes purplish); the ish
-form of red is reddish. \ Mixing radically different colors such as
-yellow and purple does not usually produce the expected results. \ The
-default lightness is medium and the default saturation is vivid. \ It
+form of red is reddish. Mixing radically different colors such as
+yellow and purple does not usually produce the expected results. The
+default lightness is medium and the default saturation is vivid. It
 is worth noting that human perception of color varies significantly, as
 do the actual colors produced from these names on different monitors.
 
@@ -592,8 +592,8 @@ In addition to the standard color names, platform-specific color names
 may be supported. Colors may also be specified by strings encoding the
 red, green, and blue components of the desired color. Unicon accepts
 the hex formats {\textquotedbl}\#rgb{\textquotedbl} in which r, g, and
-b are 1 to 4 hex digits each. \ Red, green, and blue may also be given
-in decimal format, separated by commas. \ The components are given on a
+b are 1 to 4 hex digits each. Red, green, and blue may also be given
+in decimal format, separated by commas. The components are given on a
 linear scale from 0 to 65535, although displays typically offer far
 less precision and nonlinear colors. For example,
 {\textquotedbl}bg=32767,0,0{\textquotedbl} requests a medium red
@@ -624,20 +624,20 @@ String s has the form
 {\textquotedbl}\textit{width},\textit{palette},\textit{data}{\textquotedbl}.
 \textit{width} is the width of the rectangle drawn, palette is a code
 that defines the colors corresponding to data values, and the rest of
-the data supplies pixel values. \ Predefined palettes and palette
-functions help to provide this capability. \ Image and palette
+the data supplies pixel values. Predefined palettes and palette
+functions help to provide this capability. Image and palette
 functions are described fully in [Griswold98].
 
 \subsubsection{Patterns}
 
 Graphics contexts include a fillstyle attribute that determines the
 pixels drawn during draw and fill operations such as rectangles, arcs,
-and polygons. \ If the fillstyle is not solid, a selected pattern in
+and polygons. If the fillstyle is not solid, a selected pattern in
 the filled area is drawn in the foreground color; other pixels are
 drawn in the background color
-({\textquotedbl}fillstyle=textured{\textquotedbl}). \ Patterns are
+({\textquotedbl}fillstyle=textured{\textquotedbl}). Patterns are
 specified by the function Pattern(w,s), which associates a pattern
-denoted by s with w{\textquotesingle}s context. \ String s is either
+denoted by s with w{\textquotesingle}s context. String s is either
 the name of a standard pattern, or a representation of the bits that
 define the pattern. Pattern representations are of the form
 {\textquotedbl}width,\#bits{\textquotedbl} where 1 {\textless}= width
@@ -645,10 +645,10 @@ define the pattern. Pattern representations are of the form
 the pattern{\textquotesingle}s width and height.
 
 The height of the pattern is defined by the number of rows in the bits
-component of the pattern string. \ Bits consists of a series of
+component of the pattern string. Bits consists of a series of
 numbers, each supplying one row of the pattern, in hexadecimal format.
 Each digit defines four bits and each row is defined by the number of
-digits required to supply width bits. \ For example, the call
+digits required to supply width bits. For example, the call
 
 \iconcode{
 \>   Pattern({\textquotedbl}4,\#5A5A{\textquotedbl})}
@@ -658,12 +658,12 @@ digits required to supply width bits. \ For example, the call
 \subsubsection{Pme: a Pixmap Editor}
 
 A simple image editor called Pme, demonstrates event processing
-including mouse events. \ Pme displays both a small and a
+including mouse events. Pme displays both a small and a
 {\textquotedbl}magnified{\textquotedbl} display of the image being
 edited, allows the user to set individual pixels, and allows the user
 to save the image; it is well-suited for constructing and hand-editing
 small images such as icons and textures for use in larger 2D or 3D
-scenes. \ Pme consists of four procedures and employs several graphics
+scenes. Pme consists of four procedures and employs several graphics
 functions. A sample screen image of pme is presented in Figure 7-1. The
 {\textquotedblleft}real{\textquotedblright} image is in the upper left
 corner; underneath it is a mouse icon which shows what color is drawn
@@ -711,7 +711,7 @@ stop({\textquotedbl}bad -size{\textquotedbl}) \\
 }
 
 Following the size arguments, Pme checks for a filename specifying the
-bitmap to edit. \ If one is found, it is read into the regular scale
+bitmap to edit. If one is found, it is read into the regular scale
 image, and then the magnified scale image is constructed by reading
 each pixel using the function \texttt{Pixel()}, and filling an 8x8
 rectangle with the corresponding color.
@@ -728,7 +728,7 @@ rectangle with the corresponding color.
 
 After the images are loaded with their initial contents, if any, a grid
 is drawn on the magnified image to delineate each individual
-pixel{\textquotesingle}s boundary. \ The user{\textquotesingle}s mouse
+pixel{\textquotesingle}s boundary. The user{\textquotesingle}s mouse
 actions within these boxes change the colors of corresponding pixels in
 the image. An list of three bindings to the window, each with an
 independently-set foreground color, is used to represent the color
@@ -741,7 +741,7 @@ settings of the mouse buttons.
 
 The main event processing loop of pme is simple: Each event is fetched
 with a call to \texttt{Event()} and immediately passed into a case
-expression. \ The keystroke \texttt{{\textquotedbl}q{\textquotedbl}}
+expression. The keystroke \texttt{{\textquotedbl}q{\textquotedbl}}
 exits the program; the keystroke
 \texttt{{\textquotedbl}s{\textquotedbl}} saves the bitmap in a file by
 calling \texttt{WriteImage()}, asking for a file name if one has not
@@ -1076,7 +1076,7 @@ Cylinder &
 DrawCylinder() &
 the x, y, and z coordinates of the center, the height, the radius of the
 top, the radius of the bottom. If one radius is smaller than the other
-a cone is formed. \  &
+a cone is formed.  &
 \centering\arraybslash 
 \includegraphics[width=0.7984in,height=0.689in]{ub-img/ub-img13.png} 
 \includegraphics[width=0.7953in,height=0.689in]{ub-img/ub-img14.png}
@@ -1183,7 +1183,7 @@ matrix stack can be manipulated at any given time. The function
 The use of lighting is an important step in making a 3D graphics scene
 appear to be 3D. Adding lighting to a scene can be fairly complicated.
 A light source can emit different types of light: ambient light,
-diffuse light, and specular light. \ Ambient light is light that has
+diffuse light, and specular light. Ambient light is light that has
 been scattered so much that is difficult to determine the source.
 Backlighting in a room is an example of ambient light. Diffuse light
 comes from one direction. This type of light mostly defines what color
@@ -1244,7 +1244,7 @@ formats {\textquotedbl}width,pallet,data{\textquotedbl} or
 {\textquotedbl}width,\#data{\textquotedbl} described in the 2D graphics
 facilities. In the first case the pallet will determine what colors
 appear in the texture image. In the second case, the foreground color
-and background color are used. \ The ability to use another Unicon
+and background color are used. The ability to use another Unicon
 window as a texture provides great flexibility for texture images,
 allowing programs to create texture images dynamically.
 
@@ -1277,7 +1277,7 @@ the type of primitive.
 Non-default texture coordinates are given in several ways, such as \linebreak
 \texttt{WAttrib({\textquotedbl}texcoord=}\texttt{\textit{s{\textquotedbl}}}\texttt{)}
 where \texttt{\textit{s}} is a comma separated string of real number
-values between \texttt{0.0} and \texttt{1.0}. \ Each pair of values is
+values between \texttt{0.0} and \texttt{1.0}. Each pair of values is
 taken as one texture coordinate; there must be an even number of
 decimal values or the assignment of texture coordinates will fail. One
 can assign texture coordinates by calling \texttt{Texcoord(x1,y1,...)}
@@ -1290,7 +1290,7 @@ point, line, line segment, polygon, or filled polygon, then a texture
 coordinate given is assigned to each vertex. If there are more texture
 coordinates than vertices, unused texture coordinates are ignored. If
 there are more vertices than texture coordinates the application of a
-texture will fail. \ In order to use non default texture coordinates
+texture will fail. In order to use non default texture coordinates
 with cubes, tori, spheres, disks, and cylinders a programmer should
 approximate the desired mapping with filled polygons. These
 specifications are given in Table 7-6.
@@ -1332,7 +1332,7 @@ Cylinder &
 The y texture coordinate ranges linearly from 0.0 to 1.0. On spheres
 this is from\newline
 z= -radius to z=radius; on cylinders, from\newline
-z = 0 to z = height. \ The x texture coordinate ranges from 0.0 at the
+z = 0 to z = height. The x texture coordinate ranges from 0.0 at the
 positive y-axis to 0.25 at the positive x-axis, to 0.5 at the
 negative\newline
 y-axis to 0.75 at the negative x-axis back to 1.0 at the positive
@@ -1466,9 +1466,9 @@ and three vertices,\texttt{ }(0.25, -0.25, -1.0), (1.0, 0.25, -4.0) and
 There are a maximum of eight lights that can be used in each scene. The
 lights are control by the context attributes light0 through light7.
 Each light has five properties that can be changed throughout the
-program, ambient, diffuse, specular, position, and on/off. \ The
+program, ambient, diffuse, specular, position, and on/off. The
 properties of a light can be changed by using WAttrib() and one of
-light0 through light7. \ To turn on or off a light, one can assign on
+light0 through light7. To turn on or off a light, one can assign on
 or off to the light, followed by a comma and a lighting value. A
 lighting value is a string which contains one or more semi-colon
 separated lighting properties. A lighting property is of the form
@@ -1913,7 +1913,7 @@ on. Next, the texture to be applied is specified. The floor of the
 scene is drawn using a filled polygon. The default texture coordinates
 are used to apply the carpet texture to the floor of the room. The
 tiled appearance on the floor of the room is caused by the use of the
-default texture coordinates. \ This can be avoided by using user
+default texture coordinates. This can be avoided by using user
 defined texture coordinates. This is what is done for the textures that
 are applied to the two walls of the room and the pictures. 
 
@@ -1940,13 +1940,13 @@ possible to write 3D animations in Unicon with acceptable frame rates.
 the user has changed point of view. An application can call EraseArea()
 followed by the appropriate graphics primitives to redraw a scene, but
 the results often appear to flicker. It is better to let
-Unicon{\textquotesingle}s runtime system do the redrawing. \ Unicon
+Unicon{\textquotesingle}s runtime system do the redrawing. Unicon
 maintains a \textit{display list} of graphics operations to execute
 whenever the screen must be redrawn; these operations are effectively
 everything since the last EraseArea(). The display list for a window
 can be obtained by calling WindowContents(). The elements of the list
 are Unicon records and lists containing the string names and parameters
-of graphics primitives. \ For example, a call to DrawSphere(w,x,y,z,r)
+of graphics primitives. For example, a call to DrawSphere(w,x,y,z,r)
 returns (and adds to the display list) a record
 gl\_sphere({\textquotedbl}DrawSphere{\textquotedbl},x,y,z,r). Instead
 of redrawing the entire scene in order to move an object, you can

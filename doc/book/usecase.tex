@@ -3,7 +3,7 @@
 
 When starting a new software project, it is tempting to begin coding
 immediately. An advocate of stepwise refinement starts with the
-procedure \textsf{main()} that every program has, and grows the program
+procedure \texttt{main()} that every program has, and grows the program
 gradually by elaboration from that point. For complex systems, a
 software designer should do more planning than this. Chapters 9 and 10
 covered the basics of class diagramming, an activity that allows you to
@@ -30,8 +30,8 @@ different kinds of users and the tasks for which they will use the
 software.
 \item Describe the details of use cases that define an
 application{\textquotesingle}s tasks.
-\item Draw statechart diagrams that depict the states that govern an
-object{\textquotesingle}s behavior, and transitions between states that
+\item Draw statechart diagrams that depict an
+object{\textquotesingle}s behavior as states and transitions between states that
 model the dynamic aspects of the application.
 \item Specify conditions and activities that occur when an event causes
 an object to change its state.
@@ -61,18 +61,19 @@ diagram are depicted in Figure 12-1.
 
 \bigskip
 
+\begin{center}
 \includegraphics[width=5.0in,height=4in]{ub-img/usecase.png}
 
 {\sffamily\bfseries Figure 12-1:}
 {\sffamily The main components of use case diagrams}
+\end{center}
 
-\bigskip
 
 The \textit{use cases} themselves are shown as ovals. The name of the
-use case goes inside the oval. The use cases have an accompanying
-description. An example use case description is given in the next
+use case is inside the oval. The use cases have an accompanying
+description; an example description is given in the next
 section. A use case is not represented in software by a class, but
-rather in the logic of the program{\textquotesingle}s control flow. A
+rather in the logic of the program's control flow. A
 use case relates several otherwise unassociated objects for a limited
 time to accomplish a particular task.
 
@@ -85,19 +86,19 @@ The name of the \index{role}role is written under the stick figure. An
 actor is really just a special kind of class that represents an
 external, asynchronous entity.
 
-The \index{association}\textit{association}\textit{s} between use cases
+The \index{association}\textit{associations} between use cases
 and the actors that perform those tasks are drawn as plain lines. A use
-case may be performed entirely by one actor, or may involve several
+case may be performed by one or several
 actors. Use case associations identify the actors that participate in
-each use case. They are only distantly related to the associations
+each use case. They are only slightly related to the associations
 between classes found in class diagrams.
 
 \textit{Dependencies} and
 \index{elaboration}\textit{elaboration}\textit{s} between use cases are
-drawn as lines with arrows, and annotated with a label between the
-{\textless}{\textless} and {\textgreater}{\textgreater}. Some use cases
-use (rely on) other use cases as part of a more complex task. Other use
-cases are best defined as extensions of an existing use case.
+drawn as lines with arrows, annotated with a label between
+\guillemotleft{ } and \guillemotright. Some use cases
+use other use cases as part of a more complex task. Other use
+cases are defined as extensions of another use case.
 
 \subsubsection[Use Case Diagrams]{Use Case Diagrams}
 A use case diagram consists of a set of use case ovals, bordered by a
@@ -115,14 +116,12 @@ apply for a given position. The manager evaluates applications,
 possibly interviewing several candidates. When a candidate is selected,
 the manager interacts with the legal department to make a job offer.
 
-\bigskip
-
-\includegraphics[width=5.0in,height=3.5in]{ub-img/usecase2.png}
+\begin{center}
+\includegraphics[width=4.5in,height=3.15in]{ub-img/usecase2.png}
 
 {\sffamily\bfseries Figure 12-2}
 {\sffamily A Use Case Diagram}
-
-\bigskip
+\end{center}
 
 \subsubsection{Use Case Descriptions}
 
@@ -231,21 +230,21 @@ the event is an interrupt that affects the object{\textquotesingle}s
 behavior. Such an event would normally be implemented by defining a
 method for the object with a name derived from the event name.
 
-It is common during modeling to identify a transition that can only
-occur if a particular Boolean condition is satisfied. In Figure 12-3,
+It is common during modeling to have a transition that can only
+occur if a Boolean condition is satisfied. In Figure 12-3,
 the event offer was used for two transitions out of the same state,
 with different conditions (amount {\textgreater}= list price versus
 amount {\textless} list price) to determine which transition would be
 taken. In statechart diagrams, conditions are given after the event
-name, in square brackets, as in \textsf{[amt {\textless} list]}.
+name, in square brackets, as in \texttt{[amt {\textless} list]}.
 
-If you have a condition on a transition, it might make sense for that
+For a condition on a transition, it might make sense for that
 transition to require no trigger event at all. The transition would
 occur immediately if the condition were ever satisfied. Such a
 constraint-based transition would potentially introduce condition tests
 at every point in the object{\textquotesingle}s code where the
 condition could become true, such as after each assignment to a
-variable referenced in the condition. This may work fine in special
+variable referenced in the condition. This may work in special
 cases, but poses efficiency problems in general. Transitions without
 trigger events make sense in one other situation. If a state exits when
 a particular computation completes, you can use a triggerless
@@ -269,16 +268,16 @@ present, the object has internal concurrency within that particular
 state.
 
 In statechart diagrams, actions are indicated by appending a slash
-character and an action name after the event name (and after the
-condition, if there is one). Activities are listed within the state
+character and an action after the event name (and after any
+condition). Activities are listed within the state
 oval. If a keyword and a slash prefix the activity, special semantics
-are indicated. For example, the \textsf{do} keyword indicates
+are indicated. For example, the \texttt{do} keyword indicates
 continuous or repeated activity. In Figure 12-3, the activity
-\textsf{do / show()} indicates that the house will be shown repeatedly
-while it is in the FORSALE state. The activity \textsf{entry /
-open\_escrow()} indicates that the method \textsf{open\_escrow()} is
+\texttt{do / show()} indicates that the house will be shown repeatedly
+while it is in the FORSALE state. The activity \texttt{entry /
+open\_escrow()} indicates that the method \texttt{open\_escrow()} is
 called on entry to the PENDING state, after which
-\textsf{inspections()} and \textsf{arrange\_financing()} activities are
+\texttt{inspections()} and \texttt{arrange\_financing()} activities are
 performed.
 
 \subsection{Collaboration Diagrams}

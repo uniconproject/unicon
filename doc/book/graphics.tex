@@ -158,11 +158,10 @@ assigned only when the window is opened.
 
 \bigskip
 
-{\centering\sffamily\bfseries
-Table 7-1
-
-Canvas Attributes
-}
+\begin{center}
+{\sffamily\bfseries Table 7-1} \\
+{\sffamily\bfseries Canvas Attributes}
+\end{center}
 
 \begin{center}
 \tablehead{\hline
@@ -170,7 +169,7 @@ Canvas Attributes
 \centering \bfseries\itshape Type / Example &
 \centering \bfseries\itshape Description &
 \centering\arraybslash \bfseries\itshape Usage\\\hline}
-\begin{supertabular}{|m{0.9622598in}|m{2.0323598in}|m{2.1712599in}|m{0.44835988in}|}
+\begin{supertabular}{|m{1.03in}|m{1.9in}|m{2.24in}|m{0.44835988in}|}
 size &
 pixel pair &
 Size of window &
@@ -256,7 +255,7 @@ Context Attributes
 \centering \bfseries\itshape Type / Example &
 \centering \bfseries\itshape Description : Default &
 \centering\arraybslash \bfseries\itshape Usage\\\hline}
-\begin{supertabular}{|m{1.0163599in}|m{1.6261599in}|m{2.5233598in}|m{0.44835988in}|}
+\begin{supertabular}{|m{1.076in}|m{1.5in}|m{2.58in}|m{0.448in}|}
 fg &
 color \ / {\textquotedbl}red{\textquotedbl} &
 Foreground color : black &
@@ -329,7 +328,6 @@ of \texttt{w} with a new graphics context that is manipulated
 independently. \texttt{Clone()} also accepts any number
 of string attributes to apply to the new window value, as in
 \texttt{open()} and \texttt{WAttrib()}.
-
 After calling \texttt{Clone()}, two or more Unicon window values
 write to the same canvas. The cursor location is stored in the
 canvas, not the graphics context. Writing to the windows produces
@@ -343,7 +341,7 @@ for applications that require frequent graphics context manipulations.
 \paragraph{Subwindows}
 The function \texttt{Clone()} can also be used to create subwindows,
 which are canvases that reside within other windows.
-\ \texttt{Clone(w, {\textquotedblleft}g{\textquotedblright}, ...)}
+\texttt{Clone(w, {\textquotedblleft}g{\textquotedblright}, ...)}
 opens a 2D subwindow within \texttt{w}, and \texttt{Clone(w,
 {\textquotedblleft}gl{\textquotedblright}, ...)} opens a 3D subwindow
 within \texttt{w}. Applications must supply position and size
@@ -388,17 +386,14 @@ they fail. For resize events, \texttt{\&interval} is set to zero and
 modifier keywords fail. Keywords associated with event processing on
 windows are summarized in Table 7-3:
 
-{\centering\sffamily\bfseries
-Table 7-3
-
-Window Input Event Keywords
-}
-
 \begin{center}
+{\sffamily\bfseries Table 7-3} \\
+{\sffamily\bfseries Window Input Event Keywords}
+
 \tablehead{\hline
 \centering \bfseries\itshape Keyword &
 \centering\arraybslash \bfseries\itshape Description\\\hline}
-\begin{supertabular}{|m{0.91775984in}|m{2.3525598in}|}
+\begin{supertabular}{|m{0.90in}|m{2.7in}|}
 \texttt{\&x} &
 Mouse location, horizontal\\\hline
 \texttt{\&y} &
@@ -509,8 +504,8 @@ are reported on the most recently pressed button. This behavior is
 invariant over all combinations of presses and releases of all three buttons.
 
 Resize events are reported in the same format as mouse events.
-In addition to the event code, \texttt{\&x}, \texttt{\&y}, \texttt{\&col} and
-\texttt{\&row} are assigned integers that indicate the window{\textquotesingle}s
+In addition to the event code, \texttt{\&x}, \&y, \&col and
+\&row are assigned integers that indicate the window{\textquotesingle}s
 new width and height in pixels and in text columns and rows,
 respectively. Resize events are produced when the window manager
 (usually at the behest of the user) resizes the window; no event is
@@ -520,15 +515,15 @@ generated when an Unicon program resizes its window.
 The canvas attribute \texttt{inputmask} allows programs to request three kinds
 of additional input events on windows. These events pose enough
 performance or portability obstacles that they are not produced by
-default. An {\textquotedblleft}m{\textquotedblright} in the inputmask
-requests mouse motion events even when no mouse button is depressed; by default only
-{\textquotedblleft}drag{\textquotedblright} events are reported. If the
-inputmask contains a {\textquotedblleft}k{\textquotedblright}, events
+default. An \texttt{{\textquotedblleft}m{\textquotedblright}} in the inputmask
+requests mouse motion events when no mouse button is depressed; by default only
+{\em drag\/} events are reported. If the
+inputmask contains a \texttt{{\textquotedblleft}k{\textquotedblright}}, events
 will be generated when keyboard keys are released. An inputmask
-attribute containing a {\textquotedblleft}c{\textquotedblright}
+attribute containing a \texttt{{\textquotedblleft}c{\textquotedblright}}
 requests an event when a window closure is externally triggered,
 as in the case when a titlebar
-{\textquotedblleft}x{\textquotedblright} button is pressed.
+\texttt{x} button is pressed.
 
 \paragraph{Event Queue Manipulation}
 The event queue is an Unicon list that stores events until the program
@@ -541,7 +536,7 @@ information.
 If no events are pending, the list is empty. The list returned by
 \texttt{Pending()} is
 attached to the window. Additional events may be added to it at any
-time during program execution. It is an ordinary list and
+time during program execution.  It is an ordinary list and
 can be manipulated using Unicon{\textquotesingle}s list functions and
 operators.
 
@@ -557,17 +552,21 @@ windows on repeated calls in a way that avoids window starvation.
 \subsubsection{Colors}
 
 Unicon recognizes a set of string color names based loosely on a color
-naming system found in [Berk82]. The color names consist of simple
+naming system found in [Berk82]. The color names are simple
 English phrases that specify hue, lightness, and saturation values of
 the desired color. The syntax of colors is
 
-[\textit{lightness}] [\textit{saturation}] [\textit{hue}[ish]]
-\textit{hue}
+\iconcode{[\textit{lightness}] [\textit{saturation}] [\textit{hue}[ish]]
+\textit{hue}}
 
-where lightness is one of pale, light, medium, dark, or deep; saturation
-is one of weak, moderate, strong, or vivid; and where hue is any of
-black, gray, grey, white, pink, violet, brown, red, orange, yellow,
-green, cyan, blue, purple, or magenta. A single space or hyphen
+\noindent
+where lightness is one of: \texttt{pale}, \texttt{light}, \texttt{medium},
+\texttt{dark}, or \texttt{deep}; saturation is one of \texttt{weak},
+\texttt{moderate}, \texttt{strong}, or \texttt{vivid}; and where hue is any of
+\texttt{black}, \texttt{gray}, \texttt{grey}, \texttt{white}, \texttt{pink},
+\texttt{violet}, \texttt{brown}, \texttt{red}, \texttt{orange},
+\texttt{yellow}, \texttt{green}, \texttt{cyan}, \texttt{blue}, \texttt{purple},
+or \texttt{magenta}. A single space or hyphen
 separates each word from its neighbor. When two hues are supplied
 (and the first hue has no \texttt{ish} suffix), the resulting hue is
 halfway in between the two named hues. When a hue with an \texttt{ish} suffix
@@ -628,14 +627,15 @@ pixels used by draw and fill functions like \texttt{FillPolygon()}.
 If the \texttt{fillstyle} is not \texttt{solid}, a pattern in
 the filled area is drawn in the foreground color; other pixels are
 drawn in the background color
-({\textquotedbl}fillstyle=textured{\textquotedbl}). Patterns are
-specified by the function Pattern(w,s), which associates a pattern
-denoted by s with w{\textquotesingle}s context. String s is either
-the name of a standard pattern, or a representation of the bits that
+(\texttt{{\textquotedbl}fillstyle=textured{\textquotedbl}}).
+The function \texttt{Pattern(w,s)} associates a pattern
+denoted by \texttt{s} with \texttt{w}{\textquotesingle}s context. String
+\texttt{s} is a built-in pattern name, or a representation of bits that
 define the pattern. Pattern representations are of the form
-{\textquotedbl}width,\#bits{\textquotedbl} where 1 {\textless}= width
-{\textless}= 32. The window system may define a limit as low as 8 on
-the pattern{\textquotesingle}s width and height.
+\texttt{{\textquotedbl}width,\#bits{\textquotedbl}} where
+1 {\textless}= width
+{\textless}= 32. The window system may limit 
+the pattern{\textquotesingle}s width and height to as little as 8.
 
 The height of the pattern is defined by the number of rows in the bits
 component of the pattern string. Bits consists of a series of
@@ -678,15 +678,14 @@ Pme starts by declaring and initializing several variables.
 \bigskip
 
 \iconcode{
-link dialog \\
-link file\_dlg \\
+link dialog, file\_dlg \\
 global lmargin, colors, colorbinds \\
 procedure main(argv) \\
 \>   local i := 1, j, s, e, x, y, width := 32, height := 32
 }
 
 The image width and height can be specified on the command line with a
-{}-size option, for example, \ pme -size 16,64.
+\texttt{-size} option, for example, \texttt{pme -size 16,64}.
 
 \iconcode{
 \>   if argv[1]=={\textquotedbl}-size{\textquotedbl} then \{ \\
@@ -914,8 +913,7 @@ end
 procedure getacolor(n, s) \\
 \>   if ColorDialog([{\textquotedbl}Set
 {\textquotedbl}{\textbar}{\textbar}s{\textbar}{\textbar}{\textquotedbl}
-button color{\textquotedbl}], Fg(colors[n])) == \\
-\>   \ \ \ \ \ \ {\textquotedbl}Okay{\textquotedbl} then \{ \\
+button color{\textquotedbl}],Fg(colors[n]))=={\textquotedbl}Okay{\textquotedbl} then \{ \\
 \>   \ \ \ Fg(colors[n], dialog\_value) \\
 \>   \ \ \ FillArc(colors[n], 5 + n * 10, height + 70, 5, 20) \\
 \>   \} \\
@@ -946,7 +944,7 @@ selection, and feedback.
 This section explains in detail how to use Unicon{\textquotesingle}s 3D
 facilities, for programmers who already have some idea of how 3D
 graphics work. A 3D window is opened using mode
-{\textquotedbl}gl{\textquotedbl} and is very similar to a 2D window,
+\texttt{{\textquotedbl}gl{\textquotedbl}} and is very similar to a 2D window,
 so many ideas earlier in this chapter are needed for 3D
 programming. 3D graphics use the 2D windowing functions and attributes
 and introduce several new ones.
@@ -976,6 +974,7 @@ passing in the title of the window to be opened and mode
 \>   W := open({\textquotedbl}win{\textquotedbl},
 {\textquotedbl}gl{\textquotedbl})}
 
+\noindent
 As in the 2D facilities, if a window is assigned to the keyword variable
 \&window, it is a default window for subsequent 3D function calls. 
 
@@ -1018,7 +1017,7 @@ specifications.
 
 \subsubsection{3D Drawing Primitives}
 
-In 2D, a user can draw points, lines, polygons, and circles. Functions
+In 2D, programs draw points, lines, polygons, and circles. Functions
 that have been extended for 3D include
 \texttt{DrawPoint()}, \texttt{DrawLine()}, \texttt{DrawSegment()},
 \texttt{DrawPolygon()}, and \texttt{FillPolygon()}. The 3D facilities
@@ -1039,7 +1038,6 @@ default the value of \texttt{dim} is three.
 
 \bigskip
 
-% \clearpage
 {\centering\sffamily\bfseries
 Table 7-5
 \par}
@@ -1050,7 +1048,7 @@ Types of 3D Primitives
 
 \begin{center}
 \tablehead{}
-\begin{supertabular}{|m{0.75in}|m{1.1in}|m{2.8in}|m{1.0in}|}
+\begin{supertabular}{|m{0.7in}|m{1.1in}|m{2.94in}|m{0.91in}|}
 \hline
 Primitive &
 Function &
@@ -1218,15 +1216,15 @@ parts of the object.
 
 The attribute \texttt{texmode} enables or disables textures,
 which are disabled by default.
-WAttrib({\textquotedbl}texmode=on{\textquotedbl}) enables textures.
+\texttt{WAttrib({\textquotedbl}texmode=on{\textquotedbl})} enables textures.
 When textures are enabled and a texture image is given, the texture
 is applied to the objects drawn in the scene.
 
 Unicon provides several formats to specify a texture image. A texture
 can be a Unicon window, an image file, or a string. String textures
 are encoded in one of the language standard
-formats {\textquotedbl}width,pallet,data{\textquotedbl} or
-{\textquotedbl}width,\#data{\textquotedbl} described in the 2D graphics
+formats \texttt{{\textquotedbl}width,pallet,data{\textquotedbl}} or
+\texttt{{\textquotedbl}width,\#data{\textquotedbl}} described in the 2D graphics
 facilities. In the first case the pallet will determine what colors
 appear in the texture image. In the second case, the foreground color
 and background color are used. The ability to use another Unicon
@@ -1250,7 +1248,7 @@ window cannot be used as a texture with \texttt{WAttrib(),} so
 A program can specify how a texture is applied to a particular object
 by specifying texture coordinates and vertices. Texture
 coordinates are x and y coordinates within the texture; texture
-coordinate (0.0, 0.0) corresponds to the lower left corner of the
+coordinate (0.0, 0.0) is the lower left corner of the
 texture image. Texture coordinates are mapped to the vertices of an
 object in the scene. Together, the texture coordinates and the vertices
 determine what the object looks like after textures have been applied.
@@ -1280,19 +1278,14 @@ with cubes, tori, spheres, disks, and cylinders a programmer should
 approximate the desired mapping with filled polygons. These
 specifications are given in Table 7-6.
 
-% \clearpage
-
-{\centering\sffamily\bfseries
-Table 7-6
-\par}
-
-{\centering\sffamily\bfseries
-Texture coordinates and primitives
-\par}
 
 \begin{center}
+{\sffamily\bfseries Table 7-6}
+
+{\sffamily\bfseries Texture coordinates and primitives}
+
 \tablehead{}
-\begin{supertabular}{|m{0.7122598in}|m{3.22956in}|m{0.9816598in}|m{0.7559598in}|}
+\begin{supertabular}{|m{0.712in}|m{3.36in}|m{0.9in}|m{0.7in}|}
 \hline
 Primitive &
 Default Texture Coordinates
@@ -1422,16 +1415,14 @@ Here is an example that uses some of the drawing primitives.
 \>   WAttrib(w, {\textquotedbl}light0=on, diffuse white{\textquotedbl})
 }
 
-% \clearpage
-
-\includegraphics[width=2.8071in,height=2.1335in]{ub-img/ub-img32.png} 
+\begin{center}
+\includegraphics[width=2.65in,height=2.0in]{ub-img/ub-img32.png} 
 
 {\sffamily\bfseries Figure 7-2:}
 {\sffamily 3D Drawing Primitives Made From Various Materials}
+\end{center}
 
-\bigskip
-
-The function \texttt{Fg()} specifies the material properties of
+The function \texttt{Fg()} specifies the material properties of 
 subsequently drawn objects that affect their color and appearance.
 In this example, a cube with a diffuse green material is
 drawn with sides of length 0.7. Then a sphere with a diffuse purple and
@@ -1453,22 +1444,26 @@ properties of a light can be set using \texttt{WAttrib()} to set one of
 assign on or off to the light, followed by a comma and a lighting value.
 A lighting value is a string which contains one or more semi-colon
 separated lighting properties. A lighting property is of the form
-\newline
- \ \ [diffuse{\textbar}ambient{\textbar}specular] \textit{color
-name}\newline
-If one does not want to turn on or off a light, a lighting value is
-specified. The following call turns light1 on and gives it diffuse
+
+\iconcode{
+ \ \ \ [diffuse{\textbar}ambient{\textbar}specular] \textit{color name}}
+
+\noindent
+A new lighting value can be specified without turning the light on or off.
+The following call turns \texttt{light1} on and gives it diffuse
 yellow and ambient gold lighting properties. 
 
-\ \ \ WAttrib(w, {\textquotedbl}light1=on, diffuse yellow; ambient
-gold{\textquotedbl})
+\iconcode{
+\> WAttrib(w, {\textquotedbl}light1=on, diffuse yellow; ambient
+gold{\textquotedbl})}
 
+\noindent
 The following expression sets \texttt{light0} to the default values for
 the lighting properties.
 
 \iconcode{
 \>   WAttrib(w, {\textquotedbl}light0=diffuse white; ambient black; \_ \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ specular white; position
+\>\>\>\>     specular white; position
 0.0, 1.0, 0.0{\textquotedbl})}
 
 The next example shows the difference between the different types of
@@ -1478,77 +1473,74 @@ blue-green light. The upper left scene was drawn using a diffuse
 blue-green light. The lower right scene uses only a specular blue-green
 light. The scene in the lower left uses all three types of lighting.
 
-{\centering 
-\includegraphics[width=2.1957in,height=2.2346in]{ub-img/ub-img33.jpg}
-\par}
+\begin{center}
+{\includegraphics[width=1.6in,height=1.6in]{ub-img/ub-img33.jpg}}
 
 {\sffamily\bfseries Figure 7-3:}
 {\sffamily Different Types of Lighting}
-
-\bigskip
+\end{center}
 
 \iconcode{
 \>   w :=
 open({\textquotedbl}ambient.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
 {\textquotedbl}bg=black{\textquotedbl},
 {\textquotedbl}size=400,400{\textquotedbl}) \\
-\>   WAttrib(w,{\textquotedbl}light0=on, ambient
+\>\>   WAttrib(w,{\textquotedbl}light0=on, ambient
 blue-green{\textquotedbl},{\textquotedbl}fg=specular
 white{\textquotedbl}) \\
-\>   DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>   DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>   DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
-\ \\
+\>\>   DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>\>   DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>\>   DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
 \>   x :=
 open({\textquotedbl}diffuse.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
 {\textquotedbl}bg=black{\textquotedbl},
 {\textquotedbl}size=400,400{\textquotedbl}) \\
-\>   WAttrib(x,{\textquotedbl}light0=on, diffuse
+\>\>   WAttrib(x,{\textquotedbl}light0=on, diffuse
 blue-green{\textquotedbl},{\textquotedbl}fg=specular
 white{\textquotedbl}) \\
-\>   DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>   DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>   DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
-\ \\
+\>\>   DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>\>   DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>\>   DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
 \>   y :=
 open({\textquotedbl}specular.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
 {\textquotedbl}bg=black{\textquotedbl},
 {\textquotedbl}size=400,400{\textquotedbl}) \\
-\>   WAttrib(y,{\textquotedbl}light0=on,specular
+\>\>   WAttrib(y,{\textquotedbl}light0=on,specular
 blue-green{\textquotedbl},{\textquotedbl}fg=specular
 white{\textquotedbl}) \\
-\>   DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>   DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>   DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
-\ \\
+\>\>   DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>\>   DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>\>   DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
 \>   z :=
 open({\textquotedbl}all.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
 {\textquotedbl}bg=black{\textquotedbl},
 {\textquotedbl}size=400,400{\textquotedbl}) \\
-\>   WAttrib(z, {\textquotedbl}light0=on, diffuse blue-green; \_ \\
-\>   \ specular blue-green; ambient
+\>\>   WAttrib(z, {\textquotedbl}light0=on, diffuse blue-green; \_ \\
+\>\>\>   specular blue-green; ambient
 blue-green{\textquotedbl},{\textquotedbl}fg=specular
 white{\textquotedbl}) \\
-\>   DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
-\>   DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
-\>   DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
+\>\>   DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\>\>   DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
+\>\>   DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
 }
 
 Materials can be changed using \texttt{Fg()} or \texttt{WAttrib()}
 with the context attribute \texttt{fg}. A material value is a string
 containing one or more
 semi-colon separated material properties. Material properties are of
-the form\newline
+the form
+
+\iconcode{
 \ \ [ diffuse {\textbar} ambient {\textbar} specular {\textbar} emission
-] \textit{color name} \newline
-or \newline
-\ \ {\textquotedbl}shininess n{\textquotedbl}, where n is some integer
-in the range 0 {\textless}= n
-{\textless}= 128.
+] \textit{color name}}
+
+\noindent
+or \texttt{{\textquotedbl}shininess n{\textquotedbl}}, where n is some integer
+in the range 0 {\textless}= n {\textless}= 128.
 
 The default material property type is diffuse, so the call
-Fg({\textquotedbl}red{\textquotedbl}) is equivalent to
-Fg({\textquotedbl}diffuse red{\textquotedbl}). For shininess, a value
+\texttt{Fg({\textquotedbl}red{\textquotedbl})} is equivalent to
+\texttt{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess, a value
 of 0 spreads specular light broadly across an object and a value of 128
 focuses specular light at a single point. The following line of code
 changes the current material property to diffuse green and ambient
@@ -1569,14 +1561,15 @@ specular black; emission black; \_ \\
 
 \noindent Figure 7-4 shows the effects of emission color on an object. 
 
-\bigskip
 
+\begin{center}
 {\centering 
 \includegraphics[width=2.5583in,height=1.8835in]{ub-img/ub-img34.png}
-\par}
+}
 
 {\sffamily\bfseries Figure 7-4:}
 {\sffamily Mixing Emission and Diffuse Material Properties}
+\end{center}
 
 \bigskip
 
@@ -1604,7 +1597,7 @@ image string, or another window. The following example
 uses a file as a texture. A .gif image of a map of the world is used
 to texture a torus using the default texture coordinates.
 
-\clearpage
+\bigskip
 
 {\centering 
 \includegraphics[width=2.0583in,height=2.0583in]{ub-img/ub-img35.jpg}
@@ -1612,8 +1605,6 @@ to texture a torus using the default texture coordinates.
 
 {\sffamily\bfseries Figure 7-5:}
 {\sffamily A Texture from a GIF Image is Mapped onto a Torus}
-
-\bigskip
 
 \iconcode{
 \>   WAttrib(w, {\textquotedbl}texmode=on{\textquotedbl},
@@ -1704,7 +1695,6 @@ open({\textquotedbl}win2.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\t
 \>   WAttrib(w2, {\textquotedbl}texmode=on{\textquotedbl}) \\
 \>   Texture(w2, w)  \\
 \>   Fg(w2, {\textquotedbl}diffuse purple; ambient blue{\textquotedbl}) \\
-\  \\
 \>   DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)
 }
 
@@ -1721,20 +1711,17 @@ default texture coordinates are as follows. The coordinate (0.0,
 1.0, -2.0)\texttt{, }(1.0, 1.0)\texttt{ }is mapped to (1.0, 1.0, -2.0),
 and (1.0, 0.0)\texttt{ }is mapped to (1.0, 0.0, -2.0).
 
-{\centering 
-\includegraphics[width=1.8335in,height=1.8335in]{ub-img/ub-img39.jpg}
-\par}
+\begin{center}
+{\includegraphics[width=1.5in,height=1.5in]{ub-img/ub-img39.jpg}}
 
 {\sffamily\bfseries Figure 7-8:}
 {\sffamily Default Texture Coordinates}
-
-\bigskip
+\end{center}
 
 \iconcode{
 \>   WAttrib(w,{\textquotedbl}fg=white{\textquotedbl},{\textquotedbl}bg=blue{\textquotedbl},{\textquotedbl}texmode=on{\textquotedbl},{\textquotedbl}texture=4,\#8CA9{\textquotedbl}) \\
 \>   Fg(w, {\textquotedbl}diffuse purple; ambient blue{\textquotedbl}) \\
-\>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+\>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
 This example uses the same texture image and the same object to be
@@ -1744,23 +1731,19 @@ texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
 (1.0, 1.0) is mapped to (0.0, 1.0, -2.0),(1.0, 1.0) is mapped to (1.0,
 1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
 
-\bigskip
-
-{\centering 
-\includegraphics[width=2.0307in,height=2.0311in]{ub-img/ub-img40.jpg}
-\par}
+\begin{center}
+{
+\includegraphics[width=1.5in,height=1.5in]{ub-img/ub-img40.jpg}}
 
 {\sffamily\bfseries Figure 7-9:}
 {\sffamily Custom Texture Coordinates}
-
-\bigskip
+\end{center}
 
 \iconcode{
 \>   Wattrib(w,{\textquotedbl}fg=white{\textquotedbl},{\textquotedbl}bg=blue{\textquotedbl},{\textquotedbl}texmode=on{\textquotedbl},{\textquotedblright}texture=4,\#8CA9{\textquotedblright}, \\
 \>   \ \ \ \ \ \ \ \ \ \ {\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0,
 1.0, 1.0, 1.0, 0.0{\textquotedbl}) \\
-\>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+\>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
 Instead of using \texttt{WAttrib()} with the attribute \texttt{texcoord},
@@ -1814,14 +1797,12 @@ procedure main() \\
 \>\>\> 7.0, -7.0,
 -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0) \\
 \ \\
-\>   \# Draw the right wall \\
+\>   \# Draw the right and left walls \\
 \>   Wattrib({\textquotedbl}texture=wall1.gif{\textquotedbl},
 {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
 1.0{\textquotedbl}) \\
 \>   FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0,
 2.0, 0.4, -8.0) \\
-\ \\
-\>   \# Draw the left wall \\
 \>   WAttrib({\textquotedbl}texture=wall2.gif{\textquotedbl}) \\
 \>   FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0,
 2.0, 0.4, -8.0) \\
@@ -1858,35 +1839,31 @@ procedure main() \\
 \>   PushMatrix() \\
 \>   Rotate(6.0, 0.0, 0.0, 1.0) \\
 \>   DrawTorus(-0.02, -0.22, -2.5, 0.03, 0.05) \\
-\>   PopMatrix() \  \\
-\>   PopMatrix()
+\>   PopMatrix()  \\
+\>   PopMatrix() \\
 \ \\
 \>   \# Draw the table  \\
 \>   WAttrib({\textquotedbl}texcoord=auto{\textquotedbl},
 {\textquotedbl}texmode=on{\textquotedbl},
 {\textquotedbl}texture=table.gif{\textquotedbl}) \\
-\ \\
 \>   PushMatrix() \\
 \>   Rotate(-10.0, 1.0, 0.0,0.0) \\
 \>   DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3) \\
 \>   PopMatrix() \\
-\ \\
 \>   PushMatrix() \\
 \>   Translate(0.0, -0.09, -1.8) \\
 \>   Rotate(65.0, 1.0, 0.0, 0.0) \\
 \>   DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29)  \\
 \>   PopMatrix() \\
-\ \\
 \>   WAttrib({\textquotedbl}texmode=off{\textquotedbl},
 {\textquotedbl}fg=diffuse weak brown{\textquotedbl}) \\
 \>   PushMatrix() \\
 \>   Rotate(-20.0, 1.0, 0.0,0.0) \\
 \>   DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1) \\
 \>   PopMatrix() \\
-\>   while (e := Event()) \~{}== {\textquotedbl}q{\textquotedbl} do \{ \\
-\>   \ \ \ write(image(e), {\textquotedbl}: {\textquotedbl}, \&x,
+\>   while (e := Event()) \~{}== {\textquotedbl}q{\textquotedbl} do
+        write(image(e), {\textquotedbl}: {\textquotedbl}, \&x,
 {\textquotedbl},{\textquotedbl}, \&y) \\
-\>   \ \ \ \} \\
 end
 }
 
@@ -1908,8 +1885,7 @@ a disk are used. Texturing is applied to a cylinder and the disk.
 Notice the call 
 
 \iconcode{
-\>   WAttrib(w, {\textquotedbl}texcoord=auto{\textquotedbl})
-}
+\>   WAttrib(w, {\textquotedbl}texcoord=auto{\textquotedbl})}
 
 \noindent
 This resets the texture coordinates to the defaults. Finally, texturing

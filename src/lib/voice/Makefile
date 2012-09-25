@@ -31,7 +31,7 @@ all: jvoip_libs staticlib #clean
 
 jvoip_libs: 
 	@for i in $(SUBDIRS) ; do\
-		if ! (cd $$i ; ./configure ; make ) ; then\
+		if ! (cd $$i && ./configure && make ) ; then\
 			exit 1;\
 		fi;\
 	done
@@ -52,7 +52,7 @@ voip.o : voip.cpp
 Clean:	
 	rm -f *.o
 	@for i in $(SUBDIRS) ; do\
-		if ! (cd $$i ; make clean ) ; then\
+		if ! (cd $$i && make clean ) ; then\
 			exit 1;\
 		fi;\
 	done

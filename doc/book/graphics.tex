@@ -151,12 +151,17 @@ assignments take. Attributes are also frequently set implicitly by
 the user{\textquotesingle}s manipulation of the window; for instance,
 cursor or mouse location or window size.
 
-The following attributes are maintained on a per-window basis.
+Table 7-1 lists attributes that are maintained on a per-window basis.
 Attribute values are string encodings. Usage refers to whether the
 attribute may be read, written or both. RWO and WO attributes can be
 assigned only when the window is opened.
-
-\bigskip
+Although all attribute values are encoded as strings, they represent
+a range of window system features. The attribute \texttt{pointer} refers to
+mouse pointer shapes that may be changed by the application during
+different operations. The attribute \texttt{pos} refers to the position
+of the upper-left corner of the window on the screen. Screen position
+is specified by a string containing x,y coordinates,
+e.g. \texttt{{\textquotedbl}pos=200,200{\textquotedbl}}.
 
 \begin{center}
 {\sffamily\bfseries Table 7-1} \\
@@ -218,13 +223,6 @@ Initial window contents &
 WO\\\hline
 \end{supertabular}
 \end{center}
-Although all attribute values are encoded as strings, they represent
-a range of window system features. The attribute \texttt{pointer} refers to
-mouse pointer shapes that may be changed by the application during
-different operations. The attribute \texttt{pos} refers to the position
-of the upper-left corner of the window on the screen. Screen position
-is specified by a string containing x,y coordinates,
-e.g. \texttt{{\textquotedbl}pos=200,200{\textquotedbl}}.
 
 \subsubsection{Graphics Contexts}
 
@@ -504,8 +502,8 @@ are reported on the most recently pressed button. This behavior is
 invariant over all combinations of presses and releases of all three buttons.
 
 Resize events are reported in the same format as mouse events.
-In addition to the event code, \texttt{\&x}, \&y, \&col and
-\&row are assigned integers that indicate the window{\textquotesingle}s
+In addition to the event code, \texttt{\&x}, \texttt{\&y}, \texttt{\&col} and
+\texttt{\&row} are assigned integers that indicate the window{\textquotesingle}s
 new width and height in pixels and in text columns and rows,
 respectively. Resize events are produced when the window manager
 (usually at the behest of the user) resizes the window; no event is
@@ -1166,7 +1164,8 @@ matrix stack can be manipulated at any given time. The function
 \subsubsection{Lighting and Materials}
 
 Lighting is important in making a graphics scene appear to be 3D.
-Adding lighting to a scene can be complicated. A light source can
+Adding lighting to a scene can be complicated and the hardware support for
+lighting is at present a very crude approximation. Light sources
 emit different types of light. {\em Ambient\/} light has
 been scattered so much that is difficult to determine the source;
 backlighting in a room is an example. {\em Diffuse\/} light
@@ -1174,11 +1173,35 @@ comes from one direction and is central in defining what color
 the object appears to be. Finally, {\em specular\/} light not only comes from
 one direction, but also tends to bounce off the objects in the scene.
 
-Applications control lighting using context attributes. For a 3D scene
+Applications control lighting using context attributes set using
+\texttt{WAttrib()}. For a 3D scene
 in Unicon, eight lights are available. Attributes \texttt{light0}
-- \texttt{light7} control the eight lights. Each light is
-\texttt{on} or \texttt{off} and has the properties \texttt{diffuse},
-\texttt{ambient}, \texttt{specular}, and \texttt{position}. 
+- \texttt{light7} control the eight lights. Each light can be turned
+\texttt{on} or \texttt{off} and has a \texttt{position} and
+lighting value.A lighting value is a string which contains one or more semi-colon
+separated lighting properties. A lighting property is of the form
+
+\iconcode{
+ \ \ \ [diffuse{\textbar}ambient{\textbar}specular] \textit{color name}}
+
+\noindent
+A new lighting value can be specified without turning the light on or off.
+The following call turns \texttt{light1} on and gives it diffuse
+yellow and ambient gold lighting properties. 
+
+\iconcode{
+\> WAttrib(w, {\textquotedbl}light1=on, diffuse yellow; ambient
+gold{\textquotedbl})}
+
+\noindent
+The following expression sets \texttt{light0} to the default values for
+the lighting properties.
+
+\iconcode{
+\>   WAttrib(w, {\textquotedbl}light0=diffuse white; ambient black; \_ \\
+\>\>\>\>     specular white; position
+0.0, 1.0, 0.0{\textquotedbl})}
+
 
 Interacting with the lights, the objects in a scene may have
 several material properties. The material properties are ambient,
@@ -1188,14 +1211,45 @@ emits light of a specific color. Using combinations of these material
 properties one can give an object the illusion of being made of plastic
 or metal.
 
-In 2D, the foreground color is controlled using the attribute \texttt{fg}.
-In 3D, the \texttt{fg} attribute is extended to allow a
+In 2D, the foreground color is controlled using the context attribute
+\texttt{fg} and set with \texttt{Fg()} or \texttt{WAttrib()}.
+In 3D, the attribute \texttt{fg} is extended to allow a
 semi-colon separated list of material properties with the color that
-property should have. The values for each of the lights follow the same
-pattern. A programmer can specify colors as in the 2D graphics
-facilities, or by providing comma-separated red, green, and blue
+property should have.
+A programmer can specify a material property as a simple color value or
+by providing comma-separated red, green, and blue
 intensities as real numbers between \texttt{0.0} and \texttt{1.0}.
-Examples of lighting and material properties can be found below.
+More general material properties are of the form
+
+\iconcode{
+\ \ [ diffuse {\textbar} ambient {\textbar} specular {\textbar} emission
+] \textit{color name}}
+
+\noindent
+or \texttt{{\textquotedbl}shininess n{\textquotedbl}}, where n is some integer
+in the range 0 {\textless}= n {\textless}= 128.
+
+The default material property type is diffuse, so the call
+\texttt{Fg({\textquotedbl}red{\textquotedbl})} is equivalent to
+\texttt{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess, a value
+of 0 spreads specular light broadly across an object and a value of 128
+focuses specular light at a single point. The following line of code
+changes the current material property to diffuse green and ambient
+orange. 
+
+\iconcode{
+\ \ \ WAttrib(w, {\textquotedbl}fg=diffuse green; ambient
+orange{\textquotedbl})
+}
+
+
+\noindent The default values of the material properties are given in the
+following example. 
+
+\iconcode{
+   Fg(w, \textrm{{\textquotedbl}}diffuse light grey; ambient grey;
+specular black; emission black; \_ \\
+\>\> shininess 50\textrm{{\textquotedbl}})}
 
 Using lights and materials in Unicon was simplified by extending the
 design of the 2D graphics facilities. The \texttt{fg} attribute greatly
@@ -1203,7 +1257,7 @@ reduces the number of lines of code needed for a scene. Thanks to this
 design along with the extensive use of defaults, a programmer can use
 lighting in a 3D graphics application without much effort.
 
-\subsubsection[Textures]{Text\textstyleHeadingivChar{u}res}
+\subsubsection[Textures]{Textures}
 Another important area of 3D graphics is textures.
 Adding textures to a scene can give a scene a realistic feel.
 There are several aspects to using textures. A texture
@@ -1433,38 +1487,7 @@ drawn. Finally a filled polygon with a diffuse red material property
 and three vertices, (0.25, -0.25, -1.0), (1.0, 0.25, -4.0) and
 (1.3, -0.4, -3.0) is drawn. 
 
-\paragraph{Lighting and Materials}
-Up to eight lights can be used in each scene. The
-lights are control by the context attributes \texttt{light0} through
-\texttt{light7}.
-Each light has five properties that can be changed throughout the
-program, ambient, diffuse, specular, position, and on/off. The
-properties of a light can be set using \texttt{WAttrib()} to set one of
-\texttt{light0} through \texttt{light7}. To turn on or off a light,
-assign on or off to the light, followed by a comma and a lighting value.
-A lighting value is a string which contains one or more semi-colon
-separated lighting properties. A lighting property is of the form
-
-\iconcode{
- \ \ \ [diffuse{\textbar}ambient{\textbar}specular] \textit{color name}}
-
-\noindent
-A new lighting value can be specified without turning the light on or off.
-The following call turns \texttt{light1} on and gives it diffuse
-yellow and ambient gold lighting properties. 
-
-\iconcode{
-\> WAttrib(w, {\textquotedbl}light1=on, diffuse yellow; ambient
-gold{\textquotedbl})}
-
-\noindent
-The following expression sets \texttt{light0} to the default values for
-the lighting properties.
-
-\iconcode{
-\>   WAttrib(w, {\textquotedbl}light0=diffuse white; ambient black; \_ \\
-\>\>\>\>     specular white; position
-0.0, 1.0, 0.0{\textquotedbl})}
+\paragraph{Different Types of Lighting}
 
 The next example shows the difference between the different types of
 lighting that can be used in a scene. Each window is the same scene
@@ -1524,40 +1547,7 @@ white{\textquotedbl}) \\
 \>\>   DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
 }
 
-Materials can be changed using \texttt{Fg()} or \texttt{WAttrib()}
-with the context attribute \texttt{fg}. A material value is a string
-containing one or more
-semi-colon separated material properties. Material properties are of
-the form
 
-\iconcode{
-\ \ [ diffuse {\textbar} ambient {\textbar} specular {\textbar} emission
-] \textit{color name}}
-
-\noindent
-or \texttt{{\textquotedbl}shininess n{\textquotedbl}}, where n is some integer
-in the range 0 {\textless}= n {\textless}= 128.
-
-The default material property type is diffuse, so the call
-\texttt{Fg({\textquotedbl}red{\textquotedbl})} is equivalent to
-\texttt{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess, a value
-of 0 spreads specular light broadly across an object and a value of 128
-focuses specular light at a single point. The following line of code
-changes the current material property to diffuse green and ambient
-orange. 
-
-\iconcode{
-\ \ \ WAttrib(w, {\textquotedbl}fg=diffuse green; ambient
-orange{\textquotedbl})
-}
-
-\noindent The default values of the material properties are given in the
-following example. 
-
-\iconcode{
-   Fg(w, \textrm{{\textquotedbl}}diffuse light grey; ambient grey;
-specular black; emission black; \_ \\
-\>\> shininess 50\textrm{{\textquotedbl}})}
 
 \noindent Figure 7-4 shows the effects of emission color on an object. 
 
@@ -1591,9 +1581,8 @@ in the center, the emission color was changed to black, without
 changing the diffuse property.
 
 \paragraph{Textures}
-This section contains several examples of the use of textures in a
-scene. There are several ways to specify the texture image: a file, an
-image string, or another window. The following example
+This section contains examples of the use of textures in a
+scene. The following example
 uses a file as a texture. A .gif image of a map of the world is used
 to texture a torus using the default texture coordinates.
 
@@ -1871,7 +1860,7 @@ In order to apply textures to the scene, texturing must be turned
 on. Next, the texture to be applied is specified. The floor of the
 scene is drawn using a filled polygon. The default texture coordinates
 are used to apply the carpet texture to the floor of the room. The
-tiled appearance on the floor of the room is caused by the use of the
+tiled appearance on the floor is caused by the use of the
 default texture coordinates. This can be avoided using user-supplied
 texture coordinates, as is done for the textures that
 are applied to the walls and the pictures in the room. 

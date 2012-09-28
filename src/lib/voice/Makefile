@@ -8,7 +8,7 @@ ARCHIVE = $(LIBRARYNAME).a
 
 
 INCLUDES		= -I jvoiplib-1.3.0/include -I jthread-1.1.1/include -I jrtplib-3.1.0 
-LIBRARIES		= -L. ../../../bin/libjvoip.a ../../../libjthread.a ../../../libjrtp.a 
+LIBRARIES		= -L. ../../../bin/libjvoip.a ../../../bin/libjthread.a ../../../bin/libjrtp.a 
 #-ljrtp -ljthread -lpthread 
 
 ARFLAGS = qc
@@ -48,7 +48,6 @@ $(ARCHIVE): $(OBJECTS)
 
 voip.o : voip.cpp
 
-
 Clean:	
 	rm -f *.o
 	@for i in $(SUBDIRS) ; do\
@@ -56,5 +55,3 @@ Clean:
 			exit 1;\
 		fi;\
 	done
-	
-	

@@ -1259,7 +1259,7 @@ But this is only a single attribute for one queue. To access or change
 other queue attributes, a new function is introduced to Unicon:
 \texttt{Attrib()}. \texttt{Attrib()}
 uses the form \texttt{Attrib(handle, attribcode, value,
-attribcode, value, ...)}.~The integer codes used by the
+attribcode, value, ...)}. The integer codes used by the
 \texttt{Attrib()} function are supplied by an include
 file (\texttt{threadh.icn}) with
 \texttt{\$define} symbols for the attributes. This
@@ -1397,7 +1397,6 @@ to wait in milliseconds. Negative integers are treated as a null value,
 defaulting to an indefinite blocking receive. A 0 operand indicates no
 waiting time, making the end behavior effectively similar to a
 non-blocking receive. 
-
 The following table summarizes the different forms of the send and
 receive operators and their operands:
 
@@ -1445,27 +1444,26 @@ Get a message from my inbox, block if the inbox is empty\\
  &
 \centering {\textless}{\textless}@T &
 Get a message from T{\textquoteright}s outbox, block if
-T{\textquoteright}s outbox is empty\\
+it is empty\\
  &
 \centering n{\textless}{\textless}@ &
-Get a message from my inbox, block up to n milliseconds if the inbox is
-empty waiting for new messages to become available\\
+Get a message from my inbox, block up to n milliseconds
+waiting for an inbox message to become available\\
  &
 \centering n{\textless}{\textless}@T &
 Get a message from T{\textquoteright}s outbox, block up to n
-milliseconds if T{\textquoteright}s outbox is empty waiting for new
-messages to become available\\
+milliseconds waiting for a message to become available there\\
 \end{supertabular}
 \end{flushleft}
 
 \bigskip
 
 Most applications use only a few of these modes. In a fast sender slow receiver
-application for example, the sender would block when the queue is full
+application, the sender would block when the queue is full
 and unblock when the queue is empty (using
 \texttt{@{\textgreater}{\textgreater}}). The receiver
-on the other hand would keep consuming messages from the queue until it
-is empty. In that case it blocks until there is a new message added to
+would consume messages from the queue until it
+is empty, and then block until there is a new message added to
 the queue (\texttt{{\textless}{\textless}@}). For some
 applications however, this communication scheme might not be optimal,
 hence many options are provided. The different options in the table
@@ -1493,9 +1491,11 @@ Starting a private communication is similar to a network connection,
 except that this connection is taking place between two threads in the
 same process instead of two different processes that may be on
 different machines. A private communication channel between two threads
-can be created using the function \texttt{channel()}.
+can be created using the library procedure \texttt{channel()}.
+
 \texttt{channel()} is part of the
-\texttt{threads} package and takes one parameter, which
+\texttt{threads} package, so \texttt{import threads} is necessary to use it.
+It takes one parameter, which
 is the thread with which the connection will be initiated. If
 \texttt{channel()} succeeds, it returns a list representing
 a communication channel between the two threads. Representing a
@@ -1517,13 +1517,16 @@ In thread B:
 to open a channel with A{\textquotedblright}
 }
 
-This channel is meant to be a directional communication channel. In
-theory one thread would use it as an outbox, and the other would use it
-as an inbox. That means only one thread will send messages over the
-channel while the other receive them from the other end. \ The provided
+A channel is a directional communication medium. 
+One thread should use it as an outbox, and the other should use it
+as an inbox; only one thread will send messages over the
+channel while the other receives them from the other end. The provided
 channel can be used with the communication operators (all four of them)
 with the same semantics as before. The only difference in this case is
 that the right operand is a communication channel instead of a thread.
+In the channel example below, the main thread transmits the consumer's
+identity to the producer (\texttt{c @{\textgreater} p}), who receives
+it via \texttt{c := {\textless}{\textless}@}
 
 \iconcode{
 import threads \\

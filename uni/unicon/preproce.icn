@@ -71,7 +71,12 @@ procedure predefs()
     t["__TIME__"] := "\"" || &clock || "\""
 
     # predefine a symbol that can be used to distinguish when iconc is used.
-    if \iconc then t["COMPILER"] := "1"
+    if \iconc then {
+      t["COMPILER"] := "1"
+      # at present, iconc implies various features will be absent...
+      every delete(t, "concurrent threads" | "event monitoring" |
+		      "multiple programs")
+      }
     return t
 end
 

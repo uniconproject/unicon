@@ -21,3 +21,4 @@
 #define NEED_UTIME
 #define Messaging  1
 #define PosixFns   1
+#define NoVFork

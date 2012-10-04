@@ -773,6 +773,14 @@ Deliberate Syntax Error
    #define ShellHeader
 #endif					/* UNIX */
 
+/*
+ * I don't care what autoconf says, some platforms (Solaris) have trouble
+ * with vfork.
+ */
+#ifdef NoVFork
+#undef HAVE_WORKING_VFORK
+#endif
+
 #if (MSDOS || OS2) && !NT
    #undef DirectExecution
    #define DirectExecution

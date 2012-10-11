@@ -155,8 +155,7 @@ argument. It fails if the string is not base64 encoded.
 \index{basename}\texttt{basename}\texttt{(name, suffix) : string} strips
 off any path information and removes the specified suffix, if present.
 If no suffix is provided, the portion of the name up to the first
-{\textquotedbl}.{\textquotedbl} is returned. It works under at least
-UNIX, MS-DOS, and the Macintosh.
+{\textquotedbl}.{\textquotedbl} is returned.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{binary} \hfill (RJA)}
 
@@ -4346,7 +4345,7 @@ follows a line declaring the index terms:
 ::be ::to ::by ::retrieved \\
 Text to be retrieved \\
 by findtext \\
-::index ::line
+::index ::line \\
 Each index line begins with {\textquotedbl}::{\textquotedbl}.}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fixpath \ \textrm{\textmd{filename oldpath
@@ -4611,7 +4610,7 @@ in Icon to greatly reduce the performance cost associated with
 recursive-descent parsing with \index{backtracking}backtracking.
 Features include:
 
-\begin{itemize}
+\begin{itemize}\itemsep0pt
 \item \ \ integer and real value arithmetic
 \item \ \ variables
 \item \ \ function calls to Icon functions
@@ -4737,8 +4736,8 @@ no limitation; default 1
 
 \texttt{i}\index{grep}\texttt{grep} emulates UNIX egrep using the
 enhanced regular expressions supported by \texttt{regexp.icn}. Options
-supported are nearly identical to those supported by egrep (no -b:
-print disk block number). The additional option, -E, allows Icon-type
+are nearly identical to those supported by egrep (no -b:
+print disk block number). The option -E allows Icon-type
 (hence C-type) string escape sequences in the pattern string. Beware:
 when -E is used, backslashes that are meant to be processed in the
 regular expression context must be doubled. The following patterns are
@@ -4828,12 +4827,12 @@ Requires: UNIX.\\
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ilump}}
 
-\texttt{ilump} copies one or more Icon source files, incorporating
+\texttt{ilump} copies Icon source files, incorporating
 recursively the \index{source code}source code for files named by link
-directives. This produces a standalone source program in one file,
-which is useful with certain profiling and visualization tools.
-Searching for linked source files is similar to the action of Iconc
-under UNIX. If a linked file is not found in the current directory,
+directives. This produces a whole source program in one file,
+useful with certain profiling and visualization tools.
+Searching for linked source files is similar to the action of Iconc.
+If a linked file is not found in the current directory,
 directories specified by the LPATH \index{environment
 variable!LPATH}environment variable are tried.
 
@@ -4883,14 +4882,13 @@ expression. The expression is wrapped with a main procedure, and
 written to a pipe that compiles and executes the resulting program. If
 the expression is a \index{generator}generator, all its results are
 produced. If the command-line option -e is given, the expression is
-echoed. This technique is, of course, inefficient and may be painfully
-slow except on the fastest platforms. However, the technique is
+echoed. This technique is of course inefficient, however it is
 completely general and as correct as Icon itself.
 
-\texttt{interpp} is kind of like an interactive version of BASIC: Icon
-expressions are entered with line numbers and you can resequence them
-list them etc. and execute all the lines entered. There is no editor
-built in. You have to retype a line to change it. Documentation is
+\texttt{interpp} is like the old interactive BASIC interpreters: Icon
+expressions are entered with line numbers. You can resequence them,
+list them etc. and execute all the lines entered. There is no editor,
+you have to retype a line to change it. Documentation is
 lacking but there is a {\textquotedbl}?{\textquotedbl} help command
 that lists all the other commands. 
 
@@ -4918,7 +4916,7 @@ Library. The following options are supported:\\
 \texttt{\ \ }\texttt{{}-k i}\ \ width keyword field, default 16\\
 \ \ \texttt{{}-p i}\ \ width of field for program name, default
 12\\
-Some noise words are omitted (see
+\noindent Some noise words are omitted (see
 {\textquotedbl}exceptions{\textquotedbl} in the program text). If a
 file named except.wrd is open and readable in the current directory,
 the words in it are used instead. 
@@ -4960,8 +4958,8 @@ contains the IPL standard comment header info inside.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iprint \hfill (RJA)}}
 
-\texttt{iprint} is a program to print Icon programs. If a program is
-written in a consistent style, this program attempts to keep whole
+\texttt{iprint} attractively formats Icon programs,
+attempting to keep whole
 procedures on the same page. The default is to identify the end of a
 print group (i.e. a procedure) by looking for the string
 {\textquotedbl}end{\textquotedbl} at the beginning of a line. Through
@@ -4988,11 +4986,11 @@ printer.\\
 {\textquotedbl}\#{\textquotedbl}).\\
 \ \ \texttt{{}-xS}\ \ end of comment string (default: none).\\
 \ \ \texttt{{}-i}\ \  ignore FF at start of line.\\
-Any number of file names specified will be printed, each starting on a
+\noindent Any number of file names specified will be printed, each starting on a
 new page. For example, to print C source files such as the Icon source
-code, use the following options:
+code, use these options:
 
-{\sffamily
+\iconcode{
 \ \ iprint -g {\textquotesingle} \}{\textquotesingle} -c
 {\textquotesingle}/*{\textquotesingle} -x
 {\textquotesingle}*/{\textquotesingle} file ... }
@@ -5134,6 +5132,7 @@ lines are written. The names of procedures to pass through can be given
 in a {\textquotedbl}response{\textquotedbl} file as accepted by
 \texttt{options()}, as in\\
 \ \ \texttt{itrcfltr @names {\textless}trace\_file}\\
+\noindent
 where \texttt{names} is a file containing the names to be passed
 through. The following option is supported: \texttt{{}-a} list all
 trace messages; overrides any procedure names given.
@@ -5239,7 +5238,7 @@ The default is 8.\\
 for rectangular labels, 12 for\\
 \ \ \ \ tape labels (\texttt{{}-t}).\\
 Options are processed from left to right. If the number of printed lines
-is set to a value that exceeds the depth of the label, the depth is set
+is set to exceed the depth of the label, the depth is set
 to the number of lines. If the depth is set to a value that is less
 than the number of printed lines, the number of printed lines is set to
 the depth. Note that the order in which these options are specified may
@@ -5321,25 +5320,25 @@ into a valid lisp-expression (i.e. more right than left parentheses).
 
 \texttt{literat} is a \index{database}database system to manage
 information concerning \index{literature}literature. The program uses
-standard files \texttt{literat.fil}, \texttt{literat2.fil} and
+files \texttt{literat.fil}, \texttt{literat2.fil} and
 \texttt{adress.fil} to store its data on the disk. It has a predefined
-structure of the items and predefined field labels to make it easy to
+structure of the items and field labels to make it easy to
 use and to cut down the source code length. Requires: ANSI terminal
-support, e.g. \texttt{ansi.sys}.
+support.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{loadmap\hfill (SBW)}
 
 \texttt{loadmap} produces a formatted listing of selected symbol classes
-from a compiled file. The listing is by class, and gives the name,
+from a compiled object file. The listing is by class, and gives the name,
 starting address, and length of the region associated with each symbol.
 The options are:\\
 \ \ \texttt{{}-a}\ \ Display the absolute symbols.\\
 \ \ \texttt{{}-b}\ \ Display the BSS segment symbols.\\
 \ \ \texttt{{}-c}\ \ Display the common segment symbols.\\
 \ \ \texttt{{}-d}\ \ Display the data segment symbols.\\
-\ \ \texttt{{}-t}\ \ Display the text segment symbols.\\
+\ \ \texttt{{}-t}\ \ Display the text segment symbols (default).\\
 \ \ \texttt{{}-u}\ \ Display the undefined symbols.\\
-\noindent If no options are specified, \texttt{{}-t} is assumed. If the address of
+\noindent If the address of
 a symbol cannot be determined, ???? is given in its place. The size of
 the last region in a symbol class is suspect and is usually given as
 rem. Output is not particularly exciting on a stripped file.
@@ -5547,20 +5546,16 @@ specified by \texttt{{}-l} and \texttt{{}-r}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{pargen}}
 
-\texttt{pargen} reads a context-free BNF grammar and produces an Icon
-program that is a parser for the corresponding language. Nonterminal
-symbols are enclosed in angular brackets. Vertical bars separate
-alternatives. All other characters are considered to be terminal
-symbols. The nonterminal symbol on the first line is taken to be the
-goal. An example is:
+\texttt{pargen} reads a context-free grammar and produces an Icon
+program that parses the corresponding language. Nonterminal
+symbols are enclosed in angle brackets. Vertical bars separate
+alternatives. Other characters are considered to be terminal
+symbols. The nonterminal on the first line is the
+goal. For example:
 
 \iconcode{
-{\textless}expression{\textgreater}::={\textless}term{\textgreater}{\textbar}{\textless}term{\textgreater}+{\textless}expression{\textgreater}}
-
-\iconcode{
-{\textless}term{\textgreater}::={\textless}element{\textgreater}{\textbar}{\textless}element{\textgreater}*{\textless}term{\textgreater}}
-
-\iconcode{
+{\textless}expression{\textgreater}::={\textless}term{\textgreater}{\textbar}{\textless}term{\textgreater}+{\textless}expression{\textgreater} \\
+{\textless}term{\textgreater}::={\textless}element{\textgreater}{\textbar}{\textless}element{\textgreater}*{\textless}term{\textgreater} \\
 {\textless}element{\textgreater}::=x{\textbar}y{\textbar}z{\textbar}\{{\textless}expression{\textgreater}\}}
 
 Parentheses can be used for grouping symbols, as in
@@ -5611,7 +5606,7 @@ is a unary minus.
 \index{patch}\texttt{patch}\texttt{u} reads a source file and a diff
 file, producing an updated file. The diff file may be generated by the
 UNIX \texttt{diff(1)} utility, or by \texttt{diffu.icn}, which uses
-\texttt{dif.icn} for the hard work. The original \texttt{patch(1)}
+\texttt{dif.icn}. The original \texttt{patch(1)}
 utility, written by Larry Wall, is widely used in the UNIX community.
 See \texttt{diff(1)} in a UNIX manual for more details. Requires:
 co-expressions.
@@ -5624,8 +5619,8 @@ input.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{polydemo\hfill (EE)}}
 
 \texttt{polydemo} is an example use of the \texttt{polystuf} library
-module. The user is given options that allow the creation, output,
-deletion, or operations on up to 26 polynomials, indexed by letter.
+module. The user can create, output,
+delete, or operate up to 26 polynomials, indexed by letter.
 Available commands: (R)ead - allows input of a polynomial by giving
 pairs of coefficients and exponents. For example, entering 5, 6, 2, and
 3 will create 5x\^{}6 + 2x\^{}3. This polynomial will be stored by an
@@ -5646,11 +5641,11 @@ of a file (\texttt{{\textquotedbl}-{\textquotedbl}} for standard input)
 containing a news article, \texttt{post} creates a follow-up article,
 with an attribution and quoted text. The newsgroups, subject,
 distribution, follow-up, and quote prefix (default
-{\textquotesingle}{\textgreater} {\textquotesingle}) can optionally be
+{\textquotesingle}{\textgreater} {\textquotesingle}) can be
 specified on the command line. On systems posting via \texttt{inews},
 \texttt{post} validates newsgroups and distributions in the
 \texttt{active} and \texttt{distributions} files in the news library
-directory. Bugs: Newsgroup validation assumes the active file is
+directory. Newsgroup validation assumes the active file is
 sorted.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{press\hfill (RJA)}}
@@ -5675,11 +5670,10 @@ minimal procedure declarations for them. For example, the input line
 wrapper produces:
 
 \iconcode{
-procedure wrapper()}
-
-\iconcode{
+procedure wrapper() \\
 end}
 
+\noindent
 This program is useful when you have a lot of procedures to write. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{psrsplit
@@ -5689,9 +5683,8 @@ This program is useful when you have a lot of procedures to write.
 output pages. If a file produced by the procedures in
 \texttt{psrecord.icn} contains multiple pages, it cannot be easily
 incorporated into another document. \texttt{psrsplit} reads such a file
-and breaks it into individual pages. The algorithm is frugal of memory
-and file descriptors at the expense of reading the input file multiple
-times. For an input file named \texttt{xxxx} or \texttt{xxxx.yyy}, the
+and breaks it into individual pages.
+For an input file named \texttt{xxxx} or \texttt{xxxx.yyy}, the
 output files are named \texttt{xxxx.p01}, \texttt{xxxx.p01}, etc. for
 as many pages as are available. It is assumed that the input file was
 written by \texttt{psrecord.icn}; the likelihood of correctly
@@ -5745,8 +5738,8 @@ programming techniques.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ranstars}}
 
 \texttt{ranstars} displays a random field of
-{\textquotedbl}stars{\textquotedbl} on an ANSI terminal. It displays
-stars at randomly chosen positions on the \index{screen}screen until
+{\textquotedbl}stars{\textquotedbl} on an ANSI terminal
+at randomly chosen positions on the \index{screen}screen until
 the specified maximum number is reached. It then extinguishes existing
 stars and creates new ones for the specified steady-state time, after
 which the stars are extinguished, one by one. The programming technique
@@ -5756,8 +5749,8 @@ are:\\
 \ \ \texttt{{}-t n}\ \ length of steady-state time before stars are
 extinguished, default 50.\\
 \ \ \texttt{{}-s c}\ \ the character used for
-{\textquotedbl}stars{\textquotedbl}, default *. Only the first
-character in \texttt{c} is used.\\
+{\textquotedbl}stars{\textquotedbl}, default *. Only
+\texttt{c[1]} is used.\\
 Requires: co-expressions, ANSI terminal.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{recgen}}
@@ -5846,8 +5839,9 @@ A line consisting of a single = stops prompting. Productions look like:
 {\textless}term{\textgreater}::={\textless}elem{\textgreater}{\textbar}{\textless}elem{\textgreater}*{\textless}term{\textgreater}\\
 {\textless}elem{\textgreater}::=x{\textbar}y{\textbar}z{\textbar}({\textless}expr{\textgreater})}
 
-Productions may occur in any order. Specifying a new production for it
-changes the definition for a nonterminal symbol. There are a number of
+\noindent
+Productions may occur in any order. Specifying a new production for
+a nonterminal symbol changes its definition. There are a number of
 special devices to facilitate the definition of grammars, including
 eight predefined, built-in nonterminal symbols:\\
 \ \ symbol\ \ definition\\
@@ -5887,7 +5881,7 @@ options are available:\\
 \ \ \texttt{{}-s n}\ \ Set the seed for random generation to n.\\
 \ \ \texttt{{}-r\ \ }Set the seed to 0 for repeatable results.
 \texttt{{}-r} is same as \texttt{{}-s 0}.\\
-\ \ \texttt{{}-l n\ \ }Terminate if \# symbols to be processed exceeds
+\ \ \texttt{{}-l n\ \ }Terminate if \# symbols to be processed {\textgreater}
 n. The default is limit is 1000.\\
 \ \ \texttt{{}-t\ \ }Trace the generation of sentences. Trace output
 goes to standard error output.
@@ -5909,11 +5903,13 @@ For example, changing
 \iconcode{
 {\textless}term{\textgreater}::={\textless}elem{\textgreater}{\textbar}{\textless}elem{\textgreater}*{\textless}term{\textgreater}}
 
+\noindent
 to
 
 \iconcode{
 {\textless}term{\textgreater}::={\textless}elem{\textgreater}{\textbar}{\textless}elem{\textgreater}{\textbar}{\textless}elem{\textgreater}*{\textless}term{\textgreater}}
 
+\noindent
 increases the probability of selecting
 \texttt{{\textless}elem{\textgreater}} from 1/2 to 2/3. 
 
@@ -5986,6 +5982,7 @@ shuffled. For example, the result of shuffling
  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Bells, bells, bells-\\
  \ \ To the rhyming and the chiming of the bells!}
 
+\noindent
 is
 
 \iconcode{
@@ -6029,14 +6026,12 @@ just won{\textquotesingle}t work. Terminal really needs reverse video.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{solit} \hfill (JN, PLT, REG)}}
 
 \texttt{solit} was inspired by a solitaire game that was written and
-copyrighted by Allyn Wade \ in 1985, designed for the IBM PC/XT/PCjr
-with a color or monochrome monitor. This program has the correct escape
+copyrighted by Allyn Wade in 1985. This program has the correct escape
 sequences programmed into it to handle several common terminals and
 PC{\textquotesingle}s. It is commented well enough that most people can
 modify the source to work for their hardware, or make the auto pilot
 smarter. Note: The command-line argument, which defaults to support for
-the VT100, determines the screen driver. For MS-DOS computers, the
-ANSI.SYS driver is needed.
+the VT100, determines the screen driver.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sortname}}
 
@@ -6156,15 +6151,15 @@ no limit
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{trim}}
 
 \texttt{trim} copies lines from standard input to standard output,
-truncating the lines at n characters and removing any trailing blanks.
-The default value for n is 80. For example,
+truncating the lines at n characters and removing trailing blanks.
+The default for n is 80. For example,
 
 \iconcode{
 \ \ trim 70 {\textless}grade.txt {\textgreater}grade.fix}
 
 \noindent copies \texttt{grade.txt} to \texttt{grade.fix}, with lines longer
 than 70 characters truncated to 70 characters and the trailing blanks
-removed from all lines. The \texttt{{}-f} option causes all lines to be
+removed. The \texttt{{}-f} option causes all lines to be
 n characters long by adding blanks to short lines; otherwise, short
 lines are left as is.
 
@@ -6195,18 +6190,15 @@ number (0 if halting).
 Sample input file:
 
 \iconcode{
-1. 1r2 1l3}
-
-\iconcode{
-2. 1l1 1r2}
-
-\iconcode{
+1. 1r2 1l3 \\
+2. 1l1 1r2 \\
 3. 1l2 1h0}
 
+\noindent
 One line is written for each cycle giving the cycle number, current
 state, and an image of that portion of the tape that has been visited
 so far. The current position is indicated by reverse video (using ANSI
-terminal escape sequences). Input errors are reported to standard error
+escape sequences). Input errors are reported to standard error
 output and inhibit execution. Bugs: Transitions to nonexistent states
 are not detected. Reverse video should be parameterizable or at least
 optional. There is no way to limit the number of cycles. Infinite loops
@@ -6259,9 +6251,9 @@ overrides.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{webimage}}
 
-\texttt{webimage} takes the names of image files on the command line and
+\texttt{webimage} takes image filenames on the command line and
 writes a Web page that embeds each image. Requires: Version 9 graphics.
-The following options are supported:\\
+These options are supported:\\
 \ \ \texttt{{}-a s}\ \ alignment, default
 {\textquotedbl}bottom{\textquotedbl}\\
 \ \ \texttt{{}-t s}\ \ title for page; default
@@ -6284,15 +6276,9 @@ arcane, so \texttt{when} provides a simpler alternative. Here are some
 samples:
 
 \iconcode{
-when before 4/12/92 \# files before a date}
-
-\iconcode{
-when before 300 \# files older than an age}
-
-\iconcode{
-when after 3/25 \# or younger than a date this year}
-
-\iconcode{
+when before 4/12/92 \# files before a date \\
+when before 300 \# files older than an age \\
+when after 3/25 \# or younger than a date this year \\
 when before 2/1/94 and after 10/31/93 \# even a range}
 
 More options and clauses are supported. Look at the code for clues. This
@@ -6300,14 +6286,12 @@ one only works in the current directory. Requires: UNIX.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xtable\hfill (RJA, AB)}}
 
-\texttt{xtable} prints various character translation tables. See
-procedure \texttt{help()} for the capabilities.
+\texttt{xtable} prints tables for ASCII, EBCDIC
+and their decimal and octal values.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{yahtz\hfill (CT, RLG, PLT)}}
 
-This classic dice game will run under UNIX and under DOS as well. It
-should run out of the box on DOS as long as you stay in the current
-directory. See the README file.
+A classic "dice poker" game.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{zipsort}}
 

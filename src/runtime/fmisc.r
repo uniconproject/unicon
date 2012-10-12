@@ -2358,6 +2358,10 @@ end
 
 #ifdef Concurrent
 
+/*
+ * These symbols should match those in uni/lib/threadh.icn
+ */
+
 #define OFF		0
 #define ON		1
 
@@ -2371,6 +2375,9 @@ end
 #define INBOX_CV_EMPTY	1007
 #define OUTBOX_CV_FULL	1008
 #define OUTBOX_CV_EMPTY	1009
+
+#define CHANNEL_SIZE	1010
+#define CHANNEL_LIMIT	1011
 
 #define MUTEX		1050
 #define CV		1051
@@ -2859,6 +2866,39 @@ function{1} Attrib(argv[argc])
          ccp = BlkD(argv[0], Coexpr);
 	 base = 1;
       	 }
+      else if (is:list(argv[0])) {
+      	 if (argc == 1) runerr(130, nulldesc);
+	 base = 1;
+	 hp = BlkD(argv[0], List);
+	 if (!cnv:C_integer(argv[base], q)) runerr(101, argv[base]);
+	 if (argc-base==1){
+	    switch (q) {
+	       case CHANNEL_SIZE:
+	          return C_integer hp->size;
+	          break;
+	       case CHANNEL_LIMIT:
+	          return C_integer hp->max;
+	          break;
+	       default: runerr(101, argv[base]);
+	       }
+	    }
+
+         if ((argc-base) != 2) runerr(130, nulldesc);
+	 if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
+
+	 switch (q) {
+	    case CHANNEL_SIZE:
+	       return C_integer (hp->size = n);
+	       break;
+	    case CHANNEL_LIMIT:
+	       return C_integer (hp->max = n);
+	       break;
+	    default: runerr(101, argv[base]);
+	    }
+
+         fail;
+	       
+      	 } /* if is list*/
       else {
       	 CURTSTATE();
          ccp = BlkD(k_current, Coexpr);

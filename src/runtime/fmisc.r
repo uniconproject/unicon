@@ -2887,9 +2887,6 @@ function{1} Attrib(argv[argc])
 	 if (!cnv:C_integer(argv[base+1], n)) runerr(101, argv[base+1]);
 
 	 switch (q) {
-	    case CHANNEL_SIZE:
-	       return C_integer (hp->size = n);
-	       break;
 	    case CHANNEL_LIMIT:
 	       return C_integer (hp->max = n);
 	       break;

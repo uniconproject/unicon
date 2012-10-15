@@ -50,7 +50,7 @@ end
 
 
 procedure channel(x, port)
-   local ce, T, L, chnl
+   local ce, T, L, chnl, TP
    static chTable, chTableP, chTableN
    initial{ 
           chTable  := mutex(table())
@@ -59,10 +59,11 @@ procedure channel(x, port)
       	  }
    
    if string(x) then{ # the name of the channel is what matters
-       if member(chTableN, x) then 
-          chnl :=  chTableN[x]
-       else
-	  chTableN[x] := chnl := condvar([])
+       critical chTableN:
+          if member(chTableN, x) then 
+             chnl :=  chTableN[x]
+          else
+	     chTableN[x] := chnl := condvar([])
 
        return chnl
       }
@@ -71,49 +72,38 @@ procedure channel(x, port)
       critical chTable:{
          if not(member(chTable, ce)) then chTable[ce] := table() 
          if not(member(chTable, x)) then chTable[x] := table() 
-       
-         T := chTable[ce]
-         if member(T, x) then{
-	    L := T[x]
-            if chnl := get(L) then{
-	       if *L=0 then delete(T, L)
-	       }
-	    else
+
+	 if \(L := chTable[ce][x]) & chnl := get(L) then{
+	    if *L=0 then delete(chTable[ce], x)
+	    }
+	 else if \(L := chTable[x][ce]) then
 	       put(L, chnl := condvar([]))
-            }
          else{
 	    L := []
             put(L, chnl := condvar([]))
             chTable[x][ce] := L
 	    }
-
          } # critical
       return chnl
       }
    else{
+      ce := &current
       critical chTableP:{    # connect channels based on the supplied port
-         ce := &current
-
          if not(member(chTableP, ce)) then chTableP[ce] := table() 
          if not(member(chTableP, x)) then chTableP[x] := table() 
-       
-         T := chTableP[ce]
-         if member(T, x) then{
-	    TP := T[x]
-            if member(TP, port) then{
-               chnl := TP[port]
-	       delete(TP, port)
-	       if *TP=0 then delete(T, TP)
-	       }
-	    else
-	       TP[port] := chnl := condvar([])		
+	 
+	 if \(TP := chTableP[ce][x]) & \(chnl := TP[port]) then{
+	    delete(TP, port)
+	    if *TP=0 then delete(chTableP[ce], x)
+	    }
+	 else if \(TP := chTableP[x][ce]) then{
+	    TP[port] := chnl := condvar([])
             }
          else{
 	    TP := table()
             TP[port] := chnl := condvar([])
             chTableP[x][ce] := TP
 	    }
-
          } # critical
       return chnl
      }

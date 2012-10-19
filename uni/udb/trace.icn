@@ -24,7 +24,7 @@ record LocationRec(
 #
 # This record keeps information about the watched variable
 #
-record TraceRec(
+class TraceRec(
    name,       # a string name of the traced object as entered by the user
    id,         # integer identifies the tracepoint number
    hitMax,     # integer specifies the number of hits before notifying the user
@@ -40,6 +40,39 @@ record TraceRec(
    cmd         # a string with the used command
    )
 
+   #
+   # public method
+   # returns the trace name based on the trace type 
+   #
+   method getTraceName()
+      return case traceType of {
+      "ptrace": "procedure "
+      "ftrace": "function "
+      "otrace": "operator "
+      default : "?? "
+      }
+   end
+
+   #
+   # Return a string value for the current trace state
+   #
+   method getTraceState()
+   return case state of {
+      ENABLED: "enabled"
+      DISABLED: "disabled"
+      DELETED: "deleted"
+      default: "????"
+      }
+   end
+   #
+   # Conditionally change state, if not already in that state.
+   #
+   method condAble(newstate)
+      if newstate = ENABLED & state = DISABLED then return state := ENABLED
+      if newstate = DISABLED & state = ENABLED then return state := DISABLED
+   end
+end
+
 #
 # This class handles both the< variable and behavior tracer
 #
@@ -51,7 +84,7 @@ class Tracing(
    silent,        # a flag tells whether the trace is silent or not
    traceName,     # a string holds the name of the tracing commaand
    traceType,     # a string holds the type of the tracing commaand
-   traceBehavior, # traced opbject are maped to TraceRec records
+   traceBehavior, # traced object are mapped to TraceRec records
    Behavior,      # a set of valid traceable behaviors
    Operator,      # a set of valid traceable operations
    ReturnCode,    # used when there is a cndition on the return value (ret<0)
@@ -65,9 +98,8 @@ class Tracing(
 #
 method checkTraceValue(name)
 
-   if numeric(&eventvalue) & 
-      numeric(traceBehavior[name].traceValue) then{
-      case traceBehavior[name].op of{
+   if numeric(&eventvalue) & numeric(traceBehavior[name].traceValue) then {
+      case traceBehavior[name].op of {
          "=":{
             if &eventvalue = traceBehavior[name].traceValue then
                printInfo(name)
@@ -101,8 +133,8 @@ method checkTraceValue(name)
       return
       }
    else if type(&eventvalue) == "string" &
-           type(traceBehavior[name].traceValue) == "string" then{
-      case traceBehavior[name].op of{
+           type(traceBehavior[name].traceValue) == "string" then {
+      case traceBehavior[name].op of {
          "=":{
             if &eventvalue == traceBehavior[name].traceValue then
                printInfo(name)
@@ -143,7 +175,7 @@ end
 # new trace, enable, disable, delete or clear
 #
 method UpdateMask()
-   local x, mask:= cset('')
+   local x, mask := ''
 
    every x := key(traceBehavior) do
       if traceBehavior[x].state = ENABLED then
@@ -157,16 +189,15 @@ end
 #
 method checkTraceBehavior()
    static name
+   local tbnam
 
-   if member(DState.traceMask, &eventcode) then{
+   if member(DState.traceMask, &eventcode) then {
       #write("Tracing.......................")
       name := image(&eventvalue)
-      if member(traceBehavior,name) & traceBehavior[name].state = ENABLED &
-                        member(traceBehavior[name].eventMask, &eventcode) then{
-         if /traceBehavior[name].hitMax  |
-            traceBehavior[name].hitCount < abs(traceBehavior[name].hitMax) then{
-            if member(ReturnCode, &eventcode) & 
-               \traceBehavior[name].traceValue then
+      if \ (tbnam := traceBehavior[name]) & tbnam.state = ENABLED &
+	  member(tbnam.eventMask, &eventcode) then {
+         if /tbnam.hitMax | tbnam.hitCount < abs(tbnam.hitMax) then {
+            if member(ReturnCode, &eventcode) & \ (tbnam.traceValue) then
                checkTraceValue(name)
             else
                printInfo(name)
@@ -182,23 +213,20 @@ end
 # Prints the watched object info whenever it reaches a condition or state
 #
 method printInfo(name)
-   local R
-
-   R := LocationRec(
-             keyword("file", Monitored) | "?",
-             keyword("line", Monitored) | "?",
-             keyword("level", Monitored)| "?",
-             &eventcode)
+   local R := LocationRec(keyword("file", Monitored) | "?",
+			  keyword("line", Monitored) | "?",
+			  keyword("level", Monitored)| "?",
+			  &eventcode)
 
    write(image(R))
    push(traceBehavior[name].traceList, R)
    traceBehavior[name].hitCount +:= 1
 
-   if \traceBehavior[name].silent | \traceBehavior[name].hitMax then{
+   if \traceBehavior[name].silent | \traceBehavior[name].hitMax then {
       #trace := oldVarInfo(cur_file, cur_line,varInfo[var].curValue)
       #push(varInfo[var].traceList,trace)
-      if \traceBehavior[name].silent then{
-         if traceBehavior[name].hitCount >= \traceBehavior[name].hitMax >0 then{
+      if \traceBehavior[name].silent then {
+         if traceBehavior[name].hitCount >= \traceBehavior[name].hitMax >0 then {
             showEndTraceInfo(name)
             }
          return
@@ -227,14 +255,14 @@ end
 # it notfies the user that there is no more watching
 #
 method showEndTraceInfo(name)
-   local ans, r, i
+   local r, i
 
    DState.State := PAUSE
    DState.RunCode := WATCH
 
-   if traceBehavior[name].hitMax > 0 then{ 
+   if traceBehavior[name].hitMax > 0 then { 
       msg :="\n   Reaching the last of "||traceBehavior[name].hitCount||" hits"
-      if \traceBehavior[name].silent then{
+      if \traceBehavior[name].silent then {
          msg ||:=" of:"
          msg ||:="\n   Tracepoint(Silent) #"
          msg ||:= traceBehavior[name].id||" at: "||name||"; "||
@@ -245,10 +273,10 @@ method showEndTraceInfo(name)
       msg := ""
    msg ||:="\n   Do you want to display old Trace Info (Y|n)? : " 
    DState.Writes(msg)
-   if *(ans := read()) = 0 | ans == ("y"|"Y"|"yes"|"YES") then{
-      if traceBehavior[name].hitMax > 0 then{ 
+   if read() == (""|"y"|"Y"|"yes"|"YES") then {
+      if traceBehavior[name].hitMax > 0 then { 
          msg :="\n   --------------------------------------------------"
-         every i := 1 to *traceBehavior[name].traceList do{
+         every i := 1 to *traceBehavior[name].traceList do {
             r := traceBehavior[name].traceList[i]
             msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
                    "; level="||r.level||"."
@@ -267,7 +295,7 @@ end
 method printOldTraceInfo(name, max)
    local i, r
    
-   if \traceBehavior[name].traceList then{
+   if \traceBehavior[name].traceList then {
       msg  :="\n   Command   : " ||traceBehavior[name].cmd
       msg||:="\n   hit  total: " ||traceBehavior[name].hitCount
       if \traceBehavior[name].traceValue then
@@ -282,7 +310,7 @@ method printOldTraceInfo(name, max)
       if \traceBehavior[name].hitMax then
          max := abs(traceBehavior[name].hitMax)
      
-      every i := 1 to max do{
+      every i := 1 to max do {
          r := traceBehavior[name].traceList[i]
          msg||:="\n   "||i||"# at "||r.fname||":"||r.line||
                 "; level="||r.level||"."
@@ -294,70 +322,38 @@ method printOldTraceInfo(name, max)
 end
 
 #
-# private method
-# returns the trace name based on the trace type 
-#
-method getTraceName(kind)
-
-   if kind == "ptrace" then 
-      return "procedure "
-   else if kind == "ftrace" then
-      return "function "
-   else if kind =="otrace" then
-      return "operator "
-   else
-      return "?? "
-end
-
-#
-# private method
-# returns the trace state
-#
-method getTraceState(State)
-
-   if State = ENABLED then 
-      return "enabled"
-   else if State = DISABLED then
-      return "disabled"
-   else if State = DELETED then
-      return "deleted"
-   else
-      return "????" 
-end
-
-#
 # prints the execution behavior tracer info
 # it is used by traceBehavior()
 #
 method printTraceInfo(cmd)
    local name, id
 
-   if *traceBehavior = 0 then{
+   if *traceBehavior = 0 then {
       msg :="\n   No tracepoints are available."
       DState.Write(msg)
       fail
       }
 
    msg := ""
-   if *cmd = 2 then{
-      if cmd[2] == ("trace" | "tracepoints") then{
-         every name := key(traceBehavior) do{
+   if *cmd = 2 then {
+      if cmd[2] == ("trace" | "tracepoints") then {
+         every name := key(traceBehavior) do {
             msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                   getTraceName(traceBehavior[name].traceType)||
+                   traceBehavior[name].getTraceName()||
                    traceBehavior[name].name||"; Traced Behaviors: "||
                    getBehaviorNames(traceBehavior[name].eventMask)||
-                   "("||getTraceState(traceBehavior[name].state)||")."
+                   "("||traceBehavior[name].getTraceState()||")."
             }
          }
-      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
          traceType := cmd[2]
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].traceType == traceType then{
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].traceType == traceType then {
                msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                      getTraceName(traceBehavior[name].traceType)||
+                      traceBehavior[name].getTraceName()||
                       traceBehavior[name].name||"; Traced Behaviors: "||
-                      ||getBehaviorNames(traceBehavior[name].eventMask)||
-                      "("||getTraceState(traceBehavior[name].state)||")."
+                      getBehaviorNames(traceBehavior[name].eventMask)||
+                      "("||traceBehavior[name].getTraceState()||")."
                DState.Write(msg)
                return
                }
@@ -367,15 +363,15 @@ method printTraceInfo(cmd)
          fail
          }
       }
-   else{
-      if id := integer(cmd[3]) then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].id == id then{
+   else {
+      if id := integer(cmd[3]) then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].id == id then {
                msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                      getTraceName(traceBehavior[name].traceType)||
+                      traceBehavior[name].getTraceName()||
                       traceBehavior[name].name||"; Traced Behaviors: "||
-                      ||getBehaviorNames(traceBehavior[name].eventMask)||
-                      "("||getTraceState(traceBehavior[name].state)||")."
+                      getBehaviorNames(traceBehavior[name].eventMask)||
+                      "("||traceBehavior[name].getTraceState()||")."
                DState.Write(msg)
                return
                }
@@ -384,15 +380,15 @@ method printTraceInfo(cmd)
          DState.Write(msg)
          fail
          }
-      else{
+      else {
          id := cmd[3]
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].name == id then{
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].name == id then {
                msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                      getTraceName(traceBehavior[name].traceType)||
+                      traceBehavior[name].getTraceName()||
                       traceBehavior[name].name||"; Traced Behaviors: "||
-                      ||getBehaviorNames(traceBehavior[name].eventMask)||
-                      "("||getTraceState(traceBehavior[name].state)||")."
+                      getBehaviorNames(traceBehavior[name].eventMask)||
+                      "("||traceBehavior[name].getTraceState()||")."
                DState.Write(msg)
                return
                }
@@ -413,8 +409,8 @@ end
 method getBehaviorCode(behavior, kind)
    local ecodeSet
 
-   if kind == "procedure" then{
-      case behavior of{
+   if kind == "procedure" then {
+      case behavior of {
         "start"   |
         "enter"   |
         "begin"   :{ ecodeSet := cset(E_Pcall || E_Presum)}
@@ -431,8 +427,8 @@ method getBehaviorCode(behavior, kind)
         }
       return ecodeSet
       }
-   else if kind == "function" then{
-      case behavior of{
+   else if kind == "function" then {
+      case behavior of {
         "start"   |
         "enter"   |
         "begin"   :{ ecodeSet := cset(E_Fcall || E_Fresum)}
@@ -449,8 +445,8 @@ method getBehaviorCode(behavior, kind)
         }
       return ecodeSet
       }
-   else if kind == "operator" then{
-      case behavior of{
+   else if kind == "operator" then {
+      case behavior of {
         "start"   |
         "enter"   |
         "begin"   :{ ecodeSet := cset(E_Ocall || E_Oresum)}
@@ -476,10 +472,10 @@ end
 method getBehaviorNames(ecode)
    local i, e, ename:="", name
 
-   if type(ecode) == "cset" then{
-      if *ecode > 0 then{
+   if type(ecode) == "cset" then {
+      if *ecode > 0 then {
          ename := "("
-         every e := !ecode do{
+         every e := !ecode do {
             name := evnames(e)
             i := (find(" ",name)+1) | 1
             ename ||:=name[i:0]||","
@@ -487,7 +483,7 @@ method getBehaviorNames(ecode)
          ename[-1] := ")"
          }
       }
-   else{
+   else {
       name := evnames(ecode)
       i := (find(" ",name)+1) | 1
       ename := name[i:0]
@@ -504,7 +500,7 @@ method addTracepoint(name, cmd)
     DState.traceMask ++:= ecodeSet
     id +:= 1
     
-    if *cmd > 4 then{
+    if *cmd > 4 then {
        op := cmd[4]
        val := cmd[5]
        }
@@ -517,7 +513,7 @@ method addTracepoint(name, cmd)
     UpdateMask()
 
     msg := "\n   Tracepoint #" ||id||" on: "||
-           getTraceName(traceBehavior[name].traceType)||
+           traceBehavior[name].getTraceName()||
            traceBehavior[name].name||"; Traced Behaviors: "||
            getBehaviorNames(ecodeSet)
     DState.Write(msg)
@@ -529,23 +525,23 @@ end
 # build Variable(s) and/or Behavior(s) tracer  
 #
 method cmdTrace(cmd)
-   local ans, name
+   local name
 
-   if DState.isValidCommand(cmd) then{
-      if *cmd >= 2 & resolveTraceInfo(cmd) then{
+   if DState.isValidCommand(cmd) then {
+      if *cmd >= 2 & resolveTraceInfo(cmd) then {
          name := traceName || cmd[2]
-         if \traceBehavior[name] then{
+         if \traceBehavior[name] then {
             msg :="\n   Tracepoint #"||traceBehavior[name].id||
                   " already exist: " ||name
             msg ||:="\n   previous command is : "||traceBehavior[name].cmd
             msg ||:="\n   Do you really want to replace it (Y/n)? : "
             DState.Writes(msg)
-            if *(ans:=read())=0 | ans == ("y"|"Y"|"yes"|"YES") then{
+            if read() == (""|"y"|"Y"|"yes"|"YES") then {
                msg :="\n   previous command has been replaced."
                DState.Write(msg)
                addTracepoint(name, cmd)
                }
-            else{
+            else {
                msg :="\n   \""||DState.cmdHistory[1]||"\" command is ignored."
                DState.Write(msg)
                fail
@@ -554,12 +550,12 @@ method cmdTrace(cmd)
          else
             addTracepoint(name, cmd)
          }
-      else{
+      else {
          #*cmd = 1 [trace]
          printTraceInfo()
          }
       }
-   else{
+   else {
       DState.State := ERROR
       msg:="\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
            "\n   Try \"help trace\" for assistance."
@@ -575,17 +571,17 @@ end
 method resolveTraceInfo(cmd)
    
    initNewCmd()
-   if cmd[2] == ("-s"|"-silent") then{
+   if cmd[2] == ("-s"|"-silent") then {
       silent := 1
       delete(cmd, 2)
       }
 
-   if numeric(cmd[2]) then{
+   if numeric(cmd[2]) then {
       hits := integer(cmd[2])
       delete(cmd, 2)
       }
 
-   if DState.srcCode.isProcedure(cmd[2]) then{
+   if DState.srcCode.isProcedure(cmd[2]) then {
       traceName := "procedure "
       traceType := "ptrace"
       if \cmd[3] & member(Behavior, cmd[3]) then
@@ -593,7 +589,7 @@ method resolveTraceInfo(cmd)
       else
          ecodeSet := ProcMask
       }
-   else if DState.srcCode.isFunction(cmd[2]) then{
+   else if DState.srcCode.isFunction(cmd[2]) then {
       traceName := "function "
       traceType := "ftrace"
       if \cmd[3] & member(Behavior, cmd[3]) then
@@ -601,7 +597,7 @@ method resolveTraceInfo(cmd)
       else
          ecodeSet := FncMask
       }
-   else if member(Operator, cmd[2]) then{
+   else if member(Operator, cmd[2]) then {
       traceName := "function "
       traceType := "otrace"
       if \cmd[3] & member(Behavior, cmd[3]) then
@@ -609,7 +605,7 @@ method resolveTraceInfo(cmd)
       else
          ecodeSet := OperMask
       }
-   else{
+   else {
       msg :="\n   \""||DState.cmdHistory[1]||"\" Unknown action_
              \n   Try \"help trace\" for assistance"
       DState.Write(msg)
@@ -626,13 +622,13 @@ method cmdClear(cmd)
 
    # clears all of the preset tracepoints
    # clear trace
-   if *cmd = 2 then{
-      if cmd[2] == ("trace" | "tracepoints") then{
-         every name := key(traceBehavior) do{
+   if *cmd = 2 then {
+      if cmd[2] == ("trace" | "tracepoints") then {
+         every name := key(traceBehavior) do {
              delete(traceBehavior, name)
              i +:= 1
              }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All tracepoints are cleared; ("||i||" total)."
@@ -642,15 +638,15 @@ method cmdClear(cmd)
          DState.Write(msg)
          return
          }
-      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
          traceType := cmd[2]
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].traceType == traceType then{
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].traceType == traceType then {
                delete(traceBehavior, name)
                i +:= 1
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All tracepoints of type \""||cmd[2]||
@@ -663,10 +659,10 @@ method cmdClear(cmd)
          return
          }
       }
-   else if *cmd >= 3 then{
-      if id := integer(cmd[3]) then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].id = id then{
+   else if *cmd >= 3 then {
+      if id := integer(cmd[3]) then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].id = id then {
                delete(traceBehavior, name)
                # re-construct the traceMask 
                UpdateMask()
@@ -679,11 +675,11 @@ method cmdClear(cmd)
          DState.Write(msg)
          fail
          }
-      else{
+      else {
          delete(cmd, 2)
-         if resolveTraceInfo(cmd) then{
+         if resolveTraceInfo(cmd) then {
             name := traceName || cmd[2]
-            if member(traceBehavior, name) then{
+            if member(traceBehavior, name) then {
                id := traceBehavior[name].id
                delete(traceBehavior, name)
                # re-construct the traceMask 
@@ -692,7 +688,7 @@ method cmdClear(cmd)
                DState.Write(msg)
                return
                }
-            else{
+            else {
                msg:="\n   No tracepoint available on "||name||"."
                DState.Write(msg)
                fail
@@ -714,15 +710,15 @@ method cmdDelete(cmd)
 
    # deletes all of the preset tracepoints
    # delete trace
-   if *cmd = 2 then{
-      if cmd[2] == ("trace" | "tracepoints") then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].state ~= DELETED then{
+   if *cmd = 2 then {
+      if cmd[2] == ("trace" | "tracepoints") then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].state ~= DELETED then {
                traceBehavior[name].state := DELETED
                i +:= 1
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All tracepoints are deleted; ("||i||" total)."
@@ -732,17 +728,17 @@ method cmdDelete(cmd)
          DState.Write(msg)
          return
          }
-      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
          traceType := cmd[2]
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].traceType == traceType then{
-               if traceBehavior[name].state ~= DELETED then{
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].traceType == traceType then {
+               if traceBehavior[name].state ~= DELETED then {
                   traceBehavior[name].state := DELETED
                   i +:= 1
                   }
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All tracepoints of type \""||cmd[2]||
@@ -755,12 +751,12 @@ method cmdDelete(cmd)
          return
          }
       }
-   else if *cmd >= 3 then{
+   else if *cmd >= 3 then {
       # delete trace 1
-      if id := integer(cmd[3]) then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].id = id then{
-               if traceBehavior[name].state ~= DELETED then{
+      if id := integer(cmd[3]) then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].id = id then {
+               if traceBehavior[name].state ~= DELETED then {
                   traceBehavior[name].state := DELETED
                   # re-construct the traceMask 
                   UpdateMask()
@@ -768,7 +764,7 @@ method cmdDelete(cmd)
                   DState.Write(msg)
                   return
                   }
-               else{
+               else {
                   if traceBehavior[name].state = DELETED then
                      msg:="\n   Tracepoint #"||id||" is already deleted."
                   else
@@ -782,14 +778,14 @@ method cmdDelete(cmd)
          DState.Write(msg)
          fail
          }
-      else{
+      else {
          # delete trace [proc-name| fnc-name| oper-name]
          delete(cmd, 2)
-         if resolveTraceInfo(cmd) then{
+         if resolveTraceInfo(cmd) then {
             name := traceName || cmd[2]
-            if member(traceBehavior, name) then{
+            if member(traceBehavior, name) then {
                id := traceBehavior[name].id
-               if traceBehavior[name].state ~= DELETED then{
+               if traceBehavior[name].state ~= DELETED then {
                   traceBehavior[name].state := DELETED
                   # re-construct the traceMask 
                   UpdateMask()
@@ -797,7 +793,7 @@ method cmdDelete(cmd)
                   DState.Write(msg)
                   return
                   }
-               else{
+               else {
                   if traceBehavior[name].state = DELETED then
                      msg:="\n   Tracepoint #"||id||" is already deleted."
                   else
@@ -806,7 +802,7 @@ method cmdDelete(cmd)
                   fail
                   }
                }
-            else{
+            else {
                msg:="\n   No tracepoint available on "||name||"."
                DState.Write(msg)
                fail
@@ -828,15 +824,14 @@ method cmdEnable(cmd)
 
    # enables all of the preset tracepoints
    # enable trace
-   if *cmd = 2 then{
-      if cmd[2] == ("trace" | "tracepoints") then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].state = DISABLED then{
-               traceBehavior[name].state := ENABLED
+   if *cmd = 2 then {
+      if cmd[2] == ("trace" | "tracepoints") then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].condAble(ENABLED) then {
                i +:= 1
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All tracepoints are enabled; ("||i||" total)."
@@ -846,17 +841,16 @@ method cmdEnable(cmd)
          DState.Write(msg)
          return
          }
-      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
          traceType := cmd[2]
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].traceType == traceType then{
-               if traceBehavior[name].state = DISABLED then{
-                  traceBehavior[name].state := ENABLED
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].traceType == traceType then {
+               if traceBehavior[name].condAble(ENABLED) then {
                   i +:= 1
                   }
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All disabled tracepoints of type \""||cmd[2]||
@@ -869,20 +863,19 @@ method cmdEnable(cmd)
          return
          }
       }
-   else if *cmd >= 3 then{
+   else if *cmd >= 3 then {
       # enable trace 1
-      if id := integer(cmd[3]) then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].id = id then{
-               if traceBehavior[name].state = DISABLED then{
-                  traceBehavior[name].state := ENABLED
+      if id := integer(cmd[3]) then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].id = id then {
+               if traceBehavior[name].condAble(ENABLED) then {
                   # re-construct the traceMask 
                   UpdateMask()
                   msg:="\n   Tracepoint #"||id||" is enabled."
                   DState.Write(msg)
                   return
                   }
-               else{
+               else {
                   if traceBehavior[name].state = ENABLED then
                      msg:="\n   Tracepoint #"||id||" is already enabled."
                   else
@@ -897,22 +890,21 @@ method cmdEnable(cmd)
          DState.Write(msg)
          fail
          }
-      else{
+      else {
          # enable trace [proc-name| fnc-name| oper-name]
          delete(cmd, 2)
-         if resolveTraceInfo(cmd) then{
+         if resolveTraceInfo(cmd) then {
             name := traceName || cmd[2]
-            if member(traceBehavior, name) then{
+            if member(traceBehavior, name) then {
                id := traceBehavior[name].id
-               if traceBehavior[name].state = DISABLED then{
-                  traceBehavior[name].state := ENABLED
+               if traceBehavior[name].condAble(ENABLED) then {
                   # re-construct the traceMask 
                   UpdateMask()
                   msg:="\n   Tracepoint #"||id||" is enabled."
                   DState.Write(msg)
                   return
                   }
-               else{
+               else {
                   if traceBehavior[name].state = ENABLED then
                      msg:="\n   Tracepoint #"||id||" is already enabled."
                   else
@@ -922,7 +914,7 @@ method cmdEnable(cmd)
                   fail
                   }
                }
-            else{
+            else {
                msg:="\n   No tracepoint available on "||name||"."
                DState.Write(msg)
                fail
@@ -944,15 +936,14 @@ method cmdDisable(cmd)
 
    # disables all of the preset tracepoints
    # disable trace
-   if *cmd = 2 then{
-      if cmd[2] == ("trace" | "tracepoints") then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].state = ENABLED then{
-               traceBehavior[name].state := DISABLED
+   if *cmd = 2 then {
+      if cmd[2] == ("trace" | "tracepoints") then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].condAble(DISABLED) then {
                i +:= 1
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All tracepoints are enabled; ("||i||" total)."
@@ -962,17 +953,16 @@ method cmdDisable(cmd)
          DState.Write(msg)
          return
          }
-      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then{
+      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
          traceType := cmd[2]
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].traceType == traceType then{
-               if traceBehavior[name].state = ENABLED then{
-                  traceBehavior[name].state := DISABLED
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].traceType == traceType then {
+               if traceBehavior[name].condAble(DISABLED) then {
                   i +:= 1
                   }
                }
             }
-         if i > 0 then{
+         if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
             msg:="\n   All enabled tracepoints of type \""||cmd[2]||
@@ -985,20 +975,19 @@ method cmdDisable(cmd)
          return
          }
       }
-   else if *cmd >= 3 then{
+   else if *cmd >= 3 then {
       # disable trace 1
-      if id := integer(cmd[3]) then{
-         every name := key(traceBehavior) do{
-            if traceBehavior[name].id = id then{
-               if traceBehavior[name].state = ENABLED then{
-                  traceBehavior[name].state := DISABLED
+      if id := integer(cmd[3]) then {
+         every name := key(traceBehavior) do {
+            if traceBehavior[name].id = id then {
+               if traceBehavior[name].condAble(DISABLED) then {
                   # re-construct the traceMask 
                   UpdateMask()
                   msg:="\n   Tracepoint #"||id||" is disabled."
                   DState.Write(msg)
                   return
                   }
-               else{
+               else {
                   if traceBehavior[name].state = ENABLED then
                      msg:="\n   Tracepoint #"||id||" is already disabled."
                   else
@@ -1013,22 +1002,21 @@ method cmdDisable(cmd)
          DState.Write(msg)
          fail
          }
-      else{
+      else {
          # delete trace [proc-name| fnc-name| oper-name]
          delete(cmd, 2)
-         if resolveTraceInfo(cmd) then{
+         if resolveTraceInfo(cmd) then {
             name := traceName || cmd[2]
-            if member(traceBehavior, name) then{
+            if member(traceBehavior, name) then {
                id := traceBehavior[name].id
-               if traceBehavior[name].state = ENABLED then{
-                  traceBehavior[name].state := DISABLED
+               if traceBehavior[name].condAble(DISABLED) then {
                   # re-construct the traceMask 
                   UpdateMask()
                   msg:="\n   Tracepoint #"||id||" is disabled."
                   DState.Write(msg)
                   return
                   }
-               else{
+               else {
                   if traceBehavior[name].state = ENABLED then
                      msg:="\n   Tracepoint #"||id||" is already disabled."
                   else
@@ -1038,7 +1026,7 @@ method cmdDisable(cmd)
                   fail
                   }
                }
-            else{
+            else {
                msg:="\n   No tracepoint available on "||name||"."
                DState.Write(msg)
                fail
@@ -1057,10 +1045,7 @@ end
 # re-initializes all tracepoints info
 #
 method resetTraceInfo()
-   local x
-
-   every x := key(traceBehavior) do
-      traceBehavior[x].hitCount := traceBehavior[x].missCount := 0
+   every (!traceBehavior)["hitCount"|"missCount"] := 0
 end
 
 #
@@ -1068,25 +1053,18 @@ end
 # initialize class variables for the sake of starting new tracing command
 #
 method initNewCmd()
-
-   traceType  := &null
-   traceName  := &null
-   ecodeSet   := &null
-   hits       := &null
-   silent     := &null
+   traceType := traceName := ecodeSet := hits := silent := &null
 end
 
 #
 # Initialization
 #
 initially()
-
    id            := 0
    ReturnCode    := cset(E_Pret || E_Fret || E_Oret)
    traceBehavior := table()
-   Operator      := set(
-      "+","-","*","/","\\","[]","++","--","**",
-      "<",">",">=","<=","=","==","===","~=","~==","~===",">>=","<<=")
+   Operator      := set( "+","-","*","/","\\","[]","++","--","**","<",">",
+		     ">=","<=","=","==","===","~=","~==","~===",">>=","<<=")
    Behavior      := set("start", "enter", "begin","call","resume", 
                         "exit", "end","fail","return", "suspend","remove")
 end

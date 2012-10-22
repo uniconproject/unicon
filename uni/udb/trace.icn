@@ -70,6 +70,7 @@ class TraceRec(
    method condAble(newstate)
       if newstate = ENABLED & state = DISABLED then return state := ENABLED
       if newstate = DISABLED & state = ENABLED then return state := DISABLED
+      if newstate = DELETED & state ~= DELETED then return state := DELETED
    end
 end
 
@@ -218,14 +219,13 @@ method printInfo(name)
 			  &eventcode)
 
    write(image(R))
-   push(traceBehavior[name].traceList, R)
-   traceBehavior[name].hitCount +:= 1
+   tbn := traceBehavior[name]
+   push(tbn.traceList, R)
+   tbn.hitCount +:= 1
 
-   if \traceBehavior[name].silent | \traceBehavior[name].hitMax then {
-      #trace := oldVarInfo(cur_file, cur_line,varInfo[var].curValue)
-      #push(varInfo[var].traceList,trace)
-      if \traceBehavior[name].silent then {
-         if traceBehavior[name].hitCount >= \traceBehavior[name].hitMax >0 then {
+   if \ (tbn.silent) | \ (tbn.hitMax) then {
+      if \ (tbn.silent) then {
+         if tbn.hitCount >= \ (tbn.hitMax) > 0 then {
             showEndTraceInfo(name)
             }
          return
@@ -239,8 +239,8 @@ method printInfo(name)
    msg||:="\n   hit  total: " ||traceBehavior[name].hitCount
    if \traceBehavior[name].traceValue then
       msg||:="\n   miss total: " ||traceBehavior[name].missCount
-   msg||:="\n   --------------------------------------------------"
-   msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||name||"; "||
+   msg||:="\n   --------------------------------------------------\n"
+   msg||:="   Tracepoint #" ||traceBehavior[name].id||" on: "||name||"; "||
           getBehaviorNames(&eventcode) ||", "||
           R.fname||":"||R.line||"."
    msg||:="\n   "||R.line||":"||
@@ -262,8 +262,7 @@ method showEndTraceInfo(name)
    if traceBehavior[name].hitMax > 0 then { 
       msg :="\n   Reaching the last of "||traceBehavior[name].hitCount||" hits"
       if \traceBehavior[name].silent then {
-         msg ||:=" of:"
-         msg ||:="\n   Tracepoint(Silent) #"
+         msg ||:=" of:\n   Tracepoint(Silent) #"
          msg ||:= traceBehavior[name].id||" at: "||name||"; "||
                   getBehaviorNames(traceBehavior[name].eventMask)||"."
          }
@@ -325,7 +324,7 @@ end
 # it is used by traceBehavior()
 #
 method printTraceInfo(cmd)
-   local name, id
+   local name, id, tb
 
    if *traceBehavior = 0 then {
       msg :="\n   No tracepoints are available."
@@ -336,23 +335,21 @@ method printTraceInfo(cmd)
    msg := ""
    if *cmd = 2 then {
       if cmd[2] == ("trace" | "tracepoints") then {
-         every name := key(traceBehavior) do {
-            msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                   traceBehavior[name].getTraceName()||
-                   traceBehavior[name].name||"; Traced Behaviors: "||
-                   getBehaviorNames(traceBehavior[name].eventMask)||
-                   "("||traceBehavior[name].getTraceState()||")."
+         every tb := !traceBehavior do {
+            msg||:="\n   Tracepoint #" ||tb.id||" on: "||
+		tb.getTraceName() || tb.name||"; Traced Behaviors: "||
+		getBehaviorNames(tb.eventMask)||
+		"("||tb.getTraceState()||")."
             }
          }
       else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
          traceType := cmd[2]
-         every name := key(traceBehavior) do {
-            if traceBehavior[name].traceType == traceType then {
-               msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                      traceBehavior[name].getTraceName()||
-                      traceBehavior[name].name||"; Traced Behaviors: "||
-                      getBehaviorNames(traceBehavior[name].eventMask)||
-                      "("||traceBehavior[name].getTraceState()||")."
+         every tb := !traceBehavior do {
+            if tb.traceType == traceType then {
+               msg||:="\n   Tracepoint #" ||tb.id||" on: "||
+                      tb.getTraceName() || tb.name||"; Traced Behaviors: "||
+                      getBehaviorNames(tb.eventMask)||
+                      "("||tb.getTraceState()||")."
                DState.Write(msg)
                return
                }
@@ -364,13 +361,12 @@ method printTraceInfo(cmd)
       }
    else {
       if id := integer(cmd[3]) then {
-         every name := key(traceBehavior) do {
-            if traceBehavior[name].id == id then {
-               msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                      traceBehavior[name].getTraceName()||
-                      traceBehavior[name].name||"; Traced Behaviors: "||
-                      getBehaviorNames(traceBehavior[name].eventMask)||
-                      "("||traceBehavior[name].getTraceState()||")."
+         every tb := !traceBehavior do {
+            if tb.id == id then {
+               msg||:="\n   Tracepoint #" ||tb.id||" on: "||
+                      tb.getTraceName()|| tb.name||"; Traced Behaviors: "||
+                      getBehaviorNames(tb.eventMask)||
+                      "("||tb.getTraceState()||")."
                DState.Write(msg)
                return
                }
@@ -381,13 +377,12 @@ method printTraceInfo(cmd)
          }
       else {
          id := cmd[3]
-         every name := key(traceBehavior) do {
-            if traceBehavior[name].name == id then {
-               msg||:="\n   Tracepoint #" ||traceBehavior[name].id||" on: "||
-                      traceBehavior[name].getTraceName()||
-                      traceBehavior[name].name||"; Traced Behaviors: "||
-                      getBehaviorNames(traceBehavior[name].eventMask)||
-                      "("||traceBehavior[name].getTraceState()||")."
+         every tb := !traceBehavior do {
+            if tb.name == id then {
+               msg||:="\n   Tracepoint #" ||tb.id||" on: "||
+                      tb.getTraceName()|| tb.name||"; Traced Behaviors: "||
+                      getBehaviorNames(tb.eventMask)||
+                      "("||tb.getTraceState()||")."
                DState.Write(msg)
                return
                }
@@ -711,12 +706,7 @@ method cmdDelete(cmd)
    # delete trace
    if *cmd = 2 then {
       if cmd[2] == ("trace" | "tracepoints") then {
-         every name := key(traceBehavior) do {
-            if traceBehavior[name].state ~= DELETED then {
-               traceBehavior[name].state := DELETED
-               i +:= 1
-               }
-            }
+         every (!traceBehavior).condAble(DELETED) do i +:= 1
          if i > 0 then {
             # re-construct the traceMask 
             UpdateMask()
@@ -731,8 +721,7 @@ method cmdDelete(cmd)
          traceType := cmd[2]
          every name := key(traceBehavior) do {
             if traceBehavior[name].traceType == traceType then {
-               if traceBehavior[name].state ~= DELETED then {
-                  traceBehavior[name].state := DELETED
+               if traceBehavior[name].condAble(DELETED) then {
                   i +:= 1
                   }
                }
@@ -753,10 +742,9 @@ method cmdDelete(cmd)
    else if *cmd >= 3 then {
       # delete trace 1
       if id := integer(cmd[3]) then {
-         every name := key(traceBehavior) do {
-            if traceBehavior[name].id = id then {
-               if traceBehavior[name].state ~= DELETED then {
-                  traceBehavior[name].state := DELETED
+         every tb := !traceBehavior do {
+            if tb.id = id then {
+               if tb.condAble(DELETED) then {
                   # re-construct the traceMask 
                   UpdateMask()
                   msg:="\n   Tracepoint #"||id||" is deleted."
@@ -764,7 +752,7 @@ method cmdDelete(cmd)
                   return
                   }
                else {
-                  if traceBehavior[name].state = DELETED then
+                  if tb.state = DELETED then
                      msg:="\n   Tracepoint #"||id||" is already deleted."
                   else
                      msg:="\n   Tracepoint #"||id||" is has unkown state."
@@ -784,8 +772,7 @@ method cmdDelete(cmd)
             name := traceName || cmd[2]
             if member(traceBehavior, name) then {
                id := traceBehavior[name].id
-               if traceBehavior[name].state ~= DELETED then {
-                  traceBehavior[name].state := DELETED
+               if traceBehavior[name].condAble(DELETED) then {
                   # re-construct the traceMask 
                   UpdateMask()
                   msg:="\n   Tracepoint #"||id||" is deleted."
@@ -825,10 +812,8 @@ method cmdEnable(cmd)
    # enable trace
    if *cmd = 2 then {
       if cmd[2] == ("trace" | "tracepoints") then {
-         every name := key(traceBehavior) do {
-            if traceBehavior[name].condAble(ENABLED) then {
-               i +:= 1
-               }
+         every (!traceBehavior).condAble(ENABLED) do {
+	    i +:= 1
             }
          if i > 0 then {
             # re-construct the traceMask 

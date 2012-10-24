@@ -21,4 +21,13 @@
  */
 #define NoCrypt
 #define Concurrent 1
+#define NoVFork 1
+
+/*
+ * This turns out to be a sore spot: needed on some, an error on others.
+ * Want this to be a simple #ifdef, but the use of enums instead of #define's
+ * means we can't tell which ones are defined.  Boo!
+ */
+#if 0
 #define PTHREAD_MUTEX_RECURSIVE PTHREAD_MUTEX_RECURSIVE_NP
+#endif

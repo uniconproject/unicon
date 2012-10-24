@@ -45,6 +45,7 @@ void	linit			(void);
 void	lmfree			(void);
 void	loc_init		(void);
 void	locinit			(void);
+int	lookup_linked_uid       (char *uid);
 void	lout			(FILE *fd);
 void	lwarn			(char *s1,char *s2,char *s3);
 char	*makename		(char *dest,char *d,char *name,char *e);

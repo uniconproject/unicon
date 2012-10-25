@@ -20,7 +20,6 @@
  * If you have crypt, you can remove this.
  */
 #define NoCrypt
-#define Concurrent 1
 #define NoVFork 1
 
 /*

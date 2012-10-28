@@ -200,11 +200,12 @@ global outline, outcol, outfilename,package_level_syms,package_level_class_syms
 
 procedure Progend(x1)
    
-   if yynerrs > 0 then {
+   if *\parsingErrors > 0 then {
       every pe := !parsingErrors do {
 	 write(&errout, pe.errorMessage)
 	 }
-      istop(yynerrs || " error" || (if yynerrs > 1 then "s" else ""))
+      istop(*\parsingErrors || " error" ||
+	    (if *\parsingErrors > 1 then "s" else ""))
       }
 
    if /x1 then istop("error: empty file")
@@ -290,9 +291,9 @@ program	: decls EOFX { Progend($1);} ;
 
 decls	: { $$ := EmptyNode } ;
 	| decls decl {
-	   if yynerrs = 0 then iwrites(&errout,".");
-	   $$ := node("decls", $1, $2)
-	      } ;
+	     if /parsingErrors | *parsingErrors = 0 then iwrites(&errout,".")
+	     $$ := node("decls", $1, $2)
+	     } ;
 
 decl	: record
 	| proc
@@ -348,7 +349,6 @@ classhead : CLASS IDENT supers LPAREN carglist RPAREN {
       warning("Warning: class "|| $$.name ||" overrides the built-in function")
    else if \ (foobar := classes.lookup($$.name)) then {
       yyerror("redeclaration of class " || $$.name)
-      yynerrs +:= 1
       }
    else
       classes.insert($$, $$.name)

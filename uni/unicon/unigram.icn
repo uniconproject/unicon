@@ -54,11 +54,12 @@ global outline, outcol, outfilename,package_level_syms,package_level_class_syms
 
 procedure Progend(x1)
    
-   if yynerrs > 0 then {
+   if *\parsingErrors > 0 then {
       every pe := !parsingErrors do {
 	 write(&errout, pe.errorMessage)
 	 }
-      istop(yynerrs || " error" || (if yynerrs > 1 then "s" else ""))
+      istop(*\parsingErrors || " error" ||
+	    (if *\parsingErrors > 1 then "s" else ""))
       }
 
    if /x1 then istop("error: empty file")
@@ -130,7 +131,7 @@ procedure Progend(x1)
       set_of_all_fields := set()
       }
 end
-#line 133 "unigram.icn"
+#line 134 "unigram.icn"
 $define IDENT 257
 $define INTLIT 258
 $define REALLIT 259
@@ -2710,7 +2711,7 @@ end
 # or to stderr.
 #
 record ParseError ( lineNumber, errorMessage )
-#line 2717 "unigram.icn"
+#line 2718 "unigram.icn"
 ################################################################
 # procedure: yyparse : parse input and execute indicated items
 ################################################################
@@ -2871,30 +2872,30 @@ procedure action_null()
 end
 
 procedure action_1()
-#line 288 "unigram.y"
+#line 289 "unigram.y"
  Progend(valstk[2]);
 end
 
 procedure action_2()
-#line 290 "unigram.y"
+#line 291 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_3()
-#line 291 "unigram.y"
+#line 292 "unigram.y"
 
-	   if yynerrs = 0 then iwrites(&errout,".");
-	   yyval := node("decls", valstk[2], valstk[1])
-	      
+	     if /parsingErrors | *parsingErrors = 0 then iwrites(&errout,".")
+	     yyval := node("decls", valstk[2], valstk[1])
+	     
 end
 
 procedure action_12()
-#line 306 "unigram.y"
+#line 307 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_13()
-#line 307 "unigram.y"
+#line 308 "unigram.y"
 
 	   yyval := Method( , , , , , valstk[5], "initially", EmptyNode, "method", "(", ")")
 	   yyval.locals := valstk[3]
@@ -2904,7 +2905,7 @@ procedure action_13()
 end
 
 procedure action_14()
-#line 313 "unigram.y"
+#line 314 "unigram.y"
 
 	   yyval := Method( , , , , , valstk[8], "initially", valstk[6], "method", "(", ")")
 	   yyval.locals := valstk[3]
@@ -2914,12 +2915,12 @@ procedure action_14()
 end
 
 procedure action_15()
-#line 321 "unigram.y"
+#line 322 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_17()
-#line 324 "unigram.y"
+#line 325 "unigram.y"
 
    yyval := valstk[3]
    yyval.methods := methodstaque(&null, yyval)
@@ -2927,7 +2928,7 @@ procedure action_17()
 end
 
 procedure action_18()
-#line 328 "unigram.y"
+#line 329 "unigram.y"
 
    yyval := valstk[7]
    if valstk[5] ~=== EmptyNode then {
@@ -2943,7 +2944,7 @@ procedure action_18()
 end
 
 procedure action_19()
-#line 341 "unigram.y"
+#line 342 "unigram.y"
 
    yyval := Class()
    yyval.tag := valstk[6]
@@ -2953,7 +2954,6 @@ procedure action_19()
       warning("Warning: class "|| yyval.name ||" overrides the built-in function")
    else if \ (foobar := classes.lookup(yyval.name)) then {
       yyerror("redeclaration of class " || yyval.name)
-      yynerrs +:= 1
       }
    else
       classes.insert(yyval, yyval.name)

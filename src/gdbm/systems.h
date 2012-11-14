@@ -28,7 +28,9 @@
 
 
 #ifdef __GNUC__
+#ifndef alloca
 #define alloca	__builtin_alloca
+#endif
 #else	/* not __GNUC__ */
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>

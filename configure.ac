@@ -1,4 +1,4 @@
-AC_INIT([Unicon],[11.5],[jeffery@cs.uidaho.edu])
+AC_INIT([Unicon],[12.1],[jeffery@cs.uidaho.edu])
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 AC_PROG_CC
 AC_PROG_CPP

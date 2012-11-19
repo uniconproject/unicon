@@ -131,7 +131,7 @@ else
 fi], [
 AC_MSG_RESULT(yes)
 FTGL_HOME=/usr/local
-if test ! -f "${FTGL_HOME}/include/FTGL/FTGL.h"
+if test ! -f "${FTGL_HOME}/include/FTGL/FTGLExtrdFont.h"
 then
         FTGL_HOME=/usr
 fi
@@ -155,7 +155,7 @@ then
     if test "$CXX" = "g++" -a "$GXX" = "yes"
     then
 	AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
-	AC_CHECK_HEADER(FTGL.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
+	AC_CHECK_HEADER(FTGLExtrdFont.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
         if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
         then
                 #

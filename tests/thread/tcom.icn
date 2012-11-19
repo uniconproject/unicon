@@ -1,0 +1,89 @@
+#
+#  Jafar Al-Gharaibeh
+#  11/18/2012
+#  A program that tests the built-in thread communication facilities
+#
+
+#
+# The main thread creates three threads, (a), (b) and (c), then sends a token to (a) which pass it 
+# to (b), which pass it to (c). (c) send it back to (a) which in trun returns it back to main. The 
+# main thread prints a message representing the trip of the token marked by each stop at every thread
+# along the way. 
+# The trip of the token (output): Main ==> A ==> B ==> C ==> A ==> Main
+
+
+$include "threadh.icn"
+import threads
+
+procedure main()
+   write("testing thread communications, inbox/outbox messaging...")
+  
+   a := thread A()
+   b := thread B()
+   c := thread C()
+
+   # send refernces of threads to other threads which need them
+
+    b @> a
+    c @> b
+    a @> c
+
+    "Main ==> " @> a   
+    t := <<@ a
+
+
+    t ||:= "Main!"
+    write("I got: ", t)
+
+    if t =="Main ==> A ==> B ==> C ==> A ==> Main!" then 
+       write("Correct output!")
+    else
+       write("Wrong: Unexpected output!")
+   
+   #wait(a | b | c)   # no need for this. Threads have finished what they need to do already!
+end
+
+procedure A()
+   b := <<@
+
+   # wait for the token coming from main
+   t := <<@ 
+
+   # "sign it"
+   t ||:= "A ==> "
+
+   # ship to b
+   t @> b
+
+   # wait to get the token from C
+   t := <<@
+
+   t ||:= "A ==> "
+
+
+   #  The ring is complete. Ship the token to be picked by main
+   t @>
+
+end
+
+procedure B()
+   c := <<@
+
+   t := <<@
+
+   t ||:= "B ==> "
+   t @> c
+end
+
+procedure C()
+
+   a := <<@
+
+   t := <<@
+
+   t ||:= "C ==> "
+   t @> a   
+
+end
+
+

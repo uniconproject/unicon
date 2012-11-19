@@ -1,0 +1,127 @@
+#
+#  Jafar Al-Gharaibeh
+#  10/13/2012
+#  A program that demonstrates the use of channels to communicate between threads
+#
+# The main thread creates three threads, (a), (b) and (c), then sends a token to (a) which pass it 
+# to (b), which pass it to (c). (c) send it back to (a) which in trun returns it back to main. The 
+# main thread prints a message representing the trip of the token marked by each stop at every thread
+# along the way. 
+# The trip of the token (output): Main ==> A ==> B ==> C ==> A ==> Main
+
+
+$include "threadh.icn"
+import threads
+
+procedure main()
+   write("testing private channels...")
+
+   a := thread A()
+   b := thread B()
+   c := thread C()
+
+   # send refernces of threads to other threads which need them
+
+    b @> a
+    c @> a
+
+    a @> b
+    c @> b
+
+    a @> c
+    b @> c
+
+    # Open two channels with a, MA: send from M to A,  AM: recieve from A to M.
+    # The second argument to channel() is a unique name so that it is easy to 
+    # identify it at the other end
+
+    chAM := channel(a, "AM")
+    chMA := channel(a, "MA")
+
+    # send the token to A and then wait until you hear back.
+    # Notice the use of the non blocking send @>. Since we are sending only a few 
+    # messages in this program we don't have to worry about failing or loosing messages.
+    # the use of the blocking receive is necessary however, since we need to wait to
+    # hear an answer.
+
+    "Main ==> " @> chMA   
+    t := <<@ chAM
+
+
+    t ||:= "Main!"
+    write("I got: ", t)
+
+    if t =="Main ==> A ==> B ==> C ==> A ==> Main!" then 
+       write("Correct output!")
+    else
+       write("Wrong: Unexpected output!")
+   
+   #wait(a | b | c)   # no need for this. Threads have finished what they need to do already!
+end
+
+procedure A()
+   b := <<@
+   c := <<@
+
+   # A channel to send to B, since there is only one channel with B
+   # a name is not necessary
+   chB := channel(b)
+
+   #  two channels with main. The names will take care of the correct mapping
+   chMA := channel(&main, "MA")
+   chAM := channel(&main, "AM")
+
+   # Another way to create channels: named channels without tying them to any 
+   # specific thread. Any thread who likes to join can use the unique name. 
+   # Good if there are multiple senders/receivers sharing data on the same queue
+   # This channel will be used to receive from c.
+   
+   chC := channel("I like this channel name!")
+
+   # wait for the token from main
+   t := <<@ chMA
+
+   # "sign it"
+   t ||:= "A ==> "
+
+   # ship to b
+   t @> chB
+
+   # wait to get the token from C
+   t := <<@ chC
+
+   t ||:= "A ==> "
+
+
+   #  The ring is complete. Ship the token back to main
+   t @> chAM
+
+end
+
+procedure B()
+   a := <<@
+   c := <<@
+
+   chA := channel(a)
+   chC := channel(c)
+
+   t := <<@ chA
+
+   t ||:= "B ==> "
+   t @> chC   
+end
+
+procedure C()
+
+   a := <<@
+   b := <<@
+
+   chA := channel("I like this channel name!")
+   chB := channel(b)
+
+   t := <<@ chB
+
+   t ||:= "C ==> "
+   t @> chA   
+
+end

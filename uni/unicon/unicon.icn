@@ -436,6 +436,10 @@ procedure unicon(argv)
             #
             # Generate code suitable for consumption by iconc.
             #
+	    if comp === -1 then {
+	       istop("conflicting requests for -c and -C")
+	       }
+
             iconc := 1
             parseonly := 1
             if *argv[i] > 2 then
@@ -453,12 +457,9 @@ procedure unicon(argv)
 	 "-c"   : {
 	    sysok := &null
 	    if comp = 0 then comp := -1        # don't make exe
-            if \iconc then {
-               if /icontopt then
-                  icontopt := "-c "
-               else
-                  icontopt ||:= "-c "
-               }
+	    if iconc === 1 then {
+	       istop("conflicting requests for -c and -C")
+	       }
 	    }
 	 "-quiet"  : loud := &null
 	 "-log"  : {

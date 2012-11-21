@@ -973,10 +973,10 @@ then
 	XFT_OLD_LDFLAGS=$LDFLAGS
 	XFT_OLD_CPPFLAGS=$CPPFLAGS
 	LDFLAGS="$LDFLAGS -L${XFT_HOME}/lib64 -L${XFT_HOME}/lib"
-	CPPFLAGS="$CPPFLAGS -I${XFT_HOME}/include/X11/Xft"
+	CPPFLAGS="$CPPFLAGS -I${XFT_HOME}/include/X11/Xft -I${XFT_HOME}/include/freetype2"
         AC_LANG_SAVE
         AC_LANG_C
-        AC_CHECK_LIB(Xft, XftPatternCreate, [xft_cv_libxft=yes], [xft_cv_libxft=no])
+        AC_CHECK_LIB(Xft, XftFontOpenPattern, [xft_cv_libxft=yes], [xft_cv_libxft=no])
         AC_CHECK_HEADER(Xft.h, [xft_cv_xft_h=yes], [xft_cv_xft_h=no])
         AC_LANG_RESTORE
         if test "$xft_cv_libxft" = "yes" -a "$xft_cv_xft_h" = "yes"

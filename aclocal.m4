@@ -149,8 +149,8 @@ then
     CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
     AC_PROG_CXX
     #
-    # test whether we found a C++ compiler; for now, only a true g++
-    # used to AC_LANG_CPLUSPLUS but that dies with a FATAL error if no C++
+    # test whether we found a C++ compiler; for now, only a true g++.
+    # We used to use AC_LANG_CPLUSPLUS, but that dies with a FATAL error if no C++
     #
     if test "$CXX" = "g++" -a "$GXX" = "yes"
     then

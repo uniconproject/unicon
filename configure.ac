@@ -1,6 +1,7 @@
 AC_INIT([Unicon],[12.1],[jeffery@cs.uidaho.edu])
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_RANLIB
 AC_CHECK_LIB(socket, socket)

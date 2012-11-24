@@ -580,9 +580,4 @@ raudio.o: raudio.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri
 	rm `sed 's/$$/.c/' rttcur.lst`
 
 ../common/drawstring3d.o: ../common/drawstring3d.cc
-	@if test "`which $(CXX)`" != ""; then \
-		$(CXX) -c -o ../common/drawstring3d.o ../common/drawstring3d.cc; \
-	else \
-		echo "no C++ compiler"; \
-		touch ../common/drawstring3d.o; \
-	fi 
+	cd ../common; $(MAKE) drawstring3d.o

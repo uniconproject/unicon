@@ -1343,7 +1343,7 @@ function{1} DrawString(argv[argc])
 
          for(j = warg; j < warg + 3; j++)
 	    rp->fields[2 + j - warg] = argv[j];
-	 MakeStr(s, len, &rp->fields[5]);
+	 MakeStr(s, strlen(s), &(rp->fields[5]));
          c_put(&(w->window->funclist), &f);
 	 
 	 ReturnWindow;	

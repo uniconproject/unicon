@@ -3807,8 +3807,13 @@ drawstrng3d(wbp w, double x, double y, double z, char *s)
    static char *full_name = NULL;
    FILE *f = 0;
 #if HAVE_LIBFTGL
-   int len_full_name=0, len_path=0, len_font=strlen(curr_font->name);
+   int len_full_name=0, len_path=0, len_font;
 
+   if (!curr_font) {
+      add_3dfont("NIMBU26.TTF", 5, 5);
+      curr_font = end_font;
+      }
+   len_font=strlen(curr_font->name);
    makecurrent(w);
    if (full_name==NULL) {
       full_name = (char *) malloc(sizeof(char)*255);
@@ -3850,8 +3855,7 @@ drawstrng3d(wbp w, double x, double y, double z, char *s)
 #endif					/* HAVE_LIBFTGL */
 }
 
-int
-add_3dfont(char *fname, int fsize, char ftype)
+int add_3dfont(char *fname, int fsize, char ftype)
 {
 #if HAVE_LIBFTGL
   if (end_font) {

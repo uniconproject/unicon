@@ -72,10 +72,14 @@ else
   AC_MSG_RESULT(no)
 fi], [
 AC_MSG_RESULT(yes)
+FREETYPE_HOME=/usr/X11
+if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
+then
 FREETYPE_HOME=/usr/local
 if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
 then
         FREETYPE_HOME=/usr
+fi
 fi
 ])
 #
@@ -86,7 +90,7 @@ then
 	FREETYPE_OLD_LDFLAGS=$LDFLAGS
 	FREETYPE_OLD_CPPFLAGS=$CPPFLAGS
 	LDFLAGS="$LDFLAGS -L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include/freetype2/freetype  -I${FREETYPE_HOME}/include/freetype2"
+        CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include -I${FREETYPE_HOME}/include/freetype2/freetype -I${FREETYPE_HOME}/include/freetype2"
 	echo "$CPPFLAGS"
         AC_LANG_SAVE
         AC_LANG_C
@@ -959,10 +963,14 @@ else
   AC_MSG_RESULT(no)
 fi], [
 AC_MSG_RESULT(yes)
+XFT_HOME=/usr/X11
+if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
+then
 XFT_HOME=/usr/local
 if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
 then
         XFT_HOME=/usr
+fi
 fi
 ])
 #

@@ -594,7 +594,7 @@ procedure main(argv) \\
 \>   name := argv[1] \\
 \>   host := {\textquotedbl}{\textquotedbl} \\
 \>   argv[1] ? \{ \\
-\>   \ \ \ name := tab(upto({\textquotesingle}@{\textquotesingle})) \&
+\>   \ \ \ name := tab(find({\textquotedbl}@{\textquotedbl})) \&
 ={\textquotedbl}@{\textquotedbl} \& host := tab(0) \\
 \>   \ \ \ \} \\
 \>   if *host {\textgreater} 0 then
@@ -643,11 +643,10 @@ end
 }
 
 The call to \texttt{open({\textquotedbl}:1888{\textquotedbl},
-{\textquotedbl}na{\textquotedbl})} blocks until a client accesses that
-port. The returned value is a file that represents the network
-connection. The function \index{image()}\index{image()}\texttt{image()}
-will show the IP address and port of the client machine (this is
-sometimes called the \index{peername}\textit{peername}). \ This server
+{\textquotedbl}na{\textquotedbl})} blocks until a client accesses that port.
+The returned value is a file that represents the network
+connection.
+This example server
 responds to requests by launching a separate process to handle each
 request. The network connection is passed to \texttt{myserverd} as its
 standard input and output, so that process had better be expecting a
@@ -667,11 +666,37 @@ of short duration, the server will appear to be down, or appear to be
 unacceptably slow, to anyone trying to connect while an existing
 request is being processed.
 
+\subsubsection[Determining IP Numbers]{\sffamily Determining IP Numbers}
+
+Many programs need to know the IP number of the
+machine they are talking to. Given a network connection {\texttt f}, the
+function \index{image()}\texttt{image(f)}
+will show the IP address and port of the client machine that is connected
+to the program (this is
+sometimes called the \index{peername}\textit{peername}). 
+
+It may be useful to determine your own IP number. In the general case,
+each machine can have several IP numbers, one for each kind of
+physical network hardware in operation.
+To obtain a list of your local IP numbers, a program can read the output of
+\texttt{/sbin/ifconfig} (on UNIX) or \texttt{ipconfig} (on Windows). To
+find the IP number used for a particular network connection \texttt{n},
+on some platforms you can call \texttt{gethost(n)}, which returns a string
+with the IP number and port used by the local machine for a given connection.
+
+If you do determine your IP number in one of these ways, it is usually not
+the number seen by the world, because most devices are connecting through
+some form of network address translation.
+To see the number that the world sees, you have to connect to
+someone else and ask them to tell you what IP number they see you at.
+
+
+
 \subsubsection[Non{}-blocking Network Opens]{\sffamily Non-blocking
 Network Opens}
 Servers need to never block. The call
 \texttt{open({\textquotedblleft}:port{\textquotedblright},{\textquotedbl}nl{\textquotedbl})}
-\ creates a \textit{listener} on the specified port, without waiting
+creates a \textit{listener} on the specified port, without waiting
 around for someone to actually connect to it. The network file returned
 from \texttt{open()} is not open for reading or writing, so it is not
 good for much...yet. About the only thing you can do with such a file
@@ -681,9 +706,13 @@ current connection request, \texttt{select()} converts it into a
 regular network connection as per mode
 \texttt{{\textquotedbl}na{\textquotedbl}}.
 
-In addition to non-blocking server connections, in the real-world
+In addition to non-blocking servers' listener connections, in the real-world
 clients need a way to do an almost non-blocking connection as well.
-TCP{\textquotesingle}s connecting over long distances
+TCP connections over long distances take a highly variable amount of time,
+but most clients do not want to ``freeze'' for a couple of minutes while
+the connection attempt times out. The network client versions of \texttt{open()}
+allows an optional third parameter to supply it with a timeout value,
+in milliseconds.
 
 \subsubsection{UDP}
 

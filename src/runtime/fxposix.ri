@@ -2542,6 +2542,22 @@ function{0,1} gethost(h)
 #endif					/* NT */
 	 }
       }
+      file : {
+	 body {
+	   /* if it is not a socket, then fail */
+	    if (BlkD(h,File)->status & Fs_Socket) {
+	       char buf[100], *s;
+	       int len = sock_me(BlkD(h,File)->fd.fd, buf, sizeof(buf));
+	       if (!len) fail;
+	       Protect(s=alcstr(buf,len), runerr(0));
+	       MakeStr(s, len, &result);
+	       return result;
+	       }
+	    else {
+	       runerr(103, h);
+	    }
+      }
+      }
    default: {
          runerr(103, h)
       }

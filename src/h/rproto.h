@@ -956,6 +956,7 @@ dptr make_host			(struct hostent *pw, dptr result);
 dptr make_serv			(struct servent *pw, dptr result);
 int sock_listen		(char *s, int udp);
 int sock_name			(int sock, char* addr, char* addrbuf, int bufsize);
+int sock_me			(int sock, char* addrbuf, int bufsize);
 int sock_send			(char* addr, char* msg, int msglen);
 int sock_recv			(int f, struct b_record **rp);
 int sock_write			(int f, char *s, int n);

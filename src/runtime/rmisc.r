@@ -1651,8 +1651,7 @@ dptr dp1, dp2;
          else {
             /*
              * The file is not a standard one; form a string of the form
-             *	file(nm) where nm is the argument originally given to
-             *	open.
+             *	file(nm) where nm is the argument originally given to open.
              */
              char namebuf[100];		/* scratch space */
 #ifdef Graphics

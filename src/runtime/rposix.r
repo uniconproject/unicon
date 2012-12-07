@@ -1161,27 +1161,58 @@ int is_udp_or_listener;
    return fd;
 }
 
-/* Used for image() of connected sockets */
+/*
+ * sock_name() - return (in a buffer) info on the machine we are connected to.
+ * Used for image() of connected sockets.
+ */
 int sock_name(int s, char* addr, char* addrbuf, int bufsize)
 {
    int len;
    struct sockaddr_in conn;
    int addrlen = sizeof(conn);
 
-   if (sock_get(addr) < 0)
-      /* This is not a socket we know anything about */
-      return 0;
+   /*
+    * We used to check sock_get(addr) to decide if this socket was someone
+    * that we know anything about... but that didn't work for clients,
+    * because they never called the listen() code that would introduce
+    * them into the array of sockets that sock_get() uses.  So now we
+    * don't check that, we assume socket s is a valid socket we opened.
+    */
 
    /* Otherwise we can construct a name for it and put in the string */
    if (getpeername(s, (struct sockaddr*) &conn, &addrlen) < 0)
        return 0;
    if (addrlen != sizeof(conn))
       return 0;
+
    len = snprintf(addrbuf, bufsize, "%s:%s:%d", addr,
                   inet_ntoa(conn.sin_addr), (int) ntohs(conn.sin_port));
 
    return len;
 }
+
+/*
+ * Used for gethost(n) of connected sockets.  Similar to sock_name,
+ * except it is returning MY IP # used in this socket.
+ */
+int sock_me(int s, char* addrbuf, int bufsize)
+{
+   int len;
+   struct sockaddr_in local;
+   int addrlen = sizeof(local);
+
+   /* Otherwise we can construct a name for it and put in the string */
+   if (getsockname(s, (struct sockaddr*) &local, &addrlen) < 0)
+       return 0;
+   if (addrlen != sizeof(local))
+      return 0;
+   len = snprintf(addrbuf, bufsize, "%s:%d",
+                  inet_ntoa(local.sin_addr), (int) ntohs(local.sin_port));
+
+   return len;
+}
+
+
 /* Used by function send(): in other words, create a socket, send, close it */
 int sock_send(char *adr, char *msg, int msglen)
 {
@@ -1308,6 +1339,9 @@ static struct {
 } sock_map[64] = { {0, 0} };
 static int nsock = 0;
 
+/*
+ * lookup a socket by name
+ */
 static int sock_get(s)
 char *s;
 {

@@ -245,19 +245,19 @@ well as \texttt{stat()}{\textquotesingle}s other fields.
 Ownership and Access}
 
 \index{file ownership}The previous section shows how different
-platforms{\textquotesingle} file systems vary widely in their support
+platforms{\textquotesingle} file systems vary in their support
 for the concepts of file ownership and access. If the system supports
 ownership, the user and group that own a file are changed by calling
 \texttt{chown(fname, user, group)}. The \index{chown()}\texttt{chown()}
-function will only succeed for certain users, such as the super user.
-User and group may be string names or integer user identity codes; this
-is platform dependent.
+function only succeeds for certain users, such as the super user.
+User and group may be string names, or integer user identity codes on
+some platforms.
 
 File access rights are changed with \texttt{chmod(fname, mode)}. The
-\index{chmod()}\texttt{chmod()} function only succeeds the owner of a
+\index{chmod()}\texttt{chmod()} function only succeeds for the owner of a
 given file. The \texttt{mode} is a nine-letter string similar to
-\texttt{stat()}{\textquotesingle}s mode field, or an octal integer
-encoding that information (see Appendix E for details).
+\texttt{stat()}{\textquotesingle}s mode field, or an octal
+encoding of that information (see Appendix E).
 
 Another piece of information about files is called the
 \index{umask}\textit{umask}. This is a variable that tells the system
@@ -274,7 +274,7 @@ must be set explicitly with \texttt{chmod()}.
 
 \subsubsection{File Locks}
 
-Files can be \index{file!lock}locked while a program is in the middle of
+Files can be \index{file!lock}locked while a program is
 updating some information. If the contents of the file are in an
 inconsistent state, other programs may be prevented from reading (or
 especially writing) the file. Programs can cooperate by using file
@@ -283,8 +283,9 @@ locks:
 \iconcode{
 flock(filename, {\textquotedbl}x{\textquotedbl})}
 
-The first call to \texttt{flock()} will create a lock, and subsequent
-calls by other programs will cause them to block, waiting till the
+\noindent
+The first call to \texttt{flock()} creates a lock, and subsequent
+calls by other programs will block, waiting till the
 writing program releases its lock. The flag
 \texttt{{\textquotedbl}x{\textquotedbl}} represents an
 \textit{exclusive} lock, which should be used while writing; this means
@@ -297,7 +298,7 @@ processes can concurrently open the file for reading.
 
 \subsection{Programs and Process Control}
 
-Unicon{\textquotesingle}s system interface is similar but simpler and
+Unicon{\textquotesingle}s system interface is similar but
 higher level than the POSIX C interface. An include file
 \texttt{posix.icn} defines constants used by some functions. Include
 files are special code, consisting mainly of defined symbols, intended
@@ -317,12 +318,12 @@ keyword}\texttt{\&errno} can be compared against constants like
 \texttt{ENOENT}. In general, however, human readers will prefer to
 decipher \texttt{\&errortext}.
 
-In the discussion to follow, a \textit{program} is the code that is
-executed on the computer; a \index{process}\textit{process}\textit{ }is
+In the discussion to follow, a \textit{program} is the code, while
+a \index{process}\textit{process} is such
 a program in execution. This distinction is not usually important, but
-for network applications it is important to understand the difference,
+for network applications it matters,
 since the same program can run in multiple processes, and a process can
-change the program that it{\textquotesingle}s running.
+change the program that it is running.
 
 \subsubsection{Signals}
 
@@ -374,21 +375,21 @@ end
 
 \subsubsection[Launching Programs]{Launching Programs}
 
-Many applications operate by executing other programs and combining
-their results. In many cases, you can accomplish what you need by
-calling \texttt{open()} with mode
-\texttt{{\textquotedbl}p{\textquotedbl}} (for \index{pipe}pipe) to
-launch a command. In this case the string argument to \texttt{open()}
-is not a filename but is an entire command string. Piped commands
+Many applications execute other programs and read
+their results. In many cases, the best way to do this is to
+call \texttt{open()} with mode
+\texttt{{\textquotedbl}p{\textquotedbl}} (\index{pipe}pipe) to
+launch a command. In mode \texttt{{\textquotedbl}p{\textquotedbl}}
+the string argument to \texttt{open()}
+is not a filename, it is an entire command string. Piped commands
 opened for reading (mode \texttt{{\textquotedbl}p{\textquotedbl}} or
-\texttt{{\textquotedbl}pr{\textquotedbl}}) allow your program to read
+\texttt{{\textquotedbl}pr{\textquotedbl}}) let your program read
 the command{\textquotesingle}s standard output, while piped commands
 open for writing (mode \texttt{{\textquotedbl}pw{\textquotedbl}}) allow
-your program to write the command{\textquotesingle}s standard output.
+your program to write to the command{\textquotesingle}s standard input.
 
-A more general function for launching programs is
-\texttt{system(x,f1,f2,f3,mode)}, which runs an external command on a
-set of arguments given in the command argument \texttt{x}. If
+The more general function \texttt{system(x,f1,f2,f3,mode)} runs an external
+command (argument \texttt{x}) with several options. If
 \texttt{x} is a list, \texttt{x[1]} is the command to execute and the
 remaining list elements are its command line arguments. If \texttt{x}
 is a string, it is parsed into arguments separated by spaces. Arguments
@@ -416,9 +417,10 @@ you may have used redirection:
 \ \ \ prog {\textless} file1
 }
 
+\noindent
 File redirection characters and other platform-dependent operations are
 supported in the command string passed to \texttt{system()}, as
-illustrated by the following \texttt{system()} call:
+in the following \texttt{system()} call:
 
 \iconcode{
 \>   system({\textquotedbl}prog {\textless} file1{\textquotedbl})
@@ -459,10 +461,10 @@ identity on some platforms are described in Appendix E.
 A parent process may want to be notified when any of its children quit
 (or change status). This status can be obtained with the function
 \index{wait()}\texttt{wait()}. When a child process changes state from
-{\textquotedbl}running{\textquotedbl} to either
-{\textquotedbl}exited{\textquotedbl} or
-{\textquotedbl}terminated{\textquotedbl} (and optionally
-{\textquotedbl}stopped{\textquotedbl}), \texttt{wait()} returns a
+``running'' to either
+``exited'' or
+``terminated'' (and optionally
+``stopped''), \texttt{wait()} returns a
 string of the form
 
 \iconcode{
@@ -470,9 +472,9 @@ pid:status:arg:core}
 
 The \texttt{{\textquotedbl}:core{\textquotedbl}} will only be present if
 the system created a core file for the process. The status can be any
-of \texttt{{\textquotedbl}exited{\textquotedbl}},
-\texttt{{\textquotedbl}terminated{\textquotedbl}} or
-\texttt{{\textquotedbl}stopped{\textquotedbl}}. The \texttt{arg} field
+of \texttt{``exited''},
+\texttt{``terminated''} or
+\texttt{``stopped''}. The \texttt{arg} field
 is either: a) the exit status of the program if it exited; or b) the
 signal name if it was terminated. Typically \texttt{wait()} will be
 used in the handler for the \texttt{SIGCHLD} signal which is sent to a
@@ -507,14 +509,13 @@ waits indefinitely for input on one of the files.
 
 \iconcode{
 while *(L := select(f1, f2, f3, timeout)) = 0 do \\
-\ \ \ \ \ \ handle\_timeout() \\
-\>   (\&errno = 0) {\textbar} \\
-\>   \ \ \ stop({\textquotedbl}Select \index{expression failure}failed:
-{\textquotedbl}, \&errortext) \\
-\ \ \ every f := !L do \{ \\
-\ \ \ \ \ \ \# Dispatch reads pending on f \\
-\ \ \ \ \ \ ... \\
-\ \ \ \ \ \ \}
+\> handle\_timeout() \\
+(\&errno = 0) {\textbar} stop({\textquotedbl}Select
+ \index{expression failure}failed: {\textquotedbl}, \&errortext) \\
+every f := !L do \{ \\
+\> \# Dispatch reads pending on f \\
+\> ... \\
+\> \}
 }
 
 When using \texttt{select()} to process input from multiple files, you
@@ -526,8 +527,7 @@ or a window designated by keyword \texttt{\&window}:
 
 \iconcode{
 \ \ \ while L := select(f, \&window) do \\
-\ \ \ \ \ \ if !L === f then \\
-\ \ \ \ \ \ \ \ \ c := read(f)
+\ \ \ \ \ \ if !L === f then c := read(f)
 }
 
 Just because \texttt{select()} has returned doesn{\textquotesingle}t
@@ -550,10 +550,10 @@ server or client needs to interact with multiple remote connections.
 
 \subsection[Networking]{Networking}
 \index{networking}Unicon provides a very high-level interface to
-\index{Internet}Internet communications. For applications that wish to
-use their own protocols, we will discuss both the major Internet
-applications protocols, \index{TCP}TCP and UDP. An even higher level
-interface to many popular Internet protocols such as HTTP and POP is
+\index{Internet}Internet communications. Applications with custom
+communications use one of the major Internet
+applications protocols, \index{TCP}TCP and UDP. An higher level
+interface to several popular Internet protocols such as HTTP and POP is
 provided by means of Unicon{\textquotesingle}s messaging facilities.
 
 \subsubsection{TCP}
@@ -609,8 +609,7 @@ connection: {\textquotedbl}, \&errortext) \\
 \>   write(f, name) {\textbar}
 stop({\textquotedbl}Couldn{\textquotesingle}t write: {\textquotedbl},
 \&errortext) \\
-\>   while line := read(f) do \\
-\>   \ \ \ write(line) \\
+\>   while write(read(f)) \\
 end
 }
 
@@ -642,15 +641,14 @@ procedure main() \\
 end
 }
 
-The call to \texttt{open({\textquotedbl}:1888{\textquotedbl},
-{\textquotedbl}na{\textquotedbl})} blocks until a client accesses that port.
-The returned value is a file that represents the network
-connection.
+The call \texttt{open({\textquotedbl}:1888{\textquotedbl},
+{\textquotedbl}na{\textquotedbl})} blocks until a client connects.
+The returned value is a file that represents the network connection.
 This example server
 responds to requests by launching a separate process to handle each
 request. The network connection is passed to \texttt{myserverd} as its
 standard input and output, so that process had better be expecting a
-socket as its standard I/O files, and must handle it appropriately.
+socket on its standard I/O files, and handle it appropriately.
 This works on UNIX; on other platforms a different approach is needed.
 
 Launching a separate process to handle requests is standard operating
@@ -668,18 +666,17 @@ request is being processed.
 
 \subsubsection[Determining IP Numbers]{\sffamily Determining IP Numbers}
 
-Many programs need to know the IP number of the
-machine they are talking to. Given a network connection {\texttt f}, the
-function \index{image()}\texttt{image(f)}
+Many programs need the IP number of the
+machine they are talking to. Given a network connection {\texttt f},
+\index{image()}\texttt{image(f)}
 will show the IP address and port of the client machine that is connected
-to the program (this is
-sometimes called the \index{peername}\textit{peername}). 
+(this is sometimes called the \index{peername}\textit{peername}). 
 
-It may be useful to determine your own IP number. In the general case,
+Some programs need to know their own IP number, but
 each machine can have several IP numbers, one for each kind of
 physical network hardware in operation.
-To obtain a list of your local IP numbers, a program can read the output of
-\texttt{/sbin/ifconfig} (on UNIX) or \texttt{ipconfig} (on Windows). To
+To obtain a list of local IP numbers, a program can read the output of
+\texttt{/sbin/ifconfig} (UNIX) or \texttt{ipconfig} (Windows). To
 find the IP number used for a particular network connection \texttt{n},
 on some platforms you can call \texttt{gethost(n)}, which returns a string
 with the IP number and port used by the local machine for a given connection.
@@ -734,11 +731,10 @@ TCP, though, especially if you are sending them across the Internet
 rather than to a local machine. Sending a postcard is usually cheaper
 than a long distance phone call!
 
-UDP datagrams can be sent in two ways: with an \texttt{open()/writes()}
+UDP datagrams can be sent either with an \texttt{open()/writes()}
 pair, or with \texttt{send()}. Typically a server sends/receives on the
 same socket so it will use \texttt{open()} with \texttt{read()} and
-\texttt{write()}. A client that only sends one or two datagrams might
-use
+\texttt{write()}. A client that only sends one or two datagrams uses
 \index{send()}\texttt{send()}\texttt{/}\index{receive()}\texttt{receive()}.
 
 The following example provides a service called
@@ -766,9 +762,8 @@ The record returned by \texttt{receive()} has two fields: the
 \texttt{{\textquotedbl}}\texttt{\textit{host}}\texttt{:}\texttt{\textit{port}}\texttt{{\textquotedbl}}
 form, and the \texttt{msg} field contains the message.
 
-To write a UDP client, you use mode
-\texttt{{\textquotedbl}nu{\textquotedbl}}, illustrated in the following
-example. Since UDP is not reliable, the \texttt{receive()} is guarded
+To write a UDP client, use mode \texttt{{\textquotedbl}nu{\textquotedbl}}
+Since UDP is not reliable, the \texttt{receive()} is guarded
 with a \texttt{select()}; otherwise, the program might hang forever if
 the reply is lost. The timeout of five seconds in the call to
 \texttt{select()} is arbitrary and might not be long enough on a
@@ -827,9 +822,8 @@ supplies a Reply To field as a third parameter to \texttt{open()} on an
 SMTP connection.
 
 Header fields from the server{\textquotesingle}s response to a
-connection can be read by subscripting the value returned from
-\texttt{open()} with a string header name; an example is in the next
-section.
+connection are read by subscripting the message connection value
+with a string header name; an example is in the next section.
 
 \subsubsection{HTTP}
 
@@ -916,8 +910,9 @@ write(line) \\
 end
 }
 
+\noindent
 You should improve the password handling in this program if you use it!
-Chapter 14 includes another useful example use of
+Chapter 14 includes another example use of
 Unicon{\textquotesingle}s POP messaging facilities: a spam filter.
 
 \subsection{Tasks}

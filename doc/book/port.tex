@@ -1,12 +1,11 @@
 \clearpage\section{Appendix E: Portability Considerations}
 
-Unicon{\textquotesingle}s POSIX-based system interface is divided into
-two pieces. The facilities presented in Chapter 5 are portable. You can
-expect the portable system interface to be available on any
-implementation of Unicon. Facilities will be implemented as completely
-as is feasible on each platform. This appendix presents the rest of the
-Unicon POSIX interface, as well as some notes on functionality specific
-to Microsoft Windows.
+Those of Unicon{\textquotesingle}s POSIX-based system interface facilities
+that are presented in Chapter 5 are portable.
+You can expect the portable system interface to be available on any
+implementation of Unicon. This appendix presents additional, non-portable
+elements of the Unicon POSIX interface, as well as some notes on
+functionality specific to Microsoft Windows.
 
 \subsection[POSIX extensions]{POSIX extensions}
 
@@ -68,42 +67,48 @@ them to fail on most non-UNIX platforms. Check the readme.txt file that
 comes with your installation to ascertain whether it supports any of
 these functions.
 
-\paragraph[chown(f, u:{}-1, g:{}-1) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ \ change owner]{chown(f, u:-1, g:-1) :
-?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ change owner}
-chown(f, u, g) sets the owner of a file (or string filename) f to owner
-u and group g. The user and group arguments can be numeric
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf chown(chown(f, u:{}-1, g:{}-1) : ? \hfill change owner}
+
+\noindent
+\texttt{chown(f, u, g)} sets the owner of a file (or string filename) f to
+owner u and group g. The user and group arguments can be numeric
 ID{\textquotesingle}s or names.
 
-\paragraph[chroot(string) : ?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ change
-filesystem root]{chroot(string) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ change filesystem root}
-chroot(f) changes the root of the filesystem to f. This may be of
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf chroot(string) : ? \hfill change filesystem root}
+
+\noindent
+\texttt{chroot(f)} changes the root of the filesystem to f. This may be of
 assistance in implementing security measures.
 
-\paragraph[crypt(string, string) : string\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ encrypt password]{crypt(string, string) :
-string\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ encrypt password}
-crypt(s1, s2) encrypts the password s1 with the salt s2. The first two
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf crypt(string, string) : string \hfill encrypt password}
+
+\noindent
+\texttt{crypt(s1, s2)} encrypts the password s1 with the salt s2. The first two
 characters of the returned string will be the salt.
 
-\paragraph[exec(string, string, ...) : null\ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ execute program]{exec(string, string, ...) :
-null\ \ \ \ \ \ \ \ \ \  \ \ \ \ execute program}
-exec(s, arg0, arg1, arg2, ...) \textit{replaces} the currently executing
-Icon program with a new program named in s. The other arguments are
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf exec(string, string, ...) : null \hfill execute program}
+
+\noindent
+\texttt{exec(s, arg0, arg1, arg2, ...)}
+\textit{replaces} the currently executing
+Icon program with a new program named in \texttt{s}. The other arguments are
 passed to the program. Consult the POSIX exec(2) manual pages for more
 details. \texttt{s} must be a path to a binary executable program, not
 to a shell script (or, on UNIX) an Icon program. If you want to run
-such a script, the first argument to exec() should be the binary that
+such a script, the first argument to \texttt{exec()} should be the binary that
 can execute them, such as /bin/sh.
 
-\paragraph[fcntl(file, string, options)\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ file control]{fcntl(file, string,
-options)\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ file control}
-fcntl(file, cmd, arg) performs miscellaneous operations on the open
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf fcntl(file, string, options) \hfill file control}
+
+\noindent
+\texttt{fcntl(file, cmd, arg)} performs miscellaneous operations on the open
 file. See the fcntl(2) manual page for more details. Directories and
-DBM files cannot be arguments to fcntl(). The following characters are
+DBM files cannot be arguments to \texttt{fcntl()}. The following characters are
 the possible values for cmd: 
 
 \ \ \ \ \ f \ \ \ \ \ \ \ \ Get flags (F\_SETFL)
@@ -145,19 +150,21 @@ the file flags set by F\_SETFL and accessed by F\_GETFL:
 
 \ \ \ \ \ a \ \ \ \ \ \ \ FAPPEND 
 
-\paragraph[fdup(file, file) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ duplicate file descriptor]{fdup(file, file) :
-?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ duplicate file descriptor}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf fdup(file, file) : ? \hfill duplicate file descriptor}
+
+\noindent
 \texttt{fdup(src, dest)} is based on the POSIX \texttt{dup2(2)} system
 call. It is used to
 modify a specific UNIX file descriptor, such as just before calling
 \texttt{exec()}. The dest file is closed; src is made to have its Unix file
 descriptor; and the second file is replaced by the first. 
 
-\paragraph[filepair() : list\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ create connected files]{filepair() :
-list\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ create connected files}
-filepair() creates a bi-directional pair of connected files. This is
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf filepair() : list \hfill create connected files}
+
+\noindent
+\texttt{filepair()} creates a bi-directional pair of connected files. This is
 analogous to the POSIX \texttt{socketpair(2)} function. It returns a list of two
 files, such that writes on one will be available on the other. The
 connection is bi-directional, unlike that returned by function \texttt{pipe()}.
@@ -166,38 +173,42 @@ created just before a \texttt{fork()}; after it, one process should close L[1]
 and the other should close L[2] or you will not get proper end-of-file
 notification. 
 
-\paragraph[fork() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  fork
-process]{fork() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  fork process}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf fork() : integer \hfill fork process}
+
+\noindent
 \texttt{fork()} creates a new process that is identical to the current process
 except in the return value. The parent gets a return value that is the
 PID of the child, and the child gets 0.
 
-\paragraph[getegid() : string\ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ \ \ \ get effective group identity]{getegid() :
-string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ \ get effective group
-identity}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getegid() : string \hfill get effective group identity}
+
+\noindent
 \texttt{getegid()} produces the effective group identity (gid) of the current
 process. The name is returned if it is available, otherwise the numeric
 code is returned.
 
-\paragraph[geteuid() : string\ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ \ \ \ \ \ \ get effective user identity]{geteuid() :
-string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ \ \ \ \ get effective user
-identity}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf geteuid() : string \hfill get effective user identity}
+
+\noindent
 \texttt{geteuid()} produces the effective user identity (uid) of the current
 process. The name is returned if it is available, otherwise the numeric
 code is returned.
 
-\paragraph[getgid() : string\ \ \ \ \ \ \ \ \ \ \ \ \ \  get group
-identity]{getgid() : string\ \ \ \ \ \ \ \ \ \ \ \ \ \  get group
-identity}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getgid() : string \hfill get group identity}
+
+\noindent
 \texttt{getgid()} produces the real group identity (gid) of the current process.
 The name is returned if it is available, otherwise the numeric code is
 returned.
 
-\paragraph[getgr(g) : record\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ get group
-information]{getgr(g) : record\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ get
-group information}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getgr(g) : record \hfill get group information}
+
+\noindent
 \texttt{getgr(g)} returns a record that contains group file
 information for group
 g, a string group name or an integer group code. If g is null, each
@@ -205,146 +216,171 @@ successive call to getgr() returns the next entry. setgrent() resets
 the sequence to the beginning. Return type:\\
 \ \ \texttt{record posix\_group(name, passwd, gid, members)}
 
-\paragraph[gethost(x) : record|string\ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ get host information]{gethost(x) :
-record|string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ get host information}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf gethost(x) : record|string \hfill get host information}
 
+\noindent
 \texttt{gethost(n)} for network connection n returns a string containing
 the IP number and port this machine is using for a network connection.
 \texttt{gethost(s)} returns a record that contains host information for the
 machine named s. If s is null, each successive call to \texttt{gethost()}
-returns the next entry. sethostent() resets the sequence to the
+returns the next entry. \texttt{sethostent()} resets the sequence to the
 beginning. The aliases and addresses are comma separated lists of
 aliases and addresses (in a.b.c.d format) respectively. Return
 type:\\
 \ \ \texttt{record posix\_hostent(name, aliases, addresses)}
 
-\paragraph[getpgrp() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ get
-process group]{getpgrp() : integer\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ get
-process group}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getpgrp() : integer \hfill get process group}
+
+\noindent
 \texttt{getpgrp()} returns the process group of the current process. 
 
-\paragraph[getpid() : integer\ \ \ \ \ \ \ \ \ \ \ \  \ \ get process
-identification]{getpid() : integer\ \ \ \ \ \ \ \ \ \ \ \  \ \ get
-process identification}
-getpid() produces the process identification (pid) of the current
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getpid() : integer \hfill get process identification}
+
+\noindent
+\texttt{getpid()} produces the process identification (pid) of the current
 process.
 
-\paragraph[getppid() : integer?\ \ \ \ \ \ \ \ \ \  \ \ get parent
-process identification]{getppid() : integer?\ \ \ \ \ \ \ \ \ \ 
-\ \ get parent process identification}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getppid() : integer? \hfill get parent process identification}
+
+\noindent
 \texttt{getppid()} produces the pid of the parent process.
 
-\paragraph[getpw(u) : posix\_password\ \ \ \ \ \ \ \  \ get password
-information]{getpw(u) : posix\_password\ \ \ \ \ \ \ \  \ get password
-information}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getpw(u) : posix\_password \hfill get password information}
+
+\noindent
 \texttt{getpw(u)} returns a record that contains password file
 information. \texttt{u} can
-be a numeric uid or a user name. If u is null, each successive call to
+be a numeric uid or a user name. If \texttt{u} is null, each successive call to
 \texttt{getpw()} returns the next entry and \texttt{setpwent()} resets
-the sequence to the beginning. Return type:\\
-\ \ \texttt{record posix\_password(name, passwd, uid, gid, age, comment, gecos,
+the sequence to the beginning. Return type:
+
+\noindent
+\texttt{record posix\_password(name, passwd, uid, gid, age, comment, gecos,
 dir, shell)}
 
-\paragraph[getserv(string, string) : posix\_servent\ \ \ \ \ \ 
-\ \ \ \ \ get service information]{getserv(string, string) :
-posix\_servent\ \ \ \ \ \  \ \ \ \ \ get service information}
-\texttt{getserv(s, proto)} returns a record that contains service information for
-the service s using protocol proto. If s is null, each successive call
-to \texttt{getserv()} returns the next entry. \texttt{setservent()} resets the sequence
-to the beginning. Return type:\\
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getserv(string, string) : posix\_servent \hfill
+	get service information}
+
+\noindent
+\texttt{getserv(s, proto)} returns a record that contains service information
+for the service s using protocol proto. If s is null, each successive call
+to \texttt{getserv()} returns the next entry. \texttt{setservent()}
+resets the sequence to the beginning.
+If proto is defaulted, it will return the first matching entry. 
+Return type:\\
 \ \ record posix\_servent(name, aliases, port, proto) 
 
-If proto is defaulted, it will return the first matching entry. 
 
-\paragraph[getuid() : string \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ get
-user identity]{getuid() : string \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ get user identity}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf getuid() : string \hfill get user identity}
+
+\noindent
 \texttt{getuid()} produces the real user identity (uid) of the current process. 
 
-\paragraph[kill(integer, x) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ kill
-process]{kill(integer, x) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ kill
-process}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf kill(integer, x) : ? \hfill kill process}
+
+\noindent
 \texttt{kill(pid, signal)} sends a signal to the process specified by pid. The
 second parameter can be the string name or the integer code of the
 signal to be sent.
 
-\paragraph[link(string, string) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ link files]{link(string, string) :
-?\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ link files}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf link(string, string) : ? \hfill link files}
+
+\noindent
 \index{link!file system}\texttt{link(src,dest)} creates a (hard) link dest that
 points to src.
 
-\paragraph[readlink(string) : string?\ \ \ \ \ \ \ \ \ \ \ \  \ \ read
-symbolic link]{readlink(string) : string?\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ read symbolic link}
-\texttt{readlink(s)} produces the filename referred to in a symbolic link at path
-s.
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf readlink(string) : string? \hfill read symbolic link}
 
-\paragraph[setgid(integer) : ?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ set
-group identification]{setgid(integer) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ set group identification}
+\noindent
+\texttt{readlink(s)} produces the filename referred to in a symbolic link
+at path \texttt{s}.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf setgid(integer) : ? \hfill set group identification}
+
+\noindent
 \texttt{setgid(g)} sets the group id of the current process to g. See the UNIX
 \texttt{setgid(2)} man page. 
 
-\paragraph[setgrent() : null\ \ \ \ \ \ \ \ \ \  \ \ \ \ reset group
-information cursor]{setgrent() : null\ \ \ \ \ \ \ \ \ \  \ \ \ \ reset
-group information cursor}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf setgrent() : null \hfill reset group information cursor}
+
+\noindent
 \texttt{setgrent()} resets and rewinds the pointer to the group file used by
 \texttt{getgr()} when \texttt{getgr()} is called with no arguments. 
 
-\paragraph[sethostent(integer:1) : null\ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ reset host information cursor]{sethostent(integer:1) :
-null\ \ \ \ \ \ \ \  \ \ \ \ \ \ \ reset host information cursor}
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf sethostent(integer:1) : null \hfill reset host information cursor}
+
+\noindent
 \texttt{sethostent(stayopen)} resets and rewinds the pointer to the host file
 used by \texttt{gethost()}. The argument defines whether the file should be kept
 open between calls to \texttt{gethost()}; a nonzero value (the default) keeps it
 open. 
 
-\paragraph[setpgrp() : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ set process
-group]{setpgrp() : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ set process
-group}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf setpgrp() : ? \hfill set process group}
+
+\noindent
 \texttt{setpgrp()} sets the process group. This is equivalent to
 \texttt{setpgrp(0, 0)} on BSD systems. 
 
-\paragraph[setpwent() : null\ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ reset
-password information cursor]{setpwent() : null\ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ \ \ reset password information cursor}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf setpwent() : null \hfill reset password information cursor}
+
+\noindent
 \texttt{setpwent()} resets and rewinds the pointer to the password file used by
 \texttt{getpw()} when \texttt{getpw()} is called with no arguments.
 
-\paragraph[setservent(integer:1) : null \ \ \ \ \ \  \ \ reset service
-information cursor]{setservent(integer:1) : null \ \ \ \ \ \  \ \ reset
-service information cursor}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf setservent(integer:1) : null \hfill
+	reset service information cursor}
+
+\noindent
 \texttt{setservent(stayopen)} resets and rewinds the pointer to the
 services file used by \texttt{getserv()}. The argument defines whether
 the file should be kept open between calls to \texttt{getserv()}; a
 nonzero value (the default) keeps it open. 
 
-\paragraph[setuid(integer) : ?\ \ \ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ set user identity]{setuid(integer) :
-?\ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ set user identity}
-\texttt{setuid(u)} sets the user id of the current process to
-\texttt{u}. See the UNIX \texttt{setuid(2)} man page. 
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf setuid(integer) : ? \hfill set user identity}
 
-\paragraph[symlink(string, string) : ?\ \ \ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ symbolic file link]{symlink(string, string) :
-?\ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \ \ symbolic file link}
+\noindent
+\texttt{setuid(u)} sets the user id of the current process to
+\texttt{u}. See the \texttt{setuid(2)} man page. 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf symlink(string, string) : ? \hfill symbolic file link}
+
+\noindent
 \index{link!symbolic file}symlink(src, dest) makes a symbolic link dest
 that points to src.
 
-\paragraph[umask(integer) : integer\ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ \ \ \ file permission mask]{umask(integer) :
-integer\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ \ \ \ file permission mask}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf umask(integer) : integer \hfill file permission mask}
+
+\noindent
 \texttt{umask(u)} sets the umask of the process to \texttt{u}. umask integers
 encode nine bits for the read, write, and execute permissions of user,
 group, and world access. See also \texttt{chmod()}. Each bit in the umask turns
 \textit{off} that access, by default, for newly created files. The old
 value of the umask is returned.
 
-\paragraph[wait(integer:{}-1, integer:0) : string\ \ \ \ \ \ \ \ \ \ 
-\ \ \ \ \ \ wait for process]{wait(integer:-1, integer:0) :
-string\ \ \ \ \ \ \ \ \ \  \ \ \ \ \ \ wait for process}
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf wait(integer:{}-1, integer:0) : string \hfill wait for process}
+
+\noindent
 \texttt{wait(pid, options)} waits for a process given by pid to terminate or
 stop. The default pid value causes the program to wait for all the
 current process{\textquotesingle} children. The options parameter is an
@@ -352,23 +388,24 @@ OR of the values 1 (return if no child has exited) and 2 (return for
 children that are stopped, not just for those that exit). The returned
 string represents the pid and the exit status as defined in this table:
 
+\vspace{0.05in}
+\begin{center}
+\begin{supertabular}{m{2.4in} m{2.6in}}
+ UNIX equivalent & example of returned string \\
+ WIFSTOPPED(status) & {\textquotedbl}1234 stopped:SIGTSTP{\textquotedbl} \\
+ WIFSIGNALLED(status) & {\textquotedbl}1234 terminated:SIGHUP{\textquotedbl} \\
+ WIFEXITED(status) & {\textquotedbl}1234 exit:1{\textquotedbl} \\
+ WIFCORE(status) & {\textquotedbl}1234 terminated:SIGSEGV:core{\textquotedbl} \\
+\end{supertabular}
+\end{center}
+\vspace{0.05in}
 
-\ \ \ \ \ UNIX equivalent\ \ \ \ \ \ example of returned string\\
- \ \ \ \ WIFSTOPPED(status)\ \ \ \ {\textquotedbl}1234
-stopped:SIGTSTP{\textquotedbl} \\
- \ \ \ \ WIFSIGNALLED(status)\ \ \ \ {\textquotedbl}1234
-terminated:SIGHUP{\textquotedbl} \\
- \ \ \ \ WIFEXITED(status)\ \ \ \ {\textquotedbl}1234
-exit:1{\textquotedbl} \\
- \ \ \ \ WIFCORE(status)\ \ \ \ \ \ {\textquotedbl}1234
-terminated:SIGSEGV:core{\textquotedbl} 
-
+\noindent
 Currently the \textsf{rusage} facility is unimplemented.
 
 \subsection[Microsoft Windows]{Microsoft Windows}
 Windows versions of Unicon support certain non-portable extensions to
-the system interfaces. Consult the readme.txt file and the on-line
-reference (Unicon Technical Report 7) for details.
+the system interfaces. Consult Unicon Technical Report 7 for details.
 
 \subsubsection{Partial Support for POSIX}
 
@@ -384,11 +421,11 @@ SIGTERM.
 
 Windows Unicon supports the \texttt{umask()} function, but ignores execute
 permission and treats user/group/world identically, using the most
-permissive access specified in the umask.
+permissive access specified.
 
 \subsubsection{Native User Interface Components}
 
-Windows Icon supports limited access to platform-native user interface
+Windows Unicon supports limited access to platform-native user interface
 components and multimedia controls.
 
 \texttt{WinButton(w,s,x,y,wd,ht)} installs a pushbutton with label s on window w.

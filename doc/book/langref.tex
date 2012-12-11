@@ -1292,9 +1292,17 @@ operators also require variables for their right operands.
 \noindent {\bf string ? expr \hfill scan string}
 
 \noindent
-\index{scan string}The string scanning operator evaluates \textit{expr}
+\index{scan string}String scanning evaluates \textit{expr}
 with \texttt{\&subject} equal to string and \texttt{\&pos} starting at
 1. It may be augmented.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent {\bf x ! y \hfill apply}
+
+\noindent
+\index{bang!binary}The binary bang (exclamation) operator calls x,
+using y as its parameters.  x may be a procedure, or the string name of
+a procedure.  y is a list or record.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf [x] @ co-expression \hfill activate co-expression}
@@ -2129,12 +2137,13 @@ interface function that handles Icon data representations and calling
 conventions.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf localnames(CE, i) : string* \hfill local variable names}
+\noindent {\bf localnames(CE, i:0) : string* \hfill local variable names}
 
 \noindent
 \index{local}\index{variable}\texttt{localnames(ce,i)} generates the
 names of local variables in co-expression \texttt{ce}, \texttt{i}
-levels up from the current procedure invocation.
+levels up from the current procedure invocation. The default i of 0
+generates names in the currently active procedure in ce.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf lock(x) : x \hfill lock mutex}
@@ -2229,10 +2238,12 @@ arguments, which must be numeric.
 \noindent {\bf mkdir(s, s?) : ? \hfill create directory}
 
 \noindent
-\index{directory!create}\index{create!directory}\index{mkdir()}\texttt{mkdir(path,
+\index{directory!create}\index{create!directory}\index{mkdir()}
+\texttt{mkdir(path,
 mode)} creates a new directory named \texttt{path} with mode
 \texttt{mode}. The optional \texttt{mode} parameter can be numeric or a
-string of the form accepted by \texttt{chmod()}.
+string of the form accepted by \texttt{chmod()}. The function succeeds
+if a new directory is created.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf move(i:1) : string \hfill move scanning position}
@@ -3808,7 +3819,7 @@ Preprocessor Symbol\ \ \ \ Feature}
 \_GRAPHICS\ \ \ \ \ \ \ \ graphics\\
 \_X\_WINDOW\_SYSTEM\ \ \ \ X Windows\\
 \_MS\_WINDOWS\ \ \ \ \ \ MS Windows\\
-\_WIN32\ \ \ \ \ \ \ \ Win32\\
+\_WIN32\ \ \ \ \ \ \ \ \ \ \ Win32\\
 \_PRESENTATION\_MGR\ \ \ \ Presentation Manager\\
 \_ARM\_FUNCTIONS\ \ \ \ Archimedes extensions\\
 \_DOS\_FUNCTIONS\ \ \ \ \ \ MS-DOS extensions
@@ -3831,10 +3842,10 @@ procedure call stack and value that caused the error, if there is one.
 The errors are listed below to illustrate the kinds of situations that
 can cause execution to terminate.
 
-The keyword \&error allows a program to convert runtime errors into
+The keyword \texttt{\&error} turns runtime errors into
 expression failure. When an expression fails due to a converted runtime
-error, the keywords \&errornumber, \&errortext, and \&errorvalue
-provide information about the nature of the error.
+error, the keywords \texttt{\&errornumber}, \texttt{\&errortext}, and
+\texttt{\&errorvalue} provide information about the nature of the error.
 
 101 \ \ \ \ \ \ \ integer expected or out of range\\
 102 \ \ \ \ \ \ \ numeric expected\\

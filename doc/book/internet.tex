@@ -424,9 +424,11 @@ network. The built-in function that is used for this purpose is
 network arguments.
 
 The main thing to remember when handling input from multiple
-sources is that you absolutely cannot block for I/O. This means when
-handling network connections, never use \texttt{read()},
-only use \texttt{reads()}. For windows you must also avoid
+sources is that you must not block for I/O. This means: use listener
+mode for new connections or a timeout parameter with \texttt{open()},
+and when handling network connections, never use \texttt{read()},
+only use \texttt{reads()} or better yet \texttt{ready()}.
+For windows you must also avoid
 \texttt{read()}{\textquotesingle}s library procedure counterpart,
 \texttt{WRead()}. The code below checks which connection has input
 available and calls \texttt{Event()} as events come in on the window,
@@ -591,7 +593,8 @@ and so on) and require only a couple hundred lines of code!
 
 \section*{Summary}
 
-Writing Internet programs can be easy and fun. There are several
+Writing Internet programs can be easy and fun, although it is easy to
+underestimate the security needed. There are several
 different ways to write Internet programs in Unicon. The
 \index{database}database interface presented in Chapter 6 allows you to
 develop client/server applications without \textit{any} explicit

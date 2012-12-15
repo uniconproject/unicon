@@ -40,12 +40,8 @@ which describes many important modules in the Icon Program Library.
 
 {\sffamily\bfseries Note}
 
-{\sffamily To use \texttt{cgi.icn}, place the statement
-
-\iconcode{
- \>   link cgi}
-
-\noindent at the top of your program.
+{\sffamily To use \texttt{cgi.icn}, place the statement \texttt{link cgi}
+at the top of your program.
 
 CGI programs use the hypertext markup language HTML as their output
 format for communicating with the user through a Web browser.
@@ -70,14 +66,9 @@ passed to your program, which is organized around the HTML code that
 you generate in response to the user. In fact, cgi.icn includes a
 \texttt{main()} procedure that processes the input and writes HTML
 header and tail information around your program{\textquotesingle}s
-output. 
-
-{\sffamily\bfseries
-Note}
-
-{\sffamily
-When you use \texttt{cgi.icn}, you must call your main procedure
-\texttt{cgimain()}. }
+output. For this reason,
+when you use \texttt{cgi.icn}, you must call your main procedure
+\texttt{cgimain()}.
 
 \subsubsection{Processing Input}
 
@@ -125,7 +116,7 @@ might write
 [{\textquotedbl}female{\textquotedbl},
 {\textquotedbl}male{\textquotedbl}])}
 
-to generate the HTML
+\noindent to generate the HTML
 
 \iconcode{
 {\textless}SELECT
@@ -138,7 +129,7 @@ NAME={\textquotedbl}GENDER{\textquotedbl}{\textgreater} \\
 \subsubsection[Common CGI Environment Variables]{Common CGI Environment
 Variables}
 
-Much of the official CGI definition consists of a description of a set
+The official CGI definition includes a set
 of standard \index{environment variable!CGI standard}environment
 variables that are set by the Web server as a method of passing
 information to the CGI script. Programmers access these environment
@@ -171,12 +162,11 @@ The user{\textquotesingle}s browser software and proxy gateway, if any.
 The format is \texttt{\textit{name/version}}, but varies
 wildly.\\\hline
 \texttt{QUERY\_STRING} &
-The information which follows the ? in the URL when using
-\texttt{method={\textquotedbl}GET{\textquotedbl}}. This is the string
-that holds all of the information submitted through the form. Since
-\texttt{QUERY\_STRING} is parsed and made available through a table
-stored in the global variable \texttt{cgi}, programmers that use
-\texttt{cgi.icn} do not generally consult this environment
+The information submitted through the form, which follows the ? in the
+URL when using \texttt{method={\textquotedbl}GET{\textquotedbl}}.
+\texttt{QUERY\_STRING} data is parsed and inserted into a table
+stored in the global variable \texttt{cgi}, so
+\texttt{cgi.icn} scripts do not generally consult this environment
 variable.\\\hline
 \texttt{REMOTE\_ADDR} &
 The IP address of the client machine.\\\hline
@@ -197,7 +187,7 @@ The Web server that invoked the CGI script. The format is
 
 \subsection{The CGI Execution Environment}
 
-CGI scripts don{\textquotesingle}t execute as stand-alone programs and
+CGI scripts do not execute as stand-alone programs and
 aren{\textquotesingle}t launched from a command line; a Web server
 executes them. The details of this are necessarily dependent on the
 operating system and Web server combination in use. The following
@@ -205,13 +195,16 @@ examples are based on a typical UNIX Apache server installation in
 which users{\textquotesingle} HTML files are located under
 \texttt{\$HOME/public\_html}. Check with your system administrator or
 Web server documentation for the specific filenames, directories, and
-permissions required to execute scripts from your Web server. 
+permissions required to execute scripts from your Web server. Some web
+servers do not allow scripts at all, and most others run scripts with a
+special userid in a limited/protected file system where absolute
+pathnames are different from how you see them.
 
-Under Apache, you need to create a directory under your
-\texttt{\$HOME/public\_html} directory named \texttt{cgi-bin}. Both
+Under Apache, you need a directory under
+\texttt{\$HOME/public\_html} named \texttt{cgi-bin}. Both
 \texttt{\$HOME/public\_html} and its \texttt{cgi-bin} subdirectory
 should have {\textquotedbl}group{\textquotedbl} and
-{\textquotedbl}other{\textquotedbl} permissions set to allow both
+{\textquotedbl}other{\textquotedbl} permissions set to allow
 reading and executing for the Web server to run the programs you place
 there. Do not give anyone but yourself write permissions! The following
 commands set things up on a typical Apache system. The percent sign
@@ -228,16 +221,52 @@ the current working directory.
 
 The next two example files will allow you to verify that your
 directories and permissions are correct for your Web server.
+Despite all the attempts to make the world's web servers secure,
+the only security you can count on is your own. From security expert
+David A. Gamey we have the following tips:
+
+\newenvironment{itemize*}%
+  {\begin{itemize}%
+    \setlength{\itemsep}{0pt}%
+    \setlength{\parskip}{0pt}}%
+  {\end{itemize}}
+\begin{itemize*}
+\item Use no data without checking for validity. Even HTTP header data
+can be wrong. If you expect a number, make sure the supplied data
+is a number.
+\item It is a very bad idea to make any \texttt{system()} calls (or open
+piped commands, etc.) from scripts. If you absolutely have to run something
+external, construct command strings yourself or fully parse user data being
+used to check for command separators and hidden commands, etc.
+\item Don't rely on looking for known bad characters; restrict input to
+known good characters. Use known good values such as those selected from
+list boxes
+\item Sensitive data should be sent using POST, not GET.
+\item Check for and prevent file system attacks, such as
+paths including .. in them.
+\item Log everything received by your script, so you can
+tell when attacks occur.
+\end{itemize*}
 
 \subsection{An Example HTML Form}
 
-CGI scripts are typically invoked from HTML pages, so for testing
-purposes, create an HTML form containing Listing 13-1, saved with the
-file name \texttt{simple.html} in your \texttt{\$HOME/public\_html}
-directory. When you have a CGI script compiled and ready to run, you
-can edit the URL in this file to point at your CGI program, the
-\texttt{simple.cgi} executable. When you view this page in your browser
+CGI scripts are typically invoked from HTML pages.
+When you view the following example page in your browser,
 it should look something like the one shown in Figure 13-1.
+For this test, create an HTML form  \texttt{\$HOME/public\_html/simple.html}
+containing Listing 13-1. When you have a CGI script compiled and ready to
+run, you can edit the URL in this file to point at your CGI program, the
+\texttt{simple.cgi} executable.
+
+
+\begin{center}
+\includegraphics[width=4.05in,height=4.36in]{ub-img/ub-img44.png}
+\end{center}
+
+{\sffamily\bfseries Figure 13-1:}
+{\sffamily An HTML Form Example}
+
+
 
 {\sffamily\bfseries Listing 13-1}
 {\sffamily\bfseries An HTML form}
@@ -287,12 +316,6 @@ value={\textquotedbl}Reset Form{\textquotedbl}{\textgreater} \\
 {\textless}/HTML{\textgreater}
 }
 
-\begin{center}
-\includegraphics[width=5.5516in,height=5.989in]{ub-img/ub-img44.png}
-\end{center}
-
-{\sffamily\bfseries Figure 13-1:}
-{\sffamily An HTML Form Example}
 
 \subsection{An Example CGI Script: Echoing the User{\textquotesingle}s
 Input}

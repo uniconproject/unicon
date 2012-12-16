@@ -69,7 +69,7 @@ programs that run in the background.
 
 \subsubsection{The Scorecard Client Procedure}
 
-Before you see the server program, take a look at the client procedure
+Before examining the server code, take a look at the client procedure
 that a game calls to communicate with the \texttt{scored} server. To
 use this client procedure in your programs, add the following
 declaration to your program.
@@ -145,8 +145,9 @@ delay in handling a request implies the server will be unable to
 handle other simultaneous client requests. For this reason, many servers
 immediately spawn a separate process to handle each request.
 You could do that with \texttt{system()}, as illustrated in Chapter 5,
-but for \texttt{scored} this is overkill. The server will handle each
-request almost instantaneously itself.
+or launch a thread for it,
+but for \texttt{scored} this is overkill. The server handles each
+request almost instantaneously.
 
 Some small concessions to security are in order, even in a trivial
 example such as this. If a bogus Internet client connects by accident,
@@ -165,7 +166,7 @@ names of different games, and the values in the table are lists of
 alternating user names and scores. The procedure starts by reading the
 game, user, and score from the network connection, and loading the
 game{\textquotesingle}s score list from a local file, if it
-isn{\textquotesingle}t in the table already. \ Both the score lists
+isn{\textquotesingle}t in the table already. Both the score lists
 maintained in memory, and the high scores files on the server, are
 sequences of pairs of text lines containing a userid followed by a
 numeric score. The high score files have to be created and initialized
@@ -174,33 +175,39 @@ their use by the server.
 
 \iconcode{
 procedure score\_result(net) \\
-\>   static t \\
-\>   initial t := table() \\
-\>   gamenamechars :=
+\>   local s := "" \\
+\>   static t, gamenamechars \\
+\>   initial \{ \\
+\>\>    t := table() \\
+\>\>    gamenamechars :=
 \&letters++\&digits++{\textquotesingle}-\_{\textquotesingle} \\
+\>\>    \} \\
 \ \\
 \>   select(net, 1000) {\textbar} \{ write(net,
 {\textquotedbl}timeout{\textquotedbl}); fail \} \\
-\>   read(net) == {\textquotedbl}HSP{\textquotedbl} {\textbar} \{
+
+\>   (s ||:= ready(net)) ? \{ \\
+\>\>     = {\textquotedbl}HSP{\textbackslash}n{\textquotedbl} {\textbar} \{
 write(net, {\textquotedbl}wrong protocol{\textquotedbl}); fail \} \\
-\>   game := read(net) {\textbar} \{ write(net,{\textquotedbl}no
-game?{\textquotedbl}); fail \} \\
-\>   game++gamenamechars === gamenamechars {\textbar} \{ fail \} \\
-\>   owner := read(net) {\textbar} \{ write(net,{\textquotedbl}no
-owner?{\textquotedbl}); fail \} \\
-\>   score := numeric(read(net)) {\textbar} \{ write({\textquotedbl}no
-score?{\textquotedbl}); fail \} \\
+\>\>     game := tab(many(gamenamechars)) {\textbar} \{
+                  write(net,{\textquotedbl}no game?{\textquotedbl}); fail \} \\
+\>\>     = {\textquotedbl}{\textbackslash}n{\textquotedbl} \\
+\>\>     owner := tab(many(gamenamechars)) {\textbar} \{
+                  write(net,{\textquotedbl}no owner?{\textquotedbl}); fail \} \\
+\>\>     = {\textquotedbl}{\textbackslash}n{\textquotedbl} \\
+\>\>     score := tab(many(\&digits)) {\textbar} \{
+                  write({\textquotedbl}no score?{\textquotedbl}); fail \} \\
+\>\>     \} \\
 \ \\
 \>   if t[game] === \&null then \{ \\
-\>   \ \ \ if not (f := open(game)) then \{ \\
-\>   \ \ \ \ \ \ write(net, {\textquotedbl}No high scores here for
-{\textquotedbl}, game) \\
-\>   \ \ \ \ \ \ fail \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ t[game] := L := [] \\
-\>   \ \ \ while put(L, read(f)) \\
-\>   \ \ \ close(f) \\
-\>   \ \ \ \} \\
+\>\>    if not (f := open(game)) then \{ \\
+\>\>\>     write(net, {\textquotedbl}No high scores here for {\textquotedbl}, game) \\
+\>\>\>     fail \\
+\>\>\>     \} \\
+\>\>    t[game] := L := [] \\
+\>\>    while put(L, read(f)) \\
+\>\>    close(f) \\
+\>\>    \} \\
 \>   else \\
 \>   \ \ \ L := t[game]
 }
@@ -252,7 +259,7 @@ reliable? No! It records any scores it is given for any game that has a
 high score file on the server. It is utterly easy to supply false
 scores. This is an honor system.
 
-\subsection{A Simple {\textquotedbl}Talk{\textquotedbl} Program}
+\subsection{A Simple ``Talk'' Program}
 
 E-mail is the king of all Internet applications. After that, some of the
 most popular Internet applications are real-time dialogues between

@@ -464,11 +464,20 @@ int pthreadcoswitch(void *o, void *n, int first)
    if (first != 0)			/* if not first call for this cstate */
       new = ncs[1];			/* load new context pointer */
    else {
+
+      /* pthread_attr_t attr; */
+
       /*
        * This is a newly allocated cstate array, allocated and initialized
        * over in alccoexp().  Create a thread for it and mark it alive.
        */
       new = ncs[1];
+
+      /*
+      pthread_attr_init(&attr);
+      pthread_attr_setstacksize(&attr, 1024*1024*50);
+      */
+
        if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;
@@ -485,7 +494,7 @@ int pthreadcoswitch(void *o, void *n, int first)
       
       sem_wait(old->semp);		/* block this thread */
 
-   if (!old->alive) {
+   if (!old || old->alive<1) {
       pthread_exit(NULL);		/* if unblocked because unwanted */
       }
    return 0;				/* else return to continue running */
@@ -498,39 +507,24 @@ void coclean(void *o) {
    cstate ocs = o;			/* old cstate pointer */
    struct context *old = ocs[1];	/* old context pointer */
    struct region *strregion=NULL, *blkregion=NULL;
-   if (old == NULL) 			/* if never initialized, do nothing */
-     /* ((old->c->status & Ts_Sync) && (old->alive == 0)))*/      
+
+   if (old == NULL)		/* if never initialized, do nothing */
       return;
     
    if (old->tstate){
       strregion = old->tstate->Curstring;
       blkregion = old->tstate->Curblock;
-   }
+      }
 
-
-   if (old->c->status & Ts_Sync){
-      old->alive = 0;			/* signal thread to exit */
+   if (old->c->status & Ts_Sync || old->alive==-1){
+      old->alive = -1;			/* signal thread to exit */
       if (old->have_thread){
          sem_post(old->semp);		/* unblock it */
          THREAD_JOIN(old->thread, NULL);	/* wait for thread to exit */
+         old->alive = -2;			/* mark it as joined */
          }
       }
- 
-   #ifdef NamedSemaphores
-      sem_close(old->semp);		/* close associated semaphore */
-   #else
-      sem_destroy(old->semp);		/* destroy associated semaphore */
-   #endif
-
-   if ((old->c->status & Ts_Async) && (old->alive <= 0)){
-      MUTEX_LOCKID(MTX_TLS_CHAIN);
-      tlschain_remove(old->tstate);
-      MUTEX_UNLOCKID(MTX_TLS_CHAIN);
-      free(old); 			/* free context block */
-      return;
-      }
-
-   if (old->c->status & Ts_Async){
+   else if (old->alive==1) { /* the current thread is done, called this to exit */
       tended struct b_list *hp;
       /* give up the heaps owned by the thread */
       if (blkregion){
@@ -541,9 +535,7 @@ void coclean(void *o) {
          MUTEX_LOCKID(MTX_PUBLICSTRHEAP);
          swap2publicheap(strregion, NULL,  &public_stringregion);
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-         }
-      DEC_NARTHREADS;	
-      old->alive = -1;
+         }	
 
       hp = BlkD(old->c->outbox, List);
       CV_SIGNAL_EMPTYBLK(hp);
@@ -551,20 +543,30 @@ void coclean(void *o) {
       hp = BlkD(old->c->inbox, List);
       CV_SIGNAL_FULLBLK(hp);
 
+      DEC_NARTHREADS;	
+      old->alive = -1;
       pthread_exit(NULL);
       }
-   else{
-      /*
-       * Give up the heaps owned by the old thread, 
-       * only GC thread is running, no need to lock 
-       */
-      if (blkregion){
-         swap2publicheap(blkregion, NULL,  &public_blockregion);
-         swap2publicheap(strregion, NULL,  &public_stringregion);
-         }
-      tlschain_remove(old->tstate);
-      free(old); 			/* free context block */
-      }
+
+
+   #ifdef NamedSemaphores
+      sem_close(old->semp);		/* close associated semaphore */
+   #else
+      sem_destroy(old->semp);		/* destroy associated semaphore */
+   #endif
+
+   /*
+    * Give up the heaps owned by the old thread, 
+    * only GC thread is running, no need to lock 
+    */
+    if ((old->c->status & Ts_Sync) && blkregion){
+       swap2publicheap(blkregion, NULL,  &public_blockregion);
+       swap2publicheap(strregion, NULL,  &public_stringregion);
+       }
+    tlschain_remove(old->tstate);
+    free(old); 			/* free context block */
+    ocs[1] = NULL;            
+    return;
   }
 
 /*

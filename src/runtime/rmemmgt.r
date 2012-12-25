@@ -484,7 +484,7 @@ int region;
 #ifdef Concurrent
    { struct threadstate *tstate;
    for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
-      if (!(tstate->ctx) || !(tstate->ctx->c) || (tstate->ctx->alive==0) ) continue;
+      if (!(tstate->ctx) || !(tstate->ctx->c) || (tstate->ctx->alive<-1)) continue;
       tstate->ctx->c->es_tend = tstate->Tend;
       tstate->ctx->c->es_pfp = tstate->Pfp;
       tstate->ctx->c->es_gfp = tstate->Gfp;
@@ -672,18 +672,11 @@ struct progstate *pstate;
     */
 #ifdef Concurrent
    struct threadstate *t;
-   for (t = roottstatep; t != NULL; t = t->next)
-      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async ) && (t->ctx->alive) )
-        markthread(t);
+   for (t = roottstatep->next; t != NULL; t = t->next)
+      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async ))
+         markthread(t);
 #else					/* Concurrent */
-#if 0
-   postqual(&(pstate->tstate->ksub));
-   PostDescrip(pstate->tstate->K_errorvalue);
-   PostDescrip(pstate->tstate->T_errorvalue);
-PostDescrip(pstate->tstate->K_current);
-#else
    markthread(pstate->tstate);
-#endif
 #endif					/* Concurrent */
    
 PostDescrip(pstate->K_main);

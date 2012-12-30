@@ -1150,7 +1150,7 @@ char *f(int region, word nbytes)
       
    /* look in the public heaps, */
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
-      if (rp->size >= want) {	/* if large enough to possibly succeed */
+      if (rp->size >= want && rp->size>=curr_private->size/2) {	/* if large enough to possibly succeed */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
       	 *pcurr = curr_private;
          collect(region);
@@ -1305,13 +1305,11 @@ struct region **p_public; /* pointer to the head of the list*/
      } 
     else { /* NO SWAP: some thread is giving up his heap. 
     	      Just insert curr_private into the public heap. */
-	if (*p_public==NULL){
-	   curr_private->Tprev=NULL;
+	curr_private->Tprev=NULL;
+	if (*p_public==NULL)
 	   curr_private->Tnext=NULL;
-	   }
 	else{
 	   curr_private->Tnext=*p_public;
-	   curr_private->Tprev=NULL;
 	   curr_private->Tnext->Tprev=curr_private;
 	   }
    	*p_public=curr_private;
@@ -1355,10 +1353,12 @@ word nbytes;
    
    MUTEX_LOCKID(mtx_publicheap);
    for (rp = curr; rp; rp = rp->Tnext)
-      if (DiffPtrs(rp->end, rp->free) >= nbytes)
+      if (DiffPtrs(rp->end, rp->free) >= nbytes && rp->size>=curr_private->size/2)
          break;
          
-   if (rp) rp=swap2publicheap(curr_private, rp, p_public);
+   if (rp )
+    rp=swap2publicheap(curr_private, rp, p_public);
+
    MUTEX_UNLOCKID(mtx_publicheap);
 
    return rp;

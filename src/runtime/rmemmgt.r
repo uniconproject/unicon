@@ -111,7 +111,12 @@ int firstd[] = {
      0,                       /* T_Lrgint (2), large integer */
      0,                       /* T_Real (3), real number */
      0,                       /* T_Cset (4), cset */
+
+#ifdef Concurrent
+     4*WordSize,              /* T_File (5), file block */
+#else					/* Concurrent */
      3*WordSize,              /* T_File (5), file block */
+#endif
 
 #ifdef MultiThread
      8*WordSize,              /* T_Proc (6), procedure block */
@@ -480,8 +485,19 @@ int region;
     *  with the current values.
     *  Note: no need to lock MTX_TLS_CHAIN since only the GCthread is running
     */
-   cp = BlkD(k_current, Coexpr);
 #ifdef Concurrent
+
+/*  This is replaced by a better mechansim: point directly to the ce variable
+ * and don't host any of these variables in tstate.
+ * Ex:
+ *    instead of "tend" refering to 
+ *     tstate->Tend
+ *    it will refer directly to 
+ *          tstate->c->es_tend   
+ *
+ *   The code here will be kept until we are are sure the alternative is a 
+ *   better option and we don't have surprises.
+ *
    { struct threadstate *tstate;
    for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
       if (!(tstate->ctx) || !(tstate->ctx->c) || (tstate->ctx->alive<-1)) continue;
@@ -492,7 +508,15 @@ int region;
       tstate->ctx->c->es_sp = tstate->Sp;
       }
    }
+
+*
+*
+*/
+
 #else					/* Concurrent */
+
+   cp = BlkD(k_current, Coexpr);
+
    cp->es_tend = tend;
 
 #if !COMPILER
@@ -649,15 +673,25 @@ static void markthread(struct threadstate *tcp)
    /* sync VM registers here?  Or maybe do ALL of them before any other
     * marking.
     */
-   PostDescrip(tcp->Value_tmp);
-   PostDescrip(tcp->Kywd_pos);
-   PostDescrip(tcp->ksub);
-   PostDescrip(tcp->Kywd_ran);
-   PostDescrip(tcp->K_current);
-   PostDescrip(tcp->K_errorvalue);
-   PostDescrip(tcp->T_errorvalue);
-   PostDescrip(tcp->AmperErrno);
-   PostDescrip(tcp->Eret_tmp);
+
+   if(!is:null(tcp->Value_tmp))
+      PostDescrip(tcp->Value_tmp);
+   if(!is:null(tcp->Kywd_pos))
+      PostDescrip(tcp->Kywd_pos);
+   if(!is:null(tcp->ksub))
+      PostDescrip(tcp->ksub);
+   if(!is:null(tcp->Kywd_ran))
+      PostDescrip(tcp->Kywd_ran);
+   if(!is:null(tcp->K_current))
+      PostDescrip(tcp->K_current);
+   if(!is:null(tcp->K_errorvalue))
+      PostDescrip(tcp->K_errorvalue);
+   if(!is:null(tcp->T_errorvalue))
+      PostDescrip(tcp->T_errorvalue);
+   if(!is:null(tcp->AmperErrno))
+      PostDescrip(tcp->AmperErrno);
+   if(!is:null(tcp->Eret_tmp))
+      PostDescrip(tcp->Eret_tmp);
    /* ??? */
 }
 
@@ -1337,7 +1371,7 @@ static void cofree()
 
       if ((BlkType(*ep) == T_Coexpr) /* &&
       (((struct b_coexpr *)(*ep))->program == curpstate) */) {
-	
+
          xep = *ep;
          *ep = (*ep)->nextstk;
          /*

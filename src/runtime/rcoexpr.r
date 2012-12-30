@@ -525,7 +525,6 @@ void coclean(void *o) {
          }
       }
    else if (old->alive==1) { /* the current thread is done, called this to exit */
-      tended struct b_list *hp;
       /* give up the heaps owned by the thread */
       if (blkregion){
          MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
@@ -537,11 +536,8 @@ void coclean(void *o) {
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
          }	
 
-      hp = BlkD(old->c->outbox, List);
-      CV_SIGNAL_EMPTYBLK(hp);
-
-      hp = BlkD(old->c->inbox, List);
-      CV_SIGNAL_FULLBLK(hp);
+      CV_SIGNAL_EMPTYBLK(BlkD(old->c->outbox, List));
+      CV_SIGNAL_FULLBLK(BlkD(old->c->inbox, List));
 
       DEC_NARTHREADS;	
       old->alive = -1;
@@ -612,15 +608,17 @@ void *nctramp(void *arg)
     pthread_setspecific(tstate_key, (void *) curtstate);
 #endif					/* HAVE_KEYWORD__THREAD */
 
+   curtstate->c = ce = new->c;
+
    init_threadstate(curtstate);
    tlschain_add(curtstate, new);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
    k_level = new->tmplevel;
-   ce = new->c;
    if (ce->title != T_Coexpr) {
       fprintf(stderr, "warning ce title is %ld\n", ce->title);
       }
+#if 0
    pfp = ce->es_pfp;
    efp = ce->es_efp;
    gfp = ce->es_gfp;
@@ -628,6 +626,8 @@ void *nctramp(void *arg)
    ipc = ce->es_ipc;
    ilevel = ce->es_ilevel;
    sp = ce->es_sp;
+#endif
+
    stack = ce->es_stack;
    stackend = ce->es_stackend;
    glbl_argp = ce->es_argp;
@@ -1062,11 +1062,12 @@ void tlschain_add(struct threadstate *tstate, struct context *ctx)
    if (ctx){
       tstate->ctx = ctx;
       ctx->tstate = tstate;
+      tstate->c = ctx->c;
       }
    else
       /*
        *  Warning: This may overwrite already initialized ctx,
-       *  But we can not risk leaving ctx uninitialized. 
+       *  But we cannot risk leaving ctx uninitialized. 
        */
       tstate->ctx = NULL;
 

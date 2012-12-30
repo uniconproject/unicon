@@ -562,21 +562,27 @@ void init_threadstate( struct threadstate *ts)
    ts->Lastop = 0;
    ts->Xargp = NULL;
    ts->Xnargs = 0;
-   ts->Ipc.opnd = NULL;
-   ts->Efp=NULL;		/* Expression frame pointer */
-   ts->Gfp=NULL;		/* Generator frame pointer */
-   ts->Pfp=NULL;	        /* procedure frame pointer */
-   ts->Sp = NULL;		/* Stack pointer */
-   ts->Ilevel=0;		/* Depth of recursion in interp() */
+
+#if 0
+   ts->c->es_ipc.opnd = NULL;
+   ts->c->es_efp=NULL;		/* Expression frame pointer */
+   ts->c->es_gfp=NULL;		/* Generator frame pointer */
+   ts->c->es_pfp=NULL;	        /* procedure frame pointer */
+   ts->c->es_sp = NULL;		/* Stack pointer */
+   ts->c->es_ilevel=0;		/* Depth of recursion in interp() */
+#endif
 
 #ifndef StackCheck
    ts->Stack=NULL;		/* Interpreter stack */
    ts->Stackend=NULL; 		/* End of interpreter stack */
 #endif					/* StackCheck */
+
+
 #endif					/* !COMPILER */
 
    ts->Line_num = ts->Column = ts->Lastline = ts->Lastcol = 0;
-   ts->Tend = NULL;
+
+/*   ts->c->es_tend = NULL; */
 
 #ifdef Concurrent
    ts->Curstring = NULL;
@@ -677,6 +683,11 @@ char *argv[];
 	*/
    curtstate->Curstring = &rootstring;
    curtstate->Curblock = &rootblock;
+
+   rootstring.Tnext=NULL;
+   rootstring.Tprev=NULL;
+   rootblock.Tnext=NULL;
+   rootblock.Tprev=NULL;
 
    rootpstate.Public_stringregion = NULL;
    rootpstate.Public_blockregion = NULL;
@@ -950,10 +961,10 @@ Deliberate Syntax Error
 #ifdef StackCheck
    mainhead->es_stack = (word *)(mainhead+1);
 #endif					/* StackCheck */
-
 					/*  This really is a bug. */
 #ifdef MultiThread
    mainhead->program = &rootpstate;
+   curtstate->c=mainhead;
 #endif					/* MultiThread */
 #if COMPILER
    mainhead->file_name = "";
@@ -1857,8 +1868,10 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    if (coexp == NULL) return NULL;
    pstate = coexp->program;
    tstate = pstate->tstate;
+   tstate->c = coexp;
    tstate->Stack = (word *)((char *)(tstate+1) + icodesize);
    tstate->Stackend = (word *)(((char *)(tstate->Stack)) + (stacksize/2));
+
 #ifdef StackCheck
    coexp->es_stack = tstate->Stack;
    coexp->es_stackend = tstate->Stackend;

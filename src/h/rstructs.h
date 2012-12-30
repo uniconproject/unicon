@@ -105,11 +105,10 @@ struct b_file {			/* file block */
    word title;			/*   T_File */
    union f fd;
    word status;			/*   file status */
-   struct descrip fname;	/*   file name (string qualifier) */
 #ifdef Concurrent
    word mutexid;
 #endif				/* Concurrent */
-
+   struct descrip fname;	/*   file name (string qualifier) */
    };
 
 #ifdef ISQL
@@ -443,6 +442,18 @@ union numeric {			/* long integers or real numbers */
  * but a lot of fields are VM-only.
  */
 struct threadstate {
+  
+  /* 
+   * the threadstate is tied not only to a thread, but also to 
+   * a coexpression (for now!), since there is a one to one mapping
+   * between a co-expressn and it is corresponding thread 
+   * Note: (c is also equavelent to ctx->c)
+   */
+    
+  struct b_coexpr *c;
+  struct context *ctx;         /* the corresponding context for ce/tstate*/
+
+   
 #ifdef Concurrent
    pthread_t tid;
    int Pollctr;
@@ -473,16 +484,16 @@ struct threadstate {
    struct descrip Value_tmp;      /* TLS  */
    dptr Xargp;                    /* TLS  */
    word Xnargs;                   /* TLS  */
-  struct ef_marker *Efp;	/* Expression frame pointer */
-  struct gf_marker *Gfp;	/* Generator frame pointer */
-  struct pf_marker *Pfp;	/* procedure frame pointer */
-  inst Ipc;			/* Interpreter program counter */
-  inst Oldipc;                  /* the previous ipc, fix returned line zero */
-  word *Sp;		/* Stack pointer */
-  int Ilevel;			/* Depth of recursion in interp() */
+/* struct ef_marker *Efp;	/* Expression frame pointer */
+/* struct gf_marker *Gfp;	/* Generator frame pointer */
+/* struct pf_marker *Pfp;	/* procedure frame pointer */
+/* inst Ipc;			/* Interpreter program counter */
+/* inst Oldipc;                  /* the previous ipc, fix returned line zero */
+/* word *Sp;		/* Stack pointer */
+/* int Ilevel;			/* Depth of recursion in interp() */
 
-  word *Stack;				/* Interpreter stack */
-  word *Stackend; 			/* End of interpreter stack */
+   word *Stack;				/* Interpreter stack */
+   word *Stackend; 			/* End of interpreter stack */
 #endif					/* !COMPILER */
    dptr Glbl_argp; /*TLS*/			/* global argp */
 
@@ -510,7 +521,7 @@ struct threadstate {
   word Line_num,   /* line number for current execution point */
     Column, Lastline, Lastcol; /*TLS*/
 
-  struct tend_desc *Tend;  /* chain of tended descriptors */
+  /*  struct tend_desc *Tend;  /* chain of tended descriptors */
 
   struct descrip Eret_tmp;	/* eret value during unwinding */
   
@@ -534,9 +545,7 @@ struct threadstate {
  */
   struct threadstate *prev;
   struct threadstate *next;
-
-  struct context *ctx;         /* the corresponding context for tstate*/
-   };
+  };
 
 #if !COMPILER
 

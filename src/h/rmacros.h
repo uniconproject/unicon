@@ -940,14 +940,14 @@
       #define lastcol   (curtstate->Lastcol)
 
 #ifdef Concurrent 
-      #define tend         (curtstate->Tend)
-      #define efp         (curtstate->Efp)
-      #define gfp         (curtstate->Gfp)
-      #define pfp         (curtstate->Pfp)
-      #define ipc         (curtstate->Ipc)
-      #define oldipc      (curtstate->Oldipc)
-      #define sp          (curtstate->Sp)
-      #define ilevel      (curtstate->Ilevel)
+      #define tend         (curtstate->c->es_tend)
+      #define efp         (curtstate->c->es_efp)
+      #define gfp         (curtstate->c->es_gfp)
+      #define pfp         (curtstate->c->es_pfp)
+      #define ipc         (curtstate->c->es_ipc)
+      #define oldipc      (curtstate->c->es_oldipc)
+      #define sp          (curtstate->c->es_sp)
+      #define ilevel      (curtstate->c->es_ilevel)
 
 #ifndef StackCheck
       #define stack          (curtstate->Stack)

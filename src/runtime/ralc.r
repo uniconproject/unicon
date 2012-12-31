@@ -264,7 +264,17 @@ struct b_coexpr *alccoexp()
 	 
      /*
       * Initialize sender/receiver queues.
+      *
+      * Make sure we have enough memory for all queues all at once to avoid 
+      * multiple GC if we are at the end of a region.
       */
+
+      if (!reserve(Blocks, (word)(
+      			sizeof(struct b_list) * 3 + 
+      			sizeof(struct b_lelem) * 3 +
+			(1024+1024+64) * sizeof(struct descrip)))
+			)
+      ReturnErrNum(307, NULL);
 
       if((hp = alclist(0, 1024))==NULL)
       	    ReturnErrNum(307, NULL);

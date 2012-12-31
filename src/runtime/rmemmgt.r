@@ -942,13 +942,14 @@ dptr dp;
 
 #ifdef Concurrent
        
-       if (!is:null(cp->inbox)){
+       if (!is:null(cp->inbox))
 	 markblock(&(cp->inbox));
+       if (!is:null(cp->outbox))
 	 markblock(&(cp->outbox));
+       if (!is:null(cp->cequeue))
 	 markblock(&(cp->cequeue));
-	 if (cp->handdata!=NULL) 
+       if (cp->handdata!=NULL) 
 	    markblock((cp->handdata));
-	 }
 
 #endif					/* Concurrent */
 #endif                                  /* CoExpr */

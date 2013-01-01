@@ -3407,7 +3407,7 @@ struct node *n;
 
       /*
        * Output function header that corresponds to standard calling
-       *  convensions. The function name is constructed from the letter
+       *  conventions. The function name is constructed from the letter
        *  for the operation type, the prefix that makes the function
        *  name unique, and the name of the operation.
        */

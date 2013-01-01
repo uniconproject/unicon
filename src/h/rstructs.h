@@ -484,13 +484,13 @@ struct threadstate {
    struct descrip Value_tmp;      /* TLS  */
    dptr Xargp;                    /* TLS  */
    word Xnargs;                   /* TLS  */
-/* struct ef_marker *Efp;	/* Expression frame pointer */
-/* struct gf_marker *Gfp;	/* Generator frame pointer */
-/* struct pf_marker *Pfp;	/* procedure frame pointer */
-/* inst Ipc;			/* Interpreter program counter */
-/* inst Oldipc;                  /* the previous ipc, fix returned line zero */
-/* word *Sp;		/* Stack pointer */
-/* int Ilevel;			/* Depth of recursion in interp() */
+/* struct ef_marker *Efp;	* Expression frame pointer */
+/* struct gf_marker *Gfp;	* Generator frame pointer */
+/* struct pf_marker *Pfp;	* procedure frame pointer */
+/* inst Ipc;			* Interpreter program counter */
+/* inst Oldipc;                  * the previous ipc, fix returned line zero */
+/* word *Sp;		* Stack pointer */
+/* int Ilevel;			* Depth of recursion in interp() */
 
    word *Stack;				/* Interpreter stack */
    word *Stackend; 			/* End of interpreter stack */
@@ -521,7 +521,7 @@ struct threadstate {
   word Line_num,   /* line number for current execution point */
     Column, Lastline, Lastcol; /*TLS*/
 
-  /*  struct tend_desc *Tend;  /* chain of tended descriptors */
+  /*  struct tend_desc *Tend;  * chain of tended descriptors */
 
   struct descrip Eret_tmp;	/* eret value during unwinding */
   

@@ -36,15 +36,9 @@ struct tok_lst *body;
 /*
  * new_token - allocate a new token.
  */
-struct token *new_token(id, image, fname, line)
-int id;
-char *image;
-char *fname;
-int line;
+struct token *new_token(int id, char *image, char *fname, int line)
    {
-   struct token *t;
-
-   t = NewStruct(token);
+   struct token *t = NewStruct(token);
    t->tok_id = id;
    t->image = image;
    t->fname = fname;
@@ -56,8 +50,7 @@ int line;
 /*
  * copy_t - make a copy of a token.
  */
-struct token *copy_t(t)
-struct token *t;
+struct token *copy_t(struct token *t)
    {
    struct token *t1;
 
@@ -86,12 +79,9 @@ struct token *tok;
 /*
  * new_id_lst - allocate a new element for an identifier list.
  */
-struct id_lst *new_id_lst(id)
-char *id;
+struct id_lst *new_id_lst(char *id)
    {
-   struct id_lst *ilst;
-
-   ilst = NewStruct(id_lst);
+   struct id_lst *ilst = NewStruct(id_lst);
    ilst->id = id;
    ilst->next = NULL;
    return ilst;
@@ -101,14 +91,9 @@ char *id;
  * new_cs - allocate a new structure for a source of tokens created from
  *  characters.
  */
-struct char_src *new_cs(fname, f, bufsize)
-char *fname;
-FILE *f;
-int bufsize;
+struct char_src *new_cs(char *fname, FILE *f, int bufsize)
    {
-   struct char_src *cs;
-
-   cs = NewStruct(char_src);
+   struct char_src *cs = NewStruct(char_src);
    cs->char_buf = (int *)alloc((unsigned int)(sizeof(int) * bufsize));
    cs->line_buf = (int *)alloc((unsigned int)(sizeof(int) * bufsize));
    cs->bufsize = bufsize;
@@ -125,14 +110,10 @@ int bufsize;
  * new_me - allocate a new structure for a source of tokens derived
  *  from macro expansion.
  */
-struct mac_expand *new_me(m, args, exp_args)
-struct macro *m;
-struct tok_lst **args;
-struct tok_lst **exp_args;
+struct mac_expand *new_me(struct macro *m, struct tok_lst **args,
+			  struct tok_lst **exp_args)
    {
-   struct mac_expand *me;
-
-   me = NewStruct(mac_expand);
+   struct mac_expand *me = NewStruct(mac_expand);
    me->m = m;
    me->args = args;
    me->exp_args = exp_args;

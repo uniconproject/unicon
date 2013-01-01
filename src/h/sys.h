@@ -341,7 +341,7 @@
 
 #ifdef ISQL
   /* to prevent double-typedef of BOOL on some platforms */
-  #define BOOL int
+  #define BOOL rumplestiltskin
   #include <sqlext.h>
 
 #ifdef DebugHeap

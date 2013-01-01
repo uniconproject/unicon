@@ -192,7 +192,7 @@ extern struct descrip amperErrno;
 #endif					/* Concurrent */
    
 /*delete
-   extern int ntended;			/* number of active tended descriptors
+   extern int ntended;			* number of active tended descriptors
 */
    extern struct b_cset k_ascii;	/* value of &ascii */
    extern struct b_cset k_cset;		/* value of &cset */
@@ -202,7 +202,7 @@ extern struct descrip amperErrno;
    extern struct b_cset k_ucase;	/* value of &ucase */
 
 /* delete
-   extern struct descrip tended[];	/* tended descriptors
+   extern struct descrip tended[];	* tended descriptors
 */
    
    extern struct pstrnm pntab[];

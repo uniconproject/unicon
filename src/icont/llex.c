@@ -25,8 +25,7 @@ int nlflag = 0;		/* newline last seen */
  * getopc - get an opcode from infile, return the opcode number (via
  *  binary search of opcode table), and point id at the name of the opcode.
  */
-int getopc(id)
-char **id;
+int getopc(char **id)
    {
    register char *s;
    register struct opentry *p;

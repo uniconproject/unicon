@@ -1531,9 +1531,7 @@ struct implement **tbl;
  * db_ilkup - look up id in a table of implementation information and return
  *  pointer it or NULL if it is not there.
  */
-struct implement *db_ilkup(id, tbl)
-char *id;
-struct implement **tbl;
+struct implement *db_ilkup(char *id, struct implement **tbl)
    {
    register struct implement *ptr;
 

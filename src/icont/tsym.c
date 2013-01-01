@@ -148,9 +148,7 @@ int flag, argcnt;
  * putloc - make a local symbol table entry and return the index
  *  of the entry in lhash.  alcloc does the work if there is a collision.
  */
-int putloc(id,id_type)
-char *id;
-int id_type;
+int putloc(char *id, int id_type)
    {
    register struct tlentry *ptr;
 
@@ -167,9 +165,7 @@ int id_type;
  *  is a collision.
  */
 
-static void putglob(id, id_type, n_args)
-char *id;
-int id_type, n_args;
+static void putglob(char *id, int id_type, int n_args)
    {
    register struct tgentry *ptr;
 
@@ -183,9 +179,7 @@ int id_type, n_args;
  * putlit makes a constant symbol table entry and returns the table "index"
  *  of the constant.  alclit does the work if there is a collision.
  */
-int putlit(id, idtype, len)
-char *id;
-int len, idtype;
+int putlit(char *id, int idtype, int len)
    {
    register struct tcentry *ptr;
 
@@ -202,8 +196,7 @@ int len, idtype;
  *  to it if found or NULL if not present.
  */
 
-static struct tlentry *llookup(id)
-char *id;
+static struct tlentry *llookup(char *id)
    {
    register struct tlentry *ptr;
 
@@ -217,8 +210,7 @@ char *id;
  * glookup looks up id in global symbol table and returns pointer to
  *  to it if found or NULL if not present.
  */
-static struct tgentry *glookup(id)
-char *id;
+static struct tgentry *glookup(char *id)
    {
    register struct tgentry *ptr;
 
@@ -233,13 +225,9 @@ char *id;
  * clookup looks up id in constant symbol table and returns pointer to
  *  to it if found or NULL if not present.
  */
-static struct tcentry *clookup(id,flag)
-char *id;
-int flag;
+static struct tcentry *clookup(char *id, int flag)
    {
-   register struct tcentry *ptr;
-
-   ptr = chash[chasher(id)];
+   register struct tcentry *ptr = chash[chasher(id)];
    while (ptr != NULL && (ptr->c_name != id || ptr->c_flag != flag))
       ptr = ptr->c_blink;
 
@@ -250,8 +238,7 @@ int flag;
  * klookup looks up keyword named by id in keyword table and returns
  *  its number (keyid).
  */
-int klookup(id)
-register char *id;
+int klookup(char *id)
    {
    register struct keyent *kp;
 

@@ -6,17 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if HAVE_LIBGL && HAVE_FTGL
+#if HAVE_LIBGL && HAVE_LIBFTGL
 #include <GL/gl.h>
 // #include <GL/glut.h>
 
 
-#include "FTGLOutlineFont.h"
-#include "FTGLPolygonFont.h"
-#include "FTGLBitmapFont.h"
-#include "FTGLTextureFont.h"
-#include "FTGLPixmapFont.h"
-#include "FTGLExtrdFont.h"
+#include "ftgl.h"
 
 
 static FTFont *fonts;

@@ -69,7 +69,7 @@ int readglob(struct lfile *lf)
      return 0;
    } else {
      /*printf("claiming ownership of %s!\n", &lsspace[id]);
-     /* by this gentle insertion of our uid onto the global list, we assert ownership of this uid forever */
+      * by this gentle insertion of our uid onto the global list, we assert ownership of this uid forever */
      lf->uid = &lsspace[id];
    }
 

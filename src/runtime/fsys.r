@@ -908,7 +908,8 @@ Deliberate Syntax Error
       	       DEC_NARTHREADS;
 	       fd = sock_listen(fnamestr, is_udp_or_listener);
       	       INC_NARTHREADS_CONTROLLED;
-	    } else {
+	       }
+	    else {
 	       C_integer timeout = 0;
 #if defined(Graphics) || defined(Messaging) || defined(ISQL)
 	       if (n > 0 && !is:null(attr[0])) {

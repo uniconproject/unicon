@@ -158,12 +158,7 @@ void locinit()
 /*
  * putlocal - make a local symbol table entry.
  */
-void putlocal(n, id, flags, imperror, procname)
-int n;
-word id;
-register int flags;
-int imperror;
-word procname;
+void putlocal(int n, word id, int flags, int imperror, word procname)
    {
    register struct lentry *lp;
    union {
@@ -216,11 +211,7 @@ word procname;
 /*
  * putglobal - make a global symbol table entry.
  */
-struct gentry *putglobal(id, flags, nargs, procid)
-word id;
-int flags;
-int nargs;
-int procid;
+struct gentry *putglobal(word id, int flags, int nargs, int procid)
    {
    register struct gentry *p;
 
@@ -325,8 +316,7 @@ int fnum;
  * glocate - lookup identifier in global symbol table, return NULL
  *  if not present.
  */
-struct gentry *glocate(id)
-word id;
+struct gentry *glocate(word id)
    {
    register struct gentry *p;
 
@@ -339,12 +329,9 @@ word id;
 /*
  * flocate - lookup identifier in field table.
  */
-struct fentry *flocate(id)
-word id;
+struct fentry *flocate(word id)
    {
-   register struct fentry *p;
-
-   p = lfhash[fhasher(id)];
+   register struct fentry *p = lfhash[fhasher(id)];
    while (p != NULL && p->f_name != id)
       p = p->f_blink;
    return p;

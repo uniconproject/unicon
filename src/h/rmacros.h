@@ -1162,7 +1162,7 @@
    
    #define MTX_HANDLERS		22
    
-   #define MTX_PCO_INITED	23 /* remove this*/
+   #define MTX_ALCNUM		23
    
    #define MTX_PUBLICSTRHEAP	24
    #define MTX_PUBLICBLKHEAP	25
@@ -1323,6 +1323,9 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 
 #define MUTEX_GETBLK(bp) mutexes[bp->mutexid]
 
+#define CV_GETULLTBLK(bp) condvars[bp->cvfull]
+#define CV_GETULLTBLK(bp) condvars[bp->cvfull]
+
 #define CV_INITBLK(bp) {  MUTEX_INITBLK(bp) \
      bp->cvfull = get_cv(bp->mutexid); \
      bp->cvempty = get_cv(bp->mutexid); \
@@ -1377,6 +1380,8 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 #define C_PUT_PROTECTED(L, v)
 #define CV_INITBLK(bp)
 #define MUTEX_GETBLK(bp)
+#define CV_GETULLTBLK(bp)
+#define CV_GETULLTBLK(bp)
 
 #define SUSPEND_THREADS()
 #define RESUME_THREADS()

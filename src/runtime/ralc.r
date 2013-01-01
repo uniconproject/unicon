@@ -1208,7 +1208,7 @@ char *f(int region, word nbytes)
       curr->Gprev = rp;
       MUTEX_UNLOCKID(mtx_heap);
 #ifdef Concurrent
-      MUTEX_LOCKID(mtx_publicheap);
+      MUTEX_LOCKID_CONTROLLED(mtx_publicheap);
       swap2publicheap(curr_private, NULL, p_publicheap);
       MUTEX_UNLOCKID(mtx_publicheap);
 #endif 					/* Concurrent */
@@ -1370,7 +1370,7 @@ word nbytes;
       mtx_publicheap = MTX_PUBLICBLKHEAP;
       }
    
-   MUTEX_LOCKID(mtx_publicheap);
+   MUTEX_LOCKID_CONTROLLED(mtx_publicheap);
    for (rp = curr; rp; rp = rp->Tnext)
       if (DiffPtrs(rp->end, rp->free) >= nbytes && rp->size>=curr_private->size/2)
          break;

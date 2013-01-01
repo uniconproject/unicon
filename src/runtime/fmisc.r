@@ -136,17 +136,37 @@ function{1} collect(region, bytes)
 	    collect(0);
 	    break;
 	 case Static:
+#ifdef Concurrent
+            thread_control(TC_STOPALLTHREADS);
+      	    collect(Static);
+      	    thread_control(TC_WAKEUPCALL);
+#else 					/* Concurrent */
 	    collect(Static);			 /* i2 ignored if i1==Static */
+#endif 					/* Concurrent */
 	    break;
 	 case Strings:
-	    if (DiffPtrs(strend,strfree) >= bytes)
-	       collect(Strings);		/* force unneded collection */
+	    if (DiffPtrs(strend,strfree) >= bytes){
+#ifdef Concurrent
+               thread_control(TC_STOPALLTHREADS);
+	       collect(Strings);		/* force unneaded collection */
+      	       thread_control(TC_WAKEUPCALL);
+#else 					/* Concurrent */
+	       collect(Strings);		/* force unneaded collection */
+#endif 					/* Concurrent */
+	       }
 	    else if (!reserve(Strings, bytes))	/* collect & reserve bytes */
                fail;
 	    break;
 	 case Blocks:
-	    if (DiffPtrs(blkend,blkfree) >= bytes)
-	       collect(Blocks);			/* force unneded collection */
+	    if (DiffPtrs(blkend,blkfree) >= bytes){
+#ifdef Concurrent
+               thread_control(TC_STOPALLTHREADS);
+	       collect(Blocks);			/* force unneaded collection */
+      	       thread_control(TC_WAKEUPCALL);
+#else 					/* Concurrent */
+	       collect(Blocks);			/* force unneaded collection */
+#endif 					/* Concurrent */
+	       }
 	    else if (!reserve(Blocks, bytes))	/* collect & reserve bytes */
                fail;
 	    break;

@@ -89,7 +89,13 @@ struct astkblk *alcactiv()
     * If malloc failed, attempt to free some co-expression blocks and retry.
     */
    if (abp == NULL) {
+#ifdef Concurrent
+      thread_control(TC_STOPALLTHREADS);
       collect(Static);
+      thread_control(TC_WAKEUPCALL);
+#else 					/* Concurrent */
+      collect(Static);
+#endif 					/* Concurrent */
       abp = (struct astkblk *)malloc((msize)sizeof(struct astkblk));
       }
 
@@ -147,8 +153,18 @@ struct b_coexpr *alccoexp()
     * If there have been too many co-expression allocations
     * since a collection, attempt to free some co-expression blocks.
     */
-   if (alcnum > AlcMax) collect(Static);
 
+   MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
+
+#ifdef Concurrent
+   if (alcnum > AlcMax){
+      thread_control(TC_STOPALLTHREADS);
+      collect(Static);
+      thread_control(TC_WAKEUPCALL);
+      }
+#else 					/* Concurrent */
+   if (alcnum > AlcMax) collect(Static);
+#endif 					/* Concurrent */
 
    ep = (struct b_coexpr *)malloc((msize)stksize);
 
@@ -156,14 +172,23 @@ struct b_coexpr *alccoexp()
     * If malloc failed, attempt to free some co-expression blocks and retry.
     */
    if (ep == NULL) {
+#ifdef Concurrent
+      thread_control(TC_STOPALLTHREADS);
       collect(Static);
+      thread_control(TC_WAKEUPCALL);
+#else 					/* Concurrent */
+      collect(Static);
+#endif 					/* Concurrent */
       ep = (struct b_coexpr *)malloc((msize)stksize);
       }
 
-   if (ep == NULL)
+   if (ep == NULL){
+      MUTEX_UNLOCKID(MTX_ALCNUM);
       ReturnErrNum(305, NULL);
+      }
 
    alcnum++;                    /* increment allocation count since last g.c. */
+   MUTEX_UNLOCKID(MTX_ALCNUM);
 
    ep->title = T_Coexpr;
    ep->size = 0;
@@ -205,6 +230,8 @@ struct b_coexpr *alccoexp()
     * since a collection, attempt to free some co-expression blocks.
     */
 
+MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
+
 #ifdef Concurrent
    if (alcnum > AlcMax){
       thread_control(TC_STOPALLTHREADS);
@@ -229,7 +256,13 @@ struct b_coexpr *alccoexp()
     * If malloc failed, attempt to free some co-expression blocks and retry.
     */
    if (ep == NULL) {
+#ifdef Concurrent
+      thread_control(TC_STOPALLTHREADS);
       collect(Static);
+      thread_control(TC_WAKEUPCALL);
+#else 					/* Concurrent */
+      collect(Static);
+#endif 					/* Concurrent */
 
 #ifdef MultiThread
       if (icodesize>0) {
@@ -240,10 +273,14 @@ struct b_coexpr *alccoexp()
 #endif					/* MultiThread */
          ep = (struct b_coexpr *)malloc((msize)stksize);
       }
-   if (ep == NULL)
+   if (ep == NULL){
+      MUTEX_UNLOCKID(MTX_ALCNUM);
       ReturnErrNum(305, NULL);
+      }
 
    alcnum++;		/* increment allocation count since last g.c. */
+
+   MUTEX_UNLOCKID(MTX_ALCNUM);
 
    ep->title = T_Coexpr;
    ep->es_actstk = NULL;

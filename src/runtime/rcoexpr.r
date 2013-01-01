@@ -168,7 +168,7 @@ int first;
 #else        				/* CoExpr */
 
    register struct b_coexpr *ccp;
-   tended struct b_list *hp;
+   CURTSTATE();
 
    ccp = (struct b_coexpr *)BlkLoc(k_current);
 
@@ -231,10 +231,9 @@ int first;
 
 #ifdef Concurrent
       if (ccp->status & Ts_Async){
-         struct descrip L;
-         L = ccp->outbox;
-      	 hp = BlkD(L, List);
-      	 MUTEX_LOCKBLK_CONTROLLED(hp, "co_chng(): list mutex");
+   	 struct b_list *hp;
+      	 MUTEX_LOCKBLK_CONTROLLED(BlkD(ccp->outbox, List), "co_chng(): list mutex");
+      	 hp = BlkD(BlkLoc(k_current)->Coexpr.outbox, List);
       	 if (hp->size>=hp->max){
             hp->full++;
             while (hp->size>=hp->max){
@@ -242,12 +241,13 @@ int first;
 	       DEC_NARTHREADS;
 	       CV_WAIT_FULLBLK(hp);
 	       INC_NARTHREADS_CONTROLLED;
+      	       hp = BlkD(BlkLoc(k_current)->Coexpr.outbox, List);
 	       }
 	    hp->full--;
       	    }
-         c_put(&L, valloc);
-      	 MUTEX_UNLOCKBLK(hp, "co_chng(): list mutex");
-      	 CV_SIGNAL_EMPTYBLK(hp);
+         c_put(&(BlkLoc(k_current)->Coexpr.outbox), valloc);
+      	 MUTEX_UNLOCKBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List), "co_chng(): list mutex");
+      	 CV_SIGNAL_EMPTYBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List));
 	 return;
       }
       else

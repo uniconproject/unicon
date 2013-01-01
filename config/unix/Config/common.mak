@@ -43,7 +43,7 @@ drawstring3d.o: drawstring3d.cc
 		$(CXX) -c $(CFLAGS) -I/usr/include/freetype2 -o drawstring3d.o drawstring3d.cc; \
 	else \
 		echo "No C++, too bad"; \
-		echo "static int nothing;" > drawstring3d.c ; \
+		echo "extern void syserr(char*); int cpp_drawstring3d(double x, double y, double z, char *s, char *f, int t, int size, void **tfont) { syserr(\"no C++; it is required for 3d fonts\"); return -1; } " > drawstring3d.c ; \
 		$(CC) -c $(CFLAGS) drawstring3d.c; \
 		rm drawstring3d.c ; \
 	fi

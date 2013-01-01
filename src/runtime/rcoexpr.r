@@ -168,7 +168,7 @@ int first;
 #else        				/* CoExpr */
 
    register struct b_coexpr *ccp;
-   CURTSTATE();
+   tended struct b_list *hp;
 
    ccp = (struct b_coexpr *)BlkLoc(k_current);
 
@@ -231,7 +231,6 @@ int first;
 
 #ifdef Concurrent
       if (ccp->status & Ts_Async){
-         struct b_list *hp;
          struct descrip L;
          L = ccp->outbox;
       	 hp = BlkD(L, List);
@@ -527,11 +526,11 @@ void coclean(void *o) {
    else if (old->alive==1) { /* the current thread is done, called this to exit */
       /* give up the heaps owned by the thread */
       if (blkregion){
-         MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
+         MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
          swap2publicheap(blkregion, NULL,  &public_blockregion);
          MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
 
-         MUTEX_LOCKID(MTX_PUBLICSTRHEAP);
+         MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
          swap2publicheap(strregion, NULL,  &public_stringregion);
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
          }	
@@ -1116,7 +1115,7 @@ int region;
       mtx_publicheap = MTX_PUBLICBLKHEAP;
       }
 
-   MUTEX_LOCKID(mtx_publicheap);
+   MUTEX_LOCKID_CONTROLLED(mtx_publicheap);
    for (curr = *p_public; curr; curr = curr->Tnext){
       if ( (curr->size>=nbytes) &&  DiffPtrs(curr->end, curr->free) >= freebytes){
          if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
@@ -1124,8 +1123,8 @@ int region;
   	 if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
          curr->Tnext= NULL;
          curr->Tprev = NULL;
-	  break;
- 	   }
+	 break;
+ 	 }
       }
    MUTEX_UNLOCKID(mtx_publicheap);
 
@@ -1152,7 +1151,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
    if((rp = reuse_region(strsiz, Strings)) != 0)
       ts->Curstring =  curstring = rp;
    else if ((rp = newregion(strsiz, strsiz)) != 0) {
-      MUTEX_LOCKID(MTX_STRHEAP);
+      MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
       rp->prev = curstring;
       rp->next = NULL;
       curstring->next = rp;
@@ -1170,7 +1169,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
    if((rp = reuse_region(blksiz, Blocks)) != 0)
       ts->Curblock =  curblock = rp;
    else if ((rp = newregion(blksiz, blksiz)) != 0) {
-      MUTEX_LOCKID(MTX_BLKHEAP);
+      MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);
       rp->prev = curblock;
       rp->next = NULL;
       curblock->next = rp;

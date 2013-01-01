@@ -204,7 +204,16 @@ struct b_coexpr *alccoexp()
     * If there have been too many co-expression allocations
     * since a collection, attempt to free some co-expression blocks.
     */
+
+#ifdef Concurrent
+   if (alcnum > AlcMax){
+      thread_control(TC_STOPALLTHREADS);
+      collect(Static);
+      thread_control(TC_WAKEUPCALL);
+      }
+#else 					/* Concurrent */
    if (alcnum > AlcMax) collect(Static);
+#endif 					/* Concurrent */
 
 #ifdef MultiThread
    if (icodesize > 0) {

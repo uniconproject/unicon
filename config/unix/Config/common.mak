@@ -38,7 +38,7 @@ literals.o: ../h/esctab.h
 rtdb.o: ../h/version.h icontype.h
 
 drawstring3d.o: drawstring3d.cc
-	if test "$(CXX)" = "g++" ; then \
+	if test "$(CXX)" = "g++" -o "$(CXX)" = "c++" ; then \
 		echo "Got C++, building drawstring3d.o"; \
 		$(CXX) -c $(CFLAGS) -I/usr/include/freetype2 -o drawstring3d.o drawstring3d.cc; \
 	else \

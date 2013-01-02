@@ -223,10 +223,6 @@ struct b_coexpr *alccoexp()
 
    {
    struct b_coexpr *ep = NULL;
-#ifdef Concurrent
-      /*tended*/
-       struct b_list *hpi, *hpo, *hpc;
-#endif					/* Concurrent */
    CURTSTATE();
 
    /*
@@ -234,44 +230,9 @@ struct b_coexpr *alccoexp()
     * since a collection, attempt to free some co-expression blocks.
     */
 
+MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
+
 #ifdef Concurrent
-      /*
-      * Initialize sender/receiver queues.
-      *
-      * Make sure we have enough memory for all queues all at once to avoid 
-      * multiple GC if we are at the end of a region.
-      */
-
-      if (!reserve(Blocks, (word)(
-      			sizeof(struct b_list) * 3 + 
-      			sizeof(struct b_lelem) * 3 +
-			(1024+1024+64) * sizeof(struct descrip)))
-			)
-      ReturnErrNum(307, NULL);
-
-      if((hpi = alclist(0, 1024))==NULL)
-      	    ReturnErrNum(307, NULL);
-
-      MUTEX_INITBLK(hpi);
-      hpi->max = 1024;
-      CV_INITBLK(hpi);
-
-      if((hpo = alclist(0, 1024))==NULL)
-      	    ReturnErrNum(307, NULL);
-
-      MUTEX_INITBLK(hpo);
-      hpo->max = 1024;
-      CV_INITBLK(hpo);
-
-      if((hpc = alclist(0, 64))==NULL)
-      	    ReturnErrNum(307, NULL);
-
-      MUTEX_INITBLK(hpc);
-      hpc->max = 64;
-      CV_INITBLK(hpc);
-
-      MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
-
    if (alcnum > AlcMax){
       thread_control(TC_STOPALLTHREADS);
       collect(Static);
@@ -342,21 +303,55 @@ struct b_coexpr *alccoexp()
 #endif					/* MultiThread */
 
 #ifdef Concurrent
+   ep->inbox = nulldesc;
+   ep->outbox = nulldesc;
+   ep->cequeue = nulldesc;
+   ep->handdata = NULL;
 {
-      ep->status = Ts_Sync;
+ 
+     struct b_list *hp;
+     ep->status = Ts_Sync;
 	 
      /*
       * Initialize sender/receiver queues.
+      *
+      * Make sure we have enough memory for all queues all at once to avoid 
+      * multiple GC if we are at the end of a region.
       */
 
-      BlkLoc(ep->outbox) = (union block *) hpo;
+      if (!reserve(Blocks, (word)(
+      			sizeof(struct b_list) * 3 + 
+      			sizeof(struct b_lelem) * 3 +
+			(1024+1024+64) * sizeof(struct descrip)))
+			)
+      ReturnErrNum(307, NULL);
+
+      if((hp = alclist(0, 1024))==NULL)
+      	    ReturnErrNum(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      BlkLoc(ep->outbox) = (union block *) hp;
       ep->outbox.dword = D_List;
+      hp->max = 1024;
+      CV_INITBLK(hp);
 
-      BlkLoc(ep->inbox) = (union block *) hpi;
+      if((hp = alclist(0, 1024))==NULL)
+      	    ReturnErrNum(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      BlkLoc(ep->inbox) = (union block *) hp;
       ep->inbox.dword = D_List;
+      hp->max = 1024;
+      CV_INITBLK(hp);
 
-      BlkLoc(ep->cequeue) = (union block *) hpc;
+      if((hp = alclist(0, 64))==NULL)
+      	    ReturnErrNum(307, NULL);
+
+      MUTEX_INITBLK(hp);
+      BlkLoc(ep->cequeue) = (union block *) hp;
       ep->cequeue.dword = D_List;
+      hp->max = 64;
+      CV_INITBLK(hp);
 
       ep->handdata = NULL;
       

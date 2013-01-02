@@ -374,15 +374,15 @@ void newline()
    }
 
 /*
- * the string syntax code 
+ * Store string syntax code in the string pointed to by synt.
+ * Return 0 for success, -1 for failure.
  */
 word getsynt(synt)
 char **synt;
    {
-   word indx;
-
-   indx = getstr();
+   word indx = getstr();
    if (indx == -1)
-      return EOF;
+      return -1;
    *synt = &lsspace[indx];
+   return 0;
    }

@@ -7,7 +7,8 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    miAbout, boarderstat, boarderwin3d, bordercam, tblsummary,
    tcolattrib, tcolvalue, timesh, tiskeleton, tisummary, tllogmsg, tsstat,
    menubar, mHelp, tianimation,  start_dir, wdir, files_history , tblanimation,
-   tckeys, tcname, check_box_group_animation , tcFrames, mioptions, mipreferences, treeskeleton)
+   tckeys, tcname, check_box_group_animation , tcFrames, mioptions,
+   mipreferences, treeskeleton)
    
    method component_setup()
       self.setup()
@@ -19,17 +20,17 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    end
 
    method init_dialog()
-    world.w3d := view_model3d.cwin
-    \(world.w3d) | write("Window is null!!")
+      world.w3d := view_model3d.cwin
+      \(world.w3d) | write("Window is null!!")
    end
    
    method init_history()
       local fin, what, dat, line, mif, f, fname, i
       start_dir := wdir := chdir() | ""
-      files_history :=[]
+      files_history  := []
       fin := open("last_session.ini") | fail
       
-      while line:=read(fin) do{
+      while line := read(fin) do{
 	line ? {
 	  what := tab(find(":")) | next
 	  move(1)
@@ -41,29 +42,29 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
 	} # line ?
       } # while
       close(fin)
-      
+
       *files_history>0 | fail
-      
+
       mFile.add(MenuSeparator())
-      
-      every i:=1 to *files_history do {
-	f:=files_history[i]
-	mif := TextMenuItem()
-	fname := file_name(f)
-	mif.set_label(i || ". " ||fname)
-	mif.connect(self, "on_mif", ACTION_EVENT)
-	mFile.add(mif)
-      }
+
+      every i := 1 to *files_history do {
+	 f := files_history[i]
+	 mif := TextMenuItem()
+	 fname := file_name(f)
+	 mif.set_label(i || ". " ||fname)
+	 mif.connect(self, "on_mif", ACTION_EVENT)
+	 mFile.add(mif)
+	 }
    end
    
    method add_file_history(f)
       local i, replace, mif, items, base
       if f==files_history[1] then fail # the new file is already at the top of the list
-      every i:=2 to *files_history do
-	if f==files_history[i] then{
-	  delete(files_history, i)
-	  break replace:=i
-	  }
+      every i := 2 to *files_history do
+	 if f == files_history[i] then {
+	    delete(files_history, i)
+	    break replace := i
+	    }
       push(files_history, f)
       return
       #if *files_history=1 then mFile.add(MenuSeparator())
@@ -86,7 +87,7 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    method on_mif(ev)
      local mif, i
      mif := ev.get_source()
-     mif.get_label() ? i:=integer(tab(find(".")))
+     mif.get_label() ? i := integer(tab(find(".")))
      \i | fail
      load_file(files_history[i])
    end
@@ -99,7 +100,7 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
          fd.show_modal()
          fname := fd.get_result() | fail
     ##$else
-    #  fname := WinOpenDialog("Open 3D Model File...", "", 50) | fail
+    #  fname  :=  WinOpenDialog("Open 3D Model File...", "", 50) | fail
     #$endif    
 
       if not(map(fname[-4:0]) == ".s3d" | map(fname[-2:0]) == ".x" )then
@@ -119,71 +120,39 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    end
    
    method fill_animation()
-    local anim, L, LL:=[]
-    every anim := world.mod3d.animations() do{
-	L:=[anim, world.mod3d.get_animation_max_key(anim) | "?"]
-	put(LL, L)
-      }
-
-    tblanimation.set_contents(LL)
-    tsstat.display()
+   local anim, LL := []
+      every anim := world.mod3d.animations() do {
+	 put(LL, [anim, world.mod3d.get_animation_max_key(anim) | "?"])
+	 }
+      tblanimation.set_contents(LL)
+      tsstat.display()
    end
    
    method fill_summary()
-     local  LL:=[], L
-     
-     L := []     
-     put(L, "meshes", world.mod3d.mesh_count() )
-     put(LL, L)
-
-     L := []     
-     put(L, "vertices", world.mod3d.vertex_count() )
-     put(LL, L)
-
-     L := []     
-     put(L, "normals", world.mod3d.normals_count() )
-     put(LL, L)
-
-     L := []     
-     put(L, "polygons", world.mod3d.face_count() )
-     put(LL, L)
-
-     L := []     
-     put(L, "bones", world.mod3d.bone_count() )
-     put(LL, L)
-     
-     L := []     
-     put(L, "animations", world.mod3d.animation_count() )
-     put(LL, L)
-     
-     L := []     
-     put(L, "all materials", world.mod3d.material_count() )
-     put(LL, L)
-
-     L := []     
-     put(L, "textured materials", world.mod3d.texmaterial_count() )
-     put(LL, L)
-
-     L := []     
-     put(L, "texture files", world.mod3d.texture_files_count() )
-     put(LL, L)
-
-
-     L := []     
-     put(L, "texture coords", world.mod3d.texture_coords_count() )
-     put(LL, L)
-
-     tblsummary.set_contents(LL)
-     tsstat.display()
+      local LL := [
+	 [ "meshes", world.mod3d.mesh_count() ],
+	 [ "vertices", world.mod3d.vertex_count() ],
+	 [ "normals", world.mod3d.normals_count() ],
+	 [ "polygons", world.mod3d.face_count() ],
+	 [ "bones", world.mod3d.bone_count() ],
+	 [ "animations", world.mod3d.animation_count() ],
+	 [ "all materials", world.mod3d.material_count() ],
+	 [ "textured materials", world.mod3d.texmaterial_count() ],
+	 [ "texture files", world.mod3d.texture_files_count() ],
+	 [ "texture coords", world.mod3d.texture_coords_count() ]
+	 ]
+      tblsummary.set_contents(LL)
+      tsstat.display()
    end
 
    method on_miQuit(ev)
-    local fout, f
+   local fout, f
       chdir(start_dir)
-      fout:=open("last_session.ini", "w")
+      fout := open("last_session.ini", "w") |
+	 stop("can't write last_session.ini")
       write(fout, "dir:",wdir )
-      every f:=!files_history do
-	write(fout, "file:", f)
+      every f := !files_history do
+	 write(fout, "file:", f)
       close(fout)
       self.dispose()
    end
@@ -203,10 +172,10 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    end
    
    method logit(msgs[])
-    local msg:=""
-    static L
-    initial L := tllogmsg.get_contents()
-      every msg||:=\(!msgs)
+   local msg := ""
+   static L
+   initial L := tllogmsg.get_contents()
+      every msg ||:= \(!msgs)
       put(L, string(msg))
       tllogmsg.set_contents(L)
       tllogmsg.set_selections([*L])
@@ -283,10 +252,10 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
    method on_tblanimation(ev)
      local LL, a, row
      static last_anim
-     initial last_anim:=""
-     LL:=tblanimation.get_contents()
-     row:=tblanimation.row_get_cursor() | fail
-     a:=row[1]
+     initial last_anim := ""
+     LL := tblanimation.get_contents()
+     row := tblanimation.row_get_cursor() | fail
+     a := row[1]
      (\a)~==last_anim | fail
      logit("current animation: ", a)
      world.mod3d.pick_animation(a)
@@ -408,10 +377,9 @@ class U3DViewer : Dialog(view_model3d, mFile, miLoadModel, miQuit,
       self.add(tsstat)
    end
 
-   initially
-      self.Dialog.initially()
-      logger := view := self
-      
+initially
+   self.Dialog.initially()
+   logger := view := self
 end
 
 procedure main()

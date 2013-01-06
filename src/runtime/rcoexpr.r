@@ -1101,32 +1101,39 @@ static struct region *reuse_region(nbytes, region)
 word nbytes;
 int region;
    {
-   struct region **p_public;
    struct region *curr;
-   int mtx_publicheap;
    word freebytes = nbytes / 4;
 
    if (region == Strings){
-      p_public = &public_stringregion;
-      mtx_publicheap = MTX_PUBLICSTRHEAP;
+      MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
+      for (curr = public_stringregion; curr; curr = curr->Tnext){
+         if ( (curr->size>=nbytes) &&  
+	      DiffPtrs(curr->end, curr->free) >= freebytes){
+            if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
+	    else public_stringregion = curr->Tnext;	        
+  	    if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
+            curr->Tnext= NULL;
+            curr->Tprev = NULL;
+	    break;
+ 	    }
+         }
+      MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
       }
    else{
-      p_public = &public_blockregion;
-      mtx_publicheap = MTX_PUBLICBLKHEAP;
+      MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
+      for (curr = public_blockregion; curr; curr = curr->Tnext){
+         if ( (curr->size>=nbytes) &&  
+	      DiffPtrs(curr->end, curr->free) >= freebytes){
+            if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
+	    else public_blockregion = curr->Tnext;	        
+  	    if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
+            curr->Tnext= NULL;
+            curr->Tprev = NULL;
+	    break;
+ 	    }
+         }
+      MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
       }
-
-   MUTEX_LOCKID_CONTROLLED(mtx_publicheap);
-   for (curr = *p_public; curr; curr = curr->Tnext){
-      if ( (curr->size>=nbytes) &&  DiffPtrs(curr->end, curr->free) >= freebytes){
-         if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
-	 else *p_public = curr->Tnext;	        
-  	 if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
-         curr->Tnext= NULL;
-         curr->Tprev = NULL;
-	 break;
- 	 }
-      }
-   MUTEX_UNLOCKID(mtx_publicheap);
 
    return curr;
    }

@@ -6,41 +6,47 @@ procedure main(argv)
 
    thrdL := []
 
-   if *argv>0 then
+   if *argv>0 then{
       n:=integer(argv[1]) | stop ("arg must be integer")
+      (n >= 10) | stop("arg must be >= 10")
+       }
     else
-      n:=1
+      n:=10
+
 
    x := 10^8
    d:= x / n
 
+   m := n/10
+
    t:=&now
  
-   every 1 to 6 do put(thrdL, thread dowork(n, d, x))
+   every 1 to 9 do put(thrdL, thread dowork(m, d, x))
 
+   v:=w:=""
 
    write("---------firing A... ")
    a := thread (A())
 
    write("---------waiting for  A... ")
-   wait(a)
+#   wait(a)
    write("---------A is Done... ")
 
    write("+++++++++++firing B... ")
    b := thread B()
 
    write("+++++++++++waiting 4 B... ")
-   wait(b)
+#   wait(b)
    write("************** firing C... ")
    c := thread C()
 
    write("*************waiting 4 C ... ")
    B()
-   wait(c)
+#   wait(c)
 
    write("Done all... ")
 
-   dowork(n, d, x)
+   dowork(m, d, x)
 
   every wait(!thrdL)
 
@@ -75,7 +81,7 @@ end
 
 procedure A()
    /str := ""
-   every i:=1 to 10000 do {
+   every i:=1 to 100 do {
      if i%100=1 then { L:=[]; str:="A" }
      put(L, table())
      put(L, list(100))
@@ -93,11 +99,11 @@ end
 procedure B()
  /x:=[]
    /str := ""
-   every i:=1 to 100000 do {
+   every i:=1 to 1000 do {
      if i%100=1 then{ L:=[]; str:="B" }
      put(L, T:=table())
      every j:=1 to 100 do T[j]:=j
-     put(L, list(10000))
+     put(L, list(1000))
      x := "ray"
      str ||:= x
  }

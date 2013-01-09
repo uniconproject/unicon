@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 16: Genetic Algorithms}
+\chapter{Genetic Algorithms}
 
 The previous three chapters showed you how to write Unicon programs with
 many kinds of Internet and system capabilities that are expected of
@@ -9,15 +9,14 @@ This chapter describes how to use Unicon to build an entire, somewhat
 complex application with reusable parts. The field of \index{genetic
 algorithms}\textit{genetic algorithms} (GAs) is an exciting application
 domain with lots of opportunities for exploratory programming. When
-you{\textquotesingle}re finished with this chapter, you will 
-
+you're finished with this chapter, you will 
 \begin{itemize}
 \item Understand the basics of genetic algorithms.
 \item See how to build genetic algorithm engine in Unicon.
 \item Use that GA engine to build programs for your own projects.
 \end{itemize}
 
-\subsection{What are Genetic Algorithms?}
+\section{What are Genetic Algorithms?}
 
 The broad field of evolutionary computation has been an area of active
 research since the 1950s. Initially, it was led by computer scientists
@@ -25,7 +24,7 @@ that believed evolution could be used as an optimization tool for
 engineering problems. Genetic Programming (GP) focuses on evolving
 computer programs to perform various tasks. On the other hand, GAs
 focus on the simpler task of evolving data that is used to solve a
-problem. The GAs that we{\textquotesingle}ll study have a binary
+problem. The GAs that we'll study have a binary
 representation. Increasingly there has been a shift towards non-binary
 representations such as floating-point numbers in GA-related projects.
 That field has typically been given the more general name of
@@ -78,35 +77,35 @@ random one. The code below shows how to implement this idea:
 \>   \ \ \ \}
 }
 
-Before modeling mating and mutation, you{\textquotesingle}ll have to
+Before modeling mating and mutation, you'll have to
 create a more detailed representation of the internals of an
 individual.
 
-\subsection{GA Operations}
+\section{GA Operations}
 
 An individual is represented by a string from a binary alphabet.
 Incidentally, natural evolution of DNA is based on a quaternary
 alphabet, but the size of the alphabet is unimportant for a computer
 model. In Unicon, you could represent these individuals with lists of
-integers. However, strings of \textsf{{\textquotedbl}1{\textquotedbl}}
-and \textsf{{\textquotedbl}0{\textquotedbl}} characters provide a
+integers. However, strings of \textsf{"1"}
+and \textsf{"0"} characters provide a
 representation that is easier to use. So, here is a more explicit
 representation of a population:
 
 \iconcode{
 \>   population := list(6) \\
-\>   population[1] := {\textquotedbl}010111{\textquotedbl} \\
-\>   population[2] := {\textquotedbl}000101{\textquotedbl} \\
-\>   population[3] := {\textquotedbl}111101{\textquotedbl} \\
-\>   population[4] := {\textquotedbl}111011{\textquotedbl} \\
-\>   population[5] := {\textquotedbl}111110{\textquotedbl} \\
-\>   population[6] := {\textquotedbl}010110{\textquotedbl}
+\>   population[1] := "010111" \\
+\>   population[2] := "000101" \\
+\>   population[3] := "111101" \\
+\>   population[4] := "111011" \\
+\>   population[5] := "111110" \\
+\>   population[6] := "010110"
 }
 
-\subsubsection{Fitness}
+\subsection{Fitness}
 
 The fitness can be computed by converting the string representation into
-an integer as follows: \textsf{integer({\textquotedbl}2r{\textquotedbl}
+an integer as follows: \textsf{integer("2r"
 {\textbar}{\textbar} population[1])}. The \textsf{2r} means that this
 is a literal representation of an integer in base two form. There are
 many different possible selection schemes used in GAs. This chapter
@@ -118,39 +117,39 @@ the next generation; their bits are copied into an element in the new
 population. Tournaments of size two work well. All you must do is
 randomly pair up the individuals, and move the one with the higher
 fitness to the next generation. Because you generally will want the
-population size to remain constant, you{\textquotesingle}ll have to do
+population size to remain constant, you'll have to do
 this pairing twice. Here is a tournament selection on the above
 population:
 
 \iconcode{
-\>   population[1] := {\textquotedbl}010111{\textquotedbl}
+\>   population[1] := "010111"
 \# 23 winner \\
-\>   population[6] := {\textquotedbl}010110{\textquotedbl}
+\>   population[6] := "010110"
 \# 22 \\
-\>   population[3] := {\textquotedbl}111101{\textquotedbl}
+\>   population[3] := "111101"
 \# 61 winner \\
-\>   population[4] := {\textquotedbl}111011{\textquotedbl}
+\>   population[4] := "111011"
 \# 59 \\
-\>   population[5] := {\textquotedbl}111110{\textquotedbl}
+\>   population[5] := "111110"
 \# 62 winner \\
-\>   population[2] := {\textquotedbl}000101{\textquotedbl}
+\>   population[2] := "000101"
 \# 5
 }
 
 The second round of selections is listed here:
 
 \iconcode{
-\>   population[5] := {\textquotedbl}111110{\textquotedbl}
+\>   population[5] := "111110"
 \# 62 winner \\
-\>   population[6] := {\textquotedbl}010110{\textquotedbl}
+\>   population[6] := "010110"
 \# 22 \\
-\>   population[2] := {\textquotedbl}000101{\textquotedbl}
+\>   population[2] := "000101"
 \# 5 \\
-\>   population[3] := {\textquotedbl}111101{\textquotedbl}
+\>   population[3] := "111101"
 \# 61 winner \\
-\>   population[4] := {\textquotedbl}111011{\textquotedbl}
+\>   population[4] := "111011"
 \# 59 winner \\
-\>   population[1] := {\textquotedbl}010111{\textquotedbl}
+\>   population[1] := "010111"
 \# 23
 }
 
@@ -158,24 +157,24 @@ The end result of tournament selection is listed here:
 
 \iconcode{
 \>   next\_gen[1] := population[1] :=
-{\textquotedbl}010111{\textquotedbl} \# 23 \\
+"010111" \# 23 \\
 \>   next\_gen[2] := population[3] :=
-{\textquotedbl}111101{\textquotedbl} \# 61 \\
+"111101" \# 61 \\
 \>   next\_gen[3] := population[5] :=
-{\textquotedbl}111110{\textquotedbl} \# 62 \\
+"111110" \# 62 \\
 \>   next\_gen[4] := population[5] :=
-{\textquotedbl}111110{\textquotedbl} \# 62 \\
+"111110" \# 62 \\
 \>   next\_gen[5] := population[3] :=
-{\textquotedbl}111101{\textquotedbl} \# 61 \\
+"111101" \# 61 \\
 \>   next\_gen[6] := population[4] :=
-{\textquotedbl}111011{\textquotedbl} \# 59
+"111011" \# 59
 }
 
 Notice how there are two copies of \textsf{population[3]} and
 \textsf{population[5]} in \textsf{next\_gen}. On the other hand, there
 are no copies of \textsf{population[2]}.
 
-\subsubsection{Crossover}
+\subsection{Crossover}
 
 Mating, more technically known as crossover, involves the sharing of
 information between members of the population. Again there are many
@@ -215,7 +214,7 @@ within the range from \textsf{a} to \textsf{b}.
 {\textbar}{\textbar} parent2[b:0]
 }
 
-\subsubsection{Mutation}
+\subsection{Mutation}
 
 The last GA operation is mutation. Mutation works at the independent
 level of single binary digits. To implement mutation, take a look at
@@ -225,7 +224,7 @@ injecting completely new information into the population. Almost all of
 that information will be useless, but as the GA evolves it will weed
 out the useless information and keep the useful information. 
 
-\subsection{The GA Process}
+\section{The GA Process}
 
 Now that you have a handle on the basic operations, it is time to
 describe the basic GA algorithm for applying these operations. 
@@ -276,12 +275,13 @@ significantly after ten generations, the population has converged on
 the solution. At this point, stop the GA and study the population of
 solutions.
 
-\subsection[ga\_eng: a Genetic Algorithm Engine]{ga\_eng: a Genetic
-Algorithm Engine}
-The \textsf{ga\_eng} engine is a general purpose reusable GA engine that
+
+\section{\texttt{ga\_eng}: a Genetic Algorithm Engine}
+
+The \texttt{ga\_eng} engine is a general purpose reusable GA engine that
 can quickly and easily be adapted to solve a variety of problems. This
 section presents its key elements. The full \index{source code}source
-code for \textsf{ga\_eng} is on the book{\textquotesingle}s web site.
+code for \textsf{ga\_eng} is on the book's web site.
 
 From the preceding sections, you can tell that a GA maintains a large
 amount of information as it transitions from one generation to the
@@ -290,11 +290,11 @@ next. What is the state information that the engine needs to track?
 
 \begin{itemize}
 \item n $-$ the size of the population
-\item \textit{l} $-$ the length of the individual{\textquotesingle}s bit
+\item \textit{l} $-$ the length of the individual's bit
 representation
 \item p\textsubscript{c} $-$ the probability of crossover mating
 \item p\textsubscript{m} $-$ the probability of mutation
-\item population $-$ a list of a current population{\textquotesingle}s
+\item population $-$ a list of a current population's
 individuals
 \end{itemize}
 Given the above state information, what can a GA engine do?
@@ -309,14 +309,16 @@ population
 \item \textsf{stats()} $-$ collect statistics about the current
 population to monitor progress
 \end{itemize}
-\subsubsection[The Fitness Function]{The Fitness Function}
+
+\subsection{The fitness function}
+
 A key application-specific interface issue is the fitness function. The
 user of the GA engine sets the fitness values of each member of the
 population. If that value is not set, the default value will be the
 average of the fitness of each of the parents. Each
-parent{\textquotesingle}s contribution to the fitness is weighted by
+parent's contribution to the fitness is weighted by
 how many bits it contributed to the offspring. This has the nice
-property of not requiring that each individual{\textquotesingle}s
+property of not requiring that each individual's
 fitness be computed at every generation.
 
 To use the GA engine, the programmer supplies an application-specific
@@ -324,8 +326,7 @@ fitness function \textsf{f(x)} that is applied to each individual of
 the population every generation. Given a binary string \textsf{s},
 \textsf{f(s)} would return a numeric fitness value.
 
-\subsubsection[Methods and Attributes of Class ga\_eng]{Methods and
-Attributes of Class ga\_eng}
+\subsection{Methods and attributes of class \texttt{ga\_eng}}
 
 Class \textsf{ga\_eng} implements the engine. It provides
 two public methods, \textsf{evolve()} and \textsf{set\_params()}, as
@@ -403,8 +404,10 @@ during a GA run
 reads a string of zeros and ones and returns a number representing the
 fitness.
 \end{itemize}
-\subsubsection[A Closer Look at the evolve() Method]{A Closer Look at
-the evolve() Method}
+
+
+\subsection{A Closer Look at the \texttt{evolve()} method}
+
 Space limitations prevent us from discussing every method of
 \textsf{ga\_eng}, but \textsf{evolve()} is a method that is called
 directly from user code, and defines the basic architecture of the
@@ -434,7 +437,8 @@ end
 
 Generation consists of three high-level operations. The first tournament
 selection is performed via a call to \textsf{tselect()}, which makes
-copies of selected individuals from \textsf{oldpop} to \textsf{newpop}.
+copies of selected individuals from \textsf{oldpop} to
+\textsf{newpop}.
 After this, all operations take place on individuals in
 \textsf{newpop}. The next two operations are performed inside of a
 loop, on pairs of individuals. The \textsf{crossover2()} method does
@@ -479,7 +483,7 @@ method generation() \\
 end
 }
 
-\subsubsection{Using ga\_eng}
+\subsection{Using \texttt{ga\_eng}}
 
 GAs are extremely robust. It is very easy to create a buggy GA that
 works so well that the bugs go undetected. Incidentally, masking of
@@ -489,7 +493,7 @@ the GA on a simple problem where having one bit increases the fitness
 values by one. This is a ready to compile and run GA application,
 albeit a very simple one. As you can see, \textsf{ga\_eng()} and
 \textsf{evolve()} are all the interface methods you need to build a
-complete genetic algorithm. \ Listing 16-2 shows all the code needed is
+complete genetic algorithm. Listing 16-2 shows all the code needed
 to use the GA engine for a simple test problem.
 
 \bigskip
@@ -503,26 +507,26 @@ Using ga\_eng() for a simple test problem}
 \iconcode{
 procedure decode(chrom) \\
 \>   local i := 0 \\
-\>   every !chrom == {\textquotedbl}1{\textquotedbl} do i +:= 1 \\
+\>   every !chrom == "1" do i +:= 1 \\
 \>   return i \\
 end \\
 \ \\
 \# a simple test of the engine, fitness is based on number of 1 bits in chrom \\
 procedure main() \\
-\>   log\_file \ := open({\textquotedbl}test\_ga.log{\textquotedbl},
-{\textquotedbl}w{\textquotedbl}) {\textbar} stop({\textquotedbl}cannot open
-log\_file.log{\textquotedbl}) \\
+\>   log\_file \ := open("test\_ga.log",
+"w") {\textbar} stop('cannot open
+log\_file.log") \\
 \>   ga := ga\_eng(decode, 100, 20, 0.99, 1.0/real(20), log\_file) \\
 \>   every 1 to 100 do  \\
 \>   \ \ \ ga.evolve() \\
-\>   write(log\_file, {\textquotedbl}best location ={\textgreater}
-{\textquotedbl}, ga.best) \\
-\>   write(log\_file, {\textquotedbl}best fitness \ ={\textgreater}
-{\textquotedbl}, ga.newpop[ga.best].fitness) \\
+\>   write(log\_file, "best location ={\textgreater}
+", ga.best) \\
+\>   write(log\_file, "best fitness \ ={\textgreater}
+", ga.newpop[ga.best].fitness) \\
 end
 }
 
-\subsubsection{Log Files}
+\subsection{Log files}
 
 The log file \textsf{test\_ga.log} contains a lot of statistics. Listing
 16-3 is a fragment of the log file that is generated. The complete log
@@ -612,7 +616,7 @@ best location ={\textgreater} 46 \\
 best fitness \ ={\textgreater} 19.95
 }
 
-\subsection{Color Breeder: a GA Application}
+\section{Color Breeder: a GA Application}
 
 Normally, the human eye is capable of distinguishing millions of
 different colors. If you have a device capable of producing a large
@@ -654,7 +658,7 @@ when the tab is lowered the value of scrollbar goes up. The user of
 \iconcode{
 \>   every i := 1 to 16 do \{ \\
 \>   \ \ \ f :=
-VGetState(vidgets[{\textquotedbl}sbar{\textquotedbl}{\textbar}{\textbar}i]) \\
+VGetState(vidgets["sbar"{\textbar}{\textbar}i]) \\
 \>   \ \ \ ga.newpop[i].fitness := 1 - f \\
 \>   \}
 }
@@ -682,7 +686,9 @@ foreground color is displayed as text on top of the background.
 {\sffamily\bfseries Figure 16-2:}
 {\sffamily cb - a genetic algorithm for picking colors.}
 
-\subsubsection{Breeding Textures}
+
+
+\subsection{Breeding textures}
 
 The user can turn on bi-level patterns of the form: \textit{width,
 \#data} as described in Chapter 7. A bi-level pattern is tiled using
@@ -707,7 +713,7 @@ region, the color and patterns specification will be displayed in a pop
 window. For the sake of compactness, the colors and patterns are
 represented with hexadecimal strings as opposed to binary strings. 
 
-\subsection{Picking Colors for Text Displays}
+\section{Picking Colors for Text Displays}
 
 Perhaps the most fun use of \textsf{cb} is to pick colors for your Web
 pages. Figure 16-4 is a snapshot of \textsf{cb} in text mode:

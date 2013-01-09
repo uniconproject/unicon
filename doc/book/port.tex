@@ -1,13 +1,13 @@
-\clearpage\section{Appendix E: Portability Considerations}
+\chapter{Portability Considerations}
 
-Those of Unicon{\textquotesingle}s POSIX-based system interface facilities
-that are presented in Chapter 5 are portable.
-You can expect the portable system interface to be available on any
-implementation of Unicon. This appendix presents additional, non-portable
-elements of the Unicon POSIX interface, as well as some notes on
-functionality specific to Microsoft Windows.
+Those of Unicon's POSIX-based system interface facilities that are
+presented in Chapter 5 are portable.  You can expect the portable
+system interface to be available on any implementation of Unicon. This
+appendix presents additional, non-portable elements of the Unicon
+POSIX interface, as well as some notes on functionality specific to
+Microsoft Windows.
 
-\subsection[POSIX extensions]{POSIX extensions}
+\section{POSIX extensions}
 
 \index{POSIX extensions}Technically, the extensions presented in this
 section may or may not be part of the POSIX standard. The important
@@ -16,56 +16,56 @@ major POSIX-compliant UNIX platforms such as Solaris and Linux. Ports
 of Unicon to non-POSIX or quasi-POSIX platforms may or may not
 implement any of these facilities.
 
-\subsubsection{Information from System Files}
+\subsection{Information from system files}
 
 There are four functions that read information from system files,
-getpw() to read the password file, getgr() for the group file,
-gethost() for hostnames, and getserv() for network services. Called
-with an argument (usually a string), they perform a lookup in the
-system file. When called with no arguments, these functions step
-through the files one entry at a time.
+\texttt{getpw()} to read the password file, \texttt{getgr()} for the
+group file, \texttt{gethost()} for hostnames, and \texttt{getserv()}
+for network services. Called with an argument (usually a string), they
+perform a lookup in the system file. When called with no arguments,
+these functions step through the files one entry at a time.
 
 The functions \texttt{setpwent()}, \texttt{setgrent()},
-\texttt{sethostent()}, and \texttt{setservent()} do
-the same things as their POSIX C language counterparts; they reset the
-file position used by the get* routines to the beginning of the file.
-These functions return records whose members are similar to the C
-structures returned by the system functions \texttt{getpwuid(2)},
+\texttt{sethostent()}, and \texttt{setservent()} do the same things as
+their POSIX C language counterparts; they reset the file position used
+by the get* routines to the beginning of the file.  These functions
+return records whose members are similar to the C structures returned
+by the system functions \texttt{getpwuid(2)},
 \texttt{gethostbyname(2)}, etc.
 
-\subsubsection{Fork and Exec}
+\subsection{\texttt{fork} and \texttt{exec}}
 
 POSIX-compliant systems support an additional, lower-level interface
 using the functions \index{fork()}\texttt{fork()} and \texttt{exec()}.
-\texttt{fork()} causes the
-system to make a copy of the current process. After the fork there will
-be two identical processes that share all resources like open files,
-and differ only in one respect: the return value they each got from the
-call to \texttt{fork()}. One process gets a zero and is called the child; the
-other gets the process id of the child and is called the parent.
+\texttt{fork()} causes the system to make a copy of the current
+process. After the fork there will be two identical processes that
+share all resources like open files, and differ only in one respect:
+the return value they each got from the call to \texttt{fork()}. One
+process gets a zero and is called the child; the other gets the
+process id of the child and is called the parent.
 
-Quite often \texttt{fork()} is used to run another program. In that case, the
-child process uses the system call \texttt{exec()} which replaces the code of
-the process with the code of a new program. This \texttt{fork()}/\texttt{exec()} pair is
-comparable to calling \texttt{system()} and using the option to not wait for the
-command to complete.
+Quite often \texttt{fork()} is used to run another program. In that
+case, the child process uses the system call \texttt{exec()} which
+replaces the code of the process with the code of a new program. This
+\texttt{fork()}/\texttt{exec()} pair is comparable to calling
+\texttt{system()} and using the option to not wait for the command to
+complete.
 
-The first argument to \texttt{exec()} is the filename of the program to execute,
-and the remaining arguments are the values of argv that the program
-will get, starting with argv[0]. 
+The first argument to \texttt{exec()} is the filename of the program
+to execute, and the remaining arguments are the values of argv that
+the program will get, starting with \texttt{argv[0]}.
 
 \iconcode{
-exec({\textquotedbl}/bin/echo{\textquotedbl},
-{\textquotedbl}echo{\textquotedbl},
-{\textquotedbl}Hello,{\textquotedbl},
-{\textquotedbl}world!{\textquotedbl})}
+exec("/bin/echo",
+"echo",
+"Hello,",
+"world!")}
 
-\subsubsection{POSIX Functions}
+\subsection{POSIX functions}
 
-These functions are present in all Unicon binaries, but you can expect
-them to fail on most non-UNIX platforms. Check the readme.txt file that
-comes with your installation to ascertain whether it supports any of
-these functions.
+These functions are present in all Unicon binaries, but you can expect them to
+fail on most non-UNIX platforms. Check the readme.txt file that comes with
+your installation to ascertain whether it supports any of these functions.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf chown(chown(f, u:{}-1, g:{}-1) : ? \hfill change owner}
@@ -73,7 +73,7 @@ these functions.
 \noindent
 \texttt{chown(f, u, g)} sets the owner of a file (or string filename) f to
 owner u and group g. The user and group arguments can be numeric
-ID{\textquotesingle}s or names.
+ID's or names.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf chroot(string) : ? \hfill change filesystem root}
@@ -383,7 +383,7 @@ value of the umask is returned.
 \noindent
 \texttt{wait(pid, options)} waits for a process given by pid to terminate or
 stop. The default pid value causes the program to wait for all the
-current process{\textquotesingle} children. The options parameter is an
+current process' children. The options parameter is an
 OR of the values 1 (return if no child has exited) and 2 (return for
 children that are stopped, not just for those that exit). The returned
 string represents the pid and the exit status as defined in this table:
@@ -392,10 +392,10 @@ string represents the pid and the exit status as defined in this table:
 \begin{center}
 \begin{supertabular}{m{2.4in} m{2.6in}}
  UNIX equivalent & example of returned string \\
- WIFSTOPPED(status) & {\textquotedbl}1234 stopped:SIGTSTP{\textquotedbl} \\
- WIFSIGNALLED(status) & {\textquotedbl}1234 terminated:SIGHUP{\textquotedbl} \\
- WIFEXITED(status) & {\textquotedbl}1234 exit:1{\textquotedbl} \\
- WIFCORE(status) & {\textquotedbl}1234 terminated:SIGSEGV:core{\textquotedbl} \\
+ WIFSTOPPED(status) & "1234 stopped:SIGTSTP" \\
+ WIFSIGNALLED(status) & "1234 terminated:SIGHUP" \\
+ WIFEXITED(status) & "1234 exit:1" \\
+ WIFCORE(status) & "1234 terminated:SIGSEGV:core" \\
 \end{supertabular}
 \end{center}
 \vspace{0.05in}
@@ -403,15 +403,17 @@ string represents the pid and the exit status as defined in this table:
 \noindent
 Currently the \textsf{rusage} facility is unimplemented.
 
-\subsection[Microsoft Windows]{Microsoft Windows}
+
+\section{Microsoft Windows}
+
 Windows versions of Unicon support certain non-portable extensions to
 the system interfaces. Consult Unicon Technical Report 7 for details.
 
-\subsubsection{Partial Support for POSIX}
+\subsection{Partial support for POSIX}
 
 Windows supports the \texttt{getpid()} function, but not many of the other
 process-related functions such as \texttt{getppid()}. Windows supports the
-\texttt{exec()} function in addition to Unicon{\textquotesingle}s extended
+\texttt{exec()} function in addition to Unicon's extended
 flavor of \texttt{system()}, but these functions may only launch Windows 32-bit
 .EXE binaries.
 
@@ -423,7 +425,7 @@ Windows Unicon supports the \texttt{umask()} function, but ignores execute
 permission and treats user/group/world identically, using the most
 permissive access specified.
 
-\subsubsection{Native User Interface Components}
+\subsection{Native user interface components}
 
 Windows Unicon supports limited access to platform-native user interface
 components and multimedia controls.
@@ -431,12 +433,12 @@ components and multimedia controls.
 \texttt{WinButton(w,s,x,y,wd,ht)} installs a pushbutton with label s on window w.
 
 \texttt{WinColorDialog(w, s)} allows the user to choose a color for a
-window{\textquotesingle}s context.
+window's context.
 
 \texttt{WinEditRegion(w, s, s2, x, y, wd, ht)} installs an edit box with label s.
 
 \texttt{WinFontDialog(w, s)} allows the user to choose a font for a
-window{\textquotesingle}s context.
+window's context.
 
 \texttt{WinMenuBar(w, L1, L2,...)} installs a set of top-level menus.
 

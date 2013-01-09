@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 13: CGI Scripts}
+\chapter{CGI Scripts}
 
 \index{CGI}CGI scripts are programs that read input forms and generate
 dynamic HTML content for the World Wide
@@ -8,13 +8,13 @@ Unicon is ideal for writing CGI scripts, since it
 has extraordinary support for string processing. In this chapter you
 will learn how to
 
-\begin{itemize}\itemsep0pt
+\begin{itemize}
 \item Construct programs whose input comes from a web server.
 \item Process user input obtained from fields in HTML forms
 \item Generate HTML output from your Icon programs
 \end{itemize}
 
-\subsection{Introduction to CGI}
+\section{Introduction to CGI}
 
 The Common Gateway Interface, or CGI, defines the means by which Web
 servers interact with external programs that assist in processing Web
@@ -56,8 +56,8 @@ the name, as in \texttt{{\textless}/FONT{\textgreater}}. More details
 on HTML are available from the World Wide Web Consortium at
 \texttt{http://www.w3.org/MarkUp/}.
 
-\subsubsection[Organization of a CGI Script]{Organization of a CGI
-Script}
+\subsection{Organization of a CGI script}
+
 CGI programs are very simple. They process input data supplied by the
 Web browser that invoked the script (if any), and then write a new Web
 page, in HTML, to their standard output. When you use \texttt{cgi.icn}
@@ -65,12 +65,12 @@ the input-processing phase is automatically completed before control is
 passed to your program, which is organized around the HTML code that
 you generate in response to the user. In fact, cgi.icn includes a
 \texttt{main()} procedure that processes the input and writes HTML
-header and tail information around your program{\textquotesingle}s
+header and tail information around your program's
 output. For this reason,
 when you use \texttt{cgi.icn}, you must call your main procedure
 \texttt{cgimain()}.
 
-\subsubsection{Processing Input}
+\subsection{Processing input}
 
 The \index{HTTP}HTTP protocol includes two ways to invoke a CGI program,
 with different methods of supplying user input, either from the
@@ -80,8 +80,8 @@ given names in the HTML code from which the CGI program was invoked.
 For example, an HTML form might include a tag such as: 
 
 \iconcode{
-\>   {\textless}INPUT TYPE = {\textquotedbl}text{\textquotedbl} NAME =
-{\textquotedbl}PHONE{\textquotedbl} SIZE=15{\textgreater}}
+\>   {\textless}INPUT TYPE = "text" NAME =
+"PHONE" SIZE=15{\textgreater}}
 
 \noindent
 which allows input of a string of length up to 15 characters into a
@@ -96,9 +96,9 @@ to access the \texttt{PHONE} field from the above example, the
 application could write 
 
 \iconcode{
-\>   cgi[{\textquotedbl}PHONE{\textquotedbl}]}
+\>   cgi["PHONE"]}
 
-\subsubsection{Processing Output}
+\subsection{Processing output}
 
 The main task of the CGI program is to write an HTML page to its
 standard output, and for this task \texttt{cgi.icn} provides a host of
@@ -112,31 +112,30 @@ strings in the second parameter to \texttt{cgiSelect()}. A programmer
 might write
 
 \iconcode{
-\>   cgiSelect({\textquotedbl}GENDER{\textquotedbl},
-[{\textquotedbl}female{\textquotedbl},
-{\textquotedbl}male{\textquotedbl}])}
+\>   cgiSelect("GENDER",
+["female",
+"male"])}
 
 \noindent to generate the HTML
 
 \iconcode{
 {\textless}SELECT
-NAME={\textquotedbl}GENDER{\textquotedbl}{\textgreater} \\
+NAME="GENDER"{\textgreater} \\
 {\textless}OPTION SELECTED{\textgreater}female \\
 {\textless}OPTION{\textgreater}male \\
 {\textless}/SELECT{\textgreater}
 }
 
-\subsubsection[Common CGI Environment Variables]{Common CGI Environment
-Variables}
+\subsection{Common CGI environment variables}
 
 The official CGI definition includes a set
 of standard \index{environment variable!CGI standard}environment
 variables that are set by the Web server as a method of passing
 information to the CGI script. Programmers access these environment
-variables using \texttt{getenv()}, as in 
+variables using \texttt{getenv()}, as in
 
 \iconcode{
-\>   getenv({\textquotedbl}REMOTE\_HOST{\textquotedbl})}
+\>   getenv("REMOTE\_HOST")}
 
 Table 13-1 presents a summary of the CGI environment variables as a
 convenience so that this book can serve as a stand-alone reference for
@@ -156,14 +155,14 @@ variables supported by CGI go to
 \sffamily\bfseries Explanation\\\hline
 \texttt{CONTENT\_LENGTH} &
 The length of the ASCII string provided by
-\texttt{method={\textquotedbl}POST{\textquotedbl}}.\\\hline
+\texttt{method="POST"}.\\\hline
 \texttt{HTTP\_USER\_AGENT} &
-The user{\textquotesingle}s browser software and proxy gateway, if any.
+The user's browser software and proxy gateway, if any.
 The format is \texttt{\textit{name/version}}, but varies
 wildly.\\\hline
 \texttt{QUERY\_STRING} &
 The information submitted through the form, which follows the ? in the
-URL when using \texttt{method={\textquotedbl}GET{\textquotedbl}}.
+URL when using \texttt{method="GET"}.
 \texttt{QUERY\_STRING} data is parsed and inserted into a table
 stored in the global variable \texttt{cgi}, so
 \texttt{cgi.icn} scripts do not generally consult this environment
@@ -177,7 +176,7 @@ The hostname of the client machine. Defaults to IP held by
 The method (\texttt{GET} or \texttt{POST)} used to invoke the CGI
 script.\\\hline
 \texttt{SERVER\_NAME} &
-The server{\textquotesingle}s hostname. It defaults to the IP
+The server's hostname. It defaults to the IP
 address.\\\hline
 \texttt{SERVER\_SOFTWARE} &
 The Web server that invoked the CGI script. The format is
@@ -185,14 +184,14 @@ The Web server that invoked the CGI script. The format is
 \end{supertabular}
 \end{flushleft}
 
-\subsection{The CGI Execution Environment}
+\section{The CGI Execution Environment}
 
 CGI scripts do not execute as stand-alone programs and
-aren{\textquotesingle}t launched from a command line; a Web server
+aren't launched from a command line; a Web server
 executes them. The details of this are necessarily dependent on the
 operating system and Web server combination in use. The following
 examples are based on a typical UNIX Apache server installation in
-which users{\textquotesingle} HTML files are located under
+which users' HTML files are located under
 \texttt{\$HOME/public\_html}. Check with your system administrator or
 Web server documentation for the specific filenames, directories, and
 permissions required to execute scripts from your Web server. Some web
@@ -203,8 +202,8 @@ pathnames are different from how you see them.
 Under Apache, you need a directory under
 \texttt{\$HOME/public\_html} named \texttt{cgi-bin}. Both
 \texttt{\$HOME/public\_html} and its \texttt{cgi-bin} subdirectory
-should have {\textquotedbl}group{\textquotedbl} and
-{\textquotedbl}other{\textquotedbl} permissions set to allow
+should have "group" and
+"other" permissions set to allow
 reading and executing for the Web server to run the programs you place
 there. Do not give anyone but yourself write permissions! The following
 commands set things up on a typical Apache system. The percent sign
@@ -248,24 +247,20 @@ paths including .. in them.
 tell when attacks occur.
 \end{itemize*}
 
-\subsection{An Example HTML Form}
+\section{An Example HTML Form}
 
 CGI scripts are typically invoked from HTML pages.
 When you view the following example page in your browser,
 it should look something like the one shown in Figure 13-1.
-For this test, create an HTML form  \texttt{\$HOME/public\_html/simple.html}
+For this test, create an HTML form \texttt{\$HOME/public\_html/simple.html}
 containing Listing 13-1. When you have a CGI script compiled and ready to
 run, you can edit the URL in this file to point at your CGI program, the
 \texttt{simple.cgi} executable.
-
-
 \begin{center}
 \includegraphics[width=4.05in,height=4.36in]{ub-img/ub-img44.png}
 \end{center}
-
 {\sffamily\bfseries Figure 13-1:}
 {\sffamily An HTML Form Example}
-
 
 
 {\sffamily\bfseries Listing 13-1}
@@ -279,46 +274,45 @@ An HTML Form Example
 {\textless}h1{\textgreater} A
 {\textless}tt{\textgreater}cgi.icn{\textless}/tt{\textgreater}
 Demonstration{\textless}/h1{\textgreater} \\
-{\textless}form method={\textquotedbl}GET{\textquotedbl} \\
+{\textless}form method="GET" \\
 \>   \ \
-action={\textquotedbl}http://www.cs.uidaho.edu/\~{}jeffery/cgi-bin/simple.cgi{\textquotedbl}{\textgreater} \\
-1. Name: {\textless}input type={\textquotedbl}text{\textquotedbl}
-name={\textquotedbl}name{\textquotedbl} size=25{\textgreater}
+action="http://www.cs.uidaho.edu/\~{}jeffery/cgi-bin/simple.cgi"{\textgreater} \\
+1. Name: {\textless}input type="text"
+name="name" size=25{\textgreater}
 {\textless}p{\textgreater} \\
-2. Age: \ {\textless}input type={\textquotedbl}text{\textquotedbl}
-name={\textquotedbl}age{\textquotedbl} size=3{\textgreater}
+2. Age: \ {\textless}input type="text"
+name="age" size=3{\textgreater}
 \&nbsp;Years {\textless}p{\textgreater} \\
 3. Quest: \\
-{\textless}input type={\textquotedbl}checkbox{\textquotedbl}
-name={\textquotedbl}fame{\textquotedbl}{\textgreater}Fame{\textless}/input{\textgreater} \\
-{\textless}input type={\textquotedbl}checkbox{\textquotedbl}
-name={\textquotedbl}fortune{\textquotedbl}{\textgreater}Fortune{\textless}/input{\textgreater} \\
-{\textless}input type={\textquotedbl}checkbox{\textquotedbl}
-name={\textquotedbl}grail{\textquotedbl}{\textgreater}Grail{\textless}/input{\textgreater}{\textless}p{\textgreater} \\
+{\textless}input type="checkbox"
+name="fame"{\textgreater}Fame{\textless}/input{\textgreater} \\
+{\textless}input type="checkbox"
+name="fortune"{\textgreater}Fortune{\textless}/input{\textgreater} \\
+{\textless}input type="checkbox"
+name="grail"{\textgreater}Grail{\textless}/input{\textgreater}{\textless}p{\textgreater} \\
 4. Favorite Color: \\
 {\textless}select
-name={\textquotedbl}color{\textquotedbl}{\textgreater} \\
+name="color"{\textgreater} \\
 {\textless}option{\textgreater}Red \\
 {\textless}option{\textgreater}Green \\
 {\textless}option{\textgreater}Blue \\
-{\textless}option selected{\textgreater}Don{\textquotesingle}t Know
+{\textless}option selected{\textgreater}Don't Know
 (Aaagh!) \\
 {\textless}/select{\textgreater}{\textless}p{\textgreater} \\
 Comments:{\textless}br{\textgreater} \\
 {\textless}textarea rows=5 cols=60
-name={\textquotedbl}comments{\textquotedbl}{\textgreater}{\textless}/textarea{\textgreater}{\textless}p{\textgreater} \\
-{\textless}input type={\textquotedbl}submit{\textquotedbl}
-value={\textquotedbl}Submit Data{\textquotedbl}{\textgreater} \\
-{\textless}input type={\textquotedbl}reset{\textquotedbl}
-value={\textquotedbl}Reset Form{\textquotedbl}{\textgreater} \\
+name="comments"{\textgreater}{\textless}/textarea{\textgreater}{\textless}p{\textgreater} \\
+{\textless}input type="submit"
+value="Submit Data"{\textgreater} \\
+{\textless}input type="reset"
+value="Reset Form"{\textgreater} \\
 {\textless}/form{\textgreater} \\
 {\textless}/BODY{\textgreater} \\
 {\textless}/HTML{\textgreater}
 }
 
 
-\subsection{An Example CGI Script: Echoing the User{\textquotesingle}s
-Input}
+\section{An Example CGI Script: Echoing the User's Input}
 
 The following script, named \texttt{simple.cgi} might be invoked from
 the \texttt{FORM} tag above. The \texttt{simple.cgi} script is produced
@@ -337,7 +331,7 @@ you. In addition to the web server being configured to allow user
 invocation, unless you use compiler option \texttt{{}-B} to bundle the
 virtual machine into your executable, your program must be able to find
 and execute the virtual machine from whatever user id
-CGI{\textquotesingle}s are executed.
+CGI's are executed.
 
 The program reads the form input specified in \texttt{simple.html}, and
 writes it back out. All \texttt{cgiEcho()} is doing in this case is
@@ -348,53 +342,53 @@ HTML output and a log file if given a file as its first argument.
 \iconcode{
 link cgi \\
 procedure cgimain() \\
-\>   cgiEcho({\textquotedbl}Hello, {\textquotedbl},
-cgi[{\textquotedbl}name{\textquotedbl}],
-{\textquotedbl}!{\textquotedbl}) \\
-\>   cgiEcho({\textquotedbl}Are you really {\textquotedbl},
-cgi[{\textquotedbl}age{\textquotedbl}], {\textquotedbl} years
-old?{\textquotedbl}) \\
-\>   cgiEcho({\textquotedbl}You seek: {\textquotedbl},
-cgi[{\textquotedbl}fame{\textquotedbl}]==={\textquotedbl}on{\textquotedbl}
-\& {\textquotedbl}fame{\textquotedbl}) \\
-\>   cgiEcho({\textquotedbl}You seek: {\textquotedbl},
-cgi[{\textquotedbl}fortune{\textquotedbl}]==={\textquotedbl}on{\textquotedbl}
-\& {\textquotedbl}fortune{\textquotedbl}) \\
-\>   cgiEcho({\textquotedbl}You seek: {\textquotedbl},
-cgi[{\textquotedbl}grail{\textquotedbl}]==={\textquotedbl}on{\textquotedbl}
-\& {\textquotedbl}grail{\textquotedbl}) \\
-\>   cgiEcho({\textquotedbl}Your favorite color is: {\textquotedbl},
-cgi[{\textquotedbl}color{\textquotedbl}]) \\
-\>   cgiEcho({\textquotedbl}Your comments: {\textquotedbl},
-cgi[{\textquotedbl}comments{\textquotedbl}]) \\
+\>   cgiEcho("Hello, ",
+cgi["name"],
+"!") \\
+\>   cgiEcho("Are you really ",
+cgi["age"], ' years
+old?") \\
+\>   cgiEcho("You seek: ",
+cgi["fame"]==='on'
+\& "fame") \\
+\>   cgiEcho("You seek: ",
+cgi["fortune"]==='on'
+\& "fortune") \\
+\>   cgiEcho("You seek: ",
+cgi["grail"]==='on'
+\& "grail") \\
+\>   cgiEcho("Your favorite color is: ",
+cgi["color"]) \\
+\>   cgiEcho("Your comments: ",
+cgi["comments"]) \\
 end
 }
 
-Generating an output page that rehashes the user{\textquotesingle}s
+Generating an output page that rehashes the user's
 input is a good test of your HTML form before you deploy it with a CGI
 script that actually does something. In some cases, it is also helpful
 in allowing the user to recheck their submitted input and confirm or
 cancel before acting on it.
 
-\subsection{Debugging CGI Programs}
+\section{Debugging CGI Programs}
 
 CGI programs can be a pain to debug. You may have to debug your CGI
 execution environment, before you can even start debugging your CGI
-program itself. If your CGI script returns an {\textquotedbl}internal
-server error{\textquotedbl}, or no output at all, you may have file
+program itself. If your CGI script returns an "internal
+server error", or no output at all, you may have file
 permissions wrong, or the CGI script may not be able to find the Unicon
 virtual machine in order to run the program. Some web servers execute
 CGI scripts under a special userid such as
-{\textquotedbl}web{\textquotedbl}, others will run them under your user
+"web", others will run them under your user
 id. Some web servers run CGI scripts under a protected file system
-where the root directory {\textquotedbl}/{\textquotedbl} is not the
+where the root directory "/" is not the
 same as the root directory visible to your user account, so the path to
 iconx that you normally use may be invalid in your CGI program. CGI
 scripts may have a very limited PATH for security reasons, not the PATH
 you set for your user account. \ Your best bet is probably to use the
 -B Unicon compiler option to bundle the Unicon interpreter into your
 executable file; alternatively you can probably copy the virtual
-machine {\textquotedbl}iconx{\textquotedbl} into your cgi-bin directory
+machine "iconx" into your cgi-bin directory
 
 Debugging your CGI program itself may require special tricks. Because
 your CGI program is executed by a web server, its standard error output
@@ -406,7 +400,7 @@ accomplish this is to write \textit{two} programs: one that performs
 the primary task, and a second program that calls the first one,
 catches any error messages, and converts any plain text output to HTML.
 
-\subsection{Appform: An Online Scholarship Application}
+\section{Appform: An Online Scholarship Application}
 
 The next example, \texttt{appform.icn}, is a CGI script for an
 on-line scholarship application that was used at a university. Its
@@ -418,7 +412,7 @@ print job fails for some reason.
 The program is a single \texttt{cgimain()} procedure, which starts by
 processing each of the user input fields. The program then opens a
 temporary file with a \texttt{.txt} extension, and writes a nicely
-formatted document containing the user{\textquotesingle}s scholarship
+formatted document containing the user's scholarship
 application information.
 
 The code for Appform is shown in Listing 13-2. To run it you must
@@ -454,116 +448,116 @@ on-line schol-\\
  \\
 \ \\
 link cgi, io \\
-\$define ADMIN {\textquotedbl}jeffery@cs.uidaho.edu{\textquotedbl} \\
+\$define ADMIN "jeffery@cs.uidaho.edu" \\
 procedure cgimain() \\
-\ \ fname := tempname({\textquotedbl}appform{\textquotedbl},
-{\textquotedbl}.txt{\textquotedbl},
-{\textquotedbl}/tmp{\textquotedbl}) \\
+\ \ fname := tempname("appform",
+".txt",
+"/tmp") \\
 \ \ f :=
-open({\textquotedbl}/tmp/{\textquotedbl}{\textbar}{\textbar}fname,
-{\textquotedbl}w{\textquotedbl}) {\textbar}
-stop({\textquotedbl}can{\textquotesingle}t open /tmp/{\textquotedbl},
+open("/tmp/"{\textbar}{\textbar}fname,
+"w") {\textbar}
+stop("can't open /tmp/",
 fname) \\
-\ \ write({\textquotedbl}Generating typeset copy of application
-form...{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Scholarship Program
-Application{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f, {\textquotedbl}Name: {\textquotedbl},
-cgi[{\textquotedbl}NAME{\textquotedbl}],
-{\textquotedbl}{\textbackslash}t{\textbackslash}t Phone:
-{\textquotedbl}, cgi[{\textquotedbl}PHONE{\textquotedbl}]) \\
-\ \ write(f, {\textquotedbl}Address: {\textquotedbl},
-cgi[{\textquotedbl}ADDRESS1{\textquotedbl}], {\textquotedbl}
-{\textbackslash}t{\textbackslash}t Social Sec. Number: {\textquotedbl},
-cgi[{\textquotedbl}SOC{\textquotedbl}]) \\
-\ \ write(f, cgi[{\textquotedbl}ADDRESS2{\textquotedbl}],
-{\textquotedbl} {\textbackslash}t{\textbackslash}t Gender (M/F):
-{\textquotedbl},cgi[{\textquotedbl}GENDER{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Semester hours completed: {\textquotedbl},
-cgi[{\textquotedbl}CREDITS{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}College GPA: \ Overall {\textquotedbl},
-cgi[{\textquotedbl}GPA{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}Present Employer: {\textquotedbl},
-cgi[{\textquotedbl}EMPLOYER{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}Position: {\textquotedbl},
-cgi[{\textquotedbl}POSITION{\textquotedbl}], {\textquotedbl}
-Hours/week: {\textquotedbl}, cgi[{\textquotedbl}HOURS{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}Educational Background{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}High School: name, year, GPA,
-		graduated?{\textquotedbl}) \\
-\ \ write(f, cgi[{\textquotedbl}HIGH1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl},
-cgi[{\textquotedbl}HIGH2{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}For each college, list name, dates attended,
-credit hours,{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}degrees awarded{\textquotedbl}, cgi[{\textquotedbl}COLL1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl},
-cgi[{\textquotedbl}COLL2{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Academic honors, scholarships, and
-fellowships{\textquotedbl}) \\
-\ \ write(f,cgi[{\textquotedbl}HONOR1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl},
-cgi[{\textquotedbl}HONOR2{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Extracurricular interests:{\textquotedbl}, cgi[{\textquotedbl}EXTRA1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl},
-cgi[{\textquotedbl}EXTRA2{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}Professional organizations:{\textquotedbl},
-cgi[{\textquotedbl}ORGS1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl},
-cgi[{\textquotedbl}ORGS2{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}Research interests:{\textquotedbl}) \\
-\ \ write(f,cgi[{\textquotedbl}RESEARCH1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}n{\textquotedbl},
-cgi[{\textquotedbl}RESEARCH2{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}Name(s) of at least one person you have asked
-to{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}write an academic reference
-letter.{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Name \ \ \ \ \ \ \ \ \ \ \ Address
-\ \ \ \ \ \ \ \ Relationship{\textquotedbl}) \\
-\ \ write(f,cgi[{\textquotedbl}REF1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}t{\textquotedbl},
-cgi[{\textquotedbl}REFADD1{\textquotedbl}],
-{\textquotedbl}{\textbackslash}t{\textquotedbl},cgi[{\textquotedbl}REFREL1{\textquotedbl}]) \\
-\ \ write(f,cgi[{\textquotedbl}REF2{\textquotedbl}],
-{\textquotedbl}{\textbackslash}t{\textquotedbl},
-cgi[{\textquotedbl}REFADD2{\textquotedbl}],
-{\textquotedbl}{\textbackslash}t{\textquotedbl},cgi[{\textquotedbl}REFREL2{\textquotedbl}]) \\
-\ \ write(f,{\textquotedbl}{\textbackslash}nI certify that information
-provided on this{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}application is correct and complete to my
-knowledge.{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Signature: {\textquotedbl},
-repl({\textquotedbl}\_{\textquotedbl}, 60), {\textquotedbl}{\textbackslash}n Date: {\textquotedbl},
-repl({\textquotedbl}\_{\textquotedbl}, 60), 
-{\textquotedbl}{\textbackslash}n{\textbackslash}\^{}l{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}Please write a short statement of purpose,
-including{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}information about your background, major, and
-career{\textquotedbl}) \\
-\ \ write(f,{\textquotedbl}interests, and professional
-goals.{\textbackslash}n{\textquotedbl}) \\
-\ \ write(f, cgi[{\textquotedbl}INFO{\textquotedbl}]) \\
+\ \ write("Generating typeset copy of application
+form...") \\
+\ \ write(f,"Scholarship Program
+Application{\textbackslash}n") \\
+\ \ write(f, "Name: ",
+cgi["NAME"],
+"{\textbackslash}t{\textbackslash}t Phone:
+", cgi["PHONE']) \\
+\ \ write(f, "Address: ",
+cgi["ADDRESS1"], '
+{\textbackslash}t{\textbackslash}t Social Sec. Number: ",
+cgi["SOC"]) \\
+\ \ write(f, cgi["ADDRESS2"],
+" {\textbackslash}t{\textbackslash}t Gender (M/F):
+",cgi["GENDER'],
+"{\textbackslash}n") \\
+\ \ write(f,"Semester hours completed: ",
+cgi["CREDITS"]) \\
+\ \ write(f,"College GPA: \ Overall ",
+cgi["GPA"]) \\
+\ \ write(f,"Present Employer: ",
+cgi["EMPLOYER"]) \\
+\ \ write(f,"Position: ",
+cgi["POSITION"], '
+Hours/week: ", cgi["HOURS']) \\
+\ \ write(f,"Educational Background") \\
+\ \ write(f,"High School: name, year, GPA,
+		graduated?") \\
+\ \ write(f, cgi["HIGH1"],
+"{\textbackslash}n",
+cgi["HIGH2"]) \\
+\ \ write(f,"For each college, list name, dates attended,
+credit hours,") \\
+\ \ write(f,"degrees awarded", cgi['COLL1'],
+"{\textbackslash}n",
+cgi["COLL2"],
+"{\textbackslash}n{\textbackslash}n") \\
+\ \ write(f,"Academic honors, scholarships, and
+fellowships") \\
+\ \ write(f,cgi["HONOR1"],
+"{\textbackslash}n",
+cgi["HONOR2"],
+"{\textbackslash}n") \\
+\ \ write(f,"Extracurricular interests:", cgi['EXTRA1'],
+"{\textbackslash}n",
+cgi["EXTRA2"]) \\
+\ \ write(f,"Professional organizations:",
+cgi["ORGS1"],
+"{\textbackslash}n",
+cgi["ORGS2"]) \\
+\ \ write(f,"Research interests:") \\
+\ \ write(f,cgi["RESEARCH1"],
+"{\textbackslash}n",
+cgi["RESEARCH2"]) \\
+\ \ write(f,"Name(s) of at least one person you have asked
+to") \\
+\ \ write(f,"write an academic reference
+letter.") \\
+\ \ write(f,"Name \ \ \ \ \ \ \ \ \ \ \ Address
+\ \ \ \ \ \ \ \ Relationship") \\
+\ \ write(f,cgi["REF1"],
+"{\textbackslash}t",
+cgi["REFADD1"],
+"{\textbackslash}t",cgi['REFREL1']) \\
+\ \ write(f,cgi["REF2"],
+"{\textbackslash}t",
+cgi["REFADD2"],
+"{\textbackslash}t",cgi['REFREL2']) \\
+\ \ write(f,"{\textbackslash}nI certify that information
+provided on this") \\
+\ \ write(f,"application is correct and complete to my
+knowledge.{\textbackslash}n") \\
+\ \ write(f,"Signature: ",
+repl("\_", 60), '{\textbackslash}n Date: ',
+repl("\_", 60), 
+"{\textbackslash}n{\textbackslash}\^{}l{\textbackslash}n") \\
+\ \ write(f,"Please write a short statement of purpose,
+including") \\
+\ \ write(f,"information about your background, major, and
+career") \\
+\ \ write(f,"interests, and professional
+goals.{\textbackslash}n") \\
+\ \ write(f, cgi["INFO"]) \\
 \ \ close(f) \\
-\ \ write({\textquotedbl}Mailing form to program director...{\textquotedbl}) \\
+\ \ write("Mailing form to program director...") \\
 \ \ f := open(fname) \\
-\ \ m := open({\textquotedbl}mailto:{\textquotedbl} {\textbar}{\textbar}
-ADMIN, {\textquotedbl}m{\textquotedbl}, {\textquotedbl}Subject:
-appform{\textquotedbl}) \\
+\ \ m := open("mailto:" {\textbar}{\textbar}
+ADMIN, "m", 'Subject:
+appform") \\
 \ \ while write(m, read(f)) \\
 \ \ close(m) \\
 \ \ close(f) \\
-\ \ write({\textquotedbl}Printing hard copy...{\textquotedbl}) \\
-\ \ system({\textquotedbl}cd /tmp; lpr {\textquotedbl}
-{\textbar}{\textbar} fname; rm {\textquotedbl} {\textbar}{\textbar}
-fname {\textbar}{\textbar} {\textquotedbl}.*{\textquotedbl}) \\
-\ \ cgiEcho({\textquotedbl}Thank you for applying, {\textquotedbl},
-cgi[{\textquotedbl}NAME{\textquotedbl}]) \\
-\ \ cgiEcho({\textquotedbl}Your application has been submitted to
-{\textquotedbl} {\textbar}{\textbar} ADMIN) \\
+\ \ write("Printing hard copy...") \\
+\ \ system("cd /tmp; lpr "
+{\textbar}{\textbar} fname; rm " {\textbar}{\textbar}
+fname {\textbar}{\textbar} ".*") \\
+\ \ cgiEcho("Thank you for applying, ",
+cgi["NAME"]) \\
+\ \ cgiEcho("Your application has been submitted to
+" {\textbar}{\textbar} ADMIN) \\
 end
 }
 

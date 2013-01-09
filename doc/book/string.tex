@@ -1,8 +1,8 @@
-\clearpage\section{Chapter 3: String Processing}
+\chapter{String Processing}
 
 In addition to its groundbreaking expression evaluation, Unicon inherits
 other compelling features from Icon that reduce the effort required to
-write complex programs. Icon{\textquotesingle}s ancestor is
+write complex programs. Icon's ancestor is
 \index{SNOBOL4}SNOBOL4, the grandfather of all string processing
 languages, and from it come some of the most flexible and readable
 built-in string processing facilities found in any language. In this
@@ -10,14 +10,14 @@ chapter you will learn
 
 \begin{itemize}
 \item How to manipulate strings and sets of characters
-\item Icon{\textquotesingle}s string scanning \index{control
+\item Icon's string scanning \index{control
 structure}control structure
 \item How to write custom \index{pattern matching}pattern matching
 primitives, with \index{backtracking}backtracking
 \end{itemize}
 Techniques for matching regular expressions and context free grammars
 
-\subsection{String Indexes}
+\section{String Indexes}
 
 You have already seen string literals delimited by double quotes, and
 the most common operators that work on strings: the size of a string is
@@ -49,42 +49,42 @@ index into \texttt{s}, the expression fails. The expression
 \index{character}character at position \texttt{k}. The expression
 \texttt{s[k+:n]} is the substring of length \texttt{n} starting at
 position \texttt{k}. If \texttt{s} is the string
-\texttt{{\textquotedbl}hello, world!{\textquotedbl}} then the
+\texttt{"hello, world!"} then the
 expressions
 
 \iconcode{
-s[7] := {\textquotedbl} puny {\textquotedbl} \\
-s[13:18] := {\textquotedbl}earthlings{\textquotedbl}
+s[7] := " puny " \\
+s[13:18] := "earthlings"
 }
 
 \noindent
-change \texttt{s} into \texttt{{\textquotedbl}hello, puny
-earthlings!{\textquotedbl}}, illustrating the ease with which
+change \texttt{s} into \texttt{"hello, puny
+earthlings!"}, illustrating the ease with which
 insertions and substitutions are made. The first assignment changes the
-string to \texttt{{\textquotedbl}hello, puny world!{\textquotedbl}},
+string to \texttt{"hello, puny world!"},
 replacing a single character with six characters and thereby increasing
 its length. The second assignment operates on the modified string,
-replacing \texttt{{\textquotedbl}world{\textquotedbl}} with
-\texttt{{\textquotedbl}earthlings{\textquotedbl}}.
+replacing \texttt{"world"} with
+\texttt{"earthlings"}.
 
 Strings are values, just like numbers; if you copy a string and then
 work on the copy, the original will be left unchanged:
 
 \iconcode{
-s := {\textquotedbl}string1{\textquotedbl} \\
+s := "string1" \\
 new\_s := s \\
-new\_s[7] := {\textquotedbl}2{\textquotedbl}
+new\_s[7] := "2"
 }
 
 Now the value of \texttt{new\_s} is
-{\textquotedbl}string2{\textquotedbl} but \texttt{s} is left unchanged.
+"string2" but \texttt{s} is left unchanged.
 
 As mentioned in Chapter 1, strings can be compared with string
 \index{comparison operator!string}comparison operators such as
 \texttt{==}.
 
 \iconcode{
-if line[1] == {\textquotedbl}\#{\textquotedbl} then ...}
+if line[1] == "\#" then ...}
 
 If you find you are writing many such tests, the string processing you
 are doing may be more cleanly handled using the string scanning
@@ -92,7 +92,7 @@ facilities, described below. But first, here is some more detail on the
 character set data type, which is used in many of the string scanning
 functions.
 
-\subsection{Character Sets}
+\section{Character Sets}
 
 A cset is a set of characters. It has the usual properties of sets:
 order is not significant, and a character can only occur once in a
@@ -100,12 +100,12 @@ cset. A \index{cset literal}cset literal is represented with single
 quotes:
 
 \iconcode{
-c := {\textquotesingle}aeiou{\textquotesingle}}
+c := 'aeiou'}
 
 Since characters can only occur once in a cset, duplicates in a cset
 literal are ignored; for example,
-\texttt{{\textquotesingle}aaiiee{\textquotesingle}} is equivalent to
-\texttt{{\textquotesingle}aie{\textquotesingle}}. Strings can be
+\texttt{'aaiiee'} is equivalent to
+\texttt{'aie'}. Strings can be
 converted to csets and vice versa. Since csets do not contain
 duplicates, when a string is converted to a cset, all the duplicates
 are removed.
@@ -114,7 +114,7 @@ Therefore to see if a string is composed of all the vowels and no
 consonants:
 
 \iconcode{
-if cset(s) == {\textquotesingle}aeiou{\textquotesingle} then ...}
+if cset(s) == 'aeiou' then ...}
 
 Or, to find the number of distinct characters in a string:
 
@@ -124,23 +124,23 @@ n := *cset(s)}
 The \texttt{!} operator generates the members of a cset in sorted order;
 this is also useful in some situations.
 
-\subsection{Character Escapes}
+\section{Character Escapes}
 
 Both strings and csets rely on the backslash as an escape character
 within string literals. A backslash followed by an \index{escape
 codes}\textit{escape code} of one or more characters specifies a
 non-printable or control character. Escape codes may be specified by a
 numeric value given in hex or octal format - for example,
-\texttt{{\textquotedbl}{\textbackslash}x41{\textquotedbl}}.
+\texttt{"{\textbackslash}x41"}.
 Alternatively, any control character may be specified with an escape
 code consisting of the caret (\texttt{\^{}}) followed by the alphabetic
 letter of the control character. A cset containing control-C,
 control-D, and control-Z could be specified as
-\texttt{{\textquotesingle}{\textbackslash}\^{}c{\textbackslash}\^{}d{\textbackslash}\^{}z{\textquotesingle}}.
+\texttt{'{\textbackslash}\^{}c{\textbackslash}\^{}d{\textbackslash}\^{}z'}.
 For the most common character escapes, a single-letter code is defined,
-such as \texttt{{\textquotedbl}{\textbackslash}t{\textquotedbl}} for
+such as \texttt{"{\textbackslash}t"} for
 the tab character, or
-\texttt{{\textquotedbl}{\textbackslash}n{\textquotedbl}} for the
+\texttt{"{\textbackslash}n"} for the
 newline. For all other characters, the character following the
 backslash is the character; this is how quotes or backslashes are
 included in literals. The escape codes are summarized in Table 3-1.
@@ -185,9 +185,9 @@ carriage return &
 tab\\\hline
 \ \ {\textbackslash}v &
 vertical tab &
-\ {\textbackslash}{\textquotesingle} &
+\ {\textbackslash}' &
 quote &
-\ \ {\textbackslash}{\textquotedbl} &
+\ \ {\textbackslash}" &
 double quote &
 \ \ {\textbackslash}{\textbackslash} &
 backslash\\\hline
@@ -204,9 +204,9 @@ Control-\textit{x} &
 \end{supertabular}
 \end{center}
 
-\subsection{String Scanning}
+\section{String Scanning}
 
-Icon{\textquotesingle}s string analysis facility is called
+Icon's string analysis facility is called
 \index{string!scanning}\textit{string scanning}. A
 \index{scanning!environment}scanning environment consists of a string
 \index{subject string}\index{string!subject}\textit{subject} and an
@@ -266,7 +266,7 @@ input:
 procedure getword() \\
 local wchar, line \\
 \>   wchar := \&letters ++ \&digits ++
-{\textquotesingle}{\textbackslash}{\textquotesingle}-{\textquotesingle} \\
+'{\textbackslash}'-' \\
 \>   while line := read() do \\
 \>   \ \ \ line ? while tab(upto(wchar)) do \{ \\
 \>   \ \ \ \ \ \ word := tab(many(wchar)) \\
@@ -303,7 +303,7 @@ this, add these two lines to the beginning of the procedure:
 \iconcode{
 static wchar \\
 initial wchar := \&letters ++ \&digits ++
-{\textquotesingle}{\textbackslash}{\textquotesingle}-{\textquotesingle}
+'{\textbackslash}'-'
 }
 
 The \index{match(s)}\texttt{match(s)} function takes a string argument
@@ -312,7 +312,7 @@ subject. If it succeeds, it produces the position at the end of the
 matched substring. This expression
 
 \iconcode{
-if tab(match({\textquotedbl}-{\textquotedbl})) then sign := -1 else sign
+if tab(match("-")) then sign := -1 else sign
 := 1}
 
 \noindent
@@ -323,7 +323,7 @@ is assigned a -1; otherwise, it gets a 1. The expression
 given a shortcut: \texttt{=s} does the same thing.
 
 The last two string scanning functions to round out
-Icon{\textquotesingle}s built-in repertoire are
+Icon's built-in repertoire are
 \index{any(c)}\texttt{any(c)} and \index{bal()}\texttt{bal(c1,c2,c3)}.
 \texttt{any(c)} is similar to \texttt{many()}, but only tests a single
 character being scanned to see if it is in cset \texttt{c}. The
@@ -335,8 +335,8 @@ balanced if it has the same number of characters from \texttt{c2} as
 from \texttt{c3} and there are at no point more \texttt{c3} characters
 present than \texttt{c2} characters. The \texttt{c1} argument defaults
 to \texttt{\&cset}. Since \texttt{c2} and \texttt{c3} default to
-\texttt{{\textquotesingle}({\textquotesingle}} and
-\texttt{{\textquotesingle}){\textquotesingle}}, \texttt{bal()} defaults
+\texttt{'('} and
+\texttt{')'}, \texttt{bal()} defaults
 to find balanced parentheses.
 
 The restriction that \texttt{bal()} only returns positions at which a
@@ -350,19 +350,19 @@ character solves this problem:
 
 \iconcode{
 procedure isbalanced(s) \\
-\>   return (s {\textbar}{\textbar} {\textquotedbl} {\textquotedbl}) ?
+\>   return (s {\textbar}{\textbar} " ") ?
 (bal() = *s+1) \\
 end
 }
 
 If string \texttt{s} is very large, this solution is not cheap, since it
 creates a new copy of string \texttt{s}. You might write a version of
-\texttt{isbalanced()} that doesn{\textquotesingle}t use the
+\texttt{isbalanced()} that doesn't use the
 \texttt{bal()} function, and see if you can make it run faster than
 this version. An example later in this chapter shows how to use
 \texttt{bal()} in a more elegant manner.
 
-\subsubsection{File Completion}
+\subsection{File Completion}
 
 Consider the following gem, attributed to Jerry \index{Nowlin,
 Jerry}Nowlin and Bob \index{Alexander, Bob}Alexander. Suppose you want
@@ -379,7 +379,8 @@ end
 This procedure works fine for lists with just a few members and also for
 cases where \texttt{prefix} is fairly large.
 
-\subsubsection[Backtracking]{Backtracking}
+\subsection{Backtracking}
+
 \index{backtracking}The matching functions we have seen so far,
 (\texttt{tab()} and \texttt{move()}), are actually
 \index{generator}generators. That is, even though they only produce one
@@ -389,22 +390,22 @@ resumes one of these functions, they restore the old value of
 from the same position in the string:
 
 \iconcode{
-s ? (={\textquotedbl}0x{\textquotedbl} \& tab(many(\&digits ++
-{\textquotesingle}abcdefABCDEF{\textquotesingle}))) {\textbar} \\
+s ? (="0x" \& tab(many(\&digits ++
+'abcdefABCDEF'))) {\textbar} \\
 \>   tab(many(\&digits))
 }
 
 This expression will match either a hexadecimal string in the format
 used by C or a decimal integer. Suppose \texttt{s} contains the string
-\texttt{{\textquotedbl}0xy{\textquotedbl}}. The first part of the
+\texttt{"0xy"}. The first part of the
 expression succeeds and matches the
-\texttt{{\textquotedbl}0x{\textquotedbl}}; but then the expression
+\texttt{"0x"}; but then the expression
 \texttt{tab(many(\&digits ++
-{\textquotesingle}abcdef{\textquotesingle}))} fails; this causes Unicon
+'abcdef'))} fails; this causes Unicon
 to resume the first \texttt{tab()}, which resets the position to the
 beginning of the string and fails. Unicon then evaluates the expression
 \texttt{tab(many(\&digits))} which succeeds (matching the string
-\texttt{{\textquotedbl}0{\textquotedbl}}); therefore the entire
+\texttt{"0"}); therefore the entire
 expression succeeds and leaves \texttt{\&pos} at 2.
 
 {\sffamily\bfseries
@@ -415,13 +416,13 @@ Be careful when using tab() or move() in a surrounding expression that
 can fail! The fact that tab() and move() reset \&pos upon expression
 failure causes confusion and bugs when it happens accidentally.}
 
-\subsubsection{Concordance Example}
+\subsection{Concordance Example}
 
 Listing 3-1 illustrates the above concepts and introduces a few more.
 Here is a program to read a file, and generate a
 \index{concordance}concordance that prints each word followed by a list
 of the lines on which it occurs. Short words like
-\texttt{{\textquotedbl}the{\textquotedbl}} aren{\textquotesingle}t
+\texttt{"the"} aren't
 interesting, so the program only counts words longer than three
 characters. 
 
@@ -432,10 +433,10 @@ characters.
 
 \iconcode{
 procedure main(args) \\
-\>   (*args = 1) {\textbar} stop({\textquotedbl}Need a
-file!{\textquotedbl}) \\
+\>   (*args = 1) {\textbar} stop("Need a
+file!") \\
 \>   f := open(args[1]) {\textbar}
-stop({\textquotedbl}Couldn{\textquotesingle}t open {\textquotedbl},
+stop("Couldn't open ",
 args[1]) \\
 \>   wordlist := table() \\
 \>   lineno := 0 \\
@@ -444,7 +445,7 @@ args[1]) \\
 \>   \ \ \ lineno +:= 1 \\
 \>   \ \ \ every word := getword(line) do  \\
 \>   \ \ \ \ \ \ if *word {\textgreater} 3 then \{ \\
-\>   \ \ \ \ \ \ \ \ \ \# if word isn{\textquotesingle}t in the table, 
+\>   \ \ \ \ \ \ \ \ \ \# if word isn't in the table, 
 	set entry to empty list \\
 \>   \ \ \ \ \ \ \ \ \ /wordlist[word] := list() \\
 \>   \ \ \ \ \ \ \ \ \ put(wordlist[word], lineno) \\
@@ -453,12 +454,12 @@ args[1]) \\
 \>   L := sort(wordlist) \\
 \>   every l := !L do \{ \\
 \>   \ \ \ writes(l[1],
-{\textquotedbl}{\textbackslash}t{\textquotedbl}) \\
-\>   \ \ \ linelist := {\textquotedbl}{\textquotedbl} \\
+"{\textbackslash}t") \\
+\>   \ \ \ linelist := "" \\
 \>   \ \ \ \# Collect line numbers into a string \\
 \>   \ \ \ every linelist {\textbar}{\textbar}:= (!l[2]
-{\textbar}{\textbar} {\textquotedbl}, {\textquotedbl}) \\
-\>   \ \ \ \# trim the final {\textquotedbl}, {\textquotedbl} \\
+{\textbar}{\textbar} ", ") \\
+\>   \ \ \ \# trim the final ", " \\
 \>   \ \ \ write(linelist[1:-2]) \\
 \>   \ \ \ \} \\
 end \\
@@ -502,7 +503,7 @@ the uppercase letters and the lowercase letters, respectively;
 therefore, the call to \texttt{map()} converts the line just read in to
 all \index{lower case}lowercase.
 
-\subsection{Regular Expressions}
+\section{Regular Expressions}
 
 The Icon Program Library (included with the Unicon distribution)
 provides \index{regular expression}regular expression matching
@@ -530,13 +531,13 @@ link regexp \\
 procedure main(av) \\
 \>   local f, re, repl \\
 \>   every (f{\textbar}re{\textbar}repl) := pop(av) \\
-\>   f := open(f) {\textbar} stop({\textquotedbl}cant open file named:
-{\textquotedbl}, f) \\
+\>   f := open(f) {\textbar} stop("cant open file named:
+", f) \\
 \>   while line := read(f) do \\
 \>   \ \ \ write(re\_sub(line, re, repl)) \\
 end \\
 procedure re\_sub(str, re, repl) \\
-\>   result := {\textquotedbl}{\textquotedbl} \\
+\>   result := "" \\
 \>   str ? \{ \\
 \>   \ \ \ while j := ReFind(re) do \{ \\
 \>   \ \ \ \ \ \ result {\textbar}{\textbar}:= tab(j)
@@ -550,18 +551,18 @@ end
 }
 
 To replace all occurrences of
-{\textquotedbl}read{\textbar}write{\textquotedbl} with
-{\textquotedbl}IO operation{\textquotedbl} you could type 
+"read{\textbar}write" with
+"IO operation" you could type 
 
 \iconcode{
-igrep mypaper.txt {\textquotedbl}read{\textbar}write{\textquotedbl}
-{\textquotedbl}IO Operation{\textquotedbl}}
+igrep mypaper.txt "read{\textbar}write"
+"IO Operation"}
 
 Since the program has access to the pattern matching operation at a
 finer grain, more complex operations are possible, this
 search-and-replace is just an example.
 
-\subsection{Grammars}
+\section{Grammars}
 
 \index{grammar}Grammars are collections of rules that describe
 \index{syntax}\textit{syntax}, the combinations of words allowed in a
@@ -609,7 +610,7 @@ S -{\textgreater} (S) -{\textgreater} (SS) -{\textgreater} (()S)
 \>   \ \ (()(SS)) -{\textgreater} (()(()S)) -{\textgreater} (()(()()))
 }
 
-\subsubsection{Parsing}
+\subsection{Parsing}
 
 Unicon can parse grammars in a natural way using matching
 functions. A production
@@ -624,8 +625,8 @@ can be mapped to this matching function:
 
 \iconcode{
 procedure A() \\
-\>   suspend (B() \& ={\textquotedbl}a{\textquotedbl} \& D())
-{\textbar} (C() \& E() \& ={\textquotedbl}b{\textquotedbl}) \\
+\>   suspend (B() \& ="a" \& D())
+{\textbar} (C() \& E() \& ="b") \\
 end
 }
 
@@ -633,19 +634,19 @@ end
 This procedure first tries to match a string matched by \texttt{B},
 followed the character \texttt{a}, followed by a string matched by
 \texttt{D}. If \texttt{D} \index{expression failure}fails, execution
-backtracks across the \texttt{={\textquotedbl}a{\textquotedbl}}
+backtracks across the \texttt{="a"}
 (resetting \texttt{\&pos}) and resume \texttt{B()}, which will attempt
 the next match.
 
 If the sub-expression to the left of the \index{alternation operator (
 {\textbar} )}alternation fails, then execution will try the
 sub-expression on the right, \texttt{C() \& E() \&
-={\textquotedbl}b{\textquotedbl}} until something matches - in which
+="b"} until something matches - in which
 case \texttt{A} succeeds, or nothing matches - which will cause it to
 fail.
 
 Parsers for any CFG can be written in this way. However, this is an
-expensive way to do it! Unicon{\textquotesingle}s
+expensive way to do it! Unicon's
 expression evaluation will try all possible derivations
 trying to match a string. This is not a good way to parse, especially
 if the grammar is amenable to lookahead methods. A more efficient
@@ -654,7 +655,7 @@ method is given in the next section. For serious parsing jobs, Chapter
 industrial-strength lexical analyzer and parser generation tools, lex
 and yacc.
 
-\subsubsection[Doing It Better]{Doing It Better}
+\subsection{Doing It Better}
 
 Many grammars can be parsed more efficiently using
 well-known techniques - consult a book on compilers for details. Here
@@ -679,15 +680,15 @@ this grammar:
 \iconcode{
 procedure main() \\
 \>   while line := read() do \\
-\>   \ \ \ if expr(line) == line then write({\textquotedbl}Success!{\textquotedbl}) \\
-\>   \ \ \ else write({\textquotedbl}Failure.{\textquotedbl}) \\
+\>   \ \ \ if expr(line) == line then write("Success!") \\
+\>   \ \ \ else write("Failure.") \\
 end \\
 procedure expr(s) \\
 \>   s ? \{ \\
-\>   \ \ \ while t := tab(bal({\textquotesingle}+{\textquotesingle}))
+\>   \ \ \ while t := tab(bal('+'))
 do \{ \\
 \>   \ \ \ \ \ \ term(t) {\textbar} \index{fail}fail ;
-={\textquotedbl}+{\textquotedbl} \\
+="+" \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ term(tab(0)) {\textbar} fail \\
 \>   \ \ \ \} \\
@@ -695,27 +696,27 @@ do \{ \\
 end \\
 procedure term(s) \\
 \>   s ? \{ \\
-\>   \ \ \ while f := tab(bal({\textquotesingle}*{\textquotesingle}))
+\>   \ \ \ while f := tab(bal('*'))
 do \{ \\
 \>   \ \ \ \ \ \ factor(f) {\textbar} fail ;
-={\textquotedbl}*{\textquotedbl} \\
+="*" \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ factor(tab(0)) {\textbar} fail \\
 \>   \ \ \ \} \\
 \>   return s \\
 end \\
 procedure factor(s) \\
-\>   s ? suspend ={\textquotedbl}a{\textquotedbl} {\textbar}
-={\textquotedbl}b{\textquotedbl} {\textbar}
-={\textquotedbl}c{\textquotedbl} {\textbar}  ( ={\textquotedbl}({\textquotedbl}
+\>   s ? suspend ="a" {\textbar}
+="b" {\textbar}
+="c" {\textbar}  ( ="("
 {\textbar}{\textbar}
-expr(tab(bal({\textquotesingle}){\textquotesingle})))
-{\textbar}{\textbar} ={\textquotedbl}){\textquotedbl} ) \\
+expr(tab(bal(')')))
+{\textbar}{\textbar} =")" ) \\
 end
 }
 
 The interesting procedure here is \index{bal()}\texttt{bal()}. With
-\texttt{{\textquotesingle}){\textquotesingle}} as its first argument,
+\texttt{')'} as its first argument,
 \texttt{bal()} scans to the closing parenthesis, skipping over any
 parentheses in nested subexpressions, which is exactly what is needed
 here.
@@ -738,7 +739,7 @@ matched substring.
 
 \section*{Summary}
 
-Unicon{\textquotesingle}s string processing facilities are extensive.
+Unicon's string processing facilities are extensive.
 Simple operations are very easy, while more complex string analysis has
 the support of a special control structure, string scanning. String
 scanning is not as concise as regular expression pattern matching, but

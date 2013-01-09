@@ -1,4 +1,4 @@
-\clearpage\section{Appendix A: Language Reference}
+\chapter{Language Reference}
 
 Unicon is expression-based. Nearly everything is an expression,
 including the common \index{control structure}control structures such
@@ -15,15 +15,15 @@ asterisk (\textsf{\textbf{*}}) and non-generators that can
 denotes a predicate whose success or failure is what matters; the
 predicate return value (\textsf{\&null}) is not significant.
 
-\subsection{Immutable Types}
+\section{Immutable Types}
 
-Unicon{\textquotesingle}s immutable types are integers, real numbers,
+Unicon's immutable types are integers, real numbers,
 strings, and csets. Values of these types cannot change. Operators and
 functions on immutable types produce new values rather than modify
 existing ones. The simplest expressions are literal values, which occur
 only for immutable types. A literal value evaluates to itself.
 
-\subsubsection{Integer}
+\subsection{Integer}
 
 Integers are of arbitrary precision. Decimal \index{integer}integer
 literals are contiguous sequences of the digits 0 through 9, optionally
@@ -39,7 +39,7 @@ used for values 10-35. Radix literals are case insensitive, unlike the
 rest of the language, so the R may be upper or lower case, as may the
 following alphabetic digits.
 
-\subsubsection{Real}
+\subsection{Real}
 
 \index{real number}Reals are double-precision floating-point values.
 Real decimal literals are contiguous sequences of the digits 0 through
@@ -47,7 +47,7 @@ Real decimal literals are contiguous sequences of the digits 0 through
 the digits. Real exponent literals use the format
 \textit{number}E\textit{integer}; E may be upper or lower case.
 
-\subsubsection[String]{String}
+\subsection{String}
 
 \index{string}Strings are sequences of 0 or more characters, where a
 character is a value with a platform-dependent size and symbolic
@@ -63,72 +63,68 @@ underscore (\_). In that case, the underscore, the newline, and any
 whitespace at the beginning of the next line are not part of the string
 literal.
 
-\subsubsection[Cset]{Cset}
+\subsection{Cset}
 
 \index{cset}Csets are sets of 0 or more characters. Cset literals
 consist of 0 or more characters enclosed in single quotes. As with
 strings, a \index{cset literal}cset literal may include escape
 sequences that use multiple characters to encode special characters.
 
-\subsection{Mutable Types}
+\section{Mutable Types}
 
 Mutable types' values may be altered. Changes to a
 \index{mutable value}mutable value affect its allocated memory or its
 associated OS resource. Mutable types include lists, tables,
 sets, records, objects, and files, including windows, network
 connections and \index{database}databases. These types are described in
-in the entries for \index{constructor}constructors that
+the entries for \index{constructor}constructors that
 create them. \index{structure types}Structure types hold
 collections of elements that may be of arbitrary, mixed type.
 
-\subsubsection{List}
+\subsection{List}
 
 \index{list}Lists are dynamically sized, ordered sequences of zero or
-more values. \ They are constructed by function, by an explicit
+more values. They are constructed by function, by an explicit
 operator, or implicitly by a call to a variable argument procedure.
-They change size by \index{stack}stack and \index{queue}queue
-functions.
+They change size by \index{stack}stack and \index{queue}queue functions.
 
-\subsubsection{Table}
+\subsection{Table}
 
 \index{table}Tables are dynamically sized, unordered mappings from keys
 to elements. They are constructed by function. The keys may be of
 arbitrary, mixed type.
 
-\subsubsection{Set}
+\subsection{Set}
 
-\index{set}Sets are unordered collections. They are constructed by
-function.
+\index{set}Sets are unordered collections. They are constructed by function.
 
-\subsubsection{Record}
+\subsection{Record}
 
 \index{record}Records are ordered, fixed length sequences of elements
 accessed via named fields.
 
-\subsubsection{Object}
+\subsection{Object}
 
-\index{object}Objects are ordered, fixed length sequences of elements
-that may be accessed via named fields and methods. Accessing an object's
-fields from outside its methods (using it as a record) is legal but
-deprecated.
+\index{object}Objects are ordered, fixed length sequences of elements that may
+be accessed via named fields and methods. Accessing an object's fields from
+outside its methods (using it as a record) is legal but deprecated.
 
-\subsubsection[File]{File}
+\subsection{File}
 
-\index{file}Files are system resources corresponding to data on
-secondary storage, areas on users{\textquotesingle} displays, network
-connections, or \index{database}databases. Operations on files
-cause input or output side effects on the system outside
-of the program execution.
+\index{file}Files are system resources corresponding to data on secondary
+storage, areas on users' displays, network connections, or
+\index{database}databases. Operations on files cause input or output side
+effects on the system outside of the program execution.
 
-\subsection{Variables}
+\section{Variables}
 
 Variables are names for locations in memory where values can be stored.
 Values are stored in variables by \index{assignment}assignment
 operators. A \index{variable}variable name begins with a letter or
 underscore, followed by zero or more letters, underscores, or digits. A
-variable name cannot be the same as one of Icon{\textquotesingle}s
+variable name cannot be the same as one of Icon's
 reserved words, nor can it be the same as one of
-Icon{\textquotesingle}s keywords if it follows an adjacent ampersand
+Icon's keywords if it follows an adjacent ampersand
 character. Variables can hold values of any type, and may hold
 different types of values at different times during program execution.
 
@@ -150,20 +146,19 @@ affect the other. Aliasing is a common source of program bugs.
 Variables holding integer, real, string, or cset values are never
 aliased, because those types are immutable.
 
-\subsubsection{Global}
+\subsection{Global}
 
-Global variables are visible everywhere in the program, and exist at the
-same location for the entire program execution. Declaring a procedure
-declares a global variable preinitialized to the procedure value
-that corresponds to the code for that procedure.
+Global variables are visible everywhere in the program, and exist at the same
+location for the entire program execution. Declaring a procedure declares a
+global variable initialized to the procedure value that corresponds to the
+code for that procedure.
 
-\subsubsection{Local}
+\subsection{Local}
 
-Local variables exist and are visible within a single procedure or method
-only for the duration of a single
-procedure invocation, including suspensions and resumptions, until the
-procedure returns, fails, or is \textit{vanquished} by the return or
-failure of an ancestor invocation while it is suspended.
+Local variables exist and are visible within a single procedure or method only
+for the duration of a single procedure invocation, including suspensions and
+resumptions, until the procedure returns, fails, or is \textit{vanquished} by
+the return or failure of an ancestor invocation while it is suspended.
 Undeclared variables in any \index{scope}scope are implicitly local, but this
 dangerous practice should be avoided in large programs.
 
@@ -172,31 +167,29 @@ that are preinitialized to the values of actual parameters at the time
 of a procedure or method invocation. The semantics of parameter passing
 are the same as those of assignment.
 
-\subsubsection{Static}
+\subsection{Static}
 
-Static variables are visible only within a single procedure or method,
-but exist at the same location for the entire program execution. The
-value stored in a static variable is preserved between multiple calls
-to the procedure in which it is declared.
+Static variables are visible only within a single procedure or method, but exist
+at the same location for the entire program execution. The value stored in a
+static variable is preserved between multiple calls to the procedure in which it
+is declared.
 
-\subsubsection{Class}
+\subsection{Class}
 
-Class variables are visible within the methods of a declared class.
-Class variables are created for each
-\index{instance!class}instance (object) of the class. The lifespan of
-class variables is the life span of the instance to which
-they belong. The value stored in a class variable is preserved between
-multiple calls to the methods of the class in which it is declared.
+Class variables are visible within the methods of a declared class.  Class
+variables are created for each \index{instance!class}instance (object) of the
+class. The lifespan of class variables is the life span of the instance to which
+they belong. The value stored in a class variable is preserved between multiple
+calls to the methods of the class in which it is declared.
 
-\subsection[Keywords]{Keywords}
+\section{Keywords}
 
-Keywords are names with global \index{scope}scope and special semantics
-within the language. They begin with an ampersand character. Some
-keywords are names of common constant values, while others are names of
-variables that play a special role in Icon{\textquotesingle}s
-\index{control structure}control structures. The name of the keyword is
-followed by a : if it is read-only, or a := if it is a variable,
-followed by the type of value the keyword holds.
+Keywords are names with global \index{scope}scope and special semantics within
+the language. They begin with an ampersand character. Some keywords are names of
+common constant values, while others are names of variables that play a special
+role in Icon's \index{control structure}control structures. The
+name of the keyword is followed by a : if it is read-only, or a := if it is a
+variable, followed by the type of value the keyword holds.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf \&allocated : integer* \hfill report memory use}
@@ -252,7 +245,7 @@ corresponding to the universal set of all characters.
 co-expression that is currently executing.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf \&date : string \hfill today{\textquotesingle}s date}
+\noindent {\bf \&date : string \hfill today's date}
 
 \noindent
 \index{today \&date}\textsf{\&date} produces the current
@@ -571,7 +564,7 @@ case letters from A to Z.
 \index{version}\textsf{\&version} is a string that indicates which
 version of Unicon or Icon is executing.
 
-\subsubsection{Graphics Keywords}
+\subsection{Graphics keywords}
 
 Several of the graphics keywords are variables with assignment
 restricted to value of a particular type or types. Graphics keywords
@@ -582,7 +575,7 @@ are more fully described in [Griswold98].
 
 \noindent
 \textsf{\&col} is the mouse location in text columns during the most
-recent \textsf{Event()}. \ If \textsf{\&col} is assigned, \textsf{\&x}
+recent \textsf{Event()}. If \textsf{\&col} is assigned, \textsf{\&x}
 gets a corresponding pixel location in the current font on
 \textsf{\&window}.
 
@@ -707,7 +700,7 @@ the time of the most recently processed event, otherwise
 
 \noindent
 \textsf{\&window} is the default window argument for all window
-functions. \ \textsf{\&window} may be assigned any value of type
+functions. \textsf{\&window} may be assigned any value of type
 window.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -728,15 +721,15 @@ recent \textsf{Event()}. If \textsf{\&y} is assigned, \textsf{\&row}
 gets a corresponding text coordinate in the current font on
 \textsf{\&window}.
 
-\subsection[Control Structures and Reserved Words]{Control Structures
-and Reserved Words}
+\section{Control Structures and Reserved Words}
+
 Unicon has many \index{reserved word}reserved words. Some are used in
 declarations, but most are used in \index{control structure}control
-structures. This section summarizes the syntax and semantics introduced
-by all the reserved words of the language. The reserved word under
-discussion is written in a bold font. The surrounding syntax uses
-square brackets for optional items and an asterisk for items that may
-repeat.
+structures. This section summarizes the syntax and semantics
+introduced by all the reserved words of the language. The reserved
+word under discussion is written in a bold font. The surrounding
+syntax uses square brackets for optional items and an asterisk for
+items that may repeat.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf break expr \hfill exit loop}
@@ -744,7 +737,7 @@ repeat.
 \noindent
 The \index{break expression}\textsf{break} expression exits the nearest
 enclosing loop. \textit{expr} is evaluated and treated as the result of
-the entire loop expression. \ If \textit{expr} is another
+the entire loop expression. If \textit{expr} is another
 \textsf{break} expression, multiple loops will be exited.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1057,13 +1050,13 @@ as \textit{expr1} fails.
 \index{while}The \textsf{while} expression loops as long as
 \textit{expr1} succeeds.
 
-\subsection{Operators and Built-in Functions}
+\section{Operators and Built-in Functions}
 
-Icon{\textquotesingle}s built-ins operators and functions utilize
+Icon's built-ins operators and functions utilize
 automatic type conversion to provide flexibility and ease of
 programming. Automatic \index{type conversion}type \index{conversion,
 type}conversions are limited to integer, real, string, and cset data
-types. Conversions to a {\textquotedbl}number{\textquotedbl} will
+types. Conversions to a "number" will
 convert to either an integer or a real, depending whether the value to
 be converted has a decimal. Conversions between numeric types and csets
 go through an intermediate conversion to a string value and are not
@@ -1076,11 +1069,12 @@ functions can take two indices to specify a section of the string or
 list. When two indices are supplied, they select the same string
 section whether they are in ascending or descending order.
 
-\subsubsection[Operators]{Operators}
+\subsection{Operators}
+
 \index{operators}The result types of operators are the same as the
 operand types except as noted.
 
-\subsubsection{Unary Operators}
+\subsection{Unary operators}
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ! x : any* \hfill generate elements}
@@ -1089,7 +1083,7 @@ operand types except as noted.
 \index{generate elements}The \index{generate operator "!x}generate
 operator produces the elements of \texttt{x}. If
 \texttt{x} is a string variable or refers to a structure value, the
-generated elements are variables that may be assigned. \ \texttt{!i} is
+generated elements are variables that may be assigned. \texttt{!i} is
 equivalent to \texttt{(1 to i)} for integer \texttt{i}. List, record,
 string, and file elements are generated in order, with string elements
 consisting of one-letter substrings. Set and table elements are
@@ -1117,7 +1111,7 @@ and produce their operand if it satisfies the test.
 
 \noindent
 Negation reverses the sign of its operand. Numeric identity does not
-change its operand{\textquotesingle}s value other than to convert to a
+change its operand's value other than to convert to a
 required numeric type.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1173,7 +1167,7 @@ consisting of all characters not in its operand.
 co-expression so the next time it is activated it will begin with its
 first result.
 
-\subsubsection[Binary Operators]{Binary Operators}
+\subsection{Binary operators}
 
 \index{binary operator}Most binary operators may be augmented with an
 \index{assignment!augmented}assignment. If such an operator is followed
@@ -1456,9 +1450,9 @@ argument; the procedure is called with these co-expressions as its
 parameters, and can determine for itself whether, and in what order, to
 activate its parameters to obtain values.
 
-\subsubsection{Built-in Functions}
+\subsection{Built-in functions}
 
-Unicon{\textquotesingle}s \index{built-in functions}built-in functions
+Unicon's \index{built-in functions}built-in functions
 are a key element of its ease of learning and use. They provide
 substantial functionality in a consistent and easily memorized manner.
 
@@ -1541,8 +1535,7 @@ The argument is given in radians.
 hyperbolic tangent of \texttt{r}. Arguments are given in radians.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf bal(cs:\&cset, cs:{\textquotesingle}({\textquotesingle},
-cs:{\textquotesingle}){\textquotesingle}, s, i, i) :
+\noindent {\bf bal(cs:\&cset, cs:'(', cs:')', s, i, i) :
 integer* \hfill balance string}
 
 \noindent
@@ -1552,7 +1545,7 @@ integer* \hfill balance string}
 balanced with respect to characters in \texttt{c2} and \texttt{c3}.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf center(s, i:1, s:{\textquotedbl} {\textquotedbl}) :
+\noindent {\bf center(s, i:1, s:" ") :
 string \hfill center string}
 
 \noindent
@@ -1590,7 +1583,7 @@ working directory.
 \noindent
 \index{permissions, file}\index{permissions,
 file}\index{file!permissions}\index{file!permissions}\index{chmod()}\texttt{chmod(f,
-m)} sets the access permissions ({\textquotedbl}mode{\textquotedbl}) of
+m)} sets the access permissions ("mode") of
 a string filename (or on UNIX systems, an open file) \texttt{f} to a
 string or integer mode \texttt{m}. The mode indicates the change to be
 performed. The string is of the form
@@ -1623,8 +1616,8 @@ o\\
  \ \ \ \ \texttt{o} \ \ \ \ \ \ \ the o bits on the same file
 
 If the first group is missing, then it is treated as
-{\textquotedbl}all{\textquotedbl} except that any bits in the
-user{\textquotesingle}s umask will not be modified in the mode. Not all
+"all" except that any bits in the
+user's umask will not be modified in the mode. Not all
 platforms make use of all mode bits described here; the mode bits that
 are used is a property of the filesystem on which the file resides.
 
@@ -1632,7 +1625,7 @@ are used is a property of the filesystem on which the file resides.
 \noindent {\bf classname(r) : string \hfill class name}
 
 \noindent
-\texttt{classname(r)} produces the name of \texttt{r}{\textquotesingle}s
+\texttt{classname(r)} produces the name of \texttt{r}'s
 class.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1839,7 +1832,7 @@ null \hfill \ \ \ \ \ \ \ \  get/set event mask}
 \noindent
 \index{eventmask(ce)}eventmask(ce) returns the event mask associated
 with the program that created ce, or \&null if there is no event mask.
-eventmask(ce,cs) sets that program{\textquotesingle}s event mask to cs.
+eventmask(ce,cs) sets that program's event mask to cs.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1913,7 +1906,7 @@ string:
 
 \ \ \ \ \ s \ \ \ \ \ \ \ shared lock\\
  \ \ \ \ x \ \ \ \ \ \ \ exclusive lock\\
- \ \ \ \ b \ \ \ \ \ \ \ don{\textquotesingle}t block when
+ \ \ \ \ b \ \ \ \ \ \ \ don't block when
 locking\\
  \ \ \ \ u \ \ \ \ \ \ \ unlock 
 
@@ -1999,7 +1992,7 @@ Converts an integer time in seconds since the epoch, Jan 1, 1970
 \noindent {\bf icom(i) : integer \hfill bitwise complement}
 
 \noindent
-\texttt{icom(i)} produces the bitwise complement (one{\textquotesingle}s
+\texttt{icom(i)} produces the bitwise complement (one's
 complement) of \texttt{i}.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2087,12 +2080,12 @@ field names of record R.
 
 \noindent
 \index{keyword()}\texttt{keyword(s,ce,i)} produces the value of keyword
-\texttt{s} in the context of \texttt{ce}{\textquotesingle}s execution,
+\texttt{s} in the context of \texttt{ce}'s execution,
 \texttt{i} levels up in the stack from the current point of execution.
 Used in execution monitors.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf left(s, i:1, s:{\textquotedbl} {\textquotedbl}) :
+\noindent {\bf left(s, i:1, s:" ") :
 string \hfill left format string}
 
 \noindent
@@ -2119,10 +2112,10 @@ co-expression \hfill load Unicon program}
 \index{load!Unicon
 program}\index{load()}\texttt{load(s,arglist,input,output,error,blocksize,stringsize,stacksize)}
 loads the icode file named \texttt{s} and returns that
-program{\textquotesingle}s execution as a co-expression ready to start
+program's execution as a co-expression ready to start
 its \texttt{main()} procedure with parameter \texttt{arglist} as its
 command line arguments. The three file parameters are used as that
-program{\textquotesingle}s \texttt{\&input}, \texttt{\&output}, and
+program's \texttt{\&input}, \texttt{\&output}, and
 \texttt{\&errout}. The three integers are used as its initial memory
 region sizes.
 
@@ -2174,7 +2167,7 @@ members of \texttt{c} within \texttt{s[i1:i2]}.
 \index{map string}\texttt{map(s1,s2,s3)} maps \texttt{s1}, using
 \texttt{s2} and \texttt{s3}. The resulting string will be a copy of
 \texttt{s1}, with the exception that any of
-\texttt{s1}{\textquotesingle}s characters that appear in \texttt{s2}
+\texttt{s1}'s characters that appear in \texttt{s2}
 are replaced by characters at the same position in \texttt{s3}.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2199,7 +2192,7 @@ arguments, which must be numeric.
 \noindent
 \index{member()}\texttt{member(x, ...)} returns \texttt{x} if its second
 and subsequent arguments are all members of set, cset, list or table
-\texttt{x} but fails otherwise. \ If \texttt{x} is a cset, all of the
+\texttt{x} but fails otherwise. If \texttt{x} is a cset, all of the
 characters in subsequent string arguments must be present in \texttt{x}
 in order to succeed.
 
@@ -2285,7 +2278,7 @@ number resulting from the type conversion of \texttt{x}, but fails if
 the conversion is not possible.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf open(s, s:{\textquotedbl}rt{\textquotedbl}, ...) :
+\noindent {\bf open(s, s:"rt", ...) :
 file? \hfill open file}
 
 \noindent
@@ -2293,41 +2286,41 @@ file? \hfill open file}
 \texttt{s1} with mode \texttt{s2} and attributes given in trailing
 arguments. The modes recognized by \texttt{open()} are: 
 
-\ \ \ \ \ \texttt{{\textquotedbl}a{\textquotedbl}\ \ \ \ }append; write
+\ \ \ \ \ \texttt{"a"\ \ \ \ }append; write
 after current contents\\
- \ \ \ \ \texttt{{\textquotedbl}b{\textquotedbl}\ \ \ \ }open for both
+ \ \ \ \ \texttt{"b"\ \ \ \ }open for both
 reading and writing (b does not mean binary mode!)\\
- \ \ \ \ \texttt{{\textquotedbl}c{\textquotedbl}\ \ \ \ }create a new
+ \ \ \ \ \texttt{"c"\ \ \ \ }create a new
 file and open it\\
- \ \ \ \ \texttt{{\textquotedbl}d{\textquotedbl}\ \ \ \ }open a
+ \ \ \ \ \texttt{"d"\ \ \ \ }open a
 [NG]\index{DBM}DBM database\\
- \ \ \ \ \texttt{{\textquotedbl}g{\textquotedbl}\ \ \ \ }create a 2D
+ \ \ \ \ \texttt{"g"\ \ \ \ }create a 2D
 graphics window\\
- \ \ \ \ \texttt{{\textquotedbl}gl{\textquotedbl}\ \ \ \ }create a 3D
+ \ \ \ \ \texttt{"gl"\ \ \ \ }create a 3D
 graphics window\\
- \ \ \ \ \texttt{{\textquotedbl}n{\textquotedbl}\ \ \ \ }connect to a
+ \ \ \ \ \texttt{"n"\ \ \ \ }connect to a
 remote TCP network socket\\
- \ \ \ \ \texttt{{\textquotedbl}na{\textquotedbl}\ \ \ \ }accept a
+ \ \ \ \ \texttt{"na"\ \ \ \ }accept a
 connection from a TCP network socket \\
- \ \ \ \ \texttt{{\textquotedbl}nau{\textquotedbl}\ \ }accept a
+ \ \ \ \ \texttt{"nau"\ \ }accept a
 connection from a UDP network socket\\
- \ \ \ \ \texttt{{\textquotedbl}nl{\textquotedbl}\ \ \ \ }listen on a
+ \ \ \ \ \texttt{"nl"\ \ \ \ }listen on a
 TCP network socket \\
- \ \ \ \ \texttt{{\textquotedbl}nu{\textquotedbl}\ \ \ \ }connect to a
+ \ \ \ \ \texttt{"nu"\ \ \ \ }connect to a
 UDP network socket\\
- \ \ \ \ \texttt{{\textquotedbl}m{\textquotedbl}\ \ \ \ }connect to a
+ \ \ \ \ \texttt{"m"\ \ \ \ }connect to a
 messaging server (HTTP, SMTP, POP, ...)\\
- \ \ \ \ \texttt{{\textquotedbl}o{\textquotedbl}\ \ \ \ }open an
+ \ \ \ \ \texttt{"o"\ \ \ \ }open an
 \index{ODBC}ODBC connection to a (typically \index{SQL}SQL)
 database\\
- \ \ \ \ \texttt{{\textquotedbl}p{\textquotedbl}\ \ \ \ }execute a
+ \ \ \ \ \texttt{"p"\ \ \ \ }execute a
 program given by command line s1 and open a pipe to it\\
- \ \ \ \ \texttt{{\textquotedbl}r{\textquotedbl}\ \ \ \ }read\\
- \ \ \ \ \texttt{{\textquotedbl}t{\textquotedbl}\ \ \ \ }use text mode,
+ \ \ \ \ \texttt{"r"\ \ \ \ }read\\
+ \ \ \ \ \texttt{"t"\ \ \ \ }use text mode,
 with newlines translated\\
- \ \ \ \ \texttt{{\textquotedbl}u{\textquotedbl}\ \ \ \ }use a binary
+ \ \ \ \ \texttt{"u"\ \ \ \ }use a binary
 untranslated mode\\
- \ \ \ \ \texttt{{\textquotedbl}w{\textquotedbl}\ \ \ \ }write
+ \ \ \ \ \texttt{"w"\ \ \ \ }write
 
 Directories may only be opened for reading, and produce the names of all
 files, one per line. Pipes may be opened for reading or writing, but
@@ -2335,7 +2328,7 @@ not both.
 
 When opening a network socket: the first argument \texttt{s1} is the
 name of the socket to connect. If \texttt{s1} is of the form
-{\textquotedbl}s:i{\textquotedbl}, it is an Internet domain socket on
+"s:i", it is an Internet domain socket on
 host s and port i; otherwise, it is the name of a Unix
 domain socket. If the host name is null, it represents the current
 host. Mode "n" allows an optional third parameter,
@@ -2344,25 +2337,25 @@ if no connection has been established by that time.
 
 For a UDP socket, there is not really a connection, but any writes to
 that file will send a datagram to that address, so that the address
-doesn{\textquotesingle}t have to be specified each time. Also,
+doesn't have to be specified each time. Also,
 \texttt{read()} or \texttt{reads()} cannot be performed on a UDP
 socket; use receive. UDP sockets must be in the INET domain; the
 address must have a colon. 
 
 For a DBM database, only one modifier character may be used: if
-\texttt{s1} is \texttt{{\textquotedbl}dr{\textquotedbl}} it indicates
+\texttt{s1} is \texttt{"dr"} it indicates
 that the database should be opened in read-only mode. 
 
 The filename argument is a Uniform Resource Indicator (URI) when opening
 a messaging connection. Arguments after the mode
-{\textquotedbl}m{\textquotedbl} are sent as headers. The HTTP
-User-Agent header defaults to {\textquotedbl}Unicon
-Messaging/10.0{\textquotedbl} and Host defaults to the host and port
+"m" are sent as headers. The HTTP
+User-Agent header defaults to "Unicon
+Messaging/10.0" and Host defaults to the host and port
 indicated in the URI. The SMTP From: header obtains its default from a
 UNICON\_USERADDRESS environment variable if it is present.
 
 For 2D and 3D windows, attribute values may be specified in the
-following arguments to \texttt{open()}. \ \texttt{open()} fails if a
+following arguments to \texttt{open()}. \texttt{open()} fails if a
 window cannot be opened or an attribute cannot be set to a requested
 value.
 
@@ -2370,10 +2363,10 @@ value.
 \noindent {\bf opmask(CE, c) : cset \hfill opcode mask}
 
 \noindent
-\texttt{opmask(ce)} gets \texttt{ce}{\textquotesingle}s
-program{\textquotesingle}s opcode mask. The function returns
+\texttt{opmask(ce)} gets \texttt{ce}'s
+program's opcode mask. The function returns
 \texttt{\&null} if there is no opcode mask. \texttt{opmask(ce,cs)} sets
-\texttt{ce}{\textquotesingle}s program{\textquotesingle}s opcode mask
+\texttt{ce}'s program's opcode mask
 to \texttt{cs}. This function is part of the execution monitoring
 facilities.
 
@@ -2382,7 +2375,7 @@ facilities.
 
 \noindent
 \texttt{oprec(r)} produces a variable reference for
-\texttt{r}{\textquotesingle}s class{\textquotesingle} methods vector.
+\texttt{r}'s class' methods vector.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ord(s) : integer \hfill ordinal value}
@@ -2403,7 +2396,7 @@ current activation in \texttt{ce}.
 \noindent {\bf parent(CE) : co{}-expression \hfill parent program}
 
 \noindent
-\texttt{parent(ce)} returns \texttt{\&main} for ce{\textquotesingle}s
+\texttt{parent(ce)} returns \texttt{\&main} for ce's
 parent program. This is interesting only when programs are dynamically
 loaded using the \texttt{load()} function.
 
@@ -2437,14 +2430,14 @@ position \texttt{i} in \texttt{\&subject}.
 \noindent
 \index{proc(s,i)}\texttt{proc(s,i)} converts \texttt{s} to a procedure
 if that is possible. Parameter \texttt{i} is used to resolve ambiguous
-string names; it must be either 0, 1, 2, or 3. \ If \texttt{i} is 0, a
+string names; it must be either 0, 1, 2, or 3. If \texttt{i} is 0, a
 built-in function is returned if it is available, even if the global
 identifier by that name has been assigned differently. If \texttt{i} is
 1, 2, or 3, the procedure for an operator with that number of operands
 is produced. For example,
-\texttt{proc({\textquotedbl}-{\textquotedbl},2)} produces the procedure
+\texttt{proc("-",2)} produces the procedure
 for subtraction, while
-\ \ \texttt{proc({\textquotedbl}-{\textquotedbl})} produces the
+\ \ \texttt{proc("-")} produces the
 procedure for unary negation. \texttt{proc(C,i)} returns the procedure
 activated \texttt{i} levels up with \texttt{C}. \texttt{proc(p, i, C)}
 returns procedure \texttt{p} if it belongs to the program which created
@@ -2550,7 +2543,7 @@ file named \texttt{s}.
 reverse of string or list \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf right(s, i:1, s:{\textquotedbl} {\textquotedbl}) :
+\noindent {\bf right(s, i:1, s:" ") :
 string \hfill right format string}
 
 \noindent
@@ -2686,9 +2679,9 @@ of \texttt{i}, and by table element values for even-values of
 \noindent
 \index{sort by field}\texttt{sortf(x,i)} sorts a list, record, or set
 \texttt{x} using field \texttt{i} of each element that has one.
-Elements that don{\textquotesingle}t have an
-\texttt{i}{\textquotesingle}th field are sorted in standard order and
-come before those that do have an \texttt{i}{\textquotesingle}th field.
+Elements that don't have an
+\texttt{i}'th field are sorted in standard order and
+come before those that do have an \texttt{i}'th field.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf spawn(CE, i, i) : thread \hfill launch asynchronous thread}
@@ -2723,7 +2716,7 @@ arbitrary state and should be used with care.
 \noindent
 \index{file!information}\index{stat(f)}\texttt{stat(f)} returns a record
 with information about the file \texttt{f} which may be a path or a
-file object. The return value is of \ type: \texttt{record
+file object. The return value is of type: \texttt{record
 posix\_stat(dev, ino, mode, nlink, uid, gid, rdev, size, atime, mtime,
 ctime, blksize, blocks, symlink)}. Many of these fields are POSIX
 specific, but a number are supported across platforms, such as the
@@ -2735,7 +2728,7 @@ The \texttt{atime}, \texttt{mtime}, and \texttt{ctime} fields are
 integers that may be formatted with the \texttt{ctime()} and
 \texttt{mtime()} functions. The mode is a string similar to the long
 listing option of the UNIX \texttt{ls(1)} command. For example,
-\texttt{{\textquotedbl}-rwxrwsr-x{\textquotedbl}} represents a plain
+\texttt{"-rwxrwsr-x"} represents a plain
 file with a mode of 2775 (octal). \texttt{stat(f)} fails if filename or
 path \texttt{f} does not exist.
 
@@ -2776,16 +2769,16 @@ execute system command}
 execution of a program in a separate process. \texttt{x} can be either
 a string or a list of strings. In the former case, whitespace is used
 to separate the arguments and the command is processed by the
-platform{\textquotesingle}s command interpreter. In the second case,
+platform's command interpreter. In the second case,
 each member of the list is an argument and the second and subsequent
 list elements are passed unmodified to the program named in the first
 element of the list.
 
 The three file arguments are files that will be used for the new
-process{\textquotesingle} standard input, standard output and standard
+process' standard input, standard output and standard
 error. The return value is the exit status from the process. If the
 \texttt{waitflag} argument is
-\texttt{{\textquotedbl}nowait{\textquotedbl}}, \texttt{system()}
+\texttt{"nowait"}, \texttt{system()}
 returns immediately after spasyswning the new process, and the return
 value is then the process id of the new process.
 
@@ -2837,7 +2830,7 @@ Caveat: This is not supported by the optimizing
 \index{compiler}compiler, iconc!
 
 \bigskip\hrule\vspace{0.1cm}
-\noindent {\bf trim(s, c:{\textquotesingle} {\textquotesingle}, i:{}-1) :
+\noindent {\bf trim(s, c:' ', i:{}-1) :
 string \hfill trim string}
 
 \noindent
@@ -2945,22 +2938,21 @@ argument is written to the nearest preceding file argument, defaulting
 to \texttt{\&output}. \index{writes()}\texttt{writes()} returns its
 last argument.
 
-\subsubsection{Graphics Functions}
+\subsection{Graphics functions}
 
-The names of built-in graphics functions begin with upper case. The
-built-in graphics functions are listed here. These functions are more
-thoroughly described in [Griswold98]. Extensive procedure and class
-libraries for graphics are described in [Griswold98] and in Appendix B.
-In 2D, arguments named \texttt{x} and \texttt{y} are pixel locations in
-zero-based integer coordinates. \ In 3D windows coordinates are given
-using real numbers, and functions by default take three coordinates
-(\texttt{x,y,z}) per vertex. Attribute \texttt{dim} can be set to 2 or
-4, changing most 3D functions to take vertices in a (\texttt{x,y}) or
-(\texttt{x,y,z,w}) format. Arguments named \texttt{row} and
-\texttt{col} are cursor locations in one-based integer text
-coordinates. Most functions{\textquotesingle} first parameter named
-\texttt{w} defaults to \texttt{\&window} and the window argument can be
-omitted in the default case.
+The names of built-in graphics functions begin with upper case. The built-in
+graphics functions are listed here. These functions are more thoroughly
+described in [Griswold98]. Extensive procedure and class libraries for graphics
+are described in [Griswold98] and in Appendix B.  In 2D, arguments named
+\texttt{x} and \texttt{y} are pixel locations in zero-based integer
+coordinates. In 3D windows coordinates are given using real numbers, and
+functions by default take three coordinates (\texttt{x,y,z}) per
+vertex. Attribute \texttt{dim} can be set to 2 or 4, changing most 3D functions
+to take vertices in a (\texttt{x,y}) or (\texttt{x,y,z,w}) format. Arguments
+named \texttt{row} and \texttt{col} are cursor locations in one-based integer
+text coordinates. Most functions' first parameter named
+\texttt{w} defaults to \texttt{\&window} and the window argument can be omitted
+in the default case.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Active() : window \hfill produce active window}
@@ -2968,9 +2960,9 @@ omitted in the default case.
 \noindent
 \texttt{Active()} returns a window that has one or more events pending.
 If no window has an event pending, \texttt{Active()} blocks and waits
-for an event to occur. \ \texttt{Active()} starts with a different
+for an event to occur. \texttt{Active()} starts with a different
 window on each call in order to avoid window
-{\textquotedbl}starvation{\textquotedbl}. \ \texttt{Active()} fails if
+"starvation". \texttt{Active()} fails if
 no windows are open.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2994,8 +2986,8 @@ fails if the background cannot be set to the requested color.
 
 \noindent
 \texttt{Clip(w,x,y,width,height)} clips output to a rectangular area
-within the window. \ If \texttt{width} is 0, the clip region extends
-from \texttt{x} to the right side of the window. \ If \texttt{height}
+within the window. If \texttt{width} is 0, the clip region extends
+from \texttt{x} to the right side of the window. If \texttt{height}
 is 0, the clip region extends from \texttt{y} to the bottom of the
 window.
 
@@ -3005,7 +2997,7 @@ window.
 \noindent
 \texttt{Clone(w)} produces a new window binding in which a new graphics
 context is copied from \texttt{w} and bound to
-\texttt{w}{\textquotesingle}s canvas. Additional string arguments
+\texttt{w}'s canvas. Additional string arguments
 specify attributes of the new binding, as in \texttt{WAttrib()}. If the
 first string argument is
 \texttt{{\textquotedblleft}g{\textquotedblright}} or
@@ -3029,7 +3021,7 @@ identified by \texttt{i[j]} to the corresponding colors \texttt{s[j]}.
 \noindent
 \texttt{ColorValue(w,s)} converts the string color \texttt{s} into a
 string with three comma-separated 16-bit integer values denoting the
-color{\textquotesingle}s RGB components. \texttt{ColorValue()} fails if
+color's RGB components. \texttt{ColorValue()} fails if
 string \texttt{s} is not a valid name or recognized decimal or hex
 encoding of a color.
 
@@ -3041,7 +3033,7 @@ window \hfill copy area}
 \texttt{CopyArea(w1,w2,x,y,width,height,x2,y2)} copies a rectangular
 region within \texttt{w1} defined by
 \texttt{x},\texttt{y},\texttt{width},\texttt{height} to window
-\texttt{w2} at offset \texttt{x2},\texttt{y2}. \ \texttt{CopyArea()}
+\texttt{w2} at offset \texttt{x2},\texttt{y2}. \texttt{CopyArea()}
 returns \texttt{w1}. \texttt{\&window} is not a default for this
 function. The default copies all of \texttt{w1}.
 
@@ -3059,13 +3051,13 @@ associated with \texttt{w1} to the graphics context associated with
 
 \noindent
 \texttt{DrawArc(w,x,y,width,height,a1,a2,...)} draws arcs or ellipses.
-\ Each is defined by six integer coordinates. \ \texttt{x}, \texttt{y},
+\ Each is defined by six integer coordinates. \texttt{x}, \texttt{y},
 \texttt{width} and \texttt{height} define a bounding rectangle around
 the arc; the center of the arc is the point
 \texttt{(x+(width)/2,y+(height)/2)}. Angles are specified in radians.
 \ Angle \texttt{a1} is the starting position of the arc, where 0.0 is
-the 3 o{\textquotesingle}clock position and the positive direction is
-counter-clockwise. \ Angle \texttt{a2} is not the end position, but
+the 3 o'clock position and the positive direction is
+counter-clockwise. Angle \texttt{a2} is not the end position, but
 rather specifies the direction and extent of the arc.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3081,7 +3073,7 @@ with \texttt{width=height}.
 \noindent {\bf DrawCube(w, x, y, z, len ...) : record \hfill draw cube}
 
 \noindent
-\texttt{DrawCube(w, x, y, z, len{\dots}) \ }draws a cube with sides of
+\texttt{DrawCube(w, x, y, z, len{\dots})} draws a cube with sides of
 length \texttt{len} at the position (\texttt{x}, \texttt{y},
 \texttt{z}) on the 3D window \texttt{w}. The display list element is
 returned. This procedure fails if the context attribute \texttt{dim} is
@@ -3092,7 +3084,7 @@ set to 2.
 
 \noindent
 \texttt{DrawCurve(w,x1,y1,...,xn,yn)} draws a smooth curve connecting
-each \texttt{x,y} pair in the argument list. \ \ If the first and last
+each \texttt{x,y} pair in the argument list. If the first and last
 point are the same, the curve is smooth and closed through that point.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3100,9 +3092,9 @@ point are the same, the curve is smooth and closed through that point.
 {\bf DrawCylinder(w, x, y, z, h, r1, r2, ...) : record \hfill draw cylinder}
 
 \noindent
-\texttt{DrawCylinder(w, x, y, z, h, r1, r2, {\dots})} \ draws a cylinder
+\texttt{DrawCylinder(w, x, y, z, h, r1, r2, {\dots})} draws a cylinder
 with a top of radius \texttt{r1}, a bottom with radius \texttt{r2}, and
-a height \texttt{h} on 3D window \texttt{w}. \ The disk is centered at
+a height \texttt{h} on 3D window \texttt{w}. The disk is centered at
 the point (\texttt{x}, \texttt{y}, \texttt{z}). The display list
 element is returned. This procedure fails if the context attribute
 \texttt{dim} is set to 2.
@@ -3179,7 +3171,7 @@ represents the segments on the display list for refresh purposes.
 \noindent {\bf DrawSphere(w, x, y, z, r, ...) : record \hfill draw sphere}
 
 \noindent
-\texttt{DrawSphere(w, x, y, z, r,{\dots})} \ draws a sphere with radius
+\texttt{DrawSphere(w, x, y, z, r,{\dots})} draws a sphere with radius
 r centered at (x, y, z) on 3D window w. The display list element is
 returned. This procedure fails if the context attribute \texttt{dim} is
 set to 2.
@@ -3189,9 +3181,9 @@ set to 2.
 
 \noindent
 \texttt{DrawString(w,x,y,s)} draws text \texttt{s} at coordinates (x,
-y). \ This function does not draw any background; only the
-characters{\textquotesingle} actual pixels are drawn. It is possible to
-use \texttt{{\textquotedbl}drawop=reverse{\textquotedbl}} with this
+y). This function does not draw any background; only the
+characters' actual pixels are drawn. It is possible to
+use \texttt{"drawop=reverse"} with this
 function to draw erasable text. \texttt{DrawString()} does not affect
 the text cursor position. Newlines present in \texttt{s} cause
 subsequent characters to be drawn starting at (\texttt{x, current\_y +
@@ -3205,7 +3197,7 @@ binding.
 record \hfill draw torus}
 
 \noindent
-\texttt{DrawTorus(w, x, y, z, r1, r2,{\dots})} \ draws a torus with
+\texttt{DrawTorus(w, x, y, z, r1, r2,{\dots})} draws a torus with
 inner radius \texttt{r1}, outside radius \texttt{r2}, and centered at
 (\texttt{x,y,z}) on 3D window \texttt{w}. The display list element is
 returned. This procedure fails if the context attribute \texttt{dim} is
@@ -3217,9 +3209,9 @@ erase rectangular area}
 
 \noindent
 \texttt{EraseArea(w,x,y,width,height,...)} erases rectangular areas
-within the window to the background color. \ If \texttt{width} is 0,
+within the window to the background color. If \texttt{width} is 0,
 the region cleared extends from \texttt{x} to the right side of the
-window. \ If \texttt{height} is 0, the region erased extends from
+window. If \texttt{height} is 0, the region erased extends from
 \texttt{y} to the bottom of the window. In 3D, \texttt{EraseArea(W)}
 clears the contents of the entire window.
 
@@ -3232,7 +3224,7 @@ clears the contents of the entire window.
 \texttt{Event(w, i)} retrieves the next event available for window
 \texttt{w}. If no events are available, \texttt{Event()} waits for
 \texttt{i} milliseconds. Keystrokes are encoded as strings, while mouse
-events are encoded as integers. \ The retrieval of an event is
+events are encoded as integers. The retrieval of an event is
 accompanied by assignments to the keywords \texttt{\&x}, \texttt{\&y},
 \texttt{\&row}, \texttt{\&col}, \texttt{\&interval},
 \texttt{\&control}, \texttt{\&shift}, \texttt{\&meta}, and if 3D
@@ -3266,7 +3258,7 @@ draw filled arc}
 
 \noindent
 \texttt{FillArc(w,x,y,width,height,a1,a2,...)} draws filled arcs,
-ellipses, and/or circles. \ Coordinates are as in \texttt{DrawArc()}.
+ellipses, and/or circles. Coordinates are as in \texttt{DrawArc()}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf FillCircle(w, x, y, radius, a1, a2, ...) : window \hfill
@@ -3281,7 +3273,7 @@ draw filled circle}
 {\bf FillPolygon(w, x1, y1, [z1,] ...) : window \hfill draw filled polygon}
 
 \noindent
-\texttt{FillPolygon(w,x1,y1,...,xn,yn)} draws a filled polygon. \ The
+\texttt{FillPolygon(w,x1,y1,...,xn,yn)} draws a filled polygon. The
 beginning and ending points are connected if they are not the same. In
 3D\texttt{, FillPolygon()} takes from 2-4 coordinates per vertex and
 returns the list that represents the polygon on the display list for
@@ -3299,14 +3291,14 @@ window \hfill draw filled rectangle}
 
 \noindent
 \texttt{Font(w)} produces the name of the current font.
-\texttt{Font(w,s)} sets the window context{\textquotesingle}s font to
+\texttt{Font(w,s)} sets the window context's font to
 \texttt{s} and produces its name or fails if the font name is invalid.
 \ The valid font names are largely system-dependent but follow the
 format \texttt{family[,styles],size}, where styles optionally add bold
 or italic or both. Four font names are portable: \texttt{serif} (Times
 or similar), \texttt{sans} (Helvetica or similar), \texttt{mono} (a
 mono spaced sans serif font) and \texttt{typewriter} (Courier or
-similar). \ \texttt{Font()} fails if the requested font name does not
+similar). \texttt{Font()} fails if the requested font name does not
 exist.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3314,8 +3306,8 @@ exist.
 
 \noindent
 \texttt{FreeColor(w,s1,...,sn)} allows the window system to re-use the
-corresponding color map entries. \ Whether this call has an effect is
-dependent upon the particular implementation. \ If a freed color is
+corresponding color map entries. Whether this call has an effect is
+dependent upon the particular implementation. If a freed color is
 still in use at the time it is freed, unpredictable results will occur.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3324,9 +3316,9 @@ still in use at the time it is freed, unpredictable results will occur.
 \noindent
 \texttt{GotoRC(w,row,col)} moves the text cursor to a particular row and
 column, given in numbers of characters; the upper-left corner is
-coordinate (1,1). \ The column calculation used by \texttt{GotoRC()}
+coordinate (1,1). The column calculation used by \texttt{GotoRC()}
 assigns to each column the pixel width of the widest character in the
-current font. \ If the current font is of fixed width, this yields the
+current font. If the current font is of fixed width, this yields the
 usual interpretation.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3375,7 +3367,7 @@ values L.
 \noindent
 \texttt{NewColor(w,s)} allocates an entry in the color map and returns a
 small negative integer for this entry, usable in calls to routines that
-take a color specification, such as \texttt{Fg()}. \ If \texttt{s} is
+take a color specification, such as \texttt{Fg()}. If \texttt{s} is
 specified, the entry is initialized to the given color.
 \texttt{NewColor()} fails if it cannot allocate an entry.
 
@@ -3410,11 +3402,11 @@ in palette \texttt{p}.
 
 \noindent
 \texttt{Pattern(w,s)} selects stipple pattern \texttt{s} for use during
-draw and fill operations. \ \texttt{s} may be either the name of a
+draw and fill operations. \texttt{s} may be either the name of a
 system-dependent pattern or a literal of the form
-\textit{width},\textit{bits}. \ Patterns are only used when the
+\textit{width},\textit{bits}. Patterns are only used when the
 \texttt{fillstyle} attribute is \texttt{stippled} or
-\texttt{opaquestippled}. \ \texttt{Pattern()} fails if a named pattern
+\texttt{opaquestippled}. \texttt{Pattern()} fails if a named pattern
 is not defined. An error occurs if \texttt{Pattern()} is given a
 malformed literal.
 
@@ -3423,9 +3415,9 @@ malformed literal.
 
 \noindent
 \texttt{Pending(w)} produces the list of events waiting to be read from
-window \texttt{w}. \ If no events are available, the list is empty (its
-size is 0). \ \texttt{Pending(w,x1,...,xn)} adds \texttt{x1} through
-\texttt{xn} to the end of \texttt{w}{\textquotesingle}s pending list in
+window \texttt{w}. If no events are available, the list is empty (its
+size is 0). \texttt{Pending(w,x1,...,xn)} adds \texttt{x1} through
+\texttt{xn} to the end of \texttt{w}'s pending list in
 guaranteed consecutive order.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3434,7 +3426,7 @@ generate window pixels}
 
 \noindent
 \texttt{Pixel(w,x,y,width,height)} generates pixel contents from a
-rectangular area within window \texttt{w}. \ \texttt{width * height}
+rectangular area within window \texttt{w}. \texttt{width * height}
 results are generated starting from the upper-left corner and advancing
 down to the bottom of each column before the next one is visited.
 \ Pixels are returned in integer values; ordinary colors are encoded
@@ -3453,7 +3445,7 @@ extends beyond the canvas.
 \texttt{PopMatrix(w)} pops the top matrix from either the projection or
 modelview matrix stack on 3D window \texttt{w}, depending on the
 current matrix mode\texttt{.} This procedure fails if there is only one
-matrix on the matrix stack. \ The display list element is returned. 
+matrix on the matrix stack. The display list element is returned. 
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf PushMatrix(w) : record \hfill push the matrix stack}
@@ -3495,7 +3487,7 @@ by }Translate()\textrm{.}}
 
 \noindent
 \texttt{QueryPointer(w)} generates the \texttt{x} and \texttt{y}
-coordinates of the mouse relative to window \texttt{w}. \ If \texttt{w}
+coordinates of the mouse relative to window \texttt{w}. If \texttt{w}
 is omitted, \texttt{QueryPointer()} generates the coordinates relative
 to the upper-left corner of the entire screen.
 
@@ -3534,7 +3526,7 @@ used mainly when objects have been moved in a 3D scene. The window
 \noindent
 \texttt{Rotate(w, a, x, y, z,{\dots})} rotates subsequent objects drawn
 on 3D window \texttt{w} by angle \texttt{a} degrees, in the direction
-(\texttt{x,y,z}). \ The display list element is returned.
+(\texttt{x,y,z}). The display list element is returned.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf Scale(w, x, y, z) : record \hfill\ scale
@@ -3562,7 +3554,7 @@ x}\texttt{\textsubscript{n}}\texttt{, y}\texttt{\textsubscript{n}} in
 in the list \texttt{L}. \texttt{Texcoord(W, s) }sets the texture
 coordinates to those specified by \texttt{s}. The string \texttt{s}
 must be \texttt{{\textquotedblleft}auto{\textquotedblright}} otherwise
-the procedure will fail. \ In all cases the display list element is
+the procedure will fail. In all cases the display list element is
 returned.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -3613,7 +3605,7 @@ attributes. If called with exactly one attribute, integers are produced
 for integer-value attributes; all other values are represented by
 strings. If called with more than one attribute argument,
 \texttt{WAttrib()} produces one string result per argument, prefixing
-each value by the attribute name and an equals sign (=). \ If
+each value by the attribute name and an equals sign (=). If
 \texttt{xi} is a window, subsequent attributes apply to \texttt{xi}.
 \ \texttt{WAttrib()} fails if an attempt is made to set the attribute
 \texttt{font}, \texttt{fg}, \texttt{bg}, or \texttt{pattern} to a value
@@ -3637,8 +3629,8 @@ option is available.
 
 \noindent
 \texttt{WFlush(w)} flushes window output on window systems that buffer
-text and graphics output. \ Window output is automatically flushed
-whenever the program blocks on window input. \ When this behavior is
+text and graphics output. Window output is automatically flushed
+whenever the program blocks on window input. When this behavior is
 not adequate, a call to \texttt{WFlush()} sends all window output
 immediately, but does not wait for all commands to be received and
 acted upon. \texttt{WFlush()} is a no-op on window systems that do not
@@ -3660,7 +3652,7 @@ parameters of the function, or an attribute followed by its value.
 \noindent
 \texttt{WriteImage(w,s,x,y,width,height)} saves an image of dimensions
 width, height from window w at offset \texttt{x,y} to a file named
-\texttt{s}. \ \ The default is to write the entire window. \ The file
+\texttt{s}. The default is to write the entire window. The file
 is written according to the filename extension, in either GIF, JPG,
 BMP, PNG, or a platform specific format such as XBM or XPM.
 \ \texttt{WriteImage()} fails if \texttt{s} cannot be opened for
@@ -3672,7 +3664,7 @@ writing.
 \noindent
 \texttt{WSection(w,s)} starts a new window section named \texttt{s} on
 3D window \texttt{w} and returns a display list section marker record.
-During window refreshes if the section marker{\textquotesingle}s
+During window refreshes if the section marker's
 \texttt{skip} field is 1, the section is skipped. The section name
 \texttt{s} is produced by \texttt{\&pick} if a primitive in the block
 is clicked on while attribute
@@ -3686,21 +3678,20 @@ is clicked on while attribute
 \noindent
 \texttt{WSync(w,s)} synchronizes the program with the server attached to
 window \texttt{w} on those window systems that employ a client-server
-model. \ Output to the window is flushed, and \texttt{WSync()} waits
+model. Output to the window is flushed, and \texttt{WSync()} waits
 for a reply from the server indicating all output has been processed.
-\ If \texttt{s} is \texttt{{\textquotedbl}yes{\textquotedbl}}, all
+\ If \texttt{s} is \texttt{"yes"}, all
 events pending on \texttt{w} are discarded. \texttt{WSync()} is a no-op
 on window systems that do not use a client-server model.
 
-\subsection{Preprocessor}
+\section{Preprocessor}
 
-Unicon features a simple \index{preprocessor}preprocessor \ that
-supports file inclusion and symbolic constants. It is a subset of the
-capabilities found in the C preprocessor, and is used primarily to
-support platform-specific code sections and large collections of
-symbols.
+Unicon features a simple \index{preprocessor}preprocessor that supports file
+inclusion and symbolic constants. It is a subset of the capabilities found in
+the C preprocessor, and is used primarily to support platform-specific code
+sections and large collections of symbols.
 
-\subsubsection{Preprocessor Commands}
+\subsection{Preprocessor commands}
 
 Preprocessor directives are lines beginning with a dollar sign. The
 available preprocessor commands are:
@@ -3778,7 +3769,7 @@ were missing certain bracket characters.
 These character combinations are substitutes for curly and square
 brackets on keyboards that do not have these characters.
 
-\subsubsection{Predefined Symbols}
+\subsection{Predefined symbols}
 
 \index{predefined symbols}Predefined symbols are provided for each
 platform and each feature that is optionally compiled in on some
@@ -3824,7 +3815,7 @@ Preprocessor Symbol\ \ \ \ Feature}
 \_ARM\_FUNCTIONS\ \ \ \ Archimedes extensions\\
 \_DOS\_FUNCTIONS\ \ \ \ \ \ MS-DOS extensions
 
-\subsection{Execution Errors}
+\section{Execution Errors}
 
 There are two kinds of errors that can occur during the execution of an
 Icon program: runtime errors and system errors. Runtime errors occur
@@ -3833,7 +3824,7 @@ that cannot perform as instructed. System errors occur when an
 operating system call \index{fail!system call}fails to perform a
 required service.
 
-\subsubsection{Runtime Errors}
+\subsection{Runtime errors}
 
 By default, a \index{runtime error}runtime error causes program
 execution to abort. Runtime errors are reported by name as well as by
@@ -3933,23 +3924,21 @@ length\\
 500 \ \ \ \ \ \ \ program malfunction\\
 600 \ \ \ \ \ \ \ vidget usage error
 
-\subsubsection{System Errors}
+\subsection{System errors}
 
 If an error occurs during the execution of a \index{error!system}system
-function, by default the function fails and keywords \&errornumber,
-\&errortext and \&errorvalue will be set. This contrasts with runtime
-errors, which terminate execution by default. Whereas runtime errors
-can be converted to failure by setting \&error, system errors can be
-converted to a runtime error by setting keyword \&syserr to a non-null
-value.
+function, by default the function fails and keywords \&errornumber, \&errortext
+and \&errorvalue will be set. This contrasts with runtime errors, which
+terminate execution by default. Whereas runtime errors can be converted to
+failure by setting \&error, system errors can be converted to a runtime error by
+setting keyword \&syserr to a non-null value.
 
-The complete set of \index{system error}system errors is by definition
-platform specific. Error numbers above the value 1000 are used for
-system errors. Many of the POSIX standard system errors are supported
-across platforms, and error numbers between 1001 and 1040 are reserved
-for the system errors listed below. Platforms may report other system
-error codes so long as they do not conflict with existing runtime or
-system error codes.
+The complete set of \index{system error}system errors is by definition platform
+specific. Error numbers above the value 1000 are used for system errors. Many of
+the POSIX standard system errors are supported across platforms, and error
+numbers between 1001 and 1040 are reserved for the system errors listed
+below. Platforms may report other system error codes so long as they do not
+conflict with existing runtime or system error codes.
 
 1001 \ \ \ \ \ Operation not permitted\\
 1002 \ \ \ \ \ No such file or directory\\

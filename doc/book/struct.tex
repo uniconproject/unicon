@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 2: Structures}
+\chapter{Structures}
 
 The examples in the previous chapter employed data types whose values
 are \textit{immutable}. For example, all operations that manipulate
@@ -6,25 +6,23 @@ numbers and strings compute new values, rather than modify existing
 values. This chapter presents structured types that organize and store
 collections of arbitrary (and possibly mixed) types of values. When you
 complete this chapter, you will understand how to use these types.
-
-
 \begin{itemize}
-\item Tables associate their elements with key values for rapid lookup.
-\item Lists offer efficient access by position as well as by
-\index{stack}stack or \index{queue}queue operations.
-\item Records store values using a fixed number of named fields.
-\item Sets support operations such as union and intersection on groups
-of elements.
-\item Using structures to represent \index{tree}trees, graphs, and
-matrices.
+  \item Tables associate their elements with key values for rapid lookup.
+  \item Lists offer efficient access by position as well as by
+    \index{stack}stack or \index{queue}queue operations.
+  \item Records store values using a fixed number of named fields.
+  \item Sets support operations such as union and intersection on groups
+    of elements.
+  \item Using structures to represent \index{tree}trees, graphs, and
+    matrices.
 \end{itemize}
 There are several structure types that describe different basic
 relationships between values. The philosophy of structures in Unicon is
 to provide built-in operators and functions for common organization and
-access patterns - the flexible {\textquotedbl}super glue{\textquotedbl}
+access patterns - the flexible "super glue"
 that is needed by nearly all applications. Their functionality is
 similar to the C++ Standard Template Library or generic classes in
-other languages, but Unicon{\textquotesingle}s structure types are much
+other languages, but Unicon's structure types are much
 simpler to learn and use, and are well supported by the expression
 evaluation mechanism described in the previous chapter.
 
@@ -32,7 +30,7 @@ All structure types in Icon share many aspects in common, such as the
 fact that structures are \index{mutable values}\textit{mutable}. The
 values inside them may change. In that respect, structures are similar
 to a collection of variables that are bundled together. In many cases,
-Unicon{\textquotesingle}s structure types are almost interchangeable!
+Unicon's structure types are almost interchangeable!
 Operators like subscripts and built-in functions such as
 \index{insert()}\texttt{insert()}\texttt{ }are defined consistently for
 many types. Code that relies on such operators is
@@ -70,19 +68,19 @@ Assigning a structure to a \index{variable}variable, or passing it as a
 \index{parameter}parameter, gives that variable or parameter a copy of
 the reference to the structure but does not make a copy of the
 structure. If you want a copy of a structure, you call the function
-\texttt{copy(x)}, which makes a {\textquotedbl}shallow{\textquotedbl}
+\texttt{copy(x)}, which makes a "shallow"
 copy of a single table, list, record, or set. If that structure
 contains references to other structures as its elements, those
 substructures are not copied by \texttt{copy()}. To copy a
-{\textquotedbl}deep{\textquotedbl} structure (lists of lists, tables of
+"deep" structure (lists of lists, tables of
 records, etc.) you can use the procedure \texttt{deepcopy()} that is
 given as an example later in this chapter.
 
-\subsection{Tables}
+\section{Tables}
 
 \index{table data type}Tables are unordered collections of values that
 are accessed using \index{associative memory}associated \index{keys,
-table}\textit{keys}. They are Unicon{\textquotesingle}s most versatile
+table}\textit{keys}. They are Unicon's most versatile
 type. All of the other structure types can be viewed as special cases
 of tables, optimized for performance on common operations. Most
 operations that are defined for tables are defined for other structure
@@ -95,25 +93,21 @@ function creates a new empty table. For example, the lines
 
 \iconcode{
 T := table() \\
-T[{\textquotedbl}hello{\textquotedbl}] :=
-{\textquotedbl}goodbye{\textquotedbl}
+T["hello"] :=
+"goodbye"
 }
 
 \noindent
-create a new table, and associate the key
-\texttt{{\textquotedbl}hello{\textquotedbl}} with the value
-\texttt{{\textquotedbl}goodbye{\textquotedbl}}. The \texttt{table()}
-function takes one optional argument: the \index{default
-value!table}default value to return when lookup \index{expression
-failure}fails. The default value of the default value is
-\texttt{\&null}, so after the above example,
-\texttt{write(T[{\textquotedbl}goodbye{\textquotedbl}])} would write an
-empty line, since \texttt{write()} treats a null argument the same as
-an empty string, and \texttt{write()} always writes a newline.
-Assigning a value to a key that is not in the table inserts a value
-into the table. This occurs in the second line of the example above, so
-\ \texttt{write(T[{\textquotedbl}hello{\textquotedbl}])} writes out
-\texttt{{\textquotedbl}goodbye{\textquotedbl}}.
+create a new table, and associate the key \texttt{"hello"} with the value
+\texttt{"goodbye"}. The \texttt{table()} function takes one optional argument:
+the \index{default value!table}default value to return when lookup
+\index{expression failure}fails. The default value of the default value is
+\texttt{\&null}, so after the above example, \texttt{write(T["goodbye"])} would
+write an empty line, since \texttt{write()} treats a null argument the same as
+an empty string, and \texttt{write()} always writes a newline.  Assigning a
+value to a key that is not in the table inserts a value into the table. This
+occurs in the second line of the example above, so \texttt{write(T["hello"])}
+writes out \texttt{"goodbye"}.
 
 Subscripts are the primary operation on tables, but there are several
 other useful operations. The \index{insert()!table}\texttt{insert(T,
@@ -125,7 +119,7 @@ pairs to \texttt{T}. The \index{delete()!table}\texttt{delete(T,
 k}\texttt{\textsubscript{1}}\texttt{,
 k}\texttt{\textsubscript{2}}\texttt{, ...)} function deletes values
 from \texttt{T} that correspond to the supplied keys.
-Icon{\textquotesingle}s unary \texttt{*} operator produces the size of
+Icon's unary \texttt{*} operator produces the size of
 its argument; for a table, \index{table!length *T}\texttt{*T} is the
 number of key-value pairs in the table. Unary \texttt{!} generates
 elements from a collection; for a table, \texttt{!T} generates the
@@ -144,8 +138,7 @@ interest):
 \iconcode{
 wordcount := table(0) \\
 every word := getword() do wordcount[word] +:= 1 \\
-every word := key(wordcount) do write(word, {\textquotedbl}
-\ {\textquotedbl}, wordcount[word])
+every word := key(wordcount) do write(word, " ", wordcount[word])
 }
 
 The default value for the table is 0. When a new word is inserted, the
@@ -153,7 +146,7 @@ default value gets incremented and the new value (that is, 1) is stored
 with the new word. Tables grow automatically as new elements are
 inserted.
 
-\subsection[Lists]{Lists}
+\section{Lists}
 
 \index{list data type}Lists are dynamically sized ordered
 collections of values. They are accessed by subscripts, with indexes
@@ -163,16 +156,15 @@ place of \index{array}arrays, \index{stack}stacks, \index{queue}queues,
 and \index{deque}deques found in other languages and data structures
 textbooks.
 
-A list is created by calling the function \index{list()}\texttt{list()},
-which takes optional parameters for the lists{\textquotesingle}s
-initial size and the initial value given to all elements of the list.
-By default \texttt{list()} creates an empty list. Alternatively, you
-can create a list by enclosing a comma-separated sequence of values in
-square brackets: 
+A list is created by calling the function \index{list()}\texttt{list()}, which
+takes optional parameters for the lists's initial size and the initial value
+given to all elements of the list.  By default \texttt{list()} creates an empty
+list. Alternatively, you can create a list by enclosing a comma-separated
+sequence of values in square brackets:
 
 \iconcode{
-L := [{\textquotedbl}linux{\textquotedbl}, 2.0,
-	{\textquotedbl}unix{\textquotedbl}]
+L := ["linux", 2.0,
+	"unix"]
 }
 
 Lists are dynamic. Lists grow or shrink as a result
@@ -194,15 +186,15 @@ a time with the following code.
 
 \iconcode{
 L := [ ] \\
-put(L, {\textquotedbl}linux{\textquotedbl}) \\
+put(L, "linux") \\
 put(L, 2.0) \\
-put(L, {\textquotedbl}unix{\textquotedbl})
+put(L, "unix")
 }
 
 Elements of the list can be obtained either through list manipulation
 functions or by subscripting. Given the list \texttt{L} above, in the
 following code the first line writes
-\texttt{{\textquotedbl}unix{\textquotedbl}} while the second line moves
+\texttt{"unix"} while the second line moves
 the first element to the end of the list.
 
 \iconcode{
@@ -252,7 +244,7 @@ concatenation!L1 {\textbar}{\textbar}{\textbar} L2}\texttt{L1
 elements are a copy of the elements in \texttt{L1} followed by a copy
 of the elements in \texttt{L2}.
 
-\subsection{Records}
+\section{Records}
 
 A \index{record}record is a fixed-sized, ordered collection of values
 whose elements are accessed using user-defined named \textit{fields}. A
@@ -272,7 +264,7 @@ records, or as special tables or lists with
 a constant size and fixed set of keys.
 
 \texttt{member(R,s)} tests whether \texttt{s} is a field in \texttt{R};
-\texttt{key(R)} generates \texttt{R}{\textquotesingle}s field names.
+\texttt{key(R)} generates \texttt{R}'s field names.
 Functions like \texttt{insert()}, or \texttt{push()} are not supported
 on records, since they change the size of the structure that they
 modify. Here is a demonstration of record operations.
@@ -280,9 +272,9 @@ modify. Here is a demonstration of record operations.
 \iconcode{
 a := complex(0, 0) \\
 b := complex(1, -1) \\
-if a.re = b.re then write({\textquotedbl}not likely{\textquotedbl}) \\
-if a[{\textquotedbl}re{\textquotedbl}] = a[2] then
-write({\textquotedbl}a.re and a.im are equal{\textquotedbl})
+if a.re = b.re then write("not likely") \\
+if a["re"] = a[2] then
+write("a.re and a.im are equal")
 }
 
 Unicon provides a mechanism for constructing new record types on the
@@ -292,7 +284,7 @@ object-oriented programs, described starting in Chapter 9. Records are
 closely related to classes and objects: they can be considered to be an
 optimized special case of objects that have no methods. \ 
 
-\subsection{Sets}
+\section{Sets}
 
 A \index{set data type}set is an unordered collection of values with the
 uniqueness property: an element can only be present in a set once. The
@@ -303,14 +295,12 @@ inserted. As with other structures, the elements may be of any type,
 and may be mixed. For example, the assignment
 
 \iconcode{
-S := set({\textquotedbl}rock lobster{\textquotedbl},
-{\textquotesingle}B{\textquotesingle}, 52)}
+S := set("rock lobster", 'B', 52)}
 
 \noindent
 creates a set with three members: a string, a cset, and an integer. The
 equivalent set is produced by
-\texttt{set([{\textquotedbl}rock lobster{\textquotedbl},
-{\textquotesingle}B{\textquotesingle}, 52])}. To place a list in a set
+\texttt{set(["rock lobster","B", 52])}. To place a list in a set
 set constructor, wrap it in another list, as in \texttt{set([L])},
 or insert the list into the set after it is created.
 
@@ -349,7 +339,7 @@ to an optimized special case of tables that map all keys to the value
 \texttt{\&null}. Unlike tables, sets have no default value and do not
 support the \index{subscript operator}subscript operator.
 
-\subsection{Using Structures}
+\section{Using Structures}
 
 Structures can hold other structures, allowing you to
 organize information in whatever way best fits your application.
@@ -361,7 +351,7 @@ involved in operations on complex structures, so it plays a prominent
 role in the examples. The concept of recursion was discussed in Chapter
 1.
 
-\subsubsection{A Deep Copy}
+\subsection{A Deep Copy}
 
 The built-in function \index{copy(x)}\texttt{copy(x)} makes a one-level
 copy of structure values. For a multi-level structure, you need to call
@@ -373,11 +363,11 @@ a recursive function.
 procedure deepcopy(x) \\
 \>   local y \\
 \>   case type(x) of \{ \\
-\>   {\textquotedbl}table{\textquotedbl}{\textbar}{\textquotedbl}list{\textquotedbl}{\textbar}{\textquotedbl}record{\textquotedbl}: \{ \\
+\>   "table"{\textbar}"list"{\textbar}"record": \{ \\
 \>   \ \ \ y := copy(x) \\
 \>   \ \ \ every k := key(x) do y[k] := deepcopy(x[k]) \\
 \>   \ \ \ \} \\
-\>   {\textquotedbl}set{\textquotedbl}: \{ \\
+\>   "set": \{ \\
 \>   \ \ \ y := set() \\
 \>   \ \ \ every insert(y, deepcopy(!x)) \\
 \>   \ \ \ \} \\
@@ -396,7 +386,7 @@ copied a structure, and copying it again. The Icon Program Library has
 a deep copy procedure that handles this problem, and we present the
 general technique that is used to solve it in the next section.
 
-\subsubsection{Representing Trees and Graphs}
+\subsection{Representing Trees and Graphs}
 
 Since there is no restriction on the types of values in a list, they can
 be other lists too. Here is an example of how a tree may be implemented
@@ -405,9 +395,9 @@ with records and lists:
 \iconcode{
 record node(name, links) \\
 \>   ... \\
-barney := node({\textquotedbl}Barney{\textquotedbl}, list()) \\
-betty := node({\textquotedbl}Betty{\textquotedbl}, list()) \\
-bambam := node({\textquotedbl}Bam-Bam{\textquotedbl}, [barney, betty])
+barney := node("Barney", list()) \\
+betty := node("Betty", list()) \\
+bambam := node("Bam-Bam", [barney, betty])
 }
 
 The structure created by these expressions is depicted in Figure 2-1.
@@ -463,8 +453,7 @@ procedure is that there is no way to reset the static variable and call
 \texttt{print\_relatives()} starting from scratch. How would you remove
 this defect?
 
-\subsubsection[The n{}-Queens Example]{The \textit{n}{}-Queens
-Example}
+\subsection{The $n$-Queens Example}
 
 The \index{8-Queens problem}8-Queens problem is a classic
 \index{backtracking}backtracking problem. The goal is to place eight
@@ -502,7 +491,7 @@ solutions on a 9x9 board. The default value of \texttt{n} is 6. The
 \index{options()}\texttt{options()} procedure is an Icon Program
 Library procedure described in Appendix B; it removes options from the
 command line and places them in a table whose keys are option letters
-such as \texttt{{\textquotedbl}n{\textquotedbl}}. Library procedures
+such as \texttt{"n"}. Library procedures
 such as \texttt{options()} are incorporated into a program using the
 \index{link}\texttt{link} declaration, as in the \texttt{link options}
 that begins the code fragment above. A link declaration adds the
@@ -511,11 +500,11 @@ this case, procedure \texttt{options()} came from a file
 \texttt{options.icn}) to the program.
 
 \iconcode{
-\>   opts := options(args,{\textquotedbl}n+{\textquotedbl}) \\
-\>   n := {\textbackslash}opts[{\textquotedbl}n{\textquotedbl}]
+\>   opts := options(args,"n+") \\
+\>   n := {\textbackslash}opts["n"]
 {\textbar} 6 \\
-\>   if n {\textless}= 0 then stop({\textquotedbl}-n needs a positive
-numeric parameter{\textquotedbl})
+\>   if n {\textless}= 0 then stop("-n needs a positive
+numeric parameter")
 }
 
 The value \texttt{n} gives the size for the solution array and also
@@ -523,7 +512,7 @@ appears in a banner:
 
 \iconcode{
 \>   solution := list(n) \ \ \# a list of column solutions \\
-\>   write(n,{\textquotedbl}-Queens:{\textquotedbl}) \\
+\>   write(n,"-Queens:") \\
 \>   every q(1) \ \ \ \ \ \ \ \ \ \ \ \# start by placing queen in
 first column \\
 end
@@ -542,12 +531,11 @@ queen. The other two arrays handle the diagonals: \texttt{up} is an
 array (of size \textit{2n-1}) of the upward slanting diagonals, and
 \texttt{down} is an array for the downward slanting diagonals. Two
 queens in positions \textit{(r\_1, c\_1)} and \textit{(r\_2, c\_2)} are
-on the same {\textquotedbl}up{\textquotedbl} diagonal if
+on the same "up" diagonal if
 \textit{n+r\_1-c\_1 = n+r\_2-c\_2} and they are on the same
-{\textquotedbl}down{\textquotedbl} diagonal if \textit{r\_1+c\_1-1 =
+"down" diagonal if \textit{r\_1+c\_1-1 =
 r\_2+c\_2-1}. Figure 2-2 shows some of the
-{\textquotedbl}up{\textquotedbl} and {\textquotedbl}down{\textquotedbl}
-diagonals.
+``up'' and ``down'' diagonals.
 
 \bigskip
 
@@ -582,7 +570,7 @@ places a queen, it must ensure that
 row \texttt{r}\texttt{,}
 
 2.\ \ \texttt{up[n+r-c]} is 0, that is, there is not already a queen in
-the {\textquotedbl}up{\textquotedbl} diagonal, and
+the "up" diagonal, and
 
 3.\ \ \texttt{down[r+c-1]} is 0, that is, there is not already a queen
 in the down diagonal.
@@ -617,13 +605,13 @@ time to try to place a queen in the next row:
 end
 }
 
-That{\textquotesingle}s it! The rest of the program just prints out any
+That's it! The rest of the program just prints out any
 solutions that were found.
 
 Printing the chess board is similar to other reports you might write
 that need to create horizontal lines for tables. The \texttt{repl()}
 function is handy for such situations. The \texttt{repl(s, i)} function
-returns \texttt{i} {\textquotedbl}replicas{\textquotedbl} of string
+returns \texttt{i} "replicas" of string
 \texttt{s} concatenated together. The \texttt{show()} function uses it
 to create the chessboard.\textit{ }
 
@@ -635,37 +623,29 @@ procedure show() \\
 static count, line, border \\
 initial \{ \\
 \>   count := 0 \\
-\>   line := repl({\textquotedbl}{\textbar} \ \ {\textquotedbl},n)
-{\textbar}{\textbar} {\textquotedbl}{\textbar}{\textquotedbl} \\
-\>   border := repl({\textquotedbl}-{}-{}-{}-{\textquotedbl},n)
-{\textbar}{\textbar} {\textquotedbl}-{\textquotedbl} \\
+\>   line := repl("{\textbar} \ \ ",n)
+{\textbar}{\textbar} "{\textbar}" \\
+\>   border := repl("-{}-{}-{}-",n)
+{\textbar}{\textbar} "-" \\
 \>   \} \\
-\>   write({\textquotedbl}solution: {\textquotedbl}, count+:=1,
-{\textquotedbl}{\textbackslash}n \ {\textquotedbl}, border) \\
+\>   write("solution: ", count+:=1,
+"{\textbackslash}n \ ", border) \\
 \>   every line[4*(!solution - 1) + 3] {\textless}-
-{\textquotedbl}Q{\textquotedbl} do \{ \\
-\>   \ \ \ write({\textquotedbl} \ {\textquotedbl}, line,
-{\textquotedblleft}{\textbackslash}n \ {\textquotedbl}, border) \\
+"Q" do \{ \\
+\>   \ \ \ write(" \ ", line,
+{\textquotedblleft}{\textbackslash}n \ ", border) \\
 \>   \ \ \ \} \\
 \>   write() \\
 end
 }
 
-\section*{Summary}
+\section{Summary}
 
-Unicon{\textquotesingle}s structures are better than sliced bread. To be
-fair, this is because Icon{\textquotesingle}s inventors really got
-things right. These structures are the foundations of complex
-algorithms and the glue that builds sophisticated data models. They are
-every computer scientists{\textquotesingle} buzzword-compliant best
-friends: polymorphic, heterogeneous, implicitly referenced,
-cycle-capable, dynamically represented, and automatically reclaimed.
-They provide a direct implementation of the common information
-associations used in object-oriented design. But most important of all,
-they are extremely simple to learn and use.
-
-
-\bigskip
-
-\clearpage
-\bigskip
+Unicon's structures are better than sliced bread. To be fair, this is because
+Icon's inventors really got things right. These structures are the foundations
+of complex algorithms and the glue that builds sophisticated data models. They
+are every computer scientists' buzzword-compliant best friends: polymorphic,
+heterogeneous, implicitly referenced, cycle-capable, dynamically represented,
+and automatically reclaimed.  They provide a direct implementation of the common
+information associations used in object-oriented design. But most important of
+all, they are extremely simple to learn and use.

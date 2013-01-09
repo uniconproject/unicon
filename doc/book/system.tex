@@ -1,88 +1,83 @@
-\clearpage\section{Chapter 5: The System Interface}
+\chapter{The System Interface}
 
-The \index{system interface}system interface is
-Unicon{\textquotesingle}s connection to the outside world, defining
-\index{input}input/\index{output}output interactions with the
-operating system. This chapter shows how to
-
+The \index{system interface}system interface is Unicon's connection to the
+outside world, defining \index{input}input/\index{output}output interactions
+with the operating system. This chapter shows how to
 \begin{itemize}\itemsep0pt
-\item Manipulate \index{file}files, \index{directories}directories, and
-access \index{permissions, file access}permissions
-\item Launch and interact with other programs
-\item Handle abnormal events that would otherwise terminate your program
-\item Write \index{Internet}Internet \index{client}client and
-\index{server}server applications
+  \item Manipulate \index{file}files, \index{directories}directories, and
+    access \index{permissions, file access}permissions
+  \item Launch and interact with other programs
+  \item Handle abnormal events that would otherwise terminate your program
+  \item Write \index{Internet}Internet \index{client}client and
+    \index{server}server applications.
 \end{itemize}
 
-\subsection{The Role of the System Interface}
+\section{The Role of the System Interface}
 
-Unicon{\textquotesingle}s predecessor Icon is highly portable; it runs
-on everything from mainframes to Unix machines to Amigas and Macs. This
-platform independence is both a virtue and a limitation. Icon takes a
-greatest common denominator approach to the system interface. Icon
-programs run with no source modifications across platforms, but with
-little access to the underlying system. Icon historically could not be
-used easily for many tasks such as system administration or
-client/server programming. Both the Icon graphics facilities, and now
-the Unicon system interface, {\textquotedbl}raise the
-bar{\textquotedbl} of what portable facilities programmers can expect
-to be provided by their programming language, at the cost of making it
-more difficult to port the language to new platforms.
+Unicon's predecessor Icon is highly portable; it runs on everything
+from mainframes to Unix machines to Amigas and Macs. This platform
+independence is both a virtue and a limitation. Icon takes a greatest
+common denominator approach to the system interface. Icon programs run
+with no source modifications across platforms, but with little access
+to the underlying system. Icon historically could not be used easily
+for many tasks such as system administration or client/server
+programming. Both the Icon graphics facilities, and now the Unicon
+system interface, "raise the bar" of what portable facilities
+programmers can expect to be provided by their programming language,
+at the cost of making it more difficult to port the language to new
+platforms.
 
-The interface described in this chapter relies on underlying
-standards including ANSI C{\textquotesingle}s standard 
-library, and the IEEE Portable Application Standards
-Committee{\textquotesingle}s \index{POSIX}POSIX operating system
-standard (http://www.pasc.org). Unicon relies on standards, but
-is simpler and higher level. It is also less platform-specific than the
-POSIX standard. The goal was to define facilities that can be
-implemented to a great extent on all modern operating systems.
-Non-POSIX Unicon implementations may provide a subset of the
-functionality described in this chapter, but important facilities such
-as TCP/IP Internet communications are ubiquitous
-and warrant inclusion in the language definition. So far the complete
-Unicon system interface is implemented for Linux, Solaris,
-and Windows; the challenge to port these facilities to all platforms on
-which they are relevant and useful now rests with
-Unicon{\textquotesingle}s user community.
+The interface described in this chapter relies on underlying standards
+including ANSI C's standard library, and the IEEE Portable Application
+Standards Committee's \index{POSIX}POSIX operating system standard
+(http://www.pasc.org). Unicon relies on standards, but is simpler and
+higher level. It is also less platform-specific than the POSIX
+standard. The goal was to define facilities that can be implemented to
+a great extent on all modern operating systems.  Non-POSIX Unicon
+implementations may provide a subset of the functionality described in
+this chapter, but important facilities such as TCP/IP Internet
+communications are ubiquitous and warrant inclusion in the language
+definition. So far the complete Unicon system interface is implemented
+for Linux, Solaris, and Windows; the challenge to port these
+facilities to all platforms on which they are relevant and useful now
+rests with Unicon's user community.
 
-\subsection{Files and Directories}
+\section{Files and Directories}
 
 The file type is used for any connection between a program and an
 external piece of hardware. In reality, a file is a
-\index{reference!file}reference to resources allocated by
-the operating system for the purpose of input or output. Different
-kinds of files support different operations, but most
-files support the basic functions given in this section.
+\index{reference!file}reference to resources allocated by the
+operating system for the purpose of input or output. Different kinds
+of files support different operations, but most files support the
+basic functions given in this section.
 
-Files are commonly used to manipulate named repositories of data on
-a storage device. The contents of files exist independent of the
-program that creates them, and persist after that program finishes.
-To read data from a file or save data to a file, the
-functions \index{read()}\texttt{read()} and
-\index{write()}\texttt{write()} are often used. These functions by
-default use special files denoted by the keywords \index{input,
-standard \&input}\texttt{\&input} and \index{output, standard
-\&output}\texttt{\&output}, respectively. There is a third file
-keyword, \index{error!standard, \&errout}\texttt{\&errout}, that refers
-to the location to which the program should write any error messages.
-Unless the files were redirected, they refer to the
-\index{keyboard}keyboard and the \index{display}display. If you pass
-\texttt{read()} or \texttt{write()} a value of type \textit{file} as an
-argument, the operation is performed on that file. The function
+Files are commonly used to manipulate named repositories of data on a
+storage device. The contents of files exist independent of the program
+that creates them, and persist after that program finishes.  To read
+data from a file or save data to a file, the functions
+\index{read()}\texttt{read()} and \index{write()}\texttt{write()} are
+often used. These functions by default use special files denoted by
+the keywords \index{input, standard \&input}\texttt{\&input} and
+\index{output, standard \&output}\texttt{\&output},
+respectively. There is a third file keyword, \index{error!standard,
+\&errout}\texttt{\&errout}, that refers to the location to which the
+program should write any error messages.  Unless the files were
+redirected, they refer to the \index{keyboard}keyboard and the
+\index{display}display. If you pass \texttt{read()} or
+\texttt{write()} a value of type \textit{file} as an argument, the
+operation is performed on that file. The function
 \texttt{open()}\texttt{ }creates a value of type file:
 
 \iconcode{
-f := open({\textquotedbl}myfile.txt{\textquotedbl},
-		{\textquotedbl}w{\textquotedbl}) \\
-write(f, {\textquotedbl}This is my text file.{\textquotedbl})
+f := open("myfile.txt", "w") \\
+write(f, "This is my text file.")
 }
 
 \noindent
 The \index{open()}\texttt{open()} function takes two parameters: a file
 name and a mode. The default mode is
-\texttt{{\textquotedbl}r{\textquotedbl}} for reading; the example above
-uses mode \texttt{{\textquotedbl}w{\textquotedbl}} for
+\texttt{"r"} for reading; the example above
+uses mode \texttt{"w"} for
 writing. Other modes denote other kinds of system interfaces.
 They are described in later sections.
 
@@ -97,8 +92,8 @@ Another way to read lines is via the generate operator, unary
 On systems with multi-character line terminators, appending an
 extra letter to the mode parameter of \texttt{open()} indicates whether
 newlines are to be translated (mode
-\texttt{{\textquotedbl}t{\textquotedbl}}) or untranslated (mode
-\texttt{{\textquotedbl}u{\textquotedbl}}). Text files should
+\texttt{"t"}) or untranslated (mode
+\texttt{"u"}). Text files should
 be translated, while binary files should not. The default is to translate
 newlines to and from operating system format.
 
@@ -112,13 +107,13 @@ translation mode on systems that use one.
 When operations on a file are complete, close the file by calling
 \index{close()}\texttt{close(f)}. The only exceptions are the standard
 files, \texttt{\&input}, \texttt{\&output}, and \texttt{\&errout};
-since you didn{\textquotesingle}t open them, don{\textquotesingle}t
+since you didn't open them, don't
 close them. For the rest, most operating systems have a limit on the
 number of files that they can have open at any one time, so not closing
 your files can cause your program to fail in strange ways if you use a
 lot of files.
 
-\subsubsection{Directories}
+\subsection{Directories}
 
 A \index{directory}directory is a special file that contains a
 collection of named files. Directories can contain other directories to
@@ -132,9 +127,9 @@ read its contents. Directories can only be opened for reading,
 not for writing. Every \texttt{read()} from a directory returns
 the name of one file. Directory entries are not guaranteed to be in any
 order. The expression \texttt{every
-write(!open({\textquotedbl}.{\textquotedbl}))} writes the names of the
+write(!open("."))} writes the names of the
 files in the current directory, one per line. It is not good practice
-to call an \texttt{open()} that you don{\textquotesingle}t
+to call an \texttt{open()} that you don't
 \texttt{close()}.
 
 The \index{mkdir()}\texttt{mkdir(s)} function creates a directory. An
@@ -144,7 +139,7 @@ below. Files or directories can be renamed with \texttt{rename(s1,s2)}.
 Renaming does not physically move the file, so if \texttt{s1} and
 \texttt{s2} denote locations on different hardware devices or file
 systems then \index{rename()}\texttt{rename()} will fail, and you will
-need to {\textquotedbl}copy and then delete{\textquotedbl}
+need to "copy and then delete"
 the file. Individual files or directories are removed with
 \index{remove(s)}\texttt{remove(s)}. Only empty directories may be
 removed. To remove an entire directory including its contents:
@@ -153,9 +148,9 @@ removed. To remove an entire directory including its contents:
 procedure deldir(s) \\
 \>   f := open(s) \\
 \>   every remove( s {\textbar}{\textbar}
-{\textquotedbl}/{\textquotedbl} {\textbar}{\textbar}
-({\textquotedbl}.{\textquotedbl} \~{}==
-({\textquotedbl}..{\textquotedbl} \~{}== !f))) \\
+"/" {\textbar}{\textbar}
+("." \~{}==
+(".." \~{}== !f))) \\
 \>   close(f) \\
 \>   remove(s) \\
 end
@@ -166,7 +161,8 @@ be able to devise a brute force approach using what you know, but what
 you really need is more information about a file, such as whether it is
 a directory or not.
 
-\subsubsection[Obtaining File Information]{Obtaining File Information}
+\subsection{Obtaining file information}
+
 \index{file!information}\textit{Metadata} is information about the file
 itself, as opposed to information stored in the file. Metadata includes
 the owner of the file, its size, user access rights,
@@ -196,109 +192,96 @@ procedure main(args) \\
 \>   \ \ \ \} \\
 end \\
 procedure format(p, name) \\
-\ \ \ s := sprintf({\textquotedbl}\%-7d \%-5d \%s \%-4d \%-9d \%-9d
-\%-8d \%s \%s{\textquotedbl},  \\
+\ \ \ s := sprintf("\%-7d \%-5d \%s \%-4d \%-9d \%-9d
+\%-8d \%s \%s",  \\
 
 \ \ \ \ \ \ \ \ \ \ p.ino, p.blocks, p.mode, p.nlink, p.uid, p.gid,
 p.size, \\
 
 \ \ \ \ \ \ \ \ \ \ ctime(p.mtime)[5:17], name) \\
-\>   if p.mode[1] == {\textquotedbl}l{\textquotedbl} then \\
-\>   \ \ \ s {\textbar}{\textbar}:= {\textquotedbl} -{\textgreater}
-{\textquotedbl} {\textbar}{\textbar} {\textbackslash}(p.symlink) \\
+\>   if p.mode[1] == "l" then \\
+\>   \ \ \ s {\textbar}{\textbar}:= " -{\textgreater}
+" {\textbar}{\textbar} {\textbackslash}(p.symlink) \\
 \>   return s \\
 end
 }
 
-The record returned by \texttt{stat()} contains many fields. Not all
-file systems support all of these fields. Two of the most important
-portable fields are \texttt{size}, the \index{file size}file size in
-bytes, and \texttt{mtime}, the file{\textquotesingle}s last
-\index{file!modified time}modified time, an integer that is converted
-into a human readable string format by \texttt{ctime(i)}. Another
-important field is \texttt{mode}, a string that indicates the
-file{\textquotesingle}s type and \index{access, file}access
-permissions. Its first letter (\texttt{mode[1]}) is
-\texttt{{\textquotedbl}-{\textquotedbl}} for normal files,
-\texttt{{\textquotedbl}d{\textquotedbl}} for directories, and some file
-systems support additional types. The other characters of the mode
-string are platform dependent. On UNIX there are nine letters to encode
-read, write, and execute permissions for user, group, and world, in the
-format: \texttt{{\textquotedbl}rwxrwxrwx{\textquotedbl}}. On a classic
-Windows FAT file system, there is only
-\texttt{{\textquotedbl}rwa{\textquotedbl}} to indicate the status of
-hidden, read-only, and archive bits (if it is set, the system bit is
-indicated in \texttt{mode[1]}).
+The record returned by \texttt{stat()} contains many fields. Not all file
+systems support all of these fields. Two of the most important portable fields
+are \texttt{size}, the \index{file size}file size in bytes, and \texttt{mtime},
+the file's last \index{file!modified time}modified time, an integer that is
+converted into a human readable string format by \texttt{ctime(i)}. Another
+important field is \texttt{mode}, a string that indicates the file's type and
+\index{access, file}access permissions. Its first letter (\texttt{mode[1]}) is
+\texttt{"-"} for normal files, \texttt{"d"} for directories, and some file
+systems support additional types. The other characters of the mode string are
+platform dependent. On UNIX there are nine letters to encode read, write, and
+execute permissions for user, group, and world, in the format:
+\texttt{"rwxrwxrwx"}. On a classic Windows FAT file system, there is only
+\texttt{"rwa"} to indicate the status of hidden, read-only, and archive bits (if
+it is set, the system bit is indicated in \texttt{mode[1]}).
 
 Some file systems support duplicate directory entries called
 \textit{links} that refer to the same file. In the record returned by
 \texttt{stat()}, a \index{link, file system}link is indicated by a
-\texttt{mode[1]} value of \texttt{{\textquotedbl}l{\textquotedbl}}. In
-addition, field \texttt{nlinks} ({\textquotedbl}number of
-links{\textquotedbl}) will be \texttt{{\textgreater} 1} and/or field
-\texttt{symlink} may be the string filename of which this file is an
-alias. Appendix E includes information on each
-platform{\textquotesingle}s support for the \texttt{mode} field, as
-well as \texttt{stat()}{\textquotesingle}s other fields.
+\texttt{mode[1]} value of \texttt{"l"}. In addition, field
+\texttt{nlinks} ("number of links") will be \texttt{{\textgreater} 1}
+and/or field \texttt{symlink} may be the string filename of which this
+file is an alias. Appendix E includes information on each platform's
+support for the \texttt{mode} field, as well as \texttt{stat()}'s
+other fields.
 
-\subsubsection[Controlling File Ownership and Access]{Controlling File
-Ownership and Access}
+\subsection{Controlling file ownership and access}
 
 \index{file ownership}The previous section shows how different
-platforms{\textquotesingle} file systems vary in their support
-for the concepts of file ownership and access. If the system supports
-ownership, the user and group that own a file are changed by calling
-\texttt{chown(fname, user, group)}. The \index{chown()}\texttt{chown()}
-function only succeeds for certain users, such as the super user.
-User and group may be string names, or integer user identity codes on
-some platforms.
+platforms' file systems vary in their support for the concepts of file
+ownership and access. If the system supports ownership, the user and
+group that own a file are changed by calling \texttt{chown(fname,
+user, group)}. The \index{chown()}\texttt{chown()} function only
+succeeds for certain users, such as the super user.  User and group
+may be string names, or integer user identity codes on some platforms.
 
 File access rights are changed with \texttt{chmod(fname, mode)}. The
-\index{chmod()}\texttt{chmod()} function only succeeds for the owner of a
-given file. The \texttt{mode} is a nine-letter string similar to
-\texttt{stat()}{\textquotesingle}s mode field, or an octal
-encoding of that information (see Appendix E).
+\index{chmod()}\texttt{chmod()} function only succeeds for the owner of a given
+file. The \texttt{mode} is a nine-letter string similar to \texttt{stat()}'s
+mode field, or an octal encoding of that information (see Appendix E).
 
 Another piece of information about files is called the
-\index{umask}\textit{umask}. This is a variable that tells the system
-what access rights any newly created files or directories should have.
-The function call
-\texttt{umask({\textquotedbl}rwxr-xr-x{\textquotedbl})} tells the
-system that newly created directories should have a permission of
-\texttt{{\textquotedbl}rwxr-xr-x{\textquotedbl}} and files should have
-permissions of \texttt{{\textquotedbl}rw-r-{}-r-{}-{\textquotedbl}}.
-The \texttt{mkdir(s, mode)} function takes an optional mode parameter,
-which can override the umask for for newly created directories.
-Ordinary files are never given execute permission by the system, it
-must be set explicitly with \texttt{chmod()}.
+\index{umask}\textit{umask}. This is a variable that tells the system what
+access rights any newly created files or directories should have.  The function
+call \texttt{umask("rwxr-xr-x")} tells the system that newly created directories
+should have a permission of \texttt{"rwxr-xr-x"} and files should have
+permissions of \texttt{"rw-r-{}-r-{}-"}.  The \texttt{mkdir(s, mode)} function
+takes an optional mode parameter, which can override the umask for for newly
+created directories.  Ordinary files are never given execute permission by the
+system, it must be set explicitly with \texttt{chmod()}.
 
-\subsubsection{File Locks}
+\subsection{File locks}
 
-Files can be \index{file!lock}locked while a program is
-updating some information. If the contents of the file are in an
-inconsistent state, other programs may be prevented from reading (or
-especially writing) the file. Programs can cooperate by using file
-locks:
+Files can be \index{file!lock}locked while a program is updating some
+information. If the contents of the file are in an inconsistent state, other
+programs may be prevented from reading (or especially writing) the
+file. Programs can cooperate by using file locks:
 
 \iconcode{
-flock(filename, {\textquotedbl}x{\textquotedbl})}
+flock(filename, "x")}
 
 \noindent
 The first call to \texttt{flock()} creates a lock, and subsequent
 calls by other programs will block, waiting till the
 writing program releases its lock. The flag
-\texttt{{\textquotedbl}x{\textquotedbl}} represents an
+\texttt{"x"} represents an
 \textit{exclusive} lock, which should be used while writing; this means
 no other process can be granted a lock. For reading,
-\texttt{{\textquotedbl}s{\textquotedbl}} should be used to create a
+\texttt{"s"} should be used to create a
 shared lock so that other programs that are also just reading can do
 so. In this way you can enforce the behavior that only one process may
 open the file for writing, and all others will be locked out; but many
 processes can concurrently open the file for reading.
 
-\subsection{Programs and Process Control}
+\section{Programs and Process Control}
 
-Unicon{\textquotesingle}s system interface is similar but
+Unicon's system interface is similar but
 higher level than the POSIX C interface. An include file
 \texttt{posix.icn} defines constants used by some functions. Include
 files are special code, consisting mainly of defined symbols, intended
@@ -307,7 +290,7 @@ preprocessor, described in Appendix A. To include \texttt{posix.icn} in
 a program, add this line at the top of your program:
 
 \iconcode{
-\$include {\textquotedbl}posix.icn{\textquotedbl}}
+\$include "posix.icn"}
 
 When a system call \index{fail!system call}fails, the integer keyword
 \texttt{\&errno} indicates the error that occurred. As seen earlier, a
@@ -325,88 +308,78 @@ for network applications it matters,
 since the same program can run in multiple processes, and a process can
 change the program that it is running.
 
-\subsubsection{Signals}
+\subsection{Signals}
 
-A \index{signal}signal is an asynchronous message sent to a process
-either by the system (usually as a result of an illegal operation like
-a \index{error!floating point}floating point error) or by another
-process. A program has two options to deal with a signal: it can allow
-the system to handle it in the default manner (which may include
-termination of the process) or it can register a function, called a
-signal handler, to be run when that signal is delivered.
+A \index{signal}signal is an asynchronous message sent to a process either by
+the system (usually as a result of an illegal operation like a
+\index{error!floating point}floating point error) or by another process. A
+program has two options to deal with a signal: it can allow the system to handle
+it in the default manner (which may include termination of the process) or it
+can register a function, called a signal handler, to be run when that signal is
+delivered.
 
-Signals are trapped or ignored with the \texttt{trap(s, p)} function.
-Argument \texttt{s} is the string name of the signal. The signal names
-vary by platform; see Appendix E. You can trap any signal on any
-machine; if it is not defined it will be ignored. For example, Linux
-systems don{\textquotesingle}t have a \texttt{SIGLOST.} Trapping that
-signal has no effect when a program runs on Linux. The \texttt{trap()}
-function{\textquotesingle}s second argument is the procedure to call
-when the signal is received. The previous signal handler is returned
-from \index{trap()}\texttt{trap()} so it can be restored by a
-subsequent call to \texttt{trap()}. The signal handler defaults to the
-default provided by the system. For instance, \texttt{SIGHUP} is
-ignored by default but \texttt{SIGFPE} will cause the program to
-terminate.
+Signals are trapped or ignored with the \texttt{trap(s, p)} function.  Argument
+\texttt{s} is the string name of the signal. The signal names vary by platform;
+see Appendix E. You can trap any signal on any machine; if it is not defined it
+will be ignored. For example, Linux systems don't have a \texttt{SIGLOST.}
+Trapping that signal has no effect when a program runs on Linux. The
+\texttt{trap()} function's second argument is the procedure to call when the
+signal is received. The previous signal handler is returned from
+\index{trap()}\texttt{trap()} so it can be restored by a subsequent call to
+\texttt{trap()}. The signal handler defaults to the default provided by the
+system. For instance, \texttt{SIGHUP} is ignored by default but \texttt{SIGFPE}
+will cause the program to terminate.
 
-Here is an example that handles a \texttt{SIGFPE} (floating point
-exception) by printing out a message and then runs the system default
-handler:
+Here is an example that handles a \texttt{SIGFPE} (floating point exception) by
+printing out a message and then runs the system default handler:
 
 \iconcode{
 global oldhandler \\
 \>   ... \\
-\>   trap({\textquotedbl}SIGFPE{\textquotedbl}, sig\_ignore) \\
-\>   oldhandler := signal({\textquotedbl}SIGSEGV{\textquotedbl},
+\>   trap("SIGFPE", sig\_ignore) \\
+\>   oldhandler := signal("SIGSEGV",
 handler) \\
 \>   ... \\
 \ \ \ \# restore the old handler \\
-\>   trap({\textquotedbl}SIGSEGV{\textquotedbl}, oldhandler) \\
+\>   trap("SIGSEGV", oldhandler) \\
 end \\
 \ \\
 procedure sig\_ignore(s); end
 \ \\
 procedure handler(s) \\
-\>   write(\&errout, {\textquotedbl}Got signal {\textquotedbl}, s) \\
+\>   write(\&errout, "Got signal ", s) \\
 \>   ({\textbackslash}oldhandler)(s) \\
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# propagate the signal \\
 end
 }
 
-\subsubsection[Launching Programs]{Launching Programs}
+\subsection{Launching programs}
 
-Many applications execute other programs and read
-their results. In many cases, the best way to do this is to
-call \texttt{open()} with mode
-\texttt{{\textquotedbl}p{\textquotedbl}} (\index{pipe}pipe) to
-launch a command. In mode \texttt{{\textquotedbl}p{\textquotedbl}}
-the string argument to \texttt{open()}
-is not a filename, it is an entire command string. Piped commands
-opened for reading (mode \texttt{{\textquotedbl}p{\textquotedbl}} or
-\texttt{{\textquotedbl}pr{\textquotedbl}}) let your program read
-the command{\textquotesingle}s standard output, while piped commands
-open for writing (mode \texttt{{\textquotedbl}pw{\textquotedbl}}) allow
-your program to write to the command{\textquotesingle}s standard input.
+Many applications execute other programs and read their results. In many cases,
+the best way to do this is to call \texttt{open()} with mode \texttt{"p"}
+(\index{pipe}pipe) to launch a command. In mode \texttt{"p"} the string argument
+to \texttt{open()} is not a filename, it is an entire command string. Piped
+commands opened for reading (mode \texttt{"p"} or \texttt{"pr"}) let your
+program read the command's standard output, while piped commands open for
+writing (mode \texttt{"pw"}) allow your program to write to the command's
+standard input.
 
 The more general function \texttt{system(x,f1,f2,f3,mode)} runs an external
-command (argument \texttt{x}) with several options. If
-\texttt{x} is a list, \texttt{x[1]} is the command to execute and the
-remaining list elements are its command line arguments. If \texttt{x}
-is a string, it is parsed into arguments separated by spaces. Arguments
-with spaces in them may be escaped using double quotes. A program that
-calls \index{system()}\texttt{system()} normally waits for the launched
-program to complete before continuing, and \texttt{system()} returns
-the integer status of the completed command. If \texttt{s} ends in an
-ampersand (\texttt{\&}) or the optional \texttt{mode} argument is
-\texttt{1} or \texttt{{\textquotedbl}nowait{\textquotedbl}},
-\texttt{system()} does not wait for the command to complete, but
-instead launches the command in the background and returns an integer
-process id. The \texttt{system()} function takes three optional file
-arguments that specify redirected standard input, output, and error
-files for the launched program.
+command (argument \texttt{x}) with several options. If \texttt{x} is a list,
+\texttt{x[1]} is the command to execute and the remaining list elements are its
+command line arguments. If \texttt{x} is a string, it is parsed into arguments
+separated by spaces. Arguments with spaces in them may be escaped using double
+quotes. A program that calls \index{system()}\texttt{system()} normally waits
+for the launched program to complete before continuing, and \texttt{system()}
+returns the integer status of the completed command. If \texttt{s} ends in an
+ampersand (\texttt{\&}) or the optional \texttt{mode} argument is \texttt{1} or
+\texttt{"nowait"}, \texttt{system()} does not wait for the command to complete,
+but instead launches the command in the background and returns an integer
+process id. The \texttt{system()} function takes three optional file arguments
+that specify redirected standard input, output, and error files for the launched
+program.
 
-\subsubsection[Using File Redirection and Pipes]{Using File Redirection
-and Pipes}
+\subsection{Using file redirection and pipes}
 
 \index{file!redirection}One common scenario is for a program to run
 another program but with the input and output redirected to files. On
@@ -423,7 +396,7 @@ supported in the command string passed to \texttt{system()}, as
 in the following \texttt{system()} call:
 
 \iconcode{
-\>   system({\textquotedbl}prog {\textless} file1{\textquotedbl})
+\>   system("prog {\textless} file1")
 }
 
 Pipes to and from the current program are nicely handled by the
@@ -437,20 +410,19 @@ prog1 {\textbar} prog2
 
 The \texttt{pipe()} function returns a pair of open files in a list,
 with the property that anything written to the second file will appear
-on the first. Here{\textquotesingle}s how to hook up a pipe between two
+on the first. Here's how to hook up a pipe between two
 programs:
 
 \iconcode{
 \>   L := pipe() {\textbar}
-stop({\textquotedbl}Couldn{\textquotesingle}t get pipe:
-{\textquotedbl}, \&errortext) \\
-\>   system({\textquotedbl}prog1 \&{\textquotedbl}, , L[2]) \\
-\>   system({\textquotedbl}prog2 \&{\textquotedbl}, L[1]) \\
+stop("Couldn't get pipe: ", \&errortext) \\
+\>   system("prog1 \&", , L[2]) \\
+\>   system("prog2 \&", L[1]) \\
 \>   close(L[1]) \\
 \>   close(L[2])
 }
 
-\subsubsection{Process Information}
+\subsection{Process information}
 
 The integer process identity can be obtained with
 \index{getpid()}\texttt{getpid()}. The user id of the process can be
@@ -470,7 +442,7 @@ string of the form
 \iconcode{
 pid:status:arg:core}
 
-The \texttt{{\textquotedbl}:core{\textquotedbl}} will only be present if
+The \texttt{":core"} will only be present if
 the system created a core file for the process. The status can be any
 of \texttt{``exited''},
 \texttt{``terminated''} or
@@ -482,14 +454,15 @@ process when any of its children changes state.
 
 The arguments to \texttt{wait()} are the pid of the process to wait for
 and any options. The default for pid is to wait for all children. The
-options may be either \texttt{{\textquotedbl}n{\textquotedbl}}, meaning
+options may be either \texttt{"n"}, meaning
 \texttt{wait()} should not wait for children to block but should return
-immediately with any status that{\textquotesingle}s available, or
-\texttt{{\textquotedbl}u{\textquotedbl}}, meaning that any processes
+immediately with any status that's available, or
+\texttt{"u"}, meaning that any processes
 that stopped should also be reported. These options may be combined by
-using \texttt{{\textquotedbl}nu{\textquotedbl}}.
+using \texttt{"nu"}.
 
-\subsubsection[The select() System Call]{The select() System Call}
+\subsection{The \texttt{select()} system call}
+
 Some programs need to be able to read data from more than one source.
 For example, a program may have to handle network traffic and also
 respond to the \index{keyboard}keyboard. The problem with using
@@ -510,8 +483,8 @@ waits indefinitely for input on one of the files.
 \iconcode{
 while *(L := select(f1, f2, f3, timeout)) = 0 do \\
 \> handle\_timeout() \\
-(\&errno = 0) {\textbar} stop({\textquotedbl}Select
- \index{expression failure}failed: {\textquotedbl}, \&errortext) \\
+(\&errno = 0) {\textbar} stop("Select
+ \index{expression failure}failed: ", \&errortext) \\
 every f := !L do \{ \\
 \> \# Dispatch reads pending on f \\
 \> ... \\
@@ -530,7 +503,7 @@ or a window designated by keyword \texttt{\&window}:
 \ \ \ \ \ \ if !L === f then c := read(f)
 }
 
-Just because \texttt{select()} has returned doesn{\textquotesingle}t
+Just because \texttt{select()} has returned doesn't
 mean an entire line is available; \texttt{select()} only guarantees
 that at least one character is available. The command shell log
 application in Chapter 14 shows the usage of \texttt{select()}. Another
@@ -540,74 +513,74 @@ described later in this chapter. For network connections, the function
 characters available, rather than waiting for its maximum string size
 of \texttt{i}. But if no input is available, reads() blocks.
 
-\subsubsection[Non{}-blocking Input and the ready()
-Function]{Non-blocking Input and the \textrm{ready()} Function}
+\subsection{Non-blocking input and the \texttt{ready()} function}
+
 The function \texttt{ready(f, i)} is like \texttt{reads(f, i)} except
 that it is non-blocking, that is, it returns immediately with up to
 \texttt{i} bytes if they are available, but it does not wait around. It
 is ideal for use with \texttt{select()} and in situations where a
 server or client needs to interact with multiple remote connections.
 
-\subsection[Networking]{Networking}
+\section[Networking]{Networking}
 \index{networking}Unicon provides a very high-level interface to
 \index{Internet}Internet communications. Applications with custom
 communications use one of the major Internet
 applications protocols, \index{TCP}TCP and UDP. An higher level
 interface to several popular Internet protocols such as HTTP and POP is
-provided by means of Unicon{\textquotesingle}s messaging facilities.
+provided by means of Unicon's messaging facilities.
 
-\subsubsection{TCP}
+\subsection{TCP}
 
 A TCP connection is a lot like a phone call: to make a connection you
 need to know the address of the other end, just like a phone number.
 For TCP, you need to know the name of the machine to connect to, and an
 address on that machine, called a \textit{port}. A server listens for
 connections to a port; a client sends requests to a port. Also, there
-are two kinds of ports, called {\textquotedbl}Internet
-Domain{\textquotedbl} and {\textquotedbl}Unix Domain.{\textquotedbl}
+are two kinds of ports, called "Internet
+Domain" and "Unix Domain."
 The distinction is beyond the scope of this book; we will just mention
 that Internet Domain ports are numbers, and Unix Domain ports look like
 files. Also, a connection to a Unix domain port can only be made from
 the same machine, so we will not consider the Unix domain further here.
 
 A call to \texttt{open()} with mode
-\texttt{{\textquotedbl}n{\textquotedbl}} (network) requests a network
+\texttt{"n"} (network) requests a network
 connection. The first argument to \texttt{open()} is the network
 address, a host:port pair for Internet domain connections, and a
 filename for Unix domain sockets. If the address contains no host name
-and therefore starts with \texttt{{\textquotedbl}:{\textquotedbl}}, the
+and therefore starts with \texttt{":"}, the
 socket is opened on the same machine. The value returned by
 \texttt{open()} is a file that can be used in \texttt{select()} and
 related system functions, as well as normal reading and writing. 
 
 A \index{client}client uses mode
-\texttt{{\textquotedbl}n{\textquotedbl}} with \texttt{open()} to open a
+\texttt{"n"} with \texttt{open()} to open a
 connection to a TCP server. Here is a simple version of the Internet
-{\textquotedbl}finger{\textquotedbl} program:
+"finger" program:
 
 \iconcode{
 procedure main(argv) \\
-\>   local fserv := getserv({\textquotedbl}finger{\textquotedbl})
+\>   local fserv := getserv("finger")
 {\textbar} \\
-\>   \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t get service:
-{\textquotedbl}, \&errortext) \\
+\>   \ \ \ stop("Couldn't get service:
+", \&errortext) \\
 \>   name := argv[1] \\
-\>   host := {\textquotedbl}{\textquotedbl} \\
+\>   host := "" \\
 \>   argv[1] ? \{ \\
-\>   \ \ \ name := tab(find({\textquotedbl}@{\textquotedbl})) \&
-={\textquotedbl}@{\textquotedbl} \& host := tab(0) \\
+\>   \ \ \ name := tab(find("@")) \&
+="@" \& host := tab(0) \\
 \>   \ \ \ \} \\
 \>   if *host {\textgreater} 0 then
-write({\textquotedbl}[{\textquotedbl}, host,
-{\textquotedbl}]{\textquotedbl}) \\
+write("[", host,
+"]") \\
 \>   f := open(host {\textbar}{\textbar}
-{\textquotedbl}:{\textquotedbl} {\textbar}{\textbar} fserv.port,
-{\textquotedbl}n{\textquotedbl}) {\textbar} \\
-\>   \ \ \ stop({\textquotedbl}Couldn{\textquotesingle}t open
-connection: {\textquotedbl}, \&errortext) \\
+":" {\textbar}{\textbar} fserv.port,
+"n") {\textbar} \\
+\>   \ \ \ stop("Couldn't open
+connection: ", \&errortext) \\
 \ \\
 \>   write(f, name) {\textbar}
-stop({\textquotedbl}Couldn{\textquotesingle}t write: {\textquotedbl},
+stop("Couldn't write: ",
 \&errortext) \\
 \>   while write(read(f)) \\
 end
@@ -616,7 +589,7 @@ end
 Notice the use of \index{getserv()}\texttt{getserv()}. The
 \texttt{posix\_servent} record it returns includes fields for the name,
 aliases, port, and protocol used by the Internet service indicated in
-\texttt{getserv()}{\textquotesingle}s argument. The Internet protocols
+\texttt{getserv()}'s argument. The Internet protocols
 specify the ports to be used for various services; for instance, email
 uses port 25. Instead of having to remember port numbers or hard-coding
 them in our program, we can just use the name of the service and have
@@ -624,25 +597,25 @@ them in our program, we can just use the name of the service and have
 need to use.
 
 To write a \index{server}server, all we need to do is add
-\texttt{{\textquotedbl}a{\textquotedbl}} (accept) to the mode after the
-\texttt{{\textquotedbl}n{\textquotedbl}} in \texttt{open()}. Here is a
+\texttt{"a"} (accept) to the mode after the
+\texttt{"n"} in \texttt{open()}. Here is a
 simple TCP server that listens on port 1888:
 
 \iconcode{
 procedure main() \\
-\>   while f := open({\textquotedbl}:1888{\textquotedbl},
-{\textquotedbl}na{\textquotedbl}) do \{ \\
-\>   \ \ \ system({\textquotedbl}myserverd -servicerequest
-\&{\textquotedbl}, f, f) \\
+\>   while f := open(":1888",
+"na") do \{ \\
+\>   \ \ \ system("myserverd -servicerequest
+\&", f, f) \\
 \>   \ \ \ close(f) \\
 \>   \ \ \ \} \\
-\>   (\&errno = 0) {\textbar} stop({\textquotedbl}Open failed:
-{\textquotedbl}, \&errortext) \\
+\>   (\&errno = 0) {\textbar} stop("Open failed:
+", \&errortext) \\
 end
 }
 
-The call \texttt{open({\textquotedbl}:1888{\textquotedbl},
-{\textquotedbl}na{\textquotedbl})} blocks until a client connects.
+The call \texttt{open(":1888",
+"na")} blocks until a client connects.
 The returned value is a file that represents the network connection.
 This example server
 responds to requests by launching a separate process to handle each
@@ -655,7 +628,7 @@ Launching a separate process to handle requests is standard operating
 procedure for many Internet servers, but besides the portability
 concerns, it uses a lot of memory and CPU time. Many servers can be
 implemented in a single process. Chapter 15 includes an example of such
-a server. \ Mode \texttt{{\textquotedbl}na{\textquotedbl}} is less than
+a server. \ Mode \texttt{"na"} is less than
 ideal for one-process servers: it only supports one connection at a
 time. When waiting for a new connection, the process is not doing any
 computation, and when servicing a connection, the program is not
@@ -664,51 +637,48 @@ of short duration, the server will appear to be down, or appear to be
 unacceptably slow, to anyone trying to connect while an existing
 request is being processed.
 
-\subsubsection[Determining IP Numbers]{\sffamily Determining IP Numbers}
+\subsection{Determining IP numbers}
 
-Many programs need the IP number of the
-machine they are talking to. Given a network connection {\texttt f},
-\index{image()}\texttt{image(f)}
-will show the IP address and port of the client machine that is connected
-(this is sometimes called the \index{peername}\textit{peername}). 
+Many programs need the IP number of the machine they are talking to. Given a
+network connection {\texttt f}, \index{image()}\texttt{image(f)} will show the
+IP address and port of the client machine that is connected (this is sometimes
+called the \index{peername}\textit{peername}).
 
-Some programs need to know their own IP number, but
-each machine can have several IP numbers, one for each kind of
-physical network hardware in operation.
+Some programs need to know their own IP number, but each machine can have
+several IP numbers, one for each kind of physical network hardware in operation.
 To obtain a list of local IP numbers, a program can read the output of
-\texttt{/sbin/ifconfig} (UNIX) or \texttt{ipconfig} (Windows). To
-find the IP number used for a particular network connection \texttt{n},
-on some platforms you can call \texttt{gethost(n)}, which returns a string
-with the IP number and port used by the local machine for a given connection.
+\texttt{/sbin/ifconfig} (UNIX) or \texttt{ipconfig} (Windows). To find the IP
+number used for a particular network connection \texttt{n}, on some platforms
+you can call \texttt{gethost(n)}, which returns a string with the IP number and
+port used by the local machine for a given connection.
 
-If you do determine your IP number in one of these ways, it is usually not
-the number seen by the world, because most devices are connecting through
-some form of network address translation.
-To see the number that the world sees, you have to connect to
-someone else and ask them to tell you what IP number they see you at.
+If you do determine your IP number in one of these ways, it is usually not the
+number seen by the world, because most devices are connecting through some form
+of network address translation.  To see the number that the world sees, you have
+to connect to someone else and ask them to tell you what IP number they see you
+at.
 
 \iconcode{
 procedure main(argv) \\
-\>   n := open(argv[1],{\textquotedbl}n{\textquotedbl}) | \\
-\>\>      stop({\textquotedbl}can't connect to {\textquotedbl}, argv[1]|{\textquotedbl}missing host{\textquotedbl}) \\
-\>   write({\textquotedbl}connected to: {\textquotedbl}, image(n)[6:-1]) \\
-\>   write({\textquotedbl}using: {\textquotedbl}, gethost(n)) \\
+\>   n := open(argv[1],"n") | \\
+\>\>      stop("can't connect to ", argv[1]|"missing host") \\
+\>   write("connected to: ", image(n)[6:-1]) \\
+\>   write("using: ", gethost(n)) \\
 end
 }
 
-\subsubsection[Non{}-blocking Network Opens]{\sffamily Non-blocking
-Network Opens}
+\subsection{Non-blocking network \texttt{open}s}
+
 Servers need to never block. The call
-\texttt{open({\textquotedblleft}:port{\textquotedblright},{\textquotedbl}nl{\textquotedbl})}
-creates a \textit{listener} on the specified port, without waiting
-around for someone to actually connect to it. The network file returned
-from \texttt{open()} is not open for reading or writing, so it is not
-good for much...yet. About the only thing you can do with such a file
-is include it (along with any other network connections you have going)
-as an argument in a call to \texttt{select()}. If a listener matches a
-current connection request, \texttt{select()} converts it into a
-regular network connection as per mode
-\texttt{{\textquotedbl}na{\textquotedbl}}.
+\texttt{open(":port","nl")}
+creates a \textit{listener} on the specified port, without waiting around for
+someone to actually connect to it. The network file returned from
+\texttt{open()} is not open for reading or writing, so it is not good for
+much...yet. About the only thing you can do with such a file is include it
+(along with any other network connections you have going) as an argument in a
+call to \texttt{select()}. If a listener matches a current connection request,
+\texttt{select()} converts it into a regular network connection as per mode
+\texttt{"na"}.
 
 In addition to non-blocking servers' listener connections, in the real-world
 clients need a way to do an almost non-blocking connection as well.
@@ -718,7 +688,7 @@ the connection attempt times out. The network client versions of \texttt{open()}
 allows an optional third parameter to supply it with a timeout value,
 in milliseconds.
 
-\subsubsection{UDP}
+\subsection{UDP}
 
 \index{UDP}UDP is another protocol used on the Internet. TCP is like a
 phone call: all messages you send on the connection are guaranteed to
@@ -726,7 +696,7 @@ arrive in the same order they were sent. UDP on the other hand is more
 like the postal service, where messages are not guaranteed to reach
 their destination and may not arrive in the same order they were sent
 in. Messages sent via UDP are called \textit{datagrams}.
-It{\textquotesingle}s a lot cheaper (faster) to send UDP messages than
+It's a lot cheaper (faster) to send UDP messages than
 TCP, though, especially if you are sending them across the Internet
 rather than to a local machine. Sending a postcard is usually cheaper
 than a long distance phone call!
@@ -738,18 +708,18 @@ same socket so it will use \texttt{open()} with \texttt{read()} and
 \index{send()}\texttt{send()}\texttt{/}\index{receive()}\texttt{receive()}.
 
 The following example provides a service called
-{\textquotedbl}rdate{\textquotedbl} that allows a program to ask a
+"rdate" that allows a program to ask a
 remote host what time it has. The server waits for request datagrams
 and replies with the date and time. The
-\texttt{{\textquotedbl}u{\textquotedbl}} flag added to the mode in the
+\texttt{"u"} flag added to the mode in the
 call to \texttt{open()} signifies that a UDP connection should be used.
 The function \texttt{receive()} waits for a datagram to arrive, and
 then it constructs a record having the address the message came from
 and the message in it. The server uses the address to send the reply.
 
 \iconcode{
-\ \ \ f := open({\textquotedbl}:1025{\textquotedbl},
-{\textquotedbl}nua{\textquotedbl}) \\
+\ \ \ f := open(":1025",
+"nua") \\
  \ \ while r := receive(f) do \{ \\
 \ \ \ \ \ \ \# Process the request in r.msg \\
 \ \ \ \ \ \ ... \\
@@ -759,10 +729,10 @@ and the message in it. The server uses the address to send the reply.
 
 The record returned by \texttt{receive()} has two fields: the
 \texttt{addr} field contains the address of the sender in
-\texttt{{\textquotedbl}}\texttt{\textit{host}}\texttt{:}\texttt{\textit{port}}\texttt{{\textquotedbl}}
+\texttt{"}\texttt{\textit{host}}\texttt{:}\texttt{\textit{port}}\texttt{"}
 form, and the \texttt{msg} field contains the message.
 
-To write a UDP client, use mode \texttt{{\textquotedbl}nu{\textquotedbl}}
+To write a UDP client, use mode \texttt{"nu"}
 Since UDP is not reliable, the \texttt{receive()} is guarded
 with a \texttt{select()}; otherwise, the program might hang forever if
 the reply is lost. The timeout of five seconds in the call to
@@ -773,22 +743,22 @@ service information to a particular network protocol, in this case UDP.
 
 \iconcode{
 procedure main(args) \\
-\>   (*args = 1) {\textbar} stop({\textquotedbl}Usage: rdate
-host{\textquotedbl}) \\
+\>   (*args = 1) {\textbar} stop("Usage: rdate
+host") \\
 \>   host := args[1] \\
-\>   s := getserv({\textquotedbl}daytime{\textquotedbl},
-{\textquotedbl}udp{\textquotedbl}) \\
+\>   s := getserv("daytime",
+"udp") \\
 \>   f :=
-open(host{\textbar}{\textbar}{\textquotedbl}:{\textquotedbl}{\textbar}{\textbar}s.port,
-{\textquotedbl}nu{\textquotedbl}) {\textbar} \\
-\>   \ \ \ stop({\textquotedbl}Open failed: {\textquotedbl},
+open(host{\textbar}{\textbar}":"{\textbar}{\textbar}s.port,
+"nu") {\textbar} \\
+\>   \ \ \ stop("Open failed: ",
 \&errortext) \\
-\>   writes(f, {\textquotedbl} {\textquotedbl}) \\
+\>   writes(f, " ") \\
 \>   if *select(f, 5000) = 0 then \\
-\>   \ \ \ stop({\textquotedbl}Connection timed out.{\textquotedbl}) \\
+\>   \ \ \ stop("Connection timed out.") \\
 \>   r := receive(f) \\
-\>   write({\textquotedbl}Time on {\textquotedbl}, host,
-{\textquotedbl} is {\textquotedbl}, r.msg) \\
+\>   write("Time on ", host,
+" is ", r.msg) \\
 end
 }
 
@@ -802,11 +772,11 @@ use a standard Internet protocol, you should check first to see if the
 protocol is built-in to the language as part of the messaging
 facilities, described in the next section.
 
-\subsection{Messaging Facilities}
+\section{Messaging Facilities}
 
-Unicon{\textquotesingle}s \index{messaging}messaging facilities provide
+Unicon's \index{messaging}messaging facilities provide
 higher level access to many popular Internet protocols. A call to
-\texttt{open()} using mode \texttt{{\textquotedbl}m{\textquotedbl}}
+\texttt{open()} using mode \texttt{"m"}
 establishes a messaging connection. The filename argument to a
 messaging connection is a URI (Uniform Resource Indicator) that
 specifies the protocol, host machine, and resource to read or write.
@@ -815,17 +785,17 @@ Extra arguments to open() are used to send headers defined by the
 protocol. For example, the call
 
 \iconcode{
-open({\textquotedbl}mailto:unicon-group{\textquotedbl}, {\textquotedbl}m{\textquotedbl}, {\textquotedbl}Reply To: jeffery@cs.uidaho.edu{\textquotedbl})}
+open("mailto:unicon-group", "m", "Reply To: jeffery@cs.uidaho.edu")}
 
 \noindent
 supplies a Reply To field as a third parameter to \texttt{open()} on an
 SMTP connection.
 
-Header fields from the server{\textquotesingle}s response to a
+Header fields from the server's response to a
 connection are read by subscripting the message connection value
 with a string header name; an example is in the next section.
 
-\subsubsection{HTTP}
+\subsection{HTTP}
 
 \index{HTTP}HTTP is used to read or write to Web servers; the content
 read or written typically consists of \index{HTML}HTML text. The
@@ -839,8 +809,8 @@ link basename}
 
 \iconcode{
 procedure main(argv) \\
-\>   f1 := open(argv[1],{\textquotedbl}m{\textquotedbl}) \\
-\>   f2 := open(basename(argv[1]),{\textquotedbl}w{\textquotedbl}) \\
+\>   f1 := open(argv[1],"m") \\
+\>   f2 := open(basename(argv[1]),"w") \\
 \>   while write(f2, read(f1)) \\
 end
 }
@@ -851,17 +821,17 @@ empty file. Programs can check the HTTP status code in order to
 determine the nature of the problem. Status codes and other metadata
 from HTTP header lines are inspected by subscripting the connection
 with the desired header. For example, in the previous program, checking
-\texttt{f1[{\textquotedbl}Status-Code{\textquotedbl}]} would allow us
+\texttt{f1["Status-Code"]} would allow us
 to detect HTTP errors, and
-\texttt{f1[{\textquotedbl}Location{\textquotedbl}]} would allow us to
+\texttt{f1["Location"]} would allow us to
 find the new location of the file, if the HTTP server had informed us
 that the file had moved. You can retrieve this status information on a
 remote file without retrieving the file itself. If you open a URI with
-mode \texttt{{\textquotedbl}ms{\textquotedbl}} instead of
-\texttt{{\textquotedbl}m{\textquotedbl}}, an HTTP request for header
+mode \texttt{"ms"} instead of
+\texttt{"m"}, an HTTP request for header
 information is made, but no data is retrieved.
 
-\subsubsection{SMTP and POP}
+\subsection{SMTP and POP}
 
 \index{SMTP}SMTP is used to send a mail message. Mail is delivered via
 an SMTP server machine on which the user must have a valid account.
@@ -879,7 +849,7 @@ mail}\texttt{delete()} or \index{pop()!from POP mail}\texttt{pop()};
 messages are buffered in such a way that message removal on the server
 occurs when the connection is explicitly and successfully closed.
 
-Here{\textquotesingle}s a simple program that illustrates the use of
+Here's a simple program that illustrates the use of
 msesaging to get email from a POP server. It gets messages from the
 server without deleting them and, for every message, prints out who the
 message is from as well as the subject line.
@@ -887,24 +857,24 @@ message is from as well as the subject line.
 \iconcode{
 procedure main(argv) \\
 \>   user := argv[1] {\textbar}
-getenv({\textquotedblleft}USER{\textquotedblright}) {\textbar}
-stop({\textquotedblleft}no user{\textquotedblright}) \\
+getenv("USER") {\textbar}
+stop("no user") \\
 \>   passwd := argv[2] {\textbar}
-getenv({\textquotedblleft}PASSWD{\textquotedblright}) {\textbar}
-stop({\textquotedblleft}no password{\textquotedblright}) \\
+getenv("PASSWD") {\textbar}
+stop("no password") \\
 \>   server := argv[3] {\textbar}
-getenv({\textquotedblleft}MAILHOST{\textquotedblright}) {\textbar}
-{\textquotedblleft}mailhost{\textquotedblright} \\
+getenv("MAILHOST") {\textbar}
+"mailhost" \\
 \>   conn :=
-open({\textquotedblleft}pop://{\textquotedblright}{\textbar}{\textbar}user{\textbar}{\textbar}{\textquotedblright}:{\textquotedblright}{\textbar}{\textbar}passwd{\textbar}{\textbar}{\textquotedblright}@{\textquotedblright}{\textbar}{\textbar}server,
-{\textquotedblleft}m{\textquotedblright}) {\textbar} \\
-\>   \ \ \ stop({\textquotedblleft}couldn{\textquotesingle}t connect to
-the POP server {\textquotedblleft}, server) \\
+open("pop://"{\textbar}{\textbar}user{\textbar}{\textbar}":"{\textbar}{\textbar}passwd{\textbar}{\textbar}"@"{\textbar}{\textbar}server,
+"m") {\textbar} \\
+\>   \ \ \ stop("couldn't connect to
+the POP server ", server) \\
 \>   every msg := !conn do msg ? \\
 \>   \ \ \ while line :=
-tab(find({\textquotedblleft}{\textbackslash}n{\textquotedblright})) do \\
-\>   \ \ \ \ \ \ if =({\textquotedblleft}From: {\textquotedblleft}
-{\textbar} {\textquotedblleft}Subject: {\textquotedblleft}) then
+tab(find("{\textbackslash}n")) do \\
+\>   \ \ \ \ \ \ if =("From: "
+{\textbar} "Subject: ") then
 write(line) \\
 \>   close(conn) \\
 end
@@ -913,9 +883,9 @@ end
 \noindent
 You should improve the password handling in this program if you use it!
 Chapter 14 includes another example use of
-Unicon{\textquotesingle}s POP messaging facilities: a spam filter.
+Unicon's POP messaging facilities: a spam filter.
 
-\subsection{Tasks}
+\section{Tasks}
 
 A task is the virtual machine execution state of a program. The tasking
 facilities allow Unicon programs to load, execute, communicate with,
@@ -928,9 +898,9 @@ construct nor do they include special support for multiprocessor
 hardware. Their domain is that of high-level language support for
 programs that benefit from or require a tighter coupling than that
 provided by inter-process communication; that is, programs that access
-each other{\textquotesingle}s state extensively.
+each other's state extensively.
 
-Co-expressions provide the tasking facilities{\textquotesingle} program
+Co-expressions provide the tasking facilities' program
 execution model, and co-expression activation serves as the
 communication mechanism. The extensions are general enough to be useful
 in a wide variety of contexts. For example, programs that use the
@@ -943,7 +913,7 @@ control structures. Several existing functions have been extended to
 offer additional support for the multi-tasking environment. 
 Separate memory allocation regions are established for each task. 
 
-\subsubsection[Preliminary Terminology]{Preliminary Terminology}
+\subsection{Preliminary terminology}
 
 Before describing the task model, a few definitions are needed. These
 definitions pertain to regions of memory referenced by programs during
@@ -969,7 +939,7 @@ contains the memory used to implement one or more local name spaces.
 Co-expressions in an Icon program share access to the program state and
 can use it to communicate. 
 
-\subsubsection{Tasks as an extended co-expression model}
+\subsection{Tasks as an extended co-expression model}
 
 A task is the execution state of a program within the virtual machine
 [Griswold86]. A single task called the root is created when the
@@ -1001,11 +971,11 @@ processes affect each other. For example, if one task is exhibiting
 thrashing heap behavior in which garbage collections are frequent, the
 other tasks in the system can execute at full speed during the portion
 of time in which they are running, since they do not allocate memory
-out of the thrashing task{\textquotesingle}s (full) heap. This minimal
-effect of tasks on each others{\textquotesingle} behavior is especially
+out of the thrashing task's (full) heap. This minimal
+effect of tasks on each others' behavior is especially
 important in the domain of execution monitoring. 
 
-\subsubsection{Task creation}
+\subsection{Task creation}
 
 A task can create other tasks. The function 
 
@@ -1013,67 +983,66 @@ A task can create other tasks. The function
 load(s, L, f1, f2, f3, i1, i2, i3)}
 
 \noindent loads an icode file [Griswold86] specified by the file name
-\textstyleSourceText{\textrm{s}}, creates a task for it and returns a
-co-expression corresponding to the invocation of the procedure
-\textstyleSourceText{\textrm{main(L)}} in the loaded icode file.
-\textstyleSourceText{\textrm{L}}\textstyleSourceText{ }defaults to the
-empty list. Unlike conventional Icon command-line argument lists, the
-argument list passed to\textstyleSourceText{
-}\textstyleSourceText{\textrm{load()}} can contain values of any type,
-such as procedures, lists, and tables in the calling task.
+\textrm{s}, creates a task for it and returns a co-expression corresponding to
+the invocation of the procedure {\textrm{main(L)}} in the
+loaded icode file.  {\textrm{L}}{
+}defaults to the empty list. Unlike conventional Icon command-line argument
+lists, the argument list passed to{
+}{\textrm{load()}} can contain values of any type, such as
+procedures, lists, and tables in the calling task.
 
 The task being loaded is termed the child task, while the task calling
-\textstyleSourceText{\textrm{load()}} is termed the parent. The
+{\textrm{load()}} is termed the parent. The
 collection of all tasks forms a tree of parent-child
 relationships.
 
-\textstyleSourceText{\texttt{f1}}, \textstyleSourceText{\texttt{f2}},
-and \textstyleSourceText{\texttt{f3}}\textstyleSourceText{ }are file
-arguments to use as \textstyleSourceText{\texttt{\&input}},
-\textstyleSourceText{\texttt{\&output}}, and
-\textstyleSourceText{\texttt{\&error}} in the loaded task;
-\textstyleSourceText{\texttt{\&input}},
-\textstyleSourceText{\texttt{\&output}}, and
-\textstyleSourceText{\texttt{\&error}}\textstyleSourceText{\textrm{
-}}default to those of the loading task.\textstyleSourceText{\textrm{
-}}\textstyleSourceText{\texttt{i1,}} \textstyleSourceText{\texttt{i2}},
-and \textstyleSourceText{\texttt{i3}} are three integer arguments that
-supply initial region sizes for the task{\textquotesingle}s block,
+{\texttt{f1}}, {\texttt{f2}},
+and {\texttt{f3}}{ }are file
+arguments to use as {\texttt{\&input}},
+{\texttt{\&output}}, and
+{\texttt{\&error}} in the loaded task;
+{\texttt{\&input}},
+{\texttt{\&output}}, and
+{\texttt{\&error}}{\textrm{
+}}default to those of the loading task.{\textrm{
+}}{\texttt{i1,}} {\texttt{i2}},
+and {\texttt{i3}} are three integer arguments that
+supply initial region sizes for the task's block,
 string, and stack memory areas, respectively.
-\textstyleSourceText{\texttt{i1}} and \textstyleSourceText{\texttt{i2}}
-default to 65000, while \textstyleSourceText{\texttt{i3 }}defaults to
+{\texttt{i1}} and {\texttt{i2}}
+default to 65000, while {\texttt{i3 }}defaults to
 20000 (the defaults may be changed by the environment variables
-\textstyleSourceText{\texttt{BLKSIZE}},
-\textstyleSourceText{\texttt{STRSIZ}}\texttt{E}, and
-\textstyleSourceText{\texttt{MSTKSIZE}}). 
+{\texttt{BLKSIZE}},
+{\texttt{STRSIZ}}\texttt{E}, and
+{\texttt{MSTKSIZE}}). 
 
-\subsubsection{Running other programs}
+\subsection{Running other programs}
 
-A co-expression created by \textstyleSourceText{\texttt{load()}} is
+A co-expression created by {\texttt{load()}} is
 activated like any other co-expression. When activated with the
-\textstyleSourceText{\texttt{@}} operator, the child task begins
+{\texttt{@}} operator, the child task begins
 executing its main procedure. Unless it suspends or activates
-\textstyleSourceText{\texttt{\&source}}, the child task runs to
+{\texttt{\&source}}, the child task runs to
 completion, after which control is returned to the parent. Chapter 5
 presents an alternative means of executing a child with which the
 parent retains control over the child as it executes. 
 
 This default behavior is illustrated by the program
-\textstyleSourceText{\texttt{seqload}}, which loads and executes each
+{\texttt{seqload}}, which loads and executes each
 of its arguments (string names of executable Icon programs) in turn. In
 this program the variable arguments is a list of strings passed into
 the Icon program from the operating system. Each of these strings
 (extracted from the list using the element-generation operator,
-\textstyleSourceText{\texttt{!}}) is passed in turn to
-\textstyleSourceText{\texttt{load()}}\texttt{.
-}\textstyleSourceText{\texttt{load()}} reads the code for each argument
+{\texttt{!}}) is passed in turn to
+{\texttt{load()}}\texttt{.
+}{\texttt{load()}} reads the code for each argument
 and creates a task in which to execute the loaded program; the tasks
 are then executed one-by-one by the co-expression activation operator,
-\textstyleSourceText{\texttt{@}}. This is ordinary Icon code; there is
+{\texttt{@}}. This is ordinary Icon code; there is
 nothing special about this example except the semantics of the
-\textstyleSourceText{\texttt{load()}} function and the independent
+{\texttt{load()}} function and the independent
 execution environment (separate global variables, heaps, and so forth),
-that \textstyleSourceText{\texttt{load()}}\textstyleSourceText{
+that {\texttt{load()}}{
 }provides to each task. 
 
 \iconcode{
@@ -1087,27 +1056,26 @@ For example, if three Icon programs whose executable files are named
 translate, assemble, and link are to be run in succession, the command 
 
 \iconcode{
-\textstyleSourceText{\texttt{seqload translate assemble link}}}
+{\texttt{seqload translate assemble link}}}
 
 \noindent
 executes the three programs without reloading the interpreter for each
 program. 
 
-\subsubsection{Data access}
+\subsection{Data access}
 
 Although tasks have separate program states, they reside in the same
 address space and can share data; values can be transmitted from task
-to task through
-\textstyleSourceText{\texttt{main()}}{\textquotesingle}s argument list,
-through co-expression activation, or by use of event monitoring
-facilities described in [Griswold92b]. In the following pair of
-programs, the parent receives a list value from the child and writes
-its elements out in reverse order. 
+to task through {\texttt{main()}}'s argument list, through
+co-expression activation, or by use of event monitoring facilities
+described in [Griswold92b]. In the following pair of programs, the
+parent receives a list value from the child and writes its elements
+out in reverse order.
 
 \iconcode{
 \# parent.icn \\
 procedure main() \\
-\>   L := @ load({\textquotedbl}child{\textquotedbl}) \\
+\>   L := @ load("child") \\
 \>   while write(pull(L)) \\
 end \\
 \ \\
@@ -1122,23 +1090,21 @@ end
 This data access applies to all first-class data objects in Icon, such
 as procedures and co-expressions. 
 
-\subsubsection{Shared icode libraries}
+\subsection{Shared icode libraries}
 
-Programs that are written to take advantage of the multi-tasking
-environment gain in space efficiency and modularity. Code sharing is
-one natural way to achieve space efficiency in a collection of
-programs. Since procedures are first-class data values in Icon, code
-sharing can be implemented via data sharing. Programs executing in a
-single invocation of the interpreter can share code easily if the code
-is not required to produce side effects on global variables in the
-calling task{\textquotesingle}s program state. If side-effects to the
-calling task{\textquotesingle}s program state are required, the shared
-code must generally be written with care to explicitly reference the
-calling task{\textquotesingle}s state. Side effects in the client task
-can also be achieved through the parameters passed in and results
-obtained by calling the shared procedure. 
+Programs that are written to take advantage of the multi-tasking environment
+gain in space efficiency and modularity. Code sharing is one natural way to
+achieve space efficiency in a collection of programs. Since procedures are
+first-class data values in Icon, code sharing can be implemented via data
+sharing. Programs executing in a single invocation of the interpreter can share
+code easily if the code is not required to produce side effects on global
+variables in the calling task's program state. If side-effects to the calling
+task's program state are required, the shared code must generally be written
+with care to explicitly reference the calling task's state. Side effects in the
+client task can also be achieved through the parameters passed in and results
+obtained by calling the shared procedure.
 
-\subsubsection{Loading shared code}
+\subsection{Loading shared code}
 
 Consider a collection of applications that make extensive use of
 procedures found in the Icon program library (IPL) [Griswold90c]. If
@@ -1152,20 +1118,18 @@ their generated code.
 
 Both of these problems can be solved entirely at the source level: In
 order to introduce a shared Icon procedure into the name space, a
-global variable of the same name must be declared. Managing the loading
-of shared libraries is itself a natural task to assign to an Icon
-procedure that uses a table to map strings to the pointers to the
-procedures in question. 
+global variable of the same name must be declared. Managing the
+loading of shared libraries is itself a natural task to assign to an
+Icon procedure that uses a table to map strings to the pointers to the
+procedures in question.
 
-\subsubsection{Code sharing example}
+\subsection{Code sharing example}
 
-The following collection of three programs illustrate one schema that
-allows code sharing. Other conventions can certainly be devised, and
-much of the sharing infrastructure presented here can be automatically
-generated. Program calc.icn consists of a shared library procedure
-named \textstyleSourceText{\texttt{calc()}} and a main procedure that
-exports a reference to \textstyleSourceText{\texttt{calc()}} for
-sharing: 
+The following collection of three programs illustrate one schema that allows
+code sharing. Other conventions can certainly be devised, and much of the
+sharing infrastructure presented here can be automatically generated. Program
+calc.icn consists of a shared library procedure named {\texttt{calc()}} and a
+main procedure that exports a reference to {\texttt{calc()}} for sharing:
 
 \iconcode{
 \# calc.icn \\
@@ -1186,18 +1150,18 @@ Shared modules can export other values besides procedures using the
 same mechanism.
 
 The parent task that loads the various shared library clients implements
-a procedural encapsulation (\textstyleSourceText{\texttt{loadlib()}} in
+a procedural encapsulation ({\texttt{loadlib()}} in
 this example) of an Icon table to store references to shared routines.
 The parent passes this procedure to clients. Each client calls the
 procedure for each shared routine. Routines that are already loaded are
 returned to requesting tasks after a simple Icon table lookup. Whenever
 a routine is requested that has not been loaded, the
-\textstyleSourceText{\texttt{load()}} function is called and the shared
+{\texttt{load()}} function is called and the shared
 library activated. 
 
 \iconcode{
 procedure main(arguments) \\
-\>   @load({\textquotedbl}client{\textquotedbl},put(arguments,loadlib)) \\
+\>   @load("client",put(arguments,loadlib)) \\
 end \\
 \ \\
 procedure loadlib(s, C) \\
@@ -1208,111 +1172,104 @@ procedure loadlib(s, C) \\
 end
 }
 
-A client of \textstyleSourceText{\texttt{calc}} declares a global
-variable named \textstyleSourceText{\textrm{calc}}, and assigns its
-value after inspecting its argument list to find the shared library
-loader: 
+A client of {\texttt{calc}} declares a global variable named {\textrm{calc}},
+and assigns its value after inspecting its argument list to find the shared
+library loader:
 
 \iconcode{
 global loadlib \\
 global calc \\
 procedure main(arguments) \\
-\>   if /loadlib then stop({\textquotedbl}no shared libraries
-present{\textquotedbl}) \\
-\>   loadlib({\textquotedbl}calc{\textquotedbl}, \&current) \\
+\>   if /loadlib then stop("no shared libraries
+present") \\
+\>   loadlib("calc", \&current) \\
 \>   \# ... remainder of program may call shared calc \\
 end
 }
 
-\subsubsection{Sharing procedure collections}
+\subsection{Sharing procedure collections}
 
 The primary deficiency of the previous example is that it requires one
 shared library procedure per Icon module, that is, separate
 compilation. In practice it is more convenient to have a collection of
 related procedures in a given Icon compilation unit. Shared libraries
-can employ such a mechanism by resorting to a simple database that maps
-procedure names to load modules. 
+can employ such a mechanism by resorting to a simple database that
+maps procedure names to load modules.
 
-\subsection{Monitoring Facilities}
+\section{Monitoring Facilities}
 
-Unicon{\textquotesingle}s execution monitoring facilities were developed
-for Clint Jeffery{\textquotesingle}s dissertation and are presented in
-detail in {\textquotedblleft}Program Monitoring and Visualization: an
-Exploratory Approach{\textquotedblright}. This section provides a
-summary. Unlike in MT Icon, Unicon{\textquotesingle}s monitoring
-facilities impose no noticeable performance cost when they are not in
-use, so they are incorporated as a standard feature of the language and
-always available.
+Unicon's execution monitoring facilities were developed for Clint Jeffery's
+dissertation and are presented in detail in ``Program Monitoring and
+Visualization: an Exploratory Approach''. This section provides a
+summary. Unlike in MT Icon, Unicon's monitoring facilities impose no noticeable
+performance cost when they are not in use, so they are incorporated as a
+standard feature of the language and always available.
 
-Generally, a program monitors another program by loading it as a task,
-and requesting program execution behavior \textit{events} from it when
-it activates it as a co-expression. An event is a unit of program
-execution behavior, consisting of an \textit{event code}, which is a
-one letter string that indicates what the program is doing, and an
-\textit{event value}, an associated piece of data that is being read,
-written, or manipulated at the time of the event. There are
-approximately 120 kinds of events with different codes. Observing all
-of them is a compute-intensive task, resulting in many co-expression
-switches per executing line of source code in the program being
+Generally, a program monitors another program by loading it as a task, and
+requesting program execution behavior \textit{events} from it when it activates
+it as a co-expression. An event is a unit of program execution behavior,
+consisting of an \textit{event code}, which is a one letter string that
+indicates what the program is doing, and an \textit{event value}, an associated
+piece of data that is being read, written, or manipulated at the time of the
+event. There are approximately 120 kinds of events with different
+codes. Observing all of them is a compute-intensive task, resulting in many
+co-expression switches per executing line of source code in the program being
 monitored.
 
-A program calls \texttt{EvGet(c, C)} to request events when activating a
-program denoted by co-expression \texttt{C}, instead of using the usual
-activate (\texttt{@}) operator. Cset \texttt{c} is an \textit{event
-mask} that provides a filter to select event codes of interest. As
-the program executes and events occur, their codes are checked.
-Events that are in the event mask are reported via a co-expression switch,
-and returned from \texttt{EvGet()} in the monitor.
+A program calls \texttt{EvGet(c, C)} to request events when activating
+a program denoted by co-expression \texttt{C}, instead of using the
+usual activate (\texttt{@}) operator. Cset \texttt{c} is an
+\textit{event mask} that provides a filter to select event codes of
+interest. As the program executes and events occur, their codes are
+checked.  Events that are in the event mask are reported via a
+co-expression switch, and returned from \texttt{EvGet()} in the monitor.
 
-There is a strong, if implicit distinction between activating a program
-in order to monitor it, and activating a program normally. When a
-program requests events using \texttt{EvGet()} it is playing an
-observer role, not a peer role, with the task it is monitoring. The
-program being observed is generally not aware of the monitoring that is
-going on. It does not usually activate the monitor task explicitly or
-communicate with it directly. Instead, it is the language virtual
-machine and runtime system that is reporting what is going on by
-activating the monitoring task.
+There is a strong, if implicit distinction between activating a
+program in order to monitor it, and activating a program
+normally. When a program requests events using \texttt{EvGet()} it is
+playing an observer role, not a peer role, with the task it is
+monitoring. The program being observed is generally not aware of the
+monitoring that is going on. It does not usually activate the monitor
+task explicitly or communicate with it directly. Instead, it is the
+language virtual machine and runtime system that is reporting what is
+going on by activating the monitoring task.
 
-At present, the only program to which a monitored program will report
-events is the program that loaded it -- its parent. The parent,
-however, may \textit{forward} program execution events to other tasks,
-allowing them to observe the same behavior that it sees. The function
-\texttt{EvSend(code, value, C)} transmits an event to co-expression
-\texttt{C}.
+At present, the only program to which a monitored program will report events
+is the program that loaded it--its parent. The parent, however, may
+\textit{forward} program execution events to other tasks, allowing them to
+observe the same behavior that it sees. The function
+\texttt{EvSend(code, value, C)} transmits an event to co-expression \texttt{C}.
 
-Some types of events are very frequent, frequent enough that processing
-all of them may be unacceptably slow, if a monitor only needs a tiny
-subset of those events in order to do its job. \ Good examples are
-virtual machine instruction events, and source code line number change
-events. If a monitor only needs to observe specific VM instructions, or
-be informed when a program reaches certain line numbers, it requires an
-additional means of filtering events of interest.
+Some types of events are very frequent, frequent enough that processing all of
+them may be unacceptably slow, if a monitor only needs a tiny subset of those
+events in order to do its job. \ Good examples are virtual machine instruction
+events, and source code line number change events. If a monitor only needs to
+observe specific VM instructions, or be informed when a program reaches certain
+line numbers, it requires an additional means of filtering events of interest.
 
-\section*{Summary}
+\section{Summary}
 
-Unicon{\textquotesingle}s system facilities provide a high-level
-interface to the common features of modern operating systems, such
-as directories and network connections. This interface is vital to most
-programs, and it also presents the main portability challenges,
-since a Unicon design goal is for applications to require no
-\index{source code}source code changes and no conditional code needed
-to run on most operating systems. Of course some application domains
-such as system administration are inevitably platform dependent.
+Unicon's system facilities provide a high-level interface to the
+common features of modern operating systems, such as directories and
+network connections. This interface is vital to most programs, and it
+also presents the main portability challenges, since a Unicon design
+goal is for applications to require no \index{source code}source code
+changes and no conditional code needed to run on most operating
+systems. Of course some application domains such as system
+administration are inevitably platform dependent.
 
-There are two major areas of the system interface that are whole
-application domains extensive enough to warrant an entire chapter of
-their own: \index{database}databases and graphics. Databases can be
-viewed as a hybrid of the file and directory system interface with some
-of the data structures described in Chapter 2. Since many databases are
-implemented using a client/server architecture, the database interface
-also includes aspects of networking. Databases are presented in the
-Chapter 6.
+There are two major areas of the system interface that are whole application
+domains extensive enough to warrant an entire chapter of their own:
+\index{database}databases and graphics. Databases can be viewed as a hybrid of
+the file and directory system interface with some of the data structures
+described in Chapter 2. Since many databases are implemented using a
+client/server architecture, the database interface also includes aspects of
+networking. Databases are presented in the Chapter 6.
 
 Graphics is another crucial component of the system interface, rich
 enough to warrant special features built-in to the language, and deep
 enough to warrant an entire book. Like databases, graphics can be
-viewed as an extension of the file data type described in this chapter.
-Unicon{\textquotesingle}s powerful 2D and 3D graphics facilities are
+viewed as an extension of the file data type described in this
+chapter.  Unicon's powerful 2D and 3D graphics facilities are
 discussed in Chapter 7.
 

@@ -1,50 +1,46 @@
-\clearpage\section{Chapter 18: Scanning and Parsing}
+\chapter{Scanning and Parsing}
 
 Scanners and parsers are language processing components routinely used
 by writers of compilers and interpreters. Techniques developed for
 scanning and parsing may be useful to any application that processes
 complex input, such as:
-
 \begin{itemize}
-\item a desktop calculator with arithmetic expression evaluation
-\item a \index{compiler}compiler for a programming language
-\item an HTML style checker
-\item a spreadsheet with formulas in the cells
+  \item a desktop calculator with arithmetic expression evaluation
+  \item a \index{compiler}compiler for a programming language
+  \item an HTML style checker
+  \item a spreadsheet with formulas in the cells.
 \end{itemize}
 
 This chapter describes versions of the classic UNIX scanner and parser
 generators, \index{lex}\textsf{lex} and \index{yacc}\textsf{yacc}, that
 support Unicon. The Unicon-friendly tools are called \textsf{ulex} and
-\textsf{iyacc}. In this chapter the term {\em scanning\/} refers to lexical
-analysis as found in typical compilers, the processing of characters
-one at a time to form words or tokens. This is not to be confused with
-scanning an image of a piece of paper, nor is it synonymous with
-Unicon{\textquotesingle}s built-in string scanning mechanism, although
-string scanning can certainly be used to implement a scanner for a
-compiler.
+\textsf{iyacc}. In this chapter the term \emph{scanning} refers to lexical
+analysis as found in typical compilers, the processing of characters one at
+a time to form words or tokens. This is not to be confused with scanning
+an image of a piece of paper, nor is it synonymous with Unicon's
+built-in string scanning mechanism, although string scanning can certainly be
+used to implement a scanner for a compiler.
 
-Building a \index{scanner}scanner or parser can be a daunting task for
-the newcomer. However, if you start simple, it is very easy to work
-with these very high-level tools with only a day{\textquotesingle}s
-worth of experience. For people with experience using the C versions of
-\textsf{lex} and \textsf{yacc}, be assured that the major features
-available in those programs are supported here. Additional
-documentation on \textsf{ulex} and \textsf{iyacc} are on the Unicon Web
-page.
+Building a \index{scanner}scanner or parser can be a daunting task for the
+newcomer. However, if you start simple, it is very easy to work with
+these very high-level tools with only a day's worth of experience. For
+people with experience using the C versions of \textsf{lex} and \textsf{yacc},
+be assured that the major features available in those programs are supported
+here. Additional documentation on \textsf{ulex} and \textsf{iyacc} are on the
+Unicon Web page.
 
-When you{\textquotesingle}re finished with this chapter, you will know
+When you're finished with this chapter, you will know
 how to:
-
 \begin{itemize}
-\item \ build scanners using \textsf{ulex}
-\item \ build parsers using \textsf{iyacc}
-\item \ use the two tools together with Unicon{\textquotesingle}s data
-structures
-\item \ generate useful and appropriate syntax error messages using the
-\textsf{merr} tool
+  \item build scanners using \textsf{ulex}
+  \item build parsers using \textsf{iyacc}
+  \item use the two tools together with Unicon's data structures
+  \item generate useful and appropriate syntax error messages using the
+    \textsf{merr} tool.
 \end{itemize}
 
-\subsection{What are Scanning and Parsing?}
+
+\section{What are Scanning and Parsing?}
 
 Scanning and parsing originate in the field of language recognition.
 Consider the sentence \textit{This computer can run my software}.
@@ -82,8 +78,8 @@ the example sentence.
 \end{center}
 
 {\sffamily\bfseries Figure 18-1:}
-{\sffamily Parse Tree for {\textquotedbl}This computer can run my
-software{\textquotedbl}}
+{\sffamily Parse Tree for "This computer can run my
+software"}
 
 \bigskip
 
@@ -91,7 +87,7 @@ If you have studied linguistics, this description of scanning and
 parsing may seem oversimplified, and if you have not, then
 you may be lost already.  The study of human languages has shown them
 to be quite complicated.  The tools presented in this chapter
-don{\textquotesingle}t handle all the complexities of human language,
+don't handle all the complexities of human language,
 on the contrary, they use basic linguistic concepts to elegantly solve
 most problems encountered in the processing of computer languages.
 
@@ -102,7 +98,7 @@ of these complex tools. If this chapter is your first introduction to
 1990), or consult a reference on writing compilers for more information
 on these topics.
 
-\subsection{ulex}
+\section{\textsf{ulex}}
 
 The name \textsf{ulex} stands for Unicon LEX. The \textsf{ulex}
 program was written by Katie Ray with a little help from Clinton Jeffery
@@ -111,18 +107,17 @@ It is inspired by the classic UNIX program called \textsf{lex} that
 dates back to 1975.
 
 The \textsf{ulex} tool takes a lexical specification (whose
-name supplied on the command line should end with .l); the lexical
+name supplied on the command line should end with \texttt{.l}); the lexical
 specification gives rules for forming words (and punctuation) to
 be recognized.  For example a lexical specification might tell exactly
 which characters are allowed in variable names, and exactly how the
 various kinds of numeric constants are formed for a given language.
 
-From this lexical specification, Ulex writes a corresponding Unicon
-.icn file with the source code for a lexical analyzer (consisting of
-an Icon procedure) that implements that lexical
-specification. A \index{lexical
-analyzer}lexical analyzer is a fancy name for a scanner, and the
-lexical analyzer generated by \textsf{ulex} is simply a procedure named
+From this lexical specification, \textsf{ulex} writes a corresponding Unicon
+.icn file with the source code for a lexical analyzer (consisting of an Icon
+procedure) that implements that lexical specification. A \index{lexical
+  analyzer}lexical analyzer is a fancy name for a scanner, and the lexical
+analyzer generated by \textsf{ulex} is simply a procedure named
 \textsf{yylex()}.
 
 The rules that make up
@@ -133,7 +128,7 @@ of words. The specification of the lexical structure of many languages
 can be concisely and precisely stated using this notation. You only
 need to know the basics of regular expressions to use them productively.
 
-\subsubsection{A Word Count Program}
+\subsection{A word count program}
 
 There is a UNIX program called \textsf{wc}, short for \index{word
 count}word count, that counts newlines, words, and characters in a
@@ -148,9 +143,8 @@ ulex wc.l \\
 unicon wc
 }
 
-The first command translates from the lexical specification file wc.l
-into a Unicon source file, wc.icn, which can then be compiled in the
-usual way.
+The first command translates from the lexical specification file wc.l into a
+Unicon source file, wc.icn, which can then be compiled in the usual way.
 
 \bigskip
 
@@ -219,7 +213,7 @@ characteristics. If speed is your primary consideration you can look in
 the documentation for \textsf{flex} (Paxson 1995) to get five
 progressively more complex but faster versions of word count.
 
-\subsubsection{A Lexical Analyzer for a Desktop Calculator}
+\subsection{A lexical analyzer for a desktop calculator}
 
 The above example illustrates using \textsf{ulex} to write standalone
 programs, but the function \textsf{yylex()} produced by \textsf{ulex}
@@ -230,12 +224,12 @@ generated by the \textsf{iyacc} program determines how those words may
 be combined into sentences, if possible. For this reason, it makes
 sense to study how \textsf{ulex} is used in this typical context.
 
-One primary difference between using ulex as a standalone tool and
-using it to aid a parser is that in the earlier example,
-\textsf{yylex()} was only called once to process an entire file. In
-contrast, when a parser uses \textsf{yylex()} it calls it repeatedly,
-and \textsf{yylex()} returns repeatedly, supplying the parser with each
-word that it finds. You will see this in the following example.
+One primary difference between using \textsf{ulex} as a standalone tool and
+using it to aid a parser is that in the earlier example, \textsf{yylex()} was
+only called once to process an entire file. In contrast, when a parser uses
+\textsf{yylex()} it calls it repeatedly, and \textsf{yylex()} returns
+repeatedly, supplying the parser with each word that it finds. You will see
+this in the following example.
 
 A calculator program is simple enough to understand in one sitting and
 complex enough to get a sense of how to use \textsf{ulex} with its
@@ -245,9 +239,9 @@ calculator evaluates them and prints out the answer.  The lexical
 analyzer helps convert the string of characters that are input into
 the numbers and operators to be evaluated.  The parser enforces the
 operator precedence rules and checks for correctness; it will be shown
-later during the discussion of iyacc.
+later during the discussion of \textsf{iyacc}.
 
-First things first: what are the \textit{words} of this little language?
+First things first: what are the \emph{words} of this little language?
 Numbers, math operators, and variable names. A number is one or more
 digits followed by an optional decimal point and one or more digits. In
 regular expressions, you can write this as
@@ -263,7 +257,7 @@ The backslash period means literally match a period; without a
 backslash a period matches any single character. \ The parentheses are
 used for grouping and the question mark means zero or more times.
 
-The math operators are simple {\textquotedbl}words{\textquotedbl}
+The math operators are simple "words"
 composed of one character such as the plus sign, minus sign, and star
 for multiplication. Variable names need to be meaningful; so why not
 let them be any combination of letters, digits, and underscores. You do
@@ -283,14 +277,14 @@ scanner. The rules section contains a series of rules, composed of two
 parts: a regular expression and a fragment of Unicon code that executes
 whenever that regular expression matches part of the input. The
 procedures section contains arbitrary code that is copied verbatim
-after the generated scanner{\textquotesingle}s code. A complete scanner
+after the generated scanner's code. A complete scanner
 specification for the desktop calculator looks like:
 
 \iconcode{
 \%\{ \\
 \# y\_tab.icn contains the symbol definitions for integer values \\
 \# representing the terminal symbols NAME, NUMBER, and \\
-\# \index{assignment}ASSIGNMENT. It is generated with iyacc \textrm{$-$}d calc.y \\
+\# \index{assignment}ASSIGNMENT. It is generated with iyacc -d calc.y \\
 \$include y\_tab.icn \\
 \%\} \\
 \ \\
@@ -304,7 +298,7 @@ $[0-9]+$
 ({\textbackslash}.[0-9]+)? \> \> \> \> \> \> \> \{ yylval := numeric(yytext);
 return NUMBER \} \\
 {\textbackslash}n \> \> \> \> \> \> \> \{ return 0 \} \\
-{\textquotedbl}:={\textquotedbl}
+":="
 \> \> \> \> \> \> \> \{ return ASSIGNMENT \} \\
 $[$ {\textbackslash}t$]+$ \\
  .\> \> \> \> \> \> \> \{ return ord(yytext) \} \\
@@ -319,20 +313,18 @@ the scanner rule that says to return the character code corresponding
 to \textsf{yytext}, \textsf{ord(yytext)}, on the regular expression
 that consists of a lone period (\texttt{.} matches any one character).
 
-Even if \textsf{yytext} is not part of
-\textsf{yylex()}{\textquotesingle}s return value for a token, there are
-situations in which the string is of interest to the parser, which
-reads lexical values from a global variable called \textsf{yylval}.
-When a variable name is encountered, it makes sense to copy
-\textsf{yytext} over into \textsf{yylval}. On the other hand, when a
-number is encountered, the numeric value corresponding to the
-characters in \textsf{yytext} is computed and stored in
-\textsf{yylval}. Since Icon allows a variable to hold any type of
-value, there is no need for a union or some other messy construct to
-handle the fact that different tokens have different kinds of lexical
-values.
+Even if \textsf{yytext} is not part of \textsf{yylex()}'s
+return value for a token, there are situations in which the string is of
+interest to the parser, which reads lexical values from a global variable called
+\textsf{yylval}.  When a variable name is encountered, it makes sense to copy
+\textsf{yytext} over into \textsf{yylval}. On the other hand, when a number is
+encountered, the numeric value corresponding to the characters in
+\textsf{yytext} is computed and stored in \textsf{yylval}. Since Icon allows a
+variable to hold any type of value, there is no need for a union or some other
+messy construct to handle the fact that different tokens have different kinds of
+lexical values.
 
-\subsubsection{A Summary of the Regular Expression Operators:}
+\subsection{A summary of the regular expression operators}
 
 The above example only uses a few of the regular expression operators.
 Table 18-1 lists the most commonly used operators in \textsf{ulex}.
@@ -377,8 +369,8 @@ Used to escape the special meaning of a character. For example,
 line.\\\hline
 + &
 Matches one or more occurrences of the preceding expression. For
-example, [0-9]+ matches {\textquotedbl}1234{\textquotedbl} or
-{\textquotedbl}734{\textquotedbl} but not the empty string.\\\hline
+example, [0-9]+ matches "1234" or
+"734" but not the empty string.\\\hline
 ? &
 Matches zero or more occurrences of the preceding expression. For
 example, -?[0-9]+ matches a number with an optional leading negative
@@ -387,7 +379,7 @@ sign.\\\hline
 Matches either the preceding regular expression or the one following it.
 So Mar{\textbar}Apr{\textbar}May matches any one of these three
 months.\\\hline
-{\textquotedbl}...{\textquotedbl} &
+"..." &
 Matches everything in quotes literally.\\\hline
 () &
 Groups a regular expression together, overriding the default operator
@@ -404,15 +396,15 @@ variable name? The \textsf{ulex} tool matches the longest substring of
 input that can match any of its regular expressions. So it matches
 \textsf{count10} as one word, which is a variable name in this case.
 
-There is one more sticky point: what if two rules match the exact same
-input characters, with no longest match to break the tie? In this case,
-\textsf{ulex} picks the first rule listed in the specification that
-matches, so the order of the rules is important.  It is common to have
-more specific regular expressions up top, with more general regular
-expressions later in the ulex .l files. If you put a more general rule
-first, more specific rules that match the same characters will be ignored.
+There is one more sticky point: what if two rules match the exact same input
+characters, with no longest match to break the tie? In this case, \textsf{ulex}
+picks the first rule listed in the specification that matches, so the order of
+the rules is important.  It is common to have more specific regular expressions
+up top, with more general regular expressions later in the \textsf{ulex}
+\texttt{.l} files. If you put a more general rule first, more specific rules
+that match the same characters will be ignored.
 
-\subsubsection{Lexical analyzers in real compilers}
+\subsection{Lexical analyzers in real compilers}
 
 Lexical analyzers in real compilers will exhibit some differences from
 the desktop calculator example. For one thing, many compilers use
@@ -432,7 +424,7 @@ is not implementable using a regular expression, it can usually be
 accomplished with a extra lines of Unicon code to augment a ulex-based
 lexical analyzer. Here are some more practical tips when using ulex.
 
-\liststyleLvii
+%\liststyleLvii
 \begin{itemize}
 \item Define a record type to hold lexical attributes. Depending on your
 language, this may consist only of filename, and line number for error
@@ -454,7 +446,7 @@ token names. At such times it is important to recompile both scanner
 and parser to maintain their consistency.
 \end{itemize}
 
-\subsection{iyacc}
+\section{iyacc}
 
 The name \textsf{iyacc} stands for Icon YACC. It is a variant of a
 program called \textsf{byacc} (Berkeley \index{yacc}YACC), modified to
@@ -497,7 +489,7 @@ number, an expression plus a number, or an expression minus a number.
 
 As was mentioned previously, the most common way to represent the result
 of parsing is a tree. For example, if the input string is
-\textsf{{\textquotedbl}count := 10 + 99{\textquotedbl}}, then the parse
+\textsf{"count := 10 + 99"}, then the parse
 tree for the above grammar would look like Figure 18-2. Note how the
 terminal symbols NAME and NUMBER have lexical attribute values provided
 by the scanner.
@@ -510,18 +502,18 @@ by the scanner.
 \end{center}
 
 {\sffamily\bfseries Figure 18-2:}
-{\sffamily Parse Tree for {\textquotedbl}count := 10 + 99{\textquotedbl}}
+{\sffamily Parse Tree for "count := 10 + 99"}
 
 \bigskip
 
-The \textsf{iyacc} program{\textquotesingle}s input files are structured
-much like \textsf{ulex}{\textquotesingle}s input files. They have a
+The \textsf{iyacc} program's input files are structured
+much like \textsf{ulex}'s input files. They have a
 definitions section, a rules section, and a procedures section. The
 definitions section includes code to be copied into the output file
 before the parser code, surrounded by \textsf{\%\{} and \textsf{\%\}}.
 This section also includes the declarations of each of the
 \textit{tokens} that are going to be returned by the scanner. The term
-{\textquotedbl}token{\textquotedbl} is just another name for a terminal
+"token" is just another name for a terminal
 symbol, or a word. Tokens can be given a left or right associativity,
 and they are declared from lowest precedence to highest precedence. You
 may want to consult a reference on \texttt{yacc} for details on how
@@ -549,7 +541,7 @@ grammar rule that produced that non-terminal. As was mentioned for the
 of values to \textsf{\$\$} for different non-terminals is awkward. In
 Unicon, it is very easy because variables can hold values of any type.
 
-\subsubsection{Parse Tree Construction}
+\subsection{Parse tree construction}
 
 The Unicon translator itself provides a classic demonstration of parse
 tree construction using \textsf{iyacc}. The Unicon grammar lives in
@@ -570,7 +562,7 @@ semantic actions that build typical parse tree nodes look like:
 
 \iconcode{
 expr6: expr6 PLUS expr7 \{ \$\$ :=
-node({\textquotedbl}Bplus{\textquotedbl}, \$1, \$2, \$3) \}}
+node("Bplus", \$1, \$2, \$3) \}}
 
 Note that the label is not just
 {\textquotedblleft}plus{\textquotedblright} because there are two
@@ -587,7 +579,7 @@ declaration:
 record token(tok, s, line, column, filename)}
 
 \noindent
-where \textsf{tok} is the token{\textquotesingle}s integer code,
+where \textsf{tok} is the token's integer code,
 \textsf{s} is its string lexeme, and \textsf{line}, \textsf{column},
 and \textsf{filename} are attributes that record its source code
 location for error reporting and debugging purposes. It is this type of
@@ -595,7 +587,7 @@ value, provided by the lexical analyzer, that is sitting in
 \textsf{\$2} at the time \textsf{node()} is called to produce the
 internal tree node for \textsf{expr6}.
 
-\subsubsection{A Syntax Analyzer for a Desktop Calculator}
+\subsection{A syntax analyzer for a desktop calculator}
 
 Returning to our desktop calculator example, in the calculator, there is
 one procedure, \textsf{main()}, that calls the parser once for each
@@ -617,12 +609,12 @@ global vars \\
 \ \\
 /* YACC Declarations */ \\
 \%token NUM, NAME, ASSIGNMENT \\
-\%left {\textquotesingle}-{\textquotesingle}
-{\textquotesingle}+{\textquotesingle} \\
-\%left {\textquotesingle}*{\textquotesingle}
-{\textquotesingle}/{\textquotesingle} \\
+\%left '-'
+'+' \\
+\%left '*'
+'/' \\
 \%left NEG \ \ \ \ /* negation-{}-unary minus */ \\
-\%right {\textquotesingle}\^{}{\textquotesingle} \ \ \ /* exponentiation
+\%right '\^{}' \ \ \ /* exponentiation
 \ \ \ \ \ \ \ */ \\
 \ \\
 /* Grammar follows */ \\
@@ -631,12 +623,12 @@ input: \ \ \ /* empty string */ \\
 \>   \ \ {\textbar} input line \\
 \>   \ \ ; \\
 \ \\
-line: \ \ \ \ {\textquotesingle}{\textbackslash}n{\textquotesingle} \\
+line: \ \ \ \ '{\textbackslash}n' \\
 \>   \ {\textbar} exp
-{\textquotesingle}{\textbackslash}n{\textquotesingle} \ \{ write(\$1)
+'{\textbackslash}n' \ \{ write(\$1)
 \} \\
 \>   \ {\textbar} NAME ASSIGNMENT exp
-{\textasciigrave}{\textbackslash}n{\textquotesingle} \{  \\
+'{\textbackslash}n' \{  \\
 \>   \ \ \ \ \ \ vars[\$1] := \$3  \\
 \>   \ \ \ \ \ \ write(\$3) \\
 \>   \ \ \ \ \ \ \} \\
@@ -646,59 +638,59 @@ exp: NUM \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{ \$\$ := \$1
 \ \ \ \ \ \ \} \\
 \>   {\textbar} NAME \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{ \$\$ := vars[\$1]
 \} \\
-\>   {\textbar} exp {\textquotesingle}+{\textquotesingle} exp
+\>   {\textbar} exp '+' exp
 \ \ \ \ \ \ \ \{ \$\$ := \$1 + \$3 \ \} \\
-\>   {\textbar} exp {\textquotesingle}-{\textquotesingle} exp
+\>   {\textbar} exp '-' exp
 \ \ \ \ \ \ \ \{ \$\$ := \$1 - \$3 \ \} \\
-\>   {\textbar} exp {\textquotesingle}*{\textquotesingle} exp
+\>   {\textbar} exp '*' exp
 \ \ \ \ \ \ \ \{ \$\$ := \$1 * \$3 \ \} \\
-\>   {\textbar} exp {\textquotesingle}/{\textquotesingle} exp
+\>   {\textbar} exp '/' exp
 \ \ \ \ \ \ \ \{ \$\$ := \$1 / \$3 \ \} \\
-\>   {\textbar} {\textquotesingle}-{\textquotesingle} exp \ \%prec NEG
+\>   {\textbar} '-' exp \ \%prec NEG
 \{ \$\$ := -\$2 \ \ \ \ \ \} \\
-\>   {\textbar} exp {\textquotesingle}\^{}{\textquotesingle} exp
+\>   {\textbar} exp '\^{}' exp
 \ \ \ \ \ \ \ \{ \$\$ := \$1 \^{} \$3 \ \} \\
-\>   {\textbar} {\textquotesingle}({\textquotesingle} exp
-{\textquotesingle}){\textquotesingle} \ \ \ \ \ \ \ \{ \$\$ := \$2
+\>   {\textbar} '(' exp
+')' \ \ \ \ \ \ \ \{ \$\$ := \$2
 \ \ \ \ \ \ \} \\
 \>   ; \\
 \%\% \\
 \ \\
 procedure main() \\
 \>   vars := table(0) \# initialize all variables to zero \\
-\>   write({\textquotedbl}iyacc Calculator Demo{\textquotedbl}) \\
+\>   write("iyacc Calculator Demo") \\
 \ \\
 \>   repeat \{ \\
-\>   \ \ write({\textquotedbl}expression:{\textquotedbl})  \\
+\>   \ \ write("expression:")  \\
 \>   \ \ yyparse() \\
 \>   \} \\
 end
 }
 
 You can use single quoted characters as tokens without declaring them,
-so \textsf{{\textquotesingle}+{\textquotesingle}},
-\textsf{{\textquotesingle}-{\textquotesingle}},
-\textsf{{\textquotesingle}*{\textquotesingle}},
-\textsf{{\textquotesingle}/{\textquotesingle}},
-\textsf{{\textquotesingle}\^{}{\textquotesingle}},
-\textsf{{\textquotesingle}({\textquotesingle}}\texttt{,
-}\textsf{{\textquotesingle}){\textquotesingle}} are not declared in the
+so \textsf{'+'},
+\textsf{'-'},
+\textsf{'*'},
+\textsf{'/'},
+\textsf{'\^{}'},
+\textsf{'('}\texttt{,
+}\textsf{')'} are not declared in the
 above grammar. The unary minus makes use of the \textsf{\%prec} keyword
 to give it priority over binary minus. Note that these are
 \textsf{yacc} notation for small integers;
-\textsf{{\textquotesingle}+{\textquotesingle}} is a shorthand for
-\textsf{ord({\textquotedbl}+{\textquotedbl})} here, not a cset. Tokens
+\textsf{'+'} is a shorthand for
+\textsf{ord("+")} here, not a cset. Tokens
 NUM, NAME, ASSIGNMENT, and NEG are declared.
 
-\subsubsection{Making It All Work From The Command-Line}
 
-How do you combine all these tools correctly to build a program? Here is
-the sequence of commands you would type for creating a calculator given
-the ulex and iyacc input files presented earlier. You might normally
-use a {\textquotedbl}make{\textquotedbl} program that manages the
-dependencies of different files and programs, to avoid typing this all
-by hand, but {\textquotedbl}make{\textquotedbl} is beyond the scope of
-this chapter.
+\subsection{Making it all work from the command line}
+
+How do you combine all these tools correctly to build a program? Here is the
+sequence of commands you would type for creating a calculator given the ulex and
+iyacc input files presented earlier. You might normally use a
+"make" program that manages the dependencies of
+different files and programs, to avoid typing this all by hand, but
+"make" is beyond the scope of this chapter.
 
 
 \bigskip
@@ -728,30 +720,29 @@ answer} \\
 expression: \^{}D \ \ \ \ \ \ \ \ \ \ \ control-D stop the program
 }
 
-\subsection[Generating Syntax Error Messages with Merr]{Generating
-Syntax Error Messages with Merr}
+\section{Generating Syntax Error Messages with \textsf{merr}}
 
 \index{merr}When a syntax error occurs, iyacc-generated parsers call a
 user-defined procedure named \textsf{yyerror(s)}; which by default
 writes out \textsf{s}. Usually, the string passed into
-\textsf{yyerror()} is {\textquotedbl}parse error{\textquotedbl} or
-{\textquotedbl}syntax error{\textquotedbl}; not very helpful to the
+\textsf{yyerror()} is "parse error" or
+"syntax error"; not very helpful to the
 unlucky person who has to fix the problem. If you write your own
 \textsf{yyerror()} function, you can improve this error message by
 including lexical information such as filename, line number, and the
 token on which the error was detected; this is all expert programmers
 usually need.
 
-Those mortals who dare to program can use all the help you can give them
-in interpreting their errors.\textit{ Merr} is a\textit{ }unique tool
-you can use to produce better syntax error messages from your YACC
-parsers. Merr was originally developed for the Unicon translator, but
-is easily used in other YACC applications; it is included in the
-uni/unicon directory in Unicon distributions.
+Those mortals who dare to program can use all the help you can give them in
+interpreting their errors.  \textsf{merr} is a unique tool you can use to
+produce better syntax error messages from your YACC parsers.  \textsf{merr} was originally
+developed for the Unicon translator, but is easily used in other YACC
+applications; it is included in the uni/unicon directory in Unicon
+distributions.
 
-\subsubsection{Merr Error Specification Files}
+\subsection{\textsf{merr} error specification files}
 
-To use Merr, you give it a file named \textsf{meta.err} that contains a
+To use \textsf{merr}, you give it a file named \textsf{meta.err} that contains a
 set of example errors, along with an appropriate message for each
 error. For example:
 
@@ -765,14 +756,14 @@ struct foo int x; ::: missing \{ after struct label
 
 In each case, \textsf{:::} is used to separate the error fragment from
 the diagnostic message; error examples can span multiple lines when it
-will help. Merr will run your compiler separately on each error to
+will help. \textsf{merr} will run your compiler separately on each error to
 figure out the corresponding parse state and token, and then generate a
 yyerror() function that writes the error messages when those parse
 state and input token combinations are seen by the parser.
 
-\subsubsection{The Merr Command Line}
+\subsection{The \textsf{merr} command line}
 
-Merr is invoked from the directory in which your compiler is built, with
+\textsf{merr} is invoked from the directory in which your compiler is built, with
 the following command line arguments and options:
 
 \iconcode{
@@ -782,7 +773,7 @@ merr [-yYB] [-s make] [-o msgfile] \textit{compiler} [\textit{target}]}
 where \textit{compiler} is the name of the compiler for whom error
 messages will be generated, and \textit{target} is the source filename
 that the errant programs will be written to and compiled from,
-defaulting to \textsf{m\_err.icn} (or \textsf{m\_err.c}). Merr executes
+defaulting to \textsf{m\_err.icn} (or \textsf{m\_err.c}). \textsf{merr} executes
 a system command to rebuild the compiler in order to create its error
 message table. The default command is
 
@@ -794,18 +785,18 @@ The \textsf{{}-s} option overrides this default, as in the line
 \iconcode{
 merr -s {\textquotedblleft}make all{\textquotedblright} mycc bug.c}
 
-Merr writes the error message table and \textsf{yyerror()} function to a
+\textsf{merr} writes the error message table and \textsf{yyerror()} function to a
 file named \textsf{yyerror.icn} (or \textsf{yyerror.c}) by default. The
-\textsf{{}-o} option directs Merr to write the file with a different
+\textsf{{}-o} option directs \textsf{merr} to write the file with a different
 name. Command line options \textsf{{}-y}, \textsf{{}-Y}, and
-\textsf{{}-B} direct Merr to generate compatible C \textsf{yyerror()}
+\textsf{{}-B} direct \textsf{merr} to generate compatible C \textsf{yyerror()}
 functions for Berkeley YACC, AT\&T YACC, and Bison, respectively. For
-AT\&T YACC and Bison, Merr writes a header file \textsf{yyerror.h} that
+AT\&T YACC and Bison, \textsf{merr} writes a header file \textsf{yyerror.h} that
 defines a macro to add the parse state information to the yyerror()
 function; this header file must be included in the YACC specification
 (.y) file.
 
-\subsection{Final Tips For Using ulex and iyacc}
+\section{Final Tips For Using ulex and iyacc}
 
 Tasks requiring the processing of languages with a computer program can
 vary greatly in complexity from very simple to extremely complex. As
@@ -825,22 +816,20 @@ worth asking how \textsf{ulex} and \textsf{iyacc} relate to the
 language, or why they are needed. One answer is that they are standard
 tools expected by \index{compiler}compiler writers. Another answer is
 that they use special-purpose notations and algorithms to deliver
-higher performance than is provided by Unicon{\textquotesingle}s more
+higher performance than is provided by Unicon's more
 general and more flexible facilities, and they do this from simpler
 specifications. A final answer is that these tools are not mutually
-exclusive of Unicon{\textquotesingle}s other features and you should
-use whatever combination of these tools and Icon{\textquotesingle}s
+exclusive of Unicon's other features and you should
+use whatever combination of these tools and Icon's
 built-in facilities are appropriate to the task at hand.
 
-\section*{Summary}
+\section{Summary}
 
 This chapter only scratches the surface of the features provided by
-u\textsf{lex} and \textsf{iyacc}. \ The goal is to introduce you to the
+\textsf{ulex} and \textsf{iyacc}. The goal is to introduce you to the
 capabilities of these tools that are now easy to use with Icon. In
 fact, in many ways it is much easier to use these tools with Icon than
-it is to use them with C, thanks to Icon{\textquotesingle}s string
+it is to use them with C, thanks to Icon's string
 processing facilities and built-in data structures. 
 
-\clearpage
-\bigskip
 

@@ -1,16 +1,14 @@
-\clearpage\section{Chapter 7: Graphics}
+\chapter{Graphics}
 
 Unicon provides a rich high level interface to 2D and 3D raster
 graphics, text fonts, colors, and mouse input facilities provided by an
 underlying system, such as the X Window System.
-Unicon{\textquotesingle}s graphics are portable across multiple
+Unicon's graphics are portable across multiple
 platforms. The most important characteristics of the graphics
 facilities are:
-
 \begin{itemize}\itemsep0pt
 \item Simplicity, ease of learning
-\item Windows are integrated with Unicon{\textquotesingle}s existing I/O
-functions
+\item Windows are integrated with Unicon's existing I/O functions
 \item Straightforward input event model
 \end{itemize}
 This chapter presents Unicon's 2D and 3D graphics facilities.
@@ -18,8 +16,8 @@ Some material on 2D graphics
 comes from University of Arizona CS TR93-9. The 3D graphics sections
 come from Unicon TR 9, whose original author is Naomi Martinez. The
 definitive reference for the 2D
-graphics facilities is {\textquotedbl}Graphics Programming in
-Icon{\textquotedbl} by Griswold, Jeffery, and Townsend, and this book
+graphics facilities is "Graphics Programming in
+Icon" by Griswold, Jeffery, and Townsend, and this book
 is of value for writing 3D programs. Online references
 for the graphics facilities also come with the software distributions.
 
@@ -28,9 +26,9 @@ is a trade-off between simplicity, portability, and full access to the
 underlying machine. Unicon aims for simplicity and ease of programming
 rather than full low-level access.
 
-\subsection{2D Graphics}
+\section{2D Graphics}
 
-Unicon{\textquotesingle}s 2D facilities provide access to graphics
+Unicon's 2D facilities provide access to graphics
 displays without enforcing a particular user interface look-and-feel.
 Events other than keystrokes and mouse events are handled automatically
 by the runtime system. Chapter 17 describes the standard class library
@@ -43,26 +41,26 @@ of its window at all times, it may not compute for long periods without
 checking for window events. This event driven paradigm used in the
 underlying implementation is optional at the Unicon application
 level. Since Unicon windows handle many events automatically and
-{\textquotedbl}take care of themselves{\textquotedbl}, applications
+"take care of themselves", applications
 follow the event driven paradigm only when it is needed.
-Unicon{\textquotesingle}s extensive
+Unicon's extensive
 use of default values make simple graphics applications extremely easy
 to program, while providing flexibility where it is needed in more
 sophisticated applications.
 
-\subsubsection{Window Basics}
+\subsection{Window basics}
 
 A window is a special file opened with mode
-\texttt{{\textquotedbl}g{\textquotedbl},} appearing on-screen as a
+\texttt{"g",} appearing on-screen as a
 rectangular space for text and/or graphics. Windows support text I/O,
 much as one uses a text terminal. A simple
 Unicon graphics program might look like this:
 
 \iconcode{
 \ \ \ procedure main()\\
- \ \ \ \ \ w := open({\textquotedbl}hello{\textquotedbl},
-{\textquotedbl}g{\textquotedbl})\\
- \ \ \ \ \ write(w, {\textquotedbl}hello, world{\textquotedbl})\\
+ \ \ \ \ \ w := open("hello",
+"g")\\
+ \ \ \ \ \ write(w, "hello, world")\\
  \ \ \ \ \ \# do processing ... use w as if it were a terminal\\
  \ \ \ \ \ close(w)\\
  \ \ end
@@ -71,13 +69,13 @@ Unicon graphics program might look like this:
 Windows are open for both reading and writing, and support the usual
 file operations with the exceptions of \texttt{seek()} and
 \texttt{where()}. Unlike regular files, the \texttt{type()} of a
-window is {\textquotedbl}window{\textquotedbl}. Like other files,
+window is "window". Like other files,
 windows close automatically when the program terminates, so the call to
 \texttt{close()} in the above example is optional.
 
 Bit-mapped, or raster, graphics constitute a second programming model
 for windows. There are no programming
-{\textquotedbl}modes{\textquotedbl} and code that uses graphics may be
+"modes" and code that uses graphics may be
 freely intermixed with code that performs text operations. There are
 many graphics functions and library procedures, detailed in Appendices
 A and B.
@@ -108,7 +106,7 @@ graphics coordinate axes are zero-based, which is to say that the very
 top leftmost pixel is (0,0) by default.
 
 Angles are real numbers given in radians, clockwise starting at the 3
-o{\textquotesingle}clock position. Many functions operate on
+o'clock position. Many functions operate on
 rectangular regions specified by x, y, width, and height components.
 Width and height may be negative to extend the rectangle
 left or up from x and y. Screen output may be limited to a
@@ -116,7 +114,7 @@ rectangle within the window called the clipping region. The
 clipping region is set or unset using the function \texttt{Clip()}.
 
 \paragraph{Window Attributes}
-A window{\textquotesingle}s state has many \textit{attributes}
+A window's state has many \textit{attributes}
 with associated values. Some values are defined by the system, while
 others are under program control, with reasonable defaults. When
 opening a window, \texttt{open()} allows string arguments after the filename
@@ -126,11 +124,11 @@ italics on a blue background one may write:
 
 \iconcode{
 \ \ \ procedure main()\\
- \ \ \ \ \ w := open({\textquotedbl}hello{\textquotedbl},
-{\textquotedbl}g{\textquotedbl},
-{\textquotedbl}font=sans,italics{\textquotedbl},
-{\textquotedbl}bg=blue{\textquotedbl})\\
- \ \ \ \ \ write(w, {\textquotedbl}hello, world{\textquotedbl})\\
+ \ \ \ \ \ w := open("hello",
+"g",
+"font=sans,italics",
+"bg=blue")\\
+ \ \ \ \ \ write(w, "hello, world")\\
  \ \ \ \ \ \# processing ...\\
  \ \ end}
 
@@ -148,7 +146,7 @@ on a single argument produces just the value of that attribute; for
 multiple arguments and in the case of assignment, the result is the
 \texttt{\textit{attr}}\texttt{=}\texttt{\textit{val}} form attribute
 assignments take. Attributes are also frequently set implicitly by
-the user{\textquotesingle}s manipulation of the window; for instance,
+the user's manipulation of the window; for instance,
 cursor or mouse location or window size.
 
 Table 7-1 lists attributes that are maintained on a per-window basis.
@@ -161,7 +159,7 @@ mouse pointer shapes that may be changed by the application during
 different operations. The attribute \texttt{pos} refers to the position
 of the upper-left corner of the window on the screen. Screen position
 is specified by a string containing x,y coordinates,
-e.g. \texttt{{\textquotedbl}pos=200,200{\textquotedbl}}.
+e.g. \texttt{"pos=200,200"}.
 
 \begin{center}
 {\sffamily\bfseries Table 7-1} \\
@@ -205,7 +203,7 @@ Pointer (mouse) location  &
 RW\\\hline
 display &
 device /
-{\textquotedbl}my.cs.esu.edu:0{\textquotedbl}
+"my.cs.esu.edu:0"
 &
 (X11) device window resides on &
 RWO\\\hline
@@ -224,7 +222,7 @@ WO\\\hline
 \end{supertabular}
 \end{center}
 
-\subsubsection{Graphics Contexts}
+\subsection{Graphics contexts}
 
 Some attributes are associated with the window itself, while others are
 associated with the \textit{graphics context}, a set of resources
@@ -255,11 +253,11 @@ Context Attributes
 \centering\arraybslash \bfseries\itshape Usage\\\hline}
 \begin{supertabular}{|m{1.076in}|m{1.5in}|m{2.58in}|m{0.448in}|}
 fg &
-color \ / {\textquotedbl}red{\textquotedbl} &
+color \ / "red" &
 Foreground color : black &
 RW\\\hline
 bg &
-color \ / {\textquotedbl}0,0,0{\textquotedbl} &
+color \ / "0,0,0" &
 Background color : white &
 RW\\\hline
 font &
@@ -287,7 +285,7 @@ stippled, opaquestippled &
 Graphic fill style : solid &
 RW\\\hline
 pattern &
-{\textquotedbl}4,\#5A5A{\textquotedbl} &
+"4,\#5A5A" &
 Fill pattern &
 RW\\\hline
 linestyle &
@@ -307,7 +305,7 @@ integer &
 Output coordinate translation : 0 &
 R\\\hline
 image &
-string / {\textquotedbl}flag.xpm{\textquotedbl} &
+string / "flag.xpm" &
 Initial window contents &
 WO\\\hline
 \end{supertabular}
@@ -317,7 +315,7 @@ Graphics contexts can be shared among windows, and multiple graphics
 contexts can be used on the same window. An Unicon window value is a
 \textit{binding} of a canvas (an area that may be drawn upon) and a
 graphics context. A call
-\texttt{open(s,{\textquotedbl}g{\textquotedbl})} creates both a canvas,
+\texttt{open(s,"g")} creates both a canvas,
 and a context, and binds them together, producing the binding as its
 return value.
 
@@ -355,7 +353,7 @@ and default to zero. These integers are added into the coordinates of
 all output operations that use the context; input coordinates in
 \texttt{\&x} and \texttt{\&y} are not translated.
 
-\subsubsection{Events}
+\subsection{Events}
 
 User input such as keystrokes and mouse clicks are called
 \textit{events}. Many events are handled by Unicon automatically,
@@ -415,7 +413,7 @@ The regular keys that Unicon returns as one-letter strings correspond
 approximately to the lower 128 characters of the ASCII character set.
 These characters include the control keys, the escape key, and the
 delete key. Modern keyboards have many additional keys, such as
-function keys, arrow keys, {\textquotedbl}page down{\textquotedbl},
+function keys, arrow keys, "page down",
 etc. Unicon produces integer events for these special keys. A
 collection of symbol definitions for special keys is available in the
 library include file \texttt{keysyms.icn}. The most common
@@ -473,14 +471,14 @@ on the window and is described in the reference section. Each time
 through the loop the program erases the box at its old location and
 redraws it at its new location; the first time through the loop there
 is no box to erase so the first call to \texttt{FillRectangle()} is
-forced to fail by means of Unicon{\textquotesingle}s
+forced to fail by means of Unicon's
 \texttt{{\textbackslash}} operator.
 
 \iconcode{
 procedure main()\\
- \ \ \&window := open({\textquotedbl}hello{\textquotedbl},
-{\textquotedbl}g{\textquotedbl},
-{\textquotedbl}drawop=reverse{\textquotedbl})\\
+ \ \ \&window := open("hello",
+"g",
+"drawop=reverse")\\
  \ \ repeat if Event() === (\&ldrag {\textbar} \&mdrag {\textbar}
 \&rdrag) then \{\\
  \ \ \ \ \ \# erase box at old position, then draw at new
@@ -491,7 +489,7 @@ position\\
  \ \ \ \ \ \}\\
 end}
 
-The program can inspect the window{\textquotesingle}s
+The program can inspect the window's
 state using \texttt{WAttrib()}. Between the time the mouse event
 occurs and the time it is produced by \texttt{Event()}, the mouse may
 have moved. In order to get the current mouse location, use
@@ -503,7 +501,7 @@ invariant over all combinations of presses and releases of all three buttons.
 
 Resize events are reported in the same format as mouse events.
 In addition to the event code, \texttt{\&x}, \texttt{\&y}, \texttt{\&col} and
-\texttt{\&row} are assigned integers that indicate the window{\textquotesingle}s
+\texttt{\&row} are assigned integers that indicate the window's
 new width and height in pixels and in text columns and rows,
 respectively. Resize events are produced when the window manager
 (usually at the behest of the user) resizes the window; no event is
@@ -535,7 +533,7 @@ If no events are pending, the list is empty. The list returned by
 \texttt{Pending()} is
 attached to the window. Additional events may be added to it at any
 time during program execution.  It is an ordinary list and
-can be manipulated using Unicon{\textquotesingle}s list functions and
+can be manipulated using Unicon's list functions and
 operators.
 
 When several windows are open, the program may need to wait for activity on
@@ -547,7 +545,7 @@ a window with a pending event. A window is said to starve if its
 pending events are never serviced. \texttt{Active()} cycles through open
 windows on repeated calls in a way that avoids window starvation.
 
-\subsubsection{Colors}
+\subsection{Colors}
 
 Unicon recognizes a set of string color names based loosely on a color
 naming system found in [Berk82]. The color names are simple
@@ -581,59 +579,59 @@ do the actual colors produced from these names on different monitors.
 In addition to the standard color names, platform-specific color names
 may be supported. Colors may also be specified by strings encoding the
 red, green, and blue components of the desired color. Unicon accepts
-the hex formats {\textquotedbl}\#rgb{\textquotedbl} in which r, g, and
+the hex formats "\#rgb" in which r, g, and
 b are 1 to 4 hex digits each. Red, green, and blue may also be given
 in decimal format, separated by commas. The components are given on a
 linear scale from 0 to 65535, although displays typically offer far
 less precision and nonlinear colors. For example,
-{\textquotedbl}bg=32767,0,0{\textquotedbl} requests a medium red
+"bg=32767,0,0" requests a medium red
 background; if the display is incapable of such, it approximates it as
 closely as possible from the available colors.
-{\textquotedbl}fg=0,65000,0{\textquotedbl} requests a vivid green
+"fg=0,65000,0" requests a vivid green
 foreground. If colors appear darker than they should, the window system
 is not providing linear colors. Unicon can be told to perform the
 correction by means of the gamma attribute; 1.0 is a default (no gamma
 correction), and experimenting with values between 2 and 3 usually
 provides satisfactory results.
 
-\subsubsection{Fonts}
+\subsection{Fonts}
 
 Fonts are specified by a comma-separated string of up to four fields
-supplying the font{\textquotesingle}s family name, followed by optional
+supplying the font's family name, followed by optional
 size or italic or bold designations in any order. The fonts available
 vary widely from system to system. Four font family names available on
 all Unicon systems include serif, sans, typewriter, and mono. These
-families map onto the system{\textquotesingle}s closest approximation
+families map onto the system's closest approximation
 of Times, Helvetica, Courier, and a monospaced console font. Font sizes
 are given in pixel height.
 
-\subsubsection{Images and Palettes}
+\subsection{Images and palettes}
 
 \texttt{DrawImage(x, y, s)} draws a rectangular area using an image string.
 String \texttt{s} has the form
-{\textquotedbl}\textit{width},\textit{palette},\textit{data}{\textquotedbl}.
+"\textit{width},\textit{palette},\textit{data}".
 \textit{width} is the width of the rectangle drawn, \texttt{palette} is a code
 that defines the colors corresponding to data values, and the rest of
 the data supplies pixel values. Predefined palettes and palette
 functions help to provide this capability. Image and palette
 functions are described fully in [Griswold98].
 
-\subsubsection{Patterns}
+\subsection{Patterns}
 
 The context attribute \texttt{fillstyle} determines the
 pixels used by draw and fill functions like \texttt{FillPolygon()}.
 If the \texttt{fillstyle} is not \texttt{solid}, a pattern in
 the filled area is drawn in the foreground color; other pixels are
 drawn in the background color
-(\texttt{{\textquotedbl}fillstyle=textured{\textquotedbl}}).
+(\texttt{"fillstyle=textured"}).
 The function \texttt{Pattern(w,s)} associates a pattern
-denoted by \texttt{s} with \texttt{w}{\textquotesingle}s context. String
+denoted by \texttt{s} with \texttt{w}'s context. String
 \texttt{s} is a built-in pattern name, or a representation of bits that
 define the pattern. Pattern representations are of the form
-\texttt{{\textquotedbl}width,\#bits{\textquotedbl}} where
+\texttt{"width,\#bits"} where
 1 {\textless}= width
 {\textless}= 32. The window system may limit 
-the pattern{\textquotesingle}s width and height to as little as 8.
+the pattern's width and height to as little as 8.
 
 The height of the pattern is defined by the number of rows in the bits
 component of the pattern string. Bits consists of a series of
@@ -642,20 +640,20 @@ Each digit defines four bits and each row is defined by the number of
 digits required to supply width bits. For example, the call
 
 \iconcode{
-\>   Pattern({\textquotedbl}4,\#5A5A{\textquotedbl})}
+\>   Pattern("4,\#5A5A")}
 
 \noindent defines a 4x4 pattern where each row is defined by one hex digit.
 
-\subsubsection{Pme: a Pixmap Editor}
+\subsection{\texttt{pme}: a pixmap editor}
 
-A simple image editor called Pme, demonstrates event processing
-including mouse events. Pme displays both a small and a
-{\textquotedbl}magnified{\textquotedbl} display of the image being
+A simple image editor called \texttt{pme} demonstrates event processing
+including mouse events. \texttt{pme} displays both a small and a
+"magnified" display of the image being
 edited, allows the user to set individual pixels, and allows the user
 to save the image; it is well-suited for constructing and hand-editing
 small images such as icons and textures for use in larger 2D or 3D
-scenes. Pme consists of four procedures and employs several graphics
-functions. A sample screen image of Pme is presented in Figure 7-1. The
+scenes.  \texttt{pme} consists of four procedures and employs several graphics
+functions. A sample screen image of \texttt{pme} is presented in Figure 7-1. The
 {\textquotedblleft}real{\textquotedblright} image is in the upper left
 corner; underneath it is a mouse icon which shows what color is drawn
 by each of the mouse buttons.
@@ -667,11 +665,11 @@ by each of the mouse buttons.
 \end{center}
 
 {\sffamily\bfseries Figure 7-1}
-{\sffamily Pme editing a 32x32 image}
+{\sffamily \texttt{pme} editing a 32x32 image}
 
 \bigskip
 
-Pme starts by declaring and initializing several variables.
+\texttt{pme} starts by declaring and initializing several variables.
 
 \bigskip
 
@@ -686,21 +684,21 @@ The image width and height can be specified on the command line with a
 \texttt{-size} option, for example, \texttt{pme -size 16,64}.
 
 \iconcode{
-\>   if argv[1]=={\textquotedbl}-size{\textquotedbl} then \{ \\
+\>   if argv[1]=="-size" then \{ \\
 \>   \ \ \ i +:= 1 \\
 \>   \ \ \ argv[2] ? \{ \\
 \>   \ \ \ \ \ \ width := integer(tab(many(\&digits))) {\textbar}
-stop({\textquotedbl}bad -size{\textquotedbl}) \\
-\>   \ \ \ \ \ \ ={\textquotedbl},{\textquotedbl} {\textbar}
-stop({\textquotedbl}bad -size{\textquotedbl}) \\
+stop("bad -size") \\
+\>   \ \ \ \ \ \ ="," {\textbar}
+stop("bad -size") \\
 \>   \ \ \ \ \ \ height := integer(tab(0)) {\textbar}
-stop({\textquotedbl}bad -size{\textquotedbl}) \\
+stop("bad -size") \\
 \>   \ \ \ \ \ \ i +:= 1 \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ \}
 }
 
-Following the size arguments, Pme checks for a filename specifying the
+Following the size arguments, \texttt{pme} checks for a filename specifying the
 bitmap to edit. If one is found, it is read into the regular scale
 image, and then the magnified scale image is constructed by reading
 each pixel using the function \texttt{Pixel()}, and filling an 8x8
@@ -718,7 +716,7 @@ rectangle with the corresponding color.
 
 After the images are loaded with their initial contents, if any, a grid
 is drawn on the magnified image to delineate each individual
-pixel{\textquotesingle}s boundary. The user{\textquotesingle}s mouse
+pixel's boundary. The user's mouse
 actions within these boxes change the colors of corresponding pixels in
 the image. An list of three bindings to the window, each with an
 independently-set foreground color, is used to represent the color
@@ -726,28 +724,28 @@ settings of the mouse buttons.
 
 \iconcode{
 \>   colors :=
-[Clone({\textquotedbl}fg=red{\textquotedbl}),Clone({\textquotedbl}fg=green{\textquotedbl}),Clone({\textquotedbl}fg=blue{\textquotedbl})]
+[Clone("fg=red"),Clone("fg=green"),Clone("fg=blue")]
 }
 
-The main event processing loop of Pme is simple: Each event is fetched
+The main event processing loop of \texttt{pme} is simple: Each event is fetched
 with a call to \texttt{Event()} and immediately passed into a case
-expression. The keystroke \texttt{{\textquotedbl}q{\textquotedbl}}
+expression. The keystroke \texttt{"q"}
 exits the program; the keystroke
-\texttt{{\textquotedbl}s{\textquotedbl}} saves the bitmap in a file by
+\texttt{"s"} saves the bitmap in a file by
 calling \texttt{WriteImage()}, asking for a file name if one has not
 yet been supplied.
 
 \iconcode{
 \>   \ \ \ case e := Event() of \{ \\
-\>   \ \ \ {\textquotedbl}q{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}e{\textquotedbl}:
+\>   \ \ \ "q"{\textbar}"{\textbackslash}e":
 return \\
-\>   \ \ \ {\textquotedbl}s{\textquotedbl}{\textbar}{\textquotedbl}S{\textquotedbl}:
+\>   \ \ \ "s"{\textbar}"S":
 \{ \\
-\>   \ \ \ \ \ \ if /s {\textbar} (e=={\textquotedbl}S{\textquotedbl})
+\>   \ \ \ \ \ \ if /s {\textbar} (e=="S")
 then s := getfilename() \\
-\>   \ \ \ \ \ \ write({\textquotedbl}saving image {\textquotedbl}, s,
-{\textquotedbl} size {\textquotedbl},
-width,{\textquotedbl},{\textquotedbl}, height) \\
+\>   \ \ \ \ \ \ write("saving image ", s,
+" size ",
+width,",", height) \\
 \>   \ \ \ \ \ \ WriteImage( s, 0, 0, width, height) \\
 \>   \ \ \ \ \ \ \}
 }
@@ -771,11 +769,11 @@ To change the color drawn by a mouse button, you click on it.
 \>   \ \ \ \ \ \ else \{ \# x {\textless} logical 0. User clicked in
 mouse area \\
 \>   \ \ \ \ \ \ \ \ \ if \&x {\textless} 21 then getacolor(1,
-{\textquotedbl}left{\textquotedbl}) \\
+"left") \\
 \>   \ \ \ \ \ \ \ \ \ else if \&x {\textless} 31 then getacolor(2,
-{\textquotedbl}middle{\textquotedbl}) \\
+"middle") \\
 \>   \ \ \ \ \ \ \ \ \ else getacolor(3,
-{\textquotedbl}right{\textquotedbl}) \\
+"right") \\
 \>   \ \ \ \ \ \ \ \ \ until Event() === (\&mrelease {\textbar}
 \&lrelease{\textbar} \&rrelease) \\
 \>   \ \ \ \ \ \ \ \ \ \} \\
@@ -796,15 +794,15 @@ procedure dot(x, y, c) \\
 end
 }
 
-Pme illustrates several aspects of the Unicon graphics facilities. Note
+\texttt{pme} illustrates several aspects of the Unicon graphics facilities. Note
 the event-handling: a case expression handles various
 keystrokes and mouse events with simpler control
-structure than in most languages{\textquotesingle} GUI event processing.
+structure than in most languages' GUI event processing.
 
 \bigskip
 
 {\sffamily\bfseries Listing 7-1}
-{\sffamily\bfseries Pme: a Unicon bitmap editor}
+{\sffamily\bfseries \texttt{pme}: a Unicon bitmap editor}
 
 \iconcode{
 link dialog \\
@@ -812,30 +810,30 @@ link file\_dlg \\
 global lmargin, colors \\
 procedure main(argv) \\
 \>   local i := 1, j, s, e, x, y, width := 32, height := 32 \\
-\>   if argv[1]=={\textquotedbl}-size{\textquotedbl} then \{ \\
+\>   if argv[1]=="-size" then \{ \\
 \>   \ \ \ i +:= 1 \\
 \>   \ \ \ argv[2] ? \{ \\
 \>   \ \ \ \ \ \ width := integer(tab(many(\&digits))) {\textbar}
-stop({\textquotedbl}bad -size{\textquotedbl}) \\
-\>   \ \ \ \ \ \ ={\textquotedbl},{\textquotedbl} {\textbar}
-stop({\textquotedbl}bad -size{\textquotedbl}) \\
+stop("bad -size") \\
+\>   \ \ \ \ \ \ ="," {\textbar}
+stop("bad -size") \\
 \>   \ \ \ \ \ \ height := integer(tab(0)) {\textbar}
-stop({\textquotedbl}bad -size{\textquotedbl}) \\
+stop("bad -size") \\
 \>   \ \ \ \ \ \ i +:= 1 \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ \} \\
 \>   lmargin := max(width, 65) \\
 \>   if s := argv[i] then \{ \\
-\>   \ \ \ \&window := open({\textquotedbl}pme{\textquotedbl},
-{\textquotedbl}g{\textquotedbl},
-{\textquotedbl}image={\textquotedbl}{\textbar}{\textbar}s) {\textbar}
-stop({\textquotedbl}cannot open window{\textquotedbl}) \\
+\>   \ \ \ \&window := open("pme",
+"g",
+"image="{\textbar}{\textbar}s) {\textbar}
+stop("cannot open window") \\
 \>   \ \ \ width \ {\textless}:=
-WAttrib({\textquotedbl}width{\textquotedbl}) \\
+WAttrib("width") \\
 \>   \ \ \ height {\textless}:=
-WAttrib({\textquotedbl}height{\textquotedbl}) \\
+WAttrib("height") \\
 \>   \ \ \ lmargin := max(width, 65) \\
-\>   \ \ \ WAttrib({\textquotedbl}size={\textquotedbl}{\textbar}{\textbar}(width*8+lmargin+5){\textbar}{\textbar}{\textquotedbl},{\textquotedbl}{\textbar}{\textbar}(height*8)) \\
+\>   \ \ \ WAttrib("size="{\textbar}{\textbar}(width*8+lmargin+5){\textbar}{\textbar}","{\textbar}{\textbar}(height*8)) \\
 \>   \ \ \ i := j := 0 \\
 \>   \ \ \ every p := Pixel(0, 0, width, height) do \{ \\
 \>   \ \ \ \ \ \ Fg(p) \\
@@ -845,15 +843,15 @@ WAttrib({\textquotedbl}height{\textquotedbl}) \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ \} \\
 \>   else \{ \\
-\>   \ \ \ \&window := open({\textquotedbl}pme{\textquotedbl},
-{\textquotedbl}g{\textquotedbl},
+\>   \ \ \ \&window := open("pme",
+"g",
 {\textquotedblright}size={\textquotedblright} {\textbar}{\textbar}
-(lmargin+width*8+5){\textbar}{\textbar}{\textquotedbl},{\textquotedbl}{\textbar}{\textbar}(height*8+5))
+(lmargin+width*8+5){\textbar}{\textbar}","{\textbar}{\textbar}(height*8+5))
 {\textbar} \\
- \ \ \ \ \ \ \ \ stop({\textquotedbl}cannot open window{\textquotedbl}) \\
+ \ \ \ \ \ \ \ \ stop("cannot open window") \\
 \>   \ \ \ \} \\
 \>   colors :=
-[Clone({\textquotedbl}fg=red{\textquotedbl}),Clone({\textquotedbl}fg=green{\textquotedbl}),Clone({\textquotedbl}fg=blue{\textquotedbl})] \\
+[Clone("fg=red"),Clone("fg=green"),Clone("fg=blue")] \\
 \>   every i := 1 to 3 do \{ \\
 \>   \ \ \ DrawArc(4+i*10, height+68, 7, 22) \\
 \>   \ \ \ FillArc(colors[i], 5+i*10, height+70, 5, 20) \\
@@ -861,22 +859,22 @@ WAttrib({\textquotedbl}height{\textquotedbl}) \\
 \>   DrawRectangle( 5, height+55, 45, 60, 25, height+50, 5, 5) \\
 \>   DrawCurve(27, height+50, 27, height+47, 15, height+39, \\
 \>   \ \ \ \ \ \ \ \ \ \ 40, height+20, 25, height+5) \\
-\>   Fg({\textquotedbl}black{\textquotedbl}) \\
+\>   Fg("black") \\
 \>   every i := 0 to height-1 do \\
 \>   \ \ \ every j := 0 to width-1 do \\
 \>   \ \ \ \ \ \ DrawRectangle(j*8+lmargin+5, i*8, 8, 8) \\
 \>   DrawLine(0, height, width, height, width, 0) \\
 \>   repeat \{ \\
 \>   \ \ \ case e := Event() of \{ \\
-\>   \ \ \ {\textquotedbl}q{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}e{\textquotedbl}:
+\>   \ \ \ "q"{\textbar}"{\textbackslash}e":
 return \\
-\>   \ \ \ {\textquotedbl}s{\textquotedbl}{\textbar}{\textquotedbl}S{\textquotedbl}:
+\>   \ \ \ "s"{\textbar}"S":
 \{ \\
-\>   \ \ \ \ \ \ if /s {\textbar} (e=={\textquotedbl}S{\textquotedbl})
+\>   \ \ \ \ \ \ if /s {\textbar} (e=="S")
 then s := getfilename() \\
-\>   \ \ \ \ \ \ write({\textquotedbl}saving image {\textquotedbl}, s,
-{\textquotedbl} size {\textquotedbl},
-width,{\textquotedbl},{\textquotedbl}, height) \\
+\>   \ \ \ \ \ \ write("saving image ", s,
+" size ",
+width,",", height) \\
 \>   \ \ \ \ \ \ WriteImage( s, 0, 0, width, height) \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ \&lpress {\textbar} \&ldrag {\textbar} \&mpress {\textbar}
@@ -887,11 +885,11 @@ width,{\textquotedbl},{\textquotedbl}, height) \\
 height-1) {\textbar} (x {\textgreater} width) then next \\
 \>   \ \ \ \ \ \ if x {\textless} 0 then \{ \\
 \>   \ \ \ \ \ \ \ \ \ if \&x {\textless} 21 then getacolor(1,
-{\textquotedbl}left{\textquotedbl}) \\
+"left") \\
 \>   \ \ \ \ \ \ \ \ \ else if \&x {\textless} 31 then getacolor(2,
-{\textquotedbl}middle{\textquotedbl}) \\
+"middle") \\
 \>   \ \ \ \ \ \ \ \ \ else getacolor(3,
-{\textquotedbl}right{\textquotedbl}) \\
+"right") \\
 \>   \ \ \ \ \ \ \ \ \ until Event(w) === (\&mrelease {\textbar}
 \&lrelease{\textbar} \&rrelease) \\
 \>   \ \ \ \ \ \ \ \ \ \} \\
@@ -909,9 +907,9 @@ procedure dot(x, y, c) \\
 end
 \ \\
 procedure getacolor(n, s) \\
-\>   if ColorDialog([{\textquotedbl}Set
-{\textquotedbl}{\textbar}{\textbar}s{\textbar}{\textbar}{\textquotedbl}
-button color{\textquotedbl}],Fg(colors[n]))=={\textquotedbl}Okay{\textquotedbl} then \{ \\
+\>   if ColorDialog(["Set
+"{\textbar}{\textbar}s{\textbar}{\textbar}"
+button color"],Fg(colors[n]))=="Okay" then \{ \\
 \>   \ \ \ Fg(colors[n], dialog\_value) \\
 \>   \ \ \ FillArc(colors[n], 5 + n * 10, height + 70, 5, 20) \\
 \>   \} \\
@@ -924,7 +922,7 @@ procedure getfilename() \\
 end
 }
 
-\subsection{3D Graphics}
+\section{3D Graphics}
 
 Three-dimensional graphics are provided in Unicon on platforms which
 support the industry standard OpenGL libraries. Unicon provides the
@@ -932,17 +930,17 @@ basic primitives, transformations, lighting, and texturing elements
 of 3D computer graphics in a simplified fashion, providing a good basis
 to rapidly construct 3D scenes. The Unicon 3D interface consists of
 sixteen new functions and six functions that were extended from the 2D
-graphics facilities, compared with OpenGL{\textquotesingle}s 250+
-functions. While Unicon{\textquotesingle}s 3D interface vastly
+graphics facilities, compared with OpenGL's 250+
+functions. While Unicon's 3D interface vastly
 simplifies some aspects of 3D programming compared with the OpenGL C
 interface, it does not currently provide access to several features of
 OpenGL including blending, fog, anti aliasing, display lists,
 selection, and feedback.
 
-This section explains in detail how to use Unicon{\textquotesingle}s 3D
+This section explains in detail how to use Unicon's 3D
 facilities, for programmers who already have some idea of how 3D
 graphics work. A 3D window is opened using mode
-\texttt{{\textquotedbl}gl{\textquotedbl}} and is very similar to a 2D window,
+\texttt{"gl"} and is very similar to a 2D window,
 so many ideas earlier in this chapter are needed for 3D
 programming. 3D graphics use the 2D windowing functions and attributes
 and introduce several new ones.
@@ -951,7 +949,7 @@ A primary difference between 2D and 3D is that graphics operations in 2D
 windows use (x,y) integer pixel coordinates relative to the
 upper left corner of the window, while 3D windows use (x,y,z) real
 number coordinates in an abstract geometric world. A mobile
-viewer{\textquotesingle}s position, and the direction they are looking,
+viewer's position, and the direction they are looking,
 determine what is visible. Coordinates of 3D objects go through a
 series of translations, scalings, and rotations to determine their
 final location; these matrix transformations are used to compose
@@ -962,21 +960,21 @@ foreground color. For this reason, the \texttt{fg} attribute is extended in the
 3D realm to denote a foreground \textit{material}, including color as
 well as how the object appears in different types of lighting.
 
-\subsubsection{Opening Windows for 3D Graphics}
+\subsection{Opening windows for 3D graphics}
 
 To open a 3D graphics window, call the built in function \texttt{open()},
 passing in the title of the window to be opened and mode
-{\textquotedbl}gl{\textquotedbl}.
+"gl".
 
 \iconcode{
-\>   W := open({\textquotedbl}win{\textquotedbl},
-{\textquotedbl}gl{\textquotedbl})}
+\>   W := open("win",
+"gl")}
 
 \noindent
 As in the 2D facilities, if a window is assigned to the keyword variable
 \&window, it is a default window for subsequent 3D function calls. 
 
-\subsubsection{3D Attributes}
+\subsection{3D attributes}
 
 Features such as lighting, perspective, textures, and shading give a
 scene the illusion of being three-dimensional. A Unicon programmer makes
@@ -1013,7 +1011,7 @@ eyepos, eyedir, and eyeup with a single value. Changing any of these
 attributes causes the scene to redraw itself with the new eye
 specifications.
 
-\subsubsection{3D Drawing Primitives}
+\subsection{3D drawing primitives}
 
 In 2D, programs draw points, lines, polygons, and circles. Functions
 that have been extended for 3D include
@@ -1125,7 +1123,10 @@ radius.  &
 \\\hline
 \end{supertabular}
 \end{center}
-\subsubsection[Coordinate Transformations]{Coordinate Transformations}
+
+
+\subsection{Coordinate transformations}
+
 Matrix multiplications are used to calculate transformations such as
 rotations on objects and the field of view.
 Functions to perform several matrix operations in support of coordinate
@@ -1159,9 +1160,9 @@ model view stack affect the subsequently drawn objects. The
 maximum depth of this stack is 32; pushing more than 32 matrixes on
 the model view stack results in an error. Furthermore, only one
 matrix stack can be manipulated at any given time. The function
-\texttt{MatrixMode()} switches between the two matrix stacks. 
+\texttt{MatrixMode()} switches between the two matrix stacks.
 
-\subsubsection{Lighting and Materials}
+\subsection{Lighting and materials}
 
 Lighting is important in making a graphics scene appear to be 3D.
 Adding lighting to a scene can be complicated and the hardware support for
@@ -1190,17 +1191,17 @@ The following call turns \texttt{light1} on and gives it diffuse
 yellow and ambient gold lighting properties. 
 
 \iconcode{
-\> WAttrib(w, {\textquotedbl}light1=on, diffuse yellow; ambient
-gold{\textquotedbl})}
+\> WAttrib(w, "light1=on, diffuse yellow; ambient
+gold")}
 
 \noindent
 The following expression sets \texttt{light0} to the default values for
 the lighting properties.
 
 \iconcode{
-\>   WAttrib(w, {\textquotedbl}light0=diffuse white; ambient black; \_ \\
+\>   WAttrib(w, "light0=diffuse white; ambient black; \_ \\
 \>\>\>\>     specular white; position
-0.0, 1.0, 0.0{\textquotedbl})}
+0.0, 1.0, 0.0")}
 
 
 Interacting with the lights, the objects in a scene may have
@@ -1226,20 +1227,20 @@ More general material properties are of the form
 ] \textit{color name}}
 
 \noindent
-or \texttt{{\textquotedbl}shininess n{\textquotedbl}}, where n is some integer
+or \texttt{"shininess n"}, where n is some integer
 in the range 0 {\textless}= n {\textless}= 128.
 
 The default material property type is diffuse, so the call
-\texttt{Fg({\textquotedbl}red{\textquotedbl})} is equivalent to
-\texttt{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess, a value
+\texttt{Fg("red")} is equivalent to
+\texttt{Fg("diffuse red")}. For shininess, a value
 of 0 spreads specular light broadly across an object and a value of 128
 focuses specular light at a single point. The following line of code
 changes the current material property to diffuse green and ambient
 orange. 
 
 \iconcode{
-\ \ \ WAttrib(w, {\textquotedbl}fg=diffuse green; ambient
-orange{\textquotedbl})
+\ \ \ WAttrib(w, "fg=diffuse green; ambient
+orange")
 }
 
 
@@ -1247,9 +1248,9 @@ orange{\textquotedbl})
 following example. 
 
 \iconcode{
-   Fg(w, \textrm{{\textquotedbl}}diffuse light grey; ambient grey;
+   Fg(w, \textrm{"}diffuse light grey; ambient grey;
 specular black; emission black; \_ \\
-\>\> shininess 50\textrm{{\textquotedbl}})}
+\>\> shininess 50\textrm{"})}
 
 Using lights and materials in Unicon was simplified by extending the
 design of the 2D graphics facilities. The \texttt{fg} attribute greatly
@@ -1257,12 +1258,13 @@ reduces the number of lines of code needed for a scene. Thanks to this
 design along with the extensive use of defaults, a programmer can use
 lighting in a 3D graphics application without much effort.
 
-\subsubsection[Textures]{Textures}
+\subsection{Textures}
+
 Another important area of 3D graphics is textures.
 Adding textures to a scene can give a scene a realistic feel.
 There are several aspects to using textures. A texture
 is a rectangular image that is
-{\textquotedbl}glued{\textquotedbl} onto objects in a scene. The
+"glued" onto objects in a scene. The
 appearance of the textured objects in the scene depends on several
 pieces of information supplied by the programmer. These include the
 texture image and what parts of the texture image is mapped to what
@@ -1270,15 +1272,15 @@ parts of the object.
 
 The attribute \texttt{texmode} enables or disables textures,
 which are disabled by default.
-\texttt{WAttrib({\textquotedbl}texmode=on{\textquotedbl})} enables textures.
+\texttt{WAttrib("texmode=on")} enables textures.
 When textures are enabled and a texture image is given, the texture
 is applied to the objects drawn in the scene.
 
 Unicon provides several formats to specify a texture image. A texture
 can be a Unicon window, an image file, or a string. String textures
 are encoded in one of the language standard
-formats \texttt{{\textquotedbl}width,pallet,data{\textquotedbl}} or
-\texttt{{\textquotedbl}width,\#data{\textquotedbl}} described in the 2D graphics
+formats \texttt{"width,pallet,data"} or
+\texttt{"width,\#data"} described in the 2D graphics
 facilities. In the first case the pallet will determine what colors
 appear in the texture image. In the second case, the foreground color
 and background color are used. The ability to use another Unicon
@@ -1294,7 +1296,7 @@ in the first place. Examples of how to use textures specified in the
 different forms are given below.
 
 A programmer specifies a texture either by calling
-\texttt{WAttrib({\textquotedbl}texture=...{\textquotedbl})}\texttt{ }or
+\texttt{WAttrib("texture=...")}\texttt{ }or
 using \texttt{Texture(t)}. These methods differ only in that a
 window cannot be used as a texture with \texttt{WAttrib(),} so
 \texttt{Texture()} must be called when a window is used as a texture.
@@ -1312,7 +1314,7 @@ default texture coordinates to be used. The defaults are dependent on
 the type of primitive.
 
 Non-default texture coordinates are given in several ways, such as \linebreak
-\texttt{WAttrib({\textquotedbl}texcoord=}\texttt{\textit{s{\textquotedbl}}}\texttt{)}
+\texttt{WAttrib("texcoord=}\texttt{\textit{s"}}\texttt{)}
 where \texttt{\textit{s}} is a comma separated string of real number
 values between \texttt{0.0} and \texttt{1.0}. Each pair of values is
 taken as one texture coordinate; there must be an even number of real
@@ -1428,7 +1430,7 @@ None &
 \end{supertabular}
 \end{center}
 
-\subsubsection{Examples}
+\subsection{Examples}
 
 \paragraph{Changing Context Attributes}
 The user can change attributes throughout a program. Multiple
@@ -1441,32 +1443,32 @@ redraws the screen; a given call to \texttt{WAttrib()} will only redraw the
 scene once.
 
 \iconcode{
-\>   WAttrib({\textquotedbl}eyepos=0.0,0.0,5.0{\textquotedbl},{\textquotedbl}eyedir=0.0,0.0,1.0{\textquotedbl})}
+\>   WAttrib("eyepos=0.0,0.0,5.0","eyedir=0.0,0.0,1.0")}
 
 The values of the attributes can also be read by using the function
 \texttt{WAttrib()}. The current eye position could be stored in variable
 \texttt{ep} by the call:
 
 \iconcode{
-\>   ep := WAttrib({\textquotedbl}eyepos{\textquotedbl})}
+\>   ep := WAttrib("eyepos")}
 
 \paragraph{Drawing Primitives}
 Here is an example that uses some of the drawing primitives. 
 
 \iconcode{
-\>   Fg(w, {\textquotedbl}ambient yellow{\textquotedbl}) \\
+\>   Fg(w, "ambient yellow") \\
 \>   DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 0.0, 1.0,
 		 0.5, -5.0, 0.5, 1.0) \\
-\>   Fg(w, {\textquotedbl}diffuse white{\textquotedbl}) \\
+\>   Fg(w, "diffuse white") \\
 \>   DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 
 		225.0,1.0, 0.5, -5.0, 0.5,1.0,0.0,125.0) \\
-\>   Fg(w, {\textquotedbl}ambient pink{\textquotedbl}) \\
+\>   Fg(w, "ambient pink") \\
 \>   DrawCylinder(w, 0.0, 1.0, -5.0, 1.0, 0.5, 0.3) \\
-\>   Fg(w, {\textquotedbl}specular navy{\textquotedbl}) \\
+\>   Fg(w, "specular navy") \\
 \>   DrawDisk(w, -0.5, -0.5, -2.0, 0.5, 0.3) \\
-\>   Fg(w, {\textquotedbl}emission green{\textquotedbl}) \\
+\>   Fg(w, "emission green") \\
 \>   DrawSphere(w, 0.5, 1.0, -3.0, 0.5) \\
-\>   WAttrib(w, {\textquotedbl}light0=on, diffuse white{\textquotedbl})
+\>   WAttrib(w, "light0=on, diffuse white")
 }
 
 \begin{center}
@@ -1505,43 +1507,43 @@ light. The scene in the lower left uses all three types of lighting.
 
 \iconcode{
 \>   w :=
-open({\textquotedbl}ambient.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl},
-{\textquotedbl}size=400,400{\textquotedbl}) \\
-\>\>   WAttrib(w,{\textquotedbl}light0=on, ambient
-blue-green{\textquotedbl},{\textquotedbl}fg=specular
-white{\textquotedbl}) \\
+open("ambient.icn","gl",
+"bg=black",
+"size=400,400") \\
+\>\>   WAttrib(w,"light0=on, ambient
+blue-green","fg=specular
+white") \\
 \>\>   DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
 \>   x :=
-open({\textquotedbl}diffuse.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl},
-{\textquotedbl}size=400,400{\textquotedbl}) \\
-\>\>   WAttrib(x,{\textquotedbl}light0=on, diffuse
-blue-green{\textquotedbl},{\textquotedbl}fg=specular
-white{\textquotedbl}) \\
+open("diffuse.icn","gl",
+"bg=black",
+"size=400,400") \\
+\>\>   WAttrib(x,"light0=on, diffuse
+blue-green","fg=specular
+white") \\
 \>\>   DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
 \>   y :=
-open({\textquotedbl}specular.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl},
-{\textquotedbl}size=400,400{\textquotedbl}) \\
-\>\>   WAttrib(y,{\textquotedbl}light0=on,specular
-blue-green{\textquotedbl},{\textquotedbl}fg=specular
-white{\textquotedbl}) \\
+open("specular.icn","gl",
+"bg=black",
+"size=400,400") \\
+\>\>   WAttrib(y,"light0=on,specular
+blue-green","fg=specular
+white") \\
 \>\>   DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
 \>   z :=
-open({\textquotedbl}all.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl},
-{\textquotedbl}size=400,400{\textquotedbl}) \\
-\>\>   WAttrib(z, {\textquotedbl}light0=on, diffuse blue-green; \_ \\
+open("all.icn","gl",
+"bg=black",
+"size=400,400") \\
+\>\>   WAttrib(z, "light0=on, diffuse blue-green; \_ \\
 \>\>\>   specular blue-green; ambient
-blue-green{\textquotedbl},{\textquotedbl}fg=specular
-white{\textquotedbl}) \\
+blue-green","fg=specular
+white") \\
 \>\>   DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
@@ -1564,11 +1566,11 @@ white{\textquotedbl}) \\
 \bigskip
 
 \iconcode{
-\>   Fg(w, {\textquotedbl}emission blue; diffuse yellow{\textquotedbl}) \\
+\>   Fg(w, "emission blue; diffuse yellow") \\
 \>   DrawSphere(w, -1.5, 1.0, -5.0, 0.7) \\
-\>   Fg(w, {\textquotedbl}emission black{\textquotedbl}) \\
+\>   Fg(w, "emission black") \\
 \>   DrawSphere(w, 0.0, 0.0, -5.0, 0.7) \\
-\>   Fg(w, {\textquotedbl}emission red{\textquotedbl}) \\
+\>   Fg(w, "emission red") \\
 \>   DrawSphere(w, 1.5, -1.0, -5.0, 0.7)
 }
 
@@ -1596,15 +1598,15 @@ to texture a torus using the default texture coordinates.
 {\sffamily A Texture from a GIF Image is Mapped onto a Torus}
 
 \iconcode{
-\>   WAttrib(w, {\textquotedbl}texmode=on{\textquotedbl},
-{\textquotedbl}texture=map.gif{\textquotedbl}) \\
+\>   WAttrib(w, "texmode=on",
+"texture=map.gif") \\
 \>   DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
 }
 
 Instead of using \texttt{WAttrib(w,
-{\textquotedbl}texture=map.gif{\textquotedbl})}\texttt{ }to specify the
+"texture=map.gif")}\texttt{ }to specify the
 .gif file, a call to \texttt{Texture(w,
-{\textquotedbl}map.gif{\textquotedbl})} could be used to obtain the
+"map.gif")} could be used to obtain the
 same result.
 
 The next example uses an image string to specify a
@@ -1624,26 +1626,26 @@ texture on a cube using the default texture coordinates.
 \bigskip
 
 \iconcode{
-\ \ \ WAttrib(w, {\textquotedbl}texmode=on{\textquotedbl}) \\
-\>   sphere:= {\textquotedbl}16,g16, FFFFB98788AEFFFF{\textquotedbl}
+\ \ \ WAttrib(w, "texmode=on") \\
+\>   sphere:= "16,g16, FFFFB98788AEFFFF"
 {\textbar}{\textbar} \\
-\>   \ \ {\textquotedbl}FFD865554446AFFF FD856886544339FF
-E8579BA9643323AF{\textquotedbl}{\textbar}{\textbar} \\
-\>   \ \ {\textquotedbl}A569DECA7433215E 7569CDB86433211A
-5579AA9643222108{\textquotedbl}{\textbar}{\textbar} \\
-\>   \ \ {\textquotedbl}4456776533221007 4444443332210007
-4333333222100008{\textquotedbl}{\textbar}{\textbar} \\
-\>   \ \ {\textquotedbl}533322221100000A 822222111000003D
-D41111100000019F{\textquotedbl}{\textbar}{\textbar} \\
-\>   \ \ {\textquotedbl}FA200000000018EF FFA4000000028EFF
-FFFD9532248BFFFF{\textquotedbl} \\
+\>   \ \ "FFD865554446AFFF FD856886544339FF
+E8579BA9643323AF"{\textbar}{\textbar} \\
+\>   \ \ "A569DECA7433215E 7569CDB86433211A
+5579AA9643222108"{\textbar}{\textbar} \\
+\>   \ \ "4456776533221007 4444443332210007
+4333333222100008"{\textbar}{\textbar} \\
+\>   \ \ "533322221100000A 822222111000003D
+D41111100000019F"{\textbar}{\textbar} \\
+\>   \ \ "FA200000000018EF FFA4000000028EFF
+FFFD9532248BFFFF" \\
 \>   Texture(w, sphere) \\
 \>   DrawCube(w, 0.0, 0.0, -3.0, 1.2)
 }
 
 The next example shows the use of a Unicon window as a texture. An
 image of a lamp is drawn on the first window in
-{\textquotedbl}\texttt{gl{\textquotedbl}} mode. This window is then
+"\texttt{gl"} mode. This window is then
 used as a texture on a cylinder. The same method can be
 used to embed 2D window contents in 3D scenes. Note that in the
 following code the first window is opened with size 256 x 256. Texture
@@ -1658,20 +1660,18 @@ must rescale them. The default coordinates for cylinders are used.
 \par}
 
 {\sffamily\bfseries Figure 7-7:}
-{\sffamily A Texture Obtained from Another Window{\textquotesingle}s Contents}
+{\sffamily A Texture Obtained from Another Window's Contents}
 
 \bigskip
 
 \iconcode{
-\>   w :=
-open({\textquotedbl}win1{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=light
-blue{\textquotedbl},{\textquotedbl}size=256,256{\textquotedbl}) \\
-\>   Fg(w, {\textquotedbl}emission pale grey{\textquotedbl}) \\
+\>   w := open("win1","gl","bg=light blue","size=256,256") \\
+\>   Fg(w, "emission pale grey") \\
 \>   PushMatrix(w) \\
 \>   Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
 \>   DrawCylinder(w, 0.0, 0.575, -2.0, 0.15, 0.05, 0.17) \\
 \>   PopMatrix(w) \  \\
-\>   Fg(w, {\textquotedbl}diffuse grey; emission black{\textquotedbl}) \\
+\>   Fg(w, "diffuse grey; emission black") \\
 \>   PushMatrix(w) \\
 \>   Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
 \>   DrawCylinder(w, 0.0, 0.0, -2.5, 0.7, 0.035, 0.035) \\
@@ -1680,10 +1680,10 @@ blue{\textquotedbl},{\textquotedbl}size=256,256{\textquotedbl}) \\
 \>   DrawTorus(w, 0.0, 0.6, -2.5, 0.05, 0.03) \\
 \ \\
 \>   w2 :=
-open({\textquotedbl}win2.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=black{\textquotedbl},{\textquotedbl}size=400,400{\textquotedbl}) \\
-\>   WAttrib(w2, {\textquotedbl}texmode=on{\textquotedbl}) \\
+open("win2.icn","gl","bg=black","size=400,400") \\
+\>   WAttrib(w2, "texmode=on") \\
 \>   Texture(w2, w)  \\
-\>   Fg(w2, {\textquotedbl}diffuse purple; ambient blue{\textquotedbl}) \\
+\>   Fg(w2, "diffuse purple; ambient blue") \\
 \>   DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)
 }
 
@@ -1708,8 +1708,8 @@ and (1.0, 0.0)\texttt{ }is mapped to (1.0, 0.0, -2.0).
 \end{center}
 
 \iconcode{
-\>   WAttrib(w,{\textquotedbl}fg=white{\textquotedbl},{\textquotedbl}bg=blue{\textquotedbl},{\textquotedbl}texmode=on{\textquotedbl},{\textquotedbl}texture=4,\#8CA9{\textquotedbl}) \\
-\>   Fg(w, {\textquotedbl}diffuse purple; ambient blue{\textquotedbl}) \\
+\>   WAttrib(w,"fg=white","bg=blue","texmode=on","texture=4,\#8CA9") \\
+\>   Fg(w, "diffuse purple; ambient blue") \\
 \>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
@@ -1729,9 +1729,9 @@ texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
 \end{center}
 
 \iconcode{
-\>   Wattrib(w,{\textquotedbl}fg=white{\textquotedbl},{\textquotedbl}bg=blue{\textquotedbl},{\textquotedbl}texmode=on{\textquotedbl},{\textquotedblright}texture=4,\#8CA9{\textquotedblright}, \\
-\>   \ \ \ \ \ \ \ \ \ \ {\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0,
-1.0, 1.0, 1.0, 0.0{\textquotedbl}) \\
+\>   Wattrib(w,"fg=white","bg=blue","texmode=on","texture=4,\#8CA9", \\
+\>   \ \ \ \ \ \ \ \ \ \ "texcoord=0.0, 1.0, 1.0, 1.0,
+1.0, 1.0, 1.0, 0.0") \\
 \>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
@@ -1739,8 +1739,8 @@ Instead of using \texttt{WAttrib()} with the attribute \texttt{texcoord},
 the function \texttt{Texcoord()} could be used. So the line 
 
 \iconcode{
-\>   WAttrib(w,{\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0, 1.0,
-1.0,1.0, 0.0{\textquotedbl})}
+\>   WAttrib(w,"texcoord=0.0, 1.0, 1.0, 1.0, 1.0,
+1.0,1.0, 0.0")}
 
 \noindent
 could be replaced by 
@@ -1777,49 +1777,49 @@ facilities that makes adding textures simpler than using OpenGL.
 \iconcode{
 procedure main() \\
 \>   \&window
-:=open({\textquotedbl}textured.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=black{\textquotedbl},{\textquotedbl}size=700,700{\textquotedbl}) \\
+:=open("textured.icn","gl","bg=black","size=700,700") \\
 \ \\
 \>   \# Draw the floor of the room \\
-\>   WAttrib({\textquotedbl}texmode=on{\textquotedbl},
-{\textquotedbl}texture=carpet.gif{\textquotedbl}) \\
+\>   WAttrib("texmode=on",
+"texture=carpet.gif") \\
 \>   FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0, \\
 \>\>\> 7.0, -7.0,
 -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0) \\
 \ \\
 \>   \# Draw the right and left walls \\
-\>   Wattrib({\textquotedbl}texture=wall1.gif{\textquotedbl},
-{\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
-1.0{\textquotedbl}) \\
+\>   Wattrib("texture=wall1.gif",
+"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+1.0") \\
 \>   FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0,
 2.0, 0.4, -8.0) \\
-\>   WAttrib({\textquotedbl}texture=wall2.gif{\textquotedbl}) \\
+\>   WAttrib("texture=wall2.gif") \\
 \>   FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0,
 2.0, 0.4, -8.0) \\
 \ \\
 \>   \# Draw a picture \\
-\>   Wattrib({\textquotedbl}texture=poster.gif{\textquotedbl},
-{\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
-1.0{\textquotedbl}) \\
+\>   Wattrib("texture=poster.gif",
+"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+1.0") \\
 \>   FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2,
 1.0, -2.6) \\
 \>   \# Draw another picture \\
-\>   Wattrib({\textquotedbl}texture=unicorn.gif{\textquotedbl},
-{\textquotedbl}texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0,
-1.0{\textquotedbl}) \\
+\>   Wattrib("texture=unicorn.gif",
+"texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0,
+1.0") \\
 \>   FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8,
 4.0, -9.0)
 \ \\
 \>   \# Draw the lamp \\
-\>   WAttrib({\textquotedbl}texmode=off{\textquotedbl}) \\
+\>   WAttrib("texmode=off") \\
 \>   PushMatrix() \\
 \>   Translate(0.7, 0.20, -0.5) \\
-\>   Fg({\textquotedbl}emission pale weak yellow{\textquotedbl}) \\
+\>   Fg("emission pale weak yellow") \\
 \>   PushMatrix() \\
 \>   Rotate(-5.0, 1.0, 0.0, 0.0) \\
 \>   Rotate( 5.0, 0.0, 0.0, 1.0) \\
 \>   DrawCylinder(-0.05, 0.570, -2.0, 0.15, 0.05, 0.17) \\
 \>   PopMatrix() \\
-\>   Fg({\textquotedbl}diffuse grey; emission black{\textquotedbl}) \\
+\>   Fg("diffuse grey; emission black") \\
 \>   PushMatrix() \\
 \>   Rotate(-5.0, 1.0, 0.0, 0.0) \\
 \>   Rotate( 6.0, 0.0, 0.0, 1.0) \\
@@ -1832,9 +1832,9 @@ procedure main() \\
 \>   PopMatrix() \\
 \ \\
 \>   \# Draw the table  \\
-\>   WAttrib({\textquotedbl}texcoord=auto{\textquotedbl},
-{\textquotedbl}texmode=on{\textquotedbl},
-{\textquotedbl}texture=table.gif{\textquotedbl}) \\
+\>   WAttrib("texcoord=auto",
+"texmode=on",
+"texture=table.gif") \\
 \>   PushMatrix() \\
 \>   Rotate(-10.0, 1.0, 0.0,0.0) \\
 \>   DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3) \\
@@ -1844,15 +1844,15 @@ procedure main() \\
 \>   Rotate(65.0, 1.0, 0.0, 0.0) \\
 \>   DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29)  \\
 \>   PopMatrix() \\
-\>   WAttrib({\textquotedbl}texmode=off{\textquotedbl},
-{\textquotedbl}fg=diffuse weak brown{\textquotedbl}) \\
+\>   WAttrib("texmode=off",
+"fg=diffuse weak brown") \\
 \>   PushMatrix() \\
 \>   Rotate(-20.0, 1.0, 0.0,0.0) \\
 \>   DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1) \\
 \>   PopMatrix() \\
-\>   while (e := Event()) \~{}== {\textquotedbl}q{\textquotedbl} do
-        write(image(e), {\textquotedbl}: {\textquotedbl}, \&x,
-{\textquotedbl},{\textquotedbl}, \&y) \\
+\>   while (e := Event()) \~{}== "q" do
+        write(image(e), ": ", \&x,
+",", \&y) \\
 end
 }
 
@@ -1874,13 +1874,13 @@ a disk are used. Texturing is applied to a cylinder and the disk.
 Notice the call 
 
 \iconcode{
-\>   WAttrib(w, {\textquotedbl}texcoord=auto{\textquotedbl})}
+\>   WAttrib(w, "texcoord=auto")}
 
 \noindent
 This resets the texture coordinates to the defaults. Finally, texturing
 is turned off to draw the base of the table.
 
-\subsubsection{Animation}
+\subsection{Animation}
 
 Graphics animation is performance sensitive, and Unicon is slower than
 systems programming languages such as C and C++. Nevertheless, it is
@@ -1890,7 +1890,7 @@ possible to write 3D animations in Unicon with acceptable frame rates.
 the user changes point of view. An application can call \texttt{EraseArea()}
 followed by the appropriate graphics primitives to redraw a scene, but
 the results often appear to flicker. It is better to let
-Unicon{\textquotesingle}s runtime system do the redrawing. Unicon
+Unicon's runtime system do the redrawing. Unicon
 maintains a \textit{display list} of graphics operations to execute
 whenever the screen must be redrawn; these operations are effectively
 everything since the last \texttt{EraseArea()}. The display list for a window
@@ -1898,7 +1898,7 @@ can be obtained by calling \texttt{WindowContents()}. The elements of the list
 are Unicon records and lists containing the string names and parameters
 of graphics primitives. For example, a call to \texttt{DrawSphere(w,x,y,z,r)}
 returns (and adds to the display list) a record
-\texttt{gl\_sphere({\textquotedbl}DrawSphere{\textquotedbl},x,y,z,r)}. Instead
+\texttt{gl\_sphere("DrawSphere",x,y,z,r)}. Instead
 of redrawing the entire scene to move an object, you can
 modify its display list record and call \texttt{Refresh()}. The following code
 fragment illustrates animation by causing a ball to slide up and down.
@@ -1920,7 +1920,7 @@ current midrange PC hardware. Unicon supports smooth animation for a
 number of objects which varies widely depending on the underlying
 graphics hardware and software.
 
-\subsubsection{Selective Rendering and Object Selection}
+\subsection{Selective rendering and object selection}
 
 Many 3D applications model scenes with far more objects than are needed
 at any particular instant. For example, a virtual building might have
@@ -1932,7 +1932,7 @@ perform at least approximate visibility calculations to achieve smooth
 animation. Such visibility calculations can be performed for each
 frame, and if the visible objects change, the scene can be re-rendered
 by rebuilding the display list from scratch. At this point
-Unicon{\textquotesingle}s speed can be an issue, as discussed in the
+Unicon's speed can be an issue, as discussed in the
 previous section.
 
 The function \texttt{WSection()} comes to the rescue. It plays two vital
@@ -1957,7 +1957,7 @@ identifying names for all objects intersected by the ray from the
 camera through the (x,y) screen location where the mouse was located on
 the last call to \texttt{Event()}.
 
-\section*{Summary}
+\section{Summary}
 
 Graphics are ubiquitous in modern applications. Unicon provides 2D and
 3D graphics capabilities that are easy to use, portable building blocks

@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 11: Writing Large Programs}
+\chapter{Writing Large Programs}
 
 This chapter describes language features, techniques, and software tools
 that play a supporting role in developing large programs and libraries
@@ -9,7 +9,7 @@ same target audience since one of the primary benefits of
 object-orientation is to reduce the difficulty of developing large
 programs.
 
-In the case of Unicon, {\textquotedbl}large{\textquotedbl} might mean
+In the case of Unicon, "large" might mean
 any program so complex that it is not self-explanatory without any
 special effort. This includes all programs over a few thousand lines in
 size, as well as shorter programs with complex application domains, and
@@ -34,11 +34,11 @@ This chapter shows you how to:
 \item Generate HTML indices and reference documentation for your code
 \end{itemize}
 
-\subsection{Abstract Classes}
+\section{Abstract Classes}
 
 In programming languages, it turns out there are at least two very
 different kinds of things referred to by the word
-{\textquotedbl}class{\textquotedbl}. Most classes denote a data type,
+"class". Most classes denote a data type,
 of which there are one or more instances. The word class is also used
 to denote a general category of objects, of which there are no actual
 instances. Such classes are called \index{abstract class}abstract
@@ -46,7 +46,7 @@ classes. \index{class!abstract}Abstract classes are used by defining
 subclasses which do have instances. In a small program you might not
 run into a need for abstract classes, but if you write a large
 object-oriented program, or your small program uses someone
-else{\textquotesingle}s large object-oriented class library, you are
+else's large object-oriented class library, you are
 likely to need to understand abstract classes.
 
 The whole idea of class and inheritance originated by analogy from
@@ -55,7 +55,7 @@ terms to denote categories (phylum, family, genus, etc.), that are
 distinct from the term that denotes a class of instances (species).
 There are plenty of instances of species \textit{Homo sapiens}, but
 there are no instances of a genus \textit{Homo}, there are only
-instances of \textit{Homo}{\textquotesingle}s subclasses. Similarly, if
+instances of \textit{Homo}'s subclasses. Similarly, if
 you are designing software to model the behavior of cars and trucks,
 you may identify a lot of shared behavior and place code for it in a
 superclass Vehicle, but there are no instances of Vehicle, only its
@@ -64,14 +64,14 @@ subclasses.
 In a larger inheritance graph (or tree) most classes may well be
 abstract. It may be those classes (primarily leaves) of which there are
 actual instances that are special and deserve a different term besides
-{\textquotedbl}class{\textquotedbl}. We could easily think of all
+"class". We could easily think of all
 classes as abstract by default, and refer to classes that have
-instances as {\textquotedbl}concrete classes{\textquotedbl} or
-\ {\textquotedbl}instantiation classes{\textquotedbl}. The analogy to
+instances as "concrete classes" or
+\ "instantiation classes". The analogy to
 biology would be better served by such terminology. But for better or
 for worse, most software engineers will have to live with
-{\textquotedbl}abstract class{\textquotedbl} and
-{\textquotedbl}class{\textquotedbl} to denote general categories and
+"abstract class" and
+"class" to denote general categories and
 instantiable categories, respectively.
 
 Numerous larger and more concrete examples of abstract classes appear in
@@ -86,7 +86,7 @@ all uses of inheritance they do require you to read and understand
 multiple bodies of code (the class and all its superclasses) in order
 to use the class effectively.
 
-\subsection{Design Patterns}
+\section{Design Patterns}
 
 Class and function libraries provide good mechanisms for \index{code
 reuse}code reuse, and \index{inheritance}inheritance helps with code
@@ -116,7 +116,7 @@ discussing recurring design concepts. The judicious use of one or more
 abstract classes seems to be a recurring theme throughout most of the
 design patterns identified by Gamma et al.
 
-\subsubsection{Singleton}
+\subsection{Singleton}
 
 Perhaps the simplest design pattern is the \index{singleton}singleton,
 describing a class of which exactly one \index{instance!class}instance
@@ -141,7 +141,7 @@ by the instance. Assigning an object instance to the variable that used
 to hold the constructor procedure allows you to refer to the instance
 by the name of the singleton class. It also renders the constructor
 procedure inaccessible from that point on in the
-program{\textquotesingle}s execution, ensuring only one instance will
+program's execution, ensuring only one instance will
 be created.
 
 \iconcode{
@@ -154,12 +154,12 @@ end
 \noindent
 There are undoubtedly other ways to implement singleton classes.
 
-\subsubsection{Proxy}
+\subsection{Proxy}
 
-A \index{proxy pattern}proxy is a {\textquotedbl}stand-in{\textquotedbl}
+A \index{proxy pattern}proxy is a "stand-in"
 for an object. The proxy keeps a \index{reference}reference to the
 object it is replacing, and implements the same interface as that
-object by calling the object{\textquotesingle}s version of the
+object by calling the object's version of the
 corresponding method each time one of its methods is invoked. Figure
 11-1 shows a proxy serving a client object in lieu of the real object.
 
@@ -195,7 +195,7 @@ class gigantic(x1,x2,...,x1000) \\
 \>   \ \ \ ... \\
 \>   end \\
 initially \\
-\>   \# Gigantic object{\textquotesingle}s state is loaded from network \\
+\>   \# Gigantic object's state is loaded from network \\
 end \\
 class proxy(g) \\
 \>   method invoke() \\
@@ -208,7 +208,7 @@ class proxy(g) \\
 end
 }
 
-\subsubsection{Chain of Responsibility}
+\subsection{Chain of responsibility}
 
 This pattern is similar to a proxy, in that an object is
 \textit{delegating} one or more of its methods to a second object. It
@@ -220,7 +220,7 @@ to patterns.
 
 The difference between a chain of responsibility and a proxy is that the
 proxy forwards \textit{all} method invocations to the
-{\textquotedbl}real{\textquotedbl} object, while in a chain of
+"real" object, while in a chain of
 responsibility, the object may handle some methods locally, and only
 delegate certain methods to the next object in the chain. Also, proxies
 are normally thought of as a single level of indirection, while the
@@ -252,20 +252,20 @@ class hirez\_cache(s, t) \\
 initially \\
 \>   t := table() \\
 \>   \# Insert some known values for otherwise enormous computation. \\
-\>   \# Don{\textquotesingle}t need im if user only needs these values. \\
+\>   \# Don't need im if user only needs these values. \\
 \>   t[1] := 1 \\
 \>   t[2] := 1 \\
 end
 }
 
 The instance of class Image is not created until one is needed, and
-image{\textquotesingle}s method \textsf{enhance\_resolution()} is not
+image's method \textsf{enhance\_resolution()} is not
 invoked for previously discovered results. Of course,
 \textsf{enhance\_resolution()} must be a pure mathematical function
 that does not have any side effects for this caching of results to be
 valid.
 
-\subsubsection{Visitor}
+\subsection{Visitor}
 
 The \index{visitor pattern}visitor pattern is a classic exercise in
 generic algorithms. It is fairly common to have a structure to
@@ -297,7 +297,7 @@ abstract class, instantiated by many concrete Visitor
 \index{subclass}subclasses that have the same method names but do not
 share code. Note also that this code example allows for heterogeneous
 structures: the Visitor just defines a
-{\textquotedbl}Do...{\textquotedbl} method for each type of node in the
+"Do..." method for each type of node in the
 structure.
 
 \iconcode{
@@ -332,10 +332,10 @@ nodes in the \index{tree}tree:
 \iconcode{
 class Printer() \\
 \>   method DoLeaf(theLeaf) \\
-\>   \ \ \ writes(theLeaf.datum, {\textquotedbl} {\textquotedbl}) \\
+\>   \ \ \ writes(theLeaf.datum, " ") \\
 \>   end \\
 \>   method DoInternalNode(theNode) \\
-\>   \ \ \ writes(theNode.datum, {\textquotedbl} {\textquotedbl}) \\
+\>   \ \ \ writes(theNode.datum, " ") \\
 \>   end \\
 end \\
 class Heights() \\
@@ -350,7 +350,7 @@ class Heights() \\
 end
 }
 
-\subsection{Packages}
+\section{Packages}
 
 In large programs, the global name space becomes crowded. You can create
 a disaster if one of your undeclared local variables uses the same name
@@ -358,22 +358,22 @@ as a built-in function, but at least you can memorize the names of all
 the built-in functions and avoid them. Memorization is no longer an
 option after you add in hundreds of global names from unfamiliar code
 libraries. You may accidentally overwrite some other
-programmer{\textquotesingle}s global \index{global}variable, without
+programmer's global \index{global}variable, without
 any clue that it happened.
 
 Packages allow you to partition and protect the global \index{name
 space}name space. A package is similar to a
 {\textquotedblleft}singleton{\textquotedblright} class with only one
 instance. Every global declaration (variables, procedures, records, and
-classes) is {\textquotedbl}invisible{\textquotedbl} outside the
+classes) is "invisible" outside the
 \index{package}package, unless imported explicitly.
 
-\subsubsection[The package declaration]{The \textrm{\textmd{package}}
-declaration}
-A package declaration specifies that all global symbols within a source
-file belongs to a package. \ The package declaration looks similar to
-the \index{link}link declaration. You provide the package name an
-identifier or a string filename:
+\subsection{The \texttt{package} declaration}
+
+A package declaration specifies that all global symbols within a source file
+belongs to a package.  The package declaration looks similar to the
+\index{link}\texttt{link} declaration. You provide the package name, an
+identifier, or a string filename:
 
 \iconcode{
 package foo}
@@ -381,14 +381,13 @@ package foo}
 or
 
 \iconcode{
-package {\textquotedbl}/usr/local/lib/icon/foo{\textquotedbl}}
+package "/usr/local/lib/icon/foo"}
 
-There can be only one package declaration in a source file. It need not
-be at the beginning of the source file, but this is conventional.
-Within a package, global names defined inside the package are
-referenced normally. Global names outside the package are not visible
-by default. Here is an example source file that declares some globals
-and adds them to a package.
+There can be only one package declaration in a source file. It need not be at
+the beginning of the source file, but this is conventional.  Within a package,
+global names defined inside the package are referenced normally. Global names
+outside the package are not visible by default. Here is an example source file
+that declares some globals and adds them to a package.
 
 \bigskip
 
@@ -413,26 +412,28 @@ database and that using package \textsf{first} implies linking in
 \textsf{first}. In order to prevent name conflicts the compiler also
 applies a name mangling process to the global symbols, described below.
 
-\subsubsection[The import declaration]{The \textmd{import} declaration}
-To access symbols within another package, use the import declaration,
+\subsection{The \texttt{import} declaration}
+
+To access symbols within another package, use the \texttt{import} declaration,
 which has the following syntax:
 
 \iconcode{
 import foo}
 
 This causes the compiler to look up the package in its database and
-identify its symbols. Import declarations use the IPATH
-\index{environment variable!IPATH}environment variable in the same way
-as do link declarations. In particular, an import declaration
+identify its symbols.  Import declarations use the IPATH
+\index{environment variable!IPATH}environment variable in the same
+way as do link declarations. In particular, an import declaration
 \textit{is} a link declaration, augmented with \index{scope}scope
 information about the names defined in the package.
 
-\subsubsection[Explicit Package References]{Explicit Package References}
-Sometimes, two imported packages may define the same symbol, or an
-imported symbol conflicts with a global declaration in one of your
-files. To resolve these problems, you can explicitly specify the
-package to use for particular symbol references. For example, if
-packages first and second both define a procedure named write, then
+\subsection{Explicit package references}
+
+Sometimes, two imported packages may define the same symbol, or an imported
+symbol conflicts with a global declaration in one of your files. To resolve
+these problems, you can explicitly specify the package to use for particular
+symbol references. For example, if packages first and second both define a
+procedure named write, then
 
 \iconcode{
 import first, second \\
@@ -459,38 +460,37 @@ In this example, omitting the \textsf{::} would cause the
 \textsf{write()} method to call itself until the program runs out of
 memory and produces a runtime error.
 
-\subsubsection{Name Conflicts and Name Mangling}
+\subsection{Name conflicts and name mangling}
 
-The purpose of packages is to reduce name conflicts, especially
-accidental ones. You will get a link error if you declare the same name
-twice in the same package. You will get a \index{compile}compile error
-if you try to import a package that contains a variable that is already
-declared. In Unicon, unlike Arizona Icon, you will also get a warning
-message if you declare a global variable of the same name as a built-in
-function, or assign a new value to such a name. Often this is done on
-purpose, and it shows off the flexibility of the language. But other
-times when it happens by accident, it is a disaster. Such warnings can
-be turned off with the \textsf{{}-n} option to the \textsf{unicon}
+The purpose of packages is to reduce name conflicts, especially accidental
+ones. You will get a link error if you declare the same name twice in the same
+package. You will get a \index{compile}compile error if you try to import a
+package that contains a variable that is already declared. In Unicon, unlike
+Arizona Icon, you will also get a warning message if you declare a global
+variable of the same name as a built-in function, or assign a new value to such
+a name. Often this is done on purpose, and it shows off the flexibility of the
+language. But other times when it happens by accident, it is a disaster. Such
+warnings can be turned off with the \textsf{{}-n} option to the \textsf{unicon}
 compiler.
 
-Under the hood, packages are implemented by simple name mangling that
-prefixes the package name and a pair of underscores onto the front of
-the declared name. You can easily defeat the package mechanism if you
-try, but the reason to mention the name mangling is so you can avoid
-variable names that look like names from other packages.
+Under the hood, packages are implemented by simple name mangling that prefixes
+the package name and a pair of underscores onto the front of the declared
+name. You can easily defeat the package mechanism if you try, but the reason to
+mention the name mangling is so you can avoid variable names that look like
+names from other packages.
 
 A similar \index{name mangling}name mangling constraint applies to
 classes. Also, the compiler reserves field names \textsf{\_\_s} and
 \textsf{\_\_m} for internal use; they are not legal class field names.
-Identifiers consisting of \textsf{\_}\textsf{\textit{n}}, where
-\textit{n} is an integer are reserved for Unicon temporary variable
-names. Finally, for each class \textsf{foo} declared in the
-user{\textquotesingle}s code, the names \textsf{foo},
-\textsf{foo\_\_state}, \textsf{foo\_\_methods}, and
+Identifiers consisting of \textsf{\_}\textsf{\textit{n}}, where \textit{n}
+is an integer are reserved for Unicon temporary variable names. Finally,
+for each class \textsf{foo} declared in the user's code, the names
+\textsf{foo}, \textsf{foo\_\_state}, \textsf{foo\_\_methods}, and
 \textsf{foo\_\_oprec} are reserved, as are the names \textsf{foo\_bar}
-corresponding to each method \textsf{bar} in class \textsf{foo}. 
+corresponding to each method \textsf{bar} in class \textsf{foo}.
 
-\subsubsection{Compilation Order and the Unidep Tool}
+
+\subsection{Compilation order and the \texttt{unidep} tool}
 
 When possible, you should compile all files in a package before you
 import that package. Even if you do, if multiple source files belong to
@@ -523,14 +523,14 @@ demo, which is used by \textsf{order3.icn}. You can rightly guess that
 order3.icn should be compiled after \textsf{order1.icn} and
 \textsf{order2.icn}, but does it matter which of them is compiled
 first? If \textsf{order2.icn} is compiled first,
-Unicon{\textquotesingle}s database does not know symbol first is part
+Unicon's database does not know symbol first is part
 of the package, and does not mangle the name; if you compile these
 files out of order you will get a runtime error.
 
 The brute force solutions you have available to you are: to always place
 all of a package in the same source file, or to compile the files
 twice. Neither of these options is especially appealing. The symbol
-references in each package{\textquotesingle}s files form a graph of
+references in each package's files form a graph of
 dependencies on the other files in the same package. As long as this
 graph is acyclic, a correct order can be calculated. Unidep is a
 program that automates this task and generates a \ makefile specifying
@@ -558,13 +558,13 @@ With these dependencies added, the makefile will compile the files in
 the correct order. You will want to add a rule to invoke Unidep from
 the makefile, and rerun it when your program changes significantly.
 
-\subsection{HTML documentation}
+\section{HTML documentation}
 
 \index{iplweb}Iplweb is an Icon documentation generator, inspired
-loosely by \index{Java}Java{\textquotesingle}s \index{JavaDoc}JavaDoc
+loosely by \index{Java}Java's \index{JavaDoc}JavaDoc
 program, and based on an \index{HTML}HTML{}-generating program called
 iplref, by Justin Kolb. Iplweb depends on your program being in
-{\textquotedbl}IPL normal form{\textquotedbl}, which is to say that
+"IPL normal form", which is to say that
 \index{comment}comments in your source files should be in the format
 used in the Icon Program Library. From these comments and the
 signatures of procedures, methods, records, and classes, Iplweb
@@ -572,30 +572,29 @@ generates \index{reference!documentation}reference documentation in
 HTML format.
 
 This approach produces reference documentation automatically, without
-altering the original source files. Run Iplweb early, and run it often.
-It is common for reference documentation to diverge over time from the
-\index{source code}source code without such a tool. \ It is especially
-suitable for documenting the interfaces of procedure and class
-libraries. What it doesn{\textquotesingle}t help with is the
-documentation of how something is implemented. It is designed primarily
-for the users, and not the maintainers, of library code.
+altering the original source files. Run Iplweb early, and run it
+often.  It is common for reference documentation to diverge over time
+from the \index{source code}source code without such a tool. It is
+especially suitable for documenting the interfaces of procedure and
+class libraries. What it doesn't help with is the documentation of how
+something is implemented. It is designed primarily for the users, and
+not the maintainers, of library code.
 
-\section*{Summary}
+\section{Summary}
 
 Writing and maintaining large programs poses additional challenges not
-encountered when writing small programs. The need for design and
-documentation is greater, and the challenge of maintaining the
-correspondence between design documents and code is more difficult.
-Design patterns can help you with the design process, since they
-introduce easily recognizable idioms or sentences within a design. The
-more familiar the design is, the less cognitive load is imposed by the
-task of understanding it.
+encountered when writing small programs. The need for design and documentation
+is greater, and the challenge of maintaining the correspondence between design
+documents and code is more difficult.  Design patterns can help you with the
+design process, since they introduce easily recognizable idioms or sentences
+within a design. The more familiar the design is, the less cognitive load is
+imposed by the task of understanding it.
 
-Packages have little or nothing to do with design patterns, but they are
-just as valuable in reducing the cognitive load required to work with a
-large program. Packages are not just a source code construct. They
-actually do play a prominent role in software design notations such as
-UML. From a programmer{\textquotesingle}s point of view, packages
+Packages have little or nothing to do with design patterns, but they
+are just as valuable in reducing the cognitive load required to work
+with a large program. Packages are not just a source code
+construct. They actually do play a prominent role in software design
+notations such as UML. From a programmer's point of view, packages
 protect a set of names so that their associated code is more reusable,
 without fear of conflicts from other reusable code libraries or the
 application code itself.

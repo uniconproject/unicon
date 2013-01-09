@@ -1,4 +1,4 @@
-\clearpage\section{Appendix B: The Icon Program Library}
+\chapter{The Icon Program Library}
 
 The \index{Icon Program Library}Icon Program Library (IPL) includes
 literally hundreds of complete programs ranging from simple
@@ -16,7 +16,7 @@ wish to add. Both IPATH and LPATH are space-separated lists of
 directories. The names IPATH and LPATH may be misleading; IPATH
 directories are searched for precompiled u-code modules with .u
 extensions, while LPATH directories are searched for
-\$include{\textquotesingle}d \index{source code}source code files with
+\$include'd \index{source code}source code files with
 the .icn extension.
 
 The Icon Program Library consists of around 20
@@ -24,23 +24,23 @@ directories of code, data, and supporting documentation. It
 is included in its entirety in the Unicon distributions.
 This appendix is a reference summary, giving details for
 the most useful components of the IPL, a sort of
-{\textquotedbl}Best of the Icon Program
-Library{\textquotedbl} collection of potential value to other programmers.
+``Best of the Icon Program
+Library'' collection of potential value to other programmers.
 Many modules were written by Icon creator Ralph Griswold; if he was not
 the author of a given module,
 the initials of authors are included in the module description. A list of
-authors{\textquotesingle} names appears at the end of the appendix. This
+authors' names appears at the end of the appendix. This
 appendix no doubt overlooks some excellent library modules and programs.
 The entries in this appendix loosely follow this template:
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filename}}
 
 Each module has one or more paragraphs of general description, ending
-with the authors{\textquotesingle} initials in parentheses. After the
+with the authors' initials in parentheses. After the
 description, if the module consisted of more than a single procedure,
 the external interface of the module is summarized. The external
 interface consists of procedures, record types and global variables.
-The number and type of each procedure{\textquotesingle}s parameters and
+The number and type of each procedure's parameters and
 return values are given. Library procedures can be expected to return a
 null value unless otherwise noted. The filename at the beginning is
 what you \index{link}link in order to use these procedures in your
@@ -50,9 +50,9 @@ are listed.
 record types(fields) with summary descriptions\\
 functions(parameters) : return types with summary descriptions
 
-Links: other library modules (author{\textquotesingle}s initials)
+Links: other library modules (author's initials)
 
-\subsection{Procedure Library Modules}
+\section{Procedure Library Modules}
 
 These files appear in the \texttt{ipl/procs/} directory. Each library
 module in this directory is a collection of one or more procedures.
@@ -72,7 +72,7 @@ input\\
 \texttt{get\_country(label) : string} produces the country from an
 address\\
 \texttt{get\_state(label) : string} produces the state,
-or \texttt{{\textquotedbl}XX{\textquotedbl}} if no state is found\\
+or \texttt{"XX"} if no state is found\\
 \texttt{get\_city(label) : string} produces the city from an address\\
 \texttt{get\_zipcode(label) : string} produces the city from an address\\
 \texttt{get\_lastname(label) : string} get last name\\
@@ -86,7 +86,7 @@ Links: lastname, io, namepfx, title
 % {\sffamily\bfseries ansi }
 % 
 % This module implements a subset of the \index{ANSI terminal}ANSI
-% terminal control sequences. The procedures{\textquotesingle} names are
+% terminal control sequences. The procedures' names are
 % taken directly from the ANSI names. To use these routines with non-ANSI
 % devices, link in \texttt{iolib} and (optionally) \texttt{iscreen}. Not
 % all ANSI terminals support even the limited subset of control sequences
@@ -153,7 +153,7 @@ argument. It fails if the string is not base64 encoded.
 \index{basename}\texttt{basename}\texttt{(name, suffix) : string} strips
 off any path information and removes the specified suffix, if present.
 If no suffix is provided, the portion of the name up to the first
-{\textquotedbl}.{\textquotedbl} is returned.
+"." is returned.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{binary} \hfill (RJA)}
 
@@ -182,9 +182,9 @@ c & signed char & C & unsigned char\\
 s & signed short & S & unsigned short\\
 i & signed integer & I & unsigned integer\\
 l & signed long & L & unsigned long\\
-n & short in {\textquotedbl}network{\textquotedbl} order
+n & short in "network" order
 (big-endian) &
-N & long in {\textquotedbl}network{\textquotedbl} order
+N & long in "network" order
 (big-endian)\\
 v & short in VAX order (little endian) &
 V & long in VAX order (little endian)\\
@@ -205,10 +205,10 @@ Each letter may optionally be followed by a number that gives a count.
 Together the letter and the count make a field specifier. Letters and
 numbers can be separated by white space that will be ignored. Types A,
 a, B, b, H, and h consume one value from the
-{\textquotedbl}value{\textquotedbl} list and produce a string of the
+"value" list and produce a string of the
 length given as the field-specifier-count. The other types consume
-{\textquotedbl}field-specifier-count{\textquotedbl} values from the
-{\textquotedbl}value{\textquotedbl} list and append the appropriate
+"field-specifier-count" values from the
+"value" list and append the appropriate
 data to the packed string.
 
 \texttt{unpack(template, string) : value\_list} does the reverse of
@@ -262,7 +262,7 @@ for these modules.
 % \iconcode{
 % record bit\_value(value, nbits) \\
 % ... \\
-% bitString := BitString({\textquotedbl}{\textquotedbl}) \\
+% bitString := BitString("") \\
 % while value := get\_new\_value() do \# loop to append to string \\
 % \>   BitStringPut(bitString, value.nbits, value.value) \\
 % resultString := BitStringPut(bitString) \# output any buffered bits
@@ -271,7 +271,7 @@ for these modules.
 % \texttt{BitStringPut(bitString)}, as well as producing the complete
 % string, pads the buffered string to an even character boundary. This
 % can be done during construction of a bit string if the effect is
-% desired. The {\textquotedbl}value{\textquotedbl} argument defaults to
+% desired. The "value" argument defaults to
 % zero.
 
 % \texttt{BitStringGet(bitString, n:integer):integer} extracts n bits from
@@ -344,9 +344,9 @@ In addition to processing the current line, one may process subsequent
 lines \textbf{before} they are logically read: Example:
 
 \iconcode{
-file := bufopen({\textquotedbl}name{\textquotedbl},
-{\textquotedbl}r{\textquotedbl}) {\textbar} stop({\textquotedbl}open
-failed{\textquotedbl}) \\
+file := bufopen("name",
+"r") {\textbar} stop('open
+failed") \\
 while line := bufread(file) do \{ \\
 \>   ...process current line... \\
 \>   line := bufnext(file,1) \# return next line \\
@@ -358,7 +358,7 @@ bufclose(file)
 }
 
 In the code above, calls to \texttt{bufnext()} do not affect subsequent
-\texttt{bufread()}{\textquotesingle}s.
+\texttt{bufread()}'s.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{calls}}
 
@@ -411,8 +411,8 @@ defaulting of the last three parameters.
 provided \texttt{map(s[i1])} is in \texttt{cset(map(c))} and
 \texttt{i2} is greater than \texttt{i1}. It fails otherwise.
 
-\texttt{balcl(c1, c2:{\textquotesingle}({\textquotesingle},
-c3:{\textquotesingle}){\textquotesingle}, s, i1, i2)} generates the
+\texttt{balcl(c1, c2:'(',
+c3:')', s, i1, i2)} generates the
 sequence of integer positions in \texttt{s} preceding a character of
 \texttt{cset(map(c1))} in \texttt{map(s[i1:i2])} that is balanced with
 respect to characters in \texttt{cset(map(c2))} and
@@ -442,16 +442,16 @@ Interface server side web based applications, commonly called
 \index{CGI}CGI scripts.
 
 \texttt{global cgi : table} contains keys that are
-the names of input fields in the invoking HTML page{\textquotesingle}s
+the names of input fields in the invoking HTML page's
 form, and values are whatever the user typed in those input fields. 
 
 \texttt{cgiInput(type, name, values)} writes \index{HTML}HTML INPUT tags
 with the given type and name for each of a list of
-values. The first value{\textquotesingle}s input tag is CHECKED. 
+values. The first value's input tag is CHECKED. 
 
 \texttt{cgiSelect(name, values)} writes an HTML SELECT with a
 given name and OPTION tags for a list of
-values. The first value{\textquotesingle}s OPTION tag is SELECTED. 
+values. The first value's OPTION tag is SELECTED. 
 
 \texttt{cgiXYCoord(hlst) : string} is used with an ISMAP.
 If the x and y coordinates are between certain boundaries, it returns
@@ -488,34 +488,34 @@ given in string s.
 
 \texttt{cgiOptwindow(opts, args...) : window?} attempts to open an Icon
 window, either on the X server or else on display :0 of the
-client{\textquotesingle}s machine (as defined by the IP address in
+client's machine (as defined by the IP address in
 REMOTE\_ADDR). The Icon window is typically used to generate a .GIF
 image to which a \index{link!HTML}link is embedded in the CGI
-program{\textquotesingle}s output. 
+program's output. 
 
 \texttt{main(args)} is included in the CGI library; you do not write
 your own. The CGI \texttt{main()} procedure generates an HTML header,
 parses the CGI input fields into a global table cgi, generates a
-background by calling the user{\textquotesingle}s
+background by calling the user's
 \texttt{cgiBBuilder()} function, if any, and calls the
-user{\textquotesingle}s \texttt{cgimain()} function. 
+user's \texttt{cgimain()} function. 
 
 \texttt{cgiBBuilder(args...) : table} is an optional procedure that a
 CGI program can use to define the general appearance of its
 generated web page output. If the user application defines this
 function, it should return a table which contains keys
-{\textquotedbl}background{\textquotedbl},
-{\textquotedbl}bgcolor{\textquotedbl},
-{\textquotedbl}text{\textquotedbl}, {\textquotedbl}link{\textquotedbl},
-{\textquotedbl}vlink{\textquotedbl},
-{\textquotedbl}bgproperties{\textquotedbl} with appropriate values to
+"background",
+"bgcolor",
+"text", 'link',
+"vlink",
+"bgproperties" with appropriate values to
 go into the BODY tag and define background color and texture for the
 CGI page. 
 
 \texttt{cgimain(args)} is the entry point for CGI programs. \ When you
 use the CGI library, its \texttt{main()} initializes things and then
 calls your \texttt{cgimain()} to generate the HTML content body for the
-client{\textquotesingle}s web page. 
+client's web page. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{codeobj}}
 
@@ -531,7 +531,7 @@ arbitrary complexity and even loops. For scalar types -{}- null,
 integer, real, cset, and string -{}- \texttt{decode(encode(x)) === x}.
 For structure types -{}- list, set, table, and record types -{}-
 \texttt{decode(encode(x))} is not identical to \texttt{x}, but it has
-the same {\textquotedbl}shape{\textquotedbl} and its elements bear the
+the same "shape" and its elements bear the
 same relation to the original as if they were encoded and decode
 individually. Not much can be done with files, functions and
 procedures, and co-expressions except to preserve type and
@@ -564,7 +564,7 @@ set of strings. Example:
 
 \iconcode{
 commands :=
-[{\textquotedbl}run{\textquotedbl},{\textquotedbl}stop{\textquotedbl},{\textquotedbl}quit{\textquotedbl},{\textquotedbl}save{\textquotedbl},{\textquotedbl}load{\textquotedbl},{\textquotedbl}continue{\textquotedbl}] \\
+["run",'stop','quit','save','load','continue'] \\
 while line := read(\&input) do \{ \\
 \>   cmds := [ ] \\
 \>   every put(cmds, complete(line, commands)) \\
@@ -632,15 +632,15 @@ should be a \texttt{Directive} for \texttt{Directive\_ignore} or
 
 \iconcode{
 tos := table(Directive(Directive\_ignore)) \\
-tos[{\textquotedbl}mylabel{\textquotedbl}] :=
+tos["mylabel"] :=
 Directive(Directive\_value, map) \\
-tos[{\textquotedbl}fgrgb{\textquotedbl}] := Directive(Directive\_list,
+tos["fgrgb"] := Directive(Directive\_list,
 3, 3)
 }
 
-\texttt{ReadDirectives(L:list,T:table,s1:{\textquotedbl}\#{\textquotedbl},s2:{\textquotedbl}-{\textquotedbl},c1:{\textquotesingle}{\textbackslash}{\textbackslash}{\textquotesingle},
-c2:{\textquotesingle}
-{\textbackslash}b{\textbackslash}t{\textbackslash}v{\textbackslash}f{\textbackslash}r{\textquotesingle},p)
+\texttt{ReadDirectives(L:list,T:table,s1:"\#",s2:'-',c1:'{\textbackslash}{\textbackslash}',
+c2:'
+{\textbackslash}b{\textbackslash}t{\textbackslash}v{\textbackslash}f{\textbackslash}r',p)
 : table} returns a table containing directives parsed and extracted
 from a file. \texttt{L} is a list of string filenames or open files;
 the procedure uses the first one that it is able to read. \texttt{T} is
@@ -652,11 +652,11 @@ specification table, and creates a window whose title is taken from the
 specified \texttt{mylabel} directive if it is present. Links: lastc.
 
 \iconcode{
-cfg := ReadDirectives([{\textquotedbl}.mycfg{\textquotedbl},
-{\textquotedbl}my.cfg{\textquotedbl}, \&input], tos) \\
-WOpen({\textquotedbl}label={\textquotedbl} {\textbar}{\textbar} (
-{\textbackslash} (cfg[{\textquotedbl}mylabel{\textquotedbl}])
-{\textbar} {\textquotedbl}untitled{\textquotedbl}))
+cfg := ReadDirectives([".mycfg",
+"my.cfg", \&input], tos) \\
+WOpen("label=" {\textbar}{\textbar} (
+{\textbackslash} (cfg["mylabel"])
+{\textbar} "untitled"))
 }
 
 
@@ -680,10 +680,10 @@ structures of a given type that have been created. Links: \texttt{serial}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{currency}\hfill (RJA)}
 
-\texttt{currency(amt, wid:0, neg:{\textquotedbl}-{\textquotedbl},
-frac:2, whole:1, sign:{\textquotedbl}\${\textquotedbl},
-decimal:{\textquotedbl}.{\textquotedbl},
-comma:{\textquotedbl},{\textquotedbl}) : string} formats \texttt{amt}
+\texttt{currency(amt, wid:0, neg:"-",
+frac:2, whole:1, sign:"\$",
+decimal:".",
+comma:",") : string} formats \texttt{amt}
 in a currency format that defaults to U.S. currency. \texttt{amt} can
 be a real, integer, or numeric string. \texttt{wid} is the output field
 width, in which the amount is right adjusted. The returned string will
@@ -721,9 +721,9 @@ date.\\
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{datefns}\hfill (CH)}
 
 Date and calendar adaptations of C functions from
-{\textquotedbl}The C Programming Language{\textquotedbl} (Kernighan and
-Ritchie, Prentice-Hall) and {\textquotedbl}Numerical Recipes in
-C{\textquotedbl} (Press et al, Cambridge). They represent dates using
+"The C Programming Language" (Kernighan and
+Ritchie, Prentice-Hall) and "Numerical Recipes in
+C" (Press et al, Cambridge). They represent dates using
 the record type below.
 
 \texttt{record date\_rec(year, month, day, yearday, monthname,
@@ -731,7 +731,7 @@ dayname)}\\
 \texttt{initdate()} initializes the global data before using the other
 functions.\\
 \texttt{today() : date\_rec} produces a computationally useful value for
-today{\textquotesingle}s date\\
+today's date\\
 \index{julian}\texttt{julian}\texttt{(date) : integer} converts a
 date\_rec to a Julian day number\\
 \texttt{unjulian(julianday) : date\_rec} produces a date from the Julian
@@ -814,21 +814,21 @@ filters. Warning: if the filter criteria are omitted, the
 \texttt{dbinsert(db, row:record)} inserts a record as a tuple (row) into db.
 
 \texttt{dbselect(db,columns,condition,ordering):integer} selects columns from db.
-columns defaults to {\textquotedbl}all{\textquotedbl}, condition
+columns defaults to "all", condition
 defaults to unconditionally, and ordering defaults to unordered.
 
 \texttt{dbupdate(db:database,row:record)} updates the \texttt{db} tuple
 corresponding to \texttt{row}.
 
 \texttt{dbopen(dsn, table, user, password):f} is like
-\texttt{open(dsn,{\textquotedbl}o{\textquotedbl},...)}\\
+\texttt{open(dsn,"o",...)}\\
 \texttt{dbclose(db)} is an alias for \texttt{close()}\\
 \texttt{dbfetch(db)} is an alias for \texttt{fetch()}\\
 \texttt{dbsql(db, query)} is an alias for \texttt{sql()}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{dif} \hfill (RJA)}
 
-\texttt{dif(strm:list,compare:{\textquotedbl}==={\textquotedbl},eof,group:groupfactor):list*}
+\texttt{dif(strm:list,compare:"===",eof,group:groupfactor):list*}
 generates \index{diff}differences between input streams. 
 Returns a list of records, one for each input stream, with each
 record containing a list of items that differ and their positions in
@@ -837,26 +837,26 @@ diff\_rec(pos,diffs)}. \texttt{dif()} fails if there are no
 differences.
 
 \texttt{strm} is a list of input streams from which \texttt{dif()} will
-extract its input {\textquotedbl}records{\textquotedbl}. The elements
+extract its input "records". The elements
 can be any of the following types, with corresponding actions:
 
 \begin{supertabular}{m{1.0in} m{4.8in}}
 Type & Action \\
 
-file &  file is {\textquotedbl}read{\textquotedbl} to get records\\
+file &  file is "read" to get records\\
 co-expression & co-expression is activated to get records\\
-list & records are {\textquotedbl}gotten{\textquotedbl}
+list & records are "gotten"
 (\texttt{get()}) from the list\\
 diff\_proc & a record type that has two fields, a procedure
 to call and the argument to pass to it. Its definition is:
  \texttt{record diff\_proc(proc,arg)}. It allows
-procedures supplied by \texttt{dif}{\textquotesingle}s
+procedures supplied by \texttt{dif}'s
  caller to be called to get records.
 \\
 \end{supertabular}
 
 \texttt{compare} is a procedure that succeeds if two records are
-{\textquotedbl}equal{\textquotedbl}, and fails otherwise. The
+"equal", and fails otherwise. The
 comparison must allow for the fact that the EOF object might be an
 argument, and a pair of EOFs must compare equal.
 
@@ -893,7 +893,7 @@ recognize them as such. The concept of equivalence for tables and sets
 is weak if their elements are themselves structures. There
 is no concept of order for tables and sets, yet it is impractical to
 test for equivalence of their elements without imposing an order. Since
-structures sort by {\textquotedbl}age{\textquotedbl}, there may be a
+structures sort by "age", there may be a
 mismatch between equivalent structures in two tables or sets. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{escapesq} \hfill (RJA)}
@@ -907,8 +907,8 @@ escape sequences\\
 Icon escape sequence\\
 \texttt{escape()} converts a string with escape sequences to the string it
 represents. For example,
-\texttt{escape({\textquotedbl}{\textbackslash}{\textbackslash}143{\textbackslash}{\textbackslash}141{\textbackslash}{\textbackslash}164{\textquotedbl})}
-produces the string \texttt{{\textquotedbl}cat{\textquotedbl}}.\\
+\texttt{escape("{\textbackslash}{\textbackslash}143{\textbackslash}{\textbackslash}141{\textbackslash}{\textbackslash}164")}
+produces the string \texttt{"cat"}.\\
 \texttt{quotedstring()} matches a complete quoted string.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{eval}}
@@ -916,7 +916,7 @@ produces the string \texttt{{\textquotedbl}cat{\textquotedbl}}.\\
 \index{eval()}\texttt{eval(string) : any*} analyzes a string
 representing an Icon function or procedure call and evaluates the
 result. Operators can be used in functional form, as in
-\texttt{{\textquotedbl}*(2,3){\textquotedbl}}. This procedure cannot
+\texttt{"*(2,3)"}. This procedure cannot
 handle nested expressions or control structures. It assumes the string
 is well formed. The arguments can only be Icon literals. Escapes,
 commas, and parentheses in string literals are not handled. In the case
@@ -937,16 +937,16 @@ Requires: \texttt{system()}, \texttt{/tmp}, pipes. Links:
 
 \texttt{everycat(x1, x2, ...) : string*} generates the concatenation of
 every string from !x1, !x2, ... For example, if first :=
-[{\textquotedbl}Mary{\textquotedbl}, {\textquotedbl}Joe{\textquotedbl},
-{\textquotedbl}Sandra{\textquotedbl}] and last :=
-[{\textquotedbl}Smith{\textquotedbl},
-{\textquotedbl}Roberts{\textquotedbl}] then \texttt{every
-write(everycat(first, {\textquotedbl} {\textquotedbl}, last))} writes
+["Mary", 'Joe',
+"Sandra"] and last :=
+["Smith",
+"Roberts"] then \texttt{every
+write(everycat(first, " ", last))} writes
 Mary Smith, Mary Roberts, Joe Smith, Joe Roberts, Sandra Smith, Sandra
 Roberts. x1, x2, ... can be any values for which !x1, !x2, ... are
 convertible to strings. In the example, the second
-argument is a one-character string \texttt{{\textquotedbl}
-{\textquotedbl}}, so that \texttt{!{\textquotedbl} {\textquotedbl}}
+argument is a one-character string \texttt{"
+"}, so that \texttt{!" '}
 generates a single blank. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{exprfile}}
@@ -1001,10 +1001,10 @@ Requires: Large-integer arithmetic and prime.lst for
 
 These procedures implement integer-values using a best known method.
 
-\texttt{acker(i, j)}\ \ Ackermann{\textquotesingle}s function\\
+\texttt{acker(i, j)}\ \ Ackermann's function\\
 \texttt{fib(i)}\ \ \ \ Fibonacci sequence\\
 \texttt{g(k, i)}\ \ \ \ Generalized Hofstader nested recurrence\\
-\texttt{q(i)}\ \ \ \ \ \ {\textquotedbl}Chaotic{\textquotedbl}
+\texttt{q(i)}\ \ \ \ \ \ "Chaotic"
 sequence\\
 \texttt{robbins(i)}\ \ Robbins numbers
 
@@ -1025,8 +1025,8 @@ rows)}.
 \texttt{nextseqfilename(dir, pre, ext) : string?} creates the next
 filename in a series of files (such as successive
 log files). Usage: \texttt{fn :=
-nextseqfilename({\textquotedbl}.{\textquotedbl},
-{\textquotedbl}.{\textquotedbl}, {\textquotedbl}log{\textquotedbl})}
+nextseqfilename(".",
+".", 'log')}
 returns the (non-existent) filename next in the sequence
 \texttt{.{\textbackslash}.*.log} (where the * represents 1, 2, 3, ...)
 or fails.
@@ -1044,22 +1044,22 @@ system. If you do many searches through text files, or write programs
 which do searches based on user input, then \texttt{findre()} is a
 utility you might want to look over. \texttt{findre()} leaves the user
 with no easy way to tab past a matched substring, as with \texttt{s ?
-write(tab(find({\textquotedbl}hello{\textquotedbl})+5))}. In order to
+write(tab(find("hello")+5))}. In order to
 remedy this intrinsic deficiency, \texttt{findre()} sets the global
 variable \texttt{\_\_endpoint} to the first position after any given
 match occurs. \texttt{findre()} utilizes the same basic language as
 egrep, but uses intrinsic Icon data structures and escaping conventions
 rather than those of any particular Unix variant. \texttt{findre()}
 takes a shortest-possible-match approach to regular expressions. In
-other words, if you look for \texttt{{\textquotedbl}a*{\textquotedbl}},
+other words, if you look for \texttt{"a*"},
 \texttt{findre()} will not even bother looking for an
-\texttt{{\textquotedbl}a{\textquotedbl}}\texttt{.} It will just match
+\texttt{"a"}\texttt{.} It will just match
 the empty string.
 
 \texttt{\^{}} - matches if what follows is at the beginning of
 a line (i.e. \texttt{\^{}\#} matches lines \ \\
  \ \ \ \ beginning with
-\texttt{{\textquotedbl}\#{\textquotedbl}})\\
+\texttt{"\#"})\\
 \texttt{\$} - matches if the preceding pattern is at the end of a
 line\\
 \texttt{.} - matches any single character\\
@@ -1072,7 +1072,7 @@ expression\\
 {\textbackslash} \ {}- removes the special meaning of any special
 characters\\
  \ \ \ \ (i.e. if you want to match lines beginning with a
-\texttt{{\textquotedbl}[{\textquotedbl}}, write
+\texttt{"["}, write
 \texttt{\^{}{\textbackslash}[}, and not \texttt{\^{}[})\\
 \texttt{{\textbar}} - matches either the pattern before it, or the one
 after it (i.e. \texttt{abc{\textbar}cde} matches\\
@@ -1084,11 +1084,11 @@ after it (i.e. \texttt{abc{\textbar}cde} matches\\
 \\
  \ \ \ \ \ \ \ character \textit{except} \texttt{a} and \texttt{b}).\\
 \texttt{()} - used for grouping (e.g. \texttt{\^{}(abc{\textbar}cde)\$} matches
-lines consisting of either \texttt{{\textquotedbl}abc{\textquotedbl}}
-or \texttt{{\textquotedbl}cde{\textquotedbl},}\\
+lines consisting of either \texttt{"abc"}
+or \texttt{"cde",}\\
  \ \ \ \ \ \ while \texttt{\^{}abc{\textbar}cde}\$ matches lines either
-beginning with \texttt{{\textquotedbl}abc{\textquotedbl}} or ending in
-\texttt{{\textquotedbl}cde{\textquotedbl}})
+beginning with \texttt{"abc"} or ending in
+\texttt{"cde"})
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gauss} \hfill (SBW)}
 
@@ -1109,8 +1109,8 @@ according to the needs\\
 \texttt{gdlrec(dir, findflag) : list} does same thing as gdl except it
 recursively\\
  \ \ \ \ descends through subdirectories. If \texttt{findflag} is
-nonnull, the UNIX {\textquotedbl}find{\textquotedbl}\\
- \ \ \ \ program is used; otherwise the {\textquotedbl}ls{\textquotedbl} program
+nonnull, the UNIX "find"\\
+ \ \ \ \ program is used; otherwise the "ls" program
 is used.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gener}}
@@ -1119,13 +1119,13 @@ These procedures generate sequences of results.
 
 \texttt{days() : string*} produces the \index{days of the week}days of
 the week, starting with
-\texttt{{\textquotedbl}Sunday{\textquotedbl}}.\\
+\texttt{"Sunday"}.\\
 \texttt{hex() : string*} is the sequence of
 \index{hexadecimal}hexadecimal codes for numbers from 0 to 255\\
 \texttt{label(s,i) : string*} produces labels with prefix \texttt{s}
 starting at \texttt{i}\\
 \texttt{multii(i, j) : integer*} produces \texttt{i * j}
-\texttt{i}{\textquotesingle}s\\
+\texttt{i}'s\\
 \texttt{months() : string*} produces the \index{months of the
 year}months of the year\\
 \texttt{octal() : string*} produces the \index{octal}octal codes for
@@ -1147,7 +1147,7 @@ increment j.\\
 \texttt{factseq()} factorial sequence\\
 \texttt{fibseq(i, j, k)} generalized Fibonacci (Lucas) sequence with
 additive constant k\\
-\texttt{figurseq(i)} series of i{\textquotesingle}th figurate
+\texttt{figurseq(i)} series of i'th figurate
 number\\
 \texttt{fileseq(s, i)} generate lines (if i is null) or characters
 (except line terminators)\\
@@ -1156,7 +1156,7 @@ number\\
 j\\
 \texttt{irepl(i, j)} j instances of i\\
 \texttt{multiseq(i, j, k)} sequence of (i * j + k)
-i{\textquotesingle}s\\
+i's\\
 \texttt{ngonalseq(i)} sequence of the i polygonal number\\
 \texttt{primeseq()} the sequence of prime numbers\\
 \texttt{powerseq(i, j)} sequence i \^{} j, starting at j = 0\\
@@ -1192,7 +1192,7 @@ arguments followed by those paths in the PATH \index{environment
 variable!PATH}environment variable, if one is available. A typical
 invocation might look like:
 
-\ \texttt{open(getpaths({\textquotedbl}/usr/local/lib/icon/procs{\textquotedbl})
+\ \texttt{open(getpaths("/usr/local/lib/icon/procs")
 {\textbar}{\textbar} filename)}
 
 \texttt{getpaths()} will be resumed in the above context until open
@@ -1201,7 +1201,7 @@ succeeds in finding an existing, readable file.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{graphpak}}
 
 The procedures here use sets to represent directed \index{graph}graphs.
-See {\textquotedbl}The Icon Programming Language{\textquotedbl}, third
+See "The Icon Programming Language", third
 edition, pp. 233-236. A graph has two components: a list of nodes and a
 two-way lookup table. The nodes in turn are sets of
 \index{pointer}pointers to other nodes. The two-way table maps a node
@@ -1266,7 +1266,7 @@ bnf\_filename, start-symbol). Parse\_sentence() suspends successive
 edge structures corresponding to possible parses of the input sentence.
 BNF grammars are specified using the same notation used in Griswold \&
 Griswold, and as described in the IPL program
-{\textquotedbl}pargen.icn{\textquotedbl} later in this appendix with
+"pargen.icn" later in this appendix with
 the following difference: All metacharacters (space, tab, vertical
 slash, right/left parentheses, brackets and angle brackets) are
 converted to literals by prepending a backslash. Comments can be
@@ -1293,10 +1293,10 @@ whole image on one line. Style 4 is like style 3, with structures
 expanded breadthfirst instead of depthfirst as for other styles.
 
 Structures are identified by a letter identifying the type followed by
-an integer. The tag letters are {\textquotedbl}L{\textquotedbl} for
-lists, {\textquotedbl}R{\textquotedbl} for records,
-{\textquotedbl}S{\textquotedbl} for sets, and
-{\textquotedbl}T{\textquotedbl} for tables. The first time a structure
+an integer. The tag letters are "L" for
+lists, "R" for records,
+"S" for sets, and
+"T" for tables. The first time a structure
 is encountered, it is imaged as the tag followed by a colon, followed
 by a representation of the structure. If the same structure is
 encountered again, only the tag is given.
@@ -1312,15 +1312,15 @@ into writable form by \texttt{outbits()}. See also:
 \texttt{indices(spec:list, last) : list} produces a list of the integers
 given by the specification \texttt{spec}, which is a comma separated
 list of positive integers or integer spans, as in
-\texttt{{\textquotedbl}1,3-10,...{\textquotedbl}} If \texttt{last} is
+\texttt{"1,3-10,..."} If \texttt{last} is
 specified, it is used for a span of the form
-\texttt{{\textquotedbl}10-{\textquotedbl}}. In a span, the low and high
+\texttt{"10-"}. In a span, the low and high
 values need not be in order. For example,
-\texttt{{\textquotedbl}1-10{\textquotedbl}} and
-\texttt{{\textquotedbl}10-1{\textquotedbl}} are equivalent. Similarly,
-indices need not be in order, as in \texttt{{\textquotedbl}3-10,
-1,...{\textquotedbl}}. Empty values, as in
-\texttt{{\textquotedbl}10,,12{\textquotedbl}} are ignored.
+\texttt{"1-10"} and
+\texttt{"10-1"} are equivalent. Similarly,
+indices need not be in order, as in \texttt{"3-10,
+1,..."}. Empty values, as in
+\texttt{"10,,12"} are ignored.
 \texttt{indices()} fails if the specification is syntactically
 erroneous or if it contains a value less than 1. 
 
@@ -1368,7 +1368,7 @@ ends in a backslash, that character is included in the last line read.
 
 \texttt{splitline(file, line, limit)} splits \texttt{line} into pieces
 at first blank after the limit, appending a backslash to identify split
-lines (if a line ends in a backslash already, that{\textquotesingle}s
+lines (if a line ends in a backslash already, that's
 too bad). The pieces are written to the specified file.
 
 \paragraph{Buffered input and output:}
@@ -1392,50 +1392,50 @@ DPATH.
 \texttt{dpath(s) : string?} returns the path to \texttt{s} on DPATH.
 
 \texttt{pathfind(fname,
-path:getenv({\textquotedbl}DPATH{\textquotedbl})) : string?} returns
+path:getenv("DPATH")) : string?} returns
 the full path of fname if found along the space-separated list of
-directories {\textquotedbl}path{\textquotedbl}. As is customary in Icon
-path searching, {\textquotedbl}.{\textquotedbl} is prepended to the
+directories "path". As is customary in Icon
+path searching, "." is prepended to the
 path.
 
 \texttt{pathload(fname,entry)} calls \texttt{loadfunc()} to load
 \texttt{entry} from the file \texttt{fname} found on the function path.
 If the file or entry point cannot be found, the program is aborted. The
 function path consists of the current directory, then
-\texttt{getenv({\textquotedbl}FPATH{\textquotedbl})}, and finally any
+\texttt{getenv("FPATH")}, and finally any
 additional directories configured in the code.
 
 \paragraph[Parsing file names:]{Parsing file names:}
 \texttt{suffix() : list} parses a hierarchical file name, returning a
 2-element list: [prefix,suffix]. For example,
-\texttt{suffix({\textquotedbl}/a/b/c.d{\textquotedbl})} produces
-\texttt{[{\textquotedbl}/a/b/c{\textquotedbl},{\textquotedbl}d{\textquotedbl}]}
+\texttt{suffix("/a/b/c.d")} produces
+\texttt{["/a/b/c","d"]}
 
 \texttt{tail() : list} parses a hierarchical file name, returning a
 2-element list: [head,tail]. For example,
-\texttt{tail({\textquotedbl}/a/b/c.d{\textquotedbl})} produces
-\texttt{[{\textquotedbl}/a/b{\textquotedbl},{\textquotedbl}c.d{\textquotedbl}]}.
+\texttt{tail("/a/b/c.d")} produces
+\texttt{["/a/b","c.d"]}.
 
 \texttt{components() : list} parses a hierarchical file name, returning
 a list of all directory names in the file path, with the file name
 (tail) as the last element. For example,
-\texttt{components({\textquotedbl}/a/b/c.d{\textquotedbl})} produces
-\texttt{[{\textquotedbl}/{\textquotedbl},{\textquotedbl}a{\textquotedbl},{\textquotedbl}b{\textquotedbl},{\textquotedbl}c.d{\textquotedbl}]}.
+\texttt{components("/a/b/c.d")} produces
+\texttt{["/","a","b","c.d"]}.
 
 \paragraph{Temporary files:}
-\texttt{tempfile(prefix:{\textquotedbl}{\textquotedbl},suffix:{\textquotedbl}{\textquotedbl},path:{\textquotedbl}.{\textquotedbl},len:8)}
+\texttt{tempfile(prefix:"",suffix:"",path:".",len:8)}
 produces a temporary file that can be written. The name is chosen so as
 not to overwrite an existing file. The \texttt{prefix} and
 \texttt{suffix} are prepended and appended, respectively, to a randomly
 chosen number. The \texttt{path} is prepended to the file name. The
 randomly chosen number is fit into a field of \texttt{len} characters
 by truncation or right filling with zeros as necessary. It is the
-user{\textquotesingle}s responsibility to remove the file when it is no
+user's responsibility to remove the file when it is no
 longer needed.
 
-\texttt{tempname(prefix:{\textquotedbl}{\textquotedbl},
-suffix:{\textquotedbl}{\textquotedbl},
-path:{\textquotedbl}.{\textquotedbl}, len:8)} returns a
+\texttt{tempname(prefix:"",
+suffix:"",
+path:".", len:8)} returns a
 temporary file name.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iolib}\hfill
@@ -1449,18 +1449,18 @@ e.g. TERM=ansi-color. The TERMCAP variable
 gives the location of the termcap database file, as provided on your
 UNIX system.
 
-Some useful termcap codes are {\textquotedbl}cl{\textquotedbl} (clear
-screen), {\textquotedbl}ce{\textquotedbl} (clear to end of line),
-{\textquotedbl}ho{\textquotedbl} (go to the top left square on the
-screen), {\textquotedbl}so{\textquotedbl} (begin standout mode), and
-{\textquotedbl}se{\textquotedbl} (end standout mode). The termcap
+Some useful termcap codes are "cl" (clear
+screen), "ce" (clear to end of line),
+"ho" (go to the top left square on the
+screen), "so" (begin standout mode), and
+"se" (end standout mode). The termcap
 database holds both string- and numeric-valued sequences. The value
-of {\textquotedbl}li{\textquotedbl} tells how many
-lines the terminal has; {\textquotedbl}co{\textquotedbl} tells how
+of "li" tells how many
+lines the terminal has; "co" tells how
 many columns. To go to the beginning of the second-to-last line on the
-screen: iputs(igoto(getval({\textquotedbl}cm{\textquotedbl}), 1,
-getval({\textquotedbl}li{\textquotedbl})-1)). The
-{\textquotedbl}cm{\textquotedbl} capability is a special capability,
+screen: iputs(igoto(getval("cm"), 1,
+getval("li")-1)). The
+"cm" capability is a special capability,
 and needs to be output via igoto(cm,x,y), where cm is the sequence
 telling your computer to move the cursor to a specified spot, x is the
 column, and y is the row.
@@ -1472,17 +1472,17 @@ TERM environment variable.
 id. Integer valued capabilities are returned as integers, strings as
 strings, and flags as records (if a flag is set, then
 \texttt{type(flag)} will return
-\texttt{{\textquotedbl}true{\textquotedbl}}). Absence of a capability
+\texttt{"true"}). Absence of a capability
 is signaled by failure.
 
 \texttt{igoto(cm,column,row)} returns a terminal code string that causes
 the cursor to move to the designated column and row. cm is the cursor
 movement command for the current terminal, as obtained via
-getval({\textquotedbl}cm{\textquotedbl}). column and row count down and
+getval("cm"). column and row count down and
 to the right starting from the location (1,1).
 
 \texttt{puts(s)} sends s out to the console. For example, to clear the
-screen, \texttt{iputs(getval({\textquotedbl}cl{\textquotedbl}))}
+screen, \texttt{iputs(getval("cl"))}
 
 Requires: UNIX, co-expressions. See also: iscreen.icn.
 
@@ -1506,9 +1506,9 @@ line\\
 3rd-to-last screen line; if \texttt{s} is too short for the terminal,
 \texttt{s2} is used; if \texttt{p} is nonnull then it either centers,
 left-, or right-justifies, depending on the value,
-\texttt{{\textquotedbl}c{\textquotedbl}},
-\texttt{{\textquotedbl}l{\textquotedbl}}, or
-\texttt{{\textquotedbl}r{\textquotedbl}}.
+\texttt{"c"},
+\texttt{"l"}, or
+\texttt{"r"}.
 
 Requires: UNIX. Links: \texttt{iolib}.
 
@@ -1522,7 +1522,7 @@ in the standard Icon order; otherwise, sort keys are obtained from
 within elements, instead of using the element itself as the key.
 \texttt{keyproc} can be a procedure, in which case the first argument
 to the key procedure is the item for which the key is to be computed,
-and the second argument is isort{\textquotesingle}s argument
+and the second argument is isort's argument
 \texttt{y}, passed unchanged. The \texttt{keyproc} must produce the
 extracted key. Alternatively, \texttt{keyproc} can be an integer, in
 which case it specifies a subscript to be applied to each item to
@@ -1535,19 +1535,19 @@ structure \texttt{x}.
 tokens for use in things like pretty printers, preprocessors, code
 obfuscators, and so forth. itokens() suspends values of type
 \texttt{record TOK(sym:string, str:string). sym} contains the name of
-the next token, such as \texttt{{\textquotedbl}CSET{\textquotedbl}}, or
-\texttt{{\textquotedbl}STRING{\textquotedbl}. str} gives that
-token{\textquotesingle}s literal value. For example, the \texttt{TOK}
+the next token, such as \texttt{"CSET"}, or
+\texttt{"STRING". str} gives that
+token's literal value. For example, the \texttt{TOK}
 for a literal semicolon is
-\texttt{TOK({\textquotedbl}SEMICOL{\textquotedbl},
-{\textquotedbl};{\textquotedbl})}. For a mandatory newline,
+\texttt{TOK("SEMICOL",
+";")}. For a mandatory newline,
 \texttt{itokens()} would suspend
-\texttt{TOK({\textquotedbl}SEMICOL{\textquotedbl},
-{\textquotedbl}{\textbackslash}n{\textquotedbl}). itokens()} fails on
+\texttt{TOK("SEMICOL",
+"{\textbackslash}n"). itokens()} fails on
 end-of-file. It returns syntactically meaningless newlines if the
 second argument is nonnull. These meaningless newlines are returned as
 TOK records with a null sym field (i.e. \texttt{TOK(\&null,
-{\textquotedbl}{\textbackslash}n{\textquotedbl})}). If new reserved
+"{\textbackslash}n")}). If new reserved
 words or operators are added to a given implementation, the tables in
 this module have to be altered. Note: keywords are implemented at the
 syntactic level; they are not tokens. A keyword like
@@ -1612,7 +1612,7 @@ and \texttt{c2, respectively}.
 
 \texttt{lastname(s:string) : string} produces the last name in string
 \texttt{s}, which must be a name in conventional form. Obviously, it
-doesn{\textquotesingle}t work for every possibility. 
+doesn't work for every possibility. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{list2tab}}
 
@@ -1625,7 +1625,7 @@ See also: tab2list, tab2rec, rec2tab.
 
 Many of these procedures implement \index{list functions}list functions
 similar to string functions, including an implementation of
-\index{scanning!list}list scanning, similar to Icon{\textquotesingle}s
+\index{scanning!list}list scanning, similar to Icon's
 string scanning functions.
 
 \texttt{lcomb(L,i):L*} produces all sublist combinations of \texttt{L}
@@ -1638,7 +1638,7 @@ structurally equivalent.\\
 \texttt{lextend(L,i,x):L} extends \texttt{L} to at least size
 \texttt{i}, using initial value \texttt{x}.\\
 \texttt{limage(L):string} list image function that shows
-elements{\textquotesingle} images, one level deep.\\
+elements' images, one level deep.\\
 \texttt{linterl(L1,L2):L} interleaves elements of \texttt{L1} and
 \texttt{L2}. If \texttt{L1} and \texttt{L2} are unequal size,\\
  \ \ \ \ the shorter list is extended with null values to the
@@ -1655,9 +1655,9 @@ its front (left) side.\\
 example,\\
  \ \ \ \ given the lists\\
  \ \ \ \ \ \ \ \texttt{L1 := [1,2,3,4]; L2 := [4,3,2,1]; L3 :=
-[{\textquotedbl}a{\textquotedbl},{\textquotedbl}b{\textquotedbl},{\textquotedbl}c{\textquotedbl},{\textquotedbl}d{\textquotedbl}]}\\
+["a","b","c","d"]}\\
  \ \ \ \ \texttt{lmap(L1, L2,L3)} produces a new list
-\texttt{[{\textquotedbl}d{\textquotedbl},{\textquotedbl}c{\textquotedbl},{\textquotedbl}b{\textquotedbl},{\textquotedbl}a{\textquotedbl}]}.
+\texttt{["d","c","b","a"]}.
 The lists can have any\\
  \ \ \ \ kinds of elements. The operation \texttt{x === y} is used to
 determine if elements \texttt{x}\\
@@ -1679,10 +1679,10 @@ concatenated with its reverse.\\
 \texttt{lreflect(L,i:0):L} returns \texttt{L} concatenated with its
 reversal to produce a\\
  \ \ \ \ palindrome. The values of \texttt{i} determine
-{\textquotedbl}end conditions{\textquotedbl} for the reversal:\\
+"end conditions" for the reversal:\\
  \ \ \ \ 0 = omit first and last elements. 1 = omit first element, 2 =
 omit last element,\\
- \ \ \ \ 3 = don{\textquotesingle}t omit element.\\
+ \ \ \ \ 3 = don't omit element.\\
 \texttt{lremvals(L, x1, x2, ...) : list} produces a copy of L, without
 those\\
  \ \ \ \ elements that are === x1, x2?\\
@@ -1746,22 +1746,20 @@ suspend l\_Escan(l\_Bscan(some\_list\_or\_other), \{ \\
 }
 
 List scanning environments may be nested, and may be used to generate a
-series of results as well. Here{\textquotesingle}s an example of nested
+series of results as well. Here's an example of nested
 list scanning:
 
 \iconcode{
 procedure main() \\
 \ \ \ l :=
-[{\textquotedbl}h{\textquotedbl},{\textquotedbl}e{\textquotedbl},{\textquotedbl}l{\textquotedbl},{\textquotedbl}l{\textquotedbl},{\textquotedbl}o{\textquotedbl},{\textquotedbl}
-{\textquotedbl},{\textquotedbl}t{\textquotedbl},{\textquotedbl}t{\textquotedbl},{\textquotedbl}t{\textquotedbl},{\textquotedbl}h{\textquotedbl},{\textquotedbl}e{\textquotedbl},{\textquotedbl}r{\textquotedbl},{\textquotedbl}e{\textquotedbl}] \\
+["h","e","l","l","o"," ","t","t","t","h","e","r","e"] \\
 \>   l\_Escan(l\_Bscan(l), \{ \\
 \>   \ \ \ hello\_list :=
-l\_tab(l\_match([{\textquotedbl}h{\textquotedbl},{\textquotedbl}e{\textquotedbl},{\textquotedbl}l{\textquotedbl},{\textquotedbl}l{\textquotedbl},{\textquotedbl}o{\textquotedbl}])) \\
+l\_tab(l\_match(["h","e","l","l","o"])) \\
 \>   \ \ \ every writes(!hello\_list) \\
 \>   \ \ \ write() \# Note the nested list-scanning expressions. \\
 \>   \ \ \ l\_Escan(l\_Bscan(l\_tab(0)), \{ \\
-\>   \ \ \ \ \ \ l\_tab(l\_many([[{\textquotedbl}
-{\textquotedbl}],[{\textquotedbl}t{\textquotedbl}]]) - 1) \\
+\>   \ \ \ \ \ \ l\_tab(l\_many([[" "],["t"]]) - 1) \\
 \>   \ \ \ \ \ \ every writes(!l\_tab(0)) \\
 \>   \ \ \ \ \ \ write() \\
 \>   \ \ \ \ \ \ \}) \\
@@ -1769,24 +1767,22 @@ l\_tab(l\_match([{\textquotedbl}h{\textquotedbl},{\textquotedbl}e{\textquotedbl}
 end
 }
 
-\noindent This program writes {\textquotedbl}hello{\textquotedbl} and
-{\textquotedbl}there{\textquotedbl} on successive lines to the standard
+\noindent This program writes "hello" and
+"there" on successive lines to the standard
 output.
 
 The functions compare lists, not strings, so
-\texttt{l\_find({\textquotedbl}h{\textquotedbl}, l)}, for instance,
+\texttt{l\_find("h", l)}, for instance,
 will yield an error message: use
-\texttt{l\_find([{\textquotedbl}h{\textquotedbl}], l)} instead. This
+\texttt{l\_find(["h"], l)} instead. This
 becomes confusing when looking for lists within lists. Suppose
-\texttt{l1 := [{\textquotedbl}junk{\textquotedbl},
-[[{\textquotedbl}hello{\textquotedbl}],{\textquotedbl}
-{\textquotedbl},[{\textquotedbl}there{\textquotedbl}]],{\textquotedbl}!{\textquotedbl},{\textquotedbl}m{\textquotedbl},{\textquotedbl}o{\textquotedbl},{\textquotedbl}r{\textquotedbl},{\textquotedbl}e{\textquotedbl},{\textquotedbl}junk{\textquotedbl}]}
+\texttt{l1 := ["junk",
+[["hello"]," ",["there"]],"!","m","o","r","e","junk"]}
 and you wish to find the position in \texttt{l1} at which the list
-\texttt{[[{\textquotedbl}hello{\textquotedbl}],{\textquotedbl}
-{\textquotedbl},[{\textquotedbl}there{\textquotedbl}]]} occurs. If you
+\texttt{[["hello"],'
+",["there']]} occurs. If you
 assign \texttt{L2 :=
-[[{\textquotedbl}hello{\textquotedbl}],{\textquotedbl}
-{\textquotedbl},[{\textquotedbl}there{\textquotedbl}]]}, then the
+[["hello"]," ",["there"]]}, then the
 \texttt{l\_find()} call needs to look like \texttt{l\_find([l2],l1)}.
 Links: \texttt{indices}. See also: \texttt{structs.icn}.
 
@@ -1833,8 +1829,8 @@ return with the solution vector. \texttt{M} and \texttt{I} are not
 modified by \texttt{lu\_back\_sub()} and can be used in successive
 calls of \texttt{lu\_back\_sub()} with different \texttt{B}s.
 Acknowledgement: These procedures are based on algorithms given in
-{\textquotedbl}Numerical Recipes; The Art of Scientific
-Computing{\textquotedbl}; W. H. Press, B. P. Flannery, S. A.
+"Numerical Recipes; The Art of Scientific
+Computing"; W. H. Press, B. P. Flannery, S. A.
 Teukolsky, and W. T. Vetterling; Cambridge University Press, 1986.
 
 
@@ -1842,8 +1838,8 @@ Teukolsky, and W. T. Vetterling; Cambridge University Press, 1986.
 
 \texttt{mapbit(s:string) : string} produces a string of zeros and ones
 corresponding to the bit patterns for the characters of s. For example,
-\texttt{mapbit({\textquotedbl}Axe{\textquotedbl})} produces
-\texttt{{\textquotedbl}010000010111100001100101{\textquotedbl}}. Links:
+\texttt{mapbit("Axe")} produces
+\texttt{"010000010111100001100101"}. Links:
 \texttt{strings}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mapstr}\hfill (RLG)}
@@ -1853,25 +1849,25 @@ corresponding to the bit patterns for the characters of s. For example,
 sequences (strings) as arguments 2 and 3, it takes ordered string
 sequences (lists). Suppose, for example, you wanted to
 \index{bowdlerize}bowdlerize a string by replacing the words
-{\textquotedbl}hell{\textquotedbl} and
-{\textquotedbl}shit{\textquotedbl} with
-{\textquotedbl}heck{\textquotedbl} and
-{\textquotedbl}shoot.{\textquotedbl} You would call mapstrs as
+"hell" and
+"shit" with
+"heck" and
+"shoot." You would call mapstrs as
 follows:\\
-\texttt{mapstrs(s, [{\textquotedbl}hell{\textquotedbl},
-{\textquotedbl}shit{\textquotedbl}],
-[{\textquotedbl}heck{\textquotedbl},
-{\textquotedbl}shoot{\textquotedbl}])}. If you want to replace one
+\texttt{mapstrs(s, ["hell",
+"shit"],
+["heck",
+"shoot"])}. If you want to replace one
 string with another, just use the IPL \texttt{replace()} routine (in
 \texttt{strings.icn}). If \texttt{l2} is longer than \texttt{l1}, extra
 members in \texttt{l2} are ignored. If \texttt{l1} is longer, however,
 strings in \texttt{l1} that have no correspondent in \texttt{l2} are
 simply deleted. \texttt{mapstr()} uses a longest-possible-match
 approach, so that replacing
-\texttt{[{\textquotedbl}hellish{\textquotedbl},
-{\textquotedbl}hell{\textquotedbl}]} with
-\texttt{[{\textquotedbl}heckish{\textquotedbl},
-{\textquotedbl}heck{\textquotedbl}]} will work as one would expect.
+\texttt{["hellish",
+"hell"]} with
+\texttt{["heckish",
+"heck"]} will work as one would expect.
 Links: \texttt{longstr}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{math}}
@@ -1950,12 +1946,12 @@ The mset module implements set operations in which no two identical
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{namepfx}}
 
-\texttt{namepfx(s:string) : string} produces the {\textquotedbl}name
-prefix{\textquotedbl} from a name in standard form -{}- omitting any
+\texttt{namepfx(s:string) : string} produces the "name
+prefix" from a name in standard form -{}- omitting any
 title, but picking up the first name and any initials.
 \texttt{namepfx()} only knows how to omit common titles found in module
-\texttt{titleset}. Obviously, it can{\textquotesingle}t always produce
-the {\textquotedbl}correct{\textquotedbl} result. Links:
+\texttt{titleset}. Obviously, it can't always produce
+the "correct" result. Links:
 \texttt{lastname}, \texttt{titleset}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ngrams}}
@@ -2036,32 +2032,32 @@ possibility that some files are not always being closed.
 interprets, and removes UNIX-style \index{options, command-line}command
 options from the argument list of a \texttt{main()} procedure,
 returning a table of option values. On the command line, options are
-introduced by a \texttt{{\textquotedbl}-{\textquotedbl}} character. An
+introduced by a \texttt{"-"} character. An
 option name is either a single printable character, as in
-\texttt{{\textquotedbl}-n{\textquotedbl}} or
-\texttt{{\textquotedbl}-?{\textquotedbl}}, or a string of letters, as
-in \texttt{{\textquotedbl}-geometry{\textquotedbl}}. Valueless
+\texttt{"-n"} or
+\texttt{"-?"}, or a string of letters, as
+in \texttt{"-geometry"}. Valueless
 single-character options may be combined, for example as
-\texttt{{\textquotedbl}-qtv{\textquotedbl}}. Some options require
+\texttt{"-qtv"}. Some options require
 values. Generally, the option name is one argument and the value
 appears as the next argument, for example
 
 {\ttfamily
-{\textquotedbl}-F file.txt{\textquotedbl}}
+"-F file.txt"}
 
 However, with a single-character argument name (as in that example), the
 value may be concatenated:
-\texttt{{\textquotedbl}-Ffile.txt{\textquotedbl}} is accepted as
+\texttt{"-Ffile.txt"} is accepted as
 equivalent. Options may be freely interspersed with non-option
-arguments. An argument of \texttt{{\textquotedbl}-{\textquotedbl}} is
+arguments. An argument of \texttt{"-"} is
 treated as a non-option. The special argument
-\texttt{{\textquotedbl}-{}-{\textquotedbl}} terminates option
+\texttt{"-{}-"} terminates option
 processing. Non-option arguments are returned in the original argument
 list for interpretation by the caller. An argument of the form
-\texttt{@filename} (a {\textquotedbl}@{\textquotedbl} immediately
+\texttt{@filename} (a "@" immediately
 followed by a file name) causes \texttt{options()} to replace that
 argument with arguments retrieved from the file
-{\textquotedbl}filename{\textquotedbl}. Each line of the file is taken
+"filename". Each line of the file is taken
 as a separate argument, exactly as it appears in the file.
 
 The options string is a concatenation, with optional spaces between, of
@@ -2079,14 +2075,14 @@ printable character
 \texttt{+}\ \ An integer value is required\\
 \texttt{.}\ \ A real value is required
 
-The leading \texttt{{\textquotedbl}-{\textquotedbl}} may be omitted for
-a single-character option. The \texttt{{\textquotedbl}!{\textquotedbl}}
+The leading \texttt{"-"} may be omitted for
+a single-character option. The \texttt{"!"}
 flag may be omitted except when needed to terminate a multi-character
 name. Thus, the following optstrings are equivalent:
-\texttt{{\textquotedbl}-n+ -t -v -q -F: -geometry:
--silent{\textquotedbl}}
-\texttt{{\textquotedbl}n+tvqF:-geometry:-silent{\textquotedbl}}\\
-\texttt{{\textquotedbl}-silent!n+tvqF:-geometry{\textquotedbl}}. If the
+\texttt{"-n+ -t -v -q -F: -geometry:
+-silent"}
+\texttt{"n+tvqF:-geometry:-silent"}\\
+\texttt{"-silent!n+tvqF:-geometry"}. If the
 options string is omitted, any single letter is assumed to be valid and
 require no data.
 
@@ -2115,7 +2111,7 @@ are the most significant ones). A trivial example of how
 
 \iconcode{
 outtext :=
-open({\textquotedbl}some.file.name{\textquotedbl},{\textquotedbl}w{\textquotedbl}) \\
+open("some.file.name","w") \\
 L := [1,2,3,4] \\
 every writes(outtext, outbits(!L,3)) \\
 writes(outtext, outbits(\&null,3)) \# flush buffer
@@ -2124,7 +2120,7 @@ writes(outtext, outbits(\&null,3)) \# flush buffer
 List L may be reconstructed with \texttt{inbits()}:
 
 \iconcode{
-intext := open({\textquotedbl}some.file.name{\textquotedbl}) \\
+intext := open("some.file.name") \\
 L := [] \\
 while put(L, inbits(intext, 3))
 }
@@ -2211,14 +2207,14 @@ transliterated into Icon procedures and expressions. For example, the
 pattern
 
 \iconcode{
-SPAN({\textquotedbl}0123456789{\textquotedbl}) . N
-{\textquotedbl}H{\textquotedbl} LEN(*N) . LIT}
+SPAN("0123456789") . N
+"H" LEN(*N) . LIT}
 
 can be transliterated into
 
 \iconcode{
-(n {\textless}- Span({\textquotesingle}0123456789{\textquotesingle}))
-{\textbar}{\textbar} ={\textquotedbl}H{\textquotedbl}
+(n {\textless}- Span('0123456789'))
+{\textbar}{\textbar} ="H"
 {\textbar}{\textbar} (lit {\textless}- Len(n))}
 
 Concatenation of components is necessary to preserve the
@@ -2228,8 +2224,8 @@ pattern-matching properties of SNOBOL4.
 
 \texttt{patword(s:string) : string} returns a letter pattern in which
 each different character in \texttt{s} is assigned a letter. For
-example, \texttt{patword({\textquotedbl}structural{\textquotedbl})}
-returns \texttt{{\textquotedbl}abcdebdcfg{\textquotedbl}}.
+example, \texttt{patword("structural")}
+returns \texttt{"abcdebdcfg"}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{phoname}\hfill (TRH)}
 
@@ -2274,7 +2270,7 @@ an entire polynomial.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printcol}\hfill (RJA)}
 
-printcol(items, fields, title:{\textquotedbl}{\textquotedbl},
+printcol(items, fields, title:"",
 pagelength:30000, linelength:80, auxdata) deals with the problem of
 printing tabular data where the total width of items to be printed is
 wider than the page. Simply allowing the data to wrap to additional
@@ -2319,8 +2315,8 @@ The arguments are:
 is to be printed.
 
 \texttt{fields}: a list of procedures to produce the
-field{\textquotesingle}s data. Each procedure takes two arguments. The
-procedure{\textquotesingle}s action depends upon what is passed in the
+field's data. Each procedure takes two arguments. The
+procedure's action depends upon what is passed in the
 first argument:
 
 \texttt{header} produces the row heading string to be used for that
@@ -2337,7 +2333,7 @@ invocation. The data returned by the first function on the list is used
 as a column heading (the item name).
 
 \texttt{auxdata}: arbitrary auxiliary data to be passed to the field
-procedures -{}- see {\textasciigrave}fields{\textquotesingle}, above.
+procedures -{}- see ``fields'', above.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printf}\hfill (WHM, CW, PLT)}
 
@@ -2353,9 +2349,9 @@ to \texttt{f}.\\
 produces a string result.
 
 These procedures support normal \texttt{d}, \texttt{s}, \texttt{o}, and
-\texttt{x} formats. An \texttt{{\textquotedbl}r{\textquotedbl}} format
+\texttt{x} formats. An \texttt{"r"} format
 prints real numbers in a manner similar to that of
-printf{\textquotesingle}s \texttt{{\textquotedbl}f{\textquotedbl}}, but
+printf's \texttt{"f"}, but
 will produce a result in an exponential format if the number is larger
 than the largest integer plus one. Left or right justification and
 field width control are provided as in \texttt{printf()}. \texttt{\%s}
@@ -2364,10 +2360,10 @@ and \texttt{\%r} handle precision specifications.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{prockind}}
 
 \texttt{prockind(p:procedure) : string?} produces a code for the kind of
-the procedure p as follows: \texttt{{\textquotedbl}p{\textquotedbl}}
-(declared) procedure \texttt{{\textquotedbl}f{\textquotedbl}}
-(built-in) function, \texttt{{\textquotedbl}o{\textquotedbl}} operator,
-\texttt{{\textquotedbl}c{\textquotedbl}} record
+the procedure p as follows: \texttt{"p"}
+(declared) procedure \texttt{"f"}
+(built-in) function, \texttt{"o"} operator,
+\texttt{"c"} record
 \index{constructor}constructor. It fails if \texttt{p} is not of type
 procedure. 
 
@@ -2392,29 +2388,28 @@ write PostScript as a side effect of normal graphics calls. An EPS file
 can either be incorporated as part of a larger document or sent
 directly to a PostScript printer. \texttt{epsheader()} writes the first
 portion of the PostScript output to file \texttt{f}. The calling
-program then generates the rest. It is the caller{\textquotesingle}s
+program then generates the rest. It is the caller's
 responsibility to ensure that the rest of the file conforms to the
 requirements for EPS files as documented in the PostScript Reference
 Manual, second edition. (x,y,w,h) specify the range of coordinates that
 are to be used in the generated PostScript code. \texttt{epsheader()}
 generates \index{PostScript}PostScript commands that center this region
 on the page and clip anything outside it. If the flags string contains
-the letter \texttt{{\textquotedbl}r{\textquotedbl}} and \texttt{abs(w)
+the letter \texttt{"r"} and \texttt{abs(w)
 {\textgreater} abs(h)}, the coordinate system is rotated to place the
-region in {\textquotedbl}landscape{\textquotedbl} mode. The generated
-header also defines an {\textquotedbl}inch{\textquotedbl} operator that
+region in "landscape" mode. The generated
+header also defines an "inch" operator that
 can be used for absolute measurements as shown in the example below.
 
 \iconcode{
-f := open(filename, {\textquotedbl}w{\textquotedbl}) {\textbar}
-stop({\textquotedbl}can{\textquotesingle}t open
-{\textquotedbl},filename) \\
+f := open(filename, "w") {\textbar}
+stop("can't open
+",filename) \\
 epsheader(f, x, y, w, h) \\
-write(f, {\textquotedbl}.07 inch setlinewidth{\textquotedbl}) \\
-write(f,x1, {\textquotedbl} {\textquotedbl}, y1, {\textquotedbl} moveto
-{\textquotedbl}, x2, {\textquotedbl} {\textquotedbl}, y2,
-{\textquotedbl} lineto stroke{\textquotedbl}) ... write(f,
-{\textquotedbl}showpage{\textquotedbl})
+write(f, ".07 inch setlinewidth") \\
+write(f,x1, " ", y1, " moveto ", x2, " ", y2,
+" lineto stroke") ... write(f,
+"showpage")
 }
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{random}\hfill (REG, GMT)}
@@ -2425,11 +2420,11 @@ This file contains procedures related to pseudo-random numbers.
 number \index{generator}generator. Each time it is called, it produces
 another number in the sequence and also assigns it to the global
 variable \texttt{random}. With no arguments, \texttt{rand\_num()}
-produces the same sequence(s) as Icon{\textquotesingle}s built-in
+produces the same sequence(s) as Icon's built-in
 random-number \index{generator, random number}generator. Arguments can
 be used to get different sequences. The global variable \texttt{random}
 serves the same role that \texttt{\&random} does for
-Icon{\textquotesingle}s built-in \index{random!number generator}random
+Icon's built-in \index{random!number generator}random
 number generator.
 
 \texttt{rand\_int(i) : integer} produces a random integer in the range 1
@@ -2459,7 +2454,7 @@ numbers (\index{fractions}fractions):
 \texttt{record rational(numer, denom, sign)} is used to represent
 rational values.\\
 \texttt{str2rat(string):rational?} converts a string such as
-\texttt{{\textquotedbl}3/2{\textquotedbl}} to a rational
+\texttt{"3/2"} to a rational
 number.\\
 \texttt{rat2str(r:rational):string} converts rational number \texttt{r}
 to its string representation.\\
@@ -2488,13 +2483,13 @@ should be translated. Each line has the form:
 \ \ \ SGML-designator\ \ start\_code\ \ end\_code
 
 where the SGML designator is something like
-{\textquotedbl}quote{\textquotedbl} (without the quotation marks), and
+"quote" (without the quotation marks), and
 the start and end codes are the way in which you want the beginning and
 end of a
 \texttt{{\textless}quote{\textgreater}...{\textless}/quote{\textgreater}}
 sequence to be translated. Presumably, in this instance, your codes
 would indicate some set level of indentation, and perhaps a font
-change. If you don{\textquotesingle}t have an end code for a particular
+change. If you don't have an end code for a particular
 SGML designator, just leave it blank.
 Links: \texttt{stripunb.}
 
@@ -2532,15 +2527,15 @@ is generated.
 \index{reduce()}\texttt{reduce(op, init, args[])} applies the binary
 operation \texttt{op} to all the values in \texttt{args}, using
 \texttt{init} as the initial value. For example,
-\texttt{reduce({\textquotedbl}+{\textquotedbl}, 1, args[])} produces
+\texttt{reduce("+", 1, args[])} produces
 the sum of the values in args. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{regexp}\hfill (RJA)}
 
 This module implements UNIX-like \index{regular expression}regular
 expression patterns. These procedures are interesting partly because of
-the {\textquotedbl}recursive suspension{\textquotedbl} (or
-{\textquotedbl}suspensive \index{recursion}recursion{\textquotedbl}:)
+the "recursive suspension" (or
+"suspensive \index{recursion}recursion":)
 technique used to simulate conjunction of an arbitrary number of
 computed expressions. String scanning function
 default conventions are followed.
@@ -2581,8 +2576,8 @@ regular expressions, make the following assignments prior to compiling
 the pattern string:
 
 \iconcode{
-\>   Re\_ArbString := {\textquotedbl}*{\textquotedbl} \# Defaults to
-{\textquotedbl}.*{\textquotedbl} }
+\>   Re\_ArbString := "*" \# Defaults to
+".*" }
 
 The csets that define a word, digits, and white
 space can be modified. The following assignments can be made before
@@ -2592,14 +2587,14 @@ not alter the behavior of matches unless the pattern string is
 recompiled.
 
 \iconcode{
-\>   Re\_WordChars := {\textquotesingle}whatever{\textquotesingle} \#
-default: \&letters++\&digits++{\textquotesingle}\_{\textquotesingle} \\
+\>   Re\_WordChars := 'whatever' \#
+default: \&letters++\&digits++'\_' \\
 \>   Re\_Digits := \&digits ++
-{\textquotesingle}ABCDEFabcdef{\textquotesingle} \# Defaults to
+'ABCDEFabcdef' \# Defaults to
 \&digits \\
-\>   Re\_Space := {\textquotesingle}whatever{\textquotesingle} \#
-Defaults to {\textquotesingle}
-{\textbackslash}t{\textbackslash}v{\textbackslash}n{\textbackslash}r{\textbackslash}f{\textquotesingle}
+\>   Re\_Space := 'whatever' \#
+Defaults to '
+{\textbackslash}t{\textbackslash}v{\textbackslash}n{\textbackslash}r{\textbackslash}f'
 }
 
 These globals are initialized in the first call to \texttt{RePat()} if
@@ -2614,8 +2609,8 @@ to filter, and it must return the filtered string as its result. If the
 filter procedure fails, the string will be used unfiltered. The filter
 is called with an argument of either type string (for characters in the
 pattern) or cset (for character classes [...]). By default, individual
-pattern elements are matched in a {\textquotedbl}leftmost-
-longest-first{\textquotedbl} sequence, which is the order observed by
+pattern elements are matched in a "leftmost-
+longest-first" sequence, which is the order observed by
 \index{Perl}Perl, e\index{grep}grep, and most other regular expression
 matchers. The following global variable setting causes the matcher to
 operate in leftmost-shortest- first order.
@@ -2641,7 +2636,7 @@ implementation.
 \paragraph{Regular Expression Characters and Features Supported}
 The regular expression format supported by procedures in this file model
 very closely those supported by the UNIX
-{\textquotedbl}egrep{\textquotedbl} program, with modifications as
+"egrep" program, with modifications as
 described in the Perl programming language definition. Following is a
 brief description of the special characters used in regular
 expressions. The abbreviation RE means regular expression.
@@ -2662,9 +2657,9 @@ means, such as the Icon Program Library procedure \texttt{escape()}.
 
 \texttt{[string]} A non-empty string enclosed in square brackets is a
 one-character RE that matches any one character in that string. If the
-first character is \texttt{{\textquotedbl}\^{}{\textquotedbl}}
+first character is \texttt{"\^{}"}
 (circumflex), the RE matches any character not in the remaining
-characters of the string. The \texttt{{\textquotedbl}-{\textquotedbl}}
+characters of the string. The \texttt{"-"}
 (minus), when between two other characters, may be used to indicate a
 range of consecutive \index{ASCII}ASCII characters (e.g. \texttt{[0-9]}
 is equivalent to \texttt{[0123456789]}). Other special characters stand
@@ -2690,7 +2685,7 @@ RE to match a\\
  \ \ \ \ final substring of the subject string.\\
 \texttt{{\textbar}} \index{alternation operator ( {\textbar}
 )}Alternation: two regular expressions separated by
-\texttt{{\textquotedbl}{\textbar}{\textquotedbl}} match either a match
+\texttt{"{\textbar}"} match either a match
 for\\
  \ \ \ \ the first or a match for the second.\\
 \texttt{()} A RE enclosed in parentheses matches a match for the regular
@@ -2704,7 +2699,7 @@ matches a string of characters that was\\
  \ \ \ \ matched by a parenthesized RE to the left in the same RE. The
 sub-expression\\
  \ \ \ \ specified is that beginning with the \texttt{N}th occurrence of
-\texttt{{\textquotedbl}({\textquotedbl}} counting from the
+\texttt{"("} counting from the
 \\
  \ \ \ \ left. e.g., \^{}(.*){\textbackslash}1. matches a string consisting of
 two consecutive occurrences\\
@@ -2715,7 +2710,7 @@ The following extensions to UNIX regular expressions, as specified in
 the Perl programming language, are supported.
 
 \texttt{{\textbackslash}w} matches any alphanumeric (including
-\texttt{{\textquotedbl}\_{\textquotedbl}}).\\
+\texttt{"\_"}).\\
 \texttt{{\textbackslash}W} Matches any non-alphanumeric.\\
 \texttt{{\textbackslash}b} matches at a word-boundary (a word is
 a string of alphanumerics, as in \texttt{{\textbackslash}w}).\\
@@ -2745,7 +2740,7 @@ strings \texttt{{\textless}i} in length. \texttt{rewrap()} utilizes a
 static buffer, so it can be called repeatedly with different string
 arguments, and still produce homogeneous output. This buffer is flushed
 by calling \texttt{rewrap()} with a null first argument.
-Here{\textquotesingle}s a simple example of how \texttt{rewrap()} could
+Here's a simple example of how \texttt{rewrap()} could
 be used. The following program reads the standard input, producing
 fully rewrapped output.
 
@@ -2763,13 +2758,13 @@ paragraph basis, as in
 \iconcode{
 procedure main() \\
 \>   while line := read(\&input) do \{ \\
-\>   \ \ \ if line == {\textquotedbl}{\textquotedbl} then \{ \\
-\>   \ \ \ \ \ \ write({\textquotedbl}{\textquotedbl} \~{}==rewrap()) \\
+\>   \ \ \ if line == "" then \{ \\
+\>   \ \ \ \ \ \ write("" \~{}==rewrap()) \\
 \>   \ \ \ \ \ \ write(line) \\
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ else \{ \\
 \>   \ \ \ \ \ \ if
-match({\textquotedbl}{\textbackslash}t{\textquotedbl}, line) then \{ \\
+match("{\textbackslash}t", line) then \{ \\
 \>   \ \ \ \ \ \ \ \ \ write(rewrap()) \\
 \>   \ \ \ \ \ \ \ \ \ write(rewrap(line)) \\
 \>   \ \ \ \ \ \ \ \ \ \} \\
@@ -2784,10 +2779,10 @@ end
 to the output of rewrap:
 
 \iconcode{
-i := 70; fill\_prefix := {\textquotedbl} {\textgreater} {\textquotedbl} \\
+i := 70; fill\_prefix := " {\textgreater} " \\
 while line := read(input\_file) do \{ \\
-\>   line ?:= (f\_bit := tab(many({\textquotesingle}{\textgreater}
-{\textquotesingle})) {\textbar} {\textquotedbl}{\textquotedbl},
+\>   line ?:= (f\_bit := tab(many('{\textgreater}
+')) {\textbar} "",
 tab(0)) \\
 \>   write(fill\_prefix {\textbar}{\textbar} f\_bit
 {\textbar}{\textbar} rewrap(line, i - *fill\_prefix)) \\
@@ -2810,17 +2805,17 @@ This module contains procedures related to \index{string!scanning}string
 scanning: Where indicated by parameter names, they follow the string
 scanning conventions for parameter defaults.
 
-\texttt{balq(c1,c2,c3,c4:{\textquotesingle}{\textbackslash}{\textquotesingle}{\textquotedbl}{\textquotesingle},c5:{\textquotesingle}{\textbackslash}{\textquotesingle},s,i1,i2):integer*}
+\texttt{balq(c1,c2,c3,c4:'{\textbackslash}'"',c5:'{\textbackslash}',s,i1,i2):integer*}
 generates integer positions in \texttt{s} preceding a character of
 \texttt{c1} in \texttt{s[i1:i2]} that are (a) balanced with respect to
 characters in \texttt{c2} and \texttt{c3} and (b) not
-{\textquotedbl}quoted{\textquotedbl} by characters in \texttt{c4} with
-{\textquotedbl}escape{\textquotedbl} sequences in
+"quoted" by characters in \texttt{c4} with
+"escape" sequences in
 \texttt{c5}.
 
-\texttt{balqc(c1,c2,c3,c4:{\textquotesingle}{\textbackslash}{\textquotesingle}{\textquotedbl}{\textquotesingle},c5,s1:{\textquotedbl}/*{\textquotedbl},s2:{\textquotedbl}*/{\textquotedbl},s3,i1,i2):integer*}
+\texttt{balqc(c1,c2,c3,c4:'{\textbackslash}'"',c5,s1:"/*",s2:"*/",s3,i1,i2):integer*}
 is like \texttt{balq()} with the addition that balanced characters
-within {\textquotedbl}comments{\textquotedbl}, as delimited by the
+within "comments", as delimited by the
 strings \texttt{s1} and \texttt{s2}, are also excluded from balancing.
 In addition, if \texttt{s1} is given and \texttt{s2} is null then the
 \index{comment}comment terminates at the end of string.
@@ -2843,9 +2838,9 @@ top of the snapshot, and a width (in characters) at which to wrap
 output. For example,
 
 \iconcode{
-{\textquotedbl}((a+b)-delta)/(c*d)){\textquotedbl} ?
-\{tab(bal({\textquotesingle}+-/*{\textquotesingle}));
-snapshot({\textquotedbl}example{\textquotedbl})\}}
+"((a+b)-delta)/(c*d))" ?
+\{tab(bal('+-/*'));
+snapshot("example")\}}
 
 \noindent produces
 
@@ -2858,7 +2853,7 @@ snapshot({\textquotedbl}example{\textquotedbl})\}}
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
 \\
 {\textbar} \&subject =
-{\textquotedbl}((a+b)-delta)/(c*d)){\textquotedbl} {\textbar}
+"((a+b)-delta)/(c*d))" {\textbar}
 \\
 {\textbar} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
 \ \ \ \ \ \ \ {\textbar}
@@ -2869,7 +2864,7 @@ snapshot({\textquotedbl}example{\textquotedbl})\}}
 {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
 
 Note that the bar showing \texttt{\&pos} is positioned under the
-\texttt{\&pos{\textquotesingle}}th character (actual positions are
+\texttt{\&pos'}th character (actual positions are
 between characters). If \texttt{\&pos} is at the end of
 \texttt{\&subject}, the bar is positioned under the quotation mark
 delimiting the subject. Escape sequences are handled properly. 
@@ -2880,7 +2875,7 @@ delimiting the subject. Escape sequences are handled properly.
 
 \texttt{scan\_setup(s, i1, i2) : scan\_setup\_result?} sets things up
 for user-written string-scanning procedures that are in the spirit of
-Icon{\textquotesingle}s built-ins. The values passed are the last three
+Icon's built-ins. The values passed are the last three
 arguments to all Icon scanning functions (such as
 \texttt{upto(c,s,i1,i2)}). \texttt{scan\_setup()} supplies any
 appropriate defaults and returns needed values. The value returned is a
@@ -2904,8 +2899,8 @@ procedure two\_words(s,i1,i2) \\
 \>   \ \ \ tab(upto(\&letters)) \& \\
 \>   \ \ \ pos(1) {\textbar} (move(-1) \& tab(any(\~{}\&letters))) \& \\
 \>   \ \ \ p := \&pos \& \# remember starting position \\
-\>   \ \ \ tab(many(\&letters)) \& tab(many({\textquotesingle}
-{\textquotesingle})) \& \\
+\>   \ \ \ tab(many(\&letters)) \& tab(many('
+')) \& \\
 \>   \ \ \ tab(many(\&letters)) \& \\
 \>   \ \ \ p + x.offset \# return position in original s \\
 \>   \ \ \ \} \\
@@ -2920,15 +2915,14 @@ consisting of characters that respectively do/do not occur in
 
 \index{segment(s,c)}\texttt{segment(s,c)}\texttt{ : string*} generates
 the substrings, while \texttt{seglist(s,c) : list} produces a list of
-the segments. For example, \texttt{segment({\textquotedbl}Not a
-sentence.{\textquotedbl},\&letters)} generates six string results:
-{\textquotedbl}Not{\textquotedbl} {\textquotedbl} {\textquotedbl}
-{\textquotedbl}a{\textquotedbl} {\textquotedbl} {\textquotedbl}
-{\textquotedbl}sentence{\textquotedbl} {\textquotedbl}.{\textquotedbl}
-while \texttt{seglist({\textquotedbl}Not a
-sentence.{\textquotedbl},\&letters)} produces a list of size six:
-[{\textquotedbl}Not{\textquotedbl},{\textquotedbl}
-{\textquotedbl},{\textquotedbl}a{\textquotedbl},{\textquotedbl}sentence{\textquotedbl},{\textquotedbl}.{\textquotedbl}]
+the segments. For example, \texttt{segment("Not a
+sentence.",\&letters)} generates six string results:
+"Not" " "
+"a" " "
+"sentence" "."
+while \texttt{seglist("Not a
+sentence.",\&letters)} produces a list of size six:
+["Not"," ","a","sentence","."]
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sentence, senten1}
@@ -2940,14 +2934,14 @@ that \index{generate sentences}generates sentences from file
 predicated on the notion of a sentence. For instance, some programs
 count the number of words in each sentence. Others count the number and
 length of clauses. Still others pedantically check for sentence-final
-particles and prepositions. Neither module{\textquotesingle}s
+particles and prepositions. Neither module's
 definition of a sentence will handle all possible inputs properly; you
 may wish to try both of them to see which one works better on your
 inputs.
 
 Module \texttt{sentence} requires co-expressions, while module
 \texttt{senten1} does not. Module \texttt{senten1} uses a definition of
-a {\textquotedbl}sentence{\textquotedbl} detailed in the source code.
+a "sentence" detailed in the source code.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{seqimage}}
 
@@ -2979,8 +2973,8 @@ sequence, \texttt{Seqimage\{\}} does not terminate.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sername}}
 
-\texttt{sername(p:{\textquotedbl}file{\textquotedbl},
-s:{\textquotedbl}{\textquotedbl}, n:3, i:0) : string} produces a series
+\texttt{sername(p:"file",
+s:"", n:3, i:0) : string} produces a series
 of names of the form p{\textless}nnn{\textgreater}s. If \texttt{n} is
 given it determines the number of digits in
 {\textless}nnn{\textgreater}. If \texttt{i} is given it resets the
@@ -2988,12 +2982,12 @@ sequence to start with \texttt{i}. {\textless}nnn{\textgreater} is a
 right-adjusted integer padded with zeros. Ordinarily, the arguments
 only are given on the first call. Subsequent calls without arguments
 give the next name. For example,
-\texttt{sername({\textquotedbl}image{\textquotedbl},
-{\textquotedbl}.gif{\textquotedbl}, 3, 0)} produces
-\texttt{{\textquotedbl}image000.gif{\textquotedbl}}, and subsequently,
+\texttt{sername("image",
+".gif", 3, 0)} produces
+\texttt{"image000.gif"}, and subsequently,
 \texttt{sername()} produces
-\texttt{{\textquotedbl}image001.gif{\textquotedbl}},
-\texttt{{\textquotedbl}image002.gif{\textquotedbl}}, and so on. If any
+\texttt{"image001.gif"},
+\texttt{"image002.gif"}, and so on. If any
 argument changes on subsequent calls, all non-null arguments are reset.
 
 
@@ -3006,8 +3000,8 @@ function defined by \texttt{T}.
 
 \texttt{inverse(T:table, x) : table} returns the inverse of the function
 defined by \texttt{T}.\\
- \ \ \ \ \ If \texttt{x} is null, it{\textquotesingle}s the functional
-inverse. If \texttt{x} is an empty list, it{\textquotesingle}s the
+ \ \ \ \ \ If \texttt{x} is null, it's the functional
+inverse. If \texttt{x} is an empty list, it's the
 relational\\
  \ \ \ \ \ inverse. If \texttt{x} is an empty set, it the relational inverse, but
 with each table\\
@@ -3027,20 +3021,20 @@ of sets \texttt{S1} and \texttt{S2}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{showtbl}}
 
-\texttt{showtbl(title:{\textquotedbl}{\textquotedbl}, T, mode, limit,
+\texttt{showtbl(title:"", T, mode, limit,
 order, posit, w1:10, w2:10, gutter:3, f1:left, f2:right)} displays
 table T according to the arguments given. The remaining arguments are:
 
 \texttt{mode} indicates the type of sorting, one of:
-\texttt{{\textquotedbl}ref{\textquotedbl}{\textbar}{\textquotedbl}val{\textquotedbl}}
+\texttt{"ref"{\textbar}"val"}
 (by key or decreasing value)\\
 \texttt{limit} specifies the maximum lines of table output, if
 any\\
 \texttt{order} gives the sort order, one of:
-\texttt{{\textquotedbl}incr{\textquotedbl}{\textbar}{\textquotedbl}decr{\textquotedbl}}
+\texttt{"incr"{\textbar}"decr"}
 (not implemented yet)\\
 \texttt{posit} is the first column position, one of:
-\texttt{{\textquotedbl}ref{\textquotedbl}{\textbar}{\textquotedbl}val{\textquotedbl}}
+\texttt{"ref"{\textbar}"val"}
 (not implemented yet)\\
 \texttt{w1} is the width of 1\textsuperscript{st} column\\
 \texttt{w2} is the width of 2\textsuperscript{nd} column\\
@@ -3058,7 +3052,7 @@ written.
 This module is useful for writing Icon programs that generate
 \index{shell commands}shell commands. Certain characters cannot appear
 in the open in strings that are to be interpreted as
-{\textquotedbl}words{\textquotedbl} by command shells. This family of
+"words" by command shells. This family of
 procedures assists in quoting such strings so that they will be
 interpreted as single words. Quoting characters are applied only if
 necessary -{}- if strings need no quoting they are returned unchanged.
@@ -3074,9 +3068,9 @@ C-Shell (csh).
 
 \texttt{mpwquote(s1, s2,..., sN) : string} produces a string of words
 \texttt{s1, s2,..., sN} that are properly separated and quoted for the
-Macintosh Programmer{\textquotesingle}s Workshop shell.
+Macintosh Programmer's Workshop shell.
 
-\texttt{dequote(s1,s2:{\textquotedbl}{\textbackslash}{\textbackslash}{\textquotedbl})
+\texttt{dequote(s1,s2:"{\textbackslash}{\textbackslash}")
 : string} produces the UNIX-style command line word \texttt{s1} with
 any quoting characters removed. \texttt{s2} is the escape character
 required by the shell.
@@ -3095,13 +3089,13 @@ file.
 field}field arguments. \texttt{sortgen(T, m) : any*} generates sorted
 output in a manner given by \texttt{m}:
 
-\texttt{{\textquotedbl}k+{\textquotedbl}} sort by key in ascending
+\texttt{"k+"} sort by key in ascending
 order\\
-\texttt{{\textquotedbl}k-{\textquotedbl}} sort by key in descending
+\texttt{"k-"} sort by key in descending
 order\\
-\texttt{{\textquotedbl}v+{\textquotedbl}} sort by value in ascending
+\texttt{"v+"} sort by value in ascending
 order\\
-\texttt{{\textquotedbl}v-{\textquotedbl}} sort by value in descending
+\texttt{"v-"} sort by value in descending
 order
 
 \index{sortt}\texttt{sortt}\texttt{(T, i)} is like \texttt{sort(T, i)}
@@ -3120,7 +3114,7 @@ Odell and R. C. Russell.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{statemap}}
 
 \texttt{statemap() : table} produces a
-{\textquotedbl}two-way{\textquotedbl} table to map \index{state names,
+"two-way" table to map \index{state names,
 U.S.}state names (in the postal sense) to their postal abbreviations
 and vice-versa. The list is done in two parts with auxiliary procedures
 so that this procedure can be used with the default constant-table size
@@ -3135,14 +3129,14 @@ scanning function in the sense that it suspends strings, and not
 integer positions. The code:
 
 \iconcode{
-\>   {\textquotedbl}hello, how are ya?{\textquotedbl} ? every
+\>   "hello, how are ya?" ? every
 write(str2toks()) }
 
 \noindent writes to \texttt{\&output}, on successive lines, the words
-\texttt{{\textquotedbl}hello{\textquotedbl}},
-\texttt{{\textquotedbl}how{\textquotedbl}},
-\texttt{{\textquotedbl}are{\textquotedbl}}, and finally
-\texttt{{\textquotedbl}ya{\textquotedbl}} (skipping the punctuation).
+\texttt{"hello"},
+\texttt{"how"},
+\texttt{"are"}, and finally
+\texttt{"ya"} (skipping the punctuation).
 The beginning and end of the line count as delimiters. Note
 that if \texttt{i {\textgreater} 1} or \texttt{j {\textless} *s+1} some
 tokens may end up appearing truncated.
@@ -3158,9 +3152,9 @@ characters in c in s.
 
 \texttt{collate(s1, s2) : string} \index{collate}collates the characters
 of s1 and s2. For example,\\
- \ \ \ \ \ \texttt{collate({\textquotedbl}abc{\textquotedbl},
-{\textquotedbl}def{\textquotedbl})} produces
-\texttt{{\textquotedbl}adbecf{\textquotedbl}}.
+ \ \ \ \ \ \texttt{collate("abc",
+"def")} produces
+\texttt{"adbecf"}.
 
 \texttt{comb(s, i) : string*} generates \index{combinations,
 string}combinations of characters of s taken i at a time.\\
@@ -3192,19 +3186,19 @@ extended to the length of \texttt{s1}\\
 \texttt{ispal(s) : string?} succeeds and returns \texttt{s} if
 \texttt{s} is a palindrome
 
-\texttt{maxlen(L, p:proc({\textquotedbl}*{\textquotedbl},1)) : integer}
+\texttt{maxlen(L, p:proc("*",1)) : integer}
 returns the length of the longest\\
  \ \ \ \ \ string in \texttt{L}. \texttt{p} is applied to each string as
-a {\textquotedbl}length{\textquotedbl} procedure.
+a "length" procedure.
 
 \texttt{meander(s, n) : string} produces a
-{\textquotedbl}meandering{\textquotedbl} string that contains
+"meandering" string that contains
 all\\
  \ \ \ \ \ n-tuples of characters of \texttt{s}.\\
-\texttt{minlen(L, p: proc({\textquotedbl}*{\textquotedbl}, 1)) :
+\texttt{minlen(L, p: proc("*", 1)) :
 integer} returns the length of the shortest\\
  \ \ \ \ \ string in \texttt{L}. \texttt{p} is applied to each string as
-a {\textquotedbl}length{\textquotedbl} procedure.
+a "length" procedure.
 
 \texttt{ochars(s) : string} produces unique characters in the order that
 they appear in \texttt{s}.\\
@@ -3212,16 +3206,16 @@ they appear in \texttt{s}.\\
 \index{palindrome}palindromes from characters in \texttt{s}.\\
 \texttt{permute(s) : string*} generates all the permutations of the
 string \texttt{s}.\\
-\texttt{pretrim(s, c:{\textquotesingle} {\textquotesingle}) : string}
+\texttt{pretrim(s, c:' ') : string}
 trims characters from beginning of \texttt{s}.\\
-\texttt{reflect(s1, i, s2:{\textquotedbl}{\textquotedbl}) : string}
+\texttt{reflect(s1, i, s2:"") : string}
 returns \texttt{s1} concatenated with \texttt{s2} and the\\
  \ \ \ \ \ reversal of \texttt{s1} to produce a partial palindrome. The
-values of \texttt{i} determine {\textquotedbl}end\\
- \ \ \ \ \ conditions{\textquotedbl} for the reversal: 0 = omit first
+values of \texttt{i} determine "end\\
+ \ \ \ \ \ conditions" for the reversal: 0 = omit first
 and last characters,\\
  \ \ \ \ \ 1 = omit first character, 2 = omit last character, 3 =
-don{\textquotesingle}t omit character.
+don't omit character.
 
 \texttt{replace(s1, s2, s3) : string} replaces all occurrences of
 \texttt{s2} in \texttt{s1} by \texttt{s3}.\\
@@ -3229,13 +3223,13 @@ don{\textquotesingle}t omit character.
 string}replacements in the style of \texttt{replace()},\\
  \ \ \ \ where multiple
 argument pairs may be given, as in\\
- \ \ \ \ \ \texttt{replacem(s, {\textquotedbl}a{\textquotedbl},
-{\textquotedbl}bc{\textquotedbl}, {\textquotedbl}d{\textquotedbl},
-{\textquotedbl}cd{\textquotedbl})} which replaces all
-a{\textquotesingle}s by
-\texttt{{\textquotedbl}bc{\textquotedbl}}\\
-\ \ \ \ and all d{\textquotesingle}s by
-\texttt{{\textquotedbl}cd{\textquotedbl}}. Replacements are performed
+ \ \ \ \ \ \texttt{replacem(s, "a",
+"bc", "d",
+"cd")} which replaces all
+a's by
+\texttt{"bc"}\\
+\ \ \ \ and all d's by
+\texttt{"cd"}. Replacements are performed
 sequentially, not in parallel.
 
 \texttt{replc(s, L) : string} replicates characters of \texttt{s} by
@@ -3256,7 +3250,7 @@ label \texttt{s2} and transposition \texttt{s3}.
 
 \texttt{stripcom(s) : string?} strips the commented-out portion of a
 line of Icon code. Fails on lines which, either stripped or otherwise,
-come out as an empty string. \texttt{stripcom()} can{\textquotesingle}t
+come out as an empty string. \texttt{stripcom()} can't
 handle lines ending in an underscore as part of a broken string
 literal, since \texttt{stripcom()} is not intended to be used on
 sequentially read files. It simply removes \index{comment}comments from
@@ -3271,27 +3265,27 @@ it, except that characters preceded by a backslash are counted as
 regular characters, and are not taken into account by the balancing
 algorithm). If you call \texttt{stripunb()} with a table argument as
 follows,
-\texttt{stripunb({\textquotesingle}{\textless}{\textquotesingle},{\textquotesingle}{\textgreater}{\textquotesingle},s,\&null,\&null,t)}
+\texttt{stripunb('{\textless}','{\textgreater}',s,\&null,\&null,t)}
 and if \texttt{t} is a table having the form
 
 \iconcode{
-key: {\textquotedbl}bold{\textquotedbl} value:
-outstr({\textquotedbl}{\textbackslash}e[2m{\textquotedbl},
-{\textquotedbl}{\textbackslash}e1m{\textquotedbl}) \\
-key: {\textquotedbl}underline{\textquotedbl} value:
-outstr({\textquotedbl}{\textbackslash}e[4m{\textquotedbl},
-{\textquotedbl}{\textbackslash}e1m{\textquotedbl}) etc.}
+key: "bold" value:
+outstr("{\textbackslash}e[2m",
+"{\textbackslash}e1m") \\
+key: "underline" value:
+outstr("{\textbackslash}e[4m",
+"{\textbackslash}e1m") etc.}
 
 \noindent then every instance of
-\texttt{{\textquotedbl}{\textless}bold{\textgreater}{\textquotedbl}} in
+\texttt{"{\textless}bold{\textgreater}"} in
 string s will be mapped to
-\texttt{{\textquotedbl}{\textbackslash}e2m,{\textquotedbl}} and every
+\texttt{"{\textbackslash}e2m,"} and every
 instance of
-\texttt{{\textquotedbl}{\textless}/bold{\textgreater}{\textquotedbl}}
+\texttt{"{\textless}/bold{\textgreater}"}
 will be mapped to
-\texttt{{\textquotedbl}{\textbackslash}e[1m.{\textquotedbl}} Values in
+\texttt{"{\textbackslash}e[1m."} Values in
 table t must be records of type \texttt{outstr(on, off)}. When
-\texttt{{\textquotedbl}{\textless}/{\textgreater}{\textquotedbl}} is
+\texttt{"{\textless}/{\textgreater}"} is
 encountered, \texttt{stripunb()} will output the \texttt{.off} value
 for the preceding \texttt{.on} string encountered.
 Links: \texttt{scan}.
@@ -3334,23 +3328,23 @@ based on \texttt{T}.\\
 For the operations on tables that mimic set operations, the
 correspondences are only approximate and do not have the mathematical
 properties of the corresponding operations on sets. For example, table
-{\textquotedbl}union{\textquotedbl} is not symmetric or transitive.
+"union" is not symmetric or transitive.
 Where there is potential asymmetry, the procedures
-{\textquotedbl}favor{\textquotedbl} their first argument. The
+"favor" their first argument. The
 procedures that return tables return new tables and do not modify their
 arguments.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tclass}}
 
-\texttt{tclass(x) : string} returns {\textquotedbl}atomic{\textquotedbl}
-or {\textquotedbl}composite{\textquotedbl} depending on the type of
+\texttt{tclass(x) : string} returns "atomic"
+or "composite" depending on the type of
 \texttt{x}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{title, titleset}}
 
 \texttt{title(name:string) : string} produces the title of a name, such
-as {\textquotedbl}Mr.{\textquotedbl} from\\
- \ \ \ \ \ {\textquotedbl}Mr. John Doe{\textquotedbl}. The process is
+as "Mr." from\\
+ \ \ \ \ \ "Mr. John Doe". The process is
 imperfect. Links \texttt{titleset}.
 
 \texttt{titleset() : set} produces a set of strings that commonly appear
@@ -3380,7 +3374,7 @@ protect themselves from cycles.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tuple}\hfill (WHM)}
 
 \texttt{tuple(tl:list) : list} implements a
-{\textquotedbl}tuple{\textquotedbl} feature that produces the effect of
+"tuple" feature that produces the effect of
 multiple keys. A tuple is created by an expression of the form
 \texttt{tuple([exrp1, expr2,..., exprn])}. The result can be used in a
 \index{case expression}case expression or as a table subscript. Lookup
@@ -3392,17 +3386,17 @@ using value pairs.
 
 \iconcode{
 case tuple([type(op1), type(op2)]) of \{ \\
-\>   tuple([{\textquotedbl}integer{\textquotedbl},
-{\textquotedbl}integer{\textquotedbl}]): op1 + op2 \\
-\>   tuple([{\textquotedbl}string{\textquotedbl},
-{\textquotedbl}integer{\textquotedbl}]) : op1 {\textbar}{\textbar}
-{\textquotedbl}+{\textquotedbl} {\textbar}{\textbar} op2 \\
-\>   tuple([{\textquotedbl}integer{\textquotedbl},
-{\textquotedbl}string{\textquotedbl}]) : op1 {\textbar}{\textbar}
-{\textquotedbl}+{\textquotedbl} {\textbar}{\textbar} op2 \\
-\>   tuple([{\textquotedbl}string{\textquotedbl},
-{\textquotedbl}string{\textquotedbl}]) : op1 {\textbar}{\textbar}
-{\textquotedbl}+{\textquotedbl} {\textbar}{\textbar} op2 \\
+\>   tuple(["integer",
+"integer"]): op1 + op2 \\
+\>   tuple(["string",
+"integer"]) : op1 {\textbar}{\textbar}
+"+" {\textbar}{\textbar} op2 \\
+\>   tuple(["integer",
+"string"]) : op1 {\textbar}{\textbar}
+"+" {\textbar}{\textbar} op2 \\
+\>   tuple(["string",
+"string"]) : op1 {\textbar}{\textbar}
+"+" {\textbar}{\textbar} op2 \\
 \>   \}
 }
 
@@ -3411,13 +3405,13 @@ case tuple([type(op1), type(op2)]) of \{ \\
 \texttt{typecode(x) : string} produces a one-letter string identifying
 the type of its argument. In most cases, the code is the first
 (lowercase) letter of the type, as in
-\texttt{{\textquotedbl}i{\textquotedbl}} for the integer type.
+\texttt{"i"} for the integer type.
 Structure types are in uppercase, as in
-\texttt{{\textquotedbl}L{\textquotedbl}} for the list type. All records
-have the code \texttt{{\textquotedbl}R{\textquotedbl}}. The code
-\texttt{{\textquotedbl}C{\textquotedbl}} is used for the co-expression
-type to avoid conflict for the \texttt{{\textquotedbl}c{\textquotedbl}}
-for the cset type. The code \texttt{{\textquotedbl}w{\textquotedbl}} is
+\texttt{"L"} for the list type. All records
+have the code \texttt{"R"}. The code
+\texttt{"C"} is used for the co-expression
+type to avoid conflict for the \texttt{"c"}
+for the cset type. The code \texttt{"w"} is
 produced for windows. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{unsigned}\hfill (RJA)}
@@ -3434,7 +3428,7 @@ These procedures provide various common services:
 \index{Usage(s)}\texttt{Usage(s)} stops execution with a message
 indicating how to use a program.\\
 \texttt{Error(args?)} writes arguments to \texttt{\&errout} on a single
-line, preceded by \texttt{{\textquotedbl}*** {\textquotedbl}}.\\
+line, preceded by \texttt{"*** "}.\\
 \texttt{ErrorCheck(l,f) : null} reports to \texttt{\&output} an error
 that was converted to failure.\\
 \index{Feature(s)}\texttt{Feature(s)}\texttt{ : ?} \ succeeds if feature
@@ -3529,7 +3523,7 @@ This is a kit of procedures to deal with UNIX-like filename
 [...]. The meanings are as of the pattern characters are the same as in
 the UNIX shells csh and sh. They are described briefly in the
 \texttt{wild\_pat()} procedure. These procedures are interesting partly
-because of the {\textquotedbl}recursive suspension{\textquotedbl}
+because of the "recursive suspension"
 technique used to simulate conjunction of an arbitrary number of
 computed expressions. The public procedures are:
 
@@ -3546,7 +3540,7 @@ positions in \texttt{s} where substrings begin that match
 list, see \texttt{wild\_pat()}, below.
 
 Default values of \texttt{s}, \texttt{i1}, and \texttt{i2} are the same
-as for Icon{\textquotesingle}s built-in string scanning procedures such
+as for Icon's built-in string scanning procedures such
 as \texttt{match()}.
 
 \texttt{wild\_pat(s) : L} creates a pattern element list from pattern
@@ -3569,7 +3563,7 @@ Links: \texttt{scanset}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wrap}\hfill (RJA)}
 
-\index{wrap}\texttt{wrap}\texttt{(s:{\textquotedbl}{\textquotedbl},i:0)
+\index{wrap}\texttt{wrap}\texttt{(s:"",i:0)
 : string?} facilitates accumulation of small strings into longer output
 strings, outputting when the accumulated string would exceed a
 specified length (e.g. outputting items in multiple columns).
@@ -3579,13 +3573,13 @@ did not necessitate output of the buffered output string; otherwise the
 output string is returned (which never includes \texttt{s}). Calling
 \texttt{wrap()} with no arguments produces the buffer (if it is not
 empty) and clears it. \texttt{wrap()} does no output to files.
-Here{\textquotesingle}s how \texttt{wrap()} is normally used:
+Here's how \texttt{wrap()} is normally used:
 
 \iconcode{
 wrap() \# Initialize; not needed unless there was a previous use. \\
 every i := 1 to 100 do \# Loop to process strings to output -{}-  \\
 \>   write(wrap(x[i],80)) \# only writes when 80-char line filled. \\
-write(wrap()) \# Output what{\textquotesingle}s in buffer, if something
+write(wrap()) \# Output what's in buffer, if something
 to write.
 }
 
@@ -3593,7 +3587,7 @@ to write.
 intended for use with \texttt{writes()}. If the string \texttt{s} did
 not necessitate a line-wrap, \texttt{s} is returned. If a line-wrap is
 needed, \texttt{s}, preceded by a new-line character
-(\texttt{{\textquotedbl}{\textbackslash}n{\textquotedbl}}), is
+(\texttt{"{\textbackslash}n"}), is
 returned.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xcodes}}
@@ -3615,19 +3609,19 @@ following sequence will output \texttt{x} and recreate it as
 
 \iconcode{
 \>   \ f :=
-open({\textquotedbl}xstore{\textquotedbl},{\textquotedbl}w{\textquotedbl}) \\
+open("xstore","w") \\
 \>   \ xencode(x,f) \\
 \>   \ close(f) \\
-\>   \ f := open({\textquotedbl}xstore{\textquotedbl}) \\
+\>   \ f := open("xstore") \\
 \>   \ y := xdecode(f) \\
 \>   \ close(f)
 }
 
-\noindent For {\textquotedbl}scalar{\textquotedbl} types null, integer,
+\noindent For "scalar" types null, integer,
 real, cset, and string, this sequence will result in the relationship
 \texttt{x === y}. For structured types (list, set, table, record and object)
 \texttt{y} is not identical to \texttt{x}, but it has the same
-{\textquotedbl}shape{\textquotedbl} and its elements bear the same
+"shape" and its elements bear the same
 relation to the original as if they were encoded and decoded
 individually. Files, co-expressions, and windows are not handled;
 they are restored as empty
@@ -3665,19 +3659,19 @@ parameter is not normally used for storage in text files, but it
 provides the flexibility to store the data in other ways, such as a
 string in memory. If \texttt{p} is provided, then \texttt{f} can be any
 arbitrary data object -{}- it need not be a file. For example, to
-{\textquotedbl}write{\textquotedbl} \texttt{x} to an Icon string:
+"write" \texttt{x} to an Icon string:
 
 \iconcode{
 record StringFile(s) \\
 procedure main() ... \\
 \>   encodeString :=
-xencode(x,StringFile({\textquotedbl}{\textquotedbl}),WriteString).s \\
+xencode(x,StringFile(""),WriteString).s \\
 \>   ... \\
 end \\
 procedure WriteString(f,s[]) \\
 \>   \ every f.s {\textbar}{\textbar}:= !s \\
 \>   \ f.s {\textbar}{\textbar}:=
-{\textquotedbl}{\textbackslash}n{\textquotedbl} \\
+"{\textbackslash}n" \\
 \>   \ return \\
 end
 }
@@ -3710,7 +3704,7 @@ Links: \texttt{gobject}. See also: \texttt{matrix}. (SBW, REG)
 elements of \index{structure types}structured data types. The output
 resembles Icon code and is thus familiar to Icon programmers.
 Additionally, it indents successive structural levels in such a way
-that it is easy to visualize the data{\textquotesingle}s structure.
+that it is easy to visualize the data's structure.
 Note that the additional arguments in the \texttt{ximage()} procedure
 declaration are used for passing data among recursive levels. 
 
@@ -3719,22 +3713,22 @@ write the images of x1, x2, ..., xn to \texttt{\&errout}. For example,
 the code
 
 \iconcode{
-\>   t := table() ; t[{\textquotedbl}one{\textquotedbl}] := 1 ;
-t[{\textquotedbl}two{\textquotedbl}] := 2 \\
-\>   xdump({\textquotedbl}A table{\textquotedbl},t) \\
-\>   xdump({\textquotedbl}A
-list{\textquotedbl},[3,1,3,[2,4,6],3,4,3,5])
+\>   t := table() ; t["one"] := 1 ;
+t["two"] := 2 \\
+\>   xdump("A table",t) \\
+\>   xdump("A
+list",[3,1,3,[2,4,6],3,4,3,5])
 }
 
 writes the following output (note that \texttt{ximage()} infers the
 predominant list element value and avoids excessive output):
 
 \iconcode{
-{\textquotedbl}A table{\textquotedbl} \\
+"A table" \\
 T18 := table(\&null) \\
-T18[{\textquotedbl}one{\textquotedbl}] := 1 \\
-T18[{\textquotedbl}two{\textquotedbl}] := 2 \\
-{\textquotedbl}A list{\textquotedbl} \\
+T18["one"] := 1 \\
+T18["two"] := 2 \\
+"A list" \\
 L25 := list(8,3) \\
 L25[2] := 1 \\
 L25[4] := L24 := list(3) \\
@@ -3755,12 +3749,13 @@ interesting as a recursive version of\\
  \ \ \ \ \ \texttt{x1 :=: x2 :=: x3 :=: ... xn\\
 }since a better method for lists is \texttt{push(L, pull(L))}. 
 
-\clearpage\subsection{Application Programs, Examples, and Tools}
 
-The Icon Program Library \texttt{progs} directory contains 200+ programs
-that are useful for demonstration, entertainment, and/or practical
-utility. When it is available, usage information is presented with
-[optional] and repeated* command-line arguments.
+\section{Application Programs, Examples, and Tools}
+
+The Icon Program Library \texttt{progs} directory contains 200+ programs that
+are useful for demonstration, entertainment, and/or practical utility. When it
+is available, usage information is presented with [optional] and repeated*
+command-line arguments.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{adlcheck, adlcount, adlfilter, adlfirst, adllist,
 adlsort}
@@ -3792,38 +3787,38 @@ These programs take various subsets of the following options:\\
 \ \ \texttt{{}-a}\ \ all of the above (adlcheck) \\
 \ \ \texttt{{}-C}\ \ by city (U.S., in adllist only)\\
 \ \ \texttt{{}-d}\ \ report addresses that exceed
-{\textquotedbl}standard dimensions{\textquotedbl} for labels:\\
+"standard dimensions" for labels:\\
 \ \ \ \ 40 character line length, 8 lines per entry
 
 See also: address.doc, labels.icn.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{animal \hfill (RJA)}}
 
-\texttt{animal} is the familiar {\textquotedbl}animal
-game{\textquotedbl}. The program asks the user
+\texttt{animal} is the familiar "animal
+game". The program asks the user
 a series of questions in an attempt to guess what animal he or
-she is thinking of. It is an {\textquotedbl}expert
-system{\textquotedbl} that starts out with limited knowledge, knowing
+she is thinking of. It is an "expert
+system" that starts out with limited knowledge, knowing
 only one question, but gets smarter as it plays and learns from its
 opponents. At the conclusion of a session, the program asks permission
 to remember for future sessions that which it learned. The saved file
 is an editable text file, so typos entered during the heat of battle
 can be corrected. The game is not limited to guessing only animals. By
 simply modifying the first two lines of procedure
-{\textquotedbl}main{\textquotedbl} a program can be created that will
+"main" a program can be created that will
 happily build a knowledge base in other categories. For example, the
 lines:
 
 \iconcode{
-GameObject := {\textquotedbl}president{\textquotedbl} \\
-Tree := Question({\textquotedbl}Has he ever been known as
-Bonzo{\textquotedbl},
-{\textquotedbl}Reagan{\textquotedbl},{\textquotedbl}Lincoln{\textquotedbl})
+GameObject := "president" \\
+Tree := Question("Has he ever been known as
+Bonzo",
+"Reagan","Lincoln")
 }
 
 \noindent can be substituted.
 The knowledge files will automatically be kept
-separate. Typing {\textquotedbl}list{\textquotedbl} at any yes/no
+separate. Typing "list" at any yes/no
 prompt will show an inventory of animals known, and there are some
 other commands too. 
 
@@ -3847,15 +3842,15 @@ more blanks to tabs.
 
 The \texttt{c2icn} filter does easy work involved in porting a C
 program to Icon. It reformats \index{comment}comments, moves embedded
-comments to end of line, removes {\textquotedbl};{\textquotedbl}
+comments to end of line, removes ";"
 from ends of lines, reformats line-continued strings, changes
 \texttt{=} to \texttt{:=}, and changes \texttt{{}-{\textgreater}} to
 \texttt{.} 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{calc}}
 
-\texttt{calc} is a simple Polish {\textquotedbl}desk
-calculator{\textquotedbl}. It accepts as values Icon integers, reals,
+\texttt{calc} is a simple Polish "desk
+calculator". It accepts as values Icon integers, reals,
 csets, and strings (as they would appear in an Icon program) as well as
 an empty line for the null value. Other lines of input are interpreted
 as operations. These may be Icon operators, functions, or the commands
@@ -3867,7 +3862,7 @@ argument is used. The commands are:
 
 \begin{supertabular}{m{0.5in}m{4in}}
   clear &  remove all values from the
-calculator{\textquotesingle}s \index{stack}stack\\
+calculator's \index{stack}stack\\
   dump & write out the contents of the stack\\
   quit & exit from the calculator\\
 \end{supertabular}
@@ -3888,7 +3883,7 @@ errors:
 \item \ Unknown tag.
 \item \ Badly formed tag.
 \item \ Improper tag nesting.
-\item \ Unescaped {\textless}, {\textgreater}, {\textquotedbl}, or \&.
+\item \ Unescaped {\textless}, {\textgreater}, ", or \&.
 \item \ Bad escape string.
 \item \ Improper embedding of attributes.
 \item \ Bad (non-\index{ASCII}ASCII) characters
@@ -3941,33 +3936,33 @@ n (default 72), starts new line\\
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{conman \hfill (WED)}}
 
-\texttt{conman} responds to queries like {\textquotedbl}? Volume of the
-earth in tbsp{\textquotedbl}. The keywords of the language (which are
+\texttt{conman} responds to queries like "? Volume of the
+earth in tbsp". The keywords of the language (which are
 not reserved) are: \texttt{load, save, print, ?} (same as print),
 \texttt{list, is, are} (same as is)
 
-{\textquotedbl}Load{\textquotedbl} followed by an optional filename
+"Load" followed by an optional filename
 loads definitions of units from a file. If filename is not supplied, it
 defaults to \texttt{conman.sav}.
 
-{\textquotedbl}Save{\textquotedbl} makes a file for
-{\textquotedbl}load{\textquotedbl}. Filename defaults to
-\texttt{conman.sav}. {\textquotedbl}Save{\textquotedbl} appends to an
+"Save" makes a file for
+"load". Filename defaults to
+\texttt{conman.sav}. "Save" appends to an
 existing file so a user needs to periodically edit his save file to
 prune it back.
 
-{\textquotedbl}Print{\textquotedbl} and {\textquotedbl}?{\textquotedbl}
+"Print" and "?"
 are used in phrases like: ? 5 minutes in seconds. Conman replies: 5
 minutes in seconds equals 300.
 
 List puts up on the screen all the defined units and the corresponding
 values. The format is same as load/store format.
 
-{\textquotedbl}Is{\textquotedbl} and {\textquotedbl}are{\textquotedbl}
+"Is" and "are"
 are used like this: 100 cm are 1 meter The discovery of is or are
 causes the preceding token (in this case
-{\textquotedbl}cm{\textquotedbl}) to be defined. The load/store format
-is: \textit{unitname} {\textquotedbl}is{\textquotedbl} \textit{value}.
+"cm") to be defined. The load/store format
+is: \textit{unitname} "is" \textit{value}.
 Examples:
 
 {\sffamily
@@ -3978,7 +3973,7 @@ furlong is 1 / 8 mile }
 
 \noindent
 These last two are equivalent. Note spaces before and after
-{\textquotedbl}/{\textquotedbl}. Continuing examples:
+"/". Continuing examples:
 
 {\sffamily
 1 fortnight is 14 days }
@@ -3992,7 +3987,7 @@ inches/hour is inch / hour }
 \noindent
 After this a user might type: ? 1 furlong/fortnight in inches/hour.
 Conman will reply: 1 furlong/fortnight in inches/hour equals 23.57.
-Conman{\textquotesingle}s operators have no precedence so the line
+Conman's operators have no precedence so the line
 above works, but 1 furlong/fortnight in inches/hour gives a wrong
 answer. 
 
@@ -4018,7 +4013,7 @@ result.
 
 \texttt{crypt} is an example \index{encryption}encryption program. Do
 \textit{not} use this in the face of competent cryptanalysis. Helen
-Gaines{\textquotesingle} book (Gaines, 1939) is a classical
+Gaines' book (Gaines, 1939) is a classical
 introduction to the field. As written, \texttt{crypt} uses UNIX-style
 console I/O.
 
@@ -4099,9 +4094,9 @@ you want to know how many days until
 a birthday, wedding day, etc. The date on the command line can be
 specified in various ways. For instance, if you wanted to know how
 many days it is until August 12, you could specify it as
-{\textquotedbl}August 12{\textquotedbl}, {\textquotedbl}Aug
-12{\textquotedbl}, {\textquotedbl}12 August{\textquotedbl}, or
-{\textquotedbl}12 aUGuS{\textquotedbl}, among others. The match is case
+"August 12", "Aug
+12", "12 August", or
+"12 aUGuS", among others. The match is case
 insensitive. The arguments are accepted as long as exactly one of them
 is an integer, and if there are exactly two arguments. 
 
@@ -4177,9 +4172,9 @@ edited by hand to produce an acceptable result.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{diffsort \ \ \textrm{\textmd{[file]}} \hfill (GMT)}}
 
 \texttt{diffsort} reorders the output from the Unix
-{\textquotedbl}diff{\textquotedbl} program by moving one-line entries
-such as {\textquotedbl}Common subdirectory...{\textquotedbl} and
-{\textquotedbl}Only in ...{\textquotedbl} to the front of the output
+"diff" program by moving one-line entries
+such as "Common subdirectory..." and
+"Only in ..." to the front of the output
 file and sorting them. Actual difference records then follow, in the
 original order, separated by lines of equal signs. 
 
@@ -4201,7 +4196,7 @@ differences like the UNIX \texttt{diff(1)} command.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{diffword}}
 
 \texttt{diffword} lists the different words in the input. The
-definition of {\textquotedbl}word{\textquotedbl} is naive. 
+definition of "word" is naive. 
 
 % \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{diskpack}}
 
@@ -4213,7 +4208,7 @@ definition of {\textquotedbl}word{\textquotedbl} is naive.
 % \ \ \texttt{{}-r i}\ \ space to reserve on first diskettes, default
 % 0\\
 % \ \ \texttt{{}-n s}\texttt{\ \ }UNIX-style file name specification for
-% files to be packed, default {\textquotedbl}*.lzh{\textquotedbl}
+% files to be packed, default "*.lzh"
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{duplfile}}
 
@@ -4224,7 +4219,7 @@ program should be used with caution on large directory structures.
 % \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{duplproc \hfill (RLG)}}
 
 % Use \texttt{duplproc} if you plan on posting utility procedures suitable
-% for inclusion in someone{\textquotesingle}s Icon library directories.
+% for inclusion in someone's Icon library directories.
 % duplproc.icn compiles into a program that will search through every
 % directory in your ILIBS \index{environment variable!ILIBS}environment
 % variable (and/or in the directories supplied as arguments to the
@@ -4234,7 +4229,7 @@ program should be used with caution on large directory structures.
 % to link in some of the routines contained in the IPL. BUG: duplproc
 % thinks that differently written names for the same directory are in
 % fact different directories. Use absolute path names, and
-% you{\textquotesingle}ll be fine.
+% you'll be fine.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{envelope \ \texttt{\textmd{[options] {\textless}
 address(es) \hfill (RF)}}}}
@@ -4253,8 +4248,8 @@ do \texttt{:,+N w !envelope} where N = number-of-lines-in-address.
 
 Dave \index{Farber, Dave}Farber, co-author of the original SNOBOL
 programming language, is noted for his creative use of the English
-language. Hence the terms {\textquotedbl}farberisms{\textquotedbl} and
-{\textquotedbl}to farberate{\textquotedbl}. This program produces a
+language. Hence the terms "farberisms" and
+"to farberate". This program produces a
 randomly selected farberism. Notes: Not all of the farberisms contained
 in this program were uttered by the master himself; others have learned
 to emulate him. Some farberisms may be objectionable to some
@@ -4264,25 +4259,25 @@ persons.
 outfile}} \hfill (BW)}}
 
 \texttt{filecnvt} copies a text file, converting line terminators. The
-file name {\textquotedbl}-{\textquotedbl} is taken to be standard input
+file name "-" is taken to be standard input
 or output, depending on its position, although standard input/output
 has limited usefulness, since it translates line terminators according
 the system being used. The options are:
-
+
 \texttt{\ \ {}-i s1}\ \ input file has line termination for the system
 \texttt{\textit{s1}}. The default is
-{\textquotedbl}u{\textquotedbl}.\\
+"u".\\
 \ \ \texttt{{}-o s2}\ \ write output with line terminators for the
-system s2. The default is {\textquotedbl}u{\textquotedbl}.
+system s2. The default is "u".
 
 The designations are:
 
 \ \ d\ \ MS-DOS
-({\textquotedbl}{\textbackslash}n{\textbackslash}r{\textquotedbl});
+("{\textbackslash}n{\textbackslash}r");
 also works for the Atari ST\\
 \ \ m\ \ Macintosh
-({\textquotedbl}{\textbackslash}r{\textquotedbl})\\
-\ \ u\ \ UNIX ({\textquotedbl}{\textbackslash}n{\textquotedbl}); also
+("{\textbackslash}r")\\
+\ \ u\ \ UNIX ("{\textbackslash}n"); also
 works for the Amiga
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fileprnt}}
@@ -4315,7 +4310,7 @@ tabbing are handled by the skeleton. You need only provide the
 filtering code. As it stands, \texttt{filtskel.icn} copies the input
 file(s) to standard output. Multiple files can be specified as
 arguments, and will be processed in sequence. The file name
-\texttt{{\textquotedbl}-{\textquotedbl}} represents the standard input
+\texttt{"-"} represents the standard input
 file. If there are no arguments, standard input is processed.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{findstr \hfill (RJA)}}
@@ -4344,7 +4339,7 @@ follows a line declaring the index terms:
 Text to be retrieved \\
 by findtext \\
 ::index ::line \\
-Each index line begins with {\textquotedbl}::{\textquotedbl}.}
+Each index line begins with "::".}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fixpath \ \textrm{\textmd{filename oldpath
 newpath}} \hfill (GMT)}
@@ -4376,10 +4371,10 @@ can invoke filters on a range of selected text.
 The \texttt{{}-c} option attempts to establish the form of a comment
 based on the first line, then does its best to deal properly with the
 following lines. The types of comment lines that are handled are those
-in which each line starts with a {\textquotedbl}comment{\textquotedbl}
+in which each line starts with a "comment"
 character string (possibly preceded by spaces). While formatting
 comment lines, text lines following the \index{prototype}prototype line
-that don{\textquotesingle}t match the prototype but are flush with the
+that don't match the prototype but are flush with the
 left margin are also formatted as comments. This feature simplifies
 initially entering lengthy comments or making major modifications,
 since new text can be entered without concern for comment formatting,
@@ -4403,7 +4398,7 @@ Rudmin, Duke University Physics Dept. Aug 19, 1987.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fuzz \hfill (AC)}
 
-\texttt{fuzz} does {\textquotedbl}fuzzy{\textquotedbl} string
+\texttt{fuzz} does "fuzzy" string
 \index{pattern matching}pattern matching. The result of matching s and
 t is a number between 0 and 1, based on counting matching pairs of
 characters in increasingly long substrings of s and t. Characters may
@@ -4412,15 +4407,13 @@ bias.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gcomp \hfill (WHM, REG)}
 
-\texttt{gcomp} produces a list of the files in the current directory
-that do not appear among the arguments. For example, \texttt{gcomp *.c}
-produces a list of files in the current directory that do not end in
-.c. As another example, to remove all the files in the current
-directory that do not match \texttt{Makefile}, \texttt{*.c}, and
-\texttt{*.h} the following can be used: \texttt{rm
-{\textasciigrave}gcomp Makefile *.c *.h{\textasciigrave}} The files
-\texttt{.} and \texttt{..} are not included in the output, but other
-{\textasciigrave}dot files{\textquotesingle} are. Requires: UNIX. 
+\texttt{gcomp} produces a list of the files in the current directory that do not
+appear among the arguments. For example, \texttt{gcomp *.c} produces a list of
+files in the current directory that do not end in .c. As another example, to
+remove all the files in the current directory that do not match
+\texttt{Makefile}, \texttt{*.c}, and \texttt{*.h} the following can be used:
+\texttt{rm 'gcomp Makefile *.c *.h'} The files \texttt{.} and \texttt{..} are
+not included in the output, but other dot files are. Requires: UNIX.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{genqueen \hfill (PAB)}
 
@@ -4513,7 +4506,7 @@ Requires: ANSI terminal support.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{grpsort \hfill (TRH)}
 
 \texttt{grpsort} sorts input containing
-{\textquotedbl}records{\textquotedbl} defined to be groups of
+"records" defined to be groups of
 consecutive lines. Output is written to standard output. One or more
 repetitions of a demarcation line (a line beginning with the separator
 string) separate each input record. The first line of each record is
@@ -4529,19 +4522,19 @@ The \texttt{{}-o} option sorts the input file but does not produce the
 sorted records. Instead it lists the keys (in sorted order) and line
 numbers defining the extent of the record associated with each key. The
 use of grpsort is illustrated by the following examples. The command
-\texttt{grpsort {\textquotedbl}catscats{\textquotedbl} {\textless}x
+\texttt{grpsort "catscats" {\textless}x
 {\textgreater}y} sorts the file \texttt{x}, whose records are separated
 by lines containing the string
-\texttt{{\textquotedbl}catscats{\textquotedbl}}, into the file
+\texttt{"catscats"}, into the file
 \texttt{y} placing a single line of
-\texttt{{\textquotedbl}catscats{\textquotedbl}} between each output
+\texttt{"catscats"} between each output
 record. Similarly, the command \texttt{grpsort
-{\textquotedbl}cats{\textquotedbl} {\textless}x {\textgreater}y} sorts
+"cats" {\textless}x {\textgreater}y} sorts
 the file \texttt{x} as before but assumes that any line beginning with
-the string \texttt{{\textquotedbl}cats{\textquotedbl}} delimits a new
+the string \texttt{"cats"} delimits a new
 record. This may or may not divide the lines of the input file into a
 number of records different from the previous example. In any case, a
-single line of \texttt{{\textquotedbl}cats{\textquotedbl}} will
+single line of \texttt{"cats"} will
 separate the output records. Another example is \texttt{grpsort -o
 {\textless}bibliography {\textgreater}bibkeys}, which sorts the file
 bibliography and produces a sorted list of the keys and the extents of
@@ -4555,9 +4548,9 @@ actual key of the record.
 \texttt{headicon} prepends a standard header to an Icon program. It does
 not check to see if the program already has a header. The first
 command-line argument is taken as the base name of the file; default
-{\textquotedbl}foo{\textquotedbl}. The second command-line argument is
-taken as the author; the default is \texttt{{\textquotedbl}Ralph E.
-Griswold{\textquotedbl}} -{}- but you can personalize it for your own
+"foo". The second command-line argument is
+taken as the author; the default is \texttt{"Ralph E.
+Griswold"} -{}- but you can personalize it for your own
 use. The new file is brought up in the vi \index{editor}editor. The
 file \texttt{skeleton.icn} must be accessible via \texttt{dopen()}.
 Requires: system(), vi(1).
@@ -4574,7 +4567,7 @@ Time figures from 6pm previous night. The lunation of year 1 is
 calculated to be on a Monday (our Sunday night) at ll:11:20pm. Our data
 table begins with a hypothetical year 0, corresponding to 3762 B.C.E.
 Calculations in this program are figured in the ancient Babylonian unit
-of halaqim {\textquotedbl}parts{\textquotedbl} of the hour = 1/1080
+of halaqim "parts" of the hour = 1/1080
 hour. Startup syntax is simply \texttt{hebcalen [date]}, where
 \texttt{date} is a year specification of the form 5750 for a Jewish
 year, +1990 or 1990AD or 1990CE or -1990 or 1990BC or 1990BCE for a
@@ -4597,8 +4590,8 @@ names are provided on the command line, all \texttt{*.icn} files in the
 current directory are browsed. The program facilitates browsing of Icon
 programs. It was originally written to browse the Icon Program Library,
 for which purpose it serves quite well. The user interface is
-self-explanatory -{}- use {\textquotedbl}?{\textquotedbl} for help if
-you{\textquotesingle}re confused.
+self-explanatory -{}- use "?" for help if
+you're confused.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icalc \hfill (SBW)}
 
@@ -4623,14 +4616,14 @@ Features include:
 \item \ \ while-do
 \item \ \ limited form of multiline input
 \end{itemize}
-The grammar at the start of the {\textquotedbl}parser{\textquotedbl}
+The grammar at the start of the "parser"
 proper provides more details. Normally, the input is processed one line
 at a time, in calculator fashion. However, compound statements can be
 continued across line boundaries. Here is a simple input:
 
 {\sffamily
 \{ a := 10; while a {\textgreater}= 0 do \{ write(a); a := a - 1 \};
-write({\textquotedbl}Blastoff{\textquotedbl}) \}}
+write("Blastoff") \}}
 
 For this input execution is delayed until entire compound statement is
 entered. For:
@@ -4653,7 +4646,7 @@ procedures.
 This filter does some mundane aspects of conversion of Icon to C. It
 reformats comments, line-continued strings and procedure declarations,
 changes \texttt{:=} to \texttt{=,} and changes \texttt{end} to
-\texttt{{\textquotedbl}\}{\textquotedbl}} . 
+\texttt{"\}"} . 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icontent \ \textmd{{\textless}options{\textgreater}
 {\textless}Icon source file{\textgreater}...} \hfill (RJA)}}
@@ -4661,7 +4654,7 @@ changes \texttt{:=} to \texttt{=,} and changes \texttt{end} to
 \texttt{icontent} builds a list, in Icon comment format, of procedures
 and records in an Icon source file. \ Multiple files can be specified
 as arguments, and are processed in sequence. The file name
-{\textquotedbl}-{\textquotedbl} indicates the standard input file. If
+"-" indicates the standard input file. If
 there are no arguments, standard input is processed. Options:\\
 \texttt{{}-s}\ \ sort names alphabetically (default is in order of
 occurrence)\\
@@ -4686,7 +4679,7 @@ standard output.
 
 \texttt{idxtext} turns a file associated with the \texttt{gettext()}
 routine into an indexed text-base. Though \texttt{gettext()} will work
-fine with files that haven{\textquotesingle}t been indexed via
+fine with files that haven't been indexed via
 \texttt{idxtext()}, access is faster if the indexing is done if the
 file is, say, over 5k or 10k.
 
@@ -4701,7 +4694,7 @@ keyname delimiter offset [delimiter offset [etc.]]{\textbackslash}n.}
 The first line of the index file is a pointer to the last indexed byte
 of the text-base file it indexes. Index files are large. Index names
 are not uniquely identified with their original text file. If
-you{\textquotesingle}re worried, use the \texttt{{}-a} flag. See also:
+you're worried, use the \texttt{{}-a} flag. See also:
 \texttt{gettext.icn}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ifilter}}
@@ -4714,11 +4707,11 @@ line, as in
 
 \iconcode{
 ifilter right 10 0 {\textless}foo \# right(*,
-{\textquotedbl}10{\textquotedbl}, {\textquotedbl}0{\textquotedbl})}
+"10", '0')}
 
 \iconcode{
-ifilter {\textquotedbl}\%{\textquotedbl} 11 {\textless}foo \# * \%
-{\textquotedbl}11{\textquotedbl}}
+ifilter "\%" 11 {\textless}foo \# * \%
+"11"}
 
 Except for use with operators and (built-in) functions, this program
 needs to be linked with procedures that might be used with it. The
@@ -4740,9 +4733,9 @@ print disk block number). The option -E allows Icon-type
 when -E is used, backslashes that are meant to be processed in the
 regular expression context must be doubled. The following patterns are
 equivalent: without -E:
-{\textquotesingle}{\textbackslash}bFred{\textbackslash}b{\textquotesingle}
+'{\textbackslash}bFred{\textbackslash}b'
 with -E:
-{\textquotesingle}{\textbackslash}{\textbackslash}bFred{\textbackslash}{\textbackslash}b{\textquotesingle}
+'{\textbackslash}{\textbackslash}bFred{\textbackslash}{\textbackslash}b'
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iheader}}
@@ -4765,7 +4758,7 @@ correspond to whole words in the help text; only to text fragments. All
 item name and keyword matches are case independent. The help file name
 is taken from \index{environment variable!HELPFILE}environment variable
 HELPFILE. If HELPFILE is not in the environment, file
-{\textquotedbl}help{\textquotedbl} in the current directory is used. A
+"help" in the current directory is used. A
 help file name specified in the \texttt{{}-f} option overrides. The
 help files are formatted as follows:
 
@@ -4773,14 +4766,14 @@ help files are formatted as follows:
 default text lines\\
 {}-\\
 one\\
-item {\textquotedbl}one{\textquotedbl} text lines\\
+item "one" text lines\\
 {}-\\
 two\\
-item {\textquotedbl}two{\textquotedbl} text lines\\
+item "two" text lines\\
 ...}
 
 Sections are separated by lines containing a single
-{\textquotedbl}-{\textquotedbl}. Item names are the first line
+"-". Item names are the first line
 following a separator line.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iidecode \ \textrm{\textmd{[infile] [-x]}}, iiencode
@@ -4795,10 +4788,10 @@ unscathed through non-\index{ASCII}ASCII \index{EBCDIC}EBCDIC sites).
 
 \texttt{iidecode} is similar to uudecode. An optional first argument
 specifies the file to be decoded (default: standard input).
-\texttt{iidecode}{\textquotesingle}s \texttt{{}-x} switch forces use of
+\texttt{iidecode}'s \texttt{{}-x} switch forces use of
 the xxdecoding algorithm. If you try to decode an xxencoded file
 without specifying \texttt{{}-x}, \texttt{iidecode} will forge ahead
-anyway. If it thinks you{\textquotesingle}ve made a mistake,
+anyway. If it thinks you've made a mistake,
 \texttt{iidecode} informs you after the decode is finished.
 
 \texttt{iiencode} is similar to uuencode. An optional first argument
@@ -4820,7 +4813,7 @@ file{\textgreater}... \hfill }}(RJA)}
 programs (i.e., those files named in \index{link}link declarations).
 Requires: UNIX.\\
 \texttt{\ \ {}-p}\ \ sort by
-{\textquotedbl}popularity{\textquotedbl}\\
+"popularity"\\
 \ \ \texttt{{}-v}\ \ report progress information
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ilump}}
@@ -4887,7 +4880,7 @@ completely general and as correct as Icon itself.
 expressions are entered with line numbers. You can resequence them,
 list them etc. and execute all the lines entered. There is no editor,
 you have to retype a line to change it. Documentation is
-lacking but there is a {\textquotedbl}?{\textquotedbl} help command
+lacking but there is a "?" help command
 that lists all the other commands. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipatch \ \textrm{\textmd{file
@@ -4915,7 +4908,7 @@ Library. The following options are supported:\\
 \ \ \texttt{{}-p i}\ \ width of field for program name, default
 12\\
 \noindent Some noise words are omitted (see
-{\textquotedbl}exceptions{\textquotedbl} in the program text). If a
+"exceptions" in the program text). If a
 file named except.wrd is open and readable in the current directory,
 the words in it are used instead. 
 
@@ -4925,17 +4918,17 @@ the words in it are used instead.
 producing kwic listings for the Icon program library. This is a simple
 keyword-in-context (\index{KWIC}KWIC) program. It reads from standard
 input and writes to standard output. The
-{\textquotedbl}key{\textquotedbl} words are aligned at a specified
+"key" words are aligned at a specified
 column, with the text shifted as necessary. Text shifted left is
 truncated at the left. Tabs and other characters whose
-{\textquotedbl}print width{\textquotedbl} is less than one may not be
+"print width" is less than one may not be
 handled properly. The following options are supported:\\
 \ \ \texttt{{}-c i}\ \ column at which keywords are aligned, default
 30\\
 \ \ \texttt{{}-h i}\ \ width of identifying column at left, default
 20\\
 Some noise words are omitted (see
-{\textquotedbl}exceptions{\textquotedbl} in the program text). If a
+"exceptions" in the program text). If a
 file named except.wrd is open and readable in the current directory,
 the words in it are used instead.
 
@@ -4960,12 +4953,12 @@ contains the IPL standard comment header info inside.
 attempting to keep whole
 procedures on the same page. The default is to identify the end of a
 print group (i.e. a procedure) by looking for the string
-{\textquotedbl}end{\textquotedbl} at the beginning of a line. Through
+"end" at the beginning of a line. Through
 the -g option, alternative strings can be used to signal end of a
-group. Using {\textquotedbl}end{\textquotedbl} as the group delimiter
+group. Using "end" as the group delimiter
 (inclusive), comments and declarations prior to the procedure are
 grouped with the procedure. Specifying a null group delimiter string
-(\texttt{{}-g {\textquotedblleft}{\textquotedbl}}) suppresses grouping.
+(\texttt{{}-g {\textquotedblleft}"}) suppresses grouping.
 Page creases are skipped over, and form-feeds (\^{}L) embedded in the
 file are handled properly. (Form-feeds are treated as spaces by many C
 compilers, and signal page ejects in a listing). Page headings (file
@@ -4979,9 +4972,9 @@ lines)\\
 \ \ \texttt{{}-l}\ \ add three lines at top of each page for laser
 printer.\\
 \ \ \texttt{{}-gS}\ \ end of group string (default:
-{\textquotedbl}end{\textquotedbl}).\\
+"end").\\
 \ \ \texttt{{}-cS}\ \ start of comment string (default:
-{\textquotedbl}\#{\textquotedbl}).\\
+"\#").\\
 \ \ \texttt{{}-xS}\ \ end of comment string (default: none).\\
 \ \ \texttt{{}-i}\ \  ignore FF at start of line.\\
 \noindent Any number of file names specified will be printed, each starting on a
@@ -4989,9 +4982,9 @@ new page. For example, to print C source files such as the Icon source
 code, use these options:
 
 \iconcode{
-\ \ iprint -g {\textquotesingle} \}{\textquotesingle} -c
-{\textquotesingle}/*{\textquotesingle} -x
-{\textquotesingle}*/{\textquotesingle} file ... }
+\ \ iprint -g ' \}' -c
+'/*' -x
+'*/' file ... }
 
 Control lines are special character strings that occur at the beginnings
 of lines that signal special action. Control lines begin with the start
@@ -4999,7 +4992,7 @@ of comment string (see options). The control lines currently recognized
 are:
 
 \texttt{{\textless}comment string{\textgreater}eject} -{}- page eject
-(line containing {\textquotedbl}eject{\textquotedbl} does not
+(line containing "eject" does not
 print).\\
 \texttt{{\textless}comment string{\textgreater}title} -{}- define a
 title line to print at top of each page. Title text is separated from
@@ -5009,7 +5002,7 @@ comment string{\textgreater}} or end of line, whichever comes
 first.\\
 \texttt{{\textless}comment string{\textgreater}subtitle} -{}- define a
 subtitle line to print at top of each page. Format is parallel to the
-{\textquotedbl}title{\textquotedbl} control line, above.
+"title" control line, above.
 
 If a page ejection is forced by maximum lines per page being exceeded
 (rather than intentional eject via control line, form feed, or
@@ -5086,7 +5079,7 @@ options are:\\
 \texttt{{}-o}\ \ Output tab spacing (default 8).\\
 \texttt{itab} observes Icon conventions for escapes and continuations in
 string constants. If no source-program names are given, standard input
-is {\textquotedbl}itabbed{\textquotedbl} to standard output.
+is "itabbed" to standard output.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itags \ \textrm{\textmd{[-aBFtvwx] [-f tagsfile]
 file...}} \hfill (RJA)}}
@@ -5127,7 +5120,7 @@ information.
 arguments, they are taken as procedure names, and only those lines with
 those names are written. If there are no command-line arguments, all
 lines are written. The names of procedures to pass through can be given
-in a {\textquotedbl}response{\textquotedbl} file as accepted by
+in a "response" file as accepted by
 \texttt{options()}, as in\\
 \ \ \texttt{itrcfltr @names {\textless}trace\_file}\\
 \noindent
@@ -5143,16 +5136,16 @@ trace messages; overrides any procedure names given.
 
 \texttt{iundecl} invokes icont to find undeclared variables in an Icon
 source program. The output is in the form of a
-{\textquotedbl}local{\textquotedbl} declaration, preceded by a comment
+"local" declaration, preceded by a comment
 line that identifies that procedure and file name from whence it arose.
-Beware that undeclared variables aren{\textquotesingle}t necessarily
+Beware that undeclared variables aren't necessarily
 local, so any which are intended to be global must be removed from the
 generated list. Multiple files can be specified as arguments, and will
-be processed in sequence. The file name {\textquotedbl}-{\textquotedbl}
+be processed in sequence. The file name "-"
 represents the standard input file. If there are no arguments, standard
 input is processed. The program works only if procedures are formatted
-such that the keywords {\textquotedbl}procedure{\textquotedbl} and
-{\textquotedbl}end{\textquotedbl} are the first words on their
+such that the keywords "procedure" and
+"end" are the first words on their
 respective lines. Requires: pipe support.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iwriter}}
@@ -5174,17 +5167,17 @@ standard input with any sequence of random numbers.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{krieg\hfill (DJS)}}
 
-Kriegspiel (German for {\textquotedbl}war game{\textquotedbl})
+Kriegspiel (German for "war game")
 implements a monitor and, if desired, an automatic opponent for a
 variation of the game of chess which has the same rules and goal as
 ordinary chess except that neither player sees the
-other{\textquotesingle}s moves or pieces. Thus Kriegspiel combines the
+other's moves or pieces. Thus Kriegspiel combines the
 intricacies and flavor of chess with additional elements of
 uncertainty, psychology, subterfuge, etc., which characterize games of
 imperfect information such as bridge or poker. To start the game, the
-{\textquotedbl}White{\textquotedbl} player makes a move on his board.
+"White" player makes a move on his board.
 If the move is legal, the monitor plays it on his board and invites
-{\textquotedbl}Black{\textquotedbl} to make his response. If a move
+"Black" to make his response. If a move
 attempt is illegal (because it leaves the king in check or tries to
 move through an enemy piece, etc.), the monitor announces that fact to
 both players and the moving player must try again until he finds a
@@ -5202,13 +5195,13 @@ all the intersections of the two strings in a common character.
 
 \texttt{kwic} is a simple keyword-in-context (\index{KWIC}KWIC) program.
 It reads from standard input and writes to standard output. The
-{\textquotedbl}key{\textquotedbl} words are aligned in column 40, with
+"key" words are aligned in column 40, with
 the text shifted as necessary. Text shifted left is truncated at the
-left. Tabs and other characters whose {\textquotedbl}print
-width{\textquotedbl} is less than one may not be handled properly. If
+left. Tabs and other characters whose "print
+width" is less than one may not be handled properly. If
 an integer is given on the command line, it overrides the default 40.
 Some noise words are omitted (see
-{\textquotedbl}exceptions{\textquotedbl} in the program text). If a
+"exceptions" in the program text). If a
 file named \texttt{except.wrd} is open and readable in the current
 directory, the words in it are used instead. 
 
@@ -5267,9 +5260,9 @@ input is read at that point. If a file is named more than once, its
 lines will be duplicated on the output line, except that if standard
 input is named more than once, its lines will be read alternately. For
 example, each pair of lines from standard input can be joined onto one
-line with a space between them by the command lam - {\textquotedbl}-
-{\textquotedbl} - while the command lam file1 {\textquotedbl}-
-{\textquotedbl} file1 replicates each line from file1.
+line with a space between them by the command lam - "-
+" - while the command lam file1 "-
+" file1 replicates each line from file1.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{latexidx\hfill (DSC)}}
 
@@ -5296,15 +5289,15 @@ included in the table with themselves as replacement. See also:
 
 \texttt{lineseq} reads values on separate lines and strings them
 together on a single line. The separating strings is specified by
-the \texttt{{}-s} option (default: \texttt{{\textquotedbl} {\textquotedbl}}).
+the \texttt{{}-s} option (default: \texttt{" "}).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lisp\hfill (SBW, PLT)}}
 
 \texttt{lisp} is a simple interpreter for pure \index{Lisp}Lisp. It
 takes the name of the Lisp program as a command-line argument. The
 syntax and semantics are based on EV-LISP, as described in L.
-Siklossy{\textquotesingle}s {\textquotedbl}Let{\textquotesingle}s Talk
-LISP{\textquotedbl} (Prentice-Hall, 1976). Functions that have been
+Siklossy's "Let's Talk
+LISP" (Prentice-Hall, 1976). Functions that have been
 predefined match those described in Chapters 1-4 of the book. No
 attempt at improving efficiency has been made; this is rather an
 example of how a simple Lisp interpreter might be implemented in Icon.
@@ -5372,18 +5365,18 @@ try to fit your word game into (default 20x20). If the \texttt{{}-s}
 argument is present, \texttt{makepuzz} will scramble its output, by
 putting random letters in all the blank spaces. The \texttt{{}-t} tells
 the computer when to give up, and construct the puzzle (letting you
-know if any words didn{\textquotesingle}t make it in). Defaults to 60
+know if any words didn't make it in). Defaults to 60
 (i.e. one minute). The \texttt{{}-r} argument tells \texttt{makepuzz}
 to run until it arrives at a solution with number-of-rejects or fewer
 un-inserted words. \texttt{{}-d} turns on certain diagnostic messages.
 Most of these options can safely be ignored. Just type something like
 \texttt{makepuzz -f wordlist}, where \texttt{wordlist} is a file
 containing about sixty words, one word to a line. Out will pop a
-{\textquotedbl}word-find{\textquotedbl} puzzle. Once you get the hang
+"word-find" puzzle. Once you get the hang
 of what is going on, try out the various options. The algorithm used
 here is a combination of random insertions and mindless, brute-force
 iterations through possible insertion points and insertion directions.
-If you don{\textquotesingle}t like \texttt{makepuzz}{\textquotesingle}s
+If you don't like \texttt{makepuzz}'s
 performance on one run, run it again. If your puzzle is large, try
 increasing the timeout value (see \texttt{{}-t} above).
 
@@ -5413,7 +5406,7 @@ default 1.
 
 The old monkeys at the typewriters anecdote... \texttt{monkeys} uses
 ngram analysis to randomly generate text in the same
-{\textquotesingle}style{\textquotesingle} as the input text. The
+'style' as the input text. The
 arguments are:\\
 \ \ \texttt{{}-s}\ \ show the input text\\
 \ \ \texttt{{}-n}\ \ n use n as the ngram size (default:3)\\
@@ -5425,7 +5418,7 @@ arguments are:\\
 If \texttt{morse} is invoked without arguments, a \index{Morse
 code}Morse code table is printed. If arguments are given, the Morse
 code conversion is printed in dots and dashes. If the first
-argument{\textquotesingle}s first character is a dot or dash, the
+argument's first character is a dot or dash, the
 arguments are Morse code and converted to a string.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mr \ \textrm{\textmd{[recipient] [-u user] [-f spool]}}\hfill(RF)}}
@@ -5441,9 +5434,9 @@ The program is oriented towards UNIX Internet mail processing.
 \texttt{newicon} creates a new file with a standard Icon program header
 and a skeleton mail procedure. The first command-line argument is taken
 as the base name of the file; default
-{\textquotedbl}foo{\textquotedbl}. The second command-line argument is
-taken as the author. The default is {\textquotedbl}Ralph E.
-Griswold{\textquotedbl}; personalize it for your own use. The same
+"foo". The second command-line argument is
+taken as the author. The default is "Ralph E.
+Griswold"; personalize it for your own use. The same
 \index{comment}comment applies to the skeleton file mentioned below.
 The new file is brought up in the vi \index{editor}editor. The options
 are:\\
@@ -5470,20 +5463,20 @@ The user can replace .newsrc with it if it is satisfactory.
 
 The game of \texttt{nim} focuses on a pile of 15 sticks. Each player can
 select 1, 2, or 3 sticks from the sticks remaining in the pile when
-it{\textquotesingle}s their turn. The player to pick up the last
+it's their turn. The player to pick up the last
 stick(s) wins. The loser of the previous game always gets to go first.
 There are two versions of nim in here. The first (default) version uses
 an algorithm to make its moves. It will never lose if it gets the first
 turn. The second version learns from each game. After a while it will
 also never lose if it gets the first turn, if you know how to play.
 Since the learning version learns from the person it plays against, if
-you{\textquotesingle}re lousy, the game will be too. To invoke the
+you're lousy, the game will be too. To invoke the
 learning version, pass any argument to the program. To see how the
 program learns, use \texttt{show} as the argument and the
-program{\textquotesingle}s game memory is displayed after each game.
+program's game memory is displayed after each game.
 Invoke the game with \texttt{save} as an argument to create a file
-called {\textquotedbl}.nimdump{\textquotedbl} in the current directory
-with a dump of the program{\textquotesingle}s game memory when you
+called ".nimdump" in the current directory
+with a dump of the program's game memory when you
 quit. When the game is played in learn mode it will initialize its game
 memory from the dump. You can invoke this program with both
 \texttt{show} and \texttt{save} at the same time.
@@ -5502,7 +5495,7 @@ then is brought up in the vi \index{editor}editor unless the
 packages the files into a single file, which is written to standard
 output. Files are separated by a header, \#\#\#\#\#\#\#\#\#\#, followed
 by the file name. This simple scheme does not work if a file contains
-such a header itself, and it{\textquotesingle}s problematical for files
+such a header itself, and it's problematical for files
 of binary data. See also: \texttt{unpack.icn}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{paginate\hfill (PA)}}
@@ -5528,9 +5521,9 @@ available:\\
 right parentheses. Default: 10.\\
 \ \ \texttt{{}-n n}\ \ Produce n strings. Default: 10.\\
 \ \ \texttt{{}-l s}\ \ Use the string s for the left parenthesis.
-Default: \texttt{{\textquotedbl}({\textquotedbl}} .\\
+Default: \texttt{"("} .\\
 \ \ \texttt{{}-r s}\ \ Use the string s for the right parenthesis.
-Default: \texttt{{\textquotedbl}){\textquotedbl} }.\\
+Default: \texttt{")" }.\\
 \ \ \texttt{{}-v}\ \ Randomly vary the length of the strings between 0
 and the bound.\\
 \ \ \ \ Otherwise, all strings are the exactly as long as the
@@ -5588,12 +5581,12 @@ and \texttt{parscond.icn} in the IPL \index{source code}source code.
 \index{parse}\texttt{parse} parses simple statements. It provides an
 interesting example of the use of co-expressions. \texttt{parsex} is
 another expression parser, adapted from C code written by Allen I.
-Holub (Dr. Dobb{\textquotesingle}s Journal, Feb 1987). This
+Holub (Dr. Dobb's Journal, Feb 1987). This
 general-purpose expression analyzer can evaluate any expression
 consisting of numbers and the following operators (listed according to
 precedence level):\\
 \texttt{\ \ () - !
-{\textquotesingle}str{\textquotesingle}str{\textquotesingle} * / \& + -
+'str'str' * / \& + -
 {\textless} {\textless}= {\textgreater} {\textgreater}= == != \&\&
 {\textbar}{\textbar}} \\
 \noindent All operators associate left to right unless () are present. The top -
@@ -5635,11 +5628,11 @@ post \ \textrm{\textmd{[-n groups] [-s subj] [-d dist] [-f followup] [-p
 prefix] [file]}} \hfill (RF)}
 
 \texttt{post} posts a \index{news}news article to Usenet. Given the name
-of a file (\texttt{{\textquotedbl}-{\textquotedbl}} for standard input)
+of a file (\texttt{"-"} for standard input)
 containing a news article, \texttt{post} creates a follow-up article,
 with an attribution and quoted text. The newsgroups, subject,
 distribution, follow-up, and quote prefix (default
-{\textquotesingle}{\textgreater} {\textquotesingle}) can be
+'{\textgreater} ') can be
 specified on the command line. On systems posting via \texttt{inews},
 \texttt{post} validates newsgroups and distributions in the
 \texttt{active} and \texttt{distributions} files in the news library
@@ -5658,7 +5651,7 @@ purpose and suitable for reuse in other programs.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{procprep}}
 
 \texttt{procprep} is used to produce the data needed to index the
-{\textquotedbl}\#:{\textquotedbl} comments on procedure declarations
+"\#:" comments on procedure declarations
 that is needed to produces a permuted index to procedures. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{procwrap}}
@@ -5709,17 +5702,17 @@ at most one is produced.\\
 \ \ :list\ \ list the accumulated expressions.\\
 \ \ :type\ \ toggle switch that displays the type of the result
 (default: on)\\
-{\textquotedbl}qei{\textquotedbl} is derived from the Latin
-{\textquotedbl}quod erat
-inveniendum{\textquotedbl}-{}-{\textquotedbl}which was to be found
-out{\textquotedbl}. Requires: co-expressions and \texttt{system()}.
+"qei" is derived from the Latin
+"quod erat
+inveniendum"-{}-"which was to be found
+out". Requires: co-expressions and \texttt{system()}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{qt
 \ \textrm{\textmd{[-a]}}\hfill (RJA)}}
 
 \texttt{qt} writes out the time in English. If \texttt{{}-a} is present,
 only the time is printed: \texttt{just after a quarter to three.}
-Otherwise, time is printed as a sentence: \texttt{It{\textquotesingle}s
+Otherwise, time is printed as a sentence: \texttt{It's
 just after a quarter to three}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{queens\hfill (SBW)}}
@@ -5736,7 +5729,7 @@ programming techniques.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ranstars}}
 
 \texttt{ranstars} displays a random field of
-{\textquotedbl}stars{\textquotedbl} on an ANSI terminal
+"stars" on an ANSI terminal
 at randomly chosen positions on the \index{screen}screen until
 the specified maximum number is reached. It then extinguishes existing
 stars and creates new ones for the specified steady-state time, after
@@ -5747,7 +5740,7 @@ are:\\
 \ \ \texttt{{}-t n}\ \ length of steady-state time before stars are
 extinguished, default 50.\\
 \ \ \texttt{{}-s c}\ \ the character used for
-{\textquotedbl}stars{\textquotedbl}, default *. Only
+"stars", default *. Only
 \texttt{c[1]} is used.\\
 Requires: co-expressions, ANSI terminal.
 
@@ -5807,13 +5800,13 @@ Limitations: the program only recognizes commands that appear at the
 beginning of lines and does not attempt to unravel conditional
 constructions. Similarly, defined strings buried in disguised form in
 definitions are not recognized. Reference: Nroff/Troff
-User{\textquotesingle}s Manual, Joseph F. Ossana, Bell Laboratories,
+User's Manual, Joseph F. Ossana, Bell Laboratories,
 Murray Hill, New Jersey. October 11, 1976. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{rsg}}
 
 \texttt{rsg} generates randomly selected strings
-({\textquotedbl}sentences{\textquotedbl}) from a grammar specified by
+("sentences") from a grammar specified by
 the user. Grammars are basically context-free and resemble BNF in form,
 although there are a number of extensions. The program works
 interactively, allowing the user to build, test, modify, and save
@@ -5857,7 +5850,7 @@ not \&digits)\\
 In addition, if the string between a {\textless} and a {\textgreater}
 begins and ends with a single quotation mark, it stands for any single
 character between the quotation marks. For example,
-{\textless}{\textquotesingle}xyz{\textquotesingle}{\textgreater} is
+{\textless}'xyz'{\textgreater} is
 equivalent to x{\textbar}y{\textbar}z
 
 A generation specification consists of a nonterminal symbol followed by
@@ -5947,8 +5940,8 @@ Example 1: combine files, sorting and eliminating duplicates:
 Example 2: print lines common to three files
 
 \iconcode{
-\ \ setmerge file1 {\textquotesingle}*{\textquotesingle} file2
-{\textquotesingle}*{\textquotesingle} file3}
+\ \ setmerge file1 '*' file2
+'*' file3}
 
 Example 3: print lines in file1 or file2 but not in file3
 
@@ -6004,11 +5997,11 @@ file.
 
 \texttt{sing} is an Icon adaptation of a SNOBOL program by Mike Shapiro
 in (Griswold71). The procedure \texttt{sing()} writes the lyrics to the
-song, {\textquotedbl}The Twelve Days of Christmas{\textquotedbl} to a
+song, "The Twelve Days of Christmas" to a
 parameter that can be any file open for output. It would be especially
 nice to send the lyrics to a speech synthesizer (perhaps via a pipe).
 The algorithm used can be adapted to other popular songs, such as
-{\textquotedbl}Old McDonald had a Farm{\textquotedbl}.
+"Old McDonald had a Farm".
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{snake
 \ \texttt{\textmd{[character]}} \hfill (RLG)}}
@@ -6016,30 +6009,30 @@ The algorithm used can be adapted to other popular songs, such as
 While away the idle moments watching the snake eat blank squares on your
 screen. \texttt{character} represents a single character to be used in
 drawing the snake. The default is an
-\texttt{{\textquotedbl}o{\textquotedbl}}. In order to run
+\texttt{"o"}. In order to run
 \texttt{snake}, your terminal must have cursor movement capability, and
 must be able to do reverse video. Bugs: Most magic cookie terminals
-just won{\textquotesingle}t work. Terminal really needs reverse video.
+just won't work. Terminal really needs reverse video.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{solit} \hfill (JN, PLT, REG)}}
 
 \texttt{solit} was inspired by a solitaire game that was written and
 copyrighted by Allyn Wade in 1985. This program has the correct escape
 sequences programmed into it to handle several common terminals and
-PC{\textquotesingle}s. It is commented well enough that most people can
+PC's. It is commented well enough that most people can
 modify the source to work for their hardware, or make the auto pilot
 smarter. Note: The command-line argument, which defaults to support for
 the VT100, determines the screen driver.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sortname}}
 
-\texttt{sortname} sorts a list of person{\textquotesingle}s names by the
+\texttt{sortname} sorts a list of person's names by the
 last names. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{splitlit}}
 
 \texttt{splitlit} creates a string literal with continuations in case
-it{\textquotesingle}s too long. Options:\\
+it's too long. Options:\\
 \ \ \texttt{{}-w i}\ \ width of piece on line, default 50\\
 \ \ \texttt{{}-i i}\ \  indent, default 3
 
@@ -6076,13 +6069,13 @@ it. The completion field is optional. There is not currently any way of
 specifying a completion field without an initialization field. Do not
 specify delimiters as part of code. Note that, if you are translating
 SGML code into font change or escape sequences, you may get unexpected
-results. This isn{\textquotesingle}t
-\texttt{strpsgml}{\textquotesingle}s fault. It{\textquotesingle}s just
+results. This isn't
+\texttt{strpsgml}'s fault. It's just
 a matter of how your terminal or WP operate. Some need to be
-{\textquotedbl}reminded{\textquotedbl} at the beginning of each line
+"reminded" at the beginning of each line
 what mode or font is being used. If you want to put a greater-than or
 less-than sign into your text, put a backslash before it. This will
-effectively {\textquotedbl}escape{\textquotedbl} the special meaning of
+effectively "escape" the special meaning of
 those symbols. It is possible to change the default delimiters, but the
 option has not been thoroughly tested. (RLG)
 
@@ -6090,7 +6083,7 @@ option has not been thoroughly tested. (RLG)
 
 \texttt{tablc} tabulates characters and lists each character and the
 number of times it occurs. Characters are written using
-Icon{\textquotesingle}s escape conventions. Line termination and other
+Icon's escape conventions. Line termination and other
 control characters are included in the tabulation. The following
 options are available:\\
 \ \ \texttt{{}-a}\ \ Write the summary in alphabetical order of the
@@ -6121,13 +6114,13 @@ default tabulate all words.\\
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{textcnt}}
 
 \texttt{textcnt} tabulates the number of characters,
-{\textquotedbl}words{\textquotedbl}, and lines in standard input and
+"words", and lines in standard input and
 gives the maximum and minimum line length. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{textcvt\hfill (RJA)}}
 
 \texttt{textcvt} converts text file(s) among various
-platforms{\textquotesingle} formats. The supported text file types are
+platforms' formats. The supported text file types are
 UNIX, MS-DOS, and Macintosh. A universal input text reading algorithm
 is used, so only the output file format must be specified. The files
 are either converted in-place by converting to a temporary file and
@@ -6172,7 +6165,7 @@ machine}Turing machine, tracing all actions. The machine starts in
 state 1 with an empty tape. A description of the Turing machine is read
 from the file given as a command-line argument, or from standard input
 if none is specified. Comment lines beginning with
-{\textquotesingle}\#{\textquotesingle} are allowed, as are empty lines.
+'\#' are allowed, as are empty lines.
 The program states must be numbered from 1 and must appear in order.
 Each appears on a single line in this form:
 
@@ -6202,9 +6195,9 @@ are not detected. Reverse video should be parameterizable or at least
 optional. There is no way to limit the number of cycles. Infinite loops
 are not detected. (Left as an exercise...\texttt{:-)} Reference:
 Scientific American, August 1984, pp. 19-23. A. K.
-Dewdney{\textquotesingle}s discussion of {\textquotedbl}busy
-beaver{\textquotedbl} Turing machines in his {\textquotedbl}Computer
-Recreations{\textquotedbl} column motivated this program. The sample
+Dewdney's discussion of "busy
+beaver" Turing machines in his "Computer
+Recreations" column motivated this program. The sample
 above is the three-state busy beaver.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{unique\hfill (AVH, RJA)}}
@@ -6253,16 +6246,16 @@ overrides.
 writes a Web page that embeds each image. Requires: Version 9 graphics.
 These options are supported:\\
 \ \ \texttt{{}-a s}\ \ alignment, default
-{\textquotedbl}bottom{\textquotedbl}\\
+"bottom"\\
 \ \ \texttt{{}-t s}\ \ title for page; default
-{\textquotedbl}untitled{\textquotedbl}\\
+"untitled"\\
 \ \ \texttt{{}-n}\ \ include file names; default no names
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{what \hfill (PLT)}}
 
 \texttt{what} writes all strings beginning with
-{\textquotedbl}@{\textquotedbl} followed by
-{\textquotedbl}(\#){\textquotedbl} and ending with null, newline,
+"@" followed by
+"(\#)" and ending with null, newline,
 quotes, greater-than or backslash. Follows UNIX \texttt{what(1)}
 conventions.
 
@@ -6303,20 +6296,16 @@ does not end with a legal zip code, it is placed after all labels with
 legal zip codes. In such a case, an error message is written to
 standard error output. See also: \texttt{labels.icn}.
 
-\subsection{Selected IPL Authors and Contributors}
+\section{Selected IPL Authors and Contributors}
 
-This Appendix presents the work of the following authors and
-contributors of Icon Program Library modules and programs. Ralph
-Griswold deserves primary credit for initiating and maintaining the
-collection. To a great extent, the various authors{\textquotesingle}
-code is described in their own words, from the public domain
-documentation they have written about it. We would like to acknowledge
-their contribution to the Icon community and to this book. Any errors
-that remain in this Appendix are solely our responsibility, and we
+This Appendix presents the work of the following authors and contributors of
+Icon Program Library modules and programs. Ralph Griswold deserves primary
+credit for initiating and maintaining the collection. To a great extent, the
+various authors' code is described in their own words, from the
+public domain documentation they have written about it. We would like to
+acknowledge their contribution to the Icon community and to this book. Any
+errors that remain in this Appendix are solely our responsibility, and we
 apologize for them.
-
-
-\bigskip
 
 \begin{supertabular}{m{1.8in} m{1.8in} m{1.8in}}
 

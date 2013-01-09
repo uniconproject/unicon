@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 10: Inheritance and Associations}
+\chapter{Inheritance and Associations}
 
 Relationships between classes are depicted in UML class diagrams by
 lines drawn between two or more class rectangles. One of the most
@@ -6,22 +6,19 @@ important relationships between classes describes the situation when
 one class is an extension or minor variation of another class: this is
 called generalization, or \textit{inheritance}. Most other
 relationships between classes are really relationships between those
-classes{\textquotesingle} \index{instance}instances at run-time; these
+classes' \index{instance}instances at run-time; these
 relationships are called \textit{associations}. This chapter starts
 with inheritance, and then describes a variety of associations.
 In this chapter you will learn how to:
-
 \begin{itemize}\itemsep0pt
-\item Define a new class in terms of its differences from an existing
-class
-\item Compose aggregate classes from component parts.
-\item Specify new kinds of associations
-\item Supply details about the roles and number of objects in an
-association
-\item Use structure types from Chapter 2 to implement associations
+  \item Define a new class in terms of its differences from an existing class
+  \item Compose aggregate classes from component parts.
+  \item Specify new kinds of associations
+  \item Supply details about the roles and number of objects in an association
+  \item Use structure types from Chapter 2 to implement associations
 \end{itemize}
 
-\subsection{Inheritance}
+\section{Inheritance}
 
 In many cases, several classes of objects are very similar. In
 particular, many classes arise as enhancements of classes that have
@@ -85,7 +82,7 @@ class SalariedAppointment : JobOffer (term) \\
 \>   \ \ \ term := t \\
 \>   end \\
 initially \\
-\>   /term := {\textquotedbl}unknown term{\textquotedbl} \\
+\>   /term := "unknown term" \\
 end
 }
 
@@ -93,7 +90,7 @@ As you can see, a subclass declaration is identical to a regular class,
 with the addition of one or more superclass names, separated by colons.
 The meaning of this declaration is the subject of the next section. 
 
-\subsubsection[Inheritance Semantics]{Inheritance Semantics}
+\subsection{Inheritance semantics}
 
 \index{inheritance!semantics}There are times when a new class might best
 be described as a combination of two or more classes. Unicon classes
@@ -130,7 +127,7 @@ classes have any fields or methods of the same name! }
 Fields are initialized by parameters to the constructor or by the
 class \texttt{initially} section, which is a method and is
 inherited in the normal way. It is common for a subclass \texttt{initially}
-section to call their superclasses{\textquotesingle}
+section to call their superclasses'
 \texttt{initially} sections, for example:
 
 \iconcode{
@@ -163,19 +160,18 @@ Viewing inheritance as the addition of superclass elements not found in
 the subclass is the opposite of the more traditional object-oriented
 view that a subclass is an \index{instance!superclass}instance of the
 superclass as augmented in the subclass definition.
-Unicon{\textquotesingle}s viewpoint adds quite a bit of leverage, such
+Unicon's viewpoint adds quite a bit of leverage, such
 as the ability to define classes that are subclasses of each other.
 This feature is described further below. 
 
-\subsubsection[Invoking Superclass Operations]{Invoking Superclass
-Operations}
+\subsection{Invoking superclass operations}
 
 \index{superclass!operations}When a \index{subclass}subclass defines a
 method of the same name as a method defined in the superclass,
 invocations on subclass objects execute the
-subclass{\textquotesingle} version of the
+subclass' version of the
 \index{method!overriding}method. This can be overridden by explicitly
-including the superclass name in the invocation: 
+including the superclass name in the invocation:
 
 \iconcode{
 \>   object\$superclass.method(parameters)}
@@ -190,7 +186,7 @@ operations including superclass initially sections. This allows a chain
 of initially sections to be specified to execute in either
 subclass-first or superclass-first order, or some mixture of the two. 
 
-\subsubsection[Inheritance Examples]{Inheritance Examples}
+\subsection{Inheritance examples}
 
 Several inheritance examples follow from the \texttt{buffer}
 example from Chapter 9. Suppose the program does more than
@@ -301,23 +297,23 @@ class dictionaryentry(word, partofspeech, etymology, definition) \\
 \ \ method decode(s)  \\
 \>   \ s ? \{ \\
 \>   \ \ \ word \ \ \ \ \ \ \ \ :=
-tab(upto({\textquotesingle};{\textquotesingle})) \\
+tab(upto(';')) \\
 \>   \ \ \ move(1) \\
 \>   \ \ \ partofspeech :=
-tab(upto({\textquotesingle};{\textquotesingle})) \\
+tab(upto(';')) \\
 \>   \ \ \ move(1) \\
 \>   \ \ \ etymology \ \ \ :=
-tab(upto({\textquotesingle};{\textquotesingle})) \\
+tab(upto(';')) \\
 \>   \ \ \ move(1) \\
 \>   \ \ \ definition \ \ := tab(0) \\
 \>   \ \} \\
 \ \ end \\
 \ \ method encode() \ \# encode a dictionary entry into a string \\
-\>   \ return word {\textbar}{\textbar} {\textquotedbl};{\textquotedbl}
+\>   \ return word {\textbar}{\textbar} ";"
 {\textbar}{\textbar} partofspeech {\textbar}{\textbar}
-{\textquotedbl};{\textquotedbl} {\textbar}{\textbar}
+";" {\textbar}{\textbar}
  etymology {\textbar}{\textbar}
-{\textquotedbl};{\textquotedbl} {\textbar}{\textbar} definition \\
+";" {\textbar}{\textbar} definition \\
 \ \ end \\
 initially \\
 \ \ if /partofspeech then \{ \\
@@ -336,7 +332,7 @@ class dictionary : buftable() \\
 \>   \ text := tmp \\
 \ \ end \\
 \ \ method write() \\
-\>   \ f := open(filename, {\textquotedbl}w{\textquotedbl}) {\textbar}
+\>   \ f := open(filename, "w") {\textbar}
 fail \\
 \>   \ every write(f, (!text).encode) \\
 \>   \ close(f) \\
@@ -353,7 +349,7 @@ is nearly identical to that given for dictionaries above, we omit it
 here (you might start by generalizing class \texttt{dictionaryentry} to
 handle arbitrary strings organized as fields separated by semicolons). 
 
-\subsubsection{Superclass Cycles and Type Equivalence}
+\subsection{Superclass cycles and type equivalence}
 
 In many situations, there are several ways to represent the same
 abstract type. Two-dimensional points might be represented by
@@ -362,7 +358,7 @@ equivalently by radial coordinates expressed as a distance d and angle
 r given in \index{radian}radians. If one implements classes
 corresponding to these types there is no reason one of them should be
 considered a subclass of the other; they are interchangeable and
-equivalent. 
+equivalent.
 
 In Unicon, expressing this equivalence is simple and direct. In defining
 classes \texttt{Cartesian} and \texttt{Radial} we may declare them to
@@ -386,10 +382,10 @@ have fields x, y, d, and r, and support the same set of operations.
 
 Equivalent types each have a unique \index{constructor!class}constructor
 given by their class name. Often the differing order of the parameters
-used in equivalent types{\textquotesingle} constructors reflects
+used in equivalent types' constructors reflects
 different points of view. Although they export the same set of
 operations, the actual procedures invoked by equivalent
-types{\textquotesingle} instances may be different. For example, if
+types' instances may be different. For example, if
 both classes define an implementation of a method \texttt{print()}, the
 method invoked by a given instance depends on which constructor was
 used when the object was created.
@@ -404,9 +400,9 @@ for class \texttt{Radial} to use any methods inherited from class
 \texttt{y} explicitly in its constructor from calculations on its
 \texttt{d} and \texttt{r} parameters. This added
 responsibility is minimized in those classes that treat an
-object{\textquotesingle}s state as immutable.
+object's state as immutable.
 
-\subsection{Associations}
+\section{Associations}
 
 An \index{association}association denotes a relationship between classes
 that occurs between specific instances of the classes at runtime.
@@ -419,7 +415,7 @@ links may have additional state information or behavior; in the most
 general case links can be considered to be objects themselves: special
 objects whose primary role is to interconnect other objects.
 
-\subsubsection{Aggregation}
+\subsection{Aggregation}
 
 Inheritance may be the most famous kind of relationship between classes,
 but it is not the most indispensable. Many languages that provide
@@ -448,7 +444,7 @@ different component part instances. While a given player might play for
 different teams over a period of time, at any given instant a player is
 normally part of at most one team.
 
-\subsubsection{User-Defined Associations}
+\subsection{User-defined associations}
 
 All the other relationships between classes in \index{UML}UML are left
 to the application designer to specify as custom associations.
@@ -467,7 +463,7 @@ the purposes of the application at hand.
 {\sffamily A User-Defined Association}
 \end{center}
 
-\subsubsection{Multiplicities, Roles, and Qualifiers}
+\subsection{Multiplicities, roles, and qualifiers}
 
 Whether they are aggregations or user-defined application domain
 relationships, associations are not completely specified until
@@ -532,16 +528,16 @@ the team are distinguished using a qualifier key named position.
 \includegraphics[width=4.8in,height=0.9in]{ub-img/qualifier.png}
 
 {\sffamily\bfseries Figure 10-7:}
-{\sffamily Using a Qualifier in Lieu of Multiplicity}
+{\sffamily Using a Qualifier in lieu of multiplicity}
 
-\subsubsection{Implementing Associations}
+\subsection{Implementing associations}
 
 Unlike inheritance, which is implemented by the language and resolved at
 \index{compile time}compile time, associations involve dynamic
 relationships established at runtime, and are implemented by the
 programmer...or are they? In the most general case, an association may
 be implemented by writing a class whose instances are links between the
-related classes{\textquotesingle} objects. \ In the narrowest special
+related classes' objects. \ In the narrowest special
 case, an association can be implemented by adding an attribute in one
 class to contain a \index{reference}reference to an object in an
 associated class. Much of the value introduced by multiplicity and
@@ -621,14 +617,14 @@ rare cases such as many-many relationships and associations that have
 their own state or behavior. Other examples of associations and
 their implementation are given in Part 3 of this book.
 
-\section*{Summary}
+\section{Summary}
 
 The relationships between classes are essential aspects of the
 application domain that are modeled in object-oriented programs. You
-can think of them as the {\textquotedbl}glue{\textquotedbl} that
+can think of them as the "glue" that
 connects ideas in a piece of software. Class diagrams allow many
 details of such relationships to be specified graphically during
-design. Unicon{\textquotesingle}s structure types allow most
+design. Unicon's structure types allow most
 associations to map very naturally onto code.  In order
 to understand the subtleties of how these features are implemented, you
 may wish to study the output of \texttt{unicon -E} for various examples;

@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 9: Objects and Classes}
+\chapter{Objects and Classes}
 
 \index{object-oriented programming}Object-oriented programming means
 different things to different people. In Unicon, object-oriented
@@ -11,18 +11,16 @@ alternative notations by which programmers share their knowledge. This
 chapter explores the essence of object-orientation and gives you the
 concepts needed before you delve into diagrams and code examples. In
 this chapter you will learn:
-
 \begin{itemize}\itemsep0pt
-\item How different programming languages support objects in different
-ways
+\item How different programming languages support objects in different ways
 \item To simplify programs by encapsulating data and code
 \item The relationship between objects and program design
 \item Draw diagrams that show class names, attributes, and methods
 \item Write corresponding code for classes and their methods
-\item Create instances of classes and invoke methods on those objects
+\item To create instances of classes and invoke methods on those objects
 \end{itemize}
 
-\subsection{Objects in Programming Languages}
+\section{Objects in Programming Languages}
 
 Object-oriented programming can be done in any language, but some
 languages make it easier than others. Support for objects should not
@@ -45,7 +43,7 @@ of it.
 
 Icon does not support user-defined objects, although its built-in types
 have nice object-like encapsulation and polymorphism properties.
-Unicon{\textquotesingle}s object-oriented facilities descend from a
+Unicon's object-oriented facilities descend from a
 package for Icon called \index{Idol}Idol. In Idol, a preprocessor
 implemented objects with no support from the underlying Icon runtime
 system. In contrast, Unicon has support for objects built-in to the
@@ -65,7 +63,7 @@ program and still be able to keep track of things.
 As programmers write larger and larger programs, the benefit provided by
 \index{very high-level language}very high-level languages does not keep
 up with program complexity. This obstacle has been labeled the
-{\textquotedbl}software crisis,{\textquotedbl} and object-oriented
+"software crisis," and object-oriented
 programming is one way to address this crisis. In short, the goals of
 object-oriented programming are to reduce the complexity of coding
 required to write very large programs and to allow code to be
@@ -85,7 +83,7 @@ general and widely applicable, but not all problems fit the
 object-oriented mold. Unicon advocates the use of objects, but this is
 a suggestion, not a rule. 
 
-\subsubsection{Encapsulation}
+\subsection{Encapsulation}
 
 The primary concept advocated by object-oriented programming is the
 principle of \index{encapsulation}encapsulation. Encapsulation is the
@@ -116,7 +114,7 @@ each data structure as {\em public\/} or
 {\em private\/}. There are even multiple forms of
 privacy (semi-private?). Unicon instead stresses simplicity. 
 
-\subsubsection{Inheritance}
+\subsection{Inheritance}
 
 In large programs, the same or nearly the same data structures are used
 over and over again for myriad different purposes. Similarly,
@@ -130,7 +128,7 @@ The basic premise of inheritance is simple: when writing code for a data
 structure similar to a structure that is already written,
 specify the new structure by giving the differences between it and
 the old structure, instead of copying and modifying the old
-structure{\textquotesingle}s code. There are times when the
+structure's code. There are times when the
 inheritance mechanism is not useful, such as if the two data structures
 are more different than they are similar, or if they are simple enough
 that inheritance would only confuse things, for example. 
@@ -142,16 +140,17 @@ of a program, its data structures may require extension via new state
 variables or new operations or both; inheritance is especially useful
 when both the original structure and the extension are used by the
 application. Inheritance also supports simplification, or the reduction
-of a data structure{\textquotesingle}s state variables or operations.
+of a data structure's state variables or operations.
 Simplification is analogous to \index{argument culling}\textit{argument
-culling}\textit{,} an idea from lambda calculus (don{\textquotesingle}t
+culling}\textit{,} an idea from lambda calculus (don't
 worry if this sounds like Greek to you), in that it describes a logical
 relation between structures. In general, inheritance may be used in
 source code to describe any sort of relational hyponymy, or special
 casing. In Unicon the collection of all inheritance relations defines a
 directed (not necessarily acyclic) graph. 
 
-\subsubsection[Polymorphism]{Polymorphism}
+\subsection{Polymorphism}
+
 \index{polymorphism}From the perspective of the writer of related data
 structures, inheritance provides a convenient method for code sharing,
 but what about the code that uses objects? Since objects are
@@ -169,12 +168,13 @@ polymorphism, and such algorithms are called generic. This feature is
 found in many non-object-oriented languages; in object-oriented
 languages it is a natural extension of encapsulation. 
 
-\subsection[Objects in Program Design]{Objects in Program Design}
+\section{Objects in Program Design}
+
 \index{program design}Another fundamental way to think about objects is
 from the point of view of software design. During program design,
 objects are used to model the problem domain. The different kinds of
 objects and relationships between objects capture fundamental
-information that organizes the rest of the program{\textquotesingle}s
+information that organizes the rest of the program's
 design and implementation. Program design includes several other
 fundamental tasks such as the design of the user interface, or
 interactions with external systems across a network. Additional kinds
@@ -226,7 +226,7 @@ presented first, along with the corresponding programming
 concepts. Use case diagrams, statecharts, and collaboration diagrams
 are discussed in chapter 12.
 
-\subsection{Classes and Class Diagrams}
+\section{Classes and Class Diagrams}
 
 Classes are user-defined data types that model the information and
 behavior of elements in the application domain. In Unicon they are
@@ -318,7 +318,8 @@ in the diagram convey relevant model information about the
 relationships. The details of associations and their implementation are
 described in chapter 10.
 
-\subsection[Declaring Classes]{Declaring Classes}
+\section{Declaring Classes}
+
 \index{class!declaration}In Unicon program code, the syntax of a class
 is: 
 
@@ -333,7 +334,7 @@ end
 \noindent
 The procedures that manipulate class objects are called
 \index{method}\textit{methods}. Methods define a
-class{\textquotesingle} interface from the rest of the program. The
+class' interface from the rest of the program. The
 syntax of a method like a procedure: 
 
 \iconcode{
@@ -352,7 +353,7 @@ to methods, classes may also contain regular procedure, global, and
 record declarations; such declarations have the standard semantics and
 exist in the global name space. 
 
-\subsection{Object Instances}
+\section{Object Instances}
 
 Like records, \index{instances!class object}instances of a class type
 are created with a \index{constructor!class}constructor function whose
@@ -372,7 +373,7 @@ In this case \texttt{x} would have the value \texttt{1}, and \texttt{y}
 would have the value \texttt{2}, the same as for a record
 type. The fields of an object do not have to be initialized by a
 parameter passed to the class constructor. Many constructors initialize
-objects{\textquotesingle} fields to some standard value. In this case,
+objects' fields to some standard value. In this case,
 the class declaration includes an \index{initially}\texttt{initially}
 section after its methods are defined and before its end. An
 \texttt{initially} section is just a special method that is invoked
@@ -391,7 +392,7 @@ table, both of which would be initialized to the appropriate empty
 structure: 
 
 \iconcode{
-class taque(L, T) \# pronounced {\textquotedbl}taco{\textquotedbl} \\
+class taque(L, T) \# pronounced "taco" \\
 \>   \# methods to manipulate taques, \\
 \>   \# e.g. insert, index, foreach... \\
 initially \\
@@ -427,7 +428,7 @@ This default semantics for constructor parameters is awkward in some
 cases, so there is an alternative. The \texttt{initially} section is
 really just a special method, and it is allowed to take a parameter
 list just like any other method. When an initially section includes a
-parameter list, no implicit initialization of objects{\textquotesingle}
+parameter list, no implicit initialization of objects'
 fields is performed. This frees the constructor from having the same
 number and order of parameters as the declared class fields. In the
 following class, the third field is initialized from constructor
@@ -442,7 +443,7 @@ initially(x) \\
 end
 }
 
-\subsection{Object Invocation}
+\section{Object Invocation}
 
 Once you have created an object with a class constructor, you manipulate
 the object by invoking its class methods. Since objects are
@@ -453,7 +454,7 @@ access. The syntax is
 \iconcode{
 \>   object . methodname ( arguments )}
 
-If an object{\textquotesingle}s class is known, object methods can also
+If an object's class is known, object methods can also
 be called using a normal procedure call. This allows object oriented
 Unicon code to be called from Icon. Called as a procedure, the name of
 a method is prefixed with the class name and an underscore character.
@@ -477,28 +478,28 @@ invocation. Using the taque example:
 \iconcode{
 procedure main()\\
 \>   mytaque := taque() \\
-\>   mytaque.insert({\textquotedbl}greetings{\textquotedbl},
-{\textquotedbl}hello{\textquotedbl}) \\
+\>   mytaque.insert("greetings",
+"hello") \\
 \>   mytaque.insert(123) \\
 \>   every write(mytaque.foreach()) \\
-\>   if mytaque.index({\textquotedbl}hello{\textquotedbl}) then 
-        write({\textquotedbl}, world{\textquotedbl}) \\
+\>   if mytaque.index("hello") then 
+        write(", world") \\
 end
 }
 
 For object-oriented purists, using the field operator to invoke an
-object{\textquotesingle}s methods in this manner is the only way to
+object's methods in this manner is the only way to
 access an object. In Unicon, visibility issues such as
 ``public'' and ``private'' are addressed in an
-application{\textquotesingle}s design and documentation. A good
+application's design and documentation. A good
 starting point is to consider all fields
 ``private'' and all methods ``public''. Nevertheless, an object is just a
 kind of record, complete with record-style field access.
 
-Direct external access to an object{\textquotesingle}s data fields using
+Direct external access to an object's data fields using
 the usual field operator is not good practice, since it violates the
 principle of encapsulation. Within a class method, on the other hand,
-access to an object{\textquotesingle}s attributes is expected. The
+access to an object's attributes is expected. The
 implicit object named \texttt{self} is used under the covers, but
 attributes and methods are referenced by name, like other variables.
 The taque insert method is thus: 
@@ -515,16 +516,16 @@ The \texttt{self} object allows field access just like a record, as well
 as method invocation like any other object. Using the \texttt{self}
 variable explicitly is rare.
 
-\subsection{Comparing Records and Classes by Example}
+\section{Comparing Records and Classes by Example}
 
 The concepts of classes and objects are found in many programming
 languages. The following example illustrates Unicon's object model
 and provides an initial impression of these
-concepts{\textquotesingle} value. To motivate Unicon's OOP
+concepts' value. To motivate Unicon's OOP
 constructs, our example contrasts conventional Icon
 code with object-oriented code that implements the same behavior.
 
-\subsubsection{Before Objects}
+\subsection{Before objects}
 
 Suppose you are writing some text-processing application such as a text
 \index{editor}editor. Such applications need to be able to process
@@ -567,7 +568,7 @@ to contain a record type and those procedures that operate on the type
 allows an Icon programmer to maintain a voluntary encapsulation of that
 type. 
 
-\subsubsection{After Objects}
+\subsection{After objects}
 
 Here is part of the same buffer abstraction coded in Unicon. This
 example lays the groundwork for some more substantial techniques to
@@ -593,7 +594,7 @@ end
 
 This example does not illustrate the full object-oriented style, but it
 is a start. The object-oriented version offers encapsulation and
-polymorphism. A separate name space for each class{\textquotesingle}s
+polymorphism. A separate name space for each class's
 methods allows shorter names. The same method name, such as
 \texttt{read()}, can be used in each class that
 implements a given operation. This notation is more concise than is
@@ -618,7 +619,7 @@ the net effect is that each piece of data is made responsible for its
 own behavior in the system. Although this example dealt with simple
 line-oriented text files, the same methodology applies to more abstract
 entities such as the components of a
-\index{compiler}compiler{\textquotesingle}s grammar.
+\index{compiler}compiler's grammar.
 
 The example illustrates an important scoping issue. Within class
 buffer, method \texttt{read()} makes the regular built-in
@@ -627,12 +628,12 @@ conflicts. It would be easy to capitalize the method name to
 eliminate the problem. If renaming the method is not an option, as a
 last resort you could get a reference to the built-in function
 \texttt{read()}, even within method \texttt{read()}, by calling
-\texttt{proc({\textquotedbl}read{\textquotedbl}, 0)}. The function
+\texttt{proc("read", 0)}. The function
 \texttt{proc()} converts a string to a procedure; supplying a second
 parameter of 0 tells it to skip scoping rules and look for a built-in
 function by that name.
 
-\section*{Summary}
+\section{Summary}
 
 Classes are global declarations that define a record data type and a
 set of procedures (methods) that operate on that type. Class instances,

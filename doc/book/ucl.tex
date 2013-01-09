@@ -1,6 +1,6 @@
-\clearpage\section{Appendix C: The Unicon Component Library}
+\chapter{The Unicon Component Library}
 
-\subsection{GUI Classes}
+\section{GUI Classes}
 
 This section presents the various methods and class fields making up the
 classes implemented in the Unicon GUI library. The library is a package
@@ -19,7 +19,7 @@ gui.icn : error processing object TextList : x position unspecified}
 probably because the \texttt{set\_pos()} method had not been invoked.
 
 You will generally need to consult
-{\textquotedbl}Graphics Programming in Icon{\textquotedbl}, by
+"Graphics Programming in Icon", by
 Griswold, Jeffery, and Townsend
 in order to make the best use of these classes.
 
@@ -72,7 +72,7 @@ then the final event in unique processing mode will be passed to all
 objects; otherwise it will not.
 
 \texttt{show\_modal(d)} opens and displays the dialog window, and accepts events
-into it. \ As events occur they are handled, until a call to dispose()
+into it. As events occur they are handled, until a call to dispose()
 is made, then the window is closed and the method returns. Parameter d
 is the parent dialog, if any.
 
@@ -81,7 +81,7 @@ is the parent dialog, if any.
 
 \texttt{process\_event(e)} processes Icon event e, calling event handlers.
 
-\texttt{win : window} is the dialog{\textquotesingle}s window.\\
+\texttt{win : window} is the dialog's window.\\
 \texttt{is\_open : flag} indicates whether the window is open.
 
 \texttt{focus : Component} specifies the component with the current focus.
@@ -106,7 +106,7 @@ and variables therefore apply to its sub-classes.
 \texttt{get\_x\_reference()}, \texttt{get\_y\_reference()},
 \texttt{get\_w\_reference()}, and
 \texttt{get\_h\_reference()} are called by an object to get this
-object{\textquotesingle}s x position, y position, width, and height
+object's x position, y position, width, and height
 values from which to compute absolute positions. May be over-ridden;
 by default returns \texttt{self.x}, \texttt{self.y}, \texttt{self.w},
 \texttt{self.h}.
@@ -152,11 +152,10 @@ pressing the tab key repeatedly.\\
 
 \texttt{attrib(x[])} sets the graphic attributes of the component to the given
 parameter list. For example:
-w.attrib({\textquotedbl}font=helvetica{\textquotedbl},
-{\textquotedbl}bg=pale blue{\textquotedbl}). Arguments may be either
+w.attrib("font=helvetica",
+"bg=pale blue"). Arguments may be either
 strings or lists of strings. A description of the attributes and their
-values is in the book {\textquotedbl}Graphics Programming in
-Icon{\textquotedbl}.
+values is in the book "Graphics Programming in Icon".
 
 \texttt{get\_parent\_win() : window} returns the window of the dialog in which
 the component resides.
@@ -166,31 +165,31 @@ coordinate can be either an absolute pixel position, or can be given in
 the form of a percentage plus or minus an offset.
 
 {\ttfamily
-\ \ \ \ \ \ \ \ \ \ c.set\_pos(100, {\textquotedbl}25\%{\textquotedbl})}
+\ \ \ \ \ \ \ \ \ \ c.set\_pos(100, "25\%")}
 
 {\ttfamily
-\ \ \ \ \ \ \ \ \ \ c.set\_pos({\textquotedbl}50\%-20{\textquotedbl},
-{\textquotedbl}25\%+100{\textquotedbl})}
+\ \ \ \ \ \ \ \ \ \ c.set\_pos("50\%-20",
+"25\%+100")}
 
-set\_align(x\_align:{\textquotedbl}l{\textquotedbl},
-y\_align:{\textquotedbl}t{\textquotedbl}) sets the alignment of the
-component. Options for x\_align are {\textquotedbl}l{\textquotedbl},
-{\textquotedbl}c{\textquotedbl} and {\textquotedbl}r{\textquotedbl},
+set\_align(x\_align:"l",
+y\_align:"t") sets the alignment of the
+component. Options for x\_align are "l",
+"c" and "r",
 for left, center, and right alignment. Options for y\_align are
-{\textquotedbl}t{\textquotedbl}, {\textquotedbl}c{\textquotedbl} and
-{\textquotedbl}b{\textquotedbl}, for top center and bottom alignment.
+"t", "c" and
+"b", for top center and bottom alignment.
 Examples:
 
 \iconcode{
 \>   \ \ \ \ \ \ \ \# Place c so that its center is in the center of
 the window, and its top left corner is (10,10). \\
-\>   \ \ \ \ \ \ \ c.set\_pos({\textquotedbl}50\%{\textquotedbl},
-{\textquotedbl}50\%{\textquotedbl}) \\
-\>   \ \ \ \ \ \ \ c.set\_align({\textquotedbl}c{\textquotedbl},
-{\textquotedbl}c{\textquotedbl}) \\
+\>   \ \ \ \ \ \ \ c.set\_pos("50\%",
+"50\%") \\
+\>   \ \ \ \ \ \ \ c.set\_align("c",
+"c") \\
 \>   \ \ \ \ \ \ \ c.set\_pos(10, 10) \\
-\>   \ \ \ \ \ \ \ c.set\_align({\textquotedbl}l{\textquotedbl},
-{\textquotedbl}t{\textquotedbl})
+\>   \ \ \ \ \ \ \ c.set\_align("l",
+"t")
 }
 
 \texttt{set\_size(w, h)} sets the size of the component. The parameters are as
@@ -198,7 +197,7 @@ for set\_pos() above. Some components will set sensible default sizes,
 but for others the size must be set explicitly.
 
 \texttt{handle\_event(e) : Event?} is over-ridden by all this
-class{\textquotesingle}s subclasses. It is the method that handles an
+class's subclasses. It is the method that handles an
 Icon event e. It would not normally be called by a user program. Its
 result is passed to the dialog\_event() method of the dialog.
 
@@ -213,7 +212,7 @@ For example:
 \>   \ \ \ \ \ \ \ end
 }
 
-\texttt{do\_shading(w)} is called from a component{\textquotesingle}s
+\texttt{do\_shading(w)} is called from a component's
 \texttt{display()}
 method. This method filters the component to give a shaded appearance
 if the is\_shaded\_flag is set. w is the window to use (normally cwin).
@@ -238,10 +237,10 @@ may be extended in subclasses. For example:
 may be extended.
 
 \texttt{unique\_start()} initiates unique event processing for this object by
-calling the parent dialog{\textquotesingle}s set\_unique()
+calling the parent dialog's set\_unique()
 method.\\
 \texttt{unique\_end(x)} ends unique event processing for this object by calling
-the parent dialog{\textquotesingle}s clear\_unique(x) method.
+the parent dialog's clear\_unique(x) method.
 
 \texttt{init()} sets up the cloned windows for the component. This method should
 be called for any components created and used inside any custom
@@ -275,12 +274,12 @@ to be extended for a component that contains other components. See the
 section on custom components for an example.
 
 x\_spec, y\_spec are the x and y positions as specified by \texttt{set\_pos()},
-e.g. {\textquotedbl}50\%{\textquotedbl}\\
+e.g. "50\%"\\
 w\_spec, h\_spec are the width and height specifiers as specified in
-\texttt{set\_size()}, e.g. {\textquotedbl}100\%{\textquotedbl}\\
+\texttt{set\_size()}, e.g. "100\%"\\
 x\_align, y\_align are the x and y alignment as specified in
-\texttt{set\_align()}, e.g. {\textquotedbl}l{\textquotedbl},
-{\textquotedbl}b{\textquotedbl}.
+\texttt{set\_align()}, e.g. "l",
+"b".
 
 The following four attributes are absolute dimensions in pixels,
 compiled from x\_spec, y\_spec, w\_spec, and h\_spec, and the
@@ -291,19 +290,19 @@ y\_spec.\\
 w and h are the width and height computed from w\_spec and h\_spec.
 
 cwin is a cloned window created by combining the
-Dialog{\textquotesingle}s canvas with the Component{\textquotesingle}s
+Dialog's canvas with the Component's
 attributes, so drawing into this window will draw straight to the
 Dialog window with the correct attributes. cbwin is a cloned window
 created by combining a buffer window with the
-Component{\textquotesingle}s attributes. This is used solely for
+Component's attributes. This is used solely for
 double-buffering purposes.
 
 parent\_dialog is the Dialog class \index{instance}instance of which
 this Component is a part.
 
 attribs is a list of strings specifying graphics attributes, e.g.
-[{\textquotedbl}bg=blue{\textquotedbl},
-{\textquotedbl}resize=on{\textquotedbl}].
+["bg=blue",
+"resize=on"].
 
 has\_focus : flag indicates whether the Component currently has the
 keyboard focus. accepts\_tab\_focus\_flag : flag indicates whether the
@@ -323,7 +322,7 @@ appropriately.
 \index{Container}Container : Component}
 
 This class is a container for other components. The container itself is
-invisible. Many of Component{\textquotesingle}s methods are over-ridden
+invisible. Many of Component's methods are over-ridden
 by Container. A Dialog \index{instance}instance is a sub-class of this
 class.\\
 add(c:Component) adds the component c to the Container.\\
@@ -344,7 +343,7 @@ This is the parent class of button classes including TextButton and
 IconButton. A button produces an Event of code 0 when the button is
 depressed, and code 1 when it is released. By default, when a button
 holds the \index{keyboard}keyboard focus a dashed line appears just
-within the button. \ When return is pressed an event of code 2 is
+within the button. When return is pressed an event of code 2 is
 generated. The method \texttt{Dialog.set\_initial\_focus()} can be used to give
 the button the keyboard focus when the dialog is first displayed.
 
@@ -361,8 +360,7 @@ using \texttt{set\_size()} or be left to default to a size based on the given
 label.
 
 \texttt{set\_internal\_alignment(x)} sets the alignment of the label within the
-button. The parameter should be either {\textquotedbl}l{\textquotedbl},
-{\textquotedbl}c{\textquotedbl} or {\textquotedbl}r{\textquotedbl} to
+button. The parameter should be either "l", "c" or "r" to
 set the alignment to left, center or right respectively. If this method
 is not invoked, then the alignment is centered.
 
@@ -371,11 +369,11 @@ Examples:
 
 \iconcode{
 \>   b := TextButton() \\
-\>   b.set\_label({\textquotedbl}Cancel{\textquotedbl}) \\
-\>   b.set\_pos({\textquotedbl}50\%{\textquotedbl},
-{\textquotedbl}80\%{\textquotedbl}) \\
-\>   b.set\_align({\textquotedbl}c{\textquotedbl},
-{\textquotedbl}c{\textquotedbl}) \\
+\>   b.set\_label("Cancel") \\
+\>   b.set\_pos("50\%",
+"80\%") \\
+\>   b.set\_align("c",
+"c") \\
 \>   add(b)
 }
 
@@ -389,7 +387,7 @@ inserted into a program. See also the X Window programs sxpm and pixmap
 for viewing and editing xpm files respectively.
 
 A border may be requested with set\_draw\_border(). Unless explicitly
-specified, the size will default to the image{\textquotesingle}s size,
+specified, the size will default to the image's size,
 plus a standard surrounding area if a border is requested.
 
 \texttt{set\_img(s:string)} sets the image to \texttt{s}, which should
@@ -399,7 +397,7 @@ be in Icon image format. Examples:
 \>   \# Create a button with a diamond image and a border \\
 \>   b := IconButton() \\
 \>   b.set\_draw\_border() \\
-\>   b.set\_img({\textquotedbl}11,c1,\_ \\
+\>   b.set\_img("11,c1,\_ \\
 \ \  \ \ \~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\_ \\
 \ \  \ \ \~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\_ \\
 \ \  \ \ \~{}\~{}0000000\~{}\~{}\_ \\
@@ -407,16 +405,16 @@ be in Icon image format. Examples:
 \ \  \ \ \~{}\~{}0000000\~{}\~{}\_ \\
 \ \  \ \ \~{}\~{}\~{}\~{}000\~{}\~{}\~{}\~{}\_ \\
 \ \  \ \ \~{}\~{}\~{}\~{}\~{}0\~{}\~{}\~{}\~{}\~{}\_ \\
-\ \  \ \ {\textquotedbl})
+\ \  \ \ ")
 }
 
 {\ttfamily\bfseries
 \index{ButtonGroup}ButtonGroup}
 
-This class groups several Buttons together. \ Then, when the mouse is
+This class groups several Buttons together. Then, when the mouse is
 clicked down on one of the Buttons and then dragged onto another before
 being released, the other Button will go
-{\textquotedbl}down{\textquotedbl}. \ This is the common behavior for
+"down". This is the common behavior for
 buttons in a bar along the top of an application.
 
 Note: a Button must be added to both the ButtonGroup and the Dialog too.
@@ -425,7 +423,7 @@ Examples:
 \iconcode{
 \>   bg := ButtonGroup() \\
 \>   b := TextButton() \\
-\>   b.set\_label({\textquotedbl}Okay{\textquotedbl}) \\
+\>   b.set\_label("Okay") \\
 \>   add(b) \\
 \>   bg.add(b)
 }
@@ -442,10 +440,8 @@ default if not set.
 \texttt{set\_label(s:string)} sets the label to the given string.
 
 \texttt{set\_internal\_alignment(x)} sets the horizontal alignment of the label
-within the area of the component; should be
-{\textquotedbl}l{\textquotedbl}, {\textquotedbl}c{\textquotedbl} or
-{\textquotedbl}r{\textquotedbl}. Default is
-{\textquotedbl}l{\textquotedbl}. If the horizontal size is left to
+within the area of the component; should be "l", "c" or "r". Default is
+"l". If the horizontal size is left to
 default, then setting this field should make no difference, because the
 size of the component will be set so that the string just fits into it.
 
@@ -454,14 +450,14 @@ size of the component will be set so that the string just fits into it.
 
 This displays an icon, supplied in Icon image format. A border may be
 requested with \texttt{set\_draw\_border()}. The size defaults to the
-image{\textquotesingle}s size, plus a standard surrounding area if a
+image's size, plus a standard surrounding area if a
 border is requested. \texttt{set\_img(s:string)} sets the image to be displayed.
 
 {\ttfamily\bfseries
 \index{Image}Image : Component}
 
 This class loads an image from a file and displays it. The image should
-be in GIF format. \ A border may be included with \texttt{set\_draw\_border()}.
+be in GIF format. A border may be included with \texttt{set\_draw\_border()}.
 The size of the area into which the image is drawn must be set with
 \texttt{set\_size()}.
 
@@ -474,13 +470,13 @@ expanded to fill one of the dimensions depending on its shape. If the
 image is bigger than the specified size then it will always be scaled
 down.
 
-set\_internal\_alignment(x:{\textquotedbl}c{\textquotedbl},
-y:{\textquotedbl}c{\textquotedbl}) sets the horizontal and vertical
+set\_internal\_alignment(x:"c",
+y:"c") sets the horizontal and vertical
 alignment of the image within the area of the component; x should be
-{\textquotedbl}l{\textquotedbl}, {\textquotedbl}c{\textquotedbl} or
-{\textquotedbl}r{\textquotedbl}, y should be
-{\textquotedbl}t{\textquotedbl}, {\textquotedbl}c{\textquotedbl} or
-{\textquotedbl}b{\textquotedbl}.
+"l", "c" or
+"r", y should be
+"t", "c" or
+"b".
 
 {\ttfamily\bfseries
 \index{Border}Border : VisibleContainer}
@@ -492,8 +488,8 @@ desired. The \texttt{add(c)} method from superclass VisibleContainer is used to
 set the title.
 
 \texttt{set\_internal\_alignment(x)} sets the alignment of the title object. The
-input string should be {\textquotedbl}l{\textquotedbl},
-{\textquotedbl}c{\textquotedbl} or {\textquotedbl}r{\textquotedbl}.
+input string should be "l",
+"c" or "r".
 Examples:
 
 \iconcode{
@@ -502,7 +498,7 @@ Examples:
 \>   \# Add a Label as the title \\
 \>   \# \\
 \>   l := Label() \\
-\>   l.set\_label({\textquotedbl}Title String{\textquotedbl}) \\
+\>   l.set\_label("Title String") \\
 \>   b.add(l) \\
 \>   add(b)
 }
@@ -514,15 +510,15 @@ This class provides horizontal and vertical scroll bars. There are two
 ways to use a scroll bar. The first way is to set a total\_size
 (represented by the whole bar), a page\_size (represented by the
 draggable button) and an increment\_size (being the amount
-added/subtracted when the top/bottom button is pressed). \ The value
+added/subtracted when the top/bottom button is pressed). The value
 will then range from zero to (total\_size - page\_size) inclusive. An
 initial value must be set with the \texttt{set\_value()} method. Examples:
 
 \iconcode{
 \>   vb := ScrollBar() \\
-\>   vb.set\_pos({\textquotedbl}85\%{\textquotedbl},
-{\textquotedbl}25\%{\textquotedbl}) \\
-\>   vb.set\_size(20, {\textquotedbl}40\%{\textquotedbl}) \\
+\>   vb.set\_pos("85\%",
+"25\%") \\
+\>   vb.set\_size(20, "40\%") \\
 \>   vb.set\_total\_size(130) \\
 \>   vb.set\_page\_size(30) \\
 \>   vb.set\_increment\_size(1) \\
@@ -541,9 +537,9 @@ if desired. Examples:
 
 \iconcode{
 \>   vb := ScrollBar() \\
-\>   vb.set\_pos({\textquotedbl}85\%{\textquotedbl},
-{\textquotedbl}25\%{\textquotedbl}) \\
-\>   vb.set\_size(20, {\textquotedbl}40\%{\textquotedbl}) \\
+\>   vb.set\_pos("85\%",
+"25\%") \\
+\>   vb.set\_size(20, "40\%") \\
 \>   vb.set\_range(2, 25) \\
 \>   vb.set\_value(10) \\
 \>   vb.set\_increment\_size(1) \\
@@ -555,7 +551,7 @@ dragged; the value can be retrieved by \texttt{get\_value()}. The event code
 (obtainable by \texttt{get\_code()}) is 1 if the bar has been dragged, and 0 if
 either button has been pressed or the bar released after being dragged.
 This fact can be used to reduce the number of events which are
-processed by the user{\textquotesingle}s program - just ignore events
+processed by the user's program - just ignore events
 with code 1.
 
 \texttt{set\_is\_horizontal()} makes the scroll bar horizontal (default is
@@ -597,7 +593,7 @@ the initial content is the empty string. Examples:
 \>   t.set\_pos(50, 250) \\
 \>   \# Vertical size will default \\
 \>   t.set\_size(100) \\
-\>   t.set\_contents({\textquotedbl}Initial string{\textquotedbl}) \\
+\>   t.set\_contents("Initial string") \\
 \>   add(t)
 }
 
@@ -628,7 +624,7 @@ Examples:
 \iconcode{
 \>   c := CheckBox() \\
 \>   c.set\_pos(200, 100) \\
-\>   c.set\_label({\textquotedbl}Checkbox{\textquotedbl}) \\
+\>   c.set\_label("Checkbox") \\
 \>   add(c)
 }
 
@@ -636,7 +632,7 @@ Examples:
 \index{CheckBoxGroup}CheckBoxGroup}
 
 This class contains several CheckBox objects that act together as
-{\textquotedbl}radio buttons{\textquotedbl}. Adding a CheckBox to a
+"radio buttons". Adding a CheckBox to a
 CheckBoxGroup sets the image style of the CheckBox to diamonds rather
 than boxes. The status of a CheckBoxGroup should be set with the
 \texttt{set\_which\_one()} method, not by turning the individual CheckBoxes
@@ -661,24 +657,24 @@ depending upon whether the first, second, third etc CheckBox is down.
 \>   c := CheckBoxGroup() \\
 \>   c1 := CheckBox() \\
 \>   c1.set\_pos(200, 50) \\
-\>   c1.set\_label({\textquotedbl}Checkbox 1{\textquotedbl}) \\
+\>   c1.set\_label("Checkbox 1") \\
 \>   add(c1) \\
 \>   c.add(c1) \\
 \ \\
 \>   c2 := CheckBox() \\
 \>   c2.set\_pos(200, 90) \\
 \>   c2.toggle\_is\_shaded() \\
-\>   c2.set\_label({\textquotedbl}Checkbox 2{\textquotedbl}) \\
+\>   c2.set\_label("Checkbox 2") \\
 \>   add(c2) \\
 \>   c.add(c2) \\
 \ \\
 \>   c3 := CheckBox() \\
 \>   c3.set\_pos(200, 130) \\
-\>   c3.set\_label({\textquotedbl}Checkbox 3{\textquotedbl}) \\
+\>   c3.set\_label("Checkbox 3") \\
 \>   add(c3) \\
 \>   c.add(c3) \\
 \>   \# \\
-\>   \# Initially, set the first one {\textquotedbl}on{\textquotedbl} \\
+\>   \# Initially, set the first one "on" \\
 \>   \# \\
 \>   c.set\_which\_one(c1)
 }
@@ -693,7 +689,7 @@ generated when a line is highlighted by being clicked. Horizontal and
 vertical scroll bars are displayed if necessary.
 
 If not in editable mode, then optionally the user can be allowed to
-select either one line only, or several lines. \ In either case, an
+select either one line only, or several lines. In either case, an
 event is generated when a line is selected. There is quite a high
 computational overhead for an editable TextList. For a large number of
 lines, this may result in a sluggish performance.
@@ -716,7 +712,7 @@ window is already open.
 \>   \ \ tl.set\_contents(data) \\
 \>   \ \ \ ... \\
 \>   \ \ \# Amend data and go to end of data \\
-\>   \ \ put(data, {\textquotedbl}New line{\textquotedbl}) \\
+\>   \ \ put(data, "New line") \\
 \>   \ \ tl.set\_contents(data, *data, 0)
 }
 
@@ -731,12 +727,12 @@ given list of line numbers.
 
 \iconcode{
 \>   tl := TextList() \\
-\>   tl.set\_pos({\textquotedbl}50\%{\textquotedbl},
-{\textquotedbl}50\%{\textquotedbl}) \\
-\>   tl.set\_size({\textquotedbl}70\%{\textquotedbl},
-{\textquotedbl}50\%{\textquotedbl}) \\
-\>   tl.set\_align({\textquotedbl}c{\textquotedbl},
-{\textquotedbl}c{\textquotedbl}) \\
+\>   tl.set\_pos("50\%",
+"50\%") \\
+\>   tl.set\_size("70\%",
+"50\%") \\
+\>   tl.set\_align("c",
+"c") \\
 \>   tl.set\_contents(data) \# data is a list of strings \\
 \>   add(tl)
 }
@@ -769,7 +765,7 @@ inherited from DropDown.
 
 \iconcode{
 \>   L := List() \\
-\>   L.set\_selection\_list([{\textquotedbl}Red{\textquotedbl},{\textquotedbl}Green{\textquotedbl},{\textquotedbl}Yellow{\textquotedbl},{\textquotedbl}Blue{\textquotedbl},{\textquotedbl}Orange{\textquotedbl}]) \\
+\>   L.set\_selection\_list(["Red","Green","Yellow","Blue","Orange"]) \\
 \>   L.set\_size(120) \\
 \>   L.set\_pos(100, 100) \\
 \>   L.set\_selection(2) \# Green will be the first selection \\
@@ -824,7 +820,7 @@ CONTINUE\ \ The Menu system does not close and continues to process
 events.\\
 SUCCEED\ \ The menu system closes and produces the given event, which is
 passed to the\\
- \ \ \ \ dialog{\textquotesingle}s dialog\_event() method. The last
+ \ \ \ \ dialog's dialog\_event() method. The last
 event is not passed to other components.
 
 {\ttfamily\bfseries
@@ -878,7 +874,7 @@ it in order\\
 
 \texttt{handle\_event(e)} handles the Icon event e and must be over-ridden.
 
-\texttt{hide()} hides (closes) the object{\textquotesingle}s display and must be
+\texttt{hide()} hides (closes) the object's display and must be
 over-ridden.
 
 {\ttfamily\bfseries
@@ -893,7 +889,7 @@ within the menu automatically.
 {\ttfamily\bfseries
 TextMenuItem : MenuComponent}
 
-This class encapsulates a single text item in a Menu. \ It has no
+This class encapsulates a single text item in a Menu. It has no
 additional methods that the user need call other than are contained in
 its parent class, MenuComponent.
 
@@ -901,8 +897,8 @@ its parent class, MenuComponent.
 \index{CheckBoxMenuItem}CheckBoxMenuItem : MenuComponent}
 
 This class encapsulates a check box in a menu. Several CheckBoxMenuItems
-may be added to a CheckBoxGroup structure to give {\textquotedbl}radio
-buttons{\textquotedbl} within menus.
+may be added to a CheckBoxGroup structure to give "radio
+buttons" within menus.
 
 \texttt{set\_imgs(x, y)} sets the up and down images to x and y respectively.
 The default is boxes, unless\\
@@ -934,10 +930,10 @@ this must be specified.
 
 \iconcode{
 \>   c1 := TableColumn() \\
-\>   c1.set\_internal\_alignment({\textquotedbl}r{\textquotedbl}) \#
+\>   c1.set\_internal\_alignment("r") \#
 Label is right aligned \\
 \>   c1.set\_column\_width(80) \\
-\>   c1.set\_label({\textquotedbl}Number{\textquotedbl})
+\>   c1.set\_label("Number")
 }
 
 {\ttfamily\bfseries
@@ -956,7 +952,7 @@ to one row of the table.
 
 \texttt{set\_contents(x, line, left\_pos, preserve\_selections)} sets the
 contents to x and sets the position to\\
- \ \ \ \ \ line and left\_pos. \ If these parameters are omitted then
+ \ \ \ \ \ line and left\_pos. If these parameters are omitted then
 the default is to start at line 1, with left\\
  \ \ \ \ \ offset zero if the window is not already open, or to retain
 the existing position if it is. If the\\
@@ -977,16 +973,16 @@ list of line numbers L.
 \index{TabItem}TabItem : Container}
 
 This class represents a single pane in a TabSet. Components are added to
-the TabItem using Container{\textquotesingle}s add() method. They are
+the TabItem using Container's add() method. They are
 then displayed and accept input when that TabItem is selected.
 Components added to the TabItem are positioned relative to the position
 and size of the parent TabSet. Therefore for example
-set\_pos({\textquotedbl}50\%{\textquotedbl},
-{\textquotedbl}50\%{\textquotedbl}) refers to the center of the TabSet
-rather than the center of the screen. \ The components also inherit any
+set\_pos("50\%",
+"50\%") refers to the center of the TabSet
+rather than the center of the screen. The components also inherit any
 window attributes of the TabSet, such as font, color and so on.
 
-\texttt{set\_label(x)} sets the TabItem{\textquotesingle}s label.
+\texttt{set\_label(x)} sets the TabItem's label.
 
 {\ttfamily\bfseries
 \index{TabSet}TabSet : VisibleContainer}
@@ -1002,18 +998,18 @@ default is the first that was added.\\
 
 This class simply contains other components. The components inside have
 their sizes and positions computed relative to the Panel and also
-inherit the Panel{\textquotesingle}s windowing attributes. Components
+inherit the Panel's windowing attributes. Components
 are added using the add() method of VisibleContainer.
 
 {\ttfamily\bfseries
 \index{OverlayItem}OverlayItem : Container}
 
-This class is one {\textquotedbl}pane{\textquotedbl} in an OverlaySet,
+This class is one "pane" in an OverlaySet,
 which is rather like a TabSet except that there are no tabs, and
 control over which pane is displayed is entirely the affair of the
 program. The components inside have their sizes and positions computed
 relative to the parent OverlaySet and also inherit the
-OverlaySet{\textquotesingle}s windowing attributes. \ Components are
+OverlaySet's windowing attributes. Components are
 added using the add() method of Container.
 
 {\ttfamily\bfseries

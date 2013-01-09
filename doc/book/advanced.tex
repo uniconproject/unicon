@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 4: Advanced Language Features}
+\chapter{Advanced Language Features}
 
 The previous chapters described a wide range of built-in computational
 facilities that help to make Unicon a great language.
@@ -15,8 +15,9 @@ its results can be used in different locations throughout the program
 \item Evaluating several generator expressions in parallel
 \item Permuting strings using sophisticated mappings
 \end{itemize}
-\subsection[Limiting or Negating an Expression]{Limiting or Negating an
-Expression}
+
+\section{Limiting or Negating an Expression}
+
 \index{limiting an expression}Chapter 1 described generators and the
 expression mechanism without mentioning many methods for using them,
 other than \texttt{every} loops. Suppose you wish to generate five
@@ -24,7 +25,7 @@ elements from a table. If the table has thousands of elements, then you
 may want to generate just five elements precisely in a situation where
 generating all the table elements with \texttt{!T} is infeasible. You
 could write an \texttt{every} loop that breaks out after five
-iterations, but this solution isn{\textquotesingle}t easy to use within
+iterations, but this solution isn't easy to use within
 some more complex expressions. The binary backslash operator
 \texttt{\textit{expr}}\texttt{ {\textbackslash} }\texttt{\textit{i}}
 limits \texttt{\textit{expr}} to at most \texttt{\textit{i}} results.
@@ -52,15 +53,15 @@ following two expressions:
 
 \iconcode{
 if not (s ==
-({\textquotedbl}good{\textquotedbl}{\textbar}{\textquotedbl}will{\textquotedbl}{\textbar}{\textquotedbl}hunting{\textquotedbl}))
-then write({\textquotedbl}nope{\textquotedbl}) \\
+("good"{\textbar}'will'{\textbar}'hunting'))
+then write("nope") \\
 if (s \~{}==
-({\textquotedbl}good{\textquotedbl}{\textbar}{\textquotedbl}will{\textquotedbl}{\textbar}{\textquotedbl}hunting{\textquotedbl}))
-then write({\textquotedbl}uh huh{\textquotedbl})}
+("good"{\textbar}'will'{\textbar}'hunting'))
+then write("uh huh")}
 
 The first expression uses \texttt{not} to ensure that string \texttt{s}
 is none of the three words. The second expression always writes
-\texttt{{\textquotedbl}uh huh{\textquotedbl}}, because any string
+\texttt{"uh huh"}, because any string
 \texttt{s} that you pick will be not equal (\texttt{\~{}==}) to at
 least one of the three strings in the alternation. The \texttt{then}
 part will always execute, which is probably not what was intended.
@@ -84,12 +85,12 @@ Invocation allows a string or integer in the ``procedure'' slot
 in front of a parenthesized argument
 list. For a string, as in
 \texttt{s(x)}, a procedure by the name given in \texttt{s} is called;
-if \texttt{s} had the value \texttt{{\textquotedbl}foo{\textquotedbl}},
+if \texttt{s} had the value \texttt{"foo"},
 then \texttt{s(x)} is the same as \texttt{foo(x)}. For an integer value
 \texttt{i}, after all arguments are evaluated, the value of the entire
-expression is the value of the \texttt{i}{\textquotesingle}th argument.
+expression is the value of the \texttt{i}'th argument.
 
-\subsection{List Structures and Parameter Lists}
+\section{List Structures and Parameter Lists}
 
 The functions \texttt{write()} and \texttt{put()} take any number of
 arguments; this flexibility is powerful and convenient.
@@ -115,7 +116,7 @@ procedure with that list as its parameter list. The
 the elements of \texttt{L} are written contiguously on a single line
 (unless they contain newline characters).
 
-\subsection{Co-expressions}
+\section{Co-expressions}
 
 A \index{co-expression}co-expression is an independent, encapsulated
 \index{thread}thread{}-like context, where the results of an expression
@@ -125,14 +126,14 @@ code, and you need something that will generate unique variable names.
 This expression will generate names:
 
 \iconcode{
-{\textquotedbl}name{\textquotedbl} {\textbar}{\textbar} seq()}
+"name" {\textbar}{\textbar} seq()}
 
 \noindent
 Function \index{seq()}\texttt{seq()} produces an infinite sequence
 of integers, by default starting at 1, so the whole expression
-generates \texttt{{\textquotedbl}name1{\textquotedbl}},
-\texttt{{\textquotedbl}name2{\textquotedbl}},
-\texttt{{\textquotedbl}name3{\textquotedbl}}, ... You can
+generates \texttt{"name1"},
+\texttt{"name2"},
+\texttt{"name3"}, ... You can
 use this expression anywhere in your code; but you may need
 it in several different places.
 
@@ -150,7 +151,7 @@ this requires static or global variables, and is awkward at best:
 procedure nameseq() \\
 static i \\
 initial i := 0 \\
-\>   return {\textquotedbl}name{\textquotedbl} {\textbar}{\textbar} (i
+\>   return "name" {\textbar}{\textbar} (i
 +:= 1) \\
 end
 }
@@ -165,9 +166,9 @@ creating a pair of co-expressions, you can capture exactly what is
 needed with a lot less code:
 
 \iconcode{
-labelname := create ({\textquotedbl}\_L{\textquotedbl}
+labelname := create ("\_L"
 {\textbar}{\textbar} seq()) \\
-varname := create({\textquotedbl}\_V{\textquotedbl} {\textbar}{\textbar}
+varname := create("\_V" {\textbar}{\textbar}
 seq())
 }
 
@@ -181,13 +182,13 @@ includes a copy of the local variables and parameters used in the
 expression. When a co-expression is \textit{activated}, it produces the
 next value. A co-expression is activated by the \texttt{@} operator. Each
 activation of \texttt{labelname} produces the next string in the
-sequence \texttt{{\textquotedbl}\_L0{\textquotedbl}},
-\texttt{{\textquotedbl}\_L1{\textquotedbl}},
-\texttt{{\textquotedbl}\_L2{\textquotedbl}}, and so on. Similarly, each
+sequence \texttt{"\_L0"},
+\texttt{"\_L1"},
+\texttt{"\_L2"}, and so on. Similarly, each
 activation \texttt{@varname}\texttt{ }produces the next in the sequence
-\texttt{{\textquotedbl}\_V0{\textquotedbl}},
-\texttt{{\textquotedbl}\_V1{\textquotedbl}},
-\texttt{{\textquotedbl}\_V2{\textquotedbl}}, and so on. 
+\texttt{"\_V0"},
+\texttt{"\_V1"},
+\texttt{"\_V2"}, and so on. 
 
 \iconcode{
 loop\_name := @labelname \\
@@ -197,13 +198,13 @@ tempvar\_name := @varname
 After a co-expression has produced all its results, further evaluation
 with \texttt{@} will \index{fail!co-expression}fail. The \texttt{\^{}}
 operator produces a new co-expression with the same expression as its
-argument, but {\textquotedbl}rewound{\textquotedbl} to the beginning.
+argument, but "rewound" to the beginning.
 
 \iconcode{
 \>   c := \^{}c}
 
-\subsection[User{}-Defined Control Structures]{User-Defined Control
-Structures}
+\section{User-Defined Control Structures}
+
 \index{control structure}\textit{Control structures} are language elements
 that determine in what order, and how many times, expressions
 are executed. Co-expressions are used to implement new
@@ -224,8 +225,8 @@ primes (2, 3, 5, 7, 11, ?), this expression produces the numbers 1, 2,
 
 \iconcode{
 procedure seqsel(a) \\
-\>   (*a = 2) {\textbar} stop({\textquotedbl}seqsel requires a list of
-two arguments{\textquotedbl}) \\
+\>   (*a = 2) {\textbar} stop("seqsel requires a list of
+two arguments") \\
 \>   e1 := a[1]; e2 := a[2] \\
 \ \ \ \# position in the first stream we are looking at \\
 \>   index := 1 \\
@@ -233,7 +234,7 @@ two arguments{\textquotedbl}) \\
 \>   \ \ \ \# Get the next index \\
 \>   \ \ \ (i := @e2 ) {\textbar} fail \\
 \ \ \ \ \ \ \# Keep getting values from the second expression until \\
-\ \ \ \ \ \ \# we get to the i{\textquotesingle}th one. If e1 cannot produce that \\
+\ \ \ \ \ \ \# we get to the i'th one. If e1 cannot produce that \\
 \ \ \ \ \ \ \# many values, we fail. \\
 \>   \ \ \ every index to i do \\
 \>\>   \ \ \ (value := @e1) {\textbar} fail \\
@@ -257,41 +258,41 @@ can also be written with curly brackets, as
 proc\{e1, e2, ..., en\}
 }
 
-\subsection[Parallel Evaluation]{Parallel Evaluation}
+\section{Parallel Evaluation}
 
 \index{parallel evaluation}Co-expressions can be used to evaluate
-expressions {\textquotedbl}in parallel{\textquotedbl}.
+expressions "in parallel".
 This program writes a table of \index{ASCII}ASCII characters with the
 hex, decimal, and octal equivalents:
 
 \iconcode{
 procedure main() \\
 \>   dec := create(0 to 255) \\
-\>   hex\_dig := {\textquotedbl}0123456789abcdef{\textquotedbl} \\
+\>   hex\_dig := "0123456789abcdef" \\
 \>   hex := create(!hex\_dig {\textbar}{\textbar} !hex\_dig) \\
 \>   oct := create((0 to 3) {\textbar}{\textbar} (0 to 7)
 {\textbar}{\textbar} (0 to 7)) \\
 \>   char := create image(!\&cset) \\
-\>   while write(@dec, {\textquotedbl}{\textbackslash}t{\textquotedbl},
-@oct, {\textquotedbl}{\textbackslash}t{\textquotedbl}, @hex,
-{\textquotedbl}{\textbackslash}t{\textquotedbl}, @char) \\
+\>   while write(@dec, "{\textbackslash}t",
+@oct, "{\textbackslash}t", @hex,
+"{\textbackslash}t", @char) \\
 end
 }
 
 Co-expression \texttt{dec} produces the sequence 0, 1, 2, ... 255;
-\texttt{hex} the sequence \texttt{{\textquotedbl}00{\textquotedbl}},
-\texttt{{\textquotedbl}01{\textquotedbl}},
-\texttt{{\textquotedbl}03{\textquotedbl}}, ...
-\texttt{{\textquotedbl}ff{\textquotedbl}}; \texttt{oct}\texttt{ }the
-sequence \texttt{{\textquotedbl}001{\textquotedbl}},
-\texttt{{\textquotedbl}002{\textquotedbl}}, ...
-\texttt{{\textquotedbl}377{\textquotedbl}}; and \texttt{char}\texttt{
-}the sequence ..., \texttt{{\textquotedbl} {\textquotedbl}},
-\texttt{{\textquotedbl}!{\textquotedbl}}, ...,
-\texttt{{\textquotedbl}A{\textquotedbl}}, ...
-\texttt{{\textquotedbl}Z{\textquotedbl}}, ...,
-\texttt{{\textquotedbl}a{\textquotedbl}}, ...
-\texttt{{\textquotedbl}z{\textquotedbl}}, and so forth.
+\texttt{hex} the sequence \texttt{"00"},
+\texttt{"01"},
+\texttt{"03"}, ...
+\texttt{"ff"}; \texttt{oct}\texttt{ }the
+sequence \texttt{"001"},
+\texttt{"002"}, ...
+\texttt{"377"}; and \texttt{char}\texttt{
+}the sequence ..., \texttt{" "},
+\texttt{"!"}, ...,
+\texttt{"A"}, ...
+\texttt{"Z"}, ...,
+\texttt{"a"}, ...
+\texttt{"z"}, and so forth.
 
 Every invocation of \texttt{write()} results in all the co-expressions
 being activated once, so they are all run in lock-step, producing this
@@ -299,73 +300,73 @@ table:
 
 {\sffamily
 0 \ \ \ \ \ \ 000 \ \ \ \ 00
-\ \ \ \ \ {\textquotedbl}{\textbackslash}x00{\textquotedbl}}
+\ \ \ \ \ "{\textbackslash}x00"}
 
 {\sffamily
 1 \ \ \ \ \ \ 001 \ \ \ \ 01
-\ \ \ \ \ {\textquotedbl}{\textbackslash}x01{\textquotedbl}}
+\ \ \ \ \ "{\textbackslash}x01"}
 
 {\sffamily
 2 \ \ \ \ \ \ 002 \ \ \ \ 02
-\ \ \ \ \ {\textquotedbl}{\textbackslash}x02{\textquotedbl}}
+\ \ \ \ \ "{\textbackslash}x02"}
 
 {\sffamily
 ...}
 
 {\sffamily
-45 \ \ \ \ \ 055 \ \ \ \ 2d \ \ \ \ \ {\textquotedbl}-{\textquotedbl}}
+45 \ \ \ \ \ 055 \ \ \ \ 2d \ \ \ \ \ "-"}
 
 {\sffamily
-46 \ \ \ \ \ 056 \ \ \ \ 2e \ \ \ \ \ {\textquotedbl}.{\textquotedbl}}
+46 \ \ \ \ \ 056 \ \ \ \ 2e \ \ \ \ \ "."}
 
 {\sffamily
-47 \ \ \ \ \ 057 \ \ \ \ 2f \ \ \ \ \ {\textquotedbl}/{\textquotedbl}}
+47 \ \ \ \ \ 057 \ \ \ \ 2f \ \ \ \ \ "/"}
 
 {\sffamily
-48 \ \ \ \ \ 060 \ \ \ \ 30 \ \ \ \ \ {\textquotedbl}0{\textquotedbl}}
+48 \ \ \ \ \ 060 \ \ \ \ 30 \ \ \ \ \ "0"}
 
 {\sffamily
-49 \ \ \ \ \ 061 \ \ \ \ 31 \ \ \ \ \ {\textquotedbl}1{\textquotedbl}}
+49 \ \ \ \ \ 061 \ \ \ \ 31 \ \ \ \ \ "1"}
 
 {\sffamily
-50 \ \ \ \ \ 062 \ \ \ \ 32 \ \ \ \ \ {\textquotedbl}2{\textquotedbl}}
+50 \ \ \ \ \ 062 \ \ \ \ 32 \ \ \ \ \ "2"}
 
 {\sffamily
 ...}
 
 {\sffamily
-90 \ \ \ \ \ 132 \ \ \ \ 5a \ \ \ \ \ {\textquotedbl}Z{\textquotedbl}}
+90 \ \ \ \ \ 132 \ \ \ \ 5a \ \ \ \ \ "Z"}
 
 {\sffamily
-91 \ \ \ \ \ 133 \ \ \ \ 5b \ \ \ \ \ {\textquotedbl}[{\textquotedbl}}
+91 \ \ \ \ \ 133 \ \ \ \ 5b \ \ \ \ \ "["}
 
 {\sffamily
 92 \ \ \ \ \ 134 \ \ \ \ 5c
-\ \ \ \ \ {\textquotedbl}{\textbackslash}{\textbackslash}{\textquotedbl}}
+\ \ \ \ \ "{\textbackslash}{\textbackslash}"}
 
 {\sffamily
-93 \ \ \ \ \ 135 \ \ \ \ 5d \ \ \ \ \ {\textquotedbl}]{\textquotedbl}}
+93 \ \ \ \ \ 135 \ \ \ \ 5d \ \ \ \ \ "]"}
 
 {\sffamily
 94 \ \ \ \ \ 136 \ \ \ \ 5e
-\ \ \ \ \ {\textquotedbl}\^{}{\textquotedbl}}
+\ \ \ \ \ "\^{}"}
 
 {\sffamily
-95 \ \ \ \ \ 137 \ \ \ \ 5f \ \ \ \ \ {\textquotedbl}\_{\textquotedbl}}
+95 \ \ \ \ \ 137 \ \ \ \ 5f \ \ \ \ \ "\_"}
 
 {\sffamily
 96 \ \ \ \ \ 140 \ \ \ \ 60
-\ \ \ \ \ {\textquotedbl}{\textasciigrave}{\textquotedbl}}
+\ \ \ \ \ "'"}
 
 {\sffamily
-97 \ \ \ \ \ 141 \ \ \ \ 61 \ \ \ \ \ {\textquotedbl}a{\textquotedbl}}
+97 \ \ \ \ \ 141 \ \ \ \ 61 \ \ \ \ \ "a"}
 
 {\sffamily
 ...}
 
 {\sffamily
 255 \ \ \ \ 377 \ \ \ \ ff
-\ \ \ \ \ {\textquotedbl}{\textbackslash}xff{\textquotedbl}}
+\ \ \ \ \ "{\textbackslash}xff"}
 
 \noindent
 Parallel evaluation can also be used to assign to a set of variables:
@@ -386,7 +387,7 @@ Co-expressions can be expensive. This is probably not a
 good way to assign a series of values to a group of variables but it
 demonstrates an interesting technique.
 
-\subsection{Coroutines}
+\section{Coroutines}
 
 In conventional invocation, procedures have an asymmetric
 relationship; when control is transferred from the caller to the
@@ -458,10 +459,10 @@ coexpression that activated the current co-expression.
 Note}
 
 {\sffamily
-This example doesn{\textquotesingle}t mean the producer/consumer problem
+This example doesn't mean the producer/consumer problem
 should always be done with coroutines!}
 
-\subsection[Permutations]{Permutations}
+\section{Permutations}
 
 \index{permutations}We have seen one usage of
 \index{map()}\texttt{map()}, where it transformed mixed-case strings to
@@ -472,24 +473,24 @@ treating the \textit{third} argument as the string to manipulate.
 Consider this code:
 
 \iconcode{
-s := {\textquotedbl}abcde{\textquotedbl} \\
-write(map({\textquotedbl}01234{\textquotedbl},
-{\textquotedbl}43201{\textquotedbl}, s))
+s := "abcde" \\
+write(map("01234",
+"43201", s))
 }
 
 What does this code example do? The transformation is:
-\texttt{{\textquotedbl}4{\textquotedbl}} should be mapped to
-\texttt{{\textquotedbl}a{\textquotedbl}},
-\texttt{{\textquotedbl}3{\textquotedbl}} to
-\texttt{{\textquotedbl}b{\textquotedbl}},
-\texttt{{\textquotedbl}2{\textquotedbl}} to
-\texttt{{\textquotedbl}c{\textquotedbl}},
-\texttt{{\textquotedbl}0{\textquotedbl}} to
-\texttt{{\textquotedbl}d{\textquotedbl}}, and
-\texttt{{\textquotedbl}1{\textquotedbl}} to
-\texttt{{\textquotedbl}e{\textquotedbl}}. When this mapping is applied
-to \texttt{{\textquotedbl}01234{\textquotedbl}}, we get
-\texttt{{\textquotedbl}edcab{\textquotedbl}} - a permutation of the
+\texttt{"4"} should be mapped to
+\texttt{"a"},
+\texttt{"3"} to
+\texttt{"b"},
+\texttt{"2"} to
+\texttt{"c"},
+\texttt{"0"} to
+\texttt{"d"}, and
+\texttt{"1"} to
+\texttt{"e"}. When this mapping is applied
+to \texttt{"01234"}, we get
+\texttt{"edcab"} - a permutation of the
 string \texttt{s}! It is exactly the permutation that is suggested by
 the first two arguments of \texttt{map()}. To arrange this sort of
 permutation, all three strings must be the same size, and there must be
@@ -510,8 +511,8 @@ first: 25/12/1998. This conversion is, of course, just a permutation;
 we can do this with a simple map:
 
 \iconcode{
-map({\textquotedbl}Mm/Dd/XxYy{\textquotedbl},
-{\textquotedbl}Dd/Mm/XxYy{\textquotedbl}, date)
+map("Mm/Dd/XxYy",
+"Dd/Mm/XxYy", date)
 }
 
 Here is another example. Unicon has a built-in random facility, the
@@ -525,21 +526,21 @@ dice.
 By default in Unicon, the random sequence generated by \texttt{?} is
 different for each run of the program. This is one of the few areas
 where Unicon is deliberately different from Icon, which uses the same
-seed each run by default. Icon{\textquotesingle}s semantics is good
+seed each run by default. Icon's semantics is good
 when debugging, because we want the program to behave predictably while
 it is broken! However, in most applications that use random numbers,
 such as games, different runs of the program should create different
 numbers. The \index{random!number seed}random number seed is keyword
 \texttt{\&random.} It can be assigned a value at the start of main() in
-order to get Icon-style repeatability. Here{\textquotesingle}s how to
+order to get Icon-style repeatability. Here's how to
 assign it a number based on the current date and time.
-Unicon{\textquotesingle}s default semantics do something similar.
+Unicon's default semantics do something similar.
 
 \iconcode{
-\&random := map({\textquotedbl}sSmMhH{\textquotedbl},
-{\textquotedbl}Hh:Mm:Ss{\textquotedbl}, \&clock) + \\
-\> \> \> \> map({\textquotedbl}YyXxMmDd{\textquotedbl},
-{\textquotedbl}YyXx/Mm/Dd{\textquotedbl}, \&date)
+\&random := map("sSmMhH",
+"Hh:Mm:Ss", \&clock) + \\
+\> \> \> \> map("YyXxMmDd",
+"YyXx/Mm/Dd", \&date)
 }
 
 \noindent
@@ -550,16 +551,13 @@ stored as a seed in \texttt{\&random}. Now every time the program is
 run, the random number facility will be initialized with a different
 number.
 
-\subsection{Simulation}
+\section{Simulation}
 
 A Galton Box demonstrates how balls falling through a
 lattice of pegs will end up distributed binomially. A simulation of a
 Galton box combines several of the techniques described previously.
-\ Figure 4-3 is an illustration of the program{\textquotesingle}s
+\ Figure 4-3 is an illustration of the program's
 screen.
-
-
-
 \begin{center}
 \includegraphics[width=1.75in,height=3.8201in]{ub-img/ub-img10.png}
 \end{center}
@@ -569,8 +567,8 @@ screen.
 
 \bigskip
 
-The simulation{\textquotesingle}s output window is a good example of
-Unicon{\textquotesingle}s high-level graphics facilities. Graphics is a
+The simulation's output window is a good example of
+Unicon's high-level graphics facilities. Graphics is a
 broad area, discussed in Chapter 7 of this book; the on-line references
 or the Icon graphics book (Griswold, Jeffery, Townsend 1998) contain
 substantial additional details. Graphics are part of the system
@@ -582,25 +580,25 @@ bounding rectangle. The shape is filled by the current foreground color
 and/or fill pattern. The height defaults to be the same as the width,
 producing a circle. Given additional arguments, \texttt{FillArc()
 }fills parts of an ellipse similar to pieces of a pie in shape.
-\item \texttt{WAttrib({\textquotedbl}attr{\textquotedbl})} or
-\texttt{WAttrib({\textquotedbl}attr=value{\textquotedbl})}, the generic
+\item \texttt{WAttrib("attr")} or
+\texttt{WAttrib("attr=value")}, the generic
 getter/setter for window attributes.
 In this case the attributes \texttt{fg} (foreground color) and
 \texttt{drawop} (raster drawing operation) are set to various colors
 and reversible output.
-\item \texttt{Window({\textquotedbl}attr=value{\textquotedbl}, ...)}
+\item \texttt{Window("attr=value", ...)}
 opens a window with characteristics specified by string
 attribute values. The \texttt{WDelay(t)} function waits until
 \texttt{t} milliseconds have passed. The \texttt{WDone()} function
 waits for the user to dismiss the output window by pressing
-\texttt{{\textquotedbl}q{\textquotedbl}} and then terminates the
+\texttt{"q"} and then terminates the
 program and closes the window.
 \end{itemize}
 Listing 4-2 contains the code for a simplified version of the
 simulation. A couple elements of the image above are omitted in order
 to make the example easy to follow. (Both this program and the one that
 created the screen shot above are included on the
-book{\textquotesingle}s web site, http://unicon.org/book/)
+book's web site, http://unicon.org/book/)
 
 {\sffamily\bfseries Listing 4-2}
 {\sffamily\bfseries A Simple Galton Box Simulation}
@@ -629,10 +627,10 @@ local max, xpos, ypos, i, j \\
 \>   max := n*n/pegsize \\
 \>   width := (2*n+1)*pegsize \\
 \>   height := width + n*n/2*pegsize \\
-\>   Window({\textquotedbl}size={\textquotedbl} {\textbar}{\textbar}
-width {\textbar}{\textbar} {\textquotedbl},{\textquotedbl}
-{\textbar}{\textbar} height, {\textquotedbl}fg=grayish-white{\textquotedbl}) \\
-\>   WAttrib({\textquotedbl}fg=dark-grey{\textquotedbl}) \\
+\>   Window("size=" {\textbar}{\textbar}
+width {\textbar}{\textbar} ","
+{\textbar}{\textbar} height, "fg=grayish-white") \\
+\>   WAttrib("fg=dark-grey") \\
 \>   every i := 1 to n do \{ \\
 \>   \ \ \ ypos := i * pegsize2 \\
 \>   \ \ \ xpos := width/2 - (i - 1) * pegsize - pegsize/2 \\
@@ -642,8 +640,8 @@ width {\textbar}{\textbar} {\textquotedbl},{\textquotedbl}
 \>   \ \ \ \ \ \ \} \\
 \>   \ \ \ \} \\
 \>   \# Set up drawing mode to draw the falling balls \\
-\>   WAttrib({\textquotedbl}fg=black{\textquotedbl}) \\
-\>   WAttrib({\textquotedbl}drawop=reverse{\textquotedbl}) \\
+\>   WAttrib("fg=black") \\
+\>   WAttrib("drawop=reverse") \\
 end
 \ \\
 \# Do it! \\
@@ -671,7 +669,7 @@ procedure animate(xfrom, yfrom, xto, yto) \\
 \>   animate\_actual(xto, yfrom, xto, yto, 10) \\
 end
 \ \\
-\# Drawing op is already set to {\textquotedbl}reverse{\textquotedbl},
+\# Drawing op is already set to "reverse",
 and fg colour is black. \\
 procedure animate\_actual(xfrom, yfrom, xto, yto, steps) \\
 local x := xfrom, y := yfrom, xstep, ystep, i, lastx, lasty \\

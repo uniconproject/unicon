@@ -1,4 +1,4 @@
-\clearpage\section{Chapter 6: Databases}
+\chapter{Databases}
 
 \index{database}Databases are technically part of the system interface
 described in the last chapter, but they are an important application
@@ -14,11 +14,11 @@ provides direct support. In this chapter you will learn how to:
 \item Manipulate SQL databases through the ODBC connection mechanism.
 \end{itemize}
 
-\subsection{Language Support for Databases}
+\section{Language Support for Databases}
 
 Unicon provides transparent access to databases stored in local files
 and on remote servers. The term
-{\textquotedbl}transparent{\textquotedbl} means that the built-in
+"transparent" means that the built-in
 functions and operators used to access information in a database are
 the same as those used to access information in the memory-based
 structures presented in Chapter 2. To do this, connections to databases
@@ -37,17 +37,17 @@ elements are generated from memory, but if \texttt{x} is a file,
 Unicon is to make databases just as easy to learn and use as the rest
 of the language, and to minimize the introduction of new concepts.
 
-The word {\textquotedbl}database{\textquotedbl} means different things
+The word "database" means different things
 to different people. For some, the term is used as the short form of
-the term {\textquotedbl}relational database.{\textquotedbl} This
+the term "relational database." This
 chapter uses the term database to refer to any method of providing
-{\textquotedbl}persistent structures{\textquotedbl} that store
+"persistent structures" that store
 information from one program run to the next. The operators that are
 used to access a database determine whether a single element at a time
 is read or written, or whether many operations are buffered and sent to
 the database together.
 
-\subsection{Memory-based Databases}
+\section{Memory-based Databases}
 
 Some people would not consider a memory-based
 \index{database!in-memory}database to be a database at all. If the
@@ -70,12 +70,12 @@ contents of \texttt{db} to a file named \texttt{db.dat.}
 
 \iconcode{
 db := table() \\
-db[{\textquotedbl}Ralph{\textquotedbl}] :=
-{\textquotedbl}800-USE-ICON{\textquotedbl} \\
-db[{\textquotedbl}Ray{\textquotedbl}] :=
-{\textquotedbl}800-4UN-ICON{\textquotedbl} \\
+db["Ralph"] :=
+"800-USE-ICON" \\
+db["Ray"] :=
+"800-4UN-ICON" \\
 dbf :=
-open({\textquotedbl}db.dat{\textquotedbl},{\textquotedbl}w{\textquotedbl}) \\
+open("db.dat",'w') \\
 xencode(db, dbf) \\
 close(dbf)
 }
@@ -85,10 +85,10 @@ The converse operation, reading in a structure from a file is also
 simple:
 
 \iconcode{
-dbf := open({\textquotedbl}db.dat{\textquotedbl}) \\
+dbf := open("db.dat") \\
 db := xdecode(dbf) \\
 close(dbf) \\
-write(db[{\textquotedbl}Ralph{\textquotedbl}])
+write(db["Ralph"])
 }
 
 This approach works great for databases that do not need to be written
@@ -96,12 +96,12 @@ to disk on an on-going basis and for which the queries can readily be
 expressed as operations on structure types. For example, a telephone
 rolodex application would be well-served by this type of database. The
 data fits comfortably in memory, updates often occur in batches, and
-simple queries (such as a student{\textquotesingle}s name) provide
+simple queries (such as a student's name) provide
 sufficient access to the data. The other two kinds of databases in this
 chapter use traditional database technologies to efficiently address
 situations where this type of database is inadequate.
 
-\subsection{DBM Databases}
+\section{DBM Databases}
 
 A classic database solution on the UNIX platform is provided by the DBM
 family of library functions. \index{DBM}DBM stands for Data Base
@@ -112,9 +112,9 @@ Data Base Manager) and GDBM (GNU Data Base Manager). Unicon uses GDBM
 on all platforms.
 
 DBM databases are opened by the \texttt{open()} function using mode
-\texttt{{\textquotedbl}d{\textquotedbl}}. By default, a database is
+\texttt{"d"}. By default, a database is
 opened for reading and writing; mode
-\texttt{{\textquotedbl}dr{\textquotedbl}} opens a database read-only.
+\texttt{"dr"} opens a database read-only.
 Once opened, DBM databases are treated as a special case of the table
 data type and are manipulated using table operations. For example, if
 \texttt{d} is a DBM file, \texttt{d[s]} performs a database
@@ -132,15 +132,15 @@ the command line, and writes out the value corresponding to that key.
 
 \iconcode{
 procedure main(args) \\
-\>   d := open(args[1], {\textquotedbl}d{\textquotedbl}) {\textbar}
-stop({\textquotedbl}can{\textquotesingle}t open {\textquotedbl},
+\>   d := open(args[1], "d") {\textbar}
+stop("can't open ",
 args[1]) \\
 \>   write(d[args[2]]) \\
 end
 }
 
 If you are wondering why the call to \texttt{open()}
-isn{\textquotesingle}t followed by a call to \texttt{close()}, you are
+isn't followed by a call to \texttt{close()}, you are
 right, it is proper to close files explicitly, although the system
 closes all files when the program terminates. How would you generalize
 this program to accept a third command-line argument, and insert the
@@ -150,8 +150,8 @@ this:
 
 \iconcode{
 procedure main(args) \\
-\>   d := open(args[1], {\textquotedbl}d{\textquotedbl}) {\textbar}
-stop({\textquotedbl}can{\textquotesingle}t open {\textquotedbl},
+\>   d := open(args[1], "d") {\textbar}
+stop("can't open ",
 args[1]) \\
 \>   d[args[2]] := args[3] \\
 \>   write(d[args[2]]) \\
@@ -163,7 +163,7 @@ DBM databases are good for managing data sets with a simple
 organization, when the size of the database requires that you update
 the database a record at a time, instead of writing the entire data
 set. For example, if you wrote a Web browser, you might use a DBM
-database to store the user{\textquotesingle}s set of bookmarks to Web
+database to store the user's set of bookmarks to Web
 pages of interest. In fact, Netscape uses DBM files for its bookmarks.
 
 There is one basic limitation of DBM databases when compared with the
@@ -172,17 +172,17 @@ string-based. The keys and values you put in a DBM database get
 converted and written out as strings. This makes the semantics of DBM
 databases slightly different from tables. For example, a table can have
 two separate keys for the integer \texttt{1} and the string
-\texttt{{\textquotedbl}1{\textquotedbl}}, but a DBM database will treat
-both keys as the string \texttt{{\textquotedbl}1{\textquotedbl}}. This
+\texttt{"1"}, but a DBM database will treat
+both keys as the string \texttt{"1"}. This
 limitation on DBM databases also means that you cannot use structure
 types such as lists as keys or values in the database. If the type is
-not convertible to string, it won{\textquotesingle}t work. You can use
+not convertible to string, it won't work. You can use
 the functions \texttt{xencode()} and \texttt{xdecode()}, described in
 the previous section, to manually convert between strings and
 structures for storage in a DBM database if you really need this
 capability.
 
-\subsection[SQL Databases]{SQL Databases}
+\section[SQL Databases]{SQL Databases}
 
 \index{SQL}DBM is great for data that can be organized around a single
 key, but it is not much help for more complex databases. The industry
@@ -195,7 +195,7 @@ multiple tables, and those tables are accessed by walking through a set
 of results to a query, rather than by accessing individual elements
 directly. SQL is designed for industrial-strength relational databases.
 
-\subsubsection{The SQL Language}
+\subsection{The SQL language}
 
 The SQL language was invented by IBM and based on relational database
 theory developed by E.F. Codd. A database is a collection of
@@ -207,18 +207,18 @@ form or layout of the data. There is an ANSI standard definition of
 SQL, but many vendors provide extensions, and most vendors are also
 missing features from the ANSI standard. Unicon allows you to send any
 string you want to the SQL server, so you can write portable
-{\textquotedbl}vanilla SQL{\textquotedbl} or you can write
+"vanilla SQL" or you can write
 vendor-specific SQL as needed.
 
 SQL was originally intended for text-based interactive sessions between
 humans and their databases, but is now primarily used
-{\textquotedbl}under the covers{\textquotedbl} by database
+"under the covers" by database
 applications. Many database applications accommodate novice users with
 a graphical interface that does not require any knowledge of SQL, while
-supporting a SQL {\textquotedbl}escape hatch{\textquotedbl} for
+supporting a SQL "escape hatch" for
 advanced users who may wish to do custom queries. This duality is
 paralleled in the Unicon language by the fact that
-Unicon{\textquotesingle}s built-in database operators and functions
+Unicon's built-in database operators and functions
 duplicate a subset of the capabilities of SQL. There are two ways to do
 things: using Unicon operations or using SQL statements.
 
@@ -238,43 +238,43 @@ Tables have a primary key, which must be unique among rows in the table.
 By default the primary key is the first one listed, so \texttt{name} is
 the primary key in table \texttt{addresses} above.
 
-SQL{\textquotesingle}s data manipulation operations include
+SQL's data manipulation operations include
 \texttt{SELECT}, \texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE}.
 \texttt{SELECT} allows you to refine the data set being operated on,
 picking rows and columns that form some projection of the original
 table. Perhaps more importantly, \texttt{SELECT} allows you to combine
 information from multiple tables using relational algebra operations.
 Most databases are long-lived and evolve to include more columns of
-information over time. SQL{\textquotesingle}s ability to select and
+information over time. SQL's ability to select and
 operate on projections is an important feature, since code that works
 with a certain set of columns continues to work after the database is
 modified to include additional columns.
 
 \texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE} all modify the
-table{\textquotesingle}s contents. \texttt{INSERT} adds new rows to a
+table's contents. \texttt{INSERT} adds new rows to a
 table. \ For example:
 
 \iconcode{
 insert into addresses (name, address, phone) \\
-\>   \ \ \ \ values ({\textquotesingle}Nick K{\textquotesingle},
-{\textquotesingle}1 Evil Empire{\textquotesingle},
-{\textquotesingle}(123)456-7890{\textquotesingle}) \\
+\>   \ \ \ \ values ('Nick K',
+'1 Evil Empire',
+'(123)456-7890') \\
 insert into addresses (name, address, phone) \\
-\>   \ \ \ \ values ({\textquotesingle}Vic T{\textquotesingle},
-{\textquotesingle}23 Frozen Glade{\textquotesingle},
-{\textquotesingle}(900)888-8888{\textquotesingle})
+\>   \ \ \ \ values ('Vic T',
+'23 Frozen Glade',
+'(900)888-8888')
 }
 
 \texttt{UPDATE} and \texttt{DELETE} can modify or remove sets of rows
 that match a particular criterion, as in
 
 \iconcode{
-update addresses set address = {\textquotesingle}666 RTH,
-Issaquah{\textquotesingle} \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ where name = {\textquotesingle}Nick
-K{\textquotesingle} \\
-delete from addresses where name = {\textquotesingle}Vic
-T{\textquotesingle}
+update addresses set address = '666 RTH,
+Issaquah' \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ where name = 'Nick
+K' \\
+delete from addresses where name = 'Vic
+T'
 }
 
 This section presented only a few aspects of the SQL language. For
@@ -284,12 +284,11 @@ complex operations the best solution is to formulate some SQL commands
 to solve the problem. A full discussion of SQL is beyond the scope of
 this book. For more information on this topic you might want to read
 one of the following books: Ramez Elmasri and Shamkant
-Navanthe{\textquotesingle}s \textit{Fundamentals of Database Systems,}
-C.J. Date and Hugh Darwen{\textquotesingle}s \textit{A Guide to the SQL
+Navanthe's \textit{Fundamentals of Database Systems,}
+C.J. Date and Hugh Darwen's \textit{A Guide to the SQL
 Standard}.
 
-\subsubsection[Database Architectures and ODBC]{Database Architectures
-and ODBC}
+\subsection{Database architectures and ODBC}
 
 \index{ODBC}SQL databases are accessed through an underlying Open
 DataBase Connectivity (ODBC) transport mechanism. This mechanism allows
@@ -313,7 +312,7 @@ client programs that access typical database servers.
 
 \bigskip
 
-To use Unicon{\textquotesingle}s SQL facilities, you must have several
+To use Unicon's SQL facilities, you must have several
 software components in place. First, you need a SQL server that
 supports ODBC. You could buy a commercial SQL server, or you may be
 able to use a free or low-cost server such as \index{MySQL}MySQL
@@ -334,26 +333,27 @@ to talk to their database. Once you have the ODBC software set up,
 writing the Unicon client program to connect to your database is
 straightforward.
 
-\subsubsection[Opening a SQL Database]{Opening a SQL Database}
+\subsection{Opening a SQL database}
+
 Connecting to a SQL database is performed by calling \texttt{open()}
-with mode \texttt{{\textquotedbl}o{\textquotedbl}}. This establishes a
+with mode \texttt{"o"}. This establishes a
 session with a data source. The filename argument to \texttt{open()} is
 the data source to which you are connecting; it is associated with a
 particular ODBC driver, remote database server machine or IP number,
 and port within the ODBC driver manager. Mode
-\texttt{{\textquotedbl}o{\textquotedbl}} uses additional arguments to
+\texttt{"o"} uses additional arguments to
 \texttt{open()} that specify the user name and password to use in
 connecting to the specified data source. Here is an example that
 establishes a connection to a database:
 
 \iconcode{
-f := open({\textquotedbl}unicondb{\textquotedbl},
-{\textquotedbl}o{\textquotedbl}, {\textquotedbl}scott{\textquotedbl},
-{\textquotedbl}tiger{\textquotedbl})}
+f := open("unicondb",
+"o", 'scott',
+"tiger")}
 
 The \texttt{open()} function returns a value that supports many of the
 operations of both a file and a table. If the connection
-can{\textquotesingle}t be established, the call fails. The underlying
+can't be established, the call fails. The underlying
 session information is maintained separately and may be shared by
 multiple calls to \texttt{open()} to the same database. In addition to
 the network connection and SQL session information that is retained,
@@ -363,19 +363,19 @@ consisting of a set of rows corresponding to the current query, and a
 first opened, the selection consists of a null set containing no rows
 and no columns.
 
-\subsubsection{Querying and Modifying a SQL Database}
+\subsection{Querying and modifying a SQL database}
 
 Subsequent queries to the database can be made by calling
 \texttt{sql(db, sqlcmd)}. The \index{sql()}\texttt{sql()} function sets
 the current selection within the database and places the cursor at the
 beginning of the set of selected rows. For example, to obtain Vic
-T{\textquotesingle}s phone number you might say
+T's phone number you might say
 
 \iconcode{
-sql(f, {\textquotedbl}select phone from addresses where
-name={\textquotesingle}Vic T{\textquotesingle}{\textquotedbl})}
+sql(f, "select phone from addresses where
+name='Vic T'")}
 
-Vic{\textquotesingle}s phone number is included if you use the original
+Vic's phone number is included if you use the original
 \texttt{select *} query, but the more specific your query, the less
 time and network bandwidth is wasted sending data that your client
 application must filter out. You should do as much work on the server
@@ -389,7 +389,7 @@ when there is no return value from the operation, such as a
 type for other kinds of queries, and it can fail, for example if the
 SQL string is malformed or requests an impossible operation.
 
-\subsubsection{Traversing the Selected Rows}
+\subsection{Traversing the selected rows}
 
 To walk through the rows of your current database selection, you call
 \index{fetch()!SQL}\texttt{fetch(db)}. The value returned is a
@@ -401,42 +401,43 @@ Phone, you can write
 \iconcode{
 row := fetch(db) \\
 write(row.Name) \\
-write(row[{\textquotedbl}Address{\textquotedbl}])
+write(row["Address"])
 }
 
 Called with one argument, \texttt{fetch(db)} moves the cursor forward
 one position. With two arguments, \texttt{fetch(db, column)} fetches a
 single column from the current row, without advancing the cursor.
 
-\subsubsection[A SQL Example Application]{A SQL Example Application}
+\subsection{A SQL example application}
+
 \index{SQL}A human resources database might include two tables. One
 table might maintain employee information, such as names,
 identification numbers, and phone numbers, while another table
 maintains entries about specific jobs held, including
-employee{\textquotesingle}sID, the pay rate, a code indicating whether
+employee'sID, the pay rate, a code indicating whether
 pay is hourly or salaried, and the job title. Note that the SQL is
 embedded within a string literal.
 
 \iconcode{
-sql(db, {\textquotedbl}create table employees (id varchar(11), name
+sql(db, "create table employees (id varchar(11), name
 varchar(40),\\
-\>\>\>\> phone varchar(15)){\textquotedbl}) \\
-sql(db, {\textquotedbl}create table jobs (id varchar(11), payrate
+\>\>\>\> phone varchar(15))") \\
+sql(db, "create table jobs (id varchar(11), payrate
 integer, is\_salaried char,\\
-\>\>\>\> title varchar(40)){\textquotedbl})
+\>\>\>\> title varchar(40))")
 }
 
 \noindent
 Inserting rows into the database looks like
 
 \iconcode{
-sql({\textquotedbl}insert into employees (id, name, phone) values(32,
-{\textquotesingle}Ray{\textquotesingle},
-{\textquotesingle}274-2977{\textquotesingle}){\textquotedbl})}
+sql("insert into employees (id, name, phone) values(32,
+'Ray',
+'274-2977')")}
 
 Now, how can you print out the job title for any particular employee? If
-you have the employee{\textquotesingle}s identification number, the
-task is easy, but let{\textquotesingle}s say you just have their name.
+you have the employee's identification number, the
+task is easy, but let's say you just have their name.
 These are the kinds of jobs for which SQL was created. Information from
 the employees table is effortlessly cross-referenced with the jobs
 table by the following SQL. \ The string is long so it is split into
@@ -445,13 +446,13 @@ closing doublequote has not been found and the line ends with an
 underscore character.
 
 \iconcode{
-sql(db, {\textquotedbl}select name,title from employees,jobs \_ \\
-\>   \ \ \ \ \ \ where name={\textquotesingle}Ray{\textquotesingle} and
-employees.id = jobs.id{\textquotedbl}) \\
+sql(db, "select name,title from employees,jobs \_ \\
+\>   \ \ \ \ \ \ where name='Ray' and
+employees.id = jobs.id") \\
 while write(fetch(db).Title)
 }
 
-\subsubsection{SQL Types and Unicon Types}
+\subsection{SQL types and Unicon types}
 
 SQL has many data types, most of which correspond well to Unicon types.
 For example, \texttt{CHAR} and \texttt{VARCHAR} correspond to Icon
@@ -474,13 +475,13 @@ using a function such as \texttt{xencode()}.
 SQL also has types not found in Unicon. These types, such as bit
 strings, datetimes, timestamps, and BLOBS, are generally all
 represented by strings, and strings are used to insert such values into
-SQL databases. In fact, strings are the {\textquotedbl}magic
-fingers{\textquotedbl} of the whole interface, since they are also the
+SQL databases. In fact, strings are the "magic
+fingers" of the whole interface, since they are also the
 type used by the system to represent out of range values when reading
 SQL columns into Unicon. But, you are probably tired of me stringing
 you along about databases by now.
 
-\subsubsection{More SQL Database Functions}
+\subsection{More SQL database functions}
 
 SQL databases are complicated enough, and feature-rich enough to warrant
 their own repertoire of functions in addition to the operations they
@@ -501,13 +502,13 @@ in a table. All three of these functions return their results as either
 a record or list of records; the record field names and descriptions
 are given in Appendix A.
 
-\subsection{Tips and Tricks for SQL Database Applications}
+\section{Tips and Tricks for SQL Database Applications}
 
 In addition to the complexity of learning SQL itself, SQL database
 applications have a characteristic flavor which may or may not seem
 natural to the Unicon programmer.
 
-\subsubsection{Operating on Large Files}
+\subsection{Operating on large files}
 
 If anything can bring a modern workstation to its knees, it is asking
 for 200MB of data in a remote SQL database. Some SQL operations are
@@ -517,18 +518,18 @@ network connection. For a fixed amount of data, operation time will
 vary radically depending on how it is organized; fewer, larger tuples
 are transmitted faster than many smaller tuples.
 
-\subsubsection{Use Multiple Connections to Nest Queries}
+\subsection{Use multiple connections to nest queries}
 
 It is common to use more than one table at once. Some times this is
-using SQL{\textquotesingle}s \texttt{JOIN} operation, but sometimes it
+using SQL's \texttt{JOIN} operation, but sometimes it
 is not. If you try to nest a second query inside a first one, you will
 quickly find that on a given connection, only one \texttt{SELECT} and
 one row set is maintained at a time. The second \texttt{SELECT}
 replaces the first, so for example:
 
 \iconcode{
-db := open({\textquotedbl}mydsn{\textquotedbl},
-{\textquotedbl}o{\textquotedbl}, ...) \\
+db := open("mydsn",
+"o", ...) \\
 sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
 while r := fetch(db) do \{ \\
 \>   sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
@@ -538,14 +539,14 @@ while r := fetch(db) do \{ \\
 
 \noindent
 does not work. Within your operating system and database
-server{\textquotesingle}s limits, the easy solution is to open multiple
+server's limits, the easy solution is to open multiple
 connections to your database:
 
 \iconcode{
-db1 := open({\textquotedbl}mydsn{\textquotedbl},
-{\textquotedbl}o{\textquotedbl}, ...) \\
-db2 := open({\textquotedbl}mydsn{\textquotedbl},
-{\textquotedbl}o{\textquotedbl}, ...) \\
+db1 := open("mydsn",
+"o", ...) \\
+db2 := open("mydsn",
+"o", ...) \\
 sql(db, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
 while r := fetch(db) do \{ \\
 \>   sql(db2, {\textquotedblleft}SELECT ...{\textquotedblright}) \\
@@ -553,7 +554,7 @@ while r := fetch(db) do \{ \\
 \>   \}
 }
 
-\subsubsection{Dynamic Records}
+\subsection{Dynamic records}
 
 You may be wondering exactly how rows are represented. Actually, they
 are records, but their fields are determined at run-time from the names
@@ -569,7 +570,8 @@ records can be arbitrary strings, not just legal identifiers, but
 obviously the field operator (\texttt{.}) cannot be used for fields
 that are not identifiers.
 
-\subsubsection[The db Library]{The \texttt{db} Library}
+\subsection{The \texttt{db} library}
+
 By adding \texttt{link db} to your program you can access a library that
 provides simplified access to SQL databases for non-SQL programmers.
 These procedures will not spare you the pain of learning SQL for long,
@@ -582,9 +584,9 @@ columns within a row returned by \texttt{fetch()}.
 
 \iconcode{
 row := fetch(db) \\
-row.Name := {\textquotedbl}Bill Snyder{\textquotedbl} \\
-row[{\textquotedbl}Address{\textquotedbl}] := {\textquotedbl}6900
-Tropicana Blvd{\textquotedbl} \\
+row.Name := "Bill Snyder" \\
+row["Address"] := '6900
+Tropicana Blvd" \\
 dbupdate(db, row)
 }
 
@@ -598,7 +600,7 @@ Inserting and deleting rows may be performed by the procedures
 function takes two parameters for each column being inserted, the
 column name and then the value.
 
-\subsubsection{Unwritable Tuples}
+\subsection{Unwritable tuples}
 
 It is worth mentioning that many forms of SQL selections are read-only.
 The relational combination of columns from different tables is a
@@ -609,7 +611,7 @@ which is usually applied before an aggregate count. Executing a
 if you do something fancier, you will have to know the semantics of SQL
 to tell whether the result may be modified.
 
-\section*{Summary}
+\section{Summary}
 
 Databases are a vital form of persistent storage for modern
 applications. The notation used to manipulate a database can look like

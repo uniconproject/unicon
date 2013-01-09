@@ -76,8 +76,7 @@ procedure findfile(dir, pattern) \\
          stop("Invalid pattern ", image(pattern)) \\
 \>\>    \} \\
 \>   d := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't
-	access ", dir, " ",
+\>   \ \ \ write(\&errout, "Couldn't access ", dir, " ",
 	sys\_errstr(\&errno)) \\
 \>   \ \ \ return \\
 \>   \ \ \ \}
@@ -101,8 +100,7 @@ directories, not on links.
 \>   \ \ \ f := dir {\textbar}{\textbar}
 "/" {\textbar}{\textbar} name \\
 \>   \ \ \ s := stat(f) {\textbar} \{ \\
-\>   \ \ \ \ \ \ write(\&errout,
-"Couldn't stat ", f, \\
+\>   \ \ \ \ \ \ write(\&errout, "Couldn't stat ", f, \\
 \>   \ \ \ \ \ \ \ \ \ \ \ \ " ",
 sys\_errstr(\&errno)) \\
 \>   \ \ \ \ \ \ next \\
@@ -395,7 +393,7 @@ end \\
 \# the global table "lengths" \\
 procedure scan(dir) \\
 \>   f := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't
+\>   \ \ \ write(\&errout, "Couldn't 
 open ", dir, "; ", sys\_errstr(\&errno)) \\
 \>   \ \ \ fail \\
 \>   \ \ \ \} \\
@@ -403,8 +401,7 @@ open ", dir, "; ", sys\_errstr(\&errno)) \\
 \>   \ \ \ filename := dir {\textbar}{\textbar}
 "/" {\textbar}{\textbar} name \\
 \>   \ \ \ r := stat(filename) {\textbar} \{ \\
-\>   \ \ \ \ \ \ write(\&errout,
-"Couldn't stat ",
+\>   \ \ \ \ \ \ write(\&errout, "Couldn't stat ",
 filename, "; ", sys\_errstr(\&errno)) \\
 \>   \ \ \ \ \ \ next \\
 \>   \ \ \ \ \ \ \} \\
@@ -688,18 +685,14 @@ stop("Couldn't open ",db) \\
 \>   while line := read(dbf) {\textbar}{\textbar}
 "{\textbackslash}t" do \\
 \>   \ \ \ line ? \{ \\
-\>   \ \ \ \ \ \ tab(many('
-{\textbackslash}t')) \\
+\>   \ \ \ \ \ \ tab(many('{\textbackslash}t')) \\
 \>   \ \ \ \ \ \ if pos(0) {\textbar} ="\#"
 then next \\
-\>   \ \ \ \ \ \ dir := tab(upto('
-{\textbackslash}t')); \ \ tab(many('
+\>   \ \ \ \ \ \ dir := tab(upto('{\textbackslash}t')); \ \ tab(many('
 {\textbackslash}t')) \\
-\>   \ \ \ \ \ \ user := tab(upto('
-{\textbackslash}t')); \ tab(many('
+\>   \ \ \ \ \ \ user := tab(upto('{\textbackslash}t')); \ tab(many('
 {\textbackslash}t')) \\
-\>   \ \ \ \ \ \ quota := tab(upto('
-{\textbackslash}t')); tab(many('
+\>   \ \ \ \ \ \ quota := tab(upto('{\textbackslash}t')); tab(many('
 {\textbackslash}t')) \\
 \>   \ \ \ \ \ \ days := tab(0) {\textbar}
 "" \\
@@ -747,19 +740,16 @@ procedure write\_db(db, owners, quotas, daysover) \\
 ".new" \\
 \>   db\_old := open(db) \\
 \>   db\_new := open(new\_db, "w")
-{\textbar} stop("Couldn't open
-", new\_db) \\
+{\textbar} stop("Couldn't open", new\_db) \\
 \>   while line := read(db\_old) do \{ \\
 \>   \ \ \ line ? \{ \\
-\>   \ \ \ \ \ \ tab(many('
-{\textbackslash}t')) \\
+\>   \ \ \ \ \ \ tab(many('{\textbackslash}t')) \\
 \>   \ \ \ \ \ \ if pos(0) {\textbar} ="\#"
 then \{ \\
 \>   \ \ \ \ \ \ \ \ \ write(db\_new, line) \\
 \>   \ \ \ \ \ \ \ \ \ next \\
 \>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ dir := tab(upto('
-{\textbackslash}t')) \\
+\>   \ \ \ \ \ \ dir := tab(upto('{\textbackslash}t')) \\
 \>   \ \ \ \ \ \ write(db\_new, dir,
 "{\textbackslash}t", owners[dir],
 "{\textbackslash}t", quotas[dir],
@@ -854,8 +844,7 @@ two characters from the pty's name.
 \>   \ \ \ \ \ \ \ \ \ stop("Script is done, file
 ", image(fname)) \\
 \>   \ \ \ \ \ \ \} \\
-\>   stop("Couldn't find a
-pty!") \\
+\>   stop("Couldn't find a pty!") \\
 end
 }
 
@@ -880,12 +869,10 @@ sends is echoed to the user, and also saved to the script file.
 \iconcode{
 procedure capturesession(scriptfile, pty, name, flags) \\
 \>   f := open(scriptfile, flags) {\textbar}
-		stop("Couldn't
-open ", image(scriptfile)) \\
+		stop("Couldn't open ", image(scriptfile)) \\
 \>   tty := open("/dev/tty"
 {\textbar}{\textbar} name, "rw")
-{\textbar} stop("Couldn't
-open tty!") \\
+{\textbar} stop("Couldn't open tty!") \\
 \>   shell := getenv("SHELL") {\textbar}
 "/bin/sh" \\
 \>   system([shell, "-i"], tty, tty, tty,
@@ -1031,8 +1018,7 @@ procedure traverse(dir) \\
 \>   \# Read all the files; for any non-special files, copy them \\
 \>   \# over to the output dir, creating directories as necessary \\
 \>   d := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't
-stat ", dir, " ", 
+\>   \ \ \ write(\&errout, "Couldn't stat ", dir, " ", 
 		sys\_errstr(\&errno)) \\
 \>   \ \ \ return \\
 \>   \ \ \ \} \\
@@ -1043,8 +1029,7 @@ stat ", dir, " ",
 "..") then next \\
 \>   \ \ \ s := stat(dir {\textbar}{\textbar} name) {\textbar} \{ \\
 \>   \ \ \ \ \ \ write(\&errout,
-"Couldn't stat ",
-dir{\textbar}{\textbar}name, " ", sys\_errstr(\&errno)) \\
+"Couldn't stat ", dir{\textbar}{\textbar}name, " ", sys\_errstr(\&errno)) \\
 \>   \ \ \ \ \ \ next \\
 \>   \ \ \ \} \\
 \>   \ \ \ if s.mode[1] == "d" then traverse(dir {\textbar}{\textbar} name) \\
@@ -1090,8 +1075,7 @@ procedure mkdir\_p(prefix, dir) \\
 \>   \# copying mode and owner. \\
 \>   dir {\textbar}{\textbar}:= "/" \\
 \>   d := "" \\
-\>   dir ? while comp :=
-tab(upto('/')) do \{ \\
+\>   dir ? while comp := tab(upto('/')) do \{ \\
 \>   \ \ \ tab(many('/')) \\
 \>   \ \ \ d {\textbar}{\textbar}:= "/"
 {\textbar}{\textbar} comp \\
@@ -1126,8 +1110,7 @@ procedure get\_time(n) \\
 \ \\
 \>   while line := read({\textbackslash}f) do \\
 \>   \ \ \ line ? \{ \\
-\>   \ \ \ \ \ \ lev := integer(tab(upto('
-'))) \\
+\>   \ \ \ \ \ \ lev := integer(tab(upto(' '))) \\
 \>   \ \ \ \ \ \ move(1) \\
 \>   \ \ \ \ \ \ date := tab(0) \\
 \>   \ \ \ \ \ \ levels[lev] := date \\
@@ -1149,8 +1132,7 @@ procedure save\_time(n) \\
 \>   levels[n] := \&now \\
 \ \\
 \>   f := open(dbase, "w") {\textbar}
-stop("Couldn't open table
-", dbase) \\
+stop("Couldn't open table ", dbase) \\
 \>   every i := integer(!\&digits) do \\
 \>   \ \ \ if i {\textless}= n then write(f, i, " ",
 {\textbackslash}levels[i]) \\
@@ -1220,8 +1202,7 @@ file") \\
 user {\textbar}{\textbar} ":"
 {\textbar}{\textbar} password {\textbar}{\textbar}
 "@" {\textbar}{\textbar} server \\
- \ \ s := open(url, "m") {\textbar} stop("Couldn't connect to
-", image(url)) \\
+ \ \ s := open(url, "m") {\textbar} stop("Couldn't connect to ", image(url)) \\
  \ \ while filter(pop(s), rules) do \\
  \ \ \ \ \ \# Make sure there are no errors \\
  \ \ \ \ \ if s["Status-Code"]
@@ -1289,8 +1270,7 @@ was no error in performing the action.
 \iconcode{
 procedure filterproc\_delete(message, args)\\
  \ \ return ""
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \# We don't have to do
-anything\\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \# We don't have to do anything\\
 end\\
 \\
 procedure filterproc\_save(message, filename)\\
@@ -1489,13 +1469,11 @@ user {\textbar}{\textbar} ":"
 "@" {\textbar}{\textbar} server\\
 \\
  \ \ filter\_rules := read\_rulefile(args[1]) {\textbar}\\
- \ \ \ \ \ stop("Couldn't read filter
-rules from ", image(args[1]))\\
+ \ \ \ \ \ stop("Couldn't read filter rules from ", image(args[1]))\\
  \ \ filter(testmsg(), filter\_rules)\\
 \\
  \ \ s := open(url, "m") {\textbar}
-stop("Couldn't connect to
-", image(url))\\
+stop("Couldn't connect to ", image(url))\\
 \\
  \ \ while filter(pop(s), filter\_rules) do\\
  \ \ \ \ \ if s["Status-Code"]

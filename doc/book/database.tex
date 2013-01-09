@@ -75,7 +75,7 @@ db["Ralph"] :=
 db["Ray"] :=
 "800-4UN-ICON" \\
 dbf :=
-open("db.dat",'w') \\
+open("db.dat","w") \\
 xencode(db, dbf) \\
 close(dbf)
 }
@@ -132,9 +132,7 @@ the command line, and writes out the value corresponding to that key.
 
 \iconcode{
 procedure main(args) \\
-\>   d := open(args[1], "d") {\textbar}
-stop("can't open ",
-args[1]) \\
+\>   d := open(args[1], "d") {\textbar} stop("can't open ", args[1]) \\
 \>   write(d[args[2]]) \\
 end
 }
@@ -150,9 +148,7 @@ this:
 
 \iconcode{
 procedure main(args) \\
-\>   d := open(args[1], "d") {\textbar}
-stop("can't open ",
-args[1]) \\
+\>   d := open(args[1], "d") {\textbar} stop("can't open ", args[1]) \\
 \>   d[args[2]] := args[3] \\
 \>   write(d[args[2]]) \\
 \>   close(d) \\
@@ -252,7 +248,7 @@ modified to include additional columns.
 
 \texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE} all modify the
 table's contents. \texttt{INSERT} adds new rows to a
-table. \ For example:
+table. For example:
 
 \iconcode{
 insert into addresses (name, address, phone) \\
@@ -269,12 +265,9 @@ insert into addresses (name, address, phone) \\
 that match a particular criterion, as in
 
 \iconcode{
-update addresses set address = '666 RTH,
-Issaquah' \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ where name = 'Nick
-K' \\
-delete from addresses where name = 'Vic
-T'
+update addresses set address = '666 RTH, Issaquah' \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ where name = 'Nick K' \\
+delete from addresses where name = 'Vic T'
 }
 
 This section presented only a few aspects of the SQL language. For
@@ -285,8 +278,7 @@ to solve the problem. A full discussion of SQL is beyond the scope of
 this book. For more information on this topic you might want to read
 one of the following books: Ramez Elmasri and Shamkant
 Navanthe's \textit{Fundamentals of Database Systems,}
-C.J. Date and Hugh Darwen's \textit{A Guide to the SQL
-Standard}.
+C.J. Date and Hugh Darwen's \textit{A Guide to the SQL Standard}.
 
 \subsection{Database architectures and ODBC}
 
@@ -348,7 +340,7 @@ establishes a connection to a database:
 
 \iconcode{
 f := open("unicondb",
-"o", 'scott',
+"o", "scott",
 "tiger")}
 
 The \texttt{open()} function returns a value that supports many of the
@@ -414,7 +406,7 @@ single column from the current row, without advancing the cursor.
 table might maintain employee information, such as names,
 identification numbers, and phone numbers, while another table
 maintains entries about specific jobs held, including
-employee'sID, the pay rate, a code indicating whether
+employee's ID, the pay rate, a code indicating whether
 pay is hourly or salaried, and the job title. Note that the SQL is
 embedded within a string literal.
 
@@ -440,7 +432,7 @@ you have the employee's identification number, the
 task is easy, but let's say you just have their name.
 These are the kinds of jobs for which SQL was created. Information from
 the employees table is effortlessly cross-referenced with the jobs
-table by the following SQL. \ The string is long so it is split into
+table by the following SQL. The string is long so it is split into
 two lines. A Unicon string literal spans multiple lines when the
 closing doublequote has not been found and the line ends with an
 underscore character.
@@ -585,8 +577,7 @@ columns within a row returned by \texttt{fetch()}.
 \iconcode{
 row := fetch(db) \\
 row.Name := "Bill Snyder" \\
-row["Address"] := '6900
-Tropicana Blvd" \\
+row["Address"] := '6900 Tropicana Blvd" \\
 dbupdate(db, row)
 }
 

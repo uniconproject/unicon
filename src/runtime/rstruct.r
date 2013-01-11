@@ -833,11 +833,7 @@ dynrecord(s, fields, n)
    if (bp == NULL) return NULL;
    bp->title = T_Proc;
    bp->blksize = sizeof(struct b_proc) + sizeof(struct descrip) * n;
-#if COMPILER
    bp->ccode = rmkrec;
-#else
-   bp->entryp.ccode = Omkrec;
-#endif
    bp->nfields = n;
    bp->ndynam = -2;
    bp->recnum = -1; /* recnum -1 means: dynamic record */
@@ -864,16 +860,13 @@ dynrecord(s, fields, n)
    return bp;
 }
 
-#else /* Uniconc */
+#else /* COMPILER */
 
 struct b_proc *dynrecord(dptr s, dptr fields, int n)
    {
       struct b_proc_list *bpelem = NULL;
       struct b_proc *bp = NULL;
       int i, ct=0;
-#if COMPILER
-      return NULL;
-#else
       if (n > longest_dr) {
          SUSPEND_THREADS();
          if (n > longest_dr) {
@@ -940,9 +933,8 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       bpelem->next = dr_arrays[n-1];
       dr_arrays[n-1] = bpelem;
       return bp;
-#endif
    }
-#endif /* Uniconc */
+#endif /* COMPILER */
 
 #ifdef MultiThread
 

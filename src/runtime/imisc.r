@@ -298,9 +298,9 @@ linearsearch:
 
 LibDcl(mkrec,-1,"mkrec")
    {
-   register int i;
-   register struct b_proc *bp;
-   register struct b_record *rp;
+   register int i, nfld;
+   struct b_proc *bp;		/* not tended, used only prior to alc */
+   tended struct b_record *rp;
 
    /*
     * Be sure that call is from a procedure.
@@ -311,12 +311,13 @@ LibDcl(mkrec,-1,"mkrec")
     *  a record with the appropriate number of fields.
     */
    bp = (struct b_proc *) BlkLoc(Arg0);
-   Protect(rp = alcrecd((int)bp->nfields, (union block *)bp), RunErr(0,NULL));
+   nfld = bp->nfields;
+   Protect(rp = alcrecd(nfld, (union block *)bp), RunErr(0,NULL));
 
    /*
     * Set all fields in the new record to null value.
     */
-   for (i = (int)bp->nfields; i > nargs; i--)
+   for (i = nfld; i > nargs; i--)
       rp->fields[i-1] = nulldesc;
 
    /*

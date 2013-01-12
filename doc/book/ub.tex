@@ -2,7 +2,7 @@
 % see http://writer2latex.sourceforge.net for more info
 \documentclass[letterpaper,twoside,12pt]{book}
 \usepackage[english]{babel}
-\usepackage[textwidth=6in,textheight=9in,footskip=0cm]{geometry}
+\usepackage[textwidth=6in,textheight=9in]{geometry}
 \usepackage{color,array,supertabular,hhline}
 \usepackage{makeidx}
 %%% K.O. This is only needed in usecase.tex
@@ -12,23 +12,34 @@
 \usepackage{hyperref}
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=Programming with Unicon, pdfauthor=Clinton Jeffery, pdfsubject=, pdfkeywords=}
 \usepackage{graphicx}
-%%% K.O. icon.sty:
-%%% 1. Changes some global parameters, like baselinestretch.
+%%% K.O. icon.sty: I think icon.sty can be eliminated, and only a couple of its
+%%% declarations, redefining the tt font, can be inserted in this file.
+%%% 0. In my mind, making ttfamily and sffamily the same is questionable.  The
+%%% bold seems not to make a difference.
+%%% 1. Thsi file changes some global parameters, like baselinestretch.
 %%% 2. Check what is the effect of \renewcommand{\"}[0]{{\tt "}} on the rest of
 %%% the document!!
 %%% 3. The font sizes defined are too large.  Fix.
-%%% 4. What definitions in this file are actually useful?  Given that \iconcode
-%%% is redefined below?
 \input icon.sty
+\makeatletter
+\newcommand\arraybslash{\let\\\@arraycr}
+\makeatother
+\def\ssp{\def\baselinestretch{1.0}\large\normalsize}
+\def\dsp{\def\baselinestretch{1.0}\large\normalsize}
+\renewcommand{\iconcode}[1]{{\tt\ssp\begin{tabbing} xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=\+\kill #1 \end{tabbing}\dsp}}
+
+%%% K.O. Suggested replacement for \iconcode
+\newenvironment{icode}{%
+\ttfamily
+\begin{tabbing}
+  xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=\+\kill%
+}{\end{tabbing}}
+
 %%% K.O. amsmath is needed only because it defines \text, used in the next
 %%% macro. Eliminate!!
 \usepackage{amsmath}
 \newcommand\textsubscript[1]{\ensuremath{{}_{\text{#1}}}}
-\makeatletter
-\newcommand\arraybslash{\let\\\@arraycr}
-\def\ssp{\def\baselinestretch{1.0}\large\normalsize}
-\def\dsp{\def\baselinestretch{1.0}\large\normalsize}
-\renewcommand{\iconcode}[1]{{\tt\ssp\begin{tabbing} xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=\+\kill #1 \end{tabbing}\dsp}}
+
 
 \makeindex
 
@@ -49,28 +60,18 @@
 This page intentionally left blank.
 \clearpage
 
-\bigskip
-\bigskip
-\bigskip
+\vspace*{3\bigskipamount}
 \begin{center}
-\bfseries\Huge
-Programming with Unicon
+  \bfseries\Huge
+  Programming with Unicon
 \end{center}
 \bigskip
 \bigskip
 \begin{center}
-\bfseries\huge
-2\textsuperscript{nd} edition
+  \bfseries\huge
+  2\textsuperscript{nd} edition
 \end{center}
-
-\bigskip
-\bigskip
-\bigskip
-\bigskip
-\bigskip
-\bigskip
-\bigskip
-
+\vspace*{7\bigskipamount}
 \begin{flushright}\bfseries
 Clinton Jeffery \\
 Shamim Mohamed \\

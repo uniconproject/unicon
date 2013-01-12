@@ -9,8 +9,8 @@ multiprocessor and multicore systems, the hardware is designed to do
 several computations at once, and if your program does not ask for as
 much, it is underutilizing (sometimes severely) the platform.
 
-This chapter describes Unicon's concurrency facilities. It is based
-on Unicon Technical Report 14 and the implementation work of Jafar Al
+This chapter describes Unicon's concurrency facilities. It is based on
+Unicon Technical Report 14 and the implementation work of Jafar Al
 Gharaibeh; UTR14 on the unicon.org site may amend this chapter with
 added features in the future.  Threads are an extension of the
 co-expression type described in Chapter 4 and the system interface
@@ -41,19 +41,20 @@ writing things.
 
 \section{Threads and Co-Expressions}
 
-Co-expressions are independent, explicitly sequential execution contexts.
-Only one co-expression is active at any given moment. When a co-expression
-is activated, the calling co-expression blocks until the child co-expression
-returns the execution to it or fails. Threads, on the other hand, can run
-simultaneously and independently. Threads in Unicon are like special
-co-expressions that are marked to run asynchronously.
+Co-expressions are independent, explicitly sequential execution
+contexts.  Only one co-expression is active at any given moment. When
+a co-expression is activated, the calling co-expression blocks until
+the child co-expression returns the execution to it or fails. Threads,
+on the other hand, can run simultaneously and independently. Threads
+in Unicon are like special co-expressions that are marked to run
+asynchronously.
 
-In a concurrent program with two or more threads, each thread has its own
-program counter, stack pointer, and other CPU registers. However, all of the
-threads in a program share the address space, open files, and many other
-pieces of process-wide information. This enables very fast communication and
-cooperation between threads, which leads to less blocking, faster execution
-and more efficient use of resources.
+In a concurrent program with two or more threads, each thread has its
+own program counter, stack pointer, and other CPU registers. However,
+all of the threads in a program share the address space, open files,
+and many other pieces of process-wide information. This enables very
+fast communication and cooperation between threads, which leads to
+less blocking, faster execution and more efficient use of resources.
 
 Unicon programs start execution in the \texttt{main()} procedure. In a
 multi-thread programming environment, the procedure \texttt{main()} is
@@ -107,65 +108,54 @@ initialized before running them.  \texttt{spawn()} also takes optional
 parameters to control some aspects of the newly-created thread. The
 following code creates and runs a hello world thread:
 
-\iconcode{
+\begin{icode}
 thread write("Hello World!")
-}
+\end{icode}
 
-\noindent This is equivalent to:
-
-\iconcode{
+\noindent This is equivalent to
+\begin{icode}
 spawn( create write("Hello World!"))
-}
-
-\noindent or
-
-\iconcode{
+\end{icode}
+or to
+\begin{icode}
 co := create write("Hello World!") \\
 spawn(co)
-}
-
+\end{icode}
 Both \texttt{thread} and \texttt{spawn()} return a reference to the
 new thread. The following program creates 10 threads: 
-
-\iconcode{
+\begin{icode}
 procedure main() \\
-\ \ \ every i := !10 do thread write("Hello World! I am thread: ", i ) \\
-
-\ \ \ write("main: done") \\
-
+\> every i := !10 do thread write("Hello world! I am thread: ", i ) \\
+\> write("main: done") \\
 end
-}
+\end{icode}
 
-In this example, the main thread continues to execute normally after firing 10
-threads. Because of the non-deterministic nature of threads, there is no
-guarantee which thread gets to print out its ``hello world'' message first, or
-in what order the messages are printed out, including the message from the main
-thread \texttt{"main: done"}.  All of the possible permutations are valid. No
-assumptions can be made about which thread will continue running or finish
-first.  It depends on the host OS CPU process/thread scheduler. The order is
+In this example, the main thread continues to execute normally after
+firing 10 threads. Because of the non-deterministic nature of threads,
+there is no guarantee which thread gets to print out its ``hello
+world'' message first, or in what order the messages are printed out,
+including the message from the main thread \texttt{"main: done"}.  All
+of the possible permutations are valid. No assumptions can be made
+about which thread will continue running or finish first.  It depends
+on the host OS CPU process/thread scheduler. The order is
 unpredictable.
 
-Furthermore, the main thread might finish and terminate the program before some
-or all of the threads get executed or print out messages.  To avoid such
-situations, the main thread needs to wait for other threads to finish before
-exiting the program. This is can be achieved by using the function
-\texttt{wait()}, which blocks the calling thread until the target thread is
-done. The above program can be rewritten as follows:
+Furthermore, the main thread might finish and terminate the program
+before some or all of the threads get executed or print out messages.
+To avoid such situations, the main thread needs to wait for other
+threads to finish before exiting the program. This is can be achieved
+by using the function \texttt{wait()}, which blocks the calling thread
+until the target thread is done. The above program can be rewritten as
+follows:
 
-\iconcode{
+\begin{icode}
 procedure main() \\
-
-\ \ \ L := [ ] \\
-
-\ \ \ every i := !10 do put(L , thread write("Hello
-World! I am thread: " , i )) \\
-
-\ \ \ every wait(!L) \\
-
-\ \ \ write("main: done") \\
-
+\> L := [ ] \\
+\> every i := !10 do put(L, thread write("Hello world! I am thread: " , i)) \\
+\> every wait(!L) \\
+\> write("main: done") \\
 end
-}
+\end{icode}
 
 \noindent
 \texttt{wait(!L)} tells the main the thread to wait for every thread
@@ -177,104 +167,98 @@ synchronization technique, but most concurrent programming tasks need
 more synchronization than waiting for a thread to finish.  Advanced
 synchronization mechanisms are discussed below.
 
+
 \subsection{Thread evaluation context}
 
-Similar to co-expressions, threads have their own stack, starting from a
-snapshot of parameters and local variables at creation time. This allows
-co-expressions and threads to be used outside the scope where they are
-created. It also allows a thread to start by using the variable values
-at the time of its creation, rather than when running it in the
-case of \texttt{spawn()}.  An important side effect of this process is
-avoiding race conditions, because each thread gets a copy of the variables
-instead of having all the threads competing over the same shared variables. Race
-conditions and thread-safe data will be covered in depth in the following
-section. The following example and its output demonstrate the idea of an
-evaluation context:
+Similar to co-expressions, threads have their own stack, starting from
+a snapshot of parameters and local variables at creation time. This
+allows co-expressions and threads to be used outside the scope where
+they are created. It also allows a thread to start by using the
+variable values at the time of its creation, rather than when running
+it in the case of \texttt{spawn()}.  An important side effect of this
+process is avoiding race conditions, because each thread gets a copy
+of the variables instead of having all the threads competing over the
+same shared variables. Race conditions and thread-safe data will be
+covered in depth in the following section. The following example and
+its output demonstrate the idea of an evaluation context:
 
-\iconcode{
+\begin{icode}
 procedure main() \\
-\ \ \ local x:= 10, y:=20, z:=0 \\
-\ \ \ write( "Main thread: x=", x, ", y=", y, ", z=",z) \\
-\ \ \ thread (x:=100) \& write("Thread 1: x=", x) \\
-\ \ \ thread (y:=200) \& write("Thread 2: y=", y) \\
-\ \ \ thread (z:=x+y) \& write("Thread 3: z=", z) \\
-\ \ \ delay(1000) \\
-\ \ \ write( "Main thread: x=", x, ", y=", y, ", z=",z) \\
+\> local x:= 10, y:=20, z:=0 \\
+\> write( "Main thread: x=", x, ", y=", y, ", z=", z) \\
+\> thread (x:=100) \& write("Thread 1: x=", x) \\
+\> thread (y:=200) \& write("Thread 2: y=", y) \\
+\> thread (z:=x+y) \& write("Thread 3: z=", z) \\
+\> delay(1000) \\
+\> write( "Main thread: x=", x, ", y=", y, ", z=",z) \\
 end
-}
-
-\noindent
-output:
-
-\iconcode{
+\end{icode}
+The output is:
+\begin{icode}
 Main thread: x=10, y=20, z=0 \\
 Thread 3: z=30 \\
 Thread 1: x=100 \\
 Thread 2: y=200 \\
-Main thread: x=10, y=20, z=0 \\
-}
+Main thread: x=10, y=20, z=0
+\end{icode}
 
 The \texttt{delay(1000)} should give the threads enough time to finish before
 the main program finishes.  This should not be left to chance: \texttt{wait()}
 will block until the threads finish, instead of a 1 sec delay.
 
-The output shows that the changes to the variables are per-thread, and not
-visible in the main thread or in the other threads.  The copies of local
-variables in different threads can be thought of as passing parameters by value
-to a procedure. This is true for \emph{local} variables of \emph{immutable} data
-types; on the other hand, \emph{global} variables and \emph{mutable} types, such
-as lists, are shared.  Any change in the structure of such types is visible
-across all threads.  Contrast the following example with the one above:
+The output shows that the changes to the variables are per-thread, and
+not visible in the main thread or in the other threads.  The copies of
+local variables in different threads can be thought of as passing
+parameters by value to a procedure. This is true for \emph{local}
+variables of \emph{immutable} data types; on the other hand,
+\emph{global} variables and \emph{mutable} types, such as lists, are
+shared.  Any change in the structure of such types is visible across
+all threads.  Contrast the following example with the one above:
 
-\iconcode{
+\begin{icode}
 procedure main() \\
-\ \ \ local L \\
-\ \ \ L := [20, 10, 0] \\
-\ \ \ write( "Main thread: L[1]=", L[1],
-", L[2]=", L[2], ", L[3]=",L[3]) \\
-\ \ \ thread (L[1]:=100) \& write("Thread 1:
-\ L[1]=", L[1]) \\
-\ \ \ thread (L[2]:=200) \& write("Thread 2:
-\ L[2]=", L[2]) \\
-\ \ \ thread (L[3]:=L[1]+L[2]) \& write("Thread 3:
-\ L[3]=", L[3]) \\
-\ \ \ delay(1000) \\
-\ \ \ write( "Main thread: L[1] =", L[1], ", L[2]=", L[2], ", L[3]=",L[3]) \\
+\> local L \\
+\> L := [20, 10, 0] \\
+\> write( "Main thread: L[1]=", L[1], ", L[2]=", L[2], ", L[3]=", L[3]) \\
+\> thread (L[1]:=100) \& write("Thread 1: L[1]=", L[1]) \\
+\> thread (L[2]:=200) \& write("Thread 2: L[2]=", L[2]) \\
+\> thread (L[3]:=L[1]+L[2]) \& write("Thread 3: L[3]=", L[3]) \\
+\> delay(1000) \\
+\> write( "Main thread: L[1] =", L[1], ", L[2]=", L[2], ", L[3]=",L[3]) \\
 end
-}
-\noindent
-output:
-
-\iconcode{
+\end{icode}
+with output
+\begin{icode}
 Main thread: L[1]=20, L[2]=10, L[3]=0 \\
 Thread 2: \ L[2]=200 \\
 Thread 3: \ L[3]=300 \\
 Thread 1: \ L[1]=100 \\
-Main thread: L[1] =100, L[2]=200, L[3]=300 \\
-}
+Main thread: L[1] =100, L[2]=200, L[3]=300
+\end{icode}
 
 \noindent
-Instead of using 3 variables \texttt{x}, \texttt{y}, and \texttt{z}, a list of
-size 3 is used. \texttt{x} from the previous example maps to \texttt{L[1]},
-\texttt{y} to \texttt{L[2]}, and z to \texttt{L[3]}. The program does the same
-thing as before, but any change to the content of \texttt{L} is visible in other
-threads. Unlike the output in the first case, where the values of \texttt{x},
-\texttt{y}, and \texttt{z} remained the same in the main thread, this output
-shows that the changes to the list elements in the other threads were visible in
-the main thread.
-
+Instead of using 3 variables \texttt{x}, \texttt{y}, and \texttt{z}, a
+list of size 3 is used. \texttt{x} from the previous example maps to
+\texttt{L[1]}, \texttt{y} to \texttt{L[2]}, and z to
+\texttt{L[3]}. The program does the same thing as before, but any
+change to the content of \texttt{L} is visible in other
+threads. Unlike the output in the first case, where the values of
+\texttt{x}, \texttt{y}, and \texttt{z} remained the same in the main
+thread, this output shows that the changes to the list elements in the
+other threads were visible in the main thread.
 
 \subsection{Passing arguments to threads}
 
-When creating a new thread for a procedure, the parameters that are passed to
-the procedure at creation time can be thought of as a one-time one-way
-communication between the creator thread and the new thread. This is very useful
-in initializing the new thread or passing any data that the thread is supposed
-to work on. The following program has 3 threads in addition to the main
-thread. The main thread passes a list to each ``worker'' thread, and each worker
-sums the list and prints the sum to the screen:
+When creating a new thread for a procedure, the parameters that are
+passed to the procedure at creation time can be thought of as a
+one-time one-way communication between the creator thread and the new
+thread. This is very useful in initializing the new thread or passing
+any data that the thread is supposed to work on. The following program
+has 3 threads in addition to the main thread. The main thread passes a
+list to each ``worker'' thread, and each worker sums the list and
+prints the sum to the screen:
 
-\iconcode{
+\begin{icode}
 procedure main() \\
 \>   L1 := [1, 2, 3] \\
 \>   L2 := [4, 5, 6] \\
@@ -284,53 +268,55 @@ procedure main() \\
 \>   t3 := thread sumlist(3, L3) \\
 \>   every wait(t1{\textbar}t2{\textbar}t3) \\
 end \\
-\ \\
+\\
 procedure sumlist(id, L) \\
 \>   s := 0 \\
 \>   every s +:= !L \\
 \>   write(" Thread id=", id, ", result=", s) \\
 end
-}
-
-\noindent
-output:
-
-\iconcode{
-\ Thread id=2 result=15 \\
-\ Thread id=1 result=6 \\
-\ Thread id=3 result=23
-}
+\end{icode}
+The output is
+\begin{icode}
+Thread id=2, result=15 \\
+Thread id=1, result=6 \\
+Thread id=3, result=23
+\end{icode}
 
 Since the lists are independent, there is no possibility of a race
-condition. The example shows that the second thread was the first to finish and
-print its result. If the problem solution requires sharing data or guaranteeing
-that one thread should finish before another, then a synchronization mechanism
-should be used. This is the subject of the next section.
+condition. The example shows that the second thread was the first to
+finish and print its result. If the problem solution requires sharing
+data or guaranteeing that one thread should finish before another,
+then a synchronization mechanism should be used. This is the subject
+of the next section.
 
 
 \section{Thread Synchronization}
 
-Thread synchronization can be done in many different ways. Some problems require
-more synchronization than others. Some may require advanced synchronization
-mechanisms and rely on the language support to achieve full control over the
-execution of threads and protect shared data. This section covers many
-synchronization techniques in Unicon, introduces the concept of race condition
-in a multi-thread environment, and the concept of thread-safe code.
+Thread synchronization can be done in many different ways. Some
+problems require more synchronization than others. Some may require
+advanced synchronization mechanisms and rely on the language support
+to achieve full control over the execution of threads and protect
+shared data. This section covers many synchronization techniques in
+Unicon, introduces the concept of race condition in a multi-thread
+environment, and the concept of thread-safe code.
 
 \subsection{The non-deterministic behavior of threads}
 
-Programming with threads introduces a whole new set of concepts and challenges
-that non-threaded programs do not have to deal with.  In most multi-threaded
-programs, threads need to communicate through shared data. Because threads run
-in a non-deterministic order, they access and update shared data in a
-non-deterministic fashion.  Consider the following popular example where two
-threads, $T_1$ and $T_2$, try to increment a shared variable \texttt{x} whose
-initial value is 0.
+Programming with threads introduces a whole new set of concepts and
+challenges that non-threaded programs do not have to deal with.  In
+most multi-threaded programs, threads need to communicate through
+shared data. Because threads run in a non-deterministic order, they
+access and update shared data in a non-deterministic fashion.
+Consider the following popular example where two threads, $T_1$ and
+$T_2$, try to increment a shared variable \texttt{x} whose initial
+value is 0.
+
 \begin{tabbing}
   xxxxxxxxxx \= \kill
   $T_1$ \> $T_2$ \\
   x := x+1 \> x := x+1
 \end{tabbing}
+
 While \texttt{x:=x+1} may not look like it could cause a problem, in reality it
 does because it is not atomic. In many computer systems, it can be broken down
 into three operations: fetch the value of \texttt{x}, add 1 to it, and
@@ -376,13 +362,11 @@ For some simple situations, synchronization can be achieved without relying on
 special primitives provided by the language.  For example, if one thread is
 waiting for another to finish a task, a shared flag variable can be used. In the
 following example, the main thread might finish before the child thread:
-
-\iconcode{
+\begin{icode}
 procedure main() \\
-\>   thread \ write("I am a thread: Hello world!") \\
+\>   thread write("I am a thread: Hello world!") \\
 end
-}
-
+\end{icode}
 As seen in the previous section, this can be handled using \texttt{wait()} or
 \texttt{delay()}. The \texttt{wait()} function is the best solution for this
 situation. \texttt{delay()} also works but there are two problems associated
@@ -421,17 +405,19 @@ synchronization made possible by mutexes and condition variables.
 
 \paragraph{Critical regions and mutexes}
 
-A \emph{mutex} (from mutual exclusion) is a synchronization object used to
-protect shared data and serialize threads in \emph{critical regions}, sequences
-of instructions in which only one thread may execute at a time or an error will
-occur. In the example discussed at the beginning of this chapter, two threads
-compete to increment the variable \texttt{x}. The end result might not be what
-the programmer intended. In such cases a mutex may be used to protect access to
-the variable \texttt{x}. Any operation, including data structure traversal,
-where more than one thread can execute non-deterministically, and which may lead
-to data corruption or incorrect results is called \emph{thread-unsafe}.
-Thread-unsafe code or data structures have to be handled correctly via
-synchronizations mechanism to achieve correct behavior and results.
+A \emph{mutex} (from mutual exclusion) is a synchronization construct
+used to protect shared data and serialize threads in \emph{critical
+regions}, sequences of instructions in which only one thread may
+execute at a time or an error will occur. In the example discussed at
+the beginning of this chapter, two threads compete to increment the
+variable \texttt{x}. The end result might not be what the programmer
+intended. In such cases a mutex may be used to protect access to the
+variable \texttt{x}. Any operation, including data structure
+traversal, where more than one thread can execute
+non-deterministically, and which may lead to data corruption or
+incorrect results is called \emph{thread-unsafe}. Thread-unsafe code
+or data structures have to be handled correctly via synchronizations
+mechanism to achieve correct behavior and results.
 
 A mutex object is created using the \texttt{mutex()} function. The returned
 object can be locked/unlocked via the functions \texttt{lock()} and
@@ -1187,8 +1173,7 @@ the different forms of the send and receive operators and their operands:
 Place msg in my outbox, fail if the outbox is full\\
  &
 \centering msg@>T &
-Place msg in T's inbox, fail if T's
-inbox is full\\
+Place msg in T's inbox, fail if T's inbox is full\\
 \centering {<}@\par
 
 \centering (receive) &
@@ -1196,8 +1181,7 @@ inbox is full\\
 get a message from my inbox, fail if the inbox is empty\\
  &
 \centering {<}@T &
-get a message from T's outbox, fail if
-T's outbox is empty\\
+get a message from T's outbox, fail if T's outbox is empty\\
 \centering @>>\par
 
 \centering (blocking send) &
@@ -1205,8 +1189,7 @@ T's outbox is empty\\
 Place msg in my outbox, block if the outbox is full\\
  &
 \centering msg@>>T &
-Place msg in my T's inbox, block if the
-T's inbox is full\\
+Place msg in my T's inbox, block if the T's inbox is full\\
 \centering {<}{<}@\par
 
 \centering (blocking receive) &

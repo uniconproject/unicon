@@ -1,60 +1,53 @@
 \chapter{Graphics}
 
 Unicon provides a rich high level interface to 2D and 3D raster
-graphics, text fonts, colors, and mouse input facilities provided by an
-underlying system, such as the X Window System.
-Unicon's graphics are portable across multiple
-platforms. The most important characteristics of the graphics
-facilities are:
-\begin{itemize}\itemsep0pt
-\item Simplicity, ease of learning
-\item Windows are integrated with Unicon's existing I/O functions
-\item Straightforward input event model
-\end{itemize}
-This chapter presents Unicon's 2D and 3D graphics facilities.
-Some material on 2D graphics
+graphics, text fonts, colors, and mouse input facilities provided by
+an underlying system, such as the X Window System.  Unicon's graphics
+are portable across multiple platforms. The most important
+characteristics of the graphics facilities are:
+\begin{itemize}\itemsep0pt \item Simplicity, ease of learning \item
+Windows are integrated with Unicon's existing I/O functions \item
+Straightforward input event model \end{itemize} This chapter presents
+Unicon's 2D and 3D graphics facilities.  Some material on 2D graphics
 comes from University of Arizona CS TR93-9. The 3D graphics sections
 come from Unicon TR 9, whose original author is Naomi Martinez. The
-definitive reference for the 2D
-graphics facilities is "Graphics Programming in
-Icon" by Griswold, Jeffery, and Townsend, and this book
-is of value for writing 3D programs. Online references
-for the graphics facilities also come with the software distributions.
+definitive reference for the 2D graphics facilities is ``Graphics
+Programming in Icon'' by Griswold, Jeffery, and Townsend, and this
+book is of value for writing 3D programs. Online references for the
+graphics facilities also come with the software distributions.
 
-Because different platforms have radically different capabilities, there
-is a trade-off between simplicity, portability, and full access to the
-underlying machine. Unicon aims for simplicity and ease of programming
-rather than full low-level access.
+Because different platforms have radically different capabilities,
+there is a trade-off between simplicity, portability, and full access
+to the underlying machine. Unicon aims for simplicity and ease of
+programming rather than full low-level access.
 
 \section{2D Graphics}
 
-Unicon's 2D facilities provide access to graphics
-displays without enforcing a particular user interface look-and-feel.
-Events other than keystrokes and mouse events are handled automatically
-by the runtime system. Chapter 17 describes the standard class library
-and user interface builder for Unicon applications.
+Unicon's 2D facilities provide access to graphics displays without
+enforcing a particular user interface look-and-feel.  Events other
+than keystrokes and mouse events are handled automatically by the
+runtime system. Chapter 17 describes the standard class library and
+user interface builder for Unicon applications.
 
-Graphic interfaces are \index{event driven}\textit{event driven}; an
+Graphic interfaces are \index{event driven}\emph{event driven}; an
 event reading loop is the control mechanism driving the application.
-For example, if an application must be ready to redraw the contents
-of its window at all times, it may not compute for long periods without
+For example, if an application must be ready to redraw the contents of
+its window at all times, it may not compute for long periods without
 checking for window events. This event driven paradigm used in the
 underlying implementation is optional at the Unicon application
 level. Since Unicon windows handle many events automatically and
-"take care of themselves", applications
-follow the event driven paradigm only when it is needed.
-Unicon's extensive
-use of default values make simple graphics applications extremely easy
-to program, while providing flexibility where it is needed in more
-sophisticated applications.
+``take care of themselves'', applications follow the event driven
+paradigm only when it is needed.  Unicon's extensive use of default
+values make simple graphics applications extremely easy to program,
+while providing flexibility where it is needed in more sophisticated
+applications.
 
 \subsection{Window basics}
 
-A window is a special file opened with mode
-\texttt{"g",} appearing on-screen as a
-rectangular space for text and/or graphics. Windows support text I/O,
-much as one uses a text terminal. A simple
-Unicon graphics program might look like this:
+A window is a special file opened with mode \texttt{"g"}, appearing
+on-screen as a rectangular space for text and/or graphics. Windows
+support text I/O, much as one uses a text terminal. A simple Unicon
+graphics program might look like this:
 
 \iconcode{
 \ \ \ procedure main()\\
@@ -69,31 +62,29 @@ Unicon graphics program might look like this:
 Windows are open for both reading and writing, and support the usual
 file operations with the exceptions of \texttt{seek()} and
 \texttt{where()}. Unlike regular files, the \texttt{type()} of a
-window is "window". Like other files,
-windows close automatically when the program terminates, so the call to
-\texttt{close()} in the above example is optional.
+window is "window". Like other files, windows close automatically when
+the program terminates, so the call to \texttt{close()} in the above
+example is optional.
 
 Bit-mapped, or raster, graphics constitute a second programming model
-for windows. There are no programming
-"modes" and code that uses graphics may be
-freely intermixed with code that performs text operations. There are
-many graphics functions and library procedures, detailed in Appendices
-A and B.
+for windows. There are no programming ``modes'' and code that uses
+graphics may be freely intermixed with code that performs text
+operations. There are many graphics functions and library procedures,
+detailed in Appendices A and B.
 
 \paragraph{\&window: the Default Window Argument}
 
 The keyword \texttt{\&window} is a default window for graphics.
-\texttt{\&window} starts with a null value; only window values
-(and \texttt{\&null}) may
-be assigned to \texttt{\&window}. \texttt{\&window} is a default
-argument to most graphics functions and is used implicitly by various
-operations. If a program uses \texttt{\&window}, the argument can be
-omitted from calls to functions such as \texttt{EraseArea()} and
-\texttt{WAttrib()}. The window argument is required for calls to file
-functions such as \texttt{write()} and \texttt{writes()} since these
-functions default to \texttt{\&output}, not \texttt{\&window}. The
-default window shortens the code for graphics-oriented programs and
-makes it faster.
+\texttt{\&window} starts with a null value; only window values (and
+\texttt{\&null}) may be assigned to
+\texttt{\&window}. \texttt{\&window} is a default argument to most
+graphics functions and is used implicitly by various operations. If a
+program uses \texttt{\&window}, the argument can be omitted from calls
+to functions such as \texttt{EraseArea()} and \texttt{WAttrib()}. The
+window argument is required for calls to file functions such as
+\texttt{write()} and \texttt{writes()} since these functions default
+to \texttt{\&output}, not \texttt{\&window}. The default window
+shortens the code for graphics-oriented programs and makes it faster.
 
 \paragraph{2D Graphics Coordinates}
 
@@ -101,39 +92,36 @@ The 2D graphics functions use an integer coordinate system based on
 pixels (picture elements). Like the text coordinate system, 2D
 graphics coordinates start in the upper-left corner of the screen.
 From that corner the positive x direction lies to the right and the
-positive y direction moves down. Unlike text coordinates, the
-graphics coordinate axes are zero-based, which is to say that the very
-top leftmost pixel is (0,0) by default.
+positive y direction moves down. Unlike text coordinates, the graphics
+coordinate axes are zero-based, which is to say that the very top
+leftmost pixel is (0,0) by default.
 
 Angles are real numbers given in radians, clockwise starting at the 3
-o'clock position. Many functions operate on
-rectangular regions specified by x, y, width, and height components.
-Width and height may be negative to extend the rectangle
-left or up from x and y. Screen output may be limited to a
-rectangle within the window called the clipping region. The
-clipping region is set or unset using the function \texttt{Clip()}.
+o'clock position. Many functions operate on rectangular regions
+specified by x, y, width, and height components.  Width and height may
+be negative to extend the rectangle left or up from x and y. Screen
+output may be limited to a rectangle within the window called the
+clipping region. The clipping region is set or unset using the
+function \texttt{Clip()}.
 
 \paragraph{Window Attributes}
-A window's state has many \textit{attributes}
-with associated values. Some values are defined by the system, while
-others are under program control, with reasonable defaults. When
-opening a window, \texttt{open()} allows string arguments after the filename
-and mode that specify initial values of
-attributes when the window is created. For example, to say hello in
-italics on a blue background one may write:
+A window's state has many \textit{attributes} with associated
+values. Some values are defined by the system, while others are under
+program control, with reasonable defaults. When opening a window,
+\texttt{open()} allows string arguments after the filename and mode
+that specify initial values of attributes when the window is
+created. For example, to say hello in italics on a blue background one
+may write:
 
 \iconcode{
 \ \ \ procedure main()\\
- \ \ \ \ \ w := open("hello",
-"g",
-"font=sans,italics",
-"bg=blue")\\
+ \ \ \ \ \ w := open("hello", "g", "font=sans,italics", "bg=blue")\\
  \ \ \ \ \ write(w, "hello, world")\\
  \ \ \ \ \ \# processing ...\\
  \ \ end}
 
-After a window is created, its attributes are read and set using
-the function \texttt{WAttrib(w,s1,s2,...)}. Arguments to
+After a window is created, its attributes are read and set using the
+function \texttt{WAttrib(w,s1,s2,...)}. Arguments to
 \texttt{WAttrib()} that have an equals sign are assignments that set
 the given value if possible; \texttt{WAttrib()} fails otherwise.
 \texttt{open()} only allows such attribute assignments. Some
@@ -141,24 +129,24 @@ attributes can only be read by \texttt{WAttrib()} and not set.
 
 String arguments to \texttt{WAttrib()} that have an attribute name but
 no value are queries which return the attribute value.
-\texttt{WAttrib()} generates a string result for each argument; a query
-on a single argument produces just the value of that attribute; for
-multiple arguments and in the case of assignment, the result is the
-\texttt{\textit{attr}}\texttt{=}\texttt{\textit{val}} form attribute
-assignments take. Attributes are also frequently set implicitly by
-the user's manipulation of the window; for instance,
+\texttt{WAttrib()} generates a string result for each argument; a
+query on a single argument produces just the value of that attribute;
+for multiple arguments and in the case of assignment, the result is
+the \texttt{\textit{attr}}\texttt{=}\texttt{\textit{val}} form
+attribute assignments take. Attributes are also frequently set
+implicitly by the user's manipulation of the window; for instance,
 cursor or mouse location or window size.
 
 Table 7-1 lists attributes that are maintained on a per-window basis.
 Attribute values are string encodings. Usage refers to whether the
 attribute may be read, written or both. RWO and WO attributes can be
-assigned only when the window is opened.
-Although all attribute values are encoded as strings, they represent
-a range of window system features. The attribute \texttt{pointer} refers to
-mouse pointer shapes that may be changed by the application during
-different operations. The attribute \texttt{pos} refers to the position
-of the upper-left corner of the window on the screen. Screen position
-is specified by a string containing x,y coordinates,
+assigned only when the window is opened.  Although all attribute
+values are encoded as strings, they represent a range of window system
+features. The attribute \texttt{pointer} refers to mouse pointer
+shapes that may be changed by the application during different
+operations. The attribute \texttt{pos} refers to the position of the
+upper-left corner of the window on the screen. Screen position is
+specified by a string containing x,y coordinates,
 e.g. \texttt{"pos=200,200"}.
 
 \begin{center}
@@ -167,75 +155,41 @@ e.g. \texttt{"pos=200,200"}.
 \end{center}
 
 \begin{center}
-\tablehead{\hline
-\centering \bfseries\itshape Name &
-\centering \bfseries\itshape Type / Example &
-\centering \bfseries\itshape Description &
-\centering\arraybslash \bfseries\itshape Usage\\\hline}
-\begin{supertabular}{|m{1.03in}|m{1.9in}|m{2.24in}|m{0.44835988in}|}
-size &
-pixel pair &
-Size of window &
-RW\\\hline
-pos &
-pixel pair &
-Position of window on screen &
-RW\\\hline
-canvas &
-normal, hidden &
-Canvas state &
-RW\\\hline
-windowlabel &
-string &
-Window label (title) &
-RW\\\hline
-inputmask &
-string &
-select categories of input events &
-RW\\\hline
-pointer &
-arrow, clock &
-Pointer (mouse) shape  &
-RW\\\hline
-pointerx, pointery &
-pixel &
-Pointer (mouse) location  &
-RW\\\hline
-display &
-device /
-"my.cs.esu.edu:0"
-&
-(X11) device window resides on &
-RWO\\\hline
-depth &
-\# of bits &
-Display depth &
-R\\\hline
-displaywidth, displayheight &
-pixel &
-Display size &
-R\\\hline
-image &
-string &
-Initial window contents &
-WO\\\hline
-\end{supertabular}
+  \tablehead{\hline
+    \centering \bfseries\itshape Name &
+    \centering \bfseries\itshape Type / Example &
+    \centering \bfseries\itshape Description &
+    \centering\arraybslash \bfseries\itshape Usage \\\hline}
+  \begin{supertabular}{|m{1.03in}|m{1.9in}|m{2.24in}|m{0.44835988in}|}
+    % This is weird! \\\ is defined in ub.tex.
+    size & pixel pair & Size of window & RW \\\hline
+    pos & pixel pair & Position of window on screen & RW \\\hline
+    canvas & normal, hidden & Canvas state & RW\\\hline
+    windowlabel & string & Window label (title) & RW \\\hline
+    inputmask & string & select categories of input events & RW \\\hline
+    pointer & arrow, clock & Pointer (mouse) shape  & RW \\\hline
+    pointerx, pointery & pixel & Pointer (mouse) location & RW \\\hline
+    display & device / "my.cs.esu.edu:0" & (X11) device window resides on & RWO \\\hline
+    depth & \# of bits & Display depth & R \\\hline
+    displaywidth, displayheight & pixel & Display size & R \\\hline
+    image & string & Initial window contents & WO \\\hline
+  \end{supertabular}
 \end{center}
 
 \subsection{Graphics contexts}
 
-Some attributes are associated with the window itself, while others are
-associated with the \textit{graphics context}, a set of resources
-used by operations that write to windows. This distinction is unimportant
-in simple applications but is useful in more sophisticated
+Some attributes are associated with the window itself, while others
+are associated with the \textit{graphics context}, a set of resources
+used by operations that write to windows. This distinction is
+unimportant in simple applications but is useful in more sophisticated
 applications that use multiple windows or draw many kinds of things in
-windows. A graphics context has colors, patterns, line
-styles, and text fonts and sizes.
+windows. A graphics context has colors, patterns, line styles, and
+text fonts and sizes.
 
 Although they are called graphics contexts, text operations use these
-attributes. Text is written using the foreground and background
-colors and font defined in the graphics context. Table 7-2 lists
-the attributes associated with a graphics context.
+attributes. Text is written using the foreground and background colors
+and font defined in the graphics context. Table 7-2 lists the
+attributes associated with a graphics context.
 
 {\centering\sffamily\bfseries
 Table 7-2
@@ -310,58 +264,57 @@ Initial window contents &
 WO\\\hline
 \end{supertabular}
 \end{center}
+
 \paragraph{Binding Windows and Graphics Contexts Together}
 Graphics contexts can be shared among windows, and multiple graphics
 contexts can be used on the same window. An Unicon window value is a
 \textit{binding} of a canvas (an area that may be drawn upon) and a
-graphics context. A call
-\texttt{open(s,"g")} creates both a canvas,
+graphics context. A call \texttt{open(s,"g")} creates both a canvas,
 and a context, and binds them together, producing the binding as its
 return value.
 
-\texttt{Clone(w)} creates a binding of the canvas and attributes
-of \texttt{w} with a new graphics context that is manipulated
-independently. \texttt{Clone()} also accepts any number
-of string attributes to apply to the new window value, as in
-\texttt{open()} and \texttt{WAttrib()}.
-After calling \texttt{Clone()}, two or more Unicon window values
-write to the same canvas. The cursor location is stored in the
-canvas, not the graphics context. Writing to the windows produces
-concatenated (rather than overlapping) output. Closing one of the
-window values removes the canvas from the screen but does not destroy
-its contents; the remaining binding references an invisible pixmap.
-The canvas is destroyed after the last binding associated with it
-closes. Use of \texttt{Clone()} can significantly enhance performance
-for applications that require frequent graphics context manipulations.
+\texttt{Clone(w)} creates a binding of the canvas and attributes of
+\texttt{w} with a new graphics context that is manipulated
+independently. \texttt{Clone()} also accepts any number of string
+attributes to apply to the new window value, as in \texttt{open()} and
+\texttt{WAttrib()}.  After calling \texttt{Clone()}, two or more
+Unicon window values write to the same canvas. The cursor location is
+stored in the canvas, not the graphics context. Writing to the windows
+produces concatenated (rather than overlapping) output. Closing one of
+the window values removes the canvas from the screen but does not
+destroy its contents; the remaining binding references an invisible
+pixmap.  The canvas is destroyed after the last binding associated
+with it closes. Use of \texttt{Clone()} can significantly enhance
+performance for applications that require frequent graphics context
+manipulations.
 
 \paragraph{Subwindows}
 The function \texttt{Clone()} can also be used to create subwindows,
 which are canvases that reside within other windows.
-\texttt{Clone(w, {\textquotedblleft}g{\textquotedblright}, ...)}
-opens a 2D subwindow within \texttt{w}, and \texttt{Clone(w,
-{\textquotedblleft}gl{\textquotedblright}, ...)} opens a 3D subwindow
-within \texttt{w}. Applications must supply position and size
-attributes when they create a subwindow. Input events
-to a subwindow are not seen on the enclosing parent window and vice
-versa; both windows must be polled or supplied to \texttt{WActive()} or
-\texttt{select()} in order to handle input.
+\texttt{Clone(w, "g", ...)}  opens a 2D subwindow within \texttt{w}, and
+\texttt{Clone(w, "gl", ...)} opens a 3D subwindow within
+\texttt{w}. Applications must supply position and size attributes when
+they create a subwindow. Input events to a subwindow are not seen on
+the enclosing parent window and vice versa; both windows must be
+polled or supplied to \texttt{WActive()} or \texttt{select()} in order
+to handle input.
 
 \paragraph{Coordinate Translation}
 In 2D, context attributes \texttt{dx} and \texttt{dy} perform output
-coordinate translation. \texttt{dx} and \texttt{dy} take integer values
-and default to zero. These integers are added into the coordinates of
-all output operations that use the context; input coordinates in
-\texttt{\&x} and \texttt{\&y} are not translated.
+coordinate translation. \texttt{dx} and \texttt{dy} take integer
+values and default to zero. These integers are added into the
+coordinates of all output operations that use the context; input
+coordinates in \texttt{\&x} and \texttt{\&y} are not translated.
 
 \subsection{Events}
 
 User input such as keystrokes and mouse clicks are called
 \textit{events}. Many events are handled by Unicon automatically,
-including window redrawing and resizing, etc.
-Other events are put on a queue in the order they occur, for
-processing by the Unicon program. When reading from a window using file
-input functions such as \texttt{reads(w, 1)}, only keyboard events are
-produced; mouse and other events are dropped.
+including window redrawing and resizing, etc.  Other events are put on
+a queue in the order they occur, for processing by the Unicon
+program. When reading from a window using file input functions such as
+\texttt{reads(w, 1)}, only keyboard events are produced; mouse and
+other events are dropped.
 
 The primary input function for windows is \texttt{Event(w),} which
 produces the next event for window \texttt{w} and removes it from the
@@ -369,18 +322,18 @@ queue. If the event queue is empty, \texttt{Event()} waits for an
 event. Keyboard events are returned as strings, while mouse events are
 returned as integers. Special keys, such as function and arrow keys,
 are also returned as integers, described below. \texttt{Event()} also
-removes the next two elements and assigns the keywords \texttt{\&x} and
-\texttt{\&y} the pixel coordinates of the mouse at the time of the
+removes the next two elements and assigns the keywords \texttt{\&x}
+and \texttt{\&y} the pixel coordinates of the mouse at the time of the
 event. The values of \texttt{\&x}, \texttt{\&y} remain available until
 a subsequent call to \texttt{Event()} again assigns to them.
 \texttt{Event()} sets the keyword \texttt{\&interval} to the number of
-milliseconds that have elapsed since the last event (or to zero for the
-first event). Keywords \texttt{\&control}, \texttt{\&shift}, and
-\texttt{\&meta} are set by \texttt{Event()} to return the null value if
-those modifier keys were pressed at the time of the event; otherwise
-they fail. For resize events, \texttt{\&interval} is set to zero and
-modifier keywords fail. Keywords associated with event processing on
-windows are summarized in Table 7-3:
+milliseconds that have elapsed since the last event (or to zero for
+the first event). Keywords \texttt{\&control}, \texttt{\&shift}, and
+\texttt{\&meta} are set by \texttt{Event()} to return the null value
+if those modifier keys were pressed at the time of the event;
+otherwise they fail. For resize events, \texttt{\&interval} is set to
+zero and modifier keywords fail. Keywords associated with event
+processing on windows are summarized in Table 7-3:
 
 \begin{center}
 {\sffamily\bfseries Table 7-3} \\
@@ -408,19 +361,20 @@ Succceds if Shift key pressed\\\hline
 Succeeds if Alt (meta) key pressed\\\hline
 \end{supertabular}
 \end{center}
+
 \paragraph{Keyboard Events}
 The regular keys that Unicon returns as one-letter strings correspond
 approximately to the lower 128 characters of the ASCII character set.
 These characters include the control keys, the escape key, and the
 delete key. Modern keyboards have many additional keys, such as
-function keys, arrow keys, "page down",
-etc. Unicon produces integer events for these special keys. A
-collection of symbol definitions for special keys is available in the
-library include file \texttt{keysyms.icn}. The most common
-of these are \texttt{Key\_Down}, \texttt{Key\_Up}, \texttt{Key\_Left},
-\texttt{Key\_Right}, \texttt{Key\_Home}, \texttt{Key\_End},
-\texttt{Key\_PgUp}, \texttt{Key\_PgDn}, \texttt{Key\_F1...Key\_F12},
-and \texttt{Key\_Insert}.
+function keys, arrow keys, "page down", etc. Unicon produces integer
+events for these special keys. A collection of symbol definitions for
+special keys is available in the library include file
+\texttt{keysyms.icn}. The most common of these are \texttt{Key\_Down},
+\texttt{Key\_Up}, \texttt{Key\_Left}, \texttt{Key\_Right},
+\texttt{Key\_Home}, \texttt{Key\_End}, \texttt{Key\_PgUp},
+\texttt{Key\_PgDn}, \texttt{Key\_F1...Key\_F12}, and
+\texttt{Key\_Insert}.
 
 \paragraph{Mouse Events}
 Mouse events are returned from \texttt{Event()} as integers indicating
@@ -464,14 +418,14 @@ Window was resized \\\hline
 \end{center}
 The following program uses mouse events to draw a box that follows the
 mouse pointer around the screen when a mouse button is pressed. The
-attribute \texttt{drawop=reverse} allows drawing operations to serve as
-their own inverse; see [Griswold98] for more about the \texttt{drawop}
-attribute. Function \texttt{FillRectangle()} draws a filled rectangle
-on the window and is described in the reference section. Each time
-through the loop the program erases the box at its old location and
-redraws it at its new location; the first time through the loop there
-is no box to erase so the first call to \texttt{FillRectangle()} is
-forced to fail by means of Unicon's
+attribute \texttt{drawop=reverse} allows drawing operations to serve
+as their own inverse; see [Griswold98] for more about the
+\texttt{drawop} attribute. Function \texttt{FillRectangle()} draws a
+filled rectangle on the window and is described in the reference
+section. Each time through the loop the program erases the box at its
+old location and redraws it at its new location; the first time
+through the loop there is no box to erase so the first call to
+\texttt{FillRectangle()} is forced to fail by means of Unicon's
 \texttt{{\textbackslash}} operator.
 
 \iconcode{
@@ -489,154 +443,148 @@ position\\
  \ \ \ \ \ \}\\
 end}
 
-The program can inspect the window's
-state using \texttt{WAttrib()}. Between the time the mouse event
-occurs and the time it is produced by \texttt{Event()}, the mouse may
-have moved. In order to get the current mouse location, use
-\texttt{QueryPointer()} (see below).
+The program can inspect the window's state using
+\texttt{WAttrib()}. Between the time the mouse event occurs and the
+time it is produced by \texttt{Event()}, the mouse may have moved. In
+order to get the current mouse location, use \texttt{QueryPointer()}
+(see below).
 
 When more than one button is depressed as the drag occurs, drag events
 are reported on the most recently pressed button. This behavior is
-invariant over all combinations of presses and releases of all three buttons.
+invariant over all combinations of presses and releases of all three
+buttons.
 
-Resize events are reported in the same format as mouse events.
-In addition to the event code, \texttt{\&x}, \texttt{\&y}, \texttt{\&col} and
-\texttt{\&row} are assigned integers that indicate the window's
+Resize events are reported in the same format as mouse events.  In
+addition to the event code, \texttt{\&x}, \texttt{\&y}, \texttt{\&col}
+and \texttt{\&row} are assigned integers that indicate the window's
 new width and height in pixels and in text columns and rows,
 respectively. Resize events are produced when the window manager
 (usually at the behest of the user) resizes the window; no event is
 generated when an Unicon program resizes its window.
 
 \paragraph{Key Release, Mouse Motion, and Window Closure Events}
-The canvas attribute \texttt{inputmask} allows programs to request three kinds
-of additional input events on windows. These events pose enough
-performance or portability obstacles that they are not produced by
-default. An \texttt{{\textquotedblleft}m{\textquotedblright}} in the inputmask
-requests mouse motion events when no mouse button is depressed; by default only
-{\em drag\/} events are reported. If the
-inputmask contains a \texttt{{\textquotedblleft}k{\textquotedblright}}, events
+The canvas attribute \texttt{inputmask} allows programs to request
+three kinds of additional input events on windows. These events pose
+enough performance or portability obstacles that they are not produced
+by default. An \texttt{"m"} in the inputmask requests mouse motion
+events when no mouse button is depressed; by default only \emph{drag}
+events are reported. If the inputmask contains a \texttt{"k"}, events
 will be generated when keyboard keys are released. An inputmask
-attribute containing a \texttt{{\textquotedblleft}c{\textquotedblright}}
-requests an event when a window closure is externally triggered,
-as in the case when a titlebar
+attribute containing a \texttt{"c"} requests an event when a window
+closure is externally triggered, as in the case when a titlebar
 \texttt{x} button is pressed.
 
 \paragraph{Event Queue Manipulation}
 The event queue is an Unicon list that stores events until the program
-processes them. When a user presses a key, clicks or drags a mouse,
-or resizes a window, three values are placed on the event queue: the
+processes them. When a user presses a key, clicks or drags a mouse, or
+resizes a window, three values are placed on the event queue: the
 event itself, followed by two integers containing associated event
 information.
 
 \texttt{Pending(w)} produces the event queue for window \texttt{w}.
 If no events are pending, the list is empty. The list returned by
-\texttt{Pending()} is
-attached to the window. Additional events may be added to it at any
-time during program execution.  It is an ordinary list and
-can be manipulated using Unicon's list functions and
+\texttt{Pending()} is attached to the window. Additional events may be
+added to it at any time during program execution.  It is an ordinary
+list and can be manipulated using Unicon's list functions and
 operators.
 
-When several windows are open, the program may need to wait for activity on
-any of the windows. Each pending list could be checked until a nonempty list is
-found, but such a busy-waiting solution is wasteful of CPU time. The
-function \texttt{Active()} waits for window activity, relinquishing the CPU
-until an event is pending on one of the open windows, and then returns
-a window with a pending event. A window is said to starve if its
-pending events are never serviced. \texttt{Active()} cycles through open
-windows on repeated calls in a way that avoids window starvation.
+When several windows are open, the program may need to wait for
+activity on any of the windows. Each pending list could be checked
+until a nonempty list is found, but such a busy-waiting solution is
+wasteful of CPU time. The function \texttt{Active()} waits for window
+activity, relinquishing the CPU until an event is pending on one of
+the open windows, and then returns a window with a pending event. A
+window is said to starve if its pending events are never
+serviced. \texttt{Active()} cycles through open windows on repeated
+calls in a way that avoids window starvation.
 
 \subsection{Colors}
 
 Unicon recognizes a set of string color names based loosely on a color
-naming system found in [Berk82]. The color names are simple
-English phrases that specify hue, lightness, and saturation values of
-the desired color. The syntax of colors is
+naming system found in [Berk82]. The color names are simple English
+phrases that specify hue, lightness, and saturation values of the
+desired color. The syntax of colors is
 
 \iconcode{[\textit{lightness}] [\textit{saturation}] [\textit{hue}[ish]]
 \textit{hue}}
 
 \noindent
-where lightness is one of: \texttt{pale}, \texttt{light}, \texttt{medium},
-\texttt{dark}, or \texttt{deep}; saturation is one of \texttt{weak},
-\texttt{moderate}, \texttt{strong}, or \texttt{vivid}; and where hue is any of
-\texttt{black}, \texttt{gray}, \texttt{grey}, \texttt{white}, \texttt{pink},
-\texttt{violet}, \texttt{brown}, \texttt{red}, \texttt{orange},
-\texttt{yellow}, \texttt{green}, \texttt{cyan}, \texttt{blue}, \texttt{purple},
-or \texttt{magenta}. A single space or hyphen
-separates each word from its neighbor. When two hues are supplied
-(and the first hue has no \texttt{ish} suffix), the resulting hue is
-halfway in between the two named hues. When a hue with an \texttt{ish} suffix
-precedes a hue, the resulting hue is three-fourths of the way
-from the \texttt{ish} hue to the main hue. When adding \texttt{ish} to a word
-ending in e, the e is dropped (for example, purple becomes purplish); the ish
-form of red is reddish. Mixing radically different colors such as
-yellow and purple does not usually produce the expected results. The
-default lightness is \texttt{medium} and the default saturation is
-\texttt{vivid}. Note that human perception of color varies significantly, as
-do the actual colors produced from these names on different monitors.
+where lightness is one of: \texttt{pale}, \texttt{light},
+\texttt{medium}, \texttt{dark}, or \texttt{deep}; saturation is one of
+\texttt{weak}, \texttt{moderate}, \texttt{strong}, or \texttt{vivid};
+and where hue is any of \texttt{black}, \texttt{gray}, \texttt{grey},
+\texttt{white}, \texttt{pink}, \texttt{violet}, \texttt{brown},
+\texttt{red}, \texttt{orange}, \texttt{yellow}, \texttt{green},
+\texttt{cyan}, \texttt{blue}, \texttt{purple}, or \texttt{magenta}. A
+single space or hyphen separates each word from its neighbor. When two
+hues are supplied (and the first hue has no \texttt{ish} suffix), the
+resulting hue is halfway in between the two named hues. When a hue
+with an \texttt{ish} suffix precedes a hue, the resulting hue is
+three-fourths of the way from the \texttt{ish} hue to the main
+hue. When adding \texttt{ish} to a word ending in e, the e is dropped
+(for example, purple becomes purplish); the ish form of red is
+reddish. Mixing radically different colors such as yellow and purple
+does not usually produce the expected results. The default lightness
+is \texttt{medium} and the default saturation is \texttt{vivid}. Note
+that human perception of color varies significantly, as do the actual
+colors produced from these names on different monitors.
 
 \paragraph{Color Coordinate Systems and Gamma Correction}
 In addition to the standard color names, platform-specific color names
 may be supported. Colors may also be specified by strings encoding the
 red, green, and blue components of the desired color. Unicon accepts
-the hex formats "\#rgb" in which r, g, and
-b are 1 to 4 hex digits each. Red, green, and blue may also be given
-in decimal format, separated by commas. The components are given on a
-linear scale from 0 to 65535, although displays typically offer far
-less precision and nonlinear colors. For example,
-"bg=32767,0,0" requests a medium red
+the hex formats "\#rgb" in which r, g, and b are 1 to 4 hex digits
+each. Red, green, and blue may also be given in decimal format,
+separated by commas. The components are given on a linear scale from 0
+to 65535, although displays typically offer far less precision and
+nonlinear colors. For example, "bg=32767,0,0" requests a medium red
 background; if the display is incapable of such, it approximates it as
-closely as possible from the available colors.
-"fg=0,65000,0" requests a vivid green
-foreground. If colors appear darker than they should, the window system
-is not providing linear colors. Unicon can be told to perform the
-correction by means of the gamma attribute; 1.0 is a default (no gamma
-correction), and experimenting with values between 2 and 3 usually
-provides satisfactory results.
+closely as possible from the available colors.  "fg=0,65000,0"
+requests a vivid green foreground. If colors appear darker than they
+should, the window system is not providing linear colors. Unicon can
+be told to perform the correction by means of the gamma attribute; 1.0
+is a default (no gamma correction), and experimenting with values
+between 2 and 3 usually provides satisfactory results.
 
 \subsection{Fonts}
 
 Fonts are specified by a comma-separated string of up to four fields
-supplying the font's family name, followed by optional
-size or italic or bold designations in any order. The fonts available
-vary widely from system to system. Four font family names available on
-all Unicon systems include serif, sans, typewriter, and mono. These
-families map onto the system's closest approximation
-of Times, Helvetica, Courier, and a monospaced console font. Font sizes
-are given in pixel height.
+supplying the font's family name, followed by optional size or italic
+or bold designations in any order. The fonts available vary widely
+from system to system. Four font family names available on all Unicon
+systems include serif, sans, typewriter, and mono. These families map
+onto the system's closest approximation of Times, Helvetica, Courier,
+and a monospaced console font. Font sizes are given in pixel height.
 
 \subsection{Images and palettes}
 
-\texttt{DrawImage(x, y, s)} draws a rectangular area using an image string.
-String \texttt{s} has the form
-"\textit{width},\textit{palette},\textit{data}".
-\textit{width} is the width of the rectangle drawn, \texttt{palette} is a code
-that defines the colors corresponding to data values, and the rest of
-the data supplies pixel values. Predefined palettes and palette
-functions help to provide this capability. Image and palette
-functions are described fully in [Griswold98].
+\texttt{DrawImage(x, y, s)} draws a rectangular area using an image
+string.  String \texttt{s} has the form
+"\textit{width},\textit{palette},\textit{data}".  \textit{width} is
+the width of the rectangle drawn, \texttt{palette} is a code that
+defines the colors corresponding to data values, and the rest of the
+data supplies pixel values. Predefined palettes and palette functions
+help to provide this capability. Image and palette functions are
+described fully in [Griswold98].
 
 \subsection{Patterns}
 
-The context attribute \texttt{fillstyle} determines the
-pixels used by draw and fill functions like \texttt{FillPolygon()}.
-If the \texttt{fillstyle} is not \texttt{solid}, a pattern in
-the filled area is drawn in the foreground color; other pixels are
-drawn in the background color
-(\texttt{"fillstyle=textured"}).
-The function \texttt{Pattern(w,s)} associates a pattern
-denoted by \texttt{s} with \texttt{w}'s context. String
-\texttt{s} is a built-in pattern name, or a representation of bits that
-define the pattern. Pattern representations are of the form
-\texttt{"width,\#bits"} where
-1 {\textless}= width
-{\textless}= 32. The window system may limit 
-the pattern's width and height to as little as 8.
+The context attribute \texttt{fillstyle} determines the pixels used by
+draw and fill functions like \texttt{FillPolygon()}.  If the
+\texttt{fillstyle} is not \texttt{solid}, a pattern in the filled area
+is drawn in the foreground color; other pixels are drawn in the
+background color (\texttt{"fillstyle=textured"}).  The function
+\texttt{Pattern(w,s)} associates a pattern denoted by \texttt{s} with
+\texttt{w}'s context. String \texttt{s} is a built-in pattern name, or
+a representation of bits that define the pattern. Pattern
+representations are of the form \texttt{"width,\#bits"} where 1
+{\textless}= width {\textless}= 32. The window system may limit the
+pattern's width and height to as little as 8.
 
 The height of the pattern is defined by the number of rows in the bits
-component of the pattern string. Bits consists of a series of
-numbers, each supplying one row of the pattern, in hexadecimal format.
-Each digit defines four bits and each row is defined by the number of
+component of the pattern string. Bits consists of a series of numbers,
+each supplying one row of the pattern, in hexadecimal format.  Each
+digit defines four bits and each row is defined by the number of
 digits required to supply width bits. For example, the call
 
 \iconcode{
@@ -646,17 +594,16 @@ digits required to supply width bits. For example, the call
 
 \subsection{\texttt{pme}: a pixmap editor}
 
-A simple image editor called \texttt{pme} demonstrates event processing
-including mouse events. \texttt{pme} displays both a small and a
-"magnified" display of the image being
-edited, allows the user to set individual pixels, and allows the user
-to save the image; it is well-suited for constructing and hand-editing
-small images such as icons and textures for use in larger 2D or 3D
-scenes.  \texttt{pme} consists of four procedures and employs several graphics
-functions. A sample screen image of \texttt{pme} is presented in Figure 7-1. The
-{\textquotedblleft}real{\textquotedblright} image is in the upper left
-corner; underneath it is a mouse icon which shows what color is drawn
-by each of the mouse buttons.
+A simple image editor called \texttt{pme} demonstrates event
+processing including mouse events. \texttt{pme} displays both a small
+and a "magnified" display of the image being edited, allows the user
+to set individual pixels, and allows the user to save the image; it is
+well-suited for constructing and hand-editing small images such as
+icons and textures for use in larger 2D or 3D scenes.  \texttt{pme}
+consists of four procedures and employs several graphics functions. A
+sample screen image of \texttt{pme} is presented in Figure 7-1. The
+"real" image is in the upper left corner; underneath it is a mouse
+icon which shows what color is drawn by each of the mouse buttons.
 
 
 
@@ -698,11 +645,11 @@ stop("bad -size") \\
 \>   \ \ \ \}
 }
 
-Following the size arguments, \texttt{pme} checks for a filename specifying the
-bitmap to edit. If one is found, it is read into the regular scale
-image, and then the magnified scale image is constructed by reading
-each pixel using the function \texttt{Pixel()}, and filling an 8x8
-rectangle with the corresponding color.
+Following the size arguments, \texttt{pme} checks for a filename
+specifying the bitmap to edit. If one is found, it is read into the
+regular scale image, and then the magnified scale image is constructed
+by reading each pixel using the function \texttt{Pixel()}, and filling
+an 8x8 rectangle with the corresponding color.
 
 \iconcode{
 \>   \ \ \ i := j := 0 \\
@@ -714,26 +661,24 @@ rectangle with the corresponding color.
 \>   \ \ \ \ \ \ \}
 }
 
-After the images are loaded with their initial contents, if any, a grid
-is drawn on the magnified image to delineate each individual
-pixel's boundary. The user's mouse
-actions within these boxes change the colors of corresponding pixels in
-the image. An list of three bindings to the window, each with an
-independently-set foreground color, is used to represent the color
-settings of the mouse buttons.
+After the images are loaded with their initial contents, if any, a
+grid is drawn on the magnified image to delineate each individual
+pixel's boundary. The user's mouse actions within these boxes change
+the colors of corresponding pixels in the image. An list of three
+bindings to the window, each with an independently-set foreground
+color, is used to represent the color settings of the mouse buttons.
 
 \iconcode{
 \>   colors :=
 [Clone("fg=red"),Clone("fg=green"),Clone("fg=blue")]
 }
 
-The main event processing loop of \texttt{pme} is simple: Each event is fetched
-with a call to \texttt{Event()} and immediately passed into a case
-expression. The keystroke \texttt{"q"}
-exits the program; the keystroke
-\texttt{"s"} saves the bitmap in a file by
-calling \texttt{WriteImage()}, asking for a file name if one has not
-yet been supplied.
+The main event processing loop of \texttt{pme} is simple: Each event
+is fetched with a call to \texttt{Event()} and immediately passed into
+a case expression. The keystroke \texttt{"q"} exits the program; the
+keystroke \texttt{"s"} saves the bitmap in a file by calling
+\texttt{WriteImage()}, asking for a file name if one has not yet been
+supplied.
 
 \iconcode{
 \>   \ \ \ case e := Event() of \{ \\
@@ -782,8 +727,8 @@ mouse area \\
 
 Pixel drawing is handled by procedure \texttt{dot()}, whose third
 argument specifies which button, and therefore which color to draw.
-The dot is drawn using \texttt{FillRectangle()} in the magnified window; in
-the regular scale window \texttt{DrawPoint()} suffices.
+The dot is drawn using \texttt{FillRectangle()} in the magnified window;
+in the regular scale window \texttt{DrawPoint()} suffices.
 
 \iconcode{
 procedure dot(x, y, c) \\
@@ -794,10 +739,10 @@ procedure dot(x, y, c) \\
 end
 }
 
-\texttt{pme} illustrates several aspects of the Unicon graphics facilities. Note
-the event-handling: a case expression handles various
-keystrokes and mouse events with simpler control
-structure than in most languages' GUI event processing.
+\texttt{pme} illustrates several aspects of the Unicon graphics
+facilities. Note the event-handling: a case expression handles various
+keystrokes and mouse events with simpler control structure than in
+most languages' GUI event processing.
 
 \bigskip
 
@@ -845,7 +790,7 @@ WAttrib("height") \\
 \>   else \{ \\
 \>   \ \ \ \&window := open("pme",
 "g",
-{\textquotedblright}size={\textquotedblright} {\textbar}{\textbar}
+"size=" {\textbar}{\textbar}
 (lmargin+width*8+5){\textbar}{\textbar}","{\textbar}{\textbar}(height*8+5))
 {\textbar} \\
  \ \ \ \ \ \ \ \ stop("cannot open window") \\
@@ -926,49 +871,46 @@ end
 
 Three-dimensional graphics are provided in Unicon on platforms which
 support the industry standard OpenGL libraries. Unicon provides the
-basic primitives, transformations, lighting, and texturing elements
-of 3D computer graphics in a simplified fashion, providing a good basis
+basic primitives, transformations, lighting, and texturing elements of
+3D computer graphics in a simplified fashion, providing a good basis
 to rapidly construct 3D scenes. The Unicon 3D interface consists of
 sixteen new functions and six functions that were extended from the 2D
-graphics facilities, compared with OpenGL's 250+
-functions. While Unicon's 3D interface vastly
-simplifies some aspects of 3D programming compared with the OpenGL C
-interface, it does not currently provide access to several features of
-OpenGL including blending, fog, anti aliasing, display lists,
-selection, and feedback.
+graphics facilities, compared with OpenGL's 250+ functions. While
+Unicon's 3D interface vastly simplifies some aspects of 3D programming
+compared with the OpenGL C interface, it does not currently provide
+access to several features of OpenGL including blending, fog, anti
+aliasing, display lists, selection, and feedback.
 
-This section explains in detail how to use Unicon's 3D
-facilities, for programmers who already have some idea of how 3D
-graphics work. A 3D window is opened using mode
-\texttt{"gl"} and is very similar to a 2D window,
-so many ideas earlier in this chapter are needed for 3D
+This section explains in detail how to use Unicon's 3D facilities, for
+programmers who already have some idea of how 3D graphics work. A 3D
+window is opened using mode \texttt{"gl"} and is very similar to a 2D
+window, so many ideas earlier in this chapter are needed for 3D
 programming. 3D graphics use the 2D windowing functions and attributes
 and introduce several new ones.
 
-A primary difference between 2D and 3D is that graphics operations in 2D
-windows use (x,y) integer pixel coordinates relative to the
-upper left corner of the window, while 3D windows use (x,y,z) real
-number coordinates in an abstract geometric world. A mobile
-viewer's position, and the direction they are looking,
-determine what is visible. Coordinates of 3D objects go through a
-series of translations, scalings, and rotations to determine their
-final location; these matrix transformations are used to compose
-aggregate objects from their parts. In addition to the coordinate
-system difference, 3D scenes usually employ a rich lighting model, and
-use materials and textures to draw objects more frequently than a solid
-foreground color. For this reason, the \texttt{fg} attribute is extended in the
-3D realm to denote a foreground \textit{material}, including color as
-well as how the object appears in different types of lighting.
+A primary difference between 2D and 3D is that graphics operations in
+2D windows use (x,y) integer pixel coordinates relative to the upper
+left corner of the window, while 3D windows use (x,y,z) real number
+coordinates in an abstract geometric world. A mobile viewer's
+position, and the direction they are looking, determine what is
+visible. Coordinates of 3D objects go through a series of
+translations, scalings, and rotations to determine their final
+location; these matrix transformations are used to compose aggregate
+objects from their parts. In addition to the coordinate system
+difference, 3D scenes usually employ a rich lighting model, and use
+materials and textures to draw objects more frequently than a solid
+foreground color. For this reason, the \texttt{fg} attribute is
+extended in the 3D realm to denote a foreground \textit{material},
+including color as well as how the object appears in different types
+of lighting.
 
 \subsection{Opening windows for 3D graphics}
 
 To open a 3D graphics window, call the built in function \texttt{open()},
-passing in the title of the window to be opened and mode
-"gl".
+passing in the title of the window to be opened and mode "gl".
 
 \iconcode{
-\>   W := open("win",
-"gl")}
+\>   W := open("win", "gl")}
 
 \noindent
 As in the 2D facilities, if a window is assigned to the keyword variable
@@ -977,60 +919,61 @@ As in the 2D facilities, if a window is assigned to the keyword variable
 \subsection{3D attributes}
 
 Features such as lighting, perspective, textures, and shading give a
-scene the illusion of being three-dimensional. A Unicon programmer makes
-use of context attributes to control these features. By
+scene the illusion of being three-dimensional. A Unicon programmer
+makes use of context attributes to control these features. By
 assigning new values to various attributes, the programmer controls
-many aspects of the scene. Attributes to control the coordinate system,
-field of view, lighting and textures are included in the Unicon 3D
-graphics facilities. 
+many aspects of the scene. Attributes to control the coordinate
+system, field of view, lighting and textures are included in the
+Unicon 3D graphics facilities.
 
-Some of the most basic context attributes concern the coordinate system.
-In 3D graphics, x-, y-, and z-coordinates
-determine where to place an object. The objects that are visible on the
-screen depend on several things, the eye position, the eye direction,
-and the orientation of the scene. If these items are not taken into
-account, the scene desired by the user and the scene drawn may be two
-very different things. 
+Some of the most basic context attributes concern the coordinate
+system.  In 3D graphics, x-, y-, and z-coordinates determine where to
+place an object. The objects that are visible on the screen depend on
+several things, the eye position, the eye direction, and the
+orientation of the scene. If these items are not taken into account,
+the scene desired by the user and the scene drawn may be two very
+different things.
 
 To think about these attributes, imagine a person walking around a 3D
-coordinate system. What the person sees becomes the scene viewed on the
-screen. The eye position specifies where the person is standing. Things
-close to the person appear larger and seem closer than objects further
-away. The eye direction specifies where the person is looking. If the
-person is looking toward the negative z-axis, only the objects situated
-on the negative z-axis are viewed in the scene. Anything on the
-positive z-axis is behind the viewer. Finally, the up direction can be
-described by what direction is up for the person. 
+coordinate system. What the person sees becomes the scene viewed on
+the screen. The eye position specifies where the person is
+standing. Things close to the person appear larger and seem closer
+than objects further away. The eye direction specifies where the
+person is looking. If the person is looking toward the negative
+z-axis, only the objects situated on the negative z-axis are viewed in
+the scene. Anything on the positive z-axis is behind the
+viewer. Finally, the up direction can be described by what direction
+is up for the person.
 
 The eye position is given by the attribute eyepos. By default this is
-set to be at the origin or (0, 0, 0). The eye direction is given by the
-attribute eyedir. By default this is set to be looking at the negative
-z-axis. The up direction can be specified by the attribute eyeup and by
-default is (0, 1, 0). The attribute eye allows the user to specify
-eyepos, eyedir, and eyeup with a single value. Changing any of these
-attributes causes the scene to redraw itself with the new eye
+set to be at the origin or (0, 0, 0). The eye direction is given by
+the attribute eyedir. By default this is set to be looking at the
+negative z-axis. The up direction can be specified by the attribute
+eyeup and by default is (0, 1, 0). The attribute eye allows the user
+to specify eyepos, eyedir, and eyeup with a single value. Changing any
+of these attributes causes the scene to redraw itself with the new eye
 specifications.
 
 \subsection{3D drawing primitives}
 
 In 2D, programs draw points, lines, polygons, and circles. Functions
-that have been extended for 3D include
-\texttt{DrawPoint()}, \texttt{DrawLine()}, \texttt{DrawSegment()},
-\texttt{DrawPolygon()}, and \texttt{FillPolygon()}. The 3D facilities
-introduce many new primitives, including cubes, spheres, tori,
-cylinders, and disks. These are described in Table 7-5 below.
+that have been extended for 3D include \texttt{DrawPoint()},
+\texttt{DrawLine()}, \texttt{DrawSegment()}, \texttt{DrawPolygon()},
+and \texttt{FillPolygon()}. The 3D facilities introduce many new
+primitives, including cubes, spheres, tori, cylinders, and
+disks. These are described in Table 7-5 below.
 
 Many scenes are drawn using a mixture of 2D, 3D and 4D objects. The
-context attribute \texttt{dim} allows the program to switch between the
-different dimensions when specifying the vertices an objects. A user
-can draw 2D, 3D, or 4D objects by assigning \texttt{dim} the values of
-2, 3, or 4. For primitives that take x, y, and z coordinates,
-specifying only x and y coordinate is not sufficient. For this reason,
-\texttt{{\textquotedblleft}dim = 2{\textquotedblright}} disallows the
-use of these primitives. These functions are
-\texttt{DrawSphere()}\texttt{, }\texttt{DrawTorus()}\texttt{,
-}\texttt{DrawCube()}\texttt{, and }\texttt{DrawCylinder()}.\texttt{ }By
-default the value of \texttt{dim} is three.
+context attribute \texttt{dim} allows the program to switch between
+the different dimensions when specifying the vertices an objects. A
+user can draw 2D, 3D, or 4D objects by assigning \texttt{dim} the
+values of 2, 3, or 4. For primitives that take x, y, and z
+coordinates, specifying only x and y coordinate is not sufficient. For
+this reason, \texttt{"dim = 2"} disallows the use of these
+primitives. These functions are \texttt{DrawSphere()},
+\texttt{DrawTorus()}, \texttt{DrawCube()}, and
+\texttt{DrawCylinder()}. By default the value of \texttt{dim} is
+three.
 
 \bigskip
 
@@ -1127,60 +1070,59 @@ radius.  &
 
 \subsection{Coordinate transformations}
 
-Matrix multiplications are used to calculate transformations such as
-rotations on objects and the field of view.
-Functions to perform several matrix operations in support of coordinate
-transformation are available. The main transformation functions are
-\texttt{Translate(dx,dy,dz)}, \texttt{Scale(mx,my,mz)}, and
-\texttt{Rotate(a,x,y,z)}.
+Matrix multiplications are used to calculate transformations such as rotations
+on objects and the field of view. Functions to perform several matrix
+operations in support of coordinate transformation are available. The main
+transformation functions are \texttt{Translate(dx,dy,dz)},
+\texttt{Scale(mx,my,mz)}, and \texttt{Rotate(a,x,y,z)}.
 
 In many 3D graphics applications, transformations are composed as the
 pieces of an object are drawn relative to one another. Transformations
-are saved and restored as objects are traversed.  Unicon uses the system's
-matrix stacks to keep track of the current matrix with a stack of matrices,
-where the top of the stack is the current matrix.
+are saved and restored as objects are traversed.  Unicon uses the
+system's matrix stacks to keep track of the current matrix with a
+stack of matrices, where the top of the stack is the current matrix.
 Several functions manipulate the matrix stack. The function
 \texttt{PushMatrix()} pushes a copy of the current matrix onto the
 stack. By doing this the user can compose several different
 transformations. The function \texttt{IdentityMatrix()} changes the
-current matrix to the identity matrix. To discard the top matrix and to
-return to the previous matrix, the function
-\texttt{PopMatrix()} pops the top matrix off the matrix stack.
+current matrix to the identity matrix. To discard the top matrix and
+to return to the previous matrix, the function \texttt{PopMatrix()}
+pops the top matrix off the matrix stack.
 
-There are different matrix stacks for the projection and model view. The
-projection stack contains matrices that perform calculations on
-the field of view, based on the current eye
-attributes. If these eye attributes are changed, previous
-manipulations of the projection matrix stack are no longer valid. The
-maximum depth of the projection matrix stack is two. Trying to push
-more than two matrices onto the projection matrix stack will generate a
-runtime error. The model view stack contains matrices to perform
-calculations on objects within the scene. Transformations on the
-model view stack affect the subsequently drawn objects. The
-maximum depth of this stack is 32; pushing more than 32 matrixes on
-the model view stack results in an error. Furthermore, only one
-matrix stack can be manipulated at any given time. The function
-\texttt{MatrixMode()} switches between the two matrix stacks.
+There are different matrix stacks for the projection and model
+view. The projection stack contains matrices that perform calculations
+on the field of view, based on the current eye attributes. If these
+eye attributes are changed, previous manipulations of the projection
+matrix stack are no longer valid. The maximum depth of the projection
+matrix stack is two. Trying to push more than two matrices onto the
+projection matrix stack will generate a runtime error. The model view
+stack contains matrices to perform calculations on objects within the
+scene. Transformations on the model view stack affect the subsequently
+drawn objects. The maximum depth of this stack is 32; pushing more
+than 32 matrixes on the model view stack results in an
+error. Furthermore, only one matrix stack can be manipulated at any
+given time. The function \texttt{MatrixMode()} switches between the
+two matrix stacks.
 
 \subsection{Lighting and materials}
 
 Lighting is important in making a graphics scene appear to be 3D.
-Adding lighting to a scene can be complicated and the hardware support for
-lighting is at present a very crude approximation. Light sources
-emit different types of light. {\em Ambient\/} light has
-been scattered so much that is difficult to determine the source;
-backlighting in a room is an example. {\em Diffuse\/} light
-comes from one direction and is central in defining what color
-the object appears to be. Finally, {\em specular\/} light not only comes from
-one direction, but also tends to bounce off the objects in the scene.
+Adding lighting to a scene can be complicated and the hardware support
+for lighting is at present a very crude approximation. Light sources
+emit different types of light. \emph{Ambient} light has been scattered
+so much that is difficult to determine the source; backlighting in a
+room is an example. \emph{Diffuse} light comes from one direction and
+is central in defining what color the object appears to be. Finally,
+\emph{specular} light not only comes from one direction, but also
+tends to bounce off the objects in the scene.
 
 Applications control lighting using context attributes set using
-\texttt{WAttrib()}. For a 3D scene
-in Unicon, eight lights are available. Attributes \texttt{light0}
-- \texttt{light7} control the eight lights. Each light can be turned
-\texttt{on} or \texttt{off} and has a \texttt{position} and
-lighting value.A lighting value is a string which contains one or more semi-colon
-separated lighting properties. A lighting property is of the form
+\texttt{WAttrib()}. For a 3D scene in Unicon, eight lights are
+available. Attributes \texttt{light0} - \texttt{light7} control the
+eight lights. Each light can be turned \texttt{on} or \texttt{off}
+and has a \texttt{position} and lighting value.A lighting value is a
+string which contains one or more semi-colon separated lighting
+properties. A lighting property is of the form
 
 \iconcode{
  \ \ \ [diffuse{\textbar}ambient{\textbar}specular] \textit{color name}}
@@ -1204,23 +1146,21 @@ the lighting properties.
 0.0, 1.0, 0.0")}
 
 
-Interacting with the lights, the objects in a scene may have
-several material properties. The material properties are ambient,
-diffuse, and specular, which are similar to the light properties, plus
-emission, and shininess. If an object has an emission property, it
-emits light of a specific color. Using combinations of these material
-properties one can give an object the illusion of being made of plastic
-or metal.
+Interacting with the lights, the objects in a scene may have several
+material properties. The material properties are ambient, diffuse, and
+specular, which are similar to the light properties, plus emission,
+and shininess. If an object has an emission property, it emits light
+of a specific color. Using combinations of these material properties
+one can give an object the illusion of being made of plastic or metal.
 
 In 2D, the foreground color is controlled using the context attribute
-\texttt{fg} and set with \texttt{Fg()} or \texttt{WAttrib()}.
-In 3D, the attribute \texttt{fg} is extended to allow a
-semi-colon separated list of material properties with the color that
-property should have.
-A programmer can specify a material property as a simple color value or
-by providing comma-separated red, green, and blue
-intensities as real numbers between \texttt{0.0} and \texttt{1.0}.
-More general material properties are of the form
+\texttt{fg} and set with \texttt{Fg()} or \texttt{WAttrib()}.  In 3D,
+the attribute \texttt{fg} is extended to allow a semi-colon separated
+list of material properties with the color that property should have.
+A programmer can specify a material property as a simple color value
+or by providing comma-separated red, green, and blue intensities as
+real numbers between \texttt{0.0} and \texttt{1.0}.  More general
+material properties are of the form
 
 \iconcode{
 \ \ [ diffuse {\textbar} ambient {\textbar} specular {\textbar} emission
@@ -1231,12 +1171,11 @@ or \texttt{"shininess n"}, where n is some integer
 in the range 0 {\textless}= n {\textless}= 128.
 
 The default material property type is diffuse, so the call
-\texttt{Fg("red")} is equivalent to
-\texttt{Fg("diffuse red")}. For shininess, a value
-of 0 spreads specular light broadly across an object and a value of 128
-focuses specular light at a single point. The following line of code
-changes the current material property to diffuse green and ambient
-orange. 
+\texttt{Fg("red")} is equivalent to \texttt{Fg("diffuse red")}. For
+shininess, a value of 0 spreads specular light broadly across an
+object and a value of 128 focuses specular light at a single
+point. The following line of code changes the current material
+property to diffuse green and ambient orange.
 
 \iconcode{
 \ \ \ WAttrib(w, "fg=diffuse green; ambient
@@ -1253,39 +1192,36 @@ specular black; emission black; \_ \\
 \>\> shininess 50\textrm{"})}
 
 Using lights and materials in Unicon was simplified by extending the
-design of the 2D graphics facilities. The \texttt{fg} attribute greatly
-reduces the number of lines of code needed for a scene. Thanks to this
-design along with the extensive use of defaults, a programmer can use
-lighting in a 3D graphics application without much effort.
+design of the 2D graphics facilities. The \texttt{fg} attribute
+greatly reduces the number of lines of code needed for a scene. Thanks
+to this design along with the extensive use of defaults, a programmer
+can use lighting in a 3D graphics application without much effort.
 
 \subsection{Textures}
 
-Another important area of 3D graphics is textures.
-Adding textures to a scene can give a scene a realistic feel.
-There are several aspects to using textures. A texture
-is a rectangular image that is
-"glued" onto objects in a scene. The
-appearance of the textured objects in the scene depends on several
-pieces of information supplied by the programmer. These include the
-texture image and what parts of the texture image is mapped to what
-parts of the object.
+Another important area of 3D graphics is textures.  Adding textures to
+a scene can give a scene a realistic feel.  There are several aspects
+to using textures. A texture is a rectangular image that is "glued"
+onto objects in a scene. The appearance of the textured objects in the
+scene depends on several pieces of information supplied by the
+programmer. These include the texture image and what parts of the
+texture image is mapped to what parts of the object.
 
-The attribute \texttt{texmode} enables or disables textures,
-which are disabled by default.
-\texttt{WAttrib("texmode=on")} enables textures.
-When textures are enabled and a texture image is given, the texture
-is applied to the objects drawn in the scene.
+The attribute \texttt{texmode} enables or disables textures, which are
+disabled by default.  \texttt{WAttrib("texmode=on")} enables textures.
+When textures are enabled and a texture image is given, the texture is
+applied to the objects drawn in the scene.
 
 Unicon provides several formats to specify a texture image. A texture
 can be a Unicon window, an image file, or a string. String textures
-are encoded in one of the language standard
-formats \texttt{"width,pallet,data"} or
-\texttt{"width,\#data"} described in the 2D graphics
-facilities. In the first case the pallet will determine what colors
-appear in the texture image. In the second case, the foreground color
-and background color are used. The ability to use another Unicon
-window as a texture provides great flexibility for texture images,
-allowing programs to create texture images dynamically.
+are encoded in one of the language standard formats
+\texttt{"width,pallet,data"} or \texttt{"width,\#data"} described in
+the 2D graphics facilities. In the first case the pallet will
+determine what colors appear in the texture image. In the second case,
+the foreground color and background color are used. The ability to use
+another Unicon window as a texture provides great flexibility for
+texture images, allowing programs to create texture images
+dynamically.
 
 Textures must have a height of 2\textsuperscript{n} pixels and width
 of 2\textsuperscript{m} pixels where n and m are integers. If not, the
@@ -1296,19 +1232,19 @@ in the first place. Examples of how to use textures specified in the
 different forms are given below.
 
 A programmer specifies a texture either by calling
-\texttt{WAttrib("texture=...")}\texttt{ }or
-using \texttt{Texture(t)}. These methods differ only in that a
-window cannot be used as a texture with \texttt{WAttrib(),} so
-\texttt{Texture()} must be called when a window is used as a texture.
+\texttt{WAttrib("texture=...")}\texttt{ }or using
+\texttt{Texture(t)}. These methods differ only in that a window cannot
+be used as a texture with \texttt{WAttrib(),} so \texttt{Texture()}
+must be called when a window is used as a texture.
 
 A program can specify how a texture is applied to a particular object
-by specifying texture coordinates and vertices. Texture
-coordinates are x and y coordinates within the texture; texture
-coordinate (0.0, 0.0) is the lower left corner of the
-texture image. Texture coordinates are mapped to the vertices of an
-object in the scene. Together, the texture coordinates and the vertices
-determine what the object looks like after textures have been applied.
-Since texture coordinates are complex, defaults are provided. Assigning
+by specifying texture coordinates and vertices. Texture coordinates
+are x and y coordinates within the texture; texture coordinate (0.0,
+0.0) is the lower left corner of the texture image. Texture
+coordinates are mapped to the vertices of an object in the
+scene. Together, the texture coordinates and the vertices determine
+what the object looks like after textures have been applied.  Since
+texture coordinates are complex, defaults are provided. Assigning
 attribute \texttt{texcoord} the value \texttt{auto} causes system
 default texture coordinates to be used. The defaults are dependent on
 the type of primitive.
@@ -1434,13 +1370,12 @@ None &
 
 \paragraph{Changing Context Attributes}
 The user can change attributes throughout a program. Multiple
-attributes can be changed with one call to \texttt{WAttrib()}.
-The following line of code changes the eye
-position to (0.0, 0.0, 5.0) and the eye direction to look at the
-positive z-axis. An assignment to \texttt{eyepos}, \texttt{eyedir},
-\texttt{eyeup} or \texttt{eye}
-redraws the screen; a given call to \texttt{WAttrib()} will only redraw the
-scene once.
+attributes can be changed with one call to \texttt{WAttrib()}.  The
+following line of code changes the eye position to (0.0, 0.0, 5.0) and
+the eye direction to look at the positive z-axis. An assignment to
+\texttt{eyepos}, \texttt{eyedir}, \texttt{eyeup} or \texttt{eye}
+redraws the screen; a given call to \texttt{WAttrib()} will only
+redraw the scene once.
 
 \iconcode{
 \>   WAttrib("eyepos=0.0,0.0,5.0","eyedir=0.0,0.0,1.0")}
@@ -1478,25 +1413,26 @@ Here is an example that uses some of the drawing primitives.
 {\sffamily 3D Drawing Primitives Made From Various Materials}
 \end{center}
 
-The function \texttt{Fg()} specifies the material properties of 
-subsequently drawn objects that affect their color and appearance.
-In this example, a cube with a diffuse green material is
-drawn with sides of length 0.7. Then a sphere with a diffuse purple and
-ambient blue material is drawn with radius 0.5 and center (0.4, -0.5,
--4.0). Next a diffuse yellow and ambient grey torus with center (-1.0,
-0.4, -4.0), an inner radius of 0.4, and an outer radius of 0.5 is
-drawn. Finally a filled polygon with a diffuse red material property
-and three vertices, (0.25, -0.25, -1.0), (1.0, 0.25, -4.0) and
-(1.3, -0.4, -3.0) is drawn. 
+The function \texttt{Fg()} specifies the material properties of
+subsequently drawn objects that affect their color and appearance.  In
+this example, a cube with a diffuse green material is drawn with sides
+of length 0.7. Then a sphere with a diffuse purple and ambient blue
+material is drawn with radius 0.5 and center (0.4, -0.5, -4.0). Next a
+diffuse yellow and ambient grey torus with center (-1.0, 0.4, -4.0),
+an inner radius of 0.4, and an outer radius of 0.5 is drawn. Finally a
+filled polygon with a diffuse red material property and three
+vertices, (0.25, -0.25, -1.0), (1.0, 0.25, -4.0) and (1.3, -0.4, -3.0)
+is drawn.
 
 \paragraph{Different Types of Lighting}
 
 The next example shows the difference between the different types of
 lighting that can be used in a scene. Each window is the same scene
-rendered using different lighting. The upper right scene has an ambient
-blue-green light. The upper left scene was drawn using a diffuse
-blue-green light. The lower right scene uses only a specular blue-green
-light. The scene in the lower left uses all three types of lighting.
+rendered using different lighting. The upper right scene has an
+ambient blue-green light. The upper left scene was drawn using a
+diffuse blue-green light. The lower right scene uses only a specular
+blue-green light. The scene in the lower left uses all three types of
+lighting.
 
 \begin{center}
 {\includegraphics[width=1.6in,height=1.6in]{ub-img/ub-img33.jpg}}
@@ -1506,44 +1442,25 @@ light. The scene in the lower left uses all three types of lighting.
 \end{center}
 
 \iconcode{
-\>   w :=
-open("ambient.icn","gl",
-"bg=black",
-"size=400,400") \\
+\>   w := open("ambient.icn","gl", "bg=black", "size=400,400") \\
 \>\>   WAttrib(w,"light0=on, ambient
-blue-green","fg=specular
-white") \\
+blue-green","fg=specular white") \\
 \>\>   DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
-\>   x :=
-open("diffuse.icn","gl",
-"bg=black",
-"size=400,400") \\
-\>\>   WAttrib(x,"light0=on, diffuse
-blue-green","fg=specular
-white") \\
+\>   x := open("diffuse.icn","gl", "bg=black", "size=400,400") \\
+\>\>   WAttrib(x,"light0=on, diffuse blue-green","fg=specular white") \\
 \>\>   DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
-\>   y :=
-open("specular.icn","gl",
-"bg=black",
-"size=400,400") \\
-\>\>   WAttrib(y,"light0=on,specular
-blue-green","fg=specular
-white") \\
+\>   y := open("specular.icn","gl", "bg=black", "size=400,400") \\
+\>\>   WAttrib(y,"light0=on,specular blue-green","fg=specular white") \\
 \>\>   DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
-\>   z :=
-open("all.icn","gl",
-"bg=black",
-"size=400,400") \\
+\>   z := open("all.icn","gl", "bg=black", "size=400,400") \\
 \>\>   WAttrib(z, "light0=on, diffuse blue-green; \_ \\
-\>\>\>   specular blue-green; ambient
-blue-green","fg=specular
-white") \\
+\>\>\>   specular blue-green; ambient blue-green","fg=specular white") \\
 \>\>   DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
 \>\>   DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
 \>\>   DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
@@ -1575,18 +1492,18 @@ white") \\
 }
 
 In the above example, three yellow spheres are drawn. An emission
-color of blue makes the sphere appear white with a
-blue ring. With a red emission color, the sphere remains yellow, but
-now has an orange-red ring. The middle sphere shows the effect of
-having no emission color. In order to obtain the diffuse yellow sphere
-in the center, the emission color was changed to black, without
-changing the diffuse property.
+color of blue makes the sphere appear white with a blue ring. With a
+red emission color, the sphere remains yellow, but now has an
+orange-red ring. The middle sphere shows the effect of having no
+emission color. In order to obtain the diffuse yellow sphere in the
+center, the emission color was changed to black, without changing the
+diffuse property.
 
 \paragraph{Textures}
-This section contains examples of the use of textures in a
-scene. The following example
-uses a file as a texture. A .gif image of a map of the world is used
-to texture a torus using the default texture coordinates.
+This section contains examples of the use of textures in a scene. The
+following example uses a file as a texture. A \texttt{.gif} image of a
+map of the world is used to texture a torus using the default texture
+coordinates.
 
 \bigskip
 
@@ -1603,16 +1520,14 @@ to texture a torus using the default texture coordinates.
 \>   DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
 }
 
-Instead of using \texttt{WAttrib(w,
-"texture=map.gif")}\texttt{ }to specify the
-.gif file, a call to \texttt{Texture(w,
-"map.gif")} could be used to obtain the
-same result.
+Instead of using \texttt{WAttrib(w, "texture=map.gif")} to specify the
+\texttt{.gif} file, a call to \texttt{Texture(w, "map.gif")} could be
+used to obtain the same result.
 
-The next example uses an image string to specify a
-texture image. The string used for this example is taken from Graphics
-Programming in Icon [Griswold98] page 156. This string is used as a
-texture on a cube using the default texture coordinates. 
+The next example uses an image string to specify a texture image. The
+string used for this example is taken from Graphics Programming in
+Icon [Griswold98] page 156. This string is used as a texture on a cube
+using the default texture coordinates.
 
 \bigskip
 
@@ -1644,9 +1559,8 @@ FFFD9532248BFFFF" \\
 }
 
 The next example shows the use of a Unicon window as a texture. An
-image of a lamp is drawn on the first window in
-"\texttt{gl"} mode. This window is then
-used as a texture on a cylinder. The same method can be
+image of a lamp is drawn on the first window in \texttt{gl} mode. This
+window is then used as a texture on a cylinder. The same method can be
 used to embed 2D window contents in 3D scenes. Note that in the
 following code the first window is opened with size 256 x 256. Texture
 images must have height and width that are powers of 2, or the system
@@ -1679,8 +1593,7 @@ must rescale them. The default coordinates for cylinders are used.
 \>   DrawTorus(w, 0.0, -0.22, -2.5, 0.03, 0.06) \\
 \>   DrawTorus(w, 0.0, 0.6, -2.5, 0.05, 0.03) \\
 \ \\
-\>   w2 :=
-open("win2.icn","gl","bg=black","size=400,400") \\
+\>   w2 := open("win2.icn","gl","bg=black","size=400,400") \\
 \>   WAttrib(w2, "texmode=on") \\
 \>   Texture(w2, w)  \\
 \>   Fg(w2, "diffuse purple; ambient blue") \\
@@ -1694,11 +1607,10 @@ format for such a string is described in section 2.7. This image is
 taken from Graphics Programming in Icon page 159. The first example
 uses the default texture coordinates for a filled polygon, which in
 this case is just a square with sides of length one. In this case the
-default texture coordinates are as follows. The coordinate (0.0,
-0.0)\texttt{ }of the texture image is mapped to the vertex\texttt{
-}(0.0, 0.0, -2.0) of the square, (0.0, 1.0)\texttt{ }is mapped to (0.0,
-1.0, -2.0)\texttt{, }(1.0, 1.0)\texttt{ }is mapped to (1.0, 1.0, -2.0),
-and (1.0, 0.0)\texttt{ }is mapped to (1.0, 0.0, -2.0).
+default texture coordinates are as follows. The coordinate (0.0, 0.0)
+of the texture image is mapped to the vertex (0.0, 0.0, -2.0) of the
+square, (0.0, 1.0) is mapped to (0.0, 1.0, -2.0), (1.0, 1.0) is mapped
+to (1.0, 1.0, -2.0), and (1.0, 0.0) is mapped to (1.0, 0.0, -2.0).
 
 \begin{center}
 {\includegraphics[width=1.5in,height=1.5in]{ub-img/ub-img39.jpg}}
@@ -1729,9 +1641,8 @@ texture image is mapped to the vertex (0.0, 0.0, -2.0) of the square,
 \end{center}
 
 \iconcode{
-\>   Wattrib(w,"fg=white","bg=blue","texmode=on","texture=4,\#8CA9", \\
-\>   \ \ \ \ \ \ \ \ \ \ "texcoord=0.0, 1.0, 1.0, 1.0,
-1.0, 1.0, 1.0, 0.0") \\
+\>   WAttrib(w,"fg=white","bg=blue","texmode=on","texture=4,\#8CA9", \\
+\>   \ \ \ \ \ \ \ \ \ \ "texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0") \\
 \>   FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
 }
 
@@ -1749,18 +1660,18 @@ could be replaced by
 \>   Texcoord(w, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0)}
 
 \paragraph[A Larger Textures Example]{A Larger Textures Example}
-The following more complicated example uses many features of
-the Unicon 3D graphics facilities described in the previous sections.
+The following more complicated example uses many features of the
+Unicon 3D graphics facilities described in the previous sections.
 This example also illustrates the effect of adding texture to a scene.
-The scene on the left is a scene drawn without any texturing.
-The scene on the right contains texturing. The scene on the right is a
-much more realistic scene than the one on the left. 
+The scene on the left is a scene drawn without any texturing.  The
+scene on the right contains texturing. The scene on the right is a
+much more realistic scene than the one on the left.
 
 All textures used in the textured scene, except for the unicorn, where
 captured using a digital camera. These images were then converted into
 .gif files and scaled to width and height of 2\textsuperscript{n}.
 Directly using an image file is one feature of the Unicon 3D graphics
-facilities that makes adding textures simpler than using OpenGL. 
+facilities that makes adding textures simpler than using OpenGL.
 
 \bigskip
 
@@ -1776,20 +1687,17 @@ facilities that makes adding textures simpler than using OpenGL.
 
 \iconcode{
 procedure main() \\
-\>   \&window
-:=open("textured.icn","gl","bg=black","size=700,700") \\
+\>   \&window := open("textured.icn","gl","bg=black","size=700,700") \\
 \ \\
 \>   \# Draw the floor of the room \\
-\>   WAttrib("texmode=on",
-"texture=carpet.gif") \\
+\>   WAttrib("texmode=on", "texture=carpet.gif") \\
 \>   FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0, \\
 \>\>\> 7.0, -7.0,
 -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0) \\
 \ \\
 \>   \# Draw the right and left walls \\
-\>   Wattrib("texture=wall1.gif",
-"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
-1.0") \\
+\>   WAttrib("texture=wall1.gif",
+	"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
 \>   FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0,
 2.0, 0.4, -8.0) \\
 \>   WAttrib("texture=wall2.gif") \\
@@ -1797,15 +1705,13 @@ procedure main() \\
 2.0, 0.4, -8.0) \\
 \ \\
 \>   \# Draw a picture \\
-\>   Wattrib("texture=poster.gif",
-"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
-1.0") \\
+\>   WAttrib("texture=poster.gif",
+	"texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
 \>   FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2,
 1.0, -2.6) \\
 \>   \# Draw another picture \\
-\>   Wattrib("texture=unicorn.gif",
-"texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0,
-1.0") \\
+\>   WAttrib("texture=unicorn.gif",
+	"texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0") \\
 \>   FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8,
 4.0, -9.0)
 \ \\
@@ -1832,9 +1738,7 @@ procedure main() \\
 \>   PopMatrix() \\
 \ \\
 \>   \# Draw the table  \\
-\>   WAttrib("texcoord=auto",
-"texmode=on",
-"texture=table.gif") \\
+\>   WAttrib("texcoord=auto", "texmode=on", "texture=table.gif") \\
 \>   PushMatrix() \\
 \>   Rotate(-10.0, 1.0, 0.0,0.0) \\
 \>   DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3) \\
@@ -1844,15 +1748,13 @@ procedure main() \\
 \>   Rotate(65.0, 1.0, 0.0, 0.0) \\
 \>   DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29)  \\
 \>   PopMatrix() \\
-\>   WAttrib("texmode=off",
-"fg=diffuse weak brown") \\
+\>   WAttrib("texmode=off", "fg=diffuse weak brown") \\
 \>   PushMatrix() \\
 \>   Rotate(-20.0, 1.0, 0.0,0.0) \\
 \>   DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1) \\
 \>   PopMatrix() \\
 \>   while (e := Event()) \~{}== "q" do
-        write(image(e), ": ", \&x,
-",", \&y) \\
+        write(image(e), ": ", \&x, ",", \&y) \\
 end
 }
 
@@ -1860,18 +1762,18 @@ In order to apply textures to the scene, texturing must be turned
 on. Next, the texture to be applied is specified. The floor of the
 scene is drawn using a filled polygon. The default texture coordinates
 are used to apply the carpet texture to the floor of the room. The
-tiled appearance on the floor is caused by the use of the
-default texture coordinates. This can be avoided using user-supplied
-texture coordinates, as is done for the textures that
-are applied to the walls and the pictures in the room. 
+tiled appearance on the floor is caused by the use of the default
+texture coordinates. This can be avoided using user-supplied texture
+coordinates, as is done for the textures that are applied to the walls
+and the pictures in the room.
 
-The lamp does not have a texture, so it is necessary
-to turn off texturing before drawing the lamp. Also for the lamp to be
-centered properly in the room, transformations are used. Matrices are
-used to isolate the transformations of the lamp. Finally to draw
-the table with a textured top and an untextured base, two cylinders and
-a disk are used. Texturing is applied to a cylinder and the disk.
-Notice the call 
+The lamp does not have a texture, so it is necessary to turn off
+texturing before drawing the lamp. Also for the lamp to be centered
+properly in the room, transformations are used. Matrices are used to
+isolate the transformations of the lamp. Finally to draw the table
+with a textured top and an untextured base, two cylinders and a disk
+are used. Texturing is applied to a cylinder and the disk.  Notice the
+call
 
 \iconcode{
 \>   WAttrib(w, "texcoord=auto")}
@@ -1886,24 +1788,24 @@ Graphics animation is performance sensitive, and Unicon is slower than
 systems programming languages such as C and C++. Nevertheless, it is
 possible to write 3D animations in Unicon with acceptable frame rates.
 
-3D animations redraw the entire scene each time an object moves or
-the user changes point of view. An application can call \texttt{EraseArea()}
-followed by the appropriate graphics primitives to redraw a scene, but
-the results often appear to flicker. It is better to let
-Unicon's runtime system do the redrawing. Unicon
+3D animations redraw the entire scene each time an object moves or the
+user changes point of view. An application can call
+\texttt{EraseArea()} followed by the appropriate graphics primitives
+to redraw a scene, but the results often appear to flicker. It is
+better to let Unicon's runtime system do the redrawing. Unicon
 maintains a \textit{display list} of graphics operations to execute
 whenever the screen must be redrawn; these operations are effectively
-everything since the last \texttt{EraseArea()}. The display list for a window
-can be obtained by calling \texttt{WindowContents()}. The elements of the list
-are Unicon records and lists containing the string names and parameters
-of graphics primitives. For example, a call to \texttt{DrawSphere(w,x,y,z,r)}
-returns (and adds to the display list) a record
-\texttt{gl\_sphere("DrawSphere",x,y,z,r)}. Instead
-of redrawing the entire scene to move an object, you can
-modify its display list record and call \texttt{Refresh()}. The following code
-fragment illustrates animation by causing a ball to slide up and down.
-In order to \textit{bounce}, the program would need to incorporate
-physics. 
+everything since the last \texttt{EraseArea()}. The display list for a
+window can be obtained by calling \texttt{WindowContents()}. The
+elements of the list are Unicon records and lists containing the
+string names and parameters of graphics primitives. For example, a
+call to \texttt{DrawSphere(w,x,y,z,r)} returns (and adds to the
+display list) a record \texttt{gl\_sphere("DrawSphere",x,y,z,r)}.
+Instead of redrawing the entire scene to move an object, you can
+modify its display list record and call \texttt{Refresh()}. The
+following code fragment illustrates animation by causing a ball to
+slide up and down.  In order to \textit{bounce}, the program would
+need to incorporate physics.
 
 \iconcode{
 sphere := DrawSphere(w, x, y, z, r) \\
@@ -1915,53 +1817,52 @@ every i := 1 to 100 do \\
 \>   \ \ \ \}
 }
 
-This technique gives animation rates of 100-200 frames per second on
-current midrange PC hardware. Unicon supports smooth animation for a
-number of objects which varies widely depending on the underlying
-graphics hardware and software.
+This technique gives animation rates of hundreds of frames per second
+on midrange PC hardware. Unicon supports smooth animation for a number
+of objects which varies widely depending on the underlying graphics
+hardware and software.
 
 \subsection{Selective rendering and object selection}
 
-Many 3D applications model scenes with far more objects than are needed
-at any particular instant. For example, a virtual building might have
-many rooms on multiple floors, but only a small fraction is visible
-from any particular location. The 3D facilities remove objects that are
-not visible, but doing so becomes too slow for large numbers of
-objects. An application with a large scene will generally have to
+Many 3D applications model scenes with far more objects than are
+needed at any particular instant. For example, a virtual building
+might have many rooms on multiple floors, but only a small fraction is
+visible from any particular location. The 3D facilities remove objects
+that are not visible, but doing so becomes too slow for large numbers
+of objects. An application with a large scene will generally have to
 perform at least approximate visibility calculations to achieve smooth
 animation. Such visibility calculations can be performed for each
 frame, and if the visible objects change, the scene can be re-rendered
-by rebuilding the display list from scratch. At this point
-Unicon's speed can be an issue, as discussed in the
-previous section.
+by rebuilding the display list from scratch. At this point Unicon's
+speed can be an issue, as discussed in the previous section.
 
-The function \texttt{WSection()} comes to the rescue. It plays two vital
-roles. First, it allows portions of the display list to be skipped
-during rendering, without having to rebuild the display list. Second,
-it forms the basis for specifying portions of the display list that the
-user may select (click on) when interacting with the scene. In both
-cases, calls to \texttt{WSection()} come in pairs, first a call
-\texttt{WSection(s)} identifies a portion of the display list of
-interest, then the sequence of 3D calls to render some object or
-portion of the scene, then a call to \texttt{WSection()} defines the
-end of that section. Parameter \texttt{s} must be a unique string name
-or identifier for the section.
+The function \texttt{WSection()} comes to the rescue. It plays two
+vital roles. First, it allows portions of the display list to be
+skipped during rendering, without having to rebuild the display
+list. Second, it forms the basis for specifying portions of the
+display list that the user may select (click on) when interacting with
+the scene. In both cases, calls to \texttt{WSection()} come in pairs,
+first a call \texttt{WSection(s)} identifies a portion of the display
+list of interest, then the sequence of 3D calls to render some object
+or portion of the scene, then a call to \texttt{WSection()} defines
+the end of that section. Parameter \texttt{s} must be a unique string
+name or identifier for the section.
 
-The call to create a new section returns a record that contains a field
-named \texttt{skip}. Setting \texttt{skip} to a non-null value causes the
-section to be omitted whenever the scene is redrawn.
-Using \texttt{WSection()} for 3D user input is similar. A program calls
-\texttt{WAttrib({\textquotedblleft}pick=on{\textquotedblright})} to
-turn on 3D selection, after which keyword \texttt{\&pick} generates the
-identifying names for all objects intersected by the ray from the
-camera through the (x,y) screen location where the mouse was located on
-the last call to \texttt{Event()}.
+The call to create a new section returns a record that contains a
+field named \texttt{skip}. Setting \texttt{skip} to a non-null value
+causes the section to be omitted whenever the scene is redrawn. Using
+\texttt{WSection()} for 3D user input is similar. A program calls
+\texttt{WAttrib("pick=on")} to turn on 3D selection, after which
+keyword \texttt{\&pick} generates the identifying names for all
+objects intersected by the ray from the camera through the (x,y)
+screen location where the mouse was located on the last call to
+\texttt{Event()}.
 
 \section{Summary}
 
 Graphics are ubiquitous in modern applications. Unicon provides 2D and
-3D graphics capabilities that are easy to use, portable building blocks
-for many programs. The 2D facilities are mature; the 3D interface is
-new and will evolve. Many elements of the 2D graphics system are used
-in the 3D graphics interface. Further integration of the 2D and 3D
-graphics systems is likely in the future.
+3D graphics capabilities that are easy to use, portable building
+blocks for many programs. The 2D facilities are mature; the 3D
+interface is new and will evolve. Many elements of the 2D graphics
+system are used in the 3D graphics interface. Further integration of
+the 2D and 3D graphics systems is likely in the future.

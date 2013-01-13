@@ -870,15 +870,6 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
       if (n > longest_dr) {
          SUSPEND_THREADS();
          if (n > longest_dr) {
-            if (longest_dr==0) {
-               dr_arrays = calloc(n, sizeof (struct b_proc *));
-               if (dr_arrays == NULL){
-                  RESUME_THREADS();
-	          return NULL;
-		  }
-               longest_dr = n;
-               }
-            else {
                dr_arrays = realloc(dr_arrays, n * sizeof (struct b_proc *));
                if (dr_arrays == NULL){
                   RESUME_THREADS();
@@ -887,7 +878,6 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
                while(longest_dr<n) {
                   dr_arrays[longest_dr++] = NULL;
                   }
-               }
             }
          RESUME_THREADS();
 	 }

@@ -693,9 +693,6 @@ char *argv[];
    rootpstate.Public_blockregion = NULL;
 #endif					/* Concurrent */
 
-   rootpstate.Longest_dr=0;
-   rootpstate.Dr_arrays=NULL;
-
 #ifdef Arrays   
    rootpstate.Cprealarray = cprealarray_0;
    rootpstate.Cpintarray = cpintarray_0;
@@ -1127,6 +1124,23 @@ Deliberate Syntax Error
 #ifdef ExecImages
 btinit:
 #endif					/* ExecImages */
+
+   {
+#define LONGEST_DR_NUM 64
+   struct descrip stubarr[2];
+   dr_arrays = calloc(LONGEST_DR_NUM, sizeof (struct b_proc *));
+   if (dr_arrays == NULL)
+      fatalerr(305, NULL);
+   for(longest_dr=0; longest_dr<LONGEST_DR_NUM; longest_dr++)
+      dr_arrays[longest_dr]=NULL;
+   longest_dr = LONGEST_DR_NUM;
+
+   MakeStr("__s", 3, &(stubarr[0]));
+   MakeStr("__m", 3, &(stubarr[1]));
+   stubrec = dynrecord(&emptystr, stubarr, 2);
+   stubrec->ndynam = -3; /* oh, let's pretend we're an object */
+   }
+
 #endif					/* COMPILER */
 
 /*
@@ -1904,8 +1918,15 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->K_main.dword = D_Coexpr;
    BlkLoc(pstate->K_main) = (union block *) pstate->Mainhead;
 
-   pstate->Longest_dr=0;
-   pstate->Dr_arrays=NULL;
+   {
+   int idr;
+   pstate->Dr_arrays = calloc(LONGEST_DR_NUM, sizeof (struct b_proc *));
+   if (pstate->Dr_arrays == NULL)
+      fatalerr(305, NULL);
+   for(idr=0; idr<LONGEST_DR_NUM; idr++)
+      pstate->Dr_arrays[idr]=NULL;
+   pstate->Longest_dr = LONGEST_DR_NUM;
+   }
 
 #ifdef Graphics
    pstate->AmperX = zerodesc;

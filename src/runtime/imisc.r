@@ -244,11 +244,6 @@ linearsearch:
 	    dptr d1, d2;
 	    int i;
 
-	    if (stubrec == NULL) {
-	       stubrec = dynrecord(&emptystr, rp->recdesc->Proc.lnames, 2);
-	       stubrec->ndynam = -3; /* oh, let's pretend we're an object */
-	       }
-
 	    Protect(new_rec = alcrecd(2, (union block *)stubrec), RunErr(0,0));
 
 	    /*

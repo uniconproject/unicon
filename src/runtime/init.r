@@ -1131,8 +1131,7 @@ btinit:
    dr_arrays = calloc(LONGEST_DR_NUM, sizeof (struct b_proc *));
    if (dr_arrays == NULL)
       fatalerr(305, NULL);
-   for(longest_dr=0; longest_dr<LONGEST_DR_NUM; longest_dr++)
-      dr_arrays[longest_dr]=NULL;
+
    longest_dr = LONGEST_DR_NUM;
 
    MakeStr("__s", 3, &(stubarr[0]));

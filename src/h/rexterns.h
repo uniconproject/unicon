@@ -261,6 +261,8 @@ extern struct descrip amperErrno;
       
       extern word lastop;
    #endif				/* MultiThread */
+
+      extern struct b_proc *stubrec;
    
 #else					/* COMPILER */
 

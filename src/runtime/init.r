@@ -1126,7 +1126,7 @@ btinit:
 #endif					/* ExecImages */
 
    {
-#define LONGEST_DR_NUM 64
+#define LONGEST_DR_NUM 16
    struct descrip stubarr[2];
    dr_arrays = calloc(LONGEST_DR_NUM, sizeof (struct b_proc *));
    if (dr_arrays == NULL)

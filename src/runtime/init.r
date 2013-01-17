@@ -986,6 +986,11 @@ Deliberate Syntax Error
    thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/
 
+   mainhead->inbox = nulldesc;
+   mainhead->outbox = nulldesc;
+   mainhead->cequeue = nulldesc;
+   mainhead->handdata = NULL;
+
 {
  
      struct b_list *hp;
@@ -993,6 +998,13 @@ Deliberate Syntax Error
      /*
       * Initialize sender/receiver queues.
       */
+
+      if (!reserve(Blocks, (word)(
+      			sizeof(struct b_list) * 3 + 
+      			sizeof(struct b_lelem) * 3 +
+			(1024+1024+64) * sizeof(struct descrip)))
+			)
+			fatalerr(307, NULL);
 
       if((hp = alclist(0, 1024))==NULL)
       	    fatalerr(307, NULL);

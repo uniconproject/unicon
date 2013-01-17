@@ -1560,10 +1560,10 @@ function{1} put(x, vals[n])
       }
 
    body {
-      struct b_list *hp;
+      tended struct b_list *hp;
       dptr dp;
       register word i, val, num;
-      struct b_lelem *bp;  /* does not need to be tended */
+      register struct b_lelem *bp;  /* does not need to be tended */
       static int two = 2;	/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 #ifdef Arrays
@@ -1623,10 +1623,6 @@ function{1} put(x, vals[n])
 	       if (i < MinListSlots)
 		  runerr(0);
 	       }
-
-#ifdef Concurrent
-	    hp = BlkD(x, List);
-#endif					/* Concurrent */
 
 	    Blk(hp->listtail, Lelem)->listnext = (union block *) bp;
 	    bp->listprev = hp->listtail;

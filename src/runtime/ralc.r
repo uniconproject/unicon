@@ -323,7 +323,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
       			sizeof(struct b_lelem) * 3 +
 			(1024+1024+64) * sizeof(struct descrip)))
 			)
-      ReturnErrNum(307, NULL);
+         		ReturnErrNum(307, NULL);
 
       if((hp = alclist(0, 1024))==NULL)
       	    ReturnErrNum(307, NULL);

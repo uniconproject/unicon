@@ -1,0 +1,659 @@
+#######################################################################
+#
+#	File:     eve.icn
+#
+#	Subject:  Program to control multiple execution monitors
+#
+#	Author:   Clinton Jeffery
+#
+#	Date:     November 17, 1992
+#
+#######################################################################
+#
+#	Version:  3.2
+#
+#######################################################################
+#
+#   An execution monitor coordinator
+#
+
+$include "evdefs.icn"
+link evutils
+link options
+link optwindw
+link vidgets
+link vbuttons
+link vslider
+link vstyle
+link vtext
+link vstopsgn
+
+global
+   cmd,                            # target program file name
+   clients,                         # list of client objects
+   unioncset,                    # union of client's csets
+   root,                             # root of the widget tree
+   msg,                               # main message widget
+   enabled,                       # list of checkbox widgets
+   stopSign,                      # state of the stop sign widget
+   stopstate,                     # state of the stop sign widget
+   EventCodeTable,         # table of EM's to call for each event
+   loaded,                         # list of checkbox widgets
+   delayval,                       # amount of slowdown to insert per event
+   verbose,                       # switch to make Eve explain itself
+   candidates,                   # list of potential EM's to run
+   ticksum,                        # number of clock ticks elapsed in TP
+   EveHandlers,               # Eve's procedures for each event
+   EveBroadcastQueue,   # queue used for EM - EM communication
+   vidget2index
+
+global ScriptProgs
+
+
+#
+# main() - initializes TP, EM's, Eve's own tables, then enters the main loop
+#
+procedure main(av)
+   local optable, all, i, aborter, monitor,
+      arglist, C
+     
+   optable := parseArgs(av)
+   candidates := readConfig(optable["f"], optable["all"])
+   vidget2index := table()
+   if /ScriptProgs then {
+      cmd := pop(av) |
+	 stop("Eve: Icon program command-line argument is missing!")
+      &eventsource := load(cmd, av) | stop("can't load ", image(cmd))
+
+      if \verbose then
+	 write("Eve: Monitoring ", cmd, " (", image(&eventsource), ")")
+
+      selectEMs(optable)
+      initializeEMs(optable)
+
+      initializeEve()
+      if \verbose then write("Eve: executing monitored program")
+      mainLoop()
+      set_Vstrset_coupler(stopstate, , "done")
+      stopsigndone(stopSign)
+      drawtime()
+      eveQuit()
+      }
+   else {
+      while *ScriptProgs > 0 do {
+	 x := pop(ScriptProgs)
+	 av := pop(x)
+	 cmd := pop(av)
+	 if av[-1][1]=="<" then {
+	    in := pull(av)[2:0]
+	    in := open(in) | stop("can't open redirected file ", in)
+	    }
+	 else {
+	    in := &input
+	    }
+	 &eventsource := load(cmd, av, in) | stop("can't load ", image(cmd))
+	 clients := []
+	 av := pop(x)
+	 every i := 1 to  * av do {
+	    arglist := av[i]
+	    put(clients, client(pop(arglist), arglist, i))
+	 }
+	 initializeEMs(optable)
+	 initializeEve(noop,noop)
+	 if \verbose then write("Eve: executing monitored program")
+	 mainLoop()
+	 write(cmd," finished")
+	 }
+      }
+end
+
+procedure noop()
+end
+
+#
+# mainLoop() - Eve's main loop
+#
+procedure mainLoop()
+   while EvGet(unioncset) do {
+      #
+      # Call Eve's own handler for this event, if there is one.
+      #
+      (\ EveHandlers[&eventcode]) ()
+      #
+      # Forward the event to those EM's that want it.
+      #
+      every monitor := !EventCodeTable[&eventcode] do
+	 if C := event( , , monitor.prog) then {
+	    if C ~=== monitor.mask then {
+	       while type(C) ~== "cset" do {
+		  if C === "abort" then fail
+		  #
+		  # The EM has raised a signal; pass it on, then
+		  # return to the client to get his next event request.
+		  #
+		  broadcast(C, monitor)
+		  if not (C := event( , , monitor.prog)) then {
+		     unschedule(monitor)
+		     break next
+		     }
+		  }
+	       if monitor.mask ~===:= C then
+		  computeUnionMask()
+	       }
+	    }
+	 else {
+	    unschedule(monitor)
+	    }
+      delay(6 < delayval)
+      }
+end
+
+#
+# parseArgs() - initialize the target program
+#
+procedure parseArgs(av)
+   local optable, eveoptions
+
+   delayval := 0
+   *av > 0 | stop("usage: eve [-f eveconfig] [-s] [-all] icon-command-line")
+   #
+   # pull off eve options (don't consume child's options in this call
+   #  to options()).
+   #
+   eveoptions := []
+   while av[1][1] == "-" do {
+      put(eveoptions, pop(av))
+      if eveoptions[-1] == "-f" then put(eveoptions, pop(av))
+      }
+   optable := options(eveoptions, "P:V!-geo:f:s-all!")
+   /optable["P"] := "0,0"
+   /optable["f"] := getenv("HOME") || "/.eve"
+   /optable["L"] := "Eve"
+   /optable["T"] := "helvetica,bold,17"
+   /optable["H"] := 100
+   /optable["W"] := 100
+   verbose := optable["V"]
+
+   return optable
+end
+
+global tp,ems
+#
+# selectEMs - select the execution monitors
+#
+procedure selectEMs(optable)
+   local all, i, titles, title, wantheight, maxwidth
+   all := optable["all"]
+   titles := getTitles()
+   &window := optwindow(optable) | stop("no &window")
+   maxwidth := calcWidth(titles)
+   wantheight := WAttrib("fheight") * (*candidates + 1) + WAttrib("ascent")
+   wantheight <:= 80
+   WAttrib("width=" || (maxwidth + 101 + TextWidth("loadiconifyenable") + 16))
+   WAttrib("height=" || wantheight)
+   wantheight <:= 240
+
+   # build buttons and sliders on Eve's window
+   root := Vroot_frame(&window)
+   attachClientControls(titles, maxwidth, all)
+   VResize(root)
+
+   # allow user to select EMs
+   while(pop(Pending()))
+   until stopstate.value ~=== "startup" do
+      run()
+   if wantheight ~= WAttrib("height") then WAttrib("height="||wantheight)
+   attachSlider()
+   while(pop(Pending()))
+   clients := []
+   every i := 1 to  * candidates do
+      if \all | \loaded[i].callback.value then {
+	 arglist := titledparse(candidates[i])
+	 put(clients, client(pop(arglist), arglist, i))
+	 }
+   # the first time through we activate the clients with no useful value
+end
+
+procedure initializeEMs()
+   if \verbose then write("Eve: initializing ", *clients, " clients")
+   every i := 1 to *clients do
+      clients[i].mask := @ clients[i].prog
+end
+
+#
+# initializeEve() - initialize Eve's own state variables
+#
+procedure initializeEve(tickHandler,eventHandler)
+   /tickHandler := eveTick
+   ticksum := 0
+   EveHandlers := table()
+   EveHandlers[E_Tick] := tickHandler
+   if /eventHandler then EveHandlers[E_MXevent] := eveEvent
+   EveHandlers[E_Error] := eveError
+   computeUnionMask()
+end
+
+#
+# calcWidth() - compute the width needed for Eve window, in pixels
+#
+procedure calcWidth(titles)
+   local maxwidth
+   maxwidth := 0
+   every maxwidth <:= TextWidth(!titles)
+   maxwidth <:= TextWidth("Executing program " || cmd) + 4
+   maxwidth +:= TextWidth("..")
+   return maxwidth
+end
+
+#
+# getTitles() - from a list of candidates, build a list of titles
+#
+procedure getTitles()
+   local titles, i
+   titles := list(*candidates)
+   every i := 1 to *candidates do
+      if candidates[i][1] == "\"" then
+	 candidates[i] ? {
+	    move(1) 
+	    titles[i] := tab(find("\""))
+	    }
+      else
+	 titles[i] := candidates[i]
+   return titles
+end
+
+#
+# attachClientControls() - attach controls for each possible EM,
+#  as well as Eve's stopsign and exit button
+#
+procedure attachClientControls(titles,maxwidth,all)
+   local fheight, y, dotwidth
+   fheight := WAttrib("fheight")
+   descent := WAttrib("descent")
+   dotwidth := TextWidth(".")
+   loaded    := list(*candidates)
+   enabled   := list(*candidates)
+   every i := 1 to *candidates do {
+      y := i * fheight + descent
+      title := left(titles[i], maxwidth / dotwidth, ".")
+      while TextWidth(title) > maxwidth do title := left(title, *title - 1)
+      Vmessage(root, 101, y, &window, title)
+      loaded[i] :=
+         FixedCheckbox(all, root, 101 + maxwidth, y,
+		    &window, loadedChange, i, fheight)
+      vidget2index[loaded[i]] := i
+      xxx := FixedCheckbox(&null,root, 101 + maxwidth + TextWidth("load") + 8,
+		    y, &window, iconicChange, i, fheight)
+      vidget2index[xxx] := i
+      enabled[i] :=
+         FixedCheckbox(all, root, 101 + maxwidth + TextWidth("loadiconify") + 16,
+		    y, &window, enableChange, i, fheight)
+      vidget2index[enabled[i]] := i
+      }
+
+   stopstate := Vstrset_coupler(if /all then "startup" else "running",,,,,,
+				["startup","running","stopped","done"])
+   stopSign := stopsign(&window, stopstate,"stopsign",,80,80,80)
+   aborter := stopsign(&window, Vstrset_coupler("abort",,,,,,["abort"]),"aborter",,100,70,70)
+
+   insert(Vrecset, "stopsign_rec")
+   VInsert(root, stopSign, 10, 0)
+   msg := Vmessage(root, 101, 0, &window, "Select client monitors")
+   VInsert(root, Vline(&window, 101, fheight,
+		       101 + TextWidth("Select client monitors"), fheight))
+   Vmessage(root, 101 + maxwidth, 0, &window, "load")
+   Vmessage(root, 101 + maxwidth + TextWidth("load") + 8, 0, &window, "iconify")
+   Vmessage(root, 101 + maxwidth + TextWidth("loadiconify") + 16, 0,
+      &window, "enable")
+   VInsert(root, aborter, 0, 80)
+end
+
+#
+# attachSlider() - attach slider for execution speed control
+#
+procedure attachSlider()
+   VRemove(root, msg)
+   Vmessage(root, 101, 0, &window, "Executing program " || cmd)
+   Vvert_slider(root, 45, 180, &window, speed, , WHeight()-190, 10, 0, 100, 0)
+   Vmessage(root, 10, 175, &window, "slow")
+   Vmessage(root, 10, WHeight() - 20, &window, "fast")
+   VResize(root)
+end
+
+#
+# speed() - set the speed from the slider value.  A vidget callback.
+#
+procedure speed(foo, newdelay)
+   delayval := integer(newdelay ^ 1.5)
+end
+
+#
+# run() - vidget event handler; yields control after every event by suspending
+#
+procedure run(e, x, y)
+   local return_value
+   
+   if \e then {
+      if return_value := VEvent(root, e, x, y) then suspend return_value
+      else suspend
+      }
+   repeat {
+      e := Event()
+      if return_value := VEvent(root, e, &x, &y) then
+	 suspend return_value
+      else suspend
+      }
+end
+
+#
+# titledparse() - parse command lines with an optional string title
+#  at the front.  The syntax of .eve file lines is
+#  ["title"] cmd [options]
+#
+procedure titledparse(s)
+   if s[1] == "\"" then
+      s ? {
+	 move(1)
+	 tab(find("\""))
+	 move(1)
+	 tab(many(' '))
+	 return parse(tab(0))
+	 }
+   else return parse(s)
+end
+
+#
+# Trivial command line (string) argument --> list conversion.
+#
+procedure parse(s)
+   local l, s2
+   l := []
+   s ? {
+      while s2 := tab(upto(' ')) do { put(l, s2) ; tab(many(' ')) }
+      if *(s2 := tab(0)) > 0 then put(l, s2)
+      }
+   return l
+end
+
+#
+# unschedule(EM) - remove EM from those that are receiving events.
+#
+procedure unschedule(EM)
+   local newclients, monitor
+   newclients := []
+   every monitor := !clients do {
+      if monitor ~=== EM then put(newclients, monitor)
+      else write("unscheduled ", image(EM.name))
+      }
+   clients := newclients
+   computeUnionMask()
+end
+
+#
+# computeUnionMask() - determine the set of events required by the
+#  union of all EM's -- including Eve's tick, error and user input needs
+#
+procedure computeUnionMask()
+   static tickset
+   local monitor, c
+   initial tickset := cset(E_Tick || E_MXevent || E_Error)
+
+   EventCodeTable := table()
+   EventCodeTable["noop"] := ""
+   EventCodeTable[E_Tick] := []
+   EventCodeTable[E_MXevent] := []
+   EventCodeTable[E_Error] := []
+   unioncset := tickset
+   every monitor := !clients do
+      if monitor.enabled === E_Enable then {
+	 unioncset ++:= monitor.mask
+	 every c := !monitor.mask do
+	    if c ~=== E_MXevent then {
+	       /EventCodeTable[c] := []
+	       put(EventCodeTable[c], monitor)
+	       }
+	 }
+   if \verbose then write("Eve: union mask ", image(unioncset))
+end
+
+#
+# readConfig(s) - read the .eve file and return a list containing
+#  its contents.
+#
+procedure readConfig(s, all)
+   local fin, line, candidates
+   candidates := []
+   if \s then fin := open(s) | stop("can't open ", s)
+   else if not (fin := open(getenv("HOME") || "/.eve")) then {
+      fin := &input
+      write("Enter a list of client command lines.  A blank line terminates")
+      }
+   while line := read(fin) do {
+      if *line = 0 then next
+      else if match("Monitor ",line) then {
+	 /ScriptProgs := []
+	 line ? {
+	    ="Monitor "
+	    tp := parse(trim(tab(find("with"))))
+	    ="with"
+	    tab(many(' \t'))
+	    ems := []
+	    while em := tab(find(",")) do {
+	       put(ems,parse(em))
+	       =","
+	       tab(many(' \t'))
+	       }
+	    put(ems,parse(tab(0)))
+	    }
+	 put(ScriptProgs, [tp,ems])
+	 }
+      else
+	 put(candidates, line)
+      }
+   if fin ~=== &input then close(fin)
+   return candidates
+end
+
+#
+# During execution, Eve's knowledge about EMs is stored in a list of
+#  records of type "client_rec".
+#
+
+record client_rec(name, args, eveRow, prog, state, mask, enabled)
+
+#
+# client() - create and initialize a client_rec.
+#
+procedure client(args[])
+   local self
+   self := client_rec ! args
+   if /self.name then stop("empty client?")
+   self.prog := load(self.name, self.args) | stop("can't load ", image(self.name))
+   variable("&eventsource", self.prog) := &current | stop("no EventSource?")
+   variable("Monitored", self.prog) := &eventsource | stop("no Monitored?")
+   /self.state := "Running"
+   /self.mask := ''
+   /self.enabled := E_Enable
+   return self
+end
+
+#
+# eveEvent() - event handler for E_MXevent user input event.
+# If the user pressed the stop sign, the stop sign changes into a green light;
+#  wait until the user presses the green light before continuing.
+#
+procedure eveEvent()
+   run(&eventvalue, &x, &y)
+   while stopstate.value === "stopped" do
+      run()
+   &eventcode := "noop"
+end
+
+#
+# eveTick() - event handler for E_Tick clock tick event.
+#
+procedure eveTick()
+   drawtime(ticksum +:= &eventvalue)
+end
+
+#
+# eveError() - event handler for E_Error TP run-time error event.
+#
+procedure eveError()
+   local w
+   if keyword("error", &eventsource) = 0 then
+      #
+      # this error would be fatal, handle it
+      #
+      if w := open("Run-time error", "x",
+         "font=helvetica,bold,24", "lines=10" ) then {
+	 write(w, "Run-time error ", image(&eventvalue))
+	 write(w, "File ", keyword("file", &eventsource),
+            "; line ", keyword("line", &eventsource))
+	 write(w, keyword("errortext", &eventsource))
+	 write(w, "offending value: ", image(keyword("errorvalue", &eventsource)))
+	 writes(w, "Convert to failure? ")
+	 if Event(w)===("y"|"Y") then
+	    variable("&error", &eventsource) := 1
+	 }
+end
+
+#
+# drawtime() - write the current elapsed TP clock time
+#
+procedure drawtime(val)
+   /val := ticksum
+   GotoXY(10, 84)
+   writes(&window, "T: ", val)
+end
+
+#
+# loadedChange() - vidget callback for the "loaded" buttons
+#
+procedure loadedChange(vidget, val)
+   local arglist, i
+   i := vidget2index[vidget]
+   if stopstate.value === "running" then {
+      if /val then {
+	 # trying to turn off a load while running?  Sorry...
+	 vidget.callback.V.toggle(vidget.callback, 1)
+	 }
+      else {
+	 arglist := titledparse(candidates[i])
+	 write("arglist:")
+	 every write(!arglist)
+	 put(clients, client(pop(arglist), arglist, i))
+	 enabled[i].callback.V.toggle(enabled[i].callback, i, val)
+	 if /enabled[i].callback.value then enabled[i].D.draw_off(enabled[i])
+	 else enabled[i].D.draw_on(enabled[i])
+	 write(image(enabled[i].callback.value), ",", clients[*clients].enabled)
+	 clients[*clients].mask := @ clients[*clients].prog
+	 computeUnionMask()
+	 }
+      }
+   else {
+      enabled[i].callback.V.toggle(enabled[i].callback, i, val)
+      if /enabled[i].callback.value then enabled[i].D.draw_off(enabled[i])
+      else enabled[i].D.draw_on(enabled[i])
+      }
+end
+
+#
+# enableChange() - vidget callback for the "enable" buttons.
+#  Update Eve's state, and inform client of disable/enable.
+#
+procedure enableChange(vidget, val)
+   local C, monitor, i
+   i := vidget2index[vidget]
+   if stopstate.value ~== "running" then fail
+   val := if val === &null then E_Disable else E_Enable
+   every monitor := !clients do {
+      if monitor.eveRow === i then {
+	 monitor.enabled := val
+	 (C := event(val, , monitor.prog)) | (write("failing") & fail)
+	 if monitor.mask ~===:= C then
+	    computeUnionMask()
+	 }
+      }
+end
+
+#
+# iconicChange() - vidget callback for the "icon" buttons.
+#
+procedure iconicChange(vidget, val)
+   local cl, v, v2, i
+   i := vidget2index[vidget]
+   val := if val === &null then "window" else "icon"
+   every cl := !clients do
+      if cl.eveRow === i then {
+	 if not (v := variable("Visualization", cl.prog)) then
+	    write("Visualization: failed")
+	 if find("window",image(v)) then WAttrib(v,"iconic=" || val)
+	 else if type(v) == "list" then
+	    every v2 := !v do WAttrib(v2,"iconic=" || val)
+	 else write("Visualization: ", type(variable("Visualization", cl.prog))|"failed")
+	 }
+end
+
+#
+# eveQuit() - TP execution completion handler
+#
+procedure eveQuit()
+   local c
+   if \verbose then write("Eve: Monitored program has terminated execution")
+   every c := (!clients).prog do
+      cofail(c)
+   GetEvents(root)
+end
+
+#
+# broadcast() - sent event to interested EMs
+#
+procedure broadcast(x, except)
+   /EveBroadcastQueue := []
+   put(EveBroadcastQueue, x)
+   put(EveBroadcastQueue, except)
+   flush_broadcast_queue()
+end
+
+#
+# flush events produced during EM - EM communcation.
+#  This code appears similar to Eve's main loop.
+#
+procedure flush_broadcast_queue()
+   local c, C, x, except, monitor
+   while *EveBroadcastQueue > 0 do {
+      x := pop(EveBroadcastQueue)
+      except := pop(EveBroadcastQueue) | stop("malformed broadcast queue")
+      if x === "quit" then eveQuit()
+      every monitor := (except ~=== !clients) do
+	 if C := event( , , monitor.prog) then {
+	    if C ~=== monitor.mask then {
+	       while type(C) ~== "cset" do {
+		  #
+		  # The EM has raised a signal.
+		  # Pass it on to all the others except the client.
+		  #
+		  put(EveBroadcastQueue, C)
+		  put(EveBroadcastQueue, monitor)
+		  if not (C := event( , , monitor.prog)) then {
+		     unschedule(monitor)
+		     if \verbose then
+			write("Eve warning: broadcast of ",
+			   image(&eventcode), " aborted")
+		     }
+		     break next
+		  }
+	       if monitor.mask ~===:= C then
+		  computeUnionMask()
+	       }
+	    }
+	 else {
+	    unschedule(monitor)
+	    if \verbose then
+	       write("Eve warning: broadcast of ",
+			image(&eventcode), " aborted")
+	    break
+	    }
+      }
+end

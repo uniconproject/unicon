@@ -1068,7 +1068,7 @@ Although tasks have separate program states, they reside in the same
 address space and can share data; values can be transmitted from task
 to task through {\texttt{main()}}'s argument list, through
 co-expression activation, or by use of event monitoring facilities
-described in [Griswold92b]. In the following pair of programs, the
+described in Chapter 10. In the following pair of programs, the
 parent receives a list value from the child and writes its elements
 out in reverse order.
 
@@ -1195,57 +1195,6 @@ compilation. In practice it is more convenient to have a collection of
 related procedures in a given Icon compilation unit. Shared libraries
 can employ such a mechanism by resorting to a simple database that
 maps procedure names to load modules.
-
-\section{Monitoring Facilities}
-
-Unicon's execution monitoring facilities were developed for Clint Jeffery's
-dissertation and are presented in detail in ``Program Monitoring and
-Visualization: an Exploratory Approach''. This section provides a
-summary. Unlike in MT Icon, Unicon's monitoring facilities impose no noticeable
-performance cost when they are not in use, so they are incorporated as a
-standard feature of the language and always available.
-
-Generally, a program monitors another program by loading it as a task, and
-requesting program execution behavior \textit{events} from it when it activates
-it as a co-expression. An event is a unit of program execution behavior,
-consisting of an \textit{event code}, which is a one letter string that
-indicates what the program is doing, and an \textit{event value}, an associated
-piece of data that is being read, written, or manipulated at the time of the
-event. There are approximately 120 kinds of events with different
-codes. Observing all of them is a compute-intensive task, resulting in many
-co-expression switches per executing line of source code in the program being
-monitored.
-
-A program calls \texttt{EvGet(c, C)} to request events when activating
-a program denoted by co-expression \texttt{C}, instead of using the
-usual activate (\texttt{@}) operator. Cset \texttt{c} is an
-\textit{event mask} that provides a filter to select event codes of
-interest. As the program executes and events occur, their codes are
-checked.  Events that are in the event mask are reported via a
-co-expression switch, and returned from \texttt{EvGet()} in the monitor.
-
-There is a strong, if implicit distinction between activating a
-program in order to monitor it, and activating a program
-normally. When a program requests events using \texttt{EvGet()} it is
-playing an observer role, not a peer role, with the task it is
-monitoring. The program being observed is generally not aware of the
-monitoring that is going on. It does not usually activate the monitor
-task explicitly or communicate with it directly. Instead, it is the
-language virtual machine and runtime system that is reporting what is
-going on by activating the monitoring task.
-
-At present, the only program to which a monitored program will report events
-is the program that loaded it--its parent. The parent, however, may
-\textit{forward} program execution events to other tasks, allowing them to
-observe the same behavior that it sees. The function
-\texttt{EvSend(code, value, C)} transmits an event to co-expression \texttt{C}.
-
-Some types of events are very frequent, frequent enough that processing all of
-them may be unacceptably slow, if a monitor only needs a tiny subset of those
-events in order to do its job. \ Good examples are virtual machine instruction
-events, and source code line number change events. If a monitor only needs to
-observe specific VM instructions, or be informed when a program reaches certain
-line numbers, it requires an additional means of filtering events of interest.
 
 \section{Summary}
 

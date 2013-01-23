@@ -4,8 +4,8 @@ Unicon's execution monitoring facilities allow the user to execute a Unicon
 program under the observation of one or more monitoring programs, also
 written in Unicon.  This chapter presents the monitoring architecture and a
 standard execution monitoring scenario, followed by details of the language
-feature involved.  The scenario characterizes the execution monitoring
-process and motivates the system.
+features involved.  This chapter is based on ``Program Monitoring and
+Visualization'' \cite{Jeffery99}, which has many additional examples.
 
 \section{Monitor Architecture}
 
@@ -22,6 +22,14 @@ useful independent of execution monitoring.
 
 \bigskip
 
+\subsection{Monitor Terminology}
+
+The terminology used in discussing Unicon's execution monitoring
+architecture relates to events and the linguistic features associated with
+them.
+
+
+
 \begin{list}{}{\itemsep 7pt}
 \item [{\bf Dynamic loading}] --- The ability to load multiple programs
 	into a shared execution environment supports
@@ -33,8 +41,7 @@ useful independent of execution monitoring.
 \item [{\bf Synchronous execution}] --- The monitor and target program execute
 	independently, but not concurrently.  This allows the monitor
 	to control target program execution using a simple programming model.
-	Unicon's {\em co-expression\/} data type has been
-	slightly extended to support the
+	Unicon's {\em co-expression\/} data type is used to support the
 	relationship between monitor and target program.
 	\index{synchronous execution|see{coroutine}}
 \item [{\bf High-level instrumentation}] --- Information
@@ -49,23 +56,108 @@ useful independent of execution monitoring.
 	It also supercedes the language's procedure
 	tracing mechanism \cite{Griswold97}.
 	\index{automatic instrumentation}
-\item [{\bf Event masks}] --- Monitor control over target program
-	execution is coupled with the concept of {\em filtering\/}
-	\cite{Elshoff89} in a mechanism called an {\em event mask\/}.
-	\index{filtering}\index{event mask}
-	Event masks provide a simple, dynamic model of execution
-	control that adequately meets performance requirements in
-	processing the high volume of execution information.
+\item [{\bf Events}] --- 
+	The primary language concept added in order to support execution
+	\index{event}
+	monitoring is an {\em event\/}.  An event is the smallest unit of
+	execution behavior that is observable by a monitor.  In practice, an
+	event is the execution of an instrumentation point in the code
+	(a {\em sensor\/}) \index{sensor}
+	that is capable of transfering control to the monitor.
+	\index{instrumentation}
+	This definition limits events to those aspects of program behavior
+	that are instrumented in the language runtime system or the program
+	itself. If instrumentation
+	does not exist for an aspect of program behavior of interest, it is
+	often possible to monitor the desired behavior by means of other
+	events. In the present implementation, for example, no instrumentation
+	exists for file input and output.  If an EM wishes to monitor I/O
+	behavior, it can monitor function and operator events and act on
+	those functions and operators that relate to input and output.
+	A similar example involving the monitoring of Icon's built-in
+	string scanning functions is presented in [Jeffery99]
+
+	In Unicon, events occur whether
+	they are monitored or not, and each event may or may not be observed
+	by any particular monitor.  This definition is useful in a
+	multi-monitor environment, in which EMs are not coupled with the
+	instrumentation and multiple EMs can observe a TP's execution.
+
+\item [{\bf Event codes and values}] --- 
+	From the monitor's perspective, an event has two components: an
+	\index{event!code}\index{event!value}
+	{\em event code\/} and an {\em event value\/}.  The code is
+	generally a one-character string describing what type of event
+	has taken place.  For example, the event code {\tt C} denotes a
+	procedure call event.  Event codes all have associated symbolic
+	constants used in program source code.  For example the mnemonic for a
+	procedure call event is {\tt E\_Pcall}.  These constants are available
+	to programmers as part of a standard event monitoring library
+	described below.\index{E\_Pcall@{\tt E\_Pcall}}
+
+	The event value is an Icon value associated with the event.  The
+	nature of an event value depends on the corresponding event code.
+	For example, the event value for a procedure call event is an
+	Icon value designating the procedure being called, the event value for
+	a list creation event is the list that was created, the event value
+	for a source location change event is the new source location, and so
+	forth.  Event values can be arbitrary Icon structures with pointer
+	semantics; the EM accesses them just like any other source language
+	value.\index{access!structure}
+
+\item [{\bf Event reports}] --- 
+	The number of events that occurs during a program execution is
+	extremely large---large enough to create serious performance problems
+	in an interactive system.  Most EMs function effectively on a
+	small fraction of the available events; the events that an EM uses
+	are said to be {\em reported\/} to the EM.  An {\em event report\/}
+	results in a transfer of control from the TP to the EM.  Efficient
+	support for the selection of appropriate events to report and the
+	minimization of the number of event reports are primary concerns.
+	\index{event!report}
+
+
+\item [{\bf Event masks}] --- 
+	A monitor controls the target program by means of this
+	dynamic form of filtering events.
+	\index{event!mask}\index{filtering}\index{event mask}
+	An event mask is a set that
+	describes the execution behavior of interest to the monitor.
+	Because event codes are one-letter strings,
+	the {\em cset\/} data type is used for event masks.
+	Csets are represented internally by bit
+	vectors, so a cset membership test is very efficient compared to
+	the set data type, whose membership test is a hash
+	table lookup.\index{cset!event mask}\index{character set!event mask}
+
+	Event masking allows the monitor to specify which
+	events are to be reported and to change the specification at runtime.
 	Events that are of no interest to the execution
 	monitor are not reported and do not impose unreasonable
-	execution cost. An event mask is a set that
-	describes the execution behavior of interest to the monitor;
-	the {\em cset} data type is employed to provide event masking
-	in a manner that is familiar to Unicon programmers.
+	execution cost.
+	When a monitor starts or resumes execution of the program being
+	monitored, the monitor selects
+	a subset of possible event codes from which to receive its first
+	report.  The program executes until an event occurs with a selected
+	code, at which time the event is reported.  After the monitor has
+	finished processing the report, it transfers control back to the
+	program, again specifying an event mask.  Dynamic event masking
+	enables the monitor to change the event mask in between event reports.
+
+
+	When an event report transfers control from TP to EM, the two
+	components of the event are supplied in the Icon keywords
+	{\tt \&eventcode} and {\tt \&eventvalue}, respectively.
+	\index{event!code}\index{event!value}
+	As discussed earlier, these
+	keywords are special global variables that are given their values by
+	the runtime system during an event report, rather than by explicit user
+	assignment.  The monitor then can act upon the event
+	based on its code, display or manipulate its value, etc.
 \end{list}
 
 
-\section{Standard Execution Monitoring Scenario}
+\subsection{Standard Execution Monitoring Scenario}
 
 The following scenario presents the relationship between execution monitors
 and target program in its simplest form.  More sophisticated relationships
@@ -75,7 +167,7 @@ Monitoring and Visualization'' [Jeffery99].  In addition, the expected user
 and range of program behavior observable using these monitoring facilities
 are characterized.
 
-\subsection*{Definitions}
+\subsubsection*{Scenario Definitions}
 
 \begin{tabular}{m{0.95in} m{4.75in}}
 \includegraphics[width=0.65in,height=0.85in]{tp.png} &
@@ -136,7 +228,7 @@ dependencies on the platform on which the program is running.
 {\sffamily\bfseries Figure 9-3:}
 {\sffamily Behavior depends on the language, not just the program.}
 
-\subsection*{Selecting or Developing Appropriate Monitors}
+\subsubsection*{Selecting or Developing Appropriate Monitors}
 
 Rather than focusing on one monolithic EM that attempts to accommodate
 all monitoring tasks, the framework advocates development of a suite
@@ -151,7 +243,7 @@ development of execution monitors is also useful when an existing EM
 provides the needed information, but it is obscured by other
 information; existing EMs can be customized to a particular problem.
 
-\subsection*{Running the Target Program}
+\subsubsection*{Running the Target Program}
 
 The user runs the TP, monitored by a selection of
 EMs (Figure 9-4). General-purpose EMs provide an overall impression
@@ -168,42 +260,38 @@ of a large amount of information and abstract away detail.
 
 \bigskip
 
-Obtaining more specific information frequently requires that the user
+Obtaining specific information often requires that the user
 interact with the EMs to control the TP's execution, either to increase
 the amount of information presented during specific portions of
-execution or to stop execution in order to examine details.
-In order to provide this interactive control, EMs must present
-execution information as it happens during the TP's execution, rather
-than during a postmortem analysis phase.
+execution or to pause execution to examine details.
+In order to provide this interactive control, EMs present
+execution information as it happens during the TP's execution,
+rather than during a postmortem analysis phase.
 \index{user!interaction}\index{execution!control}\index{analysis!runtime}
 \index{analysis!post mortem}
 
-\section{Framework Characteristics}
+\subsection{Framework Characteristics}
 
-The preceding scenario depends on support for exploratory programming
-in several areas: controlling a program's execution, obtaining execution
-information, presenting large quantities of information,
-and interacting with the user.  In order to support these tasks, the
-framework provides synchronous shared address multitasking and an
-event-driven execution control model.\index{shared address}
-These features are provided by extensions to the Unicon language.
+The preceding scenario requires language support in several areas:
+controlling a program's execution, obtaining execution information,
+presenting large quantities of information, and interacting with the user.
+To support these tasks, the framework provides synchronous shared address
+multitasking and an event-driven execution control model.
+\index{shared address} The first two of these features are the focus
+of this chapter.
 
+\subsubsection*{Multitasking}
 
-\subsection{Multitasking}
-
-The first and most basic characteristic of the framework is an
-execution model in which an EM is a separate program from the TP---a
-\index{execution model!multitasking}multitasking model.
-In this model the EM views the TP as a separately loaded coroutine
- \index{coroutine} \cite{Marlin80}.  The coroutine
-relationship is the primary means by which EMs control TP
-execution, and coroutine transfers of 
-control are the primary source of execution information from a TP
-(Figure 9.5).  The precise nature of the interaction between the EM and
-TP (the arrows in Figure 9.5) is that of asymmetric co-expressions.
+In the monitoring execution model, in which an EM is a separate program
+from the TP \index{execution model!multitasking}, the relationship is almost
+that of two co-expressions, except that activations of the monitor are
+implicit occurrences of events within the runtime system, rather than
+expression results or explicit activations using the \texttt{@} operator.
+Event reports are transfers of control to the monitor as well as the
+primary source of execution information from a TP (Figure 9.5).
 
 \begin{center}
-\includegraphics[width=2.4in,height=1.4in]{tpem.png}
+\includegraphics[width=2.8in,height=1.5in]{execinf.png}
 \end{center}
 
 {\sffamily\bfseries Figure 9-5:}
@@ -212,31 +300,31 @@ TP (the arrows in Figure 9.5) is that of asymmetric co-expressions.
 \bigskip
 
 
-Multitasking has the following benefits in an exploratory
-programming environment: the EM and TP are independent programs, the
-EM has full access to the TP, and the mechanism accommodates multiple
-EMs.  These benefits are described in more detail below.
+Multitasking has the following benefits for monitoring: the EM and TP are
+independent programs, the EM has full access to the TP, and the mechanism
+accommodates multiple EMs.  These benefits are described in more detail
+below.
 
 
-\subsubsection{Independence}
+\subsubsection*{Independence}
 
 Because the EM and TP are separate programs, the TP need not be
-modified or even recompiled in order to be monitored by an EM; neither
-does an EM need modification or recompilation in order to be used on different
-target programs.  The separation of EMs and TPs also simplifies the writing
-of EMs because an EM need not be implemented as a set of callback
-functions---it has its own control flow.  By definition, execution of
-tasks such as EMs and TPs is synchronous.  The TP is not
+modified or even recompiled in order to be monitored by an EM, and
+EMs can be used on different target programs. By definition, execution
+of tasks such as EMs and TPs is synchronous.  The TP is not
 running when an EM is running, and vice versa.  This synchronous
 execution allows EMs and TPs to be independent without introducing the
-complexity inherent in concurrent programming.
+complexities of concurrent programming. In a concurrent context, each
+thread might have a monitor, but the target thread and its associated
+monitor are not concurrent --- and monitoring concurrent programs is not
+yet supported by the implementation.
 \index{independence!of EM and TP}\index{control flow}\index{callback}
 
 Another degree of EM and TP independence is afforded by separate
 memory regions; EMs and TPs allocate memory from separate heaps.
 \index{memory regions!separate}\index{heap!EM separate from TP}
-For this reason memory allocation in the EM does not affect the allocation
-and garbage collection patterns in the TP.  Because Icon is a type-safe
+Memory allocation in the EM does not affect the allocation
+and garbage collection patterns in the TP. Because Unicon is a type-safe
 language with runtime type checking and no pointer data types, EMs
 and TPs cannot corrupt each others' memory by accident; only code that
 contains explicit references to another program's variables and data
@@ -252,16 +340,15 @@ An address space is a mapping from machine addresses to computer memory.
 \index{address space}\index{access}
 Within an address space, access to program variables and data is direct,
 efficient operations such as single machine instructions.  Accessing
-program variables and data from outside the address space is slower and
+program variables and data from outside the address space is slow and
 requires operating system assistance.
 
-In Unicon, programs such as the EM and TP reside within the same address
-space.  This allows EMs to treat TP data values in the same way as
-their own: EMs can access TP structures using regular Icon operations,
-compare TP strings with their own, and so forth.
-
-Because of the shared address space, the task-switching operation
-needed to transfer execution between EMs and TPs is a fast,
+The EM and TP reside within the same address space.  This allows EMs to
+treat TP data values in the same way as their own: EMs can access TP
+structures using regular Unicon operations, compare TP strings with their own,
+and so forth.
+Because of the shared address space, the co-expression switch used
+to transfer execution between EMs and TPs is a fast,
 lightweight operation.  This is important because monitoring
 requires an extremely large number of task switches compared to
 typical multitasking applications.\index{context switch!lightweight}
@@ -276,14 +363,16 @@ and other Icon programs in arbitrary configurations.  Although uses
 for many such configurations can be found, one configuration merits
 special attention when many specialized EMs are available: the
 execution of multiple monitors on a single TP \index{dynamic loading}
-(Figure 9-6).
+(Figure 9-6, left).
 
 \begin{center}
 \includegraphics[height=2.0in]{multiems.png}
+\hspace{1cm}
+\includegraphics[height=2.8in]{mcover.png}
 \end{center}
 
 {\sffamily\bfseries Figure 9-6:}
-{\sffamily Multiple EMs}
+{\sffamily Multiple EMs (left); EMs under a monitor coordinator (right)}
 
 \bigskip
 
@@ -291,20 +380,12 @@ The difficulty posed by multiple monitors is not in loading the
 programs, but in coordinating and transferring control among several
 EMs and providing each EM with the TP execution information it
 requires.  Since EMs are easier to write if they need not be aware of
-each other, this motivates construction of {\em monitor coordinators\/}
-(MCs), special EMs that monitor a TP and provide monitoring services
-to one or more additional EMs (Figure 9-7).  EMs receiving an MC's
+each other, things are much simpler if EMs run under a
+{\em monitor coordinator\/} (MC), a special EM that monitors a TP and
+provides monitoring services
+to one or more additional EMs (Figure 9-6, right).  EMs receiving an MC's
 services need not be aware of the presence of an MC any more than a TP
 need be aware of the presence of an EM.\index{monitor coordinators}
-
-\begin{center}
-\includegraphics[height=2.8in]{mcover.png}
-\end{center}
-
-{\sffamily\bfseries Figure 9-7:}
-{\sffamily An execution monitor coordinator}
-
-\bigskip
 
 The virtual monitor interface provided by MCs makes adding a new monitor to
 the system extremely easy.  A new monitor could conceivably be written,
@@ -313,87 +394,10 @@ addition, constructing efficient MCs that provide high-level services is
 another area of research that is supported within the Alamo Icon framework.
 \index{virtual monitor}
 
-\subsection{Execution Control}
-
-The primary task of an EM is to collect data from a TP's execution.
-This task poses difficult coding problems and is frequently a
-performance bottleneck. The nature of the data collection facilities
-available in a monitoring system also define and limit the kinds of
-monitors that can be implemented.\index{data!collection}
-
-The TP code is executed by a
-virtual machine interpreter written in C, which in turn calls C
-language runtime support code to perform various language operations
-\cite{Griswold86}.\index{Unicon!interpreter layers}
-The TP code, the virtual machine (VM), and the runtime system are all
-responsible for aspects of program behavior of potential interest.  The VM
-and the runtime system have been extensively instrumented to produce this
-information for EMs at the Unicon level without requiring instrumentation
-of the TP code.\index{virtual machine}
-
-\index{instrumentation!interpreter}
-The instrumentation consists of locations within the runtime
-system at which control can be transferred and information reported to
-the EM.  When execution proceeds through one of these points in the
-runtime system, an {\em event\/} occurs.\index{event}
-Many events take place during even the simplest of Icon operations.
-When an EM resumes execution of the TP, it explicitly specifies what
-kinds of events are to be reported; other kinds of events are not
-reported. The kinds of events to be reported can be
-changed dynamically each time the TP's execution is resumed (Figure 9-8).
-The processing of an event
-includes a test of whether the TP should transfer control to the EM
-and code to perform the transfer only if the test succeeds.
-
-Those events at which control is transferred produce {\em event reports\/}.
-\index{event!report}
-When an event is reported, the TP's execution is suspended
-and execution commences in the program that loaded the TP---an EM.
-Event reporting supports data collection in two ways: an event report
-contains some information associated with the event itself, and in
-addition, when the EM gains control, it can interrogate the TP's variables
-and keywords for further information.  When an EM requests another
-event report, the EM suspends execution and the TP's execution resumes
-where it left off.
-
-\begin{center}
-\includegraphics[width=27pc,height=1.8in]{execinf.png}
-\end{center}
-
-{\sffamily\bfseries Figure 9-8:}
-{\sffamily Event-driven control of TP}
-\index{event driven control}
-
-\subsection*{Visualization Support}
-
-Unicon's monitoring facilities explicitly support graphics output and
-user interaction in EMs.
-Given the amount of information associated with the execution of TP, most
-EMs use graphical techniques to present abstractions of execution
-information.  Since the monitor cannot in general anticipate what
-information will be relevant or how to interpret it, user interaction is
-crucial to the success of the monitoring process.
-
-\subsubsection*{Simplified Graphics Programming}
-
-
-Unicon includes a high-level interface to computers' graphical display
-facilities; the language provides a built-in window
-type.  The window and any associated window system parameters such as the
-graphics drawing context and display connection are implicitly bound
-together as a single value.  Programs with a primary window can
-designate it as the implicit subject of all window operations.
-\index{graphical user interface}\index{window!Icon type}
-
-Graphic displays and window system software contain a variety of
-resources such as colors, fonts, and images.  These resources are
-allocated implicitly by the system when they are used and require
-minimal attention by the user.
-
-\subsubsection{Support for Dual Input Streams}
+\subsubsection*{Support for Dual Input Streams}
 
 An EM typically has two primary input streams: the event stream from
-the TP, and the input stream from the user (Figure 9-9).  Although
+the TP, and the input stream from the user (Figure 9-7).  Although
 these two input streams are conceptually independent and may be
 treated as such, for many EMs this unnecessarily complicates
 the central loop that obtains event reports from TP---the EM must
@@ -404,7 +408,7 @@ also check its own window for user activity.\index{event stream!dual}
 \includegraphics[width=3.0in,height=1.5in]{eventstr.png}
 \end{center}
 
-{\sffamily\bfseries Figure 9-9:}
+{\sffamily\bfseries Figure 9-7:}
 {\sffamily Monitors have two input streams}
 
 \bigskip
@@ -419,51 +423,23 @@ flow and improves EM performance.
 
 \section{Tasks: An Extended Co-expression Model}
 
-\index{task}
-A {\em task\/} is an executing program within the Icon virtual machine
-\cite{Griswold86}.  A single task called the {\em root\/} is created
+
+A {\em task\/} is an executing program within the Unicon virtual
+machine.\index{task} A single task called the {\em root\/} is created
 when the interpreter starts execution. Additional tasks can be created
 dynamically as needed.
-
 A task consists of a main co-expression and zero or more child
 co-expressions that share a {\em program state\/} consisting of
 \index{program state} the memory associated with global and static name
 spaces, keywords, and dynamic memory regions.  At the source language level,
-tasks are loaded, referenced, and activated solely in terms of one of their
-member co-expressions; the task itself is implicit.
-Co-expressions share access to the
-program state and can use it to communicate.
-
-This definition of tasks is related to the concept of the same name
-commonly used in operating systems and concurrent programming
-languages.  It differs, however, in certain fundamental respects.
-Icon is a sequential language; co-expressions in Icon provide a
-synchronous coroutine execution model, not a concurrent execution
-model with implicit task switching and scheduling.  Another way to
-view this is that unlike other languages such as Ada, MT Icon provides
-the task model as a mechanism for multitasking, but does not
-predefine the policy; matters such as the scheduling algorithm used
-and whether multitasking is cooperative or preemptive are
-programmable at the user level.\index{algorithm!scheduling}
-
-\index{Smalltalk!processes}
-Another useful comparison can be made between Icon tasks and Smalltalk
-processes.  Both provide pseudo concurrency within the context of a
-sequential virtual machine.  Since Icon tasks have their own dynamic
-memory regions, their presence affects each other less than
-Smalltalk processes affect each other.  For example, if one task is
-exhibiting thrashing heap behavior in which garbage collections are
-frequent, the other tasks in the system can execute at full speed
-during the portion of time in which they are running, since they
-do not allocate memory out of the thrashing task's (full) heap.
-This minimal effect of tasks on each others' behavior is especially
-important in the domain of execution monitoring.
-
+tasks are loaded, referenced, and activated in terms of one of their
+member co-expressions; the task itself is implicit.  Co-expressions share
+access to the program state and can use it to communicate.
 
 \subsection{Task Creation}
 
 \index{task!creation}\index{loading!dynamic}
-In MT Icon, a task can create other tasks.  The MT Icon function
+In Unicon, a task can create other tasks.  The Unicon function
 \iconcode{
 \> load(s, L, f1, f2, f3, i1, i2, i3)
 % \> load(s, L)
@@ -609,19 +585,19 @@ to a file.
 %\noindent {\large\em Intertask Access Functions}
 
 %\vspace{0.25pc}
-Several of Icon's built-in functions are enhanced under Unicon
+Several built-in functions
 \index{access!variable}\index{variable@{\tt variable()}}
-to provide inter-task access to program data.  For example, the
+provide inter-task access to program data.  For example, the
 {\tt variable()} function in Unicon takes a co-expression value as an
 optional second argument denoting the task from which to fetch the named
-variable.  When called with this second argument, {\tt variable()} is
-useful for assigning to or simply reading values from another task's
-variables.  In this modified version of the {\tt seqload} example, the
-parent task initializes each child task's {\tt Parent} global
+variable. {\tt variable(s, C)} is
+useful for assigning to or reading from another task's
+variables. In the following {\tt seqload} example, the
+parent initializes each child's {\tt Parent} global
 variable (if there is one) to refer to the parent's {\tt \&main}
 co-expression.  A child task can then use this variable to determine
 whether it is being run standalone or under a parent task.
-Inter-program access through the {\tt variable()} function is also
+Inter-program access through the {\tt variable()} function is
 useful in inspecting values, especially at intermediate points during
 the monitored execution of a TP.
 
@@ -636,16 +612,14 @@ the monitored execution of a TP.
 	end
 }
 
-In addition to MT's extensions of existing functions, several new
-functions have been added.  These facilities are useful in execution
-monitoring and are used in examples in Unicon's ipl/mprogs directory
-and described in ``Program Monitoring and
-Visualization''. Some of
-the intertask access functions used in examples are listed in Figure
-9.10.  In these functions, parameter {\tt C} refers to a co-expression
-that may be from a task other than the one being executed.  In proper
-Icon style, functions that are said to {\em generate} values can produce
-more than one result from a given call.
+In addition to extending existing functions for monitoring,
+several new functions have been added.  The use of these monitoring functions
+are illustrated in many example monitors in Unicon's
+ipl/mprogs directory.  Some of the intertask access functions
+are listed in Figure 9-8.  In these functions, parameter {\tt C}
+refers to a co-expression that may be from a task other than the one being
+executed.  Functions that {\em generate\/}
+values can produce more than one result from a given call.
 \index{function!execution monitoring}\index{generator!function}
 \index{access!functions}
 
@@ -673,115 +647,11 @@ region, or heap. \\
 \end{center}
 \medskip
 
-{\sffamily\bfseries Figure 9-10:}
+{\sffamily\bfseries Figure 9-8:}
 {\sffamily Unicon interprogram access functions.}
 
 \bigskip
 
-
-\section{Terminology}
-
-The terminology used in discussing execution monitoring relates to
-events and the linguistic features associated with them.
-
-\subsection*{Events}
-
-The primary linguistic concept added in order to support execution \index{event}
-monitoring is an {\em event\/}.  An event is the smallest unit of
-execution behavior that is observable by a monitor.  In practice, an
-event is the execution of an instrumentation point in the code
-(a {\em sensor\/}) \index{sensor}
-that is capable of transfering control to the monitor.
-
-\index{instrumentation}
-This definition limits events to those aspects of program behavior
-that are instrumented in the language runtime system or the program
-itself.  The event model is only as useful or general as is the
-instrumentation that extracts program information.  If instrumentation does
-not exist for an aspect of program behavior of interest, it is often
-possible to monitor the desired behavior by means of other events. 
-In the present implementation, for example, no instrumentation exists
-for file input and output.  If an EM wishes to monitor I/O behavior, it
-can monitor function and operator events and act on those functions
-and operators that relate to input and output.  A similar example
-involving the monitoring of Icon's built-in string scanning functions
-is presented in [Jeffery99]
-
-The Unicon definition of event also differs from that of many
-monitoring systems, in which the term event refers to the basic unit
-of information {\em received\/} by the monitor \cite{Bates89}.  The
-distinction is that in the Unicon definition, events occur whether
-they are monitored or not, and each event may or may not be observed
-by any particular monitor.  This definition is useful in the MT
-Icon environment, in which EMs are not coupled with the
-instrumentation and multiple EMs can observe a TP's execution.
-
-\subsection*{Event Codes and Values}
-
-From the monitor's perspective, an event has two components: an
-\index{event!code}\index{event!value}
-{\em event code\/} and an {\em event value\/}.  The code is
-generally a one-character string describing what type of event
-has taken place.  For example, the event code {\tt C} denotes a
-procedure call event.  Event codes all have associated symbolic
-constants used in program source code.  For example the mnemonic for a
-procedure call event is {\tt E\_Pcall}.  These constants are available
-to programmers as part of a standard event monitoring library
-described below.\index{E\_Pcall@{\tt E\_Pcall}}
-
-The event value is an Icon value associated with the event.  The
-nature of an event value depends on the corresponding event code.
-For example, the event value for a procedure call event is an
-Icon value designating the procedure being called, the event value for
-a list creation event is the list that was created, the event value
-for a source location change event is the new source location, and so
-forth.  Event values can be arbitrary Icon structures with pointer
-semantics; the EM accesses them just like any other source language
-value.\index{access!structure}
-
-\subsection*{Event Reporting and Masking}
-
-The number of events that occurs during a program execution is
-extremely large---large enough to create serious performance problems
-in an interactive system.  Most EMs function effectively on a
-small fraction of the available events; the events that an EM uses
-are said to be {\em reported\/} to the EM.  An {\em event report\/}
-results in a transfer of control from the TP to the EM.  Efficient
-support for the selection of appropriate events to report and the
-minimization of the number of event reports are primary concerns.
-\index{event!report}
-
-Unicon supports {\em dynamic event masking\/} based on event codes,
-a dynamic variation of the filter concept found in most event-based
-monitoring systems
-\cite{Bates89} \cite{Elshoff89}.\index{event!mask}
-Event masking allows the monitor to specify which
-events are to be reported and to change the specification at runtime.
-When the program being monitored starts execution, the monitor selects
-a subset of possible event codes from which to receive its first
-report.  The program executes until an event occurs with a selected
-code, at which time the event is reported.  After the monitor has
-finished processing the report, it transfers control back to the
-program, again specifying an event mask.  Dynamic event masking
-enables the monitor to change the event mask in between event reports.
-
-The use of one character strings as event codes has a more practical
-value than its mnemonic merit: it allows sets of codes to be
-efficiently and easily manipulated at the Icon level by the {\em cset\/}
-(character set) data type.  Csets are represented internally by bit
-vectors, so a cset membership test is very efficient compared to
-Icon's more generic set data type, whose membership test is a hash
-table lookup.\index{cset!event mask}\index{character set!event mask}
-
-When an event report transfers control from TP to EM, the two components of
-the event are supplied in the Icon keywords {\tt \&eventcode} and {\tt
-\&eventvalue}, respectively.\index{event!code}\index{event!value}
-As discussed earlier, these
-keywords are special global variables that are given their values by the
-Icon runtime system during an event report, rather than by explicit user
-assignment.  The monitor then
-can act upon the event based on its code, display or manipulate its value,
-etc.
 
 
 \section{Obtaining Events Using {\tt evinit}}
@@ -1183,9 +1053,8 @@ in several ways, such as
 
 \section{Some Useful Library Procedures}
 
-As mentioned, several library procedures are useful
-in EMs.  This section presents those library procedures that are
-included in the {\tt evinit\/} library.
+As mentioned, several library procedures are useful in EMs.  The following
+library procedures that are included in the {\tt evinit\/} library.
 \index{evinit@{\tt evinit}}
 
 Location decoding and encoding procedures are useful in processing 
@@ -1195,8 +1064,8 @@ Besides program text line and columns, the technique can variously be
 applied to individual pixels, to screen line and columns, or to screen
 grid locations in other application-specific units.
 
-In addition, various EMs use utility procedures.  Figure 9-11 lists the
-library procedures that are used in this book.
+In addition, various EMs use utility procedures.  Figure 9-9 lists some
+library procedures that are recommended for use in monitors.
 
 \begin{center}
 \medskip
@@ -1220,97 +1089,8 @@ procedure  & returns or computes \\
 \end{tabular}
 
 \end{center}
-{\sffamily\bfseries Figure 9-11:}
+{\sffamily\bfseries Figure 9-9:}
 {\sffamily Additional library procedures for monitors.}
-
-
-\section{Typical Evolution of a Visualization Tool}
-
-Many visualization tools can be written by adapting a similar existing tool;
-in fact, many of the simple visualizations described later in this book are
-intended as starting points for such programs.  Because program
-visualization is still a relatively undeveloped area, however, there are
-still frequent situations where a new monitor is written to visualize a new
-behavior of interest.  In such a situation, the monitor writer gets to work
-from scratch.
-
-While every programmer may approach the task of writing a visualization tool
-differently, we found over time that a consistent approach has been useful
-for a wide range of tools.  Our method is incremental and reflects the view
-that the monitoring task is predominant over the graphics programming task
-in constructing such tools.  We present the sequence of tasks here in order
-to encapsulate this experience.  Following the approach is no guarantee that
-the end product will be successful, but it may simplify for the reader the
-order in which various components are best assembled.
-
-\subsection*{Generate Log Files}
-
-The initial emphasis should be to characterize precisely the behavior of
-interest.  Program execution behavior is expressed in terms of a stream of
-events; example code for handling them
-was given earlier in this chapter.  A prose description of the behavior of
-interest may be useful, but a state machine or grammar that describes the
-event sequences that constitute the behavior of interest is a more useful
-formalization.
-
-Some behavior cannot be described adequately by a regular or context-free
-sequence of events. Some monitors may have to examine
-variables and check complex conditions within the program being observed, in
-order to find the behavior of interest.  For these reasons, the ultimate
-formal preparation prior to writing the visualization code is to produce a
-fully operational monitor that observes the desired event sequences and
-writes the relevant events to a logfile.  This text-only monitor can be tested
-to establish confidence in it before starting the task of graphics coding.
-
-\subsection*{Depict the Log Files}
-
-Once a monitor that observes the correct behavior is written, the primary
-graphic design and programming can be performed.  In the absence of an
-obvious metaphor, it is possible to start from the same information that
-was being written to the logfiles and animate it as a sequence of points or
-more complex objects plotted along a Cartesian or radial axis.
-
-\subsection*{Scale to Handle Real Problems}
-
-For most monitors, multiple forms of scaling are necessary in order to
-\index{scale}
-produce a usable tool from the initial graphic design.  Traditional scaling
-involves multiplying coordinates by a scaling factor in order to ensure
-that the plotted coordinates do not go outside the visible area of the
-window.  Other forms of scaling begin the conversion from graphs to
-visualizations. This includes condensation of multiple events down to
-individual output operations, and of multiple graphic outputs onto
-a shared space in the window.  Several iterations of scaling may be applied
-as needed.
-
-\subsection*{Focus on Behaviors of Interest}
-
-Scaling often leads to enough loss of detail that the user cannot see the
-\index{focus}
-behaviors of interest, they can only see the big picture.  For cataclysmic
-events of interest, the monitor can help the user notice behaviors of
-interest by drawing attention to them using flashing lights, sound, or
-whatever. For more nebulous or tenuous situations, the monitor's goal should
-be to show enough information for users to decide whether something needs
-further investigation.  Showing more details for atypical behavior is a good
-starting point.  To show more details, the tool requires more screen space.
-Log scales or hyperbolic or fisheye views allocate conspicuously more screen
-space to some elements than to others.
-
-% \pagebreak
-
-\subsection*{Add User-Directed Navigation}
-
-Ultimately, the user will need to be able to specify objects on the
-\index{navigation}
-visualization for which additional detailed information is of interest.
-Adding navigation may be more difficult than rendering the graphics in the
-first place.  The visualization tool will need to perform hit tests to
-determine which object the user is selecting.  This requires a data
-structure that provides access to on-screen entities, and efficiency may
-become an issue for very large numbers of objects.  This task typically
-leads to the additional graphics programming required to produce detailed
-views of objects of interest.
 
 
 \section{Conclusions}

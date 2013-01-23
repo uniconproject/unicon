@@ -9,11 +9,10 @@ multiprocessor and multicore systems, the hardware is designed to do
 several computations at once, and if your program does not ask for as
 much, it is underutilizing (sometimes severely) the platform.
 
-This chapter describes Unicon's concurrency facilities. It is based on
-Unicon Technical Report 14 and the implementation work of Jafar Al
-Gharaibeh; UTR14 on the unicon.org site may amend this chapter with
-added features in the future.  Threads are an extension of the
-co-expression type described in Chapter 4 and the system interface
+This chapter describes concurrency in Unicon. It is based on Unicon
+Technical Report 14; UTR14 on the unicon.org site may amend or supercede
+this chapter with added features in the future.  Threads are an extension
+of the co-expression type described in Chapter 4 and the system interface
 described in Chapter 5.  Consulting those chapters may be helpful in
 studying this one.
 
@@ -861,14 +860,15 @@ contention in the critical region.  But a thread that keeps wasting time
 signaling condition variables that have no threads waiting on them is also
 undesirable.
 
-The \texttt{signal()} function takes a second optional parameter denoting the
-number of threads to be woken up. By default, that number is one, but it can be
+The \texttt{signal()} function takes a second optional parameter: the
+number of threads to be woken up. The default is one, but it can be
 any positive value.  For example:
 
 \iconcode{
 every !4 do signal(cv)
 }
 
+\noindent
 can be written as:
 
 \iconcode{
@@ -916,9 +916,9 @@ blocking send, receive, and blocking receive.
 
 \subsection{Thread messaging queues}
 
-Before presenting these communication operators and how they are used, we look
+Before exploring how these communication operators are used, look
 at messaging queues and how they are utilized to support communication between
-threads in Unicon.  Each thread maintains two queues called the \emph{inbox} and
+threads.  Each thread maintains two queues called the \emph{inbox} and
 \emph{outbox} that are created with the thread.  When a thread sends a message
 with an explicit destination, the message is queued in the destination's
 inbox. Otherwise, it is queued into the sender's outbox.  A thread can receive
@@ -943,6 +943,7 @@ syntax
 x @>T
 }
 
+\noindent
 where \texttt{x} can be any data type, including null, which is equivalent to omitting
 it. \texttt{T} refers to a thread to which \texttt{x} is transmitted: \texttt{x}
 is placed in \texttt{T}'s inbox.  \texttt{x} can be picked by \texttt{T} using
@@ -967,8 +968,9 @@ source or with no source, as follows:
 {<}@
 }
 
-The first case reads ``receive a value from \texttt{T}'', which gets a value
-from \texttt{T}'s outbox.  Going back to the prime number example mentioned
+\noindent
+The first case reads ``receive a value from \texttt{T}''; it obtains a value
+from \texttt{T}'s outbox. In the prime number example mentioned
 above, \texttt{<@T} would be the way to get a prime number produced by
 \texttt{T}. \texttt{{<}@} on the other hand reads values directly from the
 receiver's inbox.  It reads messages sent explicitly to the thread doing the
@@ -1061,6 +1063,7 @@ outbox\_size := Attrib(T, OUTBOX\_SIZE)
 inbox\_size := Attrib(T, INBOX\_SIZE)
 }
 
+\noindent
 gets the current size of the inbox. On the other hand
 
 \iconcode{
@@ -1182,13 +1185,13 @@ get a message from my inbox, fail if the inbox is empty\\
  &
 \centering {<}@T &
 get a message from T's outbox, fail if T's outbox is empty\\
-\centering @>>\par
+\centering @{>}{>}\par
 
 \centering (blocking send) &
-\centering msg@>> &
+\centering msg@{>}{>} &
 Place msg in my outbox, block if the outbox is full\\
  &
-\centering msg@>>T &
+\centering msg@{>}{>}T &
 Place msg in my T's inbox, block if the T's inbox is full\\
 \centering {<}{<}@\par
 

@@ -3779,16 +3779,7 @@ designators with characters in the argument.
 
 \texttt{adlsort} sorts entries in address lists.
 
-These programs take various subsets of the following options:\\
-\ \ \texttt{{}-n}\ \ by name (default; adllist, adlsort)\\
-\ \ \texttt{{}-s}\ \ state (U.S. labels only)\\
-\ \ \texttt{{}-z}\ \ ZIP code (U.S. labels only)\\
-\ \ \texttt{{}-c}\ \ country name (a very heuristic check)\\
-\ \ \texttt{{}-a}\ \ all of the above (adlcheck) \\
-\ \ \texttt{{}-C}\ \ by city (U.S., in adllist only)\\
-\ \ \texttt{{}-d}\ \ report addresses that exceed
-"standard dimensions" for labels:\\
-\ \ \ \ 40 character line length, 8 lines per entry
+Read the source for a description of these programs' many command line options.
 
 See also: address.doc, labels.icn.
 
@@ -3797,28 +3788,8 @@ See also: address.doc, labels.icn.
 \texttt{animal} is the familiar "animal
 game". The program asks the user
 a series of questions in an attempt to guess what animal he or
-she is thinking of. It is an "expert
-system" that starts out with limited knowledge, knowing
-only one question, but gets smarter as it plays and learns from its
-opponents. At the conclusion of a session, the program asks permission
-to remember for future sessions that which it learned. The saved file
-is an editable text file, so typos entered during the heat of battle
-can be corrected. The game is not limited to guessing only animals. By
-simply modifying the first two lines of procedure
-"main" a program can be created that will
-happily build a knowledge base in other categories. For example, the
-lines:
-
-\iconcode{
-GameObject := "president" \\
-Tree := Question("Has he ever been known as
-Bonzo",
-"Reagan","Lincoln")
-}
-
-\noindent can be substituted.
-The knowledge files will automatically be kept
-separate. Typing "list" at any yes/no
+she is thinking of. This expert system gets smarter as it plays.
+Typing "list" at any yes/no
 prompt will show an inventory of animals known, and there are some
 other commands too. 
 
@@ -3850,15 +3821,11 @@ from ends of lines, reformats line-continued strings, changes
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{calc}}
 
 \texttt{calc} is a simple Polish "desk
-calculator". It accepts as values Icon integers, reals,
-csets, and strings (as they would appear in an Icon program) as well as
+calculator". It accepts as values integers, reals,
+csets, and strings, as well as
 an empty line for the null value. Other lines of input are interpreted
-as operations. These may be Icon operators, functions, or the commands
-listed below. In the case of operator symbols, such as \texttt{+}, that
-correspond to both unary and binary operations, the binary one is used.
-Thus, the unary operation is not available. In case of Icon functions
-like \texttt{write()} that take an arbitrary number of arguments, one
-argument is used. The commands are:
+as operations. These may be binary operators, functions, or the commands
+listed below. The commands are:
 
 \begin{supertabular}{m{0.5in}m{4in}}
   clear &  remove all values from the
@@ -3874,20 +3841,11 @@ restored to the stack.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{chkhtml \hfill (RJA)}}
 
 This program checks an \index{HTML}HTML file and detects the following
-errors:
-
-\begin{itemize}\itemsep0pt
-\item \ Reference to undefined anchor name.
-\item \ Duplicated anchor name.
-\item \ Warning for unreferenced anchor name.
-\item \ Unknown tag.
-\item \ Badly formed tag.
-\item \ Improper tag nesting.
-\item \ Unescaped {\textless}, {\textgreater}, ", or \&.
-\item \ Bad escape string.
-\item \ Improper embedding of attributes.
-\item \ Bad (non-\index{ASCII}ASCII) characters
-\end{itemize}
+errors: Reference to undefined anchor name; duplicated anchor name;
+warning for unreferenced anchor name; unknown tag; badly formed tag;
+improper tag nesting; unescaped {\textless}, {\textgreater}, ", or \&;
+bad escape string; improper embedding of attributes; and
+bad (non-\index{ASCII}ASCII) characters.
 The program also advises on the use of
 \texttt{{\textless}HTML{\textgreater}},
 \texttt{{\textless}HEAD{\textgreater}}, and
@@ -3902,21 +3860,9 @@ multiple columns. Items are arranged in column-wise order, that is, the
 sequence runs down the first column, then down the second, etc. If a
 null line appears in the input stream, it signifies a break in the
 list, and the following line is taken as a title for the following data
-items. No title precedes the initial sequence of items.
+items. No title precedes the initial sequence of items.  See the program
+source code for command line options interpretation.
 
-\texttt{\ \ linewidth\ \ }the maximum width allowed for output lines
-(default: 80).\\
-\ \ \texttt{space\ \ \ \ }minimum number of spaces between items
-(default: 2).\\
-\ \ \texttt{min\_width\ \ }minimum width to be printed for each entry
-(default: no minimum).\\
-\ \ \texttt{tab\_width}\texttt{\ \ }tab width used to entab output
-lines. (default: no tabs).\\
-\ \ \texttt{{}-x}\ \ \ \ print items in row-wise order rather than
-column-wise.\\
-\ \ \texttt{{}-d}\ \ \ \ distribute columns throughout available
-width.\\
-\ \ \texttt{{}-h}\texttt{\ \ \ \ }generates a help message.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{comfiles}}
 
@@ -3939,57 +3885,7 @@ n (default 72), starts new line\\
 \texttt{conman} responds to queries like "? Volume of the
 earth in tbsp". The keywords of the language (which are
 not reserved) are: \texttt{load, save, print, ?} (same as print),
-\texttt{list, is, are} (same as is)
-
-"Load" followed by an optional filename
-loads definitions of units from a file. If filename is not supplied, it
-defaults to \texttt{conman.sav}.
-
-"Save" makes a file for
-"load". Filename defaults to
-\texttt{conman.sav}. "Save" appends to an
-existing file so a user needs to periodically edit his save file to
-prune it back.
-
-"Print" and "?"
-are used in phrases like: ? 5 minutes in seconds. Conman replies: 5
-minutes in seconds equals 300.
-
-List puts up on the screen all the defined units and the corresponding
-values. The format is same as load/store format.
-
-"Is" and "are"
-are used like this: 100 cm are 1 meter The discovery of is or are
-causes the preceding token (in this case
-"cm") to be defined. The load/store format
-is: \textit{unitname} "is" \textit{value}.
-Examples:
-
-{\sffamily
-8 furlongs is 1 mile}
-
-{\sffamily
-furlong is 1 / 8 mile }
-
-\noindent
-These last two are equivalent. Note spaces before and after
-"/". Continuing examples:
-
-{\sffamily
-1 fortnight is 14 days }
-
-{\sffamily
-furlong/fortnight is furlong / fortnight}
-
-{\sffamily
-inches/hour is inch / hour }
-
-\noindent
-After this a user might type: ? 1 furlong/fortnight in inches/hour.
-Conman will reply: 1 furlong/fortnight in inches/hour equals 23.57.
-Conman's operators have no precedence so the line
-above works, but 1 furlong/fortnight in inches/hour gives a wrong
-answer. 
+\texttt{list, is, are} (same as is).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{countlst}}
 
@@ -4028,58 +3924,9 @@ terminal symbols. Lines beginning with \texttt{\#} are comments and are
 ignored. A line consisting of a nonterminal symbol followed by a colon
 and a nonnegative integer i is a generation specification for i
 instances of sentences for the language defined by the nonterminal
-(goal) symbol. An example of input to \texttt{csgen} is:
+(goal) symbol. See the program source code for example inputs and output,
+additional options, and usage explanation.
 
-\iconcode{
-\# a(n)b(n)c(n)\\
-\# Salomaa, p. 11.\\
-\# Attributed to M. Soittola.\\
-\#\\
-X-{\textgreater}abc\\
-X-{\textgreater}aYbc\\
-Yb-{\textgreater}bY\\
-Yc-{\textgreater}Zbcc\\
-bZ-{\textgreater}Zb\\
-aZ-{\textgreater}aaY\\
-aZ-{\textgreater}aa\\
-X:10}
-
-The output of \texttt{csgen} for this example is
-
-\iconcode{
-aaabbbccc\\
-aaaaaaaaabbbbbbbbbccccccccc\\
-abc\\
-aabbcc\\
-aabbcc\\
-aaabbbccc\\
-aabbcc\\
-abc\\
-aaaabbbbcccc\\
-aaabbbccc}
-
-\noindent
-A positive integer followed by a colon can be prefixed to a production
-to replicate that production, making its selection more likely. For
-example, \texttt{3:X-{\textgreater}abc} is equivalent to
-
-\iconcode{
-X-{\textgreater}abc \\
-X-{\textgreater}abc \\
-X-{\textgreater}abc}
-
-One option is supported: \texttt{{}-g i} number of derivations;
-overrides the number specified in the grammar. Limitations: Only single
-uppercase letters may represent nonterminal symbols, and there is no
-way to represent uppercase letters as terminal symbols. There can be
-only one generation specification and it must appear as the last line
-of input. Comments: Generation of context-sensitive strings is a slow
-process. It may not terminate, either because of a loop in the
-rewriting rules or due to the progressive accumulation of nonterminal
-symbols. The program avoids deadlock, where there are no possible
-rewrites for a string in the derivation. This program would be improved
-if the specification of nonterminal symbols were more general, as in
-\texttt{rsg}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{cstrings \hfill (RJA)}
 
@@ -4089,44 +3936,15 @@ source files.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{daystil \hfill (NL)}
 
 \texttt{daystil} calculates and writes the number of days between the
-current date and the date given on the command line. This is useful if
-you want to know how many days until
-a birthday, wedding day, etc. The date on the command line can be
-specified in various ways. For instance, if you wanted to know how
-many days it is until August 12, you could specify it as
-"August 12", "Aug
-12", "12 August", or
-"12 aUGuS", among others. The match is case
-insensitive. The arguments are accepted as long as exactly one of them
-is an integer, and if there are exactly two arguments. 
+current date and the date given on the command line.
+The date on the command line can be specified in many ways. For example,
+August 12 can be specified as "August 12", "Aug 12", "12 August", or
+"12 aUGuS", among others.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{deal}}
 
-\texttt{deal} shuffles, deals, and displays hands in the game of bridge
-with output like:
-
-\noindent {\fontfamily{lmvtt}\selectfont
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-\\
-\ \ \ \ \ \ \ \ \ \ S: KQ987\\
-\ \ \ \ \ \ \ \ \ \ H: 52\\
-\ \ \ \ \ \ \ \ \ \ D: T94\\
-\ \ \ \ \ \ \ \ \ \ C: T82\\
-S: 3 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ S: JT4\\
-H: T7 \ \ \ \ \ \ \ \ \ \ \ \ \ \ H: J9863\\
-D: AKQ762 \ \ \ \ \ \ \ \ \ \ D: J85\\
-C: QJ94 \ \ \ \ \ \ \ \ \ \ \ \ C: K7\\
-\ \ \ \ \ \ \ \ \ \ S: A652\\
-\ \ \ \ \ \ \ \ \ \ H: AKQ4\\
-\ \ \ \ \ \ \ \ \ \ D: 3\\
-\ \ \ \ \ \ \ \ \ \ C: A653\\
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-
-}
-
-Options: The following options are available:
-
-\texttt{{}-h n}\ \ Produce n hands. The default is 1.\\
-\texttt{{}-s n}\ \ Set the seed for random generation to n (default 0).
-Different seeds give different hands.
+\texttt{deal} shuffles, deals, and displays hands in the game of bridge.
+Option \texttt{{}-h n} produces n hands. The default is 1.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{declchck}}
 
@@ -4137,26 +3955,11 @@ that may conflict with function names. Requires: UNIX.
 
 \texttt{delamc} delaminates standard input into several output files
 according to the separator characters specified by the string following
-the -t option. It writes the fields in each line to the corresponding
-output files as individual lines. If no data occurs in the specified
-position for a given input line an empty output line is written. This
-insures that all output files contain the same number of lines as the
+the -t option. All output files contain the same number of lines as the
 input file. If \texttt{{}-} is used as an output file name, the
 corresponding field is written to the standard output. If the
-\texttt{{}-t} option is not used, an ASCII horizontal tab character is
-assumed as the default field separator. The use of delamc is
-illustrated by the following:
-
-\texttt{delamc labels opcodes operands}\ \ writes the fields of standard
-input, each of which is separated by a tab character, to the output
-files \texttt{labels}, \texttt{opcodes}, and \texttt{operands}.
-
-\texttt{delamc -t: scores names matric ps1 ps2 ps3} writes the fields of
-standard input, each of which are separated by a colon, to the
-indicated output files.
-
-\texttt{delamc -t,: oldata f1 f2} separates the fields using either a
-comma or a colon.
+\texttt{{}-t} option is not used, a tab character is
+the default field separator.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{detex \hfill (CLJ)}
 
@@ -4169,19 +3972,10 @@ edited by hand to produce an acceptable result.
 
 \texttt{diffn} shows the \index{diff}differences between n files.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{diffsort \ \ \textrm{\textmd{[file]}} \hfill (GMT)}}
-
-\texttt{diffsort} reorders the output from the Unix
-"diff" program by moving one-line entries
-such as "Common subdirectory..." and
-"Only in ..." to the front of the output
-file and sorting them. Actual difference records then follow, in the
-original order, separated by lines of equal signs. 
-
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{diffsum \ \ \textrm{\textmd{[file]}} \hfill (GMT)}}
 
-\texttt{diffsum} reads a file containing output from a run of the Unix
-\texttt{diff(1)} utility. Diffsum handles either normal diffs or
+\texttt{diffsum} reads output from the Unix
+\texttt{diff(1)} utility, either normal diffs or
 context diffs. For each pair of files compared, diffsum reports two
 numbers: The number of lines added or changed, and the net change in
 file size. The first of these indicates the magnitude of the changes
@@ -4249,11 +4043,7 @@ do \texttt{:,+N w !envelope} where N = number-of-lines-in-address.
 Dave \index{Farber, Dave}Farber, co-author of the original SNOBOL
 programming language, is noted for his creative use of the English
 language. Hence the terms "farberisms" and
-"to farberate". This program produces a
-randomly selected farberism. Notes: Not all of the farberisms contained
-in this program were uttered by the master himself; others have learned
-to emulate him. Some farberisms may be objectionable to some
-persons.
+"to farberate". This program produces a randomly selected farberism.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filecnvt \ \textrm{\textmd{[-i s1] [-o s2] infile
 outfile}} \hfill (BW)}}
@@ -4270,76 +4060,46 @@ the system being used. The options are:
 \ \ \texttt{{}-o s2}\ \ write output with line terminators for the
 system s2. The default is "u".
 
-The designations are:
-
-\ \ d\ \ MS-DOS
-("{\textbackslash}n{\textbackslash}r");
-also works for the Atari ST\\
-\ \ m\ \ Macintosh
-("{\textbackslash}r")\\
-\ \ u\ \ UNIX ("{\textbackslash}n"); also
-works for the Amiga
+The designations are: {\tt d} for MS-DOS/Windows
+("{\textbackslash}n{\textbackslash}r"), {\tt m} for Macintosh
+("{\textbackslash}r"), and {\tt u} UNIX ("{\textbackslash}n").
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fileprnt}}
 
 \texttt{fileprnt} reads the file specified as a command-line argument
 and writes out a representation of each character in several forms:
 hexadecimal, octal, decimal, symbolic, and \index{ASCII}ASCII code.
-Input is from a named file rather than standard input, so that it can
-be opened in untranslated mode. Otherwise, on some systems, input is
-terminated for characters like \^{}Z. Since this program is
-comparatively slow, it is not suitable for processing very large files.
 Requires: co-expressions.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filesect}}
 
-\texttt{filesect} writes the section of the input file starting at a
-line number and extending some number of lines. The
-specifications are given as integer command-line arguments; the first
-is the starting line, the second is the number of lines. For example,
-\texttt{filesect 20 100 {\textless}input {\textgreater}output} copies
-100 lines from input to output, starting at line 20. If the
+\texttt{filesect \emph{start nlines}}
+writes the section of the input file starting at a
+line number and extending some number of lines. If the
 specifications are out of range, the file is truncated without comment.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filtskel \hfill (RJA)}
 
-\texttt{filtskel} is a generic filter skeleton. This program is
-a template for
+\texttt{filtskel} is a skeleton/template for
 creation of filter programs. Command line options, file names, and
-tabbing are handled by the skeleton. You need only provide the
-filtering code. As it stands, \texttt{filtskel.icn} copies the input
-file(s) to standard output. Multiple files can be specified as
-arguments, and will be processed in sequence. The file name
-\texttt{"-"} represents the standard input
-file. If there are no arguments, standard input is processed.
+tabbing are handled; you need only provide the filtering code.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{findstr \hfill (RJA)}}
 
 \texttt{findstr} is a utility filter to list character strings embedded
-in data files (e.g. object files). Options:
-
-\texttt{{}-l length}\ \ minimum string size to be printed (default
-3)\\
-\texttt{{}-c chars}\ \ a string of characters (besides the standard
-ASCII printable characters)\\
-\ \ \ \ to be considered part of a string. Icon string escape sequences can be
-used.
-
-Multiple files can be specified as arguments, and will be processed in
-sequence. 
+in data files such as object files. The option
+\texttt{{}-l length} gives the minimum string size to be printed (default
+3); option
+\texttt{{}-c chars} specifies a string of characters (besides the standard
+ASCII printable characters) to be considered part of a string.  String
+escape sequences can be used.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{findtext \hfill (PLT)}}
 
 \texttt{findtext} retrieves multiline text from a
-\index{database}database indexed by idxtext. Each stretch of text
-follows a line declaring the index terms:
-
-\iconcode{
-::be ::to ::by ::retrieved \\
-Text to be retrieved \\
-by findtext \\
-::index ::line \\
-Each index line begins with "::".}
+\index{database}database indexed by idxtext. Each section of text lines
+follows a line declaring the index terms.
+Each index line begins with "::".
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fixpath \ \textrm{\textmd{filename oldpath
 newpath}} \hfill (GMT)}
@@ -4352,33 +4112,15 @@ extended by null characters, which must be matched in the file for
 replacement to take place. This is dangerous in general but allows
 repairing an errant fixpath command. 
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fnctab}}
-
-\texttt{fnctab} processes an MVT token file and tabulates the usage of
-functions. Since function usage cannot be determined completely from
-static analysis, the results should be viewed with this limitation in
-mind.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{format \hfill (RJA)}
 
 \texttt{format} is a filter program that word-\index{wrap}wraps a range
-of text. Options include full justification (see usage text, below).
+of text. Options include full justification.
 All lines that have the same indentation as the first line (or same
 comment leading character format if -c option) are wrapped. Other lines
 are left as is. This program is useful in conjunction with editors that
 can invoke filters on a range of selected text.
-
-The \texttt{{}-c} option attempts to establish the form of a comment
-based on the first line, then does its best to deal properly with the
-following lines. The types of comment lines that are handled are those
-in which each line starts with a "comment"
-character string (possibly preceded by spaces). While formatting
-comment lines, text lines following the \index{prototype}prototype line
-that don't match the prototype but are flush with the
-left margin are also formatted as comments. This feature simplifies
-initially entering lengthy comments or making major modifications,
-since new text can be entered without concern for comment formatting,
-which will be done automatically later.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{former}}
 
@@ -4388,104 +4130,34 @@ greater than the number given on the command line (default 80).
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fract \hfill (REG, GMT)}}
 
 \texttt{fract} produces successive rational approximations to a real
-number. The options are:\\
-\ \ \texttt{{}-n r} \ real number to be approximated, default
-.6180339887498948482 (see below)\\
-\ \ \texttt{{}-l i} limit on number of approximations, default 100
-(unlikely to be reached).\\
+number. The option \texttt{{}-n r} specifies the real number to be
+approximated, default .6180339887498948482. Option
+\texttt{{}-l i} gives the limit on number of approximations, default 100.
 This program was based on a calculator algorithm posted by: Joseph D.
 Rudmin, Duke University Physics Dept. Aug 19, 1987.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fuzz \hfill (AC)}
 
 \texttt{fuzz} does "fuzzy" string
-\index{pattern matching}pattern matching. The result of matching s and
-t is a number between 0 and 1, based on counting matching pairs of
-characters in increasingly long substrings of s and t. Characters may
-be weighted differently. The reverse tally may be given a negative
+\index{pattern matching}pattern matching. The result of matching {\tt s} and
+{\tt t} is a number between 0 and 1, based on counting matching pairs of
+characters in increasingly long substrings of {\tt s} and {\tt t}. Characters
+may be weighted differently. The reverse tally may be given a negative
 bias.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gcomp \hfill (WHM, REG)}
 
 \texttt{gcomp} produces a list of the files in the current directory that do not
 appear among the arguments. For example, \texttt{gcomp *.c} produces a list of
-files in the current directory that do not end in .c. As another example, to
-remove all the files in the current directory that do not match
-\texttt{Makefile}, \texttt{*.c}, and \texttt{*.h} the following can be used:
-\texttt{rm 'gcomp Makefile *.c *.h'} The files \texttt{.} and \texttt{..} are
-not included in the output, but other dot files are. Requires: UNIX.
+files in the current directory that do not end in .c. Requires: UNIX.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{genqueen \hfill (PAB)}
 
-\texttt{genqueen} solves the non-attacking \index{n-queens}n-queens
+\texttt{genqueen \emph{n}} solves the non-attacking \index{n-queens}n-queens
 problem for (square) boards of arbitrary size. The problem consists of
 placing chess queens on an n-by-n grid such that no queen is in the
 same row, column, or diagonal as any other queen. The output is each of
-the solution boards; rotations not considered equal. An example of the
-output for n=8:
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}- }
-
-{\ttfamily
-{\textbar}Q{\textbar} {\textbar} {\textbar} {\textbar} {\textbar}
-{\textbar} {\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar} {\textbar} {\textbar} {\textbar} {\textbar}
-{\textbar}Q{\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar} {\textbar} {\textbar} {\textbar}Q{\textbar}
-{\textbar} {\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar} {\textbar}{\textbar} {\textbar} {\textbar}
-{\textbar} {\textbar}Q{\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar}Q{\textbar} {\textbar} {\textbar} {\textbar}
-{\textbar} {\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar} {\textbar} {\textbar}Q{\textbar} {\textbar}
-{\textbar} {\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar} {\textbar} {\textbar} {\textbar}
-{\textbar}Q{\textbar} {\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-{\ttfamily
-{\textbar} {\textbar} {\textbar}Q{\textbar} {\textbar} {\textbar}
-{\textbar} {\textbar} {\textbar}}
-
-{\ttfamily
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
-
-Usage: \texttt{genqueen n\\
-}where n is the number of rows / columns in the board. The default for n
-is 6. 
+the solution boards; rotations not considered equal.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gftrace \hfill (GMT)}}
 
@@ -4507,41 +4179,12 @@ Requires: ANSI terminal support.
 
 \texttt{grpsort} sorts input containing
 "records" defined to be groups of
-consecutive lines. Output is written to standard output. One or more
-repetitions of a demarcation line (a line beginning with the separator
-string) separate each input record. The first line of each record is
-used as the key. If no separator string is specified on the command
-line, the default is the empty string. Because all input lines are
-trimmed of white space (blanks and tabs), empty lines are default
-demarcation lines. The separator string specified can be an initial
-substring of the string used to demarcate lines, in which case the
-resulting partition of the input file may be different from a partition
-created using the entire demarcation string.
-
-The \texttt{{}-o} option sorts the input file but does not produce the
-sorted records. Instead it lists the keys (in sorted order) and line
-numbers defining the extent of the record associated with each key. The
-use of grpsort is illustrated by the following examples. The command
-\texttt{grpsort "catscats" {\textless}x
-{\textgreater}y} sorts the file \texttt{x}, whose records are separated
-by lines containing the string
-\texttt{"catscats"}, into the file
-\texttt{y} placing a single line of
-\texttt{"catscats"} between each output
-record. Similarly, the command \texttt{grpsort
-"cats" {\textless}x {\textgreater}y} sorts
-the file \texttt{x} as before but assumes that any line beginning with
-the string \texttt{"cats"} delimits a new
-record. This may or may not divide the lines of the input file into a
-number of records different from the previous example. In any case, a
-single line of \texttt{"cats"} will
-separate the output records. Another example is \texttt{grpsort -o
-{\textless}bibliography {\textgreater}bibkeys}, which sorts the file
-bibliography and produces a sorted list of the keys and the extents of
-the associated records in bibkeys. Each output key line is of the form:
-\texttt{[s-e] key} where \texttt{s} is the line number of the key line,
-\texttt{e} is the line number of the last line, and \texttt{key} is the
-actual key of the record.
+consecutive lines. One or more
+repetitions of a demarcation line beginning with the separator
+string separate each input record. The first line of each record is
+used as the key. The separator string defaults to
+the empty string; empty lines are default
+demarcation lines.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{headicon}}
 
@@ -4559,16 +4202,8 @@ Requires: system(), vi(1).
 \hfill (ADC, RLG)}
 
 The Jewish year harmonizes the solar and lunar cycle, using the 19-year
-cycle of Meton (c. 432 BCE). It corrects so that certain dates shall
-not fall on certain days for religious convenience. The Jewish year has
-six possible lengths, 353, 354, 355, 383, 384, and 385 days, according
-to day and time of new year lunation and position in Metonic cycle.
-Time figures from 6pm previous night. The lunation of year 1 is
-calculated to be on a Monday (our Sunday night) at ll:11:20pm. Our data
-table begins with a hypothetical year 0, corresponding to 3762 B.C.E.
-Calculations in this program are figured in the ancient Babylonian unit
-of halaqim "parts" of the hour = 1/1080
-hour. Startup syntax is simply \texttt{hebcalen [date]}, where
+cycle of Meton (c. 432 BCE). See source code for details.
+Startup syntax is \texttt{hebcalen [date]}, where
 \texttt{date} is a year specification of the form 5750 for a Jewish
 year, +1990 or 1990AD or 1990CE or -1990 or 1990BC or 1990BCE for a
 civil year. \ Requires: \index{keyboard}keyboard functions,
@@ -4585,12 +4220,9 @@ bars 76 characters long, the library standard.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ibrow \hfill (RJA)}
 
-\texttt{ibrow} browses Icon files for declarations. If no source file
-names are provided on the command line, all \texttt{*.icn} files in the
-current directory are browsed. The program facilitates browsing of Icon
-programs. It was originally written to browse the Icon Program Library,
-for which purpose it serves quite well. The user interface is
-self-explanatory -{}- use "?" for help if
+\texttt{ibrow} browses Icon files for declarations, defaulting to browse
+all \texttt{*.icn} files in the current directory.
+The user interface is self-explanatory -{}- use "?" for help if
 you're confused.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icalc \hfill (SBW)}
@@ -4599,42 +4231,17 @@ you're confused.
 compound statements. It illustrates a technique that can be easily used
 in Icon to greatly reduce the performance cost associated with
 recursive-descent parsing with \index{backtracking}backtracking.
-Features include:
-
-\begin{itemize}\itemsep0pt
-\item \ \ integer and real value arithmetic
-\item \ \ variables
-\item \ \ function calls to Icon functions
-\item \ \ strings allowed as function arguments
-\item \ \ unary operators: + (absolute value), - (negation)
-\item \ \ assignment: :=
-\item \ \ binary operators: +,-,*,/,\%,\^{},
-\item \ \ relational operators: =, !=, {\textless}, {\textless}=,
-{\textgreater}, {\textgreater}= (return 1 for true and 0 for false)
-\item \ \ compound statements in curly braces with semicolon separators
-\item \ \ if-then and if-then-else
-\item \ \ while-do
-\item \ \ limited form of multiline input
-\end{itemize}
-The grammar at the start of the "parser"
-proper provides more details. Normally, the input is processed one line
+Features include: integer and real value arithmetic; variables;
+function calls to built-in functions; strings allowed as function arguments;
+unary operators + (absolute value) and - (negation); assignment := ;
+binary operators: +, -, *, /, \%, and \^{};
+relational operators: =, !=, {\textless}, {\textless}=,
+{\textgreater}, {\textgreater}= (return 1 for true and 0 for false);
+compound statements in curly braces with semicolon separators;
+if-then and if-then-else; while-do; and limited form of multiline input.
+Normally, the input is processed one line
 at a time, in calculator fashion. However, compound statements can be
-continued across line boundaries. Here is a simple input:
-
-{\sffamily
-\{ a := 10; while a {\textgreater}= 0 do \{ write(a); a := a - 1 \};
-write("Blastoff") \}}
-
-For this input execution is delayed until entire compound statement is
-entered. For:
-
-\iconcode{
-write(pi := 3.14159)}
-
-\iconcode{
-write(sin(pi/2)) }
-
-execution done as each line is entered. 
+continued across line boundaries.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icalls}}
 
@@ -4653,12 +4260,10 @@ changes \texttt{:=} to \texttt{=,} and changes \texttt{end} to
 
 \texttt{icontent} builds a list, in Icon comment format, of procedures
 and records in an Icon source file. \ Multiple files can be specified
-as arguments, and are processed in sequence. The file name
-"-" indicates the standard input file. If
-there are no arguments, standard input is processed. Options:\\
-\texttt{{}-s}\ \ sort names alphabetically (default is in order of
-occurrence)\\
-\texttt{{}-l}\ \ list in single column (default is to list in multiple
+as arguments, and are processed in sequence. Option
+\texttt{{}-s} specifies to sort names alphabetically (default is in order of
+occurrence); option
+\texttt{{}-l} lists in single column (default is to list in multiple
 columns).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icvt \hfill (CW, REG)}
@@ -4682,7 +4287,6 @@ routine into an indexed text-base. Though \texttt{gettext()} will work
 fine with files that haven't been indexed via
 \texttt{idxtext()}, access is faster if the indexing is done if the
 file is, say, over 5k or 10k.
-
 \texttt{file1, file2}, etc. are the names of \texttt{gettext}{}-format
 files that are to be (re-)indexed. The \texttt{{}-a} flag tells
 \texttt{idxtext} to abort if an index file already exists. Indexed
@@ -4691,37 +4295,15 @@ files have the format:
 \iconcode{
 keyname delimiter offset [delimiter offset [etc.]]{\textbackslash}n.}
 
-The first line of the index file is a pointer to the last indexed byte
-of the text-base file it indexes. Index files are large. Index names
-are not uniquely identified with their original text file. If
-you're worried, use the \texttt{{}-a} flag. See also:
-\texttt{gettext.icn}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ifilter}}
 
 \texttt{ifilter} applies the operation given as a command-line argument
 to each line of standard input, writing out the results. For example,
 \texttt{ifilter reverse {\textless}foo} writes out the lines of foo
-reversed end-for-end. Trailing arguments can be given on the command
-line, as in
-
-\iconcode{
-ifilter right 10 0 {\textless}foo \# right(*,
-"10", '0')}
-
-\iconcode{
-ifilter "\%" 11 {\textless}foo \# * \%
-"11"}
-
-Except for use with operators and (built-in) functions, this program
-needs to be linked with procedures that might be used with it. The
-following options are supported:\\
-\texttt{\ \ {}-a i}\ \ argument position for strings read in; default
-1\\
-\ \ \texttt{{}-o i}\ \ resolution of ambiguous operator string names. 1
-= unary, 2 = binary. Default 2.\\
-\ \ \texttt{{}-l i}\ \ limit on generation, with nonpositive indicating
-no limitation; default 1
+reversed end-for-end, while
+\texttt{ifilter right 10 0 {\textless}foo}
+applies a call to {\tt right(line, "10", "0")} for each line of foo.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{igrep \hfill (RJA)}}
 
@@ -4731,12 +4313,7 @@ are nearly identical to those supported by egrep (no -b:
 print disk block number). The option -E allows Icon-type
 (hence C-type) string escape sequences in the pattern string. Beware:
 when -E is used, backslashes that are meant to be processed in the
-regular expression context must be doubled. The following patterns are
-equivalent: without -E:
-'{\textbackslash}bFred{\textbackslash}b'
-with -E:
-'{\textbackslash}{\textbackslash}bFred{\textbackslash}{\textbackslash}b'
-
+regular expression context must be doubled.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iheader}}
 
@@ -4750,31 +4327,9 @@ correctly but otherwise does not check the syntax of what follows.
 \texttt{ihelp} displays help information. The optional item name
 specifies the section of the help file that is to be displayed. If no
 item name is specified a default section will be displayed, which
-usually lists the help items that are available. An initial substring
-of the item name that differentiates it from other items is sufficient.
-If keyword(s) are specified, then only lines that contain all of the
-keywords, in any order, are displayed. The keywords do not have to
-correspond to whole words in the help text; only to text fragments. All
-item name and keyword matches are case independent. The help file name
-is taken from \index{environment variable!HELPFILE}environment variable
-HELPFILE. If HELPFILE is not in the environment, file
-"help" in the current directory is used. A
-help file name specified in the \texttt{{}-f} option overrides. The
-help files are formatted as follows:
+usually lists the help items that are available.  See the program
+source code for examples and options.
 
-\iconcode{
-default text lines\\
-{}-\\
-one\\
-item "one" text lines\\
-{}-\\
-two\\
-item "two" text lines\\
-...}
-
-Sections are separated by lines containing a single
-"-". Item names are the first line
-following a separator line.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iidecode \ \textrm{\textmd{[infile] [-x]}}, iiencode
 \ \textrm{\textmd{[infile] [-x] remotefile [-o outfile]}} \hfill (RLG, FJL)}}
@@ -4786,24 +4341,6 @@ encoded with 0644 permissions, and (2) a command-line switch was added
 for xxencoded files (similar to uuencoded files, but capable of passing
 unscathed through non-\index{ASCII}ASCII \index{EBCDIC}EBCDIC sites).
 
-\texttt{iidecode} is similar to uudecode. An optional first argument
-specifies the file to be decoded (default: standard input).
-\texttt{iidecode}'s \texttt{{}-x} switch forces use of
-the xxdecoding algorithm. If you try to decode an xxencoded file
-without specifying \texttt{{}-x}, \texttt{iidecode} will forge ahead
-anyway. If it thinks you've made a mistake,
-\texttt{iidecode} informs you after the decode is finished.
-
-\texttt{iiencode} is similar to uuencode. An optional first argument
-specifies the file to be encoded (default: standard input). The next
-argument specifies the name the encoded file should have when it is
-decoded. Extensions to the base uuencode command options include
-\texttt{{}-x} and \texttt{{}-o}. An \texttt{{}-x} tells
-\texttt{iiencode} to use xxencode (rather than uuencode) format. Option
-\texttt{{}-o} causes the following argument to be used as the file
-\texttt{iiencode} is to write its output to (default is
-\texttt{\&output}). On systems with newline translation (e.g. MS-DOS),
-the \texttt{{}-o} argument should always be used.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ilnkxref \ \textrm{\textmd{[-options] {\textless}icon source
 file{\textgreater}... \hfill }}(RJA)}
@@ -4811,10 +4348,9 @@ file{\textgreater}... \hfill }}(RJA)}
 \texttt{ilnkxref} is a utility to create
 \index{cross-reference}cross-reference of library files used in Icon
 programs (i.e., those files named in \index{link}link declarations).
-Requires: UNIX.\\
-\texttt{\ \ {}-p}\ \ sort by
-"popularity"\\
-\ \ \texttt{{}-v}\ \ report progress information
+Requires: UNIX. Option \texttt{{}-p} specifies to sort by
+"popularity"; option \texttt{{}-v} tells the program to
+report progress information
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ilump}}
 
@@ -4869,19 +4405,15 @@ Compiler.
 
 \texttt{interpe} is a crude but effective interpreter for Icon
 expressions. Each line entered from standard input must be an Icon
-expression. The expression is wrapped with a main procedure, and
-written to a pipe that compiles and executes the resulting program. If
+expression. If
 the expression is a \index{generator}generator, all its results are
-produced. If the command-line option -e is given, the expression is
-echoed. This technique is of course inefficient, however it is
-completely general and as correct as Icon itself.
+produced. If option -e is given, the expression is echoed.
 
-\texttt{interpp} is like the old interactive BASIC interpreters: Icon
-expressions are entered with line numbers. You can resequence them,
-list them etc. and execute all the lines entered. There is no editor,
-you have to retype a line to change it. Documentation is
-lacking but there is a "?" help command
-that lists all the other commands. 
+\texttt{interpp} accepts Icon
+expressions prefixed with line numbers. You can resequence them,
+list them, and execute the lines in order.
+Retype a line to change it. There is a "?" help command
+that lists the other commands. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipatch \ \textrm{\textmd{file
 path\hfill }(GMT)}}}
@@ -4894,43 +4426,28 @@ written to accommodate a possibly longer path.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipldoc}}
 
 \texttt{ipldoc} collects selected information from documentation headers
-for Icon procedure files named on the command line. The following
-options are supported:\\
-\texttt{\ \ }\texttt{{}-s}\ \ skip file headers\\
-\ \ \texttt{{}-f}\ \ sort procedure list by file; default sort by
-procedure name
+for Icon procedure files named on the command line.
+Option \texttt{{}-s} skips file headers; option
+\texttt{{}-f} sorts the procedure list by file, instead of the default sort by
+procedure name.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplindex\hfill (REG, SBW)}}
 
 \texttt{iplindex} produces an indexed listing of the Icon Program
-Library. The following options are supported:\\
-\texttt{\ \ }\texttt{{}-k i}\ \ width keyword field, default 16\\
-\ \ \texttt{{}-p i}\ \ width of field for program name, default
-12\\
-\noindent Some noise words are omitted (see
-"exceptions" in the program text). If a
-file named except.wrd is open and readable in the current directory,
+Library. Option \texttt{{}-k i} gives the width keyword field, default 16;
+option \texttt{{}-p i} specifies the width of field for program name, default
+12. If a file named except.wrd is open and readable in the current directory,
 the words in it are used instead. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplkwic\hfill (SBW, REG)}}
 
 \texttt{iplkwic} is a specialized version of \texttt{kwic.icn} used for
 producing kwic listings for the Icon program library. This is a simple
-keyword-in-context (\index{KWIC}KWIC) program. It reads from standard
-input and writes to standard output. The
+keyword-in-context (\index{KWIC}KWIC) program. The
 "key" words are aligned at a specified
 column, with the text shifted as necessary. Text shifted left is
-truncated at the left. Tabs and other characters whose
-"print width" is less than one may not be
-handled properly. The following options are supported:\\
-\ \ \texttt{{}-c i}\ \ column at which keywords are aligned, default
-30\\
-\ \ \texttt{{}-h i}\ \ width of identifying column at left, default
-20\\
-Some noise words are omitted (see
-"exceptions" in the program text). If a
-file named except.wrd is open and readable in the current directory,
-the words in it are used instead.
+truncated at the left. Tabs and other special characters
+may not be handled properly.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplweb \ \textrm{\textmd{[-ipl source] [dest]}}\hfill (JK)}}
 
@@ -4949,78 +4466,24 @@ contains the IPL standard comment header info inside.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iprint \hfill (RJA)}}
 
-\texttt{iprint} attractively formats Icon programs,
-attempting to keep whole
+\texttt{iprint} attractively formats Icon programs, attempting to keep whole
 procedures on the same page. The default is to identify the end of a
 print group (i.e. a procedure) by looking for the string
-"end" at the beginning of a line. Through
-the -g option, alternative strings can be used to signal end of a
-group. Using "end" as the group delimiter
-(inclusive), comments and declarations prior to the procedure are
-grouped with the procedure. Specifying a null group delimiter string
-(\texttt{{}-g {\textquotedblleft}"}) suppresses grouping.
+"end" at the beginning of a line.
+Comments and declarations prior to the procedure are
+grouped with the procedure.
 Page creases are skipped over, and form-feeds (\^{}L) embedded in the
-file are handled properly. (Form-feeds are treated as spaces by many C
-compilers, and signal page ejects in a listing). Page headings (file
+file are handled properly. Page headings (file
 name, date, time, page number) are printed unless suppressed by the
-\texttt{{}-h} option. Options:\\
-\ \ \texttt{{}-n}\ \ number lines\\
-\ \ \texttt{{}-pN}\ \ page length: number of lines per page (default: 60
-lines)\\
-\ \ \texttt{{}-tN}\ \ tab stop spacing (default: 8)\\
-\ \ \texttt{{}-h}\ \ suppress page headings.\\
-\ \ \texttt{{}-l}\ \ add three lines at top of each page for laser
-printer.\\
-\ \ \texttt{{}-gS}\ \ end of group string (default:
-"end").\\
-\ \ \texttt{{}-cS}\ \ start of comment string (default:
-"\#").\\
-\ \ \texttt{{}-xS}\ \ end of comment string (default: none).\\
-\ \ \texttt{{}-i}\ \  ignore FF at start of line.\\
-\noindent Any number of file names specified will be printed, each starting on a
-new page. For example, to print C source files such as the Icon source
-code, use these options:
-
-\iconcode{
-\ \ iprint -g ' \}' -c
-'/*' -x
-'*/' file ... }
-
-Control lines are special character strings that occur at the beginnings
-of lines that signal special action. Control lines begin with the start
-of comment string (see options). The control lines currently recognized
-are:
-
-\texttt{{\textless}comment string{\textgreater}eject} -{}- page eject
-(line containing "eject" does not
-print).\\
-\texttt{{\textless}comment string{\textgreater}title} -{}- define a
-title line to print at top of each page. Title text is separated from
-the \texttt{{\textless}comment string{\textgreater}title} control
-string by one space and is terminated by \texttt{{\textless}end of
-comment string{\textgreater}} or end of line, whichever comes
-first.\\
-\texttt{{\textless}comment string{\textgreater}subtitle} -{}- define a
-subtitle line to print at top of each page. Format is parallel to the
-"title" control line, above.
-
-If a page ejection is forced by maximum lines per page being exceeded
-(rather than intentional eject via control line, form feed, or
-grouping), printing of blank lines at the top of the new page is
-suppressed. Line numbers will still be printed correctly. 
+\texttt{{}-h} option.  See the program source code for details and options.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipsort}}
 
 \texttt{ipsort} reads an Icon program and writes an equivalent program
-with the procedures \index{sort source file procedures}sorted
-alphabetically. Global, link, and record declarations come first in the
+with the procedures \index{sort source file procedures} reordered.
+Global, link, and record declarations come first in the
 order they appear in the original program. The main() procedure comes
 next followed by the remaining procedures in alphabetical order.
-Comments and white space between declarations are attached to the next
-following declaration. Limitations: This program only recognizes
-declarations that start at the beginning of a line. Comments and
-interline white space between declarations may not come out as
-intended. One option is accepted: -v preserve VIB section at end.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipsplit}}
 
@@ -5029,12 +4492,7 @@ separate file. The output file names consist of the procedure name with
 \texttt{.icn} appended. If \texttt{{}-g} is specified, any global,
 link, and record declarations are written to that file. Otherwise they
 are written in the file for the procedure that immediately follows
-them. Comments and white space between declarations are attached to the
-next following declaration. The program only recognizes declarations
-that start at the beginning of lines. Comments and interline white
-space between declarations may not come out as intended. If the -g
-option is not specified, global, link, or record declarations that
-follow the last procedure are discarded.
+them.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipxref \hfill (AJA)}}
 

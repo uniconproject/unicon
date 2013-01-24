@@ -1,4 +1,4 @@
-\chapter{Use Cases, Statecharts, and Collaboration Diagrams}
+\chapter{Use Cases and Supplemental UML Diagrams}
 
 When starting a new software project, it is tempting to begin coding
 immediately. An advocate of stepwise refinement starts with the
@@ -56,14 +56,14 @@ use case.
 A diagram showing all the use cases helps early on in development to
 identify the overall \index{scope}scope and functionality of the
 software system as seen from the outside. The components of a use case
-diagram are depicted in Figure 12-1.
+diagram are depicted in Figure 13-1.
 
 \bigskip
 
 \begin{center}
 \includegraphics[width=5.0in,height=4in]{ub-img/usecase.png}
 
-{\sffamily\bfseries Figure 12-1:}
+{\sffamily\bfseries Figure 13-1:}
 {\sffamily The main components of use case diagrams}
 \end{center}
 
@@ -106,7 +106,7 @@ rectangle, with connecting lines to those use cases in which they
 participate. When some actors are non-human external systems, by convention the
 human actors are depicted on the left, and the non-humans go on the right.
 
-An example use case diagram is shown in Figure 12-2, which depicts a
+An example use case diagram is shown in Figure 13-2, which depicts a
 recruiting management system. The manager hiring a new employee may
 interact with the company's legal department to
 produce an acceptable position advertisement. Many applicants might
@@ -117,7 +117,7 @@ the manager interacts with the legal department to make a job offer.
 \begin{center}
 \includegraphics[width=4.5in,height=3.15in]{ub-img/usecase2.png}
 
-{\sffamily\bfseries Figure 12-2}
+{\sffamily\bfseries Figure 13-2}
 {\sffamily A Use Case Diagram}
 \end{center}
 
@@ -133,12 +133,12 @@ approval from the legal department, commits necessary budget resources,
 and generates an offer letter with details on salary, benefits, and the
 time frame in which a decision is required.
 
-The use case description may be organized into fields or may be more
-detailed than this example. For example, one field might consist of the
+The use case description may be organized into fields, or more
+detailed than this. For example, one field might consist of the
 most common sequence of events, emphasized by an explicit enumeration.
-The most common variations on the primary event sequence are also of
+The common variations on the primary event sequence are also of
 value. A more organized description of the Make Offer use case might
-look like
+be
 
 \paragraph[Make Offer]{\bfseries Make Offer}
 \textbf{Initiated}: by manager, after candidate for a position has been
@@ -183,7 +183,7 @@ cause transitions between states, as well as the conditions and actions
 associated with them, helps the software designer to define the
 required set of operations for classes.
 
-Figure 12-3 shows an example statechart diagram for a real estate
+Figure 13-3 shows an example statechart diagram for a real estate
 application. A house enters the FORSALE state when a listing agreement
 is signed. The house could leave the FORSALE state with a successful
 offer at the listed price (entering a REVIEW period) or by utter
@@ -202,7 +202,7 @@ and the house is SOLD.
 
 \includegraphics[width=5.8in,height=2.0in]{ub-img/statechart.png}
 
-{\sffamily\bfseries Figure 12-3:}
+{\sffamily\bfseries Figure 13-3:}
 {\sffamily A Statechart Diagram}
 
 \bigskip
@@ -216,7 +216,7 @@ domain.
 \subsection{Events and conditions}
 
 Most transitions in a statechart are triggered by an \index{event,
-  statechart}\textit{event}. In Figure 12-3 the events were things like
+  statechart}\textit{event}. In Figure 13-3 the events were things like
 ``offer'' and ``closing''.  Typically, an event describes an asynchronous
 communication received from another object. An event is instantaneous, while a
 state corresponds to some possibly lengthy interval of time until an object
@@ -226,7 +226,7 @@ behavior. Such an event would normally be implemented by defining a method for
 the object with a name derived from the event name.
 
 It is common during modeling to have a transition that can only occur if a
-Boolean condition is satisfied. In Figure 12-3, the event offer was used for
+Boolean condition is satisfied. In Figure 13-3, the event offer was used for
 two transitions out of the same state, with different conditions (amount
 {\textgreater}= list price versus amount {\textless} list price) to determine
 which transition would be taken. In statechart diagrams, conditions are given
@@ -253,7 +253,6 @@ statecharts. In addition to a condition, each event can have an
 associated \index{action, statechart}\textit{action}. An action is a
 method that is called when the event occurs. Since events are
 instantaneous, action methods should be of bounded duration.
-
 Similarly, states can have a whole regalia of related methods called
 \index{activity, statechart}\textit{activities}. There are activities
 that are called when a state is entered or exited, respectively. The
@@ -262,13 +261,13 @@ long as the object is in that state. If more than one such activity is
 present, the object has internal concurrency within that particular
 state.
 
-In statechart diagrams, actions are indicated by appending a slash
-character and an action after the event name (and after any
-condition). Activities are listed within the state
+In statechart diagrams, actions are indicated by appending a slash (/)
+and an action after the event name and any
+condition. Activities are listed within the state
 oval. If a keyword and a slash prefix the activity, special semantics
 are indicated. For example, the \texttt{do} keyword indicates
-continuous or repeated activity. In Figure 12-3, the activity
-\texttt{do / show()} indicates that the house will be shown repeatedly
+repeated activity. In Figure 13-3, the activity
+\texttt{do / show()} says that the house will be shown repeatedly
 while it is in the FORSALE state. The activity \texttt{entry /
 open\_escrow()} indicates that the method \texttt{open\_escrow()} is
 called on entry to the PENDING state, after which
@@ -277,11 +276,11 @@ performed.
 
 \section{Collaboration Diagrams}
 
-Statecharts are normally used to model the state of an individual
+Statecharts normally model the state of one
 object. They show how the object reacts to events that come from the
 other objects in the system, but do not depict where those events came
-from. In a complex system with many objects, it is useful to understand
-the interactions among objects. An event that changes one
+from. In a complex system, it is useful to understand
+the interactions among many objects. An event that changes one
 object's state may trigger events in many other
 objects, or a group of objects may trigger events in one another in a
 cyclic fashion.
@@ -301,7 +300,7 @@ one message number can be annotated for a given \index{link!association
   instance}link, since multiple messages may be transmitted between the same
 objects in the course of completing the use case.
 
-Figure 12-4 shows an example collaboration diagram. This particular
+Figure 13-4 shows an example collaboration diagram. This particular
 collaboration illustrates the input processing of a user event in a game
 application in which pieces are moved about a board, such as chess or
 checkers. The incoming event is sent as a message from the window object to the
@@ -317,14 +316,14 @@ its link to refer to the square to which it is moving.
 
 \bigskip
 
-\includegraphics[width=5.8in,height=2.2in]{ub-img/collabor.png}
+\includegraphics[width=5.5in,height=2.1in]{ub-img/collabor.png}
 
-{\sffamily\bfseries Figure 12-4:}
+{\sffamily\bfseries Figure 13-4:}
 {\sffamily A Collaboration Diagram}
 
 \bigskip
 
-There are a couple more annotations worth noting in Figure 12-4. The links
+There are a couple more annotations worth noting in Figure 13-4. The links
 between window, board widget, and square widget are identified as aggregations
 since they denote geometric containment; this information is redundant with the
 class diagram, but is given to explain how the objects are linked to allow
@@ -341,10 +340,10 @@ non-association references through which messages are transmitted.
 
 \section{Summary}
 
-This chapter introduced four diagramming techniques from the UML that
+This chapter introduced four UML diagram types that
 are useful in modeling dynamic aspects of a program's behavior. To
-learn more about these techniques and several others, you may want to
-study a book with a primary emphasis on UML, such as
+learn more about these techniques and others, consult
+a primary UML resource, such as
 \textit{The Unified Modeling Language User Guide}, by
 Grady Booch, James Rumbaugh, and Ivar Jacobson.
 

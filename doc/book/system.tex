@@ -887,10 +887,15 @@ Unicon's POP messaging facilities: a spam filter.
 
 \section{Tasks}
 
-A task is the virtual machine execution state of a program. The tasking
-facilities allow Unicon programs to load, execute, communicate with,
-and control one another, all within a single instantiation of the
-Unicon interpreter. 
+A {\em task\/} is an executing program within the Unicon virtual
+machine.\index{task} A single task called the {\em root\/} is created
+when the interpreter starts execution. Additional tasks are created
+dynamically as needed.
+
+The tasking facilities allow Unicon programs to load, execute,
+communicate with, and control one another, all within a single
+instantiation of the Unicon interpreter. 
+
 Although Unicon programs can use the tasking facilities to load and
 execute any number of other programs within the same interpreter space,
 the tasking facilities do not introduce a concurrent programming
@@ -907,7 +912,7 @@ in a wide variety of contexts. For example, programs that use the
 multi-tasking interface can communicate directly without resorting to
 external files or pipes.
 
-At the language level, the tasking facilities consist of several
+At the language level, the tasking facilities include several
 built-in functions and keywords, but no new types, declarations, or
 control structures. Several existing functions have been extended to
 offer additional support for the multi-tasking environment. 
@@ -939,41 +944,21 @@ contains the memory used to implement one or more local name spaces.
 Co-expressions in an Icon program share access to the program state and
 can use it to communicate. 
 
-\subsection{Tasks as an extended co-expression model}
+\subsection{Tasks as extended co-expressions}
 
-A task is the execution state of a program within the virtual machine
-[Griswold86]. A single task called the root is created when the
-interpreter starts execution. Additional tasks can be created
-dynamically as needed.
 A task consists of a main co-expression and zero or more child
-co-expressions that share a program state. At the source-language
+co-expressions that share a {\em program state\/} \index{program state}
+consisting of the global and static name
+spaces, keywords, and dynamic memory regions. At the source-language
 level, tasks are loaded, referenced, and activated solely in terms of
-one of their member co-expressions; the task itself is
-implicit.
+one of their member co-expressions; the task itself is implicit.
+Co-expressions share access to the program state and can use it to
+communicate.
+Unicon provides the task model as a mechanism for multi-tasking, but does
+not predefine the policy; matters such as the scheduling algorithm used and
+whether multi-tasking is co-operative or pre-emptive are programmable at the
+user level in terms of co-expression activations.
 
-This definition of tasks is related to the concept of the same name
-commonly used in operating systems and concurrent programming
-languages. It differs, however, in certain fundamental respects. Icon
-is a sequential language; co-expressions in Icon provide a synchronous
-coroutine execution model, not a concurrent execution model with
-implicit task switching and scheduling. Another way to view this is
-that unlike other languages such as Ada, Unicon provides the task model
-as a mechanism for multi-tasking, but does not predefine the policy;
-matters such as the scheduling algorithm used and whether multi-tasking
-is co-operative or pre-emptive are programmable at the user
-level.
-
-Another useful comparison can be made between Icon tasks and Smalltalk
-processes. Both provide pseudo-concurrency within the context of a
-sequential virtual machine. Since Unicon tasks have their own dynamic
-memory regions, their presence affects each other less than Smalltalk
-processes affect each other. For example, if one task is exhibiting
-thrashing heap behavior in which garbage collections are frequent, the
-other tasks in the system can execute at full speed during the portion
-of time in which they are running, since they do not allocate memory
-out of the thrashing task's (full) heap. This minimal
-effect of tasks on each others' behavior is especially
-important in the domain of execution monitoring. 
 
 \subsection{Task creation}
 
@@ -1018,6 +1003,7 @@ default to 65000, while {\texttt{i3 }}defaults to
 
 \subsection{Running other programs}
 
+\index{run!loaded program}
 A co-expression created by {\texttt{load()}} is
 activated like any other co-expression. When activated with the
 {\texttt{@}} operator, the child task begins
@@ -1028,22 +1014,19 @@ presents an alternative means of executing a child with which the
 parent retains control over the child as it executes. 
 
 This default behavior is illustrated by the program
-{\texttt{seqload}}, which loads and executes each
-of its arguments (string names of executable Icon programs) in turn. In
-this program the variable arguments is a list of strings passed into
-the Icon program from the operating system. Each of these strings
-(extracted from the list using the element-generation operator,
+\texttt{seqload}, which loads and executes each
+of its arguments (string names of executable Unicon programs) in turn.
+Each of the strings passed on the command line and extracted from the
+list using the element-generation operator,
 {\texttt{!}}) is passed in turn to
-{\texttt{load()}}\texttt{.
-}{\texttt{load()}} reads the code for each argument
-and creates a task in which to execute the loaded program; the tasks
+{\texttt{load()}}, which reads the code for each argument
+and creates a task in which to execute the loaded program. The tasks
 are then executed one-by-one by the co-expression activation operator,
-{\texttt{@}}. This is ordinary Icon code; there is
+{\texttt{@}}. There is
 nothing special about this example except the semantics of the
 {\texttt{load()}} function and the independent
 execution environment (separate global variables, heaps, and so forth),
-that {\texttt{load()}}{
-}provides to each task. 
+that {\texttt{load()}} provides to each task. 
 
 \iconcode{
 \# seqload.icn \\
@@ -1087,8 +1070,120 @@ procedure main() \\
 end
 }
 
-This data access applies to all first-class data objects in Icon, such
-as procedures and co-expressions. 
+
+
+\subsection{Access Through Task Argument Lists}
+
+The following program takes its first argument to be an Icon program
+to load and execute as a child, sorts its remaining arguments, and
+supplies them to the child program as its command-line arguments
+({\tt pop()} and {\tt sort()} are Icon built-in functions that extract
+the first list element and sort elements, respectively):
+
+\iconcode{
+	procedure main(arguments) \\
+\>	   @load(pop(arguments), sort(arguments)) \\
+	end
+}
+
+Argument lists allow more sophisticated data transfers; the {\tt seqload} 
+example presented earlier can be extended to transmit arbitrary
+structures between programs using argument lists in the following
+manner.  As in {\tt seqload}, each string naming an executable Icon
+program is passed into {\tt load()}, and the resulting task is
+activated to execute the program.  In this case, however, any result
+that is returned by one of the programs is assigned to local variable
+{\tt L} and passed to the next program in the list via the second
+argument to {\tt load()}.
+
+\iconcode{
+     \# seqload2.icn \\
+     procedure main(arguments) \\
+\>	every program := !arguments do \\
+\>\>	   L := @load(program, L) \\
+     end
+}
+
+The net effect of {\tt seqload2.icn} is similar to a UNIX pipe, with
+an important difference: Arbitrary Icon values can be passed from
+program to program through the argument lists.
+This capability is more interesting in substantial multipass tools
+such as compilers, where full data structures can be passed along from
+tool to tool instead of writing out text encodings of the structures
+to a file.
+
+
+\subsection{Inter-task Access Functions}
+
+Several built-in functions
+\index{access!variable}\index{variable@{\tt variable()}}
+provide inter-task access to program data.  These functions
+are usable in any multi-task Unicon context, but are especially
+useful in program execution monitoring, discussed in Chapter 9.
+
+For example, the
+{\tt variable()} function takes a co-expression value as an
+optional second argument denoting the task from which to fetch the named
+variable. {\tt variable(s, C)} is
+useful for assigning to or reading from another task's
+variables. In the following {\tt seqload} example, the
+parent initializes each child's {\tt Parent} global
+variable (if there is one) to refer to the parent's {\tt \&main}
+co-expression.  A child task can then use {\tt Parent} to determine
+whether it is being run standalone or under a parent task.
+The {\tt variable()} function is
+useful in inspecting values, especially at intermediate points during
+the monitored execution of a TP.
+
+\iconcode{
+     \# seqload3.icn \\
+     procedure main(arguments) \\
+\>	every arg := !arguments do \{ \\
+\>\>	   Task := load(arg) \\
+\>\>	   variable(\"Parent\", Task) := \&main \\
+\>\>	   @Task \\
+\>\>	   \} \\
+	end
+}
+
+In addition to extending existing functions for monitoring,
+several new functions have been added.  The use of these monitoring functions
+are illustrated in many example monitors in Unicon's
+ipl/mprogs directory.  Some of the intertask access functions
+are listed in Figure 5-1.  In these functions, parameter {\tt C}
+refers to a co-expression that may be from a task other than the one being
+executed.  Functions that {\em generate\/}
+values can produce more than one result from a given call.
+\index{function!execution monitoring}\index{generator!function}
+\index{access!functions}
+
+\begin{center}
+
+\begin{tabular}{|ll|} \hline
+{\bf\tt cofail(C)}      & transmit failure to {\tt C}. \\
+{\bf\tt fieldnames(r)}  & generate fieldnames of record {\tt r}. \\
+{\bf\tt globalnames(C)} & generate the names of {\tt C}'s global
+variables. \\
+{\bf\tt keyword(s, C)} & produces keyword {\tt s} in {\tt C}. \\
+	& Keywords are special global variables that have \\
+	& special semantics in certain language facilities.\\
+{\bf\tt localnames(C,i)} & generates the names of {\tt C}'s local variables,\\
+	& {\tt i} calls up from the current procedure call. \\
+{\bf\tt paramnames(C,i)} & generates the names of {\tt C}'s parameters. \\
+{\bf\tt staticnames(C,i)} & generates the names of {\tt C}'s static variables. \\
+{\bf\tt structure(C)} & generates the values in {\tt C}'s block
+region, or heap. \\
+	 & The heap holds structure types such as lists and tables. \\
+{\bf\tt variable(s,C,i)} & produces variable named {\tt s}, interpreted {\tt i} levels\\
+	& up within {\tt C}'s procedure stack. \\
+\hline
+\end{tabular}
+\end{center}
+
+{\sffamily\bfseries Figure 5-1:}
+{\sffamily Unicon interprogram access functions.}
+
+
 
 \subsection{Shared icode libraries}
 

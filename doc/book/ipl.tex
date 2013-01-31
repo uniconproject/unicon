@@ -19,13 +19,12 @@ extensions, while LPATH directories are searched for
 \$include'd \index{source code}source code files with
 the .icn extension.
 
-The Icon Program Library consists of around 20
+The Icon Program Library has 20
 directories of code, data, and supporting documentation. It
 is included in its entirety in the Unicon distributions.
-This appendix is a reference summary, giving details for
-the most useful components of the IPL, a sort of
-``Best of the Icon Program
-Library'' collection of potential value to other programmers.
+This reference summary appendix presents details for
+the most useful components of the IPL, emphasizing components
+of potential value to other programmers.
 Many modules were written by Icon creator Ralph Griswold; if he was not
 the author of a given module,
 the initials of authors are included in the module description. A list of
@@ -61,7 +60,7 @@ are of interest to programmers that use the module.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{adlutils}}
 
-This module is for programs that process address lists: Addresses are
+This module processes address lists; addresses are
 represented using a record type \texttt{label}. Procedures for
 extracting the city, state, and ZIP code work for U.S. addresses only.
 
@@ -81,7 +80,7 @@ or \texttt{"XX"} if no state is found\\
 \texttt{format\_country(string) : string} format country name using
 initial capital letters.
 
-Links: lastname, io, namepfx, title 
+Links: \texttt{lastname}, \texttt{io}, \texttt{namepfx}, \texttt{title}
 
 % {\sffamily\bfseries ansi }
 % 
@@ -122,18 +121,16 @@ present, it does not accept any escape conventions.
 
 This module provides a \index{multidimensional array}multidimensional
 array abstraction with programmer-supplied base indices.
-
 \texttt{create\_array(lbs:list, ubs:list, value):array} creates an
 n-dimensional array with specified lower bounds, upper bounds, and with
 each array element having the given initial value.
-
 \texttt{ref\_array(A, i1, i2, ...)} references the i1-th i2-th ...
 element of A. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{asciinam} \hfill (RJA)}
 
-\texttt{asciiname(s:string):string} returns the mnemonic name of the
-single unprintable ASCII character \texttt{s}.
+\texttt{asciiname(s:string):string} returns the name of
+unprintable ASCII character \texttt{s}.
 
 \pagebreak
 
@@ -150,10 +147,10 @@ argument. It fails if the string is not base64 encoded.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{basename} \hfill (REG, CAS)}
 
-\index{basename}\texttt{basename}\texttt{(name, suffix) : string} strips
-off any path information and removes the specified suffix, if present.
-If no suffix is provided, the portion of the name up to the first
-"." is returned.
+\index{basename}\texttt{basename}\texttt{(name, suffix) : string} removes
+any path information as well as the specified suffix, if present.
+If no suffix is given, the portion of the name up to the first
+\texttt{"."} is returned.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{binary} \hfill (RJA)}
 
@@ -201,14 +198,15 @@ u & uuencoded/uudecoded string \\
 \end{supertabular}
 \end{flushleft}
 
-Each letter may optionally be followed by a number that gives a count.
+\noindent
+Each letter may be followed by a numeric count.
 Together the letter and the count make a field specifier. Letters and
-numbers can be separated by white space that will be ignored. Types A,
-a, B, b, H, and h consume one value from the
-"value" list and produce a string of the
+numbers can be separated by white space that is ignored. Types in 
+[AaBbHh] consume one value from the
+``value'' list and produce a string of the
 length given as the field-specifier-count. The other types consume
-"field-specifier-count" values from the
-"value" list and append the appropriate
+``field-specifier-count'' values from the
+``value'' list and append the appropriate
 data to the packed string.
 
 \texttt{unpack(template, string) : value\_list} does the reverse of
@@ -398,8 +396,6 @@ sent to \texttt{\&output} to the file \texttt{f}.
 for placing progress messages and other comforting information on the
 screen.
 
-\pagebreak
-
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{caseless} \hfill (NJL)}
 
 These procedures are analogous to the standard string-analysis functions
@@ -526,34 +522,32 @@ retrieving them.
 \texttt{decode(s:string): any} converts a string in \texttt{encode()}
 format back to x.
 
-These procedures handle all kinds of values, including structures of
-arbitrary complexity and even loops. For scalar types -{}- null,
-integer, real, cset, and string -{}- \texttt{decode(encode(x)) === x}.
-For structure types -{}- list, set, table, and record types -{}-
+These procedures handle all Unicon values, including structures of
+arbitrary complexity. For scalar types (null,
+integer, real, cset, and string), \texttt{decode(encode(x)) === x}.
+For structures (list, set, table, and record types)
 \texttt{decode(encode(x))} is not identical to \texttt{x}, but it has
 the same "shape" and its elements bear the
 same relation to the original as if they were encoded and decode
 individually. Not much can be done with files, functions and
 procedures, and co-expressions except to preserve type and
-identification. The encoding of strings and csets handles all
+identification. The encoding of strings and csets handles
 characters in a way that is safe to write to a file and read it back.
 
 Links: \texttt{escape}, \texttt{gener}, \texttt{procname},
-\texttt{typecode}. Requires: co-expressions. See also:
-\texttt{object.icn}. 
+\texttt{typecode}. See also: \texttt{object.icn}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{colmize}\hfill (RJA)}
 
 \texttt{colmize(L:list,mx:80,sp:2,mi:0,tag,tagsp:2,tagmi:0,roww,dist) :
-string*} arranges a number of data items (from list of strings
+string*} arranges data items (from list of strings
 \texttt{L}) into multiple columns. \texttt{mx} is the maximum width of
 output lines. \texttt{sp} is the minimum number of spaces between
 columns. \texttt{mi} is the minimum column width. \texttt{tag} is a
-label to be placed on the first line of output. Items are arranged in
-column-wise order unless roww is nonnull; by default the sequence runs
+label to be placed on the first line of output. Items are arranged
+column-wise unless \texttt{roww} is nonnull; by default the sequence runs
 down the first column, then down the second, etc. \texttt{colmize()}
-goes to great lengths to print the items in as few vertical lines as
-possible.
+prints the items in as few vertical lines as possible.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{complete}\hfill (RLG)}
 
@@ -564,7 +558,7 @@ set of strings. Example:
 
 \iconcode{
 commands :=
-["run",'stop','quit','save','load','continue'] \\
+["run","stop","quit","save","load","continue"] \\
 while line := read(\&input) do \{ \\
 \>   cmds := [ ] \\
 \>   every put(cmds, complete(line, commands)) \\
@@ -686,7 +680,7 @@ decimal:".",
 comma:",") : string} formats \texttt{amt}
 in a currency format that defaults to U.S. currency. \texttt{amt} can
 be a real, integer, or numeric string. \texttt{wid} is the output field
-width, in which the amount is right adjusted. The returned string will
+width; its amount is right-adjusted. The returned string will
 be longer than \texttt{width} if necessary to preserve significance.
 \texttt{neg} is the character string to be used for negative amounts,
 and is placed to the right of the amount. \texttt{frac} and
@@ -738,8 +732,8 @@ date\_rec to a Julian day number\\
 day number\\
 \texttt{doy(year, month, day) : integer} returns the day-of-year from
 (year, month, day)\\
-\texttt{wrdate(leadin, date)} writes a line to \texttt{\&output} with a
-basic date string preceded by a leadin 
+\texttt{wrdate(leadin, date)} writes a
+basic date string preceded by a leadin to \texttt{\&output}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{datetime}\hfill (RJA, REG)}
 
@@ -1001,15 +995,15 @@ Requires: Large-integer arithmetic and prime.lst for
 
 These procedures implement integer-values using a best known method.
 
-\texttt{acker(i, j)}\ \ Ackermann's function\\
-\texttt{fib(i)}\ \ \ \ Fibonacci sequence\\
-\texttt{g(k, i)}\ \ \ \ Generalized Hofstader nested recurrence\\
-\texttt{q(i)}\ \ \ \ \ \ "Chaotic"
-sequence\\
-\texttt{robbins(i)}\ \ Robbins numbers
-
-See also: iterfncs.icn, memrfncs.icn, recrfncs.icn. Links: factors,
-memrfncs. 
+\begin{tabular}{m{1in}m{5in}}
+\texttt{acker(i, j)} & Ackermann's function\\
+\texttt{fib(i)}      & Fibonacci sequence\\
+\texttt{g(k, i)}     & Generalized Hofstader nested recurrence\\
+\texttt{q(i)}        & "Chaotic" sequence\\
+\texttt{robbins(i)}  & Robbins numbers
+\end{tabular}
+See also: \texttt{iterfncs.icn},
+\texttt{recrfncs.icn}. Links: \texttt{factors}, \texttt{memrfncs}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filedim}}
 
@@ -1025,10 +1019,9 @@ rows)}.
 \texttt{nextseqfilename(dir, pre, ext) : string?} creates the next
 filename in a series of files (such as successive
 log files). Usage: \texttt{fn :=
-nextseqfilename(".",
-".", 'log')}
+nextseqfilename(".", ".", "log")}
 returns the (non-existent) filename next in the sequence
-\texttt{.{\textbackslash}.*.log} (where the * represents 1, 2, 3, ...)
+\texttt{.{\textbackslash}.*.log} (\texttt{*} represents 1, 2, 3, ...)
 or fails.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{findre}\hfill (RLG)}
@@ -1056,12 +1049,8 @@ other words, if you look for \texttt{"a*"},
 \texttt{"a"}\texttt{.} It will just match
 the empty string.
 
-\texttt{\^{}} - matches if what follows is at the beginning of
-a line (i.e. \texttt{\^{}\#} matches lines \ \\
- \ \ \ \ beginning with
-\texttt{"\#"})\\
-\texttt{\$} - matches if the preceding pattern is at the end of a
-line\\
+\texttt{\^{}} - matches if what follows is at the beginning of a line\\
+\texttt{\$} - matches if the preceding pattern is at the end of a line\\
 \texttt{.} - matches any single character\\
 \texttt{+} - matches 1 or more occurrences of the previous
 expression (i.e. \\
@@ -1075,14 +1064,10 @@ characters\\
 \texttt{"["}, write
 \texttt{\^{}{\textbackslash}[}, and not \texttt{\^{}[})\\
 \texttt{{\textbar}} - matches either the pattern before it, or the one
-after it (i.e. \texttt{abc{\textbar}cde} matches\\
- \ \ \ \ \  either \texttt{abc} or \texttt{cde})\\
+after it\\
 \texttt{[]} - matches any member of the enclosed character set, or, if
 \texttt{\^{}} is the first character,\\
- \ \ \ \ \ \ \ any nonmember of the enclosed character set (i.e.
-\texttt{[\^{}ab]} matches any
-\\
- \ \ \ \ \ \ \ character \textit{except} \texttt{a} and \texttt{b}).\\
+ \ \ \ \ \ \ \ any nonmember of the enclosed character set \\
 \texttt{()} - used for grouping (e.g. \texttt{\^{}(abc{\textbar}cde)\$} matches
 lines consisting of either \texttt{"abc"}
 or \texttt{"cde",}\\

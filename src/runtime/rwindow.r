@@ -4990,7 +4990,7 @@ int Consolefflush(FILE *f)
 
 
 /*
- * the next section consists of code to deal with string-integer
+ * The next section consists of code to deal with string-integer
  * (stringint) symbols.  See rstructs.h.
  */
 

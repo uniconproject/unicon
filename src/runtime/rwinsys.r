@@ -34,6 +34,7 @@ void checkpollevent(){
 #endif  				/* MSWindows */
 
 #ifdef Graphics3D
+#include "rwin3d.ri"
 #if HAVE_LIBGL
 #include "ropengl.ri"
 #endif					/* HAVE_LIBGL */

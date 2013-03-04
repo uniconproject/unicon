@@ -618,7 +618,7 @@ function{1} insert(s, x[n])
 	       else runerr(103, nulldesc);
 	       db = BlkD(s,File)->fd.dbm;
 	       status = BlkD(s,File)->status;
-	       if (status & Fs_Dbm == 0)
+	       if (!(status & Fs_Dbm))
 		  runerr(122, s);
 	       key.dptr = StrLoc(x[argc]);
 	       key.dsize = StrLen(x[argc]);
@@ -1206,7 +1206,7 @@ function{0,1} member(s, x[n])
 		   runerr(103,x[argc]);
 
 	       status = BlkD(s,File)->status;
-	       if (status & Fs_Dbm == 0)
+	       if (!(status & Fs_Dbm))
 		  runerr(122, s);
 	       db = BlkD(s,File)->fd.dbm;
 	       key.dptr = StrLoc(x[argc]);

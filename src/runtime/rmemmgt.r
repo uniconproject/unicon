@@ -674,24 +674,33 @@ static void markthread(struct threadstate *tcp)
     * marking.
     */
 
-   if(!is:null(tcp->Value_tmp))
+   if(!is:null(tcp->Value_tmp)) {
       PostDescrip(tcp->Value_tmp);
-   if(!is:null(tcp->Kywd_pos))
+      }
+   if(!is:null(tcp->Kywd_pos)) {
       PostDescrip(tcp->Kywd_pos);
-   if(!is:null(tcp->ksub))
+      }
+   if(!is:null(tcp->ksub)) {
       PostDescrip(tcp->ksub);
-   if(!is:null(tcp->Kywd_ran))
+      }
+   if(!is:null(tcp->Kywd_ran)) {
       PostDescrip(tcp->Kywd_ran);
-   if(!is:null(tcp->K_current))
+      }
+   if(!is:null(tcp->K_current)) {
       PostDescrip(tcp->K_current);
-   if(!is:null(tcp->K_errorvalue))
+      }
+   if(!is:null(tcp->K_errorvalue)) {
       PostDescrip(tcp->K_errorvalue);
-   if(!is:null(tcp->T_errorvalue))
+      }
+   if(!is:null(tcp->T_errorvalue)) {
       PostDescrip(tcp->T_errorvalue);
-   if(!is:null(tcp->AmperErrno))
+      }
+   if(!is:null(tcp->AmperErrno)) {
       PostDescrip(tcp->AmperErrno);
-   if(!is:null(tcp->Eret_tmp))
+      }
+   if(!is:null(tcp->Eret_tmp)) {
       PostDescrip(tcp->Eret_tmp);
+      }
    /* ??? */
 }
 

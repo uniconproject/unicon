@@ -3942,7 +3942,7 @@ function{1} Rotate(argv[argc])
       CheckArgMultiple(4);
 
       for(i = warg; i < argc-warg; i = i+4) {
-	 if (j = rotate(w, argv, i, &f)) {
+	 if ((j = rotate(w, argv, i, &f))) {
 	    if (j == 1) runerr(0);
 	    else runerr(102, argv[-j-1]);
 	    }
@@ -3970,7 +3970,7 @@ function{1} Translate(argv[argc])
       CheckArgMultiple(3);
 
       for(i = warg; i < argc-warg; i = i+3) {
-	 if (j = translate(w, argv, i, &f)) {
+	 if ((j = translate(w, argv, i, &f))) {
 	    if (j == 1) runerr(0);
 	    else runerr(102, argv[-j-1]);
 	    }
@@ -3999,7 +3999,7 @@ function{1} Scale(argv[argc])
       CheckArgMultiple(3);
 
       for(i = warg; i < argc-warg; i = i+3) {
-	 if (j=scale(w, argv, i, &f)) {
+	 if ((j=scale(w, argv, i, &f))) {
 	    if (j == 1) runerr(0);
 	    else runerr(102, argv[-j-1]);
 	    }
@@ -4133,13 +4133,13 @@ body {
       OptWindow(w);
       CheckArgMultiple(3);
 
-      if (j = pushmatrix_rd(w, &f)) {
+      if ((j = pushmatrix_rd(w, &f))) {
 	 if (j == 151) runerr(j);
 	 else if (j == -1) runerr(0);
 	 }
 
       for(i = warg; i < argc-warg; i = i+3) {
-	 if (j = translate(w, argv, i, &f2)) {
+	 if ((j = translate(w, argv, i, &f2))) {
 	    if (j == 1) runerr(0);
 	    else runerr(102, argv[-j-1]);
 	    }
@@ -4163,13 +4163,13 @@ body {
       OptWindow(w);
       CheckArgMultiple(4);
 
-      if (j = pushmatrix_rd(w, &f)) {
+      if ((j = pushmatrix_rd(w, &f))) {
 	 if (j == 151) runerr(j);
 	 else if (j == -1) runerr(0);
 	 }
 
       for(i = warg; i < argc-warg; i = i+4) {
-	 if (j = rotate(w, argv, i, &f2)) {
+	 if ((j = rotate(w, argv, i, &f2))) {
 	    if (j == 1) runerr(0);
 	    else runerr(102, argv[-j-1]);
 	    }
@@ -4193,13 +4193,13 @@ body {
       OptWindow(w);
       CheckArgMultiple(3);
 
-      if (j = pushmatrix_rd(w, &f)) {
+      if ((j = pushmatrix_rd(w, &f))) {
 	 if (j == 151) runerr(j);
 	 else if (j == -1) runerr(0);
 	 }
 
       for(i = warg; i < argc-warg; i = i+3) {
-	 if (j = scale(w, argv, i, &f2)) {
+	 if ((j = scale(w, argv, i, &f2))) {
 	    if (j == 1) runerr(0);
 	    else runerr(102, argv[-j-1]);
 	    }

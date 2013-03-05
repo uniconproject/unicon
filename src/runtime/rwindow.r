@@ -844,7 +844,7 @@ RGBnums:
       }
 
 #ifdef Graphics3D
-   if (texture = texturephrase(buf, r, g, b, a)) {
+   if ((texture = texturephrase(buf, r, g, b, a))) {
       return Failed; /* not handling textures yet */
       }
    else
@@ -3136,11 +3136,12 @@ C_integer *bits;
 	 *bits++ = v;
 	 v = 0;
 
-	 if (len > 0)
+	 if (len > 0) {
 	    if (*s == ',') { len--; s++; }
 	    else {
 	       ReturnErrNum(205, Error);
 	       }
+	    }
 	 }
       }
    return Succeeded;

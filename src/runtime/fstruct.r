@@ -1672,7 +1672,7 @@ end
    tended struct descrip d;
 
    d = *pd;
-   if (ne = alcselem(&nulldesc, (uword)0)) {
+   if ((ne = alcselem(&nulldesc, (uword)0))) {
       pe = memb(ps, &d, hn = hash(&d), &res);
       if (res==0) {
          ne->setmem = d;			/* add new element */

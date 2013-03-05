@@ -258,6 +258,7 @@ function{} exit(status)
       }
 #endif					/* Concurrent */
       c_exit((int)status);
+      fail;				/* avoid spurious warning message */
       }
 end
 
@@ -2380,6 +2381,7 @@ end
 	    MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
 	    c_exit(EXIT_FAILURE);
+            return retvalue;            /* avoid spurious warning message */
 #else					/* terminate */
 	    return retvalue;
 #endif					/* terminate */

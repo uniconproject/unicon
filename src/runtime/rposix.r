@@ -727,11 +727,12 @@ char *name;
    StrLoc(s) = name;
    StrLen(s) = strlen(name);
    for (i = 0; i < n_globals; ++i)
-      if (eq(&s, &gnames[i]))
+      if (eq(&s, &gnames[i])) {
          if (is:proc(globals[i]))
             return &globals[i];
          else
 	    return 0;
+	 }
 
    return 0;
 }
@@ -807,7 +808,7 @@ static void on_alarm(int x)
 
 int sock_connect(char *fn, int is_udp, int timeout)
 {
-   int imode, saveflags, rc, fd, s, len, fromlen;
+   int imode, saveflags, rc, fd, s, len;
    struct sockaddr *sa, from;
    char *p, fname[BUFSIZ];
    struct sockaddr_in saddr_in;
@@ -947,7 +948,8 @@ int sock_connect(char *fn, int is_udp, int timeout)
          /* The connect is in progress, so select() must be used to wait. */
          fd_set ws, es;
          struct timeval tv;
-         int sc, cc, cclen;
+         int sc, cc;
+	 unsigned int cclen;
 
          tv.tv_sec = timeout / 1000;
          tv.tv_usec = 1000 * (timeout % 1000);
@@ -1053,7 +1055,8 @@ int sock_listen(addr, is_udp_or_listener)
 char *addr;
 int is_udp_or_listener;
 {
-   int fd, s, len, fromlen;
+   int fd, s, len;
+   unsigned int fromlen;
    struct sockaddr *sa;
    struct sockaddr_in saddr_in, from;
 #if UNIX
@@ -1169,7 +1172,7 @@ int sock_name(int s, char* addr, char* addrbuf, int bufsize)
 {
    int len;
    struct sockaddr_in conn;
-   int addrlen = sizeof(conn);
+   unsigned int addrlen = sizeof(conn);
 
    /*
     * We used to check sock_get(addr) to decide if this socket was someone
@@ -1199,7 +1202,7 @@ int sock_me(int s, char* addrbuf, int bufsize)
 {
    int len;
    struct sockaddr_in local;
-   int addrlen = sizeof(local);
+   unsigned int addrlen = sizeof(local);
 
    /* Otherwise we can construct a name for it and put in the string */
    if (getsockname(s, (struct sockaddr*) &local, &addrlen) < 0)
@@ -1277,7 +1280,8 @@ int sock_recv(int s, struct b_record **rp)
    struct sockaddr_in saddr_in;
    struct hostent *hp;
    char buf[1024];
-   int len, BUFSIZE = 1024, msglen;
+   int BUFSIZE = 1024, msglen;
+   unsigned int len;
    
    memset(&saddr_in, 0, sizeof(saddr_in));
    len = sizeof(s_type);
@@ -1318,7 +1322,8 @@ int sock_recv(int s, struct b_record **rp)
 
 int sock_write(int f, char *msg, int n)
 {
-   int rv, s_type, len;
+   int rv, s_type;
+   unsigned int len;
    SOCKET fd = ((SOCKET)f); /* used to wrap f inside an fdup, but no more */
 
    len = sizeof(s_type);

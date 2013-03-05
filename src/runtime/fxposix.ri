@@ -2064,7 +2064,8 @@ int set_if_selectable(struct descrip *f, fd_set *fdsp, int *n)
 
 void post_if_ready(dptr ldp, dptr f, fd_set *fdsp)
 {
-   int fd, fromlen, status = BlkD(*f,File)->status;
+   int fd, status = BlkD(*f,File)->status;
+   unsigned int fromlen;
    struct sockaddr_in from;
 
    if ((status & (Fs_Socket | Fs_Messaging | Fs_BPipe
@@ -2175,7 +2176,7 @@ function{0,1} select(files[nargs])
 	       if ((k+1 == nargs) && is:integer(files[k]))
 		  cnv:C_integer(files[k], timeout);
 	       else
-		  if (rv = set_if_selectable(files+k, &fds, &n))
+		  if ((rv = set_if_selectable(files+k, &fds, &n)))
 		     runerr(rv, files[k]);
 	       }
 	    else
@@ -2186,7 +2187,7 @@ function{0,1} select(files[nargs])
 		     if (j >= ep->Lelem.nslots)
 		        j -= Blk(ep,Lelem)->nslots;
 		     f = Blk(ep,Lelem)->lslots[j];
-		     if (rv = set_if_selectable(&f, &fds, &n))
+		     if ((rv = set_if_selectable(&f, &fds, &n)))
 			runerr(rv, f);
 		     }
 	          }

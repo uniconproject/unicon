@@ -757,7 +757,7 @@ char *argv[];
     * Set the default interpreter stack size to (1%/4) of physical memory.
     */
    { unsigned long l, onepercent;
-     if (l = physicalmemorysize()) {
+     if ((l = physicalmemorysize())) {
 	onepercent = l / 100;
 	if (rootstring.size < onepercent) rootstring.size = onepercent;
 	if (rootblock.size < onepercent) rootblock.size = onepercent;
@@ -2034,7 +2034,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
  */
 struct progstate * findicode(word *opnd)
 {
-   struct progstate *p;
+   struct progstate *p = NULL;
    CURTSTATE();
 
    for (p = &rootpstate; p != NULL; p = p->next) {
@@ -2042,8 +2042,8 @@ struct progstate * findicode(word *opnd)
 	 return p;
 	 }
       }
-   if (p == NULL)
-      syserr("unidentified inter-program icode\n");
+   syserr("unidentified inter-program icode\n");
+   return p; /* avoid spurious warning message */
 }
 
 /*

@@ -1650,7 +1650,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
 #if !NT
   
    /* clear the buffer */
-   memset(buffer,0,sizeof(buffer));
+   memset(buffer, '\0', sizeof(buffer));
 
    if (!longread) {
       timeout.tv_sec  = 0L;
@@ -1829,7 +1829,7 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
 
 int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
 {
-   unsigned long bytes_written;
+   long bytes_written;
    int ret=0, pstatus, sel_ret;
 
    if (ptStruct == NULL || buffer == NULL || bufsize < 1)
@@ -2015,7 +2015,7 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
 
             while (*t2 && (*t2 != '"')) t2++;
 	    if (*t2 && !dequote) t2++;
-            if (c = *t2) {
+            if ((c = *t2)) {
 	       *t2++ = '\0';
 	       }
 	    *avp = realloc(*avp, (rv + 2) * sizeof (char *));

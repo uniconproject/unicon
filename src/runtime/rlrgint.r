@@ -336,7 +336,7 @@ dptr da, dx;
       return Succeeded;		/* got lucky; a simple integer suffices */
       }
 
-   if (sgn = x < 0)
+   if ((sgn = (x < 0)))
       x = -x;
    blen = ln(x) / ln(B) + 0.99;
    for (i = 0; i < blen; i++)

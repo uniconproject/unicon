@@ -910,11 +910,12 @@ C_integer arity;
     * See if the string is the name of a global variable.
     */
    for (i = 0; i < n_globals; ++i)
-      if (eq(s, &gnames[i]))
+      if (eq(s, &gnames[i])) {
          if (is:proc(globals[i]))
             return BlkD(globals[i], Proc);
          else
             return NULL;
+	 }
 
    return bi_strprc(s,arity);
    }

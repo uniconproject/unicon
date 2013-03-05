@@ -55,22 +55,19 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    ws->funclist.dword = D_List;
 
    /* initialize opengl state*/
-   init_opengl(w);
+   init_3dcanvas(w);
 
    return f;
 }
 
-void init_opengl(wbp  w)
+/*
+ * Initialize the 3D subsystem for rendering.
+ */
+void init_3dcanvas(wbp  w)
 {
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
    wsp ws;
    wcp wc;
-   /*
-   printf("GL_RENDERER = %s\n", (char *) glGetString(GL_RENDERER));
-   printf("GL_VERSION = %s\n", (char *) glGetString(GL_VERSION));
-   printf("GL_VENDOR = %s\n", (char *) glGetString(GL_VENDOR));
-   printf("GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
-   */
 
    ws= w->window;
    wc= w->context;
@@ -99,85 +96,6 @@ void init_opengl(wbp  w)
 	     0.125 * ws->height / ws->width, 0.25, 50000.0);
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-}
-
-int init_3dcontext(wcp wc)
-{
-  /* set defaults for attributes */
-   wc->eyeupx = wc->eyeupz = 0.0;
-   wc->eyeupy = 1.0;
-   wc->dim = 3;
-   wc->slices = 15;
-   wc->rings = 10;
-   wc->selectionenabled = 0;
-   wc->selectionrendermode=0;
-   wc->selectionnamelistsize=256;
-   wc->selectionnamecount=0;
-   wc->selectionnamelist = malloc(wc->selectionnamelistsize*sizeof(char*));
-   if (wc->selectionnamelist == NULL) return Failed;
-   wc->app_use_selection3D = 0;
-
-   wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
-   wc->eyedirz = -100.0;
-   wc->autogen = 1;
-   wc->normode = 1;
-   wc->normals = NULL;
-   wc->texmode = wc->numtexcoords = 0;
-   wc->texName = malloc(16 * sizeof(GLuint));
-   if (wc->texName == NULL) return Failed;
-   wc->nalced = 16;
-   wc->maxstex=16;
-
-   wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
-   if (wc->stex == NULL) return Failed;
-
-   wc->texcoords = NULL; 
-   wc->ntextures = 0;
-   wc->curtexture = -1;
-   wc->buffermode = IMMEDIATE3D;
-   wc->meshmode = GL_POLYGON;
-   return Succeeded;
-}
-
-int copy_3dcontext(wcp wc, wcp rv)
-{
-  /* set defaults for attributes */
-   rv->eyeupx = wc->eyeupx;
-   rv->eyeupz = wc->eyeupz;
-   rv->eyeupy = wc->eyeupy;
-   rv->dim = wc->dim;
-   rv->slices = wc->slices;
-   rv->rings = wc->rings;
-   rv->selectionenabled = wc->selectionenabled;
-   rv->selectionrendermode = wc->selectionrendermode;
-   rv->selectionnamelistsize = wc->selectionnamelistsize;
-   rv->selectionnamecount = wc->selectionnamecount;
-   rv->selectionnamelist = wc->selectionnamelist;
-   rv->app_use_selection3D = wc->app_use_selection3D;
-
-   rv->eyeposx = wc->eyeposx;
-   rv->eyeposy = wc->eyeposy;
-   rv->eyeposz = wc->eyeposz;
-   rv->eyedirx = wc->eyedirx;
-   rv->eyediry = wc->eyediry;
-   rv->eyedirz = wc->eyedirz;
-   rv->autogen = wc->autogen;
-   rv->normode = wc->normode;
-   rv->normals = wc->normals;
-   rv->texmode = wc->texmode;
-   rv->numtexcoords = wc->numtexcoords;
-   rv->texName = wc->texName;
-   rv->nalced = wc->nalced;
-   rv->maxstex = wc->maxstex;
-
-   rv->stex = wc->stex;
-
-   rv->texcoords = wc->texcoords;
-   rv->ntextures = wc->ntextures;
-   rv->curtexture = wc->curtexture;
-   rv->buffermode = wc->buffermode;
-   rv->meshmode = wc->meshmode;
-   return Succeeded;
 }
 
 
@@ -1767,7 +1685,7 @@ int traversefunctionlist(wbp w)
 		   printf("REDRAW_POLYGON: NOT a real Array!!..\n");
 		   return Failed;
 		 }
-		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 /* call drawpoly with meshmode to get something polygonish */
 		 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
 	       } /*used1>0 */
 	    break;
@@ -1790,7 +1708,7 @@ int traversefunctionlist(wbp w)
 		   printf("REDRAW_FILLPOLYGON: NOT a real Array!!..\n");
 		   return Failed;
 		 }
-		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 /* call drawpoly with meshmode to get something polygonish */
 		 drawpoly(w, ap->a, BlkD(d, List)->size , w->context->meshmode, wc->dim);
 	       } /*used1>0 */
 	    break;
@@ -1813,7 +1731,7 @@ int traversefunctionlist(wbp w)
 		   printf("REDRAW_SEGMENT: NOT a real Array!!..\n");
 		   return Failed;
 		 }
-		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 /* call drawpoly with GL_LINES to get segments */
 		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINES, wc->dim);
 	       } /*used1>0 */
 	    break;
@@ -1836,7 +1754,7 @@ int traversefunctionlist(wbp w)
 		   printf("REDRAW_LINE: NOT a real Array!!..\n");
 		   return Failed;
 		 }
-		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 /* call drawpoly with GL_LINE_STRIP to get lines */
 		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_LINE_STRIP, wc->dim);
 	       } /*used1>0 */
 	    break;
@@ -1858,7 +1776,7 @@ int traversefunctionlist(wbp w)
 		   printf("REDRAW_POINT: NOT a real Array!!..\n");
 		   return Failed;
 		 }
-		 /* call drawpoly with GL_LINE_LOOP to get a polygon */
+		 /* call drawpoly with GL_POINTS to get points */
 		 drawpoly(w, ap->a, BlkD(d, List)->size , GL_POINTS, wc->dim);
 	       } /*used1>0 */
 	    break;
@@ -1958,47 +1876,6 @@ int getmaterials(char* buf)
    return Succeeded;
 }
 
-int gettexture(wbp w, dptr dp)
-{
-   wcp wc= w->context;
-   wtp wt = wc->textures;
-   while (wt) {
-      if (wt->texindex == wc->curtexture) {
-	 *dp = wt->d;
-	 return Succeeded;
-	 }
-      wt = wt->next;
-      }
-   return Failed;
-}
-
-void getatexcoord(double d, char *b)
-{
-   if ((double)(int)d == d) sprintf(b,"%d",(int)d);
-   else sprintf(b,"%.3f",d);
-}
-
-/* get the user specified texture coordinates */
-int gettexcoords(wbp w, char *buf)
-{
-   char *s = buf;
-   int i;
-   wcp wc = w->context;
-#ifdef Arrays
-   getatexcoord(wc->texcoords->a[0], s);
-#endif					/* Arrays */   
-
-   s += strlen(s);
-   for (i = 1; i < wc->numtexcoords; i++) {
-      *s++ = ',';
-#ifdef Arrays
-      getatexcoord(wc->texcoords->a[i], s);
-#endif					/* Arrays */   
-      s += strlen(s);
-     }
-   return Succeeded;
-}
-
 /* routines to set attribute values */
 
 /* set the linewidth */
@@ -2023,10 +1900,10 @@ int setlinewidth3D(wbp w, LONG linewid)
    return Succeeded;
 }
 
-/* given a string of semi-colon seperated material
- * properties (ambient, diffuse, specular, emission,
- * and shininess), parse the string and set material
- * properties
+/*
+ * Given a string of semi-colon separated material properties
+ * (ambient, diffuse, specular, emission, and shininess),
+ * parse the string and set material properties.
  */
 int setmaterials(wbp w, char* s)
 {
@@ -2246,14 +2123,13 @@ int setlight(wbp w, char* s, int light)
       }
    /* turn off the light */
    if (!strncmp(s2, "off", 3)) {
-      /* query opengl to make sure the light is not
-          already off */
-	 glGetBooleanv(light, &params);
-	 if (params)
-          glDisable(light);
-       s2 = s2 + 3;
-	 if(*s2 != ',' && *s2 != '\0') return Failed;
-       if(*s2 == ',') s2++;
+      /* query opengl to make sure the light is not already off */
+      glGetBooleanv(light, &params);
+      if (params)
+	 glDisable(light);
+      s2 = s2 + 3;
+      if(*s2 != ',' && *s2 != '\0') return Failed;
+      if(*s2 == ',') s2++;
       }
    while(*s2 != '\0'){
       while(isspace(*s2)) s2++;
@@ -2397,19 +2273,6 @@ int setdim(wbp w, char* s)
    return Succeeded;
 }
 
-void gettexmode(wbp w, char *abuf, dptr answer)
-{
-   wcp wc = w->context;
-   switch (wc->texmode) {
-   case GL_REPLACE: strcpy(abuf, "on"); break;
-   case GL_BLEND: strcpy(abuf, "blend"); break;
-   case GL_MODULATE: strcpy(abuf, "modulate"); break;
-   case 0: strcpy(abuf, "off"); break;
-   default: strcpy(abuf, "unknown texture mode"); break;
-      }
-   MakeStr(abuf, strlen(abuf), answer);
-}
-
 /* set the texture mode, either on or off */
 int settexmode(wbp w, char* s)
 {
@@ -2539,7 +2402,7 @@ int settexcoords(wbp w, char* s)
       if (glIsEnabled(GL_TEXTURE_GEN_T))
          glDisable(GL_TEXTURE_GEN_T);
       /* parse string */
-      /* if Arrays are defined then the first pass counts the # of texcoords */ 
+      /* The first pass counts the # of texcoords */ 
       while(*s2 != '\0') {
          while(*s2 != ',' && *s2 != '\0' ) {
             s3[i] = *s2;
@@ -2602,7 +2465,7 @@ int setslices(wbp w, char* s)
    
    makecurrent(w);
    /* create a list */
-   if (create3Dlisthdr(&f, "slices", 4)!=Succeeded)
+   if (create3Dlisthdr(&f, "slices", 4) != Succeeded)
      return Error;
    
    slices = atoi(s);
@@ -3832,22 +3695,6 @@ int setmeshmode(wbp w, char* s)
    return Succeeded;
 }
 
-void getmeshmode(wbp w, char *answer)
-{
-   switch(w->context->meshmode) {
-      case GL_POINTS: strcpy(answer, "points"); break;
-      case GL_LINES: strcpy(answer, "lines"); break;
-      case GL_LINE_STRIP: strcpy(answer, "linestrip"); break;
-      case GL_LINE_LOOP: strcpy(answer, "lineloop"); break;
-      case GL_TRIANGLES: strcpy(answer, "triangles"); break;
-      case GL_TRIANGLE_FAN: strcpy(answer, "trianglefan"); break;
-      case GL_TRIANGLE_STRIP: strcpy(answer, "trianglestrip"); break;
-      case GL_QUADS: strcpy(answer, "quads"); break;
-      case GL_QUAD_STRIP: strcpy(answer, "quadstrip"); break;
-      case GL_POLYGON: strcpy(answer, "polygon"); break;
-   }
-}
-
 int section_length(wbp w)
 {
    wsp ws = w->window;
@@ -3938,30 +3785,8 @@ int setselectionmode(wbp w, char* s)
    return Succeeded;
 }
 
-int create3Dlisthdr(dptr dp, char *strname, word size){
-   int draw_code;
-   struct descrip funcname, g;	/* do not need to be tended */
-   tended struct b_list *func;
-  
-   /* create a list to save function information */
-   Protect(func = alclist(0, size), return Error);
-   dp->dword = D_List;
-   dp->vword.bptr = (union block *) func;
-   MakeStr(strname, strlen(strname), &funcname);
-   c_put(dp, &funcname);
-  
-   draw_code = si_s2i(redraw3Dnames, strname);
-   if (draw_code == -1)
-      return Error;
-   MakeInt(draw_code, &g);
-   c_put(dp, &g);
-   return Succeeded;
-}
-
 /*
- ***************************************************************
  *                     Dynamic Texture Functions
- ***************************************************************
  */
 
 #define INVISIBLE(a, b, start, finish) (a>finish || b<start)

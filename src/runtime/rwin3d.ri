@@ -123,4 +123,174 @@ dptr rec_structor3d(char *name)
    return 0;
 }
 
+int create3Dlisthdr(dptr dp, char *strname, word size){
+   int draw_code;
+   struct descrip funcname, g;	/* do not need to be tended */
+   tended struct b_list *func;
+  
+   /* create a list to save function information */
+   Protect(func = alclist(0, size), return Error);
+   dp->dword = D_List;
+   dp->vword.bptr = (union block *) func;
+   MakeStr(strname, strlen(strname), &funcname);
+   c_put(dp, &funcname);
+  
+   draw_code = si_s2i(redraw3Dnames, strname);
+   if (draw_code == -1)
+      return Error;
+   MakeInt(draw_code, &g);
+   c_put(dp, &g);
+   return Succeeded;
+}
+
+
+void getmeshmode(wbp w, char *answer)
+{
+   switch(w->context->meshmode) {
+      case U3D_POINTS: strcpy(answer, "points"); break;
+      case U3D_LINES: strcpy(answer, "lines"); break;
+      case U3D_LINE_STRIP: strcpy(answer, "linestrip"); break;
+      case U3D_LINE_LOOP: strcpy(answer, "lineloop"); break;
+      case U3D_TRIANGLES: strcpy(answer, "triangles"); break;
+      case U3D_TRIANGLE_FAN: strcpy(answer, "trianglefan"); break;
+      case U3D_TRIANGLE_STRIP: strcpy(answer, "trianglestrip"); break;
+      case U3D_QUADS: strcpy(answer, "quads"); break;
+      case U3D_QUAD_STRIP: strcpy(answer, "quadstrip"); break;
+      case U3D_POLYGON: strcpy(answer, "polygon"); break;
+   }
+}
+
+void gettexmode(wbp w, char *abuf, dptr answer)
+{
+   wcp wc = w->context;
+   switch (wc->texmode) {
+      case U3D_REPLACE: strcpy(abuf, "on"); break;
+      case U3D_BLEND: strcpy(abuf, "blend"); break;
+      case U3D_MODULATE: strcpy(abuf, "modulate"); break;
+      case 0: strcpy(abuf, "off"); break;
+      default: strcpy(abuf, "unknown texture mode"); break;
+      }
+   MakeStr(abuf, strlen(abuf), answer);
+}
+
+
+void getatexcoord(double d, char *b)
+{
+   if ((double)(int)d == d) sprintf(b,"%d",(int)d);
+   else sprintf(b,"%.3f",d);
+}
+
+/* get the user specified texture coordinates */
+int gettexcoords(wbp w, char *buf)
+{
+   char *s = buf;
+   int i;
+   wcp wc = w->context;
+   getatexcoord(wc->texcoords->a[0], s);
+
+   s += strlen(s);
+   for (i = 1; i < wc->numtexcoords; i++) {
+      *s++ = ',';
+      getatexcoord(wc->texcoords->a[i], s);
+      s += strlen(s);
+     }
+   return Succeeded;
+}
+
+int gettexture(wbp w, dptr dp)
+{
+   wcp wc= w->context;
+   wtp wt = wc->textures;
+   while (wt) {
+      if (wt->texindex == wc->curtexture) {
+	 *dp = wt->d;
+	 return Succeeded;
+	 }
+      wt = wt->next;
+      }
+   return Failed;
+}
+
+
+int init_3dcontext(wcp wc)
+{
+  /* set defaults for attributes */
+   wc->eyeupx = wc->eyeupz = 0.0;
+   wc->eyeupy = 1.0;
+   wc->dim = 3;
+   wc->slices = 15;
+   wc->rings = 10;
+   wc->selectionenabled = 0;
+   wc->selectionrendermode=0;
+   wc->selectionnamelistsize=256;
+   wc->selectionnamecount=0;
+   wc->selectionnamelist = malloc(wc->selectionnamelistsize*sizeof(char*));
+   if (wc->selectionnamelist == NULL) return Failed;
+   wc->app_use_selection3D = 0;
+
+   wc->eyeposx = wc->eyeposy =  wc->eyeposz = wc->eyedirx = wc->eyediry = 0.0;
+   wc->eyedirz = -100.0;
+   wc->autogen = 1;
+   wc->normode = 1;
+   wc->normals = NULL;
+   wc->texmode = wc->numtexcoords = 0;
+   wc->texName = malloc(16 * sizeof(GLuint));
+   if (wc->texName == NULL) return Failed;
+   wc->nalced = 16;
+   wc->maxstex=16;
+
+   wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
+   if (wc->stex == NULL) return Failed;
+
+   wc->texcoords = NULL; 
+   wc->ntextures = 0;
+   wc->curtexture = -1;
+   wc->buffermode = IMMEDIATE3D;
+   wc->meshmode = U3D_POLYGON;
+   return Succeeded;
+}
+
+int copy_3dcontext(wcp wc, wcp rv)
+{
+  /* set defaults for attributes */
+   rv->eyeupx = wc->eyeupx;
+   rv->eyeupz = wc->eyeupz;
+   rv->eyeupy = wc->eyeupy;
+   rv->dim = wc->dim;
+   rv->slices = wc->slices;
+   rv->rings = wc->rings;
+   rv->selectionenabled = wc->selectionenabled;
+   rv->selectionrendermode = wc->selectionrendermode;
+   rv->selectionnamelistsize = wc->selectionnamelistsize;
+   rv->selectionnamecount = wc->selectionnamecount;
+   rv->selectionnamelist = wc->selectionnamelist;
+   rv->app_use_selection3D = wc->app_use_selection3D;
+
+   rv->eyeposx = wc->eyeposx;
+   rv->eyeposy = wc->eyeposy;
+   rv->eyeposz = wc->eyeposz;
+   rv->eyedirx = wc->eyedirx;
+   rv->eyediry = wc->eyediry;
+   rv->eyedirz = wc->eyedirz;
+   rv->autogen = wc->autogen;
+   rv->normode = wc->normode;
+   rv->normals = wc->normals;
+   rv->texmode = wc->texmode;
+   rv->numtexcoords = wc->numtexcoords;
+   rv->texName = wc->texName;
+   rv->nalced = wc->nalced;
+   rv->maxstex = wc->maxstex;
+
+   rv->stex = wc->stex;
+
+   rv->texcoords = wc->texcoords;
+   rv->ntextures = wc->ntextures;
+   rv->curtexture = wc->curtexture;
+   rv->buffermode = wc->buffermode;
+   rv->meshmode = wc->meshmode;
+   return Succeeded;
+}
+
+
+
 #endif					/* Graphics3D */

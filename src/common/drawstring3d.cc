@@ -11,7 +11,7 @@
 // #include <GL/glut.h>
 
 
-#include "ftgl.h"
+#include <FTGL/ftgl.h>
 
 
 static FTFont *fonts;

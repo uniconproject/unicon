@@ -668,6 +668,7 @@ int checkOpenConsole( FILE *w, char *s );
 
    #ifdef Graphics3D
       void init_3dcanvas(wbp  w);
+      void apply_texmodechange(wbp w);
       int add_3dfont(char *fname, int fsize, char ftype);
       int c_traverse(struct b_list *hp, struct descrip * res, int position);
       int cpp_drawstring3d(double x, double y, double z, char *s, char *f,

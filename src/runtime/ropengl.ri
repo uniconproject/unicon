@@ -125,6 +125,7 @@ int release_3d_resources(wbp w)
 #ifdef XWindows
    glXDestroyContext( wd->display, wc->ctx);
 #endif					/* XWindows */
+   return 0;
 }
 
 /*
@@ -913,7 +914,11 @@ int redraw3D(wbp w)
 		  while (numnames) {
 		     name = *bufp++;
 		     --numnames;
-		     if ((0 <= name) && (name < wc->selectionnamecount)) {
+		     /*
+		      * Name being unsigned, it will never be negative,
+		      * but it may be out of range.
+		      */
+		     if (name < wc->selectionnamecount) {
 			strcat(tmpname, wc->selectionnamelist[name]);
 			if (numnames)strcat(tmpname, "-");
 			}
@@ -998,83 +1003,6 @@ int c_realarray(struct b_list *hp, int m, int n, double *a)
       }
    return 1;
 }
-
-#define	REDRAW_CUBE 16
-#define	REDRAW_CYLINDER 32
-#define	REDRAW_DISK 48
-#define	REDRAW_LINE 64
-#define	REDRAW_POINT 80
-#define	REDRAW_POLYGON 96
-#define	REDRAW_SEGMENT 112
-#define	REDRAW_SPHERE 128
-#define	REDRAW_TORUS 144
-#define	REDRAW_FG 160
-#define	REDRAW_FILLPOLYGON 176
-#define	REDRAW_IDENTITY 192
-#define	REDRAW_MATRIXMODE 208
-#define	REDRAW_POPMATRIX 224
-#define	REDRAW_PUSHMATRIX 240
-#define	REDRAW_ROTATE 256
-#define	REDRAW_SCALE 272
-#define	REDRAW_TEXTURE 288
-#define	REDRAW_TEXCOORD 304
-#define	REDRAW_TRANSLATE 320
-#define	REDRAW_DIM 336
-#define	REDRAW_LINEWIDTH 352
-#define	REDRAW_TEXMODE 368
-#define REDRAW_FONT3D 384
-#define REDRAW_DRAWSTRING3D 400
-#define REDRAW_MARK 416
-#define REDRAW_ENDMARK 432
-#define REDRAW_MESHMODE 448
-#define REDRAW_PICK 464
-#define REDRAW_MULTMATRIX 480
-#define REDRAW_NORMALS 496
-#define REDRAW_NORMODE 512
-#define REDRAW_SLICES 528
-#define REDRAW_RINGS 544
-
-/*
- * Map 3D redrawing names to which switch case to use, and how many
- * real number arguments to convert.
- */
-stringint redraw3Dnames[] = {
-   { 0,			34 },		/* number of entries */
-   { "DrawCube",	REDRAW_CUBE | 4 },
-   { "DrawCylinder",	REDRAW_CYLINDER | 6},
-   { "DrawDisk",	REDRAW_DISK | 7 },
-   { "DrawLine",	REDRAW_LINE },
-   { "DrawPoint",	REDRAW_POINT },
-   { "DrawPolygon",	REDRAW_POLYGON },
-   { "DrawSegment",	REDRAW_SEGMENT },
-   { "DrawSphere",	REDRAW_SPHERE | 4 },
-   { "DrawString3d",    REDRAW_DRAWSTRING3D | 3},
-   { "DrawTorus",	REDRAW_TORUS | 5},
-   { "EndMark",         REDRAW_ENDMARK},
-   { "Fg",		REDRAW_FG},
-   { "FillPolygon",	REDRAW_FILLPOLYGON },
-   { "Font3d",          REDRAW_FONT3D },
-   { "Identity",	REDRAW_IDENTITY },
-   { "Mark",            REDRAW_MARK},
-   { "MatrixMode",	REDRAW_MATRIXMODE },
-   { "MeshMode",        REDRAW_MESHMODE },
-   { "MultMatrix",	REDRAW_MULTMATRIX },
-   { "Normals",		REDRAW_NORMALS },
-   { "Pick"	,	REDRAW_PICK},
-   { "PopMatrix",	REDRAW_POPMATRIX },
-   { "PushMatrix",	REDRAW_PUSHMATRIX },
-   { "Rotate",		REDRAW_ROTATE | 4 },
-   { "Scale",		REDRAW_SCALE | 3 },
-   { "Texcoord",	REDRAW_TEXCOORD },
-   { "Texture",		REDRAW_TEXTURE },
-   { "Translate",	REDRAW_TRANSLATE | 3 },
-   { "dim",		REDRAW_DIM },
-   { "linewidth",	REDRAW_LINEWIDTH },
-   { "normode",		REDRAW_NORMODE },
-   { "rings",		REDRAW_RINGS },
-   { "slices",		REDRAW_SLICES },
-   { "texmode",		REDRAW_TEXMODE },
-   };
 
 /*
  * Traverse the list of functions and redraw the scene.
@@ -2217,7 +2145,7 @@ int setlight(wbp w, char* s, int light)
  */
 void apply_texmodechange(wbp w)
 {
-   if (wc->texmode) glEnable(GL_TEXTURE_2D);
+   if (w->context->texmode) glEnable(GL_TEXTURE_2D);
    else glDisable(GL_TEXTURE_2D);
 }
 
@@ -3852,6 +3780,7 @@ imem.im->red_mask, imem.im->green_mask, imem.im->blue_mask, imem.im->bits_per_pi
 #endif
         }
       }
+   return Succeeded;
 }
 
 int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,  

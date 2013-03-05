@@ -183,6 +183,9 @@
    #include <sys/time.h>
    #include <sys/times.h>
    #include <sys/types.h>
+#ifdef MacOSX
+   #include <sys/sysctl.h>
+#endif
    #include <termios.h>
    #include <poll.h>
    #ifdef SysSelectH

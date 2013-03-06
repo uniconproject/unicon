@@ -258,7 +258,9 @@ function{} exit(status)
       }
 #endif					/* Concurrent */
       c_exit((int)status);
+#if !COMPILER
       fail;				/* avoid spurious warning message */
+#endif					/* COMPILER */
       }
 end
 

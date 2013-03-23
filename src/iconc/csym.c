@@ -183,9 +183,7 @@ struct lentry *next;
 /*
  * putloc - make a local symbol table entry and return pointer to it.
  */
-struct lentry *putloc(id,id_type)
-char *id;
-int id_type;
+struct lentry *putloc(char *id,int id_type)
    {
    register struct lentry *ptr;
    register struct lentry **lhash;
@@ -204,9 +202,7 @@ int id_type;
 /*
  * putglob makes a global symbol table entry and returns a pointer to it.
  */
-static struct gentry *putglob(id, id_type)
-char *id;
-int id_type;
+static struct gentry *putglob(char *id, int id_type)
    {
    register struct gentry *ptr;
    register unsigned hashval;
@@ -222,9 +218,7 @@ int id_type;
 /*
  * putlit makes a constant symbol table entry and returns a pointer to it.
  */
-struct centry *putlit(image, littype, len)
-char *image;
-int len, littype;
+struct centry *putlit(char *image, int littype, int len)
    {
    register struct centry *ptr;
    register unsigned hashval;
@@ -242,8 +236,7 @@ int len, littype;
  *  to it if found or NULL if not present.
  */
 
-static struct lentry *llookup(id)
-char *id;
+static struct lentry *llookup(char *id)
    {
    register struct lentry *ptr;
 
@@ -257,8 +250,7 @@ char *id;
  * flookup looks up id in flobal symbol table and returns pointer to
  *  to it if found or NULL if not present.
  */
-struct fentry *flookup(id)
-char *id;
+struct fentry *flookup(char *id)
    {
    register struct fentry *ptr;
 
@@ -273,8 +265,7 @@ char *id;
  * glookup looks up id in global symbol table and returns pointer to
  *  to it if found or NULL if not present.
  */
-struct gentry *glookup(id)
-char *id;
+struct gentry *glookup(char *id)
    {
    register struct gentry *ptr;
 
@@ -289,9 +280,7 @@ char *id;
  * clookup looks up id in constant symbol table and returns pointer to
  *  to it if found or NULL if not present.
  */
-static struct centry *clookup(image,flag)
-char *image;
-int flag;
+static struct centry *clookup(char *image, int flag)
    {
    register struct centry *ptr;
 
@@ -324,8 +313,7 @@ void symdump()
 /*
  * prt_flgs - print flags from a symbol table entry.
  */
-static void prt_flgs(flags)
-int flags;
+static void prt_flgs(int flags)
    {
    if (flags & F_Object)
       fprintf(stderr, " F_Object");
@@ -363,8 +351,7 @@ int flags;
  * ldump displays local symbol table to stderr.
  */
 
-void ldump(lhash)
-struct lentry **lhash;
+void ldump(struct lentry **lhash)
    {
    register int i;
    register struct lentry *lptr;
@@ -451,8 +438,7 @@ void fdump()
 /*
  * prt_flds - print a list of fields stored in reverse order.
  */
-static void prt_flds(f)
-struct fldname *f;
+static void prt_flds(struct fldname *f)
    {
    if (f == NULL)
      return;
@@ -482,10 +468,7 @@ void rdump()
  * alcloc allocates a local symbol table entry, fills in fields with
  *  specified values and returns pointer to new entry.  
  */
-static struct lentry *alcloc(blink, name, flag)
-struct lentry *blink;
-char *name;
-int flag;
+static struct lentry *alcloc(struct lentry *blink, char *name, int flag)
    {
    register struct lentry *lp;
 
@@ -500,10 +483,8 @@ int flag;
  * alcfld allocates a field symbol table entry, fills in the entry with
  *  specified values and returns pointer to new entry.  
  */
-static struct fentry *alcfld(blink, name, rp)
-struct fentry *blink;
-char *name;
-struct par_rec *rp;
+static struct fentry *alcfld(struct fentry *blink, char *name,
+			     struct par_rec *rp)
    {
    register struct fentry *fp;
 
@@ -518,10 +499,7 @@ struct par_rec *rp;
  * alcglob allocates a global symbol table entry, fills in fields with
  *  specified values and returns pointer to new entry.  
  */
-static struct gentry *alcglob(blink, name, flag)
-struct gentry *blink;
-char *name;
-int flag;
+static struct gentry *alcglob(struct gentry *blink, char *name, int flag)
    {
    register struct gentry *gp;
 
@@ -536,10 +514,8 @@ int flag;
  * alclit allocates a constant symbol table entry, fills in fields with
  *  specified values and returns pointer to new entry.  
  */
-static struct centry *alclit(blink, image, len, flag)
-struct centry *blink;
-char *image;
-int len, flag;
+static struct centry *alclit(struct centry *blink, char *image,
+			     int len, int flag)
    {
    register struct centry *cp;
 
@@ -562,10 +538,8 @@ int len, flag;
 /*
  * alcprec allocates an entry for the parent record list for a field.
  */
-static struct par_rec *alcprec(rec, offset, next)
-struct rentry *rec;
-int offset;
-struct par_rec *next;
+static struct par_rec *alcprec(struct rentry *rec, int offset,
+			       struct par_rec *next)
    {
    register struct par_rec *rp;
 
@@ -579,8 +553,7 @@ struct par_rec *next;
 /*
  * resolve - resolve the scope of undeclared identifiers.
  */
-void resolve(proc)
-struct pentry *proc;
+void resolve(struct pentry *proc)
    {
    struct lentry **lhash;
    register struct lentry *lp;
@@ -619,8 +592,7 @@ struct pentry *proc;
 /*
  * try_glb - see if the identifier is or should be a global variable.
  */
-static struct gentry *try_gbl(id)
-char *id;
+static struct gentry *try_gbl(char *id)
    {
    struct gentry *gp;
    register struct implement *iptr;
@@ -655,8 +627,7 @@ char *id;
 /*
  * invoc_grp - called when "invocable all" is encountered.
  */
-void invoc_grp(grp)
-char *grp;
+void invoc_grp(char *grp)
    {
    if (grp == spec_str("all"))
       str_inv = 1; /* enable full string invocation */
@@ -667,9 +638,7 @@ char *grp;
 /*
  * invocbl - indicate that the operator is needed for for string invocation.
  */
-void invocbl(op, arity)
-nodeptr op;
-int arity;
+void invocbl(nodeptr op, int arity)
    {
    struct strinv *si;
    
@@ -787,8 +756,7 @@ void chkstrinv()
 /*
  * opstrinv - set up string invocation for an operator.
  */
-static void opstrinv(ip)
-struct implement *ip;
+static void opstrinv(struct implement *ip)
    {
    char c1, c2;
    char *name;
@@ -845,8 +813,7 @@ struct implement *ip;
  *  and undereferenced arguments are separate symbols) for an operation
  *  in the data base.
  */
-int n_arg_sym(ip)
-struct implement *ip;
+int n_arg_sym(struct implement *ip)
    {
    int i;
    int num;

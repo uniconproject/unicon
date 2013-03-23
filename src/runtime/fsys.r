@@ -2383,7 +2383,9 @@ end
 	    MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
 	    c_exit(EXIT_FAILURE);
+#if !COMPILER
             return retvalue;            /* avoid spurious warning message */
+#endif					/* except on the COMPILER... */
 #else					/* terminate */
 	    return retvalue;
 #endif					/* terminate */

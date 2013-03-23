@@ -229,6 +229,10 @@ Deliberate Syntax Error
    lib_sz += strlen(" -ljpeg ");
 #endif /* HAVE_LIBJPEG */
 
+#ifdef MacOSX
+   lib_sz += strlen(" -lstdc++ ");
+#endif
+
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
 			     lib_sz + 8);
    strcpy(buf, c_comp);
@@ -307,6 +311,9 @@ Deliberate Syntax Error
 #endif /* HAVE_LIBJPEG */
 
    strcat(s, LinkLibs);
+#ifdef MacOSX
+   strcat(s, " -lstdc++ ");
+#endif
 
    /*
     * mdw: emit cc command-line if verbosity is set above 2

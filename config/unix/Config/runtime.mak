@@ -29,18 +29,18 @@ XOBJS=	xcnv.o xdata.o xdef.o xerrmsg.o xextcall.o xfconv.o xfload.o xfmath.o\
 
 COBJS=	../common/long.o ../common/time.o ../common/save.o \
 	../common/rswitch.o ../common/redirerr.o ../common/xwindow.o \
-	../common/alloc.o ../common/mlocal.o ../common/filepart.o ../common/drawstring3d.o
+	../common/alloc.o ../common/mlocal.o ../common/filepart.o $(COMMONDRAWSTRING)
 
-ICOBJS=	long.o time.o save.o rswitch.o redirerr.o xwindow.o alloc.o drawstring3d.o
+ICOBJS=	long.o time.o save.o rswitch.o redirerr.o xwindow.o alloc.o $(DRAWSTRING)
 
 OBJS=	$(XOBJS) $(COBJS)
 
 interp_all:
-	cd ../common; $(MAKE) $(ICOBJS) $(XPM) $(GDBM) $(LIBTP)
+	cd ../common; $(MAKE) $(ICOBJS) $(XPM) $(GDBM) $(LIBTP) $(DRAWSTRING)
 	$(MAKE) iconx
 
 iconx: $(OBJS)
-	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL)
+	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP)
 	cp iconx ../../bin
 	strip ../../bin/iconx
 
@@ -346,11 +346,11 @@ rt.a: ../common/rswitch.o ../common/long.o ../common/time.o ../common/mlocal.o\
       ovalue.o ralc.o rcoexpr.o rcomp.o rdebug.o rlrgint.o rlocal.o rmemmgt.o\
       rmisc.o rstruct.o rsys.o rwinrsc.o rgfxsys.o rwinsys.o fxtra.o raudio.o\
       rmsg.o rposix.o rwindow.o\
-      ../common/xwindow.o ../common/alloc.o ../common/drawstring3d.o
+      ../common/xwindow.o ../common/alloc.o $(COMMONDRAWSTRING)
 	rm -f rt.a
 	ar qc rt.a `sed 's/$$/.o/' rttfull.lst` ../common/rswitch.o\
 	    ../common/long.o ../common/time.o ../common/mlocal.o\
-	    ../common/xwindow.o ../common/alloc.o ../common/drawstring3d.o
+	    ../common/xwindow.o ../common/alloc.o $(COMMONDRAWSTRING)
 	cp rt.a rt.db ../common/dlrgint.o ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 

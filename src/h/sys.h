@@ -343,8 +343,10 @@
 #endif					/* Dbm */
 
 #ifdef ISQL
+#ifdef MacOSX
   /* to prevent double-typedef of BOOL on some platforms */
   #define BOOL rumplestiltskin
+#endif
   #include <sqlext.h>
 
 #ifdef DebugHeap

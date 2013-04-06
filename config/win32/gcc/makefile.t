@@ -2,7 +2,7 @@ include ../../makedefs
 
 # /Ox for maximum optimzation, /Zi for debugging...
 #CFLAGS= /D_X86_ /DWIN32 /Ox /D$(CONSOLE) /I..\gdbm /I..\libtp
-CFLAGS= $(ISFLAG) -D_X86_ -DWIN32 -O -D$(CONSOLE) -I../gdbm -I../libtp
+CFLAGS= $(ISFLAG) -D$(CONSOLE) -I../gdbm -I../libtp
 HFLAGS=
 LDFLAGS= $(ISFLAG)
 LIBS=

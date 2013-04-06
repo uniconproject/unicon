@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 12.0.1
+AppVerName=Windows Unicon Version 12.1.1 
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.0.1_concurrency-support
+OutputBaseFilename=setup-unicon_12.1.1_threads(32-bit)
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -34,6 +34,7 @@ Source: "\unicon\config\win32\gcc\uninstall.ico"; DestDir: "{app}"; Flags: ignor
 Source: "\unicon\config\win32\gcc\internet.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "\unicon\bin\*.h"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; Flags: ignoreversion
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; Flags: ignoreversion
@@ -89,6 +90,7 @@ Source: "\unicon\uni\3d\*.icn"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "\unicon\uni\3d\*.u"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "\unicon\uni\3d\uniclass.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "\unicon\uni\3d\viewer\*.icn"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
+Source: "\unicon\uni\3d\viewer\makefile"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "\unicon\uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: ignoreversion
 Source: "\unicon\tests\thread\*.*"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 

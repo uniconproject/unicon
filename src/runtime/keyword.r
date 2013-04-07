@@ -422,6 +422,28 @@ keyword{1,*} features
 }
 #endif					/* REPO_REVISION */
 
+{
+         char *s, *ss, *sss;
+
+#if ARM 
+         sss = "Arch arm";
+#else
+      	 sss = "Arch x86";
+#endif
+
+#if WordBits == 16
+    	 ss = "_16";
+#elif WordBits == 32
+         ss = "_32";
+#elif WordBits == 64
+         ss = "_64";
+#endif
+	 s = alcstr(NULL, strlen(ss) + strlen(sss) + 1);
+	 strcpy(s, sss);
+	 strcat(s, ss);
+	 suspend C_string s;
+}
+
 #if defined(MSWindows) && defined(SM_DIGITIZER)
       {
       int value = GetSystemMetrics(SM_DIGITIZER);

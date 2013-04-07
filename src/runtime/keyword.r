@@ -393,7 +393,34 @@ keyword{1,*} features
 #else					/* COMPILER */
 #define Feature(guard,sym,kwval) if (kwval) suspend C_string kwval;
 #endif					/* COMPILER */
+
 #include "../h/feature.h"
+
+#passthru #ifdef __GNUC__
+{
+         char *s, ss[32];
+#passthru #ifdef __MINGW32__
+	 sprintf(ss, "CCompiler MinGW gcc %d.%d.%d",
+	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#passthru #else				/* __MINGW32__ */
+	 sprintf(ss, "CCompiler gcc %d.%d.%d",
+	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#passthru #endif				/* __MINGW32__ */
+	 s = alcstr(NULL, strlen(ss) + 1);
+	 strcpy(s, ss);
+	 suspend C_string s;
+}
+#passthru #endif				/* __GNUC__ */
+
+#ifdef REPO_REVISION
+{
+         char *s;
+	 s = alcstr(NULL, strlen(REPO_REVISION) + strlen("Revision ") + 1);
+	 strcpy(s, "Revision ");
+	 strcat(s, REPO_REVISION);
+	 suspend C_string s;
+}
+#endif					/* REPO_REVISION */
 
 #if defined(MSWindows) && defined(SM_DIGITIZER)
       {

@@ -2,6 +2,8 @@
 
 include ../../Makedefs
 
+REPO_REV='"$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"'
+
 RM=rm -f
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
@@ -47,257 +49,257 @@ iconx: $(OBJS)
 xcnv.o: cnv.r $(HDRS)
 	../../bin/rtt -x cnv.r
 	$(CC) $(CFLAGS) -c xcnv.c
-	rm xcnv.c
+	$(RM) xcnv.c
 
 xdata.o: data.r $(HDRS) ../h/kdefs.h ../h/fdefs.h ../h/odefs.h
 	../../bin/rtt -x data.r
 	$(CC) $(CFLAGS) -c xdata.c
-	rm xdata.c
+	$(RM)  xdata.c
 
 xdef.o: def.r $(HDRS)
 	../../bin/rtt -x def.r
 	$(CC) $(CFLAGS) -c xdef.c
-	rm xdef.c
+	$(RM) xdef.c
 
 xerrmsg.o: errmsg.r $(HDRS)
 	../../bin/rtt -x errmsg.r
 	$(CC) $(CFLAGS) -c xerrmsg.c
-	rm xerrmsg.c
+	$(RM) xerrmsg.c
 
 xextcall.o: extcall.r $(HDRS)
 	../../bin/rtt -x extcall.r
 	$(CC) $(CFLAGS) -c xextcall.c
-	rm xextcall.c
+	$(RM) xextcall.c
 
 xfconv.o: fconv.r $(HDRS)
 	../../bin/rtt -x fconv.r
 	$(CC) $(CFLAGS) -c xfconv.c
-	rm xfconv.c
+	$(RM) xfconv.c
 
 xfdb.o: fdb.r $(HDRS)
 	../../bin/rtt -x fdb.r
 	$(CC) $(CFLAGS) -c xfdb.c
-	rm xfdb.c
+	$(RM) xfdb.c
 
 xfload.o: fload.r $(HDRS)
 	../../bin/rtt -x fload.r
 	$(CC) $(CFLAGS) -c xfload.c
-	rm xfload.c
+	$(RM) xfload.c
 
 xfmath.o: fmath.r $(HDRS)
 	../../bin/rtt -x fmath.r
 	$(CC) $(CFLAGS) -c xfmath.c
-	rm xfmath.c
+	$(RM) xfmath.c
 
 xfmisc.o: fmisc.r $(HDRS)
 	../../bin/rtt -x fmisc.r
 	$(CC) $(CFLAGS) -c xfmisc.c
-	rm xfmisc.c
+	$(RM) xfmisc.c
 
 xfmonitr.o: fmonitr.r $(HDRS)
 	../../bin/rtt -x fmonitr.r
 	$(CC) $(CFLAGS) -c xfmonitr.c
-	rm xfmonitr.c
+	$(RM) xfmonitr.c
 
 xfscan.o: fscan.r $(HDRS)
 	../../bin/rtt -x fscan.r
 	$(CC) $(CFLAGS) -c xfscan.c
-	rm xfscan.c
+	$(RM) xfscan.c
 
 xfstr.o: fstr.r $(HDRS)
 	../../bin/rtt -x fstr.r
 	$(CC) $(CFLAGS) -c xfstr.c
-	rm xfstr.c
+	$(RM) xfstr.c
 
 xfstranl.o: fstranl.r $(HDRS)
 	../../bin/rtt -x fstranl.r
 	$(CC) $(CFLAGS) -c xfstranl.c
-	rm xfstranl.c
+	$(RM) xfstranl.c
 
 xfstruct.o: fstruct.r $(HDRS)
 	../../bin/rtt -x fstruct.r
 	$(CC) $(CFLAGS) -c xfstruct.c
-	rm xfstruct.c
+	$(RM) xfstruct.c
 
 xfsys.o: fsys.r $(HDRS)
 	../../bin/rtt -x fsys.r
 	$(CC) $(CFLAGS) -c xfsys.c
-	rm xfsys.c
+	$(RM) xfsys.c
 
 xfwindow.o: fwindow.r $(HDRS) $(GRAPHICSHDRS)
 	../../bin/rtt -x fwindow.r
 	$(CC) $(CFLAGS) -c xfwindow.c
-	rm xfwindow.c
+	$(RM) xfwindow.c
 
 ximain.o: imain.r $(HDRS)
 	../../bin/rtt -x imain.r
 	$(CC) $(CFLAGS) -c ximain.c
-	rm ximain.c
+	$(RM) ximain.c
 
 ximisc.o: imisc.r $(HDRS)
 	../../bin/rtt -x imisc.r
 	$(CC) $(CFLAGS) -c ximisc.c
-	rm ximisc.c
+	$(RM) ximisc.c
 
 xinit.o: init.r $(HDRS) ../h/odefs.h ../h/version.h
 	../../bin/rtt -x init.r
 	$(CC) $(CFLAGS) -c xinit.c
-	rm xinit.c
+	$(RM) xinit.c
 
 xinterp.o: interp.r $(HDRS)
 	../../bin/rtt -x interp.r
 	$(CC) $(CFLAGS) -c xinterp.c
-	rm xinterp.c
+	$(RM) xinterp.c
 
 xinvoke.o: invoke.r $(HDRS)
 	../../bin/rtt -x invoke.r
 	$(CC) $(CFLAGS) -c xinvoke.c
-	rm xinvoke.c
+	$(RM) xinvoke.c
 
 xkeyword.o: keyword.r $(HDRS) ../h/feature.h ../h/version.h
 	../../bin/rtt -x keyword.r
 	$(CC) $(CFLAGS) -c xkeyword.c
-	rm xkeyword.c
+	$(RM) xkeyword.c
 
 xlmisc.o: lmisc.r $(HDRS)
 	../../bin/rtt -x lmisc.r
 	$(CC) $(CFLAGS) -c xlmisc.c
-	rm xlmisc.c
+	$(RM) xlmisc.c
 
 xoarith.o: oarith.r $(HDRS)
 	../../bin/rtt -x oarith.r
 	$(CC) $(CFLAGS) -c xoarith.c
-	rm xoarith.c
+	$(RM) xoarith.c
 
 xoasgn.o: oasgn.r $(HDRS)
 	../../bin/rtt -x oasgn.r
 	$(CC) $(CFLAGS) -c xoasgn.c
-	rm xoasgn.c
+	$(RM) xoasgn.c
 
 xocat.o: ocat.r $(HDRS)
 	../../bin/rtt -x ocat.r
 	$(CC) $(CFLAGS) -c xocat.c
-	rm xocat.c
+	$(RM) xocat.c
 
 xocomp.o: ocomp.r $(HDRS)
 	../../bin/rtt -x ocomp.r
 	$(CC) $(CFLAGS) -c xocomp.c
-	rm xocomp.c
+	$(RM) xocomp.c
 
 xomisc.o: omisc.r $(HDRS)
 	../../bin/rtt -x omisc.r
 	$(CC) $(CFLAGS) -c xomisc.c
-	rm xomisc.c
+	$(RM) xomisc.c
 
 xoref.o: oref.r $(HDRS)
 	../../bin/rtt -x oref.r
 	$(CC) $(CFLAGS) -c xoref.c
-	rm xoref.c
+	$(RM) xoref.c
 
 xoset.o: oset.r $(HDRS)
 	../../bin/rtt -x oset.r
 	$(CC) $(CFLAGS) -c xoset.c
-	rm xoset.c
+	$(RM) xoset.c
 
 xovalue.o: ovalue.r $(HDRS)
 	../../bin/rtt -x ovalue.r
 	$(CC) $(CFLAGS) -c xovalue.c
-	rm xovalue.c
+	$(RM) xovalue.c
 
 xralc.o: ralc.r $(HDRS)
 	../../bin/rtt -x ralc.r
 	$(CC) $(CFLAGS) -c xralc.c
-	rm xralc.c
+	$(RM) xralc.c
 
 xrcoexpr.o: rcoexpr.r $(HDRS)
 	../../bin/rtt -x rcoexpr.r
 	$(CC) $(CFLAGS) -c xrcoexpr.c
-	rm xrcoexpr.c
+	$(RM) xrcoexpr.c
 
 xrcomp.o: rcomp.r $(HDRS)
 	../../bin/rtt -x rcomp.r
 	$(CC) $(CFLAGS) -c xrcomp.c
-	rm xrcomp.c
+	$(RM) xrcomp.c
 
 xrdb.o: rdb.r $(HDRS)
 	../../bin/rtt -x rdb.r
 	$(CC) $(CFLAGS) -c xrdb.c
-	rm xrdb.c
+	$(RM) xrdb.c
 
 xrdebug.o: rdebug.r $(HDRS)
 	../../bin/rtt -x rdebug.r
 	$(CC) $(CFLAGS) -c xrdebug.c
-	rm xrdebug.c
+	$(RM) xrdebug.c
 
 xrlocal.o: rlocal.r $(HDRS)
 	../../bin/rtt -x rlocal.r
 	$(CC) $(CFLAGS) -c xrlocal.c
-	rm xrlocal.c
+	$(RM) xrlocal.c
 
 xrlrgint.o: rlrgint.r $(HDRS)
 	../../bin/rtt -x rlrgint.r
 	$(CC) $(CFLAGS) -c xrlrgint.c
-	rm xrlrgint.c
+	$(RM) xrlrgint.c
 
 xrmemmgt.o: rmemmgt.r $(HDRS)
 	../../bin/rtt -x rmemmgt.r
 	$(CC) $(CFLAGS) -c xrmemmgt.c
-	rm xrmemmgt.c
+	$(RM) xrmemmgt.c
 
 xrmisc.o: rmisc.r $(HDRS)
 	../../bin/rtt -x rmisc.r
 	$(CC) $(CFLAGS) -c xrmisc.c
-	rm xrmisc.c
+	$(RM) xrmisc.c
 
 xrmsg.o: rmsg.r $(HDRS) ../h/messagin.h
 	../../bin/rtt -x rmsg.r
 	$(CC) $(CFLAGS) -c xrmsg.c
-	rm xrmsg.c
+	$(RM) xrmsg.c
 
 xrposix.o: rposix.r $(HDRS) ../h/posix.h
 	../../bin/rtt -x rposix.r
 	$(CC) $(CFLAGS) -c xrposix.c
-	rm xrposix.c
+	$(RM) xrposix.c
 
 xrstruct.o: rstruct.r $(HDRS)
 	../../bin/rtt -x rstruct.r
 	$(CC) $(CFLAGS) -c xrstruct.c
-	rm xrstruct.c
+	$(RM) xrstruct.c
 
 xrsys.o: rsys.r $(HDRS)
 	../../bin/rtt -x rsys.r
 	$(CC) $(CFLAGS) -c xrsys.c
-	rm xrsys.c
+	$(RM) xrsys.c
 
 xrwinrsc.o: rwinrsc.r $(HDRS) $(GRAPHICSHDRS) rxrsc.ri
 	../../bin/rtt -x rwinrsc.r
 	$(CC) $(CFLAGS) -c xrwinrsc.c
-	rm xrwinrsc.c
+	$(RM) xrwinrsc.c
 
 xrgfxsys.o: rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
 	../../bin/rtt -x rgfxsys.r
 	$(CC) $(CFLAGS) -c xrgfxsys.c
-	rm xrgfxsys.c
+	$(RM) xrgfxsys.c
 
 xrwinsys.o: rwinsys.r $(HDRS) $(GRAPHICSHDRS) rxwin.ri ropengl.ri
 	../../bin/rtt -x rwinsys.r
 	$(CC) $(CFLAGS) -c xrwinsys.c
-	rm xrwinsys.c
+	$(RM) xrwinsys.c
 
 xrwindow.o: rwindow.r $(HDRS) $(GRAPHICSHDRS)
 	../../bin/rtt -x rwindow.r
 	$(CC) $(CFLAGS) -c xrwindow.c
-	rm xrwindow.c
+	$(RM) xrwindow.c
 
 xfxtra.o: fxtra.r $(HDRS) ../h/posix.h fxposix.ri fxpattrn.ri fxaudio.ri
 	../../bin/rtt -x fxtra.r
 	$(CC) $(CFLAGS) -c xfxtra.c
-	rm xfxtra.c
+	$(RM) xfxtra.c
 
 xraudio.o: raudio.r 
 	../../bin/rtt -x raudio.r
 	$(CC) $(CFLAGS) -c xraudio.c
-	rm xraudio.c
+	$(RM) xraudio.c
 
 ####################################################################
 #

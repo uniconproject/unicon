@@ -5,6 +5,9 @@ LDFLAGS= $(ISFLAG) -Xlinker --stack -Xlinker
 # -g for debugging, -Os to minimize space...
 CFLAGS= $(ISFLAG) -DMSNT -D$(CONSOLE) -I../gdbm -I../libtp
 
+
+REPO_REV='"$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"'
+
 RTT=../../bin/rtt
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
@@ -210,8 +213,8 @@ xistart.$(O): istart.r $(HDRS)
 	$(RM) xistart.c
 
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h
-	$(RTT) -x keyword.r
-	$(CC) $(CFLAGS) -c xkeyword.c
+	$(RTT) -DREPO_REVISION=$(REPO_REV) -x keyword.r
+	$(CC) $(CFLAGS) -DREPO_REVISION=$(REPO_REV) -c xkeyword.c
 	$(RM) xkeyword.c
 
 xlmisc.$(O): lmisc.r $(HDRS)

@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 12.1.1 
+AppVerName=Windows Unicon Version 12.1.1
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.1.1_threads(32-bit)
+OutputBaseFilename=setup-unicon_12.1.1_threads(32-bit)_rev3410
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -35,6 +35,7 @@ Source: "\unicon\config\win32\gcc\internet.ico"; DestDir: "{app}"; Flags: ignore
 Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\bin\*.h"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "\unicon\dat\fonts\*"; DestDir: "{app}\dat\fonts"; Flags: ignoreversion
 Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; Flags: ignoreversion
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; Flags: ignoreversion

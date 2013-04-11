@@ -12,21 +12,23 @@ import parser
 # Represents a file specified as a command line argument.
 #
 # parsed_program is the result of parsing the file
-# local_package_level_syms is a table of names to SymbolInfos defined in this file,
-# being the top-level symbols defined in this file (classes,records,globals, procs)
+# local_package_level_syms is a table of names to SymbolInfos defined in this
+# file, being the top-level symbols defined in this file
+# (classes,records,globals, procs)
+#
 # local_package_level_class_syms is as above, but just classes
 # imported_syms is a table of names -> lists of SymbolInfos imported
-# imported_class_syms is a table of names -> lists of SymbolInfos imported, but only 
-# concerning class symbols.
+# imported_class_syms is a table of names -> lists of SymbolInfos imported,
+# but only concerning class symbols.
 # filearg_classes is a list of FileArgClass objects, representing the classes
 # defined in the file
-# filearg_dependencies a table of the FileArgs upon which this FileArg depends; the
-# values provide a set of the SymbolInfos causing the dependency.
-# file_dependencies a table of file names upon which this FileArg depends; the values
-# are again  a set of the SymbolInfos causing the dependency.
+# filearg_dependencies a table of the FileArgs upon which this FileArg depends;
+# the values provide a set of the SymbolInfos causing the dependency.
+# file_dependencies a table of file names upon which this FileArg depends; the
+# values are again  a set of the SymbolInfos causing the dependency.
 # include_files is a set of the include files this file depends upon
-# external_dependencies is a set of the external files which contain class definitions
-# which are superclasses of some of the classes in this file.
+# external_dependencies is a set of the external files which contain class
+# definitions which are superclasses of some of the classes in this file.
 # unused_imports is initially the imports of the file.  As symbols are encountered
 # their package is removed from this set.  If the final value is non-empty, then an
 # error occurs.  This prevents compilation errors when a file tries to import
@@ -47,8 +49,9 @@ class FileArg(file,
               )
 
    #
-   # Get the symbol info for the symbol(string) sym.  This may refer to a local package-level symbol,
-   # or perhaps one of the imported symbols, or neither of these.
+   # Get the symbol info for the symbol(string) sym.  This may refer to
+   # a local package-level symbol, or perhaps one of the imported symbols,
+   # or neither of these.
    #
    method get_unqualified_symbol_info(sym)
       local l, si
@@ -58,7 +61,8 @@ class FileArg(file,
       if member(imported_syms, sym) then {
          l := imported_syms[sym]
          if *l > 1 then
-            err("Use of ambiguous symbol " || sym || " in file " || file || ".  Use the :: operator to resolve the ambiguity.")
+            err("Use of ambiguous symbol " || sym || " in file " || file ||
+		".  Use the :: operator to resolve the ambiguity.")
          return l[1]
       }
 
@@ -67,7 +71,8 @@ class FileArg(file,
    end
 
    #
-   # This is the same as the above, but only concerns itself with classes.  It is used to resolve symbols
+   # This is the same as the above, but only concerns itself with classes.
+   # It is used to resolve symbols
    # in the superclass declarations and in dotted field references.
    #
    method get_unqualified_class_symbol_info(sym)
@@ -78,12 +83,14 @@ class FileArg(file,
       if member(imported_class_syms, sym) then {
          l := imported_class_syms[sym]
          if *l > 1 then
-            err("Use of ambiguous class symbol " || sym || " in file " || file || ".  Use the :: operator to resolve the ambiguity.")
+            err("Use of ambiguous class symbol " || sym || " in file " ||
+		file || ".  Use the :: operator to resolve the ambiguity.")
          return l[1]
       }
 
       #
-      # This part of the symbol table only contains classes, so no different to above.
+      # This part of the symbol table only contains classes, so no different
+      # than above.
       #
       if si := symbol_table.lookup_unqualified_symbol_info(sym) then
          return si
@@ -112,7 +119,8 @@ class FileArg(file,
    method init1(file) 
       local sym, si, cl, fc
       self.file := file
-      self.parsed_program := ParsedProgram(parse_unicon(file)) | err("Couldn't parse " || file)
+      self.parsed_program := ParsedProgram(parse_unicon(file)) |
+	 err("Couldn't parse " || file)
       
       self.local_package_level_syms := table()
       self.local_package_level_class_syms := table()
@@ -122,14 +130,15 @@ class FileArg(file,
       unused_imports := set(parsed_program.imports)
 
       # Globals, records, procedures
-      every sym := !parsed_program.globals | (!parsed_program.records | !parsed_program.procedures).get_name() do {
+      every sym := !parsed_program.globals |
+	 (!parsed_program.records | !parsed_program.procedures).get_name() do {
          si := SymbolInfo()
          si.file := self.file
          si.name := sym
          si.package_name := \parsed_program.package_name
          si.filearg := self 
          insert(local_package_level_syms, sym, si)
-     }
+	 }
 
       filearg_classes := []
       # Classes
@@ -160,9 +169,9 @@ class FileArg(file,
    # we are importing packages p1, p2 and they both have a symbol sym,
    # then imported_syms["sym"] -> [SymInfo1, SymInfo2] where the two
    # SymInfo instances correspond to the two symbols.  This makes it
-   # easy to detect ambiguities later on.  A similar table of imported classes
-   # is created for class symbols only; this is really a subset of
-   # the main table.
+   # easy to detect ambiguities later on.  A similar table of imported
+   # classes is created for class symbols only; this is really a subset
+   # of the main table.
    #
    method init2()
       local imp, t, x, l
@@ -170,7 +179,8 @@ class FileArg(file,
       imported_class_syms := table()
 
       every imp := \parsed_program.package_name | !parsed_program.imports do {
-         t := symbol_table.get_table_for_package(imp) | err("unknown package " || imp || " in file " || file)
+         t := symbol_table.get_table_for_package(imp) |
+	    err("unknown package " || imp || " in file " || file)
          # Process each symbol in the package.
          every x := !sort(t) do {
             if member(imported_syms, x[1]) then
@@ -215,7 +225,8 @@ class FileArg(file,
    method init4()
       local s, dependency_info, fc, m, p
       if \debug then {
-         s := "computing deps for file " || self.file || ".  the local package level syms are : {"
+         s := "computing deps for file " || self.file ||
+	    ".  the local package level syms are : {"
          every s ||:= (!sort(local_package_level_syms))[1] || ","
          if s[-1] == "," then s[-1] := "}" else s ||:= "}"
          write(s)
@@ -223,7 +234,8 @@ class FileArg(file,
 
       dependency_info := []
       every fc := !filearg_classes do {
-         every m := !fc.parsed_class.methods | \fc.parsed_class.initially_method do
+         every m := !fc.parsed_class.methods |
+	    \fc.parsed_class.initially_method do
             add_deps_for_function(m, fc.get_inherited_syms())
       }
       every p := !parsed_program.procedures do
@@ -232,7 +244,8 @@ class FileArg(file,
       include_files := get_include_dependencies(self.file)
 
       if \debug then {
-         write("the returned set of include file deps was : " || set_str(include_files))
+         write("the returned set of include file deps was : " ||
+	       set_str(include_files))
       }
 
       return
@@ -245,8 +258,9 @@ class FileArg(file,
          write("adding deps for function ", pf.name, " in file ", self.file)
       local_vars := set(pf.args ||| pf.locals ||| pf.statics)
       if \debug then {
-         write("in addition to the package level syms, will also ignore the following local vars : " || set_str(local_vars))
-         write("and the following self_vars : " || set_str(\self_vars))
+         write("in addition to the package level syms, will also ignore ",
+	       "the following local vars : ", set_str(local_vars))
+         write("and the following self_vars : ", set_str(\self_vars))
       }
       res1 := set()
       res2 := set()
@@ -254,13 +268,16 @@ class FileArg(file,
       scopecheck_expr(\pf.body_node, res1, res2, local_vars, self_vars)
 
       if \debug then {
-         write("the returned set of symbols to add find deps was (res1) : " || set_str(res1))
-         write("the returned set of symbols to add find deps was (res2): " || set_str(res2))
+         write("the returned set of symbols to add find deps was (res1) : ",
+	       set_str(res1))
+         write("the returned set of symbols to add find deps was (res2): ",
+	       set_str(res2))
       }
 
       #
-      # Note that no dependencies are generated for symbols in the default package.  They do not need to
-      # be mangled, so the compilation order is irrelevant.  This is in contrast to superclass declarations.
+      # Note that no dependencies are generated for symbols in the default
+      # package.  They do not need to be mangled, so the compilation order
+      # is irrelevant.  This is in contrast to superclass declarations.
       #
 
       every sym := !sort(res1) do {
@@ -271,7 +288,8 @@ class FileArg(file,
          }
       }
       every sym := !sort(res2) do {
-         if si := get_unqualified_class_symbol_info(sym) & \si.package_name then {
+         if si := get_unqualified_class_symbol_info(sym) &
+	    \si.package_name then {
             if \si.filearg then
                add_dep(si)
             used_import(si.package_name)
@@ -286,9 +304,9 @@ class FileArg(file,
          "treenode": {
             case node.label of {
                #
-               # An absolute package ref pack::sym may create a dependency if pack is
-               # no this file's package, and the sym is in a filearg.  This is necessary for example
-               # in the following circumstance :-
+               # An absolute package ref pack::sym may create a dependency if
+	       # pack is not this file's package, and the sym is in a filearg.
+	       # This is necessary for example in the following circumstance :-
                # File 1                  File 2                  File 3
                # package a               package b               package b
                # import b                procedure b1()          procedure b2
@@ -297,16 +315,18 @@ class FileArg(file,
                #    b::b2()
                # end
                #
-               # Here 1 depends on 2 and 3.  If it only depended on 2 then 3 could be compiled after
-               # 1.  Then, 1 would only have a link statement generated for 2, and importing a would not
+               # Here 1 depends on 2 and 3.  If it only depended on 2 then 3
+	       # could be compiled after 1.  Then, 1 would only have a link
+	       # statement generated for 2, and importing a would not
                # mean a link to file 3, ie b::b2 would be null.
                #
-               # Moreover if the call to b1() was removed, then without a dependency to file 3, file 1
-               # could be compiled first.  On a clean build, this could mean package b did not exist,
+               # Moreover if the call to b1() was removed, then without a
+	       # dependency to file 3, file 1 could be compiled first.  On a
+	       # clean build, this could mean package b did not exist,
                # halting the compilation on error.
                #
-               # Neither of these two circumstances apply if the absolute ref refers to something else
-               # in this file's package.
+               # Neither of these two circumstances apply if the absolute ref
+	       # refers to something else in this file's package.
                "packageref" : {
                   if *node.children = 3 then {
                      if (parsed_program.package_name ~=== node.children[1].s) &
@@ -315,7 +335,8 @@ class FileArg(file,
                            si := t[node.children[3].s]
                            if \si.filearg then {
                               if \debug then 
-                                 write("creating dependency on absolute reference si=", si.to_string())
+                                 write("creating dependency on absolute ",
+				       "reference si=", si.to_string())
                               add_dep(si)
                            }
                         }
@@ -330,7 +351,8 @@ class FileArg(file,
                   scopecheck_field(node, res1, res2, local_vars, self_vars)
                }
                default :
-                  every scopecheck_expr(!node.children, res1, res2, local_vars, self_vars)
+                  every scopecheck_expr(!node.children, res1, res2,
+					local_vars, self_vars)
             }
          }
          "token": {
@@ -352,12 +374,16 @@ class FileArg(file,
          if type(rhs) == "token" then {
             if type(lhs) == "token" & lhs.s === "self" then {
                # eg self.Superclass.meth()
-               member(\self_vars | local_package_level_class_syms, rhs.s) | insert(res2, rhs.s)
-            } else {
+               member(\self_vars | local_package_level_class_syms, rhs.s) |
+		  insert(res2, rhs.s)
+	       }
+	    else {
                # For example, this could be
                # x := B() where B extends A
-               # x.A.one() invokes the method one() in A.  Here, A will be mangled possibly.
-               member(local_package_level_class_syms, rhs.s) | insert(res2, rhs.s)
+               # x.A.one() invokes the method one() in A.  Here, A will be
+	       # mangled possibly.
+               member(local_package_level_class_syms, rhs.s) |
+		  insert(res2, rhs.s)
             }
          }
 
@@ -368,8 +394,9 @@ class FileArg(file,
    end
 
    #
-   # Add the given class_info to the set of external dependencies, namely files which hold the
-   # definitions of classes which are superclasses of classes in this file.
+   # Add the given class_info to the set of external dependencies, namely
+   # files which hold the definitions of classes which are superclasses of
+   # classes in this file.
    #
    method add_external_dependency(class_info)
       local file, pack
@@ -412,7 +439,8 @@ class FileArg(file,
          s ||:= e || ","
       }
       s[-1] := ""
-      err("File " || file || " imports the following package(s) unnecessarily: " || s)
+      err("File " || file ||
+	  " imports the following package(s) unnecessarily: " || s)
    end
 
    #
@@ -432,7 +460,8 @@ class FileArg(file,
          every i := 1 to *l do {
             x := l[i]
             y := l[i + 1] | self
-            s ||:= x.file || " depends on " || y.file || symbol_info_set_str(x.filearg_dependencies[y]) || "\n"
+            s ||:= x.file || " depends on " || y.file ||
+	       symbol_info_set_str(x.filearg_dependencies[y]) || "\n"
          }
          err(s)
       }
@@ -452,9 +481,10 @@ class FileArg(file,
       local s, x
       s := ""
       every x := !sort(filearg_dependencies) do {
-         s ||:= " " || x[1].file || symbol_info_set_str(x[2])
-      }
-      every s ||:= " " || !sort(external_dependencies) || "(external superclass)"
+	 s ||:= " " || x[1].file || symbol_info_set_str(x[2])
+	 }
+      every s ||:= " " || !sort(external_dependencies) ||
+	 "(external superclass)"
       every s ||:= " " || !sort(include_files) || "($include)"
 
       if *s = 0 then

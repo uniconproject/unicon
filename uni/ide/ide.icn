@@ -74,10 +74,7 @@ class IDE (
       local f, L, line
       L := CurrentEditBox().get_contents() | []
       if f := open(lpr, "pw") then {
-	 every line := !L do {
-	    line := trim(line, '\^m')
-	    write(f, line)
-	  }
+	 every write(f, trim(!L,'\^m'))
 	 close(f)
        }
       else {
@@ -181,10 +178,8 @@ class IDE (
 
    method on_makeexe_btn(ev)
       MsgBox.set_contents([""])
-      #if  (CurrentEditBox().modified == 1) then 
-	 save()
-      #write("---------------------->>",CurrentTabItem().label)
-	 complink()
+      save()
+      complink()
    end
 
    method on_method_btn(ev)
@@ -198,8 +193,7 @@ class IDE (
    end
 
    method on_run_btn(ev)
-      #if  (CurrentEditBox().modified == 1) then 
-	 save()
+      save()
       run()
    end
 
@@ -212,9 +206,9 @@ class IDE (
    method on_editbox(e)
       modified := 1
    end
+
    # 
-   # New TabItem Method: Insert a New TabItem,
-   # for a file, into the TabSet.
+   # New TabItem Method: Insert a New TabItem, for a file, into the TabSet.
    #
    method new_tabitem(ev,x,filename,file_contents)
       local tab_item_new, EditBox, nullfilename
@@ -294,11 +288,10 @@ class IDE (
       projectOpened := "TRUE"
       projectCompiled := "FALSE"
       tabs_num +:= 1
-      modified := &null
-      filefound := &null
-
+      modified := filefound := &null
       return tabs_num
    end
+
    #
    #IDE Tools Bar Method: Adds a simple toolbar into the IDE Tab.
    #
@@ -504,6 +497,7 @@ class IDE (
       new_btn.clear_accepts_focus()
       open_btn.clear_accepts_focus()
    end
+
    #
    #  Open File Menu Item Method
    #
@@ -812,8 +806,7 @@ $endif
 	    s[find(".icn", map(s)) : 0] := ".u"
 	    if s[1] ~== "-" & (not find(".", s)) & find(".icn", map(s)) then
 	       s ||:= ".u"
-	    arglist ||:= quotes(s)
-	    arglist ||:= " "
+	    arglist ||:= quotes(s) || " "
 	    i +:= 1
 	    }
 	 }
@@ -831,7 +824,7 @@ $endif
        showanyerror(wiconlog, lst)
        }
       else {
-	 \MsgBox.set_contents(["UI doesn't know how to compile non-.icn files"])
+	 \MsgBox.set_contents(["UI only knows how to compile .icn files"])
       }
 
       fileCompiled :="TRUE"
@@ -843,12 +836,11 @@ $endif
       local log1, i, s, ln, nerrors := 0
       #delay(800)
       if log1 := open(fn, "r") then {
-	 while put(\lst, read(log1)) do {
-	 }
+	 while put(\lst, read(log1))
 	 close(log1)
 	 remove(fn)
-	 every i := 1 to *lst do {
-	    if find(CurrentTabItem().label||":",lst[i]) then
+	 every s := !lst do {
+	    if find(CurrentTabItem().label||":", s) then
 	       nerrors +:= 1
 	    }
 	 if find(".icn",CurrentTabItem().label) & nerrors > 0 then
@@ -1072,12 +1064,14 @@ $endif
 	    }
 	 }
    end
+
    #
    #
    #
    method handle_stringsearch()
       return CurrentEditBox().handle_stringsearch()
    end
+
    #
    #
    #
@@ -1088,6 +1082,7 @@ $endif
    method handle_find_next()
       CurrentEditBox().handle_find_next()
    end
+
    #
    #
    #
@@ -1100,12 +1095,8 @@ $endif
 	 fail
 	 }
 
-      every line := !l do {
-	 line := trim(line, '\^m')
-	 if \linebreak == "CRLF" then write(file, line, "\^m")
-	 else
-	    write(file, line)
-	 }
+      # write the lines to the file, with at most one carriage return
+      every write(file,trim(!l,'\^m'),if \linebreak=="CRLF" then "\^m" else "")
       close(file)
 
       \MsgBox.set_contents([filename || " saved."])

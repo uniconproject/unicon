@@ -4758,7 +4758,7 @@ FILE *OpenConsole()
    	 pthread_setspecific(tstate_key, (void *) curtstate);
          curtstate->Curstring = curstring;
          curtstate->Curblock = curblock;
-      	 curtstate->c = (struct b_coexpr *) malloc((msize)mstksize);
+      	 curtstate->c = (struct b_coexpr *) malloc((msize) 1000);
 #endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
 #if COMPILER

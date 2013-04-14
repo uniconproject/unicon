@@ -103,19 +103,13 @@ class Mainbar(
 	  }
 $ifdef _UNIX
       if f := open(lpr, "pw") then {
-	 every line := !L do {
-	    line := trim(line, '\^m')
-	    write(f, line)
-	    }
+	 every write(f, trim(!L, '\^m'))
          close(f)
          }
 $else
       # windows, for now
       if f := open("output.prn", "w") then {
-	 every line := !L do {
-	    line := trim(line, '\^m')
-	    write(f, line)
-	    }
+	 every write(f, trim(!L, '\^m'))
          close(f)
 	 system( lpr || " output.prn" )
          }

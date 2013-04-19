@@ -647,8 +647,6 @@ end
 
 "classname(r) - get name of class for instance r"
 function{0,1} classname(r)
-   if !is:record(r) then
-      runerr(107,r)
    abstract {
       return string
       }
@@ -658,6 +656,10 @@ function{0,1} classname(r)
       char * first__;
       char * second__;
       struct b_record * br;
+
+      if (!is:record(r)) {
+	 fail;
+	 }
 
       br = BlkD(r, Record);
       recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);

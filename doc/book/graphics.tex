@@ -169,7 +169,7 @@ e.g. \texttt{"pos=200,200"}.
     inputmask & string & select categories of input events & RW \\\hline
     pointer & arrow, clock & Pointer (mouse) shape  & RW \\\hline
     pointerx, pointery & pixel & Pointer (mouse) location & RW \\\hline
-    display & device / "my.cs.esu.edu:0" & (X11) device window resides on & RWO \\\hline
+    display & device / \texttt{"my.cs.esu.edu:0"} & (X11) device window resides on & RWO \\\hline
     depth & \# of bits & Display depth & R \\\hline
     displaywidth, displayheight & pixel & Display size & R \\\hline
     image & string & Initial window contents & WO \\\hline
@@ -207,11 +207,11 @@ Context Attributes
 \centering\arraybslash \bfseries\itshape Usage\\\hline}
 \begin{supertabular}{|m{1.076in}|m{1.5in}|m{2.58in}|m{0.448in}|}
 fg &
-color \ / "red" &
+color \ / \texttt{"red"} &
 Foreground color : black &
 RW\\\hline
 bg &
-color \ / "0,0,0" &
+color \ / \texttt{"0,0,0"} &
 Background color : white &
 RW\\\hline
 font &
@@ -239,7 +239,7 @@ stippled, opaquestippled &
 Graphic fill style : solid &
 RW\\\hline
 pattern &
-"4,\#5A5A" &
+\texttt{"4,\#5A5A"} &
 Fill pattern &
 RW\\\hline
 linestyle &
@@ -259,7 +259,7 @@ integer &
 Output coordinate translation : 0 &
 R\\\hline
 image &
-string / "flag.xpm" &
+string / \texttt{"flag.xpm"} &
 Initial window contents &
 WO\\\hline
 \end{supertabular}
@@ -954,6 +954,79 @@ to specify eyepos, eyedir, and eyeup with a single value. Changing any
 of these attributes causes the scene to redraw itself with the new eye
 specifications.
 
+Table 7.5 lists the added context attributes used on 3D windows.
+
+{\centering\sffamily\bfseries
+Table 7-5
+\par}
+
+{\centering\sffamily\bfseries
+3D Attributes
+\par}
+
+\begin{center}
+\tablehead{\hline
+\centering \bfseries\itshape Name &
+\centering \bfseries\itshape Type / Example &
+\centering \bfseries\itshape Description : Default &
+\centering\arraybslash \bfseries\itshape Usage\\\hline}
+\begin{supertabular}{|m{1.076in}|m{1.5in}|m{2.58in}|m{0.448in}|}
+buffer &
+boolean \ / \texttt{ "on" } &
+Buffer mode : off &
+RW\\\hline
+dim &
+integer \ / 3 &
+Dimension : 2 &
+RW\\\hline
+eye &
+xyz nonuple \ / \texttt{ "0,0,0,0,0,0,0,0,0"} &
+Eye position,direction,up : ??? &
+RW\\\hline
+eyedir &
+xyz triple \ / \texttt{ "0,0,0"} &
+Eye direction/target : ??? &
+RW\\\hline
+eyepos &
+xyz triple \ / \texttt{ "0,0,0" } &
+Eye position : ??? &
+RW\\\hline
+eyeup &
+xyz triple \ / \texttt{ "0,0,0" } &
+Eye up vector : \texttt{ "0,1,0" } &
+RW\\\hline
+meshmode &
+string / \texttt{ "triangles"} &
+Polygon mesh mode : ??? &
+RW\\\hline
+normals &
+real array  &
+Normal vectors: ??? &
+RW\\\hline
+rings &
+integer &
+Number of rings in spheres/cylinders : ??? &
+RW\\\hline
+selection &
+??? &
+Selection &
+RW\\\hline
+slices &
+integer &
+Number of slices in spheres, cylinders : ???  &
+RW\\\hline
+texcoord &
+vector of reals &
+Texture (u,v) coordinates &
+RW\\\hline
+texture &
+image &
+Texture &
+RW\\\hline
+\end{supertabular}
+\end{center}
+
+
 \subsection{3D drawing primitives}
 
 In 2D, programs draw points, lines, polygons, and circles. Functions
@@ -961,7 +1034,7 @@ that have been extended for 3D include \texttt{DrawPoint()},
 \texttt{DrawLine()}, \texttt{DrawSegment()}, \texttt{DrawPolygon()},
 and \texttt{FillPolygon()}. The 3D facilities introduce many new
 primitives, including cubes, spheres, tori, cylinders, and
-disks. These are described in Table 7-5 below.
+disks. These are described in Table 7-6 below.
 
 Many scenes are drawn using a mixture of 2D, 3D and 4D objects. The
 context attribute \texttt{dim} allows the program to switch between
@@ -978,7 +1051,7 @@ three.
 \bigskip
 
 {\centering\sffamily\bfseries
-Table 7-5
+Table 7-6
 \par}
 
 {\centering\sffamily\bfseries
@@ -1268,11 +1341,11 @@ there are more vertices than texture coordinates the application of a
 texture will fail. In order to use non-default texture coordinates
 with cubes, tori, spheres, disks, and cylinders a programmer should
 approximate the desired mapping with filled polygons. These
-specifications are given in Table 7-6.
+specifications are given in Table 7-7.
 
 
 \begin{center}
-{\sffamily\bfseries Table 7-6}
+{\sffamily\bfseries Table 7-7}
 
 {\sffamily\bfseries Texture coordinates and primitives}
 

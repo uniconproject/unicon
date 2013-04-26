@@ -51,29 +51,35 @@ class MenuBar : Component(
 
    method display(buffer_flag)
       local m
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      EraseRectangle(cbwin, x, y, w, h)
+      DrawRaisedRectangle(cbwin, x, y, w, h)
 
       #
-      # Draw the menu options with a raised rectangle around the open menu.  m.label_mid_w gives the space for
-      # the menu label, which includes DEFAULT_TEXT_X_SURROUND either side of the label itself.  m.label_x is the x position, so
-      # m.label_x + DEFAULT_TEXT_X_SURROUND put the string in the centre of its area.
+      # Draw the menu options with a raised rectangle around the open menu.
+      # m.label_mid_w gives the space for the menu label, which includes
+      # DEFAULT_TEXT_X_SURROUND either side of the label itself.  m.label_x
+      # is the x position, so m.label_x + DEFAULT_TEXT_X_SURROUND put the
+      # string in the centre of its area.
       #
       every m := !menus do {
-         if m === \self.which_highlight then
-            DrawRaisedRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w, self.h - 2 * BORDER_WIDTH)
-         left_string(self.cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, self.y + self.h / 2, m.get_label(), m.get_accel())
+         if m === \which_highlight then
+            DrawRaisedRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
+				m.label_mid_w, h - 2 * BORDER_WIDTH)
+         left_string(cbwin, m.label_x + DEFAULT_TEXT_X_SURROUND, y + h / 2,
+		     m.get_label(), m.get_accel())
          if \m.is_shaded_flag then
-            FilterRectangle(self.cbwin, m.label_x, self.y + BORDER_WIDTH, m.label_mid_w, self.h - 2 * BORDER_WIDTH)
+            FilterRectangle(cbwin, m.label_x, y + BORDER_WIDTH,
+			    m.label_mid_w, h - 2 * BORDER_WIDTH)
       }
-      self.do_shading(self.cbwin)
+      do_shading(cbwin)
 
       if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+         CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
 
    #
-   # Determine which of the menu labels is selected, if any.  Assumes y pos already tested and in menu bar.
+   # Determine which of the menu labels is selected, if any.
+   # Assumes y pos already tested and in menu bar.
    #
    # @p
    method which_button()

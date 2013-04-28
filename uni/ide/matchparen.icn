@@ -4,20 +4,16 @@ class MatchParen(stack)
 
    method leftMatch(c)
       case (c) of {
-         "(" : return "("
-         ")" : return "("
-         "[" : return "["
-         "]" : return "["
-         "{" : return "{"
-         "}" : return "{"
+         "("|")" : return "("
+         "["|"]" : return "["
+         "{"|"}" : return "{"
          }
    end
 
    method add_char( c) 
       local m, n
-      m := leftMatch(c)
 
-      if \m then {
+      if m := leftMatch(c) then {
          if m == c then { # c is some kind of left parenthesis
             push(stack, m)          # push a Character version, m
             }
@@ -30,15 +26,13 @@ class MatchParen(stack)
    end
   
    method add_string(s)
-   local i
-      every i := 1 to *s do
-         if add_char(s[i]) == "false" then fail
+      if add_char(!s) == "false" then fail
       return
    end
 
    method test(s)
    local i, sav
-      every i := 1 to *stack do pop(stack)
+      stack := [ ]
 
       if add_string(s) & *stack=0 then {
          sav := &window

@@ -490,8 +490,8 @@ int pthreadcoswitch(void *o, void *n, int first)
 #ifdef AAAConcurrent
    if (nstat & Ts_Sync )
 #endif					/* Concurrent */
-      
-      sem_wait(old->semp);		/* block this thread */
+
+   SEM_WAIT(old->semp);			/* block this thread */
 
    if (!old || old->alive<1) {
       pthread_exit(NULL);		/* if unblocked because unwanted */
@@ -516,6 +516,17 @@ void coclean(void *o) {
       }
 
    if (old->c->status & Ts_Sync || old->alive==-1){
+#ifdef Concurrent
+      CURTSTATE();
+      old->alive = -1;			/* signal thread to exit */
+      if (old->tstate==curtstate){
+       /* 
+        * If the thread is cleaning itself, exit, what about tls chain? 
+        */
+         old->have_thread = 0;
+         pthread_exit(0);
+         }
+#endif					/* Concurrent */
       old->alive = -1;			/* signal thread to exit */
       if (old->have_thread){
          sem_post(old->semp);		/* unblock it */
@@ -636,7 +647,7 @@ void *nctramp(void *arg)
    init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize);
 
 #endif					/* Concurrent */
-   sem_wait(new->semp);			/* wait for signal */
+   SEM_WAIT(new->semp);			/* wait for signal */
    new_context(0, 0);			/* call new_context; will not return */
    syserr("new_context returned to nctramp");
    return NULL;
@@ -732,36 +743,120 @@ void clean_threads()
 /*
  *  pthread errors handler
  */
-void handle_thread_error(int val)
+void handle_thread_error(int val, int func, char* msg)
 {
-   switch(val) {
+  if (!msg) msg = "";
+ 
+   switch(func) {
+   case FUNC_MUTEX_LOCK:
+   case FUNC_MUTEX_TRYLOCK:
+   case FUNC_MUTEX_UNLOCK:
 
-   case EINVAL:
-      fatalerr(180, NULL);
-      /* or syserr("the calling thread's priority is higher than the mutex's current priority ceiling");*/
-      break;
-   case EBUSY:
-     /*syserr("The mutex could not be acquired because it was already locked. ");*/
-      break;
-   case EAGAIN :
-      syserr("The mutex could not be acquired because the maximum number of recursive locks for mutex has been exceeded");
-      break;
-   case EDEADLK:
-      syserr("The current thread already owns the mutex.");
-      break;
-   case EPERM:
-      syserr("The current thread does not own the mutex. ");
-      break;
+      fprintf(stderr, "\nLock/Unlock mutex error-%s: ", msg);
 
-   case ESRCH: /* pthread_cancel */
-     fprintf(stderr, "\nError: Tried to cancel a thread that doesn't exist.\n");
-      break;
+      switch(val) {
+         case EINVAL:
+            fatalerr(180, NULL);
+      	    break;
+         case EBUSY:
+ 	    /* EBUSY is handled somewhere else, we shouldn't get here */
+/*     	    fprintf(stderr, "The mutex could not be acquired because it was already locked.\n");
+*/
+     	    break;
+   	 case EAGAIN :
+      	    fprintf(stderr, "The mutex could not be acquired because the maximum number of recursive locks for mutex has been exceeded.\n");
+	    syserr("");
+      	    break;
+   	 case EDEADLK:
+      	    fprintf(stderr, "The current thread already owns the mutex.\n");
+	    syserr("");
+      	    break;
+   	 case EPERM:
+      	    fprintf(stderr, "The current thread does not own the mutex.\n");
+	    syserr("");
+      	    break;
+      	 default:
+	    fprintf(stderr, " pthread function error!\n ");
+	    syserr("");
+      	    break;
+	 }
 
+   case FUNC_MUTEX_INIT:
+
+      fprintf(stderr, "\nInit mutex error-%s: ", msg);
+
+      switch(val) {
+         case EINVAL:
+     	    fprintf(stderr, "The value specified by attr is invalid.");
+	    syserr("");
+      	    break;
+         case ENOMEM:
+     	    fprintf(stderr, "Insufficient memory exists to initialise the mutex.");
+	    syserr("");
+     	    break;
+   	 case EAGAIN:
+     	    fprintf(stderr, "The system lacked the necessary resources to initialise the mutex.");
+	    syserr("");
+      	    break;
+   	 case EBUSY:
+      	    fprintf(stderr, "The implementation has detected an attempt to re-initialise the object referenced by mutex, a previously initialised, but not yet destroyed, mutex.");
+	    syserr("");
+      	    break;
+   	 case EPERM:
+      	    fprintf(stderr, "The caller does not have the privilege to perform the operation.");
+	    syserr("");
+      	    break;
+      	 default:
+	    fprintf(stderr, "pthread function error!\n ");
+	    syserr("");
+      	    break;
+	 }
+
+   case FUNC_MUTEX_DESTROY:
+
+      fprintf(stderr, "\nDestroy mutex error-%s:", msg);
+
+      switch(val) {
+         case EINVAL:
+            fprintf(stderr, "The value specified by mutex is invalid.");
+	    syserr("");
+      	    break;
+         case EBUSY:
+/*     	    fprintf(stderr, "The implementation has detected an attempt to destroy the object referenced by mutex while it is locked or referenced (for example, while being used in a pthread_cond_wait() or pthread_cond_timedwait()) by another thread.");
+*/
+     	    break;
+      	 default:
+	    fprintf(stderr, " pthread function error!\n ");
+      	    break;
+	 }
+
+   case FUNC_THREAD_JOIN:
+
+      fprintf(stderr, "\nThread join error-%s:", msg);
+
+      switch(val) {
+         case EINVAL:
+            fprintf(stderr, "The implementation has detected that the value specified by thread does not refer to a joinable thread.\n");
+	    syserr("");
+      	    break;
+   	 case EDEADLK:
+      	    fprintf(stderr, "A deadlock was detected or the value of thread specifies the calling thread.\n");
+	    syserr("");
+      	    break;
+   	 case ESRCH:
+     	    fprintf(stderr, "No thread could be found corresponding to that specified by the given thread ID\n");
+	    syserr("");
+      	    break;
+      	 default:
+	    fprintf(stderr, "pthread function error!\n ");
+	    syserr("");
+      	    break;
+	 }
 
    default:
-      syserr(" pthread function error!\n ");
+      fprintf(stderr, "\npthread function error!\n");
+      syserr("");
       break;
-
       }
 }
 
@@ -927,7 +1022,8 @@ int action;
          tc_queue++;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
 
-         sem_wait(&sem_tc); /* Allow only one thread to pass at a time!! */
+ 	 /* Allow only one thread to pass at a time!! */
+         SEM_WAIT(&sem_tc);
 
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */

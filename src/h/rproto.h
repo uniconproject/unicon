@@ -1054,7 +1054,7 @@ void init_threadstate(struct threadstate *ts);
 #ifndef HAVE_KEYWORD__THREAD
 struct threadstate *get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */
-void handle_thread_error(int val);
+void handle_thread_error(int val, int func, char* msg);
 void thread_control(int action);
 void clean_threads();
 void init_threads();

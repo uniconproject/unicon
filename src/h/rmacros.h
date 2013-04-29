@@ -1126,6 +1126,8 @@
 #define StdInRedirect         4
 #define OutputToBuf           8
 
+#define SEM_WAIT(semptr) while (sem_wait(semptr) != 0 ) { \
+	if (errno==EINVAL) syserr("invalid semaphore"); }
 
 #ifdef Concurrent 
 
@@ -1204,6 +1206,20 @@
    #define TC_STOPALLTHREADS 3
    #define TC_KILLALLTHREADS 4
 
+   #define FUNC_MUTEX_LOCK	1
+   #define FUNC_MUTEX_TRYLOCK	2
+   #define FUNC_MUTEX_UNLOCK	3
+   #define FUNC_MUTEX_INIT	4
+   #define FUNC_MUTEX_DESTROY	5
+   #define FUNC_COND_WAIT	6
+   #define FUNC_COND_INIT	6
+   #define FUNC_COND_DESTROY	6
+   #define FUNC_COND_TIMEDWAIT	7
+   #define FUNC_COND_SIGNAL	8
+   #define FUNC_THREAD_CREATE	9
+   #define FUNC_THREAD_JOIN	10
+
+
 #endif					/* Concurrent */
 
 #ifdef Concurrent
@@ -1213,21 +1229,25 @@
  */
 
 #define MUTEX_LOCK( mtx, msg) { int retval; \
-  if ((retval=pthread_mutex_lock(&(mtx))) != 0) handle_thread_error(retval); }
+  if ((retval=pthread_mutex_lock(&(mtx))) != 0) \
+    handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
   
 #define MUTEX_UNLOCK( mtx, msg) { int retval; \
-  if ((retval=pthread_mutex_unlock(&(mtx))) != 0)  handle_thread_error(retval); }
+  if ((retval=pthread_mutex_unlock(&(mtx))) != 0) \
+    handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
 
 #define MUTEX_TRYLOCK(mtx, isbusy, msg) { \
 if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
-   {handle_thread_error(isbusy); isbusy=0;} }
+  {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg); isbusy=0;} }
 
 #define MUTEX_INIT( mtx, attr ) { int retval; \
-    if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) handle_thread_error(retval); }
+    if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) \
+      handle_thread_error(retval, FUNC_MUTEX_INIT, NULL); }
 
 
 #define THREAD_JOIN( thrd, opt ) { int retval; \
-if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
+    if ((retval=pthread_join(thrd, opt)) != 0) \
+      handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
 
 /*
  *  Lock mutex mutexes[mtx].
@@ -1235,20 +1255,23 @@ if ((retval=pthread_join(thrd, opt)) != 0) handle_thread_error(retval); }
 
 #define MUTEX_INITID( mtx, attr ) { int retval;{	\
   mutexes[mtx] = malloc(sizeof(pthread_mutex_t)); \
-  if ((retval=pthread_mutex_init(mutexes[mtx], attr)) != 0) handle_thread_error(retval); }}
+  if ((retval=pthread_mutex_init(mutexes[mtx], attr)) != 0) \
+    handle_thread_error(retval, FUNC_MUTEX_INIT, NULL); }}
 
 #define MUTEXID(mtx) mutexes[mtx]
 
 
 #define MUTEX_LOCKID(mtx) { int retval; \
-  if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) handle_thread_error(retval); }
+  if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
+    handle_thread_error(retval, FUNC_MUTEX_LOCK, NULL); }
 
 #define MUTEX_UNLOCKID(mtx) { int retval; \
-  if ((retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  handle_thread_error(retval); }
+  if ((retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  \
+    handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
 
 #define MUTEX_TRYLOCKID(mtx, isbusy) { \
     if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
-      {handle_thread_error(isbusy); isbusy=0;} }
+      {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL); isbusy=0;} }
 
 #define INC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx)}
 #define DEC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx)}

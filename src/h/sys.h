@@ -343,11 +343,12 @@
 #endif					/* Dbm */
 
 #ifdef ISQL
-#ifdef MacOSX
+#ifndef BOOL
   /* to prevent double-typedef of BOOL on some platforms */
   #define BOOL rumplestiltskin
 #endif
   #include <sqlext.h>
+#undef BOOL
 
 #ifdef DebugHeap
 #define Type(d)		(int)((((d).dword & F_Typecode) ? ((int)((d).dword & TypeMask)) : (heaperr("descriptor type error",BlkLoc(d),(d).dword), -1)))

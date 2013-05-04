@@ -122,3 +122,227 @@ procedure microseconds()
   t := gettimeofday()
   return t.sec*1000000 + t.usec
 end
+
+class Thread(
+   t, # the thread
+   work,
+   cv
+   )
+  method reset()
+  end
+  method stop()
+  end
+
+  method pause()
+  end
+
+  method run()
+   signal(cv)
+  end
+  method thread_func()
+    wait(cv)
+  end
+
+initially(work, t)
+ self.work := work
+ cv := condvar()
+ if \t then
+    self.t := t
+ else
+    t := thread thread_func()
+end
+
+class Task(
+  nthread, 		# number of threads asked for
+  active_threads, 	# the threads assigned to this task
+  func,    		# proc, what I'm supposed to do
+  reduce_func,    		# proc, how do I combine results 
+  tttype,    		# thread task type , repeat, divide, chunk
+  chunk_size, 		#
+  caller,
+  cv_caller,		#
+  args, 
+  result_list,
+  done 			# set when done
+  )
+
+  method do_work(args)
+     return
+  end
+  
+  method exec()
+    local rslt
+    #write("args=",image(args))
+    if runners()<nthread then{
+       insert(active_threads, &current)
+       if \func then{
+          if rslt := func(args) then done := "Yes"
+	}
+       else if rslt := do_work(args) then done := "yes"
+       delete(active_threads, &current)
+       put(result_list, rslt)
+       return \done | *active_threads=0;
+       }
+  end
+
+  method signal()
+     static bsignal
+     initial bsignal := proc("signal", 0)
+     bsignal(cv_caller)
+  end
+
+  method is_done()
+     return \done
+  end
+
+  method wait()
+     static bwait
+     initial bwait := proc("wait", 0)
+     critical cv_caller: bwait(cv_caller)
+  end
+
+  method runners()
+     return *active_threads
+  end
+  
+  method set_caller(c)
+     caller := ( \c | &current )
+  end
+
+  method set_args(args)
+     self.args := args
+  end
+
+  method reduce(rslt_lst)
+     return (\reduce_func)(rslt_lst) 
+  end
+
+  method init(func, r_func, n, args)
+     self.func := func
+     self.reduce_func := r_func
+     self.args := args
+     if /n | n<=1 then 
+        nthread := 1
+     else
+        nthread := n
+
+     cv_caller := condvar()
+     active_threads := mutex(set())
+     result_list := mutex([])
+   end
+
+  initially(func, r_func, n, ar)
+
+     init(func, r_func, n, ar)
+
+end
+
+class Threads(
+ master,       # "the house keeper thread"
+ thread_ready, # a list of all ready threads
+ thread_active,# a list of all ready threads
+ task_ready,   # the list of tasks waiting to be processed 
+ task_active,  # the list of tasks being processed 
+ cv_work,      # condition variable that all threads on   
+               # thread_pool wait on when there is no 
+               # work to do.
+ cv_master,
+ actual_work,  # points to a procedure (work) that the 
+               # thread are supposed to do.
+ done
+)
+# The work that the thread has to do.
+# This function can be implemented by the subclass
+# or actual_work can be pointed to a procedure that 
+# does the work
+method do_work()
+   actual_work()
+end
+
+method thread_func()
+   local tsk, cur_thread := &current
+   while /done do{    
+      if tsk := pop(task_ready) then {
+         if tsk.runners()+1<tsk.nthread then
+            push(task_ready, tsk)
+
+        delete(thread_ready, cur_thread)
+        insert(thread_active,cur_thread)
+        #write("thread is execing task")
+	if tsk.exec() then {
+           tsk.signal()
+           #write("thread done execing task")
+           delete(thread_active, cur_thread)
+           insert(thread_ready,  cur_thread)
+           }
+      }
+
+    if *task_ready=0 then
+       critical cv_work: while *task_ready=0 do
+                            wait(cv_work)
+     }
+end
+
+# The master thread routine.
+method master_func()
+  while /done do{
+      if *task_ready>0 & *thread_ready>0 then
+         signal(cv_work)
+      else
+         delay(1000)
+    #write("master")
+   }
+end
+
+method house_keeping()
+end
+
+method submit_async(tsk, r_func, n, args)
+   if (type(tsk)=="procedure") then{
+      tsk := Task(tsk, r_func, n, args)
+      }
+   else{
+    tsk.set_args(args)
+    tsk.nthread := n
+    }
+
+   tsk.set_caller()
+   critical task_ready: put(task_ready, tsk)
+   signal(cv_work, tsk.nthread)
+end
+
+method submit_sync(tsk, r_func, n, args)
+   if (type(tsk)=="procedure") then{
+      tsk := Task(tsk, r_func, n, args)
+      }
+   else{
+    tsk.set_args(args)
+    tsk.nthread := n
+    }
+
+   tsk.set_caller()
+   critical task_ready: put(task_ready, tsk)
+   signal(cv_work, tsk.nthread)
+   #write("waiting to finish...")
+   tsk.wait()
+   return tsk.reduce(tsk.result_list)
+end
+
+method shutdown()
+   done := "force"
+end
+
+ initially(n)
+    cv_work := condvar()
+    cv_master := condvar()
+    if /n | n<1 then n := 8
+    thread_ready := mutex(set())
+    thread_active := mutex(set())
+    task_ready := mutex([ ])
+    task_active := mutex([ ])
+    every 1 to n do insert(thread_ready, thread thread_func())
+ 
+    master := thread master_func()    
+    #Threads := self   # singleton class ?
+
+end 

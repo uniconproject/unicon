@@ -441,14 +441,8 @@ on-line schol-\\
 link cgi, io \\
 \$define ADMIN "jeffery@cs.uidaho.edu" \\
 procedure cgimain() \\
-\ \ fname := tempname("appform",
-".txt",
-"/tmp") \\
-\ \ f :=
-open("/tmp/"{\textbar}{\textbar}fname,
-"w") {\textbar}
-stop("can't open /tmp/",
-fname) \\
+\ \ fname := tempname("appform", ".txt", "/tmp") \\
+\ \ f := open(fname, "w") {\textbar} stop("can't open ", fname) \\
 \ \ write("Generating typeset copy of application
 form...") \\
 \ \ write(f,"Scholarship Program
@@ -533,9 +527,7 @@ goals.{\textbackslash}n") \\
 \ \ close(m) \\
 \ \ close(f) \\
 \ \ write("Printing hard copy...") \\
-\ \ system("cd /tmp; lpr "
-{\textbar}{\textbar} fname; rm " {\textbar}{\textbar}
-fname {\textbar}{\textbar} ".*") \\
+\ \ system("lpr " {\textbar}{\textbar} fname {\textbar}{\textbar} "; rm " {\textbar}{\textbar} fname) \\
 \ \ cgiEcho("Thank you for applying, ",
 cgi["NAME"]) \\
 \ \ cgiEcho("Your application has been submitted to

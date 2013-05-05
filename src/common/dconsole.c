@@ -80,7 +80,7 @@ int _imp__pthread_mutex_unlock(pthread_mutex_t *mtx)
   return 0;
 }
 */
-void handle_thread_error(int val)
+void handle_thread_error(int val, int func, char* msg)
 {
 
 }

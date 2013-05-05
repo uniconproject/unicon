@@ -185,6 +185,22 @@ class Task(
        }
   end
 
+  method exec_map()
+    local rslt, x, rslt_lst:=[], i:=0
+
+    # if the task needs more threads and there is more work 
+    if runners()<nthread & *args>0 then{
+       # each thread does chunk_size work and put it in rslt_list
+       while i<chunk_size & put(rslt_lst, func(get(args)))
+       if *rslt_lst>0 then # if we have anything to report
+          return rslt_lst
+       }
+  end
+
+  method exec_reduce()
+     
+  end
+
   method signal()
      static bsignal
      initial bsignal := proc("signal", 0)
@@ -217,23 +233,21 @@ class Task(
      return (\reduce_func)(rslt_lst) 
   end
 
-  method init(func, r_func, n, args)
+  method init(func, r_func, args, n:1, chnk_size:1)
      self.func := func
      self.reduce_func := r_func
      self.args := args
-     if /n | n<=1 then 
-        nthread := 1
-     else
-        nthread := n
-
+     n := n<1
+     nthread := n
      cv_caller := condvar()
      active_threads := mutex(set())
      result_list := mutex([])
+     chunk_size := chnk_size
    end
 
-  initially(func, r_func, n, ar)
+  initially(func, r_func, ar, n)
 
-     init(func, r_func, n, ar)
+     init(func, r_func, ar, n)
 
 end
 
@@ -260,25 +274,35 @@ method do_work()
 end
 
 method thread_func()
-   local tsk, cur_thread := &current
+   local tsk, rslt, rslt_lst, cur_thread := &current
    while /done do{    
       if tsk := pop(task_ready) then {
+         insert(tsk.active_threads, &current)
          if tsk.runners()+1<tsk.nthread then
             push(task_ready, tsk)
 
-        delete(thread_ready, cur_thread)
-        insert(thread_active,cur_thread)
-        #write("thread is execing task")
-	if tsk.exec() then {
-           tsk.signal()
-           #write("thread done execing task")
-           delete(thread_active, cur_thread)
-           insert(thread_ready,  cur_thread)
-           }
-      }
+         delete(thread_ready, cur_thread)
+         insert(thread_active,cur_thread)
 
-    if *task_ready=0 then
-       critical cv_work: while *task_ready=0 do
+         #write("thread is execing task")
+	 if rslt_lst := tsk.exec_map() then
+	    put(tsk.result_list, tsk.reduce_func(rslt_lst))
+         #write("thread done execing task")
+
+         delete(thread_active, cur_thread)
+         insert(thread_ready,  cur_thread)
+        
+         critical task_ready:{
+	    if *tsk.args>0 & tsk~===task_ready[1] then
+            push(task_ready, tsk)
+            }
+
+         delete(tsk.active_threads, &current)
+         if tsk.runners()=*tsk.args=0 then tsk.signal()
+         }
+
+         if *task_ready=0 then
+             critical cv_work: while *task_ready=0 do
                             wait(cv_work)
      }
 end
@@ -297,9 +321,9 @@ end
 method house_keeping()
 end
 
-method submit_async(tsk, r_func, n, args)
+method submit_async(tsk, r_func, args, n)
    if (type(tsk)=="procedure") then{
-      tsk := Task(tsk, r_func, n, args)
+      tsk := Task(tsk, r_func, args, n)
       }
    else{
     tsk.set_args(args)
@@ -311,9 +335,27 @@ method submit_async(tsk, r_func, n, args)
    signal(cv_work, tsk.nthread)
 end
 
-method submit_sync(tsk, r_func, n, args)
+method submit_sync(tsk, r_func, args, n)
    if (type(tsk)=="procedure") then{
-      tsk := Task(tsk, r_func, n, args)
+      tsk := Task(tsk, r_func, args, n)
+      }
+   else{
+    tsk.set_args(args)
+    tsk.nthread := n
+    }
+
+   tsk.set_caller()
+   critical task_ready: put(task_ready, tsk)
+   signal(cv_work, tsk.nthread)
+   #write("waiting to finish...")
+   tsk.wait()
+   return tsk.reduce(tsk.result_list)
+end
+
+
+method map_reduce(tsk, r_func, args, n)
+   if (type(tsk)=="procedure") then{
+      tsk := Task(tsk, r_func, args, n)
       }
    else{
     tsk.set_args(args)

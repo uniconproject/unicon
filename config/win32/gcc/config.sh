@@ -13,8 +13,8 @@ cp auto.h ../../../src/h
 cp NTICONT.LNK ../../../src/icont
 # unicon.icon has a control-Z char at pos 29, cp on our sh.exe
 # fails to copy beyoned that point leaving the file truncated.
-# Manual copy for now!
-# cp unicon.ico ../../../src/runtime
+# Do a manual copy if that is the case!
+cp unicon.ico ../../../src/runtime
 cp icon.rc ../../../src/runtime
 
 cp makefile.cmn ../../../src/common/makefile

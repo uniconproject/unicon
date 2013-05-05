@@ -52,13 +52,13 @@ end
 procedure channel(x, port)
    local ce, T, L, chnl, TP
    static chTable, chTableP, chTableN
-   initial{ 
-          chTable  := mutex(table())
-          chTableP := mutex(table())
-	  chTableN := mutex(table())
-      	  }
+   initial {
+      chTable  := mutex(table())
+      chTableP := mutex(table())
+      chTableN := mutex(table())
+      }
    
-   if string(x) then{ # the name of the channel is what matters
+   if string(x) then { # the name of the channel is what matters
        critical chTableN:
           if member(chTableN, x) then 
              chnl :=  chTableN[x]
@@ -69,16 +69,16 @@ procedure channel(x, port)
       }
    else if /port then {   # connect channels based on order they were received
       ce := &current
-      critical chTable:{
+      critical chTable: {
          if not(member(chTable, ce)) then chTable[ce] := table() 
          if not(member(chTable, x)) then chTable[x] := table() 
 
-	 if \(L := chTable[ce][x]) & chnl := get(L) then{
+	 if \(L := chTable[ce][x]) & chnl := get(L) then {
 	    if *L=0 then delete(chTable[ce], x)
 	    }
 	 else if \(L := chTable[x][ce]) then
 	       put(L, chnl := condvar([]))
-         else{
+         else {
 	    L := []
             put(L, chnl := condvar([]))
             chTable[x][ce] := L
@@ -86,20 +86,20 @@ procedure channel(x, port)
          } # critical
       return chnl
       }
-   else{
+   else {
       ce := &current
-      critical chTableP:{    # connect channels based on the supplied port
+      critical chTableP: {    # connect channels based on the supplied port
          if not(member(chTableP, ce)) then chTableP[ce] := table() 
          if not(member(chTableP, x)) then chTableP[x] := table() 
 	 
-	 if \(TP := chTableP[ce][x]) & \(chnl := TP[port]) then{
+	 if \(TP := chTableP[ce][x]) & \(chnl := TP[port]) then {
 	    delete(TP, port)
 	    if *TP=0 then delete(chTableP[ce], x)
 	    }
-	 else if \(TP := chTableP[x][ce]) then{
+	 else if \(TP := chTableP[x][ce]) then {
 	    TP[port] := chnl := condvar([])
             }
-         else{
+         else {
 	    TP := table()
             TP[port] := chnl := condvar([])
             chTableP[x][ce] := TP
@@ -111,16 +111,14 @@ end
 
 
 procedure milliseconds()
-  local t
-  t := gettimeofday()
-  return t.sec*1000 + t.usec/1000
+   local t := gettimeofday()
+   return t.sec*1000 + t.usec/1000
 end
 
 
 procedure microseconds()
-  local t
-  t := gettimeofday()
-  return t.sec*1000000 + t.usec
+   local t := gettimeofday()
+   return t.sec*1000000 + t.usec
 end
 
 class Thread(
@@ -144,12 +142,12 @@ class Thread(
   end
 
 initially(work, t)
- self.work := work
- cv := condvar()
- if \t then
-    self.t := t
- else
-    t := thread thread_func()
+   self.work := work
+   cv := condvar()
+   if \t then
+      self.t := t
+   else
+      t := thread thread_func()
 end
 
 class Task(
@@ -173,9 +171,9 @@ class Task(
   method exec()
     local rslt
     #write("args=",image(args))
-    if runners()<nthread then{
+    if runners()<nthread then {
        insert(active_threads, &current)
-       if \func then{
+       if \func then {
           if rslt := func(args) then done := "Yes"
 	}
        else if rslt := do_work(args) then done := "yes"
@@ -189,7 +187,7 @@ class Task(
     local rslt, x, rslt_lst:=[], i:=0
 
     # if the task needs more threads and there is more work 
-    if runners()<nthread & *args>0 then{
+    if runners()<nthread & *args>0 then {
        # each thread does chunk_size work and put it in rslt_list
        while i<chunk_size & put(rslt_lst, func(get(args)))
        if *rslt_lst>0 then # if we have anything to report
@@ -265,6 +263,7 @@ class Threads(
                # thread are supposed to do.
  done
 )
+
 # The work that the thread has to do.
 # This function can be implemented by the subclass
 # or actual_work can be pointed to a procedure that 
@@ -275,7 +274,7 @@ end
 
 method thread_func()
    local tsk, rslt, rslt_lst, cur_thread := &current
-   while /done do{    
+   while /done do { 
       if tsk := pop(task_ready) then {
          insert(tsk.active_threads, &current)
          if tsk.runners()+1<tsk.nthread then
@@ -292,7 +291,7 @@ method thread_func()
          delete(thread_active, cur_thread)
          insert(thread_ready,  cur_thread)
         
-         critical task_ready:{
+         critical task_ready: {
 	    if *tsk.args>0 & tsk~===task_ready[1] then
             push(task_ready, tsk)
             }
@@ -309,7 +308,7 @@ end
 
 # The master thread routine.
 method master_func()
-  while /done do{
+  while /done do {
       if *task_ready>0 & *thread_ready>0 then
          signal(cv_work)
       else
@@ -322,10 +321,10 @@ method house_keeping()
 end
 
 method submit_async(tsk, r_func, args, n)
-   if (type(tsk)=="procedure") then{
+   if (type(tsk)=="procedure") then {
       tsk := Task(tsk, r_func, args, n)
       }
-   else{
+   else {
     tsk.set_args(args)
     tsk.nthread := n
     }
@@ -336,13 +335,13 @@ method submit_async(tsk, r_func, args, n)
 end
 
 method submit_sync(tsk, r_func, args, n)
-   if (type(tsk)=="procedure") then{
+   if (type(tsk)=="procedure") then {
       tsk := Task(tsk, r_func, args, n)
       }
-   else{
-    tsk.set_args(args)
-    tsk.nthread := n
-    }
+   else {
+      tsk.set_args(args)
+      tsk.nthread := n
+      }
 
    tsk.set_caller()
    critical task_ready: put(task_ready, tsk)
@@ -354,13 +353,13 @@ end
 
 
 method map_reduce(tsk, r_func, args, n)
-   if (type(tsk)=="procedure") then{
+   if (type(tsk)=="procedure") then {
       tsk := Task(tsk, r_func, args, n)
       }
-   else{
-    tsk.set_args(args)
-    tsk.nthread := n
-    }
+   else {
+      tsk.set_args(args)
+      tsk.nthread := n
+      }
 
    tsk.set_caller()
    critical task_ready: put(task_ready, tsk)
@@ -374,17 +373,16 @@ method shutdown()
    done := "force"
 end
 
- initially(n)
-    cv_work := condvar()
-    cv_master := condvar()
-    if /n | n<1 then n := 8
-    thread_ready := mutex(set())
-    thread_active := mutex(set())
-    task_ready := mutex([ ])
-    task_active := mutex([ ])
-    every 1 to n do insert(thread_ready, thread thread_func())
+initially(n)
+   cv_work := condvar()
+   cv_master := condvar()
+   if /n | n<1 then n := 8
+   thread_ready := mutex(set())
+   thread_active := mutex(set())
+   task_ready := mutex([ ])
+   task_active := mutex([ ])
+   every 1 to n do insert(thread_ready, thread thread_func())
  
-    master := thread master_func()    
-    #Threads := self   # singleton class ?
-
+   master := thread master_func()    
+   #Threads := self   # singleton class ?
 end 

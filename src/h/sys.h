@@ -345,7 +345,11 @@
 #ifdef ISQL
 #ifndef BOOL
   /* to prevent double-typedef of BOOL on some platforms */
-  #define BOOL rumplestiltskin
+#ifdef MacOSX
+  #define BOOL rumplemacskin
+#else
+  #define BOOL int
+#endif
 #endif
   #include <sqlext.h>
 #undef BOOL

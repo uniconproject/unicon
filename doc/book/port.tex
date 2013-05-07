@@ -1,28 +1,26 @@
 \chapter{Portability Considerations}
 
-Those of Unicon's POSIX-based system interface facilities that are
-presented in Chapter 5 are portable.  You can expect the portable
-system interface to be available on any implementation of Unicon. This
-appendix presents additional, non-portable elements of the Unicon
-POSIX interface, as well as some notes on functionality specific to
-Microsoft Windows.
+Unicon's POSIX-based system interface facilities presented in Chapter
+5 are portable.  You can expect the portable system interface to be
+available on any implementation of Unicon. This appendix presents
+additional, non-portable elements of the Unicon POSIX interface, as
+well as some notes on functionality specific to Microsoft Windows.
 
 \section{POSIX extensions}
 
-\index{POSIX extensions}Technically, the extensions presented in this
-section may or may not be part of the POSIX standard. The important
-issue is that they are a part of the Unicon language as implemented on
-major POSIX-compliant UNIX platforms such as Solaris and Linux. Ports
-of Unicon to non-POSIX or quasi-POSIX platforms may or may not
-implement any of these facilities.
+\index{POSIX extensions}The extensions presented in this section may
+or may not be part of the POSIX standard, but they are a part of the
+Unicon language as implemented on major POSIX-compliant UNIX platforms
+such as Solaris and Linux. Ports of Unicon to non-POSIX or quasi-POSIX
+platforms may or may not implement any of these facilities.
 
 \subsection{Information from system files}
 
-There are four functions that read information from system files,
+There are four functions that read information from the system:
 \texttt{getpw()} to read the password file, \texttt{getgr()} for the
 group file, \texttt{gethost()} for hostnames, and \texttt{getserv()}
 for network services. Called with an argument (usually a string), they
-perform a lookup in the system file. When called with no arguments,
+perform a lookup in the system file; called with no arguments,
 these functions step through the files one entry at a time.
 
 The functions \texttt{setpwent()}, \texttt{setgrent()},
@@ -35,16 +33,16 @@ by the system functions \texttt{getpwuid(2)},
 
 \subsection{\texttt{fork} and \texttt{exec}}
 
-POSIX-compliant systems support an additional, lower-level interface
+POSIX-compliant systems support a process-launch interface
 using the functions \index{fork()}\texttt{fork()} and \texttt{exec()}.
-\texttt{fork()} causes the system to make a copy of the current
-process. After the fork there will be two identical processes that
-share all resources like open files, and differ only in one respect:
-the return value they each got from the call to \texttt{fork()}. One
+\texttt{fork()} makes a copy of the current
+process. After the fork there are two identical processes that
+share resources such as open files, and differ only in one respect:
+the return value they received from the call to \texttt{fork()}. One
 process gets a zero and is called the child; the other gets the
 process id of the child and is called the parent.
 
-Quite often \texttt{fork()} is used to run another program. In that
+Usually \texttt{fork()} is used to run another program. In that
 case, the child process uses the system call \texttt{exec()} which
 replaces the code of the process with the code of a new program. This
 \texttt{fork()}/\texttt{exec()} pair is comparable to calling
@@ -79,8 +77,7 @@ ID's or names.
 \noindent {\bf chroot(string) : ? \hfill change filesystem root}
 
 \noindent
-\texttt{chroot(f)} changes the root of the filesystem to f. This may be of
-assistance in implementing security measures.
+\texttt{chroot(f)} changes the root directory of the filesystem to f.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf crypt(string, string) : string \hfill encrypt password}
@@ -130,12 +127,8 @@ the possible values for cmd:
 \ \ \ \ \ O \ \ \ \ \ \ \ Set file owner or process group (F\_SETOWN)
 
 In the case of L, the arg value should be a string that describes the
-lock, otherwise arg is an integer. A record will be returned by
-F\_GETLK: 
-
-\iconcode{
-\ \ record posix\_lock(value, pid)
-}
+lock, otherwise arg is an integer. A \texttt{record posix\_lock(value,
+pid)} will be returned by F\_GETLK.
 
 The lock string consists of three parts separated by commas: the type of
 lock (r, w or u), the starting position, and the length. The starting
@@ -164,11 +157,11 @@ descriptor; and the second file is replaced by the first.
 \noindent {\bf filepair() : list \hfill create connected files}
 
 \noindent
-\texttt{filepair()} creates a bi-directional pair of connected files. This is
+\texttt{filepair()} creates a bi-directional pair of files
 analogous to the POSIX \texttt{socketpair(2)} function. It returns a list of two
-files, such that writes on one will be available on the other. The
-connection is bi-directional, unlike that returned by function \texttt{pipe()}.
-The two files are indistinguishable. Caution: typically, the pair is
+indistinguishable files; writes on one will be available on the other. The
+connection is bi-directional, unlike that of function \texttt{pipe()}.
+Caution: typically, the pair is
 created just before a \texttt{fork()}; after it, one process should close L[1]
 and the other should close L[2] or you will not get proper end-of-file
 notification. 
@@ -226,9 +219,8 @@ the IP number and port this machine is using for a network connection.
 machine named s. If s is null, each successive call to \texttt{gethost()}
 returns the next entry. \texttt{sethostent()} resets the sequence to the
 beginning. The aliases and addresses are comma separated lists of
-aliases and addresses (in a.b.c.d format) respectively. Return
-type:\\
-\ \ \texttt{record posix\_hostent(name, aliases, addresses)}
+aliases and addresses (in a.b.c.d format) respectively. Its return
+type is \texttt{record posix\_hostent(name, aliases, addresses)}
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf getpgrp() : integer \hfill get process group}
@@ -272,9 +264,8 @@ dir, shell)}
 for the service s using protocol proto. If s is null, each successive call
 to \texttt{getserv()} returns the next entry. \texttt{setservent()}
 resets the sequence to the beginning.
-If proto is defaulted, it will return the first matching entry. 
-Return type:\\
-\ \ record posix\_servent(name, aliases, port, proto) 
+If proto is defaulted, it will return the first matching entry. Its
+return type is \texttt{record posix\_servent(name, aliases, port, proto)}
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -371,8 +362,8 @@ that points to src.
 \noindent {\bf umask(integer) : integer \hfill file permission mask}
 
 \noindent
-\texttt{umask(u)} sets the umask of the process to \texttt{u}. umask integers
-encode nine bits for the read, write, and execute permissions of user,
+\texttt{umask(u)} sets the umask of the process to \texttt{u}, an nine-bit
+encoding of the read, write, and execute permissions of user,
 group, and world access. See also \texttt{chmod()}. Each bit in the umask turns
 \textit{off} that access, by default, for newly created files. The old
 value of the umask is returned.
@@ -411,10 +402,9 @@ the system interfaces. Consult Unicon Technical Report 7 for details.
 
 \subsection{Partial support for POSIX}
 
-Windows supports the \texttt{getpid()} function, but not many of the other
-process-related functions such as \texttt{getppid()}. Windows supports the
-\texttt{exec()} function in addition to Unicon's extended
-flavor of \texttt{system()}, but these functions may only launch Windows 32-bit
+Windows supports \texttt{getpid()}, but omits other
+process-related functions such as \texttt{getppid()}. On Windows
+\texttt{exec()} and \texttt{system()} may only launch Windows 32-bit
 .EXE binaries.
 
 Windows Unicon supports the following signals in functions such as

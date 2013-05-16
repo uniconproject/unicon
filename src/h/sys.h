@@ -285,7 +285,7 @@
 /*
  * Include this after Xlib stuff, jmorecfg.h expects this.
  */
-#if HAVE_LIBJPEG
+#if HAVE_LIBJPEG && defined(Graphics)
 
 #if defined(XWindows)
 /* Some AMD64 Gentoo systems seem to have a buggy macros in
@@ -400,7 +400,7 @@
  * and this code needs to.  Apparently, this not including of zlib.h in png.h
  * occurs for libpng 1.5 and higher.
  */
-#if HAVE_LIBPNG
+#if HAVE_LIBPNG && defined(Graphics)
 #include <png.h>
 #if defined(NTGCC) || (defined(PNG_LIBPNG_VER) && (PNG_LIBPNG_VER >= 10500))
 #include <zlib.h>
@@ -408,7 +408,9 @@
 
 #else					/* HAVE_LIBPNG */
 
+#ifdef HAVE_LIBZ
 #include <zlib.h>
+#endif
 #endif					/* HAVE_LIBPNG */
 
 #ifndef VMS

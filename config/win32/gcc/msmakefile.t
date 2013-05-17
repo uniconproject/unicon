@@ -12,7 +12,8 @@ HFLAGS=
 LDFLAGS=
 LIBS=
 SHELL=/bin/sh
-MAKE=make -j4
+# add -j4 to line below if your version of Windows (7 and newer?) supports it
+MAKE=make
 O=o
 RM=-rm
 CP=cp

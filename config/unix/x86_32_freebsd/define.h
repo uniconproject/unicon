@@ -14,7 +14,12 @@
 #define ExecImages
 #define NoCrypt
 
-#define MaxStatSize 20480
+/* CPU architecture */
+#define IntBits 32
+#define WordBits 32
+#define Double
+#define StackAlign 16
+#define MaxStatSize 40960
 
 #define CComp "gcc"
 #define COpts "-O2"

@@ -32,7 +32,7 @@ static const char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 #include "cproto.h"
 #undef YYSTYPE
 #define YYSTYPE nodeptr
-#define YYMAXDEPTH 500
+#define YYMAXDEPTH 5000
 
 int idflag;
 #line 38 "y.tab.c"

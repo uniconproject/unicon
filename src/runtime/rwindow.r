@@ -4065,8 +4065,10 @@ char * abuf;
 	    strcpy(abuf, s);
 	    MakeStr(abuf, strlen(s), answer);
 	    }
-	 else
-	    MakeStr("black", 5, answer);
+	 else {
+	    strcpy(abuf, "black");
+	    MakeStr(abuf, 5, answer);
+	    }
 	 break;
 	 }
       case A_CLIPX:

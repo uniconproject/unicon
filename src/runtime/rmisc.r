@@ -281,18 +281,48 @@ dptr dp;
    hashstring:
       /*
        * Compute the hash value for the string based on a scaled sum
-       *  of its first ten characters, plus its length.
+       *  of its first seven and last seven characters, plus its length.
+       *  Loops are unrolled.
        */
       i = 0;
       s = StrLoc(*dp);
       j = n = StrLen(*dp);
-      if (j > 10)		/* limit scan to first ten characters */
-         j = 10;
-      while (j-- > 0) {
-         i += *s++ & 0xFF;	/* add unsigned version of next char */
-         i *= 37;		/* scale total by a nice prime number */
-         }
-      i += n;			/* add the (untruncated) string length */
+      switch(n){
+      case 14: i += (*s++) & 0xFF; i *= 37;
+      case 13: i += (*s++) & 0xFF; i *= 37;
+      case 12: i += (*s++) & 0xFF; i *= 37;
+      case 11: i += (*s++) & 0xFF; i *= 37;
+      case 10: i += (*s++) & 0xFF; i *= 37;
+      case 9:  i += (*s++) & 0xFF; i *= 37;
+      case 8:  i += (*s++) & 0xFF; i *= 37;
+      case 7:  i += (*s++) & 0xFF; i *= 37;
+      case 6:  i += (*s++) & 0xFF; i *= 37;
+      case 5:  i += (*s++) & 0xFF; i *= 37;
+      case 4:  i += (*s++) & 0xFF; i *= 37;
+      case 3:  i += (*s++) & 0xFF; i *= 37;
+      case 2:  i += (*s++) & 0xFF; i *= 37;
+      case 1:  i += (*s++) & 0xFF;    /* add unsigned version of next char */
+	       i *= 37;               /* scale total by a nice prime number */
+	       break;
+      case 0:  break;
+      default:
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 s += n - 14;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 i += (*s++) & 0xFF; i *= 37;
+	 }
+      i += n;
       }
 
    else {

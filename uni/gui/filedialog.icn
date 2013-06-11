@@ -131,7 +131,7 @@ class FileDialog : Dialog(
          }
          dir.set_contents(s)
       } else
-         dir.set_contents(s ||:= value)
+         dir.set_contents(s ||:= \value)
       #
       # Update directory and file lists.
       #
@@ -233,18 +233,20 @@ class FileDialog : Dialog(
 end
 
 #
-# Read a directory.
+# Read a directory.  An optional extension parameter filters for extensions
+# of interest.  Returns [list-of-subdirs, list-of-files].
 #
-procedure get_directory_list(s)
+procedure get_directory_list(s, ext : "*.*")
    local dir_list, file_list, p, s2, sr
 
 $ifdef _MS_WINDOWS_NT
    s := map(s,"/","\\")
-   if (*s > 1) & (s[-1] == PATHCHAR) & (map(s,&letters,repl("a",52)) ~== "a:\\") then
-      s[-1] := ""
+   # remove trailing backslash unless it is a root dir on a drive
+   if (*s > 1) & (s[-1] == PATHCHAR) & (not (s ? tab(any(&letters)) & =":\\"))
 $else
-   if (*s > 1) & (s[-1] == PATHCHAR) then s[-1] := ""
+   if (*s > 1) & (s[-1] == PATHCHAR)
 $endif
+   then s[-1] := ""
  
    p := open(s) | {
        write(&errout, "get_directory_list: can't open ", image(s))
@@ -260,11 +262,10 @@ $endif
        }
       if sr.mode[1] == "d" then
          put(dir_list, s2 || PATHCHAR)
-      else
+      else if (ext == "*.*") | find(ext, s2) then
          put(file_list, s2)
    }
    close(p)
-
    return [sort(dir_list), sort(file_list)]
 end
  

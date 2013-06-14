@@ -432,7 +432,9 @@
 #define RESIZED		(-10)
 #define WINDOWCLOSED    (-11)
 #define MOUSEMOVED      (-12)
-#define LASTEVENTCODE	MOUSEMOVED
+#define SCROLLUP	(-13)
+#define SCROLLDOWN	(-14)
+#define LASTEVENTCODE	SCROLLDOWN
 
 /*
  * Type codes (descriptors and blocks).

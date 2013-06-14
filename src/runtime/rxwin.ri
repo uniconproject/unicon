@@ -2888,10 +2888,13 @@ XButtonEvent *event;
 	 break;
          }
       }
-   if ((event->type == ButtonRelease) && (eventcode >= MOUSERIGHT)) {
-      eventcode -= (MOUSELEFT - MOUSELEFTUP);
-      swap(buttonorder[0],buttonorder[1]);
-      swap(buttonorder[1],buttonorder[2]);
+   if (event->type == ButtonRelease) {
+      if (eventcode >= MOUSERIGHT) {
+	 eventcode -= (MOUSELEFT - MOUSELEFTUP);
+	 swap(buttonorder[0],buttonorder[1]);
+	 swap(buttonorder[1],buttonorder[2]);
+	 }
+      else return; /* drop scroll wheel release events silently for now */
       }
 
    w->window->pointerx = event->x;

@@ -15,38 +15,20 @@ import lang
 $include "guih.icn"
 
 #
-# Remappable keybindings at present rely on the method vector
+# Remappable keybindings that return string names of methods bound
+# to various keys. At present this relies on the method vector
 # representation.
 #
-class Keybindings(keymap, prefix)
+class Keybindings(keymap)
    method handle_key(e)
-      if type(e) == "string" then e := prefix || e
-      if m := \ (keymap[e]) then {
-	 if m == "handle_prefix" then prefix ||:= e
-	 else {
-	    prefix := ""
-	    return m
-	    }
-	 }
+      return \ (keymap[e])
    end
    method set_key(e,m)
        keymap[e] := m
    end
-   method emacs_mode()
-      keymap["\^a"] := "handle_start_of_line"
-      keymap["\e"] := "handle_prefix"
-      keymap["\^x"] := "handle_prefix"
-      keymap["\^c"] := "handle_prefix"
-      keymap["\^v"] := "handle_key_page_down"
-      keymap["\^z"] := "handle_scrolldown_one_line"
-      keymap["\^y"] := "handle_paste"
-   keymap["\^x\^c"] := "handle_exit"
-   keymap["\^x\^x"] := "exchange_point_and_mark"
-   keymap["\^x\^f"] := "find_file"
-   keymap["\^x\^s"] := "save_buffer"
-   keymap["\^x\^n"] := "next_error"
-   end
-initially
+   # The original/default Unicon EditableTextList keybindings.
+   # Resets the keymap, in case other keys have been bound strangely.
+   method default_mode()
    keymap := table("handle_default")
    keymap[Key_Home] := "handle_key_home"
    keymap[Key_End] := "handle_key_end"
@@ -68,7 +50,10 @@ initially
    keymap["\^z"] := "handle_undo"
    keymap["\^y"] := "handle_redo"
    keymap["\^s"] := "handle_stringsearch"
-   prefix := ""
+   end
+
+initially
+   default_mode()
 end
 
 #
@@ -376,8 +361,7 @@ class EditableTextList : LineBasedScrollArea(
       else if e === (&lrelease | &rrelease | &mrelease) then
 	 handle_release(e)
       else if \self.has_focus then {
-	 meth := kmap.handle_key(e)
-	 self.__m[meth](self,e)
+	 self.__m[\ (kmap.handle_key(e))](self,e)
       }
    end
 

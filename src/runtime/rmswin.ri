@@ -708,6 +708,9 @@ void handle_mouse(wbp wb, UINT msg, WPARAM wp, LPARAM lp)
    case WM_RBUTTONUP:
       eventcode = MOUSERIGHTUP;
       break;
+   case WM_MOUSEWHEEL:
+      eventcode = ((((short)HIWORD(wp)) > 0) ? SCROLLUP : SCROLLDOWN);
+      break;
       }
 
    MakeInt(eventcode, &d);
@@ -810,12 +813,26 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       return 0;
 #ifndef NoMouseWheel
    case WM_MOUSEWHEEL:
-      if (0 /* ws->inputmask & MouseWheelMask */) {
+      if (1 /* ws->inputmask & MouseWheelMask */) {
+	 /* generate a SCROLLUP or SCROLLDOWN */
+	 short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
+
+         if (wp2 > 0) { /* page ups */
+	    do {
+	       handle_mouse(wb, WM_MOUSEWHEEL, wp, lp);
+	       wp2 -= 120;
+               } while (wp2 > 0);
+            }
+         else { /* page downs */
+	    do {
+	       handle_mouse(wb, WM_MOUSEWHEEL, wp, lp);
+	       wp2 += 120;
+               } while (wp2 < 0);
+            }
          }
       else {
-	 /* turn this into a pgup or pgdn */
+	 /* convert this into a pgup or pgdn */
 	 short wp1 = LOWORD(wp), wp2 = HIWORD(wp);
-	 int i;
 
          if (wp2 > 0) { /* page ups */
 	    while (wp2 > 0) {

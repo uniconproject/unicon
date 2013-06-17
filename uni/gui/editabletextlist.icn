@@ -23,8 +23,10 @@ class Keybindings(keymap)
    method handle_key(e)
       return \ (keymap[e])
    end
-   method set_key(e,m)
-       keymap[e] := m
+   method set_key(e,m,ems[])
+      do {
+	 keymap[e] := m
+	 } while e := pop(ems) & m := pop(ems)
    end
    # The original/default Unicon EditableTextList keybindings.
    # Resets the keymap, in case other keys have been bound strangely.

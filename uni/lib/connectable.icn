@@ -26,6 +26,11 @@ class Connectable(listeners)
 
       p := lang::find_method(obj, meth) | stop("No such method ", meth)
 
+      # omit duplicate requests
+      every l := !listeners do
+	 if (l.obj === obj) & (l.meth === p) & (l.type === type) then
+	    fail
+
       l := Listener(obj, 
                     p,
                     type)

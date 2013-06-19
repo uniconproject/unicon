@@ -190,6 +190,16 @@ class HFileDialog : Dialog(
       flist.clear_selections()
    end
 
+   #
+   # Double click on a filename in the file list and you open it.
+   #
+   method on_flist_lpress()
+      if get_click_count() = 2 then {
+	 set_result()
+	 dispose()
+	 }
+   end
+
    method on_flist()
       #
       # Clicked in file list; set TextField
@@ -267,6 +277,7 @@ class HFileDialog : Dialog(
 
       flist := TextList("pos=50%+12,110", "size=50%-38,100%-170", "select_one", "selection_on_key_moves=f")
       flist.connect(self, "on_flist", SELECTION_CHANGED_EVENT)
+      flist.connect(self, "on_flist_lpress", MOUSE_PRESS_EVENT)
       flist.set_contents(l[2])
       self.add(flist)
 

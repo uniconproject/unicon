@@ -1,6 +1,7 @@
 import gui
 $include "guih.icn"
 #link graphics
+
 link io
 
 #$define lpr "enscript -b \" \" -1 -Plexnormal"
@@ -38,27 +39,27 @@ class IDE (
    method on_new_btn(ev)
       new_tabitem(,0,"","")
 
-      tab_item_1.set_label("Messages: (Single File Mode)")
-      DevTabSet.set_which_one(tab_item_1)
-      tab_item_1.init()
-      DevTabSet.resize()
+      uidlog.tab_item_1.set_label("Messages: (Single File Mode)")
+      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
+      uidlog.tab_item_1.init()
+      uidlog.DevTabSet.resize()
    end
 
    method on_open_btn(ev)
-      handle_openfile(ev,,FileTabSet)
+      handle_openfile(ev,,uidlog.FileTabSet)
 
-      tab_item_1.set_label("Messages: (Single File Mode)")
-      DevTabSet.set_which_one(tab_item_1)
-      tab_item_1.init()
-      DevTabSet.resize()
+      uidlog.tab_item_1.set_label("Messages: (Single File Mode)")
+      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
+      uidlog.tab_item_1.init()
+      uidlog.DevTabSet.resize()
    end
 
    method on_close_btn(ev)
       if ide.CurrentTabItem().label ~== "scratch" then {
-	 FileBrowser.nodereplace(ide.CurrentTabItem().label)
+	 uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().label)
 	 handle_closefile()
-	 FileTabSet.set_which_one(tab_item_2)
-	 FileTabSet.resize()
+	 uidlog.FileTabSet.set_which_one(uidlog.tab_item_2)
+	 uidlog.FileTabSet.resize()
 	 }
    end
 
@@ -78,20 +79,20 @@ class IDE (
 	 close(f)
        }
       else {
-	 MsgBox.set_contents(["Sorry, no printing yet."])
+	 uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
        }
    end
 
    method on_ivib(ev)
       local L := []
       if CurrentTabItem().label==="Untitled" then {
-	 system("ivib " || \tab_label, L) | MsgBox.set_contents(L)
+	 system("ivib " || \tab_label, L) | uidlog.MsgBox.set_contents(L)
 	 handle_closefile()
 	 handle_openfile( , tab_label)
 	 }
       else {
 	 system("ivib " ||CurrentTabItem().label, L) |
-	 MsgBox.set_contents(["System Failed"])
+	 uidlog.MsgBox.set_contents(["System Failed"])
 	 }
    end
 
@@ -156,19 +157,19 @@ class IDE (
    end
 
    method on_viewall_btn(ev)
-      menubar.on_view_window_all(ev)
+      uidlog.menubar.on_view_window_all(ev)
    end
 
    method on_viewfiles_btn(ev)
-      menubar.on_view_window_files(ev)
+      uidlog.menubar.on_view_window_files(ev)
    end
 
    method on_viewfilesmsgs_btn(ev)
-      menubar.on_view_window_filesmsgs(ev)
+      uidlog.menubar.on_view_window_filesmsgs(ev)
    end
    
    method on_viewfilesclassbrowser_btn(ev)
-      menubar.on_view_window_filesclassbrowser(ev)
+      uidlog.menubar.on_view_window_filesclassbrowser(ev)
    end
 
    method on_class_btn(ev)
@@ -177,7 +178,7 @@ class IDE (
    end
 
    method on_makeexe_btn(ev)
-      MsgBox.set_contents([""])
+      uidlog.MsgBox.set_contents([""])
       save()
       complink()
    end
@@ -236,11 +237,11 @@ class IDE (
       EditBox.set_contents(file_contents)
 
       tab_item_new.add(EditBox)
-      FileTabSet.add(tab_item_new)
+      uidlog.FileTabSet.add(tab_item_new)
 
       tab_item_new.init()
-      FileTabSet.resize()
-      FileTabSet.set_which_one(tab_item_new)
+      uidlog.FileTabSet.resize()
+      uidlog.FileTabSet.set_which_one(tab_item_new)
       fileOpened := "TRUE"
       fileCompiled := "FALSE"
       tabs_num +:= 1
@@ -272,19 +273,19 @@ class IDE (
 	 else tab_item_new.set_label(filename)
 	 }
 
-      EditBox := BuffEditableTextList()
-      EditBox.set_pos("2", "2")
-      EditBox.set_size("100%-4", "100%-4")
-      EditBox.set_attribs("bg=white","font=sans,14")
-      EditBox.set_contents(file_contents)
+      uidlog.EditBox := BuffEditableTextList()
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.EditBox.set_attribs("bg=white","font=sans,14")
+      uidlog.EditBox.set_contents(file_contents)
 
-      tab_item_new.add(EditBox)
-      FileTabSet.add(tab_item_new)
-      MsgBox.set_contents(["Project Created ..."])
+      tab_item_new.add(uidlog.EditBox)
+      uidlog.FileTabSet.add(tab_item_new)
+      uidlog.MsgBox.set_contents(["Project Created ..."])
 
       tab_item_new.init()
-      FileTabSet.resize()
-      FileTabSet.set_which_one(tab_item_new)
+      uidlog.FileTabSet.resize()
+      uidlog.FileTabSet.set_which_one(tab_item_new)
       projectOpened := "TRUE"
       projectCompiled := "FALSE"
       tabs_num +:= 1
@@ -308,7 +309,7 @@ class IDE (
       new_btn.connect(self, "on_new_btn", ACTION_EVENT)
       new_btn.clear_toggles()
       new_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~>>>>>>>>>~~~~~~~>6666666>>~~~~~~>6666666>`>~~~~~>6666666>>>>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>6666666666>~~~~>>>>>>>>>>>>~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(new_btn)
+      uidlog.pnlToolbar.add(new_btn)
       open_btn := IconButton()
       open_btn.set_pos("4.5%", "5%")
       open_btn.set_size("4.5%", "90%")
@@ -317,7 +318,7 @@ class IDE (
       open_btn.connect(self, "on_open_btn", ACTION_EVENT)
       open_btn.clear_toggles()
       open_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~~~~~~~~~~>~~~>~>~~~~~~~~~~~~~~>>~~>>>~~~~~~~~>>>~>`6`>>>>>>>~~~~~>6`6`6`6`6>~~~~~>`6`6`6`6`>~~~~~>6`6`>>>>>>>>>>>>`6`><<<<<<<<<>~>6`><<<<<<<<<>~~>`><<<<<<<<<>~~~>><<<<<<<<<>~~~~>>>>>>>>>>>~~~~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(open_btn)
+      uidlog.pnlToolbar.add(open_btn)
       close_btn := IconButton()
       close_btn.set_pos("8.5%", "5%")
       close_btn.set_size("4.5%", "90%")
@@ -326,7 +327,7 @@ class IDE (
       close_btn.connect(self, "on_close_btn", ACTION_EVENT)
       close_btn.clear_toggles()
       close_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~>>>>>>>>>~~~~~~AA6666666>>~A~~~AAAA66666>AA~~~~~AAAA6666AA>>~~~~>6AAA66AA66>~~~~>66AAAAA666>~~~~>666AAA6666>~~~~>66AAAAA666>~~~~>6AAA66AA66>~~~~>AAA6666AA6>~~~~AAA666666A6>~~~~AAA6666666A>~~~~>A666666666>~~~~>>>>>>>>>>>A~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(close_btn)
+      uidlog.pnlToolbar.add(close_btn)
       save_btn := IconButton()
       save_btn.set_pos("12.5%", "5%")
       save_btn.set_size("4.5%", "90%")
@@ -335,7 +336,7 @@ class IDE (
       save_btn.connect(self, "on_save_btn", ACTION_EVENT)
       save_btn.clear_toggles()
       save_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~>`>66666666>6>~~>`>66666666>>>~~>`>66666666>`>~~>`>66666666>`>~~>`>66666666>`>~~>`>66666666>`>~~>``>>>>>>>>``>~~>````````````>~~>```>>>>>>>``>~~>``>>>>>>66>`>~~>``>>>>>>66>`>~~>``>>>>>>66>`>~~~>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(save_btn)
+      uidlog.pnlToolbar.add(save_btn)
       saveas_btn := IconButton()
       saveas_btn.set_pos("16.5%", "5%")
       saveas_btn.set_size("4.5%", "90%")
@@ -344,7 +345,7 @@ class IDE (
       saveas_btn.connect(self, "on_saveas_btn", ACTION_EVENT)
       saveas_btn.clear_toggles()
       saveas_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>~~~~~~~~>666666>>~~~~~~~>666666>>>~~~~~~>66666666>~~~~~~>666>>>>>>>>>>~~>666>`>6666>6>~~>666>`>6666>>>~~>666>`>6666>`>~~>666>``>>>>``>~~>666>````````>~~>666>``>>>>``>~~>>>>>`>>>>6>`>~~~~~~>`>>>>6>`>~~~~~~~>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(saveas_btn)
+      uidlog.pnlToolbar.add(saveas_btn)
       cut_btn := IconButton()
       cut_btn.set_pos("20.5%", "5%")
       cut_btn.set_size("4.5%", "90%")
@@ -353,7 +354,7 @@ class IDE (
       cut_btn.connect(self, "on_cut_btn", BUTTON_PRESS_EVENT)
       cut_btn.clear_toggles()
       cut_btn.set_img("16,c1,~~~~v~~~~~v~~~~~~~~~v~~~~~v~~~~~~~~~~v~~~v~~~~~~~~~~~v~~~v~~~~~~~~~~~v~~~v~~~~~~~~~~~~v~v~~~~~~~~~~~~~v~v~~~~~~~~~~~~~~I~~~~~~~~~~~~~~VVV~~~~~~~~~~~~~V~VVV~~~~~~~~~VVV~V~~V~~~~~~~V~~V~V~~V~~~~~~~V~~V~V~~V~~~~~~~V~~V~~VV~~~~~~~~~VV~~~~~~~~~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(cut_btn)
+      uidlog.pnlToolbar.add(cut_btn)
       copy_btn := IconButton()
       copy_btn.set_pos("24.5%", "5%")
       copy_btn.set_size("4.5%", "90%")
@@ -362,7 +363,7 @@ class IDE (
       copy_btn.connect(self, "on_copy_btn", BUTTON_PRESS_EVENT)
       copy_btn.clear_toggles()
       copy_btn.set_img("16,c1,~~~~~~~~~~~~~~~~vvvvvv~~~~~~~~~~v6666vv~~~~~~~~~v6<<6v6v~~~~~~~~v6666v>>>>>>~~~~v6<<<6>6666>>~~~v66666>6``6>6>~~v6<<<<>6666>>>>~v66666>6```666>~v6<<<<>6666666>~v66666>6`````6>~vvvvvv>6666666>~~~~~~~>6`````6>~~~~~~~>6666666>~~~~~~~>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(copy_btn)
+      uidlog.pnlToolbar.add(copy_btn)
       paste_btn := IconButton()
       paste_btn.set_pos("28.5%", "5%")
       paste_btn.set_size("4.5%", "90%")
@@ -371,7 +372,7 @@ class IDE (
       paste_btn.connect(self, "on_paste_btn", BUTTON_PRESS_EVENT)
       paste_btn.clear_toggles()
       paste_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>>~~~~~~~~~~~~>4565>~~~~~~~~~~~>>>>>>>>~~~~~~~~~>56566665>~~~~~~~~>55555654>~~~~~>>>>55555655>~~~~>566G05555654>~~~>>>>4650555655>~~~>4440J6G455654>~~~>5505045>55655>~~~>4>60>>6>55654>~~~~>60>5>5455655>~~~>60>65>>555654>~~>60~>>>>5555655>~4>0~~~~>44444444>>>~~~~~~~>>>>>>>>~ii<i<<~~~~~~~~~~~~")
-      pnlToolbar.add(paste_btn)
+      uidlog.pnlToolbar.add(paste_btn)
       undo_btn := IconButton()
       undo_btn.set_pos("32.5%", "5%")
       undo_btn.set_size("4.5%", "90%")
@@ -380,7 +381,7 @@ class IDE (
       undo_btn.connect(self, "on_undo_btn", BUTTON_PRESS_EVENT)
       undo_btn.clear_toggles()
       undo_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>~~~~~~~~~~>>>>>>>~~~~~~~~>>>~~~>>>~~~~~~>>>~~~~~>>>~~~~~>>~~~~~~~>>~~~>~>>~>~~~~~>>~~~~>>>>~~~~~~>>~~~~~>>~~~~~~>>>~~~~~~~~~~~~>>>~~~~~~~~~>>>>>>~~~~~~~~~~>>>>>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(undo_btn)
+      uidlog.pnlToolbar.add(undo_btn)
       redo_btn := IconButton()
       redo_btn.set_pos("36.5%", "5%")
       redo_btn.set_size("4.5%", "90%")
@@ -389,7 +390,7 @@ class IDE (
       redo_btn.connect(self, "on_redo_btn", BUTTON_PRESS_EVENT)
       redo_btn.clear_toggles()
       redo_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>~~~~~~~~~~>>>>>>>~~~~~~~~>>>~~~>>>~~~~~~>>>~~~~~>>>~~~~~>>~~~~~~~>>~~~~~>>~~~~~>~>>~>~~~>>~~~~~~>>>>~~~~>>>~~~~~~>>~~~~~~>>>~~~~~~~~~~~~~~>>>>>>~~~~~~~~~~~~>>>>>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(redo_btn)
+      uidlog.pnlToolbar.add(redo_btn)
       find_btn := IconButton()
       find_btn.set_pos("40.5%", "5%")
       find_btn.set_size("4.5%", "90%")
@@ -398,7 +399,7 @@ class IDE (
       find_btn.connect(self, "on_find_btn", ACTION_EVENT)
       find_btn.clear_toggles()
       find_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~>>>~~~~~~~>6>~~~>6>~~~~~~~>>>~~~>>>~~~~~~>>>>>~>>>>>~~~~~>6>>>~>6>>>~~~~>>>>>>>>>>>>>~~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>>>>>>~>>>>>>>~>6>>>~~~~~>6>>>~>6>>>~~~~~>6>>>~>>>>>~~~~~>>>>>~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(find_btn)
+      uidlog.pnlToolbar.add(find_btn)
       find_next_btn := IconButton()
       find_next_btn.set_pos("44.5%", "5%")
       find_next_btn.set_size("4.5%", "90%")
@@ -407,7 +408,7 @@ class IDE (
       find_next_btn.connect(self, "on_find_next_btn", ACTION_EVENT)
       find_next_btn.clear_toggles()
       find_next_btn.set_img("16,c1,554>>54>>555555555464546)555555555454446)<555555544>4>>4>>555555546<>V)6<)555555546<)v)6<)5555554>>>>v>4>>)55555>56<>5><54v55555>56<>5)(54v55555>vvvv5vvvvv5555555555555555555555555555555ii555555555555555ij>55555)5)5VV>>>V))555555555555V))555555555555>>5555")
-      pnlToolbar.add(find_next_btn)
+      uidlog.pnlToolbar.add(find_next_btn)
       viewall_btn := IconButton()
       viewall_btn.set_pos("48.5%", "5%")
       viewall_btn.set_size("4.5%", "90%")
@@ -416,7 +417,7 @@ class IDE (
       viewall_btn.connect(self, "on_viewall_btn", ACTION_EVENT)
       viewall_btn.clear_toggles()
       viewall_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(viewall_btn)
+      uidlog.pnlToolbar.add(viewall_btn)
       viewfiles_btn := IconButton()
       viewfiles_btn.set_pos("52.5%", "5%")
       viewfiles_btn.set_size("4.5%", "90%")
@@ -425,7 +426,7 @@ class IDE (
       viewfiles_btn.connect(self, "on_viewfiles_btn", ACTION_EVENT)
       viewfiles_btn.clear_toggles()
       viewfiles_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(viewfiles_btn)
+      uidlog.pnlToolbar.add(viewfiles_btn)
       viewfilesmsgs_btn := IconButton()
       viewfilesmsgs_btn.set_pos("56.5%", "5%")
       viewfilesmsgs_btn.set_size("4.5%", "90%")
@@ -434,7 +435,7 @@ class IDE (
       viewfilesmsgs_btn.connect(self, "on_viewfilesmsgs_btn", ACTION_EVENT)
       viewfilesmsgs_btn.clear_toggles()
       viewfilesmsgs_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(viewfilesmsgs_btn)
+      uidlog.pnlToolbar.add(viewfilesmsgs_btn)
       viewfilesbrowser_btn := IconButton()
       viewfilesbrowser_btn.set_pos("60.5%", "5%")
       viewfilesbrowser_btn.set_size("4.5%", "90%")
@@ -443,7 +444,7 @@ class IDE (
       viewfilesbrowser_btn.connect(self, "on_viewfilesclassbrowser_btn", ACTION_EVENT)
       viewfilesbrowser_btn.clear_toggles()
       viewfilesbrowser_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(viewfilesbrowser_btn)
+      uidlog.pnlToolbar.add(viewfilesbrowser_btn)
       procedure_btn := IconButton()
       procedure_btn.set_pos("64.5%", "5%")
       procedure_btn.set_size("4.5%", "90%")
@@ -452,7 +453,7 @@ class IDE (
       procedure_btn.connect(self, "on_procedure_btn", ACTION_EVENT)
       procedure_btn.clear_toggles()
       procedure_btn.set_img("16,c1,~~wwww~~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~~wwwwssss~~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~~ssssnnnn~~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~~nnnn~~")
-      pnlToolbar.add(procedure_btn)
+      uidlog.pnlToolbar.add(procedure_btn)
       class_btn := IconButton()
       class_btn.set_pos("68.5%", "5%")
       class_btn.set_size("4.5%", "90%")
@@ -461,7 +462,7 @@ class IDE (
       class_btn.connect(self, "on_class_btn", ACTION_EVENT)
       class_btn.clear_toggles()
       class_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~wwwww~~~~~yy~~~wjjjjjw~~~yLLy~~wjjjjjw~~~yLLy~~wjjjsssss~~yy~~~wjjsFFS++s~~~~~~wjjsFFS++s~~~~~~~wwsSS+nnnnn~~~~~~~s++nAANaan~~~qq~s++nAANaan~~qDDq~ssnNNaaan~~qDDq~~~naaaaan~~~qq~uu~naaaaan~~~~~uHHu~nnnnn~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~")
-      pnlToolbar.add(class_btn)
+      uidlog.pnlToolbar.add(class_btn)
       method_btn := IconButton()
       method_btn.set_pos("72.5%", "5%")
       method_btn.set_size("4.5%", "90%")
@@ -470,7 +471,7 @@ class IDE (
       method_btn.connect(self, "on_method_btn", ACTION_EVENT)
       method_btn.clear_toggles()
       method_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~yy~~~~~~~~~~~~~yLLy~~~~~~~~~~~~yLLy~~~~~~~~~~~~~yy~~~~~qq~~~~~~~~~~~~~qDDq~~~~~~~~~~~~qDDq~~~~~~~~~~~~~qq~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~uu~~~~~~~~~~~~~uHHu~~~~~~~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(method_btn)
+      uidlog.pnlToolbar.add(method_btn)
       makeexe_btn := IconButton()
       makeexe_btn.set_pos("76.5%", "5%")
       makeexe_btn.set_size("4.5%", "90%")
@@ -479,7 +480,7 @@ class IDE (
       makeexe_btn.connect(self, "on_makeexe_btn", ACTION_EVENT)
       makeexe_btn.clear_toggles()
       makeexe_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~~3444444444444430~~34JJJJJJJJJJJJ30~~34JJJJJJ60606030~~3433333333333330~~3466666666666630~~3466666666666630~~3460060606006630~~3460660606066630~~3460066066006630~~3460660606066630~~3460060606006630~~3466666666666630~~3466666666666630~~3333333333333330~~0000000000000000~~~~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(makeexe_btn)
+      uidlog.pnlToolbar.add(makeexe_btn)
       run_btn := IconButton()
       run_btn.set_pos("80.5%", "5%")
       run_btn.set_size("4.5%", "90%")
@@ -488,7 +489,7 @@ class IDE (
       run_btn.connect(self, "on_run_btn", ACTION_EVENT)
       run_btn.clear_toggles()
       run_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~SS444444444444430~S+SJJJJJJJJJJJJ30~S++SJJJJJ60606030~S+*+S333333333330~S+**+S66666666630~S+***+S6666666630~S+****+S666666630~SF*G*G*FS66666630~S+G*G*G+S66666630~SF*G*GFS666666630~SFGGGFS6666666630~SFGGFS66666666630~SFGFS666666666630~SFFS3333333333330~SFS00000000000000~SS~~~~~~~~~~~~~~~~")
-      pnlToolbar.add(run_btn)
+      uidlog.pnlToolbar.add(run_btn)
 
       cut_btn.clear_accepts_focus()
       copy_btn.clear_accepts_focus()
@@ -514,12 +515,12 @@ $ifdef _UNIX
 	 # filepath := chdir()
 	 filedirectory := fd.get_directory()
 $else
-	 filename := WinOpenDialog(dialogself.win, "Open File ...", "", 5) | fail 
+	 filename := WinOpenDialog(uidlog.win, "Open File ...", "", 5) | fail 
 $endif
 	 }
       current_dir := filedirectory
       if /filename | filename=="" | filename[-1]==("\\"|"/") then
-	 return MsgBox.set_contents("Enter File Name")
+	 return uidlog.MsgBox.set_contents("Enter File Name")
 
       if  filename[-2:0]==(".*") then filename := filename[1:-2] 
       tab_label :=  file_name(filename)
@@ -544,23 +545,23 @@ $endif
       #if opened_files_num === 0 then 
 	{
 	 if find(".o",filename) then
-	    MsgBox.set_contents(["can not open "||filename])
+	    uidlog.MsgBox.set_contents(["can not open "||filename])
 	 else {
 	    new_tabitem(,1,file_name(filename),file_contents) 
-	    FileBrowser.addreplace(file_contents, tab_label, 0)
-	    \MsgBox.set_contents(["opened " || filename||", "||*file_contents||
+	    uidlog.FileBrowser.addreplace(file_contents, tab_label, 0)
+	    \uidlog.MsgBox.set_contents(["opened " || filename||", "||*file_contents||
 				" lines, " || nchars || " characters"])
-	    FileTabSet.set_which_one(CurrentTabItem())
+	    uidlog.FileTabSet.set_which_one(CurrentTabItem())
 	    handle_update()
 	    insert(opened_files_set, file_name(filename))
 	    }
 	 }
       else {
-	 c := FileTabSet.get_tabitem(file_name(filename))
-	 FileTabSet.set_which_one(\c)
+	 c := uidlog.FileTabSet.get_tabitem(file_name(filename))
+	 uidlog.FileTabSet.set_which_one(\c)
 	 }
-      FileTabSet.resize()
-      menubar.set_font()
+      uidlog.FileTabSet.resize()
+      uidlog.menubar.set_font()
       opened_file := filename
       tabs_num +:= 1
    end
@@ -582,7 +583,7 @@ $endif
 
 	 }
       if /projectname | projectname=="" | projectname[-1]==("\\"|"/") then {
-	 MsgBox.set_contents(["Enter Project Name"])
+	 uidlog.MsgBox.set_contents(["Enter Project Name"])
 	 }
       if map(projectname)[-4:0] == ".icp" then { # open project
 	 project := projectname
@@ -590,7 +591,7 @@ $endif
 	 }
       if projectname[-2:0] == ".*" then filename := filename[1:-2] 
       file := open(projectname, "ru") | {
-	 \MsgBox.set_contents(["Could not open project: " || \filename])
+	 \uidlog.MsgBox.set_contents(["Could not open project: " || \filename])
 	 return
 	 }
       tab_label :=  fname
@@ -614,19 +615,19 @@ $endif
       # add a new tab with the file name
 #  if opened_files_num === 0 then {
       new_project_tabitem(,1,file_name(projectname),file_contents) 
-      FileBrowser.addreplace(file_contents, tab_label, 0)
-      \MsgBox.set_contents(["opened " || projectname || ", " ||
+      uidlog.FileBrowser.addreplace(file_contents, tab_label, 0)
+      \uidlog.MsgBox.set_contents(["opened " || projectname || ", " ||
 	     *file_contents ||" lines, " || nchars || " characters"])
       CurrentTabItem().set_label(tab_label)
-      FileTabSet.set_which_one(CurrentTabItem())
+      uidlog.FileTabSet.set_which_one(CurrentTabItem())
       handle_update()
 #     }
 #  else {
-#     c:= FileTabSet.get_tabitem(file_name(projectname))
-#     FileTabSet.set_which_one(\c)
+#     c:= uidlog.FileTabSet.get_tabitem(file_name(projectname))
+#     uidlog.FileTabSet.set_which_one(\c)
 #     }
 
-      FileTabSet.resize()
+      uidlog.FileTabSet.resize()
       opened_file := projectname
       tabs_num +:= 1
       needConsole := "TRUE"
@@ -637,33 +638,33 @@ $endif
    #
    method handle_closefile(ev, c)
       local t
-      \FileBrowser.nodereplace(CurrentTabItem().get_label())
+      \uidlog.FileBrowser.nodereplace(CurrentTabItem().get_label())
       if /c then c :=  CurrentTabItem()
       # check the size of the filetabset, if it is size 1 then exit
-      if *(FileTabSet.children) = 1 then {
-	 menubar.on_exit()
+      if *(uidlog.FileTabSet.children) = 1 then {
+	 uidlog.menubar.on_exit()
 	 }
-      FileTabSet.remove(c)
-      MsgBox.set_contents(["closed " || (FileTabSet.get_which_one()).label])
+      uidlog.FileTabSet.remove(c)
+      uidlog.MsgBox.set_contents(["closed " || (uidlog.FileTabSet.get_which_one()).label])
 
-      t := (FileTabSet.get_which_one()).label
+      t := (uidlog.FileTabSet.get_which_one()).label
       delete(opened_files_set, t)
       tabs_num -:= 1
 
       handle_update()
-      FileTabSet.resize()
+      uidlog.FileTabSet.resize()
    end
    #
    # Update Method
    #
    method handle_update()
-      dialogself.resize()
-      ClassTabSet.set_which_one(ClassTabSet.which_one)
-      DevTabSet.set_which_one(DevTabSet.which_one)
-      FileTabSet.set_which_one(FileTabSet.get_which_one())
-      pnlToolbar.display()
-      dialogself.resize()
-      dialogself.set_focus(CurrentEditBox())
+      uidlog.resize()
+      uidlog.ClassTabSet.set_which_one(uidlog.ClassTabSet.which_one)
+      uidlog.DevTabSet.set_which_one(uidlog.DevTabSet.which_one)
+      uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.get_which_one())
+      uidlog.pnlToolbar.display()
+      uidlog.resize()
+      uidlog.set_focus(CurrentEditBox())
    end
    #
    # Update Project Method
@@ -695,7 +696,7 @@ $endif
    # Current Tab In Which The Current Working FIle Is Displayed
    #
    method CurrentTabItem()
-      return FileTabSet.get_which_one()
+      return uidlog.FileTabSet.get_which_one()
    end
    #
    #
@@ -720,14 +721,14 @@ $endif
       l := l[1: oldy] ||| template ||| l[oldy:0]
       CurrentEditBox().set_contents(l) 
       goto_line(oldy,1)
-      MsgBox.set_contents(definition)
+      uidlog.MsgBox.set_contents(definition)
    end
    #
    #
    #
    method goto_line(ln,cn)
       if not (CurrentEditBox().goto_line(ln,cn)) then {
-	 MsgBox.set_contents(["nonexistent line number " || ln])
+	 uidlog.MsgBox.set_contents(["nonexistent line number " || ln])
 	 }
    end
    #
@@ -824,7 +825,7 @@ $endif
        showanyerror(wiconlog, lst)
        }
       else {
-	 \MsgBox.set_contents(["UI only knows how to compile .icn files"])
+	 \uidlog.MsgBox.set_contents(["UI only knows how to compile .icn files"])
       }
 
       fileCompiled :="TRUE"
@@ -845,9 +846,9 @@ $endif
 	    }
 	 if find(".icn",CurrentTabItem().label) & nerrors > 0 then
 	    nerrors -:= 1
-	 \MsgBox.set_contents(lst)
-	 if ( \ (MsgBox.vsb)).set_value(*lst - MsgBox.vsb.page_size) then
-	    MsgBox.refresh()
+	 \uidlog.MsgBox.set_contents(lst)
+	 if ( \ (uidlog.MsgBox.vsb)).set_value(*lst - uidlog.MsgBox.vsb.page_size) then
+	    uidlog.MsgBox.refresh()
 	 every s := !lst do s ? {
 	    if (not match("Script")) &
 	       (fn := ((tab(any(&letters))||=":")|"") || 
@@ -856,8 +857,8 @@ $endif
 		  if CurrentTabItem().label ~=== fn then
 		     handle_openfile( , fn)
 #                 if not handle_openfile( , fn) then {
-#                    put(\MsgBox.contents,"[switch to file with error failed]")
-#                    \MsgBox.set_contents(MsgBox.contents)
+#                    put(\uidlog.MsgBox.contents,"[switch to file with error failed]")
+#                    \uidlog.MsgBox.set_contents(uidlog.MsgBox.contents)
 #                    return
 #                    }
 	       goto_line(ln,1)
@@ -868,7 +869,7 @@ $endif
 	 }
       else {
 	 put(lst, "Can't open logfile " || \fn || ": " || \i)
-	 MsgBox.set_contents(lst)
+	 uidlog.MsgBox.set_contents(lst)
 	 }
    end
 
@@ -880,11 +881,11 @@ $endif
    method GotoErrorLine(errors_list)
       local curLine, fileBase, cLineNum, ix, index, fn, ln,
 	    errmessage
-      index := MsgBox.get_cursor()
+      index := uidlog.MsgBox.get_cursor()
       curLine := \lst[\index]
 
-      if ( \ (MsgBox.vsb)).set_value(*lst - MsgBox.vsb.page_size) then
-	 \MsgBox.refresh()
+      if ( \ (uidlog.MsgBox.vsb)).set_value(*lst - uidlog.MsgBox.vsb.page_size) then
+	 \uidlog.MsgBox.refresh()
       \curLine ? {
 	 if ((fn:=((tab(any(&letters))||=":")|"")||
 	    tab(many(&letters++&digits++' .\\/-'))) &
@@ -892,7 +893,7 @@ $endif
 	    errLine := "TRUE"
 	    if map(fn) ~== map(\tab_label) then {
 	       handle_openfile( , fn)
-	       dialogself.set_focus(CurrentEditBox())
+	       uidlog.set_focus(CurrentEditBox())
 	       }
 	 goto_line(ln,1)
 	 }
@@ -958,7 +959,7 @@ $endif
       if \modified == 1 |
 	 fileCompiled === "FALSE" then complink()
 
-      L := copy(\MsgBox.contents)
+      L := copy(\uidlog.MsgBox.contents)
       if /icodename then fail
 
       if /is_MSWindows then {
@@ -1021,11 +1022,11 @@ $endif
       /targs := ""
       /arglist := ""
       fdir := chdir(filedirectory)
-      MsgBox.set_contents([""])
+      uidlog.MsgBox.set_contents([""])
       lst := []
 
       if CurrentTabItem().label ==="Untitled" then {
-	 \MsgBox.set_contents(["Open a file to compile "])
+	 \uidlog.MsgBox.set_contents(["Open a file to compile "])
 	 return
 	 }
       fname:= "\"" || CurrentTabItem().label || "\""
@@ -1091,7 +1092,7 @@ $endif
       chdir(filedirectory)
       l := CurrentEditBox().get_contents() | []
       file := open(filename, "cu") | {
-	 \MsgBox.set_contents([filename || ": failure to open for writing."])
+	 \uidlog.MsgBox.set_contents([filename || ": failure to open for writing."])
 	 fail
 	 }
 
@@ -1099,9 +1100,9 @@ $endif
       every write(file,trim(!l,'\^m'),if \linebreak=="CRLF" then "\^m" else "")
       close(file)
 
-      \MsgBox.set_contents([filename || " saved."])
+      \uidlog.MsgBox.set_contents([filename || " saved."])
       if map(filename[-4:0]) == ".icp" then updateproject()
-      FileBrowser.addreplace(CurrentEditBox().get_contents(),tab_label,0)
+      uidlog.FileBrowser.addreplace(CurrentEditBox().get_contents(),tab_label,0)
       handle_update()
       modified := &null
    end
@@ -1152,7 +1153,7 @@ $endif
 	 }
 
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-	 \MsgBox.set_contents(["Enter file name to save"])
+	 \uidlog.MsgBox.set_contents(["Enter file name to save"])
 	 return
 	 }
 
@@ -1181,10 +1182,10 @@ $endif
 	       self.resize() # recalc with new components in place
 	       }
 	    }
-	 FileBrowser.nodereplace(CurrentTabItem().label)
+	 uidlog.FileBrowser.nodereplace(CurrentTabItem().label)
 	 CurrentTabItem().set_label(file_name(filename))
 	 L := CurrentEditBox().get_contents() | []
-	 FileBrowser.addreplace(L, file_name(filename), 0)
+	 uidlog.FileBrowser.addreplace(L, file_name(filename), 0)
 	 save_file(filename)
 	 if find(".icp", map(filename)) then { # open project
 	    project := filename
@@ -1219,7 +1220,7 @@ $endif
 
       numfiles+:=1
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
-	 MsgBox.set_contents(["Enter project name to save"])
+	 uidlog.MsgBox.set_contents(["Enter project name to save"])
 	 return
 	 }
       if \project then {

@@ -3,8 +3,8 @@
 BASE=../..
 include ../makedefs
 
-# Avoid picking up a link to dialog in ../gui
-#export IPATH:=$(UNI)/lib $(ICON_IPL)/lib
+export IPATH:=$(UNI)/lib $(UNI)/unicon $(UNI)/gui $(UNI)/xml $(ICON_IPL)/lib
+export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
 
 # nothing to configure here yet
 

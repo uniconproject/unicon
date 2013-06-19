@@ -18,9 +18,54 @@ link graphics
 import gui
 import undo
 import lang
+import util
 
 $include "guih.icn"
 $include "../unicon/ytab_h.icn"
+
+#
+# This subclass of the remappable keybinder handles multi-key prefixes
+# and remembers what mode it is in, e.g. emacs-mode, default-mode, etc.
+#
+class IDEKeybindings : Keybindings(mode, prefix)
+   method handle_key(e)
+   local m
+      if type(e) == "string" then e := prefix || e
+      if m := \ (keymap[e]) then {
+	 if m == "handle_prefix" then prefix ||:= e
+	 else {
+	    prefix := ""
+	    return m
+	    }
+	 }
+   end
+   method current_mode()
+      return mode
+   end
+   method default_mode()
+      mode := "default"
+      self.Keybindings.default_mode()
+   end
+   method emacs_mode()
+      mode := "emacs"
+      set_key("\^a", "handle_start_of_line")
+      set_key("\e", "handle_prefix")
+      keymap["\e"] := "handle_prefix"
+      keymap["\^x"] := "handle_prefix"
+      keymap["\^c"] := "handle_prefix"
+      keymap["\^v"] := "handle_key_page_down"
+      keymap["\^z"] := "handle_scrolldown_one_line"
+      keymap["\^y"] := "handle_paste"
+      keymap["\^x\^c"] := "handle_exit"
+      keymap["\^x\^x"] := "exchange_point_and_mark"
+      keymap["\^x\^f"] := "find_file"
+      keymap["\^x\^s"] := "save_buffer"
+      keymap["\^x\^n"] := "next_error"
+   end
+initially
+   self.Keybindings.initially()
+   prefix := ""
+end
 
 class BuffEditableTextList : EditableTextList(
    moved,	# to-do: check if we need this and if so, implement it.
@@ -33,6 +78,14 @@ class BuffEditableTextList : EditableTextList(
    errorLineNumber,
    doReparse
    )
+
+   method fire(type, param)
+      self$Connectable.fire(type,param)
+      if type == CONTENT_CHANGED_EVENT then
+	 doReparse := 1
+      if type == CURSOR_MOVED_EVENT & old_cursor_y ~= cursor_y then
+	 ReparseCode()
+   end
 
    method on_vsb(ev,y_coor,enter_here)
       if /enter_here & \scroll_locked then fail #lock scrollbar
@@ -95,62 +148,11 @@ class BuffEditableTextList : EditableTextList(
    # Overrides default handle_event() re-parsing on line changes, etc.
    #
    method handle_event(e)
-   local old_contents_size, old_mw, meth
-       
-      (\self.vsb).handle_event(e)
-      (\self.hsb).handle_event(e)
-      old_contents_size := *contents
-
-      if e === (&lpress | &rpress) then
-	 handle_press(e)
-      else if integer(e) = &mpress then
+      if integer(e) = &mpress then
 	 simulate_wheelbutton()
-      else if e === (&ldrag | &rdrag | &mdrag) then
-	 handle_drag(e)
-      else if e === (&lrelease | &rrelease | &mrelease) then
-	 handle_release(e)
-      else if \self.has_focus then {
-	 meth := kmap.handle_key(e)
-	 self.__m[meth](self,e)
-      }
-
-      if \moved then {
-	 #
-	 # Cursor moved.  Make sure still on screen; update scrollbars,
-	 # and refresh text.
-	 #
-	 # Reparse code when the cursor moves in the Y axis
-	 case e of {
-	    Key_PgUp | Key_PgDn | Key_Up | Key_Down | Key_Home | Key_End : {
-	       # Clear line error since the cursor moved
-	       ReparseCode()
-	       }
-	    }
-	 constrain_line()
-	 refresh(1)
-	 return _Event(e, self, 0)
-	 }
-
-      else if \changed then {
-	 if ((*contents ~= old_contents_size) | \long_line | 
-	    (old_mw ~= TextWidth(cwin, contents[long_line]))) then {
-	    #
-	    # Contents changed.  Re-compute all internal fields, ensure on
-	    # screen and re-display whole object.
-	    #
-	    set_internal_fields()
-	    constrain_line()
-	    display()
-
-	    # Set reparse flag
-	    doReparse := 1
-	    } 
-	 else {
-	    constrain_line()
-	    refresh(1)
-	    }
-	 return _Event(e, self, 0)
-      }
+      else self.EditableTextList.handle_event(e)
+      
+      if \self.old_cursor_y ~= self.cursor_y then ReparseCode()
    end
 
    #
@@ -307,6 +309,13 @@ class BuffEditableTextList : EditableTextList(
       if \self.has_focus then {
          scroll_y := &y
 
+	 # five for each press
+	 handle_key_down()
+	 handle_key_down()
+	 handle_key_down()
+	 handle_key_down()
+	 handle_key_down()
+
          while Event() === &mdrag do {
             if &y > scroll_y then {
                handle_key_down()
@@ -454,43 +463,48 @@ class BuffEditableTextList : EditableTextList(
             every errorObject := !parsingErrors do {
                # display the error
                errorObject.lineNumber +:= lineNumberOffset
-               SetErrorLineNumber( errorObject.lineNumber )
-               MsgBox.set_contents([errorObject.lineNumber ||": " ||
-                                   errorObject.errorMessage])
+	       if errorObject.lineNumber <= *contents then {
+		  SetErrorLineNumber( errorObject.lineNumber )
+		  uidlog.MsgBox.set_contents([errorObject.lineNumber ||": " ||
+					      errorObject.errorMessage])
+		  }
                }
             }
-        else MsgBox.set_contents(["(no errors)"])
+        else uidlog.MsgBox.set_contents(["(no errors)"])
         doReparse := 0
         }	
    end
 
    method GetCode()
-      local codeSubStringList, originalPositionY, currentPositionY, 
-              startPositionY, endPositionY, token
+      local codeSubStringList, originalPositionY, currentPositionY,
+              startPositionY, endPositionY, token, endsneeded
+
+      # reset parser
+      reinitialize()
 
       # Initialize positions	
       startPositionY := 0
       endPositionY := 0
 
-      # Search up for the enclosing procedure, method or class
+      # Search up for the enclosing procedure or class (compilation unit).
       originalPositionY := currentPositionY := cursor_y
+      endsneeded := 1
       while currentPositionY > 0 do {
-         # Reinitilize lexical analyzer
+         # Reinitialize lexical analyzer
          yyin := contents[currentPositionY]
          yylex_reinit()
          # Get string s tokens
          while (token := yylex()) ~=== EOFX do {
             # Get tokens
             case token of {
-               METHOD | PROCEDURE | CLASS : {
+               PROCEDURE : {
                   startPositionY := currentPositionY
                   break
                   }
-               END : {
-                  if originalPositionY ~= currentPositionY then {
-                     startPositionY := currentPositionY + 1
-                     break
-                     }
+               CLASS : {
+		  endsneeded := 2
+                  startPositionY := currentPositionY
+                  break
                   }
                default : break
                }
@@ -509,12 +523,18 @@ class BuffEditableTextList : EditableTextList(
          while ( token := yylex() ) ~=== EOFX do {
             # Get tokens
             case token of {
-               END : {
-                  endPositionY := currentPositionY
-                  break
+               END: {
+		  endsneeded -:= 1
+		  if endsneeded = 0 then {
+		      endPositionY := currentPositionY
+		      break
+		      }
                   }
-               CLASS | PROCEDURE | METHOD : {
-                  endPositionY := currentPositionY - 1
+               METHOD: {
+                  endsneeded +:= 1
+                  }
+               CLASS | PROCEDURE: {
+                  endPositionY := currentPositionY
                   break
                   }
                default : break
@@ -534,12 +554,13 @@ class BuffEditableTextList : EditableTextList(
       if startPositionY = 0 then startPositionY := 1
       codeSubStringList := [ startPositionY ] ||| 
                            contents[ startPositionY : endPositionY + 1 ]
-      # Return the sub string list
       return codeSubStringList
    end
 
    initially
       self$EditableTextList.initially()
+      kmap := IDEKeybindings()
+      kmap.emacs_mode()
       highlightcolor := "65535,65535,32428"
       autoindent := &null
       scroll_y := 1

@@ -33,19 +33,27 @@ link mainbar
 link getpaths
 link classbrowser
 link enqueue
-link "../unicon/unigram", "../unicon/idol", "../unicon/tree"
-link "../unicon/preproce", "../unicon/unilex", "../unicon/unicon"
-link "../unicon/yyerror"
+link unigram, idol, tree, preproce, unilex, unicon, yyerror
 
-global pnlToolbar, MsgBox, EditBox, FileTabSet, ClassTabSet, DevTabSet,
-       FileBrowser, linebreak, dialogself, browser, docpath,
-       tab_item_1, tab_item_2, tab_item_3, menubar, current_dir, 
-       is_MSWindows, PATHSEP, env
+global linebreak, uidlog, browser, docpath,
+       current_dir, is_MSWindows, PATHSEP, env, win_position
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
 
-class UIDE : Dialog(uide, startfile)
+class UIDE : Dialog(
+   #
+   # class variables for various objects in the dialog that are dynamically
+   # manipulated
+   #
+   uide,
+   startfile,
+   pnlToolbar, menubar,
+   MsgBox, EditBox,
+   FileTabSet,ClassTabSet, DevTabSet,
+   FileBrowser,
+   tab_item_1, tab_item_2, tab_item_3
+   )
 
    method component_setup()
       self.setup()
@@ -80,8 +88,11 @@ class UIDE : Dialog(uide, startfile)
    method ui_initialize()
       local f, line
       env := getenv("IDOLENV") | "uniclass"
+      win_position:="0,0"
       height := 400
       width := 600
+      height <:= (WAttrib("displayheight") - 300)
+      width <:= (WAttrib("displaywidth") - 300)
       msglines := 7
       font := "sans,15"
       linebreak := "LF"           # default to UNIX mode
@@ -193,14 +204,16 @@ initially(initfile)
 
    # contains the main ide functions
    ide := IDE(FileTabSet, ClassTabSet, FileBrowser)
-   dialogself := self
+   uidlog := self
    menubar := Mainbar(UProject())
    startfile := initfile
    return self
 end
 
+#
 # These are primitive legacy Notice/TextDialog compatibility functions.
 # They need to be improved/polished and eventually moved to the gui package.
+#
 
 global dialog_value, dialog_button
 
@@ -405,7 +418,7 @@ procedure ui_Warning(s, lineno, filenam)
    if \filenam then msg := msg || filenam || ":"
    if \lineno then msg := msg || lineno || ":"
    msg ||:= ": " || s 
-   MsgBox.set_contents([msg])
+   uidlog.MsgBox.set_contents([msg])
 end
 
 procedure ui_Progend(x)

@@ -50,7 +50,8 @@ class IDEKeybindings : Keybindings(mode, prefix)
       mode := "emacs"
       set_key("\^a", "handle_start_of_line")
       set_key("\e", "handle_prefix")
-      keymap["\e"] := "handle_prefix"
+      set_key(Key_Home, "handle_start_of_line",
+	      Key_End, "handle_end_of_line")
       keymap["\^x"] := "handle_prefix"
       keymap["\^c"] := "handle_prefix"
       keymap["\^v"] := "handle_key_page_down"
@@ -407,11 +408,11 @@ class BuffEditableTextList : EditableTextList(
            x +:= off
       }
       # Draw the rest of the string s that was not a token
-      Fg( win, "green" ) #Green
+      Fg( win, "very dark green" )
       remainder := s[ last_s_Position : ( *s + 1 ) ]
       if *(trim(\remainder)) > 0 then
          DrawString( win, x, y, s[ last_s_Position : ( *s + 1 ) ] )
-      Fg( win, "light green" ) #Light Green
+      Fg( win, "dark green" )
    end
 
    method SetErrorLineNumber ( lineNumber )
@@ -513,11 +514,16 @@ class BuffEditableTextList : EditableTextList(
          # go up
          currentPositionY -:= 1
          }
+      if startPositionY = 0 then startPositionY := 1
       # Search down for the enclosing end
       currentPositionY := cursor_y
       while currentPositionY < *contents + 1 do {
          # Reinitialize lexical analyzer
          yyin := contents[ currentPositionY ]
+	 while countdoublequotes(yyin)%2=1 & yyin[-1]=="_" do {
+	    currentPositionY +:= 1
+	    yyin ||:= contents[ currentPositionY ]
+	    }
          yylex_reinit()
          # Get string s tokens
          while ( token := yylex() ) ~=== EOFX do {
@@ -570,4 +576,17 @@ class BuffEditableTextList : EditableTextList(
 
       # This variable comes from the unilex.icn file
       errors := 0
+end
+
+# count # of doublequotes, supposedly accounting correctly for escaped quotes
+procedure countdoublequotes(s)
+local i := 0
+   s ? {
+      while tab(upto('"\\')) do {
+	 if ="\"" then
+	    i +:= 1
+	 else move(2)
+	 }
+      }
+   return i
 end

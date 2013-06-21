@@ -3230,7 +3230,7 @@ function{0,2} WinFontDialog(argv[argc])
 end
 
 
-"WinOpenDialog(w,s1,s2,i,s3,j) - choose a file to open"
+"WinOpenDialog(w,s1,s2,i,s3,j,s4) - choose a file to open"
 
 function{0,1} WinOpenDialog(argv[argc])
    abstract {
@@ -3240,9 +3240,9 @@ function{0,1} WinOpenDialog(argv[argc])
       wbp w;
       int len, slen;
       C_integer i, j, x, y, width, height, warg = 0;
-      char buf2[64], buf3[256], chReplace;
+      char buf2[64], buf3[256], buf4[256], chReplace;
       char *tmpstr;
-      tended char *s1, *s2, *s3;
+      tended char *s1, *s2, *s3, *s4;
       OptWindow(w);
 
       if (warg >= argc || is:null(argv[warg])) {
@@ -3295,7 +3295,22 @@ function{0,1} WinOpenDialog(argv[argc])
          }
       warg++;
 
-      if ((tmpstr = nativefiledialog(w, s1, s2, s3, i, j, 0)) == NULL) fail;
+      /* s4 is the directory; defaults to Windows version-specific rules */
+      if (warg >= argc || is:null(argv[warg])) {
+         s4 = NULL;
+         }
+      else if (!cnv:C_string(argv[warg], s4)) {
+         runerr(103, argv[warg]);
+         }
+      else {
+	 strncpy(buf4, s4, 255);
+	 buf4[255] = '\0';
+	 s4 = buf4;
+	 }
+      warg++;
+
+      if ((tmpstr = nativefiledialog(w, s1, s2, s3, s4, i, j, 0)) == NULL)
+	 fail;
       len = strlen(tmpstr);
       StrLoc(result) = tmpstr;
       StrLen(result) = len;
@@ -3366,7 +3381,7 @@ function{0,1} WinSelectDialog(argv[argc])
       }
 end
 
-"WinSaveDialog(w,s1,s2,i,s3,j) - choose a file to save"
+"WinSaveDialog(w,s1,s2,i,s3,j,s4) - choose a file to save"
 
 function{0,1} WinSaveDialog(argv[argc])
    abstract {
@@ -3376,9 +3391,9 @@ function{0,1} WinSaveDialog(argv[argc])
       wbp w;
       int len;
       C_integer i, j, warg = 0, slen;
-      char buf3[256], chReplace;
+      char buf3[256], buf4[256], chReplace;
       tended char *tmpstr;
-      tended char *s1, *s2, *s3;
+      tended char *s1, *s2, *s3, *s4;
       OptWindow(w);
 
       if (warg >= argc || is:null(argv[warg])) {
@@ -3429,7 +3444,23 @@ function{0,1} WinSaveDialog(argv[argc])
          runerr(101, argv[warg]);
          }
       warg++;
-      if ((tmpstr = nativefiledialog(w, s1, s2, s3, i, j, 1)) == NULL) fail;
+
+      /* s4 is the directory; defaults to Windows version-specific rules */
+      if (warg >= argc || is:null(argv[warg])) {
+         s4 = NULL;
+         }
+      else if (!cnv:C_string(argv[warg], s4)) {
+         runerr(103, argv[warg]);
+         }
+      else {
+	 strncpy(buf4, s4, 255);
+	 buf4[255] = '\0';
+	 s4 = buf4;
+	 }
+      warg++;
+
+      if ((tmpstr = nativefiledialog(w, s1, s2, s3, s4, i, j, 1)) == NULL)
+	 fail;
       len = strlen(tmpstr);
       StrLoc(result) = alcstr(tmpstr, len);
       StrLen(result) = len;

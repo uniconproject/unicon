@@ -4864,10 +4864,14 @@ char *nativeselectdialog(wbp w, struct b_list *L, char *s)
 
 OPENFILENAME ofn;
 
-char *nativefiledialog(wbp w, char *s1, char *s2, char *s3,
+char *nativefiledialog(wbp w,
+			char *s1, /* title */
+			char *s2, /* default/initial file */
+			char *s3, /* filter */
+			char *s4, /* directory */
 			int i, int j, int saveflag)
 {
-   char buf[128], buf2[64];
+   char buf[256], buf2[256], buf3[256];
    char *stmp;
 
    /*
@@ -4884,7 +4888,8 @@ char *nativefiledialog(wbp w, char *s1, char *s2, char *s3,
    ofn.lpstrTitle = s1;
    ofn.lpstrFileTitle = buf2;
    ofn.nMaxFileTitle = sizeof(buf2);
-   ofn.lpstrInitialDir = NULL;
+   if (s4) strcpy(buf3, s4);
+   ofn.lpstrInitialDir = s4 ? buf3 : NULL;
    ofn.Flags = OFN_SHOWHELP | OFN_PATHMUSTEXIST;
    if ((saveflag ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn)) == 0)
       return NULL;

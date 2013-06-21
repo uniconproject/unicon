@@ -18,7 +18,8 @@ global targs,browser,
    fontheight,msglines,
    linebreak,ui_ini,filename,
    flag,tmp,configdlg,
-   tabs_num,opened_files_set,
+   tabs_num,
+   opened_files_set,
    opened_files_num,
    tab_label,filedirectory,
    fileCompiled, overwrite, url_field,
@@ -515,7 +516,7 @@ $ifdef _UNIX
 	 # filepath := chdir()
 	 filedirectory := fd.get_directory()
 $else
-	 filename := WinOpenDialog(uidlog.win, "Open File ...", "", 5) | fail 
+	 filename := WinOpenDialog(uidlog.win, "Open File ...", "", 5,,,chdir()) | fail 
 $endif
 	 }
       current_dir := filedirectory
@@ -1148,7 +1149,7 @@ $endif
 	 }
       else {
 	 current_dir := filedirectory
-	 filename := WinSaveDialog(&window, "Save File As:", "", 50) | fail
+	 filename := WinSaveDialog(&window, "Save File As:", "", 50,,,chdir()) | fail
 	 if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
 	 }
 

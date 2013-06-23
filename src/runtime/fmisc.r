@@ -2452,7 +2452,7 @@ word get_cv(word mtx){
    condvars[ncondvars] = malloc(sizeof(pthread_cond_t)); \
    pthread_cond_init(condvars[ncondvars], NULL);
    if(mtx<0) 
-      condvarsmtxs[ncondvars]=get_mutex(&rmtx_attr)-1;
+      condvarsmtxs[ncondvars]=get_mutex(&rmtx_attr);
    else
       condvarsmtxs[ncondvars]=mtx;
       
@@ -2474,7 +2474,11 @@ function{1} condvar(x)
       }
    else if def:C_integer(x,-1) then{
       abstract { return integer }
-      inline { return C_integer -2 - get_cv(x); }
+      inline { if (x>0)
+      	         return C_integer -2 - get_cv(x-1); 
+	       else
+	         return C_integer -2 - get_cv(x);
+	     }
       }
    else runerr(180,x)
    

@@ -716,37 +716,42 @@ void clean_threads()
     * no args, for example.
     */
 
-
    pthread_cond_destroy(&cond_tc);
    sem_destroy(&sem_tc);
 
+/* 
+ * IMPORTANT NOTICE:
+ * Disable mutex/condvars clean up for now. Leave this to the OS.
+ * Some code/libraries think this should be alive, even though we 
+ * are doing this at exit time. 
+ */
+
+#if 0
    /*  keep MTX_SEGVTRAP_N alive	*/
    for(i=1; i<nmutexes; i++){
       pthread_mutex_destroy(mutexes[i]);
       free(mutexes[i]);
       }
+
+   pthread_mutexattr_destroy(&rmtx_attr);
    
-  /* free(mutexes); */
-
-
    for(i=0; i<ncondvars; i++){
       pthread_cond_destroy(condvars[i]);
       free(condvars[i]);
       }
-
-   pthread_mutexattr_destroy(&rmtx_attr);
    
    free(condvars);
    free(condvarsmtxs);
-
+#endif
 }
+
 /*
  *  pthread errors handler
  */
 void handle_thread_error(int val, int func, char* msg)
 {
   if (!msg) msg = "";
- 
+
    switch(func) {
    case FUNC_MUTEX_LOCK:
    case FUNC_MUTEX_TRYLOCK:

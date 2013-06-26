@@ -444,6 +444,14 @@ keyword{1,*} features
 	 suspend C_string s;
 }
 
+#ifdef CPU_CORE_COUNT
+{
+         char s[16];
+	 sprintf(s, "CPU Cores %d", num_cpu_cores );
+	 suspend C_string s;
+}
+#endif					/* CPU_CORE_COUNT */
+
 #if defined(MSWindows) && defined(SM_DIGITIZER)
       {
       int value = GetSystemMetrics(SM_DIGITIZER);

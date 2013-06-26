@@ -60,6 +60,8 @@ extern pthread_rwlock_t __environ_lock;
 extern struct tend_desc *tend;  /* chain of tended descriptors */
 #endif					/* Concurrent */
 
+extern int num_cpu_cores;
+
 #ifdef Concurrent
 extern pthread_mutex_t **mutexes;
 extern word nmutexes;

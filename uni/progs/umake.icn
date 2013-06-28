@@ -1,0 +1,64 @@
+#
+# umake.icn - Unicon version of the "make" program
+#
+# UNDER CONSTRUCTION. DOES NOT WORK YET.
+#
+# Reasons for the existence of this program:
+#
+# 1. link directly into IDE, do not launch an external process
+# 2. do not depend on end user to install a make.exe
+
+$ifdef MAIN
+procedure main(argv)
+   make(argv)
+end
+$endif
+
+procedure make(argv)
+   DepGraph("makefile")
+end
+
+#
+# make is organized around a dependency graph. The nodes are labeled by targets.
+#
+class DepGraph(targets)
+initially(filename)
+   filechars := &letters ++ '.'
+   targets := []
+   readahead := []
+   if f := open(\filename) then {
+      while line := (pop(readahead) | read(f)) do {
+         line ? {
+	    tab(many(' '))
+	    if ="#" then { write("comment: ", image(line)); continue } # skip comment
+	    else if pos(0) then { write("blankline: ", image(line)); continue } # skip empty lines
+	    else if (target:=tab(many(filechars))) &
+               (tab(many(' '))|"") & =":" then { # build a target
+	       tab(many(' '))
+	       deps := []
+		buildrules := []
+	       while dependency := tab(many(filechars)) do {
+		  put(deps,dependency)
+		  tab(many(' '))
+		  }
+		write("target ", image(target), " depends on")
+		every write("\t", image(!deps))
+		while line := read(f) & line[1]=="\t" do put(buildrules, line[2:0])
+		if line[1]=="\t" then break
+		else put(readahead, line)
+		write("and its build rules are")
+		every write("\t", image(!buildrules))
+
+	       }
+	    else write("??? ", image(line))
+	    }
+         }
+      close(f)
+      }
+   else if \filename then stop("can't open ", image(filename))
+   else stop("usage: umake ... (reads makefile)")
+end
+
+class Dependency(target, dependencies, buildrules)
+end
+

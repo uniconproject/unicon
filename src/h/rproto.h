@@ -746,7 +746,7 @@ int checkOpenConsole( FILE *w, char *s );
       char *nativecolordialog	(wbp w,long r,long g, long b,char *s);
       int nativefontdialog	(wbp w, char *buf, int flags, int fheight,char*colr);
       char *nativeselectdialog	(wbp w,struct b_list *,char *s);
-      char *nativefiledialog	(wbp w,char *s1,char *s2,char *s3,int i,int j,int k);
+      char *nativefiledialog	(wbp w,char *s1,char *s2,char *s3, char *s4, int i,int j,int k);
       HFONT mkfont		(char *s, char is_3D);
       int sysTextWidth		(wbp w, char *s, int n);
       int sysFontHeight		(wbp w);

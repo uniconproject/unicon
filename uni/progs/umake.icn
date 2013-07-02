@@ -15,16 +15,20 @@ end
 $endif
 
 procedure make(argv)
-   DepGraph("makefile")
+   d := DepGraph("makefile")
+   d.make()
 end
 
 #
 # make is organized around a dependency graph. The nodes are labeled by targets.
 #
-class DepGraph(targets)
+class DepGraph(targets,initialtarget)
+   method make(targ)
+      every r := !targets do r.print()
+   end
 initially(filename)
    filechars := &letters ++ '.'
-   targets := []
+   targets := table()
    readahead := []
    if f := open(\filename) then {
       while line := (pop(readahead) | read(f)) do {
@@ -36,19 +40,18 @@ initially(filename)
                (tab(many(' '))|"") & =":" then { # build a target
 	       tab(many(' '))
 	       deps := []
-		buildrules := []
+	       buildrules := []
 	       while dependency := tab(many(filechars)) do {
 		  put(deps,dependency)
 		  tab(many(' '))
 		  }
-		write("target ", image(target), " depends on")
-		every write("\t", image(!deps))
-		while line := read(f) & line[1]=="\t" do put(buildrules, line[2:0])
-		if line[1]=="\t" then break
-		else put(readahead, line)
-		write("and its build rules are")
-		every write("\t", image(!buildrules))
-
+	       while line := read(f) & line[1]=="\t" do
+		  put(buildrules, line[2:0])
+	       if line[1]=="\t" then break
+	       else put(readahead, line)
+	       r := Rule(target,deps,buildrules)
+	       targets[target] := r
+	       /initialtarget := target
 	       }
 	    else write("??? ", image(line))
 	    }
@@ -59,6 +62,13 @@ initially(filename)
    else stop("usage: umake ... (reads makefile)")
 end
 
-class Dependency(target, dependencies, buildrules)
+class Rule(target, dependencies, buildrules)
+   method print()
+       writes("target ", image(target), " : ")
+       every writes(" ", image(!dependencies))
+       write()
+       write("built by")
+       every write("\t", image(!buildrules))
+   end
 end
 

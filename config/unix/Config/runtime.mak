@@ -157,8 +157,8 @@ xinvoke.o: invoke.r $(HDRS)
 	$(RM) xinvoke.c
 
 xkeyword.o: keyword.r $(HDRS) ../h/feature.h ../h/version.h
-	../../bin/rtt -x keyword.r
-	$(CC) $(CFLAGS) -c xkeyword.c
+	../../bin/rtt -DREPO_REVISION=$(REPO_REV) -x keyword.r
+	$(CC) $(CFLAGS) -DREPO_REVISION=$(REPO_REV) -c xkeyword.c
 	$(RM) xkeyword.c
 
 xlmisc.o: lmisc.r $(HDRS)

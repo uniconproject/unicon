@@ -46,22 +46,32 @@ class IDEKeybindings : Keybindings(mode, prefix)
       mode := "default"
       self.Keybindings.default_mode()
    end
+
+   #
+   # Emacs-like keybindings.  Probably should rename existing
+   # methods whose names are tied to particular keys instead
+   # naming them based on what editing function they perform.
+   #
    method emacs_mode()
       mode := "emacs"
-      set_key("\^a", "handle_start_of_line")
-      set_key("\e", "handle_prefix")
-      set_key(Key_Home, "handle_start_of_line",
-	      Key_End, "handle_end_of_line")
-      keymap["\^x"] := "handle_prefix"
-      keymap["\^c"] := "handle_prefix"
-      keymap["\^v"] := "handle_key_page_down"
-      keymap["\^z"] := "handle_scrolldown_one_line"
-      keymap["\^y"] := "handle_paste"
-      keymap["\^x\^c"] := "handle_exit"
-      keymap["\^x\^x"] := "exchange_point_and_mark"
-      keymap["\^x\^f"] := "find_file"
-      keymap["\^x\^s"] := "save_buffer"
-      keymap["\^x\^n"] := "next_error"
+      set_key("\e",     "handle_prefix",
+	      Key_Home, "handle_start_of_line",
+	      Key_End,  "handle_end_of_line",
+	      "\^a",    "handle_start_of_line",
+	      "\^b",    "handle_key_left",
+	      "\^c",    "handle_prefix",
+	      "\^f",    "handle_key_right",
+	      "\^n",    "handle_key_down",
+	      "\^p",    "handle_key_up",
+	      "\^v",    "handle_key_page_down",
+	      "\^x",    "handle_prefix",
+	      "\^y",    "handle_paste",
+	      "\^z",    "handle_scrolldown_one_line",
+	      "\^x\^c", "handle_exit",
+	      "\^x\^x", "exchange_point_and_mark",
+	      "\^x\^f", "find_file",
+	      "\^x\^s", "save_buffer",
+	      "\^x\^n", "next_error")
    end
 initially
    self.Keybindings.initially()
@@ -77,7 +87,8 @@ class BuffEditableTextList : EditableTextList(
    autoindent, # taken from buffertextlist
    scroll_y,  # taken from buffertextlist
    errorLineNumber,
-   doReparse
+   doReparse,
+   paren_match_found
    )
 
    method fire(type, param)
@@ -151,6 +162,11 @@ class BuffEditableTextList : EditableTextList(
    method handle_event(e)
       if integer(e) = &mpress then
 	 simulate_wheelbutton()
+      # turn scroll up/down into a key_up/down in the vsb.
+      else if integer(e) = -13 then
+         every 1 to 4 do (\vsb).handle_button_up(e)
+      else if integer(e) = -14 then
+         every 1 to 4 do (\vsb).handle_button_down(e)
       else self.EditableTextList.handle_event(e)
       
       if \self.old_cursor_y ~= self.cursor_y then ReparseCode()
@@ -230,7 +246,7 @@ class BuffEditableTextList : EditableTextList(
          # Check if this string belong to the error line
          if ( i = errorLineNumber ) then {
             # Set error line color (red)
-            Fg( self.cbwin, "Red" )
+            Fg(self.cbwin, "red")
             }
          }
 
@@ -355,11 +371,11 @@ class BuffEditableTextList : EditableTextList(
       # Check if an error line has been set.
       if \errorLineNumber then {
          # Check if this string belong to the error line
-         if ( currentLine = errorLineNumber ) then {
+         if currentLine = errorLineNumber then {
             # Set error line color (red)
-            Fg( win, "Red" )
+            Fg(win, "Red")
             # Print the string
-            DrawString( win, x, y, s )
+            DrawString(win, x, y, s)
             # Exit this method
             return
             }
@@ -465,7 +481,7 @@ class BuffEditableTextList : EditableTextList(
                # display the error
                errorObject.lineNumber +:= lineNumberOffset
 	       if errorObject.lineNumber <= *contents then {
-		  SetErrorLineNumber( errorObject.lineNumber )
+		  SetErrorLineNumber(errorObject.lineNumber)
 		  uidlog.MsgBox.set_contents([errorObject.lineNumber ||": " ||
 					      errorObject.errorMessage])
 		  }

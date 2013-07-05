@@ -305,19 +305,12 @@ dptr da;
 int realtobig(da, dx)
 dptr da, dx;
 {
-
-#ifdef Double
-   double x;
-#else					/* Double */
-   double x = BlkD(*da,Real)->realval;
-#endif					/* Double */
-
    struct b_bignum *b;
-   word i, blen;
-   word d;
+   word i, blen, d;
    int sgn;
 
 #ifdef Double
+   double x;
    {
    int	*rp, *rq;
 #ifdef DescriptorDouble
@@ -329,6 +322,8 @@ dptr da, dx;
    *rq++ = *rp++;
    *rq = *rp;
    }
+#else					/* Double */
+   double x = BlkD(*da,Real)->realval;
 #endif					/* Double */
 
    if (x > 0.9999 * MinLong && x < 0.9999 * MaxLong) {

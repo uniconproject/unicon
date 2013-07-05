@@ -446,6 +446,12 @@ dptr s, d;
          if (dbl > MaxLong || dbl < MinLong) {
 
 #ifdef LargeInts
+#ifdef DescriptorDouble
+	    s->vword.realval = dbl;
+#else
+            BlkLoc(*s) = alcreal(dbl);
+#endif
+	    s->dword = D_Real;
             if (realtobig(s, d) == Succeeded) {
                EVValD(d, e_sconv);
                return 1;

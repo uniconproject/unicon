@@ -55,8 +55,8 @@ class IDEKeybindings : Keybindings(mode, prefix)
    method emacs_mode()
       mode := "emacs"
       set_key("\e",     "handle_prefix",
-	      Key_Home, "handle_start_of_line",
-	      Key_End,  "handle_end_of_line",
+	      Key_Home, "ide_key_home",
+	      Key_End,  "ide_key_end",
 	      "\^a",    "handle_start_of_line",
 	      "\^b",    "handle_key_left",
 	      "\^c",    "handle_prefix",
@@ -90,6 +90,18 @@ class BuffEditableTextList : EditableTextList(
    doReparse,
    paren_match_found
    )
+
+   # HOME goes to beginning of line, ^HOME goes to beginning of file
+   method ide_key_home(e)
+      if &control then handle_key_home(e)
+      else handle_start_of_line()
+   end
+
+   # END goes to end of line, ^END goes to end of file
+   method ide_key_end(e)
+      if &control then handle_key_end(e)
+      else handle_end_of_line()
+   end
 
    method fire(type, param)
       self$Connectable.fire(type,param)
@@ -244,13 +256,13 @@ class BuffEditableTextList : EditableTextList(
      # Check if an error line has been set.
       if \errorLineNumber then {
          # Check if this string belong to the error line
-         if ( i = errorLineNumber ) then {
+         if i = errorLineNumber then {
             # Set error line color (red)
             Fg(self.cbwin, "red")
             }
          }
 
-      left_string_unicon ( self.cbwin, xp, yp, detab(s), i )
+      left_string_unicon (self.cbwin, xp, yp, detab(s), i)
 
       if (v.index = \self.cursor_y) & 
          (v.first <= \self.cursor_x <= v.last) then {
@@ -320,7 +332,9 @@ class BuffEditableTextList : EditableTextList(
       else autoindent := 1
    end
 
-   #Not a very good simulation !!!
+   # Simulate a wheelbutton using middle mouse button events.
+   # Not a very good simulation! This code is subsumed by the
+   # new scrollup/scrolldown (-13, -14) events.
    method simulate_wheelbutton()
 
       if \self.has_focus then {
@@ -400,7 +414,7 @@ class BuffEditableTextList : EditableTextList(
       while (token := yylex()) ~=== EOFX do {
          # Set token color
          case token of {
-            ABSTRACT | BREAK | BY | CASE | CLASS | CREATE | 
+            ABSTRACT | BREAK | BY | CASE | CLASS | CREATE |
             DEFAULT | DO | ELSE | END | EVERY | FAIL | 
             GLOBAL | IF | IMPORT | INITIALLY | 
             iconINITIAL | INVOCABLE | LINK | LOCAL | 

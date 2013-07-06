@@ -516,7 +516,9 @@ $ifdef _UNIX
 	 # filepath := chdir()
 	 filedirectory := fd.get_directory()
 $else
-	 filename := WinOpenDialog(uidlog.win, "Open File ...", "", 5,,,chdir()) | fail 
+	 filename :=
+	    WinOpenDialog(uidlog.win, "Open File ...", "", 5,,,chdir()) |
+	    fail 
 $endif
 	 }
       current_dir := filedirectory
@@ -1149,7 +1151,9 @@ $endif
 	 }
       else {
 	 current_dir := filedirectory
-	 filename := WinSaveDialog(&window, "Save File As:", "", 50,,,chdir()) | fail
+	 filename := WinSaveDialog(&window, "Save File As:", "", 50,
+				   "Unicon Source File (.icn)|*.icn|_
+				    All Files(*.*)|*.*|",0,chdir()) | fail
 	 if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
 	 }
 
@@ -1213,8 +1217,11 @@ $endif
 	 filedirectory := fd.get_directory()
 	 if numfiles>1 then fd.set_directory(filedirectory)
 	 }
-      else{
-	 filename := WinSaveDialog(&window, "Save Project As:", "", 50) | fail
+      else {
+	 filename := WinSaveDialog(&window, "Save Project As:", "", 50,
+				   "Unicon Project (.prj)|*.prj|_
+				    Unicon Source File (.icn)|*.icn|_
+				    All Files(*.*)|*.*|",0,chdir()) | fail
 	 if filename[-2:0] == ".*" then filename[-2:0] := ""
 	 }
       current_dir := filedirectory

@@ -54,7 +54,7 @@ class Mainbar(
          ide.handle_closefile()
          uidlog.FileTabSet.set_which_one(uidlog.tab_item_2)
          uidlog.FileTabSet.resize()
-         }
+	 }
    end
 
    method on_ivib(ev)
@@ -94,29 +94,29 @@ class Mainbar(
 
       lpr := d.printcmd.get_contents()
       if match("enscript"|"lpr", lpr) then {
-	  lpr ||:= " -P" || \prn_name
-	  lpr ||:= " -#" || \copies_num
-	  }
+	 lpr ||:= " -P" || \prn_name
+	 lpr ||:= " -#" || \copies_num
+	 }
       else if match("lp", lpr) then {
-	  lpr ||:= " -d " || \prn_name
-	  lpr ||:= " -n " || \copies_num
-	  }
+	 lpr ||:= " -d " || \prn_name
+	 lpr ||:= " -n " || \copies_num
+	 }
 $ifdef _UNIX
       if f := open(lpr, "pw") then {
 	 every write(f, trim(!L, '\^m'))
-         close(f)
-         }
+	 close(f)
+	 }
 $else
       # windows, for now
       if f := open("output.prn", "w") then {
 	 every write(f, trim(!L, '\^m'))
-         close(f)
-	 system( lpr || " output.prn" )
-         }
+	 close(f)
+	 system(lpr || " output.prn")
+	 }
 $endif
       else {
-         uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
-         }
+	 uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
+	 }
    end
 
    method on_save_file(ev)
@@ -149,10 +149,10 @@ $endif
       dialogFor := "goto"
       oldwindow := &window
       &window := win
-         if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
-            gotoln := integer(dialog_value[1])
-	    ide.goto_line(gotoln,1)
-	    }
+      if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
+	 gotoln := integer(dialog_value[1])
+	 ide.goto_line(gotoln,1)
+	 }
       &window := oldwindow 
    end
 
@@ -178,15 +178,15 @@ $endif
       /replacestr := ""
       oldwindow := &window
       &window := win
-       if TextDialog("Replace what with what: ",,
-          [(\findstr | ""),""],1)=="Okay" then {
-          findstr := dialog_value[1]
-          replacestr := dialog_value[2]
-          ide.findstring(findstr)
-          first_x := ide.CurrentEditBox().cursor_x-(*dialog_value[1])
-          second_x := ide.CurrentEditBox().cursor_x
-          wu_replace(ev, first_x, second_x, replacestr)
-          }
+      if TextDialog("Replace what with what: ",, [(\ findstr | ""),""], 1) ==
+	 "Okay" then {
+	    findstr := dialog_value[1]
+	    replacestr := dialog_value[2]
+	    ide.findstring(findstr)
+	    second_x := ceb.cursor_x
+	    first_x := second_x - (*dialog_value[1])
+	    wu_replace(ev, first_x, second_x, replacestr)
+	    }
       &window := oldwindow
       modified := 1
    end
@@ -205,9 +205,9 @@ $endif
    end
 
    method InsertString(first_x, second_x, replace_str)
-      local l, oldy , m, e, p1, p2, wchar
-      l := ide.CurrentEditBox().get_contents() 
-      oldy := ide.CurrentEditBox().cursor_y
+      local ceb := ide.CurrentEditBox(), l, oldy , m, e, p1, p2, wchar
+      l := ceb.get_contents() 
+      oldy := ceb.cursor_y
       wchar := &letters
       m := l[oldy]
       e := *m
@@ -215,7 +215,7 @@ $endif
       p2 := m[\first_x+1 : e+1]
       m := [p1 || \replace_str || " " ||\p2]
       l := l[1: oldy] ||| m ||| l[oldy+1:0]
-      ide.CurrentEditBox().set_contents(l) 
+      ceb.set_contents(l) 
       ide.goto_line(oldy,1)
    end
 
@@ -232,21 +232,21 @@ $endif
    end
 
    method set_font(fname, fcolor)
-       /fontname := "sans,15"
-       /fgcolor := "black"
-       if not (/fname := fontname) then fontname := fname
-       if not (/fcolor := fgcolor) then fgcolor := fcolor
-       if uidlog.MsgBox.set_attribs("font=" || fontname) then {
-	   #uidlog.MsgBox.compute_and_invalidate()
-	   uidlog.MsgBox.set_attribs("fg=" || fgcolor)
-       }
-       if (ide.CurrentEditBox()).set_attribs("font=" || fontname) then {
-	   #EditBox.compute_and_invalidate()
-	   (ide.CurrentEditBox()).set_attribs("fg=" || fgcolor)
-       }
-       uidlog.init()
-       uidlog.resize()
-       uidlog.display()
+      /fontname := "sans,15"
+      /fgcolor := "black"
+      if not (/fname := fontname) then fontname := fname
+      if not (/fcolor := fgcolor) then fgcolor := fcolor
+      if uidlog.MsgBox.set_attribs("font=" || fontname) then {
+	 #uidlog.MsgBox.compute_and_invalidate()
+	 uidlog.MsgBox.set_attribs("fg=" || fgcolor)
+	 }
+      if (ide.CurrentEditBox()).set_attribs("font=" || fontname) then {
+	 #EditBox.compute_and_invalidate()
+	 (ide.CurrentEditBox()).set_attribs("fg=" || fgcolor)
+	 }
+      uidlog.init()
+      uidlog.resize()
+      uidlog.display()
    end
 
    method on_font()
@@ -451,7 +451,7 @@ $endif
       uidlog.ClassTabSet.resize()
       uidlog.DevTabSet.resize()
       uidlog.pnlToolbar.resize()
-  end
+   end
 
    method on_msgs_normal(ev)
       uidlog.FileTabSet.set_pos("150", "50")
@@ -545,11 +545,11 @@ $endif
       /targs := ""
       oldwindow := &window
       &window := win
-         if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
-         targs := dialog_value[1]
-      &window :=oldwindow   
-#      configdlg := ConfigureOptions()
-#      configdlg.show_modal()
+      if TextDialog("Enter compiler options: ",,targs,60)=="Okay" then
+	 targs := dialog_value[1]
+      &window := oldwindow
+      #      configdlg := ConfigureOptions()
+      #      configdlg.show_modal()
    end
 
    method on_make_exe(ev)
@@ -565,9 +565,9 @@ $endif
       /xargs := ""
       oldwindow := &window
       &window := win
-         if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
-         xargs := dialog_value[1]
-      &window :=oldwindow   
+      if TextDialog("Enter command line arguments: ",,xargs,60)=="Okay" then
+	 xargs := dialog_value[1]
+      &window := oldwindow   
    end
 
    method on_run_program(ev)
@@ -577,17 +577,17 @@ $endif
    end
 
    method on_insert_class(ev)
-      ide.InsertCode( templates("class"), definitions("class") )
+      ide.InsertCode(templates("class"), definitions("class"))
       modified := 1
    end
 
    method on_insert_method(ev)
-      ide.InsertCode( templates("method"), definitions("method") )
+      ide.InsertCode(templates("method"), definitions("method"))
       modified := 1
    end
 
    method on_insert_proc(ev)
-      ide.InsertCode( templates("procedure"), definitions("procedure") )
+      ide.InsertCode(templates("procedure"), definitions("procedure"))
       modified := 1
    end
 
@@ -598,17 +598,15 @@ $endif
    end
 
    method on_about(ev)
-      local sav
+      local sav, sp13
       sav := &window
       &window  := &null
-         Notice("                           Unicon IDE 0.91",
-                "             " || &version,
-                "==================================",
-                "                          contributions by ",
-                "             Hani Bani-Salameh, Nolan Clayton",
-		"                    Sean Harris, Clint Jeffery",
-	        "               bugreports: jeffery@uidaho.edu")
-
+      sp13 := repl(" ", 13)
+      Notice(repl(" ",27) || "Unicon IDE 0.92", sp13 || &version, repl("=",34),
+             sp13 || sp13 || " contributions by ",
+             sp13 || "Hani Bani-Salameh, Nolan Clayton",
+             sp13 || "       Sean Harris, Clint Jeffery",
+             sp13 || "  bugreports: jeffery@uidaho.edu")
       &window := sav
    end
 
@@ -616,7 +614,7 @@ $endif
       local sav
       sav := &window
       &window  := &null
-         Notice("Project Path Unknown")
+      Notice("Project Path Unknown")
       &window := sav
    end
 
@@ -680,7 +678,7 @@ $ifdef _UNIX
             proc("system",0)(\browser || " " || URL || " &>ui.err &")
          close(f)
          remove("ui.err")
-         }
+	 }
 $else
       proc("system",0)(\browser || " " || URL) # || " &")
       #s := \browser[2:-1] || " " || URL
@@ -700,7 +698,7 @@ $endif
          newUPro := UProject(pname,filedirectory)
 
          newUPro.show_modal()
-         }
+	 }
       projecttype :="Unicon"
       projectCreated := "TRUE"
       uidlog.tab_item_1.set_label("Messages: (Project Mode)")
@@ -716,9 +714,9 @@ $endif
       projectOpened := "TRUE"
 
       if \projectname then {
-         pname:=file_name(projectname)
-         }
-      projecttype :="Unicon"
+         pname := file_name(projectname)
+	 }
+      projecttype := "Unicon"
 
       uidlog.tab_item_1.set_label("Messages: (Project Mode)")
       uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
@@ -731,57 +729,58 @@ $endif
       ide.handle_openfile(ev)
       projectOpened := "TRUE"
    end
+
    #
    # Method on_make_compile_Project; it allows making 
    # or compiling the Unicon projects
    #
    method on_make_compile_Project()
       local console, pname, pname2
-      lst :=[]
+      lst := []
       pname := ide.CurrentTabItem().label
       pname2 := pname[1:*pname-4]
 
 $ifdef _UNIX
-      console:="konsole --vt_sz 70x18 " 
- $else # implies Windows for now
-      console:="cmd "
- $endif
+      console := "konsole --vt_sz 70x18 " 
+$else # implies Windows for now
+      console := "cmd "
+$endif
 
       if \projecttype == "Unicon" then {
          chdir(filedirectory)
          system("make deps")
-         system("make -f "||pname2||"_uprjMakefile"||
-                " > "||wiconlog||" 2>&1",lst,1)
+         system("make -f " || pname2 || "_uprjMakefile > " ||
+                wiconlog || " 2>&1", lst, 1)
          ide.showanyerror(wiconlog, lst)
-         }
+	 }
       fileCompiled := "TRUE"
    end
 
    method on_run_project()
       local console, cmd, pname, pname2
-      lst :=[]
+      lst := []
       pname := ide.CurrentTabItem().label
-      pname2 := pname[1:*pname-4]||".exe"
+      pname2 := pname[1:*pname-4] || ".exe"
 
 $ifdef _UNIX
-     console:="konsole --vt_sz 70x18 " 
+      console := "konsole --vt_sz 70x18 " 
 $else # implies Windows for now
-     console:="cmd "
+      console := "cmd "
 $endif
       if \projecttype == "Unicon" then { #run unicon projects
          chdir(filedirectory)
 $ifdef _UNIX
 	 # path search, see if xterm exists on path, use it
-         if pathfind("xterm", getenv("PATH")) then {
-            console :="xterm -hold -e "
-            system(console||" ./"||"UProject")
-            }
+	 if pathfind("xterm", getenv("PATH")) then {
+	    console :="xterm -hold -e "
+	    system(console || " ./UProject")
+	    }
 	 else #just run without "console || ..."
-            system(pname2)
+	    system(pname2)
 $else
-         system(console||" ./"||"UProject")
+	 system(console || " ./UProject")
 $endif
-         }
+	 }
    end
 
    method on_make_clean()
@@ -790,14 +789,14 @@ $endif
       pname := ide.CurrentTabItem().label
       pname2 := pname[1:*pname-4]
 
-      if \(projectCreated| projectOpened) == "TRUE" then {
-         if \projecttype == "Unicon" then {
-            chdir(filedirectory)
-            system("make clean -f "||pname2||"_uprjMakefile"||
-                   " > "||wiconlog||" 2>&1",lst,1)
-            }
-         ide.showanyerror(wiconlog, lst)
-         }
+      if \ (projectCreated | projectOpened) == "TRUE" then {
+	 if \projecttype == "Unicon" then {
+	    chdir(filedirectory)
+	    system("make clean -f " || pname2 || "_uprjMakefile > " ||
+		   wiconlog || " 2>&1", lst, 1)
+	    }
+	 ide.showanyerror(wiconlog, lst)
+	 }
       else on_project_check()
    end
 

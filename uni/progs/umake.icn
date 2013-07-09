@@ -63,6 +63,18 @@ initially(filename)
 end
 
 class Rule(target, dependencies, buildrules)
+   method make()
+      # first, recursively build dependencies
+      # check timestamps of dependencies against my timestamp
+      # if needed, execute build rules
+   end
+   method exec()
+      every r := !buildrules do {
+	 if not (rv := system(r)) then
+	    stop("umake: system(",image(r),") failed")
+	 if rv ~=== 0 then stop("umake: ", rv, " exit by ", image(r))
+	 }
+   end
    method print()
        writes("target ", image(target), " : ")
        every writes(" ", image(!dependencies))

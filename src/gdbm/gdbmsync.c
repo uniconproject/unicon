@@ -36,10 +36,15 @@
 /* Make sure the database is all on disk. */
 
 #if defined(NT) || defined(NTGCC)
+#ifndef fsync
+/*
+ * If a macro definition exists, it supercedes this faux-fsync.
+ */
 void fsync(int i)
 {
   fflush(NULL); fflush(NULL);
 }
+#endif					/* fsync */
 #endif
 
 void

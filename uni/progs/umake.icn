@@ -7,6 +7,7 @@
 #
 # 1. link directly into IDE, do not launch an external process
 # 2. do not depend on end user to install a make.exe
+# 3. lingo-supremacist hubris. Write a shorter make in your language.
 
 $ifdef MAIN
 procedure main(argv)
@@ -14,28 +15,50 @@ procedure main(argv)
 end
 $endif
 
+global depgraph, macros
+
 procedure make(argv)
-   d := DepGraph("makefile")
-   d.make()
+   macros := table("")
+   (depgraph := DepGraph("makefile")).make()
 end
 
 #
 # make is organized around a dependency graph. The nodes are labeled by targets.
 #
-class DepGraph(targets,initialtarget)
+class DepGraph(targets, initialtarget, marked)
+   method mark(s)
+      insert(marked, s)
+   end
+   method ismarked(s)
+      return member(marked,s)
+   end
+   method node(s)
+      return \ targets[s]
+      if stat(s) then fail # no node for s, but it exists
+      stop("no rule to make ", image(s))
+   end
    method make(targ)
-      every r := !targets do r.print()
+      /targ := initialtarget
+      targets[targ].make()
    end
 initially(filename)
-   filechars := &letters ++ '.'
+   filechars := &letters ++ './_'
    targets := table()
+   marked := set()
+   fstack := []
    readahead := []
    if f := open(\filename) then {
-      while line := (pop(readahead) | read(f)) do {
+      while line := (pop(readahead) | read(f) | (close(f) & (f:=pop(fstack)) & read(f))) do {
+	 line := macroexpand(line)
          line ? {
 	    tab(many(' '))
-	    if ="#" then { write("comment: ", image(line)); continue } # skip comment
-	    else if pos(0) then { write("blankline: ", image(line)); continue } # skip empty lines
+	    if ="#" then { # skip comment
+	       write("comment: ", image(line))
+	       continue
+	       }
+	    else if pos(0) then { # skip empty lines
+	       continue
+	       }
 	    else if (target:=tab(many(filechars))) &
                (tab(many(' '))|"") & =":" then { # build a target
 	       tab(many(' '))
@@ -46,13 +69,29 @@ initially(filename)
 		  tab(many(' '))
 		  }
 	       while line := read(f) & line[1]=="\t" do
-		  put(buildrules, line[2:0])
+		  put(buildrules, macroexpand(line[2:0]))
 	       if line[1]=="\t" then break
 	       else put(readahead, line)
 	       r := Rule(target,deps,buildrules)
 	       targets[target] := r
 	       /initialtarget := target
 	       }
+	    else if (macroname:=tab(many(filechars))) &
+               (tab(many(' '))|"") & ="=" then { # build a macro
+	       macros[macroname] := tab(0)
+	       write("macro ", macroname, " defined as ", macros[macroname])
+	       }
+	    else if ="include" & tab(many(' \t')) &
+	       (inclname := tab(many(filechars))) then {
+		  push(fstack, f)
+		  write("including ", image(inclname))
+		  f := open(inclname)
+		  }
+	    else if ="export" & tab(many(' \t')) &
+	       (envname := tab(many(filechars))) & =":=" & (val:=tab(0)) then {
+		  write("setting ", envname, " to ", image(val))
+		  setenv(envname, val)
+		  }
 	    else write("??? ", image(line))
 	    }
          }
@@ -64,12 +103,37 @@ end
 
 class Rule(target, dependencies, buildrules)
    method make()
+      if depgraph.ismarked(target) then {
+	 write("make ", target, " (already made)")
+	 }
+      else {
+	 write("make ", target)
+	 depgraph.mark(target)
+	 }
       # first, recursively build dependencies
+      every depgraph.node(!dependencies).make()
+
       # check timestamps of dependencies against my timestamp
-      # if needed, execute build rules
+      every d := !dependencies do {
+	 if newer(d) then {      # if needed, execute build rules
+	    exec()
+	    return
+	    }
+	 }
+      write(target, " is up to date")
+   end
+   # check me (target timestamp) against d and succeed if d is newer
+   method newer(d)
+   local mytimestamp, theirtimestamp
+      if not (mytimestamp := stat(target).mtime) then return
+      if not (theirtimestamp := stat(d).mtime) then
+	 stop(target, " depends on ", d, " but it didn't get built")
+      write("me: ", image(mytimestamp), ", them: ", image(theirtimestamp))
+      if mytimestamp < theirtimestamp then return
    end
    method exec()
       every r := !buildrules do {
+write("exec'ing ", image(r))
 	 if not (rv := system(r)) then
 	    stop("umake: system(",image(r),") failed")
 	 if rv ~=== 0 then stop("umake: ", rv, " exit by ", image(r))
@@ -84,3 +148,13 @@ class Rule(target, dependencies, buildrules)
    end
 end
 
+procedure macroexpand(s)
+   s ? {
+      while i := upto('$') & ="$(" & (mac := tab(many(&letters))) & =")" do{
+	 if macros[mac] == "" then write("warning: empty macro ", mac)
+	 s[i +: *mac+3] := macros[mac]
+	 &subject := s; &pos := i
+	 }
+      }
+   return s
+end

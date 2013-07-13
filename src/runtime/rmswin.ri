@@ -961,8 +961,8 @@ LRESULT_CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
       handle_config(wb, msg, wp, lp);
       break;
    case WM_MOVE:
-      ws->posx = LOWORD(lp) - (BORDWIDTH>>1);
-      ws->posy = HIWORD(lp) - (BORDHEIGHT - 4);
+      ws->posx = ((int)(short)LOWORD(lp)) - (int)(BORDWIDTH>>1);
+      ws->posy = ((int)(short)HIWORD(lp)) - (int)(BORDHEIGHT - 4);
       break;
    case WM_ACTIVATE:
       if (wp == WA_INACTIVE) {
@@ -3739,7 +3739,7 @@ wbp w;
 
 
 #if HAVE_LIBGL
-      for (i=0; i<256; i++) wc->texName[i] = wc2->texName[i];
+      for (i=0; i<wc->nalced; i++) wc->texName[i] = wc2->texName[i];
 #if 0
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);

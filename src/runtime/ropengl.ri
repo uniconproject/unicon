@@ -48,6 +48,9 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    wc = w->context;
 
    if (init_3dcontext(wc) == Failed) return NULL;
+#if HAVE_LIBGL
+   if (init_texnames(wc) == Failed) return 0;
+#endif					/* HAVE_LIBGL */
 
    /* create an empty list for list of function calls */
    if ((ws->funclist.vword.bptr = (union block *)alclist(0, 40000)) == NULL)
@@ -59,6 +62,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 
    return f;
 }
+
+/*
+ * Initialize texture names.
+ */
 
 /*
  * Initialize the 3D subsystem for rendering.
@@ -610,7 +617,7 @@ void cylinder(double radius1, double radius2, double height,
 }
 
 /*
- * draw a disk. angle2 < 360 degrees specifies a partial disk
+ * draw a disk. angle2 < 360 degrees specifies a partial disk.
  */
 void disk(double radius1, double radius2, double angle1, double angle2,
           double x, double y, double z, int slices, int rings, int gen)
@@ -2141,6 +2148,19 @@ int setlight(wbp w, char* s, int light)
 }
 
 /*
+ * the matrix mode controls whether subsequent operations (e.g. push and pop)
+ * affect the "modelview" or the "projection" matrix stack.
+ */
+int setmatrixmode(char *s)
+{
+   if (!strcmp("modelview", s)) { glMatrixMode(GL_MODELVIEW); }
+   else if (!strcmp("projection", s)) { glMatrixMode(GL_PROJECTION); }
+   else return Error;
+   return Succeeded;
+}
+
+
+/*
  * Call to direct OpenGL to change the texture mode.
  */
 void apply_texmodechange(wbp w)
@@ -2255,7 +2275,8 @@ int settexcoords(wbp w, char* s)
 
 
 /* set a texture */
-int settexture(wbp w, char* str, int len, struct descrip *f, int curtex, int is_init)
+int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
+	       int is_init)
 {
    wcp wc = w->context;
    char* s;
@@ -3980,5 +4001,14 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int heigh
       }
 
    TEXUPDATE(w2, wc, texhandle, tex, wd, ht);   
+   return Succeeded;
+}
+
+int init_texnames(wcp wc)
+{
+   wc->texName = malloc(16 * sizeof(GLuint));
+   if (wc->texName == NULL) return Failed;
+   wc->nalced = 16;
+   wc->maxstex=16;
    return Succeeded;
 }

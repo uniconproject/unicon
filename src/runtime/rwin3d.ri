@@ -280,10 +280,6 @@ int init_3dcontext(wcp wc)
    wc->normode = 1;
    wc->normals = NULL;
    wc->texmode = wc->numtexcoords = 0;
-   wc->texName = malloc(16 * sizeof(GLuint));
-   if (wc->texName == NULL) return Failed;
-   wc->nalced = 16;
-   wc->maxstex=16;
 
    wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
    if (wc->stex == NULL) return Failed;
@@ -323,8 +319,14 @@ int copy_3dcontext(wcp wc, wcp rv)
    rv->normals = wc->normals;
    rv->texmode = wc->texmode;
    rv->numtexcoords = wc->numtexcoords;
+#if HAVE_LIBGL
+   /*
+    * This appears to be a bug: shared pointer to malloced array
+    * of bound textures. How do we tell who is to free them?
+    */
    rv->texName = wc->texName;
    rv->nalced = wc->nalced;
+#endif					/* HAVE_LIBGL */
    rv->maxstex = wc->maxstex;
 
    rv->stex = wc->stex;

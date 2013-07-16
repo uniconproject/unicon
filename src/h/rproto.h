@@ -689,6 +689,9 @@ int checkOpenConsole( FILE *w, char *s );
       int gettexture(wbp w, dptr dp);
       int imagestr(wbp w, char* str);
       int init_3dcontext(wcp wc);
+#ifdef HAVE_LIBGL
+      int init_texnames(wcp wc);
+#endif
       int copy_3dcontext(wcp wc, wcp rv);
       void makecurrent(wbp w);
       int make_enough_texture_space(wcp wc);
@@ -746,7 +749,8 @@ int checkOpenConsole( FILE *w, char *s );
       char *nativecolordialog	(wbp w,long r,long g, long b,char *s);
       int nativefontdialog	(wbp w, char *buf, int flags, int fheight,char*colr);
       char *nativeselectdialog	(wbp w,struct b_list *,char *s);
-      char *nativefiledialog	(wbp w,char *s1,char *s2,char *s3, char *s4, int i,int j,int k);
+      char *nativefiledialog	(wbp w, char *s1, char *s2, char *s3,
+				 char *s4, int i, int j, int k);
       HFONT mkfont		(char *s, char is_3D);
       int sysTextWidth		(wbp w, char *s, int n);
       int sysFontHeight		(wbp w);

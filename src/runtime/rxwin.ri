@@ -4688,6 +4688,9 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
 	       */
    if (is_3d) {
       if (init_3dcontext(wc) == Failed) return 0;
+#if HAVE_LIBGL
+      if (init_texnames(wc) == Failed) return 0;
+#endif					/* HAVE_LIBGL */
       }
 #endif					/* Graphics3D */
    return 1;
@@ -4995,6 +4998,9 @@ char my_wmap(wbp w)
       /* set defaults for attributes */
       if (init_3dcontext(w->context)==Failed)
 	 return 0;
+#if HAVE_LIBGL
+      if (init_texnames(wc) == Failed) return 0;
+#endif					/* HAVE_LIBGL */
      
       /* create an empty list for list of function calls */
 /*

@@ -4324,19 +4324,11 @@ function{1} MatrixMode(argv[argc])
       /* convert parameter */	
       if (!cnv:C_string(argv[warg],temp)) runerr(103,argv[warg]); 
 
-      /* check the value of s and switch matrix stacks */
-      if (!strcmp("modelview", temp)) {
-#if HAVE_LIBGL
-	 glMatrixMode(GL_MODELVIEW);	
-#endif					/* HAVE_LIBGL */
-	 }
-      else if (!strcmp("projection", temp)) {
-#if HAVE_LIBGL
-	 glMatrixMode(GL_PROJECTION);
-#endif					/* HAVE_LIBGL */
-	 }
-      else 
-         runerr(152, argv[warg]);
+      /* the only "failure" is: the argument was illegal */
+      switch (setmatrixmode(temp)) {
+      case Error: runerr(152, argv[warg]); break;
+      case Failed: fail;
+      }
 
       /* put parameter in the list */
       rp->fields[2] = argv[warg];

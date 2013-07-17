@@ -15,10 +15,11 @@ procedure main(argv)
 end
 $endif
 
-global depgraph, macros
+global depgraph, macros, filechars, noexec, verbose
 
 procedure make(argv)
    macros := table("")
+   noexec := 1 # hardwire to -n for now
    (depgraph := DepGraph("makefile")).make()
 end
 
@@ -39,10 +40,11 @@ class DepGraph(targets, initialtarget, marked)
    end
    method make(targ)
       /targ := initialtarget
+      if /targ then stop("no initial target? can't make.")
       targets[targ].make()
    end
 initially(filename)
-   filechars := &letters ++ './_'
+   filechars := &letters ++ './_%'
    targets := table()
    marked := set()
    fstack := []
@@ -68,18 +70,21 @@ initially(filename)
 		  put(deps,dependency)
 		  tab(many(' '))
 		  }
-	       while line := read(f) & line[1]=="\t" do
+	       while (line := read(f)) & (line[1]=="\t") do {
 		  put(buildrules, macroexpand(line[2:0]))
-	       if line[1]=="\t" then break
-	       else put(readahead, line)
+		  line := &null
+		  }
+	       put(readahead, \line)
 	       r := Rule(target,deps,buildrules)
 	       targets[target] := r
-	       /initialtarget := target
+	       if not find("%", target, 1) then
+		  /initialtarget := target
 	       }
 	    else if (macroname:=tab(many(filechars))) &
                (tab(many(' '))|"") & ="=" then { # build a macro
-	       macros[macroname] := tab(0)
-	       write("macro ", macroname, " defined as ", macros[macroname])
+	       macros[macroname] := macroexpand(tab(0))
+	       if \verbose then
+		  write("macro ", macroname, " defined as ", macros[macroname])
 	       }
 	    else if ="include" & tab(many(' \t')) &
 	       (inclname := tab(many(filechars))) then {
@@ -89,7 +94,10 @@ initially(filename)
 		  }
 	    else if ="export" & tab(many(' \t')) &
 	       (envname := tab(many(filechars))) & =":=" & (val:=tab(0)) then {
-		  write("setting ", envname, " to ", image(val))
+		  #what the heck, let's expand macro names
+		  val := macroexpand(val)
+		  if \verbose then
+		     write("setting ", envname, " to ", image(val))
 		  setenv(envname, val)
 		  }
 	    else write("??? ", image(line))
@@ -120,7 +128,7 @@ class Rule(target, dependencies, buildrules)
 	    return
 	    }
 	 }
-      write(target, " is up to date")
+      write("umake: `",target, "' is up to date")
    end
    # check me (target timestamp) against d and succeed if d is newer
    method newer(d)
@@ -128,15 +136,19 @@ class Rule(target, dependencies, buildrules)
       if not (mytimestamp := stat(target).mtime) then return
       if not (theirtimestamp := stat(d).mtime) then
 	 stop(target, " depends on ", d, " but it didn't get built")
-      write("me: ", image(mytimestamp), ", them: ", image(theirtimestamp))
+      if \verbose then
+	 write("   ", target,": ", image(mytimestamp), ", ",
+	       d, ": ", image(theirtimestamp))
       if mytimestamp < theirtimestamp then return
    end
    method exec()
       every r := !buildrules do {
-write("exec'ing ", image(r))
-	 if not (rv := system(r)) then
-	    stop("umake: system(",image(r),") failed")
-	 if rv ~=== 0 then stop("umake: ", rv, " exit by ", image(r))
+	 if \noexec then write(r)
+	 else {
+	    if not (rv := system(r)) then
+	       stop("umake: system(",image(r),") failed")
+	    if rv ~=== 0 then stop("umake: ", rv, " exit by ", image(r))
+	    }
 	 }
    end
    method print()
@@ -150,8 +162,12 @@ end
 
 procedure macroexpand(s)
    s ? {
-      while i := upto('$') & ="$(" & (mac := tab(many(&letters))) & =")" do{
-	 if macros[mac] == "" then write("warning: empty macro ", mac)
+      while tab(i := upto('$')) &
+	    ="$(" & (mac := tab(many(filechars))) & =")" do {
+	 if not member(macros, mac) then {
+	    if val := getenv(mac) then macros[mac] := val
+	    else write("warning: empty macro ", mac)
+	    }
 	 s[i +: *mac+3] := macros[mac]
 	 &subject := s; &pos := i
 	 }

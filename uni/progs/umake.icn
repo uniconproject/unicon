@@ -98,6 +98,8 @@ initially(filename)
 		  val := macroexpand(val)
 		  if \verbose then
 		     write("setting ", envname, " to ", image(val))
+# if Windows... do we need to map PATH to Path, or is PATH OK?
+# need to test.  Mebbe PATH is OK.
 		  setenv(envname, val)
 		  }
 	    else write("??? ", image(line))
@@ -165,7 +167,8 @@ procedure macroexpand(s)
       while tab(i := upto('$')) &
 	    ="$(" & (mac := tab(many(filechars))) & =")" do {
 	 if not member(macros, mac) then {
-	    if val := getenv(mac) then macros[mac] := val
+	    if val := getenv(mac|initcap(mac)|map(mac)) then
+	       macros[mac] := val
 	    else write("warning: empty macro ", mac)
 	    }
 	 s[i +: *mac+3] := macros[mac]
@@ -174,3 +177,8 @@ procedure macroexpand(s)
       }
    return s
 end
+
+procedure initcap(s)
+   return map(s[1],&lcase,&ucase) || map(s[2:0])
+end
+

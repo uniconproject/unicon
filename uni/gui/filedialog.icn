@@ -242,7 +242,8 @@ procedure get_directory_list(s, ext : "*.*")
 $ifdef _MS_WINDOWS_NT
    s := map(s,"/","\\")
    # remove trailing backslash unless it is a root dir on a drive
-   if (*s > 1) & (s[-1] == PATHCHAR) & (not (s ? tab(any(&letters)) & =":\\"))
+   if (*s > 1) & (s[-1] == PATHCHAR) &
+      (not (*s=3) & (s ? (tab(any(&letters)) & =":\\")))
 $else
    if (*s > 1) & (s[-1] == PATHCHAR)
 $endif

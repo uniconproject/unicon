@@ -91,7 +91,6 @@
 #endif
 
 
-#ifdef Concurrent
 /*
  * Thread status flags in status field of coexpr blocks.
  * Ts_Native can only be Ts_Sync.  Ts_Posix may be Sync or Async.
@@ -103,7 +102,7 @@
 #define Ts_Active      16               /* someone activated me */
 #define Ts_WTinbox     32               /* waiting on inbox Q */
 #define Ts_WToutbox    64               /* waiting on outbox Q */
-#endif					/* Concurrent */
+
 
 /*#ifdef Graphics*/
    #define XKey_Window 0

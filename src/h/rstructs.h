@@ -818,8 +818,8 @@ struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
    word size;			/*   number of results produced */
    word id;			/*   identification number */
+   word status;			/*   status (native/posix, sync/async, etc) */
 #ifdef Concurrent
-   word status;			/*   status (sync vs. async, etc) */
    word shared;
    pthread_mutex_t mutex;
    struct descrip *handdata;     /*   result just handed  to the current ce */

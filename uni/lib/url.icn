@@ -208,13 +208,15 @@ class URL : Error : Object : SelectiveClassCoding(protocol, address, file, ref, 
    #
    method parse(s)
       s ? {
-         set_protocol(1(tab(many(&lcase ++ &ucase)), ="://") | "http")
+         set_protocol(1(tab(many(&letters)), ="://") | "http")
          set_address(tab(upto(':/') | 0))
 
          if =":" then {
             set_port(integer(tab(many(&digits)))) | return error("Bad port")
-         } else
-            set_port(getserv(get_protocol() | "www").port) | return error("Unknown protocol")
+            }
+	 else
+            set_port(getserv(get_protocol() | "www").port) |
+	       return error("Unknown protocol")
 
          if pos(0) then
             set_file("/")

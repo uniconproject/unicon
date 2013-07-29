@@ -18,56 +18,15 @@ $define PATHCHAR "/"
 $endif
 
 #
+# HFile dialog class.  See gui/filedialog.icn
+# This class provides the following differences from FileDialog:
+# It maintains file extension information, defaulting to look for .icn files.
 #
-# File dialog class.  This class provides a standard file dialog.
-# 
-# @example
-# @ d := FileDialog()
-# @ d.show()
-# @ write(d.get_result() | "cancelled")
-#
-class HFileDialog : Dialog(
-   init_dir,                # Initial directory name
-   init_file,               # Initial file name
-   res,                     # Resulting file path
-   dir,                     # TextField directory
-   file,                    # TextField filename
+class HFileDialog : FileDialog(
    file_extension,	    # File type extension
-   dlist,                   # TextList of directories
-   flist,                   # TextList of files
-   okay,                    #
-   cancel,                  #
    fext_list,		    # File extension list
    init_fileType
    )
-
-   #
-   # Get the directory part of the result
-   #
-   method get_directory()
-      return directory_name(\self.res)
-   end
-
-   #
-   # Get the result, (will fail if cancel was pressed).
-   #
-   method get_result()
-      return \self.res
-   end
-
-   #
-   # Set the initial directory.
-   #
-   method set_directory(s)
-      return self.init_dir := s
-   end
-
-   #
-   # Set the initial file
-   #
-   method set_file(s)
-      return self.init_file := s
-   end
 
    #
    # Set the initial files type
@@ -80,55 +39,14 @@ class HFileDialog : Dialog(
    # Set the initial file/directory from a whole path.
    # 
    method set_path(s)
-      self.init_dir := directory_name(s)
-      self.init_file := file_name(s)
+      self.FileDialog.set_path(s)
       self.init_fileType := "*.icn"
       return s
    end
 
-   #
-   # Set the result
-   #
-   # @p
-   method set_result()
-      local path_to_file
-      path_to_file := file.get_contents()
-      self.res := if ((\path_to_file)[1] == PATHCHAR) then 
-                     path_to_file
-                  else 
-                     self.get_std_dir() || path_to_file
-   end
-
-   #
-   # Get the directory TextField contents standardized with a trailing /
-   #
-   # @p
-   method get_std_dir()
-      local s
-      s := dir.get_contents()
-      if (s[-1] ~== PATHCHAR) then
-         s ||:= PATHCHAR
-
-      return s
-   end
-
-   method on_okay()
-      self.set_result()
-      self.dispose()
-   end
-
-  
-   method on_file()
-      #
-      # If return pressed in file TextField, same as okay
-      #
-      self.set_result()
-      self.dispose()
-   end
-
    method on_file_extension()
       on_fextension_change()
-    end
+   end
 
    method on_dlist()
       local s, value, l
@@ -146,12 +64,13 @@ class HFileDialog : Dialog(
             while s[-1] ~== PATHCHAR do s[-1] := ""
          }
          dir.set_contents(s)
-      } else
+         }
+      else
          dir.set_contents(s ||:= \value)
       #
       # Update directory and file lists.
       #
-      l := (get_directory_list(s,file_extension) | [[],[]])
+      l := (get_directory_list(s,fext_list[file_extension.get_selection()]) | [[],[]])
       dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
@@ -181,7 +100,7 @@ class HFileDialog : Dialog(
       #
       # Update directory and file lists.
       #
-      l := (get_directory_list(s,file_extension) | [[],[]])
+      l := (get_directory_list(s,fext_list[file_extension.get_selection()]) | [[],[]])
       dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
@@ -193,27 +112,20 @@ class HFileDialog : Dialog(
    #
    # Double click on a filename in the file list and you open it.
    #
-   method on_flist_lpress()
+   method on_flist_lpress(ev)
       if get_click_count() = 2 then {
 	 set_result()
 	 dispose()
 	 }
    end
 
-   method on_flist()
-      #
-      # Clicked in file list; set TextField
-      #
-      file.set_contents(flist.get_contents()[flist.get_selections()[1]])
-   end
-
    method on_dir()
-      local l, s
+      local s, l
       #
       # Return pressed in directory TextField; update lists.
       #
       dir.set_contents(s := self.get_std_dir())
-      l := (get_directory_list(s,file_extension) | [[],[]])
+      l := (get_directory_list(s,fext_list[file_extension.get_selection()]) | [[],[]])
       dlist.set_contents(l[1])
       dlist.goto_pos(1, 0)
       dlist.clear_selections()
@@ -223,10 +135,6 @@ class HFileDialog : Dialog(
       file.set_contents("")
    end
 
-   method init_dialog()
-      self.set_focus(file)
-   end
-   
    method component_setup()
       local l
       #extChoosed := "FALSE"
@@ -261,21 +169,27 @@ class HFileDialog : Dialog(
       file_extension := List()
       file_extension.set_pos("100", "80")
       file_extension.set_size("100%-150", "20")
-      file_extension.connect(self, "on_file_extension", SELECTION_CHANGED_EVENT)
-      file_extension.set_selection_list(["All Files(*.*)", "Unicon Files(*.icn)",
+      file_extension.connect(self, "on_file_extension",
+			     SELECTION_CHANGED_EVENT)
+      file_extension.set_selection_list(["All Files(*.*)",
+					 "Unicon Files(*.icn)",
                                          "Project Files(*.uprj)"])
       file_extension.set_selection(2)
       self.add(file_extension)
       l.set_linked_accel(file_extension)
 
-      l := (get_directory_list(init_dir,file_extension) | [[],[]])
+      l := (get_directory_list(init_dir,
+			       fext_list[file_extension.get_selection()]) |
+	    [[],[]])
 
-      dlist := TextList("pos=25,110", "size=50%-38,100%-170", "select_one", "selection_on_key_moves=f")
+      dlist := TextList("pos=25,110", "size=50%-38,100%-170", "select_one",
+			"selection_on_key_moves=f")
       dlist.connect(self, "on_dlist", SELECTION_CHANGED_EVENT)
       dlist.set_contents(l[1])
       self.add(dlist)
 
-      flist := TextList("pos=50%+12,110", "size=50%-38,100%-170", "select_one", "selection_on_key_moves=f")
+      flist := TextList("pos=50%+12,110", "size=50%-38,100%-170", "select_one",
+			"selection_on_key_moves=f")
       flist.connect(self, "on_flist", SELECTION_CHANGED_EVENT)
       flist.connect(self, "on_flist_lpress", MOUSE_PRESS_EVENT)
       flist.set_contents(l[2])
@@ -285,83 +199,14 @@ class HFileDialog : Dialog(
       okay.connect(self, "on_okay", ACTION_EVENT)
       self.add(okay)
 
-      cancel := TextButton("pos=66%,100%-30", "align=c,c", "label=Cancel", "accel=c")
+      cancel := TextButton("pos=66%,100%-30", "align=c,c", "label=Cancel",
+			   "accel=c")
       cancel.connect(self, "dispose", ACTION_EVENT)
       self.add(cancel)
    end
 
 initially(a[])
-   self.Dialog.initially()
-   #
-   # Set attrib before calling set_fields, so these settings can
-   # be overridden.
-   #
-   attrib("size=420,370", "resize=on", "label=Select File")
+   self.FileDialog.initially()
    set_fields(a)
-end
-
-#
-# Read a directory.
-#
-procedure get_directory_list(s,file_extension)
-   local dir_list, file_list, ext, fatal_error, fext_list,
-         s2, p, sr
-   /fatal_error := stop
    fext_list :=["*.*", ".icn", ".uprj"]
-
-   ext := fext_list[file_extension.get_selection()]
-
-$ifdef _MS_WINDOWS_NT
-   s := map(s,"/","\\")
-   if (*s > 1) & (s[-1] == PATHCHAR) & (map(s,&letters,repl("a",52)) ~== "a:\\") then
-      s[-1] := ""
-$else
-   if (*s > 1) & (s[-1] == PATHCHAR) then s[-1] := ""
-$endif
- 
-   p := open(s) | {
-       write(&errout, "get_directory_list: can't open ", image(s))
-       fail
-   }
-   if not (s[-1] == PATHCHAR) then s ||:= PATHCHAR
-   dir_list := []
-   file_list := []
-   while s2 := read(p) do {
-      sr := stat(s||s2) | {
-          write(&errout, "get_directory_list: can't stat ", image(s2))
-          fail
-       }
-      if sr.mode[1] == "d" then
-         put(dir_list, s2 || PATHCHAR)
-      else
-         if file_extension.get_selection() == 1 then
-            put(file_list, s2)
-         else {
-#             if file_extension.get_selection() == 2 then
-#                ext := ".cpp"|".c"|".cc"|".h"
-             if find(ext,s2) then #[2:*ext]
-	        put(file_list, s2)
-         }
-   }
-
-   close(p)
-   return [sort(dir_list), sort(file_list)]
-end
- 
-#
-# Return the directory name of the file name s, including the trailing /
-#
-procedure directory_name(s)
-   local i
-   every i := find(PATHCHAR, s)
-   return s[1:\i + 1] | ""
-end
- 
-#
-# Return the file name of s
-#
-procedure file_name(s)
-   local i
-   every i := find(PATHCHAR, s)
-   return s[\i + 1:0] | s
 end

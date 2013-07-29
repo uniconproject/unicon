@@ -4,18 +4,17 @@
 # Kostas Oikonomou, February 2003.
 #
 # If you have a large program spread over a number of separately-compiled
-# packages, classes, etc., using options that change frequently, you don't want
-# to specify all these options in main().  
-# This package allows decentralized processing of options (arguments to the main
-# program), according to specification strings that can be defined wherever the
-# particular options are used.  
+# packages, classes, etc., using options that change frequently, you don't
+# want to specify all these options in main().  
+# This package allows decentralized processing of options (arguments to
+# the main program), according to specification strings that can be defined
+# wherever the particular options are used.  
 #
 # Drawback: checking for unrecognized options is more cumbersome in a
 # decentralized setting.
 # Unrecognized option = it is in the argument list, but not in the total option
 # string.  The problem is that the total option string is distributed, and our
 # protocol consists of a single round.
-#
 #
 # Simple example:
 # ------------------------------------------------------------------------
@@ -114,8 +113,10 @@ procedure options(arg,optstring,errproc,unrec)
 		    return errproc("No parameter following -" || optname)
 		  case opttype of {
 		    ":": p
-		    "+": integer(p) | return errproc("-" || optname || " needs numeric parameter")
-		    ".": real(p)    | return errproc("-" || optname || " needs numeric parameter")
+		    "+": integer(p) |
+		       return errproc("-"||optname||" needs numeric parameter")
+		    ".": real(p)    |
+		       return errproc("-"||optname||" needs numeric parameter")
 		  }
 		}
 		else 1
@@ -145,4 +146,3 @@ procedure options(arg,optstring,errproc,unrec)
   while push(arg, pull(fList))
   return option
 end
-

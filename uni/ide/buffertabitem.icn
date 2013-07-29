@@ -1,12 +1,12 @@
 ################################################################
 #
-#   File:         buffertabitem.icn
+#   File:	buffertabitem.icn
 #
-#   Subject:  SubClass TabItem
+#   Subject:	SubClass TabItem
 #
-#   Author:   Nolan Clayton
+#   Author:	Nolan Clayton
 #
-#   Date:       May 26, 2004
+#   Date:	May 26, 2004
 #
 ################################################################
 
@@ -17,82 +17,79 @@ import gui
 #  class BufferTabItem:  Overide Display method and add an extra attribute. 
 #
 
-class BufferTabItem : TabItem(
+class BufferTabItem : TabItem (
    filename  # The Complete filename of the TabItem (c:\Unicon ....).
    )
    
    method setfilename(x)
-      self.set_label(if \x then file_name (x) else " ")
-      return self.filename := x
+      set_label(if \x then file_name (x) else " ")
+      return filename := x
    end
    
    method get_label()
-      return self.label
+      return label
    end
 
    method set_label(x)
-      return self.label := x
+      return label := x
    end
    
    method getfilename()
-      return self.filename
+      return filename
    end
 
-   
    #
-   # Display Tab Method:  Draw Tabs to Match the Editor's Theme.
+   # Display Tab:  Draw tabs to match the editor's theme.
    #
    method display_tab()
       local xpw, pslh, updown, ypos, cw
       
-      ypos := (self.line_no - 1) * self.parent.line_h + self.parent.y
-      cw := Clone(self.parent.cbwin)
+      ypos := (line_no - 1) * parent.line_h + parent.y
+      cw := Clone(parent.cbwin)
 
-      xpw := self.label_x + self.label_w
-      pslh := self.parent.line_h
+      xpw := label_x + label_w
+      pslh := parent.line_h
       
       Fg(cw, "black") #"greyish white")
       DrawLine(cw, xpw - 1, ypos, xpw - 1, ypos + pslh - 1)
       DrawLine(cw, xpw - 2, ypos + 1, xpw - 2, ypos + pslh - 2)
-      DrawLine(cw, self.label_x, ypos + pslh - 1,
-	       self.label_x, ypos, xpw - 1, ypos)
+      DrawLine(cw, label_x, ypos + pslh - 1, label_x, ypos, xpw - 1, ypos)
       
       Fg(cw, "white")
-      DrawLine(cw, self.label_x + 1, ypos + pslh - 2,
-	       self.label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
+      DrawLine(cw, label_x + 1, ypos + pslh - 2, label_x + 1, ypos + 1,
+	       xpw - 2, ypos  + 1)
       Uncouple(cw)
 
       #
       # These 4 rectangles give the tabs a nice look
       #
-      Fg(\ (self.parent.cbwin), "white")
-      FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2 ,
+      Fg(\ (parent.cbwin), "white")
+      FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2,
 		    label_w - 2, (pslh - 2) / 2)
-      Fg(\ (self.parent.cbwin), "pale greyish white")
-      FillRectangle(parent.cbwin, label_x, ypos + 2  + (pslh - 2) / 2 ,
+      Fg(\ (parent.cbwin), "pale greyish white")
+      FillRectangle(parent.cbwin, label_x, ypos + 2 + (pslh - 2) / 2,
 		    label_w - 2, (pslh - 2) / 4)
-      Fg(\ (self.parent.cbwin), "light greyish white")
-      FillRectangle(parent.cbwin, label_x, ypos + 2 ,
+      Fg(\ (parent.cbwin), "light greyish white")
+      FillRectangle(parent.cbwin, label_x, ypos + 2,
 		    label_w - 2, (pslh - 2) /2 )
-      Fg(\ (self.parent.cbwin), "greyish white")
-      FillRectangle(parent.cbwin, label_x, ypos + 2 ,
+      Fg(\ (parent.cbwin), "greyish white")
+      FillRectangle(parent.cbwin, label_x, ypos + 2,
 		    label_w - 2, (pslh - 2) / 4)
 
       updown := -1
-      if parent.which_one === self then  updown :=1
+      if parent.which_one === self then updown := 1
 
-      Fg(\ (self.parent.cbwin), "pale grey")
-      BevelRoundedRectangle(parent.cbwin, label_x+DEFAULT_TEXT_X_SURROUND -1,
-                            ypos-6 + pslh/ 2, TextWidth(parent.cbwin, label),
+      Fg(\ (parent.cbwin), "pale grey")
+      BevelRoundedRectangle(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND -1,
+			    ypos-6 + pslh / 2, TextWidth(parent.cbwin, label),
 			    3 + (pslh - 2) / 2, updown)
       
-      Fg(\ (self.parent.cbwin), "black")
+      Fg(\ (parent.cbwin), "black")
       left_string(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND,
-		  ypos + pslh / 2, self.label)
+		  ypos + pslh / 2, label)
       
       if is_shaded() then
          FilterRectangle(parent.cbwin, label_x, ypos + 2, label_w - 2, pslh-1)
-      
    end
    
    initially
@@ -101,8 +98,8 @@ class BufferTabItem : TabItem(
 end
 
 #
-# Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle to be used
-# for a TabItem.
+# Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle
+# to be used for a TabItem.
 #
 procedure BevelRoundedRectangle(win, x, y, w, h, bw)	
    local b, upper, lower, xx, yy, r, a, cx, cy, cw, cr, oldfg1, oldfg2 
@@ -120,7 +117,6 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
       return BevelRectangle((\&window | runerr(140)), win, x, y, w, h)
    b := bev_lookup(win)
 
-   
    /x := -WAttrib(win, "dx")
    /y := -WAttrib(win, "dy")
    /w := WAttrib(win, "width") - (x + WAttrib(win, "dx"))
@@ -130,7 +126,6 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
       x -:= (w := -w)
    if h < 0 then
       y -:= (h := -h)
-
 
    oldfg1 := Fg(b.hilite)
    oldfg2 := Fg(b.shadow)
@@ -173,10 +168,9 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
       r -:= 1
       x +:= 1
       y +:= 1
-      }   
+      }
 
-   Fg(b.hilite,oldfg1)
-   Fg(b.shadow,oldfg2)
-   
+   Fg(b.hilite, oldfg1)
+   Fg(b.shadow, oldfg2)
    return win
 end

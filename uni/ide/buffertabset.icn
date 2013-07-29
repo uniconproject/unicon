@@ -1,11 +1,11 @@
 import gui
-link graphics
+link guiprocs
 $include "guih.icn"
 
 class BufferTabSet : TabSet()
    method get_tabitem(lab)
    local c
-   if (c := !children).label == lab then return c
+      if (c := !children).label == lab then return c
    end
 
    method display(buffer_flag)
@@ -14,18 +14,18 @@ class BufferTabSet : TabSet()
       #
       # Erase all and display outline of tabbed pane area.
       #
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      DrawRaisedRectangle(self.cbwin, self.x, self.y, self.w, self.h, 2)
+      EraseRectangle(cbwin, x, y, w, h)
+      DrawRaisedRectangle(cbwin, x, y, w, h, 2)
       #
       # Display all tabs.
       #
-      every (!!self.line_break).display_tab()
-      last_on_a_line := (!self.line_break)[-1] === self.which_one
+      every (!!line_break).display_tab()
+      last_on_a_line := (!line_break)[-1] === which_one
 
       #
       # Display line under tabs.
       #
-      cw := Clone(self.cbwin, "drawop=reverse")
+      cw := Clone(cbwin, "drawop=reverse")
       Fg(cw, "pale gray")
       DrawLine(cw, x, y + tab_h - 2, which_one.label_x, y + tab_h - 2)
 
@@ -57,7 +57,7 @@ class BufferTabSet : TabSet()
       if *components = 1 then fail
       every i := 1 to *components do if components[i] === c then break
       if (i > *components) | (components[i] ~=== c) then fail
-      set_which_one( components[ (i % *components) +1 ] )
+      set_which_one( components[ (i % *components) + 1 ] )
    end
 
 initially

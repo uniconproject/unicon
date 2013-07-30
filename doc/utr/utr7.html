@@ -1,23 +1,24 @@
-<html><head><title>Version 11 of Unicon for Microsoft Windows</title></head><body>
+<html><head><title>
+Version 12 of Unicon for Microsoft Windows
+</title></head><body>
 
 <br><br><br><br><br><br>
 <center>
-<h2>Version 11.7 of Unicon<br> for Microsoft Windows</h2>
+<h2>Version 12.1 of Unicon<br> for Microsoft Windows</h2>
 </center>
 <p>
 </p><h4><p align="center">
 Clinton L. Jeffery and Jafar Al-Gharaibeh<br>
-March 11, 2010<br>
-Unicon Technical Report #7b<br>
+July 30, 2013<br>
+Unicon Technical Report #7c<br>
 </p></h4>
 
 <br><br><br><br>
 <h4><p align="center">Abstract
 			</p></h4>
 <br>
-This document is your one-stop guide to installing and running the
-Unicon programming language under the Microsoft Windows environment.  It
-serves as the primary reference for the Ui programming environment and
+This report describes how to install and run the Unicon programming language
+under the Microsoft Windows environment.  It is the primary reference for
 the Windows-specific language extensions to Unicon.
 
 <br><br><br><br><br>
@@ -25,7 +26,7 @@ the Windows-specific language extensions to Unicon.
 <tbody><tr>
 <td><img src="unilogo.jpg"></td>
 <td>
-http://unicon.sourceforge.net/utr/utr7.htm<br>
+http://unicon.org/utr/utr7.htm<br>
 <br>
 Department of Computer Science<br>
 			University of Idaho<br>
@@ -49,11 +50,12 @@ Department of Computer Science<br>
 
 <h3><a name="intro">1. Introduction</a></h3>
 
-The Microsoft Windows implementation of Version 11 of Unicon runs on 386 or
-higher PCs or PC clones with an operating system that can execute 32-bit
-Windows binaries, including Microsoft Windows 95, 98, Me, NT, 2000, and XP.
-16 MB of RAM is required, and far more MB of RAM is strongly
-recommended.<p>
+The Microsoft Windows implementation of Version 12 of Unicon runs on
+computers with an operating system that can execute 32-bit x86
+Windows binaries, potentially Microsoft Windows 95 and newer.
+It has been tested primarily on Windows 7, with some testing on
+Windows XP, Vista, and 8.  64-bit binaries are in a public beta period.
+<p>
 
 This implementation of Unicon is an open source project under the GNU
 license; it may be copied and used with few restrictions.  The Unicon
@@ -61,13 +63,11 @@ Project makes no warranties of any kind as to the correctness of this
 material or its suitability for any application.  The responsibility for the
 use of Unicon lies entirely with the user.</p><p>
 
-The basic reference for Version 11 of Unicon is the book
-<u>Programming with Unicon</u> [1].  This book is available from the Unicon
-Project web site at http://unicon.org. The graphics
-facilities are detailed in a separate report [2].
-Windows Unicon and the Ui environment are open source products based on
-the volunteer work of many people; final responsibility for this release
-rests with Clinton Jeffery of
+The basic reference for Unicon is the book <u>Programming with Unicon</u> [1].
+This book is available from the Unicon Project web site at http://unicon.org.
+The graphics facilities are detailed in a separate report [2].
+Unicon is an open source product based on the volunteer work of many people;
+final responsibility for this release rests with Clinton Jeffery of
 University of Idaho.  Send requests, and bug reports to
 <code>jeffery@cs.uidaho.edu</code>.  General Unicon language questions can be
 sent to <code>unicon-group@lists.sourceforge.net</code>, which is a
@@ -78,9 +78,9 @@ to the list).
 
 </p><h3><a name="installing">2. Installing Windows Unicon</a></h3>
 
-Windows Unicon is distributed as a single (large) executable installer.
-Run <code>setup.exe</code>, prefixed by whatever drive letter and
-path you copied setup.exe into, to install Windows Unicon.
+Windows Unicon is distributed as a single executable installer file 8+ MB
+in size. Run its setup program, prefixed by whatever drive letter and
+path you copied setup-unicon*.exe into, to install Windows Unicon.
 <p>
 
 During installation, you will be asked for a drive and directory into which
@@ -92,19 +92,19 @@ of a Windows Unicon program group with a set of icons that allow you read
 on-line documentation, uninstall the software, and launch Windows Unicon.
 </p><p>
 
-Within the directory that Unicon was installed, the most important subdirectory
-is the <code>bin</code> directory, which contains the Unicon system binaries.
-Several executable binary files are required to use Unicon, including
-the executor and the
-compiler that produces virtual machine code files for the executor.  The
-executor and compiler are normally invoked by the integrated
-development environment called <em>Ui</em>, a simple
-editor/project builder that provides a visual
-interface to the program development process.  Applications that provide a
-graphical interface are usually constructed by means of a visual interface
-builder called IVIB, a drawing program that generates Unicon code for a
-program's interface.  The following table summarizes the contents of the
-<code>bin</code> directory:
+Within the directory that Unicon was installed, the most important
+subdirectory is the <code>bin</code> directory, which contains the
+Unicon system binaries.  Several executable binary files are required
+to use Unicon, including the executor and the compiler that produces
+virtual machine code files for the executor.  The executor and
+compiler can be invoked from an integrated development
+environment called <em>Ui</em>, a software tool that
+provides a visual interface to the programming process.
+Applications that provide a graphical interface are usually
+constructed by means of a visual interface builder called IVIB, a
+drawing program that generates Unicon code for a program's user interface.
+The following table summarizes the contents of the <code>bin</code>
+directory:
 
 </p><dl>
 <dt>unicon.exe</dt>
@@ -123,9 +123,9 @@ program's interface.  The following table summarizes the contents of the
 
 <b>Important!</b> Unicon's <code>bin</code> directory, normally
 <code>C:\UNICON\BIN</code>
-usually must be added to your PATH specification. This
-is done through the Control Panel, or the autoexec.bat
-file, depending on your version of Windows.
+usually must be added to your PATH specification. This is normally done by
+the installer program, but it can also be done through the Control Panel,
+or on the command line, when necessary.
 <p>
 
 </p><h3><a name="running">3. Running Windows Unicon</a></h3>
@@ -300,18 +300,19 @@ unreasonable values may cause Unicon to malfunction.</p><p>
 
 The following environment variables can be set to adjust Unicon's execution
 parameters. Their default values are listed in parentheses after the
-environment variable name:
+environment variable name. Percentages listed are percentages of the
+physical main memory available on the system.
 
 </p><dl>
-<dt>BLKSIZE (500000)</dt><dd>  This variable determines the size, in bytes, of the
+<dt>BLKSIZE (1%)</dt><dd>  This variable determines the size, in bytes, of the
 initial region in which Unicon allocates lists, tables, and other objects.  If
 additional block regions are needed, they may be smaller.</dd>
 
-<dt>COEXPSIZE (2000)</dt><dd> This variable determines the size, in 32-bit words, of
-each co-expression block.</dd>
+<dt>COEXPSIZE (.01%)</dt><dd> This variable determines the size, in 32-bit
+words, of each co-expression block.</dd>
 
-<dt>ICONFONT (fixed)</dt><dd>  This variable contains the name of the default font used
-by Windows that are opened.  Any fixed-pitch font may be the
+<dt>ICONFONT (fixed)</dt><dd>  This variable contains the name of the default
+font used by Windows that are opened.  Any fixed-pitch font may be the
 default. Example syntax is:
 <pre>      set ICONFONT=Lucida Sans Typewriter
 </pre>
@@ -319,18 +320,24 @@ default. Example syntax is:
 
 <dt>IPATH (undefined)</dt><dd>  This variable contains a list of directories,
 separated by spaces.  The directories are searched for library files specified
-by link declarations.</dd>
+by link declarations, as well as imported packages and inherited classes.
+Unicon system directories ipl/lib, uni/lib, uni/gui, and uni/3d are added onto
+the end of any user-supplied IPATH.
+</dd>
 
 <dt>LPATH (undefined)</dt><dd>  This variable contains a list of directories,
 separated by spaces.  The directories are searched for header files specified
-by preprocessor $include directives.</dd>
+by preprocessor $include directives.  Unicon system directories ipl/incl,
+uni/lib, uni/gui, ipl/gincl, and ipl/mincl are added onto the end of any
+user-supplied LPATH.
+</dd>
 
-<dt>MSTKSIZE (30000)</dt><dd> This variable determines the size, in words,
+<dt>MSTKSIZE (0.25%)</dt><dd> This variable determines the size, in words,
 of the main interpreter stack.</dd>
 
 <dt>NOERRBUF (undefined)</dt><dd>  If this variable is set, &amp;errout is not buffered.</dd>
 
-<dt>STRSIZE (500000)</dt><dd> This variable determines the size, in bytes, of
+<dt>STRSIZE (1%)</dt><dd> This variable determines the size, in bytes, of
 the initial region in which strings are stored. If additional string regions
 are needed, they may be smaller.</dd>
 
@@ -345,7 +352,7 @@ completes.</dd>
 
 <h3><a name="features">6.  Features of Windows Unicon</a></h3>
 
-Windows Unicon supports all the features of Version 10 of Unicon and
+Windows Unicon supports all the features all prior versions of Unicon and
 Version 9.4 of Icon, including graphics facilities, with the following
 exceptions and additions:
 
@@ -356,10 +363,12 @@ exceptions and additions:
 </pre>
 </li><li> Wildcards are allowed in filename command-line arguments.
 
-</li><li> Files with extension .icp are treated as command-line argument lists
+<!--</li><li> Files with extension .icp are treated as command-line argument lists
      (one argument per line).
-        Set up .icp files for batch jobs, associate .icp extensions with wicont.exe, and you can run the
+        Set up .icp files for batch jobs, associate .icp extensions with
+        wicont.exe, and you can run the
         batch job by double-clicking it in the file manager.
+-->
 
 </li><li> wunicon and wicont allow an option -q that causes it to exit on
      termination without waiting for a user keystroke; this is useful
@@ -375,11 +384,10 @@ exceptions and additions:
 
 <h4>6.1  Native Windows User Interface Access</h4>
 
-Version 11 of Windows Unicon provides the following built-in user interface
-components that make use of native Windows features.
-Additions are still being made to this set, and the facilities described
-here being further integrated into the
-Icon Program Library so that they are used automatically in Unicon programs
+Version 12 of Windows Unicon provides the following built-in user interface
+components that make use of native Windows features.  In some cases,
+the facilities described here are integrated into the Unicon gui classes
+so that they are used automatically in Unicon programs
 that provide a visual interface. This section summarizes features;
 the following section provides a reference guide. <p>
 
@@ -497,6 +505,10 @@ class library.
 	You can add the library declaration "link fattrib" to your
 	program if you don't want to change your fattrib() calls.
 <hr>
+<h4> WinAssociate(s) - return the application associated with an extension </h4>
+	This Windows Icon function produces the name of the program associated
+	with a string file extension supplied in parameter s.
+<hr>
 <h4> WinButton(s, x, y, wd, ht) - install button</h4>
          WinButton(s, x, y, wd, ht) installs a pushbutton on w with label s.  Whenever the button is
          clicked, the string label s is placed on the window's event queue.
@@ -554,17 +566,19 @@ commands:
         Ampersand is used to specify keyboard shortcuts, as in ["&amp;File", "&amp;Save", "Save &amp;As..."].
 
 <hr>
-<h4> WinOpenDialog(s1,s2,i,s3,j), WinSaveDialog(s1,s2,i,s3,j) -  Execute Windows common dialogs for
+<h4> WinOpenDialog(s1,s2,i,s3,j,s4), WinSaveDialog(s1,s2,i,s3,j,s4) -  Execute Windows common dialogs for
          opening and saving files.</h4>
 
-  These functions are similar to Unicon Program Library procedures with similar
-         names. s1, s2, and  i are the caption, default value, and text entry field size.  s3 and j
+  These functions open typical dialogs to perform file selection for reading
+  and writing, respectively. s1, s2, and  i are the caption, default value,
+  and text entry field size.  s3 and j
          specify the filter string and its index.  s3 is a string of alternating names and filters, separated and
          ending in |, of the form "name1|filter1|name2|filter2|...|".  It defaults to "All Files(*.*)|*.*|".
-         j supplies the default extension index within s3; it defaults to first pair in filter string.
+         j supplies the default extension index within s3; it defaults to first pair in filter string.  s4 is the directory to show when the dialog is opened;
+        it defaults to use Windows version-specific rules.
 
-        These functions return the file name chosen, rather than assigning it to the global variable
-         dialog_value as the IPL procedures do. They fail if the user selects Cancel.
+        These functions return the file name chosen.
+        They fail if the user selects Cancel.
 
 <hr>
 <h4> WinPlayMedia(w, s1, s2, ...) - play a multimedia resource.</h4>

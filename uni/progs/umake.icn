@@ -1,7 +1,7 @@
 #
 # umake.icn - Unicon version of the "make" program
 #
-# UNDER CONSTRUCTION. DOES NOT WORK YET.
+# PRELIMINARY. ALPHA TEST LEVEL.
 #
 # Reasons for the existence of this program:
 #
@@ -19,20 +19,46 @@ global depgraph, macros, filechars, noexec, verbose
 
 procedure make(argv)
    macros := table("")
-   noexec := 1 # hardwire to -n for now
-   (depgraph := DepGraph("makefile")).make()
+   i := 1
+   while i <= *argv do {
+      if argv[i]=="-n" then {
+	 noexec := 1
+	 delete(argv,i)
+	 next
+	 }
+      else if argv[i]=="-v" then {
+	 verbose := 1
+	 delete(argv,i)
+	 next
+	 }
+      i +:= 1
+      }
+   if *argv=0 then
+      (depgraph := DependencyGraph("makefile")).make()
+   else every i := 1 to *argv do {
+      (depgraph := DependencyGraph("makefile")).make(argv[i])
+      }
 end
 
 #
 # make is organized around a dependency graph. The nodes are labeled by targets.
 #
-class DepGraph(targets, initialtarget, marked)
+class DependencyGraph(targets, initialtarget, marked)
+
+   #   under construction
+   method add_node(target)
+   end
+   method add_dependency(source,target)
+   end
+
    method mark(s)
       insert(marked, s)
    end
    method ismarked(s)
       return member(marked,s)
    end
+
+   # produce a dependency graph node corresponding to a named file
    method node(s)
       return \ targets[s]
       if stat(s) then fail # no node for s, but it exists
@@ -41,6 +67,31 @@ class DepGraph(targets, initialtarget, marked)
    method make(targ)
       /targ := initialtarget
       if /targ then stop("no initial target? can't make.")
+      if /(targets[targ]) then {
+	 # first, check for matching extensions
+	 every k := key(targets) do {
+	    if find("%", k) & (k ~=== "%")  then {
+	       s := targ
+	       kk := k
+	       while s[1]===k[1] do { s[1] := ""; k[1] := "" }
+	       while s[-1]===k[-1] do { s[-1] := ""; k[-1] := "" }
+	       if k == "%" & (*s>0) then {
+		  # instantiate the generic rule
+		  if \verbose then
+		     write("instantiating generic rule for ", targ)
+		  targets[targ] := targets[kk].clone(s)
+		  return targets[targ].make()
+		  }
+	       }
+	    }
+	 # last, try a global
+	 if t := targets["%"] then {
+	    write("there exists a universal target")
+	    targets[targ] := targets["%"].clone(targ)
+	    return targets[targ].make()
+	    }
+	 stop("no target for ", image(targ))
+	 }
       targets[targ].make()
    end
 initially(filename)
@@ -89,7 +140,8 @@ initially(filename)
 	    else if ="include" & tab(many(' \t')) &
 	       (inclname := tab(many(filechars))) then {
 		  push(fstack, f)
-		  write("including ", image(inclname))
+		  if \verbose then
+		     write("including ", image(inclname))
 		  f := open(inclname)
 		  }
 	    else if ="export" & tab(many(' \t')) &
@@ -112,12 +164,27 @@ initially(filename)
 end
 
 class Rule(target, dependencies, buildrules)
+   method subst(s, percent_sub, symbol : "%")
+      s[find(symbol, s) +: *symbol] := percent_sub
+      return s
+   end
+   method clone(percent_sub)
+      newRule := Rule(target, copy(dependencies), copy(buildrules))
+      newRule.target := subst(newRule.target, percent_sub)
+      every d := 1 to *dependencies do {
+	 newRule.dependencies[d] := subst(newRule.dependencies[d], percent_sub)
+	 }
+      every b := 1 to *buildrules do {
+	 newRule.buildrules[b] := subst(newRule.buildrules[b], newRule.dependencies[1], "$<")
+	 }
+      return newRule
+   end
    method make()
       if depgraph.ismarked(target) then {
-	 write("make ", target, " (already made)")
+	 write("umake ", target, " (already made)")
 	 }
       else {
-	 write("make ", target)
+	 write("umaking ", target)
 	 depgraph.mark(target)
 	 }
       # first, recursively build dependencies
@@ -144,6 +211,7 @@ class Rule(target, dependencies, buildrules)
       if mytimestamp < theirtimestamp then return
    end
    method exec()
+   local r
       every r := !buildrules do {
 	 if \noexec then write(r)
 	 else {
@@ -162,14 +230,22 @@ class Rule(target, dependencies, buildrules)
    end
 end
 
+#
+# This is a dependency graph with built-in knowledge of .u and .icn
+# dependencies necessary for Unicon programs.  What about subclasses
+# and packages that introduce additional file dependencies?
+#
+class UniconProject : DependencyGraph()
+end
+
 procedure macroexpand(s)
    s ? {
-      while tab(i := upto('$')) &
+      while tab(i := find("$")) &
 	    ="$(" & (mac := tab(many(filechars))) & =")" do {
 	 if not member(macros, mac) then {
 	    if val := getenv(mac|initcap(mac)|map(mac)) then
 	       macros[mac] := val
-	    else write("warning: empty macro ", mac)
+	    else if \verbose then write("warning: empty macro ", mac)
 	    }
 	 s[i +: *mac+3] := macros[mac]
 	 &subject := s; &pos := i
@@ -181,4 +257,3 @@ end
 procedure initcap(s)
    return map(s[1],&lcase,&ucase) || map(s[2:0])
 end
-

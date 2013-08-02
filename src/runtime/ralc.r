@@ -941,7 +941,7 @@ char *f(register char *s, register word slen)
       }
       s = StrLoc(ts);
 
-      if (((word)strfree) % 8) strfree += (8 - (((word)strfree) % 8));
+      /* if (((word)strfree) % 8) strfree += (8 - (((word)strfree) % 8)); */
       }
 
    strtotal += slen;

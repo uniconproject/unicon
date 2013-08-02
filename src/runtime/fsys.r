@@ -1130,7 +1130,7 @@ function{0,1} read(f)
 
    body {
       register word slen, rlen;
-      register char *sptr;
+      tended char *sptr;
       int status;
       char sbuf[MaxReadStr];
       tended struct descrip s;
@@ -1340,12 +1340,29 @@ function{0,1} read(f)
 	 rlen = slen < 0 ? (word)MaxReadStr : slen;
 
 	 Protect(reserve(Strings, rlen), runerr(0));
+	 /*
+	  * If extending our read string bumped us into a new heap...
+	  */
 	 if (StrLen(s) > 0 && !InRange(strbase,StrLoc(s),strfree)) {
+	    /*
+	     * Copy the prefix into the new heap, followed by the new part.
+	     * Start by reserving enough space for the whole thing.
+	     */
 	    Protect(reserve(Strings, StrLen(s)+rlen), runerr(0));
-	    Protect((StrLoc(s) = alcstr(StrLoc(s),StrLen(s))), runerr(0));
+	    /*
+	     * recast this as a single call to alcstr(NULL, StrLen(s)+rlen)
+	     * followed by two copies.
+	     */
+	     { int i, j;
+	     sptr = alcstr(NULL, StrLen(s)+rlen);
+	     for(i=0; i<StrLen(s); i++) sptr[i] = StrLoc(s)[i];
+	     for(j=0; j<rlen; j++) sptr[i+j] = sbuf[j];
+	     StrLoc(s) = sptr;
+	     }
 	    }
+	 else
+	    Protect(sptr = alcstr(sbuf,rlen), runerr(0));
 
-	 Protect(sptr = alcstr(sbuf,rlen), runerr(0));
 	 if (StrLen(s) == 0)
 	    StrLoc(s) = sptr;
 	 StrLen(s) += rlen;
@@ -1654,11 +1671,14 @@ function{0,1} reads(f,i)
 	 else if (tally == -3)
             fail;
 	 }
-      else
+      else {
 #endif					/* Graphics */
       DEC_NARTHREADS;
       tally = longread(StrLoc(s),sizeof(char),i,fp);
       INC_NARTHREADS_CONTROLLED;
+#ifdef Graphics
+      }
+#endif					/* Graphics */
 
       if (tally == 0)
 	 fail;

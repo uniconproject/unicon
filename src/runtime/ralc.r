@@ -926,22 +926,16 @@ char *f(register char *s, register word slen)
    s = StrLoc(ts);
 #endif					/* MultiThread */
 
-#if 1
-   padding = 8;
-#endif
-
    /*
     * Make sure there is enough room in the string space.
     */
-   if (DiffPtrs(strend,strfree) < slen + 8) {
+   if (DiffPtrs(strend,strfree) < slen) {
       StrLen(ts) = slen;
       StrLoc(ts) = s;
-      if (!reserve(Strings, slen+8)){
+      if (!reserve(Strings, slen)){
          return NULL;
       }
       s = StrLoc(ts);
-
-      /* if (((word)strfree) % 8) strfree += (8 - (((word)strfree) % 8)); */
       }
 
    strtotal += slen;

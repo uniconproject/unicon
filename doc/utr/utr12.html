@@ -173,34 +173,53 @@ Figure 4: A Run-time Error in Ui.  The message window's size is adjustable.
 </p>
 <h3><a name="projects">5. Projects</a></h3>
 
-Ui works on programs comprised of any number of source files.  By default,
-Ui assumes a single file program consisting of the current source file.  If
-you are working on a single-file program, and you open a new
-<code>.icn</code> source file, Ui switches the editor and compile and
-link commands to work on a different program.<p>
+Ui works on programs comprised of one or more source files. A <em>project</em>
+is Ui's abstraction of a program, consisting of the program name, working
+directory in which it is built, and set of source files and their dependencies
+on other files. By default,  Ui takes it that it is working on single file
+project consisting of the current source file. 
+If you are working on a single-file project, and you open a new .icn 
+source file, Ui switches the editor and compile and link commands to
+work on this new program.
+<p>
 
-Project files are plain text files with extension <code>.icp</code>.  They
-list source files, one file per line.  When you open a project file, Ui goes
-into "project mode", and adds the source files in the project to your File
-menu, allowing you to switch easily between files in the project.  If you
-subsequently open a source file not in the project, Ui asks if you want to
-add that source file to the project, or switch out of project mode and edit
-that file as a separate program.  In general, project files allow you to
-"make" large projects efficiently. Underneath the covers, Ui invokes the
-other Unicon program executables to do the work of compiling and running
-programs, described below.</p><p>
+Ui project files are Makefiles, given the extension .Makefile. 
+The format of Makefiles is described in documentation for one of the
+widely used "make" programs such as GNU make (see for example 
+<A href="http://www.gnu.org/software/make/">www.gnu.org/software/make/</A>).
+You can write your makefiles by hand, but in order for Ui to keep things
+straight, you had better stick closely to the format that it generates
+for you when you create a New Project. The dialog for creating a project
+let's you specify the set of source files and their dependencies for a
+Unicon program.
+<p>
+<img src="utr12/project_dialog_screenshot.png">
 
-When Ui "makes" a program executable, it recompiles those modules listed in
-the project file whose modified time is newer than their corresponding
-object files.  On the other hand, Ui knows nothing about link declarations
-embedded in source files, and recompilation will not be triggered by such
-dependencies.  When you use Ui, you should generally use link statements for
-library files (such as Unicon Program Library modules), and use
-<code>.icp</code> files for your own sources. Files listed in the .icp file
-must not also be referenced in a link statement; linking the same module
-twice causes link errors.  For projects, the executable <code>.bat</code>
-that is produced by "make" is named after the first program in the project
-file.
+
+<p>
+When you open a project file, Ui goes into "project mode", and adds the 
+source files and their dependencies to your Class Browser allowing you 
+to switch easily between files relevant to your project. If you 
+subsequently open a source file not in the project, Ui asks if you want 
+to add that source file to the project, or edit that file as a 
+separate program. In general, project files allow you to "make" large 
+projects efficiently. Underneath the covers, Ui invokes the other Unicon 
+program executables to do the work of compiling and running programs, 
+described below.
+<p>
+
+When Ui "makes" a program executable, it recompiles those modules listed 
+in the project file whose modified time is newer than their corresponding 
+object files.  Ui does not present consider link declarations 
+embedded in source files, which generally are used for library modules;
+recompilation will not be triggered by such dependencies.
+When you use Ui, you should generally use link directives for library files
+(such as Unicon Program Library modules), and use explicit project file
+entries for all of your own source files. Files detailed in the .Makefile 
+must not also be referenced in a link statement; linking the same module 
+twice causes link errors. For projects, the executable that is produced and
+the project itself are named after the first program in the project file 
+unless otherwise specified. 
 
 </p>
 <h3><A name="options">6. Ui Options </A></h3>
@@ -243,20 +262,20 @@ for Icon and Unicon.
 <p>
 
 In the early 1990's, a prominent member of the Icon community (Bob Goldberg,
-if I recall correctly) did a very rough prototype IDE for Icon on Windows,
+if I recall correctly) did a rough prototype IDE for Icon on Windows,
 which whetted our appetite for this category of tool. An M.S. student at
 UTSA, Steve Schiavo, did a second prototype IDE in Borland Delphi.  These
 efforts featured basic editing, compiling, and executing but were not
 feature complete and never released.
 <p>
 
-Clint Jeffery ported Icon's graphics facilities to Windows while at UTSA,
+Clint Jeffery ported Icon's graphics facilities to Windows at UTSA,
 as part of his agreed contribution for the book "Graphics Programming in
 Icon"[3]. An IDE (along with a setup.exe installer) was considered essential
 for the Windows Icon distribution. In order to minimize external language-
 and compiler-dependencies, and in order to test and demonstrate the
-functionality of Windows Icon, Schiavo's IDE was reimplemented in Icon
-by Clint Jeffery as a program called Wi (Windows icon).
+functionality of Windows Icon, Jeffery implemented an IDE similar to Steve
+Schiavo's in Icon as a program called Wi (Windows icon).
 In order to provide an attractive, native-looking GUI, Windows95 native
 dialogs (the Win* functions) were added to the language specifically for
 use in Wi. The Wi program was modified slightly to form
@@ -269,15 +288,18 @@ Windows it had some nasty limitations, such as a 32kb file size limit
 imposed by the classic native windows text editor widget. After Robert
 Parlett contributed his wonderful GUI class library, which supported fonts
 and colors, it became ever more desirable to build a Unicon IDE that would
-run on all Unicon platforms.  There were multiple failed attempts, such as
-Bryan Ross's RUDE (Ross' Unicon Development Environment).
+run on all Unicon platforms.
+Bryan Ross's RUDE (Ross' Unicon Development Environment) was an attempt
+to address the multi-platform requirement in prototype form.
+
 <p>
 
 Finally, the Ui program was developed by Clint Jeffery, using Parlett's
 IVIB interface builder and adapting code from Wu. Unfortunately, various
 elements of Wu were not replicated immediately in Ui, and it has only
-gradually progressed towards a complete or usable feature set.  Its toolbar was
-added by Nolan Clayton. Syntax coloring was added by Luis Alvidrez.
+gradually progressed towards a complete or usable feature set.  Its toolbar
+was added by Nolan Clayton, who also made various improvements to its
+visual appearance. Syntax coloring was added by Luis Alvidrez.
 Hani bani Salameh ported it to version 2 of the GUI classes. It is by now
 the work of several people, and remains very small and lacks features compared
 with mainstream IDE's.  However, it continues to evolve.
@@ -286,9 +308,8 @@ with mainstream IDE's.  However, it continues to evolve.
 <h3><a name="conclusions">8. Conclusions and Future Work</a></h3>
 
 The Ui program is a relatively small multi-platform IDE for Unicon.
-Its original author (Jeffery) is perpetually
-embarrassed by its lack of features, and is grateful for the help he
-has received towards making Ui less of a toy.
+Its original author (Jeffery) is grateful for the help he
+has received from many persons improving Ui and making it less of a toy.
 Ui remains perpetually in need of more and better "polish", and the list
 of planned features is long.
 

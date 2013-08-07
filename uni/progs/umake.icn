@@ -26,6 +26,11 @@ procedure make(argv)
 	 delete(argv,i)
 	 next
 	 }
+      else if argv[i]=="-f" then {
+	 delete(argv,i)
+	 makefile := argv[i]
+	 delete(argv,i)
+	 }
       else if argv[i]=="-v" then {
 	 verbose := 1
 	 delete(argv,i)
@@ -33,10 +38,14 @@ procedure make(argv)
 	 }
       i +:= 1
       }
+   /makefile := "makefile"
    if *argv=0 then
-      (depgraph := DependencyGraph("makefile")).make()
-   else every i := 1 to *argv do {
-      (depgraph := DependencyGraph("makefile")).make(argv[i])
+      (depgraph := DependencyGraph(makefile)).make()
+   else {
+      depgraph := DependencyGraph(makefile)
+      every i := 1 to *argv do {
+	 depgraph.make(argv[i])
+	 }
       }
 end
 

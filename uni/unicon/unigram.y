@@ -168,7 +168,7 @@ procedure Keyword(x1,x2)
 
    # verify that x2 is a valid keyword
    if not member(keywords, x2.s) then
-      write(&errout, "&",x2.s," is not a valid keyword!")
+      yyerror("&" || x2.s ||" is not a valid keyword!")
 
    return node("keyword",x1,x2)
 end
@@ -488,7 +488,10 @@ cparmlist: carg ;
 arg	: IDENT ;
 	| IDENT COLON IDENT { $$ := node("arg2", $1, $2, $3) } ;
 	| IDENT COLON literal { $$ := node("arg3", $1, $2, $3) } ;
-	| IDENT COLON IDENT COLON literal { $$ := node("arg4", $1, $2, $3, $4, $5) } ;
+	| IDENT COLON IDENT COLON literal { $$ := node("arg4", $1,$2,$3,$4,$5)};
+	| IDENT COLON AND IDENT { $$ := node("arg5", $1, $2, Keyword($3, $4)) };
+	| IDENT COLON IDENT COLON AND IDENT { $$ := node("arg6", $1, $2, $3, $4, Keyword($5, $6)) } ;
+
 
 carg	: priv arg { $$ := $2 };
 

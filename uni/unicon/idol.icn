@@ -834,7 +834,7 @@ class idTaque : taque(punc)
       case type(node) of {
 	 "treenode": {
 	    if *node.children > 0 then {
-		if node.label == ("arg2"|"arg3"|"arg4") then {
+		if node.label == ("arg2"|"arg3"|"arg4"|"arg5"|"arg6") then {
 		    insert(node, node.children[1].s)
 		    }
                 else if node.label == "varlist2" then {
@@ -903,7 +903,9 @@ class argList : idTaque(varg)
 	    v := x.children[1].s
 	    if x.label == ("arg3" | "arg4") then
 	      write(yyout, "/", v, " := ", x.children[-1].s)
-	    if x.label == ("arg2" | "arg4") then {
+	    else if x.label == ("arg5" | "arg6") then
+	      write(yyout, "/", v, " := &", x.children[-1].children[-1].s)
+	    if x.label == ("arg2" | "arg4" | "arg6") then {
 	      case x.children[3].s of {
 		  "integer"|"string"|"numeric"|"cset"|"real": {
 		      writes(yyout, v, " := ", x.children[3].s, "(",  v, ") |")

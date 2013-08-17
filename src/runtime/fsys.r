@@ -342,7 +342,7 @@ function{0,1} open(fname, spec)
       register int i;
       register char *s;
       int status;
-      char mode[4], sbuf[MaxCvtLen+1], sbuf2[MaxCvtLen+1];
+      char mode[4];
       extern FILE *fopen();
       FILE *f;
       SOCKET fd;
@@ -843,20 +843,29 @@ Deliberate Syntax Error
 
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
       if (status & Fs_Pipe) {
-	 int c;
+	 tended char *sbuf, *sbuf2, *my_s = NULL;
+	 int c, fnamestrlen = strlen(fnamestr);
 	 if (status != (Fs_Read|Fs_Pipe) && status != (Fs_Write|Fs_Pipe))
 	    runerr(209, spec);
-	 strcpy(sbuf, fnamestr);
-	 if ((s = strchr(sbuf, ' ')) != NULL) *s = '\0';
+	 /*
+	  * fnamestr is a program command line.  Extract its first
+	  * argument (the command) and expand that with a path search.
+	  */
+	 Protect(reserve(Strings, (fnamestrlen<<1)+PATH_MAX+2), runerr(0));
+	 sbuf = alcstr(fnamestr, fnamestrlen+1);
+	 sbuf[fnamestrlen] = '\0';
+	 if ((my_s = strchr(sbuf, ' ')) != NULL) *my_s = '\0';
 	 if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
-	    if (findonpath(sbuf, sbuf2, MaxCvtLen) == NULL)
+	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen);
+	    if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL)
 	       fail;
 	    fnamestr = sbuf2;
-	    if (s) {
+	    if (my_s) {
 	       strcat(fnamestr, " ");
-	       strcat(fnamestr, s+1);
+	       strcat(fnamestr, my_s+1);
 	       }
 	    }
+
 	 f = popen(fnamestr, mode);
 	 if (!strcmp(mode,"r")) {
 	    if ((c = getc(f)) == EOF) {

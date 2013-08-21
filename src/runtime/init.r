@@ -242,10 +242,17 @@ int num_cpu_cores;
 #ifdef CPU_CORE_COUNT
 
 int get_num_cpu_cores() {
-#ifdef WIN32
-    SYSTEM_INFO sysinfo;
+#ifdef NT
+   char *sbuf[MaxCvtLen+1];
+    if ((getenv_r("NUMBER_OF_PROCESSORS", sbuf, MaxCvtLen) != 0)
+     || (*sbuf == '\0'))
+      return 0;
+    return atoi(sbuf);
+
+/*    SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     return sysinfo.dwNumberOfProcessors;
+*/
 #elif MACOS
     int nm[2];
     size_t len = 4;

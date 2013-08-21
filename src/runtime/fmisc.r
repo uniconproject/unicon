@@ -3025,7 +3025,7 @@ function{1} opencl(argv[argc])
     clGetPlatformIDs(platformCount, platforms, NULL);
    
    printf("platfom count=%d\n", platformCount);
-#if 0
+
     for (i = 0; i < platformCount; i++) {
       /* get all devices */
         clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
@@ -3071,7 +3071,6 @@ function{1} opencl(argv[argc])
 
         free(devices);
     }
-#endif
 
     free(platforms);
 

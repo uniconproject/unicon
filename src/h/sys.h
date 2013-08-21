@@ -453,5 +453,5 @@
 
 /* OpenCL */
 #ifdef HAVE_LIBCL
-	#include <opencl-utils/include/CL/cl.h>
+	#include <CL/cl.h>
 #endif					/* HAVE_LIBOGG */

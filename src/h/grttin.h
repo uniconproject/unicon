@@ -272,6 +272,10 @@ typedef int DIR;
        typedef int pthread_key_t;
 #endif					/* Concurrent */
 
+#ifdef HAVE_LIBCL
+       typedef int cl_uint, cl_platform_id, cl_device_id;
+#endif					/* HAVE_LIBCL */
+
 #ifdef Dbm
 typedef int DBM;
 typedef struct {

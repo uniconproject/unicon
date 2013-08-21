@@ -422,3 +422,7 @@ FncDef(fetch,2)
   FncDef(condvar,1)
   FncDef(signal,2)
   FncDefV(Attrib)
+
+#ifdef HAVE_LIBCL
+  FncDef(opencl, 1)
+#endif					/* HAVE_LIBCL */

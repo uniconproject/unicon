@@ -1263,7 +1263,7 @@ if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
 #define MUTEXID(mtx) mutexes[mtx]
 
 
-#define MUTEX_LOCKID(mtx) { int retval; \
+#define MUTEX_LOCKID(mtx) { int retval;\
   if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
     handle_thread_error(retval, FUNC_MUTEX_LOCK, NULL); }
 

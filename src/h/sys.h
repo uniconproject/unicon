@@ -450,3 +450,8 @@
 	#include <vorbis/codec.h>
 	#include <vorbis/vorbisfile.h>
 #endif					/* HAVE_LIBOGG */
+
+/* OpenCL */
+#ifdef HAVE_LIBCL
+	#include <opencl-utils/include/CL/cl.h>
+#endif					/* HAVE_LIBOGG */

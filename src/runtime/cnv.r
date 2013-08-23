@@ -449,7 +449,7 @@ dptr s, d;
 #ifdef DescriptorDouble
 	    s->vword.realval = dbl;
 #else
-            BlkLoc(*s) = alcreal(dbl);
+            BlkLoc(*s) = (union block *)alcreal(dbl);
 #endif
 	    s->dword = D_Real;
             if (realtobig(s, d) == Succeeded) {

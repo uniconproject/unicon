@@ -153,8 +153,8 @@ then
     CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
     AC_PROG_CXX
     #
-    # test whether we found a C++ compiler; for now, only a true g++.
-    # We used to use AC_LANG_CPLUSPLUS, but that dies with a FATAL error if no C++
+    # Test whether we found a C++ compiler; for now, only a true g++.  We used
+    # to use AC_LANG_CPLUSPLUS, but it dies with a FATAL error if no C++ found
     #
     if test "$CXX" = "g++" -a "$GXX" = "yes"
     then
@@ -167,6 +167,8 @@ then
                 #
                 AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev)
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
+		LIBSTDCPP=`locate libstdc++.so.6|head -1`
+		LDFLAGS="$LDFLAGS $LIBSTDCPP"
                 AC_MSG_RESULT(ok)
         else
                 #

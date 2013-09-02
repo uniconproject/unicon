@@ -78,6 +78,8 @@ Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; Flags: ignoreversio
 Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
 Source: "\unicon\uni\ivib\icon\*.*"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
 Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; Flags: ignoreversion
+Source: "\unicon\uni\progs\makefile"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
+Source: "\unicon\uni\progs\*.icn"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
 Source: "\unicon\uni\udb\*.*"; DestDir: "{app}\uni\udb"; Flags: ignoreversion
 Source: "\unicon\uni\udb\dta\*.*"; DestDir: "{app}\uni\udb\dta"; Flags: ignoreversion
 Source: "\unicon\uni\udb\lib\*.*"; DestDir: "{app}\uni\udb\lib"; Flags: ignoreversion

@@ -700,6 +700,7 @@ expr11	: literal ;
 	| LBRACE compound RBRACE { $$ := node("Brace", $1,$2,$3);} ;
 	| LBRACK caselist RBRACK { $$ := tablelit($1,$2,$3);} ;
 	| LBRACK exprlist RBRACK { $$ := node("Brack", $1,$2,$3);} ;
+	| LBRACK COLON expr COLON RBRACK { $$ := ListComp($3);} ;
 	| expr11 LBRACK exprlist RBRACK { $$ := node("Subscript", $1,$2,$3,$4);} ;
 	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3);} ;
 	| expr11 LBRACE pdcolist RBRACE { $$ := node("Pdco1", $1,$2,$3,$4);} ;
@@ -953,6 +954,18 @@ procedure buildtab_from_cclause(n, args)
 	push(args.children, n.children[1])
 	}
    }
+end
+
+# build a tree equivalent to
+# {__tmp :=[]; every put(__tmp, expr); if __tmp>0 then __tmp}
+procedure ListComp(expr)
+   local tmp
+   tmpcount +:= 1
+   tmp := "__" || tmpcount
+   return node("ListComp",
+		"{" || tmp || " :=[]; every put(" || tmp || ", ",
+		expr,
+		"); if *" || tmp || ">0 then " || tmp || "}")
 end
 
 procedure tablelit(lb, cl, rb)

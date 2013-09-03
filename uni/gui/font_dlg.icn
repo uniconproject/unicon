@@ -3,8 +3,7 @@ $include "guih.icn"
 
 procedure fontdialog(font)
 $ifdef _UNIX
-   # TODO: need to use passed-in font as a default for this dialog
-   d := FontDialog()
+   d := FontDialog(font)
    d.show_modal()
    if font := \ (d.font) then {
       suspend font
@@ -15,13 +14,30 @@ $else
 $endif
 end
 
-class FontDialog : Dialog(
+class FontDialog : Dialog(cur_font,
    cancel, edit_fontcolor, label_4, label_5, ok,
    border_1, edit_fontname, edit_fontsize, edit_fontstyle, label_1, label_2,
    label_3, font, fn, fsz, fst, fontcolor
    )
    method component_setup()
-      self.setup()
+      local type, size, style                  
+      if \cur_font then {
+         cur_font ? {
+            type := tab(upto(','))           
+            tab(upto(&digits))
+            size := integer(tab(many('0123456789.')))
+            tab(many(','))
+            style := tab(0)
+            }
+         fn := type
+         fsz := size
+         if style == "" then
+            fst := &null
+         else
+            fst := style
+         }
+      if *self.children < 1 then
+         self.setup()
    end
 
    method end_dialog()
@@ -45,32 +61,33 @@ class FontDialog : Dialog(
 
    method setfnt()
       font := (\fn | "sans")
-      font ||:= "," || \fst
       font ||:= "," || \fsz
-   end
-
-   method on_edit_fontname(ev)
-      fn := edit_fontname.selection_list[edit_fontname.get_selection()]
-      fst := map(edit_fontstyle.selection_list[edit_fontstyle.get_selection()])
-      if fst == "regular" then fst := &null
-      else if fst == "bold italic" then fst := "bold,italic"
-      fsz := edit_fontsize.selection_list[edit_fontsize.get_selection()]
-      setfnt()
+      font ||:= "," || \fst
       label_5.set_attribs("font="||font)
       self.init()
       self.resize()
       self.display()
    end
 
+   method on_edit_fontname(ev)
+      fn := edit_fontname.selection_list[edit_fontname.get_selection()]
+      setfnt()
+   end
+
    method on_edit_fontsize(ev)
-      on_edit_fontname(ev)
+      fsz := edit_fontsize.selection_list[edit_fontsize.get_selection()]
+      setfnt()
    end
 
    method on_edit_fontstyle(ev)
-      on_edit_fontname(ev)
+      fst := map(edit_fontstyle.selection_list[edit_fontstyle.get_selection()])
+      if fst == "regular" then fst := &null
+      else if fst == "bold italic" then fst := "bold,italic"
+      setfnt()
    end
 
    method on_ok(ev)
+      cur_font:=font
       self.dispose()
    end
 
@@ -93,7 +110,7 @@ class FontDialog : Dialog(
       label_5 := Label()
       label_5.set_pos("7", "10")
       label_5.set_size("301", "61")
-      label_5.set_attribs("font=sans,11")
+      label_5.set_attribs("font=sans,"||(\fsz|"11")||","||(\fst|""))
       label_5.set_internal_alignment("c")
       label_5.set_label("Sample")
       border_1.add(label_5)
@@ -108,19 +125,21 @@ class FontDialog : Dialog(
       edit_fontname.set_size(114, )
       edit_fontname.connect(self, "on_edit_fontname", SELECTION_CHANGED_EVENT)
       edit_fontname.set_selection_list(["sans", "serif", "mono", "typewriter"])
+      edit_fontname.set_contents(\fn | "sans")
       self.add(edit_fontname)
       edit_fontstyle := EditList()
       edit_fontstyle.set_pos(153, 60)
       edit_fontstyle.set_size("100", )
       edit_fontstyle.connect(self, "on_edit_fontstyle", SELECTION_CHANGED_EVENT)
       edit_fontstyle.set_selection_list(["Regular", "Italic", "Bold", "Bold Italic"])
+      edit_fontstyle.set_contents(\fst | "Regular")
       self.add(edit_fontstyle)
       edit_fontsize := EditList()
       edit_fontsize.set_pos(275, 60)
       edit_fontsize.set_size("100", )
       edit_fontsize.connect(self, "on_edit_fontsize", SELECTION_CHANGED_EVENT)
       edit_fontsize.set_selection_list(["7", "8", "9", "10", "11", "12", "13", "14", "16", "18", "20", "22", "24", "26", "30", "36", "44", "52", "60", "72"])
-      edit_fontsize.set_contents("11")
+      edit_fontsize.set_contents(\fsz | "11")
       self.add(edit_fontsize)
       ok := TextButton()
       ok.set_pos("400", "124")
@@ -153,7 +172,7 @@ class FontDialog : Dialog(
 
    initially
       self.Dialog.initially()
-      font := "sans,11"
+      font := \cur_font | "sans,11"
 end
 
 #procedure main()

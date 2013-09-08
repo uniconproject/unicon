@@ -1,0 +1,135 @@
+
+import gui
+$include "guih.icn"
+
+$ifdef _MS_WINDOWS_NT
+$define CMD "where make.exe >null" 
+$define URL "http://sourceforge.net/projects/gnuwin32/files/make/3.81/"
+$else
+$define CMD "which make >/dev/null" 
+$define URL "http://sourceforge.net/projects/gmsl/"
+$endif   
+
+procedure verify_make()
+   local m, check
+   check := system(CMD)
+   if check = 0 then return
+   else m := VerifyMakeDlg(); m.show_modal()
+   if /m.quit_true then return 
+end
+
+class VerifyMakeDlg : Dialog(
+   lbl_warning_pt1,
+   lbl_warning_pt2,
+   lbl_warning_pt3,
+   lbl_url,
+   txt_btn_url,
+   txt_btn_quit,
+   txt_btn_dismiss,
+   quit_true,
+   position
+   )
+   method component_setup()
+      local pos_x, pos_y, size_x, size_y
+      WAttrib("pos") ? {
+         pos_x := tab(find(","))
+         =","
+         pos_y := tab(many('-0123456789'))
+	 }
+      if /pos_x then pos_x := 0
+      else pos_x +:= 0.40 * WAttrib("width")
+      if /pos_y then pos_y:=0
+      else pos_y +:= 0.40 * WAttrib("height")
+      position := pos_x||","||pos_y
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_txt_btn_quit(ev)
+      quit_true := 1
+      dispose()
+   end
+
+   method on_txt_btn_dismiss(ev)
+      dispose()
+   end
+
+   method on_VerifyMakeDlg(ev)
+      dispose()
+   end
+
+   method on_txt_btn_url()
+      local URL2 := "", f
+      $ifdef _UNIX
+         proc("system",0)(\browser || "  " || URL || " &>ui.err &")
+         delay(800)
+         if f := open("ui.err") then {
+            if find("not running", read(f)) then
+               proc("system",0)(\browser || "  " || URL || " &>ui.err &")
+            close(f)
+            remove("ui.err")
+      }
+      $else
+         proc("system",0)("cmd /C start /B " || \browser || " " || URL) # || " &")
+      $endif
+   end
+
+   method setup()
+      self.set_attribs("size=435,156", "pos="||position)
+      lbl_warning_pt1 := Label()
+      lbl_warning_pt1.set_pos(20, 16)
+      lbl_warning_pt1.set_size(400, 20)
+      lbl_warning_pt1.set_internal_alignment("l")
+      lbl_warning_pt1.set_label("Warning: make was not found on your path.")
+      self.add(lbl_warning_pt1)
+      lbl_warning_pt2 := Label()
+      lbl_warning_pt2.set_pos(20, 36)
+      lbl_warning_pt2.set_size(400, 20)
+      lbl_warning_pt2.set_internal_alignment("l")
+      lbl_warning_pt2.set_label("Compile Project option will not work.")
+      self.add(lbl_warning_pt2)
+      lbl_warning_pt3 := Label()
+      lbl_warning_pt3.set_pos(20, 66)
+      lbl_warning_pt3.set_size(400, 20)
+      lbl_warning_pt3.set_internal_alignment("l")
+      lbl_warning_pt3.set_label("Gnu make facility is availble for download at:")
+      self.add(lbl_warning_pt3)      
+      lbl_url := Label()
+      lbl_url.set_pos(20, 86)
+      lbl_url.set_size(400, 20)
+      lbl_url.set_internal_alignment("l")
+      lbl_url.set_label(URL)
+      self.connect(self, "on_VerifyMakeDlg", CLOSE_BUTTON_EVENT)
+      self.add(lbl_url)
+      txt_btn_dismiss := TextButton()
+      txt_btn_dismiss.set_pos(50, 116)
+      txt_btn_dismiss.connect(self, "on_txt_btn_dismiss", BUTTON_RELEASE_EVENT)
+      txt_btn_dismiss.clear_toggles()
+      txt_btn_dismiss.set_label("Dismiss")
+      txt_btn_dismiss.set_internal_alignment("c")
+      self.add(txt_btn_dismiss)
+      txt_btn_quit := TextButton()
+      txt_btn_quit.set_pos(332, 116)
+      txt_btn_quit.connect(self, "on_txt_btn_quit", BUTTON_RELEASE_EVENT)
+      txt_btn_quit.clear_toggles()
+      txt_btn_quit.set_label("Quit")
+      txt_btn_quit.set_internal_alignment("c")
+      self.add(txt_btn_quit)
+      txt_btn_url := TextButton()
+      txt_btn_url.set_pos(135, 116)
+      txt_btn_url.connect(self, "on_txt_btn_url", BUTTON_RELEASE_EVENT)
+      txt_btn_url.clear_toggles()
+      txt_btn_url.set_label("Continue to SourceForge")
+      txt_btn_url.set_internal_alignment("c")
+      self.add(txt_btn_url)
+      quit_true := &null
+   end
+
+   initially
+      self.Dialog.initially()
+end

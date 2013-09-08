@@ -1,11 +1,12 @@
 #################################################################
 #
-#   File:         utags.icn
+#   File:      utags.icn
 #
 #   Subject:   Parse File and Generate Nodes for Class Browser Tree
-#   Author:   Nolan Clayton
+#   Author:    Nolan Clayton
+#              (Based on or inspired by itags.icn by Nick Kline.)
 #
-#   Date:       May 26, 04
+#   Date:      May 26, 04
 #
 ##################################################################
 
@@ -15,7 +16,7 @@ global line
 procedure utags(contents, parentfile)
    local  lineno, outlines, notid, word, x, gword
 
-   notid := &cset -- &ucase -- &digits -- &lcase -- '_'
+   notid := &cset -- &letters -- &digits -- '_'
 
    lineno := 1
    outlines   := []
@@ -27,171 +28,148 @@ procedure utags(contents, parentfile)
       line[find("/*",line):0] := ""
       line[find("//",line):0] := ""
 
-   line ? {
-      gword := getword3(line)
+      line ? {
+	 gword := getword3(line)
 ### Unicon Tags ###
 
-      if find(".icn", parentfile) then {    #Unicon Tags
-         gword := getword()
-         tab(many(' ')) 
+	 if find(".icn", parentfile) then {    #Unicon Tags
+	    gword := getword()
+	    tab(many(' ')) 
 
-         if gword === "procedure" then {
-	       put(outlines, Tag("procedure", getword(), lineno, parentfile))
-	  }
-         if gword === "class" then {
-	       put(outlines, Tag("class", getword(), lineno, parentfile))
-          }
-         if gword === "method" then {
-	       outlines[-1].add( Tag("method", getword(), lineno, parentfile))
-          }
-         if gword === "initially" then {
-	       outlines[-1].add(Tag("initially","initially",lineno,parentfile))
-          }
-         if gword === "link" then {
-            every  word := getword()  do
-               put(outlines, Tag("link", word, lineno, parentfile) )
-          }
-         if gword === "$include" then {
-            every  word := getword()  do
-               put(outlines, Tag("$include", word, lineno, parentfile) )
-          }
-         if gword === "package" then {
-            every  word := getword()  do
-               put(outlines, Tag("package", word, lineno, parentfile) )
-          }
-       }
-       lineno +:= 1
-   }
-}
+	    case gword of {
+	       "procedure"|"class": {
+		  put(outlines, Tag(gword, getword(), lineno, parentfile))
+		  }
+	       "method": {
+		  outlines[-1].add(Tag(gword, getword(), lineno,parentfile))
+		  }
+	       "initially": {
+		  outlines[-1].add(Tag(gword,gword,lineno,parentfile))
+		  }
+	       "link"|"$include"|"package": {
+		  every word := getword()  do
+		     put(outlines, Tag(gword, word, lineno, parentfile) )
+		  }
+	       }
+	    }
+	 lineno +:= 1
+	 }
+      }
    return outlines
 end
 
 
 #
-# procedures' names are self explanitory.  Taken from itags. #
+# procedures' names are self explanatory.  Taken from itags.
 #
 
 procedure getword()
    local word
    static letts, ids
    initial {
-        letts := &letters ++ '(' ++ '{'
-        ids :=&letters ++ &digits ++ '_' ++ '.'
-     }
+      letts := &letters ++ '({'
+      ids :=&letters ++ &digits ++ '_.'
+      }
 
    while tab(upto(letts)) do {
       word := tab(many(ids))
+      if /word then word := "(missing field-name)"
       suspend word
-   }
+      }
 end
 
 procedure getword3(line)
- local i, c, ch1, ch2, index1, index2, word
+local i, c, ch1 := 0, ch2, index1, index2, word
 
 #
 # returns the index of the location of 
 # '(' or '{' in the method header.
 #
- ch1:=0
- every c := !line do {
-    ch1+:=1
-    if  c == "(" | c == "{" then {
-       index2 := ch1
-       break
-    }
-  }
+   index2 := upto('({', line)
 
-#
-# returns the index of the location of 
-# the first blank before the method name.
-#
- i:=\index2-2
- while line[\i] ~== " " do
-    i-:=1
+   #
+   # returns the index of the location of 
+   # the first blank before the method name.
+   #
+   i := \index2-2
+   while line[\i] ~== " " do
+      i -:= 1
 
- index1:=i
- word := line[\index1:\index2] 
- suspend word
-
+   index1 := i
+   word := line[\index1:\index2] 
+   suspend word
 end
 
 
-
-#################################################################
-# Stand Alone Version
-#         Uncomment The Lines Below...
-#################################################################
 #
-# global Tags
+# Compile with -DMAIN to produce a standalone utags application program.
+# Dated legacy (version 1 GUI) code might need to be updated to V2.
 #
-# procedure main(args)
-#    local i, lines, d, name, l, temp
+$ifdef MAIN
+global Tags
+
+procedure main(args)
+   local i, lines, d, name, l, temp
    
-#    Tags := []
-#    lines := []
-#    l := []
+   Tags := []
+   lines := []
+   l := []
    
-#    while *args > 0 do {
-#       name := pop(args)
-#       i  := open(  name,"r")
- 
-#       while put( lines, read(i))
-#       close(i)
-#       l := utags(lines)
+   while *args > 0 do {
+      name := pop(args)
+      if not (i := open(name,"r")) then
+	 stop("utags: couldn't open ", image(name))
+      while put(lines, read(i))
+      close(i)
+      l := utags(lines)
 
-#       temp := Tag("file",name, 0)
-#       every  i :=  ! l do temp.add(i) 
+      temp := Tag("file",name, 0)
+      every  i :=  ! l do temp.add(i) 
 
-#       put( Tags, temp)
-#       lines := []
-#    }
+      put(Tags, temp)
+      lines := []
+      }
+   dialog().show_modal()
+end
 
- 
-   
-#    d := dialog()
-#    d.show_modal()
-   
-# end
+class dialog : _Dialog(class_browser)
 
+   method handle_class_browser(ev)
+      class_browser$flatten()
+   end
 
-# class dialog : _Dialog(class_browser)
-
-#    method handle_class_browser(ev)
-#       class_browser$flatten()
-#    end
-
-#    method handle_default(ev)
-#    end
+   method handle_default(ev)
+   end
       
-#    method dialog_event(ev)
-#       case ev.get_component() of {
-#          class_browser : handle_class_browser(ev)
-#          default : handle_default(ev)
-#       }
-#    end
+   method dialog_event(ev)
+      case ev.get_component() of {
+         class_browser : handle_class_browser(ev)
+         default : handle_default(ev)
+	 }
+   end
    
-#    method setup()
-#       local nodes, names, i, j
+   method setup()
+      local nodes, names, i, j
       
-
-#       self.set_attribs("size=500,600", "bg=pale gray")
-#       self.min_width  := 200
-#       self.min_height := 200
+      self.set_attribs("size=500,600", "bg=pale gray")
+      self.min_width  := 200
+      self.min_height := 200
       
-#       class_browser := ClassBrowser()
-#       class_browser$set_pos("5", "5")
-#       class_browser$set_size("100%-10", "100%-10")
-#       class_browser$set_attribs("bg=white","font=sans,18","label=Unicon Class File Browser", "resize=on")
+      class_browser := ClassBrowser()
+      class_browser$set_pos("5", "5")
+      class_browser$set_size("100%-10", "100%-10")
+      class_browser$set_attribs("bg=white","font=sans,18",
+				"label=Unicon Class File Browser", "resize=on")
       
-#       class_browser$filltree(Tags)
-#       self$add(class_browser)
-      
-#    end
+      class_browser$filltree(Tags)
+      self$add(class_browser)
+   end
    
-#    method component_setup()
-#       self.setup()
-#    end
+   method component_setup()
+      self.setup()
+   end
 
-#    initially
-#       self$_Dialog.initially()
-# end
+   initially
+      self$_Dialog.initially()
+end
+$endif

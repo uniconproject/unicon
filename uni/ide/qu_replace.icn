@@ -1,0 +1,351 @@
+# qu_replace.icn
+# query_replace; ivib replacement for wu_replace
+# benjamin jeffery 07/01/13
+# source: wu_replace.icn by Clinton L Jeffery
+
+import gui
+$include "guih.icn"
+
+
+class qu_replace : Dialog(s1, s2, text_button_close, text_field_1, text_field_2, label_replace_with, label_search_for, text_button_find, text_button_replace, text_button_replace_all, check_box_backwards, check_box_insensitive, check_box_regex)
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_text_button_close(ev)
+      dispose()
+   end
+
+   method wu_replace(e, first_x, second_x, replace_str)
+      local ceb := ide.CurrentEditBox()
+
+      ceb.mark_x := first_x
+      ceb.mark_y := ceb.cursor_y
+      ceb.cursor_x := second_x
+
+      ide.handle_select_str(e, first_x, second_x, ceb.cursor_y)
+      
+      get_clipboard().set_content(replace_str)
+      ceb.handle_paste()
+   end
+
+   method on_text_field_1(ev)
+      self.on_text_button_find()
+   end
+
+   # common "find" code whether invoked from dialog or toolbar
+   method do_find(s1, direction_flag)
+      local first_x, second_x, vi, ceb := ide.CurrentEditBox()
+
+      if s1 == "" then fail
+      if ide.findstring(\s1) then {
+	 second_x := ceb.cursor_x
+	 first_x := second_x - *s1
+	 ide.handle_select_str(&null, first_x, second_x, ceb.cursor_y)
+	 }
+      # wrap to begining of buffer
+      else if /direction_flag then {
+         uidlog.MsgBox.set_contents(["end of buffer.\n searching from the top."])
+         ceb.mark_x := ceb.cursor_x := ceb.mark_y := ceb.cursor_y := 1
+         ide.goto_line(1,1)
+         }
+      else {
+         uidlog.MsgBox.set_contents(["top of buffer.\n searching from the bottom."])
+         vi := ceb.get_line_count()
+         ceb.mark_x := ceb.cursor_x := *ceb.contents[vi]+1
+         ceb.mark_y := ceb.cursor_y := vi
+         ide.goto_line(vi,*ceb.contents[vi]+1)
+         }
+   end
+
+   method on_text_button_find(ev)
+      return do_find(text_field_1.get_contents(),
+		     check_box_backwards.is_checked_flag)
+   end
+
+   method handle_pnl_find(ev)
+      return do_find(ide.text_field_search.get_contents(),
+		     ide.toggle_find_dir_btn.is_checked_flag)
+   end
+
+
+   method on_text_button_replace(ev)
+      local first_x, second_x
+
+      s1 := text_field_1.get_contents()
+      s2 := text_field_2.get_contents()
+      if s1 == "" then fail
+      if s2 == "" then fail
+      
+      second_x := ide.CurrentEditBox().cursor_x
+      first_x := second_x - *s1
+      wu_replace(ev, first_x, second_x, s2)
+      ide.modified := 1
+
+   end
+
+   method on_text_button_replace_all(ev)
+      local first_x, second_x
+      s1 := text_field_1.get_contents()
+      s2 := text_field_2.get_contents()
+      if s1 == "" then fail
+      if s2 == "" then fail
+      
+      while ide.findstring(s1) do {
+         second_x := ide.CurrentEditBox().cursor_x
+         first_x := second_x - (*s1)
+         wu_replace(ev, first_x, second_x, s2) 
+	 }
+      ide.modified := 1      
+   end
+
+   method on_check_box_backwards(ev)
+      # if /check_box_backwards.is_checked_flag  then { # === &null
+      #  write("backwards search checked")
+      # }
+      #else write("backwards search unchecked")
+
+   end
+
+   method on_check_box_insensitive(ev)
+      # if /check_box_insensitive.is_checked_flag  then { # === &null
+      #   write("Case-insensitive checked")
+      #  }
+      # else write("case-insensitive unchecked")
+   end
+
+   method on_check_box_regex(ev)
+      # f /check_box_regex.is_checked_flag then { # === &null
+      # write("regex search checked")
+      #}
+      # else write("regex search unchecked")
+   end
+
+   method setup()
+      self.set_attribs("size=412,272", "bg=yellowish white")
+      label_search_for := Label()
+      label_search_for.set_pos(19, 10)
+      label_search_for.set_size("77", "22")
+      label_search_for.set_internal_alignment("l")
+      label_search_for.set_label("Search for")
+      self.add(label_search_for)
+      text_field_1 := TextField()
+      text_field_1.set_pos("18", "41")
+      text_field_1.set_size("234", "26")
+      text_field_1.set_draw_border()
+      self.set_focus(text_field_1)
+      text_field_1.connect(self, "on_text_field_1", ACTION_EVENT)
+      text_field_1.set_contents("")
+      self.add(text_field_1)
+      label_replace_with := Label()
+      label_replace_with.set_pos("22", "82")
+      label_replace_with.set_size("84", "23")
+      label_replace_with.set_internal_alignment("l")
+      label_replace_with.set_label("Replace with")
+      self.add(label_replace_with)
+      text_field_2 := TextField()
+      text_field_2.set_pos(19, 126)
+      text_field_2.set_size(231, 22)
+      text_field_2.set_draw_border()
+      text_field_2.set_contents("")
+      self.add(text_field_2)
+      text_button_replace := TextButton()
+      text_button_replace.set_pos(313, 102)
+      text_button_replace.set_size("72", "32")
+      text_button_replace.connect(self, "on_text_button_replace", ACTION_EVENT)
+      text_button_replace.clear_toggles()
+      text_button_replace.set_label("Replace")
+      text_button_replace.set_internal_alignment("c")
+      self.add(text_button_replace)
+      text_button_replace_all := TextButton()
+      text_button_replace_all.set_pos(313, 143)
+      text_button_replace_all.set_size("77", "37")
+      text_button_replace_all.connect(self, "on_text_button_replace_all", BUTTON_RELEASE_EVENT)
+      text_button_replace_all.clear_toggles()
+      text_button_replace_all.set_label("Replace All")
+      text_button_replace_all.set_internal_alignment("c")
+      self.add(text_button_replace_all)
+      text_button_close := TextButton()
+      text_button_close.set_pos(314, 213)
+      text_button_close.set_size(78, 38)
+      text_button_close.connect(self, "on_text_button_close", BUTTON_RELEASE_EVENT)
+      text_button_close.clear_toggles()
+      text_button_close.set_label("Close")
+      text_button_close.set_internal_alignment("c")
+      self.add(text_button_close)
+      text_button_find := TextButton()
+      text_button_find.set_pos(313, 38)
+      text_button_find.set_size("76", "33")
+      text_button_find.connect(self, "on_text_button_find", BUTTON_RELEASE_EVENT)
+      text_button_find.clear_toggles()
+      text_button_find.set_label("Find")
+      text_button_find.set_internal_alignment("c")
+      self.add(text_button_find)
+      check_box_insensitive := CheckBox()
+      check_box_insensitive.set_pos("22", "173")
+      check_box_insensitive.set_size("168", "20")
+      check_box_insensitive.connect(self, "on_check_box_insensitive", BUTTON_PRESS_EVENT)
+      check_box_insensitive.set_toggles()
+      check_box_insensitive.set_label("case-insensitive search")
+      self.add(check_box_insensitive)
+      check_box_regex := CheckBox()
+      check_box_regex.set_pos("22", "238")
+      check_box_regex.set_size("117", "20")
+      check_box_regex.connect(self, "on_check_box_regex", BUTTON_PRESS_EVENT)
+      check_box_regex.set_toggles()
+      check_box_regex.set_label("Regex Search")
+      self.add(check_box_regex)
+      check_box_backwards := CheckBox()
+      check_box_backwards.set_pos("22", "205")
+      check_box_backwards.set_size("130", "23")
+      check_box_backwards.connect(self, "on_check_box_backwards", BUTTON_PRESS_EVENT)
+      check_box_backwards.set_toggles()
+      check_box_backwards.set_label("Search Backwards")
+      self.add(check_box_backwards)
+   end
+
+   initially
+      self.Dialog.initially()
+      
+end
+
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|5|string|check_box|integer|
+#5|string|label|integer|2|string|list|integer|1|string|text_button|inte
+#ger|6|string|text_field|integer|2|SuperClass Name|string|Dialog|Import
+# Name|string|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|
+#Boxes|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|
+#Boxes|list|0|Gen Indent|integer|3|Gen Main|null|Gen Component Setup|in
+#teger|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struc
+#t|class|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attr
+#ibs|list|1|string|bg=yellowish white|Name|string|Untitled|Width|intege
+#r|412|Height|integer|272|Items|list|11|class|CanvasLabel|27|Parent Can
+#vas|1|Name|string|label_search_for|Class Name|string|Label|Import Name
+#|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null
+#|H Default|null|X Spec|integer|19|Y Spec|integer|10|W Spec|string|77|H
+# Spec|string|22|X Align|string|l|Y Align|string|t|Is shaded|null|Is Bu
+#tton Subclass|null|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|
+#null|Event Handlers|list|0|Class Variable|integer|1|Parent Component|1
+#|Label|string|Search for|Internal Align|string|l|class|CanvasTextField
+#|27|Parent Canvas|1|Name|string|text_field_1|Class Name|string|TextFie
+#ld|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|
+#W Default|null|H Default|null|X Spec|string|18|Y Spec|string|41|W Spec
+#|string|234|H Spec|string|26|X Align|string|l|Y Align|string|t|Is shad
+#ed|null|Is Button Subclass|null|Draw Border|integer|1|Attribs|list|0|T
+#ooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1|
+#Parent Component|1|Contents|string||Filter String|string||class|Canvas
+#Label|27|Parent Canvas|1|Name|string|label_replace_with|Class Name|str
+#ing|Label|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fi
+#x|null|W Default|null|H Default|null|X Spec|string|22|Y Spec|string|82
+#|W Spec|string|84|H Spec|string|23|X Align|string|l|Y Align|string|t|I
+#s shaded|null|Is Button Subclass|null|Draw Border|null|Attribs|list|0|
+#Tooltip|null|Accel|null|Event Handlers|list|0|Class Variable|integer|1
+#|Parent Component|1|Label|string|Replace with|Internal Align|string|l|
+#class|CanvasTextField|27|Parent Canvas|1|Name|string|text_field_2|Clas
+#s Name|string|TextField|Import Name|string|gui|X Fix|null|Y Fix|null|W
+# Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|19|Y
+# Spec|integer|126|W Spec|integer|231|H Spec|integer|22|X Align|string|
+#l|Y Align|string|t|Is shaded|null|Is Button Subclass|null|Draw Border|
+#integer|1|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|null|C
+#lass Variable|integer|1|Parent Component|1|Contents|string||Filter Str
+#ing|string||class|CanvasTextButton|36|Parent Canvas|1|Name|string|text
+#_button_replace|Class Name|string|TextButton|Import Name|string|gui|X 
+#Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|nul
+#l|X Spec|integer|313|Y Spec|integer|102|W Spec|string|72|H Spec|string
+#|32|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclas
+#s|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Ev
+#ent Handlers|list|1|list|2|string|ACTION_EVENT|string|on_text_button_r
+#eplace|Class Variable|integer|1|Parent Component|1|Label|string|Replac
+#e|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Img Height
+#|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|
+#null|Parent Button Group|null|Internal Align|string|c|class|CanvasText
+#Button|36|Parent Canvas|1|Name|string|text_button_replace_all|Class Na
+#me|string|TextButton|Import Name|string|gui|X Fix|null|Y Fix|null|W Fi
+#x|null|H Fix|null|W Default|null|H Default|null|X Spec|integer|313|Y S
+#pec|integer|143|W Spec|string|77|H Spec|string|37|X Align|string|l|Y A
+#lign|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|
+#null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list
+#|2|string|BUTTON_RELEASE_EVENT|string|on_text_button_replace_all|Class
+# Variable|integer|1|Parent Component|1|Label|string|Replace All|No Key
+#board|null|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is
+# Checked Flag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Par
+#ent Button Group|null|Internal Align|string|c|class|CanvasTextButton|3
+#6|Parent Canvas|1|Name|string|text_button_close|Class Name|string|Text
+#Button|Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|n
+#ull|W Default|null|H Default|null|X Spec|integer|314|Y Spec|integer|21
+#3|W Spec|integer|78|H Spec|integer|38|X Align|string|l|Y Align|string|
+#t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|null|Attribs
+#|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list|2|string|BU
+#TTON_RELEASE_EVENT|string|on_text_button_close|Class Variable|integer|
+#1|Parent Component|1|Label|string|Close|No Keyboard|null|Img Up|null|I
+#mg Down|null|Img Width|null|Img Height|null|Is Checked Flag|null|Is Ch
+#eckbox Flag|null|Parent CheckBoxGroup|null|Parent Button Group|null|In
+#ternal Align|string|c|class|CanvasTextButton|36|Parent Canvas|1|Name|s
+#tring|text_button_find|Class Name|string|TextButton|Import Name|string
+#|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H Defa
+#ult|null|X Spec|integer|313|Y Spec|integer|38|W Spec|string|76|H Spec|
+#string|33|X Align|string|l|Y Align|string|t|Is shaded|null|Is Button S
+#ubclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|n
+#ull|Event Handlers|list|1|list|2|string|BUTTON_RELEASE_EVENT|string|on
+#_text_button_find|Class Variable|integer|1|Parent Component|1|Label|st
+#ring|Find|No Keyboard|null|Img Up|null|Img Down|null|Img Width|null|Im
+#g Height|null|Is Checked Flag|null|Is Checkbox Flag|null|Parent CheckB
+#oxGroup|null|Parent Button Group|null|Internal Align|string|c|class|Ca
+#nvasCheckBox|35|Parent Canvas|1|Name|string|check_box_insensitive|Clas
+#s Name|string|CheckBox|Import Name|string|gui|X Fix|null|Y Fix|null|W 
+#Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|string|22|Y S
+#pec|string|173|W Spec|string|168|H Spec|string|20|X Align|string|l|Y A
+#lign|string|t|Is shaded|null|Is Button Subclass|integer|1|Draw Border|
+#null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|list|1|list
+#|2|string|BUTTON_PRESS_EVENT|string|on_check_box_insensitive|Class Var
+#iable|integer|1|Parent Component|1|Label|string|case-insensitive searc
+#h|No Keyboard|null|Img Up|string|(0=shadow;1=hilite;~=trans)13,c6,~~~~
+#~~~~~~~~~~11111111111~~11111111110~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~
+#~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11000000000~~
+#10000000000~~~~~~~~~~~~~~|Img Down|string|(b=black;0=shadow;1=hilite;~
+#=trans)13,c6,~~~~~~~~~~~~~~00000000001~~00000000001~~00~~~~~~~11~~00~b
+#bbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~~~~~~~
+#11~~01111111111~~11111111111~~~~~~~~~~~~~~|Img Width|integer|13|Img He
+#ight|integer|13|Is Checked Flag|null|Is Checkbox Flag|integer|1|Parent
+# CheckBoxGroup|null|Parent Button Group|null|class|CanvasCheckBox|35|P
+#arent Canvas|1|Name|string|check_box_regex|Class Name|string|CheckBox|
+#Import Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W D
+#efault|null|H Default|null|X Spec|string|22|Y Spec|string|238|W Spec|s
+#tring|117|H Spec|string|20|X Align|string|l|Y Align|string|t|Is shaded
+#|null|Is Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Too
+#ltip|null|Accel|null|Event Handlers|list|1|list|2|string|BUTTON_PRESS_
+#EVENT|string|on_check_box_regex|Class Variable|integer|1|Parent Compon
+#ent|1|Label|string|Regex Search|No Keyboard|null|Img Up|string|(0=shad
+#ow;1=hilite;~=trans)13,c6,~~~~~~~~~~~~~~11111111111~~11111111110~~11~~
+#~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~
+#00~~11~~~~~~~00~~11000000000~~10000000000~~~~~~~~~~~~~~|Img Down|strin
+#g|(b=black;0=shadow;1=hilite;~=trans)13,c6,~~~~~~~~~~~~~~00000000001~~
+#00000000001~~00~~~~~~~11~~00~bbbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~bb
+#bbb~11~~00~bbbbb~11~~00~~~~~~~11~~01111111111~~11111111111~~~~~~~~~~~~
+#~~|Img Width|integer|13|Img Height|integer|13|Is Checked Flag|null|Is 
+#Checkbox Flag|integer|1|Parent CheckBoxGroup|null|Parent Button Group|
+#null|class|CanvasCheckBox|35|Parent Canvas|1|Name|string|check_box_bac
+#kwards|Class Name|string|CheckBox|Import Name|string|gui|X Fix|null|Y 
+#Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|st
+#ring|22|Y Spec|string|205|W Spec|string|130|H Spec|string|23|X Align|s
+#tring|l|Y Align|string|t|Is shaded|null|Is Button Subclass|integer|1|D
+#raw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Handlers|
+#list|1|list|2|string|BUTTON_PRESS_EVENT|string|on_check_box_backwards|
+#Class Variable|integer|1|Parent Component|1|Label|string|Search Backwa
+#rds|No Keyboard|null|Img Up|string|(0=shadow;1=hilite;~=trans)13,c6,~~
+#~~~~~~~~~~~~11111111111~~11111111110~~11~~~~~~~00~~11~~~~~~~00~~11~~~~
+#~~~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11~~~~~~~00~~11000000000
+#~~10000000000~~~~~~~~~~~~~~|Img Down|string|(b=black;0=shadow;1=hilite
+#;~=trans)13,c6,~~~~~~~~~~~~~~00000000001~~00000000001~~00~~~~~~~11~~00
+#~bbbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~bbbbb~11~~00~~~~~
+#~~11~~01111111111~~11111111111~~~~~~~~~~~~~~|Img Width|integer|13|Img 
+#Height|integer|13|Is Checked Flag|null|Is Checkbox Flag|integer|1|Pare
+#nt CheckBoxGroup|null|Parent Button Group|null|Initial Focus|13|Event 
+#Handlers|list|0|

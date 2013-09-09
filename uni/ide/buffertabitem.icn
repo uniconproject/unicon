@@ -39,7 +39,7 @@ class BufferTabItem : TabItem (
    end
 
    #
-   # Display Tab:  Draw tabs to match the editor's theme.
+   # Display Tab: Draw tabs to match the editor's theme.
    #
    method display_tab()
       local xpw, pslh, updown, ypos, cw
@@ -56,8 +56,8 @@ class BufferTabItem : TabItem (
       DrawLine(cw, label_x, ypos + pslh - 1, label_x, ypos, xpw - 1, ypos)
       
       Fg(cw, "white")
-      DrawLine(cw, label_x + 1, ypos + pslh - 2, label_x + 1, ypos + 1,
-	       xpw - 2, ypos  + 1)
+      DrawLine(cw, label_x + 1, ypos + pslh - 2,
+	       label_x + 1, ypos + 1, xpw - 2, ypos  + 1)
       Uncouple(cw)
 
       #
@@ -83,22 +83,22 @@ class BufferTabItem : TabItem (
       BevelRoundedRectangle(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND -1,
 			    ypos-6 + pslh / 2, TextWidth(parent.cbwin, label),
 			    3 + (pslh - 2) / 2, updown)
-      
+
       Fg(\ (parent.cbwin), "black")
       left_string(parent.cbwin, label_x + DEFAULT_TEXT_X_SURROUND,
 		  ypos + pslh / 2, label)
-      
+
       if is_shaded() then
          FilterRectangle(parent.cbwin, label_x, ypos + 2, label_w - 2, pslh-1)
    end
-   
-   initially
-      self$TabItem.initially()
-      filename := &null
+
+initially
+   self$TabItem.initially()
+   filename := &null
 end
 
 #
-# Bevel Rounded Rectangle Proc: Draw  A Beveled Rounded Rectangle
+# Bevel Rounded Rectangle Proc: Draw a Beveled Rounded Rectangle
 # to be used for a TabItem.
 #
 procedure BevelRoundedRectangle(win, x, y, w, h, bw)	
@@ -133,7 +133,7 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
    #
    # The minus .5 makes the circle fit perfect at the ends of the rectangle
    #
-   r := (h/2) -.5
+   r := (h/2) - 0.5
    /bw := 2
    if bw >= 0 then {
       upper := b.hilite
@@ -148,7 +148,7 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
       Fg(b.hilite,"white")
       Fg(b.shadow,"dark grey")
       }
-   
+
    xx := x + w
    yy := y + h
    a := -&pi /2
@@ -157,14 +157,14 @@ procedure BevelRoundedRectangle(win, x, y, w, h, bw)
    cy := y
    cw := w
    cr := r
-   
+
    FillRectangle(lower, x, yy, w, -bw )
-   
+
    while (bw -:= 1) >= 0 do {
       DrawLine(upper, x, y, xx -:= 1 , y)
       DrawCircle(upper, cx+1, cy+cr, r, a + &pi, &pi)
       DrawCircle(lower, cx+cw-1, cy+cr, r, a, &pi)
-     
+
       r -:= 1
       x +:= 1
       y +:= 1

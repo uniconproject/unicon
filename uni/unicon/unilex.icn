@@ -213,8 +213,23 @@ procedure do_digits()
 	      }
 	      else {
 		  if yytext ||:= tab(any('rR')) then {
-		      yytext ||:= tab(many(R))
-		  }
+		     yytext ||:= tab(many(R))
+		     }
+		  else if tab(any('kK')) then {
+		     yytext := string(yytext * 1024)
+		     }
+		  else if tab(any('mM')) then {
+		     yytext := string(yytext * 1024^2)
+		     }
+		  else if tab(any('gG')) then {
+		     yytext := string(yytext * 1024^3)
+		     }
+		  else if tab(any('tT')) then {
+		     yytext := string(yytext * 1024^4)
+		     }
+		  else if tab(any('pP')) then {
+		     yytext := string(yytext * 1024^5)
+		     }
 		  return INTLIT
 	      }
 end

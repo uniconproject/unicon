@@ -62,7 +62,7 @@ class HFileDialog : FileDialog(
          if s ~== PATHCHAR then {
             s[-1] := ""
             while s[-1] ~== PATHCHAR do s[-1] := ""
-         }
+	    }
          dir.set_contents(s)
          }
       else
@@ -90,12 +90,13 @@ class HFileDialog : FileDialog(
       # Go to parent directory (unless at root directory)
       #
       if \value == (".." || PATHCHAR) then {    
-         if s ~== PATHCHAR then {
-            s[-1] := ""
-            while s[-1] ~== PATHCHAR do s[-1] := ""
-         }
-         dir.set_contents(s)
-      } else
+	 if s ~== PATHCHAR then {
+	    s[-1] := ""
+	    while s[-1] ~== PATHCHAR do s[-1] := ""
+	    }
+	 dir.set_contents(s)
+	 }
+      else
          dir.set_contents(s ||:= \value)
       #
       # Update directory and file lists.
@@ -110,10 +111,16 @@ class HFileDialog : FileDialog(
    end
 
    #
-   # Double click on a filename in the file list and you open it.
+   # Double click on a filename in the file list and you open it,
+   # except if the click was really on one of your scrollbars.
+   # TODO: can the click ever be in some other invalid area?
    #
    method on_flist_lpress(ev)
+   local sb
       if get_click_count() = 2 then {
+	 if (sb := \ (flist.vsb | flist.hsb)) &
+	    (sb.x <= &x <= sb.x+sb.w) & (sb.y <= &y <= sb.y+sb.h) then
+	       fail
 	 set_result()
 	 dispose()
 	 }
@@ -142,8 +149,8 @@ class HFileDialog : FileDialog(
       # Defaults if none set by caller.
       #
       if /init_dir | (init_dir == "") then {
-         init_dir := chdir() | PATHCHAR
-      }
+	 init_dir := chdir() | PATHCHAR
+	 }
       /init_file := ""
       /init_fileType := ""
       if (init_dir[-1] ~== PATHCHAR) then init_dir ||:= PATHCHAR

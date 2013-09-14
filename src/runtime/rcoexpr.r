@@ -611,7 +611,7 @@ void *nctramp(void *arg)
    struct context *new = arg;		/* new context pointer */
    struct b_coexpr *ce;
 #ifdef Concurrent
-   sigset_t mask;
+/*   sigset_t mask; */
 
 #ifndef HAVE_KEYWORD__THREAD
     struct threadstate *curtstate;
@@ -623,9 +623,9 @@ void *nctramp(void *arg)
    * Mask all allowed signals, the main thread takes care of them
    */
 
-  sigfillset(&mask); 
+/*  sigfillset(&mask); 
   pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
+*/
    curtstate->c = ce = new->c;
 
    init_threadstate(curtstate);

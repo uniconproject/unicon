@@ -611,12 +611,20 @@ void *nctramp(void *arg)
    struct context *new = arg;		/* new context pointer */
    struct b_coexpr *ce;
 #ifdef Concurrent
+   sigset_t mask;
 
 #ifndef HAVE_KEYWORD__THREAD
     struct threadstate *curtstate;
     curtstate = (new->tstate ? new->tstate : alloc_tstate());
     pthread_setspecific(tstate_key, (void *) curtstate);
 #endif					/* HAVE_KEYWORD__THREAD */
+
+  /* 
+   * Mask all allowed signals, the main thread takes care of them
+   */
+
+  sigfillset(&mask); 
+  pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
    curtstate->c = ce = new->c;
 

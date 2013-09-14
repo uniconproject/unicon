@@ -269,7 +269,7 @@ typedef int DIR;
 #endif					/* PosixFns */
 
 #ifdef Concurrent
-       typedef int pthread_key_t;
+       typedef int pthread_key_t, sigset_t;
 #endif					/* Concurrent */
 
 #ifdef HAVE_LIBCL

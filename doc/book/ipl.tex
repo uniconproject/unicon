@@ -1502,17 +1502,17 @@ Requires: UNIX. Links: \texttt{iolib}.
 \texttt{i}\index{sort}\texttt{sort}\texttt{(x,keyproc,y) : list} is a
 customizable sort procedure. \texttt{x} can be any Icon data type that
 supports the unary element generation (!) operator. The result is a
-sorted list of objects. If \texttt{keyproc} is omitted, sorting occurs
-in the standard Icon order; otherwise, sort keys are obtained from
-within elements, instead of using the element itself as the key.
-\texttt{keyproc} can be a procedure, in which case the first argument
-to the key procedure is the item for which the key is to be computed,
+sorted list of objects. The sort keys are obtained by calling
+keyproc() on each element of strucure \texttt{x} to obtain the sort
+key for that element. If
+\texttt{keyproc} is a procedure, the first argument to each call to
+keyproc() is the element for which the key is to be computed,
 and the second argument is isort's argument
 \texttt{y}, passed unchanged. The \texttt{keyproc} must produce the
 extracted key. Alternatively, \texttt{keyproc} can be an integer, in
-which case it specifies a subscript to be applied to each item to
-produce a key. \texttt{keyproc} will be called once for each element of
-structure \texttt{x}.
+which case it is a subscript applied uniformly to each element to select
+a sort key. If \texttt{keyproc} is omitted, sorting uses
+the standard Icon sort order.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itokens}\hfill (RLG)}
 

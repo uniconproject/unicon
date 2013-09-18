@@ -4707,7 +4707,7 @@ int checkOpenConsole( wbp w, char *s)
        if (s){
        	  register word l;
 	  l=strlen(s);
-          for(i=0;i<l;i++) Consoleputc(s[i], w);
+          for(i=0;i<l;i++) Consoleputc(s[i], (FILE *)w);
 	  }
        return 1;
        }

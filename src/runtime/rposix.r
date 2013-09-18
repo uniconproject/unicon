@@ -471,6 +471,11 @@ int getmodefd(fd, mode)
 int fd;
 char *mode;
 {
+#if defined(NTGCC) && (WordBits==32)
+#passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
+#passthru #define stat _stat64i32
+#passthru #endif
+#endif					/* NTGCC && WordBits==32*/
    struct stat st;
    if (fstat(fd, &st) < 0)
       return -1;

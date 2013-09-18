@@ -1413,9 +1413,16 @@ function{0,1} reads(f,i)
       int bytesread = 0;
       int Maxread = 0;
       long tally, nbytes;
-      int status;
+      int status, fd, kk;
       FILE *fp = NULL;
       tended struct descrip s;
+
+#if defined(NTGCC) && (WordBits==32)
+#passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
+#passthru #define stat _stat64i32
+#passthru #endif
+#endif					/* NTGCC && WordBits==32*/
+      struct stat statbuf;
 
       /*
        * Get a pointer to the file and be sure that it is open for reading.
@@ -1597,8 +1604,6 @@ function{0,1} reads(f,i)
        * For ordinary files, reads -1 means the whole file.
        */
       if ((i == -1) && (status == (Fs_Read|Fs_Buff))) {
-	 int fd, kk;
-	 struct stat statbuf;
 	 if ((fd = fileno(fp)) == -1) fail;
 	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
 	 i = statbuf.st_size;
@@ -1607,8 +1612,6 @@ function{0,1} reads(f,i)
        * For suspiciously large reads on normal files, cap at file size.
        */
       else if ((i >= 65535) && (status == (Fs_Read|Fs_Buff))) {
-	 int fd, kk;
-	 struct stat statbuf;
 	 if ((fd = fileno(fp)) == -1) fail;
 	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
 	 if (i > statbuf.st_size) i = statbuf.st_size;

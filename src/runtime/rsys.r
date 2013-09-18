@@ -475,7 +475,7 @@ dptr d;
       return  Succeeded;
    s = StrLoc(*d);
 
-   if (checkOpenConsole(f, s)) return Succeeded;
+   if (checkOpenConsole((wbp)f, s)) return Succeeded;
 
 #if VMS
    /*
@@ -1916,6 +1916,12 @@ FILE *finredir, *fouredir, *ferredir;
  */
 void detectRedirection()
 {
+#if defined(NTGCC) && (WordBits==32)
+#passthru #if (__GNUC__==4) && (__GNUC_MINOR__>7)
+#passthru #define stat _stat64i32
+#passthru #endif
+#endif					/* NTGCC && WordBits==32*/
+      struct stat statbuf;
    struct stat sb;
    /*
     * Look at the standard file handles and attempt to detect

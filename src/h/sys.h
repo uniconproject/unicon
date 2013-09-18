@@ -92,6 +92,10 @@
    #include <sys/stat.h>
    #include <fcntl.h>
 #ifdef NTGCC
+   /* Mingw GCC 4.8.1 idiotically #define's stat. We need that name intact. */
+#ifdef stat
+   #undef stat
+#endif					/* stat */
    #include <dirent.h>
    #ifndef OLD_NTGCC
    /* The new GCC needs locking.h but the old one doesn't*/

@@ -172,15 +172,15 @@ class EditableTextList : LineBasedScrollArea(
 	 v := view_list[self.get_first_line()]
 	 self.cursor_y := v.index
 	 self.cursor_x := v.first
-      }
+	 }
       else if vi >= self.get_first_line() + self.get_max_lines() then {
 	 v := view_list[self.get_first_line() + self.get_max_lines() - 1]
 	 self.cursor_y := v.index
 	 self.cursor_x := v.first
-      }
+	 }
       else {
 	 v := view_list[vi]
-      }
+	 }
 
       s := v.str
       i := TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width)
@@ -189,14 +189,16 @@ class EditableTextList : LineBasedScrollArea(
       if self.view.x - l > i then {
 	 while (self.cursor_x - v.first + 1 < *s) &
 	    (TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width) <
-	     view.x - l) do
+	     view.x - l) do {
 	    cursor_x +:= 1
+	    }
 	 }
       else if self.view.x - l + self.view.w < j then {
 	 while (self.cursor_x - v.first + 1 > 1) &
 	    TextWidthEx(cwin, s, 1, cursor_x - v.first + 2, tab_width) >
-	     view.x - l + view.w do
+	     view.x - l + view.w do {
 	    cursor_x -:= 1
+	    }
       }
    end
 
@@ -207,14 +209,20 @@ class EditableTextList : LineBasedScrollArea(
    method constrain_line()
       local vi, v, s, i, j, l
 
-      vi := get_view_list_index()
+      if not (vi := get_view_list_index()) then {
+	 # serious error, what to do?
+	 fail
+	 }
 
       if \vi < self.get_first_line() then
 	 self.vsb.set_value(self.line_height * (\vi - 1))
       else if \vi > self.get_last_line() then
 	 self.vsb.set_value(self.line_height * (\vi - self.get_max_lines()))
 
-      v := self.view_list[\vi]
+      if not ( v := view_list[\vi] ) then {
+	 # serious error, what to do?
+	 fail
+	 }
       s := (\v).str
       i := TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width)
       j := i + CharWidth(self.cwin, s[self.cursor_x - v.first + 1])
@@ -376,6 +384,8 @@ class EditableTextList : LineBasedScrollArea(
       local l, nlines, s, i, v
       l := (&y - self.view.y) / self.line_height
       nlines := self.get_curr_lines()
+      if nlines = 0 then # there are no lines of text, hence no cursor
+	 fail
       l <:= 0
       l >:= nlines - 1
 
@@ -545,15 +555,15 @@ class EditableTextList : LineBasedScrollArea(
 	       v := view_list[vi - 1]
 	       self.cursor_y := v.index
 	       self.cursor_x := v.first
+	       }
 	    }
-	 }
 	 "down" : {
 	    if vi < *view_list then {
 	       v := view_list[vi + 1]
 	       self.cursor_y := v.index
 	       self.cursor_x := v.first
+	       }
 	    }
-	 }
 	 "left" : {
 	    v := view_list[vi]
 	    l := self.get_left_pos()
@@ -562,8 +572,8 @@ class EditableTextList : LineBasedScrollArea(
 	       TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width) >=
 		view.x - l do {
 	       cursor_x -:= 1
+	       }
 	    }
-	 }
 	 "right" : {
 	    v := view_list[vi]
 	    l := self.get_left_pos()
@@ -572,9 +582,9 @@ class EditableTextList : LineBasedScrollArea(
 	       TextWidthEx(cwin, s, 1, cursor_x - v.first + 1, tab_width) <
 		view.x - l + view.w do {
 	       cursor_x +:= 1
+	       }
 	    }
 	 }
-      }
       end_handle(e)
    end
 
@@ -661,9 +671,11 @@ class EditableTextList : LineBasedScrollArea(
 	 if self.cursor_y > 1 then {
 	    self.cursor_y -:= 1
 	    self.cursor_x := *self.contents[self.cursor_y] + 1
+	    }
 	 }
-      } else
+      else {
 	 self.cursor_x -:= 1
+	 }
       end_handle(e)
    end
 
@@ -674,9 +686,11 @@ class EditableTextList : LineBasedScrollArea(
 	 if self.cursor_y < *self.contents then {
 	    self.cursor_x := 1
 	    self.cursor_y +:= 1
+	    }
 	 }
-      } else
+      else {
 	 self.cursor_x +:= 1
+	 }
       end_handle(e)
    end
 
@@ -995,6 +1009,7 @@ class EditableTextList : LineBasedScrollArea(
 
       /x := self.cursor_x
       /y := self.cursor_y
+
       i := 1
       j := *view_list
 
@@ -1247,6 +1262,14 @@ class EditableTextListReturnEdit:EditableTextListEdit()
       parent.contents := parent.contents[1:parent.cursor_y + 1] ||| [s[parent.cursor_x:0]] ||| parent.contents[parent.cursor_y + 1:0]
       parent.update_view_list(parent.cursor_y, 1, 2)
 	
+      if (\ (parent.mark_y) > parent.cursor_y) |
+	 (\ (parent.mark_y) = parent.cursor_y &
+	  \ (parent.mark_x) >= parent.cursor_x) then {
+	     # Mark was after insertion. Push the mark forward.
+	     parent.mark_y +:= 1
+	     parent.mark_x -:= (parent.cursor_x-1)
+	     }
+
       parent.cursor_y +:= 1
       parent.cursor_x := 1
    end

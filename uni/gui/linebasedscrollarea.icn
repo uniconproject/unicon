@@ -135,6 +135,31 @@ class LineBasedScrollArea : DrawScrollArea(
    end
 
    #
+   #  Reset the height of the scroll area so it is exactly the 
+   #  line_height * number of lines and that there is no extra space 
+   #  or gap at the bottom of the scroll area. 
+   #  This allows correct positioning when hitting page up/down or the scroll
+   #  bar. Without this, lines are skipped while scrolling unless the
+   #  scroll area height is an exact multiple of font height.
+   #  
+   method reset_height()
+   local ml := 1
+
+      if /self.vsb then return
+
+      #
+      # For horizontal scroll bar & vsb need to reset the view.h to
+      # to initial min height & width to recalculate max_lines 
+      # 
+      ml := self.get_max_lines() | 1
+      line_height :=  self.get_line_height()
+      self.view.h := ml * line_height 
+
+      view.set_size(self.view.w, self.view.h)
+      view.resize()
+   end 
+
+   #
    # This method is overridden by the subclass to draw the given 
    # line at the given position, into the buffer window cbwin.
    # @param xp  The left position it should be drawn at

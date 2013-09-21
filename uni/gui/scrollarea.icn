@@ -224,6 +224,8 @@ class ScrollArea : Component(
       # Initialize scroll bars.
       #
       if \self.vsb then {
+	 reset_height()
+
          if view.h > 0 then
             self.vsb.set_page_size(view.h)
          else
@@ -296,7 +298,14 @@ class ScrollArea : Component(
 
       self.do_shading(self.cbwin)
       if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+         CopyArea(cbwin, cwin, x, y, w, h, x, y)
+   end
+
+   #
+   # reset_height() - could make this abstract; LineBasedScrollArea
+   # implement this method but for everyone else it might be a no-op.
+   #
+   method reset_height()
    end
 
    #

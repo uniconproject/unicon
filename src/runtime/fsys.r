@@ -2249,8 +2249,11 @@ end
 	 fblk = &k_errout;
          MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
 #endif					/* Concurrent */
-      if ((k_errout.status & Fs_Write) == 0)
+
+      if ((k_errout.status & Fs_Write) == 0){
+	 MUTEX_UNLOCKID(fblk->mutexid);
 	 runerr(213);
+	 }
       else {
 #ifndef ConsoleWindow
 	 f.fp = k_errout.fd.fp;
@@ -2263,8 +2266,10 @@ end
 	 fblk = &k_output;
          MUTEX_LOCKID_CONTROLLED(fblk->mutexid);
 #endif					/* Concurrent */
-      if ((k_output.status & Fs_Write) == 0)
+      if ((k_output.status & Fs_Write) == 0){
+	 MUTEX_UNLOCKID(fblk->mutexid);
 	 runerr(213);
+	 }
       else {
 #ifndef ConsoleWindow
 	 f.fp = k_output.fd.fp;
@@ -2311,8 +2316,10 @@ end
       if (status & Fs_Messaging) {
 	 struct MFile *mf = f.mf;
 	 extern int Merror;
-	 if (!MFIN(mf, WRITING))
+	 if (!MFIN(mf, WRITING)){
+	    MUTEX_UNLOCKID(fblk->mutexid);
 	    runerr(213);
+	    }
 	 if (tp_write(mf->tp, "\n", 1) < 0) {
 	 MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
@@ -2322,6 +2329,7 @@ end
 #endif
 	    }
 	 if (Merror != 0) {
+	    MUTEX_UNLOCKID(fblk->mutexid);
 	    runerr(Merror);
 	    }
 	 }
@@ -2372,18 +2380,24 @@ end
       if (status & (Fs_Compress
 		    )) {
 
-       /*if (ferror(f))
+       /*if (ferror(f)){
+	    MUTEX_UNLOCKID(fblk->mutexid);
 	    runerr(214);
+	    }
          gzflush(f, Z_SYNC_FLUSH);  */
          }
       else{
-         if (ferror(f.fp))
+         if (ferror(f.fp)){
+	    MUTEX_UNLOCKID(fblk->mutexid);
 	    runerr(214);
+	    }
          fflush(f.fp);
       }
 #else					/* HAVE_LIBZ */
-         if (ferror(f.fp))
+         if (ferror(f.fp)){
+	    MUTEX_UNLOCKID(fblk->mutexid);
 	    runerr(214);
+	    }
          fflush(f.fp);
       
 #endif					/* HAVE_LIBZ */
@@ -2535,8 +2549,10 @@ function {1} name(x[nargs])
 
 #if HAVE_LIBZ
                      if (status & Fs_Compress) {
-			if (gzputc(f.fp,'\n')==-1)
-                            runerr(214);
+			if (gzputc(f.fp,'\n')==-1){
+			   MUTEX_UNLOCKID(fblk->mutexid);
+                           runerr(214);
+			   }
 /*			gzflush(f.fp,4); */
 			  }
 		     else {
@@ -2554,8 +2570,9 @@ function {1} name(x[nargs])
 			   struct MFile *mf = f.mf;
 			   extern int Merror;
 			   if (!MFIN(mf, WRITING)) {
-			     runerr(213);
-			   }
+			      MUTEX_UNLOCKID(fblk->mutexid);
+			      runerr(213);
+			      }
 			   if (tp_write(mf->tp, "\n", 1) < 0) {
 			      MUTEX_UNLOCKID(fblk->mutexid);
 #if terminate
@@ -2565,6 +2582,7 @@ function {1} name(x[nargs])
 #endif
 			      }
 			   if (Merror != 0) {
+		    	      MUTEX_UNLOCKID(fblk->mutexid);
 			      runerr(Merror, x[n]);
 			      }
 			   }
@@ -2584,8 +2602,10 @@ function {1} name(x[nargs])
 			else {
 #endif					/* PosixFns */
 			putc('\n', f.fp);
-			if (ferror(f.fp))
+			if (ferror(f.fp)){
+	    		   MUTEX_UNLOCKID(fblk->mutexid);
 			   runerr(214);
+			   }
 			fflush(f.fp);
 #ifdef PosixFns
                         }
@@ -2612,8 +2632,10 @@ function {1} name(x[nargs])
 		   * argument providing it is a file.
 		   */
 		  status = BlkD(x[n],File)->status;
-		  if ((status & Fs_Write) == 0)
+		  if ((status & Fs_Write) == 0){
+	    	     MUTEX_UNLOCKID(fblk->mutexid);
 		     runerr(213, x[n]);
+		     }
 		  f.fp = BlkLoc(x[n])->File.fd.fp;
 #ifdef Concurrent 
 		  fblk = BlkD(x[n], File);
@@ -2644,8 +2666,10 @@ function {1} name(x[nargs])
 		   * Convert the argument to a string, defaulting to a empty
 		   *  string.
 		   */
-		  if (!def:tmp_string(x[n],emptystr,t))
+		  if (!def:tmp_string(x[n],emptystr,t)){
+	    	     MUTEX_UNLOCKID(fblk->mutexid);
 		     runerr(109, x[n]);
+		     }
 
 		  /*
 		   * Output the string.
@@ -2664,8 +2688,10 @@ function {1} name(x[nargs])
 
 #if HAVE_LIBZ
 	          if (status & Fs_Compress){
-                     if (gzputs(f.fp, StrLoc(t))==-1) 
+                     if (gzputs(f.fp, StrLoc(t))==-1){
+	    	     	MUTEX_UNLOCKID(fblk->mutexid); 
 			runerr(214);
+			}
                      }
 		  else
 #endif					/* HAVE_LIBZ */
@@ -2682,6 +2708,7 @@ function {1} name(x[nargs])
 			Merror = 0;
 			tp_write(mf->tp, StrLoc(t), StrLen(t));
 			if (Merror > 1200) {
+	    		   MUTEX_UNLOCKID(fblk->mutexid);
 			   runerr(Merror);
 			   }
 			}
@@ -2703,7 +2730,10 @@ function {1} name(x[nargs])
 #endif					/* PosixFns */
 		     if (putstr(f.fp, &t) == Failed)
 #endif					/* RecordIO */
+			{
+	    		MUTEX_UNLOCKID(fblk->mutexid);
 			runerr(214, x[n]);
+			}
 #ifdef PosixFns
 			}
 #endif

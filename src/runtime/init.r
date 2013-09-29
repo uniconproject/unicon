@@ -183,6 +183,9 @@ struct progstate rootpstate;
 struct threadstate *roottstatep; 
 
 #ifdef Concurrent
+
+int is_concurrent=1; 
+
 #ifdef HAVE_KEYWORD__THREAD
       #passthru __thread struct threadstate roottstate; 
       #passthru __thread struct threadstate *curtstate;

@@ -78,6 +78,8 @@ extern word* condvarsmtxs;
 extern word ncondvars; 
 extern word maxcondvars; 
 
+extern int is_concurrent; 
+
 #endif					/* Concurrent */
 
 /*

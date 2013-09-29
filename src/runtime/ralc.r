@@ -918,10 +918,8 @@ char *f(register char *s, register word slen)
    StrLen(ts) = slen;
    StrLoc(ts) = s;
 #if E_String
-   MUTEX_LOCKID(MTX_NOMTEVENTS);
    if (!noMTevents)
       EVVal(slen, e_string);
-   MUTEX_UNLOCKID(MTX_NOMTEVENTS);
 #endif					/* E_String */
    s = StrLoc(ts);
 #endif					/* MultiThread */

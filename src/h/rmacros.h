@@ -1231,15 +1231,15 @@
  */
 
 #define MUTEX_LOCK( mtx, msg) { int retval; \
-  if ((retval=pthread_mutex_lock(&(mtx))) != 0) \
+  if ( is_concurrent && (retval=pthread_mutex_lock(&(mtx))) != 0) \
     handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
-  
+
 #define MUTEX_UNLOCK( mtx, msg) { int retval; \
-  if ((retval=pthread_mutex_unlock(&(mtx))) != 0) \
+  if ( is_concurrent && (retval=pthread_mutex_unlock(&(mtx))) != 0) \
     handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
 
 #define MUTEX_TRYLOCK(mtx, isbusy, msg) { \
-if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
+if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
   {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg); isbusy=0;} }
 
 #define MUTEX_INIT( mtx, attr ) { int retval; \
@@ -1264,15 +1264,15 @@ if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
 
 
 #define MUTEX_LOCKID(mtx) { int retval;\
-  if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
+  if ( is_concurrent && (retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
     handle_thread_error(retval, FUNC_MUTEX_LOCK, NULL); }
 
 #define MUTEX_UNLOCKID(mtx) { int retval; \
-  if ((retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  \
+  if ( is_concurrent && (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  \
     handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
 
 #define MUTEX_TRYLOCKID(mtx, isbusy) { \
-    if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+    if ( is_concurrent && (isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
       {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL); isbusy=0;} }
 
 #define INC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx)}

@@ -219,6 +219,11 @@ function{0,1} EvGet(cs,vmask,flag)
       tended struct descrip dummy;
       struct progstate *p = NULL;
 
+#ifdef Concurrent
+       if (is_concurrent) 
+       	  is_concurrent = 0;
+#endif Concurrent			/* Concurrent */ 
+
       /*
        * Be sure an eventsource is available
        */

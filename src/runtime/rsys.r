@@ -206,15 +206,16 @@ struct b_file *fbp;
 #endif					/* Graphics */
 
 #if NT
-   if (fbp->status & Fs_Pipe) {
-      if (feof(fd)) {
-         pclose(fd);
-	 fbp->status = 0;
-         if (l>0) return 1;
-         else return -1;
-         }
-      }
+      if (fbp->status & Fs_Pipe) {
+	 if (feof(fd)) {
+	    pclose(fd);
+	    fbp->status = 0;
+	    if (l>0) return 1;
+	    else return -1;
+	    }
+	 }
 #endif					/* NT */
+      errno = 0;
       if ((c = fgetc(fd)) == '\n') {	/* \n terminates line */
 	 break;
          }
@@ -254,7 +255,9 @@ struct b_file *fbp;
 #endif					/* NT */
 
 #ifdef PosixFns
-	 /* If errno is EAGAIN, we will not return any chars just yet */
+	 /*
+	  * If errno is EAGAIN, we will not return any chars just yet.
+	  */
 	 if (errno == EAGAIN 
 #if !NT
 	    || errno == EWOULDBLOCK
@@ -271,7 +274,9 @@ struct b_file *fbp;
 #endif					/* PosixFns */
 	    return l;
 	    } 
-	 else return -1;
+	 else {
+	    return -1;
+	    }
 	 }
       if (++l > maxi) {
 	 ungetc(c, fd);
@@ -1598,7 +1603,7 @@ struct ptstruct *ptopen(char *command)
 
    /* finally open the slave pty file descriptor */
    if((newPtStruct->slave_fd=open(newPtStruct->slave_filename,
-				  O_RDWR|O_NONBLOCK)) == -1) {
+				  O_RDWR)) == -1) {
       EXITERROR(newPtStruct);
       }
 
@@ -1644,8 +1649,9 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
    struct timeval timeout, *timeoutp = NULL;
 #endif
 
-   if(buffer == NULL || ptStruct == NULL)
+   if(buffer == NULL || ptStruct == NULL) {
       return -1;
+      }
 
 #if !NT
   
@@ -1666,8 +1672,9 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
    if (ptStruct->master_fd > -1) {
       FD_SET(ptStruct->master_fd,&rd_set);
       }
-   else
+   else {
       return -1;
+      }
 
   /*
    * if select returns without any errors and
@@ -1768,7 +1775,6 @@ int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct, struct t
 	FD_SET(ptStruct->master_fd,&rd_set);
   } 
   if(bytes_read > 0) {
-    /* printf("output: %s",buffer); */
     return bytes_read;
   } else if(bytes_read == 0 && !FD_ISSET(ptStruct->master_fd,&rd_set)) {
     return -1;

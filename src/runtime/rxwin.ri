@@ -870,8 +870,30 @@ wbp w;
  * poll for available events on all opened displays.
  * this is where the interpreter calls into the X interface.
  */
+
+#ifdef HELPER_THREAD
+int helper_thread_pollevent(){
+
+   wdp wd;
+   int hm;
+   for (wd = wdsplys; wd; wd = wd->next) {
+      if ((hm = handle_misc(wd, NULL)) < 1) {
+	if (hm == -1){
+	  return -1;
+	  }
+	 else if (hm == 0) {
+	    /* how to handle failure? */
+	    }
+         }
+      }
+   return 400;
+
+}
+#endif					/* HELPER_THREAD */
+
 int pollevent()
    {
+#ifndef HELPER_THREAD
    wdp wd;
    int hm;
 #ifdef Concurrent
@@ -895,6 +917,8 @@ int pollevent()
          }
       }
    MUTEX_UNLOCKID(MTX_POLLEVENT);
+#endif					/* HELPER_THREAD */
+
    return 400;
    }
 

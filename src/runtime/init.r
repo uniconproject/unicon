@@ -560,6 +560,31 @@ deliberate syntax errror
    struct header hdr;
 #endif					/* !COMPILER */
 
+#ifdef HELPER_THREAD
+   pthread_t helper_thread;
+   int shutdown_helper_thread;
+
+int helper_thread_pollevent();
+
+void * helper_thread_work(void * data){
+   int i=0;
+   while (!shutdown_helper_thread){
+      usleep(1000000);
+      printf("i=%d\n", i++);
+      helper_thread_pollevent();
+      }
+}
+
+void init_helper_thread(){
+   int i;
+   if (pthread_create(&helper_thread, NULL, helper_thread_work, (void *)&i) != 0) 
+         syserr("cannot create helper thread");
+
+}
+#endif					/* HELPER_THREAD */
+
+
+
 void init_threadstate( struct threadstate *ts)
 {
 #ifdef Concurrent
@@ -1239,6 +1264,10 @@ Deliberate Syntax Error
 /*
  * End of operating-system specific code.
  */
+
+#ifdef HELPER_THREAD
+   init_helper_thread();
+#endif					/* HELPER_THREAD */
 
    /*
     * Start timing execution.

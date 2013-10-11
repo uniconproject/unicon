@@ -1,46 +1,46 @@
 #
-# long run program that is carpage collection intensive
+# Long run program that is garbage collection intensive
 #
 
 global gsum
 procedure main(argv)
-   gsum:=0
-   thrd:=[]
+   gsum := 0
+   thrd := []
 
    if *argv>0 then
-      n:=integer(argv[1]) | stop ("arg must be integer")
+      n := integer(argv[1]) | stop ("arg must be integer")
    else
-      n:=1
-  
-   d:=10^8 / n
+      n := 1
+
+   d := 10^8 / n
    write("running ", n , " thread(s) please wait... ")
-   t:=&now
-   every i:=!n do put(thrd, thread suma(d, i))
+   t := &now
+   every i := !n do put(thrd, thread suma(d, i))
    every wait(!thrd)
 
-   write("sum=",gsum)
+   write("sum=", gsum)
    write("time:", &now-t, " seconds")
 end
 
 
 procedure suma(n, id)
-   local sum:=0, L, T, S
-   static region 
-   initial region:=mutex()
+   local sum := 0, L, T, S
+   static region
+   initial region := mutex()
 
-   every i:=1 to n do{
-      sum+:=1
-      if i%100=1 then{
-         L:=[]
-         T:=table()
-         S:=set()
-        }
+   every i := 1 to n do {
+      sum +:= 1
+      if i%100 = 1  then {
+         L := []
+         T := table()
+         S := set()
+	 }
 
       put(L, i)
-      T[i]:=sum                                                                              
+      T[i] := sum
       insert(S, i, sum)
       }
 
-   critical region: gsum +:= sum                                                                              
+   critical region: gsum +:= sum
    write("Thread ", id , " is done")
 end

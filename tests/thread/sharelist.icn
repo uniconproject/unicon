@@ -1,19 +1,27 @@
 #
-# this test illustrates how lists must be protected from threads.
-# at present, lists are not so protected
+# This test illustrates how lists must be protected from threads.
+# Two runs with three threads each; once without mutex and once with mutex.
 #
 global L
 procedure main()
    if not (&features == "concurrent threads") then
        stop("requires concurrent threads")
-   L := []
    n := 3
-   threads := []
-   every i := !n do
-       put(threads, thread work(i))
 
-   every wait(!threads)
-   every write(!L)
+   every j := 1 to 2 do {
+      L := []
+      if j = 2 then L := mutex(L)
+
+      threads := []
+      every i := !n do
+	 put(threads, thread work(i))
+
+      every wait(!threads)
+      write("We just did 3,000,000 calls to put(). ",
+	    if j = 2 then "The list was protected by a mutex.\n" else " ",
+	    "How many elements do we have?")
+      write(*L)
+      }
 end
 
 procedure work(i)

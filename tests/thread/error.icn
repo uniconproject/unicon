@@ -3,43 +3,43 @@ global gsum, mutex_gsum
 
 
 procedure main(argv)
-   gsum:=0
-   thrd:=[]
+   gsum := 0
+   thrd := []
 
    if *argv>0 then
-      n:=integer(argv[1]) | stop ("arg must be integer")
-    else
-      n:=1
+      n := integer(argv[1]) | stop ("arg must be integer")
+   else
+      n := 1
   
-   d:=10^2 / n
+   d := 10^2 / n
 
    write("Running ", n , " thread(s) please wait... ")
-   write("The test should crash with a run time error now,")
-   write("you should see only one runtime error message,any repetition ")
+   write("The test should crash with a run time error now.")
+   write("You should see only one runtime error message. Any repetition")
    write("of the error message indicates a problem in the threads system.")
 
-   t:=&now
-   every i:=1 to n do{
+   t := &now
+   every i := 1 to n do {
      th := thread suma(d, i)
      put(thrd, th)
      }
 
    mutex_gsum := mutex()
   
-   every i:=1 to *thrd do
+   every i := 1 to *thrd do
       wait(thrd[i])
 
-   write("sum=",gsum)
+   write("sum=", gsum)
    
    write("time:", &now-t, " seconds")
 end
 
 
 procedure suma(n, id)
-   local sum, error_null
-    sum:=0
-    every i:=1 to n do
-      sum+:=1
+   local sum := 0, error_null
+
+   every i := 1 to n do
+      sum +:= 1
 
     sum := sum + error_null   
    

@@ -183,7 +183,7 @@ if *Proc_stack > 0 then {
       }
    }
 
-
+   write(output)
    write(output, left("PROCEDURE",12), left("%TIME", 7), left("TOTAL", 8),
 	 left("TIME ALONE", 12), left("CALLS", 8), left("RETS", 6),
 	 left("FAILS", 6), left("SUSP", 5), left("RESUM",6), "TIME/CALL")
@@ -216,12 +216,20 @@ if *Proc_stack > 0 then {
    }
 
    if \lines then {
-       write(output, "\n", printf("%"||(longest_filename_length+1)||"s %8s %8s %8s", "FILE", "LINE", "TIME", "COUNT"))
+       write(output)
+       write(output,
+	     printf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
+		    "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
+       write(output,
+	     printf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
+		    "    ", "    ", "(ms)", "COUNT", "  (ms) "))
        L := reverse(sort(line_time,2))
        every le := !L do {
 	  write(output,
-		printf("%"||(longest_filename_length+1)||"s %8d %8d %8d",
-		       le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0], le[2], line_count[le[1]]))
+		printf("%"||(longest_filename_length+1)||"s %8d %8d %8d   %.3r",
+		       le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
+		       le[2], line_count[le[1]],
+		       divimage(le[2], real(line_count[le[1]]))))
        }
    }
 

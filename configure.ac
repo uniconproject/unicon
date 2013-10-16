@@ -8,7 +8,7 @@ AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(nsl, gethostbyname)
 AC_HEADER_STDC
 AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
-		 stdlib.h string.h fcntl.h memory.h sys/file.h \
+		 stdlib.h string.h fcntl.h memory.h sys/file.h sys/resource.h \
                  netinet/in.h sys/errno.h sys/socket.h sys/types.h)
 AC_INT_16_BITS
 AC_LONG_64_BITS
@@ -26,6 +26,7 @@ AC_FUNC_FORK()
 AC_CHECK_LIB(dbm,main)
 AC_CHECK_LIB(ndbm,main)
 AC_SEARCH_LIBS([clock_gettime],[rt],AC_DEFINE(HAVE_CLOCK_GETTIME))
+AC_CHECK_FUNC(getrusage,AC_DEFINE(HAVE_GETRUSAGE))
 CHECK_FREETYPE()
 CHECK_FTGL()
 CHECK_OGG()

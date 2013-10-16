@@ -190,6 +190,9 @@
 #ifdef MacOSX
    #include <sys/sysctl.h>
 #endif
+#ifdef HAVE_SYS_RESOURCE_H
+   #include <sys/resource.h>
+#endif					/* HAVE_SYS_RESOURCE_H */
    #include <termios.h>
    #include <poll.h>
    #ifdef SysSelectH

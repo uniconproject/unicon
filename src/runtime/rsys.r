@@ -480,7 +480,7 @@ dptr d;
       return  Succeeded;
    s = StrLoc(*d);
 
-   if (checkOpenConsole((wbp)f, s)) return Succeeded;
+   if (checkOpenConsole(f, s)) return Succeeded;
 
 #if VMS
    /*

@@ -544,7 +544,7 @@ deliberate syntax errror
 
 #if HAVE_LIBZ
    if ((strchr((char *)(hdr->config), 'Z'))!=NULL) { /* to decompress */
-      return gzdopen(fdname,"rb");
+      return (FILE *)gzdopen(fdname,"rb");
       }
    else
 #endif					/* HAVE_LIBZ  */

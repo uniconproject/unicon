@@ -124,16 +124,8 @@ operator{1} * size(x)
 	 if ((status & Fs_ODBC) == Fs_ODBC) { /* ODBC file */
 	    struct ISQLFile *fp;
 	    int rc;
-	    /*
-	     * This ODBCVER version check probably doesn't work, since rtt
-	     * runs without sucking in system includes, on which it depends.
-	     */
 
-#if (ODBCVER >= 0x0351) || defined(MacOSX) || defined(MSWIN64)
-	    SQLLEN numrows;
-#else					/* ODBCVER >= 0x0351 */
-	    SQLINTEGER numrows;
-#endif					/* ODBCVER >= 0x0351 */
+	    SQLLEN numrows;			/* was SQLINTEGER */
 	    fp = BlkLoc(x)->File.fd.sqlf;
 	    rc = SQLRowCount(fp->hstmt, &numrows);
 	    return C_integer(numrows);

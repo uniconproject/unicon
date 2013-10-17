@@ -384,11 +384,7 @@ void		xmfree		(void);
 void checkpollevent();
 void detectRedirection();
 
-#ifdef ConsoleWindow
-int checkOpenConsole( wbp w, char *s );
-#else
 int checkOpenConsole( FILE *w, char *s );
-#endif
 
 #ifdef MSWindows
    #ifdef FAttrib

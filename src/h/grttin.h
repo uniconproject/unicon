@@ -413,7 +413,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
 	    fail;
          (w) = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-	 checkOpenConsole(w, NULL);
+	 checkOpenConsole((FILE *)(w), NULL);
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))
 	    fail;

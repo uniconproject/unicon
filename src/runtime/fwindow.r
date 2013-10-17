@@ -2161,7 +2161,7 @@ function{0,1} Pending(argv[argc])
 
          w = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-	 checkOpenConsole( w, NULL);
+	 checkOpenConsole(w, NULL);
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))
 	    isclosed = 1;

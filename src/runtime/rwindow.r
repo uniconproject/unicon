@@ -4695,19 +4695,19 @@ int kbhit(void)
       return 0;  /* fail */
 }
 
-int checkOpenConsole( wbp w, char *s)
+int checkOpenConsole(FILE *w, char *s)
 {
    int i;
-   if ((((FILE*)(w)) != ConsoleBinding) && (
-       ((((FILE*)(w))==k_input.fd.fp )&&(!(ConsoleFlags & StdInRedirect)))||
-       ((((FILE*)(w))==k_output.fd.fp)&&(!(ConsoleFlags & StdOutRedirect)))||
-       ((((FILE*)(w))==k_errout.fd.fp)&&(!(ConsoleFlags & StdErrRedirect)))
+   if ((w != ConsoleBinding) && (
+       ((w==k_input.fd.fp )&&(!(ConsoleFlags & StdInRedirect)))||
+       ((w==k_output.fd.fp)&&(!(ConsoleFlags & StdOutRedirect)))||
+       ((w==k_errout.fd.fp)&&(!(ConsoleFlags & StdErrRedirect)))
       )){
-	 (w) = (wbp)OpenConsole();
+	 w = OpenConsole();
        if (s){
        	  register word l;
 	  l=strlen(s);
-          for(i=0;i<l;i++) Consoleputc(s[i], (FILE *)w);
+          for(i=0;i<l;i++) Consoleputc(s[i], w);
 	  }
        return 1;
        }
@@ -4938,8 +4938,9 @@ int Consolefflush(FILE *f)
 #else					/* ConsoleWindow */
 
 /*
- * If we don't have graphics facilities (e.g. we are nticonx), let's define Consolefprintf and friends
- * anyhow, so that we can define the printf macros everywhere and not have to recompile to switch.
+ * If we don't have graphics facilities (e.g. we are nticonx), let's define
+ * Consolefprintf and friends anyhow, so that we can define the printf macros
+ * everywhere and not have to recompile to switch.
  */
 #undef fprintf
 #undef printf

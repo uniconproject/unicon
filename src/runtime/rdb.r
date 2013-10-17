@@ -62,10 +62,10 @@ isql_open_fail:
 	 return 0;
 	 }
 
-#if (ODBCVER >= 0x0300)
+#passthru #if (ODBCVER >= 0x0300)
       SQLSetEnvAttr(ISQLEnv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) SQL_OV_ODBC3,
                     SQL_IS_INTEGER);
-#endif					/* ODBCVER >= 0x0300 */
+#passthru #endif					/* ODBCVER >= 0x0300 */
       }
 
    if (SQLAllocConnect(ISQLEnv, &(fp->hdbc))!=SQL_SUCCESS) {
@@ -118,12 +118,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
     * SQLINTEGER, SQLLEN, or SDWORD? Depending on ODBC version and doc
     * you read.  SQLLEN tried, and did not magically fix on AMD64.
     */
-#ifdef MSWIN64
    SQLLEN colsz, len, typesize;
-#else					/* MSWIN64 */
-   SDWORD colsz, len;
-   UDWORD typesize;
-#endif					/* MSWIN64 */
    char buff[BUFF_SZ*2]; /* data buffer */
    UCHAR colname[MAX_COL_NAME+1];
    SWORD SQLType, scale, nullable;

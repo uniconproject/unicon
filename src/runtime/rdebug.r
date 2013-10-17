@@ -379,7 +379,7 @@ int get_name(dptr dp1,dptr dp0)
                   proc = &blkptr->Record.recdesc->Proc;
 
                   sprintf(sbuf,"record %s_%ld.%s", StrLoc(proc->recname),
-			  Blk(blkptr,Record)->id,
+			  (long)(Blk(blkptr,Record)->id),
 			  StrLoc(proc->lnames[i]));
 
                   i = strlen(sbuf);
@@ -522,7 +522,7 @@ static int keyref(bp, dp)
       }
    else
 #endif					/* Dbm */
-      sprintf(sbuf, "table_%ld[", Blk(bp,Table)->id);
+      sprintf(sbuf, "table_%ld[", (long)(Blk(bp,Table)->id));
    { char * dest = sbuf + strlen(sbuf);
    strncpy(dest, s2, len);
    dest[len] = '\0';

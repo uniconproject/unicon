@@ -15,11 +15,6 @@
 /* a non-default datatype for SQLBindCol's 6th parameter */
 #define SQL_LENORIND SQLLEN
 
-/*
- * Some Linuxen have -lcrypt, some dont.
- * If you have crypt, you can remove this.
- */
-#define NoCrypt
 #define NoVFork 1
 
 /*

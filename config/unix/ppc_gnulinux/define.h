@@ -10,9 +10,4 @@
 #define COpts "-O2 -fomit-frame-pointer"
 #define NEED_UTIME
 
-/*
- * Some GNU/Linux systems have -lcrypt, some dont.
- * If you have crypt, you can remove this.
- */
-#define NoCrypt
 #define Messaging

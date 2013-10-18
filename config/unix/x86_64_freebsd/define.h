@@ -12,7 +12,6 @@
 #define LoadFunc
 #define SysOpt
 #define ExecImages
-#define NoCrypt
 
 /* CPU architecture */
 #define IntBits 32

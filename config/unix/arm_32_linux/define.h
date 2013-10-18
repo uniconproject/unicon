@@ -13,12 +13,6 @@
 #define Double
 
 /*
- * Some Linuxen have -lcrypt, some dont.
- * If you have crypt, you can remove this.
- */
-#define NoCrypt
-
-/*
  * #define Concurrent 1
  * here to enable threads. If you do on certain older platforms,
  * you might need to

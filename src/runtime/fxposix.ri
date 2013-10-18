@@ -1345,23 +1345,21 @@ function{0,1} crypt(key, salt)
       }
    inline {
       char *s;
-#ifdef NoCrypt
-      fail;
-      return nulldesc; /* NOTREACHED */
-#else					/* NoCrypt */
 #ifdef HAVE_CRYPT_R
       struct crypt_data localdata;
       char *crypt_r(const char *key, const char *salt, struct crypt_data *data);
       localdata.initialized = 0;
       s = crypt_r(key, salt, &localdata);
-      String(result, alcstr(s, strlen(s)));
 #else					/* HAVE_CRYPT_R */
+#ifdef HAVE_CRYPT
       char *crypt(const char *key, const char *salt);
       s = crypt(key, salt);
-      String(result, alcstr(s, strlen(s)));
+#else					/* HAVE_CRYPT */
+      fail;
+#endif					/* HAVE_CRYPT */
 #endif					/* HAVE_CRYPT_R */
+      String(result, alcstr(s, strlen(s)));
       return result;
-#endif					/* NoCrypt */
    }
 end
 
@@ -2850,7 +2848,7 @@ function{0, 1} setenv(name, value)
 #if NT
       if (!SetEnvironmentVariable(name, value))
          fail;
-#else                                   /* NoCrypt */
+#else                                   /* NT */
 #if defined(SUN) || defined(HP)
 
       /*
@@ -2889,12 +2887,12 @@ function{0, 1} setenv(name, value)
          fail;
       if (q)
          free(q);
-#else
+#else					/* SUN || HP */
       /* Tested on OpenBSD 3.1, FreeBSD-4.6, Linux 2.4.18 */
       if (setenv(name, value, 1) < 0)
          fail;
-#endif
-#endif					/* NoCrypt */
+#endif					/* SUN || HP */
+#endif					/* NT */
       return nulldesc;
    }
 end

@@ -586,15 +586,25 @@ struct b_record **rp;
 #if NT
    (*rp)->fields[4] = (*rp)->fields[5] = emptystr;
 #else					/* NT */
-   if(getpwuid_r(st->st_uid, &pwbuf, buf, 4096, &pw)!=0){
+   /*
+    * If we can get the user name, use it. Otherwise use the user id #.
+    * getpwuid_r's interface is a fair bit different than getpwuid!
+    * It returns 0 whether or not the entry is found, but we could be
+    * checking for a non-zero return value that would indicate an Error.
+    */
+   getpwuid_r(st->st_uid, &pwbuf, buf, 4096, &pw);
+   if(pw == 0){
       sprintf(mode, "%d", st->st_uid);
       user = mode;
-   } else
+      }
+   else {
       user = pw->pw_name;
+      }
    StrLoc((*rp)->fields[4]) = alcstr(user, strlen(user));
    StrLen((*rp)->fields[4]) = strlen(user);
    
-   if ((getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr)!=0) || (gr == NULL)){
+   getgrgid_r(st->st_gid, &grbuf, buf, 4096, &gr);
+   if (gr == 0){
       sprintf(mode, "%d", st->st_gid);
       group = mode;
       }

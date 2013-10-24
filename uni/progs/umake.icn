@@ -63,10 +63,31 @@ end
 #
 class DependencyGraph(targets, initialtarget, marked)
 
-   #   under construction
-   method add_node(target)
+   #  Add a new target to the graph.  Example call:
+   #
+   # ufiles := ""
+   # every targ := !targets do {
+   #   if targ.target[-2:0]==".u" then ufiles ||:= targ[target]
+   #   }
+   # dg.add_node("clean", [], ["rm "|| ufiles ||" uniclass.*"])
+   #
+   method add_node(target, dependencies, buildrules)
+      /dependencies := []
+      /buildrules := []
+      # if \targets[target] then {
+	 #
+	 # Target already exists.  Under some circumstances this ought to
+	 # be an error/fail/warning, but by default we replace silently.
+	 #
+	 #	 write(&errout, "replacing ", image(target))
+	 # }
+      targets[target] := Rule(target, dependencies, buildrules)
    end
    method add_dependency(source,target)
+
+      /targets := Rule(target)
+      if not (source == !(targets[target].dependencies)) then
+	 put(targets[target].dependencies, source)
    end
 
    method mark(s)
@@ -119,7 +140,8 @@ initially(filename)
    fstack := []
    readahead := []
    if f := open(\filename) then {
-      while line := (pop(readahead) | read(f) | (close(f) & (f:=pop(fstack)) & read(f))) do {
+      while line := (pop(readahead) | read(f) |
+		     (close(f) & (f:=pop(fstack)) & read(f))) do {
 	 line := macroexpand(line)
          line ? {
 	    tab(many(' '))
@@ -193,7 +215,8 @@ class Rule(target, dependencies, buildrules)
 	 newRule.dependencies[d] := subst(newRule.dependencies[d], percent_sub)
 	 }
       every b := 1 to *buildrules do {
-	 newRule.buildrules[b] := subst(newRule.buildrules[b], newRule.dependencies[1], "$<")
+	 newRule.buildrules[b] := subst(newRule.buildrules[b],
+					newRule.dependencies[1], "$<")
 	 }
       return newRule
    end
@@ -246,12 +269,15 @@ class Rule(target, dependencies, buildrules)
        write("built by")
        every write("\t", image(!buildrules))
    end
+initially
+   /dependencies := []
+   /buildrules := []
 end
 
 #
-# This is a dependency graph with built-in knowledge of .u and .icn
-# dependencies necessary for Unicon programs.  What about subclasses
-# and packages that introduce additional file dependencies?
+# This is (should be) a dependency graph with built-in knowledge of
+# .u and .icn dependencies necessary for Unicon programs.  What about
+# subclasses and packages that introduce additional file dependencies?
 #
 class UniconProject : DependencyGraph()
 end

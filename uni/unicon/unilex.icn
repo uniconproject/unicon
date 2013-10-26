@@ -1,5 +1,5 @@
 #
-# A hand-written lex compatible icon lexer.
+# A hand-written lex(1)-compatible Unicon lexer.
 #
 
 link escape
@@ -588,16 +588,18 @@ procedure yylex_reinit()
    yylineno := 0
    yycolno := 1
    lastchar := ""
-      if type(yyin) == "file" then
-         buffer := reads(yyin, 1000000)
-      else
-         buffer := yyin
-      tokflags := 0
+   if type(yyin) == "file" then
+      buffer := reads(yyin, 1000000)
+   else if type(yyin) == "list" then
+      buffer := pop(yyin) | ""
+   else
+      buffer := yyin
+   tokflags := 0
 end
 
-procedure yylex()
+procedure yylex(ender)
   static saved_tok, saved_yytext
-  local rv, ender
+  local rv
   initial {
       if /buffer then
 	  yylex_reinit()
@@ -616,9 +618,12 @@ procedure yylex()
       write("yylex() : ", tokenstr(rv), "\t", image(yytext))
     return rv
   }
-  ender := iand(tokflags, Ender)
+  /ender := iand(tokflags, Ender)
   tokflags := 0
   if *buffer=0 then {
+      if type(yyin)=="list" then {
+	 if buffer := "\n"||pop(yyin) then return yylex(ender)
+	 }
       buffer := &null
       if \debuglex then
 	  write("yylex() : EOFX")
@@ -629,6 +634,9 @@ procedure yylex()
 	  buffer := tab(0)
       }
       else {
+	 if type(yyin)=="list" then {
+	    if buffer := "\n"||pop(yyin) then return yylex(ender)
+	    }
          buffer := &null
 	 yytext := ""
 	 if \debuglex then

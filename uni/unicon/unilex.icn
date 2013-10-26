@@ -618,11 +618,17 @@ procedure yylex(ender)
       write("yylex() : ", tokenstr(rv), "\t", image(yytext))
     return rv
   }
-  /ender := iand(tokflags, Ender)
-  tokflags := 0
+  if /ender := iand(tokflags, Ender) then
+      tokflags := 0
   if *buffer=0 then {
       if type(yyin)=="list" then {
-	 if buffer := "\n"||pop(yyin) then return yylex(ender)
+	 if buffer := pop(yyin) then {
+	    yylineno +:= 1
+	    yycolno := 1
+	    if tokflags < Newline then
+	       tokflags +:= Newline
+	    return yylex(ender)
+	    }
 	 }
       buffer := &null
       if \debuglex then
@@ -635,7 +641,13 @@ procedure yylex(ender)
       }
       else {
 	 if type(yyin)=="list" then {
-	    if buffer := "\n"||pop(yyin) then return yylex(ender)
+	    if buffer := pop(yyin) then {
+	       yylineno +:= 1
+	       yycolno := 1
+	       if tokflags < Newline then
+		  tokflags +:= Newline
+	       return yylex(ender)
+	       }
 	    }
          buffer := &null
 	 yytext := ""

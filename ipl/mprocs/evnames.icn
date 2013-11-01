@@ -52,6 +52,7 @@ procedure evnames(e)
       namemap[E_Comment] := "comment"
       namemap[E_Coret] := "co-expression return"
       namemap[E_Cset] := "cset allocation"
+      namemap[E_Cstack] := "C stack"
       namemap[E_Syntax] := "Expression Syntax change"
       namemap[E_Ecall] := "call of operation"
       namemap[E_Efail] := "failure from expression"
@@ -72,6 +73,9 @@ procedure evnames(e)
       namemap[E_Fresum] := "function resumption"
       namemap[E_Fret] := "function return"
       namemap[E_Fsusp] := "function suspension"
+      namemap[E_HashNum] := "hash number"
+      namemap[E_HashSlots] := "hash buckets"
+      namemap[E_HashChain] := "hash length"
       namemap[E_Highlight] := "allocation highlight"
       namemap[E_Intcall] := "interpreter call"
       namemap[E_Integer] := "integer value pseudo-event"
@@ -174,6 +178,8 @@ procedure evnames(e)
       twt(namemap)
       }
    
-   return namemap[e]
+   rv := namemap[e]
+   if rv=="unknown event" then rv ||:= " " || ord(e)
+   return rv
 
 end

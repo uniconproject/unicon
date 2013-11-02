@@ -1006,6 +1006,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
             EVValD(&y, E_Tsub);
 
 	    hn = hash(&y);
+            EVVal(hn, E_HashNum);
             Protect(tp = alctvtbl(&dx, &y, hn), runerr(0));
             return tvtbl(tp);
             }

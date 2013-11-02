@@ -653,6 +653,7 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
    register union block **lp;
    register struct b_selem *pe;
    register uword eh;
+   int chainlen = 0; /* # of elements visited during this lookup */
 #ifdef DebugHeap
    int elemtitle;
    if (pb->Set.title == T_Set) elemtitle = T_Selem;
@@ -667,11 +668,15 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
     */
    *res = 0;
    while ((pe = (struct b_selem *)*lp) != NULL && BlkType(pe) != T_Table) {
+      chainlen++;
       eh = pe->hashnum;
-      if (eh > hn)			/* too far - it isn't there */
+      if (eh > hn) {			/* too far - it isn't there */
+	 EVVal((word)chainlen, E_HashChain);
          return lp;
+	 }
       else if ((eh == hn) && (equiv(&pe->setmem, x)))  {
          *res = 1;
+	 EVVal((word)chainlen, E_HashChain);
          return lp;
          }
       /*
@@ -683,6 +688,7 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
    /*
     *  At end of chain - not there.
     */
+   EVVal((word)chainlen, E_HashChain);
    return lp;
    }
 

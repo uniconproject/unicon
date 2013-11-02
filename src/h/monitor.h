@@ -971,7 +971,37 @@
 #define E_Signal 0
 #endif
 
-/* unused pool.  how many event codes are unused?
+/*
+ * Events for hash table details. The table events like E_Tsub
+ * already provide keys.  E_HashNum is a number returned by hash().
+ * E_HashSlots is an expansion of the buckets for a given set/table.
+ * E_HashChain is the number of link list elements traversed in a lookup.
+ */
+
+#if defined(EventMon) || defined(E_HashNum)
+#undef E_HashNum
+#define E_HashNum       '\210'
+#else
+#define E_HashNum 0
+#endif
+
+#if defined(EventMon) || defined(E_HashSlots)
+#undef E_HashSlots
+#define E_HashSlots       '\211'
+#else
+#define E_HashSlots 0
+#endif
+
+#if defined(EventMon) || defined(E_HashChain)
+#undef E_HashChain
+#define E_HashChain       '\212'
+#else
+#define E_HashChain 0
+#endif
+
+
+
+/* unused pool.  how many event codes are unused?  Don't use 000.
 
 000 001 002 003 004 005 006 007
 010 011 012 013 014 015 016 017
@@ -986,7 +1016,7 @@
 162
 
 203 204 205 206 207
-210 211 212 213 214 215 216 217
+            213 214 215 216 217
 220 221 222 223 224 225 226 227
 230 231 232 233 234 235 236 237
 240 241 242 243 244 245 246 247

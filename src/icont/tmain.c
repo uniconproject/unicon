@@ -33,6 +33,11 @@
 #endif
 
 #ifdef MSWindows
+
+#ifdef Concurrent
+int is_concurrent; 
+#endif					/* Concurrent */
+
    #ifdef NTConsole
       #define int_PASCAL int PASCAL
       #define LRESULT_CALLBACK LRESULT CALLBACK

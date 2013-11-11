@@ -328,6 +328,22 @@ class Component : Object : SetFields : Connectable(
       } else if e === (&lrelease | &rrelease | &mrelease) then {
          fire_icon_events_on_mouse(MOUSE_RELEASE_EVENT, e)
       } else {
+	 #
+	 # Non-mouse events.  By definition, these generate an ICON_EVENT.
+	 # If they are key presses, they generate a KEY_PRESS_EVENT.
+	 # If they are key releases, they generate a KEY_RELEASE_EVENT.
+	 # KEY_RELEASE_EVENTs do not occur unless input mask requests
+	 # them, and ivib does not yet know about KEY_RELEASE_EVENTs.
+	 # The other tricky part here is that in order for subcomponents
+	 # to get any events out of this, one has to visit children, which
+	 # is what the fire_..._on_mouse event does, as opposed to fire().
+	 #
+	 if (type(e)=="string") | (integer(e)>0) then {
+	    fire_icon_events_on_mouse(KEY_PRESS_EVENT, e)
+	    }
+	 else if integer(e) < LASTEVENTCODE then {
+	    fire_icon_events_on_mouse(KEY_RELEASE_EVENT, e)
+	    }
          fire(ICON_EVENT, e)
       }
    end

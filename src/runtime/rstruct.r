@@ -547,6 +547,7 @@ union block *bp;
    if (ps->hdir[HSegs-1] != NULL)
       return;				/* can't split further */
    newslots = ps->mask + 1;
+   EVVal((word)newslots, E_HashSlots);
    Protect(newseg = alcsegment(newslots), return);
    if (BlkType(bp) == T_Table) {
       int j;

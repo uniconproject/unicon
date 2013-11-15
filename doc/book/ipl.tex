@@ -3480,11 +3480,10 @@ conversion.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wdiag}}
 
-\texttt{wdiag(s1, s2,...) : null} writes the values of the global
-variables named \texttt{s1, s2, ...} with \texttt{s1, s2, ...} as
+\texttt{wdiag(s1, s2,...) : null} writes the values of global
+variables \texttt{s1, s2, ...} with \texttt{s1, s2, ...} as
 identifying labels. It writes a diagnostic message to standard error
-output if an argument is not the name of a global variable. Note that
-this procedure only works for global variables. 
+if an argument is not the name of a global variable.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{weighted}\hfill (EE)}
 
@@ -3503,14 +3502,17 @@ The procedure will fail if the given percentage is not between 0 and
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wildcard}\hfill (RJA)}
 
-This is a kit of procedures to deal with UNIX-like filename
+These procedures deal with UNIX-like filename
 \index{wild-card patterns}wild-card patterns containing *, ?, and
-[...]. The meanings are as of the pattern characters are the same as in
-the UNIX shells csh and sh. They are described briefly in the
-\texttt{wild\_pat()} procedure. These procedures are interesting partly
-because of the "recursive suspension"
-technique used to simulate conjunction of an arbitrary number of
-computed expressions. The public procedures are:
+[...], as found in
+the UNIX shells csh and sh; they are described briefly in the
+\texttt{wild\_pat()} procedure. 
+Recursive suspension is used to simulate conjunction of an arbitrary number of
+computed expressions.
+Default values of \texttt{s}, \texttt{i1}, and \texttt{i2} are the same
+as for Icon's built-in string scanning procedures such
+as \texttt{match()}.
+The public procedures are:
 
 \texttt{wild\_match(pattern,s,i1,i2) : integer*} produces the sequence
 of positions in \texttt{s} past a substring starting at \texttt{i1}
@@ -3523,10 +3525,6 @@ positions in \texttt{s} where substrings begin that match
 \texttt{pattern}, but fails if there is no such position. Similar to
 \texttt{find()}. \texttt{pattern} can be either a string or a pattern
 list, see \texttt{wild\_pat()}, below.
-
-Default values of \texttt{s}, \texttt{i1}, and \texttt{i2} are the same
-as for Icon's built-in string scanning procedures such
-as \texttt{match()}.
 
 \texttt{wild\_pat(s) : L} creates a pattern element list from pattern
 string \texttt{s}. A pattern element is needed by
@@ -4210,7 +4208,7 @@ procedures.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icn2c \hfill (RJA)}
 
-\texttt{icn2c} performs mundane aspects of conversion of Icon to C. It
+\texttt{icn2c} partially converts Icon to C. It
 reformats comments, line-continued strings and procedure declarations,
 changes \texttt{:=} to \texttt{=,} and changes \texttt{end} to
 \texttt{"\}"}.
@@ -4386,12 +4384,13 @@ Option \texttt{{}-s} skips file headers; option
 \texttt{{}-f} sorts the procedure list by file, instead of the default sort by
 procedure name.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplindex\hfill (REG, SBW)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplindex \
+\textrm{[-k i:16] [-p i:12]}\hfill (REG, SBW)}}
 
 \texttt{iplindex} produces an indexed listing of the Icon Program
-Library. Option \texttt{{}-k i} gives the width keyword field, default 16;
-option \texttt{{}-p i} specifies the width of field for program name, default
-12. If a file named except.wrd is open and readable in the current directory,
+Library. Option \texttt{{}-k i} gives the width keyword field;
+option \texttt{{}-p i} specifies the width of field for program name.
+If a file \texttt{except.wrd} is readable in the current directory,
 the words in it are used instead. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplkwic\hfill (SBW, REG)}}
@@ -4407,17 +4406,17 @@ may not be handled properly.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iplweb \ \textrm{\textmd{[-ipl source] [dest]}}\hfill (JK)}}
 
 \index{iplweb}\texttt{iplweb} generates web pages from IPL header
-\index{comment}comments. It uses \index{environment
-variable!IPL}environment variable \texttt{IPL} as a path to the Icon
+\index{comment}comments. \index{environment
+variable!IPL}Environment variable \texttt{IPL} locates the Icon
 Program Library if \texttt{{}-ipl} is not specified;
-\texttt{dest} is the current directory if not specified.
+\texttt{dest} defaults to the current directory.
 \texttt{iplweb} generates an \index{HTML}HTML subdirectory in
 \texttt{dest} and makes an index to \texttt{gprogs}, \texttt{gprocs},
-\texttt{procs}, and \texttt{progs} directories under HTML. In each of
-these directories is an \texttt{.html} file for each of the
-\texttt{.icn} files in the referenced directory. An index to all of
-these files is also generated. Each of the \texttt{.html} files
-contains the IPL standard comment header info inside.
+\texttt{procs}, and \texttt{progs} directories under HTML.
+These directories contain an \texttt{.html} file for each
+\texttt{.icn} file in the referenced directory. An index to all
+files is also generated. The \texttt{.html} files
+contain the IPL standard comment header info inside.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iprint \hfill (RJA)}}
 

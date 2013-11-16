@@ -1358,6 +1358,9 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
      bp->empty = 0; \
      bp->max = 1024; }
 
+#define CV_WAIT_ON_EXPR(expr, cv, mtxid)				\
+  while (expr) pthread_cond_wait(cv, MUTEXID(mtxid));
+
 #define CV_WAIT_FULLBLK(bp) \
     pthread_cond_wait(condvars[bp->cvfull], MUTEX_GETBLK(bp));
 
@@ -1408,7 +1411,27 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
 #define CV_GETULLTBLK(bp)
 #define CV_GETULLTBLK(bp)
 
+
+
+#define CV_WAIT_FULLBLK(bp)
+
+#define CV_WAIT_EMPTYBLK(bp)
+#define CV_SIGNAL_FULLBLK(bp)
+
+#define CV_SIGNAL_EMPTYBLK(bp)
+
+#define CV_TIMEDWAIT_EMPTYBLK(bp, t)
+
+
 #define SUSPEND_THREADS()
 #define RESUME_THREADS()
+
+#define CV_WAIT_ON_EXPR(expr, cv, mtxid)
+
+#define MUTEX_LOCKBLK_NOCHK(bp, msg)
+
+#define MUTEX_UNLOCKBLK_NOCHK(bp, msg)
+
+#define MUTEX_TRYLOCKBLK_NOCHK(bp, isbusy, msg)
 
 #endif					/* Concurrent */

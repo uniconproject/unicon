@@ -2457,7 +2457,7 @@ function {1} name(x[nargs])
    declare {
       union f f;
 #ifdef Concurrent
-      tended struct b_file *fblk;
+      tended struct b_file *fblk = NULL;
 #endif					/* terminate */
       word status =
 #if terminate
@@ -2550,7 +2550,10 @@ function {1} name(x[nargs])
 #if HAVE_LIBZ
                      if (status & Fs_Compress) {
 			if (gzputc(f.fp,'\n')==-1){
+#ifdef Concurrent 
+			   if (fblk)
 			   MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
                            runerr(214);
 			   }
 /*			gzflush(f.fp,4); */
@@ -2570,11 +2573,17 @@ function {1} name(x[nargs])
 			   struct MFile *mf = f.mf;
 			   extern int Merror;
 			   if (!MFIN(mf, WRITING)) {
+#ifdef Concurrent 
+			      if (fblk)
 			      MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 			      runerr(213);
 			      }
 			   if (tp_write(mf->tp, "\n", 1) < 0) {
+#ifdef Concurrent 
+			      if (fblk)
 			      MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 #if terminate
 			      syserr("tp_write failed in stop()");
 #else
@@ -2582,7 +2591,10 @@ function {1} name(x[nargs])
 #endif
 			      }
 			   if (Merror != 0) {
+#ifdef Concurrent 
+			      if (fblk)
 		    	      MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 			      runerr(Merror, x[n]);
 			      }
 			   }
@@ -2591,7 +2603,10 @@ function {1} name(x[nargs])
 #ifdef PosixFns
 			if (status & Fs_Socket) {
 			   if (sock_write(f.fd, "\n", 1) < 0){
+#ifdef Concurrent 
+			      if (fblk)
 			      MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 #if terminate
 			      syserr("sock_write failed in stop()");
 #else
@@ -2603,7 +2618,10 @@ function {1} name(x[nargs])
 #endif					/* PosixFns */
 			putc('\n', f.fp);
 			if (ferror(f.fp)){
+#ifdef Concurrent 
+			   if (fblk)
 	    		   MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 			   runerr(214);
 			   }
 			fflush(f.fp);
@@ -2613,7 +2631,10 @@ function {1} name(x[nargs])
 #ifdef Graphics
 			}
 #endif					/* Graphics */
+#ifdef Concurrent 
+		     if (fblk)
 			MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 		     }
 #endif					/* nl */
 
@@ -2633,7 +2654,10 @@ function {1} name(x[nargs])
 		   */
 		  status = BlkD(x[n],File)->status;
 		  if ((status & Fs_Write) == 0){
+#ifdef Concurrent 
+		     if (fblk)
 	    	     MUTEX_UNLOCKID(fblk->mutexid);
+#endif					/* Concurrent */
 		     runerr(213, x[n]);
 		     }
 		  f.fp = BlkLoc(x[n])->File.fd.fp;

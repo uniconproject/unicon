@@ -459,7 +459,11 @@ int interp_x(int fsig,dptr cargp)
 #else
       value_tmp = cargp[0];
 #endif
+#ifdef MultiThread
       Deref0(value_tmp);
+#else					/* MultiThread */
+      Deref(value_tmp);
+#endif					/* MultiThread */
       if (fsig == G_Fsusp) {
 	 InterpEVValD(&value_tmp, e_fsusp);
 	 }
@@ -1115,7 +1119,9 @@ L_astatic:
 	       }	       
 #endif					/* LineCodes && Polling */
             line_num = GetWord;
+#ifdef MultiThread
             lastline = line_num;
+#endif					/* MultiThread */
             break;
 
 				/* ---String Scanning--- */
@@ -2252,9 +2258,11 @@ L_agoto:
 	     *	if this is a main co-expression failing to its parent
 	     *  (monitoring) program, generate an E_Exit event.
 	     */
+#ifdef MultiThread
             if (curpstate->parent == ncp->program) {
 	       EVVal(0, E_Exit);
 	       }
+#endif					/* MultiThread */
 
             co_chng(ncp, NULL, NULL, A_Cofail, 1);
             EntInterp_sp;
@@ -2403,7 +2411,7 @@ interp_quit:
 interp_macro(interp_0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 interp_macro(interp_1,E_Intcall,E_Stack,E_Fsusp,E_Osusp,E_Bsusp,E_Ocall,E_Ofail,E_Tick, E_Line,E_Loc,E_Opcode,E_Fcall,E_Prem,E_Erem,E_Intret,E_Psusp,E_Ssusp,E_Pret,E_Efail, E_Sresum,E_Fresum,E_Oresum,E_Eresum,E_Presum,E_Pfail,E_Ffail,E_Frem,E_Orem,E_Fret, E_Oret,E_Literal,E_Operand,E_Syntax,E_Cstack)
 #else					/* MultiThread */
-interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 #endif					/* MultiThread */
 
 

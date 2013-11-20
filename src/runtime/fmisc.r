@@ -1502,8 +1502,6 @@ function{*} fieldnames(r)
       }
 end
 
-#ifdef MultiThread
-
 "cofail(CE) - transmit a co-expression failure to CE"
 
 function{0,1} cofail(CE)
@@ -1528,13 +1526,19 @@ function{0,1} cofail(CE)
    else if !is:coexpr(CE) then
       runerr(118,CE)
    body {
+#ifdef CoExpr
       struct b_coexpr *ncp = BlkD(CE, Coexpr);
       if (co_chng(ncp, NULL, &result, A_Cofail, 1) == A_Cofail) fail;
       return result;
+#else					/* CoExpr */
+      runerr(118, CE);
+#endif					/* CoExpr */
       }
 end
 
 
+#ifdef MultiThread
+
 "localnames(ce,i) - produce the names of local variables"
 " in the procedure activation i levels up in ce"
 function{*} localnames(ce,i)

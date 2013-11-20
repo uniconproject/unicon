@@ -313,7 +313,9 @@ void main(int argc, char **argv)
     */
    icon_init(argv[1], &argc, argv);
    
+#ifdef MultiThread
    curtstate = roottstatep;
+#endif					/* MultiThread */
 
 #ifdef Messaging
    errno = 0;

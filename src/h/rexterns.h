@@ -123,6 +123,7 @@ extern struct b_real realzero;		/* real zero block */
  */
 #ifndef MultiThread
    extern dptr glbl_argp;		/* argument pointer */
+   extern struct descrip value_tmp;	/* list argument to Op_Apply */
    extern struct region *curstring;
    extern struct region *curblock;
 

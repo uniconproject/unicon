@@ -281,7 +281,7 @@ dptr dp;
    hashstring:
       /*
        * Compute the hash value for the string based on a scaled sum
-       *  of its first seven and last seven characters, plus its length.
+       *  of its first and last several characters, plus its length.
        *  Loops are unrolled.
        */
       i = 0;
@@ -1386,6 +1386,7 @@ int level;
    int i;
    CURTSTATE();
 
+#ifdef MultiThread
    if (BlkLoc(ce->program->tstate->K_current) != BlkLoc(k_current))
       fp = ce->es_pfp;
    else
@@ -1394,6 +1395,7 @@ int level;
    i = ce->program->tstate->K_level;
    if (i<level) 
       return (word*)0;
+#endif					/* MultiThread */
 
    /* follow upwards, i levels */
    while (level) {

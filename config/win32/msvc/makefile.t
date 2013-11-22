@@ -2,7 +2,6 @@ DCONSOLE=dconsole.obj
 OS=NT
 ENV=WIN32
 CPU=i386
-!include <$(OS)$(ENV).mak>
 
 CC=cl
 LD=link

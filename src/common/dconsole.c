@@ -1,4 +1,6 @@
+#ifndef _MSC_VER
 void exit(int);
+#endif					/* Microsoft Visual C++ */
 
 /*
  * dconsole.c - versions of run-time support for console windows for

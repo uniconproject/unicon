@@ -54,13 +54,11 @@ VX-Configure:	config/unix/$(name)/status
 		@echo Now remember to add unicon/bin to your path
 
 NT-Configure:
-		cmd /C cd config\win32\msvc
-		cmd /C config
+		cmd /C "cd config\win32\msvc && config"
 		@echo Now remember to add unicon/bin to your path
 
 W-Configure:
-		cmd /C cd config\win32\msvc
-		cmd /C w-config
+		cmd /C "cd config\win32\msvc && w-config"
 		@echo Now remember to add unicon/bin to your path
 
 W-Configure-GCC:

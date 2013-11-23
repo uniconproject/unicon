@@ -242,9 +242,7 @@ typedef int jmp_buf;
 
 #if NT
 typedef int HMODULE, WSADATA, WORD, HANDLE, MEMORYSTATUS, DWORD;
-#ifdef NTGCC
 typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
-#endif
 #endif					/* NT */
 
 #if HAVE_LIBJPEG

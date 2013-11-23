@@ -23,5 +23,4 @@ type makefile.ipl >> ..\..\..\ipl\lib\makefile
 del ..\..\..\src\icont\*.obj
 del ..\..\..\src\common\*.obj
 del ..\..\..\src\runtime\*.obj
-copy RTT.LNK ..\..\..\src\rtt
 call copymk

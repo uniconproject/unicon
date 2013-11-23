@@ -19,6 +19,9 @@
 #if MSDOS
 #define PATHSEP ';'
 #define FILESEP '\\'
+#if !defined(NTGCC)
+#define getcwd _getcwd
+#endif
 #endif
 
 static char *findexe(char *name, char *buf, size_t len);

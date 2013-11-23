@@ -396,6 +396,7 @@ keyword{1,*} features
 
 #include "../h/feature.h"
 
+#if UNIX || defined(NTGCC)
 #passthru #ifdef __GNUC__
 {
          char *s, ss[32];
@@ -411,6 +412,7 @@ keyword{1,*} features
 	 suspend C_string s;
 }
 #passthru #endif				/* __GNUC__ */
+#endif					/* UNIX || NTGCC */
 
 #ifdef REPO_REVISION
 {

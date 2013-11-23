@@ -326,7 +326,7 @@
       #define ICONC_XLIB "-L/usr/X11R6/lib -lX11"
    #endif				/* ICONC_XLIB */
 
-#if defined(ConsoleWindow) || (NT && !defined(Rttx))
+#if defined(ConsoleWindow) || (NT && !defined(Rttx) && !defined(NTConsole))
       /*
        * Knock out fprintf and putc; these are here so that consoles
        * may be used in icont and rtt, not just iconx.

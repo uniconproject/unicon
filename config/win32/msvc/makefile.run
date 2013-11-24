@@ -36,9 +36,9 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfm
 
 COBJS=	../common/long.$(O) ../common/time.$(O) ../common/save.$(O) \
 	../common/redirerr.$(O) ../common/xwindow.$(O) ../common/alloc.$(O)\
-	../common/rswitch.$(O) ../common/filepart.$(O)
+	../common/rswitch.$(O) ../common/filepart.$(O) ../common/mlocal.$(O)
 
-ICOBJS=	long.$(O) time.$(O) save.$(O) rswitch.$(O) redirerr.$(O) xwindow.$(O) alloc.$(O) filepart.$(O)
+ICOBJS=	long.$(O) time.$(O) save.$(O) rswitch.$(O) redirerr.$(O) xwindow.$(O) alloc.$(O) filepart.$(O) mlocal.$(O)
 
 OBJS=	$(XOBJS) $(COBJS)
 
@@ -49,7 +49,7 @@ interp_all:
 	cd ..\runtime
 	$(MAKE) $(ICONX)
 
-MYGUILIBS=libc.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib
+MYGUILIBS=kernel32.lib user32.lib gdi32.lib comdlg32.lib
 
 # add $(linkdebug) after /STACK:40000 for debugging
 
@@ -61,7 +61,7 @@ wiconx: $(OBJS)
 	cd ..\gdbm
 	$(MAKE) gdbm.lib
         cd ..\runtime
-	$(link) /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib shell32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(guilibs) -out:wiconx.exe
+	link /STACK:768000 $(guiflags) $(OBJS) winmm.lib wsock32.lib odbc32.lib shell32.lib ../gdbm/gdbm.lib ../libtp/libtp.lib $(MYGUILIBS) -out:wiconx.exe
 	copy wiconx.exe ..\..\bin
 
 iconx.dll: iconx ximain.c
@@ -75,7 +75,7 @@ iconx: $(OBJS)
 	cd ..\gdbm
 	$(MAKE) gdbm.lib
 	cd ..\runtime
-	link @iconx.lnk
+	link -subsystem:console ../common/alloc.obj ../common/rswitch.obj ../common/long.obj ../common/time.obj ../common/save.obj ../common/redirerr.obj ../common/filepart.obj ../common/mlocal.obj XDEF.obj XERRMSG.obj XEXTCALL.obj XFCONV.obj XFMATH.obj XFMONITR.obj XFMISC.obj XFSCAN.obj XFSTR.obj XFSTRANL.obj XFSTRUCT.obj XFSYS.obj XFWINDOW.obj XRMSG.obj XFXTRA.obj XDATA.obj XIMAIN.obj XINIT.obj XIMISC.obj XINTERP.obj XINVOKE.obj XISTART.obj XKEYWORD.obj XLMISC.obj XOARITH.obj XOASGN.obj XOCAT.obj XOCOMP.obj XOMISC.obj XOREF.obj XOSET.obj XOVALUE.obj XRALC.obj XRCOEXPR.obj XRCOMP.obj XCNV.obj XFDB.OBJ XRDB.OBJ XRDEBUG.obj XRLRGINT.obj XRLOCAL.obj XRMEMMGT.obj XRMISC.obj XRSTRUCT.obj XRSYS.obj xrposix.obj xrwindow.obj xfload.obj kernel32.lib winmm.lib WSOCK32.LIB ODBC32.LIB SHELL32.LIB ..\GDBM\GDBM.LIB ..\LIBTP\LIBTP.LIB -out:iconx.exe
 	copy iconx.exe ..\..\bin
 
 xcnv.$(O): cnv.r $(HDRS)

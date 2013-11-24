@@ -18,6 +18,7 @@
 #define rindex strrchr
 #define strdup _strdup
 #define unlink _unlink
+#define snprintf _snprintf
 
 #define MSDOS 1
 #define StandardC

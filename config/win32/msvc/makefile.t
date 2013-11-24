@@ -15,12 +15,11 @@ MAKE=nmake
 O=obj
 RM=-del
 
-TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O)\
-		tree.$(O) tglobals.$(O)
+TRANS=          trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O) tree.$(O) yyerror.$(O)
 
 LINKR=          link.$(O) lglob.$(O) lcode.$(O) llex.$(O) lmem.$(O) lsym.$(O) opcode.$(O)
 
-OBJS=           tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
+OBJS=           tmain.$(O) util.$(O) tlocal.$(O) tglobals.$(O) lcompres.$(O) $(TRANS) $(LINKR)
 
 COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		   ../common/filepart.$(O) ../common/strtbl.$(O)\
@@ -39,7 +38,7 @@ icont:
 		$(MAKE) icont2 CONSOLE=NTConsole DCONSOLE=
 
 icont2:        $(OBJS) common
-		link @icont.lnk
+		link -subsystem:console ..\common\long.obj ..\common\getopt.obj ..\common\alloc.obj ..\common\filepart.obj ..\common\strtbl.obj ..\common\ipp.obj ..\common\mlocal.obj lcode.obj lglob.obj link.obj llex.obj lmem.obj lnklist.obj lsym.obj opcode.obj tparse.obj tcode.obj tlex.obj tlocal.obj tmain.obj tmem.obj trans.obj tree.obj tsym.obj tglobals.obj util.obj libc.lib kernel32.lib user32.lib gdi32.lib winspool.lib VERSION.LIB -out:icont.exe
 		copy icont.exe ..\..\bin
 
 wicont:
@@ -47,10 +46,12 @@ wicont:
 		$(RM) link.obj
 		nmake wicont2
 
+MYGUILIBS=kernel32.lib user32.lib gdi32.lib comdlg32.lib
+
 # add $(linkdebug) after $(link) for debugging
 
 wicont2: $(OBJS) common
-		$(link) $(guiflags) $(OBJS) $(COBJS) $(WOBJS) winmm.lib $(guilibs) -out:wicont.exe
+		$(LD) $(guiflags) $(OBJS) $(COBJS) $(WOBJS) winmm.lib $(MYGUILIBS) -out:wicont.exe
 		copy wicont.exe ..\..\bin
 
 linkit:

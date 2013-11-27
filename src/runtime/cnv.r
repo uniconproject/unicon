@@ -36,9 +36,22 @@ dptr s;
 double *d;
    {
 
-#ifdef LargeInts
-   tended	/* need to be tended if ston allocates largeint blocks */
-#endif					/* LargeInts */
+   /*
+    * The classic design goal for cnv.r was to avoid tending (and heap
+    * allocation for that matter) as much as possible, hence versions of
+    * several functions labeled "tmp". Nevertheless, there was a bunch of
+    * tending in this file that costs Unicon more than it costs Icon.
+    *
+    * cnvstr appears in many functions and has always been tended. It is only
+    * used for a cset that has been converted to a (temporary) string, and in
+    * that case, the cset's string has been allocated in a local character
+    * array, sbuf, so it will not move during garbage collection, and
+    * therefore need not be tended.
+    *
+    * In this function, there is also a variable result that was tended, but
+    * it only has to survive a call to bigtoreal(), which does not allocate a
+    * block and therefore does not need to be tended.
+    */
 
    struct descrip result, cnvstr;
    char sbuf[MaxCvtLen];
@@ -105,12 +118,7 @@ int cnv_c_int(s, d)
 dptr s;
 C_integer *d;
    {
-
-#ifdef LargeInts
-   tended  /* tended since ston now allocates blocks */
-#endif						/* LargeInts */
-
-   struct descrip cnvstr, result;			/* not tended */
+   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
    union numeric numrc;
    char sbuf[MaxCvtLen];
 
@@ -267,12 +275,7 @@ int cnv_ec_int(s, d)
 dptr s;
 C_integer *d;
    {
-
-#ifdef LargeInts
-   tended  /* tended since ston now allocates blocks */
-#endif						/* LargeInts */
-
-   struct descrip cnvstr;			/* not tended */
+   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
    union numeric numrc;
    char sbuf[MaxCvtLen];
 
@@ -317,12 +320,7 @@ C_integer *d;
 int cnv_eint(s, d)
 dptr s, d;
    {
-
-#ifdef LargeInts
-   tended  /* tended since ston now allocates blocks */
-#endif						/* LargeInts */
-
-   struct descrip cnvstr;			/* not tended */
+   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
    char sbuf[MaxCvtLen];
    union numeric numrc;
 
@@ -370,12 +368,7 @@ dptr s, d;
 int f(s, d)
 dptr s, d;
    {
-
-#ifdef LargeInts
-   tended   /* tended since ston now allocates blocks */
-#endif						/* LargeInts */
-
-   struct descrip cnvstr;			/* not tended */
+   struct descrip cnvstr;	/* not tended, see comment at cnv_c_dbl */
    char sbuf[MaxCvtLen];
    union numeric numrc;
 

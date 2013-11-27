@@ -602,10 +602,14 @@
 #define SYNC_GLOBAL_CURTSTATE()  if (!is_concurrent) global_curtstate = \
 		(struct threadstate *) pthread_getspecific(tstate_key);
 
+#define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = \
+		     (struct threadstate *) pthread_getspecific(tstate_key);
+
+
 #define GET_CURTSTATE()  struct threadstate *curtstate = \
     global_curtstate? global_curtstate: \
-			     (struct threadstate *) pthread_getspecific(tstate_key);	
-
+    (struct threadstate *) pthread_getspecific(tstate_key);
+    
 #define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
 
 #define CURTSTATE()  GET_CURTSTATE(); \

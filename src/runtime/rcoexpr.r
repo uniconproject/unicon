@@ -398,6 +398,9 @@ dptr cargp;
    {
    continuation cf;
    CURTSTATVAR();
+
+   SYNC_GLOBAL_CURTSTATE();
+
    if (coexpr_fnc != NULL) {
       cf = coexpr_fnc;
       coexpr_fnc = NULL;

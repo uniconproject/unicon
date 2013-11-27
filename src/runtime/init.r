@@ -1750,7 +1750,7 @@ word getrandom()
    int i;
    time_t t;
    struct tm *ct, ctstruct;
-   CURTSTATE_ONLY();
+   TLS_CURTSTATE_ONLY();
 
    time(&t);
 

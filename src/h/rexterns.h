@@ -79,6 +79,7 @@ extern word ncondvars;
 extern word maxcondvars; 
 
 extern int is_concurrent; 
+extern struct threadstate *global_curtstate;
 
 #endif					/* Concurrent */
 

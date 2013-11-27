@@ -307,6 +307,7 @@ function{1} display(i,f,c)
        /* rtt doesn't like CURTSTATE() in declare clause */
        struct threadstate *curtstate =
                    (struct threadstate *) pthread_getspecific(tstate_key);
+       struct b_coexpr *curtstate_ce = curtstate->c;
 #endif					/* Concurrent */
       }
 #else					/* MultiThread */
@@ -2472,13 +2473,16 @@ function{1} condvar(x)
       abstract { return list }
       inline{
          tended struct b_list *hp = BlkD(x, List);
+      	 TURN_ON_CONCURRENT();
       	 CV_INITBLK(hp);
       	 return x;
       	 }
       }
    else if def:C_integer(x,-1) then{
       abstract { return integer }
-      inline { if (x>0)
+      inline { 
+	    	TURN_ON_CONCURRENT();
+      		if (x>0)
       	         return C_integer -2 - get_cv(x-1); 
 	       else
 	         return C_integer -2 - get_cv(x);
@@ -2551,6 +2555,7 @@ function{1} mutex(x, y)
        inline {
          if (!is:null(y))
       	    runerr(180, x);
+      	 TURN_ON_CONCURRENT();
 	 return C_integer get_mutex(&rmtx_attr)+1;
          }
         }
@@ -2564,6 +2569,7 @@ function{1} mutex(x, y)
               inline {
 	    	 if ((BlkMask(x))->shared)
 		    runerr(184, x);
+      	 	 TURN_ON_CONCURRENT();
 	         MUTEX_INITBLK(BlkMask(x));
 	         return x;
 	         }
@@ -2572,6 +2578,7 @@ function{1} mutex(x, y)
    	      if !cnv:C_integer(y) then runerr(180, y);
               inline {
       	         word y1;
+      	 	 TURN_ON_CONCURRENT();
 		 GETMUTEXID(y, y1);
 
 	    	 if ((BlkMask(x))->shared)
@@ -2585,7 +2592,7 @@ function{1} mutex(x, y)
               inline {
 	    	 if ((BlkMask(x))->shared)
 		    runerr(184, x);
-
+      	 	 TURN_ON_CONCURRENT();
 	         MUTEX_INITBLKID(BlkMask(x), BlkD(y, File)->mutexid);
                  return x;
 	         }
@@ -2596,6 +2603,7 @@ function{1} mutex(x, y)
            list:{
               inline {
 	         struct b_mask *bp = BlkMask(y);
+      	 	 TURN_ON_CONCURRENT();
 	    	 if (!bp->shared)
 		    MUTEX_INITBLK(bp);
 
@@ -2766,6 +2774,8 @@ function{0,1} spawn(x, blocksize, stringsize)
 	    runerr(183, x);
 	    }
 
+      	 TURN_ON_CONCURRENT();
+
 	 /*
 	  * Make sure it is a pthreads-based co-expression.
 	  */
@@ -2855,6 +2865,7 @@ function{0,1} spawn(x, blocksize, stringsize)
      body {
 	tended struct descrip d;
 	d = nulldesc;
+      	TURN_ON_CONCURRENT();
 	/*
 	 * Create a thread, similar to creating a (pthreads-based)
 	 * co-expression, except with the Cs_Concurrent flag on.

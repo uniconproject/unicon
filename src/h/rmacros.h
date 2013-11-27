@@ -589,12 +589,40 @@
 #endif  					/* LOCALPROGSTATE */
 
 #ifdef Concurrent
+
+#define TURN_ON_CONCURRENT() if (!is_concurrent){ \
+	is_concurrent=1; global_curtstate = NULL;}
+
 #ifdef HAVE_KEYWORD__THREAD
 #define CURTSTATE()
+#define CURTSTATE_CE()
 #else
-#define CURTSTATE() struct threadstate *curtstate =	\
-                   (struct threadstate *) pthread_getspecific(tstate_key); \
+
+
+#define SYNC_GLOBAL_CURTSTATE()  if (!is_concurrent) global_curtstate = \
+		(struct threadstate *) pthread_getspecific(tstate_key);
+
+#define GET_CURTSTATE()  struct threadstate *curtstate = \
+    global_curtstate? global_curtstate: \
+			     (struct threadstate *) pthread_getspecific(tstate_key);	
+
+#define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
+
+#define CURTSTATE()  GET_CURTSTATE(); \
+  	           CURTSTATE_CE(); \
+                   CURPTSTATE;
+
+
+/*#define CURTSTATE_VM() inst *curtstate_ipc = curtstate->c->es_ipc;*/
+/*  		   struct tend_desc *curtstate_tended = curtstate_ce->es_tend; */
+
+#define CURTSTATE_ONLY() GET_CURTSTATE(); \
                     CURPTSTATE;
+
+
+/*  		    struct b_coexpr *curtstate_ce = curtstate->c;	
+		    #define CURTSTATE_CE struct b_coexpr *curtstate_CE = curtstate->c;*/
+
 
 #ifdef TSTATARG
 #define CURTSTATARG curtstate
@@ -617,6 +645,10 @@
 #define blkfree  (curtstate->Curblock->free)
 #else 					/* Concurrent */
 #define CURTSTATE()
+#define CURTSTATE_CE()
+#define CURTSTATE_ONLY()
+#define SYNC_GLOBAL_CURTSTATE()
+
 #define CURTSTATARG
 #define RTTCURTSTATARG
 #define CURTSTATVAR()
@@ -941,14 +973,16 @@
       #define lastcol   (curtstate->Lastcol)
 
 #ifdef Concurrent 
-      #define tend         (curtstate->c->es_tend)
-      #define efp         (curtstate->c->es_efp)
-      #define gfp         (curtstate->c->es_gfp)
-      #define pfp         (curtstate->c->es_pfp)
-      #define ipc         (curtstate->c->es_ipc)
-      #define oldipc      (curtstate->c->es_oldipc)
-      #define sp          (curtstate->c->es_sp)
-      #define ilevel      (curtstate->c->es_ilevel)
+ 
+      #define tend         (curtstate_ce->es_tend)
+ 
+      #define efp         (curtstate_ce->es_efp)
+      #define gfp         (curtstate_ce->es_gfp)
+      #define pfp         (curtstate_ce->es_pfp)
+      #define ipc         (curtstate_ce->es_ipc)
+      #define oldipc      (curtstate_ce->es_oldipc)
+      #define sp          (curtstate_ce->es_sp)
+      #define ilevel      (curtstate_ce->es_ilevel)
 
 #ifndef StackCheck
       #define stack          (curtstate->Stack)
@@ -1361,6 +1395,12 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
 #define CV_WAIT_ON_EXPR(expr, cv, mtxid)				\
   while (expr) pthread_cond_wait(cv, MUTEXID(mtxid));
 
+#define CV_WAIT(cv, mtxid) { int rv;				   \
+    if ((rv=pthread_cond_wait(cv, MUTEXID(mtxid)))<0 ){		     \
+	fprintf(stderr, "condition variable wait failure %d\n", rv); \
+      	exit(-1); \
+      	 }}
+
 #define CV_WAIT_FULLBLK(bp) \
     pthread_cond_wait(condvars[bp->cvfull], MUTEX_GETBLK(bp));
 
@@ -1414,6 +1454,7 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
 
 
 #define CV_WAIT_FULLBLK(bp)
+#define CV_WAIT(cv, mtxid)
 
 #define CV_WAIT_EMPTYBLK(bp)
 #define CV_SIGNAL_FULLBLK(bp)

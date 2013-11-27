@@ -1464,16 +1464,13 @@ function{0,1} wait(pid, options)
    abstract { return integer }
    body {
       if (pid<-1){
-         int rv;
+
 	 int x = -pid-2;
       	 if (x<0 || x>=ncondvars)
       	    irunerr(181, pid);
 
-      	 DEC_NARTHREADS;	
-      	 if (rv=pthread_cond_wait(condvars[x], MUTEXID(condvarsmtxs[x])) != 0){
-      	    fprintf(stderr, "condition variable wait failure %d\n", rv);
-      	    exit(-1);
-      	    }
+      	 DEC_NARTHREADS;
+      	 CV_WAIT(condvars[x], condvarsmtxs[x]);
 	 INC_NARTHREADS_CONTROLLED;
 
       	 return C_integer 1;

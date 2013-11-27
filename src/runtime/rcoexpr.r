@@ -496,6 +496,9 @@ int pthreadcoswitch(void *o, void *n, int first)
    if (!old || old->alive<1) {
       pthread_exit(NULL);		/* if unblocked because unwanted */
       }
+
+   SYNC_GLOBAL_CURTSTATE();
+
    return 0;				/* else return to continue running */
    }
 
@@ -943,8 +946,7 @@ int action;
     	       MUTEX_LOCKID(MTX_NARTHREADS);
     	       NARthreads--;
     	       MUTEX_UNLOCKID(MTX_NARTHREADS);
-    	       while (thread_call) 
-       	          pthread_cond_wait(&cond_tc, MUTEXID(MTX_COND_TC)); /*block!!*/
+	       CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
   	       MUTEX_UNLOCKID(MTX_COND_TC);
 
   	       /* 
@@ -976,8 +978,9 @@ int action;
 	    MUTEX_LOCKID(MTX_COND_TC);
 	    /* wake up another TCthread and go to sleep */
 	    sem_post(&sem_tc);
-	    while (thread_call) 
-	       pthread_cond_wait(&cond_tc, MUTEXID(MTX_COND_TC)); /*block!!*/
+
+       	    CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
+
 	    MUTEX_UNLOCKID(MTX_COND_TC);
 	 
 	    /* Another TC thread just woke me up!

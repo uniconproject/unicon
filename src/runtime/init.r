@@ -183,8 +183,8 @@ struct progstate rootpstate;
 struct threadstate *roottstatep; 
 
 #ifdef Concurrent
-
-int is_concurrent=1; 
+     int is_concurrent = 0;
+     struct threadstate *global_curtstate;
 
 #ifdef HAVE_KEYWORD__THREAD
       #passthru __thread struct threadstate roottstate; 
@@ -716,6 +716,7 @@ char *argv[];
    rootpstate.Kywd_err = zerodesc;
 
    curtstate = &roottstate;
+
    rootpstate.tstate = curtstate;
    roottstatep = curtstate; 
    init_threadstate(curtstate);
@@ -746,6 +747,9 @@ char *argv[];
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
 #ifdef Concurrent
+
+   global_curtstate = curtstate;
+
        /* 
         * The heaps for root are handled differently (allocated already). 
         * This replaces a call to init_threadheap(curtstate, , ,)  
@@ -1287,7 +1291,7 @@ Deliberate Syntax Error
 void envset()
    {
    char *p, sbuf[MaxCvtLen+1];
-   CURTSTATE();
+   CURTSTATE_ONLY();
 
    if (getenv_r("NOERRBUF", sbuf, MaxCvtLen) == 0)
       noerrbuf++;
@@ -1746,7 +1750,7 @@ word getrandom()
    int i;
    time_t t;
    struct tm *ct, ctstruct;
-   CURTSTATE();
+   CURTSTATE_ONLY();
 
    time(&t);
 
@@ -1795,7 +1799,7 @@ void datainit()
 #ifdef MSWindows
    extern FILE *finredir, *fouredir, *ferredir;
 #endif					/* MSWindows */
-   CURTSTATE();
+   CURTSTATE_ONLY();
 
    /*
     * Initializations that cannot be performed statically (at least for

@@ -222,6 +222,10 @@ void main(int argc, char **argv)
    {
    int i, slen;
 
+#ifdef MultiThread
+   struct b_coexpr *curtstate_ce;
+#endif					/* MultiThread */
+
 #ifdef Concurrent
 #ifndef HAVE_KEYWORD__THREAD
    struct threadstate *curtstate;
@@ -315,6 +319,7 @@ void main(int argc, char **argv)
    
 #ifdef MultiThread
    curtstate = roottstatep;
+   curtstate_ce = curtstate->c;
 #endif					/* MultiThread */
 
 #ifdef Messaging

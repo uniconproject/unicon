@@ -14,6 +14,7 @@ void exit(int);
 /* FILE *ConsoleBinding = NULL; moved to rwindow.r */
 
 struct threadstate roottstate, *curtstate = &roottstate;
+struct threadstate *global_curtstate = &roottstate;
 
 #ifdef MultiThread
 

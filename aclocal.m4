@@ -163,11 +163,13 @@ then
         if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
         then
                 #
-                # If both library and header were found, use them
+                # If both library and header were found, use them.
+		# At the moment, this looks deplorably Linux-specific.
+		# sort|tail ensures that /usr/lib64 is preferred to /usr/lib
                 #
                 AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev)
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
-		LIBSTDCPP=`locate libstdc++.so.6|head -1`
+		LIBSTDCPP="`locate libstdc++.so.6|grep '.so.6\$'|sort|tail -1`"
 		LDFLAGS="$LDFLAGS $LIBSTDCPP"
                 AC_MSG_RESULT(ok)
         else

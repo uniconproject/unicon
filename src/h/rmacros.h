@@ -1310,6 +1310,16 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
   if ( is_concurrent && (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  \
     handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
 
+
+#define MUTEX_LOCKID_FORCE(mtx) { int retval;				\
+  if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
+    handle_thread_error(retval, FUNC_MUTEX_LOCK, NULL); }
+
+#define MUTEX_UNLOCKID_FORCE(mtx) { int retval;			\
+  if ( (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)		\
+    handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
+
+
 #define MUTEX_TRYLOCKID(mtx, isbusy) { \
     if ( is_concurrent && (isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
       {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL); isbusy=0;} }
@@ -1431,9 +1441,14 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
 #define MUTEX_LOCK(mtx, msg)
 #define MUTEX_UNLOCK(mtx, msg)
 #define MUTEX_TRYLOCK(mtx, isbusy, msg)
+
 #define MUTEX_LOCKID(mtx)
 #define MUTEX_UNLOCKID(mtx)
 #define MUTEX_TRYLOCKID(mtx, isbusy)
+
+#define MUTEX_LOCKID_FORCE(mtx)
+#define MUTEX_UNLOCKID_FORCE(mtx)
+
 #define THREAD_JOIN(thrd, opt)
 #define MUTEX_LOCK_CONTROLLED(mtx, msg)
 #define MUTEX_LOCKID_CONTROLLED(mtx)

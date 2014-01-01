@@ -211,7 +211,7 @@ initially(initfile)
 end
 
 #
-# These are primitive legacy Notice/TextDialog compatibility functions.
+# Primitive legacy Notice/TextDialog compatibility functions.
 # They need to be improved/polished and eventually moved to the gui package.
 #
 
@@ -397,7 +397,8 @@ procedure Notice(captions[])		#: notice dialog
       /win := temp_win := WOpen("canvas=hidden", "bg=gray")
       }
 
-   if \is_MSWindows & (p := proc("WinSelectDialog", 0)) then {	# use built-in if available
+   # use built-in if available
+   if \is_MSWindows & (p := proc("WinSelectDialog", 0)) then {
 	 p(win, captions)
 	 dialog_button := "Okay"
        }
@@ -431,14 +432,14 @@ procedure main(argv)
    Progend := ui_Progend
    warning := ui_Warning
 
-   if &features=="MS Windows NT" then{
-       PATHSEP := "\\"
-       is_MSWindows := 1
-   }
-   else{
-       PATHSEP := "/"
-       is_MSWindows := &null
-   }
+   if &features=="MS Windows NT" then {
+      PATHSEP := "\\"
+      is_MSWindows := 1
+      }
+   else {
+      PATHSEP := "/"
+      is_MSWindows := &null
+      }
 
    d := UIDE(d)
    d.show_modal()

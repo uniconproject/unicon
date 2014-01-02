@@ -14,13 +14,13 @@ UFLAGS=-c -u
 UFLAGS2=-c
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
-	buffertabitem.icn mainbar.icn modified.icn templates.icn \
-	definitions.icn uproject.icn \
+	buffertabitem.icn mainbar.icn modified.icn preferences.icn \
+	templates.icn definitions.icn uproject.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
-	mainbar.u modified.u templates.u definitions.u uproject.u \
-	classbrowser.u imgs.u utags.u matchparen.u
+	mainbar.u modified.u preferences.u templates.u definitions.u \
+	uproject.u classbrowser.u imgs.u utags.u matchparen.u
 
 ui:	$(OBJ)
 ifdef EXE
@@ -50,6 +50,9 @@ buffertabset.u: buffertabset.icn
 
 matchparen.u: matchparen.icn
 	$(UC) $(UFLAGS)  matchparen
+
+preferences.u: preferences.icn
+	$(UC) $(UFLAGS)  preferences
 
 mainbar.u: mainbar.icn
 	$(UC) $(UFLAGS) mainbar
@@ -91,5 +94,3 @@ ui.exe: ui
 
 clean:
 	$(RM) *.u uniclass.dir uniclass.pag ui$(EXE)
-
-

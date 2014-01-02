@@ -1,0 +1,446 @@
+#
+# preferences.icn - GUI for editing IDE preferences
+#
+
+link graphics
+
+import gui
+$include "guih.icn"
+
+class DialogPreferences : Dialog(
+      position,
+      #Edit values
+      val_background_color, syntax_text_color, comment_text_color,
+      linenumber_text_color, text_highlight_color, error_text_color,
+      #Temp edit values
+      temp_val_background_color, temp_syntax_text_color,
+      temp_comment_text_color,
+      temp_linenumber_text_color, temp_text_highlight_color,
+      temp_error_text_color,
+      #Complementary edit values
+      linenumber_highlight_color, # same as val_background_color
+      default_text_color, # depends on bg color ^
+      cursor_highlight_color, # depends on bg color ^
+      cursor_text_color, # depends on highlight color ^
+      glob_text_color, # attached to syntax_text_color
+      procedure_text_color, # attached to syntax_text_color
+      quote_text_color, # attached to syntax_text_color
+      #GUI components
+      edit_box, list_bg_color, list_syntax_color,
+      list_comment_color, list_linenumber_color, list_highlight_color,
+      list_error_color,
+      #Restore Values
+      vbc, stc, mtc, ltc, thc, etc, lhc, dtc, chc, ctc, gtc, ptc, qtc,
+      paren_check_box_state, syntax_check_box_state,
+      #
+      sample_box,
+      label_background_color, label_syntax_color, label_comment_color,
+      label_linenumber_color, label_highlight_color, label_error_color,
+      label_paren_match1, label_paren_match2, check_box_paren_on,
+      label_syntax_highlighting1, label_syntax_highlighting2,
+      check_box_syntax_highlighting_on,
+      text_button_ok, text_button_cancel
+   )
+
+   method component_setup()
+      local i, l, pos_x, pos_y
+      WAttrib("pos") ? {
+         pos_x := tab(find(","))
+         =","
+         pos_y := tab(many('-0123456789'))
+	 }
+      if /pos_x | pos_x < 0 then pos_x := 0
+      if /pos_y | pos_y < 0 then pos_y := 0
+      position := pos_x||","||pos_y
+      if *self.children < 1 then
+         self.setup()
+      else {
+         l := self.attribs
+         i := 1
+         while i <= *l do {
+            if match("pos=", l[i]) then
+               delete(l, i)
+            else
+               i +:= 1
+	    }
+         self.set_attribs("pos=" || position)
+      }
+   end
+
+   method init_dialog()
+      paren_check_box_state := check_box_paren_on.is_checked_flag
+      syntax_check_box_state:= check_box_syntax_highlighting_on.is_checked_flag
+      update()
+      set_focus(list_bg_color)
+   end
+   
+   method end_dialog()
+      vbc:=stc:=mtc:=ltc:=thc:=etc:=lhc:=dtc:=chc:=ctc:=gtc:=ptc:=qtc:=&null
+   end
+
+   method on_DialogPreferences(ev)
+      if \ev.param = -11 then
+         exit_without_saving()
+   end
+
+   method on_list_bg_color(ev)
+      temp_val_background_color := list_bg_color.get_string_selection()
+      update()
+   end
+   
+   method on_list_syntax_color(ev)
+      temp_syntax_text_color := list_syntax_color.get_string_selection()
+      update()
+   end
+   
+   method on_list_comment_color(ev)
+      temp_comment_text_color := list_comment_color.get_string_selection()
+      update()
+   end
+   
+   method on_list_linenumber_color(ev)
+      temp_linenumber_text_color := list_linenumber_color.get_string_selection()
+      update()
+   end
+
+   method on_list_highlight_color(ev)
+      temp_text_highlight_color := list_highlight_color.get_string_selection()
+      update()
+   end
+
+   method on_list_error_color(ev)
+      temp_error_text_color := list_error_color.get_string_selection()
+      update()
+   end
+
+   method update()
+      local i, l
+            
+      l := sample_box.attribs
+      i := 1
+      if \temp_val_background_color then {
+         /vbc := val_background_color
+         /dtc := default_text_color
+         /chc := cursor_highlight_color
+         /ctc := cursor_text_color
+         /lhc := linenumber_highlight_color
+         default_text_color := "black"
+         cursor_highlight_color := "black"
+         cursor_text_color := "white"
+         if temp_val_background_color == "off-white" then
+            val_background_color := "white-yellow"
+         else if temp_val_background_color == "black" then {
+            val_background_color := "black"
+            default_text_color := "white"
+            cursor_highlight_color := "white"
+            cursor_text_color := "black"
+            }
+         else
+            val_background_color := "white"            
+         linenumber_highlight_color := val_background_color
+         while i <= *l do {
+            if match("bg=", l[i]) then
+               delete(l, i)
+            else
+               i +:= 1
+	    }
+         sample_box.set_attribs("bg="||val_background_color)
+         WAttrib(\ (sample_box.cbwin), "bg="||val_background_color)
+         WAttrib(\ (sample_box.view.cbwin), "bg="||val_background_color)
+         }
+      if \temp_syntax_text_color then {
+         /stc := syntax_text_color
+         /gtc := glob_text_color
+         /ptc := procedure_text_color
+         /qtc := quote_text_color
+         syntax_text_color := temp_syntax_text_color
+         case syntax_text_color of {
+            "light-colors" : {
+               syntax_text_color := "dark-blue-green"
+               glob_text_color := "dark-green"
+               procedure_text_color := "purple"
+               quote_text_color := "light-brown"
+            }
+            "dark-colors" : {
+               syntax_text_color := "very-dark-green"
+               glob_text_color := "very-dark-yellow"
+               procedure_text_color := "dark-blue"
+               quote_text_color := "dark-orange"
+            }
+            "bright-colors" : {
+               syntax_text_color := "green"
+               glob_text_color := "pink"
+               procedure_text_color := "purple"
+               quote_text_color := "dark-yellow"
+            }
+            default : write("ERROR")
+            }
+         }
+      if \temp_comment_text_color then {
+         /mtc := comment_text_color
+         comment_text_color:=temp_comment_text_color
+         }
+      if \temp_linenumber_text_color then {
+         /ltc := linenumber_text_color
+         linenumber_text_color:=temp_linenumber_text_color
+         }
+      if \temp_text_highlight_color then {
+         /thc := text_highlight_color
+         text_highlight_color:=temp_text_highlight_color
+         }
+      if \temp_error_text_color then {
+         /etc := error_text_color
+         error_text_color:=temp_error_text_color
+         }
+      sample_box.draw(0, 0, 43, 55, 539, 136)
+      sample_box.display()
+      sample_box.doReparse:=1
+      sample_box.ReparseCode()
+   end
+
+   method on_check_box_paren_on(ev)
+   end
+
+   method check_box_syntax_highlighting_on(ev)
+   end
+   
+   method on_text_button_ok(ev)
+      exit_with_saving()
+   end
+
+   method on_text_button_cancel(ev)
+      exit_without_saving()
+   end
+
+   method exit_with_saving()
+      paren_check_box_state:=check_box_paren_on.is_checked_flag
+      syntax_check_box_state:=check_box_syntax_highlighting_on.is_checked_flag
+      dispose()
+   end
+   
+   method exit_without_saving()
+      local i, l
+      if \vbc then {
+         l := sample_box.attribs
+         i := 1
+         val_background_color := vbc
+         while i <= *l do {
+            if match("bg=", l[i]) then
+               delete(l, i)
+            else
+               i +:= 1
+	    }
+         sample_box.set_attribs("bg="||val_background_color)
+         WAttrib(\ (sample_box.cbwin), "bg="||val_background_color)
+         WAttrib(\ (sample_box.view.cbwin), "bg="||val_background_color)
+         sample_box.display()
+         }
+      default_text_color := \dtc 
+      cursor_highlight_color := \chc
+      cursor_text_color := \ctc 
+      syntax_text_color := \stc
+      linenumber_highlight_color := \lhc 
+      glob_text_color := \gtc 
+      procedure_text_color := \ptc 
+      quote_text_color := \qtc
+      comment_text_color := \mtc 
+      linenumber_text_color := \ltc 
+      text_highlight_color := \thc 
+      error_text_color := \etc
+      check_box_paren_on.is_checked_flag:=paren_check_box_state
+      check_box_syntax_highlighting_on.is_checked_flag:=syntax_check_box_state
+      dispose()
+   end
+
+   method initialize_values()
+      if /position then position := "0,0"
+      
+      if /val_background_color then {
+         val_background_color := "white"
+         linenumber_highlight_color := "white"
+         default_text_color := "black"
+         cursor_highlight_color := "black"
+         cursor_text_color := "white"
+         }
+      if /syntax_text_color then {
+         syntax_text_color := "dark-blue-green"
+         glob_text_color := "dark-green"
+         procedure_text_color := "purple"
+         quote_text_color := "light-brown"
+         }
+      if /comment_text_color then
+         comment_text_color := "blue"
+      if /linenumber_text_color then
+         linenumber_text_color := "grey"
+      if /text_highlight_color then
+         text_highlight_color := "light-grey"
+      if /error_text_color then
+         error_text_color := "red"
+   end
+   
+   method setup()
+      self.set_attribs("size=640,200", "pos="||position)
+
+      sample_box := BuffEditableTextList()
+      sample_box.set_attribs("bg="||val_background_color, "font="||fontname)
+      sample_box.set_pos("35", "50")
+      sample_box.set_size("75%", "75%-4")
+      sample_box.set_contents(["# Sample Code w/ Error",
+                               "procedure main()", "   local c",
+			       "   c:=Hello()", "end", "",
+			       "class Hello ()",
+			       "   write(\"Hello World\")", "end"])
+
+      list_bg_color := List()
+      list_bg_color.set_pos(25, 25)
+      list_bg_color.set_size("100", )
+      list_bg_color.connect(self, "on_list_bg_color", SELECTION_CHANGED_EVENT)
+      list_bg_color.set_selection_list(["white", "black", "off-white"])
+
+      list_syntax_color := List()
+      list_syntax_color.set_pos(125, 25)
+      list_syntax_color.set_size("100")
+      list_syntax_color.connect(self, "on_list_syntax_color",
+				SELECTION_CHANGED_EVENT)
+      list_syntax_color.set_selection_list(["light-colors", "dark-colors",
+					    "bright-colors"])
+      
+      list_comment_color := List()
+      list_comment_color.set_pos(225, 25)
+      list_comment_color.set_size("100")
+      list_comment_color.connect(self, "on_list_comment_color",
+				 SELECTION_CHANGED_EVENT)
+      list_comment_color.set_selection_list(["blue", "red", "green"])
+
+      list_linenumber_color := List()
+      list_linenumber_color.set_pos(325, 25)
+      list_linenumber_color.set_size("100")
+      list_linenumber_color.connect(self, "on_list_linenumber_color",
+				    SELECTION_CHANGED_EVENT)
+      list_linenumber_color.set_selection_list(["grey","black","white","brown",
+                                                "dark-yellow", "yellow"])
+
+      list_highlight_color := List()
+      list_highlight_color.set_pos(425, 25)
+      list_highlight_color.set_size("100")
+      list_highlight_color.connect(self, "on_list_highlight_color",
+				   SELECTION_CHANGED_EVENT)
+      list_highlight_color.set_selection_list(["light-grey", "white-grey",
+					       "yellow"])
+
+      list_error_color := List()
+      list_error_color.set_pos(525, 25)
+      list_error_color.set_size("100")
+      list_error_color.connect(self, "on_list_error_color",
+			       SELECTION_CHANGED_EVENT)
+      list_error_color.set_selection_list(["red", "dark-red", "pink"])
+      
+      label_background_color := Label()
+      label_background_color.set_pos("35", "10")
+      label_background_color.set_internal_alignment("l")
+      label_background_color.set_label("Background:")
+
+      label_syntax_color := Label()
+      label_syntax_color.set_pos("135", "10")
+      label_syntax_color.set_internal_alignment("l")
+      label_syntax_color.set_label("Syntax:")
+      
+      label_comment_color := Label()
+      label_comment_color.set_pos("235", "10")
+      label_comment_color.set_internal_alignment("l")
+      label_comment_color.set_label("Comment:")
+
+      label_linenumber_color := Label()
+      label_linenumber_color.set_pos("335", "10")
+      label_linenumber_color.set_internal_alignment("l")
+      label_linenumber_color.set_label("Line Number:")
+
+      label_highlight_color := Label()
+      label_highlight_color.set_pos("435", "10")
+      label_highlight_color.set_internal_alignment("l")
+      label_highlight_color.set_label("Highlight:")
+
+      label_error_color := Label()
+      label_error_color.set_pos("535", "10")
+      label_error_color.set_internal_alignment("l")
+      label_error_color.set_label("Error:")
+
+      label_paren_match1 := Label()
+      label_paren_match1.set_pos("534", "63")
+      label_paren_match1.set_internal_alignment("l")
+      label_paren_match1.set_label("Parentheses")
+
+      label_paren_match2 := Label()
+      label_paren_match2.set_pos("544", "78")
+      label_paren_match2.set_internal_alignment("l")
+      label_paren_match2.set_label("Matching:")
+
+      check_box_paren_on := CheckBox()
+      check_box_paren_on.set_pos("555", "90")
+      check_box_paren_on.connect(self, "on_check_box_paren_on", ACTION_EVENT)
+      check_box_paren_on.set_toggles()
+      if \paren_check_box_state = 1 then
+         check_box_paren_on.set_is_checked()
+      check_box_paren_on.set_label("On")
+
+      label_syntax_highlighting1 := Label()
+      label_syntax_highlighting1.set_pos("545", "118")
+      label_syntax_highlighting1.set_internal_alignment("l")
+      label_syntax_highlighting1.set_label("Syntax")
+
+      label_syntax_highlighting2 := Label()
+      label_syntax_highlighting2.set_pos("530", "132")
+      label_syntax_highlighting2.set_internal_alignment("l")
+      label_syntax_highlighting2.set_label("Highlighting:")
+      
+      check_box_syntax_highlighting_on := CheckBox()
+      check_box_syntax_highlighting_on.set_pos("555", "146")
+      check_box_syntax_highlighting_on.connect(self,
+			      "check_box_syntax_highlighting_on", ACTION_EVENT)
+      check_box_syntax_highlighting_on.set_toggles()
+      if \syntax_check_box_state = 1 then
+         check_box_syntax_highlighting_on.set_is_checked()
+      check_box_syntax_highlighting_on.set_label("On")
+      
+      text_button_ok := TextButton()
+      text_button_ok.set_pos(595, 170)
+      text_button_ok.connect(self, "on_text_button_ok", BUTTON_RELEASE_EVENT)
+      text_button_ok.set_internal_alignment("c")
+      text_button_ok.set_label("Ok")
+
+      text_button_cancel := TextButton()
+      text_button_cancel.set_pos(535, 170)
+      text_button_cancel.connect(self, "on_text_button_cancel",
+				 BUTTON_RELEASE_EVENT)
+      text_button_cancel.set_internal_alignment("c")
+      text_button_cancel.set_label("Cancel")
+      
+      self.add(sample_box)
+      self.add(list_bg_color)
+      self.add(list_syntax_color)
+      self.add(list_comment_color)
+      self.add(list_linenumber_color)
+      self.add(list_highlight_color)
+      self.add(list_error_color)
+      self.add(label_background_color)
+      self.add(label_syntax_color)
+      self.add(label_comment_color)
+      self.add(label_linenumber_color)
+      self.add(label_highlight_color)
+      self.add(label_error_color)
+      self.add(label_paren_match1)
+      self.add(label_paren_match2)
+      self.add(label_syntax_highlighting1)
+      self.add(label_syntax_highlighting2)
+      self.add(check_box_paren_on)
+      self.add(check_box_syntax_highlighting_on)
+      self.add(text_button_ok)
+      self.add(text_button_cancel)
+
+      self.connect(self, "on_DialogPreferences", CLOSE_BUTTON_EVENT)
+   end
+
+   initially
+      initialize_values()
+      self.Dialog.initially()
+end

@@ -83,9 +83,9 @@ class BuffEditableTextList : EditableTextList(
    mouse_locked,
    scroll_locked,
    vi,      #virtual line index
-   highlightcolor, # taken from buffertextlist
-   autoindent, # taken from buffertextlist
-   scroll_y,  # taken from buffertextlist
+   highlightcolor,
+   autoindent,
+   scroll_y,
    errorLineNumber,
    doReparse,
    paren_match_found
@@ -105,10 +105,15 @@ class BuffEditableTextList : EditableTextList(
 
    method fire(type, param)
       self$Connectable.fire(type,param)
-      if type == CONTENT_CHANGED_EVENT then
+      if type === CONTENT_CHANGED_EVENT then {
+	 # Optimize this blind any-change==reparse logic to be more
+	 # selective.  Pressing return won't change the token sequence,
+	 # nor will editing of comments.
 	 doReparse := 1
-      if type == CURSOR_MOVED_EVENT & old_cursor_y ~= cursor_y then
+	 }
+      if type === CURSOR_MOVED_EVENT & old_cursor_y ~= cursor_y then {
 	 ReparseCode()
+	 }
    end
 
    method on_vsb(ev,y_coor,enter_here)
@@ -455,7 +460,7 @@ class BuffEditableTextList : EditableTextList(
    method ReparseCode ()
       local s, rv, x, errorObject, timeElapsed, lineNumberOffset
 
-      if doReparse == 1 then {
+      if doReparse === 1 then {
          # Get time spent in reparsing the code
          timeElapsed := &time
          # Clear errors
@@ -507,15 +512,11 @@ class BuffEditableTextList : EditableTextList(
    end
 
    method GetCode()
-      local codeSubStringList, originalPositionY, currentPositionY,
-              startPositionY, endPositionY, token, endsneeded
+      local codeSubStringList, originalPositionY, currentPositionY, token,
+              startPositionY := 0, endPositionY := 0, endsneeded
 
       # reset parser
       reinitialize()
-
-      # Initialize positions	
-      startPositionY := 0
-      endPositionY := 0
 
       # Search up for the enclosing procedure or class (compilation unit).
       originalPositionY := currentPositionY := cursor_y

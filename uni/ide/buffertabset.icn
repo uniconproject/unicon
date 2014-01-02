@@ -52,6 +52,19 @@ class BufferTabSet : TabSet()
          CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
 
+   #
+   # Set which tab is currently on display.
+   # @param x  The {TabItem} to be displayed.
+   #
+   # Functionality added to set focus in editbox
+   # associated with current tab item
+   #
+   method set_which_one(x)
+      self.TabSet.set_which_one(x)
+      uidlog.set_focus(ide.CurrentEditBox())
+      return x
+   end
+
    method tab_right(c)
       local i
       if *components = 1 then fail

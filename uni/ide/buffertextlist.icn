@@ -58,9 +58,9 @@ class IDEKeybindings : Keybindings(mode, prefix)
 	      Key_Home, "ide_key_home",
 	      Key_End,  "ide_key_end",
 	      "\^a",    "handle_start_of_line",
-	      "\^b",    "handle_key_left",
+	      "\^b",    "backward_char",
 	      "\^c",    "handle_prefix",
-	      "\^f",    "handle_key_right",
+	      "\^f",    "forward_char",
 	      "\^n",    "handle_key_down",
 	      "\^p",    "handle_key_up",
 	      "\^v",    "handle_key_page_down",
@@ -71,7 +71,25 @@ class IDEKeybindings : Keybindings(mode, prefix)
 	      "\^x\^x", "exchange_point_and_mark",
 	      "\^x\^f", "find_file",
 	      "\^x\^s", "save_buffer",
-	      "\^x\^n", "next_error")
+	      "\^x\^n", "next_error"
+# Proposed function key bindings. Still under construction.
+# Loosely based on Borland-style IDE keybindings.
+#
+# Key	Base		Control     Alt		Shift
+#  F1   Help		search@crsr help/srch	help index
+#  F2	Save file	restart	    Find(next)	grep
+#  F3	Open file	callstack   closewin	New file
+#  F4   Run to cursor
+#  F5	Toggle breakpt		    User screen
+#  F6	Next win				Previous win
+#  F7	Step		set watchpt
+#  F8	Next		set breakpt
+#  F9	Make		Run	    Compileonly Run/debug
+# F10	Main menu		
+# F11	runtime msgs	project dlg inspect
+# F12	compiler msgs	toggle ivib
+# alt-x = exit
+	      )
    end
 initially
    self.Keybindings.initially()
@@ -91,6 +109,14 @@ class BuffEditableTextList : EditableTextList(
    paren_match_found
    )
 
+   method forward_char(e)
+      handle_key_right(e)
+   end
+
+   method backward_char(e)
+      handle_key_left(e)
+   end
+
    # HOME goes to beginning of line, ^HOME goes to beginning of file
    method ide_key_home(e)
       if &control then handle_key_home(e)
@@ -104,7 +130,7 @@ class BuffEditableTextList : EditableTextList(
    end
 
    method fire(type, param)
-      self$Connectable.fire(type,param)
+      self$Connectable.fire(type, param)
       if type === CONTENT_CHANGED_EVENT then {
 	 # Optimize this blind any-change==reparse logic to be more
 	 # selective.  Pressing return won't change the token sequence,
@@ -250,15 +276,18 @@ class BuffEditableTextList : EditableTextList(
 
       left_string(self.cbwin, xp, yp, detab(s))
 
-      Fg(self.cbwin, "pale greyish white")  #rectangle color
+      #rectangle color
+      Fg(self.cbwin, uidlog.ui_Preferences.linenumber_highlight_color)
       yp2 :=  yp + ((asc - desc)/2) - asc
       FillRectangle(self.cbwin, xp - 35, yp2, 40, fh) #rectangle pos
-      Fg(self.cbwin, "weak greyish blue")   #line_num color
-      left_string(self.cbwin, xp - TextWidth(self.cwin, i) - 3 , yp, i)  #line_num pos
+      #line_num color
+      Fg(self.cbwin, uidlog.ui_Preferences.linenumber_text_color)
+      #line_num pos
+      left_string(self.cbwin, xp - TextWidth(self.cwin, i) - 3 , yp, i)
 
       Fg(cbwin, "black")
 
-     # Check if an error line has been set.
+      # Check if an error line has been set.
       if \errorLineNumber then {
          # Check if this string belong to the error line
          if i = errorLineNumber then {
@@ -272,7 +301,9 @@ class BuffEditableTextList : EditableTextList(
       if (v.index = \self.cursor_y) & 
          (v.first <= \self.cursor_x <= v.last) then {
          if \self.has_focus then {
-            cw := Clone(self.cbwin, "bg=red", "fg=white")
+            cw := Clone(self.cbwin,
+			"bg="||uidlog.ui_Preferences.cursor_highlight_color,
+                        "fg="||uidlog.ui_Preferences.cursor_text_color)
             off := TextWidthEx(self.cbwin, s, 1, si, self.tab_width)
             EraseRectangle(cw, xp + off, yp - self.line_height / 2, 
                            CharWidth(self.cbwin, s[si]), self.line_height)
@@ -283,7 +314,8 @@ class BuffEditableTextList : EditableTextList(
             Uncouple(cw)
             } 
          else {
-            cw := Clone(self.cbwin, "fg=red")
+            cw := Clone(self.cbwin,
+			"fg="||uidlog.ui_Preferences.cursor_highlight_color)
             Rectangle(cw, 
                       xp + TextWidthEx(self.cbwin, s, 1, si, self.tab_width), 
                       1 + yp - self.line_height / 2, 
@@ -384,7 +416,8 @@ class BuffEditableTextList : EditableTextList(
 
    # New left_string for the UniconTextList
    method left_string_unicon(win, x, y, s, currentLine)
-      local i, token, last_s_Position, new_s_Position, off, remainder
+      local i, token, last_s_Position, new_s_Position, off, remainder, prefs
+      prefs := uidlog.ui_Preferences
 
       y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
       # Check if an error line has been set.
@@ -392,7 +425,7 @@ class BuffEditableTextList : EditableTextList(
          # Check if this string belong to the error line
          if currentLine = errorLineNumber then {
             # Set error line color (red)
-            Fg(win, "Red")
+            Fg(win, prefs.error_text_color)
             # Print the string
             DrawString(win, x, y, s)
             # Exit this method
@@ -412,8 +445,7 @@ class BuffEditableTextList : EditableTextList(
 
       # Initialize string s position variables
       off := 0
-      new_s_Position  := 1
-      last_s_Position := 1
+      new_s_Position := last_s_Position := 1
 
       # Get string s tokens
       while (token := yylex()) ~=== EOFX do {
@@ -470,15 +502,11 @@ class BuffEditableTextList : EditableTextList(
          uni_predefs := predefs()
 
          # Get the line number offset and the code
-         s := []
          x := 1
-         s |||:= GetCode()
+         s := copy(GetCode()) | []
 
          # Extract the line number offset		
-         lineNumberOffset := s[1]
-
-         # Remove the line number offset from the list
-         pop( s )
+         lineNumberOffset := pop(s)
 
          # Call the preprocessor but instead of passing a file name, 
          # we will pass a list containing the code

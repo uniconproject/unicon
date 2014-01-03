@@ -16,11 +16,12 @@ UFLAGS2=-c
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn modified.icn preferences.icn \
 	templates.icn definitions.icn uproject.icn \
-	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn
+	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
+	qu_replace.icn 
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
-	uproject.u classbrowser.u imgs.u utags.u matchparen.u
+	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u
 
 ui:	$(OBJ)
 ifdef EXE
@@ -65,6 +66,9 @@ definitions.u: definitions.icn
 
 uproject.u: uproject.icn
 	$(UC) $(UFLAGS) uproject
+
+qu_replace.u: qu_replace.icn
+	$(UC) $(UFLAGS) qu_replace
 
 #idol.u: idol.icn
 #	$(UC) $(UFLAGS2) idol

@@ -40,7 +40,7 @@ class IDE (
    method on_new_btn(ev)
       new_tabitem(,0,"","")
 
-      uidlog.tab_item_1.set_label("Messages: (Single File Mode)")
+      uidlog.tab_item_1.set_label("Messages:")
       uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
       uidlog.tab_item_1.init()
       uidlog.DevTabSet.resize()
@@ -49,7 +49,7 @@ class IDE (
    method on_open_btn(ev)
       handle_openfile(ev,,uidlog.FileTabSet)
 
-      uidlog.tab_item_1.set_label("Messages: (Single File Mode)")
+      uidlog.tab_item_1.set_label("Messages:")
       uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
       uidlog.tab_item_1.init()
       uidlog.DevTabSet.resize()
@@ -762,17 +762,17 @@ $endif
 	 saveas()
 	 }
 
-      fdir := chdir(filedirectory)
+      fdir := chdir(CurrentTabItem().filedirectory)
       if /project then {
-	 if not (arglist := comp1file(\CurrentTabItem().label)) then {
-	    s := \CurrentTabItem().label #tab_label
+	 if not (arglist := comp1file(\CurrentTabItem().filename)) then {
+	    s := \CurrentTabItem().filename
 	    if find(".icn", map(s)) then {
 	       s[find(".icn", map(s)) : 0] := ".u"
 	       if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"
 	       }
 	    arglist := quotes(s)
 	    }
-	 icodename := CurrentTabItem().label
+	 icodename := CurrentTabItem().filename
 	 if find(".icn", map(icodename)) then 
 	    icodename[find(".icn", map(icodename)) : 0] := ""
 	 }
@@ -1261,7 +1261,7 @@ class UpdatedTextDialog : Dialog(caption,message)
    method component_setup()
       local l, bn1, bn2
       l := Label("label="||message,"pos=50%,33%","size=100%,20%",
-		  "align=c,c","internal_alignment=c")
+		 "align=c,c","internal_alignment=c")
       add(l)
 
       bn1 := TextButton("label=OK","pos=45%,66%","size=60,30","align=c,c")

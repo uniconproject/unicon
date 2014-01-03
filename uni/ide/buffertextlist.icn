@@ -130,6 +130,7 @@ class BuffEditableTextList : EditableTextList(
    end
 
    method fire(type, param)
+   local t1, t2
       self$Connectable.fire(type, param)
       if type === CONTENT_CHANGED_EVENT then {
 	 # Optimize this blind any-change==reparse logic to be more
@@ -138,7 +139,12 @@ class BuffEditableTextList : EditableTextList(
 	 doReparse := 1
 	 }
       if type === CURSOR_MOVED_EVENT & old_cursor_y ~= cursor_y then {
+	 t1 := &time
 	 ReparseCode()
+	 t2 := &time
+	 if t2 - t1 > 150 then
+	    write(&errout, "syntax checking is slow in here (", t2-t1,
+		  "ms); consider disabling it")
 	 }
    end
 
@@ -180,7 +186,7 @@ class BuffEditableTextList : EditableTextList(
    end
 
    method handle_return(e)
-      local i, str
+      local i, str, t1, t2
       self.EditableTextList.handle_return(e)
       if \autoindent then{ 
 	 str := contents[cursor_y - 1]
@@ -196,13 +202,19 @@ class BuffEditableTextList : EditableTextList(
 	    }
         }
       # Reparse code when the cursor moves in the Y axis
-      ReparseCode( )
+      t1 := &time
+      ReparseCode()
+      t2 := &time
+      if t2 - t1 > 150 then
+	 write(&errout, "syntax checking is slow in here (", t2-t1,
+	       "ms); consider disabling it")
    end
 
    #
    # Overrides default handle_event() re-parsing on line changes, etc.
    #
    method handle_event(e)
+   local t1, t2
       if integer(e) = &mpress then
 	 simulate_wheelbutton()
       # turn scroll up/down into a key_up/down in the vsb.
@@ -212,7 +224,35 @@ class BuffEditableTextList : EditableTextList(
          every 1 to 4 do (\vsb).handle_button_down(e)
       else self.EditableTextList.handle_event(e)
       
-      if \self.old_cursor_y ~= self.cursor_y then ReparseCode()
+      if \self.old_cursor_y ~= self.cursor_y then {
+	 t1 := &time
+	 ReparseCode()
+	 t2 := &time
+	 if t2 - t1 > 150 then
+	    write(&errout, "syntax checking is slow in here (", t2-t1,
+		  "ms); consider disabling it")
+	 }
+      
+      if \self.changed then {
+         #ide.modified:=1
+         if not (ide.CurrentTabItem().label[-1] == "*") then {
+            ide.CurrentTabItem().label := ide.CurrentTabItem().label || "*"
+            uidlog.FileTabSet.resize()
+            }
+         if \uidlog.ui_Preferences.paren_check_box_state then {
+            if \self.match_paren() then {
+               self.contents_changed()
+               self.fire(CURSOR_MOVED_EVENT, e)
+               }
+            if \paren_match_found then {
+               self.cursor_update()
+               self.contents_changed()
+               self.fire(CURSOR_MOVED_EVENT, e)
+               }
+            }
+         uidlog.FileBrowser.addreplace(self.get_contents(),
+                                       uidlog.FileTabSet.which_one.filename, 0)
+         }
    end
 
    #
@@ -417,8 +457,8 @@ class BuffEditableTextList : EditableTextList(
    # New left_string for the UniconTextList
    method left_string_unicon(win, x, y, s, currentLine)
       local i, token, last_s_Position, new_s_Position, off, remainder, prefs
-      prefs := uidlog.ui_Preferences
 
+      prefs := uidlog.ui_Preferences
       y +:= (WAttrib(win, "ascent") - WAttrib(win, "descent")) / 2
       # Check if an error line has been set.
       if \errorLineNumber then {
@@ -447,21 +487,23 @@ class BuffEditableTextList : EditableTextList(
       off := 0
       new_s_Position := last_s_Position := 1
 
-      # Get string s tokens
-      while (token := yylex()) ~=== EOFX do {
-         # Set token color
-         case token of {
-            ABSTRACT | BREAK | BY | CASE | CLASS | CREATE |
-            DEFAULT | DO | ELSE | END | EVERY | FAIL | 
-            GLOBAL | IF | IMPORT | INITIALLY | 
-            iconINITIAL | INVOCABLE | LINK | LOCAL | 
-            METHOD | NEXT | NOT | OF | PACKAGE | 
-            PROCEDURE | RECORD | REPEAT | RETURN | STATIC | 
-            SUSPEND | THEN | TO | UNTIL | WHILE | GLOBAL | 
-            LOCAL                                         : Fg(win, "Blue")
-            STRINGLIT | CSETLIT                           : Fg(win, "Dark Red")
-            default                                       : Fg(win, "Black")
-            }
+      if \uidlog.ui_Preferences.syntax_check_box_state then {
+         # Get string s tokens
+         while (token := yylex()) ~=== EOFX do {
+            # Set token color
+            Fg(win, case token of {
+               ABSTRACT | BREAK | BY | CASE | CREATE |
+               DEFAULT | DO | ELSE | EVERY | FAIL |
+               IF | INITIALLY | iconINITIAL |
+               INVOCABLE | NEXT | NOT | OF |
+               RECORD | REPEAT | RETURN | SUSPEND |
+               THEN | TO | UNTIL | WHILE          : prefs.syntax_text_color
+               GLOBAL | LINK | STATIC |
+               IMPORT | PACKAGE | LOCAL           : prefs.glob_text_color
+               PROCEDURE |CLASS | METHOD | END    : prefs.procedure_text_color
+               STRINGLIT | CSETLIT                : prefs.quote_text_color
+               default                            : prefs.default_text_color
+               })
             # Get token end position in string s
             new_s_Position := yytoken["column"] + *yytoken["s"] - 1
             # Print the string
@@ -469,17 +511,22 @@ class BuffEditableTextList : EditableTextList(
             # Get the printed text of string s offset
             off := TextWidth(win, s[ last_s_Position : (new_s_Position + 1)])
 
-           # Get the new last string s starting position
-           last_s_Position := new_s_Position + 1
-           # Add the offset to the x position
-           x +:= off
-      }
-      # Draw the rest of the string s that was not a token
-      Fg( win, "very dark green" )
-      remainder := s[ last_s_Position : ( *s + 1 ) ]
+            # Get the new last string s starting position
+            last_s_Position := new_s_Position + 1
+            # Add the offset to the x position
+            x +:= off
+            }
+         
+         # Draw the rest of the string s that was not a token
+         Fg(win, prefs.comment_text_color)#Very Dark Green
+         }
+      else
+         Fg(win, prefs.default_text_color)
+
+      remainder := s[ last_s_Position : 0 ]
       if *(trim(\remainder)) > 0 then
-         DrawString( win, x, y, s[ last_s_Position : ( *s + 1 ) ] )
-      Fg( win, "dark green" )
+         DrawString( win, x, y, s[ last_s_Position : 0 ] )
+      Fg(win, prefs.text_highlight_color)
    end
 
    method SetErrorLineNumber ( lineNumber )

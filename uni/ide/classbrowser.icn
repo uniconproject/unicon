@@ -124,7 +124,7 @@ class  ClassBrowser : Tree(
    # then goto the node's line in it's parent's file.
    #
    method handle_press(e)
-      local l, lno, N, curr_sel, yp, xp
+      local l, lno, N, curr_sel, yp, xp, c, i
       if (view.x <= &x < view.x + view.w) &
 	 (view.y  <= &y < view.y + view.h) then {
 	 lno := (&y - view.y) / line_height
@@ -144,22 +144,21 @@ class  ClassBrowser : Tree(
 		  #
 		  # Clicking on the little icon ends the sequence, and sets
 		  # the selection to the given node.
-                  #
-                  start_handle(e)
-                  curr_sel := object_get_selections()
-                  N.toggle_expanded()
-                  last_expanded := N
-                  tree_structure_changed()
-                  is_held := &null
-                  if not lang::equals(object_get_selections(), curr_sel) then
-                     selchange := 1
-                  fire(TREE_NODE_EXPANSION_EVENT, e)
-                  end_handle(e)
-                  }
-
-            }
+		  #
+		  start_handle(e)
+		  curr_sel := object_get_selections()
+		  N.toggle_expanded()
+		  last_expanded := N
+		  tree_structure_changed()
+		  is_held := &null
+		  if not lang::equals(object_get_selections(), curr_sel) then
+		     selchange := 1
+		  fire(TREE_NODE_EXPANSION_EVENT, e)
+		  end_handle(e)
+		  }
+	       }
             if find(".icn",N.label) then {
-               c:= uidlog.FileTabSet.get_tabitem(N.label)
+               c := uidlog.FileTabSet.get_tabitem(N.label)
                uidlog.FileTabSet.set_which_one(\c)
                }
 
@@ -176,8 +175,7 @@ class  ClassBrowser : Tree(
    # Contents is a list of Tags (nodes).
    #
    method filltree(contents)
-      local i
-      if \contents then every  i :=  ! contents do files_root.add(i)
+      every files_root.add(!\contents)
       set_root_node(files_root)
    end
 

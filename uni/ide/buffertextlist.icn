@@ -255,6 +255,59 @@ class BuffEditableTextList : EditableTextList(
          }
    end
 
+   method cursor_update()
+      delay(300)
+      paren_match_found:=&null
+      self.cursor_y := self.old_cursor_y 
+      self.cursor_x := self.old_cursor_x
+   end
+   
+   method match_paren()
+      local paren, paren_closing, paren_string, paren_string_rest, paren_grid,
+         paren_pos, virtual_pos, counter, i, j, msgboxdata
+      paren := MatchParen()
+      paren_closing := ')]}'
+      paren_string := ""
+      paren_string_rest := ""
+      paren_grid := table()
+      
+      if member(paren_closing, contents[cursor_y, cursor_x - 1]) then {
+         every i := 1 to self.cursor_y - 1 do {
+            paren_string ||:= self.contents[i]
+            insert(paren_grid, i, self.contents[i])
+         }
+         virtual_pos := *paren_string + self.cursor_x
+         
+         paren_string_rest := self.contents[self.cursor_y]
+         paren_string_rest := paren_string_rest[1:self.cursor_x+1]
+
+         paren_string||:=paren_string_rest
+         insert(paren_grid, self.cursor_y, paren_string_rest)
+         
+         paren_pos := paren.test(\paren_string, virtual_pos)
+         
+         if \paren_pos then {
+            counter := 0
+            self.old_cursor_y := self.cursor_y
+            self.old_cursor_x := self.cursor_x
+            every i := 1 to self.cursor_y do {
+               every j := 1 to *paren_grid[i] do {
+                  counter +:= 1
+                  if counter = paren_pos then {
+                     self.cursor_y := i
+                     self.cursor_x := j
+                     uidlog.MsgBox.set_contents([self.contents[i]])
+                     uidlog.MsgBox.display()
+                     self.display()
+                     return paren_match_found := 1
+                  }
+               }
+            }
+         }
+      }
+      fail
+   end
+   
    #
    # The virtual x position of a line in the canvas, except
    # that we have line numbering turned on at the left.
@@ -287,6 +340,8 @@ class BuffEditableTextList : EditableTextList(
       # Left offset
       #
       xp := vx - subject_x
+      # ... make it a scalable offset
+      xp := ((((*self.get_last_line()) / 1.75) * self.line_height) + xp - 30)
 
       rev := Clone(self.cbwin, "drawop=reverse")
 
@@ -588,14 +643,15 @@ class BuffEditableTextList : EditableTextList(
 
    method GetCode()
       local codeSubStringList, originalPositionY, currentPositionY, token,
-              startPositionY := 0, endPositionY := 0, endsneeded
+              startPositionY := 0, endPositionY := 0, endsneeded,
+	      inClass := 0, inMethod := 0
 
       # reset parser
       reinitialize()
 
       # Search up for the enclosing procedure or class (compilation unit).
       originalPositionY := currentPositionY := cursor_y
-      endsneeded := 1
+      # used to assign this here: endsneeded := 1
       while currentPositionY > 0 do {
          # Reinitialize lexical analyzer
          yyin := contents[currentPositionY]
@@ -608,8 +664,13 @@ class BuffEditableTextList : EditableTextList(
                   startPositionY := currentPositionY
                   break
                   }
+               METHOD : {
+		  inMethod := 1
+                  startPositionY := currentPositionY
+                  break
+                  }
                CLASS : {
-		  endsneeded := 2
+		  inClass := 1
                   startPositionY := currentPositionY
                   break
                   }
@@ -626,6 +687,7 @@ class BuffEditableTextList : EditableTextList(
       while currentPositionY < *contents + 1 do {
          # Reinitialize lexical analyzer
          yyin := contents[ currentPositionY ]
+         yylex_reinit()
 	 while countdoublequotes(yyin)%2=1 & yyin[-1]=="_" do {
 	    currentPositionY +:= 1
 	    yyin ||:= contents[ currentPositionY ]
@@ -636,18 +698,14 @@ class BuffEditableTextList : EditableTextList(
             # Get tokens
             case token of {
                END: {
-		  endsneeded -:= 1
-		  if endsneeded = 0 then {
-		      endPositionY := currentPositionY
-		      break
-		      }
-                  }
-               METHOD: {
-                  endsneeded +:= 1
+		  endPositionY := currentPositionY
+		  break
                   }
                CLASS | PROCEDURE: {
-                  endPositionY := currentPositionY
-                  break
+		  if currentPositionY ~= startPositionY then {
+		     endPositionY := currentPositionY-1
+		     break
+		     }
                   }
                default : break
                }
@@ -664,8 +722,23 @@ class BuffEditableTextList : EditableTextList(
          }
       # Send only the enclosing sub string list
       if startPositionY = 0 then startPositionY := 1
-      codeSubStringList := [ startPositionY ] ||| 
-                           contents[ startPositionY : endPositionY + 1 ]
+
+      if inMethod = 1 then {
+	 codeSubStringList := [ startPositionY, "class __Parse()" ] ||| 
+				contents[ startPositionY : endPositionY+1 ]|||
+			      ["end"]
+	 }
+      else if inClass = 1 then {
+	 codeSubStringList := [ startPositionY ] ||| 
+				contents[ startPositionY : endPositionY+1 ]|||
+			      ["end"]
+	 }
+      else {
+	 codeSubStringList := [ startPositionY ] ||| 
+				contents[ startPositionY : endPositionY+1 ]
+	 }
+      # check what we came up with to parse
+      # every write("\t", codeSubStringList[2 to *codeSubStringList])
       return codeSubStringList
    end
 
@@ -678,7 +751,7 @@ class BuffEditableTextList : EditableTextList(
       scroll_y := 1
 
       errorLineNumber := 0
-      doReparse := 0
+      doReparse := 1
 
       # This variable comes from the unilex.icn file
       errors := 0

@@ -157,17 +157,22 @@ class  ClassBrowser : Tree(
 		  end_handle(e)
 		  }
 	       }
-            if find(".icn",N.label) then {
-               c := uidlog.FileTabSet.get_tabitem(N.label)
-               uidlog.FileTabSet.set_which_one(\c)
-               }
-
-               last_selected := contents[1]
-               ide.goto_line(N.lineno,1)
-               ide.CurrentEditBox().highlight_line(N.lineno)
-
+	    if find(".icn",N.parentfile) then {
+               every i:=!uidlog.FileTabSet.children do {
+                  if i.label == N.parentfile then {
+                     c := uidlog.FileTabSet.get_tabitem(N.parentfile)
+                     uidlog.FileTabSet.set_which_one(\c)
+                     }
+                  if i.label == N.parentfile||"*" then {
+                     c := uidlog.FileTabSet.get_tabitem(N.parentfile||"*")
+                     uidlog.FileTabSet.set_which_one(\c)
+                     }
+                  }
+	       }
+            last_selected := contents[1]
+            goto(N.lineno)
+            }
          }
-      }
       self.SelectableScrollArea.handle_press(e)
    end
    #
@@ -218,20 +223,27 @@ class  ClassBrowser : Tree(
    # Go To Method: A Node was clicked. Set the focus on Tab with the label
    # Tab Label and go to and highlight the line number Line.
    # 
-   method goto(tab_label,line)
-      local c
-      if /tab_label | /line then fail
-      c := ide.uidlog.FileTabSet.get_tabitem(tab_label)  
-      if /c then fail
- 
-      ide.uidlog.FileTabSet.set_which_one(c)
-      ide.CurrentEditBox().highlight_line( line )
-      ide.set_focus(ide.CurrentEditBox())
-   end
+   method goto(line)
+      local ceb, comment_adjust:=0, i:=1
 
-   method highlight_line(i)
-      start_handle()
-      end_handle()
+      ceb := ide.CurrentEditBox()
+      
+      if find("#", ceb.contents[line-2] | ceb.contents[line-1]) then {
+         comment_adjust +:= 2
+         every i := 3 to 6 do
+            if find("#", ceb.contents[line-i]) then comment_adjust +:= 1
+         }
+             
+      ceb.ensure_row_visible(line + ceb.get_max_lines())
+      ceb.ensure_row_visible(line - comment_adjust)
+      ceb.start_handle()
+      if /line  then line := 1
+      if not (*ceb.contents >=  line > 1) then line := 1
+      ceb.mark_x := 1
+      ceb.mark_y := line
+      ceb.cursor_y := line
+      ceb.cursor_x := 1
+      ceb.end_handle()
    end
 
 initially()

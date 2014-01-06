@@ -32,19 +32,19 @@ $include "guih.icn"
 link mainbar
 link getpaths
 link classbrowser
-link enqueue
+link enqueue, preferences
 link unigram, idol, tree, preproce, unilex, unicon, yyerror
 
 global linebreak, uidlog, browser, docpath,
-       current_dir, is_MSWindows, PATHSEP, env, win_position
+       current_dir, is_MSWindows, PATHSEP, env, win_position,
+       fontname
 
 #$define lpr "enscript -b \" \" -1 -Plex3normal"
 ##$define HELP_PATH "help"
 
 class UIDE : Dialog(
    #
-   # class variables for various objects in the dialog that are dynamically
-   # manipulated
+   # The class variables, generally representing components in the dialog.
    #
    uide,
    startfile,
@@ -52,10 +52,12 @@ class UIDE : Dialog(
    MsgBox, EditBox,
    FileTabSet,ClassTabSet, DevTabSet,
    FileBrowser,
-   tab_item_1, tab_item_2, tab_item_3
+   tab_item_1, tab_item_2, tab_item_3, tab_item_4,
+   ui_Preferences
    )
 
    method component_setup()
+      local error_msg := pre_ui_initialize()
       self.setup()
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
@@ -82,6 +84,30 @@ class UIDE : Dialog(
       if map(docpath[-4:0])==("bin/"|"bin\\") then docpath[-4:0] := ""
       else write("did not find expected Unicon binaries in a bin/ directory")
    end
+
+   #
+   # pre initialization procedure
+   #
+   method pre_ui_initialize()
+      local blank_window, error_msg
+      ui_Preferences := DialogPreferences()
+      error_msg := menubar.load_config()
+      if \ui_Preferences.paren_check_box_state == "" then
+	  ui_Preferences.paren_check_box_state := &null
+      if \ui_Preferences.syntax_check_box_state == "" then
+	  ui_Preferences.syntax_check_box_state := &null
+      if not (blank_window := open("u_ide_blank", "g", "canvas=hidden")) then
+	 fail
+      if /win_position then win_position := "2,3"
+      if /height then height := WAttrib(blank_window, "displayheight") - 150
+      if /width then width := WAttrib(blank_window, "displaywidth") - 150
+      close(blank_window)
+      if /msglines then msglines := 7
+      if /fontname then fontname := "sans,15"
+      if /linebreak then linebreak := "LF"  # default to UNIX mode
+      if \error_msg then return error_msg
+   end
+
    #
    # main initialization procedure
    #
@@ -106,9 +132,9 @@ class UIDE : Dialog(
 
       wiconlog := tempname("ui",".tmp",,)
       xargs := ""
-      if /is_MSWindows then{
+      if /is_MSWindows then {
          every browser := getenv("BROWSER") |
-                       "firefox" | "netscape" | "mozilla"| "opera" do {
+			  "firefox" | "netscape" | "mozilla"| "opera" do {
             if stat(getpaths() || browser) then {
                MsgBox.set_contents(["found browser " || browser])
                break
@@ -119,9 +145,9 @@ class UIDE : Dialog(
      else
         (browser := "\"" || WinAssociate("HTM") || "\"" ) |
          write("What, no browser?  Unicon's online help won't be readable \n_
-             until you associate an HTML reader application with the HTM \n_ 
+             until you associate an HTML reader application with the HTM \n_
              file extension.\n")
-     
+
       set_docpath()
    end
 
@@ -137,8 +163,144 @@ class UIDE : Dialog(
       menubar.set_font()
       # queue up an lpress to set the initial focus to the editor buffer
       if \win then {
-	  Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
-      }
+	 Enqueue(\win, &lpress, EditBox.x+2, EditBox.y+2)
+	 }
+   end
+
+# Proposed function key bindings. Still under construction.
+# Loosely based on Borland-style IDE keybindings.
+#
+#  Key	Base		Control     Alt		Shift
+#  F1   Help		search@crsr help/srch	help index
+#  F2	Save file	restart	    Find(next)	grep
+#  F3	Open file	callstack   closewin	New file
+#  F4   Run to cursor
+#  F5	Toggle breakpt		    User screen
+#  F6	Next win/tab				Previous win
+#  F7	Step		set watchpt
+#  F8	Next		set breakpt
+#  F9	Make		Run	    Compileonly Run/debug
+#  F10	Main menu		
+#  F11	runtime msgs	project dlg inspect
+#  F12	compiler msgs	toggle ivib
+# alt-x = exit
+
+
+   #
+   # Generic implementation
+   #
+   method on_function_key(ev)
+      case ev.param of {
+	 Key_F1:   ide_key_file_menu()
+	 Key_F2:   ide_key_help_menu()
+	 Key_F3:   ide_handle_save()
+	 Key_F4:   ide_handle_open()
+	 Key_F5:   ide_prev_tab()
+	 Key_F6:   ide_next_tab()
+	 Key_F7:   ""#ide_handle_compile()
+	 Key_F8:   ""#ide_handle_run()
+	 Key_F9:    ""
+	 Key_F10:   ""
+	 Key_F11:   ""
+	 Key_F12:  ide_handle_exit()
+	 }
+   end
+
+   #
+   # compile and run are not reliable enough yet to
+   # implement these shortcuts
+   #
+   method ide_handle_compile()
+      ide.on_makeexe_btn()
+   end
+
+   method ide_handle_run()
+      ide.on_run_btn()
+   end
+
+   method ide_handle_exit()
+      menubar.on_exit()
+   end
+
+   method ide_handle_open()
+      ide.on_open_btn()
+   end
+
+   method ide_handle_save()
+      ide.on_save_btn()
+      ide.CurrentEditBox().handle_event()
+    end
+
+   method ide_next_tab()
+      local i, fs, cs, ct
+      fs := FileTabSet
+      cs := FileTabSet.children
+      ct := ide.CurrentTabItem()
+
+      if  *cs = 1 then fail
+      every i := 1 to *cs do if cs[i] === ct then break
+      if (i > *cs) | (cs[i] ~=== ct) then fail
+      if cs[*cs] === ct then
+         fs.set_which_one(cs[1])
+      else
+         fs.set_which_one(cs[i+1])
+   end
+
+   method ide_prev_tab()
+      local i, fs, cs, ct
+      fs := FileTabSet
+      cs := FileTabSet.children
+      ct := ide.CurrentTabItem()
+
+      if  *cs = 1 then fail
+      every i := 1 to *cs do if cs[i] === ct then break
+      if (i > *cs) | (cs[i] ~=== ct) then fail
+      if cs[1] === ct then
+         fs.set_which_one(cs[-1])
+      else
+         fs.set_which_one(cs[i-1])
+   end
+
+   method ide_key_file_menu()
+      local m, b, r
+      m := menubar.menu_bar_1.menus
+      b := menubar.menu_bar_1
+      uidlog.set_focus(b)
+#      if not b.has_focus then
+#         set_focus(b)
+      if (r := !m).label == "File" then {
+         if \b.which_open then {
+            if b.which_open === r then
+               b.set_which_open()
+            else
+               b.set_which_open(r)
+            }
+         else {
+            b.set_which_open(r)
+            }
+       #  self.unique_end()
+         }
+   end
+
+   method ide_key_help_menu()
+      local m, b, r
+      m := menubar.menu_bar_1.menus
+      b := menubar.menu_bar_1
+      uidlog.set_focus(b)
+#      if not b.has_focus then
+#         set_focus(b)
+      if (r := !m).label == "Help" then {
+         if \b.which_open then {
+            if b.which_open === r then
+               b.set_which_open()
+            else
+               b.set_which_open(r)
+            }
+         else {
+            b.set_which_open(r)
+            }
+      #   self.unique_end()
+         }
    end
 
    method on_close(ev)
@@ -146,7 +308,12 @@ class UIDE : Dialog(
    end
 
    method setup()
-      self.set_attribs("size=750,560", "bg=pale gray", "label=Unicon IDE", "font=sans,14", "resize=on")
+      self.min_width := 645
+      self.min_height := 485
+      self.set_attribs("size="||width||","||height, "pos="||win_position,
+		       "bg=pale gray",
+		       "label=Unicon IDE", "font=sans,15", "resize=on")
+
       DevTabSet := TabSet()
       DevTabSet.set_pos("0", "100%-110")
       DevTabSet.set_size("100%", "110")
@@ -156,7 +323,7 @@ class UIDE : Dialog(
       MsgBox.set_pos("2", "2")
       MsgBox.set_size("100%-4", "100%-4")
       MsgBox.set_draw_border()
-      MsgBox.set_attribs("bg=white")
+      MsgBox.set_attribs("bg=white", "font="||fontname)
       MsgBox.set_contents([""])
       tab_item_1.add(MsgBox)
       DevTabSet.add(tab_item_1)
@@ -171,7 +338,8 @@ class UIDE : Dialog(
       EditBox.set_pos("2", "2")
       EditBox.set_size("100%-4", "100%-4")
       EditBox.set_draw_border()
-      EditBox.set_attribs("bg=white")
+      EditBox.set_attribs("bg="||ui_Preferences.val_background_color,
+			  "font="||fontname)
       EditBox.set_contents([""])
       tab_item_2.add(EditBox)
       FileTabSet.add(tab_item_2)
@@ -353,7 +521,7 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    every maxl <:= *(labels | defaults | widths)
    until *labels = maxl do put(labels, labels[-1] | "")
    until *defaults = maxl do put(defaults, defaults[-1] | "")
-   until *widths = maxl do put(widths, widths[-1] | 10) 
+   until *widths = maxl do put(widths, widths[-1] | 10)
 
    id := 0
 
@@ -418,7 +586,7 @@ procedure ui_Warning(s, lineno, filenam)
    local msg := ""
    if \filenam then msg := msg || filenam || ":"
    if \lineno then msg := msg || lineno || ":"
-   msg ||:= ": " || s 
+   msg ||:= ": " || s
    uidlog.MsgBox.set_contents([msg])
 end
 
@@ -457,7 +625,7 @@ end
 #nteger|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen I
 #nitially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min He
 #ight|null|Ticker Rate|null|Attribs|list|4|string|bg=pale gray|string|l
-#abel=Unicon IDE|string|font=sans,14|string|resize=on|Name|string|UIDE|
+#abel=Unicon IDE|string|font=sans,15|string|resize=on|Name|string|UIDE|
 #Width|integer|750|Height|integer|560|Items|list|4|class|CanvasTabSet|2
 #7|Parent Canvas|1|Name|string|DevTabSet|Class Name|string|TabSet|Impor
 #t Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defaul

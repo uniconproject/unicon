@@ -18,7 +18,6 @@ global targs,browser,
    fontheight,msglines,
    linebreak,ui_ini,filename,
    flag,configdlg,
-   tabs_num,
    opened_files_set,
    opened_files_num,
    tab_label,
@@ -28,48 +27,27 @@ global targs,browser,
 #
 # Class IDE
 #
-
 class IDE (
    class_btn, close_btn, method_btn, new_btn, open_btn, procedure_btn,
-   copy_btn, cut_btn, find_btn, paste_btn, undo_btn, redo_btn, 
-   opened_file, tablist, tabItem, view_3d, errors_list, errLine, 
-   modified, filefound, menu_1, fileOpened, projectCompiled, find_next_btn,  
+   copy_btn, cut_btn, find_btn, paste_btn, undo_btn, redo_btn,
+   opened_file, tablist, tabItem, view_3d, errors_list, errLine,
+   modified, filefound, menu_1, fileOpened, projectCompiled,
+   toggle_find_dir_btn, text_field_search,
    needConsole
    )
 
-   method on_new_btn(ev)
-      new_tabitem(,0,"","")
-
-      uidlog.tab_item_1.set_label("Messages:")
-      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
-      uidlog.tab_item_1.init()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_open_btn(ev)
-      handle_openfile(ev,,uidlog.FileTabSet)
-
-      uidlog.tab_item_1.set_label("Messages:")
-      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
-      uidlog.tab_item_1.init()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_close_btn(ev)
-      if ide.CurrentTabItem().label ~== "scratch" then {
-	 uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().label)
-	 handle_closefile()
-	 uidlog.FileTabSet.set_which_one(uidlog.tab_item_2)
-	 uidlog.FileTabSet.resize()
-	 }
-   end
-
-   method on_save_btn(ev)
-      save()
-   end
-
-   method on_saveas_btn(ev)
-      saveas()
+   method system(s, lst, apnd, alternate_txt)
+      local rv
+      static realsys
+      initial realsys := proc("system", 0)
+      if /s then fail
+      /lst := []
+      if /apnd then while pop(lst)
+      put(lst,\alternate_txt | s)
+      WAttrib("pointer=wait")
+      rv := realsys(s)
+      WAttrib("pointer=arrow")
+      if \rv then return rv
    end
 
    method on_print_file(ev)
@@ -78,22 +56,551 @@ class IDE (
       if f := open(lpr, "pw") then {
 	 every write(f, trim(!L,'\^m'))
 	 close(f)
-       }
-      else {
+         }
+      else
 	 uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
-       }
    end
 
-   method on_ivib(ev)
-      local L := []
-      if CurrentTabItem().label==="Untitled" then {
-	 system("ivib " || \tab_label, L) | uidlog.MsgBox.set_contents(L)
-	 handle_closefile()
-	 handle_openfile( , tab_label)
+   method on_new_btn(ev)
+      new_tabitem( , 0, "", "", CurrentTabItem().filedirectory)
+
+      uidlog.tab_item_1.set_label("Messages:")
+      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
+      uidlog.tab_item_1.init()
+      uidlog.DevTabSet.resize()
+   end
+
+   method on_open_btn(ev)
+      handle_openfile(ev)
+
+      uidlog.tab_item_1.set_label("Messages:")
+      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
+      uidlog.tab_item_1.init()
+      uidlog.DevTabSet.resize()
+   end
+
+   #
+   # Open File Menu Item Method
+   #
+   method handle_openfile(ev, filename)
+      local line, L, nchars, fd,
+         ufile, tab_label, found,
+         which_tab, c, filedirectory
+
+      if /filename then {
+$ifdef _UNIX
+	 fd := HFileDialog()
+         fd.set_directory(CurrentTabItem().filedirectory)
+	 fd.show_modal()
+	 filename := fd.get_result() | fail
+	 filedirectory := fd.get_directory()
+$else
+	 filename :=
+	    WinOpenDialog(
+            uidlog.win, "Open File ...", "", 5,,,chdir(CurrentTabItem().filedirectory)
+                         ) | fail
+
+$endif
+	 }
+      if /filename | filename=="" | filename[-1]==("\\"|"/") then
+         return \uidlog.MsgBox.set_contents(["Error opening file \"" || file_name(filename) || "\""])
+#      uidlog.MsgBox.set_contents("Enter File Name")
+
+      if  filename[-2:0]==(".*") then filename := filename[1:-2]
+      tab_label := file_name(filename)
+      found := 1
+      file_contents := []
+      nchars := 0
+      if ufile := open(filename, "ru") then
+      while line := read(ufile) do {
+	 if line[-1] == "\^m" then line := line[1:-1]
+	 put(file_contents, line)
+	 nchars +:= *line + 1
+	 }
+      # A loop to check whether or not the file is already open
+      # or if there is a different file open with the same name
+      #every tab_id:=1 to *opened_files_list do {
+      #	 if opened_files_list[tab_id] === file_name(filename) then
+      #	    opened_files_num +:= 1
+      #	 }
+      # We don't have a file open with the same name, so
+      # add a new tab with the file name
+      if not member(opened_files_set, filename) then
+	{
+         # replace with a more general "don't open binary files" mechanism
+	 if map(filename[-2:0])==".o" then
+	    uidlog.MsgBox.set_contents(["Cannot open "||filename])
+	 else {
+	    new_tabitem(,1,file_name(filename),file_contents, filedirectory)
+            \uidlog.MsgBox.set_contents(["opened " || filename || ", " ||
+					 *file_contents || " lines, " ||
+					 nchars || " characters"])
+	    uidlog.FileTabSet.set_which_one(CurrentTabItem())
+	    handle_update()
+	    insert(opened_files_set, filename)
+	    }
 	 }
       else {
-	 system("ivib " ||CurrentTabItem().label, L) |
-	 uidlog.MsgBox.set_contents(["System Failed"])
+	 c := uidlog.FileTabSet.get_tabitem(file_name(filename))
+	 uidlog.FileTabSet.set_which_one(\c)
+	 }
+      CurrentTabItem().filename := file_name(filename)
+      CurrentTabItem().filedirectory := filename[1:-*CurrentTabItem().filename]
+      uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
+				    uidlog.FileTabSet.which_one.filename, 0)
+      uidlog.FileTabSet.resize()
+      uidlog.menubar.set_font()
+   end
+
+   method on_close_btn(ev)
+      handle_closefile()
+   end
+
+   #
+   # Close File Menu Item Method
+   #
+   method handle_closefile(ev, c)
+      local modified, decision, fname, r
+      if /c then c := CurrentTabItem()
+      fname := c.filedirectory || c.filename
+#      if CurrentTabItem().label[-1] := "*" then
+#         CurrentTabItem().label := CurrentTabItem().label[1:-1]
+      uidlog.FileTabSet.set_which_one(c)
+      handle_update()
+
+      if c.label[-1] == "*" then {
+         decision := asksave(c.filename)
+         modified := 1
+         }
+
+      if \decision == "Cancel" then return "Cancel"
+      if \decision == "Save" then on_save_btn(, c)
+
+      if *uidlog.FileTabSet.children = 1 then exit(0)
+
+      if /modified then { # close a non-modified buffer (no * suffix)
+         uidlog.FileTabSet.remove(c)
+         uidlog.MsgBox.set_contents(["closed " || c.filename])
+         delete(opened_files_set, fname)
+         }
+      else { # close a modified buffer (* suffix)
+         uidlog.FileTabSet.remove(c)
+         uidlog.MsgBox.set_contents(["closed " || c.filename])
+         delete(opened_files_set, fname)
+         }
+      uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().filename)
+      uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.children[-1])
+      handle_update()
+      uidlog.FileTabSet.resize()
+   end
+
+   method on_save_btn(ev, c)
+      if /c then c := CurrentTabItem()
+      if c.label[-1] == "*" then {
+         if c.label == ("Untitled*"|"scratch*") then
+            on_saveas_btn()
+         else {
+            c.label := c.label[1:-1]
+            save_file(c)
+            }
+         }
+   end
+
+   method on_saveas_btn(ev)
+      local fd, filename, foo, index := i, warntxt, fexist := &null, L,
+	    i, oldwindow, win, fileslist, fext, isUnicon := 1, filedirectory
+
+      is_unicon(isUnicon)
+
+      fileslist := []
+      every put(fileslist,!open("."))
+
+      chdir(CurrentTabItem().filedirectory)
+
+      if /is_MSWindows then {
+	 fd := HFileDialog()
+	 fd.set_attribs("label=Save File As:")
+	 fd.show_modal()
+	 #fd.set_extra_attribs(["label=Save file As:"])
+	 filename := fd.get_result() | fail
+	 filedirectory := fd.get_directory()
+         # Append .icn under certain circumstances.  Probably need to fix
+         # circumstances.
+         fext := fd.file_extension
+         if not find(".", file_name(filename)) &
+            file_name(filename) ~== "Makefile" &
+            file_name(filename) ~== "makefile" &
+	    find("Unicon Files", fext.selection_list[fext.get_selection()])
+         then
+             filename ||:= ".icn"
+	 }
+      else {
+	 filename := WinSaveDialog(
+                     &window, "Save File As:", "", 50,,,
+		     chdir(CurrentTabItem().filedirectory)
+                     ) | fail
+         if filename[-2:0] == ".*" then filename[-2:0] := ".icn"
+	 }
+
+      if /filename | file_name(filename) ==".icn" | filename[-1]==("\\"|"/")
+      then {
+	 \uidlog.MsgBox.set_contents(["Error saving file " ||
+				      file_name(filename)])
+	 fail
+	 }
+      every i := 1 to *fileslist do
+	 if file_name(filename) === fileslist[i] then {
+               oldwindow := &window
+               &window := win
+               warntxt := UpdatedTextDialog (
+                         "Overwrite file? ",
+			 "A file named "|| file_name(filename) || " already" ||
+                         " exists. Are you sure you want to overwrite it?")
+               warntxt.show_modal()
+               &window := oldwindow
+            }
+
+      if (overwrite === "OK") | /fexist then {
+	 if \project then {
+	    # Resolve absolute versus relative paths and not add absolute
+	    # if relative is already in the project.
+	    # Brute force version in place.
+	    if (not find(map(filename), map(("" | (chdir() || PATHSEP)) ||
+                                            (!menu_1.menus).get_label()))) &
+	       find(".icn"|".u",filename) then {
+                  foo := TextMenuItem()
+                  foo.set_label(filename)
+                  menu_1.add(foo)
+                  self.resize() # recalc with new components in place
+                  }
+	    }
+	 uidlog.FileBrowser.nodereplace(CurrentTabItem().filename)
+	 CurrentTabItem().set_label(file_name(filename))
+	 L := CurrentEditBox().get_contents() | []
+	 uidlog.FileBrowser.addreplace(L, file_name(filename), 0)
+         CurrentTabItem().filename := file_name(filename)
+         CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
+	 save_file(CurrentTabItem())
+         ### what's going on here?? ###
+	 if find(".icp", map(filename)) then { # open project
+	    project := filename
+	    updateproject()
+	    }
+	 handle_update()
+	 }
+   end
+
+   #
+   # method is_unicon(): report whether current buffer is Unicon source code.
+   # Will be called from on_saveas_btn() above
+   #
+   method is_unicon(isUnicon)
+      # scan past #-style comments (not implemented yet), then require
+      # a Unicon class, procedure or link statement.
+      # At present this is too simplistic.
+
+      return findstring("class" | "procedure" | "link")
+   end
+
+   #
+   # Save File Menu Item Method
+   #
+   method save_file(c)
+      local ufile, l, line
+      chdir(c.filedirectory)
+      l := CurrentEditBox().get_contents() | []
+      ufile := open(c.filename, "cu") | {
+	 \uidlog.MsgBox.set_contents([c.filename ||
+				      ": failure to open for writing."])
+	 fail
+	 }
+
+      # write the lines to the file, with at most one carriage return
+      every write(ufile,trim(!l,'\^m'),
+		  if \linebreak=="CRLF" then "\^m" else "")
+      close(ufile)
+
+      \uidlog.MsgBox.set_contents([c.label || " saved."])
+      if map(c.label[-4:0]) == ".icp" then updateproject()
+      uidlog.FileBrowser.addreplace(CurrentEditBox().get_contents(),
+				    uidlog.FileTabSet.which_one.filename, 0)
+      handle_update()
+      modified := &null
+      return
+   end
+
+   #
+   # Update Method
+   #
+   method handle_update()
+      uidlog.resize()
+      uidlog.ClassTabSet.set_which_one(uidlog.ClassTabSet.which_one)
+      uidlog.DevTabSet.set_which_one(uidlog.DevTabSet.which_one)
+      uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.get_which_one())
+      uidlog.pnlToolbar.display()
+      uidlog.resize()
+      uidlog.set_focus(CurrentEditBox())
+   end
+
+   #
+   #  Quotes Method
+   #
+   method quotes(s)
+      if find(" ", s) then s := "\"" || s || "\""
+      return s
+   end
+
+   #
+   # Edit Code
+   #
+   method findstring(s) # (from cve 6/5/13.
+      # Modified 7/13, duplicate function in editabletextlist.icn)
+
+      local L, startcol, i, j, whichFindFunction := find, direction,
+	 foundline, foundcol, rd
+
+      # override the find function if there are special requests
+      if rd := \uidlog.menubar.replace_dialog then {
+	 if \rd.check_box_insensitive.is_checked_flag then {
+	    whichFindFunction := c_find
+	    }
+	 else if \rd.check_box_regex.is_checked_flag then {
+	    whichFindFunction := findre
+	    }
+	 }
+
+      # find something
+      L := CurrentEditBox().get_contents()
+      startcol := CurrentEditBox().cursor_x
+      i := CurrentEditBox().cursor_y
+      foundline := &null
+      while L[i] do {
+         if j := whichFindFunction(\s, L[i], \startcol) then {
+            foundline := i
+            foundcol := j
+            goto_line(i,1)
+            CurrentEditBox().cursor_x := j + *s
+            CurrentEditBox().constrain_line()
+            CurrentEditBox().refresh(1)
+            return
+            }
+         # decide which direction to go next
+         if \uidlog.menubar.replace_dialog then {
+            if /uidlog.menubar.replace_dialog.check_box_backwards.is_checked_flag then {
+               direction := 1
+                }
+            else direction := -1
+            }
+         else if /self.toggle_find_dir_btn.is_checked_flag then {
+            direction := 1
+            }
+         else direction := -1
+            i +:= direction
+            startcol := 1
+         }
+   end
+
+   method on_text_field_search(ev)
+      qu_replace().handle_pnl_find()
+   end
+
+   method on_goto_line(ev)
+      local oldwindow
+      /gotoln := ""
+      dialogFor := "goto"
+      oldwindow := &window
+      &window := win
+      if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
+	 gotoln := integer(dialog_value[1])
+	 ide.goto_line(gotoln,1)
+	 }
+      &window := oldwindow
+   end
+
+   method goto_line(ln,cn)
+      if not (CurrentEditBox().goto_line(ln,cn)) then {
+	 uidlog.MsgBox.set_contents(["nonexistent line number " || ln])
+	 }
+   end
+
+   #
+   # Insert Code
+   # - these need to trigger a changed event inside the BuffEditableTextList
+   #
+   method on_procedure_btn(ev)
+      InsertCode( templates("procedure"), definitions("procedure"))
+   end
+
+   method on_class_btn(ev)
+      InsertCode( templates("class"), definitions("class"))
+   end
+
+   method on_method_btn(ev)
+      InsertCode( templates("method"), definitions("method"))
+   end
+
+   method InsertCode(template, definition)
+      local l, oldy, s
+      l := CurrentEditBox().get_contents()
+      oldy := CurrentEditBox().cursor_y
+      s := ""
+      every s ||:= !template do s ||:= "\n"
+      #      get_clipboard().set_contents(s)
+      #      CurrentEditBox().handle_paste ( "\^v" )
+
+      l := l[1: oldy] ||| template ||| l[oldy:0]
+      CurrentEditBox().set_contents(l)
+      CurrentEditBox().changed:=1
+      CurrentEditBox().handle_event()
+      goto_line(oldy,1)
+      uidlog.MsgBox.set_contents(definition)
+   end
+
+   #
+   # Compile Code
+   #
+   method compile()
+      local command, str, compile_options, log1, cmd, fname, arglist, fdir
+      static compile_cmd
+      initial {
+	 if &features=="MS Windows NT" then
+	    compile_cmd := "wunicon -c -quiet -log "
+	 else
+	    compile_cmd := "unicon -c "
+	 }
+      /targs := ""
+      /arglist := ""
+      fdir := chdir(CurrentTabItem().filedirectory)
+      uidlog.MsgBox.set_contents([""])
+      lst := []
+
+      if CurrentTabItem().label ==="Untitled" then {
+	 \uidlog.MsgBox.set_contents(["Open a file to compile "])
+	 return
+	 }
+      fname:= "\"" || CurrentTabItem().filename || "\""
+
+      if /is_MSWindows then
+	 cmd := compile_cmd || targs || " " ||comp1file(fname)|| " > "||wiconlog||" 2>&1"
+      else
+	 cmd := compile_cmd || wiconlog ||" "||targs||  " "||comp1file(fname)
+
+      if find(".icn",fname) then
+	 system( cmd, lst,1 ,comp1file(fname))
+      fileCompiled := "TRUE"
+      showanyerror(wiconlog, lst)
+   end
+   #
+   # Comp1file Method
+   #
+   method comp1file(s)
+      local extended
+      if find(".icn", CurrentTabItem().label) then {
+	 s[find(".icn", map(s)) : 0] := "" # truncate extension
+	 extended := s || ".icn"
+	 }
+      return quotes(extended)
+   end
+
+   #
+   # Run Code
+   #
+
+$ifdef _UNIX
+$define EXT ""
+$else
+$define EXT ".exe"
+$endif
+
+   method on_run_btn(ev)
+      run()
+   end
+
+   #
+   # Run program. Invocable from either the menubar or the run button.
+   # Either way, should be same behavior: save, compile, and execute.
+   #
+   method run(fileset, exename)
+      local L, cmd, s, fdir, fname, cmd2, console, fun, unam
+
+      if /fileset := set() then {
+	  if fun := open(".") then {
+	      every insert(fileset, !fun)
+	      close(fun)
+	      fun := &null
+	  }
+      }
+      #
+      # Before you run it, make the executable.
+      # This will save it if it is modified.
+      on_makeexe_btn()
+
+      if /is_MSWindows then
+         if pathfind("xterm", getenv("PATH")) then
+            console :="xterm -hold -e "
+         else if pathfind("konsole", getenv("PATH")) then
+            console := "konsole --vt_sz 70x18 "
+         else console := ""
+      else # implies Windows for now
+	 console := "cmd "
+
+      if CurrentTabItem().filedirectory ~== "" then
+	  fdir := chdir(CurrentTabItem().filedirectory)
+      else fdir := chdir(".")
+
+      fname := CurrentTabItem().filename
+
+      L := copy(\uidlog.MsgBox.contents)
+
+      if /icodename then {
+         if not member(fileset, exename || EXT) then fail
+         else icodename := exename
+	 }
+
+      if /is_MSWindows then {
+	 if not(any(&letters,icodename) & (icodename[2]==":"))&
+         not find(("./"|"/"), icodename) then
+            if icodename[1] ~== PATHSEP then
+               icodename := "." || PATHSEP || icodename
+	 if find(".icn", fname) then {
+	    if not find(("./"|"/"), icodename) then cmd ||:= "./"
+	    cmd := quotes(icodename) || " " || xargs
+	    }
+	 # path search, see if xterm exists on path, use it
+	 if pathfind("xterm", getenv("PATH")) then {
+	    if (fun := open("uname","pr")) &
+		(unam := read(fun)) & close(fun) & match("Darwin",unam) then {
+		console := "xterm -hold -e script " || wiconlog ||" "
+		cmd2 := console || \cmd || " "
+	       }
+	     else {
+	       console := "xterm -hold -e script -c \""
+	       cmd2 := console || \cmd || " \" " || wiconlog
+	       }
+	    }
+	 else #just run without "console || ..."
+	    cmd2 := cmd || " &> " || wiconlog
+
+	 }
+      else{
+	 if icodename[1] ~== PATHSEP then icodename := icodename
+	 cmd := quotes(icodename||".exe")
+	 if fdir[-1] ~== "\\" then
+	  fdir := fdir || "\\"
+	 if find(".icn", CurrentTabItem().label) then
+	   cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
+
+	 #cmd := "wiconx " || cmd
+	 }
+
+      if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
+	 # hope WICONLOG does trick?
+	 showanyerror(wiconlog, L, 1)
+	 }
+      else {
+	 s := "system(" || icodename || " " || xargs ||
+	      ") failed.  Is the PATH setup to run this?"
+	 showanyerror(s, [], 0)
 	 }
    end
 
@@ -112,7 +619,21 @@ class IDE (
    end
 
    method on_find_btn(ev)
-      handle_stringsearch() 
+      qu_replace().handle_pnl_find()
+   end
+
+
+   method on_toggle_find_dir_btn(ev)
+      # toggles backwards search and shifts focus to the textfield
+      uidlog.set_focus(text_field_search)
+      if /self.toggle_find_dir_btn.is_checked_flag then {
+      # Right Arrow / Search Forwards Image
+	 toggle_find_dir_btn.set_img("16,c1,554>>54>>555555555464546)555555555454446)<555555544>4>>4>>555555546<>V)6<)555555546<)v)6<)5555554>>>>v>4>>)55555>56<>5><54v55555>56<>5)(54v55555>vvvv5vvvvv55555555555555555555555555555555SS55555555555555SSS55555SSSSSSSSSSSS555555555555SSS5555555555555SS555")
+	 }
+      else {
+	 # Left Arrow / Search Backwards Image
+	 toggle_find_dir_btn.set_img("16,c1,554>>54>>555555555464546)555555555454446)<555555544>4>>4>>555555546<>V)6<)555555546<)v)6<)5555554>>>>v>4>>)55555>56<>5><54v55555>56<>5)(54v55555>vvvv5vvvvv555555555555555555555555SS5555555555555SSS555555555555SSSSSSSSSSSS55555SSS55555555555555SS55555555555")
+	 }
    end
 
    method on_find_next_btn(ev)
@@ -129,34 +650,6 @@ class IDE (
       modified := 1
    end
 
-   method on_replace(ev)
-      local oldwindow
-      /findstr := ""
-      dialogFor := "replace"
-      oldwindow := &window
-      &window := win
-      if TextDialog("Replace what with what: ",,
-	 [(\findstr | ""),""],6)=="Okay" then {
-	 Notice("replace is not implemented yet")
-	 # wu_replace(dialog_value[1], dialog_value[2])
-	 }
-      &window := oldwindow 
-      modified := 1
-   end
-
-   method on_goto_line(ev)
-      local oldwindow
-      /gotoln := ""
-      dialogFor := "goto"
-      oldwindow := &window
-      &window := win
-      if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
-	 gotoln := integer(dialog_value[1])
-	 ide.goto_line(gotoln,1)
-	 }
-      &window := oldwindow 
-   end
-
    method on_viewall_btn(ev)
       uidlog.menubar.on_view_window_all(ev)
    end
@@ -168,14 +661,9 @@ class IDE (
    method on_viewfilesmsgs_btn(ev)
       uidlog.menubar.on_view_window_filesmsgs(ev)
    end
-   
+
    method on_viewfilesclassbrowser_btn(ev)
       uidlog.menubar.on_view_window_filesclassbrowser(ev)
-   end
-
-   method on_class_btn(ev)
-      InsertCode( templates("class"), definitions("class"))
-      modified := 1
    end
 
    method on_makeexe_btn(ev)
@@ -184,32 +672,11 @@ class IDE (
       complink()
    end
 
-   method on_method_btn(ev)
-      InsertCode( templates("method"), definitions("method"))
-      modified := 1
-   end
-
-   method on_procedure_btn(ev)
-      InsertCode( templates("procedure"), definitions("procedure"))
-      modified := 1
-   end
-
-   method on_run_btn(ev)
-      save()
-      run()
-   end
-
-   method on_error_check(ev)
-      errLine := "FALSE"
-      if fileCompiled === "TRUE" then
-	 GotoErrorLine(errors_list)
-   end
-
    method on_editbox(e)
       modified := 1
    end
 
-   # 
+
    # New TabItem Method: Insert a New TabItem, for a file, into the TabSet.
    #
    method new_tabitem(ev,x,filename,file_contents)
@@ -218,23 +685,25 @@ class IDE (
       if x == 1 then {
 	 if filename === "" then {
 	    nullfilename := &window
-      	    &window  := &null
-      	       Notice("Enter File Name ...")
-	    &window := nullfilename
+	    uidlog.MsgBox.set_contents(["No File Name Specified..."])
   	    }
 	 else {
-	    tab_item_new.set_label(filename) 
+	    tab_item_new.set_label(filename)
+            tab_item_new.filedirectory := CurrentTabItem().filedirectory
 	    }
 	 }
       else {
 	 filename := "Untitled"
 	 tab_item_new.set_label(filename)
+         tab_item_new.filename := filename
+         tab_item_new.filedirectory := CurrentTabItem().filedirectory
 	 }
 
       EditBox := BuffEditableTextList()
       EditBox.set_pos("2", "2")
       EditBox.set_size("100%-4", "100%-4")
-      EditBox.set_attribs("bg=white","font=sans,14")
+      EditBox.set_attribs("bg="||uidlog.ui_Preferences.val_background_color,
+			  "font="||fontname)
       EditBox.set_contents(file_contents)
 
       tab_item_new.add(EditBox)
@@ -245,11 +714,8 @@ class IDE (
       uidlog.FileTabSet.set_which_one(tab_item_new)
       fileOpened := "TRUE"
       fileCompiled := "FALSE"
-      tabs_num +:= 1
       modified := &null
       filefound := &null
-
-      return tabs_num
    end
 
    #
@@ -258,7 +724,7 @@ class IDE (
    #
    method new_project_tabitem(ev,x,filename,file_contents)
       local tab_item_new, nullfilename
-      tab_item_new := TabItem()
+      tab_item_new := BufferTabItem()
       if x == 1 then {
 	 if filename === "" then {
 	    nullfilename := &window
@@ -266,10 +732,10 @@ class IDE (
       	       Notice("Enter File Name ...")
 	    &window := nullfilename
   	    }
-	 else  tab_item_new.set_label(filename)
+	 else tab_item_new.set_label(filename)
 	 }
       else {
-	 if filename === "" then 
+	 if filename === "" then
       	    tab_item_new.set_label("Untitled")
 	 else tab_item_new.set_label(filename)
 	 }
@@ -277,7 +743,7 @@ class IDE (
       uidlog.EditBox := BuffEditableTextList()
       uidlog.EditBox.set_pos("2", "2")
       uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.EditBox.set_attribs("bg=white","font=sans,14")
+      uidlog.EditBox.set_attribs("bg="||uidlog.ui_Preferences.val_background_color,"font=sans,14")
       uidlog.EditBox.set_contents(file_contents)
 
       tab_item_new.add(uidlog.EditBox)
@@ -289,9 +755,20 @@ class IDE (
       uidlog.FileTabSet.set_which_one(tab_item_new)
       projectOpened := "TRUE"
       projectCompiled := "FALSE"
-      tabs_num +:= 1
       modified := filefound := &null
-      return tabs_num
+   end
+
+   method on_ivib(ev)
+      local L := []
+      if CurrentTabItem().label==="Untitled" then {
+	 system("ivib " || \tab_label, L) | uidlog.MsgBox.set_contents(L)
+	 handle_closefile()
+	 handle_openfile( , tab_label)
+	 }
+      else {
+	 system("ivib " ||CurrentTabItem().label, L) |
+	 uidlog.MsgBox.set_contents(["System Failed"])
+	 }
    end
 
    #
@@ -393,7 +870,7 @@ class IDE (
       redo_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>>>~~~~~~~~~~>>>>>>>~~~~~~~~>>>~~~>>>~~~~~~>>>~~~~~>>>~~~~~>>~~~~~~~>>~~~~~>>~~~~~>~>>~>~~~>>~~~~~~>>>>~~~~>>>~~~~~~>>~~~~~~>>>~~~~~~~~~~~~~~>>>>>>~~~~~~~~~~~~>>>>>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(redo_btn)
       find_btn := IconButton()
-      find_btn.set_pos("40.5%", "5%")
+      find_btn.set_pos("96.5%", "5%")
       find_btn.set_size("4.5%", "90%")
       find_btn.set_draw_border()
       find_btn.set_tooltip("Find")
@@ -401,17 +878,19 @@ class IDE (
       find_btn.clear_toggles()
       find_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~>>>~~~>>>~~~~~~~>6>~~~>6>~~~~~~~>>>~~~>>>~~~~~~>>>>>~>>>>>~~~~~>6>>>~>6>>>~~~~>>>>>>>>>>>>>~~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>6>>>5>>6>>>>>~>>>>>>>~>>>>>>>~>6>>>~~~~~>6>>>~>6>>>~~~~~>6>>>~>>>>>~~~~~>>>>>~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(find_btn)
-      find_next_btn := IconButton()
-      find_next_btn.set_pos("44.5%", "5%")
-      find_next_btn.set_size("4.5%", "90%")
-      find_next_btn.set_draw_border()
-      find_next_btn.set_tooltip("Find Next")
-      find_next_btn.connect(self, "on_find_next_btn", ACTION_EVENT)
-      find_next_btn.clear_toggles()
-      find_next_btn.set_img("16,c1,554>>54>>555555555464546)555555555454446)<555555544>4>>4>>555555546<>V)6<)555555546<)v)6<)5555554>>>>v>4>>)55555>56<>5><54v55555>56<>5)(54v55555>vvvv5vvvvv5555555555555555555555555555555ii555555555555555ij>55555)5)5VV>>>V))555555555555V))555555555555>>5555")
-      uidlog.pnlToolbar.add(find_next_btn)
+      toggle_find_dir_btn := IconButton()
+      toggle_find_dir_btn.set_pos("76.5%", "5%")
+      toggle_find_dir_btn.set_size("4.5%", "90%")
+      toggle_find_dir_btn.set_draw_border()
+      toggle_find_dir_btn.set_tooltip("Toggle Search Direction")
+      toggle_find_dir_btn.connect(self, "on_toggle_find_dir_btn", ACTION_EVENT)
+      toggle_find_dir_btn.set_toggles()
+      toggle_find_dir_btn.set_img("16,c1,554>>54>>555555555464546)555555555454446)<555555544>4>>4>>555555546<>V)6<)555555546<)v)6<)5555554>>>>v>4>>)55555>56<>5><54v55555>56<>5)(54v55555>vvvv5vvvvv55555555555555555555555555555555SS55555555555555SSS55555SSSSSSSSSSSS555555555555SSS5555555555555SS555")
+      # undocumented leftover image, guessing it was a findnext button
+      #("16,c1,554>>54>>555555555464546)555555555454446)<555555544>4>>4>>555555546<>V)6<)555555546<)v)6<)5555554>>>>v>4>>)55555>56<>5><54v55555>56<>5)(54v55555>vvvv5vvvvv5555555555555555555555555555555ii555555555555555ij>55555)5)5VV>>>V))555555555555V))555555555555>>5555")
+      uidlog.pnlToolbar.add(toggle_find_dir_btn)
       viewall_btn := IconButton()
-      viewall_btn.set_pos("48.5%", "5%")
+      viewall_btn.set_pos("40.5%", "5%")
       viewall_btn.set_size("4.5%", "90%")
       viewall_btn.set_draw_border()
       viewall_btn.set_tooltip("View All")
@@ -420,7 +899,7 @@ class IDE (
       viewall_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>66>`````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewall_btn)
       viewfiles_btn := IconButton()
-      viewfiles_btn.set_pos("52.5%", "5%")
+      viewfiles_btn.set_pos("44.5%", "5%")
       viewfiles_btn.set_size("4.5%", "90%")
       viewfiles_btn.set_draw_border()
       viewfiles_btn.set_tooltip("View Files")
@@ -429,7 +908,7 @@ class IDE (
       viewfiles_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfiles_btn)
       viewfilesmsgs_btn := IconButton()
-      viewfilesmsgs_btn.set_pos("56.5%", "5%")
+      viewfilesmsgs_btn.set_pos("48.5%", "5%")
       viewfilesmsgs_btn.set_size("4.5%", "90%")
       viewfilesmsgs_btn.set_draw_border()
       viewfilesmsgs_btn.set_tooltip("View Files/Msgs")
@@ -438,7 +917,7 @@ class IDE (
       viewfilesmsgs_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfilesmsgs_btn)
       viewfilesbrowser_btn := IconButton()
-      viewfilesbrowser_btn.set_pos("60.5%", "5%")
+      viewfilesbrowser_btn.set_pos("52.5%", "5%")
       viewfilesbrowser_btn.set_size("4.5%", "90%")
       viewfilesbrowser_btn.set_draw_border()
       viewfilesbrowser_btn.set_tooltip("View Files/Class Browser")
@@ -447,7 +926,7 @@ class IDE (
       viewfilesbrowser_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~>>>>>>>>>>>>>>~~><<<<<<<<<<<<>~~>>>>>>>>>>>>>>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>````````````>~~>>>>>>>>>>>>>>~~>666666666666>~~>666666666666>~~>>>>>>>>>>>>>>~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(viewfilesbrowser_btn)
       procedure_btn := IconButton()
-      procedure_btn.set_pos("64.5%", "5%")
+      procedure_btn.set_pos("56.5%", "5%")
       procedure_btn.set_size("4.5%", "90%")
       procedure_btn.set_draw_border()
       procedure_btn.set_tooltip("Insert Procedure")
@@ -456,7 +935,7 @@ class IDE (
       procedure_btn.set_img("16,c1,~~wwww~~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~wjjjjw~~~~~~~~~~~wwwwssss~~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~s++++s~~~~~~~~~~~ssssnnnn~~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~naaaan~~~~~~~~~~~nnnn~~")
       uidlog.pnlToolbar.add(procedure_btn)
       class_btn := IconButton()
-      class_btn.set_pos("68.5%", "5%")
+      class_btn.set_pos("60.5%", "5%")
       class_btn.set_size("4.5%", "90%")
       class_btn.set_draw_border()
       class_btn.set_tooltip("Insert Class")
@@ -465,7 +944,7 @@ class IDE (
       class_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~wwwww~~~~~yy~~~wjjjjjw~~~yLLy~~wjjjjjw~~~yLLy~~wjjjsssss~~yy~~~wjjsFFS++s~~~~~~wjjsFFS++s~~~~~~~wwsSS+nnnnn~~~~~~~s++nAANaan~~~qq~s++nAANaan~~qDDq~ssnNNaaan~~qDDq~~~naaaaan~~~qq~uu~naaaaan~~~~~uHHu~nnnnn~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~")
       uidlog.pnlToolbar.add(class_btn)
       method_btn := IconButton()
-      method_btn.set_pos("72.5%", "5%")
+      method_btn.set_pos("64.5%", "5%")
       method_btn.set_size("4.5%", "90%")
       method_btn.set_draw_border()
       method_btn.set_tooltip("Insert Method")
@@ -474,7 +953,7 @@ class IDE (
       method_btn.set_img("16,c1,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~yy~~~~~~~~~~~~~yLLy~~~~~~~~~~~~yLLy~~~~~~~~~~~~~yy~~~~~qq~~~~~~~~~~~~~qDDq~~~~~~~~~~~~qDDq~~~~~~~~~~~~~qq~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~uu~~~~~~~~~~~~~uHHu~~~~~~~~~~~~uHHu~~~~~~~~~~~~~uu~~~~~~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(method_btn)
       makeexe_btn := IconButton()
-      makeexe_btn.set_pos("76.5%", "5%")
+      makeexe_btn.set_pos("68.5%", "5%")
       makeexe_btn.set_size("4.5%", "90%")
       makeexe_btn.set_draw_border()
       makeexe_btn.set_tooltip("Compile")
@@ -483,7 +962,7 @@ class IDE (
       makeexe_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~~3444444444444430~~34JJJJJJJJJJJJ30~~34JJJJJJ60606030~~3433333333333330~~3466666666666630~~3466666666666630~~3460060606006630~~3460660606066630~~3460066066006630~~3460660606066630~~3460060606006630~~3466666666666630~~3466666666666630~~3333333333333330~~0000000000000000~~~~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(makeexe_btn)
       run_btn := IconButton()
-      run_btn.set_pos("80.5%", "5%")
+      run_btn.set_pos("72.5%", "5%")
       run_btn.set_size("4.5%", "90%")
       run_btn.set_draw_border()
       run_btn.set_tooltip("Run")
@@ -491,6 +970,15 @@ class IDE (
       run_btn.clear_toggles()
       run_btn.set_img("18,c1,~~~~~~~~~~~~~~~~~~~3333333333333333~SS444444444444430~S+SJJJJJJJJJJJJ30~S++SJJJJJ60606030~S+*+S333333333330~S+**+S66666666630~S+***+S6666666630~S+****+S666666630~SF*G*G*FS66666630~S+G*G*G+S66666630~SF*G*GFS666666630~SFGGGFS6666666630~SFGGFS66666666630~SFGFS666666666630~SFFS3333333333330~SFS00000000000000~SS~~~~~~~~~~~~~~~~")
       uidlog.pnlToolbar.add(run_btn)
+
+      text_field_search := TextField()
+      text_field_search.set_pos("80.5%", "7%")
+      text_field_search.set_size("16%", "90%")
+      text_field_search.set_draw_border()
+      text_field_search.set_tooltip("Find this")
+      text_field_search.connect(self, "on_text_field_search", ACTION_EVENT)
+      text_field_search.set_contents("")
+      uidlog.pnlToolbar.add(text_field_search)
 
       cut_btn.clear_accepts_focus()
       copy_btn.clear_accepts_focus()
@@ -500,74 +988,6 @@ class IDE (
       open_btn.clear_accepts_focus()
    end
 
-   #
-   #  Open File Menu Item Method
-   #
-   method handle_openfile(ev, filename)
-      local line, L, nchars, fd, file, tab_label, found, which_tab, c
-
-      chdir(current_dir)
-
-      if /filename then {
-$ifdef _UNIX
-	 fd := HFileDialog()
-	 fd.show_modal()
-	 filename := fd.get_result() | fail
-	 # filepath := chdir()
-	 filedirectory := fd.get_directory()
-$else
-	 filename :=
-	    WinOpenDialog(uidlog.win, "Open File ...", "", 5,,,chdir()) |
-	    fail 
-$endif
-	 }
-      current_dir := filedirectory
-      if /filename | filename=="" | filename[-1]==("\\"|"/") then
-	 return uidlog.MsgBox.set_contents("Enter File Name")
-
-      if  filename[-2:0]==(".*") then filename := filename[1:-2] 
-      tab_label :=  file_name(filename)
-      found := 1
-      file_contents := []
-      nchars := 0
-      if file := open(filename, "ru") then
-      while line := read(file) do {
-	 if line[-1] == "\^m" then line := line[1:-1]
-	 put(file_contents, line)
-	 nchars +:= *line + 1
-	 }
-      # A loop to check whether or not the file is already open
-      # or if there is a different file open with the same name
-      #every tab_id:=1 to *opened_files_list do {
-      #	 if opened_files_list[tab_id] === file_name(filename) then
-      #	    opened_files_num +:= 1
-      #	 }
-      # We don't have a files open with the same name, so 
-      # add a new tab with the file name
-      if not member(opened_files_set, file_name(filename)) then
-      #if opened_files_num === 0 then 
-	{
-	 if find(".o",filename) then
-	    uidlog.MsgBox.set_contents(["can not open "||filename])
-	 else {
-	    new_tabitem(,1,file_name(filename),file_contents) 
-	    uidlog.FileBrowser.addreplace(file_contents, tab_label, 0)
-	    \uidlog.MsgBox.set_contents(["opened " || filename||", "||*file_contents||
-				" lines, " || nchars || " characters"])
-	    uidlog.FileTabSet.set_which_one(CurrentTabItem())
-	    handle_update()
-	    insert(opened_files_set, file_name(filename))
-	    }
-	 }
-      else {
-	 c := uidlog.FileTabSet.get_tabitem(file_name(filename))
-	 uidlog.FileTabSet.set_which_one(\c)
-	 }
-      uidlog.FileTabSet.resize()
-      uidlog.menubar.set_font()
-      opened_file := filename
-      tabs_num +:= 1
-   end
    #
    #  Open Project Menu Item Method
    #
@@ -583,7 +1003,6 @@ $endif
 	 else
 	    projectname := WinOpenDialog(&window, "Open Project ...", "", 50) |
 	       fail
-
 	 }
       if /projectname | projectname=="" | projectname[-1]==("\\"|"/") then {
 	 uidlog.MsgBox.set_contents(["Enter Project Name"])
@@ -592,7 +1011,7 @@ $endif
 	 project := projectname
 	 updateproject()
 	 }
-      if projectname[-2:0] == ".*" then filename := filename[1:-2] 
+      if projectname[-2:0] == ".*" then filename := filename[1:-2]
       file := open(projectname, "ru") | {
 	 \uidlog.MsgBox.set_contents(["Could not open project: " || \filename])
 	 return
@@ -608,67 +1027,37 @@ $endif
 	 }
       # A loop to check whether or not the file ifiles already open
       # or if there is a different file open with the same name
- 
+
       #every tab_id:=1 to *opened_files_list do {
       #   if opened_files_list[tab_id] === file_name(projectname) then
       #	    opened_files_num +:= 1
       #   }
 
-      # We don't have a files open with the same name, so 
+      # We don't have a files open with the same name, so
       # add a new tab with the file name
 #  if opened_files_num === 0 then {
-      new_project_tabitem(,1,file_name(projectname),file_contents) 
-      uidlog.FileBrowser.addreplace(file_contents, tab_label, 0)
+      new_project_tabitem(,1,file_name(projectname),file_contents)
       \uidlog.MsgBox.set_contents(["opened " || projectname || ", " ||
 	     *file_contents ||" lines, " || nchars || " characters"])
       CurrentTabItem().set_label(tab_label)
       uidlog.FileTabSet.set_which_one(CurrentTabItem())
       handle_update()
-#     }
-#  else {
-#     c:= uidlog.FileTabSet.get_tabitem(file_name(projectname))
-#     uidlog.FileTabSet.set_which_one(\c)
-#     }
+      #     }
+      #  else {
+      #     c:= uidlog.FileTabSet.get_tabitem(file_name(projectname))
+      #     uidlog.FileTabSet.set_which_one(\c)
+      #     }
 
       uidlog.FileTabSet.resize()
       opened_file := projectname
-      tabs_num +:= 1
+
+      uidlog.FileBrowser.addreplace(CurrentEditBox().contents,
+                                    uidlog.FileTabSet.which_one.filename, 0)
+
       needConsole := "TRUE"
       projectOpened := "TRUE"
    end
-   #
-   # Close File Menu Item Method
-   #
-   method handle_closefile(ev, c)
-      local t
-      \uidlog.FileBrowser.nodereplace(CurrentTabItem().get_label())
-      if /c then c :=  CurrentTabItem()
-      # check the size of the filetabset, if it is size 1 then exit
-      if *(uidlog.FileTabSet.children) = 1 then {
-	 uidlog.menubar.on_exit()
-	 }
-      uidlog.FileTabSet.remove(c)
-      uidlog.MsgBox.set_contents(["closed " || (uidlog.FileTabSet.get_which_one()).label])
 
-      t := (uidlog.FileTabSet.get_which_one()).label
-      delete(opened_files_set, t)
-      tabs_num -:= 1
-
-      handle_update()
-      uidlog.FileTabSet.resize()
-   end
-   #
-   # Update Method
-   #
-   method handle_update()
-      uidlog.resize()
-      uidlog.ClassTabSet.set_which_one(uidlog.ClassTabSet.which_one)
-      uidlog.DevTabSet.set_which_one(uidlog.DevTabSet.which_one)
-      uidlog.FileTabSet.set_which_one(uidlog.FileTabSet.get_which_one())
-      uidlog.pnlToolbar.display()
-      uidlog.resize()
-      uidlog.set_focus(CurrentEditBox())
-   end
    #
    # Update Project Method
    #
@@ -709,31 +1098,7 @@ $endif
       if (c:=!components).label == lab then return c
       return &null
    end
-   #
-   #
-   #
-   method InsertCode(template, definition)
-      local l, oldy, s
-      l := CurrentEditBox().get_contents() 
-      oldy := CurrentEditBox().cursor_y
-      s := ""
-      every s ||:= !template do s ||:= "\n"
-#      get_clipboard().set_contents(s)
-#      CurrentEditBox().handle_paste ( "\^v" )
 
-      l := l[1: oldy] ||| template ||| l[oldy:0]
-      CurrentEditBox().set_contents(l) 
-      goto_line(oldy,1)
-      uidlog.MsgBox.set_contents(definition)
-   end
-   #
-   #
-   #
-   method goto_line(ln,cn)
-      if not (CurrentEditBox().goto_line(ln,cn)) then {
-	 uidlog.MsgBox.set_contents(["nonexistent line number " || ln])
-	 }
-   end
    #
    #
    #
@@ -773,7 +1138,7 @@ $endif
 	    arglist := quotes(s)
 	    }
 	 icodename := CurrentTabItem().filename
-	 if find(".icn", map(icodename)) then 
+	 if find(".icn", map(icodename)) then
 	    icodename[find(".icn", map(icodename)) : 0] := ""
 	 }
       else {
@@ -818,11 +1183,11 @@ $endif
      if find(".icn",CurrentTabItem().label) then {
        if /is_MSWindows then {
          cmdargs := " " || targs || " " || arglist || " > " ||wiconlog||" 2>&1"
-	 cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs  
+	 cmd := compile_cmd || "-o " ||  quotes(icodename) || cmdargs
 	 }
        else {
 	 cmdargs := " " || wiconlog || " " || targs ||  " " || arglist
-	 cmd := compile_cmd || cmdargs 
+	 cmd := compile_cmd || cmdargs
 	 }
        system( cmd, lst,1,"Compiling...")
        showanyerror(wiconlog, lst)
@@ -831,8 +1196,18 @@ $endif
 	 \uidlog.MsgBox.set_contents(["UI only knows how to compile .icn files"])
       }
 
-      fileCompiled :="TRUE"
+      fileCompiled := "TRUE"
    end
+
+   #
+   # Error Code
+   #
+   method on_error_check(ev)
+      errLine := "FALSE"
+      if fileCompiled === "TRUE" then
+	 GotoErrorLine(errors_list)
+   end
+
    #
    #
    #
@@ -854,16 +1229,11 @@ $endif
 	    uidlog.MsgBox.refresh()
 	 every s := !lst do s ? {
 	    if (not match("Script")) &
-	       (fn := ((tab(any(&letters))||=":")|"") || 
+	       (fn := ((tab(any(&letters))||=":")|"") ||
 			tab(many(&letters++&digits++' .\\/-'))) & =":" &
 	       ln := integer(tab(many(&digits))) & = ":" then {
 		  if CurrentTabItem().label ~=== fn then
 		     handle_openfile( , fn)
-#                 if not handle_openfile( , fn) then {
-#                    put(\uidlog.MsgBox.contents,"[switch to file with error failed]")
-#                    \uidlog.MsgBox.set_contents(uidlog.MsgBox.contents)
-#                    return
-#                    }
 	       goto_line(ln,1)
 	       CurrentEditBox().highlight_line(ln)
 	       return
@@ -912,138 +1282,8 @@ $endif
 	    Notice("Selected line is not a unicon error message.")
 	 &window := errmessage
 	 }
-   end #GotoErrorLine method
-   #
-   # comp1file Method
-   #
-   method comp1file(s)
-      local extended
-      if find(".icn", CurrentTabItem().label) then {
-	 s[find(".icn", map(s)) : 0] := "" # truncate extension
-	 extended := s || ".icn"
-	 }
-      return quotes(extended)
    end
-   #
-   #  quotes Method
-   #
-   method quotes(s)
-      if find(" ", s) then s := "\"" || s || "\""
-      return s
-   end
-   #
-   #  system Method
-   #
-   method system(s, lst, apnd, alternate_txt)
-      local rv
-      static realsys
-      initial realsys:=proc("system", 0)
-      if /s then fail
-      /lst := []
-      if /apnd then while pop(lst)
-      put(lst,\alternate_txt | s)
-      WAttrib("pointer=wait")
-      rv := realsys(s)
-      WAttrib("pointer=arrow")
 
-      if \rv then return rv
-   end
-   #
-   # Run Method
-   #
-   method run()
-      local L, cmd, s, fdir, cmd2, console, fun, unam
-      if /is_MSWindows then
-	 console := "konsole --vt_sz 70x18 " 
-      else # implies Windows for now
-	 console := "cmd "
-
-      fdir := chdir(filedirectory)
-      if \modified == 1 |
-	 fileCompiled === "FALSE" then complink()
-
-      L := copy(\uidlog.MsgBox.contents)
-      if /icodename then fail
-
-      if /is_MSWindows then {
-	 if not(any(&letters,icodename) & (icodename[2]==":")) then
-	 if icodename[1] ~== PATHSEP then
-	    icodename := "." || PATHSEP || icodename
-	 if find(".icn", CurrentTabItem().label) then {
-	    if not match(("./"|"/"), icodename) then cmd ||:= "./"
-	    cmd := quotes(icodename) || " " || xargs
-	    }
-
-	 # path search, see if xterm exists on path, use it
-	 if pathfind("xterm", getenv("PATH")) then {
-	    if (fun := open("uname","pr")) &
-		(unam := read(fun)) & close(fun) & match("Darwin",unam) then {
-		console := "xterm -hold -e script " || wiconlog ||" "
-		cmd2 := console || \cmd || " "
-	       }
-	     else {
-	       console := "xterm -hold -e script -c \""
-	       cmd2 := console || \cmd || " \" " || wiconlog
-	       }
-	    }
-	 else #just run without "console || ..."
-	    cmd2 := cmd || " &> " || wiconlog
-	 }
-      else{
-	 if icodename[1] ~== PATHSEP then icodename := icodename
-	 cmd := quotes(icodename||".exe")   
-	 if fdir[-1] ~== "\\" then
-	  fdir := fdir || "\\"
-	 if find(".icn", CurrentTabItem().label) then
-	   cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
-
-	 #cmd := "wiconx " || cmd
-	 }
-
-      if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
-	 # hope WICONLOG does trick?
-	 showanyerror(wiconlog, L, 1)
-	 }
-      else {
-	 s := "system(" || icodename || " " || xargs ||
-	      ") failed.  Is the PATH setup to run this?"
-	 showanyerror(s, [], 0)
-	 }
-   end
-   #
-   #  Compile Method
-   #
-   method compile()
-      local command, str, compile_options, log1, cmd, fname, arglist, fdir
-      static compile_cmd
-      initial {
-	 if &features=="MS Windows NT" then
-	    compile_cmd := "wunicon -c -quiet -log "
-	 else
-	    compile_cmd := "unicon -c "
-	 }
-      /targs := ""
-      /arglist := ""
-      fdir := chdir(filedirectory)
-      uidlog.MsgBox.set_contents([""])
-      lst := []
-
-      if CurrentTabItem().label ==="Untitled" then {
-	 \uidlog.MsgBox.set_contents(["Open a file to compile "])
-	 return
-	 }
-      fname:= "\"" || CurrentTabItem().label || "\""
-
-      if /is_MSWindows then
-	 cmd := compile_cmd || targs || " " ||comp1file(fname)|| " > "||wiconlog||" 2>&1"
-      else
-	 cmd := compile_cmd || wiconlog ||" "||targs||  " "||comp1file(fname)
-
-      if find(".icn",fname) then 
-	 system( cmd, lst,1 ,comp1file(fname))      
-      fileCompiled :="TRUE"
-      showanyerror(wiconlog, lst)
-   end
    #
    # Prompt Save Method
    #
@@ -1087,28 +1327,6 @@ $endif
       CurrentEditBox().handle_find_next()
    end
 
-   #
-   #
-   #
-   method save_file(filename)  
-      local file, l, line
-      chdir(filedirectory)
-      l := CurrentEditBox().get_contents() | []
-      file := open(filename, "cu") | {
-	 \uidlog.MsgBox.set_contents([filename || ": failure to open for writing."])
-	 fail
-	 }
-
-      # write the lines to the file, with at most one carriage return
-      every write(file,trim(!l,'\^m'),if \linebreak=="CRLF" then "\^m" else "")
-      close(file)
-
-      \uidlog.MsgBox.set_contents([filename || " saved."])
-      if map(filename[-4:0]) == ".icp" then updateproject()
-      uidlog.FileBrowser.addreplace(CurrentEditBox().get_contents(),tab_label,0)
-      handle_update()
-      modified := &null
-   end
    #
    # Save Menu Item Method
    #
@@ -1179,7 +1397,7 @@ $endif
 	    # if relative is already in the project.
 	    # Brute force version in place.
 	    if (not find(map(filename), map(("" | (chdir() || PATHSEP)) ||
-	       (!menu_1.menus).get_label()))) & 
+	       (!menu_1.menus).get_label()))) &
 	       find(".icn"|".u",filename) then {
 	       foo := TextMenuItem()
 	       foo.set_label(filename)
@@ -1250,13 +1468,14 @@ $endif
 #
 #
 initially
-   tabs_num := 0
    ide := self
    opened_files_set := set()
    opened_files_num := 0
-end # IDE Class End
+end
 
-
+#
+# Class UpdatedTextDialog
+#
 class UpdatedTextDialog : Dialog(caption,message)
    method component_setup()
       local l, bn1, bn2

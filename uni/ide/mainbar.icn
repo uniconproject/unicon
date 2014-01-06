@@ -1,11 +1,11 @@
 #
-# File:        ProjectMenubar.icn
+# File:        mainbar.icn
 #
 # Subject:    Main System Menubar
 #
 # Description: Class ProjectMenubar is where the overall main
 # menubar GUI and its functionality are implemented and added into
-# the dialog. It contains a call to all of the ide commands; such as 
+# the dialog. It contains a call to all of the ide commands; such as
 # new/existing files/projects editing and creation.
 #
 
@@ -14,17 +14,17 @@ $include "guih.icn"
 
 link io, font_dlg
 
-global new_UniconProject, uniconProject, uide, gotoln, 
+global new_UniconProject, uniconProject, uide, gotoln,
    projectCreated, projectOpened, win
 
 #
-# Class menubar needs description.
+# Class Mainbar needs description.
 # If this class is a GUI class, it normally should be a subclass of
 # Component or some other GUI class.
 #
 class Mainbar(
    new_UniconProject, uniconProject, open_Project, openUProj,
-   menu_1, exit_menu_item, classbrowser_100, classbrowser_50, 
+   menu_1, exit_menu_item, classbrowser_100, classbrowser_50,
    classbrowser_normal, classbrowser_submenu, close_file, compile_only,
    compile_options, copy, cut, findv, findnext,
    myfont, fontname, fgcolor, gotoline,
@@ -33,28 +33,163 @@ class Mainbar(
    menu_10, menu_11, menu_12, menu_2, menu_6, menu_7, menu_9,
    menu_net, menu_separator_1, msgs_100, msgs_50,
    msgs_normal, msgs_submenu, new_file, online_courses,
-   open_file, hide_toolbar, paste, print_file, replace, 
-   run_arguments, run_program, save_file, saveas_file, 
-   select_all, users_guide_menu, command_reference_menu, 
-   about_menu, text_menu_item_3, text_menu_item_4,undo, 
-   view_window_all, view_window_files, view_window_filesclassbrowser, 
-   view_window_filesmsgs, window_submenu,menu_bar_1, projectname, 
-   projecttype, make_compile_unicon, runProject, makeClean, 
-   makeCleanAll, menu_separator, menu_separator2, connect_menu, 
+   open_file, hide_toolbar, paste, print_file, replace,
+   run_arguments, run_program, save_file, saveas_file,
+   select_all, users_guide_menu, command_reference_menu,
+   about_menu, text_menu_item_3, text_menu_item_4,undo,
+   view_window_all, view_window_files, view_window_filesclassbrowser,
+   view_window_filesmsgs, window_submenu,menu_bar_1, projectname,
+   projecttype, make_compile_unicon, runProject, makeClean,
+   makeCleanAll, menu_separator, menu_separator2, connect_menu,
    disconnect_menu, menu_act, pswd_menu, avt_menu, face_menu, reg_menu,
    users_guide_file, commands_file, language_ref, fileOpened,
-   icon_ref, unicon_ref, graphics_ref, icon_prog_library, languages_faq, 
+   icon_ref, unicon_ref, graphics_ref, icon_prog_library, languages_faq,
    icon_faq, unicon_faq, modified, saveoptions, redo, new_Project,
-   ui_programming_envi, tutorial_overview, ivib_interface_builder
+   ui_programming_envi, tutorial_overview, ivib_interface_builder,
+   cur_ide_win_setup, # the current setup for which windows are being displayed
+   cur_ide_tb_status, # the current state of the tool bar
+   tb_adj, # tool bar adjust value -4% when the tool bar isn't present
+   preferences, replace_dialog, debuggIt
    )
 
+   method on_print_file(ev)
+      ide.on_print_file(ev)
+   end
+
+   method on_new_file(ev)
+      ide.on_new_btn(ev)
+   end
+
+   method on_open_file(ev)
+      ide.on_open_btn(ev)
+   end
+
    method on_close_file(ev)
-      if ide.CurrentTabItem().label ~== "scratch" then {
-         uidlog.FileBrowser.nodereplace(ide.CurrentTabItem().label)
-         ide.handle_closefile()
-         uidlog.FileTabSet.set_which_one(uidlog.tab_item_2)
-         uidlog.FileTabSet.resize()
-	 }
+      ide.on_close_btn(ev)
+   end
+
+   method on_save_file(ev)
+      ide.on_save_btn(ev)
+   end
+
+   method on_saveas_file(ev)
+      ide.on_saveas_btn(ev)
+   end
+
+   method on_exit(ev)
+      local tab_item, modified, decision, i:=1
+
+      every tab_item := !uidlog.FileTabSet.children do {
+         if tab_item.label[-1] == "*" then {
+            modified:=1
+            break
+            }
+         }
+      if /modified then exit(0)
+      decision := asksave(,"Exit")
+
+      if decision === "Cancel" then fail
+      else if decision === "ExitWithoutSaving" then exit(0)
+      else if decision === "Save" then {
+         while i <= *uidlog.FileTabSet.children do {
+            if \decision == "Cancel" then fail
+            tab_item := uidlog.FileTabSet.children[i]
+            if not (tab_item.label == ("scratch" | "scratch*")) then
+               decision := ide.handle_closefile(, tab_item)
+            else i +:= 1
+            }
+         if ide.CurrentTabItem().label == "scratch*" then {
+            decision := asksave("scratch")
+            if decision == "Save" then ide.on_save_btn(, ide.CurrentTabItem())
+            else if decision == "Cancel" then fail
+            }
+         }
+      else {
+         every tab_item := !uidlog.FileTabSet.children do
+            if tab_item.label[-1] == "*" then ide.on_save_btn(, tab_item)
+         }
+      exit(0)
+   end
+
+   method on_replace(ev)
+      replace_dialog := qu_replace()
+      replace_dialog.show_modeless()
+   end
+
+   method on_goto_line(ev)
+      ide.on_goto_line(ev)
+   end
+
+   method on_match_parenthesis(ev)
+      local file_contents := "", FileBuffer, mparens
+      FileBuffer := ide.CurrentEditBox().get_contents()
+      every file_contents ||:= !FileBuffer
+      mparens := MatchParen()
+      mparens.test(file_contents)
+   end
+
+   #
+   # Insert Code
+   #
+   method on_insert_proc(ev)
+      ide.on_procedure_btn(ev)
+   end
+
+   method on_insert_class(ev)
+      ide.on_method_btn(ev)
+   end
+
+   method on_insert_method(ev)
+      ide.on_method_btn(ev)
+   end
+
+   #
+   # Compile Code
+   #
+   method on_make_exe(ev)
+      if \ (ide.CurrentEditBox().contents_changed()) then
+         ide.save()
+      uidlog.MsgBox.set_contents([""])
+      ide.complink()
+   end
+
+   method on_compile_only(ev)
+      if \ (ide.CurrentEditBox().contents_changed()) then
+         ide.save()
+      ide.compile()
+   end
+
+   method on_compile_options(ev)
+      local oldwindow
+      dialogFor := "compile"
+      /targs := ""
+      oldwindow := &window
+      &window := win
+      if TextDialog("Enter compiler options: ",,targs,60) == "Okay" then
+	 targs := dialog_value[1]
+      &window := oldwindow
+      #      configdlg := ConfigureOptions()
+      #      configdlg.show_modal()
+   end
+
+   #
+   # Run Code
+   #
+   method on_run_program(ev)
+      if \ (ide.CurrentEditBox().contents_changed()) then
+         ide.save()
+      ide.run()
+   end
+
+   method on_run_arguments(ev)
+      local oldwindow
+      dialogFor := "run"
+      /xargs := ""
+      oldwindow := &window
+      &window := win
+      if TextDialog("Enter command line arguments: ",,xargs,60) == "Okay" then
+	 xargs := dialog_value[1]
+      &window := oldwindow
    end
 
    method on_ivib(ev)
@@ -73,60 +208,6 @@ class Mainbar(
       if \rv then return rv
    end
 
-   method on_new_file(ev)
-      ide.new_tabitem(,0,"","")
-      uidlog.tab_item_1.set_label("Messages: (Single File Mode)")
-      uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
-      uidlog.tab_item_1.init()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_open_file(ev)
-      ide.on_open_btn(ev)
-   end
-
-   method on_print_file(ev)
-      local f, L, line, d
-      L := ide.CurrentEditBox().get_contents() | []
-      d := PrintDialog()
-      d.show_modal()
-      if /copies_num then fail			# Cancel
-
-      lpr := d.printcmd.get_contents()
-      if match("enscript"|"lpr", lpr) then {
-	 lpr ||:= " -P" || \prn_name
-	 lpr ||:= " -#" || \copies_num
-	 }
-      else if match("lp", lpr) then {
-	 lpr ||:= " -d " || \prn_name
-	 lpr ||:= " -n " || \copies_num
-	 }
-$ifdef _UNIX
-      if f := open(lpr, "pw") then {
-	 every write(f, trim(!L, '\^m'))
-	 close(f)
-	 }
-$else
-      # windows, for now
-      if f := open("output.prn", "w") then {
-	 every write(f, trim(!L, '\^m'))
-	 close(f)
-	 system(lpr || " output.prn")
-	 }
-$endif
-      else {
-	 uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
-	 }
-   end
-
-   method on_save_file(ev)
-      ide.save()
-   end
-
-   method on_saveas_file(ev)
-      ide.saveas()
-   end
-
    method on_copy(ev)
       ide.CurrentEditBox().handle_copy(ev)
    end
@@ -143,52 +224,8 @@ $endif
       ide.handle_find_next()
    end
 
-   method on_goto_line(ev)
-      local oldwindow, win
-      /gotoln := ""
-      dialogFor := "goto"
-      oldwindow := &window
-      &window := win
-      if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
-	 gotoln := integer(dialog_value[1])
-	 ide.goto_line(gotoln,1)
-	 }
-      &window := oldwindow 
-   end
-
-   method on_match_parenthesis(ev)
-      local L:=[],i,pos1:=0,pos2:=1, line_contents:="", FileBuffer, mparens
-      FileBuffer := ide.CurrentEditBox().get_contents()
-      file_contents := ""
-      every file_contents ||:= !FileBuffer
-      mparens := MatchParen()
-      mparens.test(file_contents)
-   end
-
    method on_paste(ev)
       ide.CurrentEditBox().handle_paste(ev)
-   end
-
-   method on_replace(ev)
-      local oldwindow, ceb, replacestr, first_x, second_x 
-      ceb := ide.CurrentEditBox()
-      ceb.cursor_x := ceb.cursor_y := 1
-      dialogFor := "replace"
-      /findstr := ""
-      /replacestr := ""
-      oldwindow := &window
-      &window := win
-      if TextDialog("Replace what with what: ",, [(\ findstr | ""),""], 1) ==
-	 "Okay" then {
-	    findstr := dialog_value[1]
-	    replacestr := dialog_value[2]
-	    ide.findstring(findstr)
-	    second_x := ceb.cursor_x
-	    first_x := second_x - (*dialog_value[1])
-	    wu_replace(ev, first_x, second_x, replacestr)
-	    }
-      &window := oldwindow
-      modified := 1
    end
 
    method wu_replace(e, first_x, second_x, replace_str)
@@ -206,7 +243,7 @@ $endif
 
    method InsertString(first_x, second_x, replace_str)
       local ceb := ide.CurrentEditBox(), l, oldy , m, e, p1, p2, wchar
-      l := ceb.get_contents() 
+      l := ceb.get_contents()
       oldy := ceb.cursor_y
       wchar := &letters
       m := l[oldy]
@@ -215,7 +252,7 @@ $endif
       p2 := m[\first_x+1 : e+1]
       m := [p1 || \replace_str || " " ||\p2]
       l := l[1: oldy] ||| m ||| l[oldy+1:0]
-      ceb.set_contents(l) 
+      ceb.set_contents(l)
       ide.goto_line(oldy,1)
    end
 
@@ -253,7 +290,7 @@ $endif
       local c, fL, eb
       # suspicious that font is mixed-use as string font name and as an object
       /myfont := Font()
-      
+
       fL := []
 
       every put(fL, fontdialog(myfont))
@@ -264,10 +301,35 @@ $endif
          }
    end
 
+   method on_preferences()
+      local tab_item, buff_editable, l, i:=1, ceb:=ide.CurrentEditBox()
+      local prefs := uidlog.ui_Preferences
+
+      prefs.show_modal()
+
+      every tab_item := !uidlog.FileTabSet.children do
+         every buff_editable := !tab_item.children do {
+            l := buff_editable.attribs
+            while i <= *l do {
+               if match("bg=", l[i]) then
+                  delete(l, i)
+               else
+                  i +:= 1
+            }
+            buff_editable.set_attribs("bg="||prefs.val_background_color)
+            WAttrib(\ (buff_editable.cbwin), "bg="||prefs.val_background_color)
+            WAttrib(\ (buff_editable.view.cbwin),
+                    "bg="||prefs.val_background_color)
+         }
+      ceb.display()
+   end
+
 $ifdef _UNIX
 $define PS "/"
+$define FILE ".uirc"
 $else
 $define PS "\\"
+$define FILE "_uirc"
 $endif
    method save_config()
    local f
@@ -287,133 +349,109 @@ $endif
    end
 
    method load_config()
-   local f
-   if f := open(getenv("HOME"|"HOMEDIR")||PS||".uirc","r") then {
-      while line := read(f) do {
-	 line ? {
-	    if ="msglines" then {
-	       tab(upto(&digits))
-	       msglines := integer(tab(many(&digits)))
+      local f, prefs := uidlog.ui_Preferences
+      if f := open(getenv("HOME"|"HOMEDIR"|"LOCALAPPDATA")||PS||FILE,"r") then {
+         while line := read(f) do {
+            line ? {
+               if ="position" then {
+                  tab(upto(&digits))
+                  win_position := tab(many(&digits ++ ','))
+		  }
+               else if ="height" then {
+                  tab(upto(&digits))
+                  height := integer(tab(many(&digits)))
+		  }
+               else if ="width" then {
+                  tab(upto(&digits))
+                  width := integer(tab(many(&digits)))
+		  }
+               else if ="window_setup" then {
+                  tab(many('= \t'))
+                  cur_ide_win_setup := tab(0)
+		  }
+               else if ="toolbar_status" then {
+                  tab(many('= \t'))
+                  cur_ide_tb_status := tab(0)
+		  }
+               else if ="msglines" then {
+                  tab(upto(&digits))
+                  msglines := integer(tab(many(&digits)))
+		  }
+               else if ="font" then {
+                  tab(many('= \t'))
+                  fontname := tab(0)
+		  }
+               else if="linebreak" then {
+                  tab(many('= \t'))
+                  linebreak := tab(0)
+		  }
+               else if ="val_background_color" then {
+                  tab(many('= \t'))
+                  prefs.val_background_color := tab(0)
+		  }
+               else if ="linenumber_highlight_color" then {
+                  tab(many('= \t'))
+                  prefs.linenumber_highlight_color := tab(0)
+		  }
+               else if ="default_text_color=" then {
+                  tab(many('= \t'))
+                  prefs.default_text_color := tab(0)
+		  }
+               else if ="cursor_highlight_color" then {
+                  tab(many('= \t'))
+                  prefs.cursor_highlight_color := tab(0)
+		  }
+               else if ="cursor_text_color" then {
+                  tab(many('= \t'))
+                  prefs.cursor_text_color := tab(0)
+		  }
+               else if ="syntax_text_color" then {
+                  tab(many('= \t'))
+                  prefs.syntax_text_color := tab(0)
+		  }
+               else if ="glob_text_color" then {
+                  tab(many('= \t'))
+                  prefs.glob_text_color := tab(0)
+		  }
+               else if ="procedure_text_color" then {
+                  tab(many('= \t'))
+                  prefs.procedure_text_color := tab(0)
+		  }
+               else if ="quote_text_color" then {
+                  tab(many('= \t'))
+                  prefs.quote_text_color := tab(0)
+		  }
+               else if ="comment_text_color" then {
+                  tab(many('= \t'))
+                  prefs.comment_text_color := tab(0)
+		  }
+               else if ="linenumber_text_color" then {
+                  tab(many('= \t'))
+                  prefs.linenumber_text_color := tab(0)
+		  }
+               else if ="text_highlight_color" then {
+                  tab(many('= \t'))
+                  prefs.text_highlight_color := tab(0)
+		  }
+               else if ="error_text_color" then {
+                  tab(many('= \t'))
+                  prefs.error_text_color := tab(0)
+		  }
+               else if ="parentheses_match" then {
+                  tab(many('= \t'))
+                  prefs.paren_check_box_state := tab(0)
+		  }
+               else if ="syntax_highlighting" then {
+                  tab(many('= \t'))
+                  prefs.syntax_check_box_state := tab(0)
+		  }
 	       }
-	    else if ="height" then {
-	       tab(upto(&digits))
-	       height := integer(tab(many(&digits)))
-	       }
-	    else if ="width" then {
-	       tab(upto(&digits))
-	       width := integer(tab(many(&digits)))
-	       }
-	    else if ="font" then {
-	       tab(many('= \t'))
-	       fontname := tab(0)
-	       }
-	    else if ="fg" then {
-		tab(many('= \t'))
-		fgcolor := tab(0)
-	    }
-	    else if ="linebreak" then {
-	       tab(many('= \t'))
-	       linebreak := tab(0)
-	       }
-	}
+            }
+         close(f)
       }
-   close(f)
-   }
-   else
-      uidlog.MsgBox.set_contents(["couldn't load options"])
+      else
+         return "couldn't load saved settings"
    end
-
-   method on_view_window_all(ev)
-      uidlog.FileTabSet.set_pos("150", "50")
-      uidlog.FileTabSet.set_size("100%-150", "100%-160")
-      uidlog.ClassTabSet.set_pos("0", "50")
-      uidlog.ClassTabSet.set_size("150", "100%-160")
-      uidlog.DevTabSet.set_pos("0", "100%-110")
-      uidlog.DevTabSet.set_size("100%", "110")
-      uidlog.EditBox.set_pos("2", "2")
-      uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.MsgBox.set_pos("2", "2")
-      uidlog.MsgBox.set_size("100%-4", "100%-4")
-      uidlog.FileBrowser.set_pos("2", "2")
-      uidlog.FileBrowser.set_size("100%-4", "100%-4")
-      uidlog.FileTabSet.resize()
-      uidlog.ClassTabSet.resize()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_view_window_files(ev)
-      uidlog.FileTabSet.set_pos("0", "50")
-      uidlog.FileTabSet.set_size("100%", "100%-50")
-      uidlog.EditBox.set_pos("2", "2")
-      uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.MsgBox.set_pos("0", "110%")
-      uidlog.ClassTabSet.set_pos("0", "110%")
-      uidlog.FileTabSet.resize()
-      uidlog.ClassTabSet.resize()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_view_window_filesmsgs(ev)
-      uidlog.FileTabSet.set_pos("0", "50")
-      uidlog.FileTabSet.set_size("100%", "100%-160")
-      uidlog.EditBox.set_pos("2", "2")
-      uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.DevTabSet.set_pos("0", "100%-110")
-      uidlog.DevTabSet.set_size("100%", "110")
-      uidlog.MsgBox.set_pos("2", "2")
-      uidlog.MsgBox.set_size("100%-4", "100%-4")
-      uidlog.ClassTabSet.set_pos("0", "110%")
-      uidlog.FileTabSet.resize()
-      uidlog.ClassTabSet.resize()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_view_window_filesclassbrowser(ev)
-      uidlog.FileTabSet.set_pos("150", "50")
-      uidlog.FileTabSet.set_size("100%-150", "100%-50")
-      uidlog.EditBox.set_pos("2", "2")
-      uidlog.EditBox.set_size("100%-4", "100%-4")
-      uidlog.ClassTabSet.set_pos("0", "50")
-      uidlog.ClassTabSet.set_size("150", "100%-50")
-      uidlog.DevTabSet.set_pos("0", "100%-110")
-      uidlog.DevTabSet.set_size("100%", "110")
-      uidlog.MsgBox.set_pos("0", "110%")
-      uidlog.FileTabSet.resize()
-      uidlog.ClassTabSet.resize()
-      uidlog.DevTabSet.resize()
-   end
-
-   method on_hide_toolbar(ev)
-      if hide_toolbar.get_label() == "Hide Toolbar" then {
-         hide_toolbar.set_label("Show Toolbar")
-         uidlog.pnlToolbar.set_pos("0", "110%")
-         uidlog.FileTabSet.set_pos("150", "25")
-	 uidlog.FileTabSet.set_size("100%-150", "100%-135")
-         uidlog.ClassTabSet.set_pos("0", "25")
-         uidlog.ClassTabSet.set_size("150", "100%-135")
-         uidlog.DevTabSet.set_pos("0", "100%-110")
-         uidlog.DevTabSet.set_size("100%", "110")
-         uidlog.FileTabSet.resize()
-         uidlog.ClassTabSet.resize()
-         uidlog.DevTabSet.resize()
-	 uidlog.pnlToolbar.resize()
-         }
-      else {
-	 hide_toolbar.set_label("Hide Toolbar") 
-	 uidlog.pnlToolbar.set_pos("0","25")
-         uidlog.FileTabSet.set_pos("150", "50")
-	 uidlog.FileTabSet.set_size("100%-150", "100%-160")
-         uidlog.ClassTabSet.set_pos("0", "50")
-         uidlog.ClassTabSet.set_size("150", "100%-160")
-         uidlog.DevTabSet.set_pos("0", "100%-110")
-         uidlog.DevTabSet.set_size("100%", "110")
-         uidlog.FileTabSet.resize()
-         uidlog.ClassTabSet.resize()
-         uidlog.DevTabSet.resize()
-	 uidlog.pnlToolbar.resize()
-         }
-   end
-
 
    method on_msgs_100(ev)
       uidlog.FileTabSet.set_pos("150", "50")
@@ -533,83 +571,6 @@ $endif
       uidlog.pnlToolbar.resize()
    end
 
-   method on_compile_only(ev)
-      if \ (ide.CurrentEditBox().contents_changed()) then 
-         ide.save()
-      ide.compile()
-   end
-
-   method on_compile_options(ev)
-      local oldwindow
-      dialogFor := "compile"
-      /targs := ""
-      oldwindow := &window
-      &window := win
-      if TextDialog("Enter compiler options: ",,targs,60) == "Okay" then
-	 targs := dialog_value[1]
-      &window := oldwindow
-      #      configdlg := ConfigureOptions()
-      #      configdlg.show_modal()
-   end
-
-   method on_make_exe(ev)
-      if \ (ide.CurrentEditBox().contents_changed()) then 
-         ide.save()
-      uidlog.MsgBox.set_contents([""])
-      ide.complink()
-   end
-
-   method on_run_arguments(ev)
-      local oldwindow
-      dialogFor := "run"
-      /xargs := ""
-      oldwindow := &window
-      &window := win
-      if TextDialog("Enter command line arguments: ",,xargs,60) == "Okay" then
-	 xargs := dialog_value[1]
-      &window := oldwindow   
-   end
-
-   method on_run_program(ev)
-      if \ (ide.CurrentEditBox().contents_changed()) then 
-         ide.save()
-      ide.run()
-   end
-
-   method on_insert_class(ev)
-      ide.InsertCode(templates("class"), definitions("class"))
-      modified := 1
-   end
-
-   method on_insert_method(ev)
-      ide.InsertCode(templates("method"), definitions("method"))
-      modified := 1
-   end
-
-   method on_insert_proc(ev)
-      ide.InsertCode(templates("procedure"), definitions("procedure"))
-      modified := 1
-   end
-
-   method on_exit(ev)
-      if \ (ide.CurrentEditBox().contents_changed()) then 
-         ide.save()
-      exit(0)
-   end
-
-   method on_about(ev)
-      local sav, sp13
-      sav := &window
-      &window  := &null
-      sp13 := repl(" ", 13)
-      Notice(repl(" ",27) || "Unicon IDE 0.92", sp13 || &version, repl("=",34),
-             sp13 || sp13 || " contributions by ",
-             sp13 || "Hani Bani-Salameh, Nolan Clayton",
-             sp13 || "       Sean Harris, Clint Jeffery",
-             sp13 || "  bugreports: jeffery@uidaho.edu")
-      &window := sav
-   end
-
    method on_project_check()
       local sav
       sav := &window
@@ -686,6 +647,128 @@ $else
 $endif
    end
 
+   method on_about(ev)
+      local sav, sp13
+      sav := &window
+      &window  := &null
+      sp13 := repl(" ", 13)
+      Notice(repl(" ",27) || "Unicon IDE 0.92", sp13 || &version, repl("=",34),
+             sp13 || sp13 || " contributions by ",
+             sp13 || "Hani Bani-Salameh, Nolan Clayton",
+             sp13 || "       Sean Harris, Clint Jeffery",
+             sp13 || "  bugreports: jeffery@uidaho.edu")
+      &window := sav
+   end
+
+   #
+   # View Setup Code
+   #
+   method on_view_window_all(ev)
+      local pos_y, size_y
+      pos_y := 8+tb_adj||"%"
+      size_y := 71-tb_adj||"%"
+      cur_ide_win_setup := "view_window_all"
+      uidlog.DevTabSet.set_pos("0", "79%")
+      uidlog.DevTabSet.set_size("100%", "21%")
+      uidlog.FileTabSet.set_pos("15%", pos_y)
+      uidlog.FileTabSet.set_size("85%", size_y)
+      uidlog.ClassTabSet.set_pos("0", pos_y)
+      uidlog.ClassTabSet.set_size("15%", size_y)
+      uidlog.MsgBox.set_pos("2", "2")
+      uidlog.MsgBox.set_size("100%-4", "100%-4")
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.FileBrowser.set_pos("2", "2")
+      uidlog.FileBrowser.set_size("100%-4", "100%-4")
+      uidlog.DevTabSet.resize()
+      uidlog.FileTabSet.resize()
+      uidlog.ClassTabSet.resize()
+      uidlog.pnlToolbar.resize()
+   end
+
+   method on_view_window_files(ev)
+      local pos_y, size_y
+      pos_y := 8+tb_adj||"%"
+      size_y := 92-tb_adj||"%"
+      cur_ide_win_setup := "view_window_files"
+      uidlog.DevTabSet.set_pos("0", "110%")
+      uidlog.DevTabSet.set_size("0", "0")
+      uidlog.FileTabSet.set_pos("0", pos_y)
+      uidlog.FileTabSet.set_size("100%", size_y)
+      uidlog.ClassTabSet.set_pos("0", "110%")
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.DevTabSet.resize()
+      uidlog.FileTabSet.resize()
+      uidlog.ClassTabSet.resize()
+      uidlog.pnlToolbar.resize()
+   end
+
+   method on_view_window_filesmsgs(ev)
+      local pos_y, size_y
+      pos_y := 8+tb_adj||"%"
+      size_y := 71-tb_adj||"%"
+      cur_ide_win_setup := "view_window_filesmsgs"
+      uidlog.DevTabSet.set_pos("0", "79%")
+      uidlog.DevTabSet.set_size("100%", "21%")
+      uidlog.FileTabSet.set_pos("0", pos_y)
+      uidlog.FileTabSet.set_size("100%", size_y)
+      uidlog.ClassTabSet.set_pos("0", "110%")
+      uidlog.MsgBox.set_pos("2", "2")
+      uidlog.MsgBox.set_size("100%-4", "100%-4")
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.DevTabSet.resize()
+      uidlog.FileTabSet.resize()
+      uidlog.ClassTabSet.resize()
+      uidlog.pnlToolbar.resize()
+   end
+
+   method on_view_window_filesclassbrowser(ev)
+      local pos_y, size_y
+      pos_y := 8+tb_adj||"%"
+      size_y := 92-tb_adj||"%"
+      cur_ide_win_setup := "view_window_filesclassbrowser"
+      uidlog.DevTabSet.set_pos("0", "110%")
+      uidlog.DevTabSet.set_size("0", "0")
+      uidlog.FileTabSet.set_pos("15%", pos_y)
+      uidlog.FileTabSet.set_size("85%", size_y)
+      uidlog.ClassTabSet.set_pos("0", pos_y)
+      uidlog.ClassTabSet.set_size("15%", size_y)
+      uidlog.EditBox.set_pos("2", "2")
+      uidlog.EditBox.set_size("100%-4", "100%-4")
+      uidlog.DevTabSet.resize()
+      uidlog.FileTabSet.resize()
+      uidlog.ClassTabSet.resize()
+      uidlog.pnlToolbar.resize()
+   end
+
+   method update_view_window(ev)
+      case cur_ide_win_setup of {
+         "view_window_all" : on_view_window_all(ev)
+         "view_window_files" : on_view_window_files(ev)
+         "view_window_filesmsgs" : on_view_window_filesmsgs(ev)
+         "view_window_filesclassbrowser" : on_view_window_filesclassbrowser(ev)
+         default : write("ERROR")
+	 }
+   end
+
+   method on_hide_toolbar(ev)
+      if hide_toolbar.get_label() == "Hide Toolbar" then {
+         cur_ide_tb_status := "hide"
+         hide_toolbar.set_label("Show Toolbar")
+         uidlog.pnlToolbar.set_pos("0", "110%")
+         tb_adj := -4
+	 }
+      else {
+         cur_ide_tb_status:="show"
+	 hide_toolbar.set_label("Hide Toolbar")
+         uidlog.pnlToolbar.set_pos("0","4.5%")
+         tb_adj := 0
+	 }
+      update_view_window(ev)
+   end
+
    method on_new_UniconProject(ev)
       local newUPro, pname
 
@@ -731,7 +814,7 @@ $endif
    end
 
    #
-   # Method on_make_compile_Project; it allows making 
+   # Method on_make_compile_Project; it allows making
    # or compiling the Unicon projects
    #
    method on_make_compile_Project()
@@ -741,7 +824,7 @@ $endif
       pname2 := pname[1:*pname-4]
 
 $ifdef _UNIX
-      console := "konsole --vt_sz 70x18 " 
+      console := "konsole --vt_sz 70x18 "
 $else # implies Windows for now
       console := "cmd "
 $endif
@@ -763,7 +846,7 @@ $endif
       pname2 := pname[1:*pname-4] || ".exe"
 
 $ifdef _UNIX
-      console := "konsole --vt_sz 70x18 " 
+      console := "konsole --vt_sz 70x18 "
 $else # implies Windows for now
       console := "cmd "
 $endif
@@ -817,7 +900,9 @@ $endif
       else on_project_check()
    end
 
-
+   #
+   # IDE Main Menu Bar Method: Adds a simple menubar into the IDE tab.
+   #
    method Menubar()
       menu_bar_1 := MenuBar()
       menu_bar_1.set_pos("0", "0")
@@ -890,11 +975,14 @@ $endif
       window_submenu.add(view_window_filesclassbrowser)
       menu_6.add(window_submenu)
       hide_toolbar := TextMenuItem()
-      hide_toolbar.set_label("Hide Toolbar")
+      if cur_ide_tb_status == "show" then
+         hide_toolbar.set_label("Show Toolbar")
+      else
+         hide_toolbar.set_label("Hide Toolbar")
       hide_toolbar.connect(self, "on_hide_toolbar", ACTION_EVENT)
       menu_6.add(hide_toolbar)
       msgs_submenu := Menu()
-      msgs_submenu.set_label("Messages (Single File Mode)")
+      msgs_submenu.set_label("Messages")
       msgs_normal := TextMenuItem()
       msgs_normal.set_label("normal")
       msgs_normal.connect(self, "on_msgs_normal", ACTION_EVENT)
@@ -927,9 +1015,13 @@ $endif
       menu_7 := Menu()
       menu_7.set_label("Config")
       font := TextMenuItem()
-      font.set_label("Font ...")
+      font.set_label("Font")
       font.connect(self, "on_font", ACTION_EVENT)
       menu_7.add(font)
+      preferences := TextMenuItem()
+      preferences.set_label("Preferences")
+      preferences.connect(self, "on_preferences", ACTION_EVENT)
+      menu_7.add(preferences)
       saveoptions := TextMenuItem()
       saveoptions.set_label("Save options")
       saveoptions.connect(self, "save_config", ACTION_EVENT)
@@ -1136,4 +1228,6 @@ initially(newUniconProject)
    projectCreated := "FALSE"
    fileOpened     := "FALSE"
    users_guide_file := 0
-end #Class ProjectMenubar
+   if /cur_ide_win_setup then cur_ide_win_setup := "view_window_all"
+   if /cur_ide_tb_status then cur_ide_tb_status := "show"
+end

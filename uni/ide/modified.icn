@@ -1,6 +1,177 @@
 import gui
 $include "guih.icn"
 
+procedure asksave(f, state)
+   local m
+   if \state == "Exit" then m := exit_modifieddialog()
+   else m := close_modifieddialog(f)
+   m.show_modal()
+   return \ (m.selection)
+end
+
+class close_modifieddialog : Dialog(f, position, selection, no_btn, save_btn, cancel_btn)
+
+   method component_setup() 
+      local pos_x, pos_y, size_x, size_y
+      WAttrib("pos") ? {
+         pos_x := tab(find(","))
+         =","
+         pos_y := tab(many('-0123456789'))
+      }
+      if /pos_x | pos_x < 0 then pos_x := 0
+      else pos_x +:= 0.40 * WAttrib("width")
+      if /pos_y | pos_y < 0 then pos_y := 0
+      else pos_y +:= 0.40 * WAttrib("height")
+      position := pos_x||","||pos_y
+      self.setup()
+   end
+
+   method on_no_btn(ev)
+      selection := "No"
+      dispose()
+   end
+
+   method on_save_btn(ev)
+      selection := "Save"
+      dispose()
+   end
+
+   method on_cancel_btn(ev)
+      selection := "Cancel"
+      dispose()
+   end
+
+   method setup()
+      self.set_attribs("size=350,75", "pos="||position)
+      
+      label_1 := Label()
+      label_1.set_pos(12, 7)
+      label_1.set_size("320", "15")
+      label_1.set_internal_alignment("c")
+      label_1.set_label(f || " is modified. Save file?")
+      self.add(label_1)
+
+      no_btn := TextButton()
+      no_btn.set_pos("40", "40")
+      no_btn.set_size("60", )
+      no_btn.connect(self, "on_no_btn", ACTION_EVENT)
+      no_btn.clear_toggles()
+      no_btn.set_label("No")
+      no_btn.set_internal_alignment("c")
+      self.add(no_btn)
+      
+      save_btn := TextButton()
+      save_btn.set_pos("140", "40")
+      save_btn.set_size("60", )
+      save_btn.connect(self, "on_save_btn", ACTION_EVENT)
+      save_btn.clear_toggles()
+      save_btn.set_label("Save")
+      save_btn.set_internal_alignment("c")
+      self.add(save_btn)
+
+      cancel_btn := TextButton()
+      cancel_btn.set_pos("240", "40")
+      cancel_btn.set_size("60", )
+      cancel_btn.connect(self, "on_cancel_btn", ACTION_EVENT)
+      cancel_btn.clear_toggles()
+      cancel_btn.set_label("Cancel")
+      cancel_btn.set_internal_alignment("c")
+      self.add(cancel_btn)
+   end
+
+initially
+   self.Dialog.initially()
+end
+
+
+class exit_modifieddialog : Dialog(position, selection, cancel_btn, save_btn, save_all_btn, exit_without_saving_btn)
+
+   method component_setup() 
+      local pos_x, pos_y, size_x, size_y
+      WAttrib("pos") ? {
+         pos_x := tab(find(","))
+         =","
+         pos_y := tab(many('-0123456789'))
+         }
+      if /pos_x | pos_x < 0 then pos_x := 0
+      else pos_x +:= 0.40 * WAttrib("width")
+      if /pos_y | pos_y < 0 then pos_y := 0
+      else pos_y +:= 0.40 * WAttrib("height")
+      position := pos_x||","||pos_y
+      self.setup()
+   end
+
+   method on_cancel_btn(ev)
+      selection := "Cancel"
+      dispose()
+   end
+
+   method on_save_btn(ev)
+      selection := "Save"
+      dispose()
+   end
+
+   method on_save_all_btn(ev)
+      selection := "SaveAll"
+      dispose()
+   end
+
+   method on_exit_without_saving_btn(ev)
+      selection := "ExitWithoutSaving"
+      dispose()
+   end
+
+   method setup()
+      self.set_attribs("size=350,75", "pos="||position)
+      
+      label_1 := Label()
+      label_1.set_pos(12, 7)
+      label_1.set_size("320", "15")
+      label_1.set_internal_alignment("c")
+      label_1.set_label("Modified files exist. Save files?")
+      self.add(label_1)
+
+      cancel_btn := TextButton()
+      cancel_btn.set_pos("10", "40")
+      cancel_btn.set_size("60", )
+      cancel_btn.connect(self, "on_cancel_btn", ACTION_EVENT)
+      cancel_btn.clear_toggles()
+      cancel_btn.set_label("Cancel")
+      cancel_btn.set_internal_alignment("c")
+      self.add(cancel_btn)
+      
+      save_btn := TextButton()
+      save_btn.set_pos("80", "40")
+      save_btn.set_size("60", )
+      save_btn.connect(self, "on_save_btn", ACTION_EVENT)
+      save_btn.clear_toggles()
+      save_btn.set_label("Save")
+      save_btn.set_internal_alignment("c")
+      self.add(save_btn)
+
+      save_all_btn := TextButton()
+      save_all_btn.set_pos("150", "40")
+      save_all_btn.set_size("70", )
+      save_all_btn.connect(self, "on_save_all_btn", ACTION_EVENT)
+      save_all_btn.clear_toggles()
+      save_all_btn.set_label("Save All")
+      save_all_btn.set_internal_alignment("c")
+      self.add(save_all_btn)
+
+      exit_without_saving_btn := TextButton()
+      exit_without_saving_btn.set_pos("230", "40")
+      exit_without_saving_btn.set_size("110", )
+      exit_without_saving_btn.connect(self, "on_exit_without_saving_btn", ACTION_EVENT)
+      exit_without_saving_btn.clear_toggles()
+      exit_without_saving_btn.set_label("Exit Anyways")
+      exit_without_saving_btn.set_internal_alignment("c")
+      self.add(exit_without_saving_btn) 
+   end
+
+initially
+   self.Dialog.initially()
+end
+   
 procedure AskSave(fn)
    local m := ModifiedDialog()
    if \fn then
@@ -78,8 +249,8 @@ class ModifiedDialog : Dialog(selection, cancel_btn, label_1,
       self.add(cancel_btn)
    end
 
-   initially
-      self.Dialog.initially()
+initially
+   self.Dialog.initially()
 end
 
 ### Ivib-v2 layout ##

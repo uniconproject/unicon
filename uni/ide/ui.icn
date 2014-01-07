@@ -33,6 +33,17 @@ link mainbar
 link getpaths
 link classbrowser
 link enqueue, preferences
+
+$ifdef _MS_WINDOWS_NT
+$define SL "\\"
+$else
+$define SL "/"
+$endif
+
+#
+# You may alter your makedefs and/or makefile to add directories in which
+# to find these files to your IPATH.
+#
 link unigram, idol, tree, preproce, unilex, unicon, yyerror
 
 global linebreak, uidlog, browser, docpath,
@@ -68,6 +79,7 @@ class UIDE : Dialog(
       menubar.Menubar()
       ide.Toolbar(pnlToolbar) #This call to add a toolbar
       FileBrowser.addreplace("file_contents", "tab_label", 0)
+      MsgBox.set_contents([\error_msg])
    end
 
    method IDEDialog()
@@ -112,26 +124,23 @@ class UIDE : Dialog(
    # main initialization procedure
    #
    method ui_initialize()
-      local f, line
+      local f, line, m
+      menubar.on_hide_toolbar() # hide/show toolbar and setup ide window layout
       env := getenv("IDOLENV") | "uniclass"
-      win_position:="0,0"
-      height := 400
-      width := 600
-      height <:= (WAttrib("displayheight") - 300)
-      width <:= (WAttrib("displaywidth") - 300)
-      msglines := 7
-      font := "sans,15"
-      linebreak := "LF"           # default to UNIX mode
       alpha    := &ucase ++ &lcase ++ '_' ++ &digits
       nonalpha := &cset -- alpha
       alphadot := alpha ++ '.'
       white    := ' \t\f\r'
       nonwhite := &cset -- white
 
-      menubar.load_config()
+#      menubar.load_config()
 
       wiconlog := tempname("ui",".tmp",,)
       xargs := ""
+      if \MsgBox.contents then {
+         m := ""
+         every m ||:= !!MsgBox.contents
+	 }
       if /is_MSWindows then {
          every browser := getenv("BROWSER") |
 			  "firefox" | "netscape" | "mozilla"| "opera" do {
@@ -142,13 +151,18 @@ class UIDE : Dialog(
             else browser := &null
            }
         }
-     else
-        (browser := "\"" || WinAssociate("HTM") || "\"" ) |
-         write("What, no browser?  Unicon's online help won't be readable \n_
+     else {
+         (browser := "\""|| (
+	     WinAssociate("HTM") |
+             (getenv("ProgramW6432"|"ProgramFiles"|"ProgramFiles(x86)") ||
+			"\\Internet Explorer\\iexplore.exe")) || "\"") |
+            write("What, no browser?  Unicon's online help won't be readable \n_
              until you associate an HTML reader application with the HTM \n_
              file extension.\n")
-
-      set_docpath()
+      }
+      # iexplore runs off http:// but not file://
+      if not find("iexplore.exe", \browser) then set_docpath()
+#      if not verify_make() then on_close()
    end
 
    method end_dialog()

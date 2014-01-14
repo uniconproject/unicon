@@ -17,11 +17,12 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn modified.icn preferences.icn \
 	templates.icn definitions.icn uproject.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
-	qu_replace.icn 
+	qu_replace.icn online.icn about.icn is_binary.u
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
-	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u
+	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
+	online.u about.u is_binary.u
 
 ui:	$(OBJ)
 ifdef EXE
@@ -39,6 +40,15 @@ printdlg.u: printdlg.icn
 
 hfiledialog.u: hfiledialog.icn
 	$(UC) $(UFLAGS) hfiledialog
+
+online.u: online.icn
+	$(UC) $(UFLAGS) online
+
+about.u: about.icn
+	$(UC) $(UFLAGS) about
+
+is_binary.u: is_binary.icn
+	$(UC) $(UFLAGS) is_binary
 
 buffertextlist.u: buffertextlist.icn ../gui/editabletextlist.icn
 	$(UC) $(UFLAGS) buffertextlist

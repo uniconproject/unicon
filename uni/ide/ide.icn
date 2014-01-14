@@ -125,11 +125,9 @@ $endif
       #	 }
       # We don't have a file open with the same name, so
       # add a new tab with the file name
-      if not member(opened_files_set, filename) then
-	{
-         # replace with a more general "don't open binary files" mechanism
-	 if map(filename[-2:0])==".o" then
-	    uidlog.MsgBox.set_contents(["Cannot open "||filename])
+      if not member(opened_files_set, filename) then {
+	 if is_binary(filename) then
+	    uidlog.MsgBox.set_contents(["Cannot open binary "||filename])
 	 else {
 	    new_tabitem(,1,file_name(filename),file_contents, filedirectory)
             \uidlog.MsgBox.set_contents(["opened " || filename || ", " ||
@@ -632,7 +630,7 @@ $endif
 	 \uidlog.MsgBox.set_contents(["Could not open project: " || \filename])
 	 return
 	 }
-      tab_label :=  fname
+      tab_label := fname
       found := 1
       file_contents := []
       nchars := 0
@@ -641,8 +639,8 @@ $endif
 	 put(file_contents, line)
 	 nchars +:= *line + 1
 	 }
-      # A loop to check whether or not the file ifiles already open
-      # or if there is a different file open with the same name
+
+      # Used to have a check here for file already open with same name.
 
       #every tab_id:=1 to *opened_files_list do {
       #   if opened_files_list[tab_id] === file_name(projectname) then
@@ -651,10 +649,10 @@ $endif
 
       # We don't have a files open with the same name, so
       # add a new tab with the file name
-#  if opened_files_num === 0 then {
+      #  if opened_files_num === 0 then {
       new_project_tabitem(,1,file_name(projectname),file_contents)
       \uidlog.MsgBox.set_contents(["opened " || projectname || ", " ||
-	     *file_contents ||" lines, " || nchars || " characters"])
+			*file_contents ||" lines, " || nchars || " characters"])
       CurrentTabItem().set_label(tab_label)
       uidlog.FileTabSet.set_which_one(CurrentTabItem())
       handle_update()
@@ -675,21 +673,18 @@ $endif
    end
 
    #
-   #  New Project save
+   # New Project save
    #
    method ProjectSave(ev)
       local fd, filename, foo, numfiles := 0
 
-      chdir(current_dir)
-
+      chdir(CurrentTabItem().filedirectory)
       if /is_MSWindows then {
 	 fd := HFileDialog()
 	 fd.show_modal()
 	 fd.set_attribs("label=Save Project As:")
 	 #fd.set_extra_attribs(["label=Save file As:"])
 	 filename := fd.get_result() | fail
-	 filedirectory := fd.get_directory()
-	 if numfiles>1 then fd.set_directory(filedirectory)
 	 }
       else {
 	 filename := WinSaveDialog(&window, "Save Project As:", "", 50,
@@ -698,7 +693,6 @@ $endif
 				    All Files(*.*)|*.*|",0,chdir()) | fail
 	 if filename[-2:0] == ".*" then filename[-2:0] := ""
 	 }
-      current_dir := filedirectory
 
       numfiles +:= 1
       if /filename | filename=="" | filename[-1]==("\\"|"/") then {
@@ -739,14 +733,17 @@ $endif
 	 }
    end
 
+   #
+   # Handle request to make executable.
+   #
    method on_makeexe_btn(ev)
       uidlog.MsgBox.set_contents([""])
-      save()
+      on_save_btn()
       complink()
    end
 
    #
-   #
+   # perform compilation and linking (for current program/project)
    #
    method complink()
       local x, arglist := "", lst := [], logf, i, s, fname, file_name,
@@ -763,14 +760,11 @@ $endif
       lst := []
       if find(".",CurrentTabItem().label) then {
 	 if \modified == 1 then {
-	    save_file(CurrentTabItem().label)
+	    save_file(CurrentTabItem())
 	    }
-#	 every i := 1 to \*opened_files_list do
-#	    if CurrentTabItem().label === \opened_files_list[i] then
-#	       filedirectory := opened_files_locs[i]
 	 }
       else {
-	 saveas()
+	 on_saveas_btn()
 	 }
 
       fdir := chdir(CurrentTabItem().filedirectory)
@@ -839,7 +833,7 @@ $endif
        showanyerror(wiconlog, lst)
        }
       else {
-	 \uidlog.MsgBox.set_contents(["UI only knows how to compile .icn files"])
+	 \uidlog.MsgBox.set_contents(["UI only compiles .icn files"])
       }
 
       fileCompiled := "TRUE"
@@ -855,7 +849,9 @@ $endif
    end
 
    #
-   #
+   # The showanyerror() method should make visible (e.g. in the MsgBox) any
+   # problem encountered in the last operation (compile, link, or run). The
+   # error messages are typically read in from a logfile.
    #
    method showanyerror(fn, lst)
       local log1, i, s, ln, nerrors := 0
@@ -994,31 +990,31 @@ $endif
    end
 
    #
-   #
+   # handle_select_str() - perform a (single line?) string selection
    #
    method handle_select_str(e, first_x, second_x, y_position)
       CurrentEditBox().handle_select_str(e, first_x, second_x, y_position)
    end
 
    method on_undo_btn(ev)
-      CurrentEditBox().handle_undo()
+      CurrentEditBox().handle_undo(ev)
       modified := 1
    end
 
    method on_redo_btn(ev)
-      CurrentEditBox().handle_redo()
+      CurrentEditBox().handle_redo(ev)
       modified := 1
    end
 
    #
-   # Current Tab In Which The Current Working FIle Is Displayed
+   # Current tab, component in which the current working file is displayed.
    #
    method CurrentTabItem()
       return uidlog.FileTabSet.get_which_one()
    end
 
    #
-   #
+   # get_tabitem(s) - produce the tabitem component whose name is s
    #
    method get_tabitem(lab)
       local c
@@ -1118,13 +1114,13 @@ $endif
 	 handle_openfile( , tab_label)
 	 }
       else {
-	 system("ivib " ||CurrentTabItem().label, L) |
-	 uidlog.MsgBox.set_contents(["System Failed"])
+	 if not system("ivib " || CurrentTabItem().label, L) then
+            uidlog.MsgBox.set_contents(["System Failed"])
 	 }
    end
 
    #
-   #IDE Tools Bar Method: Adds a simple toolbar into the IDE Tab.
+   # IDE Tools Bar Method: Adds a simple toolbar into the IDE tab.
    #
    method Toolbar(pnlToolbar)
       local save_btn, saveas_btn, makeexe_btn, run_btn
@@ -1338,42 +1334,6 @@ $endif
       close_btn.clear_accepts_focus()
       new_btn.clear_accepts_focus()
       open_btn.clear_accepts_focus()
-   end
-
-   #
-   # Prompt Save Method
-   #
-   method prompt_save()
-      if (CurrentEditBox().modified == 1) then {
-	 case AskSave((\tab_label|"File")) of {
-	    "Yes":{
-		if CurrentTabItem().label ~=="Untitled" then {
-		   save_file(filename) #CurrentTabItem().label)		
-		   }
-		else {
-		   saveas()
-		   return
-		   }
-		}
-	    "Save As":{
-		saveas()
-		}
-	    "Cancel": {
-		fail
-		}
-	    }
-	 }
-   end
-
-   #
-   #
-   #
-   method handle_stringsearch()
-      return CurrentEditBox().handle_stringsearch()
-   end
-
-   method handle_find_next()
-      CurrentEditBox().handle_find_next()
    end
 
    #

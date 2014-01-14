@@ -124,7 +124,7 @@ class UIDE : Dialog(
    # main initialization procedure
    #
    method ui_initialize()
-      local f, line, m
+      local f, m, line
       menubar.on_hide_toolbar() # hide/show toolbar and setup ide window layout
       env := getenv("IDOLENV") | "uniclass"
       alpha    := &ucase ++ &lcase ++ '_' ++ &digits
@@ -132,8 +132,6 @@ class UIDE : Dialog(
       alphadot := alpha ++ '.'
       white    := ' \t\f\r'
       nonwhite := &cset -- white
-
-#      menubar.load_config()
 
       wiconlog := tempname("ui",".tmp",,)
       xargs := ""
@@ -144,14 +142,14 @@ class UIDE : Dialog(
       if /is_MSWindows then {
          every browser := getenv("BROWSER") |
 			  "firefox" | "netscape" | "mozilla"| "opera" do {
-            if stat(getpaths() || browser) then {
-               MsgBox.set_contents(["found browser " || browser])
-               break
-               }
-            else browser := &null
-           }
-        }
-     else {
+	    if stat(getpaths() || browser) then {
+	       MsgBox.set_contents(["found browser " || browser, \m])
+	       break
+	       }
+	    else browser := &null
+	    }
+	 }
+      else {
          (browser := "\""|| (
 	     WinAssociate("HTM") |
              (getenv("ProgramW6432"|"ProgramFiles"|"ProgramFiles(x86)") ||
@@ -161,7 +159,8 @@ class UIDE : Dialog(
              file extension.\n")
       }
       # iexplore runs off http:// but not file://
-      if not find("iexplore.exe", \browser) then set_docpath()
+      if (not find("iexplore.exe", \browser)) |
+	 (not match("online", is_online())) then set_docpath()
 #      if not verify_make() then on_close()
    end
 
@@ -171,7 +170,7 @@ class UIDE : Dialog(
    method init_dialog()
    local wid, ht
       ui_initialize()
-      docpath := &null
+#      docpath := &null
       insert(opened_files_set,"scratch")
       ide.handle_openfile(&null, \startfile)
       menubar.set_font()
@@ -318,7 +317,11 @@ class UIDE : Dialog(
    end
 
    method on_close(ev)
-      dispose()
+      menubar.on_exit(ev)
+   end
+
+   method change(e)
+#      write("The tabset selection changed.")
    end
 
    method setup()
@@ -340,14 +343,7 @@ class UIDE : Dialog(
       MsgBox.set_attribs("bg=white", "font="||fontname)
       MsgBox.set_contents([""])
       tab_item_1.add(MsgBox)
-      DevTabSet.add(tab_item_1)
-      DevTabSet.set_which_one(tab_item_1)
-      self.add(DevTabSet)
-      FileTabSet := BufferTabSet()
-      FileTabSet.set_pos("150", "9%")
-      FileTabSet.set_size("100%-150", "100%-160")
-      tab_item_2 := TabItem()
-      tab_item_2.set_label("scratch")
+
       EditBox := BuffEditableTextList()
       EditBox.set_pos("2", "2")
       EditBox.set_size("100%-4", "100%-4")
@@ -355,6 +351,15 @@ class UIDE : Dialog(
       EditBox.set_attribs("bg="||ui_Preferences.val_background_color,
 			  "font="||fontname)
       EditBox.set_contents([""])
+
+      DevTabSet.add(tab_item_1)
+      DevTabSet.set_which_one(tab_item_1)
+      self.add(DevTabSet)
+      FileTabSet := BufferTabSet()
+      FileTabSet.set_pos("150", "9%")
+      FileTabSet.set_size("100%-150", "100%-160")
+      tab_item_2 := BufferTabItem()
+      tab_item_2.set_label("scratch")
       tab_item_2.add(EditBox)
       FileTabSet.add(tab_item_2)
       FileTabSet.set_which_one(tab_item_2)

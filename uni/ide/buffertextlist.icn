@@ -636,9 +636,9 @@ class BuffEditableTextList : EditableTextList(
 		  }
                }
             }
-        else uidlog.MsgBox.set_contents(["(no errors)"])
-        doReparse := 0
-        }	
+	 else uidlog.MsgBox.set_contents(["(no errors)"])
+	 doReparse := 0
+	 }
    end
 
    method GetCode()
@@ -690,7 +690,9 @@ class BuffEditableTextList : EditableTextList(
          yylex_reinit()
 	 while countdoublequotes(yyin)%2=1 & yyin[-1]=="_" do {
 	    currentPositionY +:= 1
-	    yyin ||:= contents[ currentPositionY ]
+	    if not (yyin ||:= contents[ currentPositionY ]) then {
+	       break break
+	       }
 	    }
          yylex_reinit()
          # Get string s tokens
@@ -764,7 +766,11 @@ local i := 0
       while tab(upto('"\\')) do {
 	 if ="\"" then
 	    i +:= 1
-	 else move(2)
+	 else {
+	    move(1) # eat \\
+	    if i % 2  = 1 then
+	       move(1) # eat escaped things; should make smarter
+	    }
 	 }
       }
    return i

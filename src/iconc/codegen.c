@@ -584,8 +584,13 @@ void const_blks()
             case F_RealLit:
                nxt_pre(cptr->prefix, pre, PrfxSz);
                cptr->prefix[PrfxSz] = '\0';
+#ifdef DescriptorDouble
+               fprintf(inclfile, "double BDR%s = %s;\n",
+                   cptr->prefix, cptr->image);
+#else					/* DescriptorDouble */
                fprintf(inclfile, "struct b_real BDR%s = {T_Real, %s};\n",
                    cptr->prefix, cptr->image);
+#endif					/* DescriptorDouble */
                break;
             }
          }
@@ -1113,8 +1118,13 @@ int outer;
                   fprintf(codefile, ".dword = D_Real;\n");
                   fprintf(codefile, "   ");
                   val_loc(cd->Rslt, outer);
+#ifdef DescriptorDouble
+                  fprintf(codefile, ".vword.realval = *(double *)&BDR%s;\n",
+                     lit->prefix);
+#else					/* DescriptorDouble */
                   fprintf(codefile, ".vword.bptr = (union block *)&BDR%s;\n",
                      lit->prefix);
+#endif					/* DescriptorDouble */
                   break;
                case F_StrLit:
                   fprintf(codefile, ".vword.sptr = ");

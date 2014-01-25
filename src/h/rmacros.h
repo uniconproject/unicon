@@ -1278,8 +1278,10 @@
     handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
 
 #define MUTEX_TRYLOCK(mtx, isbusy, msg) { \
-if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY) \
-  {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg); isbusy=0;} }
+  if ( is_concurrent ){ \
+     if (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY)	\
+        {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg); isbusy=0;} \
+  }else isbusy=0; }
 
 #define MUTEX_INIT( mtx, attr ) { int retval; \
     if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) \
@@ -1320,9 +1322,11 @@ if ( is_concurrent && (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBU
     handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
 
 
-#define MUTEX_TRYLOCKID(mtx, isbusy) { \
-    if ( is_concurrent && (isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
-      {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL); isbusy=0;} }
+#define MUTEX_TRYLOCKID(mtx, isbusy){ \
+    if ( is_concurrent ){ \
+      if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+         {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL); isbusy=0;} \
+    } else isbusy = 0;}
 
 #define INC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx)}
 #define DEC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx)}

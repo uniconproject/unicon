@@ -229,7 +229,7 @@ Deliberate Syntax Error
    lib_sz += strlen(" -ljpeg ");
 #endif /* HAVE_LIBJPEG */
 
-#ifdef MacOSX
+#if defined(MacOSX) || defined(HAVE_LIBFTGL)
    lib_sz += strlen(" -lstdc++ ");
 #endif
 
@@ -311,7 +311,7 @@ Deliberate Syntax Error
 #endif /* HAVE_LIBJPEG */
 
    strcat(s, LinkLibs);
-#ifdef MacOSX
+#if defined(MacOSX) || defined(HAVE_LIBFTGL)
    strcat(s, " -lstdc++ ");
 #endif
 

@@ -690,7 +690,11 @@ struct il_code *il;
          cd->ElemTyp(0) = A_ValLoc;
          cd->ValLoc(0) =               rslt;
          cd->ElemTyp(1) = A_Str;
+#ifdef DescriptorDouble
+         cd->Str(1) =                  ".vword.realval = (double)(";
+#else					/* DescriptorDouble */
          cd->Str(1) =                  ".vword.bptr = (union block *)alcreal(";
+#endif					/* DescriptorDouble */
          cd->ElemTyp(2) = A_Str;
          cd->Str(2) =                  oper_nm;
          cd->ElemTyp(3) = A_Str;
@@ -1068,7 +1072,11 @@ struct il_c *ilc;
             cd->ElemTyp(0) = A_ValLoc;
             cd->ValLoc(0) =             rslt;
             cd->ElemTyp(1) = A_Str;
+#ifdef DescriptorDouble
+            cd->Str(1) =                ".vword.realval = (double)(";
+#else					/* DescriptorDouble */
             cd->Str(1) =                ".vword.bptr = (union block *)alcreal(";
+#endif					/* DescriptorDouble */
             sub_ilc(ilc0, cd, 2);       /* value */
             cd->ElemTyp(3) = A_Str;
             cd->Str(3) =                ");";
@@ -1946,13 +1954,25 @@ struct il_c *dest;
    else if (typcd == real_typ) {
       cd = alc_ary(7);
       cd->ElemTyp(0) = A_Str;
+#ifdef DescriptorDouble
+      cd->Str(0) =                                      "(((";
+#else					/* DescriptorDouble */
       cd->Str(0) =                                      "((BlkLoc(";
+#endif					/* DescriptorDouble */
       cnv_dest(0, 0, src, sym_indx, dest, cd, 1);       /* variable */
       cd->ElemTyp(2) = A_Str;
+#ifdef DescriptorDouble
+      cd->Str(2) =                                ").vword.realval = (double)(";
+#else					/* DescriptorDouble */
       cd->Str(2) =                                ") = (union block *)alcreal(";
+#endif					/* DescriptorDouble */
       sub_ilc(dflt, cd, 3);                             /* default */
       cd->ElemTyp(4) = A_Str;
+#ifdef DescriptorDouble
+      cd->Str(4) =                     ")) , (";
+#else					/* DescriptorDouble */
       cd->Str(4) =                     ")) == NULL ? (fatalerr(0,NULL), 0) : (";
+#endif					/* DescriptorDouble */
       cnv_dest(0, 0, src, sym_indx, dest, cd, 5);       /* variable */
       cd->ElemTyp(6) = A_Str;
       cd->Str(6) =                                     ".dword = D_Real, 1))";

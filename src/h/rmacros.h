@@ -299,7 +299,7 @@
 #else					/* DebugHeap */
 #ifdef DescriptorDouble
    #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
-         *((struct size_dbl *)&(dp->vword.realval))
+         *((struct size_dbl *)&((dp)->vword.realval))
 #else					/* DescriptorDouble */
    #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
          *((struct size_dbl *)&((BlkLoc(*dp)->Real.realval)))

@@ -790,8 +790,8 @@ operator{1} ^ powr(x, y)
 	       runerr(0);
 	    return result;
 #else
-	    extern int over_flow;
-	    C_integer r = iipow(IntVal(x), y);
+	    int over_flow;
+	    C_integer r = iipow(IntVal(x), y, &over_flow);
 	    if (over_flow)
 	       runerr(203);
 	    return C_integer r;
@@ -859,14 +859,12 @@ end
 /*
  * iipow - raise an integer to an integral power. 
  */
-C_integer iipow(n1, n2)
-C_integer n1, n2;
+C_integer iipow(C_integer n1, C_integer n2, int *over_flowp)
    {
    C_integer result;
-   extern int over_flow;
 
    /* Handle some special cases first */
-   over_flow = 0;
+   *over_flowp = 0;
    switch ( n1 ) {
       case 1:
 	 return 1;
@@ -875,7 +873,7 @@ C_integer n1, n2;
 	 return ( n2 & 01 ) ? -1 : 1;
       case 0:
 	 if ( n2 <= 0 )
-	    over_flow = 1;
+	    *over_flowp = 1;
 	 return 0;
       default:
 	 if (n2 < 0)
@@ -886,17 +884,17 @@ C_integer n1, n2;
    for ( ; ; ) {
       if (n2 & 01L)
 	 {
-	 result = mul(result, n1, &over_flow);
-	 if (over_flow)
+	 result = mul(result, n1, over_flowp);
+	 if (*over_flowp)
 	    return 0;
 	 }
 
       if ( ( n2 >>= 1 ) == 0 ) break;
-      n1 = mul(n1, n1, &over_flow);
-      if (over_flow)
+      n1 = mul(n1, n1, over_flowp);
+      if (*over_flowp)
 	 return 0;
       }
-   over_flow = 0;
+   *over_flowp = 0;
    return result;
    }
 #endif					/* COMPILER || !(defined LargeInts) */

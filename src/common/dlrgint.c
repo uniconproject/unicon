@@ -192,12 +192,12 @@ int bigpow(da, db, dx)
 dptr da, db, dx;
    {
    C_integer r;
-   extern int over_flow;
+   int over_flow;
 
    /*
     * Just do ordinary interger exponentiation and check for overflow.
     */
-   r = iipow(IntVal(*da), IntVal(*db));
+   r = iipow(IntVal(*da), IntVal(*db), &over_flow);
    if (over_flow) {
       k_errornumber = 203;
       k_errortext = "";

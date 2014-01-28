@@ -379,6 +379,7 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
+
 #if UNIX
             /*
              * Assume all files that are not Icon source go to linker.
@@ -401,6 +402,8 @@ Deliberate Syntax Error
       optind++;
       }
  
+   addlib("/usr/lib64/libstdc++.so.6");
+
    if (srclst == NULL)
       usage();				/* error -- no files named */
 

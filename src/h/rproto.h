@@ -895,7 +895,7 @@ int	getimage	(dptr dp1, dptr dp2);
 int	getstrg		(char *buf, int maxi, struct b_file *fbp);
 void	hgrow		(union block *bp);
 void	hshrink		(union block *bp);
-C_integer iipow		(C_integer n1, C_integer n2);
+C_integer iipow		(C_integer n1, C_integer n2, int *over_flowp);
 void	init		(char *name, int *argcp, char *argv[], int trc_init);
 int	kbhit		(void);
 int	mkreal		(double r,dptr dp);

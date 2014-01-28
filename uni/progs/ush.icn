@@ -164,13 +164,16 @@ end
 
 procedure cp(av)
    if *av ~= 3 then stop("ush: cp file1 file2")
-   if not (fin := open(av[2])) then stop("can't copy from ", av[2])
-   if (sr := stat(av[3])).mode[1] == "d" then {
+   if not (statrec := stat(av[2])) then
+      stop("can't copy from nonexistent ", av[2])
+   if not (fin := open(av[2],"ru")) then stop("can't open ", av[2], " to copy")
+   if stat(av[3]).mode[1] == "d" then {
       av[3] ||:= "\\" || basename(av[2])
       }
 
-   if not (fout := open(av[3],"w")) then stop("can't copy to ", av[3])
-   while write(fout, read(fin))
+   if not (fout := open(av[3],"wu")) then stop("can't copy to ", av[3])
+   if *writes(fout, reads(fin, statrec.size)) ~= statrec.size then
+       write(&errout, "warning: output size difference in copy of ", av[2])
    close(fout)
    close(fin)
 end

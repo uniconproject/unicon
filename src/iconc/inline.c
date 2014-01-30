@@ -705,7 +705,9 @@ struct il_code *il;
          cd->Str(5) =                  "));";
          cd_add(cd);
          dwrd_asgn(rslt, "Real");
+#ifndef DescriptorDouble
          chkforblk();    /* make sure the block allocation succeeded */
+#endif					/* DescriptorDouble */
          cd_add(mk_goto(*scont_strt));
          break;
       case RetNoVal:
@@ -1082,7 +1084,9 @@ struct il_c *ilc;
             cd->Str(3) =                ");";
             cd_add(cd);
             dwrd_asgn(rslt, "Real");
+#ifndef DescriptorDouble
             chkforblk();    /* make sure the block allocation succeeded */
+#endif					/* DescriptorDouble */
             break;
          case TypCStr:
             /*

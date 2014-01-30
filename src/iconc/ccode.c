@@ -1131,8 +1131,8 @@ gencode(p, n, rslt)
           */
          if (err_conv) {
             sbuf = (char *)alloc((unsigned int)(strlen(rec->name) + 
-                strlen("signal = R_") + PrfxSz + 1));
-            sprintf(sbuf, "signal = R%s_%s(", rec->prefix, rec->name);
+                strlen("r_signal = R_") + PrfxSz + 1));
+            sprintf(sbuf, "r_signal = R%s_%s(", rec->prefix, rec->name);
             }
          else {
             sbuf = (char *)alloc((unsigned int)(strlen(rec->name) + PrfxSz +4));
@@ -1171,7 +1171,7 @@ gencode(p, n, rslt)
             cd->cd_id = C_If;
             cd1 = alc_ary(1);
             cd1->ElemTyp(0) = A_Str;
-            cd1->Str(0) =                  "signal == A_Resume";
+            cd1->Str(0) =                  "r_signal == A_Resume";
             cd->Cond = cd1;
             cd->ThenStmt = sig_cd(on_failure, cur_fnc);
             cd_add(cd);

@@ -464,9 +464,6 @@ int region;
 
 #if !COMPILER
    if (sp == NULL){
-#ifdef AAAConcurrent
-      thread_control(TC_WAKEUPCALL);  /* 1 wake up all threads. */
-#endif					/* Concurrent */
       return 0;
       }
 #endif					/* !COMPILER */
@@ -645,10 +642,6 @@ int region;
       EVValD(&nulldesc, E_EndCollect);
       }
 #endif					/* instrument allocation events */
-#endif					/* Concurrent */
-
-#ifdef AAAConcurrent
-      thread_control(TC_WAKEUPCALL);  /* wake up all threads. */
 #endif					/* Concurrent */
 
    return 1;

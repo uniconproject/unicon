@@ -20,9 +20,9 @@ unicon.exe: $(U) $(LIBFILES)
 	$(CP) unicon.exe $(BIN)
 
 # A windows-specific build option
-wunicon.exe: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
+wunicon.exe: $(U)
 	set PATH=$(BIN)
-	$(ICONT) -G -o wunicon.exe unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
+	$(ICONT) -G -o wunicon.exe $(U)
 	$(CP) wunicon.exe $(BIN)
 
 unicon.u : unicon.icn

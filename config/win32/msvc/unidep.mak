@@ -11,6 +11,11 @@ clean:
 	$(RM) uniclass.dir 
 	$(RM) uniclass.pag
 
+deps:
+	$(UNIDEP) *.icn -f deps.out -nb
+
+deps.out:
+
 unidep.exe: $(UFILES)
 	set IPATH=$(UNI)\lib $(UNI)\parser $(ICON_IPL)\lib
 	set PATH=$(BIN)

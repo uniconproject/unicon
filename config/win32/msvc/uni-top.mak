@@ -5,8 +5,10 @@ all :
 	nmake
 	cd ..\lib
 	nmake
-	cd ..\ivib 
+	cd ..\udb
 	nmake
+	cd ..\udb
+	nmake tools
 	cd ..\gui 
 	nmake
 	cd ..\gui\ivib 

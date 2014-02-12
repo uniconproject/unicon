@@ -17,7 +17,7 @@ deps:
 deps.out:
 
 unidep.exe: $(UFILES)
-	set IPATH=$(UNI)\lib $(UNI)\parser $(ICON_IPL)\lib
+	set IPATH=$(UNI)\lib;$(UNI)\parser;$(ICON_IPL)\lib
 	set PATH=$(BIN)
 	$(UNICON) -o unidep $(UFILES)
 	$(CP) unidep.exe $(BIN)

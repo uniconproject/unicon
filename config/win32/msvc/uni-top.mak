@@ -5,10 +5,6 @@ all :
 	nmake
 	cd ..\lib
 	nmake
-	cd ..\udb
-	nmake
-	cd ..\udb
-	nmake tools
 	cd ..\gui 
 	nmake
 	cd ..\gui\ivib 
@@ -16,8 +12,6 @@ all :
 	cd ..\..\xml 
 	nmake
 	cd ..\parser 
-	nmake
-	cd ..\unidep 
 	nmake
 	cd ..\util 
 	nmake

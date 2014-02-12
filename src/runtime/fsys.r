@@ -2900,11 +2900,11 @@ end
 #if NT
 #ifdef MSWindows
 #ifdef NTGCC
-/* gcc has a getenv() but it doesn't work as well as GetEnvironmentVariable */
+/*
+ * gcc has a getenv() but it doesn't work as well as GetEnvironmentVariable.
+ * As of Visual Studio 12, cl wants to use a getenv from LIBCMT.lib.
+ */
 char *getenv(const char *s)
-#else					/* NTGCC */
-char *getenv(char *s)
-#endif					/* NTGCC */
 {
 static char tmp[1537];
 DWORD rv;
@@ -2912,6 +2912,7 @@ rv = GetEnvironmentVariable(s, tmp, 1536);
 if (rv > 0) return tmp;
 return NULL;
 }
+#endif					/* NTGCC */
 #endif					/* MSWindows */
 
 #ifndef NTGCC

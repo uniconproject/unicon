@@ -4,7 +4,11 @@
  */
 
 #include <signal.h>
+#ifdef _MSC_VER
+#include <stdlib.h>
+#else
 #include <unistd.h>		/* for _exit() */
+#endif
 
 #include "defs.h"
 

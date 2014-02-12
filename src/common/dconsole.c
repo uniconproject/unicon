@@ -106,6 +106,7 @@ struct tend_desc *tend;
 char *reserve_0(int r, word n) { return malloc(1); }
 
 #ifdef MSWindows
+#ifdef NTGCC
    char *getenv(const char *s)
    {
    static char tmp[1537];
@@ -114,7 +115,7 @@ char *reserve_0(int r, word n) { return malloc(1); }
    if (rv > 0) return tmp;
       return NULL;
    }
-
+#endif					/* NTGCC */
 int idelay(int n){
   Sleep(n);
   return Succeeded;

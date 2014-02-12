@@ -1120,11 +1120,9 @@ int link(char *s1, char *s2)
    return 0;
 }
 #endif					/* Dbm */
-#endif					/* NT */
 
-#ifdef NTGCC
 /*
- * tmpfile() from Mingw32 no longer works under Vista
+ * tmpfile() from Mingw32 no longer works under Vista.
  */
 FILE *mytmpfile()
 {
@@ -1141,8 +1139,9 @@ FILE *mytmpfile()
       }
    return f;
 }
+#endif					/* NT */
 
-
+#ifdef NTGCC
 /* libc replacement functions for win32.
 
 Copyright (C) 1992, 93 Free Software Foundation, Inc.

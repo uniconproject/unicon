@@ -22,7 +22,7 @@ cdialog.u checkboxgroupset.u choicedialog.u code.u commondialog.u \
 componentsort.u custom.u eventtab.u gridelement.u gridset.u \
 group.u groupset.u groupsetdialog.u hcomponentsort.u infodialog.u \
 ivib.u ivibmigrate.u main.u menucomponentedit.u menutree.u menutreenode.u \
-savechangesdialog.u utils.u vcomponentsort.u version.u \
+savechangesdialog.u utils.u vcomponentsort.u \
 canvashlineui.u  canvasline.u  canvaslinedialog.u  canvasvlineui.u \
 canvastreeui.u canvastree.u canvastreedialog.u \
 canvaslistspinui.u canvaslistspin.u canvaslistspindialog.u \

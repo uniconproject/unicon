@@ -138,8 +138,10 @@ char *ArgvToCmdline(char **argv)
 
 #if NT
 /*
- * On all Microsoft systems, main() here is named iconx(). On nticonx, a trivial main just calls
- * iconx(); on iconx and wiconx, an MSSstartup() and WinMain() call iconx(). main() is provided by Windows.
+ * On all Microsoft systems, main() here is named iconx().
+ * On nticonx, a trivial main (found in rwinsys.r) just calls iconx().
+ * For iconx and wiconx, an MSSstartup() and WinMain() call iconx(),
+ * since main() is provided by Windows.
  */
 #define main iconx
 #endif

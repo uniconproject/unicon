@@ -9,11 +9,14 @@ UNI=..
 BIN=$(BASE)\bin
 ICONT=$(BIN)\icont
 
+U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
+LIBFILES= ../lib/unilex.u ../lib/tree.u
+
 all:	unicon.exe wunicon.exe
 
-unicon.exe: unigram.u unilex.u tree.u preproce.u idol.u unicon.u unix.u tokens.u yyerror.u
+unicon.exe: $(U) $(LIBFILES)
 	set PATH=$(BIN)
-	$(ICONT) unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u
+	$(ICONT) $(U)
 	$(CP) unicon.exe $(BIN)
 
 # A windows-specific build option
@@ -26,9 +29,19 @@ unicon.u : unicon.icn
 	set PATH=$(BIN)
 	$(ICONT) -c unicon
 
+../lib/unilex.u: unilex.u
+        $(CP) unilex.u ../lib
+
 unilex.u : unilex.icn ytab_h.icn
 	set PATH=$(BIN)
 	$(ICONT) -c unilex
+
+main.u: main.icn
+	set PATH=$(BIN)
+        $(ICONT) -c main
+
+../lib/tree.u: tree.u
+        $(CP) tree.u ../lib
 
 tree.u : tree.icn
 	set PATH=$(BIN)
@@ -41,6 +54,12 @@ tokens.u : tokens.icn ytab_h.icn
 preproce.u : preproce.icn
 	set PATH=$(BIN)
 	$(ICONT) -c preproce
+
+cfy.u : cfy.icn
+        $(ICONT) -c cfy
+
+ca.u : ca.icn
+        $(ICONT) -c ca
 
 # Commented out to avoid bootstrap problem.
 # Uncomment if you modify unigram.y/unigram.icn

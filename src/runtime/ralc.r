@@ -89,13 +89,7 @@ struct astkblk *alcactiv()
     * If malloc failed, attempt to free some co-expression blocks and retry.
     */
    if (abp == NULL) {
-#ifdef Concurrent
-      SUSPEND_THREADS();
-      collect(Static);
-      RESUME_THREADS();
-#else 					/* Concurrent */
-      collect(Static);
-#endif 					/* Concurrent */
+      DO_COLLECT(Static);
       abp = (struct astkblk *)malloc((msize)sizeof(struct astkblk));
       }
 
@@ -119,9 +113,7 @@ struct b_bignum *f(word n)
    register uword size;
    CURTSTATE();
 
-   size = sizeof(struct b_bignum) + ((n - 1) * sizeof(DIGIT));
-   /* ensure whole number of words allocated */
-   size = (size + WordSize - 1) & -WordSize;
+   size = LrgNeed(n);
 
    EVVal((word)size, e_lrgint);
 
@@ -155,15 +147,7 @@ struct b_coexpr *alccoexp()
 
    MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
-#ifdef Concurrent
-   if (alcnum > AlcMax){
-      SUSPEND_THREADS();
-      collect(Static);
-      RESUME_THREADS();
-      }
-#else 					/* Concurrent */
-   if (alcnum > AlcMax) collect(Static);
-#endif 					/* Concurrent */
+   if (alcnum > AlcMax) DO_COLLECT(Static);
 
    ep = (struct b_coexpr *)malloc((msize)stksize);
 
@@ -171,13 +155,7 @@ struct b_coexpr *alccoexp()
     * If malloc failed, attempt to free some co-expression blocks and retry.
     */
    if (ep == NULL) {
-#ifdef Concurrent
-      SUSPEND_THREADS();
-      collect(Static);
-      RESUME_THREADS();
-#else 					/* Concurrent */
-      collect(Static);
-#endif 					/* Concurrent */
+      DO_COLLECT(Static);
       ep = (struct b_coexpr *)malloc((msize)stksize);
       }
 
@@ -231,15 +209,7 @@ struct b_coexpr *alccoexp()
 
 MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
-#ifdef Concurrent
-   if (alcnum > AlcMax){
-      SUSPEND_THREADS();
-      collect(Static);
-      RESUME_THREADS();
-      }
-#else 					/* Concurrent */
-   if (alcnum > AlcMax) collect(Static);
-#endif 					/* Concurrent */
+   if (alcnum > AlcMax) DO_COLLECT(Static);
 
 #ifdef MultiThread
    if (icodesize > 0) {
@@ -255,13 +225,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
     * If malloc failed, attempt to free some co-expression blocks and retry.
     */
    if (ep == NULL) {
-#ifdef Concurrent
-      SUSPEND_THREADS();
-      collect(Static);
-      RESUME_THREADS();
-#else 					/* Concurrent */
-      collect(Static);
-#endif 					/* Concurrent */
+      DO_COLLECT(Static);
 
 #ifdef MultiThread
       if (icodesize>0) {

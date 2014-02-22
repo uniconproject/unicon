@@ -348,6 +348,7 @@
 #else					/* EBCDIC */
    #define LineFeed  10
    #define CarriageReturn 13
+#define tonum(c)     (isdigit(c) ? (c)-'0' : 10+(((c)|(040))-'a'))
 #endif					/* EBCDIC */
 
 /*
@@ -1435,8 +1436,14 @@
 #define CV_TIMEDWAIT_EMPTYBLK(bp, t)\
   pthread_cond_timedwait(condvars[bp->cvempty], MUTEX_GETBLK(bp), &t);
 
-#define SUSPEND_THREADS() thread_control(TC_STOPALLTHREADS);
-#define RESUME_THREADS() thread_control(TC_WAKEUPCALL);
+#define SUSPEND_THREADS() thread_control(TC_STOPALLTHREADS)
+#define RESUME_THREADS() thread_control(TC_WAKEUPCALL)
+
+#define DO_COLLECT(region) do { \
+   SUSPEND_THREADS(); \
+   collect(region); \
+   RESUME_THREADS(); \
+   } while(0)
 
 #else					/* Concurrent */
 #define MUTEX_INIT(mtx, attr)
@@ -1475,8 +1482,6 @@
 #define CV_GETULLTBLK(bp)
 #define CV_GETULLTBLK(bp)
 
-
-
 #define CV_WAIT_FULLBLK(bp)
 #define CV_WAIT(cv, mtxid)
 
@@ -1487,9 +1492,10 @@
 
 #define CV_TIMEDWAIT_EMPTYBLK(bp, t)
 
-
 #define SUSPEND_THREADS()
 #define RESUME_THREADS()
+
+#define DO_COLLECT(region) collect(region)
 
 #define CV_WAIT_ON_EXPR(expr, cv, mtxid)
 

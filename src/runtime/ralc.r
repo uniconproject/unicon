@@ -1299,11 +1299,11 @@ char *f(int region, word nbytes)
     * All attempts failed.
     */
    if (region == Blocks)
-      ReturnErrNum(307, 0);
+      ReturnErrNum(307, NULL);
    else if (qualfail)
-      ReturnErrNum(304, 0);
+      ReturnErrNum(304, NULL);
    else
-      ReturnErrNum(306, 0);
+      ReturnErrNum(306, NULL);
 }
 #enddef
 

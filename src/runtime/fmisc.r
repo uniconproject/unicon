@@ -2441,7 +2441,7 @@ word get_cv(word mtx){
       condvarsmtxs=realloc(condvarsmtxs, maxcondvars * WordSize);
       if (condvars==NULL || condvarsmtxs==NULL)
 	     syserr("get_cv(): out of memory for condition variables!");
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
       }
 
    condvars[ncondvars] = malloc(sizeof(pthread_cond_t)); \

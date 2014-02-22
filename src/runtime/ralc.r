@@ -92,7 +92,7 @@ struct astkblk *alcactiv()
 #ifdef Concurrent
       SUSPEND_THREADS();
       collect(Static);
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
 #else 					/* Concurrent */
       collect(Static);
 #endif 					/* Concurrent */
@@ -159,7 +159,7 @@ struct b_coexpr *alccoexp()
    if (alcnum > AlcMax){
       SUSPEND_THREADS();
       collect(Static);
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
       }
 #else 					/* Concurrent */
    if (alcnum > AlcMax) collect(Static);
@@ -174,7 +174,7 @@ struct b_coexpr *alccoexp()
 #ifdef Concurrent
       SUSPEND_THREADS();
       collect(Static);
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
 #else 					/* Concurrent */
       collect(Static);
 #endif 					/* Concurrent */
@@ -235,7 +235,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    if (alcnum > AlcMax){
       SUSPEND_THREADS();
       collect(Static);
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
       }
 #else 					/* Concurrent */
    if (alcnum > AlcMax) collect(Static);
@@ -258,7 +258,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 #ifdef Concurrent
       SUSPEND_THREADS();
       collect(Static);
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
 #else 					/* Concurrent */
       collect(Static);
 #endif 					/* Concurrent */
@@ -1191,7 +1191,7 @@ char *f(int region, word nbytes)
    SUSPEND_THREADS();
    collect(region); /* try to collect the private region first */
    if (DiffPtrs(curr_private->end,curr_private->free) >= want) {
-      thread_control(TC_WAKEUPCALL);
+      RESUME_THREADS();
       return curr_private->free;
       }
 
@@ -1213,7 +1213,7 @@ char *f(int region, word nbytes)
       	 *pcurr = curr_private;
          collect(region);
          if (DiffPtrs( curr_private->end, curr_private->free) >= want){
-            thread_control(TC_WAKEUPCALL);
+            RESUME_THREADS();
             return curr_private->free;
             }
          }
@@ -1221,7 +1221,7 @@ char *f(int region, word nbytes)
    /*
     * GC has failed so far to free enough memory, wake up all threads for now.
     */   
-   thread_control(TC_WAKEUPCALL); 
+   RESUME_THREADS(); 
  #endif 					/* Concurrent */   
 
    /*
@@ -1308,11 +1308,11 @@ char *f(int region, word nbytes)
          *pcurr = curr_private;
          collect(region);
          if (DiffPtrs(curr_private->end,curr_private->free) >= want){
-   	    thread_control(TC_WAKEUPCALL); 
+   	    RESUME_THREADS(); 
             return curr_private->free;
             }
          }
-   thread_control(TC_WAKEUPCALL); 
+   RESUME_THREADS(); 
    if ((rp = findgap(curr_private, nbytes, region)) != 0)    /* check all regions on chain */
    
 #else 					/* Concurrent */

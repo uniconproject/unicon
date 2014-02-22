@@ -1506,3 +1506,10 @@
 #define MUTEX_TRYLOCKBLK_NOCHK(bp, isbusy, msg)
 
 #endif					/* Concurrent */
+
+#ifdef LargeInts
+/* determine the number of words needed for a bignum block with n digits */
+
+#define LrgNeed(n)   ( ((sizeof(struct b_bignum) + ((n) - 1) * sizeof(DIGIT)) \
+		       + WordSize - 1) & -WordSize )
+#endif					/* LargeInts */

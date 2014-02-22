@@ -87,17 +87,6 @@
 #define ceil(x)      ((word)((x) + 1.01))
 #define ln(n)        (log((double)n))
 
-/* determine the number of words needed for a bignum block with n digits */
-
-#define LrgNeed(n)   ( ((sizeof(struct b_bignum) + ((n) - 1) * sizeof(DIGIT)) \
-		       + WordSize - 1) & -WordSize )
-
-/* copied from rconv.c */
-
-#if !EBCDIC
-#define tonum(c)     (isdigit(c) ? (c)-'0' : 10+(((c)|(040))-'a'))
-#endif					/* !EBCDIC */
-
 /* copied from oref.c */
 
 #define RandVal (RanScale*(k_random=(RandA*(long)k_random+RandC)&0x7fffffffL))

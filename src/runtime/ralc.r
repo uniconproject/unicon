@@ -90,7 +90,7 @@ struct astkblk *alcactiv()
     */
    if (abp == NULL) {
 #ifdef Concurrent
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       collect(Static);
       thread_control(TC_WAKEUPCALL);
 #else 					/* Concurrent */
@@ -157,7 +157,7 @@ struct b_coexpr *alccoexp()
 
 #ifdef Concurrent
    if (alcnum > AlcMax){
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       collect(Static);
       thread_control(TC_WAKEUPCALL);
       }
@@ -172,7 +172,7 @@ struct b_coexpr *alccoexp()
     */
    if (ep == NULL) {
 #ifdef Concurrent
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       collect(Static);
       thread_control(TC_WAKEUPCALL);
 #else 					/* Concurrent */
@@ -233,7 +233,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
 #ifdef Concurrent
    if (alcnum > AlcMax){
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       collect(Static);
       thread_control(TC_WAKEUPCALL);
       }
@@ -256,7 +256,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
     */
    if (ep == NULL) {
 #ifdef Concurrent
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       collect(Static);
       thread_control(TC_WAKEUPCALL);
 #else 					/* Concurrent */
@@ -1188,7 +1188,7 @@ char *f(int region, word nbytes)
    if (want < nbytes)
       want = nbytes;
 
-   thread_control(TC_STOPALLTHREADS);
+   SUSPEND_THREADS();
    collect(region); /* try to collect the private region first */
    if (DiffPtrs(curr_private->end,curr_private->free) >= want) {
       thread_control(TC_WAKEUPCALL);
@@ -1294,7 +1294,7 @@ char *f(int region, word nbytes)
 #ifdef Concurrent
    fprintf(stderr, " !!! Low memory!! Trying all options !!!\n ");
    /* look in the public heaps, */
-   thread_control(TC_STOPALLTHREADS); 
+   SUSPEND_THREADS(); 
 
    /* public heaps might have got updated, resync, no need to lock!  */
    if (region == Strings)

@@ -36,7 +36,7 @@ void err_msg(int n, dptr v)
     */
    if (is:null(curpstate->eventmask))
       if (IntVal(kywd_err) == 0 || !err_conv)
-         thread_control(TC_STOPALLTHREADS);
+         SUSPEND_THREADS();
 #endif					/* Concurrent */
 
    if (n == 0) {

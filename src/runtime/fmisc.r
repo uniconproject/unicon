@@ -154,7 +154,7 @@ function{1} collect(region, bytes)
 	 case Blocks:
 	    if (DiffPtrs(blkend,blkfree) >= bytes){
 	       SUSPEND_THREADS();
-	       collect(Blocks);		/* force unneaded collection */
+	       collect(Blocks);		/* force unneeded collection */
 	       RESUME_THREADS();
 	       }
 	    else if (!reserve(Blocks, bytes))	/* collect & reserve bytes */
@@ -2435,7 +2435,7 @@ word get_cv(word mtx){
    word n;
    MUTEX_LOCKID_CONTROLLED(MTX_CONDVARS);
    if(ncondvars==maxcondvars){
-      thread_control(TC_STOPALLTHREADS);
+      SUSPEND_THREADS();
       maxcondvars = maxcondvars * 2;
       condvars=realloc(condvars, maxcondvars * sizeof(pthread_cond_t *));
       condvarsmtxs=realloc(condvarsmtxs, maxcondvars * WordSize);

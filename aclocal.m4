@@ -528,6 +528,10 @@ then
 	if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
 	then
 	        XLIB_HOME=/usr/openwin
+		if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+		then
+		        XLIB_HOME=/opt/X11
+		fi
 	fi
 fi
 ])

@@ -2,11 +2,11 @@
 
 \index{database}Databases are technically part of the system interface
 described in the last chapter, but they are an important application
-area in their own right. There are different kinds of databases, and
-the appropriate database to use depends on how much information is to
-be stored, and what kinds of accesses to the information are supported.
-This chapter describes three database mechanisms for which Unicon
-provides direct support. In this chapter you will learn how to:
+area in their own right. Different kinds of databases are
+appropriate in different situations depending on how much information is to
+be stored and what kinds of accesses to the information are supported.
+This chapter describes three kinds of databases for which Unicon
+provides direct support, enabling you to:
 
 \begin{itemize}
 \item Read and write memory-based structures to data files.
@@ -18,7 +18,7 @@ provides direct support. In this chapter you will learn how to:
 
 Unicon provides transparent access to databases stored in local files
 and on remote servers. The term
-"transparent" means that the built-in
+{\em transparent\/} means that the built-in
 functions and operators used to access information in a database are
 the same as those used to access information in the memory-based
 structures presented in Chapter 2. To do this, connections to databases
@@ -37,36 +37,32 @@ elements are generated from memory, but if \texttt{x} is a file,
 Unicon is to make databases just as easy to learn and use as the rest
 of the language, and to minimize the introduction of new concepts.
 
-The word "database" means different things
-to different people. For some, the term is used as the short form of
-the term "relational database." This
-chapter uses the term database to refer to any method of providing
-"persistent structures" that store
-information from one program run to the next. The operators that are
-used to access a database determine whether a single element at a time
-is read or written, or whether many operations are buffered and sent to
-the database together.
+The word ``database'' means different things to different people; for
+some, it is the short form of ``relational database.'' This chapter
+uses the term database to refer to any method of providing
+{\em persistent structures\/} that store information from one program
+run to the next. The operators used to access a database determine
+whether one element at a time is read or written, or whether many
+operations are buffered and sent to the database together.
 
 \section{Memory-based Databases}
 
-Some people would not consider a memory-based
-\index{database!in-memory}database to be a database at all. If the
-entire database fits in memory at once, you can generally achieve vast
+If the entire database fits in memory at once, you can achieve vast
 speedups by avoiding the disk as much as possible. For example, all
-forms of querying or reading the database can be performed from memory.
-The database may be modified in memory immediately, and updated on the
-disk later on. Memory-based databases were limited in value ten years
-ago, but in the age where a gigabyte of main memory for your PC is
-affordable, they may be the best choice for many or most applications.
+queries to read the database can be performed from memory.  The
+database may be modified in memory immediately, and updated on the
+disk later on. Memory-based databases are increasingly feasible as
+workstation main memories grow larger, they are an excellent choice
+for many applications.
 
-One easy way to implement a memory-based database is to build up your
+One way to implement a memory-based database is to build up your
 arbitrary structure in memory, and then use the Icon Program Library
-procedures in module \texttt{xcodes} to write them out and read them
-in. The \index{xcodes}\texttt{xcodes} procedures flatten structures
-into a canonical string format that can be written to a file, and
-convert such strings back into the corresponding structure. If variable
-\texttt{db} contains such a structure, the following sequence saves the
-contents of \texttt{db} to a file named \texttt{db.dat.}
+module \texttt{xcodes} to write them out and read them
+in. The \index{xcodes}\texttt{xcodes} procedures convert structures
+to a string format that can be written to a file, and convert
+such strings back into the corresponding structure.
+The following sequence saves the
+contents of structure \texttt{db} to a file named \texttt{db.dat}.
 
 \iconcode{
 db := table() \\
@@ -111,17 +107,15 @@ eventually followed by compatible superset libraries called NDBM (New
 Data Base Manager) and GDBM (GNU Data Base Manager). Unicon uses GDBM
 on all platforms.
 
-DBM databases are opened by the \texttt{open()} function using mode
-\texttt{"d"}. By default, a database is
-opened for reading and writing; mode
-\texttt{"dr"} opens a database read-only.
-Once opened, DBM databases are treated as a special case of the table
-data type and are manipulated using table operations. For example, if
-\texttt{d} is a DBM file, \texttt{d[s]} performs a database
+DBM databases are accessed via the \texttt{open()} function using mode
+\texttt{"d"} to open a database for reading and writing, or mode
+\texttt{"dr"} for read-only access. Once opened, DBM databases
+resemble the table data type and are manipulated using table
+operations. For example, if \texttt{d} is a DBM file,
+\texttt{d[s]}\index{subscript operator} performs a database
 insert/update or lookup, depending on whether the expression is
-assigned a new value, or just \index{dereference}dereferenced for its
-current value. For persons who do not like to use \index{subscript
-operator}subscript operators for everything, values can also be
+assigned a new value, or \index{dereference}dereferenced for its
+current value. Values can also be
 inserted into the database with \index{insert()!DBM
 database}\texttt{insert(d, k, v)} and read from it with
 \index{fetch()!DBM database}\texttt{fetch(d, k)}. \index{delete()!DBM
@@ -160,7 +154,7 @@ organization, when the size of the database requires that you update
 the database a record at a time, instead of writing the entire data
 set. For example, if you wrote a Web browser, you might use a DBM
 database to store the user's set of bookmarks to Web
-pages of interest. In fact, Netscape uses DBM files for its bookmarks.
+pages of interest.
 
 There is one basic limitation of DBM databases when compared with the
 table data type that you should know about. DBM databases are
@@ -180,13 +174,13 @@ capability.
 
 \section[SQL Databases]{SQL Databases}
 
-\index{SQL}DBM is great for data that can be organized around a single
-key, but it is not much help for more complex databases. The industry
+\index{SQL}DBM is great for data that is organized around a single
+key, but it is inadequate for complex databases. The industry
 standard choice for enterprise-level data organization is the
 Structured Query Language (SQL). SQL is supported by every major
 database vendor.
 
-A SQL database is more complex than a DBM database. It can contain
+Unlike DBM, a SQL database can contain
 multiple tables, and those tables are accessed by walking through a set
 of results to a query, rather than by accessing individual elements
 directly. SQL is designed for industrial-strength relational databases.
@@ -203,15 +197,14 @@ form or layout of the data. There is an ANSI standard definition of
 SQL, but many vendors provide extensions, and most vendors are also
 missing features from the ANSI standard. Unicon allows you to send any
 string you want to the SQL server, so you can write portable
-"vanilla SQL" or you can write
-vendor-specific SQL as needed.
+``vanilla SQL'' or you can write vendor-specific SQL as needed.
 
 SQL was originally intended for text-based interactive sessions between
-humans and their databases, but is now primarily used
-"under the covers" by database
-applications. Many database applications accommodate novice users with
+humans and their databases. Nowadays, SQL is primarily used
+``under the covers'' by database
+applications that accommodate novice users with
 a graphical interface that does not require any knowledge of SQL, while
-supporting a SQL "escape hatch" for
+supporting a SQL ``escape hatch'' for
 advanced users who may wish to do custom queries. This duality is
 paralleled in the Unicon language by the fact that
 Unicon's built-in database operators and functions
@@ -230,15 +223,15 @@ New tables are created with a \texttt{CREATE TABLE} statement, such as
 create table addresses (name varchar(40), address varchar(40),\\
 \>\>\>\> phone varchar(15))}
 
-Tables have a primary key, which must be unique among rows in the table.
+Tables have a primary key that must be unique among rows in the table.
 By default the primary key is the first one listed, so \texttt{name} is
 the primary key in table \texttt{addresses} above.
 
 SQL's data manipulation operations include
 \texttt{SELECT}, \texttt{INSERT}, \texttt{UPDATE}, and \texttt{DELETE}.
-\texttt{SELECT} allows you to refine the data set being operated on,
+\texttt{SELECT} determines the data set being operated on,
 picking rows and columns that form some projection of the original
-table. Perhaps more importantly, \texttt{SELECT} allows you to combine
+table. \texttt{SELECT} also allows you to combine
 information from multiple tables using relational algebra operations.
 Most databases are long-lived and evolve to include more columns of
 information over time. SQL's ability to select and
@@ -295,7 +288,7 @@ database systems, it provides concrete examples of writing Unicon
 client programs that access typical database servers.
 
 \begin{center}
-\includegraphics[width=4in,height=3in]{ub-img/odbcarch.png}
+\includegraphics[width=3.2in,height=2.4in]{ub-img/odbcarch.png}
 \end{center}
 
 {\sffamily\bfseries Figure 6-1:}
@@ -306,28 +299,27 @@ client programs that access typical database servers.
 
 To use Unicon's SQL facilities, you must have several
 software components in place. First, you need a SQL server that
-supports ODBC. You could buy a commercial SQL server, or you may be
-able to use a free or low-cost server such as \index{MySQL}MySQL
+supports ODBC. You can buy a commercial SQL server, or
+use a free server such as \index{MySQL}MySQL
 (\texttt{www.mysql.com}) or \index{PostgreSQL}PostgreSQL
 (\texttt{www.postgresql.org}).
 
 Second, you need an account, password, and permissions on the SQL
-server, so that you can connect to it. The details of this process are
-necessarily server-dependent and unfortunately outside the scope of
-this book.
+server in order to connect to it. The details are
+server-dependent and outside the scope of this book.
 
 Third, your client machine needs an \index{driver manager!ODBC}ODBC
-driver manager, and an ODBC driver for your SQL server, and these have
-to be configured properly. The driver manager is a piece of system
-software that multiplexes applications to different databases, while
-the drivers are the dynamic link libraries that database vendors supply
+driver manager, and an ODBC driver for your SQL server; these must
+be configured properly. The driver manager is a component
+that connects applications to various databases; ODBC
+drivers are dynamic link libraries that database vendors supply
 to talk to their database. Once you have the ODBC software set up,
 writing the Unicon client program to connect to your database is
 straightforward.
 
 \subsection{Opening a SQL database}
 
-Connecting to a SQL database is performed by calling \texttt{open()}
+To connect to a SQL database, call \texttt{open()}
 with mode \texttt{"o"}. This establishes a
 session with a data source. The filename argument to \texttt{open()} is
 the data source to which you are connecting; it is associated with a
@@ -344,10 +336,9 @@ f := open("unicondb",
 "tiger")}
 
 The \texttt{open()} function returns a value that supports many of the
-operations of both a file and a table. If the connection
-can't be established, the call fails. The underlying
-session information is maintained separately and may be shared by
-multiple calls to \texttt{open()} to the same database. In addition to
+operations of both a file and a table, or fails if the connection
+cannot be established. The underlying session information is shared by
+multiple calls to \texttt{open()} the same database. In addition to
 the network connection and SQL session information that is retained,
 each database file value maintains a current \textit{selection}
 consisting of a set of rows corresponding to the current query, and a
@@ -396,9 +387,10 @@ write(row.Name) \\
 write(row["Address"])
 }
 
-Called with one argument, \texttt{fetch(db)} moves the cursor forward
-one position. With two arguments, \texttt{fetch(db, column)} fetches a
-single column from the current row, without advancing the cursor.
+\noindent
+Called with one argument, \texttt{fetch(db)} advances the cursor
+one position. With two arguments, \texttt{fetch(db, col)} produces a
+column from the current row without advancing the cursor.
 
 \subsection{A SQL example application}
 
@@ -446,9 +438,9 @@ while write(fetch(db).Title)
 
 \subsection{SQL types and Unicon types}
 
-SQL has many data types, most of which correspond well to Unicon types.
-For example, \texttt{CHAR} and \texttt{VARCHAR} correspond to Icon
-strings, \texttt{INTEGER} and \texttt{SMALLINT} correspond to integers,
+SQL has many data types, most of which correspond to Unicon types.
+\texttt{CHAR} and \texttt{VARCHAR} correspond to Icon
+strings; \texttt{INTEGER} and \texttt{SMALLINT} correspond to integers;
 \texttt{FLOAT} and \texttt{REAL} correspond to reals, and so on. The
 philosophy is to convert between Icon and SQL seamlessly and with
 minimal changes to the data format, but you should be aware that these
@@ -461,24 +453,20 @@ they use.
 
 Unicon has structure types for which there is no SQL equivalent. Values
 of these types cannot be inserted into a SQL database unless you
-explicitly convert them to a SQL-compatible type (usually, a string)
+explicitly convert them to a SQL-compatible type (usually a string)
 using a function such as \texttt{xencode()}.
-
-SQL also has types not found in Unicon. These types, such as bit
-strings, datetimes, timestamps, and BLOBS, are generally all
-represented by strings, and strings are used to insert such values into
-SQL databases. In fact, strings are the "magic
-fingers" of the whole interface, since they are also the
-type used by the system to represent out of range values when reading
-SQL columns into Unicon. But, you are probably tired of me stringing
-you along about databases by now.
+SQL also has types not found in Unicon such as bit
+strings, timestamps, and BLOBS; they are represented
+by strings, and strings are used to insert such values into SQL
+databases. Strings are also used to represent out-of-range values when
+reading SQL columns into Unicon.
 
 \subsection{More SQL database functions}
 
-SQL databases are complicated enough, and feature-rich enough to warrant
-their own repertoire of functions in addition to the operations they
+SQL databases are feature-rich enough to warrant a suite
+of functions in addition to those they
 share with other kinds of files and databases. These functions are
-described in detail in Appendix A, but a few of them deserve special
+described in detail in Appendix A, but some of them deserve special
 mention. The function \texttt{dbtables(db)} is useful to obtain a
 listing of the data sources available within a particular database.
 Function \texttt{dbcolumns(db)} provides detailed information about the
@@ -486,12 +474,12 @@ current table that is useful in writing general tools for viewing or
 modifying arbitrary SQL databases.
 
 The functions \texttt{dbproduct(db)} and \texttt{dbdriver(db)} produce
-information about the DBMS to which db is connected, and the
-\index{ODBC}ODBC driver software used in the connection, respectively.
+information about the DBMS on which \texttt{db} resides, and the
+\index{ODBC}ODBC driver software used in the connection.
 The function \texttt{dblimits(db)} produces the upper bounds for many
 DBMS system parameters, such as the maximum number of columns allowed
-in a table. All three of these functions return their results as either
-a record or list of records; the record field names and descriptions
+in a table. These functions return their results as
+a record or list of records whose field names and descriptions
 are given in Appendix A.
 
 \section{Tips and Tricks for SQL Database Applications}
@@ -502,13 +490,13 @@ natural to the Unicon programmer.
 
 \subsection{Operating on large files}
 
-If anything can bring a modern workstation to its knees, it is asking
-for 200MB of data in a remote SQL database. Some SQL operations are
-slow due to an inefficient query on the remote server, while others are
-slow because large amounts of data are transmitted over a limited
-network connection. For a fixed amount of data, operation time will
-vary radically depending on how it is organized; fewer, larger tuples
-are transmitted faster than many smaller tuples.
+Asking for 200MB of data in a remote SQL database is a good way to
+bring a computer to its knees. Some SQL operations are slow due to an
+inefficient query on the remote server, while others are slow because
+large amounts of data are transmitted over a limited network
+connection. For a fixed amount of data, operation time will vary
+radically depending on how it is organized; fewer, larger tuples are
+transmitted faster than many smaller tuples.
 
 \subsection{Use multiple connections to nest queries}
 
@@ -548,28 +536,26 @@ while r := fetch(db) do \{ \\
 
 \subsection{Dynamic records}
 
-You may be wondering exactly how rows are represented. Actually, they
-are records, but their fields are determined at run-time from the names
-of selected columns. Such new record types that are introduced on the
-fly are called \textit{dynamic records}, and they are useful in other
+Rows are represented as a special kind of Unicon record whose
+fields are determined at run-time from the names
+of selected columns. Record types introduced at runtime
+are called \textit{dynamic records}, and they are useful in other
 contexts besides databases.
 
 The function \index{constructor!dynamic record
-type}\texttt{constructor(recordname, field, field, ?)} produces a
-Unicon record constructor procedure for records named
-\texttt{recordname} with the specified fields. The fields of dynamic
-records can be arbitrary strings, not just legal identifiers, but
-obviously the field operator (\texttt{.}) cannot be used for fields
-that are not identifiers.
+type}\texttt{constructor(rname, field, field, ...)} produces a
+procedure that constructs records named
+\texttt{rname} with the given fields. The field names
+can be arbitrary strings, but only legal identifiers
+will be subsequently accessible via the field operator (\texttt{.})
 
 \subsection{The \texttt{db} library}
 
-By adding \texttt{link db} to your program you can access a library that
-provides simplified access to SQL databases for non-SQL programmers.
-These procedures will not spare you the pain of learning SQL for long,
+The declaration \texttt{link db} provides simplified SQL access routines
+for non-SQL programmers.
+This library will not allow you to avoid learning SQL for long,
 but may ease the conversion from Unicon structure values into SQL
 strings for transmission over the network.
-
 The most useful of these procedures is \texttt{dbupdate()}, which sends
 a record (tuple) to the database. The following example updates two
 columns within a row returned by \texttt{fetch()}.
@@ -577,7 +563,7 @@ columns within a row returned by \texttt{fetch()}.
 \iconcode{
 row := fetch(db) \\
 row.Name := "Bill Snyder" \\
-row["Address"] := '6900 Tropicana Blvd" \\
+row["Address"] := "6900 Tropicana Blvd" \\
 dbupdate(db, row)
 }
 
@@ -585,32 +571,26 @@ Of course, before a fetch can be performed, a row set must have been
 selected. The procedure \texttt{dbselect(db, columns, filter, order)}
 selects tuples containing columns from the database, with optional
 filter(s) and ordering rule(s).
-
-Inserting and deleting rows may be performed by the procedures
+Inserting and deleting rows is performed by procedures
 \texttt{dbinsert()} and \texttt{dbdelete()}. The \texttt{dbinsert()}
 function takes two parameters for each column being inserted, the
 column name and then the value.
 
 \subsection{Unwritable tuples}
 
-It is worth mentioning that many forms of SQL selections are read-only.
-The relational combination of columns from different tables is a
-powerful abstraction, but the resulting selections are non-updatable.
-Another example of a read-only query is a \texttt{GROUP BY} query,
-which is usually applied before an aggregate count. Executing a
-\texttt{SELECT *} on a single table is guaranteed to be updatable, but
-if you do something fancier, you will have to know the semantics of SQL
-to tell whether the result may be modified.
+Many SQL selections are read-only.  The relational combination of
+columns from different tables is powerful, but the resulting
+selections are non-updatable.  Another example of a read-only query is
+a \texttt{GROUP BY} query, which is usually applied before an
+aggregate count. Executing a \texttt{SELECT *} on a single table is
+updatable, but if you do something fancier, you will have to know the
+semantics of SQL to tell whether the result may be modified.
 
 \section{Summary}
 
-Databases are a vital form of persistent storage for modern
-applications. The notation used to manipulate a database can look like
-a sequence of table and record operations, or it may be an obvious
-combination of Unicon and SQL statements. Either way, database
-facilities give programmers more direct access and control over the
+Databases are a standard form of persistent storage for modern
+applications. The notation for manipulating a database looks like
+a sequence of table and record operations, comprising a
+combination of Unicon and SQL statements. Database
+facilities give programmers direct access and control over the
 information flow to and from permanent storage.
-
-
-\bigskip
-

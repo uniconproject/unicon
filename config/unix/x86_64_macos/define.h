@@ -1,5 +1,5 @@
 /*
- * Icon configuration file for PPC running Darwin 1.4 or newer.
+ * Unicon configuration file for x86_64-bit Mac OSX.
  */
 
 #define UNIX 1
@@ -20,5 +20,3 @@
 #define PROFIL_CHAR_P
 /* LoadFunc not implemented */
 #define LoadFunc
-
-#define Graphics 1

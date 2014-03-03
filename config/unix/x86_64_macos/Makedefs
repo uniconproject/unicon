@@ -7,14 +7,15 @@
 #  XLIBS    libraries to link for graphics
 #  XPMDEFS  definitions for building XPM library
 
-LIBS =  @GL_LDFLAGS@ @LIBS@
+LIBS = -lz
 CC = cc
-CFLAGS = -Wno-parentheses-equality -I../libtp -I../gdbm -I../xpm @GL_CFLAGS@ -I/usr/X11R6/include
+# give both the new (/opt/X11) and old (/usr/X11R6) locations for X11
+CFLAGS = -Wno-parentheses-equality -I../libtp -I../gdbm -I../xpm @GL_CFLAGS@ -I/opt/X11/include -I/usr/X11R6/include -I/usr/local/include
 CFDYN =
-RLINK = -L../../bin @GL_LDFLAGS@ ../gdbm/libgdbm.a
+RLINK = -L../../bin
 RLIBS = @LIBS@ -lm -lgdbm -ltp -lstdc++
 TLIBS =
-XLIBS = -L/usr/X11R6/lib -lXpm -lX11
+XLIBS = @GL_LDFLAGS@ -L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lXpm -lX11
 XPMDEFS = -DZPIPE -I/usr/X11R6/include
 XPM=xpm
 GDBM=gdbm

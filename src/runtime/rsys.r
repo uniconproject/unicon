@@ -1639,7 +1639,8 @@ struct ptstruct *ptopen(char *command)
 }
 
 
-int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigned long waittime, int longread)
+int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
+	      unsigned long waittime, int longread)
    {
    unsigned long bytes_read=0;
    int tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
@@ -1655,7 +1656,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct, unsigne
 #if !NT
   
    /* clear the buffer */
-   memset(buffer, '\0', sizeof(buffer));
+   memset(buffer, '\0', bufsiz);
 
    if (!longread) {
       timeout.tv_sec  = 0L;

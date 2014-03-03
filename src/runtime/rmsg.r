@@ -378,7 +378,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
    int need_from = 1;
 
    if (getenv_r("UNICON_SMTPSERVER", tmpbuf, 255)==0) {
-      strncat(smtpserver, tmpbuf, sizeof(smtpserver));
+      strncat(smtpserver, tmpbuf, sizeof(smtpserver)-1);
       smtpserver[sizeof(smtpserver)-1] = '\0';
       }
    else {
@@ -397,7 +397,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
 
  got_smtpserver:   
    if(getenv_r("UNICON_USERADDRESS", tmpbuf, 255)==0) {
-      strncat(useraddr, tmpbuf, sizeof(useraddr));
+      strncat(useraddr, tmpbuf, sizeof(useraddr)-1);
       useraddr[sizeof(useraddr)-1] = '\0';
       }
    else {

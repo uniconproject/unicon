@@ -13,6 +13,7 @@
 #define StackAlign 16
 /* a non-default datatype for SQLBindCol's 6th parameter */
 #define SQL_LENORIND SQLLEN
+#define NoLIBZ
 
 #define NamedSemaphores
 #define MacOSX

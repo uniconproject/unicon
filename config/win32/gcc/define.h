@@ -1,3 +1,13 @@
+/*
+ * 0x501 => WindowsXP or later
+ */
+
+#if !defined(WINVER) || (WINVER < 0x0501)
+#undef WINVER
+#define WINVER 0x0501
+#define HAVE_GETADDRINFO
+#endif
+
 #define HostStr "Win32 Intel GCC"
 #define IconAlloc
 #define Precision 16

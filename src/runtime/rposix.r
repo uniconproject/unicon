@@ -1494,6 +1494,152 @@ dptr result;
    return result;
 }
 
+#ifdef HAVE_GETADDRINFO
+
+dptr make_host_from_addrinfo(name, inforesult, result)
+char *name;
+struct addrinfo *inforesult;
+ dptr result;
+{
+   struct b_record *rp;
+   dptr constr;
+   int nfields;
+   int nmem = 0, i, n;
+   unsigned int *addr;
+   char *p;
+
+   struct addrinfo *ptr;
+
+   CURTSTATE();
+
+   if (!(constr = rec_structor("posix_hostent")))
+     return 0;
+
+   nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+   rp = alcrecd(nfields, BlkLoc(*constr));
+
+   result->dword = D_Record;
+   result->vword.bptr = (union block *)rp;
+
+   if (inforesult->ai_canonname)
+      String(rp->fields[0], inforesult->ai_canonname);
+   else
+      String(rp->fields[0], name);
+      
+   String(rp->fields[1], name);
+
+   /* Retrieve each address and print out the hex bytes */
+
+   for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
+     nmem++;
+   }
+
+   if (inforesult->ai_family == AF_INET6)
+     StrLoc(rp->fields[2]) = p = alcstr(NULL, nmem*46);
+   else
+     StrLoc(rp->fields[2]) = p = alcstr(NULL, nmem*16);
+
+
+   for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
+      struct sockaddr_in6 *sockaddr_ipv6;
+      struct sockaddr_in *sockaddr_ip;
+      char ipstrbuf[64];
+      int ipbuflen = 64;
+      int a;
+
+    switch (ptr->ai_family) {
+            case AF_INET:
+		a = ntohl(((struct sockaddr_in *) ptr->ai_addr)->sin_addr.s_addr);
+      		sprintf(p, "%u.%u.%u.%u,", (a & 0xff000000) >> 24,
+	      		(a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
+      		while(*p) p++;
+                break;
+
+            case AF_INET6:
+	    sockaddr_ip =  ptr->ai_addr;
+#ifdef NT
+                /*
+		 * The buffer length is changed by each call to 
+		 * WSAAddresstoString, So we need to set it for each 
+                 * iteration through the loop for safety
+		 */
+
+                ipbuflen = 46;
+                if (WSAAddressToString(sockaddr_ip, (DWORD) ptr->ai_addrlen, NULL, 
+                    ipstrbuf, &ipbuflen)!=0)
+		    ipstrbuf[0]='\0';
+#else
+		if (inet_ntop(AF_INET6, (void *)
+		   &(((struct sockaddr_in6 *) ptr->ai_addr)->sin6_addr.s6_addr),
+	           ipstrbuf, ipbuflen) == NULL)
+		   ipstrbuf[0]='\0';
+#endif
+
+		sprintf(p, "%s ", ipstrbuf);
+		while(*p) p++;
+
+                break;
+
+            default:
+                /*printf("Other %ld\n", ptr->ai_family);*/
+                break;
+        }
+/*
+ *   Not Yet used! left here for possible expansions in the future.
+ * 
+        printf("\tSocket type: ");
+        switch (ptr->ai_socktype) {
+            case 0:
+                printf("Unspecified\n");
+                break;
+            case SOCK_STREAM:
+                printf("SOCK_STREAM (stream)\n");
+                break;
+            case SOCK_DGRAM:
+                printf("SOCK_DGRAM (datagram) \n");
+                break;
+            case SOCK_RAW:
+                printf("SOCK_RAW (raw) \n");
+                break;
+            case SOCK_RDM:
+                printf("SOCK_RDM (reliable message datagram)\n");
+                break;
+            case SOCK_SEQPACKET:
+                printf("SOCK_SEQPACKET (pseudo-stream packet)\n");
+                break;
+            default:
+                printf("Other %ld\n", ptr->ai_socktype);
+                break;
+        }
+        printf("\tProtocol: ");
+        switch (ptr->ai_protocol) {
+            case 0:
+                printf("Unspecified\n");
+                break;
+            case IPPROTO_TCP:
+                printf("IPPROTO_TCP (TCP)\n");
+                break;
+            case IPPROTO_UDP:
+                printf("IPPROTO_UDP (UDP) \n");
+                break;
+            default:
+                printf("Other %ld\n", ptr->ai_protocol);
+                break;
+        }
+*/
+     }
+   
+   *--p = 0;
+   StrLen(rp->fields[2]) = DiffPtrs(p,StrLoc(rp->fields[2]));
+   n = DiffPtrs(p,strfree);             /* note the deallocation */
+   EVStrAlc(n);
+   strtotal += n;
+   strfree = p;                         /* give back unused space */
+
+   return result;
+}
+#endif					/* HAVE_GETADDRINFO */
+
 dptr make_host(hs, result)
 struct hostent *hs;
  dptr result;

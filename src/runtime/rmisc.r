@@ -1328,7 +1328,7 @@ word *ipc_in;
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
-   if (!InRange(code,ipc_in,ecode))
+   if (!InRange(code,ipc_in,endcode))
       return 0;
    ipc_offset = DiffPtrs((char *)ipc_in,(char *)code);
    base = ilines;
@@ -1432,7 +1432,7 @@ word *ipc_in;
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
-   if (!InRange(code,ipc_in,ecode))
+   if (!InRange(code,ipc_in,endcode))
       return 0;
    ipc_offset = DiffPtrs((char *)ipc_in,(char *)code);
    base = ilines;
@@ -1465,7 +1465,7 @@ word *ipc_in;
    extern word *records;
 #endif					/* MultiThread */
 
-   if (!InRange(code,ipc_in,ecode))
+   if (!InRange(code,ipc_in,endcode))
       return "?";
    ipc_offset = DiffPtrs((char *)ipc_in,(char *)code);
    for (p = efilenms - 1; p >= filenms; p--)

@@ -866,7 +866,7 @@
       #define kywd_trc  (curpstate->Kywd_trc)
       #define mainhead (curpstate->Mainhead)
       #define code (curpstate->Code)
-      #define ecode (curpstate->Ecode)
+      #define endcode (curpstate->Ecode)
       #define records (curpstate->Records)
       #define ftabp (curpstate->Ftabp)
       #ifdef FieldTableCompression

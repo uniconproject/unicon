@@ -201,7 +201,7 @@ struct threadstate *roottstatep;
 struct b_coexpr *mainhead;		/* &main */
 
 char *code;				/* interpreter code buffer */
-char *ecode;				/* end of interpreter code buffer */
+char *endcode;				/* end of interpreter code buffer */
 word *records;				/* pointer to record procedure blocks */
 
 int *ftabp;				/* pointer to record/field table */
@@ -239,6 +239,10 @@ extern word table_ser;
 extern int first_time;
 #endif					/* MultipleRuns */
 #endif					/* COMPILER */
+
+#ifdef NT
+    WSADATA wsaData;
+#endif
 
 int num_cpu_cores;
 
@@ -960,11 +964,11 @@ Deliberate Syntax Error
    /*
     * Establish pointers to icode data regions.		[[I?]]
     */
-   ecode = code + hdr.Records;
+   endcode = code + hdr.Records;
 #ifdef OVLD
     OpTab = (int *)(code + hdr.OpTab);
 #endif
-   records = (word *)ecode;
+   records = (word *)endcode;
    ftabp = (int *)(code + hdr.Ftab);
 #ifdef FieldTableCompression
    fo = (int *)(code + hdr.Fo);
@@ -1272,6 +1276,40 @@ Deliberate Syntax Error
 #ifdef HELPER_THREAD
    init_helper_thread();
 #endif					/* HELPER_THREAD */
+
+#if defined(NT) && (WINVER>=0x0501)
+{
+    WORD wVersionRequested;
+    int err;
+
+    /* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
+    wVersionRequested = MAKEWORD(2, 2);
+
+    err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0) {
+        /* Tell the user that we could not find a usable */
+        /* Winsock DLL.                                  */
+        fprintf(stderr, "WSAStartup failed with error: %d\n", err);
+    }
+
+    /* 
+     * Confirm that the WinSock DLL supports 2.2.
+     * Note that if the DLL supports versions greater
+     * than 2.2 in addition to 2.2, it will still return
+     * 2.2 in wVersion since that is the version we
+     * requested.
+     */
+
+    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+       /* We could not find a usable WinSock DLL */
+        fprintf(stderr, "Could not find a usable version of Winsock.dll\n");
+        WSACleanup();
+    }
+
+/* The Winsock DLL is acceptable. Proceed to use it. */
+}
+
+#endif				/* NT && WINVER<=0x0501 */
 
    /*
     * Start timing execution.
@@ -1683,6 +1721,11 @@ extern int gettstate_count, gettstate_count2[];
    PostQuitMessage(0);
    while (wstates != NULL) pollevent();
 #endif					/* MSWindows */
+
+#ifdef NT
+    if (LOBYTE(wsaData.wVersion) >= 2 || HIBYTE(wsaData.wVersion) >= 2)
+        WSACleanup();
+#endif
 
 #if TURBO || BORLAND_386
    flushall();

@@ -572,7 +572,7 @@ int interp_x(int fsig,dptr cargp)
 #endif					/* e_line */
        )) {
 
-      if (InRange(code, ipc.opnd, ecode)) {
+      if (InRange(code, ipc.opnd, endcode)) {
 	uword ipc_offset = DiffPtrs((char *)ipc.opnd, (char *)code);
 	uword size;
 	word temp_no;
@@ -817,7 +817,7 @@ L_areal:
 	     * state, then lookup the program state of the current procedure,
 	     * and use its globals instead of the current program state.
 	     */
-	    if (!InRange(code, ipc.opnd, ecode)) {
+	    if (!InRange(code, ipc.opnd, endcode)) {
 	       struct progstate *p = findicode(ipc.opnd);
 	       opnd = (word)(p->Strcons + GetWord);
 	       }
@@ -870,7 +870,7 @@ L_astr:
 	     * state, then lookup the program state of the current procedure,
 	     * and use its globals instead of the current program state.
 	     */
-	    if (!InRange(code, ipc.opnd, ecode)) {
+	    if (!InRange(code, ipc.opnd, endcode)) {
 	       struct progstate *p = findicode(ipc.opnd);
 	       PushAVal(&(p->Globals[opnd]));
 	       PutWord((word)&(p->Globals[opnd]));
@@ -916,7 +916,7 @@ L_aglobal:
 	     * state, then lookup the program state of the current procedure,
 	     * and use its statics instead of the current program state.
 	     */
-	    if (!InRange(code, ipc.opnd, ecode)) {
+	    if (!InRange(code, ipc.opnd, endcode)) {
 	       struct progstate *p = findicode(ipc.opnd);
 	       PushAVal(&(p->Statics[opnd]));
 	       PutWord((word)&(p->Statics[opnd]));

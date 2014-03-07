@@ -954,6 +954,11 @@ dptr make_pwd			(struct passwd *pw, dptr result);
 dptr make_group			(struct group *pw, dptr result);
 #endif					/* NT */
 dptr make_host			(struct hostent *pw, dptr result);
+
+#ifdef HAVE_GETADDRINFO
+dptr make_host_from_addrinfo(char *name, struct addrinfo *inforesult, dptr result);
+#endif
+
 dptr make_serv			(struct servent *pw, dptr result);
 int sock_listen		(char *s, int udp);
 int sock_name			(int sock, char* addr, char* addrbuf, int bufsize);

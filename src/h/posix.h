@@ -32,7 +32,11 @@
 #include <grp.h>
 #endif					/* UNIX */
 
+
 #ifdef NT
+
+#include<ws2tcpip.h>
+
 #include <sys/timeb.h>
 #include <sys/locking.h>
 #include <sys/types.h>

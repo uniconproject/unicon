@@ -2491,7 +2491,7 @@ end
 
 "gethost() - get host information."
 
-function{0,1} gethost(h)
+function{0,1} gethost(h, f)
    declare {
       struct hostent *hs;
    }
@@ -2503,12 +2503,56 @@ function{0,1} gethost(h)
 	 body {
 	    tended char* name;
 	    cnv:C_string(h, name);
-    
+
+#ifdef HAVE_GETADDRINFO
+{
+	    int family;
+	    tended char* fstr;
+    	    int s;
+    	    struct addrinfo hints, *inforesult;
+
+	    if (is:null(f)){
+	    family = AF_INET;
+	    } else if (is:string(f)){
+	      cnv:C_string(f, fstr);
+	      if (strcmp(fstr, "ipv6")==0)
+	         family = AF_INET6;
+	      else
+	         family = AF_INET;
+	    }
+
+    	    memset(&hints, 0, sizeof(struct addrinfo));
+	    /* IPv4 or IPv6 for now */
+    	    hints.ai_family = family;
+    	    /* Any socket */
+    	    hints.ai_socktype = 0;
+    	    /* For wildcard IP address, and interested in canonical name */
+    	    hints.ai_flags = AI_PASSIVE | AI_CANONNAME;
+    	    /* Any protocol */
+    	    hints.ai_protocol = 0;
+    	    hints.ai_canonname = NULL;
+    	    hints.ai_addr = NULL;
+    	    hints.ai_next = NULL;
+
+    	    s = getaddrinfo(name, NULL, &hints, &inforesult);
+    	    if (s != 0) {
+               /*fprintf(stderr, "getaddrinfo: (%s) %s\n",
+	       			 name, gai_strerror(s));*/
+               fail;
+    	       }
+
+    	    if (make_host_from_addrinfo(name, inforesult, &result) == 0)
+      	       syserr("failed to create posix record constructor");
+
+}
+#else				/* HAVE_GETADDRINFO */
+
 	    if ((hs = gethostbyname(name)) == NULL)
 	       fail;
 	    if (make_host(hs, &result) == 0)
 	       syserr("failed to create posix record constructor");
 
+#endif				/* HAVE_GETADDRINFO */
 	    return result;
 	 }
       }

@@ -4,12 +4,12 @@ ASMFLAG=--32
 WINRESFLAG=-F pe-i386
 
 # Enable these if you have some of the additional/optional libraries
-#OPTLIBS= --static -lpng -lz -ljpeg -lpthread -lopencl
-#NTOPTLIBS= -lz -lpthread -lopencl
-OPTLIBS= --static -lpthread
-NTOPTLIBS= -lpthread
+#OPTLIBS= --static -lpng -lz -ljpeg -lpthread -lws2_32 -lopencl
+#NTOPTLIBS= -lz -lpthread -lopencl -lws2_32   -lopencl
+OPTLIBS= --static -lpthread -lws2_32
+NTOPTLIBS= -lpthread -lws2_32
 
-MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lws2_32
+MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
 OS=NT
 ENV=WIN32
@@ -19,7 +19,7 @@ CPU=i386
 CC=gcc
 LD=ld
 # add -j8 to line below if your version of Windows (7 and newer?) supports it
-MAKE=make
+MAKE=make -j8
 O=o
 RM=rm -rf
 CP=cp

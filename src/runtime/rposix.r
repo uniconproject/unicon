@@ -1567,7 +1567,7 @@ struct addrinfo *inforesult;
                 ipbuflen = 46;
                 if (WSAAddressToString(((struct sockaddr_in6 *) ptr->ai_addr), 
 		    (DWORD) ptr->ai_addrlen, NULL, 
-                    ipstrbuf, &ipbuflen)!=0)
+                    ipstrbuf, (LPDWORD) &ipbuflen)!=0)
 		    ipstrbuf[0]='\0';
 #else
 		if (inet_ntop(AF_INET6, (void *)
@@ -1629,7 +1629,9 @@ struct addrinfo *inforesult;
         }
 */
      }
-   
+
+   freeaddrinfo(inforesult);
+
    *--p = 0;
    StrLen(rp->fields[2]) = DiffPtrs(p,StrLoc(rp->fields[2]));
    n = DiffPtrs(p,strfree);             /* note the deallocation */

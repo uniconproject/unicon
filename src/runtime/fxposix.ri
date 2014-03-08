@@ -2524,11 +2524,11 @@ function{0,1} gethost(h, f)
     	    memset(&hints, 0, sizeof(struct addrinfo));
 	    /* IPv4 or IPv6 for now */
     	    hints.ai_family = family;
-    	    /* Any socket */
-    	    hints.ai_socktype = 0;
+    	    /* 0=>Any socket */
+    	    hints.ai_socktype = SOCK_DGRAM;
     	    /* For wildcard IP address, and interested in canonical name */
     	    hints.ai_flags = AI_PASSIVE | AI_CANONNAME;
-    	    /* Any protocol */
+    	    /* 0=>Any protocol */
     	    hints.ai_protocol = 0;
     	    hints.ai_canonname = NULL;
     	    hints.ai_addr = NULL;
@@ -2536,14 +2536,15 @@ function{0,1} gethost(h, f)
 
     	    s = getaddrinfo(name, NULL, &hints, &inforesult);
     	    if (s != 0) {
-               /*fprintf(stderr, "getaddrinfo: (%s) %s\n",
-	       			 name, gai_strerror(s));*/
+	       char buf[512];
+               sprintf(buf, "%s", gai_strerror(s));
+	       k_errornumber = s;
+	       Protect(k_errortext =alcstr(buf, strlen(buf)), runerr(0));
                fail;
     	       }
 
     	    if (make_host_from_addrinfo(name, inforesult, &result) == 0)
       	       syserr("failed to create posix record constructor");
-
 }
 #else				/* HAVE_GETADDRINFO */
 

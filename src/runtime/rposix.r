@@ -1533,7 +1533,7 @@ struct addrinfo *inforesult;
    for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
      nmem++;
    }
-
+   
    if (inforesult->ai_family == AF_INET6)
      StrLoc(rp->fields[2]) = p = alcstr(NULL, nmem*46);
    else
@@ -1542,7 +1542,6 @@ struct addrinfo *inforesult;
 
    for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
       struct sockaddr_in6 *sockaddr_ipv6;
-      struct sockaddr_in *sockaddr_ip;
       char ipstrbuf[64];
       int ipbuflen = 64;
       int a;
@@ -1552,12 +1551,13 @@ struct addrinfo *inforesult;
 		a = ntohl(((struct sockaddr_in *) ptr->ai_addr)->sin_addr.s_addr);
       		sprintf(p, "%u.%u.%u.%u,", (a & 0xff000000) >> 24,
 	      		(a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
+
       		while(*p) p++;
                 break;
 
             case AF_INET6:
-	    sockaddr_ip =  ptr->ai_addr;
 #ifdef NT
+
                 /*
 		 * The buffer length is changed by each call to 
 		 * WSAAddresstoString, So we need to set it for each 
@@ -1565,7 +1565,8 @@ struct addrinfo *inforesult;
 		 */
 
                 ipbuflen = 46;
-                if (WSAAddressToString(sockaddr_ip, (DWORD) ptr->ai_addrlen, NULL, 
+                if (WSAAddressToString(((struct sockaddr_in6 *) ptr->ai_addr), 
+		    (DWORD) ptr->ai_addrlen, NULL, 
                     ipstrbuf, &ipbuflen)!=0)
 		    ipstrbuf[0]='\0';
 #else
@@ -1575,9 +1576,9 @@ struct addrinfo *inforesult;
 		   ipstrbuf[0]='\0';
 #endif
 
-		sprintf(p, "%s ", ipstrbuf);
-		while(*p) p++;
+		sprintf(p, "%s,", ipstrbuf);
 
+		while(*p) p++;
                 break;
 
             default:

@@ -242,8 +242,17 @@ dptr result;
 	       }
  	    CV_SIGNAL_FULLBLK(hp);
 	    DEC_NARTHREADS;
+	    if (n->alive<0){
+	       hp->empty--;
+      	       return A_Resume;
+	       }
+	    
 	    CV_WAIT_EMPTYBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
+	    if (n->alive<0){
+	       hp->empty--;
+      	       return A_Resume;
+	       }
 	    }
 	 hp->empty--;
 	 if (hp->size==0){ /* This shouldn't be the case, but.. */

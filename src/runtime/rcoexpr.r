@@ -552,6 +552,7 @@ void coclean(void *o) {
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
          }	
 
+      old->alive = -8;
       CV_SIGNAL_EMPTYBLK(BlkD(old->c->outbox, List));
       CV_SIGNAL_FULLBLK(BlkD(old->c->inbox, List));
 

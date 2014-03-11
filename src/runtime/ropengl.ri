@@ -2691,12 +2691,11 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 /* check if a number is a power of two */
 int powertwo(int a)
 {
-   int p = 1;
-   while(p < a){
-      p = p*2;
-     }
-   if (a == p) return 0;
-   else return p;
+   int p;
+   if (a & (a-1) == 0) return 0;
+   p = 1;
+   while (p < a) p = p*2;
+   return p;
 }
 
 /* apply a texture to a scene */

@@ -580,6 +580,13 @@
    word nparam; word ndynam; word nstatic; word fstatic;\
    struct sdescrip quals[n];}
 
+
+/*
+ * Check whether a number is not a power of 2
+ */
+#define not_poweroftwo(a) ((a) & (a-1))
+
+
 #ifdef LOCALPROGSTATE
 #define CURPTSTATE struct progstate *curpstate = curtstate->pstate;
 #define CURPSTATE struct progstate *curpstate =	\

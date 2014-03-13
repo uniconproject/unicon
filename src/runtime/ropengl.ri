@@ -2688,23 +2688,13 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
      }
 }
 
-/* check if a number is a power of two */
-int powertwo(int a)
-{
-   int p;
-   if (a & (a-1) == 0) return 0;
-   p = 1;
-   while (p < a) p = p*2;
-   return p;
-}
-
 /* apply a texture to a scene */
 int texture(int width, int height, GLubyte *tex, int texmode)
 {
    GLubyte *tex2;
 
    /* if not a power of two, scale image to closest power of two */
-   if (powertwo(width) || powertwo(height)) {
+   if (not_poweroftwo(width) || not_poweroftwo(height)) {
       int neww=1, newh=1, rv;
       while (neww * 2 < width) neww *= 2;
       while (newh * 2 < height) newh *= 2;

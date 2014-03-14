@@ -390,7 +390,10 @@ end
 procedure gcd(i,j)		#: greatest common divisor
    local r
 
-   if (i | j) < 1 then runerr(501)
+   i := (0 < i) | -i
+   j := (0 < j) | -j
+   if j = 0 then if i ~= 0 then return i else runerr(501)
+   if i = 0 then if j ~= 0 then return j else runerr(501)
 
    repeat {
       r := i % j

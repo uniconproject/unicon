@@ -830,19 +830,25 @@ class idTaque : taque(punc)
     }
     return
   end
+  #
+  # Traverse a given subtree, adding its contents to myself.
+  # Routinely called in the constructor after a comma-separated
+  # list of identifiers have been parsed; also called on "local"
+  # declarations in classes to append them onto the initial list.
+  #
   method traverse(node)
       case type(node) of {
 	 "treenode": {
 	    if *node.children > 0 then {
 		if node.label == ("arg2"|"arg3"|"arg4"|"arg5"|"arg6") then {
-		    insert(node, node.children[1].s)
+		    insert(node.children[1].s)
 		    }
                 else if node.label == "varlist2" then {
-                    insert(node, node.children[1].s)
+                    insert(node.children[1].s)
 		    }
                 else if node.label==("varlist3"|"varlist4") then {
                     traverse(node.children[1])
-                    insert(node, node.children[3].s)
+                    insert(node.children[3].s)
 		    }
 		else
 		    every traverse(!node.children)
@@ -854,8 +860,8 @@ class idTaque : taque(punc)
 	       insert(node.s)
 	    }
 	 "string": {
-	    if node ~== self.punc then
-	       write("idTaque on ", type(node), " : ", image(node))
+	    if (node ~== self.punc) & (node ~== ";") then
+	       write("idTaque on ", type(node), " : ", image(node), " (punc was ",image(punc),")")
 	    }
 	 "null": { }
 	 default: {

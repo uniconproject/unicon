@@ -1107,7 +1107,7 @@ int pclose(FILE *fd)
 	while (temp) {
 	   if (temp->f == fd) {
 	      pid = temp->pid;
-	      kill(pid, SIGPIPE );
+	      kill(pid, EOF);
 	      if (pid==waitpid(pid, &waitstat, 0 )){ /* we are good */
 		 if ((temp2 = temp->next)) {
 		    *temp = *(temp->next);

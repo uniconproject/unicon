@@ -86,6 +86,8 @@ function{1} delete(s, x[n])
 	       if (!cnv:C_integer(x[argc], cnv_x)) runerr(101, x[argc]);
 	       hp = BlkD(s, List);
 	       size = hp->size;
+	       if (cnv_x < 0 ) 
+	       	  cnv_x = size +  cnv_x + 1; 
 	       for (i = 1; i <= size; i++) {
 		  c_get(hp, &d);
 		  if (i != cnv_x)

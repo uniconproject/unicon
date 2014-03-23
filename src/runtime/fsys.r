@@ -799,7 +799,7 @@ Deliberate Syntax Error
 	 f = isql_open(fnamestr, attr, attr+1, attr+2);
 	 }
       else {
-	 f = isql_open(fnamestr, NULL, attr+1, attr+2);
+	 f = isql_open(fnamestr, NULL, attr, attr+1);
 	 }
       }
    else

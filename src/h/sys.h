@@ -415,9 +415,7 @@
 
 #else					/* HAVE_LIBPNG */
 
-#ifdef HAVE_LIBZ
 #include <zlib.h>
-#endif
 #endif					/* HAVE_LIBPNG */
 
 #ifndef VMS
@@ -461,4 +459,4 @@
 /* OpenCL */
 #ifdef HAVE_LIBCL
 	#include <CL/cl.h>
-#endif					/* HAVE_LIBOGG */
+#endif					/* HAVE_LIBCL */

@@ -1,5 +1,5 @@
 /*  
- * Icon configuration file for Linux v2 on Intel
+ * Icon configuration file for Linux v2 on Intel 32-bit x86
  */
 
 #define UNIX 1

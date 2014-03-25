@@ -693,8 +693,6 @@ char *argv[];
 #if COMPILER
    curstring = &rootstring;
    curblock  = &rootblock;
-   rootstring.size = MaxStrSpace;
-   rootblock.size  = MaxAbrSize;
 #else					/* COMPILER */
 
 #ifdef MultiThread
@@ -826,6 +824,10 @@ char *argv[];
    init_sighandlers();
 #endif					/* MultiThread */
 
+   op_tbl = (struct b_proc*)init_op_tbl;
+
+#endif					/* COMPILER */
+
    rootstring.size = MaxStrSpace;
    rootblock.size  = MaxAbrSize;
 
@@ -846,12 +848,6 @@ char *argv[];
 	   }
 	}
    }
-
-#endif					/* COMPILER */
-
-#if !COMPILER
-   op_tbl = (struct b_proc*)init_op_tbl;
-#endif					/* !COMPILER */
 
 #ifdef Double
    if (sizeof(struct size_dbl) != sizeof(double))

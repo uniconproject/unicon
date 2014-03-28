@@ -159,7 +159,10 @@ $endif
    #
    method handle_closefile(ev, c)
       local modified, decision, fname, r
-      if /c then c := CurrentTabItem()
+      /c := CurrentTabItem()
+      /c.filedirectory := chdir()
+      /c.filename := c.label
+      if c.filename[-1] == "*" then c.filename[-1] := ""
       fname := c.filedirectory || c.filename
 #      if CurrentTabItem().label[-1] := "*" then
 #         CurrentTabItem().label := CurrentTabItem().label[1:-1]

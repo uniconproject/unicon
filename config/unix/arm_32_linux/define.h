@@ -1,10 +1,10 @@
 /*  
- * Icon configuration file for ARM WebOS devices such as HP Touchpad
+ * Icon configuration file for ARM devices such as the Raspberry Pi
  */
 
 #define UNIX 1
 #define NoLoadFunc
-#define NoCoexpr
+/*#define NoCoexpr*/
 /* no SysOpt: Linux getopt() is POSIX-compatible only if an envmt var is set */
 
 #define CComp "gcc"
@@ -19,3 +19,5 @@
  * #define PTHREAD_MUTEX_RECURSIVE PTHREAD_MUTEX_RECURSIVE_NP
  * as well.
  */
+
+#define Concurrent 1

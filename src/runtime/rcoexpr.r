@@ -231,6 +231,11 @@ int first;
 
 #ifdef Concurrent
       if (ccp->status & Ts_Async){
+      /*
+       * The CE thread is genereating a new value, it should go into the outbox.
+       * ccp is the "k_current" CE. k_current is used to avoid invalid ccp 
+       * because of GC. 
+       */
    	 struct b_list *hp;
       	 MUTEX_LOCKBLK_CONTROLLED(BlkD(ccp->outbox, List), "co_chng(): list mutex");
       	 hp = BlkD(BlkLoc(k_current)->Coexpr.outbox, List);
@@ -248,7 +253,7 @@ int first;
          c_put(&(BlkLoc(k_current)->Coexpr.outbox), valloc);
       	 MUTEX_UNLOCKBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List), "co_chng(): list mutex");
       	 CV_SIGNAL_EMPTYBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List));
-	 return;
+	 return A_Continue;
       }
       else
 #endif					/* Concurrent */
@@ -479,7 +484,6 @@ int pthreadcoswitch(void *o, void *n, int first)
       pthread_attr_init(&attr);
       pthread_attr_setstacksize(&attr, 1024*1024*50);
       */
-
        if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
          syserr("cannot create thread");
       new->alive = 1;

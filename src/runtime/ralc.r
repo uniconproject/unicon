@@ -355,6 +355,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    ctx->c = ep;
    ctx->tmplevel = 0;
    ctx->have_thread = 0;
+   ctx->alive = 0;
 #ifdef Concurrent
 #ifdef MultiThread
    if(icodesize>0){

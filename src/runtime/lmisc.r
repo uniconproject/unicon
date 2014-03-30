@@ -231,25 +231,23 @@ dptr result;
       /* receive */
       hp = BlkD(ncp->outbox, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
-
       if (hp->size==0){
 	 struct context *n = (struct context *) ncp->cstate[1];
 	 hp->empty++;
          while (hp->size==0){
-	    if (n->alive<0){
+	    if (hp->size==0 && n->alive<0){
 	       hp->empty--;
       	       return A_Resume;
 	       }
  	    CV_SIGNAL_FULLBLK(hp);
 	    DEC_NARTHREADS;
-	    if (n->alive<0){
+	    if (hp->size==0 && n->alive<0){
 	       hp->empty--;
       	       return A_Resume;
 	       }
-	    
 	    CV_WAIT_EMPTYBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
-	    if (n->alive<0){
+	    if (hp->size==0 && n->alive<0){
 	       hp->empty--;
       	       return A_Resume;
 	       }

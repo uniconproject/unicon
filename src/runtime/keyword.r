@@ -403,6 +403,9 @@ keyword{1,*} features
 #passthru #ifdef __MINGW32__
 	 sprintf(ss, "CCompiler MinGW gcc %d.%d.%d",
 	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#passthru #elseif defined(__clang__)				/* __MINGW32__ */
+#passthru sprintf(ss, "CCompiler clang %d.%d.%d",
+#passthru	      __clang_major__,  __clang_minor__, __clang_patchlevel__);
 #passthru #else				/* __MINGW32__ */
 	 sprintf(ss, "CCompiler gcc %d.%d.%d",
 	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);

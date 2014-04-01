@@ -798,7 +798,7 @@ Deliberate Syntax Error
 	 if (!is:string(attr[2])) runerr(103, attr[2]);
 	 f = isql_open(fnamestr, attr, attr+1, attr+2);
 	 }
-      else {
+      else { /* n == 2, treat as omitting table; user, password required */
 	 f = isql_open(fnamestr, NULL, attr, attr+1);
 	 }
       }
@@ -832,7 +832,7 @@ Deliberate Syntax Error
       /* a bidirectional pipe can mean only one thing: pseudotty */
       if (status == (Fs_Pipe | Fs_Read | Fs_Write)) {
 #ifdef PseudoPty
-	 status = Fs_Pty| Fs_Read | Fs_Write;
+	 status = Fs_Pty | Fs_Read | Fs_Write;
 	 f = (FILE*) ptopen(fnamestr);
 #else
 	 fprintf(stderr, "This VM is not built with bidirectional pipes.\n");

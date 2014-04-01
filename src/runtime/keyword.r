@@ -403,13 +403,17 @@ keyword{1,*} features
 #passthru #ifdef __MINGW32__
 	 sprintf(ss, "CCompiler MinGW gcc %d.%d.%d",
 	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#passthru #elseif defined(__clang__)				/* __MINGW32__ */
+#passthru #else                         /* __MINGW32__ */
+
+#passthru #ifdef __clang__
 #passthru sprintf(ss, "CCompiler clang %d.%d.%d",
-#passthru	      __clang_major__,  __clang_minor__, __clang_patchlevel__);
-#passthru #else				/* __MINGW32__ */
-	 sprintf(ss, "CCompiler gcc %d.%d.%d",
-	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#passthru #endif				/* __MINGW32__ */
+#passthru             __clang_major__,  __clang_minor__, __clang_patchlevel__);
+#passthru #else                         /* __clang__ */
+         sprintf(ss, "CCompiler gcc %d.%d.%d",
+                      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#passthru #endif                                /* __clang__ */
+
+#passthru #endif                                /* __MINGW32__ */
 	 s = alcstr(NULL, strlen(ss) + 1);
 	 strcpy(s, ss);
 	 suspend C_string s;

@@ -479,6 +479,8 @@ $endif
 	 \uidlog.MsgBox.set_contents(["Open a file to compile "])
 	 return
 	 }
+
+      \(CurrentTabItem().filename) | fail
       fname:= "\"" || CurrentTabItem().filename || "\""
 
       if /is_MSWindows then
@@ -545,11 +547,13 @@ $endif
       else # implies Windows for now
 	 console := "cmd "
 
-      if CurrentTabItem().filedirectory ~== "" then
+      if \(CurrentTabItem().filedirectory) & 
+         CurrentTabItem().filedirectory ~== "" then
 	  fdir := chdir(CurrentTabItem().filedirectory)
       else fdir := chdir(".")
 
       fname := CurrentTabItem().filename
+      \fname | fail
 
       L := copy(\uidlog.MsgBox.contents)
 
@@ -774,6 +778,10 @@ $endif
       if /project then {
 	 if not (arglist := comp1file(\CurrentTabItem().filename)) then {
 	    s := \CurrentTabItem().filename
+            if /s then{
+               fileCompiled := "FALSE"
+               fail
+              }
 	    if find(".icn", map(s)) then {
 	       s[find(".icn", map(s)) : 0] := ".u"
 	       if s[1] ~== "-" & (not find(".", s)) then s ||:= ".u"

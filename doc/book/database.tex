@@ -313,7 +313,51 @@ driver manager, and an ODBC driver for your SQL server; these must
 be configured properly. The driver manager is a component
 that connects applications to various databases; ODBC
 drivers are dynamic link libraries that database vendors supply
-to talk to their database. Once you have the ODBC software set up,
+to talk to their database.  Figure 6-2 shows database configuration
+for MySQL via the MyODBC GUI dialog box on Windows (left), and in a
+{\raise.17ex\hbox{$\scriptstyle\sim$}}/odbc.ini file on Linux (right).
+In both cases, configuration involves knowing the internet server
+name or IP address, the port, and the database to connect to. For that
+triplet, you get to define a name called a DSN or data source name,
+which is the name that Unicon will pass in to \texttt{open()}. In the
+Windows dialog, this name is a textfield explicitly named as a DSN,
+while in the Linux odbc.ini file, it is at the top, inside the square
+brackets.
+
+In both cases, there are a lot of additional options which are beyond
+the scope of this book.  On Windows, each ODBC driver may have its own
+custom dialogs for configuration, while on Linux the odbc.ini file is
+more the property of the driver manager and is used to configure all
+the various drivers. As a fair warning, the details required in the
+dialogs or the exact syntax of the odbc.ini and its required entries
+for a given driver change slightly from time to time and are beyond
+the scope of this book.  Consult current ODBC documentation for the
+driver manager on your platform and the specific database to which
+you are connecting.
+
+\bigskip
+
+\noindent
+\begin{tabular}{@{}c@{}}{\includegraphics[width=3.8in,height=4.0in]{ub-img/odbcconf.png}}\end{tabular}
+\hspace*{.04in}
+\begin{tabular}{@{}c@{}}
+\begin{tabular}{l}
+\texttt{[phones]}\\
+\texttt{Driver = /usr/lib64/libmyodbc5.so}\\
+\texttt{Description = phone example}\\
+\texttt{Server = localhost}\\
+\texttt{Database = phonebook}\\
+\texttt{Port = 3306}
+\end{tabular}
+\end{tabular}
+
+{\sffamily\bfseries Figure 6-2:}
+{\sffamily Configuring ODBC on Windows (left) and Linux (right)}
+
+\bigskip
+
+
+Once you have the ODBC software set up,
 writing the Unicon client program to connect to your database is
 straightforward.
 

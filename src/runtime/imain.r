@@ -235,6 +235,7 @@ void main(int argc, char **argv)
 #endif					/* HAVE_KEYWORD__THREAD */
 
    init_threads();
+   global_curtstate = roottstatep = &roottstate;
 #endif					/* Concurrent */
 
 #if WildCards && NT

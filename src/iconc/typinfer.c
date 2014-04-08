@@ -20,8 +20,15 @@
 #endif					/* HighResTime */
 #endif					/* TypTrc */
 
+#if NT && !defined(NTGCC)
+/* keyword inline does not work on MSVC */
+#define inline
+#else
 #include <sys/time.h>
+#endif					/* WIN32 */
+#ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
+#endif					/* HAVE_SYS_RESOURCE_H */
 /*
  * Information about co-expressions is keep on a list.
  */
@@ -195,8 +202,10 @@ void typeinfer()
    int size;
    int flag;
 /* mdw */long lastchanged;
+#ifdef DebugOnly
 struct rusage ru_in, ru_out;
 getrusage(RUSAGE_SELF, &ru_in);
+#endif					/* DebugOnly */
 #ifdef TypTrc
    /*
     * Set up for type tracing.

@@ -62,6 +62,11 @@ static struct tvent * anytyp = 0;
 static struct tvent * tmpent = 0;
 static struct tvent ** tvtbl = 0;
 
+#if NT && !defined(NTGCC)
+/* keyword inline does not work on MSVC */
+#define inline
+#endif					/* NT && !NTGCC */
+
 static inline vord * alcbits(void);
 static inline struct tvent * alcent(void);
 static inline struct tv * alctv(void);
@@ -732,7 +737,11 @@ tv_stats(bgn, end)
    int i, j, n;
    extern int verbose;
    struct tvent * ent;
-   int bktsz[n_tvtbl_bkts];
+   int * bktsz = calloc(n_tvtbl_bkts, sizeof(int));
+   if (bktsz==NULL) {
+      fprintf(stderr, "tv_stats cannot allocate %d buckets\n", n_tvtbl_bkts);
+      return;
+      }
 
    for (i=0; i<n_tvtbl_bkts; i++) {
       for (n=0,ent=tvtbl[i]; ent; ent=ent->next)
@@ -774,6 +783,7 @@ tv_stats(bgn, end)
          }
       }
 exit_point:
+   free(bktsz);
    printf("n-tvtbl-bkts: %d\n", n_tvtbl_bkts);
    printf("end tv-stats\n");
 }

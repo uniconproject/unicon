@@ -1790,6 +1790,7 @@ static int jpegread(char *filename, int p)
    struct jpeg_decompress_struct cinfo; /* libjpeg struct */
    struct my_error_mgr jerr;
    JSAMPARRAY buffer;
+   unsigned char *row_ptr;
    int row_stride;
    int i,j,k;
    gf_f = NULL;
@@ -1823,8 +1824,13 @@ static int jpegread(char *filename, int p)
       cinfo.desired_number_of_colors = 254;
       }
    else {
-        cinfo.quantize_colors = FALSE;
-   }
+      /*
+       * Force output image to be always RGB-color space regardless
+       * of the input image color space.
+       */
+      cinfo.out_color_space= JCS_RGB;
+      cinfo.quantize_colors = FALSE;
+      }
 
    /* Start decompression */
 
@@ -1861,18 +1867,12 @@ static int jpegread(char *filename, int p)
     */
    buffer = (*cinfo.mem->alloc_sarray)
       ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-   j = 0;
+   row_ptr = gf_string;
    while (cinfo.output_scanline < cinfo.output_height) {
-/*      k = 0; */
       (void) jpeg_read_scanlines(&cinfo, buffer, 1);
-
-      for (i=0; i<row_stride; i++) {
-/*	 if (p == 1) */   /* 8bit color */
-	    gf_string[j*row_stride+i] = buffer[0][i];
-	 }
-      j += 1;
+      memcpy(row_ptr, buffer[0], row_stride);
+      row_ptr += row_stride;
       }
-
 
    (void) jpeg_finish_decompress(&cinfo); /* jpeg lib function call */
 

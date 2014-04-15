@@ -3605,6 +3605,71 @@ int on_icon;
    return ret;
    }
 
+
+void copytruecolor(Visual *vis, XImage *im, unsigned char *data, int width, int height)
+{
+   int i, j, k;
+   unsigned long c;
+   unsigned long rmask, gmask, bmask;
+   unsigned long rshift, rbits, gshift, gbits, bshift, bbits;
+
+   rmask = vis->red_mask, 
+   gmask = vis->green_mask, 
+   bmask = vis->blue_mask; 
+
+   rshift = 0; rbits = 0; 
+        while(!(rmask & 1)){ 
+            rshift++; 
+            rmask >>= 1; 
+        } 
+        while(rmask & 1){ 
+            rbits++; 
+            rmask >>= 1; 
+        } 
+        if(rbits>8){ 
+            rshift += rbits-8; 
+            rbits = 8; 
+        } 
+ 
+        gshift = 0; gbits = 0; 
+        while(!(gmask & 1)){ 
+            gshift++; 
+            gmask >>= 1; 
+        } 
+        while(gmask & 1){ 
+            gbits++; 
+            gmask >>= 1; 
+        } 
+        if(gbits>8){ 
+            gshift += gbits-8; 
+            gbits = 8; 
+        } 
+ 
+        bshift = 0; bbits = 0; 
+        while(!(bmask & 1)){ 
+            bshift++; 
+            bmask >>= 1; 
+        } 
+        while(bmask & 1){ 
+            bbits++; 
+            bmask >>= 1; 
+        } 
+        if(bbits>8){ 
+            bshift += bbits-8; 
+            bbits = 8; 
+        }
+
+      for(j=0; j < height; j++){
+   	k = j * width * 3;
+	for(i=0; i < width; i++) {
+	   c =  XGetPixel(im, i, j);
+           data[k++] =  ((c >> rshift) & ((1 << rbits)-1))  << (8-rbits); 
+           data[k++] =((c >> gshift) & ((1 << gbits)-1)) << (8-gbits); 
+           data[k++] =((c >> bshift) & ((1 << bbits)-1)) << (8-bbits); 
+	   }
+	}
+}
+
 /*
  * getimstr(w, x, y, width, height, paltbl, data) -- get image as a string.
  *
@@ -3716,6 +3781,7 @@ unsigned char *data;
    SysColor px;
    unsigned long pix;
    int i, x, y, wid = xx + width, ht = yy + height;
+   Visual *vis = w->window->vis;
    STDLOCALS(w);
 
    /*
@@ -3724,6 +3790,11 @@ unsigned char *data;
    im = getximage(w, x, y, width, height, 1);
    if (!im)
       return 0;
+
+   if(vis->class == TrueColor){
+     copytruecolor(vis, im, data, width, height);
+     return 1;
+    }
    
    for (y = yy; y < ht; y++) {
 #if 0

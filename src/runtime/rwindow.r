@@ -1768,7 +1768,19 @@ int readJPEG(char *filename, int p, struct imgdata *imd)
    return Succeeded;				/* return success */
 }
 
-void my_error_exit (j_common_ptr cinfo);
+/*
+ * jpeg error handler 
+ */
+
+void my_error_exit (j_common_ptr cinfo)
+{
+  my_error_ptr myerr = (my_error_ptr) cinfo->err;
+  /*(*cinfo->err->output_message) (cinfo);*/
+  if (gf_f) { fclose(gf_f); gf_f = NULL; }
+  longjmp(myerr->setjmp_buffer, 1);
+}
+
+
 
 /*
  * jpegread(filename, p) - read jpeg file, setting gf_ globals
@@ -1898,16 +1910,6 @@ static int jpegread(char *filename, int p)
    fclose(gf_f);
    gf_f = NULL;
    return Succeeded;
-}
-
-/* a part of error handling */
-void my_error_exit (j_common_ptr cinfo)
-{
-  my_error_ptr myerr = (my_error_ptr) cinfo->err;
-  /*(*cinfo->err->output_message) (cinfo);*/
-  jpeg_destroy(cinfo);
-  if (gf_f) { fclose(gf_f); gf_f = NULL; }
-  longjmp(myerr->setjmp_buffer, 1);
 }
 
 #endif

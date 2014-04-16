@@ -1755,7 +1755,7 @@ int b;
 void my_error_exit (j_common_ptr cinfo)
 {
   my_error_ptr myerr = (my_error_ptr) cinfo->err;
-  /*(*cinfo->err->output_message) (cinfo);*/
+/*  (*cinfo->err->output_message) (cinfo); */
   longjmp(myerr->setjmp_buffer, 1);
 }
 
@@ -2449,27 +2449,6 @@ static void gfdump()
 #define putc fputc
 #endif					/* ConsoleWindow */
 
-static int jpegwrite(wbp w, char *filename, int x, int y,int width,int height);
-
-/*
- * writeJPEG(w, filename, x, y, width, height) - write JPEG image
- * Returns Succeeded, Failed, or Error.
- * We assume that the area specified is within the window.
- */
-int writeJPEG(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
-   {
-   int r;
-
-   r = jpegwrite(w, filename, x, y, width, height);
-   if (gf_f) { fclose(gf_f); gf_f = NULL; }
-   if (gf_string) free((pointer)gf_string);
-   return r;
-   }
-
-
 /*
  * jpegwrite(w, filename, x, y, width, height) - write JPEG file
  */
@@ -2477,8 +2456,9 @@ int x, y, width, height;
 static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 {
    int i, j, c, cur;
-   long len;
    unsigned char *p, *q;
+   FILE * jpg_f = NULL;
+   unsigned char *imgBuf = NULL;
 
    struct jpeg_compress_struct cinfo;
    struct my_error_mgr jerr;
@@ -2487,25 +2467,27 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    int row_stride;		/* physical row width in image buffer */
    int quality;
 
-   len = (long)width * (long)height ;	/* total length of data */
-
    quality = 95;
 
    cinfo.err = jpeg_std_error(&jerr.pub);
    jerr.pub.error_exit = my_error_exit;
 
    if (setjmp(jerr.setjmp_buffer)) {
+      if (imgBuf)
+         free(imgBuf);
+      if (jpg_f)
+         fclose(jpg_f);
       return Failed;
       }
 
    jpeg_create_compress(&cinfo);
 
-   if ((gf_f = fopen(filename,"wb")) == NULL) {
-      fprintf(stderr, "can't open file" );
-      exit(1);
+   if ((jpg_f = fopen(filename,"wb")) == NULL) {
+      jpeg_destroy_compress(&cinfo);
+      return Failed;
       }
 
-   jpeg_stdio_dest(&cinfo, gf_f);
+   jpeg_stdio_dest(&cinfo, jpg_f);
 
    cinfo.image_width = width; 	/* image width and height, in pixels */
    cinfo.image_height = height;
@@ -2520,23 +2502,39 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 
    row_stride = cinfo.image_width *3;	/* JSAMPLEs per row in image_buffer */
 
-   if (!(gf_string = (unsigned char*)malloc((msize)len*3)))
+   if (!(imgBuf = (unsigned char*)malloc( height * row_stride * sizeof(unsigned char))))
       return Error;
 
-   if (!getimstr24(w, x, y, width, height, gf_string))
+   if (!getimstr24(w, x, y, width, height, imgBuf))
       return Error;
 
    while (cinfo.next_scanline < cinfo.image_height) {
-      row_pointer[0] = & gf_string[cinfo.next_scanline*row_stride];
+      row_pointer[0] = &imgBuf[cinfo.next_scanline*row_stride];
       (void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
       }
 
    jpeg_finish_compress(&cinfo);
-   fclose(gf_f);
-   gf_f = NULL;
    jpeg_destroy_compress(&cinfo);
+   free(imgBuf);
+   fclose(jpg_f);
    return Succeeded;
  }
+
+/*
+ * writeJPEG(w, filename, x, y, width, height) - write JPEG image
+ * Returns Succeeded, Failed, or Error.
+ * We assume that the area specified is within the window.
+ */
+int writeJPEG(w, filename, x, y, width, height)
+wbp w;
+char *filename;
+int x, y, width, height;
+   {
+   int r;
+
+   r = jpegwrite(w, filename, x, y, width, height);
+   return r;
+   }
 
 #endif					/* HAVE_LIBJPEG */
 

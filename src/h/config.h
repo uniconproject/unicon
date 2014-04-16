@@ -805,10 +805,6 @@ Deliberate Syntax Error
  * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
  */
 
-#ifndef PTHREAD_MUTEX_RECURSIVE
-#define PTHREAD_MUTEX_RECURSIVE PTHREAD_MUTEX_RECURSIVE_NP
-#endif
-
 #endif					/* Concurrent */
 
 #ifdef PthreadCoswitch

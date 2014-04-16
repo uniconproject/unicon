@@ -1916,35 +1916,10 @@ int readJPEG(char *filename, int p, struct imgdata *imd)
 
 #if HAVE_LIBPNG
 /*
- * readPNG(filename, p, imd) - read PNG file into image data structure
- * p is a palette number to which the PNG colors are to be coerced;
- * p=0 uses the colors exactly as given in the PNG file.
- */
-
-static int pngread(char *filename, int p);
-
-int readPNG(char *filename, int p, struct imgdata *imd)
-{
-   int r = pngread(filename, p);			/* read image */
-   if (r == Failed){
-      if (gf_f) { fclose(gf_f); gf_f = NULL; }
-      return Failed;
-      }
-
-   imd->width = gf_width;		/* set return variables */
-   imd->height = gf_height;
-   imd->paltbl = gf_paltbl;
-   imd->data = gf_string;
-
-   return Succeeded;				/* return success */
-}
-
-
-/*
  * pngread(filename, p) - read png file, setting gf_ globals
  */
 
-static int pngread(char *filename, int p)
+static int pngread(char *filename, int p, struct imgdata *imd)
 {
    unsigned char header[8];
    int  bit_depth, color_type;
@@ -1957,18 +1932,18 @@ static int pngread(char *filename, int p)
    png_infop info_ptr = NULL;
    png_infop end_info = NULL;
 
-   gf_f = NULL;
+   FILE * png_f = NULL;
 
    #ifdef MSWindows
-      if ((gf_f = fopen(filename, "rb")) == NULL) {
+      if ((png_f = fopen(filename, "rb")) == NULL) {
    #else					/* MSWindows */
-      if ((gf_f = fopen(filename, "r")) == NULL) {
+      if ((png_f = fopen(filename, "r")) == NULL) {
    #endif					/* MSWindows */
 	 return Failed;
 	 }
 
    /* read the first n bytes (1-8, 8 used here) and test for png signature */
-   fread(header, 1, 8, gf_f);
+   fread(header, 1, 8, png_f);
 
    if (png_sig_cmp(header, 0, 8)) {
       return Failed;  /* (NOT_PNG) */
@@ -1993,19 +1968,19 @@ static int pngread(char *filename, int p)
 
    if (setjmp(png_jmpbuf(png_ptr))) {
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-      if (gf_f) { fclose(gf_f); gf_f = NULL; }
+      if (png_f) { fclose(png_f); png_f = NULL; }
       return Failed;
       }
 
-   png_init_io(png_ptr, gf_f);
+   png_init_io(png_ptr, png_f);
    png_set_sig_bytes(png_ptr, 8);
    png_read_info(png_ptr, info_ptr);
 
    png_get_IHDR(png_ptr, info_ptr, &mywidth, &myheight, &bit_depth, 
    		&color_type, NULL, NULL, NULL);
 
-   gf_width  = (int) mywidth;
-   gf_height = (int) myheight;
+   imd->width  = (int) mywidth;
+   imd->height = (int) myheight;
  
    /*
     * Expand palette images to RGB, low-bit-depth grayscale images to 8 bits,
@@ -2080,26 +2055,24 @@ static int pngread(char *filename, int p)
 
    rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
-   if ((gf_string = (unsigned char *)malloc(rowbytes*gf_height)) == NULL) {
+   if ((imd->data = (unsigned char *)malloc(rowbytes*imd->height)) == NULL) {
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
       return Failed;
       }
 
-   if ((row_pointers=(png_bytepp)malloc(gf_height*sizeof(png_bytep))) == NULL){
+   if ((row_pointers=(png_bytepp)malloc(imd->height*sizeof(png_bytep))) == NULL){
       png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-      free(gf_string);
-      gf_string = NULL;
       return Failed;
       }
 
    /* set the individual row_pointers to point at the correct offsets */
 
-   for (i = 0;  i < gf_height;  ++i)
+   for (i = 0;  i < imd->height;  ++i)
 #ifdef NTGCC
       /* image is upside down, reverse it */
-      row_pointers[gf_height-1-i] = gf_string + i*rowbytes;
+      row_pointers[imd->height-1-i] = imd->data + i*rowbytes;
 #else								/* NTGCC*/
-      row_pointers[i] = gf_string + i*rowbytes;
+      row_pointers[i] = imd->data + i*rowbytes;
 #endif								/* NTGCC*/
 
    /* now we can go ahead and just read the whole image */
@@ -2120,11 +2093,32 @@ static int pngread(char *filename, int p)
       end_info = NULL;
       }
 
-   fclose(gf_f);
-   gf_f = NULL;
+   fclose(png_f);
+   png_f = NULL;
    return Succeeded;
 }
 
+/*
+ * readPNG(filename, p, imd) - read PNG file into image data structure
+ * p is a palette number to which the PNG colors are to be coerced;
+ * p=0 uses the colors exactly as given in the PNG file.
+ */
+
+int readPNG(char *filename, int p, struct imgdata *imd)
+{
+   int r;
+   imd->paltbl = NULL;
+   imd->data = NULL;
+
+   r = pngread(filename, p, imd);			/* read image */
+   if (r == Failed){
+      if (imd->paltbl) free(imd->paltbl);
+      if (imd->data) free(imd->data);
+      return Failed;
+      }
+
+   return Succeeded;				/* return success */
+}
 #endif		/*  HAVE_LIBPNG  */
 
 /*

@@ -3606,68 +3606,35 @@ int on_icon;
    }
 
 
-void copytruecolor(Visual *vis, XImage *im, unsigned char *data, int width, int height)
-{
+#define DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)		\
+   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;	\
+   do {	    	 	   	    	      	       		 		\
+      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;	\
+      while (!(rmask & 1)) { rshift++; rmask >>= 1; }				\
+      while (rmask & 1) { rbits++; rmask >>= 1; } 				\
+      if (rbits>8) { rshift += rbits-8; rbits = 8; } 				\
+      while (!(gmask & 1)) { gshift++; gmask >>= 1; }				\
+      while (gmask & 1) { gbits++; gmask >>= 1; } 				\
+      if (gbits>8) { gshift += gbits-8; gbits = 8;} 				\
+      while (!(bmask & 1)) { bshift++; bmask >>= 1; }				\
+      while (bmask & 1) { bbits++; bmask >>= 1; }  				\
+      if (bbits>8) { bshift += bbits-8; bbits = 8; }				\
+   } while (0)
+
+void copytruecolor(Visual *vis, XImage *im, unsigned char *data, int width, int height){
    int i, j, k;
    unsigned long c;
-   unsigned long rmask, gmask, bmask;
-   unsigned long rshift, rbits, gshift, gbits, bshift, bbits;
+   DECLARE_AND_INIT_RGB_VARS(vis->red_mask, vis->green_mask, vis->blue_mask);
 
-   rmask = vis->red_mask, 
-   gmask = vis->green_mask, 
-   bmask = vis->blue_mask; 
-
-   rshift = 0; rbits = 0; 
-        while(!(rmask & 1)){ 
-            rshift++; 
-            rmask >>= 1; 
-        } 
-        while(rmask & 1){ 
-            rbits++; 
-            rmask >>= 1; 
-        } 
-        if(rbits>8){ 
-            rshift += rbits-8; 
-            rbits = 8; 
-        } 
- 
-        gshift = 0; gbits = 0; 
-        while(!(gmask & 1)){ 
-            gshift++; 
-            gmask >>= 1; 
-        } 
-        while(gmask & 1){ 
-            gbits++; 
-            gmask >>= 1; 
-        } 
-        if(gbits>8){ 
-            gshift += gbits-8; 
-            gbits = 8; 
-        } 
- 
-        bshift = 0; bbits = 0; 
-        while(!(bmask & 1)){ 
-            bshift++; 
-            bmask >>= 1; 
-        } 
-        while(bmask & 1){ 
-            bbits++; 
-            bmask >>= 1; 
-        } 
-        if(bbits>8){ 
-            bshift += bbits-8; 
-            bbits = 8; 
-        }
-
-      for(j=0; j < height; j++){
-   	k = j * width * 3;
-	for(i=0; i < width; i++) {
-	   c =  XGetPixel(im, i, j);
-           data[k++] =  ((c >> rshift) & ((1 << rbits)-1))  << (8-rbits); 
-           data[k++] =((c >> gshift) & ((1 << gbits)-1)) << (8-gbits); 
-           data[k++] =((c >> bshift) & ((1 << bbits)-1)) << (8-bbits); 
-	   }
-	}
+   for(j=0; j < height; j++){
+      k = j * width * 3;
+      for(i=0; i < width; i++) {
+         c =  XGetPixel(im, i, j);
+         data[k++] =  ((c >> rshift) & ((1 << rbits)-1))  << (8-rbits); 
+         data[k++] =((c >> gshift) & ((1 << gbits)-1)) << (8-gbits); 
+         data[k++] =((c >> bshift) & ((1 << bbits)-1)) << (8-bbits);
+	 }
+      }
 }
 
 /*
@@ -3769,7 +3736,7 @@ unsigned char *data;
 /*
  * getimstr24 -- get an image as a string of RGB tuples.
  *
- * Stores the specified subimage in data, three pixels per byte.
+ * Stores the specified subimage in data, three bytes per pixel.
  */
 int getimstr24(w, xx, yy, width, height, data)
 wbp w;
@@ -3777,33 +3744,31 @@ int xx, yy, width, height;
 unsigned char *data;
    {
    XImage *im;
-   XColor colorcell;
    SysColor px;
    unsigned long pix;
-   int i, x, y, wid = xx + width, ht = yy + height;
-   Visual *vis = w->window->vis;
+   int x, y;
    STDLOCALS(w);
 
    /*
     * Get an XImage structure containing window pixel values.
     */
-   im = getximage(w, x, y, width, height, 1);
+   im = getximage(w, xx, yy, width, height, 1);
    if (!im)
       return 0;
 
-   if(vis->class == TrueColor){
-     copytruecolor(vis, im, data, width, height);
+   if(ws->vis->class == TrueColor){
+     copytruecolor(ws->vis, im, data, width, height);
      return 1;
     }
    
-   for (y = yy; y < ht; y++) {
+   for (y = 0; y < height; y++) {
 #if 0
       /* want to do pollevent here, but can't inside a STDLOCALS declaration */
       if (y & 1 == 0) {
 	 pollevent();
 	 }
 #endif
-      for (x = xx; x < wid; x++) {
+      for (x = 0; x < width; x++) {
 	 px.pixel = XGetPixel(im, x, y);
 	 XQueryColor(stddpy, wd->cmap, &px);
 	 *data++ = px.red >> 8;

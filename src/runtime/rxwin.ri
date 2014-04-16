@@ -12,6 +12,30 @@
 XSizeHints size_hints;
 
 /*
+ * Utility macros to extract RGB color components when dealing with TRUE COLOR visuals.
+ */
+
+#define TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)	\
+   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;	\
+   do {	    	 	   	    	      	       		 		\
+      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;	\
+      while (!(rmask & 1)) { rshift++; rmask >>= 1; }				\
+      while (rmask & 1) { rbits++; rmask >>= 1; } 				\
+      if (rbits>8) { rshift += rbits-8; rbits = 8; } 				\
+      while (!(gmask & 1)) { gshift++; gmask >>= 1; }				\
+      while (gmask & 1) { gbits++; gmask >>= 1; } 				\
+      if (gbits>8) { gshift += gbits-8; gbits = 8;} 				\
+      while (!(bmask & 1)) { bshift++; bmask >>= 1; }				\
+      while (bmask & 1) { bbits++; bmask >>= 1; }  				\
+      if (bbits>8) { bshift += bbits-8; bbits = 8; }				\
+   } while (0)
+
+#define TRUECOLOR_GET_RGB_BYTE(c, cshifts, cbits) (((c >> cshift) & ((1 << cbits)-1)) << (8-cbits))
+#define TRUECOLOR_GET_RGB_RED(c)   (((c >> rshift) & ((1 << rbits)-1))  << (8-rbits))
+#define TRUECOLOR_GET_RGB_GREEN(c) (((c >> gshift) & ((1 << gbits)-1))  << (8-gbits))
+#define TRUECOLOR_GET_RGB_BLUE(c)  (((c >> bshift) & ((1 << bbits)-1))  << (8-bbits))
+
+/*
  * function prototypes
  */
 int                  seticonicstate   (wbp w, char *s);
@@ -3606,37 +3630,6 @@ int on_icon;
    }
 
 
-#define DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)		\
-   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;	\
-   do {	    	 	   	    	      	       		 		\
-      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;	\
-      while (!(rmask & 1)) { rshift++; rmask >>= 1; }				\
-      while (rmask & 1) { rbits++; rmask >>= 1; } 				\
-      if (rbits>8) { rshift += rbits-8; rbits = 8; } 				\
-      while (!(gmask & 1)) { gshift++; gmask >>= 1; }				\
-      while (gmask & 1) { gbits++; gmask >>= 1; } 				\
-      if (gbits>8) { gshift += gbits-8; gbits = 8;} 				\
-      while (!(bmask & 1)) { bshift++; bmask >>= 1; }				\
-      while (bmask & 1) { bbits++; bmask >>= 1; }  				\
-      if (bbits>8) { bshift += bbits-8; bbits = 8; }				\
-   } while (0)
-
-void copytruecolor(Visual *vis, XImage *im, unsigned char *data, int width, int height){
-   int i, j, k;
-   unsigned long c;
-   DECLARE_AND_INIT_RGB_VARS(vis->red_mask, vis->green_mask, vis->blue_mask);
-
-   for(j=0; j < height; j++){
-      k = j * width * 3;
-      for(i=0; i < width; i++) {
-         c =  XGetPixel(im, i, j);
-         data[k++] =  ((c >> rshift) & ((1 << rbits)-1))  << (8-rbits); 
-         data[k++] =((c >> gshift) & ((1 << gbits)-1)) << (8-gbits); 
-         data[k++] =((c >> bshift) & ((1 << bbits)-1)) << (8-bbits);
-	 }
-      }
-}
-
 /*
  * getimstr(w, x, y, width, height, paltbl, data) -- get image as a string.
  *
@@ -3733,6 +3726,7 @@ unsigned char *data;
    XDestroyImage(im);
    return 1;
    }
+
 /*
  * getimstr24 -- get an image as a string of RGB tuples.
  *
@@ -3757,25 +3751,30 @@ unsigned char *data;
       return 0;
 
    if(ws->vis->class == TrueColor){
-     copytruecolor(ws->vis, im, data, width, height);
-     return 1;
-    }
-   
-   for (y = 0; y < height; y++) {
-#if 0
-      /* want to do pollevent here, but can't inside a STDLOCALS declaration */
-      if (y & 1 == 0) {
-	 pollevent();
-	 }
-#endif
-      for (x = 0; x < width; x++) {
-	 px.pixel = XGetPixel(im, x, y);
-	 XQueryColor(stddpy, wd->cmap, &px);
-	 *data++ = px.red >> 8;
-	 *data++ = px.green >> 8;
-	 *data++ = px.blue >> 8;
-	 }
+      unsigned long c;
+      TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(ws->vis->red_mask, 
+      		     ws->vis->green_mask, ws->vis->blue_mask);
+      for(y=0; y < height; y++){
+         for(x=0; x < width; x++) {
+            c =  XGetPixel(im, x, y);
+            *data++ = TRUECOLOR_GET_RGB_RED(c);
+            *data++ = TRUECOLOR_GET_RGB_GREEN(c);
+            *data++ = TRUECOLOR_GET_RGB_BLUE(c);
+	    }
+         }
+       }
+    else{
+      for (y = 0; y < height; y++) {
+         for (x = 0; x < width; x++) {
+	    px.pixel = XGetPixel(im, x, y);
+	    XQueryColor(stddpy, wd->cmap, &px);
+	    *data++ = px.red >> 8;
+	    *data++ = px.green >> 8;
+	    *data++ = px.blue >> 8;
+	    }
+         }
       }
+
    return 1;
    }
 

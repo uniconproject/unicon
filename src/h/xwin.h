@@ -205,13 +205,28 @@ typedef struct wcolor {
 #define YTOROW(w,y)   ((y>0) ? ((y) / LEADING(w) + 1) : ((y) / LEADING(w)))
 #define XTOCOL(w,x)  (!FWIDTH(w) ? (x) : ((x) / FWIDTH(w)))
 
-#define STDLOCALS(w) \
-   wcp wc = (w)->context; \
-   wsp ws = (w)->window; \
-   wdp wd = ws->display; \
-   GC      stdgc  = wc->gc; \
-   Display *stddpy = wd->display; \
-   Window  stdwin  = ws->win; \
-   Pixmap  stdpix  = ws->pix;
+/*
+ * Utility macros to extract RGB color components when dealing with TRUE COLOR visuals.
+ */
+
+#define TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)	\
+   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;	\
+   do {	    	 	   	    	      	       		 		\
+      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;	\
+      while (!(rmask & 1)) { rshift++; rmask >>= 1; }				\
+      while (rmask & 1) { rbits++; rmask >>= 1; } 				\
+      if (rbits>8) { rshift += rbits-8; rbits = 8; } 				\
+      while (!(gmask & 1)) { gshift++; gmask >>= 1; }				\
+      while (gmask & 1) { gbits++; gmask >>= 1; } 				\
+      if (gbits>8) { gshift += gbits-8; gbits = 8;} 				\
+      while (!(bmask & 1)) { bshift++; bmask >>= 1; }				\
+      while (bmask & 1) { bbits++; bmask >>= 1; }  				\
+      if (bbits>8) { bshift += bbits-8; bbits = 8; }				\
+   } while (0)
+
+#define TRUECOLOR_GET_RGB_BYTE(c, cshifts, cbits) (((c >> cshift) & ((1 << cbits)-1)) << (8-cbits))
+#define TRUECOLOR_GET_RGB_RED(c)   (((c >> rshift) & ((1 << rbits)-1))  << (8-rbits))
+#define TRUECOLOR_GET_RGB_GREEN(c) (((c >> gshift) & ((1 << gbits)-1))  << (8-gbits))
+#define TRUECOLOR_GET_RGB_BLUE(c)  (((c >> bshift) & ((1 << bbits)-1))  << (8-bbits))
 
 #endif					/* XWindows */

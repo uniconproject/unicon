@@ -1747,26 +1747,6 @@ int b;
 
 
 #if HAVE_LIBJPEG
-/*
- * readJPEG(filename, p, imd) - read JPEG file into image data structure
- * p is a palette number to which the JPEG colors are to be coerced;
- * p=0 uses the colors exactly as given in the JPEG file.
- */
-static int jpegread(char *filename, int p);
-
-int readJPEG(char *filename, int p, struct imgdata *imd)
-{
-   int r;
-   r = jpegread(filename, p);			/* read image */
-   if (r == Failed) return Failed;
-
-   imd->width = gf_width;		/* set return variables */
-   imd->height = gf_height;
-   imd->paltbl = gf_paltbl;
-   imd->data = gf_string;
-
-   return Succeeded;				/* return success */
-}
 
 /*
  * jpeg error handler 
@@ -1776,29 +1756,26 @@ void my_error_exit (j_common_ptr cinfo)
 {
   my_error_ptr myerr = (my_error_ptr) cinfo->err;
   /*(*cinfo->err->output_message) (cinfo);*/
-  if (gf_f) { fclose(gf_f); gf_f = NULL; }
   longjmp(myerr->setjmp_buffer, 1);
 }
 
-
-
 /*
- * jpegread(filename, p) - read jpeg file, setting gf_ globals
+ * jpegread(filename, p, image) - read jpeg file
  */
-static int jpegread(char *filename, int p)
+static int jpegread(char *filename, int p, struct imgdata *imd)
 {
    struct jpeg_decompress_struct cinfo; /* libjpeg struct */
    struct my_error_mgr jerr;
    JSAMPARRAY buffer;
    unsigned char *row_ptr;
    int row_stride;
-   int i,j,k;
-   gf_f = NULL;
+   int i;
+   static FILE *jpg_f = NULL;			/* input file */
 
 #ifdef MSWindows
-      if ((gf_f = fopen(filename, "rb")) == NULL)
+      if ((jpg_f = fopen(filename, "rb")) == NULL)
 #else					/* MSWindows */
-      if ((gf_f = fopen(filename, "r")) == NULL)
+      if ((jpg_f = fopen(filename, "r")) == NULL)
 #endif					/* MSWindows */
 	 return Failed;
 
@@ -1807,13 +1784,13 @@ static int jpegread(char *filename, int p)
 
    if (setjmp(jerr.setjmp_buffer)) {
       jpeg_destroy_decompress(&cinfo);
-      if (gf_f != NULL)
-	 fclose(gf_f);
+      if (jpg_f != NULL)
+	 fclose(jpg_f);
       return Failed;
       }
 
    jpeg_create_decompress(&cinfo);
-   jpeg_stdio_src(&cinfo, gf_f);
+   jpeg_stdio_src(&cinfo, jpg_f);
    jpeg_read_header(&cinfo, TRUE);
 
    /*
@@ -1825,91 +1802,112 @@ static int jpegread(char *filename, int p)
       }
    else {
       /*
-       * Force output image to be always RGB-color space regardless
-       * of the input image color space.
+       * Force output image to be always RGB-color space regardless of the
+       * input image color space. Use BGR on windows if it is available (jpeg-turbo)
        */
-      cinfo.out_color_space= JCS_RGB;
+#if defined(NTGCC) 
+      /* Assume we have libjpeg-turbo on Windows for now */
+      #define HAVE_LIBJPEG_TURBO
+      cinfo.out_color_space = JCS_EXT_BGR;
+#else
+      cinfo.out_color_space = JCS_RGB;
+#endif
+
       cinfo.quantize_colors = FALSE;
       }
 
    /* Start decompression */
 
    jpeg_start_decompress(&cinfo);
-   gf_width = cinfo.output_width;
-   gf_height = cinfo.output_height;
+   imd->width = cinfo.output_width;
+   imd->height = cinfo.output_height;
    row_stride = cinfo.output_width * cinfo.output_components; /* actual width of the image */
 
    if (p == 1) {
-      if (!(gf_paltbl=(struct palentry *)malloc(256 * sizeof(struct palentry))))
+      if (!(imd->paltbl=(struct palentry *)malloc(256 * sizeof(struct palentry))))
 	 return Failed;
 
       for (i = 0; i < cinfo.actual_number_of_colors; i++) {
 	 /* init palette table */
-	 gf_paltbl[i].used = 1;
-	 gf_paltbl[i].valid = 1;
-	 gf_paltbl[i].transpt = 0;
-	 gf_paltbl[i].clr.red = cinfo.colormap[0][i] * 257;
-	 gf_paltbl[i].clr.green = cinfo.colormap[1][i] * 257;
-	 gf_paltbl[i].clr.blue = cinfo.colormap[2][i] * 257;
+	 imd->paltbl[i].used = 1;
+	 imd->paltbl[i].valid = 1;
+	 imd->paltbl[i].transpt = 0;
+	 imd->paltbl[i].clr.red = cinfo.colormap[0][i] * 257;
+	 imd->paltbl[i].clr.green = cinfo.colormap[1][i] * 257;
+	 imd->paltbl[i].clr.blue = cinfo.colormap[2][i] * 257;
 	 }
 
       for(;i < 256; i++) {
-	 gf_paltbl[i].used = gf_paltbl[i].valid = gf_paltbl[i].transpt = 0;
+	 imd->paltbl[i].used = imd->paltbl[i].valid = imd->paltbl[i].transpt = 0;
 	 }
       }
 
-/*   if (p == 1) */
-      gf_string = calloc(jpg_space=row_stride*cinfo.output_height,
+      imd->data = calloc(row_stride*cinfo.output_height,
 			 sizeof(unsigned char));
-
    /*
     * Make a one-row-high sample array that will go away when done with image
     */
    buffer = (*cinfo.mem->alloc_sarray)
       ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-   row_ptr = gf_string;
+
+#ifdef NTGCC
+   row_ptr = imd->data + (cinfo.output_height-1) * row_stride;
+   while (cinfo.output_scanline < cinfo.output_height) {
+      (void) jpeg_read_scanlines(&cinfo, buffer, 1);
+      memcpy(row_ptr, buffer[0], row_stride);
+      row_ptr -= row_stride;
+      }
+#ifndef HAVE_LIBJPEG_TURBO
+   /*
+    * Change RGB to BGR
+    */
+   {
+   unsigned char c, *byte, *imgEnd = imd->data + row_stride*cinfo.output_height;
+   for (byte=imd->data; byte<imgEnd; byte +=3) {
+      c = *byte; *byte = byte[2]; byte[2] = c;
+      }
+   }
+#endif					 /* HAVE_LIBJPEG_TURBO */
+#else
+   row_ptr = imd->data;
    while (cinfo.output_scanline < cinfo.output_height) {
       (void) jpeg_read_scanlines(&cinfo, buffer, 1);
       memcpy(row_ptr, buffer[0], row_stride);
       row_ptr += row_stride;
       }
-
-   (void) jpeg_finish_decompress(&cinfo); /* jpeg lib function call */
-
-#ifdef NTGCC
-   /*
-    * Swap around pixel data to compensate for either a library bug or a
-    * bug in the code that calls the library. (image upside down)
-    */
-   {
-   int i, j, t, t1, t2, t3;
-   for (i=0, j=row_stride*cinfo.output_height-1; i < j; i++,j--) {
-      t = gf_string[i]; gf_string[i] = gf_string[j]; gf_string[j]=t;
-      }
-   for (i=0; i < cinfo.output_height; i++) {
-      for (j=0; j < cinfo.output_width/2; j++) {
-	 t1 = gf_string[i*row_stride+j*3+0];
-	 t2 = gf_string[i*row_stride+j*3+1];
-	 t3 = gf_string[i*row_stride+j*3+2];
-	 gf_string[i*row_stride+j*3+0] = gf_string[(i+1)*row_stride-(j+1)*3+0];
-	 gf_string[i*row_stride+j*3+1] = gf_string[(i+1)*row_stride-(j+1)*3+1];
-	 gf_string[i*row_stride+j*3+2] = gf_string[(i+1)*row_stride-(j+1)*3+2];
-	 gf_string[(i+1)*row_stride-(j+1)*3+0] = t1;
-	 gf_string[(i+1)*row_stride-(j+1)*3+1] = t2;
-	 gf_string[(i+1)*row_stride-(j+1)*3+2] = t3;
-	 }
-      }
-   }
 #endif					/* NTGCC */
 
    /*
-    * Release JPEG decompression object
+    * Finish and release the JPEG decompression object
     */
+   (void) jpeg_finish_decompress(&cinfo); /* jpeg lib function call */
    jpeg_destroy_decompress(&cinfo); /* jpeg lib function call */
 
-   fclose(gf_f);
-   gf_f = NULL;
+   fclose(jpg_f);
+   jpg_f = NULL;
    return Succeeded;
+}
+
+/*
+ * readJPEG(filename, p, imd) - read JPEG file into image data structure
+ * p is a palette number to which the JPEG colors are to be coerced;
+ * p=0 uses the colors exactly as given in the JPEG file.
+ */
+
+int readJPEG(char *filename, int p, struct imgdata *imd)
+{
+   int r;
+   imd->paltbl = NULL;
+   imd->data = NULL;
+
+   r = jpegread(filename, p, imd);			/* read image */
+   if (r == Failed){
+      if (imd->paltbl) free(imd->paltbl);
+      if (imd->data) free(imd->data);
+      return Failed;
+      }
+
+   return Succeeded;				/* return success */
 }
 
 #endif

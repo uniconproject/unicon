@@ -435,6 +435,28 @@ char **argv;
    if (!(pp_only || iconx_flg)) {
       if (fclose(curlst) != 0)
          err2("cannot close ", curlst_nm);
+#if NT
+      /*
+       * We have just finished making a list of the files without extensions.
+       * Windows does not have sed(1), so write out a copy with extensions.
+       */
+      if (curlst = fopen(curlst_nm,"r")) {
+	 FILE *f2 = fopen("rttcur.lnk","w");
+	 if (f2 == NULL) {
+	    fclose(curlst);
+	    err2("cannot open ", "rttcur.lnk");
+	    }
+	 else {
+	    char line[1024];
+	    while (fgets(line, 1023, curlst)) {
+	       if (line[strlen(line)-1] == '\n') line[strlen(line)-1] = '\0';
+	       fprintf(f2, "%s.c", line);
+	       }
+	    fclose(f2);
+	    fclose(curlst);
+	    }
+	 }
+#endif					/* NT */
       dumpdb(dbname);
       full_lst("rttfull.lst");
       }

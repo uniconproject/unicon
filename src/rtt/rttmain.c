@@ -450,7 +450,7 @@ char **argv;
 	    char line[1024];
 	    while (fgets(line, 1023, curlst)) {
 	       if (line[strlen(line)-1] == '\n') line[strlen(line)-1] = '\0';
-	       fprintf(f2, "%s.c", line);
+	       fprintf(f2, "%s.c\n", line);
 	       }
 	    fclose(f2);
 	    fclose(curlst);

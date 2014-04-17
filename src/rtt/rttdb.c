@@ -1210,6 +1210,14 @@ char *fname;
    struct cfile *clst;
    struct fileparts *fp;
    FILE *f;
+#if NT
+   /*
+    * under Windows we do not have sed(1), so go ahead and emit a version of
+    * rttfull.lst called rttfull.lnk with .obj extensions appended.
+    */
+   FILE *f2 = fopen("rttfull.lnk","w");
+   if (f2 == NULL) err2("cannot open ", "rttfull.lnk");
+#endif					/* NT */
 
    f = fopen(fname, "w");
    if (f == NULL)
@@ -1229,9 +1237,16 @@ char *fname;
 #endif                                  /* MVS */
 
             fprintf(f, "%s\n", fp->name);
+#if NT
+            fprintf(f2, "%s.obj\n", fp->name);
+#endif					/* NT */
             }
    if (fclose(f) != 0)
       err2("cannot close ", fname);
+#if NT
+   if (fclose(f2) != 0)
+      err2("cannot close ", "rttfull.lnk");
+#endif					/* NT */
    }
 
 /*

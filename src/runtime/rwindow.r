@@ -2144,15 +2144,21 @@ static int pngwrite(wbp w, FILE *png_f, int x, int y, int width, int height, uns
 
    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
-   if (!png_ptr)
+   if (!png_ptr){
+      free(row_pointers);
       return Failed;
+      }
 
    info_ptr = png_create_info_struct(png_ptr);
-   if (!info_ptr)
+   if (!info_ptr){
+      png_destroy_write_struct (&png_ptr, NULL);
+      free(row_pointers);
       return Failed;
+      }
 
    if (setjmp(png_jmpbuf(png_ptr))){
      png_destroy_write_struct (&png_ptr, &info_ptr);
+     free(row_pointers);
      return Failed;
     }
 
@@ -2167,20 +2173,18 @@ static int pngwrite(wbp w, FILE *png_f, int x, int y, int width, int height, uns
    /* set the individual row_pointers to point at the correct offsets */
    rowbytes = width * 3;
    for (i = 0; i < height;  i++)
-#ifdef NTGCC
-      /* image is upside down, reverse it */
-      row_pointers[height-1-i] = imgBuf + i*rowbytes;
-#else								/* NTGCC*/
       row_pointers[i] = imgBuf + i*rowbytes;
-#endif								/* NTGCC*/
 
+   /*
    png_set_rows (png_ptr, info_ptr, row_pointers);
    png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
-   /*png_write_image(png_ptr, row_pointers); */
+   */
+   png_write_image(png_ptr, row_pointers);
 
    png_write_end(png_ptr, NULL);
    png_destroy_write_struct (&png_ptr, &info_ptr);
 
+   free(row_pointers);
    return Succeeded;
  }
 

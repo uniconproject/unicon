@@ -2119,6 +2119,106 @@ int readPNG(char *filename, int p, struct imgdata *imd)
 
    return Succeeded;				/* return success */
 }
+
+
+
+#ifdef ConsoleWindow
+#undef fprintf
+#undef putc
+#define putc fputc
+#endif					/* ConsoleWindow */
+
+/*
+ * pngwrite(w, filename, x, y, width, height) - write PNG file
+ */
+
+static int pngwrite(wbp w, FILE *png_f, int x, int y, int width, int height, unsigned char *imgBuf)
+{
+   int i, j, rowbytes;
+   png_structp png_ptr;
+   png_infop info_ptr;
+   png_bytep * row_pointers=NULL;
+
+   if ((row_pointers=(png_bytepp)malloc( height * sizeof(png_bytep))) == NULL)
+      return Failed;
+
+   png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+   if (!png_ptr)
+      return Failed;
+
+   info_ptr = png_create_info_struct(png_ptr);
+   if (!info_ptr)
+      return Failed;
+
+   if (setjmp(png_jmpbuf(png_ptr))){
+     png_destroy_write_struct (&png_ptr, &info_ptr);
+     return Failed;
+    }
+
+   png_init_io(png_ptr, png_f);
+
+   png_set_IHDR(png_ptr, info_ptr, width, height,
+                     8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+                     PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+   png_write_info(png_ptr, info_ptr);
+
+   /* set the individual row_pointers to point at the correct offsets */
+   rowbytes = width * 3;
+   for (i = 0; i < height;  i++)
+#ifdef NTGCC
+      /* image is upside down, reverse it */
+      row_pointers[height-1-i] = imgBuf + i*rowbytes;
+#else								/* NTGCC*/
+      row_pointers[i] = imgBuf + i*rowbytes;
+#endif								/* NTGCC*/
+
+   png_set_rows (png_ptr, info_ptr, row_pointers);
+   png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+   /*png_write_image(png_ptr, row_pointers); */
+
+   png_write_end(png_ptr, NULL);
+   png_destroy_write_struct (&png_ptr, &info_ptr);
+
+   return Succeeded;
+ }
+
+/*
+ * writePNG(w, filename, x, y, width, height) - write JPEG image
+ * Returns Succeeded, Failed, or Error.
+ * We assume that the area specified is within the window.
+ */
+int writePNG(w, filename, x, y, width, height)
+wbp w;
+char *filename;
+int x, y, width, height;
+   {
+   int r;
+   FILE * png_f = NULL;
+   unsigned char *imgBuf = NULL;
+
+   if (!(imgBuf = (unsigned char*)malloc( width * height * 3 * sizeof(unsigned char))))
+      return Error;
+
+   if (!getimstr24(w, x, y, width, height, imgBuf)){
+      free(imgBuf);
+      return Error;
+      }
+
+   if ((png_f = fopen(filename,"wb")) == NULL) {
+      free(imgBuf);
+      return Failed;
+      }
+
+   r = pngwrite(w, png_f, x, y, width, height, imgBuf);
+
+   free(imgBuf);
+   fclose(png_f);
+   
+   return r;
+   }
+
 #endif		/*  HAVE_LIBPNG  */
 
 /*

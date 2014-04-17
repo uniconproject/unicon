@@ -437,6 +437,7 @@ int checkOpenConsole( FILE *w, char *s );
 #endif					/* HAVE_LIBJPEG */
 #if HAVE_LIBPNG
    int	readPNG		(char *fname, int p, struct imgdata *d);
+   int  writePNG	(wbp w, char *fn, int x, int y, int width, int height);
 #endif					/* HAVE_LIBPNG */
    int	rectargs	(wbp w, int argc, dptr argv, int i,
    			   word *px, word *py, word *pw, word *ph);

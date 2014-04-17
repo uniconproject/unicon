@@ -2768,6 +2768,14 @@ function{0,1} WriteImage(argv[argc])
 	 r = writeJPEG(w, s, x, y, width, height);
          }
 #endif					/* HAVE_LIBJPEG */
+
+#if HAVE_LIBPNG
+      if ((r == NoCvt) &&
+	  (strcmp(s + strlen(s)-4, ".png")==0 ||
+          (strcmp(s + strlen(s)-4, ".PNG")==0))) {
+	 r = writePNG(w, s, x, y, width, height);
+         }
+#endif					/* HAVE_LIBPNG */
       if (r == NoCvt)
          r = writeBMP(w, s, x, y, width, height);
       if (r == NoCvt)

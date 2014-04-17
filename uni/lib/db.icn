@@ -1,17 +1,46 @@
-procedure dbopen(dsn,table,user,password)
-   return open(dsn,"o",table,user,password)
+#
+# db.icn - DataBase convenience utility library
+#
+# This is mainly for backwards compatibility with early, experimental
+# versions of Unicon's database facilities, and is effectively vestigial
+# and obsolete at this point. You should probably just ignore this and
+# use the interface described in the Unicon book.
+#
+# Having said that, the vestigial interface provided simple database
+# access for folks who do not know SQL. They were a growing number of
+# built-in functions before we had the stroke of genius to just provide
+# a sql() function and leave it to the applications programmer. That
+# allowed us to delete several built-ins and deprecate them down to being
+# library procedures in here. There might or might not occur in future
+# a motivation to resuscitate and enhance that API as a library. One
+# surviving vestigial element is open's optional "default table" parameter
+# that may be supplied prior to user and password. The "default table" is
+# used in some built-in functions that turn information about column names
+# and types and the like.
+#
+
+#
+# dbopen(dsn, user, password) - opens database connection, no default table
+# dbopen(dsn, table, user, password) - opens connection, supplies default table
+#
+procedure dbopen(dsn,tabl,user,password)
+   if /password then return open(dsn,"o",tabl,user)
+   else return open(dsn,"o",tabl,user,password)
 end
 
+# old name for fetch()
 procedure dbfetch(db)
    dbfetch := fetch
    return fetch(db)
 end
 
+# old name for close()
 procedure dbclose(db)
    dbclose := close
    return close(db)
 end
 
+# old name for sql()
 procedure dbsql(db,sqlstatement)
    dbsql := sql
    return sql(db,sqlstatement)

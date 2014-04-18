@@ -133,29 +133,21 @@ function{1} collect(region, bytes)
          }
       switch (region) {
 	 case 0:
-	    SUSPEND_THREADS();
-	    collect(0);
-	    RESUME_THREADS();
+	    DO_COLLECT(0);
 	    break;
 	 case Static:
-	    SUSPEND_THREADS();
-	    collect(Static);			 /* i2 ignored if i1==Static */
-	    RESUME_THREADS();
+	    DO_COLLECT(Static);			 /* i2 ignored if i1==Static */
 	    break;
 	 case Strings:
 	    if (DiffPtrs(strend,strfree) >= bytes){
-	       SUSPEND_THREADS();
-	       collect(Strings);		/* force unneaded collection */
-	       RESUME_THREADS();
+	       DO_COLLECT(Strings);		/* force unneeded collection */
 	       }
 	    else if (!reserve(Strings, bytes))	/* collect & reserve bytes */
                fail;
 	    break;
 	 case Blocks:
 	    if (DiffPtrs(blkend,blkfree) >= bytes){
-	       SUSPEND_THREADS();
-	       collect(Blocks);		/* force unneeded collection */
-	       RESUME_THREADS();
+	       DO_COLLECT(Blocks);		/* force unneeded collection */
 	       }
 	    else if (!reserve(Blocks, bytes))	/* collect & reserve bytes */
                fail;
@@ -1404,7 +1396,7 @@ function{0,1} variable(s)
    body {
       register int rv;
 #ifdef MultiThread
-      struct progstate *prog, *savedprog;
+      struct progstate *prog, *savedprog=NULL;
       struct pf_marker *tmp_pfp;
       dptr tmp_argp;
 #endif					/* MultiThread */
@@ -1413,18 +1405,21 @@ function{0,1} variable(s)
 #ifdef MultiThread
       tmp_pfp = pfp;
       tmp_argp = glbl_argp;
-
-      savedprog = curpstate;
       if (is:null(c)) c = k_current;
       else if (!is:coexpr(c)){
 	 runerr(118, c);
 	 }
-      BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync frame pointer */
-
-      prog = BlkD(c,Coexpr)->program;
-      pfp = BlkD(c,Coexpr)->es_pfp;
-      glbl_argp = BlkD(c,Coexpr)->es_argp;
-      ENTERPSTATE(prog);
+      else if (BlkLoc(c) != BlkLoc(k_current)) {
+	 /*
+	  * Save global variables needed by getvar() and temporarily set them
+	  * to the "context" where getvar() will work. 
+	  */
+	 savedprog = curpstate;
+	 prog = BlkD(c,Coexpr)->program;
+	 pfp = BlkD(c,Coexpr)->es_pfp;
+	 glbl_argp = BlkD(c,Coexpr)->es_argp;
+	 ENTERPSTATE(prog);
+	 }
 
       /*
        * Produce error if i is negative
@@ -1442,19 +1437,19 @@ function{0,1} variable(s)
 	 pfp = pfp->pf_pfp;
          }
       if (pfp)
-      glbl_argp = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
+	 glbl_argp = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
       else glbl_argp = NULL;
 #endif						/* MultiThread */
 
       rv = getvar(s, &result);
    
 #ifdef MultiThread
-      if (BlkLoc(c) != BlkLoc(k_current)) {
+      if (savedprog)
 	 ENTERPSTATE(savedprog);
-	 pfp = tmp_pfp;
-	 glbl_argp = tmp_argp;
+      pfp = tmp_pfp;
+      glbl_argp = tmp_argp;
 
-	 if ((rv == LocalName) || (rv == StaticName)) {
+      if ((rv == LocalName) || (rv == StaticName)) {
 
 #ifdef MonitoredTrappedVar
 	    if (trap_local) {
@@ -1464,9 +1459,10 @@ function{0,1} variable(s)
 	       }
 	    else
 #endif                                         /* MonitoredTrappedVar */
-            Deref(result);
+	       if (BlkLoc(c) != BlkLoc(k_current)) {
+		  Deref(result);
+		  }
 	    }
-	 }
 #endif						/* MultiThread */
 
       if (rv != Failed)

@@ -1,0 +1,49 @@
+# pidigits.icn
+#
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+# Translated from Mario Pernici's Python program
+
+link printf
+
+procedure run_pidigits(av)
+   N := integer(av[1])
+   i := k := ns := a := t := u := 0
+   k1 := n := d := 1
+   repeat {
+      k +:= 1
+      t := ishift(n,1)
+      n *:= k
+      a +:= t
+      k1 +:= 2
+      a *:= k1
+      d *:= k1
+      if a >= n then {
+         cse := n * 3 + a
+         t := cse / d
+         u := cse % d + n
+         if d > u then {
+            ns := ns * 10 + t
+            i +:= 1
+            if i % 10 = 0 then {
+               fprintf(output, "%010d\t:%d\n", ns, i)
+               ns := 0
+               }
+            if i >= N then {
+               if i % 10 ~= 0 then 
+                  fprintf(output, "%-10d\t:%d\n", ns, i)
+               break
+               }
+            a := (a - d * t) * 10
+            n *:= 10
+            }
+         }
+      }
+end
+
+$ifdef MAIN
+procedure main(av)
+   output := &output
+   run_pidigits(av)
+end
+$endif

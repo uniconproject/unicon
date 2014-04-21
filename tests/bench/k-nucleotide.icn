@@ -1,0 +1,83 @@
+# k-nucleotide.icn
+#
+# The Computer Language Shootout
+# http://shootout.alioth.debian.org/
+# Translated from Ian Osgood, 
+# Sokolov Yura and bearophile's
+# Python program
+
+link printf, sort
+
+procedure gen_freq(sequ, frame)
+   ns := *sequ + 1 - frame
+   frequences := table(0)
+   every ii := 1 to ns do {
+      nucleo := sequ[ii:ii+frame]
+      if member(frequences, nucleo) then
+         frequences[nucleo] +:= 1
+      else
+         frequences[nucleo] := 1
+      }
+   return [ns, frequences]
+end
+
+procedure rev(L)
+   i := *L
+   temp := []
+   while i > 0 do{
+      put(temp, L[i])
+      i -:= 1
+      }
+   return temp
+end
+
+procedure sort_sequ(sequ, length)
+   local results, l, reverse
+   results := gen_freq(sequ, length)
+   n := results[1]
+   frequences := results[2]
+   l := sort(frequences, 2)  
+   l := sortff(l, 2, 1)
+   l := rev(l)
+   every pair := !l do {
+      st := pair[1]; fr := pair[2];
+      fprintf(output, "%s %.3r\n", st, 100.0*fr/n)
+      }
+   write(output, )
+end
+
+procedure find_sequ(sequ, s)
+   local results := []
+   results := gen_freq(sequ, *s)
+   n := results[1]
+   t := results[2]
+   fprintf(output, "%d\t%s\n", t[s], s)
+end
+
+procedure run_knucleotide(argv)
+   fin := open(argv[1])
+   se := [
+          "GGT", "GGTA", "GGTATT", 
+          "GGTATTTTAATT", "GGTATTTTAATTTATAGT"
+          ]
+
+   while line := read(fin) do {
+      if line[1:4] == ">TH" then
+         break
+      }      
+   sequ := ""
+   while line := read(fin) do
+      sequ ||:= line 
+   sequence := map(sequ, &lcase, &ucase)
+   every nl := 1 to 2 do
+      sort_sequ(sequence, nl)
+   every  s := !se do
+      find_sequ(sequence, s)
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_knucleotide(argv)
+end
+$endif

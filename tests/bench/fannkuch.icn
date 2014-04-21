@@ -1,0 +1,80 @@
+# fannkuch.icn
+#
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+# Translated from Isaac Gouy, Buck Golemon 
+# and Justin Peel's Python program
+
+procedure fannkuch(n)
+   maxFlipsCount := checksum := 0
+   permSign := 1
+   perm1 := list(n)
+   every perm1[i := 1 to n] := i-1
+   count := copy(perm1) 
+
+   repeat { 
+      k := perm1[1]
+      if k ~= 0 then {
+         perm := copy(perm1) 
+         flipsCount := 1
+         kk := perm[k + 1]
+         while kk ~= 0 do {
+            # reverse elements 1..k+1
+            top := k+2
+            every i := 1 to (k+1)/2 do
+               perm[i] :=: perm[top-i]
+            flipsCount +:= 1
+            k := kk
+            kk := perm[kk+1]
+            }
+         if maxFlipsCount < flipsCount then {
+            maxFlipsCount := flipsCount
+            }
+         if permSign = 1 then {
+            checksum +:= flipsCount 
+            }
+         else { 
+            checksum -:= flipsCount
+            }
+         }
+      # generate another permutation via incremental change
+      flag := 1
+      if permSign = 1 then {
+         perm1[1] :=: perm1[2]
+         permSign := 0
+         }
+      else {
+         perm1[2] :=: perm1[3]
+         permSign := 1 
+         every r := 3 to n - 1 do {
+            if count[r] ~= 0 then {
+               flag := 0
+               break
+               }
+            count[r] := r-1
+            perm0 := pop(perm1)
+            insert(perm1, r + 1, perm0)
+            }
+         if flag = 1 then {
+            r := n
+            if count[r] = 0 then {
+               write(output, checksum)
+               return maxFlipsCount
+               }
+            }
+         count[r] -:= 1
+         }
+      }
+end
+
+procedure run_fannkuch(av)
+   n := integer(av[1])
+   write(output, "Pfannkuchen(", n, ") = ", fannkuch(n))
+end
+
+$ifdef MAIN
+procedure main(av)
+   output := &output
+   run_fannkuch(av)
+end
+$endif

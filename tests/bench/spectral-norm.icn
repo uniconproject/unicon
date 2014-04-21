@@ -1,0 +1,69 @@
+# spectral-norm.icn
+#
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+#
+# Translated from Sebastien Loisel, Isaac Gouy, Simon
+# Descarpentries and Vadim Zelenin's Python program
+
+procedure eval_A (i, j)
+   return 1.0 / ((ishift((i + j) * (i + j + 1), -1) + i + 1))
+end
+
+procedure eval_A_times_u (u, resulted_list)
+   u_len := *u
+   
+   every i := 0 to u_len - 1 do {
+      partial_sum := 0
+      every j := 0 to u_len - 1 do {
+         partial_sum +:= eval_A(i, j) * u[j + 1]
+         } 
+      resulted_list[i + 1] := partial_sum
+      }
+end
+
+procedure eval_At_times_u (u, resulted_list)
+   u_len := *u
+   
+   every i := 0 to u_len - 1 do {
+      partial_sum := 0
+      every j := 0 to u_len - 1 do {
+         partial_sum +:= eval_A (j, i) * u[j + 1]
+         }
+      resulted_list[i + 1] := partial_sum
+      }
+end
+
+procedure eval_AtA_times_u (u, out, tmp)
+   eval_A_times_u (u, tmp)
+   eval_At_times_u (tmp, out)
+end
+
+procedure run_spectralnorm(av)
+   n := integer(av[1])
+   u := list(n, 1.0)
+   v := list(n, 1.0)
+   tmp := list(n, 1.0)
+
+   every 1 to 10 do {
+      eval_AtA_times_u (u, v, tmp)
+      eval_AtA_times_u (v, u, tmp)
+      }
+
+   vBv := vv := 0
+
+   every i := 1 to n do {
+      vi := v[i]
+      vBv +:= u[i] * vi
+      vv +:= vi * vi
+      }
+
+   write(output, sqrt(vBv/vv))
+end
+
+$ifdef MAIN
+procedure main(av)
+   output := &output
+   run_spectralnorm(av)
+end
+$endif

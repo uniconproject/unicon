@@ -1,0 +1,52 @@
+############################################################################
+#
+#	File:     generate.icn
+#
+#	Subject:  Generates input files for Unicon Benchmarks
+#
+#	Author:   Shea Newton
+#
+#	Date:     January 3, 2014
+#
+############################################################################
+
+$ifdef _MS_WINDOWS_NT
+$define EXE ""
+$else
+$define EXE "./"
+$endif
+
+
+procedure main()
+   
+   writes("generating input files...")
+   fin := open("ipxref.test", "r") | stop("ipxref.test not found")
+   fout := open("ipxref.dat", "w") | stop("cannot open ipxref.dat for writing")
+   size := stat(fin).size
+   data := reads(fin, size)
+   close(fin)
+   every 1 to 96 do write(fout, data)
+   close(fout)
+   writes(".")
+   if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+   writes(".")
+   system(EXE || "generate.out 1000 > 1-thou.dat")
+   writes(".")
+   system(EXE || "generate.out 10000 > 10-thou.dat")
+   writes(".")
+   system(EXE || "generate.out 25000 > 25-thou.dat")
+   writes(".")
+   system(EXE || "generate.out 150000 > 150-thou.dat")
+   writes(".")
+   system(EXE || "generate.out 700000 > 700-thou.dat")
+   writes(".")
+   system(EXE || "generate.out 3000000 > 3-mil.dat")
+   writes(".")
+   system(EXE || "generate.out 5000000 > 5-mil.dat")
+   writes(".")
+   system(EXE || "generate.out 15000000 > 15-mil.dat")
+   writes(".")
+   system(EXE || "generate.out 25000000 > 25-mil.dat")
+   write("done!")
+
+end

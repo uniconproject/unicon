@@ -1,0 +1,114 @@
+# fasta.icn
+#
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+# Translated from Ian Osgood and 
+# Henrich Acher's Python program
+
+procedure genRandom()
+   static ia, ic, im, imf, seed
+   initial {   
+      ia := 3877
+      ic := 29573
+      im := 139968
+      seed := 42
+      imf := real(im)
+      }
+   seed := (seed * ia + ic) % im
+   return seed / imf
+end
+
+procedure makeCumulative (genelist) 
+   local P := [], C := [], prob := 0.0
+   every i := !genelist do {
+      prob +:= i.p
+      put(P, prob)
+      put(C, i.c)
+      }
+   return [P, C]
+end
+
+procedure repeatFasta(src, n)
+   width := 60
+   r := *src 
+   s := src || src || src[1 : n % r + 1]
+   every j := 0 to integer(n / width)-1 do {
+      i := j * width % r
+      write(output, s[i + 1 +: width]) 
+      }
+   if n % width ~= 0 then
+      write(output, s[-(n % width) : 0])
+end
+
+procedure randomFasta(genelist, n)
+   local width := 60
+   local results := makeCumulative(genelist)
+   probs := results[1]
+   chars := results[2]
+   every 0 to integer(n / width)-1 do {
+      x := ""
+      every 1 to width do
+         x ||:= chars[bisect(probs, genRandom())]
+      write(output, x)
+      }
+   if n % width ~= 0 then {
+      y := ""
+      every 1 to n%width do
+         y ||:= chars[bisect(probs, genRandom())]
+      write(output, y)
+      }
+end
+
+procedure bisect(L, x)
+   i := 1
+   while L[i] < x do i +:= 1
+   return i
+end
+
+record aminoacids(p, c)
+
+procedure run_fasta(argv) 
+   alu := "GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGG_
+          GAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGA_
+          CCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAAT_
+          ACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCA_
+          GCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG_
+          AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC_
+          AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA"
+   
+   iub := [ aminoacids(0.27, "a"),
+           aminoacids(0.12, "c"),
+           aminoacids(0.12, "g"),
+           aminoacids(0.27, "t"),
+           aminoacids(0.02, "B"),
+           aminoacids(0.02, "D"),
+           aminoacids(0.02, "H"),
+           aminoacids(0.02, "K"),
+           aminoacids(0.02, "M"),
+           aminoacids(0.02, "N"),
+           aminoacids(0.02, "R"),
+           aminoacids(0.02, "S"),
+           aminoacids(0.02, "V"),
+           aminoacids(0.02, "W"),
+           aminoacids(0.02, "Y")]
+   homosapiens := [
+                   aminoacids(0.3029549426680, "a"),
+                   aminoacids(0.1979883004921, "c"),
+                   aminoacids(0.1975473066391, "g"),
+                   aminoacids(0.3015094502008, "t")
+                   ]
+   n := integer(argv[1])
+   write(output, ">ONE Homo sapiens alu")
+   repeatFasta(alu, n*2)
+   write(output, ">TWO IUB ambiguity codes")
+   randomFasta(iub, n*3)
+   write(output, ">THREE Homo sapiens frequency")
+   randomFasta(homosapiens, n*5)
+end
+
+$ifdef MAIN
+procedure main(argv) 
+   output := &output
+   run_fasta(argv) 
+end
+$endif

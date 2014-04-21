@@ -1,0 +1,101 @@
+############################################################################
+#
+#	File:     auxiliary.icn
+#
+#	Subject:  Auxiliary procedures for Unicon benchmark run-* scripts 
+#
+#	Author:   Shea Newton
+#
+#	Date:     January 3, 2014
+#
+############################################################################
+
+link "printf"
+link "binary-trees"
+link "chameneos-redux"
+link "fannkuch"
+link "fasta"
+link "k-nucleotide"
+link "mandelbrot"
+link "meteor-contest"
+link "n-body"
+link "pidigits"
+link "regex-dna"
+link "reverse-complement"
+link "spectral-norm"
+link "thread-ring"
+link "concord"
+link "deal"
+link "ipxref"
+link "queens"
+link "rsg"
+
+procedure CpuToHrMinSec(ms:0)
+   s := m := h := 0
+   if *ms > 3 then 
+      s := ms[1:-3] & ms := ms[-3:0]
+   if s > 59 then
+      m := s / 60
+   if m > 59 then 
+      h := m / 60
+   return [h, m % 60, s % 60, ms]
+end
+
+procedure WallToHrMinSec(s:0)
+   m := h := 0
+   if s > 59 then
+      m := s / 60 
+   if m > 59 then 
+      h := m / 60
+   return [h, m % 60, s % 60]
+end
+
+procedure writetime(L1, L2, wallusec)
+   printf("\nElapsed CPU Time: %02dh:%02dm:%d.%ds", L1[1], L1[2], L1[3], L1[4]) 
+   printf("\nElapsed Real Time: %02dh:%02dm:%d.%06ds\n", L2[1], L2[2], L2[3], wallusec)
+end
+
+procedure calctimes(cpustart, cpufinish, wallstart, wallfinish)
+   cputime := cpufinish - cpustart
+   wallsec := wallfinish.sec - wallstart.sec
+   wallusec := wallfinish.usec - wallstart.usec
+   if wallusec[1] == "-" then {
+      wallsec -:= 1
+      wallusec +:= 1000000
+      }
+   C := CpuToHrMinSec(cputime)
+   W := WallToHrMinSec(wallsec)
+   return [C, W, wallusec]
+end
+
+
+procedure gettimes(proc, arg)
+   wallstart := gettimeofday()
+   cpustart := &time
+   proc([arg])
+   cpufinish := &time
+   wallfinish := gettimeofday()
+   return [cpustart, cpufinish, wallstart, wallfinish]
+end
+
+procedure write_error(msg)
+
+   if msg = 1 then
+      write("N/A. Threaded Benchmark.")      
+   if msg = 2 then {
+      write("N/A. Threaded Benchmark.")
+      write("\nConcurrency Not Enabled. \nEnable _
+             concurrency to run threaded benchmarks.\n")
+      }
+   if msg = 3 then {
+      write("\nConcurrency not enabled. \nEnable _
+             concurrency to run threaded benchmarks.")
+      }
+end
+
+procedure verify_concurrent()
+   every i := &features do {
+      if i == "concurrent threads" then
+         return 1
+      }
+end

@@ -1,0 +1,71 @@
+# mandelbrot.icn
+#
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+# Translated from Greg Buchholz's C program   
+
+global w, h, wr, hr
+$define iter 50
+$define limit 2.0
+
+procedure do_y(y)
+   local bit_num, byte_acc, x, Zr, Zi, Cr, Ci, Tr, Ti, i, rv
+   bit_num := byte_acc := 0
+   rv := ""
+      
+      Ci := (2.0*y/hr - 1.0)
+      every x := 0 to w-1 do {
+         Zr := Zi := Tr := Ti := 0.0
+         Cr := (2.0*x/wr - 1.5) 
+	 every i := 0 to iter-1 do {
+	    if Tr+Ti > 4.0 then break
+            Zi := 2.0 * Zr * Zi + Ci
+            Zr := Tr - Ti + Cr
+            Tr := Zr * Zr
+            Ti := Zi * Zi
+            }
+         
+         byte_acc := ishift(byte_acc, 1) 
+         if Tr+Ti <= 4.0 then { 
+            byte_acc := ior(byte_acc, 1)
+            }          
+         bit_num +:= 1 
+
+         if bit_num = 8 then {
+            rv ||:= char(byte_acc)
+            byte_acc := bit_num := 0
+            }
+         }
+      if bit_num ~= 0 then {
+	 byte_acc := ishift(byte_acc, abs(8-w%8))
+	 rv ||:= char(byte_acc)
+	 byte_acc := bit_num := 0
+	 }
+     return rv
+end
+
+procedure run_mandelbrot(argv)
+   local y, i, pool
+
+   pool := Pool(64)
+   wL := list()
+   rL := list()
+   w := h := integer(argv[1])
+   wr := hr := real(w)
+   
+   write(output, "P4\n", w, " ", h)
+
+   every i := 0 to h-1 do
+      put(wL, i)
+   rL := pool.imap(do_y, wL)
+   pool.kill()
+   every i := !rL do
+      writes(output, i)
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_mandelbrot(argv)
+end
+$endif

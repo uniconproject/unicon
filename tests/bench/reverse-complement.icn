@@ -1,0 +1,66 @@
+# reverse-complement.icn
+#
+# The Computer Language Benchmarks Game
+# http://shootout.alioth.debian.org/
+# Translated from Jacob Lee, Steven Bethard,
+# Daniele Varrazzo and Daniel Nanz's 
+# Python program
+
+procedure mapseq(str)
+   head := ""
+   ns := ""
+   H := []
+   M := []
+   chars := &letters ++ '> '
+   
+   str ? {
+      while tab(upto(chars)) do {
+         if c := move(1)  == ">" then {
+            if *head > 0 then {
+               put(M, ns)
+               ns := ""
+               }
+            head := tab(many(chars))
+            head := c || head
+            put(H, head)
+            }
+         else {
+            ns ||:= tab(many(chars)) 
+            }
+         }
+      put(M, ns)
+      }
+
+   every i := 1 to *M do {
+      M[i] := reverse(map(M[i],
+                      "ACBDGHKMNSRUTVYacbdghkmnsrutwvy",
+                      "TGVHCDMKNSYAABRTGVHCDMKNSYAAWBR")
+                     ) 
+      }
+   return [H, M]
+end
+
+procedure run_reversecomplement(argv)
+   fin := open(argv[1])
+   str := reads(fin, stat(argv[1]).size)
+   L := mapseq(str)  
+   i := 1
+   while i < 4 do {
+      write(output, L[1,i])
+      L[2, i] ? {
+         while write(output, move(60))
+         s := tab(0)
+         if *s > 0 then 
+            write(output, s)
+         }
+      i +:= 1
+      }
+   
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_reversecomplement(argv)
+end
+$endif

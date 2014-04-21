@@ -1,0 +1,116 @@
+# binary-trees.icn
+#
+# The Computer Language Benchmarks Game
+# http://shootout.alioth.debian.org/
+#
+# Translated from Python code written by
+# Antoine Pitrou, Dominique Wahli and
+# Daniel Nanz
+
+#link memlog
+link pool
+
+global min_depth, max_depth, stretch_depth, mmd
+record nodes(a, b, c)
+record ca(a,b)
+record cb(a,b)
+procedure make_tree(i, d)
+   if d > 0 then {
+      i2 := i + i
+      d -:= 1
+      return nodes(i, make_tree(i2 - 1, d), make_tree(i2, d))
+   }
+   return nodes(i)
+   
+end
+
+procedure check_tree(nodelst)
+   if /nodelst[2] then 
+      return nodelst[1]
+   else
+      return nodelst[1] + check_tree(nodelst[2]) - check_tree(nodelst[3])
+end
+
+procedure get_argchunks(i, d)
+   local chunksize:= 5000, chunk := []
+   every k := 1 to i do { 
+      put(chunk, cb(ca(k, d), ca(-k, d)))
+      if *chunk = chunksize then {
+         suspend chunk
+         chunk := []
+         }
+      }
+   if *chunk > 0 then
+      suspend chunk
+end
+
+procedure build_trees(d)
+   local i, cs
+   i := 2^(mmd-d)
+   cs := 0
+   c := 0
+   every argchunk := !get_argchunks(i,d) do {
+      c +:= 1
+      cs +:= check_tree(make_tree(argchunk.a.a, argchunk.a.b))
+      cs +:= check_tree(make_tree(argchunk.b.a, argchunk.b.b))
+      }
+   return (i*2 || "\t trees of depth " || d || "\t check: " || cs )
+end
+
+
+
+procedure run_binarytrees(argv)
+   local wL := [], rL := [] 
+   min_depth := 4
+   max_depth := argv[1]
+   stretch_depth := max_depth + 1
+   mmd := max_depth + min_depth
+
+   write(output, "stretch tree of depth ", stretch_depth,
+         "\t check: ", check_tree(make_tree(0, stretch_depth)))
+   
+   every d := min_depth to stretch_depth by 2 do
+      put(wL, d)
+
+   pool := Pool(*wL) 
+   rL := pool.imap(build_trees, wL)
+   pool.kill()   
+   every write(output, !rL)
+   long_lived_tree := make_tree(0, max_depth)
+
+   write(output, "long lived tree of depth ", max_depth,
+         "\t check: ", check_tree(long_lived_tree))
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_binarytrees(argv)
+end
+$endif
+
+#################################################
+# Optional sizes of environment varialbe BLKSIZE
+# to reduce garbage collections
+#
+# 1GB
+# export "BLKSIZE=1073741824"
+#
+# 2GB
+# export "BLKSIZE=2147483648"
+#
+# 3GB
+# export "BLKSIZE=3221225472"
+#
+#################################################
+
+#############################################
+# For potentially giving each thread block
+# region of their own
+#   
+#   # 40MB block region
+#   #pool := Pool(*wL, 41943040)
+#   # 400MB block region
+#   #pool := Pool(*wL, 419430400) 
+#   #1GB block region
+#############################################

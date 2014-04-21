@@ -1,0 +1,241 @@
+#regex-dna.icn
+#
+# The Computer Language Benchmarks Game
+# http://shootout.alioth.debian.org/
+
+link findre, pool
+global variants, subst, sequ
+record sp(f, r)
+
+procedure do_trim()
+   outs := ""
+   sequ ? {
+      while outs ||:= tab(findp(,&subject,&pos,0)) & mark := __endpoint do {
+         tab(mark)
+	 }
+      outs ||:= sequ[&pos:0]
+   }
+   return copy(outs)
+end
+
+procedure do_variants(e)
+      i := e[2](sequ)
+      return e[1] || " " || i
+end
+
+procedure do_subst()
+   every e := !subst do {
+      outs := ""   
+      sequ ? {
+         while outs ||:= tab(find(e.f)) do  {
+            outs ||:= e.r
+            move(1)
+         }
+         outs ||:= sequ[&pos:0]
+      }
+      sequ := copy(outs)
+   }
+   return sequ
+end
+
+#
+# The initial pattern p was ">+[A-Za-z ]*\n+|\n+"
+# The findre() api calls for us to set __endpoint to the position
+# after the match.
+#
+procedure findp(p, subj:&subject, i1:&pos, i2:0)
+   alphaspace := &letters ++ ' '
+
+   every i := upto('>\n',subj,i1,i2) do {
+      case subj[i] of {
+	 ">": {
+	    i3 := many('>', subj, i, i2)
+	    i3 := many(alphaspace, subj, i3, i2)
+	    if not i3 := many('\n', subj, i3, i2) then {
+	       next
+	       }
+	    __endpoint := i3
+	    }
+	 "\n": {
+	    i3 := many('\n', subj, i, i2)
+	    __endpoint := i3
+	    }
+	 }
+      suspend i
+      }
+end
+
+
+#
+# generate all the positions in s at which this pattern matches, in order
+#
+
+#  agggtaaa|tttaccct
+procedure var_1(s)
+local i := 0
+   s ? { every find("agggtaaa"|"tttaccct") do i +:= 1 }
+   return i
+end
+
+# "[cgt]gggtaaa|tttaccc[acg]",
+procedure var_2(s)
+local i := 0
+s ? {
+   every tab(upto('cgt')+1) & ="gggtaaa" do i +:= 1
+   &pos := 1
+   every tab(find("tttaccc")+7) & tab(any('acg')) do i +:= 1
+   return i
+   }
+end
+
+
+# "a[act]ggtaaa|tttacc[agt]t",
+procedure var_3(s)
+local i := 0
+s ? {
+   every tab(find("a")+1) & tab(any('act')) & ="ggtaaa" do i +:= 1
+   &pos := 1
+   every tab(find("tttacc")+6) & tab(any('agt')) & ="t" do i +:= 1
+   return i
+   }
+end
+
+# "ag[act]gtaaa|tttac[agt]ct",
+procedure var_4(s)
+local i := 0
+s ? {
+   every tab(find("ag")+2) & tab(any('act')) & ="gtaaa" do i +:= 1
+   &pos := 1
+   every tab(find("tttac")+5) & tab(any('agt')) & ="ct" do i +:= 1
+   return i
+   }
+end
+
+# "agg[act]taaa|ttta[agt]cct",
+procedure var_5(s)
+local i := 0
+s ? {
+   every tab(find("agg")+3) & tab(any('act')) & ="taaa" do i +:= 1
+   &pos := 1
+   every tab(find("ttta")+4) & tab(any('agt')) & ="cct" do i +:= 1
+   return i
+   }
+end
+
+# "aggg[acg]aaa|ttt[cgt]ccct",
+procedure var_6(s)
+local i := 0
+s ? {
+   every tab(find("aggg")+4) & tab(any('acg')) & ="aaa" do i +:= 1
+   &pos := 1
+   every tab(find("ttt")+3) & tab(any('cgt')) & ="ccct" do i +:= 1
+   return i
+   }
+end
+
+#  "agggt[cgt]aa|tt[acg]accct",
+procedure var_7(s)
+local i := 0
+s ? {
+   every tab(find("agggt")+5) & tab(any('cgt')) & ="aa" do i +:= 1
+   &pos := 1
+   every tab(find("tt")+2) & tab(any('acg')) & ="accct" do i +:= 1
+   return i
+   }
+end
+
+#  "agggta[cgt]a|t[acg]taccct",
+procedure var_8(s)
+local i := 0
+s ? {
+   every tab(find("agggta")+6) & tab(any('cgt')) & ="a" do i +:= 1
+   &pos := 1
+   every tab(find("t")+1) & tab(any('acg')) & ="taccct" do i +:= 1
+   return i
+   }
+end
+
+# "agggtaa[cgt]|[acg]ttaccct"
+procedure var_9(s)
+local i := 0
+s ? {
+   every tab(find("agggtaa")+7) & tab(any('cgt')) do i +:= 1
+   &pos := 1
+   every tab(upto('acg')+1) & ="ttaccct" do i +:= 1
+   return i
+   }
+end
+
+procedure run_regexdna(av)
+   fin := open(av[1]) | stop("usage: regex-dna filename")
+   siz := stat(av[1]).size | stop("can't stat ", av[1])
+   sequ := reads(fin, siz) | stop("can't read ", av[1])
+   pool := Pool(9)
+   p := ">+[A-Za-z ]*\n+|\n+"
+   ilen := *sequ
+   
+   outs := ""
+   sequ ? {
+      while outs ||:= tab(findp(,&subject, &pos, 0)) & mark := __endpoint do {
+         tab(mark)
+	 }
+      outs ||:= sequ[&pos:0]
+   }
+   sequ := copy(outs)
+   
+   clen := *sequ
+   
+   variants := [["agggtaaa|tttaccct", var_1],
+		["[cgt]gggtaaa|tttaccc[acg]", var_2],
+		["a[act]ggtaaa|tttacc[agt]t", var_3],
+		["ag[act]gtaaa|tttac[agt]ct", var_4],
+		["agg[act]taaa|ttta[agt]cct", var_5],
+		["aggg[acg]aaa|ttt[cgt]ccct", var_6],
+		["agggt[cgt]aa|tt[acg]accct", var_7],
+		["agggta[cgt]a|t[acg]taccct", var_8],
+		["agggtaa[cgt]|[acg]ttaccct", var_9]
+                ]
+   subst := [ sp("B", "(c|g|t)"),
+             sp("D", "(a|g|t)"),
+             sp("H", "(a|c|t)"),
+             sp("K", "(g|t)"),
+             sp("M", "(a|c)"),
+             sp("N", "(a|c|g|t)"),
+             sp("R", "(a|g)"),
+             sp("S", "(c|g)"),
+             sp("V", "(a|c|g)"),
+             sp("W", "(a|t)"),
+             sp("Y", "(c|t)")
+             ]
+
+   wL := []
+   every e := !variants do put(wL, e)
+
+   rL := pool.imap(do_variants, wL)
+   pool.kill()
+   every write(output, !rL)
+   
+   every e := !subst do {
+      outs := ""   
+      sequ ? {
+         while outs ||:= tab(find(e.f)) do  {
+            outs ||:= e.r
+            move(1)
+         }
+         outs ||:= sequ[&pos:0]
+      }
+      sequ := copy(outs)
+   }
+
+   write(output, "\n", ilen)
+   write(output, clen)
+   write(output, *sequ)
+end
+
+$ifdef MAIN
+procedure main(av)
+   output := &output
+   run_regexdna(av)
+end
+$endif
+

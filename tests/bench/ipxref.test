@@ -1,0 +1,527 @@
+############################################################################
+#
+#     File:     sesrit.icn
+#
+#     Subject:  An Icon variant of the classic game Tetris
+#
+#     Author:   David Rice and Clinton Jeffery
+#
+#     Date:     January 24, 1999
+#
+############################################################################
+#
+#   Version:  2.3
+#
+############################################################################
+#
+#   This file is in the public domain.
+#
+############################################################################
+#
+#  This program generates random pieces that fall from the top
+#  of the screen.  The object is to position the pieces in a way
+#  that they complete a horizontal row.  Scoring is done by 50
+#  points for one row, 100 for two, 200 for three, and 400
+#  points for a tetris, or four rows.  Another five points are
+#  awarded for every piece played.  Levels increase every time
+#  that ten rows are deleted.
+#
+#  The keys are:
+#     up:        rotates piece clockwise
+#     down:      rotates piece counter-clockwise
+#     left:      moves piece to the left
+#     right:     moves piece to the right
+#     space:     drops piece to bottom
+#      meta + s: starts the game
+#      meta + p: toggles pause
+#      meta + n: re-initializes values for new game
+#      meta + a: displays the about menu
+#      meta + q: quits the game
+#
+############################################################################
+#
+#  Requires:  Version 9 graphics
+#
+############################################################################
+#
+#  Links:  graphics, random
+#
+############################################################################
+
+
+link graphics
+link random
+link highscor
+$include "keysyms.icn"
+
+global activecells, activecellcolor, nextpiece, nextcolor, L,
+       colors, score, numrows, level, delaytime, pieceposition,
+       button_status, game_status, tot_score
+
+
+procedure main()
+   init()
+   repeat
+      if buttons(15, 105, 270, 290, ["Start", "green", 45, 285],
+                 ["Pause", "red", 40, 285]) == "done" then break
+   repeat {
+      game_loop()
+      init()
+      }
+end
+
+
+procedure init()
+   initial {
+      /&window := WOpen("label=sesrit","size=276,510", "posx=20")
+      colors := table(&window)
+      every c := ("blue"|"yellow"|"cyan"|"green"|"red"|"white"|
+                  "red-yellow" | "purple-magenta" | "pink") do
+         colors[c] := Clone("fg=" || c)
+      colors["black"] := colors["dark vivid gray"] :=
+         Clone(&window, "fg=dark vivid gray")
+      randomize()
+      }
+
+   game_status := -1
+   button_status := 0
+   WAttrib("bg=black", "fg=white", "font=sans,bold,15")
+   EraseArea(0, 0, 276, 510)
+   DrawString(15,50,"Next Object")
+   WAttrib("bg=vivid blue", "font=serif,italic,bold,16") 
+   GotoXY(4,16)
+   WWrites("  SESRIT 2.4  ")
+   WAttrib("fg=dark weak greenish cyan", "linewidth=1", "font=sans,bold,16")
+   DrawRectangle(15, 270, 90, 20, 15, 300, 90, 20,
+                 15, 330, 90, 20, 15, 360, 90, 20)
+   Fg("green")
+   DrawString(45, 285, "Start")
+   Fg("pale vivid red-yellow")
+   DrawString(26, 315, "New Game", 47, 345, "Quit", 41, 375, "About")
+   WAttrib("fg=white", "font=serif,italic,bold,16")
+   numrows := score := level := 0
+   /tot_score := 0
+
+   drawstat(0, 0, 0, tot_score)
+
+   Fg("dark vivid gray")
+   FillRectangle(119,19,152,451, 119,479,152,17)
+   WAttrib("fg=pale vivid red-yellow", "bg=dark vivid gray")
+   DrawRectangle(119,19,151,451, 119,480,151,16)
+
+   delaytime := 200
+   L := list(30)
+   every !L := list(10, "black")
+   newobject()
+   activecells := copy(nextpiece)
+   activecellcolor := copy(nextcolor)
+   every point := !activecells do
+      L[point[1], point[2]] := activecellcolor
+   newobject()
+end
+
+
+procedure drawcell(x,y,color)
+   FillRectangle(colors[color],x,y,15,15)
+   DrawRectangle(colors["white"], x, y, 14, 14)
+end
+
+procedure drawstat(score, rows, level, total)
+   DrawString(12, 150, "Score: " || \score)
+   DrawString(12, 170, "Rows: " || \rows)
+   DrawString(12, 230, "LEVEL: " || \level)
+   DrawString(12, 200, "Total: " || \total)
+end
+
+procedure game_loop()
+   game_status := 1
+   repeat {
+      while *Pending() > 0 do {
+         case Event() of {
+            Key_Left  : move_piece(-1, 0)
+            Key_Right : move_piece(1, 0)
+            Key_Down  : rotate_piece(1, -1)
+            Key_Up    : rotate_piece(-1, 1)
+            " "       : while move_piece(0,1) # drop piece to bottom
+            "q"       : if &meta then exit()
+            "a"       : if &meta then about_sesrit()
+            "p"       : if (&meta & game_status = 1) then pause()
+            "n"       : if &meta then return
+
+            &lpress   : {
+               if 15 <= &x <= 105 then {
+                  if 270 <= &y <= 290 then pause()
+                     else if 300 <= &y <= 320 then return
+                        else if 360 <= &y <= 380 then
+                           about_sesrit()
+                  }
+               }
+            &lrelease :
+               if ((15 <= &x <= 105) & (330 <= &y <= 350)) then
+                  exit()
+            }
+         }
+      if not move_piece(0,1) then {
+	 if (!activecells)[1] < 2 then {
+            game_over()
+            return
+            }
+
+         while get(Pending())
+         scanrows()
+         Fg("black")            
+         drawstat(score, , , tot_score)
+         score +:= 5
+         tot_score +:= 5
+         Fg("white")
+         drawstat(score, , , tot_score)
+         activecells := copy(nextpiece)
+         activecellcolor := copy(nextcolor)
+         every point := !activecells do
+            L[point[1], point[2]] := activecellcolor
+         newobject()
+         EraseArea(120,481,150,15)
+         Bg("black")
+         every cell := !activecells do {
+            EraseArea(-40 + (cell[2]-1)*15, 60 + (cell[1]-1)*15, 15, 15)
+            drawcell(120 + (cell[2]-1)*15, 481, activecellcolor)
+            }
+         every cell := !nextpiece do
+            drawcell(-40 + (cell[2]-1)*15,
+                60 + (cell[1]-1)*15, nextcolor)
+         }
+
+      WSync()
+      delay(delaytime)
+      }
+end
+
+
+procedure newobject()
+   pieceposition := 1
+   if ? 4 = 1 then {
+      nextcolor := "pink"
+      nextpiece := [[2,6]]
+      while ?4 < 4 do {
+         x := copy(nextpiece[-1])
+         x[1] +:= ?3 - 2
+         x[2] +:= ?3 - 2
+         if x[1] = ((y := !nextpiece)[1]) & x[2] = y[2] then next
+         put(nextpiece, x)
+         }
+       miny := maxy := nextpiece[1][1]
+       minx := maxx := nextpiece[1][2]
+       every miny >:= (!nextpiece)[1]
+       every minx >:= (!nextpiece)[2]
+       every maxy <:= (!nextpiece)[1]
+       every maxx <:= (!nextpiece)[2]
+       every i := 2 to *nextpiece do
+         if nextpiece[i][1] == (miny + maxy) / 2 &
+            nextpiece[i][2] == (minx + maxx) / 2 then
+	     nextpiece[1] :=: nextpiece[i]
+       if miny < 1 then every (!nextpiece)[1] +:= -miny + 1
+       every minx to 3 do every (!nextpiece)[2] +:= 1
+       if (!nextpiece)[1] > 5 then return newobject()
+       if (!nextpiece)[2] > 8 then return newobject()
+       }
+   else case nextcolor := ?["red-yellow", "red", "yellow", "green",
+                       "cyan", "blue", "purple-magenta"] of {
+   "red-yellow":     nextpiece := [ [1,5], [1,6], [2,5], [2,6] ]
+   "yellow":         nextpiece := [ [2,6], [1,6], [2,5], [2,7] ]
+   "blue":           nextpiece := [ [2,6], [1,5], [2,5], [2,7] ]
+   "purple-magenta": nextpiece := [ [2,6], [1,7], [2,5], [2,7] ]
+   "red":            nextpiece := [ [3,6], [1,6], [2,6], [4,6] ]
+   "green":          nextpiece := [ [2,6], [1,5], [1,6], [2,7] ]
+   "cyan":           nextpiece := [ [2,6], [1,6], [1,7], [2,5] ]
+   }
+end
+
+
+procedure move_piece(x, y)
+   newactivecells := []
+   every cell := !activecells do
+      put(newactivecells, [cell[1]+y, cell[2]+x])
+   return place_piece(newactivecells, x)
+end
+
+procedure place_piece(newactivecells, horiz)
+   if collision(newactivecells) then fail
+   if not (\horiz = 0) then
+      EraseArea(120,481,150,15)
+   every cell := !activecells do {
+      FillRectangle(colors["black"],
+                    120 + (cell[2]-1)*15, 20 + (cell[1]-1)*15,15,15)
+      L[cell[1], cell[2]] := "black"
+      }
+   every cell := !newactivecells do {
+      L[cell[1], cell[2]] := activecellcolor
+      drawcell(120 + (cell[2]-1)*15, 20 + (cell[1]-1)*15, activecellcolor)
+      if not (\horiz = 0) then
+         drawcell(120 + (cell[2]-1)*15, 481, activecellcolor)
+      }
+   WSync()
+   activecells := newactivecells
+   return
+end
+
+# Test a candidate list of cells for an object's new location, to see
+# if the object can be placed there.  Returns null if there is a problem;
+# fails otherwise
+procedure collision(cells)
+   every foo := !cells do {
+      if not ((1 <= foo[1] <= 30) & (1 <= foo[2] <= 10)) then return
+      if L[foo[1], foo[2]] === "black" then next
+      every point2 := !activecells do {
+         if (foo[1] = point2[1]) & foo[2] = point2[2] then
+            break next
+         }
+      if L[foo[1], foo[2]] ~=== "black" then return
+      }
+   fail
+end
+
+procedure rotate_piece(mult1, mult2)
+   if activecellcolor === "red-yellow" then fail
+   newactivecells := list()
+   centerpoint := copy(activecells[1])
+
+   differencelist := list()
+   every point := ! activecells do {
+      temp := [ centerpoint[1] - point[1], centerpoint[2] - point[2] ]
+      put(differencelist, temp)
+      next
+      }
+   every cell := !activecells do
+      put(newactivecells, copy(cell))
+   if activecellcolor === ("red" | "green" | "cyan") then {
+      if pieceposition = 2 then { mult2 :=: mult1; pieceposition := 1 }
+      else pieceposition := 2
+      }
+   every foo := 1 to *newactivecells do
+      newactivecells[foo] := [
+         centerpoint[1] + differencelist[foo,2] * mult1,
+         centerpoint[2] + differencelist[foo,1] * mult2
+         ]
+   return place_piece(newactivecells)
+end
+
+
+procedure scanrows()
+   scanned_rows := table()
+   rows_to_delete := []
+   every point := !activecells do {
+      if \scanned_rows[point[1]] then next
+      scanned_rows[point[1]] := 1
+      every x := 1 to 10 do {
+         if L[point[1], x] === "black" then
+            break next
+         }
+      put(rows_to_delete, point[1])
+      }
+   if *rows_to_delete > 0 then {
+      Fg("black")            
+      drawstat(score, numrows, level, tot_score)
+      numrows +:= *rows_to_delete
+      level := integer(numrows / 10)
+      score +:= 50 * (2 ^ (*rows_to_delete - 1))
+      tot_score +:= 50 * (2 ^ (*rows_to_delete - 1))
+      delaytime := 200 - (10 * level)
+      Fg("white")
+      drawstat(score, numrows, level, tot_score)
+      deleterows(rows_to_delete)
+      }
+end
+
+
+procedure deleterows(rows_to_delete)
+   temp := []
+   current_row := 30
+   rows_to_delete := sort(rows_to_delete)
+   row_set := set()
+   every insert(row_set, !rows_to_delete)
+   while current_row >= rows_to_delete[1] do {
+      push(temp, pull(L))
+      current_row -:= 1
+      }
+   temp_size := *temp
+   current_row := 1
+   basesize := *L
+   while *temp>0 do {
+      if member(row_set, basesize + current_row) then {
+         push(L, list(10, "black"))
+         pop(temp)
+         }
+      else
+         put(L, pop(temp))
+      current_row +:= 1
+      }
+   refresh_screen()
+   WSync()
+end
+
+procedure game_over()
+   EraseArea(120,481,150,15)
+   Bg("black")
+   every cell := !nextpiece do
+      EraseArea(-40 + (cell[2]-1)*15,
+                60 + (cell[1]-1)*15, 15, 15)
+   every (x := 30 to 1 by -1, y := 1 to 10) do {
+      temp := ?["red-yellow", "yellow", "blue", "cyan",
+                         "red", "green", "purple-magenta"]
+      Fg(temp)
+      drawcell(120 + (y-1)*15, 20 + (x-1)*15, temp)
+      }
+   every (x := 1 to 30, y := 1 to 10) do {
+      FillRectangle(colors["black"], 120 + (y-1)*15,
+                    20 + (x-1)*15, 15, 15)
+      }
+   Bg("light gray")
+   Fg("black")               
+
+   dlg_text := ["Game Over", " "]
+   if scores := highscore("sesrit", "player", score, "icon.cs.utsa.edu") then{
+      put(dlg_text, "Internetwide High Scores:")
+      while put(dlg_text, scores)
+      }
+   else put(dlg_text, "(no internet scores available)")
+   put(dlg_text, " ", "What shall we do?")
+
+   Font("sans,bold,15")
+   if TextDialog(&window, dlg_text,,,,
+                 ["Play Again", "Quit"]) === "Quit" then exit()
+
+end
+
+procedure pause()
+   text1 := ["Start", "green", 45, 285]
+   text2 := ["Pause", "red", 40, 285]
+   button_status := 0
+   game_status := 0
+   Bg("black")
+   EraseArea(16, 271, 89, 19)
+   Font("sans,bold,16")
+   Fg("green")
+   DrawString(45, 285, "Start")
+   FillRectangle(colors["black"], 120,20,150,450, 120,481,150,15)
+
+   every cell := !nextpiece do
+      EraseArea(-40 + (cell[2]-1)*15, 60 + (cell[1]-1)*15, 15, 15)
+
+   repeat {
+      Fg("white")
+      Font("sans,italic,bold,20")
+      CenterString(195, 234, "-PAUSED-")
+      if (buttons(15, 105, 270, 290, text1, text2)) == "done" then
+         break
+      }
+   refresh_screen()
+   game_status := 1
+end
+
+
+procedure buttons(x1, x2, y1, y2, text1, text2)
+   while *Pending() > 0 do {
+      case e := Event() of {
+            "s" | "p"      :
+                if ((e == "s") & (&meta & game_status = -1)) |
+                   ((e == "p") & (&meta & game_status = 0)) then {
+                      Bg("black")
+                      EraseArea(15 - 2, 270 - 2, 95, 25)
+                      WAttrib("fg=dark weak greenish cyan", "linewidth=1")
+                      DrawRectangle(15, 270, 90, 20)
+                      Font("sans,bold,16")
+                      Fg(text2[2])
+                      DrawString(text2[3], text2[4], text2[1])
+                      Font("serif,italic,bold,16")
+                      return "done"
+                      }
+            "q"       : if &meta then exit()
+            "a"       : if &meta then about_sesrit()
+            "n"       : if &meta then main()
+         &lpress  : {
+            if (15 <= &x <= 105) & (330 <= &y <= 350) then exit()
+            if x1 <= &x <= x2 then
+               if y1 <= &y <= y2 then {
+                  Bg(text1[2])
+                  EraseArea(x1 + 1, y1 + 1, 89, 19)
+                  Font("sans,bold,16")
+                  Fg("black")
+                  DrawString(text1[3], text1[4], text1[1])
+                  button_status := 1
+                  }
+               else if (360 <= &y <= 380) then about_sesrit()
+                  else if (300 <= &y <= 320) then main()
+                      else button_status := 0
+            }
+         &ldrag   : {
+            if not ((x1 <= &x <= x2) & (y1 <= &y <= y2)) then
+               button_status := 0
+            }
+         &lrelease: {
+            if ((x1 <= &x <= x2) & (y1 <= &y <= y2) &
+                (button_status = 1)) then {
+               Bg("black")
+               EraseArea(x1 - 2, y1 - 2, 95, 25)
+               WAttrib("fg=dark weak greenish cyan", "linewidth=1")
+               DrawRectangle(x1, y1, 90, 20)
+               Font("sans,bold,16")
+               Fg(text2[2])
+               DrawString(text2[3], text2[4], text2[1])
+               Font("serif,italic,bold,16")
+               return "done"
+               }
+            return "keep goin"
+            }
+         }
+      px := WAttrib("pointerx")
+      py := WAttrib("pointery")
+      if not ((x1 <= &x <= x2) & (y1 <= &y <= y2)) then {
+         Bg("black")
+         EraseArea(x1 - 2, y1 - 2, 95, 25)
+         WAttrib("fg=dark weak greenish cyan", "linewidth=1")
+         DrawRectangle(x1, y1, 90, 20)
+         WAttrib("font=sans,bold,16", "fg=" || text1[2])
+         DrawString(text1[3], text1[4], text1[1])
+         } 
+      }
+end
+
+
+procedure about_sesrit()
+   about := WOpen("label=About Sesrit", "size=330,200", "fg=white",
+                  "bg=black", "posx=10", "posy=155") | fail
+
+   Bg("black")
+   every cell := !nextpiece do
+      EraseArea(-40 + (cell[2]-1)*15, 60 + (cell[1]-1)*15, 15, 15)
+   FillRectangle(colors["black"], 120,20,150,450,
+                                  120,481,150,15)
+   CenterString(about, 165, 25, "By David Rice")
+   CenterString(about, 165, 50, "Communications Arts HS, San Antonio")
+   CenterString(about, 165, 90, "and")
+   CenterString(about, 165, 115, "Clinton Jeffery")
+   CenterString(about, 165, 155, &version)
+   CenterString(about, 165, 180, "Spring 1999")
+
+   Event(about)
+
+   while get(Pending())
+   WClose(about)
+   if game_status = 1 then refresh_screen()
+end
+
+
+procedure refresh_screen()
+   every cell := !nextpiece do
+      drawcell(-40 + (cell[2]-1)*15, 60 + (cell[1]-1)*15,
+               nextcolor)
+   every cell := !activecells do {
+         drawcell(120 + (cell[2]-1)*15, 481, activecellcolor)
+      }
+   every (x := 1 to 30, y := 1 to 10) do {
+      FillRectangle(colors[L[x, y]], 120 + (y-1)*15, 20 + (x-1)*15, 15, 15)
+      if L[x,y] ~=== "black" then 
+         DrawRectangle(colors["white"], 120 + (y-1)*15,
+                       20 + (x-1) * 15, 14, 14)
+      }
+end

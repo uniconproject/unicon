@@ -1,0 +1,147 @@
+# n-body.icn
+#
+# The Computer Language Benchmarks Game
+# http://benchmarksgame.alioth.debian.org/
+#
+# Translated from Kevin Carson, Tupteq, Fredrick Johansson,
+# Daniel Nanz and Maciej Fijalkowski's Python program
+
+link printf
+
+global PI, SOLAR_MASS, DAYS_PER_YEAR, BODIES, SYSTEM, PAIRS
+
+procedure combinations(L)
+   result := []
+   every put(result, [L[x := 1 to *L], L[x+1 to *L]])
+   return result
+end
+
+record xyz(x,y,z)
+
+procedure advance(dt, n)
+   every i := 1 to n do {
+      every p := !PAIRS do {
+         p1 := p[1]
+         p11 := p1[1]
+         v1 := p1[2]
+         p2 := p[2]
+         p21 := p2[1]
+         v2 := p2[2]
+         dx := p11.x - p21.x
+         dy := p11.y - p21.y
+         dz := p11.z - p21.z
+         mag := dt * ((dx * dx + dy * dy + dz * dz) ^ -1.5)
+         b1m := p1[3] * mag
+         b2m := p2[3] * mag
+         v1.x -:= dx * b2m
+         v1.y -:= dy * b2m
+         v1.z -:= dz * b2m
+         v2.x +:= dx * b1m
+         v2.y +:= dy * b1m
+         v2.z +:= dz * b1m
+         }
+      every s := !SYSTEM do {
+         r := s[1]
+         v := s[2]
+         r[1] +:= dt * v.x
+         r[2] +:= dt * v.y
+         r[3] +:= dt * v.z
+         }
+      }
+end
+
+procedure report_energy()
+   local e := 0.0, p1
+   every p := !PAIRS do {
+      p1 := p[1]
+      p11 := p1[1]
+      p2 := p[2]
+      p21 := p2[1]
+      dx := p11.x - p21.x
+      dy := p11.y - p21.y
+      dz := p11.z - p21.z
+      e -:= p1[3] * p2[3] / ((dx * dx + dy * dy + dz * dz) ^ 0.5)
+      }
+
+   every b := !SYSTEM do {
+      v := b[2]
+      e +:= b[3] * (v.x * v.x + v.y * v.y + v.z * v.z) / 2.
+         }
+   
+   fprintf(output, "%.9r\n", e)
+end
+
+procedure offset_momentum(ref)
+   local px := 0, py := 0, pz := 0.0
+   every s := !SYSTEM do {
+      v := s[2]
+      m := s[3]
+      px -:= v.x * m
+      py -:= v.y * m
+      pz -:= v.z * m
+      }
+   v := ref[2]
+   m := ref[3]
+   v.x := px / m
+   v.y := py / m
+   v.z := pz / m
+end
+
+procedure run_nbody(argv)
+   local ref := "sun"
+   PI := 3.14159265358979323
+   SOLAR_MASS := 4 * PI * PI
+   DAYS_PER_YEAR := 365.24
+
+   BODIES := table(
+             "sun",
+                [xyz(0.0, 0.0, 0.0), xyz(0.0, 0.0, 0.0), SOLAR_MASS],
+             "jupiter",
+                [xyz(4.84143144246472090e+00,
+                   -1.16032004402742839e+00,
+                   -1.03622044471123109e-01),
+                 xyz(1.66007664274403694e-03 * DAYS_PER_YEAR,
+                    7.69901118419740425e-03 * DAYS_PER_YEAR,
+                   -6.90460016972063023e-05 * DAYS_PER_YEAR),
+                    9.54791938424326609e-04 * SOLAR_MASS],
+              "saturn",
+                 [xyz(8.34336671824457987e+00,
+                    4.12479856412430479e+00,
+                   -4.03523417114321381e-01),
+                  xyz(-2.76742510726862411e-03 * DAYS_PER_YEAR,
+                    4.99852801234917238e-03 * DAYS_PER_YEAR,
+                    2.30417297573763929e-05 * DAYS_PER_YEAR),
+                    2.85885980666130812e-04 * SOLAR_MASS],
+              "uranus",
+                  [xyz(1.28943695621391310e+01,
+                      -1.51111514016986312e+01,
+                      -2.23307578892655734e-01),
+                   xyz(2.96460137564761618e-03 * DAYS_PER_YEAR,
+                       2.37847173959480950e-03 * DAYS_PER_YEAR,
+                      -2.96589568540237556e-05 * DAYS_PER_YEAR),
+                       4.36624404335156298e-05 * SOLAR_MASS],
+              "neptune",
+                  [xyz(1.53796971148509165e+01,
+                      -2.59193146099879641e+01,
+                       1.79258772950371181e-01),
+                   xyz(2.68067772490389322e-03 * DAYS_PER_YEAR,
+                       1.62824170038242295e-03 * DAYS_PER_YEAR,
+                      -9.51592254519715870e-05 * DAYS_PER_YEAR),
+                       5.15138902046611451e-05 * SOLAR_MASS]
+                    )
+
+   SYSTEM := []
+   every put(SYSTEM, !BODIES)
+   PAIRS := combinations(SYSTEM)
+   offset_momentum(BODIES[ref])
+   report_energy()
+   advance(0.01, argv[1])
+   report_energy()
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_nbody(argv)
+end
+$endif

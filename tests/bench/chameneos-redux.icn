@@ -1,0 +1,153 @@
+# chameneos-redux.icn
+#
+# The Computer Language Benchmarks Game
+# http://shootout.alioth.debian.org/
+# Translated from Daniel Nanz's 
+# Python program
+
+global creature_colors, compl_dict, in_lock, out_lock, venue 
+
+procedure complement(c1, c2)
+   if c1 == c2 then return c1
+   if c1 == "blue" then {
+      if c2 == "red" then return "yellow"
+      return "red"
+      }
+   if c1 == "red" then {
+      if c2 == "blue" then return "yellow"
+      return "blue"
+      }
+   if c2 == "blue" then return "red"
+   return "blue"
+end
+
+procedure check_complement()
+   every c1 := !creature_colors do
+      every c2 := !creature_colors do
+         write(output, c1, " + ", c2, " -> ", compl_dict[c1||c2])
+   write(output, )
+end
+
+procedure spellout(n)
+   numbers := ["zero", "one", "two", "three", "four",
+               "five", "six", "seven", "eight", "nine"]
+   s := "  "
+   every c := !string(n) do
+      s ||:= numbers[c+1] || " "
+   return s
+end
+
+procedure report(input_zoo, met, self_met)
+   s := "  "
+   every j := !input_zoo do 
+      s ||:= j || " "
+   write(output, s)
+   every i := 1 to *met do 
+      write(output, met[i], spellout(self_met[i]))
+   i := 0
+   every i +:= !met 
+   write(output, spellout(i), "\n")
+end
+
+procedure creature(my_id, my_lock, in_lock, out_lock)
+   repeat {
+      lock_acquire(my_lock)
+      lock_acquire(in_lock)
+      critical venue: venue[1] := my_id
+      lock_release(out_lock) 
+      }
+end
+
+procedure lock_object()
+   repeat{
+      @>>  
+         <<@ 
+         }
+end
+
+procedure lock_release(T)
+   @>>T
+end
+procedure lock_acquire(T)
+   <<@T
+end
+
+procedure let_them_meet(meetings_left, input_zoo)
+   local c_no, met, self_met, colors, my_locks
+   c_no := *input_zoo
+   met := list(c_no, 0)
+   self_met := list(c_no, 0)
+   colors := copy(input_zoo)
+   my_locks := []
+   in_lock := thread lock_object()
+   lock_acquire(in_lock)  
+   out_lock := thread lock_object()
+   lock_acquire(out_lock) 
+   every 1 to *input_zoo do {
+      put(my_locks, thread lock_object())
+      }
+   every ci := 1 to c_no do {
+      thread creature(ci, my_locks[ci], in_lock, out_lock)
+      }
+   delay(0)
+   
+   lock_release(in_lock)  
+   lock_acquire(out_lock) 
+   
+   critical venue: id1 := venue[1]
+   while meetings_left > 0 do {
+      lock_release(in_lock)
+      lock_acquire(out_lock)
+      critical venue: id2 := venue[1]
+      if id1 ~= id2 then {
+         new_color := compl_dict[colors[id1]||colors[id2]]
+         colors[id1] := new_color
+         colors[id2] := new_color
+         met[id1] +:= 1
+         met[id2] +:= 1
+         }
+      else {
+         self_met[id1] +:= 1
+         met[id1] +:= 1
+         }
+      meetings_left -:= 1
+      if meetings_left > 0 then {
+         lock_release(my_locks[id1])
+         id1 := id2
+         }
+      else{
+         report(input_zoo, met, self_met)
+         }
+      }
+end
+
+procedure chameneosiate(n)
+   check_complement()
+   let_them_meet(n, ["blue", "red", "yellow"])
+   let_them_meet(n, ["blue", "red", "yellow", "red", "yellow",
+                     "blue", "red", "yellow", "red", "blue"])
+end
+
+procedure run_chameneos(argv)
+   venue := mutex([-1])
+   creature_colors := ["blue", "red", "yellow"]
+   compl_dict := table(
+                       "blueblue", complement("blue", "blue"),
+                       "bluered", complement("blue", "red"),
+                       "blueyellow", complement("blue", "yellow"),
+                       "redblue", complement("red", "blue"),
+                       "redred", complement("red", "red"),
+                       "redyellow", complement("red", "yellow"),
+                       "yellowblue", complement("yellow", "blue"),
+                       "yellowred", complement("yellow", "red"),
+                       "yellowyellow", complement("yellow", "yellow")
+                       )
+   chameneosiate(integer(argv[1]))
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_chameneos(argv)
+end
+$endif

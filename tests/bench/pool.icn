@@ -1,0 +1,78 @@
+############################################################################
+#
+#	File:     pool.icn
+#
+#	Subject:  Thread "pool" management 
+#
+#	Author:   Clinton Jeffery and Shea Newton
+#
+#	Date:     January 3, 2014
+#
+############################################################################
+
+# sequential pool
+class SeqPool()
+   method imap(p, L)
+       L2 := list(*L)
+       every i := 1 to *L do {
+	   L2[i] := p(L[i])
+       }
+       return L2
+   end
+end
+
+# concurrent pool
+class Pool(
+           workers,          # list of threads
+	   worklist,         # list of work to do
+	   resultlist,       # return value
+	   resultlistcount,  # count of how many return values are in
+	   rlcmutex
+	   )
+
+   method work()
+      repeat {
+	  while *worklist=0 do {
+             if <@ then  
+                return # kill thread                
+             delay(0) # else wait for more work
+             }
+	  # non-empty worklist, get some work
+	  while *worklist > 0 do {
+             if mywork := pop(worklist) then {
+		  resultlist[mywork[1]] := mywork[2](mywork[3])
+		  critical rlcmutex: resultlistcount +:= 1
+                  }
+              }
+          }
+   end
+
+   method kill()
+      # put a message in each live thread's inbox
+      # signaling work is completed
+      every t := !workers do 
+         @>>t
+   end
+
+   method imap(p, L)
+       critical rlcmutex: resultlistcount := 0
+       resultlist := list(*L)
+       every i := 1 to *L do put(worklist, [i, p, L[i]])
+       while resultlistcount < *L do { delay(0) }
+       return resultlist
+   end
+
+initially(n:1, blocksize)
+   workers := []
+   worklist := mutex([])
+   rlcmutex := mutex()
+   if /blocksize then {
+      every i := 1 to n do
+         put(workers, thread work())
+   }
+   else {
+      every i := 1 to n do 
+         put(workers, spawn(create(work(), blocksize)))
+   }
+      
+end

@@ -1,0 +1,41 @@
+# thread-ring.icn
+#
+# The Computer Language Benchmarks Game
+# http://shootout.alioth.debian.org/
+# Translated from Antti Kervinen and
+# Tupteq's Python program
+
+global main_lock, first_lock, n
+procedure threadfun(number, my_lock, next_lock)
+   repeat {
+      critical my_lock: wait(my_lock)
+      if n > 0 then {
+         n -:= 1
+         signal(next_lock)
+         }
+      else {
+         write(output, number)
+         signal(main_lock)
+         }
+      }
+end
+
+procedure run_threadring(argv)
+   n := argv[1]
+   main_lock := condvar()
+   next_lock := first_lock := condvar()
+   every number := 1 to 503 do {
+      my_lock := next_lock
+      next_lock := if number < 503 then condvar() else first_lock
+      thread threadfun(number, my_lock, next_lock)
+      }
+   signal(first_lock)
+   critical main_lock: wait(main_lock)
+end
+
+$ifdef MAIN
+procedure main(argv)
+   output := &output
+   run_threadring(argv)
+end
+$endif

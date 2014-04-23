@@ -195,13 +195,13 @@ function{1} copy(x)
             /*
              * Pass the buck to cplist to copy a list.
              */
-            if (cplist(&x, &result, (word)1, BlkD(x,List)->size + 1) ==Error)
+            if (cplist(&x, &result, (word)1, BlkD(x,List)->size + 1) ==RunError)
 	       runerr(0);
             return result;
             }
       table: {
          body {
-	    if (cptable(&x, &result, BlkD(x,Table)->size) == Error) {
+	    if (cptable(&x, &result, BlkD(x,Table)->size) == RunError) {
 	       runerr(0);
 	       }
 	    return result;
@@ -213,7 +213,7 @@ function{1} copy(x)
             /*
              * Pass the buck to cpset to copy a set.
              */
-            if (cpset(&x, &result, BlkD(x,Set)->size) == Error)
+            if (cpset(&x, &result, BlkD(x,Set)->size) == RunError)
                runerr(0);
 	    return result;
             }
@@ -447,21 +447,21 @@ end
 #define bitxor ^
 #begdef big_bitand(x,y)
 {
-   if (bigand(&x, &y, &result) == Error)  /* alcbignum failed */
+   if (bigand(&x, &y, &result) == RunError)  /* alcbignum failed */
       runerr(0);
    return result;
 }
 #enddef
 #begdef big_bitor(x,y)
 {
-   if (bigor(&x, &y, &result) == Error)  /* alcbignum failed */
+   if (bigor(&x, &y, &result) == RunError)  /* alcbignum failed */
       runerr(0);
    return result;
 }
 #enddef
 #begdef big_bitxor(x,y)
 {
-   if (bigxor(&x, &y, &result) == Error)  /* alcbignum failed */
+   if (bigxor(&x, &y, &result) == RunError)  /* alcbignum failed */
       runerr(0);
    return result;
 }
@@ -491,7 +491,7 @@ function{1} icom(i)
 
          td.dword = D_Integer;
          IntVal(td) = -1;
-         if (bigsub(&td, &i, &result) == Error)  /* alcbignum failed */
+         if (bigsub(&td, &i, &result) == RunError)  /* alcbignum failed */
             runerr(0);
          return result;
          }
@@ -514,16 +514,16 @@ function{1} image(x)
 #ifdef EventMon
       type_case x of {
           tvmonitored:{
-             if (getimage(VarLoc(BlkD(x,Tvmonitored)->tv),&result) == Error)
+             if (getimage(VarLoc(BlkD(x,Tvmonitored)->tv),&result) == RunError)
                 runerr(0);
              }
           default:{
-             if (getimage(&x,&result) == Error)
+             if (getimage(&x,&result) == RunError)
                 runerr(0);
              }
       }
 #else
-      if (getimage(&x,&result) == Error)
+      if (getimage(&x,&result) == RunError)
 	 runerr(0);
 #endif
       return result;
@@ -552,7 +552,7 @@ function{1} ishift(i,j)
       cj = IntVal(j);
       if (Type(i) == T_Lrgint || cj >= WordBits
       || ((ci=(uword)IntVal(i))!=0 && cj>0 && (ci >= (1<<(WordBits-cj-1))))) {
-         if (bigshift(&i, &j, &result) == Error)  /* alcbignum failed */
+         if (bigshift(&i, &j, &result) == RunError)  /* alcbignum failed */
             runerr(0);
          return result;
          }
@@ -641,7 +641,7 @@ function{1} name(underef v)
       ENTERPSTATE(savedprog);
 #endif						/* MultiThread */
 
-      if (i == Error)
+      if (i == RunError)
          runerr(0);
       return result;
       }
@@ -788,7 +788,7 @@ function{1} sort(t, i)
              *  qsort to sort the descriptors.  (That was easy!)
              */
             size = BlkD(t,List)->size;
-            if (cplist(&t, &result, (word)1, size + 1) == Error)
+            if (cplist(&t, &result, (word)1, size + 1) == RunError)
 	       runerr(0);
             qsort((char *)Blk(BlkD(result,List)->listhead,Lelem)->lslots,
                (int)size, sizeof(struct descrip),(QSortFncCast) anycmp);
@@ -1100,7 +1100,7 @@ function{1} sortf(t, i)
              *  qsort to sort the descriptors.  (That was easy!)
              */
             size = BlkD(t,List)->size;
-            if (cplist(&t, &result, (word)1, size + 1) == Error)
+            if (cplist(&t, &result, (word)1, size + 1) == RunError)
                runerr(0);
             sort_field = i;
             qsort((char *)Blk(BlkD(result,List)->listhead,Lelem)->lslots,
@@ -2832,7 +2832,7 @@ function{0,1} spawn(x, blocksize, stringsize)
    	  if (cp->es_actstk == NULL)
       	     Protect(cp->es_actstk = alcactiv(),runerr(0,x));
 
-   	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == Error)
+   	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
       	     runerr(0,x);
 
 	 sem_post(n->semp);

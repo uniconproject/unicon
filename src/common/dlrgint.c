@@ -131,7 +131,7 @@ dptr dx;
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
-   return Error;
+   return RunError;
    }
 
 /*
@@ -143,7 +143,7 @@ dptr da, db, dx;
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
-   return Error;
+   return RunError;
    }
 
 /*
@@ -155,7 +155,7 @@ dptr da, dx;
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
-   return Error;
+   return RunError;
    }
 
 /*
@@ -167,7 +167,7 @@ dptr da, db, dx;
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
-   return Error;
+   return RunError;
    }
 
 /*
@@ -203,7 +203,7 @@ dptr da, db, dx;
       k_errortext = "";
       k_errorvalue = nulldesc;
       have_errval = 0;
-      return Error;
+      return RunError;
       }
    MakeInt(r, dx);
    return Succeeded;

@@ -2916,6 +2916,7 @@ return NULL;
 #endif					/* MSWindows */
 
 #ifndef NTGCC
+#undef chdir
 int nt_chdir(char *s)
 {
     return chdir(s);

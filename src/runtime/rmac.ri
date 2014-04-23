@@ -104,7 +104,7 @@ int n, *err_index;
          {
 	     switch (wattrib((wbp) wb, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt, answer)) 
 	        {
-	        case Error:
+	        case RunError:
 	           *err_index = i;
 	           return NULL;
 	        case Failed:
@@ -534,7 +534,7 @@ char *s;
               ShowHide (ws->theWindow, kInvisible);
               }
            }
-   else return Error;
+   else return RunError;
    return Succeeded;
 }
 
@@ -721,14 +721,14 @@ int *retval;
    
    if (argc > 0) {
       if (argc != 1) 
-         return Error;
+         return RunError;
       else
          if (argv[0].dword == D_Integer) {
             if (IntVal (argv[0]) >= 0) return Failed;  /* must be negative */
             }
          else {
             if (!cnv:C_string(argv[0], str)) {
-               ReturnErrVal (103, argv[0], Error);
+               ReturnErrVal (103, argv[0], RunError);
                }
             if (parsecolor (NULL, str, &r, &g, &b) != Succeeded) {
                gNumColors--;
@@ -952,7 +952,7 @@ char *geo;
    STDLOCALS(wb);
 
    if ((status = parsegeometry(geo, &x, &y, &width, &height)) == 0)
-      return Error;
+      return RunError;
    if (status & 1) {
       ws->width = width;
       ws->height = height;

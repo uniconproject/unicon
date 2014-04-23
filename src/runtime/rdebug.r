@@ -202,7 +202,7 @@ int get_name(dptr dp1,dptr dp0)
 	  * allocate space for both the name and the subscript image,
 	  *  and then copy both parts into the allocated space
 	  */
-	 Protect(s = alcstr(NULL, k + j), return Error);
+	 Protect(s = alcstr(NULL, k + j), return RunError);
 	 s2 = StrLoc(*dp0);
 	 StrLoc(*dp0) = s;
          StrLen(*dp0) = j + k;
@@ -215,8 +215,8 @@ int get_name(dptr dp1,dptr dp0)
 
       tvtbl: {
          t = keyref((union block *)BlkD(*dp1, Tvtbl) ,dp0);
-         if (t == Error)
-            return Error;
+         if (t == RunError)
+            return RunError;
           }
 
       kywdint:
@@ -371,7 +371,7 @@ int get_name(dptr dp1,dptr dp0)
                   sprintf(sbuf,"list_%ld[%ld]",
 			  (long)Blk(Blk(blkptr,Lelem)->listprev,List)->id, (long)i);
                   i = strlen(sbuf);
-                  Protect(StrLoc(*dp0) = alcstr(sbuf,i), return Error);
+                  Protect(StrLoc(*dp0) = alcstr(sbuf,i), return RunError);
                   StrLen(*dp0) = i;
                   break;
                case T_Record: 		/* record */
@@ -383,13 +383,13 @@ int get_name(dptr dp1,dptr dp0)
 			  StrLoc(proc->lnames[i]));
 
                   i = strlen(sbuf);
-                  Protect(StrLoc(*dp0) = alcstr(sbuf,i), return Error);
+                  Protect(StrLoc(*dp0) = alcstr(sbuf,i), return RunError);
                   StrLen(*dp0) = i;
                   break;
                case T_Telem: 		/* table */
                   t = keyref(blkptr,dp0);
-                  if (t == Error)
-                      return Error;
+                  if (t == RunError)
+                      return RunError;
                   break;
                default:		/* none of the above */
 #ifdef MultiThread
@@ -503,8 +503,8 @@ static int keyref(bp, dp)
    char sbuf[256];			/* buffer; might be too small */
    int len;
 
-   if (getimage(&((bp->Telem.tref)),dp) == Error)
-      return Error;	
+   if (getimage(&((bp->Telem.tref)),dp) == RunError)
+      return RunError;	
 
    /*
     * Allocate space, and copy the image surrounded by "table_n[" and "]"
@@ -529,7 +529,7 @@ static int keyref(bp, dp)
    }
    strcat(sbuf, "]");
    len = strlen(sbuf);
-   Protect(s = alcstr(sbuf, len), return Error);
+   Protect(s = alcstr(sbuf, len), return RunError);
    StrLoc(*dp) = s;
    StrLen(*dp) = len;
    return Succeeded;

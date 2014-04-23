@@ -659,7 +659,7 @@ operator{0,1} ? random(underef x -> dx)
 #ifdef LargeInts
             C_integer v;
             if (Type(dx) == T_Lrgint) {
-	       if (bigrand(&dx, &result) == Error)  /* alcbignum failed */
+	       if (bigrand(&dx, &result) == RunError)  /* alcbignum failed */
 	          runerr(0);
 	       return result;
 	       }
@@ -733,16 +733,16 @@ operator{0,1} [:] sect(underef x -> dx, i, j)
 #ifdef Arrays
 	 if (BlkD(dx,List)->listtail!=NULL){
 #endif					/* Arrays */
-	    if (cplist(&dx, &result, i, j) == Error)
+	    if (cplist(&dx, &result, i, j) == RunError)
 	       runerr(0);
 #ifdef Arrays
 	       }
 	 else if ( BlkType(BlkD(dx,List)->listhead)==T_Realarray){
-	    if (cprealarray(&dx, &result, i, j) == Error)
+	    if (cprealarray(&dx, &result, i, j) == RunError)
 	       runerr(0);
 	    }
 	 else /*if ( BlkType(BlkD(dx,List)->listhead)==T_Intarray)*/{
-	    if (cpintarray(&dx, &result, i, j) == Error)
+	    if (cpintarray(&dx, &result, i, j) == RunError)
 	       runerr(0);
 	    }
 #endif					/* Arrays */	    

@@ -278,7 +278,7 @@ dptr result;
    else
       first = 1;
 
-   if (pushact(ncp, (struct b_coexpr *)BlkLoc(k_current)) == Error)
+   if (pushact(ncp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
       RunErr(0,NULL);
 
    if (co_chng(ncp, val, result, A_Coact, first) == A_Cofail)

@@ -239,7 +239,7 @@ function{1} Clone(argv[argc])
 	       runerr(109, argv[n]);
 	    switch (wattrib(w2, StrLoc(argv[n]), StrLen(argv[n]), &sbuf2, answer)) {
 	    case Failed: fail;
-	    case Error: runerr(0, argv[n]);
+	    case RunError: runerr(0, argv[n]);
 	       }
 	    }
 	 }
@@ -770,7 +770,7 @@ function{0,1} DrawImage(argv[argc])
          if (nchars % row != 0)
             fail;
          height = nchars / row;
-         if (blimage(w, x, y, width, height, c, s, (word)(z - s)) == Error)
+         if (blimage(w, x, y, width, height, c, s, (word)(z - s)) == RunError)
             runerr(305);
          else
             return nulldesc;
@@ -2127,7 +2127,7 @@ function{1} Pattern(argv[argc])
          runerr(103, nulldesc);
 
       switch (SetPattern(w, StrLoc(argv[warg]), StrLen(argv[warg]))) {
-         case Error:
+         case RunError:
             runerr(0, argv[warg]);
          case Failed:
             fail;
@@ -2432,13 +2432,13 @@ function{0,1} ReadImage(argv[argc])
          status = strimage(w, x, y, imd.width, imd.height, imd.paltbl,
 			   imd.data, (word)imd.width * (word)imd.height, 0);
          if (status < 0)
-            r = Error;
+            r = RunError;
          free((pointer)imd.paltbl);
          free((pointer)imd.data);
          }
       else if (r == Failed)
          r = readimage(w, filename, x, y, &status);
-      if (r == Error)
+      if (r == RunError)
          runerr(305);
       if (r == Failed)
          fail;
@@ -2600,7 +2600,7 @@ function{*} WAttrib(argv[argc])
 			 */
 		        argv[n] = nulldesc;
 		        continue;
-		     case Error: runerr(0, argv[n]);
+		     case RunError: runerr(0, argv[n]);
                
 
 		     }
@@ -2653,7 +2653,7 @@ function{*} WAttrib(argv[argc])
 		  switch (wattrib(w, StrLoc(sbuf), StrLen(sbuf),
 				  &sbuf2, answer)) {
 		  case Failed: continue;
-		  case Error:  runerr(0, argv[n]);
+		  case RunError:  runerr(0, argv[n]);
 		     }
 		  if (is:string(sbuf2)) {
 	             char *p=StrLoc(sbuf2);
@@ -3043,7 +3043,7 @@ function{0,1} WinMenuBar(argv[argc])
          }
       ws->menuMap = (char **)calloc(total, sizeof(char *));
 
-      if (nativemenubar(w, total, argc, argv, warg, &d) == Error)
+      if (nativemenubar(w, total, argc, argv, warg, &d) == RunError)
         runerr(103, d);
       ReturnWindow;
       }
@@ -4334,7 +4334,7 @@ function{1} MatrixMode(argv[argc])
 
       /* the only "failure" is: the argument was illegal */
       switch (setmatrixmode(temp)) {
-      case Error: runerr(152, argv[warg]); break;
+      case RunError: runerr(152, argv[warg]); break;
       case Failed: fail;
       }
 

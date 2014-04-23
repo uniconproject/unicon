@@ -67,7 +67,11 @@ end
 
 "getppid() - get parent pid."
 
+#if NT
+function{0} getppid()
+#else					/* NT */
 function{0,1} getppid()
+#endif					/* NT */
    abstract {
       return integer
       }
@@ -100,7 +104,11 @@ end
 
 "link() - create a link to a file."
 
+#if NT
+function{0} link(s1, s2)
+#else					/* NT */
 function{0,1} link(s1, s2)
+#endif					/* NT */
    if !cnv:C_string(s1) then
       runerr(103, s1)
    if !cnv:C_string(s2) then
@@ -125,7 +133,11 @@ end
 
 "symlink() - create a symlink to a file."
 
+#if NT
+function{0} symlink(s1, s2)
+#else					/* NT */
 function{0,1} symlink(s1, s2)
+#endif					/* NT */
    if !cnv:C_string(s1) then
       runerr(103, s1)
    if !cnv:C_string(s2) then
@@ -150,7 +162,11 @@ end
 
 "readlink() - read a symbolic link."
 
+#if NT
+function{0} readlink(s)
+#else					/* NT */
 function{0,1} readlink(s)
+#endif					/* NT */
    if !cnv:C_string(s) then
       runerr(103, s)
    abstract {
@@ -195,7 +211,11 @@ end
 
 "kill() - send a signal to a process."
 
+#if NT
+function{0} kill(pid, signal)
+#else					/* NT */
 function{0,1} kill(pid, signal)
+#endif					/* NT */
    if !is:string(signal) then
       if !is:integer(signal) then
          runerr(170, signal)
@@ -241,7 +261,11 @@ end
 
 "trap() - trap a signal."
 
+#if NT
+function{0} trap(nsignal, handler)
+#else					/* NT */
 function{0,1} trap(nsignal, handler)
+#endif					/* NT */
    if !is:string(nsignal) then
       if !is:integer(nsignal) then
          runerr(170, nsignal)
@@ -288,7 +312,11 @@ end
 
 "chown() - change the owner of a file."
 
+#if NT
+function{0} chown(s, u, g)
+#else					/* NT */
 function{0,1} chown(s, u, g)
+#endif					/* NT */
    declare {
       C_integer i_u, i_g;
       }
@@ -464,7 +492,11 @@ end
 
 "chroot() - change the root directory."
 
+#if NT
+function{0} chroot(d)
+#else					/* NT */
 function{0,1} chroot(d)
+#endif					/* NT */
    if !cnv:C_string(d) then
       runerr(103, d)
    abstract {
@@ -696,7 +728,12 @@ end
 
 "fcntl() - control a file."
 
+#if NT
+function{0} fcntl(f, action, options)
+#else					/* NT */
 function{0,1} fcntl(f, action, options)
+#endif					/* NT */
+
    if !is:string(action) then
       runerr(103, action)
    if !is:file(f) then
@@ -947,7 +984,11 @@ end
 
 "filepair() - create a connected bidirectional pair of files."
 
+#if NT
+function{0} filepair()
+#else					/* NT */
 function{0,1} filepair()
+#endif					/* NT */
    abstract {
       return new list(file)
       }
@@ -1149,7 +1190,11 @@ end
 
 "getuid() - get the real user identity."
 
+#if NT
+function{0} getuid()
+#else					/* NT */
 function{0,1} getuid()
+#endif					/* NT */
    abstract {
       return string
       }
@@ -1175,7 +1220,11 @@ end
 
 "geteuid() - get the effective user identity."
 
+#if NT
+function{0} geteuid()
+#else					/* NT */
 function{0,1} geteuid()
+#endif					/* NT */
    abstract {
       return string
       }
@@ -1201,7 +1250,11 @@ end
 
 "getgid() - get the real group identity."
 
+#if NT
+function{0} getgid()
+#else					/* NT */
 function{0,1} getgid()
+#endif					/* NT */
    abstract {
       return string
       }
@@ -1227,7 +1280,11 @@ end
 
 "getegid() - get the effective group identity."
 
+#if NT
+function{0} getegid()
+#else					/* NT */
 function{0,1} getegid()
+#endif					/* NT */
    abstract {
       return string
       }
@@ -1253,7 +1310,11 @@ end
 
 "setuid() - set the real and/or effective user identity."
 
+#if NT
+function{0} setuid(u)
+#else					/* NT */
 function{0,1} setuid(u)
+#endif					/* NT */
    if !cnv:C_integer(u) then
       runerr(101, u)
    abstract {
@@ -1276,7 +1337,11 @@ end
 
 "setgid() - set the real and/or effective group identity."
 
+#if NT
+function{0} setgid(g)
+#else					/* NT */
 function{0,1} setgid(g)
+#endif					/* NT */
    if !cnv:C_integer(g) then
       runerr(101, g)
    abstract {
@@ -1299,7 +1364,11 @@ end
 
 "getpgrp() - get the process group."
 
+#if NT
+function{0} getpgrp()
+#else					/* NT */
 function{0,1} getpgrp()
+#endif					/* NT */
    abstract {
       return integer
       }
@@ -1314,7 +1383,11 @@ end
 
 "setpgrp() - set the process group."
 
+#if NT
+function{0} setpgrp()
+#else					/* NT */
 function{0,1} setpgrp()
+#endif					/* NT */
    abstract {
       return null
       }
@@ -2344,7 +2417,11 @@ end
 
 "getpw() - get password file information."
 
+#if NT
+function{0} getpw(u)
+#else					/* NT */
 function{0,1} getpw(u)
+#endif					/* NT */
 
    declare {
 #if !NT
@@ -2413,7 +2490,11 @@ end
 
 "getgr() - get group information."
 
+#if NT
+function{0} getgr(g)
+#else					/* NT */
 function{0,1} getgr(g)
+#endif					/* NT */
 
    declare {
 #if !NT
@@ -2679,7 +2760,11 @@ end
 
 "setpwent() - reset the password file."
 
+#if NT
+function{0} setpwent()
+#else					/* NT */
 function{0,1} setpwent()
+#endif					/* NT */
    abstract {
       return null
       }
@@ -2688,14 +2773,18 @@ function{0,1} setpwent()
       fail;
 #else					/* NT */
       setpwent();
-#endif					/* NT */
       return nulldesc;
+#endif					/* NT */
    }
 end
 
 "setgrent() - reset the group file."
 
+#if NT
+function{0} setgrent()
+#else					/* NT */
 function{0,1} setgrent()
+#endif					/* NT */
    abstract {
       return null
       }
@@ -2711,7 +2800,11 @@ end
 
 "sethostent() - reset host processing."
 
+#if NT
+function{0} sethostent(so)
+#else					/* NT */
 function{0,1} sethostent(so)
+#endif					/* NT */
    if !def:C_integer(so, 1) then
       runerr(101, so)
    abstract {
@@ -2729,7 +2822,11 @@ end
 
 "setservent() - reset network service entry processing."
 
+#if NT
+function{0} setservent(so)
+#else					/* NT */
 function{0,1} setservent(so)
+#endif					/* NT */
    if !def:C_integer(so, 1) then
       runerr(101, so)
    abstract {

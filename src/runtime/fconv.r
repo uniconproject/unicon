@@ -25,7 +25,7 @@ function{1} abs(n)
 #ifdef LargeInts
 	       struct descrip tmp;
 	       MakeInt(n,&tmp);
-	       if (bigneg(&tmp, &result) == Error)  /* alcbignum failed */
+	       if (bigneg(&tmp, &result) == RunError)  /* alcbignum failed */
 	          runerr(0);
                return result;
 #else					/* LargeInts */
@@ -48,7 +48,7 @@ function{1} abs(n)
 	 if (BlkD(n, Lrgint)->sign == 0)
 	    result = n;
 	 else {
-	    if (bigneg(&n, &result) == Error)  /* alcbignum failed */
+	    if (bigneg(&n, &result) == RunError)  /* alcbignum failed */
 	       runerr(0);
 	    }
          return result;

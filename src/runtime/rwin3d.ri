@@ -175,7 +175,7 @@ int create3Dlisthdr(dptr dp, char *strname, word size){
    tended struct b_list *func;
   
    /* create a list to save function information */
-   Protect(func = alclist(0, size), return Error);
+   Protect(func = alclist(0, size), return RunError);
    dp->dword = D_List;
    dp->vword.bptr = (union block *) func;
    MakeStr(strname, strlen(strname), &funcname);
@@ -183,7 +183,7 @@ int create3Dlisthdr(dptr dp, char *strname, word size){
   
    draw_code = si_s2i(redraw3Dnames, strname);
    if (draw_code == -1)
-      return Error;
+      return RunError;
    MakeInt(draw_code, &g);
    c_put(dp, &g);
    return Succeeded;
@@ -454,12 +454,12 @@ int setdim(wbp w, char* s)
    makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "dim", 4)!=Succeeded)
-     return Error;
+     return RunError;
    
    dim = atoi(s);
    /* must be a value between 1 and 4 */
    if (dim < 1 || dim > 4)
-      return Error;
+      return RunError;
    w->context->dim = dim;
 
    /* put the value of dim on the list of functions */
@@ -480,7 +480,7 @@ int seteye(wbp w, char *s)
    while (isspace(*s2)) s2++;
 
    /* set the eyepos attribute */
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeposx = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -489,8 +489,8 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeposy = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -499,8 +499,8 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeposz = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -510,8 +510,8 @@ int seteye(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* set the eyedir attribute */
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyedirx = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -520,8 +520,8 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyediry= atof(s2);
 
    if (*s2 == '-') s2++;
@@ -530,8 +530,8 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyedirz = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -542,9 +542,9 @@ int seteye(wbp w, char *s)
       }
 
    /* set the eyeup attribute */
-   if (*s2++ != ',') return Error;
+   if (*s2++ != ',') return RunError;
    while (isspace(*s2)) s2++;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeupx = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -553,8 +553,8 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeupy= atof(s2);
 
    if (*s2 == '-') s2++;
@@ -563,8 +563,8 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeupz = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -573,7 +573,7 @@ int seteye(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2) return Error;
+   if (*s2) return RunError;
    if (redraw3D(w) == Failed)
       return Failed;
    return Succeeded;
@@ -587,7 +587,7 @@ int seteyedir(wbp w, char *s)
 
    while (isspace(*s2)) s2++;
    /* find the x-coordinate of eyedir */
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyedirx = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -597,8 +597,8 @@ int seteyedir(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* find the y-coordinate */
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyediry= atof(s2);
 
    if (*s2 == '-') s2++;
@@ -608,8 +608,8 @@ int seteyedir(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* find the z-coordinate */
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyedirz = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -619,7 +619,7 @@ int seteyedir(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* if there are more entries return an error */
-   if (*s2) return Error;
+   if (*s2) return RunError;
    redraw3D(w);
    return Succeeded;
 }
@@ -635,7 +635,7 @@ int seteyepos(wbp w, char *s)
 
    /* get the x-coordinate of eyepos */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
-      return Error;
+      return RunError;
    wc->eyeposx = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -645,8 +645,8 @@ int seteyepos(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* get the y-coordinate of eyepos */
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeposy = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -656,8 +656,8 @@ int seteyepos(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* get the z-coordinate of eyepos */
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
    wc->eyeposz = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -666,7 +666,7 @@ int seteyepos(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2) return Error;
+   if (*s2) return RunError;
 
    redraw3D(w);
    return Succeeded;
@@ -683,7 +683,7 @@ int seteyeup(wbp w, char *s)
 
    /* set the x-coordinate of eyeyp */
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
-      return Error;
+      return RunError;
    wc->eyeupx = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -693,9 +693,9 @@ int seteyeup(wbp w, char *s)
       while (isdigit(*s2)) s2++;
       }
    /* set the y-coordinate of eyeup */
-   if (*s2++ != ',') return Error;
+   if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
-      return Error;
+      return RunError;
    wc->eyeupy= atof(s2);
 
    if (*s2 == '-') s2++;
@@ -706,9 +706,9 @@ int seteyeup(wbp w, char *s)
       }
 
    /* set the z-coordinate of eyeup */
-   if (*s2++ != ',') return Error;
+   if (*s2++ != ',') return RunError;
    if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.'))
-      return Error;
+      return RunError;
    wc->eyeupz = atof(s2);
 
    if (*s2 == '-') s2++;
@@ -717,7 +717,7 @@ int seteyeup(wbp w, char *s)
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2) return Error;
+   if (*s2) return RunError;
    redraw3D(w);
    return Succeeded;
 }
@@ -733,7 +733,7 @@ int setfov(wbp w, char* s)
    makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "fov", 4)!=Succeeded)
-     return Error;
+     return RunError;
    
    fov = atof(s);
 #ifdef DescriptorDouble
@@ -763,7 +763,7 @@ int setnormode(wbp w, char* s)
    makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "normode", 4)!=Succeeded)
-     return Error;
+     return RunError;
    
    if (!strcmp("on", s))
       wc->normode = 2;
@@ -774,7 +774,7 @@ int setnormode(wbp w, char* s)
       wc->normode = 0;
    /* not a valid normals mode so generate an error */
    else
-      return Error;
+      return RunError;
    
    MakeInt(wc->normode, &mode);
    c_put(&f, &mode);
@@ -793,11 +793,11 @@ int setrings(wbp w, char* s)
    makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "rings", 4)!=Succeeded)
-     return Error;
+     return RunError;
    
    rings = atoi(s);
    /* must be positive integer */
-   if (rings<=0) return Error;
+   if (rings<=0) return RunError;
    MakeInt(rings, &val);
    c_put(&f, &val);   
    wc->rings = rings;
@@ -817,11 +817,11 @@ int setslices(wbp w, char* s)
    makecurrent(w);
    /* create a list */
    if (create3Dlisthdr(&f, "slices", 4) != Succeeded)
-     return Error;
+     return RunError;
    
    slices = atoi(s);
    /* must be positive integer */   
-   if (slices <= 0) return Error;
+   if (slices <= 0) return RunError;
    MakeInt(slices, &val);
    c_put(&f, &val);   
    wc->slices = slices;
@@ -844,7 +844,7 @@ int settexmode(wbp w, char* s)
    makecurrent(w);
     /* create a list */
     if (create3Dlisthdr(&f, "texmode", 4)!=Succeeded)
-      return Error;
+      return RunError;
 
    /*
     * turn textures on in replace, blend, or modulate (default mode = replace)
@@ -864,7 +864,7 @@ int settexmode(wbp w, char* s)
      }
    /* not a valid texture mode so generate an error */
    else
-      return Error;
+      return RunError;
 
    if (((oldtexmode == 0) && (wc->texmode != 0)) ||
        ((oldtexmode != 0) && (wc->texmode == 0)))

@@ -1056,7 +1056,7 @@ union numeric *result;
       int rv;
 #ifdef LargeInts
       rv = bigradix((int)msign, (int)mantissa, s, end_s, result);
-      if (rv == Error)
+      if (rv == RunError)
          fatalerr(0, NULL);
 #else					/* LargeInts */
       rv = radix((int)msign, (int)mantissa, s, end_s, result);
@@ -1136,7 +1136,7 @@ union numeric *result;
       if (!realflag) {
          int rv;
          rv = bigradix((int)msign, 10, ssave, end_s, result);
-         if (rv == Error)
+         if (rv == RunError)
             fatalerr(0, NULL);
          return rv;
          }

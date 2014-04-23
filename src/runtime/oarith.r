@@ -69,7 +69,7 @@ end
    if ( ( Type ( y ) == T_Integer ) && ( IntVal ( y ) == 0 ) )
       runerr(201);  /* Divide fix */
 
-   if (bigdiv(&x,&y,&result) == Error) /* alcbignum failed */
+   if (bigdiv(&x,&y,&result) == RunError) /* alcbignum failed */
       runerr(0);
    return result;
 }
@@ -84,7 +84,7 @@ end
 #ifdef LargeInts
       MakeInt(x,&lx);
       MakeInt(y,&ly);
-      if (bigdiv(&lx,&ly,&result) == Error) /* alcbignum failed */
+      if (bigdiv(&lx,&ly,&result) == RunError) /* alcbignum failed */
 	 runerr(0);
       return result;
 #else                                   /* LargeInts */
@@ -115,7 +115,7 @@ ArithOp( / , divide , Divide , RealDivide, list_add /* bogus */)
 
 #begdef big_Sub(x,y)
 {
-   if (bigsub(&x,&y,&result) == Error) /* alcbignum failed */
+   if (bigsub(&x,&y,&result) == RunError) /* alcbignum failed */
       runerr(0);
    return result;
 }
@@ -127,7 +127,7 @@ ArithOp( / , divide , Divide , RealDivide, list_add /* bogus */)
 #ifdef LargeInts
       MakeInt(x,&lx);
       MakeInt(y,&ly);
-      if (bigsub(&lx,&ly,&result) == Error) /* alcbignum failed */
+      if (bigsub(&lx,&ly,&result) == RunError) /* alcbignum failed */
          runerr(0);
       return result;
 #else					/* LargeInts */
@@ -154,7 +154,7 @@ ArithOp( - , minus , Sub , RealSub, list_add /* bogus */)
       irunerr(202,0);
       errorfail;
       }
-   if (bigmod(&x,&y,&result) == Error)
+   if (bigmod(&x,&y,&result) == RunError)
       runerr(0);
    return result;
 }
@@ -200,7 +200,7 @@ ArithOp( % , mod , IntMod , RealMod, list_add /* bogus */ )
 
 #begdef big_Mpy(x,y)
 {
-   if (bigmul(&x,&y,&result) == Error)
+   if (bigmul(&x,&y,&result) == RunError)
       runerr(0);
    return result;
 }
@@ -212,7 +212,7 @@ ArithOp( % , mod , IntMod , RealMod, list_add /* bogus */ )
 #ifdef LargeInts
       MakeInt(x,&lx);
       MakeInt(y,&ly);
-      if (bigmul(&lx,&ly,&result) == Error) /* alcbignum failed */
+      if (bigmul(&lx,&ly,&result) == RunError) /* alcbignum failed */
          runerr(0);
       return result;
 #else					/* LargeInts */
@@ -244,7 +244,7 @@ operator{1} - neg(x)
 #ifdef LargeInts
 	       struct descrip tmp;
 	       MakeInt(x,&tmp);
-	       if (bigneg(&tmp, &result) == Error)  /* alcbignum failed */
+	       if (bigneg(&tmp, &result) == RunError)  /* alcbignum failed */
 	          runerr(0);
                return result;
 #else					/* LargeInts */
@@ -261,7 +261,7 @@ operator{1} - neg(x)
          return integer
          }
       inline {
-	 if (bigneg(&x, &result) == Error)  /* alcbignum failed */
+	 if (bigneg(&x, &result) == RunError)  /* alcbignum failed */
 	    runerr(0);
 	 return result;
          }
@@ -323,7 +323,7 @@ end
 
 #begdef big_Add(x,y)
 {
-   if (bigadd(&x,&y,&result) == Error)
+   if (bigadd(&x,&y,&result) == RunError)
       runerr(0);
    return result;
 }
@@ -335,7 +335,7 @@ end
 #ifdef LargeInts
       MakeInt(x,&lx);
       MakeInt(y,&ly);
-      if (bigadd(&lx, &ly, &result) == Error)  /* alcbignum failed */
+      if (bigadd(&lx, &ly, &result) == RunError)  /* alcbignum failed */
 	 runerr(0);
       return result;
 #else					/* LargeInts */
@@ -360,15 +360,15 @@ int list_add(dptr x, dptr y, dptr z)
    if (is:list(*x) && is:list(*y)) {
       size1 = BlkLoc(*x)->List.size;
       size2 = BlkLoc(*y)->List.size;
-      if (size1 != size2) return Error;
+      if (size1 != size2) return RunError;
 #ifdef Arrays      
       if ( BlkType(BlkD(*x,List)->listhead)==T_Realarray){
 	 double *a, *c;
 
 	 if ( BlkType(BlkD(*y,List)->listhead)==T_Realarray){ /*the two are real arrays*/
 	    double *b;
-	    if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	    if (cprealarray(x, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    /* points to the three arrays data and copy! */
 	    a = ((struct b_realarray *) BlkLoc(*x)->List.listhead )->a;
 	    b = ((struct b_realarray *) BlkLoc(*y)->List.listhead )->a;
@@ -380,8 +380,8 @@ int list_add(dptr x, dptr y, dptr z)
 	 else if ( BlkType(BlkD(*y,List)->listhead)==T_Intarray){ /*first arrays is real, second is int*/
 	    word *b;
 
-	    if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	    if (cprealarray(x, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    
 	    a = ((struct b_realarray *) BlkLoc(*x)->List.listhead )->a;
 	    b =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
@@ -397,8 +397,8 @@ int list_add(dptr x, dptr y, dptr z)
 	    word k=0;
 	    double f;
 	    
-	    if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	    if (cprealarray(x, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 
 	    apa = (struct b_realarray *) BlkLoc(*x)->List.listhead;
 	    apc = (struct b_realarray *) BlkLoc(*z)->List.listhead;
@@ -411,7 +411,7 @@ int list_add(dptr x, dptr y, dptr z)
 		  j -= ep->Lelem.nslots;
 		     
 		  if (!cnv:C_double(ep->Lelem.lslots[j], f)) 
-		     return Error;
+		     return RunError;
 		  
 		  apc->a[k] = apa->a[k] + f;
 		  k++;
@@ -424,8 +424,8 @@ int list_add(dptr x, dptr y, dptr z)
 	 
 	 if ( BlkType(BlkD(*y,List)->listhead)==T_Realarray){ /*first arrays is int, second is real*/
 	    double *b, *c;
-	    if (cprealarray(y, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	    if (cprealarray(y, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    /* points to the three arrays data and copy! */
 	    a = ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
 	    b = ((struct b_realarray *) BlkLoc(*y)->List.listhead )->a;
@@ -437,8 +437,8 @@ int list_add(dptr x, dptr y, dptr z)
 	 else if ( BlkType(BlkD(*y,List)->listhead)==T_Intarray){  /*the two are int arrays*/
 	    word *b, *c;
 
-	    if (cpintarray(x, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	    if (cpintarray(x, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    
 	    a = ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
 	    b =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
@@ -453,8 +453,8 @@ int list_add(dptr x, dptr y, dptr z)
 	    tended struct b_intarray *apa, *apc;
 	    word k=0, d;
 	    
-	    if (cpintarray(x, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	    if (cpintarray(x, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    
 	    apa = (struct b_intarray *) BlkLoc(*x)->List.listhead;
 	    apc = (struct b_intarray *) BlkLoc(*z)->List.listhead;
@@ -469,7 +469,7 @@ int list_add(dptr x, dptr y, dptr z)
 		  /* default : The resutling array is of type int */
 		  if (Type(ep->Lelem.lslots[j]) == T_Integer ){
 		     if (!cnv:C_integer(ep->Lelem.lslots[j], d))
-			return Error;
+			return RunError;
 		     apc->a[k] = apa->a[k] + d;
 		     k++;
 		     }
@@ -480,8 +480,8 @@ int list_add(dptr x, dptr y, dptr z)
 		     tended struct b_realarray *apc2;
 		     double f;
 		     word ii;
-		     if (cpint2realarray(x, z, (word) 1, size1 + 1) == Error)
-			return Error;
+		     if (cpint2realarray(x, z, (word) 1, size1 + 1) == RunError)
+			return RunError;
 		     
 		     apc2 = (struct b_realarray *) BlkLoc(*z)->List.listhead;
 		     for (ii=0; ii<k; ii++)
@@ -497,7 +497,7 @@ int list_add(dptr x, dptr y, dptr z)
 			   if (j >= ep->Lelem.nslots)
 			      j -= ep->Lelem.nslots;
 			   if (!cnv:C_double(ep->Lelem.lslots[j], f))
-			      return Error;
+			      return RunError;
 			   apc2->a[k] = apa->a[k] + f;
 			   k++;
 			   }
@@ -515,8 +515,8 @@ int list_add(dptr x, dptr y, dptr z)
 	 word k=0;
 	 double f;
 	 
-	 if (cprealarray(y, z, (word) 1, size1 + 1) == Error)
-	    return Error;
+	 if (cprealarray(y, z, (word) 1, size1 + 1) == RunError)
+	    return RunError;
 	 
 	 apa = (struct b_realarray *) BlkLoc(*y)->List.listhead;
 	 apc = (struct b_realarray *) BlkLoc(*z)->List.listhead;
@@ -529,7 +529,7 @@ int list_add(dptr x, dptr y, dptr z)
 		  j -= ep->Lelem.nslots;
 	       
 	       if (!cnv:C_double(ep->Lelem.lslots[j], f)) 
-		  return Error;
+		  return RunError;
 	       
 	       apc->a[k] = apa->a[k] + f;
 	       k++;
@@ -541,8 +541,8 @@ int list_add(dptr x, dptr y, dptr z)
 	 tended struct b_intarray *apa, *apc;
 	 word k=0, d;
 
-	 if (cpintarray(y, z, (word) 1, size1 + 1) == Error)
-	    return Error;
+	 if (cpintarray(y, z, (word) 1, size1 + 1) == RunError)
+	    return RunError;
 	 
 	 apa = (struct b_intarray *) BlkLoc(*y)->List.listhead;
 	 apc = (struct b_intarray *) BlkLoc(*z)->List.listhead;
@@ -557,7 +557,7 @@ int list_add(dptr x, dptr y, dptr z)
 	       /* default : The resutling array is of type int */
 	       if (Type(ep->Lelem.lslots[j]) == T_Integer ){
 		  if (!cnv:C_integer(ep->Lelem.lslots[j], d))
-		     return Error;
+		     return RunError;
 		  apc->a[k] = apa->a[k] + d;
 		  k++;
 		  }
@@ -568,8 +568,8 @@ int list_add(dptr x, dptr y, dptr z)
 		  tended struct b_realarray *apc2;
 		  double f;
 		  word ii;
-		  if (cpint2realarray(y, z, (word) 1, size1 + 1) == Error)
-		     return Error;
+		  if (cpint2realarray(y, z, (word) 1, size1 + 1) == RunError)
+		     return RunError;
 		  
 		  apc2 = (struct b_realarray *) BlkLoc(*z)->List.listhead;
 		  for (ii=0; ii<k; ii++)
@@ -584,7 +584,7 @@ int list_add(dptr x, dptr y, dptr z)
 			if (j >= ep->Lelem.nslots)
 			   j -= ep->Lelem.nslots;
 			if (!cnv:C_double(ep->Lelem.lslots[j], f))
-			   return Error;
+			   return RunError;
 			apc2->a[k] = apa->a[k] + f;
 			k++;
 			
@@ -601,8 +601,8 @@ int list_add(dptr x, dptr y, dptr z)
 #endif					/* Arrays */
 	 struct descrip *slotptr;
 	 tended struct b_lelem *bp1;
-	 if (cplist(x, z, (word)1, size1 + 1) == Error)
-	    return Error;
+	 if (cplist(x, z, (word)1, size1 + 1) == RunError)
+	    return RunError;
 	 /* add in values from y */
 
 	 lp1 = (struct b_list *) BlkLoc(*y);
@@ -632,10 +632,10 @@ int list_add(dptr x, dptr y, dptr z)
 	 double *a, *c, f;
 	 size1 = BlkLoc(*x)->List.size;
 	 
-	 if (cprealarray(x, z, (word) 1, size1 + 1) == Error)
-	    return Error;
+	 if (cprealarray(x, z, (word) 1, size1 + 1) == RunError)
+	    return RunError;
 	 if (!cnv:C_double(*y, f)) 
-	    return Error;
+	    return RunError;
 	 
 	 a =  ((struct b_realarray *) BlkLoc(*x)->List.listhead )->a;
 	 c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
@@ -650,9 +650,9 @@ int list_add(dptr x, dptr y, dptr z)
 	 if ( Type ( *y ) == T_Integer ){
 	    word *c;
 	    if (!cnv:C_integer(*y, d)) 
-	       return Error;
-	    if (cpintarray(x, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	       return RunError;
+	    if (cpintarray(x, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    a =  ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
 	    c =  ((struct b_intarray *) BlkLoc(*z)->List.listhead )->a;
 	    for(i=0; i<size1; i++)
@@ -660,22 +660,22 @@ int list_add(dptr x, dptr y, dptr z)
 	    }
 	 else if (cnv:C_double(*y, f)){
 	    double *c;
-	    if (cpint2realarray(x, z, (word) 1, size1 + 1, 0 /* no need to copy elements */) == Error)
-	       return Error;
+	    if (cpint2realarray(x, z, (word) 1, size1 + 1, 0 /* no need to copy elements */) == RunError)
+	       return RunError;
 	    a =  ((struct b_intarray *) BlkLoc(*x)->List.listhead )->a;
 	    c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
 	    for(i=0; i<size1; i++)
 	       c[i] = a[i] + f ;
 	    }
 	 else
-	    return Error;
+	    return RunError;
 	 }
       else{
 #endif					/* Arrays*/
 	 struct descrip *slotptr;
 	 size1 = BlkLoc(*x)->List.size;
-	 if (cplist(x, z, (word)1, size1 + 1) == Error)
-	    return Error;
+	 if (cplist(x, z, (word)1, size1 + 1) == RunError)
+	    return RunError;
 	 for (i=0; i<size1; i++) {
 	    slotptr = BlkLoc(*z)->List.listhead->Lelem.lslots + i;
 	    list_add(slotptr, y, slotptr);
@@ -691,10 +691,10 @@ int list_add(dptr x, dptr y, dptr z)
 	 double *a, *c, f;
 	 size1 = BlkLoc(*y)->List.size;
 	 
-	 if (cprealarray(y, z, (word) 1, size1 + 1) == Error)
-	    return Error;
+	 if (cprealarray(y, z, (word) 1, size1 + 1) == RunError)
+	    return RunError;
 	 if (!cnv:C_double(*x, f)) 
-	    return Error;
+	    return RunError;
 	 
 	 a =  ((struct b_realarray *) BlkLoc(*y)->List.listhead )->a;
 	 c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
@@ -709,9 +709,9 @@ int list_add(dptr x, dptr y, dptr z)
 	 if ( Type ( *x ) == T_Integer ){
 	    word *c;
 	    if (!cnv:C_integer(*x, d)) 
-	       return Error;
-	    if (cpintarray(y, z, (word) 1, size1 + 1) == Error)
-	       return Error;
+	       return RunError;
+	    if (cpintarray(y, z, (word) 1, size1 + 1) == RunError)
+	       return RunError;
 	    a =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
 	    c =  ((struct b_intarray *) BlkLoc(*z)->List.listhead )->a;
 	    for(i=0; i<size1; i++)
@@ -719,22 +719,22 @@ int list_add(dptr x, dptr y, dptr z)
 	    }
 	 else if (cnv:C_double(*x, f)){
 	    double *c;
-	    if (cpint2realarray(y, z, (word) 1, size1 + 1, 0 /* no need to copy elements */) == Error)
-	       return Error;
+	    if (cpint2realarray(y, z, (word) 1, size1 + 1, 0 /* no need to copy elements */) == RunError)
+	       return RunError;
 	    a =  ((struct b_intarray *) BlkLoc(*y)->List.listhead )->a;
 	    c =  ((struct b_realarray *) BlkLoc(*z)->List.listhead )->a;
 	    for(i=0; i<size1; i++)
 	       c[i] = a[i] + f ;
 	    }
 	 else
-	    return Error;
+	    return RunError;
 	 }
       else{
 #endif					/* Arrays */
 	 struct descrip *slotptr;
 	 size1 = BlkLoc(*y)->List.size;
-	 if (cplist(y, z, (word)1, size1 + 1) == Error)
-	    return Error;
+	 if (cplist(y, z, (word)1, size1 + 1) == RunError)
+	    return RunError;
 	 for (i=0; i<size1; i++) {
 	    slotptr = BlkLoc(*z)->List.listhead->Lelem.lslots + i;
 	 list_add(slotptr, x, slotptr);
@@ -757,15 +757,15 @@ int list_add(dptr x, dptr y, dptr z)
 #ifdef LargeInts
             MakeInt(x,&lx);
             MakeInt(y,&ly);
-            if (bigadd(&lx, &ly, z) == Error)  /* alcbignum failed */
-               return Error;
+            if (bigadd(&lx, &ly, z) == RunError)  /* alcbignum failed */
+               return RunError;
 #endif					/* LargeInts */
 	    }
 	 else MakeInt(irslt, z);
          }
       else if (cnv:C_double(*x, tmp3) && cnv:C_double(*y, tmp4)) {
          }
-      else return Error;
+      else return RunError;
       }
    return Succeeded;
 }
@@ -786,7 +786,7 @@ operator{1} ^ powr(x, y)
 #ifdef LargeInts
 	    tended struct descrip ly;
 	    MakeInt ( y, &ly );
-	    if (bigpow(&x, &ly, &result) == Error)  /* alcbignum failed */
+	    if (bigpow(&x, &ly, &result) == RunError)  /* alcbignum failed */
 	       runerr(0);
 	    return result;
 #else
@@ -805,7 +805,7 @@ operator{1} ^ powr(x, y)
 	    return real
 	    }
 	 inline {
-	    if (ripow( x, y, &result) ==  Error)
+	    if (ripow( x, y, &result) ==  RunError)
 	       runerr(0);
 	    return result;
 	    }
@@ -818,7 +818,7 @@ operator{1} ^ powr(x, y)
 	    return integer
 	    }
 	 inline {
-	    if (bigpow(&x, &y, &result) == Error)  /* alcbignum failed */
+	    if (bigpow(&x, &y, &result) == RunError)  /* alcbignum failed */
 	       runerr(0);
 	    return result;
 	    }
@@ -830,7 +830,7 @@ operator{1} ^ powr(x, y)
 	    return real
 	    }
 	 inline {
-	    if ( bigpowri ( x, &y, &result ) == Error )
+	    if ( bigpowri ( x, &y, &result ) == RunError )
 	       runerr(0);
 	    return result;
 	    }
@@ -912,7 +912,7 @@ dptr drslt;
    CURTSTATE();
 
    if (r == 0.0 && n <= 0) 
-      ReturnErrNum(204, Error);
+      ReturnErrNum(204, RunError);
    if (n < 0) {
       /*
        * r ^ n = ( 1/r ) * ( ( 1/r ) ^ ( -1 - n ) )
@@ -936,7 +936,7 @@ dptr drslt;
 #ifdef DescriptorDouble
    drslt->vword.realval = retval;
 #else					/* DescriptorDouble */
-   Protect(BlkLoc(*drslt) = (union block *)alcreal(retval), return Error);
+   Protect(BlkLoc(*drslt) = (union block *)alcreal(retval), return RunError);
 #endif					/* DescriptorDouble */
    drslt->dword = D_Real;
    return Succeeded;

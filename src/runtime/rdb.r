@@ -134,16 +134,16 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
       return Failed;
       }
 
-   Protect(reserve(Blocks, sizeof (struct b_record)+(numcols-1)*sizeof(struct descrip)), return Error);
+   Protect(reserve(Blocks, sizeof (struct b_record)+(numcols-1)*sizeof(struct descrip)), return RunError);
 
    if (fp->proc == NULL) {
-      Protect(reserve(Strings, MAX_COL_NAME * numcols), return Error);
+      Protect(reserve(Strings, MAX_COL_NAME * numcols), return RunError);
       fieldname = malloc(numcols * sizeof(struct descrip));
       if (fieldname == NULL) {
          t_errornumber = 305;
          t_errorvalue = nulldesc;
          t_have_val = 0;
-         return Error;
+         return RunError;
          }
       /* record field names */
       for (i=1; i<=numcols; i++) {
@@ -166,7 +166,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
          t_errornumber = 305;
          t_errorvalue = nulldesc;
          t_have_val = 0;
-         return Error;
+         return RunError;
          }
       }
 
@@ -175,7 +175,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
        t_errornumber = 307;
        t_errorvalue = nulldesc;
        t_have_val = 0;
-       return Error;
+       return RunError;
        }
     pR->dword=D_Record;
     pR->vword.bptr=(union block *) r;
@@ -205,7 +205,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
       /*
        * reserve contiguous space for this column
        */
-      Protect(reserve(Strings, colsz), return Error);
+      Protect(reserve(Strings, colsz), return RunError);
 
       /* if the column is NULL colsz=-1 */
       colsz = colsz>0?colsz:0; /* normalize colsz to prevent a crash! */
@@ -252,7 +252,7 @@ int dbfetch(struct ISQLFile *fp, dptr pR)
              t_errornumber = 306;
              t_errorvalue = nulldesc;
              t_have_val = 0;
-             return Error;
+             return RunError;
 	     /* used to return Failed for strange types */
              }
           StrLen(r->fields[p])=colsz>0?colsz:0;

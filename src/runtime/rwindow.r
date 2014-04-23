@@ -491,7 +491,7 @@ char *s;
 
    s2 = s;
    while (isspace(*s2)) s2++;
-   if (!isdigit(*s2) && (*s2 != '-')) return Error;
+   if (!isdigit(*s2) && (*s2 != '-')) return RunError;
    posx = atol(s2);
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -499,8 +499,8 @@ char *s;
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
-   if (!isdigit(*s2) && (*s2 != '-')) return Error;
+   if (*s2++ != ',') return RunError;
+   if (!isdigit(*s2) && (*s2 != '-')) return RunError;
    posy = atol(s2);
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -508,7 +508,7 @@ char *s;
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2) return Error;
+   if (*s2) return RunError;
    if (posx < 0) {
       if (posy < 0) sprintf(tmp,"%d%d",posx,posy);
       else sprintf(tmp,"%d+%d",posx,posy);
@@ -534,7 +534,7 @@ char *s;
 
    s2 = s;
    while (isspace(*s2)) s2++;
-   if (!isdigit(*s2) && (*s2 != '-')) return Error;
+   if (!isdigit(*s2) && (*s2 != '-')) return RunError;
    width = atol(s2);
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -542,7 +542,7 @@ char *s;
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2++ != ',') return Error;
+   if (*s2++ != ',') return RunError;
    height = atol(s2);
    if (*s2 == '-') s2++;
    while (isdigit(*s2)) s2++;
@@ -550,7 +550,7 @@ char *s;
       s2++;
       while (isdigit(*s2)) s2++;
       }
-   if (*s2) return Error;
+   if (*s2) return RunError;
    sprintf(tmp,"%dx%d",width,height);
    return setgeometry(w,tmp);
    }
@@ -1363,7 +1363,7 @@ int readGIF(char *filename, int p, struct imgdata *imd)
 	 free((pointer) gf_string);
 	 gf_string = NULL;
 	 }
-      return r;					/* return Failed or Error */
+      return r;					/* return Failed or RunError */
       }
 
    imd->width = gf_width;			/* set return variables */
@@ -1414,7 +1414,7 @@ int p;
       if (!gfmap(gf_f, p))
          return Failed;
    if (!gfsetup())			/* prepare to read image */
-      return Error;
+      return RunError;
    if (!gfrdata(gf_f))			/* read image data */
       return Failed;
    while (gf_row < gf_height)		/* pad if too short */
@@ -2190,7 +2190,7 @@ static int pngwrite(wbp w, FILE *png_f, int x, int y, int width, int height, uns
 
 /*
  * writePNG(w, filename, x, y, width, height) - write JPEG image
- * Returns Succeeded, Failed, or Error.
+ * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
 int writePNG(w, filename, x, y, width, height)
@@ -2203,11 +2203,11 @@ int x, y, width, height;
    unsigned char *imgBuf = NULL;
 
    if (!(imgBuf = (unsigned char*)malloc( width * height * 3 * sizeof(unsigned char))))
-      return Error;
+      return RunError;
 
    if (!getimstr24(w, x, y, width, height, imgBuf)){
       free(imgBuf);
-      return Error;
+      return RunError;
       }
 
    if ((png_f = fopen(filename,"wb")) == NULL) {
@@ -2229,7 +2229,7 @@ int x, y, width, height;
  * writeBMP(w, filename, x, y, width, height) - write BMP image
  *
  * Fails if filename does not end in .bmp or .BMP; default is write .GIF.
- * Returns Succeeded, Failed, or Error.
+ * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
 int writeBMP(wbp w, char *filename, int x, int y, int width, int height)
@@ -2264,12 +2264,12 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
    if (!(gf_f = fopen(filename, "wb")))
       return Failed;
    if (!(gf_string = (unsigned char*)malloc((msize)len)))
-      return Error;
+      return RunError;
 
    for (i = 0; i < DMAXCOLORS; i++)
       paltbl[i].used = paltbl[i].valid = paltbl[i].transpt = 0;
    if (!getimstr(w, x, y, width, height, paltbl, gf_string))
-      return Error;
+      return RunError;
 
    fprintf(gf_f, "BM");
    a[0] = 54 + 4 * 256 + len;
@@ -2297,7 +2297,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
       c[3] = 0;
       if (fwrite(c, 4, 1, gf_f) < 1) return Failed;
       }
-   if (bmp_data(width, height, 1, (char *)gf_string) == NULL) return Error;
+   if (bmp_data(width, height, 1, (char *)gf_string) == NULL) return RunError;
    if (fwrite(gf_string, width, height, gf_f) < height) return Failed;
    return Succeeded;
 }
@@ -2306,7 +2306,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
 /*
  * writeGIF(w, filename, x, y, width, height) - write GIF image
  *
- * Returns Succeeded, Failed, or Error.
+ * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
 int writeGIF(w, filename, x, y, width, height)
@@ -2352,12 +2352,12 @@ int x, y, width, height;
    if (!(gf_f = fopen(filename, "wb")))
       return Failed;
    if (!(gf_string = (unsigned char*)malloc((msize)len)))
-      return Error;
+      return RunError;
 
    for (i = 0; i < DMAXCOLORS; i++)
       paltbl[i].used = paltbl[i].valid = paltbl[i].transpt = 0;
    if (!getimstr(w, x, y, width, height, paltbl, gf_string))
-      return Error;
+      return RunError;
 
    gfpack(gf_string, len, paltbl);	/* pack color table, set color params */
 
@@ -2607,10 +2607,10 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    row_stride = cinfo.image_width *3;	/* JSAMPLEs per row in image_buffer */
 
    if (!(imgBuf = (unsigned char*)malloc( height * row_stride * sizeof(unsigned char))))
-      return Error;
+      return RunError;
 
    if (!getimstr24(w, x, y, width, height, imgBuf))
-      return Error;
+      return RunError;
 
    while (cinfo.next_scanline < cinfo.image_height) {
       row_pointer[0] = &imgBuf[cinfo.next_scanline*row_stride];
@@ -2626,7 +2626,7 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 
 /*
  * writeJPEG(w, filename, x, y, width, height) - write JPEG image
- * Returns Succeeded, Failed, or Error.
+ * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
 int writeJPEG(w, filename, x, y, width, height)
@@ -3175,7 +3175,7 @@ C_integer *bits;
    /*
     * Get the width
     */
-   if (sscanf(s, "%d,", width) != 1) return Error;
+   if (sscanf(s, "%d,", width) != 1) return RunError;
    if (*width < 1) return Failed;
 
    /*
@@ -3184,7 +3184,7 @@ C_integer *bits;
    while ((len > 0) && isdigit(*s)) {
       len--; s++;
       }
-   if ((len <= 1) || (*s != ',')) return Error;
+   if ((len <= 1) || (*s != ',')) return RunError;
    len--; s++;					/* skip over ',' */
 
    if (*s == '#') {
@@ -3192,7 +3192,7 @@ C_integer *bits;
        * get remaining bits as hex constant
        */
       s++; len--;
-      if (len == 0) return Error;
+      if (len == 0) return RunError;
       hexdigits_per_row = *width / 4;
       if (*width % 4) hexdigits_per_row++;
       *nbits = len / hexdigits_per_row;
@@ -3209,7 +3209,7 @@ C_integer *bits;
 	       v += *s - 'a' + 10; break;
 	    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
 	       v += *s - 'A' + 10; break;
-	    default: return Error;
+	    default: return RunError;
 	       }
 	    }
 	 *bits++ = v;
@@ -3235,7 +3235,7 @@ C_integer *bits;
 	 if (len > 0) {
 	    if (*s == ',') { len--; s++; }
 	    else {
-	       ReturnErrNum(205, Error);
+	       ReturnErrNum(205, RunError);
 	       }
 	    }
 	 }
@@ -3279,7 +3279,7 @@ SHORT *x, *y, *width, *height;
 
 
 /* return failure if operation returns either failure or error */
-#define AttemptAttr(operation) do { switch (operation) { case Error: t_errornumber=145; StrLen(t_errorvalue)=strlen(val);StrLoc(t_errorvalue)=val;return Error; case Succeeded: break; default: return Failed; } } while(0)
+#define AttemptAttr(operation) do { switch (operation) { case RunError: t_errornumber=145; StrLen(t_errorvalue)=strlen(val);StrLoc(t_errorvalue)=val;return RunError; case Succeeded: break; default: return Failed; } } while(0)
 
 /* does string (already checked for "on" or "off") say "on"? */
 #define ATOBOOL(s) (s[1]=='n')
@@ -3611,12 +3611,12 @@ char * abuf;
 	    return Failed;
 #ifdef Graphics3D
  	 if (w->context->is_3D) {
-            if (setlinewidth3D(w, tmp) == Error)
+            if (setlinewidth3D(w, tmp) == RunError)
 	       return Failed;
 	    }
          else
 #endif					/* Graphics3D */
-	 if (setlinewidth(w, tmp) == Error)
+	 if (setlinewidth(w, tmp) == RunError)
 	    return Failed;
 	 break;
 	 }
@@ -3782,12 +3782,12 @@ char * abuf;
       case A_FWIDTH:
       case A_ASCENT:
       case A_DESCENT:
-         ReturnErrNum(147, Error);
+         ReturnErrNum(147, RunError);
       /*
        * invalid attribute
        */
       default:
-	 ReturnErrNum(145, Error);
+	 ReturnErrNum(145, RunError);
 	 }
       strncpy(abuf, s, len);
       abuf[len] = '\0';
@@ -3806,7 +3806,7 @@ char * abuf;
 	 MakeStr(selectiontemp, strlen(selectiontemp), answer);
 	 break;
       case A_IMAGE:
-         ReturnErrNum(147, Error);
+         ReturnErrNum(147, RunError);
          break;
 #ifdef Graphics3D
       case A_DIM:
@@ -4037,7 +4037,7 @@ char * abuf;
 	 answer->vword.realval = wc->gamma;
 #else					/* DescriptorDouble */
          Protect(BlkLoc(*answer) = (union block *)alcreal(wc->gamma),
-            return Error);
+            return RunError);
 #endif					/* DescriptorDouble */
          answer->dword = D_Real;
          break;
@@ -4150,7 +4150,7 @@ char * abuf;
       case A_ICONPOS: {
 	 switch (geticonpos(w,abuf)) {
 	    case Failed: return Failed;
-	    case Error:  return Failed;
+	    case RunError:  return Failed;
 	    }
 	 MakeStr(abuf, strlen(abuf), answer);
 	 break;
@@ -4192,7 +4192,7 @@ char * abuf;
 	    *answer = nulldesc;
 	 break;
       default:
-	 ReturnErrNum(145, Error);
+	 ReturnErrNum(145, RunError);
 	 }
    }
    wflush(w);

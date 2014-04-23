@@ -1103,15 +1103,15 @@ char *sbuf;
    c = StrLoc(*dp);
    slen = StrLen(*dp)++;
    if (slen >= MaxCvtLen) {
-      Protect(reserve(Strings, slen+1), return Error);
+      Protect(reserve(Strings, slen+1), return RunError);
       c = StrLoc(*dp);
       if (c + slen != strfree) {
-         Protect(s = alcstr(c, slen), return Error);
+         Protect(s = alcstr(c, slen), return RunError);
          }
       else
          s = c;
       StrLoc(*dp) = s;
-      Protect(alcstr("",(word)1), return Error);
+      Protect(alcstr("",(word)1), return RunError);
       }
    else {
       StrLoc(*dp) = sbuf;
@@ -1498,19 +1498,19 @@ int c, q;
       switch (c) {
          case '"':
             if (c != q) goto deflt;
-            Protect(alcstr("\\\"", (word)(2)), return Error);
+            Protect(alcstr("\\\"", (word)(2)), return RunError);
             return 2;
          case '\'':
             if (c != q) goto deflt;
-            Protect(alcstr("\\'", (word)(2)), return Error);
+            Protect(alcstr("\\'", (word)(2)), return RunError);
             return 2;
          case '\\':
-            Protect(alcstr("\\\\", (word)(2)), return Error);
+            Protect(alcstr("\\\\", (word)(2)), return RunError);
             return 2;
          default:
          deflt:
             cbuf[0] = c;
-            Protect(alcstr(cbuf, (word)(1)), return Error);
+            Protect(alcstr(cbuf, (word)(1)), return RunError);
             return 1;
          }
       }
@@ -1522,7 +1522,7 @@ int c, q;
     */
    switch (c) {
       case '\b':			/*	   backspace	*/
-         Protect(alcstr("\\b", (word)(2)), return Error);
+         Protect(alcstr("\\b", (word)(2)), return RunError);
          return 2;
 
 #if !EBCDIC
@@ -1531,7 +1531,7 @@ int c, q;
       case '\x07':			/*      delete    */
 #endif					/* !EBCDIC */
 
-         Protect(alcstr("\\d", (word)(2)), return Error);
+         Protect(alcstr("\\d", (word)(2)), return RunError);
          return 2;
 
 #if !EBCDIC
@@ -1540,33 +1540,33 @@ int c, q;
       case '\x27':			/*          escape       */
 #endif					/* !EBCDIC */
 
-         Protect(alcstr("\\e", (word)(2)), return Error);
+         Protect(alcstr("\\e", (word)(2)), return RunError);
          return 2;
       case '\f':			/*	   form feed	*/
-         Protect(alcstr("\\f", (word)(2)), return Error);
+         Protect(alcstr("\\f", (word)(2)), return RunError);
          return 2;
 
 #if EBCDIC == 1
       case '\x25':                      /* EBCDIC line feed */
-         Protect(alcstr("\\l", (word)(2)), return Error);
+         Protect(alcstr("\\l", (word)(2)), return RunError);
          return 2;
 #endif					/* EBCDIC */
 
       case LineFeed:			/*	   new line	*/
-         Protect(alcstr("\\n", (word)(2)), return Error);
+         Protect(alcstr("\\n", (word)(2)), return RunError);
          return 2;
       case CarriageReturn:		/*	   return	*/
-         Protect(alcstr("\\r", (word)(2)), return Error);
+         Protect(alcstr("\\r", (word)(2)), return RunError);
          return 2;
       case '\t':			/*	   horizontal tab     */
-         Protect(alcstr("\\t", (word)(2)), return Error);
+         Protect(alcstr("\\t", (word)(2)), return RunError);
          return 2;
       case '\13':			/*	    vertical tab     */
-         Protect(alcstr("\\v", (word)(2)), return Error);
+         Protect(alcstr("\\v", (word)(2)), return RunError);
          return 2;
       default:				/*	  hex escape sequence  */
          sprintf(cbuf, "\\x%02x", ToAscii(c & 0xff));
-         Protect(alcstr(cbuf, (word)(4)), return Error);
+         Protect(alcstr(cbuf, (word)(4)), return RunError);
          return 4;
       }
    }
@@ -1598,14 +1598,14 @@ dptr dp1, dp2;
           */
          s = StrLoc(source);
          len = StrLen(source);
-	 Protect (reserve(Strings, (len << 2) + 2), return Error);
-         Protect(t = alcstr("\"", (word)(1)), return Error);
+	 Protect (reserve(Strings, (len << 2) + 2), return RunError);
+         Protect(t = alcstr("\"", (word)(1)), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = 1;
 
          while (len-- > 0)
             StrLen(*dp2) += doimage(*s++, '"');
-         Protect(alcstr("\"", (word)(1)), return Error);
+         Protect(alcstr("\"", (word)(1)), return RunError);
          ++StrLen(*dp2);
          }
 
@@ -1628,7 +1628,7 @@ dptr dp1, dp2;
             if (dlen >= MaxDigits) {
                sprintf(sbuf,"integer(~10^%ld)",(long)dlen);
 	       len = strlen(sbuf);
-               Protect(StrLoc(*dp2) = alcstr(sbuf,len), return Error);
+               Protect(StrLoc(*dp2) = alcstr(sbuf,len), return RunError);
 
 
                StrLen(*dp2) = len;
@@ -1664,15 +1664,15 @@ dptr dp1, dp2;
 	    i = cssize(&source);
 	 i = (i << 2) + 2;
 	 if (i > 730) i = 730;
-	 Protect (reserve(Strings, i), return Error);
+	 Protect (reserve(Strings, i), return RunError);
 
-         Protect(t = alcstr("'", (word)(1)), return Error);
+         Protect(t = alcstr("'", (word)(1)), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = 1;
          for (i = 0; i < 256; ++i)
             if (Testb(i, source))
                StrLen(*dp2) += doimage((char)i, '\'');
-         Protect(alcstr("'", (word)(1)), return Error);
+         Protect(alcstr("'", (word)(1)), return RunError);
          ++StrLen(*dp2);
          }
 
@@ -1705,7 +1705,7 @@ dptr dp1, dp2;
 	       if ((BlkLoc(source)->File.status != Fs_Window) &&
 		  (s = BlkLoc(source)->File.fd.wb->window->windowlabel)){
 	          len = strlen(s);
-                  Protect (reserve(Strings, (len << 2) + 16), return Error);
+                  Protect (reserve(Strings, (len << 2) + 16), return RunError);
 	          sprintf(sbuf, "window_%d:%d(", 
 		       BlkLoc(source)->File.fd.wb->window->serial,
 		       BlkLoc(source)->File.fd.wb->context->serial
@@ -1713,10 +1713,10 @@ dptr dp1, dp2;
                 }
 		else {
                   len = 0;
-                  Protect (reserve(Strings, (len << 2) + 16), return Error);
+                  Protect (reserve(Strings, (len << 2) + 16), return RunError);
 	          sprintf(sbuf, "window_-1:-1(");
                   }
-	       Protect(t = alcstr(sbuf, (word)(strlen(sbuf))), return Error);
+	       Protect(t = alcstr(sbuf, (word)(strlen(sbuf))), return RunError);
 	       StrLoc(*dp2) = t;
 	       StrLen(*dp2) = strlen(sbuf);
 	       }
@@ -1736,8 +1736,8 @@ dptr dp1, dp2;
 #ifdef PosixFns
                }
 #endif 					/* PosixFns */
-               Protect (reserve(Strings, (len << 2) + 12), return Error);
-	       Protect(t = alcstr("file(", (word)(5)), return Error);
+               Protect (reserve(Strings, (len << 2) + 12), return RunError);
+	       Protect(t = alcstr("file(", (word)(5)), return RunError);
 	       StrLoc(*dp2) = t;
 	       StrLen(*dp2) = 5;
 #ifdef Graphics
@@ -1745,7 +1745,7 @@ dptr dp1, dp2;
 #endif					/* Graphics */
             while (len-- > 0)
                StrLen(*dp2) += doimage(*s++, '\0');
-            Protect(alcstr(")", (word)(1)), return Error);
+            Protect(alcstr(")", (word)(1)), return RunError);
             ++StrLen(*dp2);
             }
          }
@@ -1763,16 +1763,16 @@ dptr dp1, dp2;
           */
          len = StrLen(BlkD(source,Proc)->pname);
          s = StrLoc(BlkLoc(source)->Proc.pname);
-	 Protect (reserve(Strings, len + 22), return Error);
+	 Protect (reserve(Strings, len + 22), return RunError);
          switch ((int)BlkLoc(source)->Proc.ndynam) {
             default:  type = "procedure "; outlen = 10; break;
             case -1:  type = "function "; outlen = 9; break;
             case -2:  type = "record constructor "; outlen = 19; break;
 	    case -3:  type = "class constructor "; outlen = 18; break;
             }
-         Protect(t = alcstr(type, outlen), return Error);
+         Protect(t = alcstr(type, outlen), return RunError);
          StrLoc(*dp2) = t;
-         Protect(alcstr(s, len),  return Error);
+         Protect(alcstr(s, len),  return RunError);
          StrLen(*dp2) = len + outlen;
          }
 
@@ -1786,7 +1786,7 @@ dptr dp1, dp2;
          sprintf(sbuf, "list_%ld(%ld)", (long)Blk(bp,List)->id,
 		 (long)Blk(bp,List)->size);
          len = strlen(sbuf);
-         Protect(t = alcstr(sbuf, len), return Error);
+         Protect(t = alcstr(sbuf, len), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }
@@ -1801,7 +1801,7 @@ dptr dp1, dp2;
          sprintf(sbuf, "table_%ld(%ld)", (long)Blk(bp,Table)->id,
             (long)Blk(bp,Table)->size);
          len = strlen(sbuf);
-         Protect(t = alcstr(sbuf, len), return Error);
+         Protect(t = alcstr(sbuf, len), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }
@@ -1814,7 +1814,7 @@ dptr dp1, dp2;
          sprintf(sbuf, "set_%ld(%ld)", (long)Blk(bp,Set)->id,
 		 (long)Blk(bp,Set)->size);
          len = strlen(sbuf);
-         Protect(t = alcstr(sbuf,len), return Error);
+         Protect(t = alcstr(sbuf,len), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }
@@ -1830,15 +1830,15 @@ dptr dp1, dp2;
          sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id,
             (long)bp->Record.recdesc->Proc.nfields);
          len = strlen(sbuf);
-	 Protect (reserve(Strings, 7 + len + rnlen), return Error);
-         Protect(t = alcstr("record ", (word)(7)), return Error);
+	 Protect (reserve(Strings, 7 + len + rnlen), return RunError);
+         Protect(t = alcstr("record ", (word)(7)), return RunError);
          bp = BlkLoc(*dp1);		/* refresh pointer */
          StrLoc(*dp2) = t;
 	 StrLen(*dp2) = 7;
          Protect(alcstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),rnlen),
-	            return Error);
+	            return RunError);
          StrLen(*dp2) += rnlen;
-         Protect(alcstr(sbuf, len),  return Error);
+         Protect(alcstr(sbuf, len),  return RunError);
          StrLen(*dp2) += len;
          }
 
@@ -1857,19 +1857,19 @@ dptr dp1, dp2;
 #ifdef Concurrent
          if (BlkLoc(source)->Coexpr.status & Ts_Async){
 	    numchar = 6;
-	    Protect (reserve(Strings, len + numchar), return Error);
-            Protect(t = alcstr("thread", numchar), return Error);
+	    Protect (reserve(Strings, len + numchar), return RunError);
+            Protect(t = alcstr("thread", numchar), return RunError);
 	    }
    	 else
 #endif					/* Concurrent */
             {
 	    numchar = 13;
-	    Protect (reserve(Strings, len + numchar), return Error);
-            Protect(t = alcstr("co-expression", numchar), return Error);
+	    Protect (reserve(Strings, len + numchar), return RunError);
+            Protect(t = alcstr("co-expression", numchar), return RunError);
 	    }
 
          StrLoc(*dp2) = t;
-         Protect(alcstr(sbuf, len), return Error);
+         Protect(alcstr(sbuf, len), return RunError);
          StrLen(*dp2) = numchar + len;
          }
 
@@ -1877,7 +1877,7 @@ dptr dp1, dp2;
          /* 
           * foreign monitored tapped variable 
           */
-         Protect(t = alcstr("Trapped_monitored", (word)(17)), return Error);
+         Protect(t = alcstr("Trapped_monitored", (word)(17)), return RunError);
          StrLoc(*dp2) = t;
          StrLen(*dp2) = 17;
          } 
@@ -1887,7 +1887,7 @@ dptr dp1, dp2;
 	 if (Type(*dp1) == T_Intarray) {
 	    sprintf(sbuf, "intarray(?)");
 	    len = strlen(sbuf);
-	    Protect(t = alcstr(sbuf, len), return Error);
+	    Protect(t = alcstr(sbuf, len), return RunError);
 	    StrLoc(*dp2) = t;
 	    StrLen(*dp2) = len;
 	    }
@@ -1899,12 +1899,12 @@ dptr dp1, dp2;
             */
            sprintf(sbuf, "external(%ld)",(long)BlkD(*dp1,External)->blksize);
            len = strlen(sbuf);
-           Protect(t = alcstr(sbuf, len), return Error);
+           Protect(t = alcstr(sbuf, len), return RunError);
            StrLoc(*dp2) = t;
            StrLen(*dp2) = len;
            }
          else {
-	    ReturnErrVal(123, source, Error);
+	    ReturnErrVal(123, source, RunError);
             }
       }
    return Succeeded;

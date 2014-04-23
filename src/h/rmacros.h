@@ -126,6 +126,9 @@
  *  Note, some conversion routines also return type codes. Other routines may
  *  return positive values other than return codes. sort() places restrictions
  *  on Less, Equal, and Greater.
+ *
+ * The symbol Error is used in Windows 8.1 header file ws2tcpip.h, so Unicon's
+ * Error has been renamed RunError.
  */
 
 #define Less		-1
@@ -138,7 +141,7 @@
 #define Failed		-5
 #define Defaulted	-6
 #define Succeeded	-7
-#define Error		-8
+#define RunError	-8
 
 #define GlobalName	0
 #define StaticName	1

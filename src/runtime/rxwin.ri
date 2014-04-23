@@ -12,22 +12,23 @@
 XSizeHints size_hints;
 
 /*
- * Utility macros to extract RGB color components when dealing with TRUE COLOR visuals.
+ * Utility macros to extract RGB color components when dealing with
+ * TRUE COLOR visuals.
  */
 
-#define TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask)	\
-   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;	\
-   do {	    	 	   	    	      	       		 		\
-      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask;	\
-      while (!(rmask & 1)) { rshift++; rmask >>= 1; }				\
-      while (rmask & 1) { rbits++; rmask >>= 1; } 				\
-      if (rbits>8) { rshift += rbits-8; rbits = 8; } 				\
-      while (!(gmask & 1)) { gshift++; gmask >>= 1; }				\
-      while (gmask & 1) { gbits++; gmask >>= 1; } 				\
-      if (gbits>8) { gshift += gbits-8; gbits = 8;} 				\
-      while (!(bmask & 1)) { bshift++; bmask >>= 1; }				\
-      while (bmask & 1) { bbits++; bmask >>= 1; }  				\
-      if (bbits>8) { bshift += bbits-8; bbits = 8; }				\
+#define TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(red_mask, green_mask, blue_mask) \
+   unsigned long rshift=0, rbits=0, gshift=0, gbits=0, bshift=0, bbits=0;    \
+   do {	    	 	   	    	      	       		 	     \
+      unsigned long rmask = red_mask, gmask = green_mask, bmask = blue_mask; \
+      while (!(rmask & 1)) { rshift++; rmask >>= 1; }			     \
+      while (rmask & 1) { rbits++; rmask >>= 1; } 			     \
+      if (rbits>8) { rshift += rbits-8; rbits = 8; } 			     \
+      while (!(gmask & 1)) { gshift++; gmask >>= 1; }			     \
+      while (gmask & 1) { gbits++; gmask >>= 1; } 			     \
+      if (gbits>8) { gshift += gbits-8; gbits = 8;} 			     \
+      while (!(bmask & 1)) { bshift++; bmask >>= 1; }			     \
+      while (bmask & 1) { bbits++; bmask >>= 1; }  			     \
+      if (bbits>8) { bshift += bbits-8; bbits = 8; }			     \
    } while (0)
 
 #define TRUECOLOR_GET_RGB_BYTE(c, cshifts, cbits) (((c >> cshift) & ((1 << cbits)-1)) << (8-cbits))
@@ -1228,7 +1229,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       if((StrLen(attr[i])<9)||strncmp(StrLoc(attr[i]),"display=",8)) {
 	 switch (wattrib((wbp) w, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt,
 			 answer)) {
-	 case Error:
+	 case RunError:
 	    *err_index = i;
 	    return NULL;
 	 case Failed:
@@ -1337,7 +1338,7 @@ static void setclasshints(wbp w)
 /*
  * Create a canvas.
  *  If a window, cause the window to actually become visible on the screen.
- *  returns Succeeded, Failed, or Error
+ *  returns Succeeded, Failed, or RunError
  */
 int wmap(wbp w)
    {
@@ -1558,7 +1559,7 @@ int wmap(wbp w)
 	 }
       if (ws->iconlabel == NULL) {
 	 if ((ws->iconlabel = salloc(ws->windowlabel)) == NULL)
-	    ReturnErrNum(305, Error);
+	    ReturnErrNum(305, RunError);
 	 }
       XSetStandardProperties(stddpy, stdwin, ws->windowlabel, ws->iconlabel,
 			     0,0,0, &size_hints);
@@ -1613,7 +1614,7 @@ int wmap(wbp w)
       int hm;
       while (!ISEXPOSED(w) && (ws->iconic != IconicState || ws->iconwin)) {
 	 if ((hm = handle_misc(wd, w)) < 1) {
-	    if (hm == -1) return Error;
+	    if (hm == -1) return RunError;
 	    else if (hm == 0) {
 	       /* how to handle failure? */
 	       }
@@ -1701,7 +1702,7 @@ char *geo;
    STDLOCALS(w);
 
    if ((status = parsegeometry(geo, &x, &y, &width, &height)) == 0)
-      return Error;
+      return RunError;
    if (status & 1) {
       ws->width = size_hints.width = width;
       ws->height = size_hints.height = height;
@@ -1752,7 +1753,7 @@ char *val;
    STDLOCALS(w);
    if (ws->iconlabel != NULL) free(ws->iconlabel);
    if ((ws->iconlabel = salloc(val)) == NULL)
-      ReturnErrNum(305, Error);
+      ReturnErrNum(305, RunError);
    
    if (stddpy && stdwin) {
       XSetIconName(stddpy, stdwin, w->window->iconlabel);
@@ -1777,7 +1778,7 @@ char *s;
    CURTSTATE();
    if (ws->windowlabel != NULL) free(ws->windowlabel);
    if ((ws->windowlabel = salloc(s)) == NULL)
-      ReturnErrNum(305, Error);
+      ReturnErrNum(305, RunError);
    if (ws->display && ws->display->display && ws->win)
       XStoreName(ws->display->display, ws->win,
 	 *ws->windowlabel ? ws->windowlabel : " ");    /* empty string fails */
@@ -1843,7 +1844,7 @@ char *val;
 	    XSetForeground(stddpy, stdgc, wd->colors[wc->fg].c);
 	 }
       wc->drawop = si_s2i(drawops,val);
-      if (wc->drawop == -1) { wc->drawop = GXcopy; return Error; }
+      if (wc->drawop == -1) { wc->drawop = GXcopy; return RunError; }
       }
    if (stdgc) XSetFunction(stddpy, stdgc, wc->drawop);
    return Succeeded;
@@ -1980,7 +1981,7 @@ char *s;
 	    XSync(stddpy, False);
 	    while (ws->iconic != IconicState)
 	       if ((hm = handle_misc(wd, NULL)) < 1) {
-		  if (hm == -1) return Error;
+		  if (hm == -1) return RunError;
 		  else if (hm == 0) {
 		     return Failed;
 		     }
@@ -2063,7 +2064,7 @@ char *s;
 	       XFlush(wd->display);			      /* force out request */
 	       XGetWMName(wd->display, ws->win, &textprop);    /* force WM round trip */
 	       XSync(wd->display, False);		      /* NOW sync */
-	       if (pollevent() == -1) return Error;
+	       if (pollevent() == -1) return RunError;
 	       moveWindow(w, -ws->posx, -ws->posy);
 	       XFlush(wd->display);			      /* force out request */
 	       XGetWMName(wd->display, ws->win, &textprop);    /* force WM round trip */
@@ -2102,7 +2103,7 @@ char *s;
 	    }
 	 }
       }
-   else return Error;
+   else return RunError;
    XSync(ws->display->display, False);
    return Succeeded;
    }
@@ -2140,7 +2141,7 @@ char *s;
 	 ws->iconic = RootState;
       else return Failed;
       }
-   else return Error;
+   else return RunError;
    XSync(ws->display->display, False);
    return Succeeded;
    }
@@ -2157,13 +2158,13 @@ char *s;
    ws->iconx = atol(s2);
    while (isspace(*s2)) s2++;
    while (isdigit(*s2)) s2++;
-   if (*s2++ != ',') return Error;
+   if (*s2++ != ',') return RunError;
    ws->icony = atol(s2);
 
    if (ws->win) {
       if (ws->iconwin == (Window) NULL)
 	 makeIcon(w, ws->iconx, ws->icony);
-      if (remap(w, ws->iconx, ws->icony) == -1) return Error;
+      if (remap(w, ws->iconx, ws->icony) == -1) return RunError;
       }
    return Succeeded;
    }
@@ -2248,7 +2249,7 @@ char *s;
       || !strcmp(s, "opaquestippled") || !strcmp(s, "opaquepatterned")) {
       wc->fillstyle = FillOpaqueStippled;
       }
-   else return Error;
+   else return RunError;
    if (stdpix) {
       XSetFillStyle(stddpy, stdgc, wc->fillstyle);
       }
@@ -2273,7 +2274,7 @@ char *s;
    else if (!strcmp(s, "doubledash") || !strcmp(s, "striped")) {
       wc->linestyle = LineDoubleDash;
       }
-   else return Error;
+   else return RunError;
    if (stdpix) {
       XSetLineAttributes(stddpy, stdgc,
 	 wc->linewidth, wc->linestyle, CapProjecting, JoinMiter);
@@ -2292,7 +2293,7 @@ LONG linewid;
    XGCValues gcv;
    STDLOCALS(w);
 
-   if (linewid < 0) return Error;
+   if (linewid < 0) return RunError;
    wc->linewidth = linewid;
    if (stdpix) {
       gcv.line_width = linewid;
@@ -3299,13 +3300,13 @@ int *retval;
       if (ws->theColors == NULL) {
 	 ws->theColors = (short *)calloc(WMAXCOLORS, sizeof(short));
 	 if (ws->theColors == NULL)
-	    return Error;
+	    return RunError;
 	 }
       ws->theColors[ws->numColors++] = i;
       }
 
    if (ac > 0) {                     /* set the color */
-      if (ac != 1) return Error;
+      if (ac != 1) return RunError;
       /*
        * old-style check for C integer
        */
@@ -3319,7 +3320,7 @@ int *retval;
 	 }
       else {
 	 if (!cnv:C_string(argv[0],str)) {
-	    ReturnErrVal(103,argv[0], Error);
+	    ReturnErrVal(103,argv[0], RunError);
 	    }
          if (parsecolor(w, str, &clr.red, &clr.green, &clr.blue, &alpha) != Succeeded) {
             free_xcolor(w, pixels[0]);
@@ -3439,7 +3440,7 @@ word len;
     */
    im = getximage(w, x, y, width, height, ch == TCH1);
    if (im == NULL)
-      return Error;
+      return RunError;
 
    /*
     * Read the image string and set the pixel values.  Note that
@@ -4055,7 +4056,7 @@ int len;
    if (wc->patternname != NULL)
       free(wc->patternname);
    wc->patternname = malloc(len+1);
-   if (wc->patternname == NULL) ReturnErrNum(305, Error);
+   if (wc->patternname == NULL) ReturnErrNum(305, RunError);
    strncpy(wc->patternname, name, len);
    wc->patternname[len] = '\0';
    
@@ -4067,8 +4068,8 @@ int len;
       switch (parsepattern(name, len, &width, &nbits, bits)) {
       case Failed:
 	 return Failed;
-      case Error:
-	 ReturnErrNum(145, Error);
+      case RunError:
+	 ReturnErrNum(145, RunError);
 	 }
       if (!stdgc) return Succeeded;
       return SetPatternBits(w, width, bits, nbits);
@@ -4192,7 +4193,7 @@ dptr dp;
    if (is:file(*dp) && (BlkD(*dp,File)->status & Fs_Window)) {
       wbp x = BlkLoc(*dp)->File.fd.wb;
       if ((ws->iconimage = salloc(x->window->windowlabel)) == NULL)
-	 ReturnErrNum(305, Error);
+	 ReturnErrNum(305, RunError);
       pix = XCreatePixmap(stddpy, DefaultRootWindow(stddpy),
 			  x->window->width, x->window->height,
 			  DefaultDepth(stddpy,wd->screen));
@@ -4211,19 +4212,19 @@ dptr dp;
 	 ws->icony = ws->y;
 	 }
       if (remap(w,ws->iconx,ws->icony) == -1)
-	 ReturnErrNum(144, Error);
+	 ReturnErrNum(144, RunError);
 
       }
    /* get the pixmap file named by x */
    else if (is:string(*dp)) {
       unsigned int height, width;
       if (!cnv:C_string(*dp,tmp))
-	 ReturnErrVal(103, *dp, Error);
+	 ReturnErrVal(103, *dp, RunError);
 
       if ((ws->iconimage != NULL) && strcmp(ws->iconimage, ""))
 	free(ws->iconimage);
       if ((ws->iconimage = salloc(tmp)) == NULL)
-	 ReturnErrNum(305, Error);
+	 ReturnErrNum(305, RunError);
       if (ws->iconwin == (Window) NULL) makeIcon(w,0,0);
       else {
 	 pix = loadimage(w, ws->iconimage, &height, &width, 0, &status);
@@ -4239,7 +4240,7 @@ dptr dp;
 	 ws->iconw = width;
 	 ws->iconh = height;
 	 if (remap(w,ws->iconx,ws->icony) == -1)
-	    ReturnErrNum(144, Error);
+	    ReturnErrNum(144, RunError);
 	 }
       }
    else
@@ -4974,7 +4975,7 @@ char my_wmap(wbp w)
 /*
       if (ws->iconlabel == NULL) {
 	 if ((ws->iconlabel = salloc(ws->windowlabel)) == NULL)
-	    ReturnErrNum(305, Error);
+	    ReturnErrNum(305, RunError);
 	 }
 */
       XSetStandardProperties(wd->display, ws->win, ws->windowlabel, ws->iconlabel,

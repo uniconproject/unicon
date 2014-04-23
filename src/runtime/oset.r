@@ -240,7 +240,7 @@ operator{1} ++ union(x,y)
           * Copy x and ensure there's room for *x + *y elements.
           */
          if (cpset(&x, &result, BlkD(x,Set)->size + BlkD(y,Set)->size)
-            == Error) {
+            == RunError) {
             runerr(0);
             }
 

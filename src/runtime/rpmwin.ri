@@ -1230,7 +1230,7 @@ LONG ParseRGBValue(char *buf,double gamma)
    {
    int r, g, b;
 
-   if (parsecolor((wbp)NULL, buf, &r, &g, &b) == Error) return -1;
+   if (parsecolor((wbp)NULL, buf, &r, &g, &b) == RunError) return -1;
 /* Apply GAMMA Correction */
    r = 65535 * pow(r/65535.0,gamma);
    g = 65535 * pow(g/65535.0,gamma);
@@ -2265,7 +2265,7 @@ int SetPattern(wbp w, char *name, int len)
    * If the pattern starts with a number it is a width , bits encoding
    */
   if ((len > 0) && ((name[0] == '#') || isdigit(name[0]))) {
-     if (parsepattern(name, len, &width, &nbits, buf) == Error)
+     if (parsepattern(name, len, &width, &nbits, buf) == RunError)
 	ReturnErrNum(144, 0);
      return SetPatternBits(w, width, buf, nbits);
      }
@@ -2337,7 +2337,7 @@ int nbits;
 
    /* this function will do all the work */
    if (!SetNewBitPattern(w->context, data))
-      return Error;
+      return RunError;
    return Succeeded;
    }
 
@@ -2567,7 +2567,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 	 DosReleaseMutexSem(ws->mutex);
 	 wclose(wb);
 	 return NULL;
-      case Error:
+      case RunError:
 	 DosReleaseMutexSem(ws->mutex);
 	 /* think of something to do here */
 	 break;
@@ -3098,7 +3098,7 @@ char *geo;
     * figure out what we are dealing with
     */
    if ((stat = parsegeometry(geo, &x, &y, &width, &height)) == 0) {
-      return Error;
+      return RunError;
     }
    else {
       /*
@@ -3191,7 +3191,7 @@ int setcanvas(wbp w,char *s)
 	WinShowWindow(stdwin,FALSE);
 	return Succeeded;
       }
-   else return Error;
+   else return RunError;
    WinSetWindowPos(stdwin,HWND_TOP,0,0,0,0,cmd);
    return Succeeded;
    }
@@ -3226,7 +3226,7 @@ char *val;
       ws->winState = (ws->winState & WS_HIDDEN) | WS_MAX;
       flags |= SWP_MAXIMIZE;
       }
-   else return Error;
+   else return RunError;
    if( !(ws->winState & WS_HIDDEN)) flags |= SWP_SHOW;
 
    height = ws->height + TITLEHEIGHT + (BORDERHEIGHT << 1);
@@ -3408,7 +3408,7 @@ wbp w, w2;
     * make the dependencies
     */
    if (!AddWindowDep(ws, wc) || !AddContextDep(ws, wc))
-      return Error;
+      return RunError;
    return Succeeded;
    }
 
@@ -3579,7 +3579,7 @@ int setfillstyle(wbp w,char *s)
 	 wc->fillstyle = FS_OPAQUESTIPPLE;
 	 wc->areaBundle.usBackMixMode = BM_OVERPAINT;
 	 }
-      else return Error;
+      else return RunError;
       /*
        * fixup the bundle
        */
@@ -3608,7 +3608,7 @@ int setlinestyle(wbp w,char *s)
    STDLOCALS(w);
 
    if ((ltype = si_s2i(siLineTypes, s)) < 0)
-      return Error;
+      return RunError;
    wc->lineBundle.usType = ltype;
    UnsetLineContext(wc);
    return Succeeded;
@@ -3622,7 +3622,7 @@ int setlinewidth(wbp w, LONG linewid)
    STDLOCALS(w);
 
    if (linewid < 0)
-      return Error;
+      return RunError;
    if (linewid == 0) wc->lineBundle.lGeomWidth = LINEWIDTH_DEFAULT;
    else wc->lineBundle.lGeomWidth = linewid - 1;
    UnsetLineContext(wc);
@@ -3844,7 +3844,7 @@ int setdrawop(wbp w,char *val)
    USHORT foreground = FM_OVERPAINT;
 
    if ((dop = si_s2i(siMixModes, val)) < 0)
-      return Error;
+      return RunError;
 
    /* check if we really need to change - dop != wc->drawop */
 
@@ -4407,7 +4407,7 @@ int argc;
     * make the dependencies
     */
    if (!AddWindowDep(ws, wc) || !AddContextDep(ws, wc))
-      return Error;
+      return RunError;
    /*
     * build the presentation space and DC for the bitmap
     */
@@ -4565,7 +4565,7 @@ dptr dp;
    else if (is:string(*dp)) {
       int height, width;
       if (!cnv:C_string(*dp,tmp))
-	 ReturnErrVal(103, *dp, Error);
+	 ReturnErrVal(103, *dp, RunError);
       /*
        * try to load the bitmap
        */

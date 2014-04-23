@@ -439,7 +439,7 @@ void EVVariable(dptr dx, int eventcode)
        * To check: did get_name allocate out of monitor?
        */
       }
-   else if (i == Error) {
+   else if (i == RunError) {
       syserr("get_name error in EVVariable");
       }
    else {

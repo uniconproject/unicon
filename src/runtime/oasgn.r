@@ -24,7 +24,7 @@
            store[store[type(x).str_var]] = string
            }
         inline {
-           if (subs_asgn(&x, (const dptr)&y) == Error)
+           if (subs_asgn(&x, (const dptr)&y) == RunError)
               runerr(0);
            }
         }
@@ -33,7 +33,7 @@
            store[store[type(x).trpd_tbl].tbl_val] = type(y)
            }
         inline {
-           if (tvtbl_asgn(&x, (const dptr)&y) == Error)
+           if (tvtbl_asgn(&x, (const dptr)&y) == RunError)
               runerr(0);
            }
          }
@@ -43,7 +43,7 @@
            store[store[type(x).trpd_monitored]] = type(y)
            }
         inline {
-           if (tvmonitored_asgn(&x, (const dptr)&y) == Error)
+           if (tvmonitored_asgn(&x, (const dptr)&y) == RunError)
               runerr(0);
            }
 #endif                                /* MonitoredTrappedVar */
@@ -465,7 +465,7 @@ const dptr src;
    word postlen;  /* length of portion of string following substring */
 
    if (!cnv:tmp_string(*src, srcstr))
-      ReturnErrVal(103, *src, Error);
+      ReturnErrVal(103, *src, RunError);
 
    /*
     * Be sure that the variable in the trapped variable points
@@ -475,18 +475,18 @@ const dptr src;
    tvsub = BlkD(*dest, Tvsubs);
    deref(&tvsub->ssvar, &deststr);
    if (!is:string(deststr))
-      ReturnErrVal(103, deststr, Error);
+      ReturnErrVal(103, deststr, RunError);
    prelen = tvsub->sspos - 1;
    poststrt = prelen + tvsub->sslen;
    if (poststrt > StrLen(deststr))
-      ReturnErrNum(205, Error);
+      ReturnErrNum(205, RunError);
 
    /*
     * Form the result string.
     *  Start by allocating space for the entire result.
     */
    len = prelen + StrLen(srcstr) + StrLen(deststr) - poststrt;
-   Protect(s = alcstr(NULL, len), return Error);
+   Protect(s = alcstr(NULL, len), return RunError);
    StrLoc(rsltstr) = s;
    StrLen(rsltstr) = len;
    /*
@@ -529,8 +529,8 @@ const dptr src;
          k_pos = 1;
          }
       tvtbl: {
-         if (tvtbl_asgn(&tvsub->ssvar, (const dptr)&rsltstr) == Error)
-            return Error;
+         if (tvtbl_asgn(&tvsub->ssvar, (const dptr)&rsltstr) == RunError)
+            return RunError;
          }
       default: {
          Asgn(tvsub->ssvar, rsltstr);
@@ -577,10 +577,10 @@ const dptr src;
 	  * as insert().  key is bp->tref, and value is src
 	  */
 	 if (!cnv:string(bp->tref, bp->tref)) { /* key */
-	    ReturnErrVal(103, bp->tref, Error);
+	    ReturnErrVal(103, bp->tref, RunError);
 	    }
 	 if (!cnv:string(tval, tval)) { /* value */
-	    ReturnErrVal(103, tval, Error);
+	    ReturnErrVal(103, tval, RunError);
 	    }
 	 key.dptr = StrLoc(bp->tref);
 	 key.dsize = StrLen(bp->tref);
@@ -598,7 +598,7 @@ const dptr src;
 	 return Failed; /* should set runerr instead, or maybe syserr */
       }
 
-   Protect(te = alctelem(), return Error);
+   Protect(te = alctelem(), return RunError);
 
    /*
     * First see if reference is in the table; if it is, just update
@@ -648,7 +648,7 @@ const dptr src;
 
    count = BlkD(curpstate->eventsource,Coexpr)->actv_count;
    if (count != BlkD(*dest,Tvmonitored)->cur_actv)
-      ReturnErrVal(217, *dest, Error);
+      ReturnErrVal(217, *dest, RunError);
 
    *VarLoc(BlkD(*dest,Tvmonitored)->tv) = *src;
    return Succeeded;

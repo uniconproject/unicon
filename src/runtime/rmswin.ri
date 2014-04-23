@@ -322,7 +322,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       case Failed:
 	 wclose(w);
 	 return NULL;
-      case Error:
+      case RunError:
 	 /* think of something to do here */
 	 break;
 	 }
@@ -1484,7 +1484,7 @@ char *geo;
    int width = 0, height = 0;
    int x = 0, y = 0, status;
    if ((status = parsegeometry(geo, &x, &y, &width, &height)) == 0)
-      return Error;
+      return RunError;
    if (status & 1) {
       ws->width = width;
       ws->height = height;
@@ -1523,7 +1523,7 @@ char *s;
       SETTOBEHIDDEN(ws);
       }
    else {
-      return Error;
+      return RunError;
       }
    if (stdwin)
       ShowWindow(stdwin, cmd);
@@ -1889,7 +1889,7 @@ char *s;
          wc->bkmode = OPAQUE;
 	 }
       else {
-	 return Error;
+	 return RunError;
 	 }
       }
    return Succeeded;
@@ -1906,7 +1906,7 @@ char *s;
    SHORT ltype;
 
    if ((ltype = si_s2i(siLineTypes, s)) < 0)
-      return Error;
+      return RunError;
    wc->pen.lopnStyle = ltype;
    resetfg(w);
    if(!strcmp(s, "striped")) wc->bkmode = OPAQUE;
@@ -2164,7 +2164,7 @@ char *val;
          resetfg(w);
 	 }
       wc->drawop = si_s2i(drawops,val);
-      if (wc->drawop == -1) { wc->drawop = R2_COPYPEN; return Error; }
+      if (wc->drawop == -1) { wc->drawop = R2_COPYPEN; return RunError; }
       }
    return Succeeded;
    }
@@ -3096,7 +3096,7 @@ int mutable_color(wbp w, dptr argv, int argc, int *retval)
    if (argc > 0) {                     /* set the color */
       if (argc != 1) {
          FREE_STDLOCALS(w);
-         return Error;
+         return RunError;
          }
       /*
        * old-style check for C integer
@@ -3109,14 +3109,14 @@ int mutable_color(wbp w, dptr argv, int argc, int *retval)
 	 if (GetPaletteEntries(palette, -IntVal(argv[0]),
 	    1, lp.palPalEntry) == 0) {
             FREE_STDLOCALS(w);
-            return Error;
+            return RunError;
             }
 	 /* convert to linear color? */
 	 }
       else {
 	 if (!cnv:C_string(argv[0],str)) {
             FREE_STDLOCALS(w);
-	    ReturnErrVal(103,argv[0], Error);
+	    ReturnErrVal(103,argv[0], RunError);
 	    }
 	 if (parsecolor(w, str, &r, &g, &b, &a) != Succeeded) {
 	    /* reduce logical palette size and count */
@@ -3925,8 +3925,8 @@ int len;
       switch (parsepattern(name, len, &width, &nbits, bits)) {
       case Failed:
 	 return Failed;
-      case Error:
-	 ReturnErrNum(145, Error);
+      case RunError:
+	 ReturnErrNum(145, RunError);
 	 }
       if (w->window->iconwin == NULL) return Succeeded;
       return SetPatternBits(w, width, bits, nbits);
@@ -3952,7 +3952,7 @@ int len;
 	 }     
       return Succeeded;
       }
-   ReturnErrNum(145, Error);
+   ReturnErrNum(145, RunError);
    }
 
 /*
@@ -4560,8 +4560,8 @@ int nativemenubar(wbp w, int total, int argc, dptr argv, int warg, dptr d)
       tempMenu = CreateMenu();
       for(i=0; i < r; i++) {
          c_get(hp, d);
-         if (!is:string(*d)) return Error;
-         if (!cnv:C_string(*d, s)) return Error;
+         if (!is:string(*d)) return RunError;
+         if (!cnv:C_string(*d, s)) return RunError;
          s = strdup(s);
          if (i == 0) s2=s;
          else

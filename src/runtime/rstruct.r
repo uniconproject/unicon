@@ -82,7 +82,7 @@ int f(dptr dp1, dptr dp2, word i, word j)
    if (nslots == 0)
       nslots = MinListSlots;
 
-   Protect(lp2 = (struct b_list *) alclist(size, nslots), return Error);
+   Protect(lp2 = (struct b_list *) alclist(size, nslots), return RunError);
    cpslots(dp1, lp2->listhead->Lelem.lslots, i, j);
 
    /*
@@ -157,7 +157,7 @@ int tcode;
     */
    dst = hmake(tcode, BlkPH(BlkLoc(*dp1),Set,mask) + 1, n);
    if (dst == NULL)
-      return Error;
+      return RunError;
    /*
     * Copy the header and slot blocks.
     */
@@ -178,11 +178,11 @@ int tcode;
 	      ep != NULL && BlkType(ep) != T_Table;
 	      ep = (struct b_selem *)ep->clink) {
 	    if (tcode == T_Set) {
-               Protect(se = alcselem(&ep->setmem, ep->hashnum), return Error);
+               Protect(se = alcselem(&ep->setmem, ep->hashnum),return RunError);
                se->clink = ep->clink;
 	       }
 	    else {
-	       Protect(se = (struct b_selem *)alctelem(), return Error);
+	       Protect(se = (struct b_selem *)alctelem(), return RunError);
 	       *(struct b_telem *)se = *(struct b_telem *)ep; /* copy table entry */
 	       if (BlkType(se->clink) == T_Table)
 		  se->clink = dst;
@@ -951,13 +951,13 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    StrLoc(d) = (char *)&ec;
    StrLen(d) = 1;
 
-   if (! is:table(p->valuemask)) return Error;
+   if (! is:table(p->valuemask)) return RunError;
    hn = hash(&d);
    foo = memb(BlkLoc(p->valuemask), &d, hn, &rv);
    if (rv == 1) {
       /* found a value mask for this event code; use it */
       d = Blk(*foo,Telem)->tval;
-      if (! is:set(d)) return Error;
+      if (! is:set(d)) return RunError;
       hn = hash(val);
       foo = memb(BlkLoc(d), val, hn, &rv);
       if (rv == 1) return Succeeded;
@@ -1140,7 +1140,7 @@ int arraytolist(struct descrip *arr)
       if (lparr->listtail!=NULL) return Succeeded;
       }
    else
-      return Error;
+      return RunError;
 
    if (BlkType(lparr->listhead) == T_Realarray) {
 
@@ -1155,7 +1155,7 @@ int arraytolist(struct descrip *arr)
        (ap->blksize - sizeof(struct b_realarray) + sizeof(double)) /
 	       sizeof(double));
 
-      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return Error );      
+      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );      
       lelemp->listprev = lelemp->listnext = (union block *) lparr;
       lparr->listhead = lparr->listtail = (union block *)lelemp;
       
@@ -1232,7 +1232,7 @@ int arraytolist(struct descrip *arr)
       lsize = (ndims>1? ap->dims->Intarray.a[0]:
        (ap->blksize - sizeof(struct b_intarray) + sizeof(word))/sizeof(word));
 
-      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return Error );      
+      Protect(lelemp = alclstb(lsize, (word)0, (word)0) , return RunError );      
       lelemp->listprev = lelemp->listnext = (union block *) lparr;
       lparr->listhead = lparr->listtail = (union block *)lelemp;
       
@@ -1290,7 +1290,7 @@ int arraytolist(struct descrip *arr)
 
       } /* IntArray*/
    else
-      return Error;
+      return RunError;
 
    return Succeeded;
 }
@@ -1352,9 +1352,9 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
    */
    size =j - i ;
    if (!reserve(Blocks, (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray)
-      + size * (word)sizeof(double))))  return Error;
+      + size * (word)sizeof(double))))  return RunError;
    
-   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return Error);
+   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return RunError);
 
    if (!skipcopyelements){
       word k;
@@ -1382,7 +1382,7 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
 	  for (k=0; k<size; k++,i++){
 	    c_traverse(lp, &val, i); /* This is not very efficient */
 	    if (!cnv:C_double(val, ap2->a[k]))
-	      return Error;
+	      return RunError;
 	    }
 	  }
 	}
@@ -1390,7 +1390,7 @@ int cplist2realarray(dptr dp, dptr dp2, word i, word j,  word skipcopyelements)
 	dp = &dp[i];
 	for (k=0; k<size; k++){
 	  if (!cnv:C_double(*dp++, ap2->a[k]))
-	    return Error;
+	    return RunError;
 	    }
 	  }
       } /* skip */
@@ -1421,9 +1421,9 @@ int cpint2realarray(dptr dp1, dptr dp2, word i, word j, int copyelements)
    size = j - i;
    bytes = (word)(sizeof(struct b_list) + (word)sizeof(struct b_realarray) +
 		size * (word)sizeof(double));
-   if (!reserve(Blocks, bytes)) return Error;
+   if (!reserve(Blocks, bytes)) return RunError;
    
-   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return Error);
+   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return RunError);
    ap = (struct b_intarray *) BlkD(*dp1, List)->listhead;
    
    if (copyelements){
@@ -1479,9 +1479,9 @@ int f(dptr dp1, dptr dp2, word i, word j)
    size =j - i;
    if (!reserve(Blocks, (word)(sizeof(struct b_list) +
 			       (word)sizeof(struct b_realarray) +
-				size * (word)sizeof(double))))  return Error;
+				size * (word)sizeof(double))))  return RunError;
    
-   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return Error);
+   Protect(ap2 = (struct b_realarray *) alcrealarray(size), return RunError);
    ap = (struct b_realarray *) BlkD(*dp1, List)->listhead;
 
    if (copyelements){
@@ -1543,9 +1543,9 @@ int f(dptr dp1, dptr dp2, word i, word j)
    size =j - i;
    if (!reserve(Blocks, (word)(sizeof(struct b_list) +
 			       (word) sizeof(struct b_intarray) +
-				size * (word) sizeof(word))))  return Error;
+				size * (word) sizeof(word))))  return RunError;
    
-   Protect(ap2 = (struct b_intarray *) alcintarray(size), return Error);
+   Protect(ap2 = (struct b_intarray *) alcintarray(size), return RunError);
    ap = (struct b_intarray *) BlkD(*dp1, List)->listhead;
    
    if (copyelements){

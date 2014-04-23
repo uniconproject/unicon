@@ -915,7 +915,7 @@ int redraw3D(wbp w)
 			memsize += strlen(wc->selectionnamelist[i])+1;
 		     }
 
-	          Protect(tmpname = alcstr(NULL, memsize), return Error);
+	          Protect(tmpname = alcstr(NULL, memsize), return RunError);
 	          tmpname[0] = '\0';
 
 		  while (numnames) {
@@ -1221,7 +1221,7 @@ int traversefunctionlist(wbp w)
             bp1->listprev = (union block *) funclist;
          }
 	 if (! is:integer(bp1->lslots[k1])) { /* should check for large int! */
-	    return Error;
+	    return RunError;
 	    }
          tmp = IntVal(bp1->lslots[k1]);
 
@@ -1234,7 +1234,7 @@ int traversefunctionlist(wbp w)
 	       v = realloc(v, funclist->size * sizeof (double));
 	       }
 	    vsize = funclist->size-1;
-	    if (v == NULL) return Error;
+	    if (v == NULL) return RunError;
 	    }
 
          switch(tmp & ~0xf) {
@@ -1783,14 +1783,14 @@ int setlinewidth3D(wbp w, LONG linewid)
    tended struct descrip f;
    struct descrip  width;
 
-   if (linewid < 0) return Error;
+   if (linewid < 0) return RunError;
    makecurrent(w);
    setlinewidth(w, linewid);
    glLineWidth(linewid);
 
    /* create a list */
    if (create3Dlisthdr(&f, "linewidth", 4)!=Succeeded)
-     return Error;
+     return RunError;
 
    MakeInt(linewid, &width);
    c_put(&f, &width);
@@ -1825,7 +1825,7 @@ int setmaterials(wbp w, char* s)
 
       /* create a list element for each material property */
       if (create3Dlisthdr(&f, "Fg", 7)!=Succeeded)
-	return Error;
+	return RunError;
       
      /*
       * parse the string to determine the material property and its value
@@ -2155,7 +2155,7 @@ int setmatrixmode(char *s)
 {
    if (!strcmp("modelview", s)) { glMatrixMode(GL_MODELVIEW); }
    else if (!strcmp("projection", s)) { glMatrixMode(GL_PROJECTION); }
-   else return Error;
+   else return RunError;
    return Succeeded;
 }
 
@@ -2186,7 +2186,7 @@ int settexcoords(wbp w, char* s)
 
    /* create a list */
    if (create3Dlisthdr(&f, "Texcoord", 4)!=Succeeded)
-     return Error;
+     return RunError;
 
    while(isspace(*s2)) s2++;
 
@@ -2236,7 +2236,7 @@ int settexcoords(wbp w, char* s)
          }
 
 
-      Protect(ap = (struct b_realarray *) alcrealarray(j), return Error);
+      Protect(ap = (struct b_realarray *) alcrealarray(j), return RunError);
       d.vword.bptr = (union block *) alclisthdr(j, (union block *) ap);
       d.dword = D_List;
       w->context->texcoords = ap;
@@ -2263,13 +2263,13 @@ int settexcoords(wbp w, char* s)
 
       /* Number of texture coordinates must be even */
       if (j % 2)
-	 return Error;
+	 return RunError;
       /* save the number of texture coordinates */
       w->context->numtexcoords = j;
       c_put(&(w->window->funclist), &f);
      }
    /* return an error for any other value */
-   else return Error;
+   else return RunError;
    return Succeeded;
 }
 
@@ -3186,14 +3186,14 @@ int setselectionmode(wbp w, char* s)
    makecurrent(w);
    /* create a list to store function information */
    if (create3Dlisthdr(&f, "Pick", 4)!=Succeeded)
-     return Error;
+     return RunError;
 
    if (!strcmp("on", s))
 	   wc->selectionenabled = 1;
    else if (!strcmp("off", s))
 	   wc->selectionenabled = 0;
    else
-	   return Error;
+	   return RunError;
 
    wc->app_use_selection3D = 1;
 

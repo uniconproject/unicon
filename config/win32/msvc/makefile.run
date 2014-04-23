@@ -1,3 +1,4 @@
+ICONX=iconx 
 OS=NT
 ENV=WIN32
 CPU=i386
@@ -340,242 +341,268 @@ xfxtra.$(O): fxtra.r fxposix.ri $(HDRS)
 #
 
 comp_all:
-	cd ../common; $(MAKE) $(ICOBJS) dlrgint.$(O)
+	cd ..\common
+	$(MAKE) $(ICOBJS) dlrgint.$(O)
+	cd ..\runtime
 	$(MAKE) db_lib
 
-db_lib: rt.db rt.a
+comp_all_uniconc:
+	cd ..\common
+	$(MAKE) $(ICOBJS) dlrgint.$(O)
+	cd ..\runtime
+	$(MAKE) db_lib_uniconc
+
+db_lib: rt.db rt.lib
+db_lib_uniconc: rt.db.uniconc rt.lib
 
 #
 # if rt.db is missing or any header files have been updated, recreate
 # rt.db from scratch along with the .$(O) files.
 #
 rt.db: $(HDRS)
-	$(RM) -f rt.db rt.a
+	$(RM) -f rt.db rt.lib
 	$(RTT) cnv.r data.r def.r errmsg.r fconv.r fmath.r\
 	  fmisc.r fmonitr.r fscan.r fstr.r fstranl.r fstruct.r\
 	  fsys.r fwindow.r init.r invoke.r keyword.r\
 	  lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
-	  oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
+	  oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r rmsg.r \
 	  rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
-	  rsys.r rgfxsys.r rwinsys.r rwindow.r fxtra.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	  rsys.r rgfxsys.r rwinsys.r rwindow.r rposix.r fxtra.r
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) *.c
 
-rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) \
+rt.db.uniconc: $(HDRS)
+	$(RM) -f rt.db rt.lib
+	$(RTT) -DUniconc cnv.r data.r def.r errmsg.r fconv.r fmath.r\
+	  fmisc.r fmonitr.r fscan.r fstr.r fstranl.r fstruct.r\
+	  fsys.r fwindow.r init.r invoke.r keyword.r\
+	  lmisc.r oarith.r oasgn.r ocat.r ocomp.r omisc.r\
+	  oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r rmsg.r\
+	  rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
+	  rsys.r rgfxsys.r rwinsys.r rwindow.r rposix.r fxtra.r
+	$(CC) $(CFLAGS) -DUniconc -c @rttcur.lnk
+	$(RM) *.c
+
+
+rt.lib: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) \
       cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) fscan.$(O)\
       fstr.$(O) fstranl.$(O) fstruct.$(O) fsys.$(O) fwindow.$(O) init.$(O) invoke.$(O)\
       keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
-      ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
+      ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rmsg.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
       rmisc.$(O) rstruct.$(O) rsys.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O)\
-      rwindow.$(O) ../common/xwindow.$(O)
-	$(RM) -f rt.a
-	ar qc rt.a `sed 's/$$/.$(O)/' rttfull.lst` ../common/rswitch.$(O)\
+      rposix.$(O) rwindow.$(O) ../common/xwindow.$(O)
+	$(RM) -f rt.lib
+	lib /OUT:rt.lib @rttfull.lnk ../common/rswitch.$(O)\
 	    ../common/long.$(O) ../common/time.$(O) \
-	    ../common/xwindow.$(O)
-	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
-	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
+	    ../common/xwindow.$(O) ../common/alloc.$(O)
+	cp rt.lib rt.db ../common/dlrgint.$(O) ../../bin
 
 cnv.$(O): cnv.r $(HDRS)
 	$(RTT) cnv.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) cnv.c
 
 data.$(O): data.r $(HDRS)
 	$(RTT) data.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) data.c
 
 def.$(O): def.r $(HDRS)
 	$(RTT) def.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) def.c
 
 errmsg.$(O): errmsg.r $(HDRS)
 	$(RTT) errmsg.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) errmsg.c
 
 fconv.$(O): fconv.r $(HDRS)
 	$(RTT) fconv.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fconv.c
 
 fmath.$(O): fmath.r $(HDRS)
 	$(RTT) fmath.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fmath.c
 
 fmisc.$(O): fmisc.r $(HDRS)
 	$(RTT) fmisc.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fmisc.c
 
 fmonitr.$(O): fmonitr.r $(HDRS)
 	$(RTT) fmonitr.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fmonitr.c
 
 fscan.$(O): fscan.r $(HDRS)
 	$(RTT) fscan.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fscan.c
 
 fstr.$(O): fstr.r $(HDRS)
 	$(RTT) fstr.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fstr.c
 
 fstranl.$(O): fstranl.r $(HDRS)
 	$(RTT) fstranl.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fstranl.c
 
 fstruct.$(O): fstruct.r $(HDRS)
 	$(RTT) fstruct.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fstruct.c
 
 fsys.$(O): fsys.r $(HDRS)
 	$(RTT) fsys.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fsys.c
 
 fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 	$(RTT) fwindow.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fwindow.c
 
 init.$(O): init.r $(HDRS)
 	$(RTT) init.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) init.c
 
 invoke.$(O): invoke.r $(HDRS)
 	$(RTT) invoke.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) invoke.c
 
 keyword.$(O): keyword.r $(HDRS)
 	$(RTT) keyword.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) keyword.c
 
 lmisc.$(O): lmisc.r $(HDRS)
 	$(RTT) lmisc.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) lmisc.c
 
 oarith.$(O): oarith.r $(HDRS)
 	$(RTT) oarith.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) oarith.c
 
 oasgn.$(O): oasgn.r $(HDRS)
 	$(RTT) oasgn.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) oasgn.c
 
 ocat.$(O): ocat.r $(HDRS)
 	$(RTT) ocat.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) ocat.c
 
 ocomp.$(O): ocomp.r $(HDRS)
 	$(RTT) ocomp.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) ocomp.c
 
 omisc.$(O): omisc.r $(HDRS)
 	$(RTT) omisc.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) omisc.c
 
 oref.$(O): oref.r $(HDRS)
 	$(RTT) oref.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) oref.c
 
 oset.$(O): oset.r $(HDRS)
 	$(RTT) oset.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) oset.c
 
 ovalue.$(O): ovalue.r $(HDRS)
 	$(RTT) ovalue.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) ovalue.c
 
 ralc.$(O): ralc.r $(HDRS)
 	$(RTT) ralc.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) ralc.c
 
 rcoexpr.$(O): rcoexpr.r $(HDRS)
 	$(RTT) rcoexpr.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rcoexpr.c
 
 rcomp.$(O): rcomp.r $(HDRS)
 	$(RTT) rcomp.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rcomp.c
 
 rdebug.$(O): rdebug.r $(HDRS)
 	$(RTT) rdebug.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rdebug.c
 
 rlrgint.$(O): rlrgint.r $(HDRS)
 	$(RTT) rlrgint.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rlrgint.c
 
 rlocal.$(O): rlocal.r $(HDRS)
 	$(RTT) rlocal.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rlocal.c
 
 rmemmgt.$(O): rmemmgt.r $(HDRS)
 	$(RTT) rmemmgt.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rmemmgt.c
 
 rmisc.$(O): rmisc.r $(HDRS)
 	$(RTT) rmisc.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rmisc.c
 
 rstruct.$(O): rstruct.r $(HDRS)
 	$(RTT) rstruct.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rstruct.c
 
 rsys.$(O): rsys.r $(HDRS)
 	$(RTT) rsys.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rsys.c
 
 rgfxsys.$(O): rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
 	$(RTT) rgfxsys.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rgfxsys.c
 
 rwinsys.$(O): rwinsys.r $(HDRS) $(GRAPHICSHDRS)
 	$(RTT) rwinsys.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rwinsys.c
 
 rwindow.$(O): rwindow.r $(HDRS) $(GRAPHICSHDRS)
 	$(RTT) rwindow.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rwindow.c
 
 rmsg.$(O): rmsg.r $(HDRS)
 	$(RTT) rmsg.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rmsg.c
+
+rposix.$(O): rposix.r $(HDRS)
+	$(RTT) rposix.r
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) rposix.c
 
 fxtra.$(O): fxtra.r $(HDRS)
 	$(RTT) fxtra.r
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(CC) $(CFLAGS) -c @rttcur.lnk
+	$(RM) fxtra.c

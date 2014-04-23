@@ -37,7 +37,7 @@ common:
 		cd ..\iconc
 
 iconc:		$(OBJS) $(COBJS)
-		$(CC) $(LDFLAGS) -o iconc $(OBJS) $(COBJS)
+		$(CC) $(LDFLAGS) $(OBJS) $(COBJS) -out:iconc.exe
 		cp iconc.exe ..\..\bin
 
 $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\

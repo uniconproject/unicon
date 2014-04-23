@@ -1,4 +1,6 @@
 # top-level Icon makefile, configured for Windows NT
+RM=del
+
 Top:
 	@echo To configure sources:
 	@echo    MSVC: "nmake NT-Configure" or "nmake W-Configure"
@@ -18,11 +20,14 @@ NT-Configure-GCC:
 	echo Run "make Unicon" to build
 
 NT-Configure:
-	cd config/win32/msvc && config
+	echo "You better use plain CMD.EXE or all bets are off, no sh.exe"
+	cd config/win32/msvc && config.bat
 	echo Run "nmake Unicon" to build
 
 W-Configure:
-	cd config/win32/msvc && w-config
+	cd config/win32/msvc
+	w-config.bat
+	cd ../../..
 	echo Run "nmake Unicon" to build
 
 Unicon:
@@ -36,12 +41,31 @@ Unicon:
 	cd uni
 	$(MAKE)
 
+#
+# Uniconc
+#
+Uniconc bin/iconc: Common
+	cd src\runtime
+	$(RM) *.o
+	$(MAKE) comp_all_uniconc
+	cd ..\iconc
+	$(MAKE)
+	cd ..\..
+
 Icon-icont:
 	nmake Rtt
 	cd src\runtime
 	nmake interp_all
 	cd ..\icont
 	nmake
+	cd ..\..
+
+# Common components.
+Common:		src\h\define.h
+	cd src\common
+	$(MAKE)
+	cd ..\rtt
+	$(MAKE)
 	cd ..\..
 
 Rtt:

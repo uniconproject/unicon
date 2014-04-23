@@ -6,7 +6,11 @@
  * Emmer.
  */
 
-#include "../h/rt.h"
+/* #include "../h/rt.h" */
+typedef long int word;
+#define NULL 0L
+void		syserr		(char *s);
+void		new_context	(int fsig, void * cargp);
 
 /*
  * The NT co-expression context consists of 5 words. The
@@ -59,7 +63,7 @@ int	first;
 	 mov	esp, SP_OFF [ eax ]
 	 mov	ebp, esp
 	 }
-      new_context( 0, NULL );
+      new_context( 0, (void *)NULL );
       syserr( "interp() returned in coswitch" );
       }
 

@@ -29,11 +29,11 @@ winobjs:
 	        nmake $(OBJS) $(DCONSOLE) D=$(CONSOLE)
 
 doincl.exe:     doincl.obj
-		link32 -subsystem:console doincl.obj libc.lib kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB -out:doincl.exe
+		link -subsystem:console doincl.obj kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB -out:doincl.exe
 
 patchstr.exe:   patchstr.c
 		$(CC) $(CFLAGS) patchstr.c
-		link32 -subsystem:console patchstr.obj libc.lib kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB -out:patchstr.exe
+		link -subsystem:console patchstr.obj kernel32.lib ntdll.lib user32.lib gdi32.lib winspool.lib comdlg32.lib VERSION.LIB -out:patchstr.exe
 		copy patchstr.exe ..\..\bin
 
 patchstr.obj:  patchstr.c

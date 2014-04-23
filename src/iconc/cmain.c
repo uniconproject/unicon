@@ -474,13 +474,12 @@ Deliberate Syntax Error
    /*
     * Compile and link C file.
     */
-   if (no_c_comp)			/* exit if no C compile wanted */
+   if (no_c_comp) {			/* exit if no C compile wanted */
       exit(EXIT_SUCCESS);
+      }
 
-#if !MSDOS
    if (verbose > 0)
       report("Compiling and linking C code");
-#endif					/* !MSDOS */
 
    ret_code = ccomp(cfile, ofile);
    if (ret_code == EXIT_FAILURE) {

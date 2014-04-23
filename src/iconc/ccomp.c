@@ -22,7 +22,17 @@ extern char *refpath;
 Deliberate Syntax Error
 #endif						/* PORT */
 
-#if UNIX || AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || VM || OS2
+#if MSDOS
+#ifdef NTGCC
+#define ExeFlag "-o"
+#define LinkLibs " -lm"
+#else
+#define ExeFlag " "
+#define LinkLibs " rt.lib libtp.lib gdbm.lib kernel32.lib winmm.lib WSOCK32.LIB ODBC32.LIB SHELL32.LIB"
+#endif
+#endif
+
+#if UNIX || AMIGA || ATARI_ST || MACINTOSH || MVS || VM || OS2
 #define ExeFlag "-o"
 #define LinkLibs " -lm"
 #endif						/* UNIX ... */
@@ -142,11 +152,6 @@ rmv_ccomp_opts(opts)
 int ccomp(srcname, exename)
 char *srcname;
 char *exename;
-#if MSDOS
-   {
-   return EXIT_SUCCESS;			/* can't do from inside */
-   }
-#else					/* MSDOS */
    {
    struct lib *l;
    char sbuf[MaxFileName];		/* file name construction buffer */
@@ -154,7 +159,7 @@ char *exename;
    char *s;
    char *dlrgint;
    int cmd_sz, opt_sz, flg_sz, exe_sz, src_sz;
-extern int opt_hc_opts;
+   extern int opt_hc_opts;
 
    if (!opt_hc_opts)
       /*
@@ -188,15 +193,78 @@ extern int opt_hc_opts;
  *  Construct the command line to do the compilation.
  */
 
-#if PORT || AMIGA || ATARI_ST || MACINTOSH || MSDOS || MVS || VM || OS2
+#if PORT || AMIGA || ATARI_ST || MACINTOSH || MVS || VM || OS2
    /* something may be needed */
 Deliberate Syntax Error
 #endif						/* PORT || AMIGA || ... */
 
+#if MSDOS
+#if NTGCC
+#else
+
+   opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/gdbm");
+   opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/libtp");
+   lib_sz += strlen(" -L") + strlen(refpath);
+
+   /*
+    * Visual Studio / VC++ / cl.exe
+    */
+   buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
+			     lib_sz + 64);
+   strcpy(buf, c_comp);
+   s = buf + cmd_sz;
+   strcpy(s, " /c");
+   s += 3;
+   *s++ = ' ';
+   strcpy(s, c_opts);
+   strcat(s, " /I");
+   strcat(s, refpath);
+   strcat(s, "..\\src\\gdbm");
+   strcat(s, " /I");
+   strcat(s, refpath);
+   strcat(s, "..\\src\\libtp");
+   s+=opt_sz;
+   *s++ = ' ';
+   strcpy(s, srcname);
+   s += src_sz;
+   *s++ = ' ';
+
+   /* first, the compile */
+   if (system(buf) != 0)
+      return EXIT_FAILURE;
+
+   /* then, the link */
+   s = buf;
+   strcpy(s, "link -subsystem:console ");
+   s += 24;
+
+   strcpy(s, srcname);
+   s += strlen(srcname)-1; /* trim c extension */
+   strcpy(s, "obj");
+   s += 3;
+
+   strcat(s, " /LIBPATH:");
+   strcat(s, refpath);
+   s += strlen(refpath)+10;
+   *s++ = ' ';
+   strcpy(s, LinkLibs);
+   s += strlen(LinkLibs);
+
+   strcpy(s, " -out:");
+   s += 6;
+   strcpy(s, exename);
+   s += exe_sz;
+   strcpy(s, ".exe");
+   s += 4;
+
+   if (system(buf) != 0)
+      return EXIT_FAILURE;
+#endif
+#endif
+
 #if UNIX
 
-   lib_sz += strlen(" -L") +
-             strlen(refpath);
+   lib_sz += strlen(" -L") + strlen(refpath);
 
 #ifdef Messaging
    lib_sz += strlen(" -ltp ");
@@ -392,4 +460,3 @@ Deliberate Syntax Error
 
    return EXIT_SUCCESS;
    }
-#endif					/* MSDOS */

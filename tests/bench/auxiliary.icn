@@ -51,8 +51,22 @@ procedure WallToHrMinSec(s:0)
 end
 
 procedure writetime(L1, L2, wallusec)
-   printf("\nElapsed CPU Time: %02dh:%02dm:%d.%ds", L1[1], L1[2], L1[3], L1[4]) 
-   printf("\nElapsed Real Time: %02dh:%02dm:%d.%06ds\n", L2[1], L2[2], L2[3], wallusec)
+   if L1[1]>0 then
+      printf("%02d:%02d:%d.%03d", L1[1], L1[2], L1[3], L1[4]) 
+   else {
+      if L2[1]>0 then
+	 printf("    %02d:%d.%03d", L1[2], L1[3], L1[4])
+      else
+	 printf("       %d.%03d", L1[3], L1[4])
+      }
+   if L1[1]>0 then
+      printf("   %02d:%02d:%d.%03d\n", L2[1], L2[2], L2[3], wallusec/1000)
+   else {
+      if L2[2]>0 then
+	 printf("       %02d:%d.%03d\n", L2[2], L2[3], wallusec/1000)
+      else
+	 printf("          %d.%03d\n", L2[3], wallusec/1000)
+      }
 end
 
 procedure calctimes(cpustart, cpufinish, wallstart, wallfinish)
@@ -88,14 +102,45 @@ procedure write_error(msg)
              concurrency to run threaded benchmarks.\n")
       }
    if msg = 3 then {
-      write("\nConcurrency not enabled. \nEnable _
-             concurrency to run threaded benchmarks.")
+      write("\nConcurrency not enabled. _
+ 	     Enable concurrency to run threaded benchmarks.")
       }
 end
 
 procedure verify_concurrent()
-   every i := &features do {
-      if i == "concurrent threads" then
-         return 1
+   if &features == "concurrent threads" then
+      return 1
+end
+
+procedure get_C_compiler()
+   if match("CCompiler ", x := &features) then return x[11:0]
+   else return "unknown"
+end
+   
+procedure get_CPU()
+   local f, result := "unknown"
+   if f := open("/proc/cpuinfo") then {
+      while line := read(f) do {
+	 if match("model name", line) then {
+	    result := line[find(":",line)+2:0]
+	    break
+	    }
+	 }
+      close(f)
       }
+   return result
+end
+   
+procedure get_clockspeed()
+   local f, result := "unknown"
+   if f := open("/proc/cpuinfo") then {
+      while line := read(f) do {
+	 if match("cpu MHz", line) then {
+	    result := sprintf("%1.1r GHz", line[find(":",line)+2:0] / 1000)
+	    break
+	    }
+	 }
+      close(f)
+      }
+   return result
 end

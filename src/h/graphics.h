@@ -279,8 +279,16 @@ struct palentry {			/* entry for one palette member */
    char transpt;			/* nonzero if char is transparent */
    };
 
+/*
+ * Color formats to be used with imgdata
+ */
+#define UCOLOR_RGB   1
+#define UCOLOR_BGR   2
+
 struct imgdata {			/* image loaded from a file */
    int width, height;			/* image dimensions */
+   int format;
+   int is_bottom_up;
    struct palentry *paltbl;		/* pointer to palette table */
    unsigned char *data;			/* pointer to image data */
    };

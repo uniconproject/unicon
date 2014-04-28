@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.2.0_threads(64-bit)_rev3755
+OutputBaseFilename=setup-unicon_12.2.0_threads(32-bit)_rev3774
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -129,6 +129,16 @@ Source: "\unicon\tests\thread\*.icn"; DestDir: "{app}\tests\thread"; Flags: igno
 Source: "\unicon\tests\thread\*.std"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 Source: "\unicon\tests\thread\README"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 Source: "\unicon\tests\thread\makefile"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
+
+; Bench
+Source: "\unicon\tests\bench\*.icn"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\*.dat"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\*.c"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\*.test"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\README"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\makefile"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\icon\*.*"; DestDir: "{app}\tests\bench\icon"; Flags: ignoreversion
+
 
 [INI]
 Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.sourceforge.net"

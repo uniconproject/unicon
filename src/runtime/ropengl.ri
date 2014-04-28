@@ -2449,6 +2449,9 @@ int fileimage(wbp w, char* filename)
    word l;
    struct imgdata im;
 
+   im.format = UCOLOR_RGB;
+   im.is_bottom_up = 1;
+
    /* a gif file */
    if ((r = readGIF(filename, 0, &im)) == Succeeded){
       i = textureimg(w, im.width, im.height, im.paltbl, im.data,
@@ -2985,7 +2988,8 @@ int texture_24img(wbp w, struct imgdata im)
 	}
 #else					/* XWindows */
    for(l=0; l < wh3; l+=3, t+=3) {
-      tex[l+2] = t[0]; tex[l+1] = t[1]; tex[l] = t[2];
+ 
+     tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
       }
 #endif					/* XWindows */
 
@@ -3519,7 +3523,7 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
    wd  = wc->stex[texhandle].width;
    ht  = wc->stex[texhandle].height;
 
-   /* if width/height is negative, flip it and readjust x and y accroridngly */
+   /* if width/height is negative, flip it and readjust x and y accordingly */
    if (width < 0){ x+= width; width=-width; }
    if (height < 0){ y+= height; height=-height; }
 
@@ -3599,33 +3603,18 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 
    s = imd->data ;  /* point to the image data*/
 
-#ifdef XWindows
-   l = (ht-y-imd->height)*wd*3- ( wd-x)*3; /* first byte in texture data to be updated */
-   nextLineOffset = (wd+imd->width)*3;
-
-   for (i=0; i<imd->height; i++) {
-      for (j=0; j<imd->width; j++) {
-	 tex[l++] = (GLubyte) *s++;
-	 tex[l++] = (GLubyte) *s++;
-	 tex[l++] = (GLubyte) *s++;
-	 }
-      l -= nextLineOffset;
-      }
-#else					/* XWindows */
    l = (ht-y-imd->height)*wd*3 + ( x)*3; /* first byte in texture data to be updated */
    nextLineOffset = (wd-imd->width)*3;
 
    for (i=0; i<imd->height; i++) {
       for (j=0; j<imd->width; j++) {
-	 tex[l+2] = (GLubyte) *s++;
-	 tex[l+1] = (GLubyte) *s++;
 	 tex[l] = (GLubyte) *s++;
+	 tex[l+1] = (GLubyte) *s++;
+	 tex[l+2] = (GLubyte) *s++;
 	 l+=3;
 	 }
       l += nextLineOffset;
       }
-#endif					/* XWindows */
-
 
    TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;
@@ -3651,57 +3640,8 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
    Display *stddpy = wd->display;
    Visual *vis = w2d->window->vis;
    XColor clrcell;
-   unsigned long rmask, gmask, bmask;
-   unsigned long rshift, rbits, gshift, gbits, bshift, bbits;
-
+   TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(vis->red_mask, vis->green_mask,vis->blue_mask);
    lastcp = wd->colors;
-
-   rmask = vis->red_mask, 
-   gmask = vis->green_mask, 
-   bmask = vis->blue_mask; 
-
-   rshift = 0; rbits = 0; 
-        while(!(rmask & 1)){ 
-            rshift++; 
-            rmask >>= 1; 
-        } 
-        while(rmask & 1){ 
-            rbits++; 
-            rmask >>= 1; 
-        } 
-        if(rbits>8){ 
-            rshift += rbits-8; 
-            rbits = 8; 
-        } 
- 
-        gshift = 0; gbits = 0; 
-        while(!(gmask & 1)){ 
-            gshift++; 
-            gmask >>= 1; 
-        } 
-        while(gmask & 1){ 
-            gbits++; 
-            gmask >>= 1; 
-        } 
-        if(gbits>8){ 
-            gshift += gbits-8; 
-            gbits = 8; 
-        } 
- 
-        bshift = 0; bbits = 0; 
-        while(!(bmask & 1)){ 
-            bshift++; 
-            bmask >>= 1; 
-        } 
-        while(bmask & 1){ 
-            bbits++; 
-            bmask >>= 1; 
-        } 
-        if(bbits>8){ 
-            bshift += bbits-8; 
-            bbits = 8; 
-        }
-
 #endif					/* XWindows */
 
    imem.x = x;
@@ -3716,21 +3656,14 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 
 #ifdef XWindows
    if(vis->class==TrueColor){ 
-  /*    unsigned char *ptr;
-      printf(" xoffset=%i  order=%i   depth=%i   pad=%i  bytes=%i   wid=%i  h=%i  r=%d  g=%d  b=%d bits=%i \n",  imem.im->xoffset
-      ,  imem.im->byte_order,  imem.im->depth,   imem.im->bitmap_pad,  
-     imem.im->bytes_per_line,  imem.im->width,  imem.im->height,
-imem.im->red_mask, imem.im->green_mask, imem.im->blue_mask, imem.im->bits_per_pixel
- );*/
+
       for(j=0; j < height; j++){
    	l = (txh-yt-j-1)*twd3 + xt * 3;
 	for(i=0; i < width; i++) {
 	   c =  XGetPixel(imem.im, i, j);
-          /* ptr = imem.im->data + (j * imem.im->bytes_per_line * height + 4 * i);
-	   c = *c2 & 0xffffff;*/
-           tex[l] =  ((c >> rshift) & ((1 << rbits)-1))  << (8-rbits); 
-           tex[l+1] =((c >> gshift) & ((1 << gbits)-1)) << (8-gbits); 
-           tex[l+2] =((c >> bshift) & ((1 << bbits)-1)) << (8-bbits); 
+           tex[l] = TRUECOLOR_GET_RGB_RED(c);
+           tex[l+1] = TRUECOLOR_GET_RGB_GREEN(c);
+           tex[l+2] = TRUECOLOR_GET_RGB_BLUE(c);
 	   l = l + 3;
 	   }
 	}

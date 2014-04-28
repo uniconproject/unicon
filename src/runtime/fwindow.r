@@ -2367,9 +2367,19 @@ function{0,1} ReadImage(argv[argc])
 
       OptTexWindow(w);
 
-      if (is_texture)
-	 warg=1;
-
+      if (is_texture){
+         warg=1;
+         imd.format = UCOLOR_RGB;
+         imd.is_bottom_up = 1;
+         }
+      else{
+#ifdef NT
+         imd.format = UCOLOR_BGR;
+#else
+         imd.format = UCOLOR_RGB;
+#endif 
+         imd.is_bottom_up = 0;
+      }
 
       if (argc - warg == 0)
 	 runerr(103,nulldesc);	
@@ -2384,12 +2394,10 @@ function{0,1} ReadImage(argv[argc])
       else if (!def:C_integer(argv[warg+1], -w->context->dx, x))
 	 runerr(101, argv[warg+1]);
 
-
       if (argc - warg < 3)
 	 y = -w->context->dy;
       else if (!def:C_integer(argv[warg+2], -w->context->dy, y))
          runerr(101, argv[warg+2]);
-
 
       /*
        * p is an optional palette name.

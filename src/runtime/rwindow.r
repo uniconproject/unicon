@@ -1768,7 +1768,7 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
    struct my_error_mgr jerr;
    JSAMPARRAY buffer;
    unsigned char *row_ptr;
-   int row_stride;
+   int row_stride, row_stride_shift;
    int i;
    static FILE *jpg_f = NULL;			/* input file */
 
@@ -1802,18 +1802,17 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
       }
    else {
       /*
-       * Force output image to be always RGB-color space regardless of the
-       * input image color space. Use BGR on windows if it is available (jpeg-turbo)
+       * Check the requested image color format. Use BGR on windows 
+       * if it is available (jpeg-turbo) by checking for JCS_EXTENSIONS macro
        */
-#if defined(NTGCC) 
-      /* Assume we have libjpeg-turbo on Windows for now */
-      #define HAVE_LIBJPEG_TURBO
-      cinfo.out_color_space = JCS_EXT_BGR;
-#else
+      
       cinfo.out_color_space = JCS_RGB;
-#endif
-
       cinfo.quantize_colors = FALSE;
+
+#ifdef JCS_EXTENSIONS
+      if (imd->format == UCOLOR_BGR)
+         cinfo.out_color_space = JCS_EXT_BGR;
+#endif
       }
 
    /* Start decompression */
@@ -1850,32 +1849,34 @@ static int jpegread(char *filename, int p, struct imgdata *imd)
    buffer = (*cinfo.mem->alloc_sarray)
       ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
 
-#ifdef NTGCC
-   row_ptr = imd->data + (cinfo.output_height-1) * row_stride;
+   if (imd->is_bottom_up){
+      row_stride_shift = -row_stride;
+      row_ptr = imd->data + (cinfo.output_height-1) * row_stride;
+      }
+   else{
+      row_stride_shift = row_stride;
+      row_ptr = imd->data;
+      }
+
    while (cinfo.output_scanline < cinfo.output_height) {
       (void) jpeg_read_scanlines(&cinfo, buffer, 1);
       memcpy(row_ptr, buffer[0], row_stride);
-      row_ptr -= row_stride;
+      row_ptr += row_stride_shift;
       }
-#ifndef HAVE_LIBJPEG_TURBO
+
+#ifndef JCS_EXTENSIONS
    /*
-    * Change RGB to BGR
+    * If we don't have JCS_EXTENSIONS provided by libjpeg-turbo then
+    * we have to transoform the format from RGB to BGR if needed
     */
-   {
-   unsigned char c, *byte, *imgEnd = imd->data + row_stride*cinfo.output_height;
-   for (byte=imd->data; byte<imgEnd; byte +=3) {
-      c = *byte; *byte = byte[2]; byte[2] = c;
-      }
+   if (imd->format == UCOLOR_BGR ){
+      unsigned char c, *byte;
+      unsigned char *imgEnd = imd->data + row_stride*cinfo.output_height;
+      for (byte=imd->data; byte<imgEnd; byte +=3){
+         c = *byte; *byte = byte[2]; byte[2] = c;
+         }
    }
-#endif					 /* HAVE_LIBJPEG_TURBO */
-#else
-   row_ptr = imd->data;
-   while (cinfo.output_scanline < cinfo.output_height) {
-      (void) jpeg_read_scanlines(&cinfo, buffer, 1);
-      memcpy(row_ptr, buffer[0], row_stride);
-      row_ptr += row_stride;
-      }
-#endif					/* NTGCC */
+#endif					/* !JCS_EXTENSIONS */
 
    /*
     * Finish and release the JPEG decompression object
@@ -1911,8 +1912,6 @@ int readJPEG(char *filename, int p, struct imgdata *imd)
 }
 
 #endif
-
-
 
 #if HAVE_LIBPNG
 /*
@@ -2015,12 +2014,11 @@ static int pngread(char *filename, int p, struct imgdata *imd)
    else if (bit_depth < 8)
       png_set_packing(png_ptr);
 
-#ifdef NTGCC
-   if (color_type == PNG_COLOR_TYPE_RGB ||
-       color_type == PNG_COLOR_TYPE_RGB_ALPHA ||
-       color_type == PNG_COLOR_TYPE_PALETTE)
-      png_set_bgr(png_ptr);
-#endif						/* NTGCC*/
+   if (imd->format == UCOLOR_BGR )
+      if (color_type == PNG_COLOR_TYPE_RGB ||
+          color_type == PNG_COLOR_TYPE_RGB_ALPHA ||
+          color_type == PNG_COLOR_TYPE_PALETTE)
+         png_set_bgr(png_ptr);
 
    if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)){
       /* adds a full alpha channel if there is transparency information
@@ -2066,14 +2064,12 @@ static int pngread(char *filename, int p, struct imgdata *imd)
       }
 
    /* set the individual row_pointers to point at the correct offsets */
-
-   for (i = 0;  i < imd->height;  ++i)
-#ifdef NTGCC
-      /* image is upside down, reverse it */
-      row_pointers[imd->height-1-i] = imd->data + i*rowbytes;
-#else								/* NTGCC*/
-      row_pointers[i] = imd->data + i*rowbytes;
-#endif								/* NTGCC*/
+   if (imd->is_bottom_up)
+      for (i = 0;  i < imd->height;  ++i)
+         row_pointers[imd->height-1-i] = imd->data + i*rowbytes;
+   else
+      for (i = 0;  i < imd->height;  ++i)
+         row_pointers[i] = imd->data + i*rowbytes;
 
    /* now we can go ahead and just read the whole image */
    png_read_image(png_ptr, row_pointers);
@@ -3667,6 +3663,13 @@ char * abuf;
          break;
          }
       case A_IMAGE: {
+#ifdef NT
+         ws->initimage.format = UCOLOR_BGR;
+#else
+         ws->initimage.format = UCOLOR_RGB;
+#endif 
+         ws->initimage.is_bottom_up = 0;
+
          /* first try GIF; then try platform-dependent format */
          r = readGIF(val, 0, &ws->initimage);
          if (r != Succeeded) r = readBMP(val, 0, &ws->initimage);

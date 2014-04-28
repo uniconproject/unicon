@@ -2637,10 +2637,36 @@ int on_icon;
          }
       else {
 	 buf2 = s;
-         bmih->biBitCount = 24;
          bmih->biClrUsed = 0;
-         bmih->biHeight = height;
-         temppix=CreateDIBitmap(pixdc, bmih, CBM_INIT, buf2, bmi, 0);
+         bmih->biHeight = -height;
+         bmih->biBitCount = 24;
+#if 0
+
+/*
+ *       Microsoft expcects BGR format by default but we store images in RGB. 
+ *	 the default behavior can be changed by using the user-defined bit mask
+ *	 for each of the color components as shown below when 
+ *	 bmih->biCompression = BI_BITFIELDS; //instead of (BI_RGB)
+ * 	 but that works only with 32 bit colors (belowbmih->biBitCount = 32) 
+ *	 not 24. For now, we are storing images in BGR before feeding 
+ *	 them to MS API!
+ */
+	 bmi->bmiColors[0].rgbBlue = 0xFF;
+	 bmi->bmiColors[0].rgbGreen = 0x00;
+	 bmi->bmiColors[0].rgbRed = 0x00;
+	 bmi->bmiColors[0].rgbReserved = 0x00;
+
+	 bmi->bmiColors[1].rgbBlue = 0x00;
+	 bmi->bmiColors[1].rgbGreen = 0xFF;
+	 bmi->bmiColors[1].rgbRed = 0x00;
+	 bmi->bmiColors[1].rgbReserved = 0x00;
+
+	 bmi->bmiColors[2].rgbBlue = 0x00;
+	 bmi->bmiColors[2].rgbGreen = 0x00;
+	 bmi->bmiColors[2].rgbRed = 0xFF;
+	 bmi->bmiColors[2].rgbReserved = 0x00;
+#endif
+         temppix=CreateDIBitmap(pixdc, bmih, CBM_INIT, buf2, bmi, DIB_RGB_COLORS);
         }
 
       tempdc = CreateCompatibleDC(stddc);

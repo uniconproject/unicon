@@ -27,7 +27,7 @@ procedure run_threadring(argv)
    every number := 1 to 503 do {
       my_lock := next_lock
       next_lock := if number < 503 then condvar() else first_lock
-      thread threadfun(number, my_lock, next_lock)
+      spawn(create threadfun(number, my_lock, next_lock),512,512)
       }
    signal(first_lock)
    critical main_lock: wait(main_lock)

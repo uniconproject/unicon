@@ -13,40 +13,208 @@
 $ifdef _MS_WINDOWS_NT
 $define EXE ""
 $else
-$define EXE "./"
+   $define EXE "./"
 $endif
 
 
-procedure main()
+procedure main(argv)
+   local types := []
    
-   writes("generating input files...")
-   fin := open("ipxref.test", "r") | stop("ipxref.test not found")
-   fout := open("ipxref.dat", "w") | stop("cannot open ipxref.dat for writing")
-   size := stat(fin).size
-   data := reads(fin, size)
-   close(fin)
-   every 1 to 96 do write(fout, data)
-   close(fout)
-   writes(".")
-   if not stat("generate.out") then system("gcc -o generate.out fasta.c")
-   writes(".")
-   system(EXE || "generate.out 1000 > 1-thou.dat")
-   writes(".")
-   system(EXE || "generate.out 10000 > 10-thou.dat")
-   writes(".")
-   system(EXE || "generate.out 25000 > 25-thou.dat")
-   writes(".")
-   system(EXE || "generate.out 150000 > 150-thou.dat")
-   writes(".")
-   system(EXE || "generate.out 700000 > 700-thou.dat")
-   writes(".")
-   system(EXE || "generate.out 3000000 > 3-mil.dat")
-   writes(".")
-   system(EXE || "generate.out 5000000 > 5-mil.dat")
-   writes(".")
-   system(EXE || "generate.out 15000000 > 15-mil.dat")
-   writes(".")
-   system(EXE || "generate.out 25000000 > 25-mil.dat")
-   write("done!")
+   if *argv < 1 then {
+      put(types, "all")
+      }
+   else every put(types, !argv) 
 
+   while type := get(types) do {
+      case type of {
+         "all" : {
+            writes("generating input files...")  
+            if not stat("ipxref.dat") then {
+               fin := open("ipxref.test", "r") | stop("ipxref.test not found")
+               fout := open("ipxref.dat", "w") | stop("cannot open ipxref.dat for writing")
+               size := stat(fin).size
+               data := reads(fin, size)
+               close(fin)
+               every 1 to 96 do write(fout, data)
+               close(fout)
+               }
+            
+            if has_C_compiler() then {
+               writes(".")
+               if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+               writes(".")
+               if not stat("1-thou.dat") then system(EXE || "generate.out 1000 > 1-thou.dat")
+               writes(".")
+               if not stat("10-thou.dat") then system(EXE || "generate.out 10000 > 10-thou.dat")
+               writes(".")
+               if not stat("25-thou.dat") then system(EXE || "generate.out 25000 > 25-thou.dat")
+               writes(".")
+               if not stat("150-thou.dat") then system(EXE || "generate.out 150000 > 150-thou.dat")
+               writes(".")
+               if not stat("700-thou.dat") then system(EXE || "generate.out 700000 > 700-thou.dat")
+               writes(".")
+               if not stat("3-mil.dat") then system(EXE || "generate.out 3000000 > 3-mil.dat")
+               writes(".")
+               if not stat("5-mil.dat") then system(EXE || "generate.out 5000000 > 5-mil.dat")
+               writes(".")
+               if not stat("15-mil.dat") then system(EXE || "generate.out 15000000 > 15-mil.dat")
+               writes(".")
+               if not stat("25-mil.dat") then system(EXE || "generate.out 25000000 > 25-mil.dat")
+               write("done!")
+               }
+            else {
+               write("\nNo C compiler found, using Unicon to generate the necessary input _
+               files can take 30+ minutes. Continue? [y/n]")
+               repeat {
+                  decision := read()
+                  case decision of {
+                     "y" | "Y" | "yes" | "Yes" | "YES" : {
+                        writes("\nOkay, generating input files...")
+                        if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+                        writes(".")
+                        if not stat("1-thou.dat") then system(EXE || "fasta 1000 > 1-thou.dat")
+                        writes(".")
+                        if not stat("10-thou.dat") then system(EXE || "fasta 10000 > 10-thou.dat")
+                        writes(".")
+                        if not stat("25-thou.dat") then system(EXE || "fasta 25000 > 25-thou.dat")
+                        writes(".")
+                        if not stat("150-thou.dat") then system(EXE || "fasta 150000 > 150-thou.dat")
+                        writes(".")
+                        if not stat("700-thou.dat") then system(EXE || "fasta 700000 > 700-thou.dat")
+                        writes(".")
+                        if not stat("3-mil.dat") then system(EXE || "fasta 3000000 > 3-mil.dat")
+                        writes(".")
+                        if not stat("5-mil.dat") then system(EXE || "fasta 5000000 > 5-mil.dat")
+                        writes(".")
+                        if not stat("15-mil.dat") then system(EXE || "fasta 15000000 > 15-mil.dat")
+                        writes(".")
+                        if not stat("25-mil.dat") then system(EXE || "fasta 25000000 > 25-mil.dat")
+                        write("done!")
+                        return
+                        }
+                     "n" | "N" | "no" | "No" | "NO" : {
+                        write("Okay, consult the README file for instructions on generating _
+                               input files incrementally")
+                        return
+                        }
+                     default : write("Unknown instruction. Continue? [y/n]")
+                     }
+                  }
+               }
+            break
+            }
+         "test" : {
+            writes("generating input files...")  
+            if has_C_compiler() then {
+               if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+               writes(".")
+               if not stat("1-thou.dat") then system(EXE || "generate.out 1000 > 1-thou.dat")
+               writes(".")
+               if not stat("10-thou.dat") then system(EXE || "generate.out 10000 > 10-thou.dat")
+               writes(".")
+               if not stat("25-thou.dat") then system(EXE || "generate.out 25000 > 25-thou.dat")
+               }
+            else {
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("1-thou.dat") then system(EXE || "fasta 1000 > 1-thou.dat")
+               writes(".")
+               if not stat("10-thou.dat") then system(EXE || "fasta 10000 > 10-thou.dat")
+               writes(".")
+               if not stat("25-thou.dat") then system(EXE || "fasta 25000 > 25-thou.dat")
+               }
+            writes("done!\n")
+            break
+            }
+         "benchmark" : {
+            writes("generating input files...")  
+            if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+            writes(".")
+            if not stat("ipxref.dat") then {
+               fin := open("ipxref.test", "r") | stop("ipxref.test not found")
+               fout := open("ipxref.dat", "w") | stop("cannot open ipxref.dat for writing")
+               size := stat(fin).size
+               data := reads(fin, size)
+               close(fin)
+               every 1 to 96 do write(fout, data)
+               close(fout)
+               }
+            if has_C_compiler() then {
+               if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+               writes(".")
+               if not stat("150-thou.dat") then system(EXE || "generate.out 150000 > 150-thou.dat")
+               writes(".")
+               if not stat("700-thou.dat") then system(EXE || "generate.out 700000 > 700-thou.dat")
+               writes(".")
+               if not stat("15-mil.dat") then system(EXE || "generate.out 15000000 > 15-mil.dat")
+               }
+            else {
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("150-thou.dat") then system(EXE || "fasta 150000 > 150-thou.dat")
+               writes(".")
+               if not stat("700-thou.dat") then system(EXE || "fasta 700000 > 700-thou.dat")
+               writes(".")
+               if not stat("15-mil.dat") then system(EXE || "fasta 15000000 > 15-mil.dat")
+               }
+            writes("done!\n")
+            break
+            }
+         "med" : {
+            writes("generating input files...")  
+            if has_C_compiler() then {
+               if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+               writes(".")
+               if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+               writes(".")
+               if not stat("3-mil.dat") then system(EXE || "generate.out 3000000 > 3-mil.dat")
+               writes(".")
+               if not stat("5-mil.dat") then system(EXE || "generate.out 5000000 > 5-mil.dat")
+               writes(".")
+               if not stat("25-mil.dat") then system(EXE || "generate.out 25000000 > 25-mil.dat")
+               }
+            else {
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("3-mil.dat") then system(EXE || "fasta 3000000 > 3-mil.dat")
+               writes(".")
+               if not stat("5-mil.dat") then system(EXE || "fasta 5000000 > 5-mil.dat")
+               writes(".")
+               if not stat("25-mil.dat") then system(EXE || "fasta 25000000 > 25-mil.dat")
+               }
+            writes("done!\n")
+            break
+            }
+         "shootout" : {
+            writes("generating input files...")  
+            if has_C_compiler() then {
+               if not stat("generate.out") then system("gcc -o generate.out fasta.c")
+               writes(".")
+               if not stat("5-mil.dat") then system(EXE || "generate.out 5000000 > 5-mil.dat")
+               writes(".")
+               if not stat("25-mil.dat") then system(EXE || "generate.out 25000000 > 25-mil.dat")
+               }
+            else {
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("fasta") then system("unicon -o fasta -DMAIN fasta.icn")
+               writes(".")
+               if not stat("5-mil.dat") then system(EXE || "fasta 5000000 > 5-mil.dat")
+               writes(".")
+               if not stat("25-mil.dat") then system(EXE || "fasta 25000000 > 25-mil.dat")
+               }
+            writes("done!\n")
+            break
+            }
+         default : write("unknown argument " || type)
+         }
+      }
+end
+
+procedure has_C_compiler()
+   if match("CCompiler ", x := &features) then return 
 end

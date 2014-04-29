@@ -8,8 +8,8 @@ CFLAGS=-DMAIN -o
 EXE=binary-trees chameneos-redux fannkuch fasta fasta k-nucleotide	\
 	mandelbrot meteor-contest n-body pidigits reverse-complement	\
 	regex-dna spectral-norm thread-ring generate run-test		\
-	run-shootout run-benchmark run-med generate.out concord deal	\
-	ipxref queens rsg
+	run-shootout run-benchmark run-med concord deal ipxref queens	\
+	rsg
 
 SRC=binary-trees.icn chameneos-redux.icn fannkuch.icn fasta.icn		\
 	fasta.icn k-nucleotide.icn mandelbrot.icn meteor-contest.icn	\
@@ -32,16 +32,7 @@ all: $(EXE) input
 build: $(EXE)
 
 input:
-	test -f ipxref.dat || ./generate
-	test -f 1-thou.dat || ./generate	
-	test -f 10-thou.dat || ./generate
-	test -f 25-thou.dat || ./generate
-	test -f 150-thou.dat || ./generate
-	test -f 700-thou.dat || ./generate
-	test -f 3-mil.dat || ./generate		
-	test -f 5-mil.dat || ./generate
-	test -f 15-mil.dat || ./generate
-	test -f 25-mil.dat || ./generate
+	./generate
 
 generate: generate.u
 	unicon -o generate generate.u
@@ -72,9 +63,6 @@ run-shootout: run-shootout.u $(OBJ)
 
 run-shootout.u: run-shootout.icn 
 	unicon $(UFLAGS) run-shootout.icn
-
-generate.out: fasta.o
-	gcc -o generate.out fasta.o
 
 auxiliary.u: auxiliary.icn
 	unicon $(UFLAGS) auxiliary.icn

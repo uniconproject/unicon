@@ -484,8 +484,7 @@ int pthreadcoswitch(void *o, void *n, int first)
       pthread_attr_init(&attr);
       pthread_attr_setstacksize(&attr, 1024*1024*50);
       */
-       if (pthread_create(&new->thread, NULL, nctramp, new) != 0) 
-         syserr("cannot create thread");
+      THREAD_CREATE(new, 0, "spawn()");
       new->alive = 1;
       new->have_thread = 1;
 
@@ -871,6 +870,41 @@ void handle_thread_error(int val, int func, char* msg)
      	    fprintf(stderr, "No thread could be found corresponding to that specified by the given thread ID\n");
 	    syserr("");
       	    break;
+      	 default:
+	    fprintf(stderr, "pthread function error!\n ");
+	    syserr("");
+      	    break;
+	 }
+
+   case FUNC_THREAD_CREATE:
+
+      fprintf(stderr, "\nThread create error-%s:", msg);
+
+      switch(val) {
+         case EAGAIN:
+            fprintf(stderr, "Insufficient resources to create another thread, or a system imposed limit on the number of threads was encountered.\n");
+#if 0
+	    {
+	    struct rlimit rlim;
+	    getrlimit(RLIMIT_NPROC, &rlim);
+	    fprintf(stderr," Soft Limit: %u\n Hard Limit: %u\n", 
+	       (unsigned int) rlim.rlim_cur, (unsigned int) rlim.rlim_max);
+	    }
+#endif
+
+	    syserr("");
+      	    break;
+
+         case EINVAL:
+            fprintf(stderr, "Invalid settings in attr.\n");
+	    syserr("");
+      	    break;
+
+         case EPERM:
+            fprintf(stderr, "No permission to set the scheduling policy and parameters specified in attr.\n");
+	    syserr("");
+      	    break;
+
       	 default:
 	    fprintf(stderr, "pthread function error!\n ");
 	    syserr("");

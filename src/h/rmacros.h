@@ -1275,6 +1275,24 @@
 #endif					/* Concurrent */
 
 #ifdef Concurrent
+
+#define THREAD_CREATE(ctx, t_stksize, msg)				\
+  do {									\
+    int retval;								\
+    if (t_stksize){							\
+      pthread_attr_t attr;						\
+      pthread_attr_init(&attr);						\
+      pthread_attr_setstacksize(&attr, t_stksize);			\
+      retval = pthread_create(&ctx->thread, &attr, nctramp, ctx);	\
+    }									\
+    else								\
+      retval = pthread_create(&ctx->thread, NULL, nctramp, ctx);	\
+    if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
+  } while (0)
+
+
+
+
 /*
  *  Lock mutex mtx. msg is a string name that refers to mtx, useful for
  *  error tracing.
@@ -1345,7 +1363,7 @@
 #define INC_NARTHREADS_CONTROLLED { \
    MUTEX_LOCKID(MTX_THREADCONTROL); \
    MUTEX_LOCKID(MTX_NARTHREADS); \
-   NARthreads++; \
+   NARthreads++;		   \
    MUTEX_UNLOCKID(MTX_NARTHREADS); \
    MUTEX_UNLOCKID(MTX_THREADCONTROL); }
 
@@ -1456,6 +1474,8 @@
    } while(0)
 
 #else					/* Concurrent */
+
+#define THREAD_CREATE(ctx, t_stksize, msg)
 #define MUTEX_INIT(mtx, attr)
 #define MUTEX_INITID(mtx, attr)
 #define MUTEXID(mtx)

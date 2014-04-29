@@ -2736,17 +2736,19 @@ function{1} unlock(x)
      }
 end
 
-"spawn(x,blocksize,stringsize) - evaluate co-expression"
+"spawn(x,blocksize,stringsize, stacksize) - evaluate co-expression"
 " or procedure x concurrently"
 
-function{0,1} spawn(x, blocksize, stringsize)
+function{0,1} spawn(x, blocksize, stringsize, stacksize)
    declare {
-      C_integer _bs_, _ss_;
+      C_integer _bs_, _ss_, _stks_;
       }
    if !def:C_integer(blocksize,0,_bs_) then
       runerr(101,blocksize)
    if !def:C_integer(stringsize,0,_ss_) then
       runerr(101,stringsize)
+   if !def:C_integer(stacksize,0,_stks_) then
+      runerr(101,stacksize)
    if is:coexpr(x) then {
       abstract { return coexpr }
       body {
@@ -2810,8 +2812,7 @@ function{0,1} spawn(x, blocksize, stringsize)
 	    /*
 	     * Activate thread x for the first time.
 	     */
-	    if ( pthread_create(&(n->thread), NULL, nctramp, n) != 0 )
-	       syserr("cannot create thread");
+	    THREAD_CREATE(n, _stks_, "spawn()");
 	    n->alive = 1;
 	    }
 

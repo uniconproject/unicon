@@ -840,7 +840,7 @@ int noimage;
             putc(')', f);
             }
          else if (Type(*dp) == T_External)
-            fprintf(f, "external(%ld)",BlkD(*dp,External)->blksize);
+            fprintf(f, "external(%ld)",(long int)(BlkD(*dp,External)->blksize));
          else if (Type(*dp) <= MaxType)
             fprintf(f, "%s", blkname[Type(*dp)]);
          else
@@ -1031,7 +1031,7 @@ int noimage;
 
       for (i=0;i<size;i++) {
 	 if (i < ListLimit/2 || i >= size - ListLimit/2) {
-	    fprintf(f, "%ld" , ap->a[i]);
+	    fprintf(f, "%ld" , (long int) (ap->a[i]));
 	    if (i < size-1)
 	       putc(',', f);
 	    }

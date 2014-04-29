@@ -242,7 +242,7 @@ function{0,1} get_or_pop(x,i)
 	    Tprequest_t req = { LIST, NULL, 0 };
 	    struct Mpoplist* mpl;
 	    unsigned int msgnum;
-	    size_t msglen;
+	    long int msglen;
 
 	    if (!(BlkD(x,File)->status & Fs_Messaging)) {
 	       runerr(1213, x);
@@ -282,7 +282,7 @@ function{0,1} get_or_pop(x,i)
 	    if (mf->resp->sc != 200) {
 	       runerr(1212, x);
 	       }
-	    tp_read(mf->tp, StrLoc(result), msglen);
+	    tp_read(mf->tp, StrLoc(result), (size_t)msglen);
 	    while (buf[0] != '.') {
 	       tp_readln(mf->tp, buf, sizeof(buf));
 	       }

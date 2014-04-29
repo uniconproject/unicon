@@ -159,7 +159,7 @@ operator{*} ! bang(underef x -> dx)
 		  char buf[100];
 		  Tprequest_t req = {0, NULL, 0};
 		  unsigned msgnum;
-		  size_t msglen;
+		  long int msglen;
 		  unsigned sc;
 
 		  req.args = buf;
@@ -188,7 +188,7 @@ operator{*} ! bang(underef x -> dx)
 		     if (mf->resp->sc != 200)
 			runerr(1212, dx);
 
-		     tp_read(mf->tp, StrLoc(result), msglen);
+		     tp_read(mf->tp, StrLoc(result), (size_t)msglen);
 		     while (buf[0] != '.')
 			tp_readln(mf->tp, buf, sizeof(buf));
 
@@ -864,7 +864,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	       else if (c_y[0] >= '0' && c_y[0] <= '9' && 
 			strcmp(mf->tp->uri.scheme, "pop") == 0) {
 		  Tprequest_t req = { LIST, NULL, 0 };
-		  size_t msglen;
+		  long int msglen;
 		  char buf[100];
 
 		  req.args = c_y;
@@ -889,7 +889,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  if (mf->resp->sc != 200) {
 		     runerr(1212, dx);
 		     }
-		  tp_read(mf->tp, StrLoc(result), msglen);
+		  tp_read(mf->tp, StrLoc(result), (size_t)msglen);
 		  while (buf[0] != '.') {
 		     tp_readln(mf->tp, buf, sizeof(buf));
 		     }

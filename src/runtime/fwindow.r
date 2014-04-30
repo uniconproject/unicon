@@ -2416,18 +2416,12 @@ function{0,1} ReadImage(argv[argc])
       strncpy(filename, tmp, MaxFileName);   /* copy to loc that won't move*/
       filename[MaxFileName] = '\0';
 
+
       /*
-       * First try to read as a GIF, BMP, or JPG file.
+       * First try to read as one of the supported image file formats.
        * If that doesn't work, try platform-dependent image reading code.
        */
-      r = readGIF(filename, p, &imd);
-      if (r != Succeeded) r = readBMP(filename, p, &imd);
-#if HAVE_LIBJPEG	
-      if (r != Succeeded) r = readJPEG(filename, p, &imd);
-#endif					/* HAVE_LIBJPEG */
-#if HAVE_LIBPNG	
-      if (r != Succeeded) r = readPNG(filename, p, &imd); 
-#endif					/* HAVE_LIBPNG */
+      r = readImage(filename, p, &imd);
       if (r == Succeeded) {
 
 #ifdef Graphics3D

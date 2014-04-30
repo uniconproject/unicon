@@ -1229,22 +1229,23 @@ struct palentry *bmp_paltbl(int n, int *colortable)
  * Only trick we know about so far is to reverse rows so first row is bottom
  * But apparently this is wrong (for some bmp's?) if there's no color table.
  */
-unsigned char * bmp_data(int width, int height, int bpp, char * rasterdata)
+unsigned char * bmp_data(int width, int height, int bpp, char * rasterdata, int bottom_up)
 {
-int i;
-int rowbytes = width * bpp;
-char *tmp;
+   int i;
+   int rowbytes = width * bpp;
+   char *tmp;
 
-if (bpp!=1) return (unsigned char *)rasterdata;
-if ((tmp = malloc(rowbytes))==NULL) return NULL;
-for(i=0;i<height/2;i++) {
-   memmove(tmp, rasterdata + (i * rowbytes), rowbytes);
-   memmove(rasterdata + (i * rowbytes),
+   if (bottom_up) return (unsigned char *)rasterdata;
+
+   if ((tmp = malloc(rowbytes))==NULL) return NULL;
+   for(i=0;i<height/2;i++) {
+      memmove(tmp, rasterdata + (i * rowbytes), rowbytes);
+      memmove(rasterdata + (i * rowbytes),
 	   rasterdata + (height-i-1) * rowbytes, rowbytes);
-   memmove(rasterdata + (height-i-1) * rowbytes, tmp, rowbytes);
-   }
-free(tmp);
-return (unsigned char *)rasterdata;
+      memmove(rasterdata + (height-i-1) * rowbytes, tmp, rowbytes);
+      }
+  free(tmp);
+  return (unsigned char *)rasterdata;
 }
 
 
@@ -1318,11 +1319,18 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      imd->height = height;
      if (colortable) {
         imd->paltbl = bmp_paltbl(numcolors, colortable);
-        imd->data = bmp_data(width, height, 1, rasterdata);
+        imd->data = bmp_data(width, height, 1, rasterdata, imd->is_bottom_up);
         }
      else {
         imd->paltbl = NULL;
-        imd->data = bmp_data(width, height, 3, rasterdata);
+        imd->data = bmp_data(width, height, 3, rasterdata, imd->is_bottom_up);
+#ifdef NT
+	if (imd->format == UCOLOR_RGB &&  bitcount == 24 ){
+	   unsigned char *byte, t;
+ 	   for (byte=imd->data; byte<imd->data+width*height*3; byte+=3)
+	     {t = byte[0]; byte[0] = byte[2]; byte[2] = t;}
+	   }
+#endif
         }
      return Succeeded;
      }
@@ -2293,7 +2301,7 @@ static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
       c[3] = 0;
       if (fwrite(c, 4, 1, gf_f) < 1) return Failed;
       }
-   if (bmp_data(width, height, 1, (char *)gf_string) == NULL) return RunError;
+   if (bmp_data(width, height, 1, (char *)gf_string, 0) == NULL) return RunError;
    if (fwrite(gf_string, width, height, gf_f) < height) return Failed;
    return Succeeded;
 }
@@ -2638,6 +2646,119 @@ int x, y, width, height;
 
 #endif					/* HAVE_LIBJPEG */
 
+#define IMAGE_UNKNOWN	0
+#define IMAGE_GIF	1
+#define IMAGE_JPEG	2
+#define IMAGE_PNG	3
+#define IMAGE_BMP	4
+
+int image_type(fname)
+char *fname;
+{
+  int n = strlen(fname);
+  int i = n-3;
+  if (n < 5)
+     return IMAGE_UNKNOWN;
+
+  if (fname[i] == 'j' || fname[i] == 'J')
+     if ( (fname[++i] == 'p' || fname[i] == 'P') && 
+     	  (fname[++i] == 'g' || fname[i] == 'G'))
+	  return IMAGE_JPEG;
+
+  if (fname[i] == 'p' || fname[i] == 'P')
+     if ( (fname[++i] == 'n' || fname[i] == 'N') && 
+     	  (fname[++i] == 'g' || fname[i] == 'G'))
+	  return IMAGE_PNG;
+
+  if (fname[i] == 'g' || fname[i] == 'G')
+     if ( (fname[++i] == 'i' || fname[i] == 'I') && 
+     	  (fname[++i] == 'f' || fname[i] == 'F'))
+	  return IMAGE_GIF;
+
+  if (fname[i] == 'b' || fname[i] == 'B')
+     if ( (fname[++i] == 'm' || fname[i] == 'M') && 
+     	  (fname[++i] == 'p' || fname[i] == 'P'))
+	  return IMAGE_BMP;
+
+  return IMAGE_UNKNOWN;
+}
+ 
+/*
+ * readImage(filename, p, imd) - read an image file into image data structure
+ * p is a palette number to which the image colors are to be coerced;
+ * p=0 uses the colors exactly as given in the image file.
+ */
+
+int readImage(char *filename, int p, struct imgdata *imd){
+   int itype, r = Failed;
+   itype = image_type(filename);
+
+   switch (itype){
+     case IMAGE_JPEG: 
+#if HAVE_LIBJPEG
+        r = readJPEG(filename, p, imd);
+#endif					/* HAVE_LIBJPEG */
+	break;
+     case IMAGE_PNG: 
+#if HAVE_LIBPNG
+        r = readPNG(filename, p, imd);
+#endif					/* HAVE_LIBPNG */
+	break;
+     case IMAGE_GIF: 
+        r = readGIF(filename, p, imd);
+	break;
+     case IMAGE_BMP: 
+        r = readBMP(filename, p, imd);
+	break;
+     }
+
+  if (r == Succeeded)
+     return Succeeded; 				/* return success */
+
+ /*
+  * We couldn't read the file based on its extension
+  * try brute-force...
+  */
+#if HAVE_LIBJPEG
+   if (itype != IMAGE_JPEG && readJPEG(filename, p, imd) == Succeeded)
+     return Succeeded;
+#endif					/* HAVE_LIBPNG */
+
+#if HAVE_LIBPNG
+   if (itype != IMAGE_PNG && readPNG(filename, p, imd) == Succeeded)
+     return Succeeded;
+#endif					/* HAVE_LIBPNG */
+
+   if (itype != IMAGE_GIF && readGIF(filename, p, imd) == Succeeded)
+     return Succeeded;
+
+   if (itype != IMAGE_BMP && readBMP(filename, p, imd) == Succeeded)
+     return Succeeded;
+
+   return Failed;
+}
+
+int  writeImage	(wbp w, char *filename, int x, int y, int width, int height){
+   int itype, r = Failed;
+   itype = image_type(filename);
+
+   switch (itype){
+     case IMAGE_JPEG: 
+#if HAVE_LIBJPEG
+#endif					/* HAVE_LIBJPEG */
+	break;
+     case IMAGE_PNG: 
+#if HAVE_LIBPNG
+#endif					/* HAVE_LIBPNG */
+	break;
+     case IMAGE_GIF: 
+
+	break;
+     case IMAGE_BMP: 
+
+	break;
+     }
+}
 
 #ifdef ConsoleWindow
 #undef fprintf
@@ -3670,35 +3791,14 @@ char * abuf;
 #endif 
          ws->initimage.is_bottom_up = 0;
 
-         /* first try GIF; then try platform-dependent format */
-         r = readGIF(val, 0, &ws->initimage);
-         if (r != Succeeded) r = readBMP(val, 0, &ws->initimage);
+         /* first try supported image file formats; then try platform-dependent format */
+         r = readImage(val, 0, &ws->initimage);
          if (r == Succeeded) {
             setwidth(w, ws->initimage.width);
             setheight(w, ws->initimage.height);
             }
-         else {
-#if HAVE_LIBJPEG
-            r = readJPEG(val,0, &ws->initimage);
-            if (r == Succeeded) {
-               setwidth(w, ws->initimage.width);
-               setheight(w, ws->initimage.height);
-               }
-            else{
-#endif					/* HAVE_LIBJPEG */
-#if HAVE_LIBPNG
-            r = readPNG(val,0, &ws->initimage);
-            if (r == Succeeded) {
-               setwidth(w, ws->initimage.width);
-               setheight(w, ws->initimage.height);
-               }
-            else
-#endif					/* HAVE_LIBPNG */
-               r = setimage(w, val);
-#if HAVE_LIBJPEG
-            }
-#endif					/* HAVE_LIBJPEG */
-	    }
+         else
+            r = setimage(w, val);
 
 	 AttemptAttr(r);
          break;

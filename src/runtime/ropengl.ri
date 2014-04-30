@@ -2468,37 +2468,25 @@ int fileimage(wbp w, char* filename)
      i = SCREENDEPTH(w);
      i = i / 8;
 
-#if HAVE_LIBJPEG
-     if ((r = readJPEG(filename, i, &im)) == Succeeded) {
+     if ((r = readImage(filename, i, &im)) == Succeeded) {
         switch (i) {
         case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
                         (word)im.width*(word)im.height);
+                if (im.data){ free(im.data); im.data = NULL;}
+                if (im.paltbl){ free(im.paltbl); im.paltbl = NULL;}
                 break;
         case 2: /* 16-bit display, but opengl does the right thing for us */
         case 3:
         case 4: i = texture_24img(w, im);
+                if (im.data){ free(im.data); im.data = NULL;}
+                if (im.paltbl){ free(im.paltbl); im.paltbl = NULL;}
                 break;
         }
       }
      else
-#endif					/* HAVE_JPEG */
-#if HAVE_LIBPNG
-     if ((r = readPNG(filename, i, &im)) == Succeeded) {
-        switch (i) {
-        case 1: i = textureimg(w, im.width, im.height, im.paltbl, im.data,
-                        (word)im.width*(word)im.height);
-                break;
-        case 2: /* 16-bit display, but opengl does the right thing for us */
-	case 3:
-        case 4: i = texture_24img(w, im);
-                break;
-        }
-      }
-     else
-#endif					/* HAVE_PNG */
-
-         r = readimage(w, filename, 0, 0, &status);
+        r = readimage(w, filename, 0, 0, &status);
    }
+
    if (i == Succeeded)
 	 return Succeeded;
    else

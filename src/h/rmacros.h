@@ -351,7 +351,7 @@
 #else					/* EBCDIC */
    #define LineFeed  10
    #define CarriageReturn 13
-#define tonum(c)     (isdigit(c) ? (c)-'0' : 10+(((c)|(040))-'a'))
+   #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
 #endif					/* EBCDIC */
 
 /*

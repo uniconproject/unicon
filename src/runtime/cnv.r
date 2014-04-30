@@ -16,10 +16,6 @@
  * have managed to eliminate bugs related to these assignments.
  */
 
-#if !EBCDIC
-#define tonum(c)	(isdigit(c) ? (c)-'0' : 10+(((c)|(040))-'a'))
-#endif					/* EBCDIC */
-
 /*
  * Prototypes for static functions.
  */

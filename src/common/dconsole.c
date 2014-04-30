@@ -578,7 +578,7 @@ union numeric *result;
    num = 0L;
    while (isalnum(c)) {
 #if !EBCDIC
-   #define tonum(c)	(isdigit(c) ? (c)-'0' : 10+(((c)|(040))-'a'))
+   #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
 #endif
       c = tonum(c);
       if (c >= r)

@@ -429,16 +429,12 @@ int checkOpenConsole( FILE *w, char *s );
    int	parsegeometry	(char *buf, SHORT *x, SHORT *y, SHORT *w, SHORT *h);
    int	parsepattern	(char *s, int len, int *w, int *nbits, C_integer *bits);
    void	qevent		(wsp ws, dptr e, int x, int y, uword t, long f);
+
    int readBMP		(char *filename, int p, struct imgdata *imd);
-   int	readGIF		(char *fname, int p, struct imgdata *d);
-#if HAVE_LIBJPEG
-   int	readJPEG	(char *fname, int p, struct imgdata *d);
-   int  writeJPEG	(wbp w, char *fn, int x, int y, int width, int height);
-#endif					/* HAVE_LIBJPEG */
-#if HAVE_LIBPNG
-   int	readPNG		(char *fname, int p, struct imgdata *d);
-   int  writePNG	(wbp w, char *fn, int x, int y, int width, int height);
-#endif					/* HAVE_LIBPNG */
+   int readGIF		(char *fname, int p, struct imgdata *d);
+
+   int readImage        (char *filename, int p, struct imgdata *imd);
+   int writeImage	(wbp w, char *filename, int x, int y, int width, int height);
    int	rectargs	(wbp w, int argc, dptr argv, int i,
    			   word *px, word *py, word *pw, word *ph);
    char	*rgbkey		(int p, double r, double g, double b);

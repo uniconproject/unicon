@@ -43,14 +43,24 @@ procedure threadfun2(number)
       }
       else{                  # no more work! wake &main
          write(output, number)
-         signal(&main) & return
+         signal(&main)
      }
   }
 end
 
+procedure threadfun3(number)
+   next_thread := <<@        # wait for &main to send me my next thread
+   repeat  (((0 < <<@) - 1) @>> next_thread) | 
+       ( write(output, number) & ( @>> &main) & return)
+end
+
 procedure run_threadring(argv)
- if argv[2] then
-     run_threadring_new(argv)
+ if argv[2] then{
+     if numeric(argv[2]) = 2 then
+        run_threadring_new2(argv)
+     else
+        run_threadring_new(argv)
+ }
  else
      run_threadring_old(argv)
 end
@@ -66,6 +76,19 @@ procedure run_threadring_new(argv)
       }
    first_thread @>> new_thread
    delay(-1)
+end
+
+procedure run_threadring_new2(argv)
+   n := argv[1]
+   first_thread :=  prev_thread := spawn(create threadfun3(1), 1K, 1K, 64K)
+   every number := 2 to 503 do {
+      new_thread := spawn(create threadfun3(number), 1K, 1K, 64K)
+      new_thread @>> prev_thread
+      prev_thread := new_thread
+      }
+   first_thread @>> new_thread
+   n @>> first_thread
+   <<@
 end
 
 $ifdef MAIN

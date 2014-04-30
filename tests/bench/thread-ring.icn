@@ -35,7 +35,7 @@ end
 
 procedure threadfun2(number)
    next_thread := <<@        # wait for &main to send me my next thread
-   repeat{
+   repeat {
       delay(-1)              # delay/block forever! until some thread signals me 
       if n > 0 then{
 	 n -:= 1
@@ -50,8 +50,9 @@ end
 
 procedure threadfun3(number)
    next_thread := <<@        # wait for &main to send me my next thread
-   repeat  (((0 < <<@) - 1) @>> next_thread) | 
-       ( write(output, number) & ( @>> &main) & return)
+   while ((0 < <<@) - 1) @>> next_thread
+   write(output, number)
+   @>> &main
 end
 
 procedure run_threadring(argv)

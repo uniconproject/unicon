@@ -20,17 +20,52 @@ procedure threadfun(number, my_lock, next_lock)
       }
 end
 
-procedure run_threadring(argv)
+procedure run_threadring_old(argv)
    n := argv[1]
    main_lock := condvar()
    next_lock := first_lock := condvar()
    every number := 1 to 503 do {
       my_lock := next_lock
       next_lock := if number < 503 then condvar() else first_lock
-      spawn(create threadfun(number, my_lock, next_lock),512,512)
+      spawn(create threadfun(number, my_lock, next_lock),1K, 1K, 64K)
       }
    signal(first_lock)
    critical main_lock: wait(main_lock)
+end
+
+procedure threadfun2(number)
+   next_thread := <<@        # wait for &main to send me my next thread
+   repeat{
+      delay(-1)              # delay/block forever! until some thread signals me 
+      if n > 0 then{
+	 n -:= 1
+	 signal(next_thread) # wake up the next thread
+      }
+      else{                  # no more work! wake &main
+         write(output, number)
+         signal(&main) & return
+     }
+  }
+end
+
+procedure run_threadring(argv)
+ if argv[2] then
+     run_threadring_new(argv)
+ else
+     run_threadring_old(argv)
+end
+
+procedure run_threadring_new(argv)
+   n := argv[1]
+   first_thread :=  prev_thread := spawn(create threadfun2(1), 1K, 1K, 64K)
+   signal(first_thread)
+   every number := 2 to 503 do {
+      new_thread := spawn(create threadfun2(number), 1K, 1K, 64K)
+      new_thread @>> prev_thread
+      prev_thread := new_thread
+      }
+   first_thread @>> new_thread
+   delay(-1)
 end
 
 $ifdef MAIN

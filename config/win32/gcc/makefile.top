@@ -5,12 +5,80 @@ MAKE2=make
 Top:
 	@echo To configure sources:
 	@echo    MSVC: "nmake NT-Configure" or "nmake W-Configure"
-	@echo    GCC: "make NT-Configure-GCC" or "make W-Configure-GCC"
-	@echo Then run "[n]make Unicon" to build everything
+	@echo           Then run "nmake Unicon" to build everything
+	@echo "   GCC: Run \"make WUnicon\" or \"make WUnicon64\"."
+
 
 WUnicon:
-	cd config/win32/gcc && sh msconfig.sh
-	make Unicon
+	@echo
+	@echo =============================================
+	@echo Running configuration and setup scripts NT 32
+	@echo =============================================
+	@echo
+	cd config/win32/gcc && sh config.sh
+	cd config/win32/gcc && sh nt-config.sh
+	cd config/win32/gcc && sh config32.sh
+	@echo
+	@echo =========================
+	@echo Building NT Unicon 32-bit
+	@echo =========================
+	@echo
+	$(MAKE2) Unicon
+	@echo
+	@echo ==================================================
+	@echo Running configuration and setup scripts Windows 32
+	@echo ==================================================
+	@echo
+	cd config/win32/gcc && sh config.sh
+	cd config/win32/gcc && sh w-config.sh
+	cd config/win32/gcc && sh config32.sh
+	@echo
+	@echo ==============================
+	@echo Building Windows Unicon 32-bit
+	@echo ==============================
+	@echo
+	echo make Unicon
+	$(MAKE2) Unicon
+	@echo
+	@echo ===================================================
+	@echo Windows Unicon build process completed successfully
+	@echo ===================================================
+	@echo
+
+WUnicon64:
+	@echo
+	@echo =============================================
+	@echo Running configuration and setup scripts NT 64
+	@echo =============================================
+	@echo
+	cd config/win32/gcc && sh config.sh
+	cd config/win32/gcc && sh nt-config.sh
+	cd config/win32/gcc && sh config64.sh
+	@echo
+	@echo ==================
+	@echo Building NT Unicon
+	@echo ==================
+	@echo
+	$(MAKE2) Unicon
+	@echo
+	@echo ==================================================
+	@echo Running configuration and setup scripts Windows 64
+	@echo ==================================================
+	@echo
+	cd config/win32/gcc && sh config.sh
+	cd config/win32/gcc && sh w-config.sh
+	cd config/win32/gcc && sh config64.sh
+	@echo
+	@echo ==============================
+	@echo Building Windows Unicon 64-bit
+	@echo ==============================
+	@echo
+	$(MAKE2) Unicon
+	@echo
+	@echo ==========================================================
+	@echo Windows Unicon 64-bit build process completed successfully
+	@echo ==========================================================
+	@echo
 
 W-Configure-GCC:
 	cd config/win32/gcc && sh config.sh

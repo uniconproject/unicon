@@ -10,6 +10,7 @@ help:
 	@echo "   where system is one of those in config/unix."
 	@echo "Windows (MSVC): Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
 	@echo "Windows (GCC): Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
+	@echo "        (GCC): For a fully-automated build Run \"make WUnicon\" ."
 	@echo "All: Then add the Unicon bin directory to your path."
 	@echo "All: after configuration, run \"make (or nmake) Unicon\"."
 
@@ -52,6 +53,17 @@ VX-Configure:	config/unix/$(name)/status
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure
 		@echo Now remember to add unicon/bin to your path
+
+WUnicon:
+	@echo Reloading the Makefile from config/win32/gcc/makefile.top
+	cp config/win32/gcc/makefile.top Makefile
+	@echo Done.
+	@echo
+	@echo Ready to build Windows Unicon, Please run
+	@echo
+	@echo "   - " \"make WUnicon\"   for a 32-bit build, or
+	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
+	@echo
 
 NT-Configure:
 		cmd /C "cd config\win32\msvc && config"

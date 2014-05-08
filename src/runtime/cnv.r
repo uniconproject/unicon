@@ -72,7 +72,7 @@ double *d;
          return 1;
          }
       string: {
-         /* fall through */
+         /* fall through (to the statement after the type_case).  */
          }
       cset: {
         tmp_str(sbuf, s, &cnvstr);
@@ -140,7 +140,7 @@ C_integer *d;
          return 1;
          }
       string: {
-         /* fall through */
+         /* fall through (to the statement after the type_case).  */
          }
       cset: {
         tmp_str(sbuf, s, &cnvstr);
@@ -287,7 +287,7 @@ C_integer *d;
          return 1;
          }
       string: {
-         /* fall through */
+         /* fall through (to the statement after the type_case).  */
          }
       cset: {
         tmp_str(sbuf, s, &cnvstr);
@@ -326,7 +326,7 @@ dptr s, d;
          return 1;
          }
       string: {
-         /* fall through */
+         /* fall through (to the statement after the type_case).  */
          }
       cset: {
         tmp_str(sbuf, s, &cnvstr);
@@ -401,7 +401,7 @@ dptr s, d;
          return 1;
          }
       string: {
-         /* fall through */
+         /* fall through (to the statement after the type_case).  */
          }
       cset: {
         tmp_str(sbuf, s, &cnvstr);

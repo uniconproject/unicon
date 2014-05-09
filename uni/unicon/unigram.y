@@ -333,7 +333,7 @@ cl: classhead SEMICOL END {
       if $3.label == "locals3" then
          yyerror("static class variables not yet implemented")
       # splice in any class locals into the field list
-      $$.fields.traverse($3)
+      $$.fields.traverse($3, "classlocal")
       }
    if $6 ~=== EmptyNode then
       $4 := node("methods", $4, $6)

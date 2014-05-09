@@ -836,23 +836,32 @@ class idTaque : taque(punc)
   # list of identifiers have been parsed; also called on "local"
   # declarations in classes to append them onto the initial list.
   #
-  method traverse(node)
+  method traverse(node, isClassLocal)
       case type(node) of {
 	 "treenode": {
 	    if *node.children > 0 then {
-		if node.label == ("arg2"|"arg3"|"arg4"|"arg5"|"arg6") then {
-		    insert(node.children[1].s)
-		    }
-                else if node.label == "varlist2" then {
-                    insert(node.children[1].s)
-		    }
-                else if node.label==("varlist3"|"varlist4") then {
-                    traverse(node.children[1])
-                    insert(node.children[3].s)
-		    }
-		else
-		    every traverse(!node.children)
-		}
+	       if node.label == ("arg2"|"arg3"|"arg4"|"arg5"|"arg6") then {
+		  if /isClassLocal then
+		     insert(node, node.children[1].s)
+		  else
+		     insert(node.children[1].s)
+		  }
+	       else if node.label == "varlist2" then {
+		  if /isClassLocal then
+                     insert(node, node.children[1].s)
+		  else
+                     insert(node.children[1].s)
+		  }
+	       else if node.label==("varlist3"|"varlist4") then {
+		  traverse(node.children[1], isClassLocal)
+		  if /isClassLocal then
+		     insert(node, node.children[3].s)
+		  else
+		     insert(node.children[3].s)
+		  }
+	       else
+		  every traverse(!node.children, isClassLocal)
+	       }
 	    else write("leaf ", node.label)
 	    }
 	 "token": {

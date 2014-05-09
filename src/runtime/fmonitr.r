@@ -58,8 +58,10 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       ((Testb((word)ToAscii(E_Tcreate), cs)) ? cptable_1 : cptable_0);
    p->Deref =
       ((Testb((word)ToAscii(E_Deref), cs)) ? deref_1 : deref_0);
+#ifdef LargeInts
    p->Alcbignum =
       ((Testb((word)ToAscii(E_Lrgint),cs)) ? alcbignum_1:alcbignum_0);
+#endif					/* LargeInts */
    p->Alccset =
       ((Testb((word)ToAscii(E_Cset), cs)) ? alccset_1 : alccset_0);
 #undef alcfile

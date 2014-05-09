@@ -792,7 +792,9 @@ char *argv[];
    rootpstate.Cnvtcset = cnv_tcset_0;
    rootpstate.Cnvtstr = cnv_tstr_0;
    rootpstate.Deref = deref_0;
+#ifdef LargeInts
    rootpstate.Alcbignum = alcbignum_0;
+#endif					/* LargeInts */
    rootpstate.Alccset = alccset_0;
    rootpstate.Alcfile = alcfile;
    rootpstate.Alchash = alchash_0;
@@ -2118,7 +2120,9 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Cnvtcset = cnv_tcset_0;
    pstate->Cnvtstr = cnv_tstr_0;
    pstate->Deref = deref_0;
+#ifdef LargeInts
    pstate->Alcbignum = alcbignum_0;
+#endif					/* LargeInts */
    pstate->Alccset = alccset_0;
    pstate->Alcfile = alcfile;
    pstate->Alchash = alchash_0;

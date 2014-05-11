@@ -16,7 +16,7 @@ asterisk (\textsf{\textbf{*}}) and non-generators that can
 denotes a predicate whose success or failure is what matters; the
 predicate return value (\textsf{\&null}) is not significant.
 
-\section{Immutable Types}
+\section{Immutable Types: Numbers, Strings, Csets}
 
 Unicon's immutable types are integers, real numbers,
 strings, and csets. Values of these types cannot change. Operators and
@@ -24,7 +24,7 @@ functions on immutable types produce new values rather than modify
 existing ones. The simplest expressions are literal values, which occur
 only for immutable types. A literal value evaluates to itself.
 
-\subsection{Integer}
+\subsection*{Integer}
 
 Integers are of arbitrary precision. Decimal \index{integer}integer
 literals are contiguous sequences of the digits 0 through 9, optionally
@@ -40,7 +40,7 @@ used for values 10-35. Radix literals are case insensitive, unlike the
 rest of the language, so the R may be upper or lower case, as may the
 following alphabetic digits.
 
-\subsection{Real}
+\subsection*{Real}
 
 \index{real number}Reals are double-precision floating-point values.
 Real decimal literals are contiguous sequences of the digits 0 through
@@ -48,7 +48,7 @@ Real decimal literals are contiguous sequences of the digits 0 through
 the digits. Real exponent literals use the format
 \textit{number}E\textit{integer}; E may be upper or lower case.
 
-\subsection{String}
+\subsection*{String}
 
 \index{string}Strings are sequences of 0 or more characters, where a
 character is a value with a platform-dependent size and symbolic
@@ -121,14 +121,14 @@ Control-\textit{x} &
 \end{center}
 
 
-\subsection{Cset}
+\subsection*{Cset}
 
 \index{cset}Csets are sets of 0 or more characters. Cset literals
 consist of 0 or more characters enclosed in single quotes. As with
 strings, a \index{cset literal}cset literal may include escape
 sequences that use multiple characters to encode special characters.
 
-\section{Mutable Types}
+\section{Mutable Types: Containers and Files}
 
 Mutable types' values may be altered. Changes to a
 \index{mutable value}mutable value affect its allocated memory or its
@@ -139,35 +139,35 @@ the entries for \index{constructor}constructors that
 create them. \index{structure types}Structure types hold
 collections of elements that may be of arbitrary, mixed type.
 
-\subsection{List}
+\subsection*{List}
 
 \index{list}Lists are dynamically sized, ordered sequences of zero or
 more values. They are constructed by function, by an explicit
 operator, or implicitly by a call to a variable argument procedure.
 They change size by \index{stack}stack and \index{queue}queue functions.
 
-\subsection{Table}
+\subsection*{Table}
 
 \index{table}Tables are dynamically sized, unordered mappings from keys
 to elements. They are constructed by function. The keys may be of
 arbitrary, mixed type.
 
-\subsection{Set}
+\subsection*{Set}
 
 \index{set}Sets are unordered collections. They are constructed by function.
 
-\subsection{Record}
+\subsection*{Record}
 
 \index{record}Records are ordered, fixed length sequences of elements
 accessed via named fields.
 
-\subsection{Object}
+\subsection*{Object}
 
 \index{object}Objects are ordered, fixed length sequences of elements that may
 be accessed via named fields and methods. Accessing an object's fields from
 outside its methods (using it as a record) is legal but deprecated.
 
-\subsection{File}
+\subsection*{File}
 
 \index{file}Files are system resources corresponding to data on secondary
 storage, areas on users' displays, network connections, or
@@ -204,14 +204,14 @@ affect the other. Aliasing is a common source of program bugs.
 Variables holding integer, real, string, or cset values are never
 aliased, because those types are immutable.
 
-\subsection{Global}
+\subsection*{Global}
 
 Global variables are visible everywhere in the program, and exist at the same
 location for the entire program execution. Declaring a procedure declares a
 global variable initialized to the procedure value that corresponds to the
 code for that procedure.
 
-\subsection{Local}
+\subsection*{Local}
 
 Local variables exist and are visible within a single procedure or method only
 for the duration of a single procedure invocation, including suspensions and
@@ -225,14 +225,14 @@ that are preinitialized to the values of actual parameters at the time
 of a procedure or method invocation. The semantics of parameter passing
 are the same as those of assignment.
 
-\subsection{Static}
+\subsection*{Static}
 
 Static variables are visible only within a single procedure or method, but exist
 at the same location for the entire program execution. The value stored in a
 static variable is preserved between multiple calls to the procedure in which it
 is declared.
 
-\subsection{Class}
+\subsection*{Class}
 
 Class variables are visible within the methods of a declared class.  Class
 variables are created for each \index{instance!class}instance (object) of the
@@ -622,7 +622,7 @@ case letters from A to Z.
 \index{version}\textsf{\&version} is a string that indicates which
 version of Unicon or Icon is executing.
 
-\subsection{Graphics keywords}
+\subsection*{Graphics keywords}
 
 Several of the graphics keywords are variables with assignment
 restricted to value of a particular type or types. Graphics keywords
@@ -1127,12 +1127,12 @@ functions can take two indices to specify a section of the string or
 list. When two indices are supplied, they select the same string
 section whether they are in ascending or descending order.
 
-\subsection{Operators}
+\subsection*{Operators}
 
 \index{operators}The result types of operators are the same as the
 operand types except as noted.
 
-\subsection{Unary operators}
+\subsection*{Unary operators}
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ! x : any* \hfill generate elements}
@@ -1227,7 +1227,7 @@ consisting of all characters not in its operand.
 co-expression so the next time it is activated it will begin with its
 first result.
 
-\subsection{Binary operators}
+\subsection*{Binary operators}
 
 \index{binary operator}Most binary operators may be augmented with an
 \index{assignment!augmented}assignment. If such an operator is followed
@@ -1516,7 +1516,7 @@ argument; the procedure is called with these co-expressions as its
 parameters, and can determine for itself whether, and in what order, to
 activate its parameters to obtain values.
 
-\subsection{Built-in functions}
+\subsection*{Built-in functions}
 
 Unicon's \index{built-in functions}built-in functions
 are a key element of its ease of learning and use. They provide
@@ -3008,7 +3008,7 @@ argument is written to the nearest preceding file argument, defaulting
 to \texttt{\&output}. \index{writes()}\texttt{writes()} returns its
 last argument.
 
-\subsection{Graphics functions}
+\subsection*{Graphics functions}
 
 The names of built-in graphics functions begin with upper case. The built-in
 graphics functions are listed here. These functions are more thoroughly
@@ -3761,7 +3761,7 @@ inclusion and symbolic constants. It is a subset of the capabilities found in
 the C preprocessor, and is used primarily to support platform-specific code
 sections and large collections of symbols.
 
-\subsection{Preprocessor commands}
+\subsection*{Preprocessor commands}
 
 Preprocessor directives are lines beginning with a dollar sign. The
 available preprocessor commands are:
@@ -3839,7 +3839,7 @@ were missing certain bracket characters.
 These character combinations are substitutes for curly and square
 brackets on keyboards that do not have these characters.
 
-\subsection{Predefined symbols}
+\subsection*{Predefined symbols}
 
 \index{predefined symbols}Predefined symbols are provided for each
 platform and each feature that is optionally compiled in on some
@@ -3894,7 +3894,7 @@ that cannot perform as instructed. System errors occur when an
 operating system call \index{fail!system call}fails to perform a
 required service.
 
-\subsection{Runtime errors}
+\subsection*{Runtime errors}
 
 By default, a \index{runtime error}runtime error causes program
 execution to abort. Runtime errors are reported by name as well as by
@@ -3994,7 +3994,7 @@ length\\
 500 \ \ \ \ \ \ \ program malfunction\\
 600 \ \ \ \ \ \ \ vidget usage error
 
-\subsection{System errors}
+\subsection*{System errors}
 
 If an error occurs during the execution of a \index{error!system}system
 function, by default the function fails and keywords \&errornumber, \&errortext

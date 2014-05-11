@@ -21,7 +21,7 @@ there is a trade-off between simplicity, portability, and full access
 to the underlying machine. Unicon aims for simplicity and ease of
 programming rather than full low-level access.
 
-\section{2D Graphics}
+\section{2D Graphics Basics}
 
 Unicon's 2D facilities provide access to graphics displays without
 enforcing a particular user interface look-and-feel.  Events other
@@ -42,7 +42,6 @@ values make simple graphics applications extremely easy to program,
 while providing flexibility where it is needed in more sophisticated
 applications.
 
-\subsection{Window basics}
 
 A window is a special file opened with mode \texttt{"g"}, appearing
 on-screen as a rectangular space for text and/or graphics. Windows
@@ -176,7 +175,7 @@ e.g. \texttt{"pos=200,200"}.
   \end{supertabular}
 \end{center}
 
-\subsection{Graphics contexts}
+\section{Graphics Contexts}
 
 Some attributes are associated with the window itself, while others
 are associated with the \textit{graphics context}, a set of resources
@@ -306,7 +305,7 @@ values and default to zero. These integers are added into the
 coordinates of all output operations that use the context; input
 coordinates in \texttt{\&x} and \texttt{\&y} are not translated.
 
-\subsection{Events}
+\section{Events}
 
 User input such as keystrokes and mouse clicks are called
 \textit{events}. Many events are handled by Unicon automatically,
@@ -498,7 +497,7 @@ window is said to starve if its pending events are never
 serviced. \texttt{Active()} cycles through open windows on repeated
 calls in a way that avoids window starvation.
 
-\subsection{Colors}
+\section{Colors and Fonts}
 
 Unicon recognizes a set of string color names based loosely on a color
 naming system found in [Berk82]. The color names are simple English
@@ -546,7 +545,7 @@ be told to perform the correction by means of the gamma attribute; 1.0
 is a default (no gamma correction), and experimenting with values
 between 2 and 3 usually provides satisfactory results.
 
-\subsection{Fonts}
+\subsection*{Fonts}
 
 Fonts are specified by a comma-separated string of up to four fields
 supplying the font's family name, followed by optional size or italic
@@ -556,7 +555,7 @@ systems include serif, sans, typewriter, and mono. These families map
 onto the system's closest approximation of Times, Helvetica, Courier,
 and a monospaced console font. Font sizes are given in pixel height.
 
-\subsection{Images and palettes}
+\section{Images, Palettes, and Patterns}
 
 \texttt{DrawImage(x, y, s)} draws a rectangular area using an image
 string.  String \texttt{s} has the form
@@ -566,8 +565,6 @@ defines the colors corresponding to data values, and the rest of the
 data supplies pixel values. Predefined palettes and palette functions
 help to provide this capability. Image and palette functions are
 described fully in [Griswold98].
-
-\subsection{Patterns}
 
 The context attribute \texttt{fillstyle} determines the pixels used by
 draw and fill functions like \texttt{FillPolygon()}.  If the
@@ -592,7 +589,7 @@ digits required to supply width bits. For example, the call
 
 \noindent defines a 4x4 pattern where each row is defined by one hex digit.
 
-\subsection{\texttt{pme}: a pixmap editor}
+\subsection*{\texttt{pme}: a pixmap editor}
 
 A simple image editor called \texttt{pme} demonstrates event
 processing including mouse events. \texttt{pme} displays both a small
@@ -904,7 +901,7 @@ extended in the 3D realm to denote a foreground \textit{material},
 including color as well as how the object appears in different types
 of lighting.
 
-\subsection{Opening windows for 3D graphics}
+\subsection*{Opening windows for 3D graphics}
 
 To open a 3D graphics window, call the built in function \texttt{open()},
 passing in the title of the window to be opened and mode "gl".
@@ -916,7 +913,7 @@ passing in the title of the window to be opened and mode "gl".
 As in the 2D facilities, if a window is assigned to the keyword variable
 \&window, it is a default window for subsequent 3D function calls. 
 
-\subsection{3D attributes}
+\subsection*{3D attributes}
 
 Features such as lighting, perspective, textures, and shading give a
 scene the illusion of being three-dimensional. A Unicon programmer
@@ -1027,7 +1024,7 @@ RW\\\hline
 \end{center}
 
 
-\subsection{3D drawing primitives}
+\subsection*{3D drawing primitives}
 
 In 2D, programs draw points, lines, polygons, and circles. Functions
 that have been extended for 3D include \texttt{DrawPoint()},
@@ -1141,7 +1138,7 @@ radius.  &
 \end{center}
 
 
-\subsection{Coordinate transformations}
+\subsection*{Coordinate transformations}
 
 Matrix multiplications are used to calculate transformations such as rotations
 on objects and the field of view. Functions to perform several matrix
@@ -1177,7 +1174,7 @@ error. Furthermore, only one matrix stack can be manipulated at any
 given time. The function \texttt{MatrixMode()} switches between the
 two matrix stacks.
 
-\subsection{Lighting and materials}
+\subsection*{Lighting and materials}
 
 Lighting is important in making a graphics scene appear to be 3D.
 Adding lighting to a scene can be complicated and the hardware support
@@ -1270,7 +1267,7 @@ greatly reduces the number of lines of code needed for a scene. Thanks
 to this design along with the extensive use of defaults, a programmer
 can use lighting in a 3D graphics application without much effort.
 
-\subsection{Textures}
+\section{Textures}
 
 Another important area of 3D graphics is textures.  Adding textures to
 a scene can give a scene a realistic feel.  There are several aspects
@@ -1439,7 +1436,7 @@ None &
 \end{supertabular}
 \end{center}
 
-\subsection{Examples}
+\subsection*{3D Examples}
 
 \paragraph{Changing Context Attributes}
 The user can change attributes throughout a program. Multiple
@@ -1855,7 +1852,7 @@ call
 This resets the texture coordinates to the defaults. Finally, texturing
 is turned off to draw the base of the table.
 
-\subsection{Animation}
+\subsection*{Animation}
 
 Graphics animation is performance sensitive, and Unicon is slower than
 systems programming languages such as C and C++. Nevertheless, it is
@@ -1895,7 +1892,7 @@ on midrange PC hardware. Unicon supports smooth animation for a number
 of objects which varies widely depending on the underlying graphics
 hardware and software.
 
-\subsection{Selective rendering and object selection}
+\subsection*{Selective rendering and object selection}
 
 Many 3D applications model scenes with far more objects than are
 needed at any particular instant. For example, a virtual building

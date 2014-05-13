@@ -67,7 +67,7 @@ random one. The code below shows how to implement this idea:
 
 \iconcode{
 \>   maxi := 2\^{}6 \\
-\ \ \ population := [?maxi, ?maxi, ?maxi, ?maxi, ?maxi, ?maxi] \\
+\>   population := [?maxi, ?maxi, ?maxi, ?maxi, ?maxi, ?maxi] \\
 \>   every i := 1 to 100 do \{ \\
 \>   \ \ \ worst := 1 \\
 \>   \ \ \ every i := 1 to 5 do \\
@@ -81,32 +81,26 @@ Before modeling mating and mutation, you'll have to
 create a more detailed representation of the internals of an
 individual.
 
-\section{GA Operations: Fitness, Crossover, and Mutation}
+\section{Operations: Fitness, Crossover, and Mutation}
 
 An individual is represented by a string from a binary alphabet.
 Incidentally, natural evolution of DNA is based on a quaternary
 alphabet, but the size of the alphabet is unimportant for a computer
 model. In Unicon, you could represent these individuals with lists of
-integers. However, strings of \textsf{"1"}
-and \textsf{"0"} characters provide a
+integers. However, strings of \texttt{"1"}
+and \texttt{"0"} characters provide a
 representation that is easier to use. So, here is a more explicit
 representation of a population:
 
 \iconcode{
-\>   population := list(6) \\
-\>   population[1] := "010111" \\
-\>   population[2] := "000101" \\
-\>   population[3] := "111101" \\
-\>   population[4] := "111011" \\
-\>   population[5] := "111110" \\
-\>   population[6] := "010110"
+\>   population := ["010111", "000101", "111101", "111011", "111110", "010110"]
 }
 
 \subsection*{Fitness}
 
 The fitness can be computed by converting the string representation into
-an integer as follows: \textsf{integer("2r"
-{\textbar}{\textbar} population[1])}. The \textsf{2r} means that this
+an integer as follows: \texttt{integer("2r"
+{\textbar}{\textbar} population[1])}. The \texttt{2r} means that this
 is a literal representation of an integer in base two form. There are
 many different possible selection schemes used in GAs. This chapter
 uses one that has proven to be very robust in a large number of
@@ -170,9 +164,9 @@ The end result of tournament selection is listed here:
 "111011" \# 59
 }
 
-Notice how there are two copies of \textsf{population[3]} and
-\textsf{population[5]} in \textsf{next\_gen}. On the other hand, there
-are no copies of \textsf{population[2]}.
+Notice how there are two copies of \texttt{population[3]} and
+\texttt{population[5]} in \texttt{next\_gen}. On the other hand, there
+are no copies of \texttt{population[2]}.
 
 \subsection*{Crossover}
 
@@ -196,12 +190,12 @@ form two new rings.\\
 {\sffamily Two-point crossover.}
 
 The code for two-point crossover is presented below. The
-\textsf{?(lchrom+1)} expression picks a random number between one and
-the length of the chromosome. Variables \textsf{a} and \textsf{b} are
-initialized to two different values in this range; \textsf{a} is made
+\texttt{?(lchrom+1)} expression picks a random number between one and
+the length of the chromosome. Variables \texttt{a} and \texttt{b} are
+initialized to two different values in this range; \texttt{a} is made
 the smaller of the two indices. Two children in the new generation are
-formed by splicing portions of \textsf{parent1} and \textsf{parent2}
-within the range from \textsf{a} to \textsf{b}.
+formed by splicing portions of \texttt{parent1} and \texttt{parent2}
+within the range from \texttt{a} to \texttt{b}.
 
 \iconcode{
 \>   \ \ \ a := ?(lchrom+1) \\
@@ -249,13 +243,13 @@ population.
 condition.
 
 Even with this mechanical algorithm, applying a GA to any specific
-problem is still an art. For example, step 7 leaves the desired
+problem remains an art. For example, step 7 leaves the desired
 stopping condition up to the implementer. Typically the stopping
-condition might be something like, until the average fitness has not
-risen significantly in the last five generations. This is only one of
-many implementation choices you have to make. There are all sorts of
-choices you can make from variations on crossover to adjusting the
-mutation and mating rates. \ Here are some time-tested rules of thumb:
+condition might be something like: until the average fitness has not
+risen significantly in the last five generations. This is one of
+many implementation choices you have to make,
+from variations on crossover to adjusting the
+mutation and mating rates. Here are some time-tested rules of thumb:
 
 \ \ 1.\ \ Encode the solutions to a problem with as few bits as possible
 but not at the expense of making the encoding very complex. 
@@ -281,7 +275,7 @@ solutions.
 The \texttt{ga\_eng} engine is a general purpose reusable GA engine that
 can quickly and easily be adapted to solve a variety of problems. This
 section presents its key elements. The full \index{source code}source
-code for \textsf{ga\_eng} is on the book's web site.
+code for \texttt{ga\_eng} is on the book's web site.
 
 From the preceding sections, you can tell that a GA maintains a large
 amount of information as it transitions from one generation to the
@@ -300,13 +294,13 @@ individuals
 Given the above state information, what can a GA engine do?
 
 \begin{itemize}
-\item \textsf{init()} $-$ initialize the state information and
+\item \texttt{init()} $-$ initialize the state information and
 population
-\item \textsf{evolve()} $-$ move a population from one generation to the
+\item \texttt{evolve()} $-$ move a population from one generation to the
 next
-\item \textsf{tselect()} $-$ perform tournament of selection on the
+\item \texttt{tselect()} $-$ perform tournament of selection on the
 population
-\item \textsf{stats()} $-$ collect statistics about the current
+\item \texttt{stats()} $-$ collect statistics about the current
 population to monitor progress
 \end{itemize}
 
@@ -322,21 +316,19 @@ property of not requiring that each individual's
 fitness be computed at every generation.
 
 To use the GA engine, the programmer supplies an application-specific
-fitness function \textsf{f(x)} that is applied to each individual of
-the population every generation. Given a binary string \textsf{s},
-\textsf{f(s)} would return a numeric fitness value.
+fitness function \texttt{f(x)} that is applied to each individual of
+the population every generation. Given a binary string \texttt{s},
+\texttt{f(s)} would return a numeric fitness value.
 
 \subsection*{Methods and attributes of class \texttt{ga\_eng}}
 
-Class \textsf{ga\_eng} implements the engine. It provides
-two public methods, \textsf{evolve()} and \textsf{set\_params()}, as
+Class \texttt{ga\_eng} implements the engine. It provides
+two public methods, \texttt{evolve()} and \texttt{set\_params()}, as
 well as eight private methods: 
 
 \iconcode{
-method set\_params(fitness\_func, popsize, lchrom,  \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pcross, pmutation, log\_file) \\
 method evolve() \\
-\ \\
+method set\_params(fitness\_func, popsize, lchrom, pcross, pmutation, log\_file) \\
 method tselect() \\
 method crossover2(parent1, parent2) \\
 method generation() \\
@@ -347,22 +339,22 @@ method initpop() \\
 method init()
 }
 
-The \textsf{set\_params()} method sets the fitness function, the
+The \texttt{set\_params()} method sets the fitness function, the
 population size, the length of the chromosomes, the probability of
 crossover, the probability of mutation, and the log file for generating
 a trace of \ a run. The \index{constructor}constructor
-\textsf{ga\_eng()} takes the same input parameters as
-\textsf{set\_params()} but it also re-initializes the engine by
-creating a new population from scratch. The \textsf{evolve()} method
+\texttt{ga\_eng()} takes the same input parameters as
+\texttt{set\_params()} but it also re-initializes the engine by
+creating a new population from scratch. The \texttt{evolve()} method
 moves the population from one generation to the next.
 
-The \textsf{tselect()} method operates on the whole population by
-performing tournament selection. The \textsf{crossover2()} method takes
+The \texttt{tselect()} method operates on the whole population by
+performing tournament selection. The \texttt{crossover2()} method takes
 two individuals and returns two new individuals in a list after doing
-two-point crossover. The \textsf{stats()} method collects statistics on
-the given population, and \textsf{report()} writes the results out to
-the log file if it is not set to \textsf{\&null}. The \textsf{init()}
-and \textsf{initpop()} methods initialize the GA.
+two-point crossover. The \texttt{stats()} method collects statistics on
+the given population, and \texttt{report()} writes the results out to
+the log file if it is not set to \texttt{\&null}. The \texttt{init()}
+and \texttt{initpop()} methods initialize the GA.
 
 You might be asking what is a population of \textit{individuals}? \ The
 key pieces of information about an individual are its chromosomes,
@@ -376,31 +368,31 @@ record individual(chrom, fitness, parent1, parent2, xsite)}
 This stores the fitness values, the index of two parents, and the
 crossover sites from when the parents were mated.
 
-The class \textsf{ga\_eng} makes use of the following
+The class \texttt{ga\_eng} makes use of the following
 \index{instance}instance variables: 
 
 \begin{itemize}
-\item \textsf{oldpop}, \textsf{newpop} $-$ two populations; selection
-goes from \textsf{oldpop} into \textsf{newpop}
-\item \textsf{popsize}, \textsf{lchrom} $-$ the population size and the
+\item \texttt{oldpop}, \texttt{newpop} $-$ two populations; selection
+goes from \texttt{oldpop} into \texttt{newpop}
+\item \texttt{popsize}, \texttt{lchrom} $-$ the population size and the
 length of the chromosomes
-\item \textsf{gen}, \textsf{maxgen} $-$ current and max generation
+\item \texttt{gen}, \texttt{maxgen} $-$ current and max generation
 number
-\item \textsf{pcross}, \textsf{pmutation} $-$ the probability of
+\item \texttt{pcross}, \texttt{pmutation} $-$ the probability of
 crossover and mutation
-\item \textsf{sumfitness} $-$ the sum of the fitness of the entire
+\item \texttt{sumfitness} $-$ the sum of the fitness of the entire
 population
-\item \textsf{nmutation} $-$ number of mutation in the current
+\item \texttt{nmutation} $-$ number of mutation in the current
 generation
-\item \textsf{ncross} $-$ number of crossovers (or matings) in the
+\item \texttt{ncross} $-$ number of crossovers (or matings) in the
 current generation
-\item \textsf{avg}, \textsf{max}, \textsf{min} $-$ average, maximum, and
+\item \texttt{avg}, \texttt{max}, \texttt{min} $-$ average, maximum, and
 minimum fitness in the population
-\item \textsf{best} $-$ the location of the individual with the highest
+\item \texttt{best} $-$ the location of the individual with the highest
 fitness
-\item \textsf{log\_file} $-$ a text file where statistics are written
+\item \texttt{log\_file} $-$ a text file where statistics are written
 during a GA run
-\item \textsf{fitness\_func} $-$ the user-supplied fitness function. It
+\item \texttt{fitness\_func} $-$ the user-supplied fitness function. It
 reads a string of zeros and ones and returns a number representing the
 fitness.
 \end{itemize}
@@ -408,16 +400,16 @@ fitness.
 
 \subsection*{A Closer Look at the \texttt{evolve()} method}
 
-Space limitations prevent us from discussing every method of
-\textsf{ga\_eng}, but \textsf{evolve()} is a method that is called
-directly from user code, and defines the basic architecture of the
-engine. The \textsf{evolve()} method initializes the population the
-first time the method is invoked by each instance of \textsf{ga\_eng}.
-After initialization and in all subsequent calls, \textsf{evolve()}
+Space limitations preclude discussing every method of
+\texttt{ga\_eng}, but \texttt{evolve()} is a method that is called
+by user code, and defines the basic architecture of the
+engine. The \texttt{evolve()} method initializes the population the
+first time the method is invoked by each instance of \texttt{ga\_eng}.
+After initialization and in subsequent calls, \texttt{evolve()}
 does three things: it collects statistics, writes the results to a log
 file, and then evolves the population for one generation. The method
-\textsf{generation()} then becomes the focus of activity. The code for
-\textsf{evolve()} is:
+\texttt{generation()} then becomes the focus of activity. The code for
+\texttt{evolve()} is:
 
 \iconcode{
 method evolve() \\
@@ -435,30 +427,28 @@ method evolve() \\
 end
 }
 
-Generation consists of three high-level operations. The first tournament
-selection is performed via a call to \textsf{tselect()}, which makes
-copies of selected individuals from \textsf{oldpop} to
-\textsf{newpop}.
+Generation consists of three high-level operations. Tournament
+selection is performed via a call to \texttt{tselect()}, which makes
+copies of selected individuals from \texttt{oldpop} to
+\texttt{newpop}.
 After this, all operations take place on individuals in
-\textsf{newpop}. The next two operations are performed inside of a
-loop, on pairs of individuals. The \textsf{crossover2()} method does
-the mating, and it encapsulates the relatively low-level operation of
+\texttt{newpop}. The next two operations are performed in a
+loop, on pairs of individuals. The \texttt{crossover2()} method does
+the mating; it encapsulates the relatively low-level operation of
 mutation. The last high-level operation that a GA does is call the user
-supplied \textsf{fitness\_func} to assign a fitness value to each
+supplied \texttt{fitness\_func} to assign a fitness value to each
 individual in the new population. The GA keeps track of only two
-generations for the \textsf{evolve()} method to continue as long as
+generations for the \texttt{evolve()} method to continue as long as
 needed. Once each individual has been evaluated, that generation is
-complete. The \textsf{oldpop} variable is assigned the value of the
-\textsf{newpop}, and the process is ready to start again. Listing 17-1
-shows the code for the method \textsf{generation()}:
+complete. The \texttt{oldpop} variable is assigned the value of the
+\texttt{newpop}, and the process is ready to start again. Listing 17-1
+shows the code for the method \texttt{generation()}:
 
 \bigskip
 
-{\sffamily\bfseries
-Listing 17-1}
+{\sffamily\bfseries Listing 17-1}
 
-{\sffamily\bfseries
-A method for producing \ a new generation.}
+{\sffamily\bfseries A method for producing a new generation.}
 
 \iconcode{
 method generation() \\
@@ -466,8 +456,7 @@ method generation() \\
 \\
 \>   newpop \ \ \ := list(popsize) \\
 \>   nmutation := ncross := 0 \\
-\>   selected \ := tselect() \\
-\ \\
+\>   selected \ \ := tselect() \\
 \>   repeat \ \{ \\
 \>   \ \ \ mate1 := selected[j] \\
 \>   \ \ \ mate2 := selected[j+1] \\
@@ -479,30 +468,28 @@ method generation() \\
 \\
 \>   \ \ \ if j {\textgreater} popsize then break \\
 \>   \ \ \ j +:= 2 \\
-\>   \} \\
+\>   \ \ \ \} \\
 end
 }
 
 \subsection*{Using \texttt{ga\_eng}}
 
-GAs are extremely robust. It is very easy to create a buggy GA that
-works so well that the bugs go undetected. Incidentally, masking of
-bugs by robust algorithms is not unique to GA. It occurs in many
-numerical algorithms. To prevent this masking, the following code tests
+GAs are extremely robust. It is easy to create a buggy GA that
+works so well that the bugs go undetected. Masking of
+bugs by robust algorithms is not unique to GA; it occurs in many
+numerical algorithms. To prevent this, the following code tests
 the GA on a simple problem where having one bit increases the fitness
 values by one. This is a ready to compile and run GA application,
-albeit a very simple one. As you can see, \textsf{ga\_eng()} and
-\textsf{evolve()} are all the interface methods you need to build a
+albeit a very simple one. As you can see, \texttt{ga\_eng()} and
+\texttt{evolve()} are all the interface methods you need to build a
 complete genetic algorithm. Listing 17-2 shows all the code needed
 to use the GA engine for a simple test problem.
 
 \bigskip
 
-{\sffamily\bfseries
-Listing 17-2}
+{\sffamily\bfseries Listing 17-2}
 
-{\sffamily\bfseries
-Using ga\_eng() for a simple test problem}
+{\sffamily\bfseries Using \texttt{ga\_eng()} for a simple test problem}
 
 \iconcode{
 procedure decode(chrom) \\
@@ -516,18 +503,16 @@ procedure main() \\
 \>   log\_file \ := open("test\_ga.log",
 "w") {\textbar} stop("cannot open log\_file.log") \\
 \>   ga := ga\_eng(decode, 100, 20, 0.99, 1.0/real(20), log\_file) \\
-\>   every 1 to 100 do  \\
-\>   \ \ \ ga.evolve() \\
-\>   write(log\_file, "best location ={\textgreater}
-", ga.best) \\
-\>   write(log\_file, "best fitness \ ={\textgreater}
-", ga.newpop[ga.best].fitness) \\
+\>   every 1 to 100 do ga.evolve() \\
+\>   write(log\_file, "best location ={\textgreater} ", ga.best) \\
+\>   write(log\_file, "best fitness \ ={\textgreater} ",
+           ga.newpop[ga.best].fitness) \\
 end
 }
 
 \subsection*{Log files}
 
-The log file \textsf{test\_ga.log} contains a lot of statistics. Listing
+The log file \texttt{test\_ga.log} contains a lot of statistics. Listing
 17-3 is a fragment of the log file that is generated. The complete log
 file has over twelve thousand lines.
 
@@ -539,8 +524,6 @@ Listing 17-3}
 {\sffamily\bfseries
 A trace of the GA for a simple test problem}
 
-
-\bigskip
 
 \iconcode{
 Log\_File for Genetic Algorithm (GA) \\
@@ -557,9 +540,7 @@ Log\_File for Genetic Algorithm (GA) \\
 \ Initial population sum of \ fitness = \ 5.00e1 \  \\
 {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}- \\
 Population Report \\
-\ \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Generation
-\ \ 0 \\
+\>   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Generation 0 \\
 \ \\
 \>   \ \ \# \ \ \ parents \ \ \ \ \ \ xsite \ \ chromo
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fitness \\
@@ -574,10 +555,8 @@ Population Report \\
 \>   \ \ 100) ( \ 0, \ \ 0) \ \ \ \ \ \ 0 \ \ \ 11011100110011001010
 \ 5.00e-1  \\
 {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}- \\
-\ \\
 Statistics:  \\
 min = \ 5.00000000e-1 \ avg = \ 5.00000000e-1 \ max = \ 5.00000000e-1  \\
-\ \\
 \ no. of mutations \ \ \ \ \ \ \ = 0 \\
 \ no. of crossovers \ \ \ \ \ \ = 0 \\
 \ location of best chromo = 1 \\
@@ -601,11 +580,8 @@ Population Report \\
 \>   \ \ 100) ( 57, \ 27) \ \ 13:15 \ \ \ 11111010110110111110 \ 1.78e1
 \  \\
 {}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}- \\
-\ \\
 Statistics:  \\
-min = \ 9.19999999e0 \ \ avg = \ 1.77200000e1 \ \ max = \ 1.99500000e1
-\  \\
-\ \\
+min = \ 9.19999999e0 \ \ avg = \ 1.77200000e1 \ \ max = \ 1.99500000e1 \\
 \ no. of mutations \ \ \ \ \ \ \ = 111 \\
 \ no. of crossovers \ \ \ \ \ \ = 51 \\
 \ location of best chromo = 46 \\
@@ -624,7 +600,7 @@ printer, then finding exactly the color that you have in mind can be a
 tricky task. The color space is quite large. For example, imagine that
 you want to create a Web page with a blue background. But this is no
 ordinary blue; you want a blue that is like the blue you saw on the
-Mediterranean skyline on your last trip to Greece. \ 
+Mediterranean skyline on your last trip to Greece.
 
 One option is to look at a color wheel and click on the part that
 represents the blue that you have in mind. Unfortunately,
@@ -642,17 +618,17 @@ case you settle for a quick approximation of the color you intended.
 
 The following \textit{color breeder} program has properties from both of
 the color wheel and the tinkering methods. It uses a GA to explore the
-problem space. The program \textsf{cb} first displays sixteen randomly
+problem space. The program \texttt{cb} first displays sixteen randomly
 generated colors. The fitness of an individual color is based entirely
 on user preference. Using scrollbars, the user ranks the individuals,
 and then hits a breed button to generate a new population of colors. 
 
-Scrollbars \textsf{sbar}\textsf{\textit{i}} are indexed with
-\textsf{\textit{i}}\textit{,} where \textsf{\textit{i}} runs from 1 to
-16. \ The value of the scrollbar is inverted because scrollbar values
+Scrollbars \texttt{sbar[\textit{i}]} are indexed with
+\texttt{\textit{i}}, where \texttt{\textit{i}} runs from 1 to
+16. The value of the scrollbar is inverted because scrollbar values
 correspond to the y-axis by default, which grows from top to bottom;
 when the tab is lowered the value of scrollbar goes up. The user of
-\textsf{cb} sets higher tabs to indicate higher fitness.
+\texttt{cb} sets higher tabs to indicate higher fitness.
 
 \iconcode{
 \>   every i := 1 to 16 do \{ \\
@@ -668,15 +644,15 @@ Mediterranean sky blue you were thinking of. You can then save a
 snapshot of the screen in a GIF format if you wish, and can see the
 numeric codes that represents the color by clicking on a color.
 
-Figure 17-2 is a screen snapshot of \textsf{cb}. The higher the user
+Figure 17-2 is a screenshot of \texttt{cb}. The higher the user
 slides the scrollbar tab, the more fit the color. There are three
-resolutions of \index{color}color to select from: 12-, 24-, and 48-bit.
-The bits are equally divided into three segments each representing a
+\index{color}color resolutions to select from: 12-, 24-, and 48-bit.
+The bits are equally divided into three segments, each representing a
 color intensity. There are two mutually exclusive advanced modes:
 patterns and text. Patterns are square bit patterns that specify the
-mixing of foreground and background colors. They come in three
-different resolutions: 6x6, 8x8, and 10x10. In text mode, the
-foreground color is displayed as text on top of the background.
+mix of foreground and background colors in three
+resolutions: 6x6, 8x8, and 10x10. In text mode, the
+foreground color is displayed as text atop the background.
 
 \begin{center}
 \includegraphics[width=4.0in,height=3.0in]{ub-img/ub-img46.png}
@@ -689,22 +665,26 @@ foreground color is displayed as text on top of the background.
 
 \subsection*{Breeding textures}
 
-The user can turn on bi-level patterns of the form: \textit{width,
-\#data} as described in Chapter 7. A bi-level pattern is tiled using
-the foreground color and background color to fill an area. Where the
-pattern is one, the foreground is used, and where it is zero, the
-background is used. The patterns come in three resolutions: 8x8, 10x10,
+The user can turn on bi-level patterns of the form: \texttt{\textit{width,
+\#data}} as described in Chapter 7. A bi-level pattern is tiled using
+the foreground and background color to fill an area; a 1 in the
+pattern denotes the foreground, and a 0 denotes the background. The
+patterns come in three resolutions: 8x8, 10x10,
 and 12x12. In low resolutions it is hard to find interesting patterns;
 in high resolution, most patterns look like a random mixture and are
-hard to evolve into something more structured. Figure 17-3 shows
-\textsf{cb} in pattern mode.
+hard to evolve into something more structured. Figure 17-3 (left) shows
+\texttt{cb} in pattern mode.
 
-\begin{center}
-\includegraphics[width=4.3335in,height=3.252in]{ub-img/ub-img47.png}
-\end{center}
+\bigskip
+
+\noindent \includegraphics[width=3.125in,height=2.62in]{ub-img/ub-img47.png}
+\includegraphics[width=3.125in,height=2.62in]{ub-img/ub-img48.png}
 
 {\sffamily\bfseries Figure 17-3:}
-{\sffamily cb in pattern mode}
+{\sffamily \texttt{cb} in pattern mode (left) and text mode (right)}
+
+\bigskip
+
 
 The user can click on the snap shot button to create a GIF image file
 that is a snapshot of the whole screen. If you left click on a color
@@ -714,21 +694,11 @@ represented with hexadecimal strings as opposed to binary strings.
 
 \section{Picking Colors for Text Displays}
 
-Perhaps the most fun use of \textsf{cb} is to pick colors for your Web
-pages. Figure 17-4 is a snapshot of \textsf{cb} in text mode:
-
-\bigskip
-
-\begin{center}
-\includegraphics[width=3.6811in,height=2.6929in]{ub-img/ub-img48.png}
-\end{center}
-
-{\sffamily\bfseries Figure 17-4:}
-{\sffamily \texttt{cb} in text mode.}
-
+Perhaps the most fun use of \texttt{cb} is to pick colors for your Web
+pages. Figure 17-3 (right) is a snapshot of \texttt{cb} in text mode.
 In text mode with 24-bit color, the user can right click on a color
 region to generate a sample HTML document such as the one shown in
-Figure 17-5 that demonstrates how to incorporate the selected color
+Figure 17-4 that demonstrates how to incorporate the selected color
 combination inside of a Web page. It is also possible to get the
 hexadecimal representation of a pattern or a color by right clicking on
 it.
@@ -737,7 +707,7 @@ it.
 \includegraphics[width=3.7256in,height=3.0047in]{ub-img/ub-img49.png}
 \end{center}
 
-{\sffamily\bfseries Figure 17-5:}
+{\sffamily\bfseries Figure 17-4:}
 {\sffamily A sample HTML page generated by \texttt{cb}}
 
 \section*{Summary}

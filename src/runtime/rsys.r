@@ -345,18 +345,18 @@ word longread(s,width,len,fd)
 FILE *fd;
 int width;
 char *s;
-long len;
+word len;
 {
    tended char *ts = s;
-   long tally = 0;
-   long n = 0;
+   word tally = 0;
+   word n = 0;
 
 #if NT && !defined(NTGCC)
    /*
     * Under NT/MSVC++, ftell() used in Icon where() returns bad answers
     * after a wlongread().  We work around it here by fseeking after fread.
     */
-   long pos = ftell(fd);
+   word pos = ftell(fd);
 #endif					/* NT */
 
 #ifdef XWindows
@@ -390,19 +390,19 @@ long len;
 word gzlongread(s,width,len,fd)
 char *s;
 int width;
-long len;
+word len;
 FILE *fd;
 {
    tended char *ts = s;
-   long tally = 0;
-   long n = 0;
+   word tally = 0;
+   word n = 0;
 
 #if NT && !defined(NTGCC)
    /*
     * Under NT/MSVC++, ftell() used in Icon where() returns bad answers
     * after a wlongread().  We work around it here by fseeking after fread.
     */
-   long pos = ftell(fd);
+   word pos = ftell(fd);
 #endif					/* NT */
 
 #ifdef XWindows

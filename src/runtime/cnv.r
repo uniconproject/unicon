@@ -930,7 +930,7 @@ dptr dp;
 char *s;
    {
    register char *p;
-   long ival;
+   word ival;
    char *maxneg = MaxNegInt;
 
    p = s + MaxCvtLen - 1;
@@ -979,7 +979,7 @@ union numeric *result;
    char msign = '+';    /* sign of mantissa */
    char esign = '+';    /* sign of exponent */
    double mantissa = 0; /* scaled mantissa with no fractional part */
-   long lresult = 0;	/* integer result */
+   word lresult = 0;	/* integer result */
    int scale = 0;	/* number of decimal places to shift mantissa */
    int digits = 0;	/* total number of digits seen */
    int sdigits = 0;	/* number of significant digits seen */
@@ -1200,7 +1200,7 @@ register char *end_s;
 union numeric *result;
    {
    register int c;
-   long num;
+   word num;
 
    if (r < 2 || r > 36)
       return CvtFail;
@@ -1237,15 +1237,15 @@ union numeric *result;
  */
 
 word cvpos(pos, len)
-long pos;
-register long len;
+word pos;
+register word len;
    {
    register word p;
 
    /*
     * Make sure the position is in the range of an int. (?)
     */
-   if ((long)(p = pos) != pos)
+   if ((word)(p = pos) != pos)
       return CvtFail;
    /*
     * Make sure the position is within range.

@@ -168,7 +168,7 @@ int		cpintarray	(dptr dp1,dptr dp2,word i,word j);
 void		cpslots		(dptr dp1,dptr slotptr,word i, word j);
 int		csetcmp		(unsigned int *cs1,unsigned int *cs2);
 int		cssize		(dptr dp);
-word		cvpos		(long pos,long len);
+word		cvpos		(word pos, word len);
 void		datainit	(void);
 #ifdef MultiThread
 void		deallocate_0	(union block *bp);
@@ -239,9 +239,9 @@ int		Kcset		(dptr cargp);
 int		Klcase		(dptr cargp);
 int		Kucase		(dptr cargp);
 int		lexcmp		(dptr dp1,dptr dp2);
-word		longread	(char *s,int width,long len,FILE *fname);
+word		longread	(char *s,int width, word len,FILE *fname);
 #if HAVE_LIBZ
-word		gzlongread	(char *s,int width,long len,FILE *fd);
+word		gzlongread	(char *s,int width, word len,FILE *fd);
 #endif					/* HAVE_LIBZ */
 #ifdef FAttrib
 #if UNIX

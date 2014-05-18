@@ -25,7 +25,7 @@ struct fileparts {			/* struct of file name parts */
  * xval - holds references to literal constants
  */
 union xval {
-   long ival;		/* integer */
+   word ival;		/* integer */
    double rval;		/*  real */
    word sval;		/*  offset into string space of string */
    };

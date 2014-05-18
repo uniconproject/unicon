@@ -20,7 +20,7 @@ void	gentables		(void);
 int	getdec			(void);
 int	getopr			(int ac, int *cc);
 word	getid			(void);
-long	getint			(int i, word *wp);
+word	getint			(int i, word *wp);
 int	getlab			(void);
 struct	lfile *getlfile		(struct lfile * *lptr);
 int	getoct			(void);

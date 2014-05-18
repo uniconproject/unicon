@@ -34,7 +34,7 @@ static void	intout		(int oint);
 static void	lemit		(int op,char *name);
 static void	lemitcon	(int k);
 static void	lemitin		(int op,word offset,int n,char *name);
-static void	lemitint	(int op,long i,char *name);
+static void	lemitint	(int op,word i,char *name);
 static void	lemitl		(int op,int lab,char *name);
 static void	lemitn		(int op,word n,char *name);
 static void	lemitproc    (word name,int nargs,int ndyn,int nstat,int fstat);
@@ -227,7 +227,7 @@ void gencode()
 
 
          case Op_Int: {
-            long i;
+            word i;
             k = getdec();
             newline();
             cp = &lctable[k];
@@ -241,7 +241,7 @@ void gencode()
                lemit(Op_Number,"number");
                break;
                }
-            i = (long)cp->c_val.ival;
+            i = (word)cp->c_val.ival;
             lemitint(op, i, name);
             break;
             }
@@ -456,7 +456,7 @@ void gencode()
             flags = getoct();
             if (flags & F_IntLit) {
                {
-               long m;
+               word m;
                word s_indx;
 
                j = getdec();		/* number of characters in integer */
@@ -666,14 +666,14 @@ char *name;
  */
 static void lemitint(op, i, name)
 int op;
-long i;
+word i;
 char *name;
    {
    misalign();
 
 #ifdef DeBugLinker
    if (Dflag)
-      fprintf(dbgfile,"%ld:\t%d\t%ld\t\t\t# %s\n",(long)pc,op,(long)i,name);
+      fprintf(dbgfile,"%ld:\t%d\t%ld\t\t\t# %s\n",(long)pc,op,(word)i,name);
 #endif					/* DeBugLinker */
 
    outop(op);
@@ -688,7 +688,7 @@ register int k;
    int csbuf[CsetSize];
    union {
       char ovly[1];  /* Array used to overlay l and f on a bytewise basis. */
-      long l;
+      word l;
       double f;
       } x;
 

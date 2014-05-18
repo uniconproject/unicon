@@ -215,7 +215,7 @@ int getoct()
  *  Get integer, but if it's too large for a long, put the string via wp
  *   and return -1.
  */
-long getint(j,wp)
+word getint(j,wp)
    int j;
    word *wp;
    {
@@ -223,7 +223,7 @@ long getint(j,wp)
    int over = 0;
    register word indx;
    double result = 0;
-   long lresult = 0;
+   word lresult = 0;
    double radix;
 
    ++j;   /* incase we need to add a '\0' and make it into a string */
@@ -260,8 +260,9 @@ long getint(j,wp)
          }
       }
    nlflag = (c == '\n');
-   if (!over)
+   if (!over) {
       return lresult;			/* integer is small enough */
+   }
    else {				/* integer is too large */
       lsspace[indx++] = '\0';
       *wp = putident((int)(indx - lsfree), 1); /* convert integer to string */

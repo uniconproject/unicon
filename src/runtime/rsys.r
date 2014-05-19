@@ -1293,12 +1293,16 @@ FILE *popen (const char* cmd, const char *mode)
   if (strchr(mode, 'w')) {
     binary_mode |= _O_WRONLY;
     if (CreatePipe(&child_in, &father_out, &sa, 0) == FALSE) {
+#ifdef __TRACE
       fprintf(stderr, "popen: error CreatePipe\n");
+#endif
       return NULL;
     }
 #if 0
     if (SetStdHandle(STD_INPUT_HANDLE, child_in) == FALSE) {
+#ifdef __TRACE
       fprintf(stderr, "popen: error SetStdHandle child_in\n");
+#endif
       return NULL;
     }
 #endif
@@ -1309,7 +1313,9 @@ FILE *popen (const char* cmd, const char *mode)
     if (DuplicateHandle(current_pid, father_out, 
                         current_pid, &father_out_dup, 
                         0, FALSE, DUPLICATE_SAME_ACCESS) == FALSE) {
+#ifdef __TRACE
       fprintf(stderr, "popen: error DuplicateHandle father_out\n");
+#endif
       return NULL;
     }
     CloseHandle(father_out);
@@ -1321,7 +1327,9 @@ FILE *popen (const char* cmd, const char *mode)
   else if (strchr(mode, 'r')) {
     binary_mode |= _O_RDONLY;
     if (CreatePipe(&father_in, &child_out, &sa, 0) == FALSE) {
+#ifdef __TRACE
       fprintf(stderr, "popen: error CreatePipe\n");
+#endif
       return NULL;
     }
 #if 0
@@ -1345,7 +1353,9 @@ FILE *popen (const char* cmd, const char *mode)
     i = setvbuf( f, NULL, _IONBF, 0 );
   }
   else {
+#ifdef __TRACE
     fprintf(stderr, "popen: invalid mode %s\n", mode);
+#endif
     return NULL;
   }
 
@@ -1361,7 +1371,10 @@ FILE *popen (const char* cmd, const char *mode)
                     &si,        /* pointer to STARTUPINFO */
                     &pi         /* pointer to PROCESS_INFORMATION */
                   ) == FALSE) {
-    fprintf(stderr, "popen: CreateProcess %x\n", GetLastError());
+#ifdef __TRACE
+    fprintf(stderr,
+       "popen: CreateProcess(%s::%s) %x\n", app_name, new_cmd, GetLastError());
+#endif
     return NULL;
   }
   

@@ -129,15 +129,23 @@ end
    
 procedure get_CPU()
    local f, result := "unknown"
-   if f := open("/proc/cpuinfo") then {
-      while line := read(f) do {
-	 if match("model name", line) then {
-	    result := line[find(":",line)+2:0]
-	    break
-	    }
-	 }
-      close(f)
-      }
+   if &features == "Win32" then {
+       result := getenv("PROCESSOR_ARCHITECTURE") # not very good, but its a start
+       if map(getenv("PROCESSOR_IDENTIFIER")) ? find("genuineintel") then
+	   result := "Intel " || result
+       result ||:= ":" || getenv("PROCESSOR_LEVEL") # not very good, but its a start
+   }
+   else {
+       if f := open("/proc/cpuinfo") then {
+	   while line := read(f) do {
+	       if match("model name", line) then {
+		   result := line[find(":",line)+2:0]
+		   break
+	       }
+	   }
+	   close(f)
+       }
+   }
    return result
 end
    

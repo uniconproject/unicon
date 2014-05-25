@@ -210,7 +210,7 @@ char *lookcmdname(char *buf, char *s)
 int mswinsystem(char *s)
 {
    int i, rv, j, background = 0;
-   char *s2, **argv, cmd[256], prefixed[256];
+   char *s2, **argv, cmd[256], prefixed[384];
    int argc;
 
    if (s == NULL) return -1;
@@ -236,7 +236,9 @@ int mswinsystem(char *s)
       }
 
    if (strchr(s, '>')) {
-      strcpy(prefixed, "cmd /C "); strcat(prefixed, s);
+      if (getenv_r("SystemRoot", prefixed, 384)) strcat(prefixed, "\\System32\\");
+      else prefixed[0] = '\0';
+      strcat(prefixed, "cmd /C "); strcat(prefixed, s);
       s = prefixed;
       }
 

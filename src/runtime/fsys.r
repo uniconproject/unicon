@@ -1346,6 +1346,8 @@ function{0,1} read(f)
 	 /*
 	  * Allocate the string read and make s a descriptor for it.
 	  */
+	 if ((status & Fs_Messaging) && (slen == -2)) rlen = MaxReadStr-1;
+	 else
 	 rlen = slen < 0 ? (word)MaxReadStr : slen;
 
 	 Protect(reserve(Strings, rlen), runerr(0));

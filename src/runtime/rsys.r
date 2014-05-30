@@ -160,6 +160,9 @@ struct b_file *fbp;
       if (buf[l-1] == '\n') {
 	 l--;
 	 }
+      else if ((buf[l-1] == '\0') && (l==maxi)) {
+	 return -2;
+	 }
       if ((!(fbp->status & Fs_Untrans)) && (buf[l-1] == '\r')) {
 	 l--;
 	 }

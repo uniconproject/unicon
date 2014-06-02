@@ -49,7 +49,8 @@ double *d;
     * block and therefore does not need to be tended.
     */
 
-   struct descrip result, cnvstr;
+   struct descrip result;
+   struct descrip cnvstr;
    char sbuf[MaxCvtLen];
 
    union numeric numrc;
@@ -965,9 +966,9 @@ char *s;
 /*
  * ston - convert a string to a numeric quantity if possible.
  * Returns a typecode or CvtFail.  Its answer is in the dptr,
- * unless conversion produces a double, in which case its in the union numeric
- * (we do this to avoid allocating a block for a real
- * that will later be used directly as a C_double).
+ * unless conversion produces a double, in which case its in the
+ * union numeric (we do this to avoid allocating a block for a
+ * real that will later be used directly as a C_double).
  */
 static int ston(sptr, result)
 dptr sptr;

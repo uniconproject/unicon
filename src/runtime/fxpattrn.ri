@@ -2954,7 +2954,10 @@ Node_Succeed:
 #if !COMPILER
 
 /* No provision for resumption */
+#ifndef Concurrent
 static word *callproc, ibuf[100];
+#endif	
+
 static dptr calliconproc(proc, args, nargs)
 struct descrip proc;
 struct descrip args[];
@@ -2962,9 +2965,12 @@ int nargs;
 {
    int i, off, retval;
    inst saved_ipc;
-   word *saved_sp = sp;
+   word *saved_sp;
    inst wp;
    dptr dp, ret;
+   CURTSTATE();
+
+   saved_sp = sp;
 
 #ifdef HP
    bcopy(&ipc, &saved_ipc, sizeof(ipc));
@@ -2992,7 +2998,13 @@ int nargs;
 
    sp += (nargs+1)*2;
    ipc.op = (int *)callproc;
+
+#ifdef TSTATARG 
+   retval = interp(0, NULL, CURTSTATARG);
+#else 		 	   	  	 /* TSTATARG */
    retval = interp(0, NULL);
+#endif 		 	   	  	 /* TSTATARG */
+
    if (retval != A_Trapfail) ret = (dptr)(sp-1);
 
 #ifdef HP

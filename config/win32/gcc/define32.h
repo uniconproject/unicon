@@ -19,8 +19,10 @@
 /* #define HAVE_LIBJPEG 1 */
 
 /*define if you have pthreads and want concurrency*/
+/*
 #define HAVE_LIBPTHREAD 1
 #define Concurrent 1
 #define NoKeyword__Thread 1
+*/
 
 /*#define HAVE_STRUCT_TIMESPEC 1*/

@@ -527,6 +527,7 @@ struct b_pattern *f(word stck_size)
 {
    register struct b_pattern *pheader;
    register struct b_pelem *pelem;
+   CURTSTATE();
    
    if (!reserve(Blocks, (word)
 		( sizeof(struct b_pattern) + sizeof(struct b_pelem))))
@@ -556,6 +557,7 @@ alcpattern_macro(alcpattern,0,0)
 struct b_pelem *f( word patterncode)
 {
    register struct b_pelem *pelem;
+   CURTSTATE();
    
    if (!reserve(Blocks, (word)
 		(sizeof(struct b_pelem))

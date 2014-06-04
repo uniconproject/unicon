@@ -1699,9 +1699,9 @@ struct hostent *hs;
 
 /* No provision for resumption */
 #ifndef Concurrent
-static word *callproc, ibuf[100];
+word *callproc, callproc_ibuf[100];
 #endif					/* Concurrent */
-static dptr call(proc, args, nargs)
+dptr calliconproc(proc, args, nargs)
 struct descrip proc;
 dptr args;
 int nargs;
@@ -1721,7 +1721,7 @@ int nargs;
    saved_ipc = ipc;
 #endif					/* HP */
 
-   wp.opnd = callproc = ibuf;
+   wp.opnd = callproc = callproc_ibuf;
    ipad(wp);  *wp.op++ = Op_Mark;   *wp.opnd++ = (2 + nargs+1)*2 * WordSize;
    ipad(wp);  *wp.op++ = Op_Copyd;  *wp.opnd++ = -(nargs+1);
    off = -nargs;
@@ -1751,7 +1751,8 @@ int nargs;
    retval = interp(0, NULL);
 #endif 		 	   	  	 /* TSTATARG */
 
-   if (retval != A_Resume) ret = (dptr)(sp-1);
+   /* need to double-check all return codes from interp() */
+   if ((retval != A_Resume) && (retval != A_Trapfail)) ret = (dptr)(sp-1);
 
 #ifdef HP
    bcopy(&saved_ipc, &ipc, sizeof(ipc));
@@ -1760,7 +1761,7 @@ int nargs;
 #endif
    sp = saved_sp;
 
-   if (retval == A_Resume)
+   if ((retval == A_Resume) || (retval == A_Trapfail))
       return 0;
    else
       return ret;
@@ -1859,7 +1860,7 @@ int sig;
 #if COMPILER
    syserr("signal handlers are not supported by iconc");
 #else
-   (void) call(proc, &val, 1);
+   (void) calliconproc(proc, &val, 1);
 #endif
    
    /* Restore signal just in case (for non-BSD systems) */

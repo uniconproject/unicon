@@ -1019,6 +1019,8 @@ void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
       void	initalloc	(word codesize);
    #endif				/* MultiThread */
 
+   dptr calliconproc(proc, args, nargs);
+
 #endif					/* COMPILER */
 
 /* dynamic records */

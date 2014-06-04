@@ -467,7 +467,7 @@ struct threadstate {
    
    /* used in rposix.r */
    word *Callproc;
-   word Ibuf[100];
+   word Callproc_Ibuf[100];
 
 #ifdef PosixFns
    char Savedbuf[BUFSIZ];
@@ -601,7 +601,7 @@ struct progstate {
    struct descrip Kywd_err;          /* Probably mutex. not important now */
    struct descrip Kywd_prog;   
 
-   struct descrip Kywd_trc;         /* leave global fow now   */
+   struct descrip Kywd_trc;         /* leave global for now   */
    struct b_coexpr *Mainhead;
    char *Code;
    char *Ecode;

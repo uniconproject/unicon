@@ -1022,7 +1022,7 @@
       
       /* used in rposix.r */
       #define callproc		(curtstate->Callproc)
-      #define ibuf		(curtstate->Ibuf)
+      #define callproc_ibuf	(curtstate->Callproc_Ibuf)
 
 #endif					/* Concurrent */
 

@@ -108,11 +108,15 @@ procedure write_error(msg)
 end
 
 procedure write_header()
-
+   write()
+   write(left("OS",12)," ",left("Word Size",32)," ",left("Main Memory",12))
+   write(left(get_OS(),12)," ",left(get_WordSize(),32)," ",
+         left(get_Memory(),12))
+   write()
    write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))
    write(left(get_C_compiler(),12)," ",left(get_CPU(),32)," ",
          left(get_clockspeed(),12))
-
+   write()
    write("benchmark                     CPU time h:m:s  Real time h:m:s")
    
 end
@@ -120,6 +124,32 @@ end
 procedure verify_concurrent()
    if &features == "concurrent threads" then
       return 1
+end
+
+procedure get_Memory()
+   local f, result := "unknown"
+   if f := open("/proc/meminfo") then {
+      while line := read(f) do {
+         if match("MemTotal", line) then {
+            line ? {
+               tab(upto(&digits))
+               result := line[&pos:0]
+               }
+            break
+            }
+         }
+      close(f)
+      }
+   return result
+end
+
+procedure get_OS()
+   return x := &features
+end
+
+procedure get_WordSize()
+   if match("Arch ", x := &features) then return x[10:0] || " bit"
+   else return "unknown"
 end
 
 procedure get_C_compiler()

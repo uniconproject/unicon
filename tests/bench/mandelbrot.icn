@@ -44,7 +44,7 @@ procedure do_y(y)
      return rv
 end
 
-procedure run_mandelbrot(argv)
+procedure run_mandelbrot_concurrent(argv)
    local y, i, pool
 
    pool := Pool(64)
@@ -63,9 +63,30 @@ procedure run_mandelbrot(argv)
       writes(output, i)
 end
 
+procedure run_mandelbrot_sequential(argv)
+   wL := list()
+   rL := list()
+   w := h := integer(argv[1])
+   wr := hr := real(w)
+   
+   write(output, "P4\n", w, " ", h)
+
+
+   every i := 0 to h-1 do
+      put(wL, i)
+   rL := list(*wL)
+   every i := 1 to *rL do {
+      rL[i] := do_y(wL[i])
+      }   
+   
+   every i := !rL do
+      writes(output, i)
+end
+
 $ifdef MAIN
 procedure main(argv)
    output := &output
-   run_mandelbrot(argv)
+   if &features == "concurrent threads" then run_mandelbrot_concurrent(argv)
+   else run_mandelbrot_sequential(argv)
 end
 $endif

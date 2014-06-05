@@ -59,7 +59,7 @@ end
 
 
 
-procedure run_binarytrees(argv)
+procedure run_binarytrees_concurrent(argv)
    local wL := [], rL := [] 
    min_depth := 4
    max_depth := argv[1]
@@ -82,10 +82,37 @@ procedure run_binarytrees(argv)
          "\t check: ", check_tree(long_lived_tree))
 end
 
+procedure run_binarytrees_sequential(argv)
+   local wL := [], rL := []
+   min_depth := 4
+   max_depth := argv[1]
+   stretch_depth := max_depth + 1
+   mmd := max_depth + min_depth
+   
+   write(output, "stretch tree of depth ", stretch_depth,
+         "\t check: ", check_tree(make_tree(0, stretch_depth)))
+   
+   every d := min_depth to stretch_depth by 2 do
+      put(wL, d)
+   
+   L2 := list(*wL)
+
+   every i := 1 to *L2 do {
+      L2[i] := build_trees(wL[i])
+      }
+
+   every write(output, !L2)
+   long_lived_tree := make_tree(0, max_depth)
+   
+   write(output, "long lived tree of depth ", max_depth,
+         "\t check: ", check_tree(long_lived_tree))
+end
+
 $ifdef MAIN
 procedure main(argv)
    output := &output
-   run_binarytrees(argv)
+   if &features == "concurrent threads" then run_binarytrees_concurrent(argv)
+   else run_binarytrees_sequential(argv)
 end
 $endif
 

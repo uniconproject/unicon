@@ -49,12 +49,11 @@ procedure main(argv)
 
             write_header()
 
-            if \concurrent then {
-	       writes(left("binary-trees 20",30))
-               tL := gettimes(run_binarytrees, 20)
-               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
-               }
+            writes(left("binary-trees 20",30))
+            if \concurrent then tL := gettimes(run_binarytrees_concurrent,20)
+            else tL := gettimes(run_binarytrees_sequential,20)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            writetime(rL[1], rL[2], rL[3])
             
             if \concurrent then {
 	       writes(left("chameneos-redux 6000000",30))
@@ -78,12 +77,11 @@ procedure main(argv)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
 
-            if \concurrent then {
-	       writes(left("mandelbrot 16000",30))
-               tL := gettimes(run_mandelbrot, 16000)
-               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
-               }
+            writes(left("mandelbrot 16000",30))
+            if \concurrent then tL := gettimes(run_mandelbrot_concurrent,16000)
+            else tL := gettimes(run_mandelbrot_sequential,16000)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            writetime(rL[1], rL[2], rL[3])
 
             writes(left("meteor-contest 2098",30))
             tL := gettimes(run_meteorcontest, 2098)
@@ -100,13 +98,12 @@ procedure main(argv)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
 
-            if \concurrent then {
-	       writes(left("regex-dna 5-mil.dat",30))
-               tL := gettimes(run_regexdna, "5-mil.dat")
-               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
-               }
-
+            writes(left("regex-dna 5-mil.dat",30))
+            if \concurrent then tL := gettimes(run_regexdna_concurrent, "5-mil.dat")
+            else tL := gettimes(run_regexdna_sequential, "5-mil.dat")
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            writetime(rL[1], rL[2], rL[3])
+            
             writes(left("reverse-complement 25-mil.dat",30))
             tL := gettimes(run_reversecomplement, "25-mil.dat")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
@@ -148,11 +145,10 @@ procedure main(argv)
          "binary-trees" : {
             write_header()
             writes(left("binary-trees 20",30))
-            if \concurrent then {
-               tL := gettimes(run_binarytrees, 17)
-               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
-               } else write_error(2)
+            if \concurrent then tL := gettimes(run_binarytrees_concurrent,20)
+            else tL := gettimes(run_binarytrees_sequential,20)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            writetime(rL[1], rL[2], rL[3])
             }
          "chameneos-redux" : {
             write_header()
@@ -187,11 +183,10 @@ procedure main(argv)
          "mandelbrot" : {
             write_header()
             writes(left("mandelbrot 16000",30))
-            if \concurrent then {
-               tL := gettimes(run_mandelbrot, 16000)
-               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
-               } else write_error(2)
+            if \concurrent then tL := gettimes(run_mandelbrot_concurrent,16000)
+            else tL := gettimes(run_mandelbrot_sequential,16000)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            writetime(rL[1], rL[2], rL[3])
             }
          "meteor-contest" : {
             write_header()
@@ -217,11 +212,10 @@ procedure main(argv)
          "regex-dna" : {
             write_header()
             writes(left("regex-dna 5-mil.dat",30))
-            if \concurrent then {
-               tL := gettimes(run_regexdna, "5-mil.dat")
-               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
-               } else write_error(2)
+            if \concurrent then tL := gettimes(run_regexdna_concurrent, "5-mil.dat")
+            else tL := gettimes(run_regexdna_sequential, "5-mil.dat")
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            writetime(rL[1], rL[2], rL[3])
             }
          "reverse-complement" : {
             write_header()

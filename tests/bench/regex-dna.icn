@@ -166,7 +166,7 @@ s ? {
    }
 end
 
-procedure run_regexdna(av)
+procedure run_regexdna_concurrent(av)
    fin := open(av[1]) | stop("usage: regex-dna filename")
    siz := stat(av[1]).size | stop("can't stat ", av[1])
    sequ := reads(fin, siz) | stop("can't read ", av[1])
@@ -232,10 +232,84 @@ procedure run_regexdna(av)
    write(output, *sequ)
 end
 
+
+procedure run_regexdna_sequential(av)
+   fin := open(av[1]) | stop("usage: regex-dna filename")
+
+   fp := open("wc -c " || av[1], "p")
+
+   read(fp) ? siz := tab(upto(" "))
+
+   sequ := reads(fin, integer(siz))
+
+   p := ">+[A-Za-z ]*\n+|\n+"
+   ilen := *sequ
+   
+   outs := ""
+   sequ ? {
+      while outs ||:= tab(findp()) & mark := __endpoint do {
+         tab(mark)
+	 }
+      outs ||:= sequ[&pos:0]
+   }
+   sequ := copy(outs)
+
+   clen := *sequ
+   
+   variants := [["agggtaaa|tttaccct", var_1],
+		["[cgt]gggtaaa|tttaccc[acg]", var_2],
+		["a[act]ggtaaa|tttacc[agt]t", var_3],
+		["ag[act]gtaaa|tttac[agt]ct", var_4],
+		["agg[act]taaa|ttta[agt]cct", var_5],
+		["aggg[acg]aaa|ttt[cgt]ccct", var_6],
+		["agggt[cgt]aa|tt[acg]accct", var_7],
+		["agggta[cgt]a|t[acg]taccct", var_8],
+		["agggtaa[cgt]|[acg]ttaccct", var_9]
+                ]
+   subst := [ sp("B", "(c|g|t)"),
+             sp("D", "(a|g|t)"),
+             sp("H", "(a|c|t)"),
+             sp("K", "(g|t)"),
+             sp("M", "(a|c)"),
+             sp("N", "(a|c|g|t)"),
+             sp("R", "(a|g)"),
+             sp("S", "(c|g)"),
+             sp("V", "(a|c|g)"),
+             sp("W", "(a|t)"),
+             sp("Y", "(c|t)")
+             ]
+
+   wL := []
+   every e := !variants do put(wL, e)
+
+   rL := list(*wL)
+   every i := 1 to *wL do
+      rL[i] := do_variants(wL[i]) 
+
+   every write(output, !rL)
+   
+   every e := !subst do {
+      outs := ""   
+      sequ ? {
+         while outs ||:= tab(find(e.f)) do  {
+            outs ||:= e.r
+            move(1)
+         }
+         outs ||:= sequ[&pos:0]
+      }
+      sequ := copy(outs)
+   }
+
+   write(output, "\n", ilen)
+   write(output, clen)
+   write(output, *sequ)
+end
+
 $ifdef MAIN
 procedure main(av)
    output := &output
-   run_regexdna(av)
+   if &features == "concurrent threads" then run_regexdna_concurrent(av)
+   else run_regexdna_sequential(av)
 end
 $endif
 

@@ -421,6 +421,16 @@ keyword{1,*} features
 #passthru #endif				/* __GNUC__ */
 #endif					/* UNIX || NTGCC */
 
+{
+        char *s, ss[32];
+        unsigned long l = physicalmemorysize();
+        if (l > 0) {
+           sprintf(ss, "Physical memory: %ld bytes", l);
+           s = alcstr(ss, strlen(ss) + 1);
+           suspend C_string s;
+        }
+}
+
 #ifdef REPO_REVISION
 {
          char *s;

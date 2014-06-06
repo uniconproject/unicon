@@ -92,6 +92,37 @@ procedure gettimes(proc, arg)
    return [cpustart, cpufinish, wallstart, wallfinish]
 end
 
+procedure getavgtimes(proc, arg)
+   local L := [], wallu := 0, wall := 0, cpu := 0
+   every 1 to 3 do {
+      wallstart := gettimeofday()
+      cpustart := &time
+      proc([arg])
+      cpufinish := &time
+      wallfinish := gettimeofday()
+      put(L, calcseconds(cpustart, cpufinish, wallstart, wallfinish))
+   }      
+   every i := !L do {
+      cpu +:= i[1]
+      wall +:= i[2]
+      wallu +:= i[3]
+   }
+   C := CpuToHrMinSec(cpu/3)
+   W := WallToHrMinSec(wall/3)
+   return [C, W, wallu/3]
+end
+
+procedure calcseconds(cpustart, cpufinish, wallstart, wallfinish)
+   cputime := cpufinish - cpustart
+   wallsec := wallfinish.sec - wallstart.sec
+   wallusec := wallfinish.usec - wallstart.usec
+   if wallusec[1] == "-" then {
+      wallsec -:= 1
+      wallusec +:= 1000000
+      }
+   return [cputime, wallsec, wallusec]
+end
+
 procedure write_error(msg)
 
    if msg = 1 then
@@ -109,8 +140,8 @@ end
 
 procedure write_header()
    write()
-   write(left("OS",12)," ",left("Word Size",32)," ",left("Main Memory",12))
-   write(left(get_OS(),12)," ",left(get_WordSize(),32)," ",
+   write(left("OS",12)," ",left("Word Size",12)," ",left("Main Memory",12))
+   write(left(get_OS(),12)," ",left(get_WordSize(),12)," ",
          left(get_Memory(),12))
    write()
    write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))

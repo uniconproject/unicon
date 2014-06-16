@@ -1,0 +1,46 @@
+
+# Some macros (above) are/will-be added during the configuration step,
+# these macros come from config/win32/gcc/makedef{32,64}.top
+
+DEFINEH=define$(TOSBITS).h
+ASMFLAG=--$(TOSBITS)
+
+# -g for debugging, -Os to minimize space...
+ISFLAG=--static -m$(TOSBITS) $(EXTRAFLAGS) -O2 -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB
+
+MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
+
+# Qdditional/optional libraries
+# Enable by copying the options to the lines following the comment
+# -lpng    : PNG image support (requires the compression library -lz)
+# -ljpeg   : JPEG image support
+# -lpthread: Thread/concurrency support
+# -lws2-32 : Modern Windows socket API
+# -lopencl : Open computing library (experimental)
+# availavle OPTLIBS  : -lz -lpthread -lws2_32 -lopencl -ljpeg -lpng
+# available NTOPTLIBS: -lz -lpthread -lws2_32 -lopencl
+#
+# Enabled Libraries are:
+OPTLIBS= -lws2_32
+NTOPTLIBS= -lws2_32
+
+OS=NT
+ENV=WIN32
+CPU=i386
+#!include <$(OS)$(ENV).mak>
+
+CC=gcc
+LD=ld
+# add -j8 to the line below if your build environment supports it
+MAKE=make
+O=o
+RM=rm -rf
+CP=cp
+COPY=cp
+CMD=cmd
+EXE=.exe
+
+UNIDIR=c:\unicon
+BINDIR=$(UNIDIR)/bin
+ICONT=$(BINDIR)/icont
+UNICON=$(BINDIR)/unicon

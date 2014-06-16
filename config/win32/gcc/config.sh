@@ -40,11 +40,16 @@ cp ../../unix/Config/util.mak ../../../uni/util/makefile
 cp ../../unix/Config/gui.mak ../../../uni/gui/makefile
 cp ../../unix/Config/guidemos.mak ../../../uni/gui/guidemos/makefile
 cp ../../unix/Config/ivib-v2.mak ../../../uni/gui/ivib/makefile
-cp ../../unix/Config/uni-top.mak ../../../uni/Makefile
+cp uni-top.mak ../../../uni/Makefile
 echo EXE=.exe > ../../../uni/makedefs
 cat ../../unix/Config/uni-makedefs >>../../../uni/makedefs
 cp iyacc.mak ../../../uni/iyacc/Makefile
 
+rm -f ../../../uni/unicon/unicon.exe
+rm -f ../../../uni/unicon/wunicon.exe
+rm -f ../../../uni/ide/ui.exe
+rm -f ../../../uni/gui/ivib/ivib.exe
+rm -f ../../../uni/udb/udb.exe
 rm -f ../../../src/icont/*.o
 rm -f ../../../src/common/*.o
 rm -f ../../../src/runtime/*.o

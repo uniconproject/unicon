@@ -2,9 +2,7 @@ include ../../makedefs
 
 LDFLAGS= $(ISFLAG) -Xlinker --stack -Xlinker
 
-# -g for debugging, -Os to minimize space...
 CFLAGS= $(ISFLAG) -DMSNT -D$(CONSOLE) -I../gdbm -I../libtp
-
 
 REPO_REV='"$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"'
 
@@ -57,8 +55,9 @@ nt_iconx:
 freshwiconx:
 	$(RM) wiconx.exe
 	$(RM) *.$(O)
-	$(CP) ../../config/win32/gcc/wdefine.h ../h/define.h
-	cat ../../config/win32/gcc/$(DEFINEH) >>../h/define.h
+	$(CP) ../../config/win32/gcc/$(DEFINEH) ../h/define.h
+	cat ../../config/win32/gcc/wdefine.h >>../h/define.h
+	cat ../../config/win32/gcc/define.h >>../h/define.h
 	cd ../libtp && $(MAKE) -f makefile.wgc libtp.a
 	cd ../gdbm && $(MAKE) -f makefile.wgc libgdbm.a
 	$(MAKE) wiconx
@@ -73,8 +72,8 @@ wiconx: $(OBJS)
 freshnticonx:
 	$(RM) nticonx.exe
 	$(RM) *.$(O)
-	$(CP) ../../config/win32/gcc/define.h ../h/define.h
-	cat ../../config/win32/gcc/$(DEFINEH) >>../h/define.h
+	$(CP) ../../config/win32/gcc/$(DEFINEH) ../h/define.h
+	cat ../../config/win32/gcc/define.h >>../h/define.h
 	$(MAKE) nticonx
 
 # only if freshnticonx is already built
@@ -87,9 +86,10 @@ nticonx: $(OBJS)
 freshiconx:
 	$(RM) iconx.exe
 	$(RM) *.$(O)
-	$(CP) ../../config/win32/gcc/wdefine.h ../h/define.h
-	cat ../../config/win32/gcc/$(DEFINEH) >>../h/define.h
+	$(CP) ../../config/win32/gcc/$(DEFINEH) ../h/define.h
+	cat ../../config/win32/gcc/wdefine.h >>../h/define.h
 	cat ../../config/win32/gcc/ntconsole.h >>../h/define.h
+	cat ../../config/win32/gcc/define.h >>../h/define.h
 	$(MAKE) iconx
 
 # only if freshiconx is already built

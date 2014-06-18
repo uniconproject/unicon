@@ -6,9 +6,21 @@ Top:
 	@echo To configure sources:
 	@echo    MSVC: "nmake NT-Configure" or "nmake W-Configure"
 	@echo           Then run "nmake Unicon" to build everything
-	@echo "   GCC: Run \"make WUnicon\" or \"make WUnicon64\"."
+	@echo "   GCC: Run \"make WUnicon32\" or \"make WUnicon64\"."
 
 WUnicon:
+	@echo Reloading the Makefile from config/win32/gcc/makefile.top
+	cp config/win32/gcc/makefile.top Makefile
+	@echo Done.
+	@echo
+	@echo Ready to build Windows Unicon
+	@echo Make sure the Unicon bin directory is in your path before continuing, then run:
+	@echo
+	@echo "   - " \"make WUnicon32\" for a 32-bit build, or
+	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
+	@echo
+
+WUnicon32:
 	@echo
 	@echo =============================================
 	@echo Running configuration and setup scripts NT 32
@@ -77,6 +89,13 @@ WUnicon64:
 	@echo ==========================================================
 	@echo Windows Unicon 64-bit build process completed successfully
 	@echo ==========================================================
+	@echo
+
+Fresh-Makefile:
+	@echo
+	@echo Reloading the Makefile from makefile.top
+	cp makefile.top Makefile
+	@echo Done.
 	@echo
 
 W-Configure-GCC:

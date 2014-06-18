@@ -78,7 +78,7 @@ WUnicon:
 	@echo Ready to build Windows Unicon
 	@echo Make sure the Unicon bin directory is in your path before continuing, then run:
 	@echo
-	@echo "   - " \"make WUnicon\"   for a 32-bit build, or
+	@echo "   - " \"make WUnicon32\" for a 32-bit build, or
 	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
 	@echo
 

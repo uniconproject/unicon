@@ -423,13 +423,13 @@ keyword{1,*} features
 
 {
         char *s, ss[48];
-#ifdef NT && (WordBits==64)
+#if NT && (WordBits==64)
         unsigned long long l = physicalmemorysize();
 #else
         unsigned long l = physicalmemorysize();
 #endif
         if (l > 0) {
-#ifdef NT && (WordBits==64)
+#if NT && (WordBits==64)
            sprintf(ss, "Physical memory: %I64u bytes", l);
 #else
            sprintf(ss, "Physical memory: %lu bytes", l);

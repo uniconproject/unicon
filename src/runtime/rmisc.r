@@ -1882,6 +1882,27 @@ dptr dp1, dp2;
          StrLen(*dp2) = 17;
          } 
 
+#ifdef PatternType		
+      pattern: {
+         /*
+          * Produce:
+          *  "pattern_m(n)"
+          * where n is the current size of the pattern.
+          */
+	 register union block *ep;
+         bp = BlkLoc(*dp1);
+	 ep = (long)Blk(bp,Pattern)->pe;
+
+	 sprintf(sbuf, "pattern_%ld(%ld)", (long)Blk(bp,Pattern)->id, 
+		 (long)Blk(ep,Pelem)->index);
+
+         len = strlen(sbuf);
+         Protect(t = alcstr(sbuf, len), return RunError);
+         StrLoc(*dp2) = t;
+         StrLen(*dp2) = len;
+         }
+#endif					/* Pattern Type */
+
       default:
 #ifdef Arrays
 	 if (Type(*dp1) == T_Intarray) {

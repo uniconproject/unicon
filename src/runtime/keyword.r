@@ -422,10 +422,18 @@ keyword{1,*} features
 #endif					/* UNIX || NTGCC */
 
 {
-        char *s, ss[32];
+        char *s, ss[48];
+#ifdef NT && (WordBits==64)
+        unsigned long long l = physicalmemorysize();
+#else
         unsigned long l = physicalmemorysize();
+#endif
         if (l > 0) {
-           sprintf(ss, "Physical memory: %ld bytes", l);
+#ifdef NT && (WordBits==64)
+           sprintf(ss, "Physical memory: %I64u bytes", l);
+#else
+           sprintf(ss, "Physical memory: %lu bytes", l);
+#endif
            s = alcstr(ss, strlen(ss) + 1);
            suspend C_string s;
         }

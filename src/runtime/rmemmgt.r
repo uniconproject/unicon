@@ -1725,12 +1725,12 @@ void blkdump()
 
 #if NT && (WordBits==64)
 unsigned long long physicalmemorysize()
-#else
+#else					/* NT && (WordBits == 64) */
 unsigned long physicalmemorysize()
-#endif
+#endif					/* NT && (WordBits == 64) */
 {
    char buf[80], *p;
-   unsigned long i;
+unsigned long i;
    FILE *f;
 #if UNIX
 #ifdef SUN
@@ -1779,16 +1779,17 @@ unsigned long physicalmemorysize()
 
 #else					/* UNIX */
 #if NT
-#if NT && (WordBits==64)
-   MEMORYSTATUSEX ms;
+#if (WordBits==64)
+   MEMORYSTATUSEX ms; 
    ms.dwLength = sizeof(ms);
    GlobalMemoryStatusEx(&ms);
-   return ms.ullTotalPhys;
-#else
-   MEMORYSTATUS ms;
+   return ms.ullTotalPhys; 
+#else					/* WordBits */
+   MEMORYSTATUS ms;	
    GlobalMemoryStatus(&ms);
-   return ms.dwTotalPhys;
-#endif
+   return ms.dwTotalPhys;		
+#endif	  				/* WordBits */
+
 #else					/* NT */
    return 0;
 #endif					/* NT */

@@ -267,9 +267,9 @@ void		outimage	(FILE *f,dptr dp,int noimage);
 struct b_coexpr	*popact		(struct b_coexpr *ce);
 #if NT && (WordBits==64)
 unsigned long long physicalmemorysize();
-#else
-unsigned long	physicalmemorysize();
-#endif
+#else                           /* NT && (WordBits == 64) */
+unsigned long physicalmemorysize();
+#endif                          /* NT && (WordBits == 64) */
 word		prescan		(dptr d);
 int		pstrnmcmp	(struct pstrnm *a,struct pstrnm *b);
 #ifdef PseudoPty

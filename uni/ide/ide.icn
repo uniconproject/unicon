@@ -197,12 +197,18 @@ $endif
 
    method on_save_btn(ev, c)
       if /c then c := CurrentTabItem()
-      if c.label[-1] == "*" then {
-         if c.label == ("Untitled*"|"scratch*") then
+      # if not .icn (i.e. unmodified .icn source), save if asked
+      # .icn's get turned into .icn*'s but other extensions do not.
+      if not (c.label[-4:0] == ".icn") then {
+         if c.label == (("Untitled"||(""|"*"))|("scratch*"||(""|"*"))) then
             on_saveas_btn()
          else {
-            c.label := c.label[1:-1]
-            save_file(c)
+	    if c.label[-5:0] == ".icn*" then {
+	       c.label := c.label[1:-1]
+	       if not (save_file(c)) then c.label ||:= "*"
+	       }
+	    else
+		save_file(c)
             }
          }
    end

@@ -186,7 +186,7 @@ shuffle.u:
 
 
 clean:
-	rm -f *.u uni* *.o thread-ring spectral-norm			\
+	rm -f *.u uni* *.o *.exe thread-ring spectral-norm		\
 	reverse-complement regex-dna pidigits n-body binary-trees	\
 	chameneos-redux fannkuch fasta k-nucleotide mandelbrot		\
 	meteor-contest queens rsg concord deal ipxref run-test		\

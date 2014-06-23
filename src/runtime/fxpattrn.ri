@@ -140,11 +140,12 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
 static void cnv_str_pattern(dptr s, dptr p);
 static void cnv_cset_pattern(dptr s, dptr p);
 
+/* review for merging? with other checked calloc functions? */
 static void * checked_calloc(size_t nelem, size_t elsize)
 {
    void *retval = calloc(nelem,elsize);
    if (retval == NULL) {
-      fprintf(stdout, "Fatal error out of memory");
+      fprintf(stderr, "Fatal error out of memory");
       fatalerr(0, NULL);
       }
    else
@@ -158,27 +159,22 @@ static struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
 		int pattern_code, int index, struct descrip param)
 {
-   struct b_pattern * pattern;
    tended struct b_pelem *lpnext = pnext;
-   tended struct b_pelem *pelem = alcpelem(pattern_code);
    tended struct descrip lparam = param;
+   tended struct b_pelem *pelem = alcpelem(pattern_code);
    tended union block * bp = (union block *)alcpattern(stck_size);
    pelem->pthen = (union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
-   pattern = (struct b_pattern *)bp;
-   pattern->pe = (union block *)pelem;
+   BlkPH(bp,Pattern,pe) = (union block *)pelem;
    return bp;
 }
 
 union block *pattern_make_pelem(int stck_size, struct b_pelem * pe)
 {
-   struct b_pattern * pattern;
-   tended union block * bp;
    tended struct b_pelem *lpe = pe;
-   bp = (union block *)alcpattern(stck_size);
-   pattern = (struct b_pattern *)bp;
-   pattern->pe = (union block *)lpe;
+   union block * bp = (union block *)alcpattern(stck_size);
+   BlkPH(bp,Pattern,pe) = (union block *)lpe;
    return bp;
 }
 
@@ -272,8 +268,8 @@ static struct b_pelem *  ResolveReferences(struct b_pelem * P )
 
       reserve(Blocks, RefLen * sizeof(struct b_pelem));
 
-      Refs = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
-      Copy = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Refs = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
+      Copy = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
 
       Build_Ref_Array (P, Refs);
 
@@ -321,38 +317,36 @@ static struct b_pelem *  ResolveReferences(struct b_pelem * P )
 	 case PC_Rpat:{
 	    tended char * varname;				
 	    if (is:list(E->parameter)) {
-		/*
-		 * we know our list
-		 * it has only 2 elements object variable name and field name
-		 * so we dont perform all the sanity checks
-		 */
-		tended struct b_lelem *ep;
-		tended struct b_record *rp;
-		union block *bptr;
-		struct descrip fieldptr;
+	       /*
+		* we know our list
+		* it has only 2 elements object variable name and field name
+		* so we dont perform all the sanity checks
+		*/
+	       tended struct b_lelem *ep;
+	       tended struct b_record *rp;
+	       union block *bptr;
+	       struct descrip fieldptr;
 
-		int i,nfields, fnum;
-		tended struct b_list *lp = (struct b_list *)BlkLoc(E->parameter);
-		ep = (struct b_lelem *)lp->listhead;
-		if (is:string(ep->lslots[0])){
-
-		    cnv:C_string(ep->lslots[0],varname);
-			if ( getvar(varname,&ep->lslots[0])== Failed) {
-			    VariableLookupFailed(varname);
-			}
-		    }
-	    }
-	    else
-		{
-		    if ( is:string(E->parameter)){
-		    cnv:C_string(E->parameter, varname);
-			DEBUGF(2, (stdout, "Looking up variable name =%s\n",
+	       int i,nfields, fnum;
+	       tended struct b_list *lp = (struct b_list *)BlkLoc(E->parameter);
+	       ep = (struct b_lelem *)lp->listhead;
+	       if (is:string(ep->lslots[0])) {
+	          cnv:C_string(ep->lslots[0],varname);
+		  if (getvar(varname,&ep->lslots[0])== Failed) {
+		     VariableLookupFailed(varname);
+		     }
+		  }
+	       }
+	    else {
+	       if (is:string(E->parameter)){
+	          cnv:C_string(E->parameter, varname);
+		  DEBUGF(2, (stdout, "Looking up variable name =%s\n",
 				   varname));
-			if ( getvar(varname,&E->parameter)== Failed){
-			    VariableLookupFailed(varname);	
-			}	
-		    }
-		}
+		  if (getvar(varname,&E->parameter)== Failed) {
+		     VariableLookupFailed(varname);
+		     }
+		  }
+	       }
 	    break;
 	 }
 	 case PC_Pos_NF:
@@ -431,8 +425,8 @@ static struct b_pelem *  Copy (struct b_pelem * P )
       int J;
       int RefLen = P->index + 1;
 
-      Refs = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
-      Copy = (struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Refs = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
+      Copy = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
 
       Build_Ref_Array (P, Refs);
 
@@ -525,56 +519,48 @@ struct b_pelem *  Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
 
 struct b_pelem * ResolvePattern(struct b_pattern *pat)
 {
-    struct descrip key;
-    tended struct descrip val;    
-    int res;
-    uword hn;
-    struct b_telem *te;
-    tended struct b_pelem *phead;
-    union block **pd;
-    key.dword = D_Integer;
-    IntVal(key) = pat->id;
-    hn = hash(&key);
-    if (pfp->pattern_cache == NULL)
-	{
-	    pfp->pattern_cache =  (struct b_table *)hmake(T_Table, (word)0,(word)0);
-	}
-    else /* we have a table check if the pattern is already resolved */
-	{
-	    pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
-	    if ( res != 0) /*the element is in the table*/
-		{
-		    te = (struct b_telem *) *pd;
-		    return (struct b_pelem *)BlkLoc(te->tval);
-		}
-	}
-    /* if it is not in table first resolve references */
-    phead = ResolveReferences(&(pat->pe->Pelem));
-    val.dword = D_Pelem;
-    BlkLoc(val) = (union block *)phead;
-    /* get this now because can't tend pb */
-    te = alctelem();
-    if ( te == NULL)
-	{
-	    fprintf(stdout,"Out of memory");
-	    fatalerr(0, NULL);
-	}
-    /* find where to insert cannot just reuse pd as it cannot be tended*/
-    pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
-    pfp->pattern_cache->size++;
-    te->clink = *pd;
-    *pd =  (union block *)te;
-    te->hashnum = hn;
-    te->tref = key;
-    te->tval = val;
-    if (TooCrowded(pfp->pattern_cache))
-	hgrow( (union block *)pfp->pattern_cache);
-    return phead;
-    
-
+   struct descrip key;
+   tended struct descrip val;    
+   int res;
+   uword hn;
+   struct b_telem *te;
+   tended struct b_pelem *phead;
+   union block **pd;
+   key.dword = D_Integer;
+   IntVal(key) = pat->id;
+   hn = hash(&key);
+   if (pfp->pattern_cache == NULL) {
+      pfp->pattern_cache =  (struct b_table *)hmake(T_Table, (word)0,(word)0);
+      }
+   else { /* we have a table check if the pattern is already resolved */
+      pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
+      if (res != 0) { /*the element is in the table*/
+	 te = (struct b_telem *) *pd;
+	 return (struct b_pelem *)BlkLoc(te->tval);
+	 }
+      }
+   /* if it is not in table first resolve references */
+   phead = ResolveReferences(&(pat->pe->Pelem));
+   val.dword = D_Pelem;
+   BlkLoc(val) = (union block *)phead;
+   /* get this now because can't tend pb */
+   te = alctelem();
+   if (te == NULL) {
+      fprintf(stdout,"Out of memory");
+      fatalerr(0, NULL);
+      }
+   /* find where to insert cannot just reuse pd as it cannot be tended*/
+   pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
+   pfp->pattern_cache->size++;
+   te->clink = *pd;
+   *pd =  (union block *)te;
+   te->hashnum = hn;
+   te->tref = key;
+   te->tval = val;
+   if (TooCrowded(pfp->pattern_cache))
+      hgrow( (union block *)pfp->pattern_cache);
+   return phead;
 }
-
-
 
 
 function {*} pattern_match(underef psub -> dpsub, pat)
@@ -768,7 +754,7 @@ function {1} PAny(charset)
       union block *bp;
       ConvertPatternArgumentCset(charset, bp, PC_Any);
       return pattern(bp);
-    }
+      }
 end
 
 function {1} PBreak(charset)
@@ -1116,9 +1102,7 @@ function {1} PSucceed()
       return pattern;
       }
    body {
-      union block *bp;
-      bp = pattern_make(1, &EOP,PC_Succeed,1, nulldesc);
-      return pattern(bp);
+      return pattern(pattern_make(1, &EOP,PC_Succeed,1, nulldesc));
       }
 end
 
@@ -1501,9 +1485,10 @@ end
  * pattern_recursive
  * pattern_unevalvar
  *
- * The unicon compiler converts expressions such as P -> X to pattern_assign_immediate(P,X,"X")
- * During the pattern matching process the variable X is looked up using the string X
- * Passing the variable to the function frees the programmer from having to declare it
+ * The unicon compiler converts expressions such as P -> X to
+ * pattern_assign_immediate(P,X,"X"). During the pattern matching
+ * process the variable X is looked up using the string X. Passing the
+ * variable to the function frees the programmer from having to declare it.
  */
 
 function {1} PCancel()
@@ -1540,7 +1525,8 @@ function {1} PFail()
       }
 end
 
-static void MYWriteToFile(FILE *fd, int len, char *s){
+static void MYWriteToFile(FILE *fd, int len, char *s)
+{
    int i;
    for (i = 0; i < len; i++){
       fprintf(fd,"%c",s[i]);
@@ -1569,11 +1555,16 @@ static void Set_String(dptr V, char * pat, int start, int end)
  *  CP_R_Restore : aliased PE := (PC_R_Restore, 0, N);
  */
 
-static struct b_pelem CP_Assign    = {T_Pelem, PC_Assign,    (union block *)NULL, 0, {D_Null,0}};
-static struct b_pelem CP_Cancel    = {T_Pelem, PC_Cancel,    (union block *)NULL, 0, {D_Null,0}};
-static struct b_pelem CP_Fence_Y   = {T_Pelem, PC_Fence_Y,   (union block *)NULL, 0, {D_Null,0}};
-static struct b_pelem CP_R_Remove  = {T_Pelem, PC_R_Remove,  (union block *)NULL, 0, {D_Null,0}};
-static struct b_pelem CP_R_Restore = {T_Pelem, PC_R_Restore, (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_Assign    =
+   {T_Pelem, PC_Assign,    (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_Cancel    =
+   {T_Pelem, PC_Cancel,    (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_Fence_Y   =
+   {T_Pelem, PC_Fence_Y,   (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_R_Remove  =
+   {T_Pelem, PC_R_Remove,  (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_R_Restore =
+   {T_Pelem, PC_R_Restore, (union block *)NULL, 0, {D_Null,0}};
 
 /*
  * Stack used to maintain history during pattern matching
@@ -1624,7 +1615,6 @@ else {
 }
 #enddef
 /*
- *
  * Push
  *
  *    procedure Push (Node : PE_Ptr) is
@@ -1651,7 +1641,6 @@ Stack[Stack_Ptr].node   = Node;
  *       Stack (Stack_Ptr).Node   := CP_R_Remove'Access;
  *       Stack_Base := Stack_Ptr;
  *    end Push_Region;
- *
  */
 #begdef Push_Region()
 Stack_Ptr = Stack_Ptr + 2;
@@ -1661,10 +1650,10 @@ Stack_Base = Stack_Ptr;
 #enddef
 
 /*
- * used to convert the string or list stored in the parameter field of a
- * node to the variable location and value the variable location is stored in
- * the pvar (used when the variable needs to be assigned to) the variable value
- * is stored in var
+ * Used to convert the string or list stored in the parameter field of
+ * a node to the variable location and value the variable location is
+ * stored in the pvar (used when the variable needs to be assigned to)
+ * the variable value is stored in var
 */
 #begdef GetVarFromNodeParameter(Node)
 struct descrip var;
@@ -1672,14 +1661,14 @@ struct descrip varref;
 dptr pvar;
 tended char * varname;
 if (is:list(Node->parameter)) {
-		tended struct b_lelem *ep;
-		tended struct b_record *rp;
-		union block *bptr;
-		struct descrip fieldptr;
+   tended struct b_lelem *ep;
+   tended struct b_record *rp;
+   union block *bptr;
+   struct descrip fieldptr;
 
-		int i,nfields, fnum;
-		struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
-		ep = (struct b_lelem *)lp->listhead;
+   int i,nfields, fnum;
+   struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+   ep = (struct b_lelem *)lp->listhead;
 
    deref(&var,&ep->lslots[0]);
    if (!is:record(var))
@@ -1706,9 +1695,26 @@ if (is:list(Node->parameter)) {
    varref = var = rp->fields[fnum];
    }
 else {
-    pvar = VarLoc(Node->parameter);
-    var = *pvar;
-}
+   tended char *varnam;
+   if(is:string(Node->parameter)) {
+      cnv:C_string(Node->parameter, varnam);
+      if (getvar(varnam, &varref) == Failed) {
+	 VariableLookupFailed(varnam);
+	 }
+      pvar = VarLoc(varref);
+      }
+   else if (!is:string(Node->parameter) && Var(Node->parameter)) {
+      pvar = VarLoc(Node->parameter);
+      var = *pvar;
+      }
+   else {
+      fprintf(stderr, "oh my, parameter\n\n\t%16x\n\t%16x\n\npvar %p\n",
+	      Node->parameter.dword, Node->parameter.vword.integr,
+	      pvar);
+      fprintf(stderr, "bad descriptor in .$ or some such\n");
+      fatalerr(0, NULL);
+      }
+   }
 #enddef
 
 
@@ -1863,7 +1869,7 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    int Assign_OnM = 0;
    int Region_Level = 0;
    DEBUGF(2, (stdout,
-	  "Initiating pattern match, subject = %*s\t Len = %d\t Curpos = %d\n",
+	  "Initiating pattern match\nsubject = \"%*s\", len = %d, curpos = %d\n",
 	      Length,pat_sub,Length, Cursor));
    if (pattern == NULL) {
       fprintf(stdout,"Uninitialized Pattern");
@@ -2837,9 +2843,9 @@ Node_Succeed:
 
    case  PC_String : {
       int Len = StrLen(Node->parameter);
-      DEBUGF(20,(stdout,"Matching String\n"));
-      if ((Length - Cursor >= Len )
-	  && !strncmp(pat_sub + Cursor, StrLoc(Node->parameter), Len)) {
+      DEBUGF(20,(stdout,"Matching String \"%*s\" against %s, Length %d Cursor %d Len %d\n", Len, StrLoc(Node->parameter), pat_sub+Cursor, Length, Cursor, Len));
+      if ((Length - Cursor >= Len) &&
+	  !strncmp(pat_sub + Cursor, StrLoc(Node->parameter), Len)) {
 	 Cursor = Cursor + Len;
 	 goto Node_Succeed;
 	 }

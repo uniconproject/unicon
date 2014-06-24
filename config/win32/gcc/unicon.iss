@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.2.0_threads(32-bit)_rev3774
+OutputBaseFilename=setup-unicon_12.2.0_threads(32-bit)_rev3834
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -34,7 +34,7 @@ Source: "\unicon\config\win32\gcc\uninstall.ico"; DestDir: "{app}"; Flags: ignor
 Source: "\unicon\config\win32\gcc\internet.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 ;Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
-Source: "\unicon\bin\*.h"; DestDir: "{app}\bin"; Flags: ignoreversion
+;Source: "\unicon\bin\*.h"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "\unicon\dat\fonts\*"; DestDir: "{app}\dat\fonts"; Flags: ignoreversion
 
 ; Documentation
@@ -90,12 +90,15 @@ Source: "\unicon\uni\gui\ivib\icon\*.icon"; DestDir: "{app}\uni\gui\ivib\icon"; 
 Source: "\unicon\uni\gui\ivib\icon\*.xpm"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
 Source: "\unicon\uni\gui\ivib\icon\icon.gif"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
 Source: "\unicon\uni\gui\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
-; The old IVIB
-Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
-Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
-Source: "\unicon\uni\ivib\icon\*.ico"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
-Source: "\unicon\uni\ivib\icon\*.xpm"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
-Source: "\unicon\uni\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
+
+; The old IVIB 
+; NOTE: The old ivib was dropped from sources in early 2014.
+Source: "\unicon\uni\ivib\README"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
+;Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
+;Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
+;Source: "\unicon\uni\ivib\icon\*.ico"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
+;Source: "\unicon\uni\ivib\icon\*.xpm"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
+;Source: "\unicon\uni\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
 
 ; IDE
 Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; Flags: ignoreversion

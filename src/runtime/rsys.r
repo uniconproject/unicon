@@ -2101,7 +2101,7 @@ skipredirect:
    return rv;
 }
 
-#ifdef HAVE_LIBPTHREAD
+#if defined(HAVE_LIBPTHREAD) && (defined(Concurrent) || defined(PthreadCoswitch))
 
 #ifndef SUN
 /* from netbsd.org, under the BSD license  */

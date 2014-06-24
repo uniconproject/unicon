@@ -686,7 +686,7 @@ char *argv[];
 
    prog_name = name;			/* Set icode file name */
 
-#if defined(HAVE_LIBPTHREAD) && !defined(SUN)
+#if defined(HAVE_LIBPTHREAD) && (defined(Concurrent) || defined(PthreadCoswitch)) && !defined(SUN)
    pthread_rwlock_init(&__environ_lock, NULL);
 #endif					/*HAVE_LIBPTHREAD && !SUN */
 

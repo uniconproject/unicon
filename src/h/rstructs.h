@@ -429,7 +429,7 @@ struct debug {
    };
 
 union numeric {			/* long integers or real numbers */
-   long integer;
+   word integer;
    double real;
    #ifdef LargeInts
       struct b_bignum *big;

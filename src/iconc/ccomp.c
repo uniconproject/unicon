@@ -297,6 +297,10 @@ Deliberate Syntax Error
    lib_sz += strlen(" -ljpeg ");
 #endif /* HAVE_LIBJPEG */
 
+#if HAVE_LIBPTHREAD
+   lib_sz += strlen(" -lpthread ");
+#endif                                        /* HAVE_LIBPTHREAD */
+
 #if defined(MacOSX) || defined(HAVE_LIBFTGL)
    lib_sz += strlen(" -lstdc++ ");
 #endif
@@ -377,6 +381,10 @@ Deliberate Syntax Error
 #if HAVE_LIBJPEG
    strcat(s, " -ljpeg ");
 #endif /* HAVE_LIBJPEG */
+
+#if HAVE_LIBPTHREAD
+   strcat(s, " -lpthread ");
+#endif                                        /* HAVE_LIBPTHREAD */  
 
    strcat(s, LinkLibs);
 #if defined(MacOSX) || defined(HAVE_LIBFTGL)

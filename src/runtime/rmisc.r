@@ -1891,10 +1891,10 @@ dptr dp1, dp2;
           */
 	 register union block *ep;
          bp = BlkLoc(*dp1);
-	 ep = (long)Blk(bp,Pattern)->pe;
+	 ep = Blk(bp,Pattern)->pe;
 
-	 sprintf(sbuf, "pattern_%ld(%ld)", (long)Blk(bp,Pattern)->id, 
-		 (long)Blk(ep,Pelem)->index);
+	 sprintf(sbuf, "pattern_%ld(%ld)", (long)(Blk(bp,Pattern)->id),
+		 (long)(Blk(ep,Pelem)->index));
 
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return RunError);

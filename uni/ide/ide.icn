@@ -360,8 +360,8 @@ $endif
    #
    # Edit Code
    #
-   method findstring(s) # (from cve 6/5/13.
-      # Modified 7/13, duplicate function in editabletextlist.icn)
+   method findstring(s)
+      # Replaces a simpler function in editabletextlist.icn
 
       local L, startcol, i, j, whichFindFunction := find, direction,
 	 foundline, foundcol, rd
@@ -549,6 +549,14 @@ $endif
             console :="xterm -hold -e "
          else if pathfind("konsole", getenv("PATH")) then
             console := "konsole --vt_sz 70x18 "
+         else if pathfind("mate-terminal", getenv("PATH")) then
+            console := "mate-terminal --title=Unicon -e "
+         else if pathfind("gnome-terminal", getenv("PATH")) then
+            console := "gnome-terminal --title=Unicon -e "
+         else if pathfind("lxterminal", getenv("PATH")) then
+            console := "lxterminal --title=Unicon -e "
+         else if pathfind("xfce4-terminal", getenv("PATH")) then
+            console := "xfce4-terminal --title=Unicon --hold -e "     
          else console := ""
       else # implies Windows for now
 	 console := "cmd "
@@ -589,17 +597,32 @@ $endif
 	       cmd2 := console || \cmd || " \" " || wiconlog
 	       }
 	    }
+         else if pathfind("mate-terminal", getenv("PATH")) then {
+            console := "mate-terminal --title=Unicon -e "
+            cmd2 := console || \cmd || " &> " || wiconlog 
+            }
+         else if pathfind("gnome-terminal", getenv("PATH")) then {
+            console := "gnome-terminal --title=Unicon -e "
+            cmd2 := console || \cmd || " &> " || wiconlog 
+            }
+         else if pathfind("lxterminal", getenv("PATH")) then {
+            console := "lxterminal --title=Unicon -e "
+            cmd2 := console || \cmd || " &> " || wiconlog 
+            }
+         else if pathfind("xfce4-terminal", getenv("PATH")) then {
+            console := "xfce4-terminal --title=Unicon --hold -e "
+            cmd2 := console || \cmd || " &> " || wiconlog 
+            }      
 	 else #just run without "console || ..."
-	    cmd2 := cmd || " &> " || wiconlog
-
+               cmd2 := cmd || " &> " || wiconlog
 	 }
-      else{
+      else {
 	 if icodename[1] ~== PATHSEP then icodename := icodename
 	 cmd := quotes(icodename||".exe")
 	 if fdir[-1] ~== "\\" then
-	  fdir := fdir || "\\"
+	    fdir := fdir || "\\"
 	 if find(".icn", CurrentTabItem().label) then
-	   cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
+	    cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
 
 	 #cmd := "wiconx " || cmd
 	 }

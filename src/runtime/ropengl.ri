@@ -2,6 +2,7 @@
  *  File: ropengl.ri
  *     3D facilities OpenGL support routines
  */
+int alcinstalltex(int k, wdp wd, GLubyte *tex, int width, int height);
 int bltex(wbp w, int width, int height, int ch, char *s, word len);
 int determinematerial(char *, C_integer, C_integer, C_integer, C_integer);
 wtp lookup_texture_byname(wbp w, char *name, int len, int type, int curtex);
@@ -2507,7 +2508,7 @@ int textureimg(wbp w, int width, int height,
    wdp wd = w->window->display;
 #endif					/* XWindows */
    wcp wc = w->context;
-   int c, v, i, k;
+   int c, v, i;
    unsigned int ix = 0, iy = height -1;
    GLubyte *tex = (GLubyte *)malloc(height * width * 4 + 1);
 
@@ -2555,27 +2556,9 @@ int textureimg(wbp w, int width, int height,
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded) {
-      wdp wd = wc->display;
-      k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k >= wd->maxstex) {
-        SUSPEND_THREADS();
-        if (k >= wd->maxstex) {
-	  wd->maxstex *= 2;
-	  wd->stex = realloc(wd->stex, sizeof(struct _savetexture)*wd->maxstex);
-	  if (wd->stex==NULL){
-	   RESUME_THREADS();
-	   return Failed;
-	   }
-	  }
-       RESUME_THREADS();
-       }
-
-      wd->stex[k].tex = tex;
-      wd->stex[k].width = width;
-      wd->stex[k].height = height;
-      return Succeeded;
+      return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
    else {
       free(tex);
@@ -2591,7 +2574,7 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 #endif					/* XWindows */
    wcp wc = w->context;
    unsigned int m, msk1, c, ix, iy;
-   int r, b, g, i, k, l;
+   int r, b, g, i, l;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
 
    makecurrent(w);
@@ -2654,28 +2637,9 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
    if (i == Succeeded)  {
-      wdp wd = wc->display;
-      k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k >= wd->maxstex){
-         SUSPEND_THREADS();
-      	 if (k>=wd->maxstex){
-	    wd->maxstex *= 2;
-	    wd->stex = realloc(wd->stex, 
-	    	     sizeof(struct _savetexture)*wd->maxstex);
-	    if (wd->stex==NULL){
-               RESUME_THREADS();
-	       return Failed;
-	       }
-	    }
-         RESUME_THREADS();
-	 }
-
-      wd->stex[k].tex = tex;
-      wd->stex[k].width = width;
-      wd->stex[k].height = height;
-      return Succeeded;
+      return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
    else {
      free(tex);
@@ -2989,28 +2953,9 @@ int texture_24img(wbp w, struct imgdata im)
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded) {
-      wdp wd = wc->display;
-      k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k >= wd->maxstex){
-         SUSPEND_THREADS();
-      	 if (k >= wd->maxstex){
-	    wd->maxstex *= 2;
-	    wd->stex = realloc(wd->stex, 
-	    	     sizeof(struct _savetexture)*wd->maxstex);
-	    if (wd->stex == NULL) {
-	       RESUME_THREADS();
-	       return Failed;
-	       }
-	    }
-    	 RESUME_THREADS();
-	 }
-
-      wd->stex[k].tex = tex;
-      wd->stex[k].width = width;
-      wd->stex[k].height = height;
-      return Succeeded;
+      return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
    else {
       free(tex);
@@ -3762,7 +3707,7 @@ int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,
 /* convert a 2D window into a texture */
 int texwindow2D(wbp w, wbp w2d)
 {
-   int k, r;
+   int r;
    wsp ws = w2d->window;
    GLubyte *tex = (GLubyte *)malloc(ws->height * ws->width * 3);
    wcp wc = w2d->context;
@@ -3779,27 +3724,9 @@ int texwindow2D(wbp w, wbp w2d)
 
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
    if (r == Succeeded)  {
-      k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k >= wc->display->maxstex) {
-         SUSPEND_THREADS();
-         if (k >= wc->display->maxstex) {
-	    wc->display->maxstex *= 2;
-	    wc->display->stex = realloc(wc->display->stex, 
-	    	     sizeof(struct _savetexture)*wc->display->maxstex);
-	    if (wc->display->stex == NULL) {
-               RESUME_THREADS();
-	       return Failed;
-	       }
-	    }
-         RESUME_THREADS();
-	 }
-
-      wc->display->stex[k].tex = tex;
-      wc->display->stex[k].width = ws->width;
-      wc->display->stex[k].height = ws->height;
-      return Succeeded;
+      return alcinstalltex(wc->curtexture,wc->display,tex,ws->width,ws->height);
       }
    else {
      free(tex);
@@ -3814,7 +3741,7 @@ int texwindow3D(wbp w1, wbp w2)
    wcp wc = w2->context;
    int width = ws->width;
    int height = ws->height;
-   int i, k;
+   int i;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
 
    /* change the current context to w2's context */
@@ -3840,27 +3767,9 @@ int texwindow3D(wbp w1, wbp w2)
    }
 #endif					/* MSWindows */
     if (i == Succeeded) {
-      k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k >= wc->display->maxstex) {
-         SUSPEND_THREADS();
-         if (k >= wc->display->maxstex) {
-	    wc->display->maxstex *= 2;
-	    wc->display->stex = realloc(wc->display->stex, 
-	    	     sizeof(struct _savetexture)*wc->display->maxstex);
-	    if (wc->display->stex==NULL) {
-               RESUME_THREADS();
-	       return Failed;
-	       }
-	 }
-         RESUME_THREADS();
-	 }
-
-      wc->display->stex[k].tex = tex;
-      wc->display->stex[k].width = width;
-      wc->display->stex[k].height = height;
-      return Succeeded;
+      return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
     else {
        free(tex);
@@ -3926,5 +3835,28 @@ int init_texnames(wcp wc)
       wd->nalced = 16;
       wd->maxstex = 16;
       }
+   return Succeeded;
+}
+
+/*
+ * Emergent piece of redundant code for installing a texture, growing if needed
+ */
+int alcinstalltex(int k, wdp wd, GLubyte *tex, int width, int height)
+{
+   if (k >= wd->maxstex) {
+      SUSPEND_THREADS();
+      if (k >= wd->maxstex) {
+	 wd->maxstex *= 2;
+	 wd->stex = realloc(wd->stex, sizeof(struct _savetexture)*wd->maxstex);
+	 if (wd->stex == NULL) {
+	    RESUME_THREADS();
+	    return Failed;
+	    }
+	 }
+      RESUME_THREADS();
+      }
+   wd->stex[k].tex = tex;
+   wd->stex[k].width = width;
+   wd->stex[k].height = height;
    return Succeeded;
 }

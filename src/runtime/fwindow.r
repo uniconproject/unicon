@@ -153,7 +153,7 @@ function{1} Clone(argv[argc])
       	 int nfields, draw_code;
       	 static dptr constr;
 
-	 if (texhandle >= w->context->maxstex) runerr(101, argv[warg]);
+	 if (texhandle >= w->context->display->maxstex) runerr(101, argv[warg]);
 
       	 if (!constr && !(constr = rec_structor3d("gl_texture")))
 	    syserr("failed to create opengl record constructor");
@@ -409,7 +409,7 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 
       if (is_texture) {
 	 base=warg;
-	 if (texhandle >= w2->context->maxstex) runerr(102, argv[base]);
+	 if (texhandle >= w2->context->display->maxstex) runerr(102,argv[base]);
 	 if (!cnv:C_integer(argv[base]  , x)) runerr(102, argv[base]);
 	 if (!cnv:C_integer(argv[base+1], y)) runerr(102, argv[base+1]);
 	 if (!cnv:C_integer(argv[base+2], width)) runerr(102, argv[base+2]);
@@ -854,7 +854,7 @@ function{1} DrawLine(argv[argc])
 	 if (argc-warg<4) /* first line should have at least 4 int values */
 	    runerr(146);
 	 
-	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+	 if (texhandle >= w->context->display->maxstex) runerr(101, argv[base]);
 
      	 if (!cnv:C_integer(argv[base]  , x1)) runerr(101, argv[base]);
 	 if (!cnv:C_integer(argv[base+1], y1)) runerr(101, argv[base+1]);
@@ -959,7 +959,7 @@ function{1} DrawPoint(argv[argc])
 	 base=warg;
 	 CheckArgMultiple(2); 
 
-	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
+	 if (texhandle >= w->context->display->maxstex) runerr(102, argv[base]);
 
          for (; base < argc; base+=2){
 	     if (!cnv:C_integer(argv[base], x)) runerr(101, argv[base]);
@@ -1150,7 +1150,7 @@ function{1} DrawRectangle(argv[argc])
 	 base=warg;
 	 CheckArgMultiple(4);
 
-	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+	 if (texhandle >= w->context->display->maxstex) runerr(101, argv[base]);
          for (; base < argc; base+=4){
      	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
 	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
@@ -1204,7 +1204,7 @@ function{1} DrawSegment(argv[argc])
       if (is_texture) {
 	 base=warg;
 	 CheckArgMultiple(4);
-	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+	 if (texhandle >= w->context->display->maxstex) runerr(101, argv[base]);
          for (; base < argc; base+=4){
      	     if (!cnv:C_integer(argv[base]  , x1)) runerr(101, argv[base]);
 	     if (!cnv:C_integer(argv[base+1], y1)) runerr(101, argv[base+1]);
@@ -1390,7 +1390,7 @@ function{1} EraseArea(argv[argc])
       if (is_texture) {
 	 base=warg;
 	 CheckArgMultiple(4);
-	 if (texhandle >= w->context->maxstex) runerr(102, argv[base]);
+	 if (texhandle >= w->context->display->maxstex) runerr(102, argv[base]);
          for (; base < argc; base+=4){
      	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
 	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
@@ -1767,7 +1767,7 @@ function{1} FillRectangle(argv[argc])
 	 base=warg;
 	 CheckArgMultiple(4);
 
-	 if (texhandle >= w->context->maxstex) runerr(101, argv[base]);
+	 if (texhandle >= w->context->display->maxstex) runerr(101, argv[base]);
          for (; base < argc; base+=4){
      	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
 	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
@@ -2426,7 +2426,8 @@ function{0,1} ReadImage(argv[argc])
 
 #ifdef Graphics3D
 	 if (is_texture) {
-	    if (texhandle > w->context->maxstex) runerr(102, argv[warg]);
+	    if (texhandle > w->context->display->maxstex)
+	       runerr(102, argv[warg]);
 	    return C_integer (word) TexReadImage(w, texhandle, x, y, &imd);
 	    }
 #endif					/* Graphics3D */
@@ -4424,7 +4425,7 @@ function{1} Texture(argv[argc])
 	 else if (!cnv:C_integer(argv[warg + 1], theTexture)) {
 	    runerr(101, argv[warg+1]);
 	    }
-	 if ((theTexture<0) || (theTexture>=wc->ntextures)) fail;
+	 if ((theTexture<0) || (theTexture>=wc->display->ntextures)) fail;
 	 theTexture++; /* should be check, probably no need for ++ */
 
 	 wc->curtexture = theTexture;
@@ -4454,7 +4455,7 @@ function{1} Texture(argv[argc])
 	 rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
 	 wc->curtexture = texhandle;
 #if HAVE_LIBGL
-	 glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+	 glBindTexture(GL_TEXTURE_2D, wc->display->texName[wc->curtexture]);
 #endif					/* HAVE_LIBGL */
 	 c_put(&(w->window->funclist), &f);
 	 return f; 
@@ -4474,7 +4475,7 @@ function{1} Texture(argv[argc])
 
 	 if (theTexture==-1){
 	    if (make_enough_texture_space(wc)==Failed) fail;
-	    wc->curtexture = wc->ntextures;
+	    wc->curtexture = wc->display->ntextures;
 	    }
 	 else
 	    wc->curtexture = theTexture;
@@ -4486,8 +4487,8 @@ function{1} Texture(argv[argc])
 	    i = texwindow2D(w, w2);
 
 	 if (i==Succeeded){
-	    if (wc->curtexture == wc->ntextures)
-	       wc->ntextures++;
+	    if (wc->curtexture == wc->display->ntextures)
+	       wc->display->ntextures++;
 	    MakeInt(wc->curtexture, &(rp->fields[2]));
 	    c_put(&(w->window->funclist), &f);
 	    return f;

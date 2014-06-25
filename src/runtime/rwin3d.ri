@@ -246,7 +246,7 @@ int gettexcoords(wbp w, char *buf)
 int gettexture(wbp w, dptr dp)
 {
    wcp wc= w->context;
-   wtp wt = wc->textures;
+   wtp wt = wc->display->textures;
    while (wt) {
       if (wt->texindex == wc->curtexture) {
 	 *dp = wt->d;
@@ -281,11 +281,14 @@ int init_3dcontext(wcp wc)
    wc->normals = NULL;
    wc->texmode = wc->numtexcoords = 0;
 
-   wc->stex = (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
-   if (wc->stex == NULL) return Failed;
+   if (wc->display->stex == NULL) {
+      wc->display->stex =
+	 (struct _savetexture *) malloc(16*sizeof(struct _savetexture));
+      if (wc->display->stex == NULL) return Failed;
+      wc->display->ntextures = 0;
+      }
 
    wc->texcoords = NULL; 
-   wc->ntextures = 0;
    wc->curtexture = -1;
    wc->buffermode = IMMEDIATE3D;
    wc->meshmode = U3D_POLYGON;
@@ -319,20 +322,8 @@ int copy_3dcontext(wcp wc, wcp rv)
    rv->normals = wc->normals;
    rv->texmode = wc->texmode;
    rv->numtexcoords = wc->numtexcoords;
-#if HAVE_LIBGL
-   /*
-    * This appears to be a bug: shared pointer to malloced array
-    * of bound textures. How do we tell who is to free them?
-    */
-   rv->texName = wc->texName;
-   rv->nalced = wc->nalced;
-#endif					/* HAVE_LIBGL */
-   rv->maxstex = wc->maxstex;
-
-   rv->stex = wc->stex;
 
    rv->texcoords = wc->texcoords;
-   rv->ntextures = wc->ntextures;
    rv->curtexture = wc->curtexture;
    rv->buffermode = wc->buffermode;
    rv->meshmode = wc->meshmode;

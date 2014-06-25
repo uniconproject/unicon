@@ -328,7 +328,33 @@ typedef struct _wctype {
 #endif					/* MacGraph */
 
 
-#ifdef XWindows
+/*
+ * Texture management requires that we be able to lookup and reuse
+ * existing textures, as well as support dynamic window-based textures.
+ */
+#ifdef Graphics3D
+typedef struct _wtexture {
+   int		refcount;
+   int		serial;			/* serial # */
+   struct _wtexture *previous, *next;
+   int          textype;	/* 1 = file, 2 = window (descrip), 3 = string*/
+   struct descrip d;
+   struct {			/* if type = 1, we store file attributes */
+      int           size;
+      int          timestamp;
+      } fattr;
+   int       texindex;
+   } wtexture, *wtp;
+
+typedef struct _savetexture {
+#if HAVE_LIBGL
+   GLubyte *tex;
+#endif					/* HAVE_LIBGL */
+   int width, height;
+   struct _wbinding *w;
+   } stexture, *wvp;
+#endif					/* Graphics3D */
+
 
 /*
  * Displays are maintained in a global list in rwinrsc.r.
@@ -336,28 +362,39 @@ typedef struct _wctype {
 typedef struct _wdisplay {
   int		refcount;
   int		serial;			/* serial # */
+#ifdef XWindows
   char		name[MAXDISPLAYNAME];
   Display *	display;
   GC		icongc;
   Colormap	cmap;
-  double	gamma;
-  int		screen;
-  int		numFonts;
-  wfp		fonts;
 #ifdef HAVE_XFT
   XFontStruct   *xfont;
 #endif					/* HAVE_XFT */
 #ifdef Graphics3D
   XVisualInfo  *vis;
 #endif					/* Graphics3D */
+  Cursor	cursors[NUMCURSORSYMS];
   int           numColors;		/* allocated color info */
   int		sizColors;		/* # elements of alloc. color array */
   struct wcolor	*colors;
+  int		screen;
+  int		numFonts;
+  wfp		fonts;
   int		buckets[16384];		/* hash table for quicker lookups */
-  Cursor	cursors[NUMCURSORSYMS];
+#endif					/* XWindows */
+#ifdef Graphics3D
+  int ntextures;			/* # textures actually used */
+  int nalced;				/* number allocated */
+#if HAVE_LIBGL
+  GLuint *texName;			/* array of GL textures */
+#endif					/* HAVE_LIBGL */
+  wtp textures;				/* textures */
+  wvp stex;
+  int maxstex;
+#endif					/* Graphics3D */
+  double	gamma;
   struct _wdisplay *previous, *next;
 } *wdp;
-#endif					/* XWindows */
 
 #ifdef PresentationManager
 /*
@@ -388,33 +425,6 @@ typedef struct _lclIdentifier {
 #endif					/* PresentationManager */
 
 /*
- * Texture management requires that we be able to lookup and reuse
- * existing textures, as well as support dynamic window-based textures.
- */
-#ifdef Graphics3D
-typedef struct _wtexture {
-   int		refcount;
-   int		serial;			/* serial # */
-   struct _wtexture *previous, *next;
-   int          textype;	/* 1 = file, 2 = window (descrip), 3 = string*/
-   struct descrip d;
-   struct {			/* if type = 1, we store file attributes */
-      int           size;
-      int          timestamp;
-      } fattr;
-   int       texindex;
-   } wtexture, *wtp;
-
-typedef struct _savetexture {
-#if HAVE_LIBGL
-   GLubyte *tex;
-#endif					/* HAVE_LIBGL */
-   int width, height;
-   struct _wbinding *w;
-   } stexture, *wvp;
-#endif					/* Graphics3D */
-
-/*
  * "Context" comprises the graphics context, and the font (i.e. text context).
  * Foreground and background colors (pointers into the display color table)
  * are stored here to reduce the number of window system queries.
@@ -436,8 +446,8 @@ typedef struct _wcontext {
 #ifdef MacGraph
   ContextPtrType   contextPtr;
 #endif					/* MacGraph */
-#ifdef XWindows
   wdp		display;
+#ifdef XWindows
   GC		gc;			/* X graphics context */
   int		fg, bg;
   int		linestyle;
@@ -512,15 +522,7 @@ typedef struct _wcontext {
   int           numtexcoords;           /* # of texture coordinates used */
   struct b_realarray  *texcoords;             /* texture coordinates */
   
-  int ntextures;			/* # textures actually used */
   int curtexture;			/* subscript of current texture */
-  int nalced;				/* number allocated */
-#if HAVE_LIBGL
-  GLuint *texName;			/* array of GL textures */
-#endif					/* HAVE_LIBGL */
-  wtp textures;				/* textures */
-  wvp stex;
-  int maxstex;
 #endif					/* Graphics3D */
 } wcontext, *wcp;
 
@@ -588,8 +590,8 @@ typedef struct _wstate {
   Boolean   lockOK;
   Boolean   visible;
 #endif					/* MacGraph */
-#ifdef XWindows
   wdp		display;
+#ifdef XWindows
   Window	win;			/* X window */
   Pixmap	pix;			/* current screen state */
   Pixmap	initialPix;		/* an initial image to display */

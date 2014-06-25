@@ -86,7 +86,7 @@ void init_3dcanvas(wbp  w)
 
    glShadeModel(GL_SMOOTH);
    /*glPolygonMode(GL_FRONT, GL_FILL);*/
-   glGenTextures(16, wc->texName);
+   glGenTextures(16, wc->display->texName);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -113,22 +113,23 @@ int release_3d_resources(wbp w)
 {
    int i;
    wcp wc = w->context;
-#ifdef XWindows
    wdp wd = w->window->display;
-#endif					/* XWindows */
 
-   for (i=0; i<wc->ntextures; i++) {
-      free(wc->stex[i].tex);
-      wc->stex[i].w=0;
+#if 0
+   /* need to consider what 3D resources can be freed in the wdp and when */
+   for (i=0; i < wd->ntextures; i++) {
+      free(wd->stex[i].tex);
+      wd->stex[i].w=0;
    }
-   free(wc->stex);
-   wc->stex = NULL;
+   free(wd->stex);
+   free(wd->texName);
+   wd->stex = NULL;
+#endif
    i = wc->selectionnamecount;
    while (i){
       free(wc->selectionnamelist[--i]);
    }
    free(wc->selectionnamelist);
-   free(wc->texName);
 #ifdef XWindows
    glXDestroyContext( wd->display, wc->ctx);
 #endif					/* XWindows */
@@ -141,16 +142,17 @@ int release_3d_resources(wbp w)
  */
 int make_enough_texture_space(wcp wc)
 {
-   if (wc->ntextures >= wc->nalced) {
+   wdp wd = wc->display;
+   if (wd->ntextures >= wd->nalced) {
     SUSPEND_THREADS();
-    if (wc->ntextures >= wc->nalced) {
-      wc->nalced *= 2;
-      wc->texName = realloc(wc->texName, wc->nalced * sizeof(GLuint));
-       if (wc->texName==NULL){
+    if (wd->ntextures >= wd->nalced) {
+      wd->nalced *= 2;
+      wd->texName = realloc(wd->texName, wd->nalced * sizeof(GLuint));
+       if (wd->texName==NULL){
        RESUME_THREADS();
        return Failed;
        }
-      glGenTextures(wc->nalced / 2, wc->texName + wc->nalced / 2);
+      glGenTextures(wd->nalced / 2, wd->texName + wd->nalced / 2);
       }
     RESUME_THREADS();
     }
@@ -1154,7 +1156,7 @@ int traversefunctionlist(wbp w)
              * the objects using glBindTexture()
 	     */
 	    if (!cnv:C_integer(rp->fields[2], num)) goto free_v_and_fail;
-	    glBindTexture(GL_TEXTURE_2D, wc->texName[num]);
+	    glBindTexture(GL_TEXTURE_2D, wc->display->texName[num]);
 	    if (wc->texmode)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	    break;
@@ -2552,16 +2554,17 @@ int textureimg(wbp w, int width, int height,
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
-   if (i == Succeeded)  {
+   if (i == Succeeded) {
+      wdp wd = wc->display;
       k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
+      if (k >= wd->maxstex) {
         SUSPEND_THREADS();
-        if (k>=wc->maxstex){
-	  wc->maxstex *= 2;
-	  wc->stex = realloc(wc->stex, sizeof(struct _savetexture)*wc->maxstex);
-	  if (wc->stex==NULL){
+        if (k >= wd->maxstex) {
+	  wd->maxstex *= 2;
+	  wd->stex = realloc(wd->stex, sizeof(struct _savetexture)*wd->maxstex);
+	  if (wd->stex==NULL){
 	   RESUME_THREADS();
 	   return Failed;
 	   }
@@ -2569,9 +2572,9 @@ int textureimg(wbp w, int width, int height,
        RESUME_THREADS();
        }
 
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = width;
-      wc->stex[k].height = height;
+      wd->stex[k].tex = tex;
+      wd->stex[k].width = width;
+      wd->stex[k].height = height;
       return Succeeded;
       }
    else {
@@ -2651,16 +2654,17 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
 
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
    if (i == Succeeded)  {
+      wdp wd = wc->display;
       k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
+      if (k >= wd->maxstex){
          SUSPEND_THREADS();
-      	 if (k>=wc->maxstex){
-	    wc->maxstex *= 2;
-	    wc->stex = realloc(wc->stex, 
-	    	     sizeof(struct _savetexture)*wc->maxstex);
-	    if (wc->stex==NULL){
+      	 if (k>=wd->maxstex){
+	    wd->maxstex *= 2;
+	    wd->stex = realloc(wd->stex, 
+	    	     sizeof(struct _savetexture)*wd->maxstex);
+	    if (wd->stex==NULL){
                RESUME_THREADS();
 	       return Failed;
 	       }
@@ -2668,9 +2672,9 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
          RESUME_THREADS();
 	 }
 
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = width;
-      wc->stex[k].height = height;
+      wd->stex[k].tex = tex;
+      wd->stex[k].width = width;
+      wd->stex[k].height = height;
       return Succeeded;
       }
    else {
@@ -2879,7 +2883,7 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
 {
    char filename[MaxFileName +1];
    wcp wc = w->context;
-   wtp wt = wc->textures, wt2;
+   wtp wt = wc->display->textures, wt2;
    int i, saved_tex;
    CURTSTATE();
 
@@ -2906,24 +2910,24 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
    StrLoc(wt2->d) = strdup(name);
    StrLen(wt2->d) = len;
 
-   wt2->next = wc->textures;
-   if (wc->textures) {
-      wc->textures->previous = wt2;
+   wt2->next = wc->display->textures;
+   if (wc->display->textures) {
+      wc->display->textures->previous = wt2;
       }
-   wc->textures = wt2;
+   wc->display->textures = wt2;
    saved_tex = wc->curtexture;
    if (curtex == -1) {
       /*
        * need a new texture name, make room for it if necessary
        */
       if (!make_enough_texture_space(wc)) return NULL;
-      wc->curtexture = wc->ntextures;
+      wc->curtexture = wc->display->ntextures;
       }
    else /* replace the curtex */
       wc->curtexture = curtex;
 
 
-   glBindTexture(GL_TEXTURE_2D, wc->texName[wc->curtexture]);
+   glBindTexture(GL_TEXTURE_2D, wc->display->texName[wc->curtexture]);
 
    if (ttype == 3)
       i = imagestr(w, name);
@@ -2934,8 +2938,8 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
       }
 
    if (i == Succeeded){
-      wt2->texindex = wc->ntextures;
-      wc->ntextures++;
+      wt2->texindex = wc->display->ntextures;
+      wc->display->ntextures++;
       return wt2;
       }
    else{
@@ -2981,22 +2985,21 @@ int texture_24img(wbp w, struct imgdata im)
       }
 #endif					/* XWindows */
 
-
-
    /* set the texture */
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
 
    if (i == Succeeded) {
+      wdp wd = wc->display;
       k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
+      if (k >= wd->maxstex){
          SUSPEND_THREADS();
-      	 if (k>=wc->maxstex){
-	    wc->maxstex *= 2;
-	    wc->stex = realloc(wc->stex, 
-	    	     sizeof(struct _savetexture)*wc->maxstex);
-	    if (wc->stex==NULL){
+      	 if (k >= wd->maxstex){
+	    wd->maxstex *= 2;
+	    wd->stex = realloc(wd->stex, 
+	    	     sizeof(struct _savetexture)*wd->maxstex);
+	    if (wd->stex == NULL) {
 	       RESUME_THREADS();
 	       return Failed;
 	       }
@@ -3004,9 +3007,9 @@ int texture_24img(wbp w, struct imgdata im)
     	 RESUME_THREADS();
 	 }
 
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = width;
-      wc->stex[k].height = height;
+      wd->stex[k].tex = tex;
+      wd->stex[k].width = width;
+      wd->stex[k].height = height;
       return Succeeded;
       }
    else {
@@ -3228,7 +3231,7 @@ int setselectionmode(wbp w, char* s)
       if (wc->buffermode) { \
       	  wc->curtexture = texhand; \
       	  MKCURRENT3D(w); \
-	  glBindTexture(GL_TEXTURE_2D, wc->texName[texhand]); \
+	  glBindTexture(GL_TEXTURE_2D, wc->display->texName[texhand]); \
 	  texture1(wd, ht, tex, wc->texmode); }
 
 
@@ -3246,9 +3249,9 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
    cgreen = (GLint) GREEN(wc->fg);
    cblue = (GLint) BLUE(wc->fg);
 
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
+   tex = wc->display->stex[texhandle].tex;
+   wd  = wc->display->stex[texhandle].width;
+   ht  = wc->display->stex[texhandle].height;
 
    /* Bresenham algorithm for line drawing */
    if (x2==x1) {
@@ -3414,9 +3417,9 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
    cgreen = (GLint) GREEN(wc->fg);
    cblue = (GLint) BLUE(wc->fg);
 
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
+   tex = wc->display->stex[texhandle].tex;
+   wd  = wc->display->stex[texhandle].width;
+   ht  = wc->display->stex[texhandle].height;
 
    /* if width/height is negative, flip it and readjust x and y accroridngly */
    if (width < 0){ x+= width; width=-width; flipx=1;}
@@ -3482,7 +3485,6 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
        	  }
       }
 
-
    TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;
 }
@@ -3507,9 +3509,9 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
       cblue = (GLint) BLUE(wc->bg);
       }
 
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
+   tex = wc->display->stex[texhandle].tex;
+   wd  = wc->display->stex[texhandle].width;
+   ht  = wc->display->stex[texhandle].height;
 
    /* if width/height is negative, flip it and readjust x and y accordingly */
    if (width < 0){ x+= width; width=-width; }
@@ -3554,9 +3556,9 @@ int TexDrawPoint(wbp w, int texhandle, int x, int y)
    cgreen = (GLint) GREEN(wc->fg);
    cblue = (GLint) BLUE(wc->fg);
 
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
+   tex = wc->display->stex[texhandle].tex;
+   wd  = wc->display->stex[texhandle].width;
+   ht  = wc->display->stex[texhandle].height;
 
    if (x<0 || x>=wd || y<0 || y>=ht) 
       return Failed;
@@ -3581,9 +3583,9 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
    GLubyte *tex;
    unsigned char *s;
 
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
+   tex = wc->display->stex[texhandle].tex;
+   wd  = wc->display->stex[texhandle].width;
+   ht  = wc->display->stex[texhandle].height;
 
    /*  check for width and height.  the old texture with the new image  */
    if (wd<x+imd->width || ht<y+imd->height)
@@ -3773,20 +3775,20 @@ int texwindow2D(wbp w, wbp w2d)
    /* apply the texture */
 
    MKCURRENT3D(w);
-   glBindTexture(GL_TEXTURE_2D, w->context->texName[wc->curtexture]);
+   glBindTexture(GL_TEXTURE_2D, w->context->display->texName[wc->curtexture]);
 
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
    if (r == Succeeded)  {
       k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
+      if (k >= wc->display->maxstex) {
          SUSPEND_THREADS();
-         if (k>=wc->maxstex){
-	    wc->maxstex *= 2;
-	    wc->stex = realloc(wc->stex, 
-	    	     sizeof(struct _savetexture)*wc->maxstex);
-	    if (wc->stex==NULL){
+         if (k >= wc->display->maxstex) {
+	    wc->display->maxstex *= 2;
+	    wc->display->stex = realloc(wc->display->stex, 
+	    	     sizeof(struct _savetexture)*wc->display->maxstex);
+	    if (wc->display->stex == NULL) {
                RESUME_THREADS();
 	       return Failed;
 	       }
@@ -3794,9 +3796,9 @@ int texwindow2D(wbp w, wbp w2d)
          RESUME_THREADS();
 	 }
 
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = ws->width;
-      wc->stex[k].height = ws->height;
+      wc->display->stex[k].tex = tex;
+      wc->display->stex[k].width = ws->width;
+      wc->display->stex[k].height = ws->height;
       return Succeeded;
       }
    else {
@@ -3820,7 +3822,7 @@ int texwindow3D(wbp w1, wbp w2)
    glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
    glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
-   glBindTexture(GL_TEXTURE_2D, w1->context->texName[w1->context->curtexture]);
+   glBindTexture(GL_TEXTURE_2D, w1->context->display->texName[w1->context->curtexture]);
     i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
 #endif					/* XWindows */
 #ifdef MSWindows
@@ -3831,7 +3833,8 @@ int texwindow3D(wbp w1, wbp w2)
    ReleaseDC(ws->iconwin, stddc);
    stddc = CreateWinDC(w1);
    wglMakeCurrent(stddc, w1->context->ctx);
-   glBindTexture(GL_TEXTURE_2D, w1->context->texName[w1->context->curtexture]);
+   glBindTexture(GL_TEXTURE_2D,
+		 w1->context->display->texName[w1->context->curtexture]);
    i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
    ReleaseDC(w1->window->iconwin, stddc);
    }
@@ -3840,13 +3843,13 @@ int texwindow3D(wbp w1, wbp w2)
       k = wc->curtexture;
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
-      if (k>=wc->maxstex){
+      if (k >= wc->display->maxstex) {
          SUSPEND_THREADS();
-         if (k>=wc->maxstex){
-	    wc->maxstex *= 2;
-	    wc->stex = realloc(wc->stex, 
-	    	     sizeof(struct _savetexture)*wc->maxstex);
-	    if (wc->stex==NULL){
+         if (k >= wc->display->maxstex) {
+	    wc->display->maxstex *= 2;
+	    wc->display->stex = realloc(wc->display->stex, 
+	    	     sizeof(struct _savetexture)*wc->display->maxstex);
+	    if (wc->display->stex==NULL) {
                RESUME_THREADS();
 	       return Failed;
 	       }
@@ -3854,9 +3857,9 @@ int texwindow3D(wbp w1, wbp w2)
          RESUME_THREADS();
 	 }
 
-      wc->stex[k].tex = tex;
-      wc->stex[k].width = width;
-      wc->stex[k].height = height;
+      wc->display->stex[k].tex = tex;
+      wc->display->stex[k].width = width;
+      wc->display->stex[k].height = height;
       return Succeeded;
       }
     else {
@@ -3874,9 +3877,9 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int heigh
  
    wwd =  (int)w->window->width;
    wht =  (int)w->window->height;
-   tex = wc->stex[texhandle].tex;
-   wd  = wc->stex[texhandle].width;
-   ht  = wc->stex[texhandle].height;
+   tex = wc->display->stex[texhandle].tex;
+   wd  = wc->display->stex[texhandle].width;
+   ht  = wc->display->stex[texhandle].height;
 
    /* if width/height is negative, flip it and readjust x and y accroridngly */
    if (width < 0){  x+= width;  xt+=width;  width=-width;   }
@@ -3916,9 +3919,12 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int heigh
 
 int init_texnames(wcp wc)
 {
-   wc->texName = malloc(16 * sizeof(GLuint));
-   if (wc->texName == NULL) return Failed;
-   wc->nalced = 16;
-   wc->maxstex=16;
+   wdp wd = wc->display;
+   if (wd->texName == NULL) {
+      wd->texName = malloc(16 * sizeof(GLuint));
+      if (wd->texName == NULL) return Failed;
+      wd->nalced = 16;
+      wd->maxstex = 16;
+      }
    return Succeeded;
 }

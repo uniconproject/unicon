@@ -3755,19 +3755,11 @@ wbp w;
       wc->autogen = wc2->autogen;
       wc->texmode = wc2->texmode;
 
-/* unfinished: make safe copy of context (textures, etc) */
-      wc->nalced = wc2->nalced;
-#if HAVE_LIBGL
-      wc->texName = malloc(wc->nalced * sizeof(GLuint));
-      if (wc->texName == NULL) syserr("internal memory error in Clone()");
-#endif					/* HAVE_LIBGL */
+      /* unfinished: ensure that we increment refcount on display struct */
       wc->numtexcoords = wc2->numtexcoords;
-      wc->ntextures = wc2->ntextures;
       wc->texcoords = wc2->texcoords;
 
-
 #if HAVE_LIBGL
-      for (i=0; i<wc->nalced; i++) wc->texName[i] = wc2->texName[i];
 #if 0
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);

@@ -67,7 +67,7 @@ X-Configure:	config/unix/$(name)/status
 		@if grep -q "HAVE_LIBX11 1" src/h/auto.h; then \
 			echo "Think we found X11, you are good to go."; \
 		else \
-			make Configure name=$(name); \
+			$(MAKE) Configure name=$(name); \
 			echo "X11 libraries or headers missing; graphics" ; \
 			echo "not enabled. " ; \
 		fi

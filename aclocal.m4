@@ -169,7 +169,7 @@ then
                 #
                 AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev)
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
-		LIBSTDCPP="`locate libstdc++.so.6|grep '.so.6\$'|sort|tail -1`"
+		LIBSTDCPP="`locate -e libstdc++.so.6|grep '.so.6\$'|sort|tail -1`"
 		LDFLAGS="$LDFLAGS $LIBSTDCPP"
                 AC_MSG_RESULT(ok)
         else
@@ -511,8 +511,8 @@ AC_DEFUN([CHECK_XLIB],
 #
 [AC_MSG_CHECKING(if xlib is wanted)
 AC_ARG_WITH(xlib,
-[  --with-xlib=DIR root directory path of xlib installation [defaults to
-          /usr/X11 or /usr/X11R6 or /usr/openwin if not found in /usr/X11]
+[  --with-xlib=DIR root directory path of xlib installation [looks in
+          /usr/X11 /usr/X11R6 /usr/openwin /opt/X11 /usr/local]
   --without-xlib to disable xlib usage completely],
 [if test "$withval" != no ; then
   AC_MSG_RESULT(yes)
@@ -531,6 +531,10 @@ then
 		if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
 		then
 		        XLIB_HOME=/opt/X11
+			if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+			then
+				XLIB_HOME=/usr/local
+			fi
 		fi
 	fi
 fi

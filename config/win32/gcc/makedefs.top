@@ -2,11 +2,10 @@
 # Some macros (above) are/will-be added during the configuration step,
 # these macros come from config/win32/gcc/makedef{32,64}.top
 
-DEFINEH=define$(TOSBITS).h
-ASMFLAG=--$(TOSBITS)
+ASMFLAG=--$(UBITS)
 
 # -g for debugging, -Os to minimize space...
-ISFLAG=--static -m$(TOSBITS) $(EXTRAFLAGS) -O2 -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB
+ISFLAG=--static -m$(UBITS) $(EXTRAFLAGS) -O2 -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB
 
 MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
 
@@ -17,12 +16,33 @@ MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
 # -lpthread: Thread/concurrency support
 # -lws2-32 : Modern Windows socket API
 # -lopencl : Open computing library (experimental)
-# availavle OPTLIBS  : -lz -lpthread -lws2_32 -lopencl -ljpeg -lpng
-# available NTOPTLIBS: -lz -lpthread -lws2_32 -lopencl
+# availavle OPTLIBS  : -lws2_32 -lz -lpthread  -ljpeg -lpng -lopencl
+# available NTOPTLIBS: -lws2_32 -lz -lpthread -lopencl
+#
+
+ifeq ($(WANT_JPG),1)
+     JPGLIB= -ljpeg
+endif
+
+ifeq ($(WANT_PNG),1)
+     PNGLIB= -lpng -lz
+     ZLIB= -lz
+endif
+
+ifeq ($(WANT_THREADS),1)
+     PTHREADLIB= -lpthread
+endif
+
+ifeq ($(MAKEJ),1)
+     JN=-j8
+endif
+
 #
 # Enabled Libraries are:
-OPTLIBS= -lws2_32
-NTOPTLIBS= -lws2_32
+#
+
+OPTLIBS= -lws2_32 $(PTHREADLIB) $(PNGLIB) $(JPGLIB)
+NTOPTLIBS= -lws2_32 $(PTHREADLIB) $(ZLIB)
 
 OS=NT
 ENV=WIN32
@@ -31,8 +51,8 @@ CPU=i386
 
 CC=gcc
 LD=ld
-# add -j8 to the line below if your build environment supports it
-MAKE=make
+
+MAKE=make $(JN)
 O=o
 RM=rm -rf
 CP=cp

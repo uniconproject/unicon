@@ -45,6 +45,53 @@ echo EXE=.exe > ../../../uni/makedefs
 cat ../../unix/Config/uni-makedefs >>../../../uni/makedefs
 cp iyacc.mak ../../../uni/iyacc/Makefile
 
+#
+# Prepare the "seed" of the top level Makedefs file
+#rm -f ../../../makedefs
+#
+cp libconfig.in ../../../makedefs
+echo "#" >>../../../makedefs
+echo "# makedefs, created by config/win32/gcc/config.sh" >> ../../../makedefs
+echo "#" >>../../../makedefs
+# This controls which optional libraries should be linked in
+
+#
+# Prepare libdefine.h, the "seed" for src/h/define.h
+#
+
+echo "/*"  > libdefine.h
+echo " * Source file: libdefine.h" >> libdefine.h
+echo " * Created by config.sh" >> libdefine.h
+echo " * A placeholder for defines of optional Libraries." >> libdefine.h
+echo " */" >> libdefine.h
+echo " " >> libdefine.h
+
+#
+# Put the required defines based on configuration in libconfig.in
+#
+if [ $(grep -c "WANT_JPG=1" libconfig.in) -ne 0 ]
+then
+    echo "#define WANT_JPG 1" >> libdefine.h
+fi
+
+if [ $(grep -c "WANT_PNG=1" libconfig.in) -ne 0 ]
+then
+    echo "#define WANT_PNG 1" >> libdefine.h
+fi
+
+if [ $(grep -c "WANT_THREADS=1" libconfig.in) -ne 0 ]
+then
+    echo "#define WANT_THREADS 1" >> libdefine.h
+fi
+
+echo " " >> libdefine.h
+echo "/*" >> libdefine.h
+echo " * End of libdefine.h" >> libdefine.h
+echo " */" >> libdefine.h
+echo " " >> libdefine.h
+
+cp libdefine.h ../../../src/h/define.h
+
 rm -f ../../../uni/unicon/unicon.exe
 rm -f ../../../uni/unicon/wunicon.exe
 rm -f ../../../uni/ide/ui.exe

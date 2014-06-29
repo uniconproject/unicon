@@ -2,8 +2,7 @@ echo
 echo Configuring for console build...
 echo
 
-rm -f ../../../makedefs
-echo ICONX=nt_iconx >../../../makedefs
+echo ICONX=nt_iconx >>../../../makedefs
 echo CONSOLE=NTConsole >>../../../makedefs
 echo BUILDICONT=icont >>../../../makedefs
 

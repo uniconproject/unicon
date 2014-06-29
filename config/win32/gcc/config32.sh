@@ -3,7 +3,7 @@
 echo
 echo Running 32-bit build configuration...
 echo
-cp define32.h ../../../src/h/define.h
+cat define32.h >>../../../src/h/define.h
 cat define.h >> ../../../src/h/define.h
 cat makedefs32.top >>../../../makedefs
 cat makedefs.top >>../../../makedefs

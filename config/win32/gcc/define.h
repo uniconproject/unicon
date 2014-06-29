@@ -68,16 +68,20 @@
 
 
 /*define for png image support, libz is required by PNG */
-/* #define HAVE_LIBPNG 1 */
-/* #define HAVE_LIBZ 1   */ 
+#if WANT_PNG
+#define HAVE_LIBPNG 1
+#define HAVE_LIBZ 1
+#endif
 
 /*define for jpeg image support */
-/* #define HAVE_LIBJPEG 1 */
+#if WANT_JPG
+#define HAVE_LIBJPEG 1
+#endif
 
 /*define if you have pthreads and want concurrency*/
-/*
+#if WANT_THREADS
 #define HAVE_LIBPTHREAD 1
 #define Concurrent 1
-*/
+#endif
 
 /*#define HAVE_STRUCT_TIMESPEC 1*/

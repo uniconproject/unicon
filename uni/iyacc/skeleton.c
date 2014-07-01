@@ -241,6 +241,7 @@ char *iheader[] =
   "# procedure: init_stacks : allocate and prepare stacks",
   "################################################################",
   "procedure init_stacks()",
+  "  local i",
   "  statestk := []",
   "  valstk := []",
   "  yyval  := 0 ",

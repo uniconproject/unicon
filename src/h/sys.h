@@ -108,10 +108,14 @@
       #define LRESULT_CALLBACK LRESULT CALLBACK
       #define BOOL_CALLBACK BOOL CALLBACK
       #ifdef PosixFns
-      /* Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean" */
-      #define boolean bolean
+
+      /* 
+       * Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean"
+       * uncomment the "boolean" lines below if you have this issue. 
+       */
+      /* #define boolean bolean */
       #include <winsock2.h>
-      #undef boolean
+      /* #undef boolean */
       #else					/* PosixFns */
       #include <windows.h>
       #endif					/* PosixFns */
@@ -123,10 +127,14 @@
       #define PATH_MAX 512
       #endif					/* PATH_MAX */
       #ifdef PosixFns
-      /* Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean" */
-      #define boolean bolean
+
+      /* 
+       * Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean"
+       * uncomment the "boolean" lines below if you have this issue. 
+       */
+      /* #define boolean bolean */
       #include <winsock2.h>
-      #undef boolean
+      /* #undef boolean */
       #else
 #if defined(ISQL) || defined(Audio)
 #include <windows.h>

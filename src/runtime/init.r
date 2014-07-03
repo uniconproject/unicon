@@ -246,8 +246,9 @@ extern int first_time;
 
 int num_cpu_cores;
 
-#ifdef CPU_CORE_COUNT
-
+/*
+ * report the number of CPU cores available in hardware, 0 if unknown.
+ */
 int get_num_cpu_cores() {
 #ifdef NT
    char *sbuf[MaxCvtLen+1];
@@ -274,12 +275,12 @@ int get_num_cpu_cores() {
         if(count < 1) { count = 1; }
     }
     return count;
-#else
+#elif defined(HAVE_SYSCONF)
     return sysconf(_SC_NPROCESSORS_ONLN);
+#else
+    return 0;
 #endif
 }
-
-#endif					/* CPU_CORE_COUNT */
 
 #if !COMPILER
 
@@ -690,6 +691,8 @@ char *argv[];
    pthread_rwlock_init(&__environ_lock, NULL);
 #endif					/*HAVE_LIBPTHREAD && !SUN */
 
+   num_cpu_cores = get_num_cpu_cores();
+
 #if COMPILER
    curstring = &rootstring;
    curblock  = &rootblock;
@@ -703,10 +706,6 @@ char *argv[];
    
    init_sighandlers(curpstate);
 
-#ifdef CPU_CORE_COUNT
-   num_cpu_cores = get_num_cpu_cores();
-#endif					/* CPU_CORE_COUNT */
-   
    rootpstate.parent = rootpstate.next = NULL;
    rootpstate.parentdesc = nulldesc;
    rootpstate.eventmask= nulldesc;

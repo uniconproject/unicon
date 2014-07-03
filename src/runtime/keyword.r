@@ -471,13 +471,13 @@ keyword{1,*} features
 	 suspend C_string s;
 }
 
-#ifdef CPU_CORE_COUNT
 {
          char s[16];
-	 sprintf(s, "CPU Cores %d", num_cpu_cores );
-	 suspend C_string s;
+	 if (num_cpu_cores > 0) {
+	    sprintf(s, "CPU Cores %d", num_cpu_cores );
+	    suspend C_string s;
+	    }
 }
-#endif					/* CPU_CORE_COUNT */
 
 #if defined(MSWindows) && defined(SM_DIGITIZER)
       {

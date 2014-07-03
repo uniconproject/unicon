@@ -822,12 +822,6 @@ Deliberate Syntax Error
 #endif					/* NoStackCheck */
 #endif					/* Concurrent */
 
-#ifndef NoCPU_CORE_COUNT
-#ifndef CPU_CORE_COUNT
-#define CPU_CORE_COUNT
-#endif					/* CPU_CORE_COUNT */
-#endif					/* NoCPU_CORE_COUNT */
-
 #ifdef NoLIBZ
 #undef HAVE_LIBZ
 #define HAVE_LIBZ 0

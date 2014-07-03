@@ -10,6 +10,8 @@
 #define COpts "-O2 -fomit-frame-pointer"
 #define NEED_UTIME
 
+#define HAVE_SYSCONF 1
+
 /*
  * #define Concurrent 1
  * here to enable threads. If you do on certain older platforms,

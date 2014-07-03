@@ -18,6 +18,7 @@
 
 /* a non-default datatype for SQLBindCol's 6th parameter */
 #define SQL_LENORIND SQLLEN
+#define HAVE_SYSCONF 1
 
 /*
  * #define Concurrent 1

@@ -399,30 +399,29 @@ keyword{1,*} features
 #if UNIX || defined(NTGCC)
 #passthru #ifdef __GNUC__
 {
-         char *s, ss[32];
+         char *s = alcstr(NULL, 33);
 #passthru #ifdef __MINGW32__
-	 sprintf(ss, "CCompiler MinGW gcc %d.%d.%d",
+	 sprintf(s, "CCompiler MinGW gcc %d.%d.%d",
 	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #passthru #else                         /* __MINGW32__ */
 
 #passthru #ifdef __clang__
-#passthru sprintf(ss, "CCompiler clang %d.%d.%d",
+#passthru sprintf(s, "CCompiler clang %d.%d.%d",
 #passthru             __clang_major__,  __clang_minor__, __clang_patchlevel__);
 #passthru #else                         /* __clang__ */
-         sprintf(ss, "CCompiler gcc %d.%d.%d",
+         sprintf(s, "CCompiler gcc %d.%d.%d",
                       __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #passthru #endif                                /* __clang__ */
 
 #passthru #endif                                /* __MINGW32__ */
-	 s = alcstr(NULL, strlen(ss) + 1);
-	 strcpy(s, ss);
+	 
 	 suspend C_string s;
 }
 #passthru #endif				/* __GNUC__ */
 #endif					/* UNIX || NTGCC */
 
 {
-	char *s, ss[48];
+	char *s = alcstr(NULL, 44);
 #if NT && (WordBits==64)
         unsigned long long l = physicalmemorysize();
 #else					        /* NT && (WordBits == 64) */
@@ -430,21 +429,18 @@ keyword{1,*} features
 #endif		      	  			/* NT && (WordBits == 64) */	
         if (l > 0) {
 #if NT && (WordBits==64)
-           sprintf(ss, "Physical memory: %I64u bytes", l);
+           sprintf(s, "Physical memory: %I64u bytes", l);
 #else	   	       		 	       /* NT && (WordBits == 64) */
-           sprintf(ss, "Physical memory: %lu bytes", l);
+           sprintf(s, "Physical memory: %lu bytes", l);
 #endif					       /* NT && (WordBits == 64) */ 	  
-           s = alcstr(ss, strlen(ss) + 1);
            suspend C_string s;	     
            }
 }
 
 #ifdef REPO_REVISION
 {
-         char *s;
-	 s = alcstr(NULL, strlen(REPO_REVISION) + strlen("Revision ") + 1);
-	 strcpy(s, "Revision ");
-	 strcat(s, REPO_REVISION);
+         char *s = alcstr(NULL, strlen(REPO_REVISION) + strlen("Revision ") + 1);
+	 sprintf(s, "Revision %s", REPO_REVISION);
 	 suspend C_string s;
 }
 #endif					/* REPO_REVISION */
@@ -472,9 +468,9 @@ keyword{1,*} features
 }
 
 {
-         char s[16];
+         char *s = alcstr(NULL, 20);
 	 if (num_cpu_cores > 0) {
-	    sprintf(s, "CPU Cores %d", num_cpu_cores );
+	    sprintf(s, "CPU cores %d", num_cpu_cores );
 	    suspend C_string s;
 	    }
 }

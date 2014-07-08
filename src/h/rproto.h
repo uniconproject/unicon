@@ -212,6 +212,8 @@ void		fpetrap		(void);
 int		getenv_r	(const char *name, char *buf, size_t len);
 word		getrandom	(void);
 int		getvar		(char *s,dptr vp);
+int		get_CCompiler	(char *s);
+int		get_num_cpu_cores();
 uword		hash		(dptr dp);
 union block	**hchain	(union block *pb,uword hn);
 union block	*hgfirst	(union block *bp, struct hgstate *state);

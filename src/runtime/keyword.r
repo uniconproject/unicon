@@ -397,27 +397,13 @@ keyword{1,*} features
 #include "../h/feature.h"
 
 #if UNIX || defined(NTGCC)
-#passthru #ifdef __GNUC__
 {
-         char *s = alcstr(NULL, 33);
-#passthru #ifdef __MINGW32__
-	 sprintf(s, "CCompiler MinGW gcc %d.%d.%d",
-	 	      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#passthru #else                         /* __MINGW32__ */
 
-#passthru #ifdef __clang__
-#passthru sprintf(s, "CCompiler clang %d.%d.%d",
-#passthru             __clang_major__,  __clang_minor__, __clang_patchlevel__);
-#passthru #else                         /* __clang__ */
-         sprintf(s, "CCompiler gcc %d.%d.%d",
-                      __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
-#passthru #endif                                /* __clang__ */
+    char *s = alcstr(NULL, 33);  
+    if (get_CCompiler(s)) 
+       suspend C_string s;		  
 
-#passthru #endif                                /* __MINGW32__ */
-	 
-	 suspend C_string s;
 }
-#passthru #endif				/* __GNUC__ */
 #endif					/* UNIX || NTGCC */
 
 {

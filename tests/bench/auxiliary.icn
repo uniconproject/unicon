@@ -30,6 +30,24 @@ link "ipxref"
 link "queens"
 link "rsg"
 
+procedure write_ratios(rTable)
+   write()
+   every k := key(rTable) do {
+      printf("- concurrent %s represents a %2.2rx speedup\n",  k, rTable[k])  
+      }
+   write()
+end
+
+procedure list_to_num(L)
+   r := real(L[2,1] || L[2,2] || L[2,3] || "." || L[3]/1000)
+   return r
+end
+
+procedure tabulate_ratios(rT)
+   ratio := rT[1] / rT[2]
+   return real(integer(ratio*1000))/1000
+end
+
 procedure CpuToHrMinSec(ms:0)
    s := m := h := 0
    if *ms > 3 then 
@@ -50,23 +68,32 @@ procedure WallToHrMinSec(s:0)
    return [h, m % 60, s % 60]
 end
 
-procedure writetime(L1, L2, wallusec)
-   if L1[1]>0 then
-      printf("%02d:%02d:%d.%03d", L1[1], L1[2], L1[3], L1[4]) 
-   else {
-      if L2[1]>0 then
-	 printf("    %02d:%d.%03d", L1[2], L1[3], L1[4])
-      else
-	 printf("       %d.%03d", L1[3], L1[4])
-      }
-   if L1[1]>0 then
+procedure writetime(L1, L2, wallusec, c:0)
+   if L2[1]>0 then
       printf("   %02d:%02d:%d.%03d\n", L2[1], L2[2], L2[3], wallusec/1000)
    else {
       if L2[2]>0 then
-	 printf("       %02d:%d.%03d\n", L2[2], L2[3], wallusec/1000)
+         printf("       %02d:%d.%03d\n", L2[2], L2[3], wallusec/1000)
       else
-	 printf("          %d.%03d\n", L2[3], wallusec/1000)
+         printf("          %d.%03d\n", L2[3], wallusec/1000)
       }
+end
+
+procedure writestime(L1, L2, wallusec, c:0)
+   if L2[1]>0 then 
+      printf("   %02d:%02d:%d.%03d", L2[1], L2[2], L2[3], wallusec/1000)
+   else {
+      if L2[2]>0 then
+         printf("       %02d:%d.%03d", L2[2], L2[3], wallusec/1000)
+      else
+         printf("          %d.%03d", L2[3], wallusec/1000)
+      }
+end
+
+procedure calc_cputime(s:0)
+
+ return CpuToHrMinSec(s)
+
 end
 
 procedure calctimes(cpustart, cpufinish, wallstart, wallfinish)
@@ -124,7 +151,6 @@ procedure calcseconds(cpustart, cpufinish, wallstart, wallfinish)
 end
 
 procedure write_error(msg)
-
    if msg = 1 then
       write("N/A. Threaded Benchmark.")      
    if msg = 2 then {
@@ -138,18 +164,46 @@ procedure write_error(msg)
       }
 end
 
-procedure write_header()
-   write()
-   write(left("OS",12)," ",left("Word Size",12)," ",left("Main Memory",12))
-   write(left(get_OS(),12)," ",left(get_WordSize(),12)," ",
-         left(get_Memory(),12) || "bytes")
-   write()
-   write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))
-   write(left(get_C_compiler(),12)," ",left(get_CPU(),32)," ",
-         left(get_clockspeed(),12))
-   write()
-   write("benchmark                     CPU time h:m:s  Real time h:m:s")
-   
+procedure write_header(c:0)
+   if verify_concurrent() then{
+      if c ~= 0 then {
+         write()
+         write(left("OS",12)," ",left("Word Size",12)," ",left("Main Memory",12))
+         write(left(get_OS(),12)," ",left(get_WordSize(),12)," ",
+               left(get_Memory(),12))
+         write()
+         write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))
+         write(left(get_C_compiler(),12)," ",left(get_CPU(),32)," ",
+               left(get_clockspeed(),12))
+         write()
+         write("                                        Elapsed time h:m:s        |Concurrent |")
+         write("benchmark                           |Sequential|   |Concurrent|   |Performance|")
+         }
+      else {
+         write()
+         write(left("OS",12)," ",left("Word Size",12)," ",left("Main Memory",12))
+         write(left(get_OS(),12)," ",left(get_WordSize(),12)," ",
+               left(get_Memory(),12))
+         write()
+         write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))
+         write(left(get_C_compiler(),12)," ",left(get_CPU(),32)," ",
+               left(get_clockspeed(),12))
+         write()
+         write("benchmark                 Elapsed time h:m:s")
+         }
+      }
+   else {
+      write()
+      write(left("OS",12)," ",left("Word Size",12)," ",left("Main Memory",12))
+      write(left(get_OS(),12)," ",left(get_WordSize(),12)," ",
+            left(get_Memory(),12))
+      write()
+      write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))
+      write(left(get_C_compiler(),12)," ",left(get_CPU(),32)," ",
+            left(get_clockspeed(),12))
+      write()
+      write("benchmark                      Elapsed time h:m:s")
+      }
 end
 
 procedure verify_concurrent()
@@ -158,12 +212,18 @@ procedure verify_concurrent()
 end
 
 procedure get_Memory()
-   if match("Physical memory", x := &features) then return x[17:0]
+   if match("Physical memory", x := &features) then {
+      j := real(x[17:-5])/1073741824
+      if j < 1 then return ((integer(j*1000) || " MB"))
+      else return real(integer(j*1000))/1000 || " GB"
+      }
    else return "unknown"
 end
 
 procedure get_OS()
-   return x := &features
+   x := &features
+   if x == "MS Windows NT" then return "MS Windows"
+   return x
 end
 
 procedure get_WordSize()
@@ -178,7 +238,7 @@ end
    
 procedure get_CPU()
    local f, result := "unknown"
-   if &features == "Win32" then {
+   if &features == ("MS Windows NT"|"Win32") then {
        result := getenv("PROCESSOR_ARCHITECTURE") # not very good, but its a start
        if map(getenv("PROCESSOR_IDENTIFIER")) ? find("genuineintel") then
 	   result := "Intel " || result

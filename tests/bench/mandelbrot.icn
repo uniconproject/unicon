@@ -45,9 +45,14 @@ procedure do_y(y)
 end
 
 procedure run_mandelbrot_concurrent(argv)
-   local y, i, pool
+   local x, y, i, pool
 
-   pool := Pool(64)
+   if match("CPU cores", x := &features) then
+      x := integer(x[11:0])
+   else
+      x := 4
+   
+   pool := Pool(x) 
    wL := list()
    rL := list()
    w := h := integer(argv[1])

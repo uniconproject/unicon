@@ -60,7 +60,7 @@ end
 
 
 procedure run_binarytrees_concurrent(argv)
-   local wL := [], rL := [] 
+   local x, wL := [], rL := [] 
    min_depth := 4
    max_depth := argv[1]
    stretch_depth := max_depth + 1
@@ -72,7 +72,12 @@ procedure run_binarytrees_concurrent(argv)
    every d := min_depth to stretch_depth by 2 do
       put(wL, d)
 
-   pool := Pool(*wL) 
+   if match("CPU cores", x := &features) then
+      x := integer(x[11:0])
+   else
+      x := 4
+   
+   pool := Pool(x) 
    rL := pool.imap(build_trees, wL)
    pool.kill()   
    every write(output, !rL)

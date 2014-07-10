@@ -168,13 +168,13 @@ procedure write_header(c:0)
    if verify_concurrent() then{
       if c ~= 0 then {
          write()
-         write(left("OS",12)," ",left("Word Size",12)," ",left("Main Memory",12))
-         write(left(get_OS(),12)," ",left(get_WordSize(),12)," ",
-               left(get_Memory(),12))
+         write(left("Word Size",10)," ",left("Main Memory",12), " ",
+               left("C Compiler",11)," ",left("clock",8), " ", left("OS",12))
+         write(left(get_WordSize(),10)," ", left(get_Memory(),12), " ",
+               left(get_C_compiler(),11)," ",left(get_clockspeed(),8), " ", left(get_OS(),12))
          write()
-         write(left("C Compiler",12)," ",left("CPU",32)," ",left("clock",12))
-         write(left(get_C_compiler(),12)," ",left(get_CPU(),32)," ",
-               left(get_clockspeed(),12))
+         write(left("CPU",32))
+         write(left(get_CPU(), 60))
          write()
          write("                                        Elapsed time h:m:s        |Concurrent |")
          write("benchmark                           |Sequential|   |Concurrent|   |Performance|")
@@ -255,7 +255,9 @@ procedure get_CPU()
 	   close(f)
        }
    }
-   return result
+   if match("CPU cores", x := &features) then
+      x := integer(x[11:0])
+   return x || "x " || result
 end
    
 procedure get_clockspeed()

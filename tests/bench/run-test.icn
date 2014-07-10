@@ -30,8 +30,8 @@ $endif
 global output
 
 procedure main(argv)
-   local rL, tL, concurrent, tests := []
-
+   local rL, tL, rT, concurrent, tests := [], rTable := table()
+   
    concurrent := verify_concurrent()
    
    output := open(NUL, "w") | stop("Cannot open " || NUL || " for writing")
@@ -46,237 +46,361 @@ procedure main(argv)
       case test of {
          "all" : {
 
-            write_header()
+            write_header(1)
 
-            writes(left("concord concord.test",30))
+            writes(left("concord concord.test",31))
             tL := gettimes(run_concord, "concord.test")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
 
-            writes(left("deal 500", 30))
+            writes(left("deal 500", 31))
             tL := gettimes(run_deal, 500)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("ipxref ipxref.test", 30))
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+            
+            writes(left("ipxref ipxref.test", 31))
             tL := gettimes(run_ipxref, "ipxref.test")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
 
-            writes(left("queens 9", 30))
+            writes(left("queens 9", 31))
             tL := gettimes(run_queens, 9)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
 
-            writes(left("rsg rsg.test", 30))
+            writes(left("rsg rsg.test", 31))
             tL := gettimes(run_rsg, "rsg.test")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("binary-trees 10",30))
-            if \concurrent then tL := gettimes(run_binarytrees_concurrent,10)
-            else tL := gettimes(run_binarytrees_sequential,10)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])            
-            
             if \concurrent then {
-	       writes(left("chameneos-redux 600", 30))
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+
+            rT := []
+            writes(left("binary-trees 10",31))
+            tL:= gettimes(run_binarytrees_sequential,10)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            put(rT, list_to_num(rL)) 
+#            insert(rTable, "binary-trees", tabulate_ratios(rT))
+
+            if \concurrent then {
+#               writes(left("binary-trees 10 ",31))
+               writestime(rL[1], rL[2], rL[3])
+               tL := gettimes(run_binarytrees_concurrent,10)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+#               insert(rTable, "binary-trees", tabulate_ratios(rT))
+               writestime(rL[1], rL[2], rL[3],1)
+               writes(right(tabulate_ratios(rT) || "x\n",16))
+               }
+            else writetime(rL[1], rL[2], rL[3])
+               
+            if \concurrent then {
+	       writes(left("chameneos-redux 600", 43))
+               writes(left("N/A", 3))
                tL := gettimes(run_chameneos, 600)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
+               writetime(rL[1], rL[2], rL[3],1)
                }
 
-            writes(left("fannkuch 7", 30))
+            writes(left("fannkuch 7", 31))
             tL := gettimes(run_fannkuch, 7)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
 
-            writes(left("fasta 1000", 30))
+            writes(left("fasta 1000", 31))
             tL := gettimes(run_fasta, 1000)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
 
-            writes(left("k-nucleotide 25-thou.dat", 30))
+            writes(left("k-nucleotide 25-thou.dat", 31))
             tL := gettimes(run_knucleotide, "25-thou.dat")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
 
-            writes(left("mandelbrot 200",30))
-            if \concurrent then tL := gettimes(run_mandelbrot_concurrent,200)
-            else tL := gettimes(run_mandelbrot_sequential,200)
+            rT := []
+            writes(left("mandelbrot 200",31))
+            tL := gettimes(run_mandelbrot_sequential,200)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("meteor-contest 1", 30))
-            tL := gettimes(run_meteorcontest, 1)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("n-body 1000", 30))
-            tL := gettimes(run_nbody, 1000)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("pidigits 500", 30))
-            tL := gettimes(run_pidigits, 500)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("regex-dna 10-thou.dat",30))
-            if \concurrent then tL := gettimes(run_regexdna_concurrent, "10-thou.dat")
-            else tL := gettimes(run_regexdna_sequential, "10-thou.dat")
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("reverse-complement 150-thou.dat", 30))
-            tL := gettimes(run_reversecomplement, "150-thou.dat")
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
-
-            writes(left("spectral-norm 100", 30))
-            tL := gettimes(run_spectralnorm, 100)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            put(rT, list_to_num(rL)) 
 
             if \concurrent then {
-	       writes(left("thread-ring 1000", 30))
+               writestime(rL[1], rL[2], rL[3])
+               tL := gettimes(run_mandelbrot_concurrent,200)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+#               insert(rTable, "mandelbrot", tabulate_ratios(rT))
+               writestime(rL[1], rL[2], rL[3],1)
+               writes(right(tabulate_ratios(rT) || "x\n", 16))
+               }
+            else writetime(rL[1], rL[2], rL[3])
+
+            writes(left("meteor-contest 1", 31))
+            tL := gettimes(run_meteorcontest, 1)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+
+            writes(left("n-body 1000", 31))
+            tL := gettimes(run_nbody, 1000)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+
+            writes(left("pidigits 500", 31))
+            tL := gettimes(run_pidigits, 500)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+
+            rT := []
+            writes(left("regex-dna 10-thou.dat",31))
+            tL := gettimes(run_regexdna_sequential, "10-thou.dat")
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            put(rT, list_to_num(rL))
+
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               tL := gettimes(run_regexdna_concurrent, "10-thou.dat")
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+#               insert(rTable, "regex-dna", tabulate_ratios(rT))
+               writestime(rL[1], rL[2], rL[3],1)
+               writes(right(tabulate_ratios(rT) || "x\n", 16))
+               }
+            else writetime(rL[1], rL[2], rL[3])
+
+            writes(left("reverse-complement 150-thou.dat", 31))
+            tL := gettimes(run_reversecomplement, "150-thou.dat")
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+
+            writes(left("spectral-norm 100", 31))
+            tL := gettimes(run_spectralnorm, 100)
+            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+            if \concurrent then {
+               writestime(rL[1], rL[2], rL[3])
+               writes(right("N/A\n", 16))
+            } else writetime(rL[1], rL[2], rL[3])
+
+            if \concurrent then {
+	       writes(left("thread-ring 1000", 43))
+               writes(left("N/A", 3))
                tL := gettimes(run_threadring, 1000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
+               writetime(rL[1], rL[2], rL[3],1)
                }
-            
+#            if \concurrent then write_ratios(rTable)
             }
          "concord" : {
             write_header()
-            writes(left("concord concord.test",30))
+            writes(left("concord concord.test",31))
             tL := gettimes(run_concord, "concord.test")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "deal" : {
             write_header()
-            writes(left("deal 500",30))
+            writes(left("deal 500",31))
             tL := gettimes(run_deal, 500)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "ipxref" : {
             write_header()
-            writes(left("ipxref ipxref.test",30))
+            writes(left("ipxref ipxref.test",31))
             tL := gettimes(run_ipxref, "ipxref.test")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "queens" : {
             write_header()
-            writes(left("queens 9",30))
+            writes(left("queens 9",31))
             tL := gettimes(run_queens, 9)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "rsg" : {
             write_header()
-            writes(left("rsg rsg.test",30))
+            writes(left("rsg rsg.test",31))
             tL := gettimes(run_rsg, "rsg.test")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "binary-trees" : {
             write_header()
-            writes(left("binary-trees 10",30))
-            if \concurrent then tL := gettimes(run_binarytrees_concurrent,10)
-            else tL := gettimes(run_binarytrees_sequential,10)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               rT := []
+               writes(left("binary-trees 10 (concurrent)",31))
+               tL := gettimes(run_binarytrees_concurrent,10)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+               writetime(rL[1], rL[2], rL[3],1)
+               writes(left("binary-trees 10 (sequential)",31))
+               tL:= gettimes(run_binarytrees_sequential,10)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL)) 
+               insert(rTable, "binary-trees", tabulate_ratios(rT))
+               writetime(rL[1], rL[2], rL[3])
+               write_ratios(rTable)
+               }
+            else {
+               writes(left("binary-trees 10 (sequential)",31))
+               tL := gettimes(run_binarytrees_sequential,10)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               writetime(rL[1], rL[2], rL[3],1)
+               }
             }
          "chameneos-redux" : {
             write_header()
-            writes(left("chameneos-redux 600",30))
+            writes(left("chameneos-redux 600",31))
             if \concurrent then {
                tL := gettimes(run_chameneos, 600)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
+               writetime(rL[1], rL[2], rL[3],1)
                } else write_error(2)
             }
          "fannkuch" : {
             write_header()
-            writes(left("fannkuch 7",30))
+            writes(left("fannkuch 7",31))
             tL := gettimes(run_fannkuch, 7)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "fasta" : {
             write_header()
-            writes(left("fasta 1000",30))
+            writes(left("fasta 1000",31))
             tL := gettimes(run_fasta, 1000)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "k-nucleotide": {
             write_header()
-            writes(left("k-nucleotide 25-thou.dat",30))
+            writes(left("k-nucleotide 25-thou.dat",31))
             tL := gettimes(run_knucleotide, "25-thou.dat")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "mandelbrot" : {
             write_header()
-            writes(left("mandelbrot 200",30))
-            if \concurrent then tL := gettimes(run_mandelbrot_concurrent,200)
-            else tL := gettimes(run_mandelbrot_sequential,200)
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then {
+               rT := []
+               writes(left("mandelbrot 200 (concurrent)",31))
+               tL := gettimes(run_mandelbrot_concurrent,200)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+               writetime(rL[1], rL[2], rL[3],1)
+               writes(left("mandelbrot 200 (sequential)",31))
+               tL := gettimes(run_mandelbrot_sequential,200)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL)) 
+               insert(rTable, "mandelbrot", tabulate_ratios(rT))
+               writetime(rL[1], rL[2], rL[3])
+               write_ratios(rTable)
+               }
+            else {
+               writes(left("mandelbrot (sequential) 200",31))
+               tL := gettimes(run_mandelbrot_sequential,200)
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               writetime(rL[1], rL[2], rL[3],1)
+               }
             }
          "meteor-contest" : {
             write_header()
-            writes(left("meteor-contest 1",30)) 
+            writes(left("meteor-contest 1",31)) 
             tL := gettimes(run_meteorcontest, 1)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "n-body" : {
             write_header()
-            writes(left("n-body 1000",30))
+            writes(left("n-body 1000",31))
             tL := gettimes(run_nbody, 1000)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "pidigits" : {
             write_header()
-            writes(left("pidigits 500",30))
+            writes(left("pidigits 500",31))
             tL := gettimes(run_pidigits, 500)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "regex-dna" : {
             write_header()
-            writes(left("regex-dna 10-thou.dat",30))
-            if \concurrent then tL := gettimes(run_regexdna_concurrent, "10-thou.dat")
-            else tL := gettimes(run_regexdna_sequential, "10-thou.dat")
-            rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-            writetime(rL[1], rL[2], rL[3])
+            if \concurrent then{
+               rT := []
+               writes(left("regex-dna 10-thou.dat (concurrent)",31))
+               tL := gettimes(run_regexdna_concurrent, "10-thou.dat")
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+               writetime(rL[1], rL[2], rL[3],1)
+               writes(left("regex-dna 10-thou.dat (sequential)",31))
+               tL := gettimes(run_regexdna_sequential, "10-thou.dat")
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               put(rT, list_to_num(rL))
+               insert(rTable, "regex-dna", tabulate_ratios(rT))
+               writetime(rL[1], rL[2], rL[3])
+               write_ratios(rTable)
+               }
+            else {
+               writes(left("regex-dna 10-thou.dat (sequential)",31))
+               tL := gettimes(run_regexdna_sequential, "10-thou.dat")
+               rL := calctimes(tL[1], tL[2], tL[3], tL[4])
+               writetime(rL[1], rL[2], rL[3],1)
+               }
             }
          "reverse-complement" : {
             write_header()
-            writes(left("reverse-complement 150-thou.dat",30))
+            writes(left("reverse-complement 150-thou.dat",31))
             tL := gettimes(run_reversecomplement, "150-thou.dat")
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "spectral-norm" : {
             write_header()
-            writes(left("spectral-norm 100",30))
+            writes(left("spectral-norm 100",31))
             tL := gettimes(run_spectralnorm, 100)
             rL := calctimes(tL[1], tL[2], tL[3], tL[4])
             writetime(rL[1], rL[2], rL[3])
             }
          "thread-ring" : {
             write_header()
-            writes(left("thread-ring 1000",30))
+            writes(left("thread-ring 1000",31))
             if \concurrent then {
                tL := gettimes(run_threadring, 1000)
                rL := calctimes(tL[1], tL[2], tL[3], tL[4])
-               writetime(rL[1], rL[2], rL[3])
+               writetime(rL[1], rL[2], rL[3],1)
                } else write_error(2)
             }
          default : write("\ncannot run benchmark " || test || "\n")

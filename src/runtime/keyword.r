@@ -396,15 +396,11 @@ keyword{1,*} features
 
 #include "../h/feature.h"
 
-#if UNIX || defined(NTGCC)
 {
-
-    char *s = alcstr(NULL, 33);  
-    if (get_CCompiler(s)) 
-       suspend C_string s;		  
-
+    char *s = alcstr(NULL, 33);
+    if (get_CCompiler(s))
+       suspend C_string s;
 }
-#endif					/* UNIX || NTGCC */
 
 {
 	char *s = alcstr(NULL, 44);

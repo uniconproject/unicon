@@ -550,20 +550,33 @@ char junkclocal; /* avoid empty module */
  * &features and is called from keyword.r. 
  */
 
-int get_CCompiler(char *s){
+int get_CCompiler(char *s)
+{
 #ifdef __GNUC__
 #ifdef __MINGW32__
-	 sprintf(s, "CCompiler MinGW gcc %d.%d.%d", __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+	 sprintf(s, "CCompiler MinGW gcc %d.%d.%d",
+		 __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 	 return 1;
-#else  
+#else					/* MINGW32 */
 #ifdef __clang__
-	 sprintf(s, "CCompiler clang %d.%d.%d", __clang_major__,  __clang_minor__, __clang_patchlevel__);
+	 sprintf(s, "CCompiler clang %d.%d.%d",
+		 __clang_major__,  __clang_minor__, __clang_patchlevel__);
 	 return 1;
-#else  
-         sprintf(s, "CCompiler gcc %d.%d.%d", __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#else					/* clang */
+         sprintf(s, "CCompiler gcc %d.%d.%d",
+		 __GNUC__,  __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 	 return 1;
-#endif 
-#endif 
-#endif 
+#endif					/* clang */
+#endif					/* MINGW32 */
+
+#else					/* GNUC */
+#ifdef MSVC
+	 sprintf(s, "CCompiler MSC %d.%d",
+		 _MSC_VER/100, _MSC_VER%100);
+	 return 1;
+#else					/* MSVC */
+	 sprintf(s, "\0");
 	 return 0;
+#endif					/* MSVC */
+#endif					/* GNUC */
 } 

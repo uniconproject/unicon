@@ -15,14 +15,16 @@ class PrintDialog : Dialog(printerInfo_tab_item, printer_tabset,
    method end_dialog()
    end
 
-   # need a portable way to check on print queues. On UNIX there is lpstat.
+   # need a portable way to check on print queues. On UNIX there is lpstat:
    # lpstat -h localhost -v
+   # We don't know how yet on MS Windows, so just fail gracefully.
 
    method init_dialog()
       local name_lst := [], loc_lst := [], stat_lst := [],
          printers_lst := [], name, loc, status, ln, prn, i, log1
 
       printers_tbl := []
+$ifdef UNIX      
       system("lpstat -v > prn1.txt")
       system("lpstat -p > prn2.txt")
       if log1 := open("prn1.txt", "r") then {
@@ -49,19 +51,22 @@ class PrintDialog : Dialog(printerInfo_tab_item, printer_tabset,
                   tab(find("is")+2)
                   status := tab(0) 
                   }
-               }
-           put(stat_lst, status)
-           }
-           close(log1)
-	   remove("prn2.txt")
-        }
-       every i := 1 to * name_lst do {
-	  printers_lst := [name_lst[i], loc_lst[i], stat_lst[i]]
-          put(printers_tbl, printers_lst)
-          }
-       printer_tbl.set_contents(printers_tbl)
-
-
+	       }
+            put(stat_lst, status)
+            }
+         close(log1)
+	 remove("prn2.txt")
+	 }
+      every i := 1 to * name_lst do {
+	 printers_lst := [name_lst[i], loc_lst[i], stat_lst[i]]
+         put(printers_tbl, printers_lst)
+         }
+      printer_tbl.set_contents(printers_tbl)
+      printer_tbl.set_selections([1])
+$else
+      printer_tbl.set_contents([["Printing not enabled"], [""], [""]])
+$endif
+      
 $ifdef _MS_WINDOWS_NT
       printcmd.set_contents("print")
 $else
@@ -72,6 +77,7 @@ $endif
 
    method on_cancel_btn(ev)
       copies_num := &null
+      prn_name := &null
       self.dispose()
    end
 
@@ -101,7 +107,7 @@ $endif
    method setup()
       self.set_attribs("size=400,300", "bg=pale gray")
       printer_tabset := TabSet()
-      printer_tabset.set_pos("2", "2")
+      printer_tabset.set_pos(1, 4)
       printer_tabset.set_size("100%-4", "100%-4")
       printerInfo_tab_item := TabItem()
       printerInfo_tab_item.set_label("General")
@@ -145,26 +151,26 @@ $endif
       printerInfo_tab_item.add(print_btn)
       copies_txt := TextField()
       copies_txt.set_pos("335", "195")
-      copies_txt.set_size("55", "25")
+      copies_txt.set_size("55", "24")
       copies_txt.set_draw_border()
       copies_txt.set_attribs("bg=white")
       copies_txt.set_contents("1")
       printerInfo_tab_item.add(copies_txt)
       copies_lbl := Label()
-      copies_lbl.set_pos("275", "195")
-      copies_lbl.set_size("55", "25")
+      copies_lbl.set_pos("286", "195")
+      copies_lbl.set_size("44", "24")
       copies_lbl.set_internal_alignment("l")
       copies_lbl.set_label("Copies")
       printerInfo_tab_item.add(copies_lbl)
       copies_lbl_1 := Label()
       copies_lbl_1.set_pos(6, 196)
-      copies_lbl_1.set_size(76, 24)
+      copies_lbl_1.set_size(90, 24)
       copies_lbl_1.set_internal_alignment("l")
       copies_lbl_1.set_label("Print Command")
       printerInfo_tab_item.add(copies_lbl_1)
       printcmd := TextField()
-      printcmd.set_pos("88", "196")
-      printcmd.set_size("161", "25")
+      printcmd.set_pos("118", "196")
+      printcmd.set_size("160", "24")
       printcmd.set_draw_border()
       printcmd.set_attribs("bg=white")
       printcmd.set_contents("lpr")
@@ -178,11 +184,6 @@ $endif
       self.Dialog.initially()
 end
 
-#procedure main()
-#   local d
-#   d := Print()
-#   d.show_modal()
-#end
 
 ### Ivib-v2 layout ##
 #class|Canvas|17|Name Table|table|integer|0|9|string|copies_lbl|integer

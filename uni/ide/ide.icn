@@ -4,7 +4,7 @@ $include "guih.icn"
 
 link io, noncase, findre
 
-#$define lpr "enscript -b \" \" -1 -Plexnormal"
+# $define lpr "enscript -b \" \" -1 -Plexnormal"
 #----------------------------------------------
 
 global targs,browser,
@@ -51,14 +51,28 @@ class IDE (
    end
 
    method on_print_file(ev)
-      local f, L, line
+      local f, L, line, d
+      d := PrintDialog()
+      d.show_modal()
+ 
+      # prn_name and copies_num are returned from PrintDialog().
+      if (copies_num === &null) then {
+         uidlog.MsgBox.set_contents(["Printing canceled."])
+         fail
+         }
+      if (prn_name === &null) then {
+         uidlog.MsgBox.set_contents(["Printer not selected."])
+         fail
+         }
       L := CurrentEditBox().get_contents() | []
-      if f := open(lpr, "pw") then {
-	 every write(f, trim(!L,'\^m'))
-	 close(f)
+
+      # lpr -P prn_name -# copies_num
+      if f := open(lpr || " -P " || prn_name || " -\# " || copies_num, "pw") then {
+      	 every write(f, trim(!L,'\^m'))
+      	 close(f)
          }
       else
-	 uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
+      	 uidlog.MsgBox.set_contents(["Sorry, no printing yet."])
    end
 
    method on_new_btn(ev)
@@ -544,23 +558,6 @@ $endif
       # This will save it if it is modified.
       on_makeexe_btn()
 
-      if /is_MSWindows then
-         if pathfind("xterm", getenv("PATH")) then
-            console :="xterm -hold -e "
-         else if pathfind("konsole", getenv("PATH")) then
-            console := "konsole --vt_sz 70x18 "
-         else if pathfind("mate-terminal", getenv("PATH")) then
-            console := "mate-terminal --title=Unicon -e "
-         else if pathfind("gnome-terminal", getenv("PATH")) then
-            console := "gnome-terminal --title=Unicon -e "
-         else if pathfind("lxterminal", getenv("PATH")) then
-            console := "lxterminal --title=Unicon -e "
-         else if pathfind("xfce4-terminal", getenv("PATH")) then
-            console := "xfce4-terminal --title=Unicon --hold -e "     
-         else console := ""
-      else # implies Windows for now
-	 console := "cmd "
-
       if \(CurrentTabItem().filedirectory) & 
          CurrentTabItem().filedirectory ~== "" then
 	  fdir := chdir(CurrentTabItem().filedirectory)
@@ -587,30 +584,34 @@ $endif
 	    }
 	 # path search, see if xterm exists on path, use it
 	 if pathfind("xterm", getenv("PATH")) then {
-	    if (fun := open("uname","pr")) &
+	    if (fun := open("uname","pr")) &   # Apple xterm option
 		(unam := read(fun)) & close(fun) & match("Darwin",unam) then {
 		console := "xterm -hold -e script " || wiconlog ||" "
 		cmd2 := console || \cmd || " "
 	       }
-	     else {
+	     else {   # non-Apple xterm
 	       console := "xterm -hold -e script -c \""
 	       cmd2 := console || \cmd || " \" " || wiconlog
 	       }
 	    }
+         else if pathfind("konsole", getenv("PATH")) then {
+            console := "konsole --vt_sz 70x18 "
+            cmd2 := console || \cmd || " &> " || wiconlog 
+            }
          else if pathfind("mate-terminal", getenv("PATH")) then {
-            console := "mate-terminal --title=Unicon -e "
+            console := "mate-terminal -e "
             cmd2 := console || \cmd || " &> " || wiconlog 
             }
          else if pathfind("gnome-terminal", getenv("PATH")) then {
-            console := "gnome-terminal --title=Unicon -e "
+            console := "gnome-terminal -e "
             cmd2 := console || \cmd || " &> " || wiconlog 
             }
          else if pathfind("lxterminal", getenv("PATH")) then {
-            console := "lxterminal --title=Unicon -e "
+            console := "lxterminal -e "
             cmd2 := console || \cmd || " &> " || wiconlog 
             }
          else if pathfind("xfce4-terminal", getenv("PATH")) then {
-            console := "xfce4-terminal --title=Unicon --hold -e "
+            console := "xfce4-terminal --hold -e "
             cmd2 := console || \cmd || " &> " || wiconlog 
             }      
 	 else #just run without "console || ..."
@@ -623,10 +624,10 @@ $endif
 	    fdir := fdir || "\\"
 	 if find(".icn", CurrentTabItem().label) then
 	    cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
-
-	 #cmd := "wiconx " || cmd
 	 }
-
+      
+      # in order to switch to pty, we're going to have to open() something here
+      # instead of calling system()
       if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
 	 # hope WICONLOG does trick?
 	 showanyerror(wiconlog, L, 1)
@@ -1477,6 +1478,7 @@ initially
    ide := self
    opened_files_set := set()
    opened_files_num := 0
+   lpr := "lpr"
 end
 
 #

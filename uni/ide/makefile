@@ -35,9 +35,6 @@ endif
 ide.u: ide.icn
 	$(UC) $(UFLAGS) ide
 
-printdlg.u: printdlg.icn
-	$(UC) $(UFLAGS) printdlg
-
 hfiledialog.u: hfiledialog.icn
 	$(UC) $(UFLAGS) hfiledialog
 

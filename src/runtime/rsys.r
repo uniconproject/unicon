@@ -518,9 +518,7 @@ int iselect(int fd, int t)
    fd_set fds;
    tv.tv_sec = t/1000;
    tv.tv_usec = (t % 1000) * 1000;
-#if !NT
    FD_ZERO(&fds);
-#endif					/* NT */
    FD_SET(fd, &fds);
    return select(fd+1, &fds, NULL, NULL, &tv);
 #else					/* PosixFns */

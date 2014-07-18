@@ -283,7 +283,7 @@ int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 	     struct timeval *timeout);
 int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct);
 int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize);
-int ptputc(const char c, struct ptstruct *ptStruct);
+int ptputc(char c, struct ptstruct *ptStruct);
 int ptflush(struct ptstruct *ptStruct);
 #ifdef MSWindows
 struct b_list *findactivepty(struct b_list *lps);

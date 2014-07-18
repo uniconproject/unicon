@@ -2758,6 +2758,7 @@ int  writeImage	(wbp w, char *filename, int x, int y, int width, int height){
 
 	break;
      }
+  return Failed;
 }
 
 #ifdef ConsoleWindow

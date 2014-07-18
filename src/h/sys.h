@@ -102,6 +102,9 @@
    #include <sys/locking.h>
    #endif				/* OLD_NTGCC */
 #endif					/* NTGCC */
+#ifdef MSVC
+   #include <direct.h>
+#endif					/* MSVC */
 
    #ifdef MSWindows
       #define int_PASCAL int PASCAL

@@ -42,6 +42,6 @@ ivib.exe: $(UFILES)
 	set IPATH=$(UNI)\lib $(UNI)\gui $(ICON_IPL)\lib
 	set PATH=$(BIN)
 	$(UNICON) -o ivib linkfiles.icn
-	$(CP) ivib.exe $(BIN)\ivib-v2.exe
+	$(CP) ivib.exe $(BIN)\ivib.exe
 
 include deps.out

@@ -251,7 +251,7 @@ int num_cpu_cores;
  */
 int get_num_cpu_cores() {
 #ifdef NT
-   char *sbuf[MaxCvtLen+1];
+   char sbuf[MaxCvtLen+1];
     if ((getenv_r("NUMBER_OF_PROCESSORS", sbuf, MaxCvtLen) != 0)
      || (*sbuf == '\0'))
       return 0;
@@ -1325,7 +1325,7 @@ Deliberate Syntax Error
  */
 void envset()
    {
-   char *p, sbuf[MaxCvtLen+1];
+   char sbuf[MaxCvtLen+1];
    CURTSTATE_ONLY();
 
    if (getenv_r("NOERRBUF", sbuf, MaxCvtLen) == 0)
@@ -1361,7 +1361,7 @@ Deliberate Syntax Error
  * End of operating-system specific code.
  */
 
-   if ((getenv_r(ICONCORE, sbuf, MaxCvtLen) == 0) && *p != '\0') {
+   if ((getenv_r(ICONCORE, sbuf, MaxCvtLen) == 0) && (sbuf[0] != '\0')) {
 
 /*
  * The following code is operating-system dependent [@init.05].  Set trap to

@@ -1455,7 +1455,7 @@ function{1} Event(argv[argc])
 	 runerr(142,d);
       w = BlkLoc(d)->File.fd.wb;
 #ifdef ConsoleWindow
-      checkOpenConsole(w, NULL);
+      checkOpenConsole((FILE *)w, NULL);
 #endif					/* ConsoleWindow */
       if (ISCLOSED(w) && BlkD(w->window->listp,List)->size == 0)
 	 runerr(142,d);
@@ -2161,7 +2161,7 @@ function{0,1} Pending(argv[argc])
 
          w = BlkD(argv[warg],File)->fd.wb;
 #ifdef ConsoleWindow
-	 checkOpenConsole(w, NULL);
+	 checkOpenConsole((FILE *)w, NULL);
 #endif					/* ConsoleWindow */
          if (ISCLOSED(w))
 	    isclosed = 1;
@@ -3338,7 +3338,7 @@ function{0,1} WinSelectDialog(argv[argc])
       }
    body {
       wbp w;
-      C_integer i, j, warg = 0, len;
+      C_integer i, j, warg = 0, len = 0;
       tended char *s1;
       char *s2 = NULL, *tmpstr;
       tended struct descrip d;

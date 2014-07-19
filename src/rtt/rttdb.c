@@ -13,11 +13,12 @@
  * prototypes for static functions.
  */
 static void max_pre   (struct implement **tbl, char *pre);
-static int     name_cmp  (char *p1, char *p2);
-static int     op_cmp    (char *p1, char *p2);
+static int     name_cmp  (const void *p1, const void *p2);
+static int     op_cmp    (const void *p1, const void *p2);
 static void prt_dpnd  (FILE *db);
 static void prt_impls (FILE *db, char *sect, struct implement **tbl,
-                           int num, struct implement **sort_ary, int (*com)());
+                       int num, struct implement **sort_ary,
+		       int (*com)(const void *,const void *));
 static int     prt_c_fl  (FILE *db, struct cfile *clst, int line_left);
 static int     put_case  (FILE *db, struct il_code *il);
 static void put_ilc   (FILE *db, struct il_c *ilc);
@@ -29,7 +30,7 @@ static void ret_flag  (FILE *db, int flag, int may_fthru);
 static int     set_impl  (struct token *name, struct implement **tbl,
                            int num_impl, char *pre);
 static void set_prms  (struct implement *ptr);
-static int     src_cmp   (char *p1, char *p2);
+static int     src_cmp   (const void *p1, const void *p2);
 
 static struct implement *bhash[IHSize];	/* hash area for built-in func table */
 static struct implement *ohash[IHSize]; /* hash area for operator table */
@@ -320,13 +321,9 @@ char *dbname;
  * prt_impl - sort and print to the data base the enties from one
  *   of the operation tables.
  */
-static void prt_impls(db, sect, tbl, num, sort_ary, cmp)
-FILE *db;
-char *sect;
-struct implement **tbl;
-int num;
-struct implement **sort_ary;
-int (*cmp)();
+static void prt_impls(FILE *db, char *sect, struct implement **tbl, int num,
+		      struct implement **sort_ary,
+		      int (*cmp)(const void *, const void *))
    {
    int i;
    int j;
@@ -1072,15 +1069,10 @@ struct il_c *ilc;
  * name_cmp - compare implementation structs by name; function used as
  *  an argument to qsort().
  */
-static int name_cmp(p1, p2)
-char *p1;
-char *p2;
+static int name_cmp(const void *p1, const void *p2)
    {
-   register struct implement *ip1;
-   register struct implement *ip2;
-
-   ip1 = *(struct implement **)p1;
-   ip2 = *(struct implement **)p2;
+   register struct implement *ip1 = *(struct implement **)p1;
+   register struct implement *ip2 = *(struct implement **)p2;
    return strcmp(ip1->name, ip2->name);
    }
 
@@ -1088,16 +1080,11 @@ char *p2;
  * op_cmp - compare implementation structs by operator and number of args;
  *   function used as an argument to qsort().
  */
-static int op_cmp(p1, p2)
-char *p1;
-char *p2;
+static int op_cmp(const void *p1, const void *p2)
    {
    register int cmp;
-   register struct implement *ip1;
-   register struct implement *ip2;
-
-   ip1 = *(struct implement **)p1;
-   ip2 = *(struct implement **)p2;
+   register struct implement *ip1 = *(struct implement **)p1;
+   register struct implement *ip2 = *(struct implement **)p2;
 
    cmp = strcmp(ip1->op, ip2->op);
    if (cmp == 0)
@@ -1132,7 +1119,7 @@ FILE *db;
          for (sfile = dhash[hashval]; sfile != NULL; sfile = sfile->next)
             sort_ary[num++] = sfile;
       qsort((char *)sort_ary, num, sizeof(struct srcfile *),
-         (int (*)())src_cmp);
+         (int (*)(const void *,const void *))src_cmp);
       }
 
    /*
@@ -1158,15 +1145,10 @@ FILE *db;
 /*
  * src_cmp - compare srcfile structs; function used as an argument to qsort().
  */
-static int src_cmp(p1, p2)
-char *p1;
-char *p2;
+static int src_cmp(const void *p1, const void *p2)
    {
-   register struct srcfile *sp1;
-   register struct srcfile *sp2;
-
-   sp1 = *(struct srcfile **)p1;
-   sp2 = *(struct srcfile **)p2;
+   register struct srcfile *sp1 = *(struct srcfile **)p1;
+   register struct srcfile *sp2 = *(struct srcfile **)p2;
    return strcmp(sp1->name, sp2->name);
    }
 

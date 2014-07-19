@@ -34,6 +34,16 @@ struct toktab {
 
 extern struct toktab *restab[];	/* reserved word index */
 
+/*
+ * On some platforms, the translator ends up including runtime system
+ * defined symbols. Cross our fingers and hope that no .c file that needs
+ * to include this file would ever use the *other* definitions of these
+ * macros.  Consider renaming these to use Tok_ prefix instead of T_.
+ */
+#undef T_Real
+#undef T_String
+#undef T_Cset
+
 #define T_Ident		&toktab[0]
 #define T_Int		&toktab[1]
 #define T_Real		&toktab[2]

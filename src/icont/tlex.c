@@ -3,9 +3,6 @@
  */
 
 #include "../h/gsupport.h"
-#undef T_Real
-#undef T_String
-#undef T_Cset
 #include "../h/lexdef.h"
 #include "tree.h"
 #include "ttoken.h"

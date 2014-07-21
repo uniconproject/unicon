@@ -465,106 +465,15 @@ int setdim(wbp w, char* s)
 /* this set the eyeup, eyedir, and the eyepos attributes */
 int seteye(wbp w, char *s)
 {
-   char *s2 = s;
    wcp wc = w->context;
 
-   while (isspace(*s2)) s2++;
-
-   /* set the eyepos attribute */
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyeposx = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyeposy = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyeposz = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   /* set the eyedir attribute */
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyedirx = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyediry= atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyedirz = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
+   if (sscanf(s, " %lf , %lf , %lf , %lf , %lf , %lf , %lf , %lf , %lf ",
+	      &(wc->eyeposx), &(wc->eyeposy), &(wc->eyeposz),
+	      &(wc->eyedirx), &(wc->eyediry), &(wc->eyedirz),
+	      &(wc->eyeupx),  &(wc->eyeupy),  &(wc->eyeupz)) != 9) {
+      return RunError;
       }
 
-   /* set the eyeup attribute */
-   if (*s2++ != ',') return RunError;
-   while (isspace(*s2)) s2++;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyeupx = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyeupy= atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2++ != ',') return RunError;
-   if (!isdigit(*s2) && (*s2 != '-') &&(*s2 != '.')) return RunError;
-   wc->eyeupz = atof(s2);
-
-   if (*s2 == '-') s2++;
-   while (isdigit(*s2)) s2++;
-   if (*s2 == '.') {
-      s2++;
-      while (isdigit(*s2)) s2++;
-      }
-   if (*s2) return RunError;
    if (redraw3D(w) == Failed)
       return Failed;
    return Succeeded;

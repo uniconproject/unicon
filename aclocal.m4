@@ -169,8 +169,7 @@ then
                 #
                 AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev)
                 AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
-		LIBSTDCPP="`locate -e libstdc++.so.6|grep '.so.6\$'|sort|tail -1`"
-		LDFLAGS="$LDFLAGS $LIBSTDCPP"
+		LIBS="$LIBS -lstdc++"
                 AC_MSG_RESULT(ok)
         else
                 #

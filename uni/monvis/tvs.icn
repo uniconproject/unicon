@@ -1,0 +1,21 @@
+#
+# tvs.icn - trapped variable substring allocation visualization
+#
+$include "evdefs.icn"
+link evinit, printf
+
+procedure main(av)
+   collects := subs := subbytes := 0
+   mask := E_Collect ++ E_Tvsubs
+   EvInit(av) | stop("no EvInit")
+   while EvGet(mask) do {
+      case &eventcode of {
+	 E_Collect: collects +:= 1
+	 E_Tvsubs: { subs +:= 1; subbytes +:= &eventvalue }
+	 }
+      }
+   write(&errout, collects, " collections, ", subs, " substring blocks (",
+	 subbytes, " bytes)")
+   if collects > 0 then
+      fprintf(&errout, "%0.1r tvsubs bytes/collect\n",real(subbytes)/collects)
+end

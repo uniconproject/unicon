@@ -155,7 +155,7 @@ char *exename;
    {
    struct lib *l;
    char sbuf[MaxFileName];		/* file name construction buffer */
-   char *buf;
+   char *buf, objname[MaxFileName];
    char *s;
    char *dlrgint;
    int cmd_sz, opt_sz, flg_sz, exe_sz, src_sz;
@@ -211,51 +211,19 @@ Deliberate Syntax Error
     */
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
 			     lib_sz + 64);
-   strcpy(buf, c_comp);
-   s = buf + cmd_sz;
-   strcpy(s, " /c");
-   s += 3;
-   *s++ = ' ';
-   strcpy(s, c_opts);
-   strcat(s, " /I");
-   strcat(s, refpath);
-   strcat(s, "..\\src\\gdbm");
-   strcat(s, " /I");
-   strcat(s, refpath);
-   strcat(s, "..\\src\\libtp");
-   s+=opt_sz;
-   *s++ = ' ';
-   strcpy(s, srcname);
-   s += src_sz;
-   *s++ = ' ';
+   sprintf(buf, "%s /c %s /I%s..\\src\\gdbm /I%s..\\src\\libtp %s ",
+	   c_comp, c_opts, refpath, refpath, srcname);
 
    /* first, the compile */
    if (system(buf) != 0)
       return EXIT_FAILURE;
 
    /* then, the link */
-   s = buf;
-   strcpy(s, "link -subsystem:console ");
-   s += 24;
+   strcpy(objname, srcname);
+   strcat(objname+strlen(objname)-1, "obj"); /* trim c extension */
 
-   strcpy(s, srcname);
-   s += strlen(srcname)-1; /* trim c extension */
-   strcpy(s, "obj");
-   s += 3;
-
-   strcat(s, " /LIBPATH:");
-   strcat(s, refpath);
-   s += strlen(refpath)+10;
-   *s++ = ' ';
-   strcpy(s, LinkLibs);
-   s += strlen(LinkLibs);
-
-   strcpy(s, " -out:");
-   s += 6;
-   strcpy(s, exename);
-   s += exe_sz;
-   strcpy(s, ".exe");
-   s += 4;
+   sprintf(buf, "link -subsystem:console %s /LIBPATH:%s %s -out:%s.exe",
+	   objname, refpath, LinkLibs, exename);
 
    if (system(buf) != 0)
       return EXIT_FAILURE;

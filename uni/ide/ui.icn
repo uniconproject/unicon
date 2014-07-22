@@ -140,8 +140,10 @@ class UIDE : Dialog(
          every m ||:= !!MsgBox.contents
 	 }
       if /is_MSWindows then {
-         every browser := getenv("BROWSER") | "chromium-browser" |
-			  "firefox" | "netscape" | "mozilla" | "opera" do {
+         # browser search appears random but should actually should be in order
+         # of how well PDF is displayed (in-line, external tool, or not at all)
+         every browser := getenv("BROWSER") | "firefox" | "midori" |
+		  "chromium-browser" | "opera" | "netscape" | "mozilla" do {
 	    if stat(getpaths() || browser) then {
 	       MsgBox.set_contents(["found browser " || browser, \m])
 	       break

@@ -417,32 +417,55 @@ $endif
    # Launch online help, if we are online.
    #
    method handle_help(filename, URL)
-      local URL2 := "", f, sysline
-      if \docpath then {
-         URL := "file://" || map(\docpath || filename,"/",PATHSEP)
-         }
+      local URL2 := "", f, sysline, nonot, fout, fout2
+
+      if /browser then fail
 
 $ifdef _UNIX
+      if not match("online", is_online()) then {
+         # use local copy since UI thinks we are offline
+         if \docpath then {
+            URL := "file://" || \docpath || filename
+            }
+         else URL := "file://" || filename
+         }
+
       if find("netscape"|"firefox", \browser) then
          URL2 := " -remote 'openURL(" || URL || ")'"
       else URL2 := " " || URL
 
-      if not match("online", is_online()) then {
-	 # using local copy since UI thinks we are offline
-	 if sysline := \browser || " " || URL2 || " &>ui.err &" then
-            proc("system",0)(sysline)
-         }
-      # else write("trying remote copy since UI thinks we are online")
+      fout := open("ui.err","w")
+      fout2 := open("ui.err2","w")
 
-      proc("system",0)(\browser || " " || URL2 || " &>ui.err &")
-      delay(800)
-      if f := open("ui.err") then {
-         if find("not running", read(f)) then
-            proc("system",0)(\browser || " " || URL || " &>ui.err &")
-         close(f)
-         remove("ui.err")
-	 }
+      sysline := \browser || " " || URL2
+      proc("system",0)(sysline, , fout, fout2, "nowait")
+      delay(1000)
+      close(fout)
+      close(fout2)
+
+      if find("netscape"|"firefox", \browser) then {
+         if f := open("cat ui.err ui.err2","p") then {
+            line := ""
+            while line ||:= read(f)
+            map(line) ? {
+               if tab(find(nonot:=("no"|"not")) + *nonot) & tab(many(' ')) & ="running" then {
+               #   write(&errout, \browser, " not running, reverting to URL")
+                  fout := open("ui.err","w")
+                  fout2 := open("ui.err2","w")
+                  proc("system",0)(\browser || " " || URL, , fout, fout2, "nowait" )
+                  }
+               else {
+               #   write(&errout, \browser, " was running, so we are good")
+                  }
+	       }
+            close(f)
+            remove("ui.err")
+            }
+         }
 $else
+      if \docpath then {
+         URL := "file://" || map(\docpath || filename,"/",PATHSEP)
+         }
       proc("system",0)(\browser || " " || URL) # || " &")
       #s := \browser[2:-1] || " " || URL
       #proc("system",0)(s,,,,1)

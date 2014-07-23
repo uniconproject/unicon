@@ -2051,7 +2051,13 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
          cnv:C_string(d_stdout, s_stdouterr);
 	 d_stdout.dword = d_stderr.dword = D_Integer;
 	 d_stdout.vword.integr =
+#if UNIX
 	    open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+#endif
+#if NT
+	    _open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
+#endif
+
 	 d_stderr.vword.integr = d_stdout.vword.integr;
 	 }
       else {
@@ -2060,14 +2066,24 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
          cnv:C_string(d_stdout, s_stdout);
 	 d_stdout.dword = D_Integer;
 	 d_stdout.vword.integr =
+#if UNIX
 	    open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+#endif
+#if NT
+	    _open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
+#endif
 	 }
       if (is:string(d_stderr)) {
 	 tended char *s_stderr;
          cnv:C_string(d_stderr, s_stderr);
 	 d_stderr.dword = D_Integer;
 	 d_stderr.vword.integr =
+#if UNIX
 	    open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+#endif
+#if NT
+	    _open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, _S_IWRITE|_S_IREAD);
+#endif
 	 }
       }
 

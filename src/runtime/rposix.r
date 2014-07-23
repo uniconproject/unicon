@@ -1971,18 +1971,34 @@ tryagain:
    return d;
 }
 
-
+/*
+ * Duplicate the file descriptors for a child process, in support of
+ * file redirection.  This may be an open file, or an integer file
+ * descriptor. The integer file descriptors are only used internally
+ * to the runtime system, in the case of files opened by string name
+ * as a by-product of parsing a command line or taking a string
+ * filename redirection argument to system().
+ */
 void dup_fds(dptr d_stdin, dptr d_stdout, dptr d_stderr)
 {
    if (is:file(*d_stdin)) {
       dup2(get_fd(*d_stdin, 0), 0);
-   }
+      }
+   else if (is:integer(*d_stdin)) {
+      dup2(IntVal(*d_stdin), 0);
+      }
    if (is:file(*d_stdout)) {
       dup2(get_fd(*d_stdout, 0), 1);
-   }
+      }
+   else if (is:integer(*d_stdout)) {
+      dup2(IntVal(*d_stdout), 1);
+      }
    if (is:file(*d_stderr)) {
       dup2(get_fd(*d_stderr, 0), 2);
-   }
+      }
+   else if (is:integer(*d_stderr)) {
+      dup2(IntVal(*d_stderr), 2);
+      }
 }
 
 

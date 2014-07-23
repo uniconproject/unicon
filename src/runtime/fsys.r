@@ -1913,14 +1913,17 @@ end
 
 function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
    if !is:file(d_stdin) then
-      if !is:null(d_stdin) then
-	 runerr(105, d_stdin)
+      if !is:string(d_stdin) then
+	 if !is:null(d_stdin) then
+	    runerr(105, d_stdin)
    if !is:file(d_stdout) then
-      if !is:null(d_stdout) then
-	 runerr(105, d_stdout)
+      if !is:string(d_stdout) then
+	 if !is:null(d_stdout) then
+	    runerr(105, d_stdout)
    if !is:file(d_stderr) then
-      if !is:null(d_stderr) then
-	 runerr(105, d_stderr)
+      if !is:string(d_stderr) then
+	 if !is:null(d_stderr) then
+	    runerr(105, d_stderr)
    if !is:list(argv) then
       if !is:string(argv) then
          runerr(110, argv)
@@ -1933,7 +1936,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       return null ++ integer
       }
    body {
-      int i, j, n, fd_0, fd_1, fd_2, is_argv_str=0, pid;
+      int i, j, n, fd_0=-1, fd_1=-1, fd_2=-1, is_argv_str=0, pid;
       C_integer i_mode=0;
       tended union block *ep;
 	 
@@ -1989,10 +1992,84 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	 margv[n] = 0;
          }
       else if (is:string(argv)) {
+	 char *s;
 	 is_argv_str = 1;
          cnv:C_string(argv, cmdline);
+
+	 /*
+	  * If we have a string it may have redirection orders.
+	  * Since execl("/bin/sh"...) doesn't seem to handle those
+	  * redirections for us, figure out how to do them ourselves.
+	  * This is a lame hack. Someone needs to think through
+	  * a general solution and rewrite it.
+	  */
+	 if (s = strstr(cmdline, "&>")) {
+	    *s = '\0';
+	    s += 2;
+	    while (*s == ' ') s++;
+	    StrLen(d_stdout) = StrLen(d_stderr) = strlen(s);
+	    StrLoc(d_stdout) = StrLoc(d_stderr) = s;
+	    while (*s) {
+	       if (*s == ' ') {
+		  *s = '\0';
+		  break;
+		  }
+	       s++;
+	       }
+	    }
+	 else if (s = strchr(cmdline, '>')) {
+	    *s = '\0';
+	    s++;
+	    while (*s == ' ') s++;
+	    StrLen(d_stdout) = strlen(s);
+	    StrLoc(d_stdout) = s;
+	    while (*s) {
+	       if (*s == ' ') {
+		  *s = '\0';
+		  break;
+		  }
+	       s++;
+	       }
+	    }
       }
 
+      /*
+       * File redirection to/from (string) named files.
+       * Open in the parent, fork/exec, close (in the parent).
+       */
+      if (is:string(d_stdin)) {
+	 tended char *s_stdin;
+         cnv:C_string(d_stdin, s_stdin);
+	 d_stdin.dword = D_Integer;
+	 d_stdin.vword.integr = open(s_stdin, O_RDONLY);
+	 }
+      if (is:string(d_stdout) && is:string(d_stderr) &&
+	  (StrLen(d_stdout) == StrLen(d_stderr)) &&
+	  !strncmp(StrLoc(d_stdout), StrLoc(d_stderr), StrLen(d_stdout))) {
+	 /* special case: stderr/stdout to same file */
+	 tended char *s_stdouterr;
+         cnv:C_string(d_stdout, s_stdouterr);
+	 d_stdout.dword = d_stderr.dword = D_Integer;
+	 d_stdout.vword.integr =
+	    open(s_stdouterr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+	 d_stderr.vword.integr = d_stdout.vword.integr;
+	 }
+      else {
+      if (is:string(d_stdout)) {
+	 tended char *s_stdout;
+         cnv:C_string(d_stdout, s_stdout);
+	 d_stdout.dword = D_Integer;
+	 d_stdout.vword.integr =
+	    open(s_stdout, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+	 }
+      if (is:string(d_stderr)) {
+	 tended char *s_stderr;
+         cnv:C_string(d_stderr, s_stderr);
+	 d_stderr.dword = D_Integer;
+	 d_stderr.vword.integr =
+	    open(s_stderr, O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+	 }
+      }
 
 #if !NT
       /* 
@@ -2031,6 +2108,11 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	 break;
       default:
          if (margv) free(margv);
+	 if (is:integer(d_stdin) &&IntVal(d_stdin)>-1) close(IntVal(d_stdin));
+	 if (is:integer(d_stdout)&&IntVal(d_stdout)>-1) close(IntVal(d_stdout));
+	 if (is:integer(d_stderr) && (IntVal(d_stderr)>-1) &&
+	     ((!is:integer(d_stdout))||(IntVal(d_stdout)!=IntVal(d_stderr))))
+	    close(IntVal(d_stderr));
 	 if (!i_mode) {
 	    int status;
 	    waitpid(pid, &status, 0);

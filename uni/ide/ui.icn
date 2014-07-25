@@ -115,7 +115,7 @@ class UIDE : Dialog(
       if /width then width := WAttrib(blank_window, "displaywidth") - 150
       close(blank_window)
       if /msglines then msglines := 7
-      if /fontname then fontname := "sans,15"
+      if /fontname then fontname := "mono,16"
       if /linebreak then linebreak := "LF"  # default to UNIX mode
       if \error_msg then return error_msg
    end
@@ -331,7 +331,7 @@ class UIDE : Dialog(
       self.min_height := 485
       self.set_attribs("size="||width||","||height, "pos="||win_position,
 		       "bg=pale gray",
-		       "label=Unicon IDE", "font=sans,15", "resize=on")
+		       "label=Unicon IDE", "font=mono,16", "resize=on")
 
       DevTabSet := TabSet()
       DevTabSet.set_pos("0", "100%-110")
@@ -617,6 +617,7 @@ end
 
 procedure main(argv)
    local d := argv[1]
+   if not match("graphics", &features) then stop("Graphics not enabled")
    reinitialize()
    Progend := ui_Progend
    warning := ui_Warning
@@ -646,7 +647,7 @@ end
 #nteger|1|Gen Component Setup|integer|1|Gen Init Dialog|integer|1|Gen I
 #nitially|integer|1|Dialog Struct|class|CDialog|4|Min Width|null|Min He
 #ight|null|Ticker Rate|null|Attribs|list|4|string|bg=pale gray|string|l
-#abel=Unicon IDE|string|font=sans,15|string|resize=on|Name|string|UIDE|
+#abel=Unicon IDE|string|font=mono,16|string|resize=on|Name|string|UIDE|
 #Width|integer|750|Height|integer|560|Items|list|4|class|CanvasTabSet|2
 #7|Parent Canvas|1|Name|string|DevTabSet|Class Name|string|TabSet|Impor
 #t Name|string|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Defaul

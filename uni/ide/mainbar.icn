@@ -49,7 +49,7 @@ class Mainbar(
    cur_ide_win_setup, # the current setup for which windows are being displayed
    cur_ide_tb_status, # the current state of the tool bar
    tb_adj, # tool bar adjust value -4% when the tool bar isn't present
-   preferences, replace_dialog, debuggIt
+   preferences, replace_dialog, debuggIt, unicon_manpage
    )
 
    method on_print_file(ev)
@@ -413,6 +413,11 @@ $endif
                   "http://unicon.sourceforge.net/faq.html")
    end
 
+   method on_unicon_manpage()
+      handle_help("doc/unicon/uniman.html",
+                  "http://unicon.sourceforge.net/uniman.html")
+   end
+      
    #
    # Launch online help, if we are online.
    #
@@ -1189,6 +1194,10 @@ $endif
       tutorial_overview.set_label("Tutorial Overview")
       tutorial_overview.connect(self, "on_tutorial_overview", ACTION_EVENT)
       menu_2.add(tutorial_overview)
+   unicon_manpage := TextMenuItem()
+   unicon_manpage.set_label("Unicon Man Page")
+   unicon_manpage.connect(self, "on_unicon_manpage", ACTION_EVENT)
+   menu_2.add(unicon_manpage)
       language_ref := Menu()
       language_ref.set_label("Language References")
       icon_ref := TextMenuItem()

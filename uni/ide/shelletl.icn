@@ -1,0 +1,528 @@
+#
+# $Id: shelletl.icn
+# Author: Hani Bani-Salameh for CVE
+# Edited for ui BLJ
+# Code Name: ShellETL
+# This file is in the public domain.
+#
+
+import gui
+import undo
+import lang
+
+$include "guih.icn"
+
+global rnln, # run line
+       brkln, # break line
+       runs,
+       highlightline,
+       shellcmd
+
+#
+# A scrollable editable text area.
+# An CONTENT_CHANGED_EVENT is generated whenever the contents
+# are changed by the user, a CURSOR_MOVED_EVENT when the cursor moves,
+# and a SELECTION_CHANGED_EVENT whenver the selection changes.
+#
+class ShellETL : EditableTextList (
+   flag,
+   contents,
+   printable,               # The printable characters
+   direction,               #
+   is_held,
+   long_line,               #
+   undo_manager,
+   old_view_list_size,
+   old_mw,
+   view_list,
+   tab_width,
+   wrap_mode,
+   line_splitter,
+   changed, moved,
+   mouse_locked,
+   scroll_locked,
+   vi,		# virtual line index
+   undolist,	# Taken from old-version editabletextlist
+   wordlist,	# Taken from old-version editabletextlist
+   noedit,	# Taken from old-version editabletextlist
+   startdragx,	# Taken from old-version editabletextlist
+   enddragx,	# Taken from old-version editabletextlist
+   startdragy,	# Taken from old-version editabletextlist
+   enddragy,	# Taken from old-version editabletextlist
+   donedrag,	# Taken from old-version editabletextlist
+   highlightcolor, # Taken from buffertextlist
+   autoindent,	# Taken from buffertextlist
+   scroll_y,	# Taken from buffertextlist
+   objType,
+   pos,result,counter,found,
+   pmlbl_width
+   )
+   #
+
+   #override original method
+   #set attrib
+   #will remove old attribute value and replace it with the new one
+   #
+   method set_attribs(attrval)
+   local attr, i
+       attrval ? {
+           attr := tab(many(&letters)) || ="="
+           every i := 1 to *attribs do {
+               if match(attr, attribs[i]) then {
+                   attribs[i] := attrval
+                   return
+		   }
+               }
+           }
+      return self$EditableTextList.set_attribs(attrval)
+   end
+   #
+   #
+   # initialze ftab from ide's tabset.
+   #
+   method Search_IDESession_Table()
+      stop ("Search_IDESession_Table() not implemented")
+
+   end
+
+   method create_msg()
+      stop ("create_msg() not implemented")
+   end
+
+   method handle_shell_messages(case_name, e, key, shortcut, shell_cmd, msg)
+      stop ("handle_shell_messages() not implemented")
+   end
+
+
+   #
+   # This method is modified to work as a simple shell in order to
+   # handle the shell/debugging commands.
+   # Also,to add some line higlighting to the debuggee  # which doesn't work
+   #
+   method handle_return(e)
+      local pos, result, counter, found, cmdstr, cmdln, s, index, f, str, i
+
+      # insert the return into the buffer.
+      /highlightline := 1
+
+      # grab the command line that was most recently typed.
+      # note that after a return, there is a new empty line after it.
+      # note that if we aren't at the end of the editable buffer, we
+      # probably should not be trying to execute anything.
+      if cursor_y < *contents - 2 then {
+	 write(&errout, "missing end-of-buffer check before writing to shell")
+         goto_line(*contents,1)
+         }
+      else {
+	 cmdln := contents[cursor_y]
+	 if \cmdln then {    # if cmdln is non-null
+	       write(ide.pty, cmdln)  # write it to the pseudo-tty
+
+	       cmdln ? {      # scan string
+		  if cmdstr := tab(upto(' ')) then move(1)
+		  else cmdstr := cmdln
+		  shellcmd := cmdstr
+		  case map(\cmdstr) of {
+		     "b" | "break" : {
+			highlightline := integer(tab(many(&digits)))
+			}
+		     "r" | "run" : {
+			runs := 1
+#			every i := 1 to *file_contents do
+#			   if find("main", file_contents[i]) then rnln := i
+			if \rnln < highlightline then {
+			   rnln := highlightline
+			   }
+			}
+		     "q" | "quit" : {
+			ide.debugger := 0
+#                        write("shelletl.handlereturn debugger is ", image(ide.debugger))
+#                        uidlog.DevTabSet.set_which_one(uidlog.tab_item_3)
+			}
+		     default : { highlightline := integer(tab(many(&digits))) }
+		     }
+		  }
+
+	    f := open(wiconlog, "a") | stop("Can't open the logfile")
+	    close(f)
+	    showanyresult(wiconlog, ide.dlst)
+	    }
+	 }
+      self.EditableTextList.handle_return(e)
+      resize()
+      refresh(1)
+   end
+   #
+   #
+   #
+   method showanyresult(fn, dlst)
+      local log1, i, s, ln, nerrors := 0, msgboxSize
+      delay(800)
+      if log1 := open(fn, "rw") then {
+         while ln := read(log1) do {
+            if *ln > 0 & (ln ~== "   ") then
+               put(\ide.dlst, ln)
+            }
+         s := ide.dlst[*ide.dlst]
+         \s ? { \highlightline := tab(many(&digits)) }
+         ide.CurrentDevBox().highlight_line(\highlightline) # invalid field name
+         put(\ide.dlst, "   ")
+         close(log1)
+         remove(fn)
+         set_contents(\ide.dlst)
+         refresh()
+         if ( \ (vsb)).set_value(*ide.dlst - vsb.page_size) then
+            refresh()
+         }
+      else {
+         put(ide.dlst, "Can't open logfile " || \fn || ": " || \i)
+         set_contents(ide.dlst)
+         }
+      # borrowed from cve; kinda wondering about the scope here
+      set_cursor_y(*ide.dlst)
+      goto_line(*ide.dlst,1)
+      handle_delete_line()
+      
+      msgboxSize := *(uidlog.PtyBox.get_contents())
+      uidlog.PtyBox.set_cursor_y(msgboxSize)
+      uidlog.PtyBox.goto_line(msgboxSize, 1)
+      uidlog.PtyBox.handle_delete_line()
+   end
+   
+   #
+   #
+   # #
+
+   method handle_event(e)
+      local old_contents_size, old_mw, E
+
+      if E := (\vsb).handle_event(e) then {
+         #
+         # Handled by VSB; amend line number and refresh contents
+         #
+         constrain_cursor()
+         refresh()
+         #text_area_to_high()
+	 }
+      else if E := (\hsb).handle_event(e) then {
+         #
+         # Handled by HSB; amend left offset and refresh
+         #
+         constrain_cursor()
+         refresh()
+	 }
+      else {
+         if e === -11 then fail # window closed, nothing to do?
+         old_contents_size := *contents
+         changed := moved := &null
+         if integer(e) = &lpress then
+            handle_press(e)
+         else if integer(e) = &ldrag then
+            handle_drag(e)
+         else if integer(e) = &mpress then
+            handle_press(e)
+         else if integer(e) = &lrelease then {
+            if \has_focus then
+               handle_release(e)
+            }
+         else if \has_focus then {
+            case e of {
+               Key_Home : handle_key_home(e)
+               Key_End : handle_key_end(e)
+               Key_PgUp : handle_key_page_up(e)
+               Key_PgDn : handle_key_page_down(e)
+               Key_Up : handle_key_up(e)
+               Key_Down : handle_key_down(e)
+               Key_Left :    handle_key_left(e)
+               Key_Right : handle_key_right(e)
+               #"\t" : handle_tab_text(e)    #not working
+               "\b" : handle_delete_left(e)
+               "\r" : handle_return(e)
+               "\l" : handle_return(e)
+               "\^k" : handle_delete_line() # handle_nodefault()
+               "\^a" : handle_start_of_line(e)
+               "\^e" : handle_end_of_line(e)
+               "\d"  : handle_delete_right(e)
+               "\^d" : handle_delete_right(e)
+               "\^x" :  handle_cut(e)
+               "\^c" :  handle_copy(e)
+               "\^v" :  handle_paste(e)
+               "\^z" :  handle_undo(e)
+               "\^y" :  handle_redo(e)
+               default : handle_default(e)   
+            }
+         }
+         if \moved then {
+            #
+            # Cursor moved.  Make sure still on screen; update scrollbars,
+            # and refresh text.
+            constrain_line()
+            refresh(1)
+            return _Event(e, self, 0)
+	    }
+         else if \changed then {
+            if (*contents ~= old_contents_size) | \long_line |
+               (old_mw ~= TextWidth(cwin,contents[long_line])) then {
+               #
+               # Contents changed.  Re-compute all internal fields, ensure on
+               # screen and re-display whole object.
+               set_internal_fields()
+               constrain_line()
+               display() 
+         if e === -11 then fail
+	       }
+            else {
+               constrain_line()
+               refresh(1)
+	       }
+            return _Event(e, self, 0)
+         }
+      }
+   end
+
+   method compute_pmlbl_width()
+      local promptlbl := "(ICI)", tblbl
+
+      tblbl := ide.CurrentTabItem().label
+      if \ide.debugger = 1 then {
+         if find(".icn", tblbl) then promptlbl := "(udb)"
+         else uidlog.PtyBox.set_contents(uidlog.PtyBox.get_contents() ||| ["Not a Unicon program."])
+         }
+     
+      pmlbl_width := TextWidthEx(cbwin, promptlbl)
+   end
+
+   method draw_line(xp, yp, i, rev)
+      local si, s, off, off1, off2, v, r, fh, asc, desc, line_off, yp2, cw
+
+      compute_pmlbl_width()
+      xp +:= pmlbl_width
+
+      fh := WAttrib(cbwin, "fheight")
+      asc := WAttrib(cbwin, "ascent")
+      desc := WAttrib(cbwin, "descent")
+      v := view_list[i]
+      s := v.str
+      si := cursor_x - v.first + 1
+
+      # Draw the line number.
+      left_string(cbwin, xp, yp, detab(s, tab_width + 1))
+
+      if \ide.debugger = 1 then {
+         if i = (1 |  *view_list) then {
+            Fg(cbwin, "pale red")  #rectangle color
+            yp2 :=  yp + ((asc - desc)/2) - asc
+            FillRectangle(cbwin, xp - pmlbl_width, yp2, pmlbl_width, fh)
+            Fg(cbwin, "black")   #line_num color
+            if (i > 1) & (find("udb"|"Uncompressed Icode",!contents)) then
+               left_string(cbwin, xp - pmlbl_width, yp,"(udb)")
+            else {
+               left_string(cbwin, xp - pmlbl_width, yp,"(ICI)")  # prompt
+	       }
+            }
+         else {
+            Fg(cbwin, "black")   #line_num color
+            left_string(cbwin, xp - pmlbl_width, yp,"     ")
+            }
+         }
+      else {
+      #if \ide.debugger = 0 &
+      #   \shellcmd == "y" then {
+         if i = (1 |  *view_list) then {
+            #if shellcmd == "y" then
+            Fg(cbwin, "pale red")  #rectangle color
+            yp2 :=  yp + ((asc - desc)/2) - asc
+            FillRectangle(cbwin, xp - pmlbl_width, yp2, pmlbl_width, fh)
+            Fg(cbwin, "black")   #line_num color
+            left_string(cbwin, xp - pmlbl_width, yp,"(ICI)")
+            }
+         else {
+            Fg(cbwin, "black")   #line_num color
+            left_string(cbwin, xp - pmlbl_width, yp,"     ")
+            }
+         }
+
+      Fg(cbwin, "black")
+
+      if (v.index = \cursor_y) & (v.first <= \cursor_x <= v.last) then {
+         if \has_focus then {
+            cw := Clone(cbwin, "bg=red", "fg=white")
+            off := TextWidthEx(cbwin, s, 1, si, tab_width)
+            EraseRectangle(cw, xp + \off, 1 + yp - line_height / 2,
+                           CharWidth(cbwin, s[si]), line_height)
+
+            if s[si] ~== "\t" then
+               left_string(cw, xp + off, yp + 1, s[si])
+
+            Uncouple(cw)
+	    }
+	 else {
+            cw := Clone(cbwin, "fg=red")
+            Rectangle(cw,
+                      xp + TextWidthEx(cbwin, s, 1, si, tab_width),
+                      1 + yp - line_height / 2,
+                      CharWidth(cbwin, s[si]),
+                      line_height)
+            Uncouple(cw)
+         }
+      }
+
+      if \mark_y then {
+         if (mark_y < v.index < cursor_y) |
+            (mark_y > v.index > cursor_y) then {
+            # Whole line selected
+            r := [v.first, v.last]
+	    }
+	 else if v.index = mark_y = cursor_y then {
+            # Part of line
+            if mark_x < cursor_x then {
+               r := range(v.first, v.last, mark_x, cursor_x)
+	       }
+            else if mark_x > cursor_x then {
+               r := range(v.first, v.last, cursor_x + 1 , mark_x)
+	       }
+	    }
+	 else if v.index = mark_y then {
+            if mark_y < cursor_y then {
+               r := range(v.first, v.last, mark_x,
+			  *contents[v.index] + 1)
+	       }
+	    else {
+               r := range(v.first, v.last, 1, mark_x)
+	       }
+	    }
+	 else if v.index = cursor_y then {
+            if mark_y > cursor_y then {
+               r := range(v.first, v.last, cursor_x + 1,
+			  *contents[v.index] + 1)
+	       }
+	    else {
+               r := range(v.first, v.last, 1, cursor_x)
+	       }
+         }
+         if \r then {
+            off1 := TextWidthEx(cbwin, s, 1, r[1] - v.first + 1,
+				tab_width)
+            off2 := TextWidthEx(cbwin, s, 1, r[2] - v.first + 1,
+				tab_width)
+            FillRectangle(rev, xp + off1, 1 + yp - line_height / 2,
+			  off2 - off1, line_height)
+	    }
+      }
+   end
+
+   #
+   #
+   method toggle_autoindent()
+      if \autoindent then autoindent:= &null
+      else autoindent := 1
+   end
+   #
+   # Not a very good simulation !!!
+   #
+#    method simulate_wheelbutton()
+
+#       if \has_focus then {
+#          scroll_y := &y
+
+# 	 while Event() === &mdrag do {
+# 	    if &y > scroll_y then {
+# 	       handle_key_down()
+# 	       handle_key_down()
+# 	       handle_key_down()
+# 	       }
+# 	    if &y < scroll_y  then {
+# 	       handle_key_up()
+# 	       handle_key_up()
+# 	       handle_key_up()
+# 	       }
+# 	    constrain_line()
+# 	    refresh(1)
+# #	    text_area_to_high()
+# 	    }
+# 	 }
+#    end
+#    #
+   #
+   # overwrites gui/linebasedscrollarea.get_left_pos
+   method get_left_pos()
+      local lineno_space := 0
+      compute_pmlbl_width()
+      lineno_space := TextWidth(cwin,*contents)
+      return (lineno_space + view.x  - (\hsb).get_value() + pmlbl_width) |
+             (lineno_space + view.x + pmlbl_width)
+   end
+   #
+   #
+   # new method
+   method reset_drag()
+      enddragx := startdragx
+      enddragy := startdragy
+   end
+   #
+   #  This method returns the offset(or number of added blanks because
+   #  of the tabs) up to the end position. If the use_selfcontents parameter
+   #  is null then the number of blanks up to the position (endpos) in the
+   #  actual line (the line with the blanks that is displayed) is returned.
+   #  If use_selfcontents is not null, then the number of blanks that would
+   #  be inserted up to the position (endpos) in contents is returned.
+   #
+   method offset_pos(tab_line,endpos,use_selfcontents)
+   local posx := 0, sblnks := 0, linepos := 0, numtabs := 0, x12
+
+   tab_line ? {
+      while x12 := move(1) do {
+	 linepos +:= 1
+         if /use_selfcontents then {
+	    if posx == endpos - 1 then # stop at the pos. in the line displayed
+               return sblnks - numtabs
+            }
+         else {
+	    if linepos == endpos then  # stop where at endpos in contents
+               return  sblnks - numtabs
+             }
+         if x12 == "\t" then {
+            numtabs +:= 1
+            posx +:= 1
+            sblnks +:= 8 - (posx-1)%8
+            posx +:= (8 -  (posx-1)%8) - 1
+            }
+         else
+            posx +:= 1
+         } # while
+      }
+
+      #  subtract numtabs the positions "\t" since we already counted them
+      return sblnks - numtabs
+   end
+
+   method highlight_line(i)
+      start_handle()
+      if /i  then i := 1
+      if not(*contents >=  i > 1) then i := 1
+
+      mark_x := 1
+      mark_y := i
+      cursor_y := i
+      cursor_x := *contents[i] + 1
+      end_handle()
+   end
+
+initially(a[])
+   self.EditableTextList.initially()
+   printable := cset(&ascii[33:128])
+   cursor_x := cursor_y := 1
+   highlightcolor := "65535,65535,32428"
+   autoindent := &null
+   scroll_y := 1
+   accepts_focus_flag := &null
+   startdragx := 1
+   enddragx := 1
+   startdragy := 1
+   enddragy := 1
+   donedrag := 0
+   undolist := []
+   #redolist := []
+   wordlist := []
+   noedit := 0
+end

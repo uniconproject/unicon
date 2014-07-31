@@ -17,12 +17,13 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn modified.icn preferences.icn \
 	templates.icn definitions.icn uproject.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
-	qu_replace.icn online.icn about.icn is_binary.icn
+	qu_replace.icn online.icn about.icn is_binary.icn ptyDispatcher.icn \
+	shelletl.icn
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
 	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
-	online.u about.u is_binary.u
+	online.u about.u is_binary.u ptyDispatcher.u shelletl.u
 
 ui:	$(OBJ)
 ifdef EXE
@@ -76,6 +77,12 @@ uproject.u: uproject.icn
 
 qu_replace.u: qu_replace.icn
 	$(UC) $(UFLAGS) qu_replace
+
+ptyDispatcher.u: ptyDispatcher.icn
+	$(UC) $(UFLAGS) ptyDispatcher
+
+shelletl.u: shelletl.icn
+	$(UC) $(UFLAGS) shelletl
 
 #idol.u: idol.icn
 #	$(UC) $(UFLAGS2) idol

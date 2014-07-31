@@ -79,6 +79,12 @@ class Mainbar(
    method on_exit(ev)
       local tab_item, modified, decision, i:=1
 
+      if (ide.debugger = 1) then {
+         if not close(ide.pty) then {
+            write("Possible UDB zombie outbreak")
+            } else write("UDB closed")
+         }
+
       every tab_item := !uidlog.FileTabSet.children do {
          if tab_item.label[-1] == "*" then {
             modified:=1
@@ -217,6 +223,11 @@ class Mainbar(
 
    method on_select_all(ev)
       ide.CurrentEditBox().handle_select_all()
+   end
+
+   method on_debuggIt(ev)
+      on_msgs_50(ev)
+      ide.debuggIt()
    end
 
    #
@@ -1154,6 +1165,10 @@ $endif
       run_arguments.set_label("Run arguments")
       run_arguments.connect(self, "on_run_arguments", ACTION_EVENT)
       menu_10.add(run_arguments)
+      debuggIt := TextMenuItem()
+      debuggIt.set_label("Debug program")
+      debuggIt.connect(self, "on_debuggIt", ACTION_EVENT)
+      menu_10.add(debuggIt)   
       menu_bar_1.add(menu_10)
       menu_12 := Menu()
       menu_12.set_label("Project")

@@ -424,7 +424,11 @@ $endif
    method handle_help(filename, URL)
       local URL2 := "", f, sysline, nonot, fout, fout2
 
-      if /browser then fail
+      if /browser then {
+	 uidlog.MsgBox.set_contents([
+	    "Sorry, you must configure a browser in order for help to work."])
+	 fail
+	 }
 
 $ifdef _UNIX
       if not match("online", is_online()) then {
@@ -437,6 +441,9 @@ $ifdef _UNIX
 
       if find("netscape"|"firefox", \browser) then
          URL2 := " -remote 'openURL(" || URL || ")'"
+      else if browser=="open" then {
+	 URL2 := " -a Safari " || URL
+	 }
       else URL2 := " " || URL
 
       fout := open("ui.err","w")

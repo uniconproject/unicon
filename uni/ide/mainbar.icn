@@ -389,8 +389,8 @@ $endif
    end
 
    method on_graphics3D_ref()
-      handle_help("doc/utr/utr9b.pdf",
-		  "http://unicon.org/utr/utr9b.pdf")
+      handle_help("doc/utr/utr9c.pdf",
+		  "http://unicon.org/utr/utr9c.pdf")
    end
 
    method on_icon_prog_library()
@@ -450,6 +450,7 @@ $ifdef _UNIX
       fout2 := open("ui.err2","w")
 
       sysline := \browser || " " || URL2
+      uidlog.MsgBox.set_contents(["launching " || sysline])
       proc("system",0)(sysline, , fout, fout2, "nowait")
       delay(1000)
       close(fout)
@@ -478,6 +479,8 @@ $else
       if \docpath then {
          URL := "file://" || map(\docpath || filename,"/",PATHSEP)
          }
+      uidlog.MsgBox.set_contents([
+	 "launching " || browser || " " || URL])
       proc("system",0)(\browser || " " || URL) # || " &")
       #s := \browser[2:-1] || " " || URL
       #proc("system",0)(s,,,,1)

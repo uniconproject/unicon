@@ -60,7 +60,7 @@ class UIDE : Dialog(
    uide,
    startfile,
    pnlToolbar, menubar,
-   MsgBox, EditBox,
+   MsgBox, EditBox, PtyBox,
    FileTabSet,ClassTabSet, DevTabSet,
    FileBrowser,
    tab_item_1, tab_item_2, tab_item_3, tab_item_4,
@@ -346,6 +346,16 @@ class UIDE : Dialog(
       MsgBox.set_contents([""])
       tab_item_1.add(MsgBox)
 
+      PtyBox := ShellETL()
+      PtyBox.set_pos("2", "2")
+      PtyBox.set_size("100%-4", "100%-4") 
+      PtyBox.set_draw_border()
+      PtyBox.set_attribs("bg=yellowish white", "font="||fontname)
+      PtyBox.set_contents([""])
+      tab_item_4 := TabItem()
+      tab_item_4.set_label("Debug Messages: (Single File Mode)")
+      tab_item_4.add(PtyBox)
+
       EditBox := BuffEditableTextList()
       EditBox.set_pos("2", "2")
       EditBox.set_size("100%-4", "100%-4")
@@ -356,7 +366,10 @@ class UIDE : Dialog(
 
       DevTabSet.add(tab_item_1)
       DevTabSet.set_which_one(tab_item_1)
+      DevTabSet.add(tab_item_4)
+      DevTabSet.connect(self, "change", SELECTION_CHANGED_EVENT)
       self.add(DevTabSet)
+      
       FileTabSet := BufferTabSet()
       FileTabSet.set_pos("150", "9%")
       FileTabSet.set_size("100%-150", "100%-160")
@@ -366,6 +379,7 @@ class UIDE : Dialog(
       FileTabSet.add(tab_item_2)
       FileTabSet.set_which_one(tab_item_2)
       self.add(FileTabSet)
+      
       ClassTabSet := BufferTabSet()
       ClassTabSet.set_pos("0", "9%")
       ClassTabSet.set_size("150", "100%-160")
@@ -381,6 +395,7 @@ class UIDE : Dialog(
       ClassTabSet.add(tab_item_3)
       ClassTabSet.set_which_one(tab_item_3)
       self.add(ClassTabSet)
+      
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
       pnlToolbar.set_size("100%", "4.5%")
@@ -396,6 +411,7 @@ initially(initfile)
    uidlog := self
    menubar := Mainbar(UProject())
    startfile := initfile
+   gui::dispatcher := ptyDispatcher()
    return self
 end
 

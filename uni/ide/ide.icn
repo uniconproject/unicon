@@ -33,7 +33,7 @@ class IDE (
    opened_file, tablist, tabItem, view_3d, errors_list, errLine,
    modified, filefound, menu_1, fileOpened, projectCompiled,
    toggle_find_dir_btn, text_field_search,
-   needConsole
+   needConsole, ptybuffer, pty, dlst, debugger
    )
 
    method system(s, lst, apnd, alternate_txt)
@@ -638,6 +638,105 @@ $endif
 	 showanyerror(s, [], 0)
 	 }
    end
+   method CurrentDevBox()
+      local ti
+      ti := CurrentDevItem() | stop ("No Current DevTabItem")
+      return ti.children[1]
+   end
+
+################### pty/debug ###################
+   method debuggIt()
+      local p, pth, cwd, args1, args2
+
+      cwd := chdir()
+      chdir(filedirectory)
+      tab_label := CurrentTabItem().label
+      if not find(".", tab_label) then {
+         on_saveas_btn()
+         tab_label := CurrentTabItem().label
+         if /tab_label then {
+            uidlog.MsgBox.set_contents(uidlog.MsgBox.get_contents() ||| ["File not found"])
+            return
+            }
+         }
+      if find(".icn",tab_label) then {
+$ifdef _UNIX
+      args1 := "udb"
+$else
+      args1 := "udb.exe"
+$endif
+      args2 := tab_label[1:(*tab_label-3)]
+      system("unicon "||tab_label)
+      }
+$ifdef _UNIX
+	args2 := args2
+$else
+	args2 ||:= ".exe"
+$endif
+# finds the path to udb
+$ifdef _UNIX
+     if pth := pathfind(args1) then
+$else
+     if pth := pathfind(args1, getenv("PATH"), ";") then
+$endif
+   {
+      # finds the path to the debug target; doesn't work if target hasn't run yet
+
+      if \args2 then {
+         if /filedirectory then
+            filedirectory := chdir()
+         
+         pth := pth || " -line"
+
+         pth ||:= " "||filedirectory|| PATHSEP || args2
+
+         (pty := open(pth, "prw")) | stop("open failed")   # opens udb
+         debugger := 1
+         gui::dispatcher.add_pty(pty) #
+
+         uidlog.PtyBox.accepts_focus_flag := debugger
+         uidlog.DevTabSet.set_which_one(uidlog.tab_item_4)
+         CurrentDevBox().constrain_line()
+         }
+      }
+     else {
+        uidlog.MsgBox.set_contents( uidlog.MsgBox.get_contents() |||
+				   ["UDB not found"])
+	}
+      handle_update()
+      chdir(cwd)
+   end
+
+   #
+   #
+   # clipped from cve, for debug integration
+
+   method do_pty_event()
+
+      /ptybuffer := ""
+      while ptybuffer ||:= ready(pty,1) do {
+
+         if ptybuffer[-1] == "\n" then {
+            put(dlst, ptybuffer[1:(*ptybuffer-1)])
+            ptybuffer := ""
+            }
+
+         if ptybuffer[-6:0] == "(udb) " then {
+            uidlog.PtyBox.showanyresult(wiconlog, dlst)   # shelletl method
+            if find("quit", shellcmd) | (\shellcmd == "q") then {
+               debugger := 0
+               uidlog.PtyBox.accepts_focus_flag := &null
+               uidlog.DevTabSet.set_which_one(uidlog.tab_item_1)
+               handle_update()
+               break
+               }
+            ptybuffer := ""
+            }
+         }
+      showanyerror(wiconlog, dlst)
+      
+      uidlog.MsgBox.goto_line(*dlst,1)
+   end
 
    #
    #  Open Project Menu Item Method
@@ -1045,6 +1144,11 @@ $endif
    method on_redo_btn(ev)
       CurrentEditBox().handle_redo(ev)
       modified := 1
+   end
+
+   ### DevTabSet Functionality
+   method CurrentDevItem()
+      return uidlog.DevTabSet.get_which_one()
    end
 
    #
@@ -1478,6 +1582,7 @@ initially
    ide := self
    opened_files_set := set()
    opened_files_num := 0
+   dlst := []
    lpr := "lpr"
 end
 

@@ -1156,7 +1156,9 @@ int traversefunctionlist(wbp w)
 	     * lookup the name of the texture and bind it
              * the objects using glBindTexture()
 	     */
-	    if (!cnv:C_integer(rp->fields[2], num)) goto free_v_and_fail;
+	    if (!cnv:C_integer(rp->fields[2], num)) {
+	       goto free_v_and_fail;
+	       }
 	    glBindTexture(GL_TEXTURE_2D, wc->display->texName[num]);
 	    if (wc->texmode)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
@@ -3710,7 +3712,7 @@ int texwindow2D(wbp w, wbp w2d)
    int r;
    wsp ws = w2d->window;
    GLubyte *tex = (GLubyte *)malloc(ws->height * ws->width * 3);
-   wcp wc = w2d->context;
+   wcp wc = w->context;
 
    makecurrent(w);
 

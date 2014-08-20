@@ -2531,9 +2531,8 @@ function{*} WAttrib(argv[argc])
       word n;
       tended struct descrip sbuf, sbuf2 = nulldesc;
       char answer[4096];
-      int  pass, config = 0;
-      int warg = 0;
-      OptWindow(w);
+      int  pass, config = 0, warg = 0, is_texture=0, texhandle;
+      OptTexWindow(w);
 
       wsave = w;
       /*
@@ -2590,6 +2589,11 @@ function{*} WAttrib(argv[argc])
 		  for ( ; tmp_s < tmp_s2; tmp_s++)
 		     if (*tmp_s == '=') break;
 		  if (tmp_s < tmp_s2) {
+		     if (is_texture) {
+			/* For now, no attribute assignments on textures */
+			runerr(0, argv[n]);
+			}
+
 		     /*
 		      * pass 1: perform attribute assignments
 		      */  
@@ -2652,6 +2656,29 @@ function{*} WAttrib(argv[argc])
  		     if (*stmp == '=') break;
  		  if (stmp < stmp2)
 		     StrLen(sbuf) = stmp - StrLoc(sbuf);
+
+		  if (is_texture) {
+		     wdp wd = w->context->display;
+		     /*
+		      * So far, textures support only read-only access to a
+		      * couple common canvas attributes (width and height).
+		      */
+		     if(StrLen(sbuf)==5 && StrLoc(sbuf)[0]=='w' &&
+			StrLoc(sbuf)[1]=='i' && StrLoc(sbuf)[2]=='d' &&
+			StrLoc(sbuf)[3]=='t' && StrLoc(sbuf)[4]=='h') {
+			return C_integer wd->stex[texhandle].width;
+			}
+		     else if (StrLen(sbuf)==6 &&
+			      StrLoc(sbuf)[0]=='h' && StrLoc(sbuf)[1]=='e' &&
+			      StrLoc(sbuf)[2]=='i' && StrLoc(sbuf)[3]=='g' &&
+			      StrLoc(sbuf)[4]=='h' && StrLoc(sbuf)[5]=='t') {
+			return C_integer wd->stex[texhandle].height;
+			}
+		     else {
+			fprintf(stderr, "ok, failing\n"); fflush(stderr);
+			fail;
+			}
+		     }
 
 		  switch (wattrib(w, StrLoc(sbuf), StrLen(sbuf),
 				  &sbuf2, answer)) {
@@ -4406,7 +4433,6 @@ function{1} Texture(argv[argc])
       f.vword.bptr = (union block *)rp;
       
       saved_tex = wc->curtexture;
-
 
       /*
        * Replace an existing texture "name".  In this case, we are setting

@@ -2590,8 +2590,13 @@ function{*} WAttrib(argv[argc])
 		     if (*tmp_s == '=') break;
 		  if (tmp_s < tmp_s2) {
 		     if (is_texture) {
-			/* For now, no attribute assignments on textures */
-			runerr(0, argv[n]);
+			/* For now, no attribute assignments on textures. */
+			if (StrLen(sbuf) > 12 &&
+			    !strncmp(StrLoc(sbuf), "windowlabel=", 12)) {
+			   fail;
+			   }
+			else
+			   runerr(0, argv[n]);
 			}
 
 		     /*
@@ -2675,7 +2680,9 @@ function{*} WAttrib(argv[argc])
 			return C_integer wd->stex[texhandle].height;
 			}
 		     else {
-			fprintf(stderr, "ok, failing\n"); fflush(stderr);
+			/* the default=fail semantics will be clear enough
+			 * to applications on read.
+			 */
 			fail;
 			}
 		     }

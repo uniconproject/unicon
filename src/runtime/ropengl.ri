@@ -3559,6 +3559,49 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
 
 static wclrp lastcp;
 
+int copyareaTexToTex(wbp w, int texhandle, int dest_texhandle,
+		     int x, int y, int width, int height, /* box to copy */
+		     int xt, int yt)    /* dest loc */
+{
+   wdp wd = w->window->display;
+   GLubyte *src = wd->stex[texhandle].tex;
+   GLubyte *dest = wd->stex[dest_texhandle].tex;
+   int srcwd = wd->stex[texhandle].width;
+   int srcht = wd->stex[texhandle].height;                /* src dims */
+   int txw = wd->stex[dest_texhandle].width;
+   int txh = wd->stex[dest_texhandle].height;
+   int i, j;
+   int srcl;              /* source index */
+   int dstl;              /* destination index */
+   int tws3 = srcwd * 3;
+   int twd3 = txw * 3;
+   GLubyte b;
+
+   for(j=0; j < height; j++){
+      srcl = (srcht-y-j-1)*tws3 + x * 3;
+      dstl = (txh-yt-j-1)*twd3 + xt * 3;
+      for(i=0; i < width; i++) {
+	 b = src[srcl];
+           dest[dstl] =b;
+           dest[dstl+1] = src[srcl+1];
+           dest[dstl+2] = src[srcl+2];
+	   srcl += 3;
+	   dstl += 3;
+	   }
+	}
+
+   MKCURRENT3D(w);
+   glBindTexture(GL_TEXTURE_2D,
+		 wd->texName[dest_texhandle]);
+   texture(wd->stex[dest_texhandle].width,
+	   wd->stex[dest_texhandle].height,
+	   wd->stex[dest_texhandle].tex,
+	   w->context->texmode
+	   );
+   return Succeeded;
+}
+
+/* copy from a 2D window to a texture */
 int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,  
     int width, int height, int xt, int yt, int txw, int txh)
 {
@@ -3663,6 +3706,10 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
    return Succeeded;
 }
 
+/*
+ * Copy from a 3D window to a texture. As written here, it comes out
+ * in four-byte RGBA format, and we copy just the RGB part over.
+ */
 int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,  
     int width, int height, int xt, int yt, int txw, int txh)
 {
@@ -3779,6 +3826,9 @@ int texwindow3D(wbp w1, wbp w2)
        }
 }
 
+/*
+ * TexCopyArea copies source image data into a destination texture.
+ */
 int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int height,
     		 int xt, int yt, int width2, int height2)
 {

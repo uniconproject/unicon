@@ -387,19 +387,27 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
       int warg = 0, n, r;
       C_integer x, y, width, height, x2, y2, width2, height2;
       wbp w, w2;
-      int is_texture=0, base=0;
-      int texhandle;
+      int is_texture=0 /* src */, dest_is_texture=0, base=0;
+      int texhandle /* src */, dest_texhandle;
 
-      OptWindow(w);
+      OptTexWindow(w);
+
+      /*
+       * w is the source window, and w2 is a destination.  There are 4 cases:
+       * 1. window to window (handled by copyArea),
+       * 2. window to texture (handled by TexCopyArea),
+       * 3. texture to window (not handled),
+       * 4. texture to texture (not handled).
+       */
 
 #ifdef Graphics3D
       if (argc>warg && is:record(argv[warg])) {
 	/* set a boolean flag, use a texture */
-	is_texture=1;
+	dest_is_texture=1;
 	/* Get the Window from Texture record */
 	w2 = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
         /* Pull out the texture handler */
-	texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
+	dest_texhandle = IntVal(BlkD(argv[warg],Record)->fields[2]);
 	/* get the context from the window binding */
 	warg++;
       }
@@ -407,9 +415,12 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
       if (argc-warg<4) /* should have at least 4 int values */
 	    runerr(146);
 
-      if (is_texture) {
+      /*
+       * This is the: "w2 is a destination texture" case.
+       */
+      if (dest_is_texture) {
 	 base=warg;
-	 if (texhandle >= w2->context->display->maxstex) runerr(102,argv[base]);
+	 if (dest_texhandle >= w2->context->display->maxstex) runerr(102,argv[base]);
 	 if (!cnv:C_integer(argv[base]  , x)) runerr(102, argv[base]);
 	 if (!cnv:C_integer(argv[base+1], y)) runerr(102, argv[base+1]);
 	 if (!cnv:C_integer(argv[base+2], width)) runerr(102, argv[base+2]);
@@ -429,9 +440,19 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 	    }
 	 else y2 = y;
 
-	 if (TexCopyArea(w, w2, texhandle, x, y, width, height, x2, y2,
-	 		  width2, height2)==Failed)
-			  fail;
+	 if (is_texture) {
+	    wdp wd = w->window->display;
+	    /* texture to texture */
+	    copyareaTexToTex(w, texhandle, dest_texhandle,
+			     x,y,width,height, x2,y2);
+
+	    }
+	 else {
+	    /* window to texture */
+	    if (TexCopyArea(w, w2, dest_texhandle, x, y, width, height, x2, y2,
+			    width2, height2)==Failed)
+	       fail;
+	 }
 	 ReturnWindow;
 	 }
 #endif					/* Graphics3D */

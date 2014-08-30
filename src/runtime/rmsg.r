@@ -386,7 +386,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       if (gethostname(smtpserver, sizeof(smtpserver)) >= 0) {
 	 if (getdomainname(buf, sizeof(buf)) >= 0) {
 	    strncat(smtpserver, ".", 1);
-	    strncat(smtpserver, buf, sizeof(smtpserver)-strlen(smtpserver));
+	    strncat(smtpserver, buf, sizeof(smtpserver)-strlen(smtpserver)-1);
 	    goto got_smtpserver;
 	    }
 	 }

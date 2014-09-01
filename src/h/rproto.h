@@ -267,11 +267,11 @@ int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		openlog		(char *p);
 void		outimage	(FILE *f,dptr dp,int noimage);
 struct b_coexpr	*popact		(struct b_coexpr *ce);
-#if NT && (WordBits==64)
-unsigned long long physicalmemorysize();
-#else                           /* NT && (WordBits == 64) */
+#if NT
+unsigned long long int physicalmemorysize();
+#else                           /* NT */
 unsigned long physicalmemorysize();
-#endif                          /* NT && (WordBits == 64) */
+#endif                          /* NT */
 word		prescan		(dptr d);
 int		pstrnmcmp	(struct pstrnm *a,struct pstrnm *b);
 #ifdef PseudoPty

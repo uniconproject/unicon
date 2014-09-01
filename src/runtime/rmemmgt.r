@@ -1723,11 +1723,11 @@ void blkdump()
    }
 #endif                                  /* DeBugIconx */
 
-#if NT && (WordBits==64)
-unsigned long long physicalmemorysize()
-#else					/* NT && (WordBits == 64) */
+#if NT
+unsigned long long int physicalmemorysize()
+#else					/* NT */
 unsigned long physicalmemorysize()
-#endif					/* NT && (WordBits == 64) */
+#endif					/* NT */
 {
    char buf[80], *p;
 unsigned long i;
@@ -1779,7 +1779,7 @@ unsigned long i;
 
 #else					/* UNIX */
 #if NT
-#if (WordBits==64)
+#if 1
    MEMORYSTATUSEX ms; 
    ms.dwLength = sizeof(ms);
    GlobalMemoryStatusEx(&ms);

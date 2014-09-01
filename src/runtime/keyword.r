@@ -404,17 +404,17 @@ keyword{1,*} features
 
 {
 	char *s = alcstr(NULL, 44);
-#if NT && (WordBits==64)
-        unsigned long long l = physicalmemorysize();
-#else					        /* NT && (WordBits == 64) */
+#if NT
+        unsigned long long int l = physicalmemorysize();
+#else					        /* NT */
         unsigned long l = physicalmemorysize();	
-#endif		      	  			/* NT && (WordBits == 64) */	
+#endif		      	  			/* NT */	
         if (l > 0) {
-#if NT && (WordBits==64)
-           sprintf(s, "Physical memory: %I64u bytes", l);
-#else	   	       		 	       /* NT && (WordBits == 64) */
+#if NT 
+           sprintf(s, "Physical memory: %llu bytes", l);
+#else	   	       		 	       /* NT */
            sprintf(s, "Physical memory: %lu bytes", l);
-#endif					       /* NT && (WordBits == 64) */ 	  
+#endif					       /* NT */ 	  
            suspend C_string s;	     
            }
 }

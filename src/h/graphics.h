@@ -333,6 +333,9 @@ typedef struct _wctype {
  * existing textures, as well as support dynamic window-based textures.
  */
 #ifdef Graphics3D
+
+#define INITTEXTURENUM 64
+
 typedef struct _wtexture {
    int		refcount;
    int		serial;			/* serial # */
@@ -349,7 +352,8 @@ typedef struct _wtexture {
 typedef struct _savetexture {
 #if HAVE_LIBGL
    GLubyte *tex;
-#endif					/* HAVE_LIBGL */
+   GLuint texName;			/* GL texture name*/
+#endif
    int width, height;
    struct _wbinding *w;
    } stexture, *wvp;
@@ -383,12 +387,10 @@ typedef struct _wdisplay {
   int		buckets[16384];		/* hash table for quicker lookups */
 #endif					/* XWindows */
 #ifdef Graphics3D
+  wtp textures;				/* textures */
+
   int ntextures;			/* # textures actually used */
   int nalced;				/* number allocated */
-#if HAVE_LIBGL
-  GLuint *texName;			/* array of GL textures */
-#endif					/* HAVE_LIBGL */
-  wtp textures;				/* textures */
   wvp stex;
   int maxstex;
 #endif					/* Graphics3D */

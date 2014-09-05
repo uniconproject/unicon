@@ -666,7 +666,7 @@ int checkOpenConsole( FILE *w, char *s );
    #endif				/* XWindows */
 
    #ifdef Graphics3D
-      void init_3dcanvas(wbp  w);
+      int init_3dcanvas(wbp  w);
       void apply_texmodechange(wbp w);
       int add_3dfont(char *fname, int fsize, char ftype);
       int c_traverse(struct b_list *hp, struct descrip * res, int position);
@@ -693,7 +693,7 @@ int checkOpenConsole( FILE *w, char *s );
 #endif
       int copy_3dcontext(wcp wc, wcp rv);
       void makecurrent(wbp w);
-      int make_enough_texture_space(wcp wc);
+      int make_enough_texture_space(wdp wc);
       int popmatrix();
       int pushmatrix();
       int pushmatrix_rd(wbp w, dptr f);

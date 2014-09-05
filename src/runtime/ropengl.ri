@@ -49,9 +49,6 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    wc = w->context;
 
    if (init_3dcontext(wc) == Failed) return NULL;
-#if HAVE_LIBGL
-   if (init_texnames(wc) == Failed) return 0;
-#endif					/* HAVE_LIBGL */
 
    /* create an empty list for list of function calls */
    if ((ws->funclist.vword.bptr = (union block *)alclist(0, 40000)) == NULL)
@@ -59,7 +56,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    ws->funclist.dword = D_List;
 
    /* initialize opengl state*/
-   init_3dcanvas(w);
+   if (init_3dcanvas(w) == Failed) return NULL;
 
    return f;
 }
@@ -71,7 +68,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
 /*
  * Initialize the 3D subsystem for rendering.
  */
-void init_3dcanvas(wbp  w)
+/*
+ * Initialize the 3D subsystem for rendering.
+ */
+int init_3dcanvas(wbp  w)
 {
    GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
    wsp ws;
@@ -86,8 +86,20 @@ void init_3dcanvas(wbp  w)
 		BLUE(wc->bg)/(GLfloat)255, 0.0);
 
    glShadeModel(GL_SMOOTH);
+
+   if (wc->display->stex == NULL) {
+      wc->display->ntextures = 0;
+      wc->display->maxstex = INITTEXTURENUM;
+
+      wc->display->stex =
+	 (struct _savetexture *) malloc(INITTEXTURENUM*sizeof(struct _savetexture));
+      if (wc->display->stex == NULL) return Failed;
+
+      if (init_texnames(w->context) == Failed) return Failed ;
+
+      }
+   
    /*glPolygonMode(GL_FRONT, GL_FILL);*/
-   glGenTextures(16, wc->display->texName);
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -104,8 +116,8 @@ void init_3dcanvas(wbp  w)
 	     0.125 * ws->height / ws->width, 0.25, 50000.0);
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
+   return Succeeded;
 }
-
 
 /*
 * release_3d_resources - free all resources used for 3D graphics
@@ -123,7 +135,6 @@ int release_3d_resources(wbp w)
       wd->stex[i].w=0;
    }
    free(wd->stex);
-   free(wd->texName);
    wd->stex = NULL;
 #endif
    i = wc->selectionnamecount;
@@ -141,23 +152,77 @@ int release_3d_resources(wbp w)
  * check if we have enough textures names (and records)
  * try to allocate if we need more
  */
-int make_enough_texture_space(wcp wc)
+
+int make_enough_texture_space(wdp wd)
+{
+   GLuint *texName;
+   int i, newmax;
+   if (wd->ntextures >= wd->maxstex) {
+      SUSPEND_THREADS();
+
+      /* 
+       * Allocate space and create new opengl texture names
+       */
+      if (wd->ntextures >= wd->maxstex) {
+         texName = malloc(wd->maxstex * sizeof(GLuint));
+         if (texName == NULL) {
+            RESUME_THREADS();
+            return Failed;
+            }
+         glGenTextures(wd->maxstex, texName);
+
+    	 newmax = wd->maxstex * 2;
+
+	 /*
+	  * Expand the texture storage and copy the new OpenGL names into place
+	  */
+      	 wd->stex = realloc(wd->stex, sizeof(struct _savetexture) * newmax);
+     	 if (wd->stex == NULL) {
+           RESUME_THREADS();
+	   free(texName);
+       	   return Failed;
+	   }
+         for (i=wd->maxstex; i<newmax; i++)
+            wd->stex[i].texName = texName[i-wd->maxstex];
+
+         wd->maxstex = newmax;
+
+      	 RESUME_THREADS();
+      	 free(texName);
+      	 }
+      }
+   return Succeeded;
+}
+
+int init_texnames(wcp wc)
 {
    wdp wd = wc->display;
-   if (wd->ntextures >= wd->nalced) {
-    SUSPEND_THREADS();
-    if (wd->ntextures >= wd->nalced) {
-      wd->nalced *= 2;
-      wd->texName = realloc(wd->texName, wd->nalced * sizeof(GLuint));
-       if (wd->texName==NULL){
-       RESUME_THREADS();
-       return Failed;
-       }
-      glGenTextures(wd->nalced / 2, wd->texName + wd->nalced / 2);
-      }
-    RESUME_THREADS();
-    }
+   GLuint texNames[INITTEXTURENUM];
+   int i;
 
+   if (wd->stex == NULL) 
+      return Failed;
+ 
+   glGenTextures(INITTEXTURENUM, texNames);
+ 
+   for (i=0; i<INITTEXTURENUM; i++){
+      wd->stex[i].texName = texNames[i];
+}
+
+   return Succeeded;
+}
+
+/*
+ * Emergent piece of redundant code for installing a texture, growing if needed
+ */
+int alcinstalltex(int k, wdp wd, GLubyte *tex, int width, int height)
+{
+   if (k >= wd->maxstex) {
+      if (make_enough_texture_space(wd)==Failed) return Failed;
+      }
+   wd->stex[k].tex = tex;
+   wd->stex[k].width = width;
+   wd->stex[k].height = height;
    return Succeeded;
 }
 
@@ -1159,7 +1224,7 @@ int traversefunctionlist(wbp w)
 	    if (!cnv:C_integer(rp->fields[2], num)) {
 	       goto free_v_and_fail;
 	       }
-	    glBindTexture(GL_TEXTURE_2D, wc->display->texName[num]);
+	    glBindTexture(GL_TEXTURE_2D, wc->display->stex[num].texName);
 	    if (wc->texmode)
 	       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, wc->texmode);
 	    break;
@@ -2338,7 +2403,7 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
 
    /*
     * To redraw the window we must keep track of the "texture name" assigned
-    * to it by opengl. This name is stored in wc->texName[wc->ntextures].
+    * to it by opengl. This name is stored in wc->stex[wc->ntextures].texName.
     * So by remembering wc->ntextures we can recover the name of the texture.
     */
    MakeInt(wc->curtexture, &(rp->fields[2]));
@@ -2559,7 +2624,7 @@ int textureimg(wbp w, int width, int height,
 
    if (i == Succeeded) {
       /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
       return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
    else {
@@ -2640,7 +2705,7 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
    i = texture(width, height, (GLubyte *)tex, w->context->texmode);
    if (i == Succeeded)  {
       /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
       return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
    else {
@@ -2886,14 +2951,14 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
       /*
        * need a new texture name, make room for it if necessary
        */
-      if (!make_enough_texture_space(wc)) return NULL;
+      if (!make_enough_texture_space(wc->display)) return NULL;
       wc->curtexture = wc->display->ntextures;
       }
    else /* replace the curtex */
       wc->curtexture = curtex;
 
 
-   glBindTexture(GL_TEXTURE_2D, wc->display->texName[wc->curtexture]);
+   glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
 
    if (ttype == 3)
       i = imagestr(w, name);
@@ -2956,7 +3021,7 @@ int texture_24img(wbp w, struct imgdata im)
 
    if (i == Succeeded) {
       /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
       return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
    else {
@@ -3178,7 +3243,7 @@ int setselectionmode(wbp w, char* s)
       if (wc->buffermode) { \
       	  wc->curtexture = texhand; \
       	  MKCURRENT3D(w); \
-	  glBindTexture(GL_TEXTURE_2D, wc->display->texName[texhand]); \
+	  glBindTexture(GL_TEXTURE_2D, wc->display->stex[texhand].texName); \
 	  texture1(wd, ht, tex, wc->texmode); }
 
 
@@ -3592,7 +3657,7 @@ int copyareaTexToTex(wbp w, int texhandle, int dest_texhandle,
 
    MKCURRENT3D(w);
    glBindTexture(GL_TEXTURE_2D,
-		 wd->texName[dest_texhandle]);
+		 wd->stex[dest_texhandle].texName);
    texture(wd->stex[dest_texhandle].width,
 	   wd->stex[dest_texhandle].height,
 	   wd->stex[dest_texhandle].tex,
@@ -3769,12 +3834,12 @@ int texwindow2D(wbp w, wbp w2d)
    /* apply the texture */
 
    MKCURRENT3D(w);
-   glBindTexture(GL_TEXTURE_2D, w->context->display->texName[wc->curtexture]);
+   glBindTexture(GL_TEXTURE_2D, w->context->display->stex[wc->curtexture].texName);
 
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
    if (r == Succeeded)  {
       /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
       return alcinstalltex(wc->curtexture,wc->display,tex,ws->width,ws->height);
       }
    else {
@@ -3798,7 +3863,7 @@ int texwindow3D(wbp w1, wbp w2)
    glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
    glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
-   glBindTexture(GL_TEXTURE_2D, w1->context->display->texName[w1->context->curtexture]);
+   glBindTexture(GL_TEXTURE_2D, w1->context->display->stex[w1->context->curtexture].texName);
     i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
 #endif					/* XWindows */
 #ifdef MSWindows
@@ -3810,14 +3875,14 @@ int texwindow3D(wbp w1, wbp w2)
    stddc = CreateWinDC(w1);
    wglMakeCurrent(stddc, w1->context->ctx);
    glBindTexture(GL_TEXTURE_2D,
-		 w1->context->display->texName[w1->context->curtexture]);
+		 w1->context->display->stex[w1->context->curtexture].texName);
    i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
    ReleaseDC(w1->window->iconwin, stddc);
    }
 #endif					/* MSWindows */
     if (i == Succeeded) {
       /* no need to re-check, the check was made earlier in the code */
-      /*if (make_enough_texture_space(wc)==Failed) return Failed;*/
+      /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
       return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
       }
     else {
@@ -3875,40 +3940,5 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int heigh
       }
 
    TEXUPDATE(w2, wc, texhandle, tex, wd, ht);   
-   return Succeeded;
-}
-
-int init_texnames(wcp wc)
-{
-   wdp wd = wc->display;
-   if (wd->texName == NULL) {
-      wd->texName = malloc(16 * sizeof(GLuint));
-      if (wd->texName == NULL) return Failed;
-      wd->nalced = 16;
-      wd->maxstex = 16;
-      }
-   return Succeeded;
-}
-
-/*
- * Emergent piece of redundant code for installing a texture, growing if needed
- */
-int alcinstalltex(int k, wdp wd, GLubyte *tex, int width, int height)
-{
-   if (k >= wd->maxstex) {
-      SUSPEND_THREADS();
-      if (k >= wd->maxstex) {
-	 wd->maxstex *= 2;
-	 wd->stex = realloc(wd->stex, sizeof(struct _savetexture)*wd->maxstex);
-	 if (wd->stex == NULL) {
-	    RESUME_THREADS();
-	    return Failed;
-	    }
-	 }
-      RESUME_THREADS();
-      }
-   wd->stex[k].tex = tex;
-   wd->stex[k].width = width;
-   wd->stex[k].height = height;
    return Succeeded;
 }

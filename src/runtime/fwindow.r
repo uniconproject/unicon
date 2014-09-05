@@ -4442,7 +4442,7 @@ function{1} Texture(argv[argc])
        * create a record of the graphical object and its parameters
        *
        * to redraw a texture we must know the texture name assigned by opengl
-       * This name is stored in wc->texName[wc->curtexture].
+       * This name is stored in wc->stex[wc->curtexture].texName
        * so we put wc->curtexture in the list.
        */
 
@@ -4509,7 +4509,7 @@ function{1} Texture(argv[argc])
 	 rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
 	 wc->curtexture = texhandle;
 #if HAVE_LIBGL
-	 glBindTexture(GL_TEXTURE_2D, wc->display->texName[wc->curtexture]);
+	 glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
 #endif					/* HAVE_LIBGL */
 	 c_put(&(w->window->funclist), &f);
 	 return f; 
@@ -4528,7 +4528,7 @@ function{1} Texture(argv[argc])
 	    runerr(142,argv[warg]);
 
 	 if (theTexture==-1){
-	    if (make_enough_texture_space(wc)==Failed) fail;
+	    if (make_enough_texture_space(wc->display)==Failed) fail;
 	    wc->curtexture = wc->display->ntextures;
 	    }
 	 else

@@ -4979,9 +4979,6 @@ char child_window_stuff(wbp w, wbp wp, char child_window)
    ws->is_3D = wc->is_3D = is_3d;
    if (is_3d) {
       if (init_3dcontext(wc) == Failed) return 0;
-#if HAVE_LIBGL
-      if (init_texnames(wc) == Failed) return 0;
-#endif					/* HAVE_LIBGL */
       }
 #endif					/* Graphics3D */
 
@@ -5197,13 +5194,9 @@ char my_wmap(wbp w)
    /* set defaults for attributes */
       if (init_3dcontext(w->context)==Failed)
 	 return 0;
-#if HAVE_LIBGL
-      if (init_texnames(wc) == Failed) return 0;
-#endif					/* HAVE_LIBGL */
-
 
    /* set up the appropriate 3D states; initialize canvas */
-   init_3dcanvas(w);
+   if (init_3dcanvas(w)  == Failed) return 0;
    }
 #endif
 #endif

@@ -337,23 +337,25 @@ typedef struct _wctype {
 #define INITTEXTURENUM 64
 
 typedef struct _wtexture {
-#if HAVE_LIBGL
-   GLubyte *tex;
-   GLuint texName;			/* GL texture name*/
-#endif
+   int		refcount;
+   int		serial;			/* serial # */
+
    int width, height;
    struct _wbinding *w;
 
-   int		refcount;
-   int		serial;			/* serial # */
-   struct _wtexture *previous, *next;
+  struct _wtexture *previous, *next;
+
    int          textype;	/* 1 = file, 2 = window (descrip), 3 = string*/
    struct descrip d;
    struct {			/* if type = 1, we store file attributes */
       int           size;
       int          timestamp;
       } fattr;
-   int       texindex;
+
+#if HAVE_LIBGL
+   GLubyte *tex;
+   GLuint texName;			/* GL texture name*/
+#endif
 
    } wtexture, *wtp;
 #endif					/* Graphics3D */

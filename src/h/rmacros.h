@@ -1543,3 +1543,28 @@
 #define LrgNeed(n)   ( ((sizeof(struct b_bignum) + ((n) - 1) * sizeof(DIGIT)) \
 		       + WordSize - 1) & -WordSize )
 #endif					/* LargeInts */
+
+
+#define PRINT_TEXTURE_INFO(wt, msg)			\
+  do {\
+  printf("%s\n", msg); \
+  printf("refcount = %d", (wt)->refcount);	\
+  printf("\ttexName  = %d", (wt)->texName);	\
+  printf("\ttextype  = %d", (wt)->textype);	\
+  printf("\tserial   = %d", (wt)->serial);	\
+  printf("\twidth    = %d", (wt)->width);	\
+  printf("\theight   = %d\n", (wt)->height);	\
+  } while (0)
+
+
+#define REPORT_OPENGL_ERROR(msg) \
+ do { \
+  int rc; \
+   rc = glGetError(); \
+   switch (rc){ \
+ case GL_NO_ERROR : printf("%s NO GL ERROR\n", msg); break; \
+ case GL_INVALID_ENUM : printf("%s GL ERROR: invalid enum\n", msg); break; \
+ case GL_INVALID_OPERATION : printf("%s GL ERROR: invalid op\n", msg); break; \
+ default: printf("%s GL ERROR: %d\n", msg, rc); \
+    } \
+ } while (0)

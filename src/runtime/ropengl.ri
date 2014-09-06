@@ -5,7 +5,7 @@
 int alcinstalltex(int k, wdp wd, GLubyte *tex, int width, int height);
 int bltex(wbp w, int width, int height, int ch, char *s, word len);
 int determinematerial(char *, C_integer, C_integer, C_integer, C_integer);
-wtp lookup_texture_byname(wbp w, char *name, int len, int type, int curtex);
+int lookup_texture_byname(wbp w, char *name, int len, int type, int curtex);
 int texture(int width, int height, GLubyte *tex, int texmode);
 int texture_24img(wbp w, struct imgdata im);
 int textureimg(wbp w, int width, int height,
@@ -92,7 +92,7 @@ int init_3dcanvas(wbp  w)
       wc->display->maxstex = INITTEXTURENUM;
 
       wc->display->stex =
-	 (struct _savetexture *) malloc(INITTEXTURENUM*sizeof(struct _savetexture));
+	 (struct _wtexture *) malloc(INITTEXTURENUM*sizeof(struct _wtexture));
       if (wc->display->stex == NULL) return Failed;
 
       if (init_texnames(w->context) == Failed) return Failed ;
@@ -176,7 +176,7 @@ int make_enough_texture_space(wdp wd)
 	 /*
 	  * Expand the texture storage and copy the new OpenGL names into place
 	  */
-      	 wd->stex = realloc(wd->stex, sizeof(struct _savetexture) * newmax);
+      	 wd->stex = realloc(wd->stex, sizeof(struct _wtexture) * newmax);
      	 if (wd->stex == NULL) {
            RESUME_THREADS();
 	   free(texName);
@@ -2354,7 +2354,7 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
    tended struct descrip d;
    tended struct b_record *rp;
    static dptr constr;
-   wtp wt;
+   int wt_index;
    int ttype;
 
    makecurrent(w);
@@ -2398,8 +2398,8 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
       ttype = 1;
       }
 
-   wt = lookup_texture_byname(w, str, len, ttype, curtex);
-   if (wt == NULL) return Failed;
+   wt_index = lookup_texture_byname(w, str, len, ttype, curtex);
+   if (wt_index == Failed) return Failed;
 
    /*
     * To redraw the window we must keep track of the "texture name" assigned
@@ -2909,23 +2909,36 @@ int scale(wbp w, dptr argv, int i, dptr f)
    return 0;
 }
 
+/*
+ * Lookup a texture given its name (filename), and reuse it insted of reloading
+ * it from disk. Otherwise create a new texture.
+ * NOTE: The lookup is a linear search! not good enough for a program
+ * with large number of textures. We should improve this.
+ * returns:
+ *         The index of the texture if found
+ *         Succeeded, if a new texture is created
+ *         Failed, if a new texture could not be created
+ */
 
-wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
+int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
 {
    char filename[MaxFileName +1];
    wcp wc = w->context;
-   wtp wt = wc->display->textures, wt2;
+   wtp wt;
+   wdp wd = wc->display;
    int i, saved_tex;
    CURTSTATE();
 
    makecurrent(w);
-   while (wt) {
+   i=0;
+   while (i<wd->ntextures) {
+      wt = &(wd->stex[i]);
       if (wt->textype == ttype) {
 	 switch (ttype) {
 	 case 1: /* file */
 	    if ((StrLen(wt->d) == len) && strncmp(StrLoc(wt->d),name,len)==0) {
 	       wc->curtexture = wt->texindex;
-	       return wt;
+	       return i;
 	       }
 	    break;
 	 case 2: /* window */
@@ -2934,31 +2947,26 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
 	    break;
 	    }
 	 }
-      wt = wt->next;
+      i++;
       }
-   GRFX_ALLOC(wt2, _wtexture);
-   wt2->textype = ttype;
-   StrLoc(wt2->d) = strdup(name);
-   StrLen(wt2->d) = len;
 
-   wt2->next = wc->display->textures;
-   if (wc->display->textures) {
-      wc->display->textures->previous = wt2;
-      }
-   wc->display->textures = wt2;
    saved_tex = wc->curtexture;
    if (curtex == -1) {
       /*
        * need a new texture name, make room for it if necessary
        */
-      if (!make_enough_texture_space(wc->display)) return NULL;
+      if (!make_enough_texture_space(wc->display)) return Failed ;
       wc->curtexture = wc->display->ntextures;
       }
    else /* replace the curtex */
       wc->curtexture = curtex;
 
+   wt = &(wd->stex[wc->curtexture]);
+   wt->textype = ttype;
+   StrLoc(wt->d) = strdup(name);
+   StrLen(wt->d) = len;
 
-   glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
+   glBindTexture(GL_TEXTURE_2D, wt->texName);
 
    if (ttype == 3)
       i = imagestr(w, name);
@@ -2969,13 +2977,13 @@ wtp lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
       }
 
    if (i == Succeeded){
-      wt2->texindex = wc->display->ntextures;
-      wc->display->ntextures++;
-      return wt2;
+      wt->texindex = wd->ntextures;
+      wd->ntextures++;
+      return Succeeded;
       }
    else{
       wc->curtexture=saved_tex;
-      return NULL;
+      return Failed;
       }
 }
 

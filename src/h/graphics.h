@@ -337,6 +337,13 @@ typedef struct _wctype {
 #define INITTEXTURENUM 64
 
 typedef struct _wtexture {
+#if HAVE_LIBGL
+   GLubyte *tex;
+   GLuint texName;			/* GL texture name*/
+#endif
+   int width, height;
+   struct _wbinding *w;
+
    int		refcount;
    int		serial;			/* serial # */
    struct _wtexture *previous, *next;
@@ -347,16 +354,8 @@ typedef struct _wtexture {
       int          timestamp;
       } fattr;
    int       texindex;
-   } wtexture, *wtp;
 
-typedef struct _savetexture {
-#if HAVE_LIBGL
-   GLubyte *tex;
-   GLuint texName;			/* GL texture name*/
-#endif
-   int width, height;
-   struct _wbinding *w;
-   } stexture, *wvp;
+   } wtexture, *wtp;
 #endif					/* Graphics3D */
 
 
@@ -387,11 +386,10 @@ typedef struct _wdisplay {
   int		buckets[16384];		/* hash table for quicker lookups */
 #endif					/* XWindows */
 #ifdef Graphics3D
-  wtp textures;				/* textures */
 
   int ntextures;			/* # textures actually used */
   int nalced;				/* number allocated */
-  wvp stex;
+  wtp stex;
   int maxstex;
 #endif					/* Graphics3D */
   double	gamma;

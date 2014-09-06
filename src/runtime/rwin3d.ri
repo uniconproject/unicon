@@ -246,17 +246,14 @@ int gettexcoords(wbp w, char *buf)
 int gettexture(wbp w, dptr dp)
 {
    wcp wc= w->context;
-   wtp wt = wc->display->textures;
-   while (wt) {
-      if (wt->texindex == wc->curtexture) {
-	 *dp = wt->d;
-	 return Succeeded;
-	 }
-      wt = wt->next;
+   wtp wt = wc->display->stex;
+   if (wc->curtexture>=0 && wc->curtexture<wc->display->ntextures) {
+      *dp = wt->d;
+      return Succeeded;
       }
-   return Failed;
+   else
+      return Failed;
 }
-
 
 int init_3dcontext(wcp wc)
 {

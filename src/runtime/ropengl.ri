@@ -21,16 +21,25 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    int  query;
    int major, minor;
 
-   /* create an opengl window */
 #ifdef XWindows
    int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
-
-  /* create an opengl window */
+   /*
+    * Allocate a display structure. Note that this is just to check
+    * whether the X server has GLX; wopen() will call it again and
+    * initialize ws->display and wc->display. So this is under #ifdef XWindows.
+    * The redundant calls to alc_display() is harmless as it will just return
+    * pointer to already-allocated connection but:
+    *
+    * BUG: this code looks to be ignoring any explicit display= assignment
+    * in attr, if anyone still uses non-local displays any more then we
+    * should fix it.  alc_display() honors/uses a DISPLAY environment variable.
+    */
    wdp wd = alc_display(NULL);
-   if (wd==NULL){
-    fprintf(stderr, "can't allocate a new display: ");
-    return NULL;
-   }
+   if (wd==NULL) {
+      fprintf(stderr, "can't allocate a new display: ");
+      return NULL;
+      }
+
    if (!glXQueryExtension(wd->display, &query, &query)) {
       fprintf(stderr, "X server has no OpenGL GLX extension\n");
       return NULL;

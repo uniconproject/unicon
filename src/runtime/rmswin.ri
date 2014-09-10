@@ -298,6 +298,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
     */
    Protect(w = alc_wbinding(), return NULL);
    Protect(w->window = alc_winstate(), { free_binding(w); return NULL; });
+   Protect(w->window->display=alc_display(NULL), {free_binding(w);return NULL;})
    Protect(w->context = alc_context(w), { free_binding(w); return NULL; });
    ws = w->window;
    ws->listp.dword = D_List;
@@ -3665,6 +3666,7 @@ wbp w;
      icnfnt = fnt;
    
    wc->serial = ++context_serial;
+   wc->display = w->window->display;
    wc->bkmode = OPAQUE;        /* at present, only used in line drawing */
    wc->fg = RGB(0,0,0);
    wc->bg = RGB(255,255,255);

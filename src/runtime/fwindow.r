@@ -2684,6 +2684,8 @@ function{*} WAttrib(argv[argc])
 		     StrLen(sbuf) = stmp - StrLoc(sbuf);
 
 		  if (is_texture) {
+
+#ifdef Graphics3D
 		     wdp wd = w->context->display;
 		     /*
 		      * So far, textures support only read-only access to a
@@ -2700,7 +2702,9 @@ function{*} WAttrib(argv[argc])
 			      StrLoc(sbuf)[4]=='h' && StrLoc(sbuf)[5]=='t') {
 			return C_integer wd->stex[texhandle].height;
 			}
-		     else {
+		     else 
+#endif					/* Graphics3D */
+		        {
 			/* the default=fail semantics will be clear enough
 			 * to applications on read.
 			 */

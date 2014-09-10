@@ -3615,6 +3615,40 @@ LONG NumWindows = 0;
 
 
 /*
+ * Allocate a display on machine s.  A "display" originated on X Windows as
+ * a structure to remember a network connection to an X server, and handles
+ * for server resources that could be shared across canvases/contexts.  On
+ * Windows it serves the latter, shared resource role, notably for textures.
+ */
+wdp alc_display(char *s)
+   {
+   int i;
+   double g;
+   wdp wd;
+   CURTSTATE();
+   if ((s == NULL) && (getenv_r("DISPLAY", tmp, 255)==0))
+      s = tmp;
+   if (s == NULL) s = "";
+   for(wd = wdsplys; wd; wd = wd->next)
+      if (!strcmp(wd->name,s)) {
+         wd->refcount++;
+	 return wd;
+         }
+
+   GRFX_ALLOC(wd, _wdisplay);
+
+   strcpy(wd->name,s);
+#ifdef Graphics3D
+   wd->vis = NULL;     /* initialized later if we are a 3D app */
+   wd->stex = NULL;
+#endif					/* Graphics3D */
+
+   /* gradually move common/shared resources into "display". e.g. fonts? */
+
+   GRFX_LINK(wd, wdsplys);
+   return wd;
+   }
+/*
  * allocate a context.  Can't be called until w has a window.
  */
 wcp alc_context(w)

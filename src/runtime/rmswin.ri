@@ -21,6 +21,8 @@
  *   getdefault
  */
 
+wdp wdsplys;
+
 #ifdef ConsoleWindow
 extern void closelog();
 #endif					/* ConsoleWindow */
@@ -298,7 +300,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
     */
    Protect(w = alc_wbinding(), return NULL);
    Protect(w->window = alc_winstate(), { free_binding(w); return NULL; });
-   Protect(w->window->display=alc_display(NULL), {free_binding(w);return NULL;})
+   Protect(w->window->display = alc_display(NULL),{free_binding(w);return NULL;});
    Protect(w->context = alc_context(w), { free_binding(w); return NULL; });
    ws = w->window;
    ws->listp.dword = D_List;
@@ -3626,6 +3628,7 @@ wdp alc_display(char *s)
    int i;
    double g;
    wdp wd;
+   char tmp[256];
    CURTSTATE();
    if ((s == NULL) && (getenv_r("DISPLAY", tmp, 255)==0))
       s = tmp;
@@ -3640,7 +3643,6 @@ wdp alc_display(char *s)
 
    strcpy(wd->name,s);
 #ifdef Graphics3D
-   wd->vis = NULL;     /* initialized later if we are a 3D app */
    wd->stex = NULL;
 #endif					/* Graphics3D */
 

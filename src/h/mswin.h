@@ -2,6 +2,8 @@
  * mswin.h - macros and types used in the MS Windows graphics interface.
  */
 
+#define MAXDISPLAYNAME	64
+
 #define DRAWOP_AND			R2_MASKPEN
 #define DRAWOP_ANDINVERTED		R2_MASKNOTPEN
 #define DRAWOP_ANDREVERSE		R2_NOTMASKPEN

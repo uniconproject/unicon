@@ -367,6 +367,11 @@ typedef struct _wtexture {
 typedef struct _wdisplay {
   int		refcount;
   int		serial;			/* serial # */
+
+#ifdef MSWindows
+  char		name[MAXDISPLAYNAME];
+#endif					/* MSWindows*/
+
 #ifdef XWindows
   char		name[MAXDISPLAYNAME];
   Display *	display;

@@ -743,6 +743,7 @@ int checkOpenConsole( FILE *w, char *s );
    #endif					/* Graphics3D */
 
    #ifdef MSWindows
+      wdp	alc_display		(char *s);
       /*
        * Implementation routines specific to MS Windows
        */

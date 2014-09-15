@@ -409,6 +409,7 @@ int region;
    struct b_coexpr *cp;
    int i;
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
+   static setrlimit_firsttime=1, setrlimit_count=0;
    struct rlimit rl;
 #endif
    CURTSTATE();
@@ -419,6 +420,18 @@ int region;
 #endif					/* Concurrent */
 
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
+   /*
+    * A user can enable an informative message regarding setrlimit()
+    * failing by setting a SETRLIMIT_COUNT environment variable.
+    */
+   if (setrlimit_firsttime) {
+      char *s;
+      setrlimit_firsttime = 0;
+      if (s=getenv("SETRLIMIT_COUNT")) {
+	 setrlimit_count = atoi(s);
+	 }
+      }
+
    getrlimit(RLIMIT_STACK , &rl);
    /*
     * Grow the C stack, proportional to the block region. Seems crazy large,
@@ -428,9 +441,12 @@ int region;
    if (rl.rlim_cur < curblock->size) {
       rl.rlim_cur = curblock->size;
       if (setrlimit(RLIMIT_STACK , &rl) == -1) {
-	 fprintf(stderr,"iconx setrlimit(%lu) failed %d\n",
-		 (unsigned long)(rl.rlim_cur),errno);
-	 fflush(stderr);
+	 if (setrlimit_count != 0) {
+	    fprintf(stderr,"iconx setrlimit(%lu) failed %d\n",
+		    (unsigned long)(rl.rlim_cur),errno);
+	    fflush(stderr);
+	    setrlimit_count--;
+	    }
 	 }
       }
 #endif

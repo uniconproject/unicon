@@ -550,6 +550,21 @@ typedef struct childcontrol {
 #endif					/* MSWindows */
 
 /*
+ *
+ */
+
+#define REAL_WSTATE	1
+#define SUBWIN_WSTATE	2
+#define TEXTURE_WSTATE	4
+
+#define CHILD_WIN2D	 1
+#define CHILD_WIN3D 	 2
+#define CHILD_WINTEXTURE 3
+
+#define TEXTURE_RECORD   1
+#define TEXTURE_WINDOW   2
+
+/*
  * "Window state" includes the actual X window and references to a large
  * number of resources allocated on a per-window basis.  Windows are
  * allocated out of a global array in rwinrsrc.c.  Windows remember the
@@ -559,6 +574,12 @@ typedef struct _wstate {
   int		refcount;		/* reference count */
   int		serial;			/* serial # */
   struct _wstate *previous, *next;
+
+#ifdef Graphics3D
+  int type;
+  int texindex;
+#endif					/* Graphics3D */
+
   int		inputmask;		/* user input mask */
   int		pixheight;		/* backing pixmap height, in pixels */
   int		pixwidth;		/* pixmap width, in pixels */

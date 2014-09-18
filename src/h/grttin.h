@@ -435,7 +435,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
    #begdef OptTexWindow(w)
       if (argc>warg && is:record(argv[warg])) {
 	/* set a boolean flag, use a texture */
-	is_texture=1;
+	is_texture=TEXTURE_RECORD;
 	/* Get the Window from Texture record */
 	w = BlkD(BlkD(argv[warg],Record)->fields[3],File)->fd.wb;
         /* Pull out the texture handler */
@@ -443,7 +443,45 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
 	/* get the context from the window binding */
 	warg++;
       }
-      else OptWindow(w); 
+      else
+      if (argc>warg && is:file(argv[warg])) {
+         if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
+	    runerr(140,argv[warg]);
+         if ((BlkD(argv[warg],File)->status & (Fs_Read|Fs_Write)) == 0)
+	    fail;
+         (w) = BlkD(argv[warg],File)->fd.wb;
+#ifdef ConsoleWindow
+	 checkOpenConsole((FILE *)(w), NULL);
+#endif					/* ConsoleWindow */
+         if (ISCLOSED(w))
+	    fail;
+         warg++;
+#ifdef Graphics3D
+	/* set a boolean flag, use a texture */
+	 if (w->window->type == TEXTURE_WSTATE){
+	    is_texture=TEXTURE_WINDOW;
+	    texhandle = w->window->texindex;
+	    }
+#endif					/* Graphics3D */
+
+         }
+      else {
+         if (!(is:file(kywd_xwin[XKey_Window]) &&
+	      (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
+	    runerr(140,kywd_xwin[XKey_Window]);
+         if (!(BlkD(kywd_xwin[XKey_Window],File)->status & (Fs_Read|Fs_Write)))
+	    fail;
+         (w) = (wbp)BlkD(kywd_xwin[XKey_Window],File)->fd.fp;
+         if (ISCLOSED(w))
+	    fail;
+#ifdef Graphics3D
+	/* set a boolean flag, use a texture */
+	 if (w->window->type == TEXTURE_WSTATE){
+	    is_texture=TEXTURE_WINDOW;
+	    texhandle = w->window->texindex;
+	    }
+#endif					/* Graphics3D */
+         }
    #enddef   /* OptTexWindow */
 
    #begdef ReturnWindow

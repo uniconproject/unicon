@@ -2974,6 +2974,7 @@ int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
    wt->textype = ttype;
    StrLoc(wt->d) = strdup(name);
    StrLen(wt->d) = len;
+   wt->w = w;
 
    glBindTexture(GL_TEXTURE_2D, wt->texName);
 
@@ -3255,12 +3256,13 @@ int setselectionmode(wbp w, char* s)
    ReleaseDC(w3d->window->iconwin, stddc);}
 #endif					/* MSWindows */
 
-#define TEXUPDATE(w, wc, texhand, tex, wd, ht) \
+#define TEXUPDATE(win, wc, texhand, tex, wd, ht) \
       if (wc->buffermode) { \
       	  wc->curtexture = texhand; \
-      	  MKCURRENT3D(w); \
+      	  MKCURRENT3D(wc->display->stex[texhand].w); \
 	  glBindTexture(GL_TEXTURE_2D, wc->display->stex[texhand].texName); \
-	  texture1(wd, ht, tex, wc->texmode); }
+	  texture1(wd, ht, tex, \
+	    wc->display->stex[texhand].w->context->texmode); }
 
 
 int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
@@ -3568,7 +3570,6 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
        	   tex[l+2]=cblue;
        	   }
 	}
-
    TEXUPDATE(w, wc, texhandle, tex, wd, ht);
    return Succeeded;
 }

@@ -141,14 +141,15 @@ function{1} Clone(argv[argc])
       int warg = 0, n;
       tended struct descrip sbuf, sbuf2;
       char answer[128];
-      char child_window=0;
+      int child_window=0;
       int is_texture=0;
       int texhandle;
+
       tended struct descrip f;
       tended struct b_record *rp;
 
       OptTexWindow(w);
-#ifdef Graphics3D
+#if 0 /* Graphics3D */
       if (is_texture){
       	 int nfields, draw_code;
       	 static dptr constr;
@@ -179,32 +180,50 @@ function{1} Clone(argv[argc])
 	 }
 
       Protect(w2 = alc_wbinding(), runerr(0));
-      {
-        int f1=0;
-        for (n=warg; n<argc; n++) {
-          if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gl", 2))
-              f1++;
-        }
-        if (f1==1) {
+
+      for (n=warg; n<argc; n++) {
+         if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gl", 2)){
 #ifdef Graphics3D
-	   child_window=2;
+	     child_window = CHILD_WIN3D;
 #else					/* Graphics3D */
-	   runerr(150, argv[n]);
+	     runerr(150, argv[n]);
 #endif					/* Graphics3D */
-	   }
-        else {
-          for (n=warg; n<argc; n++) {
-            if (StrLen(argv[n])==1 && !strncmp(StrLoc(argv[n]), "g", 1))
-                f1++;
-          }
-          if (f1==1) child_window=1;
-        }
+	     argv[n] = nulldesc;
+	     break;
+	     }
+	 else
+         if (StrLen(argv[n])==2 && !strncmp(StrLoc(argv[n]), "gt", 2)){
+#ifdef Graphics3D
+	     child_window = CHILD_WINTEXTURE;
+#else					/* Graphics3D */
+	     runerr(150, argv[n]);
+#endif					/* Graphics3D */
+	     argv[n] = nulldesc;
+	     break;
+	     }
+         }
+
+      if (child_window==0){
+         for (n=warg; n<argc; n++) {
+            if (StrLen(argv[n])==1 && !strncmp(StrLoc(argv[n]), "g", 1)){
+	       child_window = CHILD_WIN2D;
+	       argv[n] = nulldesc;
+	       break;
+  	       }
+            }
+         }
+
+#ifdef Graphics3D
+      if (is_texture == TEXTURE_RECORD){
+         child_window = CHILD_WINTEXTURE + texhandle;
       }
+#endif					/* Graphics3D */
+
       if (!child_window) {
         w2->window = w->window;
         w2->window->refcount++;
       }
-      else warg++;
+
 
       if (argc>warg && is:file(argv[warg])) {
 	 if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
@@ -224,7 +243,7 @@ function{1} Clone(argv[argc])
 	 }
 
 #ifdef Graphics3D
-      if (child_window==2) {
+      if (child_window==CHILD_WIN3D) {
 	 /* create an empty list for list of function calls */
 	 if ((w2->window->funclist.vword.bptr =
 	      (union block *)alclist(0, MinListSlots)) == NULL)
@@ -253,7 +272,7 @@ function{1} Clone(argv[argc])
 				   , &emptystr),runerr(0));
       result.dword = D_File;
 
-#ifdef Graphics3D
+#if 0 /* Graphics3D */
       if (is_texture){
        	 rp->fields[3] = result;
 	 return f;

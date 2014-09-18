@@ -1295,7 +1295,6 @@ wsp alc_winstate()
    {
    wsp ws;
    CURTSTATE();
-
    GRFX_ALLOC(ws, _wstate);
    ws->serial = ++canvas_serial;
    ws->bits = 1024;				/* echo ON; others OFF */
@@ -1313,6 +1312,11 @@ wsp alc_winstate()
 #ifdef HAVE_XFT
    ws->pixDraw = ws->winDraw = NULL;
 #endif					/* HAVE_XFT */
+
+#ifdef Graphics3D
+  ws->type = REAL_WSTATE;
+  ws->texindex = -1;
+#endif					/* Graphics3D */
 
    GRFX_LINK(ws, wstates);
    return ws;

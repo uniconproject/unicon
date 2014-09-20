@@ -4705,9 +4705,11 @@ char child_window_stuff(wbp w, wbp wp, int child_window)
       ws->display = wp->window->display;
       wp->window->display->refcount++;
 #ifdef Graphics3D
-      ws->texindex = child_window - CHILD_WINTEXTURE;
-      ws->type = TEXTURE_WSTATE;
-      ws->iconic = HiddenState;
+      if (child_window >= CHILD_WINTEXTURE){
+         ws->texindex = child_window - CHILD_WINTEXTURE;
+         ws->type = TEXTURE_WSTATE;
+         ws->iconic = HiddenState;
+         }
 #endif					/* Graphics3D */
       }
    else {

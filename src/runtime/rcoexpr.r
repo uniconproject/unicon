@@ -913,11 +913,10 @@ void handle_thread_error(int val, int func, char* msg)
 
    case FUNC_SEM_OPEN:
 
-      fprintf(stderr, "\sem open error-%s\n ", msg);
-      perror("sem_open()"):
+      fprintf(stderr, "sem open error-%s\n ", msg);
+      perror("sem_open()");
       syserr("");
       break;
-	 }
 
    default:
       fprintf(stderr, "\npthread function error!\n");

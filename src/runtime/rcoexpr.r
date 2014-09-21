@@ -594,7 +594,7 @@ void makesem(struct context *ctx) {
       sprintf(name, "i%ld.sem", (long)getpid());
       ctx->semp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 0);
       if (ctx->semp == (sem_t *)SEM_FAILED)
-         syserr("cannot create semaphore");
+         handle_thread_error(errno, FUNC_SEM_OPEN, "make_sem():cannot create semaphore");
       sem_unlink(name);
    #else				/* NamedSemaphores */
       if (sem_init(&ctx->sema, 0, 0) == -1)

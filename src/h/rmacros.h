@@ -1270,6 +1270,7 @@
    #define FUNC_COND_SIGNAL	8
    #define FUNC_THREAD_CREATE	9
    #define FUNC_THREAD_JOIN	10
+   #define FUNC_SEM_OPEN	11
 
 
 #endif					/* Concurrent */

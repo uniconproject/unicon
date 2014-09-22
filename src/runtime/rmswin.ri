@@ -5001,15 +5001,16 @@ char child_window_stuff(wbp w, wbp wp, int child_window)
    HFONT oldfont;
    struct wbind_list *curr;
    int is_3d=0;
-   
+
    if (child_window==CHILD_WIN3D) {
        is_3d = 1;
    }
-      /*
+
+   /*
     * allocate a window state, and a context
     */
+   
    Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
-   Protect(w->context = alc_context(w), { free_binding(w); return 0; });
    ws = w->window;
    CLRTITLEBAR(ws);
 
@@ -5021,10 +5022,13 @@ char child_window_stuff(wbp w, wbp wp, int child_window)
       if (child_window >= CHILD_WINTEXTURE){
          ws->texindex = child_window - CHILD_WINTEXTURE;
          ws->type = TEXTURE_WSTATE;
-/*         ws->iconic = HiddenState; */
+	 SETTOBEHIDDEN(ws);
          }
 #endif					/* Graphics3D */
       }
+
+   Protect(w->context = alc_context(w), { free_binding(w); return 0; });
+
 
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);

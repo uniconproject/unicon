@@ -1179,7 +1179,7 @@
 
 #define SEM_WAIT(semptr) while (sem_wait(semptr) != 0 ) { \
 	if (errno==EINVAL) syserr("invalid semaphore"); \
-	else if (errno != EINTR) syserr("sem_wait error"); }
+	else if (errno != EINTR) {perror("sem_wait()"); syserr("sem_wait error");} }
 
 #ifdef Concurrent 
 

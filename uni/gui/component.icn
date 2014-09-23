@@ -125,7 +125,12 @@ class Component : Object : SetFields : Connectable(
    #
    pointer,
 
-   ticker
+   ticker,
+
+   #
+   # Flag to indicate whether we should auto update/resize after calling add()
+   #
+   auto_refresh
    )
 
    #
@@ -373,6 +378,21 @@ class Component : Object : SetFields : Connectable(
    end
 
    #
+   # Set auto_refresh so that the component 
+   # resize() itself on add()/remove()
+   #
+   method set_auto_refresh()
+      self.auto_refresh := 1
+   end
+
+   #
+   # Clear auto_refresh
+   #
+   method clear_auto_refresh()
+      self.auto_refresh := &null
+   end
+
+   #
    # Set the shaded status of the component to shaded.
    #
    method set_is_shaded()
@@ -599,36 +619,38 @@ class Component : Object : SetFields : Connectable(
    # Complete the final setup before display by initializing the parent
    # dialog reference and creating the cloned windows.
    #
-   method init()
+   method init(dont_force_new_win)
       local i, p
       if /self.parent then
          fatal("incorrect ancestry (parent null)")
-      parent_dialog := parent.get_parent_dialog_reference()
-      if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
-	 cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
-	 }
-      else {
-	 # Clone failed, what to do?  Try to drop a single
-	 # attribute, as that will identify which one is hurting us.
-	 every i := 1 to *attribs do {
-	    p := pop(attribs)
-	    if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
-	       write(&errout, "clone failed, had to discard attribute ", image(p))
-	       break
-	       }
+      if /cwin | /dont_force_new_win then {
+	parent_dialog := parent.get_parent_dialog_reference()
+      	if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
+	   cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
+	   }
+      	else {
+	   # Clone failed, what to do?  Try to drop a single
+	   # attribute, as that will identify which one is hurting us.
+	   every i := 1 to *attribs do {
+	      p := pop(attribs)
+	      if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
+	      write(&errout, "clone failed, had to discard attribute ", image(p))
+	      break
+	      }
 	    push(attribs, p)
 	    }
-	 if /cwin then {
-	    write(&errout, "clone failed, discarding attributes:")
-	    every write(&errout, "\t", ! attribs)
-	    cwin := Clone(parent.get_cwin_reference())
-	    if /cwin then fatal("multiple bad attributes")
-	    cbwin := Clone(parent.get_cbwin_reference())
-	    if /cbwin then fatal("bad cbwin, multiple bad attributes")
-	    }
-	 else {
-	    cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
-	    if /cbwin then fatal("bad cbwin, not sure why")
+	    if /cwin then {
+	       write(&errout, "clone failed, discarding attributes:")
+	       every write(&errout, "\t", ! attribs)
+	       cwin := Clone(parent.get_cwin_reference())
+	       if /cwin then fatal("multiple bad attributes")
+	       	  cbwin := Clone(parent.get_cbwin_reference())
+	       if /cbwin then fatal("bad cbwin, multiple bad attributes")
+	       }
+	    else {
+	       cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
+	       if /cbwin then fatal("bad cbwin, not sure why")
+	       }
 	    }
 	 }
       every (!self.children).init()
@@ -841,11 +863,26 @@ class Component : Object : SetFields : Connectable(
    # @          is appended to the end.
    #
    method add(c, i)
-      if /i then 
+      local j
+      # make sure we don't have this component already
+      j := *self.children
+      while j>0 do {
+         if self.children[j]===c then fail # we have it.
+	 j-:=1
+   	 }
+	
+      if /i | i=0 | i=*self.children then 
          put(self.children, c)
       else
-         self.children := self.children[1 : i] ||| [c] ||| self.children[i : 0]
+         insert(self.children, i, c)
+
       c.parent := self
+
+      if self.is_dialog_open() & \(self.auto_refresh) then{
+         c.init(1)
+         self.resize()
+	 }
+      return
    end
 
    #
@@ -857,6 +894,8 @@ class Component : Object : SetFields : Connectable(
       every i := 1 to *self.children do {
          if self.children[i] === c then {
             delete(self.children, i)
+	    if self.is_dialog_open() & \(self.auto_refresh) then
+               self.resize()
             return
          }
       }
@@ -1110,4 +1149,5 @@ class Component : Object : SetFields : Connectable(
       self.children := []
       self.x_align := "l"
       self.y_align := "t"
+      self.auto_refresh := 1
 end

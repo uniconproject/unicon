@@ -544,7 +544,7 @@ $endif
    # Either way, should be same behavior: save, compile, and execute.
    #
    method run(fileset, exename)
-      local L, cmd, s, fdir, fname, cmd2, console, fun, unam
+      local L, cmd, s, fdir, fname, cmd2, console, fun, unam, scpt
 
       if /fileset := set() then {
 	  if fun := open(".") then {
@@ -571,73 +571,86 @@ $endif
       if /icodename then {
          if not member(fileset, exename || EXT) then fail
          else icodename := exename
-	 }
+      }
 
       if /is_MSWindows then {
-	 if not(any(&letters,icodename) & (icodename[2]==":"))&
-         not find(("./"|"/"), icodename) then
+      if not(any(&letters,icodename) & (icodename[2]==":"))&
+            not find(("./"|"/"), icodename) then
             if icodename[1] ~== PATHSEP then
                icodename := "." || PATHSEP || icodename
-	 if find(".icn", fname) then {
-	    if not find(("./"|"/"), icodename) then cmd ||:= "./"
-	    cmd := quotes(icodename) || " " || xargs
-	    }
-	 # path search, see if xterm exists on path, use it
-	 if pathfind("xterm", getenv("PATH")) then {
-	    if (fun := open("uname","pr")) &   # Apple xterm option
-		(unam := read(fun)) & close(fun) & match("Darwin",unam) then {
-		console := "xterm -hold -e script " || wiconlog ||" "
-		cmd2 := console || \cmd || " "
-	       }
-	     else {   # non-Apple xterm
-	       console := "xterm -hold -e script -c \""
-	       cmd2 := console || \cmd || " \" " || wiconlog
-	       }
-	    }
-         else if pathfind("konsole", getenv("PATH")) then {
-            console := "konsole --vt_sz 70x18 "
-            cmd2 := console || \cmd || " &> " || wiconlog 
-            }
-         else if pathfind("mate-terminal", getenv("PATH")) then {
-            console := "mate-terminal -e "
-            cmd2 := console || \cmd || " &> " || wiconlog 
-            }
-         else if pathfind("gnome-terminal", getenv("PATH")) then {
-            console := "gnome-terminal -e "
-            cmd2 := console || \cmd || " &> " || wiconlog 
-            }
-         else if pathfind("lxterminal", getenv("PATH")) then {
-            console := "lxterminal -e "
-            cmd2 := console || \cmd || " &> " || wiconlog 
-            }
-         else if pathfind("xfce4-terminal", getenv("PATH")) then {
-            console := "xfce4-terminal --hold -e "
-            cmd2 := console || \cmd || " &> " || wiconlog 
-            }      
-	 else #just run without "console || ..."
-               cmd2 := cmd || " &> " || wiconlog
-	 }
+      if find(".icn", fname) then {
+         if not find(("./"|"/"), icodename) then cmd ||:= "./"
+         cmd := quotes(icodename) || " " || xargs
+         }
+      # path search for script
+      if pathfind("script", getenv("PATH")) then {
+        # write("found script()")
+         scpt := "script "
+         }
       else {
-	 if icodename[1] ~== PATHSEP then icodename := icodename
-	 cmd := quotes(icodename||".exe")
-	 if fdir[-1] ~== "\\" then
-	    fdir := fdir || "\\"
-	 if find(".icn", CurrentTabItem().label) then
-	    cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
-	 }
+        # write("script() not found")
+         scpt := " "
+         }
+      # using script is currently hit-and-miss 09/23/14
+      
+      # path search for local terminal, use it
+      if pathfind("xterm", getenv("PATH")) then {
+         if (fun := open("uname","pr")) &   # Apple xterm option
+            (unam := read(fun)) & close(fun) & match("Darwin",unam) then {
+               console := "xterm -hold -e script " || wiconlog ||" "
+               cmd2 := console || \cmd || " "
+	       }
+         else {   # non-Apple xterm
+            console := "xterm -hold -e script -c \""
+            cmd2 := console || \cmd || " \" " || wiconlog
+            }
+         }
+      else if pathfind("konsole", getenv("PATH")) then {
+         console := "konsole --vt_sz 70x18 "
+         cmd2 := console || \cmd || " &> " || wiconlog 
+         }
+      else if pathfind("mate-terminal", getenv("PATH")) then {
+         console := "mate-terminal -e "
+         cmd2 := console || \cmd || " &> " || wiconlog 
+         }
+      else if pathfind("gnome-terminal", getenv("PATH")) then {
+         console := "gnome-terminal -e "
+         cmd2 := console || \cmd || " &> " || wiconlog 
+         }
+      else if pathfind("lxterminal", getenv("PATH")) then {
+         console := "lxterminal -e "
+         cmd2 := console || \cmd || " &> " || wiconlog 
+         }
+      else if pathfind("xfce4-terminal", getenv("PATH")) then {
+         console := "xfce4-terminal --hold -e "
+         cmd2 := console || \cmd || " &> " || wiconlog 
+         }      
+      else #just run without "console || ..."
+            cmd2 := \cmd || " &> " || wiconlog
+      }
+      else {
+      if icodename[1] ~== PATHSEP then icodename := icodename
+      cmd := quotes(icodename||".exe")
+      if fdir[-1] ~== "\\" then
+         fdir := fdir || "\\"
+      if find(".icn", CurrentTabItem().label) then
+         cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
+      }
       
       # in order to switch to pty, we're going to have to open() something here
       # instead of calling system()
+
       if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
-	 # hope WICONLOG does trick?
-	 showanyerror(wiconlog, L, 1)
-	 }
+      # hope WICONLOG does trick?
+      showanyerror(wiconlog, L, 1)
+      }
       else {
-	 s := "system(" || icodename || " " || xargs ||
-	      ") failed.  Is the PATH setup to run this?"
-	 showanyerror(s, [], 0)
-	 }
+      s := "system(" || icodename || " " || xargs ||
+         ") failed.  Is the PATH setup to run this?"
+      showanyerror(s, [], 0)
+      }
    end
+   
    method CurrentDevBox()
       local ti
       ti := CurrentDevItem() | stop ("No Current DevTabItem")
@@ -659,6 +672,7 @@ $endif
             return
             }
          }
+      if find("scratch",tab_label) then fail
       if find(".icn",tab_label) then {
 $ifdef _UNIX
       args1 := "udb"

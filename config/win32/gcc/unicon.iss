@@ -42,8 +42,8 @@ Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; Flags: ignoreversion
 Source: "\unicon\doc\icon\faq_files\*.*"; DestDir: "{app}\doc\icon\fag_files"; Flags: ignoreversion
 
-Source: "\unicon\doc\utr\*.*"; DestDir: "{app}\doc\unicon\utr"; Flags: ignoreversion
-Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; Flags: ignoreversion
+Source: "\unicon\doc\utr\*.*"; DestDir: "{app}\doc\utr"; Flags: ignoreversion
+Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\utr\utr7"; Flags: ignoreversion
 
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; Flags: ignoreversion
 Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; Flags: ignoreversion
@@ -87,8 +87,9 @@ Source: "\unicon\uni\gui\*.icn"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "\unicon\uni\gui\*.u"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "\unicon\uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "\unicon\uni\gui\makefile"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
-Source: "\unicon\uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
-Source: "\unicon\uni\gui\guidemos\makefile"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
+
+Source: "\unicon\uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\guidemos"; Flags: ignoreversion
+Source: "\unicon\uni\gui\guidemos\makefile"; DestDir: "{app}\uni\gui\guidemos"; Flags: ignoreversion
 
 ; IVIB
 Source: "\unicon\uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion

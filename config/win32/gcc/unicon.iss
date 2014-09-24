@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.2.0_threads(32-bit)_rev3834
+OutputBaseFilename=setup-unicon_12.2.0_threads(32-bit)_rev3953
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -40,10 +40,17 @@ Source: "\unicon\dat\fonts\*"; DestDir: "{app}\dat\fonts"; Flags: ignoreversion
 ; Documentation
 Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; Flags: ignoreversion
+Source: "\unicon\doc\icon\faq_files\*.*"; DestDir: "{app}\doc\icon\fag_files"; Flags: ignoreversion
+
+Source: "\unicon\doc\utr\*.*"; DestDir: "{app}\doc\unicon\utr"; Flags: ignoreversion
+Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; Flags: ignoreversion
+
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; Flags: ignoreversion
 Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; Flags: ignoreversion
-Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\unicon\utr7"; Flags: ignoreversion
 Source: "\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; Flags: ignoreversion
+
+Source: "\unicon\doc\udb\*.html"; DestDir: "{app}\doc\udb"; Flags: ignoreversion
+Source: "\unicon\doc\udb\*.pdf"; DestDir: "{app}\doc\udb"; Flags: ignoreversion
 
 ;IPL
 Source: "\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; Flags: ignoreversion

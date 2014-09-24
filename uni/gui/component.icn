@@ -623,7 +623,7 @@ class Component : Object : SetFields : Connectable(
       local i, p
       if /self.parent then
          fatal("incorrect ancestry (parent null)")
-      if /cwin | /dont_force_new_win then {
+      if /self.cwin | /dont_force_new_win then {
 	parent_dialog := parent.get_parent_dialog_reference()
       	if cwin := (Clone ! ([parent.get_cwin_reference()] ||| attribs)) then {
 	   cbwin := (Clone ! ([parent.get_cbwin_reference()] ||| attribs))
@@ -688,10 +688,10 @@ class Component : Object : SetFields : Connectable(
    #
    method finally()
       stop_ticker()
-      Uncouple(self.cwin)
-      Uncouple(self.cbwin)
-      BevelDispose(self.cwin)
-      BevelDispose(self.cbwin)
+      Uncouple(\self.cwin)
+      Uncouple(\self.cbwin)
+      BevelDispose(\self.cwin)
+      BevelDispose(\self.cbwin)
       self.cwin := self.cbwin := &null
       every (!self.children).finally()
    end
@@ -878,10 +878,10 @@ class Component : Object : SetFields : Connectable(
 
       c.parent := self
 
-      if self.is_dialog_open() & \(self.auto_refresh) then{
+      if self.is_dialog_open() & \self.auto_refresh then{
          c.init(1)
          self.resize()
-	 }
+      	 }
       return
    end
 

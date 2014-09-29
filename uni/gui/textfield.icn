@@ -437,6 +437,7 @@ class TextField : Component(
       else if e === (&lrelease | &rrelease | &mrelease) then
          return handle_release(e)
       else if \self.has_focus then {
+
          #
          # Object has focus.  Handle various key presses.
          #
@@ -492,6 +493,7 @@ class TextField : Component(
 
    method lost_focus(e)
       clear_mark()
+      if \self.transparent then resize()
       self.Component.lost_focus(e)
    end
 
@@ -532,14 +534,20 @@ class TextField : Component(
    end
 
    method display(buffer_flag)
-      local cp, fh, mp, np, off1, off2, cw
-
+      local cp, fh, mp, np, off1, off2, cw, dwin, nocursor, mp2
+      
       fh := WAttrib(self.cwin, "fheight")
 
-      #
-      # Clear rectangle, set s to string to display
-      #
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if /self.transparent then{
+         dwin := self.cbwin
+         #
+         #  Clear rectangle, set s to string to display
+         #
+         EraseRectangle(dwin, self.x, self.y, self.w, self.h)
+	}
+      else{ 
+         dwin := self.cwin 
+         }
 
       #
       # Cursor position within s
@@ -547,28 +555,7 @@ class TextField : Component(
       cp := self.cursor - self.leftmost + 1
 
       if \self.draw_border_flag then
-         DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-
-      #
-      # Display view_str centred vertically in box
-      #
-      left_string(self.cbwin, self.tx, self.y + self.h / 2 , view_str)
-
-      #
-      # If has focus display box cursor, else display outline cursor
-      #
-      if \self.has_focus then {
-         cw := Clone(self.cbwin, "bg=red", "fg=white")
-         EraseRectangle(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]), 
-                        1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, view_str[cp]), fh)
-         left_string(cw, self.tx + TextWidth(cw, view_str[1:cp]), self.y + self.h / 2 , view_str[cp])
-         Uncouple(cw)
-      } else {
-         cw := Clone(self.cbwin, "fg=red")
-         Rectangle(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]), 
-                   1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, view_str[cp]), fh)
-         Uncouple(cw)
-      }
+         DrawSunkenRectangle(dwin, self.x, self.y, self.w, self.h)
 
       if has_region() then {
          mp := self.mark - self.leftmost + 1 
@@ -582,21 +569,52 @@ class TextField : Component(
 	    np >:= (*view_str + 1)
          }
 
-	 if (off1 := TextWidth(self.cwin, view_str[1:mp])) &
+        if mark > cursor then
+           mp2 := 1<=mp-1 | 1
+        else
+           mp2 := mp
+
+	 if (off1 := TextWidth(self.cwin, view_str[1:mp2 ])) &
 	     (off2 := TextWidth(self.cwin, view_str[1:np])) then {
 
-	    cw := Clone(self.cbwin, "drawop=reverse")
+	    left_string(dwin, self.tx, self.y + self.h / 2 , view_str[1:mp])
+
+
+	    cw := Clone(dwin, "fg=blue")
 	    FillRectangle(cw, self.tx + off1, 
                        1 + self.y + (self.h - fh) / 2, 
                        off2 - off1, fh)
+
+	    WAttrib(cw, "fg=white")
+	    left_string(cw, self.tx+off1, self.y + self.h / 2 , view_str[mp2:np]) 
 	    Uncouple(cw)
-	    }
-      }
 
-      self.do_shading(self.cbwin)
+	    left_string(dwin, self.tx+off2, self.y + self.h / 2 , view_str[np:0])
+	    nocursor := 1
+           }
+         }
+      else{
+	 #
+	 # Display view_str centred vertically in box
+         #
+         left_string(dwin, self.tx, self.y + self.h / 2 , view_str)
 
-      if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+         #
+         # If has focus display box cursor, else display outline cursor
+         #
+
+         if \self.has_focus then {
+            cw := Clone(dwin, "fg=black")
+            CursorLine(cw, self.tx + TextWidth(self.cwin, view_str[1:cp]), 
+                   1 + self.y + (self.h - fh) / 2, TextWidth(self.cwin, view_str[cp]), fh)
+            Uncouple(cw)
+            }
+         }
+
+      self.do_shading(dwin)
+
+      if /buffer_flag & /self.transparent then
+            CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
    end
 
    method set_one(attr, val)

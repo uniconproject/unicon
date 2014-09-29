@@ -16,11 +16,18 @@ $include "guih.icn"
 #
 class Panel : Component()
    method display(buffer_flag)
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
-      every (!self.children).display(1)
-      self.do_shading(self.cbwin)
-      if /buffer_flag then
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+      if /self.transparent then{
+         EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+         every (!self.children).display(1)
+         self.do_shading(self.cbwin)
+         if /buffer_flag then
+            CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
+	}
+      else{
+         every (!self.children).display()
+         self.do_shading(self.cwin)
+	 }
+
    end
 
    initially(a[])

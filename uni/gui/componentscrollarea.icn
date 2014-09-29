@@ -55,6 +55,11 @@ class ComponentScrollAreaView : Component(inner,
 
    method display(buffer_flag)
       local W
+      if \self.transparent then{
+        inner.display(1)
+        return
+	}
+
       W := if /buffer_flag then self.cwin else self.cbwin
       EraseArea(temp_win, x, y, w, h)
       inner.display(1)
@@ -62,7 +67,8 @@ class ComponentScrollAreaView : Component(inner,
    end
 
    method child_validated(c)
-      CopyArea(temp_win, self.cwin, x, y, w, h, x, y)
+      if /self.transparent then
+         CopyArea(temp_win, self.cwin, x, y, w, h, x, y)
       self.Component.child_validated(c)
    end
 

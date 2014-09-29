@@ -12,14 +12,30 @@ link graphics
 $include "guih.icn"
 
 class DrawScrollAreaView : Component()
+
    method display(buffer_flag)
-      EraseRectangle(cbwin, x, y, w, h)
-      # As we delegate drawing to the parent, we clip on the parent cbwin.
-      Clip(parent.cbwin, x, y, w, h)
-      parent.draw(parent.get_areax(), parent.get_areay(), x, y, w, h)
-      Clip(parent.cbwin)
-      self.do_shading(cbwin)
-      if /buffer_flag then
+      local dwin
+      if /self.transparent then{
+         dwin := self.cbwin
+         EraseRectangle(dwin, x, y, w, h)
+	}
+      else{ 
+         dwin := self.cwin
+         }
+
+      if /parent.transparent then{
+         Clip(parent.cbwin, x, y, w, h)
+         parent.draw(parent.get_areax(), parent.get_areay(), x, y, w, h)
+         Clip(parent.cbwin)
+       }
+      else{
+         Clip(parent.cwin, x, y, w, h)
+         parent.draw(parent.get_areax(), parent.get_areay(), x, y, w, h)
+         Clip(parent.cwin)
+	}
+
+      self.do_shading(dwin)
+      if /buffer_flag & /self.transparent then
          CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
 end

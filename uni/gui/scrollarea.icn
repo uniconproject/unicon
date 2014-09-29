@@ -288,7 +288,9 @@ class ScrollArea : Component(
    end
 
    method display(buffer_flag)
-      EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+      if /self.transparent then
+         EraseRectangle(self.cbwin, self.x, self.y, self.w, self.h)
+
       if \self.draw_border_flag then
          DrawSunkenRectangle(self.cbwin, self.x, self.y, self.w, self.h)
 
@@ -296,8 +298,9 @@ class ScrollArea : Component(
       (\self.vsb).display(1)
       (\self.hsb).display(1)
 
-      self.do_shading(self.cbwin)
-      if /buffer_flag then
+       self.do_shading(self.cbwin)
+
+      if /buffer_flag & /self.transparent then
          CopyArea(cbwin, cwin, x, y, w, h, x, y)
    end
 

@@ -107,6 +107,24 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    #
+   # Set the component to be transparent
+   #
+   method set_transparent()
+      self.transparent := 1
+      view.set_transparent()
+      
+   end
+
+   #
+   # Set the component to be non-transparent
+   #
+   method clear_transparent()
+      self.transparent := &null
+      view.clear_transparent()
+   end
+
+
+   #
    # Set the contents of the component.
    #
    # @param x the contents, as a list of strings
@@ -855,7 +873,7 @@ class EditableTextList : LineBasedScrollArea(
    end
 
    method draw(subject_x, subject_y, vx, vy, vw, vh)
-      local rev, first_line, last_line, xp, yp, i
+      local rev, first_line, last_line, xp, yp, i, dwin
 
       #
       # Which lines to draw
@@ -874,46 +892,39 @@ class EditableTextList : LineBasedScrollArea(
       #
       xp := vx - subject_x
 
-      rev := Clone(self.cbwin, "drawop=reverse")
+
+      if /self.transparent then
+         dwin:=self.cbwin
+      else
+         dwin:=self.cwin 
 
       #
       # Write the lines
       #
       every i := first_line to last_line do {
-	 draw_line(xp, yp, i, rev)
+	 draw_line(xp, yp, i, dwin)
 	 yp +:= self.line_height
       }
-
-      Uncouple(rev)
-      rev := &null
       return
    end
 
-   method draw_line(xp, yp, i, rev)
-      local si, s, off, off1, off2, v, r, cw
+   method draw_line(xp, yp, i, dwin)
+      local si, s, off, off1, off2, v, r, cw, ds, r1, do_r1, fc
 
       v := self.view_list[i]
       s := v.str
+      ds := detab(s, self.tab_width + 1)
       si := self.cursor_x - v.first + 1
 
-      left_string(self.cbwin, xp, yp, detab(s, self.tab_width + 1))
       if (v.index = \self.cursor_y) & (v.first <= \self.cursor_x <= v.last) then {
 	 if \self.has_focus then {
-	    cw := Clone(self.cbwin, "bg=red", "fg=white")
-	    off := TextWidthEx(self.cbwin, s, 1, si, self.tab_width)
-	    EraseRectangle(cw, xp + off, 1 + yp - self.line_height / 2,
-	                   CharWidth(self.cbwin, s[si]), self.line_height)
-	    if s[si] ~== "\t" then
-	       left_string(cw, xp + off, yp, s[si])
-	    Uncouple(cw)
-	 } else {
-	    cw := Clone(self.cbwin, "fg=red")
-	    Rectangle(cw,
-	              xp + TextWidthEx(self.cbwin, s, 1, si, self.tab_width),
+#	    if s[si] ~== "\t" then
+#	       left_string(cw, xp + off, yp, s[si])
+	    CursorLine(dwin,
+	              xp + TextWidthEx(dwin, s, 1, si, self.tab_width),
 	              1 + yp - self.line_height / 2,
-	              CharWidth(self.cbwin, s[si]),
+	              CharWidth(dwin, s[si]),
 	              self.line_height)
-	    Uncouple(cw)
 	 }
       }
 
@@ -928,6 +939,7 @@ class EditableTextList : LineBasedScrollArea(
 	    }
 	    else if self.mark_x > self.cursor_x then {
 	       r := range(v.first, v.last, self.cursor_x + 1 , self.mark_x)
+	       do_r1 := 1
 	    }
 	 } else if v.index = self.mark_y then {
 	    if self.mark_y < self.cursor_y then {
@@ -940,19 +952,40 @@ class EditableTextList : LineBasedScrollArea(
 	    if self.mark_y > self.cursor_y then {
 	       r := range(v.first, v.last, self.cursor_x + 1,
 			  *self.contents[v.index] + 1)
+	       do_r1 := 1
 	    } else {
 	       r := range(v.first, v.last, 1, self.cursor_x)
 	    }
 	 }
+
 	 if \r then {
-	    off1 := TextWidthEx(self.cbwin, s, 1, r[1] - v.first + 1,
+	    if /do_r1 then r1:=r[1]
+	    else r1 := 1<=r[1]-1 | 1
+
+	    off1 := TextWidthEx(dwin, s, 1, r1 - v.first + 1,
 				self.tab_width)
-	    off2 := TextWidthEx(self.cbwin, s, 1, r[2] - v.first + 1,
+	    off2 := TextWidthEx(dwin, s, 1, r[2] - v.first + 1,
 				self.tab_width)
-	    FillRectangle(rev, xp + off1, 1 + yp - self.line_height / 2,
+
+	    fc := Fg(dwin)
+	    Fg(dwin, "blue")
+
+	    FillRectangle(dwin, xp + off1, 1 + yp - self.line_height / 2,
 			  off2 - off1, self.line_height)
-	 }
-      }
+
+	    Fg(dwin, "white")
+      	    left_string(dwin, xp+off1, yp, ds[r1:r[2]])
+
+	    Fg(dwin, fc)
+    	    left_string(dwin, xp, yp, ds[1:r1])
+    	    left_string(dwin, xp+off2, yp, ds[r[2]:0])
+	   }
+          else
+    	    left_string(dwin, xp, yp, ds)
+	}
+       else
+    	  left_string(dwin, xp, yp, ds)
+
    end
 
    #

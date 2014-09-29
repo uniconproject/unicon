@@ -52,9 +52,14 @@ class Border : Panel(
 
    method display(buffer_flag)
       local W
+      if /self.transparent then buffer_flag := &null
+
+
       W := if /buffer_flag then self.cwin else self.cbwin
 
-      EraseRectangle(W, self.x, self.y, self.w, self.h)
+      if /self.transparent then
+         EraseRectangle(W, self.x, self.y, self.w, self.h)
+
       DrawSunkenRectangle(W, self.x, y1, self.w, h1)
       DrawRaisedRectangle(W, self.x + BORDER_WIDTH, y1 + BORDER_WIDTH, self.w - 2 * BORDER_WIDTH, h1 - 2 * BORDER_WIDTH)
 

@@ -1,14 +1,11 @@
 /*
- *  fmonitr.r -- event, EvGet
+ *  fmonitr.r -- EvSend, EvGet
  *
  *   This file contains execution monitoring code, used only if EventMon
  *   (event monitoring) or some of its constituent events is defined.
  *   There used to be a separate virtual machine with all events defined,
- *   but the current setup allows specific events to be defined, and the
- *   source is moving towards a setup in which monitoring is unified into
- *   the main virtual machine.
- *
- *   The built-in functions are defined for all MultiThread interpreters.
+ *   but the current setup allows specific events to be defined, and
+ *   monitoring is unified into the main virtual machine.
  *
  *   When EventMon is undefined, most of the "MMxxxx" and "EVxxxx"
  *   entry points are defined as null macros in monitor.h.  See

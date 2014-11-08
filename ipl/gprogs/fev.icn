@@ -40,13 +40,25 @@ link xcompat
 procedure main(av)
    local slope, fin, win, L, ht, focus, focuswidth, e, base
    slope := 2
-   if av[1] == "-s" then slope := (pop(av), pop(av))
+   ht := 23
+   while av[1][1] == "-" do {
+      case av[1] of {
+	 "-s": slope := (pop(av), pop(av))
+	 "-h": ht := (pop(av), pop(av))
+	 default:  write("unrecognized option ", pop(av))
+	 }
+      }
    fin := open(av[1]) | stop("no file")
    win := WOpen("label=" || av[1], "height=860") | stop("no window")
+   if win2 := WOpen("label=" || av[1], "resize=on",
+		    "height="||(WAttrib(win, "displayheight")-100)) then {
+      close(win)
+      win := win2
+      }
+
    L := []
    every put(L,!fin)
    write(*L," lines")
-   ht := 23
    focus := *L/2
    focuswidth := 1
    fisheye(win,L,focus,ht,slope,,,focuswidth)
@@ -80,21 +92,26 @@ procedure fisheye(w,L,focus,maxht,slope,family,weight,focuswidth)
       fonttable := table()
       }
    /focuswidth := 1
-   /family := "helvetica"
+   /family := "sans"
    /weight := "bold"
 
    /fonttable[w] := []
 
    past_end := *fonttable[w] + 1
+
    every i := past_end to maxht do {
+      fontname := family||","||weight||","||i
       put(fonttable[w], 
-	  XBind(w,"font=-adobe-"||family||"-"||weight||
-		"-r-normal--"||i||"-*-*-*-*-*-*-*") | stop("no XBind"))
+	  Clone(w,"font="||fontname) | &null)
+      if /fonttable[w][-1] then
+	 write(&errout,"no Clone for font ", fontname)
       }
+
    EraseArea(w)
    splt := WAttrib(w,"height") / 2
-   viewtop(fonttable[w],L,focus,splt,maxht,slope,focuswidth)
+   # bottom is drawn before top so that top's descenders are not overwritten
    viewbottom(fonttable[w],L,focus+1,splt+maxht,maxht-slope,slope,focuswidth)
+   viewtop(fonttable[w],L,focus,splt,maxht,slope,focuswidth)
    FillRectangle(w,0,(focus * WAttrib(w,"height") / *L)-WAttrib(w,"ascent"),
 		  16,WAttrib(w,"fheight"))
    DrawLine(w,17,0,17,WAttrib(w,"height") * focuswidth)
@@ -103,12 +120,12 @@ end
 
 procedure viewtop(w,L,focus,base,ht,slope,focuswidth)
    local wh
-   wh := WAttrib(w[1],"height") | stop("no WAttrib")
+   wh := WAttrib(w[-1],"height") | stop("no WAttrib")
    while focus >= 1 & base >= 1 do {
       if ht < 1 then ht := 1
-      GotoXY(w[1],20,base)
+      GotoXY(\ (w[ht]),20,base)
 
-      writes(w[ht],L[focus])
+      writes(\ (w[ht]),L[focus])
       base -:= ht
       if focus > 1 & base / focus < ht & focuswidth <= 1 then
 	 ht -:= slope
@@ -121,12 +138,12 @@ end
 
 procedure viewbottom(w,L,focus,base,ht,slope,focuswidth)
    local wh
-   wh := WAttrib(w[1],"height") | stop("no WAttrib")
+   wh := WAttrib(w[-1],"height") | stop("no WAttrib")
    while focus <= *L & base <= wh do {
       if ht < 1 then ht := 1
-      GotoXY(w[1],20,base)
+      GotoXY(\ (w[ht]),20,base)
 
-      writes(w[ht],L[focus])
+      writes(\ (w[ht]),L[focus])
       base +:= ht
       if focus < *L & (wh - base) / (*L - focus) < ht & focuswidth <= 1 then
 	 ht -:= slope

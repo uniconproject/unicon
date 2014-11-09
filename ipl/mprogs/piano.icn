@@ -25,7 +25,7 @@ procedure doevents(e)
 	    &lpress | &ldrag: {
 	       insert(stoplines,&y)
 	       DrawLine(wr,0,&y,5,&y)
-WSync()
+	       WSync()
 	       }
 	    &resize: {
 	       width := &x
@@ -38,7 +38,6 @@ WSync()
 	 }
       if Pending()[1] then e := Event() else break
       }
-write("do events: done")
 end
 
 procedure main(av)
@@ -47,11 +46,12 @@ procedure main(av)
        value, scale, oldY, theY, step, e, sl
    line_change_increment := 1
    stoplines := set()
-   t := options(av,"P:w!c!")
+   t := options(av,"P:w!c!t!")
    position := t["P"]
    /position := "0,120"
    wrap := t["w"]
    connected := t["c"]
+   if \ (tick_accrue := t["t"]) then alreadyDrawn := set()
 
    if *av=0 then EvInit()
    else EvInit(av)			 # direct MT monitor
@@ -87,8 +87,7 @@ procedure main(av)
 		  scale := real(height) / maxline
 		  WAttrib("windowlabel=Pianoroll, scale "||left(scale,4))
 		  }
-	    if value ~= lastline | x-base~=lastx then {
-#	    if value ~= lastline then {
+	    if (value ~= lastline) | (x-base ~= lastx) then {
 	       oldY := lastline
 	       oldY *:= \scale
 	       lastline := value
@@ -96,12 +95,21 @@ procedure main(av)
 	       theY := lastline
 	       theY *:= \scale
 	       theY := integer(theY)
-	       if /connected then
-		  DrawPoint(x-base, theY)
-	       else
+	       if /connected then {
+		  if member(\alreadyDrawn, theY) then {
+		     }
+		  else {
+		     DrawPoint(x-base, theY)
+		     insert(\alreadyDrawn, theY)
+		     }
+		  }
+	       else {
 		  DrawLine(x-base, theY, x-base, oldY)
+		  }
 	       
-	       x +:= line_change_increment # comment out to get GMT-style
+	       if /tick_accrue then { # enable tick_accrue to get GMT-style
+		  x +:= line_change_increment
+		  }
 
 	       if \step | member(stoplines, theY) then {
 		  DrawLine(if member(stoplines,\step) then wr else ww,
@@ -110,7 +118,8 @@ procedure main(av)
 			    6,\step,width,\step)
 		  DrawLine(if \step then wg else wb,0,theY,width,theY)
 		  \step := &null
-		  WAttrib("windowlabel=Piano("||lastline||") s)tep, c)ont _ clear ")
+		  WAttrib("windowlabel=Piano(" || lastline ||
+					    ") s)tep, c)ont _ clear ")
 		  while e := Event() do {
 		     case e of {
 			"q"|"\e": {
@@ -144,9 +153,9 @@ procedure main(av)
 
 	 E_Tick : {
 	    x +:= &eventvalue
+	    if \tick_accrue then alreadyDrawn := set()
 	    }
 	 E_MXevent: {
-write("MXevent")
 	    doevents(&eventvalue)
 	    }
 	 E_Disable: {

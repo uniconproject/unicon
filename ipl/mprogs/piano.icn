@@ -23,7 +23,6 @@ procedure doevents(e)
       else {
 	 case e of {
 	    &lpress | &ldrag: {
-write("inserting at ", &y)
 	       insert(stoplines,&y)
 	       DrawLine(wr,0,&y,5,&y)
 WSync()
@@ -61,8 +60,8 @@ procedure main(av)
    mymask := LinenoMask
 
    lastline := 0
-   Visualization := open("Pianoroll","x","fg=black","bg=white",
-	     "geometry=256x250","pos="||position) |
+   Visualization := open("Pianoroll","g","resize=on",
+			 "geometry=1024x1000","pos="||position) |
       stop("can't open window")
    &window := Visualization
    ww   := Clone(&window,"fg=white")
@@ -177,4 +176,5 @@ write("MXevent")
 	 }
       if \wrap then EraseArea(x-base, 0, 1)
    }
+   EvTerm()
 end

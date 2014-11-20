@@ -740,6 +740,18 @@ int checkOpenConsole( FILE *w, char *s );
       int translate(wbp w, dptr argv, int i, dptr f);
       int traversefunctionlist(wbp w);
       int create3Dlisthdr(dptr dp, char *strname, word size);
+
+      int identitymatrix();
+      int setautogen(wbp w, int i);
+      int create3dcontext(wbp w);
+      void initializeviewport(int w, int h);
+      int destroycontext(wbp w);
+      int copytextures(wcp wc1, wcp wc2);
+      void swapbuffers(wbp w, int flush);
+      void erasetocolor(int r,int g,int b);
+      /* void bindtexture(wbp w, texture t); */
+      void applyAutomaticTextureCoords(int enable);
+      void applymatrix(wbp w, double a[]);
    #endif					/* Graphics3D */
 
    #ifdef MSWindows

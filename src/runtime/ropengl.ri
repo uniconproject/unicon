@@ -498,7 +498,8 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
 
 
 /* helper function to draw a torus */
-void torus(double radius1, double radius2, double x,double y, double z, int slices, int rings, int gen)
+void torus(double radius1, double radius2, double x,double y, double z,
+	   int slices, int rings, int gen)
 {
    int i, j;
    GLfloat theta, phi, theta1;
@@ -2248,6 +2249,25 @@ void apply_texmodechange(wbp w)
    else glDisable(GL_TEXTURE_2D);
 }
 
+/*
+ * Enable/use automatic texture coordinates for standard 3D primitives
+ */
+void applyAutomaticTextureCoords(int enable)
+{
+   if (enable) {
+      if (!glIsEnabled(GL_TEXTURE_GEN_S))
+	 glEnable(GL_TEXTURE_GEN_S);
+      if (!glIsEnabled(GL_TEXTURE_GEN_T))
+	 glEnable(GL_TEXTURE_GEN_T);
+      }
+   else {
+      if (glIsEnabled(GL_TEXTURE_GEN_S))
+	 glDisable(GL_TEXTURE_GEN_S);
+      if (glIsEnabled(GL_TEXTURE_GEN_T))
+	 glDisable(GL_TEXTURE_GEN_T);
+      }
+}
+
 
 /* set texture coordinates */
 int settexcoords(wbp w, char* s)
@@ -3047,8 +3067,7 @@ int texture_24img(wbp w, struct imgdata im)
       }
 }
 
-int
-drawstrng3d(wbp w, double x, double y, double z, char *s)
+int drawstrng3d(wbp w, double x, double y, double z, char *s)
 {
    int xx=0;
    char *p, *q;
@@ -3958,4 +3977,20 @@ int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int heigh
 
    TEXUPDATE(w2, wc, texhandle, tex, wd, ht);   
    return Succeeded;
+}
+
+
+int identitymatrix()
+{
+   glLoadIdentity();
+   return Succeeded;
+}
+
+/*
+ * Swap buffers after output to make it visible on-screen.
+ */
+void swapbuffers(wbp w, int flush)
+{
+   if (flush) glFlush();
+   glXSwapBuffers(w->window->display->display, w->window->win);
 }

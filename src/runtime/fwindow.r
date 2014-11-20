@@ -940,11 +940,8 @@ function{1} DrawLine(argv[argc])
 
 	 /* draw the lines */
 	 if (w->context->buffermode) {
-#if HAVE_LIBGL
-	    drawpoly(w, ap->a, num, GL_LINE_STRIP, w->context->dim);
-	    glFlush();
-	    glXSwapBuffers(w->window->display->display, w->window->win);
-#endif					/* HAVE_LIBGL */
+	    drawpoly(w, ap->a, num, U3D_LINE_STRIP, w->context->dim);
+	    swapbuffers(w, 1);
 	    }
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
@@ -1040,11 +1037,8 @@ function{1} DrawPoint(argv[argc])
          c_put(&(w->window->funclist), &f);
 
 	 if (w->context->buffermode) {
-#if HAVE_LIBGL
-	    drawpoly(w, ap->a, num, GL_POINTS, w->context->dim);
-	    glFlush();
-	    glXSwapBuffers(w->window->display->display, w->window->win);
-#endif					/* HAVE_LIBGL */
+	    drawpoly(w, ap->a, num, U3D_POINTS, w->context->dim);
+	    swapbuffers(w, 1);
 	    }
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
@@ -1119,11 +1113,8 @@ function{1} DrawPolygon(argv[argc])
  
          /* draw the polygon */
 	 if (w->context->buffermode) {
-#if HAVE_LIBGL
-	    drawpoly(w, ap->a, num, GL_LINE_LOOP /* w->context->meshmode*/, w->context->dim);
-	    glFlush();
-	    glXSwapBuffers(w->window->display->display, w->window->win);
-#endif					/* HAVE_LIBGL */
+	    drawpoly(w, ap->a, num, U3D_LINE_LOOP /* w->context->meshmode*/, w->context->dim);
+	    swapbuffers(w, 1);
 	    }
          redraw3D(w); /* workaround an apparent render/update bug */
          return f;
@@ -1286,11 +1277,8 @@ function{1} DrawSegment(argv[argc])
          c_put(&(w->window->funclist), &f);
 
 	 if (w->context->buffermode) {
-#if HAVE_LIBGL
-	    drawpoly(w, ap->a, argc-warg, GL_LINES, w->context->dim);
-	    glFlush();
-	    glXSwapBuffers(w->window->display->display, w->window->win);
-#endif					/* HAVE_LIBGL */
+	    drawpoly(w, ap->a, argc-warg, U3D_LINES, w->context->dim);
+	    swapbuffers(w, 1);
 	    }
 	 redraw3D(w);
 	 return f;
@@ -1365,10 +1353,8 @@ function{1} DrawString(argv[argc])
 	 if (!(cnv:C_string(argv[warg+3], s)))
 	    runerr(103, argv[warg+3]);
 	 drawstrng3d(w, (double) x, (double) y, (double) z, s);
-#if HAVE_LIBGL
-	 glFlush();
-	 glXSwapBuffers(w->window->display->display, w->window->win);
-#endif					/* HAVE_LIBGL */
+	 swapbuffers(w, 1);
+
 	 /* create a record of the graphical object */
 
 	 Protect(rp = alcrecd(nf, BlkLoc(*constr)), runerr(0));
@@ -1454,8 +1440,8 @@ function{1} EraseArea(argv[argc])
 	 /* need to free selectionnamelist entries here */
          w->context->selectionnamecount=0;
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
-         glXSwapBuffers(w->window->display->display, w->window->win);
 #endif					/* HAVE_LIBGL */
+	 swapbuffers(w, 0);
          ReturnWindow;
 	 }
 #endif					/* Graphics3D */
@@ -1747,11 +1733,8 @@ function{1} FillPolygon(argv[argc])
 
          /*CheckArgMultiple(w->context->dim);*/
 	 if (w->context->buffermode) {
-#if HAVE_LIBGL
-	    drawpoly(w, ap->a, num, GL_POLYGON, w->context->dim);
-	    glFlush();
-	    glXSwapBuffers(w->window->display->display, w->window->win);
-#endif					/* HAVE_LIBGL */
+	    drawpoly(w, ap->a, num, U3D_POLYGON, w->context->dim);
+	    swapbuffers(w, 1);
 	    }
 	 return f;
 	 }
@@ -3699,7 +3682,7 @@ function{1} DrawTorus(argv[argc])
    
 	/* Since we are using double buffers, swap */
       if (bfmode)
-	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 swapbuffers(w, 0);
       return f;
    }
 end
@@ -3765,7 +3748,7 @@ function{1} DrawCube(argv[argc])
          }
 
       if (bfmode)
-	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 swapbuffers(w, 0);
       return f;
       }
 end
@@ -3833,7 +3816,7 @@ function{1} DrawSphere(argv[argc])
 	 }
 
       if (bfmode)
-	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 swapbuffers(w, 0);
       return f;
       }
 end
@@ -3900,7 +3883,7 @@ function{1} DrawCylinder(argv[argc])
          c_put(&(w->window->funclist), &f);
          }
       if (bfmode)
-	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 swapbuffers(w, 0);
       return f;
    }
 end
@@ -3982,7 +3965,7 @@ function{1} DrawDisk(argv[argc])
          c_put(&(w->window->funclist), &f);
         }
       if (bfmode)
-	 glXSwapBuffers(w->window->display->display, w->window->win);
+	 swapbuffers(w, 0);
       return f;
       }
 end
@@ -4367,9 +4350,7 @@ function{1} IdentityMatrix(argv[argc])
       c_put(&(w->window->funclist), &f);
 
       /* load identity matrix */
-#if HAVE_LIBGL
-      glLoadIdentity();
-#endif					/* HAVE_LIBGL */
+      identitymatrix();
       return f;
    }
 end
@@ -4622,49 +4603,40 @@ function{1} Texcoord(argv[argc])
 
       /* check if the argument is a list */
       if (is:list(argv[warg]))
-	num= BlkD(argv[warg], List)->size;
-      else{
-	num = argc-warg;
-	start=warg;
+	 num = BlkD(argv[warg], List)->size;
+      else {
+	 num = argc-warg;
+	 start=warg;
 
-	if (num == 1) { /* probably "auto" */
-	  if (!cnv:C_string(argv[warg], tmp))
-	    runerr(103, argv[warg]);
-	  if (!strcmp(tmp, "auto")){
-	    wc->autogen = 1;
-	    wc->numtexcoords = 0;
-#if HAVE_LIBGL
-	    if (!glIsEnabled(GL_TEXTURE_GEN_S))
-	      glEnable(GL_TEXTURE_GEN_S);
-	    if (!glIsEnabled(GL_TEXTURE_GEN_T))
-	      glEnable(GL_TEXTURE_GEN_T);
-#endif					/* HAVE_LIBGL */
-	    mode = onedesc;
-	    c_put(&f, &mode);
-	    c_put(&(w->window->funclist), &f);
-	    return f;
-	  }
-	  else fail;
-	  }
-	}
-#if HAVE_LIBGL
-         if (glIsEnabled(GL_TEXTURE_GEN_S))
-            glDisable(GL_TEXTURE_GEN_S);
-         if (glIsEnabled(GL_TEXTURE_GEN_T))
-            glDisable(GL_TEXTURE_GEN_T);
-#endif					/* HAVE_LIBGL */
-         mode = zerodesc;
-         c_put(&f, &mode);
-         wc->autogen = 0;
-         wc->numtexcoords = 0;
-	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
-	    runerr(305, argv[warg]);
+	 if (num == 1) { /* probably "auto" */
+	    if (!cnv:C_string(argv[warg], tmp))
+	       runerr(103, argv[warg]);
+	    if (!strcmp(tmp, "auto")) {
+	       wc->autogen = 1;
+	       wc->numtexcoords = 0;
+	       applyAutomaticTextureCoords(1);
+	       mode = onedesc;
+	       c_put(&f, &mode);
+	       c_put(&(w->window->funclist), &f);
+	       return f;
+	       }
+	    else fail;
+	    }
+	 }
+
+      applyAutomaticTextureCoords(0);
+      mode = zerodesc;
+      c_put(&f, &mode);
+      wc->autogen = 0;
+      wc->numtexcoords = 0;
+      if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 runerr(305, argv[warg]);
 #ifdef  Arrays
-	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
-	 wc->texcoords = ap;
+      ap = (struct b_realarray *) BlkD(d, List)->listhead;
+      wc->texcoords = ap;
 #endif					/* Arrays */
-	 wc->numtexcoords = num;
-	 c_put(&f, &d);
+      wc->numtexcoords = num;
+      c_put(&f, &d);
 
       /* there must be an even number of arguments */
       if (num % 2  != 0) {

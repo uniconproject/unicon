@@ -1405,6 +1405,7 @@ function{1} EraseArea(argv[argc])
       }
    body {
       wbp w;
+      wcp wc=NULL;
       int warg = 0, i, r, n;
       C_integer x, y, width, height;
       int is_texture=0, base=0;
@@ -1413,10 +1414,11 @@ function{1} EraseArea(argv[argc])
       OptTexWindow(w);
 
 #ifdef Graphics3D
+      wc = w->context;
       if (is_texture) {
 	 base=warg;
 	 CheckArgMultiple(4);
-	 if (texhandle >= w->context->display->ntextures) runerr(102, argv[base]);
+	 if (texhandle >= wc->display->ntextures) runerr(102, argv[base]);
          for (; base < argc; base+=4){
      	     if (!cnv:C_integer(argv[base]  , x)) runerr(101, argv[base]);
 	     if (!cnv:C_integer(argv[base+1], y)) runerr(101, argv[base+1]);
@@ -1427,20 +1429,17 @@ function{1} EraseArea(argv[argc])
 	 ReturnWindow;
 	 }
 
-      if (w->context->is_3D) {
+      if (wc->is_3D) {
 	 /*
 	  * allocate a new list for functions
 	  */
          Protect(w->window->funclist.vword.bptr = (union block *)alclist(0, MinListSlots), runerr(0));
 	 
 #if HAVE_LIBGL
-         glClearColor(RED(w->context->bg)/(GLfloat)256,
-               GREEN(w->context->bg)/(GLfloat)256, 
-               BLUE(w->context->bg)/(GLfloat)256, 0.0);
 	 /* need to free selectionnamelist entries here */
-         w->context->selectionnamecount=0;
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+         wc->selectionnamecount=0;
 #endif					/* HAVE_LIBGL */
+	 erasetocolor(RED(wc->bg), GREEN(wc->bg), BLUE(wc->bg));
 	 swapbuffers(w, 0);
          ReturnWindow;
 	 }

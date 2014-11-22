@@ -611,9 +611,10 @@ class BuffEditableTextList : EditableTextList(
          lineNumberOffset := pop(s)
 
          # Call the preprocessor but instead of passing a file name, 
-         # we will pass a list containing the code
+         # pass a list containing the code.
 	 preproc_err_count := 0
          yyin := ""
+	 fName := uidlog.FileTabSet.which_one.filename
          every yyin ||:= preprocessor(s, uni_predefs) do yyin ||:= "\n"
 	 if preproc_err_count = 0 then {
 	    # Reinitialize lexical analyzer

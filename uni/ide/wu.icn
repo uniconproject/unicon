@@ -64,7 +64,7 @@ end
 # compile() - compile targets, show errors (if WICONLOG is set)
 #
 procedure compile()
-    system("wunicon -c -quiet -log " || wiconlog || " " || targs || " " || comp1file(current_file), log)
+    system("wiconx unicon -c -quiet -log " || wiconlog || " " || targs || " " || comp1file(current_file), log)
     log := readin(wiconlog)
     showanyerror(log)
 end
@@ -100,7 +100,7 @@ procedure complink()
 	 i +:= 1
 	 }
       if find(".icn", arglist) then {
-	 system("wunicon -quiet -log " || wiconlog || " -c " || targs || " " || arglist, log)
+	 system("wiconx unicon -quiet -log " || wiconlog || " -c " || targs || " " || arglist, log)
 
 	 every 1 to 5 do {
 	     if f := open(wiconlog) then {
@@ -128,7 +128,7 @@ procedure complink()
 	 }
       }
 
-      system("wunicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, log)
+      system("wiconx unicon -quiet -log " || wiconlog || " -o " || quotes(icodename) || " " || targs || " " || arglist, log)
       s := readin(wiconlog)
       remove(wiconlog)
       showanyerror(s)

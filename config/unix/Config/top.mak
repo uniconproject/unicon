@@ -22,7 +22,7 @@ All:	Icont Ilib Ibin
 
 config/unix/$(name)/status src/h/define.h:
 	:
-	: To configure Icon, run either
+	: To configure Unicon, run either
 	:
 	:	make Configure name=xxxx     [for no graphics]
 	: or	make X-Configure name=xxxx   [with X-Windows graphics]

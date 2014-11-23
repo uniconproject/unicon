@@ -4510,10 +4510,7 @@ function{1} Texture(argv[argc])
 	 /* Pull out the texture handle */
          texhandle = IntVal(BlkLoc(argv[warg])->Record.fields[2]);
 	 rp->fields[2] = BlkLoc(argv[warg])->Record.fields[2];
-	 wc->curtexture = texhandle;
-#if HAVE_LIBGL
-	 glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
-#endif					/* HAVE_LIBGL */
+	 bindtexture(w, texhandle);
 	 c_put(&(w->window->funclist), &f);
 	 return f; 
 	 }

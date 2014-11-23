@@ -749,7 +749,7 @@ int checkOpenConsole( FILE *w, char *s );
       int copytextures(wcp wc1, wcp wc2);
       void swapbuffers(wbp w, int flush);
       void erasetocolor(int r,int g,int b);
-      /* void bindtexture(wbp w, texture t); */
+      void bindtexture(wbp w, int texturehandle);
       void applyAutomaticTextureCoords(int enable);
       void applymatrix(wbp w, double a[]);
    #endif					/* Graphics3D */

@@ -4004,3 +4004,16 @@ void erasetocolor(int r,int g,int b)
    glClearColor(r/(GLfloat)256,	g/(GLfloat)256, b/(GLfloat)256, 0.0);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
 }
+
+/*
+ * Apply/use a texture given by integer texturehandle as the current texture
+ * used on subsequent 3D primitives.  Texturehandles are integer indices
+ * used internal to our 3D runtime system code to identify previous textures;
+ * they must be created/produced by some other call in here, which one?
+ */
+void bindtexture(wbp w, int texturehandle)
+{
+   wcp wc = w->context;
+   wc->curtexture = texturehandle;
+   glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
+}

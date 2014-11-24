@@ -659,7 +659,7 @@ $endif
 
 ################### pty/debug ###################
    method debuggIt()
-      local p, pth, cwd, args1, args2
+      local p, pth, cwd, args1, args2, udbprefix
 
       cwd := chdir()
       chdir(filedirectory)
@@ -676,8 +676,10 @@ $endif
       if find(".icn",tab_label) then {
 $ifdef _UNIX
       args1 := "udb"
+      udbprefix := ""
 $else
       args1 := "udb.exe"
+      udbprefix := "wiconx "
 $endif
       args2 := tab_label[1:(*tab_label-3)]
       system("unicon "||tab_label)
@@ -699,7 +701,7 @@ $endif
          if /filedirectory then
             filedirectory := chdir()
          
-         pth := pth || " -line"
+         pth := udbprefix || pth || " -line"
 
          pth ||:= " "||filedirectory|| PATHSEP || args2
 

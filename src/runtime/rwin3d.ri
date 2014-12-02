@@ -775,4 +775,73 @@ int setautogen(wbp w, int i)
    return Succeeded;
 }
 
+/* set a texture */
+int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
+	       int is_init)
+{
+   wcp wc = w->context;
+   char* s;
+   int nfields, draw_code;
+   tended struct descrip d;
+   tended struct b_record *rp;
+   static dptr constr;
+   int wt_index;
+   int ttype;
+
+   makecurrent(w);
+
+   if (!is_init){
+      if (!constr &&  !(constr = rec_structor3d("gl_texture")))
+      	 syserr("failed to create opengl record constructor");
+   	 nfields = (int) ((struct b_proc *)BlkLoc(*constr))->nfields;
+
+   	 /*
+    	  * create a record of the graphical object and its parameters
+    	  */
+      if (!(rp = alcrecd(nfields, BlkLoc(*constr))))
+      	 return Failed;
+     (*f).dword = D_Record;
+     (*f).vword.bptr = (union block *)rp;
+     MakeStr("Texture", 7, &(rp->fields[0]));
+
+     draw_code = si_s2i(redraw3Dnames, "Texture");
+     if (draw_code == -1)
+       return Failed;
+     MakeInt(draw_code, &(rp->fields[1]));
+
+     Protect(BlkLoc(rp->fields[3]) =
+	      (union block *)alcfile((FILE *)w, Fs_Window|Fs_Read|Fs_Write
+		      | (w->context->is_3D?Fs_Window3D:0)	
+		      , &emptystr), return Failed);
+
+     rp->fields[3].dword = D_File;
+     }
+   else
+      rp = BlkD(*f, Record);
+
+   s=str;
+   while(isspace(*s)) s++;
+   while(isdigit(*s)) s++;
+   while(isspace(*s)) s++;
+   if (*s == ',')  /* must be an image string */
+      ttype = 3;
+   else	{	  /* it is a file name */
+      ttype = 1;
+      }
+
+   wt_index = lookup_texture_byname(w, str, len, ttype, curtex);
+   if (wt_index == Failed) return Failed;
+
+   /*
+    * To redraw the window we must keep track of the "texture name" assigned
+    * to it by opengl. This name is stored in wc->stex[wc->ntextures].texName.
+    * So by remembering wc->ntextures we can recover the name of the texture.
+    */
+   MakeInt(wc->curtexture, &(rp->fields[2]));
+
+   c_put(&(w->window->funclist), f);
+
+   return Succeeded;
+}
+
 #endif					/* Graphics3D */

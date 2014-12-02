@@ -156,15 +156,17 @@ int setmatrixmode(char *s)
 }
 
 /*
- * Set the current texture.
+ * Lookup a texture given its name (filename), and reuse it insted of reloading
+ * it from disk. Otherwise create a new texture.
+ * NOTE: The lookup is a linear search! not good enough for a program
+ * with large number of textures. We should improve this.
+ * returns:
+ *         The index of the texture if found
+ *         Succeeded, if a new texture is created
+ *         Failed, if a new texture could not be created
  */
-int settexture(
-   wbp w,		/* 3D window on which we operate */
-   char* str,		/* filename or Unicon image string */
-   int len,		/* length of str */
-   struct descrip *f,	/* output param for display list entry */
-   int curtex, 		/* -1: new, >=0: replace current texture @ curtex */
-   int is_init)		/* 0: new display list entry. 1: write on existing */
+
+int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
 {
    return Failed;
 }

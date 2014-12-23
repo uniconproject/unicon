@@ -2017,6 +2017,32 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       s++;
 	       }
 	    }
+	 else if (s = strstr(cmdline, ">>")) {
+	    tended char *s_stdout;
+	    *s = '\0';
+	    s += 2;				/* skip over >> */
+	    while (*s == ' ') s++;
+	    StrLen(d_stdout) = strlen(s);
+	    StrLoc(d_stdout) = s;
+
+            cnv:C_string(d_stdout, s_stdout);
+	    d_stdout.dword = D_Integer;
+	    d_stdout.vword.integr =
+#if UNIX
+	       open(s_stdout, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
+#endif
+#if NT
+	       _open(s_stdout, O_WRONLY|O_CREAT|O_APPEND, _S_IWRITE|_S_IREAD);
+#endif
+
+	    while (*s) {
+	       if (*s == ' ') {
+		  *s = '\0';
+		  break;
+		  }
+	       s++;
+	       }
+	    }
 	 else if (s = strchr(cmdline, '>')) {
 	    *s = '\0';
 	    s++;

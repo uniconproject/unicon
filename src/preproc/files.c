@@ -225,7 +225,7 @@ int system;
 	 path = FileNameMacConvert(FileNameUnixToMac,path);
 #endif					/* MACINTOSH */
          f = fopen(path, "r");
-         prefix = ++prefix;
+         ++prefix;
          }
       rel_sbuf(sbuf);
 #else					/* !MVS && !VM */

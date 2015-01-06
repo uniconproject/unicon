@@ -222,7 +222,7 @@ xpmParseColors(data, ncolors, cpp, colorTablePtr, hashtable)
 	    curkey = 0;
 	    lastwaskey = 0;
 	    *curbuf = '\0';		/* init curbuf */
-	    while ((l = xpmNextWord(data, buf, BUFSIZ)) != NULL) {
+	    while ((l = xpmNextWord(data, buf, BUFSIZ)) != 0) {
 		if (!lastwaskey) {
 		    for (key = 0, sptr = xpmColorKeys; key < NKEYS; key++,
 			 sptr++)
@@ -302,7 +302,7 @@ xpmParseColors(data, ncolors, cpp, colorTablePtr, hashtable)
 	     */
 	    xpmNextString(data);	/* get to the next string */
 	    *curbuf = '\0';		/* init curbuf */
-	    while ((l = xpmNextWord(data, buf, BUFSIZ)) != NULL) {
+	    while ((l = xpmNextWord(data, buf, BUFSIZ)) != 0) {
 		if (*curbuf != '\0')
 		    strcat(curbuf, " ");/* append space */
 		buf[l] = '\0';

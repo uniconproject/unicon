@@ -574,7 +574,7 @@ void openlog(char *p)
        * need to think about: don't generate a logfile unless asked, because
        * if you weren't asked, there is no reader to delete that logfile.
        */
-      if (flog = fopen(lognam, "r")) {
+      if ((flog = fopen(lognam, "r")) != NULL) {
          flog = freopen(lognam, "a", flog);
 	 }
       else {

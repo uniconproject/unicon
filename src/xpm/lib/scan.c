@@ -385,7 +385,7 @@ ScanTransparentColor(color, cpp, attributes)
 		((XpmColor **) attributes->colorTable)[attributes->mask_pixel];
 /* end 3.2 bc */
 	for (key = 1; key <= NKEYS; key++) {
-	    if (s = mask_defaults[key]) {
+	    if ((s = mask_defaults[key]) != NULL) {
 		defaults[key] = (char *) xpmstrdup(s);
 		if (!defaults[key])
 		    return (XpmNoMemory);
@@ -521,7 +521,7 @@ ScanOtherColors(display, colors, ncolors, pixels, mask, cpp, attributes)
 
 		found = True;
 		for (key = 1; key <= NKEYS; key++) {
-		    if (s = adefaults[key])
+		    if ((s = adefaults[key]) != NULL)
 			defaults[key] = (char *) xpmstrdup(s);
 		}
 	    }

@@ -119,23 +119,23 @@ XpmWriteFileFromXpmImage(filename, image, info)
 	    name++;
 #endif
 	/* let's try to make a valid C syntax name */
-	if (dot = index(name, '.')) {
+	if ((dot = index(name, '.')) != NULL) {
 	    strcpy(new_name, name);
 	    /* change '.' to '_' */
 	    name = s = new_name;
-	    while (dot = index(s, '.')) {
+	    while ((dot = index(s, '.')) != NULL) {
 		*dot = '_';
 		s = dot;
 	    }
 	}
-	if (dot = index(name, '-')) {
+	if ((dot = index(name, '-')) != NULL) {
 	    if (name != new_name) {
 		strcpy(new_name, name);
 		name = new_name;
 	    }
 	    /* change '-' to '_' */
 	    s = name;
-	    while (dot = index(s, '-')) {
+	    while ((dot = index(s, '-')) != NULL) {
 		*dot = '_';
 		s = dot;
 	    }
@@ -226,7 +226,7 @@ WriteColors(file, colors, ncolors)
 	fprintf(file, "\"%s", *defaults++);
 
 	for (key = 1; key <= NKEYS; key++, defaults++) {
-	    if (s = *defaults)
+	    if ((s = *defaults) != NULL)
 		fprintf(file, "\t%s %s", xpmColorKeys[key - 1], s);
 	}
 	fprintf(file, "\",\n");

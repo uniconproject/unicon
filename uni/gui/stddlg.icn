@@ -19,7 +19,7 @@ $define XOffButton	 85	# initial x offset for buttons
 $define XOffIncr	 15	# space between buttons
 
 class vdialog : Dialog(captions, labels, buttons, textfields,
-		       defaults, myanswer)
+		       defaults, myanswer, label_width)
    method component_setup()
       self.setup()
    end
@@ -61,7 +61,8 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
 	 }
       every i := 1 to *labels do {
 	 text_field_1 := TextField()
-	 text_field_1.set_pos(20, integer((*captions + i)*100/nlines) || "%-10")
+	 text_field_1.set_pos(20+label_width,
+			      integer((*captions + i)*100/nlines) || "%-10")
 	 text_field_1.set_size(180, 30)
 	 text_field_1.set_contents((\defaults)[i])
 	 text_field_1.set_draw_border()
@@ -105,11 +106,12 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
 	 dispose()
    end
 
-initially(caps, labs, btns, dflts)
+initially(caps, labs, btns, dflts, labwid)
    captions := caps
    labels := labs
    buttons := btns
    defaults := dflts
+   label_width := labwid
    textfields := []
    self.Dialog.initially()
 end
@@ -165,7 +167,7 @@ local default_width, default_button, maxl, id, label_width, maxb, lead, pad,
    pad := 2 * lead
    cwidth := WAttrib(win, "fwidth")
 
-   dialog := vdialog(captions, labels, buttons, defaults)
+   dialog := vdialog(captions, labels, buttons, defaults, label_width)
 
    maxw := 0
    every maxw <:= TextWidth(win, !captions)

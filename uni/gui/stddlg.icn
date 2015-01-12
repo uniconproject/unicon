@@ -93,13 +93,16 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
    end
 
    method on_button(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
       myanswer := ev.source.label
       dispose()
    end
 
    method on_keypress(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
       myanswer := buttons[1]
-      dispose()
+      if ev.param === "\r" then
+	 dispose()
    end
 
 initially(caps, labs, btns, dflts)

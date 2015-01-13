@@ -18,6 +18,143 @@ $define XOff		  0	# offset for text vidgets
 $define XOffButton	 85	# initial x offset for buttons
 $define XOffIncr	 15	# space between buttons
 
+class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
+   method component_setup()
+      self.setup()
+   end
+
+   method init_dialog()
+   local maxw := 0
+      every maxw <:= TextWidth(win, !captions)
+      maxw +:= 40
+      maxw <:= 60+choice_width
+write("maxw ", image(maxw))
+      self.resize_win(maxw, (32 * (*captions + *choices +2)))
+   end
+   method setup()
+   local i, cap, check_box_group_1
+   local nlines := *captions + *choices + 2
+   local label_2, text_button_1, text_field_1
+
+      self.set_attribs("size="||(220+choice_width)||"," || (32 * nlines))
+      every i := 1 to *captions do {
+	 cap := Label()
+	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
+	 cap.set_internal_alignment("l")
+	 cap.set_label(captions[i])
+	 self.add(cap)
+	 }
+      border_1 := Border()
+      border_1.set_pos("10", integer((i+1) * 100 / nlines) || "%-5")
+      border_1.set_size("100%-20",((*choices)*100/nlines)||"%")
+      border_1.set_internal_alignment("l")
+      check_box_group_1 := CheckBoxGroup()
+
+      every i := 1 to *choices do {
+	 cb := CheckBox()
+	 cb.set_pos(10, integer(i*100/nlines) || "%")
+	 cb.set_toggles()
+	 check_box_group_1.add(cb)
+	 cb.set_label(choices[i])
+	 border_1.add(cb)
+	 }
+      self.add(border_1)
+
+      every i := 1 to *buttons do {
+	 text_button_1 := TextButton()
+	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
+			       integer((*captions + *choices + 1)*100/nlines) ||
+			       "%" )
+	 text_button_1.connect(self, "on_button", ACTION_EVENT)
+	 text_button_1.clear_toggles()
+	 text_button_1.set_label(buttons[i])
+	 text_button_1.set_internal_alignment("c")
+	 self.add(text_button_1)
+	 }
+   end
+
+   method on_button(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      myanswer := ev.source.label
+      dispose()
+   end
+
+   method on_keypress(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      myanswer := buttons[1]
+      if ev.param === "\r" then
+	 dispose()
+   end
+
+initially(caps, chocs, dflt, btns, indx, chow)
+   captions := caps
+   choices := chocs
+   defaults := dflts
+   buttons := btns
+   index := indx
+write("chow ", image(chow))
+if /chow then stop("null chow")
+   choice_width := chow
+   self.Dialog.initially()
+end
+
+procedure SelectDialog(
+   win, captions, choices, dflt, buttons, index
+   )
+local default_width, default_button, maxl, id, choice_width, maxb, lead, pad,
+      cwidth, dialog, maxw, y, temp_win
+
+   if type(win) ~== "window" then {
+      win :=: captions :=: labels :=: dflt :=: buttons :=: index
+      win := &window
+      /win := temp_win := WOpen("canvas=hidden", "bg=gray")
+      }
+
+   /captions := []
+   /choices := []
+   /buttons := ["Okay", "Cancel"]
+   /index := 1
+
+   if type(captions) ~== "list" then captions := [captions]
+   if type(choices) ~== "list" then choices := ([\choices] | [])
+   if type(buttons) ~== "list" then buttons := [buttons]
+
+   default_button := buttons[index] 		# null if out of bounds
+   default_width := FieldWidth
+
+   maxl := 0
+   every maxl <:= *(choices)
+   until *choices = maxl do put(choices, choices[-1] | "")
+
+   id := 0
+
+   choice_width := 0
+   every choice_width <:= TextWidth(win, !labels)
+   if choice_width > 0 then choice_width +:= 15
+
+   maxb := 0
+   every maxb <:= TextWidth(win, !buttons)
+   maxb +:= 10
+   maxb <:= ButtonWidth
+
+   lead := WAttrib(win, "leading")
+   pad := 2 * lead
+   cwidth := WAttrib(win, "fwidth")
+
+   dialog := sdialog(captions, labels, , buttons,, choice_width)
+
+   maxw := 0
+   every maxw <:= TextWidth(win, !captions)
+
+   y := -lead
+
+   dialog.show_modal()
+   dialog_button := dialog.myanswer
+   dialog_value := []
+   every put(dialog_value, (!(dialog.textfields)).get_contents())
+   return dialog_button
+end
+
 class vdialog : Dialog(captions, labels, buttons, textfields,
 		       defaults, myanswer, label_width)
    method component_setup()

@@ -32,7 +32,7 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
       maxw := 0
       every maxw <:= TextWidth(win, !captions)
       maxw +:= 40
-      maxw <:= 220
+      maxw <:= 220+label_width
       self.resize_win(maxw, (32 * (*captions + *labels +2)))
       if textfields[1] then {
 	 Enqueue(\win, &lpress, textfields[1].x+2, textfields[1].y+2)
@@ -44,7 +44,7 @@ class vdialog : Dialog(captions, labels, buttons, textfields,
    local nlines := *captions + *labels + 2
    local label_2, text_button_1, text_field_1
 
-      self.set_attribs("size=220," || (32 * nlines))
+      self.set_attribs("size="||(220+label_width)||"," || (32 * nlines))
       every i := 1 to *captions do {
 	 cap := Label()
 	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")

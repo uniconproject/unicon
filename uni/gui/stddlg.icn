@@ -28,7 +28,6 @@ class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
       every maxw <:= TextWidth(win, !captions)
       maxw +:= 40
       maxw <:= 60+choice_width
-write("maxw ", image(maxw))
       self.resize_win(maxw, (32 * (*captions + *choices +2)))
    end
    method setup()
@@ -92,8 +91,6 @@ initially(caps, chocs, dflt, btns, indx, chow)
    defaults := dflts
    buttons := btns
    index := indx
-write("chow ", image(chow))
-if /chow then stop("null chow")
    choice_width := chow
    self.Dialog.initially()
 end
@@ -142,6 +139,141 @@ local default_width, default_button, maxl, id, choice_width, maxb, lead, pad,
    cwidth := WAttrib(win, "fwidth")
 
    dialog := sdialog(captions, labels, , buttons,, choice_width)
+
+   maxw := 0
+   every maxw <:= TextWidth(win, !captions)
+
+   y := -lead
+
+   dialog.show_modal()
+   dialog_button := dialog.myanswer
+   dialog_value := []
+   every put(dialog_value, (!(dialog.textfields)).get_contents())
+   return dialog_button
+end
+
+class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width)
+   method component_setup()
+      self.setup()
+   end
+
+   method init_dialog()
+   local maxw := 0
+      every maxw <:= TextWidth(win, !captions)
+      maxw +:= 40
+      maxw <:= 60+tognam_width
+      self.resize_win(maxw, (32 * (*captions + *toggles +2)))
+   end
+   method setup()
+   local i, cap
+   local nlines := *captions + *toggles + 2
+   local label_2, text_button_1, text_field_1
+
+      self.set_attribs("size="||(220+tognam_width)||"," || (32 * nlines))
+      every i := 1 to *captions do {
+	 cap := Label()
+	 cap.set_pos("20", integer(i *100 / nlines)|| "%-5")
+	 cap.set_internal_alignment("l")
+	 cap.set_label(captions[i])
+	 self.add(cap)
+	 }
+
+      every i := 1 to *toggles do {
+	 cb := CheckBox()
+	 cb.set_pos(10, integer((*captions+i)*100/nlines) || "%")
+	 cb.set_toggles()
+	 if \ (states[i]) then cb.set_is_checked()
+	 cb.set_label(toggles[i])
+	 self.add(cb)
+	 }
+
+      every i := 1 to *buttons do {
+	 text_button_1 := TextButton()
+	 text_button_1.set_pos( integer(i * 100 / (*buttons+1)) || "%-20",
+			       integer((*captions + *toggles + 1)*100/nlines) ||
+			       "%" )
+	 text_button_1.connect(self, "on_button", ACTION_EVENT)
+	 text_button_1.clear_toggles()
+	 text_button_1.set_label(buttons[i])
+	 text_button_1.set_internal_alignment("c")
+	 self.add(text_button_1)
+	 }
+   end
+
+   method on_button(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      myanswer := ev.source.label
+      dispose()
+   end
+
+   method on_keypress(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      myanswer := buttons[1]
+      if ev.param === "\r" then
+	 dispose()
+   end
+
+initially(caps, togs, stats, btns, indx, togw)
+   captions := caps
+write("captions: ", image(captions))
+   toggles := togs
+write("toggles: ", image(toggles))
+   states := stats
+   buttons := btns
+   index := indx
+   tognam_width := togw
+   self.Dialog.initially()
+end
+
+procedure ToggleDialog(
+   win, captions, toggles, states, buttons, index
+   )
+local default_width, default_button, maxl, id, tognam_width, maxb, lead, pad,
+      cwidth, dialog, maxw, y, temp_win
+
+   if type(win) ~== "window" then {
+      win :=: captions :=: toggles :=: states :=: buttons :=: index
+      win := &window
+      /win := temp_win := WOpen("canvas=hidden", "bg=gray")
+      }
+
+   /captions := []
+   /toggles := []
+   /states := []
+   /buttons := ["Okay", "Cancel"]
+   /index := 1
+
+   if type(captions) ~== "list" then captions := [captions]
+   if type(toggles) ~== "list" then toggles := ([\toggles] | [])
+   if type(states) ~== "list" then states := ([\states] | [])
+   if type(buttons) ~== "list" then buttons := [buttons]
+
+   default_button := buttons[index] 		# null if out of bounds
+   default_width := FieldWidth
+
+   maxl := 0
+   every maxl <:= *(toggles)
+   until *toggles = maxl do put(toggles, toggles[-1] | "")
+
+   id := 0
+
+write("toggles1: ", image(toggles))
+every write("\t", image(!toggles))
+
+   tognam_width := 0
+   every tognam_width <:= TextWidth(win, !toggles)
+   if tognam_width > 0 then tognam_width +:= 15
+
+   maxb := 0
+   every maxb <:= TextWidth(win, !buttons)
+   maxb +:= 10
+   maxb <:= ButtonWidth
+
+   lead := WAttrib(win, "leading")
+   pad := 2 * lead
+   cwidth := WAttrib(win, "fwidth")
+
+   dialog := tdialog(captions, toggles, states, buttons,, tognam_width)
 
    maxw := 0
    every maxw <:= TextWidth(win, !captions)

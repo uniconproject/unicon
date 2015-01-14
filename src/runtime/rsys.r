@@ -1135,7 +1135,8 @@ FILE *mytmpfile()
       return NULL;
       }
    if ((f = fopen(temp, "w+b")) == NULL) {
-      fprintf(stderr, "fopen(TEMP) w+b failed\n");
+      fprintf(stderr, "fopen(TEMP) w+b failed: ");
+      perror("");
       return NULL;
       }
    return f;

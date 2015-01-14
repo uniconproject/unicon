@@ -18,6 +18,7 @@ $define XOff		  0	# offset for text vidgets
 $define XOffButton	 85	# initial x offset for buttons
 $define XOffIncr	 15	# space between buttons
 
+# dialog used for selection, dialog_value should be one of choices, or &null
 class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
    method component_setup()
       self.setup()
@@ -55,6 +56,7 @@ class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
 	 cb.set_toggles()
 	 check_box_group_1.add(cb)
 	 cb.set_label(choices[i])
+	 cb.connect(self, "on_selection", ACTION_EVENT)
 	 border_1.add(cb)
 	 }
       self.add(border_1)
@@ -72,15 +74,20 @@ class sdialog : Dialog(captions, choices, dflt, buttons, index, choice_width)
 	 }
    end
 
+   method on_selection(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      dialog_value := ev.source.label
+   end
+
    method on_button(ev)
       if ev.param === -12 then fail # do not trigger on mouse moves
-      myanswer := ev.source.label
+      dialog_button := ev.source.label
       dispose()
    end
 
    method on_keypress(ev)
       if ev.param === -12 then fail # do not trigger on mouse moves
-      myanswer := buttons[1]
+      dialog_button := buttons[1]
       if ev.param === "\r" then
 	 dispose()
    end
@@ -146,13 +153,13 @@ local default_width, default_button, maxl, id, choice_width, maxb, lead, pad,
    y := -lead
 
    dialog.show_modal()
-   dialog_button := dialog.myanswer
-   dialog_value := []
-   every put(dialog_value, (!(dialog.textfields)).get_contents())
+   if dialog_button === "Cancel" then dialog_value := &null
    return dialog_button
 end
 
-class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width)
+# toggle dialog. myanswer should be a 1 for Okay or &null for cancel.
+class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width,
+		       myanswer, cboxes)
    method component_setup()
       self.setup()
    end
@@ -168,6 +175,8 @@ class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width)
    local i, cap
    local nlines := *captions + *toggles + 2
    local label_2, text_button_1, text_field_1
+
+cboxes := []
 
       self.set_attribs("size="||(220+tognam_width)||"," || (32 * nlines))
       every i := 1 to *captions do {
@@ -185,6 +194,7 @@ class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width)
 	 if \ (states[i]) then cb.set_is_checked()
 	 cb.set_label(toggles[i])
 	 self.add(cb)
+	 put(cboxes, cb)
 	 }
 
       every i := 1 to *buttons do {
@@ -215,9 +225,7 @@ class tdialog : Dialog(captions, toggles, states, buttons, index, tognam_width)
 
 initially(caps, togs, stats, btns, indx, togw)
    captions := caps
-write("captions: ", image(captions))
    toggles := togs
-write("toggles: ", image(toggles))
    states := stats
    buttons := btns
    index := indx
@@ -257,9 +265,6 @@ local default_width, default_button, maxl, id, tognam_width, maxb, lead, pad,
 
    id := 0
 
-write("toggles1: ", image(toggles))
-every write("\t", image(!toggles))
-
    tognam_width := 0
    every tognam_width <:= TextWidth(win, !toggles)
    if tognam_width > 0 then tognam_width +:= 15
@@ -283,12 +288,15 @@ every write("\t", image(!toggles))
    dialog.show_modal()
    dialog_button := dialog.myanswer
    dialog_value := []
-   every put(dialog_value, (!(dialog.textfields)).get_contents())
+   every i := 1 to *dialog.cboxes do {
+      put(dialog_value, if dialog.cboxes[i].is_checked() then 1 else &null)
+      }
    return dialog_button
 end
 
 class vdialog : Dialog(captions, labels, buttons, textfields,
-		       defaults, myanswer, label_width)
+		       defaults, myanswer, label_width,
+		       myanswer)
    method component_setup()
       self.setup()
    end

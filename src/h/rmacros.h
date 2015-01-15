@@ -1264,13 +1264,13 @@
    #define FUNC_MUTEX_INIT	4
    #define FUNC_MUTEX_DESTROY	5
    #define FUNC_COND_WAIT	6
-   #define FUNC_COND_INIT	6
-   #define FUNC_COND_DESTROY	6
-   #define FUNC_COND_TIMEDWAIT	7
-   #define FUNC_COND_SIGNAL	8
-   #define FUNC_THREAD_CREATE	9
-   #define FUNC_THREAD_JOIN	10
-   #define FUNC_SEM_OPEN	11
+   #define FUNC_COND_INIT	7
+   #define FUNC_COND_DESTROY	8
+   #define FUNC_COND_TIMEDWAIT	9
+   #define FUNC_COND_SIGNAL	10
+   #define FUNC_THREAD_CREATE	11
+   #define FUNC_THREAD_JOIN	12
+   #define FUNC_SEM_OPEN	13
 
 
 #endif					/* Concurrent */

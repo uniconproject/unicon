@@ -130,6 +130,7 @@ a parameter for the recursive call.
 \iconcode{
 \>   \ \ \ if s.mode[1] == "d" then findfile(f) \\
 \>   \} \\
+\>   close(d) \\
 end
 }
 
@@ -159,7 +160,11 @@ natural structure is a list. This leads to the following code:
 
 \iconcode{
 procedure scan(dir) \\
-\>   f := open(dir) \\
+\>   f := open(dir) {\textbar} \{ \\
+\>   \ \ \ write(\&errout, "Couldn't access ", dir, " ",
+	sys\_errstr(\&errno)) \\
+\>   \ \ \ return \\
+\>   \ \ \ \}
 \>   while name := read(f) do \{ \\
 \>   \ \ \ filename := dir {\textbar}{\textbar}
 "/" {\textbar}{\textbar} name \\
@@ -173,6 +178,7 @@ procedure scan(dir) \\
 {\textbar} "..") {\textbar} scan(filename) \\
 \>   \ \ \ \} \\
 \>   \} \\
+\>   close(f) \\
 end
 }
 

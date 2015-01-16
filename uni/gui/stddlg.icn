@@ -4,6 +4,8 @@
 # These are primitive legacy Notice/TextDialog compatibility functions.
 # They need to be improved/polished/expanded.
 #
+link color, font_dlg
+$include "guih.icn"
 
 package gui
 
@@ -482,4 +484,243 @@ procedure Notice(captions[])		#: notice dialog
    dialog_value := &null
    WClose(\temp_win)
    return dialog_button
+end
+
+# from Parlett's guidemo
+class ColourRectangle : Component(r, g, b)
+   method display(buffer_flag)
+      local W
+      W := if /buffer_flag then self.cwin else self.cbwin
+      FreeColor(W, WAttrib(self.cwin, "fg"))
+      WAttrib(W, "fg=" || r || "," || g || "," || b)
+      FillRectangle(W, self.x, self.y, self.w, self.h)
+   end
+
+   method handle_event(e)
+      fail
+   end
+
+   method set_colours(r, g, b)
+      self.r := r
+      self.g := g
+      self.b := b
+      dialog_value := r||","||g||","||b
+   end
+
+   method set_hsv(h, s, v)
+      dialog_value := HSVValue(h||"/"||s||"/"||v) | stop("no HSVValue")
+      dialog_value ? {
+	 self.r := integer(tab(many(&digits)))
+	 =","
+	 self.g := integer(tab(many(&digits)))
+	 =","
+	 self.b := integer(tab(many(&digits)))
+	 }
+   end
+
+   initially
+      self.Component.initially()
+end
+
+class cdialog : Dialog(captions, refcolor, callback, value,
+		       s1, s2, s3, s4, s5, s6, # RBG, then HSV
+		       b1, cr, lab, myanswer)
+   method init_dialog()
+   local maxw := 0
+      every maxw <:= TextWidth(win, !captions)
+      maxw +:= 40
+      maxw <:= 420
+      self.resize_win(maxw, 370 + (32 * (*captions + 2)))
+      set_focus(b1)
+   end
+
+   method on_OK(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      if ev.type === GOT_FOCUS_EVENT then fail
+      myanswer := "OK"
+      dispose()
+   end
+
+   method on_Cancel(ev)
+      if ev.param === -12 then fail # do not trigger on mouse moves
+      myanswer := "Cancel"
+      dispose()
+   end
+
+   method on_slider(ev)
+     local r, g, b
+if ev.source === (s1 | s2 | s3) then {
+      cr.set_colours((r := s1.get_value()), (g := s2.get_value()), (b := s3.get_value()))
+      cr.display()
+      # set s4, s5, s6
+      hsv := HSV(r||","||g||","||b)
+      hsv ? {
+	 h := tab(many(&digits))
+	 ="/"
+	 s := tab(many(&digits))
+	 ="/"
+	 v := tab(many(&digits))
+	 s4.set_value(h)
+	 s5.set_value(s)
+	 s6.set_value(v)
+	 invalidate()
+	 }
+      }
+else if ev.source === (s4 | s5 | s6) then {
+      cr.set_hsv((h:=s4.get_value()), (s:=s5.get_value()), (v:=s6.get_value()))
+      cr.display()
+      # set s1, s2, s3
+      rgb := HSVValue(h||"/"||s||"/"||v)
+      rgb ? {
+	 r := tab(many(&digits))
+	 =","
+	 g := tab(many(&digits))
+	 =","
+	 b := tab(many(&digits))
+	 s1.set_value(r)
+	 s2.set_value(g)
+	 s3.set_value(b)
+	 invalidate()
+	 }
+   }
+      lab.set_label("(" || s1.get_value() || ", " || s2.get_value() || ", " || s3.get_value() || ")")
+   end
+
+   initially(caps, rcolor, cback, val)
+      local l, nlines := *caps + 2
+
+      captions := caps; refcolor := rcolor; callback := cback; value := val
+      self.Dialog.initially()
+      self.set_attribs_list(["size=420,370"])
+
+      every i := 1 to *captions do {
+	 cap := Label()
+	 cap.set_pos("20", string(i * 32))
+	 cap.set_internal_alignment("l")
+	 cap.set_label(captions[i])
+	 self.add(cap)
+	 }
+
+      s1 := Slider()
+      s1.set_pos("40", "50%")      
+      s1.set_align("c", "c")
+      s1.set_size(, "50%")
+      s1.set_range(0, 65535)
+      s1.set_ticks(10000)
+      s1.set_increment_size(1000)
+      s1.set_value(0)
+      s1.connect(self, "on_slider")
+      self.add(s1)
+ 
+      s2 := Slider()
+      s2.set_pos("80", "50%")      
+      s2.set_align("c", "c")
+      s2.set_size(, "50%")
+      s2.set_range(0, 65535)
+      s2.set_ticks(10000)
+      s2.set_increment_size(1000)
+      s2.set_value(0)
+      s2.connect(self, "on_slider")
+      self.add(s2)
+ 
+      s3 := Slider()
+      s3.set_pos("120", "50%")      
+      s3.set_align("c", "c")
+      s3.set_size(, "50%")
+      s3.set_range(0, 65535)
+      s3.set_ticks(10000)
+      s3.set_increment_size(1000)
+      s3.set_value(0)
+      s3.connect(self, "on_slider")
+      self.add(s3)
+
+      s4 := Slider()
+      s4.set_pos("300", "50%")      
+      s4.set_align("c", "c")
+      s4.set_size(, "50%")
+      s4.set_range(0, 360)
+      s4.set_ticks(10000)
+      s4.set_increment_size(1000)
+      s4.set_value(0)
+      s4.connect(self, "on_slider")
+      self.add(s4)
+ 
+      s5 := Slider()
+      s5.set_pos("340", "50%")      
+      s5.set_align("c", "c")
+      s5.set_size(, "50%")
+      s5.set_range(0, 100)
+      s5.set_ticks(10000)
+      s5.set_increment_size(1000)
+      s5.set_value(0)
+      s5.connect(self, "on_slider")
+      self.add(s5)
+ 
+      s6 := Slider()
+      s6.set_pos("380", "50%")      
+      s6.set_align("c", "c")
+      s6.set_size(, "50%")
+      s6.set_range(0, 100)
+      s6.set_ticks(10000)
+      s6.set_increment_size(1000)
+      s6.set_value(0)
+      s6.connect(self, "on_slider")
+      self.add(s6)
+
+      cr := ColourRectangle()
+      cr.set_pos("200", "50%")      
+      cr.set_align("c", "c")
+      cr.set_size(70, 70)   
+      cr.set_colours(0, 0, 0)
+      self.add(cr)
+
+      lab := Label()
+      lab.set_size(150,24)
+      lab.set_label("(0, 0, 0)")
+      lab.set_internal_alignment("c")
+      lab.set_pos(200, "50%-90")
+      lab.set_align("c", "c")
+      self.add(lab)
+      
+      b1 := TextButton()
+      b1.set_label("Okay")
+      b1.set_pos("35%", "88%")
+      b1.set_align("c", "c")
+      b1.connect(self, "on_OK", ACTION_EVENT)
+      self.add(b1)
+      b2 := TextButton()
+      b2.set_label("Cancel")
+      b2.set_pos("65%", "88%")
+      b2.set_align("c", "c")
+      b2.connect(self, "on_Cancel", ACTION_EVENT)
+      self.add(b2)
+end
+
+procedure ColorDialog(win, captions, refcolor, callback, value)
+   if type(win) ~== "window" then {
+      win :=: captions :=: refcolor :=: callback :=: value
+      win := &window
+      /win := temp_win := WOpen("canvas=hidden", "bg=gray")
+      }
+   /captions := []
+   if type(captions) ~== "list" then captions := [captions]
+
+   dialog := cdialog(captions, refcolor, callback, value)
+   dialog.show_modal()
+   dialog_button := dialog.myanswer
+end
+
+procedure FontDialog(win, font)
+   if type(win) ~== "window" then {
+      win :=: font; win := &window;
+      /win := temp_win := WOpen("canvas=hidden","bg=gray")
+      }
+   dialog := fdialog(font)
+   dialog.show_modal()
+   dialog_button := dialog.myanswer
+   if font := \ (dialog.font) then {
+      dialog_value := font
+      suspend font
+      suspend dialog.fontcolor
+      }
 end

@@ -3,7 +3,7 @@ $include "guih.icn"
 
 procedure fontdialog(font)
 $ifdef _UNIX
-   d := FontDialog(font)
+   d := fdialog(font)
    d.show_modal()
    if font := \ (d.font) then {
       suspend font
@@ -14,10 +14,10 @@ $else
 $endif
 end
 
-class FontDialog : Dialog(cur_font,
+class fdialog : Dialog(cur_font,
    cancel, edit_fontcolor, label_4, label_5, ok,
    border_1, edit_fontname, edit_fontsize, edit_fontstyle, label_1, label_2,
-   label_3, font, fn, fsz, fst, fontcolor
+   label_3, font, fn, fsz, fst, fontcolor, myanswer
    )
    method component_setup()
       local type, size, style                  
@@ -48,6 +48,7 @@ class FontDialog : Dialog(cur_font,
 
    method on_cancel(ev)
       font := &null
+      myanswer := "Cancel"
       self.dispose()
    end
 
@@ -87,7 +88,8 @@ class FontDialog : Dialog(cur_font,
    end
 
    method on_ok(ev)
-      cur_font:=font
+      cur_font := font
+      myanswer := "Okay"
       self.dispose()
    end
 

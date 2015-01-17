@@ -4,7 +4,20 @@ $include "guih.icn"
 
 global prn_name, copies_num, printers_tbl
 
-class PrintDialog : Dialog(printerInfo_tab_item, printer_tabset,
+procedure PrintDialog()
+   d := pdialog()
+   d.show_modal()
+   if /copies_num then return "Cancel"
+   dialog_value := d.printcmd.get_contents()
+   return "Okay"
+end
+
+#
+# The PrintDialog class was renamed pdialog in order to allow a more
+# packaged PrintDialog() procedure, and to be consistent with other
+# stddlg dialogs.
+#
+class pdialog : Dialog(printerInfo_tab_item, printer_tabset,
 			   lprlocation_col, lprname_col, lprstatus_col,
 			   cancel_btn, print_btn, printer_tbl,
 			   copies_lbl, copies_txt, copies_lbl_1, printcmd)

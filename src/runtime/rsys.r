@@ -1130,15 +1130,18 @@ FILE *mytmpfile()
    char *temp;
    FILE *f;
 
-   if ((temp = _tempnam(NULL, NULL)) == NULL) {
+   if ((temp = _tempnam(NULL, "uni")) == NULL) {
       fprintf(stderr, "_tempnam(TEMP) failed\n");
       return NULL;
       }
+
    if ((f = fopen(temp, "w+b")) == NULL) {
-      fprintf(stderr, "fopen(TEMP) w+b failed: ");
+      fprintf(stderr, "fopen(%s) w+b failed: ", temp);
       perror("");
+      free(temp);
       return NULL;
       }
+   free(temp);
    return f;
 }
 #endif					/* NT */

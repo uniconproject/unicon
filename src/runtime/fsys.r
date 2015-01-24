@@ -136,7 +136,7 @@ function{1} close(f)
 #endif					/* PosixFns */
 
 #ifdef ReadDirectory
-#if !NT
+#if !NT || defined(NTGCC)
       if (BlkD(f,File)->status & Fs_Directory) {
 	 BlkLoc(f)->File.status = 0;
 	 closedir((DIR *)fp);
@@ -1041,7 +1041,7 @@ Deliberate Syntax Error
 	       if (status & Fs_Write)
 		  runerr(173, fname);
 	       else {
-#if !NT
+#if !NT || defined(NTGCC)
 		  f = (FILE *)opendir(fnamestr);
 		  status |= Fs_Directory;
 #else					/* !NT */
@@ -1264,7 +1264,7 @@ function{0,1} read(f)
 #endif					/* Graphics */
 
 #ifdef PosixFns
-#if !NT
+#if !NT || defined(NTGCC)
 	  if (status & Fs_Directory) {
 	     struct dirent *d;
 	     char *s, *p=sbuf;

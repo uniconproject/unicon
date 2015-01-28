@@ -1543,7 +1543,6 @@
 #define CV_WAIT_ON_EXPR(expr, cv, mtxid)
 
 #define CV_INIT(cv, msg)
-#define SEM_CLOSE(sem_s)
 
 #define MUTEX_LOCKBLK_NOCHK(bp, msg)
 

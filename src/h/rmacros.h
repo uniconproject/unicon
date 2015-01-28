@@ -1181,6 +1181,12 @@
 	if (errno==EINVAL) syserr("invalid semaphore"); \
 	else if (errno != EINTR) {perror("sem_wait()"); syserr("sem_wait error");} }
 
+#ifndef NamedSemaphores
+#define SEM_CLOSE(sem_s) sem_destroy(sem_s);
+#else
+#define SEM_CLOSE(sem_s) sem_close(sem_s);
+#endif /* NamedSemaphores */
+
 #ifdef Concurrent 
 
    #define MTX_OP_ASTR		0
@@ -1271,6 +1277,7 @@
    #define FUNC_THREAD_CREATE	11
    #define FUNC_THREAD_JOIN	12
    #define FUNC_SEM_OPEN	13
+   #define FUNC_SEM_INIT	14
 
 
 #endif					/* Concurrent */
@@ -1450,6 +1457,11 @@
       	exit(-1); \
       	 }}
 
+#define CV_INIT(cv, msg) { int rv;					\
+    if ((rv=pthread_cond_init(cv, NULL))<0 ){				\
+      handle_thread_error(rv, FUNC_COND_INIT, msg);			\
+    }}
+
 #define CV_WAIT_FULLBLK(bp) \
     pthread_cond_wait(condvars[bp->cvfull], MUTEX_GETBLK(bp));
 
@@ -1529,6 +1541,9 @@
 #define DO_COLLECT(region) collect(region)
 
 #define CV_WAIT_ON_EXPR(expr, cv, mtxid)
+
+#define CV_INIT(cv, msg)
+#define SEM_CLOSE(sem_s)
 
 #define MUTEX_LOCKBLK_NOCHK(bp, msg)
 

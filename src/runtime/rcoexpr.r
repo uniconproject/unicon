@@ -445,7 +445,7 @@ dptr cargp;
  * and it is typically used infrequently.
  *
  * Unnamed semaphores are used unless NamedSemaphores is defined.
- * (This is for Mac OS 10.3 which does not have unnamed semaphores.)
+ * This is systems that do not have unnamed semaphores such as Mac OS.
  */
 
 #if 0
@@ -565,11 +565,7 @@ void coclean(void *o) {
       }
 
 
-   #ifdef NamedSemaphores
-      sem_close(old->semp);		/* close associated semaphore */
-   #else
-      sem_destroy(old->semp);		/* destroy associated semaphore */
-   #endif
+   SEM_CLOSE(old->semp);	/* close/destroy associated semaphore */
 
    /*
     * Give up the heaps owned by the old thread, 
@@ -598,7 +594,7 @@ void makesem(struct context *ctx) {
       sem_unlink(name);
    #else				/* NamedSemaphores */
       if (sem_init(&ctx->sema, 0, 0) == -1)
-         syserr("cannot init semaphore");
+         handle_thread_error(errno, FUNC_SEM_INIT, "make_sem():cannot init semaphore");
       ctx->semp = &ctx->sema;
    #endif				/* NamedSemaphores */
    }
@@ -679,7 +675,17 @@ pthread_t TCthread;
 int thread_call;
 int NARthreads;
 pthread_cond_t cond_tc;
-sem_t sem_tc; 
+
+#ifndef NamedSemaphores
+sem_t sem_tc;
+#endif /* NamedSemaphores */
+
+/* 
+ * sem_tcp points to sem_tc on non Mac systems and to the return 
+ * from sem_open() on Macs 
+ */
+sem_t *sem_tcp;	
+
 
 pthread_cond_t **condvars;
 word* condvarsmtxs;
@@ -701,8 +707,28 @@ void init_threads()
    rootpstate.mutexid_blocktotal = MTX_BLOCKTOTAL;
    rootpstate.mutexid_coll = MTX_COLL;
 
-   pthread_cond_init(&cond_tc, NULL);
-   sem_init(&sem_tc, 0, 1);
+   CV_INIT(&cond_tc, "init_threads()");
+
+#ifdef NamedSemaphores 
+   /* Mac OS X has sem_init(), so it is POSIX compliant.
+    * Unfortunately, POSIX compliance does not mean it must work, just be there.
+    * On OS X, sem_init() always fails, so we use named semaphores instead.
+    */
+   {
+   char name[50];
+   sprintf(name, "gc%ld.sem", (long)getpid());
+   sem_tcp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 1);
+   if (sem_tcp == (sem_t *)SEM_FAILED)
+      handle_thread_error(errno, FUNC_SEM_OPEN, "thread_init():cannot create GC semaphore");
+
+   /* There's not much we can do if sem_unlink fails, so ignore return value */
+   (void) sem_unlink(name);
+   }
+#else
+   sem_tcp = &sem_tc; 
+   if (0 != sem_init(sem_tcp, 0, 1))
+   	  handle_thread_error(errno, FUNC_SEM_INIT, "thread_init():cannot init GC semaphore");
+#endif /* NamedSemaphores */
 
    maxmutexes = 1024;
    mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
@@ -735,7 +761,8 @@ void clean_threads()
     */
 
    pthread_cond_destroy(&cond_tc);
-   sem_destroy(&sem_tc);
+   if (sem_tcp)
+      SEM_CLOSE(sem_tcp);		/* close/destroy TC semaphore */
 
 /* 
  * IMPORTANT NOTICE:
@@ -911,10 +938,44 @@ void handle_thread_error(int val, int func, char* msg)
       	    break;
 	 }
 
-   case FUNC_SEM_OPEN:
+   case FUNC_COND_INIT:
 
+      fprintf(stderr, "\nInit condition variable error-%s: ", msg);
+
+      switch(val) {
+         case EINVAL:
+     	    fprintf(stderr, "The value specified by attr is invalid.");
+	    syserr("");
+      	    break;
+         case ENOMEM:
+     	    fprintf(stderr, "Insufficient memory exists to initialise the condition variable.");
+	    syserr("");
+     	    break;
+   	 case EAGAIN:
+     	    fprintf(stderr, "The system lacked the necessary resources to initialise the condition variable.");
+	    syserr("");
+      	    break;
+   	 case EBUSY:
+      	    fprintf(stderr, "The implementation has detected an attempt to re-initialise the condition variable before destroying it.");
+	    syserr("");
+      	    break;
+
+      	 default:
+	    fprintf(stderr, "pthread function error!\n ");
+	    syserr("");
+      	    break;
+	 }
+
+
+   case FUNC_SEM_OPEN:
       fprintf(stderr, "sem open error-%s\n ", msg);
       perror("sem_open()");
+      syserr("");
+      break;
+
+   case FUNC_SEM_INIT:
+      fprintf(stderr, "sem init error-%s\n ", msg);
+      perror("sem_init()");
       syserr("");
       break;
 
@@ -973,7 +1034,7 @@ int action;
 	       }
       	    default:{
       	       /*
-       	        *  Check to see it is necessary to do GC for the current thread.
+       	        *  Check to see if it is necessary to do GC for the current thread.
        		*  Hopefully we will force GC to happen if that is the case.
        		*/
                if ((curtblock->end - curtblock->free) / (double) curtblock->size < 0.09) {
@@ -1012,7 +1073,7 @@ int action;
          /*---------------------------------*/
 	 }
       case TC_WAKEUPCALL:{
-         if (tc_queue){  /* Other threads are waiting for to take control */
+         if (tc_queue){  /* Other threads are waiting for TC to take control */
 
 	    /* lock MUTEX_COND_TC mutex and wait on the condition variable 
 	     * cond_gc.
@@ -1026,7 +1087,7 @@ int action;
 
 	    MUTEX_LOCKID(MTX_COND_TC);
 	    /* wake up another TCthread and go to sleep */
-	    sem_post(&sem_tc);
+	    sem_post(sem_tcp);
 
        	    CV_WAIT_ON_EXPR(thread_call, &cond_tc, MTX_COND_TC);
 
@@ -1048,7 +1109,7 @@ int action;
 
          thread_call = 0;
          NARthreads++;
-         sem_post(&sem_tc);
+         sem_post(sem_tcp);
          action_in_progress = TC_NONE;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
          MUTEX_UNLOCKID(MTX_THREADCONTROL);
@@ -1088,7 +1149,7 @@ int action;
          MUTEX_UNLOCKID(MTX_NARTHREADS);
 
  	 /* Allow only one thread to pass at a time!! */
-         SEM_WAIT(&sem_tc);
+         SEM_WAIT(sem_tcp);
 
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */

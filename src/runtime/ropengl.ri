@@ -3948,3 +3948,19 @@ void bindtexture(wbp w, int texturehandle)
    wc->curtexture = texturehandle;
    glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
 }
+
+int create3Dcontext(wbp w)
+{
+   wcp wc = w->context;
+   wdp wd = w->window->display;
+#ifdef MSWindows
+   wc->ctx = wglCreateContext (hdc);
+   wglMakeCurrent (hdc, wc->ctx);
+#else
+   wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
+   if (wc->ctx == NULL) 
+      return Failed;
+   glXMakeCurrent(wd->display, w->window->win, wc->ctx);
+#endif
+   return Succeeded;
+}

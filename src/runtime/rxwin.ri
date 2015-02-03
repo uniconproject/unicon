@@ -1483,12 +1483,7 @@ int wmap(wbp w)
 
 #ifdef Graphics3D
    if (wc->is_3D) {
-#if HAVE_LIBGL
-      wc->ctx = glXCreateContext(wd->display, wd->vis, None, GL_TRUE);
-      if (wc->ctx == NULL) 
-	 return Failed;
-      glXMakeCurrent(wd->display, w->window->win, wc->ctx);
-#endif					/* HAVE_LIBGL */
+      if (create3Dcontext(w) == Failed) return Failed;
       }
 #endif					/* Graphics3D */
 

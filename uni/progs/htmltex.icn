@@ -1,0 +1,456 @@
+############################################################################
+#
+#	File:     tex2html.icn
+#
+#	Subject:  Program to convert LaTeX to HTML
+#
+#	Author:   Clinton L. Jeffery
+#
+#	Date:     February 5, 2015
+#
+############################################################################
+#
+#     Program that reads in documents formatted with the LaTeX typesetting
+#  language, and changes some of the common LaTeX commands into HTML format.
+#
+#  Warning: the code here is a dirty hack, decades old and never engineered.
+#  This program is NOT a full LaTeX parser, and output must typically
+#  be further edited by hand to produce an acceptable result.
+#  However, it is able to process enough LaTeX to produce langref.html,
+#  the Unicon language reference in HTML format, from langref.tex.
+#
+#  Examples of known bugs include:
+#     Style files are not read or used
+#     Citations are not processed by the appropriate bibliographystyle
+#
+
+global fin, fout, silent, date, bibliography, root, vers
+
+procedure main(args)
+   local cut, i, j, s
+
+   initialize()
+   cut := ""
+
+   if *args = 0 then {
+      write(&errout, vers, " executed on ",date)
+      every write(\ (htmltex(!&input)))
+      }
+   else {
+      i := 1
+      while args[i][1] == "-" do {
+	 case args[i] of {
+	    "-silent": silent := 1
+	    "-cut"   : cut := "-cut"
+	    default  : write(&errout,"dont know option ",args[i])
+	    }
+	 i +:= 1
+         }
+      if /silent then write(&errout, vers, " executed on ",date)
+      if i > *args then {
+	 every write(\ (htmltex(!&input)))
+	 return
+         }
+      if j := find(".ctex", args[i]) then {
+	 args[i][j:0] := ""
+	 system("retex -c -silent " || cut || " " || args[i])
+         }
+      else if j := find(".gtex", args[i]) then {
+	 args[i][j:0] := ""
+	 s := "pstex " || args[i] || ".gtex >" || args[i] || ".tex"
+	 mysystem("rm -f " || args[i] || ".tex")
+	 mysystem(s)
+	 }
+      else if j := find(".tex", args[i]) then args[i][j:0] := ""
+      root := args[i]
+      if not (fin := open(args[i] || ".tex","r")) then
+	 stop("htmltex: couldn't open ",args[i],".tex for reading")
+      if not (fout := open(args[i] || ".html","w")) then
+	 stop("htmltex: couldn't open ",args[i],".html for writing")
+      every write(fout,\ (htmltex(!fin)))
+      close(fin)
+      if \bibliography then {
+	 if not (fin := open(bibliography,"r")) then
+	    stop(&errout,"htmltex: couldn't open ",bibliography," for reading")
+	 write(fout,"\n\n",trim(center("References",70)))
+	 every write(fout,\ (debib(htmltex(!fin))))
+	 }
+      close(fout)
+      }
+end
+
+procedure initialize()
+
+   date := &dateline[find(",",&dateline)+2:0]
+   date := reverse(date)
+   date := date[find(":",date)+1:0]
+   date := date[many(&digits,date):0]
+   date := reverse(date)
+   vers := "htmltex version 1.3"
+
+end
+
+#
+# strip comments.  so far we only strip entire-line comments
+#
+procedure htmltex(s)
+
+   if *s > 0 & s[1]=="%" then fail
+   if *s = 0 then return "<p>"
+   return defootnote(deline(debrace(demacro(s))))
+
+end
+
+#
+# remove footnotes and similar multiline entities
+# all footnotes are assumed to end in }. and this is processed after
+# all single-line entities were already processed
+#
+procedure defootnote(s)
+
+   if s == ("}"|"}{"|"}%{") then return ""
+   while s[find("\\footnote{",s) +: *"\\footnote{"] := " ("
+   while s[find("}.",s) +: *"}."] := ")."
+   s [find("}%iconcode", s) +: *"}%iconcode"] := "</PRE>"
+   return s
+
+end
+#
+# This routine handles macros that may appear anywhere on a line
+#
+procedure demacro(s)
+   local i, delim, x
+
+while s[find("\\{", s) +: 2] := "\\leftcurly"
+while s[find("\\}", s) +: 2] := "\\rightcurly"
+   i := 1
+   while i := find("\\frac{",s,i) do {
+      s[i:i+*"\\frac{"] := "("
+      s[find("}",s,i)] := ")"
+      s[find("{",s,i)] := "/"
+      s[find("}$",s,i)] := ""
+      }
+   i := 1
+   while i := find("$_{",s,i) do {
+      s[i:i+*"$_{"] := "["
+      }
+   i := 1
+   while i := find("}$",s,i) do {
+      s[i:i+*"}$"] := "]"
+      }
+   i := 1
+   while i := find("_{",s,i) do {
+      s[i:i+*"_{"] := "["
+      i +:= 1
+      i := many(&letters++&digits, s, i)
+      if s[i] == "}" then s[i] := "]"
+      }
+   i := 1
+   while i := find("\\today",s,i) do {
+      s[i:i+*"\\today"] := date
+      }
+   i := 1
+   while i := find("\\times",s,i) do {
+      s[i:i+*"\\times"] := "x"
+      }
+   i := 1
+   while i := find("\\^{}",s,i) do {
+      s[i:i+*"\\^{}"] := "^"
+      }
+   i := 1
+   while i := find("\\null",s,i) do {
+      s[i:i+*"\\null"] := ""
+      }
+   i := 1
+   while i := find("\\textbf{",s,i) do {
+      s[i:i+*"\\textbf{"] := "<b>"
+      s[find("}",s,i)] := "</b>"
+      }
+   i := 1
+   while i := find("\\textit{",s,i) do {
+      s[i:i+*"\\textit{"] := "<em>"
+      s[find("}",s,i)] := "</em>"
+      }
+   i := 1
+   while i := find("{\\sffamily\\bfseries ",s,i) do {
+      s[i:i+*"{\\sffamily\\bfseries "] := "<b>"
+      s[find("}",s,i)] := "</b>"
+      }
+   i := 1
+   while i := find("{\\bfseries ",s,i) do {
+      s[i:i+*"{\\bfseries "] := "<b>"
+      s[find("}",s,i)] := "</b>"
+      }
+   i := 1
+   while i := find("{}",s,i) do {
+      s[i:i+*"{}"] := ""
+      }
+   i := 1
+   while i := find("{\\textbackslash}",s,i) do {
+      s[i:i+*"{\\textbackslash}"] := "\""
+      }
+   i := 1
+   while i := find("{\\textless}",s,i) do {
+      s[i:i+*"{\\textless}"] := "&lt;"
+      }
+   i := 1
+   while i := find("{\\textgreater}",s,i) do {
+      s[i:i+*"{\\textgreater}"] := "&gt;"
+      }
+   i := 1
+   while i := find("{\\textbar}",s,i) do {
+      s[i:i+*"{\\textbar}"] := "|"
+      }
+   i := 1
+   while i := find("{\\dots}",s,i) do {
+      s[i:i+*"{\\dots}"] := "..."
+      }
+   i := 1
+   while i := find("{\\textquotedblleft}",s,i) do {
+      s[i:i+*"{\\textquotedblleft}"] := "\""
+      }
+   i := 1
+   while i := find("{\\textquotedblright}",s,i) do {
+      s[i:i+*"{\\textquotedblright}"] := "\""
+      }
+   i := 1
+   while i := find("\\textsf{",s,i) do {
+      s[i:i+*"\\textsf{"] := ""
+      s[find("}",s,i)] := ""
+      }
+   i := 1
+   while i := find("\\texttt{",s,i) do {
+      s[i:i+*"\\texttt{"] := "<code>"
+      s[find("}",s,i)] := "</code>"
+      }
+   i := 1
+   while i := find("\\cite{",s,i) do {
+      s[i:i+*"\\cite{"] := "["
+      s[find("}",s,i)] := "]"
+      }
+   i := 1
+   while i := find("\\textsuperscript{",s,i) do {
+      s[i:i+*"\\textsuperscript{"] := "<sup>"
+      s[find("}",s,i)] := "</sup>"
+      }
+   i := 1
+   while i := find("\\textsubscript{",s,i) do {
+      s[i:i+*"\\textsubscript{"] := "<sub>"
+      s[find("}",s,i)] := "</sub>"
+      }
+   i := 1
+   while i := find("\\index{",s,i) do {
+      if not (j := find("}",s,i+1)) then stop("bad index in ", image(s))
+      s[i: j+1] := "<A name=\"" || s[i+7 : j] || "\"> </A>"
+      }
+   i := 1
+   while i := find("\\mbox{",s,i) do {
+      s[i:i+*"\\cite{"] := ""
+      s[find("}",s,i)] := "" # there should be a bal here somewhere
+      }
+   i := 1
+   while i := find("\\verb", s, i) do {
+      delim := s[i+*"\\verb"]
+      s[i : i+*"\\verb"+1] := ""
+      s[find(delim,s,i)] := ""
+      }
+
+   while s ?:= tab(find("$\\setminus$")) || (move(11) & "\\") || tab(0)
+   while s[find("{\\normalsize",s) +: *"{\\normalsize"] := ""
+   while s[find("\\normalsize",s) +: *"\\normalsize"] := ""
+   while s[find("\\linebreak",s) +: *"\\linebreak"] := ""
+   while s[find("\\kill",s) +: *"\\kill"] := ""
+   while s[find("\\/"|"\\\\"|"\\>"|"\\="|"\\,"|"\\+",s) +: 2] := ""
+   while s[find("\\ ",s) +: 2] := "  "
+   while s[find("``"|"''",s) +: 2] := "\""
+   while s[ 1((x <- find("&",s)), s[0<x-1]~=="\\") ] := ""
+   while s[find("$<$", s) +: 3] := "&lt"
+   while s[find("$>$", s) +: 3] := "&gt"
+   while s[ 1((x <- find("$",s)), s[0<x-1]~=="\\") ] := ""
+
+   while s ?:= tab(find("\\mid")) || (move(4) & "|") || tab(0)
+   while s ?:=
+       tab(find("\\&")) || "&amp;" || (move(2) & tab(0))
+   while s ?:=
+       tab(find("\\$"|"\\_"|"\\\""|"\\{"|"\\}"|"\\#")) ||
+       (move(1) & tab(0))
+
+   while s[find("\\bigskip",s) +: 8] := "<p>"
+   while s[find("\\vspace{0.1cm}",s) +: 14] := ""
+   while s[find("\\hrule",s) +: 6] := "<hr />"
+
+   if i := find("\\hfill",s) then {
+      s := "<div style=\"text-align:left; float:left;\">" ||s[1:i]|| "</div>"||
+	 "<div style=\"text-align:right; float:right\">"||s[i+6:0]|| "</div>"||
+	 "<br>"
+      }
+   if i := find("\\hline",s) then
+      s[i +: *"\\hline"] := "\n" || repl("-",i) || "\n"
+
+   return s
+
+end
+
+# extra help for .bbl files
+procedure debib(s)
+   local i
+
+   while s[find("~",s)] := ""
+   while (i:=find("{",s))=(find("}",s)-2) do s[i+:3] := s[i+1]
+   while (i:=find("{",s))=(find("}",s)-3) do s[i+:4] := s[i+1]
+   return s
+
+end
+
+# This procedure handles macros that comprise an entire line/start a line
+procedure deline(s)
+   local command, body
+
+   if s[1] == "\\" then s ? {
+      move(1)
+      command := tab(many(&letters))
+      case command of {
+	 "noindent": {
+	    tab(many(' \t'))
+	    return tab(0)
+	    }
+	 "caption": {
+	    tab(upto('{')+1)
+	    return "(Figure titled \"" || tab(-1) || "\" omitted.)"
+	    }
+	 "item": {
+	    tab(many(' \t'))
+	    if ="[" then {
+	       body := tab(upto(']'))
+	       move(1) # past "]"
+	       return body || tab(0)
+	       }
+	    else return "<LI> " || tab(0)
+	    }
+	 "bibitem": {
+	    body := tab(upto(']}')+1)
+	    return body
+	    }
+	 "newblock": {
+	    move(1)
+	    body := tab(0)
+	    return body
+	    }
+	 "bibliography": {
+	    tab(upto('{')+1)
+	    if not (body := tab(upto('}'))) then body := tab(0)
+	    bibliography := (\root | body) || ".bbl"
+	    return ""
+	    }
+	 "title": {
+	    tab(upto('{')+1)
+	    if not (body := tab(upto('}'))) then body := tab(0)
+	    return "<TITLE>" || body || "</TITLE>" || "\n" ||
+		"<BR><BR><BR><BR><BR><BR><BR><BR><BR>\n" ||
+		"<H1><P ALIGN=\"center\">" || body || "</P></H1>"
+	    }
+	 "author": {
+	    tab(upto('{')+1)
+	    if not (body := tab(upto('}'))) then body := tab(0)
+	    return "<h4><P ALIGN=\"center\">" || body || "<BR>\n"
+	    }
+	 "date": {
+	    tab(upto('{')+1) # handle both \section{ and \section*{
+	    if not (body := tab(upto('}'))) then body := tab(0)
+	    return body || "\n</p></h4>"
+	    }
+	 "section" | "subsection" | "subsubsection": {
+	    tab(upto('{')+1) # handle both \section{ and \section*{
+	    if not (body := tab(upto('}'))) then body := tab(0)
+	    return "<" || cmd2tag(command) || ">" || body ||
+		"</" || cmd2tag(command) || ">"
+	    }
+	 "iconcode": {
+	    return "<PRE>"
+	    }
+	 "trnumber": {
+	    tab(upto('{')+1) # handle both \section{ and \section*{
+	    if not (body := tab(upto('}'))) then body := tab(0)
+	    return "TR " || body || "<BR>"
+	    }
+	 "abstract": {
+	    return "<BR><BR><BR><BR><BR>\n<H4>_
+                     <P ALIGN=\"center\">Abstract</P></H4><BR>"
+	    }
+	 "maketitle": {
+	    return "<BR><BR><BR><BR><BR><BR><BR><CENTER>\n_
+              <P>Department of Computer Science<br>\n_
+		The University of Idaho<br>\n_
+		Moscow, ID 83844\n</P>\n_
+		<h5>_
+		(this document generated from latex source by " || vers ||
+		")</h5><BR><BR><BR><BR>\n"
+	    }
+	 default: {
+	    return ""
+	    }
+         }
+      }
+   else
+      return s
+end
+
+# This procedure removes braces which get inserted by common single-line
+# environments such as font changes
+#
+# Bug: should look for other ways commands are terminated besides spaces,
+# e.g. {\tt\em starts a tt command.
+procedure debrace(s)
+   local cmd, i, j, k
+
+   s ||:= " "
+   while i := find((cmd := "{\\it "|"{\\em "|"{\\texttt "|"{\\tt "|
+		    "{\\textbf "|"{\\bf "| "{\\textit "|
+		    "{\\textsf "|"{\\sf "|"{\\ctt "|"{\\sf\\bf "),s) do {
+      j := &null
+      k := 0
+      every j := bal(&cset,'{','}',s,i,0) \ 2 do k +:= 1
+      if \j & k=2 then {
+	 s := s[1:i] ||
+	     "<" || cmd2tag(cmd) || ">" ||
+	     s[i+*cmd:j-1] ||
+	     "</" || cmd2tag(cmd) || ">" ||
+	     s[j:0]
+         }
+      else {
+	 write(&errout,"check matching brace for ",image(s))
+write(&errout, "   j ", image(j), " k ", image(k))
+	 break
+	 }
+      }
+while s[find("\\leftcurly", s) +: *"\\leftcurly"] := "{"
+while s[find("\\rightcurly", s) +: *"\\rightcurly"] := "}"
+   return trim(s)
+
+end
+
+procedure cmd2tag(s)
+
+   case s of {
+      "{\\em ": return "EM"
+      "{\\it ": return "EM"
+      "{\\textit ": return "EM"
+      "{\\textit": return "EM"
+      "{\\texttt": return "CODE"
+      "{\\texttt ": return "CODE"
+      "{\\tt ": return "CODE"
+      "{\\bf ": return "STRONG"
+      "{\\textbf ": return "STRONG"
+      "{\\textbf": return "STRONG"
+      "item": return "LI"
+      "section": return "H2"
+      "subsection": return "H3"
+      "subsubsection": return "H4"
+      default: stop("don't know ", s, " yet")
+      }
+end
+
+procedure mysystem(s)
+   write(&errout,s)
+   return system(s)
+end

@@ -973,9 +973,9 @@ until one matches the expression given between the word
 \noindent
 \index{package}The \textsf{package} declaration segregates the global
 names in the current source file. In order to refer to them, client
-code must either import the package, or prepend \textsf{\textit{name
-.}} (the package name followed by a period) onto the front of a name in
-the package.
+code must either import the package, or prepend
+\textsf{\textit{name.}} (the package name followed by a period)
+onto the front of a name in the package.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf procedure name (params) body end \hfill declare procedure}
@@ -1605,14 +1605,14 @@ working directory.
 
 \noindent
 \index{permissions, file}
-\index{file!permissions}\index{chmod()}\texttt{chmod(f,
-m)} sets the access permissions ("mode") of
+\index{file!permissions}\index{chmod()}\texttt{chmod(f, m)}
+sets the access permissions ("mode") of
 a string filename (or on UNIX systems, an open file) \texttt{f} to a
 string or integer mode \texttt{m}. The mode indicates the change to be
 performed. The string is of the form
 
 \iconcode{
-\>   [ugoa]*[+-=][rwxRWXstugo]* }
+\>   [ugoa]*[+-=][rwxRWXstugo]* }%iconcode
 
 The first group describes the set of mode bits to be changed: \texttt{u}
 is the owner set, \texttt{g} is the group and \texttt{o} is the set of
@@ -1667,14 +1667,14 @@ status of the connection, otherwise it returns the closed file.
 \noindent {\bf cofail(CE) : any \hfill transmit co-expression failure}
 
 \noindent
-\index{fail!co-expression}\index{co-expression}cofail(ce) activates
+\index{fail!co-expression}\index{co-expression}\texttt{cofail(ce)} activates
 co-expression ce, transmitting failure instead of a result.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf collect(i:0, i:0) : null \hfill collect garbage}
 
 \noindent
-\index{collect garbage}collect(i1,i2) calls the
+\index{collect garbage}\texttt{collect(i1,i2)} calls the
 \index{garbage collector}garbage collector to ensure that i2 bytes
 are free in region i1. i1 can be 0 (no region in particular)
 1 (static region) 2 (string region) or 3 (block region).
@@ -1690,8 +1690,8 @@ a new condition variable.
 \noindent {\bf constructor(s, ...) : procedure \hfill record constructor}
 
 \noindent
-\index{record constructor}constructor(label, field, field, ...) creates
-a new record type named \texttt{label} with fields named by its
+\index{record constructor}\texttt{constructor(label, field, field, ...)}
+creates a new record type named \texttt{label} with fields named by its
 subsequent arguments, and returns a constructor procedure for this
 record type.
 
@@ -1699,7 +1699,7 @@ record type.
 \noindent {\bf copy(any) : any \hfill copy value}
 
 \noindent
-\index{copy(x)}copy(x) produces a copy of x. For immutable types
+\index{copy(x)}\texttt{copy(x)} produces a copy of x. For immutable types
 (numbers, strings, csets, procedures) this is a no-op. For mutable
 types (lists, tables, sets, records, objects) a one-level deep copy of
 the object is made.
@@ -1708,21 +1708,21 @@ the object is made.
 \noindent {\bf cos(r) : real \hfill cosine}
 
 \noindent
-\index{cosine}cos(r) produces the cosine of r. The argument is given in
-radians.
+\index{cosine}\texttt{cos(r)} produces the cosine of r. The argument
+is given in radians.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf cset(any) : cset? \hfill convert to cset}
 
 \noindent
-\index{convert!to cset}cset(x) converts x to a cset, or fails if the
+\index{convert!to cset}\texttt{cset(x)} converts x to a cset, or fails if the
 conversion cannot be performed.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf ctime(i) : string \hfill format a time value into local time }
 
 \noindent
-\index{local time}\index{ctime(i)}ctime(i) converts an integer time
+\index{local time}\index{ctime(i)}\texttt{ctime(i)} converts an integer time
 given in seconds since the epoch, Jan 1, 1970 00:00:00 into a string in
 the local timezone. See also keywords \&clock and \&dateline.
 
@@ -1730,7 +1730,7 @@ the local timezone. See also keywords \&clock and \&dateline.
 \noindent {\bf dbcolumns(D,s) : list \hfill ODBC column information}
 
 \noindent
-\index{column!ODBC}dbcolumns(db, tablename) produces a list of record
+\index{column!ODBC}\texttt{dbcolumns(db, tablename)} produces a list of record
 (catalog, schema, tablename, colname, datatype, typename, colsize,
 buflen, decdigits, numprecradix, nullable, remarks) entries. Fields
 \texttt{datatype} and \texttt{typename} are SQL-dependent and data
@@ -1747,7 +1747,7 @@ known whether the column accepts null values.
 \noindent {\bf dbdriver(D) : record \hfill ODBC driver information}
 
 \noindent
-\index{ODBC driver}dbdriver(db) produces a record driver(name, ver,
+\index{ODBC driver}\texttt{dbdriver(db)} produces a record driver(name, ver,
 odbcver, connections, statements, dsn) that describes the details of
 the \index{ODBC}ODBC driver used to connect to database db. Connections
 and statements are the maximums the driver can support. Fields
@@ -1759,7 +1759,7 @@ and Windows Data Source Name associated with the connection.
 \noindent {\bf dbkeys(D,string) : list \hfill ODBC key information}
 
 \noindent
-\index{key!ODBC}dbkeys(db,tablename) produces a list of record
+\index{key!ODBC}\texttt{dbkeys(db,tablename)} produces a list of record
 (columnname, sequencenumber) pairs containing information about the
 primary keys in tablename.
 
@@ -1767,26 +1767,26 @@ primary keys in tablename.
 \noindent {\bf dblimits(D) : record \hfill ODBC operation limits}
 
 \noindent
-dblimits(db) produces a record with fields \texttt{maxbinlitlen,
-maxcharlitlen, maxcolnamelen, maxgroupbycols, maxorderbycols,
-maxindexcols, maxselectcols, maxtblcols, maxcursnamelen, maxindexsize,
-maxrownamelen, maxprocnamelen, maxqualnamelen, maxrowsize,
-maxrowsizelong, maxstmtlen, maxtblnamelen, maxselecttbls,} and\texttt{
-maxusernamelen} that contains the upper bounds of the database for many
-parameters.
+\texttt{dblimits(db)} produces a record with fields \texttt{maxbinlitlen},
+\texttt{maxcharlitlen, maxcolnamelen, maxgroupbycols, maxorderbycols},
+\texttt{maxindexcols, maxselectcols, maxtblcols, maxcursnamelen, maxindexsize},
+\texttt{maxrownamelen, maxprocnamelen, maxqualnamelen, maxrowsize},
+\texttt{maxrowsizelong, maxstmtlen, maxtblnamelen, maxselecttbls}, and
+\texttt{maxusernamelen} that contains the upper bounds of the database
+for many parameters.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf dbproduct(D) : record \hfill database name}
 
 \noindent
-dbproduct(db) produces a record (name, ver) that gives the name and the
+\texttt{dbproduct(db)} produces a record (name, ver) that gives the name and the
 version of the DBMS product containing db.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf dbtables(D) : list \hfill ODBC table information}
 
 \noindent
-dbtables(db) returns a list of record (qualifier, owner, name, type,
+\texttt{dbtables(db)} returns a list of record (qualifier, owner, name, type,
 remarks) entries that describe all of the tables in the database
 associated with db.
 
@@ -1794,13 +1794,13 @@ associated with db.
 \noindent {\bf delay(i) : null \hfill delay for i milliseconds}
 
 \noindent
-\index{delay(i)}delay(i) pauses the program for at least i milliseconds.
+\index{delay(i)}\texttt{delay(i)} pauses the program for at least i milliseconds.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf delete(x1, x2, ...) : x1 \hfill delete element}
 
 \noindent
-\index{delete element}delete(x1, x2) deletes elements denoted by the
+\index{delete element}\texttt{delete(x1, x2)} deletes elements denoted by the
 2\textsuperscript{nd} and following parameters from set, table, list,
 DBM database, or POP connection x1 if it is there. In any case, it
 returns x1. If x1 is a table or set, elements x\textsubscript{i} denote
@@ -1813,7 +1813,7 @@ deleted when the close() operation closes that connection.
 \noindent {\bf detab(string, integer:9,...) : string \hfill replace tabs}
 
 \noindent
-detab(s,i,...) replaces tabs with spaces, with stops at columns
+\texttt{detab(s,i,...)} replaces tabs with spaces, with stops at columns
 indicated by the second and following parameters, which must all be
 integers. Tab stops are extended infinitely using the interval between
 the last two specified tab stops.
@@ -1822,21 +1822,22 @@ the last two specified tab stops.
 \noindent {\bf display(i:\&level, f:\&errout, CE:\&current) : null \hfill write variables}
 
 \noindent
-\index{display(i,f)}display(i,f) writes the local variables of i most
-recent procedure activations, plus global variables, to file f.
+\index{display(i,f)}\texttt{display(i,f)} writes the local variables
+of \texttt{i} most recent procedure activations, plus global
+variables, to file \texttt{f}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf dtor(r) : real \hfill convert degrees to radians}
 
 \noindent
-\index{convert!degrees to radians}\index{dtor(r)}dtor(r) produces the
-equivalent of r degrees, expressed in radians.
+\index{convert!degrees to radians}\index{dtor(r)}\texttt{dtor(r)}
+produces the equivalent of \texttt{r} degrees, expressed in radians.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf entab(s, i:9,...) : string \hfill replace spaces}
 
 \noindent
-entab(s,i,...) replaces spaces with tabs, with stops at columns
+\texttt{entab(s,i,...)} replaces spaces with tabs, with stops at columns
 indicated. Tab stops are extended infinitely using the interval between
 the last two specified tab stops.
 
@@ -1844,14 +1845,14 @@ the last two specified tab stops.
 \noindent {\bf errorclear() : null \hfill clear error condition}
 
 \noindent
-\index{errorclear()}errorclear() resets keywords \&errornumber,
+\index{errorclear()}\texttt{errorclear()} resets keywords \&errornumber,
 \&errortext, and \&errorvalue to indicate that no error is present.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf eventmask(CE, cset) : cset {\textbar} null \hfill \ \ \ \ \ \ \ \  get/set event mask}
 
 \noindent
-\index{eventmask(ce)}eventmask(ce) returns the event mask associated
+\index{eventmask(ce)}\texttt{eventmask(ce)} returns the event mask associated
 with the program that created ce, or \&null if there is no event mask.
 eventmask(ce,cs) sets that program's event mask to cs.
 
@@ -1860,66 +1861,70 @@ eventmask(ce,cs) sets that program's event mask to cs.
 {\bf EvGet(c, flag) : string \hfill get event from monitored program}
 
 \noindent
-EvGet(c,flag) activates a program being monitored until an event in cset
-mask c occurs. Under normal circumstances this is a one-character
-string event code.
+\texttt{EvGet(c,flag)} activates a program being monitored until an event
+in cset mask \texttt{c} occurs. Under normal circumstances this is a
+one-character string event code.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf EvSend(i, x, CE) : any \hfill transmit event}
 
 \noindent
-\index{EvSend(x, y, C)}EvSend(x, y, C) transmits an event with event
-code x and event value y to a monitoring co-expression C.
+\index{EvSend(x, y, C)}\texttt{EvSend(x, y, C)} transmits an event with event
+code \texttt{x} and event value \texttt{y} to a monitoring
+co-expression \texttt{C}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf exit(i:normalexit) \hfill exit process}
 
 \noindent
-\index{exit(i)}exit(i) terminates the current program execution,
-returning status code i. The default is the platform-dependent exit
+\index{exit(i)}\texttt{exit(i)} terminates the current program execution,
+returning status code \texttt{i}. The default is the platform-dependent exit
 code that indicates normal termination (0 on most systems).
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf exp(r) : real \hfill exponential}
 
 \noindent
-\index{exponential, exp(r)}exp(r) produces the result of \&e \^{} r.
+\index{exponential, exp(r)}\texttt{exp(r)} produces the result of \&e \^{} r.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf fetch(D, s?) : string {\textbar} row? \hfill fetch database value}
 
 \noindent
-\index{fetch(d, k)}fetch(d, k) fetches the value corresponding to key k
-from a \index{DBM}DBM or \index{SQL!fetch}SQL database d. The result is
+\index{fetch(d, k)}\texttt{fetch(d, k)} fetches the value
+corresponding to key \texttt{k} from a \index{DBM}DBM or
+\index{SQL!fetch}SQL database \texttt{d}. The result is
 a string (for DBM databases) or a row (for SQL databases). For SQL
-databases, when the string k is omitted, fetch(d) produces the next row
+databases, when the string \texttt{k} is omitted,
+\texttt{fetch(d)} produces the next row
 in the current selection, and advances the cursor to the next row. A
 row is a record whose field names and types are determined by the
-columns specified in the current query. fetch(d) fails if there are no
+columns specified in the current query. \texttt{fetch(d)} fails if there are no
 more rows to return from the current query. Typically a call to
-dbselect() will be followed by a while{}-loop that calls fetch()
-repeatedly until it fails.
+\texttt{dbselect()} will be followed by a while{}-loop that calls
+\texttt{fetch()} repeatedly until it fails.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf fieldnames(R) : string* \hfill get field names}
 
 \noindent
-\index{fieldnames(r)}fieldnames(r) produces the names of the fields in
-record r.
+\index{fieldnames(r)}\texttt{fieldnames(r)} produces the names of the fields in
+record \texttt{r}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf find(s, s, i, i) : integer* \hfill find string}
 
 \noindent
-\index{find string}String scanning function find(s1,s2,i1,i2) generates
-the positions in s2 at which s1 occurs as a substring in s2[i1:i2].
+\index{find string}String scanning function \texttt{find(s1,s2,i1,i2)} generates
+the positions in \texttt{s2} at which \texttt{s1} occurs as a
+substring in \texttt{s2[i1:i2]}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf flock(f, s) : ? \hfill apply or remove file lock}
 
 \noindent
-\index{file!lock}\index{flock(f,s)}flock(f,s) applies an advisory
+\index{file!lock}\index{flock(f,s)}\texttt{flock(f,s)} applies an advisory
 \index{lock, file}lock to the file. Advisory locks enable processes to
 cooperate when accessing a shared file, but do not enforce exclusive
 access. The following characters can be used to make up the operation
@@ -2094,7 +2099,7 @@ or of \texttt{i1} and \texttt{i2}.
 \index{key(x)}\texttt{key(T)} generates the key (entry) values from
 table \texttt{T}. \texttt{key(L)} generates the indices from 1 to
 \texttt{*L} in list \texttt{L}. \texttt{key(R)} generates the string
-field names of record R.
+field names of record \texttt{R}.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -2252,9 +2257,8 @@ arguments, which must be numeric.
 
 \noindent
 \index{directory!create}\index{create!directory}\index{mkdir()}
-\texttt{mkdir(path,
-mode)} creates a new directory named \texttt{path} with mode
-\texttt{mode}. The optional \texttt{mode} parameter can be numeric or a
+\texttt{mkdir(path,mode)} creates a new directory named \texttt{path} with
+mode \texttt{mode}. The optional \texttt{mode} parameter can be numeric or a
 string of the form accepted by \texttt{chmod()}. The function succeeds
 if a new directory is created.
 
@@ -2680,8 +2684,8 @@ signal is sent waking up all threads waiting on {\textit x}.
 \noindent {\bf sin(r) : real \hfill sine}
 
 \noindent
-\index{sine}sin(r) produces the sine of r. The argument is given in
-radians.
+\index{sine}\texttt{sin(r)} produces the sine of
+\texttt{r}. The argument is given in radians.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf sort(x, i:1) : list \hfill sort structure}
@@ -2738,9 +2742,10 @@ arbitrary state and should be used with care.
 \noindent
 \index{file!information}\index{stat(f)}\texttt{stat(f)} returns a record
 with information about the file \texttt{f} which may be a path or a
-file object. The return value is of type: \texttt{record
-posix\_stat(dev, ino, mode, nlink, uid, gid, rdev, size, atime, mtime,
-ctime, blksize, blocks, symlink)}. Many of these fields are POSIX
+file object. The return value is of type:
+\texttt{record posix\_stat(dev, ino, mode, nlink, uid, gid, rdev},
+\texttt{size, atime, mtime, ctime, blksize, blocks, symlink)}.
+Many of these fields are POSIX
 specific, but a number are supported across platforms, such as the
 \index{file size}file size in bytes (the \texttt{size} field), access
 permissions (the \texttt{mode} field), and the last modified time (the
@@ -2848,7 +2853,7 @@ any) is returned. If \texttt{proc} is null, the signal is reset to its
 default value. 
 
 Caveat: This is not supported by the optimizing
-\index{compiler}compiler, iconc!
+\index{compiler}compiler (the -C command line option, which invokes iconc).
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent {\bf trim(s, c:' ', i:{}-1) : string \hfill trim string}
@@ -3156,8 +3161,8 @@ purposes.
 {\bf DrawPolygon(w, x1, y1, [z1,] ...) : window [list] \hfill draw polygon}
 
 \noindent
-\texttt{DrawPolygon(w,x1,y1,...,xn,yn)} draws a polygon. In 3D\texttt{,
-DrawPolygon()} takes from 2-4 coordinates per vertex and returns the
+\texttt{DrawPolygon(w,x1,y1,...,xn,yn)} draws a polygon. In 3D,
+\texttt{DrawPolygon()} takes from 2-4 coordinates per vertex and returns the
 list that represents the polygon on the display list for refresh
 purposes.
 
@@ -3199,8 +3204,9 @@ characters' actual pixels are drawn. It is possible to
 use \texttt{"drawop=reverse"} with this
 function to draw erasable text. \texttt{DrawString()} does not affect
 the text cursor position. Newlines present in \texttt{s} cause
-subsequent characters to be drawn starting at (\texttt{x, current\_y +
-leading}), where \texttt{x} is the \texttt{x} supplied to the function,
+subsequent characters to be drawn starting at
+(\texttt{x, current\_y + leading}), where \texttt{x} is the
+\texttt{x} supplied to the function,
 \texttt{current\_y} is the \texttt{y} coordinate the newline would have
 been drawn on, and leading is the current leading associated with the
 binding.
@@ -3248,9 +3254,9 @@ an event occurs.
 \noindent
 \texttt{Fg(w)} retrieves the current foreground color. \texttt{Fg(w,s)}
 sets the foreground by name or value. \texttt{Fg()} fails if the
-foreground cannot be set to the requested color. In 3D, \texttt{Fg(w,
-s)} changes the material properties of subsequently drawn objects to
-the material properties specified by \texttt{s}. The string \texttt{s}
+foreground cannot be set to the requested color. In 3D,
+\texttt{Fg(w, s)} changes the material properties of subsequently drawn objects
+to the material properties specified by \texttt{s}. The string \texttt{s}
 must be one or more semi-colon separated material properties. A
 material property is of the form 
 
@@ -3545,13 +3551,11 @@ element is returned.
 {\bf Texcoord(w, x, y, ...) : list \hfill define texture coordinates}
 
 \noindent
-\texttt{Texcoord(W, x}\texttt{\textsubscript{1}}\texttt{,
-y}\texttt{\textsubscript{1}}\texttt{, {\dots},
-x}\texttt{\textsubscript{n}}\texttt{,
-y}\texttt{\textsubscript{n}}\texttt{) }sets the texture coordinates to
-\texttt{x}\texttt{\textsubscript{1}}\texttt{,
-y}\texttt{\textsubscript{1}}\texttt{, {\dots},
-x}\texttt{\textsubscript{n}}\texttt{, y}\texttt{\textsubscript{n}} in
+\texttt{Texcoord(W, x\textsubscript{1},y\textsubscript{1},}
+\texttt{{\dots}, x\textsubscript{n}, y\textsubscript{n})}
+sets the texture coordinates to
+\texttt{x\textsubscript{1}, y\textsubscript{1}, {\dots},}
+\texttt{x\textsubscript{n}, y\textsubscript{n}} in
 3D window w. Each x, y, pair forms one texture coordinate.
 \texttt{Texcoord(W, L)} sets the texture coordinates to those specified
 in the list \texttt{L}. \texttt{Texcoord(W, s) }sets the texture
@@ -3576,8 +3580,8 @@ subsequent objects drawn on 3D window \texttt{w}. The string \texttt{s}
 specifies the texture image as a filename, a string of the form
 \texttt{width,pallet,data} or \texttt{width,\#,data}, where pallet is a
 pallet from the Unicon 2D graphics facilities and data is the
-hexadecimal representation of an image. \texttt{Texture(w1, w2)
-}specifies that the contents of 2D or 3D window \texttt{w2} be used as
+hexadecimal representation of an image. \texttt{Texture(w1, w2)}
+specifies that the contents of 2D or 3D window \texttt{w2} be used as
 a texture image that is applied to subsequent objects on the window
 \texttt{w1}. The display list element is returned.
 
@@ -3766,7 +3770,7 @@ were missing certain bracket characters.
 {\textbf \$) for \} } \\
 {\textbf \${\textless}\ for $[$ } \\
 {\textbf \${\textgreater} for $]$ }
-}
+}%iconcode
 
 These character combinations are substitutes for curly and square
 brackets on keyboards that do not have these characters.

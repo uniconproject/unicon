@@ -1807,7 +1807,7 @@ function{0,1} stat(f)
 	    if (lstat(fname, &sbuf) != 0) {
 	       IntVal(amperErrno) = errno;
 	       fail;
-	    }
+	       }
 	    if (!constr)
 	       if (!(constr = rec_structor("posix_stat")))
 		  syserr("failed to create posix record constructor");
@@ -1873,11 +1873,21 @@ function{0,1} stat(f)
 #endif					/* HAVE_LIBZ */
 
 	    IntVal(amperErrno) = 0;
-	    if ((fd = get_fd(f, 0)) < 0)
-	       runerr(174, f);
-	    if (fstat(fd, &sbuf) != 0) {
-	       IntVal(amperErrno) = errno;
-	       fail;
+	    if (BlkD(f,File)->status & Fs_Directory) {
+	       tended char *fname;
+	       cnv:C_string((BlkD(f,File)->fname), fname);
+	       if (lstat(fname, &sbuf) != 0) {
+		  IntVal(amperErrno) = errno;
+		  fail;
+		  }
+	       }
+	    else {
+	       if ((fd = get_fd(f, 0)) < 0)
+		  runerr(174, f);
+	       if (fstat(fd, &sbuf) != 0) {
+		  IntVal(amperErrno) = errno;
+		  fail;
+		  }
 	       }
 	    if (!constr)
 	       if (!(constr = rec_structor("posix_stat")))

@@ -1,12 +1,12 @@
 ############################################################################
 #
-#	File:     tex2html.icn
+#	File:     htmltex.icn
 #
 #	Subject:  Program to convert LaTeX to HTML
 #
 #	Author:   Clinton L. Jeffery
 #
-#	Date:     February 5, 2015
+#	Date:     February 18, 2015
 #
 ############################################################################
 #
@@ -24,7 +24,7 @@
 #     Citations are not processed by the appropriate bibliographystyle
 #
 
-global fin, fout, silent, date, bibliography, root, vers
+global fin, fout, silent, date, bibliography, root, vers, in_supertabular
 
 procedure main(args)
    local cut, i, j, s
@@ -63,12 +63,9 @@ procedure main(args)
 	 }
       else if j := find(".tex", args[i]) then args[i][j:0] := ""
       root := args[i]
-      if not (fin := open(args[i] || ".tex","r")) then
-	 stop("htmltex: couldn't open ",args[i],".tex for reading")
       if not (fout := open(args[i] || ".html","w")) then
 	 stop("htmltex: couldn't open ",args[i],".html for writing")
-      every write(fout,\ (htmltex(!fin)))
-      close(fin)
+      include(args[i])
       if \bibliography then {
 	 if not (fin := open(bibliography,"r")) then
 	    stop(&errout,"htmltex: couldn't open ",bibliography," for reading")
@@ -77,6 +74,14 @@ procedure main(args)
 	 }
       close(fout)
       }
+end
+
+procedure include(fname)
+   local fin
+   if not (fin := open(fname || ".tex")) then
+      stop("htmltex: couldn't include ", fname, ".tex")
+   every write(fout, \ (htmltex(!fin)))
+   close(fin)
 end
 
 procedure initialize()
@@ -94,11 +99,9 @@ end
 # strip comments.  so far we only strip entire-line comments
 #
 procedure htmltex(s)
-
    if *s > 0 & s[1]=="%" then fail
    if *s = 0 then return "<p>"
    return defootnote(deline(debrace(demacro(s))))
-
 end
 
 #
@@ -107,13 +110,11 @@ end
 # all single-line entities were already processed
 #
 procedure defootnote(s)
-
    if s == ("}"|"}{"|"}%{") then return ""
    while s[find("\\footnote{",s) +: *"\\footnote{"] := " ("
    while s[find("}.",s) +: *"}."] := ")."
    s [find("}%iconcode", s) +: *"}%iconcode"] := "</PRE>"
    return s
-
 end
 #
 # This routine handles macros that may appear anywhere on a line
@@ -185,9 +186,14 @@ while s[find("\\}", s) +: 2] := "\\rightcurly"
    while i := find("{}",s,i) do {
       s[i:i+*"{}"] := ""
       }
+   while s[find("\\ ",s) +: 2] := "  "
+   if \in_supertabular then
+      while s[find("\\\\",s) +: 2] := "<tr><td>"
+   else
+      while s[find("\\\\",s) +: 2] := "<br>"
    i := 1
    while i := find("{\\textbackslash}",s,i) do {
-      s[i:i+*"{\\textbackslash}"] := "\""
+      s[i:i+*"{\\textbackslash}"] := "\\"
       }
    i := 1
    while i := find("{\\textless}",s,i) do {
@@ -255,15 +261,30 @@ while s[find("\\}", s) +: 2] := "\\rightcurly"
       s[find(delim,s,i)] := ""
       }
 
+   if i := find("\\begin{supertabular}", s) then {
+      in_supertabular := 1
+      write("in_supertabular")
+      s := "<table border><tr><td>"
+      
+      }
+   if i := find("\\end{supertabular}", s) then {
+      in_supertabular := &null
+      write("finished supertabular")
+      s[i +: 18] := "</table>"
+      }
+
    while s ?:= tab(find("$\\setminus$")) || (move(11) & "\\") || tab(0)
    while s[find("{\\normalsize",s) +: *"{\\normalsize"] := ""
    while s[find("\\normalsize",s) +: *"\\normalsize"] := ""
    while s[find("\\linebreak",s) +: *"\\linebreak"] := ""
    while s[find("\\kill",s) +: *"\\kill"] := ""
-   while s[find("\\/"|"\\\\"|"\\>"|"\\="|"\\,"|"\\+",s) +: 2] := ""
-   while s[find("\\ ",s) +: 2] := "  "
+   while s[find("\\/"|"\\>"|"\\="|"\\,"|"\\+",s) +: 2] := ""
+
    while s[find("``"|"''",s) +: 2] := "\""
-   while s[ 1((x <- find("&",s)), s[0<x-1]~=="\\") ] := ""
+   if \in_supertabular then
+      while s[ 1((x <- find("&",s)), s[0<x-1]~=="\\") ] := "<td>"
+   else
+      while s[ 1((x <- find("&",s)), s[0<x-1]~=="\\") ] := ""
    while s[find("$<$", s) +: 3] := "&lt"
    while s[find("$>$", s) +: 3] := "&gt"
    while s[ 1((x <- find("$",s)), s[0<x-1]~=="\\") ] := ""
@@ -284,8 +305,12 @@ while s[find("\\}", s) +: 2] := "\\rightcurly"
 	 "<div style=\"text-align:right; float:right\">"||s[i+6:0]|| "</div>"||
 	 "<br>"
       }
-   if i := find("\\hline",s) then
-      s[i +: *"\\hline"] := "\n" || repl("-",i) || "\n"
+   if i := find("\\hline",s) then {
+      if \in_supertabular then
+	 s[i +: *"\\hline"] := "\n"
+      else
+	 s[i +: *"\\hline"] := "\n" || repl("-",i) || "\n"
+      }
 
    return s
 
@@ -317,6 +342,13 @@ procedure deline(s)
 	 "caption": {
 	    tab(upto('{')+1)
 	    return "(Figure titled \"" || tab(-1) || "\" omitted.)"
+	    }
+	 "include": {
+	    if ="{" &
+	       (fname := tab(many(&letters++&digits))) &
+	       ="}" then {
+		  include(fname)
+		  }
 	    }
 	 "item": {
 	    tab(many(' \t'))
@@ -378,13 +410,12 @@ procedure deline(s)
                      <P ALIGN=\"center\">Abstract</P></H4><BR>"
 	    }
 	 "maketitle": {
-	    return "<BR><BR><BR><BR><BR><BR><BR><CENTER>\n_
-              <P>Department of Computer Science<br>\n_
-		The University of Idaho<br>\n_
-		Moscow, ID 83844\n</P>\n_
-		<h5>_
-		(this document generated from latex source by " || vers ||
-		")</h5><BR><BR><BR><BR>\n"
+	    return "<BR><BR><BR><BR><BR><BR><BR><CENTER>\n" ||
+              "<P>Department of Computer Science<br>\n" ||
+		"The University of Idaho<br>\n" ||
+		"Moscow, ID 83844\n</P>\n<h5>" ||
+		"(this document generated from latex source by " || vers ||
+		")</h5></CENTER><BR><BR><BR><BR>\n"
 	    }
 	 default: {
 	    return ""

@@ -3218,6 +3218,7 @@ int setselectionmode(wbp w, char* s)
 int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
 {
    wcp wc=w->context;
+   wdp wdptr=wc->display;
    char steep, ystep;
    int cred, cgreen, cblue;
    int wd3, wd, ht, yy, xx, l, yb, yt, xl, xr,
@@ -3229,9 +3230,9 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
    cgreen = (GLint) GREEN(wc->fg);
    cblue = (GLint) BLUE(wc->fg);
 
-   tex = wc->display->stex[texhandle].tex;
-   wd  = wc->display->stex[texhandle].width;
-   ht  = wc->display->stex[texhandle].height;
+   tex = wdptr->stex[texhandle].tex;
+   wd  = wdptr->stex[texhandle].width;
+   ht  = wdptr->stex[texhandle].height;
 
    /* Bresenham algorithm for line drawing */
    if (x2==x1) {
@@ -3801,13 +3802,15 @@ int texwindow2D(wbp w, wbp w2d)
    /* apply the texture */
 
    MKCURRENT3D(w);
-   glBindTexture(GL_TEXTURE_2D, w->context->display->stex[wc->curtexture].texName);
+   glBindTexture(GL_TEXTURE_2D, wc->display->stex[wc->curtexture].texName);
 
    r = texture(ws->width, ws->height, (GLubyte*)tex, w->context->texmode);
    if (r == Succeeded)  {
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
-      return alcinstalltex(wc->curtexture,wc->display,tex,ws->width,ws->height);
+      r = alcinstalltex(wc->curtexture,wc->display,tex,ws->width,ws->height);
+      if (r == Succeeded) wc->display->stex[wc->curtexture].w = w;
+      return r;
       }
    else {
      free(tex);
@@ -3819,7 +3822,7 @@ int texwindow2D(wbp w, wbp w2d)
 int texwindow3D(wbp w1, wbp w2)
 {
    wsp ws = w2->window;
-   wcp wc = w2->context;
+   wcp wc = w2->context, w1c = w1->context;
    int width = ws->width;
    int height = ws->height;
    int i;
@@ -3827,30 +3830,32 @@ int texwindow3D(wbp w1, wbp w2)
 
    /* change the current context to w2's context */
 #ifdef XWindows
-   glXMakeCurrent(ws->display->display, ws->win, w2->context->ctx);
+   glXMakeCurrent(ws->display->display, ws->win, wc->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
-   glXMakeCurrent(w1->window->display->display, w1->window->win, w1->context->ctx);
-   glBindTexture(GL_TEXTURE_2D, w1->context->display->stex[w1->context->curtexture].texName);
+   glXMakeCurrent(w1->window->display->display, w1->window->win, w1c->ctx);
+   glBindTexture(GL_TEXTURE_2D, w1c->display->stex[w1c->curtexture].texName);
     i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
 #endif					/* XWindows */
 #ifdef MSWindows
    {
    HDC stddc = CreateWinDC(w2);
-   wglMakeCurrent(stddc, w2->context->ctx);
+   wglMakeCurrent(stddc, wc->ctx);
    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, tex);
    ReleaseDC(ws->iconwin, stddc);
    stddc = CreateWinDC(w1);
-   wglMakeCurrent(stddc, w1->context->ctx);
+   wglMakeCurrent(stddc, w1c->ctx);
    glBindTexture(GL_TEXTURE_2D,
-		 w1->context->display->stex[w1->context->curtexture].texName);
-   i = texture(width, height, (GLubyte *)tex, w1->context->texmode);
+		 w1c->display->stex[w1c->curtexture].texName);
+   i = texture(width, height, (GLubyte *)tex, w1c->texmode);
    ReleaseDC(w1->window->iconwin, stddc);
    }
 #endif					/* MSWindows */
     if (i == Succeeded) {
       /* no need to re-check, the check was made earlier in the code */
       /*if (make_enough_texture_space(wc->display)==Failed) return Failed;*/
-      return alcinstalltex(wc->curtexture, wc->display, tex, width, height);
+      i = alcinstalltex(wc->curtexture, wc->display, tex, width, height);
+      if (i == Succeeded) wc->display->stex[wc->curtexture].w = w1;
+      return i;
       }
     else {
        free(tex);
@@ -3861,8 +3866,8 @@ int texwindow3D(wbp w1, wbp w2)
 /*
  * TexCopyArea copies source image data into a destination texture.
  */
-int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width, int height,
-    		 int xt, int yt, int width2, int height2)
+int TexCopyArea(wbp w, wbp w2, int texhandle, int x, int y, int width,
+    		 int height, int xt, int yt, int width2, int height2)
 {
    wcp wc=w2->context;
    int wd, ht, wwd, wht;

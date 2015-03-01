@@ -3470,7 +3470,7 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
    return Succeeded;
 }
 
-int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int isfg)
+int TexFillRect(wbp w, int texh, int x, int y, int width, int height, int isfg)
 {
    wcp wc=w->context;
    int x2, y2;
@@ -3490,38 +3490,42 @@ int TexFillRect(wbp w, int texhandle, int x, int y, int width, int height, int i
       cblue = (GLint) BLUE(wc->bg);
       }
 
-   tex = wc->display->stex[texhandle].tex;
-   wd  = wc->display->stex[texhandle].width;
-   ht  = wc->display->stex[texhandle].height;
+   tex = wc->display->stex[texh].tex;
+   wd  = wc->display->stex[texh].width;
+   ht  = wc->display->stex[texh].height;
 
    /* if width/height is negative, flip it and readjust x and y accordingly */
    if (width < 0){ x+= width; width=-width; }
    if (height < 0){ y+= height; height=-height; }
 
-   if (x+width<0 || x>=wd || y+height<0 || y>=ht) return Failed;
+   if (x+width<0 || x>=wd || y+height<0 || y>=ht) {
+      return Failed;
+      }
 
    if (x<0){ width+=x; x=0;}
-   if (x+width >= wd ) width=wd-x-1;
+   if (x+width > wd ) width=wd-x-1;
    if (y<0){ height+=y; y=0;}
-   if (y+height >= ht ) height=ht-y-1;
+   if (y+height > ht ) height=ht-y-1;
 
-   if (width==0 || height==0) return Failed;
+   if ((width==0) || (height==0)) {
+      return Failed;
+      }
 
    wd3 = wd * 3;
 
    /* Horizontal 1 */
    x2=width+x; y2=y+height;
 
-   for (yy=y; yy<=y2; yy++){
+   for (yy=y; yy<y2; yy++){
        l =  wd3 * (ht-yy - 1) + x * 3;
-       for (xx = x; xx <= x2; xx++) {
-       	   l = l + 3;
+       for (xx = x; xx < x2; xx++) {
        	   tex[l] = cred;
        	   tex[l+1]=cgreen;
        	   tex[l+2]=cblue;
+       	   l = l + 3;
        	   }
 	}
-   TEXUPDATE(w, wc, texhandle, tex, wd, ht);
+   TEXUPDATE(w, wc, texh, tex, wd, ht);
    return Succeeded;
 }
 

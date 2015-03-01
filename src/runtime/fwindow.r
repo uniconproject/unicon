@@ -60,8 +60,12 @@ function{0,1} Bg(argv[argc])
       char sbuf1[MaxCvtLen];
       int len;
       tended char *tmp;
+      int is_texture=0, texhandle;
       int warg = 0;
-      OptWindow(w);
+      OptTexWindow(w);
+      if (is_texture) {
+	 warg=1;
+	 }
 
       /*
        * If there is a (non-window) argument we are setting by
@@ -1533,7 +1537,6 @@ function{0,1} Fg(argv[argc])
       }
    body {
       wbp w;
-      wcp wc;
       char sbuf1[MaxCvtLen];
       int len;
       tended char *tmp;

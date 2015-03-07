@@ -146,80 +146,9 @@ struct b_cset  fullcs = {
 		~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0)
    };
 
-#if !COMPILER
-
 /*
- * Built-in csets
+ * Built-in csets that used to live here were replaced by rtt's generated ones.
  */
-
-/*
- * &digits; bits corresponding to 0-9 are on.
- */
-struct b_cset  k_digits = {
-   T_Cset,
-   10,
-
-#if EBCDIC != 1
-   cset_display(0,  0,	0,  0x3ff, 0,  0, 0,  0,
-		0,  0,	0,  0,	 0,  0,	 0,  0)
-#else					/* EBCDIC != 1*/
-   cset_display(0,  0,	0,  0,	0,  0,	0,  0,
-		0,  0,	0,  0,  0,  0,  0,  0x3ff)
-#endif					/* EBCDIC != 1 */
-
-   };
-
-/*
- * Cset for &lcase; bits corresponding to lowercase letters are on.
- */
-struct b_cset  k_lcase = {
-   T_Cset,
-   26,
-
-#if EBCDIC != 1
-   cset_display(0,  0,	0,  0,	0,  0,	~01,  03777,
-		0,  0,	0,  0,	0,  0,	0,  0)
-#else					/* EBCDIC != 1 */
-   cset_display(0,  0,	0,  0,	0,  0,	0,  0,
-		0x3fe,	0x3fe,	0x3fc,	0,  0,	0,  0,	0)
-#endif					/* EBCDIC != 1 */
-
-   };
-
-/*
- * &ucase; bits corresponding to uppercase characters are on.
- */
-struct b_cset  k_ucase = {
-   T_Cset,
-   26,
-
-#if EBCDIC != 1
-   cset_display(0,  0,	0,  0,	~01,  03777, 0, 0,
-		0,  0,	0,  0,	0,  0,	0,  0)
-#else					/* EBCDIC != 1 */
-   cset_display(0,  0,	0,  0,	0,  0,	0,  0,
-		0,  0,	0,  0,	0x3fe,	0x3fe,	0x3fc,	0)
-#endif					/* EBCDIC != 1 */
-
-   };
-
-/*
- * &letters; bits corresponding to letters are on.
- */
-struct b_cset  k_letters = {
-   T_Cset,
-   52,
-
-#if EBCDIC != 1
-   cset_display(0,  0,	0,  0,	~01,  03777, ~01, 03777,
-		0,  0,	0,  0,	0,  0,	0,  0)
-#else					/* EBCDIC != 1 */
-   cset_display(0,  0,	0,  0,	0,  0,	0,  0,
-		0x3fe,  0x3fe,	0x3fc,  0, 0x3fe, 0x3fe, 0x3fc,	0)
-#endif					/* EBCDIC != 1 */
-
-   };
-#endif					/* COMPILER */
 
 /*
  * Built-in files.

@@ -202,10 +202,6 @@ extern struct descrip amperErrno;
 */
    extern struct b_cset k_ascii;	/* value of &ascii */
    extern struct b_cset k_cset;		/* value of &cset */
-   extern struct b_cset k_digits;	/* value of &digits */
-   extern struct b_cset k_lcase;	/* value of &lcase */
-   extern struct b_cset k_letters;	/* value of &letters */
-   extern struct b_cset k_ucase;	/* value of &ucase */
 
 /* delete
    extern struct descrip tended[];	* tended descriptors

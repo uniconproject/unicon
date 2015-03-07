@@ -137,16 +137,6 @@ struct b_cset  rparcs = {
    };
 
 /*
- * fullcs - all 256 bits on.
- */
-struct b_cset  fullcs = {
-   T_Cset,
-   256,
-   cset_display(~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0,
-		~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0)
-   };
-
-/*
  * Built-in csets that used to live here were replaced by rtt's generated ones.
  */
 

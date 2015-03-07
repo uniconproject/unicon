@@ -207,7 +207,8 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
 " by cset c."
 
 function{0,1} EvGet(cs,vmask,flag)
-   if !def:cset(cs,fullcs) then
+   if is:null(cs) then inline { Kcset(&cs); }
+   else if !cnv:cset(cs) then
       runerr(104,cs)
    if !is:null(vmask) then
       if !is:table(vmask) then

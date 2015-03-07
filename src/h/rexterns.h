@@ -197,16 +197,6 @@ extern struct descrip amperErrno;
    extern word *stackend;		/* end of evaluation stack */
 #endif					/* Concurrent */
    
-/*delete
-   extern int ntended;			* number of active tended descriptors
-*/
-   extern struct b_cset k_ascii;	/* value of &ascii */
-   extern struct b_cset k_cset;		/* value of &cset */
-
-/* delete
-   extern struct descrip tended[];	* tended descriptors
-*/
-   
    extern struct pstrnm pntab[];
    extern int pnsize;
    

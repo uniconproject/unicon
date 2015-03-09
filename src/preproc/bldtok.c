@@ -123,7 +123,7 @@ struct char_src *cs;
     * See if we are at white space or a comment.
     */
    c1 = *next_char;
-   if (!IsWhSp(c1) && (c1 != '/' || next_char[1] != '*'))
+   if (!IsWhSp(c1) && (c1 != '/' || (next_char[1] != '*' && next_char[1]!='/')))
       return NULL;
 
    /*
@@ -193,6 +193,42 @@ struct char_src *cs;
          else if (whsp_image == NoComment)
             AppChar(tknize_sbuf, ' ');
          AdvChar();
+         AdvChar();
+         }
+      else if (c1 == '/' && next_char[1] == '/') {
+         /*
+          * Start of C++ comment. If we are retaining the image of comments,
+          *  copy the characters into the string buffer.
+          */
+         if (whsp_image == FullImage) {
+            AppChar(tknize_sbuf, '/');
+            AppChar(tknize_sbuf, '/');
+            }
+         AdvChar();
+         AdvChar();
+
+         /*
+          * Look for the end of the comment.
+          */
+         c1 = *next_char;
+         while (c1 != '\n') {
+            if (c1 == EOF)
+                errfl1(fname, line, "eof encountered in comment");
+            AdvChar();
+            if (whsp_image == FullImage)
+               AppChar(tknize_sbuf, c1);
+	    c1 = *next_char;
+            }
+
+         /*
+          * Determine if we are retaining the image of a comment, replacing
+          *  a comment by one space character, or ignoring comments.
+          */
+         if (whsp_image == FullImage) {
+            AppChar(tknize_sbuf, '\n');
+            }
+         else if (whsp_image == NoComment)
+            AppChar(tknize_sbuf, ' ');
          AdvChar();
          }
       else

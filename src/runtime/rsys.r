@@ -1542,6 +1542,10 @@ struct ptstruct *ptopen(char *command)
    strcpy(newPtStruct->slave_command, command);
   
    ac = CmdParamToArgv(command, &av, 0);
+   /*
+    * Maybe need to conduct a path search for av[0], augment
+    * command string with path if found; fail if not found.
+    */
 
 #if NT
    /* Set up the security attributes struct. */

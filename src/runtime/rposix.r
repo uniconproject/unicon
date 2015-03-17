@@ -1701,10 +1701,7 @@ struct hostent *hs;
 #ifndef Concurrent
 word *callproc, callproc_ibuf[100];
 #endif					/* Concurrent */
-dptr calliconproc(proc, args, nargs)
-struct descrip proc;
-dptr args;
-int nargs;
+dptr calliconproc(struct descrip proc, dptr args, int nargs)
 {
    int i, off, retval;
    inst saved_ipc;

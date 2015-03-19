@@ -1,9 +1,65 @@
 /*
  * File: ocat.r -- caterr, lconcat
  */
+
+#ifdef PatternIntegration
+"x || y - concatenate strings and patterns x and y." 
+#else					/* PatternIntegration */
 "x || y - concatenate strings x and y." 
+#endif					/* PatternIntegration */
 
 operator{1} || cater(x, y)
+
+#ifdef PatternIntegration
+   if is:pattern(x) then {
+      abstract {
+	 return pattern;
+	 }
+      body {
+	 struct b_pattern *lp, *rp;
+	 struct b_pelem *pe;
+	 union block *bp;
+	 type_case y of {
+	    string:  cnv_str_pattern(&y,&y);
+	    cset:    cnv_cset_pattern(&y,&y);
+	    pattern: { }
+	    default: { runerr(127); }
+	    }
+	 lp = (struct b_pattern *)BlkLoc(x);
+	 rp = (struct b_pattern *)BlkLoc(y);
+
+	 /* perform concatenation in patterns */
+	 pe = (struct b_pelem *)Concat(Copy((struct b_pelem *)lp->pe), Copy((struct b_pelem *)rp->pe), rp->stck_size);
+	 bp = (union block *)pattern_make_pelem(lp->stck_size + rp->stck_size,pe);
+	 return pattern(bp);
+	 }
+      }
+   else if is:pattern(y) then {
+      abstract {
+	 return pattern;
+	 }
+      body {
+	 struct b_pattern *lp, *rp;
+	 struct b_pelem *pe;
+	 union block *bp;
+	 type_case x of {
+	    string:  cnv_str_pattern(&x,&x);
+	    cset:    cnv_cset_pattern(&x,&x);
+	    pattern: { }
+	    default: { runerr(127); }
+	    }
+	 lp = (struct b_pattern *)BlkLoc(x);
+	 rp = (struct b_pattern *)BlkLoc(y);
+
+	 /* perform concatenation in patterns */
+	 pe = (struct b_pelem *)Concat(Copy((struct b_pelem *)lp->pe),
+				 Copy((struct b_pelem *)rp->pe), rp->stck_size);
+	 bp = (union block *)pattern_make_pelem(lp->stck_size+rp->stck_size,pe);
+	 return pattern(bp);
+	 }
+      }
+   else {
+#endif				/* PatternIntegration */
 
    if !cnv:string(x) then
       runerr(103, x)
@@ -26,8 +82,8 @@ operator{1} || cater(x, y)
          StrLen(result) = StrLen(x) + StrLen(y);
          return result;
          }
-      else if ((StrLoc(x) + StrLen(x) == strfree)
-      && (DiffPtrs(strend,strfree) > StrLen(y))) {
+      else if ((StrLoc(x) + StrLen(x) == strfree) &&
+	       (DiffPtrs(strend,strfree) > StrLen(y))) {
          /*
           * Optimization 2: The end of x is at the end of the string space.
           *  Hence, x was the last string allocated and need not be
@@ -60,6 +116,11 @@ operator{1} || cater(x, y)
       StrLen(result) = StrLen(x) + StrLen(y);
       return result;
       }
+
+#ifdef PatternIntegration
+   }
+#endif					/* PatternIntegration */
+
 end
 
 

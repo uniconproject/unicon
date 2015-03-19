@@ -124,6 +124,12 @@ int		cnv_str		(dptr s, dptr d);
 int		cnv_tcset	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tstr	(char *sbuf, dptr s, dptr d);
 #endif					/* MultiThread */
+#ifdef PatternIntegration
+void 		cnv_str_pattern	(dptr s, dptr p);
+void 		cnv_cset_pattern(dptr s, dptr p);
+struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
+struct b_pelem *Copy		(struct b_pelem * P);
+#endif               /* PatternIntegration */
 int		co_chng		(struct b_coexpr *ncp, struct descrip *valloc,
 				   struct descrip *rsltloc,
 				   int swtch_typ, int first);
@@ -212,6 +218,9 @@ void		fpetrap		(void);
 int		getenv_r	(const char *name, char *buf, size_t len);
 word		getrandom	(void);
 int		getvar		(char *s,dptr vp);
+
+int 		getkeyword	(char *s, dptr vp);
+
 int		get_CCompiler	(char *s);
 int		get_num_cpu_cores();
 uword		hash		(dptr dp);
@@ -234,11 +243,19 @@ int		interp_1	(int fsig,dptr cargp);
 #else
 int		interp		(int fsig,dptr cargp);
 #endif
+#ifdef PatternIntegration
+int 		internal_match	(char * pat_sub, int Length, int Pat_S,
+				struct b_pelem * pattern, int *Start, int *Stop,
+				int initial_cursor, int Anchored_Mode);
+#endif					/* PatternIntegration */
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
 int		iselect		(int fd, int t);
+int		Kascii		(dptr cargp);
 int		Kcset		(dptr cargp);
+int		Kdigits		(dptr cargp);
 int		Klcase		(dptr cargp);
+int		Kletters	(dptr cargp);
 int		Kucase		(dptr cargp);
 int		lexcmp		(dptr dp1,dptr dp2);
 word		longread	(char *s,int width, word len,FILE *fname);
@@ -266,6 +283,11 @@ void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub*/
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		openlog		(char *p);
 void		outimage	(FILE *f,dptr dp,int noimage);
+#ifdef PatternIntegration
+union block 	*pattern_make	(int stck_size, struct b_pelem * pnext,
+				int pattern_code, int index, struct descrip param);
+union block 	*pattern_make_pelem	(int stck_size, struct b_pelem * pe);
+#endif					/* PatternIntegration */
 struct b_coexpr	*popact		(struct b_coexpr *ce);
 #if NT
 unsigned long long int physicalmemorysize();
@@ -296,6 +318,9 @@ char		*qsearch	(char *key, char *base, int nel, int width,
 int		qtos		(dptr dp,char *sbuf);
 int    		 radix		(int sign, register int r, register char *s,
 				 register char *end_s, union numeric *result);
+#ifdef PatternIntegration
+struct b_pelem 	*ResolvePattern	(struct b_pattern *pat);
+#endif					/* PatternIntegration */
 #ifdef MultiThread
 char		*reserve_0	(int region, word nbytes);
 char		*reserve_1	(int region, word nbytes);

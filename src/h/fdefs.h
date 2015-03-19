@@ -103,6 +103,37 @@ FncDefV(write)
 FncDefV(writes)
 #ifdef PatternType
      FncDef(pattern_match,2) /* ?? */
+#ifdef PatternIntegration
+     FncDef(Any,1)    
+     FncDef(Break,1) 
+     FncDef(NotAny,1)
+     FncDef(Span,1)
+     FncDef(Arb,0)
+     FncDef(Arbno,1)
+     FncDef(pattern_concat,2) /* || */
+     FncDef(pattern_alternate,2) /* .| */
+     FncDef(pattern_setcur,2) /* .> */
+     FncDef(Succeed,0)
+     FncDef(Bal,0)
+     FncDef(Breakx,1)
+     FncDef(pattern_assign_immediate,3) /* => */
+     FncDef(pattern_assign_onmatch,3)  /* -> */
+     FncDef(Fence,1)
+     FncDef(pattern_unevalvar,1)   /* `` */
+     FncDef(pattern_fieldeval,1)   /* `x.y` */
+     FncDef(Len,1)
+     FncDef(Cancel,0)
+     FncDef(Rem,0)
+     FncDef(pattern_stringfunccall,1)  /* ```` */
+     FncDef(pattern_boolfunccall,1)    /* `` */
+     FncDef(pattern_stringmethodcall,1)  /* ``x.y`` */
+     FncDef(pattern_boolmethodcall,1)    /* `x.y` */
+     FncDef(PFail,0)
+     FncDef(Pos,1)
+     FncDef(Rpos,1)
+     FncDef(Tab,1)
+     FncDef(Rtab,1)
+#else					/* PatternIntegration */
      FncDef(PAny,1)    
      FncDef(PBreak,1) 
      FncDef(PNotAny,1)
@@ -132,6 +163,7 @@ FncDefV(writes)
      FncDef(PRpos,1)
      FncDef(PTab,1)
      FncDef(PRtab,1)
+#endif					/* PatternIntegration */
 #endif					/* PatternType */
 
 

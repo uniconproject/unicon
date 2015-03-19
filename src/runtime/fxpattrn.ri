@@ -132,9 +132,16 @@ enum pattern_codes{
 #define DEBUGF(lev, x)
 #endif /* DEBUG not defined */
 
+#ifdef PatternIntegration
+dptr processFuncCallList(struct b_list *list, int csr);
+int internal_match(char * pat_sub, int Length, int Pat_S,
+		struct b_pelem * pattern, int *Start, int *Stop,
+		int initial_cursor, int Anchored_Mode);
+#else
 int internal_match(char * pat_sub, int Length, int Pat_S,
 		struct b_pelem * pattern, int *Start, int *Stop,
 		int initial_cursor);
+#endif					/* !PatternIntegration */
 void cnv_str_pattern(dptr s, dptr p);
 void cnv_cset_pattern(dptr s, dptr p);
 
@@ -235,13 +242,152 @@ void Build_Ref_Array(struct b_pelem * E, struct b_pelem *RA[] )
    Record_PE(E, RA);
 }
 
-
 void VariableLookupFailed(char * varname)
 {
    fprintf(stderr, "failed to lookup variable name=%s\n",varname);
    fatalerr(0,NULL);
 }
 
+#ifdef PatternIntegration
+void printList(struct b_list *l, int t){
+	int i;
+	tended char *item;
+	tended struct b_lelem *elem;
+	struct b_list *list;
+
+	elem = (struct b_lelem *)l->listhead;
+	for(i = 1; i < elem->nused; i++){
+	   if (is:list(elem->lslots[i])) {
+	      list = (struct b_list *)BlkD(elem->lslots[i], List);
+	      printList(list, t + 1);
+	      }
+	   else {
+	      cnv:C_string(elem->lslots[i], item);
+	      if (item != NULL) printf("%*s%s\n", t, "\t", item);
+	      }
+	}
+}
+
+struct b_list *ResolveList(struct b_list *lp)
+{
+   struct descrip proc;
+   struct descrip var;
+   tended struct b_lelem *elsrc;
+   tended struct b_lelem *eldest;
+   int i, b, nargs;
+   tended struct b_list *lpsrc;
+   tended struct b_list *lpdest;
+   struct b_list *lptemp;
+   tended char *temp;
+   int complement;
+   struct b_cset *cp, *cpx;
+
+   lpsrc = lp;
+   lpdest = alclist(lpsrc->size,lpsrc->size);
+   DEBUGF(20,(stdout, "Resolving function name and parameters"));
+   nargs = lpsrc->size -1;
+   elsrc = (struct b_lelem *)lpsrc->listhead;
+
+   temp = "";
+
+   proc.dword = D_Proc;
+   /* convert string in to process and store in proc*/
+   BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
+   if (BlkLoc(proc) == NULL) {
+      fprintf(stderr, "Unable to find proc\n");
+      fatalerr(0, NULL);
+      }
+   eldest = (struct b_lelem *)lpdest->listhead;
+   eldest->lslots[0] = proc;
+   for (; BlkType(elsrc) == T_Lelem; elsrc = (struct b_lelem *)elsrc->listnext) {
+      for (i = 1; i < elsrc->nused; i++) {
+	 tended char * varname;
+	 struct descrip parm;
+	 dptr pvar;
+	 if (is:string(elsrc->lslots[i])) {
+	    /* if a string constant, drop double quotes,
+	    else lookup using getvar() */
+	    cnv:C_string(elsrc->lslots[i], varname);
+	    if (StrLen(elsrc->lslots[i])>0) {
+
+	       complement = 0;
+               if (strcspn(varname, "~") == 0) {
+		  /* resolve complement */
+		  StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+		  StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 1;
+		  cnv:C_string(elsrc->lslots[i], varname);
+		  complement = 1;
+		  }
+
+	       if (strcspn(varname, "\"") == 0) {
+		  /* drop the quotes, but pass string as a cset */
+		  StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+		  StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+		  cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
+		  parm = elsrc->lslots[i];
+		  }
+	       else if (strcspn(varname, "\'") == 0) { 
+		  /* drop the quotes, but pass string as a cset */
+		  StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+		  StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+		  cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
+		  parm = elsrc->lslots[i];
+		  }
+	       else if (strcspn(varname, "&") == 0) {
+		  if ( getkeyword(varname, &parm) == Failed) {
+		     VariableLookupFailed(varname);
+	             }
+		  cnv:cset(parm, elsrc->lslots[i]);
+		  if(complement) {
+		     Protect(cp = alccset(), fatalerr(0,NULL));
+		     cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
+		     for (b = 0; b < CsetSize; b++) 
+			cp->bits[b] = ~cpx->bits[b];
+		     elsrc->lslots[i].vword.bptr = (union block *)cp;
+		     }
+		  parm = elsrc->lslots[i];
+		  }
+	       else if (strcspn(varname, "1234567890") == 0) {
+		  cnv:integer(elsrc->lslots[i], elsrc->lslots[i]);
+		  parm = elsrc->lslots[i];
+		  }
+	       else {
+		  if ( getvar(varname, &parm) == Failed) {
+		     VariableLookupFailed(varname);
+	             }
+		  pvar = VarLoc(parm);
+		  elsrc->lslots[i] = *pvar;
+		  
+		  if(complement) {
+		     Protect(cp = alccset(), fatalerr(0,NULL));
+		     cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
+		     for (b = 0; b < CsetSize; b++) 
+			cp->bits[b] = ~cpx->bits[b];
+		     elsrc->lslots[i].vword.bptr = (union block *)cp;
+		     }
+		  }
+	       parm = elsrc->lslots[i];
+	       }
+
+	    else {
+	       /*printf("Not sure what\n");*/
+	       }
+            }
+	 else if (is:list(elsrc->lslots[i])) {
+            /* recursively visit sublists, do same stuff */
+	    lptemp = (struct b_list *)BlkD(elsrc->lslots[i], List);
+	    lpdest = ResolveList(lptemp);
+	    }
+	 else { 
+	    /* cset, integer constant, ... */
+	    parm = elsrc->lslots[i];
+	    }
+         eldest->lslots[i] = parm;
+         }
+      }
+   return lpdest;
+   }
+#endif					/* PatternIntegration */
 
 /*
  *  ----------
@@ -359,13 +505,19 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	 case PC_Span_VF:
 	 case PC_Pred_Func:
 	 case PC_String_VF:{
+#ifdef PatternIntegration
+#else 				/* PatternIntegration */
 	    struct descrip proc;
 	    tended struct b_lelem *elsrc;
 	    tended struct b_lelem *eldest;
 	    int i, nargs;
+#endif				/* PatternIntegration */
 	    tended struct b_list *lpsrc;
 	    tended struct b_list *lpdest;
-	    lpsrc = (struct b_list *)BlkLoc(E->parameter);
+	    lpsrc = (struct b_list *)BlkD(E->parameter, List);    
+#ifdef PatternIntegration
+	    lpdest = ResolveList(lpsrc);
+#else				/* PatternIntegration */
 	    lpdest = alclist(lpsrc->size,lpsrc->size);
 	    DEBUGF(20,(stdout, "Resolving function name and parameters"));
 	    nargs = lpsrc->size -1;
@@ -390,6 +542,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 		  eldest->lslots[i] = parm;
 		  }
 	       }
+#endif				/* PatternIntegration */
 	    E->parameter.dword = D_List;
 	    E->parameter.vword.bptr = (union block *) lpdest;
 	    }
@@ -582,15 +735,33 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       runerr(114, dpsub);
 
    body {
+#ifndef PatternIntegration
       int curpos = 0;
+#endif					/* !PatternIntegration */
       int oldpos;
       int start;
       int stop;
+      int new_len;
       struct b_pattern *pattern;
       tended struct b_pelem *phead;
+
+#ifdef PatternIntegration
+      int subject_len;
+      CURTSTATE();
+    
+      /*
+       * Is k_pos really 0-based and not 1-based?
+       * If we are assigning new values to &subject/&pos for a match,
+       * do we need to save & restore old values when finished?
+       */
+      k_pos = 0;
+      k_subject = dpsub;
+      subject_len = StrLen(k_subject);
+#else					/* PatternIntegration */
       char * pattern_subject = StrLoc(dpsub);
       int subject_len = StrLen(dpsub);
-      int new_len;
+#endif					/* PatternIntegration */
+
       type_case pat of {
 	 string: {
 	    cnv_str_pattern(&pat,&pat);
@@ -604,22 +775,40 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	    runerr(127);
 	    }
 	 }
+
       pattern = (struct b_pattern *)BlkLoc(pat);
       phead = ResolvePattern(pattern) ;
+#ifdef PatternIntegration
+      while ((k_pos >= 0) &&
+	     internal_match(StrLoc(k_subject), subject_len, pattern->stck_size,
+			    phead, &start, &stop, k_pos, 0)
+	     ){
+	 oldpos = k_pos;
+	 k_pos = stop;
+#else					/* PatternIntegration */
       while ((curpos >= 0) &&
 	     internal_match(pattern_subject, subject_len, pattern->stck_size,
 			    phead, &start, &stop, curpos)
 	     ){
 	 oldpos = curpos;
 	 curpos = stop;
+#endif					/* PatternIntegration */
 	 if (use_trap == 1)
 	    suspend tvsubs(&psub, start+1,stop - start);
 	 else
 	    suspend string(stop - start, StrLoc(dpsub)+ start);
 	 deref(&psub,&dpsub);
+#ifdef PatternIntegration
+	 k_subject = dpsub;
+#else					/* PatternIntegration */
 	 pattern_subject = StrLoc(dpsub);
+#endif					/* PatternIntegration */
 	 if (subject_len != StrLen(dpsub)) {
+#ifdef PatternIntegration
+	    k_pos += StrLen(dpsub) - subject_len;
+#else					/* PatternIntegration */
 	    curpos += StrLen(dpsub) - subject_len;
+#endif					/* PatternIntegration */
 	    subject_len = StrLen(dpsub);
 	    }
 	 }
@@ -738,7 +927,11 @@ struct b_pelem *Bracket (struct b_pelem *E,struct b_pelem * P,
 	 }
 #enddef
 
+#ifdef PatternIntegration
+function {1} Any(charset)
+#else					/* PatternIntegration */
 function {1} PAny(charset)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -749,7 +942,11 @@ function {1} PAny(charset)
       }
 end
 
+#ifdef PatternIntegration
+function {1} Break(charset)
+#else					/* PatternIntegration */
 function {1} PBreak(charset)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -760,7 +957,11 @@ function {1} PBreak(charset)
       }
 end
 
+#ifdef PatternIntegration
+function {1} NotAny(char_set)
+#else					/* PatternIntegration */
 function {1} PNotAny(char_set)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -771,7 +972,11 @@ function {1} PNotAny(char_set)
       }
 end
 
+#ifdef PatternIntegration
+function {1} Span(char_set)
+#else					/* PatternIntegration */
 function {1} PSpan(char_set)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -798,7 +1003,11 @@ static struct b_pattern * breakx_make(struct b_pelem * B)
 /*
  * BreakX
  */
+#ifdef PatternIntegration
+function {1} Breakx(char_set)
+#else					/* PatternIntegration */
 function {1} PBreakx(char_set)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -872,7 +1081,11 @@ end
 	 }
 #enddef
 
+#ifdef PatternIntegration
+function {1} Len(count)
+#else					/* PatternIntegration */
 function {1} PLen(count)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -883,18 +1096,40 @@ function {1} PLen(count)
       }
 end
 
+#ifdef PatternIntegration
+function {1} Pos(position)
+#else					/* PatternIntegration */
 function {1} PPos(position)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
    body {
       union block *bp;
+#ifdef PatternIntegration
+      /*
+       * check if position is negative
+       */
+      if(position.vword.integr < 1) {
+         /* change position to a positive value and use RPos */
+         position.vword.integr = -position.vword.integr;
+         ConvertPatternArgumentInt(position,bp,PC_RPos);
+	 } 
+      else {
+         ConvertPatternArgumentInt(position,bp,PC_Pos);
+         }
+#else 				/* PatternIntegration */
       ConvertPatternArgumentInt(position,bp,PC_Pos);
+#endif				/* PatternIntegration */
       return pattern(bp);
       }
 end
 
+#ifdef PatternIntegration
+function {1} Rpos(position)
+#else					/* PatternIntegration */
 function {1} PRpos(position)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -905,18 +1140,40 @@ function {1} PRpos(position)
       }
 end
 
+#ifdef PatternIntegration
+function {1} Tab(count)
+#else					/* PatternIntegration */
 function {1} PTab(count)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
    body {
       union block *bp;
+#ifdef PatternIntegration
+      /*
+       * check if count is negative
+       */
+      if(count.vword.integr < 1) {
+         /* change count to a positive value and use RTab */
+         count.vword.integr = -count.vword.integr;
+         ConvertPatternArgumentInt(count,bp,PC_RTab);
+	 } 
+      else {
+         ConvertPatternArgumentInt(count,bp,PC_Tab);
+         }
+#else					/* PatternIntegration */
       ConvertPatternArgumentInt(count,bp,PC_Tab);
+#endif					/* PatternIntegration */
       return pattern(bp);
       }
 end
 
+#ifdef PatternIntegration
+function {1} Rtab(count)
+#else					/* PatternIntegration */
 function {1} PRtab(count)
+#endif					/* PatternIntegration */
    if !cnv:integer(count) then
       runerr(102,count)
    abstract {
@@ -944,7 +1201,11 @@ end
  *  The PC_Arb_X element is numbered 2, and the PC_Arb_Y element is 1.
 */
 
+#ifdef PatternIntegration
+function {1} Arb()
+#else					/* PatternIntegration */
 function {1} PArb()
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -977,8 +1238,11 @@ struct b_pelem * Arbno_Simple(struct b_pelem *pe)
    return S;
 }
 
-
+#ifdef PatternIntegration
+function {1} Arbno(ARBPAT)
+#else					/* PatternIntegration */
 function {1} PArbno(ARBPAT)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -1089,7 +1353,11 @@ end
 /*
  * Succeed
  */
+#ifdef PatternIntegration
+function {1} Succeed()
+#else					/* PatternIntegration */
 function {1} PSucceed()
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -1101,7 +1369,11 @@ end
 /*
  * bal
  */
+#ifdef PatternIntegration
+function {1} Bal()
+#else					/* PatternIntegration */
 function {1} PBal()
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -1110,7 +1382,6 @@ function {1} PBal()
       return pattern(bp);
       }
 end
-
 
 function {1} pattern_fieldeval (var_list)
    if !is:list(var_list) then
@@ -1124,7 +1395,6 @@ function {1} pattern_fieldeval (var_list)
       return pattern(bp);
       }
 end
-
 
 function {1} pattern_stringfunccall (var_list)
    if !is:list(var_list) then
@@ -1383,7 +1653,11 @@ end
  *  Where N is the number of nodes in P, the X node is numbered N + 1,
  *  and the E node is N + 2.
  */
+#ifdef PatternIntegration
+function {1} Fence(P)
+#else					/* PatternIntegration */
 function {1} PFence(P)
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -1479,7 +1753,11 @@ end
  * variable to the function frees the programmer from having to declare it.
  */
 
+#ifdef PatternIntegration
+function {1} Cancel()
+#else					/* PatternIntegration */
 function {1} PCancel()
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -1490,7 +1768,11 @@ function {1} PCancel()
 end
 
 
+#ifdef PatternIntegration
+function {1} Rem()
+#else					/* PatternIntegration */
 function {1} PRest()
+#endif					/* PatternIntegration */
    abstract {
       return pattern;
       }
@@ -1710,20 +1992,55 @@ static void ErrorDuringPatternMatch(char *x)
    fatalerr(0, NULL);
 }
 
+#ifdef PatternIntegration
+dptr processFuncCallList(struct b_list *lp, int csr){
+   int nargs;
+   tended struct b_lelem *ep;
+   struct descrip proc;
+   int i;
+   struct descrip procargs[10];
+   tended struct descrip cresult;
+   dptr call_result;
+   tended char *temp;
+   k_pos = csr + 1;
+   nargs = lp->size -1;
+   ep = (struct b_lelem *)lp->listhead;
+   proc = ep->lslots[0];
+   for (; BlkType(ep) == T_Lelem; ep = (struct b_lelem *)ep->listnext) {
+      for (i = 1; i < ep->nused; i++) {
+	 if(is:list(ep->lslots[i])) {
+	    dptr rv = processFuncCallList(BlkD(ep->lslots[i],List), csr);
+	    if (rv == 0) return 0;
+	    procargs[i - 1] = *rv;
+	    }
+         else {
+	    procargs[i - 1] = ep->lslots[i];
+	    }
+         }
+      }
+   call_result = calliconproc(proc,procargs,nargs);
+   return call_result;
+   }
+#endif				/* PatternIntegration */
 /*
  * uses the list stored in the parameter field of a node to
  * 1. obtains the name of the procedure from the first element of the list
  * 2. the remaining elements of the list are used as paramters to the function
  */
 #begdef GetResultFromFuncCall()
+#ifndef PatternIntegration
    int nargs;
    struct descrip procargs[10];
    struct descrip proc;
    tended struct b_lelem *ep;
    int i;
+#endif				/* PatternIntegration */
    tended struct descrip cresult;
    dptr call_result;
    tended struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
+#ifdef PatternIntegration
+   call_result = processFuncCallList(lp, Cursor);
+#else				/* PatternIntegration */
    nargs = lp->size -1;
    ep = (struct b_lelem *)lp->listhead;
    proc = ep->lslots[0];
@@ -1733,6 +2050,7 @@ static void ErrorDuringPatternMatch(char *x)
          }
       }
    call_result = calliconproc(proc,procargs,nargs);
+#endif				/* PatternIntegration */
    if (call_result == 0)
       goto Node_Fail;
    cresult = *call_result;
@@ -1836,10 +2154,21 @@ else {
 
 #define Stack_Init 1
 #define Stack_Size 200
+/*
+ * Revised as part of 2015 integration
+ *   added Anchored_Mode to signature to allow external definition
+ *   pattern mode.
+ */
+#ifndef PatternIntegration
 static int Anchored_Mode = 0;
+#endif					/* !PatternIntegration */
 int internal_match(char * pat_sub, int Length, int Pat_S,
 		   struct b_pelem * pattern, int *Start, int *Stop,
-		   int initial_cursor )
+		   int initial_cursor
+#ifdef PatternIntegration
+		   , int Anchored_Mode
+#endif					/* PatternIntegration */
+		   )
 {
    stack_entry Stack[Stack_Size];
    int Stack_Ptr , Stack_Base ;
@@ -1864,7 +2193,11 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    /* In anchored mode, the bottom entry on the stack is a cancel entry */
    if (Anchored_Mode) {
       Stack[Stack_Init].node = &CP_Cancel;
+#ifdef PatternIntegration
+      Stack[Stack_Init].cursor = initial_cursor;
+#else					/* PatternIntegration */
       Stack[Stack_Init].cursor = 0;
+#endif					/* PatternIntegration */
       }
 /*
  *       --  In unanchored mode, the bottom entry on the stack references
@@ -2397,6 +2730,10 @@ Node_Succeed:
       if ( call_result == 0)
 	 goto Node_Fail;
       else {
+#ifdef PatternIntegration
+	 cnv:C_integer(cresult, k_pos);
+	 Cursor = k_pos - 1;
+#endif					/* PatternIntegration */
 	 goto Node_Succeed;
 	 }
       break;

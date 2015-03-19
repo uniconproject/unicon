@@ -1,10 +1,10 @@
 /*
  * File: rmisc.r
- *  Contents: deref, eq, getvar, hash, outimage,
+ *  Contents: eq, getkeyword, getvar, hash, outimage,
  *  qtos, pushact, popact, topact, [dumpact], 
  *  findline, findipc, findfile, doimage, getimage
  *  findsyntax, hitsyntax
- *  printable, sig_rsm, cmd_line, varargs.
+ *  printable, retderef, sig_rsm, cmd_line, varargs.
  *
  *  Integer overflow checking.
  */
@@ -38,6 +38,47 @@ dptr d1, d2;
 	return 1;
 }
 
+
+#ifdef PatternIntegration
+/*
+ * getkeyword() - return a descriptor with current value of non-variable
+ * keywords not found in getvar(). So far just the cset constants.
+ * Need to add the rest of the keywords.
+ * The code to use getkeyword() is different from code to use getvar because
+ *    getvar() returns a variable descriptor, but getkeyword() just returns
+ *    the value in a descriptor. No dereference will be needed.
+ */
+
+int getkeyword(char *s, dptr vp)
+{
+   if (strcmp(s, "&ascii") == 0) {
+      Kascii(vp);
+      return Succeeded;
+      }
+   if (strcmp(s, "&cset") == 0) {
+      Kcset(vp);
+      return Succeeded;
+      }
+   if (strcmp(s, "&digits") == 0) {
+      Kdigits(vp);
+      return Succeeded;
+      }
+   if (strcmp(s, "&lcase") == 0) {
+      Klcase(vp);
+      return Succeeded;
+      }
+   if (strcmp(s, "&letters") == 0) {
+      Kletters(vp);
+      return Succeeded;
+      }
+   if (strcmp(s, "&ucase") == 0) {
+      Kucase(vp);
+      return Succeeded;
+      }
+   return Failed;
+}
+#endif					/* PatternIntegration */
+
 /*
  * Get variable descriptor from name.  Returns the (integer-encoded) scope
  *  of the variable (Succeeded for keywords), or Failed if the variable

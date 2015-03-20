@@ -21,6 +21,8 @@ cp makefile.cmn ../../../src/common/makefile
 cp MAKEFILE.RTT ../../../src/rtt/makefile
 cp MAKEFILE.RUN ../../../src/runtime/makefile
 cp MAKEFILE.T ../../../src/icont/makefile
+cp iconc.mak ../../../src/iconc/makefile
+
 rm ../../../src/libtp/config.h
 cp ../../../src/libtp/config_h.win ../../../src/libtp/config.h
 mkdir -p ../../../ipl/lib

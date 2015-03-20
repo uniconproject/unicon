@@ -23,6 +23,7 @@
 #define Header header
 #define NT 1
 #define NTGCC 1
+#define CComp "gcc"
 #define ShellHeader
 
 #define index strchr

@@ -401,8 +401,11 @@ Deliberate Syntax Error
          }
       optind++;
       }
- 
+
+#ifndef NT 
+   /* what is this non-portable Linux junk doing here? */
    addlib("/usr/lib64/libstdc++.so.6");
+#endif					/* NTGCC */
 
    if (srclst == NULL)
       usage();				/* error -- no files named */

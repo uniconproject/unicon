@@ -1220,7 +1220,11 @@ char *fname;
 
             fprintf(f, "%s\n", fp->name);
 #if NT
+#if NTGCC
+            fprintf(f2, "%s.o\n", fp->name);
+#else					/* NTGCC */
             fprintf(f2, "%s.obj\n", fp->name);
+#endif					/* NTGCC */
 #endif					/* NT */
             }
    if (fclose(f) != 0)

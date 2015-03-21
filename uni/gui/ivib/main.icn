@@ -781,15 +781,87 @@ class Main : CommonDialog(
    # Given a file f, return a Canvas object
    #
    method load_canvas(f, fname)
-      local s
+      local s, L := [ ]
       repeat {
-         s := read(f) | return alert_error("No Ivib layout in " || fname)
-         if s == v1_marker then
-            return load_v1(f, fname)
-         if s == v2_marker then
-            return load_v2(f, fname)
-      }
+	 if not (s := read(f)) then {
+	    cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
+	    cd.show_modal()
+	    if not cd.result() then fail
+	    # no ivib layout, need to append
+	    close(f)
+	    if f := open(fname, "w") then {
+	       # write L
+	       every write(f, !L)
+	       # write the empty layout
+	       append_ivib(f)
+	       close(f)
+	       L := [ ]
+	       if f := open(fname) then {
+		  alert_error("added an Ivib interface")
+		  next
+		  }
+	       else return alert_error("Failed to append layout to " || fname)
+	       }
+	    else
+	       return alert_error("No Ivib layout in " || fname)
+	    }
+	 if s == v1_marker then
+	    return load_v1(f, fname)
+	 if s == v2_marker then
+	    return load_v2(f, fname)
+	 put(L, s)
+	 }
    end
+
+   #
+   # Append an (empty/default) ivib interface to a source file that
+   # doesn't have one.  f must be a file open for writing, at the
+   # end after having written a copy of the non-ivib program.
+   #
+   method append_ivib(f)
+   L := ["import gui",
+      "$include \"guih.icn\"",
+      "",
+      "class Untitled : Dialog()",
+      "   method component_setup()",
+      "      self.setup()",
+      "   end",
+      "",
+      "   method end_dialog()",
+      "   end",
+      "",
+      "   method init_dialog()",
+      "   end",
+      "",
+      "   method setup()",
+      "      self.set_attribs(\"size=644,399\")",
+      "   end",
+      "",
+      "   initially",
+      "      self.Dialog.initially()",
+      "end",
+      "",
+      "#You can invoke your ivib layout with something like this:",
+      "#procedure main()",
+      "#   local d",
+      "#   d := Untitled()",
+      "#   d.show_modal()",
+      "#end",
+      "",
+      "### Ivib-v2 layout ##",
+      "#class|Canvas|17|Name Table|table|integer|0|1|string|label|integer|1|Su",
+      "#perClass Name|string|Dialog|Import Name|string|gui|Button Groups|class",
+      "#|ButtonGroupSet|2|Parent Canvas|1|Boxes|list|0|Checkbox Groups|class|C",
+      "#heckBoxGroupSet|2|Parent Canvas|1|Boxes|list|0|Gen Indent|integer|3|Ge",
+      "#n Main|integer|1|Gen Component Setup|integer|1|Gen Init Dialog|integer",
+      "#|1|Gen Initially|integer|1|Dialog Struct|class|CDialog|4|Min Width|nul",
+      "#l|Min Height|null|Ticker Rate|null|Attribs|list|0|Name|string|Untitled",
+      "#|Width|integer|644|Height|integer|399|Items|list|0|Initial Focus|null|",
+      "#Event Handlers|null|"
+      ]
+   every write(f, !L)
+   end
+
 
    method load_layout(f, fname)
       local s, t

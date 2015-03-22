@@ -727,8 +727,29 @@ expr11	: literal ;
 	| AND FAIL { $$ := node("keyword",$1,$2) } ;
 	| AND IDENT { $$ := Keyword($1,$2) } ;
 
-while	: WHILE expr { $$ := node("While0", $1,$2);} ;
-	| WHILE expr DO expr { $$ := node("While1", $1,$2,$3,$4);} ;
+while	: WHILE expr {
+	    $$ := node("While0", $1,$2);
+	    } ;
+	| WHILE expr DO expr {
+	    # warn if a while loop should be an every.
+	    # should generalize; compute a semantic attribute and
+	    # warn if a while loop control expression is a generator.
+	    # but for now, only complain about the most obvious case
+	    if type($2) == "treenode" & $2.label === "assign" &
+	       *$2.children = 3 & type($2.children[3]) == "treenode" &
+	       $2.children[3].label == "to" & *($2.children[3].children)=3 &
+		     (type($2.children[3].children[1]) ===
+		      type($2.children[3].children[3]) === "token") &
+		     ($2.children[3].children[1].tok = 
+		      $2.children[3].children[3].tok = INTLIT) &
+		     $2.children[3].children[1].s<=$2.children[3].children[3].s
+	    then {
+		warning("infinite loop; use \"every\" to loop on generator results",
+			$1.line, $1.filename, $1.s
+			)
+	       }
+	    $$ := node("While1", $1,$2,$3,$4);
+	    } ;
 
 until	: UNTIL expr { $$ := node("until", $1,$2);} ;
 	| UNTIL expr DO expr { $$ := node("until1", $1,$2,$3,$4);} ;

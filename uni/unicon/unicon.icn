@@ -933,12 +933,12 @@ procedure warn(args[])
   iwrite(&errout)
 end
 
-procedure warning(s, lineno, filenam)
+procedure warning(s, lineno, filenam, text)
    /warnings := 0
    /errors := 0
    if warnings + errors = 0 then iwrite(&errout)
    iwrites(&errout, \(filenam|fName), ":")
-   iwrite(&errout, \lineno|yylineno, ": # \"", yytext, "\": ", s)
+   iwrite(&errout, \lineno|yylineno, ": # \"", \text|yytext, "\": ", s)
    warnings +:= 1
 end
 

@@ -2533,6 +2533,7 @@ global valstk           # value stack
 # procedure: init_stacks : allocate and prepare stacks
 ################################################################
 procedure init_stacks()
+  local i
   statestk := []
   valstk := []
   yyval  := 0 
@@ -2541,7 +2542,7 @@ procedure init_stacks()
   every i := 1 to 1000 do action[i] := proc("action_" || i)
 end
 
-#line 787 "unigram.y"
+#line 804 "unigram.y"
 
 #
 # This procedure parenthesizes the right-hand side of an expression,
@@ -2745,7 +2746,7 @@ end
 # or to stderr.
 #
 record ParseError ( lineNumber, errorMessage )
-#line 2752 "unigram.icn"
+#line 2753 "unigram.icn"
 ################################################################
 # procedure: yyparse : parse input and execute indicated items
 ################################################################
@@ -4031,86 +4032,103 @@ end
 
 procedure action_253()
 #line 729 "unigram.y"
- yyval := node("While0", valstk[2],valstk[1]);
+
+	    yyval := node("While0", valstk[2],valstk[1]);
+	    
 end
 
 procedure action_254()
-#line 730 "unigram.y"
- yyval := node("While1", valstk[4],valstk[3],valstk[2],valstk[1]);
+#line 732 "unigram.y"
+
+	    if type(valstk[3]) == "treenode" & valstk[3].label === "assign" &
+	       *valstk[3].children = 3 & type(valstk[3].children[3]) == "treenode" &
+	       valstk[3].children[3].label == "to" & *(valstk[3].children[3].children)=3 &
+		     (type(valstk[3].children[3].children[1]) ===
+		      type(valstk[3].children[3].children[3]) === "token") &
+		     (valstk[3].children[3].children[1].tok = 
+		      valstk[3].children[3].children[3].tok = INTLIT) &
+		     valstk[3].children[3].children[1].s<=valstk[3].children[3].children[3].s
+	     then {
+		warning("infinite loop; use \"every\" to loop on generator results",
+			valstk[4].line, valstk[4].filename, valstk[4].s
+			)
+	       }
+	    yyval := node("While1", valstk[4],valstk[3],valstk[2],valstk[1]);
+	    
 end
 
 procedure action_255()
-#line 732 "unigram.y"
+#line 749 "unigram.y"
  yyval := node("until", valstk[2],valstk[1]);
 end
 
 procedure action_256()
-#line 733 "unigram.y"
+#line 750 "unigram.y"
  yyval := node("until1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_257()
-#line 735 "unigram.y"
+#line 752 "unigram.y"
  yyval := node("every", valstk[2],valstk[1]);
 end
 
 procedure action_258()
-#line 736 "unigram.y"
+#line 753 "unigram.y"
  yyval := node("every1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_259()
-#line 738 "unigram.y"
+#line 755 "unigram.y"
  yyval := node("repeat", valstk[2],valstk[1]);
 end
 
 procedure action_261()
-#line 741 "unigram.y"
+#line 758 "unigram.y"
  yyval := node("return", valstk[2], valstk[1]);
 end
 
 procedure action_262()
-#line 742 "unigram.y"
+#line 759 "unigram.y"
  yyval := node("Suspend0", valstk[2],valstk[1]);
 end
 
 procedure action_263()
-#line 743 "unigram.y"
+#line 760 "unigram.y"
  yyval := node("Suspend1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_264()
-#line 745 "unigram.y"
+#line 762 "unigram.y"
  yyval := node("If0", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_265()
-#line 746 "unigram.y"
+#line 763 "unigram.y"
  yyval := node("If1", valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_266()
-#line 748 "unigram.y"
+#line 765 "unigram.y"
  yyval := node("Case", valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_268()
-#line 751 "unigram.y"
+#line 768 "unigram.y"
  yyval := node("Caselist", valstk[3],";",valstk[1]);
 end
 
 procedure action_269()
-#line 753 "unigram.y"
+#line 770 "unigram.y"
  yyval := node("cclause0", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_270()
-#line 754 "unigram.y"
+#line 771 "unigram.y"
  yyval := node("cclause1", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_272()
-#line 757 "unigram.y"
+#line 774 "unigram.y"
 
 	   if type(valstk[3])=="treenode" & (valstk[3].label=="elst1") then {
 	      yyval := valstk[3]; put(yyval.children, valstk[2], valstk[1])
@@ -4121,33 +4139,33 @@ procedure action_272()
 end
 
 procedure action_273()
-#line 765 "unigram.y"
+#line 782 "unigram.y"
  yyval := node("pdcolist0", valstk[1]) 
 end
 
 procedure action_274()
-#line 766 "unigram.y"
+#line 783 "unigram.y"
  yyval := node("pdcolist1", valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_279()
-#line 773 "unigram.y"
+#line 790 "unigram.y"
  yyval := node("section", valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_284()
-#line 780 "unigram.y"
+#line 797 "unigram.y"
  yyval := node("compound", valstk[3],";",valstk[1]);
 end
 
 procedure action_286()
-#line 783 "unigram.y"
+#line 800 "unigram.y"
  yyval := node("error", valstk[4],valstk[2],valstk[1]); 
 end
 
 procedure action_287()
-#line 784 "unigram.y"
+#line 801 "unigram.y"
  yyval := node("error"); 
 end
 
-#line 4157 "unigram.icn"
+#line 4175 "unigram.icn"

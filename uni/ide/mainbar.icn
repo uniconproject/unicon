@@ -433,7 +433,7 @@ $endif
    # Launch online help, if we are online.
    #
    method handle_help(filename, URL)
-      local URL2 := "", f, sysline, nonot, fout, fout2
+      local URL2 := "", f, sysline, nonot, fout, fout2, foutname, foutname2
 
       if /browser then {
 	 uidlog.MsgBox.set_contents([
@@ -457,33 +457,45 @@ $ifdef _UNIX
 	 }
       else URL2 := " " || URL
 
-      fout := open("ui.err","w")
-      fout2 := open("ui.err2","w")
+      foutname := tempname("ui", ".err")
+      foutname2 := tempname("ui", ".err2")
+      fout := open(foutname,"w")
+      fout2 := open(foutname2,"w")
 
       sysline := \browser || " " || URL2
       uidlog.MsgBox.set_contents(["launching " || sysline])
       proc("system",0)(sysline, , fout, fout2, "nowait")
       delay(1000)
-      close(fout)
-      close(fout2)
+      close(\fout)
+      close(\fout2)
 
       if find("netscape"|"firefox", \browser) then {
-         if f := open("cat ui.err ui.err2","p") then {
+         if f := open("cat " ||
+		      (if \fout then foutname else "") ||
+		      " "||
+		      (if \fout2 then foutname2 else ""),"p") then {
             line := ""
             while line ||:= read(f)
             map(line) ? {
-               if tab(find(nonot:=("no"|"not")) + *nonot) & tab(many(' ')) & ="running" then {
+               if tab(find(nonot:=("no"|"not")) + *nonot) & tab(many(' ')) &
+		  ="running" then {
                #   write(&errout, \browser, " not running, reverting to URL")
-                  fout := open("ui.err","w")
-                  fout2 := open("ui.err2","w")
-                  proc("system",0)(\browser || " " || URL, , fout, fout2, "nowait" )
+		  if \fout then remove(foutname)
+		  if \fout2 then remove(foutname2)
+		  fout := fout2 := &null
+		  fout := open(foutname,"w")
+                  fout2 := open(foutname2,"w")
+                  proc("system",0)(\browser||" "||URL, , fout, fout2, "nowait")
+		  close(\fout)
+		  close(\fout2)
+		  if \fout then remove(foutname)
+		  if \fout2 then remove(foutname2)
                   }
                else {
                #   write(&errout, \browser, " was running, so we are good")
                   }
 	       }
             close(f)
-            remove("ui.err")
             }
          }
 $else

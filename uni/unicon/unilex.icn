@@ -239,7 +239,9 @@ procedure do_dollar()
 	      if yytext ||:= =")" then { tokflags +:= Ender; return RBRACE }
 	      if yytext ||:= ="<" then { tokflags +:= Beginner; return LBRACK }
 	      if yytext ||:= =">" then { tokflags +:= Ender; return RBRACK }
+$ifndef PatternIntegration
 	      if yytext ||:= ="$" then { return PIMDASSN }
+$endif
 	      return DOLLAR
 end
 
@@ -355,6 +357,9 @@ procedure do_equal()
 		  return SEQ
 	      }
 	      if yytext ||:= =":=" then { return AUGNMEQ }
+$ifndef NoPatternIntegration
+	      if yytext ||:= =">" then { return PIMDASSN }
+$endif
 	      tokflags +:= Beginner
 	      return NMEQ
 end
@@ -428,12 +433,12 @@ procedure do_dot()
 	tokflags +:= Beginner+Ender
 	return REALLIT
     }
-    else if yytext ||:= ="|" then {
-	return POR
-	}
-    else if yytext ||:= ="$" then {
-	return PSETCUR
-	}
+    else if yytext ||:= ="|" then { return POR }
+$ifndef NoPatternIntegration
+    else if yytext ||:= =">" then { return PSETCUR }
+$else
+    else if yytext ||:= ="$" then { return PSETCUR }
+$endif
     else {
 	tokflags +:= Beginner
 	return DOT

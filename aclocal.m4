@@ -411,7 +411,7 @@ then
         AC_LANG_C
         AC_CHECK_LIB(openal, alGetSourceiv, [libopenal_cv_libopenal=yes], [libopenal_cv_libopenal=no])
         AC_CHECK_HEADER(al.h, [libopenal_cv_libopenal_h=yes], [libopenal_cv_libopenal_h=no])
-        AC_CHECK_LIB(alut, alutGetMajorVersion, [libalut_cv_libalut=yes], [libalut_cv_libalut=no])
+        AC_CHECK_LIB(alut, alutGetMajorVersion, [libalut_cv_libalut=yes], [libalut_cv_libalut=no], [-lopenal])
         AC_CHECK_HEADER(alut.h, [libalut_cv_libalut_h=yes], [libalut_cv_libalut_h=no])
         AC_LANG_RESTORE
         if test "$libopenal_cv_libopenal" = "yes" -a "$libopenal_cv_libopenal_h" = "yes" -a "$libalut_cv_libalut" = "yes" -a "$libalut_cv_libalut_h" = "yes"

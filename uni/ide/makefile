@@ -18,12 +18,13 @@ SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	templates.icn definitions.icn uproject.icn \
 	classbrowser.icn tree.icn imgs.icn utags.icn matchparen.icn \
 	qu_replace.icn online.icn about.icn is_binary.icn ptyDispatcher.icn \
-	shelletl.icn
+	shelletl.icn funclookup.icn 
 
 OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
 	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
-	online.u about.u is_binary.u ptyDispatcher.u shelletl.u
+	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u\
+	
 
 ui:	$(OBJ)
 ifdef EXE
@@ -32,6 +33,10 @@ else
 	$(UC) -o ui $(OBJ)
 endif
 	$(CP) ui$(EXE) ../../bin
+
+funclookup.u: funclookup.icn
+	$(UC) $(UFLAGS) funclookup
+
 
 ide.u: ide.icn
 	$(UC) $(UFLAGS) ide

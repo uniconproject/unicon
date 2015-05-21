@@ -1,0 +1,172 @@
+###############################################################################
+#	File: 	funclookup.icn
+#
+#	Subject: look up known functions
+#	
+#	Author: Serendel Macphereson, Shea Newton, Clint Jeffery
+#
+#	Date: 	Febuarary 25, 2015
+#
+##############################################################################
+#
+#  This program loads a table with names of built-in functions, collects 
+#  the word under the cursor, looks for it in the table and preforms a 
+#  jump to the function definition in UTR8 if a match, otherwise looks in a 
+#  table of user-defined functions generated from the ClassBroswer tree.
+#  If that matches, it jumps to the line number saved in the table.
+#  	
+#  Currently only accessed through right-clicking in the editbox of the IDE
+#
+#   result from--> ide.icn buffertextlist.icn 
+#
+###############################################################################
+#  Links: ide.icn buffertextlist.icn
+###############################################################################
+import lang
+import util
+import gui
+
+$include "guih.icn"
+
+global built_ins, builtIn_func_table, usr_func_table
+
+class known_funcs () 
+
+   method load_BInames()
+      local f, func_name
+      built_in_list()
+      # load built in functions
+      every f := 1 to *built_ins do {			
+	 insert(builtIn_func_table, built_ins[f])
+	 }
+   end
+
+   method open_reference(func_name)
+      #load up remote or local utr8 documentation for built-ins
+      uidlog.menubar.handle_help("doc/book/utr8.html#"||func_name,
+				 "http://unicon.org/utr/utr8.html#"||func_name)
+   end
+
+   method usr_funcs(usr_func_name)
+      #change cursor position to be at the function name (jump to line)
+      uidlog.FileBrowser.goto(usr_func_table[usr_func_name])
+   end
+
+   # on init: every t:= 0 to *N.subnodes do
+   # treeRecursion(N.subnodes[t])
+   # in tree recursion populate the table
+   method treeRecursion(N)
+      local t
+      every t := 0 to *N.subnodes do {
+	 treeRecursion(N.subnodes[t])
+	 }
+      if not (N.label[-4:0] == ".icn") then {
+	 if not member(usr_func_table, N.label) then
+	    insert(usr_func_table,N.label, N.lineno)
+	 }
+   end
+
+   # Check user-defined and built in functions for the word under the cursor
+   method func_lookup(var_tocheck)
+      local N
+
+      #go through the known user functions in ClassBrowser and
+      #load them, if not present, into a table with their line numbers
+      N := uidlog.FileBrowser.get_root_node()
+      treeRecursion(N.subnodes[1])
+
+      if member(builtIn_func_table, var_tocheck) then #if it's a built in
+	 return 1 #open_reference(var_tocheck)
+      else if member(usr_func_table, var_tocheck) then #if it's user defined
+	 return 2 #usr_funcs(var_tocheck)
+      else {
+	 return -1 #write(var_tocheck, " is not a known function.")
+	 }
+   end 
+
+   #collect the word under the cursor in the main UI editbox
+   method word_under_cursor()
+      local x, line, the_word, end_of_word, non_whitespace, editBuffer
+		
+      editBuffer := ide.CurrentEditBox().get_contents()
+      line := editBuffer[ide.CurrentEditBox().cursor_y] | []
+      x := ide.CurrentEditBox().cursor_x | []
+      non_whitespace := &cset -- ' \t' -- '(' -- '.'
+
+      if any(non_whitespace,line,x) then {
+	 while x > 1 & any(non_whitespace,line,x-1) do {
+	    x -:= 1
+	    }
+	 end_of_word := many(non_whitespace,line,x)
+	 the_word := line[x:end_of_word]
+	 #look it up in the table of known functions
+	 #func_lookup(the_word)
+	 return the_word
+	 }
+      else {
+	 return -1	#not a word
+	 }
+   end
+
+   method built_in_list()
+      built_ins := [
+	 "abs","acos","any","args","asin","atan","atanh",
+	 "bal",
+	 "center","channel","char","chdir","chmod","classname",
+	    "close","cofail","collect","condvar","constructor",
+	    "copy","cos","cset","ctime",
+	 "dbcolumns","dbdriver","dbkeys","dblimits","dbproduct","dbtables",
+	    "delay","delete","detab","display","dtor",
+	 "entab","errorclear","eventmask","every",
+	    "EvGet","EvSend","exit","exp", 
+	 "fetch","fieldnames","find","flock","flush","function",
+	 "get","getch","getche","getenv","gettimeofday","globalnames","gtime",
+	 "iand","icom","image","insert","integer",
+	    "ior","ishift","istate","ixor",
+	 "kbhit","key","keyword",
+	 "left","list","load","loadfunc","localnames","lock","log",
+	 "many","map","match","max","member","membernames","methodnames",
+	    "methods","min","mkdir","move","mutex",
+	 "name","numeric",
+	 "open","opmask","oprec","ord",
+	 "paramnames","parent","pipe","pop","pos","proc","pull","push","put",
+	 "read","reads","ready","real","receive","remove","rename","repl",
+	    "reverse","right","rmdir","rtod","runerr",
+	 "seek","select","send","seq","serial","set","setenv",
+	    "signal","sin","sort","sortf","spawn","sql","sqrt",
+	    "stat","staticnames","stop","string","system","sys\_errstr",
+	 "tab","table","tan","trap","trim","truncate","trylock","type",
+	 "unlock","upto","utime",
+	 "variable",
+	 "wait","while","write","writes", 
+	 "Active","Alert",
+	 "Bg",
+	 "Clip","Clone","Color","ColorValue","CopyArea","Couple",
+	 "DrawArc","DrawCircle","DrawCube","DrawCurve","DrawCylinder",
+	    "DrawDisk","DrawImage","DrawLine","DrawPoint","DrawPolygon",
+	    "DrawRectangle","DrawSegment","DrawSphere","DrawString","DrawTorus",
+	 "EraseArea","Event",
+	 "Fg","FillArc","FillCircle","FillPolygon","FillRectangle",
+	    "Font","FreeColor",
+	 "GotoRC","GotoXY",
+	 "IdentityMatrix",
+	 "Lower",
+	 "MatrixMode","MultMatrix",
+	 "NewColor",
+	 "PaletteChars","PaletteColor","PaletteKey","Pattern","Pending",
+	    "Pixel","PopMatrix","PushMatrix",
+	    "PushRotate","PushScale","PushTranslate",
+	 "QueryPointer",
+	 "Raise","ReadImage","Refresh","return", "Rotate", 
+	 "Scale",
+	 "Texcoord","TextWidth","Texture","Translate",
+	 "Uncouple",
+	 "WAttrib","WDefault","WFlush","WindowContents",
+	    "WriteImage","WSection","WSync"]
+
+   end
+initially
+   builtIn_func_table := table()
+   usr_func_table := table()
+end
+

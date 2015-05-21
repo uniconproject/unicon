@@ -100,13 +100,18 @@ class BuffEditableTextList : EditableTextList(
    moved,	# to-do: check if we need this and if so, implement it.
    mouse_locked,
    scroll_locked,
+   pm,
+   pm_menu,
    vi,      #virtual line index
    highlightcolor,
    autoindent,
    scroll_y,
    errorLineNumber,
    doReparse,
-   paren_match_found
+   paren_match_found,
+   EditBox,
+   word, known,
+   popup_item, l
    )
 
    method forward_char(e)
@@ -210,6 +215,65 @@ class BuffEditableTextList : EditableTextList(
 	       "ms); consider disabling it")
    end
 
+
+   # on rightclick, see if we can popup a helpful link
+   method handle_right_click(e)
+      local func_type
+      word := known.word_under_cursor()
+      popup_item.disconnect(l)
+      if word === -1 then {
+	 #right-clicked on something besides a word
+	 #popmenu item should be a discription of what it can do	
+	 popup_item.set_label("Method call jumps to definition")
+	 }
+      else {
+	 func_type := known.func_lookup(word)
+	 if func_type === 1 then {
+	    #popup menu item should be documentation for (function)
+	    popup_item.set_label("function "|| word || "()")
+	    l := popup_item.connect(self, "open_ref", ACTION_EVENT)
+	    }
+	 else if func_type === 2 then {
+	    #popup menu item should be Jump-To (name of function)
+	    popup_item.set_label("Jump to function definition for: "|| word)
+	    l := popup_item.connect(self, "jump_to", ACTION_EVENT)
+
+	    #popup_item.disconnect(self)
+	    }
+	 else {
+	    #popmenu item should be a discription of what it can do
+	    popup_item.set_label("Method call jumps to definition")
+	    }	
+	 }
+
+      # Only add it once.
+      if *pm_menu.children === 0 then {
+	 pm_menu.add(popup_item)
+	 pm.attrib("fg=magenta")
+	 }
+      pm.set_menu(pm_menu)
+      pm.set_parent(self.parent_dialog)	
+      if !children === pm then {} else
+	 add(pm)
+      pm.init()
+		
+      #pm.set_pos(self.cursor_x, self.cursor_y)
+      #pm.resize()
+      #pm.display()
+      pm.popup()
+      #write("xy: ",self.cursor_x, ",", self.cursor_y)
+   end
+
+   # jump to user-defined procedure/method
+   method jump_to(ev)
+      known.usr_funcs(word)
+   end
+
+   # open reference documenation for built in functions
+   method open_ref(ev)
+      known.open_reference(word)
+   end
+
    #
    # Overrides default handle_event() re-parsing on line changes, etc.
    #
@@ -222,7 +286,11 @@ class BuffEditableTextList : EditableTextList(
          every 1 to 4 do (\vsb).handle_button_up(e)
       else if integer(e) = -14 then
          every 1 to 4 do (\vsb).handle_button_down(e)
-      else self.EditableTextList.handle_event(e)
+      else if integer(e) === &rrelease then {
+	handle_right_click(e)
+	}
+	else self.EditableTextList.handle_event(e)
+
       
       if \self.old_cursor_y ~= self.cursor_y then {
 	 t1 := &time
@@ -753,6 +821,12 @@ class BuffEditableTextList : EditableTextList(
       autoindent := &null
       scroll_y := 1
 
+      known := known_funcs()
+#load the list of built-in functions into a table
+      known.load_BInames()
+      pm := PopupMenu()
+      pm_menu := Menu()
+      popup_item := TextMenuItem()
       errorLineNumber := 0
       doReparse := 1
 

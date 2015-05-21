@@ -24,8 +24,9 @@ all: $(UFILES)
 clean:
 	$(RM) *.u uniclass.dir uniclass.pag 
 
-# manual dependency since unidep is broken at the moment
+# additional manual dependencies since unidep is broken at the moment
 printdlg.u : printdlg.icn dialog.u tabset.u tabitem.u table.u tablecolumn.u textbutton.u textfield.u label.u guih.icn
+editabletextlist.u: stddlg.u
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

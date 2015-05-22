@@ -339,7 +339,8 @@ extern wfont *start_font, *end_font, *curr_font;
 
 #ifdef PosixFns
 extern struct descrip posix_lock, posix_timeval, posix_stat, posix_message,
-  posix_passwd, posix_group, posix_servent, posix_hostent;
+  posix_passwd, posix_group, posix_servent, posix_hostent, posix_rusage;
+extern dptr timeval_constr;
 #endif					/* PosixFns */
 
 #ifdef Messaging

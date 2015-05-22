@@ -1689,6 +1689,8 @@ end
 GenTime(ctime, "ASCII.", 1)
 GenTime(gtime, "UTC.", 0)
 
+dptr timeval_constr;
+
 "gettimeofday() - get time since the epoch (Jan 1, 1970 00:00:00)."
 
 function{0,1} gettimeofday()
@@ -1701,7 +1703,6 @@ function{0,1} gettimeofday()
       struct _timeb wtp;
 #endif					/* NT */
       struct b_record *rp; /* does not need to be tended */
-      static dptr constr;
       int nfields;
       CURTSTATE();
 
@@ -1714,12 +1715,12 @@ function{0,1} gettimeofday()
 	 fail;
 	 }
 #endif					/* NT */
-      if (!constr)
-	 if (!(constr = rec_structor("posix_timeval")))
+      if (!timeval_constr)
+	 if (!(timeval_constr = rec_structor("posix_timeval")))
 	    syserr("failed to create posix record constructor");
 
-      nfields = (int) BlkD(*constr, Proc)->nfields;
-      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      nfields = (int) BlkD(*timeval_constr, Proc)->nfields;
+      Protect(rp = alcrecd(nfields, BlkLoc(*timeval_constr)), runerr(0));
       result.dword = D_Record;
       result.vword.bptr = (union block *)rp;
 #if NT
@@ -1732,6 +1733,50 @@ function{0,1} gettimeofday()
       return result;
 
    }
+end
+
+"getrusage() - get resource usage."
+
+function{0,1} getrusage(who)
+   if !def:C_string(who, "self") then runerr(103, who)
+   abstract {
+      return record
+      }
+   body {
+      tended struct b_record *rp;
+      struct rusage usage;
+      static dptr constr;
+      int nfields, iwho;
+
+      IntVal(amperErrno) = 0;
+      if ((*who == '\0') || (!strcmp(who, "self"))) iwho = RUSAGE_SELF;
+#ifdef RUSAGE_THREAD
+      else if (!strcmp(who, "thread")) iwho = RUSAGE_THREAD;
+#endif
+      else if (!strcmp(who, "children")) iwho = RUSAGE_CHILDREN;
+      else fail;
+
+#if NT
+      fail; /* for now */
+#else
+      if (getrusage(iwho, &usage) != 0) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+	 }
+      if (!constr)
+	 if (!(constr = rec_structor("posix_rusage")))
+	    syserr("failed to create posix record constructor");
+      nfields = (int) BlkD(*constr, Proc)->nfields;
+
+      if (!timeval_constr)
+	 if (!(timeval_constr = rec_structor("posix_timeval")))
+	    syserr("failed to create posix record constructor");
+
+      Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
+      rusage2rec(&usage, &result, &rp);
+      return result;
+#endif
+      }
 end
 
 "lstat() - get file status without following symlinks."

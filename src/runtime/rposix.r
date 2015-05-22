@@ -617,8 +617,59 @@ struct b_record **rp;
 
 }
 
+#if !NT
+/*
+ * Create a record of type posix_rusage
+ * (defined in posix.icn because it's too painful for iconc if we
+ * add a new record type here) and initialise the fields with the
+ * fields from the struct rusage.  Because this allocates memory that
+ * may trigger a garbage collection, the pointer parameters dp and rp
+ * should point at tended variables.
+ */
+void rusage2rec(usg, dp, rp)
+struct rusage *usg;
+struct descrip *dp;
+struct b_record **rp;
+{
+   int i;
+   tended struct b_record *utime_rp, *stime_rp;
+
+   /*
+    * Initialize fields 0 and 1 to posix_timeval records.
+    */
+   Protect(utime_rp = alcrecd(2, BlkLoc(*timeval_constr)),syserr("allocation"));
+   Protect(stime_rp = alcrecd(2, BlkLoc(*timeval_constr)),syserr("allocation"));
+
+   dp->dword = D_Record;
+   dp->vword.bptr = (union block *)(*rp);
+   (*rp)->fields[0].dword = D_Record;
+   (*rp)->fields[0].vword.bptr = (union block *)utime_rp;
+   (*rp)->fields[1].dword = D_Record;
+   (*rp)->fields[1].vword.bptr = (union block *)stime_rp;
+   MakeInt(usg->ru_utime.tv_sec, &(utime_rp->fields[0]));
+   MakeInt(usg->ru_utime.tv_usec, &(utime_rp->fields[1]));
+   MakeInt(usg->ru_stime.tv_sec, &(stime_rp->fields[0]));
+   MakeInt(usg->ru_stime.tv_usec, &(stime_rp->fields[1]));
+
+   /*
+    * The rest of the rusage are (long) integers.
+    */
+   for (i = 2; i < 9; i++)
+     (*rp)->fields[i].dword = D_Integer;
+
+   IntVal((*rp)->fields[2]) = (word)usg->ru_maxrss;
+   IntVal((*rp)->fields[3]) = (word)usg->ru_minflt;
+   IntVal((*rp)->fields[4]) = (word)usg->ru_majflt;
+   IntVal((*rp)->fields[5]) = (word)usg->ru_inblock;
+   IntVal((*rp)->fields[6]) = (word)usg->ru_oublock;
+   IntVal((*rp)->fields[7]) = (word)usg->ru_nvcsw;
+   IntVal((*rp)->fields[8]) = (word)usg->ru_nivcsw;
+}
+#endif
+
 struct descrip posix_lock = {D_Null};
 struct descrip posix_timeval = {D_Null};
+struct descrip posix_rusage = {D_Null};
 struct descrip posix_stat = {D_Null};
 struct descrip posix_message = {D_Null};
 struct descrip posix_passwd = {D_Null};
@@ -685,6 +736,23 @@ char *name;
 	 posix_timeval.vword.bptr = (union block *)dynrecord(&s, fields, 2);
 	 }
       return &posix_timeval;
+      }
+   else if (!strcmp(name, "posix_rusage")) {
+      if (is:null(posix_rusage)) {
+	 AsgnCStr(s, "posix_rusage");
+	 AsgnCStr(fields[0], "utime");
+	 AsgnCStr(fields[1], "stime");
+	 AsgnCStr(fields[2], "maxrss");
+	 AsgnCStr(fields[3], "minflt");
+	 AsgnCStr(fields[4], "majflt");
+	 AsgnCStr(fields[5], "inblock");
+	 AsgnCStr(fields[6], "oublock");
+	 AsgnCStr(fields[7], "nvcsw");
+	 AsgnCStr(fields[8], "nivcsw");
+	 posix_rusage.dword = D_Proc;
+	 posix_rusage.vword.bptr = (union block *)dynrecord(&s, fields, 9);
+	 }
+      return &posix_rusage;
       }
    else if (!strcmp(name, "posix_group")) {
       if (is:null(posix_group)) {

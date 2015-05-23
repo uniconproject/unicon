@@ -1,0 +1,12 @@
+procedure main()
+   every i := 1 to 10 do i*i
+   write("after a brief computation:")
+   r := getrusage()
+   write(image(r), ": ",
+	 r.utime.sec, " seconds, ", r.utime.usec, " microseconds")
+   every k := key(r) do
+      if type(r[k]) == "posix_timeval" then
+	 write(k, ": ", r[k].sec, "s, ", r[k].usec, "us")
+      else 
+	 write(k, ": ", image(r[k]))
+end

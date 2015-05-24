@@ -240,6 +240,10 @@ class BuffEditableTextList : EditableTextList(
 
 	    #popup_item.disconnect(self)
 	    }
+	 else if type(func_type) == "list" then {
+	    popup_item.set_label(func_type[1] || " " || word || " " ||
+				 func_type[2])
+	    }
 	 else {
 	    #popmenu item should be a discription of what it can do
 	    popup_item.set_label("Method call jumps to definition")
@@ -610,7 +614,9 @@ class BuffEditableTextList : EditableTextList(
       off := 0
       new_s_Position := last_s_Position := 1
 
-      if \uidlog.ui_Preferences.syntax_check_box_state then {
+      if 1 # (\uidlog.ui_Preferences.syntax_check_box_state) # &
+#         (map(uidlog.FileTabSet.which_one.filename)[-4:0]==".icn")
+      then {
          # Get string s tokens
          while (token := yylex()) ~=== EOFX do {
             # Set token color

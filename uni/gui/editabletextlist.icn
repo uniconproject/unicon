@@ -399,7 +399,7 @@ class EditableTextList : LineBasedScrollArea(
    #
    # @p
    method set_cursor_from_pos()
-      local l, nlines, s, i, v
+      local l, nlines, s, i, v, shift
       l := (&y - self.view.y) / self.line_height
       nlines := self.get_curr_lines()
       if nlines = 0 then # there are no lines of text, hence no cursor
@@ -415,8 +415,12 @@ class EditableTextList : LineBasedScrollArea(
       l := self.get_left_pos()
       while (i < *s) & (TextWidthEx(cwin, s, 1, i + 1, tab_width) < &x - l) do
 	 i+:= 1
-
-      self.cursor_x := v.first + i - 1
+   # shift cursor to account for line numbers in the edit box
+      if v.index < 10 then shift := 3
+      else if v.index >= 10 & v.index < 100 then shift := 2
+      else if v.index >= 100 & v.index < 1000 then shift := 1
+      else shift := 0
+      self.cursor_x := v.first + i - 1 + shift
    end
 
    method clear_mark()

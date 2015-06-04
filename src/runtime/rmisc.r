@@ -2272,7 +2272,7 @@ dptr rslt;
    /*
     * Allocate the list and a list block.
     */
-   Protect(hp = alclist(argc, argc), fatalerr(0,NULL));
+   Protect(hp = alclist_raw(argc, argc), fatalerr(0,NULL));
    bp = Blk(hp->listhead,Lelem);
 
    /*
@@ -2297,8 +2297,8 @@ int nargs;
 dptr rslt;
    {
    tended struct b_list *hp;
+   tended struct b_lelem *bp; /* deref() can alloc, needs to be tended. */
    register word i;
-   register struct b_lelem *bp;  /* need not be tended */
 
    /*
     * Allocate the list and a list block.

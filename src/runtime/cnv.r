@@ -531,11 +531,6 @@ int f(dptr s, dptr d)
 
 #ifdef LargeInts
          if (Type(*s) == T_Lrgint) {
-            word slen;
-            word dlen;
-
-            slen = (BlkD(*s,Lrgint)->lsd - BlkD(*s,Lrgint)->msd +1);
-            dlen = slen * NB * 0.3010299956639812;	/* 1 / log2(10) */
 	    bigtos(s,d);
 	    }
          else
@@ -548,8 +543,9 @@ int f(dptr s, dptr d)
          GetReal(s, res);
          rtos(res, d, sbuf);
          }
-      cset:
+      cset: {
          cstos(BlkD(*s,Cset)->bits, d, sbuf);
+	 }
       default: {
          EVValD(s, e_fconv);
          return 0;
@@ -812,11 +808,6 @@ dptr d;
 
 #ifdef LargeInts
          if (Type(*s) == T_Lrgint) {
-            word slen;
-            word dlen;
-
-            slen = (BlkD(*s,Lrgint)->lsd - BlkD(*s,Lrgint)->msd +1);
-            dlen = slen * NB * 0.3010299956639812;	/* 1 / log2(10) */
 	    bigtos(s,d);
 	    }
          else
@@ -1340,7 +1331,7 @@ int cnv_list(dptr s, dptr d)
     */
    size = BlkD(*s,Set)->size;
 
-   Protect(lp = alclist(size, size), fatalerr(0,NULL));
+   Protect(lp = alclist_raw(size, size), fatalerr(0,NULL));
 
    bp = BlkLoc(*s);  /* need not be tended if not set until now */
 

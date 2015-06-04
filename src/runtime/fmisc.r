@@ -894,9 +894,13 @@ function{1} sort(t, i)
                 * Point bp at the table header block of the table to be sorted
                 *  and point lp at a newly allocated list
                 *  that will hold the the result of sorting the table.
+		*
+		* alclist_raw normally cannot be used if more allocations
+		* may occur before the list is initialized. The reason it is
+		* OK here is because of the reserve().
                 */
                bp = (struct b_table *)BlkLoc(t);
-               Protect(lp = alclist(size, size), runerr(0));
+               Protect(lp = alclist_raw(size, size), runerr(0));
 
                /*
                 * If the table is empty, there is no need to sort anything.
@@ -956,7 +960,7 @@ function{1} sort(t, i)
              *  that will hold the the result of sorting the table.
              */
             bp = (struct b_table *)BlkLoc(t);
-            Protect(lp = alclist(size, size), runerr(0));
+            Protect(lp = alclist_raw(size, size), runerr(0));
 
             /*
              * If the table is empty there's no need to sort anything.
@@ -1180,7 +1184,7 @@ function{1} sortf(t, i)
              */
             size = BlkD(t,Set)->size;
 
-            Protect(lp = alclist(size, size), runerr(0));
+            Protect(lp = alclist_raw(size, size), runerr(0));
 
             bp = BlkLoc(t);  /* need not be tended if not set until now */
 
@@ -2501,14 +2505,13 @@ function{1} signal(x, y)
 	 return x;
 	 }
       }
-
+   else {
    if !cnv:C_integer(x) then
       runerr(181, x)
    if is:null(y) then
       inline { Y = 1; }
    else if !cnv:C_integer(y, Y) then
       runerr(101, y)
-   
    abstract { return integer }
    body {
       int rv;
@@ -2529,6 +2532,7 @@ function{1} signal(x, y)
       	 }
       return C_integer 1;
       }
+   }
 end
 
 

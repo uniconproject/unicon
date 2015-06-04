@@ -590,6 +590,7 @@ int checkOpenConsole( FILE *w, char *s );
 #ifdef Graphics3D
    FILE	*wopengl	(char *nm, struct b_list *hp, dptr attr, int n,int *e);
 #endif					/* Graphics3D */
+
    int	wputc		(int ci, wbp w);
 #ifndef MSWindows
    void	wsync		(wbp w);
@@ -777,6 +778,7 @@ int checkOpenConsole( FILE *w, char *s );
       void bindtexture(wbp w, int texturehandle);
       void applyAutomaticTextureCoords(int enable);
       void applymatrix(wbp w, double a[]);
+      int create_display_list(wbp w, int size);     
    #endif					/* Graphics3D */
 
    #ifdef MSWindows

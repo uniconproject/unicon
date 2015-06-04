@@ -844,4 +844,16 @@ int settexture(wbp w, char* str, int len, struct descrip *f, int curtex,
    return Succeeded;
 }
 
+/* 
+ * Create an empty list for function calls for a 3D window
+ */
+int create_display_list(wbp w, int size)
+{
+   if ((w->window->funclist.vword.bptr = (union block *)alclist(0, size)) == NULL)
+      return Failed;
+
+   w->window->funclist.dword = D_List;
+
+   return Succeeded;
+}
 #endif					/* Graphics3D */

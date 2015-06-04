@@ -592,6 +592,12 @@ int checkOpenConsole( FILE *w, char *s );
 #endif					/* Graphics3D */
 
    int	wputc		(int ci, wbp w);
+#if HAVE_LIBPNG
+   int writePNG(wbp w, char *filename, int x, int y, int width, int height);
+#endif					/* HAVE_LIBJPEG */
+#if HAVE_LIBJPEG
+   int writeJPEG(wbp w, char *filename, int x, int y, int width, int height);
+#endif					/* HAVE_LIBJPEG */
 #ifndef MSWindows
    void	wsync		(wbp w);
 #endif					/* MSWindows */
@@ -737,6 +743,7 @@ int checkOpenConsole( FILE *w, char *s );
       int setlight(wbp w, char* s, int light);
       int setlinewidth3D(wbp w, LONG linewid);
       int setmaterials(wbp w, char* s);
+      int setmatrixmode(char *s);
       int setmeshmode(wbp w, char* s);
       int setnormode(wbp w, char* s);
       int setrings(wbp w, char *s);

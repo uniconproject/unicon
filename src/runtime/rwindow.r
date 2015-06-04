@@ -2197,10 +2197,7 @@ static int pngwrite(wbp w, FILE *png_f, int x, int y, int width, int height, uns
  * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
-int writePNG(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
+int writePNG(wbp w, char *filename, int x, int y, int width, int height)
    {
    int r;
    FILE * png_f = NULL;
@@ -2633,10 +2630,7 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
  * Returns Succeeded, Failed, or RunError.
  * We assume that the area specified is within the window.
  */
-int writeJPEG(w, filename, x, y, width, height)
-wbp w;
-char *filename;
-int x, y, width, height;
+int writeJPEG(wbp w, char *filename, int x, int y, int width, int height)
    {
    int r;
 

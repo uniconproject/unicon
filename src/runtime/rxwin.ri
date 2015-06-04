@@ -1208,15 +1208,6 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    ws->x += w->context->dx;
 #ifdef Graphics3D
    w->context->is_3D = ws->is_3D = is_3d;
-   if (is_3d) {
-      /*
-       * Create an empty list for list of function calls.
-       */
-      if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots))
-	  == NULL)
-           return NULL;
-       ws->funclist.dword = D_List;
-    }
 #endif					/* Graphics3D */
    /*
     * Loop through any remaining arguments.
@@ -5067,13 +5058,7 @@ char my_wmap(wbp w)
       /* set defaults for attributes */
       if (init_3dcontext(w->context)==Failed)
 	 return 0;
-     
-      /* create an empty list for list of function calls */
-/*
-     if ((ws->funclist.vword.bptr = (union block *)alclist(0, MinListSlots)) == NULL)
-       return 0;
-     ws->funclist.dword = D_List;
-*/     
+
       /* set up the appropriate opengl states */
       if (init_3dcanvas(w) == Failed) return 0;
       }

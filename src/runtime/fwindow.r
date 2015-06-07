@@ -248,11 +248,8 @@ function{1} Clone(argv[argc])
 
 #ifdef Graphics3D
       if (child_window==CHILD_WIN3D) {
-	 /* create an empty list for list of function calls */
-	 if ((w2->window->funclist.vword.bptr =
-	      (union block *)alclist(0, MinListSlots)) == NULL)
+	 if(create_display_list(w2, 40000) == Failed)
 	    fail;
-	 w2->window->funclist.dword = D_List;
 	 }
 #endif					/* Graphics3D */
 
@@ -1434,10 +1431,8 @@ function{1} EraseArea(argv[argc])
 	 }
 
       if (wc->is_3D) {
-	 /*
-	  * allocate a new list for functions
-	  */
-         Protect(w->window->funclist.vword.bptr = (union block *)alclist(0, MinListSlots), runerr(0));
+	 if(create_display_list(w, 40000) == Failed)
+	    runerr(0);
 	 
 #if HAVE_LIBGL
 	 /* need to free selectionnamelist entries here */

@@ -758,6 +758,64 @@ fi
 ])
 
 
+AC_DEFUN([CHECK_OPENSSL],
+#
+# Handle user hints
+#
+[AC_MSG_CHECKING(if OPENSSL is wanted)
+AC_ARG_WITH(openssl,
+[  --with-openssl=DIR root directory path of openssl installation [defaults to
+                    /usr/local or /usr if not found in /usr/local]
+  --without-openssl to disable openssl usage completely],
+[if test "$withval" != no ; then
+  AC_MSG_RESULT(yes)
+  OPENSSL_HOME="$withval"
+else
+  AC_MSG_RESULT(no)
+fi], [
+AC_MSG_RESULT(yes)
+OPENSSL_HOME=/usr/local
+if test ! -f "${SSL_HOME}/include/openssl/bio.h"
+then
+        OPENSSL_HOME=/usr
+fi
+])
+
+#
+# Locate openssl, if wanted
+#
+if test -n "${OPENSSL_HOME}"
+then
+        OPENSSL_OLD_LDFLAGS=$LDFLAGS
+        OPENSSL_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${OPENSSL_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${OPENSSL_HOME}/include"
+        AC_LANG_SAVE
+        AC_LANG_C
+	AC_CHECK_LIB(ssl, SSL_library_init, [openssl_cv_libssl=yes], [openssl_cv_libssl=no])
+        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
+        AC_LANG_RESTORE
+	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+		AC_CHECK_LIB(ssl, SSL_library_init)
+                AC_MSG_CHECKING(ssl in ${OPENSSL_HOME})
+                AC_MSG_RESULT(ok)
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                AC_MSG_CHECKING(ssl in ${OPENSSL_HOME})
+                LDFLAGS="$OPENSSL_OLD_LDFLAGS"
+                CPPFLAGS="$OPENSSL_OLD_CPPFLAGS"
+                AC_MSG_RESULT(failed)
+        fi
+fi
+])
+
+
 AC_DEFUN([CHECK_OPENGL],
 #
 # Handle user hints

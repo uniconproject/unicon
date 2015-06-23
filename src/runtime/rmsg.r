@@ -1,7 +1,9 @@
 /*
- * File: rmsg.r Contents: [csicmp], [Maddtoheader], Mclose, [Mexcept],
- *  [Mhttp], Mopen, [Mpop], Mpop_delete, [Mpop_freelist], [Mpop_newlist],
- *  [Msmtp], [Mstartreading], [Mwashs], [si_cs2i] */
+ * File: rmsg.r
+ *  Contents: [csicmp], [Maddtoheader], Mclose, [Mexcept], [Mhttp],
+ *  Mopen, [Mpop], Mpop_delete, [Mpop_freelist], [Mpop_newlist],
+ *  [Msmtp], [Mstartreading], [Mwashs], [si_cs2i]
+ */
 
 /**********************************************************************\
 * rmsg.r: Support code for messaging extensions.                       *
@@ -25,7 +27,7 @@ int M_open_timeout;
 extern int StartupWinSocket(void);
 #endif					/* NT */
 
-const char* DEFAULT_USER_AGENT = "User-Agent: Unicon Messaging/10.0";
+const char* DEFAULT_USER_AGENT = "User-Agent: Unicon Messaging/13.0";
 
 char *Maddtoheader(char* header, const char* s, int slen, int* nleft);
 void Mhttp(struct MFile* mf, dptr attr, int nattr);
@@ -97,6 +99,14 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
    if (strcasecmp(puri->scheme, "http") == 0) {
       meth = TpmHTTP;
       }
+#ifdef HAVE_LIBSSL
+   else if (strcasecmp(puri->scheme, "https") == 0) {
+      meth = TpmHTTP;
+      /* replace regular Unix socket discipline with openssl */
+      disc = tp_newdisc(TpdSSL);
+      disc->exceptf = Mexcept;
+      }
+#endif					/* HAVE_LIBSSL */
    else if (strcasecmp(puri->scheme, "finger") == 0) {
       meth = TpmFinger;
       }

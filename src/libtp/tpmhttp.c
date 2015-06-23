@@ -5,7 +5,8 @@
 
 /* TODO:
  *
- * - Do HTTP authentication if necessary
+ * - Do HTTP authentication if necessary. An Authorization header line
+ *   can already be appended easily.
  */
 
 #include "config.h"

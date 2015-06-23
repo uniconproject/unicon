@@ -68,25 +68,6 @@ extern int unixexcept(int type, void *obj, Tpdisc_t* tpdisc);
 
 static int ssl_is_initialized;
 
-/**
- * Print SSL error details
- */
-void print_ssl_error(char* message, FILE* out) {
-   fprintf(out, message);
-   fprintf(out, "Error: %s\n", ERR_reason_error_string(ERR_get_error()));
-   fprintf(out, "%s\n", ERR_error_string(ERR_get_error(), NULL));
-   ERR_print_errors_fp(out);
-}
-
-/**
- * Print SSL error details with inserted content
- */
-void print_ssl_error_2(char* message, char* content, FILE* out) {
-   fprintf(out, message, content);
-   fprintf(out, "Error: %s\n", ERR_reason_error_string(ERR_get_error()));
-   fprintf(out, "%s\n", ERR_error_string(ERR_get_error(), NULL));
-   ERR_print_errors_fp(out);
-}
 
 /**
  * Initialise OpenSSL
@@ -98,23 +79,12 @@ void init_openssl() {
    ERR_load_BIO_strings();
    OpenSSL_add_all_algorithms();
 
-    /* seed the random number system - only really nessecary for systems
-       without '/dev/random' */
-    /* RAND_add(?,?,?); need to work out a cryptographically significant way
-       of generating the seed */
+   /*
+    * systems without '/dev/random' should seed the random number system
+    */
+   /* RAND_add(?,?,?); need to work out a cryptographically significant way
+      of generating the seed */
 }
-
-/**
- * Close an unencrypted connection gracefully
- */
-int close_connection(BIO* bio) {
-   int r;
-   if ((r = BIO_free(bio)) == 0) {
-      /* Error unable to free BIO */
-      }
-   return r;
-}
-
 
 /**
  * Read from a stream and handle restarts if necessary
@@ -125,17 +95,16 @@ ssize_t read_from_stream(BIO* bio, char* buffer, ssize_t length) {
    while (r < 0) {
       r = BIO_read(bio, buffer, length);
       if (r == 0) {
-         print_ssl_error("Reached the end of the data stream.\n", stdout);
          continue;
          }
       else if (r < 0) {
          if (!BIO_should_retry(bio)) {
-            print_ssl_error("BIO_read should retry test failed.\n", stdout);
+            /* add exception: "should retry" test failed. */
             continue;
             }
-         print_ssl_error("BIO_read should retry test succeeded.\n", stdout);
-         /* It would be prudent to check the reason for the retry and handle
-          * it appropriately here */
+         /* "should retry" test succeeded. */
+         /* check the reason for the retry and handle it appropriately here */
+	 /* think about whether to set errno to EINTR or some such */
          }
       }
     return r;
@@ -150,11 +119,12 @@ int write_to_stream(BIO* bio, char* buffer, ssize_t length) {
       r = BIO_write(bio, buffer, length);
       if (r <= 0) {
          if (!BIO_should_retry(bio)) {
-            print_ssl_error("BIO_read should retry test failed.\n", stdout);
+            /* add exception: "should retry" test failed. */
             continue;
             }
-         /* It would be prudent to check the reason for the retry and handle
-          * it appropriately here */
+         /* "should retry" test succeeded. */
+         /* check the reason for the retry and handle it appropriately here */
+	 /* think about whether to set errno to EINTR or some such */
          }
       }
    return r;
@@ -178,8 +148,7 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    else
       r = SSL_CTX_load_verify_locations(*ctx, NULL, store_path);
    if (r == 0) {
-      print_ssl_error_2("Unable to load the trust store from %s.\n",
-                        store_path, stdout);
+      /* add exception: Unable to load the trust store from store_path */
       return NULL;
       }
 
@@ -187,7 +156,7 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    bio = BIO_new_ssl_connect(*ctx);
    BIO_get_ssl(bio, ssl);
    if (!(*ssl)) {
-      print_ssl_error("Unable to allocate SSL pointer.\n", stdout);
+      /* add exception: Unable to allocate SSL pointer. */
       return NULL;
       }
    SSL_set_mode(*ssl, SSL_MODE_AUTO_RETRY);
@@ -197,12 +166,13 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
 
    /* Verify the connection opened and perform the handshake */
    if (BIO_do_connect(bio) < 1) {
-      print_ssl_error_2("Unable to connect BIO.%s\n", host_and_port, stdout);
+      /* add exception: Unable to connect BIO. */
       return NULL;
       }
 
    if (SSL_get_verify_result(*ssl) != X509_V_OK) {
-      print_ssl_error("Unable to verify connection result.\n", stdout);
+      /* if certificate is required, then */
+      /* add exception: Unable to verify connection result. */
       }
 
    return bio;
@@ -235,9 +205,16 @@ int sslconnect(char* host, u_short port, Tpdisc_t* tpdisc)
    return 1;
 }
 
+/**
+ * Close an unencrypted connection gracefully
+ */
 int sslclose(Tpdisc_t* tpdisc)
 {
-   int rv = close_connection(((Tpssldisc_t*)tpdisc)->bio);
+   int rv;
+   if ((rv = BIO_free(((Tpssldisc_t*)tpdisc)->bio)) == 0) {
+      /* Error unable to free BIO */
+      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);
+      }
    return 1;
 }
 

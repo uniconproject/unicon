@@ -13,6 +13,8 @@ struct _tpssldisc_s
   BIO *bio;
   SSL_CTX *ctx;
   SSL *ssl;
+  int encrypt; /* 1=encrypt, 0=don't encrypt. not used yet, encrypt-only. */
+  int verify;  /* 1=enforce certificate, 0=anything goes. not used yet. */
 };
 
 #endif /* !_SSL_DISC_H_ */

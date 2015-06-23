@@ -22,9 +22,9 @@ WARNINGS =
 
 SUBDIRS = uri . tests
 
-OBJS = tp.o util.o tpdunix.o tpmdaytm.o tpmfinge.o tpmhttp.o  \
+OBJS = tp.o util.o tpdunix.o tpdssl.o tpmdaytm.o tpmfinge.o tpmhttp.o  \
        tpmpop.o tpmsmtp.o
-SRCS = tp.c util.c tpdunix.c tpmdaytm.c tpmfinge.c tpmhttp.c  \
+SRCS = tp.c util.c tpdunix.c tpdssl.c tpmdaytm.c tpmfinge.c tpmhttp.c  \
        tpmpop.c tpmsmtp.c
 LIBURI = uri/liburi.a
 
@@ -67,6 +67,7 @@ dist: Makefile distclean
 
 tp.o: tp.c config.h tp.h util.h uri/uri.h
 tpdunix.o: tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h
+tpdssl.o: tpdssl.c config.h util.h tp.h uri/uri.h tpdssl.h
 tpmdaytm.o: tpmdaytm.c config.h tp.h util.h uri/uri.h
 tpmfinge.o: tpmfinge.c config.h tp.h util.h uri/uri.h
 tpmhttp.o: tpmhttp.c config.h tp.h uri/uri.h util.h

@@ -191,6 +191,7 @@ extern Tpmethod_t* TpmSMTP;
 
 /* Disciplines */
 extern Tpdisc_t* TpdUnix;
+extern Tpdisc_t* TpdSSL;
 
 #endif /* !_LIBTP_ */
 

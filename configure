@@ -9141,6 +9141,48 @@ else
   openssl_cv_libssl=no
 fi
 
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BIO_read in -lcrypto" >&5
+$as_echo_n "checking for BIO_read in -lcrypto... " >&6; }
+if ${ac_cv_lib_crypto_BIO_read+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcrypto  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char BIO_read ();
+int
+main ()
+{
+return BIO_read ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_crypto_BIO_read=yes
+else
+  ac_cv_lib_crypto_BIO_read=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_BIO_read" >&5
+$as_echo "$ac_cv_lib_crypto_BIO_read" >&6; }
+if test "x$ac_cv_lib_crypto_BIO_read" = xyes; then :
+  openssl_cv_libcrypto=yes
+else
+  openssl_cv_libcrypto=no
+fi
+
         ac_fn_c_check_header_mongrel "$LINENO" "openssl/bio.h" "ac_cv_header_openssl_bio_h" "$ac_includes_default"
 if test "x$ac_cv_header_openssl_bio_h" = xyes; then :
   openssl_cv_bio_h=yes
@@ -9155,10 +9197,10 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes"
+	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes" -a "$openssl_cv_libcrypto" = "yes"
         then
                 #
-                # If both library and headers were found, use them
+                # If library and headers were found, use them
                 #
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_library_init in -lssl" >&5
 $as_echo_n "checking for SSL_library_init in -lssl... " >&6; }
@@ -9202,6 +9244,51 @@ if test "x$ac_cv_lib_ssl_SSL_library_init" = xyes; then :
 _ACEOF
 
   LIBS="-lssl $LIBS"
+
+fi
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BIO_read in -lcrypto" >&5
+$as_echo_n "checking for BIO_read in -lcrypto... " >&6; }
+if ${ac_cv_lib_crypto_BIO_read+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcrypto  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char BIO_read ();
+int
+main ()
+{
+return BIO_read ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_crypto_BIO_read=yes
+else
+  ac_cv_lib_crypto_BIO_read=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_BIO_read" >&5
+$as_echo "$ac_cv_lib_crypto_BIO_read" >&6; }
+if test "x$ac_cv_lib_crypto_BIO_read" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBCRYPTO 1
+_ACEOF
+
+  LIBS="-lcrypto $LIBS"
 
 fi
 

@@ -793,14 +793,16 @@ then
         AC_LANG_SAVE
         AC_LANG_C
 	AC_CHECK_LIB(ssl, SSL_library_init, [openssl_cv_libssl=yes], [openssl_cv_libssl=no])
+	AC_CHECK_LIB(crypto, BIO_read, [openssl_cv_libcrypto=yes], [openssl_cv_libcrypto=no])
         AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
         AC_LANG_RESTORE
-	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes"
+	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes" -a "$openssl_cv_libcrypto" = "yes"
         then
                 #
-                # If both library and headers were found, use them
+                # If libraries and headers were found, use them
                 #
 		AC_CHECK_LIB(ssl, SSL_library_init)
+		AC_CHECK_LIB(crypto, BIO_read)
                 AC_MSG_CHECKING(ssl in ${OPENSSL_HOME})
                 AC_MSG_RESULT(ok)
         else

@@ -864,10 +864,10 @@ int nargs, ndyn, nstat, fstat;
 /*
  * This table contains the method names that allow us to do operator
  * overloading.  These method names map to opcodes which correspond to the
- * operators we are overloading
+ * operators we are overloading.
  *
  * The second array is used to map the opcodes directly to the field number
- * corrsponding to the  method 
+ * corresponding to the method.
  */
 
 
@@ -905,21 +905,21 @@ static char *op2funcmap[] = {
    "__add__",   /*binary + operator*/
    "__powr__",  /*binary ^ operator*/
    "__random__",/* unary ? operator */ 
-   NULL, 
-	NULL,
-	NULL,
+   NULL,        /* reversible assignment, overload not supported */
+	NULL,   /* receive, overload not supported */
+	NULL,   /* receivebk, overload not supported. */
    "__refresh__", /* unary ^ operator */
-   NULL, 
-   "__sect__", 
-	NULL,
-	NULL,
+   NULL,        /* reversible swap, overload not supported */
+   "__sect__",  /* section [] operator */
+	NULL,   /* send */
+	NULL,   /* sendbk */
    "__size__", /* unary * operator */
    "__subsc__", /* ternary [i:j] operator*/
-   NULL, 
+   NULL,        /* swap, overload not supported */
    "__tabmat__", /* unary = operator */
    "__toby__", /* ternary  to i by j "operator" */
    "__union__", /*binary ++ operator*/
-   NULL, 
+   NULL,         /* "value", probably unary . operator */
    NULL, 
    NULL, 
    NULL, 

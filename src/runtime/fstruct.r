@@ -665,7 +665,8 @@ function{0,1} classname(r)
 
       br = BlkD(r, Record);
       recnm_bgn = StrLoc(Blk(br->recdesc,Proc)->recname);
-      first__ = strstr(recnm_bgn, "__");
+      if ((first__ = strstr(recnm_bgn, "__")) == NULL)
+	 fail;
       second__ = strstr(first__ + 2, "__");
       if (second__ != NULL) recnm_bgn = first__ + 2;
       recnm_end = strstr(recnm_bgn, ClsInstSuffix);

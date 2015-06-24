@@ -489,6 +489,12 @@ char *outname;
 	 infile = fopen(inname, ReadText);
 	 if (infile == NULL)
 	    quitf("cannot open .u or .u1 for %s", inname);
+	 if (((c = getc(infile)) != 'v') ||
+	     ((c = getc(infile)) != 'e') ||
+	     ((c = getc(infile)) != 'r') ||
+	     ((c = getc(infile)) != 's')) {
+	    quitf("'%s' is not a ucode file", inname);
+	    }
 	 /*
 	  * skip past the control-L
 	  */

@@ -683,7 +683,7 @@ int StartAudioThread(char filename[])
 {
    int i;
    pthread_attr_t attrib;
-   char *sp;
+   char *strptr;
    pthread_mutex_lock(&mutex);
    if (isPlaying == -1)
    {
@@ -708,7 +708,7 @@ int StartAudioThread(char filename[])
       strcpy(arraySource[i].filename, filename);
       pthread_attr_init(&attrib);
       pthread_attr_setdetachstate(&attrib, PTHREAD_CREATE_DETACHED);
-      if((sp = strstr(filename,".mp3")) != NULL) {
+      if((strptr = strstr(filename,".mp3")) != NULL) {
 #if defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
 #ifndef WIN32
 	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayMP3 , NULL) ) {
@@ -742,7 +742,7 @@ int StartAudioThread(char filename[])
 #endif
 	 }
 
-      if((sp = strstr(filename,".ogg")) != NULL){
+      if((strptr = strstr(filename,".ogg")) != NULL){
 #if defined(HAVE_LIBOGG) 
 #ifndef WIN32
 	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayOgg , NULL) ) {
@@ -779,7 +779,7 @@ int StartAudioThread(char filename[])
 #endif /* defined(HAVE_LIBOGG)  */
 	 }
 
-      if((sp = strstr(filename,".wav")) != NULL){
+      if((strptr = strstr(filename,".wav")) != NULL){
 #ifdef HAVE_LIBOPENAL
 #ifndef WIN32
 	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayWAV , NULL) ) {
@@ -1000,14 +1000,14 @@ int LinuxMixer(char * cmd) /* cmd: eg. "vol=50" */
    char val[5] = {'\0'};
    int  cmdiVal = -1;
    char cmdsVal[10] = {'\0'};
-   char *sp = NULL, *p = NULL;
+   char *strptr = NULL, *p = NULL;
 
    if( MixInitialize() >= 0){
       /*----------------parse cmd; */
       p = strchr(cmd,'=');
       if(p != NULL){ /* cmd: "cmd=ival" */
-	 sp=cmd;
-	 while(sp != p)	cmdsVal[i++] = *sp++;
+	 strptr=cmd;
+	 while(strptr != p)	cmdsVal[i++] = *strptr++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0') val[i++] = *p;
@@ -1535,7 +1535,7 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
    char val[5] = {'\0'};
    int  cmdiVal = -1;
    char cmdsVal[10] = {'\0'};
-   char *sp = NULL, *p = NULL;
+   char *strptr= NULL, *p = NULL;
    char * DevNames[10] = {
       "Volume Contro","Wave","SW Synth","Telephone","PC Speaker",
       "CD Audio","Line In","Microphone","IIS","Phone Line"};
@@ -1545,8 +1545,8 @@ int WinMixer(char * cmd) /* cmd: eg. "vol=50" */
       /*----------------parse cmd */
       p = strchr(cmd,'=');
       if (p != NULL){ /* cmd: "cmd=ival" */
-	 sp=cmd;
-	 while(sp != p)	cmdsVal[i++]=*sp++;
+	 strptr=cmd;
+	 while(strptr != p)	cmdsVal[i++]=*strptr++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0')	val[i++]=*p;

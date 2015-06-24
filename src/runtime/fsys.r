@@ -43,56 +43,6 @@ extern int errno;
  */
 
 
-/*
- * Change the mixed case of string s1 to the lower case string s2 by
- * copying s2 (without the NUL terminator; can be at front or in the middle).
- */
-void UtoL (char *s1, char *s2)
-{
-   int i, l = strlen(s2);
-
-   for (i = 0; i < l; i++)
-      *(s1+i) = *(s2+i);
-}
-
-/*
- * is_url() takes a string s as its parameter. If s starts with a URL scheme,
- * is_url() returns 1. If s starts with "net:", it returns 2. Otherwise,
- * for normal files, is_url() returns 0.
-*/
-
-int is_url(char *s)
-{
-   char *tmp = s;
-
-   while ( *tmp == ' ' || *tmp == '\t' || *tmp == '\n' )
-      tmp++;
-
-   if (!strncasecmp (tmp, "http:", 5) ){
-      UtoL(tmp, "http");
-      return 1;
-      }
-   if (!strncasecmp (tmp, "file:", 5) ) {
-      UtoL(tmp, "file");
-      return 1;
-      }
-   if (!strncasecmp (tmp, "ftp:", 4) ) {
-      UtoL(tmp, "ftp");
-      return 1;
-      }
-   if (!strncasecmp (tmp, "gopher:", 7) ) {
-      UtoL(tmp, "gopher");
-      return 1;
-      }
-   if (!strncasecmp (tmp, "telnet:", 7) )  {
-      UtoL(tmp, "telnet");
-      return 1;
-      }
-   if ( !strncasecmp(tmp, "net:", 4) )
-      return 2;
-   return 0;
-}
-
 "close(f) - close file f."
 
 function{1} close(f)
@@ -845,7 +795,7 @@ Deliberate Syntax Error
       if (status & Fs_Pipe) {
 	 tended char *sbuf, *sbuf2, *my_s = NULL;
 	 int c, fnamestrlen = strlen(fnamestr);
-	 if (status != (Fs_Read|Fs_Pipe) && status != (Fs_Write|Fs_Pipe))
+	 if ((status != (Fs_Read|Fs_Pipe)) && (status != (Fs_Write|Fs_Pipe)))
 	    runerr(209, spec);
 	 /*
 	  * fnamestr is a program command line.  Extract its first
@@ -854,9 +804,10 @@ Deliberate Syntax Error
 	 Protect(reserve(Strings, (fnamestrlen<<1)+PATH_MAX+2), runerr(0));
 	 sbuf = alcstr(fnamestr, fnamestrlen+1);
 	 sbuf[fnamestrlen] = '\0';
+	 /* what if it was a tab, instead of a space character? */
 	 if ((my_s = strchr(sbuf, ' ')) != NULL) *my_s = '\0';
 	 if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
-	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen);
+	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen); /* +1? */
 	    if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL)
 	       fail;
 	    fnamestr = sbuf2;

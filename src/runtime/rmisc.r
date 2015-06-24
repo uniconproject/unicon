@@ -51,30 +51,25 @@ dptr d1, d2;
 
 int getkeyword(char *s, dptr vp)
 {
-   if (strcmp(s, "&ascii") == 0) {
-      Kascii(vp);
-      return Succeeded;
-      }
-   if (strcmp(s, "&cset") == 0) {
-      Kcset(vp);
-      return Succeeded;
-      }
-   if (strcmp(s, "&digits") == 0) {
-      Kdigits(vp);
-      return Succeeded;
-      }
-   if (strcmp(s, "&lcase") == 0) {
-      Klcase(vp);
-      return Succeeded;
-      }
-   if (strcmp(s, "&letters") == 0) {
-      Kletters(vp);
-      return Succeeded;
-      }
-   if (strcmp(s, "&ucase") == 0) {
-      Kucase(vp);
-      return Succeeded;
-      }
+   if (*s++ == '&') {
+      switch(*s++) {
+      case 'a':
+         if (!strcmp(s, "scii")) { Kascii(vp); return Succeeded; }
+         break;
+      case 'c':
+         if (!strcmp(s, "set")) { Kcset(vp); return Succeeded; }
+         break;
+      case 'd':
+         if (!strcmp(s, "igits")) { Kdigits(vp); return Succeeded; }
+         break;
+      case 'l':
+         if (!strcmp(s, "etters")) { Kletters(vp); return Succeeded; }
+         else if (!strcmp(s, "case")) { Klcase(vp); return Succeeded; }
+         break;
+      case 'u':
+         if (!strcmp(s, "case")) { Kucase(vp); return Succeeded; }
+         break;
+         }
    return Failed;
 }
 #endif					/* PatternIntegration */

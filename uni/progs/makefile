@@ -9,3 +9,11 @@ ie: ie.icn
 
 uprof: uprof.icn
 	$(UNICON) uprof
+
+grok: grok.u
+
+umake: umake.icn
+	$(UNICON) -DMAIN umake
+
+umake.u: umake.icn
+	$(UNICON) -c umake

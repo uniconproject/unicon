@@ -21,9 +21,10 @@ $define RM "rm -f "
 $define SL "/"
 $endif
 
-procedure main()
+procedure main(argv)
+   if *argv=0 then put(argv, ".")
    # writes out all directories from the current directory down
-   every d :=  !getdirs(".") do { 
+   every d :=  !getdirs(!argv) do {
    
       # construct file deletion commands around current directory name
       # tilde's behaviour on Windows systems requires two separate expressions	

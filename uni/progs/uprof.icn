@@ -183,27 +183,28 @@ if *Proc_stack > 0 then {
       }
    }
 
-   write(output)
-   write(output, left("PROCEDURE",12), left("%TIME", 7), left("TOTAL", 8),
-	 left("TIME ALONE", 12), left("CALLS", 8), left("RETS", 6),
-	 left("FAILS", 6), left("SUSP", 5), left("RESUM",6), "TIME/CALL")
-
-   #sorts the output
+   #sort the output
    keys := list()
-
    every y := key(Proc_time) do {
        if not member(Proc_time,top) then write("not a member...")
       x := lkey(y, divimage(Proc_alone_time[y]*100,Proc_time[top]))
       push(keys, x)
       }
-
    keys := reverse(sortf(keys, 2))
 
+   mxname := 12
+   every mxname <:= *image((!keys).keyval)[10:0]
+
    #output
+   write(output)
+   write(output, left("PROCEDURE",mxname-2), left("%TIME", 7), left("TOTAL", 8),
+	 left("TIME ALONE", 12), left("CALLS", 8), left("RETS", 6),
+	 left("FAILS", 6), left("SUSP", 5), left("RESUM",6), "TIME/CALL")
+
    every y := (!keys).keyval do {
       writes(output,
-	     left((image(y))[10:0], 12),
-	     left(divimage(Proc_alone_time[y]*100,Proc_time[top]), 7),
+	     left((image(y))[10:0], mxname),
+	     left(divimage(Proc_alone_time[y]*100,Proc_time[top]), 6),
 	     left(Proc_time[y], 8),
 	     left(Proc_alone_time[y], 12),
 	     left(Proc_calls[y], 8), left(Proc_returns[y], 6),

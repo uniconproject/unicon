@@ -80,7 +80,9 @@ method parse_Command(cmd)
      "r"      |
      "run"    :{  cmdRun(cmd)                       }
      "q"      |
-     "quit"   :{  cmdQuit()                         }
+     "quit"   :{
+	write(&errout, "received ", image(cmd[1]), ", quitting")
+	cmdQuit()                         }
      "p"      |
      "print"  :{  cmdPrint(cmd[2:0])                }
      "b"      |
@@ -233,13 +235,15 @@ method cmdQuit()
       DState.Writes("\n   The program "|| 
                           DState.srcFile.exeName ||
                           " is running.  Exit anyway (Y/n)?: ")
-      if (not (ans:=read())) | (*ans=0) | map(ans[1]) == "y" then
+      if (not (ans:=read())) | (*ans=0) | map(ans[1]) == "y" then {
          DState.State := QUIT
+	 }
       else
          DState.State := SKIP
       }
-   else
+   else {
       DState.State := QUIT
+      }
 end
 
 #

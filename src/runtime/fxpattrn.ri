@@ -125,7 +125,7 @@ enum pattern_codes{
    PC_Span_MF = 96
 };
 
-#define PRINTF_DEBUG 1
+/* #define PRINTF_DEBUG 1 or some other level if you want debugging */
 #ifdef PRINTF_DEBUG
 #define DEBUGF(lev, x) if (lev <= PRINTF_DEBUG) fprintf x
 #else  /* DEBUG not defined */
@@ -1782,16 +1782,7 @@ function {1} PRest()
       }
 end
 
-function {1} PFail()
-   abstract {
-      return pattern;
-      }
-   body {
-      union block *bp;
-      bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
-      return pattern(bp);
-      }
-end
+/* PFail() moved to bottom (function Fail()) */
 
 static void MYWriteToFile(FILE *fd, int len, char *s)
 {
@@ -2139,7 +2130,7 @@ if (is:list(Node->parameter)) {
 	 if (getvar(varname,&parm)== Failed) {
 	    VariableLookupFailed(varname);
 	    }
-	 procargs[i -1] = parm;
+	 procargs[i - 1] = parm;
 	 }
       }
    call_result = calliconproc(proc,procargs,nargs);
@@ -2482,7 +2473,7 @@ Node_Succeed:
 		       pat_sub + Stack[Stack_Base - 1].cursor);
 	 }
       else {
-	 Set_String(pvar, pat_sub,Stack[Stack_Base - 1].cursor,Cursor);
+	 Set_String(pvar, pat_sub, Stack[Stack_Base - 1].cursor, Cursor);
 	 }
       Pop_Region();
       goto Node_Succeed;
@@ -2762,7 +2753,7 @@ Node_Succeed:
       DEBUGF(20,(stdout,"Matching Len unevaluated variable\n"));
       if (!cnv_int(&var,&var)) {
 	 ErrorDuringPatternMatch((stdout,
-			     "Unevaluated variable for Len should be cset"));
+			     "Unevaluated variable for Len should be integer"));
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor + IntVal(var) > Length)
@@ -2775,7 +2766,7 @@ Node_Succeed:
    case PC_Len_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
+      if (!cnv_int(&cresult,&cresult))
 	 ErrorDuringPatternMatch((stdout,
 		      "Unevaluated function call for Len should be integer"));
       if (Cursor + IntVal(cresult) > Length)
@@ -2789,7 +2780,7 @@ Node_Succeed:
    case PC_Len_NMF:{
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
+      if (!cnv_int(&cresult,&cresult))
 	 ErrorDuringPatternMatch((stdout,
 		      "Unevaluated function call for Len should be integer"));
       if (Cursor + IntVal(cresult) > Length)
@@ -2907,10 +2898,10 @@ Node_Succeed:
 
    case PC_Pos_NP:{
       GetVarFromNodeParameter(Node);
-      DEBUGF(20,(stdout,"Matching Len unevaluated variable\n"));
+      DEBUGF(20,(stdout,"Matching Pos unevaluated variable\n"));
       if (!cnv_int(&var,&var)) {
 	 ErrorDuringPatternMatch((stdout,
-			       "Unevaluated variable for Len should be cset"));
+			     "Unevaluated variable for Pos should be integer"));
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor == IntVal(var) - 1)
@@ -2924,7 +2915,7 @@ Node_Succeed:
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
 	 ErrorDuringPatternMatch((stdout,
-		       "Unevaluated function call for Len should be integer"));
+		       "Unevaluated function call for Pos should be integer"));
       if (Cursor == IntVal(cresult) - 1)
 	 goto Node_Succeed;
       else
@@ -2947,7 +2938,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       if (!cnv_int(&var,&var)) {
 	 ErrorDuringPatternMatch((stdout,
-		"Could not convert unevaluated variable for PTab to integer"));
+		"Could not convert unevaluated variable for Tab to integer"));
 	 }
       if (Cursor <= IntVal(var) - 1){
 	 Cursor = IntVal(var) - 1;
@@ -2964,7 +2955,7 @@ Node_Succeed:
       else {
 	 if (!cnv_int(&cresult,&cresult))
 	    ErrorDuringPatternMatch((stdout,
-			  "Unevaluated function call for Any should be cset"));
+			  "Unevaluated function call for Tab should be integer"));
 	 }
       if (Cursor <= IntVal(cresult) - 1) {
 	 Cursor = IntVal(cresult) - 1;
@@ -2997,7 +2988,7 @@ Node_Succeed:
       DEBUGF(20,(stdout,"Matching Rpos unevaluated variable\n"));
       if (!cnv_int(&var,&var)){
 	 ErrorDuringPatternMatch((stdout,
-			    "Unevaluated variable for Len should be integer"));
+			    "Unevaluated variable for RPos should be integer"));
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor == (Length - IntVal(Node->parameter)))
@@ -3271,5 +3262,21 @@ Node_Succeed:
    fprintf(stderr,"!!Unrecognized pcode in internal match!!\n");
    fatalerr(0,NULL);
 }
+
+/* keep this at the end so the #undef Fail affects no-one else */
+#ifdef PatternIntegration
+#undef Fail
+function {1} Fail()
+#else					/* PatternIntegration */
+function {1} PFail()
+#endif					/* PatternIntegration */
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
+      return pattern(bp);
+      }
+end
 
 #endif					/* PatternType */

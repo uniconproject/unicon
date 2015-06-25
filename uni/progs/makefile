@@ -10,8 +10,6 @@ ie: ie.icn
 uprof: uprof.icn
 	$(UNICON) uprof
 
-grok: grok.u
-
 umake: umake.icn
 	$(UNICON) -DMAIN umake
 

@@ -23,6 +23,8 @@ struct b_iproc mt_llist = {
 #define FncDefV(p) extern struct b_proc Cat(B,p);
 #passthru #undef exit
 #undef exit
+#passthru #undef Fail
+#undef Fail
 #include "../h/fdefs.h"
 #undef FncDef
 #undef FncDefV

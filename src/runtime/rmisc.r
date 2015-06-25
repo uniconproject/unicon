@@ -70,8 +70,9 @@ int getkeyword(char *s, dptr vp)
          if (!strcmp(s, "case")) { Kucase(vp); return Succeeded; }
          break;
          }
+      }
    return Failed;
-}
+   }
 #endif					/* PatternIntegration */
 
 /*

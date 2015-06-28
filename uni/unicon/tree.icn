@@ -69,14 +69,59 @@ procedure yystalists(node)
    }
 end
 
+global list_of_invocables
 
+procedure writes_code_for_uneval(L)
+local i
+   writes(yyout, "[")
+   every temp := L[i := 1 to *L] do {
+      if type(temp) == "list" then {
+	 writes_code_for_uneval(temp)
+	 } 
+      else {
+	 writes(yyout, image(temp))
+	 if i = 1 then {
+	    /list_of_invocables := []
+	    put(list_of_invocables, temp)
+	    }
+	 if i < *L then {
+	    writes(yyout, ", ")	
+	    }
+	 }
+      }
+   writes(yyout, "]")
+   return
+end
 
-procedure  emit_code_for_uneval(funcname)
+procedure make_list_for_uneval(L, word)
+   while tab(upto(word)) do {
+      temp := tab(many(word))
+      if proc(temp) | move(1) === "." then {
+	 L1 := []
+	 put(L1, temp)
+	 L1 := make_list_for_uneval(L1, word)
+	 put(L, L1)
+	 }
+      else {
+	 put(L, temp)
+	 }
+      }
+   return L
+end
+
+procedure emit_code_for_uneval(funcname)
+static word
+initial { word := &letters ++ &digits ++ '\'\"&~' }
    L := []
-   tab(many("`"))
-   temp := tab(upto("(.")) 
+   tab(many('`'))
+   temp := tab(upto('(.')) 
    if \temp == "\\" then temp := "\\\\"
-   put(L,\temp)
+   put(L, \temp)
+$ifndef NoPatternIntegration
+   L := make_list_for_uneval(L, word)
+   writes(yyout, funcname, "(")
+   writes_code_for_uneval(L)
+$else					#PatternIntegration
    while tab(upto(&letters)) do {
       temp := tab(many(&letters))
       put(L,temp)
@@ -87,7 +132,9 @@ procedure  emit_code_for_uneval(funcname)
       writes(yyout, "\"", temp,"\",")
       }
    writes(yyout, "\"", L[*L], "\"")
-   writes(yyout, "])")
+   writes(yyout, "]")
+$endif					#PatternIntegration
+   writes(yyout, ")")
    return
 end
 

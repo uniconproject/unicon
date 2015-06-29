@@ -259,17 +259,14 @@ struct b_list *ResolveList(struct b_list *lp)
    tended struct b_list *lpsrc;
    tended struct b_list *lpdest;
    struct b_list *lptemp;
-   tended char *temp;
    int complement;
    struct b_cset *cp, *cpx;
 
    lpsrc = lp;
    lpdest = alclist(lpsrc->size,lpsrc->size);
-   DEBUGF(20,(stdout, "Resolving function name and parameters from list"));
+   DEBUGF(20,(stdout, "Resolving function name and parameters from list\n"));
    nargs = lpsrc->size -1;
    elsrc = (struct b_lelem *)lpsrc->listhead;
-
-   temp = "";
 
    proc.dword = D_Proc;
    /* convert string in to process and store in proc*/
@@ -280,91 +277,101 @@ struct b_list *ResolveList(struct b_list *lp)
       }
    eldest = (struct b_lelem *)lpdest->listhead;
    eldest->lslots[0] = proc;
-   for (; BlkType(elsrc) == T_Lelem; elsrc = (struct b_lelem *)elsrc->listnext) {
-      for (i = 1; i < elsrc->nused; i++) {
-	 tended char * varname;
-	 struct descrip parm;
-	 dptr pvar;
-	 if (is:string(elsrc->lslots[i])) {
-	    /* if a string constant, drop double quotes,
-	    else lookup using getvar() */
-	    cnv:C_string(elsrc->lslots[i], varname);
-	    if (StrLen(elsrc->lslots[i])>0) {
+   /*
+    * For now, there is a limitation of only handling single-element-block
+    * lists. Deemed OK for something only called internally for our own
+    * constructed lists for unevaluated expressions.
+    */
+   if (BlkType(elsrc->listnext) == T_Lelem) {
+      fprintf(stderr, "uneval cannot handle multi-element-block list\n");
+      fatalerr(0, NULL);
+      }
 
-	       complement = 0;
-               if (strcspn(varname, "~") == 0) {
-		  /* resolve complement */
-		  StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-		  StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 1;
-		  cnv:C_string(elsrc->lslots[i], varname);
-		  complement = 1;
-		  }
+   for (i = 1; i < elsrc->nused; i++) {
+      tended char * varname;
+      struct descrip parm;
+      dptr pvar;
+      if (is:string(elsrc->lslots[i])) {
+         /*
+	  * if a string constant, drop double quotes,
+	  * else lookup using getvar()
+	  */
+	 cnv:C_string(elsrc->lslots[i], varname);
+	 if (StrLen(elsrc->lslots[i])>0) {
+	    complement = 0;
+	    if (strcspn(varname, "~") == 0) {
+	       /* resolve complement */
+	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 1;
+	       cnv:C_string(elsrc->lslots[i], varname);
+	       complement = 1;
+	       }
 
-	       if (strcspn(varname, "\"") == 0) {
-		  /* drop the quotes, but pass string as a cset */
-		  StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-		  StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
-		  cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
-		  parm = elsrc->lslots[i];
+	    if (strcspn(varname, "\"") == 0) {
+	       /* drop the quotes, pass string contents */
+	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+	       cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
+	       parm = elsrc->lslots[i];
+	       }
+	    else if (strcspn(varname, "\'") == 0) { 
+	       /* drop the quotes, but pass string as a cset */
+	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
+	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
+	       cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
+	       parm = elsrc->lslots[i];
+	       }
+	    else if (strcspn(varname, "&") == 0) {
+	       if ( getkeyword(varname, &parm) == Failed) {
+		  VariableLookupFailed(varname);
 		  }
-	       else if (strcspn(varname, "\'") == 0) { 
-		  /* drop the quotes, but pass string as a cset */
-		  StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
-		  StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
-		  cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
-		  parm = elsrc->lslots[i];
-		  }
-	       else if (strcspn(varname, "&") == 0) {
-		  if ( getkeyword(varname, &parm) == Failed) {
-		     VariableLookupFailed(varname);
-	             }
-		  cnv:cset(parm, elsrc->lslots[i]);
-		  if(complement) {
-		     Protect(cp = alccset(), fatalerr(0,NULL));
-		     cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
-		     for (b = 0; b < CsetSize; b++) 
-			cp->bits[b] = ~cpx->bits[b];
-		     elsrc->lslots[i].vword.bptr = (union block *)cp;
-		     }
-		  parm = elsrc->lslots[i];
-		  }
-	       else if (strcspn(varname, "1234567890") == 0) {
-		  cnv:integer(elsrc->lslots[i], elsrc->lslots[i]);
-		  parm = elsrc->lslots[i];
-		  }
-	       else {
-		  if ( getvar(varname, &parm) == Failed) {
-		     VariableLookupFailed(varname);
-	             }
-		  pvar = VarLoc(parm);
-		  elsrc->lslots[i] = *pvar;
-		  
-		  if(complement) {
-		     Protect(cp = alccset(), fatalerr(0,NULL));
-		     cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
-		     for (b = 0; b < CsetSize; b++) 
-			cp->bits[b] = ~cpx->bits[b];
-		     elsrc->lslots[i].vword.bptr = (union block *)cp;
-		     }
+	       cnv:cset(parm, elsrc->lslots[i]);
+	       if(complement) {
+		  Protect(cp = alccset(), fatalerr(0,NULL));
+		  cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
+		  for (b = 0; b < CsetSize; b++) 
+		     cp->bits[b] = ~cpx->bits[b];
+		  elsrc->lslots[i].vword.bptr = (union block *)cp;
 		  }
 	       parm = elsrc->lslots[i];
 	       }
-
-	    else {
-	       /*printf("Not sure what\n");*/
+	    else if (strcspn(varname, "1234567890") == 0) {
+	       cnv:integer(elsrc->lslots[i], elsrc->lslots[i]);
+	       parm = elsrc->lslots[i];
 	       }
-            }
-	 else if (is:list(elsrc->lslots[i])) {
-            /* recursively visit sublists, do same stuff */
-	    lptemp = (struct b_list *)BlkD(elsrc->lslots[i], List);
-	    lpdest = ResolveList(lptemp);
-	    }
-	 else { 
-	    /* cset, integer constant, ... */
+	    else {
+	       if (getvar(varname, &parm) == Failed) {
+		  VariableLookupFailed(varname);
+		  }
+	       pvar = VarLoc(parm);
+	       elsrc->lslots[i] = *pvar;
+
+	       if (complement) {
+		  Protect(cp = alccset(), fatalerr(0,NULL));
+		  cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
+		  for (b = 0; b < CsetSize; b++) 
+		     cp->bits[b] = ~cpx->bits[b];
+		  elsrc->lslots[i].vword.bptr = (union block *)cp;
+		  }
+	       }
 	    parm = elsrc->lslots[i];
 	    }
-         eldest->lslots[i] = parm;
-         }
+	 else {
+	    /* uneval string of length zero, probably should be runerr */
+	    return NULL;
+	    }
+	 }
+      else if (is:list(elsrc->lslots[i])) {
+	 /* recursively visit sublists, do same stuff */
+	 lptemp = (struct b_list *)BlkD(elsrc->lslots[i], List);
+	 parm.dword = D_List;
+	 parm.vword.bptr = (union block *)ResolveList(lptemp);
+	 }
+      else { 
+	 /* cset, integer constant, ... */
+	 parm = elsrc->lslots[i];
+	 }
+      eldest->lslots[i] = parm;
       }
    return lpdest;
    }
@@ -506,7 +513,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	    proc.dword = D_Proc;
 	    BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
 	    if (BlkLoc(proc) == NULL) {
-	       fprintf(stderr, "Unable to find proc\n");
+	       fprintf(stderr, "Unable to find proc in ResolveReferences\n");
 	       fatalerr(0, NULL);
 	       }
 	    eldest = (struct b_lelem *)lpdest->listhead;
@@ -907,7 +914,7 @@ struct b_pelem *Bracket (struct b_pelem *E,struct b_pelem * P,
 	    runerr(104, arg);
 	 bp = pattern_make(0, &EOP, ptype ## _CS,1, arg);
 	 }
-	 }
+   }
 #enddef
 
 #ifdef PatternIntegration
@@ -1907,12 +1914,12 @@ if (is:list(Node->parameter)) {
    tended struct b_record *rp;
    union block *bptr;
    struct descrip fieldptr;
-
    int i,nfields, fnum;
    struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
    ep = (struct b_lelem *)lp->listhead;
+   var = ep->lslots[0];
+   deref(&var, &var);
 
-   deref(&var,&ep->lslots[0]);
    if (!is:record(var))
       RunErr(107, &var);
 
@@ -1937,7 +1944,7 @@ if (is:list(Node->parameter)) {
    }
 else {
    tended char *varnam;
-   if(is:string(Node->parameter)) {
+   if (is:string(Node->parameter)) {
       cnv:C_string(Node->parameter, varnam);
       if (getvar(varnam, &varref) == Failed) {
 	 VariableLookupFailed(varnam);
@@ -1945,7 +1952,7 @@ else {
       pvar = VarLoc(varref);
       var = *pvar;
       }
-   else if (!is:string(Node->parameter) && Var(Node->parameter)) {
+   else if (Var(Node->parameter)) {
       pvar = VarLoc(Node->parameter);
       var = *pvar;
       }
@@ -2072,9 +2079,9 @@ if (is:list(Node->parameter)) {
    ep = (struct b_lelem *)lp->listhead;
 
    cnv:C_string(ep->lslots[0],varname);
-   if (getvar(varname,&var) == Failed) {
-      VariableLookupFailed(varname);
-      }
+   var.dword = D_Proc;
+   BlkLoc(var) = (union block *)strprc(&ep->lslots[0], ep->nslots);
+   if (BlkLoc(var) == NULL) VariableLookupFailed(varname);
    procargs[0] = var;
    deref(&var,&var);
    if (!is:record(var))

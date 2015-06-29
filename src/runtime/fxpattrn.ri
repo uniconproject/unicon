@@ -249,25 +249,6 @@ void VariableLookupFailed(char * varname)
 }
 
 #ifdef PatternIntegration
-void printList(struct b_list *l, int t){
-	int i;
-	tended char *item;
-	tended struct b_lelem *elem;
-	struct b_list *list;
-
-	elem = (struct b_lelem *)l->listhead;
-	for(i = 1; i < elem->nused; i++){
-	   if (is:list(elem->lslots[i])) {
-	      list = (struct b_list *)BlkD(elem->lslots[i], List);
-	      printList(list, t + 1);
-	      }
-	   else {
-	      cnv:C_string(elem->lslots[i], item);
-	      if (item != NULL) printf("%*s%s\n", t, "\t", item);
-	      }
-	}
-}
-
 struct b_list *ResolveList(struct b_list *lp)
 {
    struct descrip proc;
@@ -284,7 +265,7 @@ struct b_list *ResolveList(struct b_list *lp)
 
    lpsrc = lp;
    lpdest = alclist(lpsrc->size,lpsrc->size);
-   DEBUGF(20,(stdout, "Resolving function name and parameters"));
+   DEBUGF(20,(stdout, "Resolving function name and parameters from list"));
    nargs = lpsrc->size -1;
    elsrc = (struct b_lelem *)lpsrc->listhead;
 
@@ -294,7 +275,7 @@ struct b_list *ResolveList(struct b_list *lp)
    /* convert string in to process and store in proc*/
    BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
    if (BlkLoc(proc) == NULL) {
-      fprintf(stderr, "Unable to find proc\n");
+      fprintf(stderr, "Unable to find proc in ResolveList\n");
       fatalerr(0, NULL);
       }
    eldest = (struct b_lelem *)lpdest->listhead;
@@ -483,7 +464,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	    else {
 	       if (is:string(E->parameter)){
 	          cnv:C_string(E->parameter, varname);
-		  DEBUGF(2, (stdout, "Looking up variable name =%s\n",
+		  DEBUGF(2, (stdout, "Looking up variable name = %s\n",
 				   varname));
 		  if (getvar(varname,&E->parameter)== Failed) {
 		     VariableLookupFailed(varname);
@@ -674,6 +655,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
    struct b_telem *te;
    tended struct b_pelem *phead;
    union block **pd;
+
    key.dword = D_Integer;
    IntVal(key) = pat->id;
    hn = hash(&key);
@@ -749,6 +731,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       int subject_len;
       CURTSTATE();
     
+      DEBUGF(20,(stdout, "(729)begin pattern_match()\n"));
       /*
        * Is k_pos really 0-based and not 1-based?
        * If we are assigning new values to &subject/&pos for a match,
@@ -1971,7 +1954,11 @@ else {
 	      (unsigned long int)Node->parameter.dword,
 	      (unsigned long int)Node->parameter.vword.integr,
 	      pvar);
+#ifdef PatternIntegration
+      fprintf(stderr, "bad descriptor in .> or some such\n");
+#else					/* PatternIntegration */
       fprintf(stderr, "bad descriptor in .$ or some such\n");
+#endif					/* PatternIntegration */
       fatalerr(0, NULL);
       }
    }
@@ -2013,6 +2000,7 @@ dptr processFuncCallList(struct b_list *lp, int csr){
    return call_result;
    }
 #endif				/* PatternIntegration */
+
 /*
  * uses the list stored in the parameter field of a node to
  * 1. obtains the name of the procedure from the first element of the list
@@ -2037,7 +2025,7 @@ dptr processFuncCallList(struct b_list *lp, int csr){
    proc = ep->lslots[0];
    for (; BlkType(ep) == T_Lelem; ep = (struct b_lelem *)ep->listnext) {
       for (i = 1; i < ep->nused; i++) {
-         procargs[i -1] = ep->lslots[i];
+         procargs[i - 1] = ep->lslots[i];
          }
       }
    call_result = calliconproc(proc,procargs,nargs);
@@ -2172,11 +2160,11 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %d\n",
 	      Length,pat_sub,Length, Cursor));
+   DEBUGF(25, (stdout, "internal_match\n"));
    if (pattern == NULL) {
       fprintf(stderr,"Uninitialized Pattern");
       fatalerr(0,NULL);
       }
-
    if (Pat_S > Stack_Size - 1) {
       fprintf(stderr,"Pattern Stack Overflow");
       fatalerr(0,NULL);
@@ -2306,7 +2294,7 @@ Node_Succeed:
  *       --    goto Match_Fail     if the entire match fails
  *       --    goto Fail           to signal failure of current match
  */
-
+   DEBUGF(5, (stdout, "match: %ld, Cursor: %d\n", Node->pcode, Cursor); fflush(stdout));
    switch(Node->pcode) {
    case PC_Alt: {
       DEBUGF(20,(stdout,"Setting up alternative \n"));
@@ -2465,7 +2453,7 @@ Node_Succeed:
        */
    case  PC_Assign_Imm : {
       GetVarFromNodeParameter(Node);
-      DEBUGF(20,(stdout, "executing immediate assignment of %s\n ", varname));
+      DEBUGF(20,(stdout, "executing immediate assignment\n"));
       if (var.dword == D_File) {
 	 struct b_file *f;
 	 f = (struct b_file *)BlkLoc(var);
@@ -2494,7 +2482,6 @@ Node_Succeed:
    case PC_Cancel: {
       DEBUGF(20,(stdout, "matching Cancel"));
       goto Match_Fail;
-      break;
       }
       /*
        *   Bal
@@ -2534,7 +2521,7 @@ Node_Succeed:
 	Cursor++;
 	Push (Node);
 	DEBUGF(2,(stdout,
-		  "matching or extending Bal succeded Cursor = %d\n",
+		  "matching or extending Bal succeeded, Cursor = %d\n",
 		  Cursor));
 	goto Node_Succeed;
     }
@@ -2677,6 +2664,7 @@ Node_Succeed:
        * Fail
        */
    case PC_Fail: {
+      DEBUGF(20,(stdout, "matching Fail"));
       goto Node_Fail;
       }
 
@@ -2718,7 +2706,7 @@ Node_Succeed:
        */
    case  PC_Pred_Func: {
       GetResultFromFuncCall();
-      if ( call_result == 0)
+      if (call_result == 0)
 	 goto Node_Fail;
       else {
 #ifdef PatternIntegration
@@ -3103,7 +3091,7 @@ Node_Succeed:
 
    case  PC_Span_CS : {
       int P = Cursor;
-      DEBUGF(20,(stdout,"Matching Span\n"));
+      DEBUGF(20,(stdout,"Matching Span_CS\n"));
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),Node->parameter))
 	 P++;
       if (P != Cursor) {

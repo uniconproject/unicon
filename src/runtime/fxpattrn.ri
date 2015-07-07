@@ -312,14 +312,12 @@ struct b_list *ResolveList(struct b_list *lp)
 	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
 	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
 	       cnv:string(elsrc->lslots[i], elsrc->lslots[i]);
-	       parm = elsrc->lslots[i];
 	       }
 	    else if (strcspn(varname, "\'") == 0) { 
 	       /* drop the quotes, but pass string as a cset */
 	       StrLoc(elsrc->lslots[i]) = StrLoc(elsrc->lslots[i]) + 1;
 	       StrLen(elsrc->lslots[i]) = StrLen(elsrc->lslots[i]) - 2;
 	       cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
-	       parm = elsrc->lslots[i];
 	       }
 	    else if (strcspn(varname, "&") == 0) {
 	       if ( getkeyword(varname, &parm) == Failed) {
@@ -333,11 +331,9 @@ struct b_list *ResolveList(struct b_list *lp)
 		     cp->bits[b] = ~cpx->bits[b];
 		  elsrc->lslots[i].vword.bptr = (union block *)cp;
 		  }
-	       parm = elsrc->lslots[i];
 	       }
 	    else if (strcspn(varname, "1234567890") == 0) {
 	       cnv:integer(elsrc->lslots[i], elsrc->lslots[i]);
-	       parm = elsrc->lslots[i];
 	       }
 	    else {
 	       if (getvar(varname, &parm) == Failed) {

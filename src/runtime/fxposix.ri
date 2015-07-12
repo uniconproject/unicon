@@ -1564,7 +1564,7 @@ function{0,1} wait(pid, options)
 #endif
       CURTSTATE();
 #if !NT
-#if defined(BSD) || defined(Linux) || defined(BSD_4_4_LITE)
+#if defined(BSD) || defined(BSD_4_4_LITE)
       while(options[i])
 	 switch(options[i++]) {
 	 case 'n' : option |= WNOHANG; break;
@@ -1576,16 +1576,15 @@ function{0,1} wait(pid, options)
 	 IntVal(amperErrno) = errno;
 	 fail;
       }
-
-#else					/* BSD || Linux */
-      /* HP and Solaris */
+#else					/* BSD */
       if (pid == -1) {
 	 IntVal(amperErrno) = 0;
 	 if ((wpid = wait(&status)) < 0) {
 	    IntVal(amperErrno) = errno;
 	    fail;
+	    }
 	 }
-      } else {
+      else {
 	 while(options[i])
 	    switch(options[i++]) {
 	    case 'n' : option |= WNOHANG; break;
@@ -1598,7 +1597,7 @@ function{0,1} wait(pid, options)
 	    fail;
 	 }
       }
-#endif					/* BSD || Linux */
+#endif					/* BSD */
 
       /* Unpack all the fields */
       if (WIFSTOPPED(status))
@@ -1613,17 +1612,12 @@ function{0,1} wait(pid, options)
 	 sprintf(retval, "%d exited:%d", wpid, WEXITSTATUS(status));
       else
 	 sprintf(retval, "???");
-#ifdef Linux
-      if (WIFSIGNALED(status) && status & 0200 )	/* core dump */
-#else
 #if defined(BSD) && defined(SUN)
       if (WIFSIGNALED(status) && ((union __wait*)&status)->w_T.w_Coredump)
 #else
       if (WIFSIGNALED(status) && WCOREDUMP(status))
 #endif
-#endif
 	 strcat(retval, ":core");
-
 #else					/* NT */
       {
       int termstat;

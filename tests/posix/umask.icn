@@ -1,6 +1,8 @@
-#
+# umask.icn - set and get the umask.
 
 procedure main()
-   write(image(umask("rwxr-xr-x")))
-   write(image(umask()))
+   write("setting the mask to rwxr-xr-x.")
+   umask("rwxr-xr-x") | write("set umask fails")
+   # read and check the newly-set umask
+   write(image(u := umask()),"; ", ("expected " || (u ~=== "rwxr-xr-x")) |"OK")
 end

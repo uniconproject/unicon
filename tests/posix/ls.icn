@@ -3,7 +3,20 @@ $include "posix.icn"
 link printf
 
 procedure main()
+   # (re-)create test-dir so that ls output can be predictable
+   system("rm -r test-dir")
+   umask("rwxr-xr-x") | write("set umask fails")
+   mkdir("test-dir")
+   f := open("test-dir/a","w")
+   close(f)
+   f := open("test-dir/b","w")
+   close(f)
+   f := open("test-dir/c","w")
+   close(f)
+
    chdir("test-dir")
+   symlink("a", "d")
+
    f := open(".") | stop(sys_errstr(&errno), image("test-dir"))
    L := list()
    while line := read(f) do
@@ -13,7 +26,10 @@ end
 
 procedure format(p, name)
    s := sprintf("%4s %s %3s %8s %s",
-	   p.blocks, p.mode, p.nlink,
+	   p.blocks,
+	   # omit permissions of ".." since it is user's umask-dependent
+	   if name==".." then ".........." else p.mode,
+	   p.nlink,
 	   p.size, name)
    
    s ||:= " -> " || \p.symlink

@@ -2771,6 +2771,7 @@ function{0,1} getserv(s, proto)
 	 body {
 	    tended char *p;
 	    C_integer port;
+	    unsigned short real_port;
 	    p = 0;
 	    cnv:C_integer(s, port);
             if (!is:null(proto))
@@ -2779,7 +2780,8 @@ function{0,1} getserv(s, proto)
 
 	    if (p && !getprotobyname(p))
 	       runerr(1047, proto);
-	    if ((serv = getservbyport(port, p)) == NULL)
+            real_port = htons((unsigned short)port);
+	    if ((serv = getservbyport((int)real_port, p)) == NULL)
 	       fail;
 
 	    if (make_serv(serv, &result) == 0)

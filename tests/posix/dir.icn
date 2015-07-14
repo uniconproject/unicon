@@ -15,11 +15,16 @@ procedure main()
 
 end
 
+# format a "ls -l"-like line containing information from stat(), except keep
+# it portable. Actual #bytes and #blocks for an empty directory vary from
+# filesystem to filesystem.
 procedure format(p, name)
 
-   s := right(p.blocks, 4) || " " || p.mode || " " ||
-      right(p.nlink, 3) || " "  ||
-      " " || right(p.size, 8) || " " || name
+   s := right("*", 4) || # was p.blocks
+	 " " || p.mode || " " ||
+	 right(p.nlink, 3) || " "  ||
+	 " " || right("*", 8) || # was p.size
+	 " " || name
 
    if p.mode[1] == "l" then
       s ||:= " -> " || readlink(name)

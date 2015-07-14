@@ -3,12 +3,27 @@ $include "posix.icn"
 
 procedure main()
 
-   f := open("foo", "w")
+   # set the umask, so that expected output can be predictable.
+   umask("rw-r--r--") | write("set umask fails")
+   f := open("foo", "w") | write("can't open/write foo")
    write(f)
    close(f)
-   chmod("foo", "+x") | write("Couldn't chmod: ", sys_errstr(&errno))
-   f := open("ls -l foo", "p")
-   s := read(f)
+
+   # check that permissions are as expected before chmod.
+   f := open("ls -l foo", "p") | write("can't open pipe")
+   s := read(f) | write("can't read pipe")
+   close(f)
+   write("-rw-r--r--" ~== s[1:11])
+
+   # +x will not override umask, so it is a non-portable no-op unless
+   # some pretty special circumstances were to be created first. Feel free
+   # to revert to a "+x" mode test if you write a portable, useful one.
+
+   # check that permissions are as expected after chmod.
+   chmod("foo", "a+x") | write("Couldn't chmod: ", sys_errstr(&errno))
+   f := open("ls -l foo", "p") | write("can't open pipe")
+   s := read(f) | write("can't read pipe")
+   close(f)
    write(s[1:11])
 
    system("rm foo")

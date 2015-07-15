@@ -27,8 +27,8 @@ dptr dp1, slotptr;
 word i, j;
    {
    word size;
-   tended struct b_list *lp1;
-   tended struct b_lelem *bp1;
+   struct b_list *lp1; /* these were tended, but I see no allocations here */
+   struct b_lelem *bp1;
    /*
     * Get pointers to the list and list elements for the source list
     *  (bp1, lp1).

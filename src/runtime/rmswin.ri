@@ -264,7 +264,6 @@ int mswinsystem(char *s)
       return rv;
 }
 
-
 /*
  * wopen
  */
@@ -421,10 +420,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
    if (wc->is_3D) {
       hdc = GetDC(ws->iconwin);
       SetDCPixelFormat(hdc);
-#if HAVE_LIBGL
-      wc->ctx = wglCreateContext (hdc);
-      wglMakeCurrent (hdc, wc->ctx);
-#endif					/* HAVE_LIBGL */
+      create3Dcontext(w);
       ReleaseDC(ws->iconwin, hdc);
       }
 #endif					/* Graphics3D */

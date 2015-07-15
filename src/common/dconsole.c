@@ -577,9 +577,6 @@ union numeric *result;
    c = (s < end_s) ? *s++ : ' ';
    num = 0L;
    while (isalnum(c)) {
-#if !EBCDIC
-   #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
-#endif
       c = tonum(c);
       if (c >= r)
 	 return CvtFail;

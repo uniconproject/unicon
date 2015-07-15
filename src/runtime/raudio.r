@@ -940,7 +940,7 @@ int SetMixerAttribute(char *dev, int value)
 
    left = right = value;
 
-   /*display warning if left and right gains given for non-stereo device */
+   /* issue warning if left and right gains given for non-stereo device */
    if ((left != right) && !((1 << i) & stereodevs)) {
       /* Warning: "dev" is not a stereo device  */
       }
@@ -1007,7 +1007,7 @@ int LinuxMixer(char * cmd) /* cmd: eg. "vol=50" */
       p = strchr(cmd,'=');
       if(p != NULL){ /* cmd: "cmd=ival" */
 	 strptr=cmd;
-	 while(strptr != p)	cmdsVal[i++] = *strptr++;
+	 while(strptr != p) cmdsVal[i++] = *strptr++;
 	 cmdsVal[i]='\0';
 	 i=0;
 	 while(*++p != '\0') val[i++] = *p;

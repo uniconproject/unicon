@@ -1,5 +1,5 @@
 /*
- * features.h -- predefined symbols and &features
+ * feature.h -- predefined symbols and &features
  *
  * This file consists entirely of a sequence of conditionalized calls
  *  to the Feature() macro.  The macro is not defined here, but is

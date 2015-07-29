@@ -363,15 +363,13 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
       ctx->tstate = ep->program->tstate;
       ctx->tstate->ctx = ctx;
       }
-   else{ 
+   else
+#endif					/* MultiThread */
+      {
       ctx->tstate = NULL; 
       ctx->isProghead = 0;
       }
-#endif					/* MultiThread */
- 
-
 #endif					/* Concurrent */
-
 }
 #endif					/* PthreadCoswitch */
 
@@ -604,16 +602,18 @@ struct b_list *alclisthdr(uword size, union block *bptr)
 }
 
 
-#begdef alclist_raw_macro(f, e_list, e_lelem)
 /*
- * alclist - allocate a list header block in the block region.
- *  A corresponding list element block is also allocated.
+ * alclist_raw(), followed by alclist().
+ *
+ * alclist - allocate a list header block and attach a
+ *  corresponding list element block in the block region.
  *  Forces a g.c. if there's not enough room for the whole list.
- *  The "alclstb" code inlined so as to avoid duplicated initialization.
+ *  The "alclstb" code is inlined to avoid duplicated initialization.
  *
  * alclist_raw() - as per alclist(), except initialization is left to
  * the caller, who promises to initialize first n==size slots w/o allocating.
  */
+#begdef alclist_raw_macro(f, e_list, e_lelem)
 
 struct b_list *f(uword size, uword nslots)
    {

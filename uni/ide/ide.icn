@@ -110,14 +110,15 @@ $ifdef _UNIX
 	 filedirectory := fd.get_directory()
 $else
 	 filename :=
-	    WinOpenDialog(
-            uidlog.win, "Open File ...", "", 5,,,chdir(CurrentTabItem().filedirectory)
+	    WinOpenDialog(uidlog.win, "Open File ...", "", 5,,,
+			  chdir(CurrentTabItem().filedirectory)
                          ) | fail
 
 $endif
 	 }
       if /filename | filename=="" | filename[-1]==("\\"|"/") then
-         return \uidlog.MsgBox.set_contents(["Error opening file \"" || file_name(filename) || "\""])
+         return \uidlog.MsgBox.set_contents(["Error opening file \"" ||
+					     file_name(filename) || "\""])
 #      uidlog.MsgBox.set_contents("Enter File Name")
 
       if  filename[-2:0]==(".*") then filename := filename[1:-2]

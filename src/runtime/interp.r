@@ -309,10 +309,15 @@ deliberate syntax error
  *  only accessible inside the loop, and the global variable sp is used
  *  for the stack pointer elsewhere, rsp must be stored into sp when
  *  the context of the loop is left and conversely, rsp must be loaded
- *  from sp when the loop is reentered.  The macros ExInterp and EntInterp,
- *  respectively, handle these operations.  Currently, this register/global
- *  scheme is only used for the stack pointer, but it can be easily extended
- *  to other variables.
+ *  from sp when the loop is reentered.  The macros ExInterp_sp and
+ *  EntInterp_sp, respectively, handle these operations.  Currently,
+ *  this register/global scheme is only used for the stack pointer.
+ *  Study (performance testing) is needed to justify rsp's use, and determine
+ *  whether it should be extended to other interpreter loop variables.
+ *  Potential future candidates include ipc and lastop, for example.
+ *  Even if they are part of it, its not clear that there should be
+ *  separate macros for them, or if one ExInterp/EntInterp pair should
+ *  handle all register variables that need to be saved/restored.
  */
 
 #define ExInterp_sp	sp = rsp;

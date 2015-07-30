@@ -128,7 +128,9 @@ FncDefV(writes)
      FncDef(pattern_boolfunccall,1)    /* `` */
      FncDef(pattern_stringmethodcall,1)  /* ``x.y`` */
      FncDef(pattern_boolmethodcall,1)    /* `x.y` */
+#undef Fail
      FncDef(Fail,0)
+#define Fail return A_Resume
      FncDef(Pos,1)
      FncDef(Rpos,1)
      FncDef(Tab,1)

@@ -140,7 +140,7 @@
 #endif					/* Big */
 
 #ifndef Precision
-   #define Precision 10			/* digits in string from real */
+   #define Precision 16			/* digits in string from real */
 #endif					/* Precision */
 
 /*

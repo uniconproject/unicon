@@ -1968,6 +1968,20 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       s++;
 	       }
 	    }
+	 else if (s = strstr(cmdline, "2>")) {
+	    *s = '\0';
+	    s += 2;
+	    while (*s == ' ') s++;
+	    StrLen(d_stderr) = strlen(s);
+	    StrLoc(d_stderr) = s;
+	    while (*s) {
+	       if (*s == ' ') {
+		  *s = '\0';
+		  break;
+		  }
+	       s++;
+	       }
+	    }
 	 else if (s = strstr(cmdline, ">>")) {
 	    tended char *s_stdout;
 	    *s = '\0';

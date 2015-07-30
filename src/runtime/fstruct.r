@@ -1084,8 +1084,8 @@ function{1} list(n, x)
       nslots = size = n;
 
       /*
-       * Ensure that the size is positive and that the list-element block 
-       *  has at least MinListSlots slots.
+       * Ensure that the size is positive and that the
+       *  list-element block has at least MinListSlots slots.
        */
       if (size < 0) {
          irunerr(205, n);
@@ -1520,8 +1520,8 @@ void c_put(struct descrip *l, struct descrip *val)
 #endif					/* MaxListSlots */
 
       /*
-       * Allocate a new list element block.  If the block can't
-       *  be allocated, try smaller blocks.
+       * Allocate a new list element block.  If the block
+       *  can't be allocated, try smaller blocks.
        */
       while ((bp = alclstb(i, (word)0, (word)0)) == NULL) {
          i /= 4;

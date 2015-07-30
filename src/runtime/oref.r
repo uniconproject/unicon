@@ -927,8 +927,8 @@ operator{0,1} [] subsc(underef x -> dx,y)
           */
          if !cnv:C_integer(y) then {
 	    /*
-	     * If it isn't a C integer, but is a large integer, fail on
-	     * the out-of-range index.
+	     * If it isn't a C integer, but is a large integer,
+	     * fail on the out-of-range index.
 	     */
 	    if cnv : integer(y) then inline { fail; }
 	    runerr(101, y)
@@ -952,8 +952,8 @@ operator{0,1} [] subsc(underef x -> dx,y)
                fail;
 	       }
             /*
-             * Locate the list-element block containing the desired
-             *  element.
+             * Locate the list-element block containing the
+             *  desired element.
              */
             bp = lp->listhead;
 

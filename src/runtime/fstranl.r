@@ -252,12 +252,12 @@ function{*} upto(c,s,i,j)
        * of a character in c.
        */
       while (cnv_i < cnv_j) {
-         tmp = (C_integer)ToAscii(StrLoc(s)[cnv_i-1]);
-         if (Testb(tmp, c)) {
-            suspend C_integer cnv_i;
-            }
-         cnv_i++;
-         }
+	 tmp = (C_integer)ToAscii(StrLoc(s)[cnv_i-1]);
+	 if (Testb(tmp, c)) {
+	    suspend C_integer cnv_i;
+	    }
+	 cnv_i++;
+	 }
       /*
        * Eventually fail.
        */

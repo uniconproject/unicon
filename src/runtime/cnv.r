@@ -845,9 +845,7 @@ struct descrip *dp;
 /*
  * bi_strprc - convert a string to a (built-in) function or operator.
  */
-struct b_proc *bi_strprc(s, arity)
-dptr s;
-C_integer arity;
+struct b_proc *bi_strprc(dptr s, C_integer arity)
    {
    C_integer i;
    struct pstrnm *pp;
@@ -887,23 +885,21 @@ C_integer arity;
 /*
  * strprc - convert a string to a procedure.
  */
-struct b_proc *strprc(s, arity)
-dptr s;
-C_integer arity;
+struct b_proc *strprc(dptr s, C_integer arity)
    {
    C_integer i;
 
    /*
     * See if the string is the name of a global variable.
     */
-   for (i = 0; i < n_globals; ++i)
+   for (i = 0; i < n_globals; ++i) {
       if (eq(s, &gnames[i])) {
          if (is:proc(globals[i]))
             return BlkD(globals[i], Proc);
          else
             return NULL;
 	 }
-
+      }
    return bi_strprc(s,arity);
    }
 

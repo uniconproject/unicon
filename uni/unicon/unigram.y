@@ -266,6 +266,18 @@ procedure Progend(x1)
    yyprint(x1)
    write(yyout)
 
+$ifndef NoPatternIntegration
+   # generate invocable declarations for identifiers in unevaluated exprs
+   if (*\list_of_invocables)>0 then {
+      writes(yyout, "invocable ")
+      every temp := list_of_invocables[i := 1 to *list_of_invocables] do {
+	 writes(yyout, image(temp))
+	 if i < *list_of_invocables then writes(yyout, ",")
+         }
+      write(yyout)
+      }
+$endif					# NoPatternIntegration
+
    if \iconc & (type(set_of_all_fields) == "set") &
 	(*set_of_all_fields > 0) then {
 	arandomfield := !set_of_all_fields
@@ -491,6 +503,8 @@ arg	: IDENT ;
 	| IDENT COLON IDENT COLON literal { $$ := node("arg4", $1,$2,$3,$4,$5)};
 	| IDENT COLON AND IDENT { $$ := node("arg5", $1, $2, Keyword($3, $4)) };
 	| IDENT COLON IDENT COLON AND IDENT { $$ := node("arg6", $1, $2, $3, $4, Keyword($5, $6)) } ;
+	| IDENT COLON LBRACK RBRACK { $$ := node("arg7", $1, $2, "[]") } ;
+	| IDENT COLON IDENT COLON LBRACK RBRACK { $$ := node("arg8", $1, $2, $3, $4, "[]") } ;
 
 
 carg	: priv arg { $$ := $2 };
@@ -572,8 +586,6 @@ expr3	: expr4 ;
 	| expr4 BAR expr3  {$$ := node(BAR, $1,$2,$3);} ;
 
 expr4	: expr5;
-	| expr4 PIMDASSN expr5 { $$ := node("BPiam", $1,$2,$3);} ;
-	| expr4 PASSNONMATCH expr5 { $$ := node("BPaom", $1,$2,$3);} ;
 	| expr4 SEQ expr5 { $$ := node("Bseq", $1,$2,$3);} ;
 	| expr4 SGE expr5 { $$ := node("Bsge", $1,$2,$3);} ;
 	| expr4 SGT expr5 { $$ := node("Bsgt", $1,$2,$3);} ;
@@ -593,11 +605,9 @@ expr5	: expr6 ;
 	| expr5 CONCAT expr6 { $$ := node("Bcat", $1,$2,$3);} ;
 	| expr5 LCONCAT expr6 { $$ := node("Blcat", $1,$2,$3);} ;
 
-/* Rules for pattern matching operators 
-expr6p  : expr7;
-        
-*/
 expr6	: expr7 ;
+	| expr6 PIMDASSN expr7 { $$ := node("BPiam", $1,$2,$3);} ;
+	| expr6 PASSNONMATCH expr7 { $$ := node("BPaom", $1,$2,$3);} ;
 	| expr6 PLUS expr7 { $$ := node("Bplus", $1,$2,$3);} ;
 	| expr6 DIFF expr7 { $$ := node("Bdiff", $1,$2,$3);} ;
 	| expr6 UNION expr7 { $$ := node("Bunion", $1,$2,$3);} ;
@@ -660,6 +670,7 @@ expr10	: expr11 ;
 	| PSETCUR expr10 { $$ := node("upsetcur", $1,$2);} ;
 
 expr11	: literal ;
+	| NMLT regex NMGT { $$ := node("regex", $2); }
 	| section ;
 	| return ;
 	| if ;
@@ -791,6 +802,41 @@ literal	: INTLIT ;
 	| REALLIT ;
 	| STRINGLIT ;
 	| CSETLIT ;
+
+regex: neregex { $$ := regexp($1); next_gt_is_ender := 1 }
+	|  { $$ := "emptyregex"; next_gt_is_ender := 1 }
+	;
+
+/* nonempty regexp */
+neregex: neregex2
+	| neregex2 neregex { $$ := node("regexconcat", $1, $2) }
+	| neregex2 BAR neregex { $$ := node("regexbar", $1, $2, $3); write("holy mackerel, we have a regex OR") }
+	;
+
+neregex2: neregex3 ;
+	| neregex2 STAR { $$ := node("kleene", $1, $2); write("holy mackerel, we have a regex star") }
+	| neregex2 PLUS { $$ := node("oneormore", $1, $2); write("holy mackerel, we have a regex plus") }
+	| neregex2 QMARK { $$ := node("optional", $1, $2) }
+	;
+
+neregex3:  IDENT { next_gt_is_ender := 1 }
+	| INTLIT { write("holy mackerel, we have a regex intlit") }
+	| REALLIT { write("holy mackerel, we have a regex reallit") }
+	| STRINGLIT { write("holy mackerel, we have a regex stringlit") }
+	| CSETLIT { write("holy mackerel, we have a regex csetlit") }
+	| DOT { write("holy mackerel, we have a regex dot") }
+	| LPAREN regex RPAREN { $$ := node("Paren",$1,$2,$3); }
+	| LBRACK brackchars RBRACK { $$ := node("acset", $1, $2, $3) }
+	| LBRACK CARET brackchars RBRACK { $$ := node("notany", $1, $2, $3, $4); write("holy mackerel, we have a regex NotAny") }
+	| BACKSLASH neregex { $$ := node("escape", $1, $2); write("holy mackerel, we have a regex backslash") }
+	;
+
+brackchars: brackchars2
+	| brackchars MINUS brackchars2 { $$ := node("brackchars", $1, $2, $3) }
+	;
+
+brackchars2: IDENT | INTLIT | REALLIT
+	;
 
 section	: expr11 LBRACK expr sectop expr RBRACK { $$ := node("section", $1,$2,$3,$4,$5,$6);} ;
 

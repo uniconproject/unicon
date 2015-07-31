@@ -1073,3 +1073,156 @@ procedure constant_folder(n)
     if n.label == "Bstar" then {
     }
 end
+
+# build a parse tree for the pattern that matches this regexp
+procedure regexp(n)
+   case type(n) of {
+      "token": {
+	 case n.tok of {
+	    IDENT: {
+	       return "\"" || n.s || "\""
+	       }
+	    STRINGLIT: {
+	       return n
+	       }
+	    default: {
+	       write("unknown token die die die ", image(n.tok))
+	       }
+	    }
+	 return "regexp"
+	 }
+      "treenode": {
+	 case n.label of {
+	    "kleene": {
+	       # arbno child[1], but recognize *'s precedence
+	       case type(n.children[1]) of {
+		  "token": {
+		     case n.children[1].tok of {
+			IDENT: {
+			   if *n.children[1].s > 1 then {
+			      return "(\"" || n.children[1].s[1:-1] ||
+				      "\"||Arbno(\"" || n.children[1].s[-1]||
+				      "\"))"
+			      }
+			   }
+			STRINGLIT: {
+			   }
+			}
+		     }
+		  }
+	       }
+	    "oneormore": {
+	       # + , but recognize +'s precedence
+	       case type(n.children[1]) of {
+		  "token": {
+		     case n.children[1].tok of {
+			IDENT: {
+			   if *n.children[1].s > 1 then {
+			      return "(\"" || n.children[1].s || "\"||" ||
+				      "Arbno(\"" || n.children[1].s[-1]||"\"))"
+			      }
+			   }
+			STRINGLIT: {
+			   }
+			}
+		     }
+		  }
+	       }
+	    "optional": {
+	       # ?, but recognize ?'s precedence
+	       case type(n.children[1]) of {
+		  "token": {
+		     case n.children[1].tok of {
+			IDENT: {
+			   if *n.children[1].s > 1 then {
+			      return "(\"" || n.children[1].s[1:-1] ||
+				      "\"||pattern_alternate(\"" ||
+				      n.children[1].s[-1] || "\",\"\"))"
+			      }
+			   }
+			STRINGLIT: {
+			   }
+			}
+		     }
+		  }
+	       }
+	    "regexconcat": {
+	       return node("concat", "((", regexp(n.children[1]),")||(",
+					   regexp(n.children[2]),"))")
+	       }
+	    "regexbar": {
+	       return node("alt", " pattern_alternate(", regexp(n.children[1]),
+			   ",", regexp(n.children[3]),")")
+	       }
+	    "acset": {
+	       return node("cset", "Any('" || csetify(n) || "')")
+	       }
+	    "notany": {
+	       return node("cset", "NotAny('" || csetify(n) || "')")
+	       }
+	    "brackchars": {
+	       return csetify(n)
+	       }
+	    default: {
+	       write("treenode label ", image(n.label))
+	       }
+	    }
+	 }
+      default: {
+	 write("type of regexp is ", type(n))
+	 return "regexp"
+	 }
+      }
+end
+
+# create a cset from a regex-style cset
+procedure csetify(n)
+   if type(n) ~== "treenode" then {
+      if type(n) == "token" then {
+	 case n.tok of {
+	    IDENT: {
+	       return cset(n.s)
+	       }
+	    }
+	 }
+      stop("csetify ", type(n),"?")
+      }
+    case n.label of {
+       "brackchars": {
+	  write(type(n.children[1], " vs. ", n.children[3]))
+	  }
+       "acset": {
+	  n := n.children[2]
+	  }
+       "notany": {
+	  n := n.children[3]
+	  }
+       default: {
+	  # write("csetify ", image(n.label), " kids ", *n.children)
+	  }
+       }
+   if type(n) == "treenode" & n.label == "brackchars" then {
+      # only way you get this node is you are a range
+      cs := csetify(n.children[1]) ++ csetify(n.children[3]) ++
+	 csetrange(lastofcset(n.children[1]), firstofcset(n.children[3]))
+      return cs
+      }
+
+   return n
+end
+
+procedure csetrange(char1,char2)
+   local rv := ''
+   every i := ord(char1) to ord(char2) do {
+      rv ++:= char(i)
+      }
+   return rv
+end	 
+
+procedure firstofcset(c)
+   if type(c) == "token" & c.tok = IDENT then return c.s[1]
+end
+
+procedure lastofcset(c)
+   if type(c) == "token" & c.tok = IDENT then return c.s[-1]
+end

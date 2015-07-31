@@ -114,7 +114,6 @@ $endif
 end
 
 procedure gen(t)
-
     f := open(ofile, "w") | stop("can't write ", image(ofile))
     if \C then {
 	if /byacc then {
@@ -145,17 +144,21 @@ procedure gen(t)
 	every k := key(\t) do {
 	    write(f, "   errtab[",k,"].i = ", *t[k], ";")
 	    if *t[k] > 1 then {
-		write(f, "   errtab[",k,"].u.p = (struct errtable *)",calloc,"(1,",*t[k]+1," * sizeof(struct errtable));")
-		write(f, "   errtab[",k,"].u.p[0].u.msg = ", image(t[k,10000000000]),";")
+		write(f, "   errtab[",k,"].u.p = (struct errtable *)",calloc,
+		      "(1,",*t[k]+1," * sizeof(struct errtable));")
+		write(f, "   errtab[",k,"].u.p[0].u.msg = ",
+		      image(t[k,10000000000]),";")
 		j := 1
 		every k2 := key(t[k]) do {
 		    write(f, "   errtab[", k, "].u.p[", j, "].i = ", k2, ";")
-		    write(f, "   errtab[", k, "].u.p[", j, "].u.msg = ", image(t[k,k2]), ";")
+		    write(f, "   errtab[", k, "].u.p[", j, "].u.msg = ",
+			  image(t[k,k2]), ";")
 		    j +:= 1
 		}
 	    }
 	    else
-		write(f,"   errtab[",k,"].u.msg = ",image(t[k,10000000000]),";")
+		write(f,"   errtab[",k,"].u.msg = ",image(t[k,10000000000]),
+		      ";")
 	}
       write(f, "}\n")
 
@@ -180,11 +183,13 @@ procedure gen(t)
                "   if (strstr(s, \"stack\")) return 0;")
 
       write(f, "   if (__merr_errors++ > 10) {\n",
-	       "      ", yywritefn, "(stderr, \"too many errors, aborting\");\n",
+	       "      ", yywritefn,
+	       "(stderr, \"too many errors, aborting\");\n",
 	       "      exit(__merr_errors); }")
 
       write(f, "   if (",\yyfn,") ",yywritefn,"(stderr, \"%s:\", ",\yyfn,");")
-      write(f, "   if ((!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\"))&&")
+      write(f, "   if ((!strcmp(s, \"syntax error\") || ",
+		       "!strcmp(s,\"parse error\"))&&")
       write(f,"         (state>=0 && state<=yymaxstate)) {")
       write(f,"       if (errtab[state].i==1)")
       write(f, "         s = errtab[state].u.msg;")
@@ -197,10 +202,12 @@ procedure gen(t)
       write(f,"          }")
       write(f,"       }")
 
-      write(f, "   if (!strcmp(s, \"syntax error\") || !strcmp(s,\"parse error\")){")
+      write(f, "   if (!strcmp(s, \"syntax error\") || ",
+		      "!strcmp(s,\"parse error\")){")
       write(f, "      sprintf(sbuf,\"%s (%d;%d)\", s, state, yychar);")
       write(f, "      s=sbuf;\n      }")
-      write(f, "   ",yywritefn,"(stderr, \"%d: # \\\"%s\\\": %s\\n\", ",yyln,", ",yytxt,", s);")
+      write(f, "   ",yywritefn,"(stderr, \"%d: # \\\"%s\\\": %s\\n\", ",
+	    yyln,", ",yytxt,", s);")
       write(f, "   return 0;")
       write(f, "}")
       }
@@ -228,16 +235,19 @@ procedure gen(t)
       write(f, "      }")
 
       write(f, "   if __merr_errors = 0 then ",yywritefn,"(&errout)")
-      write(f, "   else if map(s)== \"stack underflow. aborting...\" then return")
+      write(f, "   else if map(s)== \"stack underflow. aborting...\" ",
+			"then return")
       write(f, "   __merr_errors +:= 1")
       write(f, "   if __merr_errors > 10 then")
       write(f, "      ",yywritefn,"(\"too many errors, aborting\") & stop()")
       write(f, "   if s == \"syntax error\" then")
       write(f, "      s := t[(\\statestk)[1], yychar]")
       write(f, "   if s == \"syntax error\" then {")
-      write(f, "      s ||:= \" (\" || (\\statestk)[1] ||\";\"|| yychar || \")\"")
+      write(f, "      s ||:= \" (\" || (\\statestk)[1] ||\";\"|| ",
+			     "yychar || \")\"")
       write(f, "      }")
-      write(f, "   ",yywritefn,"(&errout, \\fName, \":\",",yyln,", \": # \\\"\", yytext, \"\\\": \", s)")
+      write(f, "   ",yywritefn,"(&errout, \\fName, \":\",",yyln,
+			       ", \": # \\\"\", yytext, \"\\\": \", s)")
       write(f, "   return")
       write(f, "end")
 }
@@ -393,11 +403,12 @@ else if phase = 2 then {
     iteration := 1
     repeat {
 	curfoundsome := foundsome
-	write("*********************************************************************")
+	write(repl("*",69))
 	generate_errs(L, iteration)
 	legalprefixes := newlegalprefixes
-        write("iteration ", iteration, " complete, found ", foundsome, " prefixes ", *legalprefixes)
-	write("*********************************************************************")
+        write("iteration ", iteration, " complete, found ", foundsome,
+	      " prefixes ", *legalprefixes)
+	write(repl("*",69))
 	iteration +:= 1
        	if \maxiter & maxiter < iteration then break
         if foundsome = curfoundsome & iteration > 2 then break
@@ -458,19 +469,14 @@ end
 
 
 procedure addprefix(newlegalprefixes, err, msg)
-
-   msg ?
-       {
-	   tab(find('(') + 1) & stt := integer(tab(many(&digits))) 	  
-	   write("In state : " ||stt, "Legal prefix = ", err );	  
-       }
-   if newlegalprefixes[stt] == 0 then
-       {
-	   newlegalprefixes[stt] := err
-	   write ("Added prefix to table : " || err)
-       }
-
-
+   msg ? {
+      tab(find("(") + 1) & stt := integer(tab(many(&digits))) 	  
+      write("In state : ", stt, "Legal prefix = ", err );	  
+      }
+   if newlegalprefixes[stt] == 0 then {
+      newlegalprefixes[stt] := err
+      write ("Added prefix to table : ", err)
+      }
 end
 
 # generate errors for fragments of length = i tokens that start with t

@@ -5,6 +5,10 @@
 link escape
 
 #$define debuglex 1
+$ifndef NoPatternIntegration
+$define PatternIntegration 1
+$endif
+
 global yytext, yyin, yytoken #, debuglex
 
 global O, D, L, H, R, FS, IS, W, idchars
@@ -364,21 +368,28 @@ $endif
 	      return NMEQ
 end
 
+global next_gt_is_ender
+
 procedure do_greater()
-	      if yytext ||:= =":=" then { return AUGNMGT }
-	      if yytext ||:= =">" then {
-		  if yytext ||:= =":=" then { return AUGSGT }
-		  if yytext ||:= ="=" then {
-		      if yytext ||:= =":=" then {return AUGSGE}
-		      return SGE
-		  }
-		  return SGT
-	      }
-	      if yytext ||:= ="=" then {
-		  if yytext ||:= =":=" then { return AUGNMGE }
-		  return NMGE
-	      }
-	      return NMGT
+   if yytext ||:= =":=" then { return AUGNMGT }
+   if yytext ||:= =">" then {
+      if yytext ||:= =":=" then { return AUGSGT }
+      if yytext ||:= ="=" then {
+	 if yytext ||:= =":=" then {return AUGSGE}
+	 return SGE
+	 }
+      return SGT
+      }
+   if yytext ||:= ="=" then {
+      if yytext ||:= =":=" then { return AUGNMGE }
+      return NMGE
+      }
+   if \next_gt_is_ender then {
+      tokflags +:= Ender
+      next_gt_is_ender := &null
+      }
+   return NMGT
+
 end
 
 procedure do_less()
@@ -436,9 +447,8 @@ procedure do_dot()
     else if yytext ||:= ="|" then { return POR }
 $ifndef NoPatternIntegration
     else if yytext ||:= =">" then { return PSETCUR }
-$else
-    else if yytext ||:= ="$" then { return PSETCUR }
 $endif
+    else if yytext ||:= ="$" then { return PSETCUR }
     else {
 	tokflags +:= Beginner
 	return DOT

@@ -97,13 +97,24 @@ class IDE (
    # Open File Menu Item Method
    #
    method handle_openfile(ev, filename)
-      local line, L, nchars, fd,
+      local line, L, nchars, fd, dwidth, dheight, dposx, dposy,
          ufile, tab_label, found,
          which_tab, c, filedirectory
 
       if /filename then {
 $ifdef _UNIX
 	 fd := HFileDialog()
+
+	 # set subdialog's position based on ide's position
+	 # assume subdialog is 400x400
+	 dwidth := WAttrib(uidlog.win, "width")
+	 dheight := WAttrib(uidlog.win, "height")
+	 dposx :=  WAttrib(uidlog.win, "posx") + dwidth/2 - 200
+	 dposy :=  WAttrib(uidlog.win, "posy") + dheight/2 - 200
+	 # L := []; every put(L, QueryPointer(uidlog.win))
+	 # mousex := L[1]; mousey := L[2]
+	 fd.attrib("pos=" || dposx || "," || dposy)
+
          fd.set_directory(CurrentTabItem().filedirectory)
 	 fd.show_modal()
 	 filename := fd.get_result() | fail
@@ -300,14 +311,15 @@ $endif
 	 CurrentTabItem().set_label(file_name(filename))
 	 L := CurrentEditBox().get_contents() | []
 	 uidlog.FileBrowser.addreplace(L, file_name(filename), 0)
-         CurrentTabItem().filename := file_name(filename)
-         CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
+	 CurrentTabItem().filename := file_name(filename)
+	 CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
 	 save_file(CurrentTabItem())
-         ### what's going on here?? ###
-	 if find(".icp", map(filename)) then { # open project
-	    project := filename
-	    updateproject()
-	    }
+
+	 # The old IDE updated the file list on the File Menu when a
+	 # project file save occurred.  The new IDE should reload/reopen
+	 # the project and update the navigation tree.
+	 if CurrentTabItem.filename() === project then updateproject()
+
 	 handle_update()
 	 }
    end
@@ -343,6 +355,9 @@ $endif
       close(ufile)
 
       \uidlog.MsgBox.set_contents([c.label || " saved."])
+
+      # if we just saved a project source file then we want to
+      # update (i.e. re-populate the navigation tree) from it.
       if map(c.label[-4:0]) == ".icp" then updateproject()
       uidlog.FileBrowser.addreplace(CurrentEditBox().get_contents(),
 				    uidlog.FileTabSet.which_one.filename, 0)
@@ -757,7 +772,7 @@ $endif
    #
    #  Open Project Menu Item Method
    #
-   method handle_openproject(ev, projectname,fname)
+   method handle_openproject(ev, projectname, fname)
       local line, nchars, fd, file, found, which_tab, fin, tab_id, c
       if /projectname then {
 	 if /is_MSWindows then {

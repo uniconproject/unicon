@@ -178,10 +178,43 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    return bio;
 }
 
-/* upgrade to use environment variable?  or something in discipline? */
+int pathFind(char *, char *, int);
+/*
+ * upgrade to use environment variable?  or something in discipline?
+ */
 char *get_storepath(Tpdisc_t *tpdisc, char *store_typep)
 {
+   char path_to_ssl[1024], *certfile;
+   static char open_ssldir[1024];
+
    *store_typep = 'f';
+
+   /* use SSL_CERT_FILE if available */
+   if (certfile = getenv("SSL_CERT_FILE")) {
+      return certfile;
+      }
+
+   /* use SSL_CERT_DIR if available */
+   if (certfile = getenv("SSL_CERT_DIR")) {
+      *store_typep = 'd';
+      return certfile;
+      }
+
+   /* if openssl command line client is available, use its output */
+   if (pathFind("openssl", path_to_ssl, 1024) == 1) {
+      FILE *f;
+      f = popen("openssl version -a | grep OPENSSLDIR", "r");
+      fgets(path_to_ssl, 1023, f);
+      pclose(f);
+      if (sscanf(path_to_ssl, "OPENSSLDIR: \"%s\"", open_ssldir) == 1) {
+	 /* sscanf was OK */
+	 return open_ssldir;
+	 }
+      /* else fall through to return a default string */
+      }
+
+   /* if /usr/local/ssl/certs/ is present, use it */
+
    return "/etc/pki/ca-trust/extracted/pem/objsign-ca-bundle.pem";
 }
 
@@ -338,7 +371,7 @@ ssize_t sslwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
 
   size_t nleft;
   ssize_t nwritten;
-  const char* cp = buf;
+  char *cp = buf;
 
   nleft = n;
   nwritten = 0;

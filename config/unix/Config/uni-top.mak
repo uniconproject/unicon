@@ -18,7 +18,9 @@ all :
 	cd 3d; $(MAKE)
 
 clean Clean:
-	cd iyacc; $(MAKE) Clean
+	if [ -f iyacc/Makefile ] ; then \
+		cd iyacc; $(MAKE) Clean;\
+	fi
 	cd unicon; $(MAKE) Clean
 	cd udb; $(MAKE) Clean
 	cd ivib; $(MAKE) Clean

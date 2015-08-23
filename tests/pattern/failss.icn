@@ -1,17 +1,12 @@
 #pg 48
 
 procedure main()
-	p := (PBreak("a") $$ a .| PBreak("b") $$ b .| PBreak("c") $$ c) && PFail() 
-	l := [ 
-		"alpha", "beta", "abracadabra","absolutely",
-		"awful","albeit"
-	     ]
-	write("Acceptable words are")
-	every s := !l do 
-	{
-		a := b := c := &null
-		s ?? p
-		if ( \a & \b & /c) then write(s)
-			
-	}
+   p := (Break("a") => a .| Break("b") => b .| Break("c") => c) && Fail() 
+   l := [ "alpha", "beta", "abracadabra", "absolutely", "awful", "albeit" ]
+   write("Acceptable words are")
+   every s := !l do {
+      a := b := c := &null
+      s ?? p
+      if ( \a & \b & /c) then write(s)
+      }
 end

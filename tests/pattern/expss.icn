@@ -14,24 +14,23 @@
 #END
 
 procedure main()
-	variable := PAny("xyz")
-	addop 	 := PAny("+-")
-	mulop 	 := PAny("*/")
-	factor 	 := variable .| "(" && `exp` && ")"
-	term 	 := factor .|  factor && mulop && `term`
-	exp 	 := addop && term .| term .| term &&addop && `exp`
-	p	 := PPos(0) && exp && PRpos(0)
+   variable := Any("xyz")
+   addop    := Any("+-")
+   mulop    := Any("*/")
+   factor   := variable .| "(" && `exp` && ")"
+   term     := factor .|  factor && mulop && `term`
+   exp      := addop && term .| term .| term &&addop && `exp`
+   p        := Pos(0) && exp && Rpos(0)
 
-	L := [
-		"x+y*(z+x)",
-		"x+y+z",
-		"xy"
-		]
-	every s := !L do
-	{
-		if ( s ?? p ) then
-			write(s, " is an expression")
-		else
-			write(s, " is not an expression")
-	}
+   L := [
+	 "x+y*(z+x)",
+	 "x+y+z",
+	 "xy"
+	 ]
+   every s := !L do {
+      if ( s ?? p ) then
+	 write(s, " is an expression")
+      else
+	 write(s, " is not an expression")
+      }
 end

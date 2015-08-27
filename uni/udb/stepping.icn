@@ -100,16 +100,22 @@ end
 method checkStep()
    local cur_line, cur_file
 
-   if step_count > 1 then{
+   if step_count > 1 then {
       step_count -:= 1
       DState.State := RUN
       DState.RunCode := STEP
-   }else
-   if step_count = 1 then{
-      step_count -:= 1
-
+      }
+   else if step_count = 1 then {
       cur_file := keyword("file", Monitored)
       cur_line := keyword("line", Monitored)
+
+      if cur_file == "__faux.icn" then {
+	 DState.State := RUN
+	 DState.RunCode := STEP
+	 return
+	 }
+
+      step_count -:= 1
 
       msg  :="\n   file "||cur_file||", line "||cur_line||"."
       msg||:="\n   "||cur_line-1||":"||

@@ -26,9 +26,9 @@ method printFrame(frame, detail:1)
    
    CMonitored := keyword("current",Monitored)
 
-   level := keyword("level", CMonitored) -1
+   level := keyword("level", CMonitored) - 1
 
-   if 0 <= frame <= level then{
+   if 0 <= frame <= level then {
       Message := "   #"|| frame
       pname := image(proc(CMonitored, frame))
 
@@ -36,8 +36,8 @@ method printFrame(frame, detail:1)
 
 #       pname ? if tab(find(" ")+1) then pname := tab(0)
       Message ||:= ": "|| pname
-      every x := paramnames(CMonitored,frame) do{
-         if \detail then{
+      every x := paramnames(CMonitored,frame) do {
+         if \detail then {
             i := variable(x, CMonitored,frame)
             p ||:= x||"="||image(i)||", "
             }
@@ -190,15 +190,15 @@ end
 method cmdBacktrace(cmd)
    local ans, level, frames
 
-   if DState.State = PAUSE then{
+   if DState.State = PAUSE then {
       level := keyword("level", Monitored)
-      if *cmd = 1 then{
+      if *cmd = 1 then {
          BaseFrame := 0
-         while(BaseFrame < level) do{
+         while BaseFrame < level do {
             printFrames(BaseFrame, BaseFrame + MaxFrame)
             BaseFrame +:= MaxFrame + 1
-            if BaseFrame < level then{
-               Message:="---Type <return> to continue, or q <return> to quit---"
+            if BaseFrame < level then {
+               Message:= "---Type <return> to continue, or q <return> to quit---"
                DState.Writes(Message)
                if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break 
                }

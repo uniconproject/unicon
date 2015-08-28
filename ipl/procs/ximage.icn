@@ -57,7 +57,7 @@
 
 
 procedure ximage(x,indent,done)		#: string image of value
-   local i,s,ss,state,t,xtag,tp,sn,sz
+   local i,s,ss,state,t,xtag,tp,sn,sz, prefix
    static tr, name
 
    initial name := proc("name", 0)	# REG: in case name is a global
@@ -172,17 +172,18 @@ procedure ximage(x,indent,done)		#: string image of value
       #
       default: {
 	 image(x) ? {
-	    move(7)
+	    prefix := move(7) |
+	       write(&errout, "ximage expected \"record\" in ", image(x))
 	    t := ""
 	    while t ||:= tab(find("_")) || move(1)
 	    t[-1] := ""
 	    sn := tab(find("("))
 	    }
-	 done[x] := xtag := "R_" || t ||  "_" || sn
+	 done[x] := xtag := (if prefix=="record " then "R_" else "") ||
+	    t ||  "_" || sn
 	 every i := 1 to *x do {
 	    name(x[i]) ? (tab(find(".")),sn := tab(0))
-	    ss ||:= indent || xtag || sn || " := " ||
-		  ximage(\x[i],indent,done)
+	    ss ||:= indent || xtag || sn || " := " || ximage(\x[i],indent,done)
 	    }
 	 xtag || " := " || t || "()" || ss
 	 }

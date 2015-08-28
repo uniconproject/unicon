@@ -212,7 +212,7 @@ method getVarReference(Var, index, level)
            x := get(index)
            if x == "." then x := get(index)
 
-           if \x then{
+           if \x then {
               every fld := fieldnames(Var) do{
                  if x === fld then{
                     Var := Var[string(x)]
@@ -340,7 +340,7 @@ method printVar(Expr, action, level)
    local Var, var, ref, index, x, expr:=""
   
    index := parsePrintExpression(Expr)
-   if *index = 0 then{
+   if *index = 0 then {
       Message :="\n   \""||expr||"\" is an unknown expression."
       DState.Write(Message)
       return
@@ -350,8 +350,8 @@ method printVar(Expr, action, level)
 
    var := get(index)
    if Var := variable(var, Monitored, level) then
-      if (ref := getVarReference(Var, index, level)) & *index = 0 then{
-         case action of{
+      if (ref := getVarReference(Var, index, level)) & *index = 0 then {
+         case action of {
             "*" :{ Message := "\n   *"||expr||" = "||*ref }
             "!" :{ Message := "\n   !"||expr||" = "
                    Message ||:="{ "
@@ -360,12 +360,13 @@ method printVar(Expr, action, level)
                    Message:=Message[1:-2] || " }"
                  }
             "?" :{ Message := "OOPS: not implemented yet!!!"  }
-            default:{
+            default: {
                  Message := "\n   "||expr||" = "
                  #DState.Write("---type of ",expr," is : ", type(ref))
                  if (type(ref) == ("list" | "table" | "set" | "foreign-local" )|
-                     find("record",image(ref))) & *ref >= 1 then
+                     match("record"|"object",image(ref))) & *ref >= 1 then {
                         Message ||:= ximage(ref)
+			}
                  else{
                         Message ||:= image(ref)
                      }

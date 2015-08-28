@@ -1857,20 +1857,37 @@ dptr dp1, dp2;
          }
 
       record: {
+	 long size;
          /*
           * Produce:
           *  "record name_m(n)"	-- under construction
           * where n is the number of fields.
           */
          bp = BlkLoc(*dp1);
-         rnlen = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
-         sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id,
-            (long)bp->Record.recdesc->Proc.nfields);
-         len = strlen(sbuf);
+	 size = (long)bp->Record.recdesc->Proc.nfields;
+	 rnlen = StrLen(Blk(Blk(bp,Record)->recdesc,Proc)->recname);
+	 sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id, size);
+	 len = strlen(sbuf);
 	 Protect (reserve(Strings, 7 + len + rnlen), return RunError);
-         Protect(t = alcstr("record ", (word)(7)), return RunError);
-         bp = BlkLoc(*dp1);		/* refresh pointer */
-         StrLoc(*dp2) = t;
+	 bp = BlkLoc(*dp1);		/* refresh pointer */
+	 /*
+	  * If we have an object, its size is -2 for __s and __m fields.
+	  * Also, drop the tedious "__state" portion of its recname.
+	  */
+	 if (Blk(Blk(bp,Record)->recdesc, Proc)->ndynam == -3) {
+	    char *los;			/* location of "__state" in recname */
+	    sprintf(sbuf, "_%ld(%ld)", (long)bp->Record.id, size-2);
+	    len= strlen(sbuf);
+	    los= strstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),"__state");
+	    if (los == NULL)
+	       syserr("no __state in object's classname");
+	    rnlen = los - StrLoc(Blk(bp,Record)->recdesc->Proc.recname);
+	    Protect(t = alcstr("object ", (word)(7)), return RunError);
+	    }
+	 else {
+	    Protect(t = alcstr("record ", (word)(7)), return RunError);
+	    }
+	 StrLoc(*dp2) = t;
 	 StrLen(*dp2) = 7;
          Protect(alcstr(StrLoc(Blk(bp,Record)->recdesc->Proc.recname),rnlen),
 	            return RunError);

@@ -79,7 +79,7 @@ class Mainbar(
    method on_exit(ev)
       local tab_item, modified, decision, i:=1
 
-      if (\ide.debugger = 1) then {
+      if \ide.debugger = 1 then {
          if not close(ide.pty) then {
             write("Possible UDB zombie outbreak")
             } else write("UDB closed")
@@ -87,7 +87,7 @@ class Mainbar(
 
       every tab_item := !uidlog.FileTabSet.children do {
          if tab_item.label[-1] == "*" then {
-            modified:=1
+            modified := 1
             break
             }
          }
@@ -166,16 +166,14 @@ class Mainbar(
    end
 
    method on_compile_options(ev)
-      local oldwindow
+      local oldwindow := &window
       dialogFor := "compile"
       /targs := ""
-      oldwindow := &window
       &window := win
       if TextDialog("Enter compiler options: ",,targs,60) == "Okay" then
 	 targs := dialog_value[1]
       &window := oldwindow
-      #      configdlg := ConfigureOptions()
-      #      configdlg.show_modal()
+      # having obtained some compile options, where do they go? Project object?
    end
 
    #
@@ -196,6 +194,7 @@ class Mainbar(
       if TextDialog("Enter command line arguments: ",,xargs,60) == "Okay" then
 	 xargs := dialog_value[1]
       &window := oldwindow
+      # having obtained some run arguments, where do they go? Project object?
    end
 
    #

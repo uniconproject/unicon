@@ -18,6 +18,7 @@ ub.pdf: $(SRC) ub.ind
 	pdflatex ub
 
 ub.ps: ub.pdf
+	echo "the following pdf2ps command runs silent and deep 1-2 minutes..."
 	pdf2ps ub.pdf
 
 ub.ind: ub.idx

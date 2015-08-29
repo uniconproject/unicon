@@ -52,6 +52,12 @@
    #define COMPILER 0
 #endif
 
+#if defined(Concurrent) && COMPILER
+   #define ConcurrentCOMPILER 1
+#else
+   #define ConcurrentCOMPILER 0
+#endif
+
 /*
  * The following definitions insure that all the symbols for operating
  * systems that are not relevant are defined to be 0 -- so that they
@@ -176,7 +182,6 @@
    #undef Eve
    #undef MultiThread
    #undef EventMon
-   #undef Concurrent			/* for now */
 #endif					/* COMPILER */
 
 #ifndef NoStrInvoke

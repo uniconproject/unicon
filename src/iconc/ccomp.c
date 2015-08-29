@@ -200,7 +200,161 @@ Deliberate Syntax Error
 
 #if MSDOS
 #if NTGCC
-#else
+
+   lib_sz += strlen(" -L") + strlen(refpath);
+
+#ifdef Messaging
+   lib_sz += strlen(" -ltp ");
+   opt_sz += strlen(" -L") + strlen(refpath) + strlen("../src/libtp");
+#endif
+
+#ifdef Dbm
+   lib_sz += strlen(" -lgdbm ");
+   opt_sz += strlen(" -L") + strlen(refpath) + strlen("../src/gdbm");
+#endif
+
+#ifdef Graphics
+   lib_sz += strlen(" -lXpm ");
+#ifdef Graphics3D
+   lib_sz += strlen(" -lGL -lGLU ");
+#endif					/* Graphics3D */
+   lib_sz += strlen(ICONC_XLIB);
+   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
+#endif					/* Graphics */
+
+#ifdef mdw_0
+#ifdef ISQL
+   lib_sz += strlen(" -liodbc ");
+#endif /* ISQL */
+#endif /* mdw_0 */
+
+#if HAVE_LIBZ
+   lib_sz += strlen(" -lz ");
+#endif /* HAVE_LIBZ */
+
+#if HAVE_LIBJPEG
+   lib_sz += strlen(" -ljpeg ");
+#endif /* HAVE_LIBJPEG */
+
+#if HAVE_LIBPTHREAD
+   lib_sz += strlen(" -lpthread ");
+#endif                                        /* HAVE_LIBPTHREAD */
+
+#if defined(HAVE_LIBFTGL)
+   lib_sz += strlen(" -lstdc++ ");
+#endif
+
+   lib_sz += strlen(" -lwinmm");
+   lib_sz += strlen(" -lwsock32");
+   lib_sz += strlen(" -lodbc32");
+   lib_sz += strlen(" -lws2_32 "); 
+
+   buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
+			     lib_sz + 8);
+   strcpy(buf, c_comp);
+   s = buf + cmd_sz;
+   *s++ = ' ';
+   strcpy(s, c_opts);
+#ifdef Messaging
+   strcat(s, " -L");
+   strcat(s, refpath);
+   strcat(s, "..\\src\\libtp");
+#endif
+#ifdef Dbm
+   strcat(s, " -L");
+   strcat(s, refpath);
+   strcat(s, "..\\src\\gdbm");
+#endif
+#ifdef Graphics
+   strcat(s, " -I");
+   strcat(s, refpath);
+   strcat(s, "..\\src\\xpm");
+#endif
+   s += opt_sz;
+   *s++ = ' ';
+   strcpy(s, ExeFlag);
+   s += flg_sz;
+   *s++ = ' ';
+   strcpy(s, exename);
+   s += exe_sz;
+   *s++ = ' ';
+   strcpy(s, srcname);
+   s += src_sz;
+#if 0
+   if (!largeints) {
+      *s++ = ' ';
+      strcpy(s, dlrgint);
+      s += strlen(dlrgint);
+      }
+#endif
+   for (l = liblst; l != NULL; l = l->next) {
+      *s++ = ' ';
+      strcpy(s, l->libname);
+      s += l->nm_sz;
+      }
+
+   strcpy(s," -L");
+   strcat(s, refpath);
+
+#ifdef Messaging
+   strcat(s, " -ltp ");
+#endif
+
+#ifdef Dbm
+   strcat(s, " -lgdbm ");
+#endif
+
+#ifdef Graphics
+   strcat(s," -lXpm ");
+#ifdef Graphics3D
+   strcat(s, " -lGL -lGLU ");
+#endif					/* Graphics3D */
+   strcat(s, ICONC_XLIB);
+#endif						/* Graphics */
+
+#ifdef mdw_0
+#ifdef ISQL
+   strcat(s, " -liodbc ");
+#endif /* ISQL */
+#endif /* mdw_0 */
+
+#if HAVE_LIBZ
+   strcat(s, " -lz ");
+#endif /* HAVE_LIBZ */
+
+#if HAVE_LIBJPEG
+   strcat(s, " -ljpeg ");
+#endif /* HAVE_LIBJPEG */
+
+#if HAVE_LIBPTHREAD
+   strcat(s, " -lpthread ");
+#endif                                        /* HAVE_LIBPTHREAD */  
+
+   strcat(s, LinkLibs);
+#if defined(HAVE_LIBFTGL)
+   strcat(s, " -lstdc++ ");
+#endif
+
+   strcat(s, " -lwinmm");
+   strcat(s, " -lwsock32");
+   strcat(s, " -lodbc32");
+   strcat(s, " -lws2_32 "); 
+   /*
+    * mdw: emit cc command-line if verbosity is set above 2
+    */
+   if (verbose > 2)
+      fprintf(stdout, "system(%s)...\n", buf);
+   if (system(buf) != 0)
+      return EXIT_FAILURE;
+   if (!dbgsyms) {
+      /* mdw: strip dbg symbols from target */
+      strcpy(buf, "strip ");
+      s = buf + 6;
+      strcpy(s, exename);
+      system(buf);
+      }
+
+#else					/* NTGCC */
 
    opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/gdbm");
    opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/libtp");

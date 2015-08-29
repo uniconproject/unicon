@@ -31,11 +31,13 @@ void err_msg(int n, dptr v)
    CURTSTATE();
 
 #ifdef Concurrent
+#if !ConcurrentCOMPILER
    /* 
     * Force all of the threads to stop before proceeding with the runtime error 
     */
    if (is:null(curpstate->eventmask))
       if (IntVal(kywd_err) == 0 || !err_conv)
+#endif                                  /* ConcurrentCOMPILER */
          SUSPEND_THREADS();
 #endif					/* Concurrent */
 

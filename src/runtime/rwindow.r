@@ -4946,8 +4946,10 @@ FILE *OpenConsole()
          curblock->size  = MaxAbrSize;
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
    	 curtstate = &roottstate;
+#if !ConcurrentCOMPILER
 	 curpstate->tstate = curtstate;
    	 rootpstate.tstate = curtstate;
+#endif                                   /* ConcurrentCOMPILER */
    	 roottstatep = curtstate; 
    	 init_threadstate(curtstate);
    	 pthread_key_create(&tstate_key, NULL);

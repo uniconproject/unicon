@@ -1674,7 +1674,9 @@ function{0,1} remove(s)
       }
 
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
       if (remove(s) != 0) {
 #ifdef PosixFns
 	 IntVal(amperErrno) = 0;
@@ -3030,7 +3032,9 @@ function{0,1} delay(n)
         fail;
 #ifdef Graphics
 {
+#if !ConcurrentCOMPILER	
       CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
       pollctr >>= 1;
       pollctr++;
 }

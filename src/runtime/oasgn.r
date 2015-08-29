@@ -92,11 +92,17 @@
             if (!cnv:C_integer(y, i))
                runerr(101, y);
 
-#ifdef MultiThread
+#if defined(MultiThread) || ConcurrentCOMPILER
+	    /*
+	     * Assuming (ahem) that the address of &subject is the next
+	     * descriptor following &pos, which is true in struct threadstate,
+	     * then we can access it via our reference to &pos, rather than
+	     * needing to lookup the curtstate to find the former global.
+	     */
 	    i = cvpos((long)i, StrLen(*(VarLoc(x)+1)));
-#else					/* MultiThread */
+#else					/* MultiThread || ConcurrentCOMPILER */
             i = cvpos((long)i, StrLen(k_subject));
-#endif					/* MultiThread */
+#endif					/* MultiThread || ConcurrentCOMPILER */
 
             if (i == CvtFail)
                fail;

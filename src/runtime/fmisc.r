@@ -323,7 +323,9 @@ function{1} display(i,f)
    body {
       FILE *std_f;
       int r;
-
+#if ConcurrentCOMPILER
+      CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
       if (!debug_info)
          runerr(402);
 
@@ -753,7 +755,9 @@ function {0,1} serial(x)
          return C_integer BlkD(x,Coexpr)->id;
          }
       null: inline {
+#if !ConcurrentCOMPILER
       	 CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
          return C_integer BlkD(k_current,Coexpr)->id;
          }
 #ifdef Graphics
@@ -1906,7 +1910,9 @@ end
 
 function{1} parent(ce)
    if is:null(ce) then inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
       ce = k_current;
       }
    else if !is:coexpr(ce) then runerr(118,ce)
@@ -2049,24 +2055,41 @@ static stringint siKeywords[] = {
       if (strcmp(kname,"allocated") == 0) {
 	 int tot;
 #ifdef Concurrent
+#if !ConcurrentCOMPILER
 	 MUTEX_LOCKID(p->mutexid_stringtotal);
 	 MUTEX_LOCKID(p->mutexid_blocktotal);
 	 tot =  stattotal + p->stringtotal + p->blocktotal;
 	 MUTEX_UNLOCKID(p->mutexid_blocktotal);
 	 MUTEX_UNLOCKID(p->mutexid_stringtotal);
-
+#else                                    /* ConcurrentCOMPILER */
+	 MUTEX_LOCKID(mutexid_stringtotal);
+	 MUTEX_LOCKID(mutexid_blocktotal);
+	 tot =  stattotal + p->stringtotal + p->blocktotal;
+	 MUTEX_UNLOCKID(mutexid_blocktotal);
+	 MUTEX_UNLOCKID(mutexid_stringtotal);
+#endif                                    /* ConcurrentCOMPILER */
 	 suspend C_integer tot;
 
 	 suspend C_integer stattotal;
-
+#if !ConcurrentCOMPILER
 	 MUTEX_LOCKID(p->mutexid_stringtotal);
 	 tot =  p->stringtotal;
 	 MUTEX_UNLOCKID(p->mutexid_stringtotal);
+#else                                    /* ConcurrentCOMPILER */
+	 MUTEX_LOCKID(mutexid_stringtotal);
+	 tot =  p->stringtotal;
+	 MUTEX_UNLOCKID(mutexid_stringtotal);
+#endif                                   /* ConcurrentCOMPILER */
 	 suspend C_integer tot;
-
+#if !ConcurrentCOMPILER
 	 MUTEX_LOCKID(p->mutexid_blocktotal);
 	 tot =  p->blocktotal;
 	 MUTEX_UNLOCKID(p->mutexid_blocktotal);
+#else                                    /* ConcurrentCOMPILER */
+	 MUTEX_LOCKID(mutexid_blocktotal);
+	 tot =  p->blocktotal;
+	 MUTEX_UNLOCKID(mutexid_blocktotal);
+#endif                                   /* ConcurrentCOMPILER */
 	 return C_integer tot;
 #else					/* Concurrent */
 	 suspend C_integer stattotal + p->stringtotal + p->blocktotal;
@@ -2740,6 +2763,13 @@ function{1} unlock(x)
      }
 end
 
+#if ConcurrentCOMPILER
+/*
+ * Fake out a possible fail, to trick iconc.
+ */
+int improbable = 0;
+#endif                                   /* ConcurrentCOMPILER */
+
 "spawn(x,blocksize,stringsize, stacksize) - evaluate co-expression"
 " or procedure x concurrently"
 
@@ -2759,15 +2789,17 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	 struct context *n;
 	 struct b_coexpr *cp = BlkD(x, Coexpr);
 	 int i;
-
+#if !ConcurrentCOMPILER
 	 if (!is:null(curpstate->eventmask)) {
 	    fprintf(stderr,
 		    "monitoring of concurrent programs is not yet supported.");
 	    runerr(183, x);
 	    }
-
+#endif                                   /* ConcurrentCOMPILER */
       	 TURN_ON_CONCURRENT();
-
+#if ConcurrentCOMPILER
+	 CURTSTATE();
+#endif                                   /* ConcurrentCOMPILER */
 	 /*
 	  * Make sure it is a pthreads-based co-expression.
 	  */
@@ -2848,6 +2880,9 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	 INC_LOCKID(NARthreads, MTX_NARTHREADS);
 	 MUTEX_UNLOCKID(MTX_THREADCONTROL);
 
+#if ConcurrentCOMPILER
+	 if (improbable) fail;
+#endif                                  /* ConcurrentCOMPILER*/
 	 return x;
 	 }
       }

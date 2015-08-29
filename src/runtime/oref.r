@@ -286,6 +286,9 @@ operator{*} ! bang(underef x -> dx)
                   rlen = slen < 0 ? (word)MaxCvtLen : slen;
 
 		  Protect(reserve(Strings, rlen), runerr(0));
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 		  if (!InRange(strbase,StrLoc(result),strfree)) {
 		     Protect(reserve(Strings, StrLen(result)+rlen), runerr(0));
 		     Protect((StrLoc(result) = alcstr(StrLoc(result),
@@ -410,6 +413,9 @@ operator{0,1} ? random(underef x -> dx)
       body {
          C_integer val;
          double rval;
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 
          /*
           * A string from a variable is being banged. Produce a one
@@ -435,6 +441,9 @@ operator{0,1} ? random(underef x -> dx)
          body {
             C_integer val;
             double rval;
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 
             if ((val = StrLen(dx)) <= 0)
                fail;
@@ -459,6 +468,9 @@ operator{0,1} ? random(underef x -> dx)
             C_integer val;
             double rval;
 	    char ch;
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 
             if ((val = StrLen(dx)) <= 0)
                fail;
@@ -482,6 +494,9 @@ operator{0,1} ? random(underef x -> dx)
             double rval;
             register C_integer i, j;
             union block *bp;     /* doesn't need to be tended */
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
             val = BlkD(dx,List)->size;
             if (val <= 0)
                fail;
@@ -543,6 +558,9 @@ operator{0,1} ? random(underef x -> dx)
             union block *ep, *bp;   /* doesn't need to be tended */
 	    struct b_slots *seg;
 	    struct b_tvtbl *tp;
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 
             bp = BlkLoc(dx);
             val = Blk(bp,Table)->size;
@@ -586,6 +604,9 @@ operator{0,1} ? random(underef x -> dx)
             register C_integer i, j, n;
             union block *bp, *ep;  /* doesn't need to be tended */
 	    struct b_slots *seg;
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 
             bp = BlkLoc(dx);
             val = Blk(bp,Set)->size;
@@ -623,6 +644,9 @@ operator{0,1} ? random(underef x -> dx)
             C_integer val;
             double rval;
             struct b_record *rec;  /* doesn't need to be tended */
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
 
             rec = BlkD(dx, Record);
             val = Blk(rec->recdesc,Proc)->nfields;
@@ -666,6 +690,10 @@ operator{0,1} ? random(underef x -> dx)
 
             v = IntVal(dx);
 #endif					/* LargeInts */
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
+
             /*
              * x is an integer, be sure that it's non-negative.
              */

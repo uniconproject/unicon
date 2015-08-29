@@ -20,11 +20,15 @@
    
    if is:null(s) then {
       inline {
+#if !ConcurrentCOMPILER
 	 CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
          s = k_subject;
          }
       if is:null(i) then inline {
+#if !ConcurrentCOMPILER
 	 CURTSTATE();
+#endif                                     /* ConcurrentCOMPILER */
          cnv_ ## i = k_pos;
          }
       }

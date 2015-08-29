@@ -322,7 +322,9 @@ operator{*} ... toby(from, to, by)
    else if cnv:C_double(from) && cnv:C_double(to) && cnv:C_double(by) then {
             abstract { return real }
 	    inline {
+#if !ConcurrentCOMPILER
       	       CURTSTATVAR();
+#endif                                    /* ConcurrentCOMPILER */
                if (by == 0) {
                   irunerr(211, by);
                   errorfail;

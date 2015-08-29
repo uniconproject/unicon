@@ -128,6 +128,9 @@ int bigadd(da, db, dx)
 dptr da, db;
 dptr dx;
    {
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                            /* ConcurrentCOMPILER */
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
@@ -140,6 +143,9 @@ dptr dx;
 int bigmul(da, db, dx)
 dptr da, db, dx;
    {
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                            /* ConcurrentCOMPILER */
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
@@ -152,6 +158,9 @@ dptr da, db, dx;
 int bigneg(da, dx)
 dptr da, dx;
    {
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                            /* ConcurrentCOMPILER */
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
@@ -164,6 +173,9 @@ dptr da, dx;
 int bigsub(da, db, dx)
 dptr da, db, dx;
    {
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                            /* ConcurrentCOMPILER */
    t_errornumber = 203;
    t_errorvalue = nulldesc;
    t_have_val = 0;
@@ -193,6 +205,9 @@ dptr da, db, dx;
    {
    C_integer r;
    int over_flow;
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                            /* ConcurrentCOMPILER */
 
    /*
     * Just do ordinary interger exponentiation and check for overflow.

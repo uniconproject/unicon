@@ -119,6 +119,10 @@ struct b_file *fbp;
    FILE *fd = fbp->fd.fp;
 
 #if defined(PosixFns) && !defined(Concurrent)
+   /*
+    * Think about doing a thread-safe implementation,
+    * so Concurrent uses this logic.
+    */
    static char savedbuf[BUFSIZ];
    static int nsaved = 0;
 #endif					/* PosixFns */
@@ -193,14 +197,14 @@ struct b_file *fbp;
 
    l = 0;
 
-#ifdef PosixFns
+#if defined(PosixFns) && !defined(Concurrent)
    /* If there are saved chars in the static buffer, use those */
    if (nsaved > 0) {
       strncpy(buf, savedbuf, nsaved);
       l = nsaved;
       buf += l;
    }
-#endif
+#endif					/* PosixFns */
 
    while (1) {
 
@@ -283,19 +287,19 @@ struct b_file *fbp;
 	 }
       if (++l > maxi) {
 	 ungetc(c, fd);
-#ifdef PosixFns
+#if defined(PosixFns) && !defined(Concurrent)
 	 /* Clear the saved chars buffer */
 	 nsaved = 0;
 #endif					/* PosixFns */
 	 return -2;
 	 }
-#ifdef PosixFns
+#if defined(PosixFns) && !defined(Concurrent)
       savedbuf[nsaved++] = c;
 #endif					/* PosixFns */
       *buf++ = c;
       }
 
-#ifdef PosixFns
+#if defined(PosixFns) && !defined(Concurrent)
    /* We can clear the saved static buffer */
    nsaved = 0;
 #endif					/* PosixFns */

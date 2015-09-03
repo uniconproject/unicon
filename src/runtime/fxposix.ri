@@ -1511,7 +1511,7 @@ function{0,1} wait(pid, options)
      body {
 	struct context *n;
 	int rv;
-	if (BlkLoc(pid)->Coexpr.status & Ts_Async){
+	if (BlkLoc(pid)->Coexpr.status & Ts_Async) {
 	   n =  (struct context *)  BlkLoc(pid)->Coexpr.cstate[1];
 
 	   if ( !n || n->alive == 0 || n->alive == -2) fail;
@@ -1523,20 +1523,36 @@ function{0,1} wait(pid, options)
 
 	   return pid;
 	   }
-        }
-      }
+	else fail;
+	}
+     }
+   else {
 #endif					/* Concurrent */ 
 
    if !def:C_integer(pid, -1) then
       runerr(101, pid)
- /* 
-  *if pid>=-1 then it is a process, otherwise it is a condition variable 
-  */
+   if !def:C_string(options, "") then 
+      runerr(103, options)
 
 #ifdef Concurrent
-   abstract { return integer }
+   abstract { return integer ++ string }
+#else					/* Concurrent */ 
+   abstract { return string }
+#endif					/* Concurrent */ 
+
    body {
-      if (pid<-1){
+      char retval[64];
+      int option = 0, status = 0, wpid, i=0;
+#if !NT && (defined(BSD) || defined(Linux) || defined(BSD_4_4_LITE))
+      struct rusage rusage;
+#endif
+      CURTSTATE();
+
+#ifdef Concurrent
+      /* 
+       * If pid>=-1 then it is a process, otherwise it is a condition variable.
+       */
+      if (pid < -1) {
 
 	 int x = -pid-2;
       	 if (x<0 || x>=ncondvars)
@@ -1548,21 +1564,8 @@ function{0,1} wait(pid, options)
 
       	 return C_integer 1;
       	 }
-      }
 #endif					/* Concurrent */     
 
-   if !def:C_string(options, "") then 
-      runerr(103, options)
-   abstract {
-      return string;
-      }
-   body {
-      char retval[64];
-      int option = 0, status = 0, wpid, i=0;
-#if !NT && (defined(BSD) || defined(Linux) || defined(BSD_4_4_LITE))
-      struct rusage rusage;
-#endif
-      CURTSTATE();
 #if !NT
 #if defined(BSD) || defined(BSD_4_4_LITE)
       while(options[i])
@@ -1639,7 +1642,10 @@ function{0,1} wait(pid, options)
 
       String(result, retval);
       return result;
+      }
+#ifdef Concurrent
    }
+#endif					/* Concurrent */
 end
 
 #begdef GenTime(name, conv_type, i)
@@ -1958,6 +1964,7 @@ function{0,1} send(addr, msg, timeout)
 	fail;
 	}
      }
+  else
   if is:null(addr) then {
      abstract { return integer }
      body {
@@ -1967,14 +1974,13 @@ function{0,1} send(addr, msg, timeout)
 	fail;
 	}
      }
+   else {
 #endif					/* Concurrent */ 
    if !cnv:C_string(addr) then
       runerr(103, addr)
    if !cnv:string(msg) then
       runerr(103, msg)
-   abstract {
-      return null
-      }
+   abstract { return null }
    body {
       CURTSTATE();
       IntVal(amperErrno) = 0;
@@ -1984,6 +1990,9 @@ function{0,1} send(addr, msg, timeout)
 	 }
       return nulldesc;
    }
+#ifdef Concurrent
+   }
+#endif					/* Concurrent */
 end
 
 "receive() - receive a UDP datagram."
@@ -1997,6 +2006,7 @@ function{0,1} receive(f)
   if !def:C_integer(timeout, 0) then
      runerr(101, timeout)
   if is:null(f) then {
+     abstract { return any_value }
      body {
 	tended struct descrip d;
 
@@ -2005,7 +2015,8 @@ function{0,1} receive(f)
 	fail;
 	}
      }
-  if is:coexpr(f) then {
+  else if is:coexpr(f) then {
+     abstract { return any_value }
      body {
 	tended struct descrip d;
 
@@ -2014,6 +2025,7 @@ function{0,1} receive(f)
 	fail;
 	}
      }
+   else {
 #endif					/* Concurrent */ 
   if !is:file(f) then
       runerr(105, f)
@@ -2048,6 +2060,9 @@ function{0,1} receive(f)
       result.vword.bptr = (union block *)rp;
       return result;
    }
+#ifdef Concurrent
+  }
+#endif					/* Concurrent */
 end
 
 #if defined(Dbm) || defined(ISQL)

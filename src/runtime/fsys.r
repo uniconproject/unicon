@@ -2587,6 +2587,9 @@ function {1} name(x[nargs])
 #endif					/* terminate */
 	 DefaultFile(terminate)
 	 body {
+#if ConcurrentCOMPILER
+	    CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
 	    Finish(nulldesc, nl, terminate)
 	    }
 	 }

@@ -81,6 +81,18 @@ extern word maxcondvars;
 extern int is_concurrent; 
 extern struct threadstate *global_curtstate;
 
+#ifndef HAVE_KEYWORD__THREAD
+   extern pthread_key_t tstate_key;
+#endif
+
+#if ConcurrentCOMPILER
+extern int list_ser;
+/*
+ * Fake out a possible fail, to trick iconc.
+ */
+extern int improbable;
+#endif                                   /* ConcurrentCOMPILER */
+
 #endif					/* Concurrent */
 
 /*
@@ -222,7 +234,6 @@ extern struct descrip amperErrno;
       extern __thread struct threadstate *curtstate;
       #else					/* HAVE_KEYWORD__THREAD */
       extern struct threadstate roottstate;
-      extern pthread_key_t tstate_key;
       #endif					/* HAVE_KEYWORD__THREAD */
    #else					/* Concurrent */
       extern struct threadstate roottstate; 

@@ -601,6 +601,25 @@
 
 #ifdef Concurrent
 
+   #define tend         (curtstate_ce->es_tend)
+
+   /* used in fmath.r, log() */
+   #define lastbase	     	(curtstate->Lastbase)
+   #define divisor		(curtstate->Divisor)
+
+   /* used in fstr.r, map() */
+   #define maptab		(curtstate->Maptab)
+      
+   /* used in rposix.r */
+   #define callproc		(curtstate->Callproc)
+   #define callproc_ibuf	(curtstate->Callproc_Ibuf)
+
+   #define pollctr		(curtstate->Pollctr)
+
+   #define curtstring		(curtstate->Curstring)
+   #define curtblock		(curtstate->Curblock)
+
+
 #define TURN_ON_CONCURRENT() if (!is_concurrent){ \
 	is_concurrent=1; global_curtstate = NULL;}
 
@@ -934,12 +953,10 @@
       #define table_ser (curpstate->Table_ser)
 
 #ifdef Concurrent
-      #define curtstring (curtstate->Curstring)
-      #define curtblock  (curtstate->Curblock)
-      #define strtotal  (curtstate->stringtotal)
-      #define blktotal  (curtstate->blocktotal)
       #define public_stringregion (curpstate->Public_stringregion)
       #define public_blockregion (curpstate->Public_blockregion)
+      #define strtotal		(curtstate->stringtotal)
+      #define blktotal		(curtstate->blocktotal)
 #else 					/* Concurrent */
       #define strtotal  (curpstate->stringtotal)
       #define blktotal  (curpstate->blocktotal)
@@ -990,8 +1007,6 @@
 
 #ifdef Concurrent 
  
-      #define tend         (curtstate_ce->es_tend)
- 
       #define efp         (curtstate_ce->es_efp)
       #define gfp         (curtstate_ce->es_gfp)
       #define pfp         (curtstate_ce->es_pfp)
@@ -1006,23 +1021,11 @@
 #endif					/* StackCheck */
 
       #define eret_tmp       (curtstate->Eret_tmp)
-      #define pollctr        (curtstate->Pollctr)
 
 #ifdef PosixFns
       #define savedbuf       (curtstate->Savedbuf)
       #define nsaved         (curtstate->Nsaved)
 #endif					/* PosixFns */
-
-      /* used in fmath.r, log() */
-      #define lastbase	     	(curtstate->Lastbase)
-      #define divisor		(curtstate->Divisor)
-
-      /* used in fstr.r, map() */
-      #define maptab		(curtstate->Maptab)
-      
-      /* used in rposix.r */
-      #define callproc		(curtstate->Callproc)
-      #define callproc_ibuf	(curtstate->Callproc_Ibuf)
 
 #endif					/* Concurrent */
 

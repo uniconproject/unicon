@@ -240,6 +240,19 @@ void var_dcls()
    else
       fprintf(codefile, "   largeints = 0;\n");
 
+#ifdef Concurrent
+     fprintf(codefile, "   struct b_coexpr *curtstate_ce;\n");
+  #ifndef HAVE_KEYWORD__THREAD
+     fprintf(codefile, "   struct threadstate *curtstate;\n");
+     fprintf(codefile, "   pthread_key_create(&tstate_key, NULL);\n");
+  #endif					/* HAVE_KEYWORD__THREAD */
+     fprintf(codefile, "   init_threads();\n");
+     fprintf(codefile, "   global_curtstate = roottstatep = &roottstate;\n");
+     fprintf(codefile, "   curtstate = &roottstate;\n");
+     fprintf(codefile, "   curtstate_ce = curtstate->c;\n");
+     fprintf(codefile, "\n");
+#endif						/* Concurrent */
+
    /*
     * Produce code to call the routine to initialize the runtime system.
     */

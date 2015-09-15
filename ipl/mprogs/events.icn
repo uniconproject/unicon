@@ -39,6 +39,7 @@
 link evinit
 link evnames
 link evsyms
+link evutils
 link options
 $include "evdefs.icn"
 
@@ -54,9 +55,10 @@ procedure main(args)
 
    while EvGet() do {
       val := &eventvalue
-      if &eventcode === E_Opcode then {
-	  val := opnames(val)
-      }
+      case &eventcode of {
+	 E_Opcode: val := opnames(val)
+	 E_Loc: val := vertical(val) || ":" || horizontal(val)
+	 }
 
       write(output, left(\symmap[&eventcode], 14),
          left(evnames(&eventcode), 35), (string|image)(val))

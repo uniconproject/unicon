@@ -409,7 +409,9 @@ int get_name(dptr dp1,dptr dp0)
 #if COMPILER
 #begdef PTraceSetup()
    struct b_proc *proc;
-
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                 /* ConcurrentCOMPILER */
    --k_trace;
    showline(file_name, line_num);
    showlevel(k_level);

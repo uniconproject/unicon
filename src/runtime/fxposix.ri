@@ -76,7 +76,9 @@ function{0,1} getppid()
       return integer
       }
    body {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -117,7 +119,9 @@ function{0,1} link(s1, s2)
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -146,7 +150,9 @@ function{0,1} symlink(s1, s2)
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -503,7 +509,9 @@ function{0,1} chroot(d)
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -526,7 +534,9 @@ function{0,1} rmdir(s)
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
 #define rmdir _rmdir
@@ -955,7 +965,9 @@ function{0,1} ioctl(f, action, options)
       }
    inline {
       int retval, fd;
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
       if ((fd = get_fd(f, 0)) < 0)
 	 runerr(174, f);
@@ -1079,7 +1091,9 @@ function{0,1} fork()
       }
    inline {
       int pid;
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1321,7 +1335,9 @@ function{0,1} setuid(u)
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1348,7 +1364,9 @@ function{0,1} setgid(g)
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1392,7 +1410,9 @@ function{0,1} setpgrp()
       return null
       }
    inline {
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
 #if NT
       fail;
@@ -1964,8 +1984,7 @@ function{0,1} send(addr, msg, timeout)
 	fail;
 	}
      }
-  else
-  if is:null(addr) then {
+  else if is:null(addr) then {
      abstract { return integer }
      body {
      	CURTSTATE();
@@ -2059,9 +2078,9 @@ function{0,1} receive(f)
       result.dword = D_Record;
       result.vword.bptr = (union block *)rp;
       return result;
-   }
+      }
 #ifdef Concurrent
-  }
+   }
 #endif					/* Concurrent */
 end
 

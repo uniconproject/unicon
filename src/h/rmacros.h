@@ -179,7 +179,7 @@
 #define Blk(p,u) (&((p)->u))
 #define BlkPH(p,u,s) ((p)->u.s)
 #define BlkPE(p,u,s) ((p)->u.s)
-#else
+#else					/* !DebugHeap */
 
 /*
  * Debug Heap macros.  These add runtime checks to catch (most)
@@ -476,7 +476,7 @@
 
 #ifdef PatternType
 #define T_Pattern 	26	/* keyword &eventsource, etc. */
-#define T_Pelem 	        27	/* keyword &eventsource, etc. */
+#define T_Pelem 	27	/* keyword &eventsource, etc. */
 #endif					/* PatternType */
 
 #define T_Tvmonitored   28      /* Monitored trapped variable */
@@ -594,10 +594,10 @@
 #define CURPTSTATE struct progstate *curpstate = curtstate->pstate;
 #define CURPSTATE struct progstate *curpstate =	\
     ((struct threadstate *) pthread_getspecific(tstate_key))->pstate;
-#else
+#else					/* LOCALPROGSTATE */
 #define CURPSTATE
 #define CURPTSTATE
-#endif  					/* LOCALPROGSTATE */
+#endif					/* LOCALPROGSTATE */
 
 #ifdef Concurrent
 
@@ -623,11 +623,12 @@
 #define TURN_ON_CONCURRENT() if (!is_concurrent){ \
 	is_concurrent=1; global_curtstate = NULL;}
 
+/*
 #ifdef HAVE_KEYWORD__THREAD
 #define CURTSTATE()
 #define CURTSTATE_CE()
 #else
-
+*/
 
 #define SYNC_GLOBAL_CURTSTATE()  if (!is_concurrent) global_curtstate = \
 		(struct threadstate *) pthread_getspecific(tstate_key);
@@ -642,17 +643,20 @@
     
 #define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
 
-#define CURTSTATE()  GET_CURTSTATE(); \
-  	           CURTSTATE_CE(); \
-                   CURPTSTATE;
-
+#if ConcurrentCOMPILER
+#define CURTSTATE()  GET_CURTSTATE(); CURTSTATE_CE(); 
+#else					/* ConcurrentCOMPILER */
+#define CURTSTATE()  GET_CURTSTATE(); CURTSTATE_CE(); CURPTSTATE;
+#endif					/* ConcurrentCOMPILER */
 
 /*#define CURTSTATE_VM() inst *curtstate_ipc = curtstate->c->es_ipc;*/
 /*  		   struct tend_desc *curtstate_tended = curtstate_ce->es_tend; */
 
-#define CURTSTATE_ONLY() GET_CURTSTATE(); \
-                    CURPTSTATE;
-
+#if ConcurrentCOMPILER
+#define CURTSTATE_ONLY() GET_CURTSTATE();
+#else					/* ConcurrentCOMPILER */
+#define CURTSTATE_ONLY() GET_CURTSTATE(); CURPTSTATE;
+#endif					/* ConcurrentCOMPILER */
 
 /*  		    struct b_coexpr *curtstate_ce = curtstate->c;	
 		    #define CURTSTATE_CE struct b_coexpr *curtstate_CE = curtstate->c;*/
@@ -665,9 +669,14 @@
 #else
 #define CURTSTATARG
 #define RTTCURTSTATARG
+#if ConcurrentCOMPILER
+#define CURTSTATVAR() CURTSTATE()
+#else					/* ConcurrentCOMPILER */
 #define CURTSTATVAR()
+#endif					/* ConcurrentCOMPILER */
 #endif 					/* TSTATARG */
-#endif
+/*#endif*/
+
 #define ssize    (curtstate->Curstring->size)
 #define strbase  (curtstate->Curstring->base)
 #define strend   (curtstate->Curstring->end)
@@ -677,7 +686,9 @@
 #define blkbase  (curtstate->Curblock->base)
 #define blkend   (curtstate->Curblock->end)
 #define blkfree  (curtstate->Curblock->free)
+
 #else 					/* Concurrent */
+
 #define CURTSTATE()
 #define CURTSTATE_CE()
 #define CURTSTATE_ONLY()
@@ -699,12 +710,33 @@
 #endif 					/* Concurrent */
 
 #if COMPILER
-   
+#if ConcurrentCOMPILER 
+/*
+ * ConcurrentCOMPILER claims to avoid threads hanging by periodically
+ * answering thread_call's from within Poll().  This should probably
+ * by reviewed by Jafar to answer: (A) is it correct and safe, and
+ * (B) if so, should regular Concurrent be doing it?
+ */
+#ifdef Graphics
+#define Poll() do{ \
+  if (!pollctr--) pollctr = pollevent(); \
+  if (thread_call){ \
+    thread_control(TC_ANSWERCALL);}\
+}while (0)
+   #else				/* Graphics */
+#define Poll() do{ \
+  if (thread_call){ \
+  thread_control(TC_ANSWERCALL);\
+  }\
+  } while (0)
+#endif				         /* Graphics */
+#else                                    /* ConcurrentCOMPILER */
    #ifdef Graphics
       #define Poll() if (!pollctr--) pollctr = pollevent()
    #else				/* Graphics */
       #define Poll()
    #endif				/* Graphics */
+#endif                                  /* ConcurrentCOMPILER */
    
 #else					/* COMPILER */
    
@@ -951,17 +983,10 @@
 #endif					/* PatternType */
       #define set_ser   (curpstate->Set_ser)
       #define table_ser (curpstate->Table_ser)
+#endif					/* MultiThread */
+#endif					/* COMPILER */
 
-#ifdef Concurrent
-      #define public_stringregion (curpstate->Public_stringregion)
-      #define public_blockregion (curpstate->Public_blockregion)
-      #define strtotal		(curtstate->stringtotal)
-      #define blktotal		(curtstate->blocktotal)
-#else 					/* Concurrent */
-      #define strtotal  (curpstate->stringtotal)
-      #define blktotal  (curpstate->blocktotal)
-#endif 					/* Concurrent */
-
+#ifdef MultiThread
       #define curstring (curpstate->stringregion)
       #define curblock  (curpstate->blockregion)
 
@@ -973,19 +998,27 @@
       /* thread local*/
       #define lastop    (curtstate->Lastop)
       #define lastopnd  (curtstate->Lastopnd)
+#endif					/* MultiThread */
 
+#ifdef MultiThread
+      #define field_argp (curtstate->Field_argp)
+      #define xargp     (curtstate->Xargp)
+      #define xnargs    (curtstate->Xnargs)
+      #ifdef PosixFns
+         #define amperErrno (curtstate->AmperErrno)
+      #endif
+
+      #define line_num  (curtstate->Line_num)
+#endif					/* MultiThread */
+
+#if defined(MultiThread) || ConcurrentCOMPILER
       #define glbl_argp (curtstate->Glbl_argp)  
 
       #define kywd_pos  (curtstate->Kywd_pos)
       #define k_subject (curtstate->ksub)
       #define kywd_ran  (curtstate->Kywd_ran)
-
-      #define field_argp (curtstate->Field_argp)
-      #define xargp     (curtstate->Xargp)
-      #define xnargs    (curtstate->Xnargs)
-
       #define value_tmp (curtstate->Value_tmp)
-      
+
       #define k_current     (curtstate->K_current)
       #define k_errornumber (curtstate->K_errornumber)
       #define k_level       (curtstate->K_level)
@@ -995,32 +1028,27 @@
       #define t_errornumber (curtstate->T_errornumber)
       #define t_have_val    (curtstate->T_have_val)
       #define t_errorvalue  (curtstate->T_errorvalue)
-
-      #ifdef PosixFns
-         #define amperErrno (curtstate->AmperErrno)
-      #endif
-
-      #define line_num  (curtstate->Line_num)
       #define column    (curtstate->Column)
       #define lastline  (curtstate->Lastline)
       #define lastcol   (curtstate->Lastcol)
 
 #ifdef Concurrent 
  
+      #define pfp         (curtstate_ce->es_pfp)
+#if !ConcurrentCOMPILER
       #define efp         (curtstate_ce->es_efp)
       #define gfp         (curtstate_ce->es_gfp)
-      #define pfp         (curtstate_ce->es_pfp)
       #define ipc         (curtstate_ce->es_ipc)
       #define oldipc      (curtstate_ce->es_oldipc)
       #define sp          (curtstate_ce->es_sp)
       #define ilevel      (curtstate_ce->es_ilevel)
+      #define eret_tmp       (curtstate->Eret_tmp)
+#endif					/* ConcurrentCOMPILER */
 
 #ifndef StackCheck
       #define stack          (curtstate->Stack)
       #define stackend       (curtstate->Stackend)
 #endif					/* StackCheck */
-
-      #define eret_tmp       (curtstate->Eret_tmp)
 
 #ifdef PosixFns
       #define savedbuf       (curtstate->Savedbuf)
@@ -1029,6 +1057,7 @@
 
 #endif					/* Concurrent */
 
+#if !ConcurrentCOMPILER
       #define k_main        (curpstate->K_main)
       #define k_errout      (curpstate->K_errout)
       #define k_input       (curpstate->K_input)
@@ -1075,17 +1104,18 @@
       #define alctvtbl      (curpstate->Alctvtbl)
       #define deallocate    (curpstate->Deallocate)
       #define reserve       (curpstate->Reserve)
+#endif					/* ConcurrentCOMPILER */
 
 #ifdef Concurrent
+#if !ConcurrentCOMPILER
       #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); }
+#endif					/* ConcurrentCOMPILER */
 #else					/* Concurrent */
       #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); curtstate=p->tstate;}
 #endif					/* Concurrent */
       
-   #endif				/* MultiThread */
+#endif					/* MultiThread */
    
-#endif					/* COMPILER */
-
 #if COMPILER || !defined(MultiThread)
    #define EVStrAlc(n)
 #endif
@@ -1282,11 +1312,6 @@
    #define FUNC_SEM_OPEN	13
    #define FUNC_SEM_INIT	14
 
-
-#endif					/* Concurrent */
-
-#ifdef Concurrent
-
 #define THREAD_CREATE(ctx, t_stksize, msg)				\
   do {									\
     int retval;								\
@@ -1300,9 +1325,6 @@
       retval = pthread_create(&ctx->thread, NULL, nctramp, ctx);	\
     if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
   } while (0)
-
-
-
 
 /*
  *  Lock mutex mtx. msg is a string name that refers to mtx, useful for
@@ -1586,3 +1608,21 @@
  default: printf("%s GL ERROR: %d\n", msg, rc); \
     } \
  } while (0)
+
+#ifdef Concurrent
+#if ConcurrentCOMPILER
+      #define public_stringregion  (Public_stringregion)
+      #define public_blockregion  (Public_blockregion)
+      #define coexpr_fnc (curtstate->Coexpr_fnc)
+#else
+      #define public_stringregion (curpstate->Public_stringregion)
+      #define public_blockregion (curpstate->Public_blockregion)
+#endif                                  /* ConcurrentCOMPILER */
+      #define strtotal		(curtstate->stringtotal)
+      #define blktotal		(curtstate->blocktotal)
+#else 					/* Concurrent */
+#ifdef MultiThread
+      #define strtotal  (curpstate->stringtotal)
+      #define blktotal  (curpstate->blocktotal)
+#endif					/* MultiThread */
+#endif 					/* Concurrent */

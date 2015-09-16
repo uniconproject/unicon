@@ -20,7 +20,12 @@ keyword{4} allocated
       struct threadstate *tstate;
       uword blktot=0;
       uword strtot=0;
+#if !ConcurrentCOMPILER
+      /* plausible to omit as there is only one program, and maybe globals
+	 in lieu of curpstate. But...
+       */
       CURTSTATVAR();
+#endif					/* ConcurrentCOMPILER */
       MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
@@ -54,8 +59,10 @@ keyword{2} clock
       time_t t;
       struct tm *ct;
       char sbuf[128], *tmp;
+#if !ConcurrentCOMPILER
+      /* why on earth would &clock need a curtstate? */
       CURTSTATVAR();
-
+#endif					/* ConcurrentCOMPILER */
       time(&t);
       ct = localtime(&t);
 
@@ -95,7 +102,10 @@ keyword{4} collections
       return integer
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATVAR();
+#endif					/* ConcurrentCOMPILER */
       suspend C_integer coll_tot;
       suspend C_integer coll_stat;
       suspend C_integer coll_str;
@@ -126,7 +136,10 @@ keyword{1} current
       return coexpr
       }
    inline {
+#if 1 /* proposed !ConcurrentCOMPILER */
+      /* should be separate &current for each thread */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       return k_current;
       }
 end
@@ -253,7 +266,10 @@ keyword{0,1} errornumber
       return integer
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       if (k_errornumber == 0)
          fail;
       return C_integer k_errornumber;
@@ -266,7 +282,10 @@ keyword{0,1} errortext
       return string
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       if (k_errornumber == 0)
          fail;
       return C_string k_errortext;
@@ -279,7 +298,10 @@ keyword{0,1} errorvalue
       return any_value
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       if (have_errval) {
          return k_errorvalue;
 	 }
@@ -510,7 +532,13 @@ keyword{1} file
       }
    inline {
       char *s;
+#if !ConcurrentCOMPILER
+      /* COMPILER version of this doesn't look meaningful in any case.
+       * A fixed version would need to handle multiple files and be
+       * reporting location of current thread.
+       */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
 #if COMPILER
       if (line_info)
          return C_string file_name;
@@ -567,7 +595,12 @@ keyword{1} level
       }
 
    inline {
+      /* need to check if ConcurrentCOMPILER, in the presence of debug_info,
+       * has an &level per thread.
+       */
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
 #if COMPILER
       if (!debug_info)
          runerr(402);
@@ -582,7 +615,13 @@ keyword{1} line
       return integer;
       }
    inline {
+#if !ConcurrentCOMPILER
+      /*
+       * A fixed version would need to handle multiple files and be
+       * reporting location of current thread.
+       */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
 #if COMPILER
       if (line_info)
          return C_integer line_num;
@@ -645,7 +684,9 @@ keyword{0,*} pick
       int i, elements;
       struct b_list *namelist;
       struct descrip name;
+#if !ConcurrentCOMPILER
       CURTSTATVAR();
+#endif					/* !ConcurrentCOMPILER */
 
       if (is:null(lastEventWin)) runerr(140, lastEventWin);
       if (is:null(amperPick)) fail;
@@ -679,7 +720,11 @@ keyword{1} pos
       return kywdpos
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* there are not multiple programs, but don't threads have separate
+       * copies of &pos? */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       return kywdpos(&kywd_pos);
       }
 end
@@ -700,7 +745,10 @@ keyword{1} random
       return kywdint
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* plausible to omit is there is only one program, one seed */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       return kywdint(&kywd_ran);
       }
 end
@@ -713,7 +761,12 @@ keyword{3} regions
    inline {
       word allRegions = 0;
       struct region *rp;
+#if !ConcurrentCOMPILER
+      /* not so sure this is plausible to omit, don't we need curtstate
+       * in order to talk to curstring, etc.
+       */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
 
       suspend C_integer 0;		/* static region */
 
@@ -743,7 +796,11 @@ keyword{1} source
        return coexpr
        }
    inline {
+      /* proposed #if !ConcurrentCOMPILER rejected, we need curtstate to
+       * get k_current.
+       */
       CURTSTATE();
+      /* proposed #endif !ConcurrentCOMPILER */
 #ifndef CoExpr
       return k_main;
 #else					/* CoExpr */
@@ -760,6 +817,7 @@ keyword{3} storage
    inline {
       word allRegions = 0;
       struct region *rp;
+/* proposed if !ConcurrentCOMPILER rejected to omit curtstate */
       CURTSTATE();
 
       suspend C_integer 0;		/* static region */
@@ -790,7 +848,11 @@ keyword{1} subject
       return kywdsubj
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* there are not multiple programs, but don't threads have separate
+       * copies of &subject? */
       CURTSTATE();
+#endif                               /* !ConcurrentCOMPILER */
       return kywdsubj(&k_subject);
       }
 end
@@ -849,7 +911,12 @@ keyword{1} errno
       return kywdint
       }
    inline {
+#if !ConcurrentCOMPILER
+      /* actually, I would think this would be tracked on a per-thread basis,
+       * so we should probably dismantle this !ConcurrentCOMPILER directive.
+       */
       CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
       return kywdint(&amperErrno);
       }
 #else /* PosixFns */

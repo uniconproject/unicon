@@ -23,6 +23,7 @@ struct b_iproc mt_llist = {
 #define FncDefV(p) extern struct b_proc Cat(B,p);
 #passthru #undef exit
 #undef exit
+/* there was an #undef Fail, and even a passthru of it here */
 #include "../h/fdefs.h"
 #undef FncDef
 #undef FncDefV
@@ -137,8 +138,14 @@ struct b_cset  rparcs = {
    };
 
 /*
- * Built-in csets that used to live here were replaced by rtt's generated ones.
+ * Some built-in csets that live here were once replaced by rtt's
+ * generated csets, but iconx uses generated constructor functions for them,
+ * which are not in the runtime system for iconc.
  */
+struct b_cset fullcs = {T_Cset, 256,
+    cset_display(0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+		0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff)
+    };
 
 /*
  * Built-in files.
@@ -156,15 +163,16 @@ struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
  */
 #ifndef MultiThread
 struct descrip kywd_err = {D_Integer};  /* &error */
-struct descrip kywd_pos = {D_Integer};	/* &pos */
 struct descrip kywd_prog;		/* &progname */
-struct descrip k_subject; 		/* &subject */
-struct descrip kywd_ran = {D_Integer};	/* &random */
 struct descrip kywd_trc = {D_Integer};	/* &trace */
 struct descrip k_eventcode = {D_Null};	/* &eventcode */
 struct descrip k_eventsource = {D_Null};/* &eventsource */
 struct descrip k_eventvalue = {D_Null};	/* &eventvalue */
-
+#if !ConcurrentCOMPILER
+struct descrip k_subject; 		/* &subject */
+struct descrip kywd_ran = {D_Integer};	/* &random */
+struct descrip kywd_pos = {D_Integer};	/* &pos */
+#endif                                  /* ConcurrentCOMPILER */
 #endif					/* MultiThread */
 
 #ifdef FncTrace

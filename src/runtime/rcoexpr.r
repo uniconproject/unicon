@@ -6,7 +6,9 @@
 /*
  * Function to call after switching stacks. If NULL, call interp().
  */
+#if !ConcurrentCOMPILER
 static continuation coexpr_fnc;
+#endif					/* ConcurrentCOMPILER */
 
 #ifdef Concurrent
 void tlschain_add(struct threadstate *tstate, struct context *ctx);
@@ -349,9 +351,10 @@ int first;
    glbl_argp = ncp->es_argp;
    BlkLoc(k_current) = (union block *)ncp;
 
-#if COMPILER
+#if COMPILER && !ConcurrentCOMPILER
+   /* ConcurrentCOMPILER moved this into the nctramp trampoline? */
    coexpr_fnc = ncp->fnc;
-#endif					/* COMPILER */
+#endif					/* COMPILER && !ConcurrentCOMPILER */
 
 #else					/* ! Concurrent */
 #if !COMPILER
@@ -572,8 +575,22 @@ void coclean(void *o) {
     * only GC thread is running, no need to lock 
     */
     if ((old->c->status & Ts_Sync) && blkregion){
+       /*
+	* ConcurrentCOMPILER folks leave these locks in, should they be
+	* removed for them too?
+	*/
+#if ConcurrentCOMPILER
+       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
+#endif					/* ConcurrentCOMPILER */
        swap2publicheap(blkregion, NULL,  &public_blockregion);
+#if ConcurrentCOMPILER
+       MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
+       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
+#endif					/* ConcurrentCOMPILER */
        swap2publicheap(strregion, NULL,  &public_stringregion);
+#if ConcurrentCOMPILER
+       MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
+#endif					/* ConcurrentCOMPILER */
        }
     tlschain_remove(old->tstate);
     free(old); 			/* free context block */
@@ -634,6 +651,10 @@ void *nctramp(void *arg)
 */
    curtstate->c = ce = new->c;
 
+#if ConcurrentCOMPILER
+     coexpr_fnc = ce->fnc;    
+#endif					/* ConcurrentCOMPILER */
+
    init_threadstate(curtstate);
    tlschain_add(curtstate, new);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -652,8 +673,10 @@ void *nctramp(void *arg)
    sp = ce->es_sp;
 #endif
 
+#if !COMPILER
    stack = ce->es_stack;
    stackend = ce->es_stackend;
+#endif					/* !COMPILER */
    glbl_argp = ce->es_argp;
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
@@ -702,10 +725,15 @@ void init_threads()
 
    pthread_mutexattr_init(&rmtx_attr);
    pthread_mutexattr_settype(&rmtx_attr,PTHREAD_MUTEX_RECURSIVE);
-
+#if !ConcurrentCOMPILER
    rootpstate.mutexid_stringtotal = MTX_STRINGTOTAL;
    rootpstate.mutexid_blocktotal = MTX_BLOCKTOTAL;
    rootpstate.mutexid_coll = MTX_COLL;
+#else
+   mutexid_stringtotal = MTX_STRINGTOTAL;
+   mutexid_blocktotal = MTX_BLOCKTOTAL;
+   mutexid_coll= MTX_COLL;
+#endif                                 /* ConcurrentCOMPILER */
 
    CV_INIT(&cond_tc, "init_threads()");
 
@@ -1235,7 +1263,8 @@ int action;
   return;
 }
 
-
+#if !ConcurrentCOMPILER
+/* should probably be under some obscure Debug ifdef. */
 void howmanyblock()
 {
   int i=0;
@@ -1272,6 +1301,7 @@ void howmanyblock()
 
   printf(" local block= %d\n", i);
 }
+#endif                                /* ConcurrentCOMPILER */
 
 void tlschain_add(struct threadstate *tstate, struct context *ctx)
 {
@@ -1307,10 +1337,14 @@ void tlschain_remove(struct threadstate *tstate)
    tstate->prev->next = tstate->next;
    if (tstate->next)
       tstate->next->prev = tstate->prev;
-
+#if ConcurrentCOMPILER
+   /* CurrentCOMPILER has tstate but no pstate */
+   curstring->size += tstate->stringtotal;
+   curblock->size += tstate->blocktotal;
+#else					/* ConcurrentCOMPILER */
    rootpstate.stringtotal += tstate->stringtotal;
    rootpstate.blocktotal += tstate->blocktotal;
-
+#endif					/* ConcurrentCOMPILER */
    if (tstate->ctx && tstate->ctx->isProghead) return;
    
    free(tstate);

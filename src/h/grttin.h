@@ -163,24 +163,30 @@
 #enddef
 
 #begdef InterpEVVal(value,event)
+#if !ConcurrentCOMPILER
 #if event
   { ExInterp_sp; RealEVVal(value,event); EntInterp_sp; }
 #endif
+#endif					/* !ConcurrentCOMPILER */
 #enddef
 
 #begdef InterpEVValD(dp,event)
+#if !ConcurrentCOMPILER
 #if event
  { ExInterp_sp; EVValD(dp,event); EntInterp_sp; }
 #endif
+#endif					/* !ConcurrentCOMPILER */
 #enddef
 
 /*
  * Macro for Syntax Monitoring 
  */  
 #begdef InterpEVValS(ipcopnd,event)
+#if !ConcurrentCOMPILER
 #if event
  { ExInterp_sp; EVValS(ipcopnd,event); EntInterp_sp; }
 #endif
+#endif					/* !ConcurrentCOMPILER */
 #enddef
 
 /*
@@ -313,7 +319,7 @@ typedef int OggVorbis_File, vorbis_info;
    typedef int VSESSION, PVSESSION;
 #endif				/* HAVE_VOICE */
 
-#ifdef HAVE_LIBPTHREAD
+#if defined(HAVE_LIBPTHREAD)
       typedef int pthread_t, pthread_attr_t, pthread_cond_t;
       typedef int pthread_rwlock_t, sem_t;
       typedef int pthread_mutex_t, pthread_mutexattr_t;

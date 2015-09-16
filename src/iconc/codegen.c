@@ -248,10 +248,8 @@ void var_dcls()
   #endif					/* HAVE_KEYWORD__THREAD */
      fprintf(codefile, "   init_threads();\n");
      fprintf(codefile, "   global_curtstate = roottstatep = &roottstate;\n");
-     fprintf(codefile, "   curtstate = &roottstate;\n");
-     fprintf(codefile, "   curtstate_ce = curtstate->c;\n");
      fprintf(codefile, "\n");
-#endif						/* Concurrent */
+#endif					/* Concurrent */
 
    /*
     * Produce code to call the routine to initialize the runtime system.
@@ -260,6 +258,12 @@ void var_dcls()
       fprintf(codefile, "   init(*argv, &argc, argv, -1);\n");
    else
       fprintf(codefile, "   init(*argv, &argc, argv, 0);\n");
+
+#ifdef Concurrent
+     fprintf(codefile, "   curtstate = &roottstate;\n");
+     fprintf(codefile, "   curtstate_ce = curtstate->c;\n");
+#endif					/* Concurrent */
+
    fprintf(codefile, "\n");
 
    /*

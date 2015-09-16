@@ -102,7 +102,9 @@ word mstksize = MStackSize;		/* initial size of main stack */
 word stksize = StackSize;		/* co-expression stack size */
 
 #ifndef MultiThread
+#if !ConcurrentCOMPILER
 int k_level = 0;			/* &level */
+#endif                                  /* ConcurrentCOMPILER */
 struct descrip k_main;			/* &main */
 #endif					/* MultiThread */
 
@@ -113,11 +115,11 @@ word qualsize = QualLstSize;		/* size of quallist for fixed regions */
 word memcushion = RegionCushion;	/* memory region cushion factor */
 word memgrowth = RegionGrowth;		/* memory region growth factor */
 
-uword stattotal = 0;			/* cumulative total static allocation */
-#ifndef MultiThread
-uword strtotal = 0;			/* cumulative total string allocation */
+uword stattotal = 0;			/* cumulative total static allocatn. */
+#if !(defined(MultiThread) || ConcurrentCOMPILER)
+uword strtotal = 0;			/* cumulative total string allocatn. */
 uword blktotal = 0;			/* cumulative total block allocation */
-#endif					/* MultiThread */
+#endif					/* !(MultiThread|ConcurrentCOMPILER) */
 
 int dodump;				/* if nonzero, core dump on error */
 int noerrbuf;				/* if nonzero, do not buffer stderr */
@@ -125,7 +127,7 @@ int noerrbuf;				/* if nonzero, do not buffer stderr */
 struct descrip maps2;			/* second cached argument of map */
 struct descrip maps3;			/* third cached argument of map */
 
-#ifndef MultiThread
+#if !(defined(MultiThread) || ConcurrentCOMPILER)
 struct descrip k_current;		/* current expression stack pointer */
 int k_errornumber = 0;			/* &errornumber */
 char *k_errortext = "";			/* &errortext */
@@ -134,7 +136,7 @@ int have_errval = 0;			/* &errorvalue has legal value */
 int t_errornumber = 0;			/* tentative k_errornumber value */
 int t_have_val = 0;			/* tentative have_errval flag */
 struct descrip t_errorvalue;		/* tentative k_errorvalue value */
-#endif					/* MultiThread */
+#endif					/* !(MultiThread|ConcurrentCOMPILER) */
 
 struct b_coexpr *stklist;	/* base of co-expression block list */
 
@@ -145,7 +147,9 @@ struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 struct region rootstring, rootblock;
 
 #ifndef MultiThread
+#if !ConcurrentCOMPILER
 dptr glbl_argp = NULL;		/* argument pointer */
+#endif                                  /* ConcurrentCOMPILER */
 dptr globals, eglobals;			/* pointer to global variables */
 dptr gnames, egnames;			/* pointer to global variable names */
 dptr estatics;				/* pointer to end of static variables */
@@ -153,10 +157,31 @@ dptr estatics;				/* pointer to end of static variables */
 struct region *curstring, *curblock;
 #endif					/* MultiThread */
 
-#if COMPILER
-struct p_frame *pfp = NULL;	/* procedure frame pointer */
+#if defined(MultiThread) || ConcurrentCOMPILER
+struct threadstate *roottstatep; 
 
-int debug_info;				/* flag: is debugging information available */
+#ifdef Concurrent
+     int is_concurrent = 0;
+     struct threadstate *global_curtstate;
+
+#ifdef HAVE_KEYWORD__THREAD
+      #passthru __thread struct threadstate roottstate; 
+      #passthru __thread struct threadstate *curtstate;
+#else					/* HAVE_KEYWORD__THREAD */
+      struct threadstate roottstate;
+#endif					/* HAVE_KEYWORD__THREAD */
+#else					/* Concurrent */
+      struct threadstate roottstate; 
+      struct threadstate *curtstate;
+#endif					/* Concurrent */
+#endif					/* MultiThread || ConcurrentCOMPILER */
+
+#if COMPILER
+#if !ConcurrentCOMPILER
+struct p_frame *pfp = NULL;	/* procedure frame pointer */
+#endif                                  /* ConcurrentCOMPILER */
+
+int debug_info;				/* flag: is debugging info available */
 int err_conv;				/* flag: is error conversion supported */
 int largeints;				/* flag: large integers are supported */
 
@@ -176,27 +201,27 @@ int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
 #ifdef OVLD
  int *OpTab;				/* pointer to op2fieldnum table */
 #endif
+#endif                                  /* COMPILER  */
 
-#ifdef MultiThread
+#if defined(MultiThread) || ConcurrentCOMPILER
+#if ConcurrentCOMPILER
+/*
+ * Globals for ConcurrentCOMPILER
+ */
+struct region *Public_stringregion;
+struct region *Public_blockregion;
+
+word mutexid_stringtotal;
+word mutexid_blocktotal;
+word mutexid_coll;
+#else					/* ConcurrentCOMPILER */
 struct progstate *curpstate;
 struct progstate rootpstate;
+#endif					/* ConcurrentCOMPILER */
 struct threadstate *roottstatep; 
+#endif					/* MultiThread */
 
-#ifdef Concurrent
-     int is_concurrent = 0;
-     struct threadstate *global_curtstate;
-
-#ifdef HAVE_KEYWORD__THREAD
-      #passthru __thread struct threadstate roottstate; 
-      #passthru __thread struct threadstate *curtstate;
-#else					/* HAVE_KEYWORD__THREAD */
-      struct threadstate roottstate;
-#endif					/* HAVE_KEYWORD__THREAD */
-#else					/* Concurrent */
-      struct threadstate roottstate; 
-      struct threadstate *curtstate;
-#endif					/* Concurrent */
-#else					/* MultiThread */
+#ifndef MultiThread
 
 struct b_coexpr *mainhead;		/* &main */
 
@@ -216,7 +241,10 @@ char *bm;				/* bitmap array of valid field bits */
 #endif					/* FieldTableCompression */
 
 dptr fnames, efnames;			/* pointer to field names */
+#if !COMPILER
+/* in generated code */
 dptr statics;				/* pointer to static variables */
+#endif					/* !COMPILER */
 char *strcons;				/* pointer to string constant table */
 struct ipc_fname *filenms, *efilenms;	/* pointer to ipc/file name table */
 struct ipc_line *ilines, *elines;	/* pointer to ipc/line number table */
@@ -238,7 +266,6 @@ extern word set_ser;
 extern word table_ser;
 extern int first_time;
 #endif					/* MultipleRuns */
-#endif					/* COMPILER */
 
 #ifdef NT
     WSADATA wsaData;
@@ -693,10 +720,10 @@ char *argv[];
 
    num_cpu_cores = get_num_cpu_cores();
 
-#if COMPILER
+#if COMPILER && !defined(Concurrent)
    curstring = &rootstring;
    curblock  = &rootblock;
-#else					/* COMPILER */
+#else					/* COMPILER && !Concurrent */
 
 #ifdef MultiThread
    /*
@@ -715,10 +742,13 @@ char *argv[];
    rootpstate.eventval = nulldesc;
    rootpstate.eventsource = nulldesc;
    rootpstate.Kywd_err = zerodesc;
+#endif					/* MultiThread */
 
+#if defined(MultiThread) || ConcurrentCOMPILER
    curtstate = &roottstate;
-
+#ifdef MultiThread
    rootpstate.tstate = curtstate;
+#endif					/* MultiThread */
    roottstatep = curtstate; 
    init_threadstate(curtstate);
 
@@ -726,6 +756,7 @@ char *argv[];
    pthread_setspecific(tstate_key, (void *) curtstate);
 #endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
+#ifdef MultiThread
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;
 
@@ -747,6 +778,9 @@ char *argv[];
    rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
+#endif                                 /* MultiThread */
+#endif					/* COMPILER && !Concurrent */
+
 #ifdef Concurrent
 
    global_curtstate = curtstate;
@@ -763,10 +797,24 @@ char *argv[];
    rootblock.Tnext=NULL;
    rootblock.Tprev=NULL;
 
+#if ConcurrentCOMPILER
+   /*
+    * If this is one-time program initialization and no concurrent threads
+    * are possible, I am not sure how these mutexes can be needed.
+    */
+MUTEX_LOCKID(MTX_PUBLICSTRHEAP);
+MUTEX_LOCKID(MTX_PUBLICBLKHEAP);
+   Public_stringregion = NULL;
+   Public_blockregion = NULL;
+MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
+MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
+#else					/* ConcurrentCOMPILER */
    rootpstate.Public_stringregion = NULL;
    rootpstate.Public_blockregion = NULL;
+#endif					/* ConcurrentCOMPILER */
 #endif					/* Concurrent */
 
+#ifdef MultiThread
 #ifdef Arrays   
    rootpstate.Cprealarray = cprealarray_0;
    rootpstate.Cpintarray = cpintarray_0;
@@ -825,9 +873,11 @@ char *argv[];
    init_sighandlers();
 #endif					/* MultiThread */
 
+#if !COMPILER
    op_tbl = (struct b_proc*)init_op_tbl;
+#endif					/* !COMPILER */
 
-#endif					/* COMPILER */
+#endif					/* COMPILER && !Concurrent */
 
    rootstring.size = MaxStrSpace;
    rootblock.size  = MaxAbrSize;
@@ -1035,8 +1085,10 @@ Deliberate Syntax Error
 					/*  This really is a bug. */
 #ifdef MultiThread
    mainhead->program = &rootpstate;
-   curtstate->c=mainhead;
 #endif					/* MultiThread */
+#if defined(MultiThread) || ConcurrentCOMPILER
+   curtstate->c=mainhead;
+#endif					/* MultiThread || ConcurrentCOMPILER */
 #if COMPILER
    mainhead->file_name = "";
    mainhead->line_num = 0;
@@ -1114,7 +1166,7 @@ Deliberate Syntax Error
       mainhead->cequeue.dword = D_List;
 
       mainhead->handdata = NULL;
-      list_ser=1;
+      list_ser = 1;
 }
 #endif					/* Concurrent */
    

@@ -145,6 +145,8 @@ struct b_coexpr *alccoexp()
     * since a collection, attempt to free some co-expression blocks.
     */
 
+   CURTSTATE();
+
    MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 
    if (alcnum > AlcMax) DO_COLLECT(Static);
@@ -169,6 +171,7 @@ struct b_coexpr *alccoexp()
 
    ep->title = T_Coexpr;
    ep->size = 0;
+   ep->es_actstk = NULL;
    MUTEX_LOCKID(MTX_COEXP_SER);
    ep->id = coexp_ser++;
    MUTEX_UNLOCKID(MTX_COEXP_SER);
@@ -177,6 +180,90 @@ struct b_coexpr *alccoexp()
    ep->line_num = 0;
    ep->freshblk = nulldesc;
    ep->es_actstk = NULL;
+
+   /* need to look at concurrent initialization for COMPILER and !COMPILER
+    * cases and see if we should make a common function that can serve both.
+    */
+#ifdef Concurrent
+   ep->inbox = nulldesc;
+   ep->outbox = nulldesc;
+   ep->cequeue = nulldesc;
+   ep->handdata = NULL;
+{
+   struct b_list *hp;
+   ep->status = Ts_Sync;
+	 
+  /*
+   * Initialize sender/receiver queues.
+   *
+   * Make sure we have enough memory for all queues all at once to avoid 
+   * multiple GC if we are at the end of a region.
+   */
+
+   if (!reserve(Blocks, (word)(
+		sizeof(struct b_list) * 3 + 
+		sizeof(struct b_lelem) * 3 +
+		(1024+1024+64) * sizeof(struct descrip)))
+		)
+       		ReturnErrNum(307, NULL);
+
+   if((hp = alclist(0, 1024))==NULL)
+      ReturnErrNum(307, NULL);
+
+   MUTEX_INITBLK(hp);
+   BlkLoc(ep->outbox) = (union block *) hp;
+   ep->outbox.dword = D_List;
+   hp->max = 1024;
+   CV_INITBLK(hp);
+
+   if((hp = alclist(0, 1024))==NULL)
+      ReturnErrNum(307, NULL);
+
+   MUTEX_INITBLK(hp);
+   BlkLoc(ep->inbox) = (union block *) hp;
+   ep->inbox.dword = D_List;
+   hp->max = 1024;
+   CV_INITBLK(hp);
+
+   if((hp = alclist(0, 64))==NULL)
+      ReturnErrNum(307, NULL);
+
+   MUTEX_INITBLK(hp);
+   BlkLoc(ep->cequeue) = (union block *) hp;
+   ep->cequeue.dword = D_List;
+   hp->max = 64;
+   CV_INITBLK(hp);
+
+   ep->handdata = NULL;     
+
+   ep->ini_blksize = rootblock.size/100;
+   if (ep->ini_blksize < MinAbrSize)
+      ep->ini_blksize = MinAbrSize;
+
+   INIT_SHARED(ep);			    
+
+   ep->ini_ssize = rootstring.size/100;
+   if (ep->ini_ssize < MinStrSpace)
+      ep->ini_ssize = MinStrSpace;
+}
+#endif             /* Concurrent */
+
+   ep->es_tend = NULL;	
+
+#ifdef PthreadCoswitch
+{
+   cstate ncs = (cstate) (ep->cstate);
+   context *ctx;
+   ctx = ncs[1] = alloc(sizeof (struct context));
+   makesem(ctx);
+   ctx->c = ep;
+   ctx->tmplevel = 0;
+   ctx->have_thread = 0;
+   ctx->alive = 0;
+
+}
+#endif					/* PthreadCoswitch */
+
    MUTEX_LOCKID(MTX_STKLIST);
    ep->nextstk = stklist;
    stklist = ep;

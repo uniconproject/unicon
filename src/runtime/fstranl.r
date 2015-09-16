@@ -91,8 +91,7 @@ end
 
 function{*} bal(c1,c2,c3,s,i,j)
    str_anal( s, i, j )
-   if is:null(c1) then inline { Kcset(&c1); }
-   else if !cnv:tmp_cset(c1) then
+   if !def:tmp_cset(c1,fullcs) then
       runerr(104,c1)
    if !def:tmp_cset(c2,lparcs) then
       runerr(104,c2)

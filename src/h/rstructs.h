@@ -453,6 +453,9 @@ struct threadstate {
   struct b_coexpr *c;
   struct context *ctx;         /* the corresponding context for ce/tstate*/
 
+#if ConcurrentCOMPILER
+  continuation Coexpr_fnc;     /* function containing co-expression code */
+#endif					/* ConcurrentCOMPILER */
    
 #ifdef Concurrent
    pthread_t tid;
@@ -491,7 +494,6 @@ struct threadstate {
 /* inst Oldipc;                  * the previous ipc, fix returned line zero */
 /* word *Sp;		* Stack pointer */
 /* int Ilevel;			* Depth of recursion in interp() */
-
    word *Stack;				/* Interpreter stack */
    word *Stackend; 			/* End of interpreter stack */
 #endif					/* !COMPILER */
@@ -810,9 +812,7 @@ struct b_iproc {		/* procedure block */
    struct sdescrip ip_pname;	/*   procedure name (string qualifier) */
    struct descrip ip_lnames[1];	/*   list of local names (qualifiers) */
    };
-
 #endif					/* COMPILER */
-
 
 struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
@@ -880,7 +880,7 @@ struct b_refresh {		/* co-expression refresh block */
 #else					/* COMPILER */
    word *ep;			/*   entry point */
    struct pf_marker pfmkr;	/*   marker for enclosing procedure */
-#endif
+#endif					/* COMPILER */
    struct descrip elems[1];	/*   args and locals (VM: including Arg0) */
    };
 

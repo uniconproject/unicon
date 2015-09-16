@@ -26,7 +26,10 @@ static void mvc		(uword n, char *src, char *dest);
 
 #ifdef MultiThread
 static void markprogram	(struct progstate *pstate);
-#endif					/*MultiThread*/
+#endif					/* MultiThread */
+#ifdef Concurrent
+static void markthreads();
+#endif					/* Concurrent */
 
 /*
  * Variables
@@ -46,6 +49,14 @@ dptr *equallist;                /* end of qualifier list */
 
 int qualfail;                   /* flag: qualifier list overflow */
 
+/*
+ * A garbage-collection-specific macro. Should it move to rmacros.h anyhow?
+ */
+#define PostDescrip(d) \
+   if (Qual(d)) \
+      postqual(&(d)); \
+   else if (Pointer(d))\
+      markblock(&(d));
 
 /*
  * Allocated block size table (sizes given in bytes).  A size of -1 is used
@@ -376,13 +387,15 @@ word codesize;
 #else					/* MultiThread */
    {
    uword t1, t2;
+#if ConcurrentCOMPILER
+   CURTSTATE();
+#endif                                  /* ConcurrentCOMPILER */
    t1 = ssize;
    t2 = abrsize;
    curstring = (struct region *)malloc(sizeof(struct region));
    curblock = (struct region *)malloc(sizeof(struct region));
    curstring->size = t1;
    curblock->size = t2;
-   }
    curstring->next = curstring->prev = NULL;
    curstring->Gnext = curstring->Gprev = NULL;
    curblock->next = curblock->prev = NULL;
@@ -396,6 +409,7 @@ word codesize;
    if ((quallist = (dptr *)malloc(qualsize)) == NULL)
       error(NULL, "insufficient memory for qualifier list");
    equallist = (dptr *)((char *)quallist + qualsize);
+   }
 #endif					/* MultiThread */
    }
 
@@ -551,6 +565,10 @@ int region;
     */
 #ifdef MultiThread
    markprogram(&rootpstate);
+#else
+#if ConcurrentCOMPILER
+   markthreads();
+#endif	                                /* ConcurrentCOMPILER */
 #endif					/* MultiThread */
    markblock(&k_main);
    markblock(&k_current);
@@ -560,8 +578,10 @@ int region;
     * Mark &subject and the cached s2 and s3 strings for map.
     */
 #ifndef MultiThread
+#if !ConcurrentCOMPILER
    postqual(&k_subject);
    postqual(&kywd_prog);
+#endif					/* ConcurrentCOMPILER */
 #endif					/* MultiThread */
    if (Qual(maps2))                     /*  caution: the cached arguments of */
       postqual(&maps2);                 /*  map may not be strings. */
@@ -663,17 +683,7 @@ int region;
    return 1;
    }
 
-/*
- * markprogram - traverse pointers out of a program state structure
- */
-
-#ifdef MultiThread
-#define PostDescrip(d) \
-   if (Qual(d)) \
-      postqual(&(d)); \
-   else if (Pointer(d))\
-      markblock(&(d));
-
+#if defined(MultiThread) || ConcurrentCOMPILER
 /*
  * use  threadstate in order to sync VM registers
  */
@@ -683,9 +693,11 @@ static void markthread(struct threadstate *tcp)
     * marking.
     */
 
+#if !ConcurrentCOMPILER
    if(!is:null(tcp->Value_tmp)) {
       PostDescrip(tcp->Value_tmp);
       }
+#endif					/* ConcurrentCOMPILER */
    if(!is:null(tcp->Kywd_pos)) {
       PostDescrip(tcp->Kywd_pos);
       }
@@ -713,6 +725,28 @@ static void markthread(struct threadstate *tcp)
    /* ??? */
 }
 
+#if Concurrent
+/*
+ * Mark all the threads, because hey, they are live even if we don't
+ * reach them. Skips the first thread, the one pointed at by
+ * rootpstatep. Perhaps that is implicit/assumed covered by marking
+ * co-expression &main.
+ */
+static void markthreads()
+{
+   struct threadstate *t;
+   for (t = roottstatep->next; t != NULL; t = t->next)
+      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async )){
+	 markthread(t);
+	 }
+}
+#endif					/* Concurrent */
+#endif					/* MultiThread || ConcurrentCOMPILER */
+
+#ifdef MultiThread
+/*
+ * markprogram - traverse pointers out of a program state structure
+ */
 static void markprogram(pstate)
 struct progstate *pstate;
    {
@@ -723,15 +757,12 @@ struct progstate *pstate;
     * This replaces some of the former programstate marking below
     */
 #ifdef Concurrent
-   struct threadstate *t;
-   for (t = roottstatep->next; t != NULL; t = t->next)
-      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async ))
-         markthread(t);
+   markthreads();
 #else					/* Concurrent */
    markthread(pstate->tstate);
 #endif					/* Concurrent */
    
-PostDescrip(pstate->K_main);
+   PostDescrip(pstate->K_main);
 
    PostDescrip(pstate->parentdesc);
    PostDescrip(pstate->eventmask);

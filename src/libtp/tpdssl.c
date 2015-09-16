@@ -178,7 +178,50 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    return bio;
 }
 
-int pathFind(char *, char *, int);
+#include <sys/stat.h>
+/*
+ * Adapted from pathFind. Looks on the real path to find an executable.
+ * Simplified and avoids circular library dependency for iconc's sake.
+ */
+static int sslpathFind(char target[], char buf[], int n)
+   {
+   char *path;
+   register int i;
+   int res = 1;
+   struct stat sbuf;
+
+   if ((path = getenv("PATH")) == 0)
+      path = "";
+
+   while(res && *path) {
+#if UNIX
+      for (i = 0; *path && *path != ':' && *path != ';' ; ++i)
+#else
+      for (i = 0; *path && *path != ';' ; ++i)
+#endif
+         buf[i] = *path++;
+      if (*path)			/* skip the ; or : separator */
+         ++path;
+      if (i == 0)			/* skip empty fragments in PATH */
+         continue;
+#if UNIX
+      if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\' && buf[i-1] != ':')
+            buf[i++] = '/';
+#else					/* UNIX */
+      if (i > 0 && buf[i-1] != '/' && buf[i-1] != '\\')
+            buf[i++] = '\\';
+#endif					/* UNIX */
+      strcpy(buf + i, target);
+      res = stat(buf, &sbuf);
+      /* exclude directories (and any other nasties) from selection */
+      if (res == 0 && sbuf.st_mode & S_IFDIR)
+         res = -1;
+      }
+   if (res != 0)
+      *buf = 0;
+   return res == 0;
+   }
+
 /*
  * upgrade to use environment variable?  or something in discipline?
  */
@@ -201,7 +244,7 @@ char *get_storepath(Tpdisc_t *tpdisc, char *store_typep)
       }
 
    /* if openssl command line client is available, use its output */
-   if (pathFind("openssl", path_to_ssl, 1024) == 1) {
+   if (sslpathFind("openssl", path_to_ssl, 1024) == 1) {
       FILE *f;
       f = popen("openssl version -a | grep OPENSSLDIR", "r");
       fgets(path_to_ssl, 1023, f);

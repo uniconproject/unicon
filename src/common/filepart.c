@@ -453,7 +453,8 @@ int pathFind(char target[], char buf[], int n)
    int res;
    struct stat sbuf;
 
-   if ((target[0] == '/') || (target[0] == '\\') || (target[1]==':' && target[2]=='\\')) {
+   if ((target[0] == '/') || (target[0] == '\\') ||
+       (target[1]==':' && target[2]=='\\')) {
       if ((res = stat(target, &sbuf)) == 0) {
 	 strcpy(buf, target);
 	 return 1;

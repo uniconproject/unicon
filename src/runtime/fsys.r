@@ -201,7 +201,12 @@ function{} exit(status)
     * coclean calls pthread_exit() in case of Async threads.
     */
    if ( status==10101 ){
+#if !ConcurrentCOMPILER
+     /* ConcurrentCOMPILER generates curtstates for us, and rtt
+      * does not preserve the { } that would allow redundancy.
+      */
      CURTSTATE();
+#endif					/* !ConcurrentCOMPILER */
      #ifdef CoClean
      coclean(BlkD(k_current, Coexpr)->cstate);
      #endif				/* CoClean */

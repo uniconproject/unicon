@@ -86,7 +86,13 @@ extern struct threadstate *global_curtstate;
 #endif
 
 #if ConcurrentCOMPILER
-extern int list_ser;
+extern struct region *Public_stringregion;
+extern struct region *Public_blockregion;
+
+extern word mutexid_stringtotal;
+extern word mutexid_blocktotal;
+extern word mutexid_coll;
+extern word list_ser;
 /*
  * Fake out a possible fail, to trick iconc.
  */
@@ -135,37 +141,37 @@ extern struct b_real realzero;		/* real zero block */
  * Externals conditional on multithreading.
  */
 #ifndef MultiThread
-   extern dptr glbl_argp;		/* argument pointer */
-   extern struct descrip value_tmp;	/* list argument to Op_Apply */
    extern struct region *curstring;
    extern struct region *curblock;
-
+#if !ConcurrentCOMPILER
+   extern dptr glbl_argp;		/* argument pointer */
+   extern struct descrip value_tmp;	/* list argument to Op_Apply */
    extern struct descrip k_current;	/* &current */
    extern char *k_errortext;		/* value of &errortext */
    extern int have_errval;		/* &errorvalue has a legal value */
    extern int k_errornumber;		/* value of &errornumber */
    extern int t_errornumber;		/* tentative k_errornumber value */
    extern int t_have_val;		/* tentative have_errval flag */
+   extern struct descrip k_errorvalue;	/* value of &errorvalue */
+   extern int k_level;			/* &level */
+   extern struct descrip k_subject;	/* &subject */
+   extern struct descrip kywd_pos;	/* descriptor for &pos */
+   extern struct descrip kywd_ran;	/* descriptor for &random */
+   extern struct descrip t_errorvalue;	/* tentative k_errorvalue value */
+
+   extern uword blktotal;		/* cumul total of all block allocs */
+   extern uword strtotal;		/* cumul total of all string allocs */
+#endif					/* ConcurrentCOMPILER */
    extern struct b_file k_errout;	/* value of &errout */
    extern struct b_file k_input;	/* value of &input */
    extern struct b_file k_output;	/* value of &output */
-   extern struct descrip k_errorvalue;	/* value of &errorvalue */
    extern struct descrip kywd_err;	/* &error */
-   extern int k_level;			/* &level */
-   extern struct descrip kywd_pos;	/* descriptor for &pos */
    extern struct descrip kywd_prog;	/* descriptor for &prog */
-   extern struct descrip kywd_ran;	/* descriptor for &random */
-   extern struct descrip k_subject;	/* &subject */
    extern struct descrip kywd_trc;	/* descriptor for &trace */
    extern struct descrip k_eventcode;	/* &eventcode */
    extern struct descrip k_eventsource;	/* &eventsource */
    extern struct descrip k_eventvalue;	/* &eventvalue */
    extern struct descrip k_main;	/* value of &main */
-
-   extern struct descrip t_errorvalue;	/* tentative k_errorvalue value */
-
-   extern uword blktotal;		/* cumul total of all block allocs */
-   extern uword strtotal;		/* cumul total of all string allocs */
 
    extern word coll_tot;		/* total number of collections */
    extern word coll_stat;		/* collections from static reqests */
@@ -189,42 +195,9 @@ extern struct descrip amperErrno;
 #endif					/* PosixFns */
 #endif					/* MultiThread */
 
-/*
- * Externals that differ between compiler and interpreter.
- */
-#if !COMPILER
-   /*
-    * External declarations for the interpreter.
-    */
-
-#ifndef Concurrent
-   extern struct pf_marker *pfp;	        /* Procedure frame pointer */
-   extern struct ef_marker *efp;		/* Expression frame pointer */
-   extern struct gf_marker *gfp;		/* Generator frame pointer */
-   extern inst ipc;			/* Interpreter program counter */
-   extern inst oldipc;                    /* the previous ipc, fix returned line zero */
-   extern word *sp;		/* Stack pointer */
-   extern int ilevel;	
-   extern word *stack;			/* interpreter stack base */
-   extern word *stackend;		/* end of evaluation stack */
-#endif					/* Concurrent */
-   
-   extern struct pstrnm pntab[];
-   extern int pnsize;
-   
-/*probably Thread Safe*/
-   #ifdef ExecImages
-      extern int dumped;		/* the interpreter has been dumped */
-   #endif				/* ExecImages */
-
-   #ifdef MultiThread
-   #ifdef LOCALPROGSTATE
-      extern struct progstate *mainpstate;
-   #else					/* LOCALPROGSTATE */
-      extern struct progstate *curpstate;
-   #endif					/* LOCALPROGSTATE */
-      extern struct progstate rootpstate;
+#if defined(MultiThread) || defined(Concurrent)
       extern struct threadstate *roottstatep; 
+#endif					/* MultiThread || Concurrent */
    #ifdef Concurrent
       #ifdef HAVE_KEYWORD__THREAD
       /*
@@ -239,6 +212,49 @@ extern struct descrip amperErrno;
       extern struct threadstate roottstate; 
       extern struct threadstate *curtstate;
    #endif					/* Concurrent */
+
+/*
+ * Externals that differ between compiler and interpreter.
+ */
+#if !COMPILER
+   /*
+    * External declarations for the interpreter.
+    */
+#ifndef Concurrent
+   extern struct pf_marker *pfp;	        /* Procedure frame pointer */
+   extern struct ef_marker *efp;		/* Expression frame pointer */
+   extern struct gf_marker *gfp;		/* Generator frame pointer */
+   extern inst ipc;			/* Interpreter program counter */
+   extern inst oldipc;                    /* the previous ipc, fix returned line zero */
+   extern word *sp;		/* Stack pointer */
+   extern int ilevel;	
+   extern word *stack;			/* interpreter stack base */
+   extern word *stackend;		/* end of evaluation stack */
+#endif					/* !Concurrent */
+#endif					/* !COMPILER */
+
+#if !COMPILER || ConcurrentCOMPILER
+   extern struct pstrnm pntab[];
+   extern int pnsize;
+   
+/*probably Thread Safe*/
+   #ifdef ExecImages
+      extern int dumped;		/* the interpreter has been dumped */
+   #endif				/* ExecImages */
+#endif					/* !COMPILER || ConcurrentCOMPILER */
+
+   #if defined(MultiThread)
+   #ifdef LOCALPROGSTATE
+      extern struct progstate *mainpstate;
+   #else					/* LOCALPROGSTATE */
+      extern struct progstate *curpstate;
+   #endif					/* LOCALPROGSTATE */
+      extern struct progstate rootpstate;
+   #endif					/* MultiThread */
+
+
+#if !COMPILER
+   #ifdef MultiThread
       extern int noMTevents;		/* no MT events during GC */
    #ifdef Concurrent
       extern pthread_mutex_t mutex_noMTevents;
@@ -267,12 +283,17 @@ extern struct descrip amperErrno;
 
       extern struct b_proc *stubrec;
    
-#else					/* COMPILER */
+#else					/* !COMPILER */
 
+#if ConcurrentCOMPILER
+   extern pthread_mutex_t mutex_noMTevents;
+#endif                                  /* ConcurrentCOMPILER */
    extern struct descrip statics[];	/* array of static variables */
    extern struct b_proc *builtins[];	/* pointers to builtin functions */
    extern int noerrbuf;			/* error buffering */
+#if !ConcurrentCOMPILER
    extern struct p_frame *pfp;		/* procedure frame pointer */
+#endif					/* ConcurrentCOMPILER */
    extern struct descrip trashcan;	/* dummy descriptor, never read */
    extern int largeints;		/* flag: large integers supported */
 

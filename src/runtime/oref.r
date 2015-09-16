@@ -131,6 +131,9 @@ operator{*} ! bang(underef x -> dx)
 #ifdef Dbm
 	    datum key;
 #endif					/* Dbm */
+#if ConcurrentCOMPILER && defined(Graphics)
+	    CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
 
             /*
              * x is a file.  Read the next line into the string space
@@ -197,7 +200,7 @@ operator{*} ! bang(underef x -> dx)
 		     }
 		  }
 	       }
-#endif                                  /* Messaging */
+#endif					/* Messaging */
 
 #ifdef Dbm
 	    if (status & Fs_Dbm) {
@@ -252,7 +255,7 @@ operator{*} ! bang(underef x -> dx)
 		  }
 		  else
 #endif					/* !NT */
-#endif                                  /* ReadDirectory */
+#endif					/* ReadDirectory */
 
 #ifdef Dbm
 		  if (status & Fs_Dbm) {
@@ -280,7 +283,7 @@ operator{*} ! bang(underef x -> dx)
 			getstrg(sbuf, MaxCvtLen, BlkD(dx,File)))) == -1)
 #else					/* RecordIO */
                   if ((slen = getstrg(sbuf,MaxCvtLen,BlkD(dx,File))) == -1)
-#endif                                  /* RecordIO */
+#endif					/* RecordIO */
 
                      fail;
                   rlen = slen < 0 ? (word)MaxCvtLen : slen;
@@ -288,7 +291,7 @@ operator{*} ! bang(underef x -> dx)
 		  Protect(reserve(Strings, rlen), runerr(0));
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 		  if (!InRange(strbase,StrLoc(result),strfree)) {
 		     Protect(reserve(Strings, StrLen(result)+rlen), runerr(0));
 		     Protect((StrLoc(result) = alcstr(StrLoc(result),
@@ -415,7 +418,7 @@ operator{0,1} ? random(underef x -> dx)
          double rval;
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
          /*
           * A string from a variable is being banged. Produce a one
@@ -443,7 +446,7 @@ operator{0,1} ? random(underef x -> dx)
             double rval;
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
             if ((val = StrLen(dx)) <= 0)
                fail;
@@ -470,7 +473,7 @@ operator{0,1} ? random(underef x -> dx)
 	    char ch;
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
             if ((val = StrLen(dx)) <= 0)
                fail;
@@ -496,7 +499,7 @@ operator{0,1} ? random(underef x -> dx)
             union block *bp;     /* doesn't need to be tended */
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
             val = BlkD(dx,List)->size;
             if (val <= 0)
                fail;
@@ -560,7 +563,7 @@ operator{0,1} ? random(underef x -> dx)
 	    struct b_tvtbl *tp;
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
             bp = BlkLoc(dx);
             val = Blk(bp,Table)->size;
@@ -606,7 +609,7 @@ operator{0,1} ? random(underef x -> dx)
 	    struct b_slots *seg;
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
             bp = BlkLoc(dx);
             val = Blk(bp,Set)->size;
@@ -646,7 +649,7 @@ operator{0,1} ? random(underef x -> dx)
             struct b_record *rec;  /* doesn't need to be tended */
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
             rec = BlkD(dx, Record);
             val = Blk(rec->recdesc,Proc)->nfields;
@@ -692,7 +695,7 @@ operator{0,1} ? random(underef x -> dx)
 #endif					/* LargeInts */
 #if ConcurrentCOMPILER
 	    CURTSTATE();
-#endif                                  /* ConcurrentCOMPILER */
+#endif					/* ConcurrentCOMPILER */
 
             /*
              * x is an integer, be sure that it's non-negative.
@@ -941,7 +944,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  }
 	       }
 	    else
-#endif                                  /* Messaging */
+#endif					/* Messaging */
 	       runerr(114,dx);
 	    }
 	 }

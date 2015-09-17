@@ -730,6 +730,16 @@ procedure unicon(argv)
 
       if rv ~=== 0 then
          errors +:= 1
+
+      if errors = 0 & \exec then {
+	 if cmd := \exename then {
+	    if match("-o ", cmd) then cmd[1:4] := ""
+	    if not (any('/\\', cmd) | (cmd[any(&letters,cmd)]==":")) then
+	       cmd := "./" || cmd
+	    every cmd ||:= " " || argv[exec+1 to *argv]
+	    system(cmd)
+	    }
+	 }
       }
    else
 

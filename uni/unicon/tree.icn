@@ -1104,10 +1104,18 @@ procedure regexp(n)
 				      "\"||Arbno(\"" || n.children[1].s[-1]||
 				      "\"))"
 			      }
+			   else return "(Arbno(\"" || n.children[1].s|| "\"))"
 			   }
-			STRINGLIT: {
+			STRINGLIT: return "(Arbno(" || n.children[1].s|| "))"
+			default: {
+			   write("system error in regex, * operand ",
+				 (image(n.children[1].tok)|"no tok"))
 			   }
 			}
+		     }
+		  default: {
+		     write("system error in regex, * operand type ",
+			   (type(n.children[1])|"no child"))
 		     }
 		  }
 	       }

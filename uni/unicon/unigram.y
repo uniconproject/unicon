@@ -670,7 +670,7 @@ expr10	: expr11 ;
 	| PSETCUR expr10 { $$ := node("upsetcur", $1,$2);} ;
 
 expr11	: literal ;
-	| NMLT regex NMGT { $$ := node("regex", $2); }
+	| NMLT { next_gt_is_ender := 1 } regex NMGT { $$ := node("regex", $3); }
 	| section ;
 	| return ;
 	| if ;
@@ -803,32 +803,49 @@ literal	: INTLIT ;
 	| STRINGLIT ;
 	| CSETLIT ;
 
-regex: neregex { $$ := regexp($1); next_gt_is_ender := 1 }
-	|  { $$ := "emptyregex"; next_gt_is_ender := 1 }
+regex: neregex { $$ := regexp($1) }
+	|  { $$ := "emptyregex" }
 	;
 
 /* nonempty regexp */
 neregex: neregex2
 	| neregex2 neregex { $$ := node("regexconcat", $1, $2) }
-	| neregex2 BAR neregex { $$ := node("regexbar", $1, $2, $3); write("holy mackerel, we have a regex OR") }
+	| neregex2 BAR neregex { $$ := node("regexbar", $1, $2, $3) }
 	;
 
 neregex2: neregex3 ;
-	| neregex2 STAR { $$ := node("kleene", $1, $2); write("holy mackerel, we have a regex star") }
-	| neregex2 PLUS { $$ := node("oneormore", $1, $2); write("holy mackerel, we have a regex plus") }
+	| neregex2 STAR { $$ := node("kleene", $1, $2) }
+	| neregex2 PLUS { $$ := node("oneormore", $1, $2) }
 	| neregex2 QMARK { $$ := node("optional", $1, $2) }
+	| neregex2 LBRACE INTLIT RBRACE {
+	   if $3.s < 0 then {
+	      yyerror("regex occurrences may not be negative")
+	      $$ := node("error")
+	      }
+	   else if $3.s = 0 then {
+	      yyerror("regex occurrences may not be zero yet")
+	      $$ := node("error")
+	      }
+	   else if $3.s = 1 then $$ := $1
+	   else { # normal case, positive number of repeats of $1
+	      $$ := $1
+	      every i := 2 to $3.s do {
+	         $$ := node("regexconcat", $$, $1)
+	         }
+	      }
+	   }
 	;
 
-neregex3:  IDENT { next_gt_is_ender := 1 }
-	| INTLIT { write("holy mackerel, we have a regex intlit") }
-	| REALLIT { write("holy mackerel, we have a regex reallit") }
-	| STRINGLIT { write("holy mackerel, we have a regex stringlit") }
-	| CSETLIT { write("holy mackerel, we have a regex csetlit") }
-	| DOT { write("holy mackerel, we have a regex dot") }
+neregex3:  IDENT
+	| INTLIT
+	| REALLIT
+	| STRINGLIT
+	| CSETLIT
+	| DOT
 	| LPAREN regex RPAREN { $$ := node("Paren",$1,$2,$3); }
 	| LBRACK brackchars RBRACK { $$ := node("acset", $1, $2, $3) }
-	| LBRACK CARET brackchars RBRACK { $$ := node("notany", $1, $2, $3, $4); write("holy mackerel, we have a regex NotAny") }
-	| BACKSLASH neregex { $$ := node("escape", $1, $2); write("holy mackerel, we have a regex backslash") }
+	| LBRACK CARET brackchars RBRACK { $$ := node("notany", $1, $2, $3, $4) }
+	| BACKSLASH neregex { $$ := node("escape", $1, $2) }
 	;
 
 brackchars: brackchars2

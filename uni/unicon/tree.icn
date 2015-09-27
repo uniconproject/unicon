@@ -138,6 +138,14 @@ $endif					#PatternIntegration
    return
 end
 
+procedure emit_line_directive_if_needed(node)
+   if (outfilename ~== node.filename)|(outline ~= node.line) then {
+      write(yyout,"\n#line ", node.line-1," \"", node.filename,"\"")
+      outline := node.line
+      outcol := 1
+      outfilename := node.filename
+      }
+end
 
 # the unevaluated expressions in pattern matching has the following major cases
 # 1. local/global variable ( indicated by absence of . and ( )
@@ -149,6 +157,7 @@ end
 # will add error checking later
 
 procedure process_uneval(node)
+   emit_line_directive_if_needed(node)
    case type(node.s) of {
       "string":	{
 	 write(node.s)
@@ -1113,6 +1122,18 @@ procedure regexp(n)
 			   }
 			}
 		     }
+		  "treenode": {
+		     case n.children[1].label of {
+			"acset": {
+			   return "(Arbno(\'" || csetify(n.children[1]) || "\'))"
+			   }
+			default: {
+			   write("* operand label is ", n.children[1].label)
+			   }
+			}
+		     stop("regex, * operand type ",
+			   (type(n.children[1])|"no child"))
+		     }
 		  default: {
 		     write("system error in regex, * operand type ",
 			   (type(n.children[1])|"no child"))
@@ -1131,8 +1152,15 @@ procedure regexp(n)
 			      }
 			   }
 			STRINGLIT: {
+			   stop("need to implement 1-or-more on string literal")
 			   }
 			}
+		     }
+		  default: {
+		     nclone := copy(n)
+		     nclone.label := "kleene"
+		     return node("concat", "((", regexp(n.children[1]),")||(",
+				 regexp(nclone), "))")
 		     }
 		  }
 	       }
@@ -1149,6 +1177,8 @@ procedure regexp(n)
 			      }
 			   }
 			STRINGLIT: {
+			   return "(pattern_alternate(" ||
+			      n.children[1].s || ",\"\"))"
 			   }
 			}
 		     }
@@ -1191,6 +1221,13 @@ procedure csetify(n)
 	    IDENT: {
 	       return cset(n.s)
 	       }
+	    INTLIT: {
+	       return cset(n.s)
+	       }
+	    default: {
+	       runerr("csetify", n.tok)
+	       stop("csetify ", image(n.tok))
+	       }
 	    }
 	 }
       stop("csetify ", type(n),"?")
@@ -1206,16 +1243,22 @@ procedure csetify(n)
 	  n := n.children[3]
 	  }
        default: {
-	  # write("csetify ", image(n.label), " kids ", *n.children)
+	  stop("csetify ", image(n.label), " kids ", *n.children)
 	  }
        }
    if type(n) == "treenode" & n.label == "brackchars" then {
-      # only way you get this node is you are a range
-      cs := csetify(n.children[1]) ++ csetify(n.children[3]) ++
-	 csetrange(lastofcset(n.children[1]), firstofcset(n.children[3]))
+      # only way you get this node is you are a range. What about two ranges?
+      cs1 := csetify(n.children[1]) | stop("can't csetify ",image(n.children[1]))
+      cs2 := csetify(n.children[3]) | stop("can't csetify ",image(n.children[3]))
+      lo1 := lastofcset(n.children[1]) |
+	 stop("can't lastofcset ", image(n.children[1]))
+      fo2 := firstofcset(n.children[3]) |
+	 stop("can't firstofcset ", image(n.children[3]))
+      csr := csetrange(lo1, fo2) |
+	 stop("can't csetrange ", image(lo1), " and ", image(fo2))
+      cs := cs1 ++ cs2 ++ csr
       return cs
       }
-
    return n
 end
 
@@ -1230,8 +1273,12 @@ end
 
 procedure firstofcset(c)
    if type(c) == "token" & c.tok = IDENT then return c.s[1]
+   if type(c) == "token" & c.tok = INTLIT then return c.s[1]
+   if type(c) == "treenode" then return firstofcset(c.children[1])
 end
 
 procedure lastofcset(c)
    if type(c) == "token" & c.tok = IDENT then return c.s[-1]
+   if type(c) == "token" & c.tok = INTLIT then return c.s[-1]
+   if type(c) == "treenode" then return lastofcset(c.children[-1])
 end

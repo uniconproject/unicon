@@ -698,6 +698,10 @@ Deliberate Syntax Error
    #define DescriptorDouble 1
 #endif					/* DescriptorDouble */
 
+#ifndef NoPatternType
+   #define PatternType 1
+#endif
+
 #ifndef ExecSuffix
    #define ExecSuffix ""
 #endif					/* ExecSuffix */

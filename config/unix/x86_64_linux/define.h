@@ -26,6 +26,4 @@
  * you might need to
  * #define PTHREAD_MUTEX_RECURSIVE PTHREAD_MUTEX_RECURSIVE_NP
  * as well.
- * #define PatternType 1
- * here to enable (experimental) SNOBOL-style pattern type.
  */

@@ -331,15 +331,15 @@ uword segsize[] = {
 #if COMPILER
 void initalloc()
    {
-
+#ifdef Concurrent
+   CURTSTATE_ONLY();
+#endif					/* Concurrent */
 #else					/* COMPILER */
 #ifdef MultiThread
-void initalloc(codesize,p)
-struct progstate *p;
+void initalloc(word codesize, struct progstate *p)
 #else					/* MultiThread */
-void initalloc(codesize)
+void initalloc(word codesize)
 #endif					/* MultiThread */
-word codesize;
    {
 #ifdef MultiThread
    struct region *ps, *pb;

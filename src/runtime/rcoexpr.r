@@ -747,7 +747,8 @@ void init_threads()
    sprintf(name, "gc%ld.sem", (long)getpid());
    sem_tcp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 1);
    if (sem_tcp == (sem_t *)SEM_FAILED)
-      handle_thread_error(errno, FUNC_SEM_OPEN, "thread_init():cannot create GC semaphore");
+      handle_thread_error(errno, FUNC_SEM_OPEN,
+			  "thread_init():cannot create GC semaphore");
 
    /* There's not much we can do if sem_unlink fails, so ignore return value */
    (void) sem_unlink(name);
@@ -755,7 +756,8 @@ void init_threads()
 #else
    sem_tcp = &sem_tc; 
    if (0 != sem_init(sem_tcp, 0, 1))
-   	  handle_thread_error(errno, FUNC_SEM_INIT, "thread_init():cannot init GC semaphore");
+      handle_thread_error(errno, FUNC_SEM_INIT,
+			  "thread_init():cannot init GC semaphore");
 #endif /* NamedSemaphores */
 
    maxmutexes = 1024;
@@ -764,11 +766,10 @@ void init_threads()
 
    ncondvars = 0;
    maxcondvars = 10*1024;
-   condvars=malloc(maxcondvars * sizeof(pthread_cond_t *));
-   condvarsmtxs=malloc(maxcondvars * WordSize);
+   condvars = malloc(maxcondvars * sizeof(pthread_cond_t *));
+   condvarsmtxs = malloc(maxcondvars * WordSize);
    if (condvars==NULL || condvarsmtxs==NULL)
-	     syserr("init_threads(): out of memory for condition variables!");
-
+      syserr("init_threads(): out of memory for condition variables!");
 
    nmutexes = NUM_STATIC_MUTEXES;
 

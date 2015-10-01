@@ -275,7 +275,7 @@ struct b_file *fbp;
 #endif					/* PosixFns */
 
 	 if (l > 0) {
-#ifdef PosixFns
+#if defined(PosixFns) && !defined(Concurrent)
 	    /* Clear the saved chars buffer */
 	    nsaved = 0;
 #endif					/* PosixFns */

@@ -17,10 +17,10 @@ procedure main()
    variable := Any("xyz")
    addop    := Any("+-")
    mulop    := Any("*/")
-   factor   := variable .| "(" && `exp` && ")"
-   term     := factor .|  factor && mulop && `term`
-   exp      := addop && term .| term .| term &&addop && `exp`
-   p        := Pos(0) && exp && Rpos(0)
+   factor   := variable .| "(" || `exp` || ")"
+   term     := factor .|  factor || mulop || `term`
+   exp      := addop || term .| term .| term || addop || `exp`
+   p        := Pos(0) || exp || Rpos(0)
 
    L := [
 	 "x+y*(z+x)",

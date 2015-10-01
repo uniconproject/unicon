@@ -2,17 +2,12 @@ procedure test(a,b,c)
 	return (a  = (b - a)) & (a = (c - b))
 end
 
-
 procedure main()
-	p := PPos(1) && PSpan("a") && .$a && PSpan("b") && .$b && PSpan("c") && .$c && PRpos(0) && `test(a,b,c)`
+   p := Pos(1) || Span("a") || .> a || Span("b") || .> b ||
+	 Span("c") || .> c || Rpos(0) # && `test(a,b,c)` fix
 
-	while write(line := read()) do
-		if (line ?? p) then write(" accepted") 
-		else write(" rejected")
-
-	test(1,2,3)
+   while line := read() do
+      if (line ?? p) & ((a-1) = (b-a) = (c-b))
+      then write("accepted") 
+      else write("rejected")
 end
-
-real    0m0.201s
-user    0m0.171s
-sys     0m0.017s

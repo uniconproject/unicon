@@ -153,7 +153,7 @@ operator{*} = tabmat(x)
    /*
     * x must be (convertible to) a string, or a pattern.
     */
-#ifdef PatternIntegration
+#ifdef PatternType
    if is:pattern(x) then {
       abstract {
 	 return string
@@ -220,9 +220,9 @@ operator{*} = tabmat(x)
       }
 
    else if !cnv:string(x) then {
-#else					/* PatternIntegration */
+#else					/* PatternType */
    if !cnv:string(x) then {
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
       runerr(103, x)
       }
    else {

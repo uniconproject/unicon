@@ -2,15 +2,15 @@
  * File: ocat.r -- caterr, lconcat
  */
 
-#ifdef PatternIntegration
+#ifdef PatternType
 "x || y - concatenate strings and patterns x and y." 
-#else					/* PatternIntegration */
+#else					/* PatternType */
 "x || y - concatenate strings x and y." 
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
 
 operator{1} || cater(x, y)
 
-#ifdef PatternIntegration
+#ifdef PatternType
    if is:pattern(x) then {
       abstract {
 	 return pattern;
@@ -59,7 +59,7 @@ operator{1} || cater(x, y)
 	 }
       }
    else {
-#endif				/* PatternIntegration */
+#endif				/* PatternType */
 
    if !cnv:string(x) then
       runerr(103, x)
@@ -117,9 +117,9 @@ operator{1} || cater(x, y)
       return result;
       }
 
-#ifdef PatternIntegration
+#ifdef PatternType
    }
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
 
 end
 

@@ -39,7 +39,7 @@ dptr d1, d2;
 }
 
 
-#ifdef PatternIntegration
+#ifdef PatternType
 /*
  * getkeyword() - return a descriptor with current value of non-variable
  * keywords not found in getvar(). So far just the cset constants.
@@ -73,7 +73,7 @@ int getkeyword(char *s, dptr vp)
       }
    return Failed;
    }
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
 
 /*
  * Get variable descriptor from name.  Returns the (integer-encoded) scope
@@ -1955,7 +1955,7 @@ dptr dp1, dp2;
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }
-#endif					/* Pattern Type */
+#endif					/* PatternType */
 
       default:
 #ifdef Arrays

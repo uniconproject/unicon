@@ -124,12 +124,12 @@ int		cnv_str		(dptr s, dptr d);
 int		cnv_tcset	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tstr	(char *sbuf, dptr s, dptr d);
 #endif					/* MultiThread */
-#ifdef PatternIntegration
+#ifdef PatternType
 void 		cnv_str_pattern	(dptr s, dptr p);
 void 		cnv_cset_pattern(dptr s, dptr p);
 struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
 struct b_pelem *Copy		(struct b_pelem * P);
-#endif               /* PatternIntegration */
+#endif               /* PatternType */
 int		co_chng		(struct b_coexpr *ncp, struct descrip *valloc,
 				   struct descrip *rsltloc,
 				   int swtch_typ, int first);
@@ -243,11 +243,11 @@ int		interp_1	(int fsig,dptr cargp);
 #else
 int		interp		(int fsig,dptr cargp);
 #endif
-#ifdef PatternIntegration
+#ifdef PatternType
 int 		internal_match	(char * pat_sub, int Length, int Pat_S,
 				struct b_pelem * pattern, int *Start, int *Stop,
 				int initial_cursor, int Anchored_Mode);
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
 int		iselect		(int fd, int t);
@@ -283,11 +283,11 @@ void		new_context	(int fsig, dptr cargp); /* w/o CoExpr: a stub*/
 int		numcmp		(dptr dp1,dptr dp2,dptr dp3);
 void		openlog		(char *p);
 void		outimage	(FILE *f,dptr dp,int noimage);
-#ifdef PatternIntegration
+#ifdef PatternType
 union block 	*pattern_make	(int stck_size, struct b_pelem * pnext,
 				int pattern_code, int index, struct descrip param);
 union block 	*pattern_make_pelem	(int stck_size, struct b_pelem * pe);
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
 struct b_coexpr	*popact		(struct b_coexpr *ce);
 #if NT
 unsigned long long int physicalmemorysize();
@@ -318,9 +318,9 @@ char		*qsearch	(char *key, char *base, int nel, int width,
 int		qtos		(dptr dp,char *sbuf);
 int    		 radix		(int sign, register int r, register char *s,
 				 register char *end_s, union numeric *result);
-#ifdef PatternIntegration
+#ifdef PatternType
 struct b_pelem 	*ResolvePattern	(struct b_pattern *pat);
-#endif					/* PatternIntegration */
+#endif					/* PatternType */
 #ifdef MultiThread
 char		*reserve_0	(int region, word nbytes);
 char		*reserve_1	(int region, word nbytes);

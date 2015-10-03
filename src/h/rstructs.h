@@ -415,6 +415,9 @@ struct region {
       struct descrip *rslt;
       continuation succ_cont;
       struct tend_desc t;
+#ifdef PatternType
+    struct b_table *pattern_cache; /* used to cache the variable references used in a pattern*/
+#endif					/* PatternType */
       };
    #endif				/* COMPILER */
 
@@ -766,7 +769,7 @@ struct pf_marker {		/* procedure frame marker */
    dptr pf_scan;		/*   saved scanning environment */
 #ifdef PatternType
     struct b_table *pattern_cache; /* used to cache the variable references used in a pattern*/
-#endif
+#endif					/* PatternType */
 
    struct descrip pf_locals[1];	/*   descriptors for locals */
    };

@@ -423,7 +423,7 @@ int region;
    struct b_coexpr *cp;
    int i;
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
-   static setrlimit_firsttime=1, setrlimit_count=0;
+   static int setrlimit_firsttime=1, setrlimit_count=0;
    struct rlimit rl;
 #endif
    CURTSTATE();

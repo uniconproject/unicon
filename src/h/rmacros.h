@@ -1626,3 +1626,126 @@
       #define blktotal  (curpstate->blocktotal)
 #endif					/* MultiThread */
 #endif 					/* Concurrent */
+
+#ifdef PatternType
+#define   PC_Arb_Y  0
+#define   PC_Assign  1
+#define   PC_Bal  2
+#define   PC_BreakX_X  3
+#define   PC_Cancel  4
+#define   PC_EOP  5
+#define   PC_Fail  6
+#define   PC_Fence  7
+#define   PC_Fence_X  8
+#define   PC_Fence_Y  9
+#define   PC_R_Enter  10
+#define   PC_R_Remove  11
+#define   PC_R_Restore  12
+#define   PC_Rest  13
+#define   PC_Succeed  14
+#define   PC_Unanchored  15
+
+#define   PC_Alt  16
+#define   PC_Arb_X  17
+#define   PC_Arbno_S  18
+#define   PC_Arbno_X  19
+
+#define   PC_Rpat  20
+
+#define   PC_Pred_Func  21
+
+#define   PC_Assign_Imm  22
+#define   PC_Assign_OnM  23
+#define   PC_Any_VP  24
+#define   PC_Break_VP  25
+#define   PC_BreakX_VP  26
+#define   PC_NotAny_VP  27
+#define   PC_NSpan_VP  28
+#define   PC_Span_VP  29
+#define   PC_String_VP  30
+
+#define   PC_Write_Imm  31
+#define   PC_Write_OnM  32
+
+#define   PC_Null  33
+#define   PC_String  34
+
+#define   PC_String_2  35
+#define   PC_String_3  36
+#define   PC_String_4  37
+#define   PC_String_5  38
+#define   PC_String_6  39
+
+#define   PC_Setcur  40
+
+#define   PC_Any_CH  41
+#define   PC_Break_CH  42
+#define   PC_BreakX_CH  43
+#define   PC_Char  44
+#define   PC_NotAny_CH  45
+#define   PC_NSpan_CH  46
+#define   PC_Span_CH  47
+
+#define   PC_Any_CS  48
+#define   PC_Break_CS  49
+#define   PC_BreakX_CS  50
+#define   PC_NotAny_CS  51
+#define   PC_NSpan_CS  52
+#define   PC_Span_CS  53
+
+#define   PC_Arbno_Y  54
+#define   PC_Len_Nat  55
+#define   PC_Pos_Nat  56
+#define   PC_RPos_Nat  57
+#define   PC_RTab_Nat  58
+#define   PC_Tab_Nat  59
+
+#define   PC_Pos_NF  60
+#define   PC_Len_NF  61
+#define   PC_RPos_NF  62
+#define   PC_RTab_NF  63
+#define   PC_Tab_NF  64
+
+#define   PC_Pos_NP  65
+#define   PC_Len_NP  66
+#define   PC_RPos_NP  67
+#define   PC_RTab_NP  68
+#define   PC_Tab_NP  69
+
+#define   PC_Any_VF  70
+#define   PC_Break_VF  71
+#define   PC_BreakX_VF  72
+#define   PC_NotAny_VF  73
+#define   PC_NSpan_VF  74
+#define   PC_Span_VF  75
+#define   PC_String_VF  76
+#define   PC_Func  77
+
+   /*
+    * These constants are added because of the way "unevaluated expressions"
+    * are handled in unicon During the pattern construction process pattern
+    * elements containing unevaluated expressions contain their string
+    * representations. In the procedure pattern_match these string names are
+    * resolved to the corresponding variable references.
+    */
+
+#define   PC_UNEVALVAR  78
+#define   PC_UNEVALFIELD  79
+#define   PC_STRINGFUNCCALL  80
+#define   PC_BOOLFUNCCALL  81
+#define   PC_STRINGMETHODCALL  82
+#define   PC_BOOLMETHODCALL  83
+#define   PC_String_MF  84
+#define   PC_Pred_MF  85
+#define   PC_Pos_NMF  86
+#define   PC_Len_NMF  87
+#define   PC_RPos_NMF  88
+#define   PC_RTab_NMF  89
+#define   PC_Tab_NMF  90
+#define   PC_Any_MF  91
+#define   PC_Break_MF  92
+#define   PC_BreakX_MF  93
+#define   PC_NotAny_MF  94
+#define   PC_NSpan_MF  95
+#define   PC_Span_MF  96
+#endif					/* PatternType */

@@ -381,3 +381,7 @@ extern int M_open_timeout;
 
 extern char *lognam;
 extern FILE *flog;
+
+#ifdef PatternType
+extern struct b_pelem EOP;
+#endif					/* PatternType */

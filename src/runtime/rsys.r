@@ -278,7 +278,7 @@ struct b_file *fbp;
 #if defined(PosixFns) && !defined(Concurrent)
 	    /* Clear the saved chars buffer */
 	    nsaved = 0;
-#endif					/* PosixFns */
+#endif					/* PosixFns && !Concurrent */
 	    return l;
 	    } 
 	 else {
@@ -290,19 +290,19 @@ struct b_file *fbp;
 #if defined(PosixFns) && !defined(Concurrent)
 	 /* Clear the saved chars buffer */
 	 nsaved = 0;
-#endif					/* PosixFns */
+#endif					/* PosixFns && !Concurrent */
 	 return -2;
 	 }
 #if defined(PosixFns) && !defined(Concurrent)
       savedbuf[nsaved++] = c;
-#endif					/* PosixFns */
+#endif					/* PosixFns && !Concurrent */
       *buf++ = c;
       }
 
 #if defined(PosixFns) && !defined(Concurrent)
    /* We can clear the saved static buffer */
    nsaved = 0;
-#endif					/* PosixFns */
+#endif					/* PosixFns && !Concurrent */
 
    return l;
    }

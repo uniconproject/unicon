@@ -169,8 +169,9 @@ operator{*} = tabmat(x)
 	 char * pattern_subject;
 	 int subject_len;
 	 int new_len;
+#if !ConcurrentCOMPILER
 	 CURTSTATE();
-
+#endif					/* ConcurrentCOMPILER */
 	 /*
 	  * set cursor position, and subject to match
 	  */
@@ -295,7 +296,9 @@ operator{*} ... toby(from, to, by)
 	    return integer
             }
 	 inline {
+#if !ConcurrentCOMPILER
       	    CURTSTATVAR();
+#endif					/* !ConcurrentCOMPILER */
 	    /*
 	     * by must not be zero.
 	     */

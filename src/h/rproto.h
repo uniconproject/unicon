@@ -125,10 +125,19 @@ int		cnv_tcset	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tstr	(char *sbuf, dptr s, dptr d);
 #endif					/* MultiThread */
 #ifdef PatternType
+struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R);
+struct b_pelem * Arbno_Simple(struct b_pelem *pe);
+struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
+			    struct b_pelem * A);
 void 		cnv_str_pattern	(dptr s, dptr p);
 void 		cnv_cset_pattern(dptr s, dptr p);
 struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
 struct b_pelem *Copy		(struct b_pelem * P);
+union block *pattern_make(int stck_size, struct b_pelem * pnext,
+		int pattern_code, int index, struct descrip param);
+union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
+			struct descrip param);
+struct b_pattern * breakx_make(struct b_pelem * B);
 #endif               /* PatternType */
 int		co_chng		(struct b_coexpr *ncp, struct descrip *valloc,
 				   struct descrip *rsltloc,

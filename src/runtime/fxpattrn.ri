@@ -2,129 +2,6 @@
 
 #include "../h/opdefs.h"
 
-enum pattern_codes{
-   PC_Arb_Y = 0,
-   PC_Assign = 1,
-   PC_Bal = 2,
-   PC_BreakX_X = 3,
-   PC_Cancel = 4,
-   PC_EOP = 5,
-   PC_Fail = 6,
-   PC_Fence = 7,
-   PC_Fence_X = 8,
-   PC_Fence_Y = 9,
-   PC_R_Enter = 10,
-   PC_R_Remove = 11,
-   PC_R_Restore = 12,
-   PC_Rest = 13,
-   PC_Succeed = 14,
-   PC_Unanchored = 15,
-
-   PC_Alt = 16,
-   PC_Arb_X = 17,
-   PC_Arbno_S = 18,
-   PC_Arbno_X = 19,
-
-   PC_Rpat = 20,
-
-   PC_Pred_Func = 21,
-
-   PC_Assign_Imm = 22,
-   PC_Assign_OnM = 23,
-   PC_Any_VP = 24,
-   PC_Break_VP = 25,
-   PC_BreakX_VP = 26,
-   PC_NotAny_VP = 27,
-   PC_NSpan_VP = 28,
-   PC_Span_VP = 29,
-   PC_String_VP = 30,
-
-   PC_Write_Imm = 31,
-   PC_Write_OnM = 32,
-
-   PC_Null = 33,
-   PC_String = 34,
-
-   PC_String_2 = 35,
-   PC_String_3 = 36,
-   PC_String_4 = 37,
-   PC_String_5 = 38,
-   PC_String_6 = 39,
-
-   PC_Setcur = 40,
-
-   PC_Any_CH = 41,
-   PC_Break_CH = 42,
-   PC_BreakX_CH = 43,
-   PC_Char = 44,
-   PC_NotAny_CH = 45,
-   PC_NSpan_CH = 46,
-   PC_Span_CH = 47,
-
-   PC_Any_CS = 48,
-   PC_Break_CS = 49,
-   PC_BreakX_CS = 50,
-   PC_NotAny_CS = 51,
-   PC_NSpan_CS = 52,
-   PC_Span_CS = 53,
-
-   PC_Arbno_Y = 54,
-   PC_Len_Nat = 55,
-   PC_Pos_Nat = 56,
-   PC_RPos_Nat = 57,
-   PC_RTab_Nat = 58,
-   PC_Tab_Nat = 59,
-
-   PC_Pos_NF = 60,
-   PC_Len_NF = 61,
-   PC_RPos_NF = 62,
-   PC_RTab_NF = 63,
-   PC_Tab_NF = 64,
-
-   PC_Pos_NP = 65,
-   PC_Len_NP = 66,
-   PC_RPos_NP = 67,
-   PC_RTab_NP = 68,
-   PC_Tab_NP = 69,
-
-   PC_Any_VF = 70,
-   PC_Break_VF = 71,
-   PC_BreakX_VF = 72,
-   PC_NotAny_VF = 73,
-   PC_NSpan_VF = 74,
-   PC_Span_VF = 75,
-   PC_String_VF = 76,
-   PC_Func = 77,
-
-   /*
-    * These constants are added because of the way "unevaluated expressions"
-    * are handled in unicon During the pattern construction process pattern
-    * elements containing unevaluated expressions contain their string
-    * representations. In the procedure pattern_match these string names are
-    * resolved to the corresponding variable references.
-    */
-
-   PC_UNEVALVAR = 78,
-   PC_UNEVALFIELD = 79,
-   PC_STRINGFUNCCALL = 80,
-   PC_BOOLFUNCCALL = 81,
-   PC_STRINGMETHODCALL = 82,
-   PC_BOOLMETHODCALL = 83,
-   PC_String_MF = 84,
-   PC_Pred_MF = 85,
-   PC_Pos_NMF = 86,
-   PC_Len_NMF = 87,
-   PC_RPos_NMF = 88,
-   PC_RTab_NMF = 89,
-   PC_Tab_NMF = 90,
-   PC_Any_MF = 91,
-   PC_Break_MF = 92,
-   PC_BreakX_MF = 93,
-   PC_NotAny_MF = 94,
-   PC_NSpan_MF = 95,
-   PC_Span_MF = 96
-};
-
 /* #define PRINTF_DEBUG 1 or some other level if you want debugging */
 #ifdef PRINTF_DEBUG
 #define DEBUGF(lev, x) if (lev <= PRINTF_DEBUG) fprintf x
@@ -153,7 +30,7 @@ static void * checked_calloc(size_t nelem, size_t elsize)
 }
 
 
-static struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
+struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
 
 
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
@@ -687,7 +564,9 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       tended struct b_pelem *phead;
 
       int subject_len;
+#if !ConcurrentCOMPILER
       CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
     
       DEBUGF(20,(stdout, "(729)begin pattern_match()\n"));
       /*
@@ -798,7 +677,7 @@ static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
 /*
  * Bracket
  */
-struct b_pelem *Bracket (struct b_pelem *E,struct b_pelem * P,
+struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 			    struct b_pelem * A)
 {
    if (P == &EOP) {
@@ -894,7 +773,7 @@ function {1} Span(char_set)
 end
 
 
-static struct b_pattern * breakx_make(struct b_pelem * B)
+struct b_pattern * breakx_make(struct b_pelem * B)
 {
    tended struct b_pelem *X =  pelem_make(B,PC_BreakX_X, 2, nulldesc);
    tended struct descrip param;
@@ -1362,7 +1241,7 @@ function {1} pattern_concat(L, R)
       }
 end
 
-static struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
+struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
 {
    tended struct descrip param;
    param.dword = D_Pelem;
@@ -1905,7 +1784,12 @@ dptr processFuncCallList(struct b_list *lp, int csr){
 	  (unsigned long int)proc.vword.bptr); fflush(stdout));
    DEBUGF(25,(stdout, "nargs %d\n", nargs));fflush(stdout);
    k_pos = Cursor + 1;
+#if COMPILER
+   ErrorDuringPatternMatch("deferred evaluation function call not supported in optimizing compiler");
+   call_result = NULL;
+#else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs);
+#endif					/* COMPILER */
    k_pos = oldPos;
    return call_result;
    }
@@ -2020,7 +1904,12 @@ dptr processMethodCallList(struct b_list *lp, int csr)
 	 }
       }
    k_pos = Cursor + 1;
+#if COMPILER
+   ErrorDuringPatternMatch("deferred evaluation function call not supported in optimizing compiler");
+   call_result = NULL;
+#else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs);
+#endif					/* COMPILER */
    k_pos = oldPos;
    return call_result;
    }

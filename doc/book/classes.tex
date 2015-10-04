@@ -379,10 +379,10 @@ section after its methods are defined and before its end. An
 \texttt{initially} section is just a special method that is invoked
 automatically by the system when it creates each instance of the class.
 
-An \texttt{initially} section begins with the word
-\texttt{initially} and an optional parameter list, followed by lines of
-code that are executed when an object of that class is constructed.
-These lines can assign values to the attributes of the object
+An \texttt{initially} section begins with the word \texttt{initially}
+and an optional parameter list, followed by lines of code that are
+executed when an object of that class is constructed.  These lines
+typically assign values to one or more of the attributes of the object
 being created.
 
 For example, suppose you want an enhanced table type that permits
@@ -411,35 +411,67 @@ procedure main() \\
 end
 }
 
-In the absence of an \texttt{initially} section, missing arguments to a
-constructor default to the null value. Together with an
-\texttt{initially} section, the class declaration looks like a
-procedure that constructs objects of that class. You can
+Although the default behavior of classes is the same as records, and
+constructor arguments normally assign each of the fields in the class
+in order, there are some important rules that override classes'
+record-like constructor behavior.
+
+\begin{itemize}
+\item With no \texttt{initially} section, a class constructor behaves
+exactly like a record constructor. Class fields are assigned in order
+from parameters and missing arguments default to the null value.
+
+\item With an \texttt{initially(...)} that has a parenthesized list of
+zero or more formal parameter names, the constructor parameters are used
+to initialize the formal parameters of the \texttt{initially()} method.
+In this case, the constructor does not assign class fields
+from parameters implicitly. Instead the initially section may
+initialize fields as it sees fit, including initializing them using
+values from the named parameters of method \texttt{initially()}
+if it so chooses.
+
+\item an \texttt{initially} section without a parenthesized
+formal parameter list behaves somewhere in between the above two
+cases.  Normal record-like assignment of parameters to fields is performed.
+Missing arguments start with a null value. However,
+the \texttt{initially} section may assign those
+fields without the caller having passed values into the constructor.
+\end{itemize}
+
+The initially section with no parameter list makes it possible to
 write classes with some fields that are initialized explicitly by the
-constructor while other fields are initialized automatically in the
-\texttt{initially} section. In this case you should either declare the
-automatically initialized fields after those initialized in
-the constructor, or insert \texttt{\&null} in the positions of the
-automatically initialized fields in the constructor. The parameters to
-the constructor are exactly in the order they appear in the class
-declaration.
+constructor parameters, while other fields are initialized implicitly
+by code in the \texttt{initially} section. In this case you should
+declare the automatically initialized fields after those
+initialized by parameters in the constructor.
+The parameters are assigned to fields in the constructor
+exactly in the order they appear in the class declaration.
 
 This default semantics for constructor parameters is awkward in some
-cases, so there is an alternative. The \texttt{initially} section is
-really just a special method, and it is allowed to take a parameter
-list just like any other method. When an initially section includes a
+cases, so there is an alternative.
+When an initially section includes a
 parameter list, no implicit initialization of objects'
 fields is performed. This frees the constructor from having the same
 number and order of parameters as the declared class fields. In the
-following class, the third field is initialized from constructor
-parameter \texttt{x}, overriding the default behavior of initializing
+following example, class \texttt{C} is constructed with only a single
+parameter even though it has three fields. The actual parameter
+\texttt{"Greenwich Village"} is bound to \texttt{initially}
+formal parameter \texttt{x}.  The third field in the class (\texttt{c}) is
+initialized from the constructor parameter \texttt{x}, overriding
+the default behavior of initializing
 fields in the declared order. This capability becomes important in
 large classes with many fields.
 
 \iconcode{
 class C(a, b, c) \\
 initially(x) \\
+\>   a := ["vital", "urgent", "gentrified"] \\
+\>   b := promptedread("tell me about " || x) \\
 \>   c := x \\
+end \\
+... \\
+procedure main() \\
+   v := C("Greenwich Village")\\
 end
 }
 

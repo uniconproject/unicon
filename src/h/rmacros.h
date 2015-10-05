@@ -21,7 +21,11 @@
 #define MaxCvtLen	   257	/* largest string in conversions; the extra
 				 *  one is for a terminating null */
 #define MaxReadStr	   512	/* largest string to read() in one piece */
+#if IntBits==16
 #define MaxIn		  32767	/* largest number of bytes to read() at once */
+#else
+#define MaxIn		((10*1024*1024)-1) /* max # of bytes to reads() at once */
+#endif
 #define RandA        1103515245	/* random seed multiplier */
 #define RandC	      453816694	/* random seed additive constant */
 #define RanScale 4.65661286e-10	/* random scale factor = 1/(2^31-1) */

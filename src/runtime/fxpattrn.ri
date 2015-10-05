@@ -600,8 +600,15 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	     ){
 	 oldpos = k_pos;
 	 k_pos = stop;
-	 if (use_trap == 1)
+
+	 /* check of psub no longer refers to what k_subject holds.
+	  * if so, we can't suspend a trapped variable reference to it.
+	  */
+	 if ((use_trap == 1) &&
+	     (StrLoc(*(psub.vword.descptr)) == StrLoc(k_subject)) &&
+	     (StrLen(*(psub.vword.descptr)) == StrLen(k_subject)) ) {
 	    suspend tvsubs(&psub, start+1,stop - start);
+	    }
 	 else
 	    suspend string(stop - start, StrLoc(dpsub)+ start);
 	 deref(&psub,&dpsub);

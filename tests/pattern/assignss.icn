@@ -1,6 +1,18 @@
-#pg 39
+#
+# assignss.icn - test assignments to substrings
+#
+# Example is from SNOBOL4 green book, pg. 39 bottom of page.
+#
+# Expected output is
+# actinium:ac:89:227*:1899:debierne
+#
+# Status: compile (semantic) error caused by line that assigns to p,
+#  if a person does not have latest/current unigram.{icn,u}, which
+#  are not committed yet due to the need to rebuild yyerror.
+#  Workaround is to parenthesize (Break(" ") -> chars).
+#
 procedure main()
-   s := "actinium      ac    89    227    1899    debierne"
+   s := "actinium      ac    89    227*    1899    debierne"
    p := Break(" ") -> chars || Span(" ")
    every pattern_match(s,p) := chars || ":" 
    write(s)

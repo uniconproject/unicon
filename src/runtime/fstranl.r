@@ -91,7 +91,7 @@ end
 
 function{*} bal(c1,c2,c3,s,i,j)
    str_anal( s, i, j )
-   if !def:tmp_cset(c1,fullcs) then
+   if !def:tmp_cset(c1,k_cset) then
       runerr(104,c1)
    if !def:tmp_cset(c2,lparcs) then
       runerr(104,c2)

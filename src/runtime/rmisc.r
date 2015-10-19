@@ -54,20 +54,38 @@ int getkeyword(char *s, dptr vp)
    if (*s++ == '&') {
       switch(*s++) {
       case 'a':
-         if (!strcmp(s, "scii")) { Kascii(vp); return Succeeded; }
+         if (!strcmp(s, "scii")) {
+	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_ascii;
+	    return Succeeded;
+	    }
          break;
       case 'c':
-         if (!strcmp(s, "set")) { Kcset(vp); return Succeeded; }
+         if (!strcmp(s, "set")) {
+	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_cset;
+	    return Succeeded;
+	    }
          break;
       case 'd':
-         if (!strcmp(s, "igits")) { Kdigits(vp); return Succeeded; }
+         if (!strcmp(s, "igits")) {
+	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_digits;
+	    return Succeeded;
+	    }
          break;
       case 'l':
-         if (!strcmp(s, "etters")) { Kletters(vp); return Succeeded; }
-         else if (!strcmp(s, "case")) { Klcase(vp); return Succeeded; }
+         if (!strcmp(s, "etters")) {
+	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_letters;
+	    return Succeeded;
+	    }
+         else if (!strcmp(s, "case")) {
+	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_lcase;
+	    return Succeeded;
+	    }
          break;
       case 'u':
-         if (!strcmp(s, "case")) { Kucase(vp); return Succeeded; }
+         if (!strcmp(s, "case")) {
+	    vp->dword = D_Cset; vp->vword.bptr = (union block *)&k_ucase;
+	    return Succeeded;
+	    }
          break;
          }
       }

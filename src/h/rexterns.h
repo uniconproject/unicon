@@ -29,7 +29,12 @@ extern struct b_coexpr *stklist;/* base of co-expression stack list */
 extern struct b_cset blankcs;   /* ' ' */
 extern struct b_cset lparcs;    /* '(' */
 extern struct b_cset rparcs;    /* ')' */
-extern struct b_cset fullcs;    /* cset containing all characters */
+extern struct b_cset k_digits;  /* &digits */
+extern struct b_cset k_lcase;   /* &lcase */
+extern struct b_cset k_ucase;   /* &ucase */
+extern struct b_cset k_letters; /* &letters */
+extern struct b_cset k_ascii;   /* &ascii */
+extern struct b_cset k_cset;    /* &cset */
 extern struct descrip blank;	/* blank */
 extern struct descrip emptystr;	/* empty string */
 

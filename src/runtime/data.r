@@ -138,14 +138,31 @@ struct b_cset  rparcs = {
    };
 
 /*
- * Some built-in csets that live here were once replaced by rtt's
- * generated csets, but iconx uses generated constructor functions for them,
- * which are not in the runtime system for iconc.
+ * We removed these built-in csets in lieu of the ones that rtt
+ * generates, but if PatternType is defined, the runtime system needs
+ * a global way to get to these, and under COMPILER rtt may not generate
+ * them at all. So here they are again.
  */
-struct b_cset fullcs = {T_Cset, 256,
-    cset_display(0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
-		0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff)
+struct b_cset k_digits = {T_Cset, 10,
+   cset_display(0, 0, 0,0x3ff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+   };
+struct b_cset k_lcase = {T_Cset, 26,
+   cset_display(0, 0, 0, 0, 0, 0,0xfffe,0x7ff, 0, 0, 0, 0, 0, 0, 0, 0)
+   };
+struct b_cset k_ucase = {T_Cset, 26,
+   cset_display(0, 0, 0, 0,0xfffe,0x7ff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+   };
+struct b_cset k_letters = {T_Cset, 52,
+   cset_display(0, 0, 0, 0,0xfffe,0x7ff,0xfffe,0x7ff, 0, 0, 0, 0, 0, 0, 0, 0)
+   };
+struct b_cset k_ascii = {T_Cset, 128,
+   cset_display(0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+		0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0)
     };
+struct b_cset k_cset = {T_Cset, 256,
+   cset_display(0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,
+		0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff)
+   };
 
 /*
  * Built-in files.

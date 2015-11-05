@@ -84,11 +84,12 @@ int n;
  * Routines to convert property data into text strings.
  */
 
-#define NUMBER_ATOMS    12
+#define NUMBER_ATOMS    13
 
 char*   atom_names[NUMBER_ATOMS]= {
    "CHARACTER_POSITION",
    "CLIENT_WINDOW",
+   "CLIPBOARD",
    "HOST_NAME",
    "HOSTNAME",
    "LENGTH",
@@ -103,20 +104,20 @@ char*   atom_names[NUMBER_ATOMS]= {
 
 static Atom     atom_array[NUMBER_ATOMS];
 
-
 /* Macros to access elements in atom_names array. */
-#define CHARACTER_POSITION  0
-#define CLIENT_WINDOW       1
-#define HOST_NAME           2
-#define HOSTNAME            3
-#define LENGTH              4
-#define LIST_LENGTH         5
-#define NAME                6
-#define OWNER_OS            7
-#define SPAN                8
-#define TARGETS             9
-#define TIMESTAMP           10
-#define USER                11
+#define CHARACTER_POSITION	0
+#define CLIENT_WINDOW		1
+#define CLIPBOARD		2
+#define HOST_NAME		3
+#define HOSTNAME		4
+#define LENGTH			5
+#define LIST_LENGTH		6
+#define NAME			7
+#define OWNER_OS		8
+#define SPAN			9
+#define TARGETS			10
+#define TIMESTAMP		11
+#define USER			12
 
 
 static int InternAtoms(Display* display)
@@ -144,15 +145,13 @@ static int InternAtoms(Display* display)
 #endif					/* R5 and below. */
 }
 
+/* TODO: move this into a field on the display structure */
+int  intern_status = 0;
 
 Atom ConvertTarget(Display* display, Atom desired_target)
 {
-   static int  intern_status = 0;
-
    /* Ensure that our atoms are interned. */
-   if (intern_status == 0) {
-      intern_status = InternAtoms(display);
-      }
+   if (intern_status == 0) intern_status = InternAtoms(display);
 
    /* Check for common cases. */
    if ( (desired_target == atom_array[TIMESTAMP])    ||
@@ -188,7 +187,6 @@ char* PropertyToString(Display* display, Atom target, int number_items,
     char* data)
 {
    Atom            new_target;
-   Atom            timestamp, span;
    unsigned long*  long_array;
    int*            int_array;
    char*           string = NULL;
@@ -196,9 +194,8 @@ char* PropertyToString(Display* display, Atom target, int number_items,
    char            temp[100];
    char*           atom_name;
 
-   /* Convert our atoms. */
-   timestamp = XInternAtom(display, "TIMESTAMP", False);
-   span      = XInternAtom(display, "SPAN", False);
+   /* Ensure that our atoms are interned. */
+   if (intern_status == 0) intern_status = InternAtoms(display);
 
    /* Convert target, if necessary. */
    new_target = ConvertTarget(display, target);
@@ -233,8 +230,8 @@ char* PropertyToString(Display* display, Atom target, int number_items,
       strcpy(string, data);
       }
    else if ((new_target == XA_INTEGER) ||
-            (new_target == span) ||
-            (new_target == timestamp) ) {
+            (new_target == atom_array[SPAN]) ||
+            (new_target == atom_array[TIMESTAMP]) ) {
 
       int_array = (int*) data;
 
@@ -293,6 +290,10 @@ Window requestor;
 Atom selection, target;
 Time timestmp;
 
+/*
+ * Copy from selection/clipboard into our program. Ask for it by asking
+ *  to convert, then wait for a notify.
+ */
 char *copyselection(wsp ws, char* s, int *ip)
 {
    Display *display = ws->display->display;
@@ -308,15 +309,15 @@ char *copyselection(wsp ws, char* s, int *ip)
    unsigned long      bytes_remaining, number_items;
    char*              string = NULL;
    unsigned long      str_len;
-   char*	       atom_name= "STRING";   
+/*   char*	       atom_name= "STRING";    */
 
-   target = XInternAtom(display, atom_name, False);
+   /* Ensure that our atoms are interned. */
+   if (intern_status == 0) intern_status = InternAtoms(display);
 
-   if (target == None) {
-/*      printf("target is None\n"); who cares ? */
-      }
+/*   target = XInternAtom(display, atom_name, False); */
 
-   XConvertSelection(display, XA_PRIMARY, XA_STRING, target, window,timestamp);
+   XConvertSelection(display, XA_PRIMARY, XA_STRING, None /*was target*/,
+		     window, timestamp);
    timestmp = timestamp;
    requestor = window;
    XFlush(display);
@@ -325,18 +326,9 @@ char *copyselection(wsp ws, char* s, int *ip)
 
    /* Check that property is not NULL. */
    if ((event->property == (Atom) None) ||
-       (event->selection != XA_PRIMARY) ||
+       ((event->selection != XA_PRIMARY) &&
+		 (event->selection != atom_array[CLIPBOARD])) ||
        (event->requestor == (Window) None) ) {
-
-      if (event->property == (Atom) None) {
-	 /* printf("property = none\n"); */
-	 }
-      if (event->selection != XA_PRIMARY) {
-	 /* printf("selection not primary\n"); */
-	 }
-      if (event->requestor == (Window) None) {
-	 /* printf("window none\n"); */
-	 }
 
       /* printf("Owning program failed to convert data."); */
 
@@ -454,7 +446,7 @@ static void ErrorHandler(Display* display, XErrorEvent* error_event)
 	   error_event->minor_code, error_event->error_code );
    }
 
-int Groovy()
+int CheckErrorFlag()
 { 
    return ErrorFlag;
 } 
@@ -480,16 +472,14 @@ int AppendProperty(Display* display, Window window,
    SetErrorHandler();			    /* the error handler is set up. */
    ResetErrorFlag();
    if (target != XA_STRING) {
-      /* printf("target %x XA_STRING %x\n", target, XA_STRING); */
+      /* fprintf(stderr, "target %x XA_STRING %x\n", target, XA_STRING); */
       }
 
    if (number_items > 0) {
       XChangeProperty(display, window, property, target, format, 
-            PropModeReplace, data, number_items);
-
+			PropModeReplace, data, number_items);
       XSync(display, False);
-
-      if ( Groovy() ) {
+      if (CheckErrorFlag()) {
 	 return False;
 	 }
       }
@@ -497,15 +487,10 @@ int AppendProperty(Display* display, Window window,
 }   
 
 
-
-int ownselection( Display* display, Window window, 
-		  Atom selection,	    /* XA_PRIMARY */
-		  Time timestamp	    /* should be current time */
-		 )
+int ownselection(Display* display,Window window,Atom selection, Time timestamp)
 {   
    Window owner;
-   if ((window == (Window) None ) || 
-       (selection == (Atom) None ) ) {
+   if ((window == (Window) None ) || (selection == (Atom) None ) ) {
       /* printf("No selection was selected"); */
       return False;
       }
@@ -517,12 +502,9 @@ int ownselection( Display* display, Window window,
    owner = XGetSelectionOwner(display, selection);
 
    if (owner != window) {
-
-      /* printf("Failed to ownselection\n"); */
+      /* fprintf(stderr, "Failed to ownselection\n"); */
       return False;
       }
-
-   /* printf("Successfull ownselection\n"); */
    return True;
 }
 
@@ -658,10 +640,8 @@ wbp w;
  * if w is non-null, block until a returnable event arrives.
  * returns 1 on success, 0 on failure, and -1 on error.
  */
-int handle_misc(wd, w)
-wdp wd;
-wbp w;
-   {
+int handle_misc(wdp wd, wbp w)
+{
    XEvent event;
    Window evwin;
    int i;
@@ -723,32 +703,69 @@ wbp w;
       switch (event.type) {
          case SelectionRequest: {
 	    XEvent theevent;
-	    /* printf("selectionrequest, selectiondata \"%s\"\n",
-	       ws->selectiondata); */
+
+	    /* Ensure that our atoms are interned. */
+	    if (intern_status == 0)
+	       intern_status = InternAtoms(ws->display->display);
+
+	    if ((event.xselectionrequest.selection != XA_PRIMARY) &&
+	        (event.xselectionrequest.selection != atom_array[CLIPBOARD])) {
+	       fprintf(stderr, "unknown selectionrequest\n");
+	       }
+
+	    if (event.xselectionrequest.target == atom_array[TARGETS]) {
+	       Atom xastring = XA_STRING;
+	       XChangeProperty(ws->display->display,
+			       event.xselectionrequest.requestor,
+			       event.xselectionrequest.property,
+			       XA_ATOM, 32, PropModeReplace,
+			       (unsigned char *)&xastring, 1);
+	       goto sendevent;
+	       }
+	    else if (event.xselectionrequest.target != XA_STRING) {
+	       Atom ct, cs, ut, mu;
+	       ct = XInternAtom(ws->display->display, "COMPOUND_TEXT", False);
+	       cs = XInternAtom(ws->display->display, "COMPOUND_STRING", False);
+	       ut = XInternAtom(ws->display->display, "UTF8_STRING", False);
+	       mu = XInternAtom(ws->display->display, "MULTIPLE", False);
+	       if (event.xselectionrequest.target == cs)
+		  fprintf(stderr, "compoundstring\n");
+	       else if (event.xselectionrequest.target == ut)
+		  fprintf(stderr, "UTF8\n");
+	       else if (event.xselectionrequest.target == mu)
+		  fprintf(stderr, "MULTIPLE\n");
+	       else if (event.xselectionrequest.target == ct)
+		  fprintf(stderr, "unlikely\n");
+	       else
+		  fprintf(stderr, "wtf\n");
+	       }
+
+/* TODO: check timestamp to verify that we owned selection at that time. */
+
 	    if (ws->selectiondata != NULL) {
-	       /* printf("property %x primary %x target %x string %x\n",
-		  event.xselectionrequest.property, XA_PRIMARY,
-		  event.xselectionrequest.target, XA_STRING
-		  ); */
 	       if (AppendProperty(ws->display->display,
 				  event.xselectionrequest.requestor,
 			      event.xselectionrequest.property, XA_STRING, 8,
 			      (unsigned char *)ws->selectiondata,
 			      strlen(ws->selectiondata)) == False) {
-		  /* printf("append property error\n"); */
+		  fprintf(stderr, "selection property error\n");
 		  }
+
+ sendevent:
+	       memset(&theevent, 0, sizeof(theevent));
 	       theevent.type = SelectionNotify;
+	       theevent.xselection.property = event.xselectionrequest.property;
 	       theevent.xselection.serial = event.xselectionrequest.serial;
-	       theevent.xselection.send_event = True;
+	       theevent.xselection.send_event = False;/* Was True. Why? */
 	       theevent.xselection.display = event.xselectionrequest.display;
 	       theevent.xselection.requestor = event.xselectionrequest.requestor;
 	       theevent.xselection.selection = event.xselectionrequest.selection;
 	       theevent.xselection.target = event.xselectionrequest.target;
-	       theevent.xselection.property = event.xselectionrequest.property;
 	       theevent.xselection.time = event.xselectionrequest.time;
 	       XSendEvent(ws->display->display,
 			  event.xselectionrequest.requestor,
 			  False, 0, &theevent);
+	       XSync(ws->display->display, False);
 	       }
 	    }
 	    break;
@@ -1901,15 +1918,25 @@ char *s;
 int setselection(wbp w, dptr val)
 {
    wsp ws = w->window;
-   int i;
+   int i, j;
+
+   /* Ensure that our atoms are interned. */
+   if (intern_status == 0) intern_status = InternAtoms(ws->display->display);
+
    i = ownselection(ws->display->display, ws->win, XA_PRIMARY,
 			(Time) ws->timestamp);
-   if (i != True) return Failed;
+   j = ownselection(ws->display->display, ws->win, atom_array[CLIPBOARD],
+			(Time) ws->timestamp);
    ws->selectiondata = malloc(StrLen(*val)+1);
    if (ws->selectiondata == NULL) return Failed;
    strncpy(ws->selectiondata, StrLoc(*val), StrLen(*val));
    ws->selectiondata[StrLen(*val)] = '\0';
+
    ws->inputmask |= PropertyChangeMask;
+   /* if inputmask changed, maybe need to XSelectInput here */
+
+   /* tried to own PRIMARY and CLIPBOARD; if failure, report */
+   if ((i != True) || (j != True)) return Failed;
    return Succeeded;
 }
 

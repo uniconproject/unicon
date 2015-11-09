@@ -64,3 +64,8 @@ UNIDIR=c:\unicon
 BINDIR=$(UNIDIR)/bin
 ICONT=$(BINDIR)/icont
 UNICON=$(BINDIR)/unicon
+
+# Some versions of mingw make have an incorrect implicit rule for %.o:.%.c (of "$(COMPILE.C) $(OUTPUT_OPTION) $<")
+# which results in the c++ toolchain being used to compile c files.
+%.o: %.c
+	$(COMPILE.c) $(OUTPUT_OPTION) $<

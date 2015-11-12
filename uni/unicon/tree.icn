@@ -210,7 +210,8 @@ procedure emit_assign_code(node)
    case type(node) of {
       "treenode": {
 	 if node.label ~== "field" then {
-	    yyerror("Assignement must be to field")
+	    yyerror("In-pattern assignment must be to field, not a " ||
+		    image(node.label))
 	    return
 	    }
 	 if type(node.children[1]) ~== "token" then {
@@ -226,7 +227,6 @@ procedure emit_assign_code(node)
 	    rec := tab(upto('.'))
 	    if \rec then &pos +:= 1; # jump over the .
 	    var := tab(0)
-	    write("rec =", rec, " var = ",var)
 	    if \rec then writes(yyout,"[","\"",rec,"\",\"",var,"\"]")
 	    else writes(yyout,"\"",var,"\"")
 	    }
@@ -1259,6 +1259,7 @@ procedure csetify(n)
       cs := cs1 ++ cs2 ++ csr
       return cs
       }
+   if type(n) == "token" then return csetify(n)
    return n
 end
 

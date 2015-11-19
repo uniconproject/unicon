@@ -84,7 +84,7 @@ int n;
  * Routines to convert property data into text strings.
  */
 
-#define NUMBER_ATOMS    13
+#define NUMBER_ATOMS    14
 
 char*   atom_names[NUMBER_ATOMS]= {
    "CHARACTER_POSITION",
@@ -97,6 +97,7 @@ char*   atom_names[NUMBER_ATOMS]= {
    "NAME",
    "OWNER_OS",
    "SPAN",
+   "STRING",
    "TARGETS",
    "TIMESTAMP",
    "USER"
@@ -115,9 +116,10 @@ static Atom     atom_array[NUMBER_ATOMS];
 #define NAME			7
 #define OWNER_OS		8
 #define SPAN			9
-#define TARGETS			10
-#define TIMESTAMP		11
-#define USER			12
+#define STRING			10
+#define TARGETS			11
+#define TIMESTAMP		12
+#define USER			13
 
 
 static int InternAtoms(Display* display)
@@ -309,14 +311,12 @@ char *copyselection(wsp ws, char* s, int *ip)
    unsigned long      bytes_remaining, number_items;
    char*              string = NULL;
    unsigned long      str_len;
-/*   char*	       atom_name= "STRING";    */
 
    /* Ensure that our atoms are interned. */
    if (intern_status == 0) intern_status = InternAtoms(display);
+   target = atom_array[STRING];
 
-/*   target = XInternAtom(display, atom_name, False); */
-
-   XConvertSelection(display, XA_PRIMARY, XA_STRING, None /*was target*/,
+   XConvertSelection(display, XA_PRIMARY, XA_STRING, target,
 		     window, timestamp);
    timestmp = timestamp;
    requestor = window;
@@ -778,16 +778,6 @@ int handle_misc(wdp wd, wbp w)
 	       }
 	    break;
          case SelectionNotify:
-	    /*
-	     * printf("selectionnotify\n");
-	     * printf("selection %x (%x)\n", event.xselection.selection,
-	     *        XA_PRIMARY);
-	     * printf("time %x (%x)\n", event.xselection.time, timestmp);
-	     * printf("requestor %x (%x)\n", event.xselection.requestor,
-	     *        requestor);
-	     * printf("target %x (%x)\n", event.xselection.target, target);
-	     */
-
 	    if ((event.xselection.selection == XA_PRIMARY) &&
 		(event.xselection.time == timestmp) &&
 		(event.xselection.requestor == requestor) &&

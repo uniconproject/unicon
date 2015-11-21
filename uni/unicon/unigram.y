@@ -843,7 +843,17 @@ neregex3:  IDENT
 	| CSETLIT
 	| DOT
 	| LPAREN regex RPAREN { $$ := node("Paren",$1,$2,$3); }
-	| LBRACK brackchars RBRACK { $$ := node("acset", $1, $2, $3) }
+	| LBRACK brackchars RBRACK {
+	      $$ := node("acset", $1, $2, $3)
+	      if type($2) == "token" then {
+	         if not (($1.line == $2.line) &
+		         ($1.column + 1 == $2.column)) then {
+		    # [ is nonadjacent, add space
+		    $2.s := " " || $2.s
+		    }
+	         }
+		 else write("[ followed by ", type($2), " so not checking for space")
+	      }
 	| LBRACK CARET brackchars RBRACK { $$ := node("notany", $1, $2, $3, $4) }
 	| BACKSLASH neregex { $$ := node("escape", $1, $2) }
 	;
@@ -853,6 +863,14 @@ brackchars: brackchars2
 	;
 
 brackchars2: IDENT | INTLIT | REALLIT
+	| BACKSLASH IDENT {
+	   $$ := $2
+	   $$.column := $1.column
+	   case $$.s[1] of {
+	      "b"|"d"|"e"|"f"|"l"|"n"|"r"|"t"|"v": $$.s[1] := "\\" || $$.s[1]
+	      default: stop("unrecognized escape char \\", $$.s[1])
+	      }
+	}
 	;
 
 section	: expr11 LBRACK expr sectop expr RBRACK { $$ := node("section", $1,$2,$3,$4,$5,$6);} ;

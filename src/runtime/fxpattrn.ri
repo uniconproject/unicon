@@ -211,7 +211,7 @@ struct b_list *ResolveList(struct b_list *lp)
 		  VariableLookupFailed(varname);
 		  }
 	       pvar = VarLoc(parm);
-	       elsrc->lslots[i] = *pvar; /*was  ... = parm */
+	       elsrc->lslots[i] = parm; /* = *pvar too aggressive */
 
 	       if (complement) {
 		  Protect(cp = alccset(), fatalerr(0,NULL));
@@ -508,7 +508,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
 	 return (struct b_pelem *)BlkLoc(te->tval);
 	 }
       }
-   /* if it is not in table first resolve references */
+   /* if it is not in table, first resolve references */
    phead = ResolveReferences(&(pat->pe->Pelem));
    val.dword = D_Pelem;
    BlkLoc(val) = (union block *)phead;

@@ -758,9 +758,15 @@ procedure scopecheck_locals(n, localvars, selfvars)
    if /n then fail
    if type(n) == "treenode" then {
       case n.label of {
-	 "locals2": {
+	 "locals2": { # locals LOCAL varlist
 	    scopecheck_locals(n.children[1], localvars, selfvars)
 	    scopecheck_locals(n.children[3], localvars, selfvars)
+	    }
+	 "locals3": { # locals STATIC varlist
+	    scopecheck_locals(n.children[1], localvars, selfvars)
+	    # need different rules for static initializers, if we
+	    # ever decide to allow them
+	    # scopecheck_locals(n.children[3], localvars, selfvars)
 	    }
 	 "varlist2": {
 	    scopecheck_expr(n.children[3], localvars, selfvars)

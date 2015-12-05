@@ -117,23 +117,9 @@ initial { word := &letters ++ &digits ++ '\'\"&~' }
    temp := tab(upto('(.')) 
    if \temp == "\\" then temp := "\\\\"
    put(L, \temp)
-$ifndef NoPatternIntegration
    L := make_list_for_uneval(L, word)
    writes(yyout, funcname, "(")
    writes_code_for_uneval(L)
-$else					#PatternIntegration
-   while tab(upto(&letters)) do {
-      temp := tab(many(&letters))
-      put(L,temp)
-      }
-   writes(yyout,funcname, "(")
-   writes(yyout, "[")
-   every temp := !L\ (*L -1) do {
-      writes(yyout, "\"", temp,"\",")
-      }
-   writes(yyout, "\"", L[*L], "\"")
-   writes(yyout, "]")
-$endif					#PatternIntegration
    writes(yyout, ")")
    return
 end
@@ -1183,8 +1169,13 @@ procedure regexp(n)
 			      }
 			   }
 			STRINGLIT: {
-			   return "(pattern_alternate(" ||
-			      n.children[1].s || ",\"\"))"
+			   # build a tree node with lexical information from
+			   # the string, but with the "or nothing" alternate
+                           newt := copy(n.children[1])
+			   newt.tok := LPAREN
+			   newt.s := "("
+			   return node("concat", newt,
+			     "pattern_alternate("|| n.children[1].s ||",\"\"))")
 			   }
 			}
 		     }

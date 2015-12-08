@@ -445,9 +445,17 @@ procedure do_dot()
 	return REALLIT
     }
     else if yytext ||:= ="|" then { return POR }
-$ifndef NoPatternIntegration
-    else if yytext ||:= =">" then { return PSETCUR }
-$endif
+    else if yytext ||:= =">" then {
+       # .> is normally a cursor assignment, but not inside a regex
+       if next_gt_is_ender === 1 then {
+	  move(-1) # back up, don't eat the >
+	  tokflags +:= Beginner
+	  return DOT
+	  }
+       else
+       return PSETCUR
+       }
+    # next one .$ is candidate for deletion, old S.G. syntax
     else if yytext ||:= ="$" then { return PSETCUR }
     else {
 	tokflags +:= Beginner

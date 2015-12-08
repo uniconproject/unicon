@@ -860,9 +860,14 @@ neregex3:  IDENT
 
 brackchars: brackchars2
 	| brackchars MINUS brackchars2 { $$ := node("brackchars", $1, $2, $3) }
+	| brackchars brackchars2 {
+	   # inside square brackets, its all just cset-member characters
+	   $$ := copy($1)
+	   $$.s ||:= $2.s
+	   }
 	;
 
-brackchars2: IDENT | INTLIT | REALLIT
+brackchars2: IDENT | INTLIT | REALLIT | DOT
 	| BACKSLASH IDENT {
 	   $$ := $2
 	   $$.column := $1.column

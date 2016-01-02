@@ -48,9 +48,9 @@ class ContentType:Error(type, subtype, parameters)
       parameters.member(key) | fail
       s := parameters.get(key)
       if any('\"', s) then
-         return s[2:-1]
+	 return s[2:-1]
       else
-         return s
+	 return s
    end
 
    #
@@ -59,7 +59,7 @@ class ContentType:Error(type, subtype, parameters)
    # @param key the key
    method get_unqouted_parameter(key)
       if parameters.member(key) then
-         return parameters.get(key)
+	 return parameters.get(key)
    end
 
 
@@ -73,24 +73,22 @@ class ContentType:Error(type, subtype, parameters)
    end
 
    method parse(s)
-      local p
-      p := mail::RFC822Parser()
+      local p := mail::RFC822Parser()
       return p.parse_content_type(s, self) | error(p)
    end   
 
    method to_rfc1521()
-      local s, e
-      s := type || "/" || subtype
+      local e, s := type || "/" || subtype
       every e := !parameters.sort() do
-         s ||:= " ; " || e[1] || "=" || e[2]
+	 s ||:= " ; " || e[1] || "=" || e[2]
       return s
    end
 
    initially(a[])
       parameters := ClTable()
       if (*a = 1) & (::type(a[1]) == "string") then {
-         parse(a[1]) | fail
-      }
+	 parse(a[1]) | fail
+	 }
 end
 
 

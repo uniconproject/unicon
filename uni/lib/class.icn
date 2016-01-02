@@ -21,8 +21,7 @@ procedure get_class_for_name(name)
       x := Class()
       x.init(name) | fail
       lang_class_table[name] := x
-   }
-
+      }
    return x
 end
 
@@ -70,8 +69,8 @@ class Class(name,
    end
 
    #
-   # Get a set of the names of the implemented classes of this class (including this
-   # class itself).
+   # Get a set of the names of the implemented classes of this class
+   # (including this class itself).
    #
    method get_implemented_classes()
       return implemented_classes
@@ -105,36 +104,34 @@ class Class(name,
       self.oprec := variable(name || "__oprec") | fail
    
       every i := 1 to *self.oprec do {
-         ::name(self.oprec[i]) ? {
-            tab(upto('.'))
-            move(1)
-            s := tab(0)
-         }
+	 ::name(self.oprec[i]) ? {
+	    tab(find(".")+1)
+	    s := tab(0)
+	    }
          
-         v := self.oprec[i]
-         if type(v) == "procedure" then {
-            imgv := image(v)
-            cname := imgv[11+:*imgv-*s-11]
-            m := Method(v, s, cname)
-            put(methods, m)
-            insert(methods_map, s, m)
-         } else {
-            put(supers, s)
-         }
+	 v := self.oprec[i]
+	 if type(v) == "procedure" then {
+	    imgv := image(v)
+	    cname := imgv[11+:*imgv-*s-11]
+	    m := Method(v, s, cname)
+	    put(methods, m)
+	    insert(methods_map, s, m)
+	    }
+	 else {
+	    put(supers, s)
+	    }
       }
 
       p := proc(name || "__state") | fail
       state_instance := p()
       variables := []
       every ::name(state_instance[1 to *state_instance]) ? {
-         tab(upto('.'))
-         move(1)
-         put(variables, tab(0))
-      }
+	 tab(find(".")+1)
+	 put(variables, tab(0))
+	 }
 
       implemented_classes := set(supers)
       insert(implemented_classes, name)
-
       return
    end
 end

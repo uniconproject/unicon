@@ -11,9 +11,9 @@ class Connectable(listeners)
 
       e := Event(self, type, param)
       every l := !listeners do {
-         if /l.type | l.type === e.type then
-            l.meth(l.obj, e)
-      }
+	 if /l.type | l.type === e.type then
+	    l.meth(l.obj, e)
+	 }
       return e
    end
 
@@ -31,11 +31,8 @@ class Connectable(listeners)
 	 if (l.obj === obj) & (l.meth === p) & (l.type === type) then
 	    fail
 
-      l := Listener(obj, 
-                    p,
-                    type)
+      l := Listener(obj, p, type)
       put(listeners, l)
-
       return l
    end
 
@@ -46,9 +43,9 @@ class Connectable(listeners)
       local t, l
       t := []
       every l := !listeners do {
-         if l.obj ~=== obj then
-            put(t, l)
-      }
+	 if l.obj ~=== obj then
+	    put(t, l)
+	 }
       listeners := t
    end
 
@@ -56,13 +53,11 @@ class Connectable(listeners)
    # Remove a Listener previously returned by {connect}
    #
    method disconnect(l)
-      local t
-      t := []
+      local t := []
       every put(t, l ~=== !listeners)
       listeners := t
    end
 
-   initially
-      listeners := []
+initially
+   listeners := []
 end
-

@@ -419,7 +419,8 @@ int c_inserttable(union block **pbp, int n, dptr x)
 
    s.dword = D_Table;
    BlkLoc(s) = *pbp;
-   for(argc=0; argc<n; argc+=2) {
+   /* < n-1 because there has to be a following value */
+   for(argc=0; argc<n-1; argc+=2) {
       hn = hash(x+argc);
 
       /* get this now because can't tend pd */
@@ -435,10 +436,7 @@ int c_inserttable(union block **pbp, int n, dptr x)
 	 *pd = (union block *)te;
 	 te->hashnum = hn;
 	 te->tref = x[argc];
-	 if (argc+1 < n)
-	    te->tval = x[argc+1];
-	 else
-	    te->tval = nulldesc;
+	 te->tval = x[argc+1];
 	 if (TooCrowded(*pbp))
 	    hgrow(*pbp);
 	 }
@@ -448,10 +446,7 @@ int c_inserttable(union block **pbp, int n, dptr x)
 	  */
 	 deallocate((union block *)te);
 	 te = (struct b_telem *) *pd;
-	 if (argc+1 < n)
-	    te->tval = x[argc+1];
-	 else
-	    te->tval = nulldesc;
+	 te->tval = x[argc+1];
 	 }
       EVValD(&s, E_Tinsert);
       EVValD(x+argc, E_Tsub);

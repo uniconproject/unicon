@@ -1494,12 +1494,12 @@ end
  * variable to the function frees the programmer from having to declare it.
  */
 
-function {1} Cancel()
+function {1} Abort()
    abstract {
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_Cancel,1, nulldesc);
+      union block *bp = pattern_make(0, &EOP,PC_Abort,1, nulldesc);
       return pattern(bp);
       }
 end
@@ -1541,7 +1541,7 @@ static void Set_String(dptr V, char * pat, int start, int end)
 /*
  * Constant Pattern elements used only on stack
  *  CP_Assign    : aliased PE := (PC_Assign,    0, N);
- *  CP_Cancel    : aliased PE := (PC_Cancel,    0, N);
+ *  CP_Abort    : aliased PE := (PC_Abort,    0, N);
  *  CP_Fence_Y   : aliased PE := (PC_Fence_Y,   0, N);
  *  CP_R_Remove  : aliased PE := (PC_R_Remove,  0, N);
  *  CP_R_Restore : aliased PE := (PC_R_Restore, 0, N);
@@ -1549,8 +1549,8 @@ static void Set_String(dptr V, char * pat, int start, int end)
 
 static struct b_pelem CP_Assign    =
    {T_Pelem, PC_Assign,    (union block *)NULL, 0, {D_Null,0}};
-static struct b_pelem CP_Cancel    =
-   {T_Pelem, PC_Cancel,    (union block *)NULL, 0, {D_Null,0}};
+static struct b_pelem CP_Abort    =
+   {T_Pelem, PC_Abort,    (union block *)NULL, 0, {D_Null,0}};
 static struct b_pelem CP_Fence_Y   =
    {T_Pelem, PC_Fence_Y,   (union block *)NULL, 0, {D_Null,0}};
 static struct b_pelem CP_R_Remove  =
@@ -2002,7 +2002,7 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
       }
    /* In anchored mode, the bottom entry on the stack is a cancel entry */
    if (Anchored_Mode) {
-      Stack[Stack_Init].node = &CP_Cancel;
+      Stack[Stack_Init].node = &CP_Abort;
       Stack[Stack_Init].cursor = initial_cursor;
       }
 /*
@@ -2304,10 +2304,10 @@ Node_Succeed:
       goto Node_Succeed;
       }
       /*
-       * Cancel
+       * Abort
        */
-   case PC_Cancel: {
-      DEBUGF(20,(stdout, "matching Cancel"));
+   case PC_Abort: {
+      DEBUGF(20,(stdout, "matching Abort"));
       goto Match_Fail;
       }
       /*
@@ -2507,7 +2507,7 @@ Node_Succeed:
        *   Fence (built in pattern)
        */
    case PC_Fence : {
-      Push (&CP_Cancel);
+      Push (&CP_Abort);
       goto Node_Succeed;
       }
 

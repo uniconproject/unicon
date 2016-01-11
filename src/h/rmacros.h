@@ -1636,7 +1636,7 @@
 #define   PC_Assign  1
 #define   PC_Bal  2
 #define   PC_BreakX_X  3
-#define   PC_Cancel  4
+#define   PC_Abort  4
 #define   PC_EOP  5
 #define   PC_Fail  6
 #define   PC_Fence  7

@@ -121,7 +121,7 @@ FncDefV(writes)
      FncDef(pattern_unevalvar,1)   /* `` */
      FncDef(pattern_fieldeval,1)   /* `x.y` */
      FncDef(Len,1)
-     FncDef(Cancel,0)
+     FncDef(Abort,0)
      FncDef(Rem,0)
      FncDef(pattern_stringfunccall,1)  /* ```` */
      FncDef(pattern_boolfunccall,1)    /* `` */

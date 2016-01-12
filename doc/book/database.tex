@@ -66,12 +66,9 @@ contents of structure \texttt{db} to a file named \texttt{db.dat}.
 
 \iconcode{
 db := table() \\
-db["Ralph"] :=
-"800-USE-ICON" \\
-db["Ray"] :=
-"800-4UN-ICON" \\
-dbf :=
-open("db.dat","w") \\
+db["Ralph"] := "800-USE-ICON" \\
+db["Ray"] := "800-4UN-ICON" \\
+dbf := open("db.dat","w") \\
 xencode(db, dbf) \\
 close(dbf)
 }
@@ -377,7 +374,7 @@ connecting to the specified data source. Here is an example that
 establishes a connection to a database:
 
 \iconcode{
-f := open("unicondb", "o", "scott", "tiger")}
+db := open("unicondb", "o", "scott", "tiger")}
 
 The \texttt{open()} function returns a value that supports many of the
 operations of both a file and a table, or fails if the connection
@@ -399,8 +396,7 @@ beginning of the set of selected rows. For example, to obtain Vic
 T's phone number you might say
 
 \iconcode{
-sql(f, "select phone from addresses where
-name='Vic T'")}
+sql(db, "select phone from addresses where name='Vic T'")}
 
 Vic's phone number is included if you use the original
 \texttt{select *} query, but the more specific your query, the less
@@ -434,7 +430,13 @@ write(row["Address"])
 \noindent
 Called with one argument, \texttt{fetch(db)} advances the cursor
 one position. With two arguments, \texttt{fetch(db, col)} produces a
-column from the current row without advancing the cursor.
+column by name from the current row, without advancing the cursor.
+The preceding example could have been written
+
+\iconcode{
+   write(fetch(db,"Name")) \\
+   write(fetch(db,"Address"))
+}
 
 \subsection*{A SQL example application}
 
@@ -512,7 +514,7 @@ of functions in addition to those they
 share with other kinds of files and databases. These functions are
 described in detail in Appendix A, but some of them deserve special
 mention. The function \texttt{dbtables(db)} is useful to obtain a
-listing of the data sources available within a particular database.
+listing of the data objects available within a particular database.
 Function \texttt{dbcolumns(db)} provides detailed information about the
 current table that is useful in writing general tools for viewing or
 modifying arbitrary SQL databases.

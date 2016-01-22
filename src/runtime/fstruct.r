@@ -1170,7 +1170,7 @@ function{0,1} member(s, x[n])
 	    for(argc=0; argc<n; argc++) {
 	       if (!(cnv:C_integer(x[argc], cnv_x))) fail;
 	       cnv_x = cvpos(cnv_x, size);
-	       if (cnv_x > size) fail;
+	       if ((cnv_x == CvtFail) || (cnv_x > size)) fail;
 	       }
 	    return x[n-1];
 	    }

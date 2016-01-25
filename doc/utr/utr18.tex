@@ -1042,7 +1042,7 @@ compiled with the "-f s" option which enables full string invocation.
 \subsection{Pattern expressions and Unicon control structure}
 
 One of the goals while introducing pattern types in Unicon was to
-ensure that it integrated well with Unicon’s syntax and features such
+ensure that it integrated well with Unicon's syntax and features such
 as goal directed evaluation. Unicon’s features such as generators and
 limiting generators can be used along side the pattern matching
 features to write concise and readable code.
@@ -1079,91 +1079,21 @@ end
 \end{verbatim}
 
 
-\section{Future Work and Conclusion}
+\section{Conclusions}
 
-The pattern matching features implemented in Unicon are still in a
-pre-release state. This section discusses improvements to the pattern
-matching features, provides an example of how pattern matching and
-string scanning can cooperate and ends with a summary of the whole
-project
+The pattern matching facilities are still rough around the edges, but
+nevertheless provide benefits in many text processing tasks. They
+allow Unicon programmers to write more succinct and efficient code to
+perform text processing.
 
-\subsection{Future work}
-
-The future work can be broadly divided into two categories.
-
-\begin{itemize}
-\item Improving the power of pattern matching.
-\item Improving the efficiency of pattern matching.
-\end{itemize}
-
-\subsubsection{Improving the power of pattern matching}
-
-A major difference between SNOBOL and Unicon is the lack of a runtime
-eval mechanism in Unicon. The pattern matching code in SNOBOL often
-relies on the dynamic evaluation mechanism. For example the pattern
-for $A^{n}B^{n}C^{n}$ in SNOBOL
-
-\begin{verbatim}
-ANBNCN = POS(0) SPAN('A') @A SPAN('B') @B SPAN('C') 
-                 @C RPOS(0) *((EQ(B - A,A) (EQ(C - B,A) )
-\end{verbatim}
-
-is more concise and clear than the same in Unicon 
-
-\begin{lstlisting}
-procedure test(a,b,c)
-	return ((a -1)  = (b - a)) & ((a -1) = (c - b))
-end
-p := Pos(1) || Span("a") || .>a || Span("b") || .>b || 
-        Span("c") || .>c || Rpos(0) || `test(a,b,c)`
-\end{lstlisting}
-
-The addition of a generic eval mechanism would remove the arbitary
-limitations that have been imposed on the unevaluated expressions
-allowed in patterns.
-
-
-\subsection{Mixing pattern matching and string scanning}
-
-Pattern matching and string scanning are separate ways of performing
-string processing. They are integrated, but can possibly lead to
-cognitive dissonance.
-
-Since arbitrary Unicon code can be executed during string scanning, it
-is possible to mix pattern matching with string scanning code. For
-example here is the modified string scanning code for detecting words
-with double letters
-
-\begin{lstlisting}
-procedure main()
-   in := open("mtent12.txt", "r") | stop("open failed")
-   out := open("mtentscanOut.txt", "w")
-   double := (Len(1) => x || `x`)
-   while line := read(in) do {
-      line ? {
-         while(tab(upto(&letters))) do {
-            word := tab(many(&letters))
-            if word ?? double then write(out, word)
-            }
-         }
-      }
-end    
-\end{lstlisting}
-
-\subsection{Conclusion}
-
-The newly added pattern data type provides some benefits in text
-proccessing tasks. It allows Unicon programmers to write more succinct
-and efficient code to perform text processing. Since the new pattern
-facility closely follows the implementation of patterns in SNOBOL it
-also provides a path for SNOBOL programmers to migrate their legacy
-SNOBOL code to Unicon. Translating SNOBOL pattern matching code to
-Unicon patterns has been simplified because of the nearly one to one
-matching between SNOBOL operators and functions and Unicon operators
-and functions. The lack of eval in Unicon prevents the pattern data
-type from exhibiting all the power of SNOBOL patterns. The real
-challenge for Unicon patterns is their adoption in the Unicon
-programmer community and use in real world applications.
+Since the new pattern facility closely follows the implementation of
+patterns in SNOBOL it also provides a path for programmers to
+migrate legacy SNOBOL code to Unicon. Translating SNOBOL pattern
+matching code to Unicon has been simplified because of the
+nearly one to one matching between SNOBOL operators and functions and
+Unicon operators and functions. The lack of an {\tt eval} function in
+Unicon prevents the pattern data type from exhibiting all the power
+of SNOBOL patterns.
 
 
 %\bibliographystyle{abbrv}

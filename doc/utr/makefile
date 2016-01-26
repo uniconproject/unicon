@@ -1,9 +1,13 @@
 #
 # Makefile for unicon TR's
 #
-# Original motivation: build (simplified) HTM's from PDF for use by
-# Unicon online help.
+# This file is unfinished/incomplete.
 #
+# Compile/generate PDF and/or HTML version of Unicon TR's.
+# HTML versions may be special-purpose, for Unicon IDE's online help.
+#
+
+all: utr9c.html utr18.pdf
 
 utr9c.html: utr9c.pdf htmlean
 	pdftohtml -noframes utr9c.pdf
@@ -12,3 +16,5 @@ utr9c.html: utr9c.pdf htmlean
 htmlean: htmlean.icn
 	unicon htmlean
 
+utr18.pdf: utr18.tex
+	pdflatex utr18

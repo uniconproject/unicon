@@ -74,6 +74,45 @@ struct b_cset {			/* cset block */
    unsigned int bits[CsetSize];		/*   array of bits */
    };
 
+#ifdef Uniconde
+ /* 
+  * Unicode string block 
+  */
+struct b_unistr { 
+   word title;                       /* T_UniStr */
+   word size;                        /* size in unicode character units, returned by *s */
+   word lcidx_used;                  /* cache: last unicode character index used  */
+   word lbidx_used;                  /* cache: last byte index used */
+   char bsize;                       /* The number of charactes in each cbindex block below, 
+				      * k=1, 2, … 32 
+				      */
+   char encoding;                    /* In case we go beyound UTF-8, for now this field will 
+				      * always be set to 1. 0 represents "pure" ASCII
+				      */
+   /* char ielemsize; */             /* index element size, maybe inferrable from size */
+   char resevred[6];                 /* explicit alighnment to 8-byte */
+   union cbindex {                   /* mapping of characters to their byte indicies in sd below */
+   char c[16];                       /* for short strings, this in-place table will be used */  
+   struct sdescrip sdb	             /* if size>16, allocate indexes in string region */
+   } u;
+
+   /*
+    * The actual string data is stored as a conventional string
+    */
+   struct sdescrip sd;
+ };
+
+ /* 
+  * Unicode cset block 
+  */
+struct b_unicset {
+   word title;
+   word size;
+   union block *cset;
+   union block *set;
+   };
+#endif				/* Uniconde */
+
 /*
  * This union was pulled out of struct b_file and made non-anonymous
  * in order to eliminate an error in some version of gcc on amd64.

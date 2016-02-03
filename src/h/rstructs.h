@@ -74,7 +74,7 @@ struct b_cset {			/* cset block */
    unsigned int bits[CsetSize];		/*   array of bits */
    };
 
-#ifdef Uniconde
+#ifdef Unicode
  /* 
   * Unicode string block 
   */
@@ -83,14 +83,14 @@ struct b_unistr {
    word size;                        /* size in unicode character units, returned by *s */
    word lcidx_used;                  /* cache: last unicode character index used  */
    word lbidx_used;                  /* cache: last byte index used */
-   char bsize;                       /* The number of charactes in each cbindex block below, 
-				      * k=1, 2, … 32 
+   char bsize;                       /* The number of characters in each cbindex block below, 
+				      * k=1, 2,...,32 
 				      */
    char encoding;                    /* In case we go beyound UTF-8, for now this field will 
 				      * always be set to 1. 0 represents "pure" ASCII
 				      */
    /* char ielemsize; */             /* index element size, maybe inferrable from size */
-   char resevred[6];                 /* explicit alighnment to 8-byte */
+   char reserved[6];                 /* explicit alighnment to 8-byte */
    union cbindex {                   /* mapping of characters to their byte indicies in sd below */
    char c[16];                       /* for short strings, this in-place table will be used */  
    struct sdescrip sdb	             /* if size>16, allocate indexes in string region */
@@ -108,10 +108,12 @@ struct b_unistr {
 struct b_unicset {
    word title;
    word size;
+   char neg;                         /* is this a negation set */
+   char reserved[7];                 /* explicit alighnment to 8-byte */
    union block *cset;
    union block *set;
    };
-#endif				/* Uniconde */
+#endif				/* Unicode */
 
 /*
  * This union was pulled out of struct b_file and made non-anonymous

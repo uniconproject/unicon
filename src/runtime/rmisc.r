@@ -536,10 +536,12 @@ int noimage;
          if (Type(*dp) == T_Lrgint)
             bigprint(f, dp);
          else
-            fprintf(f, "%lld", (word)IntVal(*dp));
-#else					/* LargeInts */
-         fprintf(f, "%lld", (word)IntVal(*dp));
 #endif					/* LargeInts */
+#ifdef LongLongWord
+            fprintf(f, "%lld", (word)IntVal(*dp));
+#else					/* LongLongWord */
+            fprintf(f, "%ld", (word)IntVal(*dp));
+#endif					/* LongLongWord */
 
       real: {
          char s[30];

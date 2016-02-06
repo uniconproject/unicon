@@ -536,9 +536,9 @@ int noimage;
          if (Type(*dp) == T_Lrgint)
             bigprint(f, dp);
          else
-            fprintf(f, "%ld", (long)IntVal(*dp));
+            fprintf(f, "%lld", (word)IntVal(*dp));
 #else					/* LargeInts */
-         fprintf(f, "%ld", (long)IntVal(*dp));
+         fprintf(f, "%lld", (word)IntVal(*dp));
 #endif					/* LargeInts */
 
       real: {

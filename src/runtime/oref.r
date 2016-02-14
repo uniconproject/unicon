@@ -241,10 +241,13 @@ operator{*} ! bang(underef x -> dx)
 
 
 #ifdef ReadDirectory
-#if !NT
+#if !NT || defined(NTGCC)
           	  if (status & Fs_Directory) {
-		     struct dirent *d = readdir((DIR *)fd);
+		     struct dirent *d;
 		     char *s, *p=sbuf;
+		     DEC_NARTHREADS;
+	             d = readdir((DIR *)fd);
+      	             INC_NARTHREADS_CONTROLLED;
 		     if (d == NULL) fail;
 		     s = d->d_name;
 		     slen = 0;

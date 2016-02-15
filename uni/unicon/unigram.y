@@ -861,9 +861,21 @@ neregex3:  IDENT
 brackchars: brackchars2
 	| brackchars MINUS brackchars2 { $$ := node("brackchars", $1, $2, $3) }
 	| brackchars brackchars2 {
-	   # inside square brackets, its all just cset-member characters
+	   if type($1) == "treenode" then {
+	     c1 := csetify($1)
+	     write("c1 is ", image(c1))
+	     }
+	   if type($2) == "treenode" then c2 := csetify($2)
+
 	   $$ := copy($1)
-	   $$.s ||:= $2.s
+	   while type($$) == "treenode" do {
+	      $$ := copy($$.children[1])
+	      $$.s := c1
+	      }
+	   if type($$) ~== "token" then stop("regex type ", image($$))
+
+	   if type($2) == "treenode" then $$.s ||:= c2
+	   else $$.s ||:= $2.s
 	   }
 	;
 

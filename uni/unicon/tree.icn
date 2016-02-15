@@ -146,15 +146,12 @@ procedure process_uneval(node)
    emit_line_directive_if_needed(node)
    case type(node.s) of {
       "string":	{
-	 write(node.s)
 	 if node.s[1:3] === "``" then {
 	    node.s ? {
 	       if find(".") & find ("(") then {
-		  write("\nFound method call")
 		  return emit_code_for_uneval("pattern_stringmethodcall")
 		  }
 	       else if find ("(") then {
-		  write("\nFound procedure call")
 		  return emit_code_for_uneval("pattern_stringfunccall")
 		  }	
 	       else
@@ -164,19 +161,15 @@ procedure process_uneval(node)
 	 else {
 	    node.s ? {
 	       if find(".") & find ("(") then {
-		  write("\nFound method call")
 		  return emit_code_for_uneval("pattern_boolmethodcall")
 		  }
 	       else if find ("(") then {
-		  write("\nFound procedure call")
 		  return emit_code_for_uneval("pattern_boolfunccall")
 		  }	
 	       else if find(".") then {
-		  write("\nFound field reference")
 		  return emit_code_for_uneval("pattern_unevalvar")
 		  }
 	       else {
-		  write("\nFound variable reference")
 		  tab(upto(&letters))
 		  temp := tab(many(&letters))
 		  writes(yyout,"pattern_unevalvar( ")

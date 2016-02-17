@@ -709,7 +709,6 @@ int noimage;
 	    !strcmp(StrLoc(Blk(Blk(bp,Record)->recdesc,Proc)->lnames[0]),
 		    "__s")) {
 	    char *__stateloc;
-	    fprintf(f, "object ");
 	    is_obj = 1;
 	    if ((__stateloc = strstr(s, "__state")) != NULL) {
 	       while (s != __stateloc) {
@@ -726,26 +725,28 @@ int noimage;
 	    }
          fprintf(f, "_%ld", (long)Blk(bp,Record)->id);
 
-         if (j <= 0)
-            fprintf(f, "()");
-         else if (noimage > 0)
-            fprintf(f, "(%ld)", (long)j);
-         else {
-            putc('(', f);
-	    if (is_obj) i = 2; else
-            i = 0;
-	    /* if we have any fields at all... */
-	    if (i < j) {
-            for (;;) {
-               outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);
-               if (++i >= j)
-                  break;
-               putc(',', f);
-               }
+	 if (f != stderr) {
+	    if (j <= 0)
+	       fprintf(f, "()");
+	    else if (noimage > 0)
+	       fprintf(f, "(%ld)", (long)j);
+	    else {
+	       putc('(', f);
+	       if (is_obj) i = 2; else
+		  i = 0;
+	       /* if we have any fields at all... */
+	       if (i < j) {
+		  for (;;) {
+		     outimage(f, &Blk(bp,Record)->fields[i], noimage + 1);
+		     if (++i >= j)
+			break;
+		     putc(',', f);
+		     }
+		  }
+	       putc(')', f);
+	       }
 	    }
-            putc(')', f);
-            }
-         }
+	 }
 
       coexpr: {
          struct b_coexpr *cp = BlkD(*dp, Coexpr);

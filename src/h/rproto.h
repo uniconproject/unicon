@@ -1048,7 +1048,7 @@ void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
    int	invoke			(int n, dptr args, dptr rslt, continuation c);
    void	rtrace			(void);
    void	strace			(void);
-   void	tracebk			(struct p_frame *lcl_pfp, dptr argp);
+   void	tracebk			(struct p_frame *lcl_pfp, dptr argp, FILE *fd);
    int	xdisp			(struct p_frame *fp, dptr dp, int n, FILE *f);
 
 #else					/* COMPILER */
@@ -1065,7 +1065,7 @@ void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
    int	invoke			(int nargs, dptr *cargs, int *n);
    void	rtrace			(dptr dp, dptr rval);
    void	strace			(dptr dp, dptr rval);
-   void	tracebk			(struct pf_marker *lcl_pfp, dptr argp);
+   void	tracebk			(struct pf_marker *lcl_pfp, dptr argp, FILE *fd);
    int	xdisp			(struct pf_marker *fp, dptr dp, int n, FILE *f);
 
    #define Fargs dptr cargp

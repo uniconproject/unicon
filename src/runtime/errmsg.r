@@ -14,6 +14,8 @@ extern void CallARexx(char *script);
 
 extern struct errtab errtab[];		/* error numbers and messages */
 
+char *logopt;                            /* Log option destination */ 
+
 /*
  * err_msg - print run-time error message, performing trace back if required.
  *  This function underlies the rtt runerr() construct.
@@ -21,6 +23,9 @@ extern struct errtab errtab[];		/* error numbers and messages */
 void err_msg(int n, dptr v)
 {
    register struct errtab *p;
+   char *lfile = NULL;
+   FILE *logfptr = NULL;
+   
 #ifdef PresentationManager
    HMODULE modhand;
 #endif
@@ -41,6 +46,11 @@ void err_msg(int n, dptr v)
          SUSPEND_THREADS();
 #endif					/* Concurrent */
 
+   if (logopt != NULL)
+      logfptr = fopen(logopt, "a");
+   else if (((lfile = getenv("ULOG")) != NULL) && (lfile[0] != '\0')) {
+      logfptr = fopen(lfile, "a");  
+      }
    if (n == 0) {
       k_errornumber = t_errornumber;
       k_errorvalue = t_errorvalue;
@@ -111,9 +121,29 @@ void err_msg(int n, dptr v)
       }
 
    fprintf(stderr, "Traceback:\n");
-   tracebk(pfp, glbl_argp);
-   fflush(stderr);
 
+   if (logfptr != NULL) {
+      fprintf(logfptr, "Run-time error %d\n", k_errornumber);
+      fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
+	      (long)findline(ipc.opnd));
+      fprintf(logfptr, "%s\n", k_errortext);
+      if (have_errval) {
+	 fprintf(logfptr, "offending value: ");
+	 outimage(logfptr, &k_errorvalue, 0);
+	 putc('\n', logfptr);
+	 }
+      fprintf(logfptr, "Traceback:\n");
+     }
+
+   tracebk(pfp, glbl_argp, logfptr);
+   if (logopt != NULL)
+     fprintf(stderr, "Complete error traceback written to %s\n\n", logopt); 
+   else if (lfile != NULL && lfile[0] != '\0' )
+     fprintf(stderr, "Complete error traceback written to %s\n\n", lfile);
+     
+   fflush(stderr);
+   if (logfptr != NULL)
+      fclose(logfptr);
 
    if (dodump)
       abort();

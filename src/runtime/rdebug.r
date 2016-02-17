@@ -10,9 +10,9 @@ static int     glbcmp    (char *pi, char *pj);
 static int     keyref    (union block *bp, dptr dp);
 static void showline  (char *f, int l);
 static void showlevel (register int n);
-static void ttrace	(void);
+static void ttrace	(FILE *f);
 static void xtrace
-   (struct b_proc *bp, word nargs, dptr arg, int pline, char *pfile);
+   (struct b_proc *bp, word nargs, dptr arg, int pline, char *pfile, FILE *logfile);
 
 /*
  * tracebk - print a trace of procedure calls.
@@ -21,7 +21,7 @@ static void xtrace
 /* have to add COMPILER support too */
 void tracebk(void *foo, dptr argp, HWND hwndMLE)
 #else					/* PresentationManager */
-void tracebk(lcl_pfp, argp)
+void tracebk(lcl_pfp, argp, logfptr)
 
 #if COMPILER
 struct p_frame *lcl_pfp;
@@ -30,6 +30,7 @@ struct pf_marker *lcl_pfp;
 #endif					/* COMPILER */
 
 dptr argp;
+FILE *logfptr; 
 #endif					/* PresentationManager */
    {
    struct b_proc *cproc;
@@ -48,10 +49,10 @@ dptr argp;
    if (lcl_pfp == NULL)
       return;
    debug = PFDebug(*lcl_pfp);
-   tracebk(lcl_pfp->old_pfp, lcl_pfp->old_argp);
+   tracebk(lcl_pfp->old_pfp, lcl_pfp->old_argp, logfptr);
    cproc = debug->proc;
    xtrace(cproc, (word)abs((int)cproc->nparam), argp, debug->old_line,
-      debug->old_fname);
+      debug->old_fname, logfptr);
 #else					/* COMPILER */
    origpfp = pfp;
    /*
@@ -82,17 +83,10 @@ dptr argp;
       cipc = pfp->pf_ipc;
       --cipc.opnd;
       --cipc.op;
-
-#define TRCMAX 10
-
-      if ((depth < TRCMAX) || (iteration < (TRCMAX>>1)) ||
-	   ((depth-iteration)<(TRCMAX>>1))) {
-	 xtrace(cproc, pfp->pf_nargs, &arg[0], findline(cipc.opnd),
-		findfile(cipc.opnd));
-	 }
-      else if ((depth > TRCMAX) && (iteration==(TRCMAX>>1))) {
-	 fprintf(stderr, "...\n");
-	 }
+      
+      xtrace(cproc, pfp->pf_nargs, &arg[0], findline(cipc.opnd),
+        findfile(cipc.opnd), logfptr);
+	
 #ifdef PresentationManager
       /* insert the text in the MLE */
       WinSendMsg(hwndMLE, MLM_INSERT, MPFROMP(ConsoleStringBuf), (MPARAM)0);
@@ -108,7 +102,11 @@ dptr argp;
          /* add it to the MLE */
          WinSendMsg(hwndMLE, MLM_INSERT, MPFROMP(ConsoleStringBuf), (MPARAM)0);
 #else					/* PresentationManager */
-         ttrace();
+	 if(logfptr != NULL)
+	    ttrace(logfptr); 
+	 ttrace(stderr); 
+	 if (logfptr != NULL)
+	    fprintf(logfptr, "\n\n\n"); 
 #endif					/* PresentationManager */
          break;
          }
@@ -123,43 +121,71 @@ dptr argp;
  * xtrace - procedure *bp is being called with nargs arguments, the first
  *  of which is at arg; produce a trace message.
  */
-static void xtrace(bp, nargs, arg, pline, pfile)
+static void xtrace(bp, nargs, arg, pline, pfile, logfile)
 struct b_proc *bp;
 word nargs;
 dptr arg;
 int pline;
 char *pfile;
+FILE *logfile; 
    {
+
+dptr arg_l = arg;                      /* Log arguments */ 
 
 #ifndef PresentationManager 
    fprintf(stderr, "   ");
+   if (logfile != NULL)
+      fprintf(logfile, "   "); 
 #endif					/* PresentationManager */
-   if (bp == NULL)
+   if (bp == NULL) {
       fprintf(stderr, "????");
+      if (logfile != NULL)
+	 fprintf(logfile, "????");
+      }
    else {
 
 #if COMPILER
-       putstr(stderr, &(bp->pname));
+      putstr(stderr, &(bp->pname));
 #else					/* COMPILER */
-       if (arg[0].dword == D_Proc)
-          putstr(stderr, &(bp->pname));
-       else
-          outimage(stderr, arg, 0);
-       arg++;
+      if (arg[0].dword == D_Proc) {
+	 putstr(stderr, &(bp->pname));
+	 if (logfile != NULL)
+	    putstr(logfile, &(bp->pname));
+	 }
+      else {
+	 outimage(stderr, arg, 0);
+	 if(logfile != NULL)
+	    outimage(logfile, arg, 0);
+	 }
+      arg++;
 #endif					/* COMPILER */
 
-       putc('(', stderr);
-       while (nargs--) {
-          outimage(stderr, arg++, 0);
-          if (nargs)
-             putc(',', stderr);
-          }
-       putc(')', stderr);
-       }
-	 
-   if (pline != 0)
+      putc('(', stderr);
+      if (logfile != NULL)
+	 putc('(', logfile); 
+      while (nargs--) {
+	 if (logfile != NULL)
+	    outimage(logfile, arg, 0);
+	 outimage(stderr, arg++, 0);
+	 if (nargs) {
+            putc(',', stderr);
+	    if (logfile != NULL)
+	       putc(',', logfile);
+	    }
+	 }
+      putc(')', stderr);
+      if (logfile != NULL)
+         putc(')', logfile); 
+      }
+
+   if (pline != 0) {
       fprintf(stderr, " from line %d in %s", pline, pfile);
+      if (logfile != NULL)
+	 fprintf(logfile, " from line %d in %s", pline, pfile);
+      }
    putc('\n', stderr);
+   if (logfile != NULL)
+     putc('\n', logfile); 
    fflush(stderr);
    }
 
@@ -665,147 +691,151 @@ extern struct b_proc *opblks[];
 /*
  * ttrace - show offending expression.
  */
-static void ttrace()
+static void ttrace(f)
+FILE *f; 
    {
    struct b_proc *bp;
    word nargs;
+   dptr reset; 
    CURTSTATE();
 
 #ifndef PresentationManager
-   fprintf(stderr, "   ");
+   fprintf(f, "   ");
 #endif					/* PresentationManager */
+
+   reset = xargp; 
 
    switch ((int)lastop) {
 
       case Op_Keywd:
-         fprintf(stderr,"bad keyword reference");
+         fprintf(f,"bad keyword reference");
          break;
 
       case Op_Invoke:
          nargs = xnargs;
          if (xargp[0].dword == D_Proc) {
 	    bp = BlkD(*xargp, Proc);
-            putstr(stderr, &(bp->pname));
+            putstr(f, &(bp->pname));
 	    }
          else
-            outimage(stderr, xargp, 0);
-         putc('(', stderr);
+            outimage(f, xargp, 0);
+         putc('(', f);
          while (nargs--) {
-            outimage(stderr, ++xargp, 0);
+            outimage(f, ++xargp, 0);
             if (nargs)
-               putc(',', stderr);
+               putc(',', f);
             }
-         putc(')', stderr);
+         putc(')', f);
          break;
 
       case Op_Toby:
-         putc('{', stderr);
-         outimage(stderr, ++xargp, 0);
-         fprintf(stderr, " to ");
-         outimage(stderr, ++xargp, 0);
-         fprintf(stderr, " by ");
-         outimage(stderr, ++xargp, 0);
-         putc('}', stderr);
+         putc('{', f);
+         outimage(f, ++xargp, 0);
+         fprintf(f, " to ");
+         outimage(f, ++xargp, 0);
+         fprintf(f, " by ");
+         outimage(f, ++xargp, 0);
+         putc('}', f);
          break;
 
       case Op_Subsc:
-         putc('{', stderr);
-         outimage(stderr, ++xargp, 0);
+         putc('{', f);
+         outimage(f, ++xargp, 0);
 
 #if EBCDIC != 1
-         putc('[', stderr);
+         putc('[', f);
 #else					/* EBCDIC != 1 */
-         putc('$', stderr);
-         putc('<', stderr);
+         putc('$', f);
+         putc('<', f);
 #endif					/* EBCDIC != 1 */
 
-         outimage(stderr, ++xargp, 0);
+         outimage(f, ++xargp, 0);
 
 #if EBCDIC != 1
-         putc(']', stderr);
+         putc(']', f);
 #else					/* EBCDIC != 1 */
-         putc('$', stderr);
-         putc('>', stderr);
+         putc('$', f);
+         putc('>', f);
 #endif					/* EBCDIC != 1 */
 
-         putc('}', stderr);
+         putc('}', f);
          break;
 
       case Op_Sect:
-         putc('{', stderr);
-         outimage(stderr, ++xargp, 0);
+         putc('{', f);
+         outimage(f, ++xargp, 0);
 
 #if EBCDIC != 1
-         putc('[', stderr);
+         putc('[', f);
 #else					/* EBCDIC != 1 */
-         putc('$', stderr);
-         putc('<', stderr);
+         putc('$', f);
+         putc('<', f);
 #endif					/* EBCDIC != 1 */
 
-         outimage(stderr, ++xargp, 0);
-         putc(':', stderr);
-         outimage(stderr, ++xargp, 0);
+         outimage(f, ++xargp, 0);
+         putc(':', f);
+         outimage(f, ++xargp, 0);
 
 #if EBCDIC != 1
-         putc(']', stderr);
+         putc(']', f);
 #else					/* EBCDIC != 1 */
-         putc('$', stderr);
-         putc('>', stderr);
+         putc('$', f);
+         putc('>', f);
 #endif					/* EBCDIC != 1 */
 
-         putc('}', stderr);
+         putc('}', f);
          break;
 
       case Op_Bscan:
-         putc('{', stderr);
-         outimage(stderr, xargp, 0);
-         fputs(" ? ..}", stderr);
+         putc('{', f);
+         outimage(f, xargp, 0);
+         fputs(" ? ..}", f);
          break;
 
       case Op_Coact:
-         putc('{', stderr);
-         outimage(stderr, ++xargp, 0);
-         fprintf(stderr, " @ ");
-         outimage(stderr, ++xargp, 0);
-         putc('}', stderr);
+         putc('{', f);
+         outimage(f, ++xargp, 0);
+         fprintf(f, " @ ");
+         outimage(f, ++xargp, 0);
+         putc('}', f);
          break;
 
       case Op_Apply:
-         outimage(stderr, xargp++, 0);
-         fprintf(stderr," ! ");
-         outimage(stderr, &value_tmp, 0);
+         outimage(f, xargp++, 0);
+         fprintf(f," ! ");
+         outimage(f, &value_tmp, 0);
          break;
 
       case Op_Create:
-         fprintf(stderr,"{create ..}");
+         fprintf(f,"{create ..}");
          break;
 
       case Op_Field:
-         putc('{', stderr);
-         outimage(stderr, ++xargp, 0);
-         fprintf(stderr, " . ");
+         putc('{', f);
+         outimage(f, ++xargp, 0);
+         fprintf(f, " . ");
 	 ++xargp;
 	 if (IntVal(*xargp) < 0 && fnames-efnames < IntVal(*xargp))
-            fprintf(stderr, "%s", StrLoc(efnames[IntVal(*xargp)]));
+            fprintf(f, "%s", StrLoc(efnames[IntVal(*xargp)]));
 	 else if (0 <= IntVal(*xargp) && IntVal(*xargp) < efnames - fnames)
-            fprintf(stderr, "%s", StrLoc(fnames[IntVal(*xargp)]));
+            fprintf(f, "%s", StrLoc(fnames[IntVal(*xargp)]));
 	 else
-            fprintf(stderr, "field");
+            fprintf(f, "field");
 
-         putc('}', stderr);
+         putc('}', f);
          break;
 
       case Op_Limit:
-         fprintf(stderr, "limit counter: ");
-         outimage(stderr, xargp, 0);
+         fprintf(f, "limit counter: ");
+         outimage(f, xargp, 0);
          break;
 
       case Op_Llist:
 
 #if EBCDIC != 1
-         fprintf(stderr,"[ ... ]");
+         fprintf(f,"[ ... ]");
 #else					/* EBCDIC != 1 */
-         fputs("$< ... $>", stderr);
+         fputs("$< ... $>", f);
 #endif					/* EBCDIC != 1 */
          break;
 
@@ -815,29 +845,30 @@ static void ttrace()
          bp = opblks[lastop];
 	 if (!bp) break;
          nargs = abs((int)bp->nparam);
-         putc('{', stderr);
+         putc('{', f);
          if (lastop == Op_Bang || lastop == Op_Random)
             goto oneop;
          if (abs((int)bp->nparam) >= 2) {
-            outimage(stderr, ++xargp, 0);
-            putc(' ', stderr);
-            putstr(stderr, &(bp->pname));
-            putc(' ', stderr);
+            outimage(f, ++xargp, 0);
+            putc(' ', f);
+            putstr(f, &(bp->pname));
+            putc(' ', f);
    	    }
          else
 oneop:
-         putstr(stderr, &(bp->pname));
-         outimage(stderr, ++xargp, 0);
-         putc('}', stderr);
+         putstr(f, &(bp->pname));
+         outimage(f, ++xargp, 0);
+         putc('}', f);
       }
 	 
    if (ipc.opnd != NULL)
-      fprintf(stderr, " from line %d in %s", findline(ipc.opnd),
+      fprintf(f, " from line %d in %s", findline(ipc.opnd),
          findfile(ipc.opnd));
 #ifndef PresentationManager
-   putc('\n', stderr);
+   putc('\n', f);
 #endif					/* PresentationManager */
-   fflush(stderr);
+   xargp = reset; 
+   fflush(f);
    }
 
 

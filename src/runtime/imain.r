@@ -691,7 +691,8 @@ int *ip;
    if (!NoOptions)
 #endif					/* MACINTOSH && MPW */
    while ( argv[1] != 0 && *argv[1] == '-' ) {
-      switch ( *(argv[1]+1) ) {
+      char optletter = *(argv[1]+1);
+      switch ( optletter ) {
 
 #ifdef TallyOpt
 	/*
@@ -711,7 +712,10 @@ int *ip;
 	    }
 	    break;
 
-	 case 'l': {
+	 /* -l: IDE whole-console-session logfile */
+	 /* -L: runtime error messaging logfile */
+	 case 'l': case 'L': {
+	    extern char *logopt; 
 	    char *p;
 	    if ( *(argv[1]+2) != '\0' )
 	       p = argv[1]+2;
@@ -723,11 +727,17 @@ int *ip;
 	       if ( !p )
 		  error(NULL, "no file name given for logfile");
 	       }
-            openlog(p);
-            if (!flog)
-               syserr("Unable to open logfile\n");
+	    if(optletter == 'l') {
+	       openlog(p);
+	       if (!flog)
+		  syserr("Unable to open logfile\n");
+	       }
+	    else { /* -L */
+	       logopt = p;
+	       }
 	    break;
 	    }
+	    
       /*
        * Set stderr to new file if -e option is given.
        */

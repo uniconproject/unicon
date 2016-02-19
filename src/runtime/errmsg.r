@@ -124,8 +124,13 @@ void err_msg(int n, dptr v)
 
    if (logfptr != NULL) {
       fprintf(logfptr, "Run-time error %d\n", k_errornumber);
+#if COMPILER
+      if (line_info)
+	 fprintf(logfptr, "File %s; Line %d\n", file_name, line_num);
+#else					/* COMPILER */
       fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
 	      (long)findline(ipc.opnd));
+#endif					/* COMPILER */
       fprintf(logfptr, "%s\n", k_errortext);
       if (have_errval) {
 	 fprintf(logfptr, "offending value: ");

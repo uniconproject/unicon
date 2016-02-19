@@ -1173,7 +1173,16 @@ procedure regexp(n)
 			   return node("concat", newt,
 			     "pattern_alternate("|| n.children[1].s ||",\"\"))")
 			   }
+			default: runerr("regex error: surprise token " ||
+					image(n.children[1].s))
 			}
+		     }
+		  "treenode": {
+		     return node("alt", " pattern_alternate(",
+				 regexp(n.children[1]),", \"\")")
+		     }
+		  default: {
+		     runerr("regex error: operand to ? supported")
 		     }
 		  }
 	       }

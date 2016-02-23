@@ -1953,7 +1953,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	 char *s;
 	 is_argv_str = 1;
          cnv:C_string(argv, cmdline);
-
+#if !NT
 	 /*
 	  * If we have a string it may have redirection orders.
 	  * Since execl("/bin/sh"...) doesn't seem to handle those
@@ -2029,6 +2029,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       s++;
 	       }
 	    }
+#endif
       }
 
       /*

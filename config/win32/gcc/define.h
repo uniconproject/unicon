@@ -56,6 +56,8 @@
 #define Double
 #endif					/* OLD_NTGCC */
 
+#define PatternType 1
+
 /*
  * The rule of thumb we aim for is: it includes everything that comes with
  * mingw out of the box. This includes pthreads, apparently, and 2D and 3D

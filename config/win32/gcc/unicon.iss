@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 12.2
+AppVerName=Windows Unicon Version 12.3
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.sourceforge.net
 AppSupportURL=http://unicon.sourceforge.net
@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.sourceforge.net
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.2.0_threads(32-bit)_rev3953
+OutputBaseFilename=setup-unicon_12.3.0_threads(32-bit)_rev4234
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes

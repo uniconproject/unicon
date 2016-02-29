@@ -140,8 +140,8 @@ initially(filename)
    fstack := []
    readahead := []
    if f := open(\filename) then {
-      while line := (pop(readahead) | read(f) |
-		     (close(f) & (f:=pop(fstack)) & read(f))) do {
+      while line := (pop(readahead) | unspilt(f) |
+		     (close(f) & (f:=pop(fstack)) & unsplit(f))) do {
 	 line := macroexpand(line)
          line ? {
 	    tab(many(' '))
@@ -161,6 +161,8 @@ initially(filename)
 		  put(deps,dependency)
 		  tab(many(' '))
 		  }
+ 	       # This is a "recipe line", so continuations should not be concatenated
+	       # i.e. use read(f) directly, rather than unsplit(f)
 	       while (line := read(f)) & (line[1]=="\t") do {
 		  put(buildrules, macroexpand(line[2:0]))
 		  line := &null
@@ -300,4 +302,13 @@ end
 
 procedure initcap(s)
    return map(s[1],&lcase,&ucase) || map(s[2:0])
+end
+
+# Concatenate lines with a trailing backslash with the next line
+# and replace the "whitespace \ whitespace" at the join with a single space
+procedure unsplit(f)
+    local line := read(f) | fail
+    if line[-1] == "\\" 
+    then return trim(line, '\t \\') || " " || trim(\unsplit(f), ' \t', 1) 
+    else return line
 end

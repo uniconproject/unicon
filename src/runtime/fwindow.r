@@ -3636,6 +3636,8 @@ function{1} DrawTorus(argv[argc])
       char bfmode;
 
       OptWindow(w);
+      EnsureWindow3D(w);
+    
       CheckArgMultiple(5);
       
       wc = w->context;
@@ -3701,7 +3703,8 @@ function{1} DrawCube(argv[argc])
       static dptr constr;
       char bfmode;
 
-      OptWindow(w);		
+      OptWindow(w);
+      EnsureWindow3D(w);      
       CheckArgMultiple(4);
       bfmode = w->context->buffermode;
 
@@ -3770,6 +3773,7 @@ function{1} DrawSphere(argv[argc])
       char bfmode;
 
       OptWindow(w);
+      EnsureWindow3D(w);
       CheckArgMultiple(4);
 
       wc = w->context;
@@ -3838,6 +3842,7 @@ function{1} DrawCylinder(argv[argc])
       char bfmode;
 
       OptWindow(w);
+      EnsureWindow3D(w);      
       wc = w->context;
       CheckArgMultiple(6);
 
@@ -3906,6 +3911,7 @@ function{1} DrawDisk(argv[argc])
       char bfmode;
 
       OptWindow(w);
+      EnsureWindow3D(w);      
       wc = w->context;
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_disk")))
@@ -3985,12 +3991,8 @@ function{1} Eye(argv[argc])
       char abuf[128];
 
       OptWindow(w);
+      EnsureWindow3D(w);      
       wc = w->context;
-      if (wc->is_3D == 0) {
-	 if (warg == 0)
-	    runerr(150, kywd_xwin[XKey_Window]);
-	 else runerr(150, argv[0]);
-	 }
 
       while (warg+i < argc && i < 9) {
 	 if (!is:null(argv[warg+i]))
@@ -4039,6 +4041,7 @@ function{1} Rotate(argv[argc])
       tended struct b_record *rp;
 
       OptWindow(w);
+      EnsureWindow3D(w);
       CheckArgMultiple(4);
 
       for(i = warg; i < argc-warg; i = i+4) {
@@ -4067,6 +4070,7 @@ function{1} Translate(argv[argc])
       static dptr constr;
 
       OptWindow(w);
+      EnsureWindow3D(w);      
       CheckArgMultiple(3);
 
       for(i = warg; i < argc-warg; i = i+3) {
@@ -4096,6 +4100,7 @@ function{1} Scale(argv[argc])
       tended struct descrip f = nulldesc;
 
       OptWindow(w);
+      EnsureWindow3D(w);      
       CheckArgMultiple(3);
 
       for(i = warg; i < argc-warg; i = i+3) {
@@ -4125,12 +4130,7 @@ function{1} PopMatrix(argv[argc])
       static dptr constr;
 
       OptWindow(w);
-
-      if (w->window->is_3D == 0) {
-	 if (warg == 0)
-	    runerr(150, kywd_xwin[XKey_Window]);
-	 else runerr(150, argv[0]);
-         }
+      EnsureWindow3D(w);
 
       if (argc == warg) npops = 1;
       else if (!def:C_integer(argv[warg], 1, npops))
@@ -4186,12 +4186,7 @@ function{1} PushMatrix(argv[argc])
       static dptr constr;
  
       OptWindow(w);
-
-      if (w->window->is_3D == 0) {
-	 if (warg == 0)
-	    runerr(150, kywd_xwin[XKey_Window]);
-	 else runerr(150, argv[0]);
-         }
+      EnsureWindow3D(w);
 
       if (!constr && !(constr = rec_structor3d("gl_pushmatrix")))
 	 syserr("failed to create opengl record constructor");
@@ -4231,6 +4226,7 @@ body {
       tended struct descrip f, f2;
  
       OptWindow(w);
+      EnsureWindow3D(w);
       CheckArgMultiple(3);
 
       if ((j = pushmatrix_rd(w, &f))) {
@@ -4261,6 +4257,7 @@ body {
       tended struct descrip f, f2;
  
       OptWindow(w);
+      EnsureWindow3D(w);
       CheckArgMultiple(4);
 
       if ((j = pushmatrix_rd(w, &f))) {
@@ -4291,6 +4288,7 @@ body {
       tended struct descrip f, f2;
  
       OptWindow(w);
+      EnsureWindow3D(w);
       CheckArgMultiple(3);
 
       if ((j = pushmatrix_rd(w, &f))) {
@@ -4325,6 +4323,7 @@ function{1} IdentityMatrix(argv[argc])
       static dptr constr;
 
       OptWindow(w);
+      EnsureWindow3D(w);
 
       if (!constr)
 	 if (!(constr = rec_structor3d("gl_identity")))
@@ -4370,6 +4369,7 @@ function{1} MatrixMode(argv[argc])
       static dptr constr;
             
       OptWindow(w);
+      EnsureWindow3D(w);
   	
       if (!constr & !(constr = rec_structor3d("gl_matrixmode")))
 	 syserr("failed to create opengl record constructor");
@@ -4431,6 +4431,7 @@ function{1} Texture(argv[argc])
       C_integer theTexture=-1;
 
       OptWindow(w);
+      EnsureWindow3D(w);
       wc = w->context;
       if (argc - warg < 1)/* missing texture source */
          runerr(103);	
@@ -4585,7 +4586,7 @@ function{1} Texcoord(argv[argc])
 #endif					/* Arrays */
 
       OptWindow(w);
-
+      EnsureWindow3D(w);
       wc = w->context;
       num=argc-warg;
       if (num < 1) /* missing the texture coordinates */
@@ -4660,7 +4661,7 @@ function{1} Normals(argv[argc])
 #endif					/* Arrays */
 
       OptWindow(w);
-
+      EnsureWindow3D(w);
       wc = w->context;
       num=argc-warg;
       if (num < 1) /* missing the normals coordinates */
@@ -4711,7 +4712,7 @@ function{1} MultMatrix(argv[argc])
 #endif					/* Arrays */
 
       OptWindow(w);
-
+      EnsureWindow3D(w);
       wc = w->context;
       if (argc-warg < 1) /* missing the matrix elements */
 	 runerr(103);
@@ -4761,12 +4762,7 @@ function{1} Refresh(argv[argc])
       wbp w;
       int i, warg = 0;
       OptWindow(w);
-      if (w->context->is_3D == 0) {
-	 if (warg == 0)
-	    runerr(150, kywd_xwin[XKey_Window]);
-	 else runerr(150, argv[0]);
-	 }
-
+      EnsureWindow3D(w);
       redraw3D(w);
       ReturnWindow; 
 
@@ -4786,8 +4782,7 @@ function{1} WindowContents(argv[argc])
       wbp w;
       int i, warg = 0;
       OptWindow(w);
-
-      
+      EnsureWindow3D(w);
       return w->window->funclist; 
 
    }
@@ -4812,10 +4807,9 @@ function{1} WSection(argv[argc])
       static int section_depth=1;
 
       OptWindow(w);
+      EnsureWindow3D(w);      
       wc = w->context;
-      if (wc->is_3D==0) {
-	 fail;
-	 }
+
       if (argc-warg==0) {	/* section ends */
 	 if (!section_length(w))
 	    syserr("failed to find the section length");

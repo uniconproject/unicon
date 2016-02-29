@@ -502,6 +502,20 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
      if (!n) runerr(146);
    }
    #enddef				/* CheckArgMultiple */
+
+/*
+ * make sure the window is 3D, issue a runtime error if it is not 
+ */
+   #begdef EnsureWindow3D(w)				
+   {
+     if (w->context->is_3D == 0) {
+       if (warg == 0)
+	 runerr(150, kywd_xwin[XKey_Window]);
+       else
+	 runerr(150, argv[0]);
+     }
+   }
+   #enddef
    
 #endif					/* Graphics */
 

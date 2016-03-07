@@ -830,112 +830,39 @@ void handle_thread_error(int val, int func, char* msg)
    case FUNC_MUTEX_LOCK:
    case FUNC_MUTEX_TRYLOCK:
    case FUNC_MUTEX_UNLOCK:
-
       fprintf(stderr, "\nLock/Unlock mutex error-%s: ", msg);
-
       switch(val) {
          case EINVAL:
             fatalerr(180, NULL);
       	    break;
          case EBUSY:
  	    /* EBUSY is handled somewhere else, we shouldn't get here */
-/*     	    fprintf(stderr, "The mutex could not be acquired because it was already locked.\n");
-*/
-     	    break;
-   	 case EAGAIN :
-      	    fprintf(stderr, "The mutex could not be acquired because the maximum number of recursive locks for mutex has been exceeded.\n");
-	    syserr("");
-      	    break;
-   	 case EDEADLK:
-      	    fprintf(stderr, "The current thread already owns the mutex.\n");
-	    syserr("");
-      	    break;
-   	 case EPERM:
-      	    fprintf(stderr, "The current thread does not own the mutex.\n");
-	    syserr("");
-      	    break;
-      	 default:
-	    fprintf(stderr, " pthread function error!\n ");
-	    syserr("");
-      	    break;
+     	    return;
 	 }
+      break;
 
    case FUNC_MUTEX_INIT:
-
       fprintf(stderr, "\nInit mutex error-%s: ", msg);
-
-      switch(val) {
-         case EINVAL:
-     	    fprintf(stderr, "The value specified by attr is invalid.");
-	    syserr("");
-      	    break;
-         case ENOMEM:
-     	    fprintf(stderr, "Insufficient memory exists to initialise the mutex.");
-	    syserr("");
-     	    break;
-   	 case EAGAIN:
-     	    fprintf(stderr, "The system lacked the necessary resources to initialise the mutex.");
-	    syserr("");
-      	    break;
-   	 case EBUSY:
-      	    fprintf(stderr, "The implementation has detected an attempt to re-initialise the object referenced by mutex, a previously initialised, but not yet destroyed, mutex.");
-	    syserr("");
-      	    break;
-   	 case EPERM:
-      	    fprintf(stderr, "The caller does not have the privilege to perform the operation.");
-	    syserr("");
-      	    break;
-      	 default:
-	    fprintf(stderr, "pthread function error!\n ");
-	    syserr("");
-      	    break;
-	 }
+      break;
 
    case FUNC_MUTEX_DESTROY:
-
       fprintf(stderr, "\nDestroy mutex error-%s:", msg);
-
       switch(val) {
-         case EINVAL:
-            fprintf(stderr, "The value specified by mutex is invalid.");
-	    syserr("");
-      	    break;
          case EBUSY:
 /*     	    fprintf(stderr, "The implementation has detected an attempt to destroy the object referenced by mutex while it is locked or referenced (for example, while being used in a pthread_cond_wait() or pthread_cond_timedwait()) by another thread.");
 */
-     	    break;
+     	    return;
       	 default:
 	    fprintf(stderr, " pthread function error!\n ");
-      	    break;
+      	    return;
 	 }
 
    case FUNC_THREAD_JOIN:
-
       fprintf(stderr, "\nThread join error-%s:", msg);
-
-      switch(val) {
-         case EINVAL:
-            fprintf(stderr, "The implementation has detected that the value specified by thread does not refer to a joinable thread.\n");
-	    syserr("");
-      	    break;
-   	 case EDEADLK:
-      	    fprintf(stderr, "A deadlock was detected or the value of thread specifies the calling thread.\n");
-	    syserr("");
-      	    break;
-   	 case ESRCH:
-     	    fprintf(stderr, "No thread could be found corresponding to that specified by the given thread ID\n");
-	    syserr("");
-      	    break;
-      	 default:
-	    fprintf(stderr, "pthread function error!\n ");
-	    syserr("");
-      	    break;
-	 }
+      break;
 
    case FUNC_THREAD_CREATE:
-
       fprintf(stderr, "\nThread create error-%s:", msg);
-
       switch(val) {
          case EAGAIN:
             fprintf(stderr, "Insufficient resources to create another thread, or a system imposed limit on the number of threads was encountered.\n");
@@ -947,72 +874,29 @@ void handle_thread_error(int val, int func, char* msg)
 	       (unsigned int) rlim.rlim_cur, (unsigned int) rlim.rlim_max);
 	    }
 #endif
-
-	    syserr("");
-      	    break;
-
-         case EINVAL:
-            fprintf(stderr, "Invalid settings in attr.\n");
-	    syserr("");
-      	    break;
-
-         case EPERM:
-            fprintf(stderr, "No permission to set the scheduling policy and parameters specified in attr.\n");
-	    syserr("");
-      	    break;
-
-      	 default:
-	    fprintf(stderr, "pthread function error!\n ");
-	    syserr("");
       	    break;
 	 }
 
    case FUNC_COND_INIT:
-
-      fprintf(stderr, "\nInit condition variable error-%s: ", msg);
-
-      switch(val) {
-         case EINVAL:
-     	    fprintf(stderr, "The value specified by attr is invalid.");
-	    syserr("");
-      	    break;
-         case ENOMEM:
-     	    fprintf(stderr, "Insufficient memory exists to initialise the condition variable.");
-	    syserr("");
-     	    break;
-   	 case EAGAIN:
-     	    fprintf(stderr, "The system lacked the necessary resources to initialise the condition variable.");
-	    syserr("");
-      	    break;
-   	 case EBUSY:
-      	    fprintf(stderr, "The implementation has detected an attempt to re-initialise the condition variable before destroying it.");
-	    syserr("");
-      	    break;
-
-      	 default:
-	    fprintf(stderr, "pthread function error!\n ");
-	    syserr("");
-      	    break;
-	 }
-
-
+         fprintf(stderr, "cond init error-%s\n ", msg);
+	 break;
+	 
    case FUNC_SEM_OPEN:
       fprintf(stderr, "sem open error-%s\n ", msg);
-      perror("sem_open()");
-      syserr("");
       break;
 
    case FUNC_SEM_INIT:
       fprintf(stderr, "sem init error-%s\n ", msg);
-      perror("sem_init()");
-      syserr("");
       break;
-
+      
    default:
-      fprintf(stderr, "\npthread function error!\n");
-      syserr("");
+      fprintf(stderr, "\npthread function error-%s !\n", msg);
       break;
       }
+
+      perror("");
+      syserr("");
+      return;
 }
 
 /*

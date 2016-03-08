@@ -489,10 +489,15 @@ int timeout;
 
 "x@>y - non-blocking send."
 /*
- *  thread send .  y is either &null or a co-expression.
- *  if y is null, send to (the current thread's) outbox.
- *  fails if value cannot be sent to y because y is full.
- *  otherwise, produces the size of y's queue
+ *  send value x to y . Possible values of y and the corresponding action:
+ *  co-expression: put x in y's inbox
+ *  &null: put x the current thread's outbox.
+ *  file (socket): write x to y (assuming x can be converted to a string)
+ *  list: put x in y
+ * 
+ *  fails if the value cannot be immediately sent to y (ex: y is full).
+ *  produces the size of the list where x got added, except when 
+ *  y is a socket where 1 is returned.
  */
 operator{0,1} @> snd(x,y)
    declare {
@@ -577,10 +582,9 @@ end
 
 "x@>>y - blocking send."
 /*
- *  thread send .  y is either &null or a co-expression.
- *  if y is null, send to (the current thread's) outbox.
- *  fails if value cannot be sent to y because y is full.
- *  otherwise, produces the size of y's queue
+ *  The same sematics of x@>y above, except that this operation will block 
+ *  if the value cannot be sent immedialty to y (ex: y is full),
+ *  and wait until it can send.
  */
 operator{0,1} @>> sndbk(x,y)
    declare {
@@ -669,10 +673,24 @@ end
 
 "x<@y - non-blocking receive."
 /*
- *  thread send .  y is either &null or a co-expression.
- *  if y is null, send to (the current thread's) outbox.
- *  fails if value cannot be sent to y because y is full.
- *  otherwise, produces the size of y's queue
+ *  receive a value from y . Possible values of y and the corresponding action:
+ *  co-expression: get a value from y's outbox
+ *  &null: get a value from the current thread's inbox.
+ *  file: the same semantics of read()
+ *  list: get a value from y
+ * 
+ *  fails if a value is not avalaible in y (ex: y is empty).
+ *  produces whatever value it reads from y;
+ *
+ *  Expermintal: if x is not &null then this is a "query/set" operation 
+ *  for the max size of the queue where if y is:
+ *  list: 
+        x==0: return the "max" size of y 
+        x!=0: set the max size of y to abs(x)
+ *  co-expression: 
+ *      x==0: return the size of the y's inbox
+ *      x>0 : set the size y's outbox to x
+ *      x<0 : set the size of y's inbox to -x
  */
 operator{0,1} <@ rcv(x,y)
    declare {
@@ -821,10 +839,11 @@ end
 
 "x<<@y - blocking receive."
 /*
- *  thread send . y is either &null or a co-expression.
- *  if y is null, send to (the current thread's) outbox.
- *  fails if value cannot be sent to y because y is full.
- *  otherwise, produces the size of y's queue
+ * same semantics of x<@y excpet this is a blocking operation that waits
+ * for a value to become available if there isn't one already.
+ * x is a timeout in milliseconds before giving up on waiting.
+ * fails if no value is available after x milliseconds 
+ * otherwise, produces the value read from y (queue)
  */
 operator{0,1} <<@ rcvbk(x,y)
    declare {

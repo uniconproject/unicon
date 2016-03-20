@@ -419,8 +419,8 @@ int c_inserttable(union block **pbp, int n, dptr x)
 
    s.dword = D_Table;
    BlkLoc(s) = *pbp;
-   /* < n-1 because there has to be a following value */
-   for(argc=0; argc<n-1; argc+=2) {
+   /* n could be odd, the code below makes sure the last value defaults to null in such case */
+   for(argc=0; argc<n; argc+=2) {
       hn = hash(x+argc);
 
       /* get this now because can't tend pd */
@@ -436,7 +436,10 @@ int c_inserttable(union block **pbp, int n, dptr x)
 	 *pd = (union block *)te;
 	 te->hashnum = hn;
 	 te->tref = x[argc];
-	 te->tval = x[argc+1];
+	 if (argc+1<n)
+	    te->tval = x[argc+1];
+	 else /* if n is odd, a null is used as a default value */
+	    te->tval = nulldesc;
 	 if (TooCrowded(*pbp))
 	    hgrow(*pbp);
 	 }
@@ -1789,14 +1792,17 @@ function{1} table(x[n])
       }
    inline {
       tended union block *bp;
-      int i = 0;
    
       bp = hmake(T_Table, (word)0, (word)n);
       if (bp == NULL)
          runerr(0);
-      if (n-i > 1) {
-	 if (c_inserttable(&bp, n, x) == -1) runerr(0);
-	 }
+      if (n > 1) {
+      	 /*
+	  * if n is odd then the last value is the table's default value
+	  * the actual key-value pairs end at n-1 (n-n%2 below)
+	  */
+	  if (c_inserttable(&bp, n - n % 2, x) == -1) runerr(0);
+ 	 }
       if (n % 2)
 	 bp->Table.defvalue = x[n-1];
       else bp->Table.defvalue = nulldesc;

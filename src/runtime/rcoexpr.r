@@ -206,6 +206,17 @@ int first;
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
+#ifdef Concurrent
+	    if (ncp->program == ccp->program) {
+	       struct context *nctx, *cctx;
+	       nctx = (struct context *) ncp->cstate[1];
+	       cctx = (struct context *) ccp->cstate[1];
+	       if (nctx->tstate)
+	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
+	       else
+	       	  nctx->tmplevel =  cctx->tstate->K_level;
+	    	}
+#endif					/* Concurrent */
 	 break;
       case A_Cofail:
          EVValX(ncp,E_Cofail);
@@ -213,6 +224,17 @@ int first;
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
+#ifdef Concurrent
+	    if (ncp->program == ccp->program) {
+	       struct context *nctx, *cctx;
+	       nctx = (struct context *) ncp->cstate[1];
+	       cctx = (struct context *) ccp->cstate[1];
+	       if (nctx->tstate)
+	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
+	       else
+	       	  nctx->tmplevel =  cctx->tstate->K_level;
+	    	}
+#endif					/* Concurrent */	    
 	 break;
       }
 #endif        				/* MultiThread */

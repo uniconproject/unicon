@@ -19,6 +19,7 @@ extern word alcnum;
 #ifndef MultiThread
 word coexp_ser = 2;	/* serial numbers for co-expressions; &main is 1 */
 word list_ser = 1;	/* serial numbers for lists */
+word intern_list_ser=-1;/* serial numbers for lists used internally by the RT system */
 #ifdef PatternType
 word pat_ser = 1;	/* serial numbers for patterns */
 #endif					/* PatternType */
@@ -207,7 +208,7 @@ struct b_coexpr *alccoexp()
 		)
        		ReturnErrNum(307, NULL);
 
-   if((hp = alclist(0, 1024))==NULL)
+   if((hp = alclist(-1, 1024))==NULL)
       ReturnErrNum(307, NULL);
 
    MUTEX_INITBLK(hp);
@@ -216,7 +217,7 @@ struct b_coexpr *alccoexp()
    hp->max = 1024;
    CV_INITBLK(hp);
 
-   if((hp = alclist(0, 1024))==NULL)
+   if((hp = alclist(-1, 1024))==NULL)
       ReturnErrNum(307, NULL);
 
    MUTEX_INITBLK(hp);
@@ -225,7 +226,7 @@ struct b_coexpr *alccoexp()
    hp->max = 1024;
    CV_INITBLK(hp);
 
-   if((hp = alclist(0, 64))==NULL)
+   if((hp = alclist(-1, 64))==NULL)
       ReturnErrNum(307, NULL);
 
    MUTEX_INITBLK(hp);
@@ -376,7 +377,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 			)
          		ReturnErrNum(307, NULL);
 
-      if((hp = alclist(0, 1024))==NULL)
+      if((hp = alclist(-1, 1024))==NULL)
       	    ReturnErrNum(307, NULL);
 
       MUTEX_INITBLK(hp);
@@ -385,7 +386,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
       hp->max = 1024;
       CV_INITBLK(hp);
 
-      if((hp = alclist(0, 1024))==NULL)
+      if((hp = alclist(-1, 1024))==NULL)
       	    ReturnErrNum(307, NULL);
 
       MUTEX_INITBLK(hp);
@@ -394,7 +395,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
       hp->max = 1024;
       CV_INITBLK(hp);
 
-      if((hp = alclist(0, 64))==NULL)
+      if((hp = alclist(-1, 64))==NULL)
       	    ReturnErrNum(307, NULL);
 
       MUTEX_INITBLK(hp);
@@ -715,11 +716,19 @@ struct b_list *f(uword size, uword nslots)
    EVVal(sizeof (struct b_lelem) + (nslots-1) * sizeof(struct descrip), e_lelem);
    AlcFixBlk(blk, b_list, T_List)
    AlcVarBlk(lblk, b_lelem, T_Lelem, nslots)
-   blk->size = size;
    MUTEX_LOCKID(MTX_LIST_SER);
-   blk->id = list_ser++;
+   if (size != -1)
+      blk->id = list_ser++;
+   else{
+      /* 
+       * size -1 is used to indicate an RT list, 
+       * reset size to 0 and use the "special" serial number
+       */
+      size = 0;
+      blk->id = intern_list_ser--;
+      }
    MUTEX_UNLOCKID(MTX_LIST_SER);
-
+   blk->size = size;     
    INIT_SHARED(blk);
 
    blk->listhead = blk->listtail = (union block *)lblk;
@@ -759,10 +768,19 @@ struct b_list *f(uword size, uword nslots)
    EVVal(i, e_lelem);
    AlcFixBlk(blk, b_list, T_List)
    AlcBlk(lblk, b_lelem, T_Lelem, i)
-   blk->size = size;
    MUTEX_LOCKID(MTX_LIST_SER);
-   blk->id = list_ser++;
+   if (size != -1)
+      blk->id = list_ser++;
+   else{ 
+      /* 
+       * size -1 is used to indicate an RT list, 
+       * reset size to 0 and use the "special" serial number
+       */
+      size = 0;
+      blk->id = intern_list_ser--;
+      }
    MUTEX_UNLOCKID(MTX_LIST_SER);
+   blk->size = size;
    blk->listhead = blk->listtail = (union block *)lblk;
    INIT_SHARED(blk);
    lblk->blksize = i;

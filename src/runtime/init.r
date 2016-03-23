@@ -262,6 +262,7 @@ int dumped = 0;				/* non-zero if reloaded from dump */
 #ifdef MultipleRuns
 extern word coexp_ser;
 extern word list_ser;
+extern word intern_list_ser;
 extern word set_ser;
 extern word table_ser;
 extern int first_time;
@@ -772,6 +773,7 @@ char *argv[];
 
    rootpstate.Coexp_ser = 2;
    rootpstate.List_ser  = 1;
+   rootpstate.Intern_list_ser = -1;
    rootpstate.Set_ser   = 1;
    rootpstate.Table_ser = 1;
    rootpstate.Kywd_time_elsewhere = 0;
@@ -1167,6 +1169,8 @@ Deliberate Syntax Error
 
       mainhead->handdata = NULL;
       list_ser = 1;
+      intern_list_ser = -1;
+
 }
 #endif					/* Concurrent */
    
@@ -2030,6 +2034,7 @@ void datainit()
 					/* In module rmemmgt.r:	*/
    coexp_ser = 2;
    list_ser = 1;
+   intern_list_ser = -1;
    set_ser = 1;
    table_ser = 1;
 
@@ -2120,6 +2125,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 
    pstate->Coexp_ser = 2;
    pstate->List_ser = 1;
+   pstate->Intern_list_ser = -1;
    pstate->Set_ser = 1;
    pstate->Table_ser = 1;
 

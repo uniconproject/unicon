@@ -691,6 +691,7 @@ struct progstate {
 
    word Coexp_ser;			/* this program's serial numbers */
    word List_ser;
+   word Intern_list_ser;
 #ifdef PatternType   
    word Pat_ser;
 #endif					/* PatternType */

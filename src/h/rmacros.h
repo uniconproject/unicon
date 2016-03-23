@@ -982,6 +982,7 @@
       
       #define coexp_ser (curpstate->Coexp_ser)
       #define list_ser  (curpstate->List_ser)
+      #define intern_list_ser  (curpstate->Intern_list_ser)
 #ifdef PatternType
       #define pat_ser  (curpstate->Pat_ser)
 #endif					/* PatternType */

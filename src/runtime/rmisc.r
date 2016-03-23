@@ -1302,13 +1302,17 @@ struct b_coexpr *topact(ce)
 struct b_coexpr *ce;
 {
    struct astkblk *abp = ce->es_actstk;
-   
+   CURTSTATE();
+#ifdef MultiThread 
+   if (ce->program == curtstate->c->program){
+#endif					/* MultiThread */
+      if (abp->nactivators == 0)
+         abp = abp->astk_nxt;
+      return abp->arec[abp->nactivators-1].activator;
 #ifdef MultiThread
-   return abp->arec[0].activator;
-#else					/* MultiThread */
-   if (abp->nactivators == 0)
-      abp = abp->astk_nxt;
-   return abp->arec[abp->nactivators-1].activator;
+       }
+    else
+       return abp->arec[0].activator;
 #endif					/* MultiThread */
 }
 

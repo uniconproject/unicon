@@ -98,6 +98,7 @@ extern word mutexid_stringtotal;
 extern word mutexid_blocktotal;
 extern word mutexid_coll;
 extern word list_ser;
+extern word intern_list_ser;
 /*
  * Fake out a possible fail, to trick iconc.
  */

@@ -3,7 +3,7 @@
  */
 
 #define UNIX 1
-#define NoLoadFunc
+#define LoadFunc
 /*#define NoCoexpr*/
 /* no SysOpt: Linux getopt() is POSIX-compatible only if an envmt var is set */
 

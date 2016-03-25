@@ -46,6 +46,15 @@
 #include "XpmI.h"
 #include <ctype.h>
 
+/* Replace labs() with abs() for antediluvian compilers */
+#ifndef __STDC_VERSION__
+#define labs(x) abs(x)
+#else
+#if __STDC_VERSION__ < 199409L
+#define labs(x) abs(x)
+#endif
+#endif
+
 LFUNC(xpmVisualType, int, (Visual *visual));
 
 LFUNC(AllocColor, int, (Display *display, Colormap colormap,
@@ -342,14 +351,13 @@ SetCloseColor(display, colormap, visual, col, image_pixel, mask_pixel,
 
 	    closenesses[i].cols_index = i;
 	    closenesses[i].closeness =
-		COLOR_FACTOR * (abs((long) col->red - (long) cols[i].red)
-				+ abs((long) col->green - (long) cols[i].green)
-				+ abs((long) col->blue - (long) cols[i].blue))
-		+ BRIGHTNESS_FACTOR * abs(((long) col->red +
+		COLOR_FACTOR * (labs((long) col->red - (long) cols[i].red)
+				+ labs((long) col->green - (long) cols[i].green)
+				+ labs((long) col->blue - (long) cols[i].blue))
+		+ BRIGHTNESS_FACTOR * labs(((long) col->red +
 					   (long) col->green +
 					   (long) col->blue)
-					   - ((long) cols[i].red +
-					      (long) cols[i].green +
+					   - ((long) cols[i].red +					      (long) cols[i].green +
 					      (long) cols[i].blue));
 	}
 	qsort(closenesses, ncols, sizeof(CloseColor), closeness_cmp);

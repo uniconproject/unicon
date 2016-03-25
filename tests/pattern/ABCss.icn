@@ -1,21 +1,18 @@
-#
-# ABCss.icn - test whether lines contain strings with equal numbers
-# of a's followed by b's followed by c's: a^nb^nc^n
-#
-# Status: as-given supposedly works, but the deferred evaluation solution
-# is commented out because it appeared NOT to work and needs repair.
-# Compare and synchronize with JGG paper benchmarks section solution.
-#
+# ABCss.icn - test for lines containing equal numbers
+#   of a's followed by b's followed by c's: a^nb^nc^n
+# Tests: Pos(), Span(), .>, Rpos() `proc()`
+
 procedure test(a,b,c)
-	return (a  = (b - a)) & (a = (c - b))
+   return ((a - 1)  = (b - a)) & ((a - 1) = (c - b))
 end
 
 procedure main()
    p := Pos(1) || Span("a") || .> a || Span("b") || .> b ||
-	 Span("c") || .> c || Rpos(0) # && `test(a,b,c)` fix
+       Span("c") || .> c || Rpos(0) && `test(a,b,c)`
 
-   while line := read() do
-      if (line ?? p) & ((a-1) = (b-a) = (c-b))
-      then write("accepted") 
-      else write("rejected")
+   while line := read() do {
+      if line ?? p
+      then write(line, " accepted") 
+      else write(line, " rejected")
+      }
 end

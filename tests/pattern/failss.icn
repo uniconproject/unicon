@@ -1,12 +1,16 @@
-#pg 48
+# failss.icn
+# Original SNOBOL code: Green Book, pp. 48-49
+# Tests: Abort(), Break(), =>, .|, ??, Fail()
+# Expected output: words with at least one 'a',
+#   one 'b', and no 'c' or 'y'.
 
 procedure main()
-   p := (Break("a") => a .| Break("b") => b .| Break("c") => c) || Fail() 
-   l := [ "alpha", "beta", "abracadabra", "absolutely", "awful", "albeit" ]
-   write("Acceptable words are")
-   every s := !l do {
+   p := (Break("a") => a .| Break("b") => b .|
+      Break("c") => c) || Fail() 
+   write("Acceptable words are:\n")
+   while s := " " || read() do {
       a := b := c := &null
-      s ?? p
+      s ?? (Break("y") || Abort()) .| p
       if ( \a & \b & /c) then write(s)
       }
 end

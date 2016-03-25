@@ -1,17 +1,6 @@
-# pg 54
-# Original SNOBOL code
-#	&ANCHOR = 1
-#	VARIABLE = ANY('XYZ')
-#	ADDOP = ANY('+-')
-#	MULOP = ANY('*/')
-#	FACTOR = VARIABLE | '(' *EXP ')'
-#	TERM = FACTOR | *TERM MULOP FACTOR
-#	EXP = ADDOP TERM | TERM | *EXP ADDOP TERM
-#LOOP	STRING = TRIM(INPUT)				:F(END)
-#	STRING EXP RPOS(0)				:F(NOGOOD)
-#	OUTPUT = STRING ' IS AN EXPRESSION'		:(LOOP)
-#NOGOOD	OUTPUT = STRING ' IS NOT AN EXPRESSION'		:(LOOP)
-#END
+# expss.icn
+# Original SNOBOL4 code: Green Book, p. 54
+# Tests: Any(), .|, ||, ??, `v`, Pos(), Rpos()
 
 procedure main()
    variable := Any("xyz")
@@ -22,15 +11,10 @@ procedure main()
    exp      := addop || term .| term .| term || addop || `exp`
    p        := Pos(1) || exp || Rpos(0)
 
-   L := [
-	 "x+y*(z+x)",
-	 "x+y+z",
-	 "xy"
-	 ]
-   every s := !L do {
+   while s := read() do {
       if ( s ?? p ) then
-	 write(s, " is an expression")
+   write(s, " is an expression")
       else
-	 write(s, " is not an expression")
+   write(s, " is not an expression")
       }
 end

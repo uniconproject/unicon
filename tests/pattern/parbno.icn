@@ -1,12 +1,15 @@
+# parbno.icn
+# Tests: Pos(), Arbno(), Rpos(), ??, ||,
+#        =>, Span(), included pattern in pattern
+
 procedure main()
-   item := Span(&digits)
+   out := &output
+   item := Span(&digits) => out
    list := Pos(1) || "(" || item || Arbno("," || item) || ")" || Rpos(0)
-   if "(12,345,6)" ?? list then
-      write("Match succeeded")
-   else
-      write("Match failed")
-   if "(12,,6)" ?? list then
-      write("Match succeeded")
-   else
-      write("Match failed")
+   while line := read() do {
+      if line ?? list then
+         write("Match succeeded: ", line)
+      else
+         write("Match failed: ", line)
+      }
 end

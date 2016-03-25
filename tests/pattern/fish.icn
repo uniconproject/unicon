@@ -1,12 +1,14 @@
-#
-# fish.icn - test generator resumption of patterns.
-#
-# Print first word of fourth word-pair. Expected output:
-# blue
+# fish.icn - print word before fourth "fish".
+# Test generator resumption of patterns
+# Tests: Break(), ||, ->, ??, Span(), literals
+
 procedure main()
-   s := "One fish two fish red fish blue fish"
    wrdpat := Break(&letters) || Span(&letters) -> word
    p := wrdpat || Span(" ") || "fish"
-   every (s ?? p)\4
-   write(word)
-end       
+
+   while s := read() do {
+      n := 0
+      every (s ?? p)\4 do n +:= 1
+      n = 4 & write("Matched: '", word, "' in ", s)
+      }
+end

@@ -1,7 +1,14 @@
+# setcur.icn
+# Revised from Green Book, p. 36.
+# Tests: .|, ||, .>, ??
+
 procedure main()
-   p := ( "b" .| "r") || ("e" .|"ea") || ("d" .| "ds")
-   pattern := .$x || p || .$y
-   write("the beads are red")
-   if "the beads are red" ?? pattern then 
-      write(repl(" ",x - 1) , repl("_", y - x))
+   p := ( "b" .| "r") || ("ea" .|"e") || ("ds" .| "d")
+   pattern := .>x || p || .>y
+
+   while line := read() do {
+      write(line)
+      if line ?? pattern then
+         write(repl(" ", x - 1) , repl("-", y - x))
+      }
 end

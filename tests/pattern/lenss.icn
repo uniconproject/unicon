@@ -1,17 +1,17 @@
+# lenss.icn
+# Tests: Pos(), Len(), ->, .|, ||, Rpos(),
+#        pattern replacement
+# Input example: 20150116
+# Expected output:
+# mo = 01 day = 16 yr = 2015
+# mo = 10 day = 17 yr = 2015
+
 procedure main()
 
-   p := Fence() || Len(4) -> yr || " " || Len(4) -> mo || " " || Len(2) -> day
-   in := open("leninput", "r")
-   out := open("lenoutput", "w")
+   p := Pos(1) || Len(4) -> yr || (" " .| "") ||
+        Len(2) -> mo || (" " .| "") || Len(2) -> day || Rpos(0)
 
-   every write(out, (line := !in) ?? p := mo || " " || day || ", " || yr || " " )
-#	while line := read(in) do
-#	{	
-
-#        line ?? p := mo || " " || day || ", " || yr || " " 
-
-#        write(out,line)
-#		write(" mo = ", mo, " day = ",day, " yr = ",yr)
-#	}
+   while line := read() do
+      write(line ?? p := "mo = " || mo ||
+         " day = " || day || " yr = " || yr)
 end
-

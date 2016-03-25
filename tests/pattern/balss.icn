@@ -1,0 +1,35 @@
+# balss.icn
+# Tests: Bal()
+# Note: Bal() matches in position 1:
+#         a. a left parenthesis and text through a right parenthesis;
+#         b. any non-null, non-parenthesis character;
+#         c. or it will skip over left parentheses and a series of
+#              right-parentheses until it finds a balanced
+#              parenthesized string or the first
+#              character of an unbalanced string.
+
+procedure main()
+   output := &output
+
+   write("Green Book, p. 60 (\"BAL does not match\"):")
+   s1 := read()
+   allbal := Bal() => output || Fail()
+   s1 ?? allbal
+
+   write("Green Book, p. 60 (no match strings):")
+   ")a+b(" ?? Bal() -> output         # Matches 'a'
+   "((a+b)" ?? Bal() -> output        # Matches '(a+b)'
+   "((((a+b)" ?? Bal() -> output      # Matches '(a+b)'
+   "((((a+b" ?? Bal() -> output       # Matches 'a'
+   ")((((a + b" ?? Bal() -> output      # Matches 'a'
+   
+   write("Spitbol manual, p. 112: (\"These are not [balanced]\")")
+   ")a+b" ?? Bal() -> output             # Matches 'a'
+   "(a*(b+)" ?? Bal() -> output          # Matches 'a'
+   "(x))" ?? Bal() -> output             # Matches '(x)'
+
+   write("Matching beyond first character:")
+   s2 := read()
+   s2 ?? Pos(2) || Break("(") || Bal() -> output   # Matches '(b * c)'
+   every write("a(bc)d" ?? Bal())
+end

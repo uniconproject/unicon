@@ -1,18 +1,21 @@
+# ppos.icn
+# Tests: Len(), Pos(), Rpos(), string concatenation,
+#        ??, ->, ||, Len()
+
 procedure main()
    out := &output
-   s := "abcda"
-   if s ?? Pos(1) || "b" then
-      write("Match succeeded")
-   else
-      write("Match failed")
-   s ?? Len(3) -> out || Rpos(0) 
-   s ?? Pos(4) || Len(1) -> out
-   if s ?? Pos(1) || "abcd" || Rpos(0) then
-      write("Match succeeded")
-   else
-      write("Match failed")
-   out := &output
-   s := "abcda"
-   s ?? Len(3) -> out
-   s ?? Len(2) -> out || "a"
+
+   while s := read() do {
+      write(out, repl("-", 5))
+      if s ?? Pos(2) || "b" then
+         write(out, "Match succeeded for: ", || s)
+      else
+         write(out, "Match failed for: " || s)
+      s ?? Len(3) -> out || Rpos(0) 
+      s ?? Pos(4) || Len(1) -> out
+      if s ?? Pos(1) || "abcd" || Rpos(0) then
+         write(out, "Match succeeded for: " || s)
+      else
+         write(out, "Match failed for: " || s)
+      }
 end

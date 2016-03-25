@@ -4371,7 +4371,7 @@ function{1} MatrixMode(argv[argc])
       OptWindow(w);
       EnsureWindow3D(w);
   	
-      if (!constr & !(constr = rec_structor3d("gl_matrixmode")))
+      if (!constr && !(constr = rec_structor3d("gl_matrixmode")))
 	 syserr("failed to create opengl record constructor");
       nfields = (int) BlkD(*constr, Proc)->nfields;
 

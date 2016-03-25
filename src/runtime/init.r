@@ -1821,6 +1821,7 @@ dptr v;
    {
    IntVal(kywd_err) = 0;
    err_msg(n, v);
+   c_exit(0);		/* unreachable; but makes clang happy */
    }
 
 /*

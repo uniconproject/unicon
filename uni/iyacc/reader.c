@@ -312,10 +312,12 @@ void copy_text(void)
 	    unterminated_text(t_lineno, t_line, t_cptr);
     }
     if (!lflag)/*rwj*/
+    {
       if (jflag)
         fprintf(f, jline_format, lineno, input_file_name);
       else
         fprintf(f, line_format, lineno, input_file_name);
+    }
 
 loop:
     c = *cptr++;
@@ -443,10 +445,12 @@ void copy_union(void)
     unionized = 1;
 
     if (!lflag)
+    {
       if (jflag)
         fprintf(text_file, jline_format, lineno, input_file_name);
       else
         fprintf(text_file, line_format, lineno, input_file_name);
+    }
 
     fprintf(text_file, "typedef union");
     if (dflag) fprintf(union_file, "typedef union");
@@ -1186,16 +1190,18 @@ void copy_action(void)
     if (last_was_action)
 	insert_empty_rule();
     last_was_action = 1;
-	if (iflag)
-	  fprintf(f, "procedure action_%d()\n", nrules - 2);
-	else 
-	  fprintf(f, "case %d:\n", nrules - 2);
+    if (iflag)
+	fprintf(f, "procedure action_%d()\n", nrules - 2);
+    else 
+	fprintf(f, "case %d:\n", nrules - 2);
 
     if (!lflag)/*rwj*/
+    {
       if (jflag)
         fprintf(f, jline_format, lineno, input_file_name);
       else
         fprintf(f, line_format, lineno, input_file_name);
+    }
     if (*cptr == '=') ++cptr;
 
     n = 0;

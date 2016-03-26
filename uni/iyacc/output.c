@@ -931,10 +931,12 @@ output_stored_text(void)
 	putc(c, out);
     }
     if (!lflag)
+    {
       if (jflag)/*rwj*/
 	fprintf(out, jline_format, ++outline + 1, code_file_name);
       else
 	fprintf(out, line_format, ++outline + 1, code_file_name);
+    }
 }
 
 
@@ -1425,10 +1427,12 @@ void output_trailing_text(void)
 	putc('\n', out);
     }
     if (!lflag)
+    {
         if (jflag)
 	  fprintf(out, jline_format, ++outline + 1, code_file_name);
 	else
 	  fprintf(out, line_format, ++outline + 1, code_file_name);
+    }
 }
 
 
@@ -1461,10 +1465,12 @@ void output_semantic_actions(void)
     }
 
     if (!lflag)
+    {
         if (jflag)/*rwj*/
 	  fprintf(out, jline_format, ++outline + 1, code_file_name);
 	else
 	  fprintf(out, line_format, ++outline + 1, code_file_name);
+    }
 }
 
 void free_itemsets(void)

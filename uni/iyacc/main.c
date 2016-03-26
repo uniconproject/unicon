@@ -387,24 +387,25 @@ void create_file_names(void)
 	code_file_name = output_file_name;
 
     if (dflag)
-		if (iflag)
-		{
-		defines_file_name = MALLOC(len + 11);
-		if (defines_file_name == 0)
-		    no_space();
-        len = strcspn(input_file_name, ".");
-        strncpy(defines_file_name, input_file_name, len);
-		strcpy(defines_file_name + len, "_tab" ICON_OUTPUT_SUFFIX);
-		}
+    {
+	if (iflag)
+	{
+	    defines_file_name = MALLOC(len + 11);
+	    if (defines_file_name == 0)
+	      no_space();
+	    len = strcspn(input_file_name, ".");
+	    strncpy(defines_file_name, input_file_name, len);
+	    strcpy(defines_file_name + len, "_tab" ICON_OUTPUT_SUFFIX);
+	}
 	else
-	    {
-		defines_file_name = MALLOC(len + 7);
-		if (defines_file_name == 0)
-		    no_space();
-		strcpy(defines_file_name, file_prefix);
-		strcpy(defines_file_name + len, DEFINES_SUFFIX);
-	    }
-
+	{
+	    defines_file_name = MALLOC(len + 7);
+	    if (defines_file_name == 0)
+	      no_space();
+	    strcpy(defines_file_name, file_prefix);
+	    strcpy(defines_file_name + len, DEFINES_SUFFIX);
+	}
+    }
     if (vflag)
     {
 	verbose_file_name = MALLOC(len + 8);

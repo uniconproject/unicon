@@ -19,5 +19,4 @@
 #define MacOSX
 #define INTMAIN
 #define PROFIL_CHAR_P
-/* LoadFunc not implemented */
-#define LoadFunc
+#define LoadFunc 1

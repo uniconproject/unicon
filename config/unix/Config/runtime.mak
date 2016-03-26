@@ -47,7 +47,14 @@ interp_all:
 iconx: $(OBJS)
 	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP)
 	cp iconx ../../bin
-	strip ../../bin/iconx
+# Some systems require global symbols to be left in iconx for loadfunc() to work
+# but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
+# so only use -x when it is known to be needed and available.
+	if grep -q "MacOSX" ../../src/h/define.h; then \
+		strip -x ../../bin/iconx; \
+	else \
+		strip ../../bin/iconx; \
+	fi
 
 
 xcnv.$(O): cnv.r $(HDRS)

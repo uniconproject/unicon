@@ -9,7 +9,8 @@ ICONT = icont
 IFLAGS = -us
 ITRAN = $(ICONT) $(IFLAGS)
 
-# Macs use libcfunc.dylib
+# Macs should really use libcfunc.dylib, but libcfunc.so works just as well
+#  (and requires no alterations to other makefiles to accommodate the change to dylib).
 FUNCLIB = libcfunc.so
 
 .SUFFIXES: .c .o

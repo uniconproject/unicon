@@ -403,8 +403,8 @@ int oldmode;
    if (op == '=') {
       for(i = 0; i < 3; i++)
 	if (which & (1 << i)) {
-	    retmode &= ~(7 << i*3);
-	    retmode &= ~(1 << i + 9);
+	    retmode &= ~(7 << (i*3));
+	    retmode &= ~(1 << (i + 9));
 	}
       op = '+';
    }

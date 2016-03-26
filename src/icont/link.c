@@ -430,7 +430,18 @@ char *outname;
       "iconx",
       " \"$0\" ${1+\"$@\"}",
       "[executable Icon binary follows]");
-   strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8));
+#if __clang__
+   /* clang doesn't much like the strcat code below and recommends array indexing instead. i.e.
+	*       strcat(script, &"        \n\f\n"[((int)(strlen(script) + 4) % 8)]);
+	* but the code is well defined standard C, so we'll just temporarily suppress clang's fastidiousness
+	*/
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wstring-plus-int"
+#endif
+   strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8)); /* Guarantee longword (8 byte) alignment for following data */
+#if __clang__
+#pragma clang diagnostic pop
+#endif
    hdrsize = strlen(script) + 1;	/* length includes \0 at end */
    fwrite(script, hdrsize, 1, outfile);	/* write header */
 #endif					/* UNIX */

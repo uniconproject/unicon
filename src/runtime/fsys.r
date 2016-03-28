@@ -1961,7 +1961,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	  * This is a lame hack. Someone needs to think through
 	  * a general solution and rewrite it.
 	  */
-	 if (s = strstr(cmdline, "&>")) {
+	 if ((s = strstr(cmdline, "&>"))) {
 	    *s = '\0';
 	    s += 2;
 	    while (*s == ' ') s++;
@@ -1975,7 +1975,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       s++;
 	       }
 	    }
-	 else if (s = strstr(cmdline, "2>")) {
+	 else if ((s = strstr(cmdline, "2>"))) {
 	    *s = '\0';
 	    s += 2;
 	    while (*s == ' ') s++;
@@ -1989,7 +1989,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       s++;
 	       }
 	    }
-	 else if (s = strstr(cmdline, ">>")) {
+	 else if ((s = strstr(cmdline, ">>"))) {
 	    tended char *s_stdout;
 	    *s = '\0';
 	    s += 2;				/* skip over >> */
@@ -2015,7 +2015,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	       s++;
 	       }
 	    }
-	 else if (s = strchr(cmdline, '>')) {
+	 else if ((s = strchr(cmdline, '>'))) {
 	    *s = '\0';
 	    s++;
 	    while (*s == ' ') s++;

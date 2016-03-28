@@ -877,7 +877,7 @@ void output_defines(void)
 		    putc(c, code_file);
 		    if (dflag) putc(c, defines_file);
 		}
-		while (c = *++s);
+		while ((c = *++s));
 	    }
 	    ++outline;
 

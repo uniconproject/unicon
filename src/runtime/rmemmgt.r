@@ -441,7 +441,7 @@ int region;
    if (setrlimit_firsttime) {
       char *s;
       setrlimit_firsttime = 0;
-      if (s=getenv("SETRLIMIT_COUNT")) {
+      if ((s=getenv("SETRLIMIT_COUNT"))) {
 	 setrlimit_count = atoi(s);
 	 }
       }

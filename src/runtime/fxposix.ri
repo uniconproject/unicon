@@ -28,6 +28,12 @@ struct descrip amperErrno = {D_Integer};
 #define fstat _fstat
 #endif					/* NT */
 
+/*
+ * clang complains that "implicit declaration of function 'rusage2rec' is invalid in C99",
+ * so throw it a bone.
+ */
+void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);  /* From rposix.r */
+
 extern int errno;
 
 #define String(d, s) do {                               \
@@ -1138,11 +1144,12 @@ function{0,1} fdup(src, dest)
 
       if ((fd_dest = get_fd(dest, 0)) < 0)
 	 runerr(174, dest);
-      if (BlkLoc(dest)->File.status != 0)
+      if (BlkLoc(dest)->File.status != 0) {
 	 if (BlkLoc(dest)->File.status & Fs_Pipe)
 	    pclose(BlkLoc(dest)->File.fd.fp);
 	 else 
 	    fclose(BlkLoc(dest)->File.fd.fp);
+	  }
  
       IntVal(amperErrno) = 0;
       if (dup2(fd_src, fd_dest) < 0) {

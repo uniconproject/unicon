@@ -799,7 +799,7 @@ int checkOpenConsole( FILE *w, char *s );
 
       int identitymatrix();
       int setautogen(wbp w, int i);
-      int create3dcontext(wbp w);
+      int create3Dcontext(wbp w);
       void initializeviewport(int w, int h);
       int destroycontext(wbp w);
       int copytextures(wcp wc1, wcp wc2);

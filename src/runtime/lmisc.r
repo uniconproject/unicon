@@ -362,7 +362,7 @@ int timeout;
 	  case -2 :
    	  if (hp->size == 0){
              idelay(1);
-             if (hp->size == 0) 
+             if (hp->size == 0){ 
       	     	if (!dncp) 
 		   idelay(-1);
 	    	else{
@@ -377,7 +377,8 @@ int timeout;
 	              ccp->handdata = NULL;
 	              Return;
 	              }
-	           }  
+	           }
+		}
               }
 	     break;
 	  default :
@@ -409,6 +410,7 @@ int timeout;
 
    	     Return;
       }
+      Fail; /* Unreachable */
 }
 
 

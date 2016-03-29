@@ -254,7 +254,7 @@ int first;
 #endif					/* COMPILER */
 
 #ifdef Concurrent
-      if (ccp->status & Ts_Async){
+      if (IS_TS_ASYNC(ccp->status)){
       /*
        * The CE thread is genereating a new value, it should go into the outbox.
        * ccp is the "k_current" CE. k_current is used to avoid invalid ccp 
@@ -292,7 +292,7 @@ int first;
     * depending on desired join semantics.
     * coclean calls pthread_exit() in case of Async threads.
     */
-   if (ccp->status & Ts_Async){
+   if (IS_TS_ASYNC(ccp->status)){
       #ifdef CoClean
  	 coclean(ccp->cstate);
       #endif				/* CoClean */
@@ -519,7 +519,7 @@ int pthreadcoswitch(void *o, void *n, int first)
    sem_post(new->semp);			/* unblock the new thread */
 
 #ifdef AAAConcurrent
-   if (nstat & Ts_Sync )
+   if (IS_TS_SYNC(nstat))
 #endif					/* Concurrent */
 
    SEM_WAIT(old->semp);			/* block this thread */
@@ -544,12 +544,14 @@ void coclean(void *o) {
    if (old == NULL)		/* if never initialized, do nothing */
       return;
     
+#ifdef Concurrent
    if (old->tstate){
       strregion = old->tstate->Curstring;
       blkregion = old->tstate->Curblock;
       }
+#endif					/* Concurrent */
 
-   if (old->c->status & Ts_Sync || old->alive==-1){
+   if (IS_TS_SYNC(old->c->status) || old->alive==-1){
 #ifdef Concurrent
       CURTSTATE();
       old->alive = -1;			/* signal thread to exit */
@@ -570,6 +572,7 @@ void coclean(void *o) {
       }
    else if (old->alive==1) { /* the current thread is done, called this to exit */
       /* give up the heaps owned by the thread */
+#ifdef Concurrent
       if (blkregion){
          MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
          swap2publicheap(blkregion, NULL,  &public_blockregion);
@@ -579,7 +582,7 @@ void coclean(void *o) {
          swap2publicheap(strregion, NULL,  &public_stringregion);
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
          }	
-
+#endif					/* Concurrent */
       old->alive = -8;
       CV_SIGNAL_EMPTYBLK(BlkD(old->c->outbox, List));
       CV_SIGNAL_FULLBLK(BlkD(old->c->inbox, List));
@@ -592,29 +595,22 @@ void coclean(void *o) {
 
    SEM_CLOSE(old->semp);	/* close/destroy associated semaphore */
 
+#ifdef Concurrent
    /*
     * Give up the heaps owned by the old thread, 
     * only GC thread is running, no need to lock 
     */
-    if ((old->c->status & Ts_Sync) && blkregion){
-       /*
-	* ConcurrentCOMPILER folks leave these locks in, should they be
-	* removed for them too?
-	*/
-#if ConcurrentCOMPILER
+    if (IS_TS_SYNC(old->c->status) && blkregion){
        MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
-#endif					/* ConcurrentCOMPILER */
        swap2publicheap(blkregion, NULL,  &public_blockregion);
-#if ConcurrentCOMPILER
        MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
        MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
-#endif					/* ConcurrentCOMPILER */
        swap2publicheap(strregion, NULL,  &public_stringregion);
-#if ConcurrentCOMPILER
        MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-#endif					/* ConcurrentCOMPILER */
        }
     tlschain_remove(old->tstate);
+#endif					/* ConcurrentCOMPILER */
+
     free(old); 			/* free context block */
     ocs[1] = NULL;            
     return;
@@ -839,86 +835,6 @@ void clean_threads()
    free(condvars);
    free(condvarsmtxs);
 #endif
-}
-
-/*
- *  pthread errors handler
- */
-void handle_thread_error(int val, int func, char* msg)
-{
-  if (!msg) msg = "";
-
-   switch(func) {
-   case FUNC_MUTEX_LOCK:
-   case FUNC_MUTEX_TRYLOCK:
-   case FUNC_MUTEX_UNLOCK:
-      fprintf(stderr, "\nLock/Unlock mutex error-%s: ", msg);
-      switch(val) {
-         case EINVAL:
-            fatalerr(180, NULL);
-      	    break;
-         case EBUSY:
- 	    /* EBUSY is handled somewhere else, we shouldn't get here */
-     	    return;
-	 }
-      break;
-
-   case FUNC_MUTEX_INIT:
-      fprintf(stderr, "\nInit mutex error-%s: ", msg);
-      break;
-
-   case FUNC_MUTEX_DESTROY:
-      fprintf(stderr, "\nDestroy mutex error-%s:", msg);
-      switch(val) {
-         case EBUSY:
-/*     	    fprintf(stderr, "The implementation has detected an attempt to destroy the object referenced by mutex while it is locked or referenced (for example, while being used in a pthread_cond_wait() or pthread_cond_timedwait()) by another thread.");
-*/
-     	    return;
-      	 default:
-	    fprintf(stderr, " pthread function error!\n ");
-      	    return;
-	 }
-
-   case FUNC_THREAD_JOIN:
-      fprintf(stderr, "\nThread join error-%s:", msg);
-      break;
-
-   case FUNC_THREAD_CREATE:
-      fprintf(stderr, "\nThread create error-%s:", msg);
-      switch(val) {
-         case EAGAIN:
-            fprintf(stderr, "Insufficient resources to create another thread, or a system imposed limit on the number of threads was encountered.\n");
-#if 0
-	    {
-	    struct rlimit rlim;
-	    getrlimit(RLIMIT_NPROC, &rlim);
-	    fprintf(stderr," Soft Limit: %u\n Hard Limit: %u\n", 
-	       (unsigned int) rlim.rlim_cur, (unsigned int) rlim.rlim_max);
-	    }
-#endif
-      	    break;
-	 }
-
-   case FUNC_COND_INIT:
-         fprintf(stderr, "cond init error-%s\n ", msg);
-	 break;
-	 
-   case FUNC_SEM_OPEN:
-      fprintf(stderr, "sem open error-%s\n ", msg);
-      break;
-
-   case FUNC_SEM_INIT:
-      fprintf(stderr, "sem init error-%s\n ", msg);
-      break;
-      
-   default:
-      fprintf(stderr, "\npthread function error-%s !\n", msg);
-      break;
-      }
-
-      perror("");
-      syserr("");
-      return;
 }
 
 /*
@@ -1356,3 +1272,87 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
 }
 
 #endif 					/* Concurrent */
+
+
+#ifdef PthreadCoswitch
+
+/*
+ *  pthread errors handler
+ */
+void handle_thread_error(int val, int func, char* msg)
+{
+  if (!msg) msg = "";
+
+   switch(func) {
+   case FUNC_MUTEX_LOCK:
+   case FUNC_MUTEX_TRYLOCK:
+   case FUNC_MUTEX_UNLOCK:
+      fprintf(stderr, "\nLock/Unlock mutex error-%s: ", msg);
+      switch(val) {
+         case EINVAL:
+            fatalerr(180, NULL);
+      	    break;
+         case EBUSY:
+ 	    /* EBUSY is handled somewhere else, we shouldn't get here */
+     	    return;
+	 }
+      break;
+
+   case FUNC_MUTEX_INIT:
+      fprintf(stderr, "\nInit mutex error-%s: ", msg);
+      break;
+
+   case FUNC_MUTEX_DESTROY:
+      fprintf(stderr, "\nDestroy mutex error-%s:", msg);
+      switch(val) {
+         case EBUSY:
+/*     	    fprintf(stderr, "The implementation has detected an attempt to destroy the object referenced by mutex while it is locked or referenced (for example, while being used in a pthread_cond_wait() or pthread_cond_timedwait()) by another thread.");
+*/
+     	    return;
+      	 default:
+	    fprintf(stderr, " pthread function error!\n ");
+      	    return;
+	 }
+
+   case FUNC_THREAD_JOIN:
+      fprintf(stderr, "\nThread join error-%s:", msg);
+      break;
+
+   case FUNC_THREAD_CREATE:
+      fprintf(stderr, "\nThread create error-%s:", msg);
+      switch(val) {
+         case EAGAIN:
+            fprintf(stderr, "Insufficient resources to create another thread, or a system imposed limit on the number of threads was encountered.\n");
+#if 0
+	    {
+	    struct rlimit rlim;
+	    getrlimit(RLIMIT_NPROC, &rlim);
+	    fprintf(stderr," Soft Limit: %u\n Hard Limit: %u\n",
+	       (unsigned int) rlim.rlim_cur, (unsigned int) rlim.rlim_max);
+	    }
+#endif
+      	    break;
+	 }
+
+   case FUNC_COND_INIT:
+         fprintf(stderr, "cond init error-%s\n ", msg);
+	 break;
+
+   case FUNC_SEM_OPEN:
+      fprintf(stderr, "sem open error-%s\n ", msg);
+      break;
+
+   case FUNC_SEM_INIT:
+      fprintf(stderr, "sem init error-%s\n ", msg);
+      break;
+
+   default:
+      fprintf(stderr, "\npthread function error-%s !\n", msg);
+      break;
+      }
+
+      perror("");
+      syserr("");
+      return;
+}
+#endif                                  /* PthreadCoswitch */

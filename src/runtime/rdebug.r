@@ -599,7 +599,7 @@ dptr valloc;
    putstr(stderr, &proc->pname);
 
 #ifdef Concurrent
-   if (ccp->status & Ts_Async)
+   if (IS_TS_ASYNC(ccp->status))
       fprintf(stderr,"; thread_%ld ", (long)ccp->id);
    else
 #endif					/* Concurrent */
@@ -622,7 +622,7 @@ dptr valloc;
       }
 
 #ifdef Concurrent
-   if (ncp->status & Ts_Async)
+   if (IS_TS_ASYNC(ncp->status))
       fprintf(stderr,"thread_%ld", (long)ncp->id);
    else
 #endif					/* Concurrent */
@@ -1011,7 +1011,7 @@ struct b_coexpr *ncp;
    putstr(stderr, &(bp->pname));
 
 #ifdef Concurrent
-   if (ccp->status & Ts_Async)
+   if (IS_TS_ASYNC(ccp->status))
       fprintf(stderr,"; thread_%ld : ", (long)ccp->id);
    else
 #endif	
@@ -1020,7 +1020,7 @@ struct b_coexpr *ncp;
    outimage(stderr, (dptr)(sp - 3), 0);
 
 #ifdef Concurrent
-   if (ncp->status & Ts_Async)
+   if (IS_TS_ASYNC(ncp->status))
       fprintf(stderr," @ thread_%ld\n", (long)ncp->id);
    else
 #endif	
@@ -1050,7 +1050,7 @@ struct b_coexpr *ncp;
    putstr(stderr, &(bp->pname));
 
 #ifdef Concurrent
-   if (ccp->status & Ts_Async)
+   if (IS_TS_ASYNC(ccp->status))
       fprintf(stderr,"; thread_%ld returned ", (long)ccp->id);
    else
 #endif	
@@ -1059,7 +1059,7 @@ struct b_coexpr *ncp;
    outimage(stderr, (dptr)(&ncp->es_sp[-3]), 0);
 
 #ifdef Concurrent
-   if (ncp->status & Ts_Async)
+   if (IS_TS_ASYNC(ncp->status))
       fprintf(stderr," to thread_%ld\n", (long)ncp->id);
    else
 #endif	
@@ -1089,15 +1089,15 @@ struct b_coexpr *ncp;
    putstr(stderr, &(bp->pname));
 
 #ifdef Concurrent
-   if (ccp->status & ncp->status & Ts_Async)
+   if (IS_TS_ASYNC(ccp->status) && IS_TS_ASYNC(ncp->status))
       fprintf(stderr,"; thread_%ld failed to thread_%ld\n",
       			(long)ccp->id, (long)ncp->id);
    else
-   if ( (ccp->status & Ts_Async) && (ncp->status & Ts_Sync))
+   if ( IS_TS_ASYNC(ccp->status) && IS_TS_SYNC(ncp->status))
       fprintf(stderr,"; thread_%ld failed to co-expression_%ld\n",
       			(long)ccp->id, (long)ncp->id);
    else
-   if ( (ccp->status & Ts_Sync) && ncp->status & Ts_Async)
+   if ( IS_TS_SYNC(ccp->status) && IS_TS_ASYNC(ncp->status))
       fprintf(stderr,"; coexpression_%ld failed to thread_%ld\n",
       			(long)ccp->id, (long)ncp->id);
    else

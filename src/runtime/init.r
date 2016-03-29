@@ -1122,7 +1122,7 @@ Deliberate Syntax Error
 {
  
      struct b_list *hp;
-     mainhead->status = Ts_Sync;	 
+     mainhead->status = 0;	 
      /*
       * Initialize sender/receiver queues.
       */

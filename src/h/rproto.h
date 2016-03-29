@@ -1128,6 +1128,7 @@ struct b_realarray *alcrealarray(uword n);
 #ifdef PthreadCoswitch
 void makesem(struct context *ctx);
 void *nctramp(void *arg);
+void handle_thread_error(int val, int func, char* msg);
 #endif					/* PthreadCoswitch */
 
 void init_threadstate(struct threadstate *ts);
@@ -1136,7 +1137,6 @@ void init_threadstate(struct threadstate *ts);
 #ifndef HAVE_KEYWORD__THREAD
 struct threadstate *get_tstate();
 #endif					/* HAVE_KEYWORD__THREAD */
-void handle_thread_error(int val, int func, char* msg);
 void thread_control(int action);
 void clean_threads();
 void init_threads();

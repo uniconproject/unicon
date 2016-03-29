@@ -751,7 +751,7 @@ int noimage;
       coexpr: {
          struct b_coexpr *cp = BlkD(*dp, Coexpr);
 #ifdef Concurrent
-         if (cp->status & Ts_Async)
+         if (IS_TS_ASYNC(cp->status))
             fprintf(f, "thread_%ld(%ld)", (long) cp->id, (long) cp->size);
    	 else
 #endif					/* Concurrent */
@@ -1277,7 +1277,7 @@ struct b_coexpr *ce;
    actvtr = arp->activator;
 
 #ifdef Concurrent
-   if (ce->status & Ts_Sync){
+   if (IS_TS_SYNC(ce->status)){
 #endif					/* Concurrent */
       if (--arp->acount == 0)
          abp->nactivators--;

@@ -101,12 +101,18 @@
  */
 #define Ts_Native	1		/* native (assembler) coexpression */
 #define Ts_Posix	2		/* POSIX (pthread) coexpression */
-#define Ts_Sync		4		/* synchronous (Icon) coexpression) */
-#define Ts_Async        8		/* asynchronous (concurrent) thread */
-#define Ts_Active      16               /* someone activated me */
-#define Ts_WTinbox     32               /* waiting on inbox Q */
-#define Ts_WToutbox    64               /* waiting on outbox Q */
+#define Ts_Async        4		/* asynchronous (concurrent) thread */
+#define Ts_Active       8               /* someone activated me */
+#define Ts_WTinbox     16               /* waiting on inbox Q */
+#define Ts_WToutbox    32               /* waiting on outbox Q */
 
+#define SET_FLAG(X,F)        (X) |= (F)
+#define UNSET_FLAG(X,F)      (X) &= ~(F)
+#define CHECK_FLAG(X,F)      ((X) & (F))
+#define NOT_CHECK_FLAG(X,F)  (!CHECK_FLAG(X,F))
+
+#define IS_TS_ASYNC(X) CHECK_FLAG(X, Ts_Async)
+#define IS_TS_SYNC(X) (!IS_TS_ASYNC(X))
 
 /*#ifdef Graphics*/
    #define XKey_Window 0
@@ -330,8 +336,17 @@
    #define Min(x,y)     __builtin_min(x,y)
 #else					/* SASC */
    #define Abs(x) (((x) < 0) ? (-(x)) : (x))
-   #define Max(x,y)        ((x)>(y)?(x):(y))
-   #define Min(x,y)        ((x)<(y)?(x):(y))
+   /*
+    * gcc docs recommends these type-safe definitions for Max/Min
+    */
+   #define Max(a, b) \
+      ({ typeof (a) _a = (a); \
+         typeof (b) _b = (b); \
+         _a > _b ? _a : _b; })
+   #define Min(a, b) \
+     ({ typeof (a) _a = (a); \
+        typeof (b) _b = (b); \
+        _a < _b ? _a : _b; })
 #endif					/* SASC */
 
 /*
@@ -1225,6 +1240,21 @@
 #define SEM_CLOSE(sem_s) sem_close(sem_s);
 #endif /* NamedSemaphores */
 
+#define FUNC_MUTEX_LOCK		1
+#define FUNC_MUTEX_TRYLOCK	2
+#define FUNC_MUTEX_UNLOCK	3
+#define FUNC_MUTEX_INIT		4
+#define FUNC_MUTEX_DESTROY	5
+#define FUNC_COND_WAIT		6
+#define FUNC_COND_INIT		7
+#define FUNC_COND_DESTROY	8
+#define FUNC_COND_TIMEDWAIT	9
+#define FUNC_COND_SIGNAL	10
+#define FUNC_THREAD_CREATE	11
+#define FUNC_THREAD_JOIN	12
+#define FUNC_SEM_OPEN		13
+#define FUNC_SEM_INIT		14
+
 #ifdef Concurrent 
 
    #define MTX_OP_ASTR		0
@@ -1301,21 +1331,6 @@
    #define TC_WAKEUPCALL 2
    #define TC_STOPALLTHREADS 3
    #define TC_KILLALLTHREADS 4
-
-   #define FUNC_MUTEX_LOCK	1
-   #define FUNC_MUTEX_TRYLOCK	2
-   #define FUNC_MUTEX_UNLOCK	3
-   #define FUNC_MUTEX_INIT	4
-   #define FUNC_MUTEX_DESTROY	5
-   #define FUNC_COND_WAIT	6
-   #define FUNC_COND_INIT	7
-   #define FUNC_COND_DESTROY	8
-   #define FUNC_COND_TIMEDWAIT	9
-   #define FUNC_COND_SIGNAL	10
-   #define FUNC_THREAD_CREATE	11
-   #define FUNC_THREAD_JOIN	12
-   #define FUNC_SEM_OPEN	13
-   #define FUNC_SEM_INIT	14
 
 #define THREAD_CREATE(ctx, t_stksize, msg)				\
   do {									\

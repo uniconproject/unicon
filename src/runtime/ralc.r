@@ -192,7 +192,7 @@ struct b_coexpr *alccoexp()
    ep->handdata = NULL;
 {
    struct b_list *hp;
-   ep->status = Ts_Sync;
+   ep->status = Ts_Native;
 	 
   /*
    * Initialize sender/receiver queues.
@@ -361,7 +361,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 {
  
      struct b_list *hp;
-     ep->status = Ts_Sync;
+     ep->status = Ts_Native;
 	 
      /*
       * Initialize sender/receiver queues.

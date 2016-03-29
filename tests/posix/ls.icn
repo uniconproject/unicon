@@ -3,7 +3,7 @@ $include "posix.icn"
 link printf
 
 procedure main()
-   # (re-)create test-dir so that ls output can be predictable
+   # (re-)create test-dir so that output is predictable
    system("rm -rf test-dir")
    umask("rwxr-xr-x") | write("set umask fails")
    mkdir("test-dir")
@@ -25,15 +25,24 @@ procedure main()
 end
 
 procedure format(p, name)
-   s := sprintf("%4s %s %3s %8s %s",
-	   p.blocks,
-	   # omit permissions of ".." since it is user's umask-dependent
-	   if name==".." then ".........." else p.mode,
-	   p.nlink,
-	   p.size, name)
-   
-   s ||:= " -> " || \p.symlink
 
-   return s
+   case p.mode[1] of {
+       "-": { # Normal file:
+	       return sprintf("%s (file) permissions %s size %8s", name, p.mode, p.size)
+            }
+       "d": { # Directory: special case ".."
+	       if name == ".."
+               then return ".. (directory)"
+	       else return sprintf("%s (directory) permissions %s", name, p.mode)
+	    }
+       "l": { # Symbolic link:
+		 return sprintf("%s (symbolic link) -> %s", name, p.symlink)
+	    }
+       default:
+	   {
+	       return sprintf("%s Unexpected file type (%s)", name, p.mode[1])
+	   }
+   }
+
 end
 

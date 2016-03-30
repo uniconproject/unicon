@@ -210,7 +210,7 @@ color \ / \texttt{"red"} &
 Foreground color : black &
 RW\\\hline
 bg &
-color \ / \texttt{"0,0,0"} &
+color \ / \texttt{"0,65535,0"} &
 Background color : white &
 RW\\\hline
 font &
@@ -534,12 +534,15 @@ may be supported. Colors may also be specified by strings encoding the
 red, green, and blue components of the desired color. Unicon accepts
 the hex formats "\#rgb" in which r, g, and b are 1 to 4 hex digits
 each. Red, green, and blue may also be given in decimal format,
-separated by commas. The components are given on a linear scale from 0
-to 65535, although displays typically offer far less precision and
+separated by commas, using a linear scale from 0
+to 65535 ("0,0,0" is black; "65535,65535,65535" is white), although
+displays typically offer far less precision and
 nonlinear colors. For example, "bg=32767,0,0" requests a medium red
 background; if the display is incapable of such, it approximates it as
 closely as possible from the available colors.  "fg=0,65000,0"
-requests a vivid green foreground. If colors appear darker than they
+requests a vivid green foreground.
+
+If colors appear darker than they
 should, the window system is not providing linear colors. Unicon can
 be told to perform the correction by means of the gamma attribute; 1.0
 is a default (no gamma correction), and experimenting with values

@@ -154,7 +154,6 @@ void		corettrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 int		coswitch	(word *old, word *new, int first);
 #ifdef Concurrent
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz);
-int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat);
 #endif					/* Concurrent */
 int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
 #ifdef MultiThread

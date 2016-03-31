@@ -152,14 +152,10 @@ void		coacttrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		cofailtrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		corettrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 int		coswitch	(word *old, word *new, int first);
-#ifdef PthreadCoswitch
 #ifdef Concurrent
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz);
 int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat);
-#else					/* Concurrent */
-int pthreadcoswitch(void *o, void *n, int first);
 #endif					/* Concurrent */
-#endif					/* PthreadCoswitch */
 int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
 #ifdef MultiThread
 int		cplist_0	(dptr dp1,dptr dp2,word i,word j);

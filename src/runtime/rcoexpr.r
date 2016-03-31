@@ -15,6 +15,10 @@ void tlschain_add(struct threadstate *tstate, struct context *ctx);
 void tlschain_remove(struct threadstate *tstate);
 #endif					/* Concurrent  */
 
+#ifdef PthreadCoswitch
+int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat);
+#endif					/* PthreadCoswitch */
+
 /*
  * co_init - use the contents of the refresh block to initialize the
  *  co-expression.
@@ -399,11 +403,7 @@ int first;
 
    ncp->coexp_act = swtch_typ;
 #ifdef PthreadCoswitch
-#ifdef Concurrent
    pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
-#else					/* Concurrent */
-   pthreadcoswitch(ccp->cstate, ncp->cstate,first);
-#endif					/* Concurrent */
 #else					/* PthreadCoswitch */
    coswitch(ccp->cstate, ncp->cstate,first);
 #endif					/* PthreadCoswitch */
@@ -481,11 +481,7 @@ static int pco_inited = 0;		/* has first-time initialization been done? */
  * coswitch(old, new, first) -- switch contexts.
  */
 
-#ifdef Concurrent
 int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat)
-#else
-int pthreadcoswitch(void *o, void *n, int first)
-#endif					/* Concurrent */
 {
    cstate ocs = o;			/* old cstate pointer */
    cstate ncs = n;			/* new cstate pointer */

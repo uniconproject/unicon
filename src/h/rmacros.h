@@ -1255,6 +1255,31 @@
 #define FUNC_SEM_OPEN		13
 #define FUNC_SEM_INIT		14
 
+#ifdef PthreadCoswitch
+#define THREAD_CREATE(ctx, t_stksize, msg)				\
+  do {									\
+    int retval;								\
+    if (t_stksize){							\
+      pthread_attr_t attr;						\
+      pthread_attr_init(&attr);						\
+      pthread_attr_setstacksize(&attr, t_stksize);			\
+      retval = pthread_create(&ctx->thread, &attr, nctramp, ctx);	\
+    }									\
+    else								\
+      retval = pthread_create(&ctx->thread, NULL, nctramp, ctx);	\
+    if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
+  } while (0)
+
+
+#define THREAD_JOIN( thrd, opt ) { int retval; \
+    if ((retval=pthread_join(thrd, opt)) != 0) \
+      handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
+
+#else                                  /* PthreadCoswitch */
+#define THREAD_CREATE(ctx, t_stksize, msg)
+#define THREAD_JOIN(thrd, opt)
+#endif                                  /* PthreadCoswitch */
+
 #ifdef Concurrent 
 
    #define MTX_OP_ASTR		0
@@ -1332,20 +1357,6 @@
    #define TC_STOPALLTHREADS 3
    #define TC_KILLALLTHREADS 4
 
-#define THREAD_CREATE(ctx, t_stksize, msg)				\
-  do {									\
-    int retval;								\
-    if (t_stksize){							\
-      pthread_attr_t attr;						\
-      pthread_attr_init(&attr);						\
-      pthread_attr_setstacksize(&attr, t_stksize);			\
-      retval = pthread_create(&ctx->thread, &attr, nctramp, ctx);	\
-    }									\
-    else								\
-      retval = pthread_create(&ctx->thread, NULL, nctramp, ctx);	\
-    if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
-  } while (0)
-
 /*
  *  Lock mutex mtx. msg is a string name that refers to mtx, useful for
  *  error tracing.
@@ -1369,10 +1380,6 @@
     if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) \
       handle_thread_error(retval, FUNC_MUTEX_INIT, NULL); }
 
-
-#define THREAD_JOIN( thrd, opt ) { int retval; \
-    if ((retval=pthread_join(thrd, opt)) != 0) \
-      handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
 
 /*
  *  Lock mutex mutexes[mtx].
@@ -1533,7 +1540,6 @@
 
 #else					/* Concurrent */
 
-#define THREAD_CREATE(ctx, t_stksize, msg)
 #define MUTEX_INIT(mtx, attr)
 #define MUTEX_INITID(mtx, attr)
 #define MUTEXID(mtx)
@@ -1548,7 +1554,6 @@
 #define MUTEX_LOCKID_FORCE(mtx)
 #define MUTEX_UNLOCKID_FORCE(mtx)
 
-#define THREAD_JOIN(thrd, opt)
 #define MUTEX_LOCK_CONTROLLED(mtx, msg)
 #define MUTEX_LOCKID_CONTROLLED(mtx)
 #define INC_LOCKID(x, mtx)

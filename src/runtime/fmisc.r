@@ -1329,7 +1329,7 @@ function{1} type(x)
       record:   inline { return Blk(BlkD(x,Record)->recdesc,Proc)->recname; }
       coexpr:   inline { 
 #ifdef Concurrent
-      		   if (BlkD(x, Coexpr)->status & Ts_Async)
+      		   if (IS_TS_THREAD(BlkD(x, Coexpr)->status))
       		      return C_string "thread"; 
 #endif					/* Concurrent */
       		   return C_string "co-expression"; 

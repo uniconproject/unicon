@@ -1143,8 +1143,11 @@
 #else					/* Concurrent */
       #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); curtstate=p->tstate;}
 #endif					/* Concurrent */
-      
+
+#else					/* MultiThread */
+ #define ENTERPSTATE(p)
 #endif					/* MultiThread */
+
    
 #if COMPILER || !defined(MultiThread)
    #define EVStrAlc(n)
@@ -1280,11 +1283,19 @@
     if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
   } while (0)
 
-
 #define THREAD_JOIN( thrd, opt ) { int retval; \
     if ((retval=pthread_join(thrd, opt)) != 0) \
       handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
 
+#define CREATE_CE_THREAD(cp, t_stksize, msg) do {		\
+   context *new = (struct context *) cp->cstate[1];		\
+   THREAD_CREATE(new, t_stksize, msg);				\
+   new->alive = 1;						\
+   new->have_thread = 1;					\
+   SET_FLAG(cp->status, Ts_Attached);				\
+   SET_FLAG(cp->status, Ts_Posix);				\
+   /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/	\
+   } while (0)
 #else                                  /* PthreadCoswitch */
 #define THREAD_CREATE(ctx, t_stksize, msg)
 #define THREAD_JOIN(thrd, opt)

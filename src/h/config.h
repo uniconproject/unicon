@@ -141,16 +141,18 @@
 #endif					/* HAVE_LIBPTHREAD */
 
 #ifndef NoCoExpr
-
-#ifdef Concurrent
-   #define NoNativeCoswitch
-   #define PthreadCoswitch 1
-   #define TSLIST 
-   /*
-    * The default at present does not use __thread.
-    * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
-    */
+   #ifdef Concurrent
+      #define PthreadCoswitch 1
+      #define TSLIST 
+      /*
+       * The default at present does not use __thread.
+       * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
+       */
    #endif					/* Concurrent */
+
+   #ifdef PthreadCoswitch
+      #define NoNativeCoswitch
+   #endif					/* PthreadCoswitch */
 
    #undef CoExpr
    #define CoExpr

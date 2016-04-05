@@ -2852,21 +2852,14 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	    /*
 	     * Activate thread x for the first time.
 	     */
-	    THREAD_CREATE(n, _stks_, "spawn()");
-	    n->alive = 1;
-	    n->have_thread = 1;
+	    CREATE_CE_THREAD(cp, _stks_, "spawn()");
 	    }
 
 	 /*
 	  * Turn on Thread, Async... flags
 	  */
          SET_FLAG(cp->status, Ts_Thread);
-         SET_FLAG(cp->status, Ts_Attached);
          SET_FLAG(cp->status, Ts_Async);
-#ifdef PthreadCoswitch
-         if (!CHECK_FLAG(cp->status, Ts_Posix))
-	    SET_FLAG(cp->status, Ts_Posix);
-#endif					/* PthreadCoswitch */
 
 	 /*
 	  * assign the correct "call" level to the new thread.

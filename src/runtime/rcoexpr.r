@@ -16,7 +16,7 @@ void tlschain_remove(struct threadstate *tstate);
 #endif					/* Concurrent  */
 
 #ifdef PthreadCoswitch
-int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat);
+int pthreadcoswitch(void *o, void *n, word ostat, word nstat);
 #endif					/* PthreadCoswitch */
 
 /*
@@ -176,7 +176,17 @@ int first;
    register struct b_coexpr *ccp;
    CURTSTATE();
 
+
    ccp = (struct b_coexpr *)BlkLoc(k_current);
+
+#ifndef NativeCoswitch
+   /* 
+    * We don't have Native co-expressions. If this is the first 
+    * activation for ncp create a thread for it.
+    */
+   if (first == 0)
+      CREATE_CE_THREAD(ncp, 0, "co_chng()");
+#endif                                  /* NativeCoswitch */
 
 #if !COMPILER
 #ifdef MultiThread
@@ -312,6 +322,7 @@ int first;
    ccp->es_pfp = pfp;
    ccp->es_argp = glbl_argp;
    ccp->es_tend = tend;
+
 #if !COMPILER
    ccp->es_efp = efp;
    ccp->es_gfp = gfp;
@@ -319,79 +330,64 @@ int first;
    ccp->es_oldipc = oldipc; /* To be used when the found line is zero*/
    ccp->es_sp = sp;
    ccp->es_ilevel = ilevel;
-#ifdef EventMon
-   ccp->actv_count += 1;
-#endif					/* EventMon */
-#endif					/* COMPILER */
 
-#if COMPILER
+   #ifdef EventMon
+   ccp->actv_count += 1;
+   #endif				/* EventMon */
+
+#else					/* !COMPILER */
    if (line_info) {
       ccp->file_name = file_name;
       ccp->line_num = line_num;
       file_name = ncp->file_name;
       line_num = ncp->line_num;
       }
-#endif					/* COMPILER */
-
-#if COMPILER
    if (debug_info)
-#endif					/* COMPILER */
+#endif					/* !COMPILER */
       if (k_trace) {
-#ifdef MultiThread
+      #ifdef MultiThread
 	 if (swtch_typ != A_MTEvent)
-#endif					/* MultiThread */
+      #endif					/* MultiThread */
 	 cotrace(ccp, ncp, swtch_typ, valloc);
 	 }
 
-#ifndef Concurrent
-   /*
-    * Establish state for new co-expression.
-    */
-   pfp = ncp->es_pfp;
-   tend = ncp->es_tend;
+      /*
+       * Establish state for new co-expression.
+       */
 
-#if !COMPILER
-   efp = ncp->es_efp;
-   gfp = ncp->es_gfp;
-   ipc = ncp->es_ipc;
-   sp = ncp->es_sp;
-   ilevel = (int)ncp->es_ilevel;
-#endif					/* COMPILER */
+#ifdef Concurrent
+   if (!IS_TS_ATTACHED(ncp->status)){
+      curtstate->c = ncp;
+      ((struct context *) ncp->cstate[1])->tstate = curtstate;
+   }
+#else
+   {
+       pfp = ncp->es_pfp;
+       tend = ncp->es_tend;
 
-#if 0
-/* testing: update the curtstate for native (non-pthreads) co-expr switches */
-#ifndef PthreadCoswitch
-   curtstate = ncp->tstate;
-#endif                                  /* PthreadCoswitch */
-#endif
+       #if !COMPILER
+       efp = ncp->es_efp;
+       gfp = ncp->es_gfp;
+       ipc = ncp->es_ipc;
+       sp = ncp->es_sp;
+       ilevel = (int)ncp->es_ilevel;
+       #endif					/* !COMPILER */
+   }
+#endif					/* ! Concurrent */
 
-#if !COMPILER
-#ifdef MultiThread
    /*
     * Enter the program state of the co-expression being activated
     */
    ENTERPSTATE(ncp->program);
-#endif        				/* MultiThread */
-#endif					/* COMPILER */
 
+#ifndef Concurrent
    glbl_argp = ncp->es_argp;
    BlkLoc(k_current) = (union block *)ncp;
-
-#if COMPILER && !ConcurrentCOMPILER
+   #if COMPILER && !ConcurrentCOMPILER
    /* ConcurrentCOMPILER moved this into the nctramp trampoline? */
    coexpr_fnc = ncp->fnc;
-#endif					/* COMPILER && !ConcurrentCOMPILER */
-
-#else					/* ! Concurrent */
-#if !COMPILER
-#ifdef MultiThread
-   /*
-    * Enter the program state of the co-expression being activated
-    */
-   ENTERPSTATE(ncp->program);
-#endif        				/* MultiThread */
-#endif					/* COMPILER */
-#endif					/* ! Concurrent */
+   #endif				/* COMPILER && !ConcurrentCOMPILER */
+#endif					/* !Concurrent */
 
 #ifdef MultiThread
    /*
@@ -418,10 +414,10 @@ int first;
     MUTEX_LOCKBLK(ncp, "lock co-expression");
 
 #ifdef PthreadCoswitch
-   if (IS_TS_ATTACHED(ncp->status) || (IS_TS_POSIX(ncp->status) && first==0) ) {
+   if (IS_TS_ATTACHED(ncp->status)) {
       SET_FLAG(ncp->status, Ts_Attached);
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
-      pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
+      pthreadcoswitch(ccp->cstate, ncp->cstate, ccp->status, ncp->status );
       }
    else
 #endif					/* PthreadCoswitch */
@@ -431,11 +427,15 @@ int first;
        * to the new co-expression and will be no longer attached 
        * to the current co-expression
        */
-       SET_FLAG(ncp->status, Ts_Attached);
-       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
-       UNSET_FLAG(ccp->status, Ts_Attached);
-       coswitch(ccp->cstate, ncp->cstate, first);      
-       }
+      SET_FLAG(ncp->status, Ts_Attached);
+      MUTEX_UNLOCKBLK(ncp, "lock co-expression");
+      UNSET_FLAG(ccp->status, Ts_Attached);
+      coswitch(ccp->cstate, ncp->cstate, first);
+#ifdef AAAConcurrent
+      curtstate->c = ccp;
+      ((struct context *) ccp->cstate[1])->tstate = curtstate;
+#endif
+   }
 
    /*
     * Beware!  Native co-expression switches may not save all registers,
@@ -511,36 +511,13 @@ static int pco_inited = 0;		/* has first-time initialization been done? */
  * coswitch(old, new, first) -- switch contexts.
  */
 
-int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat)
+int pthreadcoswitch(void *o, void *n, word ostat, word nstat)
 {
    cstate ocs = o;			/* old cstate pointer */
    cstate ncs = n;			/* new cstate pointer */
    context *old, *new;			/* old and new context pointers */
-
-   old = ocs[1];			/* load current context pointer */
-
-   if (first != 0)			/* if not first call for this cstate */
-      new = ncs[1];			/* load new context pointer */
-   else {
-
-      /* pthread_attr_t attr; */
-
-      /*
-       * This is a newly allocated cstate array, allocated and initialized
-       * over in alccoexp().  Create a thread for it and mark it alive.
-       */
-      new = ncs[1];
-
-      /*
-      pthread_attr_init(&attr);
-      pthread_attr_setstacksize(&attr, 1024*1024*50);
-      */
-      THREAD_CREATE(new, 0, "spawn()");
-      new->alive = 1;
-      new->have_thread = 1;
-
-      /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/
-      }
+   old = (struct context *) ocs[1];	/* load current context pointer */
+   new = (struct context *) ncs[1];	/* load new context pointer */
    
    sem_post(new->semp);			/* unblock the new thread */
    SEM_WAIT(old->semp);			/* block this thread */

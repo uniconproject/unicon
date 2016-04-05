@@ -134,14 +134,29 @@
 #define ReadDirectory
 #endif					/* PosixFns */
 
+#ifndef HAVE_LIBPTHREAD
+#ifdef Concurrent
+#undef Concurrent
+#endif					/* Concurrent */
+#endif					/* HAVE_LIBPTHREAD */
+
 #ifndef NoCoExpr
+
+#ifdef Concurrent
+   #define NoNativeCoswitch
+   #define PthreadCoswitch 1
+   #define TSLIST 
+   /*
+    * The default at present does not use __thread.
+    * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
+    */
+   #endif					/* Concurrent */
+
    #undef CoExpr
    #define CoExpr
-#ifndef NoNativeCoswitch
-#ifndef PthreadCoswitch
-   #define NativeCoswitch
-#endif					/* PthreadCoswitch */
-#endif					/* NoNativeCoswitch */
+   #ifndef NoNativeCoswitch
+      #define NativeCoswitch
+   #endif					/* NoNativeCoswitch */
 #endif					/* NoCoExpr */
 
 #ifdef NoMultiThread
@@ -804,22 +819,6 @@ Deliberate Syntax Error
    #undef DirectExecution
    #define DirectExecution
 #endif					/* Header */
-
-#ifndef HAVE_LIBPTHREAD
-#ifdef Concurrent
-#undef Concurrent
-#endif					/* Concurrent */
-#endif					/* HAVE_LIBPTHREAD */
-
-#ifdef Concurrent
-#define PthreadCoswitch 1
-#define TSLIST 
-/*
- * The default at present does not use __thread.
- * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
- */
-
-#endif					/* Concurrent */
 
 #ifdef PthreadCoswitch
 #define CoClean 1

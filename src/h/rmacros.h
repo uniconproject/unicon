@@ -99,9 +99,10 @@
  * Thread status flags in status field of coexpr blocks.
  * Ts_Native can only be Ts_Sync.  Ts_Posix may be Sync or Async.
  */
-#define Ts_Main		01		/* This is the main co-expression/thread */
+#define Ts_Main		01		/* This is the main co-expression */
 #define Ts_Thread	02		/* This is a thread */
-#define Ts_Posix	04		/* POSIX (pthread) coexpression */
+#define Ts_Attached	04		/* OS-level thread attached to this ce */
+
 
 #define Ts_Async       010		/* asynchronous (concurrent) thread */
 #define Ts_Actived     020              /* activated at least once */
@@ -109,6 +110,8 @@
 
 #define Ts_WTinbox    0100              /* waiting on inbox Q */
 #define Ts_WToutbox   0200              /* waiting on outbox Q */
+#define Ts_Posix      0400		/* POSIX (pthread-based) coexpression */
+
 
 #define SET_FLAG(X,F)        (X) |= (F)
 #define UNSET_FLAG(X,F)      (X) &= ~(F)
@@ -117,6 +120,7 @@
 
 #define IS_TS_MAIN(X) CHECK_FLAG(X, Ts_Main)
 #define IS_TS_THREAD(X) CHECK_FLAG(X, Ts_Thread)
+#define IS_TS_ATTACHED(X) CHECK_FLAG(X, Ts_Attached)
 #define IS_TS_POSIX(X) CHECK_FLAG(X, Ts_Posix)
 #define IS_TS_ASYNC(X) CHECK_FLAG(X, Ts_Async)
 #define IS_TS_SYNC(X) (!IS_TS_ASYNC(X))

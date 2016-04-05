@@ -1108,10 +1108,10 @@ Deliberate Syntax Error
    k_main.dword = D_Coexpr;
    BlkLoc(k_main) = (union block *) mainhead;
    k_current = k_main;
-#ifdef NativeCoswitch
+#ifdef AAANativeCoswitch
      mainhead->status = Ts_Main;
 #else					/* NativeCoswitch */
-     mainhead->status = Ts_Main | Ts_Posix | Ts_Async;
+     mainhead->status = Ts_Main | Ts_Attached | Ts_Async;
 #endif					/* NativeCoswitch */
 
    /**/

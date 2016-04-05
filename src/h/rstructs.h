@@ -866,7 +866,7 @@ struct b_coexpr {		/* co-expression stack block */
    word status;			/*   status (native/posix, sync/async, etc) */
 #ifdef Concurrent
    word shared;
-   pthread_mutex_t mutex;
+   word mutexid;
    struct descrip *handdata;     /*   result just handed  to the current ce */
    struct descrip cequeue;       /*   CEs waiting to receive results   */
    struct descrip inbox, outbox; /*   pending send/receive queues */

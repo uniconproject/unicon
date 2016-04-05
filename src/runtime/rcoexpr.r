@@ -402,11 +402,41 @@ int first;
 #endif					/* MultiThread */
 
    ncp->coexp_act = swtch_typ;
+
+   /*
+    *  Transfer the Async status
+    */
+   SET_FLAG(ncp->status, Ts_Async);
+   UNSET_FLAG(ccp->status, Ts_Async);
+   /*
+    * Time to switch context to the new co-expression.
+    * the type of switch depends on whether the new co-expression
+    * has its own attached thread or not or if it is of type 
+    * posix and being activated for the first time
+    */
+
+    MUTEX_LOCKBLK(ncp, "lock co-expression");
+
 #ifdef PthreadCoswitch
-   pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
-#else					/* PthreadCoswitch */
-   coswitch(ccp->cstate, ncp->cstate,first);
+   if (IS_TS_ATTACHED(ncp->status) || (IS_TS_POSIX(ncp->status) && first==0) ) {
+      SET_FLAG(ncp->status, Ts_Attached);
+      MUTEX_UNLOCKBLK(ncp, "lock co-expression");
+      pthreadcoswitch(ccp->cstate, ncp->cstate,first, ccp->status, ncp->status );
+      }
+   else
 #endif					/* PthreadCoswitch */
+   {
+      /*
+       * with native coswitch, the OS-level thread is reattaching 
+       * to the new co-expression and will be no longer attached 
+       * to the current co-expression
+       */
+       SET_FLAG(ncp->status, Ts_Attached);
+       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
+       UNSET_FLAG(ccp->status, Ts_Attached);
+       coswitch(ccp->cstate, ncp->cstate, first);      
+       }
+
    /*
     * Beware!  Native co-expression switches may not save all registers,
     * they might only preserve enough to immediate return.  So local variables

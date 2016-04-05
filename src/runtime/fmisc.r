@@ -2858,12 +2858,15 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	    }
 
 	 /*
-	  * Turn on Thread, Async, and posix flags
+	  * Turn on Thread, Async... flags
 	  */
+         SET_FLAG(cp->status, Ts_Thread);
+         SET_FLAG(cp->status, Ts_Attached);
+         SET_FLAG(cp->status, Ts_Async);
+#ifdef PthreadCoswitch
          if (!CHECK_FLAG(cp->status, Ts_Posix))
 	    SET_FLAG(cp->status, Ts_Posix);
-         SET_FLAG(cp->status, Ts_Thread);
-         SET_FLAG(cp->status, Ts_Async);
+#endif					/* PthreadCoswitch */
 
 	 /*
 	  * assign the correct "call" level to the new thread.

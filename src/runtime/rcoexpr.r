@@ -258,7 +258,7 @@ int first;
 #endif					/* COMPILER */
 
 #ifdef Concurrent
-      if (IS_TS_ASYNC(ccp->status)){
+      if (IS_TS_ASYNC(ccp->status) && IS_TS_ASYNC(ncp->status)){
       /*
        * The CE thread is genereating a new value, it should go into the outbox.
        * ccp is the "k_current" CE. k_current is used to avoid invalid ccp 
@@ -296,7 +296,7 @@ int first;
     * depending on desired join semantics.
     * coclean calls pthread_exit() in case of Async threads.
     */
-   if (IS_TS_ASYNC(ccp->status)){
+   if (IS_TS_THREAD(ccp->status)){
       #ifdef CoClean
  	 coclean(ccp->cstate);
       #endif				/* CoClean */
@@ -513,11 +513,6 @@ int pthreadcoswitch(void *o, void *n, int first, word ostat, word nstat)
       }
    
    sem_post(new->semp);			/* unblock the new thread */
-
-#ifdef AAAConcurrent
-   if (IS_TS_SYNC(nstat))
-#endif					/* Concurrent */
-
    SEM_WAIT(old->semp);			/* block this thread */
 
    if (!old || old->alive<1) {
@@ -547,7 +542,7 @@ void coclean(void *o) {
       }
 #endif					/* Concurrent */
 
-   if (IS_TS_SYNC(old->c->status) || old->alive==-1){
+   if (!IS_TS_THREAD(old->c->status) || old->alive==-1){
 #ifdef Concurrent
       CURTSTATE();
       old->alive = -1;			/* signal thread to exit */
@@ -596,7 +591,7 @@ void coclean(void *o) {
     * Give up the heaps owned by the old thread, 
     * only GC thread is running, no need to lock 
     */
-    if (IS_TS_SYNC(old->c->status) && blkregion){
+    if (!IS_TS_THREAD(old->c->status) && blkregion){
        MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
        swap2publicheap(blkregion, NULL,  &public_blockregion);
        MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);

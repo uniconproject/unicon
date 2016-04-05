@@ -137,6 +137,11 @@
 #ifndef NoCoExpr
    #undef CoExpr
    #define CoExpr
+#ifndef NoNativeCoswitch
+#ifndef PthreadCoswitch
+   #define NativeCoswitch
+#endif					/* PthreadCoswitch */
+#endif					/* NoNativeCoswitch */
 #endif					/* NoCoExpr */
 
 #ifdef NoMultiThread

@@ -1538,7 +1538,7 @@ function{0,1} wait(pid, options)
      body {
 	struct context *n;
 	int rv;
-	if (BlkLoc(pid)->Coexpr.status & Ts_Async) {
+	if (IS_TS_THREAD(BlkLoc(pid)->Coexpr.status)) {
 	   n =  (struct context *)  BlkLoc(pid)->Coexpr.cstate[1];
 
 	   if ( !n || n->alive == 0 || n->alive == -2) fail;

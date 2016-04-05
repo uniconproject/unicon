@@ -348,7 +348,7 @@ function{1} display(i,f)
          i = k_level;
 
 #ifdef Concurrent
-      if (BlkD(k_current,Coexpr)->status & Ts_Async)
+      if (IS_TS_THREAD(BlkD(k_current,Coexpr)->status))
          fprintf(std_f,"thread_%ld(%ld)\n\n",
             (long)BlkD(k_current,Coexpr)->id,
 	    (long)BlkD(k_current,Coexpr)->size);
@@ -2789,6 +2789,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	 struct context *n;
 	 struct b_coexpr *cp = BlkD(x, Coexpr);
 	 int i;
+
 #if !ConcurrentCOMPILER
 	 if (!is:null(curpstate->eventmask)) {
 	    fprintf(stderr,
@@ -2800,11 +2801,19 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 #if ConcurrentCOMPILER
 	 CURTSTATE();
 #endif                                   /* ConcurrentCOMPILER */
-	 /*
-	  * Make sure it is a pthreads-based co-expression.
-	  */
-	 if (cp->status & Ts_Native) runerr(101,x);
-	 if (cp->status & Ts_Async) return x;
+
+
+	 if (IS_TS_THREAD(cp->status)) return x;
+
+	 n = (struct context *) cp->cstate[1];
+	 if (n->alive == 1) {
+	    /*
+	     * The co-expression has already been Activated!
+	     * spawning an active co-expression is not yet supported
+	     */
+	     runerr(185, x);
+	    }
+    
 
          if (!_bs_)
 	    _bs_ = rootblock.size/10 ;
@@ -2818,11 +2827,6 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 
 	 cp->ini_blksize = _bs_;
 	 cp->ini_ssize = _ss_;
-
-	 /*
-	  * Transmit whatever is needed to wake it up.
-	  */
-	 n = (struct context *) cp->cstate[1];
 	
 	 /*
 	  * Loop until I aquire the mutex.
@@ -2850,12 +2854,16 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	     */
 	    THREAD_CREATE(n, _stks_, "spawn()");
 	    n->alive = 1;
+	    n->have_thread = 1;
 	    }
 
 	 /*
-	  * Turn on Async flag.
+	  * Turn on Thread, Async, and posix flags
 	  */
-	 cp->status = Ts_Posix | Ts_Async;
+         if (!CHECK_FLAG(cp->status, Ts_Posix))
+	    SET_FLAG(cp->status, Ts_Posix);
+         SET_FLAG(cp->status, Ts_Thread);
+         SET_FLAG(cp->status, Ts_Async);
 
 	 /*
 	  * assign the correct "call" level to the new thread.
@@ -2872,6 +2880,9 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
    	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
       	     runerr(0,x);
 
+	 /*
+	  * wake the new thread up.
+	  */
 	 sem_post(n->semp);
 
 	 /*

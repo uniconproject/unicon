@@ -736,7 +736,7 @@ static void markthreads()
 {
    struct threadstate *t;
    for (t = roottstatep->next; t != NULL; t = t->next)
-      if (t->ctx && t->ctx->c && (t->ctx->c->status & Ts_Async )){
+      if (t->ctx && t->ctx->c && (IS_TS_THREAD(t->ctx->c->status))){
 	 markthread(t);
 	 }
 }

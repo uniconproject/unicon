@@ -1108,6 +1108,11 @@ Deliberate Syntax Error
    k_main.dword = D_Coexpr;
    BlkLoc(k_main) = (union block *) mainhead;
    k_current = k_main;
+#ifdef NativeCoswitch
+     mainhead->status = Ts_Main;
+#else					/* NativeCoswitch */
+     mainhead->status = Ts_Main | Ts_Posix | Ts_Async;
+#endif					/* NativeCoswitch */
 
    /**/
 #ifdef Concurrent
@@ -1122,7 +1127,6 @@ Deliberate Syntax Error
 {
  
      struct b_list *hp;
-     mainhead->status = 0;	 
      /*
       * Initialize sender/receiver queues.
       */
@@ -1632,7 +1636,7 @@ char *s;
       abort();
    c_exit(EXIT_FAILURE);
    }
-
+
 
 /*
  * c_exit(i) - flush all buffers and exit with status i.

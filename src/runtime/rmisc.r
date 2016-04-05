@@ -751,7 +751,7 @@ int noimage;
       coexpr: {
          struct b_coexpr *cp = BlkD(*dp, Coexpr);
 #ifdef Concurrent
-         if (IS_TS_ASYNC(cp->status))
+         if (IS_TS_THREAD(cp->status))
             fprintf(f, "thread_%ld(%ld)", (long) cp->id, (long) cp->size);
    	 else
 #endif					/* Concurrent */
@@ -1276,13 +1276,13 @@ struct b_coexpr *ce;
    arp = &abp->arec[abp->nactivators - 1];
    actvtr = arp->activator;
 
-#ifdef Concurrent
+#ifdef AAAConcurrent
    if (IS_TS_SYNC(ce->status)){
 #endif					/* Concurrent */
       if (--arp->acount == 0)
          abp->nactivators--;
       ce->es_actstk = abp;
-#ifdef Concurrent
+#ifdef AAAConcurrent
       }
 #endif					/* Concurrent */
 
@@ -1336,7 +1336,7 @@ struct b_coexpr *ce;
          arp = &abp->arec[i-1];
          /*for (j = 1; j <= arp->acount; j++)*/
 #ifdef Concurrent
-         if (arp->activator->status & Ts_Async)
+         if (IS_TS_THREAD(arp->activator->status))
             fprintf(stderr, "thread_%ld(%d)\n", (long)(arp->activator->id),
             arp->acount);
    	 else
@@ -1934,7 +1934,7 @@ dptr dp1, dp2;
             (long)BlkLoc(source)->Coexpr.size);
          len = strlen(sbuf);
 #ifdef Concurrent
-         if (BlkLoc(source)->Coexpr.status & Ts_Async){
+         if (IS_TS_THREAD(BlkLoc(source)->Coexpr.status)){
 	    numchar = 6;
 	    Protect (reserve(Strings, len + numchar), return RunError);
             Protect(t = alcstr("thread", numchar), return RunError);

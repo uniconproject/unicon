@@ -150,7 +150,7 @@ dptr result;
    {
 #ifdef CoExpr
 
-   int first;
+   int first = 1;  /* equals 0 if first activation */
 
 #ifdef Concurrent
    if (!ncp){
@@ -205,7 +205,7 @@ dptr result;
       return A_Continue;   
       }
    else
-   if (ncp->status & Ts_Async){
+   if (IS_TS_THREAD(ncp->status) && IS_TS_ASYNC(ncp->status)){
       struct b_list *hp;
 
       if (!is:null(*val)){
@@ -273,10 +273,8 @@ dptr result;
     */
    if (ncp->es_actstk == NULL) {
       Protect(ncp->es_actstk = alcactiv(),RunErr(0,NULL));
-      first = 0;
+      first = 0; /* equals 0 if first activation */
       }
-   else
-      first = 1;
 
    if (pushact(ncp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
       RunErr(0,NULL);

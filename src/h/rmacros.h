@@ -99,18 +99,25 @@
  * Thread status flags in status field of coexpr blocks.
  * Ts_Native can only be Ts_Sync.  Ts_Posix may be Sync or Async.
  */
-#define Ts_Native	1		/* native (assembler) coexpression */
-#define Ts_Posix	2		/* POSIX (pthread) coexpression */
-#define Ts_Async        4		/* asynchronous (concurrent) thread */
-#define Ts_Active       8               /* someone activated me */
-#define Ts_WTinbox     16               /* waiting on inbox Q */
-#define Ts_WToutbox    32               /* waiting on outbox Q */
+#define Ts_Main		01		/* This is the main co-expression/thread */
+#define Ts_Thread	02		/* This is a thread */
+#define Ts_Posix	04		/* POSIX (pthread) coexpression */
+
+#define Ts_Async       010		/* asynchronous (concurrent) thread */
+#define Ts_Actived     020              /* activated at least once */
+#define Ts_Active      040              /* someone activated me */
+
+#define Ts_WTinbox    0100              /* waiting on inbox Q */
+#define Ts_WToutbox   0200              /* waiting on outbox Q */
 
 #define SET_FLAG(X,F)        (X) |= (F)
 #define UNSET_FLAG(X,F)      (X) &= ~(F)
 #define CHECK_FLAG(X,F)      ((X) & (F))
 #define NOT_CHECK_FLAG(X,F)  (!CHECK_FLAG(X,F))
 
+#define IS_TS_MAIN(X) CHECK_FLAG(X, Ts_Main)
+#define IS_TS_THREAD(X) CHECK_FLAG(X, Ts_Thread)
+#define IS_TS_POSIX(X) CHECK_FLAG(X, Ts_Posix)
 #define IS_TS_ASYNC(X) CHECK_FLAG(X, Ts_Async)
 #define IS_TS_SYNC(X) (!IS_TS_ASYNC(X))
 
@@ -620,8 +627,6 @@
 
 #ifdef Concurrent
 
-   #define tend         (curtstate_ce->es_tend)
-
    /* used in fmath.r, log() */
    #define lastbase	     	(curtstate->Lastbase)
    #define divisor		(curtstate->Divisor)
@@ -1053,7 +1058,7 @@
       #define lastcol   (curtstate->Lastcol)
 
 #ifdef Concurrent 
- 
+      #define tend        (curtstate_ce->es_tend)
       #define pfp         (curtstate_ce->es_pfp)
 #if !ConcurrentCOMPILER
       #define efp         (curtstate_ce->es_efp)
@@ -1062,6 +1067,7 @@
       #define oldipc      (curtstate_ce->es_oldipc)
       #define sp          (curtstate_ce->es_sp)
       #define ilevel      (curtstate_ce->es_ilevel)
+
       #define eret_tmp       (curtstate->Eret_tmp)
 #endif					/* ConcurrentCOMPILER */
 

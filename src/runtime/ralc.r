@@ -182,6 +182,13 @@ struct b_coexpr *alccoexp()
    ep->freshblk = nulldesc;
    ep->es_actstk = NULL;
 
+#ifdef NativeCoswitch
+   ep->status = 0;
+#else					/* NativeCoswitch */
+   ep->status = Ts_Posix;
+#endif					/* NativeCoswitch */
+
+
    /* need to look at concurrent initialization for COMPILER and !COMPILER
     * cases and see if we should make a common function that can serve both.
     */
@@ -192,8 +199,7 @@ struct b_coexpr *alccoexp()
    ep->handdata = NULL;
 {
    struct b_list *hp;
-   ep->status = Ts_Native;
-	 
+ 
   /*
    * Initialize sender/receiver queues.
    *
@@ -342,6 +348,12 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    ep->es_argp = NULL;
    ep->tvalloc = NULL;
 
+#ifdef NativeCoswitch
+   ep->status = 0;
+#else					/* NativeCoswitch */
+   ep->status = Ts_Posix;
+#endif					/* NativeCoswitch */
+
    if (icodesize > 0)
       ep->id = 1;
    else{
@@ -361,8 +373,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 {
  
      struct b_list *hp;
-     ep->status = Ts_Native;
-	 
+ 
      /*
       * Initialize sender/receiver queues.
       *

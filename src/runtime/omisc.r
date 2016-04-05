@@ -88,7 +88,7 @@ operator{1} * size(x)
       coexpr: inline {
 #ifdef Concurrent 
          struct b_coexpr *cp = BlkD(x, Coexpr);
-	 if (cp->status & Ts_Async)
+	 if (IS_TS_THREAD(cp->status))
 	    return C_integer  BlkD(cp->outbox, List)->size;
 #endif					/* Concurrent */ 
          return C_integer BlkD(x,Coexpr)->size;

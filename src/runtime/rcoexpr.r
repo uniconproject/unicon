@@ -359,10 +359,12 @@ int first;
    }
 #endif					/* ! Concurrent */
 
+#if !COMPILER
    /*
     * Enter the program state of the co-expression being activated
     */
    ENTERPSTATE(ncp->program);
+#endif					/* !COMPILER */
 
 #ifndef Concurrent
    glbl_argp = ncp->es_argp;

@@ -285,12 +285,13 @@ int first;
 
 #ifdef Concurrent
    /*
-    * exit if this is a thread.
+    * exit if this is a returning/failing thread.
     * May want to check/fix thread  activator initialization 
     * depending on desired join semantics.
-    * coclean calls pthread_exit() in case of Async threads.
+    * coclean calls pthread_exit() in this case.
     */
-   if (IS_TS_THREAD(ccp->status)){
+   if (IS_TS_THREAD(ccp->status) && 
+      (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
       #ifdef CoClean
  	 coclean(ccp->cstate);
       #endif				/* CoClean */
@@ -300,12 +301,42 @@ int first;
    ncp->tvalloc = NULL;
    ccp->tvalloc = rsltloc;
 
+#if COMPILER
+   if (line_info) {
+      ccp->file_name = file_name;
+      ccp->line_num = line_num;
+      file_name = ncp->file_name;
+      line_num = ncp->line_num;
+      }
+
+   if (debug_info)
+#endif					/* !COMPILER */
+   {
+      if (k_trace 
+      #ifdef MultiThread
+	 &&  (swtch_typ != A_MTEvent)
+      #endif					/* MultiThread */
+         )
+	 cotrace(ccp, ncp, swtch_typ, valloc);
+    }
+
    /*
     * Save state of current co-expression.
+    * & Establish state for new co-expression.
     */
-   ccp->es_pfp = pfp;
    ccp->es_argp = glbl_argp;
+
+#ifdef Concurrent
+   if (!IS_TS_ATTACHED(ncp->status)){
+      curtstate->c = ncp;
+      ((struct context *) ncp->cstate[1])->tstate = curtstate;
+   }
+#else					/* Concurrent */
+   ccp->es_pfp = pfp;
    ccp->es_tend = tend;
+
+   pfp = ncp->es_pfp;
+   tend = ncp->es_tend;
 
 #if !COMPILER
    ccp->es_efp = efp;
@@ -315,49 +346,13 @@ int first;
    ccp->es_sp = sp;
    ccp->es_ilevel = ilevel;
 
-   #ifdef EventMon
-   ccp->actv_count += 1;
-   #endif				/* EventMon */
-
-#else					/* !COMPILER */
-   if (line_info) {
-      ccp->file_name = file_name;
-      ccp->line_num = line_num;
-      file_name = ncp->file_name;
-      line_num = ncp->line_num;
-      }
-   if (debug_info)
+   efp = ncp->es_efp;
+   gfp = ncp->es_gfp;
+   ipc = ncp->es_ipc;
+   sp = ncp->es_sp;
+   ilevel = ncp->es_ilevel;
 #endif					/* !COMPILER */
-      if (k_trace) {
-      #ifdef MultiThread
-	 if (swtch_typ != A_MTEvent)
-      #endif					/* MultiThread */
-	 cotrace(ccp, ncp, swtch_typ, valloc);
-	 }
-
-      /*
-       * Establish state for new co-expression.
-       */
-
-#ifdef Concurrent
-   if (!IS_TS_ATTACHED(ncp->status)){
-      curtstate->c = ncp;
-      ((struct context *) ncp->cstate[1])->tstate = curtstate;
-   }
-#else
-   {
-       pfp = ncp->es_pfp;
-       tend = ncp->es_tend;
-
-       #if !COMPILER
-       efp = ncp->es_efp;
-       gfp = ncp->es_gfp;
-       ipc = ncp->es_ipc;
-       sp = ncp->es_sp;
-       ilevel = (int)ncp->es_ilevel;
-       #endif					/* !COMPILER */
-   }
-#endif					/* ! Concurrent */
+#endif					/* Concurrent */
 
 #if !COMPILER
    /*
@@ -366,14 +361,23 @@ int first;
    ENTERPSTATE(ncp->program);
 #endif					/* !COMPILER */
 
-#ifndef Concurrent
-   glbl_argp = ncp->es_argp;
-   BlkLoc(k_current) = (union block *)ncp;
+
+
+#ifdef Concurrent
+#ifdef NativeCoswitch
+   if (!IS_TS_ATTACHED(ncp->status)){
+    glbl_argp = ncp->es_argp;
+    BlkLoc(k_current) = (union block *)ncp;
+   }
+#endif                                  /* NativeCoswitch */
+#else					/* Concurrent */
+    glbl_argp = ncp->es_argp;
+    BlkLoc(k_current) = (union block *)ncp;
    #if COMPILER && !ConcurrentCOMPILER
    /* ConcurrentCOMPILER moved this into the nctramp trampoline? */
    coexpr_fnc = ncp->fnc;
    #endif				/* COMPILER && !ConcurrentCOMPILER */
-#endif					/* !Concurrent */
+#endif					/* Concurrent */
 
 #ifdef MultiThread
    /*
@@ -417,10 +421,6 @@ int first;
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
       UNSET_FLAG(ccp->status, Ts_Attached);
       coswitch(ccp->cstate, ncp->cstate, first);
-#ifdef AAAConcurrent
-      curtstate->c = ccp;
-      ((struct context *) ccp->cstate[1])->tstate = curtstate;
-#endif
    }
 
    /*
@@ -432,7 +432,7 @@ int first;
 
 #endif        				/* CoExpr */
    }
-
+
 #ifdef CoExpr
 /*
  * new_context - determine what function to call to execute the new

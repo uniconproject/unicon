@@ -671,6 +671,14 @@
     
 #define CURTSTATE_CE() struct b_coexpr *curtstate_ce = curtstate->c;
 
+#ifdef NativeCoswitch
+#define SYNC_CURTSTATE_CE() if (curtstate->c != curtstate_ce) curtstate_ce = curtstate->c;
+#else					/* NativeCoswitch */
+#define SYNC_CURTSTATE_CE()
+#endif					/* NativeCoswitch */
+
+
+
 #if ConcurrentCOMPILER
 #define CURTSTATE()  GET_CURTSTATE(); CURTSTATE_CE(); 
 #else					/* ConcurrentCOMPILER */
@@ -722,6 +730,7 @@
 #define CURTSTATE_ONLY()
 #define SYNC_GLOBAL_CURTSTATE()
 #define TLS_CURTSTATE_ONLY()
+#define SYNC_CURTSTATE_CE()
 
 #define CURTSTATARG
 #define RTTCURTSTATARG

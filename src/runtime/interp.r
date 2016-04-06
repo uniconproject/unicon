@@ -2208,13 +2208,16 @@ L_agoto:
             Deref(*dp);
 
 #ifdef Concurrent
-            if (is:null(*dp))
+            if (is:null(*dp)){
 	       signal = activate((dptr)(sp - 3), NULL, (dptr)(sp - 3));
+	       SYNC_CURTSTATE_CE();
+	       }
 	    else 
 #endif					/* Concurrent */	      
             if (is:coexpr(*dp)) {
                ncp = BlkD(*dp, Coexpr);
                signal = activate((dptr)(sp - 3), ncp, (dptr)(sp - 3));
+	       SYNC_CURTSTATE_CE();
 	       }
 	    else{
                err_msg(118, dp);
@@ -2243,6 +2246,7 @@ L_agoto:
 
             ++BlkLoc(k_current)->Coexpr.size;
             co_chng(ncp, (dptr)&sp[-1], NULL, A_Coret, 1);
+       	    SYNC_CURTSTATE_CE();
             EntInterp_sp;
 #endif					/* CoExpr */
             break;
@@ -2270,6 +2274,7 @@ L_agoto:
 #endif					/* MultiThread */
 
             co_chng(ncp, NULL, NULL, A_Cofail, 1);
+       	    SYNC_CURTSTATE_CE();
             EntInterp_sp;
 #endif					/* CoExpr */
             break;

@@ -13,6 +13,20 @@ static continuation coexpr_fnc;
 #ifdef Concurrent
 void tlschain_add(struct threadstate *tstate, struct context *ctx);
 void tlschain_remove(struct threadstate *tstate);
+
+#define TRANSFER_KLEVEL(ncp, ccp) do {				\
+	    if (ncp->program == ccp->program) { 		\
+	       struct context *nctx, *cctx;			\
+	       nctx = (struct context *) ncp->cstate[1];	\
+	       cctx = (struct context *) ccp->cstate[1];	\
+	       if (nctx->tstate)      	 			\
+	       	  nctx->tstate->K_level = cctx->tstate->K_level;\
+	       else						\
+	       	  nctx->tmplevel =  cctx->tstate->K_level;	\
+	    	} 		    				\
+	} while (0)
+#else					/* Concurrent  */
+#define TRANSFER_KLEVEL(ncp, ccp)
 #endif					/* Concurrent  */
 
 #ifdef PthreadCoswitch
@@ -202,17 +216,7 @@ int first;
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
-#ifdef Concurrent
-	    if (ncp->program == ccp->program) {
-	       struct context *nctx, *cctx;
-	       nctx = (struct context *) ncp->cstate[1];
-	       cctx = (struct context *) ccp->cstate[1];
-	       if (nctx->tstate)
-	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
-	       else
-	       	  nctx->tmplevel =  cctx->tstate->K_level;
-	    	}
-#endif					/* Concurrent */
+	 TRANSFER_KLEVEL(ncp, ccp);
 	 break;
       case A_Coret:
          EVValX(ncp,E_Coret);
@@ -220,17 +224,7 @@ int first;
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
-#ifdef Concurrent
-	    if (ncp->program == ccp->program) {
-	       struct context *nctx, *cctx;
-	       nctx = (struct context *) ncp->cstate[1];
-	       cctx = (struct context *) ccp->cstate[1];
-	       if (nctx->tstate)
-	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
-	       else
-	       	  nctx->tmplevel =  cctx->tstate->K_level;
-	    	}
-#endif					/* Concurrent */
+	 TRANSFER_KLEVEL(ncp, ccp);
 	 break;
       case A_Cofail:
          EVValX(ncp,E_Cofail);
@@ -238,17 +232,7 @@ int first;
 	    curpstate->parent->eventsource.dword = D_Coexpr;
 	    BlkLoc(curpstate->parent->eventsource) = (union block *)ncp;
 	    }
-#ifdef Concurrent
-	    if (ncp->program == ccp->program) {
-	       struct context *nctx, *cctx;
-	       nctx = (struct context *) ncp->cstate[1];
-	       cctx = (struct context *) ccp->cstate[1];
-	       if (nctx->tstate)
-	       	  nctx->tstate->K_level =  cctx->tstate->K_level;
-	       else
-	       	  nctx->tmplevel =  cctx->tstate->K_level;
-	    	}
-#endif					/* Concurrent */	    
+	 TRANSFER_KLEVEL(ncp, ccp);
 	 break;
       }
 #endif        				/* MultiThread */

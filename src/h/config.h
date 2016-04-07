@@ -151,7 +151,7 @@
    #endif					/* Concurrent */
 
    #ifdef PthreadCoswitch
-      #define NoNativeCoswitch
+   //#define NoNativeCoswitch
    #endif					/* PthreadCoswitch */
 
    #undef CoExpr

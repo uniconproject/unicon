@@ -2039,13 +2039,11 @@ static stringint siKeywords[] = {
       struct progstate *p = BlkD(d,Coexpr)->program;
       char *kname = kyname;
 #ifdef Concurrent
-      struct context *cntx = 
-	  (struct context *)(( cstate *) BlkD(d,Coexpr)->cstate)[1];
-	  struct threadstate *tstate;
-	  if (cntx->tstate)
-	     tstate = cntx->tstate;
-	  else
-	     tstate = p->tstate;
+      struct threadstate *tstate;
+      if (BlkD(d,Coexpr)->ctx->tstate)
+      	 tstate = BlkD(d,Coexpr)->ctx->tstate;
+      else
+	 tstate = p->tstate;
 	    
 #else					/* Concurrent */
       struct threadstate *tstate = p->tstate;
@@ -2512,18 +2510,14 @@ function{1} signal(x, y)
    if is:coexpr(x) then {
       abstract { return coexpr }
       body {
-	 struct context *n;
-	 struct b_coexpr *cp = BlkD(x, Coexpr);
-
  	 /*
 	  * Transmit whatever is needed to wake it up.
 	  */
-	 n = (struct context *) cp->cstate[1];
 	
-	 if (n->alive == 0)
+	 if (BlkD(x, Coexpr)->ctx->alive == 0)
 	    fail;
 
-	 sem_post(n->semp);
+	 sem_post(BlkD(x, Coexpr)->ctx->semp);
 
 	 return x;
 	 }
@@ -2802,10 +2796,9 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	 CURTSTATE();
 #endif                                   /* ConcurrentCOMPILER */
 
-
 	 if (IS_TS_THREAD(cp->status)) return x;
 
-	 n = (struct context *) cp->cstate[1];
+	 n = cp->ctx;
 	 if (n->alive == 1) {
 	    /*
 	     * The co-expression has already been Activated!

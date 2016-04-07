@@ -1184,9 +1184,7 @@ Deliberate Syntax Error
  * Allocate a struct context   for the main co-expression.
  */
 {
-   cstate ncs = (cstate) (mainhead->cstate);
-   context *ctx;
-   ctx = ncs[1] = alloc(sizeof (struct context));
+   struct context *ctx = mainhead->ctx = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = mainhead;
    ctx->thread = pthread_self();

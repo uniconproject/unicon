@@ -92,6 +92,10 @@
    Feature(1, "_CO_EXPRESSIONS", "co-expressions")
 #endif					/* CoExpr */
 
+#ifdef NativeCoswitch
+   Feature(1, "_NATIVECOSWITCH", "native coswitch")
+#endif					/* NativeCoswitch */
+
 #ifdef Concurrent
    Feature(1, "_CONCURRENT", "concurrent threads")
 #endif					/* CoExpr */

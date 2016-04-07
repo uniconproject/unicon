@@ -208,7 +208,7 @@ function{} exit(status)
      CURTSTATE();
 #endif					/* !ConcurrentCOMPILER */
      #ifdef CoClean
-     coclean(BlkD(k_current, Coexpr)->cstate);
+     coclean(BlkD(k_current, Coexpr));
      #endif				/* CoClean */
       }
 #endif					/* Concurrent */

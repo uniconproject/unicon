@@ -69,7 +69,7 @@ typedef int (*continuation) (void);
  * We use cstate[1] to point to the actual context struct.
  * (Both of these are initialized to NULL by Icon 9.4.1 or later.)
  */
-typedef struct context **cstate;
+//typedef struct context **cstate;
 #endif					/* PthreadCoswitch */
 
 #if !COMPILER

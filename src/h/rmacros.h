@@ -1297,7 +1297,7 @@
       handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
 
 #define CREATE_CE_THREAD(cp, t_stksize, msg) do {		\
-   context *new = (struct context *) cp->cstate[1];		\
+   struct context *new = cp->ctx;		\
    THREAD_CREATE(new, t_stksize, msg);				\
    new->alive = 1;						\
    new->have_thread = 1;					\

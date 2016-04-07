@@ -14,23 +14,20 @@ static continuation coexpr_fnc;
 void tlschain_add(struct threadstate *tstate, struct context *ctx);
 void tlschain_remove(struct threadstate *tstate);
 
-#define TRANSFER_KLEVEL(ncp, ccp) do {				\
-	    if (ncp->program == ccp->program) { 		\
-	       struct context *nctx, *cctx;			\
-	       nctx = (struct context *) ncp->cstate[1];	\
-	       cctx = (struct context *) ccp->cstate[1];	\
-	       if (nctx->tstate)      	 			\
-	       	  nctx->tstate->K_level = cctx->tstate->K_level;\
-	       else						\
-	       	  nctx->tmplevel =  cctx->tstate->K_level;	\
-	    	} 		    				\
+#define TRANSFER_KLEVEL(ncp, ccp) do {					\
+	    if (ncp->program == ccp->program) { 			\
+	       if (ncp->ctx->tstate)      	 			\
+	       	  ncp->ctx->tstate->K_level = ccp->ctx->tstate->K_level;\
+	       else							\
+	       	  ncp->ctx->tmplevel =  ccp->ctx->tstate->K_level;	\
+	    	} 		    					\
 	} while (0)
 #else					/* Concurrent  */
 #define TRANSFER_KLEVEL(ncp, ccp)
 #endif					/* Concurrent  */
 
 #ifdef PthreadCoswitch
-int pthreadcoswitch(void *o, void *n, word ostat, word nstat);
+int pthreadcoswitch(struct context *old, struct context *new, word ostat, word nstat);
 #endif					/* PthreadCoswitch */
 
 /*
@@ -293,7 +290,7 @@ int first;
    if (IS_TS_THREAD(ccp->status) && 
       (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
       #ifdef CoClean
- 	 coclean(ccp->cstate);
+ 	 coclean(ccp);
       #endif				/* CoClean */
       }
 #endif					/* Concurrent */
@@ -329,7 +326,7 @@ int first;
 #ifdef Concurrent
    if (!IS_TS_ATTACHED(ncp->status)){
       curtstate->c = ncp;
-      ((struct context *) ncp->cstate[1])->tstate = curtstate;
+      ncp->ctx->tstate = curtstate;
    }
 #else					/* Concurrent */
    ccp->es_pfp = pfp;
@@ -407,7 +404,7 @@ int first;
    if (IS_TS_ATTACHED(ncp->status)) {
       SET_FLAG(ncp->status, Ts_Attached);
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
-      pthreadcoswitch(ccp->cstate, ncp->cstate, ccp->status, ncp->status );
+      pthreadcoswitch(ccp->ctx, ncp->ctx, ccp->status, ncp->status );
       }
    else
 #endif					/* PthreadCoswitch */
@@ -497,14 +494,8 @@ static int pco_inited = 0;		/* has first-time initialization been done? */
  * coswitch(old, new, first) -- switch contexts.
  */
 
-int pthreadcoswitch(void *o, void *n, word ostat, word nstat)
+int pthreadcoswitch(struct context *old, struct context *new, word ostat, word nstat)
 {
-   cstate ocs = o;			/* old cstate pointer */
-   cstate ncs = n;			/* new cstate pointer */
-   context *old, *new;			/* old and new context pointers */
-   old = (struct context *) ocs[1];	/* load current context pointer */
-   new = (struct context *) ncs[1];	/* load new context pointer */
-   
    sem_post(new->semp);			/* unblock the new thread */
    SEM_WAIT(old->semp);			/* block this thread */
 
@@ -520,9 +511,8 @@ int pthreadcoswitch(void *o, void *n, word ostat, word nstat)
 /*
  * coclean(old) -- clean up co-expression state before freeing.
  */
-void coclean(void *o) {
-   cstate ocs = o;			/* old cstate pointer */
-   struct context *old = ocs[1];	/* old context pointer */
+void coclean(struct b_coexpr *cp) {
+   struct context *old = cp->ctx; 
    struct region *strregion=NULL, *blkregion=NULL;
 
    if (old == NULL)		/* if never initialized, do nothing */
@@ -596,7 +586,7 @@ void coclean(void *o) {
 #endif					/* ConcurrentCOMPILER */
 
     free(old); 			/* free context block */
-    ocs[1] = NULL;            
+    cp->ctx = NULL;            
     return;
   }
 
@@ -860,7 +850,7 @@ int action;
          switch (action_in_progress){
 	    case TC_KILLALLTHREADS:{
       	       #ifdef CoClean
-     	       coclean(BlkD(k_current, Coexpr)->cstate);
+     	       coclean(BlkD(k_current, Coexpr));
 	       #else
       	       DEC_NARTHREADS;	
       	       pthread_exit(NULL);

@@ -232,7 +232,7 @@ dptr result;
       hp = BlkD(ncp->outbox, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
       if (hp->size==0){
-	 struct context *n = (struct context *) ncp->cstate[1];
+	 struct context *n = ncp->ctx;
 	 hp->empty++;
          while (hp->size==0){
 	    if (hp->size==0 && n->alive<0){
@@ -450,14 +450,12 @@ int timeout;
    hp = BlkD(ccp->cequeue, List);
    if (hp->size>0){
       tended struct descrip d;
-      struct context *n;
       MUTEX_LOCKBLK_CONTROLLED(hp, "send(): list mutex");
       c_get(hp, &d);
       BlkD(d, Coexpr)->handdata = msg;
       MUTEX_UNLOCKBLK(hp, "send(): list mutex");
-      n = (struct context *) BlkD(d, Coexpr)->cstate[1];
-      if (n->alive > 0){
-      	 sem_post(n->semp);
+      if (BlkD(d, Coexpr)->ctx->alive > 0){
+      	 sem_post(BlkD(d, Coexpr)->ctx->semp);
 	 MakeInt(hp->size, msg);
 	 Return;
 	 }

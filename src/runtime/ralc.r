@@ -259,9 +259,7 @@ struct b_coexpr *alccoexp()
 
 #ifdef PthreadCoswitch
 {
-   cstate ncs = (cstate) (ep->cstate);
-   context *ctx;
-   ctx = ncs[1] = alloc(sizeof (struct context));
+   struct context *ctx = ep->ctx = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = ep;
    ctx->tmplevel = 0;
@@ -447,9 +445,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
  * Allocate a struct context for this co-expression.
  */
 {
-   cstate ncs = (cstate) (ep->cstate);
-   context *ctx;
-   ctx = ncs[1] = alloc(sizeof (struct context));
+   struct context *ctx = ep->ctx = alloc(sizeof (struct context));
    makesem(ctx);
    ctx->c = ep;
    ctx->tmplevel = 0;

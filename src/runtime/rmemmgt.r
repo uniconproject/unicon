@@ -1441,7 +1441,7 @@ static void cofree()
             } /* for abp */ 
 
          #ifdef CoClean
- 	    coclean(xep->cstate);
+ 	    coclean(xep);
          #endif				/* CoClean */
 
          free((pointer)xep);

@@ -13,7 +13,7 @@
 \usepackage{hyperref}
 \hypersetup{pdftex, colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=Programming Language Support for Exploratory Graphics Applicati, pdfauthor=, pdfsubject=, pdfkeywords=}
 \usepackage[pdftex]{graphicx}
-\newcommand\textsubscript[1]{\ensuremath{{}_{\text{#1}}}}
+%\newcommand\textsubscript[1]{\ensuremath{{}_{\text{#1}}}}
 % Text styles
 \newcommand\textstyleHeadingivChar[1]{\foreignlanguage{english}{#1}}
 % Outline numbering
@@ -117,11 +117,11 @@ Naomi Martinez, Clinton Jeffery, and Jafar Al Gharaibeh
 \par}
 
 {\centering\selectlanguage{english}
-Unicon Technical Report \#9c
+Unicon Technical Report \#9d
 \par}
 
 {\centering\selectlanguage{english}
-February 16, 2014
+April 3, 2016
 \par}
 
 \bigskip
@@ -142,7 +142,8 @@ Abstract
 \bigskip
 
 {\selectlanguage{english}
-Version 11 of the Unicon language includes 3D graphics facilities. This document describes the design of the Unicon 3D
+Version 12 of the Unicon language includes 3D graphics facilities.
+This document describes the design of the Unicon 3D
 graphics facilities, and provides several examples detailing their use.}
 
 
@@ -190,69 +191,82 @@ EIA-0220590 and EIA-9810732.}
 
 \bigskip
 
-{\selectlanguage{english}
-Most application programming interfaces for writing 3D computer graphics applications are complicated and difficult to
-master. Toolkits such as OpenGL [OpenGL00] and Open Inventor are powerful, but several weeks or even months are needed
-to gain proficiency. Even after gaining proficiency, many lines of code are required to implement most features. There
-is much that can be simplified. }
+Most application programming interfaces for writing 3D computer
+graphics applications are complicated and difficult to
+master. Toolkits such as OpenGL [OpenGL00] and Open Inventor are
+powerful, but several weeks or even months are needed to gain
+proficiency. Even after gaining proficiency, many lines of code are
+required to implement most features. There is much that can be
+simplified.
 
-{\selectlanguage{english}
-Unicon [Jeffery03] is a superset of the Icon programming language [Griswold96] that offers many features that minimize
-the time and effort spent programming. Programs written in Unicon require from two to ten times fewer lines of code
-than programs written in languages such as C, C++, or Java. This report describes a set of simple, easy to use 3D
-graphics facilities for Unicon.}
+Unicon [Jeffery03] is a superset of the Icon programming language
+[Griswold96] that offers many features that minimize the time and
+effort spent programming. Programs written in Unicon require from two
+to ten times fewer lines of code than programs written in languages
+such as C, C++, or Java. This report describes a set of simple, easy
+to use 3D graphics facilities for Unicon.
 
-{\selectlanguage{english}
-Icon and Unicon already provide facilities that simplify the process of programming 2D graphics applications
-[Griswold98]. Unicon's 3D graphics facilities are based upon and integrated with the 2D facilities. Unicon's 3D
-facilities are built on top of one of the leading 3D graphics libraries, OpenGL. OpenGL is more widely portable and
-available than most similar toolkits.}
+Icon and Unicon already provide facilities that simplify the process
+of programming 2D graphics applications [Griswold98]. Unicon's 3D
+graphics facilities are based upon and integrated with the 2D
+facilities. Unicon's 3D facilities are built on top of one of the
+leading 3D graphics libraries, OpenGL. OpenGL is more widely portable
+and available than most similar toolkits.
 
-{\selectlanguage{english}
-This paper discusses the design and demonstrates the use of Unicon's 3D graphics facilities. Section two contains the
-design of the Unicon 3D graphics facilities. Examples and sample code can be found in section three. References for
-functions and attributes are found in section four. The implementation of the Unicon 3D graphics facilities is
-discussed in [JeffMart03].}
+This paper discusses the design and demonstrates the use of Unicon's
+3D graphics facilities. Section two contains the design of the Unicon
+3D graphics facilities. Examples and sample code can be found in
+section three. References for functions and attributes are found in
+section four. The implementation of the Unicon 3D graphics facilities
+is discussed in [JeffMart03].
 
 
 \section[2. Design]{2. Design}
 
-{\selectlanguage{english}
-The Unicon 3D graphics facilities aim to provide the basic elements of 3D computer graphics in a simplified fashion. The
-basic functionality includes primitives, transformations, lighting, and texturing. With these features, the Unicon 3D
-graphics facilities should provide a good basis to construct an OpenGL scene using Unicon.}
 
-{\selectlanguage{english}
-The features of the Unicon 3D graphics facilities differ from the features of OpenGL in several ways. The Unicon 3D
-graphics facilities introduce several not available in OpenGL. These features include the direct use of image files as
-textures and the use of the foreground attribute to manipulate material properties. Also there are several features of
-OpenGL that are not available in the Unicon 3D graphics facilities. These feature include blending, fog, antialiasing,
-display lists, selection, and feedback. If there is need to, future work might include implementing these features. }
+The Unicon 3D graphics facilities aim to provide the basic elements of
+3D computer graphics in a simplified fashion. The basic functionality
+includes primitives, transformations, lighting, and texturing. With
+these features, the Unicon 3D graphics facilities should provide a
+good basis to construct an OpenGL scene using Unicon.
+
+The features of the Unicon 3D graphics facilities differ from the
+features of OpenGL in several ways. The Unicon 3D graphics facilities
+introduce several not available in OpenGL. These features include the
+direct use of image files as textures and the use of the foreground
+attribute to manipulate material properties. Also there are several
+features of OpenGL that are not available in the Unicon 3D graphics
+facilities. These feature include blending, fog, antialiasing, display
+lists, selection, and feedback. If there is need to, future work might
+include implementing these features.
 
 \subsection[2.1 Application Programming Interface (API)
 Reduction]{\bfseries 2.1 Application Programming Interface (API) Reduction}
 
-{\selectlanguage{english}
-OpenGL contains over 250 functions that can be called to render 3D graphics applications. Also needed are many window
-system calls that are not provided by OpenGL, to open and close windows and handle input from the user. The Unicon 3D
-graphic facilities reduce the number of functions that a Unicon user must typically learn to use. The Unicon 3D
-graphics facilities contain sixteen new functions and six functions that have been extended from the 2D graphics
-facilities. }
+OpenGL contains over 250 functions that can be called to render 3D
+graphics applications. Also needed are many window system calls that
+are not provided by OpenGL, to open and close windows and handle input
+from the user. The Unicon 3D graphic facilities reduce the number of
+functions that a Unicon user must typically learn to use. The Unicon
+3D graphics facilities contain sixteen new functions and six functions
+that have been extended from the 2D graphics facilities.
 
-{\selectlanguage{english}
-Some of the API reduction was obtained by trivial application of Unicon language features. The ability to store
-different data types in the same variable and the fact that Unicon handles functions with a variable number of
-arguments and varying types reduced the number of functions needed in the API. For example there are six different
-functions one can call to clear a window in OpenGL. Unicon users only need one. Other methods of reduction include
-providing OpenGL features with default parameters and eliminating unnecessary function calls.}
+Some of the API reduction was obtained by trivial application of
+Unicon language features. The ability to store different data types in
+the same variable and the fact that Unicon handles functions with a
+variable number of arguments and varying types reduced the number of
+functions needed in the API. For example there are six different
+functions one can call to clear a window in OpenGL. Unicon users only
+need one. Other methods of reduction include providing OpenGL features
+with default parameters and eliminating unnecessary function calls.
 
 
 \subsection[2.2 Opening Windows for 3D Graphics]
 {2.2 Opening Windows for 3D Graphics}
 
 
-{\selectlanguage{english}
-The first step in 3D graphics programming is opening windows to render 3D graphics, as in the line: }
+The first step in 3D graphics programming is opening windows to render
+3D graphics, as in the line:
 
 {\sffamily
 W := open(``win'', ``gl'')}
@@ -288,7 +302,8 @@ following example demonstrates the use of such attributes:
 \textsf{end}
 
 \noindent
-and here is a sample output of the program after running it on some specific hardware:\newline
+and here is a sample output of the program after running it on
+some specific hardware:\newline
 \newline
 \textsf{glversion \ : 2.1.2 NVIDIA 195.36.15\newline
 glvendor \ \ : NVIDIA Corporation\newline
@@ -297,36 +312,47 @@ glrenderer : Quadro FX Go1400/PCI/SSE2}\newline
 
 \subsection[2.3 The Coordinate System]{2.3 The Coordinate System}
 
-{\selectlanguage{english}
-Features such as lighting, perspective, texturing, and shading, give a scene the illusion of being three-dimensional. In
-order to control such features, a Unicon programmer makes use of context attributes. By assigning new values to various
-attributes the programmer can effectively change many aspects of the scene. Attributes to control the coordinate
-system, field of view, lighting and textures are included in the Unicon 3D graphics facilities. }
+Features such as lighting, perspective, texturing, and shading, give
+a scene the illusion of being three-dimensional. In order to control
+such features, a Unicon programmer makes use of context attributes.
+By assigning new values to various attributes the programmer can
+effectively change many aspects of the scene. Attributes to control
+the coordinate system, field of view, lighting and textures are
+included in the Unicon 3D graphics facilities.
 
-{\selectlanguage{english}
-Some of the most basic context attributes concern the coordinate system. In 3D graphics one can think of drawing the
-scene in a three-dimensional coordinate system. A set of three numbers, an x-coordinate, a y-coordinate, and a
-z-coordinate, determine where to place an object. The objects that are visible on the screen depend on several things,
-the eye position, the eye direction, and the orientation of the scene. If these things are not taken into account, the
-scene drawn and the scene desired by the user might be two very different things. }
+Some of the most basic context attributes concern the coordinate
+system. In 3D graphics one can think of drawing the scene in a
+three-dimensional coordinate system. A set of three numbers, an
+x-coordinate, a y-coordinate, and a z-coordinate, determine where to
+place an object. The objects that are visible on the screen depend on
+several things, the eye position, the eye direction, and the
+orientation of the scene. If these things are not taken into account,
+the scene drawn and the scene desired by the user might be two very
+different things.
 
-{\selectlanguage{english}
-To help think about these attributes, imagine a person walking around a 3D coordinate system. What this person sees
-becomes the scene viewed on the screen. The eye position specifies where this person is standing. For instance if this
-person is standing at the origin, \textsf{(0, 0, 0),} then things close to the origin appear larger and seem closer
-than objects further from the origin. The eye direction supplies the direction in which the person is looking. Suppose
-the person is looking toward the negative z-axis. Then only the objects situated on the negative z-axis are viewed in
-the scene. Anything on the positive z-axis is behind the viewer. Finally, the up direction can be described by what
-direction is up for the person. }
+To help think about these attributes, imagine a person walking around
+a 3D coordinate system. What this person sees becomes the scene viewed
+on the screen. The eye position specifies where this person is
+standing. For instance if this person is standing at the origin,
+\textsf{(0, 0, 0),} then things close to the origin appear larger and
+seem closer than objects further from the origin. The eye direction
+supplies the direction in which the person is looking. Suppose the
+person is looking toward the negative z-axis. Then only the objects
+situated on the negative z-axis are viewed in the scene. Anything on
+the positive z-axis is behind the viewer. Finally, the up direction
+can be described by what direction is up for the person.
 
-{\selectlanguage{english}
-In the Unicon 3D graphics facilities, the eye position is given by the attribute \textsf{eyepos}. By default this is set
-to be at the origin or \textsf{(0, 0, 0)}. The eye direction is given by the attribute \textsf{eyedir}. By default this
-is set to be looking at the negative z-axis. The up direction can be specified by the attribute \textsf{eyeup} and by
-default is \textsf{(0, 1, 0)}. The attribute \textsf{eye} allows the user to specify \textsf{eyepos}, \textsf{eyedir},
-and \textsf{eyeup} with a single value; for convenience a function \textsf{Eye()} sets these attributes directly from
-numeric parameters. After changing any of these attributes, the scene will redraw itself with the new eye
-specifications.}
+In the Unicon 3D graphics facilities, the eye position is given by the
+attribute \textsf{eyepos}. By default this is set to be at the origin
+or \textsf{(0, 0, 0)}. The eye direction is given by the attribute
+\textsf{eyedir}. By default this is set to be looking at the negative
+z-axis. The up direction can be specified by the attribute
+\textsf{eyeup} and by default is \textsf{(0, 1, 0)}. The attribute
+\textsf{eye} allows the user to specify \textsf{eyepos},
+\textsf{eyedir}, and \textsf{eyeup} with a single value; for
+convenience a function \textsf{Eye()} sets these attributes directly
+from numeric parameters. After changing any of these attributes, the
+scene will redraw itself with the new eye specifications.
 
 
 \bigskip
@@ -343,17 +369,25 @@ functions specified, can take as their first parameter the window to
 be drawn on. When a window is not specified the primitives will be
 drawn on the default window, \textsf{\&window}.
 
-In the Unicon 3D graphics facilities, one can draw 2D, 3D or 4D objects within the same scene. With the use of the
-context attribute, \textsf{dim}, the user can switch between the different dimensions of an object. A user can draw 2D,
-3D, or 4D, objects by assigning \textsf{dim} the values of 2, 3, or 4. It is worth noting that a 2D object drawn in a
-3D scene does not use Unicon's 2D graphics facilities for its implementation. Instead, the\texttt{ }\textsf{dim}
-attribute defines how many components a vertex of a primitive will have. The value of \textsf{dim} affects the
-primitives drawn in several ways. For functions such as \textsf{DrawPolygon()} which take the coordinates of each
-vertex as parameters, the value of \textsf{dim} specifies the number of parameters each vertex will have. For
-primitives that take x, y, and z coordinates, specifying only x and y coordinate is not sufficient. For this reason,
-\textsf{{}``dim = 2''} disallows the use of these primitives. These functions are \textsf{DrawSphere(), DrawTorus(),
-DrawCube(), and DrawCylinder()}.\texttt{ }By default the value of \textsf{dim} is three. An example of drawing
-primitive can be found in section 3.2.
+In the Unicon 3D graphics facilities, one can draw 2D, 3D or 4D
+objects within the same scene. With the use of the context attribute,
+\textsf{dim}, the user can switch between the different dimensions of
+an object. A user can draw 2D, 3D, or 4D, objects by assigning
+\textsf{dim} the values of 2, 3, or 4. It is worth noting that a 2D
+object drawn in a 3D scene does not use Unicon's 2D graphics
+facilities for its implementation. Instead, the \textsf{dim}
+attribute defines how many components a vertex of a primitive will
+have. The value of \textsf{dim} affects the primitives drawn in
+several ways. For functions such as \textsf{DrawPolygon()} which take
+the coordinates of each vertex as parameters, the value of
+\textsf{dim} specifies the number of parameters each vertex will
+have. For primitives that take x, y, and z coordinates, specifying
+only x and y coordinate is not sufficient. For this reason,
+\textsf{{}``dim = 2''} disallows the use of these primitives. These
+functions are
+\textsf{DrawSphere(), DrawTorus(), DrawCube(), and DrawCylinder()}.
+By default the value of \textsf{dim} is
+three. An example of drawing primitive can be found in section 3.2.
 
 
 \bigskip
@@ -419,12 +453,17 @@ outer circle. By specifying an additional two angle values a partial disk is obt
 \centering\arraybslash  \includegraphics[width=0.9398in,height=0.6272in]{utr9/utr9-img012.png} \\\hline
 \end{supertabular}
 \end{center}
-{\selectlanguage{english}
-Several functions from the 2D graphics facilities have been extended for the 3D graphics facilities. By doing this,
-learning to use the Unicon 3D graphics facilities may be easier for users of the Unicon 2D graphics facilities. These
-functions are\texttt{ }\textsf{DrawPoint(), DrawLine(), DrawSegment(), DrawPolygon(), and FillPolygon()}, which draw a
-point, a line, a line segment, an outline polygon or a filled polygon, respectively. Through the use of the already
-present 2D functions, the number of functions added for the 3D graphics facilities are kept to a minimum. }
+
+Several functions from the 2D graphics facilities have been extended
+for the 3D graphics facilities. By doing this, learning to use the
+Unicon 3D graphics facilities may be easier for users of the Unicon 2D
+graphics facilities. These functions are
+\textsf{DrawPoint(), DrawLine(), DrawSegment(), DrawPolygon()} and
+\textsf{FillPolygon()}, which
+draw a point, a line, a line segment, an outline polygon or a filled
+polygon, respectively. Through the use of the already present 2D
+functions, the number of functions added for the 3D graphics
+facilities are kept to a minimum.
 
 
 
@@ -445,12 +484,14 @@ stack is the current matrix. The Unicon 3D graphics facilities make
 use of OpenGL's implementation of the matrix stack to implement
 transformations.
 
-{\selectlanguage{english}
-Several functions are provided to the Unicon user to manipulate the matrix stack. The function \textsf{PushMatrix()}
-pushes a copy of the current matrix onto the stack. By doing this the user can compose several different
-transformations. The function \textsf{IdentityMatrix()} changes the current matrix to the identity matrix. Finally, to
-discard the top matrix and to return to the previous matrix, the function \textsf{PopMatrix()}will pop the top matrix
-off the matrix stack. }
+Several functions are provided to the Unicon user to manipulate the
+matrix stack. The function \textsf{PushMatrix()} pushes a copy of the
+current matrix onto the stack. By doing this the user can compose
+several different transformations. The function
+\textsf{IdentityMatrix()} changes the current matrix to the identity
+matrix. Finally, to discard the top matrix and to return to the
+previous matrix, the function \textsf{PopMatrix()}will pop the top
+matrix off the matrix stack.
 
 As in OpenGL, there are two different matrix stacks, projection and
 modelview, in the Unicon 3D graphics facilities. The projection matrix
@@ -482,47 +523,57 @@ color the object appears to be. Finally, specular light not only comes
 from one direction, but also tends to bounce off the objects in the
 scene.
 
-{\selectlanguage{english}
-Lighting has been implemented in the Unicon graphics facilities through the use of context attributes. The use of
-context attributes reduces the number of functions added to the Unicon 3D graphics facilities. For a 3D scene
-implemented in Unicon, there are eight lights available. Using the attributes \textsf{light0} through \textsf{light7}
-one can control the eight lights. Each light is \textsf{on} or \textsf{off} and has the properties \textsf{diffuse},
-\textsf{ambient}, \textsf{specular}, and \textsf{position}. }
+Lighting has been implemented in the Unicon graphics facilities
+through the use of context attributes. The use of context attributes
+reduces the number of functions added to the Unicon 3D graphics
+facilities. For a 3D scene implemented in Unicon, there are eight
+lights available. Using the attributes \textsf{light0} through
+\textsf{light7} one can control the eight lights. Each light is
+\textsf{on} or \textsf{off} and has the properties \textsf{diffuse},
+\textsf{ambient}, \textsf{specular}, and \textsf{position}.
 
-{\selectlanguage{english}
-\ A scene not only has several lighting properties, but the objects in scene may have several material properties. The
-material properties are ambient, diffuse, and specular, which are similar to the light properties, emission, and
-shininess. If an object has an emission property, it emits light of a specific color. Using combinations of these
-material properties one can give an object the illusion of being made of plastic or metal. }
+A scene not only has several lighting properties, but the objects in
+scene may have several material properties. The material properties
+are ambient, diffuse, and specular, which are similar to the light
+properties, emission, and shininess. If an object has an emission
+property, it emits light of a specific color. Using combinations of
+these material properties one can give an object the illusion of being
+made of plastic or metal.
 
-{\selectlanguage{english}
-In the Unicon 2D graphics facilities, users use a rich naming scheme to specify the current foreground color using the
-attribute \textsf{fg}. Colors can be specified using a string name, a hexadecimal number, or red, green, and blue
-components each between \textsf{0} and \textsf{65535}. The 3D graphics facilities have extended this idea to the
-lighting and material properties. For a material property, the programmer can specify the material property by stating
-the type of the material property and then the color that the property should have. Similarly the values for each of
-the lights follow the same pattern. Also, not only can a programmer specify a color in the same ways as the 2D
-graphics facilities, but also a color can be given by providing the red, green, and blue intensities between
-\textsf{0.0} and \textsf{1.0}. Examples of lighting and material properties can be found in section 3.3.}
+In the Unicon 2D graphics facilities, users use a rich naming scheme
+to specify the current foreground color using the attribute
+\textsf{fg}. Colors can be specified using a string name, a
+hexadecimal number, or red, green, and blue components each between
+\textsf{0} and \textsf{65535}. The 3D graphics facilities have
+extended this idea to the lighting and material properties. For a
+material property, the programmer can specify the material property by
+stating the type of the material property and then the color that the
+property should have. Similarly the values for each of the lights
+follow the same pattern. Also, not only can a programmer specify a
+color in the same ways as the 2D graphics facilities, but also a color
+can be given by providing the red, green, and blue intensities between
+\textsf{0.0} and \textsf{1.0}. Examples of lighting and material
+properties can be found in section 3.3.
 
-{\selectlanguage{english}
-By extending the features of the 2D graphics facilities, adding and changing properties of lights and material has been
-simplified. Furthermore, the use of the foreground attribute greatly reduces the number of lines of code needed for a
-scene. This design along with several defaults, a user of the Unicon 3D graphics facilities can have lighting in a 3D
-graphics application without much effort. }
+By extending the features of the 2D graphics facilities, adding and
+changing properties of lights and material has been simplified.
+Furthermore, the use of the foreground attribute greatly reduces
+the number of lines of code needed for a scene. This design along
+with several defaults, a user of the Unicon 3D graphics facilities
+can have lighting in a 3D graphics application without much effort.
 
 
 \subsection[2.7 Textures]{2.7 Textures}
 
 Another important area of three-dimension computer graphics is
-textures. Adding textures to a scene can give a scene a realistic
+textures. Adding textures to a scene can give it a more realistic
 feel. In order to implement textures in the Unicon 3D graphics
 facilities, several aspects of texturing have to be taken into
 account. A texture image can be viewed as a rectangular image that is
 ``glued'' onto objects in a scene. The appearances of the textured
 objects in the scene depend on several key pieces of information
 supplied by the programmer. These include the texture image and what
-parts of the texture image is mapped to what parts of an object.
+parts of the texture image are mapped to what parts of an object.
 
 Since not all scenes require the use of textures, the attribute
 \textsf{texmode} is included in the Unicon 3D graphics facilities. By
@@ -540,17 +591,20 @@ objects.
 {\selectlanguage{english}\ttfamily
 \ \ \ \textsf{WAttrib(W, ``texmode=off'')}}
 
-{\selectlanguage{english}
-Texture images in OpenGL programs are images that have been encoded into an array. So if a programmer wants to use a
-.gif image file, the file must be converted into a format accepted by OpenGL. Often times this is a cumbersome process
-to obtain the desired result. For this reason, the Unicon 3D graphics facilities provide several different formats to
-specify a texture image. A texture image can be another Unicon window, an image file, or a string. If the texture image
-is a string it must be encoded in one of two language standard formats. Either it is in the format }
+Texture images in OpenGL programs are images that have been encoded
+into an array. So if a programmer wants to use a .gif image file, the
+file must be converted into a format accepted by OpenGL. Often times
+this is a cumbersome process to obtain the desired result. For this
+reason, the Unicon 3D graphics facilities provide several different
+formats to specify a texture image. A texture image can be another
+Unicon window, an image file, or a string. If the texture image is a
+string it must be encoded in one of two language standard
+formats. Either it is in the format
 
 {\selectlanguage{english}\sffamily
 {}``width,pallet,data'' \ \textrm{or} \ {}`` width,\#,data''}
 
-\noindent where pallet is one of the pallets described in the 2D
+\noindent where \textsf{pallet} is one of the pallets described in the 2D
 graphics facilities and data is a hexadecimal representation of an
 image. In the first case the pallet will determine what colors appear
 in the texture image. In the second case, the foreground color and
@@ -560,46 +614,63 @@ for texture images. For OpenGL, a texture image must be known before
 the start of the program. The use of a window as a texture allows
 the programmer to create a texture image dynamically.
 
-Textures must have a height of 2\textsuperscript{n} pixels and width
+On many 3D platforms,
+textures must have a height of 2\textsuperscript{n} pixels and width
 of 2\textsuperscript{m} pixels where n and m are integers. If not, the
 texture dimensions are automatically scaled down to the closest power
 of 2. Rescaling affects application performance and may cause visual
-artifacts, so it may be wise to create textures with appropriate sizes
+artifacts, so it is best to create textures with appropriate sizes
 in the first place. Section 3.4 contains examples on how to use
 textures specified in the different forms.
 
-{\selectlanguage{english}
-A programmer can give the texture in one of two ways, one can use \textsf{WAttrib(``texture={\dots}'') }or the function
-\textsf{Texture(t)}\texttt{.} These methods do differ in one important way, a window cannot be used as a texture with
-\textsf{WAttrib()}. So a function call must be made to \textsf{Texture()} if a window is to be used as a texture. }
+A programmer can give the texture in one of two ways, one can use
+\textsf{WAttrib(``texture={\dots}'') }or the function
+\textsf{Texture(t)}\texttt{.} These methods do differ in one important
+way, a window cannot be used as a texture with \textsf{WAttrib()}. So
+a function call must be made to \textsf{Texture()} if a window is to
+be used as a texture.
 
-{\selectlanguage{english}
-For textures, a programmer must specify how a texture is applied to particular object. This is done by specifying
-texture coordinates and vertices. Since a texture image can be viewed as a rectangular image, texture coordinates are x
-and y coordinates of the texture image. So the texture coordinate \textsf{(0.0, 0.0)} corresponds to the lower left
-hand corner of the texture image. The texture coordinates are mapped to the vertices specified by the programmer. These
-vertices are usually the vertices of an object in the scene. Together, the texture coordinates and the vertices
-determine what the scene looks like after textures have been applied. }
+For textures, a programmer must specify how a texture is applied to
+particular object. This is done by specifying texture coordinates and
+vertices. Since a texture image can be viewed as a rectangular image,
+texture coordinates are x and y coordinates of the texture image. So
+the texture coordinate \textsf{(0.0, 0.0)} corresponds to the lower
+left hand corner of the texture image. The texture coordinates are
+mapped to the vertices specified by the programmer. These vertices are
+usually the vertices of an object in the scene. Together, the texture
+coordinates and the vertices determine what the scene looks like after
+textures have been applied.
 
-{\selectlanguage{english}
-The design of textures in the Unicon 3D graphics facilities aims to simplify the process of mapping a texture onto an
-object by setting defaults for texture coordinates. There are several ways to specify texture coordinates. To use the
-defaults given by the Unicon 3D graphics facilities, one can either use \textsf{WAttrib(``texcoord=auto'')} or
-\textsf{Texcoord(``auto'')}. The defaults are dependent on the type of primitive and are outlined in Table 2.}
+The design of textures in the Unicon 3D graphics facilities aims to
+simplify the process of mapping a texture onto an object by setting
+defaults for texture coordinates. There are several ways to specify
+texture coordinates. To use the defaults given by the Unicon 3D
+graphics facilities, one can either use
+\textsf{WAttrib(``texcoord=auto'')} or
+\textsf{Texcoord(``auto'')}. The defaults are dependent on the type of
+primitive and are outlined in Table 2.
 
-{\selectlanguage{english}
-\ If the programmer wishes to use texture coordinates other than the defaults, these can be specified in several ways.
-One can use \textsf{WAttrib(``texcoord=s'')} where \textsf{s} is a comma separated string of real number values between
-\textsf{0.0} and \textsf{1.0}. Each pair of values is to be taken as one texture coordinate; there must be an even
-number of decimal values or the assignment of texture coordinates will fail. Also one can assign texture coordinates by
-\textsf{Texcoord(x1, y1, {\dots})}\texttt{ }where each \textsf{x} and \textsf{y} are real number values between
-\textsf{0.0} and \textsf{1.0}. Finally one can use \textsf{Texcoord(L)} where \textsf{L} is a list of real number
-texture coordinates. The texture coordinates specified by the programmer are used differently depending on the type of
-primitive to be drawn. If the primitive is a point, line, line segment, polygon, or filled polygon, then a texture
-coordinate given is assigned to each vertex. If there are more texture coordinates than vertices, the unused texture
-coordinates are ignored. If there are more vertices than texture coordinates the application of a texture will fail.
-\ In order to use non default texture coordinates with cubes, tori, spheres, disks, and cylinders a programmer should
-approximate the desired mapping with filled polygons. These specifications are given in the following table. }
+If the programmer wishes to use texture coordinates other than the
+defaults, these can be specified in several ways.  One can use
+\textsf{WAttrib(``texcoord=s'')} where \textsf{s} is a comma separated
+string of real number values between \textsf{0.0} and
+\textsf{1.0}. Each pair of values is to be taken as one texture
+coordinate; there must be an even number of decimal values or the
+assignment of texture coordinates will fail. Also one can assign
+texture coordinates by \textsf{Texcoord(x1, y1, {\dots})} where each
+\textsf{x} and \textsf{y} are real number values between \textsf{0.0}
+and \textsf{1.0}. Finally one can use \textsf{Texcoord(L)} where
+\textsf{L} is a list of real number texture coordinates. The texture
+coordinates specified by the programmer are used differently depending
+on the type of primitive to be drawn. If the primitive is a point,
+line, line segment, polygon, or filled polygon, then a texture
+coordinate given is assigned to each vertex. If there are more texture
+coordinates than vertices, the unused texture coordinates are
+ignored. If there are more vertices than texture coordinates the
+application of a texture will fail.  In order to use non default
+texture coordinates with cubes, tori, spheres, disks, and cylinders a
+programmer should approximate the desired mapping with filled
+polygons. These specifications are given in the following table.
 
 \pagebreak
 
@@ -682,6 +753,45 @@ p\textsubscript{1}x\textsubscript{0}+p\textsubscript{2}y\textsubscript{0}+p\text
 \end{center}
 
 
+\subsection[2.8 Transparency and Blending]{2.8 Transparency and Blending}
+
+Drawn 3D objects are normally fully opaque, obscuring anything drawn
+behind them in a 3D scene. Transparency adjectives modify colors used
+in material surfaces, allowing them to render objects that are not fully
+opaque. The transparency adjectives are given in the following table,
+progressing from solid to near-invisible.
+
+\bigskip
+
+{\centering\selectlanguage{english}\bfseries
+Table 3 -- transparency adjectives
+\par}
+
+\begin{center}
+\begin{tabular}{|l | l|}\hline
+Transparency name & percent visible \\\hline
+\texttt{opaque} & 100 \\
+\texttt{dull}, a.k.a. \texttt{subtranslucent} & 75 \\
+\texttt{translucent} & 50 \\
+\texttt{subtransparent} & 25 \\
+\texttt{transparent} & 5 \\\hline
+\end{tabular}
+
+\end{center}
+
+\bigskip
+
+
+
+When it is set \textsf{``on''}, the attribute \textsf{texmode} is used instead
+of the current foreground color material specification; the two are
+mutually exclusive by default.  Attribute \textsf{texmode} may instead be set
+to \textsf{``texmode=blend''}, a mode in which the current color is
+applied to the texture as it is output. By such a technique, a reddish
+brick texture could for example be blended with green or blue to provide
+bricks of different colors.
+
+
 \section[3. Examples]{3. Examples}
 
 The following section provides examples and a further description of
@@ -689,14 +799,18 @@ the Unicon 3D graphics facilities.
 
 \subsection[3.1 Changing Context Attributes]{3.1 Changing Context Attributes}
 
-{\selectlanguage{english}
-As mentioned in the above design section, new context attributes have been added to the Unicon 3D graphics facilities.
-The user can change these attributes throughout a program. To change from an attribute, make a call to
-\textsf{WAttrib()} with the window to be drawn on, the attributes to be changed, and their new values. Multiple
-attributes can be changed with one call to \textsf{WAttrib()}. This is illustrated in the following line of code, where
-the user changes the eye position to \textsf{(0.0, 0.0, 5.0)} and the eye direction to look at the positive z-axis on
-the window w. Since an assignment to \textsf{eyepos}, \textsf{eyedir}, \textsf{eyeup} or \textsf{eye} redraws the
-screen, it is important to note that the following will redraw the scene once. }
+As mentioned in the above design section, new context attributes have
+been added to the Unicon 3D graphics facilities.  The user can change
+these attributes throughout a program. To change from an attribute,
+make a call to \textsf{WAttrib()} with the window to be drawn on, the
+attributes to be changed, and their new values. Multiple attributes
+can be changed with one call to \textsf{WAttrib()}. This is
+illustrated in the following line of code, where the user changes the
+eye position to \textsf{(0.0, 0.0, 5.0)} and the eye direction to look
+at the positive z-axis on the window w. Since an assignment to
+\textsf{eyepos}, \textsf{eyedir}, \textsf{eyeup} or \textsf{eye}
+redraws the screen, it is important to note that the following will
+redraw the scene once.
 
 
 \bigskip
@@ -707,10 +821,11 @@ WAttrib(w, ``eyepos=0.0,0.0,5.0'',``eyedir=0.0,0.0,1.0'')}
 
 \bigskip
 
-{\selectlanguage{english}
-The values of the attributes can also be read by using the function \textsf{WAttrib()}.\texttt{ }By passing
-\textsf{WAttrib()} the window and the name of the attribute to be read, the user will obtain the value of the specified
-attributes. For example, to obtain the value of the current eye position, call }
+The values of the attributes can also be read by using the function
+\textsf{WAttrib()}. By passing \textsf{WAttrib()} the window
+and the name of the attribute to be read, the user will obtain the
+value of the specified attributes. For example, to obtain the value of
+the current eye position, call
 
 
 \bigskip
@@ -721,10 +836,9 @@ WAttrib(w, ``eyepos'')}
 
 \bigskip
 
-{\selectlanguage{english}
-Multiple attributes can be read with one call to \textsf{WAttrib()}. This is shown in the following line of code where
-the user reads the current value of the eye direction and up direction. }
-
+Multiple attributes can be read with one call to
+\textsf{WAttrib()}. This is shown in the following line of code where
+the user reads the current value of the eye direction and up direction.
 
 \bigskip
 
@@ -734,9 +848,8 @@ every put(attrList, WAttrib(w, ``eyedir'', ''eyeup'')}
 
 \subsection[3.2 Drawing Primitives]{3.2 Drawing Primitives}
 
-{\selectlanguage{english}
-The following is an example on how to use some of the functions to draw primitives. }
-
+The following is an example on how to use some of the functions to
+draw primitives.
 
 \bigskip
 
@@ -775,32 +888,39 @@ Fg(w, {\textquotedbl}ambient yellow{\textquotedbl})}
 
  \includegraphics[width=2.8071in,height=2.1335in]{utr9/utr9-img021.png} 
 
-{\selectlanguage{english}
-The function \textsf{Fg()}, specifies the material properties of an object. These material properties affect the color
-and appearance of the primitives. After a call to \textsf{Fg()}, all objects will be drawn with the material
-properties until the material property is changed with another call to \textsf{Fg()}.\texttt{ }In this example, a cube
-with a diffuse green material is drawn with sides of length 0.7. Then a sphere with a diffuse purple and ambient blue
-material is drawn with radius 0.5 and center \ \textsf{(0.4, -0.5, -4.0)}. Next a diffuse yellow and ambient grey
-torus with center \textsf{(-1.0, 0.4, -4.0)}, an inner radius of 0.4, and an outer radius of 0.5 is drawn. Finally a
-filled polygon with a diffuse red material property and three vertices,\texttt{ }\textsf{(0.25, -0.25, -1.0)},
-\textsf{(1.0, 0.25, -4.0)} and \textsf{(1.3, -0.4, -3.0)} is drawn.}
+The function \textsf{Fg()}, specifies the material properties of an
+object. These material properties affect the color and appearance of
+the primitives. After a call to \textsf{Fg()}, all objects will be
+drawn with the material properties until the material property is
+changed with another call to \textsf{Fg()}.\texttt{ }In this example,
+a cube with a diffuse green material is drawn with sides of length
+0.7. Then a sphere with a diffuse purple and ambient blue material is
+drawn with radius 0.5 and center \textsf{(0.4, -0.5, -4.0)}. Next a
+diffuse yellow and ambient grey torus with center
+\textsf{(-1.0, 0.4, -4.0)}, an inner radius of 0.4, and an outer
+radius of 0.5 is drawn. Finally a filled polygon with a diffuse red
+material property and three vertices,\texttt{ }\textsf{(0.25, -0.25, -1.0)},
+\textsf{(1.0, 0.25, -4.0)} and \textsf{(1.3, -0.4, -3.0)} is drawn.
 
 \subsection[3.3 Slices and Rings]{3.3 Slices and Rings}
 
-{\selectlanguage{english}
-In many cases, it is useful to be able to control the level of detail when drawing graphics primitives, for example
-depending on how far away and/or how large the primitive is. Slices and rings attributes serve this purpose. Both
-attributes take integer vales greater than 0 and denote how closely to approximate the abstract graphics shape when
-rendering with simpler graphics primitives such as triangles or quads. \textsf{WAttrib(``slices=10'', ``rings=10'')}
-for example sets them both to 10. Greater values achieve smoother and more fine detailed shapes but are more expensive
-to render, so these values should be picked with care. These attributes can also be used to achieve some useful
-effects, such as drawing a diamond using the the Draw\foreignlanguage{english}{Sphere()} function or drawing a pyramid
-using the \textsf{Draw}\foreignlanguage{english}{\textsf{Cylinder()}} function.
-\foreignlanguage{english}{\textsf{Slices}} and \foreignlanguage{english}{\textsf{rings}} affect
-\textsf{Draw}\foreignlanguage{english}{\textsf{Sphere()}}, \textsf{Draw}\foreignlanguage{english}{\textsf{Cylinder()}},
-\textsf{Draw}\foreignlanguage{english}{\textsf{Torus()}} and \textsf{Draw}\foreignlanguage{english}{\textsf{Disk()}}
-functions. The example and figure below illustrates the use of \foreignlanguage{english}{\textsf{slices}} and
-\foreignlanguage{english}{\textsf{rings}}.}
+In many cases, it is useful to be able to control the level of detail
+when drawing graphics primitives, for example depending on how far
+away and/or how large the primitive is. Slices and rings attributes
+serve this purpose. Both attributes take integer vales greater than 0
+and denote how closely to approximate the abstract graphics shape when
+rendering with simpler graphics primitives such as triangles or
+quads. \textsf{WAttrib(``slices=10'', ``rings=10'')} for example sets
+them both to 10. Greater values achieve smoother and more fine
+detailed shapes but are more expensive to render, so these values
+should be picked with care. These attributes can also be used to
+achieve some useful effects, such as drawing a diamond using the the
+\textsf{DrawSphere()} function or drawing a pyramid
+using the \textsf{DrawCylinder()} function. \textsf{Slices} and
+\textsf{rings} affect \textsf{DrawSphere()}, \textsf{DrawCylinder()},
+\textsf{DrawTorus()} and \textsf{DrawDisk()} functions. The
+example and figure below illustrates the use of
+\textsf{slices} and \textsf{rings}.
 
 {\selectlanguage{english}\sffamily
 procedure main()}
@@ -937,7 +1057,7 @@ There are a maximum of eight lights that can be used in each scene of the Unicon
 control by the context attributes \textsf{light0} through \textsf{light7}. Each light has five properties that can be
 changed throughout the program, ambient, diffuse, specular, position, and on/off. The properties of a light can be
 changed by using \textsf{WAttrib()} and one of \textsf{light0} through \textsf{light7}. To turn on or off a light,
-one can assign \textsf{{}``on''}\texttt{ }or \textsf{{}``off''} to the light, followed by a comma and a lighting value.
+one can assign \textsf{{}``on''} or \textsf{{}``off''} to the light, followed by a comma and a lighting value.
 A lighting value is a string which contains one or more semi-colon separated lighting properties. A lighting property
 is of the form
 
@@ -962,14 +1082,13 @@ on and gives it diffuse yellow and ambient gold lighting properties.
 
 \bigskip
 
-{\selectlanguage{english}
-The following line of codes sets \textsf{light0} to the default values for the lighting properties. }
-
+The following line of codes sets \textsf{light0} to the
+default values for the lighting properties.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WAttrib(w, ``light0=diffuse white; ambient black; }
+{\sffamily
+WAttrib(w, ``light0=diffuse white; ambient black;}
 
 {\selectlanguage{english}\sffamily
 specular white; position 0.0, 1.0, 0.0'')}
@@ -977,11 +1096,12 @@ specular white; position 0.0, 1.0, 0.0'')}
 
 \bigskip
 
-{\selectlanguage{english}
-The follow example shows the difference between the different types of lighting that can be used in a scene. Each window
-is the same scene rendered using different lighting. The upper right scene has an ambient blue-green light. The upper
-left scene was drawn using a diffuse blue-green light. The lower right scene uses only a specular blue-green light. The
-scene in the lower left uses all three types of lighting.}
+The follow example shows the difference between the different types of
+lighting that can be used in a scene. Each window is the same scene
+rendered using different lighting. The upper right scene has an ambient
+blue-green light. The upper left scene was drawn using a diffuse
+blue-green light. The lower right scene uses only a specular blue-green
+light. The scene in the lower left uses all three types of lighting.
 
 
 \bigskip
@@ -1098,11 +1218,13 @@ where \textsf{n} is between \textsf{0} and \textsf{128}.
 
 \bigskip
 
-{
-The default material property type is diffuse, so the call \textsf{Fg({\textquotedbl}red{\textquotedbl})} is equivalent
-to \textsf{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess, a value of 0 spreads specular light broadly
-across an object and a value of 128 focuses specular light at a single point. The following line of code changes the
-current material property to diffuse green and ambient orange. }
+The default material property type is diffuse, so the call
+\textsf{Fg({\textquotedbl}red{\textquotedbl})} is equivalent to
+\textsf{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess,
+a value of 0 spreads specular light broadly across an object and a
+value of 128 focuses specular light at a single point. The following
+line of code changes the current material property to diffuse green
+and ambient orange.
 
 
 \bigskip
@@ -1128,8 +1250,8 @@ Fg(w, ``diffuse light grey; ambient grey; \_}
 
 \bigskip
 
-{\selectlanguage{english}
-The following is an example of several different material properties used within one scene. }
+The following is an example of several different material
+properties used within one scene.
 
 {\centering  \includegraphics[width=1.6799in,height=1.7299in]{utr9/utr9-img024.png} \par}
 
@@ -1165,14 +1287,15 @@ DrawCylinder(w, 0.0, -0.2, -3.5, 1.2, 1.0, 0.0)}
 
 \bigskip
 
-{\selectlanguage{english}
-First a cylinder with a diffuse blue material is drawn. Then the bottom torus is drawn, which has a diffuse red
-material. Next the middle torus is draw with a diffuse white and ambient red property. Finally the top torus is drawn
-with a diffuse red, specular red and ambient property, and shininess of 10. Notice, that in order an object not to be
-drawn with a previous material property, that property must be reset to its default. }
+First a cylinder with a diffuse blue material is drawn. Then the
+bottom torus is drawn, which has a diffuse red material. Next the
+middle torus is draw with a diffuse white and ambient red
+property. Finally the top torus is drawn with a diffuse red, specular
+red and ambient property, and shininess of 10. Notice, that in order
+an object not to be drawn with a previous material property, that
+property must be reset to its default.
 
-{\selectlanguage{english}
-The following example shows the effects of emission color on an object. }
+The following example shows the effects of emission color on an object.
 
 
 \bigskip
@@ -1202,21 +1325,25 @@ The following example shows the effects of emission color on an object. }
 
 \bigskip
 
-{\selectlanguage{english}
-In the above example, there are three diffuse yellow spheres drawn. If an emission color of blue is applied to the
-sphere, the sphere appears white with a blue ring. If the emission color is red, the sphere remains yellow, but now has
-an orange-red ring. The middle sphere shows the effect of having no emission color. Note that in order to obtain the
-diffuse yellow sphere in the center, the emission color had to be change to black. It was not needed to change the
-diffuse material property.}
+In the above example, there are three diffuse yellow spheres drawn. If
+an emission color of blue is applied to the sphere, the sphere appears
+white with a blue ring. If the emission color is red, the sphere
+remains yellow, but now has an orange-red ring. The middle sphere
+shows the effect of having no emission color. Note that in order to
+obtain the diffuse yellow sphere in the center, the emission color had
+to be change to black. It was not needed to change the diffuse
+material property.
 
 
 \subsection[3.5 Textures]{3.5 Textures}
 
-{\selectlanguage{english}
-This section contains several examples of the use of textures in a scene. There are several ways to specify the texture
-image in the Unicon 3D graphics facilities: a file, an image string, or another Unicon window. The following example
-shows how to use a file as a texture. A .gif image of a map of the word is used to texture a torus. The texture
-coordinates are the default coordinates as describe in 2.7. }
+This section contains several examples of the use of textures in a
+scene. There are several ways to specify the texture image in the
+Unicon 3D graphics facilities: a file, an image string, or another
+Unicon window. The following example shows how to use a file as a
+texture. A .gif image of a map of the word is used to texture a
+torus. The texture coordinates are the default coordinates as describe
+in 2.7.
 
 
 \bigskip
@@ -1242,10 +1369,11 @@ call to \textsf{Texture(w, {\textquotedbl}map.gif{\textquotedbl})} could be used
 
 \bigskip
 
-{\selectlanguage{english}
-The next example illustrates the use of an image string to specify a texture image. The format of the string is
-described in section 2.7. The string used for this example is taken from Graphics Programming in Icon [Griswold98] page
-156. This string is used as a texture on a cube using the default texture coordinates. }
+The next example illustrates the use of an image string to specify a
+texture image. The format of the string is described in section
+2.7. The string used for this example is taken from Graphics
+Programming in Icon [Griswold98] page 156. This string is used as a
+texture on a cube using the default texture coordinates.
 
 
 \bigskip
@@ -1284,12 +1412,15 @@ described in section 2.7. The string used for this example is taken from Graphic
 
 \bigskip
 
-{\selectlanguage{english}
-The next example shows the use of another Unicon window as a texture. A simple scene of a lamp is drawn on the first
-window, which is opened in \textsf{{}``gl''} mode. This window is then captured and used as a texture on a cylinder. If
-a Unicon window opened in \textsf{{}``g''}\texttt{ }mode as a texture the same method can be used. Note that in the
-following code the first window is opened with size 256 x 256. Texture images must have height and width that are
-powers of 2, or the system must rescale them. The default coordinates for cylinders are used.}
+The next example shows the use of another Unicon window as a
+texture. A simple scene of a lamp is drawn on the first window, which
+is opened in \textsf{{}``gl''} mode. This window is then captured and
+used as a texture on a cylinder. If a Unicon window opened in
+\textsf{{}``g''}\texttt{ }mode as a texture the same method can be
+used. Note that in the following code the first window is opened with
+size 256 x 256. Texture images must have height and width that are
+powers of 2, or the system must rescale them. The default coordinates
+for cylinders are used.
 
 
 \bigskip
@@ -1370,15 +1501,19 @@ DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)}
 
 \bigskip
 
-{\selectlanguage{english}
-The next two examples illustrate the use of the default texture coordinates versus texture coordinates specified by the
-programmer. In both examples, a bi-level image is used as the texture image. The format for such a string is described
-in section 2.7. This image is taken from Graphics Programming in Icon [Griswold98] page 159. The first example uses the
-default texture coordinates for a filled polygon, which in this case is just a square with sides of length one. In this
-case the default texture coordinates are as follows. The coordinate \textsf{(0.0, 0.0) }of the texture image is mapped
-to the vertex\texttt{ }\textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(0.0, 1.0) }is mapped to \textsf{(0.0, 1.0,
--2.0), (1.0, 1.0)}\texttt{ }is mapped to \textsf{(1.0, 1.0, -2.0)}, and \textsf{(1.0, 0.0) }is mapped to \textsf{(1.0,
-0.0, -2.0)}.}
+The next two examples illustrate the use of the default texture
+coordinates versus texture coordinates specified by the programmer. In
+both examples, a bi-level image is used as the texture image. The
+format for such a string is described in section 2.7. This image is
+taken from Graphics Programming in Icon [Griswold98] page 159. The
+first example uses the default texture coordinates for a filled
+polygon, which in this case is just a square with sides of length
+one. In this case the default texture coordinates are as follows. The
+coordinate \textsf{(0.0, 0.0) }of the texture image is mapped to the
+vertex\texttt{ }\textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(0.0,
+  1.0) }is mapped to \textsf{(0.0, 1.0, -2.0), (1.0, 1.0)}\texttt{ }is
+mapped to \textsf{(1.0, 1.0, -2.0)}, and \textsf{(1.0, 0.0) }is mapped
+to \textsf{(1.0, 0.0, -2.0)}.
 
 
 \bigskip
@@ -1403,13 +1538,15 @@ to the vertex\texttt{ }\textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(0.0, 1.
 
 \bigskip
 
-{\selectlanguage{english}
-This example uses the same texture image and the same object to be textured, but instead uses the texture
-coordinates\texttt{ }\textsf{(0.0, 1.0)},\textsf{ (1.0, 1.0)},\textsf{ (1.0, 1.0)},\texttt{ }and\texttt{ }\textsf{(1.0,
-0.0)}.\texttt{ }So the coordinate \textsf{(0.0, 1.0) }of the texture image is mapped to the vertex\texttt{
-}\textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(1.0, 1.0)}\texttt{ }is mapped to \textsf{(0.0, 1.0, -2.0),(1.0, 1.0)
-}is mapped to \textsf{(1.0, 1.0, -2.0),} and \textsf{(1.0},\textsf{ 0.0) }is mapped to \textsf{(1.0, 0.0,
--2.0)}.\texttt{ }}
+This example uses the same texture image and the same object to be
+textured, but instead uses the texture coordinates
+\textsf{(0.0, 1.0)},\textsf{ (1.0, 1.0)},
+\textsf{ (1.0, 1.0)}, and \textsf{(1.0, 0.0)}. So the
+coordinate \textsf{(0.0, 1.0) }of the texture image is mapped to the
+vertex \textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(1.0, 1.0)}
+is mapped to \textsf{(0.0, 1.0, -2.0),(1.0, 1.0)} is
+mapped to \textsf{(1.0, 1.0, -2.0)}, and \textsf{(1.0}, \textsf{0.0)}
+is mapped to \textsf{(1.0, 0.0, -2.0)}.
 
 
 \bigskip
@@ -1435,10 +1572,9 @@ coordinates\texttt{ }\textsf{(0.0, 1.0)},\textsf{ (1.0, 1.0)},\textsf{ (1.0, 1.0
 
 \bigskip
 
-{\selectlanguage{english}
-Also instead of using \textsf{WAttrib()} with the attribute \textsf{texcoord}, the function \textsf{Texcoord()} could be
-used. So the line }
-
+Also instead of using \textsf{WAttrib()} with the attribute
+\textsf{texcoord}, the function \textsf{Texcoord()} could be
+used. So the line
 
 \bigskip
 
@@ -1448,8 +1584,7 @@ WAttrib(w,{\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0{\textquo
 
 \bigskip
 
-{\selectlanguage{english}
-could be replaced by }
+\noindent could be replaced by
 
 
 \bigskip
@@ -1467,10 +1602,11 @@ to a scene can have. The scene on the left is a scene drawn without
 any texturing. The scene on the right contains texturing. The scene on
 the right is a much more realistic scene than the one on the left.
 
-{\selectlanguage{english}
-All textures used in the textured scene, except for the unicorn, where captured using a digital camera. These images
-were then converted into .gif files and scaled to width and height of 2\textsuperscript{n}. Directly using an image
-file is one feature of the Unicon 3D graphics facilities that makes adding textures simpler than using OpenGL. }
+All textures used in the textured scene, except for the unicorn, where
+captured using a digital camera. These images were then converted into
+.gif files and scaled to width and height of 2\textsuperscript{n}.
+Directly using an image file is one feature of the Unicon 3D graphics
+facilities that makes adding textures simpler than using OpenGL.
 
 
 \bigskip
@@ -1701,24 +1837,29 @@ end}
 
 \bigskip
 
-{\selectlanguage{english}
-In order to apply textures to the scene, texturing must first be turned on. Next, the texture to be applied is
-specified. Then the floor of the scene is drawn, which is done by using a filled polygon. The default texture
-coordinates are used to apply the carpet texture to the floor of the room. The tiled appearance on the floor of the
-room is caused by the use of the default texture coordinates. This can be avoided by using user defined texture
-coordinates. This is what is done for the textures that are applied to the two walls of the room and the pictures. }
+In order to apply textures to the scene, texturing must first be
+turned on. Next, the texture to be applied is specified. Then the
+floor of the scene is drawn, which is done by using a filled
+polygon. The default texture coordinates are used to apply the carpet
+texture to the floor of the room. The tiled appearance on the floor of
+the room is caused by the use of the default texture coordinates. This
+can be avoided by using user defined texture coordinates. This is what
+is done for the textures that are applied to the two walls of the room
+and the pictures.
 
-{\selectlanguage{english}
-The lamp does not have any texturing applied to it, so it is necessary to turn off texturing before drawing the lamp.
-Also for the lamp to be centered properly in the room, transformations are used. Notice the use of matrices to isolate
-the transformations of the lamp. Finally to draw the table with a textured top and an untextured base, two cylinders
-and a disk are used. Texturing is applied to a cylinder and the disk. Notice the call }
+The lamp does not have any texturing applied to it, so it is necessary
+to turn off texturing before drawing the lamp.  Also for the lamp to
+be centered properly in the room, transformations are used. Notice the
+use of matrices to isolate the transformations of the lamp. Finally to
+draw the table with a textured top and an untextured base, two
+cylinders and a disk are used. Texturing is applied to a cylinder and
+the disk. Notice the call
 
 {\selectlanguage{english}
 \ \ \ \textsf{WAttrib(w, {\textquotedbl}texcoord=auto{\textquotedbl})}}
 
-{\selectlanguage{english}
-This resets the texture coordinates to the defaults. Finally, texturing is turned off to draw the base of the table.}
+This resets the texture coordinates to the defaults. Finally,
+texturing is turned off to draw the base of the table.
 
 
 \subsection[3.7 Animation]{3.7 Animation}
@@ -1729,18 +1870,27 @@ such as C and C++. Nevertheless, it is possible to prototype simple 3D
 animations using Unicon; applications with few moving objects can
 achieve smooth animation with acceptable frame rates.
 
-{\selectlanguage{english}
-In OpenGL, animations are normally written to redraw the entire scene each time any object has moved, or the user has
-changed point of view. An application can repeatedly call EraseArea() followed by the appropriate graphics primitives
-to achieve this effect, but the results often appear to flicker. It is better to let OpenGL's built-in double
-buffering, and Unicon's runtime system, do the redrawing. Unicon maintains a \textit{display list} of graphics
-operations to execute whenever the screen must be redrawn; these operations are effectively everything since the last
-EraseArea(). The display list for a window can be obtained by calling WindowContents(). The elements of the list are
-Unicon records and lists containing the string names and parameters of graphics primitives. For example, a call to
-DrawSphere(w,x,y,z,r) returns (and adds to the display list) a record gl\_sphere(``DrawSphere'', x, y, z, r). Instead
-of redrawing the entire scene in order to move an object, you can modify its display list record and call Refresh().
-The following code fragment illustrates animation by causing a ball to slide up and down. In order to ``bounce'' the
-program would need to incorporate physics. }
+In OpenGL, animations are normally written to redraw the entire scene
+each time any object has moved, or the user has changed point of
+view. An application can repeatedly call \textsf{EraseArea()}
+followed by the
+appropriate graphics primitives to achieve this effect, but the
+results often appear to flicker. It is better to let OpenGL's built-in
+double buffering, and Unicon's runtime system, do the
+redrawing. Unicon maintains a \textit{display list} of graphics
+operations to execute whenever the screen must be redrawn; these
+operations are effectively everything since the last EraseArea(). The
+display list for a window can be obtained by calling
+WindowContents(). The elements of the list are Unicon records and
+lists containing the string names and parameters of graphics
+primitives. For example, a call to \textsf{DrawSphere(w,x,y,z,r)}
+returns (and adds to the display list) a record
+gl\_sphere(``DrawSphere'', x, y, z, r). Instead of redrawing the
+entire scene in order to move an object,
+you can modify its display list record and call \textsf{Refresh()}.  The
+following code fragment illustrates animation by causing a ball to
+slide up and down. In order to ``bounce'' the program would need to
+incorporate physics.
 
 \bigskip
 
@@ -1779,12 +1929,13 @@ objects.
 
 \subsection[3.8 Object Selection]{3.8 Object Selection}
 
-{\selectlanguage{english}
-Many 3D applications allow the user to interact with, select, or identify 3D objects in a scene by clicking on objects
-with the mouse. In Unicon, a window attribute (\texttt{pick}) enables or disables 3D selection. When pick=on, keyword
-\texttt{\&pick} can be used to access the 3D selection results. The function (WSection()) is used to name objects in
-the scene. The steps required to use 3D selection in Unicon are summarized by the following:}
-
+Many 3D applications allow the user to interact with, select, or
+identify 3D objects in a scene by clicking on objects with the
+mouse. In Unicon, a window attribute (\texttt{pick}) enables or
+disables 3D selection. When pick=on, keyword \texttt{\&pick} can be
+used to access the 3D selection results. The function (WSection()) is
+used to name objects in the scene. The steps required to use 3D
+selection in Unicon are summarized by the following:
 
 \bigskip
 
@@ -1796,11 +1947,12 @@ the scene. The steps required to use 3D selection in Unicon are summarized by th
 
 \bigskip
 
-{\selectlanguage{english}
-Although this section uses the word ``selection'' freely to refer to 3D object selection, the Unicon language
-consistently uses ``pick'' instead of ``select'' for 3D objects. The reason for this is that ``selection'' is used in
-other ways in computing systems and user interfaces. In Unicon and in certain window systems, it refers to the
-mechanism used when data is copied and pasted between applications. }
+Although this section uses the word ``selection'' freely to refer to
+3D object selection, the Unicon language consistently uses ``pick''
+instead of ``select'' for 3D objects. The reason for this is that
+``selection'' is used in other ways in computing systems and user
+interfaces. In Unicon and in certain window systems, it refers to the
+mechanism used when data is copied and pasted between applications.
 
 
 \subsubsection[3.8.1 Controlling the selection state]{3.8.1 Controlling the selection state}
@@ -1831,28 +1983,35 @@ WAttrib({\textquotedbl}pick=off{\textquotedbl})}
 
 \bigskip
 
-{\selectlanguage{english}
-To check the current 3D selection state (on or off), the function \texttt{WAttrib} can be called with the string
-parameter \textsf{{\textquotedbl}pick{\textquotedbl}} (i.e \textsf{WAttrib(``pick'')} ) and it will return a string
-value of \textsf{{\textquotedbl}on{\textquotedbl}} or \textsf{{\textquotedbl}off{\textquotedbl}} depending on the
-current 3D selection state. By default 3D selection is turned off. The program can turn on and off the 3D selection
-depending on the program requirements. For a better performance, selection should be turned off for all non-selectable
-objects in the scene. }
-
+To check the current 3D selection state (on or off), the function
+\texttt{WAttrib} can be called with the string parameter
+\textsf{{\textquotedbl}pick{\textquotedbl}} (i.e
+\textsf{WAttrib(``pick'')} ) and it will return a string value of
+\textsf{{\textquotedbl}on{\textquotedbl}} or
+\textsf{{\textquotedbl}off{\textquotedbl}} depending on the current 3D
+selection state. By default 3D selection is turned off. The program
+can turn on and off the 3D selection depending on the program
+requirements. For a better performance, selection should be turned off
+for all non-selectable objects in the scene.
 
 
 \subsubsection[3.8.2 Naming 3D objects]{3.8.2 Naming 3D objects}
 
-{\selectlanguage{english}
-3D Objects are defined by their corresponding rendered primitives. The function \textsf{WSection()} marks the beginning
-and the ending of a section that holds a 3D object. A call to \textsf{WSection()} with a parameter string marks the
-beginning of a 3D object with the string as its name. Another call to \textsf{WSection} with no string parameter marks
-the end of the 3D objects. All of the rendered graphics between a beginning \textsf{WSection()} and its corresponding
-ending \textsf{WSection} are parts of the same object. To make it selectable, a 3D object must have at least one
-graphical primitive. A line or a sphere are examples of such primitives. The string name should be unique to
-distinguish different objects from each other. Different objects could have the same name if the same action would be
-taken no matter which of these objects is picked. The following code fragment is an example of named 3D objects. It
-simply draws a red rectangle and gives it the name {\textquotedbl}redrect{\textquotedbl}.}
+3D Objects are defined by their corresponding rendered primitives. The
+function \textsf{WSection()} marks the beginning and the ending of a
+section that holds a 3D object. A call to \textsf{WSection()} with a
+parameter string marks the beginning of a 3D object with the string as
+its name. Another call to \textsf{WSection} with no string parameter
+marks the end of the 3D objects. All of the rendered graphics between
+a beginning \textsf{WSection()} and its corresponding ending
+\textsf{WSection} are parts of the same object. To make it selectable,
+a 3D object must have at least one graphical primitive. A line or a
+sphere are examples of such primitives. The string name should be
+unique to distinguish different objects from each other. Different
+objects could have the same name if the same action would be taken no
+matter which of these objects is picked. The following code fragment
+is an example of named 3D objects. It simply draws a red rectangle and
+gives it the name {\textquotedbl}redrect{\textquotedbl}.
 
 
 \bigskip
@@ -1872,23 +2031,29 @@ WSection()\ \ \ \ \ \ \# end of the object redrect}
 
 \bigskip
 
-{\selectlanguage{english}
-In the example above \textsf{WSection({\textquotedbl}redrect{\textquotedbl})} marks the beginning of a new object with
-the name redrect. \textsf{Fg({\textquotedbl}red{\textquotedbl}) }doesn't affect selection because it doesn't produce a
-rendered object. \textsf{FillPolygon(0,0,0, 0,1,0, 1,1,0, 1,0,0) }on the other hand does affect selection because it
-produces a rendered object, and it actually represents the object named redrect. \textsf{WSection() }marks the end of
-the object named redrect.}
+In the example above
+\textsf{WSection({\textquotedbl}redrect{\textquotedbl})} marks the
+beginning of a new object with the name
+redrect. \textsf{Fg({\textquotedbl}red{\textquotedbl})} doesn't affect
+selection because it doesn't produce a rendered
+object. \textsf{FillPolygon(0,0,0, 0,1,0, 1,1,0, 1,0,0)} on the other
+hand does affect selection because it produces a rendered object, and
+it actually represents the object named redrect.
+\textsf{WSection()} marks the end of the object named redrect.
 
 
 \subsubsection[3.8.3 Retrieving picked objects]{3.8.3 Retrieving picked objects}
 
-{\selectlanguage{english}
-The keyword \textsf{\&pick} generates the names of objects that were clicked on at the last returned event, if they were
-associated with a name using \textsf{WSection(name)}. A given mouse click might correspond to multiple objects that are
-rendered along the ray from the camera through the point clicked. In addition, \textsf{WSection()} calls may be nested,
-in which case the name reported by \textsf{\&pick} will be a concatenation (separated by hyphens) of the
-\textsf{WSection()} names enclosing the object clicked. The following code fragment writes all of the objects names
-that were picked by the mouse click:}
+The keyword \textsf{\&pick} generates the names of objects that were
+clicked on at the last returned event, if they were associated with a
+name using \textsf{WSection(name)}. A given mouse click might
+correspond to multiple objects that are rendered along the ray from
+the camera through the point clicked. In addition, \textsf{WSection()}
+calls may be nested, in which case the name reported by
+\textsf{\&pick} will be a concatenation (separated by hyphens) of the
+\textsf{WSection()} names enclosing the object clicked. The following
+code fragment writes all of the objects names that were picked by the
+mouse click:
 
 
 \bigskip
@@ -1902,17 +2067,17 @@ every picked\_object := \&pick do}
 
 \bigskip
 
-{\selectlanguage{english}
-If there were no selectable objects under the cursor at the time of the event, \textsf{\&pick} just fails and produces
-no results. \textsf{\&pick} gets its results from both left-clicks and right-clicks.}
-
+If there were no selectable objects under the cursor at the time of
+the event, \textsf{\&pick} just fails and produces no
+results. \textsf{\&pick} gets its results from both left-clicks and
+right-clicks.
 
 \bigskip
 
-{\selectlanguage{english}
-These ideas are illustrated in the following example, which draws a crude humanoid figure. The rendering function turns
-\textsf{{}``pick=on''} and then uses \textsf{WSection()} calls to identify different parts of the figure.}
-
+These ideas are illustrated in the following example, which draws
+a crude humanoid figure. The rendering function turns
+\textsf{{}``pick=on''} and then uses \textsf{WSection()} calls to
+identify different parts of the figure.
 
 
 \begin{center}
@@ -2077,10 +2242,8 @@ end}
 
 \bigskip
 
-{\selectlanguage{english}
-The event-handling code for \textsf{\&lpress} looks in \textsf{\&pick} to see what (if anything) the user was
-selecting.}
-
+The event-handling code for \textsf{\&lpress} looks in \textsf{\&pick}
+to see what (if anything) the user was selecting.
 
 \bigskip
 
@@ -2217,15 +2380,13 @@ and the mapping between these events and their corresponding objects tables}
 
 \bigskip
 
-{\selectlanguage{english}
-The \textsf{Selection3D} class uses another helper class to store information about each selectable object, its name
-(given by the user), the action associated with it, the class objects that holds the action if the action is a method,
-and the event type (specified by the user). Figure 3 shows the two classes and their relationship}
-
+The \textsf{Selection3D} class uses another helper class to store
+information about each selectable object, its name (given by the
+user), the action associated with it, the class objects that holds the
+action if the action is a method, and the event type (specified by the
+user). Figure 3 shows the two classes and their relationship
 
 \bigskip
-
-
 
 \begin{center}
 \includegraphics[width=6in,height=1.75in]{utr9/utr9-img035.png}
@@ -2239,9 +2400,8 @@ and the event type (specified by the user). Figure 3 shows the two classes and t
 
 \bigskip
 
-{\selectlanguage{english}
-To make Selection3D class available to a program, the following statement should be added at beginning of the source
-code.}
+To make Selection3D class available to a program, the following
+statement should be added at beginning of the source code.
 
 
 \bigskip
@@ -2252,10 +2412,9 @@ link Selection3D}
 
 \bigskip
 
-{\selectlanguage{english}
-An instance of this class can be created simply by an assignment statement. The following example line creates this
-instance and store it in a variable called \textsf{select3D:}}
-
+An instance of this class can be created simply by an assignment
+statement. The following example line creates this instance and store
+it in a variable called \textsf{select3D:}
 
 \bigskip
 
@@ -2265,11 +2424,11 @@ select3D := Selection3D()}
 
 \bigskip
 
-{\selectlanguage{english}
-The \textsf{Selection3D} class has three methods that can be called to manage the 3D selection in the program. The first
-method is \textsf{selectable()}, which is used to register new 3D objects to make them selectable. This method takes up
-to four parameters in the following order}
-
+The \textsf{Selection3D} class has three methods that can be called
+to manage the 3D selection in the program. The first method is
+\textsf{selectable()}, which is used to register new 3D objects to
+make them selectable. This method takes up to four parameters in the
+following order
 
 \bigskip
 
@@ -2289,11 +2448,10 @@ parameter is a method which is part of a class object.}
 
 \bigskip
 
-{\selectlanguage{english}
-The method \textsf{selectable()} returns a string value which is referred to as selection\_id. selection\_id is a unique
-value that can then be passed to \textsf{WSection()} to mark a new 3D object name. The following is an example of such
-use}
-
+The method \textsf{selectable()} returns a string value which is
+referred to as a selection\_id. A selection\_id is a unique value
+that can then be passed to \textsf{WSection()} to mark a new
+3D object name. The following is an example of such use
 
 \bigskip
 
@@ -2301,25 +2459,27 @@ use}
 select\_id := select3D.selectable({\textquotedbl}red ball{\textquotedbl}, on\_red\_ball)~~ \newline
 WSection(select\_id)}
 
+\bigskip
+
+In this example a 3D object named \textsf{{}``red ball''} was
+registered to be selectable. The procedure \textsf{on\_red\_ball} will
+be called if this 3D object is selected. No event type was passed in
+the call so this 3D object will respond to mouse left
+click. \textsf{on\_red\_ball} must be a procedure name (not a method)
+so nothing should be passed as a fourth parameter also. The example
+also shows how is the returned value \textsf{select\_id} was passed to
+\textsf{WSection()}.
 
 \bigskip
 
-{\selectlanguage{english}
-In this example a 3D object named \textsf{{}``red ball''} was registered to be selectable. The procedure
-\textsf{on\_red\_ball} will be called if this 3D object is selected. No event type was passed in the call so this 3D
-object will respond to mouse left click. \textsf{on\_red\_ball} must be a procedure name (not a method) so nothing
-should be passed as a fourth parameter also. The example also shows how is the returned value \textsf{select\_id} was
-passed to \textsf{WSection().}}
-
-
-\bigskip
-
-{\selectlanguage{english}
-The second method in Selection3D class is \textsf{add\_action()}. This method takes four parameters exactly like
-\textsf{selectable()} except for the first parameter. Instead of taking a random string name, it takes a string name
-that was returned and registered by \textsf{selectable()} to add another action or response to another kind of event.
-In the example above the following line of code can be added right after the first line to make the red ball respond
-to mouse right click by calling the procedure \textsf{on\_right\_click():}}
+The second method in Selection3D class is \textsf{add\_action()}. This
+method takes four parameters exactly like \textsf{selectable()} except
+for the first parameter. Instead of taking a random string name, it
+takes a string name that was returned and registered by
+\textsf{selectable()} to add another action or response to another
+kind of event.  In the example above the following line of code can be
+added right after the first line to make the red ball respond to mouse
+right click by calling the procedure \textsf{on\_right\_click():}
 
 
 \bigskip
@@ -2328,14 +2488,17 @@ to mouse right click by calling the procedure \textsf{on\_right\_click():}}
 select3D.add\_action(select\_id, on\_right\_click, select3D.RIGHT\_CLICK)~~ \newline
 }
 
-{\selectlanguage{english}
-The third and the last method in the Selection3D class is \textsf{handle\_event()}\texttt{.} Normally this method should
-be part of the event handling loop in the program. At least all types of mouse events in Unicon should be passed to
-this method. This lets the \textsf{Selection3D} class to collect events information and picked objects through
-\textsf{\&pick} and take the appropriate action. Failure to pass any kind of mouse events to the \textsf{Selection3D}
-class might cause it not to produce the interned behavior. i.e. 3D object selection would not work as you expect. A
-correct way to use the method \textsf{handle\_event}\textsf{()} is shown toward the end of the following complete
-example}
+The third and the last method in the Selection3D class is
+\textsf{handle\_event()}. Normally this method should be part
+of the event handling loop in the program. At least all types of mouse
+events in Unicon should be passed to this method. This lets the
+\textsf{Selection3D} class to collect events information and picked
+objects through \textsf{\&pick} and take the appropriate
+action. Failure to pass any kind of mouse events to the
+\textsf{Selection3D} class might cause it not to produce the interned
+behavior. i.e. 3D object selection would not work as you expect. A
+correct way to use the method \textsf{handle\_event()} is
+shown toward the end of the following complete example
 
 \subsection[]{\color{black} }
 {\selectlanguage{english}\sffamily
@@ -2393,53 +2556,66 @@ end}
 \section[4. Open Issues and Conclusions]{4. Open Issues and Conclusions}
 
 
-{\selectlanguage{english}
-The Unicon 3D graphics facilities provide many of the features of 3D graphics programming. Several areas in which
-improvements and extensions can be made have been discussed where appropriate in previous sections. Besides those
-topics already mentioned throughout the paper, there are several areas where work could still be done. These areas
-include animation, composition, and simplification of the design of the matrix stack. }
+The Unicon 3D graphics facilities provide many of the features of 3D
+graphics programming. Several areas in which improvements and
+extensions can be made have been discussed where appropriate in
+previous sections. Besides those topics already mentioned throughout
+the paper, there are several areas where work could still be
+done. These areas include animation, composition, and simplification
+of the design of the matrix stack.
 
-{\selectlanguage{english}
-The Unicon 3D graphics facilities do not contain special features to simplify the process of animation. Future work may
-include the examination of different ways to directly support animation in Unicon.}
+The Unicon 3D graphics facilities do not contain special features to
+simplify the process of animation. Future work may include the
+examination of different ways to directly support animation in Unicon.
 
-{\selectlanguage{english}
-Composition is viewing several different pieces as one piece. For example, say the user wants to implement a moving car.
-To do this, the user would need to break the car into several pieces, possibly, four tires, a car body, windows, and
-lights. To make the process of simulating the moving car easier, one would like these individual pieces to be one
-piece. Currently, a Unicon programmer can develop such applications using the 3D graphics facilities. The question
-remains whether composition should be added as a feature of the Unicon 3D graphics facilities.}
+Composition is viewing several different pieces as one piece. For
+example, say the user wants to implement a moving car.  To do this,
+the user would need to break the car into several pieces, possibly,
+four tires, a car body, windows, and lights. To make the process of
+simulating the moving car easier, one would like these individual
+pieces to be one piece. Currently, a Unicon programmer can develop
+such applications using the 3D graphics facilities. The question
+remains whether composition should be added as a feature of the Unicon
+3D graphics facilities.
 
-{\selectlanguage{english}
-The design of matrices and transformation in the Unicon 3D graphics facilities is similar to the design of OpenGL. For
-this reason, there is no advantage gained over OpenGL in the area of transformations. It might be necessary in the
-future to consider ways to simplify matrices and transformation in Unicon. One improvement to consider is a reduction
-in the number of parameters needed for function like \textsf{Translate()}, \textsf{Rotate()} and \textsf{Scale()}. The
-elimination of the need for two different matrix stacks might be another simplification. }
+The design of matrices and transformation in the Unicon 3D graphics
+facilities is similar to the design of OpenGL. For this reason, there
+is no advantage gained over OpenGL in the area of transformations. It
+might be necessary in the future to consider ways to simplify matrices
+and transformation in Unicon. One improvement to consider is a
+reduction in the number of parameters needed for function like
+\textsf{Translate()}, \textsf{Rotate()} and \textsf{Scale()}. The
+elimination of the need for two different matrix stacks might be
+another simplification.
 
-{\selectlanguage{english}
-The current Unicon 3D graphics facilities have made an improvement over OpenGL in terms of the number of lines of coded
-needed to implement a 3D graphics application. Programmers that want to develop 3D graphics applications but do not
-have the time to learn one of the standard toolkits might find this project valuable. Although the Unicon 3D graphics
-facilities provide the important feature of 3D graphics, there are some limitations. One limitation might be the lack
-of some feature in Unicon that are available in OpenGL. Another limitation might be the use of default parameters that
-are used in some feature of the Unicon 3D graphics facilities. These defaults reduce the flexibility of the programmer
-and will be seen as a restriction by some. Future work on the Unicon 3D graphics facilities might include the addition
-of attributes or other mechanisms to remove those of these limits which prove to be problems. The current Unicon 3D
-graphics facilities provide a basis in which 3D graphics can be implemented in Unicon. }
+The current Unicon 3D graphics facilities have made an improvement
+over OpenGL in terms of the number of lines of coded needed to
+implement a 3D graphics application. Programmers that want to develop
+3D graphics applications but do not have the time to learn one of the
+standard toolkits might find this project valuable. Although the
+Unicon 3D graphics facilities provide the important feature of 3D
+graphics, there are some limitations. One limitation might be the lack
+of some feature in Unicon that are available in OpenGL. Another
+limitation might be the use of default parameters that are used in
+some feature of the Unicon 3D graphics facilities. These defaults
+reduce the flexibility of the programmer and will be seen as a
+restriction by some. Future work on the Unicon 3D graphics facilities
+might include the addition of attributes or other mechanisms to remove
+those of these limits which prove to be problems. The current Unicon
+3D graphics facilities provide a basis in which 3D graphics can be
+implemented in Unicon.
 
 
 \section[5. Functions and Attributes]{5. Functions and Attributes}
 
-{\selectlanguage{english}
-The built-in functions attributes in the Unicon 3D graphics facilities are described in this section. For all functions
-with a window argument W, the parameter can be omitted. Also the use of ``{\dots}'' indicates that more arguments can
-be given. By doing this, the result is similar to that of multiple function calls. The window argument should not be
-specified again for this case.}
-
+The built-in functions attributes in the Unicon 3D graphics facilities
+are described in this section. For all functions with a window
+argument W, the parameter can be omitted. Also the use of ``{\dots}''
+indicates that more arguments can be given. By doing this, the result
+is similar to that of multiple function calls. The window argument
+should not be specified again for this case.
 
 \bigskip
-
 
 
 \subsection[5.1 New Functions]{5.1 New Functions}
@@ -2512,9 +2688,9 @@ if the context attribute dim is set to 2.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{Eye(W, x, y, z, x2, y2, z2, x3,y3,z3)} places the camera at position (x1,y1,z1) looking at the point
-(x2,y2,z2). The direction (x3,y3,z3) will be ``up'' in the rendered scene.}
+\textsf{Eye(W, x, y, z, x2, y2, z2, x3,y3,z3)} places the camera at
+position (x1,y1,z1) looking at the point (x2,y2,z2). The direction
+(x3,y3,z3) will be ``up'' in the rendered scene.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{IdentityMatrix(file): record}}
@@ -2536,9 +2712,9 @@ matrix. The display list element is returned.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{MatrixMode(W, s)} changes the matrix mode to s. The string s must be either \textsf{{}``projection''} or
-\textsf{{}``modelview''.} Otherwise this procedure fails. The display list element is returned. }
+\textsf{MatrixMode(W, s)} changes the matrix mode to s. The string s
+must be either \textsf{{}``projection''} or \textsf{{}``modelview''},
+otherwise this procedure fails. The display list element is returned.
 
 
 \bigskip
@@ -2564,18 +2740,15 @@ otherwise the function will fail.
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{Normals(file, x): list}}\hfill set normals
 
-{\selectlanguage{english}
-\textsf{Normals(W, L)} sets the normals to use for subsequent rendered objects to those given in list L.}
+\textsf{Normals(W, L)} sets the normals to use for subsequent
+rendered objects to those given in list L.
 
-{\selectlanguage{english}
-\textsf{Normals(W, x}\textsf{\textsubscript{1}}\textsf{,
-y}\textsf{\textsubscript{1}}\textsf{,z}\textsf{\textsubscript{1}}\textsf{, ..., x}\textsf{\textsubscript{n}}\textsf{,
-y}\textsf{\textsubscript{n}}\textsf{, z}\textsf{\textsubscript{n}}\textsf{) }sets the normals to use for subsequent
-rendered objects to x, y and z values. Each x, y, z triple forms one normal coordinate that corresponds to one
-vertex.}
+\textsf{Normals(W, x\textsubscript{1},y\textsubscript{1},z\textsubscript{1}, ..., x\textsubscript{n},y\textsubscript{n}, z\textsubscript{n})}
+sets the normals to use for subsequent rendered objects to x, y and z
+values. Each x, y, z triple forms one normal coordinate that corresponds
+to one vertex.
 
-{\selectlanguage{english}
-In all cases the display list element is returned.}
+In all cases the display list element is returned.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{PopMatrix(file): record}}
@@ -2595,11 +2768,13 @@ the matrix stack. The display list element is returned.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{PushMatrix(W)} pushes a copy of the current matrix onto the matrix stack. The current matrix mode determines
-what stack the new matrix is pushed upon. This procedure fails if the matrix mode is \textsf{{}``projection''} and
-there are already two matrices on the stack. If the matrix mode is \textsf{{}``modelview''} and there are already
-thirty two matrices on the stack, then this procedure will fail. The display list element is returned.}
+\textsf{PushMatrix(W)} pushes a copy of the current matrix onto the
+matrix stack. The current matrix mode determines what stack the new
+matrix is pushed upon. This procedure fails if the matrix mode is
+\textsf{{}``projection''} and there are already two matrices on the
+stack. If the matrix mode is \textsf{{}``modelview''} and there are
+already thirty two matrices on the stack, then this procedure will
+fail. The display list element is returned.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{Refresh(file):file}} \hfill redraw the window
@@ -2628,9 +2803,8 @@ scales objects
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{Scale(W, x, y, z,{\dots})} scales object according to the given x, y and z coordinates. The display list element
-is returned.}
+\textsf{Scale(W, x, y, z,{\dots})} scales object according to the
+given x, y and z coordinates. The display list element is returned.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{Texcoord(file, X):list}}
@@ -2639,15 +2813,13 @@ is returned.}
 
 \bigskip
 
-{\selectlanguage{english}
 \textsf{Texcoord(W, x}\textsf{\textsubscript{1}}\textsf{, y}\textsf{\textsubscript{1}}\textsf{, {\dots},
 x}\textsf{\textsubscript{n}}\textsf{, y}\textsf{\textsubscript{n}}\textsf{) }sets the texture coordinates to
 \textsf{x}\textsf{\textsubscript{1}}\textsf{, y}\textsf{\textsubscript{1}}\textsf{, {\dots},
 x}\textsf{\textsubscript{n}}\textsf{, y}\textsf{\textsubscript{n}}\texttt{\textsubscript{. }}Each x, y, pair forms one
-texture coordinate. Every x must match to a y otherwise the assignment of texture coordinates will fail. }
+texture coordinate. Every x must match to a y otherwise the assignment of texture coordinates will fail.
 
-{\selectlanguage{english}
-\textsf{Texcoord(W, L)} sets the texture coordinates to those specified in the list \textsf{L}. }
+\textsf{Texcoord(W, L)} sets the texture coordinates to those specified in the list \textsf{L}.
 
 \textsf{Texcoord(W, s) }sets the texture coordinates to those
 specified by \textsf{s}. The string \textsf{s} must be
@@ -2660,21 +2832,25 @@ the display list element is returned.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{Texture(W, s) }creates a texture image that is applied to subsequent objects on the window \textsf{W}. The
-string \textsf{s} specifies the texture image as a filename, a string of the form \textsf{width,pallet,data} or
-\textsf{width,\#,data}, where pallet is a pallet from the Unicon 2D graphics facilities and data is the hexadecimal
-representation of an image. The display list element is returned.}
+\textsf{Texture(W, s) }creates a texture image that is applied to
+subsequent objects on the window \textsf{W}. The string \textsf{s}
+specifies the texture image as a filename, a string of the form
+\textsf{width,pallet,data} or \textsf{width,\#,data}, where pallet is
+a pallet from the Unicon 2D graphics facilities and data is the
+hexadecimal representation of an image. The display list element is
+returned.
 
-{\selectlanguage{english}
-\textsf{Texture(W1, W2) }creates a texture image that is applied to subsequent objects on the window \textsf{W1}. The
-file \textsf{W2} is another Unicon window. The contents of \textsf{W2} are used to create the texture image. The
-display list element on \textsf{W1} is returned. }
+\textsf{Texture(W1, W2) }creates a texture image that is applied to
+subsequent objects on the window \textsf{W1}. The file \textsf{W2} is
+another Unicon window. The contents of \textsf{W2} are used to create
+the texture image. The display list element on \textsf{W1} is
+returned.
 
-{\selectlanguage{english}
-\textsf{Texture(W1, R) }creates a texture image that is applied to subsequent objects on the window \textsf{W1}. The
-Record \textsf{R} is another texture record that will be used to create the new texture reusing R texture data. This is
-useful to reapply the same texture on different places in the program.}
+\textsf{Texture(W1, R) }creates a texture image that is applied to
+subsequent objects on the window \textsf{W1}. The Record \textsf{R} is
+another texture record that will be used to create the new texture
+reusing R texture data. This is useful to reapply the same texture on
+different places in the program.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{Translate(file, real, real, real,{\dots}): record}}
@@ -2694,14 +2870,12 @@ display list element is returned.}
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{WindowContents(W)} returns a Unicon list of display elements, which are records or lists. Each element has a
-function name followed by the parameters of the function, or an attribute followed by its value. The display list is
-further described in section 3.6. }
-
+\textsf{WindowContents(W)} returns a Unicon list of display elements,
+which are records or lists. Each element has a function name followed
+by the parameters of the function, or an attribute followed by its
+value. The display list is further described in section 3.6.
 
 \bigskip
-
 
 \bigskip
 
@@ -2711,13 +2885,11 @@ further described in section 3.6. }
 
 \bigskip
 
-{\selectlanguage{english}
-Several functions from the Unicon 2D graphics facilities have been modified for use in the 3D facilities. This section
-describes the parameters and use of these functions.}
-
+Several functions from the Unicon 2D graphics facilities have been
+modified for use in the 3D facilities. This section describes the
+parameters and use of these functions.
 
 \bigskip
-
 
 \bigskip
 
@@ -2728,21 +2900,23 @@ describes the parameters and use of these functions.}
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{DrawLine(W, x1, y1, z1, {\dots},xn, yn, zn)} draws a line connecting the n vertices specified by (x, y, z). If
-only one set of vertices is given, then no line is drawn. If the attribute \textsf{dim} is set to 2, then
-\textsf{DrawLine(W, x1, y1,{\dots},xn, yn) }draws a line connecting the n vertices of the form (x, y). If the
-attribute \textsf{dim} is set to 4, then }
+\textsf{DrawLine(W, x1, y1, z1, {\dots},xn, yn, zn)} draws a line
+connecting the n vertices specified by (x, y, z). If only one set of
+vertices is given, then no line is drawn. If the attribute
+\textsf{dim} is set to 2, then
+\textsf{DrawLine(W, x1, y1,{\dots},xn, yn)}
+draws a line connecting the n vertices of the form (x, y). If
+the attribute \textsf{dim} is set to 4, then
 
-{\selectlanguage{english}
-\textsf{DrawLine(W, x1, y1,z1, w1{\dots},xn, yn,zn, wn) }draws a line connecting the n vertices of the form (x, y, z,
-w). The display list element is returned.}
+\textsf{DrawLine(W, x1, y1,z1, w1{\dots},xn, yn,zn, wn)}
+draws a line connecting the n vertices of the form (x, y, z, w).
+The display list element is returned.
 
 
 \bigskip
 
-{\selectlanguage{english}
-DrawLine(W, L) draws lines whose coordinates are passed as a list of real values.}
+DrawLine(W, L) draws lines whose coordinates are passed as a list of
+real values.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{DrawPoint(file, real, real, real, {\dots}): list}}
@@ -2751,11 +2925,12 @@ DrawLine(W, L) draws lines whose coordinates are passed as a list of real values
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{DrawPoint(W, x1, y1, z1, {\dots})} for each set of vertices (x, y, z) a point is drawn. If the attribute
-\textsf{dim} is set to 2, then \textsf{DrawPoint(W, x1, y1,{\dots})}\texttt{ }draws points of the form (x, y). If the
-attribute \textsf{dim} is set to 4, then \textsf{DrawPoint(W, x1,y1,z1,w1{\dots}) }draws points of the form (x, y, z,
-w). The display list element is returned.}
+\textsf{DrawPoint(W, x1, y1, z1, {\dots})} for each set of vertices
+(x, y, z) a point is drawn. If the attribute \textsf{dim} is set to 2,
+then \textsf{DrawPoint(W, x1, y1,{\dots})}\texttt{ }draws points of
+the form (x, y). If the attribute \textsf{dim} is set to 4, then
+\textsf{DrawPoint(W, x1,y1,z1,w1{\dots}) }draws points of the form (x,
+y, z, w). The display list element is returned.
 
 
 \bigskip
@@ -2780,8 +2955,8 @@ of a polygon using the n vertices of the form (x, y). If
 connecting the n vertices of the form (x, y, z, w). The display list
 element is returned.
 
-{\selectlanguage{english}
-DrawPolygon(W, L) draws polygons/shapes whose coordinates are passed as a list of real values.}
+DrawPolygon(W, L) draws polygons/shapes whose coordinates are passed
+as a list of real values.
 
 
 \bigskip
@@ -2797,19 +2972,23 @@ discussed in the New Attributes section.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{DrawSegment(W, x1, y1, z1, x2, y2, z2,{\dots})} draws a line segment between a pair of vertices of the form (x,
-y, z). If the context attribute \textsf{dim} has value 2 then \textsf{DrawSegment(W, x1, y1, x2, y2,{\dots})} draws a
-line segment between a pair of vertices of the form (x, y). If the context attribute \textsf{dim }has value 4 then
-\textsf{DrawSegment(W, x1, y1, z1, w1, x2, y2, z2, w2,{\dots})} draws a line segment between a pair of vertices of the
-form (x, y, z, w). \ If an odd number of vertices if given, then the last vertex is ignored. The display list element
-is returned. }
+\textsf{DrawSegment(W, x1, y1, z1, x2, y2, z2,{\dots})} draws a line
+segment between a pair of vertices of the form (x, y, z). If the
+context attribute \textsf{dim} has value 2 then
+\textsf{DrawSegment(W, x1, y1, x2, y2,{\dots})}
+draws a line segment between a pair of
+vertices of the form (x, y). If the context attribute \textsf{dim} has
+value 4 then
+\textsf{DrawSegment(W, x1, y1, z1, w1, x2, y2, z2, w2,{\dots})}
+draws a line segment between a pair of vertices of the
+form (x, y, z, w). If an odd number of vertices if given, then the
+last vertex is ignored. The display list element is returned.
 
 
 \bigskip
 
-{\selectlanguage{english}
-DrawSegment(W, L) draws line segments whose coordinates are passed as a list of real values.}
+DrawSegment(W, L) draws line segments whose coordinates are passed
+as a list of real values.
 
 
 \bigskip
@@ -2829,9 +3008,10 @@ area, \textsf{EraseArea()} erases the entire contents of a 3D window.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{Fg(W, s)} changes the material properties of subsequently drawn objects to the material properties specified by
-s. The string s must be one or more semi-colon separated material properties. A material property is of the form }
+\textsf{Fg(W, s)} changes the material properties of subsequently
+drawn objects to the material properties specified by s. The string s
+must be one or more semi-colon separated material properties. A
+material property is of the form
 
 $\left[
 \begin{array}{l}
@@ -2851,23 +3031,26 @@ will be returned.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{FillPolygon(W, x1, y1, z1, {\dots}, xn, yn, zn)} draws a filled polygon formed from the n vertices of the form
-(x, y, z) and the current foreground color. If the context attribute \textsf{dim} is set to 2, then
-\textsf{FillPolygon(W, x1, y1, {\dots}, xn, yn)} draws a filled polygon formed from the n vertices of the form (x, y)
-and the current foreground color. If \textsf{dim} is set to 4, then \textsf{FillPolygon(W, x1, y1, z1, w1 {\dots}, xn,
-yn, zn, wn)} draws a filled polygon formed from the n vertices of the form (x, y, z, w) and the current foreground
-color. The display list element is returned. }
+\textsf{FillPolygon(W, x1, y1, z1, {\dots}, xn, yn, zn)} draws a
+filled polygon formed from the n vertices of the form (x, y, z) and
+the current foreground color. If the context attribute \textsf{dim} is
+set to 2, then \textsf{FillPolygon(W, x1, y1, {\dots}, xn, yn)} draws
+a filled polygon formed from the n vertices of the form (x, y) and the
+current foreground color. If \textsf{dim} is set to 4, then
+\textsf{FillPolygon(W, x1, y1, z1, w1 {\dots}, xn, yn, zn, wn)} draws
+a filled polygon formed from the n vertices of the form (x, y, z, w)
+and the current foreground color. The display list element is
+returned.
 
-{\selectlanguage{english}
-FillPolygon(W, L) draws filled polygons/shapes whose coordinates are passed as a list of real values.}
+FillPolygon(W, L) draws filled polygons/shapes whose coordinates
+are passed as a list of real values.
 
 
 \bigskip
 
-{\selectlanguage{english}
-This function can be used to draw shapes other than polygons, this feature can be controlled by the attribute
-\textsf{meshmode} which is discussed in the New Attributes section.}
+This function can be used to draw shapes other than polygons, this
+feature can be controlled by the attribute
+\textsf{meshmode} which is discussed in the New Attributes section.
 
 
 \bigskip
@@ -2877,32 +3060,31 @@ This function can be used to draw shapes other than polygons, this feature can b
 
 \bigskip
 
-{\selectlanguage{english}
-This section describes the new context attributes that have been added specifically for the 3D graphics facilities. }
+This section describes the new context attributes that have been
+added specifically for the 3D graphics facilities.
 
 
 \bigskip
 
 \noindent\hrulefill\\
-\noindent\textsf{\textbf{dim}} \hfill dimensionality of graphic
-objects
+\noindent\textsf{\textbf{dim}} \hfill dimensionality of graphic objects
+
+\bigskip
+
+The functions
+\textsf{DrawLine(), DrawPolygon(), DrawSegment(), DrawPoint(),}
+and \textsf{FillPolygon(),} use the value of
+\textsf{dim} to determine how many coordinates each vertex has. If
+\textsf{{}``dim = 2''} then
+\textsf{DrawTorus(), DrawSphere(), DrawCube()}, and
+\textsf{DrawCylinder()} cannot be used.
 
 
 \bigskip
 
-{\selectlanguage{english}
-The functions \textsf{DrawLine(), DrawPolygon(), DrawSegment(), DrawPoint(),} and \textsf{FillPolygon(), }use the value
-of \textsf{dim} to determine how many coordinates each vertex has. If \textsf{{}``dim = 2''} then \textsf{DrawTorus(),
-DrawSphere(), DrawCube(),} and \textsf{DrawCylinder()} cannot be used. }
+Values: \textsf{{}``2''}, \textsf{{}``3''}, or \textsf{{}``4''}
 
-
-\bigskip
-
-{\selectlanguage{english}
-Values: \textsf{{}``2''}, \textsf{{}``3''}, or \textsf{{}``4''}}
-
-{\selectlanguage{english}
-Default value: \textsf{{}``3''}}
+Default value: \textsf{{}``3''}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eye}} \hfill point of view
@@ -2910,14 +3092,13 @@ Default value: \textsf{{}``3''}}
 
 \bigskip
 
-{\selectlanguage{english}
-This attribute assigns the eyepos, eyedir, and eyeup attributes. See also the \textsf{Eye()} function.}
+This attribute assigns the eyepos, eyedir, and eyeup attributes.
+See also the \textsf{Eye()} function.
 
 
 \bigskip
 
-{\selectlanguage{english}
-Default value: \ \textsf{{}``(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)''}}
+Default value: \ \textsf{{}``(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)''}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eyedir}} \hfill eye direction
@@ -2925,14 +3106,12 @@ Default value: \ \textsf{{}``(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)''}}
 
 \bigskip
 
-{\selectlanguage{english}
-The eye direction is the direction in which the eye is looking.}
+The eye direction is the direction in which the eye is looking.
 
 
 \bigskip
 
-{\selectlanguage{english}
-Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}}
+Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eyepos}} \hfill eye position
@@ -2940,14 +3119,12 @@ Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}}
 
 \bigskip
 
-{\selectlanguage{english}
-The eye position is the where the eye is currently located. }
+The eye position is the where the eye is currently located.
 
 
 \bigskip
 
-{\selectlanguage{english}
-Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}}
+Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eyeup}} \hfill up direction
@@ -2955,14 +3132,12 @@ Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}}
 
 \bigskip
 
-{\selectlanguage{english}
-The eyeup attribute specifies what direction is up in the scene. }
+The eyeup attribute specifies what direction is up in the scene.
 
 
 \bigskip
 
-{\selectlanguage{english}
-Default value: \ \textsf{{}``(0.0, 1.0, 0.0)''}}
+Default value: \ \textsf{{}``(0.0, 1.0, 0.0)''}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{glrenderer}} \hfill 3D renderer
@@ -2970,9 +3145,8 @@ Default value: \ \textsf{{}``(0.0, 1.0, 0.0)''}}
 
 \bigskip
 
-{\selectlanguage{english}
-Read only attribute that gives the specific hardware configuration (video card name) that is used to render 3D
-graphics.}
+Read only attribute that gives the specific hardware configuration
+(video card name) that is used to render 3D graphics.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{glvendor}} \hfill 3D vendor
@@ -2980,8 +3154,8 @@ graphics.}
 
 \bigskip
 
-{\selectlanguage{english}
-Read only attribute that gives the vendor of the 3D graphics library implementation.}
+Read only attribute that gives the vendor of the 3D graphics
+library implementation.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{glversion}} \hfill 3D version
@@ -2989,8 +3163,7 @@ Read only attribute that gives the vendor of the 3D graphics library implementat
 
 \bigskip
 
-{\selectlanguage{english}
-Read only attribute that gives the 3D graphics library version number.}
+Read only attribute that gives the 3D graphics library version number.
 
 
 \bigskip
@@ -3001,10 +3174,12 @@ Read only attribute that gives the 3D graphics library version number.}
 
 \bigskip
 
-{\selectlanguage{english}
-There are eight lights in the Unicon 3D graphics facilities. Each light can be assigned values to each of its properties
-on/off, diffuse, ambient, specular, and position. The values of diffuse, ambient, specular are a color specification.
-The position is given by a (x, y, z) coordinate. The default values are as follows for the lights.}
+There are eight lights in the Unicon 3D graphics facilities. Each
+light can be assigned values to each of its properties on/off,
+diffuse, ambient, specular, and position. The values of diffuse,
+ambient, specular are a color specification.  The position is given by
+a (x, y, z) coordinate. The default values are as follows for the
+lights.
 
 
 \bigskip
@@ -3048,17 +3223,15 @@ The position is given by a (x, y, z) coordinate. The default values are as follo
 
 \bigskip
 
-{\selectlanguage{english}
 The attribute \textsf{texcoord} can be assigned the value \textsf{{}``auto'',} or a string of texture coordinates. If
 \textsf{texcoord} has the value \textsf{{}``auto'',} texture coordinates are determined by the Unicon 3D graphics
 facilities. Otherwise texture coordinates, which are pairs (x, y) with x and y are between 0.0 and 1.0, are obtained
-from attribute \textsf{texture}.}
+from attribute \textsf{texture}.
 
 
 \bigskip
 
-{\selectlanguage{english}
-Default:\ \ \textsf{{}``auto''}.}
+Default:\ \ \textsf{{}``auto''}.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{meshmode}} \hfill mesh mode type
@@ -3066,18 +3239,18 @@ Default:\ \ \textsf{{}``auto''}.}
 
 \bigskip
 
-{\selectlanguage{english}
-The \textsf{meshmode} attribute changes how the coordinates\textbf{ }passed to\textbf{ }\textsf{DrawPolygon()} and
-\textsf{FillPolygon()} will be interpreted. This attribute can take the following values: \textsf{{}``points''},
-\textsf{{}``lines''}, \textsf{{}``linestrip''}, \textsf{{}``lineloop''}, \textsf{{}``triangles''},
-\textsf{{}``trianglefan''}, \textsf{{}``trianglestrip''}, \textsf{{}``quads''}, \textsf{{}``quadstrip''} and
-\textsf{{}``polygon''}.}
+The \textsf{meshmode} attribute changes how the coordinates passed to
+\textsf{DrawPolygon()} and \textsf{FillPolygon()} will be interpreted.
+This attribute can take the following values: \textsf{{}``points''},
+\textsf{{}``lines''}, \textsf{{}``linestrip''}, \textsf{{}``lineloop''},
+\textsf{{}``triangles''}, \textsf{{}``trianglefan''},
+\textsf{{}``trianglestrip''}, \textsf{{}``quads''},
+\textsf{{}``quadstrip''} and \textsf{{}``polygon''}.
 
 
 \bigskip
 
-{\selectlanguage{english}
-Default:\ \ \textsf{{}``polygon''}.}
+Default:\ \ \textsf{{}``polygon''}.
 
 
 \bigskip
@@ -3088,11 +3261,13 @@ Default:\ \ \textsf{{}``polygon''}.}
 
 \bigskip
 
-{\selectlanguage{english}
-If normode has the value \textsf{{}``auto'',} then normals are automatically generated for each drawn polygon so that
-the normal is perpendicular on the polygon and pointing away from it. If normode has the value of ``on'' then the user
-can supply custom normals using the \textsf{Normals()} function. Otherwise normode has the value \textsf{{}``off''},
-which indicates objects are drawn using a default preset normal. By default normode has the value \textsf{{}``auto''.}}
+If normode has the value \textsf{{}``auto''}, then normals are
+automatically generated for each drawn polygon so that the normal is
+perpendicular on the polygon and pointing away from it. If normode has
+the value of ``on'' then the user can supply custom normals using the
+\textsf{Normals()} function. Otherwise normode has the value
+\textsf{{}``off''}, which indicates objects are drawn using a default
+preset normal. By default normode has the value \textsf{{}``auto''.}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{rings}} \hfill sets the number of rings
@@ -3100,9 +3275,10 @@ which indicates objects are drawn using a default preset normal. By default norm
 
 \bigskip
 
-{\selectlanguage{english}
-rings should be an integer value greater than 0. It controls the level of details for drawing spheres, cylinders and
-toruses by setting the number of rings used to draw those objects. By default slices has the value 15\textsf{.}}
+rings should be an integer value greater than 0. It controls the level
+of details for drawing spheres, cylinders and toruses by setting the
+number of rings used to draw those objects. By default slices has the
+value 15.
 
 
 \bigskip
@@ -3113,10 +3289,10 @@ toruses by setting the number of rings used to draw those objects. By default sl
 
 \bigskip
 
-{\selectlanguage{english}
-slices should be an integer value greater than 0. It controls the level of details for drawing spheres, cylinders,
-toruses and disks by setting the number of slices used to draw those objects. By default slices has the value
-15\textsf{.}}
+slices should be an integer value greater than 0. It controls the
+level of details for drawing spheres, cylinders, toruses and disks by
+setting the number of slices used to draw those objects. By default
+slices has the value 15.
 
 
 \bigskip
@@ -3145,9 +3321,10 @@ following format.
 \texttt{\ \ \ }\textsf{width,pallet,data} \ or \ \ \textsf{width,\#,data}
 
 \noindent
-where pallet is a pallet defined in the Unicon 2D graphics facilities and data is the hexadecimal representation of an
-image. The value assigned to texture is used to create a texture image which is applied to subsequent objects on the
-window.
+where \textsf{pallet} is a pallet defined in the Unicon 2D graphics
+facilities and data is the hexadecimal representation of an image.
+The value assigned to texture is used to create a texture image
+which is applied to subsequent objects on the window.
 
 
 \subsection[5.4 Extensions from the 2D Graphics Attributes]
@@ -3156,9 +3333,9 @@ window.
 
 \bigskip
 
-{\selectlanguage{english}
-Several attributes have been extended to be used in the 3D graphics facilities. The new meanings of these attributes are
-described in this section. }
+Several attributes have been extended to be used in the 3D graphics
+facilities. The new meanings of these attributes are described in
+this section.
 
 
 \bigskip
@@ -3169,8 +3346,8 @@ described in this section. }
 
 \bigskip
 
-{\selectlanguage{english}
-The string assigned to fg must be one or more semi-colon material properties. A material property is of the form }
+The string assigned to fg must be one or more semi-colon
+material properties. A material property is of the form
 
 $\left[
 \begin{array}{l}
@@ -3228,14 +3405,16 @@ http://unicon.org
 \bigskip
 
 \noindent
-[JeffMart03]\ \ Jeffery, Clinton and Martinez, Naomi. The Implementation of Graphics in Unicon Version 11. Unicon
+[JeffMart03]\ \ Jeffery, Clinton and Martinez, Naomi.
+The Implementation of Graphics in Unicon Version 11. Unicon
 Technical Report \#5a, \href{http://unicon.org/}{http://unicon.org}, 2003.
 
 \bigskip
 
 \noindent
-[OpenGL99] \ \ OpenGL Architecture Review Board; Woo, Mason; Neider, Jackie; Davis;
-Tom; Shreiner, Dave. OpenGL Programming Guide: the Official Guide to
+[OpenGL99] \ \ OpenGL Architecture Review Board;
+Woo, Mason; Neider, Jackie; Davis, Tom; Shreiner, Dave.
+OpenGL Programming Guide: the Official Guide to
 Learning OpenGL, Third Edition. Reading, MA: Addison-Wesley
 Publishing Company, 1999.
 

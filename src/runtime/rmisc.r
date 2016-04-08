@@ -1264,8 +1264,22 @@ struct b_coexpr *ce;
 	 }
       else
 #endif					/* MultiThread */
+      {
+
+#ifdef Concurrent
+       /*
+        * if this is a thread it should exist
+        * coclean calls pthread_exit() in this case.
+    	*/
+   	if (IS_TS_THREAD(ce->status)){
+      	#ifdef CoClean
+ 	   coclean(ce);
+        #endif				/* CoClean */
+           }
+#endif					/* Concurrent */
 	 syserr("empty activator stack\n");
       }
+   }
 
    /*
     * Find the activation record for the most recent co-expression.

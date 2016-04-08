@@ -15,13 +15,13 @@ void tlschain_add(struct threadstate *tstate, struct context *ctx);
 void tlschain_remove(struct threadstate *tstate);
 
 #define TRANSFER_KLEVEL(ncp, ccp) do {					\
-	    if (ncp->program == ccp->program) { 			\
-	       if (ncp->ctx->tstate)      	 			\
-	       	  ncp->ctx->tstate->K_level = ccp->ctx->tstate->K_level;\
-	       else							\
-	       	  ncp->ctx->tmplevel =  ccp->ctx->tstate->K_level;	\
-	    	} 		    					\
-	} while (0)
+    if (IS_TS_SYNC(ncp->status) && ncp->program == ccp->program) {	\
+       if (ncp->ctx->tstate)      	 			   	\
+       	  ncp->ctx->tstate->K_level = ccp->ctx->tstate->K_level;	\
+       else								\
+       	  ncp->ctx->tmplevel =  ccp->ctx->tstate->K_level;		\
+    	} 		    						\
+} while (0)
 #else					/* Concurrent  */
 #define TRANSFER_KLEVEL(ncp, ccp)
 #endif					/* Concurrent  */
@@ -272,6 +272,15 @@ int first;
          c_put(&(BlkLoc(k_current)->Coexpr.outbox), valloc);
       	 MUTEX_UNLOCKBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List), "co_chng(): list mutex");
       	 CV_SIGNAL_EMPTYBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List));
+   	 if (IS_TS_THREAD(ccp->status) &&
+	    (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
+       	    /*
+             * On return or fail, the thread is done and should exit
+    	     */
+      	 #ifdef CoClean
+ 	     coclean(ccp);
+         #endif				/* CoClean */
+            }
 	 return A_Continue;
       }
       else

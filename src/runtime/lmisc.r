@@ -157,7 +157,6 @@ dptr result;
       tended struct b_list *hp;
       ncp = BlkD(k_current, Coexpr);
 
-
       if (!is:null(*val)){      
       /* send */
 

@@ -198,7 +198,7 @@ function{} exit(status)
     * exit if this is a thread.
     * May want to check/fix thread  activator initialization 
     * depending on desired join semantics.
-    * coclean calls pthread_exit() in case of Async threads.
+    * coclean calls pthread_exit() in case of threads.
     */
    if ( status==10101 ){
 #if !ConcurrentCOMPILER

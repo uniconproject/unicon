@@ -204,17 +204,22 @@
 #ifdef HAVE_SYS_RESOURCE_H
    #include <sys/resource.h>
 #endif					/* HAVE_SYS_RESOURCE_H */
+#ifdef HAVE_SYS_FILE_H
+   #include <sys/file.h>
+#endif					/* HAVE_FILE_H */
    #include <termios.h>
    #include <poll.h>
    #ifdef SysSelectH
       #include <sys/select.h>
    #endif
+#if defined(PseudoPty) || defined(Audio)
+   #include <fcntl.h>
+#endif					/* PseudoPty || Audio */
 #ifdef Audio
    #include <sys/ioctl.h>
-   #include <fcntl.h>
    #include <linux/soundcard.h>
    #include <pthread.h>
-#endif
+#endif					/* Audio */
 #endif					/* UNIX */
 
 #ifdef HAVE_LIBPTHREAD

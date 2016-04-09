@@ -324,6 +324,17 @@ int ptflush(struct ptstruct *ptStruct);
 #ifdef MSWindows
 struct b_list *findactivepty(struct b_list *lps);
 #endif					/* MSWindows */
+
+/*
+ * System pty prototypes missing from standard includes due to XOPEN_SOURCE
+ * issues, resulting in compiler warnings, at least on Linux. Of course,
+ * just providing our own prototypes for library functions may cause problems
+ * on other platforms; we may need to fix this or put it under an ifdef.
+ */
+int grantpt(int);
+int unlockpt(int);
+int posix_openpt(int);
+int ptsname_r(int, char *, size_t);
 #endif					/* PseudoPty */
 int		pushact		(struct b_coexpr *ce, struct b_coexpr *actvtr);
 int		putstr		(FILE *f,dptr d);
@@ -342,6 +353,7 @@ char		*reserve_1	(int region, word nbytes);
 char		*reserve	(int region, word nbytes);
 #endif					/* MultiThread */
 void		retderef		(dptr valp, word *low, word *high);
+void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);
 void		segvtrap	(void);
 void		stkdump		(int);
 word		sub		(word a,word b, int *over_flowp);

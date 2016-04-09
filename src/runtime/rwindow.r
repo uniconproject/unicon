@@ -709,6 +709,7 @@ static colrmod sattable[] = {			/* saturation levels */
    };
 
 static colrmod transptable[] = {		/* transparency levels */
+   { "dull",  75 },				/* alias for subtranslucent */
    { "opaque",  100 },
    { "subtranslucent",  75 },
    { "subtransparent",  25 },

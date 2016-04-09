@@ -626,10 +626,7 @@ struct b_record **rp;
  * may trigger a garbage collection, the pointer parameters dp and rp
  * should point at tended variables.
  */
-void rusage2rec(usg, dp, rp)
-struct rusage *usg;
-struct descrip *dp;
-struct b_record **rp;
+void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp)
 {
    int i;
    tended struct b_record *utime_rp, *stime_rp;

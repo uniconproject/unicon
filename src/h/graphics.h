@@ -26,6 +26,7 @@
 #include "direct3d.h"
 #endif					/* HAVE_LIBGL */
 
+#define MAXDISPLAYNAME	128
 
 #define	REDRAW_CUBE 16
 #define	REDRAW_CYLINDER 32

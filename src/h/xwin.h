@@ -90,7 +90,6 @@
 #define DMAXCOLORS	256
 #define WMAXCOLORS	256
 #define MAXCOLORNAME	40
-#define MAXDISPLAYNAME	64
 #define CLR_SHARED          0
 #define CLR_MUTABLE         1
 #define NUMCURSORSYMS	78

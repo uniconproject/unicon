@@ -599,19 +599,10 @@ procedure exists(name)			#: test file existence
 end
 
 procedure directory(name)		#: succeed if name is a directory
-
-$ifdef _MS_WINDOWS_NT
-   if fattrib(name, "status")[1] == "d" then
-      return name
-   else
-      fail
-$else
    if close(open(name || "/.")) then
       return name
    else
       fail
-$endif
-
 end
 
 $ifdef _MSDOS

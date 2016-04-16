@@ -1537,7 +1537,6 @@ function{0,1} reads(f,i)
 #endif					/* ConsoleWindow */
 
 #ifdef ReadDirectory
-#if !NT
       /*
        *  If reading a directory, return up to i bytes of next entry.
        */
@@ -1555,7 +1554,6 @@ function{0,1} reads(f,i)
          Protect(sptr = alcstr(de->d_name, nbytes), runerr(0));
          return string(nbytes, sptr);
          }
-#endif
 #endif					/* ReadDirectory */
 
       /*

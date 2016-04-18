@@ -43,6 +43,7 @@
 #define NoCrypt
 #define Dbm
 #define Messaging
+#define HAVE_STRERROR
 
 #if defined(Messaging) && defined(OLD_NTGCC)
 #define ssize_t signed

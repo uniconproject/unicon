@@ -1,5 +1,7 @@
 : "$Id: Test-icont,v 1.2 2001-12-13 22:38:08 phliar Exp $"
 
+OS=`uname`
+
 for i in `cat $1.lst`
 do
    rm -f local/$i.out
@@ -13,7 +15,17 @@ do
       ../../bin/iconx $i >local/$i.out 2>&1
    fi
    echo Checking $i
-   diff local/$i.out stand/$i.out
+
+   # Assume that NT in uname means Windows
+   if [[ $OS == *NT* ]]; then
+      if test -r stand/$i.wout; then
+	  diff -w stand/$i.wout local/$i.out
+      else
+	  diff -w stand/$i.out local/$i.out
+      fi	  
+   else
+      diff stand/$i.out local/$i.out
+   fi
    rm -f $i
 done
 

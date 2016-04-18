@@ -1,9 +1,10 @@
 SHELL=/bin/sh
 MAKE=make
 
-what:
-		@echo "what do you want to make?"
+#what:
+#		@echo "what do you want to make?"
 
+default: Test
 
 Test:
 		sh Test-icont icont

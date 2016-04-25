@@ -85,7 +85,8 @@
 /*define if you have pthreads and want concurrency*/
 #if WANT_THREADS
 #define HAVE_LIBPTHREAD 1
-#define Concurrent 1
-#endif
+#else
+#define NoConcurrent
+#ednif
 
 /*#define HAVE_STRUCT_TIMESPEC 1*/

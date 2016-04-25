@@ -52,12 +52,6 @@
    #define COMPILER 0
 #endif
 
-#if defined(Concurrent) && COMPILER
-   #define ConcurrentCOMPILER 1
-#else
-   #define ConcurrentCOMPILER 0
-#endif
-
 /*
  * The following definitions insure that all the symbols for operating
  * systems that are not relevant are defined to be 0 -- so that they
@@ -134,13 +128,12 @@
 #define ReadDirectory
 #endif					/* PosixFns */
 
-#ifndef HAVE_LIBPTHREAD
-#ifdef Concurrent
 #undef Concurrent
-#endif					/* Concurrent */
-#endif					/* HAVE_LIBPTHREAD */
-
 #ifndef NoCoExpr
+   #if defined(HAVE_LIBPTHREAD) && !defined(NoConcurrent)
+      #define Concurrent 1
+   #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
+
    #ifdef Concurrent
       #define PthreadCoswitch 1
       #define TSLIST 
@@ -148,18 +141,20 @@
        * The default at present does not use __thread.
        * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
        */
-   #endif					/* Concurrent */
-
-   #ifdef PthreadCoswitch
-   //#define NoNativeCoswitch
-   #endif					/* PthreadCoswitch */
+   #endif				/* Concurrent */
 
    #undef CoExpr
    #define CoExpr
    #ifndef NoNativeCoswitch
       #define NativeCoswitch
-   #endif					/* NoNativeCoswitch */
+   #endif				/* NoNativeCoswitch */
 #endif					/* NoCoExpr */
+
+#if defined(Concurrent) && COMPILER
+   #define ConcurrentCOMPILER 1
+#else
+   #define ConcurrentCOMPILER 0
+#endif
 
 #ifdef NoMultiThread
 #ifndef NoEventMon

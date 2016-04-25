@@ -13,9 +13,13 @@
 #define HAVE_SYSCONF 1
 
 /*
- * #define Concurrent 1
- * here to enable threads. If you do on certain older platforms,
- * you might need to
+ * To turn off concurrency
+ * #define NoConcurrent
+ *
+ * On certain older platforms you might need to
  * #define PTHREAD_MUTEX_RECURSIVE PTHREAD_MUTEX_RECURSIVE_NP
- * as well.
+ * to build with concurreny enabled
+ *
+ * If you don't have native coswitch (rswitch.s), you must 
+ * #define NoNativeCoswitch
  */

@@ -616,6 +616,13 @@ char *s;
          }
 
    GRFX_ALLOC(wd, _wdisplay);
+   if (strlen(s) >= MAXDISPLAYNAME){
+      /*
+       * There are better ways to fix this, but since this is very
+       * unlikely to happen if MAXDISPLAYNAME is big enough, then...
+       */
+       syserr("Environment variable DISPLAY is too long");
+      }
 
    strcpy(wd->name,s);
    wd->display = XOpenDisplay((*s=='\0') ? NULL : s);

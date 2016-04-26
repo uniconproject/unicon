@@ -16,7 +16,9 @@ unset MSTKSIZE COEXPSIZE QLSIZE
 #  check that icont and iconx have been built
 ls $IC ../../bin/iconx >/dev/null || exit 0
 
-OS=`uname`
+case `uname` in 
+     *"NT"*) NT=1;; 
+esac;
 
 #  if no files specified, run them all
 if [ $# = 0 ]; then
@@ -37,7 +39,7 @@ for F in $*; do
    fi
 
    # Assume that NT in uname means Windows
-   if [[ $OS == *NT* ]]; then
+   if [ -n "$NT" ]; then
        if test -r $F.wstd; then
 	  diff -w $F.wstd $F.out
       else

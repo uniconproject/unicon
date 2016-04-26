@@ -1,6 +1,8 @@
 : "$Id: Test-icont,v 1.2 2001-12-13 22:38:08 phliar Exp $"
 
-OS=`uname`
+case `uname` in 
+     *"NT"*) NT=1;; 
+esac;
 
 for i in `cat $1.lst`
 do
@@ -17,7 +19,7 @@ do
    echo Checking $i
 
    # Assume that NT in uname means Windows
-   if [[ $OS == *NT* ]]; then
+   if [ -n "$NT" ]; then
       if test -r stand/$i.wout; then
 	  diff -w stand/$i.wout local/$i.out
       else

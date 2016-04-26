@@ -576,6 +576,14 @@ struct threadstate {
   struct region *Curblock;     /*     same above     */
   uword stringtotal;			/* cumulative total allocation */
   uword blocktotal;			/* cumulative total allocation */
+
+#ifdef SoftThreads
+  int sthrd_tick;
+  int sthrd_size;
+  int sthrd_cur;
+  struct b_coexpr * sthrds[SOFT_THREADS_SIZE];
+  struct b_coexpr * owner; /* the co-expression where the thread spawned */
+#endif 					/* SoftThreads */ 
 #endif 					/* Concurrent */
 
 #ifdef MultiThread
@@ -871,6 +879,12 @@ struct b_coexpr {		/* co-expression stack block */
    struct descrip cequeue;       /*   CEs waiting to receive results   */
    struct descrip inbox, outbox; /*   pending send/receive queues */
    word ini_blksize, ini_ssize;  /*   initial blksize and string size to want */
+
+#ifdef SoftThreads
+  int sthrd_tick;
+  struct b_coexpr * parent;
+#endif 					/* SoftThreads */ 
+
 #endif					/* Concurrent */
 #ifdef EventMon
    word actv_count;             /*   number of times activated using EvGet() */

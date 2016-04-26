@@ -103,7 +103,6 @@
 #define Ts_Thread	02		/* This is a thread */
 #define Ts_Attached	04		/* OS-level thread attached to this ce */
 
-
 #define Ts_Async       010		/* asynchronous (concurrent) thread */
 #define Ts_Actived     020              /* activated at least once */
 #define Ts_Active      040              /* someone activated me */
@@ -112,6 +111,7 @@
 #define Ts_WToutbox   0200              /* waiting on outbox Q */
 #define Ts_Posix      0400		/* POSIX (pthread-based) coexpression */
 
+#define Ts_SoftThread   01000		/* soft thread */
 
 #define SET_FLAG(X,F)        (X) |= (F)
 #define UNSET_FLAG(X,F)      (X) &= ~(F)
@@ -124,6 +124,7 @@
 #define IS_TS_POSIX(X) CHECK_FLAG(X, Ts_Posix)
 #define IS_TS_ASYNC(X) CHECK_FLAG(X, Ts_Async)
 #define IS_TS_SYNC(X) (!IS_TS_ASYNC(X))
+#define IS_TS_SOFTTHREAD(X) CHECK_FLAG(X, Ts_SoftThread)
 
 /*#ifdef Graphics*/
    #define XKey_Window 0
@@ -1190,7 +1191,15 @@
       #define	A_Trapret	12	/* Return from stub  */
       #define	A_Trapfail	13	/* Fail from stub  */
    #endif 				/* PosixFns */
+   #ifdef SoftThreads
+      #define A_Coschedule	14	/* co-expression schedule */
+   #endif 				/* SoftThreads */
 #endif					/* COMPILER */
+
+#ifdef SoftThreads
+#define SOFT_THREADS_SIZE 16
+#define SOFT_THREADS_TSLICE 500
+#endif 				/* SoftThreads */
 
 /*
  * Address of word containing cset bit b (c is a struct descrip of type Cset).

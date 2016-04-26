@@ -323,12 +323,12 @@ deliberate syntax error
 #define ExInterp_sp	sp = rsp;
 #define EntInterp_sp	rsp = sp;
 
-#define ExInterp_ipc	ipc = ripc;
+/*#define ExInterp_ipc	ipc = ripc;
 #define EntInterp_ipc	ripc = ipc;
 
 #define ExInterp_lastop	rlastop = lastop;
 #define EntInterp_lastop	lastop = rlastop;
-
+*/
 /*
  * Inside the interpreter loop, PushDesc, PushNull, PushAVal, and
  *  PushVal use rsp instead of sp for efficiency.
@@ -520,6 +520,30 @@ int interp_x(int fsig,dptr cargp)
  */
 
    for (;;) {
+
+#ifdef SoftThreads
+  if (curtstate->sthrd_size>0){
+     if (curtstate->c->sthrd_tick-- <= 10){
+        struct b_coexpr *ncp;
+	ncp = curtstate->sthrds[curtstate->sthrd_cur];
+        ncp->sthrd_tick = SOFT_THREADS_TSLICE; /* give the new thread a "slice" */
+	curtstate->sthrds[curtstate->sthrd_cur] = curtstate->c;
+	curtstate->sthrd_cur = (curtstate->sthrd_cur + 1) % curtstate->sthrd_size;
+      	ExInterp_sp;
+	if (ncp->es_actstk == NULL){ /* this shouldn't be the case */
+      	     Protect(ncp->es_actstk = alcactiv(), err_msg(0,NULL));
+   	     if (pushact(ncp, curtstate->owner) == RunError)
+      	        err_msg(183, NULL);
+	     co_chng(ncp, NULL, NULL, A_Coschedule, 0);
+	}
+	else
+           co_chng(ncp, NULL, NULL, A_Coschedule, 1);
+	   
+	SYNC_CURTSTATE_CE();
+      	EntInterp_sp;
+	}
+     }
+#endif 					/* SoftThreads */ 
 
 #ifdef MultiThread
       /* 

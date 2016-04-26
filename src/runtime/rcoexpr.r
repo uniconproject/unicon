@@ -296,7 +296,10 @@ int first;
     * depending on desired join semantics.
     * coclean calls pthread_exit() in this case.
     */
-   if (IS_TS_THREAD(ccp->status) && 
+   if (IS_TS_THREAD(ccp->status) &&
+#ifdef SoftThreads
+       !IS_TS_SOFTTHREAD(ccp->status) &&
+#endif 					/* SoftThreads */ 
       (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
       #ifdef CoClean
  	 coclean(ccp);

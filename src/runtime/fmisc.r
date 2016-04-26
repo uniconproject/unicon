@@ -2766,10 +2766,9 @@ int improbable = 0;
 
 "spawn(x,blocksize,stringsize, stacksize) - evaluate co-expression"
 " or procedure x concurrently"
-
-function{0,1} spawn(x, blocksize, stringsize, stacksize)
+function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
    declare {
-      C_integer _bs_, _ss_, _stks_;
+      C_integer _bs_, _ss_, _stks_, isoft;
       }
    if !def:C_integer(blocksize,0,_bs_) then
       runerr(101,blocksize)
@@ -2777,6 +2776,8 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
       runerr(101,stringsize)
    if !def:C_integer(stacksize,0,_stks_) then
       runerr(101,stacksize)
+   if !def:C_integer(soft,0,isoft) then
+      runerr(101,soft)
    if is:coexpr(x) then {
       abstract { return coexpr }
       body {
@@ -2792,11 +2793,34 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize)
 	    }
 #endif                                   /* ConcurrentCOMPILER */
       	 TURN_ON_CONCURRENT();
-#if ConcurrentCOMPILER
+#if ConcurrentCOMPILER || defined(SoftThreads)
 	 CURTSTATE();
 #endif                                   /* ConcurrentCOMPILER */
 
 	 if (IS_TS_THREAD(cp->status)) return x;
+
+#ifdef SoftThreads
+       if (isoft) {
+       	  if (IS_TS_SOFTTHREAD(cp->status)) return x;
+          if (curtstate->sthrd_size+1>=SOFT_THREADS_SIZE) /* for now */
+	     syserr("now space for soft threads");
+  	  curtstate->sthrds[curtstate->sthrd_size++] = cp;
+	  SET_FLAG(cp->status, Ts_SoftThread);
+	  SET_FLAG(cp->status, Ts_Thread);
+	  cp->parent = curtstate->c;
+	  curtstate->c->sthrd_tick /= 10;
+	 /*
+    	  *  Set the parent of the new thread.
+    	  */
+/*   	  if (cp->es_actstk == NULL)
+      	     Protect(cp->es_actstk = alcactiv(),runerr(0,x));
+
+   	  if (pushact(cp, (struct b_coexpr *)BlkLoc(k_current)) == RunError)
+      	     runerr(0,x);
+*/	     
+  	  return x;
+	  }
+#endif 					/* SoftThreads */ 
 
 	 n = cp->ctx;
 	 if (n->alive == 1) {

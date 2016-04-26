@@ -687,6 +687,14 @@ void init_threadstate( struct threadstate *ts)
    ts->Curblock = NULL;
    ts->stringtotal=0;
    ts->blocktotal=0;
+   
+#ifdef SoftThreads
+  ts->sthrd_size = 0;
+  ts->sthrd_tick = 0;  
+  ts->sthrd_cur = 0;
+  ts->owner = ts->c ; /* the co-expression where the thread spawned */
+#endif 				/* LW_Threads */  
+
 #endif 					/* Concurrent */
 }
 
@@ -1090,6 +1098,10 @@ Deliberate Syntax Error
 #endif					/* MultiThread */
 #if defined(MultiThread) || ConcurrentCOMPILER
    curtstate->c=mainhead;
+#ifdef SoftThreads
+   curtstate->owner=mainhead;
+   curtstate->c->sthrd_tick = SOFT_THREADS_TSLICE;
+#endif 					/* SoftThreads */ 
 #endif					/* MultiThread || ConcurrentCOMPILER */
 #if COMPILER
    mainhead->file_name = "";

@@ -1043,9 +1043,35 @@ FILE *ptr;
 struct filepid {
    FILE *f;
    int pid;
+   word status;
    struct filepid *next;
    };
 struct filepid *root_of_all_filepids;
+
+void push_filepid(int pid, FILE *fp, word status){
+   struct filepid *temp = malloc(sizeof(struct filepid));
+   if (!temp) syserr("out of memory");
+   temp->f = fp;
+   temp->pid = pid;
+   temp->status = status;
+   temp->next = root_of_all_filepids;
+   root_of_all_filepids = temp;
+}
+
+void clear_all_filepids(){
+   struct filepid *temp = root_of_all_filepids, *temp2;
+   while (temp) {
+      if (temp->status == Fs_BPipe)
+      	 kill(temp->pid, SIGPIPE);
+      else
+	 kill(temp->pid, EOF);
+
+      temp2 = temp;
+      temp = temp->next;
+      free(temp2);
+      }
+   root_of_all_filepids = NULL;
+}
 
 FILE *popen (const char *command, const char *mode)
 {
@@ -1078,14 +1104,10 @@ FILE *popen (const char *command, const char *mode)
 		} else {			/* vfork -- parent or failed */
 			close(pr);
 			if (pid > 0) {	/* vfork -- parent */
-			  struct filepid *temp = malloc(sizeof(struct filepid));
-			  temp->f = fp;
-			  temp->pid = pid;
-			  temp->next = root_of_all_filepids;
-			  root_of_all_filepids = temp;
-			  return fp;
+			   push_filepid(pid, fp, Fs_Pipe);
+			   return fp;
 			} else {		/* vfork -- failed! */
-				fclose(fp);
+			   fclose(fp);
 			}
 		}
 	} else {				/* fdopen failed */
@@ -1107,7 +1129,10 @@ int pclose(FILE *fd)
 	while (temp) {
 	   if (temp->f == fd) {
 	      pid = temp->pid;
-	      kill(pid, EOF);
+	      if (temp->status == Fs_BPipe)
+	      	 kill(pid, SIGPIPE);
+	      else
+	      	 kill(pid, EOF);
 	      if (pid==waitpid(pid, &waitstat, 0 )){ /* we are good */
 		 if ((temp2 = temp->next)) {
 		    *temp = *(temp->next);

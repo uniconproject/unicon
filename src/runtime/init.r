@@ -1647,6 +1647,9 @@ char *s;
    c_exit(EXIT_FAILURE);
    }
 
+#if UNIX && defined(HAVE_WORKING_VFORK)
+void clear_all_filepids();
+#endif
 
 /*
  * c_exit(i) - flush all buffers and exit with status i.
@@ -1689,6 +1692,9 @@ extern int gettstate_count, gettstate_count2[];
         thread_control(TC_KILLALLTHREADS);
 #endif					/* PresentationManager */
 
+#if UNIX && defined(HAVE_WORKING_VFORK)
+   clear_all_filepids();
+#endif
 
 #ifdef TallyOpt
    {

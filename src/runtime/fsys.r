@@ -38,6 +38,11 @@ extern int MPWFlush(FILE *f);
 #ifdef PosixFns
 extern int errno;
 #endif					/* PosixFns */
+
+#if UNIX && defined(HAVE_WORKING_VFORK)
+extern void push_filepid(int pid, FILE *fp, word status);
+#endif 	    		     	  /* UNIX && defined(HAVE_WORKING_VFORK */
+
 /*
  * End of operating-system specific code.
  */
@@ -164,16 +169,16 @@ function{1} close(f)
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
       /*
        * Close pipe if pipes are supported.
+       * should we consider treating Fs_BPipe in the same way?!
        */
-
-      if (BlkD(f,File)->status & Fs_Pipe) {
+      if ((BlkD(f,File)->status & Fs_Pipe) /*|| (BlkD(f,File)->status & Fs_BPipe)*/) {
 	 BlkLoc(f)->File.status = 0;
 	 return C_integer((pclose(fp) >> 8) & 0377);
 	 }
       else
 #endif					/* AMIGA || ARM || OS2 || ... */
+         fclose(fp);
 
-      fclose(fp);
       BlkLoc(f)->File.status = 0;
 
       /*
@@ -2120,6 +2125,19 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	 fail;
 	 break;
       default:
+
+#if UNIX && defined(HAVE_WORKING_VFORK)
+        if (!is:null(d_stdin)){
+           if (BlkD(d_stdin,File)->status & Fs_BPipe)
+	      push_filepid(pid, BlkD(d_stdin,File)->fd.fp, Fs_BPipe);
+	   }
+
+        if (!is:null(d_stdout)){
+           if (BlkD(d_stdout,File)->status & Fs_BPipe)
+   	      push_filepid(pid, BlkD(d_stdout,File)->fd.fp, Fs_BPipe);
+	   }
+#endif				/* UNIX && defined(HAVE_WORKING_VFORK) */
+
          if (margv) free(margv);
 	 if (is:integer(d_stdin) &&IntVal(d_stdin)>-1) close(IntVal(d_stdin));
 	 if (is:integer(d_stdout)&&IntVal(d_stdout)>-1) close(IntVal(d_stdout));

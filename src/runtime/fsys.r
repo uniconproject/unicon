@@ -2127,12 +2127,12 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       default:
 
 #if UNIX && defined(HAVE_WORKING_VFORK)
-        if (!is:null(d_stdin)){
+        if (!is:null(d_stdin) && is:file(d_stdin)){
            if (BlkD(d_stdin,File)->status & Fs_BPipe)
 	      push_filepid(pid, BlkD(d_stdin,File)->fd.fp, Fs_BPipe);
 	   }
 
-        if (!is:null(d_stdout)){
+        if (!is:null(d_stdout) && is:file(d_stdout)){
            if (BlkD(d_stdout,File)->status & Fs_BPipe)
    	      push_filepid(pid, BlkD(d_stdout,File)->fd.fp, Fs_BPipe);
 	   }

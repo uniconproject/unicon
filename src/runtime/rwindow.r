@@ -1268,7 +1268,7 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      fclose(f);
      return Failed;
      }
-  if (fread(headerstuff, 1, 52, f) < 1) {
+  if (fread(headerstuff, 1, 52, f) < 52) {
      fclose(f);
      return Failed;
      }
@@ -1951,26 +1951,34 @@ static int pngread(char *filename, int p, struct imgdata *imd)
 	 }
 
    /* read the first n bytes (1-8, 8 used here) and test for png signature */
-   fread(header, 1, 8, png_f);
+   if (fread(header, 1, 8, png_f) < 8) {
+      fclose(png_f);
+      return Failed;
+      }   
 
    if (png_sig_cmp(header, 0, 8)) {
+      fclose(png_f);
       return Failed;  /* (NOT_PNG) */
       }
 
    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
-   if (!png_ptr)
+   if (!png_ptr){
+      fclose(png_f);   
       return Failed;
+      }
 
    info_ptr = png_create_info_struct(png_ptr);
    if (!info_ptr) {
       png_destroy_read_struct(&png_ptr, NULL, NULL);
+      fclose(png_f);      
       return Failed;
       }
 
    end_info = png_create_info_struct(png_ptr);
    if (!end_info){
       png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+      fclose(png_f);      
       return Failed;
       }
 

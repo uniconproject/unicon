@@ -2965,11 +2965,7 @@ int n;
       return;
   
    ForceNl();
-   prt_str("#if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)", 0);
-   ForceNl();
-   prt_str("CURTSTATE();", IndentInc);
-   ForceNl();
-   prt_str("#endif\t\t\t\t\t/* Concurrent && !HAVE_KEYWORD__THREAD */", 0);
+   prt_str("CURTSTATE_AND_CE();", IndentInc);
    ForceNl();
 
    prt_str("struct {", IndentInc);

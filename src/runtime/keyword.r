@@ -121,7 +121,7 @@ keyword{1} column
       }
    inline {
 #ifdef MultiThread
-      CURTSTATE();
+      CURTSTATE_AND_CE();
       return C_integer findcol(ipc.opnd);
 #else
       fail;
@@ -537,7 +537,7 @@ keyword{1} file
        * A fixed version would need to handle multiple files and be
        * reporting location of current thread.
        */
-      CURTSTATE();
+      CURTSTATE_AND_CE();
 #endif					/* !ConcurrentCOMPILER */
 #if COMPILER
       if (line_info)
@@ -620,7 +620,7 @@ keyword{1} line
        * A fixed version would need to handle multiple files and be
        * reporting location of current thread.
        */
-      CURTSTATE();
+      CURTSTATE_AND_CE();
 #endif					/* !ConcurrentCOMPILER */
 #if COMPILER
       if (line_info)

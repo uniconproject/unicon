@@ -411,7 +411,7 @@ int interp_x(int fsig,dptr cargp)
  * Review OVLD code and do away with the tended if possible.
  */
 #if !(defined(TSTATARG) || defined(OVLD))
-    CURTSTATE();
+    CURTSTATE_AND_CE();
 #endif		 	   	  	 /* TSTATARG */
 #endif					/* Concurrent */
 

@@ -33,7 +33,7 @@ void err_msg(int n, dptr v)
 #ifdef Messaging
    int saveerrno = errno;
 #endif                                  /* Messaging */
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #ifdef Concurrent
 #if !ConcurrentCOMPILER

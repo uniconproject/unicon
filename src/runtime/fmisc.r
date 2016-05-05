@@ -324,7 +324,7 @@ function{1} display(i,f)
       FILE *std_f;
       int r;
 #if ConcurrentCOMPILER
-      CURTSTATE();
+      CURTSTATE_AND_CE();
 #endif                                     /* ConcurrentCOMPILER */
       if (!debug_info)
          runerr(402);
@@ -1408,7 +1408,7 @@ function{0,1} variable(s)
       struct pf_marker *tmp_pfp;
       dptr tmp_argp;
 #endif					/* MultiThread */
-      CURTSTATE();
+      CURTSTATE_AND_CE();
 
 #ifdef MultiThread
       tmp_pfp = pfp;

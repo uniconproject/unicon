@@ -49,7 +49,7 @@ struct b_coexpr *sblkp;
     * Get pointer to refresh block.
     */
    struct b_refresh *rblkp = (struct b_refresh *)BlkLoc(sblkp->freshblk);
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #if COMPILER
    na = rblkp->nargs;                /* number of arguments */
@@ -185,7 +185,7 @@ int first;
 #else        				/* CoExpr */
 
    register struct b_coexpr *ccp;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 
    ccp = (struct b_coexpr *)BlkLoc(k_current);

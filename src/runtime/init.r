@@ -1396,7 +1396,7 @@ Deliberate Syntax Error
 void envset()
    {
    char sbuf[MaxCvtLen+1];
-   CURTSTATE_ONLY();
+   CURTSTATE();
 
    if (getenv_r("NOERRBUF", sbuf, MaxCvtLen) == 0)
       noerrbuf++;
@@ -1619,7 +1619,7 @@ char *s1, *s2;
 void syserr(s)
 char *s;
    {
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #ifdef PresentationManager
    ConsoleFlags |= OutputToBuf;
@@ -1667,7 +1667,7 @@ int i;
 #endif					/* ConsoleWindow */
 extern int gettstate_count, gettstate_count2[];
 
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #if E_Exit
    if (curpstate != NULL)
@@ -1916,7 +1916,7 @@ void datainit()
 #ifdef MSWindows
    extern FILE *finredir, *fouredir, *ferredir;
 #endif					/* MSWindows */
-   CURTSTATE_ONLY();
+   CURTSTATE();
 
    /*
     * Initializations that cannot be performed statically (at least for
@@ -2233,7 +2233,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 struct progstate * findicode(word *opnd)
 {
    struct progstate *p = NULL;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    for (p = &rootpstate; p != NULL; p = p->next) {
       if (InRange(p->Code, ipc.opnd, p->Ecode)) {

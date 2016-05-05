@@ -667,8 +667,8 @@
 #define SYNC_CURTSTATE_CE()
 #endif					/* NativeCoswitch */
 
-#define CURTSTATE()  GET_CURTSTATE(); CURTSTATE_CE(); 
-#define CURTSTATE_ONLY() GET_CURTSTATE();
+#define CURTSTATE()  GET_CURTSTATE();
+#define CURTSTATE_AND_CE() GET_CURTSTATE(); CURTSTATE_CE();
 
 #ifdef TSTATARG
 #define CURTSTATARG curtstate

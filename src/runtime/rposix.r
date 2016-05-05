@@ -1773,7 +1773,7 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
    word *saved_sp;
    inst wp;
    dptr dp, ret;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    saved_sp = sp;
 

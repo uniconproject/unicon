@@ -111,7 +111,7 @@ int getvar(s,vp)
 #else					/* COMPILER */
    struct pf_marker *fp;
 #endif
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #if COMPILER
    if (!debug_info) 
@@ -1460,7 +1460,7 @@ int level;
 {
    struct pf_marker *fp;
    int i;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #ifdef MultiThread
    if (BlkLoc(ce->program->tstate->K_current) != BlkLoc(k_current))

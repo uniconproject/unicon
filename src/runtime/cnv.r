@@ -699,7 +699,6 @@ void f(dptr s, dptr d)
 	    int status = Blk(Blk(bp,Tvtbl)->clink,File)->status;
 #ifdef Dbm
 	    if (status & Fs_Dbm) {
-	       int rv;
 	       DBM *db;
 	       datum key, content;
 	       db = (DBM *)Blk(Blk(bp,Tvtbl)->clink,File)->fd.fp;

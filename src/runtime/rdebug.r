@@ -43,7 +43,7 @@ FILE *logfptr;
    dptr arg;
    inst cipc;
 #endif					/* COMPILER */
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #if COMPILER
    if (lcl_pfp == NULL)
@@ -436,7 +436,7 @@ int get_name(dptr dp1,dptr dp0)
 #begdef PTraceSetup()
    struct b_proc *proc;
 #if ConcurrentCOMPILER
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 #endif                                 /* ConcurrentCOMPILER */
    --k_trace;
    showline(file_name, line_num);
@@ -578,7 +578,7 @@ dptr valloc;
 #if !COMPILER
    inst t_ipc;
 #endif					/* !COMPILER */
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    --k_trace;
 
@@ -697,7 +697,7 @@ FILE *f;
    struct b_proc *bp;
    word nargs;
    dptr reset; 
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #ifndef PresentationManager
    fprintf(f, "   ");
@@ -881,7 +881,7 @@ dptr dp;
 int nargs;
 dptr arg;
    {
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    showline(findfile(ipc.opnd), findline(ipc.opnd));
    showlevel(k_level);
@@ -906,7 +906,7 @@ dptr dp;
 dptr rval;
    {
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    /*
     * Compute the ipc of the return instruction.
@@ -929,7 +929,7 @@ void failtrace(dp)
 dptr dp;
    {
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    /*
     * Compute the ipc of the fail instruction.
@@ -952,7 +952,7 @@ dptr dp;
 dptr rval;
    {
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    /*
     * Compute the ipc of the suspend instruction.
@@ -975,7 +975,7 @@ void atrace(dp)
 dptr dp;
    {
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    /*
     * Compute the ipc of the instruction causing resumption.
@@ -999,7 +999,7 @@ struct b_coexpr *ncp;
    {
    struct b_proc *bp;
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    bp = BlkD(*glbl_argp, Proc);
    /*
@@ -1038,7 +1038,7 @@ struct b_coexpr *ncp;
    {
    struct b_proc *bp;
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    bp = BlkD(*glbl_argp, Proc);
    /*
@@ -1077,7 +1077,7 @@ struct b_coexpr *ncp;
    {
    struct b_proc *bp;
    inst t_ipc;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    bp = BlkD(*glbl_argp, Proc);
    /*

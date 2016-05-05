@@ -426,7 +426,7 @@ int region;
    static int setrlimit_firsttime=1, setrlimit_count=0;
    struct rlimit rl;
 #endif
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
 #ifdef Concurrent
        curblock = curtblock;
@@ -1257,7 +1257,7 @@ struct b_coexpr *ce;
    register struct gf_marker *s_gfp;
    register struct ef_marker *s_efp;
    word nargs, type = 0, gsize = 0;
-   CURTSTATE();
+   CURTSTATE_AND_CE();
 
    fp = ce->es_pfp;
    s_gfp = ce->es_gfp;

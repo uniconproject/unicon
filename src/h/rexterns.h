@@ -250,11 +250,7 @@ extern struct descrip amperErrno;
 #endif					/* !COMPILER || ConcurrentCOMPILER */
 
    #if defined(MultiThread)
-   #ifdef LOCALPROGSTATE
-      extern struct progstate *mainpstate;
-   #else					/* LOCALPROGSTATE */
       extern struct progstate *curpstate;
-   #endif					/* LOCALPROGSTATE */
       extern struct progstate rootpstate;
    #endif					/* MultiThread */
 

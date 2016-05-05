@@ -72,15 +72,7 @@
  */
 #define Protect(notnull,orelse) do {if ((notnull)==NULL) orelse;} while(0)
 
-/* 
- * This is not correct for monitoring facilities, but it is a way
- * to turn off compile errors until their turn come to be fixed
-*/
-#ifdef LOCALPROGSTATE
-#define   mycurpstate mainpstate
-#else					/* LOCALPROGSTATE */
 #define   mycurpstate curpstate
-#endif					/* LOCALPROGSTATE */
 
 /*
  * perform what amounts to "function inlining" of EVVal

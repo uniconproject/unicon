@@ -614,21 +614,10 @@
    word nparam; word ndynam; word nstatic; word fstatic;\
    struct sdescrip quals[n];}
 
-
 /*
  * Check whether a number is not a power of 2
  */
 #define not_poweroftwo(a) ((a) & (a-1))
-
-
-#ifdef LOCALPROGSTATE
-#define CURPTSTATE struct progstate *curpstate = curtstate->pstate;
-#define CURPSTATE struct progstate *curpstate =	\
-    ((struct threadstate *) pthread_getspecific(tstate_key))->pstate;
-#else					/* LOCALPROGSTATE */
-#define CURPSTATE
-#define CURPTSTATE
-#endif					/* LOCALPROGSTATE */
 
 #ifdef Concurrent
 
@@ -678,26 +667,8 @@
 #define SYNC_CURTSTATE_CE()
 #endif					/* NativeCoswitch */
 
-
-
-#if ConcurrentCOMPILER
 #define CURTSTATE()  GET_CURTSTATE(); CURTSTATE_CE(); 
-#else					/* ConcurrentCOMPILER */
-#define CURTSTATE()  GET_CURTSTATE(); CURTSTATE_CE(); CURPTSTATE;
-#endif					/* ConcurrentCOMPILER */
-
-/*#define CURTSTATE_VM() inst *curtstate_ipc = curtstate->c->es_ipc;*/
-/*  		   struct tend_desc *curtstate_tended = curtstate_ce->es_tend; */
-
-#if ConcurrentCOMPILER
 #define CURTSTATE_ONLY() GET_CURTSTATE();
-#else					/* ConcurrentCOMPILER */
-#define CURTSTATE_ONLY() GET_CURTSTATE(); CURPTSTATE;
-#endif					/* ConcurrentCOMPILER */
-
-/*  		    struct b_coexpr *curtstate_ce = curtstate->c;	
-		    #define CURTSTATE_CE struct b_coexpr *curtstate_CE = curtstate->c;*/
-
 
 #ifdef TSTATARG
 #define CURTSTATARG curtstate

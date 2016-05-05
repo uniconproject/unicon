@@ -461,7 +461,6 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 	 else y2 = y;
 
 	 if (is_texture) {
-	    wdp wd = w->window->display;
 	    /* texture to texture */
 	    copyareaTexToTex(w, texhandle, dest_texhandle,
 			     x,y,width,height, x2,y2);
@@ -1226,7 +1225,7 @@ function{1} DrawSegment(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, warg = 0, dx, dy, draw_code;
+      int i, j, n, warg = 0, dx, dy;
       XSegment segs[MAXXOBJS];
       C_integer x1, x2, y1, y2;
       int is_texture=0, base=0;
@@ -1324,7 +1323,7 @@ function{1} DrawString(argv[argc])
       }
    body {
       wbp w;
-      int i, j, n, len, warg = 0, nf, dx, dy;
+      int i, j, n, len, warg = 0, nf;
       tended char *s;
       double x, y, z;
       struct descrip f;
@@ -1335,7 +1334,6 @@ function{1} DrawString(argv[argc])
       OptWindow(w);
 #ifdef Graphics3D
       if (w->context->is_3D) {
-	 struct descrip g;
 
 	 if (argc - warg < 3) fprintf(stderr, "not enough args!!\n");
 
@@ -1535,7 +1533,6 @@ function{0,1} Fg(argv[argc])
       char sbuf1[MaxCvtLen];
       int len;
       tended char *tmp;
-      char *temp;
       int is_texture=0, texhandle;
       int warg = 0;
       OptTexWindow(w);
@@ -2378,7 +2375,7 @@ function{0,1} ReadImage(argv[argc])
       wbp w;
       char filename[MaxFileName + 1];
       tended char *tmp;
-      int status, warg = 0, base=0;
+      int status, warg = 0;
       C_integer x, y;
       int p, r;
       struct imgdata imd;
@@ -3765,7 +3762,7 @@ function{1} DrawSphere(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, i, j, nfields, draw_code;
+      int warg = 0, n, i, nfields, draw_code;
       double r, x, y, z;
       tended struct b_record *rp;
       tended struct descrip f;
@@ -3903,7 +3900,7 @@ function{1} DrawDisk(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, n, j, i, nfields, draw_code;
+      int warg = 0, i, nfields, draw_code;
       double r1, r2, a1, a2, x, y, z;
       tended struct descrip f;
       static dptr constr;
@@ -3986,7 +3983,7 @@ function{1} Eye(argv[argc])
     body {
       wbp w;
       wcp wc;
-      int warg = 0, n, i=0, len;
+      int warg = 0, i=0, len;
       double x;
       char abuf[128];
 
@@ -4035,8 +4032,7 @@ function{1} Rotate(argv[argc])
     abstract{ return record }
     body {
       wbp w;
-      int warg = 0, n, i, j, nfields;
-      double x, y, z, angle;
+      int warg = 0, n, i, j;
       tended struct descrip f;
       tended struct b_record *rp;
 
@@ -4067,7 +4063,6 @@ function{1} Translate(argv[argc])
       wbp w;
       int warg = 0, i, j, n;
       tended struct descrip f;
-      static dptr constr;
 
       OptWindow(w);
       EnsureWindow3D(w);      
@@ -4096,7 +4091,6 @@ function{1} Scale(argv[argc])
    body {
       wbp w;
       int warg = 0, n, i, j;
-      double x, y, z;
       tended struct descrip f = nulldesc;
 
       OptWindow(w);
@@ -4124,7 +4118,7 @@ function{1} PopMatrix(argv[argc])
    body {
       wbp w;
       C_integer npops;
-      int warg = 0, n, nfields, i, draw_code;
+      int warg = 0, nfields, i, draw_code;
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
@@ -4180,7 +4174,7 @@ function{1} PushMatrix(argv[argc])
    abstract{ return record }
    body {
       wbp w;
-      int warg = 0, n, nfields, draw_code;
+      int warg = 0,  nfields, draw_code;
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
@@ -4317,7 +4311,7 @@ function{1} IdentityMatrix(argv[argc])
    abstract { return record }
    body {
       wbp w;
-      int warg = 0, n, nfields, draw_code;
+      int warg = 0, nfields, draw_code;
       tended struct descrip f;
       tended struct b_record *rp;
       static dptr constr;
@@ -4362,7 +4356,7 @@ function{1} MatrixMode(argv[argc])
    abstract { return record }
    body {
       wbp w; 
-      int warg = 0, n, nfields, draw_code;
+      int warg = 0, nfields, draw_code;
       tended char* temp;
       tended struct descrip f;
       tended struct b_record *rp;
@@ -4760,7 +4754,7 @@ function{1} Refresh(argv[argc])
    abstract{ return file }
    body {
       wbp w;
-      int i, warg = 0;
+      int warg = 0;
       OptWindow(w);
       EnsureWindow3D(w);
       redraw3D(w);
@@ -4780,7 +4774,7 @@ function{1} WindowContents(argv[argc])
    abstract{ return list }
    body {
       wbp w;
-      int i, warg = 0;
+      int warg = 0;
       OptWindow(w);
       EnsureWindow3D(w);
       return w->window->funclist; 
@@ -4795,7 +4789,7 @@ function{1} WSection(argv[argc])
   body {
       wbp w;
       wcp wc;
-      int i, len, warg = 0, nfields, draw_code;
+      int len, warg = 0, nfields, draw_code;
       tended struct descrip f;
       tended struct b_record *rp;
       tended char* tmp;

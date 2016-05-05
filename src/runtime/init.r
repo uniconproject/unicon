@@ -383,9 +383,9 @@ static FILE *readhdr(name,hdr)
 char *name;
 struct header *hdr;
    {
-   int fdname = -1;
    int n;
    char tname[256];
+   int fdname;
 
 #if MSDOS
    int thisIsAnExeFile = 0;
@@ -478,7 +478,6 @@ struct header *hdr;
 #ifdef Header
 
 #ifdef ShellHeader
-   char buf[200];
    char pathbuf[512];
    int offset;
 
@@ -488,7 +487,7 @@ struct header *hdr;
 #else					/* NT */
    struct stat sbuf;
 #endif					/* NT */
-   int t1 = millisec(), rv;
+   int rv;
    FILE *ftmp;
 
    if ((rv = pathFind(tname, pathbuf, 150)) == 0) error(name, errmsg);
@@ -713,7 +712,6 @@ char *argv[];
 
    {
 #if !COMPILER
-   int fdname = -1;
    FILE *fname = 0;
    word cbread;
 #endif					/* COMPILER */
@@ -1665,7 +1663,6 @@ int i;
    char *msg = "Strike any key to close console...";
 #endif					/* ScrollingConsoleWin */
 #endif					/* ConsoleWindow */
-extern int gettstate_count, gettstate_count2[];
 
    CURTSTATE_AND_CE();
 
@@ -1864,10 +1861,8 @@ word getrandom()
  */
    static int ncalls = 0;
    word krandom;
-   int i;
    time_t t;
    struct tm *ct, ctstruct;
-   TLS_CURTSTATE_ONLY();
 
    time(&t);
 
@@ -2255,7 +2250,6 @@ C_integer bs, ss, stk;
    struct b_coexpr *coexp;
    struct progstate *pstate;
    struct header hdr;
-   int fdname;
    FILE *fname = NULL;
    word cbread;
 

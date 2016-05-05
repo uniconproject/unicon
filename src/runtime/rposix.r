@@ -888,15 +888,11 @@ static void on_alarm(int x)
 
 int sock_connect(char *fn, int is_udp, int timeout)
 {
-   int imode, saveflags, rc, fd, s, len;
-   struct sockaddr *sa, from;
+   int saveflags, rc, s, len;
+   struct sockaddr *sa;
    char *p, fname[BUFSIZ];
    struct sockaddr_in saddr_in;
    char *host = fname;
-   static struct hostent he;
-#if UNIX
-   static struct sigaction sigact;
-#endif					/* UNIX */
 
 #if UNIX
    struct sockaddr_un saddr_un;
@@ -1539,7 +1535,6 @@ dptr result;
    struct b_record *rp;
    dptr constr;
    int nfields;
-   int nmem = 0, i, n;
 
    if (!(constr = rec_structor("posix_servent")))
       return 0;
@@ -1569,12 +1564,10 @@ struct addrinfo *inforesult;
    struct b_record *rp;
    dptr constr;
    int nfields;
-   int nmem = 0, i, n;
-   unsigned int *addr;
+   int nmem = 0, n;
    char *p;
 
    struct addrinfo *ptr;
-
    CURTSTATE();
 
    if (!(constr = rec_structor("posix_hostent")))
@@ -1606,7 +1599,6 @@ struct addrinfo *inforesult;
 
 
    for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
-      struct sockaddr_in6 *sockaddr_ipv6;
       char ipstrbuf[64];
       int ipbuflen = 64;
       int a;
@@ -1875,7 +1867,6 @@ void signal_dispatcher(sig)
 int sig;
 {
    struct descrip proc, val;
-   struct b_proc *pp;
    char *p;
 
    proc = handlers[sig];
@@ -1964,7 +1955,6 @@ dptr d;
       }
    else {
       /* Read as much as we can without blocking, in chunks of 1536 bytes */
-      char buf[1536];
       long bufsize = 1536, total = 0, i = 0;
       StrLoc(*d) = strfree;
       StrLen(*d) = 0;
@@ -2071,12 +2061,9 @@ void dup_fds(dptr d_stdin, dptr d_stdout, dptr d_stderr)
  */
 struct b_list *findactivewindow(struct b_list *lws)
    {
-   static LONG next = 0;
    LONG i, j;
    tended union block *ep;
-   wsp ptr, ws;
    tended struct descrip d;
-   extern FILE *ConsoleBinding;
 
    if (lws->size == 0) return NULL;
    d = nulldesc;

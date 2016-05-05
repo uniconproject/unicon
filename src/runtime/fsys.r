@@ -671,7 +671,6 @@ Deliberate Syntax Error
 	       else {
 		  URI *puri;
 		  register int a;
-		  char *buf[4192];
 		  tended char *tmps;
 
 		  /* Check attributes (stolen from above) */
@@ -1720,8 +1719,8 @@ function{0,1} rename(s1,s2)
       }
 
    body {
-      int i=0;
 #if NT
+      int i;
       if ((i = rename(s1,s2)) != 0) {
 	 remove(s2);
 	 if (rename(s1,s2) != 0)
@@ -1897,7 +1896,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       return null ++ integer
       }
    body {
-      int i, j, n, fd_0=-1, fd_1=-1, fd_2=-1, is_argv_str=0, pid;
+      int i, j, n, is_argv_str=0, pid;
       C_integer i_mode=0;
       tended union block *ep;
 	 
@@ -2945,7 +2944,6 @@ function{0,1} kbhit()
       return null
       }
    inline {
-      int rv;
 #ifndef ConsoleWindow
       if (kbhit())
 	 return nulldesc;

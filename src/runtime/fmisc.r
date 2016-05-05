@@ -284,7 +284,7 @@ end
 function{1} display(i,f,c)
    declare {
       struct b_coexpr *ce = NULL;
-      struct progstate *prog, *savedprog;
+      struct progstate *savedprog;
 #ifdef Concurrent
        /* rtt doesn't like CURTSTATE() in declare clause */
        struct threadstate *curtstate =
@@ -1129,7 +1129,7 @@ function{1} sortf(t, i)
             register dptr d1;
             register word size;
             tended struct b_list *lp;
-            union block *ep, *bp;
+            union block *bp;
             register int j;
             extern word sort_field;
 
@@ -1748,15 +1748,11 @@ function{1} load(s,arglist,infile,outfile,errfile,
    body {
       word *stack_tmp;
       struct progstate *pstate;
-      char sbuf1[MaxCvtLen], sbuf2[MaxCvtLen];
       register struct b_coexpr *sblkp;
-      register struct b_refresh *rblkp;
       struct ef_marker *newefp;
-      register dptr dp, ndp, dsp;
-      register word *newsp, *savedsp;
-      int na, nl, i, j, num_fileargs = 0;
+      register word *savedsp;
       struct b_file *theInput = NULL, *theOutput = NULL, *theError = NULL;
-      struct b_proc *cproc;
+      struct b_proc;
       extern char *prog_name;
 
       /*
@@ -2636,7 +2632,6 @@ function{1} lock(x)
    abstract { return type(x) }
    if cnv:C_integer(x) then{
    body {
-      int rv;
       word x1;
       GETMUTEXID(x, x1);
 
@@ -2683,7 +2678,6 @@ function{0,1} trylock(x)
          int rv;
          word x1;
          GETMUTEXID(x, x1);
-
          MUTEX_TRYLOCKID(x1, rv);
          if (rv == 0) return C_integer x;
          fail;
@@ -2724,7 +2718,6 @@ function{1} unlock(x)
    abstract { return type(x) }
    if cnv:C_integer(x) then{
    body {
-      int rv;
       word x1;
       GETMUTEXID(x, x1);
 

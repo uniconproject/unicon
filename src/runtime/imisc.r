@@ -241,8 +241,6 @@ linearsearch:
 	     *  not used until after allocation is complete.
 	     */
 	    struct b_record *new_rec;
-	    dptr d1, d2;
-	    int i;
 
 	    Protect(new_rec = alcrecd(2, (union block *)stubrec), RunErr(0,0));
 

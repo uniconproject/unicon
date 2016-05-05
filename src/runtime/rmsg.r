@@ -70,10 +70,8 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
    Tpdisc_t* disc;
    Tpmethod_t* meth;
    Tprequest_t req;
-   Tpresponse_t* resp;
    struct MFile* mfile;
    int exception;
-   char header[8192];
 
 #if (UNIX || NT)
    disc = tp_newdisc(TpdUnix);
@@ -586,9 +584,6 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
 
 void Mstartreading(struct MFile* mf)
 {
-   Tpresponse_t* resp;
-   Tpdisc_t* disc = mf->tp->disc;
-  
    int exception;
 
    if (MFIN(mf, READING)) {

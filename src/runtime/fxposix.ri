@@ -46,7 +46,6 @@ function{0,1} sys_errstr(e)
       return string
       }
    inline {
-      int rv;
 #ifdef HAVE_STRERROR
       char *s = strerror(e);
       String(result, alcstr(s, strlen(s)));
@@ -179,7 +178,6 @@ function{0,1} readlink(s)
       return string
       }
    body {
-      char ret[NAME_MAX];
       int len;
       char *out;
       long n;
@@ -604,17 +602,18 @@ function{0,1} truncate(f, l)
 	    }
 	 body {
 	    tended char *s;
-	    int fd = 0;
-
 	    IntVal(amperErrno) = 0;
             cnv:C_string(f, s);
 
 #if NT
+            {
+    	    int fd;
 	    if (((fd = _open(s, _O_RDWR | _O_CREAT, _S_IWRITE)) == -1) ||
 		(_chsize(fd, l) != 0)) {
 	       IntVal(amperErrno) = errno;
 	       fail;
 	       }
+	     }
 	    _close(fd);
 #else					/* NT */
 	    if (truncate(s, l) != 0) {
@@ -697,7 +696,6 @@ function{0} flock(f, cmd)
 
       int option = 0;
       int fd, i=0;
-      long flength;
 
 #ifdef HAVE_FLOCK
 #if HAVE_LIBZ 
@@ -964,7 +962,7 @@ function{0,1} ioctl(f, action, options)
       return integer
       }
    inline {
-      int retval, fd;
+      int fd;
 #if !ConcurrentCOMPILER
       CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
@@ -982,10 +980,13 @@ function{0,1} ioctl(f, action, options)
       fail;
 #else					/* NT */
 #ifdef UNICON_IOCTL
+      {
+      int retval;
       if ((retval = ioctl(fd, action, options)) < 0) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
+       }
       return C_integer retval;
 #else					/* UNICON_IOCTL */
       runerr(121, f);
@@ -1531,7 +1532,6 @@ function{0,1} wait(pid, options)
      abstract { return coexpr }
      body {
 	struct context *n;
-	int rv;
 	if (IS_TS_THREAD(BlkLoc(pid)->Coexpr.status)) {
 	   n =  BlkLoc(pid)->Coexpr.ctx;
 
@@ -1680,9 +1680,8 @@ function{0,1} name(t)
       return string
    }
    inline {
-      char *p, buf[32];
       int l;
-      struct tm gmt;
+      char *p;
 #if i
 #if HAVE_CTIME_R
       if ((p = ctime_r((time_t *)&t, buf)) == NULL) runerr(0);
@@ -1692,8 +1691,12 @@ function{0,1} name(t)
 #endif					/* HAVE_CTIME_R */
 #else
 #if HAVE_GMTIME_R && HAVE_ASCTIME_R
+    {
+      char buf[32];
+      struct tm gmt;
       if (gmtime_r((time_t *)&t, &gmt) == NULL) runerr(0);
       if ((p = asctime_r(&gmt, buf)) == NULL) runerr(0);
+     }
 #else					/* HAVE_GMTIME_R && HAVE_ASCTIME_R */
       /* need to add mutex here for thread-safe version if Concurrent */
       p = asctime(gmtime((time_t *)&t));
@@ -1885,7 +1888,6 @@ function{0,1} stat(f)
 #if !NT
 	    if (S_ISLNK(sbuf.st_mode)) {
 	       /* readlink */
-	       char ret[NAME_MAX];
 	       int len;
 	       char *out;
 	       long n;
@@ -2101,7 +2103,6 @@ function{0,1} fetch(d, k)
       if (BlkD(d,File)->status & Fs_Dbm) {
 	 DBM *db;
 	 datum key, content;
-	 int n;
 
 	 if (!cnv:string(k, dkey))
 	    runerr(103, k);
@@ -2251,8 +2252,8 @@ function{0,1} select(files[nargs])
       return new list(file)
       }
    body {
-      int rv, status, acc_time = 0, check_time, clocks;
-      int i, j, k=0, n=0, nset, nset_add=0;
+      int rv, acc_time = 0, check_time, clocks;
+      int i, j, k=0, n=0, nset;
       C_integer timeout = -1;
 #if UNIX
       struct tms t;

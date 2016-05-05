@@ -404,7 +404,6 @@ int interp_x(int fsig,dptr cargp)
 #endif					/* TallyOpt */
 
 #ifdef Concurrent
-    int retval;
 /*
  * TSTATARG doesn't take a CURTSTATE because it is a passed parameter.
  * OVLD doesn't take a CURTSTATE because it declares a tended variable.
@@ -1125,8 +1124,8 @@ L_astatic:
 
          case Op_Colm:		/* source column number */
             {
-            word loc;
 #if e_loc
+            word loc;
             column = GetWord;
             loc = column;
             loc <<= (WordBits >> 1);	/* column in high-order part */

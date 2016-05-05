@@ -123,7 +123,6 @@ void VariableLookupFailed(char * varname)
 struct b_list *ResolveList(struct b_list *lp)
 {
    struct descrip proc;
-   struct descrip var;
    tended struct b_lelem *elsrc;
    tended struct b_lelem *eldest;
    int i, b, nargs;
@@ -321,10 +320,6 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 		*/
 	       tended struct b_lelem *ep;
 	       tended struct b_record *rp;
-	       union block *bptr;
-	       struct descrip fieldptr;
-
-	       int i,nfields, fnum;
 	       tended struct b_list *lp = (struct b_list *)BlkLoc(E->parameter);
 	       ep = (struct b_lelem *)lp->listhead;
 	       if (is:string(ep->lslots[0])) {
@@ -556,7 +551,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       runerr(114, dpsub);
 
    body {
-      int oldpos, start, stop, new_len;
+      int oldpos, start, stop;
       struct b_pattern *pattern;
       tended struct b_pelem *phead;
 
@@ -1816,7 +1811,6 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    dptr call_result;
    struct descrip var;
    tended char *varname;
-   struct descrip class;
    tended char *classname;
    int nfields, fnum, cnlen;
    int oldPos;

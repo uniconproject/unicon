@@ -8,9 +8,6 @@
 " (always succeeds and returns x1)."
 
 function{1} delete(s, x[n])
-   declare {
-      C_integer cmode;
-      }
    abstract {
       return type(s) ** (set ++ table ++ list)
       }
@@ -24,7 +21,6 @@ function{1} delete(s, x[n])
          body {
             register uword hn;
             register union block **pd;
-            union block *bp;     /* does not need to be tended. */
             int res, argc;
 	    
 	    MUTEX_LOCKBLK_CONTROLLED(BlkD(s, Set), "delete(): lock set");
@@ -46,7 +42,6 @@ function{1} delete(s, x[n])
 	    }
       table:
          body {
-            union block *bp;     /* does not need to be tended. */
             register union block **pd;
             register uword hn;
             int res, argc;
@@ -1183,9 +1178,7 @@ function{0,1} member(s, x[n])
 	    return cset
 	    }
 	 body {
-            int res, argc, i;
-            register uword hn;
-
+            int argc, i;
 	    for(argc=0; argc<n; argc++) {
 	       if (!(cnv:string(x[argc], x[argc]))) fail;
 	       for(i=0; i<StrLen(x[argc]); i++)

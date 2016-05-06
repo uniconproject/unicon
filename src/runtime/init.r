@@ -713,7 +713,6 @@ char *argv[];
    {
 #if !COMPILER
    FILE *fname = 0;
-   word cbread;
 #endif					/* COMPILER */
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
     struct threadstate *curtstate;
@@ -1222,6 +1221,7 @@ Deliberate Syntax Error
     */
    if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
 #if HAVE_LIBZ
+      word cbread;
       if ((cbread = gzlongread(code, sizeof(char), (long)hdr.hsize, fname)) !=
 	   hdr.hsize) {
 	 fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",
@@ -2251,7 +2251,6 @@ C_integer bs, ss, stk;
    struct progstate *pstate;
    struct header hdr;
    FILE *fname = NULL;
-   word cbread;
 
    /*
     * open the icode file and read the header
@@ -2338,6 +2337,7 @@ C_integer bs, ss, stk;
 
    if ((strchr((char *)(hdr.config), 'Z'))!=NULL) { /* to decompress */
 #if HAVE_LIBZ
+      word cbread;
       if ((cbread = gzlongread(pstate->Code, sizeof(char), (long)hdr.hsize, fname))
       	   != hdr.hsize) {
 	 fprintf(stderr,"Tried to read %ld bytes of code, got %ld\n",

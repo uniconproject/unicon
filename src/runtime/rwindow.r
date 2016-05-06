@@ -565,8 +565,7 @@ wbp w;
 char *s;
 int len;
    {
-   char *s2 = s, *catenation;
-   wstate *ws = w->window;
+   char *s2 = s;
    tended struct descrip result;
 
    /* turn off the cursor */
@@ -581,6 +580,8 @@ int len;
 #ifdef ScrollingConsoleWin
 #undef fprintf
    if (w == (wbp)ConsoleBinding) {
+      wstate *ws = w->window;
+      char *catenation;
       int i, j=0;
       for(i=0; i<len; i++)
 	 if (s[i]=='\n') j++;
@@ -609,8 +610,8 @@ int len;
 	}
         alcstr("\0", 1);
 	seteditregion(ws->child, catenation);
-      movechild(ws->child, 0, 0, ws->width, ws->height);
-      setfocusonchild(ws, ws->child, ws->width, ws->height);
+        movechild(ws->child, 0, 0, ws->width, ws->height);
+        setfocusonchild(ws, ws->child, ws->width, ws->height);
 	setchildselection(ws, ws->child, StrLen(result), StrLen(result)+len);
 	return;
 	}
@@ -1260,7 +1261,7 @@ int readBMP(char *filename, int p, struct imgdata *imd)
   char headerstuff[52]; /* 54 - 2 byte magic number = 52 */
   int filesize, dataoffset, width, height, compression, imagesize,
       xpixelsperm, ypixelsperm, colorsused, colorsimportant, numcolors;
-  short planes, bitcount;
+  short bitcount;
   int *colortable = NULL;
   char *rasterdata;
   if ((f = fopen(filename, "rb")) == NULL) return Failed;
@@ -2260,14 +2261,10 @@ int writeBMP(wbp w, char *filename, int x, int y, int width, int height)
 
 static int bmpwrite(wbp w, char *filename, int x, int y, int width, int height)
    {
-   int i, a[6], c, cur;
+   int i, a[6];
    short sh[2];
    long len;
-   LinearColor *cp;
-   unsigned char *p, *q;
    struct palentry paltbl[DMAXCOLORS];
-   unsigned char obuf[GifBlockSize];
-   lzwnode tree[GifTableSize + 1];
 
    len = (long)width * (long)height;	/* total length of data */
 
@@ -2742,7 +2739,7 @@ int readImage(char *filename, int p, struct imgdata *imd){
 }
 
 int  writeImage	(wbp w, char *filename, int x, int y, int width, int height){
-   int itype, r = Failed;
+   int itype;
    itype = image_type(filename);
 
    switch (itype){
@@ -3598,14 +3595,12 @@ char * abuf;
 	 break;
 	 }
       case A_RESIZE: {
-	 int on_off;
 	 if (strcmp(val, "on") & strcmp(val, "off"))
 	    return Failed;
          allowresize(w, ATOBOOL(val));
 	 break;
          }
       case A_TITLEBAR: {
-	 int on_off;
          if (w->window->pix != 0) return Failed;
 	 if (strcmp(val, "on") & strcmp(val, "off"))
 	    return Failed;
@@ -4770,7 +4765,6 @@ int guicurses_cols(wbp w)
  */
 void drawRectangle(wbp w,int x,int y,int width,int height)
 {
-  int i;
   XRectangle r[1];
   RECX(r[0]) = x;
   RECY(r[0]) = y;

@@ -619,7 +619,6 @@ alcsegment_macro(alcsegment,0)
 struct b_pattern *f(word stck_size)
 {
    register struct b_pattern *pheader;
-   register struct b_pelem *pelem;
    CURTSTATE();
    
    if (!reserve(Blocks, (word)
@@ -991,7 +990,6 @@ char *f(register char *s, register word slen)
    tended struct descrip ts;
    register char *d;
    char *ofree;
-   int padding;
 
 #ifdef MultiThread
    StrLen(ts) = slen;
@@ -1315,7 +1313,6 @@ char *f(int region, word nbytes)
       newsize = MinAbrSize;
      
    if ((rp = newregion(nbytes, newsize)) != 0) {
-      int tmp_noMTevents;
 #ifdef Concurrent
       /* a new region is allocated, swap the current private
        * region out to the public list.
@@ -1348,6 +1345,8 @@ char *f(int region, word nbytes)
       MUTEX_UNLOCKID(mtx_heap);
       *pcurr = rp;
 #if e_tenurestring || e_tenureblock
+      {
+      int tmp_noMTevents;
       MUTEX_LOCKID(MTX_NOMTEVENTS);
       tmp_noMTevents = noMTevents;
       MUTEX_UNLOCKID(MTX_NOMTEVENTS);
@@ -1360,6 +1359,7 @@ char *f(int region, word nbytes)
             EVVal(rp->size, e_tenureblock);
             }
          }
+      }
 #endif					/* e_tenurestring || e_tenureblock */
     return rp->free;
       }

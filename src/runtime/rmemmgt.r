@@ -1774,9 +1774,7 @@ unsigned long long int physicalmemorysize()
 unsigned long physicalmemorysize()
 #endif					/* NT */
 {
-   char buf[80], *p;
 unsigned long i;
-   FILE *f;
 #if UNIX
 #ifdef SUN
 /*
@@ -1794,6 +1792,10 @@ unsigned long i;
    i = mem;
    return i;
 #else					/* MacOSX */
+   {
+   FILE *f;
+   char buf[80], *p;
+
    /*
     * old method:, use meminfo, if it is present
     */
@@ -1814,6 +1816,7 @@ unsigned long i;
 	 }
       fclose(f);
       }
+   }
    return 0;
    /*
     * No meminfo? Could try "top", but don't want to launch external process

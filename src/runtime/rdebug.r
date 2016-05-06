@@ -130,8 +130,6 @@ char *pfile;
 FILE *logfile; 
    {
 
-dptr arg_l = arg;                      /* Log arguments */ 
-
 #ifndef PresentationManager 
    fprintf(stderr, "   ");
    if (logfile != NULL)

@@ -42,9 +42,10 @@ struct b_coexpr *sblkp;
 #else					/* CoExpr */
    register word *newsp;
    register dptr dp, dsp;
-   int frame_size;
-   word stack_strt;
-   int na, nl, nt, i;
+   int na, nl, i;
+#if COMPILER
+   int nt;
+#endif					/* COMPILER */
    /*
     * Get pointer to refresh block.
     */
@@ -62,7 +63,10 @@ struct b_coexpr *sblkp;
     *  the co-expression block. For down-growing stacks, the C stack starts
     *  at the last word of the co-expression block.
     */
+  {
+   word stack_strt;
 #ifdef UpStack
+   int frame_size;
    frame_size = sizeof(struct p_frame) + sizeof(struct descrip) * (nl + na +
       nt - 1) + rblkp->wrk_size;
    stack_strt = (word)((char *)&sblkp->pf + frame_size + StackAlign*WordSize);
@@ -72,6 +76,7 @@ struct b_coexpr *sblkp;
    sblkp->cstate[0] = stack_strt & ~(WordSize * StackAlign - 1);
 
    sblkp->es_argp = &sblkp->pf.t.d[nl + nt];   /* args follow temporaries */
+   }
 
 #else					/* COMPILER */
 
@@ -786,7 +791,6 @@ void init_threads()
 
 void clean_threads()
 {
-   int i;
    /*
     * Make sure that mutexes, thread stuff are initialized before cleaning
     * them. If not, just return; this might happen if iconx is called with
@@ -805,6 +809,8 @@ void clean_threads()
  */
 
 #if 0
+   {
+   int i;
    /*  keep MTX_SEGVTRAP_N alive	*/
    for(i=1; i<nmutexes; i++){
       pthread_mutex_destroy(mutexes[i]);
@@ -820,6 +826,7 @@ void clean_threads()
    
    free(condvars);
    free(condvarsmtxs);
+   }
 #endif
 }
 

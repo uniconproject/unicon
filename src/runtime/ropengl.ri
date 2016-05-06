@@ -19,7 +19,6 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    wsp  ws;
    wcp  wc;
    int  query;
-   int major, minor;
 
 #ifdef XWindows
    int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
@@ -81,7 +80,7 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
  */
 int init_3dcanvas(wbp  w)
 {
-   GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0};
+/*   GLfloat ambient_model[] = {0.2, 0.2, 0.2, 1.0}; */
    wsp ws;
    wcp wc;
 
@@ -240,8 +239,8 @@ void calcNormal( double* v0, double* v1, double *v2, double* n )
 {
     double a, b, c;
     double d, e, f;
-    double l;
-
+/*    double l;
+*/
     a = v1[0] - v0[0];
     b = v1[1] - v0[1];
     c = v1[2] - v0[2];
@@ -330,9 +329,9 @@ int drawpoly(wbp w, double* v, int num, int type, int dim)
    /* each vertex is of the form (x, y, z) */
    if (dim == 3){
       double *vnorm;
-      int vcount;
+/*      int vcount;
       int normcount;
-      
+*/      
       /*prepare normals for normals auto mode*/
       if(wc->normode==1){ 
          /*vnorm = malloc (num*sizeof(double));*
@@ -898,7 +897,7 @@ int redraw3D(wbp w)
       GLuint        selectionbuf[256];        /* selection buffer */
       GLuint        selectionhits=0;          /* number of hits   */
       GLuint *bufp = selectionbuf;
-      unsigned int j, i = 0;
+      unsigned int j;
 
 
       /*  change the view volume  so that it is only restricted
@@ -938,7 +937,7 @@ int redraw3D(wbp w)
       selectionhits = glRenderMode(GL_RENDER);
 
       if (selectionhits){
-         GLuint name, numnames, z1, z2, z_buf[128];
+         GLuint name, numnames, z1, z_buf[128];
          tended struct b_list *namelist;
          tended struct descrip selectednameslist;
          GLuint savedhits=0;
@@ -1095,7 +1094,7 @@ int traversefunctionlist(wbp w)
 {
    wcp wc = w->context;
    wsp ws = w->window;
-   double x, y, z, r1, r2, h, a1, a2, *v, v2[256];
+   double  *v, v2[256];
    C_integer num, dim;
    C_integer r, g, b, a;
    int i, j, tmp, vsize=256;
@@ -1780,7 +1779,6 @@ int determinematerial(temp, r, g, b, a)
 char *temp;
 C_integer r, g, b, a;
 {
-   struct descrip d;
    GLfloat color[4];
 
    /*
@@ -1885,9 +1883,6 @@ int setlinewidth3D(wbp w, LONG linewid)
  */
 int setmaterials(wbp w, char* s)
 {
-#ifdef XWindows
-   wdp wd = w->window->display;
-#endif					/* XWindows */
    int k, j, i = 0;
    long rd, gr, bl, al;
    GLfloat shine;
@@ -1895,7 +1890,7 @@ int setmaterials(wbp w, char* s)
    char sbuf1[MaxCvtLen];
    char sbuf2[MaxCvtLen];
    tended struct descrip f;
-   struct descrip material, r, b, g, a, gg;
+   struct descrip material, r, b, g, a;
 
    makecurrent(w);
    while(s[i]) {
@@ -2473,9 +2468,8 @@ int imagestr(wbp w, char* str)
 /* convert a file into a opengl texture */
 int fileimage(wbp w, char* filename)
 {
-   int r, i, nwidth, nheight;
+   int r, i;
    int status;
-   word l;
    struct imgdata im;
 
    im.format = UCOLOR_RGB;
@@ -2530,9 +2524,6 @@ int fileimage(wbp w, char* filename)
 int textureimg(wbp w, int width, int height,
                struct palentry *e, unsigned char *s, word len)
 {
-#ifdef XWindows
-   wdp wd = w->window->display;
-#endif					/* XWindows */
    wcp wc = w->context;
    int c, v, i;
    unsigned int ix = 0, iy = height -1;
@@ -2595,9 +2586,6 @@ int textureimg(wbp w, int width, int height,
 /* convert a bi-level image into an opengl texture */
 int bltex(wbp w, int width, int height, int ch, char *s, word len)
 {
-#ifdef XWindows
-   wdp wd = w->window->display;
-#endif					/* XWindows */
    wcp wc = w->context;
    unsigned int m, msk1, c, ix, iy;
    int r, b, g, i, l;
@@ -2886,7 +2874,6 @@ int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
    wtp wt;
    wdp wd = wc->display;
    int i, saved_tex;
-   CURTSTATE();
 
    makecurrent(w);
    i=0;
@@ -2948,13 +2935,10 @@ int lookup_texture_byname(wbp w, char *name, int len, int ttype, int curtex)
 
 int texture_24img(wbp w, struct imgdata im)
 {
-#ifdef XWindows
-   wdp wd = w->window->display;
-#endif					/* XWindows */
    wcp wc = w->context;
    int width=im.width, height=im.height;
-   word l, wd3x2=width*3*2, wh3=width*height*3;
-   int c, v, i, j, k;
+   word l, wd3x2=width*3*2;
+   int i, j;
    unsigned char *t;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
    makecurrent(w);
@@ -2977,10 +2961,12 @@ int texture_24img(wbp w, struct imgdata im)
    	l -= wd3x2;
 	}
 #else					/* XWindows */
+   {
+   word l, wd3x2=width*3*2, wh3=width*height*3;
    for(l=0; l < wh3; l+=3, t+=3) {
- 
-     tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
+      tex[l] = t[0]; tex[l+1] = t[1]; tex[l+2] = t[2];
       }
+   }
 #endif					/* XWindows */
 
    /* set the texture */
@@ -2999,6 +2985,7 @@ int texture_24img(wbp w, struct imgdata im)
 
 int drawstrng3d(wbp w, double x, double y, double z, char *s)
 {
+#if HAVE_LIBFTGL
    int xx=0;
    char *p, *q;
 #ifdef WIN32
@@ -3008,7 +2995,7 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
 #endif
    static char *full_name = NULL;
    FILE *f = 0;
-#if HAVE_LIBFTGL
+
    int len_full_name=0, len_path=0, len_font;
 
    if (!curr_font) {
@@ -3098,9 +3085,6 @@ srch_3dfont(char *fname, int fsize, char ftype)
 
 int setmeshmode(wbp w, char* s)
 {
-#ifdef XWindows
-   wdp wd = w->window->display;
-#endif                                  /* XWindows */
    int draw_code, t=0;
    static dptr constr;
    int nfields;
@@ -3221,7 +3205,7 @@ int TexDrawLine(wbp w, int texhandle, int x1, int y1, int x2, int y2)
    char steep, ystep;
    int cred, cgreen, cblue;
    int wd3, wd, ht, yy, xx, l, yb, yt, xl, xr,
-        dx, dy, ee, ty, tx, clip1, clip2, y0, x0,
+        dx, dy, ee, tx, clip1, clip2, y0, x0,
 	top, rit, pixelshift;
    GLubyte *tex;
 
@@ -3386,9 +3370,8 @@ int TexDrawRect(wbp w, int texhandle, int x, int y, int width, int height)
 {
    wcp wc=w->context;
    int x2, y2;
-   char steep, ystep;
    int cred, cgreen, cblue;
-   int wd3, wd, ht, w3, yy, xx, l;
+   int wd3, wd, ht, yy, xx, l;
    GLubyte *tex;
    int skipTop=0, skipBottom=0, skipLeft=0, skipRight=0,
        flipx=0, flipy=0; 
@@ -3473,9 +3456,8 @@ int TexFillRect(wbp w, int texh, int x, int y, int width, int height, int isfg)
 {
    wcp wc=w->context;
    int x2, y2;
-   char steep, ystep;
    int cred, cgreen, cblue;
-   int wd3, wd, ht, w3, yy, xx, l;
+   int wd3, wd, ht, yy, xx, l;
    GLubyte *tex;
 
    if (isfg){
@@ -3531,7 +3513,6 @@ int TexFillRect(wbp w, int texh, int x, int y, int width, int height, int isfg)
 int TexDrawPoint(wbp w, int texhandle, int x, int y)
 {
    wcp wc=w->context;
-   char bfmode = wc->buffermode;
    int cred, cgreen, cblue, l, wd, ht;
    GLubyte *tex;
 
@@ -3644,13 +3625,9 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
    struct imgmem imem;
    int i, j, l, twd3;
    long rv;
-   wsp ws = w2d->window;
-   char strout[50];
-   char *s2;
    LinearColor clr;
    wclrp cp;
-   unsigned long c, *c2;
-   wcp wc = w2d->context;
+   unsigned long c;
 #ifdef XWindows
    wdp wd = w2d->window->display;
    Display *stddpy = wd->display;
@@ -3723,10 +3700,14 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 	      l = l + 3;
 	      }
 #else
- 	   if (getpixel(w2d, i, height-j, &rv, strout, &imem) == Failed)
-            return Failed;
-	   s2 = strout;
-         /* parse string to get pixel values */
+	   {
+	   char *s2, strout[50];
+
+	   if (getpixel(w2d, i, height-j, &rv, strout, &imem) == Failed)
+               return Failed;
+
+           *s2 = strout;
+           /* parse string to get pixel values */
 	   while(isspace(*s2)) s2++;
            tex[l] = atoi(s2)/256;
   	   while(isdigit(*s2)) s2++;
@@ -3736,6 +3717,7 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
   	   s2++;
            tex[l+2] = atoi(s2)/256;
 	   l = l + 3;
+	   }
 #endif
         }
       }
@@ -3750,7 +3732,7 @@ int copyareaToTex3D(wbp w3d, GLubyte *tex, int x, int y,
     int width, int height, int xt, int yt, int txw, int txh)
 {
    wcp wc = w3d->context;
-   int i, j, k, twd3, l, m;
+   int i, j, twd3, l, m;
    GLubyte *tex2;
 
    tex2 = (GLubyte *) malloc((height) * (width) * 4);

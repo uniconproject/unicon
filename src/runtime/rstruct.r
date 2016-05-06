@@ -942,7 +942,7 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
    {
    int rv;
    uword hn;
-   union block **foo, **bar;
+   union block **foo;
    /*
     * Build a Unicon string for the event code.
     */
@@ -1073,7 +1073,6 @@ union block * mkRlist(double x[], int n)
   tended struct b_lelem *bp;
   register word i, size;
   word nslots;
-  register struct b_real *rblk; /* does not need to be tended */
 
   nslots = size = n;
   if (nslots == 0) nslots = MinListSlots;
@@ -1089,8 +1088,11 @@ union block * mkRlist(double x[], int n)
 #ifdef DescriptorDouble
     bp->lslots[i].vword.realval = x[i];
 #else					/* DescriptorDouble */
+    {
+    register struct b_real *rblk; /* does not need to be tended */
     Protect(rblk = alcreal(x[i]), ReturnErrNum(307,NULL));
     bp->lslots[i].vword.bptr = (union block *)rblk;
+    }
 #endif					/* DescriptorDouble */
     bp->lslots[i].dword = D_Real;
   }
@@ -1160,13 +1162,15 @@ int arraytolist(struct descrip *arr)
       lparr->listhead = lparr->listtail = (union block *)lelemp;
       
       if (ndims==1) {
-	 struct b_real *xp;
 	 for (i=0; i<lsize; i++) {
 #ifdef DescriptorDouble
 	    lelemp->lslots[i].vword.realval = (double)ap->a[i];
 #else					/* DescriptorDouble */
+	    {
+	    struct b_real *xp;
 	    xp = alcreal((double)ap->a[i]);
 	    lelemp->lslots[i].vword.bptr = (union block *) xp;
+	    }
 #endif					/* DescriptorDouble */
 	    lelemp->lslots[i].dword = D_Real;
 	    lelemp->nused++;
@@ -1192,7 +1196,6 @@ int arraytolist(struct descrip *arr)
 	 } /* (ndims==2) */
      else { /* (ndims > 2) */
 	 struct b_realarray *ap2;
-	 struct b_intarray *dims = NULL;
 	 int n=ap->dims->Intarray.a[1];
 	 int base=0, j;
 	 
@@ -1262,7 +1265,6 @@ int arraytolist(struct descrip *arr)
 	 } /* (ndims==2) */
      else { /* (ndims > 2) */
 	 struct b_intarray *ap2;
-	 struct b_intarray *dims = NULL;
 	 int n=ap->dims->Intarray.a[1];
 	 int base=0, j;
 	 

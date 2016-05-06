@@ -1237,7 +1237,6 @@ struct b_coexpr *ce;
    struct astkblk *abp = ce->es_actstk, *oabp;
    struct actrec *arp;
    struct b_coexpr *actvtr;
-   CURTSTATE();
 
 #ifdef MultiThread
    /*

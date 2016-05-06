@@ -126,7 +126,6 @@ struct b_file *fbp;
    static char savedbuf[BUFSIZ];
    static int nsaved = 0;
 #endif					/* PosixFns */
-   CURTSTATE();
 
 #if AMIGA
 #if LATTICE
@@ -481,7 +480,6 @@ dptr d;
    {
    register char *s;
    register word l;
-   register int  i;
    l = StrLen(*d);
    if (l == 0)
       return  Succeeded;
@@ -1533,8 +1531,6 @@ struct ptstruct *ptopen(char *command)
    SECURITY_ATTRIBUTES sa;
    PROCESS_INFORMATION pi;
    STARTUPINFO si;
-#else					/* NT */
-   int pstatus;
 #endif					/* NT */
 
    /* allocating new ptstruct */
@@ -1862,7 +1858,7 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
 int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
 {
    long bytes_written;
-   int ret=0, pstatus, sel_ret;
+   int ret=0, sel_ret;
 
    if (ptStruct == NULL || buffer == NULL || bufsize < 1)
       return -1;
@@ -1953,7 +1949,6 @@ void detectRedirection()
 #passthru #define stat _stat64i32
 #passthru #endif
 #endif					/* NTGCC && WordBits==32*/
-      struct stat statbuf;
    struct stat sb;
    /*
     * Look at the standard file handles and attempt to detect
@@ -1995,10 +1990,9 @@ void detectRedirection()
  */
 int CmdParamToArgv(char *s, char ***avp, int dequote)
 {
-   char tmp[MaxPath], dir[MaxPath];
+   char tmp[MaxPath];
    char *t=salloc(s), *t2=t;
-   int rv=0, i=0;
-   FILE *f=NULL;
+   int rv=0;
 
    *avp = malloc(2 * sizeof(char *));
    (*avp)[rv] = NULL;
@@ -2086,6 +2080,7 @@ skipredirect:
 #if NT
                }
 	    else {
+   	       char dir[MaxPath];
                int end;
                strcpy(dir, t3);
 	       do {

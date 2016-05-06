@@ -168,7 +168,6 @@ operator{*} = tabmat(x)
 	 
 	 char * pattern_subject;
 	 int subject_len;
-	 int new_len;
 #if !ConcurrentCOMPILER
 	 CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
@@ -416,7 +415,6 @@ operator{1} [...] llist(elems[n])
       }
    body {
       tended struct b_list *hp;
-      register word i;
       word nslots;
 
       nslots = n;

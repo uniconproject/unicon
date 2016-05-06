@@ -14,6 +14,7 @@ HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/rproto.h ../h/mproto.h ../h/version.h ../h/sys.h
 
 GRAPHICSHDRS = ../h/graphics.h ../h/xwin.h
+GRAPHICSRI = rpmwin.ri rmac.ri rxwin.ri rmswin.ri rwin3d.ri ropengl.ri rd3d.ri
 
 default: iconx
 all:	interp_all comp_all
@@ -293,7 +294,7 @@ xrgfxsys.$(O): rgfxsys.r $(HDRS) $(GRAPHICSHDRS)
 	$(CC) $(CFLAGS) -c xrgfxsys.c
 	$(RM) xrgfxsys.c
 
-xrwinsys.$(O): rwinsys.r $(HDRS) $(GRAPHICSHDRS) rmswin.ri rwin3d.ri ropengl.ri
+xrwinsys.$(O): rwinsys.r $(HDRS) $(GRAPHICSHDRS) $(GRAPHICSRI)
 	$(RTT) -x rwinsys.r
 	$(CC) $(CFLAGS) -c xrwinsys.c
 	$(RM) xrwinsys.c

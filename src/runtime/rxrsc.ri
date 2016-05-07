@@ -79,7 +79,9 @@ int is_iconcolor;
    int *numColors;
    int *sizColors;
    short **theColors;
-   STDLOCALS(w);
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
 
    /*
     * handle black and white specially (no allocation)
@@ -131,7 +133,7 @@ int is_iconcolor;
        * first verify there is room in window color table.
        */
       if (*numColors >= *sizColors-1) {
-	 if (*numColors >= 2 << DefaultDepth(wd->display, wd->screen))
+	 if (*numColors >= 2 << DefaultDepth(stddpy, wd->screen))
 	    return NULL;
 	 (*theColors) = realloc(*theColors, *sizColors * 2 * sizeof(short));
 	 *sizColors *= 2;
@@ -466,7 +468,7 @@ wbp w1, w2;
 	 }
       }
    }
-
+
 /*
  * free a single color allocated by a given window
  */
@@ -475,7 +477,8 @@ wbp w;
 unsigned long c;
    {
    int i;
-   STDLOCALS(w);
+   wsp ws = w->window;
+   wdp wd = ws->display;
 
    for (i = 0; i < ws->numColors; i++) {
       if (wd->colors[ws->theColors[i]].c == c) break;
@@ -486,14 +489,14 @@ unsigned long c;
    else {
       if (--(wd->colors[ws->theColors[i]].refcount) == 0) {
 	 buckdelete(wd, &(wd->colors[ws->theColors[i]]));
-	 XFreeColors(stddpy, wd->cmap, &c, 1, 0);
+	 XFreeColors(wd->display, wd->cmap, &c, 1, 0);
 	 ws->numColors--;
 	 if (ws->numColors != i)
 	    ws->theColors[i] = ws->theColors[ws->numColors];
          }
       }
    }
-
+
 /*
  * free the colors allocated by a given window.  extent indicates how much
  * to free.  extent == 0 implies window colors except black, white,
@@ -510,7 +513,8 @@ int extent;
    int *numColors;
    int numSaved;
    short *theColors;
-   STDLOCALS(w);
+   wsp ws = w->window;
+   wdp wd = ws->display;
 
    numColors = (extent==1 ? &(ws->numiColors) : &(ws->numColors));
    theColors = (extent==1 ? ws->iconColors : ws->theColors);
@@ -561,11 +565,11 @@ int extent;
          }
       }
    if (freed>0)
-      XFreeColors(stddpy, wd->cmap, toFree, freed,0);
+      XFreeColors(wd->display, wd->cmap, toFree, freed,0);
    *numColors = numSaved;
    free(toFree);
    }
-
+
 /*
  * Allocate a virtual colormap with all colors used by the client copied from
  * the default colormap to new colormap, and set all windows to use this new
@@ -574,8 +578,9 @@ int extent;
 int go_virtual(w)
 wbp w;
 {
-   wsp win;
-   STDLOCALS(w);
+   wsp ws;
+   wdp wd = w->window->display;
+   Display *stddpy = wd->display;
 
    if (wd->cmap != DefaultColormap(stddpy,wd->screen))
       return 0;    /* already using a virtual colormap */
@@ -584,13 +589,13 @@ wbp w;
 
    /* set the colormap for all the windows to the new colormap */
 
-   for (win = wstates; win; win = win->next)
-      if ((win->display->display == stddpy) & (win->win != (Window)NULL))
-         XSetWindowColormap(stddpy, win->win, wd->cmap);
+   for (ws = wstates; ws; ws = ws->next)
+      if ((ws->display->display == stddpy) & (ws->win != (Window)NULL))
+         XSetWindowColormap(stddpy, ws->win, wd->cmap);
 
    return 1;
 }
-
+
 /*
  * allocate a display on machine s
  */

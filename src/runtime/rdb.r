@@ -322,5 +322,8 @@ void odbcerror(struct ISQLFile *fp, int errornum)
 }
 
 #else					/* ISQL */
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
 static int nothing;
+#passthru #pragma GCC pop
 #endif					/* ISQL */

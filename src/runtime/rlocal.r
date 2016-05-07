@@ -1617,4 +1617,7 @@ int kbhit()
  * End of operating-system specific code.
  */
 
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
 static char xjunk;			/* avoid empty module */
+#passthru #pragma GCC pop

@@ -988,14 +988,17 @@ int t;
  */
 void postcursor(wbp w)
    {
-   STDLOCALS(w);
-
-   if (!ISCURSORON(w) || !stdwin) return;
-   if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, GXcopy);
-   if (ISXORREVERSE(w)) XSetForeground(stddpy, stdgc, wd->colors[wc->fg].c);
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
+   
+   if (!ISCURSORON(w) || !ws->win) return;
+   if (wc->drawop != GXcopy) XSetFunction(stddpy, wc->gc, GXcopy);
+   if (ISXORREVERSE(w)) XSetForeground(stddpy, wc->gc, wd->colors[wc->fg].c);
 
    /* Draw only on window, not on backing pixmap */
-   XFillRectangle(stddpy, stdwin, stdgc, ws->x, ws->y, FWIDTH(w), DESCENT(w));
+   XFillRectangle(stddpy, ws->win, wc->gc, ws->x, ws->y, FWIDTH(w), DESCENT(w));
    XSync(stddpy, False);
    }
 

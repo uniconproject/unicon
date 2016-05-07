@@ -375,9 +375,8 @@ char *getselection(wbp w, char *buf)
 {
    int i;
    char *s;
-   STDLOCALS(w);
 
-   s = copyselection(ws, buf, &i);
+   s = copyselection(w->window, buf, &i);
    if (i == -1) return NULL;
 
    return s;
@@ -631,7 +630,6 @@ wbp w;
    }
    return 1;
    }
-
 
 /*
  * handle_misc processes pending events on display.
@@ -642,7 +640,6 @@ int handle_misc(wdp wd, wbp w)
 {
    XEvent event;
    Window evwin;
-   int i;
    static int presscount = 0;
    wbp wb;
    wsp ws;
@@ -951,7 +948,7 @@ int pollevent()
 
    return 400;
    }
-
+
 /*
  * get a single item from w's pending queue
  */
@@ -963,7 +960,8 @@ int t;
    int posted = 0;
 
    while (1) {
-      STDLOCALS(w);		/* leave inside loop; ws->pix can change! */
+      wdp wd = w->window->display; /* leave inside loop; ws->pix can change! */
+      
       if (!EVQUEEMPTY(w)) {
 	 EVQUEGET(w,*res);
 	 if (posted)
@@ -1025,9 +1023,8 @@ wbp w;
    wbp tmp_wb;
    wbp p;
    struct wbind_list *wbl, *t, *b;
-   int i;
-
-   STDLOCALS(w);
+   wsp ws = w->window;
+   Display *stddpy = ws->display->display;
 
    XSync(stddpy, False);
    if (pollevent() == -1) return -1;
@@ -1036,15 +1033,15 @@ wbp w;
     * Force window to close (turn into a pixmap)
     */
 
-   while (w->window->children) {
+   while (ws->children) {
       tmp_wb = w->window->children->child;
-      wbl = w->window->children;
+      wbl = ws->children;
 #ifdef Graphics3D
       if(tmp_wb->window->is_3D)
 	 release_3d_resources(tmp_wb);
 #endif						/* Graphics3D */
-      w->window->children = w->window->children->next;
-      w->window->display->refcount--;
+      ws->children = ws->children->next;
+      ws->display->refcount--;
       tmp_wb->refcount--;
       tmp_wb->window->parent=NULL;
       w->refcount--;
@@ -1054,7 +1051,7 @@ wbp w;
       wbl->next=NULL;
       free(wbl);
       }
-   p = w->window->parent;
+   p = ws->parent;
    if (p) {
       t = p->window->children;
       b = NULL;
@@ -1072,7 +1069,7 @@ wbp w;
 	 b=t;
 	 t = t->next;
 	 }
-      w->window->parent=NULL;
+      ws->parent=NULL;
       p->refcount--;
       }
 
@@ -1083,7 +1080,7 @@ wbp w;
    
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
-      XDestroyWindow(stddpy,stdwin);
+      XDestroyWindow(stddpy,ws->win);
       XFlush(stddpy);
       ws->refcount--;
       while (ws->win)
@@ -1095,21 +1092,22 @@ wbp w;
    else {
       free_xcolors(w, 2);
       free_xcolors(w, 1);
-/*      free_window(ws);  */
+      /* free_window(ws);  */
       free_binding(w);
       }
  
    return 0;
    }
+   
 /*
  * flush a window
  */
 void wflush(w)
 wbp w;
    {
-   STDLOCALS(w);
-   XFlush(stddpy);
+   XFlush(w->window->display->display);
    }
+   
 /*
  * flush all windows
  */
@@ -1120,6 +1118,7 @@ void wflushall()
       XFlush(wd->display);
       }
    }
+   
 /*
  * sync all the servers
  */
@@ -1135,7 +1134,7 @@ wbp w;
    else
       XSync(w->window->display->display, False);
    }
-
+
 /*
  * open a window
  * This routine really just allocates a window data structure.
@@ -1254,7 +1253,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       }
    return (FILE *)w;
    }
-
+
 /*
  * make an icon for a window
  */
@@ -1263,7 +1262,10 @@ wbp w;
 int x, y;		/* current mouse position */
 {
    int status;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
    
    /* if a pixmap image has been specified, load it */
    if (ws->initicon.width) {
@@ -1303,7 +1305,7 @@ int x, y;		/* current mouse position */
 		StructureNotifyMask);
 
 }
-
+
 
 /*
  * setclasshints(w) - called by wmap() and my_wmap().
@@ -1345,7 +1347,6 @@ int wmap(wbp w)
    struct imgdata *imd;
    int i, r;
    int new_pixmap = 0;
-   char *p, *s;
    XWMHints wmhints;
    CURTSTATE();
    STDLOCALS(w);
@@ -1617,7 +1618,7 @@ int wmap(wbp w)
    XSync(stddpy, False);
    return Succeeded;
 }
-
+
 
 int do_config(w, status)
 wbp w;
@@ -1668,9 +1669,8 @@ int setheight(w, new_height)
 wbp w;
 SHORT new_height;
    {
-   STDLOCALS(w);
    if (new_height < 0) return Failed;
-   ws->height = size_hints.height = new_height;
+   w->window->height = size_hints.height = new_height;
    return Succeeded;
    }
 
@@ -1678,9 +1678,8 @@ int setwidth(w, new_width)
 wbp w;
 SHORT new_width;
 {
-   STDLOCALS(w);
    if (new_width < 0) return Failed;
-   ws->width = size_hints.width = new_width;
+   w->window->width = size_hints.width = new_width;
    return Succeeded;
 }
 
@@ -1690,7 +1689,7 @@ char *geo;
    {
    int width = 0, height = 0;
    int x = 0, y = 0, status;
-   STDLOCALS(w);
+   wsp ws = w->window;
 
    if ((status = parsegeometry(geo, &x, &y, &width, &height)) == 0)
       return RunError;
@@ -1701,13 +1700,13 @@ char *geo;
    /*
     * can't set position on hidden windows (but can on opening ones)
     */
-   if ((stdwin || !stdpix) && (status & 2)) {
+   if ((ws->win || !ws->pix) && (status & 2)) {
       ws->posx = x;
       ws->posy = y;
       }
    /* insert assigns here:
     *  ws->posx = ((sign > 0) ? tmp :
-    *              DisplayWidth(stddpy,wd->screen) - ws->width - tmp);
+    *              DisplayWidth(stdpy,wd->screen) - ws->width - tmp);
     *  ws->posy = ((sign > 0) ? tmp :
     *              DisplayHeight(stddpy,wd->screen) - ws->height - tmp);
     */
@@ -1724,7 +1723,7 @@ int on;
       CLRRESIZABLE(w);
    return Succeeded;
    }
-
+
 void warpPointer(w, x, y)
 wbp w;
 int x, y;
@@ -1732,7 +1731,7 @@ int x, y;
    wsp ws = w->window;
    XWarpPointer(ws->display->display, None, ws->win, 0,0,0,0, x, y);
    }
-
+
 /*
  * #@#@ This is a bug
  */
@@ -1740,17 +1739,19 @@ int seticonlabel(w, val)
 wbp w;
 char *val;
    {
+   wsp ws = w->window;
+   wdp wd = ws->display;
    CURTSTATE();
-   STDLOCALS(w);
+
    if (ws->iconlabel != NULL) free(ws->iconlabel);
    if ((ws->iconlabel = salloc(val)) == NULL)
       ReturnErrNum(305, RunError);
    
-   if (stddpy && stdwin) {
-      XSetIconName(stddpy, stdwin, w->window->iconlabel);
+   if (wd->display && ws->win) {
+      XSetIconName(wd->display, ws->win, ws->iconlabel);
       if (ws->iconic == IconicState && !ws->iconpix && ws->iconwin) {
-	 XClearWindow(stddpy, ws->iconwin);
-	 XDrawString(stddpy, ws->iconwin, wd->icongc, 4,
+	 XClearWindow(wd->display, ws->iconwin);
+	 XDrawString(wd->display, ws->iconwin, wd->icongc, 4,
 		     wd->fonts->fsp->max_bounds.ascent + 2,
 		     ws->iconlabel, strlen(ws->iconlabel));
 	 }
@@ -1799,17 +1800,19 @@ wbp w;
 char *val;
    {
    int i = si_s2i(cursorsyms,val) >> 1;
-   STDLOCALS(w);
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   
    if (i < 0 || i >= NUMCURSORSYMS) return Failed;
 
    ws->theCursor = i;
    if (!(wd->cursors[i]))
-      wd->cursors[i] = XCreateFontCursor(stddpy, 2 * i);
-   if (stdwin)
-      XDefineCursor(stddpy, stdwin, wd->cursors[i]);
+      wd->cursors[i] = XCreateFontCursor(wd->display, 2 * i);
+   if (ws->win)
+      XDefineCursor(wd->display, ws->win, wd->cursors[i]);
    return Succeeded;
    }
-
+
 /*
  * setdrawop() - set the drawing operation
  */
@@ -1817,27 +1820,29 @@ int setdrawop(w, val)
 wbp w;
 char *val;
    {
-   STDLOCALS(w);
-   XSync(stddpy, False);
+   wcp wc = w->context;
+   wdp wd = w->window->display;
+   
+   XSync(wd->display, False);
    if (!strcmp(val,"reverse")) {
       if (!ISXORREVERSE(w)) {
 	 SETXORREVERSE(w);
 	 wc->drawop = GXxor;
-	 if (stdgc)
-	    XSetForeground(stddpy, stdgc,
+	 if (wc->gc)
+	    XSetForeground(wd->display, wc->gc,
 			   wd->colors[wc->fg].c ^ wd->colors[wc->bg].c);
 	 }
       }
    else {
       if (ISXORREVERSE(w)) {
 	 CLRXORREVERSE(w);
-	 if (stdgc)
-	    XSetForeground(stddpy, stdgc, wd->colors[wc->fg].c);
+	 if (wc->gc)
+	    XSetForeground(wd->display, wc->gc, wd->colors[wc->fg].c);
 	 }
       wc->drawop = si_s2i(drawops,val);
       if (wc->drawop == -1) { wc->drawop = GXcopy; return RunError; }
       }
-   if (stdgc) XSetFunction(stddpy, stdgc, wc->drawop);
+   if (wc->gc) XSetFunction(wd->display, wc->gc, wc->drawop);
    return Succeeded;
    }
 
@@ -1965,8 +1970,11 @@ char *s;
    {
    int hm;
    XTextProperty textprop;
-   STDLOCALS(w);
-
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
+   Window  stdwin  = ws->win;
+   
    if (!strcmp(s, "iconic")) {
       if (ws->pix == (Pixmap) NULL) {
 	 ws->wmhintflags |= StateHint;
@@ -1975,10 +1983,10 @@ char *s;
       else {
 	 if (ws->iconic != IconicState) {
 #ifdef Iconify
-	    if (ws->win == (Window) NULL) {
+	    if (stdwin == (Window) NULL) {
 	       wmap(w);
 	       }
-	    XIconifyWindow(ws->display->display, ws->win, ws->display->screen);
+	    XIconifyWindow(ws->display->display, stdwin, ws->display->screen);
 	    XSync(stddpy, False);
 	    while (ws->iconic != IconicState)
 	       if ((hm = handle_misc(wd, NULL)) < 1) {
@@ -1999,7 +2007,7 @@ char *s;
 	 ws->iconic = NormalState;
 	 }
       else {
-	 if (ws->win == (Window) NULL) {
+	 if (stdwin == (Window) NULL) {
 	    ws->iconic = NormalState;
 	    ws->initialPix = ws->pix;
 	    ws->pix = (Window) NULL;
@@ -2047,7 +2055,7 @@ char *s;
 	 ws->width = DisplayWidth(stddpy, wd->screen);
 	 ws->height= DisplayHeight(stddpy, wd->screen);
 	 if (ws->pix != (Pixmap) NULL) {
-	    if (ws->win == (Window) NULL) {
+	    if (stdwin == (Window) NULL) {
 	       ws->iconic = MaximizedState;
 	       ws->initialPix = ws->pix;
 	       ws->pix = (Window) NULL;
@@ -2068,7 +2076,7 @@ char *s;
 	       if (pollevent() == -1) return RunError;
 	       moveWindow(w, -ws->posx, -ws->posy);
 	       XFlush(wd->display);			      /* force out request */
-	       XGetWMName(wd->display, ws->win, &textprop);    /* force WM round trip */
+	       XGetWMName(wd->display, stdwin, &textprop);    /* force WM round trip */
 	       XSync(wd->display, False);		      /* NOW sync */
 	       }
 	    }
@@ -2080,7 +2088,7 @@ char *s;
 	 ws->iconic = HiddenState;
 	 }
       else {
-	 if (ws->win != (Window) NULL) {
+	 if (stdwin != (Window) NULL) {
 	    if (ws->iconic == MaximizedState) {
 	       ws->posx = ws->normalx;
 	       ws->posy = ws->normaly;
@@ -2113,7 +2121,7 @@ int seticonicstate(w,s)
 wbp w;
 char *s;
    {
-   STDLOCALS(w);
+   wsp ws = w->window;
 
    if (!strcmp(s, "icon")) {
       if (ws->pix == (Pixmap) NULL) {
@@ -2133,7 +2141,7 @@ char *s;
    else if (!strcmp(s, "window")) {
       if (ws->win != (Window) NULL) {
 	 if (ws->iconic == IconicState) {
-	    XMapWindow(stddpy, stdwin);
+	    XMapWindow(ws->display->display, ws->win);
 	    }
 	 }
       }
@@ -2187,12 +2195,12 @@ void moveWindow(w,x,y)
 wbp w;
 int x, y;
 {
-   STDLOCALS(w);
+   wsp ws = w->window;
    ws->posx = x;
    ws->posy = y;
-   if (stdwin) {
-      XMoveWindow(stddpy, stdwin, ws->posx, ws->posy);
-      XSync(stddpy, False);
+   if (ws->win) {
+      XMoveWindow(ws->display->display, ws->win, ws->posx, ws->posy);
+      XSync(ws->display->display, False);
       }
 }
 
@@ -2237,7 +2245,7 @@ int setfillstyle(w, s)
 wbp w;
 char *s;
    {
-   STDLOCALS(w);
+   wcp wc = w->context;
 
    if (!strcmp(s, "solid")) {
       wc->fillstyle = FillSolid;
@@ -2251,8 +2259,8 @@ char *s;
       wc->fillstyle = FillOpaqueStippled;
       }
    else return RunError;
-   if (stdpix) {
-      XSetFillStyle(stddpy, stdgc, wc->fillstyle);
+   if (w->window->pix) {
+      XSetFillStyle(w->window->display->display, wc->gc, wc->fillstyle);
       }
    return Succeeded;
    }
@@ -2264,8 +2272,8 @@ int setlinestyle(w, s)
 wbp w;
 char *s;
    {
-   STDLOCALS(w);
-
+   wcp wc = w->context;
+   
    if (!strcmp(s, "solid")) {
       wc->linestyle = LineSolid;
       }
@@ -2276,8 +2284,8 @@ char *s;
       wc->linestyle = LineDoubleDash;
       }
    else return RunError;
-   if (stdpix) {
-      XSetLineAttributes(stddpy, stdgc,
+   if (w->window->pix) {
+      XSetLineAttributes(w->window->display->display, wc->gc,
 	 wc->linewidth, wc->linestyle, CapProjecting, JoinMiter);
       }
    return Succeeded;
@@ -2292,11 +2300,11 @@ LONG linewid;
    {
    unsigned long gcmask;
    XGCValues gcv;
-   STDLOCALS(w);
+   wcp wc = w->context;
 
    if (linewid < 0) return RunError;
    wc->linewidth = linewid;
-   if (stdpix) {
+   if (w->window->pix) {
       gcv.line_width = linewid;
       gcv.line_style = wc->linestyle;
       if (linewid > 1)
@@ -2304,7 +2312,7 @@ LONG linewid;
       else
 	 gcv.dashes = 4;
       gcmask = GCLineWidth | GCLineStyle | GCDashList;
-      XChangeGC(stddpy, stdgc, gcmask, &gcv);
+      XChangeGC(w->window->display->display, wc->gc, gcmask, &gcv);
       }
    return Succeeded;
    }
@@ -2355,8 +2363,8 @@ wbp w;
 int fg;
    {
    int i, r, g, b;
-   STDLOCALS(w);
-
+   wdp wd = w->window->display;
+   
    if (fg >= 0) {
       b = fg & 255;
       fg >>= 8;
@@ -2369,7 +2377,7 @@ int fg;
       if (wd->colors[i].type == CLR_MUTABLE && wd->colors[i].c == -fg - 1)
 	 break;
    if (i == DMAXCOLORS) return Failed;
-   wc->fg = i;
+   w->context->fg = i;
    return resetfg(w);
    }
 
@@ -2409,7 +2417,8 @@ wbp w;
 int bg;
    {
    int i, r, g, b;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wdp wd = w->window->display;
 
    if (bg >= 0) {
       b = bg & 255;
@@ -2424,8 +2433,8 @@ int bg;
 	 break;
    if (i == DMAXCOLORS) return Failed;
    wc->bg = i;
-   if (stdgc != NULL)
-      XSetBackground(stddpy, stdgc, wd->colors[wc->bg].c);
+   if (wc->gc != NULL)
+      XSetBackground(wd->display, wc->gc, wd->colors[wc->bg].c);
    return ISXORREVERSE(w) ? resetfg(w) : Succeeded;
    }
 
@@ -2473,7 +2482,7 @@ int i;
    w->context->leading = i;
    return Succeeded;
 }
-
+
 int setimage(w, val)
 wbp w;
 char *val;
@@ -2485,22 +2494,24 @@ char *val;
    if (ws->initialPix == (Pixmap) NULL) return Failed;
    return Succeeded;
    }
-
+
 void toggle_fgbg(w)
 wbp w;
 {
    int tmp;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wdp wd = w->window->display;
+
    tmp = wc->fg;
    wc->fg = wc->bg;
    wc->bg = tmp;
-   if (stdpix) {
-      XSetForeground(stddpy, stdgc,
+   if (w->window->pix) {
+      XSetForeground(wd->display, wc->gc,
 		     wd->colors[wc->fg].c ^ (ISXORREVERSE(w)?wd->colors[wc->bg].c:0));
-      XSetBackground(stddpy, stdgc, wd->colors[wc->bg].c);
+      XSetBackground(wd->display, wc->gc, wd->colors[wc->bg].c);
       }
 }
-
+
 void getdisplay(w, answer)
 wbp w;
 char *answer;
@@ -2531,14 +2542,15 @@ wbp w;
    Window garbage1, garbage2;
    int root_x, root_y, win_x, win_y;
    unsigned int key_buttons;
-   STDLOCALS(w);
-   if (!stdwin) return Failed;
+   wsp ws = w->window;
+   
+   if (!ws->win) return Failed;
    /*
     * This call is made because it is guaranteed to generate
     * a synchronous request of the server, not just ask Xlib
     * what the window position was last it knew.
     */
-   if (XQueryPointer(stddpy, stdwin, &garbage1, &garbage2,
+   if (XQueryPointer(ws->display->display, ws->win, &garbage1, &garbage2,
 		     &root_x, &root_y, &win_x, &win_y, &key_buttons) ==
        False) {
       return Failed;
@@ -2547,21 +2559,21 @@ wbp w;
    ws->posy = root_y - win_y;
    return Succeeded;
 }
-
+
 void getfg(w, answer)
 wbp w;
 char *answer;
 {
    sprintf(answer, "%s", w->window->display->colors[w->context->fg].name);
 }
-
+
 void getbg(w, answer)
 wbp w;
 char *answer;
 {
    sprintf(answer, "%s", w->window->display->colors[w->context->bg].name);
 }
-
+
 void getlinestyle(w, answer)
 wbp w;
 char *answer;
@@ -2571,7 +2583,7 @@ char *answer;
 	   (wc->linestyle==LineSolid)?"solid":
 	   ((wc->linestyle==LineOnOffDash)?"dashed":"striped"));
 }
-
+
 void getfntnam(w, answer)
 wbp w;
 char *answer;
@@ -2624,7 +2636,8 @@ wbp w;
 char **s;
    {
    wfp tmp;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wsp ws = w->window;
 
 #ifdef Graphics3D
    if (wc->is_3D) {
@@ -2638,16 +2651,16 @@ char **s;
    Protect(tmp = alc_font(w,s), return Failed);
    wc->font = tmp;
 
-   if (stdgc != NULL)
-      XSetFont(stddpy, stdgc, wc->font->fsp->fid);
+   if (wc->gc != NULL)
+      XSetFont(ws->display->display, wc->gc, wc->font->fsp->fid);
 
-   if (stdpix == (Pixmap) NULL) {
+   if (ws->pix == (Pixmap) NULL) {
       ws->y = wc->font->fsp->max_bounds.ascent;
       ws->x = 0;
       }
    return Succeeded;
    }
-
+
 /*
  * callback procedures
  */
@@ -2771,8 +2784,8 @@ wbp w;
 XConfigureEvent *event;
    {
    struct descrip d;
-   STDLOCALS(w);
-
+   wsp ws = w->window;
+   
    /*
     * Update X-Icon's information about the window's configuration
     */
@@ -2963,8 +2976,10 @@ wbp w;
 XRectangle *recs;
 int nrecs;
    {
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"   
    STDLOCALS(w);
-
+#passthru #pragma GCC pop
    /*
     * Free colors if drawop=copy, fillstyle~=masked, no clipping,
     * and a single rectangle that fills the whole window.
@@ -3215,34 +3230,30 @@ XPoint *p;
 int n, delay;
    {
    wbp w2 = BlkD(*pixs,File)->fd.wb;
-   STDLOCALS(w);
-
+   wsp ws = w->window;
+   
    sprite = w2;
    animheight = sprite->window->height;
    animwidth  = sprite->window->width;
    tics = delay;
    lastx = lasty = -1;
    genCurve(w, p, n, animHelper);
-   XCopyArea(stddpy, stdpix, stdwin, stdgc, lastx, lasty,
+   XCopyArea(ws->display->display, ws->pix, ws->win, w->context->gc, lastx, lasty,
 	     animwidth, animheight, lastx, lasty);
    }
-
 
 int getdefault(w, prog, opt, answer)
 wbp w;
 char *prog, *opt, *answer;
    {
    char *p;
-   STDLOCALS(w);
-
    
-   if ((p = XGetDefault(stddpy,prog,opt)) == NULL)
+   if ((p = XGetDefault(w->window->display->display, prog, opt)) == NULL)
       return Failed;
    strcpy(answer, p);
    return Succeeded;
    }
 
-
 /*
  * Allocate a mutable color
  */
@@ -3260,7 +3271,9 @@ int *retval;
    int i;
    long alpha;
    {
-   STDLOCALS(w);
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
 
    /*
     * X11 Bug Warning:  some old versions of the X server, but not X11R5,
@@ -3421,7 +3434,7 @@ char *s;
    if (i != DMAXCOLORS)
       free_xcolor(w, dp->colors[i].c);
    }
-
+
 /*
  * Draw a bilevel image
  */
@@ -3492,7 +3505,7 @@ word len;
    if (wc->drawop != GXcopy) XSetFunction(stddpy, stdgc, wc->drawop);
    return Succeeded;
    }
-
+
 /*
  * Draw a character-per-pixel image
  */
@@ -3510,7 +3523,11 @@ int on_icon;
    wclrp cp;
    int ciarray[256];
    char tmp[32];
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
+   GC  stdgc  = wc->gc;
 
    if (e) {
       /*
@@ -3576,7 +3593,7 @@ int on_icon;
        *  otherwise allocate new colors
        */ 
       
-	if (w->window->vis->class == TrueColor)
+	if (ws->vis->class == TrueColor)
 	   while (iy < height) {
 	      ix = 0;
 	      while (ix < width) {
@@ -3661,7 +3678,9 @@ unsigned char *data;
    wclrp cp;
    unsigned long px, clist[DMAXCOLORS], *lp;
    int i, ncolors;
-   STDLOCALS(w);
+   wdp wd = w->window->display;
+   Display *stddpy = wd->display;
+
 
    /*
     * Get an XImage structure containing window pixel values.
@@ -3741,10 +3760,11 @@ unsigned char *data;
    {
    XImage *im;
    SysColor px;
-   unsigned long pix;
    int x, y;
-   STDLOCALS(w);
-
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
+   
    /*
     * Get an XImage structure containing window pixel values.
     */
@@ -3779,7 +3799,7 @@ unsigned char *data;
 
    return 1;
    }
-
+
 /*
  * Create an XImage structure corresponding to subimage (x, y, w, h).
  * If init is nonzero, initialize it with current contents.
@@ -3791,7 +3811,11 @@ int x, y, width, height, init;
    {
    int tx, ty;
    XImage *im;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Pixmap  stdpix  = ws->pix;
+   Display *stddpy = wd->display;
 
    im = XCreateImage(stddpy, DefaultVisual(stddpy, wd->screen),
       DefaultDepth(stddpy, wd->screen), ZPixmap, 0, NULL, width, height, 32, 0);
@@ -3821,7 +3845,7 @@ int x, y, width, height, init;
 		   im, tx, ty);
    return im;
    }
-
+
 int readimage(w, filename, x, y, status)
 wbp w;
 char *filename;
@@ -3860,15 +3884,15 @@ int getpixel_init(w, imem)
 wbp w;
 struct imgmem *imem;
    {
-   STDLOCALS(w);
+   wdp wd = w->window->display;
 
    if (imem->width <= 0 || imem->height <= 0) {
       imem->im = NULL;
       return Succeeded;
       }
-   imem->im = XGetImage(stddpy, stdpix,
+   imem->im = XGetImage(wd->display, w->window->pix,
 			imem->x, imem->y, imem->width, imem->height,
-		  (1 << DefaultDepth(stddpy, wd->screen))-1, XYPixmap);
+		  (1 << DefaultDepth(wd->display, wd->screen))-1, XYPixmap);
    
    if (imem->im == NULL) return Failed;
    return Succeeded;
@@ -4051,8 +4075,9 @@ int len;
    Pixmap p;
    char data[MAXXOBJS];
    char *buf = data;
+   wcp wc = w->context;
+   Display *stddpy = w->window->display->display;
    CURTSTATE();
-   STDLOCALS(w);
 
    if (wc->patternname != NULL)
       free(wc->patternname);
@@ -4072,7 +4097,7 @@ int len;
       case RunError:
 	 ReturnErrNum(145, RunError);
 	 }
-      if (!stdgc) return Succeeded;
+      if (!wc->gc) return Succeeded;
       return SetPatternBits(w, width, bits, nbits);
       }
 
@@ -4080,13 +4105,13 @@ int len;
     * Otherwise, it is a named pattern.  Find the symbol id.
     */
    if ((symbol = si_s2i(siPatternSyms, wc->patternname)) >= 0) {
-      if (!stdgc) return Succeeded;
+      if (!wc->gc) return Succeeded;
       for(i = 0; i < 8; i++) {
 	 v = patbits[symbol * 8 + i];
 	 *buf++ = v;
 	 }
-      p = XCreateBitmapFromData(stddpy, stdpix, data, 8, 8);
-      XSetStipple(stddpy, stdgc, p);
+      p = XCreateBitmapFromData(stddpy, w->window->pix, data, 8, 8);
+      XSetStipple(stddpy, wc->gc, p);
       XSync(stddpy, False);
       XFreePixmap(stddpy, p);
       return Succeeded;
@@ -4105,7 +4130,7 @@ int nbits;
    Pixmap p;
    char data[MAXXOBJS];
    char *buf = data;
-   STDLOCALS(w);
+   Display *stddpy = w->window->display->display;
 
    for(i = 0; i < nbits; i++) {
       v = bits[i];
@@ -4115,8 +4140,8 @@ int nbits;
 	 }
       }
 
-   p = XCreateBitmapFromData(stddpy, stdpix, data, width, nbits);
-   XSetStipple(stddpy, stdgc, p);
+   p = XCreateBitmapFromData(stddpy, w->window->pix, data, width, nbits);
+   XSetStipple(stddpy, w->context->gc, p);
    XSync(stddpy, False);
    XFreePixmap(stddpy, p);
    return Succeeded;
@@ -4133,7 +4158,13 @@ int x,y;
    {
    XSizeHints size_hints;
    XWMHints   *wmhints;
-   STDLOCALS(w);
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Window  stdwin  = ws->win;
+   Display *stddpy = wd->display;
+
+
 
    XGetSizeHints(stddpy, stdwin, &size_hints, XA_WM_NORMAL_HINTS);
    wmhints = XGetWMHints(stddpy, stdwin);
@@ -4187,7 +4218,10 @@ dptr dp;
    Pixmap pix;
    tended char *tmp;
    {
-   STDLOCALS(w);
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   Display *stddpy = wd->display;
+   
    /*
     * get the preloaded (in another window value) pixmap image
     */
@@ -4263,7 +4297,10 @@ char *filename;
 unsigned int x, y, height, width;
    {
    int status, slen;
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
    STDLOCALS(w);
+#passthru #pragma GCC pop
 
    /*
     * Check for bilevel XBM (X BitMap) format.
@@ -4377,7 +4414,10 @@ int *status;
    XGCValues gcv;
    unsigned long gcmask = GCFont | GCForeground | GCBackground;
    int isxbm;
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
    STDLOCALS(w);
+#passthru #pragma GCC pop
 
    if (!strcmp(".xbm", filename + strlen(filename) - 4))
       isxbm = 1;
@@ -4603,9 +4643,8 @@ int walert(w, volume)
 wbp w;
 int volume;
 {
-  STDLOCALS(w);
-  XBell(stddpy, volume);    
-  XFlush(stddpy);
+  XBell(w->window->display->display, volume); 
+  XFlush(w->window->display->display);
   return Succeeded;
   }
 
@@ -4614,8 +4653,8 @@ wbp w;
    {
    wbp tmp_wb;
    struct wbind_list *wbl;
-
-   STDLOCALS(w);
+   wsp ws = w->window;
+   Display *stddpy = ws->display->display;
 
    XSync(stddpy, False);
    if (pollevent() == -1) return -1;
@@ -4624,12 +4663,12 @@ wbp w;
     * Force window to close (turn into a pixmap)
     */
 
-        while (w->window->children) {
-                tmp_wb = w->window->children->child;
-                wbl = w->window->children;
-                w->window->children = w->window->children->next;
+        while (ws->children) {
+                tmp_wb = ws->children->child;
+                wbl = ws->children;
+                ws->children = ws->children->next;
                 children_close(tmp_wb);
-                w->window->refcount--;
+                ws->refcount--;
                 wbl->next=NULL;
                 free(wbl);
         }
@@ -4637,7 +4676,7 @@ wbp w;
    SETCLOSED(w);
    if (ws->win && ws->refcount > 1) {
       SETZOMBIE(w);
-      XDestroyWindow(stddpy,stdwin);
+      XDestroyWindow(stddpy, ws->win);
       XFlush(stddpy);
       ws->refcount--;
       while (ws->win)
@@ -4774,7 +4813,6 @@ char child_window_stuff(wbp w, wbp wp, int child_window)
 
 char my_wmap(wbp w)
 {
-   double tb;
    XWindowAttributes attrs;
    XGCValues gcv;
    unsigned long gcmask =
@@ -4782,7 +4820,6 @@ char my_wmap(wbp w)
    struct imgdata *imd=NULL;
    int i, r;
    int new_pixmap = 0;
-   char *p=NULL, *s=NULL, sbuf[256];
    XWMHints wmhints;
    XSizeHints size_hints;
    wsp ws = w->window;
@@ -4791,7 +4828,6 @@ char my_wmap(wbp w)
    wbp wp;
    int child_window=CHILD_WIN2D;
 
-/*   STDLOCALS(w); */
 #ifdef Graphics3D
 
    if (ws->is_3D) {
@@ -5170,9 +5206,11 @@ void mkfont(char *s, char is_3D)
 #passthru #undef drawlines
 void drawlines(wbp w, XPoint *points, int npoints)
 {
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
    STDLOCALS(w);
+#passthru #pragma GCC pop
    {
-
    RENDER3(XDrawLines,points,npoints,CoordModeOrigin);
    }
 }
@@ -5180,7 +5218,10 @@ void drawlines(wbp w, XPoint *points, int npoints)
 #passthru #undef fillpolygon
 void fillpolygon(wbp w, XPoint *points, int npoints)
 {
+#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
    STDLOCALS(w);
+#passthru #pragma GCC pop
    {
    RENDER4(XFillPolygon,points,npoints,Complex,CoordModeOrigin);
    }

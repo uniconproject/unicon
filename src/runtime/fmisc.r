@@ -2691,7 +2691,7 @@ function{0,1} trylock(x)
          body {
     	 struct b_mask *bp = BlkMask(x);
 	    if (bp->shared){
-	       int rv;
+	       int rv = 0;
       	       MUTEX_TRYLOCKBLK(bp, rv, "trylock(structure) function");
       	       if (rv == 0) return x;
       	       fail;

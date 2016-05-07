@@ -27,7 +27,6 @@ unsigned _stack = 100000;
 /*
  * Prototypes.
  */
-static	void	env_err	(char *msg,char *name,char *val);
 void	icon_setup	(int argc, char **argv, int *ip);
 
 #ifdef MacGraph

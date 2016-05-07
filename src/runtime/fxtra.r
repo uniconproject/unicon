@@ -32,7 +32,7 @@
 #include "fxpattrn.ri"
 #endif					/* (Snobol-style) Pattern data type */
 
-#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic  push
 #passthru #pragma GCC diagnostic ignored "-Wunused-variable"
 static char junk;			/* avoid empty module */
-#passthru #pragma GCC pop
+#passthru #pragma GCC diagnostic pop

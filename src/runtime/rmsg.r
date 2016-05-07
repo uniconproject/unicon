@@ -402,8 +402,11 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       Mexcept(1209, NULL, NULL);
       return;
       }
-
- got_smtpserver:   
+      
+#ifdef HAVE_GETHOSTNAME
+ got_smtpserver:
+ #endif /* HAVE_GETHOSTNAME */
+ 
    if(getenv_r("UNICON_USERADDRESS", tmpbuf, 255)==0) {
       strncat(useraddr, tmpbuf, sizeof(useraddr)-1);
       useraddr[sizeof(useraddr)-1] = '\0';
@@ -421,8 +424,11 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       Mexcept(1210, NULL, NULL);
       return;
       }
-
+      
+#if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
  got_useraddr:
+#endif
+ 
    mf->tp->uri.host = _tpastrcpy(smtpserver, mf->tp->disc);
    mf->tp->uri.port = 25;
 

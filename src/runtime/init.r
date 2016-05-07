@@ -385,7 +385,7 @@ struct header *hdr;
    {
    int n;
    char tname[256];
-   int fdname;
+   int fdname = -1;
 
 #if MSDOS
    int thisIsAnExeFile = 0;

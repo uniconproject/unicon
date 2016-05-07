@@ -2050,7 +2050,7 @@ EntInterp_sp;
 	    goto C_rtn_term;
 
 	 case Op_Goto:		/* goto */
-L_goto:
+
 #ifdef Concurrent
 	    MUTEX_LOCKID(MTX_OP_AGOTO);
             if (ipc.op[-1] == Op_Agoto) {

@@ -882,9 +882,10 @@ struct sockaddr_in *saddrs;
 /*
  * Empty handler for connection alarm signals (used for timeouts).
  */
-static void on_alarm(int x) 
+/* static void on_alarm(int x) 
 {
 }
+*/
 
 int sock_connect(char *fn, int is_udp, int timeout)
 {

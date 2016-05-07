@@ -469,7 +469,7 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
 	 else {
 	    /* window to texture */
 	    if (TexCopyArea(w, w2, dest_texhandle, x, y, width, height, x2, y2,
-			    width2, height2)==Failed)
+			    width, height)==Failed)
 	       fail;
 	 }
 	 ReturnWindow;

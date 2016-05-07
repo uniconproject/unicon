@@ -3574,8 +3574,6 @@ int TexReadImage(wbp w, int texhandle, int x, int y, struct imgdata *imd)
    return Succeeded;
 }
 
-static wclrp lastcp;
-
 int copyareaTexToTex(wbp w, int texhandle, int dest_texhandle,
 		     int x, int y, int width, int height, /* box to copy */
 		     int xt, int yt)    /* dest loc */
@@ -3626,15 +3624,14 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
    int i, j, l, twd3;
    long rv;
    LinearColor clr;
-   wclrp cp;
    unsigned long c;
 #ifdef XWindows
    wdp wd = w2d->window->display;
    Display *stddpy = wd->display;
    Visual *vis = w2d->window->vis;
    XColor clrcell;
+/*   wclrp cp, lastcp = wd->colors; */
    TRUECOLOR_DECLARE_AND_INIT_RGB_VARS(vis->red_mask, vis->green_mask,vis->blue_mask);
-   lastcp = wd->colors;
 #endif					/* XWindows */
 
    imem.x = x;
@@ -3664,13 +3661,12 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
       }
 #endif
 
-
    for(j=0; j < height; j++){
    	l = (yt+j)*twd3 + xt * 3;
 	for(i=0; i < width; i++) {
 #ifdef XWindows
 	   clrcell.pixel = XGetPixel(imem.im, i, j);
-	   rv = 0xff000000;
+/*	   rv = 0xff000000;
 	   if  (lastcp->c == c){
 	      tex[l] = lastcp ->r>>8;
 	      tex[l+1] = lastcp->g>>8;
@@ -3682,7 +3678,6 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 	      for (cp = wd->colors ; cp < wd->colors + wd->numColors; cp++) {
 		 if (cp->c == c) {
 		    lastcp = cp;
-		 foundc:
 		    tex[l] = cp->r>>8;
 		    tex[l+1] = cp->g>>8;
 		    tex[l+2] = cp->b>>8;
@@ -3691,6 +3686,7 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
 		    }
 		 }
 	   if (rv == 0xff000000) {
+*/
 	      XQueryColor(stddpy, wd->cmap, &clrcell);
 	      rv = 1;
 	      clr = lcolor(w2d, clrcell);
@@ -3698,7 +3694,7 @@ int copyareaToTex2D(wbp w2d, GLubyte *tex, int x, int y,
               tex[l+1] = clr.green>>8;
               tex[l+2] = clr.blue>>8;
 	      l = l + 3;
-	      }
+/*	      } */
 #else
 	   {
 	   char *s2, strout[50];

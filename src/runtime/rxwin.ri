@@ -308,7 +308,7 @@ char *copyselection(wsp ws, char* s, int *ip)
    int                actual_format;
    unsigned long      bytes_remaining, number_items;
    char*              string = NULL;
-   unsigned long      str_len;
+   unsigned long      str_len = 0;
 
    /* Ensure that our atoms are interned. */
    if (intern_status == 0) intern_status = InternAtoms(display);
@@ -2979,10 +2979,10 @@ wbp w;
 XRectangle *recs;
 int nrecs;
    {
-#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic push
 #passthru #pragma GCC diagnostic ignored "-Wunused-variable"   
    STDLOCALS(w);
-#passthru #pragma GCC pop
+#passthru #pragma GCC diagnostic pop
    /*
     * Free colors if drawop=copy, fillstyle~=masked, no clipping,
     * and a single rectangle that fills the whole window.
@@ -4300,10 +4300,12 @@ char *filename;
 unsigned int x, y, height, width;
    {
    int status, slen;
-#passthru #pragma GCC push
-#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
-   STDLOCALS(w);
-#passthru #pragma GCC pop
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   GC  stdgc  = wc->gc;
+   Pixmap  stdpix  = ws->pix;
+   Display *stddpy = wd->display;
 
    /*
     * Check for bilevel XBM (X BitMap) format.
@@ -4417,10 +4419,11 @@ int *status;
    XGCValues gcv;
    unsigned long gcmask = GCFont | GCForeground | GCBackground;
    int isxbm;
-#passthru #pragma GCC push
-#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
-   STDLOCALS(w);
-#passthru #pragma GCC pop
+   wcp wc = w->context;
+   wsp ws = w->window;
+   wdp wd = ws->display;
+   GC  stdgc  = wc->gc;
+   Display *stddpy = wd->display;
 
    if (!strcmp(".xbm", filename + strlen(filename) - 4))
       isxbm = 1;
@@ -5209,10 +5212,10 @@ void mkfont(char *s, char is_3D)
 #passthru #undef drawlines
 void drawlines(wbp w, XPoint *points, int npoints)
 {
-#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic push
 #passthru #pragma GCC diagnostic ignored "-Wunused-variable"
    STDLOCALS(w);
-#passthru #pragma GCC pop
+#passthru #pragma GCC diagnostic pop
    {
    RENDER3(XDrawLines,points,npoints,CoordModeOrigin);
    }
@@ -5221,10 +5224,10 @@ void drawlines(wbp w, XPoint *points, int npoints)
 #passthru #undef fillpolygon
 void fillpolygon(wbp w, XPoint *points, int npoints)
 {
-#passthru #pragma GCC push
+#passthru #pragma GCC diagnostic push
 #passthru #pragma GCC diagnostic ignored "-Wunused-variable"
    STDLOCALS(w);
-#passthru #pragma GCC pop
+#passthru #pragma GCC diagnostic pop
    {
    RENDER4(XFillPolygon,points,npoints,Complex,CoordModeOrigin);
    }

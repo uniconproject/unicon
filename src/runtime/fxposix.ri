@@ -464,10 +464,11 @@ function{0,1} chmod(s, m)
 	    tended char *cmode;
 	    C_integer i, fd;
 	    IntVal(amperErrno) = 0;
+	    if ((fd = get_fd(s, 0)) < 0)
+	       runerr(174, s);
+
 	    if (is:string(m)) {
 	       cnv:C_string(m, cmode);
-	       if ((fd = get_fd(s, 0)) < 0)
-		  runerr(174, s);
 	       i = getmodefd(fd, cmode);
 	       if (i == -1) {
 		  IntVal(amperErrno) = errno;
@@ -2678,13 +2679,14 @@ function{0,1} gethost(h, f)
     	    struct addrinfo hints, *inforesult;
 
 	    if (is:null(f)){
-	    family = AF_INET;
-	    } else if (is:string(f)){
-	      cnv:C_string(f, fstr);
-	      if (strcmp(fstr, "ipv6")==0)
-	         family = AF_INET6;
-	      else
-	         family = AF_INET;
+	       family = AF_INET;
+	    } else {
+	       if (!cnv:C_string(f, fstr))
+		  runerr(103, f);
+	       if (strcmp(fstr, "ipv6")==0)
+	          family = AF_INET6;
+	       else
+	          family = AF_INET;
 	    }
 
     	    memset(&hints, 0, sizeof(struct addrinfo));

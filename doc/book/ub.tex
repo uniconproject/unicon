@@ -56,11 +56,29 @@
   xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=xxx\=\+\kill%
 }{\end{tabbing}}
 
-%%% K.O. amsmath is needed only because it defines \text, used in the next
-%%% macro. Eliminate!!
-%\usepackage{amsmath}
-%\newcommand\textsubscript[1]{\ensuremath{{}_{\text{#1}}}}
+%
+% Adapted from a post by Gonzalo Medino on stackexchange.com in order to
+% eliminate a reference to amsmath.
+%
+\makeatletter
+\DeclareRobustCommand{\text}{%
+  \ifmmode\expandafter\text@\else\expandafter\mbox\fi}
+\let\nfss@text\text
+\def\text@#1{{\mathchoice
+  {\textdef@\displaystyle\f@size{#1}}%
+  {\textdef@\textstyle\f@size{#1}}%
+  {\textdef@\textstyle\sf@size{#1}}%
+  {\textdef@\textstyle \ssf@size{#1}}%
+  \check@mathfonts
+  }%
+}
+\def\textdef@#1#2#3{\hbox{{%
+                    \everymath{#1}%
+                    \let\f@size#2\selectfont
+                    #3}}}
+\makeatother
 
+\newcommand\textsubscript[1]{\ensuremath{{}_{\text{#1}}}}
 
 \makeindex
 

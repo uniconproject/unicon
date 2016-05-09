@@ -1203,11 +1203,6 @@ static unsigned long gf_curr;		/* current partial byte(s) */
 static int gf_valid;			/* number of valid bits */
 static int gf_rem;			/* remaining bytes in this block */
 
-#if HAVE_LIBJPEG
-static int jpg_space;
-#endif					/* HAVE_LIBJPEG */
-
-
 /*
  * Construct Icon-style paltbl from BMP-style colortable
  */
@@ -2148,7 +2143,7 @@ int readPNG(char *filename, int p, struct imgdata *imd)
 
 static int pngwrite(wbp w, FILE *png_f, int x, int y, int width, int height, unsigned char *imgBuf)
 {
-   int i, j, rowbytes;
+   int i, rowbytes;
    png_structp png_ptr;
    png_infop info_ptr;
    png_bytep * row_pointers=NULL;
@@ -2566,8 +2561,6 @@ static void gfdump()
 
 static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
 {
-   int i, j, c, cur;
-   unsigned char *p, *q;
    FILE * jpg_f = NULL;
    unsigned char *imgBuf = NULL;
 
@@ -4770,7 +4763,10 @@ void drawRectangle(wbp w,int x,int y,int width,int height)
   RECY(r[0]) = y;
   RECWIDTH(r[0]) = width;
   RECHEIGHT(r[0]) = height;
+#passthru #pragma GCC diagnostic  push
+#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
   drawrectangles(w,r,1);
+#passthru #pragma GCC diagnostic  pop
 }
 
 int Wx()

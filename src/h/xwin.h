@@ -118,42 +118,49 @@
 /*
  * Macros to perform direct window system calls from graphics routines
  */
-#define STDLOCALS(w) \
-   wcp wc = (w)->context; \
-   wsp ws = (w)->window; \
-   wdp wd = ws->display; \
-   GC      stdgc  = wc->gc; \
-   Display *stddpy = wd->display; \
-   Window  stdwin  = ws->win; \
+
+#define STDLOCALS_RENDER(w)				\
+   wsp ws = (w)->window;				\
+   GC      stdgc  = (w)->context->gc;			\
+   Display *stddpy = ws->display->display;		\
+   Window  stdwin  = ws->win;				\
+   Pixmap  stdpix  = ws->pix;
+
+#define STDLOCALS(w)					\
+   wcp wc = (w)->context;				\
+   wsp ws = (w)->window;				\
+   wdp wd = (w)->window->display;			\
+   GC      stdgc  = wc->gc;				\
+   Display *stddpy = wd->display;			\
+   Window  stdwin  = ws->win;				\
    Pixmap  stdpix  = ws->pix;
 
 #define drawarcs(w, arcs, narcs) \
-   { STDLOCALS(w); RENDER2(XDrawArcs,arcs,narcs); }
+   { STDLOCALS_RENDER(w); RENDER2(XDrawArcs,arcs,narcs); }
 #define drawlines(w, points, npoints) \
-   { STDLOCALS(w); RENDER3(XDrawLines,points,npoints,CoordModeOrigin); }
+   { STDLOCALS_RENDER(w); RENDER3(XDrawLines,points,npoints,CoordModeOrigin); }
 #define drawpoints(w, points, npoints) \
-   { STDLOCALS(w); RENDER3(XDrawPoints,points,npoints,CoordModeOrigin); }
+   { STDLOCALS_RENDER(w); RENDER3(XDrawPoints,points,npoints,CoordModeOrigin); }
 #define drawrectangles(w, recs, nrecs) { \
    int i; \
-   STDLOCALS(w); \
+   STDLOCALS_RENDER(w); \
    for(i=0; i<nrecs; i++) { \
      RENDER4(XDrawRectangle,recs[i].x,recs[i].y,recs[i].width,recs[i].height);\
      }}
 
 #define drawsegments(w, segs, nsegs) \
-   { STDLOCALS(w); RENDER2(XDrawSegments,segs,nsegs); }
+   { STDLOCALS_RENDER(w); RENDER2(XDrawSegments,segs,nsegs); }
 #define drawstrng(w, x, y, s, slen) \
-   { STDLOCALS(w); RENDER4(XDrawString, x, y, s, slen); }
+   { STDLOCALS_RENDER(w); RENDER4(XDrawString, x, y, s, slen); }
 #define fillarcs(w, arcs, narcs) \
-   { STDLOCALS(w); RENDER2(XFillArcs, arcs, narcs); }
+   { STDLOCALS_RENDER(w); RENDER2(XFillArcs, arcs, narcs); }
 #define fillpolygon(w, points, npoints) \
-   { STDLOCALS(w); RENDER4(XFillPolygon, points, npoints, Complex, CoordModeOrigin); }
+   { STDLOCALS_RENDER(w); RENDER4(XFillPolygon, points, npoints, Complex, CoordModeOrigin); }
 
 /*
  * "get" means remove them from the Icon list and put them on the ghost queue
  */
 #define EVQUEGET(w,d) { \
-   int i;\
    wsp ws = (w)->window; \
    if (!c_get((struct b_list *)BlkLoc(ws->listp),&d)) fatalerr(0,NULL); \
    if (Qual(d)) {\

@@ -332,7 +332,7 @@ uword segsize[] = {
 void initalloc()
    {
 #ifdef Concurrent
-   CURTSTATE_ONLY();
+   CURTSTATE();
 #endif					/* Concurrent */
 #else					/* COMPILER */
 #ifdef MultiThread

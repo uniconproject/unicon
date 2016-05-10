@@ -874,14 +874,12 @@ operator{0,1} <<@ rcvbk(x,y)
       int status;
       char sbuf[MaxReadStr];
       tended struct descrip s;
-      FILE *fp;
 #ifdef PosixFns
       SOCKET ws;
 #endif					/* PosixFns */
       /*
-       * Get a pointer to the file and be sure that it is open for reading.
+       * Make sure the file is open for reading.
        */
-      fp = BlkD(y, File)->fd.fp;
       status = BlkLoc(y)->File.status;
       if ((status & Fs_Read) == 0)
       runerr(212, y);

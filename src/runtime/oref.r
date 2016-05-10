@@ -163,7 +163,6 @@ operator{*} ! bang(underef x -> dx)
 		  Tprequest_t req = {0, NULL, 0};
 		  unsigned msgnum;
 		  long int msglen;
-		  unsigned sc;
 
 		  req.args = buf;
 		  msgnum = 1;
@@ -174,7 +173,6 @@ operator{*} ! bang(underef x -> dx)
 
 		     req.type = LIST;
 		     mf->resp = tp_sendreq(mf->tp, &req);
-		     sc = mf->resp->sc;
 		     if (mf->resp->sc != 200)
 			fail;
 

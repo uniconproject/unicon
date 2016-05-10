@@ -312,7 +312,6 @@ function{1} display(i,f)
       if (!is:coexpr(c)) runerr(118,c);
       else if (BlkLoc(c) != BlkLoc(k_current))
          ce = (struct b_coexpr *)BlkLoc(c);
-      savedprog = curpstate;
       }
 #endif						/* MultiThread */
 
@@ -361,6 +360,7 @@ function{1} display(i,f)
       fflush(std_f);
 #ifdef MultiThread
       if (ce) {
+         savedprog = curpstate;
 	 if ((ce->es_pfp == NULL) || (ce->es_argp == NULL)) fail;
 	 ENTERPSTATE(ce->program);
          r = xdisp(ce->es_pfp, ce->es_argp, (int)i, std_f);

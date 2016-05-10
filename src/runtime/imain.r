@@ -778,11 +778,8 @@ int *ip;
    register word i, j;
    register struct b_proc *pp;
    register dptr dp;
-   #ifdef MultiThread
-      register struct progstate *savedstate = curpstate;
-   #endif					/* MultiThread */
-   
    #if defined(MultiThread) && !defined(Concurrent)
+      register struct progstate *savedstate = curpstate;   
       if (pstate){ 
 	curpstate = pstate;
 	curtstate = pstate->tstate;

@@ -88,10 +88,10 @@ dptr dp1, dp2;
           * Collate on file name or window label.
           */
 	 {
-	 struct descrip s1, s2; /* live only long enough to lexcmp them */
 	 dptr ps1 = &(BlkD(*dp1,File)->fname);
 	 dptr ps2 = &(BlkD(*dp2,File)->fname);
 #ifdef Graphics
+	 struct descrip s1, s2; /* live only long enough to lexcmp them */
 	 if (BlkLoc(*dp1)->File.status & Fs_Window) {
 	    wbp w = BlkLoc(*dp1)->File.fd.wb;
 	    if (w->window) {

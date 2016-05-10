@@ -1022,7 +1022,7 @@ FILE *ptr;
 
 /* End of pipe support for OS/2 */
 #endif					/* OS2 */
-
+
 /*********************************** UNIX ***********************************/
 
 #if UNIX
@@ -1269,7 +1269,7 @@ int kbhit_ms(int n)
 }
 
 #endif					/* UNIX */
-
+
 /*********************************** VMS ***********************************/
 
 #if VMS
@@ -1319,7 +1319,7 @@ Pipe _pipes[_NFILE];		/* one for every open file */
 #define NOTIFY		16
 #define NOCONTROL	32
 #define SFLAGS	(NOWAIT|NOKEYPAD|NOCONTROL)
-
+
 /*
  * delay_vms - delay for n milliseconds
  */

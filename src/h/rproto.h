@@ -1165,3 +1165,7 @@ void init_sighandlers(struct progstate *pstate);
 #else					/* MultiThread */
 void init_sighandlers();
 #endif					/* MultiThread */
+
+#if UNIX && defined(HAVE_WORKING_VFORK)
+void push_filepid(int pid, FILE *fp, word status);
+#endif 	    		     	  /* UNIX && defined(HAVE_WORKING_VFORK */

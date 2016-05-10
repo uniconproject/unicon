@@ -39,14 +39,10 @@ extern int MPWFlush(FILE *f);
 extern int errno;
 #endif					/* PosixFns */
 
-#if UNIX && defined(HAVE_WORKING_VFORK)
-extern void push_filepid(int pid, FILE *fp, word status);
-#endif 	    		     	  /* UNIX && defined(HAVE_WORKING_VFORK */
-
 /*
  * End of operating-system specific code.
  */
-
+
 
 "close(f) - close file f."
 

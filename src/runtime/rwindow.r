@@ -1254,8 +1254,7 @@ int readBMP(char *filename, int p, struct imgdata *imd)
   FILE *f;
   int c;
   char headerstuff[52]; /* 54 - 2 byte magic number = 52 */
-  int filesize, dataoffset, width, height, compression, imagesize,
-      xpixelsperm, ypixelsperm, colorsused, colorsimportant, numcolors;
+  int filesize, width, height, compression, imagesize, numcolors;
   short bitcount;
   int *colortable = NULL;
   char *rasterdata;
@@ -1269,16 +1268,18 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      return Failed;
      }
   filesize = *(int *)(headerstuff);
-  dataoffset = *(int *)(headerstuff+8);
   width = *(int *)(headerstuff+16);
   height = *(int *)(headerstuff+20);
   bitcount = *(short *)(headerstuff+26);
   switch(bitcount) {
-  case 1: numcolors = 1; break;
-  case 4: numcolors = 16; break;
-  case 8: numcolors = 256; break;
-  case 16: numcolors = 65536; break;
-  case 24: numcolors = 65536 * 256;
+     case 1: numcolors = 1; break;
+     case 4: numcolors = 16; break;
+     case 8: numcolors = 256; break;
+     case 16: numcolors = 65536; break;
+     case 24: numcolors = 65536 * 256;
+     default:
+        /* teart as 8-bit ?*/
+	numcolors = 256; break;
      }
   compression = *(int *)(headerstuff+28);
   if (compression != 0) {
@@ -1292,12 +1293,6 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      imagesize = filesize - 54;
      if (bitcount <= 8) imagesize -= 4 * numcolors;
      }
-
-  xpixelsperm = *(int *)(headerstuff+36);
-  ypixelsperm = *(int *)(headerstuff+40);
-
-  colorsused = *(int *)(headerstuff+44);
-  colorsimportant = *(int *)(headerstuff+48);
 
   if (bitcount <= 8) {
      if ((colortable = (int *)malloc(4 * numcolors)) == NULL) {
@@ -3418,7 +3413,6 @@ char * abuf;
    SHORT new_height, new_width;
    wsp ws = w->window;
    wcp wc = w->context;
-   int toolong = 0;
    tended struct descrip f;
 
 
@@ -3445,7 +3439,6 @@ char * abuf;
       abuf[lenattr] = '\0';
 
       if (lenval > 255) {
-         toolong = 1;
          StrLen(d) = lenval;
          StrLoc(d) = mid;
          }
@@ -4763,10 +4756,7 @@ void drawRectangle(wbp w,int x,int y,int width,int height)
   RECY(r[0]) = y;
   RECWIDTH(r[0]) = width;
   RECHEIGHT(r[0]) = height;
-#passthru #pragma GCC diagnostic  push
-#passthru #pragma GCC diagnostic ignored "-Wunused-variable"
   drawrectangles(w,r,1);
-#passthru #pragma GCC diagnostic  pop
 }
 
 int Wx()

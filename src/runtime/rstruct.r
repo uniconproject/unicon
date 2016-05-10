@@ -650,7 +650,6 @@ union block *bp;
 
 union block **memb(union block *pb, dptr x, uword hn, int *res)
    {
-   struct b_set *ps;
    register union block **lp;
    register struct b_selem *pe;
    register uword eh;
@@ -662,7 +661,6 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
    else { syserr("odd memb\n"); }
 #endif
 
-   ps = (struct b_set *)pb;
    lp = hchain(pb, hn);
    /*
     * Look for x in the hash chain.

@@ -214,7 +214,6 @@ function{0,1} EvGet(cs,vmask,flag)
          runerr(124,vmask)
 
    body {
-      register int c;
       tended struct descrip dummy;
       struct progstate *p = NULL;
 
@@ -250,6 +249,7 @@ function{0,1} EvGet(cs,vmask,flag)
 	 if (pollctr == -1)
 	    fatalerr(141, NULL);
 	 if (BlkD(_w_->window->listp,List)->size > 0) {
+	    register int c;
 	    c = wgetevent(_w_, &curpstate->eventval, -1);
 	    if (c == 0) {
 	       StrLen(curpstate->eventcode) = 1;

@@ -699,7 +699,7 @@
 
 #define CURTSTATE()
 #define CURTSTATE_CE()
-#define CURTSTATE_ONLY()
+#define CURTSTATE_AND_CE()
 #define SYNC_GLOBAL_CURTSTATE()
 #define TLS_CURTSTATE_ONLY()
 #define SYNC_CURTSTATE_CE()

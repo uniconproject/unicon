@@ -65,8 +65,9 @@ function{1} close(f)
 #endif					/* HAVE_VOICE */
       FILE *fp = BlkD(f,File)->fd.fp;
       int status = BlkD(f,File)->status;
+#ifdef Graphics
       CURTSTATE();
-
+#endif					/* Graphics */
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
       /*
@@ -187,7 +188,7 @@ function{1} close(f)
       return f;
       }
 end
-
+
 #undef exit
 #passthru #undef exit
 
@@ -1799,7 +1800,9 @@ function{0,1} seek(f,o)
 
    body {
       FILE *fd;
+#ifdef Graphics
       CURTSTATE();
+#endif					/* Graphics */
 
       fd = BlkD(f,File)->fd.fp;
       if (BlkLoc(f)->File.status == 0)
@@ -2321,7 +2324,9 @@ function{0,1} where(f)
       FILE *fd;
       long ftell();
       long pos;
+#ifdef Graphics
       CURTSTATE();
+#endif					/* Graphics */
 
       fd = BlkD(f,File)->fd.fp;
 
@@ -3078,8 +3083,9 @@ function{1} flush(f)
    body {
       FILE *fp = BlkD(f,File)->fd.fp;
       int status = BlkD(f,File)->status;
+#ifdef Graphics
       CURTSTATE();
-
+#endif					/* Graphics */
       /*
        * File types for which no flushing is possible, or is a no-op.
        */

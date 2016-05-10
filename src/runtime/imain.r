@@ -762,7 +762,7 @@ int *ip;
 	argv++;
       }
    }
-
+
 /*
  * resolve - perform various fix-ups on the data read from the icode
  *  file.
@@ -781,9 +781,8 @@ int *ip;
    #ifdef MultiThread
       register struct progstate *savedstate = curpstate;
    #endif					/* MultiThread */
-   CURTSTATE();
-
-   #ifdef MultiThread
+   
+   #if defined(MultiThread) && !defined(Concurrent)
       if (pstate){ 
 	curpstate = pstate;
 	curtstate = pstate->tstate;
@@ -869,12 +868,11 @@ int *ip;
    for (dp = fnames; dp < efnames; dp++)
       StrLoc(*dp) = strcons + (uword)StrLoc(*dp);
 
-#ifdef MultiThread
+#if defined(MultiThread) && !defined(Concurrent)
    curpstate = savedstate;
    curtstate = curpstate->tstate;
 #endif						/* MultiThread */
    }
-
 
 /*
  * Free malloc-ed memory; the main regions then co-expressions.  Note:

@@ -1765,7 +1765,7 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
    inst saved_ipc;
    word *saved_sp;
    inst wp;
-   dptr dp, ret;
+   dptr dp, ret = NULL;
    CURTSTATE_AND_CE();
 
    saved_sp = sp;
@@ -1816,10 +1816,7 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
 #endif
    sp = saved_sp;
 
-   if ((retval == A_Resume) || (retval == A_Trapfail))
-      return 0;
-   else
-      return ret;
+   return ret;
 }
 #endif					/* !COMPILER */
 

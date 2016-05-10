@@ -539,7 +539,8 @@ int region;
 */
 
 #else					/* Concurrent */
-
+   {
+   struct b_coexpr *cp;
    cp = BlkD(k_current, Coexpr);
 
    cp->es_tend = tend;
@@ -550,6 +551,7 @@ int region;
    cp->es_efp = efp;
    cp->es_sp = sp;
 #endif					/* !COMPILER */
+   }
 #endif					/* Concurrent */
 
    /*

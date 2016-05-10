@@ -141,7 +141,6 @@ struct b_file *fbp;
 
 #ifdef Messaging
    if (fbp->status & Fs_Messaging) {
-      extern int Merror;
       struct MFile* mf = (struct MFile *)fd;
 
       if (strcmp(mf->tp->uri.scheme, "pop") == 0) {
@@ -1494,17 +1493,17 @@ int pclose (FILE * f)
 #ifdef PseudoPty
 void ptclose(struct ptstruct *ptStruct)
 {
-   int close_ret, status;
+   int status;
    if (ptStruct == NULL)
       return;  /* structure is NULL, nothing to do */
 
 #if NT
-   close_ret=CloseHandle(ptStruct->master_read);
-   close_ret=CloseHandle(ptStruct->master_write);
+   CloseHandle(ptStruct->master_read);
+   CloseHandle(ptStruct->master_write);
 #else					/* NT */
    /* close the master and slave file descriptors */
-   close_ret = close(ptStruct->master_fd);
-   close_ret = close(ptStruct->slave_fd);
+   close(ptStruct->master_fd);
+   close(ptStruct->slave_fd);
    /* terminate the child process */
    waitpid(ptStruct->slave_pid,&status,WNOHANG);
    kill(ptStruct->slave_pid,SIGKILL);
@@ -1518,7 +1517,6 @@ void ptclose(struct ptstruct *ptStruct)
 
 struct ptstruct *ptopen(char *command)
 {
-   int ac;
    char **av;
 #if defined(MacOSX) || defined(FreeBSD)
    char *tmps;
@@ -1541,7 +1539,7 @@ struct ptstruct *ptopen(char *command)
       }
    strcpy(newPtStruct->slave_command, command);
   
-   ac = CmdParamToArgv(command, &av, 0);
+   CmdParamToArgv(command, &av, 0);
    /*
     * Maybe need to conduct a path search for av[0], augment
     * command string with path if found; fail if not found.
@@ -2062,7 +2060,9 @@ int CmdParamToArgv(char *s, char ***avp, int dequote)
             FINDDATA_T fd;
 #endif					/* NT */
 	    char *t3;
+#ifdef Graphics
 skipredirect:
+#endif					/* Graphics */
 	    t3 = t2;
             while (*t2 && !isspace(*t2)) t2++;
 	    if (*t2)

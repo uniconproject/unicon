@@ -50,5 +50,5 @@ int main(int argc, char *argv[])
    return iconx(argc, argv);
 }
 #endif					/* NT */
-static char junk;		/* avoid empty module */
+/* static char junk;		/* avoid empty module */
 #endif					/* Graphics */

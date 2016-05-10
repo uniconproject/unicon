@@ -2310,5 +2310,5 @@ word n;
 }
 
 #else					/* LargeInts */
-static char x;			/* prevent empty module */
+/* static char junk;			/* prevent empty module */
 #endif					/* LargeInts */

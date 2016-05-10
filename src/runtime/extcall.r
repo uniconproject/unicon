@@ -189,7 +189,7 @@ static dptr unloadfunc(dptr dargv, int argc, int *ip)
 
 }
 #else					/* ExternalFunctions */
-static char x;			/* prevent empty module */
+/* static char junk;			/* prevent empty module */
 #endif					/* ExternalFunctions */
 #endif					/* !COMPILER */
 
@@ -211,7 +211,7 @@ int *ip;
    }
 
 #else					/* ExternalFunctions */
-static char x;			/* prevent empty module */
+/* static char junk;			/* prevent empty module */
 #endif 					/* ExternalFunctions */
 #endif					/* !COMPILER */
 #endif					/* OS2 */

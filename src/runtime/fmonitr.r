@@ -584,5 +584,5 @@ int t_errornumber, t_have_val;
 struct descrip t_errorvalue;
 
 #else					/* MultiThread */
-static char xjunk;			/* avoid empty module */
+/* static char xjunk;			/* avoid empty module */
 #endif					/* MultiThread */

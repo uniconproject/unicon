@@ -11,5 +11,5 @@
 #endif					/* PresentationManager */
 
 #else					/* Graphics */
-static char junk;		/* avoid empty module */
+/* static char junk;		/* avoid empty module */
 #endif					/* Graphics */

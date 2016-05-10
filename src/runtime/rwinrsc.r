@@ -56,5 +56,5 @@ wbp w;
    }
 
 #else					/* Graphics */
-static char x;			/* avoid empty module */
+/* static char junk;			/* avoid empty module */
 #endif					/* Graphics */

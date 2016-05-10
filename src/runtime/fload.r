@@ -269,5 +269,5 @@ rtentryvector.Cnv_int = cnv_int;
 #endif						/* COMPILER */
 
 #else						/* LoadFunc */
-static char junk;			/* avoid empty module */
+/*static char junk;			/* avoid empty module */
 #endif						/* LoadFunc */

@@ -60,12 +60,17 @@ function{0,1} Bg(argv[argc])
       char sbuf1[MaxCvtLen];
       int len;
       tended char *tmp;
-      int is_texture=0, texhandle;
       int warg = 0;
+#ifdef Graphics3D
+      int is_texture=0;
+      int texhandle;
+#endif					/* Graphics3D */
       OptTexWindow(w);
+#ifdef Graphics3D
       if (is_texture) {
 	 warg=1;
 	 }
+#endif					/* Graphics3D */
 
       /*
        * If there is a (non-window) argument we are setting by
@@ -146,9 +151,10 @@ function{1} Clone(argv[argc])
       tended struct descrip sbuf, sbuf2;
       char answer[128];
       int child_window=0;
+#ifdef Graphics3D
       int is_texture=0;
       int texhandle;
-
+#endif					/* Graphics3D */
       tended struct descrip f;
       tended struct b_record *rp;
 
@@ -407,8 +413,10 @@ function{0,1} CopyArea(argv[argc]) /* w,w2,x,y,width,height,x2,y2 */
       int warg = 0, n, r;
       C_integer x, y, width, height, x2, y2, width2, height2;
       wbp w, w2;
+#ifdef Graphics3D
       int is_texture=0 /* src */, dest_is_texture=0, base=0;
-      int texhandle /* src */, dest_texhandle;
+      int texhandle=0 /* src */, dest_texhandle;
+#endif					/* Graphics3D */
 
       OptTexWindow(w);
 
@@ -883,8 +891,11 @@ function{1} DrawLine(argv[argc])
       XPoint points[MAXXOBJS];
       int dx, dy;
       C_integer x1, x2, y1, y2;
-      int is_texture=0, base=0;
+      int base=0;
+#ifdef Graphics3D
+      int is_texture = 0;
       int texhandle;
+#endif					/* Graphics3D */
       OptTexWindow(w);
 #ifdef Graphics3D
       if (is_texture) {
@@ -987,8 +998,11 @@ function{1} DrawPoint(argv[argc])
       XPoint points[MAXXOBJS];
       int dx, dy;
       C_integer x,y;
-      int is_texture=0, base=0;
+      int base=0;
+#ifdef Graphics3D
+      int is_texture=0;
       int texhandle;
+#endif					/* Graphics3D */
 
       OptTexWindow(w);
 #ifdef Graphics3D
@@ -1171,8 +1185,11 @@ function{1} DrawRectangle(argv[argc])
       int i, j, r, n, warg = 0;
       XRectangle recs[MAXXOBJS];
       C_integer x, y, width, height;
-      int is_texture=0, base=0;
+      int base=0;
+#ifdef Graphics3D
+      int is_texture=0;
       int texhandle;
+#endif					/* Graphics3D */
 
       OptTexWindow(w);
 
@@ -1228,8 +1245,11 @@ function{1} DrawSegment(argv[argc])
       int i, j, n, warg = 0, dx, dy;
       XSegment segs[MAXXOBJS];
       C_integer x1, x2, y1, y2;
-      int is_texture=0, base=0;
+      int base=0;
+#ifdef Graphics3D
+      int is_texture=0;
       int texhandle;
+#endif					/* Graphics3D */
       OptTexWindow(w);
 #ifdef Graphics3D
       if (is_texture) {
@@ -1407,8 +1427,11 @@ function{1} EraseArea(argv[argc])
       wcp wc=NULL;
       int warg = 0, i, r, n;
       C_integer x, y, width, height;
-      int is_texture=0, base=0;
+      int base=0;
+#ifdef Graphics3D
+      int is_texture=0;
       int texhandle;
+#endif					/* Graphics3D */
 
       OptTexWindow(w);
 
@@ -1533,8 +1556,11 @@ function{0,1} Fg(argv[argc])
       char sbuf1[MaxCvtLen];
       int len;
       tended char *tmp;
-      int is_texture=0, texhandle;
       int warg = 0;
+#ifdef Graphics3D
+      int is_texture=0;
+      int texhandle;
+#endif					/* Graphics3D */
       OptTexWindow(w);
       if (is_texture) {
 	 warg=1;
@@ -1774,8 +1800,11 @@ function{1} FillRectangle(argv[argc])
       int i, j, r, n, warg = 0;
       XRectangle recs[MAXXOBJS];
       C_integer x, y, width, height;
-      int is_texture=0, base=0;
+      int base=0;
+#ifdef Graphics3D
+      int is_texture=0;
       int texhandle;
+#endif					/* Graphics3D */
 
       OptTexWindow(w);
 
@@ -2379,9 +2408,10 @@ function{0,1} ReadImage(argv[argc])
       C_integer x, y;
       int p, r;
       struct imgdata imd;
-      int is_texture=0; 
+#ifdef Graphics3D
+      int is_texture=0;
       int texhandle;
-
+#endif					/* Graphics3D */
       OptTexWindow(w);
 
       if (is_texture){
@@ -2548,7 +2578,11 @@ function{*} WAttrib(argv[argc])
       word n;
       tended struct descrip sbuf, sbuf2 = nulldesc;
       char answer[4096];
-      int  pass, config = 0, warg = 0, is_texture=0, texhandle;
+      int  pass, config = 0, warg = 0;
+#ifdef Graphics3D
+      int is_texture = 0;
+      int texhandle = 0;
+#endif					/* Graphics3D */
       OptTexWindow(w);
 
       wsave = w;
@@ -4697,7 +4731,6 @@ function{1} MultMatrix(argv[argc])
    abstract { return list }
    body {
       wbp w;
-      wcp wc;
       int warg = 0, start=0, num;
       tended struct descrip f;
       tended struct descrip d;
@@ -4707,7 +4740,6 @@ function{1} MultMatrix(argv[argc])
 
       OptWindow(w);
       EnsureWindow3D(w);
-      wc = w->context;
       if (argc-warg < 1) /* missing the matrix elements */
 	 runerr(103);
 
@@ -4789,7 +4821,7 @@ function{1} WSection(argv[argc])
   body {
       wbp w;
       wcp wc;
-      int len, warg = 0, nfields, draw_code;
+      int warg = 0, nfields, draw_code;
       tended struct descrip f;
       tended struct b_record *rp;
       tended char* tmp;
@@ -4847,7 +4879,6 @@ function{1} WSection(argv[argc])
 
       if (!cnv:string(argv[warg], argv[warg]))
 	 runerr(103, argv[warg]);
-      len = StrLen(argv[warg]);
 
 	 /* create a record of the graphical object */
 

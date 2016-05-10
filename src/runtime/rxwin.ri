@@ -513,11 +513,10 @@ int wputc(ci,w)
 int ci;
 wbp w;
    {
-   int fh, lh, width, height, over;
+   int lh, width, height, over;
    char c = (char)ci;
    STDLOCALS(w);
 
-   fh = wc->font->height;
    lh = wc->leading;
    width = ws->width;
    height = ws->height;
@@ -1152,6 +1151,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    {
    wbp w;
    wsp ws;
+   wcp wc;
    char dispchrs[256];
    char answer[128];
    char *display = NULL;
@@ -1188,8 +1188,8 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 
    ws->vis = DefaultVisual(ws->display->display, ws->display->screen); 
 
-   w->window->children=NULL;
-   w->window->parent = NULL;
+   ws->children=NULL;
+   ws->parent = NULL;
 
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *)tlp;
@@ -1198,7 +1198,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
     * some attributes of the display and window are used in the context
     */
 	
-   if ((w->context = alc_context(w)) == NULL) {
+   if ((wc = w->context = alc_context(w)) == NULL) {
       *err_index = -2;
       free_binding(w);
       return NULL;
@@ -1207,14 +1207,14 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    /*
     * some attributes of the context determine window defaults
     */
-   ws->height = w->context->font->height * 12;
-   ws->width  = w->context->font->fsp->max_bounds.width * 80;
-   ws->y = w->context->font->fsp->max_bounds.ascent;
+   ws->height = wc->font->height * 12;
+   ws->width  = wc->font->fsp->max_bounds.width * 80;
+   ws->y = wc->font->fsp->max_bounds.ascent;
    ws->x = 0;
-   ws->y += w->context->dy;
-   ws->x += w->context->dx;
+   ws->y += wc->dy;
+   ws->x += wc->dx;
 #ifdef Graphics3D
-   w->context->is_3D = ws->is_3D = is_3d;
+   wc->is_3D = ws->is_3D = is_3d;
 #endif					/* Graphics3D */
    /*
     * Loop through any remaining arguments.
@@ -3357,12 +3357,10 @@ wbp w;
 int mute_index;
    {
    wdp dp;
-   Display *d;
    int i;
    char *colorname;
 
    dp = w->window->display;
-   d = dp->display;
 
    for (i = 2; i < DMAXCOLORS; i++)
       if (dp->colors[i].type == CLR_MUTABLE && dp->colors[i].c == -mute_index-1)
@@ -3397,11 +3395,9 @@ wbp w;
 int mute_index;
    {
    wdp dp;
-   Display *d;
    int i;
 
    dp = w->window->display;
-   d = dp->display;
 
    for (i = 2; i < DMAXCOLORS; i++)
       if (dp->colors[i].type == CLR_MUTABLE && dp->colors[i].c == -mute_index-1)
@@ -3416,7 +3412,6 @@ wbp w;
 char *s;
    {
    wdp dp;
-   Display *d;
    long i, alpha;
    LinearColor clr;
    XColor color;
@@ -3424,7 +3419,6 @@ char *s;
    if (parsecolor(w, s, &clr.red, &clr.green, &clr.blue, &alpha) != Succeeded)
       return;
    dp = w->window->display;
-   d = dp->display;
    color = xcolor(w, clr);
 
    for (i = 2; i < DMAXCOLORS; i++)
@@ -4706,7 +4700,8 @@ char child_window_stuff(wbp w, wbp wp, int child_window)
    wcp wc;
    int is_3d=0, query;
    struct wbind_list *curr;
-   wdp wd;
+   wdp wd = wp->window->display;
+
 #if HAVE_LIBGL
    int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
 #endif					/* HAVE_LIBGL */
@@ -4718,7 +4713,6 @@ char child_window_stuff(wbp w, wbp wp, int child_window)
       /*
        * create an opengl window
        */
-      wd = wp->window->display;
 #if HAVE_LIBGL
       if (!glXQueryExtension(wd->display, &query, &query)) {
          printf("X server has no OpenGL GLX extension");

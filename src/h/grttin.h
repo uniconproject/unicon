@@ -431,6 +431,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
    #enddef				/* OptWindow */
    
    #begdef OptTexWindow(w)
+#ifdef Graphics3D
       if (argc>warg && is:record(argv[warg])) {
 	/* set a boolean flag, use a texture */
 	is_texture=TEXTURE_RECORD;
@@ -442,6 +443,7 @@ typedef int LOGPEN, LOGBRUSH, LPVOID, MCI_PLAY_PARMS, MCIDEVICEID;
 	warg++;
       }
       else
+#endif					/* Graphics3D */	
       if (argc>warg && is:file(argv[warg])) {
          if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
 	    runerr(140,argv[warg]);

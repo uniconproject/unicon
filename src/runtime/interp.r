@@ -2659,7 +2659,7 @@ register struct b_coexpr *ncp;
 #if UNIX && E_Tick
    if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
        ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {
-      word sum, nticks;
+      word sum /*, nticks */;
 
       oldtick = ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
        ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7];
@@ -2667,7 +2667,7 @@ register struct b_coexpr *ncp;
 	 ticker.s[4] + ticker.s[5] + ticker.s[6] + ticker.s[7] +
 	    ticker.s[8] + ticker.s[9] + ticker.s[10] + ticker.s[11] +
 	       ticker.s[12] + ticker.s[13] + ticker.s[14] + ticker.s[15];
-      nticks = sum - oldsum;
+      /* nticks = sum - oldsum; */
       oldsum = sum;
       }
 #endif					/* UNIX && E_Tick */

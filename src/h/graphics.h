@@ -2,6 +2,8 @@
  * graphics.h - macros and types used in Icon's graphics interface.
  */
 
+#define MAXDISPLAYNAME	128
+
 #ifdef MacGraph
    #include "::h:macgraph.h"
 #endif					/* MacGraph */
@@ -25,8 +27,6 @@
 #else					/* HAVE_LIBGL */
 #include "direct3d.h"
 #endif					/* HAVE_LIBGL */
-
-#define MAXDISPLAYNAME	128
 
 #define	REDRAW_CUBE 16
 #define	REDRAW_CYLINDER 32

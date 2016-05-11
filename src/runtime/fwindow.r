@@ -1562,10 +1562,11 @@ function{0,1} Fg(argv[argc])
       int texhandle;
 #endif					/* Graphics3D */
       OptTexWindow(w);
+#ifdef Graphics3D
       if (is_texture) {
 	 warg=1;
 	 }
-
+#endif					/* Graphics3D */
       /*
        * If there is a (non-window) argument we are setting by
        *  either a mutable color (negative int) or a string name.
@@ -2414,12 +2415,15 @@ function{0,1} ReadImage(argv[argc])
 #endif					/* Graphics3D */
       OptTexWindow(w);
 
+#ifdef Graphics3D
       if (is_texture){
          warg=1;
          imd.format = UCOLOR_RGB;
          imd.is_bottom_up = 1;
          }
-      else{
+      else
+#endif					/* Graphics3D */
+      {
 #ifdef NT
          imd.format = UCOLOR_BGR;
 #else
@@ -2640,6 +2644,7 @@ function{*} WAttrib(argv[argc])
 		  for ( ; tmp_s < tmp_s2; tmp_s++)
 		     if (*tmp_s == '=') break;
 		  if (tmp_s < tmp_s2) {
+#ifdef  Graphics3D
 		     if (is_texture) {
 			/* For now, no attribute assignments on textures. */
 			if (StrLen(sbuf) > 12 &&
@@ -2649,6 +2654,7 @@ function{*} WAttrib(argv[argc])
 			else
 			   runerr(0, argv[n]);
 			}
+#endif					/* Graphics3D */
 
 		     /*
 		      * pass 1: perform attribute assignments
@@ -2712,10 +2718,9 @@ function{*} WAttrib(argv[argc])
  		     if (*stmp == '=') break;
  		  if (stmp < stmp2)
 		     StrLen(sbuf) = stmp - StrLoc(sbuf);
-
+#ifdef Graphics3D
 		  if (is_texture) {
 
-#ifdef Graphics3D
 		     wdp wd = w->context->display;
 		     /*
 		      * So far, textures support only read-only access to a
@@ -2733,7 +2738,7 @@ function{*} WAttrib(argv[argc])
 			return C_integer wd->stex[texhandle].height;
 			}
 		     else 
-#endif					/* Graphics3D */
+
 		        {
 			/* the default=fail semantics will be clear enough
 			 * to applications on read.
@@ -2741,6 +2746,7 @@ function{*} WAttrib(argv[argc])
 			fail;
 			}
 		     }
+#endif					/* Graphics3D */
 
 		  switch (wattrib(w, StrLoc(sbuf), StrLen(sbuf),
 				  &sbuf2, answer)) {

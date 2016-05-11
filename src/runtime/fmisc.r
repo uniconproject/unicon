@@ -2047,43 +2047,32 @@ static stringint siKeywords[] = {
 
       if (kname[0] == '&') kname++;
       if (strcmp(kname,"allocated") == 0) {
-	 int tot;
 #ifdef Concurrent
-#if !ConcurrentCOMPILER
-	 MUTEX_LOCKID(p->mutexid_stringtotal);
-	 MUTEX_LOCKID(p->mutexid_blocktotal);
-	 tot =  stattotal + p->stringtotal + p->blocktotal;
-	 MUTEX_UNLOCKID(p->mutexid_blocktotal);
-	 MUTEX_UNLOCKID(p->mutexid_stringtotal);
+	 int tot;
+#if ConcurrentCOMPILER
+	 int mtxstr = mutexid_stringtotal;
+	 int mtxblk = mutexid_blocktotal;
 #else                                    /* ConcurrentCOMPILER */
-	 MUTEX_LOCKID(mutexid_stringtotal);
-	 MUTEX_LOCKID(mutexid_blocktotal);
-	 tot =  stattotal + p->stringtotal + p->blocktotal;
-	 MUTEX_UNLOCKID(mutexid_blocktotal);
-	 MUTEX_UNLOCKID(mutexid_stringtotal);
+	 int mtxstr = p->mutexid_stringtotal;
+	 int mtxblk = p->mutexid_blocktotal;
 #endif                                    /* ConcurrentCOMPILER */
+
+	 MUTEX_LOCKID(mtxstr);
+	 MUTEX_LOCKID(mtxblk);
+	 tot =  stattotal + p->stringtotal + p->blocktotal;
+	 MUTEX_UNLOCKID(mtxblk);
+	 MUTEX_UNLOCKID(mtxstr);
+	 suspend C_integer tot;
+	 suspend C_integer stattotal;
+
+	 MUTEX_LOCKID(mtxstr);
+	 tot =  p->stringtotal;
+	 MUTEX_UNLOCKID(mtxstr);
 	 suspend C_integer tot;
 
-	 suspend C_integer stattotal;
-#if !ConcurrentCOMPILER
-	 MUTEX_LOCKID(p->mutexid_stringtotal);
-	 tot =  p->stringtotal;
-	 MUTEX_UNLOCKID(p->mutexid_stringtotal);
-#else                                    /* ConcurrentCOMPILER */
-	 MUTEX_LOCKID(mutexid_stringtotal);
-	 tot =  p->stringtotal;
-	 MUTEX_UNLOCKID(mutexid_stringtotal);
-#endif                                   /* ConcurrentCOMPILER */
-	 suspend C_integer tot;
-#if !ConcurrentCOMPILER
-	 MUTEX_LOCKID(p->mutexid_blocktotal);
+	 MUTEX_LOCKID(mtxblk);
 	 tot =  p->blocktotal;
-	 MUTEX_UNLOCKID(p->mutexid_blocktotal);
-#else                                    /* ConcurrentCOMPILER */
-	 MUTEX_LOCKID(mutexid_blocktotal);
-	 tot =  p->blocktotal;
-	 MUTEX_UNLOCKID(mutexid_blocktotal);
-#endif                                   /* ConcurrentCOMPILER */
+	 MUTEX_UNLOCKID(mtxblk);
 	 return C_integer tot;
 #else					/* Concurrent */
 	 suspend C_integer stattotal + p->stringtotal + p->blocktotal;

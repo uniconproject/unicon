@@ -1862,7 +1862,10 @@ word getrandom()
    static int ncalls = 0;
    word krandom;
    time_t t;
-   struct tm *ct, ctstruct;
+   struct tm *ct;
+#if defined(Concurrent) && !NT
+   struct tm ctstruct;
+#endif					/* Concurrent */
 
    time(&t);
 

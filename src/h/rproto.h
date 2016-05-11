@@ -353,7 +353,9 @@ char		*reserve_1	(int region, word nbytes);
 char		*reserve	(int region, word nbytes);
 #endif					/* MultiThread */
 void		retderef		(dptr valp, word *low, word *high);
+#if !NT
 void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);
+#endif					/* NT */
 void		segvtrap	(void);
 void		stkdump		(int);
 word		sub		(word a,word b, int *over_flowp);

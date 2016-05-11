@@ -662,7 +662,7 @@ void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp)
    IntVal((*rp)->fields[7]) = (word)usg->ru_nvcsw;
    IntVal((*rp)->fields[8]) = (word)usg->ru_nivcsw;
 }
-#endif
+#endif						/* NT */
 
 struct descrip posix_lock = {D_Null};
 struct descrip posix_timeval = {D_Null};

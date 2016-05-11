@@ -402,7 +402,7 @@ FILE *fd;
    word tally = 0;
    word n = 0;
 
-#if NT
+#if AAANT
    /*
     * Under NT, ftell() used in Icon where() returns bad answers
     * after a wlongread().  We work around it here by fseeking after fread.
@@ -417,7 +417,7 @@ FILE *fd;
    while (len > 0) {
       n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
       if (n <= 0) {
-#if NT
+#if AAANT
          gzseek(fd, pos + tally, SEEK_SET);
 #endif					/* NT */
          return tally;
@@ -426,14 +426,14 @@ FILE *fd;
       ts += n;
       len -= n;
       }
-#if NT
+#if AAANT
    gzseek(fd, pos + tally, SEEK_SET);
 #endif					/* NT */
    return tally;
    }
 
 #endif					/* HAVE_LIBZ */
-
+
 
 #ifdef RecordIO
 /*

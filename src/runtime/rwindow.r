@@ -569,7 +569,7 @@ int len;
    tended struct descrip result;
 
    /* turn off the cursor */
-   hidecrsr(ws);
+   hidecrsr(w->window);
 
    if ( (FILE *) w == stdout || (FILE *) w == stderr || (FILE *) w == ConsoleBinding) {
       if (flog) fprintf(flog, "%*s", len, s);
@@ -652,11 +652,11 @@ int len;
     }
 
   /* show the cursor again */
-  UpdateCursorPos(ws, w->context);
-  showcrsr(ws);
+  UpdateCursorPos(w->window, w->context);
+  showcrsr(w->window);
 }
 
-
+
 /*
  * Structures and tables used for color parsing.
  *  Tables must be kept lexically sorted.

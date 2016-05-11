@@ -87,6 +87,6 @@
 #define HAVE_LIBPTHREAD 1
 #else
 #define NoConcurrent
-#ednif
+#endif
 
 /*#define HAVE_STRUCT_TIMESPEC 1*/

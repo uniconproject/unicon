@@ -537,7 +537,7 @@ function{0,1} rmdir(s)
       CURTSTATE();
 #endif					/* ConcurrentCOMPILER */
       IntVal(amperErrno) = 0;
-#if NT
+#if NT && !defined(MSWIN64)
 #define rmdir _rmdir
 #endif
       if (rmdir(s) != 0) {
@@ -581,7 +581,11 @@ function{0,1} mkdir(s, m)
 
       IntVal(amperErrno) = 0;
 #if NT
+#ifdef MSWIN64
+#define mkdir(s,mode) mkdir(s)		/* in NT, mkdir don't have mode*/
+#else
 #define mkdir(s,mode) _mkdir(s)		/* in NT, _mkdir don't have mode*/
+#endif
 #endif
       if (mkdir(s, mode) != 0) {
 	 IntVal(amperErrno) = errno;

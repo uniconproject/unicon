@@ -241,6 +241,7 @@ typedef int jmp_buf;
 #if NT
 typedef int HMODULE, WSADATA, WORD, HANDLE, MEMORYSTATUS, DWORD;
 typedef int STARTUPINFO, PROCESS_INFORMATION, SECURITY_ATTRIBUTES;
+typedef int LPSOCKADDR;
 #if 1
 typedef int MEMORYSTATUSEX;
 #endif

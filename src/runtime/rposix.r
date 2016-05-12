@@ -1623,7 +1623,7 @@ struct addrinfo *inforesult;
 		 */
 
                 ipbuflen = 46;
-                if (WSAAddressToString(((struct sockaddr_in6 *) ptr->ai_addr), 
+                if (WSAAddressToString(((LPSOCKADDR) ptr->ai_addr), 
 		    (DWORD) ptr->ai_addrlen, NULL, 
                     ipstrbuf, (LPDWORD) &ipbuflen)!=0)
 		    ipstrbuf[0]='\0';

@@ -858,7 +858,35 @@ int checkOpenConsole( FILE *w, char *s );
       void drawstrng(wbinding *wb, int x, int y, char *s, int slen);
       void unsetclip(wbp w);
 
-   #endif				/* MSWindows */
+      void makebutton(wsp ws, childcontrol *cc, char *s);
+      void makescrollbar(wsp ws, childcontrol *cc, char *s, int i1, int i2);
+      int nativemenubar(wbp w, int total, int argc, dptr argv, int warg, dptr d);
+      void makeeditregion(wbp w, childcontrol *cc, char *s);
+      void cleareditregion(childcontrol *cc);
+      void copyeditregion(childcontrol *cc);
+      void cuteditregion(childcontrol *cc);
+      void pasteeditregion(childcontrol *cc);
+      int undoeditregion(childcontrol *cc);
+      int modifiededitregion(childcontrol *cc);
+      int setmodifiededitregion(childcontrol *cc, int i);
+      void geteditregion(childcontrol *cc, dptr d);
+      void seteditregion(childcontrol *cc, char *s2);
+      void movechild(childcontrol *cc,
+	             C_integer x, C_integer y, C_integer width, C_integer height);
+      int setchildfont(childcontrol *cc, char *fontname);
+      void setfocusonchild(wsp ws, childcontrol *cc, int width, int height);
+      void setchildselection(wsp ws, childcontrol *cc, int x, int y);
+      void getchildselection(wsp ws, childcontrol *cc, word *x, word *y);
+      int sysScrollWidth();
+
+      void waitkey(FILE *w);
+
+
+      /* defined in src/common */
+      int pathOpenHandle(char *fname, char *mode);
+      void closelog();
+
+#endif				/* MSWindows */
 
    #ifdef PresentationManager
       /*

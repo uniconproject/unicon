@@ -1684,7 +1684,7 @@ function{0,1} remove(s)
       if (remove(s) != 0) {
 #ifdef PosixFns
 	 IntVal(amperErrno) = 0;
-#if NT
+#if NT && !defined(MSWIN64)
 #define rmdir _rmdir
 #endif					/* NT */
 	 if (rmdir(s) != 0) {

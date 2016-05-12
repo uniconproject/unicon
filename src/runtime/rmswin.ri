@@ -31,6 +31,12 @@ void SetDCPixelFormat(HDC h);
 int alc_rgb(wbp w, SysColor rgb);
 int numRealized;
 
+int dc_maxcharwidth(HDC dc);
+int dc_textwidth(HDC dc, char *s, int n);
+int reversebits(int c);
+int widenbits(int c);
+int resetfg(wbp w);
+
 #ifndef min
 #define min(x,y) (((x) < (y))?(x):(y))
 #define max(x,y) (((x) > (y))?(x):(y))
@@ -1983,7 +1989,7 @@ int devicecaps(wbp w, int i)
    FREE_STDLOCALS(w);
    return rv;
 }
-
+
 /*
  * Reset the context's foreground color to whatever it is supposed to be.
  */
@@ -2098,7 +2104,7 @@ double gamma;
    setbg(w, wc->bgname);
    return Succeeded;
    }
-
+
 /*
  * setpointer() - define a mouse pointer shape
  */
@@ -2163,15 +2169,15 @@ char *val;
       }
    return Succeeded;
    }
-
-setdisplay(wbp w, char *val)
+
+int setdisplay(wbp w, char *val)
    {
    if (strcmp(val, "MS Windows"))
       return Failed;
    return Succeeded;
    }
 
-setimage(wbp w, char *val)
+int setimage(wbp w, char *val)
    {
    wsp ws = w->window;
    int status;
@@ -4756,7 +4762,7 @@ void setchildselection(wsp ws, childcontrol *cc, int x, int y)
    ws->focusChild = cc->win;
 }
 
-void getchildselection(wsp ws, childcontrol *cc, int *x, int *y)
+void getchildselection(wsp ws, childcontrol *cc, word *x, word *y)
 {
    SendMessage(cc->win, EM_GETSEL, (WPARAM)x, (LPARAM)y);
 }

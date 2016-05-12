@@ -31,7 +31,8 @@ help:
 Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-		sh ./configure
+		sh ./configure --without-xlib --without-jpeg --without-png \
+		--without-opengl --without-xft --without-FTGL CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 		@echo Now remember to add unicon/bin to your path
 
 Thin-Configure:	config/unix/$(name)/status
@@ -78,7 +79,7 @@ WUnicon:
 	@echo Ready to build Windows Unicon
 	@echo Make sure the Unicon bin directory is in your path before continuing, then run:
 	@echo
-	@echo "   - " \"make WUnicon32\"   for a 32-bit build, or
+	@echo "   - " \"make WUnicon32\" for a 32-bit build, or
 	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
 	@echo
 

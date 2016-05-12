@@ -49,7 +49,8 @@ Configure:	config/unix/$(name)/status
 		$(MAKE) cfg
 
 cfg:
-		sh ./configure --without-xlib CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
+		sh ./configure --without-xlib --without-jpeg --without-png \
+		--without-opengl --without-xft --without-FTGL CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 x-cfg:
 		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)

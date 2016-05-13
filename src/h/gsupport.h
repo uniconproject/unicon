@@ -19,6 +19,10 @@
 #include "../h/proto.h"
 #include "../h/cpuconf.h"
 
+#ifdef HAVE_GETADDRINFO
+#undef HAVE_GETADDRINFO
+#endif 
+
 #ifdef ConsoleWindow
    #include "../h/rmacros.h"
    #include "../h/rstructs.h"

@@ -9,7 +9,15 @@
 extern fptr fncentry[];
 extern word istart[4]; extern int mterm;
 
-
+#if MSDOS || OS2
+#if !HIGHC_386 && !ZTC_386 && !INTEL_386 && !WATCOM && !BORLAND_386 && !SCCX_MX
+   static union {
+      pointer stkadr;
+      word stkint;
+   } stkword;
+#endif
+#endif				/* MSDOS || OS2 */
+   
 #ifdef OVLD
 extern int *OpTab;
 #endif

@@ -2512,6 +2512,7 @@ function{1} WSync(w)
       return file++null
       }
    body {
+#if !NT
       wbp _w_;
 
       if (is:null(w)) {
@@ -2525,6 +2526,7 @@ function{1} WSync(w)
 	 }
 
       wsync(_w_);
+#endif
       pollevent();
       return w;
       }
@@ -2925,12 +2927,10 @@ function{0,1} WinPlayMedia(argv[argc])
    body {
       wbp w;
       tended char *tmp;
-      int i, warg = 0;
-      wsp ws;
+      int warg = 0;
       word n;
       OptWindow(w);
 
-      ws = w->window;
       for (n = warg; n < argc; n++) {
          if (!cnv:C_string(argv[n], tmp))
 	    runerr(103,argv[warg]);
@@ -2939,7 +2939,6 @@ function{0,1} WinPlayMedia(argv[argc])
       return nulldesc;
       }
 end
-
 
 
 /*
@@ -2954,7 +2953,7 @@ function{0,1} WinButton(argv[argc])
    body {
       wbp w;
       wsp ws;
-      int i, ii, i2, r, total = 0;
+      int i, ii, i2;
       C_integer x, y, width, height, warg = 0;
       tended char *s, *s2;
       tended struct descrip d;
@@ -3121,7 +3120,7 @@ function{0,1} WinMenuBar(argv[argc])
       wbp w;
       wsp ws;
       int i, total = 0;
-      C_integer x, y, warg = 0;
+      C_integer warg = 0;
       tended char *s;
       tended struct descrip d;
       OptWindow(w);
@@ -3286,7 +3285,7 @@ function{0,1} WinColorDialog(argv[argc])
       wbp w;
       long r, g, b, a, warg = 0;
       tended char *s;
-      char buf[64], *tmp = buf;
+      char buf[64];
       OptWindow(w);
 
       if (warg < argc) {
@@ -3313,7 +3312,7 @@ function{0,2} WinFontDialog(argv[argc])
       wbp w;
       int flags, t, fheight,  warg = 0;
       tended char *s;
-      char buf[64], *tmp = buf;
+      char buf[64];
       char colr[64];
       OptWindow(w);
 
@@ -3345,8 +3344,8 @@ function{0,1} WinOpenDialog(argv[argc])
    body {
       wbp w;
       int len, slen;
-      C_integer i, j, x, y, width, height, warg = 0;
-      char buf2[64], buf3[256], buf4[256], chReplace;
+      C_integer i, j, warg = 0;
+      char buf3[256], buf4[256], chReplace;
       char *tmpstr;
       tended char *s1, *s2, *s3, *s4;
       OptWindow(w);
@@ -3433,7 +3432,7 @@ function{0,1} WinSelectDialog(argv[argc])
       }
    body {
       wbp w;
-      C_integer i, j, warg = 0, len = 0;
+      C_integer i, warg = 0, len = 0;
       tended char *s1;
       char *s2 = NULL, *tmpstr;
       tended struct descrip d;

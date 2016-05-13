@@ -387,13 +387,6 @@ struct header *hdr;
    char tname[256];
    int fdname = -1;
 
-#if MSDOS
-   int thisIsAnExeFile = 0;
-   char bytesThatBeginEveryExe[2] = {0,0};
-   unsigned short originalExeBytesMod512, originalExePages;
-   unsigned long originalExeBytes;
-#endif					/* MSDOS */
-
    tname[0] = '\0';
 
    if (!name)
@@ -407,7 +400,6 @@ struct header *hdr;
 #if MSDOS
    /* already has .exe extension */
    if (n >= 4 && !stricmp(".exe", name + n - 4)) {
-      thisIsAnExeFile = 1;
 
       fdname = pathOpenHandle(name, ReadBinary);
       strcpy(tname, name);

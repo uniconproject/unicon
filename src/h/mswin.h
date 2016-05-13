@@ -33,7 +33,7 @@
 #define LINEWIDTH(w) ((w)->context->pen.lopnWidth.x)
 #define DISPLAYHEIGHT(w) devicecaps(w, VERTRES)
 #define DISPLAYWIDTH(w) devicecaps(w, HORZRES)
-#define wflush(w) 0 /* noop */
+#define wflush(w) /* noop */
 #define wsync(w) /* noop */
 #define SysColor unsigned long
 #define RED(x) GetRValue(x)

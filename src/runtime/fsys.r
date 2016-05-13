@@ -1895,7 +1895,10 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       return null ++ integer
       }
    body {
-      int i, j, n, is_argv_str=0, pid;
+#if !NT
+      int pid;
+#endif
+      int i, j, n, is_argv_str=0;
       C_integer i_mode=0;
       tended union block *ep;
 	 
@@ -1951,10 +1954,10 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	 margv[n] = 0;
          }
       else if (is:string(argv)) {
+#if !NT
 	 char *s;
 	 is_argv_str = 1;
          cnv:C_string(argv, cmdline);
-#if !NT
 	 /*
 	  * If we have a string it may have redirection orders.
 	  * Since execl("/bin/sh"...) doesn't seem to handle those

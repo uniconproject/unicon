@@ -797,10 +797,6 @@
       #if HIGHC_386 || ZTC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
          #define PushAVal(x) PushVal(x)
       #else				/* HIGHC_386 || ZTC_386 || ... */
-         static union {
-                pointer stkadr;
-                word stkint;
-            } stkword;
          
          #define PushAVal(x)  {sp++; \
          			stkword.stkadr = (char *)(x); \

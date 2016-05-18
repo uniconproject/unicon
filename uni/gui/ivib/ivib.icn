@@ -6,14 +6,21 @@
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
 
+# Treat a Control-C pressed in the console as a request to quit,
+# offer to save work if needed.
+procedure ivib_trapint(x)
+   ivib_maindialog.op_quit()
+end
+
+global ivib_maindialog
 #
 # Program entry point.
 #
 procedure main(args)
-   local m
+   trap("SIGINT", ivib_trapint)
    #
    # Create the dialog window, give it the command line args, and display it.
    #
-   m := Main()
-   m.custom_show(args)
+   ivib_maindialog := Main()
+   ivib_maindialog.custom_show(args)
 end

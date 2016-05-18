@@ -429,11 +429,16 @@ procedure ui_Progend(x)
     fail
 end
 
+procedure ui_trapint(x)
+   uidlog.ide_handle_exit()
+end
+
 procedure main(argv)
    local d := argv[1]
    UIDE_VERS := "0.95"
    if not match("graphics", &features) then stop("Graphics not enabled")
    reinitialize()
+   trap("SIGINT", ui_trapint)
    Progend := ui_Progend
    warning := ui_Warning
 

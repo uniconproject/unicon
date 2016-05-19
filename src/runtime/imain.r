@@ -787,8 +787,9 @@ int *ip;
    register word i, j;
    register struct b_proc *pp;
    register dptr dp;
-   #if defined(MultiThread) && !defined(Concurrent)
-      register struct progstate *savedstate = curpstate;   
+   #ifdef MultiThread
+      register struct progstate *savedstate = curpstate;
+      CURTSTATE();
       if (pstate){ 
 	curpstate = pstate;
 	curtstate = pstate->tstate;
@@ -874,7 +875,7 @@ int *ip;
    for (dp = fnames; dp < efnames; dp++)
       StrLoc(*dp) = strcons + (uword)StrLoc(*dp);
 
-#if defined(MultiThread) && !defined(Concurrent)
+#ifdef MultiThread
    curpstate = savedstate;
    curtstate = curpstate->tstate;
 #endif						/* MultiThread */

@@ -762,7 +762,7 @@ outerfnc(fnc, reachable)
    if (Type(Tree1(cur_proc->tree)) != N_Empty)
       fprintf(codefile, "   static int first_time = 1;");
    fprintf(codefile, "\n");
-   fprintf(codefile, "   CURTSTATE();\n");
+   fprintf(codefile, "   CURTSTATE_AND_CE();\n");
    fprintf(codefile, "   r_f.old_pfp = pfp;\n");
    fprintf(codefile, "   pfp = (struct p_frame *)&r_f;\n");
    fprintf(codefile, "   r_f.old_argp = glbl_argp;\n");
@@ -953,7 +953,7 @@ struct c_fnc *fnc;
    
       fprintf(codefile, "   register int r_signal;\n");
       fprintf(codefile, "   register struct PF%s_%s *r_pfp;\n", prefix, name);
-      fprintf(codefile, "   CURTSTATE();\n");
+      fprintf(codefile, "   CURTSTATE_AND_CE();\n");
       fprintf(codefile, "\n");
       fprintf(codefile, "   r_pfp  = (struct PF%s_%s *)pfp;\n", prefix, name);
       prtcode(&(fnc->cd), 0);

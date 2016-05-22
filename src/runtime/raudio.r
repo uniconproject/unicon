@@ -742,10 +742,11 @@ int StartAudioThread(char filename[])
 #endif
 	 }
 
-      if((strptr = strstr(filename,".ogg")) != NULL){
+      if ((strptr = strstr(filename,".ogg")) != NULL) {
 #if defined(HAVE_LIBOGG) 
 #ifndef WIN32
-	 if ( pthread_create( &arraySource[i].thread, &attrib, OpenAL_PlayOgg , NULL) ) {
+	 if (pthread_create(&arraySource[i].thread, &attrib,
+			    OpenAL_PlayOgg, NULL)) {
 	    /* fprintf(stderr, "error creating thread.\n");
              * abort();
              */
@@ -1002,16 +1003,16 @@ int LinuxMixer(char * cmd) /* cmd: eg. "vol=50" */
    char cmdsVal[10] = {'\0'};
    char *strptr = NULL, *p = NULL;
 
-   if( MixInitialize() >= 0){
+   if (MixInitialize() >= 0) {
       /*----------------parse cmd; */
       p = strchr(cmd,'=');
-      if(p != NULL){ /* cmd: "cmd=ival" */
-	 strptr=cmd;
-	 while(strptr != p) cmdsVal[i++] = *strptr++;
-	 cmdsVal[i]='\0';
+      if (p != NULL) { /* cmd: "cmd=ival" */
+	 strptr = cmd;
+	 while (strptr != p) cmdsVal[i++] = *strptr++;
+	 cmdsVal[i] = '\0';
 	 i=0;
 	 while(*++p != '\0') val[i++] = *p;
-	 val[i]='\0';
+	 val[i] = '\0';
 	 cmdiVal = atoi(val);
 	 }
       else  /* cmd: "cmd" */

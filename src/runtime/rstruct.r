@@ -22,9 +22,7 @@ void addmem(struct b_set *ps,struct b_selem *pe,union block **pl)
  *  into an array of descriptors.
  */
 
-void cpslots(dp1, slotptr, i, j)
-dptr dp1, slotptr;
-word i, j;
+void cpslots(dptr dp1, dptr slotptr, word i, word j)
    {
    word size;
    struct b_list *lp1; /* these were tended, but I see no allocations here */

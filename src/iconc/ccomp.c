@@ -244,6 +244,10 @@ Deliberate Syntax Error
    lib_sz += strlen(" -lstdc++ ");
 #endif
 
+#if HAVE_LIBSSL
+   lib_sz += strlen(" -lssl -lcrypto ");
+#endif                                        /* HAVE_LIBSSL */
+
    lib_sz += strlen(" -lwinmm");
    lib_sz += strlen(" -lwsock32");
    lib_sz += strlen(" -lodbc32");
@@ -335,6 +339,10 @@ Deliberate Syntax Error
    strcat(s, " -lstdc++ ");
 #endif
 
+#if HAVE_LIBSSL
+   strcat(s, " -lssl -lcrypto ");
+#endif                                        /* HAVE_LIBSSL */
+
    strcat(s, " -lwinmm");
    strcat(s, " -lwsock32");
    strcat(s, " -lodbc32");
@@ -381,8 +389,8 @@ Deliberate Syntax Error
 
    if (system(buf) != 0)
       return EXIT_FAILURE;
-#endif
-#endif
+#endif					/* NTGCC*/
+#endif					/* MS-DOS*/
 
 #if UNIX
 
@@ -427,6 +435,10 @@ Deliberate Syntax Error
    lib_sz += strlen(" -lstdc++ ");
 #endif
 
+#if HAVE_LIBSSL
+   lib_sz += strlen(" -lssl -lcrypto ");
+#endif                                        /* HAVE_LIBSSL */
+   
    buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
 			     lib_sz + 8);
    strcpy(buf, c_comp);
@@ -512,6 +524,10 @@ Deliberate Syntax Error
 #if defined(MacOSX) || defined(HAVE_LIBFTGL)
    strcat(s, " -lstdc++ ");
 #endif
+
+#if HAVE_LIBSSL
+   strcat(s, " -lssl -lcrypto ");
+#endif                                        /* HAVE_LIBSSL */
 
    /*
     * mdw: emit cc command-line if verbosity is set above 2

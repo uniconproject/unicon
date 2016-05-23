@@ -404,7 +404,7 @@ Deliberate Syntax Error
 
 #ifndef NT 
    /* what is this non-portable Linux junk doing here? */
-   addlib("/usr/lib64/libstdc++.so.6");
+   addlib("-lstdc++");
 #endif					/* NTGCC */
 
    if (srclst == NULL)

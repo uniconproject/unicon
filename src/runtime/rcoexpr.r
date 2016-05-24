@@ -383,6 +383,9 @@ int first;
     glbl_argp = ncp->es_argp;
     BlkLoc(k_current) = (union block *)ncp;
    }
+   #if COMPILER || ConcurrentCOMPILER
+   coexpr_fnc = ncp->fnc;
+   #endif				/* COMPILER && !ConcurrentCOMPILER */
 #endif                                  /* NativeCoswitch */
 #else					/* Concurrent */
     glbl_argp = ncp->es_argp;

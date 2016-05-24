@@ -33,49 +33,49 @@ global Canvas_temp_win
 # Canvas class.
 #
 class Canvas : Component : SelectiveClassCoding(
-                                   superclass_name,         # Class name of superclass
-                                   import_name,             # Name of import file
-                                   items,                   # List of the CanvasComponents on the Canvas
-                                   selections,              # Items currently selected
-                                   selected,                # Item currently selected and highlighted
-                                   is_held,                 # Flag indicating whether left button held over item
-                                   drag_x_offset,           # Offsets used for smooth dragging
-                                   drag_y_offset, 
-                                   resize_mode,             # Flag indicating how an item is being resized/moved
-                                   button_groups,           # Set of ButtonGroup objects (see groups.iol)
-                                   checkbox_groups,         # Set of CheckBoxGroup objects
-                                   dialog_struct,           # A _Dialog object corresponding to the Canvas
-                                   is_resizing,             # Flag indicating Canvas being resized
-                                   new_file_flag,           # Flag indicating if filename is a new file (ie provided
-                                                            # via the command line, but didn't exist).
-                                   filename,                # File name of Canvas
-                                   modified,                # Flag indicating whether is modified
-                                   moving,                  # Item being moved
-                                   tmp_dup,                 # Temporary undo variable
-                                   orig_x,                  # Original pos/size of an item being resized/moved
-                                   orig_y, 
-                                   orig_w, 
-                                   orig_h, 
-                                   orig_x_spec,             # Original pos/size spec of an item being resized/moved
-                                   orig_y_spec, 
-                                   orig_w_spec, 
-                                   orig_h_spec, 
-                                   x_new,                   # New pos/size spec of an item being resized/moved
-                                   y_new,
-                                   h_new,
-                                   w_new,
-                                   arrow_flag,              # Flag for co-ordinating undo on keypad movement
-                                   initial_focus,           # Component which will have intitial focus in dialog
-                                   name,                    # Class name of Canvas
-                                   name_table,              # Table for generating default object names.
-                                   gen_main,                # Flags regarding code generation options.
-                                   gen_component_setup,
-                                   gen_initially,
-                                   gen_init_dialog,
-                                   gen_indent,
-                                   clear_borders_flag,      # Flag, used on display()
-                                   event_handlers           # List of event, handler pairs
-                                   )
+   superclass_name,     # Class name of superclass
+   import_name,         # Name of import file
+   items,               # List of the CanvasComponents on the Canvas
+   selections,          # Items currently selected
+   selected,            # Item currently selected and highlighted
+   is_held,             # Flag indicating whether left button held over item
+   drag_x_offset,       # Offsets used for smooth dragging
+   drag_y_offset,
+   resize_mode,         # Flag indicating how an item is being resized/moved
+   button_groups,       # Set of ButtonGroup objects (see groups.iol)
+   checkbox_groups,     # Set of CheckBoxGroup objects
+   dialog_struct,       # A _Dialog object corresponding to the Canvas
+   is_resizing,         # Flag indicating Canvas being resized
+   new_file_flag,       # Flag indicating if filename is a new file (i.e.
+                        # provided via the command line, but didn't exist).
+   filename,            # File name of Canvas
+   modified,            # Flag indicating whether is modified
+   moving,              # Item being moved
+   tmp_dup,             # Temporary undo variable
+   orig_x,              # Original pos/size of an item being resized/moved
+   orig_y,
+   orig_w,
+   orig_h,
+   orig_x_spec,         # Original pos/size spec of an item being
+   orig_y_spec,		# resized/moved
+   orig_w_spec,
+   orig_h_spec,
+   x_new,               # New pos/size spec of an item being resized/moved
+   y_new,
+   h_new,
+   w_new,
+   arrow_flag,          # Flag for co-ordinating undo on keypad movement
+   initial_focus,       # Component which will have intitial focus in dialog
+   name,                # Class name of Canvas
+   name_table,          # Table for generating default object names.
+   gen_main,            # Flags regarding code generation options.
+   gen_component_setup,
+   gen_initially,
+   gen_init_dialog,
+   gen_indent,
+   clear_borders_flag,  # Flag, used on display()
+   event_handlers       # List of event, handler pairs
+   )
 
    #
    # Set the class name, ie the name of the Dialog class in the generated  code
@@ -114,7 +114,10 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method update_pos_label()
       if \self.selected then
-         self.parent_dialog.pos_label.set_label(self.selected.x_spec || "," || self.selected.y_spec || " : " || self.selected.w_spec || "," || self.selected.h_spec)
+         self.parent_dialog.pos_label.set_label(self.selected.x_spec || "," ||
+						self.selected.y_spec || " : " ||
+						self.selected.w_spec || "," ||
+						self.selected.h_spec)
       else
          self.parent_dialog.pos_label.set_label("")
    end
@@ -186,9 +189,7 @@ class Canvas : Component : SelectiveClassCoding(
       f := ::open(s, "w") | return alert_error("Couldn't open " || s)
 
       c := self.selected.dup()
-
       write(f, lang::encode(c))
-
       close(f)
    end
 
@@ -832,13 +833,17 @@ class Canvas : Component : SelectiveClassCoding(
    # Called on resize - resize temporary window.
    #
    method resize()
+      local parent_dlg
       self.Component.resize()
-      WAttrib(Canvas_temp_win, "size=" || self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE || "," || self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE)
+      parent_dlg := self.get_parent_dialog()
+      WAttrib(Canvas_temp_win, "size=" || parent_dlg.get_w_reference() -
+	      self.x + 2 * EDGE || "," || parent_dlg.get_h_reference() -
+	      self.y + 2 * EDGE)
    end
 
    #
-   # Reset the cloned and buffer windows created by gui.iol to match the Canvas's
-   # own attributes, rather than the program's.
+   # Reset the cloned and buffer windows created by gui.iol to match the
+   # Canvas's own attributes, rather than the program's.
    #  
    method reset_windows()
       local t1, t2
@@ -862,17 +867,20 @@ class Canvas : Component : SelectiveClassCoding(
    # Display the canvas.
    #
    method display(buffer_flag)
-      local cw, i
+      local cw, i, parent := self.get_parent_dialog()
       #
-      # This is a flag to indicate whether to clear the area outside the current canvas size.
+      # This is a flag to indicate whether to clear the area outside the
+      # current canvas size.
       #
       if \clear_borders_flag then {
          #
          # This flag is on at the end of a canvas drag. Erase area
          # between right and bottom edge of canvas and edge of window.
          #
-         EraseArea(self.parent_dialog.win, self.x + self.w + EDGE, self.y - EDGE, self.parent_dialog.get_w_reference(), self.parent_dialog.get_h_reference())
-         EraseArea(self.parent_dialog.win, self.x - EDGE, self.y + self.h + EDGE, self.parent_dialog.get_w_reference(), self.parent_dialog.get_h_reference())
+         EraseArea(parent.win, self.x + self.w + EDGE, self.y - EDGE,
+		   parent.get_w_reference(), parent.get_h_reference())
+         EraseArea(parent.win, self.x - EDGE, self.y + self.h + EDGE,
+		   parent.get_w_reference(), parent.get_h_reference())
          clear_borders_flag := &null
       } 
 
@@ -884,7 +892,8 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Copy saved original to buffer. 
          #
-         CopyArea(Canvas_temp_win, self.cbwin, 0, 0, self.w, self.h, self.x, self.y)
+         CopyArea(Canvas_temp_win, self.cbwin,
+		  0, 0, self.w, self.h, self.x, self.y)
          #
          # Highlight moving object
          #
@@ -892,8 +901,10 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Display from buffer.
          #        
-         CopyArea(self.cbwin, self.cwin, self.x, self.y, self.w, self.h, self.x, self.y)
-      } else if \self.is_resizing then {
+         CopyArea(self.cbwin, self.cwin,
+		  self.x, self.y, self.w, self.h, self.x, self.y)
+         }
+      else if \self.is_resizing then {
          #
          # Resizing whole canvas.
          #
@@ -901,20 +912,28 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Copy saved original to buffer.
          #
-         CopyArea(Canvas_temp_win, self.cbwin, 0, 0, self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE, self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE, self.x - EDGE, self.y - EDGE)
+         CopyArea(Canvas_temp_win, self.cbwin, 0, 0,
+		  parent.get_w_reference() - self.x + 2 * EDGE,
+		  parent.get_h_reference() - self.y + 2 * EDGE,
+		  self.x - EDGE, self.y - EDGE)
 
          #
          # Draw outline of new Canvas into buffer.
          #
          cw := Clone(self.cbwin, "linestyle=dashed")
-         Rectangle(cw, self.x - EDGE, self.y - EDGE, self.w + 2 * EDGE, self.h + 2 * EDGE)
+         Rectangle(cw, self.x - EDGE, self.y - EDGE,
+		   self.w + 2 * EDGE, self.h + 2 * EDGE)
          Uncouple(cw)
          
          #
          # Copy buffer to display.
          #
-         CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE, self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE, self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE, self.x - EDGE, self.y - EDGE)
-      } else {
+         CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE,
+		  parent.get_w_reference() - self.x + 2 * EDGE,
+		  parent.get_h_reference() - self.y + 2 * EDGE,
+		  self.x - EDGE, self.y - EDGE)
+        }
+      else {
          #
          # Normal display
          #
@@ -932,28 +951,36 @@ class Canvas : Component : SelectiveClassCoding(
          #
          cw := Clone(self.cbwin, "fg=black")
          every i := 1 to EDGE do
-            Rectangle(cw, self.x - i , self.y - i, self.w + 2 * i, self.h + 2 *i)
+            Rectangle(cw, self.x - i , self.y - i, self.w + 2 * i, self.h + 2*i)
 
          #
          # Draw the resizing corner in the bottom right hand corner.
          #
          WAttrib(cw, "fg=red")
          every i := 1 to EDGE do
-            DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 + i, self.x + self.w - 1 + i, self.y + self.h - 1 + i, self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
+            DrawLine(cw, self.x + self.w - 1 - RSW, self.y + self.h - 1 + i,
+		     self.x + self.w - 1 + i, self.y + self.h - 1 + i,
+		     self.x + self.w - 1 + i, self.y + self.h - 1 - RSW)
 
          Uncouple(cw)
 
          if /buffer_flag then
-            CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE, self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE, self.y - EDGE)
+            CopyArea(self.cbwin, self.cwin, self.x - EDGE, self.y - EDGE,
+		     self.w + 2 * EDGE, self.h + 2 * EDGE, self.x - EDGE,
+		     self.y - EDGE)
          #self.update_pos_label()
       }
    end
 
    #
-   # Return whether the pointer is on the resize corner in the bottom right hand corner.
+   # Return whether the pointer is on the resize corner in the bottom
+   # right hand corner.
    #
    method in_resize_corner()
-      return ((self.x + self.w <= &x < self.x + self.w + EDGE) & (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) | ((self.x + self.w + EDGE - RSW <= &x < self.x + self.w + EDGE) & (self.y + self.h <= &y < self.y + self.h + EDGE)) 
+      return ((self.x + self.w <= &x < self.x + self.w + EDGE) &
+	      (self.y + self.h + EDGE - RSW <= &y < self.y + self.h + EDGE)) |
+             ((self.x + self.w + EDGE - RSW <= &x < self.x + self.w + EDGE) &
+	      (self.y + self.h <= &y < self.y + self.h + EDGE)) 
    end
 
    #
@@ -1005,7 +1032,8 @@ class Canvas : Component : SelectiveClassCoding(
          }
       }
 
-      if orig_x_spec ~== x_new | orig_y_spec ~== y_new | orig_w_spec ~== w_new | orig_h_spec ~== h_new then {
+      if orig_x_spec ~== x_new | orig_y_spec ~== y_new |
+         orig_w_spec ~== w_new | orig_h_spec ~== h_new then {
          if /self.arrow_flag then {
             self.parent_dialog.push_undo()
             self.arrow_flag := 1
@@ -1031,7 +1059,8 @@ class Canvas : Component : SelectiveClassCoding(
       if /moving.y_fixed then {
          y1 <:= self.y
          y1 >:= self.y + self.h - orig_h
-         y_new := moving.get_y_alignment_offset() + y1 - moving.parent.get_y_reference()
+         y_new := moving.get_y_alignment_offset() + y1 -
+                     moving.parent.get_y_reference()
       }
    end
 
@@ -1039,7 +1068,8 @@ class Canvas : Component : SelectiveClassCoding(
       if /moving.x_fixed then {
          x1 <:= self.x
          x1 >:= self.x + self.w - orig_w
-         x_new := moving.get_x_alignment_offset() + x1 - moving.parent.get_x_reference()
+         x_new := moving.get_x_alignment_offset() + x1 -
+                     moving.parent.get_x_reference()
       }
    end
 
@@ -1132,7 +1162,8 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Not in old container.  Post a message.
          #
-         self.parent_dialog.info_label.set_label(if obj === self then "Placed back in canvas" else "Placed inside container")
+         self.parent_dialog.info_label.set_label(if obj === self then
+			"Placed back in canvas" else "Placed inside container")
 
          #
          # Take it out of the one it's currently in ...
@@ -1242,7 +1273,8 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Copy present screen to Canvas_temp_win
          #
-         CopyArea(self.cwin, Canvas_temp_win, self.x, self.y, self.w, self.h, 0, 0)
+         CopyArea(self.cwin, Canvas_temp_win,
+		  self.x, self.y, self.w, self.h, 0, 0)
       } else if in_resize_corner() then {
          #
          # Save for possible push onto undo list.
@@ -1268,7 +1300,10 @@ class Canvas : Component : SelectiveClassCoding(
          #
          # Copy present screen to Canvas_temp_win
          #
-         CopyArea(self.cwin, Canvas_temp_win, self.x - EDGE, self.y - EDGE, self.get_parent_dialog().get_w_reference() - self.x + 2 * EDGE, self.get_parent_dialog().get_h_reference() - self.y + 2 * EDGE, 0, 0)
+         CopyArea(self.cwin, Canvas_temp_win, self.x - EDGE, self.y - EDGE,
+		  self.get_parent_dialog().get_w_reference() -self.x + 2*EDGE,
+		  self.get_parent_dialog().get_h_reference() - self.y + 2*EDGE,
+		  0, 0)
 
          #
          # Set offsets.
@@ -1398,7 +1433,8 @@ class Canvas : Component : SelectiveClassCoding(
    #
    method handle_lrelease()
       if \self.is_held then {
-         if orig_x_spec ~== moving.x_spec | orig_y_spec ~== moving.y_spec | orig_w_spec ~== moving.w_spec | orig_h_spec ~== moving.h_spec then {
+         if orig_x_spec ~== moving.x_spec | orig_y_spec ~== moving.y_spec |
+            orig_w_spec ~== moving.w_spec | orig_h_spec ~== moving.h_spec then {
             self.parent_dialog.push_onto_undo(self.tmp_dup)            
             self.set_modified()
 
@@ -1620,8 +1656,9 @@ class Canvas : Component : SelectiveClassCoding(
       #
       every e := !selections do {
          if /e.is_button_subclass then
-            return alert_error("You can only have subclasses of Button in a CheckBoxGroup")
-      }
+            return alert_error("You can only have subclasses of Button _
+                                in a CheckBoxGroup")
+	 }
 
       self.parent_dialog.push_undo()
 
@@ -1653,7 +1690,7 @@ class Canvas : Component : SelectiveClassCoding(
       self.set_modified()
 
       #
-      # As we may have changed the size of the objects, we must re-display whole.
+      # As we may have changed the size of the objects, re-display whole.
       #
       self.invalidate()
    end
@@ -1670,7 +1707,8 @@ class Canvas : Component : SelectiveClassCoding(
       #
       every e := !selections do {
          if /e.is_button_subclass then
-            return alert_error("You can only have subclasses of Button in a ButtonGroup")
+            return alert_error("You can only have subclasses of Button _
+                                in a ButtonGroup")
       }
 
       self.parent_dialog.push_undo()
@@ -1741,32 +1779,32 @@ end
 # Preferences for Canvas.
 #     
 class CanvasPreferencesDialog : CommonDialog(
-                                             c,                       # The object being edited
-                                             okay,                    # Okay button
-                                             cancel,                  # Cancel button
-                                             has_ticker,              # Checkbox + rate
-                                             text_ticker_rate,
-                                             set_min_w,               # Checkbox
-                                             min_w_spec,              # TextField
-                                             set_min_h,               # Checkbox
-                                             min_h_spec,              # TextField
-                                             w_spec,                  # TextField
-                                             h_spec,                  # TextField
-                                             okay_result,             # Flag indicating result
-                                             name,                    # TextField - object name
-                                             superclass_name,         # TextField - superclass name
-                                             import_name,             # TextField - import name
-                                             tabset,                  # TabSet
-                                             pos_tab,                 # Size/position tab
-                                             methods_tab,             # Code generation tab
-                                             attrib_tab,              # Attrib tab
-                                             gen_main,                # CheckBoxes for code generation flags
-                                             gen_component_setup,
-                                             gen_init_dialog,
-                                             gen_initially,
-                                             gen_indent,
-                                             event_tab                # Event tab
-                                             )
+                 c,                       # The object being edited
+                 okay,                    # Okay button
+                 cancel,                  # Cancel button
+                 has_ticker,              # Checkbox + rate
+                 text_ticker_rate,
+                 set_min_w,               # Checkbox
+                 min_w_spec,              # TextField
+                 set_min_h,               # Checkbox
+                 min_h_spec,              # TextField
+                 w_spec,                  # TextField
+                 h_spec,                  # TextField
+                 okay_result,             # Flag indicating result
+                 name,                    # TextField - object name
+                 superclass_name,         # TextField - superclass name
+                 import_name,             # TextField - import name
+                 tabset,                  # TabSet
+                 pos_tab,                 # Size/position tab
+                 methods_tab,             # Code generation tab
+                 attrib_tab,              # Attrib tab
+                 gen_main,                # CheckBoxes for code generation flags
+                 gen_component_setup,
+                 gen_init_dialog,
+                 gen_initially,
+                 gen_indent,
+                 event_tab                # Event tab
+                 )
 
    #
    # Get the result
@@ -1801,7 +1839,8 @@ class CanvasPreferencesDialog : CommonDialog(
          return alert_error("Min width not integer")
       if set_min_h.is_checked() & not(integer(min_h_spec.get_contents())) then
          return alert_error("Min height not integer")
-      integer(self.gen_indent.get_contents()) | return alert_error("Indent not integer")
+      integer(self.gen_indent.get_contents()) |
+	 return alert_error("Indent not integer")
       integer(w_spec.get_contents()) | return alert_error("Invalid width")
       integer(h_spec.get_contents()) | return alert_error("Invalid height")
       util_check_attribs(self, attrib_tab.get_contents()) | fail

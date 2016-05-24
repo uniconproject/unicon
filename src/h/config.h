@@ -271,10 +271,6 @@
    #define IPATH "IPATH"
 #endif
 
-#ifndef HAVE_FTGL
-#define HAVE_FTGL 0
-#endif
-
 #if defined(HAVE_LIBJVOIP) && defined(HAVE_LIBJRTP) && defined(HAVE_LIBJTHREAD) && defined(HAVE_LIBVOIP)
 #define HAVE_VOICE
 #endif
@@ -884,8 +880,17 @@ Deliberate Syntax Error
 #define HAVE_LIBODBC 0
 #endif					/* HAVE_LIBODBC */
 
+#ifndef HAVE_FTGL
+#define HAVE_FTGL 0
+#endif					/* HAVE_FTGL */
+
 #if HAVE_LIBGL
 #define Graphics3D 1
+#else					/* HAVE_LIBGL */
+#if HAVE_FTGL
+#undef HAVE_FTGL
+#define HAVE_FTGL 0
+#endif					/* HAVE_FTGL */
 #endif					/* HAVE_LIBGL */
 
 #ifndef Arrays

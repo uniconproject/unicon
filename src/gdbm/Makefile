@@ -3,7 +3,7 @@
 
 include ../../Makedefs
 
-srcdir = .
+srcdir=.
 
 MAKEINFO = makeinfo
 TEXI2DVI = texi2dvi

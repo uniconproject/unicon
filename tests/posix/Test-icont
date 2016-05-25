@@ -1,34 +1,56 @@
 : "$Id: Test-icont,v 1.2 2001-12-13 22:38:08 phliar Exp $"
 
+IC=${IC-icont}
+IC=../../bin/$IC
+
+#  check that icont and iconx have been built
+ls $IC ../../bin/iconx >/dev/null || exit 0
+
+
 case `uname` in 
      *"NT"*) NT=1;; 
 esac;
 
-for i in `cat $1.lst`
+for F in `cat $1.lst`
 do
-   rm -f local/$i.out
-   echo Translating $i
-   ../../bin/icont -s $i.icn
-   echo Running $i
-   if test -r $i.dat
+   rm -f local/$F.out
+   echo Translating $F
+   $IC -s $F.icn
+   echo Running $F
+   if test -r $F.dat
    then
-      ../../bin/iconx $i <$i.dat >local/$i.out 2>&1
+      ../../bin/iconx $F <$F.dat >local/$F.out 2>&1
    else
-      ../../bin/iconx $i >local/$i.out 2>&1
+      ../../bin/iconx $F >local/$F.out 2>&1
    fi
-   echo Checking $i
+   echo Checking $F
 
    # Assume that NT in uname means Windows
    if [ -n "$NT" ]; then
-      if test -r stand/$i.wout; then
-	  diff -w stand/$i.wout local/$i.out
+      if test -r stand/$F.wout; then
+	  diff -w stand/$F.wout local/$F.out
       else
-	  diff -w stand/$i.out local/$i.out
+	  diff -w stand/$F.out local/$F.out
       fi	  
    else
-      diff stand/$i.out local/$i.out
+      diff stand/$F.out local/$F.out
    fi
-   rm -f $i
+
+   # diff returns one if there is a difference
+   if [ $? -eq 1 ]; then
+      L=$L"\n\t"$F
+    fi
+
+   rm -f $F $F.c $F.h
 done
+
+echo "\n===== Test Result ===="
+if [ -n "$L" ]; then
+    echo "Failed Tests:"
+    echo $L
+else
+    echo "          Pass"
+fi
+echo "========================"
 
 exit 0

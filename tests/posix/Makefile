@@ -4,10 +4,15 @@ MAKE=make
 #what:
 #		@echo "what do you want to make?"
 
+# default is to run all tests, using icont
+
 default: Test
 
-Test:
-		sh Test-icont icont
+Test Icont Test-icont:
+		IC=icont sh Test-icont icont
+
+Iconc Test-iconc:
+		IC=iconc sh Test-icont icont
 
 
 ##########################################################

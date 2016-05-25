@@ -47,15 +47,16 @@ for F in $*; do
       fi	  
    else
        diff stand/$F.std local/$F.out
-       if [ $? -eq 1 ]; then
-	   # skip the env test since it is expected to be different
-	   if [ "$F" != "env" ]; then
-	       L=$L"\n\t"$F
-	   fi
-       fi
-     
    fi
-      
+
+   # diff returns one if there is a difference
+   if [ $? -eq 1 ]; then
+       # skip the env test since it is expected to be different
+       if [ "$F" != "env" ]; then
+	   L=$L"\n\t"$F
+       fi
+   fi
+   
    rm -f $F $F.c $F.h
 done
 

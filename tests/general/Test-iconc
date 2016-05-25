@@ -6,13 +6,13 @@ do
    echo Compiling $i
    ../../bin/iconc -s $* $i.icn
    echo Running $i
-   if test -r $i.dat
+   if test -r data/$i.dat
    then
-      ./$i <$i.dat >local/$i.out 2>&1
+      ./$i <data/$i.dat >local/$i.out 2>&1
    else
       ./$i >local/$i.out 2>&1
    fi
    echo Checking $i
-   diff local/$i.out stand/$i.out
+   diff local/$i.out stand/$i.std
    rm -f $i
 done

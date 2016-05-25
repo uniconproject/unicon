@@ -22,32 +22,48 @@ esac;
 
 #  if no files specified, run them all
 if [ $# = 0 ]; then
-   set - *.std
+   set - stand/*.std
 fi
-
+L=
 for F in $*; do
    F=`basename $F .std`
    F=`basename $F .icn`
-   rm -f $F.out
+   rm -f local/$F.out
    echo "Testing $F"
    $IC -s $F.icn || continue
-   if test -r $F.dat
+   if test -r data/$F.dat
    then
-      ./$F <$F.dat >$F.out 2>&1
+      ./$F <data/$F.dat >local/$F.out 2>&1
    else
-      ./$F </dev/null >$F.out 2>&1
+      ./$F </dev/null >local/$F.out 2>&1
    fi
 
    # Assume that NT in uname means Windows
    if [ -n "$NT" ]; then
-       if test -r $F.wstd; then
-	  diff -w $F.wstd $F.out
+       if test -r stand/$F.wstd; then
+	  diff -w stand/$F.wstd local/$F.out
       else
-	  diff -w $F.std $F.out
+	  diff -w stand/$F.std local/$F.out
       fi	  
    else
-     diff $F.std $F.out	  
+       diff stand/$F.std local/$F.out
+       if [ $? -eq 1 ]; then
+	   # skip the env test since it is expected to be different
+	   if [ "$F" != "env" ]; then
+	       L=$L"\n\t"$F
+	   fi
+       fi
+     
    fi
       
    rm -f $F
 done
+
+echo "\n===== Test Result ====="
+if [ -n "$L" ]; then
+    echo "Failed Tests:"
+    echo $L
+else
+    echo "          Pass"
+fi
+echo "========================="

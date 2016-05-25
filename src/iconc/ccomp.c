@@ -347,21 +347,6 @@ Deliberate Syntax Error
    strcat(s, " -lwsock32");
    strcat(s, " -lodbc32");
    strcat(s, " -lws2_32 "); 
-   /*
-    * mdw: emit cc command-line if verbosity is set above 2
-    */
-   if (verbose > 2)
-      fprintf(stdout, "system(%s)...\n", buf);
-   if (system(buf) != 0)
-      return EXIT_FAILURE;
-   if (!dbgsyms) {
-      /* mdw: strip dbg symbols from target */
-      strcpy(buf, "strip ");
-      s = buf + 6;
-      strcpy(s, exename);
-      system(buf);
-      }
-
 #else					/* NTGCC */
 
    opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/gdbm");
@@ -376,7 +361,13 @@ Deliberate Syntax Error
    sprintf(buf, "%s /c %s /I%s..\\src\\gdbm /I%s..\\src\\libtp %s ",
 	   c_comp, c_opts, refpath, refpath, srcname);
 
-   /* first, the compile */
+   /* First, the compile. */
+   /*
+    * Emit command-line if verbosity is set above 2
+    */
+   if (verbose > 2)
+      fprintf(stdout, "%s\n", buf);
+
    if (system(buf) != 0)
       return EXIT_FAILURE;
 
@@ -386,9 +377,6 @@ Deliberate Syntax Error
 
    sprintf(buf, "link -subsystem:console %s /LIBPATH:%s %s -out:%s.exe",
 	   objname, refpath, LinkLibs, exename);
-
-   if (system(buf) != 0)
-      return EXIT_FAILURE;
 #endif					/* NTGCC*/
 #endif					/* MS-DOS*/
 
@@ -529,21 +517,27 @@ Deliberate Syntax Error
    strcat(s, " -lssl -lcrypto ");
 #endif                                        /* HAVE_LIBSSL */
 
+#endif						/* UNIX */
+
    /*
-    * mdw: emit cc command-line if verbosity is set above 2
+    * Emit command-line if verbosity is set above 2
     */
    if (verbose > 2)
-      fprintf(stdout, "system(%s)...\n", buf);
+      fprintf(stdout, "%s\n", buf);
+
+   /* Execute the (compile+)link */
    if (system(buf) != 0)
       return EXIT_FAILURE;
-   if (!dbgsyms) {
-      /* mdw: strip dbg symbols from target */
+
+#if UNIX || NTGCC
+   /* Strip debug symbols from target unless they were requested. */
+   if (!strstr(buf, " -g ") && !dbgsyms) {
       strcpy(buf, "strip ");
       s = buf + 6;
       strcpy(s, exename);
       system(buf);
       }
-#endif						/* UNIX ... */
+#endif						/* UNIX */
 
 #if VMS
 

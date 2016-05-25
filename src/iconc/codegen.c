@@ -774,6 +774,9 @@ outerfnc(fnc, reachable)
       fprintf(codefile, "   r_f.succ_cont = r_s_cont;\n");
    else
       fprintf(codefile, "   r_f.succ_cont = NULL;\n");
+   fprintf(codefile, "#ifdef PatternType\n");
+   fprintf(codefile, "   r_f.pattern_cache = NULL;\n");
+   fprintf(codefile, "#endif\n");
    fprintf(codefile, "\n");
 #ifdef OptimizeLoop
    if (ntend > 0)  {
@@ -989,6 +992,9 @@ int n_cbuf;
    fprintf(inclfile, "   dptr old_argp;\n");
    fprintf(inclfile, "   dptr rslt;\n");
    fprintf(inclfile, "   continuation succ_cont;\n");
+   fprintf(inclfile, "#ifdef PatternType\n");
+   fprintf(inclfile, "   struct b_table *pattern_cache;\n");
+   fprintf(inclfile, "#endif\n");
    fprintf(inclfile, "   struct {\n");
    fprintf(inclfile, "      struct tend_desc *previous;\n");
    fprintf(inclfile, "      int num;\n");

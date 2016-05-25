@@ -449,16 +449,20 @@ struct region {
 
 /*
  * Structures for the compiler.
+ *
+ * If you modify struct p_frame, you have to correspondingly modify
+ * the struct PF* structures in src/iconc/codegen.c, which are expected
+ * to be compatible extensions. Don't forget initialization code.
  */
    struct p_frame {
       struct p_frame *old_pfp;
       struct descrip *old_argp;
       struct descrip *rslt;
       continuation succ_cont;
-      struct tend_desc t;
 #ifdef PatternType
-    struct b_table *pattern_cache; /* used to cache the variable references used in a pattern*/
+      struct b_table *pattern_cache; /* cache variable refs used in a pattern */
 #endif					/* PatternType */
+      struct tend_desc t;
       };
    #endif				/* COMPILER */
 

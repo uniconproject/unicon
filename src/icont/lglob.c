@@ -31,7 +31,6 @@ int readglob(struct lfile *lf)
    int implicit;
    char *name;
    struct gentry *gp;
-   extern char *progname;
 
    if (getopc(&name) != Op_Version)
       quitf("ucode file %s has no version identification",inname);

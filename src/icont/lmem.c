@@ -147,7 +147,6 @@ void alsolink(name)
 char *name;
    {
    char file[MaxFileName];
-   int i;
 
    if (!pathfind(file, ipath, name, U1Suffix) &&
        !pathfind(file, ipath, name, USuffix)) {
@@ -191,7 +190,7 @@ char *name;
 
    if (*currentdir) chdir(currentdir);
    }
-#endif
+#endif				/* Unix */
 
 #if MSDOS
    if (file[0] == '\\' || file[0] == '/' ||
@@ -210,8 +209,12 @@ char *name;
    }
 
    while(strchr(file, '\\')) *(strchr(file,'\\')) = '/';
+
+   {
+   int i;
    for (i=0; file[i]; i++)
      if (isupper(file[i])) file[i] = tolower(file[i]);
+   }
 
    /*
     * This removes ".." and "." sections from the path.  For
@@ -240,7 +243,7 @@ char *name;
    }
 
 #endif					/* MSDOS */
-#endif
+#endif					/* 0 */
 
    add_linked_file(file);
 

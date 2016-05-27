@@ -910,7 +910,7 @@ void iconx(int argc, char** argv){
     */
    if (!errors && bundleiconx) {
       FILE *f, *f2;
-      char tmp[MaxPath], tmp2[MaxPath], *iconx, mesg[80];
+      char tmp[MaxPath], *iconx, mesg[80];
       strcpy(tmp, ofile);
       strcpy(tmp+strlen(tmp)-4, ".bat");
       rename(ofile, tmp);

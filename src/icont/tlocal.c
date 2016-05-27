@@ -364,4 +364,4 @@ int sysexec(cmd, argv)
  * End of operating-system specific code.
  */
 
-static char *tjunk;			/* avoid empty module */
+/* static char *tjunk;			/* avoid empty module */

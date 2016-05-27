@@ -23,7 +23,7 @@ int file_comp(char *filename)
    gzFile f; 
    FILE *finput, *foutput;
    struct header *hdr;
-   int n, l, i, c;
+   int n, c;
    char *newfname;
    char buf[200];
    char *cf;

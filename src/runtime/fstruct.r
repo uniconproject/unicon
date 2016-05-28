@@ -255,7 +255,7 @@ function{0,1} get_or_pop(x,i)
 	    msgnum = mpl->next->msgnum;
 
 	    req.args = buf;
-	    snprintf(req.args, sizeof(req.args), "%d", msgnum);
+	    snprintf(req.args, sizeof(buf), "%d", msgnum);
 	    if (mf->resp != NULL) {
 	       tp_freeresp(mf->tp, mf->resp);
 	       }

@@ -301,7 +301,7 @@ int Mpop_delete(struct MFile* mf, unsigned int msgnum)
       }
    svrnum = mplCurrent->msgnum;
    req.args = (char *)buf;
-   snprintf(req.args, sizeof(req.args), "%d", svrnum);
+   snprintf(req.args, sizeof(buf), "%d", svrnum);
    mf->resp = tp_sendreq(mf->tp, &req);
    if (mf->resp->sc < 300) {
       /* Delete from the list */

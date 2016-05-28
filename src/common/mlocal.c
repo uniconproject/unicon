@@ -75,9 +75,8 @@ char *relfile(char *prog, char *mod) {
  */
 
 static char *findexe(char *name, char *buf, size_t len) {
-   int i, n;
-   char *s, *t;
-   char tbuf[MaxPath];
+   int n;
+   char *s;
 
    if (name == NULL)
       return NULL;

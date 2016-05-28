@@ -337,5 +337,5 @@ int ef;
 #endif					/* SUN */
 
 #else					/* ExecImages */
-static char junk;
+/* static char junk; */
 #endif					/* ExecImages */

@@ -31,9 +31,9 @@
  */
 long millisec()
    {
+#ifdef HAVE_CLOCK_GETTIME
    long usertime = 0;
-   static long starttime = -2, clk_tck;
-   long t;
+#endif					/* HAVE_CLOCK_GETTIME */   
 
 #ifdef HAVE_GETRUSAGE
    struct rusage ruse;
@@ -43,11 +43,13 @@ long millisec()
           (ruse.ru_utime.tv_usec + ruse.ru_stime.tv_usec)/1000;
 #else					/* HAVE_GETRUSAGE */
 
+   static long starttime = -2;
+
 #ifdef HAVE_CLOCK_GETTIME
     { struct timespec ts;
       static long system_millisec;
      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-     if (startime == -2)
+     if (starttime == -2)
 	system_millisec = ts.tv_sec * 1000 + ts.tv_nsec/1000000;
      usertime = ts.tv_sec * 1000 + ts.tv_nsec/1000000 - system_millisec;
      }
@@ -58,6 +60,8 @@ long millisec()
  * for user time, report system ticks, otherwise report user+system ticks.
  */
    {
+   static long clk_tck;
+   long t;
    struct tms tp;
    times(&tp);
 #ifdef HAVE_CLOCK_GETTIME

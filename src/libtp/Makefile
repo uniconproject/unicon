@@ -48,7 +48,7 @@ $(LIBURI) uri:
 	cd uri && $(MAKE)
 
 clean:
-	$(RM) $(OBJS)
+	$(RM) libtp.a $(OBJS)
 
 distclean: clean
 	@for d in $(SUBDIRS); do \

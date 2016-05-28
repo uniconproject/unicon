@@ -446,5 +446,5 @@ static Tpssldisc_t _tpdssl =
 Tpdisc_t* TpdSSL = (Tpdisc_t *)&_tpdssl;
 
 #else
-static char junk;		/* avoid empty module */
+/* static char junk;		 avoid empty module */
 #endif					/* HAVE_LIBSSL */

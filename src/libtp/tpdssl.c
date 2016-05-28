@@ -233,12 +233,12 @@ char *get_storepath(Tpdisc_t *tpdisc, char *store_typep)
    *store_typep = 'f';
 
    /* use SSL_CERT_FILE if available */
-   if (certfile = getenv("SSL_CERT_FILE")) {
+   if ((certfile = getenv("SSL_CERT_FILE")) != 0) {
       return certfile;
       }
 
    /* use SSL_CERT_DIR if available */
-   if (certfile = getenv("SSL_CERT_DIR")) {
+   if ((certfile = getenv("SSL_CERT_DIR")) != 0) {
       *store_typep = 'd';
       return certfile;
       }

@@ -30,7 +30,6 @@ int httpbegin(Tp_t* tp, Tprequest_t* req)
 {
   Tpdisc_t* disc;
   char buf[4096];
-  int rc;
 
   disc = tp->disc;
 
@@ -85,7 +84,7 @@ int httpbegin(Tp_t* tp, Tprequest_t* req)
       break;
 
     default:
-      rc = disc->exceptf(TPM_UNSUPPORTED, req, disc);
+      disc->exceptf(TPM_UNSUPPORTED, req, disc);
       return (-1);
   }
 
@@ -105,7 +104,7 @@ Tpresponse_t* httpend(Tp_t* tp)
   TPLEAVE(tp, WRITING);
 
   resp = (Tpresponse_t*)disc->memf(sizeof(Tpresponse_t), disc);
-  bzero(resp, sizeof(resp));
+  bzero(resp, sizeof(Tpresponse_t));
   resp->sc = TP_ERRCODE + TP_EREAD;
 
   if (disc->readf(buf, 5, disc) < 0) {

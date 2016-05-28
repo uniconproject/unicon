@@ -125,7 +125,7 @@ int unixconnect(char* host, u_short port, Tpdisc_t* tpdisc)
 
 int unixclose(Tpdisc_t* tpdisc)
 {
-   int rv = close(((Tpunixdisc_t*)tpdisc)->fd);
+   close(((Tpunixdisc_t*)tpdisc)->fd);
    return 1;
 }
 

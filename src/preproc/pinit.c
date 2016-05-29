@@ -929,7 +929,7 @@ struct token *dflt;
    {
    struct token *mname;
    struct token *t;
-   struct tok_lst *body;
+   struct tok_lst *body = NULL;
    struct tok_lst **ptlst, **trail_whsp;
    int i;
 
@@ -968,7 +968,6 @@ struct token *dflt;
        * Construct the token list for body of macro. Keep track of trailing
        *  white space so it can be deleted.
        */
-      body = NULL;
       ptlst = &body;
       trail_whsp = NULL;
       while (t != NULL) {
@@ -995,11 +994,10 @@ struct token *dflt;
        * There is no '=' after the macro name; use the supplied
        *  default value for the macro definition.
        */
-      if (next_tok() == NULL)
-         if (dflt == NULL)
-            body = NULL;
-         else
+      if (next_tok() == NULL){
+         if (dflt != NULL)
             body = new_t_lst(copy_t(dflt));
+         }
       else {
          fprintf(stderr, "invalid argument to -D option: ");
          for (i = 0; i < len; ++i)

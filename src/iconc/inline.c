@@ -724,7 +724,7 @@ struct il_code *il;
          cd->ElemTyp(3) = A_Str;
          cd->Str(3) =                  ");";
          cd_add(cd);
-         if (ret_flag & DoesFail | (err_conv && (ret_flag & DoesEFail)))
+         if ((ret_flag & DoesFail) | (err_conv && (ret_flag & DoesEFail)))
             cd_add(sig_cd(on_failure, cur_fnc));
          else if (ret_flag & DoesRet)
             cd_add(mk_goto(*scont_strt));

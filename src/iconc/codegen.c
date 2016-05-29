@@ -176,7 +176,7 @@ void var_dcls()
                /*
                 * Need to output *something* to stay in step with other arrays.
                 */
-               if (pfx = is_builtin(gptr)) {
+	       if ((pfx = is_builtin(gptr)) != NULL) {
                   fprintf(codefile, "   (struct b_proc *)&BF%c%c_%s,\n",
                      pfx[0], pfx[1], gptr->name);
                   }

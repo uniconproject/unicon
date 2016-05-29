@@ -565,7 +565,7 @@ char *ofile, *efile, **args;
       args++;
       }
 #else					/* AMIGA && LATTICE */
-   while (*p++ = *args++)		/* copy args into argument vector */
+   while ((*p++ = *args++) != NULL)		/* copy args into argument vector */
       ;
 #endif					/* AMIGA && LATTICE */
 

@@ -43,10 +43,11 @@ char *image;
          n = n1;
          }
       }
-   if (overflow)
+   if (overflow){
       if (largeints)
          n = -1;
       else
          tfatal("large integer option required", image);
+      }
    return n;
    }

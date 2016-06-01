@@ -17,19 +17,6 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
 void cnv_str_pattern(dptr s, dptr p);
 void cnv_cset_pattern(dptr s, dptr p);
 
-/* review for merging? with other checked calloc functions? */
-static void * checked_calloc(size_t nelem, size_t elsize)
-{
-   void *retval = calloc(nelem,elsize);
-   if (retval == NULL) {
-      fprintf(stderr, "Fatal error out of memory");
-      fatalerr(0, NULL);
-      }
-   else
-      return retval;
-}
-
-
 struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
 
 
@@ -264,8 +251,8 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
       int RefLen = P->index + 1;
       reserve(Blocks, RefLen * sizeof(struct b_pelem));
 
-      Refs = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
-      Copy = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
+      Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
+      Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
 
       Build_Ref_Array (P, Refs);
 
@@ -388,8 +375,8 @@ struct b_pelem *  Copy (struct b_pelem * P )
       int J;
       int RefLen = P->index + 1;
 
-      Refs = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
-      Copy = (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
+      Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
+      Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
 
       Build_Ref_Array (P, Refs);
 
@@ -437,7 +424,7 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
       struct b_pelem * P ;
       int J;
       int RefLen = L->index + 1;
-      Refs=(struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Refs=(struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Build_Ref_Array (L, Refs);
       for (J = 1; J < RefLen;J++) {
 	 P = Refs[J];
@@ -656,7 +643,7 @@ static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
       struct b_pelem * P ;
       int J;
       int RefLen = Pat->index + 1;
-      Refs= (struct b_pelem **)checked_calloc(RefLen,sizeof(struct b_pelem *));
+      Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Build_Ref_Array (Pat, Refs);
       for (J = 1; J < RefLen;J++){
 	 P = Refs[J];
@@ -1265,7 +1252,7 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
       struct b_pelem * P ;
       int J;
       int RefLen = L->index + 1;
-      Refs=(struct b_pelem **)checked_calloc(RefLen, sizeof(struct b_pelem *));
+      Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Build_Ref_Array (L, Refs);
       for (J = 1; J < RefLen;J++){
 	 P = Refs[J];

@@ -276,7 +276,7 @@ procedure yyprint(node)
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
-	    writes(yyout, " ) ")		
+	    writes(yyout, " ) ")
             fail
 	    }	
          else if node.label == "BPiam" then {
@@ -1076,14 +1076,14 @@ procedure regexp(n)
 	    IDENT: {
 	       return "\"" || n.s || "\""
 	       }
-	    STRINGLIT: {
+	    STRINGLIT | CSETLIT: {
 	       return n
 	       }
 	    DOT: {
 	       return "NotAny('\\n')"
 	       }
 	    default: {
-	       write("unknown regex token ", image(n.tok))
+	       write(&errout, "unknown regex token ", image(n.tok))
 	       }
 	    }
 	 return "regexp"

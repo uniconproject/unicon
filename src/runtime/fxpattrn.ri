@@ -101,12 +101,6 @@ void Build_Ref_Array(struct b_pelem * E, struct b_pelem *RA[] )
    Record_PE(E, RA);
 }
 
-void VariableLookupFailed(char * varname)
-{
-   fprintf(stderr, "failed to lookup variable name=%s\n",varname);
-   fatalerr(0,NULL);
-}
-
 struct b_list *ResolveList(struct b_list *lp)
 {
    struct descrip proc;
@@ -126,11 +120,17 @@ struct b_list *ResolveList(struct b_list *lp)
    elsrc = (struct b_lelem *)lpsrc->listhead;
 
    proc.dword = D_Proc;
-   /* convert string in to process and store in proc*/
+   /* The first element of the list must be string. */
+   if (!is:string(elsrc->lslots[0])) {
+      t_errornumber = 103;
+      t_errorvalue = elsrc->lslots[0];
+      return NULL;
+      }
+   /* convert string into procedure and store in proc */
    BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
    if (BlkLoc(proc) == NULL) {
       fprintf(stderr, "Unable to find proc in ResolveList\n");
-      fatalerr(0, NULL);
+      fatalerr(106, &elsrc->lslots[0]);
       }
    eldest = (struct b_lelem *)lpdest->listhead;
    eldest->lslots[0] = proc;
@@ -141,7 +141,9 @@ struct b_list *ResolveList(struct b_list *lp)
     */
    if (BlkType(elsrc->listnext) == T_Lelem) {
       fprintf(stderr, "uneval cannot handle multi-element-block list\n");
-      fatalerr(0, NULL);
+      t_errorvalue.dword = D_List;
+      t_errorvalue.vword.bptr = (union block *)lpsrc;
+      fatalerr(164, &t_errorvalue);
       }
 
    for (i = 1; i < elsrc->nused; i++) {
@@ -178,11 +180,13 @@ struct b_list *ResolveList(struct b_list *lp)
 	       }
 	    else if (strcspn(varname, "&") == 0) {
 	       if ( getkeyword(varname, &parm) == Failed) {
-		  VariableLookupFailed(varname);
+		  t_errornumber = 160;
+		  AsgnCStr(t_errorvalue, varname);
+		  return NULL;
 		  }
 	       cnv:cset(parm, elsrc->lslots[i]);
 	       if(complement) {
-		  Protect(cp = alccset(), fatalerr(0,NULL));
+		  Protect(cp = alccset(), fatalerr(307, NULL));
 		  cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
 		  for (b = 0; b < CsetSize; b++) 
 		     cp->bits[b] = ~cpx->bits[b];
@@ -194,13 +198,15 @@ struct b_list *ResolveList(struct b_list *lp)
 	       }
 	    else {
 	       if (getvar(varname, &parm) == Failed) {
-		  VariableLookupFailed(varname);
+		  t_errornumber = 160;
+		  AsgnCStr(t_errorvalue, varname);
+		  return NULL;
 		  }
 	       pvar = VarLoc(parm);
 	       elsrc->lslots[i] = parm; /* = *pvar too aggressive */
 
 	       if (complement) {
-		  Protect(cp = alccset(), fatalerr(0,NULL));
+		  Protect(cp = alccset(), fatalerr(307, NULL));
 		  cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
 		  for (b = 0; b < CsetSize; b++) 
 		     cp->bits[b] = ~cpx->bits[b];
@@ -218,7 +224,8 @@ struct b_list *ResolveList(struct b_list *lp)
 	 /* recursively visit sublists, do same stuff */
 	 lptemp = (struct b_list *)BlkD(elsrc->lslots[i], List);
 	 parm.dword = D_List;
-	 parm.vword.bptr = (union block *)ResolveList(lptemp);
+	 if ((parm.vword.bptr = (union block *)ResolveList(lptemp)) == NULL)
+	    return NULL;
 	 }
       else { 
 	 /* cset, integer constant, ... */
@@ -238,8 +245,7 @@ struct b_list *ResolveList(struct b_list *lp)
 static struct b_pelem * ResolveReferences(struct b_pelem * P )
 {
    if (P == NULL) {
-      DEBUGF(20,(stdout,"Null pointer passed to resolve references"));
-      fatalerr(0, NULL);
+      fatalerr(162, NULL);
       }
    else {
       /*            --  References to elements in P, indexed by Index field */
@@ -312,7 +318,9 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	       if (is:string(ep->lslots[0])) {
 	          cnv:C_string(ep->lslots[0],varname);
 		  if (getvar(varname,&ep->lslots[0])== Failed) {
-		     VariableLookupFailed(varname);
+		     t_errornumber = 160;
+		     AsgnCStr(t_errorvalue, varname);
+		     return NULL;
 		     }
 		  }
 	       }
@@ -322,7 +330,9 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 		  DEBUGF(2, (stdout, "Looking up variable name = %s\n",
 				   varname));
 		  if (getvar(varname,&E->parameter)== Failed) {
-		     VariableLookupFailed(varname);
+		     t_errornumber = 160;
+		     AsgnCStr(t_errorvalue, varname);
+		     return NULL;
 		     }
 		  }
 	       }
@@ -344,7 +354,8 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	    tended struct b_list *lpsrc;
 	    tended struct b_list *lpdest;
 	    lpsrc = (struct b_list *)BlkD(E->parameter, List);    
-	    lpdest = ResolveList(lpsrc);
+	    if ((lpdest = ResolveList(lpsrc)) == NULL)
+	       return NULL;
 	    E->parameter.dword = D_List;
 	    E->parameter.vword.bptr = (union block *) lpdest;
 	    }
@@ -363,8 +374,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 struct b_pelem *  Copy (struct b_pelem * P )
 {
    if (P == NULL) {
-      DEBUGF(20,(stdout,"Null pointer passed to copy"));
-      fatalerr(0, NULL);
+      fatalerr(162, NULL);
       }
    else {
       /* References to elements in P, indexed by Index field */
@@ -491,14 +501,12 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
 	 }
       }
    /* if it is not in table, first resolve references */
-   phead = ResolveReferences(&(pat->pe->Pelem));
+   if ((phead = ResolveReferences(&(pat->pe->Pelem))) == NULL) return NULL;
    val.dword = D_Pelem;
    BlkLoc(val) = (union block *)phead;
-   /* get this now because can't tend pb */
-   te = alctelem();
-   if (te == NULL) {
-      fprintf(stderr,"Out of memory\n");
-      fatalerr(0, NULL);
+   /* get table element now because can't tend pb */
+   if ((te = alctelem()) == NULL) {
+      fatalerr(307, NULL);
       }
    /* find where to insert cannot just reuse pd as it cannot be tended*/
    pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
@@ -572,7 +580,8 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	 }
 
       pattern = (struct b_pattern *)BlkLoc(pat);
-      phead = ResolvePattern(pattern) ;
+      if ((phead = ResolvePattern(pattern)) == NULL) runerr(0);
+      
       while ((k_pos >= 0) &&
 	     internal_match(StrLoc(k_subject), subject_len, pattern->stck_size,
 			    phead, &start, &stop, k_pos, 0)
@@ -627,12 +636,10 @@ void cnv_cset_pattern(dptr s, dptr p)
 static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
 {
    if (Pat == NULL) {
-      fprintf(stderr,"Uninitialized pattern");
-      fatalerr(0, NULL);
+      fatalerr(162, NULL);
       }
    else if (Pat == &EOP) {
-      fprintf(stderr, "Set_Successor Logic_Error");
-      fatalerr(0, NULL);
+      syserr("set_successor logic error");
       }
    else {
       struct b_pelem **Refs;
@@ -1662,7 +1669,8 @@ if (is:list(Node->parameter)) {
       fnum = i;
    else {
       cnv:C_string(ep->lslots[1],varname);       
-      VariableLookupFailed(varname);
+      AsgnCStr(t_errorvalue, varname);
+      fatalerr(160, &t_errorvalue);
       }
    pvar = &rp->fields[fnum];
    varref = var = rp->fields[fnum];
@@ -1672,7 +1680,8 @@ else {
    if (is:string(Node->parameter)) {
       cnv:C_string(Node->parameter, varnam);
       if (getvar(varnam, &varref) == Failed) {
-	 VariableLookupFailed(varnam);
+	 AsgnCStr(t_errorvalue, varnam);
+	 fatalerr(160, &t_errorvalue);
 	 }
       pvar = VarLoc(varref);
       var = *pvar;
@@ -1681,23 +1690,19 @@ else {
       pvar = VarLoc(Node->parameter);
       var = *pvar;
       }
+   else if (is:null(Node->parameter)) {
+      fatalerr(165, NULL);
+      }
    else {
       fprintf(stderr, "parameter\n\n\t%16lx\n\t%16lx\n\npvar %p\n",
 	      (unsigned long int)Node->parameter.dword,
 	      (unsigned long int)Node->parameter.vword.integr,
 	      pvar);
-      fprintf(stderr, "bad descriptor in .> or some such\n");
-      fatalerr(0, NULL);
+      syserr("bad descriptor in .> or some such");
       }
    }
 #enddef
 
-static void ErrorDuringPatternMatch(char *x)
-{
-   fprintf(stderr, "%s\n", x);
-   fatalerr(0, NULL);
-}
- 
 int isMethod(struct b_lelem *ep){
    tended struct b_record *rp;
    union block *bptr;
@@ -1773,7 +1778,7 @@ dptr processFuncCallList(struct b_list *lp, int csr){
    DEBUGF(25,(stdout, "nargs %d\n", nargs));fflush(stdout);
    k_pos = Cursor + 1;
 #if COMPILER
-   ErrorDuringPatternMatch("deferred evaluation function call not supported in optimizing compiler");
+   fatalerr(164, NULL);
    call_result = NULL;
 #else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs);
@@ -1810,7 +1815,9 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    ep = (struct b_lelem *)lp->listhead;
    cnv:C_string(ep->lslots[0], varname);
    if (getvar(varname, &var) == Failed) {
-      VariableLookupFailed(varname);
+      t_errornumber = 160;
+      AsgnCStr(t_errorvalue, varname);
+      return NULL;
       }
    procargs[0] = var;
    deref(&var,&var);
@@ -1833,8 +1840,7 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    found__m = isMethod(ep);
 
    if (found__m == -1) {
-      fprintf(stderr, "Trying to lookup method from a non object");
-      fatalerr(0, NULL);
+      fatalerr(163, NULL);
       }
    var = rp->fields[found__m];
    rp = (struct b_record *)BlkLoc(var);
@@ -1883,7 +1889,9 @@ dptr processMethodCallList(struct b_list *lp, int csr)
 	    strcat(varstring, classname);
 	    strcat(varstring, varname);
 	    if (getvar(varstring,&parm)== Failed) {
-	       VariableLookupFailed(varstring);
+	       t_errornumber = 160;
+	       AsgnCStr(t_errorvalue, varstring);
+	       return NULL;
 	       }
 	    free(varstring);
 	    procargs[i -1] = parm;
@@ -1892,7 +1900,7 @@ dptr processMethodCallList(struct b_list *lp, int csr)
       }
    k_pos = Cursor + 1;
 #if COMPILER
-   ErrorDuringPatternMatch("deferred evaluation function call not supported in optimizing compiler");
+   fatalerr(164, NULL);
    call_result = NULL;
 #else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs);
@@ -1942,7 +1950,7 @@ if (is:list(Node->parameter)) {
       }
    }
 else {
-   ErrorDuringPatternMatch("error in method call parameters");
+   fatalerr(163, NULL);
    }
 #enddef
 
@@ -1974,12 +1982,10 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    DEBUGF(25, (stdout, "internal_match\n"));
 
    if (pattern == NULL) {
-      fprintf(stderr,"Uninitialized Pattern");
-      fatalerr(0,NULL);
+      fatalerr(162, NULL);
       }
    if (Pat_S > Stack_Size - 1) {
-      fprintf(stderr,"Pattern Stack Overflow");
-      fatalerr(0,NULL);
+      fatalerr(309, NULL);
       }
    /* In anchored mode, the bottom entry on the stack is a cancel entry */
    if (Anchored_Mode) {
@@ -2051,8 +2057,7 @@ Match_Succeed:
 		  Set_String(pvar,pat_sub,Start, Stop );
 	       }
 	    else {
-	       fprintf(stderr,"Logic Error in internal_match");
-	       fatalerr(0, NULL);
+	       syserr("logic error in internal_match");
 	       }
 	    }
 	 }
@@ -2127,8 +2132,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Any unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-			       "Unevaluated variable for Any should be cset"));
+	 fatalerr(104, &var);
 	 }
       if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), var)) {
 	 Cursor++;
@@ -2143,8 +2147,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Any unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-			  "Unevaluated function call for Any should be cset"));
+	 fatalerr(104, &cresult);
       if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), cresult)) {
 	 Cursor++;
 	 goto Node_Succeed;
@@ -2158,8 +2161,7 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Any unevaluated method call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-			    "Unevaluated method call for Any should be cset"));
+	 fatalerr(104, &cresult);
       if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), cresult)) {
 	 Cursor++;
 	 goto Node_Succeed;
@@ -2243,8 +2245,7 @@ Node_Succeed:
        *   for the Arbno with one instance and the successor pattern
        */
       if (Stack_Ptr + IntVal(Node->parameter) >= Stack_Size){
-	 fprintf(stderr, "Fatal Error Stack Overflow in Pattern Match");
-	 fatalerr(0,NULL);
+	 fatalerr(309, NULL);
 	 }
       goto Node_Succeed;
       }
@@ -2353,8 +2354,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Break unevaluated variable\n"));
       if (!cnv_cset(&var,&var)){
-	 ErrorDuringPatternMatch((stdout,
-			     "Unevaluated variable for Break should be cset"));
+	 fatalerr(104, &var);
 	 }
       while( Cursor < Length ){
 	 if (Testb(ToAscii(pat_sub[Cursor]), var))
@@ -2370,8 +2370,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Break unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		       "Unevaluated function call for Break should be cset"));
+	 fatalerr(104, &cresult);
       while (Cursor < Length ){
 	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
 	    goto Node_Succeed;
@@ -2387,8 +2386,7 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Break unevaluated method call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-			  "Unevaluated method call for Break should be cset"));
+	 fatalerr(104, &cresult);
       while( Cursor < Length ){
 	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
 	    goto Node_Succeed;
@@ -2419,8 +2417,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching BreakX unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-			    "Unevaluated variable for BreakX should be cset"));
+	 fatalerr(104, &var);
 	 }
 
       while (Cursor < Length) {
@@ -2437,8 +2434,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching BreakX unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		       "Unevaluated function call for BreakX should be cset"));
+	 fatalerr(104, &cresult);
       while (Cursor < Length) {
 	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
 	    goto Node_Succeed;
@@ -2453,8 +2449,7 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching BreakX unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		       "Unevaluated function call for BreakX should be cset"));
+	 fatalerr(104, &cresult);
       while (Cursor < Length) {
 	 if (Testb(ToAscii(pat_sub[Cursor]), cresult))
 	    goto Node_Succeed;
@@ -2595,8 +2590,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Len unevaluated variable\n"));
       if (!cnv_int(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-			     "Unevaluated variable for Len should be integer"));
+	 fatalerr(101, &var);
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor + IntVal(var) > Length)
@@ -2611,8 +2605,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_int(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		      "Unevaluated function call for Len should be integer"));
+	 fatalerr(101, &cresult);
       if(!is:integer(cresult) && (internalStorage != NULL)) {
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
@@ -2630,8 +2623,7 @@ Node_Succeed:
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_int(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		      "Unevaluated function call for Len should be integer"));
+	 fatalerr(101, &cresult);
       if(!is:integer(cresult) && internalStorage != NULL) {
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
@@ -2660,8 +2652,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching NotAny unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-			    "Unevaluated variable for NotAny should be cset"));
+	 fatalerr(104, &var);
 	 }
       DEBUGF(20,(stdout, "matching NotAny_VP\n"));
       if ((Cursor < Length) &&
@@ -2677,8 +2668,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching NotAny unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		      "Unevaluated function call for NotAny should be cset"));
+	 fatalerr(104, &cresult);
       DEBUGF(20,(stdout, "matching NotAny\n"));
       if ((Cursor < Length) &&
 	  !Testb(ToAscii(pat_sub[Cursor]), cresult)){
@@ -2724,8 +2714,7 @@ Node_Succeed:
 	 Push_Region();
 	 if (Stack_Ptr +
 	     ((struct b_pattern *)BlkLoc(var))->stck_size >= Stack_Size) {
-	    fprintf(stderr, "Stack Overflow");
-	    fatalerr(0, NULL);
+	    fatalerr(309, NULL);
 	    }
 	 else {
 	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(var))->pe;
@@ -2734,8 +2723,7 @@ Node_Succeed:
 	 break;
 	 }
       default: {
-	 fprintf(stderr,"Unable to convert unevaluated variable to pattern\n");
-	 fatalerr(0,NULL);
+	 fatalerr(161, NULL);
 	 }
 	 }
       }
@@ -2754,8 +2742,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Pos unevaluated variable\n"));
       if (!cnv_int(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-			     "Unevaluated variable for Pos should be integer"));
+	 fatalerr(101, &var);
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor == IntVal(var) - 1)
@@ -2768,8 +2755,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		       "Unevaluated function call for Pos should be integer"));
+	 fatalerr(101, &cresult);
       if(!is:integer(cresult) && internalStorage != NULL) {
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
@@ -2795,8 +2781,7 @@ Node_Succeed:
    case  PC_Tab_NP: {
       GetVarFromNodeParameter(Node);
       if (!cnv_int(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-		"Could not convert unevaluated variable for Tab to integer"));
+	 fatalerr(101, &var);
 	 }
       if (Cursor <= IntVal(var) - 1){
 	 Cursor = IntVal(var) - 1;
@@ -2812,8 +2797,7 @@ Node_Succeed:
 	 goto Node_Fail;
       else {
 	 if (!cnv_int(&cresult,&cresult))
-	    ErrorDuringPatternMatch((stdout,
-			"Unevaluated function call for Tab should be integer"));
+	    fatalerr(101, &cresult);
 	 if(!is:integer(cresult) && internalStorage != NULL) {
 	    cresult.vword.bptr = internalStorage;
 	    internalStorage = NULL;
@@ -2849,8 +2833,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Rpos unevaluated variable\n"));
       if (!cnv_int(&var,&var)){
-	 ErrorDuringPatternMatch((stdout,
-			    "Unevaluated variable for RPos should be integer"));
+	 fatalerr(101, &var);
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor == (Length - IntVal(Node->parameter)))
@@ -2863,8 +2846,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		     "Unevaluated function call for RPos should be integer"));
+	 fatalerr(104, &cresult);
       if(!is:integer(cresult) && internalStorage != NULL) {
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
@@ -2891,8 +2873,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching RTab unevaluated variable\n"));
       if (!cnv_int(&var,&var)){
-	 ErrorDuringPatternMatch((stdout,
-			  "Unevaluated variable for RTab should be integer"));
+	 fatalerr(101, &var);
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor <= (Length - IntVal(var))){
@@ -2907,8 +2888,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-	     "Unevaluated function call for RTab should be integer"));
+	 fatalerr(104, &cresult);
       if(!is:integer(cresult) && internalStorage != NULL) {
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
@@ -2989,8 +2969,7 @@ Node_Succeed:
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Span unevaluated variable\n"));
       if (!cnv_cset(&var,&var)) {
-	 ErrorDuringPatternMatch((stdout,
-			      "Unevaluated variable for Span should be cset"));
+	 fatalerr(104, &var);
 	 }
       DEBUGF(20,(stdout,"Matching Span_VP\n"));
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),var))
@@ -3008,8 +2987,7 @@ Node_Succeed:
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Span_VF unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
-	 ErrorDuringPatternMatch((stdout,
-		      "Unevaluated function call for Span_VF should be cset"));
+	 fatalerr(104, &cresult);
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
 	 P++;
       if (P != Cursor) {
@@ -3129,8 +3107,7 @@ Node_Succeed:
 	 }
       }
       }
-   fprintf(stderr,"!!Unrecognized pcode in internal match!!\n");
-   fatalerr(0,NULL);
+   syserr("Unrecognized pcode in internal match.\n");
 }
 
 /* keep this at the end so the #undef Fail affects no-one else */

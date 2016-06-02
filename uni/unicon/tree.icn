@@ -185,9 +185,20 @@ procedure process_uneval(node)
       }
 end
 
+#
+# Emit code for an in-pattern assignment. This needs an explanation.
+# If there is a field, emit as ["variablename", "fieldname"]
+#
 procedure emit_assign_code(node)
    case type(node) of {
       "treenode": {
+	 if node.label == "BPuneval" then {
+	    node := node.children[1]
+	    if type(node) == "token" & node.s[1]==node.s[-1]=="`" then {
+		  yyprint("\"" || node.s[2:-1] || "\"")
+		  }
+	    return
+	    }
 	 if node.label ~== "field" then {
 	    yyerror("In-pattern assignment must be to field, not a " ||
 		    image(node.label))

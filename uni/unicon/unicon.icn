@@ -743,7 +743,8 @@ procedure unicon(argv)
       }
    else
 
-   if /parseonly & (comp = errors = yynerrs = 0) & (not find("-E", icontopt)) then {
+   if /parseonly & (comp = errors = yynerrs = 0) &
+      (not (*\parsingErrors > 0)) & (not find("-E", icontopt)) then {
       cmd := selecticont()
        if &features=="MS Windows NT" & &features=="console window" then
 	 cmd ||:= " -l "|| (wilog := tempname("uni",".tmp",,))

@@ -312,6 +312,15 @@ struct errtab errtab[] = {
    155,  "3D graphics is not enabled in this virtual machine",
 /*#endif*/					/* Graphics3D */
 
+#ifdef PatternType
+   160,  "nonexistent variable name",
+   161,  "cannot convert unevaluated variable to pattern",
+   162,  "uninitialized pattern",
+   163,  "object, method, or method parameter problem in unevaluated expression",
+   164,  "unsupported unevaluated expression",
+   165,  "null pattern argument where name was expected",
+#endif					/* PatternType */
+
 #ifdef PosixFns
    /*
     * PosixFns errors related to incorrect usage are here; PosixFns errors
@@ -364,6 +373,9 @@ struct errtab errtab[] = {
    306, "inadequate space in string region",
    307, "inadequate space in block region",
    308, "system stack overflow in co-expression",
+#ifdef PatternType
+   309, "pattern stack overflow",
+#endif					/* PatternType */
 
 #if IntBits == 16
    316, "interpreter stack too large",

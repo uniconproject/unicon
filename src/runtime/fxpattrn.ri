@@ -130,7 +130,9 @@ struct b_list *ResolveList(struct b_list *lp)
    BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
    if (BlkLoc(proc) == NULL) {
       fprintf(stderr, "Unable to find proc in ResolveList\n");
-      fatalerr(106, &elsrc->lslots[0]);
+      t_errornumber = 106;
+      t_errorvalue = elsrc->lslots[0];
+      return NULL;
       }
    eldest = (struct b_lelem *)lpdest->listhead;
    eldest->lslots[0] = proc;
@@ -141,9 +143,10 @@ struct b_list *ResolveList(struct b_list *lp)
     */
    if (BlkType(elsrc->listnext) == T_Lelem) {
       fprintf(stderr, "uneval cannot handle multi-element-block list\n");
+      t_errornumber = 164;
       t_errorvalue.dword = D_List;
       t_errorvalue.vword.bptr = (union block *)lpsrc;
-      fatalerr(164, &t_errorvalue);
+      return NULL;
       }
 
    for (i = 1; i < elsrc->nused; i++) {
@@ -245,7 +248,9 @@ struct b_list *ResolveList(struct b_list *lp)
 static struct b_pelem * ResolveReferences(struct b_pelem * P )
 {
    if (P == NULL) {
-      fatalerr(162, NULL);
+      t_errornumber = 162;
+      t_errorvalue = nulldesc;
+      return NULL;
       }
    else {
       /*            --  References to elements in P, indexed by Index field */
@@ -369,7 +374,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 }
 
 /*
- * Copy
+ * Copy a pattern element.
  */
 struct b_pelem *  Copy (struct b_pelem * P )
 {
@@ -636,7 +641,7 @@ void cnv_cset_pattern(dptr s, dptr p)
 static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
 {
    if (Pat == NULL) {
-      fatalerr(162, NULL);
+      syserr("set_successor NULL pattern error");
       }
    else if (Pat == &EOP) {
       syserr("set_successor logic error");
@@ -1631,9 +1636,14 @@ Stack_Base = Stack_Ptr;
 #enddef
 
 /*
- * Used to convert the string or list stored in the parameter field of
- * a node to the variable location and value the variable location is
- * stored in the pvar (used when the variable needs to be assigned to)
+ * GetVarFromNodeParameter() is a macro used many many times in
+ * internal_match(). Since internal_match uses its return value to
+ * indicate whether a successful/resumable match was found, it is not
+ * free to return an error code, so errors in here are fatalerr().
+ *
+ * The macro is used to convert the string or list stored in the parameter
+ * field of a node to the variable location and value the variable location
+ * is stored in the pvar (used when the variable needs to be assigned to)
  * the variable value is stored in var
 */
 #begdef GetVarFromNodeParameter(Node)
@@ -1653,9 +1663,12 @@ if (is:list(Node->parameter)) {
    deref(&var, &var);
 
    if (!is:record(var))
-      RunErr(107, &var);
+      fatalerr(107, &var);
 
    fieldptr = ep->lslots[1];
+   if (!is:string(fieldptr)) {
+      fatalerr(103, &fieldptr);
+      }
    rp = (struct b_record *)BlkLoc(var);
    bptr = rp->recdesc;
    nfields = bptr->Proc.nfields;
@@ -1668,9 +1681,7 @@ if (is:list(Node->parameter)) {
    if (i<nfields)
       fnum = i;
    else {
-      cnv:C_string(ep->lslots[1],varname);       
-      AsgnCStr(t_errorvalue, varname);
-      fatalerr(160, &t_errorvalue);
+      fatalerr(160, &(ep->lslots[1]));
       }
    pvar = &rp->fields[fnum];
    varref = var = rp->fields[fnum];
@@ -1680,8 +1691,7 @@ else {
    if (is:string(Node->parameter)) {
       cnv:C_string(Node->parameter, varnam);
       if (getvar(varnam, &varref) == Failed) {
-	 AsgnCStr(t_errorvalue, varnam);
-	 fatalerr(160, &t_errorvalue);
+	 fatalerr(160, &(Node->parameter));
 	 }
       pvar = VarLoc(varref);
       var = *pvar;
@@ -1704,9 +1714,8 @@ else {
 #enddef
 
 int isMethod(struct b_lelem *ep){
-   tended struct b_record *rp;
+   struct b_record *rp;
    union block *bptr;
-   struct descrip var;
    int i, found__m = -1;
    if (is:record(ep->lslots[0])){
       rp = (struct b_record *)BlkLoc(ep->lslots[0]);
@@ -1715,7 +1724,7 @@ int isMethod(struct b_lelem *ep){
    else if (is:proc(ep->lslots[0])){
       bptr = ep->lslots[0].vword.bptr;
       }
-   else RunErr(107, &var);
+   else fatalerr(107, &(ep->lslots[0]));
    for( i = 0; i < bptr->Proc.nfields;i++) {
       if ((StrLoc(bptr->Proc.lnames[i]) != NULL) &&
 	  !strcmp(StrLoc(bptr->Proc.lnames[i]), "__m")) {
@@ -1727,23 +1736,22 @@ int isMethod(struct b_lelem *ep){
    }
 
 dptr processFuncCallList(struct b_list *lp, int csr){
-   int nargs;
    tended struct b_lelem *ep;
    struct descrip proc;
-   int i;
+   int i, nargs = lp->size-1, Cursor=csr, oldPos;
    dptr rv;
-   struct descrip procargs[10];
+   struct descrip *procargs;
    tended struct descrip cresult;
    dptr call_result;
    tended char *temp;
-   int Cursor;
-   int oldPos;
 
-   Cursor = csr;
    oldPos = k_pos;
-   nargs = lp->size -1;
    ep = (struct b_lelem *)lp->listhead;
    proc = ep->lslots[0];
+   if ((procargs = calloc(ep->nused, sizeof(struct descrip))) == NULL) {
+      fatalerr(307, &nulldesc);
+      }
+
    DEBUGF(25,(stdout, "processFuncCallList\n")); fflush(stdout);
    DEBUGF(25,(stdout, "nargs %d\n", nargs); fflush(stdout));
    for (i = 1; i < ep->nused; i++) {
@@ -1783,6 +1791,7 @@ dptr processFuncCallList(struct b_list *lp, int csr){
 #else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs);
 #endif					/* COMPILER */
+   free(procargs);
    k_pos = oldPos;
    return call_result;
    }
@@ -1823,7 +1832,7 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    deref(&var,&var);
    if (!is:record(var)) {
       err_msg(107, &var);
-      return NULL; /* was: RunErr(107, &var); */
+      return NULL;
       }
 
    ep->lslots[0] = var;

@@ -1,7 +1,5 @@
 #ifdef PatternType
 
-#include "../h/opdefs.h"
-
 /* #define PRINTF_DEBUG 1 or some other level if you want debugging */
 #ifdef PRINTF_DEBUG
 #define DEBUGF(lev, x) if (lev <= PRINTF_DEBUG) fprintf x
@@ -18,7 +16,6 @@ void cnv_str_pattern(dptr s, dptr p);
 void cnv_cset_pattern(dptr s, dptr p);
 
 struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
-
 
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
 		int pattern_code, int index, struct descrip param)
@@ -46,7 +43,7 @@ union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
 			struct descrip param)
 {
    struct b_pelem *pelem;
-   tended union block * bp;
+   union block * bp;
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
    bp = (union block *)alcpelem(pattern_code);
@@ -60,7 +57,7 @@ union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
 union block *pelem_copy(struct b_pelem * p2copy)
 {
    struct b_pelem *pelem;
-   tended union block * bp;
+   union block * bp;
    tended struct b_pelem *lp2copy = p2copy;
    bp = (union block *)alcpelem(lp2copy->pcode);
    pelem  = (struct b_pelem *)bp;
@@ -79,6 +76,10 @@ union block *pelem_copy(struct b_pelem * p2copy)
 )
 #enddef
 
+/*
+ * Recursive function that walks through a pelem linked list and fills in
+ * an array of pelems, indexed by pelem indices.
+ */
 void Record_PE (struct b_pelem * E, struct b_pelem *RA[])
 {
    DEBUGF(20, (stdout,"  Record_PE called\n"));
@@ -101,6 +102,11 @@ void Build_Ref_Array(struct b_pelem * E, struct b_pelem *RA[] )
    Record_PE(E, RA);
 }
 
+/*
+ * What "Resolve" means is probably: turn string names into pointers to
+ * actual variables in some execution context.  Copy/transform a list
+ * into a list with actual pointers in it.
+ */
 struct b_list *ResolveList(struct b_list *lp)
 {
    struct descrip proc;
@@ -182,7 +188,7 @@ struct b_list *ResolveList(struct b_list *lp)
 	       cnv:cset(elsrc->lslots[i], elsrc->lslots[i]);
 	       }
 	    else if (strcspn(varname, "&") == 0) {
-	       if ( getkeyword(varname, &parm) == Failed) {
+	       if (getkeyword(varname, &parm) == Failed) {
 		  t_errornumber = 160;
 		  AsgnCStr(t_errorvalue, varname);
 		  return NULL;
@@ -376,7 +382,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 /*
  * Copy a pattern element.
  */
-struct b_pelem *  Copy (struct b_pelem * P )
+struct b_pelem * Copy (struct b_pelem * P )
 {
    if (P == NULL) {
       fatalerr(162, NULL);
@@ -426,39 +432,41 @@ struct b_pelem *  Copy (struct b_pelem * P )
 
 struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
 {
-   if (L == &EOP)
-      return R;
-   else if (R == &EOP)
-      return L;
+   tended struct b_pelem *lpe = L;
+   tended struct b_pelem *rpe = R;
+   if (lpe == &EOP)
+      return rpe;
+   else if (rpe == &EOP)
+      return lpe;
    else {
       struct b_pelem **Refs;
       /*
        * We build a reference array for L whose N'th element points to
        * the pattern element of L whose original Index value is N.
        */
-      struct b_pelem * P ;
+      struct b_pelem * P;
       int J;
-      int RefLen = L->index + 1;
+      int RefLen = lpe->index + 1;
       Refs=(struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
-      Build_Ref_Array (L, Refs);
+      Build_Ref_Array (lpe, Refs);
       for (J = 1; J < RefLen;J++) {
 	 P = Refs[J];
-	 P->index += R->index;
+	 P->index += rpe->index;
 	 if (P->pcode == PC_Arbno_Y){
 	    IntVal(P->parameter) += Incr;
 	    }
 	 if ((struct b_pelem *)P->pthen == &EOP)
-	    P->pthen = (union block *)R;
+	    P->pthen = (union block *)rpe;
 	 if (Has_Alt(P->pcode) &&
 	     (BlkLoc(P->parameter) == (union block *)&EOP)) {
 	    tended struct descrip param;
 	    param.dword = D_Pelem;
-	    param.vword.bptr = (union block *) R;
+	    param.vword.bptr = (union block *) rpe;
 	    P->parameter = param;
 	    }
 	 }
       free(Refs);
-      return L;
+      return lpe;
       }
 }
 
@@ -698,7 +706,7 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
    type_case arg of {
       pattern: {
 	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
-	 struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
 	 switch(pe->pcode) {
 	 case PC_Rpat: {
 	    bp = pattern_make(0, &EOP,ptype ## _VP,1, pe->parameter);
@@ -822,7 +830,7 @@ function {1} Breakx(char_set)
 						 PC_BreakX_CS, 3,char_set);
 	 }
 	 }
-      bp =  (union block *)breakx_make(peBreakx);
+      bp = (union block *)breakx_make(peBreakx);
       return pattern(bp);
       }
 end
@@ -832,7 +840,7 @@ end
    type_case arg of{
       pattern: {
 	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
-	 struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
 	 switch(pe->pcode){
 	 case PC_Rpat: {
 	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NP,
@@ -1204,8 +1212,8 @@ function {1} pattern_concat(L, R)
       }
    body {
       union block *bp;
-      struct b_pattern *lpattern;
-      struct b_pattern *rpattern;
+      tended struct b_pattern *lpattern;
+      tended struct b_pattern *rpattern;
       struct b_pelem *pe;
       type_case L of {
       string:
@@ -1242,13 +1250,14 @@ end
 
 struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
 {
+   tended struct b_pelem *lpe = L;
+   tended struct b_pelem *rpe = R; 
    tended struct descrip param;
    param.dword = D_Pelem;
-   param.vword.bptr = (union block *)R;
-
-   if (L == &EOP) {
+   param.vword.bptr = (union block *)rpe;
+   if (lpe == &EOP) {
       return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
-					  (word)R->index + 1, param);
+					  (word)rpe->index + 1, param);
       }
    /*
     *  If the left pattern is non-null, then build a reference vector
@@ -1263,14 +1272,14 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
        */
       struct b_pelem * P ;
       int J;
-      int RefLen = L->index + 1;
+      int RefLen = lpe->index + 1;
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
-      Build_Ref_Array (L, Refs);
+      Build_Ref_Array (lpe, Refs);
       for (J = 1; J < RefLen;J++){
 	 P = Refs[J];
-	 P->index += R->index;
+	 P->index += rpe->index;
 	 }
-      return (struct b_pelem *)pelem_make(L, PC_Alt, L->index + 1, param);
+      return (struct b_pelem *)pelem_make(lpe, PC_Alt, lpe->index + 1, param);
       }
 }
 
@@ -1283,8 +1292,8 @@ function{1} pattern_alternate (LPAT, RPAT )
       return pattern;
       }
    body {
-      struct b_pattern * lpattern;
-      struct b_pattern * rpattern;
+      tended struct b_pattern * lpattern;
+      tended struct b_pattern * rpattern;
       struct b_pelem *pe;
       union block *bp;
       type_case LPAT of {
@@ -1299,7 +1308,6 @@ function{1} pattern_alternate (LPAT, RPAT )
 	 runerr(127);
 	 }
 	 }
-
       type_case RPAT of {
       string:
 	 cnv_str_pattern(&RPAT,&RPAT);
@@ -1312,7 +1320,6 @@ function{1} pattern_alternate (LPAT, RPAT )
 	 runerr(127);
 	 }
 	 }
-
       lpattern = (struct b_pattern *)BlkLoc(LPAT);
       rpattern = (struct b_pattern *)BlkLoc(RPAT);
       pe = Alternate(Copy((struct b_pelem *)lpattern->pe),
@@ -1353,7 +1360,7 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
       return pattern;
       }
    body {
-       struct b_pattern * p;
+      struct b_pattern * p;
       union block *bp;
       struct b_pelem *P;
       struct b_pelem *E;
@@ -1370,7 +1377,6 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
 	 runerr(127);
 	 }
 	}
-
       p = (struct b_pattern *)BlkLoc(PAT);
       P = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
@@ -1645,7 +1651,7 @@ Stack_Base = Stack_Ptr;
  * field of a node to the variable location and value the variable location
  * is stored in the pvar (used when the variable needs to be assigned to)
  * the variable value is stored in var
-*/
+ */
 #begdef GetVarFromNodeParameter(Node)
 struct descrip var;
 struct descrip varref;
@@ -1738,7 +1744,7 @@ int isMethod(struct b_lelem *ep){
 dptr processFuncCallList(struct b_list *lp, int csr){
    tended struct b_lelem *ep;
    struct descrip proc;
-   int i, nargs = lp->size-1, Cursor=csr, oldPos;
+   int i, nargs = lp->size - 1, Cursor = csr, oldPos;
    dptr rv;
    struct descrip *procargs;
    tended struct descrip cresult;
@@ -1764,7 +1770,7 @@ dptr processFuncCallList(struct b_list *lp, int csr){
 	 else {
 	    rv = processFuncCallList(BlkD(ep->lslots[i], List), Cursor);
 	    }
-	 if (rv == 0) return 0;
+	 if (rv == 0) { free(procargs); return 0; }
 	 procargs[i - 1] = *rv;
 	 }
       else if (is:variable(ep->lslots[i])) {
@@ -1894,10 +1900,10 @@ dptr processMethodCallList(struct b_list *lp, int csr)
 	    tended char * varstring;
 	    struct descrip parm;
             cnv:C_string(ep->lslots[i], varname);
-	    varstring = calloc((strlen(classname) + strlen(varname)), sizeof(char));
+	    varstring = alloc(strlen(classname) + strlen(varname) + 1);
 	    strcat(varstring, classname);
 	    strcat(varstring, varname);
-	    if (getvar(varstring,&parm)== Failed) {
+	    if (getvar(varstring,&parm) == Failed) {
 	       t_errornumber = 160;
 	       AsgnCStr(t_errorvalue, varstring);
 	       return NULL;
@@ -3116,7 +3122,7 @@ Node_Succeed:
 	 }
       }
       }
-   syserr("Unrecognized pcode in internal match.\n");
+   syserr("Unrecognized pcode in internal match.");
 }
 
 /* keep this at the end so the #undef Fail affects no-one else */

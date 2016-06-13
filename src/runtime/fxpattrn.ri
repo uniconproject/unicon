@@ -594,7 +594,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 
       pattern = (struct b_pattern *)BlkLoc(pat);
       if ((phead = ResolvePattern(pattern)) == NULL) runerr(0);
-      
+
       while ((k_pos >= 0) &&
 	     internal_match(StrLoc(k_subject), subject_len, pattern->stck_size,
 			    phead, &start, &stop, k_pos, 0)
@@ -928,7 +928,7 @@ function {1} Tab(count)
          /* change count to a positive value and use RTab */
          count.vword.integr = -count.vword.integr;
          ConvertPatternArgumentInt(count,bp,PC_RTab);
-	 } 
+	 }
       else {
          ConvertPatternArgumentInt(count,bp,PC_Tab);
          }
@@ -1015,7 +1015,7 @@ function {1} Arbno(ARBPAT)
 	    }
 	 cset : {
 	    cnv_cset_pattern(&ARBPAT,&ARBPAT);
-	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
+	    P = (struct b_pattern *)BlkLoc(ARBPAT);
 	    X = Arbno_Simple((struct b_pelem *)P->pe);
 	    bp = pattern_make_pelem(0,X);
 	    return pattern(bp);
@@ -1360,10 +1360,10 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
       return pattern;
       }
    body {
-      struct b_pattern * p;
+      tended struct b_pattern * p;
       union block *bp;
-      struct b_pelem *P;
-      struct b_pelem *E;
+      tended struct b_pelem *P;
+      tended struct b_pelem *E;
       struct b_pelem *A;
       struct b_pelem *pe;
       type_case PAT of {
@@ -2133,8 +2133,7 @@ Node_Succeed:
       }
    case PC_Any_CS:{
       DEBUGF(20,(stdout,"Matching Any\n"));
-      if( (Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]),
-				     Node->parameter)){
+      if ((Cursor < Length) && Testb(ToAscii(pat_sub[Cursor]), Node->parameter)){
 	 Cursor++;
 	 goto Node_Succeed;
 	 }

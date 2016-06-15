@@ -12,7 +12,10 @@
 /*
  * Prototypes.
  */
-
+#ifdef PatternImage
+void            init_func_array (struct descrip funcName[]); 
+struct descrip  pattern_image   (union block *, int arbnoBool); 
+#endif					/* PatternImage */
 static void	listimage
    (FILE *f,struct b_list *lp, int noimage);
 static void	printimage	(FILE *f,int c,int q);
@@ -38,7 +41,6 @@ dptr d1, d2;
 	return 1;
 }
 
-
 #ifdef PatternType
 /*
  * getkeyword() - return a descriptor with current value of non-variable
@@ -1646,6 +1648,636 @@ int c, q;
       }
    }
 
+#ifdef PatternImage
+
+void init_func_array(struct descrip funcNames[]);
+
+static struct descrip patimg_fns[NUM_PATIMG_FUNCNAMES];
+
+struct descrip pattern_image(union block *pe, int arbnoBool)
+   {
+   tended union block * ep = pe;
+   tended union block * r;
+   tended struct descrip image;
+   tended struct descrip right;
+   tended struct descrip left;
+   tended struct descrip arg;
+   if (!StrLen(patimg_fns[0]))
+      init_func_array(patimg_fns);
+   if (ep != NULL) {
+       switch (Blk(ep,Pelem)->pcode) {
+          case PC_Alt: {
+             arg = Blk(ep,Pelem)->parameter;
+             r = (union block *)(BlkLoc(arg));
+             left = pattern_image(Blk(ep,Pelem)->pthen, arbnoBool);
+             right = pattern_image(r, arbnoBool);
+             image = construct_image(left, get_patimage(PC_Alt), right); 
+             return image;
+             } 
+          case PC_Any_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_MF),
+				     get_patimage(PI_BPAREN)); 
+             break;
+             }
+          case PC_Break_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Break], arg_image(arg, PT_MF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_BreakX_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_BreakX], arg_image(arg,PT_MF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NotAny_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NotAny], arg_image(arg,PT_MF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NSpan_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NSpan], arg_image(arg, PT_MF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Span_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Span], arg_image(arg, PT_MF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Len_NMF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Pos_NMF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_RPos_NMF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Tab_NMF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_RTab_NMF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RTab], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Any_VF: {   
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN)); 
+             break;
+             }
+          case PC_Break_VF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Break], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_BreakX_VF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_BreakX], arg_image(arg,PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NotAny_VF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NotAny], arg_image(arg,PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NSpan_VF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NSpan], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Span_VF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Span], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Len_NF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Pos_NF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_RPos_NF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_Tab_NF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_RTab_NF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RTab], arg_image(arg, PT_VF),
+				     get_patimage(PI_BPAREN));
+             break;
+	     }
+          case PC_Any_VP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN)); 
+             break;
+             }
+          case PC_Break_VP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Break], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_BreakX_VP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_BreakX], arg_image(arg,PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NotAny_VP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NotAny], arg_image(arg,PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NSpan_VP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NSpan], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Span_VP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Span], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_Len_NP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Pos_NP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_RPos_NP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_Tab_NP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_RTab_NP: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RTab], arg_image(arg, PT_VP),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_Any_CS: { 
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Break_CS: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Break],arg_image(arg,PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_BreakX_CS: {
+             arg = Blk(ep,Pelem)->parameter;
+             image =construct_image(patimg_fns[PF_BreakX],arg_image(arg,PT_EVAL),
+				    get_patimage(PI_BPAREN));
+             ep = Blk(ep,Pelem)->pthen;
+             break;
+             }
+          case PC_NotAny_CS: {
+             arg = Blk(ep,Pelem)->parameter;
+             image =construct_image(patimg_fns[PF_NotAny],arg_image(arg,PT_EVAL),
+				    get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_NSpan_CS: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_NSpan],arg_image(arg,PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Span_CS: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Span], arg_image(arg,PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }   
+          case PC_Len_Nat: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Pos_Nat: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_RPos_Nat: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RPos], arg_image(arg,PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_Tab_Nat: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             }
+          case PC_RTab_Nat: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(patimg_fns[PF_RTab], arg_image(arg,PT_EVAL),
+				     get_patimage(PI_BPAREN));
+             break;
+             } 
+          case PC_Arbno_S: {
+             union block *arb;
+             if (arbnoBool == 1)
+                return get_patimage(PI_EMPTY);
+             arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
+             image = pattern_image((union block *)arb, 1);
+             image = construct_image(patimg_fns[PF_Arbno], image,
+				     get_patimage(PI_BPAREN));
+             arbnoBool = 0;
+             }             
+          case PC_Arbno_X: {
+             union block *arb;
+             struct b_pelem *arbParam; 
+             arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
+             if (arbParam->pcode == PC_R_Enter) {
+                arb = arbParam->pthen;
+                image = pattern_image(arb, arbnoBool);
+                image = construct_image(patimg_fns[PF_Arbno], image,
+					get_patimage(PI_BPAREN));
+                }
+             else {
+                fprintf(stdout, "Error\n");
+                }
+	     break;
+             }
+          case PC_Pred_Func: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = arg_image(arg, PT_VF);
+             break;
+             }
+          case PC_Pred_MF: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = arg_image(arg, PT_MF);
+             break;
+             }
+          case PC_String_MF: {
+             AsgnCStr(image, "Stringmethodcall");
+             break;
+             }
+          case PC_String_VF: {
+             AsgnCStr(image, "Stringfunccall");
+             break;
+             }
+          case PC_Arbno_Y: {
+             return get_patimage(PI_EMPTY);
+             break;
+             }
+          case PC_Arb_X: {
+             AsgnCStr(image, "Arb()");
+             break;
+	     }
+          case PC_Assign_OnM: {
+             AsgnCStr(image, " -> ");
+             image = construct_image(get_patimage(PI_EMPTY), image,
+				     Blk(ep,Pelem)->parameter);
+             break;
+             }
+          case PC_Assign_Imm: {
+             AsgnCStr(image, " => ");
+             image = construct_image(get_patimage(PI_EMPTY), image,
+				     Blk(ep,Pelem)->parameter);
+             break;
+             }
+          case PC_Setcur: {
+             AsgnCStr(image, " .> ");
+             image = construct_image(get_patimage(PI_EMPTY), image,
+				     Blk(ep,Pelem)->parameter);
+             break;
+	     }
+          case PC_Bal: {
+             AsgnCStr(image, "Bal()");
+             break;
+             }
+          case PC_Abort: {
+             AsgnCStr(image, "Abort()");
+             break;
+             }
+          case PC_Fail: {
+             AsgnCStr(image, "Fail()");
+             break;
+             }
+          case PC_Fence: {
+             AsgnCStr(image, "Fence()");
+             break;
+             }
+          case PC_Rest: {
+             AsgnCStr(image, "Rem()");
+             break;
+             }
+          case PC_Succeed: {
+             AsgnCStr(image, "Succeed()");
+             break;
+             }
+          case PC_Rpat: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = arg_image(arg, PT_VP);
+             break;
+             }
+          case PC_String: {
+             arg = Blk(ep,Pelem)->parameter;
+             image = construct_image(get_patimage(PI_QUOTE), arg,
+				     get_patimage(PI_QUOTE));
+             break;
+             }
+	  case PC_BreakX_X: {
+             image = get_patimage(PI_EMPTY);
+             break;
+             }
+          case PC_EOP: {
+             return get_patimage(PI_EMPTY);
+             }
+          case PC_R_Enter: {
+             image = get_patimage(PI_EMPTY);
+             break;
+             }
+          default: {
+          fprintf(stdout, "Error\n");
+          return image; 
+          }
+       }
+   } else 
+        return get_patimage(PI_EMPTY);
+   if (ep = Blk(ep,Pelem)->pthen) {
+       if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
+	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
+           Blk(ep,Pelem)->pcode != PC_Setcur &&
+	   Blk(ep,Pelem)->pcode != PC_EOP &&
+           (Blk(ep,Pelem)->pcode != PC_Arbno_S || arbnoBool != 1) &&
+           Blk(ep,Pelem)->pcode != PC_Arbno_Y &&
+	   Blk(ep,Pelem)->pcode != PC_R_Enter) {
+          image = construct_image(image, get_patimage(PI_CONCAT),
+				  pattern_image(ep, arbnoBool));
+          return image;
+          }
+       else {
+          image = construct_image(get_patimage(PI_EMPTY), image,
+				  pattern_image(ep, arbnoBool));
+          }
+      }
+   }
+
+struct descrip arg_image(struct descrip arg, int pcode)
+   {
+   struct descrip image;
+   tended struct descrip param = arg;
+   if(!is:list(param)) {
+      if(pcode == PT_EVAL) {
+         type_case param of {
+            string: {
+               image = construct_image(get_patimage(PI_QUOTE), param,
+				       get_patimage(PI_QUOTE));
+               return image;
+               }
+            cset: {
+               if(!cnv:string(param,param))
+                  fprintf(stdout, "Error\n");
+               image = construct_image(get_patimage(PI_SQUOTE), param,
+				       get_patimage(PI_SQUOTE));
+               return image;
+               }
+            integer: {
+               if(!cnv:string(param, param))
+                  fprintf(stdout, "Error\n");
+               return param;
+               }
+            default: {
+               fprintf(stdout, "Error\n");
+            }
+            }
+            }
+      else {
+         image = construct_image(get_patimage(PI_BQUOTE), param,
+				 get_patimage(PI_BQUOTE));
+         return image;
+         }
+      }
+   else {   
+      struct b_list *l = (struct b_list *) BlkLoc(param);
+      tended struct b_lelem *le = (struct b_lelem *) l->listhead;
+      struct descrip str;
+      int leCurrent = 1;
+      AsgnCStr(image, StrLoc(le->lslots[le->first]));
+      switch(pcode) {
+      case PT_VP: {
+         do {
+            AsgnCStr(str, StrLoc(le->lslots[leCurrent]));
+            image = construct_image(image, get_patimage(PI_PERIOD), str);
+            leCurrent = leCurrent + 1;
+	    }
+	 while (leCurrent != le->nslots);
+	 image = construct_image(get_patimage(PI_BQUOTE), image,
+				 get_patimage(PI_BQUOTE));
+	 return image;
+	 }
+       case PT_MF: {
+         image = construct_image(image, get_patimage(PI_PERIOD),
+				 le->lslots[leCurrent]);
+         leCurrent++;
+         break;
+         }
+       case PT_VF: {
+         break;
+         }
+       default: {
+         fprintf(stdout, "Error\n");
+         break;
+         }
+         }
+       if(le->nslots == 1) {
+          construct_image(get_patimage(PI_EMPTY), image, 
+                      get_patimage(PI_BPAREN));
+          construct_image(get_patimage(PI_BQUOTE), image, 
+                      get_patimage(PI_BQUOTE));
+          return image;
+	  }
+       image = construct_image(image, get_patimage(PI_FPAREN),
+			       le->lslots[leCurrent]);
+       leCurrent++;
+       if (le->nslots != 2) {
+          do {
+             image = construct_image(image, get_patimage(PI_COMMA),
+				     le->lslots[leCurrent]);
+	     leCurrent++;
+	     }
+	  while (leCurrent != le->nslots);
+          }
+       image = construct_image(get_patimage(PI_EMPTY), image,
+			       get_patimage(PI_BPAREN));
+       image = construct_image(get_patimage(PI_BQUOTE), image,
+			       get_patimage(PI_BQUOTE));
+       return image;  
+       }
+   }
+
+void init_func_array(struct descrip funcNames[])
+{
+   AsgnCStr(funcNames[PF_Any], "Any(");
+   AsgnCStr(funcNames[PF_Break], "Break(");
+   AsgnCStr(funcNames[PF_BreakX], "BreakX(");
+   AsgnCStr(funcNames[PF_NotAny], "NotAny(");
+   AsgnCStr(funcNames[PF_NSpan], "NSpan(");
+   AsgnCStr(funcNames[PF_Span], "Span(");
+   AsgnCStr(funcNames[PF_Len], "Len(");
+   AsgnCStr(funcNames[PF_Pos], "Pos(");
+   AsgnCStr(funcNames[PF_RPos], "Rpos(");
+   AsgnCStr(funcNames[PF_Tab], "Tab(");
+   AsgnCStr(funcNames[PF_RTab], "Rtab(");
+   AsgnCStr(funcNames[PF_Arbno], "Arbno(");
+}
+
+struct descrip get_patimage(int ptype)
+   {
+   struct descrip s; 
+   switch(ptype) {
+      case PI_EMPTY: {
+         AsgnCStr(s, "");
+         return s;
+         break;
+        }
+      case PI_CONCAT: {
+	 AsgnCStr(s, " || ");
+         return s;  
+	 break;
+	 }
+      case PI_SQUOTE: {
+	 AsgnCStr(s, "'");
+         return s;
+	 break;
+	    }
+      case PI_QUOTE: {
+	 AsgnCStr(s, "\"");
+         return s;
+	 break;
+	    }
+      case PI_BQUOTE: {
+	 AsgnCStr(s, "`");
+         return s;
+	 break;
+	 }
+      case PI_FPAREN: {
+	 AsgnCStr(s, "(");
+         return s;
+	 break;
+	 }
+      case PI_BPAREN: {
+	 AsgnCStr(s, ")");
+         return s;
+	 break;
+	 }
+      case PI_COMMA: {
+	 AsgnCStr(s, ", ");
+         return s;
+	 break;
+	 }
+      case PI_PERIOD: {
+         AsgnCStr(s, ".");
+         return s;
+         break;
+         }
+      case PC_Alt: {
+         AsgnCStr(s, " .| ");
+         return s;
+	 break;
+	 }
+      case PC_Assign_OnM: {
+         AsgnCStr(s, " -> ");
+         return s;
+	 break;
+	 }
+      case PC_Assign_Imm: {
+         AsgnCStr(s, " => "); 
+         return s;
+	 break;
+	 }
+      case PC_Setcur: {
+	 AsgnCStr(s, " .> ");
+         return s;
+	 break;
+	 }
+      default: {
+	    fprintf(stderr, "Case not recognized, pattern image not set.\n");
+	    return;
+         }
+    }
+    } 
+
+struct descrip construct_image(l,s,r)
+struct descrip l,s,r;
+   {
+   struct descrip image;
+  // Protect (reserve(Strings, StrLen(l) + StrLen(s) + StrLen(r)), return RunError);
+   StrLoc(image) = alcstr(StrLoc(l), StrLen(l));
+   alcstr(StrLoc(s), StrLen(s));
+   alcstr(StrLoc(r), StrLen(r));
+   StrLen(image) = StrLen(l) + StrLen(s) + StrLen(r);
+   return image; 
+   }
+#endif					/* PatternImage */
+
 /*
  * getimage(dp1,dp2) - return string image of object dp1 in dp2.
  */
@@ -1982,11 +2614,28 @@ dptr dp1, dp2;
           * where n is the current size of the pattern.
           */
 	 register union block *ep;
+#ifdef PatternImage
+	 struct descrip temp;
+#endif					/* PatternImage */
          bp = BlkLoc(*dp1);
 	 ep = Blk(bp,Pattern)->pe;
 
+#ifdef PatternImage
+
+#ifdef PatternImageMember
+	 StrLoc(temp) = alcstr(StrLoc(Blk(ep,Pelem)->patimage), StrLen(Blk(ep,Pelem)->patimage));
+	 StrLen(temp) = StrLen(Blk(ep,Pelem)->patimage); 
+#else
+         temp = pattern_image(ep, 0);
+#endif					/* PatternImage */
+
+	 sprintf(sbuf, "pattern_%ld(%ld) = %s", (long)(Blk(bp,Pattern)->id),
+	 	        (long)(Blk(ep,Pelem)->index), StrLoc(temp)); 
+
+#else					/* PatternImage */
 	 sprintf(sbuf, "pattern_%ld(%ld)", (long)(Blk(bp,Pattern)->id),
-		 (long)(Blk(ep,Pelem)->index));
+	 	        (long)(Blk(ep,Pelem)->index));
+#endif					/* PatternImage */
 
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return RunError);

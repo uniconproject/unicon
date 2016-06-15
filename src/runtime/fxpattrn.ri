@@ -18,15 +18,26 @@ void cnv_cset_pattern(dptr s, dptr p);
 struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
 
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
-		int pattern_code, int index, struct descrip param)
+      	    		  int pattern_code, int index, struct descrip param
+#ifdef PatternImage
+			  , struct descrip image)
+#else                                  /* PatternImage */
+      	    		  )
+#endif                                  /* PatternImage */
 {
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
    tended struct b_pelem *pelem = alcpelem(pattern_code);
+#ifdef PatternImage
+   tended struct descrip limage = image;
+#endif                                  /* PatternImage */
    tended union block * bp = (union block *)alcpattern(stck_size);
    pelem->pthen = (union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
+#ifdef PatternImage
+   pelem->patimage = limage;
+#endif                                  /* PatternImage */
    BlkPH(bp,Pattern,pe) = (union block *)pelem;
    return bp;
 }
@@ -40,17 +51,27 @@ union block *pattern_make_pelem(int stck_size, struct b_pelem * pe)
 }
 
 union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
+#ifdef PatternImage
+			struct descrip param, struct descrip image)
+#else                                  /* PatternImage */
 			struct descrip param)
+#endif                                  /* PatternImage */
 {
    struct b_pelem *pelem;
    union block * bp;
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
+#ifdef PatternImage
+   tended struct descrip limage = image;
+#endif                                  /* PatternImage */
    bp = (union block *)alcpelem(pattern_code);
    pelem  = (struct b_pelem *)bp;
    pelem->pthen =(union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
+#ifdef PatternImage
+   pelem->patimage = limage;
+#endif                                  /* PatternImage */
    return bp;
 }
 
@@ -64,6 +85,9 @@ union block *pelem_copy(struct b_pelem * p2copy)
    pelem->pthen = lp2copy->pthen;
    pelem->parameter = lp2copy->parameter;
    pelem->index = lp2copy->index;
+#ifdef PatternImage
+   pelem->patimage = lp2copy->patimage; 
+#endif					/* PatternImage */
    return bp;
 }
 
@@ -448,6 +472,10 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
       int J;
       int RefLen = lpe->index + 1;
       Refs=(struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
+#ifdef PatternImage
+      lpe->patimage = construct_image(lpe->patimage, get_patimage(PI_CONCAT),
+				      rpe->patimage);
+#endif					/* PatternImage */
       Build_Ref_Array (lpe, Refs);
       for (J = 1; J < RefLen;J++) {
 	 P = Refs[J];
@@ -626,14 +654,32 @@ end
 
 void cnv_str_pattern(dptr s, dptr p)
 {
+#ifdef PatternImage
+   struct descrip image;
+   union block *bp;
+   image = construct_image(get_patimage(PI_QUOTE), *s, get_patimage(PI_QUOTE));
+   bp = pattern_make(0, &EOP,PC_String,1, *s, image);
+#else					/* PatternImage */
    union block *bp = pattern_make(0, &EOP,PC_String,1, *s);
+#endif					/* PatternImage */
    p->dword = D_Pattern;
    BlkLoc(*p) = bp;
 }
 
 void cnv_cset_pattern(dptr s, dptr p)
 {
+#ifdef PatternImage
+   struct descrip quote;
+   struct descrip image = *s;
+   union block *bp;
+   tended struct descrip char_set = *s;
+   cnv:string(image, image);    
+   image = construct_image(get_patimage(PI_SQUOTE), image,
+			   get_patimage(PI_SQUOTE));
+   bp = pattern_make(0, &EOP,PC_Any_CS,1, char_set, image);
+#else					/* PatternImage */
    union block *bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
+#endif					/* PatternImage */
    p->dword = D_Pattern;
    BlkLoc(*p) = bp;
 }
@@ -702,6 +748,52 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 }
 
 
+#ifdef PatternImage
+#begdef ConvertPatternArgumentCset(arg, bp, ptype, strtype)
+   type_case arg of {
+      pattern: {
+         struct descrip image;
+         tended struct descrip param = arg; 
+	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
+	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 switch(pe->pcode) {
+	 case PC_Rpat: {
+            image = construct_image(strtype, pe->patimage,
+				    get_patimage(PI_BPAREN)); 
+	    bp = pattern_make(0, &EOP,ptype ## _VP,1, pe->parameter, image);
+	    break;
+	    }
+	 case PC_Pred_Func:
+	 case PC_String_VF: {
+            image = construct_image(strtype, pe->patimage,
+				    get_patimage(PI_BPAREN));
+	    bp = pattern_make(0, &EOP,ptype ## _VF,1, pe->parameter, image);
+	    break;
+	    }
+	 case PC_Pred_MF:
+	 case PC_String_MF: {
+            image = construct_image(strtype, pe->patimage,
+				    get_patimage(PI_BPAREN));
+	    bp = pattern_make(0, &EOP,ptype ## _MF,1, pe->parameter, image); 
+	    break;
+	    }
+	 default: {
+	    runerr(127);
+	    }
+	    }
+	 }
+      default: {
+         struct descrip image;
+         tended struct descrip param = arg;  
+	 if (!cnv_cset(&param, &param))
+	    runerr(104, param);
+	 image = construct_image(strtype, arg_image(param, PT_EVAL),
+				 get_patimage(PI_BPAREN));
+	 bp = pattern_make(0, &EOP, ptype ## _CS, 1, param, image);
+	 }
+   }
+#enddef
+#else					/* PatternImage */
 #begdef ConvertPatternArgumentCset(arg, bp, ptype)
    type_case arg of {
       pattern: {
@@ -734,6 +826,7 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 	 }
    }
 #enddef
+#endif					/* PatternImage */
 
 function {1} Any(charset)
    abstract {
@@ -741,7 +834,13 @@ function {1} Any(charset)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Any("); 
+      ConvertPatternArgumentCset(charset, bp, PC_Any, strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentCset(charset, bp, PC_Any);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -752,7 +851,13 @@ function {1} Break(charset)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Break(");  
+      ConvertPatternArgumentCset(charset, bp, PC_Break, strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentCset(charset, bp, PC_Break);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -763,7 +868,13 @@ function {1} NotAny(char_set)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "NotAny("); 
+      ConvertPatternArgumentCset(char_set, bp, PC_NotAny, strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentCset(char_set, bp, PC_NotAny);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -774,7 +885,13 @@ function {1} Span(char_set)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Span("); 
+      ConvertPatternArgumentCset(char_set, bp, PC_Span, strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentCset(char_set, bp, PC_Span);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -782,12 +899,21 @@ end
 
 struct b_pattern * breakx_make(struct b_pelem * B)
 {
+#ifdef PatternImage
+   tended struct b_pelem *X =  pelem_make(B,PC_BreakX_X, 2, nulldesc,
+					  B->patimage);
+#else					/* PatternImage */
    tended struct b_pelem *X =  pelem_make(B,PC_BreakX_X, 2, nulldesc);
+#endif					/* PatternImage */
    tended struct descrip param;
    tended struct b_pelem *A;
    param.dword = D_Pelem;
    BlkLoc(param) =  (union block *)X;
+#ifdef PatternImage
+   A =  (struct b_pelem *)pelem_make(&EOP,PC_Alt, 1, param, nulldesc);
+#else					/* PatternImage */
    A =  (struct b_pelem *)pelem_make(&EOP,PC_Alt, 1, param);
+#endif					/* PatternImage */
    B->pthen =  (union block *)A;
    return (struct b_pattern *)pattern_make_pelem(2, B);
 }
@@ -802,20 +928,40 @@ function {1} Breakx(char_set)
    body {
       union block *bp;
       struct b_pelem *peBreakx;
+#ifdef PatternImage
+      struct descrip strtype;
+      struct descrip image;
+      AsgnCStr(strtype, "Breakx(");
+#endif					/* PatternImage */
       type_case char_set of {
       pattern: {
 	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(char_set);
-	 struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 struct descrip image; 
 	 switch(pe->pcode){
 	 case PC_Rpat:{
+#ifdef PatternImage
+            image = construct_image(strtype, arg_image(char_set, PT_VP),
+				    get_patimage(PI_BPAREN));
+	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VP, 3,
+						    pe->parameter, image);
+#else					/* PatternImage */
 	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VP, 3,
 						    pe->parameter);
+#endif					/* PatternImage */
 	    break;
 	    }
 	 case PC_Pred_Func:
 	 case PC_String_VF: {
+#ifdef PatternImage
+            image = construct_image(strtype, arg_image(char_set, PT_VF),
+				    get_patimage(PI_BPAREN));
+	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VF, 3,
+						    pe->parameter, image);
+#else					/* PatternImage */
 	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VF, 3,
 						    pe->parameter);
+#endif					/* PatternImage */
 	    break;
 	    }
 	 default: {
@@ -826,8 +972,15 @@ function {1} Breakx(char_set)
       default: {
 	 if (!cnv_cset(&char_set, &char_set))
 	    runerr(104, char_set);
-	 peBreakx = (struct b_pelem *)pelem_make(NULL,
-						 PC_BreakX_CS, 3,char_set);
+#ifdef PatternImage
+	 AsgnCStr(strtype, "Breakx(");
+	 image = construct_image(strtype, arg_image(char_set, PT_EVAL),
+				 get_patimage(PI_BPAREN)); 
+	 peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_CS, 3,
+						 char_set, image);
+#else					/* PatternImage */
+	 peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_CS, 3,char_set);
+#endif					/* PatternImage */
 	 }
 	 }
       bp = (union block *)breakx_make(peBreakx);
@@ -835,6 +988,54 @@ function {1} Breakx(char_set)
       }
 end
 
+#ifdef PatternImage
+#begdef ConvertPatternArgumentInt(arg, bp, ptype, strtype)
+   type_case arg of{
+      pattern: {
+         struct descrip image;
+	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
+	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 switch(pe->pcode){
+	 case PC_Rpat: {
+            image = construct_image(strtype, pe->patimage,
+				    get_patimage(PI_BPAREN)); 
+	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NP,
+					      1, pe->parameter, image);
+	    break;
+	    }
+	 case PC_Pred_Func:
+	 case PC_String_VF: {
+            image = construct_image(strtype, pe->patimage,
+				    get_patimage(PI_BPAREN));
+	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
+					      1, pe->parameter, image);
+	    break;
+	    }
+	 case PC_Pred_MF:
+	 case PC_String_MF: {
+            image = construct_image(strtype, pe->patimage,
+				    get_patimage(PI_BPAREN));
+	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NMF,
+					      1, pe->parameter, image);
+	    break;
+	    }
+	 default: {
+	    runerr(128);
+	    }
+	    }
+	 }
+      default: {
+         struct descrip image;
+         tended struct descrip param = arg;
+      	 if (!cnv_int(&param, &param))
+	    runerr(102, param);
+	 image = construct_image(strtype, arg_image(param, PT_EVAL),
+				 get_patimage(PI_BPAREN));
+	 bp =  (union block *)pattern_make(0, &EOP, ptype ## _Nat,1,param,image);
+	 }
+	 }
+#enddef
+#else					/* PatternImage */
 
 #begdef ConvertPatternArgumentInt(arg, bp, ptype)
    type_case arg of{
@@ -871,6 +1072,7 @@ end
 	 }
 	 }
 #enddef
+#endif					/* PatternImage */
 
 function {1} Len(count)
    abstract {
@@ -878,7 +1080,13 @@ function {1} Len(count)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Len("); 
+      ConvertPatternArgumentInt(count,bp,PC_Len,strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentInt(count,bp,PC_Len);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -889,16 +1097,28 @@ function {1} Pos(position)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Pos("); 
+#endif					/* PatternImage */
       /*
        * check if position is negative
        */
       if(position.vword.integr < 1) {
          /* change position to a positive value and use RPos */
          position.vword.integr = -position.vword.integr;
+#ifdef PatternImage
+         ConvertPatternArgumentInt(position,bp,PC_RPos, strtype);
+#else					/* PatternImage */
          ConvertPatternArgumentInt(position,bp,PC_RPos);
+#endif					/* PatternImage */
 	 } 
       else {
+#ifdef PatternImage
+         ConvertPatternArgumentInt(position,bp,PC_Pos, strtype);
+#else					/* PatternImage */
          ConvertPatternArgumentInt(position,bp,PC_Pos);
+#endif					/* PatternImage */
          }
       return pattern(bp);
       }
@@ -910,7 +1130,13 @@ function {1} Rpos(position)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Rpos("); 
+      ConvertPatternArgumentInt(position,bp,PC_RPos,strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentInt(position,bp,PC_RPos);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -921,16 +1147,28 @@ function {1} Tab(count)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Tab("); 
+#endif					/* PatternImage */
       /*
        * check if count is negative
        */
       if(count.vword.integr < 1) {
          /* change count to a positive value and use RTab */
          count.vword.integr = -count.vword.integr;
+#ifdef PatternImage
+         ConvertPatternArgumentInt(count,bp,PC_RTab, strtype);
+#else					/* PatternImage */
          ConvertPatternArgumentInt(count,bp,PC_RTab);
+#endif					/* PatternImage */
 	 }
       else {
+#ifdef PatternImage
+         ConvertPatternArgumentInt(count,bp,PC_Tab, strtype);
+#else					/* PatternImage */
          ConvertPatternArgumentInt(count,bp,PC_Tab);
+#endif					/* PatternImage */
          }
       return pattern(bp);
       }
@@ -944,7 +1182,13 @@ function {1} Rtab(count)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip strtype;
+      AsgnCStr(strtype, "Rtab("); 
+      ConvertPatternArgumentInt(count,bp,PC_RTab, strtype);
+#else					/* PatternImage */
       ConvertPatternArgumentInt(count,bp,PC_RTab);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -971,11 +1215,21 @@ function {1} Arb()
    body {
       union block *bp;
       tended struct descrip var;
-      tended struct b_pelem * Y = pelem_make(&EOP,PC_Arb_Y,1,nulldesc);
       tended struct b_pelem * X;
+#ifdef PatternImage
+      tended struct b_pelem * Y = pelem_make(&EOP,PC_Arb_Y,1,nulldesc, nulldesc);
+      tended struct descrip image;
+      AsgnCStr(image, "Arb()");
+#else					/* PatternImage */
+      tended struct b_pelem * Y = pelem_make(&EOP,PC_Arb_Y,1,nulldesc);
+#endif					/* PatternImage */
       var.dword = D_Pelem;
       BlkLoc(var) =  (union block *)Y;
+#ifdef PatternImage
+      X = (struct b_pelem *)pelem_make(&EOP,PC_Arb_X,2,var, image);
+#else					/* PatternImage */
       X = (struct b_pelem *)pelem_make(&EOP,PC_Arb_X,2,var);
+#endif					/* PatternImage */
       bp = pattern_make_pelem(1,X);
       return pattern(bp);
       }
@@ -992,7 +1246,11 @@ struct b_pelem * Arbno_Simple(struct b_pelem *pe)
    tended struct b_pelem *S;
    var.dword = D_Pelem;
    BlkLoc(var) =  (union block *)pe;
+#ifdef PatternImage
+   S = (struct b_pelem *)pelem_make(&EOP,PC_Arbno_S, pe->index + 1,var,nulldesc);
+#else					/* PatternImage */
    S = (struct b_pelem *)pelem_make(&EOP,PC_Arbno_S, pe->index + 1, var);
+#endif					/* PatternImage */
    Set_Successor(pe,S);
    return S;
 }
@@ -1005,18 +1263,37 @@ function {1} Arbno(ARBPAT)
       union block *bp;
       struct b_pattern * P;
       tended struct b_pelem * X;
+#ifdef PatternImage
+      struct descrip strtype; 
+      tended struct descrip image;
+      AsgnCStr(strtype, "Arbno("); 
+#endif					/* PatternImage */
       type_case ARBPAT of {
 	 string : {
+#ifdef PatternImage
+            image = construct_image(strtype, arg_image(ARBPAT, PT_EVAL),
+				    get_patimage(PI_BPAREN));
+#endif					/* PatternImage */
 	    cnv_str_pattern(&ARBPAT,&ARBPAT);
 	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
 	    X = Arbno_Simple((struct b_pelem *)P->pe);
+#ifdef PatternImage
+            X->patimage = image;
+#endif					/* PatternImage */
 	    bp = pattern_make_pelem(0,X);
 	    return pattern(bp);
 	    }
 	 cset : {
+#ifdef PatternImage
+            image = construct_image(strtype, arg_image(ARBPAT, PT_EVAL),
+				    get_patimage(PI_BPAREN));
+#endif					/* PatternImage */
 	    cnv_cset_pattern(&ARBPAT,&ARBPAT);
 	    P = (struct b_pattern *)BlkLoc(ARBPAT);
 	    X = Arbno_Simple((struct b_pelem *)P->pe);
+#ifdef PatternImage
+            X->patimage = image;
+#endif					/* PatternImage */
 	    bp = pattern_make_pelem(0,X);
 	    return pattern(bp);
 	    }
@@ -1050,6 +1327,11 @@ function {1} Arbno(ARBPAT)
 		*/
 
 	       X = Arbno_Simple(Pat);
+#ifdef PatternImage
+               image = construct_image(strtype, Pat->patimage,
+				       get_patimage(PI_BPAREN)); 
+               X->patimage = image; 
+#endif					/* PatternImage */
 	       bp = pattern_make_pelem(1,X);
 	       return pattern(bp);
 	       }
@@ -1080,14 +1362,29 @@ function {1} Arbno(ARBPAT)
 	       tended struct b_pelem * Y;
 	       tended struct b_pelem *EPY;
 	       tended struct descrip var;
+#ifdef PatternImage
+	       image = construct_image(strtype, Pat->patimage,
+				       get_patimage(PI_BPAREN));
+	       E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
+						 0,nulldesc, nulldesc);
+#else					/* PatternImage */
 	       E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
 						 0,nulldesc);
+#endif					/* PatternImage */
 	       var.dword = D_Pelem;
 	       BlkLoc(var) =  (union block *)E;
+#ifdef PatternImage
+	       X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var, image);
+#else					/* PatternImage */
 	       X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
+#endif					/* PatternImage */
 	       var.dword = D_Integer;
 	       IntVal(var) = P->stck_size + 3;
+#ifdef PatternImage
+	       Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var, nulldesc);
+#else					/* PatternImage */
 	       Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
+#endif					/* PatternImage */
 	       EPY = Bracket (E, Pat, Y);
 	       var.dword = D_Pelem;
 	       BlkLoc(var) =  (union block *)EPY;
@@ -1113,7 +1410,13 @@ function {1} Succeed()
       return pattern;
       }
    body {
+#ifdef PatternImage
+      struct descrip image;
+      AsgnCStr(image, "Succeed()");
+      return pattern(pattern_make(1, &EOP,PC_Succeed,1, nulldesc, image));
+#else					/* PatternImage */
       return pattern(pattern_make(1, &EOP,PC_Succeed,1, nulldesc));
+#endif					/* PatternImage */
       }
 end
 
@@ -1125,7 +1428,14 @@ function {1} Bal()
       return pattern;
       }
    body {
-      union block *bp = pattern_make(1, &EOP,PC_Bal,1, nulldesc);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      AsgnCStr(image, "Bal()");
+      bp = pattern_make(1, &EOP,PC_Bal,1, nulldesc, image);
+#else					/* PatternImage */
+      bp = pattern_make(1, &EOP,PC_Bal,1, nulldesc);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1138,7 +1448,11 @@ function {1} pattern_fieldeval (var_list)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      bp = pattern_make(0, &EOP,PC_UNEVALFIELD,1, var_list, nulldesc);
+#else					/* PatternImage */
       bp = pattern_make(0, &EOP,PC_UNEVALFIELD,1, var_list);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1150,7 +1464,15 @@ function {1} pattern_stringfunccall (var_list)
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_String_VF,1, var_list);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      tended struct descrip param;
+      AsgnCStr(image, "pattern_funccall");
+      bp = pattern_make(0, &EOP,PC_String_VF,1, param, image);
+#else					/* PatternImage */
+      bp = pattern_make(0, &EOP,PC_String_VF,1, var_list);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1162,7 +1484,15 @@ function {1} pattern_stringmethodcall (var_list)
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_String_MF,1, var_list);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      tended struct descrip param = var_list;
+      AsgnCStr(image, "pattern_stringmethodcall");
+      bp = pattern_make(0, &EOP,PC_String_MF,1, param, image);
+#else					/* PatternImage */
+      bp = pattern_make(0, &EOP,PC_String_MF,1, var_list);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1174,7 +1504,15 @@ function {1} pattern_boolfunccall (var_list)
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_Pred_Func,1, var_list);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      tended struct descrip param = var_list;
+      image = arg_image(param, PT_VF); 
+      bp = pattern_make(0, &EOP,PC_Pred_Func,1, param, image);
+#else					/* PatternImage */
+      bp = pattern_make(0, &EOP,PC_Pred_Func,1, var_list);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1187,7 +1525,14 @@ function {1} pattern_boolmethodcall (var_list)
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      tended struct descrip param = var_list;
+      image = arg_image(param, PT_MF);
+      bp = pattern_make(0, &EOP,PC_Pred_MF,1, param, image);
+#else					/* PatternImage */
       bp = pattern_make(0, &EOP,PC_Pred_MF,1, var_list);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1201,7 +1546,15 @@ function {1} pattern_unevalvar (name)
       return pattern;
       }
    body {
-      union block *bp = pattern_make(3, &EOP,PC_Rpat,1, name);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      tended struct descrip param = name;
+      image = arg_image(param, PT_VP);
+      bp = pattern_make(3, &EOP,PC_Rpat,1, param, image);
+#else					/* PatternImage */
+      bp = pattern_make(3, &EOP,PC_Rpat,1, name);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1256,8 +1609,14 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
    param.dword = D_Pelem;
    param.vword.bptr = (union block *)rpe;
    if (lpe == &EOP) {
+
+#ifdef PatternImage
       return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
-					  (word)rpe->index + 1, param);
+                                          (word)rpe->index + 1, param, nulldesc);
+#else					/* PatternImage */
+      return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
+                                          (word)rpe->index + 1, param);
+#endif					/* PatternImage */
       }
    /*
     *  If the left pattern is non-null, then build a reference vector
@@ -1273,13 +1632,22 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
       struct b_pelem * P ;
       int J;
       int RefLen = lpe->index + 1;
+#ifdef PatternImage
+      lpe->patimage = construct_image(lpe->patimage, get_patimage(PC_Alt),
+				      rpe->patimage);
+#endif					/* PatternImage */
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Build_Ref_Array (lpe, Refs);
       for (J = 1; J < RefLen;J++){
 	 P = Refs[J];
 	 P->index += rpe->index;
 	 }
+#ifdef PatternImage
+      return (struct b_pelem *)pelem_make(lpe, PC_Alt, lpe->index + 1, param,
+					  lpe->patimage);
+#else					/* PatternImage */
       return (struct b_pelem *)pelem_make(lpe, PC_Alt, lpe->index + 1, param);
+#endif					/* PatternImage */
       }
 }
 
@@ -1339,7 +1707,14 @@ function {1} pattern_setcur (underef var, name )
       }
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      image = construct_image(get_patimage(PI_EMPTY), get_patimage(PC_Setcur),
+			      name); 
+      bp = pattern_make(0, &EOP,PC_Setcur,1, name, image);
+#else					/* PatternImage */
       bp = pattern_make(0, &EOP,PC_Setcur,1, name);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1365,7 +1740,12 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
       tended struct b_pelem *P;
       tended struct b_pelem *E;
       struct b_pelem *A;
+#ifdef PatternImage
+      tended struct b_pelem *pe;
+      struct descrip image; 
+#else					/* PatternImage */
       struct b_pelem *pe;
+#endif					/* PatternImage */
       type_case PAT of {
       string:
 	 cnv_str_pattern(&PAT,&PAT);
@@ -1379,9 +1759,18 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
 	}
       p = (struct b_pattern *)BlkLoc(PAT);
       P = Copy((struct b_pelem *)p->pe);
+#ifdef PatternImage
+      E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc, nulldesc);
+      A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_Imm,0,name, nulldesc);
+#else					/* PatternImage */
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_Imm,0,name);
+#endif					/* PatternImage */
       pe = Bracket(E,P,A);
+#ifdef PatternImage
+      image = construct_image(P->patimage, get_patimage(PC_Assign_Imm), name);
+      pe->patimage = image;
+#endif					/* PatternImage */
       bp = pattern_make_pelem(p->stck_size + 3,pe);
       return pattern(bp);
       }
@@ -1405,7 +1794,13 @@ function {1} Fence(P)
    if is:null (P) then
    body {
       union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      AsgnCStr(image, "Fence()");
+      bp = pattern_make(1, &EOP,PC_Fence,1, nulldesc, image);
+#else					/* PatternImage */
       bp = pattern_make(1, &EOP,PC_Fence,1, nulldesc);
+#endif					/* PatternImage */
       return pattern(bp);
       }
    else
@@ -1415,6 +1810,10 @@ function {1} Fence(P)
       struct b_pelem *Pat;
       struct b_pelem *E;
       struct b_pelem *X;
+#ifdef PatternImage
+       struct descrip image;
+      AsgnCStr(image, "Fence()");
+#endif					/* PatternImage */
       type_case P of {
       string:
 	 cnv_str_pattern(&P,&P);
@@ -1428,8 +1827,14 @@ function {1} Fence(P)
 	}
       p = (struct b_pattern *)BlkLoc(P);
       Pat = Copy((struct b_pelem *)p->pe);
+#ifdef PatternImage
+      E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc, nulldesc);
+      X = (struct b_pelem *)pelem_make(&EOP,PC_Fence_X,0, nulldesc, image);
+#else					/* PatternImage */
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       X = (struct b_pelem *)pelem_make(&EOP,PC_Fence_X,0, nulldesc);
+#endif					/* PatternImage */
+
       bp = pattern_make_pelem(p->stck_size + 1,Bracket(E,Pat,X));
       return pattern(bp);
       }
@@ -1457,7 +1862,12 @@ function {1} pattern_assign_onmatch (PAT, underef var, name)
       struct b_pelem *P;
       struct b_pelem *E;
       struct b_pelem *A;
+#ifdef PatternImage
+      tended struct b_pelem *pe;
+      struct descrip image;
+#else					/* PatternImage */
       struct b_pelem *pe;
+#endif					/* PatternImage */
       type_case PAT of {
       string:
 	 cnv_str_pattern(&PAT,&PAT);
@@ -1472,9 +1882,18 @@ function {1} pattern_assign_onmatch (PAT, underef var, name)
 
       p = (struct b_pattern *)BlkLoc(PAT);
       P = Copy((struct b_pelem *)p->pe);
+#ifdef PatternImage
+      E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc,nulldesc);
+      A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_OnM,0,name,nulldesc);
+#else					/* PatternImage */
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_OnM,0,name);
+#endif					/* PatternImage */
       pe = Bracket(E,P,A);
+#ifdef PatternImage
+      image = construct_image(P->patimage, get_patimage(PC_Assign_OnM), name);
+      pe->patimage = image; 
+#endif					/* PatternImage */
       bp = pattern_make_pelem(p->stck_size + 3,pe);
       return pattern(bp);
       }
@@ -1499,7 +1918,14 @@ function {1} Abort()
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_Abort,1, nulldesc);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image; 
+      AsgnCStr(image, "Abort()");
+      bp = pattern_make(0, &EOP,PC_Abort,1, nulldesc, image);
+#else					/* PatternImage */
+      bp = pattern_make(0, &EOP,PC_Abort,1, nulldesc);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -1510,7 +1936,14 @@ function {1} Rem()
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_Rest,1, nulldesc);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image; 
+      AsgnCStr(image, "Rem()");
+      bp = pattern_make(0, &EOP,PC_Rest,1, nulldesc, image);
+#else					/* PatternImage */
+      bp = pattern_make(0, &EOP,PC_Rest,1, nulldesc);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end
@@ -3131,7 +3564,14 @@ function {1} Fail()
       return pattern;
       }
    body {
-      union block *bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
+      union block *bp;
+#ifdef PatternImage
+      struct descrip image;
+      AsgnCStr(image, "Fail()");
+      bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc, image);
+#else					/* PatternImage */
+      bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
+#endif					/* PatternImage */
       return pattern(bp);
       }
 end

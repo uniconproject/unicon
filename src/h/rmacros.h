@@ -1779,4 +1779,40 @@
 #define   PC_NotAny_MF  94
 #define   PC_NSpan_MF  95
 #define   PC_Span_MF  96
+
+/*
+ * Symbols associated with providing detailed pattern images.
+ */
+
+/* pattern function names. subscripts into patimg_funcs[]. */
+#define   PF_Any  0
+#define   PF_Break  1
+#define   PF_BreakX  2
+#define   PF_NotAny  3
+#define   PF_NSpan  4
+#define   PF_Span  5
+#define   PF_Len  6
+#define   PF_RPos  7
+#define   PF_Pos  8
+#define   PF_RTab 9
+#define   PF_Tab  10
+#define   PF_Arbno 11   
+#define   NUM_PATIMG_FUNCNAMES 12
+
+/* pattern argument-type codes. argument #2 to arg_image(). */
+#define   PT_MF  25
+#define   PT_VF 26
+#define   PT_VP 27
+#define   PT_EVAL 28
+
+/* pattern image codes. parameters e.g. to get_patimage(). */
+#define   PI_EMPTY   107
+#define   PI_FPAREN  108
+#define   PI_BPAREN 109
+#define   PI_BQUOTE 110
+#define   PI_QUOTE  111
+#define   PI_SQUOTE  112
+#define   PI_COMMA  230
+#define   PI_PERIOD 231
+#define   PI_CONCAT 232
 #endif					/* PatternType */

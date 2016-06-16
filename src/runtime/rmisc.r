@@ -1724,7 +1724,7 @@ struct descrip pattern_image(union block *pe, int arbnoBool)
              }
           case PC_RPos_NMF: {
              arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_VP),
+             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_MF),
 				     get_patimage(PI_BPAREN));
              break;
              }
@@ -2069,8 +2069,11 @@ struct descrip pattern_image(union block *pe, int arbnoBool)
            (Blk(ep,Pelem)->pcode != PC_Arbno_S || arbnoBool != 1) &&
            Blk(ep,Pelem)->pcode != PC_Arbno_Y &&
 	   Blk(ep,Pelem)->pcode != PC_R_Enter) {
-          image = construct_image(image, get_patimage(PI_CONCAT),
-				  pattern_image(ep, arbnoBool));
+	  if (StrLen(image)>0) {
+	     image = construct_image(image, get_patimage(PI_CONCAT),
+				     pattern_image(ep, arbnoBool));
+	     }
+	  else image = pattern_image(ep, arbnoBool);
           return image;
           }
        else {
@@ -2120,13 +2123,14 @@ struct descrip arg_image(struct descrip arg, int pcode)
       tended struct b_lelem *le = (struct b_lelem *) l->listhead;
       struct descrip str;
       int leCurrent = 1;
+
       AsgnCStr(image, StrLoc(le->lslots[le->first]));
       switch(pcode) {
       case PT_VP: {
          do {
             AsgnCStr(str, StrLoc(le->lslots[leCurrent]));
             image = construct_image(image, get_patimage(PI_PERIOD), str);
-            leCurrent = leCurrent + 1;
+            leCurrent++;
 	    }
 	 while (leCurrent != le->nslots);
 	 image = construct_image(get_patimage(PI_BQUOTE), image,
@@ -2177,7 +2181,7 @@ void init_func_array(struct descrip funcNames[])
 {
    AsgnCStr(funcNames[PF_Any], "Any(");
    AsgnCStr(funcNames[PF_Break], "Break(");
-   AsgnCStr(funcNames[PF_BreakX], "BreakX(");
+   AsgnCStr(funcNames[PF_BreakX], "Breakx(");
    AsgnCStr(funcNames[PF_NotAny], "NotAny(");
    AsgnCStr(funcNames[PF_NSpan], "NSpan(");
    AsgnCStr(funcNames[PF_Span], "Span(");

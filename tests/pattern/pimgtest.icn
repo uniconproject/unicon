@@ -1,0 +1,50 @@
+procedure main()
+    f := foo(1, 2, 3)
+    write(image(f), " vs ", image([1,2,3]), " vs ", image(table("key", "val")))
+    p1 := "this is a string" && "this is also a string"
+    p2 := "this is a string" .| "this is also a string"
+    p3 := "this is a string" .| Any('abc')
+    p4 := "this is a string" .| Any(1) -> x
+    p5 := "this is a string" || `stringcall("one", "two")`
+    p6 := "this is a string" || Any(`stringcall("one")`)
+    p7 := Any('abc') -> x || "this string"
+    p8 := `stringcall("one", "two")`.| "this string"
+    p9 := Any(`f.stringcall("one", "two")`);
+    p10 := .> x 
+    p11 := Abort()
+    p12 := Any(&letters)
+    p13 := Any(1)
+    p14 := Any("this")
+    p15 := Arb() || Bal()
+    p16 := Break("this")
+    p17 := Breakx("sthis")
+    p18 := Fail()
+    p19 := Fence() || Bal()
+    p20 := Bal() .| Fence() .| "this string"
+    p21 := Len(1)
+    p23 := Len(1) || Bal()
+    p24 := NotAny(&digits)
+    p25 := Pos(22) => x
+    p26 := Rem()
+    p27 := Span("this string") || Succeed()
+    p28 := Tab(20) || "this string in here"
+    p29 := Rpos(20) || "this string"
+    p30 := Rtab(20) && "this string"
+    p31 := Rpos(`stringcall("one", "two")`) || Rpos(`f.stringcall("one", "two")`) || Breakx("that") || Breakx("thsi")
+    every i := 1 to 31 do write(image(variable("p"||i)))
+    
+end
+
+procedure stringcall(var1, var2)
+  return 'abc'
+end
+
+
+class foo(a, b, c)
+  method stringcall(var1, var2)
+  return 'abc'
+end
+
+end
+
+

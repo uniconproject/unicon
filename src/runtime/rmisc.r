@@ -2625,14 +2625,7 @@ dptr dp1, dp2;
 	 ep = Blk(bp,Pattern)->pe;
 
 #ifdef PatternImage
-
-#ifdef PatternImageMember
-	 StrLoc(temp) = alcstr(StrLoc(Blk(ep,Pelem)->patimage), StrLen(Blk(ep,Pelem)->patimage));
-	 StrLen(temp) = StrLen(Blk(ep,Pelem)->patimage); 
-#else
          temp = pattern_image(ep, 0);
-#endif					/* PatternImage */
-
 	 sprintf(sbuf, "pattern_%ld(%ld) = %s", (long)(Blk(bp,Pattern)->id),
 	 	        (long)(Blk(ep,Pelem)->index), StrLoc(temp)); 
 

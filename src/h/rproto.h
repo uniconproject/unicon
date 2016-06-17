@@ -139,24 +139,17 @@ void 		cnv_cset_pattern(dptr s, dptr p);
 struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
 struct b_pelem *Copy		(struct b_pelem * P);
 
-#ifdef PatternImage
-union block *pattern_make(int stck_size, struct b_pelem * pnext,
-			  int pattern_code, int index, struct descrip param,
-			  struct descrip patimage);
-union block *pelem_make(struct b_pelem * pnext, int pattern_code,
-			int index, struct descrip param,
-			struct descrip patimage);
-struct descrip get_patimage(int ptype);
-struct descrip  arg_image     (struct descrip arg, int pcode);
-struct descrip  construct_image (struct descrip left, struct descrip s,
-				    struct descrip r);
-
-#else					/* PatternImage */
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
 			  int pattern_code, int index, struct descrip param);
 union block *pelem_make(struct b_pelem * pnext, int pattern_code,
 			int index, struct descrip param);
+#ifdef PatternImage
+struct descrip get_patimage(int ptype);
+struct descrip  arg_image     (struct descrip arg, int pcode);
+struct descrip  construct_image (struct descrip left, struct descrip s,
+				    struct descrip r);
 #endif					/* PatternImage */
+
 struct b_pattern * breakx_make(struct b_pelem * B);
 #endif               /* PatternType */
 int		co_chng		(struct b_coexpr *ncp, struct descrip *valloc,

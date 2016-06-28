@@ -2,27 +2,25 @@ import gui
 $include "guih.icn"
 #link graphics
 
-link io, noncase, findre
+link io, noncase, findre, printdlg
 
 # $define lpr "enscript -b \" \" -1 -Plexnormal"
 #----------------------------------------------
 
 global targs,browser,
-   PATHSEP, projectOpened, lpr,
-   browser1,docpath,
+   PATHSEP, projectOpened,
+   docpath,
    xargs,icodename,
    wiconlog,project,
-   findstr,foundline,
-   foundcol,height,
-   width, font,
+   findstr,
+   height,
+   width,
    fontheight,msglines,
-   linebreak,ui_ini,filename,
-   flag,configdlg,
+   linebreak,
    opened_files_set,
-   opened_files_num,
    tab_label,
-   fileCompiled, overwrite, url_field,
-   lst, web_mode, commands_file, ide, file_contents, dialogFor
+   fileCompiled, overwrite,
+   lst, ide, file_contents, dialogFor
 
 #
 # Class IDE
@@ -32,7 +30,7 @@ class IDE (
    copy_btn, cut_btn, find_btn, paste_btn, undo_btn, redo_btn,
    opened_file, tablist, tabItem, view_3d, errors_list, errLine,
    modified, filefound, menu_1, fileOpened, projectCompiled,
-   toggle_find_dir_btn, text_field_search,
+   toggle_find_dir_btn, text_field_search, lpr,
    needConsole, ptybuffer, pty, dlst, debugger
    )
 
@@ -60,7 +58,7 @@ class IDE (
          uidlog.MsgBox.set_contents(["Printing canceled."])
          fail
          }
-      if (prn_name === &null) then {
+      if prn_name === &null then {
          uidlog.MsgBox.set_contents(["Printer not selected."])
          fail
          }
@@ -143,12 +141,7 @@ $endif
 	 put(file_contents, line)
 	 nchars +:= *line + 1
 	 }
-      # A loop to check whether or not the file is already open
-      # or if there is a different file open with the same name
-      #every tab_id:=1 to *opened_files_list do {
-      #	 if opened_files_list[tab_id] === file_name(filename) then
-      #	    opened_files_num +:= 1
-      #	 }
+
       # We don't have a file open with the same name, so
       # add a new tab with the file name
       if not member(opened_files_set, filename) then {
@@ -340,7 +333,7 @@ $endif
    # Save File Menu Item Method
    #
    method save_file(c)
-      local ufile, l, line
+      local ufile, l
       chdir(c.filedirectory)
       l := CurrentEditBox().get_contents() | []
       ufile := open(c.filename, "cu") | {
@@ -446,7 +439,7 @@ $endif
       /gotoln := ""
       dialogFor := "goto"
       oldwindow := &window
-      &window := win
+      &window := &null
       if TextDialog(["Go to line# : "],gotoln,1)=="Okay" then {
 	 gotoln := integer(dialog_value[1])
 	 ide.goto_line(gotoln,1)
@@ -792,9 +785,10 @@ $endif
 	 project := projectname
 	 updateproject()
 	 }
-      if projectname[-2:0] == ".*" then filename := filename[1:-2]
+      if projectname[-2:0] == ".*" then projectname := projectname[1:-2]
       file := open(projectname, "ru") | {
-	 \uidlog.MsgBox.set_contents(["Could not open project: " || \filename])
+	 \uidlog.MsgBox.set_contents(["Could not open project: " ||
+				      \projectname])
 	 return
 	 }
       tab_label := fname
@@ -806,13 +800,6 @@ $endif
 	 put(file_contents, line)
 	 nchars +:= *line + 1
 	 }
-
-      # Used to have a check here for file already open with same name.
-
-      #every tab_id:=1 to *opened_files_list do {
-      #   if opened_files_list[tab_id] === file_name(projectname) then
-      #	    opened_files_num +:= 1
-      #   }
 
       # We don't have a files open with the same name, so
       # add a new tab with the file name
@@ -1534,10 +1521,10 @@ $endif
       local fd, filename, foo, index := i, warntxt, fexist := &null, L,
 	    i, oldwindow, win, fileslist, fext
 
+      chdir(CurrentTabItem().filedirectory)
+
       fileslist := []
       every put(fileslist,!open("."))
-
-      chdir(current_dir)
 
       if /is_MSWindows then {
 	 fd := HFileDialog()
@@ -1556,7 +1543,6 @@ $endif
 
 	 }
       else {
-	 current_dir := filedirectory
 	 filename := WinSaveDialog(&window, "Save File As:", "", 50,
 				   "Unicon Source File (.icn)|*.icn|_
 				    All Files(*.*)|*.*|",0,chdir()) | fail
@@ -1612,7 +1598,6 @@ $endif
 initially
    ide := self
    opened_files_set := set()
-   opened_files_num := 0
    dlst := []
    lpr := "lpr"
 end

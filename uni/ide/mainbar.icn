@@ -14,8 +14,7 @@ $include "guih.icn"
 
 link io, font_dlg
 
-global uniconProject, uide, gotoln,
-   projectCreated, projectOpened, win, window_pos
+global gotoln, projectCreated, projectOpened
 
 #
 # Class Mainbar manages an IDE toolbar, a dialog-like collection of components
@@ -42,7 +41,7 @@ class Mainbar(
    projecttype, make_compile_unicon, runProject, makeClean,
    makeCleanAll, menu_separator, menu_separator2, connect_menu,
    disconnect_menu, menu_act, pswd_menu, avt_menu, face_menu, reg_menu,
-   users_guide_file, commands_file, language_ref, fileOpened,
+   users_guide_file, language_ref, fileOpened,
    icon_ref, unicon_ref, graphics_ref, icon_prog_library, languages_faq,
    icon_faq, unicon_faq, modified, saveoptions, redo, new_Project,
    ui_programming_envi, tutorial_overview, ivib_interface_builder,
@@ -169,7 +168,10 @@ class Mainbar(
       local oldwindow := &window
       dialogFor := "compile"
       /targs := ""
-      &window := win
+      # Confusing historical semantics of functions like TextDialog().
+      # Do they open relative (e.g. centered) to an existing main &window?
+      # Or do they just modify &window such that it needs saved/restored?
+      &window := &null
       if TextDialog("Enter compiler options: ",,targs,60) == "Okay" then
 	 targs := dialog_value[1]
       &window := oldwindow
@@ -186,11 +188,13 @@ class Mainbar(
    end
 
    method on_run_arguments(ev)
-      local oldwindow
+      local oldwindow := &window
       dialogFor := "run"
       /xargs := ""
-      oldwindow := &window
-      &window := win
+      # Confusing historical semantics of functions like TextDialog().
+      # Do they open relative (e.g. centered) to an existing main &window?
+      # Or do they just modify &window such that it needs saved/restored?
+      &window := &null
       if TextDialog("Enter command line arguments: ",,xargs,60) == "Okay" then
 	 xargs := dialog_value[1]
       &window := oldwindow
@@ -433,6 +437,7 @@ $endif
    #
    method handle_help(filename, URL)
       local URL2 := "", f, sysline, nonot, fout, fout2, foutname, foutname2
+      local line
 
       if /browser then {
 	 uidlog.MsgBox.set_contents([
@@ -844,7 +849,7 @@ $endif
    end
 
    method load_config()
-      local f, prefs := uidlog.ui_Preferences
+      local f, prefs := uidlog.ui_Preferences, line
       if f := open(getenv("HOME"|"HOMEDIR"|"LOCALAPPDATA")||PS||FILE,"r") then {
 	 while line := read(f) do {
 	    line ? {
@@ -959,7 +964,7 @@ $endif
    # IDE Main Menu Bar Method: Adds a simple menubar into the IDE tab.
    #
    method Menubar()
-   local graphics2D_ref, graphics3D_ref, new_UniconProject
+   local graphics2D_ref, graphics3D_ref, new_UniconProject, font
       menu_bar_1 := MenuBar()
       menu_bar_1.set_pos("0", "0")
       menu_bar_1.set_size("100%", "4.5%")

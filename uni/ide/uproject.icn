@@ -5,7 +5,7 @@
 
 import gui
 $include "guih.icn"
-global Utargetfile, projectname, filedirectory
+global filedirectory
 
 
 #
@@ -18,7 +18,7 @@ global Utargetfile, projectname, filedirectory
 # project contents change.
 #
 class UProject : Dialog(filesAdd_btn, filesDel_btn,
-   sourcefiles_list,
+   sourcefiles_list, Utargetfile, projectname,
    Makefile_name, compilerName, compilerflags, 
    linkerName, linkerflags, targetFile_name, selectedfile,
    uproj_TabSet, files_tab, fileslist, fileslist1, prjPath,
@@ -34,8 +34,8 @@ class UProject : Dialog(filesAdd_btn, filesDel_btn,
    end
 
    method init_dialog()
-      local cmp, lnk, cmpOpts, lnkOpts #To identifiey the compiler and
-                                       #linker respectivelly and their options
+      local cmp, lnk, cmpOpts, lnkOpts #To identify the compiler and
+                                       #linker respectively and their options
       pname := file_name(projectname)
 
       if find(".uprj"|".icn", projectname) then

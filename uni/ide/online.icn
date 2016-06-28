@@ -5,20 +5,21 @@ link getpaths
 
 #report within a second or so, whether we think the net is live
 procedure is_online()
-local pathto, rv, f
+local pathto, rv, f, line
    if stat(pathto := (getpaths() || "nm-online")) then {
       rv := system("nm-online -t 1 -x >/dev/null")
       if \rv = 0 then return "online"
       else return "offline"
-} else {
-   if f := open("/sbin/ifconfig", "p") then {
-       while line := read(f) do {
-          line ? {
-              if tab(find("inet addr:127.0.0.1")) then next
-              if tab(find("inet addr:")) then return "online, I think"
-           }
-       }
-   }
-   return "don't know, assume not"
-}
+      }
+   else {
+      if f := open("/sbin/ifconfig", "p") then {
+	 while line := read(f) do {
+	    line ? {
+	       if tab(find("inet addr:127.0.0.1")) then next
+	       if tab(find("inet addr:")) then return "online, I think"
+	       }
+	    }
+	 }
+      return "don't know, assume not"
+      }
 end

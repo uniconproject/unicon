@@ -437,7 +437,7 @@ $endif
    #
    method handle_help(filename, URL)
       local URL2 := "", f, sysline, nonot, fout, fout2, foutname, foutname2
-      local line
+      local line, p, s
 
       if /browser then {
 	 uidlog.MsgBox.set_contents([
@@ -454,8 +454,21 @@ $ifdef _UNIX
 	 else URL := "file://" || filename
 	 }
 
-      if find("netscape"|"firefox", \browser) then
-	 URL2 := " -remote 'openURL(" || URL || ")'"
+      if find("netscape"|"firefox", \browser) then {
+	 if /browserversion then {
+	    if p := open(\browser || " -version", "p") then {
+	       s := read(p)
+	       close(p)
+	       s ? {
+		  tab(upto(&digits))
+		  browserversion := real(tab(many(&digits)))
+		  }
+	       }
+	    }
+	 if \browserversion <36 then
+	    URL2 := " -remote 'openURL(" || URL || ")'"
+	 else URL2 := " " || URL
+	 }
       else if browser=="open" then {
 	 URL2 := " -a Safari " || URL
 	 }

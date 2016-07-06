@@ -51,11 +51,14 @@ global Monitored, EventSource, MTEventMask
 #
 procedure MTEvInit(f,input,output,error)
 
+initial {
+   EvGet :=: MTEvGet
+   }
+
    if \&eventsource then return
 
    if type(f) == "string" then {
       &eventsource := EventSource := Monitored := load(f,,input,output,error) | fail
-      EvGet     :=: MTEvGet
       }
    else if type(f) == "list" then {
       every i := 1 to *f do {
@@ -75,7 +78,6 @@ procedure MTEvInit(f,input,output,error)
 	 else if string(arg) then put(f,arg)
 	 }
       &eventsource := EventSource := Monitored := load(f[1],f[2:0],input,output,error) | fail
-      EvGet     :=: MTEvGet
       }
    return &eventsource
 end
@@ -90,7 +92,10 @@ procedure MTEvGet(c,vmask,flag)
      lastcset := c
      eventmask(\(Monitored | EventSource) ,\c | &cset)
      }
-   return MTEvGet(c,vmask,flag)
+   if e := MTEvGet(c,vmask,flag) then
+      return e
+   # EvGet() has failed, maybe it is time to reset &eventsource
+   if &eventsource === Monitored then &eventsource := &null
 end
 
 #

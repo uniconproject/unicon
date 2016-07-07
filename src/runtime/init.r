@@ -1120,6 +1120,8 @@ Deliberate Syntax Error
    thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/
 
+   mainhead->shared = 0;
+
    mainhead->inbox = nulldesc;
    mainhead->outbox = nulldesc;
    mainhead->cequeue = nulldesc;

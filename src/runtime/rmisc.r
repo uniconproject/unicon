@@ -1254,7 +1254,7 @@ struct b_coexpr *ce;
     */
    if (abp->nactivators == 0) {
       oabp = abp;
-      abp = abp->astk_nxt;
+      ce->es_actstk = abp = abp->astk_nxt;
       free((pointer)oabp);
       }
 
@@ -1318,6 +1318,7 @@ struct b_coexpr *ce;
 {
    struct astkblk *abp = ce->es_actstk;
    CURTSTATE();
+
 #ifdef MultiThread 
    if (ce->program == curtstate->c->program){
 #endif					/* MultiThread */

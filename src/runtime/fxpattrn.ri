@@ -130,6 +130,7 @@ struct b_list *ResolveList(struct b_list *lp)
    if (!is:string(elsrc->lslots[0])) {
       t_errornumber = 103;
       t_errorvalue = elsrc->lslots[0];
+      t_have_val = 1;
       return NULL;
       }
    /* convert string into procedure and store in proc */
@@ -138,6 +139,7 @@ struct b_list *ResolveList(struct b_list *lp)
       fprintf(stderr, "Unable to find proc in ResolveList\n");
       t_errornumber = 106;
       t_errorvalue = elsrc->lslots[0];
+      t_have_val = 1;
       return NULL;
       }
    eldest = (struct b_lelem *)lpdest->listhead;
@@ -152,6 +154,7 @@ struct b_list *ResolveList(struct b_list *lp)
       t_errornumber = 164;
       t_errorvalue.dword = D_List;
       t_errorvalue.vword.bptr = (union block *)lpsrc;
+      t_have_val = 1;
       return NULL;
       }
 
@@ -190,6 +193,7 @@ struct b_list *ResolveList(struct b_list *lp)
 	    else if (strcspn(varname, "&") == 0) {
 	       if (getkeyword(varname, &parm) == Failed) {
 		  t_errornumber = 160;
+		  t_have_val = 1;
 		  AsgnCStr(t_errorvalue, varname);
 		  return NULL;
 		  }
@@ -208,6 +212,7 @@ struct b_list *ResolveList(struct b_list *lp)
 	    else {
 	       if (getvar(varname, &parm) == Failed) {
 		  t_errornumber = 160;
+		  t_have_val = 1;
 		  AsgnCStr(t_errorvalue, varname);
 		  return NULL;
 		  }
@@ -330,6 +335,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	          cnv:C_string(ep->lslots[0],varname);
 		  if (getvar(varname,&ep->lslots[0])== Failed) {
 		     t_errornumber = 160;
+		     t_have_val = 1;
 		     AsgnCStr(t_errorvalue, varname);
 		     return NULL;
 		     }
@@ -342,6 +348,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 				   varname));
 		  if (getvar(varname,&E->parameter)== Failed) {
 		     t_errornumber = 160;
+		     t_have_val = 1;
 		     AsgnCStr(t_errorvalue, varname);
 		     return NULL;
 		     }
@@ -1839,6 +1846,7 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    if (getvar(varname, &var) == Failed) {
       t_errornumber = 160;
       AsgnCStr(t_errorvalue, varname);
+      t_have_val = 1;
       return NULL;
       }
    procargs[0] = var;
@@ -1913,6 +1921,7 @@ dptr processMethodCallList(struct b_list *lp, int csr)
 	    if (getvar(varstring,&parm) == Failed) {
 	       t_errornumber = 160;
 	       AsgnCStr(t_errorvalue, varstring);
+	       t_have_val = 1;
 	       return NULL;
 	       }
 	    free(varstring);

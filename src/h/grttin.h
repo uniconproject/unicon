@@ -89,6 +89,23 @@
    } while (0)
 #enddef					/* RealEVVal */
 
+/* extended version of EVVal, allows for save/restore */
+#begdef EVValEx(value,event,vardecl,preact,postact)
+   do {
+      vardecl;
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
+      MakeInt(value, &(mycurpstate->parent->eventval));
+      if (!is:null(mycurpstate->valuemask) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+	 break;
+      preact;
+      actparent(event);
+      postact;
+   } while (0)
+#enddef					/* EVValEx */
+
+
 #begdef EVVal(value,event)
 #if event
    RealEVVal(value,event)

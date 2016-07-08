@@ -730,7 +730,7 @@ Deliberate Syntax Error
  */
 
 #if e_opcode
-      EVVal(lastop, E_Opcode);
+      EVValEx(lastop,E_Opcode,word mylastop,mylastop=lastop,lastop=mylastop);
 #endif					/* E_Opcode */
 
 #ifdef Concurrent

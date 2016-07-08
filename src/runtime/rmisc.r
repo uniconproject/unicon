@@ -1187,8 +1187,7 @@ char *sbuf;
 /*
  * pushact - push actvtr on the activator stack of ce
  */
-int pushact(ce, actvtr)
-struct b_coexpr *ce, *actvtr;
+int pushact(struct b_coexpr *ce, struct b_coexpr *actvtr)
 {
    struct astkblk *abp = ce->es_actstk, *nabp;
    struct actrec *arp;
@@ -1230,8 +1229,7 @@ struct b_coexpr *ce, *actvtr;
  * popact - pop the most recent activator from the activator stack of ce
  *  and return it.
  */
-struct b_coexpr *popact(ce)
-struct b_coexpr *ce;
+struct b_coexpr *popact(struct b_coexpr *ce)
 {
 
 #ifdef CoExpr
@@ -1250,9 +1248,15 @@ struct b_coexpr *ce;
 #endif
 
    /*
-    * If the current stack block is empty, pop it.
+    * If the current stack block is empty, pop it, unless this would leave
+    * the activation stack empty and a return to a parent program in progress.
+    * In that case, setting the actstk to NULL would be counterproductive.
     */
-   if (abp->nactivators == 0) {
+   if ((abp->nactivators == 0)
+#if !COMPILER
+        && (abp->astk_nxt || !(curpstate->parent))
+#endif					/* COMPILER */
+      ) {
       oabp = abp;
       ce->es_actstk = abp = abp->astk_nxt;
       free((pointer)oabp);

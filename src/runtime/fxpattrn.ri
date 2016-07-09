@@ -1838,7 +1838,6 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    int i, found__m = 0;
 
    oldPos = k_pos;
-   DEBUGF(25,(stdout, "processMethodCallList\n")); fflush(stdout);
    Cursor = csr;
    nargs = lp->size;
    ep = (struct b_lelem *)lp->listhead;
@@ -1884,31 +1883,46 @@ dptr processMethodCallList(struct b_list *lp, int csr)
       }
    if (i<nfields)
       fnum = i;  
-   nfields = bptr->Proc.nfields;
+   else fatalerr(207, &methodptr);
    proc = rp->fields[fnum];
    bptr = rp->recdesc;
-   for (i = 1; i < ep->nused; i++) {
+   /* given that slots[0] was the object, and slots[1] is the method,
+    * evaluate slots[2] through the rest of the list as procargs[1]...
+    */
+   procargs[0] = self;
+   for (i = 2; i < ep->nused; i++) {
       if(is:list(ep->lslots[i])) {
 	 /* check for method call else function call*/
-	 if(isMethod(ep) >= 0) {
+	 if(isMethod((struct b_lelem *)(BlkD(ep->lslots[i],List)->listhead)) >= 0) {
+	    /* slot is a method */
 	    rv = processMethodCallList(BlkD(ep->lslots[i], List), Cursor);
 	    }
 	 else {
+	    /* slot is a procedure */
 	    rv = processFuncCallList(BlkD(ep->lslots[i], List), Cursor);
 	    }
-	 if (rv == 0) return 0;
-	    procargs[i - 1] = *rv;
+	 if (rv == 0) {
+	    return 0;
 	    }
-	 else if (is:variable(ep->lslots[i])) {
-	    procargs[i - 1] = *(ep->lslots[i].vword.descptr);
+	 procargs[i - 1] = *rv;
 	 }
-      else {
-	 if (i == 1) procargs[i - 1] = self;
-	 if(strpbrk(ep->lslots[i].vword.sptr,
-	       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") == 
-	       NULL) {
-	    cnv:integer(ep->lslots[i], argmnt);
-	    procargs[i - 1] = argmnt;
+      else if (is:variable(ep->lslots[i])) {
+	 procargs[i - 1] = *(ep->lslots[i].vword.descptr);
+	 }
+      else if (cnv:integer(ep->lslots[i], argmnt)) {
+	 procargs[i - 1] = argmnt;
+	 }
+      else if (is:string(ep->lslots[i])) { /* "string" needs interpreting */
+         if ((StrLen(ep->lslots[i])>0) && StrLoc(ep->lslots[i])[0]=='\"') {
+	    procargs[i - 1] = ep->lslots[i];
+	    StrLoc(procargs[i-1])++;
+	    StrLen(procargs[i-1]) -= 2;
+	    }
+         else if ((StrLen(ep->lslots[i])>0) && StrLoc(ep->lslots[i])[0]=='\''){
+	    procargs[i - 1] = ep->lslots[i];
+	    StrLoc(procargs[i-1])++;
+	    StrLen(procargs[i-1]) -= 2;
+	    cnv:cset(procargs[i-1], procargs[i-1]);
 	    }
          else {
             tended char * varname;

@@ -160,9 +160,6 @@ void		coacttrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		cofailtrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		corettrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 int		coswitch	(word *old, word *new, int first);
-#ifdef Concurrent
-void init_threadheap(struct threadstate *ts, word blksiz, word strsiz);
-#endif					/* Concurrent */
 int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
 #ifdef MultiThread
 int		cplist_0	(dptr dp1,dptr dp2,word i,word j);
@@ -1188,7 +1185,8 @@ int msg_receive( dptr dccp, dptr dncp, dptr msg, int timeout);
 int msg_send( dptr dccp, dptr dncp, dptr msg, int timeout);
 word get_mutex( pthread_mutexattr_t *mattr);
 word get_cv(word mtx);
-
+void init_threadheap(struct threadstate *ts, word blksiz, word strsiz);
+int alcce_queues(struct b_coexpr *ep);
 struct region *swap2publicheap(struct region * curr_private, 
 			       struct region * curr_public, 
 			       struct region ** p_public);

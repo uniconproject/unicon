@@ -1120,65 +1120,8 @@ Deliberate Syntax Error
    thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/
 
-   mainhead->shared = 0;
-
-   mainhead->inbox = nulldesc;
-   mainhead->outbox = nulldesc;
-   mainhead->cequeue = nulldesc;
-   mainhead->handdata = NULL;
-
-{
- 
-     struct b_list *hp;
-     /*
-      * Initialize sender/receiver queues.
-      */
-
-      if (!reserve(Blocks, (word)(
-      			sizeof(struct b_list) * 3 + 
-      			sizeof(struct b_lelem) * 3 +
-			(1024+1024+64) * sizeof(struct descrip)))
-			)
-			fatalerr(307, NULL);
-
-      if((hp = alclist(0, 1024))==NULL)
-      	    fatalerr(307, NULL);
-
-      MUTEX_INITBLK(hp);
-      CV_INITBLK(hp);
-      hp->id=-1;
-      hp->shared = 1;
-      hp->max = 1024;
-      BlkLoc(mainhead->outbox) = (union block *) hp;
-      mainhead->outbox.dword = D_List;
-
-      if((hp = alclist(0, 1024))==NULL)
-      	    fatalerr(307, NULL);
-
-      MUTEX_INITBLK(hp);
-      CV_INITBLK(hp);
-      hp->shared = 1;
-      hp->id=-2;
-      hp->max = 1024;
-      BlkLoc(mainhead->inbox) = (union block *) hp;
-      mainhead->inbox.dword = D_List;
-
-      if((hp = alclist(0, 64))==NULL)
-      	    fatalerr(307, NULL);
-
-      MUTEX_INITBLK(hp);
-      CV_INITBLK(hp);
-      hp->shared = 1;
-      hp->id=-3;
-      hp->max = 64;
-      BlkLoc(mainhead->cequeue) = (union block *) hp;
-      mainhead->cequeue.dword = D_List;
-
-      mainhead->handdata = NULL;
-      list_ser = 1;
-      intern_list_ser = -1;
-
-}
+   if (alcce_queues(mainhead) == Failed)
+      fatalerr(307, NULL);
 #endif					/* Concurrent */
    
 

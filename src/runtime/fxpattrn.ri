@@ -435,6 +435,7 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
 {
    tended struct b_pelem *lpe = L;
    tended struct b_pelem *rpe = R;
+   EVVal(PI_CONCAT, E_Patcode);
    if (lpe == &EOP)
       return rpe;
    else if (rpe == &EOP)
@@ -628,6 +629,7 @@ end
 void cnv_str_pattern(dptr s, dptr p)
 {
    union block *bp = pattern_make(0, &EOP,PC_String,1, *s);
+   EVVal(PC_String, E_Patcode);
    p->dword = D_Pattern;
    BlkLoc(*p) = bp;
 }
@@ -635,6 +637,7 @@ void cnv_str_pattern(dptr s, dptr p)
 void cnv_cset_pattern(dptr s, dptr p)
 {
    union block *bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
+   EVVal(PC_Any_CS, E_Patcode);
    p->dword = D_Pattern;
    BlkLoc(*p) = bp;
 }
@@ -710,16 +713,19 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 	 switch(pe->pcode) {
 	 case PC_Rpat: {
 	    bp = pattern_make(0, &EOP,ptype ## _VP,1, pe->parameter);
+            EVVal(ptype ## _VP, E_Patcode);
 	    break;
 	    }
 	 case PC_Pred_Func:
 	 case PC_String_VF: {
 	    bp = pattern_make(0, &EOP,ptype ## _VF,1, pe->parameter);
+	    EVVal(ptype ## _VF, E_Patcode);
 	    break;
 	    }
 	 case PC_Pred_MF:
 	 case PC_String_MF: {
 	    bp = pattern_make(0, &EOP,ptype ## _MF,1, pe->parameter);
+	    EVVal(ptype ## _MF, E_Patcode);
 	    break;
 	    }
 	 default: {
@@ -731,6 +737,7 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 	 if (!cnv_cset(&arg, &arg))
 	    runerr(104, arg);
 	 bp = pattern_make(0, &EOP, ptype ## _CS,1, arg);
+         EVVal(ptype ## _CS, E_Patcode);
 	 }
    }
 #enddef
@@ -811,12 +818,21 @@ function {1} Breakx(char_set)
 	 case PC_Rpat:{
 	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VP, 3,
 						    pe->parameter);
+	    EVVal(PC_BreakX_VP, E_Patcode);
 	    break;
 	    }
 	 case PC_Pred_Func:
 	 case PC_String_VF: {
 	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_VF, 3,
 						    pe->parameter);
+	    EVVal(PC_BreakX_VF, E_Patcode);
+	    break;
+	    }
+	 case PC_Pred_MF:
+	 case PC_String_MF: {
+	    peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_MF, 3,
+						    pe->parameter);
+	    EVVal(PC_BreakX_MF, E_Patcode);
 	    break;
 	    }
 	 default: {
@@ -827,7 +843,8 @@ function {1} Breakx(char_set)
       default: {
 	 if (!cnv_cset(&char_set, &char_set))
 	    runerr(104, char_set);
-	 peBreakx = (struct b_pelem *)pelem_make(NULL, PC_BreakX_CS, 3,char_set);
+	 peBreakx = (struct b_pelem *)pelem_make(NULL,PC_BreakX_CS,3,char_set);
+	 EVVal(PC_BreakX_CS, E_Patcode);
 	 }
 	 }
       bp = (union block *)breakx_make(peBreakx);
@@ -844,18 +861,21 @@ end
 	 case PC_Rpat: {
 	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NP,
 					      1, pe->parameter);
+            EVVal(ptype ## _NP, E_Patcode);
 	    break;
 	    }
 	 case PC_Pred_Func:
 	 case PC_String_VF: {
 	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
 					      1, pe->parameter);
+            EVVal(ptype ## _NF, E_Patcode);
 	    break;
 	    }
 	 case PC_Pred_MF:
 	 case PC_String_MF: {
 	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NMF,
 					      1, pe->parameter);
+            EVVal(ptype ## _NMF, E_Patcode);
 	    break;
 	    }
 	 default: {
@@ -867,6 +887,7 @@ end
 	 if (!cnv_int(&arg, &arg))
 	    runerr(102, arg);
 	 bp =  (union block *)pattern_make(0, &EOP, ptype ## _Nat,1, arg);
+         EVVal(ptype ## _Nat, E_Patcode);
 	 }
 	 }
 #enddef
@@ -936,11 +957,11 @@ function {1} Tab(count)
 end
 
 function {1} Rtab(count)
-   if !cnv:integer(count) then
-      runerr(102,count)
    abstract {
       return pattern;
       }
+   if !cnv:integer(count) then
+      runerr(102,count)
    body {
       union block *bp;
       ConvertPatternArgumentInt(count,bp,PC_RTab);
@@ -972,9 +993,11 @@ function {1} Arb()
       tended struct descrip var;
       tended struct b_pelem * X;
       tended struct b_pelem * Y = pelem_make(&EOP,PC_Arb_Y,1,nulldesc);
+      EVVal(PC_Arb_Y, E_Patcode);
       var.dword = D_Pelem;
       BlkLoc(var) =  (union block *)Y;
       X = (struct b_pelem *)pelem_make(&EOP,PC_Arb_X,2,var);
+      EVVal(PC_Arb_X, E_Patcode);
       bp = pattern_make_pelem(1,X);
       return pattern(bp);
       }
@@ -992,6 +1015,7 @@ struct b_pelem * Arbno_Simple(struct b_pelem *pe)
    var.dword = D_Pelem;
    BlkLoc(var) =  (union block *)pe;
    S = (struct b_pelem *)pelem_make(&EOP,PC_Arbno_S, pe->index + 1, var);
+   EVVal(PC_Arbno_S, E_Patcode);
    Set_Successor(pe,S);
    return S;
 }
@@ -1010,6 +1034,7 @@ function {1} Arbno(ARBPAT)
 	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
 	    X = Arbno_Simple((struct b_pelem *)P->pe);
 	    bp = pattern_make_pelem(0,X);
+	    EVVal(PC_Arbno_S, E_Patcode);
 	    return pattern(bp);
 	    }
 	 cset : {
@@ -1017,6 +1042,7 @@ function {1} Arbno(ARBPAT)
 	    P = (struct b_pattern *)BlkLoc(ARBPAT);
 	    X = Arbno_Simple((struct b_pelem *)P->pe);
 	    bp = pattern_make_pelem(0,X);
+	    EVVal(PC_Arbno_S, E_Patcode);
 	    return pattern(bp);
 	    }
          pattern: {
@@ -1047,9 +1073,9 @@ function {1} Arbno(ARBPAT)
 		*  Note that we know that P cannot be EOP, because a null
 		*  pattern does not meet the requirements for simple Arbno.
 		*/
-
 	       X = Arbno_Simple(Pat);
 	       bp = pattern_make_pelem(1,X);
+	       EVVal(PC_Arbno_S, E_Patcode);
 	       return pattern(bp);
 	       }
 	    else {
@@ -1084,9 +1110,11 @@ function {1} Arbno(ARBPAT)
 	       var.dword = D_Pelem;
 	       BlkLoc(var) =  (union block *)E;
 	       X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
+               EVVal(PC_Arbno_X, E_Patcode);
 	       var.dword = D_Integer;
 	       IntVal(var) = P->stck_size + 3;
 	       Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
+               EVVal(PC_Arbno_X, E_Patcode);
 	       EPY = Bracket (E, Pat, Y);
 	       var.dword = D_Pelem;
 	       BlkLoc(var) =  (union block *)EPY;
@@ -1112,7 +1140,9 @@ function {1} Succeed()
       return pattern;
       }
    body {
-      return pattern(pattern_make(1, &EOP,PC_Succeed,1, nulldesc));
+      union block *bp = pattern_make(1, &EOP,PC_Succeed,1, nulldesc);
+      EVVal(PC_Succeed, E_Patcode);
+      return pattern(bp);
       }
 end
 
@@ -1124,8 +1154,8 @@ function {1} Bal()
       return pattern;
       }
    body {
-      union block *bp;
-      bp = pattern_make(1, &EOP,PC_Bal,1, nulldesc);
+      union block *bp = pattern_make(1, &EOP,PC_Bal,1, nulldesc);
+      EVVal(PC_Bal, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1139,6 +1169,7 @@ function {1} pattern_fieldeval (var_list)
    body {
       union block *bp;
       bp = pattern_make(0, &EOP,PC_UNEVALFIELD,1, var_list);
+      EVVal(PC_UNEVALFIELD, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1152,6 +1183,7 @@ function {1} pattern_stringfunccall (var_list)
    body {
       union block *bp;
       bp = pattern_make(0, &EOP,PC_String_VF,1, var_list);
+      EVVal(PC_String_VF, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1165,6 +1197,7 @@ function {1} pattern_stringmethodcall (var_list)
    body {
       union block *bp;
       bp = pattern_make(0, &EOP,PC_String_MF,1, var_list);
+      EVVal(PC_String_MF, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1178,6 +1211,7 @@ function {1} pattern_boolfunccall (var_list)
    body {
       union block *bp;
       bp = pattern_make(0, &EOP,PC_Pred_Func,1, var_list);
+      EVVal(PC_Pred_Func, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1191,6 +1225,7 @@ function {1} pattern_boolmethodcall (var_list)
    body {
       union block *bp;
       bp = pattern_make(0, &EOP,PC_Pred_MF,1, var_list);
+      EVVal(PC_Pred_MF, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1206,6 +1241,7 @@ function {1} pattern_unevalvar (name)
    body {
       union block *bp;
       bp = pattern_make(3, &EOP,PC_Rpat,1, name);
+      EVVal(PC_Rpat, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1259,6 +1295,7 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
    tended struct descrip param;
    param.dword = D_Pelem;
    param.vword.bptr = (union block *)rpe;
+   EVVal(PC_Alt, E_Patcode);
    if (lpe == &EOP) {
       return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
                                           (word)rpe->index + 1, param);
@@ -1342,8 +1379,8 @@ function {1} pattern_setcur (underef var, name )
       return pattern;
       }
    body {
-      union block *bp;
-      bp = pattern_make(0, &EOP,PC_Setcur,1, name);
+      union block *bp = pattern_make(0, &EOP,PC_Setcur,1, name);
+      EVVal(PC_Setcur, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1385,6 +1422,7 @@ function {1} pattern_assign_immediate (PAT, underef var, name)
       P = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_Imm,0,name);
+      EVVal(PC_Assign_Imm, E_Patcode);
       pe = Bracket(E,P,A);
       bp = pattern_make_pelem(p->stck_size + 3,pe);
       return pattern(bp);
@@ -1410,6 +1448,7 @@ function {1} Fence(P)
    body {
       union block *bp;
       bp = pattern_make(1, &EOP,PC_Fence,1, nulldesc);
+      EVVal(PC_Fence, E_Patcode);
       return pattern(bp);
       }
    else
@@ -1434,7 +1473,6 @@ function {1} Fence(P)
       Pat = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       X = (struct b_pelem *)pelem_make(&EOP,PC_Fence_X,0, nulldesc);
-
       bp = pattern_make_pelem(p->stck_size + 1,Bracket(E,Pat,X));
       return pattern(bp);
       }
@@ -1479,6 +1517,7 @@ function {1} pattern_assign_onmatch (PAT, underef var, name)
       P = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
       A = (struct b_pelem *)pelem_make(&EOP,PC_Assign_OnM,0,name);
+      EVVal(PC_Assign_OnM, E_Patcode);
       pe = Bracket(E,P,A);
       bp = pattern_make_pelem(p->stck_size + 3,pe);
       return pattern(bp);
@@ -1504,8 +1543,8 @@ function {1} Abort()
       return pattern;
       }
    body {
-      union block *bp;
-      bp = pattern_make(0, &EOP,PC_Abort,1, nulldesc);
+      union block *bp = pattern_make(0, &EOP,PC_Abort,1, nulldesc);
+      EVVal(PC_Abort, E_Patcode);
       return pattern(bp);
       }
 end
@@ -1516,8 +1555,8 @@ function {1} Rem()
       return pattern;
       }
    body {
-      union block *bp;
-      bp = pattern_make(0, &EOP,PC_Rest,1, nulldesc);
+      union block *bp = pattern_make(0, &EOP,PC_Rest,1, nulldesc);
+      EVVal(PC_Rest, E_Patcode);
       return pattern(bp);
       }
 end
@@ -2097,6 +2136,7 @@ Node_Fail:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
+   EVVal(Node->pcode, E_Fmatch);
    Cursor = Stack[Stack_Ptr].cursor;
    Node   = Stack[Stack_Ptr].node;
    Stack_Ptr--;
@@ -2135,6 +2175,7 @@ Node_Succeed:
  *       --    goto Fail           to signal failure of current match
  */
    DEBUGF(5, (stdout, "match: %ld, Cursor: %d\n", Node->pcode, Cursor));
+   EVVal(Node->pcode, E_Amatch);
    switch(Node->pcode) {
    case PC_Alt: {
       DEBUGF(20,(stdout,"Setting up alternative \n"));
@@ -2714,6 +2755,22 @@ Node_Succeed:
 	 goto Node_Fail;
 	 }
       }
+      
+   case PC_NotAny_MF : {
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching NotAny unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(104, &cresult);
+      DEBUGF(20,(stdout, "matching NotAny\n"));
+      if ((Cursor < Length) &&
+	  !Testb(ToAscii(pat_sub[Cursor]), cresult)){
+	 Cursor++;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      }
 
       /*
        *  Initiate recursive match (pattern pointer case)
@@ -2807,6 +2864,22 @@ Node_Succeed:
 	 }
       }
 
+   case PC_Pos_NMF: {
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(101, &cresult);
+      if(!is:integer(cresult) && internalStorage != NULL) {
+	 cresult.vword.bptr = internalStorage;
+	 internalStorage = NULL;
+	 }
+      if (Cursor == IntVal(cresult) - 1)
+	 goto Node_Succeed;
+      else {
+	 goto Node_Fail;
+	 }
+      }
+
       /*
        *   Tab (integer case)
        */
@@ -2836,6 +2909,28 @@ Node_Succeed:
 
    case  PC_Tab_NF: {
       GetResultFromFuncCall();
+      if (call_result == 0) {
+	 goto Node_Fail;
+	 }
+      else {
+	 if (!cnv_int(&cresult,&cresult))
+	    fatalerr(101, &cresult);
+	 if(!is:integer(cresult) && internalStorage != NULL) {
+	    cresult.vword.bptr = internalStorage;
+	    internalStorage = NULL;
+	    }
+	 }
+      if (Cursor <= IntVal(cresult) - 1) {
+	 Cursor = IntVal(cresult) - 1;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      }
+      
+   case  PC_Tab_NMF: {
+      GetResultFromMethodCall();
       if (call_result == 0) {
 	 goto Node_Fail;
 	 }
@@ -2905,6 +3000,22 @@ Node_Succeed:
 	 }
       }
 
+   case PC_RPos_NMF: {
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(104, &cresult);
+      if(!is:integer(cresult) && internalStorage != NULL) {
+	 cresult.vword.bptr = internalStorage;
+	 internalStorage = NULL;
+	 }
+      if (Cursor == (Length - IntVal(cresult)))
+	 goto Node_Succeed;
+      else {
+	 goto Node_Fail;
+	 }
+      }
+
       /*
        *   RTab (integer case)
        */
@@ -2936,6 +3047,24 @@ Node_Succeed:
 
    case  PC_RTab_NF: {
       GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(104, &cresult);
+      if(!is:integer(cresult) && internalStorage != NULL) {
+	 cresult.vword.bptr = internalStorage;
+	 internalStorage = NULL;
+	 }
+      if (Cursor <= (Length - IntVal(cresult))){
+	 Cursor = Length - IntVal(cresult);
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      }
+      
+   case  PC_RTab_NMF: {
+      GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
@@ -3039,6 +3168,23 @@ Node_Succeed:
       int P = Cursor;
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Span_VF unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(104, &cresult);
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
+	 P++;
+      if (P != Cursor) {
+	 Cursor = P;
+	 goto Node_Succeed;
+	 }
+      else {
+	 goto Node_Fail;
+	 }
+      }
+      
+   case  PC_Span_MF: {
+      int P = Cursor;
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching Span_MF unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
@@ -3175,8 +3321,8 @@ function {1} Fail()
       return pattern;
       }
    body {
-      union block *bp;
-      bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
+      union block *bp = pattern_make(0, &EOP,PC_Fail,1, nulldesc);
+      EVVal(PC_Fail, E_Patcode);
       return pattern(bp);
       }
 end

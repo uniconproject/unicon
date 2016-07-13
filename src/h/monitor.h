@@ -971,6 +971,34 @@
 #define E_Signal 0
 #endif
 
+#if defined(EventMon) || defined(E_Patcode)
+#undef E_Patcode
+#define E_Patcode        '\203'
+#else
+#define E_Patcode 0
+#endif
+
+#if defined(EventMon) || defined(E_Amatch)
+#undef E_Amatch
+#define E_Amatch '\204'
+#else
+#define E_Amatch 0
+#endif
+
+#if defined(EventMon) || defined(E_Fmatch)
+#undef E_Fmatch
+#define E_Fmatch '\205'
+#else
+#define E_Fmatch 0
+#endif
+
+#if defined(EventMon) || defined(E_Smatch)
+#undef E_Smatch
+#define E_Smatch '\206'
+#else
+#define E_Smatch 0
+#endif
+
 /*
  * Events for hash table details. The table events like E_Tsub
  * already provide keys.  E_HashNum is a number returned by hash().
@@ -1015,7 +1043,7 @@
 137
 162
 
-203 204 205 206 207
+                207
             213 214 215 216 217
 220 221 222 223 224 225 226 227
 230 231 232 233 234 235 236 237

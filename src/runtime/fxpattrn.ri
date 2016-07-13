@@ -96,12 +96,6 @@ void Record_PE (struct b_pelem * E, struct b_pelem *RA[])
       }
 }
 
-void Build_Ref_Array(struct b_pelem * E, struct b_pelem *RA[] )
-{
-   DEBUGF(20,(stdout, "\nEntering Build_Ref_Array\n"));
-   Record_PE(E, RA);
-}
-
 /*
  * What "Resolve" means is probably: turn string names into pointers to
  * actual variables in some execution context.  Copy/transform a list
@@ -276,7 +270,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
 
-      Build_Ref_Array (P, Refs);
+      Record_PE(P, Refs);
 
       /*
        * Now copy all nodes
@@ -406,7 +400,7 @@ struct b_pelem * Copy (struct b_pelem * P )
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
 
-      Build_Ref_Array (P, Refs);
+      Record_PE(P, Refs);
 
       /* Now copy all nodes */
       for(J = 1; J < RefLen; J++)
@@ -455,7 +449,7 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
       int J;
       int RefLen = lpe->index + 1;
       Refs=(struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
-      Build_Ref_Array (lpe, Refs);
+      Record_PE(lpe, Refs);
       for (J = 1; J < RefLen;J++) {
 	 P = Refs[J];
 	 P->index += rpe->index;
@@ -671,7 +665,7 @@ static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
       int J;
       int RefLen = Pat->index + 1;
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
-      Build_Ref_Array (Pat, Refs);
+      Record_PE(Pat, Refs);
       for (J = 1; J < RefLen;J++){
 	 P = Refs[J];
 	 if ((struct b_pelem *)P->pthen == &EOP)
@@ -707,7 +701,6 @@ struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
       }
    return E;
 }
-
 
 #begdef ConvertPatternArgumentCset(arg, bp, ptype)
    type_case arg of {
@@ -1285,7 +1278,7 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
       int J;
       int RefLen = lpe->index + 1;
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
-      Build_Ref_Array (lpe, Refs);
+      Record_PE(lpe, Refs);
       for (J = 1; J < RefLen;J++){
 	 P = Refs[J];
 	 P->index += rpe->index;
@@ -1541,18 +1534,6 @@ static void MYWriteToFile(FILE *fd, int len, char *s)
 }
 
 /*
- * Set_String assign to variable v new string from the subject
- */
-static void Set_String(dptr V, char * pat, int start, int end)
-{
-   struct descrip d;
-   StrLen(d) = end - start;
-   StrLoc(d) = pat + start;
-   *V = d;
-}
-
-
-/*
  * Constant Pattern elements used only on stack
  *  CP_Assign    : aliased PE := (PC_Assign,    0, N);
  *  CP_Abort    : aliased PE := (PC_Abort,    0, N);
@@ -1772,12 +1753,12 @@ dptr processFuncCallList(struct b_list *lp, int csr){
       fatalerr(307, &nulldesc);
       }
 
-   DEBUGF(25,(stdout, "processFuncCallList\n")); fflush(stdout);
-   DEBUGF(25,(stdout, "nargs %d\n", nargs); fflush(stdout));
+   DEBUGF(25,(stdout, "processFuncCallList\n"));
+   DEBUGF(25,(stdout, "nargs %d\n", nargs));
    for (i = 1; i < ep->nused; i++) {
       if(i == 1 && is:list(ep->lslots[i])) {
 	 /*check for method call else function call*/
-	 DEBUGF(25,(stdout, "is a list\n"));fflush(stdout);
+	 DEBUGF(25,(stdout, "is a list\n"));
 	 if(isMethod(ep) >= 0) {
 	    rv = processMethodCallList(BlkD(ep->lslots[i], List), Cursor);
 	    }
@@ -1791,19 +1772,18 @@ dptr processFuncCallList(struct b_list *lp, int csr){
 	 DEBUGF(25,(stdout, "replacing var %16lx : %16lx\n", 
 		  ep->lslots[i].dword,
 		  (long)ep->lslots[i].vword.bptr));
-	 fflush(stdout);
 	 procargs[i - 1] = *(ep->lslots[i].vword.descptr);
 	 }
       else {	
 	 procargs[i - 1] = ep->lslots[i];
 	 DEBUGF(25,(stdout, "nargs %d arg %d val %16lx : %16lx\n",
 		  nargs, i-1, procargs[i-1].dword, (long)procargs
-		  [i-1].vword.bptr));fflush(stdout);
+		  [i-1].vword.bptr));
          }
       }
    DEBUGF(25,(stdout, "proc %16lx : %16lx\n", proc.dword,
-	  (unsigned long int)proc.vword.bptr); fflush(stdout));
-   DEBUGF(25,(stdout, "nargs %d\n", nargs));fflush(stdout);
+	  (unsigned long int)proc.vword.bptr));
+   DEBUGF(25,(stdout, "nargs %d\n", nargs));
    k_pos = Cursor + 1;
 #if COMPILER
    fatalerr(164, NULL);
@@ -2098,8 +2078,10 @@ Match_Succeed:
 		  f = (struct b_file *)BlkLoc(var);
 		  MYWriteToFile(f->fd.fp,Stop - Start,pat_sub + Start);
 		  }
-	       else
-		  Set_String(pvar,pat_sub,Start, Stop );
+	       else {
+                  StrLen(*pvar) = Stop - Start;
+                  StrLoc(*pvar) = pat_sub + Start;
+		  }
 	       }
 	    else {
 	       syserr("logic error in internal_match");
@@ -2152,7 +2134,7 @@ Node_Succeed:
  *       --    goto Match_Fail     if the entire match fails
  *       --    goto Fail           to signal failure of current match
  */
-   DEBUGF(5, (stdout, "match: %ld, Cursor: %d\n", Node->pcode, Cursor); fflush(stdout));
+   DEBUGF(5, (stdout, "match: %ld, Cursor: %d\n", Node->pcode, Cursor));
    switch(Node->pcode) {
    case PC_Alt: {
       DEBUGF(20,(stdout,"Setting up alternative \n"));
@@ -2236,8 +2218,9 @@ Node_Succeed:
 	 Push (Node);
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       break;
       }
       /*
@@ -2314,7 +2297,8 @@ Node_Succeed:
 		       pat_sub + Stack[Stack_Base - 1].cursor);
 	 }
       else {
-	 Set_String(pvar, pat_sub, Stack[Stack_Base - 1].cursor, Cursor);
+         StrLen(*pvar) = Cursor - Stack[Stack_Base - 1].cursor;
+         StrLoc(*pvar) = pat_sub + Stack[Stack_Base - 1].cursor;
 	 }
       Pop_Region();
       goto Node_Succeed;
@@ -2349,8 +2333,9 @@ Node_Succeed:
 		   "Paren_Count = %d  Cursor = %d\n", Paren_Count,Cursor));
 	 while(1) {
 	    Cursor++;
-	    if (Cursor >= Length)
+	    if (Cursor >= Length) {
 	       goto Node_Fail;
+	       }
 	    else if (pat_sub[Cursor] == '(' ){
 	       Paren_Count++;
 	       DEBUGF(2,(stdout,
@@ -2622,8 +2607,9 @@ Node_Succeed:
 
    case PC_Len_Nat: {
       DEBUGF(20,(stdout, "matching Len\n"));
-      if (Cursor + IntVal(Node->parameter) > Length)
+      if (Cursor + IntVal(Node->parameter) > Length) {
 	 goto Node_Fail;
+	 }
       else {
 	 Cursor = Cursor + IntVal(Node->parameter);
 	 }
@@ -2637,8 +2623,9 @@ Node_Succeed:
 	 fatalerr(101, &var);
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
-      if (Cursor + IntVal(var) > Length)
+      if (Cursor + IntVal(var) > Length) {
 	 goto Node_Fail;
+	 }
       else {
 	 Cursor = Cursor + IntVal(var);
 	 }
@@ -2654,8 +2641,9 @@ Node_Succeed:
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
 	 }
-      if (Cursor + IntVal(cresult) > Length)
+      if (Cursor + IntVal(cresult) > Length) {
 	 goto Node_Fail;
+	 }
       else {
 	 Cursor = Cursor + IntVal(cresult);
 	 }
@@ -2672,8 +2660,9 @@ Node_Succeed:
 	 cresult.vword.bptr = internalStorage;
 	 internalStorage = NULL;
 	 }
-      if (Cursor + IntVal(cresult) > Length)
+      if (Cursor + IntVal(cresult) > Length) {
 	 goto Node_Fail;
+	 }
       else {
 	 Cursor = Cursor + IntVal(cresult);
 	 }
@@ -2688,8 +2677,9 @@ Node_Succeed:
 	 Cursor++;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case PC_NotAny_VP : {
@@ -2704,11 +2694,12 @@ Node_Succeed:
 	 Cursor++;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
-   case PC_NotAny_VF :{
+   case PC_NotAny_VF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching NotAny unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
@@ -2719,8 +2710,9 @@ Node_Succeed:
 	 Cursor++;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
       /*
@@ -2737,8 +2729,9 @@ Node_Succeed:
 	    Cursor = Cursor + LV_Len;
 	    goto Node_Succeed;
 	    }
-	 else
+	 else {
 	    goto Node_Fail;
+	    }
 	 break;
 	 }
 
@@ -2748,8 +2741,9 @@ Node_Succeed:
 	    Cursor++;
 	    goto Node_Succeed;
 	    }
-	 else
+	 else {
 	    goto Node_Fail;
+	    }
 	 break;
 	 }
       pattern: {
@@ -2778,8 +2772,9 @@ Node_Succeed:
    case PC_Pos_Nat: {
       if (Cursor == IntVal(Node->parameter) - 1)
 	 goto Node_Succeed;
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case PC_Pos_NP:{
@@ -2791,8 +2786,9 @@ Node_Succeed:
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor == IntVal(var) - 1)
 	 goto Node_Succeed;
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case PC_Pos_NF: {
@@ -2806,8 +2802,9 @@ Node_Succeed:
 	 }
       if (Cursor == IntVal(cresult) - 1)
 	 goto Node_Succeed;
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
       /*
@@ -2818,8 +2815,9 @@ Node_Succeed:
 	 Cursor = IntVal(Node->parameter) - 1;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_Tab_NP: {
@@ -2831,14 +2829,16 @@ Node_Succeed:
 	 Cursor = IntVal(var) - 1;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_Tab_NF: {
       GetResultFromFuncCall();
-      if (call_result == 0)
+      if (call_result == 0) {
 	 goto Node_Fail;
+	 }
       else {
 	 if (!cnv_int(&cresult,&cresult))
 	    fatalerr(101, &cresult);
@@ -2851,8 +2851,9 @@ Node_Succeed:
 	 Cursor = IntVal(cresult) - 1;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
       /*
@@ -2869,8 +2870,9 @@ Node_Succeed:
    case PC_RPos_Nat: {
       if (Cursor == (Length - IntVal(Node->parameter)))
 	 goto Node_Succeed;
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case PC_RPos_NP: {
@@ -2882,8 +2884,9 @@ Node_Succeed:
       DEBUGF(20,(stdout, "matching Len\n"));
       if (Cursor == (Length - IntVal(Node->parameter)))
 	 goto Node_Succeed;
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case PC_RPos_NF: {
@@ -2897,8 +2900,9 @@ Node_Succeed:
 	 }
       if (Cursor == (Length - IntVal(cresult)))
 	 goto Node_Succeed;
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
       /*
@@ -2909,8 +2913,9 @@ Node_Succeed:
 	 Cursor = Length - IntVal(Node->parameter);
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_RTab_NP: {
@@ -2924,8 +2929,9 @@ Node_Succeed:
 	 Cursor = Length - IntVal(var);
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_RTab_NF: {
@@ -2941,8 +2947,9 @@ Node_Succeed:
 	 Cursor = Length - IntVal(cresult);
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
       /*
@@ -3004,8 +3011,9 @@ Node_Succeed:
 	 Cursor = P;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_Span_VP : {
@@ -3022,11 +3030,12 @@ Node_Succeed:
 	 Cursor = P;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
-   case  PC_Span_VF : {
+   case  PC_Span_VF: {
       int P = Cursor;
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Span_VF unevaluated function call\n"));
@@ -3038,8 +3047,9 @@ Node_Succeed:
 	 Cursor = P;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_String : {
@@ -3050,8 +3060,9 @@ Node_Succeed:
 	 Cursor = Cursor + LV_Len;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
    case  PC_String_VP : {
@@ -3064,8 +3075,9 @@ Node_Succeed:
 	 Cursor = Cursor + LV_Len;
 	 goto Node_Succeed;
 	 }
-      else
+      else {
 	 goto Node_Fail;
+	 }
       }
 
       /*
@@ -3083,15 +3095,16 @@ Node_Succeed:
 	       Cursor = Cursor + LV_Len;
 	       goto Node_Succeed;
 	       }
-	    else
+	    else {
 	       goto Node_Fail;
+	       }
 	    }
 	 goto Node_Succeed;
 	 }
       break;
       }
 
-   case  PC_String_MF: {
+   case PC_String_MF: {
       GetResultFromMethodCall();
       if (call_result == 0)
 	 goto Node_Fail;
@@ -3104,8 +3117,9 @@ Node_Succeed:
 	       Cursor = Cursor + LV_Len;
 	       goto Node_Succeed;
 	       }
-	    else
+	    else {
 	       goto Node_Fail;
+	       }
 	    }
 	 goto Node_Succeed;
 	 }
@@ -3115,7 +3129,7 @@ Node_Succeed:
       /*
        *  Succeed
        */
-   case  PC_Succeed: {
+   case PC_Succeed: {
       DEBUGF(20,(stdout,"matching Succeed"));
       Push (Node);
       goto Node_Succeed;

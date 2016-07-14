@@ -13,8 +13,8 @@
  * Prototypes.
  */
 #ifdef PatternImage
-void            init_func_array (struct descrip funcName[]); 
-struct descrip  pattern_image   (union block *, int arbnoBool); 
+void            init_func_array (struct descrip funcNames[]);
+struct descrip  pattern_image   (union block *, int arbnoBool);
 #endif					/* PatternImage */
 static void	listimage
    (FILE *f,struct b_list *lp, int noimage);
@@ -1655,8 +1655,6 @@ int c, q;
 
 #ifdef PatternImage
 
-void init_func_array(struct descrip funcNames[]);
-
 static struct descrip patimg_fns[NUM_PATIMG_FUNCNAMES];
 
 struct descrip pattern_image(union block *pe, int arbnoBool)
@@ -1667,8 +1665,11 @@ struct descrip pattern_image(union block *pe, int arbnoBool)
    tended struct descrip right;
    tended struct descrip left;
    tended struct descrip arg;
-   if (!StrLen(patimg_fns[0]))
+   if (!StrLen(patimg_fns[0])) {
+      MUTEX_LOCKID(MTX_PATIMG_FUNCARR);
       init_func_array(patimg_fns);
+      MUTEX_UNLOCKID(MTX_PATIMG_FUNCARR);
+      }
    if (ep != NULL) {
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
@@ -1982,7 +1983,7 @@ struct descrip pattern_image(union block *pe, int arbnoBool)
           case PC_String_MF: {
              AsgnCStr(image, "Stringmethodcall");
              break;
-             }
+	     }
           case PC_String_VF: {
              AsgnCStr(image, "Stringfunccall");
              break;
@@ -2123,7 +2124,7 @@ struct descrip arg_image(struct descrip arg, int pcode)
          return image;
          }
       }
-   else {   
+   else {
       struct b_list *l = (struct b_list *) BlkLoc(param);
       tended struct b_lelem *le = (struct b_lelem *) l->listhead;
       struct descrip str;
@@ -2426,7 +2427,7 @@ dptr dp1, dp2;
 		       BlkLoc(source)->File.fd.wb->window->serial,
 		       BlkLoc(source)->File.fd.wb->context->serial
 		       );
-                }
+		  }
 		else {
                   len = 0;
                   Protect (reserve(Strings, (len << 2) + 16), return RunError);

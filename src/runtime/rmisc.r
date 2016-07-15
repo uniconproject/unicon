@@ -1651,9 +1651,11 @@ int c, q;
 #ifdef PatternImage
 
 /*
- * Construct a pattern image of pe.  Returns Succeeded or RunError
+ * Construct a pattern image of pe.  Returns Succeeded or RunError.
+ * peCount helps to know whether there is a previous thing on which
+ * to concatenate.
  */
-int pattern_image(union block *pe, int arbnoBool, dptr result)
+int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
    {
    int rv;
    tended union block * ep = pe;
@@ -1669,231 +1671,275 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
           case PC_Alt: {
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
-             if ((rv = pattern_image(Blk(ep,Pelem)->pthen, arbnoBool, &left)) !=
+             if ((rv = pattern_image(Blk(ep,Pelem)->pthen, arbnoBool, &left,
+				     peCount)) != Succeeded) return rv;
+             if ((rv = pattern_image(r, arbnoBool, &right, peCount)) !=
 		 Succeeded) return rv;
-             if ((rv = pattern_image(r, arbnoBool, &right)) != Succeeded)
-		return rv;
              return construct_image(&left, bi_pat(PI_ALT), &right, result);
              } 
           case PC_Any_MF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_Any, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Break_MF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_Break, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_BreakX_MF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_BreakX, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NotAny_MF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_NotAny, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NSpan_MF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_NSpan, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Span_MF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_Span, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Len_NMF: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Len, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Pos_NMF: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Pos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_RPos_NMF: {
 	     if ((rv = construct_funcimage(ep, PT_MF, PF_RPos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Tab_NMF: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Tab, result)) !=
 		 Succeeded) return rv;
-	     break;
+	     peCount++;
              break;
              } 
           case PC_RTab_NMF: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_RTab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Any_VF: {   
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_Any, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Break_VF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_Break, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_BreakX_VF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_BreakX, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NotAny_VF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_NotAny, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NSpan_VF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_NSpan, result)) !=
 		 Succeeded) return rv;
+/*	     peCount++; why not here ??? */
 	     break;
              }
           case PC_Span_VF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_Span, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Len_NF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_Len, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Pos_NF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_Pos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_RPos_NF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_RPos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_Tab_NF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_Tab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_RTab_NF: {
 	     if ((rv = construct_funcimage(ep, PT_VF, PF_RTab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
 	     }
           case PC_Any_VP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Any, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Break_VP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Break, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_BreakX_VP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_BreakX, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NotAny_VP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_NotAny, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NSpan_VP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_NSpan, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Span_VP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Span, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_Len_NP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Len, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Pos_NP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Pos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_RPos_NP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_RPos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_Tab_NP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_Tab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_RTab_NP: {
 	     if ((rv = construct_funcimage(ep, PT_VP, PF_RTab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_Any_CS: { 
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Any, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Break_CS: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Break, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_BreakX_CS: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_BreakX, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
+	     ep = Blk(ep,Pelem)->pthen;  /* ?? why here ?? */
 	     break;
              }
           case PC_NotAny_CS: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_NotAny, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_NSpan_CS: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_NSpan, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Span_CS: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Span, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }   
           case PC_Len_Nat: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Len, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Pos_Nat: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Pos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_RPos_Nat: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_RPos, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Tab_Nat: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Tab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_RTab_Nat: {
 	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_RTab, result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              } 
           case PC_Arbno_S: {
@@ -1903,12 +1949,13 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
                 return Succeeded;
 		}
              arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
-             if (pattern_image((union block *)arb, 1, &image) != Succeeded)
+             if (pattern_image((union block *)arb, 1, &image, 0) != Succeeded)
 		return RunError;
              if (construct_image(bi_pat(PF_Arbno), &image,
 				     bi_pat(PI_BPAREN), result) != Succeeded)
 		return RunError;
 	     /* ?? */
+	     peCount++;
              arbnoBool = 0;
 	     break;
              }             
@@ -1918,7 +1965,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, arbnoBool, &image) != Succeeded)
+                if (pattern_image(arb, arbnoBool, &image, 0) != Succeeded)
 		   return RunError;
                 if (construct_image(bi_pat(PF_Arbno), &image,
 					bi_pat(PI_BPAREN), result) != Succeeded)
@@ -1928,24 +1975,31 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              else {
                 syserr("PC_Arbno_X whose param is not a PC_R_Enter");
                 }
+	     peCount++;
 	     break;
              }
           case PC_Pred_Func: {
              arg = Blk(ep,Pelem)->parameter;
-             if ((rv = arg_image(arg, PT_VF, result)) != Succeeded) return rv;
+             if ((rv = arg_image(arg, PT_VF, result)) != Succeeded) {
+		return rv;
+		}
+	     peCount++;
 	     break;
              }
           case PC_Pred_MF: {
              arg = Blk(ep,Pelem)->parameter;
              if ((rv = arg_image(arg, PT_MF, result)) != Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_String_MF: {
              AsgnCStr(*result, "Stringmethodcall");
+	     peCount++;
 	     break;
 	     }
           case PC_String_VF: {
              AsgnCStr(*result, "Stringfunccall");
+	     peCount++;
 	     break;
              }
           case PC_Arbno_Y: {
@@ -1954,6 +2008,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              }
           case PC_Arb_X: {
              AsgnCStr(*result, "Arb()");
+	     peCount++;
 	     break;
 	     }
           case PC_Assign_OnM: {
@@ -1965,6 +2020,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              if ((rv = construct_image(bi_pat(PI_EMPTY), &image,
 				       &(Blk(ep,Pelem)->parameter), result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_Assign_Imm: {
@@ -1972,6 +2028,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              if ((rv = construct_image(bi_pat(PI_EMPTY), &image,
 				    &(Blk(ep,Pelem)->parameter), result)) !=
 		 Succeeded) return rv;
+	     peCount++;
              break;
              }
           case PC_Setcur: {
@@ -1979,35 +2036,43 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              if ((rv = construct_image(bi_pat(PI_EMPTY), &image,
 				     &(Blk(ep,Pelem)->parameter), result)) !=
 		 Succeeded) return rv;
+	     peCount++;
 	     break;
 	     }
           case PC_Bal: {
              AsgnCStr(*result, "Bal()");
+	     peCount++;
 	     break;
              }
           case PC_Abort: {
              AsgnCStr(*result, "Abort()");
+	     peCount++;
 	     break;
              }
           case PC_Fail: {
              AsgnCStr(*result, "Fail()");
+	     peCount++;
 	     break;
              }
           case PC_Fence: {
              AsgnCStr(*result, "Fence()");
+	     peCount++;
 	     break;
              }
           case PC_Rest: {
              AsgnCStr(*result, "Rem()");
+	     peCount++;
 	     break;
              }
           case PC_Succeed: {
              AsgnCStr(*result, "Succeed()");
+	     peCount++;
 	     break;
              }
           case PC_Rpat: {
              arg = Blk(ep,Pelem)->parameter;
              if ((rv = arg_image(arg, PT_VP, result)) != Succeeded) return rv;
+	     peCount++;
 	     break;
              }
           case PC_String: {
@@ -2015,6 +2080,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
              if ((rv = construct_image(bi_pat(PI_QUOTE), &arg,
 				     bi_pat(PI_QUOTE), result)) != Succeeded)
 		return rv;
+	     peCount++;
 	     break;
              }
 	  case PC_BreakX_X: {
@@ -2044,22 +2110,23 @@ int pattern_image(union block *pe, int arbnoBool, dptr result)
            Blk(ep,Pelem)->pcode != PC_Setcur &&
 	   Blk(ep,Pelem)->pcode != PC_EOP &&
            (Blk(ep,Pelem)->pcode != PC_Arbno_S || arbnoBool != 1) &&
-           Blk(ep,Pelem)->pcode != PC_Arbno_Y &&
-	   Blk(ep,Pelem)->pcode != PC_R_Enter) {
-	  if (StrLen(*result)>0) {
-	     if ((rv = pattern_image(ep, arbnoBool, &image)) != Succeeded)
-		return rv;
+           Blk(ep,Pelem)->pcode != PC_Arbno_Y ||
+	   ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)) {
+	  if ((StrLen(*result)>0) ||
+	      ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){
+	     if ((rv = pattern_image(ep, arbnoBool, &image, peCount)) !=
+		 Succeeded) return rv;
 	     return construct_image(result, bi_pat(PI_CONCAT), &image, result);
 	     }
-	  else return pattern_image(ep, arbnoBool, result);
+	  else return pattern_image(ep, arbnoBool, result, peCount);
           }
        else {
-	  if ((rv = pattern_image(ep, arbnoBool, &image)) != Succeeded)
+	  if ((rv = pattern_image(ep, arbnoBool, &image, peCount)) != Succeeded)
 	     return rv;
           return construct_image(bi_pat(PI_EMPTY), result, &image, result);
           }
-      }
-   return Failed;
+       }
+   return Succeeded;
    }
 
 int arg_image(struct descrip arg, int pcode, dptr result)
@@ -2089,7 +2156,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	       syserr("unexpected type in a PT_EVAL");
             }
             }
-            }
+	 }
       else {
          return construct_image(bi_pat(PI_BQUOTE), &param,
 				 bi_pat(PI_BQUOTE), result);
@@ -2604,23 +2671,27 @@ dptr dp1, dp2;
           */
 	 register union block *ep;
 #ifdef PatternImage
-	 struct descrip temp;
+	 tended struct descrip pimage;
 #endif					/* PatternImage */
          bp = BlkLoc(*dp1);
 	 ep = Blk(bp,Pattern)->pe;
 
 #ifdef PatternImage
-         if (pattern_image(ep, 0, &temp) != Succeeded) return RunError;
-	 sprintf(sbuf, "pattern_%ld(%ld) = %s", (long)(Blk(bp,Pattern)->id),
-	 	        (long)(Blk(ep,Pelem)->index), StrLoc(temp)); 
-
+         if (pattern_image(ep, 0, &pimage, 0) != Succeeded) return RunError;
+         t = alcstr(NULL, StrLen(pimage) + 29);
+	 sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
+	 	        (long)(Blk(ep,Pelem)->index));
+	 len = strlen(t);
+	 { int i;
+	  for(i=0;i<StrLen(pimage);i++) t[len+i] = StrLoc(pimage)[i];
+         }
+	 len += StrLen(pimage);
 #else					/* PatternImage */
 	 sprintf(sbuf, "pattern_%ld(%ld)", (long)(Blk(bp,Pattern)->id),
 	 	        (long)(Blk(ep,Pelem)->index));
-#endif					/* PatternImage */
-
          len = strlen(sbuf);
          Protect(t = alcstr(sbuf, len), return RunError);
+#endif					/* PatternImage */
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }

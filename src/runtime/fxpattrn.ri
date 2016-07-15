@@ -610,7 +610,13 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	 if ((use_trap == 1) &&
 	     (StrLoc(*(psub.vword.descptr)) == StrLoc(k_subject)) &&
 	     (StrLen(*(psub.vword.descptr)) == StrLen(k_subject)) ) {
-	    suspend tvsubs(&psub, start+1,stop - start /* + 1 ? */);
+
+	    if (psub.vword.descptr == &k_subject) {
+	       suspend kywdsubj(&k_subject);
+	       }
+	    else {
+	       suspend tvsubs(&psub, start+1,stop - start /* + 1 ? */);
+	       }
 	    }
 	 else {
 	    suspend string(stop - start /* + 1 ? */, StrLoc(dpsub)+ start);

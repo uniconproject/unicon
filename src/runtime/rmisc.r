@@ -12,12 +12,7 @@
 /*
  * Prototypes.
  */
-#ifdef PatternImage
-void            init_func_array (struct descrip funcNames[]);
-struct descrip  pattern_image   (union block *, int arbnoBool);
-#endif					/* PatternImage */
-static void	listimage
-   (FILE *f,struct b_list *lp, int noimage);
+static void	listimage       (FILE *f,struct b_list *lp, int noimage);
 static void	printimage	(FILE *f,int c,int q);
 static char *	csname		(dptr dp);
 
@@ -1655,305 +1650,267 @@ int c, q;
 
 #ifdef PatternImage
 
-static struct descrip patimg_fns[NUM_PATIMG_FUNCNAMES];
-
-struct descrip pattern_image(union block *pe, int arbnoBool)
+/*
+ * Construct a pattern image of pe.  Returns Succeeded or RunError
+ */
+int pattern_image(union block *pe, int arbnoBool, dptr result)
    {
+   int rv;
    tended union block * ep = pe;
    tended union block * r;
    tended struct descrip image;
    tended struct descrip right;
    tended struct descrip left;
    tended struct descrip arg;
-   if (!StrLen(patimg_fns[0])) {
-      MUTEX_LOCKID(MTX_PATIMG_FUNCARR);
-      init_func_array(patimg_fns);
-      MUTEX_UNLOCKID(MTX_PATIMG_FUNCARR);
-      }
+   struct descrip punct;
+
    if (ep != NULL) {
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
-             left = pattern_image(Blk(ep,Pelem)->pthen, arbnoBool);
-             right = pattern_image(r, arbnoBool);
-             image = construct_image(left, get_patimage(PC_Alt), right); 
-             return image;
+             if ((rv = pattern_image(Blk(ep,Pelem)->pthen, arbnoBool, &left)) !=
+		 Succeeded) return rv;
+             if ((rv = pattern_image(r, arbnoBool, &right)) != Succeeded)
+		return rv;
+             return construct_image(&left, bi_pat(PI_ALT), &right, result);
              } 
           case PC_Any_MF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_MF),
-				     get_patimage(PI_BPAREN)); 
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_Any, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Break_MF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Break], arg_image(arg, PT_MF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_Break, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_BreakX_MF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_BreakX], arg_image(arg,PT_MF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_BreakX, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NotAny_MF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NotAny], arg_image(arg,PT_MF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_NotAny, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NSpan_MF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NSpan], arg_image(arg, PT_MF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_NSpan, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Span_MF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Span], arg_image(arg, PT_MF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_Span, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Len_NMF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Len, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Pos_NMF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Pos, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_RPos_NMF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_MF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_MF, PF_RPos, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Tab_NMF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Tab, result)) !=
+		 Succeeded) return rv;
+	     break;
              break;
              } 
           case PC_RTab_NMF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RTab], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_RTab, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Any_VF: {   
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN)); 
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_Any, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Break_VF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Break], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_Break, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_BreakX_VF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_BreakX], arg_image(arg,PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_BreakX, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NotAny_VF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NotAny], arg_image(arg,PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_NotAny, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NSpan_VF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NSpan], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_NSpan, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Span_VF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Span], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_Span, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Len_NF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_Len, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Pos_NF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_Pos, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_RPos_NF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_RPos, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_Tab_NF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_Tab, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_RTab_NF: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RTab], arg_image(arg, PT_VF),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VF, PF_RTab, result)) !=
+		 Succeeded) return rv;
+	     break;
 	     }
           case PC_Any_VP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN)); 
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Any, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Break_VP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Break], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Break, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_BreakX_VP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_BreakX], arg_image(arg,PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_BreakX, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NotAny_VP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NotAny], arg_image(arg,PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_NotAny, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NSpan_VP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NSpan], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_NSpan, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Span_VP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Span], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Span, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_Len_NP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Len, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Pos_NP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Pos, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_RPos_NP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RPos], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_RPos, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_Tab_NP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_Tab, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_RTab_NP: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RTab], arg_image(arg, PT_VP),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_VP, PF_RTab, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_Any_CS: { 
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Any], arg_image(arg, PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Any, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Break_CS: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Break],arg_image(arg,PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Break, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_BreakX_CS: {
-             arg = Blk(ep,Pelem)->parameter;
-             image =construct_image(patimg_fns[PF_BreakX],arg_image(arg,PT_EVAL),
-				    get_patimage(PI_BPAREN));
-             ep = Blk(ep,Pelem)->pthen;
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_BreakX, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NotAny_CS: {
-             arg = Blk(ep,Pelem)->parameter;
-             image =construct_image(patimg_fns[PF_NotAny],arg_image(arg,PT_EVAL),
-				    get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_NotAny, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_NSpan_CS: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_NSpan],arg_image(arg,PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_NSpan, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Span_CS: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Span], arg_image(arg,PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Span, result)) !=
+		 Succeeded) return rv;
+	     break;
              }   
           case PC_Len_Nat: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Len], arg_image(arg, PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Len, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Pos_Nat: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Pos], arg_image(arg, PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Pos, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_RPos_Nat: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RPos], arg_image(arg,PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_RPos, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Tab_Nat: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_Tab], arg_image(arg, PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_Tab, result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_RTab_Nat: {
-             arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(patimg_fns[PF_RTab], arg_image(arg,PT_EVAL),
-				     get_patimage(PI_BPAREN));
-             break;
+	     if ((rv = construct_funcimage(ep, PT_EVAL, PF_RTab, result)) !=
+		 Succeeded) return rv;
+	     break;
              } 
           case PC_Arbno_S: {
              union block *arb;
-             if (arbnoBool == 1)
-                return get_patimage(PI_EMPTY);
+             if (arbnoBool == 1) {
+		*result = *bi_pat(PI_EMPTY);
+                return Succeeded;
+		}
              arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
-             image = pattern_image((union block *)arb, 1);
-             image = construct_image(patimg_fns[PF_Arbno], image,
-				     get_patimage(PI_BPAREN));
+             if (pattern_image((union block *)arb, 1, &image) != Succeeded)
+		return RunError;
+             if (construct_image(bi_pat(PF_Arbno), &image,
+				     bi_pat(PI_BPAREN), result) != Succeeded)
+		return RunError;
+	     /* ?? */
              arbnoBool = 0;
+	     break;
              }             
           case PC_Arbno_X: {
              union block *arb;
@@ -1961,112 +1918,126 @@ struct descrip pattern_image(union block *pe, int arbnoBool)
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                image = pattern_image(arb, arbnoBool);
-                image = construct_image(patimg_fns[PF_Arbno], image,
-					get_patimage(PI_BPAREN));
+                if (pattern_image(arb, arbnoBool, &image) != Succeeded)
+		   return RunError;
+                if (construct_image(bi_pat(PF_Arbno), &image,
+					bi_pat(PI_BPAREN), result) != Succeeded)
+		   return RunError;
+		return Succeeded;
                 }
              else {
-                fprintf(stdout, "Error\n");
+                syserr("PC_Arbno_X whose param is not a PC_R_Enter");
                 }
 	     break;
              }
           case PC_Pred_Func: {
              arg = Blk(ep,Pelem)->parameter;
-             image = arg_image(arg, PT_VF);
-             break;
+             if ((rv = arg_image(arg, PT_VF, result)) != Succeeded) return rv;
+	     break;
              }
           case PC_Pred_MF: {
              arg = Blk(ep,Pelem)->parameter;
-             image = arg_image(arg, PT_MF);
-             break;
+             if ((rv = arg_image(arg, PT_MF, result)) != Succeeded) return rv;
+	     break;
              }
           case PC_String_MF: {
-             AsgnCStr(image, "Stringmethodcall");
-             break;
+             AsgnCStr(*result, "Stringmethodcall");
+	     break;
 	     }
           case PC_String_VF: {
-             AsgnCStr(image, "Stringfunccall");
-             break;
+             AsgnCStr(*result, "Stringfunccall");
+	     break;
              }
           case PC_Arbno_Y: {
-             return get_patimage(PI_EMPTY);
+	     *result = *bi_pat(PI_EMPTY);
              break;
              }
           case PC_Arb_X: {
-             AsgnCStr(image, "Arb()");
-             break;
+             AsgnCStr(*result, "Arb()");
+	     break;
 	     }
           case PC_Assign_OnM: {
              AsgnCStr(image, " -> ");
-             image = construct_image(get_patimage(PI_EMPTY), image,
-				     Blk(ep,Pelem)->parameter);
-             break;
+	     /*
+	      * consider Resolved patterns. do we need to check
+	      * if parameter is a string, or a variable?
+	      */
+             if ((rv = construct_image(bi_pat(PI_EMPTY), &image,
+				       &(Blk(ep,Pelem)->parameter), result)) !=
+		 Succeeded) return rv;
+	     break;
              }
           case PC_Assign_Imm: {
              AsgnCStr(image, " => ");
-             image = construct_image(get_patimage(PI_EMPTY), image,
-				     Blk(ep,Pelem)->parameter);
+             if ((rv = construct_image(bi_pat(PI_EMPTY), &image,
+				    &(Blk(ep,Pelem)->parameter), result)) !=
+		 Succeeded) return rv;
              break;
              }
           case PC_Setcur: {
              AsgnCStr(image, " .> ");
-             image = construct_image(get_patimage(PI_EMPTY), image,
-				     Blk(ep,Pelem)->parameter);
-             break;
+             if ((rv = construct_image(bi_pat(PI_EMPTY), &image,
+				     &(Blk(ep,Pelem)->parameter), result)) !=
+		 Succeeded) return rv;
+	     break;
 	     }
           case PC_Bal: {
-             AsgnCStr(image, "Bal()");
-             break;
+             AsgnCStr(*result, "Bal()");
+	     break;
              }
           case PC_Abort: {
-             AsgnCStr(image, "Abort()");
-             break;
+             AsgnCStr(*result, "Abort()");
+	     break;
              }
           case PC_Fail: {
-             AsgnCStr(image, "Fail()");
-             break;
+             AsgnCStr(*result, "Fail()");
+	     break;
              }
           case PC_Fence: {
-             AsgnCStr(image, "Fence()");
-             break;
+             AsgnCStr(*result, "Fence()");
+	     break;
              }
           case PC_Rest: {
-             AsgnCStr(image, "Rem()");
-             break;
+             AsgnCStr(*result, "Rem()");
+	     break;
              }
           case PC_Succeed: {
-             AsgnCStr(image, "Succeed()");
-             break;
+             AsgnCStr(*result, "Succeed()");
+	     break;
              }
           case PC_Rpat: {
              arg = Blk(ep,Pelem)->parameter;
-             image = arg_image(arg, PT_VP);
-             break;
+             if ((rv = arg_image(arg, PT_VP, result)) != Succeeded) return rv;
+	     break;
              }
           case PC_String: {
              arg = Blk(ep,Pelem)->parameter;
-             image = construct_image(get_patimage(PI_QUOTE), arg,
-				     get_patimage(PI_QUOTE));
-             break;
+             if ((rv = construct_image(bi_pat(PI_QUOTE), &arg,
+				     bi_pat(PI_QUOTE), result)) != Succeeded)
+		return rv;
+	     break;
              }
 	  case PC_BreakX_X: {
-             image = get_patimage(PI_EMPTY);
-             break;
+             *result = *bi_pat(PI_EMPTY);
+	     break;
              }
           case PC_EOP: {
-             return get_patimage(PI_EMPTY);
+	     *result = *bi_pat(PI_EMPTY);
+	     break;
              }
           case PC_R_Enter: {
-             image = get_patimage(PI_EMPTY);
-             break;
+             *result = *bi_pat(PI_EMPTY);
+	     break;
              }
           default: {
-          fprintf(stdout, "Error\n");
-          return image; 
-          }
+	     syserr("pattern_image: bad pcode");
+	     }
+	     }
        }
-   } else 
-        return get_patimage(PI_EMPTY);
+   else {
+      *result = *bi_pat(PI_EMPTY);
+      return Succeeded;
+      }
    if (ep = Blk(ep,Pelem)->pthen) {
        if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
 	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
@@ -2075,21 +2046,23 @@ struct descrip pattern_image(union block *pe, int arbnoBool)
            (Blk(ep,Pelem)->pcode != PC_Arbno_S || arbnoBool != 1) &&
            Blk(ep,Pelem)->pcode != PC_Arbno_Y &&
 	   Blk(ep,Pelem)->pcode != PC_R_Enter) {
-	  if (StrLen(image)>0) {
-	     image = construct_image(image, get_patimage(PI_CONCAT),
-				     pattern_image(ep, arbnoBool));
+	  if (StrLen(*result)>0) {
+	     if ((rv = pattern_image(ep, arbnoBool, &image)) != Succeeded)
+		return rv;
+	     return construct_image(result, bi_pat(PI_CONCAT), &image, result);
 	     }
-	  else image = pattern_image(ep, arbnoBool);
-          return image;
+	  else return pattern_image(ep, arbnoBool, result);
           }
        else {
-          image = construct_image(get_patimage(PI_EMPTY), image,
-				  pattern_image(ep, arbnoBool));
+	  if ((rv = pattern_image(ep, arbnoBool, &image)) != Succeeded)
+	     return rv;
+          return construct_image(bi_pat(PI_EMPTY), result, &image, result);
           }
       }
+   return Failed;
    }
 
-struct descrip arg_image(struct descrip arg, int pcode)
+int arg_image(struct descrip arg, int pcode, dptr result)
    {
    struct descrip image;
    tended struct descrip param = arg;
@@ -2097,31 +2070,29 @@ struct descrip arg_image(struct descrip arg, int pcode)
       if(pcode == PT_EVAL) {
          type_case param of {
             string: {
-               image = construct_image(get_patimage(PI_QUOTE), param,
-				       get_patimage(PI_QUOTE));
-               return image;
+               return construct_image(bi_pat(PI_QUOTE), &param,
+				      bi_pat(PI_QUOTE), result);
                }
             cset: {
                if(!cnv:string(param,param))
                   fprintf(stdout, "Error\n");
-               image = construct_image(get_patimage(PI_SQUOTE), param,
-				       get_patimage(PI_SQUOTE));
-               return image;
+               return construct_image(bi_pat(PI_SQUOTE), &param,
+				      bi_pat(PI_SQUOTE), result);
                }
             integer: {
                if(!cnv:string(param, param))
-                  fprintf(stdout, "Error\n");
-               return param;
+		  ReturnErrNum(103, RunError);
+	       *result = param;
+               return Succeeded;
                }
             default: {
-               fprintf(stdout, "Error\n");
+	       syserr("unexpected type in a PT_EVAL");
             }
             }
             }
       else {
-         image = construct_image(get_patimage(PI_BQUOTE), param,
-				 get_patimage(PI_BQUOTE));
-         return image;
+         return construct_image(bi_pat(PI_BQUOTE), &param,
+				 bi_pat(PI_BQUOTE), result);
          }
       }
    else {
@@ -2130,22 +2101,26 @@ struct descrip arg_image(struct descrip arg, int pcode)
       struct descrip str;
       int leCurrent = 1;
 
-      AsgnCStr(image, StrLoc(le->lslots[le->first]));
+      if(!is:string(le->lslots[le->first]))
+         get_name(&le->lslots[le->first], result);
+      else   
+	 AsgnCStr(*result, StrLoc(le->lslots[le->first]));
       switch(pcode) {
       case PT_VP: {
          do {
-            AsgnCStr(str, StrLoc(le->lslots[leCurrent]));
-            image = construct_image(image, get_patimage(PI_PERIOD), str);
+            if (construct_image(result, bi_pat(PI_PERIOD),
+				&(le->lslots[leCurrent]), result) !=
+		Succeeded) return RunError;
             leCurrent++;
 	    }
 	 while (leCurrent != le->nslots);
-	 image = construct_image(get_patimage(PI_BQUOTE), image,
-				 get_patimage(PI_BQUOTE));
-	 return image;
+	 return construct_image(bi_pat(PI_BQUOTE), result,
+				 bi_pat(PI_BQUOTE), result);
 	 }
        case PT_MF: {
-         image = construct_image(image, get_patimage(PI_PERIOD),
-				 le->lslots[leCurrent]);
+         if (construct_image(result, bi_pat(PI_PERIOD),
+			     &(le->lslots[leCurrent]), result) != Succeeded)
+	    return RunError;
          leCurrent++;
          break;
          }
@@ -2153,139 +2128,143 @@ struct descrip arg_image(struct descrip arg, int pcode)
          break;
          }
        default: {
-         fprintf(stdout, "Error\n");
+	 syserr("unknown pcode in arg_image()");
          break;
          }
          }
-       if(le->nslots == 1) {
-          construct_image(get_patimage(PI_EMPTY), image, 
-                      get_patimage(PI_BPAREN));
-          construct_image(get_patimage(PI_BQUOTE), image, 
-                      get_patimage(PI_BQUOTE));
-          return image;
+       if((pcode != PT_MF && (le->nslots == 1)) || 
+         ((pcode == PT_MF) && (le->nslots == 2))) {
+          if (construct_image(bi_pat(PI_EMPTY), result,
+                      bi_pat(PI_BPAREN), result) != Succeeded)
+	     return RunError;
+          return construct_image(bi_pat(PI_BQUOTE), result,
+				 bi_pat(PI_BQUOTE), result);
 	  }
-       image = construct_image(image, get_patimage(PI_FPAREN),
-			       le->lslots[leCurrent]);
+      /* this is the part at which we go bad */
+       if (!is:string(le->lslots[leCurrent]) &&
+	   is:variable(le->lslots[leCurrent])) {
+          struct descrip d;
+          int rv = get_name(&(le->lslots[leCurrent]), &d);
+	  /*
+	   * OK, what do we do with this variable name, use it instead of
+	   * using slots, right?
+	   */
+	  }
+
+       if (!is:string(le->lslots[leCurrent])) {
+          get_name(&le->lslots[leCurrent], &arg);
+	  if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) !=
+	      Succeeded)
+	     return RunError;
+	  }
+       else {
+	  if (construct_image(result, bi_pat(PI_FPAREN),
+			      &(le->lslots[leCurrent]), result) != Succeeded)
+	     return RunError;
+	  }
        leCurrent++;
-       if (le->nslots != 2) {
+       if (((pcode != PT_MF) && (le->nslots != 2)) || 
+           ((pcode == PT_MF) && (le->nslots != 3))) {
           do {
-             image = construct_image(image, get_patimage(PI_COMMA),
-				     le->lslots[leCurrent]);
+	     if(!is:string(le->lslots[leCurrent])) {
+	        get_name(&le->lslots[leCurrent], &arg);
+                if((errno = construct_image(result, bi_pat(PI_COMMA), &arg, 
+					    result)) != Succeeded)
+		return errno;
+                }
+             else {
+		if (construct_image(result, bi_pat(PI_COMMA),
+				&(le->lslots[leCurrent]), result) != Succeeded)
+		return RunError;
+		}
 	     leCurrent++;
 	     }
 	  while (leCurrent != le->nslots);
           }
-       image = construct_image(get_patimage(PI_EMPTY), image,
-			       get_patimage(PI_BPAREN));
-       image = construct_image(get_patimage(PI_BQUOTE), image,
-			       get_patimage(PI_BQUOTE));
-       return image;  
+       if (construct_image(bi_pat(PI_EMPTY), result,
+			       bi_pat(PI_BPAREN), result) != Succeeded)
+	  return RunError;
+       if (construct_image(bi_pat(PI_BQUOTE), result,
+			       bi_pat(PI_BQUOTE), result) != Succeeded)
+	   return RunError;
+       return Succeeded;
        }
    }
 
-void init_func_array(struct descrip funcNames[])
-{
-   AsgnCStr(funcNames[PF_Any], "Any(");
-   AsgnCStr(funcNames[PF_Break], "Break(");
-   AsgnCStr(funcNames[PF_BreakX], "Breakx(");
-   AsgnCStr(funcNames[PF_NotAny], "NotAny(");
-   AsgnCStr(funcNames[PF_NSpan], "NSpan(");
-   AsgnCStr(funcNames[PF_Span], "Span(");
-   AsgnCStr(funcNames[PF_Len], "Len(");
-   AsgnCStr(funcNames[PF_Pos], "Pos(");
-   AsgnCStr(funcNames[PF_RPos], "Rpos(");
-   AsgnCStr(funcNames[PF_Tab], "Tab(");
-   AsgnCStr(funcNames[PF_RTab], "Rtab(");
-   AsgnCStr(funcNames[PF_Arbno], "Arbno(");
-}
-
-struct descrip get_patimage(int ptype)
+/*
+ * bi_pat() - returns a pointer to a string descriptor pattern image for
+ * built-in pattern functions and operators. This subsumes get_patimage()
+ * and patimg_fns[].
+ */
+dptr bi_pat(int what)
    {
-   struct descrip s; 
-   switch(ptype) {
-      case PI_EMPTY: {
-         AsgnCStr(s, "");
-         return s;
-         break;
-        }
-      case PI_CONCAT: {
-	 AsgnCStr(s, " || ");
-         return s;  
-	 break;
+   static struct descrip patimag[NUM_PATIMGS];
+   if (!StrLen(patimag[0])) {
+      MUTEX_LOCKID(MTX_PATIMG_FUNCARR);
+      if (!StrLen(patimag[0])) {
+	 AsgnCStr(patimag[PF_Any], "Any(");
+	 AsgnCStr(patimag[PF_Break], "Break(");
+	 AsgnCStr(patimag[PF_BreakX], "Breakx(");
+	 AsgnCStr(patimag[PF_NotAny], "NotAny(");
+	 AsgnCStr(patimag[PF_NSpan], "NSpan(");
+	 AsgnCStr(patimag[PF_Span], "Span(");
+	 AsgnCStr(patimag[PF_Len], "Len(");
+	 AsgnCStr(patimag[PF_Pos], "Pos(");
+	 AsgnCStr(patimag[PF_RPos], "Rpos(");
+	 AsgnCStr(patimag[PF_Tab], "Tab(");
+	 AsgnCStr(patimag[PF_RTab], "Rtab(");
+	 AsgnCStr(patimag[PF_Arbno], "Arbno(");
+	 AsgnCStr(patimag[PI_EMPTY], "");
+	 AsgnCStr(patimag[PI_FPAREN], "(");
+	 AsgnCStr(patimag[PI_BPAREN], ")");
+	 AsgnCStr(patimag[PI_BQUOTE], "`");
+	 AsgnCStr(patimag[PI_QUOTE], "\"");
+	 AsgnCStr(patimag[PI_SQUOTE], "'");
+	 AsgnCStr(patimag[PI_COMMA], ", ");
+	 AsgnCStr(patimag[PI_PERIOD], ".");
+	 AsgnCStr(patimag[PI_CONCAT], " || ");
+	 AsgnCStr(patimag[PI_ALT], " .| ");
+	 AsgnCStr(patimag[PI_ONM], " -> ");
+	 AsgnCStr(patimag[PI_IMM], " => ");
+	 AsgnCStr(patimag[PI_SETCUR], " .> ");
 	 }
-      case PI_SQUOTE: {
-	 AsgnCStr(s, "'");
-         return s;
-	 break;
-	    }
-      case PI_QUOTE: {
-	 AsgnCStr(s, "\"");
-         return s;
-	 break;
-	    }
-      case PI_BQUOTE: {
-	 AsgnCStr(s, "`");
-         return s;
-	 break;
-	 }
-      case PI_FPAREN: {
-	 AsgnCStr(s, "(");
-         return s;
-	 break;
-	 }
-      case PI_BPAREN: {
-	 AsgnCStr(s, ")");
-         return s;
-	 break;
-	 }
-      case PI_COMMA: {
-	 AsgnCStr(s, ", ");
-         return s;
-	 break;
-	 }
-      case PI_PERIOD: {
-         AsgnCStr(s, ".");
-         return s;
-         break;
-         }
-      case PC_Alt: {
-         AsgnCStr(s, " .| ");
-         return s;
-	 break;
-	 }
-      case PC_Assign_OnM: {
-         AsgnCStr(s, " -> ");
-         return s;
-	 break;
-	 }
-      case PC_Assign_Imm: {
-         AsgnCStr(s, " => "); 
-         return s;
-	 break;
-	 }
-      case PC_Setcur: {
-	 AsgnCStr(s, " .> ");
-         return s;
-	 break;
-	 }
-      default: {
-	    fprintf(stderr, "Case not recognized, pattern image not set.\n");
-	    return;
-         }
-    }
-    } 
+      MUTEX_UNLOCKID(MTX_PATIMG_FUNCARR);
+      }
+
+   if ((what < 0) || (what > NUM_PATIMGS)) {
+      syserr(" illegal patimg argument");
+      return NULL;
+      }
+   return patimag + what;
+   } 
 
-struct descrip construct_image(l,s,r)
-struct descrip l,s,r;
+/*
+ * Construct a concatenation of three strings. Return Succeeded if OK.
+ * Arguments MUST point at tended or static string data.
+ * Result may refer to the same location as one of the parameters,
+ */
+int construct_image(dptr l, dptr s, dptr r, dptr result)
    {
-   struct descrip image;
-  // Protect (reserve(Strings, StrLen(l) + StrLen(s) + StrLen(r)), return RunError);
-   StrLoc(image) = alcstr(StrLoc(l), StrLen(l));
-   alcstr(StrLoc(s), StrLen(s));
-   alcstr(StrLoc(r), StrLen(r));
-   StrLen(image) = StrLen(l) + StrLen(s) + StrLen(r);
-   return image; 
+   int slen = StrLen(*l) + StrLen(*s) + StrLen(*r);
+   char *str;
+   Protect (reserve(Strings, slen), return RunError);
+   str = alcstr(StrLoc(*l), StrLen(*l));
+   alcstr(StrLoc(*s), StrLen(*s));
+   alcstr(StrLoc(*r), StrLen(*r));
+   MakeStr(str, slen, result);
+   return Succeeded; 
    }
+
+/*
+ * Construct an image for a known built-in pattern function.
+ */
+int construct_funcimage(union block *pe, int aicode, int bpcode, dptr result)
+{
+   if (arg_image(Blk(pe,Pelem)->parameter, aicode, result) != Succeeded)
+      return RunError;
+   return construct_image(bi_pat(bpcode), result, bi_pat(PI_BPAREN), result);
+}
+
 #endif					/* PatternImage */
 
 /*
@@ -2631,7 +2610,7 @@ dptr dp1, dp2;
 	 ep = Blk(bp,Pattern)->pe;
 
 #ifdef PatternImage
-         temp = pattern_image(ep, 0);
+         if (pattern_image(ep, 0, &temp) != Succeeded) return RunError;
 	 sprintf(sbuf, "pattern_%ld(%ld) = %s", (long)(Blk(bp,Pattern)->id),
 	 	        (long)(Blk(ep,Pelem)->index), StrLoc(temp)); 
 

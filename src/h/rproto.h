@@ -144,14 +144,13 @@ union block *pattern_make(int stck_size, struct b_pelem * pnext,
 union block *pelem_make(struct b_pelem * pnext, int pattern_code,
 			int index, struct descrip param);
 #ifdef PatternImage
-struct descrip get_patimage(int ptype);
-struct descrip  arg_image     (struct descrip arg, int pcode);
-struct descrip  construct_image (struct descrip left, struct descrip s,
-				    struct descrip r);
+dptr		bi_pat		(int what);
+int		arg_image	(struct descrip arg, int pcode, dptr result);
+int		construct_image	(dptr left, dptr s, dptr r, dptr result);
 #endif					/* PatternImage */
 
 struct b_pattern * breakx_make(struct b_pelem * B);
-#endif               /* PatternType */
+#endif					/* PatternType */
 int		co_chng		(struct b_coexpr *ncp, struct descrip *valloc,
 				   struct descrip *rsltloc,
 				   int swtch_typ, int first);

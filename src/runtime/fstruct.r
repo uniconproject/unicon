@@ -674,25 +674,71 @@ function{0,1} classname(r)
 end
 
 "membernames(r) - get list of the member vars for class instance r"
-function{1} membernames(r)
-   if !is:record(r) then
-      runerr(107, r)
-   abstract {
-      return new list(string)
-      }
-   body {
-      register word i, n_flds;
-      tended struct b_list * p;
-      tended struct b_record * br;
-      register struct b_lelem * bp;
+function{0,1} membernames(r)
+   if is:string(r) then {
+      abstract {
+	 return new list(string)
+	 }
+      body {
+	 /* construct the string for the class instance vector in sbuf */
+	 char sbuf[MaxCvtLen];
+	 tended struct b_list * p;
+	 tended struct descrip d;
+	 tended struct b_proc *pr;
+	 register struct b_lelem * bp;
+	 int i, j, n_flds;
 
-      br = BlkD(r, Record);
-      n_flds = Blk(br->recdesc,Proc)->nfields;
-      Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
-      bp = Blk(p->listhead,Lelem);
-      for (i=0; i<n_flds; i++)
-         bp->lslots[i] = br->recdesc->Proc.lnames[i];
-      return list(p);
+	 for(i=0;i<StrLen(r);i++) sbuf[i] = StrLoc(r)[i];
+	 strcpy(sbuf+i, "__state");
+	 /* lookup the record type, given the class instance vector name */
+	 i = getvar(sbuf, &d);
+	 if (i == GlobalName) {
+	    deref(&d, &d);
+	    if (!is:proc(d)) runerr(131,d);
+	    
+	    pr = BlkD(d, Proc);
+	    n_flds = pr->nfields;
+	    j = 0;
+	    if (strcmp("__s",StrLoc(pr->lnames[j])) == 0) {
+	       j++; n_flds--;
+	       }
+	    if (strcmp("__m",StrLoc(pr->lnames[j])) == 0) {
+	       j++; n_flds--;
+	       }
+
+	    Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
+	    bp = Blk(p->listhead,Lelem);
+	    
+	    for (i=0 ; i < n_flds; i++, j++) {
+	       bp->lslots[i] = pr->lnames[j];
+	       }
+	    return list(p);
+	    }
+	 else {
+	    fail;
+	    }
+	 }
+      }
+   else if !is:record(r) then
+      runerr(107, r)
+   else {
+      abstract {
+	 return new list(string)
+	 }
+      body {
+	 register word i, n_flds;
+	 tended struct b_list * p;
+	 tended struct b_record * br;
+	 register struct b_lelem * bp;
+
+	 br = BlkD(r, Record);
+	 n_flds = Blk(br->recdesc,Proc)->nfields;
+	 Protect(p = alclist_raw(n_flds, n_flds), runerr(0));
+	 bp = Blk(p->listhead,Lelem);
+	 for (i=0; i<n_flds; i++)
+	    bp->lslots[i] = br->recdesc->Proc.lnames[i];
+	 return list(p);
+	 }
       }
 end
 

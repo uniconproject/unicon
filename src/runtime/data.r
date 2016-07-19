@@ -291,6 +291,7 @@ struct errtab errtab[] = {
    129, "unable to convert unevaluated variable to pattern",
 #endif					/* PatternType */
    130, "incorrect number of arguments",
+   131, "string is not a class name",
 /*#ifdef Graphics*/
    140, "window expected",
    141, "program terminated by window manager",

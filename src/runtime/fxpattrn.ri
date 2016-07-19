@@ -572,9 +572,12 @@ function {*} pattern_match(underef psub -> dpsub, pat)
     
       DEBUGF(20,(stdout, "(729)begin pattern_match()\n"));
       /*
-       * Is k_pos really 0-based and not 1-based?
-       * If we are assigning new values to &subject/&pos for a match,
-       * do we need to save & restore old values when finished?
+       * Is k_pos really 0-based and not 1-based?  bscan in imisc.r
+       * line 392 seems to give strong evidence it is 1-based.
+       *
+       * We are assigning new values to &subject/&pos to execute a match.
+       * Save & restore of old values is assumed to be in a surrounding ?
+       * implemented in the code generation for ??
        */
       k_pos = 0;
       k_subject = dpsub;
@@ -611,15 +614,16 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	     (StrLoc(*(psub.vword.descptr)) == StrLoc(k_subject)) &&
 	     (StrLen(*(psub.vword.descptr)) == StrLen(k_subject)) ) {
 
+	    /* if it is &subject, we can't make a tvsubs from it. */
 	    if (psub.vword.descptr == &k_subject) {
-	       suspend kywdsubj(&k_subject);
+	       suspend string(stop - start, StrLoc(dpsub)+ start);
 	       }
 	    else {
-	       suspend tvsubs(&psub, start+1,stop - start /* + 1 ? */);
+	       suspend tvsubs(&psub, start+1,stop - start);
 	       }
 	    }
 	 else {
-	    suspend string(stop - start /* + 1 ? */, StrLoc(dpsub)+ start);
+	    suspend string(stop - start, StrLoc(dpsub)+ start);
 	    }
 	 deref(&psub,&dpsub);
 	 k_subject = dpsub;
@@ -1879,10 +1883,9 @@ dptr processMethodCallList(struct b_list *lp, int csr)
       err_msg(107, &var);
       return NULL;
       }
-
    ep->lslots[0] = var;
    self = var;
-   classname = var.vword.bptr->Record.recdesc->Proc.pname.vword.sptr;  
+   classname = var.vword.bptr->Record.recdesc->Proc.pname.vword.sptr;
    cnlen = strcspn(classname, "_");
    classname = strncpy(classname, classname, cnlen);
    classname[cnlen] = '_';
@@ -1907,7 +1910,7 @@ dptr processMethodCallList(struct b_list *lp, int csr)
 	 break;
       }
    if (i<nfields)
-      fnum = i;  
+      fnum = i;
    else fatalerr(207, &methodptr);
    proc = rp->fields[fnum];
    bptr = rp->recdesc;
@@ -2890,7 +2893,7 @@ Node_Succeed:
        *   Tab (integer case)
        */
    case  PC_Tab_Nat: {
-      if (Cursor <= IntVal(Node->parameter) - 1){
+      if (IntVal(Node->parameter) - 1 <= Length){
 	 Cursor = IntVal(Node->parameter) - 1;
 	 goto Node_Succeed;
 	 }

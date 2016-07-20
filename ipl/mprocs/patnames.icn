@@ -1,0 +1,115 @@
+#
+#	File:	patnames.icn
+#
+#	Author:	Paden Rumsey
+#
+#	Date:	July 18, 2016
+#
+############################################################################
+#
+#  patnames() returns returns a table. Indexed by a pattern element
+#  code, it produces the human friendly string name/phrase for the code. 
+#  These internal codes only become visible to Unicon programs when the
+#  execution monitoring facilities are used.
+#
+############################################################################
+
+link tables
+
+$include "evdefs.icn"
+
+procedure patnames()
+    static pfuncmap
+
+    initial {
+	pfuncmap := table("????")
+      
+	pfuncmap[PF_Any] := "All Any Functions"
+	pfuncmap[PF_Arbno] := "All Arbno Functions"
+	pfuncmap[PF_Break] := "All Break Functions"
+	pfuncmap[PF_BreakX] := "All BreakX Functions"
+	pfuncmap[PF_Len] := "All Len Functions"
+	pfuncmap[PF_NotAny] := "All NotAny Functions"
+	pfuncmap[PF_RPos] := "All Rpos Functions"
+	pfuncmap[PF_Pos] := "All Pos Functions"
+	pfuncmap[PF_Tab] := "All Tab Functions"
+	pfuncmap[PF_RTab] := "All RTab Functions"
+	pfuncmap[PF_Span] := "All Span Functions"
+	pfuncmap[PC_Any_CS] := "Any w/ evaluated parameter"
+	pfuncmap[PC_Any_VP] := "Any w/unevaluated Variable"
+	pfuncmap[PC_Any_VF] := "Any w/unevaluated Function"
+	pfuncmap[PC_Any_MF] := "Any w/unevaluated Method"
+	pfuncmap[PC_Arb_X] := "Front Arb Node"
+	pfuncmap[PC_Arb_Y] := "Arb Extension"
+	pfuncmap[PC_Arbno_S] := "Simple Arbno"
+	pfuncmap[PC_Arbno_X] := "Complex Arbno"
+	pfuncmap[PC_Arbno_Y] := "End of Arbno Reached"
+	pfuncmap[PC_Assign] := "Assignment"  
+	pfuncmap[PC_Abort] := "Abort"
+	pfuncmap[PC_Bal] := "Bal"
+	pfuncmap[PC_Break_CS] := "Break w/evaluated parameter"
+	pfuncmap[PC_Break_VP] := "Break w/unevaluated Variable"
+	pfuncmap[PC_Break_VF] := "Break w/unevaluated Function"
+	pfuncmap[PC_Break_MF] := "Break w/unevaluated Method" 
+	pfuncmap[PC_BreakX_CS] := "Breakx w/ evaluated parameter"
+	pfuncmap[PC_BreakX_VP] := "Breakx w/unevaluated Variable"
+	pfuncmap[PC_BreakX_VF] := "Breakx w/unevaluated Function"
+	pfuncmap[PC_BreakX_MF] := "Breakx w/unevaluated Method"
+	pfuncmap[PC_BreakX_X] := "BreakX_X"
+	pfuncmap[PC_Fail] := "Fail"
+	pfuncmap[PC_Fence] := "Fence"
+	pfuncmap[PC_Fence] := "Fence X Node"
+	pfuncmap[PC_Fence] := "Fence Y Node"
+	pfuncmap[PC_Pred_Func] := "Unevaluated Function"
+	pfuncmap[PC_Pred_MF] := "Unevaluated Method"
+	pfuncmap[PC_Len_Nat] := "Len w/evaluated parameter"
+	pfuncmap[PC_Len_NP] := "Len w/unevaluated Variable"
+	pfuncmap[PC_Len_NF] := "Len w/unevaluated Function"
+	pfuncmap[PC_Len_NMF] := "Len w/unevaluated Method"
+	pfuncmap[PC_NotAny_CS] := "NotAny w/evaluated parameter"
+	pfuncmap[PC_NotAny_VP] := "NotAny w/unevaluated Variable"
+	pfuncmap[PC_NotAny_VF] := "NotAny w/unevaluated Function"
+	pfuncmap[PC_NotAny_MF] := "NotAny w/unevaluated Method"
+	pfuncmap[PC_Rpat] := "Unevaluated Variable"
+	pfuncmap[PC_Pos_Nat] := "Pos w/evaluated parameter"
+	pfuncmap[PC_Pos_NP] := "Pos w/unevaluated Variable"
+	pfuncmap[PC_Pos_NF] := "Pos w/unevaluated Function"
+	pfuncmap[PC_Pos_NMF] := "Pos w/unevaluated Method Function"
+	pfuncmap[PC_Tab_Nat] := "Tab w/evaluated parameter"
+	pfuncmap[PC_Tab_NP] := "Tab w/unevaluated Variable"
+	pfuncmap[PC_Tab_NF] := "Tab w/unevaluated Function"
+	pfuncmap[PC_Tab_NMF] := "Tab w/unevaluated Method"
+	pfuncmap[PC_Rest] := "Rem"
+	pfuncmap[PC_RPos_Nat] := "Rpos w/evaluated parameter"
+	pfuncmap[PC_RPos_NP] := "Rpos w/unevaluated Variable"
+	pfuncmap[PC_RPos_NF] := "Rpos w/unevaluated Function"
+	pfuncmap[PC_RPos_NMF] := "Rpos w/unevaluated Method"
+	pfuncmap[PC_RTab_Nat] := "RTab w/ evaluated parameter"
+	pfuncmap[PC_RTab_NP] := "Rpos w/unevaluated Variable"
+	pfuncmap[PC_RTab_NF] := "Rpos w/unevaluated Function"
+	pfuncmap[PC_RTab_NMF] := "Rpos w/unevaluated Method"
+	pfuncmap[PC_R_Enter] := "Entered Nested Pattern"
+	pfuncmap[PC_R_Remove] := "Failure of Nested Pattern"
+	pfuncmap[PC_R_Restore] := "Search for alternatives"
+	pfuncmap[PC_Span_CS] := "Span w/ evaluated parameter"
+	pfuncmap[PC_Span_VP] := "Span w/unevaluated Variable"
+	pfuncmap[PC_Span_VF] := "Span w/unevaluated Function"
+	pfuncmap[PC_Span_MF] := "Span w/unevaluated Method"
+	pfuncmap[PC_String] := "String Pattern"
+	pfuncmap[PC_String_VP] := "PC_String_VP?"
+	pfuncmap[PC_String_VF] := "PC_String_VF?"
+	pfuncmap[PC_String_MF] := "PC_String_MF?"
+	pfuncmap[PC_Succeed] := "Succeed"
+	pfuncmap[PC_Unanchored] := "Unanchored Pattern"
+	pfuncmap[PC_EOP] := "EOP Reached"
+	pfuncmap[PC_Assign_Imm] := " => "
+	pfuncmap[PC_Assign_OnM] := " -> "
+	pfuncmap[PC_Setcur] := " .> "
+	pfuncmap[PC_Alt] := " .| "
+	pfuncmap[PI_CONCAT] := " || or && "
+
+    }
+
+    return pfuncmap
+
+end

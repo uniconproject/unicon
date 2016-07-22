@@ -1994,9 +1994,6 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    call_result = processFuncCallList(lp, Cursor);
    if (call_result != 0) {
       cresult = *call_result;
-      if(is:integer(cresult) || is:cset(cresult)) {
-	 internalStorage = cresult.vword.bptr;
-	 }
       }
 #enddef
 
@@ -2017,9 +2014,6 @@ if (is:list(Node->parameter)) {
    call_result = processMethodCallList(lp, Cursor);
    if (call_result != 0) { 
       cresult = *call_result;
-      if(is:integer(cresult) || is:cset(cresult)) {
-	 internalStorage = cresult.vword.bptr;
-	 }
       }
    }
 else {
@@ -2048,7 +2042,6 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
 				      0, {D_Null,0}};
    int Assign_OnM = 0;
    int Region_Level = 0;
-   union block *internalStorage = NULL;
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %d\n",
 	      Length,pat_sub,Length, Cursor));
@@ -2682,21 +2675,17 @@ Node_Succeed:
       goto Node_Succeed;
       break;
       }
+
    case PC_Len_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
-      if (!cnv_int(&cresult,&cresult))
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	 fatalerr(101, &cresult);
-      if(!is:integer(cresult) && (internalStorage != NULL)) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      cresult.dword = D_Integer;
       if (Cursor + IntVal(cresult) > Length) {
 	 goto Node_Fail;
 	 }
-      else {
-	 Cursor = Cursor + IntVal(cresult);
-	 }
+      Cursor += IntVal(cresult);
       goto Node_Succeed;
       break;
       }
@@ -2704,18 +2693,13 @@ Node_Succeed:
    case PC_Len_NMF:{
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
-      if (!cnv_int(&cresult,&cresult))
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	 fatalerr(101, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      cresult.dword = D_Integer;
       if (Cursor + IntVal(cresult) > Length) {
 	 goto Node_Fail;
 	 }
-      else {
-	 Cursor = Cursor + IntVal(cresult);
-	 }
+      Cursor += IntVal(cresult);
       goto Node_Succeed;
       break;
       }
@@ -2860,12 +2844,9 @@ Node_Succeed:
    case PC_Pos_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	 fatalerr(101, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      cresult.dword = D_Integer;
       if (Cursor == IntVal(cresult) - 1)
 	 goto Node_Succeed;
       else {
@@ -2876,12 +2857,9 @@ Node_Succeed:
    case PC_Pos_NMF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Len unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	 fatalerr(101, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      cresult.dword = D_Integer;
       if (Cursor == IntVal(cresult) - 1)
 	 goto Node_Succeed;
       else {
@@ -2907,7 +2885,7 @@ Node_Succeed:
       if (!cnv_int(&var,&var)) {
 	 fatalerr(101, &var);
 	 }
-      if (Cursor <= IntVal(var) - 1){
+      if (IntVal(var) - 1 <= Length) {
 	 Cursor = IntVal(var) - 1;
 	 goto Node_Succeed;
 	 }
@@ -2922,14 +2900,11 @@ Node_Succeed:
 	 goto Node_Fail;
 	 }
       else {
-	 if (!cnv_int(&cresult,&cresult))
+	 if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	    fatalerr(101, &cresult);
-	 if(!is:integer(cresult) && internalStorage != NULL) {
-	    cresult.vword.bptr = internalStorage;
-	    internalStorage = NULL;
-	    }
+	 cresult.dword = D_Integer;
 	 }
-      if (Cursor <= IntVal(cresult) - 1) {
+      if (IntVal(cresult) - 1 <= Length) {
 	 Cursor = IntVal(cresult) - 1;
 	 goto Node_Succeed;
 	 }
@@ -2944,14 +2919,11 @@ Node_Succeed:
 	 goto Node_Fail;
 	 }
       else {
-	 if (!cnv_int(&cresult,&cresult))
+	 if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	    fatalerr(101, &cresult);
-	 if(!is:integer(cresult) && internalStorage != NULL) {
-	    cresult.vword.bptr = internalStorage;
-	    internalStorage = NULL;
-	    }
+	 cresult.dword = D_Integer;
 	 }
-      if (Cursor <= IntVal(cresult) - 1) {
+      if (IntVal(cresult) - 1 <= Length) {
 	 Cursor = IntVal(cresult) - 1;
 	 goto Node_Succeed;
 	 }
@@ -2996,12 +2968,9 @@ Node_Succeed:
    case PC_RPos_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
+	 fatalerr(101, &cresult);
+      cresult.dword = D_Integer;
       if (Cursor == (Length - IntVal(cresult)))
 	 goto Node_Succeed;
       else {
@@ -3012,12 +2981,9 @@ Node_Succeed:
    case PC_RPos_NMF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching RPos unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
+	 fatalerr(101, &cresult);
+      cresult.dword = D_Integer;
       if (Cursor == (Length - IntVal(cresult)))
 	 goto Node_Succeed;
       else {
@@ -3057,12 +3023,9 @@ Node_Succeed:
    case  PC_RTab_NF: {
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
+	 fatalerr(101, &cresult);
+      cresult.dword = D_Integer;
       if (Cursor <= (Length - IntVal(cresult))){
 	 Cursor = Length - IntVal(cresult);
 	 goto Node_Succeed;
@@ -3075,12 +3038,9 @@ Node_Succeed:
    case  PC_RTab_NMF: {
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching RTab unevaluated function call\n"));
-      if (!cnv_cset(&cresult,&cresult))
-	 fatalerr(104, &cresult);
-      if(!is:integer(cresult) && internalStorage != NULL) {
-	 cresult.vword.bptr = internalStorage;
-	 internalStorage = NULL;
-	 }
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
+	 fatalerr(101, &cresult);
+      cresult.dword = D_Integer;
       if (Cursor <= (Length - IntVal(cresult))){
 	 Cursor = Length - IntVal(cresult);
 	 goto Node_Succeed;

@@ -1,0 +1,110 @@
+## unevalcharss.icn
+## Paden Rumsey
+## July 8, 2016
+
+## The scoping rules for class are unique. An object cannot be passed into a metho
+## or function unevaluated from main unless the object is global. It will not register
+## the variable as unknown it will simply tell you "cset or integer required" 
+
+procedure main()
+    c := charfunc()
+    x := 'a'
+    while s := read() do {
+	p := Any('a')
+	s ?? p -> out
+	write(out)
+	p := Any(`fcall("one")`)
+	s ?? p -> out
+	write(out)
+	p := Any(`c.charreturn("one")`)
+	s ?? p -> out
+	write(out)
+	p := Any(`c.a`)
+	s ?? p -> out
+	write(out)
+	p := Any(`x`)
+	s ?? p -> out
+	write(out)
+	
+	p := Break('a')
+	s ?? p -> out
+	write(out)
+	p := Break(`fcall("one")`)
+	s ?? p -> out
+	write(out)
+	p := Break(`c.charreturn()`)
+	s ?? p -> out
+	write(out)
+	p := Break(`c.a`)
+	s ?? p -> out
+	write(out)
+	p := Break(`x`)
+	s ?? p -> out
+	write(out)
+
+	p := Breakx('a')
+	s ?? p -> out
+	write(out)
+	p := Breakx(`fcall("one")`)
+	s ?? p -> out
+	write(out)
+	p := Breakx(`c.charreturn()`)
+	s ?? p -> out
+	write(out)
+	p := Breakx(`c.a`)
+	s ?? p -> out
+	write(out)
+        p := Breakx(`x`)
+	s ?? p -> out
+	write(out)
+	
+	p := NotAny('a')
+	s ?? p -> out
+	write(out)
+	p := NotAny(`fcall("one")`)
+	s ?? p -> out
+	write(out)
+	p := NotAny(`c.charreturn("one")`)
+	s ?? p -> out
+	write(out)
+	p := NotAny(`c.a`)
+	s ?? p -> out
+	write(out)
+	p := NotAny(`x`)
+	s ?? p -> out
+	write(out)
+	
+	p := Span('a')
+	s ?? p -> out
+	write(out)
+	p := Span(`fcall("one")`)
+	s ?? p -> out
+	write(out)
+	p := Span(`c.charreturn("one")`)
+	s ?? p -> out
+	write(out)
+	p := Span(`c.a`)
+	s ?? p -> out
+	write(out)
+	p := Span(`x`)
+	s ?? p -> out
+	write(out)
+	
+    }
+end
+
+procedure fcall(param)
+    return 'a'
+end
+
+class charfunc(a,b,c)
+
+method charreturn()
+   return 'a'
+end
+
+initially()
+   a := 'a'
+   b := 'b'
+   c := 'c'
+end

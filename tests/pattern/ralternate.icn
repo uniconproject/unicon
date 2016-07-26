@@ -1,0 +1,46 @@
+## ralternate.icn
+## Paden Rumsey
+## July 10, 2016
+
+## I mentioned a little bit about grouping in rconcat. Also the preprocessor
+## seems to be doing similar things to what was happening in rconcat.icn
+## Look at the -E option for more information. 
+
+procedure main()
+    while s := read() do {
+	write("Alternation")
+	regx := <"Unicon" | "Icon">
+	write(image(regx))
+	match_string(s, regx)
+
+	write("Group Alternation")
+	regx := <("Unicon" | "Icon")>
+	write(image(regx))
+	match_string(s, regx)
+
+	write("Multi Group Alternation")
+	regx := <("Unicon" | "Icon" | "Icont")>
+	write(image(regx))
+        match_string(s, regx)
+
+	write("Multi Group Alternation with Concatenation")
+	regx := <("Unicon" | ("Ic" "on") | "Icont")>
+	write(image(regx))
+	match_string(s, regx)
+
+	write("Multi Group Alternation with Concatenation minus Parens")
+	regx := <("Unicon" | "Ic" "on" | "Icont")>
+	write(image(regx))
+	match_string(s, regx)
+    }
+end
+
+procedure match_string(s, r)
+    r := r -> out || Rem() -> remain
+    if s ?? r then {
+	write("The matched string is ", out, " the remainder is ", remain)
+	}
+    else
+	write("The regex failed to match")
+    write("\n")
+end

@@ -122,19 +122,12 @@ struct b_list *ResolveList(struct b_list *lp)
    proc.dword = D_Proc;
    /* The first element of the list must be string. */
    if (!is:string(elsrc->lslots[0])) {
-      t_errornumber = 103;
-      t_errorvalue = elsrc->lslots[0];
-      t_have_val = 1;
-      return NULL;
+      ReturnErrVal(103, elsrc->lslots[0], NULL);
       }
    /* convert string into procedure and store in proc */
    BlkLoc(proc)= (union block *)strprc(&elsrc->lslots[0],nargs);
    if (BlkLoc(proc) == NULL) {
-      fprintf(stderr, "Unable to find proc in ResolveList\n");
-      t_errornumber = 106;
-      t_errorvalue = elsrc->lslots[0];
-      t_have_val = 1;
-      return NULL;
+      ReturnErrVal(106, elsrc->lslots[0], NULL);
       }
    eldest = (struct b_lelem *)lpdest->listhead;
    eldest->lslots[0] = proc;
@@ -144,12 +137,9 @@ struct b_list *ResolveList(struct b_list *lp)
     * constructed lists for unevaluated expressions.
     */
    if (BlkType(elsrc->listnext) == T_Lelem) {
-      fprintf(stderr, "uneval cannot handle multi-element-block list\n");
-      t_errornumber = 164;
-      t_errorvalue.dword = D_List;
-      t_errorvalue.vword.bptr = (union block *)lpsrc;
-      t_have_val = 1;
-      return NULL;
+      proc.dword = D_List;
+      proc.vword.bptr = (union block *)lpsrc;
+      ReturnErrVal(164, proc, NULL);
       }
 
    for (i = 1; i < elsrc->nused; i++) {
@@ -186,14 +176,12 @@ struct b_list *ResolveList(struct b_list *lp)
 	       }
 	    else if (strcspn(varname, "&") == 0) {
 	       if (getkeyword(varname, &parm) == Failed) {
-		  t_errornumber = 160;
-		  t_have_val = 1;
-		  AsgnCStr(t_errorvalue, varname);
-		  return NULL;
+		  AsgnCStr(proc, varname);
+		  ReturnErrVal(160, proc, NULL);
 		  }
 	       cnv:cset(parm, elsrc->lslots[i]);
 	       if(complement) {
-		  Protect(cp = alccset(), fatalerr(307, NULL));
+		  Protect(cp = alccset(), ReturnErrNum(307, NULL));
 		  cpx = (struct b_cset *)BlkD(elsrc->lslots[i], Cset);
 		  for (b = 0; b < CsetSize; b++) 
 		     cp->bits[b] = ~cpx->bits[b];
@@ -205,16 +193,14 @@ struct b_list *ResolveList(struct b_list *lp)
 	       }
 	    else {
 	       if (getvar(varname, &parm) == Failed) {
-		  t_errornumber = 160;
-		  t_have_val = 1;
-		  AsgnCStr(t_errorvalue, varname);
-		  return NULL;
+		  AsgnCStr(parm, varname);
+		  ReturnErrVal(160, parm, NULL);
 		  }
 	       pvar = VarLoc(parm);
 	       elsrc->lslots[i] = parm; /* = *pvar too aggressive */
 
 	       if (complement) {
-		  Protect(cp = alccset(), fatalerr(307, NULL));
+		  Protect(cp = alccset(), ReturnErrNum(307, NULL));
 		  cpx = (struct b_cset *)StrLoc(elsrc->lslots[i]);
 		  for (b = 0; b < CsetSize; b++) 
 		     cp->bits[b] = ~cpx->bits[b];
@@ -224,8 +210,7 @@ struct b_list *ResolveList(struct b_list *lp)
 	    parm = elsrc->lslots[i];
 	    }
 	 else {
-	    /* uneval string of length zero, probably should be runerr */
-	    return NULL;
+	    ReturnErrNum(164, NULL);
 	    }
 	 }
       else if (is:list(elsrc->lslots[i])) {
@@ -253,9 +238,7 @@ struct b_list *ResolveList(struct b_list *lp)
 static struct b_pelem * ResolveReferences(struct b_pelem * P )
 {
    if (P == NULL) {
-      t_errornumber = 162;
-      t_errorvalue = nulldesc;
-      return NULL;
+      ReturnErrNum(163, NULL);
       }
    else {
       /*            --  References to elements in P, indexed by Index field */
@@ -327,11 +310,9 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	       ep = (struct b_lelem *)lp->listhead;
 	       if (is:string(ep->lslots[0])) {
 	          cnv:C_string(ep->lslots[0],varname);
-		  if (getvar(varname,&ep->lslots[0])== Failed) {
-		     t_errornumber = 160;
-		     t_have_val = 1;
-		     AsgnCStr(t_errorvalue, varname);
-		     return NULL;
+		  if (getvar(varname, &ep->lslots[0])== Failed) {
+		     AsgnCStr(ep->lslots[0], varname);
+		     ReturnErrVal(160, ep->lslots[0], NULL);
 		     }
 		  }
 	       }
@@ -341,10 +322,8 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 		  DEBUGF(2, (stdout, "Looking up variable name = %s\n",
 				   varname));
 		  if (getvar(varname,&E->parameter)== Failed) {
-		     t_errornumber = 160;
-		     t_have_val = 1;
-		     AsgnCStr(t_errorvalue, varname);
-		     return NULL;
+		     AsgnCStr(E->parameter, varname);
+		     ReturnErrVal(160, E->parameter, NULL);
 		     }
 		  }
 	       }
@@ -383,7 +362,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 /*
  * Copy a pattern element.
  */
-struct b_pelem * Copy (struct b_pelem * P )
+struct b_pelem * Copy(struct b_pelem * P)
 {
    if (P == NULL) {
       fatalerr(162, NULL);
@@ -520,9 +499,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
    val.dword = D_Pelem;
    BlkLoc(val) = (union block *)phead;
    /* get table element now because can't tend pb */
-   if ((te = alctelem()) == NULL) {
-      fatalerr(307, NULL);
-      }
+   Protect(te = alctelem(), ReturnErrNum(307, NULL));
    /* find where to insert cannot just reuse pd as it cannot be tended*/
    pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
    pfp->pattern_cache->size++;
@@ -593,7 +570,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	 pattern: {
 	    }
 	 default: {
-	    runerr(127);
+	    runerr(127, pat);
 	    }
 	 }
 
@@ -1872,16 +1849,13 @@ dptr processMethodCallList(struct b_list *lp, int csr)
    ep = (struct b_lelem *)lp->listhead;
    cnv:C_string(ep->lslots[0], varname);
    if (getvar(varname, &var) == Failed) {
-      t_errornumber = 160;
-      AsgnCStr(t_errorvalue, varname);
-      t_have_val = 1;
-      return NULL;
+      AsgnCStr(proc, varname);
+      ReturnErrVal(160, proc, NULL);
       }
    procargs[0] = var;
    deref(&var,&var);
    if (!is:record(var)) {
-      err_msg(107, &var);
-      return NULL;
+      ReturnErrVal(107, var, NULL);
       }
    ep->lslots[0] = var;
    self = var;
@@ -1960,11 +1934,9 @@ dptr processMethodCallList(struct b_list *lp, int csr)
 	    varstring = alloc(strlen(classname) + strlen(varname) + 1);
 	    strcat(varstring, classname);
 	    strcat(varstring, varname);
-	    if (getvar(varstring,&parm) == Failed) {
-	       t_errornumber = 160;
-	       AsgnCStr(t_errorvalue, varstring);
-	       t_have_val = 1;
-	       return NULL;
+	    if (getvar(varstring, &parm) == Failed) {
+	       AsgnCStr(parm, varstring);
+	       ReturnErrVal(160, parm, NULL);
 	       }
 	    free(varstring);
 	    procargs[i -1] = parm;
@@ -2045,7 +2017,6 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %d\n",
 	      Length,pat_sub,Length, Cursor));
-   DEBUGF(25, (stdout, "internal_match\n"));
 
    if (pattern == NULL) {
       fatalerr(162, NULL);

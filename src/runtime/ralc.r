@@ -244,7 +244,7 @@ struct b_coexpr *alccoexp()
     */
 #ifdef Concurrent
 
-   if (alcce_queue(ep) == Failed)
+   if (alcce_queues(ep) == Failed)
       ReturnErrNum(307, NULL);
    
    ep->ini_blksize = rootblock.size/100;

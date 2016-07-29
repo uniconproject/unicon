@@ -576,7 +576,7 @@ end
 
 # PUNEVAL == Pattern unevaluated
 procedure do_backquote()
-   unallowedchars := &ascii --( &letters ++ "()`." ++ &digits)
+   unallowedchars := &ascii --( &letters ++ '()`., ' ++ &digits)
    if yytext ||:= ="`" then {
       until yytext ||:= ="``" do {
 	 if not (yytext ||:= move(1)) then {
@@ -594,7 +594,7 @@ procedure do_backquote()
 	 }
       }
    yytext ? { 
-      if tab(find(unallowedchars)) then uni_error(yytext) 
+      if tab(upto(unallowedchars)) then uni_error(": illegal characters in unevaluated expression")
 #			if *yytext = bal() then {}
 #			else uni_error(yytext)
       }

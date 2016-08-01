@@ -1115,6 +1115,7 @@ procedure regexp(n)
 			      }
 			   else return "(Arbno(\"" || n.children[1].s|| "\"))"
 			   }
+			CSETLIT |
 			STRINGLIT: return "(Arbno(" || n.children[1].s|| "))"
 			default: {
 			   write("system error in regex, * operand ",
@@ -1126,6 +1127,9 @@ procedure regexp(n)
 		     case n.children[1].label of {
 			"acset": {
 			   return "(Arbno(\'" || csetify(n.children[1]) || "\'))"
+			   }
+			"Paren": {
+			   return node("arbno", "Arbno(",regexp(n.children[1].children[2]),")")
 			   }
 			default: {
 			   write("* operand label is ", n.children[1].label)
@@ -1219,7 +1223,7 @@ procedure regexp(n)
 	       return regexp( n.children[2] )
 	       }
 	    # these have recursively regexp'ed their kids already. noops.
-	    "alt" | "concat": {
+	    "alt" | "concat" | "arbno": {
 	       return n
 	       }
 	    default: {
@@ -1227,8 +1231,9 @@ procedure regexp(n)
 	       }
 	    }
 	 }
+      "string": return n
       default: {
-	 write("type of regexp is ", type(n))
+	 write("type of regexp is ", type(n), " : ", image(n))
 	 return "regexp"
 	 }
       }

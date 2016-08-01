@@ -808,9 +808,12 @@ regex: neregex { $$ := regexp($1) }
 	;
 
 /* nonempty regexp */
-neregex: neregex2
-	| neregex2 neregex { $$ := node("regexconcat", $1, $2) }
-	| neregex2 BAR neregex { $$ := node("regexbar", $1, $2, $3) }
+neregex: neregex2a
+	| neregex2a BAR neregex { $$ := node("regexbar", $1, $2, $3) }
+	;
+
+neregex2a: neregex2
+	| neregex2 neregex2a { $$ := node("regexconcat", $1, $2) }
 	;
 
 neregex2: neregex3 ;

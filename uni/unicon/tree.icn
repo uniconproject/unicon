@@ -1131,12 +1131,12 @@ procedure regexp(n)
 			"Paren": {
 			   return node("arbno", "Arbno(",regexp(n.children[1].children[2]),")")
 			   }
-			default: {
+			"regexconcat": { } # use default rule
+			default: { # cross fingers
 			   write("* operand label is ", n.children[1].label)
 			   }
 			}
-		     stop("regex, * operand type ",
-			   (type(n.children[1])|"no child"))
+		     return node("arbno", "Arbno(",regexp(n.children[1]),")")
 		     }
 		  default: {
 		     write("system error in regex, * operand type ",

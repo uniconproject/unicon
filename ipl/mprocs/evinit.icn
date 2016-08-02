@@ -58,25 +58,35 @@ initial {
    if \&eventsource then return
 
    if type(f) == "string" then {
-       operator := '<>'
-       f ? {
-	   #
-	   # If a redirection operator is present start parsing string.
-	   # Need to fix this so it would not lose or misinterpret
-	   # arguments after a redirection, as in foo <bar baz, which
-	   # should be equivalent to foo baz <bar.
-	   # Are spaces allowed between <> and the filename to be redirected?
-	   #
-	   if f := trim(tab(upto(operator),,0)) then {
-	       direction := move(1)
-	       data := trim(tab(0),,0)
-	       ## check whether or not this is output or input redirection
-	       if direction === "<" then input := open(data)
-	       else output := open(data)
-	       # need to generalize to allow more than one redirection,
-	       # and to support stderr redirection.
-	   }
-       }
+      operator := '<>'
+      f ? {
+	 #
+	 # If a redirection operator is present start parsing string.
+	 # Need to fix this so it would not lose or misinterpret
+	 # arguments after a redirection, as in foo <bar baz, which
+	 # should be equivalent to foo baz <bar.
+	 # Are spaces allowed between <> and the filename to be redirected?
+	 #
+	 if filename := trim(tab(upto(operator)),,0) then {
+	    op1 := move(1)
+	    if redirect1 := trim(tab(upto(operator)),,0) then {
+	       op2 := move(1)
+	       if op1 === op2 then fail
+	       redirect2 := trim(tab(0),,0)
+	       if op1 === "<" then {
+		  input := open(redirect1)
+		  output := open(redirect2, "w")
+		  }
+	       else {
+		  output := open(redirect1, "w")
+		  input := open(redirect2)
+		  }
+	       }
+	    if op1 === "<" then input := open(trim(tab(0),,0))
+	    else output := open(trim(tab(0),,0), "w")
+	    f := filename
+	    }
+	 }
       &eventsource := EventSource := Monitored := load(f,,input,output,error) | fail
       }
    else if type(f) == "list" then {

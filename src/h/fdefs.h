@@ -119,7 +119,6 @@ FncDefV(writes)
      FncDef(pattern_assign_onmatch,3)  /* -> */
      FncDef(Fence,1)
      FncDef(pattern_unevalvar,1)   /* `` */
-     FncDef(pattern_fieldeval,1)   /* `x.y` */
      FncDef(Len,1)
      FncDef(Abort,0)
      FncDef(Rem,0)

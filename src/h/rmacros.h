@@ -1762,7 +1762,7 @@
     */
 
 #define   PC_UNEVALVAR  78
-#define   PC_UNEVALFIELD  79
+
 #define   PC_STRINGFUNCCALL  80
 #define   PC_BOOLFUNCCALL  81
 #define   PC_STRINGMETHODCALL  82

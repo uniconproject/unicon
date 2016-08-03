@@ -97,7 +97,11 @@
 #endif					/* NativeCoswitch */
 
 #ifdef Concurrent
+#if ConcurrentCOMPILER
+   Feature(1, "_CONCURRENT", "concurrent threads, compiler subset")
+#else					/* ConcurrentCOMPILER */
    Feature(1, "_CONCURRENT", "concurrent threads")
+#endif					/* ConcurrentCOMPILER */
 #endif					/* CoExpr */
 
 #ifdef ConsoleWindow
@@ -202,6 +206,10 @@
 #ifdef Audio
    Feature(1, "_AUDIO", "Audio")
 #endif					/* Audio */
+
+#ifdef HAVE_LIBSSL
+   Feature(1, "_SSL", "secure sockets layer encryption")
+#endif					/* HAVE_LIBSSL */
 
 #ifdef HAVE_VOICE
    Feature(1, "_VOIP", "Voice Over IP")

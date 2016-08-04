@@ -5,7 +5,7 @@
 procedure main()
     while s := read() do {
 	write("Simple Arbno/Asterisk")
-	regx :=  <[s]*> || "i"
+	regx :=  <[s]* "i">
 	write(image(regx))
 	match_string(s, regx)
 
@@ -13,26 +13,67 @@ procedure main()
 	regx := <"the"*>
 	write(image(regx))
 	match_string(s, regx)
-	
-	## This particular test fails to what I believe is another 
-	## preprocessing error. You can include character literals
-	## in brackets but if you just include the single quotes the
-        ## preprocessor doesn't break it down like it should and you
-	## get a compiler error
 
-	##write("Cset Asterisk")
-	##regx := <'i'*>
-	##write(image(regx))
-	##match_string(s, regx)
+	write("Asterisk Alternation with Csets")
+	regx := <[a]* | [b]*>
+	write(image(regx))
+	match_string(s, regx)
+	
+        write("Asterisk Alternation with Parenthesis")
+	regx := <"ll"* | "ss"*>
+	write(image(regx))
+	match_string(s, regx)
+	
+	write("Cset Asterisk")
+	regx := <'i'*>
+	write(image(regx))
+	match_string(s, regx)
 
 	## This one compiles better
-	write("Cset Asterisk with Brackets")
+	write("Cset Asterisk with Cset Brackets")
 	regx := <[i]*>
 	write(image(regx))
 	match_string(s, regx)
 
-	write("Arbno in Arbno (Complex Arbno")
-	regx := Arbno(<s*>)
+	## This "nested Arbno" actually gives us a seg fault. Weird. 
+
+	write("Arbno in Arbno (Complex Arbno)")
+	regx := Arbno(<"s"*>)
+	write(image(regx))
+	match_string(s, regx)
+
+	## what this, I feel, should essentially boil down to is the same
+	## as above. If "*" is just syntactic sugar for "Arbno" then we
+	## really shouldn't have a problem nesting these Kleene Stars.
+	## I don't know if this is the behavior desired but the
+	## result of this is a compilation error
+
+	## Parsing rasterisk.icn: * operand label is Paren
+	## regex, * operand type treenode
+
+        write("Asterisk in Asterisk (Complex Arbno)")
+	regx :=<("s"*)*>
+	write(image(regx))
+	match_string(s, regx)
+
+	## we get a similar error with the asterisk that we get with
+	## the postfix operator "+" when we try it with the brackets here.
+	## This seems like a fairly simple preprocessor issue. Here's the error
+
+	##Parsing rasterisk.icn: * operand label is regexconcat
+	##regex, * operand type treenode
+
+	write("Asterisk Used with Brackets")
+	regx := <[s]{2}*>
+	write(image(regx))
+	match_string(s, regx)
+
+	##exactly the same as above but just using pattern functions
+        ## this makes me believe we have another preprocessor issue with
+	## the regex above.
+
+	write("The same as <[s]{2}*>) but written with pattern functions")
+	regx := Arbno(pattern_concat('s', 's'))
 	write(image(regx))
 	match_string(s, regx)
 
@@ -41,6 +82,7 @@ end
 
 procedure match_string(s, r)
     r := r -> out || Rem() -> remain
+    write("The string is: ", s)
     if s ?? r then {
 	write("The matched string is ", out, " the remainder is ", remain)
 	}

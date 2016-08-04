@@ -1,0 +1,70 @@
+## rplus.icn
+## Paden Rumsey
+## July 30, 2016
+
+## A pretty basic clone of rquestion. The same tests need to be
+## applied to the same operators so a clone works. A majority of
+## issues are noted in rquestion.icn. If they appear hear I will
+## mention them briefly but not in the same depth as requestion.icn
+
+procedure main()
+    while s := read() do {
+
+	##Exact quote taken from compilation error
+	
+	##Parsing rplus.icn: need to implement 1-or-more on string literal
+
+	write("Plus Operator Alternation with Strings")
+	regx := <"ll"+>
+	write(image(regx))
+	match_string(s, regx)
+
+        write("Plus Operator Alternation on Csets")
+        regx := <[a]+ | [b]+>
+	write(image(regx))
+	match_string(s, regx)
+	
+	write("Plus Operator Concatenation")
+	regx := <[a]+ [b]+>
+	write(image(regx))
+	match_string(s, regx)
+
+	##cannot use the string literal with plus operator
+	##same problem with parenthesis. we only include the cset 'ly'
+	## as a part of the postfix operator. 
+	
+	write("Question Mark Used on Semi-Complex Pattern")
+	regx := <[s].[ly]+>
+	write(image(regx))
+	match_string(s, regx)
+
+	#uncomment for error - Parenthesis causes a compilation error
+	
+	write("Plus Operator Used on Semi-Complex Pattern with Parens")
+	regx := <([s].[ly])+>
+	write(image(regx))
+	match_string(s, regx)
+
+	## Flagged compiler error when we use the braces - 
+	## Parsing rplus.icn: treenode label "Paren"
+	## * operand label is regexconcat
+	## regex, * operand type treenode
+	
+	write("Question Mark Used With Curly Braces")
+	regx := <[s]{2}+>
+	write(image(regx))
+	match_string(s, regx)
+    }
+
+end
+
+procedure match_string(s, r)
+    r := r -> out || Rem() -> remain
+    write("The string is: ", s)
+    if s ?? r then {
+	write("The matched string is ", out, " the remainder is ", remain)
+	}
+    else
+	write("The regex failed to match")
+    write("\n")
+end

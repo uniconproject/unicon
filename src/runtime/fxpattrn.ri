@@ -854,7 +854,7 @@ end
 					      1, pe->parameter);
             EVVal(ptype ## _NP, E_Patcode);
 	    break;
-	    }
+    }
 	 case PC_Pred_Func:
 	 case PC_String_VF: {
 	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
@@ -887,11 +887,44 @@ function {1} Len(count)
    abstract {
       return pattern;
       }
-   body {
-      union block *bp;
-      ConvertPatternArgumentInt(count,bp,PC_Len);
+   if is:pattern(count) then body {
+         union block *bp;
+	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(count);
+	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
+	 switch(pe->pcode){
+	 case PC_Rpat: {
+	    bp =  (union block *)pattern_make(0, &EOP,PC_Len_NP,
+					      1, pe->parameter);
+            EVVal(PC_Len_NP, E_Patcode);
+	    break;
+	    }
+	 case PC_Pred_Func:
+	 case PC_String_VF: {
+	    bp =  (union block *)pattern_make(0, &EOP,PC_Len_NF,
+					      1, pe->parameter);
+            EVVal(PC_Len_NF, E_Patcode);
+	    break;
+	    }
+	 case PC_Pred_MF:
+	 case PC_String_MF: {
+	    bp =  (union block *)pattern_make(0, &EOP,PC_Len_NMF,
+					      1, pe->parameter);
+            EVVal(PC_Len_NMF, E_Patcode);
+	    break;
+	    }
+	 default: {
+	    runerr(128);
+	    }
+	    }
       return pattern(bp);
       }
+   else if cnv:integer(count) then body {
+      union block *bp;
+      bp =  (union block *)pattern_make(0, &EOP, PC_Len_Nat,1, count);
+      EVVal(PC_Len_Nat, E_Patcode);
+      return pattern(bp);
+      }
+   else runerr(102, count)
 end
 
 function {1} Pos(position)
@@ -1947,6 +1980,7 @@ dptr processMethodCallList(struct b_list *lp)
    if (call_result != 0) {
       cresult = *call_result;
       }
+   else goto Node_Fail;
 #enddef
 
 /*
@@ -2540,7 +2574,7 @@ Node_Succeed:
    case  PC_Pred_Func: {
       GetResultFromFuncCall();
       /* review assumption as to what call_result can be pointing at */
-      if ((call_result == 0) || (call_result->vword.descptr == 0)) {
+      if (call_result->vword.descptr == 0) {
 	 goto Node_Fail;
 	 }
       else {
@@ -2634,7 +2668,7 @@ Node_Succeed:
       if (k_pos + IntVal(cresult) >= Length) {
 	 goto Node_Fail;
 	 }
-      k_pos += IntVal(cresult) + 1;
+      k_pos += IntVal(cresult);
       goto Node_Succeed;
       break;
       }
@@ -2648,7 +2682,7 @@ Node_Succeed:
       if (k_pos + IntVal(cresult) >= Length) {
 	 goto Node_Fail;
 	 }
-      k_pos += IntVal(cresult) + 1;
+      k_pos += IntVal(cresult);
       goto Node_Succeed;
       break;
       }
@@ -2845,14 +2879,9 @@ Node_Succeed:
 
    case  PC_Tab_NF: {
       GetResultFromFuncCall();
-      if (call_result == 0) {
-	 goto Node_Fail;
-	 }
-      else {
-	 if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
-	    fatalerr(101, &cresult);
-	 cresult.dword = D_Integer;
-	 }
+      if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
+	 fatalerr(101, &cresult);
+      cresult.dword = D_Integer;
       if (IntVal(cresult) - 1 <= Length) {
 	 k_pos = IntVal(cresult);
 	 goto Node_Succeed;
@@ -3148,24 +3177,20 @@ Node_Succeed:
        */
    case  PC_String_VF: {
       GetResultFromFuncCall();
-      if (call_result == 0)
-	 goto Node_Fail;
-      else {
-	 if (cnv_str(&cresult,&cresult)){
-	    int LV_Len = StrLen(cresult);
-	    DEBUGF(20,(stdout,"Matching String\n"));
-	    if ((Length - (k_pos - 1) >= LV_Len) &&
-		!strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
-	       k_pos += LV_Len;
-	       goto Node_Succeed;
-	       }
-	    else {
-	       goto Node_Fail;
-	       }
+      if (cnv_str(&cresult,&cresult)) {
+	 int LV_Len = StrLen(cresult);
+	 DEBUGF(20,(stdout,"Matching String\n"));
+	 if ((Length - (k_pos - 1) >= LV_Len) &&
+	     !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
+	    k_pos += LV_Len;
+	    goto Node_Succeed;
 	    }
-	 goto Node_Succeed;
+	 else {
+	    goto Node_Fail;
+	    }
 	 }
-      break;
+      /* should instead probably be a runtime error */
+      goto Node_Succeed;
       }
 
    case PC_String_MF: {

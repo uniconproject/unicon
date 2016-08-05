@@ -971,32 +971,32 @@
 #define E_Signal 0
 #endif
 
-#if defined(EventMon) || defined(E_Patcode)
-#undef E_Patcode
-#define E_Patcode        '\203'
+#if defined(EventMon) || defined(E_PatCode)
+#undef E_PatCode
+#define E_PatCode        '\203'
 #else
-#define E_Patcode 0
+#define E_PatCode 0
 #endif
 
-#if defined(EventMon) || defined(E_Amatch)
-#undef E_Amatch
-#define E_Amatch '\204'
+#if defined(EventMon) || defined(E_PatAttempt)
+#undef E_PatAttempt
+#define E_PatAttempt '\204'
 #else
-#define E_Amatch 0
+#define E_PatAttempt 0
 #endif
 
-#if defined(EventMon) || defined(E_Fmatch)
-#undef E_Fmatch
-#define E_Fmatch '\205'
+#if defined(EventMon) || defined(E_PatFail)
+#undef E_PatFail
+#define E_PatFail '\205'
 #else
-#define E_Fmatch 0
+#define E_PatFail 0
 #endif
 
-#if defined(EventMon) || defined(E_Smatch)
-#undef E_Smatch
-#define E_Smatch '\206'
+#if defined(EventMon) || defined(E_PatMatch)
+#undef E_PatMatch
+#define E_PatMatch '\206'
 #else
-#define E_Smatch 0
+#define E_PatMatch 0
 #endif
 
 /*
@@ -1008,21 +1008,21 @@
 
 #if defined(EventMon) || defined(E_HashNum)
 #undef E_HashNum
-#define E_HashNum       '\210'
+#define E_HashNum       '\213'
 #else
 #define E_HashNum 0
 #endif
 
 #if defined(EventMon) || defined(E_HashSlots)
 #undef E_HashSlots
-#define E_HashSlots       '\211'
+#define E_HashSlots       '\214'
 #else
 #define E_HashSlots 0
 #endif
 
 #if defined(EventMon) || defined(E_HashChain)
 #undef E_HashChain
-#define E_HashChain       '\212'
+#define E_HashChain       '\215'
 #else
 #define E_HashChain 0
 #endif
@@ -1043,8 +1043,8 @@
 137
 162
 
-                207
-            213 214 215 216 217
+                            207
+210 211 212             216 217
 220 221 222 223 224 225 226 227
 230 231 232 233 234 235 236 237
 240 241 242 243 244 245 246 247

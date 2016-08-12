@@ -889,7 +889,7 @@ int noimage;
              * *d is a variable.  Print "variable =", dereference it, and 
              *  call outimage to handle the value.
              */
-            fprintf(f, "(variable = ");
+            fprintf(f, "(variable = "); fflush(f);
             dp = (dptr)((word *)VarLoc(*dp) + Offset(*dp));
             outimage(f, dp, noimage);
             putc(')', f);
@@ -1666,6 +1666,21 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
    struct descrip punct;
 
    if (ep != NULL) {
+      struct b_pelem *P, *A, *E, *X = Blk(ep,Pelem);
+      if (!is:string(X->parameter) &&
+	  (Type(X->parameter) == T_Pelem) &&
+	  (E = BlkD(X->parameter, Pelem)) &&
+	  (E->title == T_Pelem)) { /* potential cycle */
+	 P = Blk(E->pthen,Pelem);
+	 if (P && (P->title == T_Pelem) &&
+	     (!is:string(P->parameter)) &&
+	     (Type(P->parameter) == T_Pelem) &&
+	     (BlkD(P->parameter, Pelem)->pthen == (union block *)X)) {
+	    return construct_image(bi_pat(PF_Arbno), bi_pat(PI_PERIOD),
+				   bi_pat(PI_BPAREN), result);
+	    }
+	 }
+
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
              arg = Blk(ep,Pelem)->parameter;

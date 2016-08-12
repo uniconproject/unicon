@@ -574,7 +574,6 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	     internal_match(StrLoc(k_subject), subject_len, pattern->stck_size,
 			    phead, &start, &stop, k_pos, 0)
 	     ){
-
 	 /* check if psub no longer refers to what k_subject holds.
 	  * if so, we can't suspend a trapped variable reference to it.
 	  */
@@ -608,7 +607,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	    if (k_pos < 1) k_pos = 1;
 	    else if (k_pos > StrLen(dpsub)+1) k_pos = StrLen(dpsub);
 	    }
-	 }
+         }
       fail;
       }
 end
@@ -662,10 +661,8 @@ static void Set_Successor (struct b_pelem * Pat , struct b_pelem *Succ)
 	    P->pthen = (union block *)Succ;
 	 if (Has_Alt(P->pcode) &&
 	     ((struct b_pelem *)BlkLoc(P->parameter) == &EOP)){
-	    struct descrip param;
-	    param.dword = D_Pelem;
-	    param.vword.bptr = (union block *) Succ;
-	    P->parameter = param;
+	    P->parameter.dword = D_Pelem;
+	    P->parameter.vword.bptr = (union block *) Succ;
 	    }
 	 }
       free(Refs);
@@ -2974,11 +2971,11 @@ Node_Succeed:
       }
 
       /*
-       *   RTab (integer case). Length is already one-based.
+       *   RTab (integer case).
        */
    case  PC_RTab_Nat: {
       if ((0<=IntVal(Node->parameter)) & (IntVal(Node->parameter) <= Length)) {
-	 k_pos = Length - IntVal(Node->parameter);
+	 k_pos = Length - IntVal(Node->parameter) + 1;
 	 goto Node_Succeed;
 	 }
       else {
@@ -2994,7 +2991,7 @@ Node_Succeed:
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
       if ((0<=IntVal(var)) & (IntVal(var) <= Length)) {
-	 k_pos = Length - IntVal(var);
+	 k_pos = Length - IntVal(var) + 1;
 	 goto Node_Succeed;
 	 }
       else {
@@ -3009,7 +3006,7 @@ Node_Succeed:
 	 fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
-	 k_pos = Length - IntVal(cresult);
+	 k_pos = Length - IntVal(cresult) + 1;
 	 goto Node_Succeed;
 	 }
       else {
@@ -3024,7 +3021,7 @@ Node_Succeed:
 	 fatalerr(101, &cresult);
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
-	 k_pos = Length - IntVal(cresult);
+	 k_pos = Length - IntVal(cresult) + 1;
 	 goto Node_Succeed;
 	 }
       else {

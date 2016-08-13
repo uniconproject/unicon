@@ -202,7 +202,11 @@ gdbm_open (file, block_size, flags, mode, fatal_func)
      now time to truncate the file. */
   if (need_trunc && file_stat.st_size != 0)
     {
-      TRUNCATE (dbf);
+      if (TRUNCATE (dbf) == -1) {
+	 /* consider creating a new more specific error for truncate fails */
+	 gdbm_errno = GDBM_FILE_OPEN_ERROR;
+	 return NULL;
+         }
       fstat (dbf->desc, &file_stat);
     }
 

@@ -421,7 +421,7 @@ mp3Loader *alutLoadMP3p = NULL;
 
 static void initMP3( int index )
 {
-   alSourceQueueBuffer(arraySource[index].source, 1, arraySource[index].mBuffer );
+   alSourceQueueBuffers(arraySource[index].source, 1, &(arraySource[index].mBuffer ));
    alSourcei(  arraySource[index].source, AL_LOOPING, AL_FALSE );
    return;
 }
@@ -514,7 +514,7 @@ void * OpenAL_PlayMP3( void * args )
       alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &tState);
    }
    alSourceStop(arraySource[index].source);
-   alSourcei(arraySource[index], AL_BUFFER, 0);
+   alSourcei(arraySource[index].source, AL_BUFFER, 0);
    pthread_mutex_lock(&mutex);
    isPlaying -= 1;
    arraySource[index].inUse -= 1;

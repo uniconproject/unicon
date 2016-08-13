@@ -15,6 +15,7 @@
 static void	listimage       (FILE *f,struct b_list *lp, int noimage);
 static void	printimage	(FILE *f,int c,int q);
 static char *	csname		(dptr dp);
+static int construct_funcimage(union block *pe, int aicode, int bpcode, dptr result);
 
 
 /* 
@@ -2339,7 +2340,8 @@ int construct_image(dptr l, dptr s, dptr r, dptr result)
 /*
  * Construct an image for a known built-in pattern function.
  */
-int construct_funcimage(union block *pe, int aicode, int bpcode, dptr result)
+static int construct_funcimage(union block *pe, int aicode,
+				int bpcode, dptr result)
 {
    if (arg_image(Blk(pe,Pelem)->parameter, aicode, result) != Succeeded)
       return RunError;

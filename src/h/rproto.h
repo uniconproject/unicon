@@ -958,6 +958,7 @@ int checkOpenConsole( FILE *w, char *s );
 #ifdef Audio
 int StartAudioThread(char filename[]);
 void StopAudioThread(int index);
+int AudioMixer(char * cmd);
 
 struct AudioFile * StartMP3Thread(char filename[]);
 struct AudioFile * StartWAVThread(char filename[]);

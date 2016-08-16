@@ -18,3 +18,7 @@ htmlean: htmlean.icn
 
 utr18.pdf: utr18.tex
 	pdflatex utr18
+
+utr9c.pdf: utr9.tex
+	pdflatex utr9
+	mv utr9.pdf utr9c.pdf

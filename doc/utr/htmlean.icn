@@ -54,8 +54,15 @@ end
 procedure pumpup_sectionheadings(L)
    every i := 1 to *L do {
       L[i] ? {
-	 if secnum := tab(any(&digits)) || ="." || (tab(any(&digits))|"") || =" " & title := tab(find("<br/>")) then {
+	 if secnum := tab(any(&digits)) || ="." || (tab(any(&digits))|"") ||
+                       =" " & title := tab(find("<br/>")) then {
 	    L[i] := "<h3>" || secnum || title || "</h3>" || tab(0)
+	    }
+	 else if secnum := ((="<a name="||tab(many(&digits))||="></a>")|"") ||
+			    tab(any(&digits)) || ="." || tab(any(&digits)) ||
+			   ="." || tab(any(&digits)) ||
+                           =" " & title := tab(find("<br/>")) then {
+	    L[i] := "<h4>" || secnum || title || "</h4>" || tab(0)
 	    }
 	 }
       }

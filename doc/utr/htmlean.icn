@@ -40,11 +40,38 @@ procedure maketitle(L)
    while not match("<a name=\"outline\">", L[k]) do k +:= 1
    L[k] := "<a name=\"outline\"></a><h3>Contents</h3>"
 
-   L := L[1:i] ||| ["<center><h3>"] |||
-         L[i:ii] ||| ["</h3>"] ||| L[ii:j] |||
-         ["</center>", L[j]] |||
+   L := L[1:i] ||| ["<br><br><br><br><br><center><h3>"] |||
+         L[i:ii] ||| ["</h3><br><br>"] ||| [L[ii], "<br><br>"] |||L[ii+1:j] |||
+         ["</center><br><br><br><br><br>", L[j]] |||
 	 L[k:-2] ||| L[j+1:k] ||| L[-2:0]
 
+   L := pumpup_sectionheadings(L)
+   L := strip_pagenumbers(L)
+
+   return L
+end
+
+procedure pumpup_sectionheadings(L)
+   every i := 1 to *L do {
+      L[i] ? {
+	 if secnum := tab(any(&digits)) || ="." || (tab(any(&digits))|"") || =" " & title := tab(find("<br/>")) then {
+	    L[i] := "<h3>" || secnum || title || "</h3>" || tab(0)
+	    }
+	 }
+      }
+   return L
+end
+
+procedure strip_pagenumbers(L)
+   i := 1
+   while i < *L do {
+      if (L[i] ? (tab(many(&digits)) & ="<br/>")) & (L[i+1] == "<hr/>") then {
+	    L[i] := "<br>"
+	    L[i+1] := ""
+	    i +:= 1
+	    }
+      i +:= 1
+      }
    return L
 end
 
@@ -62,7 +89,6 @@ procedure multiline_clean(L)
          L[i+7] == "\xef\xa3\xb0<br/>" &  #
          L[i+8] == "\xef\xa3\xbb<br/>" &  #
          L[i+9] == "specular<br/>" then {
-write(&errout, "Eureka! at ", i)
 	    # wow, what do I output for this?
 	    L := L[1:i] |||
 	       ["<table><tr><td>"] |||

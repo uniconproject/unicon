@@ -43,6 +43,7 @@ libtp.a: $(OBJS) $(LIBURI)
 	$(RM) $@
 	$(SHTOOL) arx -C $(AR) rc $@ $(OBJS) $(LIBURI)
 	$(RANLIB) $@
+	cp $@ ../../bin
 
 $(LIBURI) uri:
 	cd uri && $(MAKE)

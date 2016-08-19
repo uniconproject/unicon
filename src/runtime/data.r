@@ -422,6 +422,12 @@ struct errtab errtab[] = {
    1211, "invalid email address",
    1212, "server error",
    1213, "POP messaging file expected",
+
+#ifdef HAVE_LIBSSL
+   1214, "Unable to load a certificate from the trust store",
+   1215, "Unable to verify the peer's ertificate",
+#endif					/* HAVE_LIBSSL */
+
 #endif                                  /* Messaging */
 
 /*

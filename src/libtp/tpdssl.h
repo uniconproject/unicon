@@ -5,6 +5,8 @@
 #ifndef _SSL_DISC_H_
 #define _SSL_DISC_H_
 
+#include "tp.h"
+
 typedef struct _tpssldisc_s Tpssldisc_t;
 
 struct _tpssldisc_s

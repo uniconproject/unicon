@@ -134,7 +134,10 @@ int write_to_stream(BIO* bio, char* buffer, ssize_t length) {
  * Connect to a host using an encrypted stream
  */
 BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
-                       SSL_CTX** ctx, SSL** ssl) {
+		       Tpdisc_t* tpdisc){
+  
+   SSL_CTX** ctx = &(((Tpssldisc_t*)tpdisc)->ctx);
+   SSL** ssl = &(((Tpssldisc_t*)tpdisc)->ssl);
    BIO* bio = NULL;
    int r = 0;
 
@@ -148,7 +151,8 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    else
       r = SSL_CTX_load_verify_locations(*ctx, NULL, store_path);
    if (r == 0) {
-      /* add exception: Unable to load the trust store from store_path */
+      /* Exception: Unable to load the trust store from store_path */
+      (void)tpdisc->exceptf(TP_ETRUST, NULL, tpdisc);
       return NULL;
       }
 
@@ -156,7 +160,8 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    bio = BIO_new_ssl_connect(*ctx);
    BIO_get_ssl(bio, ssl);
    if (!(*ssl)) {
-      /* add exception: Unable to allocate SSL pointer. */
+      /* Exception: Unable to allocate SSL pointer. */
+      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);     
       return NULL;
       }
    SSL_set_mode(*ssl, SSL_MODE_AUTO_RETRY);
@@ -166,13 +171,16 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
 
    /* Verify the connection opened and perform the handshake */
    if (BIO_do_connect(bio) < 1) {
-      /* add exception: Unable to connect BIO. */
+      /* Exception: Unable to connect BIO. */
+      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
       return NULL;
       }
 
    if (SSL_get_verify_result(*ssl) != X509_V_OK) {
       /* if certificate is required, then */
-      /* add exception: Unable to verify connection result. */
+      /* Exception: Unable to verify connection result. */
+      (void)tpdisc->exceptf(TP_EVERIFY, NULL, tpdisc);
+      return NULL;
       }
 
    return bio;
@@ -274,8 +282,7 @@ int sslconnect(char* host, u_short port, Tpdisc_t* tpdisc)
       }
    ((Tpssldisc_t*)tpdisc)->bio =
       connect_encrypted(host_and_port, store_path, store_type,
-			&(((Tpssldisc_t*)tpdisc)->ctx),
-			&(((Tpssldisc_t*)tpdisc)->ssl));
+			tpdisc);
    free(host_and_port);
    if (((Tpssldisc_t*)tpdisc)->bio == NULL) return -1;
    return 1;

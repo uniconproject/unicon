@@ -734,6 +734,12 @@ Deliberate Syntax Error
 		     case TP_ESERVER:
 			runerr(1212, fname);
 			break;
+		     case TP_ETRUST:
+			runerr(1214, fname);
+			break;
+		     case TP_EVERIFY:
+			runerr(1215, fname);
+			break;
 		     case TP_EMEM:
 		     case TP_EOPEN:
 		     default:

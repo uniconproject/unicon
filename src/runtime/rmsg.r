@@ -76,7 +76,7 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
 #if (UNIX || NT)
    disc = tp_newdisc(TpdUnix);
 #else
-#error Systems other than Unix not supported yet
+#error Systems other than Unix/Windows not supported yet
 #endif                                  /* UNIX */
 
 #if NT

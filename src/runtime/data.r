@@ -425,7 +425,7 @@ struct errtab errtab[] = {
 
 #ifdef HAVE_LIBSSL
    1214, "Unable to load a certificate from the trust store",
-   1215, "Unable to verify the peer's ertificate",
+   1215, "Unable to verify the peer's certificate",
 #endif					/* HAVE_LIBSSL */
 
 #endif                                  /* Messaging */

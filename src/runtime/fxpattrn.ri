@@ -1300,7 +1300,7 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R)
    EVVal(PC_Alt, E_PatCode);
    if (lpe == &EOP) {
       return (struct b_pelem *)pelem_make(&EOP, (word)PC_Alt,
-                                          (word)rpe->index + 1, param);
+					  (word)rpe->index + 1, param);
       }
    /*
     *  If the left pattern is non-null, then build a reference vector
@@ -1376,7 +1376,7 @@ end
 /*
  * Setcur
  */
-function {1} pattern_setcur (underef var, name )
+function {1} pattern_setcur ( name )
    abstract{
       return pattern;
       }
@@ -1398,7 +1398,7 @@ end
  *  Where N is the number of nodes in P, the A node is numbered N + 1,
  *  and the E node is N + 2.
  */
-function {1} pattern_assign_immediate (PAT, underef var, name)
+function {1} pattern_assign_immediate (PAT, name)
    abstract {
       return pattern;
       }
@@ -1492,7 +1492,7 @@ end
  *  and the E node is N + 2.
  */
 
-function {1} pattern_assign_onmatch (PAT, underef var, name)
+function {1} pattern_assign_onmatch (PAT, name)
    abstract {
       return pattern;
       }
@@ -1525,20 +1525,6 @@ function {1} pattern_assign_onmatch (PAT, underef var, name)
       return pattern(bp);
       }
 end
-
-/*
- * The following functions take the parameter "var" which is not used in
- * the body of the function.
- * pattern_assign_onmatch
- * pattern_assign_immediate
- * pattern_recursive
- * pattern_unevalvar
- *
- * The unicon compiler converts expressions such as P -> X to
- * pattern_assign_immediate(P,X,"X"). During the pattern matching
- * process the variable X is looked up using the string X. Passing the
- * variable to the function frees the programmer from having to declare it.
- */
 
 function {1} Abort()
    abstract {

@@ -1043,7 +1043,7 @@ void	varargs		(dptr argp, int nargs, dptr rslt);
 dptr rec_structinate(dptr dp, char *name, int nfields, char *a[]);
 
 #ifdef Messaging
-struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq);
+struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq, int status);
 int Mclose(struct MFile* mf);
 int Mpop_delete(struct MFile* mf, unsigned int msgnum);
 void Mstartreading(struct MFile* mf);

@@ -136,8 +136,9 @@ int write_to_stream(BIO* bio, char* buffer, ssize_t length) {
 BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
 		       Tpdisc_t* tpdisc){
   
-   SSL_CTX** ctx = &(((Tpssldisc_t*)tpdisc)->ctx);
-   SSL** ssl = &(((Tpssldisc_t*)tpdisc)->ssl);
+   Tpssldisc_t* ssldisc = (Tpssldisc_t*) tpdisc;
+   SSL_CTX** ctx = &ssldisc->ctx;
+   SSL** ssl = &ssldisc->ssl;
    BIO* bio = NULL;
    int r = 0;
 
@@ -158,6 +159,11 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
 
    /* Setting up the BIO SSL object */
    bio = BIO_new_ssl_connect(*ctx);
+  if (bio == NULL) {
+      /* Exception: Unable to allocate new bio. */
+      (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);     
+      return NULL;
+      }   
    BIO_get_ssl(bio, ssl);
    if (!(*ssl)) {
       /* Exception: Unable to allocate SSL pointer. */
@@ -170,18 +176,18 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
    BIO_set_conn_hostname(bio, host_and_port);
 
    /* Verify the connection opened and perform the handshake */
-   if (BIO_do_connect(bio) < 1) {
+   if (BIO_do_connect(bio) <= 0) {
       /* Exception: Unable to connect BIO. */
       (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
       return NULL;
       }
 
-   if (SSL_get_verify_result(*ssl) != X509_V_OK) {
-      /* if certificate is required, then */
-      /* Exception: Unable to verify connection result. */
-      (void)tpdisc->exceptf(TP_EVERIFY, NULL, tpdisc);
-      return NULL;
-      }
+   if ((ssldisc->verify != 0) && (SSL_get_verify_result(*ssl) != X509_V_OK)) {
+       /* valid/verified certificate is required but...*/
+       /* Exception: Unable to verify connection result. */
+       (void)tpdisc->exceptf(TP_EVERIFY, NULL, tpdisc);
+       return NULL;
+       }
 
    return bio;
 }
@@ -231,25 +237,19 @@ static int sslpathFind(char target[], char buf[], int n)
    }
 
 /*
- * upgrade to use environment variable?  or something in discipline?
+ * upgrade to use something in discipline?
  */
-char *get_storepath(Tpdisc_t *tpdisc, char *store_typep)
+char get_storepath(Tpdisc_t *tpdisc, char *store_path)
 {
-   char path_to_ssl[1024], *certfile;
-   static char open_ssldir[1024];
-
-   *store_typep = 'f';
+   char path_to_ssl[1024];
 
    /* use SSL_CERT_FILE if available */
-   if ((certfile = getenv("SSL_CERT_FILE")) != 0) {
-      return certfile;
-      }
+   if ((getenv_r("SSL_CERT_FILE", store_path, 1023)) == 0)
+      return 'f';
 
    /* use SSL_CERT_DIR if available */
-   if ((certfile = getenv("SSL_CERT_DIR")) != 0) {
-      *store_typep = 'd';
-      return certfile;
-      }
+   if ((getenv_r("SSL_CERT_DIR", store_path, 1023)) == 0)
+      return 'd';
 
    /* if openssl command line client is available, use its output */
    if (sslpathFind("openssl", path_to_ssl, 1024) == 1) {
@@ -257,24 +257,26 @@ char *get_storepath(Tpdisc_t *tpdisc, char *store_typep)
       f = popen("openssl version -a | grep OPENSSLDIR", "r");
       fgets(path_to_ssl, 1023, f);
       pclose(f);
-      if (sscanf(path_to_ssl, "OPENSSLDIR: \"%s\"", open_ssldir) == 1) {
+      if (sscanf(path_to_ssl, "OPENSSLDIR: \"%s\"", store_path) == 1) {
 	 /* sscanf was OK */
-	 return open_ssldir;
+	 return 'd';
 	 }
       /* else fall through to return a default string */
       }
 
    /* if /usr/local/ssl/certs/ is present, use it */
-
-   return "/etc/pki/ca-trust/extracted/pem/objsign-ca-bundle.pem";
+   sprintf(store_path, "/usr/lib/ssl/certs");
+   return 'd';
 }
 
 int sslconnect(char* host, u_short port, Tpdisc_t* tpdisc)
 {
    char store_type;
-   char *store_path = get_storepath(tpdisc, &store_type);
+   char store_path[1024];
    char *host_and_port = malloc(strlen(host)+7);
    sprintf(host_and_port, "%s:%d", host, port);
+
+   store_type = get_storepath(tpdisc, store_path);
 
    if (!ssl_is_initialized) {
       init_openssl();
@@ -448,9 +450,17 @@ ssize_t sslwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
 /* The SSL discipline */
 static Tpssldisc_t _tpdssl = 
 { { sslconnect, sslclose, sslread, sslreadln, 
-    sslwrite, sslmem, sslfree, unixexcept, sslnewdisc, 0 }, 0 };
+    sslwrite, sslmem, sslfree, unixexcept, sslnewdisc, 0 },
+  NULL, NULL, NULL,
+  1, /* encrypt*/
+  1 /* don't verify certificates by default*/
+};
 
 Tpdisc_t* TpdSSL = (Tpdisc_t *)&_tpdssl;
+
+void _tpssl_setparam(Tpdisc_t *disc, int val){
+   ((Tpssldisc_t *)disc)->verify = val;
+ }
 
 #else
 /* static char junk;		 avoid empty module */

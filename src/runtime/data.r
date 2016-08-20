@@ -424,8 +424,8 @@ struct errtab errtab[] = {
    1213, "POP messaging file expected",
 
 #ifdef HAVE_LIBSSL
-   1214, "Unable to load a certificate from the trust store",
-   1215, "Unable to verify the peer's certificate",
+   1214, "cannot find certificate store (set SSL_CERT_FILE or SSL_CERT_DIR)",
+   1215, "cannot verify peer's certificate",
 #endif					/* HAVE_LIBSSL */
 
 #endif                                  /* Messaging */

@@ -39,6 +39,7 @@ int si_cs2i(siptr sip, char* s);
 stringint headers[];
 
 extern char *_tpastrcpy(char *s, Tpdisc_t *disc);
+extern void _tpssl_setparam(Tpdisc_t *disc, int val);
 
 /* Use the same function for handling real libtp exceptions and also
  * internal exceptions.  In the latter case, disc == NULL. */
@@ -49,6 +50,7 @@ int Mexcept(int e, void* obj, Tpdisc_t* disc)
 #ifdef MDEBUG
    fprintf(stderr, "Mexcept: %d\n", e); fflush(stderr);
 #endif
+
 
    if (disc == NULL) {
       Merror = e;
@@ -64,7 +66,8 @@ int Mexcept(int e, void* obj, Tpdisc_t* disc)
    return rc;
 }
 
-struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
+struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq,
+       		    int status)
 {
    Tp_t* tp;
    Tpdisc_t* disc;
@@ -74,7 +77,15 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
    int exception;
 
 #if (UNIX || NT)
-   disc = tp_newdisc(TpdUnix);
+#ifdef HAVE_LIBSSL
+   if (strcasecmp(puri->scheme, "https") == 0) {
+      disc = tp_newdisc(TpdSSL);
+      _tpssl_setparam(disc, status & Fs_Verify);
+      }
+   else
+#endif					/* HAVE_LIBSSL */
+      disc = tp_newdisc(TpdUnix);
+
 #else
 #error Systems other than Unix/Windows not supported yet
 #endif                                  /* UNIX */
@@ -94,17 +105,10 @@ struct MFile* Mopen(URI* puri, dptr attr, int nattr, int shortreq)
       return NULL;
       }
 
-   if (strcasecmp(puri->scheme, "http") == 0) {
+   if ((strcasecmp(puri->scheme, "http")  == 0) ||
+      ( strcasecmp(puri->scheme, "https") == 0)) {
       meth = TpmHTTP;
       }
-#ifdef HAVE_LIBSSL
-   else if (strcasecmp(puri->scheme, "https") == 0) {
-      meth = TpmHTTP;
-      /* replace regular Unix socket discipline with openssl */
-      disc = tp_newdisc(TpdSSL);
-      disc->exceptf = Mexcept;
-      }
-#endif					/* HAVE_LIBSSL */
    else if (strcasecmp(puri->scheme, "finger") == 0) {
       meth = TpmFinger;
       }

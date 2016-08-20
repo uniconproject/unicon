@@ -505,11 +505,25 @@ Deliberate Syntax Error
 	    case 'v':
 	    case 'V':
 #ifdef HAVE_VOICE
-	       status |= Fs_Voice;
-	       continue;
+#ifdef Messaging
+	       if (status & Fs_Messaging){
+	          status |= Fs_Verify;
+		  continue;
+		  }
+	       else
+#endif                                  /* Messaging */
+	          status |= Fs_Voice;
+	          continue;
 
 #else 					/* HAVE_VOICE */
-	       fail;
+#ifdef Messaging
+	       if (status & Fs_Messaging){
+	          status |= Fs_Verify;
+		  continue;
+		  }
+	       else
+#endif                                  /* Messaging */
+	          fail;
 #endif 					/* HAVE_VOICE */
 
             case 'z':
@@ -662,7 +676,7 @@ Deliberate Syntax Error
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
 	       extern int Merror;
-	       if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans)) {
+	       if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify)) {
 		  runerr(209, spec);
 		  }
 	       else {
@@ -714,7 +728,7 @@ Deliberate Syntax Error
 			runerr(1204, fname);
 		     }
 
-		  f = (FILE *)Mopen(puri, attr, n, is_shortreq);
+		  f = (FILE *)Mopen(puri, attr, n, is_shortreq, status);
 		  if (Merror > 1200) {
 		    runerr(Merror, fname);
 		  }

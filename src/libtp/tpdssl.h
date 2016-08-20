@@ -19,4 +19,6 @@ struct _tpssldisc_s
   int verify;  /* 1=enforce certificate, 0=anything goes. not used yet. */
 };
 
+void tp_set_verify(Tpdisc_t *disc, int val);
+
 #endif /* !_SSL_DISC_H_ */

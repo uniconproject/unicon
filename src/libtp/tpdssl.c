@@ -453,7 +453,7 @@ static Tpssldisc_t _tpdssl =
     sslwrite, sslmem, sslfree, unixexcept, sslnewdisc, 0 },
   NULL, NULL, NULL,
   1, /* encrypt*/
-  1 /* don't verify certificates by default*/
+  0 /* don't verify certificates by default*/
 };
 
 Tpdisc_t* TpdSSL = (Tpdisc_t *)&_tpdssl;

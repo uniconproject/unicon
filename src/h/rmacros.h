@@ -76,22 +76,23 @@
 
 #ifdef Messaging
    #define Fs_Messaging 01000000
+   #define Fs_Verify 	02000000
 #endif                                  /* Messaging */
 
 /*#ifdef Graphics3D*/
-   #define Fs_Window3D  02000000	/* reading/writing on a window */
+   #define Fs_Window3D  04000000	/* reading/writing on a window */
 /*#endif*/					/* Graphics3D */
 
 #if HAVE_LIBZ
-   #define Fs_Compress  04000000	/* reading/writing compressed file */
+   #define Fs_Compress  010000000	/* reading/writing compressed file */
 #endif					/* HAVE_LIBZ */
 
 #ifdef HAVE_VOICE
-   #define Fs_Voice  010000000		/* voice/audio connection */
+   #define Fs_Voice  	020000000		/* voice/audio connection */
 #endif					/* HAVE_VOICE */
 
 #ifdef PseudoPty
-   #define Fs_Pty   020000000            /* pty */
+   #define Fs_Pty   	040000000            /* pty */
 #endif
 
 

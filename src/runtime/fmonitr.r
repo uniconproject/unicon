@@ -551,7 +551,7 @@ void mmrefresh()
       for (p = blkbase; p < blkfree; p += n) {
 	 n = BlkSize(p);
 #if E_Lrgint || E_Real || E_Cset || E_File || E_Record || E_Tvsubs || E_External || E_List || E_Lelem || E_Table || E_Telem || E_Tvtbl || E_Set || E_Selem || E_Slots || E_Coexpr || E_Refresh
-	 RealEVVal(n, typech[(int)BlkType(p)]);	/* block region */
+	 RealEVVal(n, typech[(int)BlkType(p)],/*noop*/,/*noop*/);/* block reg.*/
 #endif					/* instrument allocation events */
 	 }
       EVVal(DiffPtrs(strfree, strbase), E_String);	/* string region */

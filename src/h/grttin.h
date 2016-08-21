@@ -75,9 +75,13 @@
 #define   mycurpstate curpstate
 
 /*
- * perform what amounts to "function inlining" of EVVal
+ * Perform what amounts to "function inlining" of EVVal.
+ * There are several variants.  The "real" one includes a cset membership
+ * test on the event mask, plus the actual event report via actparent.
+ * The non-"Real" version adds an #if test to allow the instrumentation to
+ * be excluded entirely.
  */
-#begdef RealEVVal(value,event)
+#begdef RealEVVal(value,event,exint,entint)
    do {
       if (is:null(mycurpstate->eventmask)) break;
       else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
@@ -85,11 +89,26 @@
       if (!is:null(mycurpstate->valuemask) &&
 	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
+      exint;
       actparent(event);
+      entint;
    } while (0)
 #enddef					/* RealEVVal */
 
-/* extended version of EVVal, allows for save/restore */
+#begdef RealEVValD(dp,event,exint,entint)
+   do {
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
+      mycurpstate->parent->eventval = *(dp);
+      if ((!is:null(mycurpstate->valuemask)) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+	 break;
+      actparent(event);
+   } while (0)
+#enddef					/* RealEVValD */
+
+
+/* extended version of EVVal, allows for save/restore in add'n to rsp */
 #begdef EVValEx(value,event,vardecl,preact,postact)
    do {
       vardecl;
@@ -100,7 +119,9 @@
 	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
       preact;
+      ExInterp_sp;
       actparent(event);
+      EntInterp_sp;
       postact;
    } while (0)
 #enddef					/* EVValEx */
@@ -108,21 +129,13 @@
 
 #begdef EVVal(value,event)
 #if event
-   RealEVVal(value,event)
+   RealEVVal(value,event,/*noop*/,/*noop*/)
 #endif
 #enddef					/* EVVal */
 
 #begdef EVValD(dp,event)
 #if event
-   do {
-      if (is:null(mycurpstate->eventmask)) break;
-      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
-      mycurpstate->parent->eventval = *(dp);
-      if ((!is:null(mycurpstate->valuemask)) &&
-	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
-	 break;
-      actparent(event);
-   } while (0)
+   RealEVValD(dp,event,/*noop*/,/*noop*/)
 #endif
 #enddef					/* EVValD */
 
@@ -174,7 +187,7 @@
 #begdef InterpEVVal(value,event)
 #if !ConcurrentCOMPILER
 #if event
-  { ExInterp_sp; RealEVVal(value,event); EntInterp_sp; }
+  { RealEVVal(value,event,ExInterp_sp,EntInterp_sp); }
 #endif
 #endif					/* !ConcurrentCOMPILER */
 #enddef
@@ -182,7 +195,7 @@
 #begdef InterpEVValD(dp,event)
 #if !ConcurrentCOMPILER
 #if event
- { ExInterp_sp; EVValD(dp,event); EntInterp_sp; }
+ { RealEVValD(dp,event,ExInterp_sp,EntInterp_sp); }
 #endif
 #endif					/* !ConcurrentCOMPILER */
 #enddef

@@ -368,9 +368,21 @@ function{*} key(t)
 		     Mstartreading(mf);
 		     }
 
-		  if (mf->resp == NULL || mf->resp->header == NULL) {
+		  if (mf->resp == NULL)
 		     fail;
+		     
+		  Protect(StrLoc(result) = alcstr("Status-Code", 11),runerr(0));
+		  StrLen(result) = 11;
+		  suspend result;
+
+		  if (mf->resp->msg != NULL && strlen(mf->resp->msg) > 0){
+		     Protect(StrLoc(result) = alcstr("Reason-Phrase", 13),runerr(0));
+		     StrLen(result) = 13;
+		     suspend result;
 		     }
+
+		  if (mf->resp->header == NULL)
+		     fail;
 
 		  for (field = mf->resp->header;
 		       field != NULL;

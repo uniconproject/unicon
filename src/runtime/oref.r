@@ -900,9 +900,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  char buf[100];
 
 		  req.args = c_y;
-		  if (mf->resp != NULL) {
-		     tp_freeresp(mf->tp, mf->resp);
-		     }
+		  tp_freeresp(mf->tp, mf->resp);
 		  mf->resp = tp_sendreq(mf->tp, &req);
 		  if (mf->resp->sc != 200) {
 		     fail;

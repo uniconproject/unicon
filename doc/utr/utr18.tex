@@ -23,7 +23,7 @@
 
 \title{Pattern Matching in Unicon}
 \author{Clinton Jeffery, Sudarshan Gaikaiwari and John Goettsche}
-\trnumber{18}
+\trnumber{18a}
 \date{\today}
 
 \newcommand{\squeezeup}{\vspace{-1em}}
@@ -116,9 +116,8 @@ the syntax
 s ?? p
 \end{verbatim}
 
-\noindent This is a new string scan in a new environment*, except with
-a pattern to match instead of an expression on the right side.  *Note:
-code might not properly implement this in a new environment yet.
+\noindent This is a new string scan in a new environment, except with
+a pattern to match instead of an expression on the right side.
 
 
 \section{Pattern Literals}
@@ -186,6 +185,15 @@ expressions, sometimes incompatibly, that you will not see
 here. Notably missing, for now, are caret (\^{}) and dollar (\$) for
 beginning-of-line and end-of-line.
 
+Unicon regular expressions compile down to SNOBOL-style patterns, and
+SNOBOL-style pattern matching generally matches the {\em shortest\/}
+string that can be matched by a pattern, not the longest possible
+match.  In the current version of Unicon, this can cause surprises in
+behavior, especially in patterns that can match the empty string. If
+your regular expression can match the empty string, that is the
+shortest match and that is what you will get.
+
+
 
 \section{The Unicon Pattern Data Type }
 
@@ -250,8 +258,8 @@ another alternative can be tried. A pattern match fails when an
 alternative that matches cannot be found.
 
 Suppose we wanted to construct a pattern that matched any of the
-following strings: 'COMPATIBLE', 'COMPREHENSIBLE' and
-'COMPRESSIBLE'. The pattern can be constructed by
+following strings: COMPATIBLE, COMPREHENSIBLE and
+COMPRESSIBLE. The pattern can be constructed by
 
 \begin{verbatim}
 "COMP" || ("AT" .| "RE" || ("HEN" .| "S") || "S") || "IBLE"
@@ -280,6 +288,7 @@ Consider the following pattern and its application
         "SONY Laptop" ?? Machine
 \end{verbatim}
 
+\noindent
 The pattern matching will succeed. However we would also like to
 determine which of the pattern alternatives actually matched. For this
 we use the conditional binary operator \(-\!\!>\). The operator is
@@ -315,13 +324,9 @@ During a pattern match, the cursor is Unicon's pointer into the
 subject string. It is integer valued, and points between two subject
 characters. It may also may be positioned before the first subject
 character, or after the final subject character. Its value may never
-exceed the size of the subject string by more than 1.  Here is an
-example of the numbering for the subject string UNICON:
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{poscurs.png}
-\end{figure}
+exceed the size of the subject string by more than 1.  An example of
+the index numbering system for the subject string UNICON can be found
+in below, in the discussion of the function \texttt{Pos()}.
 
 The cursor is set to 1 when a pattern match begins, corresponding to a
 position immediately to the left of the first subject character. As
@@ -347,7 +352,8 @@ the beads are red
     -----
 \end{verbatim}
 
-Summary of Unicon pattern matching operators
+Table 1 summarizes the Unicon pattern matching operators.
+
 \begin{table}[h]
 \begin{center}
 	{\begin{tabular}{ | l | l | } \hline 
@@ -405,14 +411,15 @@ cd
 The first pattern match had only one constraint: the subject had
 to be at least three characters long. Thus {\tt Len(3)} matched its first
 three characters. The second case imposes the additional restriction
-that {\tt Len(2)}'s match be followed immediately by the letter "a". This
-disqualifies the intermediate match attempts "ab" and "bc".
+that {\tt Len(2)}'s match be followed immediately by the letter
+{\tt "a"}. This disqualifies the intermediate match attempts
+{\tt "ab"} and {\tt "bc"}.
 
-Using {\tt Len()} with keyword \&ascii as the subject provides a simple way
-to obtain a string of unprintable characters. For example, the ASCII
-control characters occupy positions 0 through 31 in the 256-character
-ASCII set. To obtain a 32-character string containing these control
-codes, use:
+Using {\tt Len()} with keyword {\tt \&ascii} as the subject provides a
+simple way to obtain a string of unprintable characters. For example,
+the ASCII control characters occupy positions 0 through 31 in the
+256-character ASCII set. To obtain a 32-character string containing
+these control codes, use:
 
 \begin{verbatim}
         &ascii ?? Len(32) -> controls
@@ -430,6 +437,8 @@ the cursor positions as used by {\tt Pos()}:
 \centering
 \includegraphics[width=5in]{poscurs.png}
 \end{figure}
+
+\pagebreak
 
 The following are the cursor positions used by Rpos().
 
@@ -647,7 +656,7 @@ that {\tt Break(c)} will never return a string containing any characters in
 c, while {\tt Breakx(c)} might, if a subsequent pattern requires it.
 {\tt Breakx(c)} provides a more selective, and more efficient version of
 the {\tt Arb()} pattern. For example the following construction could have
-been used :
+been used:
 
 \begin{verbatim}
         "integers" ?? Arb() -> out || "er"
@@ -656,6 +665,7 @@ OUTPUT
 integ
 \end{verbatim}
 
+\noindent
 but {\tt Arb()} pokes along one character at time, matching
 {\tt "i"}, {\tt "in"},
 {\tt "int"}, and {\tt "inte"}, before finding the desired match,
@@ -1005,28 +1015,51 @@ OUTPUT
 abcdefghijkl
 \end{verbatim}
 
+\subsubsection{Lack of Recursive Pattern Support}
+
+At the present time, Unicon's pattern facilities do not support
+the use of an unevaluated expression to achieve {\em recursive}
+patterns.  For example, in SNOBOL it was possible to write a
+recursion comparable to the following:
+
+\begin{verbatim}
+procedure main()
+   out := &output
+   p := `p` || "Z" .| "Y"
+   po := p -> out
+   L := ["Y", "YZZZ", "XYZ", "YZZX", "AYZZZZB"]
+   every !L ?? po
+end
+\end{verbatim}
+
+\noindent
+On Unicon, this will result in a pattern stack overflow run-time error.
+
+
 \subsubsection{Limitations due to lack of eval()}
 
 A major difference between the SNOBOL4 and Icon families is that Icon
-lacks a general eval facility that is available in SNOBOL. To overcome
-this limitation the pattern feature was augmented so that certain
+lacks a general facility for evaluating string contents as
+expressions, the ability to introduce new code on the fly that is
+available in SNOBOL. To somewhat ameliorate
+this limitation, the pattern feature was augmented so that certain
 operations will be evaluated during the pattern matching phase instead
 of the pattern construction phase.  Unicon supports the following
 language constructs in unevaluated expressions.
 
 \begin{itemize}
-\item function call.
-\item method call.
-\item variable reference.
-\item field reference.
+\item function call
+\item method call
+\item variable reference
+\item field reference
 \end{itemize}
 
 Note the function or method calls can only have identifiers or
 constants as parameters. Expressions as parameters are not
-allowed. Multiple field references are of the form \texttt{x.y.z} are
-not supported. An unevaluated function or method call is used in two
-ways. The pattern matcher performs the call and if it fails treats the
-failure as if a pattern sub component has failed and tries to
+allowed. Multiple field references of the form \texttt{x.y.z} are
+not yet supported. An unevaluated function or method call is used in two
+ways. The pattern matcher performs the call and if it fails, treats the
+failure as if a pattern subcomponent has failed and tries to
 backtrack in seach of other alternatives. However if the pattern call
 succeeds then the pattern matcher can either ignore the result of the
 function or use the result in the pattern matching process. To specify
@@ -1039,10 +1072,10 @@ null
         `\(x)`
 \end{verbatim}
 
-binary operators can be used using the prefix notation. Only one
+\noindent binary operators can be used using the prefix notation. Only one
 operator or function call can be used in an unevaluated
 expression. Unicon programs that use unevaluated expressions must be
-compiled with the "-f s" option which enables full string invocation.
+compiled with the {\texttt{"-f s"} option which enables full string invocation.
 
 \subsection{Pattern expressions and Unicon control structure}
 
@@ -1144,7 +1177,7 @@ it is probably not in Unicon at present.
 	matches any one character of the cset, with the usual escapes.
 \item [{\tt {[}chars{]}}] -- square brackets produce a regular expression that
 	matches any one character of the cset, with minus interpreted
-	as a range character. {\em\bf Not yet implemented: CARET, hex
+	as a range character. {\em\bf Not yet implemented: hex
 	or octal escapes.}
 \item [.] -- in a regular expression, the period
 	matches any one character except the newline character.
@@ -1196,8 +1229,8 @@ compares the current string in the string scanning environment to see if there i
 causes an immediate failure of the entire pattern match.\\
 \noindent\rule{16.5cm}{0.1pt}
 
-\noindent\textbf{Any(s)} \hfill\textbf{match any}\\
-matches any single character contained in s appearing in the subject string.\\
+\noindent\textbf{Any(c)} \hfill\textbf{match any}\\
+matches any single character contained in c appearing in the subject string.\\
 
 \noindent\textbf{Arb()} \hfill\textbf{arbitrary pattern}\\
 matches zero or more characters in the subject string.\\
@@ -1212,13 +1245,13 @@ matches the shortest non-null string which parentheses are balanced
 in the subject string.\\
 \noindent\rule{16.5cm}{0.1pt}
 
-\noindent\textbf{Break(s)} \hfill\textbf{pattern break}\\
+\noindent\textbf{Break(c)} \hfill\textbf{pattern break}\\
 matches any characters in the subject string up to but not including
-any of the characters in s.\\
+any of the characters in cset c.\\
 \noindent\rule{16.5cm}{0.1pt}
 
-\noindent\textbf{Breakx(s)} \hfill\textbf{extended pattern break}\\
-matches any characters up to any of the subject characters in s, and
+\noindent\textbf{Breakx(c)} \hfill\textbf{extended pattern break}\\
+matches any characters up to any of the subject characters in c, and
 will search beyond the break position for a possible larger match.\\
 \noindent\rule{16.5cm}{0.1pt}
 
@@ -1257,9 +1290,9 @@ the position \texttt{i} according the Unicon index system shown below:
 matches the remainder of the subject string.\\
 \noindent\rule{16.5cm}{0.1pt}
 
-\noindent\textbf{Span(s)} \hfill\textbf{pattern span}\\
+\noindent\textbf{Span(c)} \hfill\textbf{pattern span}\\
 matches one or more characters from the subject string that
-are contained in \texttt{s}.  It must match at least one character.\\
+are contained in \texttt{c}.  It must match at least one character.\\
 \noindent\rule{16.5cm}{0.1pt}
 
 \noindent\textbf{Succeed()} \hfill\textbf{pattern succeeds}\\

@@ -115,7 +115,10 @@ dptr field_argp;			/* see comment in imisc.r/Ofield() */
    value_tmp.dword = D_Proc;
    value_tmp.vword.bptr = (union block *)&op_tbl[lastop - 1];
    lastdesc = value_tmp;
+   InterpEVValD(&value_tmp, e);
+   /*
    EVValDEx(&value_tmp, e, word mylastop, mylastop=lastop, lastop=mylastop);
+   */
    value_tmp = nulldesc;
 #endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;
@@ -2476,6 +2479,7 @@ void stkdump(op)
    {
    word *stk;
    word *i;
+   CURTSTATE_AND_CE();
    stk = (word *)BlkLoc(k_current);
    stk += Wsizeof(struct b_coexpr);
    fprintf(stderr,">  stack:  %.8x\n", (word)stk);
@@ -2501,6 +2505,7 @@ void stkdump(op)
    {
    word far *stk;
    word far *i;
+   CURTSTATE_AND_CE();
    stk = (word far *)BlkLoc(k_current);
    stk += Wsizeof(struct b_coexpr);
    fprintf(stderr,">  stack:  %08lx\n", (word)stk);
@@ -2525,6 +2530,7 @@ void stkdump(op)
    int op;
    {
    word *i;
+   CURTSTATE_AND_CE();
    fprintf(stderr,"\001stack: %lx\n",(long)(stack + Wsizeof(struct b_coexpr)));
    fprintf(stderr,"\001pfp: %lx\n",(long)pfp);
    fprintf(stderr,"\001efp: %lx\n",(long)efp);

@@ -531,7 +531,9 @@ struct threadstate {
     * VM-specific per-thread variables.
     */
 #if !COMPILER
+#ifndef Concurrent 
    word Lastop;
+#endif 					/* Concurrent */
    struct descrip Value_tmp;      /* TLS  */
    dptr Xargp;                    /* TLS  */
    word Xnargs;                   /* TLS  */
@@ -917,6 +919,8 @@ struct b_coexpr {		/* co-expression stack block */
    word *es_sp;			/*   sp */
    word *es_stack;		/*   beginning of interpreter stack */
    word *es_stackend;		/*   end of interpreter stack */
+   word Lastop;
+   
    #ifdef MultiThread
       struct progstate *program;
    #endif				/* MultiThread */

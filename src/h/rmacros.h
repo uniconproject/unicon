@@ -1002,9 +1002,15 @@
       #define coll_str  (curpstate->collstr)
       #define coll_blk  (curpstate->collblk)
 
+#ifdef Concurrent 
+      /* coexpr local*/
+      #define lastop    (curtstate_ce->Lastop)
+      #define lastopnd  (curtstate_ce->Lastopnd)
+#else
       /* thread local*/
       #define lastop    (curtstate->Lastop)
       #define lastopnd  (curtstate->Lastopnd)
+#endif 					/* Concurrent */
 #endif					/* MultiThread */
 
 #ifdef MultiThread

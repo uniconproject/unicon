@@ -366,6 +366,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 #endif					/* MultiThread */
 
 #ifdef Concurrent
+   ep->Lastop = 0;
    if (alcce_queues(ep) == Failed)
       ReturnErrNum(307, NULL);
 

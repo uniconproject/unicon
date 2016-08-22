@@ -103,9 +103,9 @@
       if ((!is:null(mycurpstate->valuemask)) &&
 	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
-      exint;
+      /* exint; */
       actparent(event);
-      entint;
+      /* entint; */
    } while (0)
 #enddef					/* RealEVValD */
 
@@ -128,6 +128,11 @@
    } while (0)
 #enddef					/* EVValEx */
 
+/* 
+  This workaround was introduced to fix a bug where lastop was getting trashed.
+  A proper fix was done by moving lastop to be part of the coexpr struct.
+  Should be removed if no longer needed.
+*/
 #begdef EVValDEx(dp,event,vardecl,preact,postact)
    do {
       vardecl;

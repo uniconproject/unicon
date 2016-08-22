@@ -685,7 +685,7 @@ function{1,*} seq(from, by)
       }
    body {
       word seq_lb = 0, seq_ub = 0;
-      CURTSTATE();
+      CURTSTATE_AND_CE();
 
       /*
        * Produce error if by is 0, i.e., an infinite sequence of from's.

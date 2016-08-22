@@ -621,6 +621,10 @@ void init_threadstate( struct threadstate *ts)
 #ifdef PosixFns
    ts->Nsaved=0;
 #endif					/* PosixFns */
+#else
+#if !COMPILER
+   ts->Lastop = 0;
+#endif					/* !COMPILER */
 #endif					/* Concurrent */
 
    ts->Glbl_argp = NULL;
@@ -648,7 +652,6 @@ void init_threadstate( struct threadstate *ts)
 #endif					/* PosixFns */
 
 #if !COMPILER
-   ts->Lastop = 0;
    ts->Xargp = NULL;
    ts->Xnargs = 0;
 

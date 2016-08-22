@@ -103,7 +103,9 @@
       if ((!is:null(mycurpstate->valuemask)) &&
 	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
 	 break;
+      exint;
       actparent(event);
+      entint;
    } while (0)
 #enddef					/* RealEVValD */
 
@@ -126,6 +128,22 @@
    } while (0)
 #enddef					/* EVValEx */
 
+#begdef EVValDEx(dp,event,vardecl,preact,postact)
+   do {
+      vardecl;
+      if (is:null(mycurpstate->eventmask)) break;
+      else if (!Testb((word)ToAscii(event), mycurpstate->eventmask)) break;
+      mycurpstate->parent->eventval = *(dp);
+      if ((!is:null(mycurpstate->valuemask)) &&
+	  (invaluemask(mycurpstate, event, &(mycurpstate->parent->eventval)) != Succeeded))
+	 break;
+      preact;
+      ExInterp_sp;
+      actparent(event);
+      EntInterp_sp;
+      postact;
+   } while (0)
+#enddef					/* RealEVValD */
 
 #begdef EVVal(value,event)
 #if event

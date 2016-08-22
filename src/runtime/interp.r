@@ -115,7 +115,7 @@ dptr field_argp;			/* see comment in imisc.r/Ofield() */
    value_tmp.dword = D_Proc;
    value_tmp.vword.bptr = (union block *)&op_tbl[lastop - 1];
    lastdesc = value_tmp;
-   InterpEVValD(&value_tmp, e);
+   EVValDEx(&value_tmp, e, word mylastop, mylastop=lastop, lastop=mylastop);
    value_tmp = nulldesc;
 #endif					/* MultiThread */
    rargp = (dptr)(rsp - 1) - nargs;

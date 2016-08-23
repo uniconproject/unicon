@@ -74,8 +74,9 @@ static int ssl_is_initialized;
  */
 void init_openssl() {
    /* call the standard SSL init functions */
-   SSL_load_error_strings();
    SSL_library_init();
+   SSL_load_error_strings();
+   /*OPENSSL_config(NULL); */
    ERR_load_BIO_strings();
    OpenSSL_add_all_algorithms();
 
@@ -137,52 +138,68 @@ BIO* connect_encrypted(char* host_and_port, char* store_path, char store_type,
 		       Tpdisc_t* tpdisc){
   
    Tpssldisc_t* ssldisc = (Tpssldisc_t*) tpdisc;
-   SSL_CTX** ctx = &ssldisc->ctx;
-   SSL** ssl = &ssldisc->ssl;
+   SSL_CTX* ctx = NULL;
+   SSL* ssl = NULL;
    BIO* bio = NULL;
    int r = 0;
-
    /* Set up the SSL pointers */
-   *ctx = SSL_CTX_new(SSLv23_client_method());
-   *ssl = NULL;
+   //   const SSL_METHOD* method = TLSv1_client_method();
+   const SSL_METHOD* method = SSLv23_client_method();
+   ctx = ssldisc->ctx = SSL_CTX_new(method);
+   const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+   SSL_CTX_set_options(ctx, flags);
 
    /* Load the trust store from the pem location in argv[2] */
    if (store_type == 'f')
-      r = SSL_CTX_load_verify_locations(*ctx, store_path, NULL);
+      r = SSL_CTX_load_verify_locations(ctx, store_path, NULL);
    else
-      r = SSL_CTX_load_verify_locations(*ctx, NULL, store_path);
+      r = SSL_CTX_load_verify_locations(ctx, NULL, store_path);
    if (r == 0) {
       /* Exception: Unable to load the trust store from store_path */
       (void)tpdisc->exceptf(TP_ETRUST, NULL, tpdisc);
       return NULL;
       }
-
+   
    /* Setting up the BIO SSL object */
-   bio = BIO_new_ssl_connect(*ctx);
-  if (bio == NULL) {
+   bio = BIO_new_ssl_connect(ctx);
+   if (bio == NULL) {
       /* Exception: Unable to allocate new bio. */
       (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);     
       return NULL;
-      }   
-   BIO_get_ssl(bio, ssl);
-   if (!(*ssl)) {
-      /* Exception: Unable to allocate SSL pointer. */
+      }
+   
+   BIO_get_ssl(bio, &ssl);
+   if (ssl == NULL) {
+      /* Exception: Unable to get SSL pointer. */
       (void)tpdisc->exceptf(TP_EMEM, NULL, tpdisc);     
       return NULL;
       }
-   SSL_set_mode(*ssl, SSL_MODE_AUTO_RETRY);
+   ssldisc->ssl = ssl;
+   SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+
+   //   SSL_set_tlsext_host_name(ssl, host);
+
+   if (BIO_set_conn_hostname(bio, host_and_port) <=0 )  {
+      /* Exception: Unable to set connection hostname . */
+      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
+      return NULL;     
+     }
 
    /* Attempt to connect */
-   BIO_set_conn_hostname(bio, host_and_port);
-
-   /* Verify the connection opened and perform the handshake */
    if (BIO_do_connect(bio) <= 0) {
       /* Exception: Unable to connect BIO. */
       (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
       return NULL;
-      }
+   }
 
-   if ((ssldisc->verify != 0) && (SSL_get_verify_result(*ssl) != X509_V_OK)) {
+   /* perform the handshake */
+   if (BIO_do_handshake(bio) <= 0) {
+      /* Exception: Unable to connect BIO. */
+      (void)tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);     
+      return NULL;
+      }   
+
+   if ((ssldisc->verify != 0) && (SSL_get_verify_result(ssl) != X509_V_OK)) {
        /* valid/verified certificate is required but...*/
        /* Exception: Unable to verify connection result. */
        (void)tpdisc->exceptf(TP_EVERIFY, NULL, tpdisc);

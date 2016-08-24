@@ -63,6 +63,7 @@ Tp_t* tp_new(URI* puri, Tpmethod_t* meth, Tpdisc_t* disc)
   tp->uri.pass   = _tpastrcpy(puri->pass, disc);
   tp->uri.host   = _tpastrcpy(puri->host, disc);
   tp->uri.port   = puri->port;
+  tp->uri.is_explicit_port = puri->is_explicit_port;
   tp->uri.path   = _tpastrcpy(puri->path, disc);
 
   tp->meth = meth;

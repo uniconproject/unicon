@@ -28,6 +28,7 @@ typedef struct _uri {
   char  *pass;    /* Password for authentication */
   char  *host;    /* Server hostname */
   unsigned short port;     /* Service port number */
+  char  is_explicit_port;  /* Whether an explicit port was set */
   char  *path;    /* Pathname (file, email address, etc) */
 } URI, *PURI;
 

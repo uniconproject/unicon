@@ -158,7 +158,7 @@ Tpresponse_t* httpend(Tp_t* tp)
       header[sizeof(header) - 1] = '\0';
       break;
     }
-  }      
+  }
 
   resp->header = _tptrimnewline(_tpastrcpy(header, disc));
   TPENTER(tp, READING);

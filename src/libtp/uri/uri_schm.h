@@ -14,7 +14,9 @@
 typedef struct _scheme {
   char *name; /* E.g. "ftp", "http" */
   PURI (*parse)(char *uri, PURI puri);
-  int port;   /* Default port */
+  unsigned short port;     /* Default port */
+  char  is_explicit_port;  /* Whether an explicit port was set */  
+  
 } SCHEME;
 
 extern SCHEME *schemes[];

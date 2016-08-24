@@ -64,6 +64,7 @@ PURI _http_parse(char *uri, PURI puri)
     }
     puri->host[0] = '\0';
     strncat(puri->host, uri, colon - uri);
+    puri->is_explicit_port = 1;
   }
   else if (slash) {
     /* No port specified */

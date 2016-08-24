@@ -65,6 +65,7 @@ PURI uri_parse(char *uri)
 	/* Load default port here since different schemes 
 	 * might use the same parser */
 	puri->port = schemes[i]->port;
+	puri->is_explicit_port = schemes[i]->is_explicit_port;
 	return schemes[i]->parse(colon+1, puri);
       }
       i++;
@@ -88,6 +89,7 @@ PURI uri_new(void)
   puri->pass = NULL;
   puri->host = NULL;
   puri->port = 0;
+  puri->is_explicit_port = 0;
   puri->path = NULL;
 
   return puri;

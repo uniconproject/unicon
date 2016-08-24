@@ -245,9 +245,12 @@ void Mhttp(struct MFile* mf, dptr attr, int nattr)
    if (need_host) {
       Maddtoheader(header, "Host: ", 6, &hleft);
       Maddtoheader(header, mf->tp->uri.host, strlen(mf->tp->uri.host), &hleft);
-      Maddtoheader(header, ":", 1, &hleft);
-      l = sprintf(buf, "%d", mf->tp->uri.port);
-      Maddtoheader(header, buf, l, &hleft);
+      /* if the user set the port explicitly then add it to the header */
+      if (mf->tp->uri.is_explicit_port != 0 ){
+      	 Maddtoheader(header, ":", 1, &hleft);
+      	 l = sprintf(buf, "%d", mf->tp->uri.port);
+      	 Maddtoheader(header, buf, l, &hleft);
+	 }
       Maddtoheader(header, "\r\n", 2, &hleft);
       }
 

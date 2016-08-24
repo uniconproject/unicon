@@ -928,17 +928,19 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	       else {
 		  char *val = tp_headerfield(mf->resp->header, c_y);
 		  char *end;
+		  tended char *tmp;		  
 		  if (val == NULL) {
 		     fail;
 		     }
-		  if ((end = strchr(val, '\r')) != NULL) {
-		     return string(end-val, val);
-		     }
-		  else if ((end = strchr(val, '\n')) != NULL) {
-		     return string(end-val, val);
+		     
+		  if (((end = strchr(val, '\r')) != NULL) ||
+		     ((end = strchr(val, '\n')) != NULL)) {
+		     Protect(tmp = alcstr(val, end-val), runerr(0));
+		     return string(end-val, tmp);
 		     }
 		  else {
-		     return string(strlen(val), val);
+		     Protect(tmp = alcstr(val, strlen(val)), runerr(0));
+		     return string(strlen(val), tmp);
 		     }
 		  }
 	       }

@@ -874,7 +874,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	       if (!cnv:C_string(y, c_y)) {
 		  runerr(103, y);
 		  }
-	       if (!MFIN(mf, READING)) {
+	       if ((mf->resp == NULL) && !MFIN(mf, READING)){
 		  Mstartreading(mf);
 		  }
 	       if (mf->resp == NULL) {

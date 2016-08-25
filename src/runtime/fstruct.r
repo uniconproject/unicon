@@ -364,7 +364,7 @@ function{*} key(t)
 		  struct MFile *mf = BlkD(t,File)->fd.mf;
 		  char *field, *end;
 
-		  if (!MFIN(mf, READING)) {
+		  if ((mf->resp == NULL) && !MFIN(mf, READING)){
 		     Mstartreading(mf);
 		     }
 

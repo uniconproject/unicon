@@ -332,8 +332,12 @@ ssize_t unixreadln(void* buf, size_t maxlen, Tpdisc_t* tpdisc)
       switch (action)
       {
 	case TP_TRYAGAIN: goto again;
-	case TP_DEFAULT:  return 0;
-
+	case TP_DEFAULT:
+	  if (rc == 0 && n > 1 ){
+	    *ptr = '\0';
+	    return n-1;   /* no \n in this case */
+	  }	  
+	  return 0;
 	case TP_RETURNERROR:
 	default:          return -1;
       }

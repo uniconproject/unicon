@@ -82,6 +82,11 @@
 #define HAVE_LIBJPEG 1
 #endif
 
+/*define for jpeg image support */
+#if WANT_SSL
+#define HAVE_LIBSSL 1
+#endif
+
 /*define if you have pthreads and want concurrency*/
 #if WANT_THREADS
 #define HAVE_LIBPTHREAD 1

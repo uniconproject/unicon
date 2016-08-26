@@ -14,9 +14,11 @@ MYGUILIBS= -lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32
 # -lpng    : PNG image support (requires the compression library -lz)
 # -ljpeg   : JPEG image support
 # -lpthread: Thread/concurrency support
+# -lssl,
+# -lcrypto : ssl and cryptography support
 # -lws2-32 : Modern Windows socket API
 # -lopencl : Open computing library (experimental)
-# availavle OPTLIBS  : -lws2_32 -lz -lpthread  -ljpeg -lpng -lopencl
+# availavle OPTLIBS  : -lws2_32 -lz -lpthread  -ljpeg -lpng -lssl -lcrypto -lopencl
 # available NTOPTLIBS: -lws2_32 -lz -lpthread -lopencl
 #
 
@@ -33,6 +35,11 @@ ifeq ($(WANT_THREADS),1)
      PTHREADLIB= -lpthread
 endif
 
+ifeq ($(WANT_JPG),1)
+# order is important
+     SSLLIB= -lssl -lcrypto -lgdi32
+endif
+
 ifeq ($(MAKEJ),1)
      JN=-j8
 endif
@@ -41,8 +48,8 @@ endif
 # Enabled Libraries are:
 #
 
-OPTLIBS= -lws2_32 $(PTHREADLIB) $(PNGLIB) $(JPGLIB)
-NTOPTLIBS= -lws2_32 $(PTHREADLIB) $(ZLIB)
+OPTLIBS= -lws2_32 $(PTHREADLIB) $(PNGLIB) $(JPGLIB) $(SSLLIB) -lws2_32
+NTOPTLIBS= -lws2_32 $(PTHREADLIB) $(ZLIB) $(SSLLIB) -lws2_32
 
 OS=NT
 ENV=WIN32

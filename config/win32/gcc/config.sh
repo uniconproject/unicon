@@ -86,6 +86,11 @@ then
     echo "#define WANT_THREADS 1" >> libdefine.h
 fi
 
+if [ $(grep -c "WANT_SSL=1" libconfig.in) -ne 0 ]
+then
+    echo "#define WANT_SSL 1" >> libdefine.h
+fi
+
 echo " " >> libdefine.h
 echo "/*" >> libdefine.h
 echo " * End of libdefine.h" >> libdefine.h

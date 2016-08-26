@@ -69,25 +69,23 @@
  * ... fill in missing information here ...
  */
 
-
-
-/*define for png image support, libz is required by PNG */
+/* define for png image support, libz is required by PNG */
 #if WANT_PNG
 #define HAVE_LIBPNG 1
 #define HAVE_LIBZ 1
 #endif
 
-/*define for jpeg image support */
+/* define for jpeg image support */
 #if WANT_JPG
 #define HAVE_LIBJPEG 1
 #endif
 
-/*define for jpeg image support */
+/* define for SSL/HTTPS support */
 #if WANT_SSL
 #define HAVE_LIBSSL 1
 #endif
 
-/*define if you have pthreads and want concurrency*/
+/* define if you have pthreads and want concurrency*/
 #if WANT_THREADS
 #define HAVE_LIBPTHREAD 1
 #else

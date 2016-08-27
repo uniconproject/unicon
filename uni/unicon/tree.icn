@@ -218,8 +218,20 @@ procedure emit_assign_code(node)
 	    rec := tab(upto('.'))
 	    if \rec then &pos +:= 1; # jump over the .
 	    var := tab(0)
-	    if \rec then writes(yyout,"[",rec,",\"",var,"\"]")
-	    else writes(yyout,"\"",var,"\"")
+
+	    # In order to print out with correct newline if needed,
+	    # create a fake token with var as a string name. Might
+	    # need to apply this technique to the treenode cases above.
+	    faketok := copy(node)
+	    faketok.tok := STRINGLIT
+	    faketok.s := "\"" || var || "\""	    
+
+	    if \rec then {
+	       writes(yyout,"[",rec,",")
+	       yyprint(faketok)
+	       writes(yyout,"]")
+	       }
+	    else yyprint(faketok)
 	    }
 	 }
       }

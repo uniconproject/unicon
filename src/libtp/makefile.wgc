@@ -22,10 +22,10 @@ DEFINES = -DHAVE_CONFIG_H -D_LIBTP_
 CFLAGS =  $(ISFLAG) $(WARNINGS) $(DEBUG) $(DEFINES) $(INCLUDES) $(CPPFLAGS)
 
 
-OBJS = tp.$(O) util.$(O) tpdunix.$(O) tpmdaytm.$(O) tpmfinge.$(O) tpmhttp.$(O)  \
+OBJS = tp.$(O) util.$(O) tpdunix.$(O) tpdssl.$(O) tpmdaytm.$(O) tpmfinge.$(O) tpmhttp.$(O)  \
        tpmpop.$(O) tpmsmtp.$(O)
 
-SRCS = tp.c util.c tpdunix.c tpmdaytm.c tpmfinge.c tpmhttp.c  \
+SRCS = tp.c util.c tpdunix.c tpdssl.c tpmdaytm.c tpmfinge.c tpmhttp.c  \
        tpmpop.c tpmsmtp.c
 LIBURI = uri/uri.$(O) uri/uri_file.$(O) uri/uri_fing.$(O) uri/uri_ftp.$(O) uri/uri_http.$(O) uri/uri_mail.$(O) uri/uri_pop.$(O) uri/uri_schm.$(O)
 
@@ -48,6 +48,7 @@ config_h:
 
 tp.$(O): tp.c config.h tp.h util.h uri/uri.h
 tpdunix.$(O): tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h
+tpdssl.$(O): tpdssl.c config.h util.h tp.h uri/uri.h tpdssl.h
 tpmdaytm.$(O): tpmdaytm.c config.h tp.h util.h uri/uri.h
 tpmfinge.$(O): tpmfinge.c config.h tp.h util.h uri/uri.h
 tpmhttp.$(O): tpmhttp.c config.h tp.h uri/uri.h util.h

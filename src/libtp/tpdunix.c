@@ -290,7 +290,7 @@ ssize_t unixread(void* buf, size_t n, Tpdisc_t* tpdisc)
 
   nleft = n;
   while (nleft > 0) {
-    if ((nread = read(disc->fd, ptr, nleft)) <= 0) {
+    if ((nread = recv(disc->fd, ptr, nleft, 0)) <= 0) {
       int action = tpdisc->exceptf(TP_EREAD, &nread, tpdisc);
       if (action > 0) {
 	nread = 0;
@@ -321,7 +321,7 @@ ssize_t unixreadln(void* buf, size_t maxlen, Tpdisc_t* tpdisc)
 
   for (n=1; n<maxlen; n++) {
   again:
-    if ((rc = read(disc->fd, &c, 1)) == 1) {
+    if ((rc = recv(disc->fd, &c, 1, 0)) == 1) {
       *ptr++ = c;
       if (c == '\n') {
 	break;
@@ -376,7 +376,7 @@ ssize_t unixwrite(void* buf, size_t n, Tpdisc_t* tpdisc)
   nleft = n;
   nwritten = 0;
   while(nleft > 0) {
-    nwritten = write(disc->fd, cp, nleft);
+    nwritten = send(disc->fd, cp, nleft, 0);
     if (nwritten <= 0) {
       int action = tpdisc->exceptf(TP_EWRITE, NULL, tpdisc);
       if (action <= 0) {

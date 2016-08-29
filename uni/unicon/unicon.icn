@@ -367,8 +367,8 @@ end
 procedure unicon_usage(continue_flag)
    local f
    if \continue_flag then f := iwrite else f := istop
-   msg := "Usage: unicon [-cBCstuEGyZM] [-Dsym=val] [-f s] [-o ofile]\n   _
-	     [--help] [-version] [-features] [-v i] file... [-x args]"
+   msg := "Usage: unicon [-cBCstuEGyZMh] [-Dsym=val] [-f s] [-o ofile]\n   _
+	     [-help] [-version] [-features] [-v i] file... [-x args]"
    f(msg)
 end
 
@@ -394,18 +394,56 @@ procedure unicon_help()
    "   -version    : report Unicon version",
    "   -x args     : execute immediately",
    "   -y          : parse (syntax check) only, do not compile",
-   "   -Z          : compress icode"
+   "   -Z          : compress icode",
+   "   -h          : display this information"
    ] )
    istop()
 end
 
+procedure handle_D(arg)
+   arg ? {
+      move(2)
+      if sym := tab(find("=")) then {
+         move(1)
+         def := tab(0)
+         }
+      else {
+         sym := tab(0)
+         def := "1"
+         }
+      uni_predefs[sym] := def
+      }
+end
+
+procedure handle_C(arg)
+   #
+   # Generate code suitable for consumption by iconc.
+   #
+   if comp === -1 then {
+      istop("conflicting requests for -c and -C")
+      }
+   
+   iconc := 1
+   parseonly := 1
+   if *arg > 2 then
+      tmpopt := "-U" || arg[3:0] || " "
+   else
+      tmpopt := "-U1 "
+   if /icontopt then
+      icontopt := tmpopt
+   else
+      icontopt ||:= tmpopt
+   calc_posix_loc()
+end
+
 procedure unicon(argv)
-   local tmpfnames, tmpopt
+   local tmpfnames, tmpopt, dash_v, skip
 
    initialize()
    if *argv = 0 then {
       unicon_usage()
       }
+
    EmptyNode := leaf(N_Empty)
    /yydebug := 0
 
@@ -416,111 +454,110 @@ procedure unicon(argv)
    ca_init()
 
    every i := 1 to *argv do {
-      if \exec then next            # after -x, args are for execution
-      if argv[i][1] == "-" then {
-	 if match("-D", argv[i]) then {
-	    argv[i] ? {
-	       move(2)
-	       if sym := tab(find("=")) then {
-		  move(1)
-		  def := tab(0)
-		  }
-	       else {
-		  sym := tab(0)
-		  def := "1"
-		  }
-	       uni_predefs[sym] := def
-	       }
-	    }
-         else if match ("-C", argv[i]) then {
-            #
-            # Generate code suitable for consumption by iconc.
-            #
-	    if comp === -1 then {
-	       istop("conflicting requests for -c and -C")
-	       }
+      # after -x, args are for execution
+      # so we break out if we hit -x and pass the remianing options down
+      #
 
-            iconc := 1
-            parseonly := 1
-            if *argv[i] > 2 then
-               tmpopt := "-U" || argv[i][3:0] || " "
-            else
-               tmpopt := "-U1 "
-            if /icontopt then
-               icontopt := tmpopt
-            else
-               icontopt ||:= tmpopt
-            calc_posix_loc()
-            }
+      if \skip then { # if we forward processed this argument then skip it
+         skip := &null
+         next
+         }
+      
+      if argv[i][1] == "-" then {
+	 if match("-D", argv[i]) then # symbols
+            handle_D(argv[i])
+         else if match ("-C", argv[i]) then # iconc
+            handle_D(argv[i])
 	 else
-	 case argv[i] of {
-	 "-c"   : {
-	    sysok := &null
-	    if comp = 0 then comp := -1        # don't make exe
-	    if iconc === 1 then {
-	       istop("conflicting requests for -c and -C")
-	       }
-	    }
-	 "-quiet"  : loud := &null
-	 "-log"  : {
-	    if (i=1) | (argv[i-1] ~=== "-log") then {
-	       if widollog := argv[i+1] then {
-		  /flog := open(flogname, "w") |
-		     write(&errout, "couldn't write log to ",image(flogname))
-		  }
-	       argv[i+1] := "-log"
-	       }
-	    }
-	 "-version": {
-	    iwrite(&version)
-	    return 0
-	    }
-	 "-features": {
-	    iwrite(&version)
-	    every iwrite(&features)
-	    return 0
-	    }
-	 "-x"      : exec := i
-	 "-o"      : {
-	    if (i=1) | (argv[i-1] ~=== "-o") then {
-	       exename := " -o " || quotes(argv[i+1]) || " "
-	       argv[i+1] := "-o"
-	       }
-	    }
-	 "-O": optimize := 1
-	 # -I and -L: add argv[i+1] to LPATH or IPATH, respectively
-	 "-I"|"-L": {
-	    if argv[i] == "-I" then thepath := "LPATH" else thepath := "IPATH" 
-	    if (i=1) | (argv[i-1] ~=== argv[i]) then {
-	       tmp_s := argv[i+1]
-	       argv[i+1] := argv[i]
-	       tmp_s ||:= " " || getenv(thepath)
-	       setenv(thepath, tmp_s) | write(&errout, "setenv failed")
-	       }
-	    }
-	 "-y": parseonly := 1
-	 "-yydbg": parseonly := yydbg := 1
-	 "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
-	 "-v" : {
-	    if (i=1) | (argv[i-1] ~=== "-v") then {
-	       ilinkopt ||:= argv[i] || " " || integer(argv[i+1]) || " "
-	       argv[i+1] := "-v"
-	       }
-	    }
-	 "-v0"|"-v1"|"-v2"|"-v3" : {
-	      ilinkopt ||:= argv[i] || " "
-	      }
-	 "-M" : merrflag := 1
-	 "-r" : returnErrorsFlag := 1
-	 "--help" | "-?": unicon_help()
-	 default   : icontopt ||:= argv[i] || " "
-	 }
-      }
-      else {
+            case argv[i] of {
+               "-c"   : {
+                  sysok := &null
+                  if comp = 0 then comp := -1        # don't make exe
+                  if iconc === 1 then
+                     istop("conflicting requests for -c and -C")
+                  }
+               "-quiet"  : loud := &null
+               "-s"      : {
+                  loud := &null
+                  dash_s := 1
+                  icontopt ||:= "-s "
+                  ilinkopt ||:= "-s "
+                  }
+               "-log"  : {
+                  if (i=1) | (argv[i-1] ~=== "-log") then {
+                     if widollog := argv[i+1] then {
+                        /flog := open(flogname, "w") |
+                           write(&errout, "couldn't write log to ",image(flogname))
+                        }
+                     argv[i+1] := "-log"
+                     }
+                  }
+               "-version": {
+                  iwrite(&version)
+                  return 0
+                  }
+               "-features": {
+                  iwrite(&version)
+                  every iwrite(&features)
+                  return 0
+                  }
+               "-x"      : {exec := i; break } # exit the every loop
+               "-o"      : {
+                  if (i=1) | (argv[i-1] ~=== "-o") then {
+                     exename := " -o " || quotes(argv[i+1]) || " "
+                     argv[i+1] := "-o"
+                     }
+                  }
+               "-O": optimize := 1
+               # -I and -L: add argv[i+1] to LPATH or IPATH, respectively
+               "-I"|"-L": {
+                  if argv[i] == "-I" then thepath := "LPATH" else thepath := "IPATH" 
+                  if (i=1) | (argv[i-1] ~=== argv[i]) then {
+                     tmp_s := argv[i+1]
+                     argv[i+1] := argv[i]
+                     tmp_s ||:= " " || getenv(thepath)
+                     setenv(thepath, tmp_s) | write(&errout, "setenv failed")
+                     }
+                  }
+               "-y": parseonly := 1
+               "-yydbg": parseonly := yydbg := 1
+               "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
+               "-v" : {
+                  if i=*argv then
+                     stop("missing verbosity value at: ", image((argv[i])))
+                  
+                  (ilinkopt ||:= argv[i] || integer(argv[i+1]) || " ")|
+                     stop("bad verbosity value: ", image(argv[i+1]))
+                  
+                  if integer(argv[i+1]) = 0 then{
+                     dash_s := 1
+                     loud := &null
+                     }                        
+                  skip := 1
+                  }
+               "-v0": {
+                  ilinkopt ||:= "-v0 "
+                  icontopt ||:= "-v0 "
+                  dash_v := 1
+                  dash_s := 1
+                  loud := &null
+                  }
+               "-v1"|"-v2"|"-v3" : {
+                  ilinkopt ||:= argv[i] || " "
+                  icontopt ||:= argv[i] || " "                  
+                  dash_v := 1
+                  }
+               
+               "-M" : merrflag := 1
+               "-r" : returnErrorsFlag := 1
+               "-h" | "-help" | "--help" | "-?": unicon_help()
+               default   : icontopt ||:= argv[i] || " "
+               } # case
+         }
+      else {   #the argument doesn't start with "-"
 	 fName := argv[i] | stop("usage: unicon file")
-	 if not (map(fName[find(".", fName)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then {
+	 if not (map(fName[find(".", fName)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then
 	    fName ||:= ".icn"
-	    }
 
 	 # do not translate .u files
 	 if map(fName[find(".", fName)+1 : 0]) == ("u"|"u1"|"u2") then {
@@ -600,9 +637,15 @@ procedure unicon(argv)
 	    iwrite(&errout,"remove ", image(tmpname), " fails")
             }
 	 reinitialize()
-     }
-  }
+         }    # the argument doesn't start with "-"
+      } # every argument
 
+   if /fName then {
+      write(&errout, "unicon: error: no input file")
+      unicon_usage()
+      }
+
+  
    #
    # If this output is intended for consumption by iconc, suck in
    # all files associated with link-refs and import-refs, and yyparse

@@ -380,7 +380,7 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
 #define Protect(notnull,orelse) do {if ((notnull)==NULL) orelse;} while(0)
 
 word mkIlist(int x[], int n);
-word mkRlist(int x[], int n);
+word mkRlist(double x[], int n);
 
 
 /* 

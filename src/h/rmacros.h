@@ -1666,99 +1666,137 @@
 #endif					/* MultiThread */
 #endif 					/* Concurrent */
 
+/*
+ * Rationale for new pattern (element) codes.
+ *
+ * Append bottom 4 bits onto existing codes in order to encode their suffix.
+ * There are apparently 5 extra values that can be associated with each family
+ * that are not part of one of the suffixes, values 11-15.
+ *
+ * xxxx0000 ==  0 == not a code, a family
+ * xxxx0001 ==  1 == not used
+ * xxxx0010 ==  2 == _VP
+ * xxxx0011 ==  3 == _CH
+ * xxxx0100 ==  4 == _CS
+ * xxxx0101 ==  5 == _Nat
+ * xxxx0110 ==  6 == _NF
+ * xxxx0111 ==  7 == _NP
+ * xxxx1000 ==  8 == _VF
+ * xxxx1001 ==  9 == _MF
+ * xxxx1010 == 10 == _NMF
+ *
+ * The purpose of all this is so that code that analyzes and categorizes
+ * pattern element codes, particularly debuggers and the like, can trivially
+ * extract base function (family) and suffix, without lots of comparisons
+ * and checks.
+ *
+ * Families. The next four bits will denote families:
+ * 0000xxxx == Any    = 0
+ * 0001xxxx == Break  = 16
+ * 0010xxxx == Breakx = 32
+ * 0011xxxx == NotAny = 48
+ * 0100xxxx == NSpan  = 64
+ * 0101xxxx == Span   = 80
+ * 0110xxxx == Len    = 96
+ * 0111xxxx == RPos   = 112
+ * 1000xxxx == Pos    = 128
+ * 1001xxxx == RTab   = 144
+ * 1010xxxx == Tab    = 160
+ * 1011xxxx == Arbno  = 176
+ * 1100xxxx == String = 192
+ *
+ * According to this scheme, 207 or so is the highest assigned family-based
+ * numbers. Numbers that are not part of a family are either a multiple of
+ * 16 (+ 1) or else 208+.
+ */
 #ifdef PatternType
-#define   PC_Arb_Y  0
-#define   PC_Assign  1
-#define   PC_Bal  2
-#define   PC_BreakX_X  3
-#define   PC_Abort  4
-#define   PC_EOP  5
-#define   PC_Fail  6
-#define   PC_Fence  7
-#define   PC_Fence_X  8
-#define   PC_Fence_Y  9
-#define   PC_R_Enter  10
-#define   PC_R_Remove  11
-#define   PC_R_Restore  12
-#define   PC_Rest  13
-#define   PC_Succeed  14
-#define   PC_Unanchored  15
+#define   PC_Arb_Y     208
+#define   PC_Assign    209
+#define   PC_Bal       210
+#define   PC_BreakX_X   43
+#define   PC_Abort     211
+#define   PC_EOP       212
+#define   PC_Fail      213
+#define   PC_Fence     214
+#define   PC_Fence_X   215
+#define   PC_Fence_Y   216
+#define   PC_R_Enter   217
+#define   PC_R_Remove  218
+#define   PC_R_Restore 219
+#define   PC_Rest      220
+#define   PC_Succeed   221
+#define   PC_Unanchored 222
 
-#define   PC_Alt  16
-#define   PC_Arb_X  17
-#define   PC_Arbno_S  18
-#define   PC_Arbno_X  19
+#define   PC_Alt        223
+#define   PC_Arb_X      224
+#define   PC_Arbno_S    187
+#define   PC_Arbno_X    188
 
-#define   PC_Rpat  20
+#define   PC_Rpat       225
 
-#define   PC_Pred_Func  21
+#define   PC_Pred_Func  226
 
-#define   PC_Assign_Imm  22
-#define   PC_Assign_OnM  23
-#define   PC_Any_VP  24
-#define   PC_Break_VP  25
-#define   PC_BreakX_VP  26
-#define   PC_NotAny_VP  27
-#define   PC_NSpan_VP  28
-#define   PC_Span_VP  29
-#define   PC_String_VP  30
+#define   PC_Assign_Imm  227
+#define   PC_Assign_OnM  228
 
-#define   PC_Write_Imm  31
-#define   PC_Write_OnM  32
+#define   PC_Any_VP        2
+#define   PC_Break_VP     18
+#define   PC_BreakX_VP    34
+#define   PC_NotAny_VP    50
+#define   PC_NSpan_VP     66
+#define   PC_Span_VP      82
+#define   PC_String_VP   194
 
-#define   PC_Null  33
-#define   PC_String  34
+#define   PC_Write_Imm   229
+#define   PC_Write_OnM   230
 
-#define   PC_String_2  35
-#define   PC_String_3  36
-#define   PC_String_4  37
-#define   PC_String_5  38
-#define   PC_String_6  39
+#define   PC_Null        231
+#define   PC_String      192
 
-#define   PC_Setcur  40
+#define   PC_Setcur      232
 
-#define   PC_Any_CH  41
-#define   PC_Break_CH  42
-#define   PC_BreakX_CH  43
-#define   PC_Char  44
-#define   PC_NotAny_CH  45
-#define   PC_NSpan_CH  46
-#define   PC_Span_CH  47
+#define   PC_Any_CH        3
+#define   PC_Break_CH     19
+#define   PC_BreakX_CH    35
+#define   PC_Char        233
+#define   PC_NotAny_CH    51
+#define   PC_NSpan_CH     67
+#define   PC_Span_CH      83
 
-#define   PC_Any_CS  48
-#define   PC_Break_CS  49
-#define   PC_BreakX_CS  50
-#define   PC_NotAny_CS  51
-#define   PC_NSpan_CS  52
-#define   PC_Span_CS  53
+#define   PC_Any_CS        4
+#define   PC_Break_CS     20
+#define   PC_BreakX_CS    36
+#define   PC_NotAny_CS    52
+#define   PC_NSpan_CS     68
+#define   PC_Span_CS      84
 
-#define   PC_Arbno_Y  54
-#define   PC_Len_Nat  55
-#define   PC_Pos_Nat  56
-#define   PC_RPos_Nat  57
-#define   PC_RTab_Nat  58
-#define   PC_Tab_Nat  59
+#define   PC_Arbno_Y     189
+#define   PC_Len_Nat     101
+#define   PC_Pos_Nat     133
+#define   PC_RPos_Nat    117
+#define   PC_RTab_Nat    149
+#define   PC_Tab_Nat     165
 
-#define   PC_Pos_NF  60
-#define   PC_Len_NF  61
-#define   PC_RPos_NF  62
-#define   PC_RTab_NF  63
-#define   PC_Tab_NF  64
+#define   PC_Pos_NF      134
+#define   PC_Len_NF      102
+#define   PC_RPos_NF     118
+#define   PC_RTab_NF     150
+#define   PC_Tab_NF      166
 
-#define   PC_Pos_NP  65
-#define   PC_Len_NP  66
-#define   PC_RPos_NP  67
-#define   PC_RTab_NP  68
-#define   PC_Tab_NP  69
+#define   PC_Pos_NP      135
+#define   PC_Len_NP      103
+#define   PC_RPos_NP     119
+#define   PC_RTab_NP     151
+#define   PC_Tab_NP      167
 
-#define   PC_Any_VF  70
-#define   PC_Break_VF  71
-#define   PC_BreakX_VF  72
-#define   PC_NotAny_VF  73
-#define   PC_NSpan_VF  74
-#define   PC_Span_VF  75
-#define   PC_String_VF  76
-#define   PC_Func  77
+#define   PC_Any_VF      8
+#define   PC_Break_VF    24
+#define   PC_BreakX_VF   40
+#define   PC_NotAny_VF   56
+#define   PC_NSpan_VF    72
+#define   PC_Span_VF     88
+#define   PC_String_VF  200
+#define   PC_Func       234
 
    /*
     * These constants are added because of the way "unevaluated expressions"
@@ -1768,25 +1806,28 @@
     * resolved to the corresponding variable references.
     */
 
-#define   PC_UNEVALVAR  78
+#define   PC_UNEVALVAR  235
 
-#define   PC_STRINGFUNCCALL  80
-#define   PC_BOOLFUNCCALL  81
-#define   PC_STRINGMETHODCALL  82
-#define   PC_BOOLMETHODCALL  83
-#define   PC_String_MF  84
-#define   PC_Pred_MF  85
-#define   PC_Pos_NMF  86
-#define   PC_Len_NMF  87
-#define   PC_RPos_NMF  88
-#define   PC_RTab_NMF  89
-#define   PC_Tab_NMF  90
-#define   PC_Any_MF  91
-#define   PC_Break_MF  92
-#define   PC_BreakX_MF  93
-#define   PC_NotAny_MF  94
-#define   PC_NSpan_MF  95
-#define   PC_Span_MF  96
+#define   PC_STRINGFUNCCALL 236
+#define   PC_BOOLFUNCCALL  237
+#define   PC_STRINGMETHODCALL 238
+#define   PC_BOOLMETHODCALL  239
+#define   PC_String_MF  201
+#define   PC_Pred_MF    240 /* suffix but no family? */
+
+#define   PC_Pos_NMF    138
+#define   PC_Len_NMF    106
+#define   PC_RPos_NMF   122
+#define   PC_RTab_NMF   154
+#define   PC_Tab_NMF    170
+#define   PC_Any_MF     9
+#define   PC_Break_MF   25
+#define   PC_BreakX_MF  41
+#define   PC_NotAny_MF  57
+#define   PC_NSpan_MF   73
+#define   PC_Span_MF    89
+
+#define   PC_Cursor     241
 
 /*
  * Symbols associated with providing detailed pattern images.

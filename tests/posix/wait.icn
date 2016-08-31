@@ -18,8 +18,9 @@ procedure main()
 
    kill(child2, "SIGQUIT")
    st := wait() | write(&errout, "Wait 2 failed: ", sys_errstr(&errno))
+   # some of these will end in :core and some won't
+   if st[-5:0] == ":core" then st[-5:0] := ""
    write(trim(st))
-   
 
    if (child3 := fork()) = 0 then {
       delay(10000)

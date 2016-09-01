@@ -414,7 +414,7 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
 {
    tended struct b_pelem *lpe = L;
    tended struct b_pelem *rpe = R;
-   EVVal(PI_CONCAT, E_PatCode);
+   EVVal(PC_Concat, E_PatCode);
    if (lpe == &EOP)
       return rpe;
    else if (rpe == &EOP)
@@ -1713,6 +1713,7 @@ if (is:list(Node->parameter)) {
       }
    pvar = &rp->fields[fnum];
    varref = var = rp->fields[fnum];
+   EVValD(&var, E_PatVal);
    }
 else {
    tended char *varnam;
@@ -1723,10 +1724,12 @@ else {
 	 }
       pvar = VarLoc(varref);
       var = *pvar;
+      EVValD(&var, E_PatVal);
       }
    else if (Var(Node->parameter)) {
       pvar = VarLoc(Node->parameter);
       var = *pvar;
+      EVValD(&var, E_PatVal);
       }
    else if (is:null(Node->parameter)) {
       fatalerr(165, NULL);
@@ -1965,6 +1968,7 @@ dptr processMethodCallList(struct b_list *lp)
    tended struct b_list *lp = (struct b_list *)BlkLoc(Node->parameter);
    call_result = processFuncCallList(lp);
    if (call_result != 0) {
+      EVValD(call_result, E_PatVal);
       cresult = *call_result;
       }
    else goto Node_Fail;
@@ -1985,7 +1989,8 @@ nargs = lp->size -1;
 
 if (is:list(Node->parameter)) {
    call_result = processMethodCallList(lp);
-   if (call_result != 0) { 
+   if (call_result != 0) {
+      EVValD(call_result, E_PatVal);
       cresult = *call_result;
       }
    }
@@ -2008,12 +2013,15 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
 		   )
 {
    stack_entry Stack[Stack_Size];
-   int Stack_Ptr , Stack_Base ;
+   int Stack_Ptr, Stack_Base;
+   tended struct descrip evalue;
    struct b_pelem * Node = NULL;
    struct b_pelem PE_Unanchored = {0, PC_Unanchored, (union block *)pattern,
 				      0, {D_Null,0}};
    int Assign_OnM = 0;
    int Region_Level = 0;
+
+   EVVal(Anchored_Mode, E_PatAttempt); 
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %d\n",
 	      Length,pat_sub,Length, k_pos));
@@ -2062,6 +2070,7 @@ Match_Fail:
    DEBUGF(20,(stdout,"Match fails\n"));
    *Start = 0;
    *Stop = 0;
+   EVVal(Node->pcode, E_PatFail);
    return 0;
 /*
  *       --  Come here if entire match succeeds
@@ -2072,6 +2081,11 @@ Match_Succeed:
    DEBUGF(2,(stdout,"Match Succeeds\n"));
    *Start = Stack[Stack_Init].cursor;
    *Stop = k_pos - 1;
+#if defined(E_PatMatch)
+   StrLen(evalue) = *Stop - *Start;
+   StrLoc(evalue) = pat_sub + *Start;
+   EVValD(&evalue, E_PatMatch);
+#endif
    DEBUGF(2,(stdout, "first matched character index =%d\n", *Start));
    DEBUGF(2,(stdout, "last matched character index =%d\n" ,*Stop));
    if (Assign_OnM) {
@@ -2109,7 +2123,7 @@ Node_Fail:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-   EVVal(Node->pcode, E_Fmatch);
+   EVVal(Node->pcode, E_PelemFail);
    k_pos = Stack[Stack_Ptr].cursor + 1;
    Node   = Stack[Stack_Ptr].node;
    Stack_Ptr--;
@@ -2123,7 +2137,7 @@ Node_Succeed:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-
+    EVVal(Node->pcode, E_PelemMatch);
     Node = (struct b_pelem *)Node->pthen;
 /*
  *       --  Come here to match the next pattern element
@@ -2148,7 +2162,49 @@ Node_Succeed:
  *       --    goto Fail           to signal failure of current match
  */
    DEBUGF(5, (stdout, "match: %ld, Pos: %d\n", Node->pcode, k_pos));
-   EVVal(Node->pcode, E_Amatch);
+
+   /* The next block is for execution monitoring. We see if the Node
+    * has a parameter, if it does it must be a specific code. The problem
+    * encountered is with arg_image. We must know if the code is evaluated or
+    * unevaluated. Thus the sanity check with the numbers. If the codes change
+    * this will not work.
+    */
+#if defined (E_PatArg)
+   switch (Node->pcode) {
+   case PC_Any_CS: case PC_Break_CS: case PC_BreakX_CS: case PC_NotAny_CS:
+   case PC_NSpan_CS: case PC_Span_CS: case PC_Len_Nat: case PC_Pos_Nat:
+   case PC_RPos_Nat: case PC_RTab_Nat: case PC_Tab_Nat: case PC_String:
+      /* if a CS or a Nat or a String */
+      arg_image(Node->parameter, PT_EVAL, &evalue);
+      EVValD(&evalue, E_PatArg);
+      break;
+   case PC_Any_VP: case PC_Break_VP: case PC_BreakX_VP: case PC_NotAny_VP:
+   case PC_NSpan_VP: case PC_Span_VP: case PC_String_VP: case PC_Pos_NP:
+   case PC_Len_NP: case PC_RPos_NP: case PC_RTab_NP: case PC_Tab_NP:
+   case PC_Rpat:
+      /* if a VP or a NP or an Rpat */
+      arg_image(Node->parameter, PT_VP, &evalue);
+      EVValD(&evalue, E_PatArg);
+      break;
+   case PC_Any_VF: case PC_Break_VF: case PC_BreakX_VF: case PC_NotAny_VF:
+   case PC_NSpan_VF: case PC_Span_VF: case PC_String_VF: case PC_Pos_NF:
+   case PC_Len_NF: case PC_RPos_NF: case PC_RTab_NF: case PC_Tab_NF:
+   case PC_Pred_Func:
+      /* if a VF or NF or PC_Pred_Func */
+      arg_image(Node->parameter, PT_VF, &evalue);
+      EVValD(&evalue, E_PatArg);
+      break;
+   case PC_String_MF: case PC_Pred_MF: case PC_Any_MF: case PC_Break_MF:
+   case PC_BreakX_MF: case PC_NotAny_MF: case PC_NSpan_MF: case PC_Span_MF:
+   case PC_Pos_NMF: case PC_Len_NMF: case PC_RPos_NMF: case PC_RTab_NMF:
+   case PC_Tab_NMF:
+      /* if a MF or NMF or PC_Pred_MF */
+      arg_image(Node->parameter, PT_MF, &evalue);
+      EVValD(&evalue, E_PatArg);
+      break;
+      }
+#endif
+   EVVal(Node->pcode, E_PelemAttempt);
    switch(Node->pcode) {
    case PC_Alt: {
       DEBUGF(20,(stdout,"Setting up alternative \n"));

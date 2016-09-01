@@ -1771,6 +1771,7 @@
 #define   PC_Span_CS      84
 
 #define   PC_Arbno_Y     189
+
 #define   PC_Len_Nat     101
 #define   PC_Pos_Nat     133
 #define   PC_RPos_Nat    117
@@ -1827,7 +1828,7 @@
 #define   PC_NSpan_MF   73
 #define   PC_Span_MF    89
 
-#define   PC_Cursor     241
+#define   PC_Concat     241
 
 /*
  * Symbols associated with providing detailed pattern images.

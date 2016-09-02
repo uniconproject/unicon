@@ -476,3 +476,19 @@
 #ifdef HAVE_LIBCL
 	#include <CL/cl.h>
 #endif					/* HAVE_LIBCL */
+
+#ifdef HAVE_LIBSSL
+/* openssl thinks we are a VMS system when VMS=0 */
+#if !VMS
+#undef VMS
+#endif
+
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
+#ifndef VMS
+#define VMS 0
+#endif
+
+#endif					/* HAVE_LIBSSL */

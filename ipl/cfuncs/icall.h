@@ -379,8 +379,19 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
 // Protection macro from grttin.h  Checks that the request for space succeeded.
 #define Protect(notnull,orelse) do {if ((notnull)==NULL) orelse;} while(0)
 
+/* 
+ * if you are not going to use list operations (pop/push... etc) on the newly 
+ * created list, then use the array fucntions instead. They create a more 
+ * effecient form of the list optimized for the int or real data types.
+ */
 word mkIlist(int x[], int n);
 word mkRlist(double x[], int n);
+
+word mkIArray(int x[], int n);
+word mkRArray(double x[], int n);
+
+word   *getIArrDataPtr( word L);
+double *getRArrDataPtr( word L);
 
 
 /* 

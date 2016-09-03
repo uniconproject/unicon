@@ -1107,7 +1107,8 @@ union block *mkIArray(int x[], int n)
 
    Protect(ap = (struct b_intarray *) alcintarray(n), return NULL);
    /* consider whether memcpy() or similar would be faster here */
-   for(i=0; i<n; i++) ap->a[i] = x[i];
+   if (x != NULL)
+      for(i=0; i<n; i++) ap->a[i] = x[i];
    return (union block *)alclisthdr(n, (union block *) ap);
 }
 
@@ -1118,10 +1119,28 @@ union block *mkRArray(double x[], int n)
 
    Protect(ap = (struct b_realarray *) alcrealarray(n), return NULL);
    /* consider whether memcpy() or similar would be faster here */
-   for(i=0; i<n; i++) ap->a[i] = x[i];
+   if (x != NULL)
+      for(i=0; i<n; i++) ap->a[i] = x[i];
    return (union block *)alclisthdr(n, (union block *) ap);
 }
 
+word *getIArrDataPtr(struct b_list * L)
+{
+   struct b_intarray *ap;
+   if (L->listtail != NULL) return NULL;
+   if (BlkType(L->listhead) != T_Intarray) return NULL;
+   ap = (struct b_intarray *) L->listhead;
+   return ap->a;
+}
+
+double *getRArrDataPtr( struct b_list * L)
+{
+   struct b_realarray *ap;
+   if (L->listtail != NULL) return NULL;
+   if (BlkType(L->listhead) != T_Realarray) return NULL;
+   ap = (struct b_realarray *) L->listhead;
+   return ap->a;
+}
 
 /*
  * Convert an (Unicon-style C-compatible) array to a list.

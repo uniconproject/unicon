@@ -120,7 +120,11 @@
 #define T_Integer	 1		/* integer */
 #define T_Real		 3		/* real number */
 #define T_File		 5		/* file, including window */
+#define T_Record	 7		/* record */
 #define T_List		 8		/* list header */
+#define T_Table		12		/* table header */
+#define T_Intarray	29      	/* integer array */
+#define T_Realarray	30      	/* real array */
 
 #define D_Null		(T_Null     | D_Typecode)
 #define D_Integer	(T_Integer  | D_Typecode)
@@ -136,6 +140,13 @@
 #define Fs_Write	0002		/* file open for writing */
 #define Fs_Pipe		0020		/* file is a [popen] pipe */
 #define Fs_Window	0400		/* file is a window */
+
+
+#define F_Mark		0100000 	/* bit for marking blocks */
+/*
+ * Get type of block pointed at by x.
+ */
+#define BlkType(x)   (*(word *)x)
 
 
 typedef long word;
@@ -180,6 +191,12 @@ void cpslots(descriptor *, descriptor *, word, word);
 
 extern descriptor nulldesc;		/* null descriptor */
 
+/*
+ * Pointer to block.
+ */
+#define BlkLoc(d)	((d).vword.bptr)
+#define Blk(p,u)	(&((p)->u))
+#define BlkD(d,u)	Blk(BlkLoc(d),u)
 
 #define IconType(d) ((d).dword>=0 ? 's' : "niIrcfpRL.S.T.....C"[(d).dword&31])
 
@@ -387,11 +404,11 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
 word mkIlist(int x[], int n);
 word mkRlist(double x[], int n);
 
-word mkIArray(int x[], int n);
-word mkRArray(double x[], int n);
+listblock * mkIArray(int x[], int n);
+listblock * mkRArray(double x[], int n);
 
-word   *getIArrDataPtr( word L);
-double *getRArrDataPtr( word L);
+word   *getIArrDataPtr( listblock * L);
+double *getRArrDataPtr( listblock * L);
 
 
 /* 

@@ -401,8 +401,8 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
  * created list, then use the array fucntions instead. They create a more 
  * effecient form of the list optimized for the int or real data types.
  */
-word mkIlist(int x[], int n);
-word mkRlist(double x[], int n);
+listblock * mkIlist(int x[], int n);
+listblock * mkRlist(double x[], int n);
 
 listblock * mkIArray(int x[], int n);
 listblock * mkRArray(double x[], int n);

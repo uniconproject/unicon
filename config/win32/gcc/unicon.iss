@@ -3,15 +3,15 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 12.3
+AppVerName=Windows Unicon Version 13.0 Beta
 AppPublisher=Unicon Project
-AppPublisherURL=http://unicon.sourceforge.net
-AppSupportURL=http://unicon.sourceforge.net
-AppUpdatesURL=http://unicon.sourceforge.net
+AppPublisherURL=http://unicon.org
+AppSupportURL=http://unicon.org
+AppUpdatesURL=http://unicon.org
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_12.3.0_threads(32-bit)_rev4234
+OutputBaseFilename=setup-unicon_13.0_beta(64-bit)_rev4515
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -35,7 +35,7 @@ Source: "\unicon\config\win32\gcc\internet.ico"; DestDir: "{app}"; Flags: ignore
 Source: "\unicon\bin\*.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 ;Source: "\unicon\bin\*.dll"; DestDir: "{app}\bin"; Flags: ignoreversion
 ;Source: "\unicon\bin\*.h"; DestDir: "{app}\bin"; Flags: ignoreversion
-Source: "\unicon\dat\fonts\*"; DestDir: "{app}\dat\fonts"; Flags: ignoreversion
+Source: "\unicon\COPYING"; DestDir: "{app}"; DestName: "COPYING.txt"; Flags: ignoreversion
 
 ; Documentation
 Source: "\unicon\doc\*.gif"; DestDir: "{app}\doc"; Flags: ignoreversion
@@ -152,12 +152,13 @@ Source: "\unicon\tests\bench\icon\*.*"; DestDir: "{app}\tests\bench\icon"; Flags
 
 
 [INI]
-Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.sourceforge.net"
+Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://unicon.org"
 
 [Icons]
 Name: {group}\{cm:UninstallProgram,Windows Unicon}; Filename: {uninstallexe};IconFilename: "{app}\uninstall.ico"
 Name: "{group}\Windows Unicon on the Web"; Filename: "{app}\WU.url" ;IconFilename: "{app}\internet.ico"
 Name: "{group}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"
+Name: "{group}\Unicon Software License"; Filename: "{app}\COPYING.txt" ;IconFilename: "{app}\internet.ico"
 Name: "{userdesktop}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"; MinVersion: 4,4; Tasks: desktopicon
 
 

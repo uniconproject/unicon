@@ -316,6 +316,7 @@ function{0,1} open(fname, spec)
 #ifdef Messaging
       int is_shortreq = 0;
       C_integer timeout = 0;
+      int do_verify = 1;
 #endif                                  /* Messaging */
 
 /*
@@ -388,7 +389,9 @@ Deliberate Syntax Error
 	    case 'W':
 	       status |= Fs_Write;
 	       continue;
-
+	    case '-':
+		  do_verify = 0;
+		  continue;
 	    case 's':
 	    case 'S':
 #ifdef Messaging
@@ -501,7 +504,6 @@ Deliberate Syntax Error
 #else 					/* ISQL */
 	       fail;
 #endif 					/* ISQL */
-
 	    case 'v':
 	    case 'V':
 #ifdef HAVE_VOICE
@@ -676,6 +678,8 @@ Deliberate Syntax Error
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
 	       extern int Merror;
+	       if (do_verify != 0)
+	       	  status |= Fs_Verify;
 	       if (status & ~(Fs_Messaging|Fs_Read|Fs_Write|Fs_Untrans|Fs_Verify)) {
 		  runerr(209, spec);
 		  }
@@ -749,11 +753,11 @@ Deliberate Syntax Error
 			runerr(1212, fname);
 			break;
 		     case TP_ETRUST:
-			runerr(1214, fname);
-			break;
+		        IntVal(amperErrno) = errno;		     
+		     	fail;
 		     case TP_EVERIFY:
-			runerr(1215, fname);
-			break;
+	 	        IntVal(amperErrno) = errno;		     
+		     	fail;
 		     case TP_EMEM:
 		     case TP_EOPEN:
 		     default:

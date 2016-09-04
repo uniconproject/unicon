@@ -19,12 +19,9 @@ operator{1} || cater(x, y)
 	 struct b_pattern *lp, *rp;
 	 struct b_pelem *pe;
 	 union block *bp;
-	 type_case y of {
-	    string:  cnv_str_pattern(&y,&y);
-	    cset:    cnv_cset_pattern(&y,&y);
-	    pattern: { }
-	    default: { runerr(127); }
-	    }
+
+	 if (!cnv_pattern(&y, &y)) runerr(127, y);
+
 	 lp = (struct b_pattern *)BlkLoc(x);
 	 rp = (struct b_pattern *)BlkLoc(y);
 
@@ -42,12 +39,9 @@ operator{1} || cater(x, y)
 	 struct b_pattern *lp, *rp;
 	 struct b_pelem *pe;
 	 union block *bp;
-	 type_case x of {
-	    string:  cnv_str_pattern(&x,&x);
-	    cset:    cnv_cset_pattern(&x,&x);
-	    pattern: { }
-	    default: { runerr(127); }
-	    }
+
+	 if (!cnv_pattern(&x, &x)) runerr(127, x);
+
 	 lp = (struct b_pattern *)BlkLoc(x);
 	 rp = (struct b_pattern *)BlkLoc(y);
 

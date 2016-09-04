@@ -12,10 +12,9 @@ dptr processMethodCallList(struct b_list *list);
 int internal_match(char * pat_sub, int Length, int Pat_S,
 		struct b_pelem * pattern, int *Start, int *Stop,
 		int initial_cursor, int Anchored_Mode);
-void cnv_str_pattern(dptr s, dptr p);
-void cnv_cset_pattern(dptr s, dptr p);
 
-struct b_pelem EOP = {0, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
+struct b_pelem EOP = {T_Pelem, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
+struct b_pattern emptypattern = { T_Pattern, 0, 0, (union block *)&EOP };
 
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
       	    		  int pattern_code, int index, struct descrip param)
@@ -553,18 +552,8 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       k_subject = dpsub;
       subject_len = StrLen(k_subject);
 
-      type_case pat of {
-	 string: {
-	    cnv_str_pattern(&pat,&pat);
-	    }
-	 cset: {
-	    cnv_cset_pattern(&pat,&pat);
-	    }
-	 pattern: {
-	    }
-	 default: {
-	    runerr(127, pat);
-	    }
+      if (! cnv_pattern(&pat, &pat)) {
+	 runerr(127, pat);
 	 }
 
       pattern = (struct b_pattern *)BlkLoc(pat);
@@ -612,20 +601,43 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       }
 end
 
-void cnv_str_pattern(dptr s, dptr p)
+/*
+ * convert to a pattern. Modeled after cnv_cset or similar in cnv.r.
+ */
+int cnv_pattern(dptr s, dptr p)
 {
-   union block *bp = pattern_make(0, &EOP,PC_String,1, *s);
-   EVVal(PC_String, E_PatCode);
-   p->dword = D_Pattern;
-   BlkLoc(*p) = bp;
-}
+   tended struct descrip emptypatternd;
+   emptypatternd.dword = D_Pattern;
+   emptypatternd.vword.bptr = (union block *)&emptypattern;
 
-void cnv_cset_pattern(dptr s, dptr p)
-{
-   union block *bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
-   EVVal(PC_Any_CS, E_PatCode);
-   p->dword = D_Pattern;
-   BlkLoc(*p) = bp;
+   EVValD(s, E_Aconv);
+   EVValD(&emptypatternd, E_Tconv);
+   type_case *s of {
+   string: {
+      tended union block *bp = pattern_make(0, &EOP,PC_String,1, *s);
+      EVVal(PC_String, E_PatCode);
+      p->dword = D_Pattern;
+      BlkLoc(*p) = bp;
+      EVValD(p, E_Sconv);
+      return 1;
+      }
+   cset: {
+      tended union block *bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
+      EVVal(PC_Any_CS, E_PatCode);
+      p->dword = D_Pattern;
+      BlkLoc(*p) = bp;
+      EVValD(p, E_Sconv);
+      return 1;
+      }
+   pattern: {
+      EVValD(s, E_Nconv);
+      return 1;
+      }
+   default: {
+      EVValD(s, E_Fconv);
+      return 0;
+      }
+      }
 }
 
 /*
@@ -1041,108 +1053,100 @@ function {1} Arbno(ARBPAT)
       return pattern;
       }
    body {
+      int pattype;
       union block *bp;
       struct b_pattern * P;
       tended struct b_pelem * X;
-      type_case ARBPAT of {
-	 string : {
-	    cnv_str_pattern(&ARBPAT,&ARBPAT);
-	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
-	    X = Arbno_Simple((struct b_pelem *)P->pe);
-	    bp = pattern_make_pelem(0,X);
-	    EVVal(PC_Arbno_S, E_PatCode);
-	    return pattern(bp);
-	    }
-	 cset : {
-	    cnv_cset_pattern(&ARBPAT,&ARBPAT);
-	    P = (struct b_pattern *)BlkLoc(ARBPAT);
-	    X = Arbno_Simple((struct b_pelem *)P->pe);
-	    bp = pattern_make_pelem(0,X);
-	    EVVal(PC_Arbno_S, E_PatCode);
-	    return pattern(bp);
-	    }
-         pattern: {
-	    tended struct b_pelem *Pat;
-	    P =  (struct b_pattern *)BlkLoc(ARBPAT);
-	    Pat = Copy((struct b_pelem *)P->pe);
-	    if ( (P->stck_size == 0) &&OK_For_Simple_Arbno(Pat->pcode)) {
-	       /*
-		*
-		* Arbno_Simple
-		*
-		*
-		*      +-------------+
-		*      |             ^
-		*      V             |
-		*    +---+           |
-		*    | S |---->      |
-		*    +---+           |
-		*      .             |
-		*      .             |
-		*    +---+           |
-		*    | P |---------->+
-		*    +---+
-		*
-		*  The node numbering of the constituent pattern P is not
-		*  affected. The S node has a node number of P.Index + 1.
-		*
-		*  Note that we know that P cannot be EOP, because a null
-		*  pattern does not meet the requirements for simple Arbno.
-		*/
-	       X = Arbno_Simple(Pat);
-	       bp = pattern_make_pelem(1,X);
-	       EVVal(PC_Arbno_S, E_PatCode);
-	       return pattern(bp);
-	       }
-	    else {
-	       /*
-		*  This is the complex case, either the pattern makes stack
-		*  entries or it is possible for the pattern to match the null
-		*  string (more accurately, we don't know that this is not the
-		* case).
-		*
-		*      +--------------------------+
-		*      |                          ^
-		*      V                          |
-		*    +---+                        |
-		*    | X |---->                   |
-		*    +---+                        |
-		*      .                          |
-		*      .                          |
-		*    +---+     +---+     +---+    |
-		*    | E |---->| P |---->| Y |--->+
-		*    +---+     +---+     +---+
-		*
-		* The node numbering of the constituent pattern P is not
-		* affected. Where N is the number of nodes in P, the Y node is
-		* numbered N + 1, the E node is N + 2, and the X node is N + 3.
-		*/
-	       tended struct b_pelem * E;
-	       tended struct b_pelem * Y;
-	       tended struct b_pelem *EPY;
-	       tended struct descrip var;
-	       E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
-						 0,nulldesc);
-	       var.dword = D_Pelem;
-	       BlkLoc(var) =  (union block *)E;
-	       X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
-               EVVal(PC_Arbno_X, E_PatCode);
-	       var.dword = D_Integer;
-	       IntVal(var) = P->stck_size + 3;
-	       Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
-               EVVal(PC_Arbno_X, E_PatCode);
-	       EPY = Bracket (E, Pat, Y);
-	       var.dword = D_Pelem;
-	       BlkLoc(var) =  (union block *)EPY;
-	       X->parameter = var;
-	       X->index = EPY->index + 1;
-	       bp = pattern_make_pelem(P->stck_size,X);
-	       return pattern(bp);
-	       }
-	    }
-      default: {
-	 runerr(127,ARBPAT);
+      if (is:string(ARBPAT) || is:cset(ARBPAT)) pattype = 1;
+      else if (is:pattern(ARBPAT)) pattype = 2;
+
+      if (!cnv_pattern(&ARBPAT, &ARBPAT)) runerr(127, ARBPAT);
+
+      if (pattype == 1) {
+	 P =  (struct b_pattern *)BlkLoc(ARBPAT);
+	 X = Arbno_Simple((struct b_pelem *)P->pe);
+	 bp = pattern_make_pelem(0,X);
+	 EVVal(PC_Arbno_S, E_PatCode);
+	 return pattern(bp);
 	 }
+      else {
+	 tended struct b_pelem *Pat;
+	 P =  (struct b_pattern *)BlkLoc(ARBPAT);
+	 Pat = Copy((struct b_pelem *)P->pe);
+	 if ((P->stck_size == 0) && OK_For_Simple_Arbno(Pat->pcode)) {
+	    /*
+	     *
+	     * Arbno_Simple
+	     *
+	     *
+	     *      +-------------+
+	     *      |             ^
+	     *      V             |
+	     *    +---+           |
+	     *    | S |---->      |
+	     *    +---+           |
+	     *      .             |
+	     *      .             |
+	     *    +---+           |
+	     *    | P |---------->+
+	     *    +---+
+	     *
+	     *  The node numbering of the constituent pattern P is not
+	     *  affected. The S node has a node number of P.Index + 1.
+	     *
+	     *  Note that we know that P cannot be EOP, because a null
+	     *  pattern does not meet the requirements for simple Arbno.
+	     */
+	    X = Arbno_Simple(Pat);
+	    bp = pattern_make_pelem(1,X);
+	    EVVal(PC_Arbno_S, E_PatCode);
+	    return pattern(bp);
+	    }
+	 else {
+	    /*
+	     *  This is the complex case, either the pattern makes stack
+	     *  entries or it is possible for the pattern to match the null
+	     *  string (more accurately, we don't know that this is not the
+	     * case).
+	     *
+	     *      +--------------------------+
+	     *      |                          ^
+	     *      V                          |
+	     *    +---+                        |
+	     *    | X |---->                   |
+	     *    +---+                        |
+	     *      .                          |
+	     *      .                          |
+	     *    +---+     +---+     +---+    |
+	     *    | E |---->| P |---->| Y |--->+
+	     *    +---+     +---+     +---+
+	     *
+	     * The node numbering of the constituent pattern P is not
+	     * affected. Where N is the number of nodes in P, the Y node is
+	     * numbered N + 1, the E node is N + 2, and the X node is N + 3.
+	     */
+	    tended struct b_pelem * E;
+	    tended struct b_pelem * Y;
+	    tended struct b_pelem *EPY;
+	    tended struct descrip var;
+	    E =  (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,
+					      0,nulldesc);
+	    var.dword = D_Pelem;
+	    BlkLoc(var) =  (union block *)E;
+	    X =  (struct b_pelem *)pelem_make(&EOP,PC_Arbno_X,0,var);
+	    EVVal(PC_Arbno_X, E_PatCode);
+	    var.dword = D_Integer;
+	    IntVal(var) = P->stck_size + 3;
+	    Y =  (struct b_pelem *)pelem_make(X,PC_Arbno_Y,0,var);
+	    EVVal(PC_Arbno_X, E_PatCode);
+	    EPY = Bracket (E, Pat, Y);
+	    var.dword = D_Pelem;
+	    BlkLoc(var) =  (union block *)EPY;
+	    X->parameter = var;
+	    X->index = EPY->index + 1;
+	    bp = pattern_make_pelem(P->stck_size,X);
+	    return pattern(bp);
+	    }
 	 }
       }
 end
@@ -1257,29 +1261,9 @@ function {1} pattern_concat(L, R)
       tended struct b_pattern *lpattern;
       tended struct b_pattern *rpattern;
       struct b_pelem *pe;
-      type_case L of {
-      string:
-	 cnv_str_pattern(&L,&L);
-      cset:
-	 cnv_cset_pattern(&L,&L);
-      pattern: {
-	 }
-      default:{
-	 runerr(127);
-	 }
-	 }
 
-      type_case R of {
-      string:
-	 cnv_str_pattern(&R,&R);
-      cset:
-	 cnv_cset_pattern(&R,&R);
-      pattern: {
-	 }
-      default: {
-	 runerr(127);
-	 }
-	 }
+      if (!cnv_pattern(&L, &L)) runerr(127, L);
+      if (!cnv_pattern(&R, &R)) runerr(127, R);
 
       lpattern = (struct b_pattern *)BlkLoc(L);
       rpattern = (struct b_pattern *)BlkLoc(R);
@@ -1339,30 +1323,12 @@ function{1} pattern_alternate (LPAT, RPAT )
       tended struct b_pattern * rpattern;
       struct b_pelem *pe;
       union block *bp;
-      type_case LPAT of {
-      string:
-	 cnv_str_pattern(&LPAT,&LPAT);
-      cset:
-	 cnv_cset_pattern(&LPAT,&LPAT);
-      pattern:{
-	 }
-      default:{
-	 /*raise error type mismatch*/
-	 runerr(127);
-	 }
-	 }
-      type_case RPAT of {
-      string:
-	 cnv_str_pattern(&RPAT,&RPAT);
-      cset:
-	 cnv_cset_pattern(&RPAT,&RPAT);
-      pattern: {
-	 }
-      default: {
-	 /*raise error type mismatch*/
-	 runerr(127);
-	 }
-	 }
+
+      if (!cnv_pattern(&LPAT, &LPAT))
+	 runerr(127, LPAT);
+      if (!cnv_pattern(&RPAT, &RPAT))
+	 runerr(127, RPAT);
+
       lpattern = (struct b_pattern *)BlkLoc(LPAT);
       rpattern = (struct b_pattern *)BlkLoc(RPAT);
       pe = Alternate(Copy((struct b_pelem *)lpattern->pe),
@@ -1409,17 +1375,9 @@ function {1} pattern_assign_immediate (PAT, name)
       tended struct b_pelem *E;
       struct b_pelem *A;
       struct b_pelem *pe;
-      type_case PAT of {
-      string:
-	 cnv_str_pattern(&PAT,&PAT);
-      cset:
-	 cnv_cset_pattern(&PAT,&PAT);
-      pattern: {
-	 }
-      default:{
-	 runerr(127);
-	 }
-	}
+
+      if (!cnv_pattern(&PAT, &PAT)) runerr(127, PAT);
+
       p = (struct b_pattern *)BlkLoc(PAT);
       P = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
@@ -1460,17 +1418,9 @@ function {1} Fence(P)
       struct b_pelem *Pat;
       struct b_pelem *E;
       struct b_pelem *X;
-      type_case P of {
-      string:
-	 cnv_str_pattern(&P,&P);
-      cset:
-	 cnv_cset_pattern(&P,&P);
-      pattern: {
-	 }
-      default:{
-	 runerr(127);
-	 }
-	}
+
+      if (!cnv_pattern(&P, &P)) runerr(127, P);
+
       p = (struct b_pattern *)BlkLoc(P);
       Pat = Copy((struct b_pelem *)p->pe);
       E = (struct b_pelem *)pelem_make(&EOP,PC_R_Enter,0, nulldesc);
@@ -1503,17 +1453,8 @@ function {1} pattern_assign_onmatch (PAT, name)
       struct b_pelem *E;
       struct b_pelem *A;
       struct b_pelem *pe;
-      type_case PAT of {
-      string:
-	 cnv_str_pattern(&PAT,&PAT);
-      cset:
-	 cnv_cset_pattern(&PAT,&PAT);
-      pattern: {
-	 }
-      default:{
-	 runerr(127);
-	 }
-	}
+
+      if (!cnv_pattern(&PAT, &PAT)) runerr(127, PAT);
 
       p = (struct b_pattern *)BlkLoc(PAT);
       P = Copy((struct b_pelem *)p->pe);
@@ -2085,7 +2026,7 @@ Match_Succeed:
    StrLen(evalue) = *Stop - *Start;
    StrLoc(evalue) = pat_sub + *Start;
    EVValD(&evalue, E_PatMatch);
-#endif
+#endif					/* E_PatMatch */
    DEBUGF(2,(stdout, "first matched character index =%d\n", *Start));
    DEBUGF(2,(stdout, "last matched character index =%d\n" ,*Stop));
    if (Assign_OnM) {
@@ -2203,7 +2144,7 @@ Node_Succeed:
       EVValD(&evalue, E_PatArg);
       break;
       }
-#endif
+#endif					/* E_PatArg */
    EVVal(Node->pcode, E_PelemAttempt);
    switch(Node->pcode) {
    case PC_Alt: {

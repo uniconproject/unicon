@@ -134,8 +134,7 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R);
 struct b_pelem * Arbno_Simple(struct b_pelem *pe);
 struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 			    struct b_pelem * A);
-void 		cnv_str_pattern	(dptr s, dptr p);
-void 		cnv_cset_pattern(dptr s, dptr p);
+int 		cnv_pattern(dptr s, dptr p);
 struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
 struct b_pelem *Copy		(struct b_pelem * P);
 

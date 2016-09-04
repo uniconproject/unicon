@@ -68,9 +68,9 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       ((Testb((word)ToAscii(E_Slots), cs)) ? alcsegment_1 : alcsegment_0);
 #ifdef PatternType
    p->Alcpattern =
-       (0 /*(Testb((word)ToAscii(E_Slots), cs))*/ ? alcpattern_1 : alcpattern_0);
+       ((Testb((word)ToAscii(E_Pattern), cs)) ? alcpattern_1 : alcpattern_0);
    p->Alcpelem =
-       (0 /*(Testb((word)ToAscii(E_Slots), cs))*/ ? alcpelem_1 : alcpelem_0);
+       ((Testb((word)ToAscii(E_Pelem), cs)) ? alcpelem_1 : alcpelem_0);
 #endif					/* PatternType */
 #undef alcreal
 #ifndef DescriptorDouble

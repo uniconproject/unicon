@@ -783,6 +783,17 @@ function {1} Span(char_set)
       }
 end
 
+function {1} NSpan(char_set)
+   abstract {
+      return pattern;
+      }
+   body {
+      union block *bp;
+      ConvertPatternArgumentCset(char_set, bp, PC_NSpan);
+      return pattern(bp);
+      }
+end
+
 
 struct b_pattern * breakx_make(struct b_pelem * B)
 {
@@ -2049,7 +2060,7 @@ Match_Succeed:
 	       else {
                   StrLen(*pvar) = Stop - Start;
                   StrLoc(*pvar) = pat_sub + Start;
-EVVar(pvar, E_Value);
+		  EVVar(pvar, E_Value);
 		  }
 	       }
 	    else {
@@ -2318,6 +2329,7 @@ Node_Succeed:
       else {
          StrLen(*pvar) = (k_pos - 1) - Stack[Stack_Base - 1].cursor;
          StrLoc(*pvar) = pat_sub + Stack[Stack_Base - 1].cursor;
+	 EVVar(pvar, E_Value);
 	 }
       Pop_Region();
       goto Node_Succeed;
@@ -3120,6 +3132,7 @@ Node_Succeed:
       DEBUGF(20,(stdout, "Matching Setcur assigning Position = %ld\n", k_pos));
       pvar->dword = D_Integer;
       IntVal(*pvar) = k_pos;
+      EVVar(pvar, E_Value);
       goto Node_Succeed;
       }
 
@@ -3192,6 +3205,65 @@ Node_Succeed:
       else {
 	 goto Node_Fail;
 	 }
+      }
+
+   case  PC_NSpan_CS : {
+      int P = k_pos - 1;
+      DEBUGF(20,(stdout,"Matching NSpan_CS\n"));
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),Node->parameter))
+	 P++;
+      if (P != (k_pos - 1)) {
+	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
+	 }
+      goto Node_Succeed;
+      }
+
+   case  PC_NSpan_VP : {
+      int P = k_pos - 1;
+      GetVarFromNodeParameter(Node);
+      DEBUGF(20,(stdout,"Matching NSpan unevaluated variable\n"));
+      if (!cnv_cset(&var,&var)) {
+	 fatalerr(104, &var);
+	 }
+      DEBUGF(20,(stdout,"Matching NSpan_VP\n"));
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),var))
+	 P++;
+      if (P != (k_pos - 1)) {
+	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
+	 }
+      goto Node_Succeed;
+      }
+
+   case  PC_NSpan_VF: {
+      int P = k_pos - 1;
+      GetResultFromFuncCall();
+      DEBUGF(20,(stdout,"Matching NSpan_VF unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(104, &cresult);
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
+	 P++;
+      if (P != (k_pos - 1)) {
+	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
+	 }
+      goto Node_Succeed;
+      }
+      
+   case  PC_NSpan_MF: {
+      int P = k_pos - 1;
+      GetResultFromMethodCall();
+      DEBUGF(20,(stdout,"Matching NSpan_MF unevaluated function call\n"));
+      if (!cnv_cset(&cresult,&cresult))
+	 fatalerr(104, &cresult);
+      while ((P < Length) && Testb(ToAscii(pat_sub[P]),cresult))
+	 P++;
+      if (P != (k_pos - 1)) {
+	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
+	 }
+      goto Node_Succeed;
       }
 
    case  PC_String : {

@@ -595,6 +595,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	    subject_len = StrLen(dpsub);
 	    if (k_pos < 1) k_pos = 1;
 	    else if (k_pos > StrLen(dpsub)+1) k_pos = StrLen(dpsub);
+	    EVVal(k_pos, E_Spos);
 	    }
          }
       fail;
@@ -1964,7 +1965,7 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
 
    EVVal(Anchored_Mode, E_PatAttempt); 
    DEBUGF(2, (stdout,
-	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %d\n",
+	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
 	      Length,pat_sub,Length, k_pos));
 
    if (pattern == NULL) {
@@ -2048,6 +2049,7 @@ Match_Succeed:
 	       else {
                   StrLen(*pvar) = Stop - Start;
                   StrLoc(*pvar) = pat_sub + Start;
+EVVar(pvar, E_Value);
 		  }
 	       }
 	    else {
@@ -2068,6 +2070,7 @@ Node_Fail:
    k_pos = Stack[Stack_Ptr].cursor + 1;
    Node   = Stack[Stack_Ptr].node;
    Stack_Ptr--;
+   EVVal(k_pos, E_Spos);
    goto Match;
 Node_Succeed:
 /*
@@ -2102,7 +2105,7 @@ Node_Succeed:
  *       --    goto Match_Fail     if the entire match fails
  *       --    goto Fail           to signal failure of current match
  */
-   DEBUGF(5, (stdout, "match: %ld, Pos: %d\n", Node->pcode, k_pos));
+   DEBUGF(5, (stdout, "match: %ld, Pos: %ld\n", Node->pcode, k_pos));
 
    /* The next block is for execution monitoring. We see if the Node
     * has a parameter, if it does it must be a specific code. The problem
@@ -2158,6 +2161,7 @@ Node_Succeed:
       DEBUGF(20,(stdout,"Matching Any\n"));
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)){
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2173,6 +2177,7 @@ Node_Succeed:
 	 }
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2187,6 +2192,7 @@ Node_Succeed:
 	 fatalerr(104, &cresult);
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2201,6 +2207,7 @@ Node_Succeed:
 	 fatalerr(104, &cresult);
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2227,6 +2234,7 @@ Node_Succeed:
       if (k_pos <= Length){
 	 k_pos++;
 	 Push (Node);
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2341,7 +2349,7 @@ Node_Succeed:
       else if (pat_sub[k_pos - 1] == '('){
 	 int Paren_Count = 1;
 	 DEBUGF(2,(stdout,
-		   "Paren_Count = %d  Pos = %d\n", Paren_Count, k_pos));
+		   "Paren_Count = %d  Pos = %ld\n", Paren_Count, k_pos));
 	 while(1) {
 	    k_pos++;
 	    if ((k_pos - 1) >= Length) {
@@ -2350,18 +2358,18 @@ Node_Succeed:
 	    else if (pat_sub[k_pos - 1] == '(' ){
 	       Paren_Count++;
 	       DEBUGF(2,(stdout,
-			 " Found ( Paren_Count = %d  Pos = %d\n",
+			 " Found ( Paren_Count = %d  Pos = %ld\n",
 			 Paren_Count,k_pos));
 	       }
 	    else if (pat_sub[k_pos - 1] == ')'){
 	       Paren_Count--;
 	       DEBUGF(2,(stdout,
-			 "Found ) Paren_Count = %d  Pos = %d\n",
+			 "Found ) Paren_Count = %d  Pos = %ld\n",
 			 Paren_Count,k_pos));
 	       }
 	    if (Paren_Count == 0) {
 	       DEBUGF(2,(stdout,
-			 "Paren_Count = %d  Pos = %d\n",
+			 "Paren_Count = %d  Pos = %ld\n",
 			 Paren_Count,k_pos));
 	       break;
 	       }
@@ -2370,8 +2378,9 @@ Node_Succeed:
 	k_pos++;
 	Push (Node);
 	DEBUGF(2,(stdout,
-		  "matching or extending Bal succeeded, Pos = %d\n",
+		  "matching or extending Bal succeeded, Pos = %ld\n",
 		  k_pos));
+        EVVal(k_pos, E_Spos);
 	goto Node_Succeed;
     }
 
@@ -2381,12 +2390,15 @@ Node_Succeed:
    case PC_Break_CS : {
       DEBUGF(20,(stdout, "matching Break\n"));
       while( k_pos <= Length ){	
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
 	    goto Node_Succeed;
+	    EVVal(k_pos, E_Spos);
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2397,12 +2409,16 @@ Node_Succeed:
 	 fatalerr(104, &var);
 	 }
       while( k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
+	    EVVal(k_pos, E_Spos);
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2412,12 +2428,15 @@ Node_Succeed:
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while (k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2428,12 +2447,15 @@ Node_Succeed:
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while( k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2444,12 +2466,15 @@ Node_Succeed:
    case PC_BreakX_CS: {
       DEBUGF(20,(stdout, "matching Breakx\n"));
       while( k_pos <= Length ){
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2461,12 +2486,15 @@ Node_Succeed:
 	 }
 
       while (k_pos <= Length) {
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2476,12 +2504,15 @@ Node_Succeed:
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while (k_pos <= Length) {
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2491,12 +2522,15 @@ Node_Succeed:
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while (k_pos <= Length) {
-	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult))
+	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
+	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
+      EVVal(k_pos, E_Spos);
       goto Node_Fail;
       break;
       }
@@ -2508,6 +2542,7 @@ Node_Succeed:
        */
    case  PC_BreakX_X : {
       k_pos++;
+      EVVal(k_pos, E_Spos);
       goto Node_Succeed;
       }
 
@@ -2578,6 +2613,7 @@ Node_Succeed:
 	    if ((Length - (k_pos - 1) >= LV_Len) &&
 	          !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
 	       k_pos += LV_Len;
+	       EVVal(k_pos, E_Spos);
 	       goto Node_Succeed;
 	       }
             else {
@@ -2586,6 +2622,7 @@ Node_Succeed:
 	    }
 	 else {
 	    k_pos = cresult.vword.integr;
+	    EVVal(k_pos, E_Spos);
 	    }
 #endif
 	 goto Node_Succeed;
@@ -2604,6 +2641,7 @@ Node_Succeed:
 	    if ((Length - (k_pos - 1) >= LV_Len) &&
 	          !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
 	       k_pos += LV_Len;
+	       EVVal(k_pos, E_Spos);
 	       goto Node_Succeed;
 	       }
             else {
@@ -2616,12 +2654,17 @@ Node_Succeed:
       }
 
    case PC_Len_Nat: {
-      DEBUGF(20,(stdout, "matching Len\n"));
-      if (k_pos + IntVal(Node->parameter) >= Length) {
+      DEBUGF(20,(stdout, "matching Len Nat\n"));
+      /* 
+       * k_pos is 1-based. k_pos + Len should be allowed, as a legal value,
+       * to go up to Length+1.  Greater than Length+1 it is out of range.
+       */
+      if (k_pos + IntVal(Node->parameter) > Length+1) {
 	 goto Node_Fail;
 	 }
       else {
 	 k_pos += IntVal(Node->parameter);
+	 EVVal(k_pos, E_Spos);
 	 }
       goto Node_Succeed;
       break;
@@ -2633,11 +2676,12 @@ Node_Succeed:
 	 fatalerr(101, &var);
 	 }
       DEBUGF(20,(stdout, "matching Len\n"));
-      if (k_pos + IntVal(var) >= Length) {
+      if (k_pos + IntVal(var) > Length+1) {
 	 goto Node_Fail;
 	 }
       else {
 	 k_pos += IntVal(var);
+	 EVVal(k_pos, E_Spos);
 	 }
       goto Node_Succeed;
       break;
@@ -2649,10 +2693,11 @@ Node_Succeed:
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	 fatalerr(101, &cresult);
       cresult.dword = D_Integer;
-      if (k_pos + IntVal(cresult) >= Length) {
+      if (k_pos + IntVal(cresult) > Length+1) {
 	 goto Node_Fail;
 	 }
       k_pos += IntVal(cresult);
+      EVVal(k_pos, E_Spos);
       goto Node_Succeed;
       break;
       }
@@ -2663,10 +2708,11 @@ Node_Succeed:
       if (!cnv_c_int(&cresult, &(cresult.vword.integr)))
 	 fatalerr(101, &cresult);
       cresult.dword = D_Integer;
-      if (k_pos + IntVal(cresult) >= Length) {
+      if (k_pos + IntVal(cresult) > Length+1) {
 	 goto Node_Fail;
 	 }
       k_pos += IntVal(cresult);
+      EVVal(k_pos, E_Spos);
       goto Node_Succeed;
       break;
       }
@@ -2676,6 +2722,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2693,6 +2740,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), var)){
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2709,6 +2757,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2725,6 +2774,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
 	 k_pos++;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2744,6 +2794,7 @@ Node_Succeed:
 	 if ((Length - (k_pos - 1) >= LV_Len )
 	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)){
 	    k_pos += LV_Len;
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2756,6 +2807,7 @@ Node_Succeed:
 	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
 	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
 	    k_pos++;
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2840,6 +2892,7 @@ Node_Succeed:
    case  PC_Tab_Nat: {
       if (IntVal(Node->parameter) - 1 <= Length){
 	 k_pos = IntVal(Node->parameter);
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2854,6 +2907,7 @@ Node_Succeed:
 	 }
       if (IntVal(var) - 1 <= Length) {
 	 k_pos = IntVal(var);
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2868,6 +2922,7 @@ Node_Succeed:
       cresult.dword = D_Integer;
       if (IntVal(cresult) - 1 <= Length) {
 	 k_pos = IntVal(cresult);
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2887,6 +2942,7 @@ Node_Succeed:
 	 }
       if (IntVal(cresult) - 1 <= Length) {
 	 k_pos = IntVal(cresult);
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2899,6 +2955,7 @@ Node_Succeed:
        */
    case PC_Rest: {
       k_pos = Length + 1;
+      EVVal(k_pos, E_Spos);
       goto Node_Succeed;
       }
 
@@ -2959,6 +3016,7 @@ Node_Succeed:
    case  PC_RTab_Nat: {
       if ((0<=IntVal(Node->parameter)) & (IntVal(Node->parameter) <= Length)) {
 	 k_pos = Length - IntVal(Node->parameter) + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2975,6 +3033,7 @@ Node_Succeed:
       DEBUGF(20,(stdout, "matching Len\n"));
       if ((0<=IntVal(var)) & (IntVal(var) <= Length)) {
 	 k_pos = Length - IntVal(var) + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2990,6 +3049,7 @@ Node_Succeed:
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
 	 k_pos = Length - IntVal(cresult) + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3005,6 +3065,7 @@ Node_Succeed:
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
 	 k_pos = Length - IntVal(cresult) + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3056,7 +3117,7 @@ Node_Succeed:
 
    case PC_Setcur: {
       GetVarFromNodeParameter(Node);
-      DEBUGF(20,(stdout, "Matching Setcur assigning Position = %d\n", k_pos));
+      DEBUGF(20,(stdout, "Matching Setcur assigning Position = %ld\n", k_pos));
       pvar->dword = D_Integer;
       IntVal(*pvar) = k_pos;
       goto Node_Succeed;
@@ -3069,6 +3130,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3088,6 +3150,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3105,6 +3168,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3122,6 +3186,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3131,10 +3196,11 @@ Node_Succeed:
 
    case  PC_String : {
       int LV_Len = StrLen(Node->parameter);
-      DEBUGF(20,(stdout,"Matching String \"%*s\" against %s, Length %d Pos %d Len %d\n", LV_Len, StrLoc(Node->parameter), pat_sub, k_pos, Length, k_pos, LV_Len));
+      DEBUGF(20,(stdout,"Matching String \"%*s\" against %s, Length %d Pos %ld Len %d\n", LV_Len, StrLoc(Node->parameter), pat_sub, Length, k_pos, LV_Len));
       if ((Length - (k_pos - 1) >= LV_Len) &&
 	  !strncmp(pat_sub + (k_pos - 1), StrLoc(Node->parameter), LV_Len)) {
 	 k_pos += LV_Len;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3150,6 +3216,7 @@ Node_Succeed:
       if ((Length -(k_pos - 1) >= LV_Len) &&
 	  !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)) {
 	 k_pos += LV_Len;
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3167,6 +3234,7 @@ Node_Succeed:
 	 if ((Length - (k_pos - 1) >= LV_Len) &&
 	     !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
 	    k_pos += LV_Len;
+	    EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -3188,6 +3256,7 @@ Node_Succeed:
 	    if ((Length - (k_pos - 1) >= LV_Len )
 		&& !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
 	       k_pos += LV_Len;
+	       EVVal(k_pos, E_Spos);
 	       goto Node_Succeed;
 	       }
 	    else {
@@ -3216,6 +3285,7 @@ Node_Succeed:
       else{
 	 k_pos++;
 	 Push (Node);
+	 EVVal(k_pos, E_Spos);
 	 goto Node_Succeed;
 	 }
       }

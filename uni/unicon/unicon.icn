@@ -34,7 +34,7 @@ global parsingErrors, returnErrorsFlag
 
 global fin,flog,flogname,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha
 global classes,comp,exec,strict,links,imports,loud,ct,reserved,optimize
-global icontopt,ilinkopt,tempenv,tmpcount, exename, widollog, tmpname
+global icontopt,ilinkopt,tempenv,tmpcount, exename,widollog,tmpname,silent
 global yydbg, yyout, linkline, translateducode, imported, imported_classes
 
 #
@@ -67,7 +67,10 @@ procedure istop(args[])
 end
 
 procedure iwrite(args[])
-  if \loud then write ! args
+   if \loud then {
+      if /silent | *parsingErrors>0 then
+         write ! args
+      }
   if \flog then {
       if args[1] === &errout then
 	  pop(args)
@@ -78,7 +81,11 @@ procedure iwrite(args[])
 end
 
 procedure iwrites(args[])
-   if \loud then writes ! args
+   if \loud then {
+      if (/silent | *parsingErrors>0) then
+         writes ! args
+      }
+
    if \flog then {
        if args[1] === &errout then
 	   pop(args)
@@ -478,7 +485,7 @@ procedure unicon(argv)
                   }
                "-quiet"  : loud := &null
                "-s"      : {
-                  loud := &null
+                  silent := 1
                   dash_s := 1
                   icontopt ||:= "-s "
                   ilinkopt ||:= "-s "
@@ -531,7 +538,7 @@ procedure unicon(argv)
                   
                   if integer(argv[i+1]) = 0 then{
                      dash_s := 1
-                     loud := &null
+                     silent := 1
                      }                        
                   skip := 1
                   }
@@ -540,7 +547,7 @@ procedure unicon(argv)
                   icontopt ||:= "-v0 "
                   dash_v := 1
                   dash_s := 1
-                  loud := &null
+                  silent := 1
                   }
                "-v1"|"-v2"|"-v3" : {
                   ilinkopt ||:= argv[i] || " "

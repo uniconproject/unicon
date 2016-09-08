@@ -1251,11 +1251,13 @@ procedure csetify(n)
    if type(n) ~== "treenode" then {
       if type(n) == "token" then {
 	 case n.tok of {
+	    # The two cases handled, leave as a string in order to
+	    # preserve escapes. Calling code will append ' ' around it.
 	    IDENT: {
-	       return cset(n.s)
+	       return n.s
 	       }
 	    INTLIT: {
-	       return cset(n.s)
+	       return n.s
 	       }
 	    default: {
 	       runerr("csetify", n.tok)

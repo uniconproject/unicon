@@ -866,7 +866,6 @@ brackchars: brackchars2
 	| brackchars brackchars2 {
 	   if type($1) == "treenode" then {
 	     c1 := csetify($1)
-	     write("c1 is ", image(c1))
 	     }
 	   if type($2) == "treenode" then c2 := csetify($2)
 
@@ -883,7 +882,7 @@ brackchars: brackchars2
 	;
 
 brackchars2: IDENT | INTLIT | REALLIT | DOT
-	| BACKSLASH IDENT {
+	| BACKSLASH IDENT { # ordinary escape char
 	   $$ := $2
 	   $$.column := $1.column
 	   case $$.s[1] of {
@@ -891,6 +890,14 @@ brackchars2: IDENT | INTLIT | REALLIT | DOT
 	      default: stop("unrecognized escape char \\", $$.s[1])
 	      }
 	}
+	| BACKSLASH INTLIT { #escaped octal?
+	   $$ := $2
+	   $$.column := $1.column
+	   case $$.s[1] of {
+	      "0"|"1"|"2"|"3"|"4"|"5"|"6"|"7": $$.s[1] := "\\" || $$.s[1]
+	      default: stop("non-octal numeric escape char \\", $$.s[1])
+	      }
+	   }
 	;
 
 section	: expr11 LBRACK expr sectop expr RBRACK { $$ := node("section", $1,$2,$3,$4,$5,$6);} ;

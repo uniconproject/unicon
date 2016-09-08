@@ -1504,15 +1504,6 @@ end
 
 /* PFail() moved to bottom (function Fail()) */
 
-static void MYWriteToFile(FILE *fd, int len, char *s)
-{
-   int i;
-   for (i = 0; i < len; i++){
-      fprintf(fd,"%c",s[i]);
-      }
-   fprintf(fd,"\n");	
-}
-
 /*
  * Constant Pattern elements used only on stack
  *  CP_Assign    : aliased PE := (PC_Assign,    0, N);
@@ -2055,7 +2046,8 @@ Match_Succeed:
 	       if (var.dword == D_File) {
 		  struct b_file *f;
 		  f = (struct b_file *)BlkLoc(var);
-		  MYWriteToFile(f->fd.fp,Stop - Start,pat_sub + Start);
+		  fwrite(pat_sub + Start, 1, Stop - Start, f->fd.fp);
+		  fputc('\n', f->fd.fp);
 		  }
 	       else {
                   StrLen(*pvar) = Stop - Start;
@@ -2323,8 +2315,9 @@ Node_Succeed:
       if (var.dword == D_File) {
 	 struct b_file *f;
 	 f = (struct b_file *)BlkLoc(var);
-	 MYWriteToFile(f->fd.fp,(k_pos -1) - Stack[Stack_Base - 1].cursor,
-		       pat_sub + Stack[Stack_Base - 1].cursor);
+	 fwrite(pat_sub + Stack[Stack_Base - 1].cursor, 1,
+		(k_pos - 1) - Stack[Stack_Base - 1].cursor, f->fd.fp);
+	 fputc('\n', f->fd.fp);
 	 }
       else {
          StrLen(*pvar) = (k_pos - 1) - Stack[Stack_Base - 1].cursor;

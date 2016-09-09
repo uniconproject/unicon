@@ -193,7 +193,7 @@ int first;
    CURTSTATE_AND_CE();
 
 
-   ccp = (struct b_coexpr *)BlkLoc(k_current);
+   ccp = BlkD(k_current, Coexpr);
 
 #ifndef NativeCoswitch
    /* 
@@ -262,7 +262,7 @@ int first;
        */
    	 struct b_list *hp;
       	 MUTEX_LOCKBLK_CONTROLLED(BlkD(ccp->outbox, List), "co_chng(): list mutex");
-      	 hp = BlkD(BlkLoc(k_current)->Coexpr.outbox, List);
+      	 hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
       	 if (hp->size>=hp->max){
             hp->full++;
             while (hp->size>=hp->max){
@@ -270,13 +270,13 @@ int first;
 	       DEC_NARTHREADS;
 	       CV_WAIT_FULLBLK(hp);
 	       INC_NARTHREADS_CONTROLLED;
-      	       hp = BlkD(BlkLoc(k_current)->Coexpr.outbox, List);
+      	       hp = BlkD(BlkD(k_current,Coexpr)->outbox, List);
 	       }
 	    hp->full--;
       	    }
-         c_put(&(BlkLoc(k_current)->Coexpr.outbox), valloc);
-      	 MUTEX_UNLOCKBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List), "co_chng(): list mutex");
-      	 CV_SIGNAL_EMPTYBLK(BlkD(BlkLoc(k_current)->Coexpr.outbox, List));
+         c_put(&(BlkD(k_current,Coexpr)->outbox), valloc);
+      	 MUTEX_UNLOCKBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List), "co_chng(): list mutex");
+      	 CV_SIGNAL_EMPTYBLK(BlkD(BlkD(k_current,Coexpr)->outbox, List));
    	 if (IS_TS_THREAD(ccp->status) &&
 	    (swtch_typ == A_Coret || swtch_typ == A_Cofail)){
        	    /*
@@ -445,7 +445,7 @@ int first;
     * they might only preserve enough to immediate return.  So local variables
     * like ccp might not be correct after the coswitch.
     */
-   return ((struct b_coexpr *)BlkLoc(k_current))->coexp_act;
+   return BlkD(k_current,Coexpr)->coexp_act;
 
 #endif        				/* CoExpr */
    }

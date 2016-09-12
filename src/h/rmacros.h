@@ -1291,6 +1291,7 @@
 #else                                  /* PthreadCoswitch */
 #define THREAD_CREATE(ctx, t_stksize, msg)
 #define THREAD_JOIN(thrd, opt)
+#define CREATE_CE_THREAD(cp, t_stksize, msg)      
 #endif                                  /* PthreadCoswitch */
 
 #ifdef Concurrent 

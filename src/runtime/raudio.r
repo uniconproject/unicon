@@ -17,13 +17,16 @@ struct sSources
    ALuint buffer[4];
    ALuint wBuffer;
    ALuint mBuffer;
-   struct OggVorbis_File oggStream;
    ALenum format;
    pthread_t thread;
 #ifdef WIN32
    HANDLE hThread;
 #endif
+
+#if (defined(HAVE_LIBVORBIS) && defined(HAVE_LIBOGG))
+   struct OggVorbis_File oggStream;
    struct vorbis_info *vorbisInfo;
+#endif
 };
 
 struct sSources arraySource[16];

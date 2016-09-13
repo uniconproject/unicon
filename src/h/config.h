@@ -275,15 +275,15 @@
 #define HAVE_VOICE
 #endif
 
-/*#if defined(HAVE_LIBOGG) || defined(HAVE_LIBOPENAL)*/
-#if (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBOGG))
-/* defined audio because have openal and have libogg */
-#define Audio
+#if (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBALUT))
+   #if (defined(HAVE_LIBVORBIS) && defined(HAVE_LIBOGG))
+   #define Audio
+   #endif
+   #if defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG)
+   #define Audio
+   #endif
 #endif
-#if (defined(HAVE_LIBOPENAL) && defined(HAVE_LIBSDL) && defined(HAVE_LIBSMPEG) )
-/* defined audio because have openal and have libsdl and have libsmpeg */
-#define Audio
-#endif
+
 #if  (defined(HAVE_LIBOGG) && defined(WIN32))
 /* defined audio because have ogg and win32 */
 #define Audio

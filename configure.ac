@@ -64,7 +64,7 @@ echo    "* Features"
 echo    "|___.* Compression"
 echo -n "|   |--> ZLIB      : "
 if test "$zlib_cv_libz"   = yes ; then echo "yes"; else echo "no"; fi
-echo "|"
+echo    "|"
 
 echo    "|___.* Graphics"
 echo -n "|   |--> XLIB      : "
@@ -77,7 +77,7 @@ echo -n "|   |--> XFT       : "
 if test "$xft_cv_libxft"   = yes ; then echo "yes"; else echo "no"; fi
 echo -n "|   |--> Freetype  : "
 if test "$freetype_cv_libfreetype"   = yes ; then echo "yes"; else echo "no"; fi
-echo "|"
+echo    "|"
 
 echo    "|___.* 3D Graphics"
 echo -n "|   |--> OpenGL    : "
@@ -90,32 +90,34 @@ echo "|"
 
 echo    "|___.* Concurrency"
 echo -n "|   |--> Threads   : "
-if test "$pthread_cv_libpthread" = yes ; then echo "yes"; else echo "no"; fi 
-echo "|"
+if test "$pthread_cv_libpthread"  = yes ; then echo "yes"; else echo "no"; fi 
+echo    "|"
 
-echo    "|___. * Audio (one group minimum)"
-echo -n "|   |--> Ogg       : "
-if test "$ogglib_cv_libogg"    = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |    Vorbis    : "
-if test "$ogglib_cv_libvorbis" = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> SDL       : "
-if test "$libsdl_cv_libsdl"   = yes ; then echo "yes"; else echo "no"; fi
+echo    "|___. * Audio"
 echo -n "|   |--> OpenAL    : "
-if test "$libopenal_cv_libsopenal"   = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |    alut      : "
-if test "$libalut_cv_libalut"   = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |    smpeg     : "
+if test "$libopenal_cv_libopenal" = yes ; then echo "yes"; else echo "no"; fi
+echo -n "|   |--> alut      : "
+if test "$libalut_cv_libalut"     = yes ; then echo "yes"; else echo "no"; fi
+echo    "|   |__One group of:"
+echo -n "|   | |> Ogg,vorbis: "
+if test "$ogglib_cv_libogg"       = yes; then echo -n "yes,"; else echo -n "no,"; fi
+if test "$ogglib_cv_libvorbis"    = yes; then echo "yes"; else echo "no"; fi
+echo -n "|   | |> SDL,smpeg : "
+if test "$libsdl_cv_libsdl"       = yes; then echo -n "yes,"; else echo -n "no,"; fi
 if test "$libsmpeg_cv_libsmpeg"   = yes ; then echo "yes"; else echo "no"; fi
+echo    "|"
+
+echo    "|___.* VOIP"
 echo -n "|   |--> jvoip     : "
-if test "$jvlib_cv_libjv"   = yes ; then echo "yes"; else echo "no"; fi
-echo "|"
+if test "$jvlib_cv_libjv"         = yes ; then echo "yes"; else echo "no"; fi
+echo    "|"
 
 echo    "|___.* Database"
 echo -n "|   |--> ODBC      : "
-if test "$odbc_cv_libodbc" = yes ; then echo "yes"; else echo "no"; fi 
-echo "|"
+if test "$odbc_cv_libodbc"        = yes ; then echo "yes"; else echo "no"; fi 
+echo    "|"
 
 echo    "|___.* Misc"
 echo -n "    |--> SSL       : "
-if test "$openssl_cv_libssl" = yes ; then echo "yes"; else echo "no"; fi 
+if test "$openssl_cv_libssl"      = yes ; then echo "yes"; else echo "no"; fi 
 echo ""

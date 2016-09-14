@@ -1411,6 +1411,14 @@ function{0,1} variable(s)
       CURTSTATE_AND_CE();
 
 #ifdef MultiThread
+      /*
+       * Produce error if i is negative
+       */
+      if (i < 0) {
+         irunerr(205, i);
+         errorfail;
+         }
+
       tmp_pfp = pfp;
       tmp_argp = glbl_argp;
       if (is:null(c)) c = k_current;
@@ -1429,17 +1437,12 @@ function{0,1} variable(s)
 	 ENTERPSTATE(prog);
 	 }
 
-      /*
-       * Produce error if i is negative
-       */
-      if (i < 0) {
-         irunerr(205, i);
-         errorfail;
-         }
-
       while (i--) {
 	 if (pfp == NULL) {
 	    pfp = tmp_pfp;
+	    glbl_argp = tmp_argp;
+	    if (savedprog)
+	       ENTERPSTATE(savedprog);
 	    fail;
 	    }
 	 pfp = pfp->pf_pfp;

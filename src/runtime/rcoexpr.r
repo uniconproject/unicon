@@ -341,10 +341,14 @@ int first;
    ccp->es_argp = glbl_argp;
 
 #ifdef Concurrent
-   if ((ccp->program == ncp->program) && !IS_TS_ATTACHED(ncp->status)){
-      curtstate->c = ncp;
-      ncp->ctx->tstate = curtstate;
-   }
+
+#if !COMPILER   
+   if (ccp->program == ncp->program)
+#endif   
+      if (!IS_TS_ATTACHED(ncp->status)){
+         curtstate->c = ncp;
+         ncp->ctx->tstate = curtstate;
+         }
 #else					/* Concurrent */
    ccp->es_pfp = pfp;
    ccp->es_tend = tend;

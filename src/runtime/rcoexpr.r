@@ -94,7 +94,7 @@ struct b_coexpr *sblkp;
     *  at the last word of the static block.
     */
 
-   newsp = (word *)((char *)sblkp + sizeof(struct b_coexpr) + sizeof(struct threadstate));
+   newsp = (word *)((char *)sblkp + sizeof(struct b_coexpr));
 
 #ifdef UpStack
    sblkp->cstate[0] =

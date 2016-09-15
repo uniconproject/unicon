@@ -1828,18 +1828,18 @@ function{1} load(s,arglist,infile,outfile,errfile,
 
       savedsp = sp;
       sp = stack_tmp + Wsizeof(struct b_coexpr)  + Wsizeof(struct progstate)
-        + Wsizeof(struct threadstate) + pstate->hsize/WordSize;
+         + pstate->hsize/WordSize;
       if (pstate->hsize % WordSize) sp++;
 
 #ifdef UpStack
       sblkp->cstate[0] =
          ((word)((char *)sblkp + (mstksize - (sizeof(*sblkp)+sizeof(struct progstate)+
-            sizeof(struct threadstate)+pstate->hsize))/2)
+            pstate->hsize))/2)
             &~((word)WordSize*StackAlign-1));
 #else					/* UpStack */
       sblkp->cstate[0] =
 	((word)((char *)sblkp + mstksize - WordSize + sizeof(struct progstate) +
-           sizeof(struct threadstate) + pstate->hsize)
+           pstate->hsize)
            &~((word)WordSize*StackAlign-1));
 #endif					/* UpStack */
 

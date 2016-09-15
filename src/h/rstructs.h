@@ -737,8 +737,6 @@ struct progstate {
    word collstr;			/*  t      number of string collect requests */
    word collblk;			/*  ex     number of block collect requests */
 
-   struct threadstate *tstate;
-
    struct descrip K_main;
    struct b_file K_errout;
    struct b_file K_input;
@@ -800,6 +798,9 @@ struct progstate {
    struct b_tvmonitored *(*Alctvmonitored) (dptr);
    void (*Deallocate)(union block *);
    char * (*Reserve)(int, word);
+
+  struct threadstate *tstate, maintstate;
+  
    };
 
 #endif					/* MultiThread */

@@ -309,7 +309,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    if (icodesize > 0) {
       ep = (struct b_coexpr *)
 	calloc(1, (msize)(stacksize + icodesize + sizeof(struct progstate) +
-			  sizeof(struct threadstate) + sizeof(struct b_coexpr)));
+			  sizeof(struct b_coexpr)));
       }
    else
 #endif					/* MultiThread */
@@ -324,7 +324,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 #ifdef MultiThread
       if (icodesize>0) {
          ep = (struct b_coexpr *)
-	    malloc((msize)(mstksize+icodesize+sizeof(struct progstate)+sizeof(struct threadstate)));
+	    malloc((msize)(mstksize+icodesize+sizeof(struct progstate)));
          }
       else
 #endif					/* MultiThread */
@@ -387,7 +387,7 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
     */
    if(icodesize>0){
      ep->program = (struct progstate *)(ep+1);
-     ep->program->tstate = (struct threadstate *) (ep->program + 1);
+     ep->program->tstate = &ep->program->maintstate;
      }
    else ep->program = curpstate;
 #endif					/* MultiThread */

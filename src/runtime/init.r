@@ -1611,12 +1611,25 @@ int i;
       EVVal((word)i, E_Exit);
 #endif					/* E_Exit */
 #ifdef MultiThread
+   /*
+    * A loaded program is calling c_exit.  Usually this will be due to a
+    * runtime error.  Maybe we should just quit now.
+    */
    if (curpstate != NULL && curpstate->parent != NULL) {
+#if 0
       /* might want to get to the lterm somehow, instead */
       while (1) {
 	 struct descrip dummy;
+	 /*
+	  * Child c_exit; it might make sense to fail to the parent in
+	  * a non-error situation, even repeatedly if the parent were
+	  * dumb enough to activate you over and over.  But it looks
+	  * risky to stick infinite loops in code. Consider revising
+	  * someday if we can think of a more correct behavior.
+	  */
 	 co_chng(curpstate->parent->Mainhead, NULL, &dummy, A_Cofail, 1);
 	 }
+#endif
       }
 #endif					/* MultiThread */
 
@@ -2092,10 +2105,16 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->colltot     = pstate->collstat   =
    pstate->collstr     = pstate->collblk    = 0;
 
+#ifdef Concurrent
+   init_threadheap(tstate, stringsiz, blocksiz);
+   pstate->stringregion = tstate->Curstring;
+   pstate->blockregion  = tstate->Curblock;   
+#else   
    pstate->stringregion = (struct region *)malloc(sizeof(struct region));
    pstate->blockregion  = (struct region *)malloc(sizeof(struct region));
    pstate->stringregion->size = stringsiz;
    pstate->blockregion->size = blocksiz;
+#endif					/* Concurrent */
 
    /*
     * the local program region list starts out with this region only

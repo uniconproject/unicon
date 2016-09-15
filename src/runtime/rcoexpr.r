@@ -341,7 +341,7 @@ int first;
    ccp->es_argp = glbl_argp;
 
 #ifdef Concurrent
-   if (!IS_TS_ATTACHED(ncp->status)){
+   if ((ccp->program == ncp->program) && !IS_TS_ATTACHED(ncp->status)){
       curtstate->c = ncp;
       ncp->ctx->tstate = curtstate;
    }
@@ -373,6 +373,15 @@ int first;
     * Enter the program state of the co-expression being activated
     */
    ENTERPSTATE(ncp->program);
+#ifdef Concurrent
+   /*
+    * Enter the threadstate of the co-expression being activated
+    */
+   if (ccp->program != ncp->program) {
+      curtstate = ncp->ctx->tstate;
+      global_curtstate = ncp->ctx->tstate;
+      }
+#endif
 #endif					/* !COMPILER */
 
 
@@ -462,7 +471,7 @@ dptr cargp;
    continuation cf;
    CURTSTATVAR();
 
-   SYNC_GLOBAL_CURTSTATE();
+   //SYNC_GLOBAL_CURTSTATE();
 
    if (coexpr_fnc != NULL) {
       cf = coexpr_fnc;
@@ -523,7 +532,7 @@ int pthreadcoswitch(struct context *old, struct context *new, word ostat, word n
       pthread_exit(NULL);		/* if unblocked because unwanted */
       }
 
-   SYNC_GLOBAL_CURTSTATE();
+   //SYNC_GLOBAL_CURTSTATE();
 
    return 0;				/* else return to continue running */
    }

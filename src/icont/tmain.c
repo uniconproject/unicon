@@ -1183,10 +1183,14 @@ Deliberate Syntax Error
        */
       if (efile != NULL) {
          close(fileno(stderr));
-         if (strcmp(efile, "-") == 0)
-            dup(fileno(stdout));
-         else if (freopen(efile, "w", stderr) == NULL)
-            quitf("could not redirect stderr to %s\n", efile);
+         if (strcmp(efile, "-") == 0){
+	    if (dup(fileno(stdout) == -1)){
+	       perror("execute(): could not dup stdout:");
+	       exit(EXIT_FAILURE);
+	       }
+	    }
+	 else if (freopen(efile, "w", stderr) == NULL)
+	      quitf("could not redirect stderr to %s\n", efile);
          }
       execv(ofile, argv);
       quitf("could not execute %s", ofile);

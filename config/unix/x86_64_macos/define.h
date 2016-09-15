@@ -20,3 +20,11 @@
 #define INTMAIN
 #define PROFIL_CHAR_P
 #define LoadFunc 1
+
+/*
+ * To turn off concurrency
+ * #define NoConcurrent
+ * 
+ * To turn off native coswitch
+ * #define NoNativeCoswitch
+ */

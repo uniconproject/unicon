@@ -1658,13 +1658,18 @@ struct ptstruct *ptopen(char *command)
 
 }
 
-
+/*
+ * ptgetstrt() - pseudo-pty getstr with timeout.  Actually, read() does not
+ * have a timeout, not sure this should either. I guess timeout is optional.
+ */
 int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 	      unsigned long waittime, int longread)
    {
-   unsigned long bytes_read=0;
    int tot_bytes_read=0, wait_fd, i=0, ret=0, premstop=0;
-#if !NT
+#if NT
+   long bytes_read=0;
+#else
+   int bytes_read=0;
    fd_set rd_set;
    struct timeval timeout, *timeoutp = NULL;
 #endif
@@ -1679,8 +1684,8 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
    memset(buffer, '\0', bufsiz);
 
    if (!longread) {
-      timeout.tv_sec  = 0L;
-      timeout.tv_usec = waittime;
+      timeout.tv_sec  = waittime / 1000000L;
+      timeout.tv_usec = waittime % 1000000L;
       timeoutp = &timeout;
       }
 
@@ -1713,30 +1718,57 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 
 #endif					/* NT */
 
-    while(!premstop && tot_bytes_read < bufsiz 
+      while(!premstop && tot_bytes_read < bufsiz) {
 
+	 /*
+	  * Read a byte. See if we have a newline.  Probably needs to
+	  * be rewritten to try for multiple bytes.
+	  */
 #if NT
-	  && (ret=ReadFile(ptStruct->master_read,&buffer[i],1,
-			   &bytes_read,NULL)) != 0) {
+	 if ((ret=ReadFile(ptStruct->master_read,&buffer[i],1,
+			  &bytes_read,NULL)) != 0) {
 #else					/* NT */
-       && (bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+	 if ((bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
 #endif					/* NT */
+
 	     if(!longread && buffer[i] == '\n') {
-		if (buffer[i-1] == '\r') tot_bytes_read--;
+		if (buffer[i-1] == '\r') {
+		   tot_bytes_read--;
+		   }
 		premstop=1;
 		}
 	     tot_bytes_read += bytes_read;
-      i++;
+	     i++;
 
 #if NT
 #else					/* NT */
-      FD_ZERO(&rd_set);
-      FD_SET(ptStruct->master_fd,&rd_set);
+	     FD_ZERO(&rd_set);
+	     FD_SET(ptStruct->master_fd,&rd_set);
 #endif					/* NT */
 
-       }
-       }
-
+	     } /* if bytes read */
+	 else {
+#if NT
+	    /*
+	     * Handle ReadFile() != 0 here. Use GetLastError().
+	     * Do we ever retry? Is ERROR_IO_PENDING possible?
+	     */
+	    break;
+#else					/* NT */
+	    /*
+	     * Negative read() is an error; 0 just means wait for more.
+	     * But even if negative, we might just need to try again.
+	     */
+	    if ((bytes_read < 0) && (errno != EAGAIN)) {
+	       /* non-continuing error */
+	       break;
+	       }
+	    usleep(5000);
+	    continue;
+#endif					/* NT */
+	    }
+	 } /* while */
+	 } /* if we had input before timeout */
 #if NT
       else ret = -1;
       if (ret == 0)

@@ -692,6 +692,10 @@ void init_threadstate( struct threadstate *ts)
 #endif 					/* Concurrent */
 }
 
+#ifdef MultiThread
+void init_progstate(struct progstate *pstate);
+#endif 					/* MutliThread */
+
 #if COMPILER
 void init(name, argcp, argv, trc_init)
 char *name;
@@ -727,22 +731,13 @@ char *argv[];
 #else					/* COMPILER && !Concurrent */
 
 #ifdef MultiThread
+  
    /*
     * initialize root pstate
     */
    curpstate = &rootpstate;
-   
-   init_sighandlers(curpstate);
-
-   rootpstate.parent = rootpstate.next = NULL;
-   rootpstate.parentdesc = nulldesc;
-   rootpstate.eventmask= nulldesc;
-   rootpstate.eventcount = zerodesc;
-   rootpstate.valuemask = nulldesc;
-   rootpstate.eventcode= nulldesc;
-   rootpstate.eventval = nulldesc;
-   rootpstate.eventsource = nulldesc;
-   rootpstate.Kywd_err = zerodesc;
+   rootpstate.next = NULL;
+   init_progstate(curpstate);
 #endif					/* MultiThread */
 
 #if defined(MultiThread) || ConcurrentCOMPILER
@@ -761,21 +756,6 @@ char *argv[];
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;
 
-#ifdef Graphics
-   rootpstate.AmperX = zerodesc;
-   rootpstate.AmperY = zerodesc;
-   rootpstate.AmperRow = zerodesc;
-   rootpstate.AmperCol = zerodesc;
-   rootpstate.AmperInterval = zerodesc;
-   rootpstate.LastEventWin = nulldesc;
-   rootpstate.Kywd_xwin[XKey_Window] = nulldesc;
-#endif					/* Graphics */
-
-   rootpstate.Coexp_ser = 2;
-   rootpstate.List_ser  = 1;
-   rootpstate.Intern_list_ser = -1;
-   rootpstate.Set_ser   = 1;
-   rootpstate.Table_ser = 1;
    rootpstate.Kywd_time_elsewhere = 0;
    rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
@@ -816,60 +796,7 @@ MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
 #endif					/* ConcurrentCOMPILER */
 #endif					/* Concurrent */
 
-#ifdef MultiThread
-#ifdef Arrays   
-   rootpstate.Cprealarray = cprealarray_0;
-   rootpstate.Cpintarray = cpintarray_0;
-#endif					/* Arrays */   
-
-   rootpstate.Cplist = cplist_0;
-   rootpstate.Cpset = cpset_0;
-   rootpstate.Cptable = cptable_0;
-   rootpstate.EVstralc = EVStrAlc_0;
-   rootpstate.Interp = interp_0;
-   rootpstate.Cnvcset = cnv_cset_0;
-#passthru #undef cnv_int
-#passthru #undef cnv_real
-#passthru #undef cnv_str
-#passthru #undef alcfile
-#passthru #undef alcreal
-#passthru #undef alcstr
-#passthru #undef alclist_raw
-   rootpstate.Cnvint = cnv_int;
-   rootpstate.Cnvreal = cnv_real;
-   rootpstate.Cnvstr = cnv_str;
-   rootpstate.Cnvtcset = cnv_tcset_0;
-   rootpstate.Cnvtstr = cnv_tstr_0;
-   rootpstate.Deref = deref_0;
-#ifdef LargeInts
-   rootpstate.Alcbignum = alcbignum_0;
-#endif					/* LargeInts */
-   rootpstate.Alccset = alccset_0;
-   rootpstate.Alcfile = alcfile;
-   rootpstate.Alchash = alchash_0;
-   rootpstate.Alcsegment = alcsegment_0;
-#ifdef PatternType
-   rootpstate.Alcpattern = alcpattern_0;
-   rootpstate.Alcpelem = alcpelem_0;
-#endif					/* PatternType */
-   rootpstate.Alclist_raw = alclist_raw;
-   rootpstate.Alclist = alclist_0;
-   rootpstate.Alclstb = alclstb_0;
-#ifndef DescriptorDouble
-   rootpstate.Alcreal = alcreal;
-#endif					/* DescriptorDouble */
-   rootpstate.Alcrecd = alcrecd_0;
-   rootpstate.Alcrefresh = alcrefresh_0;
-   rootpstate.Alcselem = alcselem_0;
-   rootpstate.Alcstr = alcstr;
-   rootpstate.Alcsubs = alcsubs_0;
-   rootpstate.Alctelem = alctelem_0;
-   rootpstate.Alctvtbl = alctvtbl_0;
-   rootpstate.Deallocate = deallocate_0;
-   rootpstate.Reserve = reserve_0;
-   
-#else					/* MultiThread */
-
+#ifndef MultiThread
    curstring = &rootstring;
    curblock  = &rootblock;
    init_sighandlers();
@@ -2022,68 +1949,24 @@ void datainit()
 #endif					/* COMPILER */
 
    }
-
+
 #ifdef MultiThread
 
-/*
- * Initialize a loaded program.  Unicon programs will have an
- * interesting icodesize; non-Unicon programs will send a fake
- * icodesize (nonzero, perhaps good if longword-aligned) to alccoexp.
- */
-struct b_coexpr *initprogram(word icodesize, word stacksize,
-			     word stringsiz, word blocksiz)
-{
-   struct b_coexpr *coexp = alccoexp(icodesize, stacksize);
-   struct progstate *pstate = NULL;
-   struct threadstate *tstate = NULL;
-   if (coexp == NULL) return NULL;
-   pstate = coexp->program;
-   tstate = pstate->tstate;
-   tstate->c = coexp;
-   tstate->Stack = (word *)((char *)(tstate+1) + icodesize);
-   tstate->Stackend = (word *)(((char *)(tstate->Stack)) + (stacksize/2));
+void init_progstate(struct progstate *pstate){
 
-#ifdef StackCheck
-   coexp->es_stack = tstate->Stack;
-   coexp->es_stackend = tstate->Stackend;
-#endif					/* StackCheck */
-
-   /*
-    * Initialize values.
-    */
-   pstate->hsize = icodesize;
+   init_sighandlers(pstate);
+   
    pstate->parent= NULL;
    pstate->parentdesc= nulldesc;
+
+   pstate->valuemask= nulldesc;
    pstate->eventmask= nulldesc;
    pstate->eventcount = zerodesc;
-   pstate->valuemask= nulldesc;
    pstate->eventcode= nulldesc;
    pstate->eventval = nulldesc;
    pstate->eventsource = nulldesc;
 
    pstate->Kywd_err = zerodesc;
-
-   init_sighandlers(pstate);
-
-#ifndef Concurrent
-   init_threadstate(tstate);
-#endif					/* Concurrent */  
-
-   pstate->Kywd_time_elsewhere = millisec();
-   pstate->Kywd_time_out = 0;
-   pstate->Mainhead= ((struct b_coexpr *)pstate)-1;
-   pstate->K_main.dword = D_Coexpr;
-   BlkLoc(pstate->K_main) = (union block *) pstate->Mainhead;
-
-   {
-   int idr;
-   pstate->Dr_arrays = calloc(LONGEST_DR_NUM, sizeof (struct b_proc *));
-   if (pstate->Dr_arrays == NULL)
-      fatalerr(305, NULL);
-   for(idr=0; idr<LONGEST_DR_NUM; idr++)
-      pstate->Dr_arrays[idr]=NULL;
-   pstate->Longest_dr = LONGEST_DR_NUM;
-   }
 
 #ifdef Graphics
    pstate->AmperX = zerodesc;
@@ -2101,42 +1984,18 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Set_ser = 1;
    pstate->Table_ser = 1;
 
-   pstate->stringtotal = pstate->blocktotal =
-   pstate->colltot     = pstate->collstat   =
-   pstate->collstr     = pstate->collblk    = 0;
+#passthru #undef cnv_int
+#passthru #undef cnv_real
+#passthru #undef cnv_str
+#passthru #undef alcfile
+#passthru #undef alcreal
+#passthru #undef alcstr
+#passthru #undef alclist_raw
 
-#ifdef Concurrent
-   init_threadheap(tstate, stringsiz, blocksiz);
-   pstate->stringregion = tstate->Curstring;
-   pstate->blockregion  = tstate->Curblock;   
-#else   
-   pstate->stringregion = (struct region *)malloc(sizeof(struct region));
-   pstate->blockregion  = (struct region *)malloc(sizeof(struct region));
-   pstate->stringregion->size = stringsiz;
-   pstate->blockregion->size = blocksiz;
-#endif					/* Concurrent */
-
-   /*
-    * the local program region list starts out with this region only
-    */
-   pstate->stringregion->prev = NULL;
-   pstate->blockregion->prev = NULL;
-   pstate->stringregion->next = NULL;
-   pstate->blockregion->next = NULL;
-   /*
-    * the global region list links this region with curpstate's
-    */
-   pstate->stringregion->Gprev = curpstate->stringregion;
-   pstate->blockregion->Gprev = curpstate->blockregion;
-   pstate->stringregion->Gnext = curpstate->stringregion->Gnext;
-   pstate->blockregion->Gnext = curpstate->blockregion->Gnext;
-   if (curpstate->stringregion->Gnext)
-      curpstate->stringregion->Gnext->Gprev = pstate->stringregion;
-   curpstate->stringregion->Gnext = pstate->stringregion;
-   if (curpstate->blockregion->Gnext)
-      curpstate->blockregion->Gnext->Gprev = pstate->blockregion;
-   curpstate->blockregion->Gnext = pstate->blockregion;
-   initalloc(0, pstate);
+#ifdef PatternType
+   rootpstate.Alcpattern = alcpattern_0;
+   rootpstate.Alcpelem = alcpelem_0;
+#endif					/* PatternType */
 
 #ifdef Arrays   
    pstate->Cprealarray = cprealarray_0;
@@ -2177,6 +2036,94 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->Alctvtbl = alctvtbl_0;
    pstate->Deallocate = deallocate_0;
    pstate->Reserve = reserve_0;
+}
+
+/*
+ * Initialize a loaded program.  Unicon programs will have an
+ * interesting icodesize; non-Unicon programs will send a fake
+ * icodesize (nonzero, perhaps good if longword-aligned) to alccoexp.
+ */
+struct b_coexpr *initprogram(word icodesize, word stacksize,
+			     word stringsiz, word blocksiz)
+{
+   struct b_coexpr *coexp = alccoexp(icodesize, stacksize);
+   struct progstate *pstate = NULL;
+   struct threadstate *tstate = NULL;
+   if (coexp == NULL) return NULL;
+   pstate = coexp->program;
+   tstate = pstate->tstate;
+   tstate->c = coexp;
+   tstate->Stack = (word *)((char *)(tstate+1) + icodesize);
+   tstate->Stackend = (word *)(((char *)(tstate->Stack)) + (stacksize/2));
+
+#ifdef StackCheck
+   coexp->es_stack = tstate->Stack;
+   coexp->es_stackend = tstate->Stackend;
+#endif					/* StackCheck */
+
+   /*
+    * Initialize values.
+    */
+   pstate->hsize = icodesize;
+
+   init_progstate(pstate);
+   
+#ifndef Concurrent
+   init_threadstate(tstate);
+#endif					/* Concurrent */  
+
+   pstate->Kywd_time_elsewhere = millisec();
+   pstate->Kywd_time_out = 0;
+   pstate->Mainhead= ((struct b_coexpr *)pstate)-1;
+   pstate->K_main.dword = D_Coexpr;
+   BlkLoc(pstate->K_main) = (union block *) pstate->Mainhead;
+
+   {
+   int idr;
+   pstate->Dr_arrays = calloc(LONGEST_DR_NUM, sizeof (struct b_proc *));
+   if (pstate->Dr_arrays == NULL)
+      fatalerr(305, NULL);
+   for(idr=0; idr<LONGEST_DR_NUM; idr++)
+      pstate->Dr_arrays[idr]=NULL;
+   pstate->Longest_dr = LONGEST_DR_NUM;
+   }
+
+   pstate->stringtotal = pstate->blocktotal =
+   pstate->colltot     = pstate->collstat   =
+   pstate->collstr     = pstate->collblk    = 0;
+
+#ifdef Concurrent
+   init_threadheap(tstate, stringsiz, blocksiz);
+   pstate->stringregion = tstate->Curstring;
+   pstate->blockregion  = tstate->Curblock;   
+#else   
+   pstate->stringregion = (struct region *)malloc(sizeof(struct region));
+   pstate->blockregion  = (struct region *)malloc(sizeof(struct region));
+   pstate->stringregion->size = stringsiz;
+   pstate->blockregion->size = blocksiz;
+#endif					/* Concurrent */
+
+   /*
+    * the local program region list starts out with this region only
+    */
+   pstate->stringregion->prev = NULL;
+   pstate->blockregion->prev = NULL;
+   pstate->stringregion->next = NULL;
+   pstate->blockregion->next = NULL;
+   /*
+    * the global region list links this region with curpstate's
+    */
+   pstate->stringregion->Gprev = curpstate->stringregion;
+   pstate->blockregion->Gprev = curpstate->blockregion;
+   pstate->stringregion->Gnext = curpstate->stringregion->Gnext;
+   pstate->blockregion->Gnext = curpstate->blockregion->Gnext;
+   if (curpstate->stringregion->Gnext)
+      curpstate->stringregion->Gnext->Gprev = pstate->stringregion;
+   curpstate->stringregion->Gnext = pstate->stringregion;
+   if (curpstate->blockregion->Gnext)
+      curpstate->blockregion->Gnext->Gprev = pstate->blockregion;
+   curpstate->blockregion->Gnext = pstate->blockregion;
+   initalloc(0, pstate);
 
    return coexp;
 }

@@ -135,40 +135,31 @@
 
 #ifdef NoCoExpr
    #undef MultiThread
-   #undef EventMon
-   #undef Eve
-   #undef NoMultiThread
-   #undef NoEventMon
    #define NoMultiThread
-   #define NoEventMon
 #endif					/* NoCoExpr */
 
 #if COMPILER
-   #undef Eve
    #undef MultiThread
-   #undef EventMon
-   #undef NoMultiThread
-   #undef NoEventMon
    #define NoMultiThread
-   #define NoEventMon
 #endif					/* COMPILER */
 
-
-#ifndef NoEventMon
-#define EventMon
-#endif
-
 #ifdef NoMultiThread
-#ifndef NoEventMon
+   #undef MultiThread
+   #undef EventMon
+   #undef Eve
    #define NoEventMon
-#endif					/* NoEventMon */
 #else
    #undef MultiThread
    #define MultiThread
 #endif					/* NoMultiThread */
 
+#ifndef NoEventMon
+  #undef  EventMon
+  #define EventMon
+#endif
+
 #undef Concurrent
-#if !defined(NoCoExpr) && defined(MultiThread)
+#ifdef MultiThread
    #if defined(HAVE_LIBPTHREAD) && !defined(NoConcurrent)
       #define Concurrent 1
    #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
@@ -223,7 +214,6 @@
 #ifdef EventMon
    #undef MultiThread
    #define MultiThread
-
 #ifndef NoMonitoredTrappedVar
    #undef MonitoredTrappedVar
    #define MonitoredTrappedVar

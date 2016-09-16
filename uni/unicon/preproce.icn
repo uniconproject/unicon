@@ -23,7 +23,7 @@ global preproc_sym_table,preproc_if_stack,preproc_file_stack,preproc_if_state,
         preproc_file,preproc_filename,preproc_line,preproc_print_line,
         preproc_word_chars,preproc_nest_level,preproc_include_name,
         preproc_include_set,preproc_print_filename,preproc_command,
-        preproc_err_count
+        preproc_err_count, preproc_dollar_or_pound
 
 procedure predefs()
     local t
@@ -102,11 +102,12 @@ procedure preprocessor(fname,predefined_syms)
     
     while line := preproc_read() do line ? {
         preproc_space()
-        if ="#" & tmppos := &pos & ="line" & tab(any(' \t')) then {
+        if (preproc_dollar_or_pound := ="#") &
+	   tmppos := &pos & ="line" & tab(any(' \t')) then {
 	    &pos := tmppos
             suspend preproc_scan_directive()
         }
-        if ="$" & any(nonpunctuation) then {
+        if (preproc_dollar_or_pound := ="$") & any(nonpunctuation) then {
             suspend preproc_scan_directive()
         } else {
             &pos := 1
@@ -288,7 +289,10 @@ procedure preproc_scan_directive()
                     preproc_filename := \new_filename
                     preproc_line := new_line
                 } else {
-                    preproc_error()
+		   if \preproc_dollar_or_pound == "$" then
+		      preproc_error()
+		   else # it was just a comment beginning with #line
+		      tab(find("\n") | 0)
                 }
             #}
         }

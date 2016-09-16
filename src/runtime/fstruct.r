@@ -1902,6 +1902,12 @@ function{1} array(x[n])
       int bsize;
       int i_or_real = 0;
 
+      if( n>2 ){
+      	 fprintf(stderr,
+	   "multi-dimensional array support has not been added yet\n");
+	 runerr(101, x[2]);
+         }
+
       /*
        * Prepare dimensions.
        * Calculate total # of elements for n-dimensional array.

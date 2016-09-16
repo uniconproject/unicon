@@ -128,8 +128,47 @@
 #define ReadDirectory
 #endif					/* PosixFns */
 
+/*
+ *  Execution monitoring is not supported under the compiler,
+ *  nor if co-expressions are not available.
+ */
+
+#ifdef NoCoExpr
+   #undef MultiThread
+   #undef EventMon
+   #undef Eve
+   #undef NoMultiThread
+   #undef NoEventMon
+   #define NoMultiThread
+   #define NoEventMon
+#endif					/* NoCoExpr */
+
+#if COMPILER
+   #undef Eve
+   #undef MultiThread
+   #undef EventMon
+   #undef NoMultiThread
+   #undef NoEventMon
+   #define NoMultiThread
+   #define NoEventMon
+#endif					/* COMPILER */
+
+
+#ifndef NoEventMon
+#define EventMon
+#endif
+
+#ifdef NoMultiThread
+#ifndef NoEventMon
+   #define NoEventMon
+#endif					/* NoEventMon */
+#else
+   #undef MultiThread
+   #define MultiThread
+#endif					/* NoMultiThread */
+
 #undef Concurrent
-#ifndef NoCoExpr
+#if !defined(NoCoExpr) && defined(MultiThread)
    #if defined(HAVE_LIBPTHREAD) && !defined(NoConcurrent)
       #define Concurrent 1
    #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
@@ -156,15 +195,6 @@
    #define ConcurrentCOMPILER 0
 #endif
 
-#ifdef NoMultiThread
-#ifndef NoEventMon
-   #define NoEventMon
-#endif					/* NoEventMon */
-#else
-   #undef MultiThread
-   #define MultiThread
-#endif					/* NoMultiThread */
-
 #ifndef NoINTMAIN
    #undef INTMAIN
    #define INTMAIN
@@ -179,27 +209,6 @@
    #undef Messaging
    #define Messaging
 #endif					/* Messaging */
-
-/*
- *  Execution monitoring is not supported under the compiler,
- *  nor if co-expressions are not available.
- */
-
-#ifdef NoCoExpr
-   #undef MultiThread
-   #undef EventMon
-   #undef Eve
-#endif					/* NoCoExpr */
-
-#ifndef NoEventMon
-#define EventMon
-#endif
-
-#if COMPILER
-   #undef Eve
-   #undef MultiThread
-   #undef EventMon
-#endif					/* COMPILER */
 
 #ifndef NoStrInvoke
    #undef StrInvoke

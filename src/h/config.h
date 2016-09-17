@@ -133,10 +133,19 @@
  *  nor if co-expressions are not available.
  */
 
+#undef NativeCoswitch
 #ifdef NoCoExpr
+   #undef NoNativeCoswitch
+   #define NoNativeCoswitch
    #undef MultiThread
    #undef NoMultiThread
    #define NoMultiThread
+#else					/* NoCoExpr */
+   #undef CoExpr
+   #define CoExpr
+   #ifndef NoNativeCoswitch
+      #define NativeCoswitch
+   #endif				/* NoNativeCoswitch */
 #endif					/* NoCoExpr */
 
 #if COMPILER
@@ -175,13 +184,7 @@
        * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
        */
    #endif				/* Concurrent */
-
-   #undef CoExpr
-   #define CoExpr
-   #ifndef NoNativeCoswitch
-      #define NativeCoswitch
-   #endif				/* NoNativeCoswitch */
-#endif					/* NoCoExpr */
+#endif					/* MultiThread */
 
 #if defined(Concurrent) && COMPILER
    #define ConcurrentCOMPILER 1

@@ -135,11 +135,13 @@
 
 #ifdef NoCoExpr
    #undef MultiThread
+   #undef NoMultiThread
    #define NoMultiThread
 #endif					/* NoCoExpr */
 
 #if COMPILER
    #undef MultiThread
+   #undef NoMultiThread
    #define NoMultiThread
 #endif					/* COMPILER */
 
@@ -147,6 +149,7 @@
    #undef MultiThread
    #undef EventMon
    #undef Eve
+   #undef NoEventMon
    #define NoEventMon
 #else
    #undef MultiThread

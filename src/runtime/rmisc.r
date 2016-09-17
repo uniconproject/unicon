@@ -1250,7 +1250,11 @@ struct b_coexpr *popact(struct b_coexpr *ce)
     */
    if ((abp->nactivators == 0)
 #if !COMPILER
-        && (abp->astk_nxt || !(curpstate->parent))
+        && (abp->astk_nxt
+#ifdef MultiThread 
+	|| !(curpstate->parent)
+#endif					/* MultiThread */
+	)
 #endif					/* COMPILER */
       ) {
       oabp = abp;

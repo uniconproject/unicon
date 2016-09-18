@@ -287,7 +287,7 @@ char *name;
 #else					/* NT */
    struct passwd *pw, pwbuf;      
    char buf[1024];
-   if(getpwnam_r(name, &pwbuf, buf, 1024, &pw)!=0)
+   if ((getpwnam_r(name, &pwbuf, buf, 1024, &pw)!=0) || (pw == NULL))
       return -1;
    return pw->pw_uid;
 #endif					/* NT */
@@ -301,7 +301,7 @@ char *name;
 #else					/* NT */
    struct group *gr, grbuf;
    char buf[4096];
-   if (getgrnam_r(name, &grbuf, buf, 4096, &gr)!=0)
+   if ((getgrnam_r(name, &grbuf, buf, 4096, &gr)!=0) || (gr == NULL))
       return -1;
    return gr->gr_gid;
 #endif					/* NT */

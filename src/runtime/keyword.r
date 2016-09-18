@@ -29,7 +29,7 @@ keyword{4} allocated
       MUTEX_LOCKID(MTX_TLS_CHAIN);
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
-      tstate = roottstatep; 
+      tstate = curpstate->tstate; 
       do{
 	blktot += tstate->blocktotal;
 	strtot += tstate->stringtotal;

@@ -1448,16 +1448,24 @@ function{0,1} crypt(key, salt)
 #ifdef HAVE_CRYPT_R
       struct crypt_data localdata;
       char *crypt_r(const char *key, const char *salt, struct crypt_data *data);
+      CURTSTATE();
       localdata.initialized = 0;
+      IntVal(amperErrno) = 0;
       s = crypt_r(key, salt, &localdata);
 #else					/* HAVE_CRYPT_R */
 #ifdef HAVE_CRYPT
       char *crypt(const char *key, const char *salt);
+      CURTSTATE();
+      IntVal(amperErrno) = 0;
       s = crypt(key, salt);
 #else					/* HAVE_CRYPT */
       fail;
 #endif					/* HAVE_CRYPT */
 #endif					/* HAVE_CRYPT_R */
+      if (s == NULL) {
+	 IntVal(amperErrno) = errno;
+	 fail;
+      } 
       String(result, alcstr(s, strlen(s)));
       return result;
    }

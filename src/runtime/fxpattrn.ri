@@ -581,6 +581,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	 else {
 	    suspend string(stop - start, StrLoc(dpsub)+ start);
 	    }
+	 /* Deref again, in case psub was altered. */ 
 	 deref(&psub,&dpsub);
 	 k_subject = dpsub;
 	 /*
@@ -1656,7 +1657,9 @@ if (is:list(Node->parameter)) {
       fatalerr(160, &(ep->lslots[1]));
       }
    pvar = &rp->fields[fnum];
-   varref = var = rp->fields[fnum];
+   varref.dword = D_Var + ((word *)pvar - (word *)rp);
+   VarLoc(varref) = (dptr)rp;
+   var = rp->fields[fnum];
    EVValD(&var, E_PatVal);
    }
 else {
@@ -1666,13 +1669,14 @@ else {
       if (getvar(varnam, &varref) == Failed) {
 	 fatalerr(160, &(Node->parameter));
 	 }
+      deref(&varref, &var);
       pvar = VarLoc(varref);
-      var = *pvar;
       EVValD(&var, E_PatVal);
       }
    else if (Var(Node->parameter)) {
+      varref = Node->parameter;
+      deref(&(Node->parameter), &var);
       pvar = VarLoc(Node->parameter);
-      var = *pvar;
       EVValD(&var, E_PatVal);
       }
    else if (is:null(Node->parameter)) {
@@ -2050,9 +2054,10 @@ Match_Succeed:
 		  fputc('\n', f->fd.fp);
 		  }
 	       else {
+		  EVVar(&varref, E_Assign);
                   StrLen(*pvar) = Stop - Start;
                   StrLoc(*pvar) = pat_sub + Start;
-		  EVVar(pvar, E_Value);
+		  EVValD(pvar, E_Value);
 		  }
 	       }
 	    else {
@@ -2320,9 +2325,10 @@ Node_Succeed:
 	 fputc('\n', f->fd.fp);
 	 }
       else {
+	 EVVar(&varref, E_Assign);
          StrLen(*pvar) = (k_pos - 1) - Stack[Stack_Base - 1].cursor;
          StrLoc(*pvar) = pat_sub + Stack[Stack_Base - 1].cursor;
-	 EVVar(pvar, E_Value);
+	 EVValD(pvar, E_Value);
 	 }
       Pop_Region();
       goto Node_Succeed;
@@ -2393,21 +2399,26 @@ Node_Succeed:
        * Break (character set case)
        */
    case PC_Break_CS : {
+      int start_kpos = k_pos;
       DEBUGF(20,(stdout, "matching Break\n"));
       while( k_pos <= Length ){	
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
+	    if (k_pos != start_kpos)
+	       EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
-	    EVVal(k_pos, E_Spos);
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      /* probably discarded, but if Break() failed, k_pos didn't change. */
+      if (k_pos != start_kpos)
+	 k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
    case PC_Break_VP :{
+      int start_kpos = k_pos;
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout,"Matching Break unevaluated variable\n"));
       if (!cnv_cset(&var,&var)){
@@ -2415,58 +2426,68 @@ Node_Succeed:
 	 }
       while( k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
-	    EVVal(k_pos, E_Spos);
+	    if (k_pos != start_kpos)
+	       EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
 	    }
 	 else {
-	    EVVal(k_pos, E_Spos);
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      if (k_pos != start_kpos)
+	 k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
    case PC_Break_VF :{
+      int start_kpos = k_pos;
       GetResultFromFuncCall();
       DEBUGF(20,(stdout,"Matching Break unevaluated function call\n"));
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while (k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    EVVal(k_pos, E_Spos);
+	    if (k_pos != start_kpos)
+	       EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      if (k_pos != start_kpos)
+	 k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
 
    case PC_Break_MF :{
+      int start_kpos = k_pos;
       GetResultFromMethodCall();
       DEBUGF(20,(stdout,"Matching Break unevaluated method call\n"));
       if (!cnv_cset(&cresult,&cresult))
 	 fatalerr(104, &cresult);
       while( k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    EVVal(k_pos, E_Spos);
+	    if (k_pos != start_kpos)
+	       EVVal(k_pos, E_Spos);
 	    goto Node_Succeed;
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      /* if a Break has failed, should &pos have changed at all? */
+      if (k_pos != start_kpos)
+	 k_pos = start_kpos;
       goto Node_Fail;
       break;
       }
 
       /*
-       * BreakX (character set case)
+       * BreakX (character set case). By themselves, these are incorrect.
+       * BreakX starts like Break, but on failure it looks for more.
+       * That is what the BreakX_X node is for.
        */
    case PC_BreakX_CS: {
       DEBUGF(20,(stdout, "matching Breakx\n"));
@@ -3123,9 +3144,10 @@ Node_Succeed:
    case PC_Setcur: {
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout, "Matching Setcur assigning Position = %ld\n", k_pos));
+      EVVar(&varref, E_Assign);
       pvar->dword = D_Integer;
       IntVal(*pvar) = k_pos;
-      EVVar(pvar, E_Value);
+      EVValD(pvar, E_Value);
       goto Node_Succeed;
       }
 

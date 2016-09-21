@@ -686,26 +686,28 @@ Deliberate Syntax Error
 	       else {
 		  URI *puri;
 		  register int a;
-		  tended char *tmps;
 
 		  /* Check attributes (stolen from above) */
 		  for (a=0; a<n; a++) {
 		     if (is:null(attr[a])) {
 			attr[a] = emptystr;
 			}
-		     else if (!cnv:C_integer(attr[a], timeout)) {
+		     else if (cnv:C_integer(attr[a], timeout)) {
 			M_open_timeout = timeout;
-			continue;
 			}
 		     else if (!is:string(attr[a])) {
 			runerr(109, attr[a]);
 			}
-		     if (cnv:C_string(attr[a], tmps)) {
 #ifdef MDEBUG
+		     {
+     		     char *tmps;
+		     if (cnv:C_string(attr[a], tmps)) {
 			fprintf(stderr, "header: %s\n", tmps);
 			fflush(stderr);
-#endif                                  /* MDEBUG */
+
 			}
+		     }
+#endif                                  /* MDEBUG */		     
 		     }
 
 		  /* Try to parse the filename as a URL */

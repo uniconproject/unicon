@@ -385,7 +385,7 @@ int first;
       curtstate = ncp->ctx->tstate;
       global_curtstate = ncp->ctx->tstate;
       }
-#endif
+#endif					/* Concurrent */
 #endif					/* !COMPILER */
 
 
@@ -455,9 +455,15 @@ int first;
 
    /*
     * Beware!  Native co-expression switches may not save all registers,
-    * they might only preserve enough to immediate return.  So local variables
-    * like ccp might not be correct after the coswitch.
+    * they might only preserve enough to immediate return.  Local variables
+    * like ccp might not be correct after the coswitch.  We used to dodge
+    * this by using the global, k_current, but that's not global anymore.
     */
+#ifdef Concurrent
+   curtstate =  global_curtstate ? global_curtstate :
+      pthread_getspecific(tstate_key);
+#endif					/* Concurrent */
+
    return BlkD(k_current,Coexpr)->coexp_act;
 
 #endif        				/* CoExpr */

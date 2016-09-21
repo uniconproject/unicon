@@ -315,7 +315,6 @@ function{0,1} open(fname, spec)
 
 #ifdef Messaging
       int is_shortreq = 0;
-      C_integer timeout = 0;
       int do_verify = 1;
 #endif                                  /* Messaging */
 
@@ -677,6 +676,7 @@ Deliberate Syntax Error
 
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
+               C_integer timeout = 0, timeout_set = 0;
 	       extern int Merror;
 	       if (do_verify != 0)
 	       	  status |= Fs_Verify;
@@ -692,8 +692,9 @@ Deliberate Syntax Error
 		     if (is:null(attr[a])) {
 			attr[a] = emptystr;
 			}
-		     else if (cnv:C_integer(attr[a], timeout)) {
+		     else if (a==0 && cnv:C_integer(attr[a], timeout)) {
 			M_open_timeout = timeout;
+			timeout_set = 1;
 			}
 		     else if (!is:string(attr[a])) {
 			runerr(109, attr[a]);
@@ -734,7 +735,7 @@ Deliberate Syntax Error
 			runerr(1204, fname);
 		     }
 
-		  f = (FILE *)Mopen(puri, attr, n, is_shortreq, status);
+		  f = (FILE *)Mopen(puri, &attr[timeout_set], n-timeout_set, is_shortreq, status);
 		  if (Merror > 1200) {
 		    runerr(Merror, fname);
 		  }

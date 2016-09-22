@@ -1396,8 +1396,8 @@ function{0,1} reads(f,i)
       register char *sptr;
       char sbuf[MaxReadStr];
       SOCKET ws;
-      int bytesread = 0;
-      int Maxread = 0;
+      uword bytesread = 0;
+      uword Maxread = 0;
       long tally, nbytes;
       int status, fd, kk;
       FILE *fp = NULL;
@@ -1434,7 +1434,7 @@ function{0,1} reads(f,i)
 	 nbytes = 0;
 	 do {
 	    if (bytesread > 0) {
-	       if (i - bytesread <= MaxReadStr)
+	       if (i>=0 && i - bytesread <= MaxReadStr)
 		  Maxread = i - bytesread;
 	       else
 		  Maxread = MaxReadStr;

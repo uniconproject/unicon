@@ -1,6 +1,6 @@
 #  Makefile for testing Icon
 
-PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss pairss pany parb parbno pimmed plen ppos prem ptab sawss setcur
+PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss nspantst pairss pany parb parbno pimmed plen ppos prem ptab sawss setcur
 
 # default is to run all tests, using icont
 

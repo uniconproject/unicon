@@ -1426,11 +1426,9 @@ function{0,1} reads(f,i)
 
 	 StrLoc(s) = NULL;
 	 StrLen(s) = 0;
-      	 DEC_NARTHREADS;
 	 if (!MFIN(mf, READING)) {
 	    Mstartreading(mf);
 	    }
-      	 INC_NARTHREADS_CONTROLLED;
 	 nbytes = 0;
 	 do {
 	    if (bytesread > 0) {

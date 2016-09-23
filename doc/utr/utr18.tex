@@ -23,7 +23,7 @@
 
 \title{Pattern Matching in Unicon}
 \author{Clinton Jeffery, Sudarshan Gaikaiwari and John Goettsche}
-\trnumber{18a}
+\trnumber{18b}
 \date{\today}
 
 \newcommand{\squeezeup}{\vspace{-1em}}
@@ -195,7 +195,7 @@ shortest match and that is what you will get.
 
 
 
-\section{The Unicon Pattern Data Type }
+\section{The Unicon Pattern Data Type}
 
 It is usually trivial to translate
 SNOBOL4 pattern construction code to Unicon patterns. This
@@ -569,7 +569,7 @@ tried, you may search for the multi-letter vowel combinations before
 falling back on a single-letter vowel match. A pattern such as:
 
 \begin{verbatim}
-   vowel := "oy" | "ei" | "ie" | Any('aieouy')
+   vowel := "oy" .| "ei" .| "ie" .| Any('aieouy')
 \end{verbatim}
 
 \noindent
@@ -577,18 +577,22 @@ allows a few common digraphs in the definition of vowel.  Of course, in
 a complex language such as English, the rabbit-hole is almost bottomless.
 
 
-\subsubsection{Break(c), Span(c): Match a run of characters}
+\subsubsection{Break(c), Span(c), NSpan(c): Match a run of characters}
 
-These are multi-character versions of {\tt NotAny()} and {\tt Any()}.
-Each requires a non-empty string argument to specify a set of characters.
+{\tt Break(c)} and {\tt Span(c)} are multi-character versions of
+{\tt NotAny()} and {\tt Any()}.  These functions
+require a non-empty cset argument to specify a set of characters.
 {\tt Span(c)} matches one or more subject characters from the set in {\tt c}.
-{\tt Span()} must
-match at least one subject character, and will match the longest
-subject string possible.  {\tt Break(c)} matches up to but not including
+{\tt Span()} must match at least one subject character, and will match
+the longest subject string possible.  {\tt NSpan()} matches zero or more
+subject characters from set {\tt c}; it is equivalent to
+{\tt (Span(c) .\textbar "")}.
+
+{\tt Break(c)} matches up to but not including
 any character in {\tt c}. The string matched must always be followed in the
 subject by a character in {\tt c}. Unlike {\tt Span()} and {\tt NotAny()},
 {\tt Break()}
-will match the empty string.  These two functions are called stream
+will match the empty string.  {\tt Break()} and {\tt Span()} are called stream
 functions because each streams by a series of subject
 characters. {\tt Span()} is most useful for matching a group of characters
 with a common trait. For example, we can say an English word is
@@ -604,7 +608,7 @@ Some patterns that can be formed by {\tt Span()} and {\tt Break()}.
 \begin{center}
 {\begin{tabular}{ | l | l | } \hline 
         Pattern & Function \\ \hline
-        a run of blanks & {\tt Span(" ")} \\ \hline
+        a run of blanks & {\tt Span(' ')} \\ \hline
 	a string of digits & {\tt Span(\&digits)} \\ \hline
 	a run of letters & {\tt Span(\&lettters)} \\ \hline
 	everything up to the next blank & {\tt Break(' ')} \\ \hline
@@ -1138,7 +1142,7 @@ of SNOBOL patterns.
 
 \appendix
 
-\section*{APPENDIX: Language Reference}
+\section*{APPENDIX A: Language Reference}
 \thispagestyle{empty}
 \addcontentsline{toc}{section}{APPENDICES}
 
@@ -1275,6 +1279,11 @@ matches any single character not contained in character set \texttt{c}
 appearing in the subject string.\\
 \noindent\rule{16.5cm}{0.1pt}
 
+\noindent\textbf{NSpan(c)} \hfill\textbf{optional pattern span}\\
+matches the longest available sequence of zero or more characters
+from the subject string that are contained in \texttt{c}.  \\
+\noindent\rule{16.5cm}{0.1pt}
+
 \noindent\textbf{Pos(i)} \hfill\textbf{cursor position}\\
 sets the cursor or index position of the subject string to
 the position \texttt{i} according the Unicon index system shown below:
@@ -1321,6 +1330,45 @@ matches any characters from the current cursor or index position up to
 the specified position of the subject string.  \texttt{Rtab()} uses
 the SNOBOL4 index system shown in \texttt{Rpos()} and position
 \texttt{n} must be to the right of the current position.\\
+
+\section*{APPENDIX B: Monitoring Pattern Matching}
+
+Unicon's execution monitoring facilities have been extended to allow
+the observation of pattern matching execution that is otherwise
+internal to the runtime system.  Pattern matching always occurs in a
+string scanning context, so the execution monitoring events related
+to string scanning environments, including \texttt{E\_Snew},
+\texttt{E\_Sfail}, \texttt{E\_Ssusp} and \text{E\_Sresum}, are
+typically monitored as part of a tool that is monitoring pattern matches.
+The pre-existing events \texttt{E\_Spos}, \texttt{E\_Assign},
+\texttt{E\_Value}, and \texttt{E\_Deref} also occur as side-effects
+of pattern matching evaluation.
+
+The following new events occur during pattern creation and pattern
+matching.
+
+\vspace{0.1in}
+
+\begin{tabular}{| c | c | c |} \hline
+String Scanning Event & Event Value & Meaning \\ \hline
+\texttt{E\_Pattern} & number of bytes allocated & pattern (block)
+allocation \\
+\texttt{E\_Pelem} & number of bytes allocated & pattern element (block)
+allocation \\
+\texttt{E\_PatCode} & integer & pattern element code \\ \hline
+\texttt{E\_PatAttempt} & 1 = anchored & attempt to match a pattern \\
+\texttt{E\_PatMatch} & string matched & pattern match succeeded \\
+\texttt{E\_PatFail} & (none) &  pattern match failed \\ \hline
+
+\texttt{E\_PelemAttempt} & integer pattern code & attempt to match an element \\
+\texttt{E\_PelemMatch} & integer pattern code & element match succeeded \\
+\texttt{E\_PelemFail} & integer pattern code &  element match failed \\ \hline
+
+\texttt{E\_PatArg} & value & value being matched \\
+\texttt{E\_PatVal} & value & result of deferred evaluation \\ \hline
+\hline\end{tabular}
+
+
 
 \bibliographystyle{plain}
 \bibliography{utr18}

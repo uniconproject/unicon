@@ -49,8 +49,8 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val);
 #ifdef PatternType
 struct b_pattern	*alcpattern_0 (word size);
 struct b_pattern	*alcpattern_1 (word size);
-struct b_pelem	*alcpelem_0	(word pattern_code);
-struct b_pelem	*alcpelem_1	(word pattern_code);
+struct b_pelem	*alcpelem_0	(word, word *);
+struct b_pelem	*alcpelem_1	(word, word *);
 #endif					/* PatternType */
 #else					/* MultiThread */
 struct b_cset	*alccset	(void);
@@ -67,7 +67,7 @@ struct b_telem	*alctelem	(void);
 struct b_tvtbl	*alctvtbl	(dptr tbl,dptr ref,uword hashnum);
 #ifdef PatternType
 struct b_pattern	*alcpattern	(word size);
-struct b_pelem	*alcpelem(word pattern_code);
+struct b_pelem	*alcpelem(word pattern_code, word *origin_ipc);
 #endif					/* PatternType */
 #endif					/* MultiThread */
 #ifdef Arrays

@@ -169,7 +169,7 @@ int firstd[] = {
      -1,                      /* T_Kywdstr (24), string keyword variable */
      -1,                      /* T_Kywdevent (25), event keyword variable */
     0,				/* T_Pattern (26), pattern block */
-    4*WordSize,              /* T_Pelem (27), pattern element */
+    5*WordSize,              /* T_Pelem (27), pattern element */
     2*WordSize,			/* T_Tvmonitored */
     0,				/* T_Intarray (29), integer array */
     0,				/* T_Realarray (30), real array */

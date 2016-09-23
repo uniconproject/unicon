@@ -13,7 +13,7 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
 		struct b_pelem * pattern, int *Start, int *Stop,
 		int initial_cursor, int Anchored_Mode);
 
-struct b_pelem EOP = {T_Pelem, PC_EOP,(union block *)NULL, 0, {D_Null,0}};
+struct b_pelem EOP = {T_Pelem, PC_EOP,(union block *)NULL, 0, 0, {D_Null,0}};
 struct b_pattern emptypattern = { T_Pattern, 0, 0, (union block *)&EOP };
 
 union block *pattern_make(int stck_size, struct b_pelem * pnext,
@@ -21,8 +21,10 @@ union block *pattern_make(int stck_size, struct b_pelem * pnext,
 {
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
-   tended struct b_pelem *pelem = alcpelem(pattern_code);
-   tended union block * bp = (union block *)alcpattern(stck_size);
+   tended struct b_pelem *pelem;
+   tended union block * bp;
+   bp = (union block *)alcpattern(stck_size);
+   pelem = alcpelem(pattern_code, ipc.opnd);
    pelem->pthen = (union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
@@ -45,7 +47,7 @@ union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
    union block * bp;
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
-   bp = (union block *)alcpelem(pattern_code);
+   bp = (union block *)alcpelem(pattern_code, ipc.opnd);
    pelem  = (struct b_pelem *)bp;
    pelem->pthen =(union block *) lpnext;
    pelem->parameter = lparam;
@@ -58,7 +60,7 @@ union block *pelem_copy(struct b_pelem * p2copy)
    struct b_pelem *pelem;
    union block * bp;
    tended struct b_pelem *lp2copy = p2copy;
-   bp = (union block *)alcpelem(lp2copy->pcode);
+   bp = (union block *)alcpelem(lp2copy->pcode, lp2copy->origin_ipc);
    pelem  = (struct b_pelem *)bp;
    pelem->pthen = lp2copy->pthen;
    pelem->parameter = lp2copy->parameter;
@@ -1515,15 +1517,15 @@ end
  */
 
 static struct b_pelem CP_Assign    =
-   {T_Pelem, PC_Assign,    (union block *)NULL, 0, {D_Null,0}};
+   {T_Pelem, PC_Assign,    (union block *)NULL, 0, 0, {D_Null,0}};
 static struct b_pelem CP_Abort    =
-   {T_Pelem, PC_Abort,    (union block *)NULL, 0, {D_Null,0}};
+   {T_Pelem, PC_Abort,    (union block *)NULL, 0, 0, {D_Null,0}};
 static struct b_pelem CP_Fence_Y   =
-   {T_Pelem, PC_Fence_Y,   (union block *)NULL, 0, {D_Null,0}};
+   {T_Pelem, PC_Fence_Y,   (union block *)NULL, 0, 0, {D_Null,0}};
 static struct b_pelem CP_R_Remove  =
-   {T_Pelem, PC_R_Remove,  (union block *)NULL, 0, {D_Null,0}};
+   {T_Pelem, PC_R_Remove,  (union block *)NULL, 0, 0, {D_Null,0}};
 static struct b_pelem CP_R_Restore =
-   {T_Pelem, PC_R_Restore, (union block *)NULL, 0, {D_Null,0}};
+   {T_Pelem, PC_R_Restore, (union block *)NULL, 0, 0, {D_Null,0}};
 
 /*
  * Stack used to maintain history during pattern matching
@@ -1965,7 +1967,7 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    tended struct descrip evalue;
    struct b_pelem * Node = NULL;
    struct b_pelem PE_Unanchored = {0, PC_Unanchored, (union block *)pattern,
-				      0, {D_Null,0}};
+				      0, 0, {D_Null,0}};
    int Assign_OnM = 0;
    int Region_Level = 0;
 
@@ -2156,7 +2158,24 @@ Node_Succeed:
       break;
       }
 #endif					/* E_PatArg */
-   EVVal(Node->pcode, E_PelemAttempt);
+
+   /*
+    * How do program execution monitors tell where they are in the pattern?
+    * Options:
+    * 1. generate E_Loc (but what about file?)
+    * 2. temporarily set &file, &line, &column for duration of E_PelemAttempt
+    * 3. create new keyword(s) or function(s)
+    * Seems like a really bad idea, but ugly as it is, we prefer 2.
+    */
+   if (Node->origin_ipc) {
+      inst savedipc = ipc;   /* save ipc */
+      ipc.opnd = Node->origin_ipc;
+      EVVal(Node->pcode, E_PelemAttempt);
+      ipc = savedipc;        /* restore ipc */
+      }
+   else
+      EVVal(Node->pcode, E_PelemAttempt);
+
    switch(Node->pcode) {
    case PC_Alt: {
       DEBUGF(20,(stdout,"Setting up alternative \n"));
@@ -2618,42 +2637,12 @@ Node_Succeed:
        */
    case  PC_Pred_Func: {
       GetResultFromFuncCall();
-      /* review assumption as to what call_result can be pointing at */
-      if (call_result->vword.descptr == 0) {
-	 goto Node_Fail;
-	 }
-      else {
-#if 0
-	 int LV_Len;
-	 /*
-	  * Review assumption as to possible return values and their meaning.
-	  * If we call a function as part of a pattern and the function fails,
-	  * we know what failure means. Does success mean anything? Previously
-	  * we interpreted it as advancing (for string returns) or setting
-	  * (for integer returns) the cursor, but this limits what predicates
-	  * can be used, so for now success will not mean anything.
-	  */
-	 if(is:string(cresult)) {
-	    LV_Len = StrLen(cresult);
-	    DEBUGF(20,(stdout,"Matching String\n"));
-	    if ((Length - (k_pos - 1) >= LV_Len) &&
-	          !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
-	       k_pos += LV_Len;
-	       EVVal(k_pos, E_Spos);
-	       goto Node_Succeed;
-	       }
-            else {
-	       goto Node_Fail;
-	       }
-	    }
-	 else {
-	    k_pos = cresult.vword.integr;
-	    EVVal(k_pos, E_Spos);
-	    }
-#endif
-	 goto Node_Succeed;
-	 }
-      break;
+      /*
+       * If the func failed, call_result would have been NULL and the
+       * above macro would have failed.  Otherwise, it succeeded and
+       * points at a return value.
+       */
+      goto Node_Succeed;
       }
 
    case  PC_Pred_MF:{

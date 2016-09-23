@@ -594,7 +594,7 @@ alcpattern_macro(alcpattern,0,0)
 
 #begdef alcpelem_macro(f, e_pelem)
 
-struct b_pelem *f( word patterncode)
+struct b_pelem *f( word patterncode, word *o_ipc)
 {
    register struct b_pelem *pelem;
    CURTSTATE();
@@ -603,6 +603,7 @@ struct b_pelem *f( word patterncode)
    AlcFixBlk(pelem, b_pelem, T_Pelem)
    pelem->pcode = patterncode;
    pelem->pthen = NULL;
+   pelem->origin_ipc = o_ipc;
    return pelem;
    }
 #enddef

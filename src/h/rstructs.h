@@ -380,6 +380,8 @@ struct b_pelem {                      /* Pattern element block */
     union block * pthen;            /*  Pointer to succeeding pointer element*/
     word index;                     /* posn of pattern elem in pointer chain
 				     * (used in image) */
+    word *origin_ipc;               /* where elem was constructed
+				     * (used in debugging) */
     struct descrip parameter;		/*   parameter */    
 };
 #endif					/* PatternType */
@@ -780,7 +782,7 @@ struct progstate {
    struct b_slots * (*Alcsegment)(word);
 #ifdef PatternType
    struct b_pattern * (*Alcpattern)(word);
-   struct b_pelem * (*Alcpelem)(word);
+   struct b_pelem * (*Alcpelem)(word, word *);
 #endif					/* PatternType */
    struct b_list *(*Alclist_raw)(uword,uword);
    struct b_list *(*Alclist)(uword,uword);

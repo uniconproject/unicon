@@ -573,11 +573,7 @@ struct b_pattern *f(word stck_size)
    register struct b_pattern *pheader;
    CURTSTATE();
    
-   if (!reserve(Blocks, (word)
-		( sizeof(struct b_pattern) + sizeof(struct b_pelem))))
-      return NULL; 
    EVVal(sizeof (struct b_pattern), e_pattern);
-   EVVal(sizeof (struct b_pelem), e_pelem);
    AlcFixBlk(pheader, b_pattern, T_Pattern)
    pheader->stck_size = stck_size;
    MUTEX_LOCKID(MTX_PAT_SER);
@@ -603,10 +599,6 @@ struct b_pelem *f( word patterncode)
    register struct b_pelem *pelem;
    CURTSTATE();
    
-   if (!reserve(Blocks, (word)
-		(sizeof(struct b_pelem))
-		)
-       ) return NULL;
    EVVal(sizeof (struct b_pelem), e_pelem);
    AlcFixBlk(pelem, b_pelem, T_Pelem)
    pelem->pcode = patterncode;

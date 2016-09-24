@@ -24,7 +24,11 @@ union block *pattern_make(int stck_size, struct b_pelem * pnext,
    tended struct b_pelem *pelem;
    tended union block * bp;
    bp = (union block *)alcpattern(stck_size);
+#if COMPILER
+   pelem = alcpelem(pattern_code);
+#else
    pelem = alcpelem(pattern_code, ipc.opnd);
+#endif					/* COMPILER */
    pelem->pthen = (union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
@@ -47,7 +51,11 @@ union block *pelem_make(struct b_pelem * pnext, int pattern_code, int index,
    union block * bp;
    tended struct b_pelem *lpnext = pnext;
    tended struct descrip lparam = param;
+#if COMPILER
+   bp = (union block *)alcpelem(pattern_code);
+#else					/* COMPILER */
    bp = (union block *)alcpelem(pattern_code, ipc.opnd);
+#endif					/* COMPILER */
    pelem  = (struct b_pelem *)bp;
    pelem->pthen =(union block *) lpnext;
    pelem->parameter = lparam;
@@ -60,7 +68,11 @@ union block *pelem_copy(struct b_pelem * p2copy)
    struct b_pelem *pelem;
    union block * bp;
    tended struct b_pelem *lp2copy = p2copy;
+#if COMPILER
+   bp = (union block *)alcpelem(lp2copy->pcode);
+#else					/* COMPILER */
    bp = (union block *)alcpelem(lp2copy->pcode, lp2copy->origin_ipc);
+#endif					/* COMPILER */
    pelem  = (struct b_pelem *)bp;
    pelem->pthen = lp2copy->pthen;
    pelem->parameter = lp2copy->parameter;
@@ -2159,6 +2171,7 @@ Node_Succeed:
       }
 #endif					/* E_PatArg */
 
+#if !COMPILER
    /*
     * How do program execution monitors tell where they are in the pattern?
     * Options:
@@ -2174,6 +2187,7 @@ Node_Succeed:
       ipc = savedipc;        /* restore ipc */
       }
    else
+#endif					/* COMPILER */
       EVVal(Node->pcode, E_PelemAttempt);
 
    switch(Node->pcode) {

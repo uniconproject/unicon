@@ -1543,20 +1543,12 @@ int i;
     * runtime error.  Maybe we should just quit now.
     */
    if (curpstate != NULL && curpstate->parent != NULL) {
-#if 0
-      /* might want to get to the lterm somehow, instead */
-      while (1) {
-	 struct descrip dummy;
-	 /*
-	  * Child c_exit; it might make sense to fail to the parent in
-	  * a non-error situation, even repeatedly if the parent were
-	  * dumb enough to activate you over and over.  But it looks
-	  * risky to stick infinite loops in code. Consider revising
-	  * someday if we can think of a more correct behavior.
-	  */
-	 co_chng(curpstate->parent->Mainhead, NULL, &dummy, A_Cofail, 1);
-	 }
-#endif
+      struct descrip dummy;
+      /*
+       * Give parent/EvGet() one cofail; bail if they come back.
+       * Used to infinite loop a cofail to the parent here.
+       */
+      co_chng(curpstate->parent->Mainhead, NULL, &dummy, A_Cofail, 1);
       }
 #endif					/* MultiThread */
 
@@ -1993,8 +1985,10 @@ void init_progstate(struct progstate *pstate){
 #passthru #undef alclist_raw
 
 #ifdef PatternType
-   rootpstate.Alcpattern = alcpattern_0;
-   rootpstate.Alcpelem = alcpelem_0;
+   pstate->Alcpattern = alcpattern_0;
+   pstate->Alcpelem = alcpelem_0;
+   pstate->Cnvpattern = cnv_pattern_0;
+   pstate->Internalmatch = internal_match_0;
 #endif					/* PatternType */
 
 #ifdef Arrays   
@@ -2071,6 +2065,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 #ifndef Concurrent
    init_threadstate(tstate);
 #endif					/* Concurrent */  
+   init_threadheap(tstate, 0, 0);
 
    pstate->Kywd_time_elsewhere = millisec();
    pstate->Kywd_time_out = 0;
@@ -2140,7 +2135,7 @@ struct progstate * findicode(word *opnd)
    CURTSTATE_AND_CE();
 
    for (p = &rootpstate; p != NULL; p = p->next) {
-      if (InRange(p->Code, ipc.opnd, p->Ecode)) {
+      if (InRange(p->Code, opnd, p->Ecode)) {
 	 return p;
 	 }
       }

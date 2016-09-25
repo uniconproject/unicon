@@ -9,9 +9,11 @@
 
 dptr processFuncCallList(struct b_list *list);
 dptr processMethodCallList(struct b_list *list);
+#ifndef MultiThread
 int internal_match(char * pat_sub, int Length, int Pat_S,
-		struct b_pelem * pattern, int *Start, int *Stop,
-		int initial_cursor, int Anchored_Mode);
+		   struct b_pelem * pattern, int *Start, int *Stop,
+		   int initial_cursor, int Anchored_Mode);
+#endif					/* MultiThread */
 
 struct b_pelem EOP = {T_Pelem, PC_EOP,(union block *)NULL, 0, 0, {D_Null,0}};
 struct b_pattern emptypattern = { T_Pattern, 0, 0, (union block *)&EOP };
@@ -617,44 +619,53 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       }
 end
 
+#begdef cnv_pattern_macro(f,e_aconv,e_tconv,e_nconv,e_sconv,e_fconv,e_patcode)
 /*
  * convert to a pattern. Modeled after cnv_cset or similar in cnv.r.
  */
-int cnv_pattern(dptr s, dptr p)
+int f(dptr s, dptr p)
 {
    tended struct descrip emptypatternd;
    emptypatternd.dword = D_Pattern;
    emptypatternd.vword.bptr = (union block *)&emptypattern;
 
-   EVValD(s, E_Aconv);
-   EVValD(&emptypatternd, E_Tconv);
+   EVValD(s, e_aconv);
+   EVValD(&emptypatternd, e_tconv);
    type_case *s of {
    string: {
       tended union block *bp = pattern_make(0, &EOP,PC_String,1, *s);
-      EVVal(PC_String, E_PatCode);
+      EVVal(PC_String, e_patcode);
       p->dword = D_Pattern;
       BlkLoc(*p) = bp;
-      EVValD(p, E_Sconv);
+      EVValD(p, e_sconv);
       return 1;
       }
    cset: {
       tended union block *bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
-      EVVal(PC_Any_CS, E_PatCode);
+      EVVal(PC_Any_CS, e_patcode);
       p->dword = D_Pattern;
       BlkLoc(*p) = bp;
-      EVValD(p, E_Sconv);
+      EVValD(p, e_sconv);
       return 1;
       }
    pattern: {
-      EVValD(s, E_Nconv);
+      EVValD(s, e_nconv);
       return 1;
       }
    default: {
-      EVValD(s, E_Fconv);
+      EVValD(s, e_fconv);
       return 0;
       }
       }
 }
+#enddef
+
+#ifdef MultiThread
+cnv_pattern_macro(cnv_pattern_0,0,0,0,0,0,0)
+cnv_pattern_macro(cnv_pattern_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv,E_PatCode)
+#else					/* MultiThread */
+cnv_pattern_macro(cnv_pattern,0,0,0,0,0,0)
+#endif					/* MultiThread */
 
 /*
  *
@@ -1963,12 +1974,12 @@ else {
 
 #define Stack_Init 1
 #define Stack_Size 200
+
+#begdef internal_match_macro(f,e_patattempt,e_patfail,e_patmatch,e_patarg,e_pelemattempt,e_pelemmatch,e_pelemfail,e_assign,e_value,e_spos)
 /*
- * Revised as part of 2015 integration
- *   added Anchored_Mode to signature to allow external definition
- *   pattern mode.
+ * internal_match() - primary pattern match engine.
  */
-int internal_match(char * pat_sub, int Length, int Pat_S,
+int f(char * pat_sub, int Length, int Pat_S,
 		   struct b_pelem * pattern, int *Start, int *Stop,
 		   int initial_cursor,
 		   int Anchored_Mode
@@ -1983,7 +1994,7 @@ int internal_match(char * pat_sub, int Length, int Pat_S,
    int Assign_OnM = 0;
    int Region_Level = 0;
 
-   EVVal(Anchored_Mode, E_PatAttempt); 
+   EVVal(Anchored_Mode, e_patattempt);
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
 	      Length,pat_sub,Length, k_pos));
@@ -2032,7 +2043,7 @@ Match_Fail:
    DEBUGF(20,(stdout,"Match fails\n"));
    *Start = 0;
    *Stop = 0;
-   EVVal(Node->pcode, E_PatFail);
+   EVVal(Node->pcode, e_patfail);
    return 0;
 /*
  *       --  Come here if entire match succeeds
@@ -2046,7 +2057,7 @@ Match_Succeed:
 #if defined(E_PatMatch)
    StrLen(evalue) = *Stop - *Start;
    StrLoc(evalue) = pat_sub + *Start;
-   EVValD(&evalue, E_PatMatch);
+   EVValD(&evalue, e_patmatch);
 #endif					/* E_PatMatch */
    DEBUGF(2,(stdout, "first matched character index =%d\n", *Start));
    DEBUGF(2,(stdout, "last matched character index =%d\n" ,*Stop));
@@ -2068,10 +2079,10 @@ Match_Succeed:
 		  fputc('\n', f->fd.fp);
 		  }
 	       else {
-		  EVVar(&varref, E_Assign);
+		  EVVar(&varref, e_assign);
                   StrLen(*pvar) = Stop - Start;
                   StrLoc(*pvar) = pat_sub + Start;
-		  EVValD(pvar, E_Value);
+		  EVValD(pvar, e_value);
 		  }
 	       }
 	    else {
@@ -2088,11 +2099,11 @@ Node_Fail:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-   EVVal(Node->pcode, E_PelemFail);
+   EVVal(Node->pcode, e_pelemfail);
    k_pos = Stack[Stack_Ptr].cursor + 1;
    Node   = Stack[Stack_Ptr].node;
    Stack_Ptr--;
-   EVVal(k_pos, E_Spos);
+   EVVal(k_pos, e_spos);
    goto Match;
 Node_Succeed:
 /*
@@ -2103,7 +2114,7 @@ Node_Succeed:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-    EVVal(Node->pcode, E_PelemMatch);
+    EVVal(Node->pcode, e_pelemmatch);
     Node = (struct b_pelem *)Node->pthen;
 /*
  *       --  Come here to match the next pattern element
@@ -2142,7 +2153,7 @@ Node_Succeed:
    case PC_RPos_Nat: case PC_RTab_Nat: case PC_Tab_Nat: case PC_String:
       /* if a CS or a Nat or a String */
       arg_image(Node->parameter, PT_EVAL, &evalue);
-      EVValD(&evalue, E_PatArg);
+      EVValD(&evalue, e_patarg);
       break;
    case PC_Any_VP: case PC_Break_VP: case PC_BreakX_VP: case PC_NotAny_VP:
    case PC_NSpan_VP: case PC_Span_VP: case PC_String_VP: case PC_Pos_NP:
@@ -2150,7 +2161,7 @@ Node_Succeed:
    case PC_Rpat:
       /* if a VP or a NP or an Rpat */
       arg_image(Node->parameter, PT_VP, &evalue);
-      EVValD(&evalue, E_PatArg);
+      EVValD(&evalue, e_patarg);
       break;
    case PC_Any_VF: case PC_Break_VF: case PC_BreakX_VF: case PC_NotAny_VF:
    case PC_NSpan_VF: case PC_Span_VF: case PC_String_VF: case PC_Pos_NF:
@@ -2158,7 +2169,7 @@ Node_Succeed:
    case PC_Pred_Func:
       /* if a VF or NF or PC_Pred_Func */
       arg_image(Node->parameter, PT_VF, &evalue);
-      EVValD(&evalue, E_PatArg);
+      EVValD(&evalue, e_patarg);
       break;
    case PC_String_MF: case PC_Pred_MF: case PC_Any_MF: case PC_Break_MF:
    case PC_BreakX_MF: case PC_NotAny_MF: case PC_NSpan_MF: case PC_Span_MF:
@@ -2166,7 +2177,7 @@ Node_Succeed:
    case PC_Tab_NMF:
       /* if a MF or NMF or PC_Pred_MF */
       arg_image(Node->parameter, PT_MF, &evalue);
-      EVValD(&evalue, E_PatArg);
+      EVValD(&evalue, e_patarg);
       break;
       }
 #endif					/* E_PatArg */
@@ -2183,12 +2194,12 @@ Node_Succeed:
    if (Node->origin_ipc) {
       inst savedipc = ipc;   /* save ipc */
       ipc.opnd = Node->origin_ipc;
-      EVVal(Node->pcode, E_PelemAttempt);
+      EVVal(Node->pcode, e_pelemattempt);
       ipc = savedipc;        /* restore ipc */
       }
    else
 #endif					/* COMPILER */
-      EVVal(Node->pcode, E_PelemAttempt);
+      EVVal(Node->pcode, e_pelemattempt);
 
    switch(Node->pcode) {
    case PC_Alt: {
@@ -2202,7 +2213,7 @@ Node_Succeed:
       DEBUGF(20,(stdout,"Matching Any\n"));
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)){
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2218,7 +2229,7 @@ Node_Succeed:
 	 }
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2233,7 +2244,7 @@ Node_Succeed:
 	 fatalerr(104, &cresult);
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2248,7 +2259,7 @@ Node_Succeed:
 	 fatalerr(104, &cresult);
       if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2275,7 +2286,7 @@ Node_Succeed:
       if (k_pos <= Length){
 	 k_pos++;
 	 Push (Node);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2358,10 +2369,10 @@ Node_Succeed:
 	 fputc('\n', f->fd.fp);
 	 }
       else {
-	 EVVar(&varref, E_Assign);
+	 EVVar(&varref, e_assign);
          StrLen(*pvar) = (k_pos - 1) - Stack[Stack_Base - 1].cursor;
          StrLoc(*pvar) = pat_sub + Stack[Stack_Base - 1].cursor;
-	 EVValD(pvar, E_Value);
+	 EVValD(pvar, e_value);
 	 }
       Pop_Region();
       goto Node_Succeed;
@@ -2424,7 +2435,7 @@ Node_Succeed:
 	DEBUGF(2,(stdout,
 		  "matching or extending Bal succeeded, Pos = %ld\n",
 		  k_pos));
-        EVVal(k_pos, E_Spos);
+        EVVal(k_pos, e_spos);
 	goto Node_Succeed;
     }
 
@@ -2437,7 +2448,7 @@ Node_Succeed:
       while( k_pos <= Length ){	
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
 	    if (k_pos != start_kpos)
-	       EVVal(k_pos, E_Spos);
+	       EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2460,7 +2471,7 @@ Node_Succeed:
       while( k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
 	    if (k_pos != start_kpos)
-	       EVVal(k_pos, E_Spos);
+	       EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2481,7 +2492,7 @@ Node_Succeed:
       while (k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
 	    if (k_pos != start_kpos)
-	       EVVal(k_pos, E_Spos);
+	       EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2503,7 +2514,7 @@ Node_Succeed:
       while( k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
 	    if (k_pos != start_kpos)
-	       EVVal(k_pos, E_Spos);
+	       EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2526,14 +2537,14 @@ Node_Succeed:
       DEBUGF(20,(stdout, "matching Breakx\n"));
       while( k_pos <= Length ){
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
       }
@@ -2546,14 +2557,14 @@ Node_Succeed:
 
       while (k_pos <= Length) {
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
       }
@@ -2564,14 +2575,14 @@ Node_Succeed:
 	 fatalerr(104, &cresult);
       while (k_pos <= Length) {
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
       }
@@ -2582,14 +2593,14 @@ Node_Succeed:
 	 fatalerr(104, &cresult);
       while (k_pos <= Length) {
 	 if (Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
 	    k_pos++;
 	    }
 	 }
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Fail;
       break;
       }
@@ -2601,7 +2612,7 @@ Node_Succeed:
        */
    case  PC_BreakX_X : {
       k_pos++;
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Succeed;
       }
 
@@ -2670,7 +2681,7 @@ Node_Succeed:
 	    if ((Length - (k_pos - 1) >= LV_Len) &&
 	          !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
 	       k_pos += LV_Len;
-	       EVVal(k_pos, E_Spos);
+	       EVVal(k_pos, e_spos);
 	       goto Node_Succeed;
 	       }
             else {
@@ -2693,7 +2704,7 @@ Node_Succeed:
 	 }
       else {
 	 k_pos += IntVal(Node->parameter);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 }
       goto Node_Succeed;
       break;
@@ -2710,7 +2721,7 @@ Node_Succeed:
 	 }
       else {
 	 k_pos += IntVal(var);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 }
       goto Node_Succeed;
       break;
@@ -2726,7 +2737,7 @@ Node_Succeed:
 	 goto Node_Fail;
 	 }
       k_pos += IntVal(cresult);
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Succeed;
       break;
       }
@@ -2741,7 +2752,7 @@ Node_Succeed:
 	 goto Node_Fail;
 	 }
       k_pos += IntVal(cresult);
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Succeed;
       break;
       }
@@ -2751,7 +2762,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), Node->parameter)) {
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2769,7 +2780,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), var)){
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2786,7 +2797,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2803,7 +2814,7 @@ Node_Succeed:
       if ((k_pos <= Length) &&
 	  !Testb(ToAscii(pat_sub[k_pos - 1]), cresult)){
 	 k_pos++;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2823,7 +2834,7 @@ Node_Succeed:
 	 if ((Length - (k_pos - 1) >= LV_Len )
 	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)){
 	    k_pos += LV_Len;
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2836,7 +2847,7 @@ Node_Succeed:
 	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
 	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), var)) {
 	    k_pos++;
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -2921,7 +2932,7 @@ Node_Succeed:
    case  PC_Tab_Nat: {
       if (IntVal(Node->parameter) - 1 <= Length){
 	 k_pos = IntVal(Node->parameter);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2936,7 +2947,7 @@ Node_Succeed:
 	 }
       if (IntVal(var) - 1 <= Length) {
 	 k_pos = IntVal(var);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2951,7 +2962,7 @@ Node_Succeed:
       cresult.dword = D_Integer;
       if (IntVal(cresult) - 1 <= Length) {
 	 k_pos = IntVal(cresult);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2971,7 +2982,7 @@ Node_Succeed:
 	 }
       if (IntVal(cresult) - 1 <= Length) {
 	 k_pos = IntVal(cresult);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -2984,7 +2995,7 @@ Node_Succeed:
        */
    case PC_Rest: {
       k_pos = Length + 1;
-      EVVal(k_pos, E_Spos);
+      EVVal(k_pos, e_spos);
       goto Node_Succeed;
       }
 
@@ -3045,7 +3056,7 @@ Node_Succeed:
    case  PC_RTab_Nat: {
       if ((0<=IntVal(Node->parameter)) & (IntVal(Node->parameter) <= Length)) {
 	 k_pos = Length - IntVal(Node->parameter) + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3062,7 +3073,7 @@ Node_Succeed:
       DEBUGF(20,(stdout, "matching Len\n"));
       if ((0<=IntVal(var)) & (IntVal(var) <= Length)) {
 	 k_pos = Length - IntVal(var) + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3078,7 +3089,7 @@ Node_Succeed:
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
 	 k_pos = Length - IntVal(cresult) + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3094,7 +3105,7 @@ Node_Succeed:
       cresult.dword = D_Integer;
       if ((0<=IntVal(cresult)) & (IntVal(cresult) <= Length)) {
 	 k_pos = Length - IntVal(cresult) + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3147,10 +3158,10 @@ Node_Succeed:
    case PC_Setcur: {
       GetVarFromNodeParameter(Node);
       DEBUGF(20,(stdout, "Matching Setcur assigning Position = %ld\n", k_pos));
-      EVVar(&varref, E_Assign);
+      EVVar(&varref, e_assign);
       pvar->dword = D_Integer;
       IntVal(*pvar) = k_pos;
-      EVValD(pvar, E_Value);
+      EVValD(pvar, e_value);
       goto Node_Succeed;
       }
 
@@ -3161,7 +3172,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3181,7 +3192,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3199,7 +3210,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3217,7 +3228,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3232,7 +3243,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 }
       goto Node_Succeed;
       }
@@ -3249,7 +3260,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 }
       goto Node_Succeed;
       }
@@ -3264,7 +3275,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 }
       goto Node_Succeed;
       }
@@ -3279,7 +3290,7 @@ Node_Succeed:
 	 P++;
       if (P != (k_pos - 1)) {
 	 k_pos = P + 1;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 }
       goto Node_Succeed;
       }
@@ -3290,7 +3301,7 @@ Node_Succeed:
       if ((Length - (k_pos - 1) >= LV_Len) &&
 	  !strncmp(pat_sub + (k_pos - 1), StrLoc(Node->parameter), LV_Len)) {
 	 k_pos += LV_Len;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3306,7 +3317,7 @@ Node_Succeed:
       if ((Length -(k_pos - 1) >= LV_Len) &&
 	  !strncmp(pat_sub + (k_pos - 1), StrLoc(var), LV_Len)) {
 	 k_pos += LV_Len;
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       else {
@@ -3324,7 +3335,7 @@ Node_Succeed:
 	 if ((Length - (k_pos - 1) >= LV_Len) &&
 	     !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
 	    k_pos += LV_Len;
-	    EVVal(k_pos, E_Spos);
+	    EVVal(k_pos, e_spos);
 	    goto Node_Succeed;
 	    }
 	 else {
@@ -3346,7 +3357,7 @@ Node_Succeed:
 	    if ((Length - (k_pos - 1) >= LV_Len )
 		&& !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
 	       k_pos += LV_Len;
-	       EVVal(k_pos, E_Spos);
+	       EVVal(k_pos, e_spos);
 	       goto Node_Succeed;
 	       }
 	    else {
@@ -3375,7 +3386,7 @@ Node_Succeed:
       else{
 	 k_pos++;
 	 Push (Node);
-	 EVVal(k_pos, E_Spos);
+	 EVVal(k_pos, e_spos);
 	 goto Node_Succeed;
 	 }
       }
@@ -3400,6 +3411,14 @@ Node_Succeed:
       }
    syserr("Unrecognized pcode in internal match.");
 }
+#enddef
+
+#ifdef MultiThread
+internal_match_macro(internal_match_0,0,0,0,0,0,0,0,0,0,0)
+internal_match_macro(internal_match_1,E_PatAttempt,E_PatFail,E_PatMatch,E_PatArg,E_PelemAttempt,E_PelemMatch,E_PelemFail,E_Assign,E_Value,E_Spos)
+#else					/* MultiThread */
+internal_match_macro(internal_match,0,0,0,0,0,0,0,0,0,0)
+#endif					/* MultiThread */
 
 /* keep this at the end so the #undef Fail affects no-one else */
 #undef Fail

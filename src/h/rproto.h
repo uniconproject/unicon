@@ -143,7 +143,12 @@ struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R);
 struct b_pelem * Arbno_Simple(struct b_pelem *pe);
 struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 			    struct b_pelem * A);
+#ifdef MultiThread
+int 		cnv_pattern_0(dptr s, dptr p);
+int 		cnv_pattern_1(dptr s, dptr p);
+#else					/* MultiThread */
 int 		cnv_pattern(dptr s, dptr p);
+#endif					/* MultiThread */
 struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
 struct b_pelem *Copy		(struct b_pelem * P);
 
@@ -270,9 +275,18 @@ int		interp_1	(int fsig,dptr cargp);
 int		interp		(int fsig,dptr cargp);
 #endif
 #ifdef PatternType
+#ifdef MultiThread
+int 		internal_match_0(char * pat_sub, int Length, int Pat_S,
+				struct b_pelem * pattern, int *Start, int *Stop,
+				int initial_cursor, int Anchored_Mode);
+int 		internal_match_1(char * pat_sub, int Length, int Pat_S,
+				struct b_pelem * pattern, int *Start, int *Stop,
+				int initial_cursor, int Anchored_Mode);
+#else					/* MultiThread */
 int 		internal_match	(char * pat_sub, int Length, int Pat_S,
 				struct b_pelem * pattern, int *Start, int *Stop,
 				int initial_cursor, int Anchored_Mode);
+#endif					/* MultiThread */
 #endif					/* PatternType */
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);

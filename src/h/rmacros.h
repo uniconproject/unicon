@@ -1104,6 +1104,8 @@
 #ifdef PatternType
       #define alcpattern    (curpstate->Alcpattern)
       #define alcpelem      (curpstate->Alcpelem)
+      #define cnv_pattern   (curpstate->Cnvpattern)
+      #define internal_match (curpstate->Internalmatch)
 #endif					/* PatternType */
       #define alclist_raw   (curpstate->Alclist_raw)
       #define alclist	    (curpstate->Alclist)

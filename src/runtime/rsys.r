@@ -539,7 +539,7 @@ int n;
    if (n < 0){  /* delay < 0 = block the current thread */
       CURTSTATE();
       DEC_NARTHREADS;
-      sem_wait(curtstate->ctx->semp);		/* block this thread */
+      sem_wait(curtstate->c->semp);		/* block this thread */
       INC_NARTHREADS_CONTROLLED;
       return Succeeded; 
       }

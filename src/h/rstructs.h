@@ -501,7 +501,6 @@ struct threadstate {
    */
     
   struct b_coexpr *c;
-  struct context *ctx;         /* the corresponding context for ce/tstate*/
 
 #if ConcurrentCOMPILER
   continuation Coexpr_fnc;     /* function containing co-expression code */
@@ -751,6 +750,8 @@ struct progstate {
 
   int Longest_dr;
   struct b_proc_list **Dr_arrays;
+
+#ifdef MultiThread  
   
    /*
     * Function Instrumentation Fields.
@@ -803,10 +804,11 @@ struct progstate {
    void (*Deallocate)(union block *);
    char * (*Reserve)(int, word);
 
+#endif					/* MultiThread */
+  
   struct threadstate *tstate, maintstate;
   
    };
-
 #endif					/* MultiThread */
 
 /*
@@ -932,8 +934,19 @@ struct b_coexpr {		/* co-expression stack block */
 #endif					/* COMPILER */
 
 #ifdef PthreadCoswitch
-  struct context *ctx;
-#endif	 				/* PthreadCoswitch */
+/* from the Icon pthreads-based co-expression implementation. */
+   pthread_t thread;	/* thread ID (thread handle) */
+   sem_t sema;		/* synchronization semaphore (if unnamed) */
+   sem_t *semp;		/* pointer to semaphore */
+   int alive;		/* set zero when thread is to die */
+
+   int tmplevel; 
+   int have_thread;
+#ifdef Concurrent
+   struct threadstate *tstate;
+   int isProghead;
+#endif	 				/* Concurrent */
+#endif					/* PthreadCoswitch */
 
      word cstate[CStateSize];	/*   C state information (registers, etc.) */
    };
@@ -952,24 +965,6 @@ struct b_refresh {		/* co-expression refresh block */
 #endif					/* COMPILER */
    struct descrip elems[1];	/*   args and locals (VM: including Arg0) */
    };
-
-#ifdef PthreadCoswitch
-/* from the Icon pthreads-based co-expression implementation. */
-typedef struct context {
-   pthread_t thread;	/* thread ID (thread handle) */
-   sem_t sema;		/* synchronization semaphore (if unnamed) */
-   sem_t *semp;		/* pointer to semaphore */
-   int alive;		/* set zero when thread is to die */
-   struct b_coexpr *c;  /* pointer to associated co-expression block */
-   int tmplevel; 
-   int have_thread;
-#ifdef Concurrent
-   struct threadstate *tstate;
-   int isProghead;
-#endif	 			/* Concurrent */
-   } context;
-
-#endif					/* PthreadCoswitch */
 
 union block {			/* general block */
 #ifndef DescriptorDouble

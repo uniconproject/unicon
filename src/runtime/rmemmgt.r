@@ -525,12 +525,12 @@ int region;
  *
    { struct threadstate *tstate;
    for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
-      if (!(tstate->ctx) || !(tstate->ctx->c) || (tstate->ctx->alive<-1)) continue;
-      tstate->ctx->c->es_tend = tstate->Tend;
-      tstate->ctx->c->es_pfp = tstate->Pfp;
-      tstate->ctx->c->es_gfp = tstate->Gfp;
-      tstate->ctx->c->es_efp = tstate->Efp;
-      tstate->ctx->c->es_sp = tstate->Sp;
+      if (!(tstate->c) || (tstate->c->alive<-1)) continue;
+      tstate->c->es_tend = tstate->Tend;
+      tstate->c->es_pfp = tstate->Pfp;
+      tstate->c->es_gfp = tstate->Gfp;
+      tstate->c->es_efp = tstate->Efp;
+      tstate->c->es_sp = tstate->Sp;
       }
    }
 
@@ -736,7 +736,7 @@ static void markthreads()
 {
    struct threadstate *t;
    for (t = roottstatep->next; t != NULL; t = t->next)
-      if (t->ctx && t->ctx->c && (IS_TS_THREAD(t->ctx->c->status))){
+      if (t->c && (IS_TS_THREAD(t->c->status))){
 	 markthread(t);
 	 }
 }

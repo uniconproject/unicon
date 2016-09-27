@@ -261,12 +261,10 @@ struct b_coexpr *alccoexp()
 
 #ifdef PthreadCoswitch
 {
-   struct context *ctx = ep->ctx = alloc(sizeof (struct context));
-   makesem(ctx);
-   ctx->c = ep;
-   ctx->tmplevel = 0;
-   ctx->have_thread = 0;
-   ctx->alive = 0;
+   makesem(ep);
+   ep->tmplevel = 0;
+   ep->have_thread = 0;
+   ep->alive = 0;
 
 }
 #endif					/* PthreadCoswitch */
@@ -393,28 +391,22 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
 #endif					/* MultiThread */
 
 #ifdef PthreadCoswitch
-/*
- * Allocate a struct context for this co-expression.
- */
 {
-   struct context *ctx = ep->ctx = alloc(sizeof (struct context));
-   makesem(ctx);
-   ctx->c = ep;
-   ctx->tmplevel = 0;
-   ctx->have_thread = 0;
-   ctx->alive = 0;
+   makesem(ep);
+   ep->tmplevel = 0;
+   ep->have_thread = 0;
+   ep->alive = 0;
 #ifdef Concurrent
 #ifdef MultiThread
    if(icodesize>0){
-      ctx->isProghead = 1;
-      ctx->tstate = ep->program->tstate;
-      ctx->tstate->ctx = ctx;
+      ep->isProghead = 1;
+      ep->tstate = ep->program->tstate;
       }
    else
 #endif					/* MultiThread */
       {
-      ctx->tstate = NULL; 
-      ctx->isProghead = 0;
+      ep->tstate = NULL; 
+      ep->isProghead = 0;
       }
 #endif					/* Concurrent */
 }

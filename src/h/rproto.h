@@ -1189,7 +1189,7 @@ struct b_realarray *alcrealarray(uword n);
 #endif					/* Arrays */
 
 #ifdef PthreadCoswitch
-void makesem(struct context *ctx);
+void makesem(struct b_coexpr *cp);
 void *nctramp(void *arg);
 void handle_thread_error(int val, int func, char* msg);
 #endif					/* PthreadCoswitch */

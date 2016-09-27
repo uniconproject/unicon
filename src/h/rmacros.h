@@ -1263,17 +1263,17 @@
 #define FUNC_SEM_INIT		14
 
 #ifdef PthreadCoswitch
-#define THREAD_CREATE(ctx, t_stksize, msg)				\
+#define THREAD_CREATE(cp, t_stksize, msg)				\
   do {									\
     int retval;								\
     if (t_stksize){							\
       pthread_attr_t attr;						\
       pthread_attr_init(&attr);						\
       pthread_attr_setstacksize(&attr, t_stksize);			\
-      retval = pthread_create(&ctx->thread, &attr, nctramp, ctx);	\
+      retval = pthread_create(&cp->thread, &attr, nctramp, cp);	\
     }									\
     else								\
-      retval = pthread_create(&ctx->thread, NULL, nctramp, ctx);	\
+      retval = pthread_create(&cp->thread, NULL, nctramp, cp);	\
     if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
   } while (0)
 
@@ -1282,16 +1282,15 @@
       handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
 
 #define CREATE_CE_THREAD(cp, t_stksize, msg) do {		\
-   struct context *new = cp->ctx;		\
-   THREAD_CREATE(new, t_stksize, msg);				\
-   new->alive = 1;						\
-   new->have_thread = 1;					\
+   THREAD_CREATE(cp, t_stksize, msg);				\
+   cp->alive = 1;						\
+   cp->have_thread = 1;						\
    SET_FLAG(cp->status, Ts_Attached);				\
    SET_FLAG(cp->status, Ts_Posix);				\
    /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/	\
    } while (0)
 #else                                  /* PthreadCoswitch */
-#define THREAD_CREATE(ctx, t_stksize, msg)
+#define THREAD_CREATE(cp, t_stksize, msg)
 #define THREAD_JOIN(thrd, opt)
 #define CREATE_CE_THREAD(cp, t_stksize, msg)      
 #endif                                  /* PthreadCoswitch */

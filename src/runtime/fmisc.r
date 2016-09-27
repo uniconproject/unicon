@@ -2039,8 +2039,8 @@ static stringint siKeywords[] = {
       char *kname = kyname;
 #ifdef Concurrent
       struct threadstate *tstate;
-      if (BlkD(d,Coexpr)->ctx->tstate)
-      	 tstate = BlkD(d,Coexpr)->ctx->tstate;
+      if (BlkD(d,Coexpr)->tstate)
+      	 tstate = BlkD(d,Coexpr)->tstate;
       else
 	 tstate = p->tstate;
 	    
@@ -2502,10 +2502,10 @@ function{1} signal(x, y)
 	  * Transmit whatever is needed to wake it up.
 	  */
 	
-	 if (BlkD(x, Coexpr)->ctx->alive == 0)
+	 if (BlkD(x, Coexpr)->alive == 0)
 	    fail;
 
-	 sem_post(BlkD(x, Coexpr)->ctx->semp);
+	 sem_post(BlkD(x, Coexpr)->semp);
 
 	 return x;
 	 }
@@ -2766,7 +2766,6 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
    if is:coexpr(x) then {
       abstract { return coexpr }
       body {
-	 struct context *n;
 	 struct b_coexpr *cp = BlkD(x, Coexpr);
 	 int i;
 
@@ -2807,8 +2806,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 	  }
 #endif 					/* SoftThreads */ 
 
-	 n = cp->ctx;
-	 if (n->alive == 1) {
+	 if (cp->alive == 1) {
 	    /*
 	     * The co-expression has already been Activated!
 	     * spawning an active co-expression is not yet supported
@@ -2850,7 +2848,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 	       }
 	 } while (i);
 
-	 if (n->alive == 0) {
+	 if (cp->alive == 0) {
 	    /*
 	     * Activate thread x for the first time.
 	     */
@@ -2866,7 +2864,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 	 /*
 	  * assign the correct "call" level to the new thread.
 	  */
-	 /* n->tstate->K_level = k_level+1;*/
+	 /* cp->tstate->K_level = k_level+1;*/
 
 	 /*
 	  * Activate co-expression x, having changed it to Asynchronous.
@@ -2881,7 +2879,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 	 /*
 	  * wake the new thread up.
 	  */
-	 sem_post(n->semp);
+	 sem_post(cp->semp);
 
 	 /*
 	  * Increment the counter of the Async running threads.

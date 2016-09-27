@@ -231,22 +231,21 @@ dptr result;
       hp = BlkD(ncp->outbox, List);
       MUTEX_LOCKBLK_CONTROLLED(hp, "activate: list mutex");
       if (hp->size==0){
-	 struct context *n = ncp->ctx;
 	 hp->empty++;
          while (hp->size==0){
-	    if (hp->size==0 && n->alive<0){
+	    if (hp->size==0 && ncp->alive<0){
 	       hp->empty--;
       	       return A_Resume;
 	       }
  	    CV_SIGNAL_FULLBLK(hp);
 	    DEC_NARTHREADS;
-	    if (hp->size==0 && n->alive<0){
+	    if (hp->size==0 && ncp->alive<0){
 	       hp->empty--;
       	       return A_Resume;
 	       }
 	    CV_WAIT_EMPTYBLK(hp);
 	    INC_NARTHREADS_CONTROLLED;
-	    if (hp->size==0 && n->alive<0){
+	    if (hp->size==0 && ncp->alive<0){
 	       hp->empty--;
       	       return A_Resume;
 	       }
@@ -453,8 +452,8 @@ int timeout;
       c_get(hp, &d);
       BlkD(d, Coexpr)->handdata = msg;
       MUTEX_UNLOCKBLK(hp, "send(): list mutex");
-      if (BlkD(d, Coexpr)->ctx->alive > 0){
-      	 sem_post(BlkD(d, Coexpr)->ctx->semp);
+      if (BlkD(d, Coexpr)->alive > 0){
+      	 sem_post(BlkD(d, Coexpr)->semp);
 	 MakeInt(hp->size, msg);
 	 Return;
 	 }

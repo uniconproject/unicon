@@ -1060,11 +1060,9 @@ Deliberate Syntax Error
  * Allocate a struct context   for the main co-expression.
  */
 {
-   struct context *ctx = mainhead->ctx = alloc(sizeof (struct context));
-   makesem(ctx);
-   ctx->c = mainhead;
-   ctx->thread = pthread_self();
-   ctx->alive = 1;
+   makesem(mainhead);
+   mainhead->thread = pthread_self();
+   mainhead->alive = 1;
 #ifdef Concurrent
    /* 
     * This is the first node in the chain. It will be always the first.
@@ -1075,9 +1073,8 @@ Deliberate Syntax Error
     */
    roottstatep->prev = roottstatep; 
    roottstatep->next = NULL;
-   roottstatep->ctx = ctx;
-   ctx->isProghead = 1;
-   ctx->tstate = roottstatep;
+   mainhead->isProghead = 1;
+   mainhead->tstate = roottstatep;
 #endif					/* Concurrent */
 }
 #endif					/* PthreadCoswitch */

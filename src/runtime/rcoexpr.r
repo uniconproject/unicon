@@ -11,15 +11,15 @@ static continuation coexpr_fnc;
 #endif					/* ConcurrentCOMPILER */
 
 #ifdef Concurrent
-void tlschain_add(struct threadstate *tstate, struct context *ctx);
+void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp);
 void tlschain_remove(struct threadstate *tstate);
 
 #define TRANSFER_KLEVEL(ncp, ccp) do {					\
     if (IS_TS_SYNC(ncp->status) && ncp->program == ccp->program) {	\
-       if (ncp->ctx->tstate)      	 			   	\
-       	  ncp->ctx->tstate->K_level = ccp->ctx->tstate->K_level;	\
+       if (ncp->tstate)      	 			   		\
+       	  ncp->tstate->K_level = ccp->tstate->K_level;			\
        else								\
-       	  ncp->ctx->tmplevel =  ccp->ctx->tstate->K_level;		\
+       	  ncp->tmplevel =  ccp->tstate->K_level;			\
     	} 		    						\
 } while (0)
 #else					/* Concurrent  */
@@ -27,7 +27,7 @@ void tlschain_remove(struct threadstate *tstate);
 #endif					/* Concurrent  */
 
 #ifdef PthreadCoswitch
-int pthreadcoswitch(struct context *old, struct context *new, word ostat, word nstat);
+int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word nstat);
 #endif					/* PthreadCoswitch */
 
 /*
@@ -347,7 +347,7 @@ int first;
 #endif   
       if (!IS_TS_ATTACHED(ncp->status)){
          curtstate->c = ncp;
-         ncp->ctx->tstate = curtstate;
+         ncp->tstate = curtstate;
          }
 #else					/* Concurrent */
    ccp->es_pfp = pfp;
@@ -382,8 +382,8 @@ int first;
     * Enter the threadstate of the co-expression being activated
     */
    if (ccp->program != ncp->program) {
-      curtstate = ncp->ctx->tstate;
-      global_curtstate = ncp->ctx->tstate;
+      curtstate = ncp->tstate;
+      global_curtstate = ncp->tstate;
       }
 #endif					/* Concurrent */
 #endif					/* !COMPILER */
@@ -437,7 +437,7 @@ int first;
    if (IS_TS_ATTACHED(ncp->status)) {
       SET_FLAG(ncp->status, Ts_Attached);
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
-      pthreadcoswitch(ccp->ctx, ncp->ctx, ccp->status, ncp->status );
+      pthreadcoswitch(ccp, ncp, ccp->status, ncp->status );
       }
    else
 #endif					/* PthreadCoswitch */
@@ -533,12 +533,12 @@ static int pco_inited = 0;		/* has first-time initialization been done? */
  * coswitch(old, new, first) -- switch contexts.
  */
 
-int pthreadcoswitch(struct context *old, struct context *new, word ostat, word nstat)
+int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word nstat)
 {
    sem_post(new->semp);			/* unblock the new thread */
    SEM_WAIT(old->semp);			/* block this thread */
 
-   if (!old || old->alive<1) {
+   if (old->alive<1) {
       pthread_exit(NULL);		/* if unblocked because unwanted */
       }
 
@@ -551,39 +551,35 @@ int pthreadcoswitch(struct context *old, struct context *new, word ostat, word n
  * coclean(old) -- clean up co-expression state before freeing.
  */
 void coclean(struct b_coexpr *cp) {
-   struct context *old = cp->ctx; 
    struct region *strregion=NULL, *blkregion=NULL;
 
-   if (old == NULL)		/* if never initialized, do nothing */
-      return;
-    
 #ifdef Concurrent
-   if (old->tstate){
-      strregion = old->tstate->Curstring;
-      blkregion = old->tstate->Curblock;
+   if (cp->tstate){
+      strregion = cp->tstate->Curstring;
+      blkregion = cp->tstate->Curblock;
       }
 #endif					/* Concurrent */
 
-   if (!IS_TS_THREAD(old->c->status) || old->alive==-1){
+   if (!IS_TS_THREAD(cp->status) || cp->alive==-1){
 #ifdef Concurrent
       CURTSTATE();
-      old->alive = -1;			/* signal thread to exit */
-      if (old->tstate==curtstate){
+      cp->alive = -1;			/* signal thread to exit */
+      if (cp->tstate==curtstate){
        /* 
         * If the thread is cleaning itself, exit, what about tls chain? 
         */
-         old->have_thread = 0;
+         cp->have_thread = 0;
          pthread_exit(0);
          }
 #endif					/* Concurrent */
-      old->alive = -1;			/* signal thread to exit */
-      if (old->have_thread){
-         sem_post(old->semp);		/* unblock it */
-         THREAD_JOIN(old->thread, NULL);	/* wait for thread to exit */
-         old->alive = -2;			/* mark it as joined */
+      cp->alive = -1;			/* signal thread to exit */
+      if (cp->have_thread){
+         sem_post(cp->semp);		/* unblock it */
+         THREAD_JOIN(cp->thread, NULL);	/* wait for thread to exit */
+         cp->alive = -2;			/* mark it as joined */
          }
       }
-   else if (old->alive==1) { /* the current thread is done, called this to exit */
+   else if (cp->alive==1) { /* the current thread is done, called this to exit */
       /* give up the heaps owned by the thread */
 #ifdef Concurrent
       if (blkregion){
@@ -596,24 +592,24 @@ void coclean(struct b_coexpr *cp) {
          MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
          }	
 #endif					/* Concurrent */
-      old->alive = -8;
-      CV_SIGNAL_EMPTYBLK(BlkD(old->c->outbox, List));
-      CV_SIGNAL_FULLBLK(BlkD(old->c->inbox, List));
+      cp->alive = -8;
+      CV_SIGNAL_EMPTYBLK(BlkD(cp->outbox, List));
+      CV_SIGNAL_FULLBLK(BlkD(cp->inbox, List));
 
       DEC_NARTHREADS;	
-      old->alive = -1;
+      cp->alive = -1;
       pthread_exit(NULL);
       }
 
 
-   SEM_CLOSE(old->semp);	/* close/destroy associated semaphore */
+   SEM_CLOSE(cp->semp);	/* close/destroy associated semaphore */
 
 #ifdef Concurrent
    /*
     * Give up the heaps owned by the old thread, 
     * only GC thread is running, no need to lock 
     */
-    if (!IS_TS_THREAD(old->c->status) && blkregion){
+    if (!IS_TS_THREAD(cp->status) && blkregion){
        MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
        swap2publicheap(blkregion, NULL,  &public_blockregion);
        MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
@@ -621,29 +617,27 @@ void coclean(struct b_coexpr *cp) {
        swap2publicheap(strregion, NULL,  &public_stringregion);
        MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
        }
-    tlschain_remove(old->tstate);
+    tlschain_remove(cp->tstate);
 #endif					/* ConcurrentCOMPILER */
 
-    free(old); 			/* free context block */
-    cp->ctx = NULL;            
     return;
   }
 
 /*
- * makesem(ctx) -- initialize semaphore in context struct.
+ * makesem(cp) -- initialize semaphore in co-expression.
  */
-void makesem(struct context *ctx) {
+void makesem(struct b_coexpr *cp) {
    #ifdef NamedSemaphores		/* if cannot use unnamed semaphores */
       char name[50];
       sprintf(name, "i%ld.sem", (long)getpid());
-      ctx->semp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 0);
-      if (ctx->semp == (sem_t *)SEM_FAILED)
+      cp->semp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 0);
+      if (cp->semp == (sem_t *)SEM_FAILED)
          handle_thread_error(errno, FUNC_SEM_OPEN, "make_sem():cannot create semaphore");
       sem_unlink(name);
    #else				/* NamedSemaphores */
-      if (sem_init(&ctx->sema, 0, 0) == -1)
+      if (sem_init(&cp->sema, 0, 0) == -1)
          handle_thread_error(errno, FUNC_SEM_INIT, "make_sem():cannot init semaphore");
-      ctx->semp = &ctx->sema;
+      cp->semp = &cp->sema;
    #endif				/* NamedSemaphores */
    }
 
@@ -662,14 +656,13 @@ struct threadstate * alloc_tstate()
  */
 void *nctramp(void *arg)
 {
-   struct context *new = arg;		/* new context pointer */
-   struct b_coexpr *ce;
+   struct b_coexpr *ce = (struct b_coexpr *) arg;
 #ifdef Concurrent
 /*   sigset_t mask; */
 
 #ifndef HAVE_KEYWORD__THREAD
     struct threadstate *curtstate;
-    curtstate = (new->tstate ? new->tstate : alloc_tstate());
+    curtstate = (ce->tstate ? ce->tstate : alloc_tstate());
     pthread_setspecific(tstate_key, (void *) curtstate);
 #endif					/* HAVE_KEYWORD__THREAD */
 
@@ -680,17 +673,17 @@ void *nctramp(void *arg)
 /*  sigfillset(&mask); 
   pthread_sigmask(SIG_BLOCK, &mask, NULL);
 */
-   curtstate->c = ce = new->c;
+   curtstate->c = ce;
 
 #if ConcurrentCOMPILER
      coexpr_fnc = ce->fnc;    
 #endif					/* ConcurrentCOMPILER */
 
    init_threadstate(curtstate);
-   tlschain_add(curtstate, new);
+   tlschain_add(curtstate, ce);
    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
-   k_level = new->tmplevel;
+   k_level = ce->tmplevel;
    if (ce->title != T_Coexpr) {
       fprintf(stderr, "warning ce title is %ld\n", ce->title);
       }
@@ -715,7 +708,7 @@ void *nctramp(void *arg)
    init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize);
 
 #endif					/* Concurrent */
-   SEM_WAIT(new->semp);			/* wait for signal */
+   SEM_WAIT(ce->semp);			/* wait for signal */
    new_context(0, 0);			/* call new_context; will not return */
    syserr("new_context returned to nctramp");
    return NULL;
@@ -1141,24 +1134,19 @@ void howmanyblock()
 }
 #endif                                /* ConcurrentCOMPILER */
 
-void tlschain_add(struct threadstate *tstate, struct context *ctx)
+void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 {
    MUTEX_LOCKID(MTX_TLS_CHAIN);
    tstate->prev = roottstatep->prev;
    tstate->next = NULL;
    roottstatep->prev->next = tstate;
    roottstatep->prev = tstate;
-   if (ctx){
-      tstate->ctx = ctx;
-      ctx->tstate = tstate;
-      tstate->c = ctx->c;
+   if (cp){
+      cp->tstate = tstate;
+      tstate->c = cp;
       }
    else
-      /*
-       *  Warning: This may overwrite already initialized ctx,
-       *  But we cannot risk leaving ctx uninitialized. 
-       */
-      tstate->ctx = NULL;
+      tstate->c = NULL;
 
    MUTEX_UNLOCKID(MTX_TLS_CHAIN);
 }
@@ -1183,7 +1171,7 @@ void tlschain_remove(struct threadstate *tstate)
    rootpstate.stringtotal += tstate->stringtotal;
    rootpstate.blocktotal += tstate->blocktotal;
 #endif					/* ConcurrentCOMPILER */
-   if (tstate->ctx && tstate->ctx->isProghead) return;
+   if (tstate->c && tstate->c->isProghead) return;
    
    free(tstate);
 }

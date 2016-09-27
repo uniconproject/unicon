@@ -114,6 +114,7 @@ procedure iconc_make_exename_opt(args)
 end
 
 procedure calc_posix_loc()
+   local bpath, f
    if (bpath := (&features ? (="Binaries at " & tab(0)))) |
       ((f := open((bpath := getpaths()) ||
       ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
@@ -123,8 +124,8 @@ procedure calc_posix_loc()
 end
 
 procedure iconc_linkref_resolve(srcfname, ref)
-   static lpaths, ipaths, sep
-   local i, f, path, base, comps, rslt
+   static lpaths, ipaths, sep, bpath
+   local i, f, path, base, comps, rslt, fil
 
    initial {
       sep := PATHCHAR
@@ -279,6 +280,7 @@ procedure iconc_importref_resolve(ref)
 end
 
 procedure iconc_yyparse(fname, tmplist)
+   local pe, rv
    # write("mdw: iconc_yyparse(" || fname || ")...")
    yyfilename := outfilename := fname
    yyin := ""
@@ -372,7 +374,7 @@ procedure reinitialize()
 end
 
 procedure unicon_usage(continue_flag)
-   local f
+   local f, msg
    if \continue_flag then f := iwrite else f := istop
    msg := "Usage: unicon [-cBCstuEGyZMh] [-Dsym=val] [-f s] [-o ofile]\n   _
 	     [-help] [-version] [-features] [-v i] file... [-x args]"
@@ -408,6 +410,7 @@ procedure unicon_help()
 end
 
 procedure handle_D(arg)
+   local def, sym
    arg ? {
       move(2)
       if sym := tab(find("=")) then {
@@ -423,15 +426,16 @@ procedure handle_D(arg)
 end
 
 procedure handle_C(arg)
+   local tmpopt
    #
    # Generate code suitable for consumption by iconc.
    #
+   write("should be here")
    if comp === -1 then {
       istop("conflicting requests for -c and -C")
       }
    
    iconc := 1
-   parseonly := 1
    if *arg > 2 then
       tmpopt := "-U" || arg[3:0] || " "
    else
@@ -444,8 +448,10 @@ procedure handle_C(arg)
 end
 
 procedure unicon(argv)
-   local tmpfnames, tmpopt, dash_v, skip
-
+   local tmpfnames, tmpopt, dash_v, skip, dash_s, parseonly,
+      EmptyNode, N_Empty, i, thepath, tmp_s, ucodefile,
+      cmd, wilog, j, flog2, locallinks, localimports, k,
+      files, n, local_name, v, mw_tmpname, rv, pe
    initialize()
    if *argv = 0 then {
       unicon_usage()
@@ -471,10 +477,13 @@ procedure unicon(argv)
          }
       
       if argv[i][1] == "-" then {
+         write(image(argv[i]))
 	 if match("-D", argv[i]) then # symbols
             handle_D(argv[i])
-         else if match ("-C", argv[i]) then # iconc
-            handle_D(argv[i])
+         else if match ("-C", argv[i]) then{ # iconc
+            handle_C(argv[i])
+            parseonly := 1
+            }            
 	 else
             case argv[i] of {
                "-c"   : {
@@ -915,7 +924,7 @@ procedure trans(argstr, prefix)
 end
 
 procedure icont(argstr,prefix)
-local myfile
+local myfile, rv
 static trans, logger
 initial {
    trans := selecticont()

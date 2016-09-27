@@ -1136,11 +1136,15 @@ void howmanyblock()
 
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 {
+/*TODO: Fixme: roottstate should be replaced with the current
+ * program root tstate, ie. tstate->pstate->tstate
+ * GC should know about this change as well
+ */
    MUTEX_LOCKID(MTX_TLS_CHAIN);
-   tstate->prev = roottstatep->prev;
+   tstate->prev = roottstate.prev;
    tstate->next = NULL;
-   roottstatep->prev->next = tstate;
-   roottstatep->prev = tstate;
+   roottstate.prev->next = tstate;
+   roottstate.prev = tstate;
    if (cp){
       cp->tstate = tstate;
       tstate->c = cp;

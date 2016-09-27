@@ -524,7 +524,7 @@ int region;
  *   better option and we don't have surprises.
  *
    { struct threadstate *tstate;
-   for (tstate = roottstatep; tstate != NULL; tstate = tstate->next) {
+   for (tstate = &roottstate; tstate != NULL; tstate = tstate->next) {
       if (!(tstate->c) || (tstate->c->alive<-1)) continue;
       tstate->c->es_tend = tstate->Tend;
       tstate->c->es_pfp = tstate->Pfp;
@@ -735,7 +735,7 @@ static void markthread(struct threadstate *tcp)
 static void markthreads()
 {
    struct threadstate *t;
-   for (t = roottstatep->next; t != NULL; t = t->next)
+   for (t = roottstate.next; t != NULL; t = t->next)
       if (t->c && (IS_TS_THREAD(t->c->status))){
 	 markthread(t);
 	 }

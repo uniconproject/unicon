@@ -241,7 +241,7 @@ void main(int argc, char **argv)
 #endif					/* HAVE_KEYWORD__THREAD */
 
    init_threads();
-   global_curtstate = roottstatep = &roottstate;
+   global_curtstate = &roottstate;
 #endif					/* Concurrent */
 
 #if WildCards && NT
@@ -327,7 +327,7 @@ void main(int argc, char **argv)
    icon_init(argv[1], &argc, argv);
    
 #ifdef MultiThread
-   curtstate = roottstatep;
+   curtstate = &roottstate;
 #ifdef Concurrent   
    curtstate_ce = curtstate->c;
 #endif					/* Concurrent */

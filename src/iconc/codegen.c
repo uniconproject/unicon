@@ -247,7 +247,7 @@ void var_dcls()
      fprintf(codefile, "   pthread_key_create(&tstate_key, NULL);\n");
   #endif					/* HAVE_KEYWORD__THREAD */
      fprintf(codefile, "   init_threads();\n");
-     fprintf(codefile, "   global_curtstate = roottstatep = &roottstate;\n");
+     fprintf(codefile, "   global_curtstate = &roottstate;\n");
      fprintf(codefile, "\n");
 #endif					/* Concurrent */
 

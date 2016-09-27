@@ -158,7 +158,6 @@ struct region *curstring, *curblock;
 #endif					/* MultiThread */
 
 #if defined(MultiThread) || ConcurrentCOMPILER
-struct threadstate *roottstatep; 
 
 #ifdef Concurrent
      int is_concurrent = 0;
@@ -218,7 +217,6 @@ word mutexid_coll;
 struct progstate *curpstate;
 struct progstate rootpstate;
 #endif					/* ConcurrentCOMPILER */
-struct threadstate *roottstatep; 
 #endif					/* MultiThread */
 
 #ifndef MultiThread
@@ -745,7 +743,6 @@ char *argv[];
 #ifdef MultiThread
    rootpstate.tstate = curtstate;
 #endif					/* MultiThread */
-   roottstatep = curtstate; 
    init_threadstate(curtstate);
 
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
@@ -1066,15 +1063,15 @@ Deliberate Syntax Error
 #ifdef Concurrent
    /* 
     * This is the first node in the chain. It will be always the first.
-    * New nodes will be added to the end of the chain, setting roottstatep->prev
+    * New nodes will be added to the end of the chain, setting roottstate.prev
     * to point to the last node will make it easy to add at the end. The chain 
     * is circular in one direction, backward, but not forward.
     * No need to lock TLS chain since only main is running.
     */
-   roottstatep->prev = roottstatep; 
-   roottstatep->next = NULL;
+   roottstate.prev = &roottstate; 
+   roottstate.next = NULL;
    mainhead->isProghead = 1;
-   mainhead->tstate = roottstatep;
+   mainhead->tstate = &roottstate;
 #endif					/* Concurrent */
 }
 #endif					/* PthreadCoswitch */

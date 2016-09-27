@@ -55,7 +55,7 @@ operator{*} ! bang(underef x -> dx)
 #endif					/* E_Lsub */
 
 	   /* static struct threadstate *curtstate;
-            if (!curtstate) curtstate=roottstatep;*/
+            if (!curtstate) curtstate=&roottstate;*/
 
             EVValD(&dx, E_Lbang);
 	    

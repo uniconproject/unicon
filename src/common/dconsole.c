@@ -65,7 +65,6 @@ struct descrip emptystr; 		/* zero-length empty string */
 #undef tend
 
 pthread_mutex_t **mutexes;
-struct threadstate *roottstatep;
 struct threadstate *get_tstate()
 {
    return curtstate;

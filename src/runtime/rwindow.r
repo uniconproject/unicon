@@ -4939,7 +4939,7 @@ FILE *OpenConsole()
 	 curpstate->tstate = curtstate;
    	 rootpstate.tstate = curtstate;
 #endif                                   /* ConcurrentCOMPILER */
-   	 roottstatep = curtstate; 
+
    	 init_threadstate(curtstate);
    	 pthread_key_create(&tstate_key, NULL);
    	 pthread_setspecific(tstate_key, (void *) curtstate);

@@ -107,7 +107,7 @@ FncDefV(writes)
      FncDef(Break,1) 
      FncDef(NotAny,1)
      FncDef(Span,1)
-     FncDef(NSpan,1)
+     FncDef(Nspan,1)
      FncDef(Arb,0)
      FncDef(Arbno,1)
      FncDef(pattern_concat,2) /* || */

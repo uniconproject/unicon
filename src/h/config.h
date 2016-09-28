@@ -170,21 +170,21 @@
   #define EventMon
 #endif
 
-#undef Concurrent
 #ifdef MultiThread
    #if defined(HAVE_LIBPTHREAD) && !defined(NoConcurrent)
+      #undef Concurrent
       #define Concurrent 1
    #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
-
-   #ifdef Concurrent
-      #define PthreadCoswitch 1
-      #define TSLIST 
-      /*
-       * The default at present does not use __thread.
-       * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
-       */
-   #endif				/* Concurrent */
 #endif					/* MultiThread */
+
+#ifdef Concurrent
+   #define PthreadCoswitch 1
+   #define TSLIST 
+   /*
+    * The default at present does not use __thread.
+    * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
+    */
+#endif				/* Concurrent */
 
 #if defined(Concurrent) && COMPILER
    #define ConcurrentCOMPILER 1

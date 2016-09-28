@@ -1,6 +1,17 @@
 /*
  * codegen.c - routines to write out C code.
  */
+
+
+/*
+ * Nowhere in the iconc/ directory do we define COMPILER, it is a runtime
+ * system symbol. But, our interpretation of what features are enabled in
+ * h/config.h (notably Concurrent) is influenced by whether we think we
+ * are COMPILER.  Define it here, so we get correct settings e.g. for
+ * Concurrent, used in var_dcls() below.
+ */
+#define COMPILER 1
+
 #include "../h/gsupport.h"
 #include "ctrans.h"
 #include "cglobals.h"

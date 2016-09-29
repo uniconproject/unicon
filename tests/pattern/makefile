@@ -8,7 +8,7 @@ Test Icont Test-icont Pattern Pattern-icont:
 		IC=unicon sh Test-icon $(PATTERNTST)
 
 Iconc Test-iconc Siconc Samples-iconc:
-		IC=iconc sh Test-icon $(PATTERNTST)
+		IC="unicon -C -fd" sh Test-icon $(PATTERNTST)
 
 Clean:
 		-rm -f *.u? foo.baz local/*.out

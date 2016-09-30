@@ -139,6 +139,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Cnvstr = cnv_str_1;
       p->Cnvtcset = cnv_tcset_1;
       p->Cnvtstr = cnv_tstr_1;
+      p->Cnvpattern = cnv_pattern_1;
       }
    else {
       p->Cnvcset = cnv_cset_0;
@@ -150,7 +151,31 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       p->Cnvstr = cnv_str;
       p->Cnvtcset = cnv_tcset_0;
       p->Cnvtstr = cnv_tstr_0;
+#ifdef PatternType
+      if (Testb((word)ToAscii(E_PatCode), cs))
+	 p->Cnvpattern = cnv_pattern_1;
+      else
+	 p->Cnvpattern = cnv_pattern_0;
+#endif					/* PatternType */
       }
+
+#ifdef PatternType
+   /* internal_match. A mini "monster" case. */
+   if (Testb((word)ToAscii(E_PatAttempt), cs) ||
+       Testb((word)ToAscii(E_PatFail), cs) ||
+       Testb((word)ToAscii(E_PatMatch), cs) ||
+       Testb((word)ToAscii(E_PatArg), cs) ||
+       Testb((word)ToAscii(E_PelemAttempt), cs) ||
+       Testb((word)ToAscii(E_PelemMatch), cs) ||
+       Testb((word)ToAscii(E_PelemFail), cs) ||
+       Testb((word)ToAscii(E_Assign), cs) ||
+       Testb((word)ToAscii(E_Value), cs) ||
+       Testb((word)ToAscii(E_Spos), cs)) {
+      p->Internalmatch = internal_match_1;
+      }
+   else p->Internalmatch = internal_match_0;
+#endif					/* PatternType */
+   
 
    /*
     * interp() is the monster case:
@@ -269,14 +294,18 @@ function{0,1} EvGet(cs,vmask,flag)
        * Loop until we read an event allowed.
        */
       while (1) {
+	 int rv;
          /*
           * Activate the event source to produce the next event.
           */
 	 dummy = cs;
-	 if (mt_activate(&dummy, &curpstate->eventcode,
-			 BlkD(curpstate->eventsource, Coexpr)) == A_Cofail)
+	 if ((rv=mt_activate(&dummy, &curpstate->eventcode,
+			 BlkD(curpstate->eventsource, Coexpr))) == A_Cofail)
 	    fail;
-	 deref(&curpstate->eventcode, &curpstate->eventcode);
+	 /*
+	  * why would we ever need to dereference &eventcode?
+	  */
+	 /* deref(&curpstate->eventcode, &curpstate->eventcode); */
 	 if (!is:string(curpstate->eventcode) ||
 	     StrLen(curpstate->eventcode) != 1) {
 	    /*

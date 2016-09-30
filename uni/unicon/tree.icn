@@ -71,6 +71,24 @@ end
 
 global list_of_invocables
 
+# under iconc, resort to some fakery to ensure that it doesn't think
+# these are unreachable procedures.
+procedure writes_faux_for_uneval(L, brackets)
+   /brackets := "{}"
+   if iconc ~=== 1 then fail
+   writes(yyout,brackets[1])
+   every temp := L[i:=1 to *L] do {
+      if type(temp) == "list" then {
+	 writes(yyout,";")
+	 writes_faux_for_uneval(temp, "")
+	 }
+      else {
+	 if i = 1 then writes(yyout, temp, "()")
+	 }
+      }
+   writes(yyout,brackets[2])
+end
+
 procedure writes_code_for_uneval(L)
 local i
    writes(yyout, "[")
@@ -119,9 +137,19 @@ initial { word := &letters ++ &digits ++ '\'\"&~_' }
    if \temp == "\\" then temp := "\\\\"
    put(L, \temp)
    L := make_list_for_uneval(L, word)
-   writes(yyout, funcname, "(")
-   writes_code_for_uneval(L)
-   writes(yyout, ")")
+
+   if iconc === 1 then {
+      writes(yyout, "(if getenv(\"NONSENSE\") then ")
+      writes_faux_for_uneval(L)
+      writes(yyout," else ", funcname, "(")
+      writes_code_for_uneval(L)
+      writes(yyout,"))")
+      }
+   else {
+      writes(yyout, " ", funcname, "(")
+      writes_code_for_uneval(L)
+      writes(yyout, ")")
+      }
    return
 end
 

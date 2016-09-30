@@ -1787,12 +1787,7 @@ dptr processFuncCallList(struct b_list *lp)
    DEBUGF(25,(stdout, "proc %16lx : %16lx\n", proc.dword,
 	  (unsigned long int)proc.vword.bptr));
    DEBUGF(25,(stdout, "nargs %d\n", nargs));
-#if COMPILER
-   fatalerr(164, NULL);
-   call_result = NULL;
-#else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs);
-#endif					/* COMPILER */
    free(procargs);
    return call_result;
    }
@@ -1921,12 +1916,7 @@ dptr processMethodCallList(struct b_list *lp)
             }
 	 }
       }
-#if COMPILER
-   fatalerr(164, NULL);
-   call_result = NULL;
-#else					/* COMPILER */
    call_result = (dptr)calliconproc(proc,procargs,nargs-1);
-#endif					/* COMPILER */
    return call_result;
    }
 

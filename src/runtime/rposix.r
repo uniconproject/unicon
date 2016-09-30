@@ -1750,10 +1750,24 @@ struct hostent *hs;
 }
 
 /*
- * Calling Icon from C (iconx)
+ * Calling Icon from C
  */
 
-#if !COMPILER
+#if COMPILER
+dptr calliconproc(struct descrip p, dptr args, int nargs)
+{
+   int i;
+   static struct descrip rv;
+   struct descrip *cargs = calloc(nargs+1, sizeof(struct descrip));
+   cargs[0] = p;
+   for (i = 0; i < nargs; i++) cargs[i+1] = args[i];
+   i = invoke(nargs+1, cargs , &rv , (continuation)NULL);
+   free(cargs);
+   if (i == -2) /* success */
+      return &rv;
+   return NULL; /* failure */
+}
+#else					/* COMPILER */
 
 /* No provision for resumption */
 #ifndef Concurrent

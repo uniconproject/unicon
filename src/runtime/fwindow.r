@@ -1787,7 +1787,7 @@ function{1} FillPolygon(argv[argc])
 
 end
 
-        /*
+/*
  * FillRectangle(w, x1, y1, width1, height1,...,xN, yN, widthN, heightN)
  */
 "FillRectangle(argv[]){1} - draw filled rectangle"

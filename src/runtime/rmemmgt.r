@@ -725,7 +725,7 @@ static void markthread(struct threadstate *tcp)
    /* ??? */
 }
 
-#if Concurrent
+#ifdef Concurrent
 /*
  * Mark all the threads, because hey, they are live even if we don't
  * reach them. Skips the first thread, the one pointed at by

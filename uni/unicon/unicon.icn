@@ -42,6 +42,7 @@ global yydbg, yyout, linkline, translateducode, imported, imported_classes
 #
 global iconc, iconc_links, iconc_parsed, iconc_imports
 global iconc_posixloc, iconc_parsed_posix, iconc_perifile_idx
+global iconc_fd	# if iconc is used, add the -fd option
 
 
 link basename, io, paths
@@ -759,6 +760,7 @@ procedure unicon(argv)
          cfy(tmpfnames[k], (tmpfnames[k] || "-iconc"));
       cmd := (getenv("ICONC")|"iconc") || " "
       cmd ||:= \icontopt
+      if \iconc_fd & (not find("-fd", icontopt)) then cmd ||:= " -fd "
       cmd ||:= \ilinkopt
       # create exename (and option) if none supplied
       if /exename then {

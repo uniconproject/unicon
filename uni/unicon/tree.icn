@@ -83,7 +83,14 @@ procedure writes_faux_for_uneval(L, brackets)
 	 writes_faux_for_uneval(temp, "")
 	 }
       else {
-	 if i = 1 then writes(yyout, temp, "()")
+	 if i = 1 then {
+	    writes(yyout, temp, "(")
+	    every j := 2 to *L do {
+	       if j>2 then writes(yyout,",")
+	       writes(yyout,"(0|0.0|\"\"|''|&input)")
+	       }
+	    writes(yyout,")")
+	    }
 	 }
       }
    writes(yyout,brackets[2])
@@ -139,7 +146,7 @@ initial { word := &letters ++ &digits ++ '\'\"&~_' }
    L := make_list_for_uneval(L, word)
 
    if iconc === 1 then {
-      writes(yyout, "(if getenv(\"NONSENSE\") then ")
+      writes(yyout, "(if getenv(\"NONSENSE\") then every ")
       writes_faux_for_uneval(L)
       writes(yyout," else ", funcname, "(")
       writes_code_for_uneval(L)
@@ -332,6 +339,11 @@ procedure yyprint(node)
             fail
 	    }	
          else if node.label == "BPiam" then {
+	    if iconc===1 then {
+	       writes(yyout, "(if getenv(\"NONSENSE\") then ")
+	       yyprint(node.children[3])
+	       writes(yyout," := \"\" else ")
+	       }
 	    # generate spurious extra parameter so that the variable is
 	    # guaranteed to be declared: pattern_assign_immediate(p,"var",var)
 	    writes(yyout, " pattern_assign_immediate( ")
@@ -341,17 +353,30 @@ procedure yyprint(node)
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
+	    if iconc===1 then writes(yyout, ")")
             fail
 	    }	
          else if node.label == "BPaom" then {
+	    if iconc===1 then {
+	       writes(yyout, "(if getenv(\"NONSENSE\") then ")
+	       yyprint(node.children[3])
+	       writes(yyout," := \"\" else ")
+	       }
 	    writes(yyout, " pattern_assign_onmatch( ")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    emit_assign_code(node.children[3])
 	    writes(yyout, " ) ")		
+	    if iconc===1 then writes(yyout, ")")
             fail
 	    }	
          else if node.label == "upsetcur" then {
+	    if iconc===1 then {
+	       writes(yyout, "(if getenv(\"NONSENSE\") then ")
+	       yyprint(node.children[2])
+	       writes(yyout," := 1 else ")
+	       }
+
 	    # generate spurious extra parameter so that the variable is
 	    # guaranteed to be declared: pattern_setcur("var",var)
 	    writes(yyout, "pattern_setcur( ")
@@ -359,6 +384,7 @@ procedure yyprint(node)
 	    writes(yyout, ",")
 	    yyprint(node.children[2])
 	    writes(yyout, " ) ")
+	    if iconc===1 then writes(yyout,")")
             fail
 	    }	
          else if node.label == "BPuneval" then {

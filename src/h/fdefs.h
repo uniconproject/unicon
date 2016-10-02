@@ -112,12 +112,12 @@ FncDefV(writes)
      FncDef(Arbno,1)
      FncDef(pattern_concat,2) /* || */
      FncDef(pattern_alternate,2) /* .| */
-     FncDef(pattern_setcur,2) /* .> */
+     FncDef(pattern_setcur,1) /* .> */
      FncDef(Succeed,0)
      FncDef(Bal,0)
      FncDef(Breakx,1)
-     FncDef(pattern_assign_immediate,3) /* => */
-     FncDef(pattern_assign_onmatch,3)  /* -> */
+     FncDef(pattern_assign_immediate,2) /* => */
+     FncDef(pattern_assign_onmatch,2)  /* -> */
      FncDef(Fence,1)
      FncDef(pattern_unevalvar,1)   /* `` */
      FncDef(Len,1)

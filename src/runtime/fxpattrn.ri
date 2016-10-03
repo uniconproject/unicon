@@ -28,7 +28,7 @@ union block *pattern_make(int stck_size, struct b_pelem * pnext,
    bp = (union block *)alcpattern(stck_size);
 #if COMPILER
    pelem = alcpelem(pattern_code);
-#else
+#else					/* COMPILER */
    pelem = alcpelem(pattern_code, ipc.opnd);
 #endif					/* COMPILER */
    pelem->pthen = (union block *) lpnext;
@@ -550,7 +550,6 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 
    body {
       int start, stop;
-      struct b_pattern *pattern;
       tended struct b_pelem *phead;
 
       int subject_len;
@@ -572,11 +571,10 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	 runerr(127, pat);
 	 }
 
-      pattern = (struct b_pattern *)BlkLoc(pat);
-      if ((phead = ResolvePattern(pattern)) == NULL) runerr(0);
+      if ((phead = ResolvePattern((struct b_pattern *)BlkLoc(pat))) == NULL) runerr(0);
 
       while ((k_pos >= 0) &&
-	     internal_match(StrLoc(k_subject), subject_len, pattern->stck_size,
+	     internal_match(StrLoc(k_subject), subject_len, ((struct b_pattern *)BlkLoc(pat))->stck_size,
 			    phead, &start, &stop, k_pos, 0)
 	     ){
 	 /* check if psub no longer refers to what k_subject holds.
@@ -1645,8 +1643,8 @@ Stack_Base = Stack_Ptr;
  * the variable value is stored in var
  */
 #begdef GetVarFromNodeParameter(Node)
-struct descrip var;
-struct descrip varref;
+tended struct descrip var;
+tended struct descrip varref;
 dptr pvar;
 tended char * varname;
 if (is:list(Node->parameter)) {
@@ -1977,12 +1975,19 @@ int f(char * pat_sub, int Length, int Pat_S,
 {
    stack_entry Stack[Stack_Size];
    int Stack_Ptr, Stack_Base;
+   tended struct b_pelem *tpattern = pattern;
    tended struct descrip evalue;
-   struct b_pelem * Node = NULL;
-   struct b_pelem PE_Unanchored = {0, PC_Unanchored, (union block *)pattern,
-				      0, 0, {D_Null,0}};
+   tended struct b_pelem * Node = NULL;
+#if COMPILER
+   tended struct b_pelem * PE_Unanchored = alcpelem(PC_Unanchored);
+#else					/* COMPILER */
+   tended struct b_pelem * PE_Unanchored = alcpelem(PC_Unanchored, ipc.opnd);
+#endif					/* COMPILER */
    int Assign_OnM = 0;
    int Region_Level = 0;
+
+   PE_Unanchored->pthen = (union block *)tpattern;
+   PE_Unanchored->parameter = nulldesc;
 
    EVVal(Anchored_Mode, e_patattempt);
    DEBUGF(2, (stdout,
@@ -2007,7 +2012,7 @@ int f(char * pat_sub, int Length, int Pat_S,
  *       --  entry is the number of anchor moves so far.
  */
    else {
-      Stack[Stack_Init].node = &PE_Unanchored;
+      Stack[Stack_Init].node = PE_Unanchored;
       Stack[Stack_Init].cursor = initial_cursor - 1;
       }
    Stack_Ptr = Stack_Init;

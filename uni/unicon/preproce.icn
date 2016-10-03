@@ -131,9 +131,13 @@ procedure preproc_new(fname,predefined_syms)
       preproc_filename := preproc_include_name := type(fname)
       }
    else {
+      if fName == "_stdin.icn" then
+	 preproc_file := &input
+      else
       # Normal file execution
       preproc_file := open(fname) |
 	 stop(&progname, ": cannot open ", image(fname))
+
       preproc_include_set := set([fname])
       preproc_filename := preproc_include_name := fname
       }
@@ -425,7 +429,7 @@ procedure preproc_read()
 	 until *preproc_if_stack <= preproc_nest_level do
 	    preproc_if_state := pop(preproc_if_stack)
 	 }
-      if type(preproc_file) ~== "list" then
+      if type(preproc_file) ~== "list" & preproc_file ~=== &input then
 	 close(preproc_file)
       delete(preproc_include_set,preproc_include_name)
       (preproc_nest_level := pop(preproc_file_stack) &

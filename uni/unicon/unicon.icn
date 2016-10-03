@@ -476,7 +476,7 @@ procedure unicon(argv)
          next
          }
       
-      if argv[i][1] == "-" then {
+      if argv[i][1] == "-" & *argv[i]>1 then {
 	 if match("-D", argv[i]) then # symbols
             handle_D(argv[i])
          else if match ("-C", argv[i]) then{ # iconc
@@ -516,7 +516,7 @@ procedure unicon(argv)
                   every iwrite(&features)
                   return 0
                   }
-               "-x"      : {exec := i; break } # exit the every loop
+               "-x"      : { exec := i; break } # exit the every loop
                "-o"      : {
                   if (i=1) | (argv[i-1] ~=== "-o") then {
                      exename := " -o " || quotes(argv[i+1]) || " "
@@ -569,8 +569,10 @@ procedure unicon(argv)
                default   : icontopt ||:= argv[i] || " "
                } # case
          }
-      else {   #the argument doesn't start with "-"
+      else {   #the argument isn't an option
 	 fName := argv[i] | stop("usage: unicon file")
+	 if fName == "-" then fName := "_stdin.icn"
+
 	 if not (map(fName[find(".", fName)+1 : 0])== ("icn"|"u"|"u1"|"u2")) then
 	    fName ||:= ".icn"
 
@@ -655,7 +657,7 @@ procedure unicon(argv)
          }    # the argument doesn't start with "-"
       } # every argument
 
-   if /fName then {
+   if /fName & not find(" - ", icontopt) then {
       write(&errout, "unicon: error: no input file")
       unicon_usage()
       }

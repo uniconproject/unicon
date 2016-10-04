@@ -1,34 +1,43 @@
 \chapter{String Processing}
 
-In addition to its groundbreaking expression evaluation, Unicon inherits
-other compelling features from Icon that reduce the effort required to
-write complex programs. Icon's ancestor is
-\index{SNOBOL4}SNOBOL4, the grandfather of all string processing
-languages, and from it come some of the most flexible and readable
-built-in string processing facilities found in any language. In this
-chapter you will learn
+In addition to its groundbreaking expression evaluation, by combining
+compelling string processing features from its ancestors Icon and
+\index{SNOBOL4}SNOBOL4, Unicon provides some of the most flexible and
+readable built-in string processing facilities found in any language.
+If you are used to string processing in a mainstream language, hold on
+to your hat: things are about to get interesting.
+
+In this chapter you will learn
 
 \begin{itemize}
 \item How to manipulate strings and sets of characters
-\item Icon's string scanning \index{control
-structure}control structure
+\item the string scanning \index{control structure}control structure,
+used to match patterns directly in code
+\item the pattern type, used to match patterns constructed as data
 \item How to write custom \index{pattern matching}pattern matching
 primitives, with \index{backtracking}backtracking
+\item techniques for matching regular expressions and context free grammars
 \end{itemize}
-Techniques for matching regular expressions and context free grammars
 
-\section{String Indexes}
+\section{The String and Cset Types}
+
+All mainstream programming languages have a string type, but the
+details of Unicon's string type set it apart from other languages.
+And almost no other mainstream languages feature a data type
+dedicated to character sets, which are quite useful.
+
+\subsection{String Indexes}
 
 You have already seen string literals delimited by double quotes, and
 the most common operators that work on strings: the size of a string is
 given by the unary \texttt{*} operator, substrings can be picked out
-with indexes, and two strings can be concatenated with the
-\texttt{{\textbar}{\textbar}} operator. Now it is time to present a
-deeper understanding of the meaning of indexes as they are used with
+with square-bracketed indexes, and two strings can be concatenated with the
+\texttt{{\textbar}{\textbar}} operator. It is time for a
+deeper explanation of the meaning of indexes as they are used with
 strings and lists.
 
 \index{string!indexes 1 based}Indexes in a string refer to the positions
-between characters. The positions are numbered starting from 1. The
+{\em between\/} characters. The positions are numbered starting from 1. The
 index 0 refers to the position after the last character in the string,
 and negative indices count from the right side of the string:
 
@@ -92,7 +101,7 @@ facilities, described below. But first, here is some more detail on the
 character set data type, which is used in many of the string scanning
 functions.
 
-\section{Character Sets}
+\subsection{Character Sets}
 
 A cset is a set of characters. It has the usual properties of sets:
 order is not significant, and a character can only occur once in a
@@ -124,7 +133,7 @@ n := *cset(s)}
 The \texttt{!} operator generates the members of a cset in sorted order;
 this is also useful in some situations.
 
-\section{Character Escapes}
+\subsection{Character Escapes}
 
 Both strings and csets rely on the backslash as an escape character
 within string literals. A backslash followed by an \index{escape
@@ -204,7 +213,22 @@ Control-\textit{x} &
 \end{supertabular}
 \end{center}
 
-\section{String Scanning}
+\section{String Analysis}
+
+Unicon is unique in its ability to break strings apart in order to
+identify, classify and extract the meaning of their component parts.
+This extreme claim only became true in Version 13 of the language,
+which unifies Icon's string scanning control structure with its
+predecessor SNOBOL's pattern matching data type. 
+
+Strings are fundamentally just ordered sequences of symbols. Their
+information is conveyed both in their individual elements and in
+the number and order in which the symbols appear.
+There is a fundamental duality between writing the code to analyze a
+string, and writing down some data that describes or abstracts
+that string. The same duality is seen in 
+
+\subsection{String Scanning}
 
 Icon's string analysis facility is called
 \index{string!scanning}\textit{string scanning}. A
@@ -249,7 +273,7 @@ it passed over. So the expression \texttt{tab(0)} will return the
 substring from the current position to the end of the string, and set
 the position to the end of the string.
 
-String scanning functions examine a string and generate the interesting
+Several string scanning functions examine a string and generate the interesting
 positions in it. We have already seen \index{find()}\texttt{find()},
 which looks for substrings. In addition to the other parameters that
 define what the function looks for, these string functions end with
@@ -258,7 +282,7 @@ functions \index{default!scanning parameters}default their string
 parameter to \texttt{\&subject}, the string being scanned. The two
 integer positions specify where in the string the processing will be
 performed; they default to 1 and 0 (the entire string), or
-\texttt{\&pos} and 0 if the string defaulted to use \texttt{\&subject}.
+\texttt{\&pos} and 0 if the string defaulted to \texttt{\&subject}.
 Here is a \index{generator}generator that produces the words from the
 input:
 
@@ -275,7 +299,7 @@ local wchar, line \\
 end
 }
 
-Variable \texttt{wchar}\texttt{ }is a cset of characters that are
+Variable \texttt{wchar} is a cset of characters that are
 allowed in words, including apostrophe (which is escaped) and hyphen
 characters. \index{upto(c)}\texttt{upto(c)} returns the next position
 at which a character from the cset \texttt{c} occurs. The
@@ -292,10 +316,11 @@ Notice the first line: the cset \texttt{wchar} is the set union of the
 upper- and lowercase letters (the value of the keyword
 \texttt{\&letters}) and the digits (the keyword \texttt{\&digits}).
 This cset union is performed each time \texttt{getword()} is called,
-which is inefficient. Instead, the procedure ought to calculate the
-value and store it for all future calls to \texttt{getword()}.
+which is inefficient if \texttt{getword()} is called many times. The
+procedure could instead calculate the value once and store it for all
+future calls to \texttt{getword()}.
 
-To do this, you declare the variable to be static, causing its value to
+Declaring the variable to be static will cause its value to
 persist across calls to the procedure. Normal local variables are
 initialized to the null value each time a procedure is entered. To do
 this, add these two lines to the beginning of the procedure:
@@ -320,7 +345,9 @@ looks to see if there is a minus sign at the current position; if one is
 found, \texttt{\&pos} is moved past it and the variable \texttt{sign}
 is assigned a -1; otherwise, it gets a 1. The expression
 \texttt{tab(match(s))} occurs quite often in string scanning, so it is
-given a shortcut: \texttt{=s} does the same thing.
+given a shortcut: \texttt{=s}.  The section on pattern matching
+later in this chapter will explain that this
+``unary equals'' operator has an additional, more powerful use.
 
 The last two string scanning functions to round out
 Icon's built-in repertoire are
@@ -379,7 +406,7 @@ end
 This procedure works fine for lists with just a few members and also for
 cases where \texttt{prefix} is fairly large.
 
-\subsection*{Backtracking}
+\subsubsection*{Backtracking}
 
 \index{backtracking}The matching functions we have seen so far,
 (\texttt{tab()} and \texttt{move()}), are actually
@@ -411,10 +438,10 @@ expression succeeds and leaves \texttt{\&pos} at 2.
 {\sffamily\bfseries
 Warning}
 
-{\sffamily
-Be careful when using tab() or move() in a surrounding expression that
-can fail! The fact that tab() and move() reset \&pos upon expression
-failure causes confusion and bugs when it happens accidentally.}
+Be careful when using \texttt{tab()} or \texttt{move()} in a
+surrounding expression that can fail! The fact that \texttt{tab()}
+and \texttt{move()} reset \texttt{\&pos} upon expression
+failure causes confusion and bugs when it happens accidentally.
 
 \subsection*{Concordance Example}
 
@@ -503,23 +530,118 @@ the uppercase letters and the lowercase letters, respectively;
 therefore, the call to \texttt{map()} converts the line just read in to
 all \index{lower case}lowercase.
 
-\section{Regular Expressions}
+\section{Pattern Matching}
 
-The Icon Program Library (included with the Unicon distribution)
-provides \index{regular expression}regular expression matching
-functions. To use it, add the line \texttt{link regexp} at the top of
-the program. Listing 3-2 is an example of a search-and-replace program
-called (somewhat inappropriately)
-\texttt{i}\index{grep}\texttt{grep}\texttt{.icn}: The actual searching
-and replacing is performed on each line of text by procedure
-\texttt{re\_sub()}. This procedure illustrates many classic aspects of
-string scanning. It marches through the string from right to left using
-a while loop. It builds up a result string, which by default would be a
-copy of its scanned string. At the start of each occurrence of the
-regular expression, the replacement string is appended to the result,
-and the regular expression is tabbed over and not appended to the
-result. When no more occurrences of the regular expression are found,
-the remainder of the string is appended to the result.
+Pattern matching in Unicon is like string scanning in steroids.
+Patterns encode as data what sort of strings to match, instead of writing
+string scanning code to perform the match directly.  A
+pattern data type allows complex patterns to be composed from pieces.
+The patterns can then be used in the middle of string scans to give
+that notation a boost, or used on their own. Arguably, you don't need
+patterns because anything that can be done to strings, can be done
+using string scanning. But when the pattern solution is usually
+shorter, more readable, and runs faster, why wouldn't everyone use them?
+
+Patterns are understood in terms of two different points in time, the
+point when the pattern is constructed, and the times at which it is
+used to match a string.  Most of the programming work for patterns
+involves formulating the pattern construction, but most of the
+computation occurs later on during the pattern matches.  Similarly in
+this chapter the next two subsections describe ways to
+create many and various complex patterns, while the two notations for
+using patterns are relatively simple and require little space.  All of
+this only becomes clear with numerous examples that will follow.
+
+
+\subsection{Regular Expressions}
+
+The literal values of the pattern type are regular expressions,
+enclosed in less than ($<$) and greater than ($>$) symbols. The
+notation of regular expressions is very old and very famous in
+computer science, and readers already familiar with them may wish
+to skim this section.
+
+Within $<$ and $>$ symbols, the normal Unicon interpretation of
+operators does not apply; instead a set of regular expression
+operators is used to express simple string patterns concisely.  The
+following are examples of regular expressions.
+
+\bigskip
+
+\begin{tabular}{|l|l|} \hline
+regular expression	& is a pattern that... \\ \hline
+\texttt{$<$abc$>$}	& matches abc \\
+\texttt{$<$a$|$b$|$c$>$}& matches a or b or c \\
+\texttt{$<$[a-c]$>$}	& matches a or b or c \\
+\texttt{$<$ab?c$>$}	& matches a followed optionally by b followed by c \\
+\texttt{$<$ab*c$>$}	& matches a followed by 0 or more b's followed by c \\
+\texttt{$<$a*b*c*$>$}	& matches a's followed by b's followed by c's \\ \hline
+\end{tabular}
+
+\subsection{Pattern Composition}
+
+Regular expressions are awesome, but there are many patterns that they
+cannot express. Unicon has many pattern functions and operators that
+construct new patterns, often from existing pattern
+arguments. Sometimes, they simply make it convenient to store parts of
+patterns in variables that can then be used at various places in
+larger patterns. Other times, they make it possible to write patterns
+are not easily written as regular expressions.
+
+\begin{tabular}{|l|l|} \hline
+composer & constructs a pattern that... \\ \hline
+\texttt{p1 {\textbar\textbar} p2} & matches if pattern p1 is followed by pattern p2 \\
+\texttt{p1 .{\textbar} p2} & matches if pattern p1 or pattern p2 matches \\
+\texttt{s -$>$ v}   & assigns s to v if an entire pattern match succeeds \\
+\texttt{s =$>$ v}   & assigns s to v if a pattern match makes it here \\
+\texttt{.$>$ v}   & assigns the current position in the match to v \\
+\texttt{Abort()}  & causes an entire pattern match to fail immediately \\
+\texttt{Any(c)}   & matches a character in cset c \\
+\texttt{Arb()}    & matches anything \\
+\texttt{Arbno(p)} & matches pattern p as few (zero or more) times as possible \\
+\texttt{Bal()}    & matches the shortest non-null substring with balanced parentheses\\
+\texttt{Break(c)} & matches the substring until a character in cset c occurs \\
+\texttt{Breakx(c)}& matches the substring until a character in cset c occurs \\
+\texttt{Fail()}   & fails to match, triggering any alternative(s) \\
+\texttt{Fence()}  & fails to match, preventing alternative(s) \\
+\texttt{Len(i)}   & matches any i characters \\
+\texttt{NotAny(c)} & matches any one character not in cset c \\
+\texttt{Nspan(c)} & matches 0 or more characters in cset c, as many as possible \\
+\texttt{Pos(i)}   & sets the cursor to position i \\
+\texttt{Rem()}    & matches the remainder of the string \\
+\texttt{Span(c)}  & matches 1 or more characters in cset c, as many as possible \\
+\texttt{Succeed()}& causes the entire pattern match to succeed immediately \\
+\texttt{Tab(n)}   & matches from the current position to position n, moving to
+	   that location \\
+\texttt{Rpos(n)}  & sets the position n characters from the right end of the
+	   string \\
+\texttt{Rtab(n)}  & matches from the current position to n
+	   characters from the right end. \\ \hline
+\end{tabular}
+
+\subsection{Pattern Match Operators}
+
+A pattern match is performed within a string scanning environment
+using the unary equals operator, \texttt{=p}.  If \texttt{p}
+is matched at the current position, \texttt{=p} produces the
+substring matched and moves the position by that amount.
+
+There is also a pattern match control structure, \texttt{s ?? p}, which creates
+a new string scanning environment for \texttt{s} and looks for pattern
+\texttt{p} within \texttt{s}, working from left to right.
+
+
+\section{String Scanning and Pattern Matching Miscellany}
+
+Many topics related to string scanning and pattern matching do not
+easily fit into one of the preceding sections, but are nevertheless
+important.
+
+\subsection{Grep}
+
+Grep, an acronym defined variously, is one of the oldest UNIX
+utilities, which searches files for occurrences of a pattern defined
+by a regular expression.
 
 \bigskip
 
@@ -550,8 +672,8 @@ end
 }
 
 To replace all occurrences of
-"read{\textbar}write" with
-"IO operation" you could type 
+\texttt{"read{\textbar}write"} with
+\texttt{"IO operation"} you could type 
 
 \iconcode{
 igrep mypaper.txt "read{\textbar}write"
@@ -610,6 +732,15 @@ S -{\textgreater} (S) -{\textgreater} (SS) -{\textgreater} (()S)
 }
 
 \subsection*{Parsing}
+
+This section is a discussion of parsers written by hand in Unicon.
+It would not be right to talk about parsing context free grammars
+without mentioning the standard tool, iyacc, that the Unicon language
+translater itself is written in.  Iyacc is an industrial strength
+parser generator, derived from the open source "Berkely yacc", that
+generates parsers as .icn source files compatible with Icon and Unicon.
+Iyacc comes with Unicon distributions and is documented in Unicon Technical
+Report 3 at http://unicon.org/utr/utr3.pdf. 
 
 Unicon can parse grammars in a natural way using matching
 functions. A production

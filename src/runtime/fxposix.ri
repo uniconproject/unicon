@@ -1462,12 +1462,15 @@ function{0,1} crypt(key, salt)
       fail;
 #endif					/* HAVE_CRYPT */
 #endif					/* HAVE_CRYPT_R */
+
+#if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) 
       if (s == NULL) {
 	 IntVal(amperErrno) = errno;
 	 fail;
       } 
       String(result, alcstr(s, strlen(s)));
       return result;
+#endif 			/* defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) */ 
    }
 end
 

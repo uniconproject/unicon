@@ -8,9 +8,9 @@ include ../makedefs
 
 # nothing to configure here yet
 UC=unicon
-UFLAGS=-c -u
+UFLAGS=-s -c -u
 
-CFLAGS= -c -u
+CFLAGS=-s -c -u
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn buffertabitem.icn mainbar.icn \
 	fontdialog.icn templates.icn definitions.icn uproject.icn cproject.icn jproject.icn \
 	projedit.icn idol.icn preproce.icn ytab_h.icn yyerror.icn unigram.icn \

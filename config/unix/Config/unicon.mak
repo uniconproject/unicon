@@ -7,6 +7,7 @@ UNICON=../unicon/unicon
 ARC=zip
 ARCEXT=zip
 IYACC=../iyacc/iyacc
+UFLAGS=-s
 ifeq ($(findstring WindowsNT, $(shell uname)),WindowsNT)
 	EXE=.exe
 else
@@ -40,34 +41,34 @@ wunicon: $(U)
 %.u: %.icn
 
 unicon.u : unicon.icn
-	$(ICONT) -c unicon
+	$(ICONT) $(UFLAGS) -c unicon
 
 ../lib/unilex.u: unilex.u
 	$(CP) unilex.u ../lib
 
 unilex.u : unilex.icn ytab_h.icn
-	$(ICONT) -c unilex
+	$(ICONT) $(UFLAGS) -c unilex
 
 main.u: main.icn
-	$(ICONT) -c main
+	$(ICONT) $(UFLAGS) -c main
 
 ../lib/tree.u: tree.u
 	$(CP) tree.u ../lib
 
 tree.u : tree.icn
-	$(ICONT) -c tree
+	$(ICONT) $(UFLAGS) -c tree
 
 tokens.u : tokens.icn ytab_h.icn
-	$(ICONT) -c tokens
+	$(ICONT) $(UFLAGS) -c tokens
 
 preproce.u : preproce.icn
-	$(ICONT) -c preproce
+	$(ICONT) $(UFLAGS) -c preproce
 
 cfy.u : cfy.icn
-	$(ICONT) -c cfy
+	$(ICONT) $(UFLAGS) -c cfy
 
 ca.u : ca.icn
-	$(ICONT) -c ca
+	$(ICONT) $(UFLAGS) -c ca
 
 # Commented out to avoid bootstrap problem.
 # Uncomment if you modify unigram.y/unigram.icn
@@ -99,7 +100,7 @@ yyerror.u: yyerror.icn
 #	$(UNICON) -c idol
 
 unix.u: unix.icn
-	$(ICONT) -c unix
+	$(ICONT) $(UFLAGS) -c unix
 
 #
 # Don't really clean, we need the .u files for bootstrapping.

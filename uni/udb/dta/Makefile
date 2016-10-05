@@ -8,7 +8,7 @@ BASE=../../..
 include ../../makedefs
 
 UC      = ../../../bin/unicon
-CFLAGS  = -c -u
+CFLAGS     = $(UFLAGS) -c
 
 UFILES  = atomic_agent.u temporals.u
 SRC     = atomic_agent.icn temporals.icn

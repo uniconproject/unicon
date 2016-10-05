@@ -8,7 +8,7 @@ calc.out: 	calc.in calc
 		./calc < calc.in > calc.out
 
 calc: 		calc.icn
-		$(BIN)/icont calc.icn
+		$(BIN)/icont -s calc.icn
 
 calc.icn: 	calc.y
 		./iyacc -i calc.y

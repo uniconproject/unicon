@@ -10,8 +10,8 @@ export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
 
 UC=../../bin/unicon
 WUC=../../bin/unicon -G
-UFLAGS=-c -u
-UFLAGS2=-c
+UFLAGS=-s -c -u
+UFLAGS2=-s -c
 
 SRC=ui.icn ide.icn hfiledialog.icn buffertextlist.icn buffertabset.icn \
 	buffertabitem.icn mainbar.icn modified.icn preferences.icn \
@@ -24,7 +24,7 @@ OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 	mainbar.u modified.u preferences.u templates.u definitions.u \
 	uproject.u classbrowser.u imgs.u utags.u matchparen.u qu_replace.u \
 	online.u about.u is_binary.u ptyDispatcher.u shelletl.u funclookup.u\
-	
+
 
 ui:	$(OBJ)
 ifdef EXE

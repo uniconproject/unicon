@@ -7,7 +7,7 @@
 BASE=../../..
 include ../../makedefs
 UC         = ../../../bin/unicon
-CFLAGS     = -u -c 
+CFLAGS     = $(UFLAGS) -c
 LDFLAGS    = -u
 STANDALONE = -DStandAlone
 

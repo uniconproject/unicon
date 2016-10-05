@@ -4,8 +4,6 @@ BASE=../..
 include ../makedefs
 
 UC=$(UNICON)
-UFLAGS=-c -u
-
 
 UFILES= vector.u matrix.u quaternion.u util3d.u face.u material.u \
 	animationkeys.u animationset.u basicobject3d.u mesh.u \
@@ -37,9 +35,6 @@ terrain.u: terrain.icn basicobject3d.u
 
 mesh.u: mesh.icn basicanimationobject3d.u
 
-%.u:	%.icn
-	 $(UC) $(UFLAGS) $<
-	 
 zip:
 	 zip lib3d.zip makefile *.icn
 

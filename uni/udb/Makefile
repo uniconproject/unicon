@@ -7,7 +7,7 @@ UC      = ../../bin/unicon
 EXEs    = udb
 DEL     = -rm
 CLEAN   = clean
-cflags  = -u -c 
+cflags  = $(UFLAGS) -c 
 ldflags = -u
 
 SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \

@@ -1,3 +1,4 @@
+CC=gcc
 OBJS=closure.o lalr.o main.o output.o skeleton.o verbose.o \
 	error.o lr0.o mkpar.o reader.o symtab.o warshall.o
 

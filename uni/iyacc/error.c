@@ -19,7 +19,8 @@ void no_space(void)
 
 void open_error(char *filename)
 {
-    fprintf(stderr, "%s: f - cannot open \"%s\"\n", myname, filename);
+    fprintf(stderr, "%s: f - cannot open \"%s\" ", myname, filename);
+    perror("-Error");
     done(2);
 }
 

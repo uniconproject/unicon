@@ -12,6 +12,10 @@
 
 #include "defs.h"
 
+#if NT
+#define tmpfile mstmpfile
+#endif					/* NT */
+
 char dflag;
 char lflag;
 char rflag;
@@ -94,7 +98,18 @@ done(int k)
 {
     DO_CLOSE(action_file);
     DO_CLOSE(text_file);
-    DO_CLOSE(union_file);
+    if (union_file) {
+       DO_CLOSE(union_file);
+#if NT
+       remove(union_file_name);
+#endif					/* NT */
+       }
+
+#if NT
+    /* Windows tmpfile() is broken, attempt to delete the files. */
+    remove(action_file_name);
+    remove(text_file_name);
+#endif					/* NT */
 
     if (got_intr)
 	_exit(EXIT_FAILURE);
@@ -416,6 +431,31 @@ void create_file_names(void)
     }
 }
 
+#if NT
+/*
+ * mstmpfile() - because tmpfile() does not work reasonably on MS Windows.
+ * This program only three temporary files and cleans them up explicitly.
+ */
+FILE *mstmpfile()
+{
+   char *temp;
+   FILE *f;
+
+   if ((temp = _tempnam(NULL, "uni")) == NULL) {
+      fprintf(stderr, "_tempnam(TEMP) failed\n");
+      return NULL;
+      }
+
+   if ((f = fopen(temp, "w+b")) == NULL) {
+      fprintf(stderr, "fopen(%s) w+b failed: ", temp);
+      perror("");
+      free(temp);
+      return NULL;
+      }
+   free(temp);
+   return f;
+}
+#endif					/* NT */
 
 void open_files(void)
 {

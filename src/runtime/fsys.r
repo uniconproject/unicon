@@ -947,6 +947,9 @@ Deliberate Syntax Error
             if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
 		char tempbuf[1024];
 #if UNIX
+		/*
+		 * attemped to open a wildcard, produce ls(1) output.
+		 */
 	    	strcpy(tempbuf, "ls -1d ");
 /*
  * Get rid of colored ls output.  On by default.
@@ -959,32 +962,14 @@ Deliberate Syntax Error
 	    	f = popen(tempbuf, "r");
 #endif
 #if NT
-		*tempbuf = '\0';
-         	if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
-            	   /*
-	     	    * attempted to open a wildcard, do file completion
-	     	    */
-		   strcpy(tempbuf, fnamestr);
-            	   }
-	 	else {
-            	   /*
-	     	    * check and see if the file was actually a directory
-	      	    */
-            	    struct stat fs;
-
-            	    if (stat(fnamestr, &fs) == -1) fail;
-	    	    if (S_ISDIR(fs.st_mode)) {
-	       	       strcpy(tempbuf, fnamestr);
-	       	       if (tempbuf[strlen(tempbuf)-1] != '\\')
-	               strcat(tempbuf, "\\");
-	       	       strcat(tempbuf, "*.*");
-	       	       }
-	    	    }
+		/*
+		 * attempted to open a wildcard, do file completion
+		 */
+		strcpy(tempbuf, fnamestr);
          	if (*tempbuf) {
             	   FINDDATA_T fd;
 	    	   if (!FINDFIRST(tempbuf, &fd)) fail;
-            	   f = tmpfile();
-            	   if (f == NULL) fail;
+            	   if ((f = mstmpfile()) == NULL) fail;
             	   do {
                	      fprintf(f, "%s\n", FILENAME(&fd));
                	      } while (FINDNEXT(&fd));
@@ -1035,15 +1020,9 @@ Deliberate Syntax Error
 		     strcat(tempbuf, "\\");
 		  strcat(tempbuf, "*.*");
 		  if (*tempbuf) {
-		     extern FILE *mytmpfile();
 		     FINDDATA_T fd;
-		     if (!FINDFIRST(tempbuf, &fd)) {
-			fail;
-			}
-		     f = mytmpfile();
-		     if (f == NULL) {
-			fail;
-			}
+		     if (!FINDFIRST(tempbuf, &fd)) fail;
+		     if ((f = mstmpfile()) == NULL) fail;
 		     do {
 			fprintf(f, "%s\n", FILENAME(&fd));
 			}

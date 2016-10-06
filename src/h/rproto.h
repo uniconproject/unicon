@@ -1073,6 +1073,7 @@ void Mstartreading(struct MFile* mf);
 
 #ifdef PosixFns
 #if NT
+FILE *mstmpfile();
 int is_internal(char *s);
 int StartupWinSocket(void);
 void stat2rec			(struct _stat *st, dptr dp, struct b_record **rp);

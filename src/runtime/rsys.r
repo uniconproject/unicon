@@ -1126,7 +1126,7 @@ int link(char *s1, char *s2)
 /*
  * tmpfile() from Mingw32 no longer works under Vista.
  */
-FILE *mytmpfile()
+FILE *mstmpfile()
 {
    char *temp;
    FILE *f;

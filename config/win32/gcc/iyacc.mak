@@ -4,9 +4,9 @@ OBJS=closure.o lalr.o main.o output.o skeleton.o verbose.o \
 
 iyacc.exe: $(OBJS)
 	gcc -o iyacc.exe $(OBJS)
-
-.o:.c
-	gcc -c $<
+	cp iyacc.exe ../../bin
+%.o:%.c
+	gcc -DNT -c $<
 
 Clean:
 	rm *.o iyacc.exe

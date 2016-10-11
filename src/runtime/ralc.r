@@ -617,12 +617,11 @@ alcpelem_macro(alcpelem,0)
 
 #endif					/* PatternType */
 
-struct b_cons *alccons(word i, union block *data)
+struct b_cons *alccons(union block *data)
 {
    struct b_cons *rv;
    CURTSTATE();
    AlcFixBlk(rv, b_cons, T_Cons);
-   rv->i = i;
    rv->data = data;
    rv->next = NULL;
    return rv;

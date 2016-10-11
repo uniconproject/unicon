@@ -263,7 +263,8 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
       tended struct b_pelem * E;
       int J;
       int RefLen = P->index + 1;
-      reserve(Blocks, RefLen * sizeof(struct b_pelem));
+      if (!reserve(Blocks, RefLen * sizeof(struct b_pelem)))
+	 ReturnErrNum(307, NULL);
 
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
@@ -1550,14 +1551,6 @@ static struct b_pelem CP_R_Restore =
    {T_Pelem, PC_R_Restore, (union block *)NULL, 0, 0, {D_Null,0}};
 
 /*
- * Stack used to maintain history during pattern matching
- * So-called stack isn't a proper stack.
- */
-typedef struct stack_entry {
-   int cursor;
-   struct b_pelem *node;
-   } stack_entry;
-/*
  *
  * Pop_Region
  *
@@ -1584,16 +1577,27 @@ typedef struct stack_entry {
  *    end Pop_Region;
  */
 
+/* Stack is now a struct b_cons *, and its cursors are in Stack->data as a
+ * struct b_intarray and its nodes are now in Stack->next as a struct b_lelem.
+ * Stack[i].cursor is now Stack->data->a[i]
+ * Stack[i].node is now Stack->next->lslots[i].vword.bptr
+ * Let's define macros!
+ */
+#define StackCursor(i) (Stack->data->Intarray.a[i])
+#define StackNode(i) (Stack->next->Lelem.lslots[i].vword.bptr)
+
 #begdef Pop_Region()
 if (Stack_Ptr == Stack_Base) {
    Stack_Ptr = Stack_Base - 2;
-   Stack_Base = Stack[Stack_Ptr + 2].cursor;
+   Stack_Base = StackCursor(Stack_Ptr + 2);
+   Stack->next->Lelem.nused -= 2;
 }
 else {
    Stack_Ptr++;
-   Stack[Stack_Ptr].cursor = Stack_Base;
-   Stack[Stack_Ptr].node = &CP_R_Restore;
-   Stack_Base = Stack[Stack_Base].cursor;
+   StackCursor(Stack_Ptr) = Stack_Base;
+   StackNode(Stack_Ptr) = (union block *)&CP_R_Restore;
+   Stack_Base = StackCursor(Stack_Base);
+   Stack->next->Lelem.nused++;
 }
 #enddef
 /*
@@ -1609,8 +1613,10 @@ else {
 
 #begdef Push(Node)
 Stack_Ptr++;
-Stack[Stack_Ptr].cursor = k_pos - 1;
-Stack[Stack_Ptr].node   = Node;
+StackCursor(Stack_Ptr) = k_pos - 1;
+StackNode(Stack_Ptr)   = (union block *)Node;
+Stack->next->Lelem.lslots[Stack_Ptr].dword = D_Pelem;
+Stack->next->Lelem.nused++;
 #enddef
 
 /*
@@ -1626,9 +1632,12 @@ Stack[Stack_Ptr].node   = Node;
  */
 #begdef Push_Region()
 Stack_Ptr = Stack_Ptr + 2;
-Stack[Stack_Ptr].cursor = Stack_Base;
-Stack[Stack_Ptr].node   = &CP_R_Remove;
+StackCursor(Stack_Ptr) = Stack_Base;
+StackNode(Stack_Ptr)   = (union block *)&CP_R_Remove;
 Stack_Base = Stack_Ptr;
+Stack->next->Lelem.lslots[Stack_Ptr-1].dword = D_Pelem;
+Stack->next->Lelem.lslots[Stack_Ptr].dword = D_Pelem;
+Stack->next->Lelem.nused += 2;
 #enddef
 
 /*
@@ -1803,7 +1812,7 @@ dptr processMethodCallList(struct b_list *lp)
    dptr rv;
    struct descrip procargs[10];
    dptr call_result;
-   struct descrip var;
+   tended struct descrip var;
    tended char *varname;
    tended char *classname;
    int nfields, fnum, cnlen;
@@ -1900,7 +1909,7 @@ dptr processMethodCallList(struct b_list *lp)
          else {
             tended char * varname;
 	    tended char * varstring;
-	    struct descrip parm;
+	    tended struct descrip parm;
             cnv:C_string(ep->lslots[i], varname);
 	    /*
 	     * We are evaluating a parameter in a variable name.
@@ -1968,14 +1977,14 @@ else {
  * internal_match() - primary pattern match engine.
  */
 int f(char * pat_sub, int Length, int Pat_S,
-		   struct b_pelem * pattern, int *Start, int *Stop,
+		   struct b_pelem * pat, int *Start, int *Stop,
 		   int initial_cursor,
 		   int Anchored_Mode
 		   )
 {
-   stack_entry Stack[Stack_Size];
+   tended struct b_cons *Stack;
    int Stack_Ptr, Stack_Base;
-   tended struct b_pelem *tpattern = pattern;
+   tended struct b_pelem *tpattern = pat;
    tended struct descrip evalue;
    tended struct b_pelem * Node = NULL;
 #if COMPILER
@@ -1985,16 +1994,23 @@ int f(char * pat_sub, int Length, int Pat_S,
 #endif					/* COMPILER */
    int Assign_OnM = 0;
    int Region_Level = 0;
+   tended struct b_intarray *biap;
+   tended struct b_lelem *blep;
 
    PE_Unanchored->pthen = (union block *)tpattern;
    PE_Unanchored->parameter = nulldesc;
+
+   biap = alcintarray(Stack_Size);
+   blep = alclstb(Stack_Size,0,0);
+   Stack = alccons((union block *)biap);
+   Stack->next = (union block *)blep;
 
    EVVal(Anchored_Mode, e_patattempt);
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
 	      Length,pat_sub,Length, k_pos));
 
-   if (pattern == NULL) {
+   if (tpattern == NULL) {
       fatalerr(162, NULL);
       }
    if (Pat_S > Stack_Size - 1) {
@@ -2002,8 +2018,8 @@ int f(char * pat_sub, int Length, int Pat_S,
       }
    /* In anchored mode, the bottom entry on the stack is a cancel entry */
    if (Anchored_Mode) {
-      Stack[Stack_Init].node = &CP_Abort;
-      Stack[Stack_Init].cursor = initial_cursor - 1;
+      StackNode(Stack_Init) = (union block *)&CP_Abort;
+      StackCursor(Stack_Init) = initial_cursor - 1;
       }
 /*
  *       --  In unanchored mode, the bottom entry on the stack references
@@ -2012,12 +2028,13 @@ int f(char * pat_sub, int Length, int Pat_S,
  *       --  entry is the number of anchor moves so far.
  */
    else {
-      Stack[Stack_Init].node = PE_Unanchored;
-      Stack[Stack_Init].cursor = initial_cursor - 1;
+      StackNode(Stack_Init) = (union block *)PE_Unanchored;
+      StackCursor(Stack_Init) = initial_cursor - 1;
       }
    Stack_Ptr = Stack_Init;
+   Stack->next->Lelem.nused = 1;
    Stack_Base = Stack_Ptr;
-   Node = pattern;
+   Node = tpattern;
    goto Match;
    /*
     *
@@ -2047,7 +2064,7 @@ Match_Fail:
  */
 Match_Succeed:
    DEBUGF(2,(stdout,"Match Succeeds\n"));
-   *Start = Stack[Stack_Init].cursor;
+   *Start = StackCursor(Stack_Init);
    *Stop = k_pos - 1;
 #if defined(E_PatMatch)
    StrLen(evalue) = *Stop - *Start;
@@ -2059,12 +2076,12 @@ Match_Succeed:
    if (Assign_OnM) {
       int S;
       for ( S = Stack_Init; S <= Stack_Ptr; S++) {
-	 if (Stack[S].node == &CP_Assign){
-	    int Inner_Base = Stack[S + 1].cursor;
+	 if (StackNode(S) == (union block *)&CP_Assign){
+	    int Inner_Base = StackCursor(S + 1);
 	    int Special_Entry =  Inner_Base - 1;
-	    tended struct b_pelem * Node_OnM = Stack[Special_Entry].node;
-	    int Start = Stack[Special_Entry].cursor;
-	    int Stop = Stack[S].cursor;
+	    tended struct b_pelem * Node_OnM = StackNode(Special_Entry);
+	    int Start = StackCursor(Special_Entry);
+	    int Stop = StackCursor(S);
 	    GetVarFromNodeParameter(Node_OnM);
 	    if (Node_OnM->pcode == PC_Assign_OnM){
 	       if (var.dword == D_File) {
@@ -2095,9 +2112,10 @@ Node_Fail:
  *       --    Stack_Ptr     current stack pointer
  */
    EVVal(Node->pcode, e_pelemfail);
-   k_pos = Stack[Stack_Ptr].cursor + 1;
-   Node   = Stack[Stack_Ptr].node;
+   k_pos = StackCursor(Stack_Ptr) + 1;
+   Node   = (struct b_pelem *)StackNode(Stack_Ptr);
    Stack_Ptr--;
+   Stack->next->Lelem.nused--;
    EVVal(k_pos, e_spos);
    goto Match;
 Node_Succeed:
@@ -2318,7 +2336,7 @@ Node_Succeed:
        */
    case PC_Arbno_Y : {
       int  Null_Match = 0;
-      if ((k_pos - 1) == Stack[Stack_Base - 1].cursor)
+      if ((k_pos - 1) == StackCursor(Stack_Base - 1))
 	 Null_Match = 1;
       DEBUGF(20,(stdout,"extending Arbno"));
       Pop_Region();
@@ -2359,14 +2377,14 @@ Node_Succeed:
       if (var.dword == D_File) {
 	 struct b_file *f;
 	 f = (struct b_file *)BlkLoc(var);
-	 fwrite(pat_sub + Stack[Stack_Base - 1].cursor, 1,
-		(k_pos - 1) - Stack[Stack_Base - 1].cursor, f->fd.fp);
+	 fwrite(pat_sub + StackCursor(Stack_Base - 1), 1,
+		(k_pos - 1) - StackCursor(Stack_Base - 1), f->fd.fp);
 	 fputc('\n', f->fd.fp);
 	 }
       else {
 	 EVVar(&varref, e_assign);
-         StrLen(*pvar) = (k_pos - 1) - Stack[Stack_Base - 1].cursor;
-         StrLoc(*pvar) = pat_sub + Stack[Stack_Base - 1].cursor;
+         StrLen(*pvar) = (k_pos - 1) - StackCursor(Stack_Base - 1);
+         StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
 	 EVValD(pvar, e_value);
 	 }
       Pop_Region();
@@ -2376,7 +2394,7 @@ Node_Succeed:
        * Assign on match. This node sets up for the eventual assignment
        */
    case PC_Assign_OnM : {
-      Stack[Stack_Base - 1].node = Node;
+      StackNode(Stack_Base - 1) = (union block *)Node;
       Push (&CP_Assign);
       Pop_Region();
       Assign_OnM = 1;
@@ -2633,9 +2651,10 @@ Node_Succeed:
        */
    case  PC_Fence_X : {
       Stack_Ptr++;
-      Stack[Stack_Ptr].cursor = Stack_Base;
-      Stack[Stack_Ptr].node   = &CP_Fence_Y;
-      Stack_Base = Stack[Stack_Base].cursor;
+      Stack->next->Lelem.nused++;
+      StackCursor(Stack_Ptr) = Stack_Base;
+      StackNode(Stack_Ptr)   = (union block *)&CP_Fence_Y;
+      Stack_Base = StackCursor(Stack_Base);
       goto Node_Succeed;
       }
 
@@ -2649,6 +2668,7 @@ Node_Succeed:
        */
    case PC_Fence_Y : {
       Stack_Ptr = k_pos - 3;
+      Stack->next->Lelem.nused = k_pos - 3;
       goto Node_Fail;
       }
 
@@ -2852,7 +2872,7 @@ Node_Succeed:
 	 }
       pattern: {
 	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
-	 Stack[Stack_Ptr + 1].node = (struct b_pelem *)Node->pthen;
+	 StackNode(Stack_Ptr + 1) = Node->pthen;
 	 Push_Region();
 	 if (Stack_Ptr +
 	     ((struct b_pattern *)BlkLoc(var))->stck_size >= Stack_Size) {
@@ -3113,7 +3133,7 @@ Node_Succeed:
        */
    case PC_R_Enter : {
       DEBUGF(20,(stdout, "starting match of nested pattern\n"));
-      Stack[Stack_Ptr + 1].cursor = k_pos - 1;
+      StackCursor(Stack_Ptr + 1) = k_pos - 1;
       Push_Region();
       goto Node_Succeed;
       }
@@ -3131,6 +3151,7 @@ Node_Succeed:
       Stack_Base = k_pos - 1;
       Region_Level--;
       Stack_Ptr--;
+      Stack->next->Lelem.nused--;
       goto Node_Fail;
       }
 
@@ -3398,14 +3419,17 @@ Node_Succeed:
        *   handing of recursive pattern matches for details.
        */
       else {
-	 Node = Stack[Stack_Base - 1].node;
+	 Node = (struct b_pelem *)StackNode(Stack_Base - 1);
 	 Pop_Region();
 	 goto Match;
 	 }
       }
       }
-   /* think about changing this to include the pcode */
-   syserr("Unrecognized pcode in internal match.");
+   {
+   char buf[64];
+   sprintf(buf, "Unrecognized pcode %ld in internal match.", Node->pcode);
+   syserr(buf);
+   }
 }
 #enddef
 

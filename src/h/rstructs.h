@@ -391,7 +391,6 @@ struct b_pelem {                      /* Pattern element block */
  */
 struct b_cons {
    word title;			/* T_Cons */
-   word i;
    union block *data;
    union block *next;
    };

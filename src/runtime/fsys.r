@@ -983,7 +983,7 @@ Deliberate Syntax Error
 		   StrLen(filename) = strlen(fnamestr);
 		   StrLoc(filename) = fnamestr;
 		   Protect(fl = alcfile(f, status, &filename), runerr(0));
-		   Protect(flnk = alccons(0, (union block *)fl), runerr(0));
+		   Protect(flnk = alccons((union block *)fl), runerr(0));
 		   flnk->next = (union block *)LstTmpFiles;
 		   LstTmpFiles = flnk;
 		   return file(fl);

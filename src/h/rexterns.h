@@ -384,3 +384,7 @@ extern FILE *flog;
 #ifdef PatternType
 extern struct b_pelem EOP;
 #endif					/* PatternType */
+
+#if NT
+extern struct  b_cons *LstTmpFiles;
+#endif					/* NT */

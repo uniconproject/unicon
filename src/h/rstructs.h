@@ -224,7 +224,6 @@ struct b_realarray {
    double a[1];			/* true array size == size, above */
    };
 
-
 struct b_mask {			/* mask block, used to access fields across blocks */
    word title;			/*   T_Table, T_Set, T_List or, T_Record */
    word size;			/*   size */
@@ -385,6 +384,18 @@ struct b_pelem {                      /* Pattern element block */
     struct descrip parameter;		/*   parameter */    
 };
 #endif					/* PatternType */
+
+/*
+ * The following "generic link list" structure type is useful for
+ * at least the Windows temp file list.
+ */
+struct b_cons {
+   word title;			/* T_Cons */
+   word i;
+   union block *data;
+   union block *next;
+   };
+
 
 /*
  * Structure for keeping set/table generator state across a suspension.

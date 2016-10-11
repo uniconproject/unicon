@@ -514,8 +514,9 @@
 #define T_Tvmonitored   28      /* Monitored trapped variable */
 #define T_Intarray	29      /* integer array */
 #define T_Realarray	30      /* real array */
+#define T_Cons		31	/* generic link list element */
 
-#define MaxType		30	/* maximum type number */
+#define MaxType		31	/* maximum type number */
 
 /*
  * Definitions for keywords.

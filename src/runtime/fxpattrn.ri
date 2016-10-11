@@ -497,6 +497,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
    hn = hash(&key);
    if (pfp->pattern_cache == NULL) {
       pfp->pattern_cache =  (struct b_table *)hmake(T_Table, (word)0,(word)0);
+      pfp->pattern_cache->defvalue = nulldesc;
       }
    else { /* we have a table check if the pattern is already resolved */
       pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
@@ -1550,13 +1551,12 @@ static struct b_pelem CP_R_Restore =
 
 /*
  * Stack used to maintain history during pattern matching
+ * So-called stack isn't a proper stack.
  */
-
 typedef struct stack_entry {
    int cursor;
    struct b_pelem *node;
    } stack_entry;
-
 /*
  *
  * Pop_Region
@@ -2062,7 +2062,7 @@ Match_Succeed:
 	 if (Stack[S].node == &CP_Assign){
 	    int Inner_Base = Stack[S + 1].cursor;
 	    int Special_Entry =  Inner_Base - 1;
-	    struct b_pelem * Node_OnM = Stack[Special_Entry].node;
+	    tended struct b_pelem * Node_OnM = Stack[Special_Entry].node;
 	    int Start = Stack[Special_Entry].cursor;
 	    int Stop = Stack[S].cursor;
 	    GetVarFromNodeParameter(Node_OnM);
@@ -3404,6 +3404,7 @@ Node_Succeed:
 	 }
       }
       }
+   /* think about changing this to include the pcode */
    syserr("Unrecognized pcode in internal match.");
 }
 #enddef

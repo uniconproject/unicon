@@ -1020,6 +1020,7 @@ Deliberate Syntax Error
 #endif 					/* SoftThreads */ 
 #endif					/* MultiThread || ConcurrentCOMPILER */
 #if COMPILER
+   mainhead->es_pfp = NULL;
    mainhead->file_name = "";
    mainhead->line_num = 0;
 #endif					/* COMPILER */
@@ -1659,8 +1660,9 @@ int i;
 #endif					/* MSWindows */
 
 #ifdef NT
-    if (LOBYTE(wsaData.wVersion) >= 2 || HIBYTE(wsaData.wVersion) >= 2)
-        WSACleanup();
+   if (LstTmpFiles) closetmpfiles();
+   if (LOBYTE(wsaData.wVersion) >= 2 || HIBYTE(wsaData.wVersion) >= 2)
+      WSACleanup();
 #endif
 
 #if TURBO || BORLAND_386

@@ -602,6 +602,7 @@ struct b_pelem *f( word patterncode, word *o_ipc)
 #if !COMPILER
    pelem->origin_ipc = o_ipc;
 #endif					/* COMPILER */
+   pelem->parameter = nulldesc;
    return pelem;
    }
 #enddef
@@ -615,6 +616,17 @@ alcpelem_macro(alcpelem,0)
 
 
 #endif					/* PatternType */
+
+struct b_cons *alccons(word i, union block *data)
+{
+   struct b_cons *rv;
+   CURTSTATE();
+   AlcFixBlk(rv, b_cons, T_Cons);
+   rv->i = i;
+   rv->data = data;
+   rv->next = NULL;
+   return rv;
+}
 
 /*
  * allocate just a list header block.  internal use only (alc*array family).

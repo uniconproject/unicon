@@ -30,6 +30,9 @@ static void markprogram	(struct progstate *pstate);
 #ifdef Concurrent
 static void markthreads();
 #endif					/* Concurrent */
+#if COMPILER
+static void sweep_pfps(struct p_frame *fp);
+#endif					/* COMPILER */
 
 /*
  * Variables
@@ -110,6 +113,7 @@ int bsizes[] = {
 #endif					/* EventMon */
      0,				/* T_Intarray (29), int array */
      0,				/* T_Realarray (30), real array */
+     sizeof(struct b_cons),	/* T_Cons (31), cons cell */
     };
 
 /*
@@ -173,6 +177,7 @@ int firstd[] = {
     2*WordSize,			/* T_Tvmonitored */
     0,				/* T_Intarray (29), integer array */
     0,				/* T_Realarray (30), real array */
+    0,				/* T_Cons (31), cons cell */
     };
 
 /*
@@ -220,6 +225,7 @@ int firstp[] = {
     -1,				/* T_Tvmonitored (28) */
     2*WordSize,			/* T_Intarray (29), integer array */
     2*WordSize,			/* T_Realarray (30), integer array */
+    2*WordSize,			/* T_Cons (31), cons cell */
     };
 
 /*
@@ -646,6 +652,14 @@ int region;
       markblock(&(lastEventWin));
 #endif					/* Graphics */
 #endif					/* MultiThread */
+
+#if COMPILER
+   sweep_pfps(pfp);
+#endif					/* COMPILER */
+
+#if NT
+   markptr(&LstTmpFiles);
+#endif					/* NT */
 
    reclaim();
 
@@ -1229,12 +1243,24 @@ struct b_coexpr *ce;
 	    }
          }
       }
-#if !COMPILER
+#if COMPILER
+   sweep_pfps(ce->es_pfp);
+#else
    sweep_stk(ce);
-#endif					/* !COMPILER */
+#endif
    }
 
-#if !COMPILER
+#if COMPILER
+
+static void sweep_pfps(struct p_frame *fp)
+{
+   while (fp != NULL) {
+      if (fp->pattern_cache != NULL)
+	 markptr((union block **)&(fp->pattern_cache));
+      fp = fp->old_pfp;
+      }
+}
+#else
 /*
  * sweep_stk - sweep the stack, marking all descriptors there.  Method
  *  is to start at a known point, specifically, the frame that the

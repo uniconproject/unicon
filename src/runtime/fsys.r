@@ -301,9 +301,9 @@ function{0,1} open(fname, spec)
       int status;
       char mode[4];
       extern FILE *fopen();
-      FILE *f;
+      FILE *f = NULL;
       SOCKET fd;
-      struct b_file *fl;
+      tended struct b_file *fl;
 #ifdef PosixFns
       struct stat st;
 #endif					/* PosixFns */
@@ -959,8 +959,8 @@ Deliberate Syntax Error
 #endif					/* LsExtensions */
 	    	strcat(tempbuf, fnamestr);
 	    	status |= Fs_Pipe;
-	    	f = popen(tempbuf, "r");
-#endif
+		f = popen(tempbuf, "r");
+#endif					/* UNIX */
 #if NT
 		/*
 		 * attempted to open a wildcard, do file completion
@@ -975,14 +975,25 @@ Deliberate Syntax Error
                	      } while (FINDNEXT(&fd));
             	   FINDCLOSE(&fd);
             	   fflush(f);
-            	   fseek(f, 0, SEEK_SET);
-            	   if (f == NULL) fail;
+           	   fseek(f, 0, SEEK_SET);
+		   /*
+		    * yet another special case: the tmpfile must be linked
+		    * in to a list in order to be closed/deleted.
+		    */
+		   StrLen(filename) = strlen(fnamestr);
+		   StrLoc(filename) = fnamestr;
+		   Protect(fl = alcfile(f, status, &filename), runerr(0));
+		   Protect(flnk = alccons(0, (union block *)fl), runerr(0));
+		   flnk->next = (union block *)LstTmpFiles;
+		   LstTmpFiles = flnk;
+		   return file(fl);
 	    	   }
 #endif					/* NT */
 		/*
 		 * Return the resulting file value. Duplicate of code below,
 		 * because rtt does not support goto statements.
 		 */
+		if (f == NULL) fail;
 		StrLen(filename) = strlen(fnamestr);
 		StrLoc(filename) = fnamestr;
 		Protect(fl = alcfile(f, status, &filename), runerr(0));

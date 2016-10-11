@@ -1123,6 +1123,20 @@ int link(char *s1, char *s2)
 }
 #endif					/* Dbm */
 
+struct b_cons *LstTmpFiles;
+void closetmpfiles()
+{
+   while (LstTmpFiles) {
+      struct b_file *fp = BlkP(LstTmpFiles->data,File);
+      if (fp->status & (Fs_Read | Fs_Write)) {
+	 fclose(fp->fd.fp);
+	 fp->status = 0;
+	 }
+      remove(StrLoc(fp->fname));
+      LstTmpFiles = (struct b_cons *)(LstTmpFiles->next);
+      }
+}
+
 /*
  * tmpfile() from Mingw32 no longer works under Vista.
  */

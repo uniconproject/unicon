@@ -225,7 +225,7 @@ int firstp[] = {
     -1,				/* T_Tvmonitored (28) */
     2*WordSize,			/* T_Intarray (29), integer array */
     2*WordSize,			/* T_Realarray (30), integer array */
-    2*WordSize,			/* T_Cons (31), cons cell */
+    1*WordSize,			/* T_Cons (31), cons cell */
     };
 
 /*

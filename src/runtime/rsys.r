@@ -1127,7 +1127,7 @@ struct b_cons *LstTmpFiles;
 void closetmpfiles()
 {
    while (LstTmpFiles) {
-      struct b_file *fp = BlkP(LstTmpFiles->data,File);
+      struct b_file *fp = Blk(LstTmpFiles->data,File);
       if (fp->status & (Fs_Read | Fs_Write)) {
 	 fclose(fp->fd.fp);
 	 fp->status = 0;

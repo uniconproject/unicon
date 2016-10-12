@@ -967,6 +967,7 @@ Deliberate Syntax Error
 		 */
 		strcpy(tempbuf, fnamestr);
          	if (*tempbuf) {
+		   struct b_cons *flnk;
             	   FINDDATA_T fd;
 	    	   if (!FINDFIRST(tempbuf, &fd)) fail;
             	   if ((f = mstmpfile()) == NULL) fail;

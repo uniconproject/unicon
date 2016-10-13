@@ -1003,6 +1003,7 @@ struct b_record *alcrecd	(int nflds,union block *recptr);
 struct b_tvsubs *alcsubs	(word len,word pos,dptr var);
 #endif					/* MultiThread */
 int	bfunc		(void);
+dptr	calliconproc	(struct descrip proc, dptr args, int nargs);
 long	ckadd		(long i, long j);
 long	ckmul		(long i, long j);
 long	cksub		(long i, long j);
@@ -1162,8 +1163,6 @@ void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
    #else				/* MultiThread */
       void	initalloc	(word codesize);
    #endif				/* MultiThread */
-
-   dptr calliconproc(struct descrip proc, dptr args, int nargs);
 
 #endif					/* COMPILER */
 

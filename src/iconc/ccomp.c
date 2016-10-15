@@ -57,7 +57,6 @@ struct lib {
    struct lib *next;
    };
 static struct lib *liblst;
-static int lib_sz = 0;
 
 /*
  * addlib - add a new library to the list the must be linked.
@@ -109,7 +108,6 @@ Deliberate Syntax Error
    l->next = NULL;
    *nxtlib = l;
    nxtlib = &l->next;
-   lib_sz += l->nm_sz + 1;
    }
 
 /*
@@ -147,6 +145,27 @@ rmv_ccomp_opts(opts)
 }
 
 /*
+ * Grow a string.
+ */
+char *growcat(char *buf, int *buflenp, int n, ...)
+{
+   int i;
+   char *s;
+   va_list args;
+   va_start(args, n);
+   for(i=0; i<n; i++) {
+      s = va_arg(args, char *);
+      if (strlen(buf) + strlen(s) >= *buflenp) {
+	 *buflenp *= 2;
+	 if ((buf = realloc(buf, *buflenp)) == NULL) return NULL;
+	 }
+      strcat(buf, s);
+      }
+   va_end(args);
+   return buf;
+}
+
+/*
  * ccomp - perform C compilation and linking.
  */
 int ccomp(srcname, exename)
@@ -155,10 +174,10 @@ char *exename;
    {
    struct lib *l;
    char sbuf[MaxFileName];		/* file name construction buffer */
+   int   buflen;
    char *buf, objname[MaxFileName];
    char *s;
    char *dlrgint;
-   int cmd_sz, opt_sz, flg_sz, exe_sz, src_sz;
    extern int opt_hc_opts;
 
    if (!opt_hc_opts)
@@ -168,29 +187,27 @@ char *exename;
        */
       c_opts = rmv_ccomp_opts(c_opts);
 
-   /*
-    * Compute the sizes of the various parts of the command line
-    *  to do the compilation.
-    */
-   cmd_sz = strlen(c_comp);
-   opt_sz = strlen(c_opts);
-   flg_sz = strlen(ExeFlag);
-   exe_sz = strlen(exename);
-   src_sz = strlen(srcname);
-   lib_sz += strlen(LinkLibs);
+
 #if 0
    /*
     * dlrgint disabled for now; linking in rt.a/rlrgint seems to conflict.
     */
    if (!largeints) {
       dlrgint = makename(sbuf, refpath, "dlrgint", ObjSuffix);
-      lib_sz += strlen(dlrgint) + 1;
       }
 #endif
+
+   buflen = 256;
+   buf = alloc(buflen);
+   buf[0] = '\0';
 
 /*
  * The following code is operating-system dependent [@tccomp.03].
  *  Construct the command line to do the compilation.
+ *  This used to be very precise and efficient, but for every optional
+ *  library the text and the ifdef had to happen twice, once for the
+ *  length pre-count and then again for the string concatenation. Over
+ *  time as the number of libraries grew, it became a maintenance problem.
  */
 
 #if PORT || AMIGA || ATARI_ST || MACINTOSH || MVS || VM || OS2
@@ -198,168 +215,12 @@ char *exename;
 Deliberate Syntax Error
 #endif						/* PORT || AMIGA || ... */
 
-#if MSDOS
-#if NTGCC
-
-   lib_sz += strlen(" -L") + strlen(refpath);
-
-#ifdef Messaging
-   lib_sz += strlen(" -ltp ");
-   opt_sz += strlen(" -L") + strlen(refpath) + strlen("../src/libtp");
-#endif
-
-#ifdef Dbm
-   lib_sz += strlen(" -lgdbm ");
-   opt_sz += strlen(" -L") + strlen(refpath) + strlen("../src/gdbm");
-#endif
-
-#ifdef Graphics
-   lib_sz += strlen(" -lXpm ");
-#ifdef Graphics3D
-   lib_sz += strlen(" -lGL -lGLU ");
-#endif					/* Graphics3D */
-   lib_sz += strlen(ICONC_XLIB);
-   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
-#endif					/* Graphics */
-
-#ifdef mdw_0
-#ifdef ISQL
-   lib_sz += strlen(" -liodbc ");
-#endif /* ISQL */
-#endif /* mdw_0 */
-
-#if HAVE_LIBZ
-   lib_sz += strlen(" -lz ");
-#endif /* HAVE_LIBZ */
-
-#if HAVE_LIBJPEG
-   lib_sz += strlen(" -ljpeg ");
-#endif /* HAVE_LIBJPEG */
-
-#if HAVE_LIBPTHREAD
-   lib_sz += strlen(" -lpthread ");
-#endif                                        /* HAVE_LIBPTHREAD */
-
-#if defined(HAVE_LIBFTGL)
-   lib_sz += strlen(" -lstdc++ ");
-#endif
-
-#if HAVE_LIBSSL
-   lib_sz += strlen(" -lssl -lcrypto ");
-#endif                                        /* HAVE_LIBSSL */
-
-   lib_sz += strlen(" -lwinmm");
-   lib_sz += strlen(" -lwsock32");
-   lib_sz += strlen(" -lodbc32");
-   lib_sz += strlen(" -lws2_32 "); 
-
-   buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
-			     lib_sz + 8);
-   strcpy(buf, c_comp);
-   s = buf + cmd_sz;
-   *s++ = ' ';
-   strcpy(s, c_opts);
-#ifdef Messaging
-   strcat(s, " -L");
-   strcat(s, refpath);
-   strcat(s, "..\\src\\libtp");
-#endif
-#ifdef Dbm
-   strcat(s, " -L");
-   strcat(s, refpath);
-   strcat(s, "..\\src\\gdbm");
-#endif
-#ifdef Graphics
-   strcat(s, " -I");
-   strcat(s, refpath);
-   strcat(s, "..\\src\\xpm");
-#endif
-   s += opt_sz;
-   *s++ = ' ';
-   strcpy(s, ExeFlag);
-   s += flg_sz;
-   *s++ = ' ';
-   strcpy(s, exename);
-   s += exe_sz;
-   *s++ = ' ';
-   strcpy(s, srcname);
-   s += src_sz;
-#if 0
-   if (!largeints) {
-      *s++ = ' ';
-      strcpy(s, dlrgint);
-      s += strlen(dlrgint);
-      }
-#endif
-   for (l = liblst; l != NULL; l = l->next) {
-      *s++ = ' ';
-      strcpy(s, l->libname);
-      s += l->nm_sz;
-      }
-
-   strcpy(s," -L");
-   strcat(s, refpath);
-
-#ifdef Messaging
-   strcat(s, " -ltp ");
-#endif
-
-#ifdef Dbm
-   strcat(s, " -lgdbm ");
-#endif
-
-#ifdef Graphics
-   strcat(s," -lXpm ");
-#ifdef Graphics3D
-   strcat(s, " -lGL -lGLU ");
-#endif					/* Graphics3D */
-   strcat(s, ICONC_XLIB);
-#endif						/* Graphics */
-
-#ifdef mdw_0
-#ifdef ISQL
-   strcat(s, " -liodbc ");
-#endif /* ISQL */
-#endif /* mdw_0 */
-
-#if HAVE_LIBZ
-   strcat(s, " -lz ");
-#endif /* HAVE_LIBZ */
-
-#if HAVE_LIBJPEG
-   strcat(s, " -ljpeg ");
-#endif /* HAVE_LIBJPEG */
-
-#if HAVE_LIBPTHREAD
-   strcat(s, " -lpthread ");
-#endif                                        /* HAVE_LIBPTHREAD */  
-
-   strcat(s, LinkLibs);
-#if defined(HAVE_LIBFTGL)
-   strcat(s, " -lstdc++ ");
-#endif
-
-#if HAVE_LIBSSL
-   strcat(s, " -lssl -lcrypto ");
-#endif                                        /* HAVE_LIBSSL */
-
-   strcat(s, " -lwinmm");
-   strcat(s, " -lwsock32");
-   strcat(s, " -lodbc32");
-   strcat(s, " -lws2_32 "); 
-#else					/* NTGCC */
-
-   opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/gdbm");
-   opt_sz += strlen(" /I") + strlen(refpath) + strlen("../src/libtp");
-   lib_sz += strlen(" -L") + strlen(refpath);
-
+#if MSDOS && !NTGCC
    /*
     * Visual Studio / VC++ / cl.exe
     */
-   buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
-			     lib_sz + 64);
-   sprintf(buf, "%s /c %s /I%s..\\src\\gdbm /I%s..\\src\\libtp %s ",
-	   c_comp, c_opts, refpath, refpath, srcname);
+   buf = growcat(buf, &buflen, 10, c_comp, " /c ", c_opts, " /I", refpath,
+		 "..\\src\\gdbm /I", refpath, "..\\src\\libtp ", srcname, " ");
 
    /* First, the compile. */
    /*
@@ -373,151 +234,104 @@ Deliberate Syntax Error
 
    /* then, the link */
    strcpy(objname, srcname);
-   strcat(objname+strlen(objname)-1, "obj"); /* trim c extension */
+   strcpy(objname+strlen(objname)-1, "obj"); /* replace .c with .obj */
 
    sprintf(buf, "link -subsystem:console %s /LIBPATH:%s %s -out:%s.exe",
 	   objname, refpath, LinkLibs, exename);
-#endif					/* NTGCC*/
-#endif					/* MS-DOS*/
+#endif					/* MS-DOS && !NTGCC */
 
-#if UNIX
+#if UNIX || NTGCC
 
-   lib_sz += strlen(" -L") + strlen(refpath);
+   buf = growcat(buf, &buflen, 3, c_comp, " ", c_opts);
 
 #ifdef Messaging
-   lib_sz += strlen(" -ltp ");
-   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/libtp");
-#endif
-
+#if NTGCC
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\libtp");
+#else					/* NTGCC */
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/libtp");
+#endif					/* NTGCC */
+#endif					/* Messaging */
 #ifdef Dbm
-   lib_sz += strlen(" -lgdbm ");
-   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/gdbm");
-#endif
-
+#if NTGCC
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\gdbm");
+#else					/* NTGCC */
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/gdbm");
+#endif					/* NTGCC */
+#endif					/* Dbm */
 #ifdef Graphics
-/* mdw: modified   lib_sz += strlen(" -lXpm "); */
-   lib_sz += strlen(" -lXpm -lGL -lGLU");
-   lib_sz += strlen(ICONC_XLIB);
-   opt_sz += strlen(" -I") + strlen(refpath) + strlen("../src/xpm");
-#endif						/* Graphics */
+#if NTGCC
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\xpm");
+#else					/* NTGCC */
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/xpm");
+#endif					/* NTGCC */
+#endif					/* Graphics */
+   buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
 
-#ifdef mdw_0
-#ifdef ISQL
-   lib_sz += strlen(" -liodbc ");
-#endif /* ISQL */
-#endif /* mdw_0 */
-
-#if HAVE_LIBZ
-   lib_sz += strlen(" -lz ");
-#endif /* HAVE_LIBZ */
-
-#if HAVE_LIBJPEG
-   lib_sz += strlen(" -ljpeg ");
-#endif /* HAVE_LIBJPEG */
-
-#if HAVE_LIBPTHREAD
-   lib_sz += strlen(" -lpthread ");
-#endif                                        /* HAVE_LIBPTHREAD */
-
-#if defined(MacOSX) || defined(HAVE_LIBFTGL)
-   lib_sz += strlen(" -lstdc++ ");
-#endif
-
-#if HAVE_LIBSSL
-   lib_sz += strlen(" -lssl -lcrypto ");
-#endif                                        /* HAVE_LIBSSL */
-   
-   buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
-			     lib_sz + 8);
-   strcpy(buf, c_comp);
-   s = buf + cmd_sz;
-   *s++ = ' ';
-   strcpy(s, c_opts);
-#ifdef Messaging
-   strcat(s, " -I");
-   strcat(s, refpath);
-   strcat(s, "../src/libtp");
-#endif
-#ifdef Dbm
-   strcat(s, " -I");
-   strcat(s, refpath);
-   strcat(s, "../src/gdbm");
-#endif
-#ifdef Graphics
-   strcat(s, " -I");
-   strcat(s, refpath);
-   strcat(s, "../src/xpm");
-#endif
-   s += opt_sz;
-   *s++ = ' ';
-   strcpy(s, ExeFlag);
-   s += flg_sz;
-   *s++ = ' ';
-   strcpy(s, exename);
-   s += exe_sz;
-   *s++ = ' ';
-   strcpy(s, srcname);
-   s += src_sz;
 #if 0
    if (!largeints) {
-      *s++ = ' ';
-      strcpy(s, dlrgint);
-      s += strlen(dlrgint);
+      buf = growcat(buf, &buflen, 2, " ", dlrgint);
       }
 #endif
    for (l = liblst; l != NULL; l = l->next) {
-      *s++ = ' ';
-      strcpy(s, l->libname);
-      s += l->nm_sz;
+      buf = growcat(buf, &buflen, 2, " ", l->libname);
       }
 
-   strcpy(s," -L");
-   strcat(s, refpath);
+   buf = growcat(buf, &buflen, 2, " -L", refpath);
 
 #ifdef Messaging
-   strcat(s, " -ltp ");
-#endif
+   buf = growcat(buf, &buflen, 1, " -ltp");
+#endif					/* Messaging */
 
 #ifdef Dbm
-   strcat(s, " -lgdbm ");
-#endif
+   buf = growcat(buf, &buflen, 1, " -lgdbm");
+#endif					/* Dbm */
 
 #ifdef Graphics
-   strcat(s," -lXpm ");
+   buf = growcat(buf, &buflen, 1, " -lXpm");
 #ifdef Graphics3D
-   strcat(s, "-lGL -lGLU ");
+   buf = growcat(buf, &buflen, 1, " -lGL -lGLU");
 #endif					/* Graphics3D */
-   strcat(s, ICONC_XLIB);
-#endif						/* Graphics */
+   buf = growcat(buf, &buflen, 2, " ", ICONC_XLIB);
+#endif					/* Graphics */
 
 #ifdef mdw_0
 #ifdef ISQL
-   strcat(s, " -liodbc ");
+   buf = growcat(buf, &buflen, 1, " -liodbc");
 #endif /* ISQL */
 #endif /* mdw_0 */
 
 #if HAVE_LIBZ
-   strcat(s, " -lz ");
-#endif /* HAVE_LIBZ */
+   buf = growcat(buf, &buflen, 1, " -lz");
+#endif					/* HAVE_LIBZ */
 
 #if HAVE_LIBJPEG
-   strcat(s, " -ljpeg ");
-#endif /* HAVE_LIBJPEG */
+   buf = growcat(buf, &buflen, 1, " -ljpeg");
+#endif					/* HAVE_LIBJPEG */
 
 #if HAVE_LIBPTHREAD
-   strcat(s, " -lpthread ");
-#endif                                        /* HAVE_LIBPTHREAD */  
+   buf = growcat(buf, &buflen, 1, " -lpthread");
+#endif					/* HAVE_LIBPTHREAD */
 
-   strcat(s, LinkLibs);
+   buf = growcat(buf, &buflen, 2, " ", LinkLibs);
+
 #if defined(MacOSX) || defined(HAVE_LIBFTGL)
-   strcat(s, " -lstdc++ ");
-#endif
+   buf = growcat(buf, &buflen, 1, " -lstdc++");
+#endif					/* MacOSX || HAVE_LIBFTGL */
 
 #if HAVE_LIBSSL
-   strcat(s, " -lssl -lcrypto ");
-#endif                                        /* HAVE_LIBSSL */
+   buf = growcat(buf, &buflen, 1, " -lssl -lcrypto");
+#endif					/* HAVE_LIBSSL */
 
-#endif						/* UNIX */
+#if NTGCC
+   buf = growcat(buf, &buflen, 1, " -lwinmm -lwsock32 -lodbc32 -lws2_32"); 
+#endif					/* NTGCC */
+
+#if UNIX
+   /* needs to be more precise, add a HAVE_LIBDL or some such */
+   buf = growcat(buf, &buflen, 1, " -ldl");
+#endif					/* UNIX */
+
+#endif					/* UNIX || NTGCC */
 
    /*
     * Emit command-line if verbosity is set above 2
@@ -541,53 +355,33 @@ Deliberate Syntax Error
 
 #if VMS
 
-#ifdef Graphics
-#ifdef HAVE_LIBXPM
-   lib_sz += strlen(refpath) + strlen("Xpm/lib,");
-#endif						/* HAVE_LIBXPM */
-   lib_sz += 1 + strlen(refpath) + strlen("X11.opt/opt");
-#endif						/* Graphics */
+   buf = growcat(buf, &buflen, 5, c_comp, " ", c_opts, " ", srcname);
 
-   buf = alloc((unsigned int)cmd_sz + opt_sz + flg_sz + exe_sz + src_sz +
-			     lib_sz + 5);
-   strcpy(buf, c_comp);
-   s = buf + cmd_sz;
-   strcpy(s, c_opts);
-   s += opt_sz;
-   *s++ = ' ';
-   strcpy(s, srcname);
-
+   /* compile */
    if (system(buf) == 0)
       return EXIT_FAILURE;
-   strcpy(buf, ExeFlag);
-   s = buf + flg_sz;
-   strcpy(s, exename);
-   s += exe_sz;
-   *s++ = ' ';
-   strcpy(s, srcname);
-   s += src_sz - 1;
-   strcpy(s, "obj");
-   s += 3;
+
+   /* link */
+   buf[0] = '\0';
+   buf = growcat(buf, &buflen, 4, ExeFlag, exename, " ", srcname);
+   /* trim extension */
+   buf[strlen(buf)-1] = '\0';
+   buf = growcat(buf, &buflen, 1, "obj");
+
 #if 0
    if (!largeints) {
-      *s++ = ',';
-      strcpy(s, dlrgint);
-      s += strlen(dlrgint);
+      buf = growcat(buf, &buflen, 2, ",", dlrgint);
       }
 #endif
    for (l = liblst; l != NULL; l = l->next) {
-      *s++ = ',';
-      strcpy(s, l->libname);
-      s += l->nm_sz;
+      buf = growcat(buf, &buflen, 2, ",", l->libname);
       }
+
 #ifdef Graphics
-   strcat(s, ",");
 #ifdef HAVE_LIBXPM
-   strcat(s, refpath);
-   strcat(s, "Xpm/lib,");
+   buf = growcat(buf, &buflen, 3, ",", refpath, "Xpm/lib");
 #endif						/* HAVE_LIBXPM */
-   strcat(s, refpath);
-   strcat(s, "X11.opt/opt");
+   buf = growcat(buf, &buflen, 3, ",", refpath, "X11.opt/opt");
 #endif						/* Graphics */
 
    if (system(buf) == 0)

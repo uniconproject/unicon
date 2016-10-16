@@ -555,6 +555,19 @@ char *s;
    return setgeometry(w,tmp);
    }
 
+/*
+ * Set an RGB mode. Allowed values are 24, 48, auto, and normalized.
+ * norm and normal are accepted abbreviations of normalized.
+ */
+int setrgbmode(wbp w, char *s)
+{
+   if (!strcmp(s, "48")) { w->context->rgbmode = 2; return Succeeded; }
+   else if (!strcmp(s, "24")) { w->context->rgbmode = 1; return Succeeded; }
+   else if (!strcmp(s, "auto")) { w->context->rgbmode = 0; return Succeeded; }
+   else if (!strcmp(s, "normalized") || !strcmp(s, "normal") ||
+	    !strcmp(s, "norm")) { w->context->rgbmode = 3; return Succeeded; }
+   return Failed;
+}
 
 
 /*
@@ -764,9 +777,11 @@ static int texturephrase(char *buf, long *r, long *g, long *b, long *a);
  *     #rrrgggbbb		(note: no 3 digit rrrgggbbbaaa)
  *     #rrrrggggbbbb
  *     #rrrrggggbbbbaaaa
- *     nnnnn,nnnnn,nnnnn	(integers 0 - 65535)
+ *     nnnnn,nnnnn,nnnnn	(numbers, interpret by rgbmode)
  *     <Icon color phrase>
  *     <native color spec>
+ *
+ *  The comma-separated numbers format can be 24-bit, 48-bit, or normalized.
  */
 
 int parsecolor(w, buf, r, g, b, a)
@@ -800,17 +815,37 @@ RGBnums:
       *g = dg;
       *b = db;
 
-#ifdef Graphics3D
-      if (w && w->context && w->context->is_3D) {
-	 if (dr>=0 && dr<=1.0 && dg>=0 && dg<=1.0 && db>=0 && db<=1.0) {
-	    *r = dr * 65535;
-	    *g = dg * 65535;
-	    *b = db * 65535;
-	    *a = da * 65535;
-	    return Succeeded;
+      if (w && w->context && w->context->rgbmode == 0) { /* auto */
+	 /* see if we need to revert it to 48-bit mode. */
+	 if (dr>=256 || dg>=256 || db>=256) {
+	    w->context->rgbmode = 2;
 	    }
 	 }
+
+      if (w && w->context)
+      switch (w->context->rgbmode) {
+      case 0:			/* nonreverted auto treated as 24-bit color */
+#ifdef Graphics3D
+				/* unless you are in 3D using normalized */
+	 if (w->context->is_3D && dr>=0 && dr<=1.0 &&
+	     dg>=0 && dg<=1.0 && db>=0 && db<=1.0)
+	    goto normalized;
 #endif					/* Graphics3D */
+      case 1:			/* convert app 24-bit color to 48-bits */
+	 *r *= 257;
+	 *g *= 257;
+	 *b *= 257;
+	 break;
+      case 2:			/* no-op, 48 bit color is internal default */
+	 break;
+      case 3:
+normalized:
+	 *r = dr * 65535;
+	 *g = dg * 65535;
+	 *b = db * 65535;
+	 *a = da * 65535;
+	 }
+
 
       if (*r>=0 && *r<=65535 && *g>=0 && *g<=65535 && *b>=0 && *b<=65535)
          return Succeeded;
@@ -3546,6 +3581,9 @@ char * abuf;
         break;
 	}
 #endif					/* Graphics3D */
+      case A_RGBMODE:
+	 AttemptAttr(setrgbmode(w, val));
+	 break;
       case A_HEIGHT: {
 	 if (!cnv:C_integer(d, tmp))
 	    return Failed;
@@ -3992,6 +4030,15 @@ char * abuf;
       case A_RINGS:
 	MakeInt(wc->rings, answer);
 	break;
+      case A_RGBMODE:
+	 switch (wc->rgbmode) {
+	    case 0: strcpy(abuf, "auto"); break;
+	    case 1: strcpy(abuf, "24"); break;
+	    case 2: strcpy(abuf, "48"); break;
+	    case 3: strcpy(abuf, "normalized"); break;
+	    }
+	 MakeStr(abuf, strlen(abuf), answer);
+	 break;
       case A_PICK: {
 	 sprintf(abuf,"%s",((w->context->selectionenabled==1)?"on":"off"));
 	 MakeStr(abuf, strlen(abuf), answer);
@@ -4673,6 +4720,7 @@ stringint attribs[] = {
    {"posy",		A_POSY},
    {"resize",		A_RESIZE},
    {"reverse",		A_REVERSE},
+   {"rgbmode",		A_RGBMODE},
    {"rings",		A_RINGS},
    {"row",		A_ROW},
    {"rows",		A_ROWS},

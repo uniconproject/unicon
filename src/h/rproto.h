@@ -528,6 +528,7 @@ int checkOpenConsole( FILE *w, char *s );
    			   word *px, word *py, word *pw, word *ph);
    char	*rgbkey		(int p, double r, double g, double b);
 
+   int	setrgbmode	(wbp w, char *s);
    int	setselection	(wbp w, dptr val);
    int	setsize		(wbp w, char *s);
    int	ulcmp		(pointer p1, pointer p2);

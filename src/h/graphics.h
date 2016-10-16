@@ -448,6 +448,7 @@ typedef struct _wcontext {
   int		dx, dy;
   int		fillstyle;
   int		drawop;
+  int		rgbmode;		/* 0=auto, 1=24, 2=48, 3=norm */
   double	gamma;			/* gamma correction value */
   int		bits;			/* context bits */
 
@@ -774,65 +775,66 @@ typedef struct
 #define A_ICONLABEL	31
 #define A_ICONPOS	32
 #define A_IMAGE		33
-#define A_INPUTMASK	58
-#define A_LABEL		34
-#define A_LEADING	35
-#define A_LINES		36
-#define A_LINESTYLE	37
-#define A_LINEWIDTH	38
-#define A_PATTERN	39
-#define A_POINTERCOL	40
-#define A_POINTERROW	41
-#define A_POINTERX	42
-#define A_POINTERY	43
-#define A_POINTER	44
-#define A_POS		45
-#define A_POSX		46
-#define A_POSY		47
-#define A_RESIZE	48
-#define A_REVERSE	49
-#define A_ROW		50
-#define A_ROWS		51
-#define A_SIZE		52
-#define A_VISUAL	53
-#define A_WIDTH		54
-#define A_WINDOWLABEL   55
-#define A_X		56
-#define A_Y		57
-#define A_SELECTION	59
+#define A_INPUTMASK	34
+#define A_LABEL		35
+#define A_LEADING	36
+#define A_LINES		37
+#define A_LINESTYLE	38
+#define A_LINEWIDTH	39
+#define A_PATTERN	40
+#define A_POINTERCOL	41
+#define A_POINTERROW	42
+#define A_POINTERX	43
+#define A_POINTERY	44
+#define A_POINTER	45
+#define A_POS		46
+#define A_POSX		47
+#define A_POSY		48
+#define A_RESIZE	49
+#define A_REVERSE	50
+#define A_RGBMODE	51
+#define A_ROW		52
+#define A_ROWS		53
+#define A_SIZE		54
+#define A_VISUAL	55
+#define A_WIDTH		56
+#define A_WINDOWLABEL   57
+#define A_X		58
+#define A_Y		59
+#define A_SELECTION	60
 
 /* 3D attributes */
-#define A_DIM           60
-#define A_EYE           61
-#define A_EYEPOS        62
-#define A_EYEDIR        63
-#define A_EYEUP         64
-#define A_LIGHT         65
-#define A_LIGHT0        66
-#define A_LIGHT1        67
-#define A_LIGHT2        68
-#define A_LIGHT3        69
-#define A_LIGHT4        70
-#define A_LIGHT5        71
-#define A_LIGHT6        72
-#define A_LIGHT7        73
-#define A_TEXTURE       74
-#define A_TEXMODE       75
-#define A_TEXCOORD      76
+#define A_DIM           61
+#define A_EYE           62
+#define A_EYEPOS        63
+#define A_EYEDIR        64
+#define A_EYEUP         65
+#define A_LIGHT         66
+#define A_LIGHT0        67
+#define A_LIGHT1        68
+#define A_LIGHT2        69
+#define A_LIGHT3        70
+#define A_LIGHT4        71
+#define A_LIGHT5        72
+#define A_LIGHT6        73
+#define A_LIGHT7        74
+#define A_TEXTURE       75
+#define A_TEXMODE       76
+#define A_TEXCOORD      77
 
-#define A_TITLEBAR      77
-#define A_BUFFERMODE    78
-#define A_MESHMODE      79
-#define A_SLICES	80
-#define A_RINGS		81
-#define A_PICK   	82
-#define A_NORMODE       83
-#define A_FOV       	84
-#define A_GLVERSION    	85
-#define A_GLVENDOR     	86
-#define A_GLRENDERER   	87
+#define A_TITLEBAR      78
+#define A_BUFFERMODE    79
+#define A_MESHMODE      80
+#define A_SLICES	81
+#define A_RINGS		82
+#define A_PICK   	83
+#define A_NORMODE       84
+#define A_FOV       	85
+#define A_GLVERSION    	86
+#define A_GLVENDOR     	87
+#define A_GLRENDERER   	88
 
-#define NUMATTRIBS	87
+#define NUMATTRIBS	88
 
 #define XICONSLEEP	20 /* milliseconds */
 

@@ -579,11 +579,32 @@ end
 
 function{1} repl(s,n)
 
-   if !cnv:string(s) then
-      runerr(103,s)
-
    if !cnv:C_integer(n) then
       runerr(101,n)
+   inline {
+      if (n < 0) { irunerr(205,n); errorfail; }
+      }
+
+   if is:list(s) then {
+      abstract { return type(s) }
+      body {
+	 register struct b_list *bp1;
+	 register struct b_lelem *lp1;
+	 word i, size1, size2;
+	 size1 = BlkD(s,List)->size;
+	 size2 = size1 * n;
+	 Protect(bp1 = (struct b_list *)alclist_raw(size2, size2), runerr(0));
+	 lp1 = (struct b_lelem *) (bp1->listhead);
+
+	 for(i=0; i<n; i++) {
+	    cpslots(&s, lp1->lslots + i*size1, (word)1, size1+1);
+	    }
+	 BlkLoc(s) = (union block *)bp1;
+	 return s;
+	 }
+      }
+
+   else if cnv:string(s) then {
 
    abstract {
        return string
@@ -594,11 +615,6 @@ function{1} repl(s,n)
       register C_integer slen;
       register C_integer size;
       register char * resloc, * sloc, *floc;
-
-      if (n < 0) {
-         irunerr(205,n);
-         errorfail;
-         }
 
       slen = StrLen(s);
       /*
@@ -641,6 +657,8 @@ function{1} repl(s,n)
 
       return result;
       }
+}
+else runerr(103,s)
 end
 
 

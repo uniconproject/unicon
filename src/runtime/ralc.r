@@ -945,15 +945,14 @@ char *f(register char *s, register word slen)
    register char *d;
    char *ofree;
 
-#ifdef MultiThread
-   StrLen(ts) = slen;
-   StrLoc(ts) = s;
-#if E_String
-   if (!noMTevents)
+#if e_string
+   if (!noMTevents){
+      StrLen(ts) = slen;
+      StrLoc(ts) = s;
       EVVal(slen, e_string);
-#endif					/* E_String */
-   s = StrLoc(ts);
-#endif					/* MultiThread */
+      s = StrLoc(ts);
+      }
+#endif					/* e_string */
 
    /*
     * Make sure there is enough room in the string space.

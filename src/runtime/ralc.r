@@ -971,12 +971,18 @@ char *f(register char *s, register word slen)
    /*
     * Copy the string into the string space, saving a pointer to its
     *  beginning.  Note that s may be null, in which case the space
-    *  is still to be allocated but nothing is to be copied into it.
+    *  is still allocated but nothing is to be copied into it.
+    *  memcpy() is slower for slen < 4 but faster for slen >> 4.
     */
    ofree = d = strfree;
    if (s) {
-      while (slen-- > 0)
-         *d++ = *s++;
+      if (slen >= 4) {
+	 memcpy(d, s, slen);
+	 d+= slen;
+	 }
+      else
+	 while (slen-- > 0)
+	    *d++ = *s++;
       }
    else
       d += slen;

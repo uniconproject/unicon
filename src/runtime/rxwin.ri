@@ -3795,7 +3795,7 @@ unsigned char *data;
 	    }
          }
       }
-
+   XDestroyImage(im);
    return 1;
    }
 
@@ -3839,9 +3839,13 @@ int x, y, width, height, init;
    if (y < 0)  { ty -= y; height += y; y = 0; }
    if (x + width > ws->width)  { width = ws->width - x; }
    if (y + height > ws->height) { height = ws->height - y; }
-   if (width > 0 && height > 0)
-      XGetSubImage(stddpy, stdpix, x, y, width, height, AllPlanes, ZPixmap,
-		   im, tx, ty);
+   if (width > 0 && height > 0) {
+      XGetSubImage(stddpy, (
+#ifdef Graphics3D
+         ws->is_3D?ws->win:
+#endif
+         stdpix), x, y, width, height, AllPlanes, ZPixmap, im, tx, ty);
+      }
    return im;
    }
 

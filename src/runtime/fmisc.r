@@ -2714,7 +2714,7 @@ function{1} unlock(x)
       GETMUTEXID(x, x1);
 
       MUTEX_UNLOCKID(x1);
-      return C_integer 1;
+      return C_integer x;
       }
    }
    else type_case x of {

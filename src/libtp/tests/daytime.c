@@ -21,7 +21,7 @@
 int main(int argc, char **argv)
 {
   Tp_t* tp;
-  URI uri = { 0, "daytime", NULL, NULL, "localhost", 13, 0, 0, NULL };
+  URI uri = { 0, "daytime", NULL, NULL, "localhost", 13, 0, NULL };
 
   char s[1024];
 

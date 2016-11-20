@@ -16,6 +16,19 @@ asterisk (\texttt{\textbf{*}}) and non-generators that can
 denotes a predicate whose success or failure is what matters; the
 predicate return value (\texttt{\&null}) is not significant.
 
+\index{thread safety}
+A ``Road Narrows''  \WarningNotThreadSafe\ sign in either margin
+--- like the sign reproduced here --- indicates that the function
+or operation is not thread-safe and should be protected from different
+threads executing it at the same time (the sign is intended to suggest
+that only one thing should be allowed through at any one time). In some cases,
+notably the augmented operations (\texttt{+:= } etc.) and the 3D operations,
+the entire group is not thread-safe. In these cases the signs that would be
+beside the individual functions or operations are replaced by a single cautionary
+sign at the head of the group.
+In a few instances, the ``Road Narrows'' sign is also used to highlight a general
+comment about concurrency (rather than a specific thread-safety issue).
+
 \section{Immutable Types: Numbers, Strings, Csets}
 
 Unicon's immutable types are integers, real numbers,
@@ -121,6 +134,7 @@ connections and \index{database}databases. These types are described in
 the entries for \index{constructor}constructors that
 create them. \index{structure types}Structure types hold
 collections of elements that may be of arbitrary, mixed type.
+\AreNotThreadSafe{Mutable types}
 
 \subsection*{List}
 
@@ -194,6 +208,7 @@ Global variables are visible everywhere in the program, and exist at the same
 location for the entire program execution. Declaring a procedure declares a
 global variable initialized to the procedure value that corresponds to the
 code for that procedure.
+\AreNotThreadSafe{Global variables}
 
 \subsection*{Local}
 
@@ -215,6 +230,7 @@ Static variables are visible only within a single procedure or method, but exist
 at the same location for the entire program execution. The value stored in a
 static variable is preserved between multiple calls to the procedure in which it
 is declared.
+\AreNotThreadSafe{Static variables}
 
 \subsection*{Class}
 
@@ -223,6 +239,7 @@ variables are created for each \index{instance!class}instance (object) of the
 class. The lifespan of class variables is the life span of the instance to which
 they belong. The value stored in a class variable is preserved between multiple
 calls to the methods of the class in which it is declared.
+\AreNotThreadSafe{Class variables}
 
 \section{Keywords}
 
@@ -346,8 +363,9 @@ runtime errors are converted into expression failure. By assigning to
 this keyword, error conversion can be enabled or disabled for specific
 sections of code. The integer \&error is decremented by one on each
 error, and if it reaches zero, a runtime error is generated. Assigning
-a value of -1 effectively disables runtime errors indefinitely. See
-also \texttt{\&syserr}.
+a value of -1 effectively disables runtime errors indefinitely. 
+There is not one \texttt{\&error} integer for each thread \WarningNotThreadSafe\
+--- the value applies to the whole program, not just the thread that sets it.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -545,6 +563,9 @@ entering a string scanning environment, moving or tabbing within the
 environment, or assigning a new value to \texttt{\&subject}.
 \texttt{\&pos} may not be assigned a value that is outside the range of
 legal indices for the current \texttt{\&subject} string.
+Each thread has its own instance of
+\texttt{\&pos}; \WarningNotThreadSafe assigning a value to it in one
+thread does not affect the string scanning environment of any another thread.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -562,8 +583,9 @@ executing program.
 \index{random!number seed}\texttt{\&random} is the seed for random
 numbers produced by the random operator, unary \texttt{?}. It is
 assigned a different sequence for each execution but may be explicitly
-set for reproducible results.
-
+set for reproducible results. Each thread has its own instance of
+\texttt{\&random}; \WarningNotThreadSafe setting it in one thread does
+not affect the random sequence produced by another thread.
 \bigskip\hrule\vspace{0.1cm}
 \noindent
 {\bf \&regions : integer* } \hfill {\bf region sizes}
@@ -600,17 +622,9 @@ backward compatibility reasons.
 value used in string scanning and analysis functions. Assigning to
 \texttt{\&subject} implicitly assigns the value \texttt{1} to
 \texttt{\&pos}.
-
-\bigskip\hrule\vspace{0.1cm}
-\noindent
-{\bf \&syserr := integer } \hfill {\bf halt on system error}
-
-\noindent
-\texttt{\&syserr} controls whether a system error causes execution to
-halt. System errors cause expression failure by
-default. If \texttt{\&syserr} is set to a non-zero value, system errors
-are converted to runtime errors and halt execution with an error
-traceback.
+Each thread has its own instance of 
+\texttt{\&subject}; \WarningNotThreadSafe assigning a value to it in one
+thread does not affect the string scanning environment of any another thread.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -891,7 +905,7 @@ execution of \textit{expr} on value {\textit x}. Value {\textit x} must
 be a mutex or protected object that has a mutex. The critical section
 causes {\textit x} to be locked before evaluating {\textit expr} and
 unlocked afterward. Breaking, returning or failing out of {\textit expr} 
-does not automatically unlock {\textit x}.
+does not automatically unlock {\textit x}.\WarningNotThreadSafe
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -978,6 +992,10 @@ with the package name.
 \noindent
 \index{initial}The \texttt{initial} expression is executed the first
 time a procedure or method is invoked.
+Any subsequent invocations (of the procedure or method) \WarningNotThreadSafe
+will not proceed until the \texttt{initial} expression has finished execution.
+A recursive invocation of the procedure inside the \texttt{initial} expression
+causes a runtime error.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1219,6 +1237,8 @@ generated in an undefined order. If \texttt{x} is a messaging
 connection to a POP server, \texttt{!x} produces complete messages as
 strings. Other types of files, including network connections, produce
 elements consisting of text lines.
+Care should be taken \WarningNotThreadSafe\ when generating the elements
+of a variable that might change during the generation.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1316,6 +1336,10 @@ expression \texttt{x }\texttt{\textit{op}}\texttt{:= y} is equivalent
 to \texttt{x := x }\texttt{\textit{op}}\texttt{ y}. For example,
 \texttt{x +:= 5} is equivalent but faster than the expression
 \ \texttt{x := x+5.}
+\AreNotThreadSafe{In general, augmented operators} \
+They are only safe if applied to a local (non static) variable that
+has an atomic type. For example, sets are mutable (not safe anywhere)
+whereas csets are atomic (unsafe if global or static; safe if local).
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1431,7 +1455,7 @@ may be augmented.
 {\bf var := expr } \hfill {\bf assign}
 
 \noindent
-{\bf var1 :=: var2 } \hfill {\bf swap}
+{\bf var1 :=: var2 } \hfill {\bf swap}\WarningNotThreadSafe
 \index{swap}
 
 \noindent
@@ -1439,7 +1463,7 @@ may be augmented.
 \index{assignment!reversible}\index{reversible assignment}
 
 \noindent
-{\bf var1 {\textless}-{\textgreater} var2 } \hfill {\bf reversible swap}
+{\bf var1 {\textless}-{\textgreater} var2 } \hfill {\bf reversible swap}\WarningNotThreadSafe
 \index{reversible swap}
 
 \noindent
@@ -1577,7 +1601,7 @@ that selects the parameter to use as the result of the entire expression.
 \index{subscript}
 
 \noindent
-{\bf expr1 \textbf{[} expr2 : expr3 \textbf{]} } \hfill {\bf subsection}
+{\bf expr1 \textbf{[} expr2 : expr3 \textbf{]} } \hfill {\bf subsection}\WarningNotThreadSafe
 \index{slice}\index{subsection}
 
 \noindent
@@ -1768,7 +1792,7 @@ length \texttt{i}. If \texttt{i {\textless} *s1} then the center
 \hrule\vspace{0.1cm}
 \index{channel}
 \noindent
-{\bf channel(TH) : list } \hfill {\bf communicationsl channel}
+{\bf channel(TH) : list } \hfill {\bf communications channel}
 
 \noindent
 \index{channel}\texttt{channel(TH)} creates a communications channel
@@ -1788,12 +1812,13 @@ character encoded by integer \texttt{i}.
 \hrule\vspace{0.1cm}
 \index{chdir}
 \noindent
-{\bf chdir(s) : string } \hfill {\bf change directory}
+{\bf chdir(s) : string } \hfill {\bf change directory}\WarningNotThreadSafe
 
 \noindent
 \index{directory}\index{chdir()}\texttt{chdir(s)} changes the current
 working directory to \texttt{s}. \texttt{chdir()} returns the current
-working directory.
+working directory, which is shared between threads.
+
 
 \bigskip
 \hrule\vspace{0.1cm}
@@ -1915,7 +1940,7 @@ record type.
 \hrule\vspace{0.1cm}
 \index{copy}
 \noindent
-{\bf copy(any) : any } \hfill {\bf copy value}
+{\bf copy(any) : any } \hfill {\bf copy value}\WarningNotThreadSafe
 
 \noindent
 \index{copy(x)}\texttt{copy(x)} produces a copy of x. For immutable types
@@ -2038,7 +2063,7 @@ associated with db.
 \bigskip\hrule\vspace{0.1cm}
 \index{delete}
 \noindent
-{\bf delete(x1, x2, ...) : x1 } \hfill {\bf delete element}
+{\bf delete(x1, x2, ...) : x1 } \hfill {\bf delete element}\WarningNotThreadSafe
 
 \noindent
 \index{delete element}\texttt{delete(x1, x2)} deletes elements denoted by the
@@ -2158,7 +2183,7 @@ corresponding to key \texttt{k} from a \index{DBM}DBM or
 \index{SQL!fetch}SQL database \texttt{d}. The result is
 a string (for DBM databases) or a row (for SQL databases). For SQL
 databases, when the string \texttt{k} is omitted,
-\texttt{fetch(d)} produces the next row
+\texttt{fetch(d)} produces the next row \WarningNotThreadSafe
 in the current selection, and advances the cursor to the next row. A
 row is a record whose field names and types are determined by the
 columns specified in the current query. \texttt{fetch(d)} fails if there are no
@@ -2188,7 +2213,7 @@ substring in \texttt{s2[i1:i2]}.
 \bigskip\hrule\vspace{0.1cm}
 \index{flock}
 \noindent
-{\bf flock(f, s) : ? } \hfill {\bf apply or remove file lock}
+{\bf flock(f, s) : ? } \hfill {\bf apply or remove file lock}\WarningNotThreadSafe
 
 \noindent
 \index{file!lock}\index{flock(f,s)}\texttt{flock(f,s)} applies an advisory
@@ -2226,7 +2251,7 @@ to file \texttt{f}.
 \bigskip\hrule\vspace{0.1cm}
 \index{get}
 \noindent
-{\bf get(L,i:1) : any? } \hfill {\bf get element from queue}
+{\bf get(L,i:1) : any? } \hfill {\bf get element from queue}\WarningNotThreadSafe
 
 \noindent
 \texttt{get(L)} returns an element which is removed from the head of the
@@ -2323,7 +2348,7 @@ complement) of \texttt{i}.
 \bigskip\hrule\vspace{0.1cm}
 \index{insert}
 \noindent
-{\bf insert(x1, x2, x3:\&null) : x1 } \hfill {\bf insert element}
+{\bf insert(x1, x2, x3:\&null) : x1 } \hfill {\bf insert element}\WarningNotThreadSafe
 
 \noindent
 \texttt{insert(x1, x2, x3)} inserts element \texttt{x2} into set, table,
@@ -2400,7 +2425,7 @@ or of \texttt{i1} and \texttt{i2}.
 \bigskip\hrule\vspace{0.1cm}
 \index{key}
 \noindent
-{\bf key(x) : any* } \hfill {\bf table keys}
+{\bf key(x) : any* } \hfill {\bf table keys}\WarningNotThreadSafe
 
 \noindent
 \index{key(x)}\texttt{key(T)} generates the key (entry) values from
@@ -2490,6 +2515,9 @@ generates names in the currently active procedure in ce.
 \noindent
 \index{lock}\texttt{lock(x)} locks the mutex {\textit x} or the mutex
 associated with thread-safe object {\textit x}.
+Mutexes are recursive (i.e. they may be locked again by the same co-expression
+or thread without blocking) but must be unlocked as many times as they are
+locked. It is an error to unlock a mutex more times than it has been locked.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{log}
@@ -2803,7 +2831,7 @@ also function \texttt{filepair()}.
 \bigskip\hrule\vspace{0.1cm}
 \index{pop}
 \noindent
-{\bf pop(L {\textbar} Message) : any? } \hfill {\bf pop from stack}
+{\bf pop(L {\textbar} Message) : any? } \hfill {\bf pop from stack}\WarningNotThreadSafe
 
 \noindent
 \index{pop(L)}\texttt{pop(L)} removes an element from the top of the
@@ -2844,7 +2872,7 @@ co-expression \texttt{C}.
 \bigskip\hrule\vspace{0.1cm}
 \index{pull}
 \noindent
-{\bf pull(L,i:1) : any? } \hfill {\bf remove from list end}
+{\bf pull(L,i:1) : any? } \hfill {\bf remove from list end}\WarningNotThreadSafe
 
 \noindent
 \index{pull(L)}\texttt{pull(L)} removes and produces an element from the
@@ -2854,7 +2882,7 @@ end of a nonempty list \texttt{L.} \texttt{pull(L, i)} removes
 \bigskip\hrule\vspace{0.1cm}
 \index{push}
 \noindent
-{\bf push(L, any, ...) : list } \hfill {\bf push on to stack}
+{\bf push(L, any, ...) : list } \hfill {\bf push on to stack}\WarningNotThreadSafe
 
 \noindent
 \texttt{push(L, x1, ..., xN)} pushes elements onto the beginning of list
@@ -2866,7 +2894,7 @@ passed as its first parameter, with the new elements added.
 \hrule\vspace{0.1cm}
 \index{put}
 \noindent
-{\bf put(L, x1, ..., xN) : list } \hfill {\bf add to list end}
+{\bf put(L, x1, ..., xN) : list } \hfill {\bf add to list end}\WarningNotThreadSafe
 
 \noindent
 \index{put()}\texttt{put(L, x1, ..., xN)} puts elements onto the end of
@@ -3098,6 +3126,8 @@ are inserted into the new set, with the exception of lists.
 {\textit x}. If {\textit y} is supplied, the condition variable is
 signaled {\textit y} times. If {\textit y} is 0, a ``broadcast''
 signal is sent waking up all threads waiting on {\textit x}.
+Condition variables have no memory: signalling a condition variable
+that has no threads waiting on it has no effect.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{sin}
@@ -3335,8 +3365,11 @@ windows, network connections, pipes, or databases.
 {\bf trylock(x) : x? } \hfill {\bf try locking mutex}
 
 \noindent
-\index{lock}\texttt{trylock(x)} locks the mutex {\textit x} or the mutex
-associated with thread-safe object {\textit x}, if it is not locked.
+\index{lock}\texttt{trylock(x)} attempts to lock the mutex {\textit x} or the
+mutex associated with thread-safe object \texttt{x}. \texttt{trylock} fails
+if \texttt{x} is locked by a different thread or co-expression. If \texttt{x}
+is already locked by the calling thread or co-expression, \texttt{trylock}
+will lock it again.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{type}
@@ -3401,7 +3434,7 @@ program that created \texttt{c}.
 \index{wait()}\texttt{wait(x)} waits for {\textit x}. If {\textit x} is
 a thread, {\texttt wait()} waits for it to finish. If {\textit x} is
 is a condition variable {\texttt wait()} waits until that variable is
-signaled by another thread.
+subsequently signaled by another thread.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -3450,7 +3483,7 @@ to take vertices in a (\texttt{x,y}) or (\texttt{x,y,z,w}) format. Arguments
 named \texttt{row} and \texttt{col} are cursor locations in one-based integer
 text coordinates. Most functions' first parameter named
 \texttt{w} defaults to \texttt{\&window} and the window argument can be omitted
-in the default case.
+in the default case. \AreNotThreadSafe{Most 3D functions}
 
 \bigskip\hrule\vspace{0.1cm}
 \index{Active}
@@ -4475,6 +4508,10 @@ error, the keywords \texttt{\&errornumber}, \texttt{\&errortext}, and
 124 \ \ \ \ \ \ \ table expected\\
 125 \ \ \ \ \ \ \ list, record, or set expected\\
 126 \ \ \ \ \ \ \ list or record expected\\
+127 \ \ \ \ \ \ \ invalid type to pattern operation\\
+128 \ \ \ \ \ \ \ unevaluated variable or function call expected\\
+129 \ \ \ \ \ \ \ unable to convert unevaluated variable to pattern\\
+130 \ \ \ \ \ \ \ incorrect number of arguments\\
 140 \ \ \ \ \ \ \ window expected\\
 141 \ \ \ \ \ \ \ program terminated by window manager\\
 142 \ \ \ \ \ \ \ attempt to read/write on closed window\\
@@ -4485,25 +4522,49 @@ error, the keywords \texttt{\&errornumber}, \texttt{\&errortext}, and
 function\\
 147 \ \ \ \ \ \ \ window attribute cannot be read or written as
 requested\\
-160 \ \ \ \ \ \ \ cannot open file\\
-161 \ \ \ \ \ \ \ bad file attribute\\
-162 \ \ \ \ \ \ \ cannot open socket\\
+150 \ \ \ \ \ \ \ "drawing a 3D object while in 2D mode\\
+151 \ \ \ \ \ \ \ "pushed/popped too many matrices\\
+152 \ \ \ \ \ \ \ "modelview or projection expected\\
+153 \ \ \ \ \ \ \ "texture not in correct format\\
+154 \ \ \ \ \ \ \ "must have an even number of texture coordinates\\
+155 \ \ \ \ \ \ \ "3D graphics is not enabled in this virtual machine\\
+%%----------------------------------------
+%% These codes are not in unicon/src/runtime/data.r or are different
+%% 160 \ \ \ \ \ \ \ cannot open file\\
+%% 161 \ \ \ \ \ \ \ bad file attribute\\
+%% 162 \ \ \ \ \ \ \ cannot open socket\\
+%% 170 \ \ \ \ \ \ \ string or integer expected\\
+%% 171 \ \ \ \ \ \ \ posix header file not included\\
+%% 172 \ \ \ \ \ \ \ posix record overridden by global value\\
+%% 173 \ \ \ \ \ \ \ directory opened for writing\\
+%% 174 \ \ \ \ \ \ \ directory or database invalid as file\\
+%% 175 \ \ \ \ \ \ \ invalid mode string\\
+%% 176 \ \ \ \ \ \ \ invalid signal\\
+%% 177 \ \ \ \ \ \ \ invalid operation to flock/fcntl\\
+%% 178 \ \ \ \ \ \ \ invalid procedure type\\
+%% 179 \ \ \ \ \ \ \ fdup of closed file\\
+%% 180 \ \ \ \ \ \ \ low-level read or select mixed with buffered
+%% read\\
+%% 181 \ \ \ \ \ \ \ not a network connection\\
+%% 182 \ \ \ \ \ \ \ not a UDP socket\\
+%% 183 \ \ \ \ \ \ \ invalid protocol name\\
+%% 184 \ \ \ \ \ \ \ invalid permission string for umask\\
 170 \ \ \ \ \ \ \ string or integer expected\\
-171 \ \ \ \ \ \ \ posix header file not included\\
-172 \ \ \ \ \ \ \ posix record overridden by global value\\
-173 \ \ \ \ \ \ \ directory opened for writing\\
-174 \ \ \ \ \ \ \ directory or database invalid as file\\
-175 \ \ \ \ \ \ \ invalid mode string\\
-176 \ \ \ \ \ \ \ invalid signal\\
-177 \ \ \ \ \ \ \ invalid operation to flock/fcntl\\
-178 \ \ \ \ \ \ \ invalid procedure type\\
-179 \ \ \ \ \ \ \ fdup of closed file\\
-180 \ \ \ \ \ \ \ low-level read or select mixed with buffered
-read\\
-181 \ \ \ \ \ \ \ not a network connection\\
-182 \ \ \ \ \ \ \ not a UDP socket\\
-183 \ \ \ \ \ \ \ invalid protocol name\\
-184 \ \ \ \ \ \ \ invalid permission string for umask\\
+171 \ \ \ \ \ \ \ UDP socket expected\\
+172 \ \ \ \ \ \ \ signal handler procedure must take one argument\\
+173 \ \ \ \ \ \ \ cannot open directory for writing\\
+174 \ \ \ \ \ \ \ invalid file operation on directory or database\\
+175 \ \ \ \ \ \ \ network connection expected\\
+180 \ \ \ \ \ \ \ invalid mutex\\
+181 \ \ \ \ \ \ \ invalid condition variable\\
+182 \ \ \ \ \ \ \ illegal recursion in initial clause\\
+183 \ \ \ \ \ \ \ concurrent threads are not enabled in
+this virtual machine\\
+184 \ \ \ \ \ \ \ structure cannot have more than one mutex at 
+the same time\\
+185 \ \ \ \ \ \ \ converting an active co-expression to a thread
+is not yet supported\\
+%%----------------------------------------
 190 \ \ \ \ \ \ \ database expected\\
 201 \ \ \ \ \ \ \ division by zero\\
 202 \ \ \ \ \ \ \ remaindering by zero\\
@@ -4522,6 +4583,7 @@ length\\
 214 \ \ \ \ \ \ \ input/output error\\
 215 \ \ \ \ \ \ \ attempt to refresh \&main\\
 216 \ \ \ \ \ \ \ external function not found\\
+217 \ \ \ \ \ \ \ unsafe inter-program variable assignment\\
 301 \ \ \ \ \ \ \ evaluation stack overflow\\
 302 \ \ \ \ \ \ \ memory violation\\
 303 \ \ \ \ \ \ \ inadequate space for evaluation stack\\
@@ -4530,6 +4592,8 @@ length\\
 306 \ \ \ \ \ \ \ inadequate space in string region\\
 307 \ \ \ \ \ \ \ inadequate space in block region\\
 308 \ \ \ \ \ \ \ system stack overflow in co-expression\\
+316 \ \ \ \ \ \ \ interpreter stack too large\\
+318 \ \ \ \ \ \ \ co-expression stack too large\\
 401 \ \ \ \ \ \ \ co-expressions not implemented\\
 402 \ \ \ \ \ \ \ program not compiled with debugging option\\
 500 \ \ \ \ \ \ \ program malfunction\\
@@ -4538,11 +4602,8 @@ length\\
 \subsection*{System errors}
 
 If an error occurs during the execution of a \index{error!system}system
-function, by default the function fails and keywords \&errornumber, \&errortext
-and \&errorvalue will be set. This contrasts with runtime errors, which
-terminate execution by default. Whereas runtime errors can be converted to
-failure by setting \&error, system errors can be converted to a runtime error by
-setting keyword \&syserr to a non-null value.
+function, the program terminates. Unlike runtime errors, there is no way
+to convert the error to a failure (and continue execution).
 
 The complete set of \index{system error}system errors is by definition platform
 specific. Error numbers above the value 1000 are used for system errors. Many of
@@ -4589,3 +4650,33 @@ conflict with existing runtime or system error codes.
 1038 \ \ \ \ \ Function not implemented\\
 1039 \ \ \ \ \ Directory not empty
 
+%% Extra definitions from unicon/src/runtime/data.r
+1040 \ \ \ \ \ socket error\\
+
+\bigskip\hrule\vspace{0.1cm}
+
+1041 \ \ \ \ \ cannot initialize network library\\
+1042 \ \ \ \ \ fdup of closed file\\
+1043 \ \ \ \ \ invalid signal\\
+1044 \ \ \ \ \ invalid operation to flock/fcntl\\
+1045 \ \ \ \ \ invalid mode string\\
+1046 \ \ \ \ \ invalid permission string for umask\\
+1047 \ \ \ \ \ invalid protocol name\\
+1048 \ \ \ \ \ low-level read or select mixed with buffered read\\
+1100 \ \ \ \ \ ODBC connection expected\\
+1200 \ \ \ \ \ system error (see errno)\\
+1201 \ \ \ \ \ malformed URL\\
+1202 \ \ \ \ \ missing username in URL\\
+1203 \ \ \ \ \ unknown scheme in URL\\
+1204 \ \ \ \ \ cannot parse URL\\
+1205 \ \ \ \ \ cannot connect\\
+1206 \ \ \ \ \ unknown host\\
+1207 \ \ \ \ \ invalid field in header\\
+1208 \ \ \ \ \ messaging file expected\\
+1209 \ \ \ \ \ cannot determine smtpserver
+(set UNICON\_SMTPSERVER)\\
+1210 \ \ \ \ \ cannot determine user return address
+(set UNICON\_USERADDRESS)\\
+1211 \ \ \ \ \ invalid email address\\
+1212 \ \ \ \ \ server error\\
+1213 \ \ \ \ \ POP messaging file expected\\

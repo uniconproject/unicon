@@ -2060,9 +2060,9 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    
 #ifndef Concurrent
    init_threadstate(tstate);
-#endif					/* Concurrent */  
+#else					/* Concurrent */  
    init_threadheap(tstate, 0, 0);
-
+#endif					/* Concurrent */  
    pstate->Kywd_time_elsewhere = millisec();
    pstate->Kywd_time_out = 0;
    pstate->Mainhead= ((struct b_coexpr *)pstate)-1;

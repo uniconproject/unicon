@@ -217,21 +217,22 @@ Control-\textit{x} &
 
 Unicon is unique in its ability to break strings apart in order to
 identify, classify and extract the meaning of their component parts.
-This extreme claim only became true in Version 13 of the language,
-which unifies Icon's string scanning control structure with its
-predecessor SNOBOL's pattern matching data type. 
+Version 13 of the language unifies Icon's string scanning control
+structure with its predecessor SNOBOL's pattern matching data type. 
 
 Strings are fundamentally just ordered sequences of symbols. Their
 information is conveyed both in their individual elements and in
 the number and order in which the symbols appear.
 There is a fundamental duality between writing the code to analyze a
 string, and writing down some data that describes or abstracts
-that string. The same duality is seen in 
+that string. The same duality is seen in Unicon's string scanning
+control structure and the pattern data type used in matching
+operators.
 
 \subsection{String Scanning}
 
-Icon's string analysis facility is called
-\index{string!scanning}\textit{string scanning}. A
+Unicon's lowest-level building block for string analysis is a control
+structure called \index{string!scanning}\textit{string scanning}. A
 \index{scanning!environment}scanning environment consists of a string
 \index{subject string}\index{string!subject}\textit{subject} and an
 integer \index{position,
@@ -247,10 +248,11 @@ The binary \texttt{?} operator sets the subject to its left argument and
 initializes the position to 1; then it executes the expression on the
 right side.
 
-The expression usually has \index{matching functions}\textit{matching
+The expression usually has an interesting combination of various
+\index{matching functions}\textit{matching
 functions} in it. Matching functions change the position, and return
 the substring between the old and new positions. For example:
-\texttt{move(j)}\texttt{ }moves the position \texttt{j} places to the
+\texttt{move(j)} moves the position \texttt{j} places to the
 right and returns the substring between the old and new position. This
 string will have exactly \texttt{j} characters in it. When the position
 cannot move as directed, for example because there are less than

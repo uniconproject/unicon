@@ -156,16 +156,36 @@ place of \index{array}arrays, \index{stack}stacks, \index{queue}queues,
 and \index{deque}deques found in other languages and data structures
 textbooks.
 
-A list is created by calling the function \index{list()}\texttt{list()}, which
+There are three ways to explicitly construct a list.  In the most
+generic form,
+a list is created by calling the function \index{list()}\texttt{list()}, which
 takes optional parameters for the lists's initial size and the initial value
-given to all elements of the list.  By default \texttt{list()} creates an empty
-list. Alternatively, you can create a list by enclosing a comma-separated
-sequence of values in square brackets:
+given to all elements of the list.  The default size is 0 and the
+default initial value is \texttt{\&null}.
+
+The second form of list constructor is when you create a list by
+enclosing a comma-separated sequence of 0 or more values in square
+nbrackets. For example
 
 \iconcode{
 L := ["linux", 2.0,
 	"unix"]
 }
+
+\noindent creates a list with three elements, a string, a real number,
+and another string.
+
+A third form of list constructor, called {\em comprehension\/}, looks
+like the previous form, except the square brackets contain adjacent colon
+characters and have an expression inside.
+
+\iconcode{
+L := [: {\em expr\/} :]
+}
+
+In a comprehension the constructed list's initial values are obtained
+by fully evaluating an expression and placing all of its results into the
+list, in order. The expression fails if {\em expr\/} fails.
 
 Lists are dynamic. Lists grow or shrink as a result
 of stack and queue operations. The \index{push()}\texttt{push()} and

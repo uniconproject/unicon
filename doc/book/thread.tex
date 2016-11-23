@@ -708,6 +708,33 @@ can be used with the critical syntax like this:
 critical L: L[1] := L[1] + 1
 }
 
+\paragraph{Thread safe assignment without a mutex}
+\label{ThreadSafeAssignment}
+Although protecting a global variable that is written to concurrently by several
+threads is always the correct thing to do, there are some situations where a
+protecting mutex may be safely discarded. If the type of the global variable
+never changes (because every thread writes a value of the same type) then
+concurrent assignments {\em are} thread safe with one exception: the
+integers. The reason for the exception is that the underlying implementation
+actually uses two different types to represent integers, one for large integers
+that are greater than some implementation defined constant, and one for
+``normal'' integers.  If you can {\em guarantee} that all of the integers
+written to the global variable are all either small or all large (but not a
+mixture) then you may also discard the protecting mutex in this case too.
+
+Doing without a mutex should be considered carefully on a case by case basis.
+In most cases the overhead introduced by the mutex will have an insignificant
+effect on the program's performance and it is better to be safe than sorry.  
+In the rare cases where the mutex has a considerable impact on performance,
+following the guidelines above should give a worthwhile improvement.
+
+If values of different types are written concurrently to a global variable then
+a mutex {\em must} be used to avoid the risk of the descriptor that the
+implementation uses to manage the variable having one type whilst referring to
+a value of a different type. Either corrupt data --- if you are lucky --- or
+program termination is the likely outcome of such an error.
+
+
 \paragraph{Condition variables}
 
 Mutexes are used to protect shared data in critical regions, and block threads

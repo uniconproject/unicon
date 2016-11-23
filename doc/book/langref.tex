@@ -364,7 +364,7 @@ this keyword, error conversion can be enabled or disabled for specific
 sections of code. The integer \&error is decremented by one on each
 error, and if it reaches zero, a runtime error is generated. Assigning
 a value of -1 effectively disables runtime errors indefinitely. 
-There is not one \texttt{\&error} integer for each thread \WarningNotThreadSafe\
+There is not one \texttt{\&error} integer for each thread \ConcurrencyIssue\
 --- the value applies to the whole program, not just the thread that sets it.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -564,7 +564,7 @@ environment, or assigning a new value to \texttt{\&subject}.
 \texttt{\&pos} may not be assigned a value that is outside the range of
 legal indices for the current \texttt{\&subject} string.
 Each thread has its own instance of
-\texttt{\&pos}; \WarningNotThreadSafe assigning a value to it in one
+\texttt{\&pos}; \ConcurrencyIssue assigning a value to it in one
 thread does not affect the string scanning environment of any another thread.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -584,7 +584,7 @@ executing program.
 numbers produced by the random operator, unary \texttt{?}. It is
 assigned a different sequence for each execution but may be explicitly
 set for reproducible results. Each thread has its own instance of
-\texttt{\&random}; \WarningNotThreadSafe setting it in one thread does
+\texttt{\&random}; \ConcurrencyIssue setting it in one thread does
 not affect the random sequence produced by another thread.
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -623,7 +623,7 @@ value used in string scanning and analysis functions. Assigning to
 \texttt{\&subject} implicitly assigns the value \texttt{1} to
 \texttt{\&pos}.
 Each thread has its own instance of 
-\texttt{\&subject}; \WarningNotThreadSafe assigning a value to it in one
+\texttt{\&subject}; \ConcurrencyIssue assigning a value to it in one
 thread does not affect the string scanning environment of any another thread.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -992,7 +992,7 @@ with the package name.
 \noindent
 \index{initial}The \texttt{initial} expression is executed the first
 time a procedure or method is invoked.
-Any subsequent invocations (of the procedure or method) \WarningNotThreadSafe
+Any subsequent invocations (of the procedure or method) \ConcurrencyIssue
 will not proceed until the \texttt{initial} expression has finished execution.
 A recursive invocation of the procedure inside the \texttt{initial} expression
 causes a runtime error.
@@ -1470,6 +1470,12 @@ may be augmented.
 The several \index{assignment}assignment
 operators all require variables for their left operands, and swap
 operators also require variables for their right operands.
+
+Assignment operators are usually thread safe \ConcurrencyIssue
+but there are some situations where they are not. 
+See the discussion of thread safe assignment without a mutex (on page
+\pageref{ThreadSafeAssignment}) for details. If in doubt, protect the
+global variable with a mutex.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent

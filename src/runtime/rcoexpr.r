@@ -450,7 +450,16 @@ int first;
       SET_FLAG(ncp->status, Ts_Attached);
       MUTEX_UNLOCKBLK(ncp, "lock co-expression");
       UNSET_FLAG(ccp->status, Ts_Attached);
+#ifdef NativeCoswitch
       coswitch(ccp->cstate, ncp->cstate, first);
+#else					/* NativeCoswitch */
+      /* 
+       * This should never happen: if pthread and coswitch are not available
+       * we would not have coexpressions in the first place,
+       * but just to make it clear:
+       */
+       syserr("coswitch() is required but not implemented");
+#endif					/* NativeCoswitch */
    }
 
    /*

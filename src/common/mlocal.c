@@ -579,3 +579,31 @@ int get_CCompiler(char *s)
 #endif					/* MSVC */
 #endif					/* GNUC */
 } 
+
+/*
+ * This function retrieves platform architecture for
+ * &features and is called from keyword.r. 
+ * pre allocated buffer for s is 20 bytes, make sure to increase it
+ * if you add an arch that requires more.
+ */
+void get_arch(char *arch){
+ /* 
+  * Catch different symbols defined by different 
+  * compilers all at once. 
+  * Need to be tested on various platforms.
+  */
+  char *s;  
+#if defined(_M_X86) || defined(_M_X64) || defined(__i386) || defined(__amd64)
+  s = "x86";
+#elif defined(_M_ARM) || defined(__arm__)
+  s = "arm";
+#elif defined(__mips)
+  s = "mips";
+#elif defined(__powerpc)
+  s = "powerpc";
+#else
+  s = "unknown";
+#endif
+
+  sprintf(arch, "Arch %s_%d", s, WordBits);
+}

@@ -595,7 +595,7 @@ void get_arch(char *arch){
   char *s;  
 #if defined(_M_X86) || defined(_M_X64) || defined(__i386) || defined(__amd64)
   s = "x86";
-#elif defined(_M_ARM) || defined(__arm__)
+#elif defined(_M_ARM) || defined(__arm) || defined(__aarch64__)
   s = "arm";
 #elif defined(__mips)
   s = "mips";

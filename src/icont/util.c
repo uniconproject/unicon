@@ -159,7 +159,7 @@ char *Syntax[]={
       "enduntil",   /* exiting until loop      */
       "repeat",     /* entering repeat loop    */ 
       "endrepeat",  /* exiting repeat loop     */ 
-      "supend",     /* entering suspend loop   */
+      "suspend",    /* entering suspend loop   */
       "endsuspend"  /* exiting suspend loop    */
   };
 

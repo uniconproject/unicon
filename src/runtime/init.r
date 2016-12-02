@@ -124,8 +124,10 @@ uword blktotal = 0;			/* cumulative total block allocation */
 int dodump;				/* if nonzero, core dump on error */
 int noerrbuf;				/* if nonzero, do not buffer stderr */
 
+#ifndef Concurrent
 struct descrip maps2;			/* second cached argument of map */
 struct descrip maps3;			/* third cached argument of map */
+#endif /* Concurrent */
 
 #if !(defined(MultiThread) || ConcurrentCOMPILER)
 struct descrip k_current;		/* current expression stack pointer */
@@ -615,6 +617,10 @@ void init_threadstate( struct threadstate *ts)
    
    /* used in fmath.r, log() */
    ts->Lastbase=0.0;
+
+   /* used in fstr.r, map() */
+   ts->Maps2 = nulldesc;
+   ts->Maps3 = nulldesc;
 
 #ifdef PosixFns
    ts->Nsaved=0;
@@ -1885,8 +1891,10 @@ void datainit()
 #endif					/* DescriptorDouble */
 #endif					/* MultiThread */
 
+#ifndef Concurrent
    maps2 = nulldesc;
    maps3 = nulldesc;
+#endif /* Concurrent */
 
 #if !COMPILER
    qsort((char *)pntab, pnsize, sizeof(struct pstrnm),

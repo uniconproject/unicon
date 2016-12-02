@@ -42,8 +42,12 @@ extern struct descrip kywd_dmp; /* descriptor for &dump */
 extern struct descrip nullptr;	/* descriptor with null block pointer */
 extern struct descrip lcase;	/* lowercase string */
 extern struct descrip letr;	/* letter "r" */
+
+#ifndef Concurrent
 extern struct descrip maps2;	/* second argument to map() */
 extern struct descrip maps3;	/* third argument to map() */
+#endif /* Concurrent */
+
 extern struct descrip nulldesc;	/* null value */
 extern struct descrip onedesc;	/* one */
 extern struct descrip ucase;	/* uppercase string */

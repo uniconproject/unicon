@@ -525,6 +525,8 @@ struct threadstate {
    double Divisor;
    
    /* used in fstr.r, map() */
+   struct descrip Maps2;
+   struct descrip Maps3;
    char Maptab[256];
    
    /* used in rposix.r */

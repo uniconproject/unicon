@@ -629,6 +629,8 @@
 
    /* used in fstr.r, map() */
    #define maptab		(curtstate->Maptab)
+   #define maps2		(curtstate->Maps2)
+   #define maps3		(curtstate->Maps3)
       
    /* used in rposix.r */
    #define callproc		(curtstate->Callproc)

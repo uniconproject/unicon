@@ -589,14 +589,25 @@ int region;
    postqual(&kywd_prog);
 #endif					/* ConcurrentCOMPILER */
 #endif					/* MultiThread */
-   if (Qual(maps2))                     /*  caution: the cached arguments of */
-      postqual(&maps2);                 /*  map may not be strings. */
-   else if (Pointer(maps2))
-      markblock(&maps2);
-   if (Qual(maps3))
-      postqual(&maps3);
-   else if (Pointer(maps3))
-      markblock(&maps3);
+
+#ifdef Concurrent
+   /* turn the non-concurrent maps2 and maps3 code into a loop over all threads */
+   {
+   struct threadstate *curtstate;     /* do NOT change this name, the maps[23] macros depend on it */
+   for (curtstate = &roottstate; curtstate != NULL; curtstate = curtstate->next) {
+#endif
+	if (Qual(maps2))                     /*  caution: the cached arguments of */
+      	   postqual(&maps2);                 /*  map may not be strings. */
+   	else if (Pointer(maps2))
+      	   markblock(&maps2);
+   	if (Qual(maps3))
+      	   postqual(&maps3);
+   	else if (Pointer(maps3))
+      	   markblock(&maps3);
+#ifdef Concurrent
+       }		/* These two braces match the curtstate loop */
+   }            /* and struct threadstate declaration above */
+#endif /* Concurrent */
 
 #ifdef Graphics
    /*

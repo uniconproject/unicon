@@ -2473,7 +2473,7 @@ Deliberate Syntax Error
    /* not included */
 #endif					/* AMIGA || ... */
 
-#if ARM
+#if DEBUG_INTERP
 void stkdump(op)
    int op;
    {

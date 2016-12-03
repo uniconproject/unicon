@@ -444,6 +444,7 @@ fldlist	: { $$ := EmptyNode } ;
 
 proc	: prochead SEMICOL locals initial procbody END {
 #		body_scopeck($5)
+		$3 := AppendListCompTemps($3, $5)
 		$$ := node("proc", $1,";",$3,$4,$5,$6)
 		} ;
 
@@ -840,6 +841,9 @@ neregex2: neregex3 ;
 	;
 
 neregex3:  IDENT
+	| BREAK { $$ := $1; $$.tok := IDENT }
+	| BY { $$ := $1; $$.tok := IDENT }
+	| PROCEDURE { $$ := $1; $$.tok := IDENT }
 	| INTLIT
 	| REALLIT
 	| STRINGLIT
@@ -1087,14 +1091,67 @@ end
 
 # build a tree equivalent to
 # {__tmp :=[]; every put(__tmp, expr); if __tmp>0 then __tmp}
+# The enclosing procedure/method also needs to declare this temp var;
+# see AppendListCompTemps
+#
 procedure ListComp(expr)
    local tmp
    tmpcount +:= 1
    tmp := "__" || tmpcount
    return node("ListComp",
-		"{" || tmp || " :=[]; every put(" || tmp || ", ",
+		"{", string(tmp), " :=[]; every put(" || tmp || ", ",
 		expr,
 		"); if *" || tmp || ">0 then " || tmp || "}")
+end
+
+#
+# AppendListCompTemps(localdecls, procbody) - at the procedure/method
+# outermost level, we may need to add some declarations based on what's
+# in the procbody. If there are changes to the declared lcls section,
+# returns changed locals.
+#
+procedure AppendListCompTemps(lcls, body)
+   # if there is, in the procbody, a list of varnames to declare
+   if *\(ltmps := ListCompTemps(body)) > 0 then {
+      # make a varlist containing ltmps
+      if *ltmps > 1 then {
+	 vl := token(IDENT, ltmps[1], 0, 0, "lambda.icn")
+	 every i := 2 to *ltmps do
+	    vl := node("varlist3", vl, ",",
+			token(IDENT, ltmps[i], 0, 0, "lambda.icn"))
+	 }
+      else {
+	 # the varlist will just be an IDENT
+	 vl := token(IDENT, ltmps[1], 0, 0, "lambda.icn")
+	 }
+      if (lcls === EmptyNode) |
+	  (type(lcls)==="treenode" & lcls.label==("locals2"|"locals3")) then {
+	 return node("locals2", lcls, copy(lcls.children[2]), vl, ";")
+	 }
+      else
+	 write(&errout, "don't know what to do with ", image(lcls))
+      }
+end
+
+#
+# ListCompTemps(n) - lower level temp. var extraction from proc body.
+# returns list of strings containing temp. variables from list comprehension
+# L
+procedure ListCompTemps(n)
+   local LCT
+   if type(n) == "treenode" then {
+      if n.label=="ListComp" then {
+	 LCT := [n.children[2]]
+	 LCT |||:= ListCompTemps(n.children[4])
+	 return LCT
+	 }
+      else if LCT := ListCompTemps(n.children[k := 1 to *(n.children)]) then {
+	 every kk := k+1 to *(n.children) do {
+	    LCT |||:= ListCompTemps(n.children[kk])
+	    }
+	 return LCT
+	 }
+      }
 end
 
 procedure tablelit(lb, cl, rb)

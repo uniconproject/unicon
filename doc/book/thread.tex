@@ -1097,19 +1097,37 @@ gets the current size of the inbox. On the other hand
 \iconcode{
 Attrib(T, INBOX\_LIMIT, 64, OUTBOX\_LIMIT, 32)
 }
-
 sets the inbox and outbox size limits to 64 and 32 respectively. The following
 table summarizes the available attributes and their meanings.
 
-
-\bigskip
+%% [DPW] For some reason, known only to itself, LaTeX insists on a page break
+%% here and leaves about 90% of the preceding page blank.  I changed from
+%% supertabular to tabular and the problem went away.
+%% \begin{flushleft}
+%% \tablehead{}
+%% \begin{supertabular}{m{2.0941598in}m{1.9087598in}m{1.9108598in}}
+%% Attribute &
+%% Meaning &
+%% Read/Write?\\
+%% INBOX\_SIZE &
+%% Number of items in the inbox &
+%% Read Only\\
+%% OUTBOX\_SIZE &
+%% Number of items in the outbox &
+%% Read Only\\
+%% INBOX\_LIMIT &
+%% The maximum number of items allowed in the inbox &
+%% Read/Write\\
+%% OUTBOX\_LIMIT &
+%% The maximum number of items allowed in the outbox &
+%% Read/Write\\
+%% \end{supertabular}
+%% \end{flushleft}
 
 \begin{flushleft}
-\tablehead{}
-\begin{supertabular}{m{2.0941598in}m{1.9087598in}m{1.9108598in}}
-Attribute &
-Meaning &
-Read/Write?\\
+\begin{tabular}{p{1.6in} p{2.8in} p{1.5in}}
+ Attribute & Meaning & Read/Write?\\
+\hline
 INBOX\_SIZE &
 Number of items in the inbox &
 Read Only\\
@@ -1122,9 +1140,8 @@ Read/Write\\
 OUTBOX\_LIMIT &
 The maximum number of items allowed in the outbox &
 Read/Write\\
-\end{supertabular}
+\end{tabular}
 \end{flushleft}
-
 
 \subsection*{Blocking send and receive}
 
@@ -1323,6 +1340,375 @@ procedure consume(p) \\
 \ \ \ every !10 do write({<}{<}@chP) \\
 end
 }
+
+\section{Practical examples using threads and messages}
+This section starts with a discussion of an early version of a program that
+forms part of an indexing system for \LaTeX\ files, which are the source for a
+book.  The system operates in three phases:
+\begin{enumerate}
+\item An analysis phase, where the possible words to be indexed are gathered
+      from the source files.
+\item A manual review phase to select the index terms. Good indexing
+      is an art and some judgement must be exercised when choosing
+      what to index and how to refer to it.
+\item An insertion phase where the chosen terms are located and the indexing
+      terms inserted into the source files.
+\end{enumerate}
+We focus on the first (analysis) phase. Here the files are read in and every
+``word'' is put into a table that counts how many times that word occurs. 
+Words that occur too many times (either in an individual source file, or the
+document as a whole) are rejected as indexing candidates because they are likely
+to be the common words that are of no value in an index.
+A simple program to analyze the files is something like the following. It uses
+three nested loops to read each file, split every line into words and put the
+results into a file table. At the end of each file, it copies eligible words from
+the file table into the document table.
+Two parameters, \texttt{perFile} and \texttt{perDoc}, govern the limits that cause
+a particular word to be rejected as an index candidate. \texttt{perDoc} is used
+in the \texttt{reportWords} procedure, which is not shown.
+
+{\small
+\iconcode{
+global perFile\ \ \ \ \# If a wordcount exceeds this in a single tex file it is rejected\\
+global perDoc\ \ \ \ \# If a wordcount exceeds this in the whole document it is rejected\\
+\\
+procedure main(args)\\
+\>local nFiles\\
+\>local f, wt, dt, word, texWord, fileName, line, count, x\\
+\\
+\>\# argument and option processing omitted for clarity\\
+\\
+\>dt := table(0)\\
+\>texWord := \&letters ++ "\_-{\textbackslash}'"\\
+\>count := 0\\
+\\
+\>every fileName := !args do \{\\
+\>\>if f := open(fileName, "r") then \{\\
+\>\>\>wt := table(0)\\
+\>\>\>every line := !f do \{ \# put each word in the word table\\
+\>\>\>\>line ? \{while tab(upto(texWord))\\ 
+\>\>\>\>\>\do \{word := tab(many(texWord)); wt[word] +:= 1; count +:=1 \}\\
+\>\>\>\>\>\}\\
+\>\>\>\}\\
+\\
+\>\>\>\# Add the candidate words used in this file to the master table.\\
+\>\>\>every word := key(wt) do if (x := wt[word]) <= perFile then dt[word] +:= x\\
+\>\>\>close(f)\\
+\>\>\} else \{write(\&errout, "Cannot open ", fileName) \}\\
+\>\}\\
+\>reportWords(dt)\\
+\\
+\>return\ \ \# Success\\
+end
+}
+}
+
+Whilst this program works, albeit with an idiosyncratic definition of what
+constitutes a word, it suffers from a serious defect: it only analyzes one file
+at a time so a large proportion of the available processing power is unused (on
+the author's machine, which reports 8 cores, the figure works out at 87.5\% idle).
+We can do {\em much} better than that.
+
+In the following version, which uses the \texttt{WorkPool} library package, each
+file is processed in parallel by a separate thread drawn from a pool of worker threads. 
+After the analysis of each file is complete, the results are sent to a separate
+``accumulator'' thread that aggregates the results.
+
+\bigskip
+{\small
+\iconcode{
+import WorkPool\\
+global perFile\ \ \ \ \# If a wordcount exceeds this in a single tex file it is rejected\\
+global perDoc\ \ \ \ \# If a wordcount exceeds this in the whole document it is rejected\\
+global countingThread\\
+\\
+procedure main(args)\\
+\>local nFiles\\
+\\
+\>\# argument and option processing omitted for clarity\\
+\\
+\>nFiles := *args\\
+\>MakePool() \# no parameter means default of 2 + no. of processors\\
+\\
+\>\# Start a "counting thread" that accumulates the answers from the analysis threads.\\
+\>Dispatch(accumulator)\\
+\\
+\>\# Analyze each file in a separate thread. Send the results to the accumulator.\\
+\>every Dispatch(analyze, !args)\\
+\\  
+\>waitFor(nFiles)             \# Wait for all files to be analyzed.\\
+\\
+\>\# Since all the analyzers have now finished, it is safe to end the counting thread.\\
+\>\# It will accumulate all the answers that have previously been sent before receiving "end".\\
+\>"end" @{>}{>} countingThread\\
+\\
+\>ClosePool()                 \# ClosePool returns when all threads have finished.\\
+\\
+\>return  \# Success\\
+end
+}
+}
+
+The procedures called by main (except for \texttt{waitFor}) are all pretty much
+the same as the corresponding lines of code in the preceding example. Each
+analysis thread sends a message to the main thread when it has finished.  Since
+the main thread knows how many files there are to be processed, it can wait
+until every file has been analyzed.
+{\small
+\iconcode{
+\# Wait for the specified number of messages before returning\\
+procedure waitFor(messages :integer)\\
+\>repeat \{ {<}{<}@ ; if 0 >= (messages -:= 1) then return \}\\
+end
+}
+}
+
+The \texttt{analyze} procedure is the same as the previous example, except that
+it sends a result to the accumulator thread and a ``finished'' message to the
+main thread.
+{\small
+\iconcode{
+procedure analyze(fileName :string)\\
+\>local f, line, count := 0, word, wt := table(0)\\
+\>local texWord := \&letters ++ "\_-{\textbackslash}'"\\
+\>if f := open(fileName, "r") then \{\\
+\\
+\>\>every line := !f do \{ \# put each word in the word table\\
+\>\>\>line ? \{while tab(upto(texWord)) do \{\\
+\>\>\>\>\>word := tab(many(texWord)); wt[word] +:= 1; count +:=1 \}\\
+\>\>\>\}\\
+\>\>\}\\
+\>\>wt @{>}{>} countingThread   \# Send the words to the accumulator thread\\
+\>\>close(f)\\
+\>\} else \{ write(\&errout, "Cannot open ", fileName) \}\\
+\\
+\>"end" @{>} \&main   \# Tell the main thread that a file has been analyzed\\
+\>return \# success\\
+end
+}
+}
+
+The accumulator thread gets messages from the analysis threads and from the main
+thread. It uses the type of the message to distinguish between them. Before
+starting, it writes its thread id to a global variable so other threads know
+where to send messages. 
+{\small
+\iconcode{
+procedure accumulator()\\
+\>local msg, word, x, dt := table(0)\\
+\>\# publish the thread Id so other threads can send messages.\\
+\>countingThread := \&current\\
+\>repeat \{\\
+\>\>msg := {<}{<}@\\
+\>\>case type(msg) of \{\\
+\>\>\>"table" :  \# Add the candidate words in this file to the master table.\\
+\>\>\>\>\{ every word := key(msg)\\
+\>\>\>\>\>do if (x := msg[word]) <= perFile then dt[word] +:= x \}\\
+\>\>\>"string" : \# Final message from the main thread.\\
+\>\>\>\>\{ reportWords(dt); return \}\\
+\>\>\>default: stop("Invalid message sent to counting thread")\\
+\>\>\}\\
+\>\}\\
+end
+}
+}
+
+Note: this design has a race condition --- it is possible that an analysis
+thread that has started {\em after} the accumulator could finish its analysis
+{\em before} the accumulator has even started. In that case the program would
+terminate because of an attempt to send a message to \texttt{\&null}: it has
+never happened, but the behaviour is theoretically possible (and a correct
+concurrent program may make {\em no} assumptions about timing). One cure would
+be for the main program to wait for a message from the accumulator thread before
+starting the others. A less elegant solution would be to delay until the
+\texttt{countingThread} variable is not null.
+
+Although the tables themselves may be quite large, because a table is a mutable
+type it is passed by reference, so the messages passed between threads are quite
+small. Extra work has to be done to pass messages and to coordinate the threads
+but the savings outweigh the extra work by a considerable margin. The graph
+below plots the run times of the original sequential program and the concurrent
+program using a different number of threads to perform the analysis.
+
+\begin{figure}[h]
+{\includegraphics[scale=0.75]{ub-img/threadPerformance.png}}
+\end{figure}
+
+Because of the accumulator thread, the number of threads performing
+the analysis is one less than the graph shows. This explains the
+slight ``bump'' at two threads: there is only one analysis thread, so
+we get the performance of the sequential version {\bf plus} the
+overheads of message passing. With two analysis threads (three in
+total) the run time is halved and with four analysis threads the
+performance is roughly quadrupled. Adding more threads doesn't really
+increase the performance in this particular example (the test machine
+reports eight processors but it's really four dual hyper-threaded cores: the
+lack of speed-up after four analysis threads suggests that the dual
+hyper-threads don't have quite as much ``grunt'' as two separate cores)
+
+There is no explicit synchronization because the analysis threads are not
+contending with each other --- if the table that counted words in the whole
+document were global and each analysis thread added it's own results to the
+global table then contention for the table might be a performance bottleneck ---
+instead, the analysis threads are just passing their results in a message and
+getting on with their day. An accumulator, for the price of an extra
+thread, can often result in a worthwhile increase in performance.
+
+This design pattern (process in parallel and send results to a single
+accumulator) can be used in many different circumstances and, in most cases, the
+reduction in contention more than makes up for the cost of the extra
+thread. 
+
+\bigskip
+
+\subsection{Disk space usage}
+The unix \texttt{du} utility can be used to traverse a filesystem and report on
+the space used.  If, instead of a recursive traversal of each directory, the
+separate directories are analyzed in parallel and the results sent to an
+accumulator the result is usually faster. The process may be initiated by a
+procedure like the following
+{\small
+\iconcode{
+\# Analyze a directory and wait until the analysis is finished\\
+procedure analyze(path)\\
+\>local thisThread := \&current\\
+\>MakePool()\\
+\>Adder := thread \{ Dispatch(du, ({\textbackslash}path | "." )); GatherResults() @{>}{>} thisThread \}\\
+\>write("total size = ", {<}{<}@ )\\
+\>ClosePool()\\
+\>return \# success\\
+end
+}
+}
+Note that instead of using a thread from the pool as an accumulator, one is
+created on the fly (this is another way of avoiding the start-up race discussed
+in the previous example). The \texttt{du} procedure analyzes a directory, adding
+up the size for regular files, ignoring special files and handing off (sub)
+directories to another thread. At the end it sends off the total for that
+directory (but not it's children) to the accumulator thread.
+
+Before analyzing a directory, it also sends off a message to the accumulator
+announcing its intent. The reasons for this are discussed later.  In the interests
+of clarity, some code dealing with loops in the filesystem has been omitted.
+{\small
+\iconcode{
+\# Get the disk usage for a directory. Do sub-dirs in parallel with this one.\\
+procedure du(d, parent)\\
+\>local st, fd, f, path, kb := 0\\
+\\
+\>fd := open(d) | \{ Report("Cannot open", d); return \}\\
+\>\# send a "starting analysis of d" message to the Adder\\
+\>[d, \&null] @{>}{>}Adder\\
+\\
+\>while f := !fd do \{ \\
+\>\>if f == ("." | "..") then next\\
+\\
+\>\>if st := stat(path := d || "/" || f) then \{\\
+\>\>\>case st.mode[1] of \{\\
+\>\>\>\>"-": \# Normal file - add its rounded size to the total for this directory\\
+\>\>\>\>\>kb +:= ((st.size {<} st.blksize) | st.blksize * ceil(st.size/(0.0 + st.blksize)))/1024\\
+\\
+\>\>\>\>"d": \# Directory - hand it off to another worker thread to analyze in parallel\\
+\>\>\>\>\>Dispatch(du, path, d, f)\\
+\\
+\>\>\>\>"l" | "s" | "b" | "c" | "p" | "|": \# Ignore special files, symbolic links, pipes etc.\\
+\>\>\>\>next\\
+\\
+\>\>\>\>default: Report("Cannot handle mode \"", st.mode, "\", file ", path)\\
+\>\>\>\}\\
+\>\>\} else \{\\
+\>\>\>Report("Cannot stat", path)\\
+\>\>\}\\
+\>\}\\
+\\
+\>close(fd)\\
+\>[d, kb,] @{>}{>} Adder   \# Send the result from analysis of d to the Adder\\
+end
+}
+}
+
+The Adder thread, which calls procedure \texttt{GatherResults}, gets results for
+each directory until it's all over. Each directory results in two messages:
+\texttt{[d, null]} followed, a little later by \texttt{[d, size]}.  Results for
+child directories of \texttt{d} might come {\em before} the second message, but
+will never precede the first.
+
+{\small
+\iconcode{
+procedure GatherResults()\\
+\>local msg, kb := 0\\
+\\
+\>repeat \{ \\
+\>\>msg := {<}{<}@; kb +:= {\textbackslash}msg[2]\\
+\\
+\>\>\# Have we finished? The question is trickier than it looks!\\
+\>\>if IsIdle() \& (Attrib(Adder,INBOX\_SIZE) = 0) then return kb\\
+\>\}\\
+end
+}
+}
+
+Now to the discussion of ``Have we finished?'' The reason the question is tricky
+is because \texttt{GatherResults} operates in parallel with the analysis;
+perhaps before it has even started.  We must ensure that we don't bail out
+before at least one directory has been analyzed, which is achieved by placing
+the test after the reception of the first message --- this is one of the reasons
+for sending two messages per directory. We must check the analysis is finished
+i.e. there is no work in progress.  The WIP logic depends on \texttt{du} queuing
+new work {\em before} reporting the result of analyzing a directory. Finally, we
+must have processed all of the messages.
+
+Note that \texttt{IsIdle()} must be true before checking the message queue is
+empty; otherwise, there is a race between the analysis thread and
+\texttt{GatherResults} (We might see an empty message queue, then the analyzer
+posts \texttt{[d, size]} and finishes before we call \texttt{IsIdle()}: The
+result would be that we'd ignore the final message, or messages).
+
+It is sometimes true that deciding when a concurrent algorithm has finished ---
+without terminating prematurely or discarding some of the final results or never
+terminating --- is harder than writing the processing algorithm itself!
+
+The reader may be wondering why the directory name is passed to the
+\texttt{GatherResults} procedure, which doesn't use it.  The reason is that
+these examples are edited extracts from a larger program that builds a structure
+that represents the directory and its child sub-directories. It then displays a
+series of pie charts (one for each directory) showing where all the space has
+gone.  It needs the directory names to label the segments of each pie chart. The
+other reason for passing two messages per directory is that the full program
+needs to set up the structure for a directory before receiving any results for
+its children.
+
+When analyzing a fairly large (500GB) directory, the pie chart program --- which
+runs on the Unicon interpreter and is based on the code examples above ---
+outperforms the built in \texttt{du} program by almost an order of magnitude on
+an eight core processor; the built in program is presumably written in C and
+optimised but, crucially, it is single threaded.
+
+\subsection{More suggestions for parallel processing}
+If several files are involved, it is often quite easy to see how the
+processing may be done in parallel but there are other cases --- some more
+obvious than others --- where it might prove useful:
+\begin{description}
+\item[Monte Carlo methods]
+  Any problem that calls for a large number of trials, where the result
+  of one trial does not affect subsequent trials is amenable to being
+  written as a parallel application.
+\item[Matrix multiplication]
+  Large matrices may be multiplied in parallel, either by a naive rewrite of the
+  sequential ($O(n^3)$) algorithm or by dividing the matrix up into blocks (divide
+  and conquer) and handling each block in a separate thread.
+\item[Unicon compiler]
+  Analysis and code generation is largely independent for each Unicon
+  procedure. It might be possible to farm out larger procedures to a thread pool
+  and thereby increase the overall performance of the compiler.
+\item[grep]
+  If the regular expression is computationally expensive, spreading out the
+  analysis work for each line of the file to a thread pool might be faster.
+\end{description}
+The last two  suggestions are speculative but demonstrate that the world can look
+quite different when viewed through concurrent spectacles.
+
+
 
 
 \section{Summary}

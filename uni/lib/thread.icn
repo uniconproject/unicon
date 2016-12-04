@@ -3,7 +3,8 @@
 #
 #  June/15/2012
 #
-
+# updated with Don Ward's thread pool, December 2016
+#
 
 package threads
 
@@ -386,3 +387,131 @@ initially(n)
    master := thread master_func()    
    #Threads := self   # singleton class ?
 end 
+
+
+#################################################################################
+#
+#  A simple pool of worker threads
+#
+#       Don Ward
+#       March 2015
+#
+#--------------------------------------------------------------------------------
+#  Typical usage
+#     MakePool(n)                Create a pool of n worker threads (default cores+2).
+#     Dispatch(proc, params ...) Post a task to be executed in parallel; a worker thread calls proc(params ...)
+#     IsIdle()                   Succeeds if no workers are active and no tasks are waiting.
+#     ClosePool()                Shuts down the pool after any remaining tasks have been performed.
+#
+#--------------------------------------------------------------------------------
+
+global ToDo     # A List of tasks to execute. Each task is itself a list where
+                # the first element is a procedure to call and the rest are its parameters.
+global Idlers   # A List of waiting worker threads
+global Work     # A mutex protecting the above
+
+global Workforce    # The collection of all worker threads.
+
+#--------------------------------------------------------------------------------
+# Construct a pool of n worker threads.
+procedure MakePool(n: integer: 0)
+    local id
+    initial {
+        Work := mutex()
+        ToDo := mutex([], Work)
+        Idlers := mutex([], Work)
+        Workforce := []
+    }
+
+    if n <= 0 then { # Use default no of threads, which is 2 + number of cores
+        &features ? { ="CPU cores " & n := 2 + tab(0) }
+    }
+    
+    # Create the requested number of workers and tell each one their thread id
+    while 0 <= (n-:= 1) do { put(Workforce, id := ( thread worker(<<@)) ); id @>> id }
+
+    return #success
+end
+
+#--------------------------------------------------------------------------------
+# dummy procedure used to request thread (self) termination.
+# NB. If called directly, causes an "emergency stop"
+procedure stopWork(reason: string: "")
+    stop("Emergency Exit: ", reason )
+end
+
+#--------------------------------------------------------------------------------
+# work thread: repeatedly get a task, which is a list [proc, param1, param2 ....]
+#              and call the procedure with the supplied parameters.
+procedure worker(MyId)
+    local task, proc
+    if type(MyId) ~== "thread" then stopWork("Invalid thread Id")
+
+    repeat {
+        lock(Work)
+        if 0 = *ToDo then {     # Nothing in queue, wait for work to arrive
+            push(Idlers, MyId)  # Indicate availability for work
+            unlock(Work)
+            task := <<@         # Wait for work to arrive
+        } else {
+            task := get(ToDo)   # Remove the next task from the queue
+            unlock(Work)
+        }
+        proc := pop(task)       # Recover the procedure placed by Dispatch()
+        if (proc === stopWork) then { return } else { proc ! task }
+    }
+end
+
+#--------------------------------------------------------------------------------
+# Add a task (described by a procedure plus parameters) to the list of tasks
+# to be executed by (one of) the pool of worker threads.
+procedure Dispatch(p, args[])
+    local worker
+    if type(p) == "procedure" then {
+        push(args, p)           # Add the procedure to call to the front of the argument list
+        lock(Work)
+        if 0 < *Idlers then {   # A worker thread is available
+            worker := pop(Idlers);
+            unlock(Work)
+            args @>> worker     # send the task to the worker
+        } else {                # No worker available; queue task for later.
+            put(ToDo, args)
+            unlock(Work)
+        }
+        return # success
+    }
+
+    fail
+end
+
+#--------------------------------------------------------------------------------
+# Fail if there is work in progress, or waiting to be done.
+procedure IsIdle()
+    lock(Work)
+    if ((*Idlers ~= *Workforce) | (*ToDo > 0)) then { unlock(Work); fail }
+
+    unlock(Work)
+    return   # success
+end
+
+#--------------------------------------------------------------------------------
+# Shut up shop. Remaining work placed in the queue before the call of ClosePool
+# will be executed before closure. Fails if all work has not been done.
+procedure ClosePool()
+    local n
+    every n := 1 to *Workforce do Dispatch(stopWork)
+    every wait(!Workforce)
+
+    # At this point, Idlers must be empty.
+    if *Idlers > 0 then stop("(ClosePool) Idlers queue not empty")
+
+    Workforce := []
+
+    # There ought to be no work to do, unless Dispatch() has been called in parallel with ClosePool()
+    if *ToDo > 0 then {
+        write(&errout, "Warning (ClosePool): Some work is left in the queue")
+        ToDo := []
+        fail
+    }
+    return #success
+end

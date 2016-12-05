@@ -804,10 +804,11 @@ function{0,1} fcntl(f, action, options)
          cnv:C_string(options, lock);
 	 if ((start = strchr(lock, ',')) == NULL)
 	    runerr(1044, options);
-	 *start++ = 0;
+	 /* found a comma, skipping over it */
+	 start++;
 	 if ((len = strchr(start, ',')) == NULL)
 	    runerr(1044, options);
-	 *len++ = 0;
+	 len++;
 
 	 switch (lock[0]) {
 	 case 'r': fl.l_type = F_RDLCK; break;
@@ -815,7 +816,7 @@ function{0,1} fcntl(f, action, options)
 	 case 'u': fl.l_type = F_UNLCK; break;
 	 default: runerr(1044, options);
 	 }
-	 if (lock[1] != 0)
+	 if (lock[1] != ',')
 	    runerr(1044, options);
 
 	 switch(start[0]) {
@@ -836,10 +837,8 @@ function{0,1} fcntl(f, action, options)
 	    runerr(1044, options);
 
 	 fl.l_len = strtol(len, &p, 10);
-	 if (*p != ',')
+	 if (*p != '\0')
 	    runerr(1044, options);
-
-	 start[-1] = len[-1] = ',';
 
 	 IntVal(amperErrno) = 0;
 	 if (fcntl(fd, cmd, &fl) < 0) {

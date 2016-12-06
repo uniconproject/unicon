@@ -340,16 +340,7 @@ cl: classhead SEMICOL END {
    $$.methods := methodstaque(&null, $$)
    }
    | classhead optsemi clocals methods optsemi initiallysection END {
-   $$ := $1
-   if $3 ~=== EmptyNode then {
-      if $3.label == "locals3" then
-         yyerror("static class variables not yet implemented")
-      # splice in any class locals into the field list
-      $$.fields.traverse($3, "classlocal")
-      }
-   if $6 ~=== EmptyNode then
-      $4 := node("methods", $4, $6)
-   $$.methods := methodstaque($4, $$)
+    $$ := class_from_parts($1, $3, $4, $6)
    } ;
 
 classhead : CLASS IDENT supers LPAREN carglist RPAREN {

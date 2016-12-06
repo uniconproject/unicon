@@ -2630,7 +2630,7 @@ procedure init_stacks()
   every i := 1 to 1000 do action[i] := proc("action_" || i)
 end
 
-#line 920 "unigram.y"
+#line 911 "unigram.y"
 
 #
 # This procedure parenthesizes the right-hand side of an expression,
@@ -2804,7 +2804,8 @@ end
 
 # build a tree equivalent to
 # {__tmp :=[]; every put(__tmp, expr); if __tmp>0 then __tmp}
-# The enclosing procedure/method also needs to declare this temp var.
+# The enclosing procedure/method also needs to declare this temp var;
+# see AppendListCompTemps
 #
 procedure ListComp(expr)
    local tmp
@@ -2816,10 +2817,15 @@ procedure ListComp(expr)
 		"); if *" || tmp || ">0 then " || tmp || "}")
 end
 
-#if there are changes to the declared lcls section, returns changed locals
-procedure AppendListCompTemps(lcls, n)
+#
+# AppendListCompTemps(localdecls, procbody) - at the procedure/method
+# outermost level, we may need to add some declarations based on what's
+# in the procbody. If there are changes to the declared lcls section,
+# returns changed locals.
+#
+procedure AppendListCompTemps(lcls, body)
    # if there is, in the procbody, a list of varnames to declare
-   if *\(ltmps := ListCompTemps(n)) > 0 then {
+   if *\(ltmps := ListCompTemps(body)) > 0 then {
       # make a varlist containing ltmps
       if *ltmps > 1 then {
 	 vl := token(IDENT, ltmps[1], 0, 0, "lambda.icn")
@@ -2839,7 +2845,11 @@ procedure AppendListCompTemps(lcls, n)
 	 write(&errout, "don't know what to do with ", image(lcls))
       }
 end
+
+#
+# ListCompTemps(n) - lower level temp. var extraction from proc body.
 # returns list of strings containing temp. variables from list comprehension
+# L
 procedure ListCompTemps(n)
    local LCT
    if type(n) == "treenode" then {
@@ -2877,7 +2887,7 @@ end
 # or to stderr.
 #
 record ParseError ( lineNumber, errorMessage )
-#line 2884 "unigram.icn"
+#line 2894 "unigram.icn"
 ################################################################
 # procedure: yyparse : parse input and execute indicated items
 ################################################################
@@ -3096,21 +3106,12 @@ end
 procedure action_18()
 #line 341 "unigram.y"
 
-   yyval := valstk[7]
-   if valstk[5] ~=== EmptyNode then {
-      if valstk[5].label == "locals3" then
-         yyerror("static class variables not yet implemented")
-      # splice in any class locals into the field list
-      yyval.fields.traverse(valstk[5], "classlocal")
-      }
-   if valstk[2] ~=== EmptyNode then
-      valstk[4] := node("methods", valstk[4], valstk[2])
-   yyval.methods := methodstaque(valstk[4], yyval)
+    yyval := class_from_parts(valstk[7], valstk[5], valstk[4], valstk[2])
    
 end
 
 procedure action_19()
-#line 354 "unigram.y"
+#line 345 "unigram.y"
 
    yyval := Class()
    yyval.tag := valstk[6]
@@ -3132,67 +3133,67 @@ procedure action_19()
 end
 
 procedure action_20()
-#line 373 "unigram.y"
+#line 364 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_21()
-#line 374 "unigram.y"
+#line 365 "unigram.y"
  yyval := node("supers", valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_22()
-#line 375 "unigram.y"
+#line 366 "unigram.y"
  yyval := node("supers", valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_23()
-#line 378 "unigram.y"
+#line 369 "unigram.y"
  yyval := node("packageref", valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_24()
-#line 379 "unigram.y"
+#line 370 "unigram.y"
  yyval := node("packageref", valstk[2],valstk[1]) 
 end
 
 procedure action_25()
-#line 382 "unigram.y"
+#line 373 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_26()
-#line 383 "unigram.y"
+#line 374 "unigram.y"
  yyval := node("methods", valstk[2],valstk[1]) 
 end
 
 procedure action_27()
-#line 384 "unigram.y"
+#line 375 "unigram.y"
  yyval := node("methods", valstk[2],valstk[1]) 
 end
 
 procedure action_28()
-#line 385 "unigram.y"
+#line 376 "unigram.y"
  yyval := node("methods", valstk[2],valstk[1]) 
 end
 
 procedure action_29()
-#line 388 "unigram.y"
+#line 379 "unigram.y"
  yyval := node("invocable", valstk[2], valstk[1]);
 end
 
 procedure action_31()
-#line 391 "unigram.y"
+#line 382 "unigram.y"
  yyval := node("invoclist", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_34()
-#line 395 "unigram.y"
+#line 386 "unigram.y"
 yyval := node("invocop3", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_35()
-#line 397 "unigram.y"
+#line 388 "unigram.y"
 
    if \thePackage then {
       if not (thePackage.name == valstk[1].s) then {
@@ -3215,7 +3216,7 @@ procedure action_35()
 end
 
 procedure action_36()
-#line 417 "unigram.y"
+#line 408 "unigram.y"
 
    yyval := node("import", valstk[2],valstk[1]," ")
    import_class(valstk[1])
@@ -3223,27 +3224,27 @@ procedure action_36()
 end
 
 procedure action_37()
-#line 422 "unigram.y"
+#line 413 "unigram.y"
  yyval := node("link", valstk[2],valstk[1]," "); 
 end
 
 procedure action_39()
-#line 425 "unigram.y"
+#line 416 "unigram.y"
  yyval := node("lnklist", valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_41()
-#line 428 "unigram.y"
+#line 419 "unigram.y"
  yyval := node("implist", valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_44()
-#line 433 "unigram.y"
+#line 424 "unigram.y"
  yyval := node("global", valstk[2],valstk[1]) 
 end
 
 procedure action_45()
-#line 435 "unigram.y"
+#line 426 "unigram.y"
 
 		yyval := declaration(valstk[4],valstk[2],valstk[5],valstk[3],valstk[1])
 		if \iconc then
@@ -3252,12 +3253,12 @@ procedure action_45()
 end
 
 procedure action_46()
-#line 441 "unigram.y"
+#line 432 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_48()
-#line 444 "unigram.y"
+#line 435 "unigram.y"
 
 #		body_scopeck(valstk[2])
 		valstk[4] := AppendListCompTemps(valstk[4], valstk[2])
@@ -3266,7 +3267,7 @@ procedure action_48()
 end
 
 procedure action_49()
-#line 450 "unigram.y"
+#line 441 "unigram.y"
 
 		yyval := valstk[6]
 		yyval.locals := valstk[4]
@@ -3276,7 +3277,7 @@ procedure action_49()
 end
 
 procedure action_50()
-#line 456 "unigram.y"
+#line 447 "unigram.y"
 
 		yyval := valstk[1]
                 yyval.abstract_flag := 1
@@ -3284,7 +3285,7 @@ procedure action_50()
 end
 
 procedure action_51()
-#line 461 "unigram.y"
+#line 452 "unigram.y"
 
 		yyval := declaration(valstk[4], valstk[2], valstk[5], valstk[3], valstk[1])
 		if \iconc then
@@ -3293,763 +3294,763 @@ procedure action_51()
 end
 
 procedure action_52()
-#line 467 "unigram.y"
+#line 458 "unigram.y"
 
 		yyval := Method( , , , , , valstk[5], valstk[4].s, valstk[2], valstk[5].s, valstk[3], valstk[1])
 		
 end
 
 procedure action_53()
-#line 472 "unigram.y"
+#line 463 "unigram.y"
  yyval := argList( , , &null) 
 end
 
 procedure action_54()
-#line 473 "unigram.y"
+#line 464 "unigram.y"
  yyval := argList( , , valstk[1]) 
 end
 
 procedure action_55()
-#line 474 "unigram.y"
+#line 465 "unigram.y"
  yyval := argList("[]" , , valstk[3]) 
 end
 
 procedure action_56()
-#line 476 "unigram.y"
+#line 467 "unigram.y"
  yyval := argList( , , &null) 
 end
 
 procedure action_57()
-#line 477 "unigram.y"
+#line 468 "unigram.y"
  yyval := argList( , , valstk[1]) 
 end
 
 procedure action_58()
-#line 478 "unigram.y"
+#line 469 "unigram.y"
  yyval := argList("[]" , , valstk[3]) 
 end
 
 procedure action_60()
-#line 482 "unigram.y"
+#line 473 "unigram.y"
  yyval := node("idlist", valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_62()
-#line 485 "unigram.y"
+#line 476 "unigram.y"
  yyval := node("varlist2", valstk[3], valstk[2], valstk[1])
 end
 
 procedure action_63()
-#line 486 "unigram.y"
+#line 477 "unigram.y"
  yyval := node("varlist3", valstk[3], valstk[2], valstk[1])
 end
 
 procedure action_64()
-#line 487 "unigram.y"
+#line 478 "unigram.y"
  yyval := node("varlist4",valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 end
 
 procedure action_66()
-#line 490 "unigram.y"
+#line 481 "unigram.y"
  yyval := node("stalist2", valstk[3], valstk[2], valstk[1])
 end
 
 procedure action_67()
-#line 491 "unigram.y"
+#line 482 "unigram.y"
  yyval := node("stalist3", valstk[3], valstk[2], valstk[1])
 end
 
 procedure action_68()
-#line 492 "unigram.y"
+#line 483 "unigram.y"
  yyval := node("stalist4",valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 end
 
 procedure action_70()
-#line 495 "unigram.y"
+#line 486 "unigram.y"
  yyval := node("parmlist", valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_72()
-#line 498 "unigram.y"
+#line 489 "unigram.y"
  yyval := node("parmlist", valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_74()
-#line 501 "unigram.y"
+#line 492 "unigram.y"
  yyval := node("arg2", valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_75()
-#line 502 "unigram.y"
+#line 493 "unigram.y"
  yyval := node("arg3", valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_76()
-#line 503 "unigram.y"
+#line 494 "unigram.y"
  yyval := node("arg4", valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 end
 
 procedure action_77()
-#line 504 "unigram.y"
+#line 495 "unigram.y"
  yyval := node("arg5", valstk[4], valstk[3], Keyword(valstk[2], valstk[1])) 
 end
 
 procedure action_78()
-#line 505 "unigram.y"
+#line 496 "unigram.y"
  yyval := node("arg6", valstk[6], valstk[5], valstk[4], valstk[3], Keyword(valstk[2], valstk[1])) 
 end
 
 procedure action_79()
-#line 506 "unigram.y"
+#line 497 "unigram.y"
  yyval := node("arg7", valstk[4], valstk[3], "[]") 
 end
 
 procedure action_80()
-#line 507 "unigram.y"
+#line 498 "unigram.y"
  yyval := node("arg8", valstk[6], valstk[5], valstk[4], valstk[3], "[]") 
 end
 
 procedure action_81()
-#line 510 "unigram.y"
+#line 501 "unigram.y"
  yyval := valstk[1] 
 end
 
 procedure action_82()
-#line 512 "unigram.y"
+#line 503 "unigram.y"
  yyval := EmptyNode;
 end
 
 procedure action_85()
-#line 516 "unigram.y"
+#line 507 "unigram.y"
  yyval := EmptyNode;
 end
 
 procedure action_86()
-#line 517 "unigram.y"
+#line 508 "unigram.y"
  yyval := node("locals2", valstk[4],valstk[3],valstk[2],";");
 end
 
 procedure action_87()
-#line 519 "unigram.y"
+#line 510 "unigram.y"
  yyval := EmptyNode;
 end
 
 procedure action_88()
-#line 520 "unigram.y"
+#line 511 "unigram.y"
  yyval := node("locals2", valstk[4],valstk[3],valstk[2],";");
 end
 
 procedure action_89()
-#line 521 "unigram.y"
+#line 512 "unigram.y"
  yyval := node("locals3", valstk[4],valstk[3],valstk[2],";");
 end
 
 procedure action_90()
-#line 523 "unigram.y"
+#line 514 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_91()
-#line 524 "unigram.y"
+#line 515 "unigram.y"
 
 	   yyval := node("initial", valstk[3], valstk[2],";")
 	      
 end
 
 procedure action_92()
-#line 528 "unigram.y"
+#line 519 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_93()
-#line 529 "unigram.y"
+#line 520 "unigram.y"
  yyval := node("procbody", valstk[3],";",valstk[1]);
 end
 
 procedure action_94()
-#line 531 "unigram.y"
+#line 522 "unigram.y"
  yyval := EmptyNode 
 end
 
 procedure action_97()
-#line 535 "unigram.y"
+#line 526 "unigram.y"
  yyval := node("and", valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_99()
-#line 538 "unigram.y"
+#line 529 "unigram.y"
  yyval := node("binques", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_101()
-#line 541 "unigram.y"
+#line 532 "unigram.y"
  yyval := node("swap", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_102()
-#line 542 "unigram.y"
+#line 533 "unigram.y"
  
           yyval := parenthesize_assign(node("assign",valstk[3],valstk[2],valstk[1]));
           
 end
 
 procedure action_103()
-#line 545 "unigram.y"
+#line 536 "unigram.y"
  yyval := node("revswap", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_104()
-#line 546 "unigram.y"
+#line 537 "unigram.y"
  yyval := node("revasgn", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_105()
-#line 547 "unigram.y"
+#line 538 "unigram.y"
  yyval := node("augcat", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_106()
-#line 548 "unigram.y"
+#line 539 "unigram.y"
  yyval := node("auglcat", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_107()
-#line 549 "unigram.y"
+#line 540 "unigram.y"
  yyval := node("Bdiffa", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_108()
-#line 550 "unigram.y"
+#line 541 "unigram.y"
  yyval := node("Buniona", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_109()
-#line 551 "unigram.y"
+#line 542 "unigram.y"
  yyval := node("Bplusa", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_110()
-#line 552 "unigram.y"
+#line 543 "unigram.y"
  yyval := node("Bminusa", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_111()
-#line 553 "unigram.y"
+#line 544 "unigram.y"
  yyval := node("Bstara", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_112()
-#line 554 "unigram.y"
+#line 545 "unigram.y"
  yyval := node("Bintera", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_113()
-#line 555 "unigram.y"
+#line 546 "unigram.y"
  yyval := node("Bslasha", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_114()
-#line 556 "unigram.y"
+#line 547 "unigram.y"
  yyval := node("Bmoda", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_115()
-#line 557 "unigram.y"
+#line 548 "unigram.y"
  yyval := node("Bcareta", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_116()
-#line 558 "unigram.y"
+#line 549 "unigram.y"
  yyval := node("Baugeq", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_117()
-#line 559 "unigram.y"
+#line 550 "unigram.y"
  yyval := node("Baugeqv", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_118()
-#line 560 "unigram.y"
+#line 551 "unigram.y"
  yyval := node("Baugge", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_119()
-#line 561 "unigram.y"
+#line 552 "unigram.y"
  yyval := node("Bauggt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_120()
-#line 562 "unigram.y"
+#line 553 "unigram.y"
  yyval := node("Baugle", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_121()
-#line 563 "unigram.y"
+#line 554 "unigram.y"
  yyval := node("Bauglt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_122()
-#line 564 "unigram.y"
+#line 555 "unigram.y"
  yyval := node("Baugne", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_123()
-#line 565 "unigram.y"
+#line 556 "unigram.y"
  yyval := node("Baugneqv", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_124()
-#line 566 "unigram.y"
+#line 557 "unigram.y"
  yyval := node("Baugseq", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_125()
-#line 567 "unigram.y"
+#line 558 "unigram.y"
  yyval := node("Baugsge", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_126()
-#line 568 "unigram.y"
+#line 559 "unigram.y"
  yyval := node("Baugsgt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_127()
-#line 569 "unigram.y"
+#line 560 "unigram.y"
  yyval := node("Baugsle", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_128()
-#line 570 "unigram.y"
+#line 561 "unigram.y"
  yyval := node("Baugslt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_129()
-#line 571 "unigram.y"
+#line 562 "unigram.y"
  yyval := node("Baugsne", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_130()
-#line 572 "unigram.y"
+#line 563 "unigram.y"
  yyval := node("Baugques", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_131()
-#line 573 "unigram.y"
+#line 564 "unigram.y"
  yyval := node("Baugamper", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_132()
-#line 574 "unigram.y"
+#line 565 "unigram.y"
  yyval := node("Baugact", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_134()
-#line 577 "unigram.y"
+#line 568 "unigram.y"
  yyval := node("BPmatch", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_136()
-#line 580 "unigram.y"
+#line 571 "unigram.y"
  yyval := node("to", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_137()
-#line 581 "unigram.y"
+#line 572 "unigram.y"
  yyval := node("toby", valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_138()
-#line 582 "unigram.y"
+#line 573 "unigram.y"
  yyval := node("BPor", valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_140()
-#line 585 "unigram.y"
+#line 576 "unigram.y"
  yyval := node("BPand", valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_141()
-#line 586 "unigram.y"
+#line 577 "unigram.y"
 yyval := node(BAR, valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_143()
-#line 589 "unigram.y"
+#line 580 "unigram.y"
  yyval := node("Bseq", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_144()
-#line 590 "unigram.y"
+#line 581 "unigram.y"
  yyval := node("Bsge", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_145()
-#line 591 "unigram.y"
+#line 582 "unigram.y"
  yyval := node("Bsgt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_146()
-#line 592 "unigram.y"
+#line 583 "unigram.y"
  yyval := node("Bsle", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_147()
-#line 593 "unigram.y"
+#line 584 "unigram.y"
  yyval := node("Bslt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_148()
-#line 594 "unigram.y"
+#line 585 "unigram.y"
  yyval := node("Bsne", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_149()
-#line 595 "unigram.y"
+#line 586 "unigram.y"
  yyval := node("Beq", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_150()
-#line 596 "unigram.y"
+#line 587 "unigram.y"
  yyval := node("Bge", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_151()
-#line 597 "unigram.y"
+#line 588 "unigram.y"
  yyval := node("Bgt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_152()
-#line 598 "unigram.y"
+#line 589 "unigram.y"
  yyval := node("Ble", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_153()
-#line 599 "unigram.y"
+#line 590 "unigram.y"
  yyval := node("Blt", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_154()
-#line 600 "unigram.y"
+#line 591 "unigram.y"
  yyval := node("Bne", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_155()
-#line 601 "unigram.y"
+#line 592 "unigram.y"
  yyval := node("Beqv", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_156()
-#line 602 "unigram.y"
+#line 593 "unigram.y"
  yyval := node("Bneqv", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_158()
-#line 605 "unigram.y"
+#line 596 "unigram.y"
  yyval := node("Bcat", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_159()
-#line 606 "unigram.y"
+#line 597 "unigram.y"
  yyval := node("Blcat", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_161()
-#line 609 "unigram.y"
+#line 600 "unigram.y"
  yyval := node("BPiam", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_162()
-#line 610 "unigram.y"
+#line 601 "unigram.y"
  yyval := node("BPaom", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_163()
-#line 611 "unigram.y"
+#line 602 "unigram.y"
  yyval := node("Bplus", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_164()
-#line 612 "unigram.y"
+#line 603 "unigram.y"
  yyval := node("Bdiff", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_165()
-#line 613 "unigram.y"
+#line 604 "unigram.y"
  yyval := node("Bunion", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_166()
-#line 614 "unigram.y"
+#line 605 "unigram.y"
  yyval := node("Bminus", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_168()
-#line 617 "unigram.y"
+#line 608 "unigram.y"
  yyval := node("Bstar", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_169()
-#line 618 "unigram.y"
+#line 609 "unigram.y"
  yyval := node("Binter", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_170()
-#line 619 "unigram.y"
+#line 610 "unigram.y"
  yyval := node("Bslash", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_171()
-#line 620 "unigram.y"
+#line 611 "unigram.y"
  yyval := node("Bmod", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_174()
-#line 624 "unigram.y"
+#line 615 "unigram.y"
  yyval := node("Bcaret", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_175()
-#line 627 "unigram.y"
+#line 618 "unigram.y"
  yyval := node("Bsnd", valstk[2],valstk[1],EmptyNode);
 end
 
 procedure action_176()
-#line 628 "unigram.y"
+#line 619 "unigram.y"
  yyval := node("Bsndbk", valstk[2],valstk[1],EmptyNode);
 end
 
 procedure action_177()
-#line 629 "unigram.y"
+#line 620 "unigram.y"
  yyval := node("Brcv", valstk[2],valstk[1],EmptyNode);
 end
 
 procedure action_178()
-#line 630 "unigram.y"
+#line 621 "unigram.y"
  yyval := node("Brcvbk", valstk[2],valstk[1],EmptyNode);
 end
 
 procedure action_180()
-#line 633 "unigram.y"
+#line 624 "unigram.y"
  yyval := node("limit", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_181()
-#line 634 "unigram.y"
+#line 625 "unigram.y"
  yyval := node("at", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_182()
-#line 635 "unigram.y"
+#line 626 "unigram.y"
  yyval := node("Bsnd", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_183()
-#line 636 "unigram.y"
+#line 627 "unigram.y"
  yyval := node("Bsndbk", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_184()
-#line 637 "unigram.y"
+#line 628 "unigram.y"
  yyval := node("Brcv", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_185()
-#line 638 "unigram.y"
+#line 629 "unigram.y"
  yyval := node("Brcvbk", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_186()
-#line 639 "unigram.y"
+#line 630 "unigram.y"
  yyval := node("apply", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_188()
-#line 642 "unigram.y"
+#line 633 "unigram.y"
  yyval := node("uat", valstk[2],valstk[1]);
 end
 
 procedure action_189()
-#line 643 "unigram.y"
+#line 634 "unigram.y"
  yyval := node("Bsnd", EmptyNode,valstk[2],valstk[1]);
 end
 
 procedure action_190()
-#line 644 "unigram.y"
+#line 635 "unigram.y"
  yyval := node("Bsndbk", EmptyNode,valstk[2],valstk[1]);
 end
 
 procedure action_191()
-#line 645 "unigram.y"
+#line 636 "unigram.y"
  yyval := node("Brcv", EmptyNode,valstk[2],valstk[1]);
 end
 
 procedure action_192()
-#line 646 "unigram.y"
+#line 637 "unigram.y"
  yyval := node("Brcvbk", EmptyNode,valstk[2],valstk[1]);
 end
 
 procedure action_193()
-#line 647 "unigram.y"
+#line 638 "unigram.y"
  yyval := node("unot", valstk[2],valstk[1]);
 end
 
 procedure action_194()
-#line 648 "unigram.y"
+#line 639 "unigram.y"
  yyval := node("ubar", valstk[2],valstk[1]);
 end
 
 procedure action_195()
-#line 649 "unigram.y"
+#line 640 "unigram.y"
  yyval := node("uconcat", valstk[2],valstk[1]);
 end
 
 procedure action_196()
-#line 650 "unigram.y"
+#line 641 "unigram.y"
  yyval := node("ulconcat", valstk[2],valstk[1]);
 end
 
 procedure action_197()
-#line 651 "unigram.y"
+#line 642 "unigram.y"
  yyval := node("udot", valstk[2],valstk[1]);
 end
 
 procedure action_198()
-#line 652 "unigram.y"
+#line 643 "unigram.y"
  yyval := node("ubang", valstk[2],valstk[1]);
 end
 
 procedure action_199()
-#line 653 "unigram.y"
+#line 644 "unigram.y"
  yyval := node("udiff", valstk[2],valstk[1]);
 end
 
 procedure action_200()
-#line 654 "unigram.y"
+#line 645 "unigram.y"
  yyval := node("uplus", valstk[2],valstk[1]);
 end
 
 procedure action_201()
-#line 655 "unigram.y"
+#line 646 "unigram.y"
  yyval := node("ustar", valstk[2],valstk[1]);
 end
 
 procedure action_202()
-#line 656 "unigram.y"
+#line 647 "unigram.y"
  yyval := node("uslash", valstk[2],valstk[1]);
 end
 
 procedure action_203()
-#line 657 "unigram.y"
+#line 648 "unigram.y"
  yyval := node("ucaret", valstk[2],valstk[1]);
 end
 
 procedure action_204()
-#line 658 "unigram.y"
+#line 649 "unigram.y"
  yyval := node("uinter", valstk[2],valstk[1]);
 end
 
 procedure action_205()
-#line 659 "unigram.y"
+#line 650 "unigram.y"
  yyval := node("utilde", valstk[2],valstk[1]);
 end
 
 procedure action_206()
-#line 660 "unigram.y"
+#line 651 "unigram.y"
  yyval := node("uminus", valstk[2],valstk[1]);
 end
 
 procedure action_207()
-#line 661 "unigram.y"
+#line 652 "unigram.y"
  yyval := node("unumeq", valstk[2],valstk[1]);
 end
 
 procedure action_208()
-#line 662 "unigram.y"
+#line 653 "unigram.y"
  yyval := node("unumne", valstk[2],valstk[1]);
 end
 
 procedure action_209()
-#line 663 "unigram.y"
+#line 654 "unigram.y"
  yyval := node("ulexeq", valstk[2],valstk[1]);
 end
 
 procedure action_210()
-#line 664 "unigram.y"
+#line 655 "unigram.y"
  yyval := node("ulexne", valstk[2],valstk[1]);
 end
 
 procedure action_211()
-#line 665 "unigram.y"
+#line 656 "unigram.y"
  yyval := node("uequiv", valstk[2],valstk[1]);
 end
 
 procedure action_212()
-#line 666 "unigram.y"
+#line 657 "unigram.y"
  yyval := node("uunion", valstk[2],valstk[1]);
 end
 
 procedure action_213()
-#line 667 "unigram.y"
+#line 658 "unigram.y"
  yyval := node("uqmark", valstk[2],valstk[1]);
 end
 
 procedure action_214()
-#line 668 "unigram.y"
+#line 659 "unigram.y"
  yyval := node("unotequiv", valstk[2],valstk[1]);
 end
 
 procedure action_215()
-#line 669 "unigram.y"
+#line 660 "unigram.y"
  yyval := node("ubackslash", valstk[2],valstk[1]);
 end
 
 procedure action_216()
-#line 670 "unigram.y"
+#line 661 "unigram.y"
  yyval := node("upsetcur", valstk[2],valstk[1]);
 end
 
 procedure action_218()
-#line 673 "unigram.y"
+#line 664 "unigram.y"
  next_gt_is_ender := 1 
 end
 
 procedure action_219()
-#line 673 "unigram.y"
+#line 664 "unigram.y"
  yyval := node("regex", valstk[2]); 
 end
 
 procedure action_228()
-#line 682 "unigram.y"
+#line 673 "unigram.y"
  yyval := node("Bsnd", EmptyNode,valstk[1],EmptyNode);
 end
 
 procedure action_229()
-#line 683 "unigram.y"
+#line 674 "unigram.y"
  yyval := node("Bsndbk", EmptyNode,valstk[1],EmptyNode);
 end
 
 procedure action_230()
-#line 684 "unigram.y"
+#line 675 "unigram.y"
  yyval := node("Brcv", EmptyNode,valstk[1],EmptyNode);
 end
 
 procedure action_231()
-#line 685 "unigram.y"
+#line 676 "unigram.y"
  yyval := node("Brcvbk", EmptyNode,valstk[1],EmptyNode);
 end
 
 procedure action_232()
-#line 686 "unigram.y"
+#line 677 "unigram.y"
  yyval := node("BPuneval", valstk[1]);
 end
 
 procedure action_233()
-#line 687 "unigram.y"
+#line 678 "unigram.y"
  yyval := node("create", valstk[2],valstk[1]);
 end
 
 procedure action_234()
-#line 688 "unigram.y"
+#line 679 "unigram.y"
 
 	      fakeThreadIdent := Clone1stToken(valstk[2])
 	      fakeThreadIdent.tok := IDENT
@@ -4071,126 +4072,126 @@ procedure action_234()
 end
 
 procedure action_235()
-#line 706 "unigram.y"
+#line 697 "unigram.y"
  yyval := node("critical", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_237()
-#line 708 "unigram.y"
+#line 699 "unigram.y"
  yyval := node("Next", valstk[1]);
 end
 
 procedure action_238()
-#line 709 "unigram.y"
+#line 700 "unigram.y"
  yyval := node("Break", valstk[2],valstk[1]);
 end
 
 procedure action_239()
-#line 710 "unigram.y"
+#line 701 "unigram.y"
  yyval := node("Paren", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_240()
-#line 711 "unigram.y"
+#line 702 "unigram.y"
  yyval := node("Brace", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_241()
-#line 712 "unigram.y"
+#line 703 "unigram.y"
  yyval := tablelit(valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_242()
-#line 713 "unigram.y"
+#line 704 "unigram.y"
  yyval := node("Brack", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_243()
-#line 714 "unigram.y"
+#line 705 "unigram.y"
  yyval := ListComp(valstk[3]);
 end
 
 procedure action_244()
-#line 715 "unigram.y"
+#line 706 "unigram.y"
  yyval := node("Subscript", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_245()
-#line 716 "unigram.y"
+#line 707 "unigram.y"
  yyval := node("Pdco0", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_246()
-#line 717 "unigram.y"
+#line 708 "unigram.y"
  yyval := node("Pdco1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_247()
-#line 718 "unigram.y"
+#line 709 "unigram.y"
 
            yyval := SimpleInvocation(valstk[4],valstk[3],valstk[2],valstk[1]);
       
 end
 
 procedure action_248()
-#line 721 "unigram.y"
+#line 712 "unigram.y"
 
 	   yyval := InvocationNode(valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 	   
 end
 
 procedure action_249()
-#line 724 "unigram.y"
+#line 715 "unigram.y"
 
 	   yyval := InvocationNode(valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 	   
 end
 
 procedure action_250()
-#line 727 "unigram.y"
+#line 718 "unigram.y"
 
 	   yyval := InvocationNode(valstk[8],valstk[7],valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 	   
 end
 
 procedure action_251()
-#line 730 "unigram.y"
+#line 721 "unigram.y"
 
 	   yyval := InvocationNode(valstk[8],valstk[7],valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1])
 	   
 end
 
 procedure action_252()
-#line 733 "unigram.y"
+#line 724 "unigram.y"
 
            yyval := FieldRef(valstk[3],valstk[2],valstk[1]);
       
 end
 
 procedure action_254()
-#line 737 "unigram.y"
+#line 728 "unigram.y"
  yyval := Field(valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_255()
-#line 738 "unigram.y"
+#line 729 "unigram.y"
  yyval := node("keyword",valstk[2],valstk[1]) 
 end
 
 procedure action_256()
-#line 739 "unigram.y"
+#line 730 "unigram.y"
  yyval := Keyword(valstk[2],valstk[1]) 
 end
 
 procedure action_257()
-#line 741 "unigram.y"
+#line 732 "unigram.y"
 
 	    yyval := node("While0", valstk[2],valstk[1]);
 	    
 end
 
 procedure action_258()
-#line 744 "unigram.y"
+#line 735 "unigram.y"
 
 	    # warn if a while loop should be an every.
 	    # should generalize; compute a semantic attribute and
@@ -4214,77 +4215,77 @@ procedure action_258()
 end
 
 procedure action_259()
-#line 765 "unigram.y"
+#line 756 "unigram.y"
  yyval := node("until", valstk[2],valstk[1]);
 end
 
 procedure action_260()
-#line 766 "unigram.y"
+#line 757 "unigram.y"
  yyval := node("until1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_261()
-#line 768 "unigram.y"
+#line 759 "unigram.y"
  yyval := node("every", valstk[2],valstk[1]);
 end
 
 procedure action_262()
-#line 769 "unigram.y"
+#line 760 "unigram.y"
  yyval := node("every1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_263()
-#line 771 "unigram.y"
+#line 762 "unigram.y"
  yyval := node("repeat", valstk[2],valstk[1]);
 end
 
 procedure action_265()
-#line 774 "unigram.y"
+#line 765 "unigram.y"
  yyval := node("return", valstk[2], valstk[1]);
 end
 
 procedure action_266()
-#line 775 "unigram.y"
+#line 766 "unigram.y"
  yyval := node("Suspend0", valstk[2],valstk[1]);
 end
 
 procedure action_267()
-#line 776 "unigram.y"
+#line 767 "unigram.y"
  yyval := node("Suspend1", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_268()
-#line 778 "unigram.y"
+#line 769 "unigram.y"
  yyval := node("If0", valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_269()
-#line 779 "unigram.y"
+#line 770 "unigram.y"
  yyval := node("If1", valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_270()
-#line 781 "unigram.y"
+#line 772 "unigram.y"
  yyval := node("Case", valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_272()
-#line 784 "unigram.y"
+#line 775 "unigram.y"
  yyval := node("Caselist", valstk[3],";",valstk[1]);
 end
 
 procedure action_273()
-#line 786 "unigram.y"
+#line 777 "unigram.y"
  yyval := node("cclause0", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_274()
-#line 787 "unigram.y"
+#line 778 "unigram.y"
  yyval := node("cclause1", valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_276()
-#line 790 "unigram.y"
+#line 781 "unigram.y"
 
 	   if type(valstk[3])=="treenode" & (valstk[3].label=="elst1") then {
 	      yyval := valstk[3]; put(yyval.children, valstk[2], valstk[1])
@@ -4295,52 +4296,52 @@ procedure action_276()
 end
 
 procedure action_277()
-#line 798 "unigram.y"
+#line 789 "unigram.y"
  yyval := node("pdcolist0", valstk[1]) 
 end
 
 procedure action_278()
-#line 799 "unigram.y"
+#line 790 "unigram.y"
  yyval := node("pdcolist1", valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_283()
-#line 806 "unigram.y"
+#line 797 "unigram.y"
  yyval := regexp(valstk[1]) 
 end
 
 procedure action_284()
-#line 807 "unigram.y"
+#line 798 "unigram.y"
  yyval := "emptyregex" 
 end
 
 procedure action_286()
-#line 812 "unigram.y"
+#line 803 "unigram.y"
  yyval := node("regexbar", valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_288()
-#line 816 "unigram.y"
+#line 807 "unigram.y"
  yyval := node("regexconcat", valstk[2], valstk[1]) 
 end
 
 procedure action_290()
-#line 820 "unigram.y"
+#line 811 "unigram.y"
  yyval := node("kleene", valstk[2], valstk[1]) 
 end
 
 procedure action_291()
-#line 821 "unigram.y"
+#line 812 "unigram.y"
  yyval := node("oneormore", valstk[2], valstk[1]) 
 end
 
 procedure action_292()
-#line 822 "unigram.y"
+#line 813 "unigram.y"
  yyval := node("optional", valstk[2], valstk[1]) 
 end
 
 procedure action_293()
-#line 823 "unigram.y"
+#line 814 "unigram.y"
 
 	   if valstk[2].s < 0 then {
 	      yyerror("regex occurrences may not be negative")
@@ -4361,27 +4362,27 @@ procedure action_293()
 end
 
 procedure action_295()
-#line 843 "unigram.y"
+#line 834 "unigram.y"
  yyval := valstk[1]; yyval.tok := IDENT 
 end
 
 procedure action_296()
-#line 844 "unigram.y"
+#line 835 "unigram.y"
  yyval := valstk[1]; yyval.tok := IDENT 
 end
 
 procedure action_297()
-#line 845 "unigram.y"
+#line 836 "unigram.y"
  yyval := valstk[1]; yyval.tok := IDENT 
 end
 
 procedure action_303()
-#line 851 "unigram.y"
+#line 842 "unigram.y"
  yyval := node("Paren",valstk[3],valstk[2],valstk[1]); 
 end
 
 procedure action_304()
-#line 852 "unigram.y"
+#line 843 "unigram.y"
 
 	      yyval := node("acset", valstk[3], valstk[2], valstk[1])
 	      if type(valstk[2]) == "token" then {
@@ -4396,22 +4397,22 @@ procedure action_304()
 end
 
 procedure action_305()
-#line 863 "unigram.y"
+#line 854 "unigram.y"
  yyval := node("notany", valstk[4], valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_306()
-#line 864 "unigram.y"
+#line 855 "unigram.y"
  yyval := node("escape", valstk[2], valstk[1]) 
 end
 
 procedure action_308()
-#line 868 "unigram.y"
+#line 859 "unigram.y"
  yyval := node("brackchars", valstk[3], valstk[2], valstk[1]) 
 end
 
 procedure action_309()
-#line 869 "unigram.y"
+#line 860 "unigram.y"
 
 	   if type(valstk[2]) == "treenode" then {
 	     c1 := csetify(valstk[2])
@@ -4431,7 +4432,7 @@ procedure action_309()
 end
 
 procedure action_314()
-#line 888 "unigram.y"
+#line 879 "unigram.y"
  # ordinary escape char
 	   yyval := valstk[1]
 	   yyval.column := valstk[2].column
@@ -4443,7 +4444,7 @@ procedure action_314()
 end
 
 procedure action_315()
-#line 896 "unigram.y"
+#line 887 "unigram.y"
  #escaped octal?
 	   yyval := valstk[1]
 	   yyval.column := valstk[2].column
@@ -4455,23 +4456,23 @@ procedure action_315()
 end
 
 procedure action_316()
-#line 906 "unigram.y"
+#line 897 "unigram.y"
  yyval := node("section", valstk[6],valstk[5],valstk[4],valstk[3],valstk[2],valstk[1]);
 end
 
 procedure action_321()
-#line 913 "unigram.y"
+#line 904 "unigram.y"
  yyval := node("compound", valstk[3],";",valstk[1]);
 end
 
 procedure action_323()
-#line 916 "unigram.y"
+#line 907 "unigram.y"
  yyval := node("error", valstk[4],valstk[2],valstk[1]); 
 end
 
 procedure action_324()
-#line 917 "unigram.y"
+#line 908 "unigram.y"
  yyval := node("error"); 
 end
 
-#line 4481 "unigram.icn"
+#line 4482 "unigram.icn"

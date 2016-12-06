@@ -15,6 +15,15 @@ link getpaths
 #
 global fin,fout,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha,reserved
 global classes,comp,exec,strict,links,imports,loud,compiles,ct,tmpcount
+
+procedure reinitialize()
+   classes  := taque()
+   links := []
+   imports := []
+   imported := table()
+   imported_classes := table()
+   thePackage := &null
+end
 
 # classspec database (DBM) entry
 record db_entry(dir, entry)
@@ -837,45 +846,59 @@ class idTaque : taque(punc)
   # list of identifiers have been parsed; also called on "local"
   # declarations in classes to append them onto the initial list.
   #
-  method traverse(node, isClassLocal)
-      case type(node) of {
+  method traverse(nod, isClassLocal)
+      case type(nod) of {
 	 "treenode": {
-	    if *node.children > 0 then {
-	       if node.label == ("arg" || ("2"|"3"|"4"|"5"|"6"|"7"|"8")) then {
+	    if *nod.children > 0 then {
+	       if nod.label == ("arg" || (2 to 8)) then {
 		  if /isClassLocal then
-		     insert(node, node.children[1].s)
-		  else
-		     insert(node.children[1].s)
+		     insert(nod, nod.children[1].s)
+		  else {
+		     insert(nod.children[1].s)
+		     }
 		  }
-	       else if node.label == "varlist2" then {
+	       else if nod.label == "varlist2" then {
 		  if /isClassLocal then
-                     insert(node, node.children[1].s)
-		  else
-                     insert(node.children[1].s)
+                     insert(nod, nod.children[1].s)
+		  else {
+                     insert(nod.children[1].s)
+		     nod := copy(nod)
+		     nod.label := "assign"
+		     return nod
+		     }
 		  }
-	       else if node.label==("varlist3"|"varlist4") then {
-		  traverse(node.children[1], isClassLocal)
+	       else if nod.label==("varlist3"|"varlist4") then {
+		  traverse(nod.children[1], isClassLocal)
 		  if /isClassLocal then
-		     insert(node, node.children[3].s)
-		  else
-		     insert(node.children[3].s)
+		     insert(nod, nod.children[3].s)
+		  else {
+		     insert(nod.children[3].s)
+		     }
 		  }
-	       else
-		  every traverse(!node.children, isClassLocal)
+	       else {
+		  accum := []
+		  every \(x := traverse(!nod.children, isClassLocal)) do {
+		     put(accum, x)
+		     }
+	          accumtree := EmptyNode
+	          while x := pull(accum) do
+		     accumtree := node("procbody", x, ";", accumtree)
+		  return accumtree
+	          }
 	       }
-	    else write("leaf ", node.label)
+	    else write("leaf ", nod.label)
 	    }
 	 "token": {
-	    if node.tok = IDENT then
-	       insert(node.s)
+	    if nod.tok = IDENT then
+	       insert(nod.s)
 	    }
 	 "string": {
-	    if (node ~== self.punc) & (node ~== ";") then
-	       write("idTaque on ", type(node), " : ", image(node), " (punc was ",image(punc),")")
+	    if (nod ~== self.punc) & (nod ~== ";") then
+	       write("idTaque on ", type(nod), " : ", image(nod), " (punc was ",image(punc),")")
 	    }
 	 "null": { }
 	 default: {
-	    write("idTaque on ", type(node), " : ", image(node))
+	    write("idTaque on ", type(nod), " : ", image(nod))
 	    }
 	 }
     return

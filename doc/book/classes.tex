@@ -353,7 +353,7 @@ to methods, classes may also contain regular procedure, global, and
 record declarations; such declarations have the standard semantics and
 exist in the global name space. 
 
-\section{Object Instances}
+\section{Object Instances and Initially Sections}
 
 Like records, \index{instances!class object}instances of a class type
 are created with a \index{constructor!class}constructor function whose
@@ -425,7 +425,7 @@ from parameters and missing arguments default to the null value.
 zero or more formal parameter names, the constructor parameters are used
 to initialize the formal parameters of the \texttt{initially()} method.
 In this case, the constructor does not assign class fields
-from parameters implicitly. Instead the initially section may
+from parameters implicitly. Instead the \texttt{initially} section may
 initialize fields as it sees fit, including initializing them using
 values from the named parameters of method \texttt{initially()}
 if it so chooses.
@@ -438,7 +438,7 @@ the \texttt{initially} section may assign those
 fields without the caller having passed values into the constructor.
 \end{itemize}
 
-The initially section with no parameter list makes it possible to
+The \texttt{initially} section with no parameter list makes it possible to
 write classes with some fields that are initialized explicitly by the
 constructor parameters, while other fields are initialized implicitly
 by code in the \texttt{initially} section. In this case you should
@@ -449,7 +449,7 @@ exactly in the order they appear in the class declaration.
 
 This default semantics for constructor parameters is awkward in some
 cases, so there is an alternative.
-When an initially section includes a
+When an \texttt{initially} section includes a
 parameter list, no implicit initialization of objects'
 fields is performed. This frees the constructor from having the same
 number and order of parameters as the declared class fields. In the
@@ -474,6 +474,17 @@ procedure main() \\
    v := C("Greenwich Village")\\
 end
 }
+
+Hopefully all this has convinced you that \texttt{initially} sections
+are important and useful. They are in fact just a special method that
+gets called when an object is constructed, but that means they play
+the role of a {\em constructor function\/} that is found in many
+other object-oriented languages. The next chapter, which goes into
+inheritance in detail, points out that the inheritance rules apply
+to \texttt{initially} sections just like any other method.  A subclass
+initially will usually need to invoke its superclass(es)'
+\texttt{initially}
+sections, along with initializing any new fields that it introduces.
 
 \section{Object Invocation}
 

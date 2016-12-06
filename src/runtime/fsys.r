@@ -295,6 +295,7 @@ function{0,1} open(fname, spec)
 
    body {
       tended char *fnamestr;
+      char home_sbuf[1024];
       register word slen;
       register int i;
       register char *s;
@@ -353,8 +354,23 @@ Deliberate Syntax Error
       if (!cnv:C_string(fname, fnamestr))
 	 runerr(103,fname);
 
+      /* poison NUL resistance. */
       if (strlen(fnamestr) != StrLen(fname)) {
 	 fail;
+	 }
+
+      /*
+       * Preliminary tilde $HOME support. Need to extend to Windows,
+       * and flesh out support for tilde-based syntax.  Need to think
+       * about whether further is needed for multi-arg fnamestr e.g. mode "p"
+       */
+      if (fnamestr[0] == '~') {
+	 if (fnamestr[1] == '/') {
+	    char *hom = getenv("HOME");
+	    int homlen = strlen(hom);
+	    sprintf(home_sbuf, "%s%s", hom, fnamestr+1);
+	    fnamestr = home_sbuf;
+	    }
 	 }
 
       status = 0;
@@ -1011,8 +1027,9 @@ Deliberate Syntax Error
 	    else
 	    if (errno == ENOENT && (status & Fs_Read))
 	       fail;
-	    else
+	    else {
 	       f = fopen(fnamestr, mode);
+	       }
 	 }
 	 else {
 	    /*

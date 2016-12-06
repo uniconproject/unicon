@@ -147,7 +147,8 @@
  * Get type of block pointed at by x.
  */
 #define BlkType(x)   (*(word *)x)
-
+#define TypeMask	63	/* type mask */
+#define Type(d) ((int)((d).dword & TypeMask))
 
 typedef long word;
 typedef struct descrip {

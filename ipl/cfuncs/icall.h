@@ -341,8 +341,8 @@ cnv_c_str(&(d),&(d)) : 0, (char*)((d).vword.sptr))
 do {if (sizeof(a[0]) != sizeof(int))  FailCode(101); \
     register int n = ListLen(d); \
     register int i; \
-    struct descrip *slot = malloc((n + 1) * sizeof(struct descrip)); \
-    cpslots(&(d),slot,1,n+1); \
+    struct descrip slot[n];	  \
+    cpslots(&(d),&slot[0],1,n+1); \
     for(i=0; i<n; i++) a[i] = IntegerVal(slot[i]); \
    } while(0);
 

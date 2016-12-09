@@ -1341,6 +1341,59 @@ procedure consume(p) \\
 end
 }
 
+\subsection*{A simple thread pool}
+In some cases the explicit creation of a thread for each concurrent activity is
+the simplest and most transparent way of writing the program, especially if the
+threads need access to the local variables of the procedure that created them.
+In other cases the work can be more expeditiously carried out by a pool of
+``worker'' threads, which execute tasks that are handed to them.  The threads
+package contains a simple thread pool that may be used for this purpose: it has
+four procedures.
+\begin{flushleft}
+\tablehead{}
+\begin{supertabular}{p{2in} p{4in}}
+\texttt{MakePool(n)} & 
+Create a pool of \texttt{n} worker threads. The default value for \texttt{n} is
+2 + the number of processors reported in \texttt{\&features}. There is usually
+not much to be gained by having many more active threads than the number of
+available processors (unless a significant number are idle, waiting for an event
+to happen).\\
+&\\
+\texttt{Dispatch(proc, params, ...)} &
+Queue a task to be executed by a thread from the pool. If a thread is available
+the procedure will be called immediately with the supplied parameters, otherwise
+it will be called when a thread becomes available.\\
+&\\
+\texttt{isIdle()} &
+Succeeds if no worker threads are active and there are no tasks in the queue.\\
+&\\
+\texttt{ClosePool()} & Shuts down the pool after remaining tasks have finished
+(including those that are in the queue). \texttt{ClosePool} does not return
+until the pool has been shut down and all the threads have finished, which
+provides a simple way of synchronizing the concurrent activities with the
+controller thread (often \texttt{\&main}).\\
+\end{supertabular}
+\end{flushleft}
+
+Although waiting for everything to finish is the most usual (and safest)
+technique, if waiting is not required a simple way to achieve it is to write
+{\small
+\iconcode{
+\>thread\{ClosePool()\}
+}
+}
+Note that calling \texttt{ClosePool} directly in a worker thread will lead to
+deadlock (because the thread will be waiting for itself to terminate).  The same
+thing happens if you write \texttt{Dispatch(ClosePool)}.  There is some risk
+attached to not waiting for the pool to complete its work because if the main
+thread terminates the whole program finishes --- regardless of the state of the
+thread pool.
+
+The thread pool is minimalist by design. There are a number of extra facilities
+that could, perhaps, be added --- cancellation of a task, place a task at the
+front of the queue, rather than the rear --- but these are left as an exercise
+for the reader who needs them.
+
 \section{Practical examples using threads and messages}
 This section starts with a discussion of an early version of a program that
 forms part of an indexing system for \LaTeX\ files, which are the source for a

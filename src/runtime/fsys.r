@@ -366,9 +366,8 @@ Deliberate Syntax Error
        */
       if (fnamestr[0] == '~') {
 	 if (fnamestr[1] == '/') {
-	    char *hom = getenv("HOME");
-	    int homlen = strlen(hom);
-	    sprintf(home_sbuf, "%s%s", hom, fnamestr+1);
+	    getenv_r("HOME", home_sbuf, 1023);
+	    strcat(home_sbuf, fnamestr+1);
 	    fnamestr = home_sbuf;
 	    }
 	 }

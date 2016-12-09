@@ -123,6 +123,7 @@
 #define T_Record	 7		/* record */
 #define T_List		 8		/* list header */
 #define T_Table		12		/* table header */
+#define T_External	19	    /* external block */
 #define T_Intarray	29      	/* integer array */
 #define T_Realarray	30      	/* real array */
 
@@ -135,6 +136,7 @@
 #endif				    	/* Descriptor Double */
 #define D_File		(T_File     | D_Typecode | F_Ptr)
 #define D_List		((word)(T_List     | D_Typecode | F_Ptr))
+#define D_External	((word)(T_External | D_Typecode | F_Ptr))
 
 #define Fs_Read		0001		/* file open for reading */
 #define Fs_Write	0002		/* file open for writing */
@@ -164,6 +166,12 @@ typedef struct descrip {
       } vword;
 } descriptor, *dptr;
 
+struct b_external {		/* external block */
+   word title;			/*   T_External */
+   word blksize;		/*   size of block */
+   word exdata[1];		/*   words of external data */
+   };
+
 typedef struct b_real { word title; double rval; } realblock;
 typedef struct b_file { word title; FILE *fp; word stat; descriptor fname; }
 	fileblock;
@@ -174,6 +182,7 @@ union block {
      listblock List;
      realblock Real;
      fileblock File;
+     struct b_external Extern;
 };
 
 int cnv_int(descriptor *, descriptor *);
@@ -315,7 +324,10 @@ do {if (argc < (i))  FailCode(101); \
 
 #define ListLen(d)      ((d).vword.bptr->List.size)
 
-
+#define ArgExternal(i) \
+  do {if (argc < (i)) FailCode(101); \
+      if( argv[i].dword != D_External) ArgError(i, 123); \
+  } while(0);
 
 /*  
   1b. Entering the C function: getting the C values
@@ -357,6 +369,11 @@ do {if (sizeof(a[0]) != sizeof(double))  FailCode(102); \
     for (i=0; i<n; i++) a[i] = RealVal(slot[i]); \
    } while(0);
 
+/* Given a descriptor, return the address of the external data */
+#define ExternAddr(d) ((void *)&(((struct b_external *)(d).vword.bptr)->exdata[0]))
+
+/* Useful when calling malloc() to get enough space for the block header */
+#define ExtHdrSize  ((int)&(((struct b_external *)(0))->exdata[0]))
 
 /*  
   2. Allocations of Icon structures.
@@ -411,6 +428,14 @@ listblock * mkRArray(double x[], int n);
 word   *getIArrDataPtr( listblock * L);
 double *getRArrDataPtr( listblock * L);
 
+/* Make an extern block */
+#define mkExternal(p, bytes) \
+  do { \
+       struct b_external *_bp = (p); /* Only refer to p once (in case its a call to malloc) */ \
+	   if (_bp == NULL) { FailCode(307); } \
+	   _bp->title = T_External; \
+	   _bp->blksize = (bytes); \
+  } while(0)
 
 /* 
   3. Returning from the C function to Icon.
@@ -455,3 +480,10 @@ double *getRArrDataPtr( listblock * L);
 /* Here L is supposed to be L = mkIlist(...) or L = mkRlist(...). */
 #define RetList(L) \
   return (argv[0].dword = D_List, argv[0].vword.bptr = (union block *)L, 0)
+
+/*
+ * Return an "external" value to the calling routine. The value is made by
+ * calling mkExternal(...)
+ */
+#define RetExternal(E) \
+  return (argv[0].dword = D_External, argv[0].vword.bptr = (union block *)E, 0)

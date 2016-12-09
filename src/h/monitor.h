@@ -229,7 +229,7 @@
     */
 #if defined(EventMon) || defined(E_Tick)
 #undef E_Tick
-#define E_Tick		'\056'		/* Clock tick */
+#define E_Tick		'\270'		/* Clock tick */
 #else
 #define E_Tick 0
 #endif
@@ -241,14 +241,14 @@
     */
 #if defined(EventMon) || defined(E_Loc)
 #undef E_Loc
-#define E_Loc		'\174'		/* Location change */
+#define E_Loc		'\273'		/* Location change */
 #else
 #define E_Loc 0
 #endif
 
 #if defined(EventMon) || defined(E_Line)
 #undef E_Line
-#define E_Line		'\355'		/* Line change */
+#define E_Line		'\274'		/* Line change */
 #else
 #define E_Line 0
 #endif
@@ -259,14 +259,14 @@
     */
 #if defined(EventMon) || defined(E_Opcode)
 #undef E_Opcode
-#define E_Opcode	'\117'		/* Virtual-machine instruction */
+#define E_Opcode	'\240'		/* Virtual-machine instruction */
 #else
 #define E_Opcode 0
 #endif
 
 #if defined(EventMon) || defined(E_Operand)
 #undef E_Operand
-#define E_Operand	'\110'		/* Virtual-machine Operand*/
+#define E_Operand	'\241'		/* Virtual-machine Operand*/
 #else
 #define E_Operand 0
 #endif
@@ -566,14 +566,14 @@
 
 #if defined(EventMon) || defined(E_Ssusp)
 #undef E_Ssusp
-#define E_Ssusp		'\342'		/* Scanning suspension */
+#define E_Ssusp		'\266'		/* Scanning suspension */
 #else
 #define E_Ssusp 0
 #endif
 
 #if defined(EventMon) || defined(E_Sresum)
 #undef E_Sresum
-#define E_Sresum	'\343'		/* Scanning resumption */
+#define E_Sresum	'\267'		/* Scanning resumption */
 #else
 #define E_Sresum 0
 #endif
@@ -638,28 +638,28 @@
 
 #if defined(EventMon) || defined(E_Intcall)
 #undef E_Intcall
-#define E_Intcall	'\351'		/* interpreter call */
+#define E_Intcall	'\275'		/* interpreter call */
 #else
 #define E_Intcall 0
 #endif
 
 #if defined(EventMon) || defined(E_Intret)
 #undef E_Intret
-#define E_Intret	'\352'		/* interpreter return */
+#define E_Intret	'\276'		/* interpreter return */
 #else
 #define E_Intret 0
 #endif
 
 #if defined(EventMon) || defined(E_Stack)
 #undef E_Stack
-#define E_Stack		'\353'		/* stack depth */
+#define E_Stack		'\272'		/* stack depth */
 #else
 #define E_Stack 0
 #endif
 
 #if defined(EventMon) || defined(E_Cstack)
 #undef E_Cstack
-#define E_Cstack		'\345'		/* C stack depth */
+#define E_Cstack		'\271'		/* C stack depth */
 #else
 #define E_Cstack 0
 #endif
@@ -676,14 +676,14 @@
 
 #if defined(EventMon) || defined(E_Efail)
 #undef E_Efail
-#define E_Efail		'\146'		/* Failure from expression */
+#define E_Efail		'\251'		/* Failure from expression */
 #else
 #define E_Efail 0
 #endif
 
 #if defined(EventMon) || defined(E_Bsusp)
 #undef E_Bsusp
-#define E_Bsusp		'\142'		/* Suspension from operation */
+#define E_Bsusp		'\250'		/* Suspension from operation */
 #else
 #define E_Bsusp 0
 #endif
@@ -704,21 +704,21 @@
 
 #if defined(EventMon) || defined(E_Eresum)
 #undef E_Eresum
-#define E_Eresum	'\165'		/* Resumption of expression */
+#define E_Eresum	'\236'		/* Resumption of expression */
 #else
 #define E_Eresum 0
 #endif
 
 #if defined(EventMon) || defined(E_Erem)
 #undef E_Erem
-#define E_Erem		'\166'		/* Removal of a suspended generator */
+#define E_Erem		'\237'		/* Removal of a suspended generator */
 #else
 #define E_Erem 0
 #endif
 
 #if defined(EventMon) || defined(E_Syntax)
 #undef E_Esyntax
-#define E_Syntax      	'\124'		/* Source code syntax change */
+#define E_Syntax      	'\242'		/* Source code syntax change */
 #else
 #define E_Syntax 0
 #endif
@@ -762,35 +762,35 @@
 
 #if defined(EventMon) || defined(E_Pfail)
 #undef E_Pfail
-#define E_Pfail		'\106'		/* Procedure failure */
+#define E_Pfail		'\246'		/* Procedure failure */
 #else
 #define E_Pfail 0
 #endif
 
 #if defined(EventMon) || defined(E_Pret)
 #undef E_Pret
-#define E_Pret		'\122'		/* Procedure return */
+#define E_Pret		'\245'		/* Procedure return */
 #else
 #define E_Pret 0
 #endif
 
 #if defined(EventMon) || defined(E_Psusp)
 #undef E_Psusp
-#define E_Psusp		'\123'		/* Procedure suspension */
+#define E_Psusp		'\243'		/* Procedure suspension */
 #else
 #define E_Psusp 0
 #endif
 
 #if defined(EventMon) || defined(E_Presum)
 #undef E_Presum
-#define E_Presum	'\125'		/* Procedure resumption */
+#define E_Presum	'\244'		/* Procedure resumption */
 #else
 #define E_Presum 0
 #endif
 
 #if defined(EventMon) || defined(E_Prem)
 #undef E_Prem
-#define E_Prem		'\126'		/* Suspended procedure removal */
+#define E_Prem		'\247'		/* Suspended procedure removal */
 #else
 #define E_Prem 0
 #endif
@@ -798,42 +798,42 @@
 
 #if defined(EventMon) || defined(E_Fcall)
 #undef E_Fcall
-#define E_Fcall		'\072'		/* Function call */
+#define E_Fcall		'\252'		/* Function call */
 #else
 #define E_Fcall 0
 #endif
 
 #if defined(EventMon) || defined(E_Ffail)
 #undef E_Ffail
-#define E_Ffail		'\115'		/* Function failure */
+#define E_Ffail		'\256'		/* Function failure */
 #else
 #define E_Ffail 0
 #endif
 
 #if defined(EventMon) || defined(E_Fret)
 #undef E_Fret
-#define E_Fret		'\120'		/* Function return */
+#define E_Fret		'\255'		/* Function return */
 #else
 #define E_Fret 0
 #endif
 
 #if defined(EventMon) || defined(E_Fsusp)
 #undef E_Fsusp
-#define E_Fsusp		'\127'		/* Function suspension */
+#define E_Fsusp		'\253'		/* Function suspension */
 #else
 #define E_Fsusp 0
 #endif
 
 #if defined(EventMon) || defined(E_Fresum)
 #undef E_Fresum
-#define E_Fresum	'\131'		/* Function resumption */
+#define E_Fresum	'\254'		/* Function resumption */
 #else
 #define E_Fresum 0
 #endif
 
 #if defined(EventMon) || defined(E_Frem)
 #undef E_Frem
-#define E_Frem		'\133'		/* Function suspension removal */
+#define E_Frem		'\257'		/* Function suspension removal */
 #else
 #define E_Frem 0
 #endif
@@ -841,42 +841,42 @@
 
 #if defined(EventMon) || defined(E_Ocall)
 #undef E_Ocall
-#define E_Ocall		'\134'		/* Operator call */
+#define E_Ocall		'\260'		/* Operator call */
 #else
 #define E_Ocall 0
 #endif
 
 #if defined(EventMon) || defined(E_Ofail)
 #undef E_Ofail
-#define E_Ofail		'\135'		/* Operator failure */
+#define E_Ofail		'\262'		/* Operator failure */
 #else
 #define E_Ofail 0
 #endif
 
 #if defined(EventMon) || defined(E_Oret)
 #undef E_Oret
-#define E_Oret		'\140'		/* Operator return */
+#define E_Oret		'\261'		/* Operator return */
 #else
 #define E_Oret 0
 #endif
 
 #if defined(EventMon) || defined(E_Osusp)
 #undef E_Osusp
-#define E_Osusp		'\173'		/* Operator suspension */
+#define E_Osusp		'\263'		/* Operator suspension */
 #else
 #define E_Osusp 0
 #endif
 
 #if defined(EventMon) || defined(E_Oresum)
 #undef E_Oresum
-#define E_Oresum	'\175'		/* Operator resumption */
+#define E_Oresum	'\264'		/* Operator resumption */
 #else
 #define E_Oresum 0
 #endif
 
 #if defined(EventMon) || defined(E_Orem)
 #undef E_Orem
-#define E_Orem		'\177'		/* Operator suspension removal */
+#define E_Orem		'\265'		/* Operator suspension removal */
 #else
 #define E_Orem 0
 #endif
@@ -945,91 +945,91 @@
 
 #if defined(EventMon) || defined(E_Literal)
 #undef E_Literal
-#define E_Literal	'\364'
+#define E_Literal	'\277'
 #else
 #define E_Literal 0
 #endif
 
 #if defined(EventMon) || defined(E_Signal)
 #undef E_Signal
-#define E_Signal	'\200'
+#define E_Signal	'\300'
 #else
 #define E_Signal 0
 #endif
 
 #if defined(EventMon) || defined(E_Pattern)
 #undef E_Pattern
-#define E_Pattern	'\201'
+#define E_Pattern	'\060'
 #else
 #define E_Pattern 0
 #endif
 
 #if defined(EventMon) || defined(E_Pelem)
 #undef E_Pelem
-#define E_Pelem		'\202'
+#define E_Pelem		'\061'
 #else
 #define E_Pelem 0
 #endif
 
 #if defined(EventMon) || defined(E_PatCode)
 #undef E_PatCode
-#define E_PatCode        '\203'
+#define E_PatCode        '\062'
 #else
 #define E_PatCode 0
 #endif
 
 #if defined(EventMon) || defined(E_PatAttempt)
 #undef E_PatAttempt
-#define E_PatAttempt '\204'
+#define E_PatAttempt '\063'
 #else
 #define E_PatAttempt 0
 #endif
 
 #if defined(EventMon) || defined(E_PatMatch)
 #undef E_PatMatch
-#define E_PatMatch '\205'
+#define E_PatMatch '\064'
 #else
 #define E_PatMatch 0
 #endif
 
 #if defined(EventMon) || defined(E_PatFail)
 #undef E_PatFail
-#define E_PatFail '\206'
+#define E_PatFail '\065'
 #else
 #define E_PatFail 0
 #endif
 
 #if defined(EventMon) || defined(E_PelemAttempt)
 #undef E_PelemAttempt
-#define E_PelemAttempt '\207'
+#define E_PelemAttempt '\066'
 #else
 #define E_PelemAttempt 0
 #endif
 
 #if defined(EventMon) || defined(E_PelemMatch)
 #undef E_PelemMatch
-#define E_PelemMatch '\210'
+#define E_PelemMatch '\067'
 #else
 #define E_PelemMatch 0
 #endif
 
 #if defined(EventMon) || defined(E_PelemFail)
 #undef E_PelemFail
-#define E_PelemFail '\211'
+#define E_PelemFail '\070'
 #else
 #define E_PelemFail 0
 #endif
 
 #if defined(EventMon) || defined(E_PatArg)
 #undef E_PatArg
-#define E_PatArg '\212'
+#define E_PatArg '\071'
 #else
 #define E_PatArg 0
 #endif
 
 #if defined(EventMon) || defined(E_PatVal)
 #undef E_PatVal
-#define E_PatVal '\213'
+#define E_PatVal '\072'
 #else
 #define E_PatVal 0
 #endif
@@ -1043,51 +1043,65 @@
 
 #if defined(EventMon) || defined(E_HashNum)
 #undef E_HashNum
-#define E_HashNum       '\214'
+#define E_HashNum       '\173'
 #else
 #define E_HashNum 0
 #endif
 
 #if defined(EventMon) || defined(E_HashSlots)
 #undef E_HashSlots
-#define E_HashSlots       '\215'
+#define E_HashSlots       '\174'
 #else
 #define E_HashSlots 0
 #endif
 
 #if defined(EventMon) || defined(E_HashChain)
 #undef E_HashChain
-#define E_HashChain       '\216'
+#define E_HashChain       '\175'
 #else
 #define E_HashChain 0
 #endif
 
 
 
-/* unused pool.  how many event codes are unused?  Don't use 000.
-
+/* unused pool.  how many event codes are unused?  DON'T USE 000.
+					Decimal
 000 001 002 003 004 005 006 007
 010 011 012 013 014 015 016 017
-020 021 022 023 024 025 026 027
+020 021 022 023 024 025 026 027		16
 030 031 032 033 034 035 036 037
-040 041 042 043 047
-050 051 053 054 057
-060 061 062 063 064 065 066 067
-070 071 073 074 075 076 077
+						blank line for readability
+040 041 042 043 047			32
+050 051     053 054     056 057
 
-137
-162
+            073 074 075 076 077
+-------------------------------			blank line for readability
+                        106		64
+110                 115     117
+120     122 123 124 125 126 127
+    131     133 134 135     137
+-------------------------------			blank line for readability
+140	142		146		96
 
-                            
-                            217
-220 221 222 223 224 225 226 227
-230 231 232 233 234 235 236 237
-240 241 242 243 244 245 246 247
-250 251 252 253 254 255 256 257
-260 261 262 263 264 265 266 267
-270 271 272 273 274 275 276 277
+        162	    165 166
+                            177
+-------------------------------			blank line for readability
+200 201 202 203 204 205 206 207		128	SPECIAL SECTION. From 128-191
+210 211 212 213 214 215 216 217			RESERVED FOR interp() stuff.
+220 221 222 223 224 225 226 227		144
+230 231 232 233 234 235
+-------------------------------			blank line for readability
+					160	SPECIAL SECTION. From 128-191
+    						RESERVED FOR interp() stuff.
 
-300 303
-365 366 367
-371 372 373 374 375 376 377
+
+-------------------------------
+            303				192
+
+
+
+        342 343     345
+    351 352 353     355
+                364 365 366 367
+    371 372 373 374 375 376 377
 */

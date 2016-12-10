@@ -1349,31 +1349,32 @@ In other cases the work can be more expeditiously carried out by a pool of
 ``worker'' threads, which execute tasks that are handed to them.  The threads
 package contains a simple thread pool that may be used for this purpose: it has
 four procedures.
-\begin{flushleft}
-\tablehead{}
-\begin{supertabular}{p{2in} p{4in}}
-\texttt{MakePool(n)} & 
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{MakePool(n)}\vspace{0.75in}}
 Create a pool of \texttt{n} worker threads. The default value for \texttt{n} is
-2 + the number of processors reported in \texttt{\&features}. There is usually
+2 + the number of processors reported in \texttt{\&features}.There is usually
 not much to be gained by having many more active threads than the number of
 available processors (unless a significant number are idle, waiting for an event
-to happen).\\
-&\\
-\texttt{Dispatch(proc, params, ...)} &
+to happen).
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[2.5in][l]{\texttt{Dispatch(proc, params, ...)}\vspace{0.75in}}
 Queue a task to be executed by a thread from the pool. If a thread is available
 the procedure will be called immediately with the supplied parameters, otherwise
 it will be called when a thread becomes available.\\
-&\\
-\texttt{isIdle()} &
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1in][l]{\texttt{isIdle()}\vspace{0.75in}}
 Succeeds if no worker threads are active and there are no tasks in the queue.\\
-&\\
-\texttt{ClosePool()} & Shuts down the pool after remaining tasks have finished
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent\makebox[1.5in][l]{\texttt{ClosePool()}\vspace{0.75in}}
+Shuts down the pool after remaining tasks have finished
 (including those that are in the queue). \texttt{ClosePool} does not return
 until the pool has been shut down and all the threads have finished, which
 provides a simple way of synchronizing the concurrent activities with the
 controller thread (often \texttt{\&main}).\\
-\end{supertabular}
-\end{flushleft}
 
 Although waiting for everything to finish is the most usual (and safest)
 technique, if waiting is not required a simple way to achieve it is to write
@@ -1483,7 +1484,7 @@ procedure main(args)\\
 \>nFiles := *args\\
 \>MakePool() \# no parameter means default of 2 + no. of processors\\
 \\
-\>\# Start a "counting thread" that accumulates the answers from the analysis threads.\\
+\>\# Start a "counting thread" to accumulate answers from the analysis threads.\\
 \>Dispatch(accumulator)\\
 \\
 \>\# Analyze each file in a separate thread. Send the results to the accumulator.\\
@@ -1492,7 +1493,7 @@ procedure main(args)\\
 \>waitFor(nFiles)             \# Wait for all files to be analyzed.\\
 \\
 \>\# Since all the analyzers have now finished, it is safe to end the counting thread.\\
-\>\# It will accumulate all the answers that have previously been sent before receiving "end".\\
+\>\# It will get all the answers that have previously been sent before receiving "end".\\
 \>"end" @{>}{>} countingThread\\
 \\
 \>ClosePool()                 \# ClosePool returns when all threads have finished.\\
@@ -1659,9 +1660,10 @@ procedure du(d, parent)\\
 \>\>if st := stat(path := d || "/" || f) then \{\\
 \>\>\>case st.mode[1] of \{\\
 \>\>\>\>"-": \# Normal file - add its rounded size to the total for this directory\\
-\>\>\>\>\>kb +:= ((st.size {<} st.blksize) | st.blksize * ceil(st.size/(0.0 + st.blksize)))/1024\\
+\>\>\>\>\>kb +:= ((st.size {<} st.blksize) |\\
+\>\>\>\>\>\>\>\>st.blksize * ceil(st.size/(0.0 + st.blksize)))/1024\\
 \\
-\>\>\>\>"d": \# Directory - hand it off to another worker thread to analyze in parallel\\
+\>\>\>\>"d": \# Directory - hand it off to a worker thread to analyze in parallel\\
 \>\>\>\>\>Dispatch(du, path, d, f)\\
 \\
 \>\>\>\>"l" | "s" | "b" | "c" | "p" | "|": \# Ignore special files, symbolic links, pipes etc.\\

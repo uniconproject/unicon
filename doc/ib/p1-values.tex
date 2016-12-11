@@ -64,7 +64,7 @@ Icon's data types, balancing considerations of size, ease of type
 testing, and efficiency of accessing the actual data.
 
 
-\section{Descriptors}
+\section[4.1 Descriptors]{4.1 Descriptors}
 
 Since every Icon value is represented by a descriptor, it is important
 that descriptors be as small as possible. On the other hand, a
@@ -137,7 +137,7 @@ are not visible at the source-language level. The actual values of
 these codes are not important, and they are indicated in diagrams by
 their type code names.
 
-\subsection{Strings}
+\subsection[4.1.1. Strings]{4.1.1. Strings}
 
 There is no type code for strings. They have a special representation
 in which the d-word contains the length of the string (the number of
@@ -167,7 +167,7 @@ d-word. The d-words of qualifiers do not have this n flag, and string
 lengths are restricted to prevent their overflow into this flag
 position, the most significant bit of a 32- or 64-bit dword.
 
-\subsection{The Null Value}
+\subsection[4.1.2 The Null Value]{4.1.2 The Null Value}
 
 A descriptor for the null value has the form
 
@@ -198,7 +198,6 @@ Note that the n flag distinguishes this descriptor from a string whose
 first character might be at the address 13570 and whose length might
 have the same value as the type code for integer.
 
-
 An Icon integer that fits in the v-word is stored there. An integer
 that is too large to fit into a word is stored in a data structure
 that is pointed to by the v-word, as illustrated in the next
@@ -209,11 +208,24 @@ contained in blocks pointed to by the v-words of their descriptors.
 Thus, there are two internal types for one source-language data type.
 
 
+\section[4.2 Blocks]{4.2 Blocks}
+
+All other types of Icon data are represented by descriptors with
+v-words that point to blocks of words. These blocks have a
+comparatively uniform structure that is designed to facilitate their
+processing during garbage collection.
+
+The first word of every block, called its \textit{title}, contains a
+type code. This type code is the same code that is in the type-code
+portion of the d-word of a descriptor that points to the block. Some
+blocks are fixed in size for all values of a given type. For example,
+on a computer with 16-bit words, the source language integer 80,000 is
+stored in a large integer block:
+
 \ \  \includegraphics[width=2.778in,height=0.8437in]{ib-img/ib-img010.jpg} 
 
-
-The p flag in the descriptor indicates that the v-word contains a
-pointer to a block.
+\noindent The p flag in the descriptor indicates that the v-word
+contains a pointer to a block.
 
 Blocks of some other types, such as record blocks, vary in size from
 value to value, but any one block is fixed in size and never grows or
@@ -285,6 +297,7 @@ descriptors for values, never to other variables. For example, if
 \includegraphics[width=3.8193in,height=0.8492in]{ib-img/ib-img013.jpg}
 \end{center}
 
+\noindent
 The v flag distinguishes descriptors for variables from descriptors for values.
 
 The values of local identifiers are kept on a stack, while the values
@@ -344,7 +357,7 @@ variable descriptor changed:
 These operations on variables correspond to indirect load and store
 instructions of a typical computer.
 
-\subsection{Trapped Variables}
+\subsection[4.3.2 Trapped Variables]{4.3.2 Trapped Variables}
 
 Icon has several variables with special properties that complicate
 assignment and dereferencing. Consider, for example, the keyword
@@ -432,7 +445,7 @@ less that it will be the procedure given earlier.
 Thus, the trapped-variable mechanism provides a way to handle
 uniformly all the situations in which such a keyword can be used.
 
-\section{Descriptors and Blocks in C}
+\section[4.4 Descriptors and Blocks in C]{4.4 Descriptors and Blocks in C}
 
 Descriptors and blocks of data are described and depicted abstractly
 in the previous sections of this chapter. In order to understand the
@@ -445,7 +458,7 @@ and operations that appear frequently in the C code are included as
 well. Other operations are introduced in subsequent chapters. as they
 are needed.
 
-\subsection{Descriptors}
+\subsection[4.4.1 Descriptors]{4.4.1 Descriptors}
 
 As mentioned in Sec. 4.1, for C compilers in which ints and pointers
 are the same size, the size of a word is the size of an int, while if
@@ -535,7 +548,7 @@ The v-word of a descriptor is a union that reflects its various uses:
 an integer, a pointer to a string, a pointer to a block, or a pointer
 to another descriptor (in the case of a variable).
 
-\subsection{Blocks}
+\subsection[4.4.2 Blocks]{4.4.2 Blocks}
 
 Each block type has a structure declaration. For example. the
 declaration for record blocks is
@@ -802,7 +815,7 @@ As indicated previously, flags, type codes, and d-words are
 distinguished by the prefixes \texttt{F\_}, \texttt{T\_}, and
 \texttt{D\_}, respectively.
 
-\subsection{RTL Coding}
+\subsection[4.4.4 RTL Coding]{4.4.4 RTL Coding}
 
 Since the optimizing compiler was introduced in versions 8 and 9 of
 Icon, the routines for the run-time system use an extended C syntax

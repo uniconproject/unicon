@@ -1,0 +1,2497 @@
+\chapter{The Unicon Translator}
+
+Unicon is implemented as a minimal addition to Icon. Most of its
+features are implemented by extending existing functions with new
+semantics, and by the addition of new functions and keywords with no
+new syntax. Originally, the object-oriented facilities were
+implemented as a preprocessor named Idol (Icon-drived object
+language). After several years of experience and evolution, Idol
+became a part of Unicon. Concurrently with this name change, thanks to
+Ray Pereda developing a version of Berkeley YACC for Icon and Unicon,
+the Unicon translator was substantially modified from a line-oriented
+preprocessor to a full parser that generates code by traversing the
+syntax tree. At this point it is still reasonable to call the Unicon
+translator a preprocessor, but it has many of the traits of a
+compiler.
+
+\section{Overview}
+
+The Unicon translator lives in uni/unicon/. In addition to many Unicon
+source files, it uses the external tools iyacc and merr to generate
+its parser and syntax error message tables, which depend on files
+unigram.y and meta.err, respectively. Unicon is written in Unicon,
+creating a bootstrapping problem. When building from sources, some of
+the .icn files can be translated by icont (the Icon translator, a C
+program). Those files that require Unicon itself in order to compile
+are included in precompiled object format (in .u files) in order to
+solve the bootstrapping problem.
+
+\section{Lexical Analysis}
+
+Unicon's lexical analyzer is written by hand, in Unicon, using a
+lex-compatible interface. Some of its design is borrowed from the Icon
+lexical analyzer (which is handwritten C code). It would be
+interesting to replace Unicon's lexical analyzer with a machine
+generated lexical analyzer to reduce the amount of compiler source
+code we have to maintain. The lexical analyzer consists of a function
+yylex() located in unicon/uni/unicon/unilex.icn, about 500 lines of
+code.
+
+{\sffamily
+Globals Comprising the Lex-compatible Public API }
+
+
+The global declarations that exist in order to provide a
+Lex-compatible API include:
+
+{\ttfamily\mdseries
+\$include {\textquotedbl}ytab\_h.icn{\textquotedbl} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# yacc's token categories}
+
+{\ttfamily\mdseries
+global yytext \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# lexeme}
+
+{\ttfamily\mdseries
+global yyin \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# source file we are reading}
+
+{\ttfamily\mdseries
+global yytoken \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# token (a record)}
+
+{\ttfamily\mdseries
+global yylineno, yycolno, yyfilename \ \ \ \# source location}
+
+{\sffamily
+Character Categories }
+
+
+The lexical analyzer uses several csets for different character
+categories beyond the built-in ones:
+
+{\ttfamily\mdseries
+global O, D, L, H, R, FS, IS, W, idchars}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+procedure init\_csets()}
+
+{\ttfamily\mdseries
+\ \ \ O \ := '01234567'}
+
+{\ttfamily\mdseries
+\ \ \ D \ := \&digits}
+
+{\ttfamily\mdseries
+\ \ \ L \ := ${\leq}$tters ++ '\_'}
+
+{\ttfamily\mdseries
+\ \ \ H \ := \&digits ++ 'abcdefABCDEF'}
+
+{\ttfamily\mdseries
+\ \ \ R \ := \&digits ++ ${\leq}$tters}
+
+{\ttfamily\mdseries
+\ \ \ FS := 'fFlL'}
+
+{\ttfamily\mdseries
+\ \ \ IS := 'uUlL'}
+
+{\ttfamily\mdseries
+\ \ \ W \ := ' {\textbackslash}t{\textbackslash}v'}
+
+{\ttfamily\mdseries
+\ \ \ idchars := L ++ D}
+
+{\ttfamily\mdseries
+end}
+
+{\sffamily
+The Token Type }
+
+
+The record type storing each token's information just bundles together
+the syntactic category (an integer), lexeme (a string), and location
+at which the token occurred. This is pretty minimalist.
+
+{\ttfamily\mdseries
+record token(tok, s, line, column, filename)}
+
+{\sffamily
+Global Variables for Error Handling and Debugging }
+
+
+Several Remaining global variables are mainly used for error handling,
+and for debugging the lexical analyzer itself.
+
+{\sffamily
+Reserved Words }
+
+
+Global reswords() creates and becomes a table holding the Unicon
+reserved words. For each word, a pair of integers [tokenflags,
+category] is kept. Language design note: tables in this language need
+a {\textquotedbl}literal{\textquotedbl} format.
+
+{\ttfamily\mdseries
+procedure reswords()}
+
+{\ttfamily\mdseries
+static t}
+
+{\ttfamily\mdseries
+initial \{}
+
+{\ttfamily\mdseries
+\ \ \ t := table([Beginner+Ender, IDENT])}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}abstract{\textquotedbl}] := [0, ABSTRACT]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}break{\textquotedbl}] := [Beginner+Ender, BREAK]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}by{\textquotedbl}] := [0, BY]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}case{\textquotedbl}] := [Beginner, CASE]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}class{\textquotedbl}] := [0, CLASS]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}create{\textquotedbl}] := [Beginner, CREATE]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}default{\textquotedbl}] := [Beginner, DEFAULT]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}do{\textquotedbl}] := [0, DO]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}else{\textquotedbl}] := [0, ELSE]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}end{\textquotedbl}] := [Beginner, END]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}every{\textquotedbl}] := [Beginner, EVERY]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}fail{\textquotedbl}] := [Beginner+Ender, FAIL]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}global{\textquotedbl}] := [0, GLOBAL]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}if{\textquotedbl}] := [Beginner, IF]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}import{\textquotedbl}] := [0, IMPORT]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}initial{\textquotedbl}] := [Beginner, iconINITIAL]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}initially{\textquotedbl}] := [Ender, INITIALLY]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}invocable{\textquotedbl}] := [0, INVOCABLE]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}link{\textquotedbl}] := [0, LINK]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}local{\textquotedbl}] := [Beginner, LOCAL]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}method{\textquotedbl}] := [0, METHOD]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}next{\textquotedbl}] := [Beginner+Ender, NEXT]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}not{\textquotedbl}] := [Beginner, NOT]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}of{\textquotedbl}] := [0, OF]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}package{\textquotedbl}] := [0, PACKAGE]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}procedure{\textquotedbl}] := [0, PROCEDURE]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}record{\textquotedbl}] := [0, RECORD]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}repeat{\textquotedbl}] := [Beginner, REPEAT]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}return{\textquotedbl}] := [Beginner+Ender, RETURN]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}static{\textquotedbl}] := [Beginner, STATIC]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}suspend{\textquotedbl}] := [Beginner+Ender, SUSPEND]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}then{\textquotedbl}] := [0, THEN]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}to{\textquotedbl}] := [0, TO]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}until{\textquotedbl}] := [Beginner, UNTIL]}
+
+{\ttfamily\mdseries
+\ \ \ t[{\textquotedbl}while{\textquotedbl}] := [Beginner, WHILE]}
+
+{\ttfamily\mdseries
+\}}
+
+{\ttfamily\mdseries
+\ \ \ return t}
+
+{\ttfamily\mdseries
+end}
+
+{\sffamily
+Lexical Analyzer Initialization and the Big Inhale }
+
+
+A function, yylex\_reinit() is called the first time yylex() is
+called, along with each time the compiler moves to process a new file
+named on the command line. Along with initializing the public API
+variables, this function reads in the entire file, in a single global
+string variable, named {\textquotedbl}buffer{\textquotedbl}. This
+allows extremely fast subsequent processing, which does not file I/O
+for each token, while avoiding complex buffering sometimes done to
+reduce file I/O costs in compilers.
+
+This {\textquotedbl}big-inhale{\textquotedbl} model did not work well
+on original 128K PDP-11 UNIX computers, but works well in this
+century. At present, the code assumes Unicon source files are less
+than a megabyte -{}- a lazy programmer's error. Although Unicon
+programs are much shorter than C programs, an upper limit of 1MB is
+bound to be reached someday.
+
+{\ttfamily\mdseries
+procedure yylex\_reinit()}
+
+{\ttfamily\mdseries
+\ \ \ yytext := {\textquotedbl}{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ yylineno := 0}
+
+{\ttfamily\mdseries
+\ \ \ yycolno := 1}
+
+{\ttfamily\mdseries
+\ \ \ lastchar := {\textquotedbl}{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ if type(yyin) == {\textquotedbl}file{\textquotedbl} then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ buffer := reads(yyin, 1000000)}
+
+{\ttfamily\mdseries
+\ \ \ else}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ buffer := yyin}
+
+{\ttfamily\mdseries
+\ \ \ tokflags := 0}
+
+{\ttfamily\mdseries
+end}
+
+{\sffamily
+Semicolon Insertion }
+
+
+Icon and Unicon insert semicolons for you automatically. This is an
+easy lexical analyzer trick. The lexical analyzer requires one token
+of lookahead. Between each two tokens, it asks: was there a newline?
+If yes, was the token before the newline one that could conceivably be
+the end of an expression, and was the token at the start of the new
+line one that could conceivably start a new expression? If it would be
+legal to do so, it saves the new token and returns a semicolon
+instead.
+
+This little procedure is entirely hidden from the regular lexical
+analyzer code by writing that regular code in a helper function
+yylex2(), and writing the semicolon insertion logic in a yylex()
+function that calls yylex2 when it needs a new token.
+
+Initialization for the yylex() function shows the static variables
+used to implement the one token of lookahead. If the global variable
+buffer doesn't hold a string anymore, /buffer will succeed and it must
+be that we are at end-of-file and should return 0.
+
+{\ttfamily\mdseries
+procedure yylex()}
+
+{\ttfamily\mdseries
+\ \ static saved\_tok, saved\_yytext}
+
+{\ttfamily\mdseries
+\ \ local rv, ender}
+
+{\ttfamily\mdseries
+\ \ initial \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if /buffer then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ yylex\_reinit()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ if /buffer then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if {\textbackslash}debuglex then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ write({\textquotedbl}yylex() : 0{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return 0}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+
+If we inserted a semicolon last time we were called, the saved\_tok will be the first token of the next line; we should
+return it. 
+
+{\ttfamily\mdseries
+\ \ if {\textbackslash}saved\_tok then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ rv := saved\_tok}
+
+{\ttfamily\mdseries
+\ \ \ \ saved\_tok := $\nu $ll}
+
+{\ttfamily\mdseries
+\ \ \ \ yytext := saved\_yytext}
+
+{\ttfamily\mdseries
+\ \ \ \ yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)}
+
+{\ttfamily\mdseries
+\ \ \ \ if {\textbackslash}debuglex then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ write({\textquotedbl}yylex() : {\textquotedbl},tokenstr(rv),
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, image(yytext))}
+
+{\ttfamily\mdseries
+\ \ \ \ return rv}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+Otherwise, we should obtain the next token by calling yylex2(). We
+have to check for end of file, remember if the last token could end an
+expression, call yylex2(), and update buffer to be the smaller string
+remaining after the token.
+
+{\ttfamily\mdseries
+\ \ ender := iand(tokflags, Ender)}
+
+{\ttfamily\mdseries
+\ \ tokflags := 0}
+
+{\ttfamily\mdseries
+\ \ if *buffer=0 then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ buffer := $\nu $ll}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if {\textbackslash}debuglex then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ write({\textquotedbl}yylex() : EOFX{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return EOFX}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ buffer ? \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if rv := yylex2() then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ buffer := tab(0)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ else \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ buffer := $\nu $ll}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ yytext := {\textquotedbl}{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if {\textbackslash}debuglex then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ write({\textquotedbl}yylex() : EOFX{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return EOFX}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+After fetching a new token, we have to decide whether to insert a
+semicolon or not. This is based on global variable ender (whether the
+previous token could end an expression) and global variable tokflags
+(which holds both whether the current token could begin an expression,
+and whether a newline occurred between the last token and the current
+token).  iand() is a bitwise AND, equivalen to C language \& operator,
+used to pick bits out of a set of boolean flags encoded as bits within
+an integer.
+
+{\ttfamily\mdseries
+\ \ if ender\~{}=0 \& iand(tokflags, Beginner)\~{}=0 \& iand(tokflags, Newline)\~{}=0 then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ saved\_tok := rv}
+
+{\ttfamily\mdseries
+\ \ \ \ saved\_yytext := yytext}
+
+{\ttfamily\mdseries
+\ \ \ \ yytext := {\textquotedbl};{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ \ rv := SEMICOL}
+
+{\ttfamily\mdseries
+\ \ \ \ \}}
+
+Returning a token requires allocation of a token() record instance,
+which is stored in a global variable.
+
+{\ttfamily\mdseries
+\ \ \ yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)}
+
+{\ttfamily\mdseries
+\ \ \ if {\textbackslash}debuglex then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ write({\textquotedbl}yylex() : {\textquotedbl}, tokenstr(rv),
+{\textquotedbl}{\textbackslash}t{\textquotedbl}, image(yytext))}
+
+{\ttfamily\mdseries
+\ \ \ return rv}
+
+{\ttfamily\mdseries
+end}
+
+{\sffamily
+The Real Lexical Analyzer Function, yylex2()}
+
+This function maintains a table of functions, calling a helper
+function depending on what the first character in the token is.
+
+{\ttfamily\mdseries
+procedure yylex2()}
+
+{\ttfamily\mdseries
+static punc\_table}
+
+{\ttfamily\mdseries
+initial \{}
+
+{\ttfamily\mdseries
+\ \ \ init\_csets()}
+
+{\ttfamily\mdseries
+\ \ \ reswords := reswords()}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table := table(uni\_error)}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}'{\textquotedbl}] := do\_literal}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}{\textbackslash}{\textquotedbl}{\textquotedbl}] := do\_literal}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}!{\textquotedbl}] := do\_bang}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\%{\textquotedbl}] := do\_mod}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\&{\textquotedbl}] := do\_and}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}*{\textquotedbl}] := do\_star}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}+{\textquotedbl}] := do\_plus}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}-{\textquotedbl}] := do\_minus}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}.{\textquotedbl}] := do\_dot}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}/{\textquotedbl}] := do\_slash}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}:{\textquotedbl}] := do\_colon}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}{\textless}{\textquotedbl}] := do\_less}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}={\textquotedbl}] := do\_equal}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}{\textgreater}{\textquotedbl}] := do\_greater}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}?{\textquotedbl}] := do\_qmark}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}@{\textquotedbl}] := do\_at}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}{\textbackslash}{\textbackslash}{\textquotedbl}] := do\_backslash}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\^{}{\textquotedbl}] := do\_caret}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}{\textbar}{\textquotedbl}] := do\_or}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\~{}{\textquotedbl}] := do\_tilde}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}({\textquotedbl}] := do\_lparen}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}){\textquotedbl}] := do\_rparen}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}[{\textquotedbl}] := do\_lbrack}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}]{\textquotedbl}] := do\_rbrack}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\{{\textquotedbl}] := do\_lbrace}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\}{\textquotedbl}] := do\_rbrace}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl},{\textquotedbl}] := do\_comma}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl};{\textquotedbl}] := do\_semi}
+
+{\ttfamily\mdseries
+\ \ \ punc\_table[{\textquotedbl}\${\textquotedbl}] := do\_dollar}
+
+{\ttfamily\mdseries
+\ \ \ every punc\_table[!\&digits] := do\_digits}
+
+{\ttfamily\mdseries
+\ \ \ every punc\_table[{\textquotedbl}\_{\textquotedbl} {\textbar} !${\leq}$tters] := do\_letters}
+
+{\ttfamily\mdseries
+\ \ \ \}}
+
+
+The main lexical analyzer code strips comments and whitespace, and calls the function table for the first non-whitespace
+character it finds. Note support for \#line directives, and the use of string scanning. 
+
+{\ttfamily\mdseries
+\ \ \ yycolno +:= *yytext}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ repeat \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ if pos(0) then fail}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ if }
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ ={\textquotedbl}\#{\textquotedbl} then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if ={\textquotedbl}line {\textquotedbl} then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if yylineno := integer(tab(many(\&digits))) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ={\textquotedbl} {\textbackslash}{\textquotedbl}{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyfilename :=
+tab(find({\textquotedbl}{\textbackslash}{\textquotedbl}{\textquotedbl}){\textbar}0)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tab(find({\textquotedbl}{\textbackslash}n{\textquotedbl}) {\textbar} 0)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ next}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ if ={\textquotedbl}{\textbackslash}n{\textquotedbl} then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ yylineno +:= 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ yycolno := 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ if tokflags {\textless} Newline then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tokflags +:= Newline}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ next}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ if tab(any(' ')) then \{ yycolno +:= 1; next \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ if tab(any('{\textbackslash}v{\textbackslash}\^{}l')) then \{ next \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ if tab(any('{\textbackslash}t')) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ yycolno +:= 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ while (yycolno-1) \% 8 \~{}= 0 do yycolno +:= 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ next}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \}}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ yytext := move(1)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ return punc\_table[yytext]()}
+
+{\ttfamily\mdseries
+\ \ \ \}}
+
+{\ttfamily\mdseries
+end}
+
+
+The functions in the punctuation table select integer codes and match
+the rest of the lexeme. do\_comma() illustrates an unambiguous token
+selection, while do\_plus() illustrates a more common case where the
+{\textquotedbl}+{\textquotedbl} character could start any of 5
+different tokens depending on the character(s) that follow it. Tokens
+starting with {\textquotedbl}letters{\textquotedbl} are looked up in a
+reserved words table, which tells whether they are special, or just a
+variable name.
+
+{\ttfamily\mdseries
+procedure do\_comma()}
+
+{\ttfamily\mdseries
+\ \ \ return COMMA}
+
+{\ttfamily\mdseries
+end}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+procedure do\_plus()}
+
+{\ttfamily\mdseries
+\ \ \ if yytext {\textbar}{\textbar}:= ={\textquotedbl}:{\textquotedbl} then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if yytext {\textbar}{\textbar}:= ={\textquotedbl}={\textquotedbl} then \{ return AUGPLUS \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return PCOLON}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ if yytext {\textbar}{\textbar}:= ={\textquotedbl}+{\textquotedbl} then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if yytext {\textbar}{\textbar}:= ={\textquotedbl}:={\textquotedbl} then \{return AUGUNION\}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return UNION}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ tokflags +:= Beginner}
+
+{\ttfamily\mdseries
+\ \ \ return PLUS}
+
+{\ttfamily\mdseries
+end}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+procedure do\_letters()}
+
+{\ttfamily\mdseries
+\ \ \ yytext {\textbar}{\textbar}:= tab(many(idchars))}
+
+{\ttfamily\mdseries
+\ \ \ x := reswords[yytext]}
+
+{\ttfamily\mdseries
+\ \ \ tokflags +:= x[1]}
+
+{\ttfamily\mdseries
+\ \ \ return x[2]}
+
+{\ttfamily\mdseries
+end}
+
+\section{The Unicon Parser}
+
+Unicon's parser is written using a YACC grammar; a graduate student
+(Ray Pereda) modified Berkeley's public domain version of YACC (byacc)
+to generate Unicon code, following in the footsteps of someone who had
+earlier modified it to generate Java. The Unicon parser lives in
+uni/unicon/unigram.y in the source distribution (22kB, 700 lines, 119
+terminals, 71 nonterminals). Unicon's YACC grammar was obtained by
+copying the Icon grammar, and adding Unicon syntax constructs. Prior
+to this time the object-oriented dialect of Icon was called Idol and
+really was a line-oriented preprocessor instead of a compiler.
+
+The start symbol for the grammar is named
+\textstyleSourceText{program}, and the semantic action code fragment
+for this nonterminal calls the rest of the compiler (semantic analysis
+and code generation) directly on the root of the syntax tree, rather
+than storing it in a global variable for the main() procedure to
+examine.
+
+{\ttfamily\mdseries
+program : decls EOFX \{ Progend(\$1);\} ;}
+
+
+Many context free grammar rules are recursive, with an empty
+production to terminate the recursion. The rule for declarations is
+typical:
+
+{\ttfamily\mdseries
+decls \ \ : \{ \$\$ := EmptyNode \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} decls decl \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ if yynerrs = 0 then iwrites(\&errout,{\textquotedbl}.{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \$\$ := node({\textquotedbl}decls{\textquotedbl}, \$1, \$2)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \} ;}
+
+
+The {\textquotedbl}semantic action{\textquotedbl} (code fragment) for
+every production rule builds a syntax tree node and assigns it to \$\$
+for the nonterminal left-hand side of the rule.
+
+Another common grammar pattern is a production rule that has many
+different alternatives, such as the one for individual declarations:
+
+{\ttfamily\mdseries
+decl \ \ \ : record}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} proc}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} global}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} link}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} package}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} import}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} invocable}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} cl}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ ;}
+
+
+For such {\textquotedbl}unary{\textquotedbl} productions, child's
+syntax tree node suffices for the parent, no new tree node is needed.
+
+Some nonterminals mostly correspond to a specific sequence of
+terminals, as is the case for package references:
+
+{\ttfamily\mdseries
+packageref : IDENT COLONCOLON IDENT \{ \$\$ := node({\textquotedbl}packageref{\textquotedbl}, \$1,\$2,\$3) \} }
+
+{\ttfamily\mdseries
+\ \ \ {\textbar} COLONCOLON IDENT \{ \$\$ := node({\textquotedbl}packageref{\textquotedbl}, \$1,\$2) \} \ }
+
+{\ttfamily\mdseries
+\ \ \ ;}
+
+
+The lexical analyzer has already constructed a valid
+{\textquotedbl}leaf{\textquotedbl} for each terminal symbol, so if a
+production rule has only one terminal symbol in it, for a syntax tree
+we can simply use the leaf for that nonterminal (for a parse tree, we
+would need to allocate an extra unary internal node):
+
+{\ttfamily\mdseries
+lnkfile : IDENT ;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} STRINGLIT ;}
+
+
+The expressions (which comprise about half of the grammar) use a
+separate nonterminal for each level of precedence intead of YACC's
+declarations for handling precedence (\%left, \%right, etc). The Icon
+and Unicon grammars approach 20 levels of nonterminals. A typical rule
+looks like:
+
+{\ttfamily\mdseries
+expr6 \ \ : expr7 ;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} expr6 PLUS expr7 \{ \$\$ := node({\textquotedbl}Bplus{\textquotedbl}, \$1,\$2,\$3);\} ;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} expr6 DIFF expr7 \{ \$\$ := node({\textquotedbl}Bdiff{\textquotedbl}, \$1,\$2,\$3);\} ;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} expr6 UNION expr7 \{ \$\$ := node({\textquotedbl}Bunion{\textquotedbl}, \$1,\$2,\$3);\} ;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ {\textbar} expr6 MINUS expr7 \{ \$\$ := node({\textquotedbl}Bminus{\textquotedbl}, \$1,\$2,\$3);\} ;}
+
+
+The {\textquotedbl}B{\textquotedbl} stands for
+{\textquotedbl}binary{\textquotedbl}, to distinguish these operators
+from their unary brethren. The 20 levels of nonterminals approach is
+inherited from Icon and probably makes the parser larger than it has
+to be, but taking these nonterminals out doesn't seem to help much.
+
+\subsection{Syntax Error Handling }
+
+Icon employed a relatively clever approach to doing syntax error
+messages with YACC --- the parse state at the time of error is enough
+to do fairly good diagnoses. But, every time the grammar changed, the
+parse state numbers could change wildly. For Unicon I developed the
+Merr tool, which associates parse error example fragments with the
+corresponding diagnostic error message, and detects/infers the parse
+state for you, reducing the maintenance problem when changing the
+grammar. Merr also considers the current input token in deciding what
+error message to emit, making it fundamentally more precise than
+Icon's approach.
+
+\section{The Unicon Preprocessor}
+
+The Icon language originally did not include any preprocessor, but
+eventually, a simple one was introduced, with ability to include
+headers, define symbolic constants (macros without parameters), and
+handle conditional compilation (ifdef).  The preprocessor
+implementation in Unicon was written by Bob Alexander, and came to
+Unicon by way of Jcon, an Icon-to-JVM translator. This preprocessor is
+written in a single 600+ line file, uni/unicon/preproce.icn.
+
+The external public interface of the preprocessor is line-oriented,
+consisting of a generator preproc(filename, predefinedsyms) which
+suspends each line of the output, one after another. Its invocation
+from the main() procedure looks like:
+
+{\ttfamily\mdseries
+\ \ \ yyin := {\textquotedbl}{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ every yyin {\textbar}{\textbar}:= preprocessor(fName, uni\_predefs) do}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ yyin {\textbar}{\textbar}:= {\textquotedbl}{\textbackslash}n{\textquotedbl}}
+
+
+Since the preprocessor outputs line-by-line, there is a mismatch
+between it and the lexical analyzer's big-inhale model.  The
+preprocessor could be modified to fit better with the lexical analyzer
+or vice versa.
+
+The preprocessor function takes the filename to read from, along with
+a table of predefined symbols which allows the preprocessor to respond
+to lines like
+
+{\ttfamily\mdseries
+\$ifdef \_SQL}
+
+\noindent based on what libraries are available and how Unicon was
+built on a given platform.
+
+The preprocessor() function itself starts each call off with initializations: 
+
+{\ttfamily\mdseries
+\ \ \ \ static nonpunctuation}
+
+{\ttfamily\mdseries
+\ \ \ \ initial \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ nonpunctuation := ${\leq}$\&letters ++ \&digits ++ '
+{\textbackslash}t{\textbackslash}f{\textbackslash}r'}
+
+{\ttfamily\mdseries
+\ \ \ \ \}}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \ preproc\_new(fname,predefined\_syms)}
+
+The initialization code opens fname, creates empty stacks to keep
+track of nested \$ifdef's and \$include's, initializes counters to 0
+and so forth.
+
+The preprocessor is line-oriented. For each line, it looks for a
+preprocessor directive, and if it does not find one, it just scans for
+symbols to replace and returns the line. The main loop looks like
+
+{\ttfamily\mdseries
+\ \ \ while line := preproc\_read() do line ? \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ preproc\_space() \ \ \ \ \ \ \# eat whitespace}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (={\textquotedbl}\#{\textquotedbl} \& match({\textquotedbl}line{\textquotedbl})) {\textbar}
+(={\textquotedbl}\${\textquotedbl} \& any(nonpunctuation)) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ suspend preproc\_scan\_directive()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ else \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \&pos := 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ suspend preproc\_scan\_text()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+
+The procedures preproc\_scan\_directive() and preproc\_scan\_text()
+work on special and ordinary lines, respectively.  The line is not a
+parameter because it is held in the current string scanning
+environment. The preproc\_scan\_directive() starts by discardign
+whitespace and identifying the first word on the line (which must be a
+valid preprocessor directive). A case expression handles the various
+directives (define, undef, ifdef, etc.). Defined symbols are stored in
+a table. \$ifdef and \$ifndef are handled using a global variable
+preproc\_if\_state to track the boolean conditions. A count of
+\$ifdef's is maintained, in order to handle matching endif's.
+
+Include files are handled using a stack, but an additional set of
+filenames is kept to prevent infinite recursion when files include
+each other. When a new include directive is encountered it is checked
+against the preproc\_include\_set and if OK, it is opened. The
+including file (and its associated name, line, etc) are pushed onto a
+list named preproc\_file\_stack. It is possible to run out of open
+files under this model, although this is not easy under modern
+operating systems.
+
+Include files are searched on an include file path, consisting of a
+list of directories given on an optional environment variable (LPATH)
+followed by a list of standard directories. The standard directories
+are expected to be found relative to the location of the virtual
+machine binaries.
+
+The procedure preproc\_scan\_text has the relatively simple job of
+replacing any symbols by their definitions within an ordinary source
+line. Since macros do not have parameters, it is vastly simpler than
+in a C preprocessor. The main challenges are to avoid macro
+substitutions when a symbol is in a comment or within quotes (string
+or cset literals).  An additional issue is to handle multiline string
+literals, which occur in Icon when a string literal is not closed on a
+line, and instead the line ends with an underscore indicating that it
+is continued on the next line. Skipping over quoted text sounds
+simple, but is trickier than it looks. Escape characters mean you
+can't just look for the closing quote without considering what comes
+before it, and you can't just look at the preceding character since it
+might have been escaped, as in
+{\textquotedbl}{\textbackslash}{\textbackslash}{\textquotedbl}. The
+code looks similar to:
+
+{\ttfamily\mdseries
+repeat \{}
+
+{\ttfamily\mdseries
+\ \ \ while tab(upto('{\textquotedbl}{\textbackslash}{\textbackslash}')) do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ case move(1) of \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}{\textbackslash}{\textbackslash}{\textquotedbl}: move(1)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ default: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ break break}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \# ...}
+
+{\ttfamily\mdseries
+\ \ \ if not match({\textquotedbl}\_{\textquotedbl},,-1) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ break}
+
+{\ttfamily\mdseries
+\ \ \ ${\subset}$\&subject := preproc\_read() {\textbar} fail}
+
+{\ttfamily\mdseries
+\ \ \ \# ...}
+
+{\ttfamily\mdseries
+\ \ \ \}}
+
+The code in preproc\_read() for reading a line does a regular Icon
+read(); end of file causes the preprocessor file\_stack to be popped
+for the previous file's information. Performance has not been
+perceived as a significant problem, it it would be interesting to
+convert preproc\_read() to use a big-inhale model to see if any
+statistical difference could be observed. When an include is
+encountered under a big-inhale, the saved state would contain the
+string of remaining file contents, instead of the open file value.
+
+
+\section{Semantic Analysis}
+
+The Unicon translator's semantic analysis is minimal, and revolves
+mainly around object-oriented features such as inheritance and package
+imports. Before we can look at those things, we need to look at the
+syntax tree structure.
+
+In conventional YACC, a \%union declaration is necessary to handle the
+varying types of objects on the value stack including the type used
+for syntax tree nodes, but iyacc has no need of this awkward
+mechanism: the value stack like all structure types can hold any type
+of value in each slot. Similarly, tree nodes can hold children of any
+type, potentially eliminating any awkwardness of mixing tokens and
+internal nodes. Of course, you do still have to check what kind of
+value you are working with.
+
+{\sffamily
+Parse Tree Nodes }
+
+uni/unicon/tree.icn contains procedures to handle the syntax tree node
+data type, including both the following declaration and the yyprint()
+traversal function we'll be discussing in today's lecture.
+
+{\ttfamily\mdseries
+record treenode(label, children)}
+
+\noindent holds one node worth of information. For convenience, a
+procedure node(label, kids[]) takes an arbitrary number of parameters
+and constructs the list of children for you. Leaves have a null
+children field.
+
+{\sffamily
+{\textquotedbl}Code Generation{\textquotedbl} in the Unicon Translator }
+
+In a regular preprocessor, there is no code generation, there is a
+text-filter model in which the preprocessor writes out (modified)
+versions of the lines it reads in. In the Unicon translator, the code
+that is written out is produced by a traversal of the syntax tree. The
+same technique might be used by a {\textquotedbl}pretty
+printer{\textquotedbl}. We will explore this aspect of the Unicon
+translator as the best available demonstration of working with Unicon
+syntax trees. Later on we will consider more
+{\textquotedbl}real{\textquotedbl} code generation in the virtual
+machine and the optimizing compiler.
+
+Earlier we saw that the start symbol of the Unicon grammar had a
+semantic action that called a procedure Progend(). We will cover most
+of that procedure next week since it is all about object-orientation,
+but at the end Progend(), a call to yyprint() performs the tree
+traversal for code generation. A classic tree traversal pattern would
+look like:
+
+{\ttfamily\mdseries
+procedure traverse(node)}
+
+{\ttfamily\mdseries
+\ \ \ if node is an internal node \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every child := ! node.children do traverse(child)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ generate code for this internal node (postfix)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ else}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ generate code for this leaf}
+
+{\ttfamily\mdseries
+end}
+
+The code generator traversal yyprint() is a lot more complicated than
+that, but fits the general pattern. The main work done at various
+nodes is to write some text to the output file, yyout. Most ordinary
+internal nodes are of type treenode as described above. But because
+there are several kinds of internal nodes and several kinds of leaves,
+the {\textquotedbl}if node is an internal node{\textquotedbl} is
+implemented as a case expression. Besides a regular treenode, the
+other kinds of internal nodes are objects of type declaration, class,
+and argument list. For regular treenodes, another case expression on
+the node's label field is used to determine what kind of code to
+generate, if any, besides visiting children and generating their code.
+
+The default behavior for an internal node is to just visit the
+children, generating their code. For ordinary syntax constructs (if,
+while, etc.) this works great and a copy of the code is written out,
+token by token. But several exceptions occur, mainly for the pieces of
+Unicon syntax that extend Icon's repertoire. For example, packages and
+imports are not in Icon and require special treatment.
+
+{\ttfamily\mdseries
+procedure yyprint(node)}
+
+{\ttfamily\mdseries
+\ \ \ static lasttok}
+
+{\ttfamily\mdseries
+\ \ \ case type(node) of \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ {\textquotedbl}treenode{\textquotedbl} : \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case node.label of \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}package{\textquotedbl}: \{ \} \# handled by semantic analysis}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}import{\textquotedbl}: \{ print\_imports(node.children[2]) \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \# implement packages via name mangling}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}packageref{\textquotedbl}: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ if *node.children = 2 then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[2]) \# ::ident}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ else \{ \# ident :: ident}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[1])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ writes(yyout, {\textquotedbl}\_\_{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ outcol +:= ((* writes(yyout, node.children[3].s)) + 2)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+
+New syntax constructs such as procedure parameter defaults and type
+restrictions, and variable initializers, are other examples where the
+default traversal would output things illegal in Icon. They are
+implemented by skipping some of the children (assignment and value) in
+the regular pass, and adding extra code elsewhere, discussed below.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}varlist2{\textquotedbl}{\textbar}{\textquotedbl}stalist2{\textquotedbl}: \{
+yyprint(node.children[1]) \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}varlist4{\textquotedbl}{\textbar}{\textquotedbl}stalist4{\textquotedbl}: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[1])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[2])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[3])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+
+Much of this special logic is orchestrated by the code for traversing
+a procedure; it can visit its arguments and variable declarations and
+apply special rules to them.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}proc{\textquotedbl}: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[1])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ every yyprint(node.children[2 to 3])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if exists\_statlists(node.children[3]) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ini := node.children[4]}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyprint({\textquotedbl}{\textbackslash}ninitial \{{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if ini \~{}=== EmptyNode then \{ \# append into existing initial}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyprint(ini.children[2])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyprint({\textquotedbl};{\textbackslash}n{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yystalists(node.children[3])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ yyprint({\textquotedbl}{\textbackslash}n\}{\textbackslash}n{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ else}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ every yyprint(node.children[4])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ (node.children[1].fields).coercions()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyvarlists(node.children[3])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[5])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ yyprint(node.children[6])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+The default behavior of visiting one's children is very simple, as is
+the handling of other kinds of internal nodes, which are objects. For
+the objects, a method Write() is invoked.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ {\textquotedbl}error{\textquotedbl}: fail}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ default:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ every yyprint(!node.children)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ {\textquotedbl}declaration\_\_state{\textquotedbl} {\textbar} {\textquotedbl}Class\_\_state{\textquotedbl}
+{\textbar} {\textquotedbl}argList\_\_state{\textquotedbl}:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ node.Write(yyout)}
+
+
+The outer case expression of yyprint() continues with various kinds of
+leaf (token) nodes. These mainly know how to write their lexemes
+out. But, a lot of effort is made to try to keep line and column
+number information consistent.  Variables outline and outcol are
+maintained as each token is written out. Integers and string literals
+found in the syntax tree are written out as themselves. Since they
+have no attached lexical attributes, they are a bit suspect in terms
+of maintaining debugging consistency. It turns out the reason they
+occur at all, and the reason they have no source lexical attributes,
+is that artificial syntax subtrees are generated to handle certain
+object-oriented constructs, and within those subtrees strings and
+integers may be placed, which do not correspond to anywhere in the
+source code.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ {\textquotedbl}integer{\textquotedbl}: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ writes(yyout, node); outcol +:= *string(node)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ {\textquotedbl}string{\textquotedbl}: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ node ? \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ while writes(yyout, tab(find({\textquotedbl}{\textbackslash}n{\textquotedbl})+1)) do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ outline+:=1; outcol:=1;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ node := tab(0)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ writes(yyout, node); outcol +:= *node}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+
+{\textquotedbl}Normally{\textquotedbl}, tokens are written out at
+exactly the line and column they appear at in the source code. But a
+myriad of constructs may bump them around. If the output falls behind
+(in lines, or columns) extra whitespace can be inserted to stay in
+sync. If output gets ahead by lines, a \#line directive can back it
+up, but if output gets ahead by columns, there is nothing much one can
+do, except make sure subsequent tokens don't accidentally get
+attached/concatenated onto earlier tokens. This occurs, for example,
+when the output code for an object-oriented construct in an expression
+is longer than the source expression, perhaps due to name
+mangling. Specific token combinations are checked, but the list here
+may be incomplete (possible BUG!). For source tokens, not only might
+the line and column change, the filename could be different as well.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ {\textquotedbl}token{\textquotedbl}: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if outfilename \~{}== node.filename {\textbar} outline {\textgreater} node.line then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ write(yyout,{\textquotedbl}{\textbackslash}n\#line {\textquotedbl}, node.line-1,{\textquotedbl}
+{\textbackslash}{\textquotedbl}{\textquotedbl},
+node.filename,{\textquotedbl}{\textbackslash}{\textquotedbl}{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ outline := node.line}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ outcol := 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ outfilename := node.filename}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ while outline {\textless} node.line do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ write(yyout); outline +:= 1; outcol := 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if outcol {\textgreater}= node.column then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \# force space between idents and reserved words, and other}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \# deadly combinations (need to add some more)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if (({\textbackslash}lasttok).tok = (IDENT{\textbar}INTLIT{\textbar}REALLIT) \&
+reswords[node.s][2]\~{}=IDENT){\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((({\textbackslash}lasttok).tok = NMLT) \& (node.tok = MINUS)) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (({\textbackslash}lasttok).tok = node.tok = PLUS) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (({\textbackslash}lasttok).tok = node.tok = MINUS) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((reswords[({\textbackslash}lasttok).s][2]\~{}=IDENT) \&
+(node.tok=(IDENT{\textbar}INTLIT{\textbar}REALLIT))){\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((reswords[({\textbackslash}lasttok).s][2]\~{}=IDENT) \&
+(reswords[node.s][2]\~{}=IDENT))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ writes(yyout, {\textquotedbl} {\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ else}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ while outcol {\textless} node.column do \{ writes(yyout, {\textquotedbl} {\textquotedbl});
+outcol +:= 1 \}}
+
+
+Most tokens' lexemes are finally written out by writing node.s: 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ writes(yyout, node.s)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ outcol +:= *node.s}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ lasttok := node}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ {\textquotedbl}null{\textquotedbl}: \{ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ default: write({\textquotedbl}its a {\textquotedbl}, type(node))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+end}
+
+{\sffamily
+Keywords }
+
+
+Besides the large set of interesting reserved words, Icon and Unicon
+have another set of predefined special words called
+\textstyleEmphasis{keywords}. These words are prefixed by an
+ampersand, for example, \&subject holds the current
+{\textquotedbl}subject{\textquotedbl} string being examined by string
+scanning. A procedure Keyword(x1,x2) semantically checks that an
+identifier following a unary ampersand is one of the valid keyword
+names. The valid names are kept in a set data structure.
+
+
+\section{Object Oriented Facilities }
+
+Unicon features classes, packages, and a novel multiple inheritance
+mechanism. These items are implemented entirely within the Unicon
+translator. The Icon virtual machine thusfar has only the slightest of
+extensions for object-orientation, specifically, the dot operator has
+been extended to handle objects and method invocation.
+
+The Unicon OOP facilities were originally prototyped as a semester
+class project in a {\textquotedbl}special topics{\textquotedbl}
+graduate course. Writing the prototype in a very high-level language
+like Icon, and developing it as a preprocessor with name mangling,
+allowed the initial class mechanism to be developed in a single
+evening, and a fairly full, usable system with working inheritance to
+be developed in the first weekend. By the end of the semester, the
+system was robust enough to write it in itself, and it was released to
+the public shortly afterwards as a package for Icon called
+{\textquotedbl}Idol{\textquotedbl}. Many many improvements were made
+after this point, often at the suggestion of users.
+
+An initial design goal was to make the absolute smallest additions to
+the language that were necessary to support
+object-orientation. Classes were viewed as a version of Icon's record
+data type, retaining its syntax for fields (member variables), but
+appending a set of associated procedures. Because records have no
+concept of public and private, neither did classes. Another graduate
+student criticized this lack of privacy, and for several versions,
+everything was made private unless an explicit public keyword was
+used. But eventually support for privacy was dropped on the grounds
+that it added no positive capabilities and was un-Iconish. The
+existence of classes with hundreds of
+{\textquotedbl}getter{\textquotedbl} and
+{\textquotedbl}setter{\textquotedbl} methods was considered a direct
+proof that {\textquotedbl}private{\textquotedbl} was idiotic in a
+rapid prototyping language.
+
+{\sffamily
+The Code Generation Model for Classes }
+
+
+{\textquotedbl}unicon -E foo{\textquotedbl} will show you what code is
+generated for Unicon file foo.icn. If foo.icn contains classes, you
+can enjoy the code generation model and experiment to see what it does
+under various circumstances. As a first example, consider
+
+{\ttfamily\mdseries
+class A(x,y)}
+
+{\ttfamily\mdseries
+\ \ \ method m()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ write({\textquotedbl}hello{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+{\ttfamily\mdseries
+end}
+
+
+These five lines generate 25 lines for Icont to translate into virtual
+machine code. The first two lines are line directives showing from
+whence this source code originated:
+
+{\ttfamily\mdseries
+\#line 0 {\textquotedbl}/tmp/uni13804206{\textquotedbl}}
+
+{\ttfamily\mdseries
+\#line 0 {\textquotedbl}a.icn{\textquotedbl}}
+
+
+Global declarations (including procedures) would be passed through the
+preprocessor pretty nearly intact, but for the class, we get a bunch
+of very different code. Methods are written out, with names mangled to
+a classname\_methodname format.
+
+{\ttfamily\mdseries
+procedure A\_m(self)}
+
+
+\bigskip
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\#line 2 {\textquotedbl}a.icn{\textquotedbl}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ write({\textquotedbl}hello{\textquotedbl});}
+
+{\ttfamily\mdseries
+end}
+
+
+Two record types are defined, one for the class instances and one for
+the {\textquotedbl}methods vector{\textquotedbl}, or
+{\textquotedbl}operation record{\textquotedbl}. The methods vector is
+instantiated exactly once in a global variable in classname\_\_oprec
+format.
+
+{\ttfamily\mdseries
+record A\_\_state(\_\_s,\_\_m,x,y)}
+
+{\ttfamily\mdseries
+record A\_\_methods(m)}
+
+{\ttfamily\mdseries
+global A\_\_oprec}
+
+
+The default constructor for a class takes fields as parameters and
+uses them directly for initialization purposes. The first time it is
+called, a methods vector is created. Instances are given a pointer to
+themselves in an \_\_s field (mainly for historical reasons) and to
+the methods vector in an \_\_m field. Current NMSU grad student Sumant
+Tambe did an independent study project to get rid of \_\_s and \_\_m
+with partial success, but his work is not finished or robust enough to
+be enabled by default.
+
+{\ttfamily\mdseries
+procedure A(x,y)}
+
+{\ttfamily\mdseries
+local self,clone}
+
+{\ttfamily\mdseries
+initial \{}
+
+{\ttfamily\mdseries
+\ \ if /A\_\_oprec then Ainitialize()}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+{\ttfamily\mdseries
+\ \ self := A\_\_state($\nu $ll,A\_\_oprec,x,y)}
+
+{\ttfamily\mdseries
+\ \ self.\_\_s := self}
+
+{\ttfamily\mdseries
+\ \ return self}
+
+{\ttfamily\mdseries
+end}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+procedure Ainitialize()}
+
+{\ttfamily\mdseries
+\ \ initial A\_\_oprec := A\_\_methods(A\_m)}
+
+{\ttfamily\mdseries
+end}
+
+{\sffamily
+Symbols and Scope Resolution }
+
+
+One of the basic aspects of semantic analysis is: for each variable,
+where was it declared, so we can identify its address, etc. Unicon
+inherits from Icon the curious convenience that variables do not have
+to be declared: they are local by default. This feature is implemented
+by deferring the local vs. global decision until link time, so the
+Unicon translator has no local vs. global issues. Class variables,
+however, have to be identified, and looked up relative to the implicit
+{\textquotedbl}self{\textquotedbl} variable. A family of procedures in
+uni/unicon/tree.icn with names starting
+{\textquotedbl}scopecheck{\textquotedbl} go through the syntax tree
+looking for such class variables. Like most tree traversals, this is a
+recursive process, and since local and parameter declarations override
+class variables, there are helper functions to walk through subtrees
+building mini-symbol tables such as local\_vars in
+scopecheck\_proc(node):
+
+{\ttfamily\mdseries
+\ \ \ \# Build local\_vars from the params and local var expressions.}
+
+{\ttfamily\mdseries
+\ \ \ local\_vars := set()}
+
+{\ttfamily\mdseries
+\ \ \ extract\_identifiers(node.children[1].fields, local\_vars)}
+
+{\ttfamily\mdseries
+\ \ \ extract\_identifiers(node.children[3], local\_vars)}
+
+Eventually, every identifier in every expression is checked against
+local\_vars, and if not found there, against the class variables
+stored in a variable self\_vars:
+
+{\ttfamily\mdseries
+\ \ \ self\_vars := set()}
+
+{\ttfamily\mdseries
+\ \ \ every insert(self\_vars, c.foreachmethod().name)}
+
+{\ttfamily\mdseries
+\ \ \ every insert(self\_vars, c.foreachfield())}
+
+{\ttfamily\mdseries
+\ \ \ every insert(self\_vars, (!c.ifields).ident)}
+
+{\ttfamily\mdseries
+\ \ \ every insert(self\_vars, (!c.imethods).ident)}
+
+For an IDENT node, the tests boil down to: 
+
+{\ttfamily\mdseries
+\ \ \ if node.tok = IDENT then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if not member({\textbackslash}local\_vars, node.s) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if member({\textbackslash}self\_vars, node.s) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ node.s := {\textquotedbl}self.{\textquotedbl} {\textbar}{\textbar} node.s}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ else }
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ node.s := mangle\_sym(node.s)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \}}
+
+
+Undeclared locals and globals are mangled to include the current
+package name if there is one.
+
+{\sffamily
+Inheritance }
+
+
+Inheritance means: creating a class that is similar to an existing
+class. In object-oriented literature there is {\textquotedbl}abstract
+inheritance{\textquotedbl} in which a class supports all the same
+operations with the same signatures, and there is concrete inheritance
+in which actual code is shared. Early object-oriented languages
+supported only concrete inheritance, while more recent languages tend
+to discourage it. Unicon is not typed at compile time, so abstract
+inheritance is not a big deal. There are abstract methods, and classes
+whose every method is abstract, but the use of abstract is mainly for
+documentation: subclass authors must provide certain methods. Anyhow,
+the syntax of inheritance in Unicon is
+
+{\ttfamily\mdseries
+class subclass : super1 : super2 : ... ( ...fields... )}
+
+
+The semantics of inheritance, and particularly of multiple
+inheritance, are interesting in Unicon; the implementation is
+relatively simple. An example of inheritance is given by class Class,
+from uni/unicon/idol.icn
+
+{\ttfamily\mdseries
+class declaration(name,fields,tag,lptoken,rptoken)}
+
+{\ttfamily\mdseries
+\ \ \ ...}
+
+{\ttfamily\mdseries
+end}
+
+{\ttfamily\mdseries
+...}
+
+{\ttfamily\mdseries
+class Class : declaration (supers,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ methods,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ text,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ imethods,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ifields,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ glob,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ linkfile,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dir,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ unmangled\_name,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ supers\_node)}
+
+
+Unique perspective on inheritance in Unicon comes from the actual
+acquisition of inherited data fields and methods by the subclass. Some
+object-oriented languages do this inheritance {\textquotedbl}by
+aggregation{\textquotedbl}, creating a copy of the superclass in the
+subclass. This is fine, but it makes
+{\textquotedbl}overriding{\textquotedbl} an anomaly, when overriding
+the parent with new/different behavior is entirely routine. Unicon
+instead inherits by the child looking for things in the parent (and
+the parent's parent, etc.) that they don't already have. In the above
+example, class declaration effectively appends 5 fields from class
+declaration onto the end of its field list. The generated code for
+instances looks like
+
+{\ttfamily\mdseries
+record Class\_\_state(\_\_s,\_\_m,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ supers,methods,text,imethods,ifields,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ glob,linkfile,dir,unmangled\_name,supers\_node,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ name,fields,tag,lptoken,rptoken)}
+
+The inheritance semantics is called {\textquotedbl}closure
+based{\textquotedbl} because the process of looking for things to add
+from parent superclasses iterates until no new information can be
+added, after which the subclass is said to be closed on its
+parents. Other forms of closure appear frequently in CS.
+
+\subsection{Implementing Multiple Inheritance in Unicon }
+
+The actual code in the Unicon translator is, by analogy to transitive
+closure, looking for things to inherit via a depthfirst traversal of
+the inheritance graph. Multiple inheritance can be separated out into
+two portions:
+
+\liststyleLxliii
+\begin{enumerate}
+
+\item a method transitive\_closure() that finds all superclasses and
+provides a linearization of them, flattening the graph into a single
+ordered list of all superclasses
+
+\item a method resolve() that walks the list and looks for classes and
+fields to add.
+
+\end{enumerate}
+
+Method transitive\_closure() is one of the cleaner demonstrations of
+why Unicon is a fun language in which to write complex algorithms. It
+is walking through a class graph, but by the way it is not recursive.
+
+{\ttfamily\mdseries
+\ \ method transitive\_closure()}
+
+{\ttfamily\mdseries
+\ \ \ \ count := supers.size()}
+
+{\ttfamily\mdseries
+\ \ \ \ while count {\textgreater} 0 do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ added := taque()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ every sc := supers.foreach() do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ if /(super := classes.lookup(sc)) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ halt({\textquotedbl}class/transitive\_closure: \_}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ couldn't find superclass {\textquotedbl},sc)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ every supersuper := super.foreachsuper() do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if / self.supers.lookup(supersuper) \&}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ /added.lookup(supersuper) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ added.insert(supersuper)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ count := added.size()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ every self.supers.insert(added.foreach())}
+
+{\ttfamily\mdseries
+\ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ end}
+
+
+Now, given that Unicon provides a depthfirst inheritance hierarchy
+semantics, what is wrong with this picture? The code is stable and
+hasn't needed changes in several years, so this question is not
+fishing for syntax bugs, or claiming that there is a bug. But there is
+something odd.
+
+The method resolve() within class Class finds the inherited fields and
+methods from the linearized list of superclasses.
+
+
+{\ttfamily\mdseries
+\ \ \#}
+
+{\ttfamily\mdseries
+\ \ \# resolve -{}- primary inheritance resolution utility}
+
+{\ttfamily\mdseries
+\ \ \#}
+
+{\ttfamily\mdseries
+\ \ method resolve()}
+
+{\ttfamily\mdseries
+\ \ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ \ \# these are lists of [class , ident] records}
+
+{\ttfamily\mdseries
+\ \ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ \ self.imethods := []}
+
+{\ttfamily\mdseries
+\ \ \ \ self.ifields := []}
+
+{\ttfamily\mdseries
+\ \ \ \ ipublics := []}
+
+{\ttfamily\mdseries
+\ \ \ \ addedfields := table()}
+
+{\ttfamily\mdseries
+\ \ \ \ addedmethods := table()}
+
+{\ttfamily\mdseries
+\ \ \ \ every sc := supers.foreach() do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ if /(superclass := classes.lookup(sc)) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ halt({\textquotedbl}class/resolve: couldn't find superclass {\textquotedbl},sc)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ every superclassfield := superclass.foreachfield() do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if /self.fields.lookup(superclassfield) \&}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ /addedfields[superclassfield] then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ addedfields[superclassfield] := superclassfield}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ put ( self.ifields , classident(sc,superclassfield) )}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if superclass.ispublic(superclassfield) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ put( ipublics, classident(sc,superclassfield) )}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \} else if {\textbackslash}strict then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ warn({\textquotedbl}class/resolve: '{\textquotedbl},sc,{\textquotedbl}' field
+'{\textquotedbl},superclassfield,}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}' is redeclared in subclass {\textquotedbl},self.name)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ every superclassmethod := (superclass.foreachmethod()).name() do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if /self.methods.lookup(superclassmethod) \&}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ /addedmethods[superclassmethod] then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ addedmethods[superclassmethod] := superclassmethod}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ put ( self.imethods, classident(sc,superclassmethod) )}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ every public := (!ipublics) do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if public.Class == sc then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ put (self.imethods, classident(sc,public.ident))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ end}
+
+{\sffamily
+Class and Package Specifications }
+
+
+In the {\textquotedbl}old days{\textquotedbl} of Unicon's ancestor
+Idol, you could only inherit from a class that appeared in the same
+source file. Anything else poses a librarian's problem of identifying
+from what file to inherit.  Java, for instances, takes a brute-force
+approach of one class per file.
+
+Unicon generates in each source directory an NDBM database (named
+uniclass.dir and uniclass.pag) that includes a mapping from class name
+to: what file the class lives in, plus, what superclasses, fields, and
+methods appear in that class.  From these specifications,
+{\textquotedbl}link{\textquotedbl} declarations are generated for
+superclasses within subclass modules, plus the subclass can perform
+inheritance resolution. The code to find a class specification is
+given in idol.icn's fetchspec(). A key fragment looks like
+
+{\ttfamily\mdseries
+\ \ \ if f := open(dir {\textbar}{\textbar} {\textquotedbl}/{\textquotedbl} {\textbar}{\textbar} env,
+{\textquotedbl}dr{\textquotedbl}) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if s := fetch(f, name) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ close(f)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return db\_entry(dir, s)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ close(f)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+
+Unicon searches for {\textquotedbl}link{\textquotedbl} declarations in
+a particular order, given by the current directory followed by
+directories in an IPATH (Icode path, or perhaps Icon path) environment
+variable, followed by system library directories such as ipl/lib and
+uni/lib. This same list of directories is searched for inherited
+classes.
+
+
+The string stored in uniclass.dir and returned from fetch() for class Class is: 
+
+{\ttfamily\mdseries
+idol.icn}
+
+{\ttfamily\mdseries
+class Class : declaration(supers,methods,text,imethods,ifields,glob,linkfile,dir,unmangled\_name,supers\_node)}
+
+{\ttfamily\mdseries
+ismethod}
+
+{\ttfamily\mdseries
+isfield}
+
+{\ttfamily\mdseries
+Read}
+
+{\ttfamily\mdseries
+ReadBody}
+
+{\ttfamily\mdseries
+has\_initially}
+
+{\ttfamily\mdseries
+ispublic}
+
+{\ttfamily\mdseries
+foreachmethod}
+
+{\ttfamily\mdseries
+foreachsuper}
+
+{\ttfamily\mdseries
+foreachfield}
+
+{\ttfamily\mdseries
+isvarg}
+
+{\ttfamily\mdseries
+transitive\_closure}
+
+{\ttfamily\mdseries
+writedecl}
+
+{\ttfamily\mdseries
+WriteSpec}
+
+{\ttfamily\mdseries
+writemethods}
+
+{\ttfamily\mdseries
+Write}
+
+{\ttfamily\mdseries
+resolve}
+
+{\ttfamily\mdseries
+end}
+
+\subsection{Unicon's Progend() revisited }
+
+Having presented scope resolution, inheritance, and importing packages
+and inheriting classes from other files via the uniclass.dir NDBM
+files, we can finally show the complete semantic analysis in the
+Unicon compiler, prior to writing out the syntax tree as Icon code:
+
+{\ttfamily\mdseries
+procedure Progend(x1)}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ package\_level\_syms := set()}
+
+{\ttfamily\mdseries
+\ \ \ package\_level\_class\_syms := set()}
+
+{\ttfamily\mdseries
+\ \ \ set\_package\_level\_syms(x1)}
+
+{\ttfamily\mdseries
+\ \ \ scopecheck\_superclass\_decs(x1)}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ outline := 1}
+
+{\ttfamily\mdseries
+\ \ \ outcol := 1}
+
+{\ttfamily\mdseries
+\ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ \# export specifications for each class}
+
+{\ttfamily\mdseries
+\ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ native := set()}
+
+{\ttfamily\mdseries
+\ \ \ every cl := classes.foreach\_t() do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ cl.WriteSpec()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ insert(native, cl)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ \# import class specifications, transitively}
+
+{\ttfamily\mdseries
+\ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ repeat \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ added := 0}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every super := ((classes.foreach\_t()).foreachsuper() {\textbar} !imports) do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if /classes.lookup(super) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ added := 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ readspec(super)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ cl := classes.lookup(super)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if /cl then halt({\textquotedbl}can't inherit class
+'{\textquotedbl},super,{\textquotedbl}'{\textquotedbl})}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ iwrite({\textquotedbl} \ inherits {\textquotedbl}, super, {\textquotedbl} from {\textquotedbl},
+cl.linkfile)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ writelink(cl.dir, cl.linkfile)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ outline +:= 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ if added = 0 then break}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+{\ttfamily\mdseries
+\ \ \#}
+
+{\ttfamily\mdseries
+\ \ \# Compute the transitive closure of the superclass graph. Then}
+
+{\ttfamily\mdseries
+\ \ \# resolve inheritance for each class, and use it to apply scoping rules.}
+
+{\ttfamily\mdseries
+\ \ \#}
+
+{\ttfamily\mdseries
+\ \ every (classes.foreach\_t()).transitive\_closure()}
+
+{\ttfamily\mdseries
+\ \ every (classes.foreach\_t()).resolve()}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ scopecheck\_bodies(x1)}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ if {\textbackslash}thePackage then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every thePackage.insertsym(!package\_level\_syms)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ \# generate output}
+
+{\ttfamily\mdseries
+\ \ \ \#}
+
+{\ttfamily\mdseries
+\ \ \ yyprint(x1)}
+
+{\ttfamily\mdseries
+\ \ \ write(yyout)}
+
+\subsection[Other OOP Issues]{Other OOP Issues}
+
+The primary mechanisms for object-oriented programming that we have
+discussed so far include: classes, method invocation,
+inheritance. There were certainly a few parts we glossed over (like
+how a\$super.m() is implemented.) The main way to look for additional
+issues we skipped is to read uni/unicon/idol.icn, which handles all
+the object-oriented features and comes from the original Idol
+preprocessor. Here are some thoughts from a scan of idol.icn:
+
+\liststyleLxliv
+\begin{itemize}
+\item 
+the preprocessor semi-parsed class and method headers in order to do inheritance. After the real (YACC-based) parser was
+added, I hoped to remove the parsing code, but it is retained in order to handle class specifications in the
+uniclass.dir NDBM files 
+\item 
+The classes in idol.icn correspond fairly directly to major syntax constructs; the compiler itself is object-oriented. 
+\item 
+Packages are a {\textquotedbl}virtual syntax construct{\textquotedbl}: no explicit representation in the source, but
+stored in the uniclass.dir database 
+\item 
+There is a curious data structure, a tabular queue, or taque, that combines (hash) table lookup and preserves (lexical)
+ordering. 
+\item 
+Aggregation and delegation patterns are used a lot. A class is an aggregate of methods, fields, etc. and delegates a lot
+of its work to objects created for subparts of its overall syntax. 
+\end{itemize}
+
+\subsection{An Aside on Public Interfaces and Runtime Type Checking}
+
+Object-oriented facilities are usually discussed in the context of
+large complex applications where software engineering is an issue. We
+don't usually need OOP for 100 line programs, but for 10,000+ line
+programs it is often a big help.
+
+Besides classes and packages, Unicon adds to Icon one additional
+syntax construct in support of this kind of program: type checking and
+coercion of parameters. Parameters and return values are the points at
+which type errors usually occur, during an integration phase in a
+large project where one person's code calls another. The type checking
+and coercion syntax was inspired by the type checks done by the Icon
+runtime system at the boundary where Icon program code calls the C
+code for a given function or operator.
+
+
+One additional comment about types is that the lack of types in
+declarations for ordinary variables such as {\textquotedbl}local
+x{\textquotedbl} does not prevent the Icon compiler iconc from
+determining the exact types of well over 90\% of uses at compile time
+using type inference. Type checking can generally be done at compile
+time even if variable declarations do not refer to types... as long as
+the type information is available across file and module boundaries.

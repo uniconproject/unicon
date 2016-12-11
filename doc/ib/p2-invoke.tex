@@ -1,0 +1,864 @@
+\chapter{Optimizing Invocations}
+
+Several optimizations apply to the invocation of procedures and
+built-in operations. These include optimizations resulting from the
+application of information from type inferencing, optimizations
+resulting from the application of lifetime information to passing
+parameters and returning results, and optimizations involving the
+generation of in-line code. There are interactions between the
+optimizations in these three categories.
+
+A primary motivation in developing the Icon compiler was to explore
+the optimizations that are possible using information from type
+inferencing. These optimizations involve eliminating type checking and
+type conversions where type inferencing indicates that they are not
+needed. Dereferencing is not normally viewed as a type conversion,
+because variable references are not first-class values in
+Icon. However, variable references occur as intermediate values and do
+appear in the type system used by the Icon compiler. Therefore, from
+the perspective of the compiler, dereferencing is a type conversion.
+
+When a procedure or built-in operation is implemented as a C function
+conforming to the standard calling conventions of the compiler system,
+that function is responsible for performing any type checking and type
+conversions needed by the procedure or operation. For this reason, the
+checking and conversions can only be eliminated from tailored
+implementations.
+
+
+\section{Invocation of Procedures}
+
+As explained earlier, a procedure has one implementation: either a
+standard implementation or a tailored implementation.  If the compiler
+decides to produce a tailored implementation, the caller of the
+procedure is responsible for dereferencing. When type inferencing
+determines that an operand is not a variable reference, no
+dereferencing code is generated. Suppose p is a procedure that takes
+one argument and always fails. If P01\_p is the tailored C function
+implementing p, then it takes one argument: a pointer to a descriptor
+containing the dereferenced Icon argument.  Without using type
+information, the call p(3) translates into
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[0].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[0].vword.integr = 3;}
+
+{\ttfamily\mdseries
+\ \ \ deref(\&frame.tend.d[0], \&frame.tend.d[0]);}
+
+{\ttfamily\mdseries
+\ \ \ P01\_p(\&frame.tend.d[0]);}
+
+
+With the use of type information, the call to deref is eliminated: 
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[0].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[0].vword.integr = 3;}
+
+{\ttfamily\mdseries
+\ \ \ P01\_p(\&frame.tend.d[0]);}
+
+
+\section{Invocation and In-lining of Built-in Operations}
+
+Icon's built-in operations present more opportunities for these
+optimizations than procedures, because they can contain type checking
+and conversions beyond dereferencing. Built-in operations are treated
+differently than procedures. Except for keywords, there is always a C
+function in the run-time library that implements the operation using
+the standard calling conventions. In addition, the compiler can create
+several tailored in-line versions of an operation from the information
+in the data base.
+
+It is important to keep in mind that there are two levels of
+in-lining. An in-line version of an operation always involves the type
+checking and conversions of the operation (although they may be
+optimized away during the tailoring process). However, detailed code
+is placed in-line only if it is specified with an inline statement in
+the run-time system. If the detailed code is specified with a body
+statement, the {\textasciigrave}{\textasciigrave}in-line'{}' code is a
+function call to a routine in the run-time library. The difference can
+be seen by comparing the code produced by compiling the expression
+\~{}x to that produced by compiling the expression /x. The definition
+in the run-time implementation language of cset complement is
+
+{\ttfamily\mdseries
+\ \ \ operator\{1\} \~{} compl(x)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if !cnv:tmp\_cset(x) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ runerr(104, x)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{ return cset \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ body \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{...}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ end}
+
+The conversion to tmp\_cset is a conversion to a cset that does not
+use space in the block region. Instead the cset is constructed in a
+temporary local buffer. The data base entry for the operation
+indicates that the argument must be dereferenced. The entry has a C
+translation of the type conversion code with a call to the support
+routine, cnv\_tcset, to do the actual conversion. cnv\_tcset takes
+three arguments: a buffer, a source descriptor, and a destination
+descriptor. The entry in the data base has a call to the function
+O160\_compl in place of the body statement. This function takes as
+arguments the argument and the result location of the operation. The
+code generator ignores the abstract clause. The in-line code for \~{}x
+is
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[3].dword = D\_Var;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[3].vword.descptr = \&frame.tend.d[0] /* x */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ deref(\&frame.tend.d[3], \&frame.tend.d[3]);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[3]), \&(frame.tend.d[3])))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L1 /* then: compl */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ err\_msg(104, \&(frame.tend.d[3]));}
+
+{\ttfamily\mdseries
+\ \ \ L1: /* then: compl */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ O160\_compl(\&(frame.tend.d[3]) , \&frame.tend.d[2]);}
+
+
+The following is the definition of the {\textasciigrave}/'
+operator. Note that both undereferenced and dereferenced versions of
+the argument are used.
+
+{\ttfamily\mdseries
+operator\{0,1\} / null(underef x -{\textgreater} dx)}
+
+{\ttfamily\mdseries
+\ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return type(x)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ if is:null(dx) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ inline \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return x;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ else inline \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ fail;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+end}
+
+
+In this operation, all detailed code is specified with inline
+statements. The generated code for /x follows. Note that the order of
+the then and else clauses is reversed to simplify the test. L3 is the
+failure label of the expression. The return is implemented as an
+assignment to the result location, frame.tend.d[2], with execution
+falling off the end of the in-line code.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[3].dword = D\_Var;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[3].vword.descptr = \&frame.tend.d[0] /* x */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ deref(\&frame.tend.d[3], \&frame.tend.d[4]);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (frame.tend.d[4].dword == D\_Null)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L2 /* then: null */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L3 /* bound */;}
+
+{\ttfamily\mdseries
+\ \ \ L2: /* then: null */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2] = frame.tend.d[3];}
+
+
+If type inferencing determines a unique type for x in each of these
+expressions, the type checking is eliminated from the code. Suppose
+type inferencing determines that x can only be of type cset in the
+expression
+
+
+\ \ \ a := \~{}x
+
+
+If parameter passing and assignment optimizations (these are explained
+below) are combined with the elimination of type checking, the
+resulting code is
+
+{\ttfamily\mdseries
+\ \ \ O160\_compl(\&(frame.tend.d[0] /* x */), \&frame.tend.d[1] /* a */);}
+
+
+The form of this translated code meets the goals of the compiler
+design for the invocation of a complicated operation: a simple call to
+a type-specific C function with minimum parameter passing. The
+implementation language for run-time operations requires that type
+conversions be specified in the control clause of an if
+statement. However, some conversions, such as converting a string to a
+cset, are guaranteed to succeed. If the code generator recognizes one
+of these conversions, it eliminates the if statement. The only code
+generated is the conversion and the code to be executed when the
+conversion succeeds. Suppose type inferencing determines that x in the
+preceding example can only be a string. Then the generated code for
+the example is
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[2] = frame.tend.d[0] /* x */;}
+
+{\ttfamily\mdseries
+\ \ \ cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[2]), \&(frame.tend.d[2]));}
+
+{\ttfamily\mdseries
+\ \ \ O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] / a /);}
+
+
+\section{Heuristic for Deciding to In-line}
+
+The in-line code for the operators shown so far in the section is
+relatively small. However, the untailored in-line code for operations
+like the element generation operator, !, is large. If tailoring the
+code does not produce a large reduction in size, it is better to
+generate a call to the C function in the run-time library that uses
+the standard calling conventions. A heuristic is needed for deciding
+when to use in-line code and when to call the standard C function.
+
+
+A simple heuristic is to use in-line code only when all type checking
+and conversions can be eliminated. However, this precludes the
+generation of in-lining code in some important situations. The
+operator / is used to direct control flow.  It should always be used
+with an operand whose type can vary at run time, and the generated
+code should always be in-lined. Consider the Icon expression
+
+{\ttfamily\mdseries
+\ \ \ if /x then x := }
+
+The compiler applies parameter-passing optimizations to the
+sub-expression /x. It also eliminates the return value of the
+operator, because the value is discarded. An implementation convention
+for operations allows the compiler to discard the expression that
+computes the return value. The convention requires that a return
+expression of an operation not contain user-visible side effects
+(storage allocation is an exception to the rule; it is visible, but
+the language makes no guarantees as to when it will occur). The code
+for /x is reduced to a simple type check. The code generated for the
+if expression is
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if ((frame.tend.d[0] /* x */).dword == D\_Null)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L3 /* bound */;}
+
+{\ttfamily\mdseries
+\ \ \ L2: /* bound */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[0] /* x */.vword.sptr = ;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[0] /* x */.dword = 0;}
+
+{\ttfamily\mdseries
+\ \ \ L3: /* bound */}
+
+
+To accommodate expressions like those in the preceding example, the
+heuristic used in the compiler is to produce tailored in-line code
+when that code contains no more than one type check. Only conversions
+retaining their if statements are counted as a type checks. This
+simple heuristic produces reasonable code. Future work includes
+examining more sophisticated heuristics.
+
+
+\section{In-lining Success Continuations}
+
+Suspension in in-line code provides further opportunity for
+optimization. In general, suspension is implemented as a call to a
+success continuation. However, if there is only one call to the
+continuation, it is better not to put the code in a continuation. The
+code should be generated at the site of the suspension. Consider the
+expression
+
+{\ttfamily\mdseries
+\ \ \ every p(1 to 10)}
+
+
+The implementation of the to operator is 
+
+{\ttfamily\mdseries
+\ \ \ operator\{\} ... to(from, to)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ /*}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ * arguments must be integers.}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if !cnv:C\_integer(from) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ runerr(101, from)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if !cnv:C\_integer(to) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ runerr(101, to)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return integer}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ inline \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ for ( ; from {\textless}= to; ++from) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ suspend C\_integer from;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ fail;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+
+The arguments are known to be integers, so the tailored version
+consists of just the code in the inline statement. The for statement
+is converted to gotos and conditional gotos, so the control flow
+optimizer can handle it (this conversion is done by rtt before putting
+the code in the data base). The suspend is translated into code to set
+the result value and a failure label used for the code of the rest of
+the bounded expression. This code is generated before the label and
+consists of a call to the procedure p and the failure introduced by
+the every expression. The generated code follows. The failure for the
+every expression is translated into goto L4, where L4 is the failure
+label introduced by the suspend. The control flow optimizer removes
+both the goto and the label. They are retained here to elucidate the
+code generation process.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[1].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[1].vword.integr = 1;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2].vword.integr = 10;}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ L1: /* within: to */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (!(frame.tend.d[1].vword.integr {\textless}= frame.tend.d[2].vword.integr) )}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[0].vword.integr = frame.tend.d[1].vword.integr;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[0].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ P01\_p(\&frame.tend.d[0]);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L4 /* end suspend: to */;}
+
+{\ttfamily\mdseries
+\ \ \ L4: /* end suspend: to */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ ++frame.tend.d[1].vword.integr;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L1 /* within: to */;}
+
+{\ttfamily\mdseries
+\ \ \ L2: /* bound */}
+
+
+This is an example of a generator within an every expression being
+converted into an in-line loop. Except for the fact that descriptors
+are being used instead of C integers, this is nearly as good as the C
+code
+
+{\ttfamily\mdseries
+\ \ \ for (i = 1; i {\textless}= 10; ++i)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ p(i);}
+
+
+\section{Parameter Passing Optimizations}
+
+As mentioned above, parameter-passing optimizations are used to
+improved the generated code. These optimizations involve eliminating
+unneeded argument computations and eliminating unnecessary
+copying. These optimizations are applied to tailored in-line
+code. They must take into account how a parameter is used and whether
+the corresponding argument value has an extended lifetime.
+
+In some situations, a parameter is not used in the tailored
+code. There are two common circumstances in which this happens. One is
+for the first operand of conjunction. The other occurs with a
+polymorphous operation that has a type-specific optional parameter. If
+a different type is being operated on, the optional parameter is not
+referenced in the tailored code. If a tailored operation has an
+unreferenced parameter and the invocation has a corresponding argument
+expression, the compiler notes that the expression result is
+discarded. Earlier in this chapter there are examples of optimizations
+possible when expression results are discarded. If the corresponding
+argument is missing, the compiler refrains from supplying a null value
+for it. Consider the invocation
+
+{\ttfamily\mdseries
+\ \ \ insert(x, 3)}
+
+\noindent insert takes three arguments. If x is a table, the third
+argument is used as the entry value and must be supplied in the
+generated code. In the following generated code, the default value for
+the third argument is computed into frame.tend.d[2].dword:
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[1].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[1].vword.integr = 3;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[2].dword = D\_Null;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[3] = frame.tend.d[0] /* x */;}
+
+{\ttfamily\mdseries
+\ \ \ F1o0\_insert(\&(frame.tend.d[2]), \&(frame.tend.d[1]), \&(frame.tend.d[3]),}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \&trashcan);}
+
+
+Because F1o0\_insert uses a tailored calling convention, its arguments
+can be in a different order from those of the Icon function. It
+appears that the argument expression x is computed in the wrong place
+in the execution order.  However, this is not true; the expression is
+not computed at all. If it were, the result would be a variable
+reference.  Instead, the assignment of the value in x to the temporary
+variable is a form of optimized dereferencing. Therefore, it must be
+done as part of the operation, not as part of the argument
+computations. This is explained below.
+
+If the value of x in this expression is a set instead of a table, the
+entry value is not used. This is illustrated by the following
+code. Note that a different C function is called for a set than for a
+table; this is because a different body statement is selected.
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[1].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[1].vword.integr = 3;}
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[2] = frame.tend.d[0] /* x */;}
+
+{\ttfamily\mdseries
+\ \ \ F1o1\_insert(\&(frame.tend.d[1]) , \&(frame.tend.d[2]) , \&trashcan);}
+
+
+In general, an operation must copy its argument to a new descriptor
+before using it. This is because an operation is allowed to modify the
+argument. Modification of the original argument location is not safe
+in the presence of goal-directed evaluation. The operation could be
+re-executed without recomputing the argument. Therefore, the original
+value must be available. This is demonstrated with the following
+expression.
+
+{\ttfamily\mdseries
+\ \ \ every p(0 to (1 to 3))}
+
+
+This is a double loop. The outer to expression is the inner loop,
+while the inner to expression is the outer loop. to modifies its first
+argument while counting. However, the first argument to the outer to
+has an extended lifetime due to the fact that the second argument is a
+generator. Therefore, this to operator must make a copy of its first
+argument.  The generated code for this every expression is
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2].vword.integr = 0;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[4].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[4].vword.integr = 1;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[5].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[5].vword.integr = 3;}
+
+{\ttfamily\mdseries
+\ \ \ L1: /* within: to */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (!(frame.tend.d[4].vword.integr {\textless}= frame.tend.d[5].vword.integr))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[3].vword.integr = frame.tend.d[4].vword.integr;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[3].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[6] = frame.tend.d[2];}
+
+{\ttfamily\mdseries
+\ \ \ L3: /* within: to */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (!(frame.tend.d[6].vword.integr {\textless}= frame.tend.d[3].vword.integr))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L4 /* end suspend: to */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[1].vword.integr = frame.tend.d[6].vword.integr;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[1].dword = D\_Integer;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ P01\_p(\&frame.tend.d[1]);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ ++frame.tend.d[6].vword.integr;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L3 /* within: to */;}
+
+{\ttfamily\mdseries
+\ \ \ L4: /* end suspend: to */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ ++frame.tend.d[4].vword.integr;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L1 /* within: to */;}
+
+{\ttfamily\mdseries
+\ \ \ L2: /* bound */}
+
+
+The first argument to the outer to is copied with the statement 
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[6] = frame.tend.d[2];}
+
+
+The copying of the other arguments has been eliminated because of two
+observations: the second argument of to is never modified and the
+first argument of the inner to (outer loop) is never reused without
+being recomputed. This second fact is determined while the lifetime
+information is being calculated. There is no generator occurring
+between the computation of the argument and the execution of the
+operator. Even if there were, it would only necessitate copying if the
+generator could be resumed after the operator started executing.
+
+As noted above, another set of optimizations involves deferencing
+named variables. If an operation needs only the dereferenced value of
+an argument and type inferencing determines that the argument is a
+specific named variable (recall that each named variable is given a
+distinct variable reference type), the code generator does not need to
+generate code to compute the variable reference, because it knows what
+it is. That is, it does not need the value of the argument. If the
+argument is a simple identifier, no code at all is generated for the
+argument.
+
+As shown in the code presented above for 
+
+{\ttfamily\mdseries
+\ \ \ insert(x, 3)}
+
+\noindent
+dereferencing can be implemented as simple assignment rather than a
+call to the deref function:
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[3] = frame.tend.d[0] /* x */;}
+
+
+In fact, unless certain conditions interfere, the variable can be used
+directly as the argument descriptor and no copying is needed. This is
+reflected in the code generated in a previous example:
+
+{\ttfamily\mdseries
+\ \ \ if /x then \textit{...}}
+
+
+x is used directly in the in-line code for /: 
+
+{\ttfamily\mdseries
+\ \ \ if ((frame.tend.d[0] /* x */).dword == D\_Null)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L2 /* bound */;}
+
+
+This optimization cannot be performed if the operation modifies the
+argument, nor can it be performed if the variable's value might change
+while the operation is executing. Performing the optimization in the
+presence of the second condition would violate the semantics of
+argument dereferencing. The compiler does two simple tests to
+determine if the second condition might be true. If the operation has
+a side effect, the compiler assumes that the side-effect might involve
+the named variable. Side effects are explicitly coded in the abstract
+type computations of the operation. The second test is to see if the
+argument has an extended lifetime. The compiler assumes that the
+variable might be changed by another operation during the extended
+lifetime (that is, while the operation is suspended).
+
+
+\section{Assignment Optimizations}
+
+The final set of invocation optimizations involves assignments to
+named variables. These includes simple assignment and augmented
+assignments. Optimizing these assignments is important and
+optimizations are possible beyond those that can easily be done
+working from the definition in the data base; assignments to named
+variables are treated as special cases. The optimizations are divided
+into the cases where the right-hand-side might produce a variable
+reference and those where it produces a simple Icon value.
+
+
+There are two cases when the right-hand-side of the assignment
+evaluates to a variable reference. If the right-hand-side is a named
+variable, a dereferencing optimization can be used. Consider
+
+{\ttfamily\mdseries
+\ \ \ s := s1}
+
+
+This Icon expression is translated into 
+
+{\ttfamily\mdseries
+\ \ \ frame.tend.d[0] /* s */ = frame.tend.d[1] /* s1 */;}
+
+
+This is the ideal translation of this expression. For other
+situations, the deref function must be used. For example the
+expression
+
+{\ttfamily\mdseries
+\ \ \ s := ?x}
+
+\noindent is translated into 
+
+{\ttfamily\mdseries
+\ \ \ if (O0f2\_random(\&(frame.tend.d[0] /* x */), \&frame.tend.d[2]) == A\_Resume)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L1 /* bound */;}
+
+{\ttfamily\mdseries
+\ \ \ deref(\&frame.tend.d[2], \&frame.tend.d[1] /* s */);}
+
+
+When the right-hand-side computes to a simple Icon value, the named
+variable on the left-hand-side can often be used directly as the
+result location of the operation. This occurs in the earlier example
+
+{\ttfamily\mdseries
+\ \ \ a := \~{}x}
+
+\noindent which translates into
+
+{\ttfamily\mdseries
+\ \ \ O160\_compl(\&(frame.tend.d[0] /* x */), \&frame.tend.d[1] /* a */);}
+
+
+This optimization is safe as long as setting the result location is
+the last thing the operation does. If the operation uses the result
+location as a work area and the variable were used as the result
+location, the operation might see the premature change to the
+variable. In this case, a separate result location must be allocated
+and the Icon assignment implemented as a C assignment. String
+concatenation is an example of an operation that uses its result
+location as a work area. The expression
+
+{\ttfamily\mdseries
+\ \ \ s := s1 {\textbar}{\textbar} s}
+
+
+is translated into 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if (StrLoc(frame.tend.d[1] /* s1 */) + StrLen(frame.tend.d[1] /* s1 */)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ == strfree )}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ goto L1 /* within: cater */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ StrLoc(frame.tend.d[2]) = alcstr(StrLoc(frame.tend.d[1] /* s1 */),}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ StrLen(frame.tend.d[1] /* s1 */));}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ StrLen(frame.tend.d[2]) = StrLen(frame.tend.d[1] /* s1 */);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ goto L2 /* within: cater */;}
+
+{\ttfamily\mdseries
+\ \ \ L1: /* within: cater */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2] = frame.tend.d[1] /* s1 */;}
+
+{\ttfamily\mdseries
+\ \ \ L2: /* within: cater */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ alcstr(StrLoc(frame.tend.d[0] /* s */), StrLen(frame.tend.d[0] /* s */));}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ StrLen(frame.tend.d[2]) = StrLen(frame.tend.d[1] /* s1 */) +}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ StrLen(frame.tend.d[0] /* s */);}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[0] /* s */ = frame.tend.d[2];}
+
+
+frame.tend.d[2] is the result location. If frame.tend.d[0] (the
+variable s) were used instead, the code would be wrong.
+
+
+There are still some optimizations falling under the category covered
+by this chapter to be explored as future work. For example, as shown
+earlier,
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ a := \~{}x}
+
+\noindent is translated into
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ frame.tend.d[2] = frame.tend.d[0] /* x */;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[2]), \&(frame.tend.d[2]));}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] /* a */);}
+
+\noindent when x is a string. The assignment to frame.tend.d[2] can be
+combined with the conversion to produce the code
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[0] /* x */), \&(frame.tend.d[2]));}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] /* a */);}
+
+There is, of course, always room for improvement in code generation
+for specific cases. However, the optimizations in this chapter combine
+to produce good code for most expressions. This is reflected in the
+performance data presented in Chapter 23.
+

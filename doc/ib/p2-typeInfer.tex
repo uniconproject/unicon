@@ -1,0 +1,691 @@
+\chapter{The Implementation of Type Inferencing}
+
+Chapter 15 develops a theoretical type inferencing model for Icon,
+called Model 3. The purpose of that chapter is to explain the
+relationship between type inferencing and the semantics of Icon; for
+simplicity, some features of the language along with certain questions
+of practical importance are ignored in that chapter. This chapter
+describes the implementation of the type inferencing system used in
+the Icon compiler. The implementation is based on Model 3. This
+chapter describes solutions to those issues that must be addressed in
+developing a complete practical type inferencing system from Model
+3. The issues include:
+
+\liststyleLxxi
+\begin{itemize}
+\item 
+the representation of types and stores 
+\item 
+the development of a type system for the full Icon language 
+\item 
+the handing of procedure calls and co-expression activation 
+\item 
+the determination of edges in the flow graph 
+\item 
+the computation of a fixed point for type information 
+\end{itemize}
+
+In addition, performance of the abstract interpretation must be
+considered. This includes both speed and memory usage.
+
+
+\section{The Representation of Types and Stores}
+
+A type consists of a set of basic types (technically, it is a union of
+basic types, but the constituents of the basic types are not
+explicitly represented). The operations needed for these sets are: add
+a basic type to a set, form the union of two sets, form the
+intersection of two sets, test for membership in a set, and generate
+members of a subrange of basic types (for example, generate all
+members that are list types). A bit vector is used for the set
+representation, with a basic type represented by an integer index into
+the vector. The required operations are simple and efficient to
+implement using this representation. Unless the sets are large and
+sparse, this representation is also space efficient. While the sets of
+types are often sparse, for typical programs, they are not large.
+
+A store is implemented as an array of pointers to types. A mapping is
+established from variable references to indexes in the store. In the
+type inferencing model, Model 3, presented in Chapter 3, there is one
+kind of store that contains all variables. In the actual
+implementation, temporary variables need not be kept in this
+store. The purpose of this store is to propagate a change to a
+variable to the program points affected by the change. A temporary
+variable is set in one place in the program and used in one place;
+there is nothing to determine dynamically. It is both effective and
+efficient to store the type of a temporary variable in the
+corresponding node of the syntax tree.
+
+Another level of abstraction can be developed that requires much less
+memory than Model 3, but it must be modified to produce good
+results. This abstraction abandons the practice of a store for every
+edge in the flow graph. Instead it has a single store that is a merger
+of all the stores in Model 3 (the type associated with a variable in a
+merged store is the union of the types obtained for that variable from
+each store being merged). For variables that are truly of one type
+throughout execution, this abstraction works well. Named variables do
+not have this property. They have an initial null value and usually
+are assigned a value of another type during execution. Because
+assignments to named variables are treated as strong updates, Model 3
+can often deduce that a variable does not contain the null type at
+specific points in the flow graph.
+
+For structure variables this further abstraction does work well in
+practice. These variables are initialized to the empty type (that is,
+no instances of these variables exist at the start of program
+execution), so the problem of the initial null type does not
+occur. Sometimes instances of these variables are created with the
+null type and later changed. However, the fact that assignments to
+these variables must be treated as weak updates means that type
+inferencing must assume that these variables can always retain their
+earlier type after an assignment. Propagating type information about
+structure variables through the syntax tree does not help much in
+these circumstances. While it is possible to construct example
+programs where Model 3 works better for structure variables than this
+further abstraction, experiments with prototype type inferencing
+systems indicate that the original system seldom gives better
+information for real programs [.tr88-25.].
+
+Type inferencing in the compiler is implemented with two kinds of
+stores: local stores that are associated with edges in the flow graph
+and contain named variables (both local and global variables) and a
+global store that contains structure variables (in the implementation,
+the global store is actually broken up by structure-variable type into
+several arrays).
+
+
+\section{A Full Type System}
+
+Model 3 from Chapter 3 includes no structure type other than lists,
+nor does it consider how to handle types for procedure and
+co-expression values to allow effective type inferencing in their
+presence. This section develops a complete and effective type system
+for Icon.
+
+Most of the structure types of Icon are assigned several subtypes in
+the type inferencing system. As explained for lists in Chapter 3,
+these subtypes are associated with the program points where values of
+the type are created. The exception to this approach is records. One
+type is created per record declaration. While it is possible to assign
+a subtype to each use of a record constructor, in practice a given
+kind of record usually is used consistently with respect to the types
+of its fields throughout a program. The extra subtypes would require
+more storage while seldom improving the resulting type information.
+
+For efficiency, the size of the bit vectors representing types and the
+size of the stores need to remain fixed during abstract
+interpretation. This means that all subtypes must be determined as
+part of the initialization of the type inferencing system. In order to
+avoid excessive storage usage, it is important to avoid creating many
+subtypes for program points where structures are not created. The
+invocation optimization described in Chapter 6 helps determine where
+structures can and cannot be created by determining for most
+invocations what operation is used. The type inferencing system
+determines what structures an operation can create by examining the
+abstract type computations associated with the operation in the data
+base. A new clause in an abstract type computation indicates that a
+structure can be created. The following example is the abstract type
+computation from the built-in function list. It indicates the the
+function creates and returns a new list with elements whose type is
+the same as that of the parameter x (the second parameter).
+
+{\ttfamily\mdseries
+\ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return new list(type(x))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+This is the clause as written by the programmer developing the
+run-time library; it is translated into an internal form for storage
+in the data base.
+
+Invocation optimizations may not identify the operation associated
+with some invocations. The initialization phase of type inferencing
+skips these invocations. Type inferencing may later discover that one
+of these invocations can create a structure. Each structure type is
+given one subtype that is used for all of these later
+discoveries. While it is possible for there to be several of these
+creation points representing logically distinct subtypes, this seldom
+occurs in practice. If it does happen, type inferencing produces a
+correct, but less precise, result.
+
+The type system contains representations for all run-time values that
+must be modeled in the abstract interpretation.  These run-time values
+can be divided into three categories, each of which is a superset of
+the previous category:
+
+\liststyleLxxii
+\begin{itemize}
+\item 
+the first-class Icon values 
+\item 
+the intermediate values of expression evaluation 
+\item 
+the values used internally by Icon operations 
+\end{itemize}
+
+Just as these categories appear in different places during the
+execution of an Icon program, the corresponding types appear in
+different places during abstract interpretation. If certain types
+cannot appear as the result of a particular type computation, it is
+not necessary to have elements in the bit vector produced by the
+computation to represent those types. It is particularly important to
+minimize the memory used for stores associated with edges of the flow
+graph (this is discussed more in the last section of this
+chapter). These stores contain only the types of the smallest set
+listed above: the first-class values.
+
+Types (or subtypes) are allocated bit vector indexes. The first-class
+types may appear as the result of any of the three classes of
+computation. They are allocated indexes at the front of the bit
+vectors. If they are the only types that can result from an abstract
+computation, the bit vector for the result has no elements beyond that
+of the last first-class types. The first-class types are:
+
+\liststyleLxxiii
+\begin{itemize}
+\item 
+null 
+\item 
+string 
+\item 
+cset 
+\item 
+integer 
+\item 
+real 
+\item 
+file 
+\item 
+list subtypes 
+\item 
+set subtypes 
+\item 
+table subtypes 
+\item 
+record subtypes 
+\item 
+procedure subtypes 
+\item 
+co-expression subtypes 
+\end{itemize}
+
+The list subtypes are allocated with 
+
+\liststyleLxxiv
+\begin{itemize}
+\item 
+one for the argument to the main procedure 
+\item 
+one for each easily recognized creation point 
+\item 
+one representing all other lists 
+\end{itemize}
+
+The set subtypes are allocated with 
+
+\liststyleLxxv
+\begin{itemize}
+\item 
+one for each easily recognized creation point 
+\item 
+one representing all other sets 
+\end{itemize}
+
+The table subtypes are allocated with 
+
+\liststyleLxxvi
+\begin{itemize}
+\item 
+one for each easily recognized creation point 
+\item 
+one representing all other tables 
+\end{itemize}
+
+The record subtypes are allocated with one for each record
+declaration. The procedure subtypes are allocated with
+
+\liststyleLxxvii
+\begin{itemize}
+\item 
+one for each procedure 
+\item 
+one for each record constructor 
+\item 
+one for each built-in function 
+\item 
+one representing operators available for string invocation 
+\end{itemize}
+
+Note that procedure subtypes are allocated after most procedure and
+function values have been eliminated by invocation optimizations (the
+procedures and functions are still there, they are just not Icon
+values). Therefore, few of these subtypes are actually allocated. The
+co-expression subtypes are allocated with
+
+\liststyleLxxviii
+\begin{itemize}
+\item 
+one for the main co-expression 
+\item 
+one for each create expression 
+\end{itemize}
+
+The bit vectors used to hold the intermediate results of performing
+abstract interpretation on expressions must be able to represent the
+basic types plus the variable reference types. Variable reference
+types are allocated bit vector indexes following those of the basic
+types. The bit vectors for intermediate results are just long enough
+to contain these two classifications of types. The variable reference
+types are
+
+\liststyleLxxix
+\begin{itemize}
+\item 
+integer keyword variable types 
+\item 
+\&pos 
+\item 
+\&subject 
+\item 
+substring trapped variable types 
+\item 
+table-element trapped variable types 
+\item 
+list-element reference types 
+\item 
+table assigned-value reference types 
+\item 
+field reference types 
+\item 
+global variable reference types 
+\item 
+local variable reference types 
+\end{itemize}
+
+\&random and \&trace behave the same way from the perspective of the
+type inferencing system, so they are grouped under one type as integer
+keyword variables. The fact that \&pos can cause assignment to fail is
+reflected in the type inferencing system, so it is given a separate
+type. \&subject is the only string keyword variable so it is in a type
+by itself.
+
+Substring trapped variables and table-element trapped variables are
+{\textasciigrave}{\textasciigrave}hidden'{}' structures in the
+implementation of Icon. They appear as intermediate results, but are
+only indirectly observable in the semantics of Icon. In order to
+reflect these semantics in the type inferencing system, there are
+substring trapped variable types and table-element trapped variable
+types. These are structure types similar to sets, but are variable
+reference types rather than first-class types. The substring trapped
+variable types are allocated with
+
+\liststyleLxxx
+\begin{itemize}
+\item 
+one for each easily recognized creation point 
+\item 
+one representing all other substring trapped variables 
+\end{itemize}
+
+The table-element trapped variable types are allocated with 
+
+\liststyleLxxxi
+\begin{itemize}
+\item 
+one for each easily recognized creation point 
+\item 
+one representing all other table-element trapped variables 
+\end{itemize}
+
+List elements, table assigned-values, and record fields are all
+variables that can appear as the intermediate results of expression
+evaluation. The type system has corresponding variable reference types
+to represent them. The list-element reference types are allocated with
+one for each list types. The table assigned-value reference types are
+allocated with one for each table type. The field reference types are
+allocated with one for each record field declaration.
+
+Identifiers are variables and are reflected in the type system. The
+global variable reference types are allocated with
+
+\liststyleLxxxii
+\begin{itemize}
+\item 
+one for each global variable (except those eliminated by invocation optimizations). 
+\item 
+one for each static variable 
+\end{itemize}
+
+The local variable reference types are allocated with one for each
+local variable, but the bit vector indexes and store indexes are
+reused between procedures. The next section describes why this reuse
+is possible.
+
+Icon's operators use a number of internal values that never
+{\textasciigrave}{\textasciigrave}escape'{}' as intermediate
+results. Some of these internal values are reflected in the type
+system in order to describe the semantics of the operations in the
+abstract interpretation. The full set of types that can be used to
+express these semantics are presented in the syntax of the abstract
+type computations of the run-time implementation language; see
+Appendix A. In addition to the types of intermediate results, these
+types include
+
+\liststyleLxxxiii
+\begin{itemize}
+\item 
+set-element reference types 
+\item 
+table key reference types 
+\item 
+table default value reference types 
+\item 
+references to the fields within substring trapped variables that reference variables 
+\item 
+references to fields within table-element trapped variables that reference tables 
+\end{itemize}
+
+These types are allocated bit vector indexes at the end of the type
+system. The only bit vectors large enough to contain them are the
+temporary bit vectors used during interpretation of the abstract type
+computations of built-in operations.
+
+Set elements, table keys, and table default values do not appear as
+variable references in the results of expression evaluation. However,
+it is necessary to refer to them in order to describe the effects of
+certain Icon operations. For this reason, they are included in the
+type system. The set-element reference types are allocated with one
+for each set type. The table key reference types are allocated with
+one for each table type. The table default value reference types are
+allocated with one for each table type.
+
+Substring trapped variable types contain references to the variable
+types being trapped and table-element trapped variable types contain
+references to the table types containing the element being
+trapped. These references are fields within these trapped variable
+types. There is one field reference type for each trapped variable
+type.
+
+
+\section{Procedure Calls and Co-Expression Activations}
+
+A type inferencing system for the full Icon language must handle
+procedures and co-expressions. As noted above, each procedure and each
+create expression is given its own type. This allows the type
+inferencing system to accurately determine which procedures are
+invoked and what co-expressions might be activated by a particular
+expression.
+
+The standard semantics for procedures and co-expressions can be
+implemented using stacks of procedure activation frames, with one
+stack per co-expression. The first frame, on every stack except that
+of the main co-expression, is a copy of the frame for the procedure
+that created the co-expression. The local variables in this frame are
+used for evaluating the code of the co-expression. The type
+inferencing system uses a trivial abstraction of these procedure frame
+stacks, while capturing the possible transfers of control induced by
+procedure calls and co-expression activations.
+
+The type inferencing system, in effect, uses an environment that has
+one frame per procedure, where that frame is a summary of all frames
+for the procedure that could occur in a corresponding environment of
+an implementation of the standard semantics. The frame is simply a
+portion of the store that contains local variables. Because no other
+procedure can alter a local variable, it is unnecessary to pass the
+types of local variables into procedure calls. If the called procedure
+returns control via a return, suspend, or fail, the types are
+unchanged, so they can be passed directly across the call. This allows
+the type inferencing system to keep only the local variables of a
+procedure in the stores on the edges of the flow graph for the
+procedure, rather than keeping the local variables of all procedures.
+Global variables must be passed into and out of procedure
+calls. Because static variables may be altered in recursive calls,
+they must also be passed into and out of procedure calls.
+
+A flow graph for an entire program is constructed from the flow graphs
+for its individual procedures and co-expressions.  An edge is added
+from every invocation of a procedure to the head of that procedure and
+edges are added from every return, suspend, and fail back to the
+invocation. In addition, edges must be added from an invocation of a
+procedure to all the suspends in the procedure to represent
+resumption. When it is not possible to predetermine which procedure is
+being invoked, edges are effectively added from the invocation to all
+procedures whose invocation cannot be ruled out based on the naive
+invocation optimizations. Edges are effectively added between all
+co-expressions and all activations, and between all
+activations. Information is propagated along an edge when type
+inferencing deduces that the corresponding procedure call or
+co-expression activation might actually occur. The representation of
+edges in the flow graph is discussed below.
+
+Type inferencing must reflect the initializations performed when a
+procedure is invoked. Local variables are initialized to the null
+value. On the first call to the procedure, static variables are also
+initialized to the null value. The initialization code for the
+standard semantics is similar to
+
+{\ttfamily\mdseries
+\ \ \ \textit{initialize locals}}
+
+{\ttfamily\mdseries
+\ \ \ if (first\_call) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ initialize statics}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ user initialization code}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+In type inferencing, the variables are initialized to the null type
+and the condition on the if is ignored. Type inferencing simply knows
+that the first-call code is executed sometimes and not others. Before
+entering the main procedure, global variables are set to the null type
+and all static variables are set to the empty type. In some sense, the
+empty type represents an impossible execution path. Type inferencing
+sees paths in the flow graph from the start of the program to the body
+of a procedure that never pass through the initialization
+code. However, static variables have an empty type along this path and
+no operation on them is valid. Invalid operations contribute nothing
+to type information.
+
+
+\section{The Flow Graph and Type Computations}
+
+In order to determine the types of variables at the points where they
+are used, type inferencing must compute the contents of the stores
+along edges in the flow graph. Permanently allocating the store on
+each edge can use a large amount of memory. The usage is
+
+{\ttfamily\mdseries
+\ \ \ M = E (G + S + L) T / 8}
+
+\noindent where 
+
+{\ttfamily\mdseries
+\ \ \ M = total memory, expressed in bytes, used by stores}
+
+{\ttfamily\mdseries
+\ \ \ E = the number of edges in the program flow graph}
+
+{\ttfamily\mdseries
+\ \ \ G = the number of global variables in the program}
+
+{\ttfamily\mdseries
+\ \ \ S = the number of static variables in the program}
+
+{\ttfamily\mdseries
+\ \ \ L = the maximum number of local variables in any procedure}
+
+{\ttfamily\mdseries
+\ \ \ T = the number of types in the type system}
+
+Large programs with many structure creation points can produce
+thousands of edges, dozens of variables, and hundreds of types,
+requiring megabytes of memory to represent the stores.
+
+The code generation phase of the compiler just needs the (possibly
+dereferenced) types of operands, not the stores. If dereferenced types
+are kept at the expressions where they are needed, it is not necessary
+to keep a store with each edge of the flow graph.
+
+Consider a section of straight-line code with no
+backtracking. Abstract interpretation can be performed on the graph
+starting with the initial store at the initial node and proceeding in
+execution order. At each node, the store on the edge entering the node
+is used to dereference variables and to compute the next store if
+there are side effects. Once the computations at a node are done, the
+store on the edge entering the node is no longer needed. If updates
+are done carefully, they can be done in-place, so that the same memory
+can be used for both the store entering a node and the one leaving it.
+
+In the case of branching control paths (as in a case expression),
+abstract interpretation must proceed along one path at a time. The
+store at the start the branching of paths must be saved for use with
+each path. However, it need only be saved until the last path is
+interpreted. At that point, the memory for the store can be
+reused. When paths join, the stores along each path must be
+merged. The merging can be done as each path is completed; the store
+from the path can then be reused in interpreting other paths. When all
+paths have been interpreted, the merged store becomes the current
+store for the node at the join point.
+
+The start of a loop is a point where control paths join. Unlike
+abstract interpretation for the joining of simple branching paths,
+abstract interpretation for the joining of back edges is not just a
+matter of interpreting all paths leading to the join point before
+proceeding. The edge leaving the start of the loop is itself on a path
+leading to the start of the loop. Circular dependencies among stores
+are handled by repeatedly performing the abstract interpretation until
+a fixed point is reached. In this type inferencing system, abstract
+interpretation is performed in iterations, with each node in the flow
+graph visited once per iteration. The nodes are visited in execution
+order. For back edges, the store from the previous iteration is used
+in the interpretation. The stores on these edges must be kept
+throughout the interpretation. These stores are initialized to map all
+variables to the empty type. This represents the fact that the
+abstract interpretation has not yet proven that execution can reach
+the corresponding edge.
+
+The type inferencing system never explicitly represents the edges of
+the flow graph in a data structure. Icon is a structured programming
+language. Many edges are implicit in a tree walk performed in forward
+execution order -- the order in which type inferencing is
+performed. The location of back edges must be predetermined in order
+to allocate stores for them, but the edges themselves are effectively
+recomputed as part of the abstract interpretation.
+
+There are two kinds of back edges. The back edges caused by looping
+control structures can be trivially deduced from the syntax tree. A
+store for such an edge is kept in the node for the control
+structure. Other back edges are induced by goal-directed
+evaluation. These edges are determined with the same techniques used
+in liveness analysis. A store for such an edge is kept in the node of
+the suspending operation that forms the start of the loop. Because the
+node can be the start of several nested loops, this store is actually
+the merged store for the stores that theoretically exist on each back
+edge.
+
+At any point in abstract interpretation, three stores are of
+interest. The \textit{current store} is the store entering the node on
+which abstract interpretation is currently being performed. It is
+created by merging the stores on the incoming edges. The
+\textit{success store} is the store representing the state of
+computations when the operation succeeds. It is usually created by
+modifying the current store. The \textit{failure store} is the store
+representing the state of computations when the operation fails.
+
+In the presence of a suspended operation, the failure store is the
+store kept at the node for that operation. A new failure store is
+established whenever a resumable operation is encountered. This works
+because abstract interpretation is performed in forward execution
+order and resumption is LIFO. Control structures, such as
+if-then-else, with branching and joining paths of execution, cause
+difficulties because there may be more than one possible suspended
+operation when execution leaves the control structure. This results in
+more than one failure store during abstract interpretation. Rather
+than keeping multiple failure stores when such a control structure has
+operations that suspend on multiple paths, type inferencing pretends
+that the control structure ends with an operation that does nothing
+other than suspend and then fail. It allocates a store for this
+operation in the node for the control structure. When later operations
+that fail are encountered, this store is updated. The failure of this
+imaginary operation is the only failure seen by paths created by the
+control structure and the information needed to update the failure
+stores for these paths is that in the store for this imaginary
+operation. This works because the imaginary operation just passes
+along failure without modifying the store.
+
+
+In the case where a control structure transforms failure into forward
+execution, as in the first subexpression of a compound expression, the
+failure store is allocated (with empty types) when the control
+structure is encountered and deallocated when it is no longer
+needed. If no failure can occur, no failure store need be
+allocated. The lack of possible failure is noted while the location of
+back edges is being computed during the initialization of type
+inferencing. Because a failure store may be updated at several
+operations that can fail, these are weak updates.  Typically, a
+failure store is updated by merging the current store into it.
+
+The interprocedural flow graph described earlier in this chapter has
+edges between invocations and returns, suspends, and fails. Type
+inferencing does not maintain separate stores for these theoretical
+edges. Instead it maintains three stores per procedure that are
+mergers of stores on several edges. One store is the merger of all
+stores entering the procedure because of invocation; this store
+contains parameter types in addition to the types of global and static
+variables. Another store is the merger of all stores entering the
+procedure because of resumption. The third store is the merger of all
+stores leaving the procedure because of returns, suspends, and
+fails. There is also a result type associated with the procedure. It
+is updated when abstract interpretation encounters returns and
+suspends.
+
+Two stores are associated with each co-expression. One is the merger
+of all stores entering the co-expression and the other is the merger
+of all stores leaving the co-expression. Execution can not only leave
+through an activation operator, it can also re-enter through the
+activation. The store entering the activation is a merger of the
+stores entering all co-expressions in which the activation can
+occur. Because a procedure containing an activation may be called from
+several co-expressions, it is necessary to keep track of those
+co-expressions. A set of co-expressions is associated with each
+procedure for this purpose. Each co-expression also contains a type
+for the values transmitted to it. The result type of an activation
+includes the result types for all co-expressions that might be
+activated and the types of all values that can be transmitted to a
+co-expression that the activation might be executed in.
+
+When type inferencing encounters the invocation of a built-in
+operation, it performs abstract interpretation on the representation
+of the operation in the data base. It interprets the type-checking
+code to see what paths might be taken through the operation. The
+interpretation uses the abstract type computations and ignores the
+detailed C code when determining the side effects and result type of
+the operation. Because the code at this level of detail contains no
+loops, it is not necessary to save stores internal to operations. An
+operation is re-interpreted at each invocation.  This allows type
+inferencing to produce good results for polymorphous operations. At
+this level, the code for an operation is simple enough that the cost
+of re-interpretation is not prohibitive. All side effects within these
+operations are treated as weak updates; the only strong updates
+recognized by type inferencing are the optimized assignments to named
+variables (see Chapter 6).
+
+The abstract semantics of control structures are hard-coded within the
+type inferencing system. The system combines all the elements
+described in this chapter to perform the abstract interpretation. A
+global flag is set any time an update changes type information that is
+used in the next iteration of abstract interpretation. The flag is
+cleared between iterations. If the flag is not set during an
+iteration, a fixed point has been reached and the interpretation
+halts.
+
+\bigskip

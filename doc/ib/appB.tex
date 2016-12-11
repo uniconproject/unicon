@@ -1,0 +1,308 @@
+\chapter{Virtual Machine Instructions}
+
+This appendix lists all the Icon virtual machine instructions. For
+instructions that correspond to source-language operators, only the
+corresponding operations are shown. Unless otherwise specified,
+references to the stack mean the interpreter stack.
+
+
+arg n\ \ Push a variable descriptor pointing to argument n.
+
+
+asgn\textit{\ \ expr1 }:= \textit{exp12}
+
+
+bang \textit{lexpr}
+
+
+bscan\ \ Push the current values of \&subject and \&pos. Convert the
+descriptor prior to these two descriptors into a string. If the
+conversion cannot be performed, terminate execution with an error
+message. Otherwise, assign it to \&subject and assign 1 to \&pos. Then
+suspend. If resumed, restore the former values of \&subject and \&pos
+and fail.
+
+
+cat\textit{\ \ expr1 {\textbar}{\textbar}} \textit{exp12}
+
+
+ccase\ \ Push a copy of the descriptor just below the current expression frame.
+
+
+chfail n Change the failure ipc in the current expression frame marker to n.
+
+
+coact\ \ Save the current state information in the current
+co-expression block, restore state information from the co-expression
+block being activated, perform a context switch, and continue
+execution.
+
+
+cofail\ \ Save the current state information in the current
+co-expression block, restore state information from the co-expression
+block being activated, perform a context switch, and continue
+execution with co-expression failure signal set.
+
+
+compl \~{}\textit{expr}
+
+
+caret\ \ Save the current state information in the current
+co-expression block, restore state information from the co-expression
+block being activated, perform a context switch, and continue
+execution with co-expression return signal set.
+
+
+create\ \ Allocate a co-expression block and a refresh block. Copy the
+current procedure frame marker, argument values, and local identifier
+values into the refresh block. Place a procedure frame for the current
+procedure on the stack of the new co-expression block.
+
+
+cset a\ \ Push a descriptor for the cset block at address a onto the stack.
+
+
+diff\textit{\ \ expr1 -{}-expr2}
+
+
+div\textit{\ \ expr1 }/ \textit{expr2}
+
+
+dup\ \ Push a null descriptor onto the stack and then push a copy of
+the descriptor that was previously on top of the stack.
+
+
+efail\ \ If there is a generator frame in the current expression
+frame, resume its generator. Otherwise remove the current expression
+frame. If the ipc in its marker is nonzero, set ipc to it. If the
+failure ipc is zero, repeat efail.
+
+
+eqv\textit{\ \ expr1 }=== \textit{expr2}
+
+
+eret\ \ Save the descriptor on the top of the stack. Unwind the C
+stack. Remove the current expression frame from the stack and push the
+saved descriptor.
+
+
+escan\ \ Dereference the top descriptor on the stack if
+necessary. Copy it to the place on the stack prior to the saved values
+of \&subject and \&pos (see bscan). Exchange the current values of
+\&subject and \&pos with the saved values on the stack. Then
+suspend. If resumed, restore the values of \&subject and \&pos from
+the stack and fail.
+
+
+esusp\ \ Create a generator frame containing a copy of the portion of
+the stack that is needed if the generator is resumed.
+
+
+field n\ \ Replace the record descriptor on the top of the stack by a
+descriptor for field n of that record.
+
+
+global n Push a variable descriptor pointing to global identifier n.
+
+
+goto n\ \ Set ipc to n.
+
+
+init n\ \ Change init instruction to goto.
+
+
+int n\ \ Push a descriptor for the integer n.
+
+
+inter\textit{\ \ expr1 }** \textit{exp'2}
+
+
+invoke n \textit{exp1lJ(expr1, exp'2, }..., \textit{exprn)}
+
+
+keywd n Push a descriptor for keyword n.
+
+
+lconcat\textit{\ \ expr1 {\textbar}{\textbar}{\textbar}} \textit{expr2}
+
+
+lexeq\textit{\ \ expr1 }== \textit{expr2}
+
+
+lexge\textit{\ \ expr1 }{\guillemotright}= \textit{expr2}
+
+
+lexgt\textit{\ \ expr1 }{\guillemotright} \textit{expr2}
+
+
+lexle\textit{\ \ expr1 }{\guillemotleft}= \textit{expr2}
+
+
+lexlt\textit{\ \ expr1 }{\guillemotleft} \textit{expr2}
+
+
+lexne\textit{\ \ expr1 }{}-== \textit{expr2}
+
+
+limit\ \ Convert the descriptor on the top of the stack to an
+integer. If the conversion cannot be performed or if the result is
+negative, terminate execution with an error message. If it is zero,
+fail. Otherwise, create an expression frame with a zero failure ipc.
+
+
+line n\ \ Set the current line number to n.
+
+
+llist n\textit{\ \ [expr1,expr2,...,exprn]}
+
+
+local n\ \ Push a variable descriptor pointing to local identifier n.
+
+
+lsusp\ \ Decrement the current limitation counter, which is
+immediately prior to the current expression frame on the stack. If the
+limit counter is nonzero, create a generator frame containing a copy
+of the portion of the interpreter stack that is needed if the
+generator is resumed. If the limitation counter is zero, unwind the C
+stack and remove the current expression frame from the stack.
+
+
+mark\ \ Create an expression frame whose marker contains the failure
+ipc corresponding to the label n, the current efp, gfp, and ilevel.
+
+
+mark0\ \ Create an expression frame with a zero failure ipc.
+
+
+minus\textit{\ \ expr1 -expr2}
+
+
+mod\textit{\ \ expr1 }\% \textit{expr2}
+
+
+mult\textit{\ \ expr1 }* \textit{expr2}
+
+
+neg \textit{{}-expr}
+
+
+neqv\textit{\ \ exprl }{}-=== \textit{expr2}
+
+
+nonnull \textit{{\textbackslash}expr}
+
+
+null \textit{/expr}
+
+
+number\textit{\ \ +expr}\ \ .
+
+
+numeq\textit{\ \ expr1 }= \textit{expr2}
+
+
+numge\textit{\ \ exprl }{\textgreater}= \textit{expr2}
+
+
+numgt\textit{\ \ expr1 }{\textgreater} \textit{expr2}
+
+
+numle\textit{\ \ exprl }{\textless}= \textit{expr2}
+
+
+numlt\textit{\ \ exprl }{\textless} \textit{expr2}
+
+
+numne\textit{\ \ exprl }{}-= \textit{expr2}
+
+
+pfail\ \ If \&trace is nonzero, decrement it and produce a trace
+message. Unwind the C stack and remove the current procedure frame
+from the stack. Then fail.
+
+
+plus\textit{\ \ exprl }+ \textit{expr2}
+
+
+pnull\ \ Push a null descriptor.
+
+
+pop\ \ Pop the top descriptor.
+
+
+power\textit{\ \ exprl }\~{} \textit{expr2}
+
+
+pret\ \ Dereference the descriptor on the top of the stack, if
+necessary, and copy it to the place where the descriptor for the
+procedure is. If \&trace is nonzero; decrement it and produce a trace
+message. Unwind the C stack and remove the current procedure frame
+from the stack.
+
+
+psusp\ \ Copy the descriptor on the top of the stack to the place
+where the descriptor for the procedure is, dereferencing it if
+necessary. Produce a trace message and decrement \&trace if it is
+nonzero. Create a generator frame containing a copy of the portion of
+the stack that is needed if the procedure call is resumed.
+
+
+push1\ \ Push a descriptor for the integer 1.
+
+
+pushn1\ \ Push a descriptor for the integer -1.
+
+
+quit\ \ Exit from the interpreter.
+
+
+random \textit{?expr}
+
+
+rasgn\textit{\ \ expr1 }{\textless}- \textit{expr2}
+
+
+real a\ \ Push a descriptor for the real number block at address a onto the stack.
+
+
+refresh \textit{\~{}expr}
+
+
+rswap\textit{\ \ expr1 }{\textless}-{\textgreater} \textit{expr2}
+
+
+sdup\ \ Push a copy of the descriptor on the top of the stackr
+
+
+sect\textit{\ \ expr1 [} \textit{expr2: expr3}\ \ ]
+
+
+size\ \ *expr
+
+
+static n Push a variable descriptor pointing to static identifier n.
+
+
+str n, a Push a descriptor for the string of length n at address a.
+
+
+subsc \textit{expr1[expr2]}
+
+
+swap\textit{\ \ expr1 }:=: \textit{exp12}
+
+
+tabmat \textit{=exp'}
+
+
+toby\textit{\ \ expr1 }to \textit{expr2 }by \textit{expr3}
+
+
+unions\textit{\ \ expr1 }++ \textit{expr2}
+
+
+unmark\ \ Remove the current expression frame from the stack and
+unwind the C stack.
+
+
+value\ \ \ \ \textit{.expr}

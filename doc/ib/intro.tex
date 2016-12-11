@@ -1,0 +1,62 @@
+\clearpage\setcounter{page}{1}\pagestyle{ClintStyleii}
+\section{Compendium Introduction}
+
+The implementation of the Icon programming language is now old. It inherits ideas from earlier languages, and introduces
+many of its own. The implementation documentation traditionally revolved around the virtual machine and its runtime
+system; other parts of the implementation were documented in scattered technical reports or not at all, other than the
+source code. This volume changes all that, by bringing all the implementation documents together in a single volume.
+
+
+Icon's public-domain implementation is fairly efficient; for example at one point Keith Waclena of the University of
+Chicago documented a factor of 4 or more speed advantage of Icon versus Python on multiple benchmarks, and that was for
+the Icon virtual machine interpreter; the Icon optimizing compiler adds another factor of 2-5 or more in faster
+execution speed. The design decisions that achieve Icon's very-high level language features (such as generators and
+goal-directed evaluation) with acceptable performance make for an interesting study. This book is intended for those
+wanting to learn the implementation in order to add features, improve performance, learn about compilers in general, or
+glean ideas for their own independent programming language efforts.
+
+
+Icon traditionally consisted of a virtual machine translator, a linker, and a virtual machine interpreter. The
+translator and linker were merged long ago, but other tools have been added. The big added components are the
+optimizing compiler written by Ken Walker, and the Unicon translator written by Clint Jeffery. These additions are now
+a large part of the story. The trends I hope to see in the future are: merger of components, and gradual replacement of
+C-based components with ones written in Unicon.
+
+\subsection*{How Many Compilers?}
+
+The figure below shows two symmetrically-organized sets of tools. \ The tools on the left are the compilers end-users
+employ to translate Icon or Unicon into executable machine code, while the tools on the right show how the underlying
+run-time system needed in order to execute those programs is built. \ Of the six rectangles, four are compilers that
+perform distinct tasks specific to this programming language family. The front-end translation tool, named unicon, is a
+preprocessor that translates Unicon code into Icon code. Its primary functions are to translate object-orientation
+(classes, single and multiple inheritance, and packages) down to underlying imperative constructs. Unicon is written in
+Unicon. Icont and iconc compile Icon code down to virtual machine and C code, respectively. They share a few common
+front-end components, but are largely independent. Iconx is the name of the Icon (and Unicon) virtual machine, which
+mostly consists of a large collection of complex high-level data structure and I/O facilities which are built-in to
+these languages. Most of the source code for iconx is also used in rt.a, the runtime library that is linked to Icon
+programs compiled with iconc. 
+
+\begin{picture}(400,100)
+\thicklines
+
+\put(20,50){\framebox(50,20){unicon}}
+\put(111,71){\framebox(50,20){icont}}
+\put(111,29){\framebox(50,20){iconc}}
+\put(70,60){\vector(2,1){40}}
+\put(70,60){\vector(2,-1){40}}
+
+\put(220,50){\framebox(50,20){rtt}}
+\put(311,71){\framebox(50,20){iconx}}
+\put(311,29){\framebox(50,20){rt.a}}
+\put(270,60){\vector(2,1){40}}
+\put(270,60){\vector(2,-1){40}}
+
+\end{picture}
+
+{\center Figure CI-1: three compilers for users (left), one (rtt) for the language implementors}
+
+\clearpage
+\bigskip
+
+
+\bigskip

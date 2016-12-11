@@ -1,0 +1,1526 @@
+\chapter{The RTL Run-Time Language }
+
+This appendix contains a description of the language used to implement
+the run-time operations of the Icon compiler system. Chapter 5
+provides a description of the design goals of the implementation
+language and an introduction to it.  Some of the design decisions for
+the language were motivated by optimizations planned for the future,
+such as constant folding of csets. The use of these features is
+presented as if the optimizations were implemented; this insures that
+the optimizations will be supported by the run-time system when they
+are implemented. This appendix is adapted from the reference manual
+for the language [.ipd79.].
+
+The translator for the implementation language is the program rtt. An
+rtt input file may contain operation definitions written in the
+implementation language, along with C definitions and
+declarations. Rtt has a built-in C preprocessor based on the ANSI C
+Standard, but with extensions to support multi-line macros with
+embedded preprocessor directives [.ipd65.]. Rtt prepends a standard
+include file, grttin.h, on the front of every implementation language
+file it translates.
+
+The first part of this appendix describes the operation definitions. C
+language documentation should be consulted for ordinary C grammar. The
+extensions to ordinary C grammar are described in the latter part of
+the appendix.
+
+The grammar for the implementation language is presented in extended
+BNF notation. Terminal symbols are set in Helvetica. Non-terminals and
+meta-symbols are set in \textit{Times-Italic}. In addition to the
+usual meta-symbols, \textit{::=} for
+{\textasciigrave}{\textasciigrave}is defined as'{}' and
+\textit{{\textbar}} for
+{\textasciigrave}{\textasciigrave}alternatives'{}', brackets around a
+sequence of symbols indicates that the sequence is optional, braces
+around a sequence of symbols followed by an asterisk indicates that
+the sequence may be repeated zero or more times, and braces followed
+by a plus indicates that the enclosed sequence may be repeated one or
+more times.
+
+\section{G.1 Operation Documentation }
+
+An operation definition can be preceded by an optional description in
+the form of a C string literal.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \textit{documented-definition ::= [ C-string-literal ] operation-definition}}
+
+
+The use of a C string allows an implementation file to be run through
+the C preprocessor without altering the description. The preprocessor
+concatenates adjacent string literals, allowing a multi-line
+description to be written using multiple strings. Alternatively, a
+multi-line description can be written using {\textasciigrave}' for
+line continuation. This description is stored in the operation data
+base where it can be extracted by documentation generation
+programs. These documentation generators produce formatted
+documentation for Icon programmers and for C programmers maintaining
+the Icon implementation. The documentation generators are responsible
+for inserting newline characters at reasonable points when printing
+the description.
+
+\section[G.2 Types of Operations ]{G.2 Types of Operations }
+
+Rtt can be used to define the built-in functions, operators, and
+keywords of the Icon language. (Note that there are some Icon
+constructs that fall outside this implementation specification
+system. These include control structures such as string scanning and
+limitation, along with record constructors and field references.)
+
+{\ttfamily\mdseries
+\ \ \ \textit{operation-definition} ::=}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ function result-seq identifier ( [ param-list ] ) [ declare ] actions end {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ operator result-seq op identifier ( [ param-list ] ) [ declare ] actions end {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ keyword result-seq identifier actions end {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ keyword result-seq identifier const key-const end}
+
+{\ttfamily\mdseries
+\ \ \ result-seq ::= \{ length , length [ + ] \} {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{ length [ + ] \} {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{ \}}
+
+{\ttfamily\mdseries
+\ \ \ length ::= integer {\textbar} *}
+
+
+\textit{result-seq} indicates the minimum and maximum length of the
+result sequence of an operation (the operation is treated as if it is
+used in a context where it produces all of its results). For example,
+addition always produces one result so its \textit{result-seq} is \{1,
+1\}. If the minimum and maximum are the same, only one number need be
+given, so the \textit{result-seq} for addition can be coded as
+\{1\}. A conditional operation can produce either no results (that is,
+it can fail) or it can produce one result, so its \textit{result-seq}
+is \{0, 1\}. A length of indicates unbounded, so the
+\textit{result-seq} of ! is indicated by \{0, \}. An in the lower
+bound means the same thing as 0, so \{0, \} can be written as \{, \},
+which simplifies to \{\}. A \textit{result-seq} of \{\} indicates no
+result sequence.  This is not the same as a zero-length result
+sequence, \{0\}; an operation with no result sequence does not even
+fail.  exit is an example of such an operation.
+
+A + following the length(s) in a \textit{result-seq} indicates that
+the operation can be resumed to perform some side effect after
+producing its last result. All existing examples of such operations
+produce at most one result, performing a side effect in the
+process. The side effect on resumption is simply an undoing of the
+original side effect. An example of this is tab, which changes \&pos
+as the side effect.
+
+For functions and keywords, \textit{identifier} is the name by which
+the operation is known within the Icon language (for keywords,
+\textit{identifier} does not include the \&). New functions and
+keywords can be added to the language by simply translating
+implementations for them. For operations, \textit{op} is (usually) the
+symbol by which the operation is known within the Icon language and
+\textit{identifier} is a descriptive name. It is possible to have more
+than one operation with the same \textit{op} as long as they have
+different identifiers and take a different number of operands.  In
+addition to translating the implementation for an operator, adding a
+new operator requires updating iconc's lexical analyzer and parser to
+know about the symbol (in reality, an \textit{operator} definition may
+be used for operations with non-operator syntax, in which case any
+syntax may be used; iconc's code generator identifies the operation by
+the type of node put in the parse tree by a parser action). In all
+cases, the \textit{identifier} is used to construct the name(s) of the
+C function(s) which implement the operation.
+
+
+A \textit{param-list} is a comma separated list of parameter
+declarations. Some operations, such as the write function, take a
+variable number of arguments. This is indicated by appending a pair of
+brackets enclosing an identifier to the last parameter
+declaration. This last parameter is then an array containing the
+\textit{tail} of the argument list, that is, those arguments not taken
+up by the preceding parameters. The identifier in brackets represents
+the length of the tail and has a type of C integer.
+
+{\ttfamily\mdseries
+\ \ \ \textit{param-list ::= param \{ , param \} [ [ identifier ] ]}}
+
+
+Most operations need their arguments dereferenced. However, some
+operations, such as assignment, need undereferenced arguments and a
+few need both dereferenced and undereferenced versions of an
+argument. There are forms of parameter declarations to match each of
+these needs.
+
+{\ttfamily\mdseries
+\ \ \ \textit{param ::= identifier {\textbar}}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textit{underef identifier {\textbar}}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textit{underef identifier -{\textgreater} identifier}}
+
+
+A simple identifier indicates a dereferenced parameter. underef
+indicates an undereferenced parameter. In the third form of parameter
+declaration, the first identifier represents the undeferenced form of
+the argument and the second identifier represents the dereferenced
+form. This third form of declaration may not be used with the variable
+part of an argument list. These identifiers are of type
+\textit{descriptor}. Descriptors are implemented as C structs. See
+Chapter 4 for a detailed explanation of descriptors. Examples of
+operation headers:
+
+{\ttfamily\mdseries
+\ \ \ detab(s,i,...) - replace tabs with spaces, with stops at columns indicated.}
+
+{\ttfamily\mdseries
+\ \ \ function\{1\} detab(s, i[n])}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ x {\textless}-{\textgreater} y -swap values of x and y.}
+
+{\ttfamily\mdseries
+\ \ \ Reverses swap if resumed.}
+
+{\ttfamily\mdseries
+\ \ \ operator\{0,1+\} {\textless}-{\textgreater} rswap(underef x -{\textgreater} dx, underef y -{\textgreater} dy)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ declare}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ actions}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \&fail -just fail}
+
+{\ttfamily\mdseries
+\ \ \ keyword\{0\} fail}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ actions}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+
+\section{G.3 Declare Clause}
+
+Some operations need C declarations that are common to several
+actions. These can be declared within the declare clause.
+
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{declare ::= declare \{ C declarations \}}}
+
+
+These may include \textit{tended} declarations, which are explained
+below in the section on extensions to C. If a declaration can be made
+local to a block of embedded C code, it is usually better to put it
+there than in a declare clause. This is explained below in the
+discussion of the body action.
+
+{\sffamily
+Constant Keywords}
+
+Any keyword can be implemented using general
+\textit{actions}. However, for constant keywords, iconc can sometimes
+produce more efficient code if it treats the keyword as a literal
+constant. Therefore, a special declaration is available for declaring
+keywords that can be represented as Icon literals. The constant is
+introduced with the word const and can be one of four literal types.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{key-const ::= string-literal {\textbar} cset-literal {\textbar} integer-literal {\textbar}
+real-literal}}
+
+
+When using this mechanism, it is important to be aware of the fact
+that rtt tokenizes these literals as C literals, not as Icon
+literals. The contents of string literals and character literals (used
+to represent cset literals) are not interpreted by rtt except for
+certain situations in string concatenation (see [.ipd65.]). They are
+simply stored, as is, in the data base. This means that literals with
+escape sequences can be used even when C and Icon would give them
+different interpretations. However, C does not recognize control
+escapes, so '\^{}'{}', which is a valid Icon literal, will result in
+an error message from rtt, because the second quote ends the literal,
+leaving the third quote dangling.  Only decimal integer literals are
+allowed.
+
+
+\section{G.4 Actions }
+
+All operations other than constant keywords are implemented with
+general \textit{actions}.
+
+Actions fall into four categories: type checking and conversions,
+detail code expressed in extended C, abstract type computations, and
+error reporting.
+
+{\ttfamily\mdseries
+\ \ \ \textit{actions} ::= \{ action \}*}
+
+{\ttfamily\mdseries
+\ \ \ action ::= checking-conversions {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ detail-code {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ abstract \{ type-computations \} {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ runerr( msg\_number [ , descriptor ] ) [ ; ]}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \{ actions \}}
+
+\subsection{Type Checking and Conversions}
+
+The type checking and conversions are 
+
+{\ttfamily\mdseries
+\ \ \ checking-conversions ::= if type-check then action {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ if type-check then action else action {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ type\_case descriptor of \{ \{ type-select \}+ \} {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ len\_case \textit{identifier} of \{ \{ integer : action \}+
+default : action \}}
+
+{\ttfamily\mdseries
+\ \ \ type-select ::= \{ type-name : \}+ action {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ default : action}
+
+
+These actions specify run-time operations. These operations could be
+performed in C, but specifying them in the implementation language
+gives the compiler information it can use to generate better code.
+
+The if actions use the result of a \textit{type-check} expression to
+select an action. The type\_case action selects an action based on the
+type of a descriptor. If a type\_case action contains a default
+clause, it must be last.  \textit{type-select} clauses must be
+mutually exclusive in their selection. The len\_case action selects an
+action based on the length of the variable part of the argument list
+of the operation. The \textit{identifier} in this action must be the
+one representing that length.
+
+A \textit{type-check} can succeed or fail. It is either an assertion
+of the type of a descriptor, a conversion of the type of a descriptor,
+or a logical expression involving \textit{type-check}s. Only limited
+forms of logical expressions are supported.
+
+{\ttfamily\mdseries
+\ \ \ \textit{type-check} ::= simple-check \{ \&\& simple-check \}* {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ! simple-check}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ simple-check ::= is: type-name ( descriptor ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cnv: dest-type ( source [ , destination ] ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ def: dest-type ( source , value [ , destination ] )}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ dest-type ::= cset {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ integer {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ real {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ string {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C\_integer {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C\_double {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C\_string {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (exact)integer {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (exact)C\_integer {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmp\_string {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmp\_cset}
+
+
+The is check succeeds if the value of the descriptor is in the type
+indicated by \textit{type-name}. Conversions indicated by cnv are the
+conversions between the Icon types of cset, integer, real, and
+string. Conversions indicated by def are the same conversions with a
+default value to be used if the original value is null.
+
+\textit{dest-type} is the type to which to a value is to be converted,
+if possible. cset, integer, real, and string constitute a subset of
+\textit{icon-type} which is in turn a subset of \textit{type-name}
+(see below). C\_integer, C\_string, and C\_double are conversions to
+internal C types that are easier to manipulate than descriptors. Each
+of these types corresponds to an Icon type. A conversion to an
+internal C type succeeds for the same values that a conversion to the
+corresponding Icon type succeeds. C\_integer represents the C integer
+type used for integer values in the particular Icon implementation
+being compiled (typically, a 32-bit integer type). C-double represents
+the C double type. C-string represents a pointer to a null-terminated
+C character array. However, see below for a discussion of the
+destination for conversion to C\_string. (exact) before integer or
+C\_integer disallows conversions from reals or strings representing
+reals, that is, the conversion fails if the value being converted
+represents a real value.
+
+Conversion to tmp\_string is the same as conversion to string (the
+result is a descriptor), except that the string is only guaranteed to
+exist for the lifetime of the operation (the lifetime of a suspended
+operation extends until it can no longer be resumed). Conversion to
+tmp\_string is generally less expensive than conversion to string and
+is never more expensive, but the resulting string must not be exported
+from the operation. tmp\_cset is analogous to tmp\_string.
+
+The source of the conversion is the descriptor whose value is to be
+converted. If no destination is specified, the conversion is done
+{\textasciigrave}{\textasciigrave}in-place'{}'. However, it may not
+actually be possible to do an argument conversion in the argument's
+original location, so the argument may be copied to another location
+as part of the conversion. Within the \textit{scope} of the
+conversion, the parameter name refers to this new location. The scope
+of a conversion is usually only important for conversions to C types;
+the run-time system translator and the Icon compiler try to keep the
+movement of descriptor parameters transparent (see below for more
+details). All elements of the variable part of an argument list must
+be descriptors. Therefore, when an element is converted to a C type,
+an explicit location must be given for the destination.
+
+The destinations for conversions to cset, integer, real, string,
+(exact)integer, tmp\_string, and tmp\_cset must be descriptors. The
+destinations for conversions to C\_integer, C\_double, and
+(exact)C\_integer must be the corresponding C types. However, the
+destination for conversion to C\_string must be tended. If the
+destination is declared as {\textasciigrave}{\textasciigrave}tended
+char '{}', then the dword (string length) of the tended location will
+be set, but the operation will not have direct access to it. The
+variable will look like a {\textasciigrave}{\textasciigrave}char
+'{}'. Because the operation does not have access to the string length,
+it is not a good idea to change the pointer once it has been set by
+the conversion. If the destination is declared as a descriptor, the
+operation has access to both the pointer to the string and the
+string's length (which includes the terminating null character). If a
+parameter is converted to C\_string and no explicit destination is
+given, the parameter will behave like a
+{\textasciigrave}{\textasciigrave}tended char '{}' within the scope of
+the conversion.
+
+The second argument to the def conversion is the default value. The
+default value may be any C expression that evaluates to the correct
+type. These types are given in the following chart.
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{0.93025976in}m{0.7538598in}}
+ cset:  &
+ struct b\_cset \\
+ integer:  &
+ C\_integer \\
+ real:  &
+ double \\
+ string:  &
+ struct descrip \\
+ C\_integer:  &
+ C\_integer \\
+ C\_double:  &
+ double \\
+ C\_string:  &
+ char * \\
+ tmp\_string: &
+ struct descrip \\
+ tmp\_cset:  &
+ struct b\_cset \\
+ (exact)integer:  &
+ C\_integer \\
+ (exact)C\_integer:  &
+ C\_integer \\
+\end{supertabular}
+\end{center}
+
+The numeric operators provide good examples of how conversions are used: 
+
+{\ttfamily\mdseries
+\ \ \ operator\{1\} / divide(x, y)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if cnv:(exact)C\_integer(x) \&\& cnv:(exact)C\_integer(y) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ else \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if !cnv:C\_double(x) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ runerr(102, x)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ if !cnv:C\_double(y) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ runerr(102, y)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ end}
+
+Within the code indicated by \textit{actions}, x and y refer to C
+values rather than to the Icon descriptors of the unconverted
+parameters.
+
+The subject of any type check or type conversion must be an unmodified
+parameter. For example, once an in-place conversion has been applied
+to a parameter, another conversion may not be applied to the same
+parameter. This helps insure that type computations in iconc only
+involve the unmodified types of arguments, simplifying those
+computations.  This restriction does not apply to type checking and
+conversions in C code.
+
+\subsection{Scope of Conversions}
+
+The following discussion is included mostly for completeness. The
+scope of conversions sounds complicated, but in practice problems
+seldom occur in code that {\textasciigrave}{\textasciigrave}looks
+reasonable'{}'. If a problem does occur, the translator catches
+it. Normally, the intricacies of scope should be ignored and the
+person writing run-time routines should code conversions in a manner
+that seems natural.
+
+An {\textquotedbl}in-place{\textquotedbl} conversion of a parameter
+can create a scope for the parameter name separate from the one
+introduced by the parameter list. This is because conversions to C
+types may require the converted value to be placed in a different
+location with a different type. The parameter name is then associated
+with this new location. The original scope of a parameter starts at
+the beginning of the operation's definition. The scope of a conversion
+starts at the conversion. A scope extends through all code that may be
+executed after the scope's beginning, up to a runerr or a conversion
+that hides the previous scope (because the type checking portion of
+the implementation language does not contain loops or arbitrary gotos,
+scope can easily be determined lexically).
+
+The use of an in-place conversion in the first sub-expression of a
+conjunction, \textit{cnv1 \&\& cnv2}, has a potential for causing
+problems. In general, there is no way to know whether the first
+conversion will effectively be undone when the second conversion
+fails. If the first conversion is actually done in-place, the
+parameter name refers to the same location in both the success and
+failure scope of the conjunction, so the conversion is not undone. If
+the conversion is done into a separate location, the failure scope
+will refer to the original value, so the conversion will effectively
+be undone. Whether the conversion is actually done in-place depends on
+the context in which operation is used. However, conversion to
+C\_integer and C\_double always preserve the original value, so there
+is no potential problem using them as the first argument to a
+conjunction, nor is there any problem using a non-conversion test
+there.  An example of this uncertainty:
+
+{\ttfamily\mdseries
+\ \ \ if cnv:string(s1) \&\& cnv:string(s2) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ /* s1 and s2 both refer to converted values */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ else \{ /* s2 refers to the original value. s1 may}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ refer to either the original or the converted value */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+
+The translator issues a warning if there is a potential problem. 
+
+It is possible for scopes to overlap; this happens because scopes
+start within conditional actions. In rare instances, executable code
+using the name may appear within this overlapping scope, as in the
+following example, which resembles code that might be found in the
+definition of a string analysis function such as find.
+
+{\ttfamily\mdseries
+\ \ \ if is:null(s) then \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if !def:C\_integer(i, k\_pos) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ runerr(101, i)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ else \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ if !def:C\_integer(i, 1) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ runerr(101, i)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{actions}}
+
+
+Here, \textit{actions} occurs within the scope of both
+conversions. Note that \textit{actions} is not in the scope of the
+original parameter i. This is because that scope is ended in each
+branch of the outer if by the conversions and the runerrs.
+
+If overlap does occur, the translator tries to insure that the same
+location is used for the name in each scope. The only situation when
+it cannot do this is when the type of the location is different in
+each scope, for instance, one is a C\_integer and the other is a
+C\_real. If a name is referenced when there is conflicting scope, the
+translator issues an error message.
+
+\subsection{Type Names}
+
+The \textit{type-name}s represent types of Icon intermediate values,
+including variable references. These are the values that enter and
+leave an operation; {\textasciigrave}{\textasciigrave}types'{}'
+internal to data structures, such as list element blocks, are handled
+completely within the C code.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{type-name} ::= empty\_type {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ icon-type {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ variable-ref}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ icon-type ::= null {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ string {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cset {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ integer {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ real {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ file {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ list {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ set {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ table {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ record {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procedure {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ co\_expression}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ variable-ref ::= variable {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tvsubs {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tvtbl {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ kywdint {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ kywdpos {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ kywdsubj}
+
+
+The \textit{type-name}s are not limited to the first-class types of
+Icon's language definition. The \textit{type-name}s that do not follow
+directly from Icon types need further explanation. empty\_type is the
+type containing no values and is needed for conveying certain
+information to the type inferencing system, such as an unreachable
+state. For example, the result type of stop is empty\_type. It may
+also be used as the internal type of an empty structure. Contrast this
+with null, which consists of the null value.
+
+Variable references are not first-class values in Icon; they cannot be
+assigned to variables. However, they do appear in the definition of
+Icon as arguments to assignments and as the subject of
+dereferencing. For example, the semantics of the expression
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ s[3] := s}
+
+\noindent can be described in terms of a substring trapped variable
+and a simple variable reference. For this reason, it is necessary to
+include these references in the type system of the implementation
+language. variable consists of all variable references. It contains
+five distinguished subtypes. tvsubs contains all substring trapped
+variables. tvtbl contains all table-element trapped variables. kywdint
+contains \&random and \&trace. kywdpos contains \&pos. kywdsubj
+contains \&subject.
+
+\subsection{Including C Code}
+
+As noted above, C declarations can be included in a declare
+clause. Embedded C code may reference these declarations as well as
+declarations global to the operation.
+
+Executable C code can be included using one of two actions. 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{detail-code ::= body \{ extended-C \} {\textbar}}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textit{inline \{ extended-C \}}}
+
+
+body and inline are similar to each other, except that inline
+indicates code that is reasonable for the compiler to put in-line when
+it can. body indicates that for the in-line version of the operation,
+this piece of C code should be put in a separate function in the link
+library and the body action should be replaced by a call to that
+function. Any parameters or variables from the declare clause needed
+by the function must be passed as arguments to the function.
+Therefore, it is more efficient to declare variables needed by a body
+action within that body than within the declare.  However, the scope
+of these local variables is limited to the body action.
+
+Most Icon keywords provide examples of operations that should be
+generated in-line. In the following example, nulldesc is a global
+variable of type descriptor. It is defined in the include files
+automatically included by rtt.
+
+{\ttfamily\mdseries
+\ \ \ \&null - the null value.}
+
+{\ttfamily\mdseries
+\ \ \ keyword\{1\} null}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return null}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ inline \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return nulldesc;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+\subsection{Error Reporting}
+{\ttfamily\mdseries
+runerr( \textit{msg\_number} [ , descriptor ] ) [ ; ]}
+
+
+runerr is translated into a call to the run-time error handling
+routine. Specifying this as a separate action rather than a C
+expression within a body or inline action gives the compiler
+additional information about the behavior of the
+operation. \textit{msg\_number} is the number used to look up the
+error message in a run-time error table. If a descriptor is given, it
+is taken to be the offending value.
+
+\subsection{Abstract Type Computations}
+{\ttfamily\mdseries
+\ \ \ abstract \{ \textit{type-computations} \}}
+
+
+The behavior of an operation with respect to types is a simplification
+of the full semantics of the operation. For example, the semantics of
+the function image is to produce the string representing its operand;
+its behavior in the type realm is described as simply returning some
+string. In general, a good simplification of an operation is too
+complicated to be automatically produced from the operation's
+implementation (of course, it is always possible to conclude that an
+operation can produce any type and can have any side effect, but that
+is hardly useful). For this reason, the programmer must use the
+abstract action to specify \textit{type-computation}s.
+
+{\ttfamily\mdseries
+\ \ \ \textit{type-computations ::= \{ store [ type ] = type [ ; ] \} [ return type [ ; ] ]}}
+
+
+\textit{type-computations} consist of side effects and a statement of
+the result type of the operation. There must be exactly one return
+\textit{type} along any path from the start of the operation to C code
+containing a return, suspend, or fail.
+
+A side effect is represented as an assignment to the
+\textit{store}. The store is analogous to program memory. Program
+memory is made up of locations containing values. The store is made up
+of locations containing types. A type represents a set of values,
+though only certain such sets correspond to types for the purpose of
+abstract type computations. Types may be basic types such as all Icon
+integers, or they may be composite types such as all Icon integers
+combined with all Icon strings. The rules for specifying types are
+given below. A location in the store may correspond to one location in
+program memory, or it may correspond to several or even an unbounded
+number of locations in program memory.  The contents of a location in
+the store can be thought of as a conservative (that is, possibly
+overestimated) summary of values that might appear in the
+corresponding location(s) in program memory at run time.
+
+Program memory can be accessed through a pointer. Similarly, the store
+can be indexed by a pointer type, using an expression of the form
+store[\textit{type]}, to get at a given location. An Icon global
+variable has a location in program memory, and a reference to such a
+variable in an Icon program is treated as a pointer to that location.
+Similarly, an Icon global variable has a location in the store and,
+during type inferencing, a reference to the variable is interpreted as
+a pointer type indexing that location in the store. Because types can
+be composite, indexing into the store with a pointer type may actually
+index several locations. Suppose we have the following side effect
+
+{\ttfamily\mdseries
+\ \ \ store[ \textit{type1} ] = type2}
+
+
+Suppose during type inferencing \textit{type1} evaluates to a
+composite pointer type consisting of the pointer types for several
+global variables, then all corresponding locations in the store will
+be updated. If the above side effect is coded in the assignment
+operator, this situation might result from an Icon expression such as
+
+{\ttfamily\mdseries
+\ \ \ every (x {\textbar} y) := \&null}
+
+
+In this example, it is obvious that both variables are changed to the
+null type. However, type inferencing can only deduce that at least one
+variable in the set is changed. Thus, it must assume that each could
+either be changed or left as is. It is only when the left hand side of
+the side effect represents a unique program variable that type
+inferencing knows that the variable cannot be left as is. In the
+current implementation of type inferencing, assignment to a single
+named variable is the only side effect where type inferencing
+recognizes that the side effect will definitely occur.
+
+Indexing into the store with a non-pointer type corresponds to
+assigning to a non-variable. Such an assignment results in error
+termination. Type inferencing ignores any non-pointer components in
+the index type; they represent execution paths that don't continue and
+thus contribute nothing to the types of expressions.
+
+A type in an abstract type computation is of the form 
+
+{\ttfamily\mdseries
+\ \ \ \textit{type ::= type-name} {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ type ( variable ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ attrb-ref {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ new type-name ( type \{ , type \} ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ store [ type ] {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ type ++ type {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textit{type ** type} {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ( type )}
+
+
+The \textit{type(variable)} expression allows type computations to be
+expressed in terms of the type of an argument to an operation. This
+must be an unmodified argument. That is, the abstract type computation
+involving this expression must not be within the scope of a
+conversion. This restriction simplifies the computations needed to
+perform type inferencing.
+
+This expression is useful in several contexts, including operations
+that deal with structure types. The type system for a program may have
+several sub-types for a structure type. The structure types are list,
+table, set, record, substring trapped variable, and table-element
+trapped variable. Each of these Icon types is a composite type within
+the type computations, rather than a basic type. Thus the type
+inferencing system may be able to determine a more accurate type for
+an argument than can be expressed with a \textit{type-name}. For
+example, it is more accurate to use
+
+{\ttfamily\mdseries
+\ \ \ if is:list(x) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return type(x)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ else}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ runerr(108, x)}
+
+
+than it is to use 
+
+{\ttfamily\mdseries
+\ \ \ if is:list(x) then}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return list}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ actions}
+
+{\ttfamily\mdseries
+\ \ \ else}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ runerr(108, x)}
+
+
+Structure values have internal
+{\textasciigrave}{\textasciigrave}structure'{}'. Structure types also
+need an internal structure that summarizes the structure of the values
+they contain. This structure is implemented with type attributes.
+These attributes are referenced using dot notation:
+
+{\ttfamily\mdseries
+\ \ \ attrb-ref ::= type . attrb-name}
+
+{\ttfamily\mdseries
+\ \ \ attrb-name ::= lst\_elem {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ set\_elem {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ key {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tbl\_elem {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ default {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ all\_fields {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ str\_var {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ trpd\_tbl}
+
+
+Just as values internal to structure values are stored in program
+memory, types internal to structure types are kept in the store. An
+attribute is a pointer type referencing a location in the store.
+
+A list is made up of (unnamed) variables. The lst\_elem attribute of a
+list type is a type representing all the variables contained in all
+the lists in the type. For example, part of the code for the bang
+operator is as follows, where dx is the dereferenced operand.
+
+{\ttfamily\mdseries
+\ \ \ type\_case dx of \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ list: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ return type(dx).lst\_elem}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ ...}
+
+
+This code fragment indicates that, if the argument to bang is in a
+list type, bang returns some variable from some list in that type. In
+the type realm, bang returns a basic pointer type.
+
+The set\_elem attribute of a set type is similar. The locations of a
+set never {\textasciigrave}{\textasciigrave}escape'{}' as
+variables. That is, it is not possible to assign to an element of a
+set. This is reflected in the fact that a set\_elem is always used as
+the index to the store and is never assigned to another location or
+returned from an operation. The case in the code from bang for sets is
+
+{\ttfamily\mdseries
+\ \ \ set: \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return store[type(dx).set\_elem]}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+Tables types have three attributes. key references a location in the
+store containing the type of any possible key value in any table in
+the table type. tbl\_elem references a location containing the type of
+any possible element in any table in the table type. default
+references a location containing the type of any possible default
+value for any table in the table type. Only tbl\_elem corresponds to a
+variable in Icon. The others must appear as indexes into the store.
+
+Record types are implemented with a location in the store for each
+field, but these locations cannot be accessed separately in the type
+computations of the implementation language. These are only needed
+separately during record creation and field reference, which are
+handled as special cases in the compiler. Each record type does have
+one attribute, all\_fields, available to type computations. It is a
+composite type and includes the pointer types for each of the fields.
+
+Substring trapped variables are implemented as structures. For this
+reason, they need structure types to describe them.  The part of the
+structure of interest in type inferencing is the reference to the
+underlying variable. This is reflected in the one attribute of these
+types, str\_var. It is a reference to a location in the store
+containing the pointer types of the underlying the variables that are
+{\textasciigrave}{\textasciigrave}trapped'{}'. str\_var is only used
+as an index into the store; it is never exported from an operation.
+
+Similarly table-element trapped variables need structure types to
+implement them. They have one attribute, trpd\_tbl, referencing a
+location in the store containing the type of the underlying table. The
+key type is not kept separately in the trapped variable type; it must
+be immediately added to the table when a table-element trapped
+variable type is created. This pessimistically assumes that the key
+type will eventually be put in the table, but saves an attribute in
+the trapped variable for the key. trpd\_tbl is only used as an index
+into the store; it is never exported from an operation.
+
+The type computation, new, indicates that an invocation of the
+operation being implemented creates a new instance of a value in the
+specified structure type. For example, the implementation of the list
+function is
+
+{\ttfamily\mdseries
+\ \ \ function\{1\} list(size, initial)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ abstract \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return new list(type(initial))}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{actions}}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+The type arguments to the new computation specify the initial values
+for the \textit{attributes} of the structure. The table type is the
+only one that contains multiple attributes. (Note that record
+constructors are created during translation and are not specified via
+the implementation language.) Table attributes must be given in the
+order: key, tbl\_elem, and default.
+
+In the type system for a given program, a structure type is
+partitioned into several sub-types (these sub-types are only
+distinguished during type inferencing, not at run time). One of these
+sub-types is allocated for every easily recognized use of an operation
+that creates a new value for the structure type. Thus, the following
+Icon program has two list sub-types: one for each invocation of list.
+
+{\ttfamily\mdseries
+\ \ \ procedure main()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ local x}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ x := list(1, list(100))}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+Two operations are available for combining types. Union is denoted by
+the operator {\textasciigrave}++' and intersection is denoted by the
+operator {\textasciigrave}**'. Intersection has the higher
+precedence. These operations interpret types as sets of
+values. However, because types may be infinite, these sets are treated
+symbolically.
+
+\subsection{C Extensions}
+
+The C code included using the declare, body, and inline actions may
+contain several constructs beyond those of standard C. There are five
+categories of C extensions: access to interface variables,
+declarations, type conversions/type checks, signaling run-time errors,
+and return statements.
+
+In addition to their use in the body of an operation, the conversions
+and checks, run-time error, and declaration extensions may be used in
+ordinary C functions that are put through the implementation language
+translator.
+
+\subsection{Interface Variables}
+
+Interface variables include parameters, the identifier for length of
+the variable part of an argument list, and the special variable
+result. Unconverted parameters, converted parameters with Icon types,
+and converted parameters with the internal types tmp\_string and
+tmp\_cset are descriptors and within the C code have the type struct
+descrip.  Converted parameters with the internal type of C\_integer
+have some signed integer type within the C code, but exactly which C
+integer type varies between systems. This type has been set up using a
+typedef in the automatically included include file so it is available
+for use in declarations in C code. Converted parameters with the
+internal type of C\_double have the type double within the C
+code. Converted parameters of the type C\_string have the type char
+. The length of the variable part of a argument list has the type
+\textit{int} within the C code.
+
+result is a special descriptor variable. Under some circumstances it
+is more efficient to construct a return value in this descriptor than
+to use other methods. See Section 5 of the implementation language
+reference manual for details.
+
+\subsection{Declarations}
+
+The extension to declarations consists of a new storage class
+specifier, tended (register is an example of an existing storage class
+specifier). Understanding its use requires some knowledge of Icon
+storage management. Only a brief description of storage management is
+given here; see the Icon implementation book for further details.
+
+Icon values are represented by descriptors. A descriptor contains both
+type information and value information. For large values (everything
+other than integers and the null value) the descriptor only contains a
+pointer to the value, which resides elsewhere. When such a value is
+dynamically created, memory for it is allocated from one of several
+memory regions. Strings are allocated from the \textit{string
+region}. All other relocatable values are allocated from the
+\textit{block region}. The only non-relocatable values are
+co-expression stacks and co-expression activation blocks. On some
+systems non-relocatable values are allocated in the \textit{static
+region}. On other systems there is no static region and these values
+are allocated using the C malloc function.
+
+When a storage request is made to a region and there is not enough
+room in that region, a \textit{garbage collection} occurs. All
+\textit{reachable} values for each region are located. Values in the
+string and block regions are moved into a contiguous area at the
+bottom of the region, creating (hopefully) free space at the end of
+the region.  Unreachable co-expression stacks and activator blocks are
+{\textasciigrave}{\textasciigrave}freed'{}'. The garbage collector
+must be able to recognize and save all values that might be referenced
+after the garbage collection and it must be able to find and update
+all pointers to the relocated values. Operation arguments that contain
+pointers into one of these regions can always be found by garbage
+collection. The implementations of many operations need other
+descriptors or pointers into memory regions. The tended storage class
+identifies those descriptors and pointers that may have \textit{live}
+values when a garbage collection could occur (that is, when a memory
+allocation is performed).
+
+A descriptor is implemented as a C struct named descrip, so an example
+of a tended descriptor declaration is
+
+{\ttfamily\mdseries
+\ \ \ tended struct descrip d;}
+
+Blocks are also implemented as C structs. The following list
+illustrates the types of block pointers that may be tended.
+
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_real *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_cset *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_file *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_proc *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_list *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_lelem *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_table *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_telem *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_set *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_selem *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_record *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_tvkywd *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_tvsubs *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_tvtbl *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_refresh *bp;}
+
+{\ttfamily\mdseries
+\ \ \ tended struct b\_coexpr *cp;}
+
+
+Alternatively, a union pointer can be used to tend a pointer to any
+kind of block.
+
+{\ttfamily\mdseries
+\ \ \ tended union block *bp;}
+
+Character pointers may also be tended. However, garbage collection
+needs a length associated with a pointer into the string
+region. Unlike values in the block region, the strings themselves do
+not have a length stored with them. Garbage collection treats a tended
+character pointer as a zero-length string. These character pointers
+are almost always pointers into some string, so garbage collection
+effectively treats them as zero-length substrings of the strings. The
+string as a whole must be tended by some descriptor so that it is
+preserved. The purpose of tending a character pointer is to insure
+that the pointer is relocated with the string it points into. An
+example is
+
+{\ttfamily\mdseries
+\ \ \ tended char *s1, *s2;}
+
+Tended arrays are not supported. tended may only be used with
+variables of local scope. tended and register are mutually
+exclusive. If no initial value is given, one is supplied that is
+consistent with garbage collection.
+
+\subsection{Type Conversions/Type Checks}
+
+Some conditional expressions have been added to C. These are based on
+type checks in the type specification part of the implementation
+language.
+
+{\ttfamily\mdseries
+\ \ \ is: \textit{type-name} ( source )}
+
+{\ttfamily\mdseries
+\ \ \ cnv: dest-type ( source , destination )}
+
+{\ttfamily\mdseries
+\ \ \ def: dest-type ( source , value , destination )}
+
+
+\textit{source} must be an Icon value, that is, a
+descriptor. \textit{destination} must be a variable whose type is
+consistent with the conversion. These type checks may appear anywhere
+a conditional expression is valid in a C program.  Note that is, cvn,
+and def are reserved words to distinguish them from labels.
+
+The type\_case statement may be used in extended C. This statement has
+the same form as the corresponding action, but in this context, C code
+replaces the \textit{action}s in the \textit{type-select} clauses.
+
+\subsection{Signaling Run-time Errors}
+
+runerr is used for signaling run-time errors. It acts like a function
+but may take either 1 or 2 arguments. The first argument is the error
+number. If the error has an associated value, the second argument is a
+descriptor containing that value.
+
+\subsection{Return Statements}
+
+There are three statements for leaving the execution of an
+operation. These are analogous to the corresponding expressions in the
+Icon language.
+
+{\ttfamily\mdseries
+\ \ \ \textit{ret-statments} ::= return ret-value ; {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ suspend ret-value ; {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fail ;}
+
+{\ttfamily\mdseries
+\ \ \ ret-value ::= descriptor {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C\_integer expression {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C\_double expression {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ C\_string expression {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ descript-constructor}
+
+
+\textit{descriptor} is an expression of type struct descrip. For example 
+
+{\ttfamily\mdseries
+\ \ \ \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ tended struct descrip dp;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ ...}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ suspend dp;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ ...}
+
+{\ttfamily\mdseries
+\ \ \ \}}
+
+
+Use of C\_integer, C\_double, or C\_string to prefix an expression
+indicates that the expression evaluates to the indicated C type and
+not to a descriptor. When necessary, a descriptor is constructed from
+the result of the expression, but when possible the Icon compiler
+produces code that can use the raw C value (See Section 5 of the
+implementation language reference manual). As an example, the integer
+case in the divide operation is simply
+
+{\ttfamily\mdseries
+\ \ \ inline \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return C\_integer x / y;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+
+Note that a returned C string must not be in a local (dynamic)
+character array; it must have a global lifetime.
+
+A \textit{descript-constructor} is an expression that explicitly
+converts a pointer into a descriptor. It is only valid in a return
+statement, because it builds the descriptor in the implicit location
+of the return value.
+
+{\ttfamily\mdseries
+\ \ \ \textit{descript-constructor} ::= string ( length , char-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cset ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ real ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ file ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procedure ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ list ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ set ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ record ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ table ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ co\_expression ( stack-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tvtbl ( block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ named\_var ( descr-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ struct\_var ( descr-ptr , block-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ substr ( descr-ptr , start , len ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ kywdint ( descr-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ kywdpos ( descr-ptr ) {\textbar}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ kywdsubj ( descr-ptr )}
+
+
+The arguments to string are the length of the string and the pointer
+to the start of the string. \textit{block-ptr}s are pointers to blocks
+of the corresponding types. \textit{stack-ptr} is a pointer to a
+co-expression stack.  \textit{descr-ptr} is a pointer to a
+descriptor. named\_var is used to create a reference to a variable
+(descriptor) that is not in a block. struct\_var is used to create a
+reference to a variable that is in a block. The Icon garbage collector
+works in terms of whole blocks. It cannot preserve just a single
+variable in the block, so the descriptor referencing a variable must
+contain enough information for the garbage collector to find the start
+of the block. That is what the \textit{block-ptr} is for. substr
+creates a substring trapped variable for the given descriptor,
+starting point within the string, and length. kywdint, kywdpos, and
+kywdsubj create references to keyword variables.
+
+Note that returning either C\_double \textit{expression} or
+substr(\textit{descr-ptr, start, len}) may trigger a garbage
+collection. \newline
+
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip

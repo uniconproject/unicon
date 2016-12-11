@@ -1,0 +1,1076 @@
+\chapter{Adding Functions and Data Types}
+
+Icon is designed so that new functions and data types can be added
+with comparative ease. Such additions require changes only to the
+run-time system; the translator and linker are not affected.
+
+
+This appendix provides some guidelines for modifying the Icon run-time
+system and lists useful macro definitions and support routines. It is
+designed to be read in conjunction with the source code for the
+implementation. The material included here only touches on the
+possibilities. There is no substitute for actually implementing new
+features and spending time studying the more intricate parts of the
+Icon system.
+
+\section{D.1 File Organization}
+
+The Icon system is organized in a hierarchy. Under UNIX, the Icon
+hierarchy is rooted at v6 and is usually located at /usr/icon/v6. For
+other operating systems, Icon may be named differently. The v6
+directory has several subdirectories that contain source code, test
+programs, documents, and so forth. The source code is in v6/src. There
+are five subdirectories in src:
+
+
+\ \ h\ \ common header files\newline
+\ \ icont\ \ command processor\newline
+\ \ iconx\ \ run-time system\newline
+\ \ link\ \ linker\newline
+\ \ tran\ \ translator
+
+
+The subdirectory h holds header files that are included by files in
+the other subdirectories. The file h/rt.h is particularly important,
+since it contains most of the definitions and declarations used in the
+run-time system.
+
+The rest of the code related to the run-time system is in the
+subdirectory iconx. The first letters of files in this subdirectory
+indicate the nature of their contents. Files that begin with the
+letter f contain code for functions, while files that begin with o
+contain code for operators. Code related directly to the interpretive
+process is in files that begin with the letter
+i. {\textquotedbl}Library{\textquotedbl} routines for operations such
+as list construction that correspond to virtual machine instructions
+are in files that begin with the letter l. Finally, files that begin
+with the letter r hold run-time support routines.
+
+Within each category, routines are grouped by functionality. For example, string construction functions such as map are
+in fstr.c, while storage allocation and garbage collection routines are in rmemmgt.c.
+
+\section{D.2 Adding Functions}
+
+There are several conventions and rules of protocol that must be
+followed in writing a new function. The situations that arise most
+frequently are covered in the following sections. The existing
+functions in f files in iconx provide many examples to supplement the
+information given here.
+
+\subsection[D.2.1 Function Declarations]{D.2.1 Function Declarations}
+
+A function begins with a call of the macro FncDcl(name, n), where name
+is the name of the function as it is called in a source-language
+program, and n is the number of arguments for the function. For
+example,
+
+{\ttfamily\mdseries
+FncDcl(map,3)}
+
+\noindent appears at the beginning of the function map. This macro
+declares the procedure block for the function and provides the
+beginning of the declaration of a C function for the code that
+follows. The value of n appears in the procedure block and is used to
+assure that the number of arguments on the interpreter stack when the
+function is called is the same as the number of arguments that the
+function expects. See Sec. 10.3.
+
+An X is prepended to the name given to avoid a collision with the
+names of other C routines in the run-time system.  Thus, the C
+function that implements map is named Xmap. Although the Icon function
+map has three arguments, the corresponding C function has only one:
+cargp, which is a pointer to an array of descriptors on the
+interpreter stack.  For example, FncDcl(map, 3) generates
+
+{\ttfamily\mdseries
+\ \ Xmap(cargp)}
+
+{\ttfamily\mdseries
+\ \ register struct descrip *cargp;}
+
+
+Other macros are provided for referencing the descriptors: Arg0 is the descriptor into which the result of a function is
+placed before it returns, Arg1 is the first descriptor argument in the call of the function, Arg2 is the second
+descriptor argument, and so on. These macros conceptually refer to the arguments in a source-language call of the
+function. It is never necessary (or desirable) to refer to cargp directly.
+
+
+Note that the descriptor at Arg0 initially points to the procedure
+block for the function (see Sec. 10.1). It is fair to assume that
+Arg1, Arg2, ..., Argi, where i arguments \textit{are} specified in the
+declaration contain valid descriptors Nothing can be assumed about the
+nature of these descriptors, other than that they represent valid
+source-language values. Similarly, a function must place a valid
+descriptor in Arg0 before returning, overwriting the procedure
+descriptor.
+
+The macros described previously allow functions to be written without
+worrying about the details of the interpreter stack. It is not
+important to know how these macros are actually defined; it is best to
+think of them in terms of the higher-level concepts they embody.
+
+\subsection[D.2.2 Returning from a Function]{D.2.2 Returning from a Function}
+
+A function returns control to the interpreter by use of one of three
+macros, Return, Suspend, or Fail, depending on whether the function
+returns, suspends, or fails, respectively. Return and Fail return
+codes that the interpreter uses to differentiate between the two
+situations. Suspend returns control to the interpreter by calling it,
+as described in Sec. 9.3.
+
+The use of Return is illustrated by the following trivial function
+that simply returns its argument:
+
+{\ttfamily\mdseries
+FncDcl(idem, 1)}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+Arg0 = Arg1;}
+
+{\ttfamily\mdseries
+Return;}
+
+{\ttfamily\mdseries
+\}}
+
+
+For example,
+
+{\ttfamily\mdseries
+\ \ write(idem({\textquotedbl}hello{\textquotedbl}))}
+
+\noindent writes hello.
+
+The use of Suspend and Fail is illustrated by the following function,
+which generates its first and second arguments in succession:
+
+{\ttfamily\mdseries
+FncDcl(gen2,2)}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+Arg0 = Arg1;}
+
+{\ttfamily\mdseries
+Suspend;}
+
+{\ttfamily\mdseries
+Arg0 = Arg2;}
+
+{\ttfamily\mdseries
+Suspend;}
+
+{\ttfamily\mdseries
+Fail;}
+
+{\ttfamily\mdseries
+\}}
+
+
+For example,
+
+
+\ \ every write(gen2({\textquotedbl}hello{\textquotedbl}, {\textquotedbl}there{\textquotedbl}))
+
+
+writes
+
+{\ttfamily\mdseries
+\ \ hello}
+
+{\ttfamily\mdseries
+\ \ there}
+
+
+As illustrated previously, Fail is used when there is not another
+result to produce. It is safe to assume that Arg0, Arg1, ...are intact
+when the function is resumed to produce another result.
+
+Most functions have a fixed number of arguments. Only write, writes,
+and stop in the standard Icon repertoire can be called with an
+arbitrary number of arguments. For a function that can be called with
+an arbitrary number of arguments, an alternative declaration macro,
+FncDcIV(name), is used. When this macro is used, the function is
+called with two arguments: the number of arguments in the call and a
+pointer to the corresponding array of descriptors. For example,
+FncDcIV(write) generates
+
+{\ttfamily\mdseries
+Xwrite(nargs, cargp)}
+
+{\ttfamily\mdseries
+int nargs;}
+
+{\ttfamily\mdseries
+register struct descrip cargp;}
+
+
+Within such a function, Arg0 refers to the return value as usual, but
+the arguments are referenced using the macro Arg(n). For example, a
+function that takes an arbitrary number of arguments and suspends with
+them as values in succession is
+
+{\ttfamily\mdseries
+FncDcIV(gen)}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+register int n;}
+
+{\ttfamily\mdseries
+for (n = 1; n {\textless}= nargs; n++) \{}
+
+{\ttfamily\mdseries
+Arg0 = Arg(n);}
+
+{\ttfamily\mdseries
+Suspend;}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+{\ttfamily\mdseries
+Fail;}
+
+{\ttfamily\mdseries
+\}}
+
+
+For example,
+
+{\ttfamily\mdseries
+\ \ every
+write(gen({\textquotedbl}hello{\textquotedbl},{\textquotedbl}there{\textquotedbl},{\textquotedbl}!{\textquotedbl}))}
+
+
+writes
+
+{\ttfamily\mdseries
+\ \ hello}
+
+{\ttfamily\mdseries
+\ \ there}
+
+{\ttfamily\mdseries
+\ \ !}
+
+
+Note the use of Fail at the end of the function; the omission of Fail
+would be an error, since returning by flowing off the end of the
+function would not provide the return code that the interpreter
+expects.
+
+\subsection{D.2.3 Type Checking and Conversion}
+
+Some functions need to perform different operations, depending on the
+types of their arguments. An example is type(x):
+
+{\ttfamily\mdseries
+\ \ FncDcl(type, 1)}
+
+{\ttfamily\mdseries
+\ \ \{}
+
+{\ttfamily\mdseries
+\ \ if (Qual(Arg1)) (}
+
+{\ttfamily\mdseries
+StrLen(Arg0) = 6;}
+
+{\ttfamily\mdseries
+StrLoc(Arg0) = {\textquotedbl}string{\textquotedbl};}
+
+{\ttfamily\mdseries
+\}}
+
+{\ttfamily\mdseries
+else \{}
+
+{\ttfamily\mdseries
+\ \ switch (Type(Arg1)) (}
+
+{\ttfamily\mdseries
+case T\_Null:}
+
+{\ttfamily\mdseries
+StrLen(Arg0) = 4;}
+
+{\ttfamily\mdseries
+StrLoc(Arg0) = {\textquotedbl}null{\textquotedbl};}
+
+{\ttfamily\mdseries
+\ \ break;}
+
+{\ttfamily\mdseries
+case T\_Integer:}
+
+{\ttfamily\mdseries
+case T\_Long:}
+
+{\ttfamily\mdseries
+StrLen(Arg0) = 7;}
+
+{\ttfamily\mdseries
+StrLoc(Arg0) = {\textquotedbl}integer{\textquotedbl};}
+
+{\ttfamily\mdseries
+break;}
+
+{\ttfamily\mdseries
+case T\_Real:}
+
+{\ttfamily\mdseries
+StrLen(Arg0) = 4;}
+
+{\ttfamily\mdseries
+StrLoc(Arg0) = {\textquotedbl}real{\textquotedbl};}
+
+{\ttfamily\mdseries
+break;}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+{\ttfamily\mdseries
+\ \ Return;}
+
+{\ttfamily\mdseries
+\ \ \}}
+
+
+As indicated by this function, the d-word serves to differentiate
+between types, except for strings, which require a separate test.
+
+
+For most functions, arguments must be of a specific type. As described
+in Sec. 12.1, type conversion routines are used for this purpose. For
+example, the function tab(i) requires that i be an integer. It begins
+as follows:
+
+{\ttfamily\mdseries
+FncDcl(tab. 1 )}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+register word i, j;}
+
+{\ttfamily\mdseries
+word t, oldpos;}
+
+{\ttfamily\mdseries
+long 11;}
+
+{\ttfamily\mdseries
+\ \ /*}
+
+{\ttfamily\mdseries
+\ \ * Arg1 must be an integer.}
+
+{\ttfamily\mdseries
+\ \ */}
+
+{\ttfamily\mdseries
+if (cvint(\&Arg1, \&11) == CvtFail)}
+
+{\ttfamily\mdseries
+runerr(101, \&Arg1);}
+
+
+Note that cvint is called with the addresses of Arg1 and 11. If the
+conversion is successful, the resulting integer is assigned to 11. As
+indicated by this example, it is the responsibility of a function to
+terminate execution by calling runerr if a required conversion cannot
+be made.
+
+The routine cvstr, which converts values to strings, requires a
+buffer, which is supplied by the routine that calls it.  See
+Sec. 4.4.4. This buffer must be large enough to hold the longest
+string that can be produced by the conversion of any value. This size
+is given by the defined constant MaxCvtLen. For example, the function
+to reverse a string begins as follows:
+
+{\ttfamily\mdseries
+FncDcl(reverse.1 )}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+register char c. *floc. *lIoc;}
+
+{\ttfamily\mdseries
+register word slen;}
+
+{\ttfamily\mdseries
+char sbuf[MaxCvtLen];}
+
+{\ttfamily\mdseries
+extern char *alcstrO;}
+
+{\ttfamily\mdseries
+/*}
+
+{\ttfamily\mdseries
+* Make sure that Arg1 is a string.}
+
+{\ttfamily\mdseries
+*/}
+
+{\ttfamily\mdseries
+if (cvstr(\&Arg1. sbuf) == CvtFail)}
+
+{\ttfamily\mdseries
+runerr(103. \&Arg1);}
+
+The buffer is used only if a nonstring value is converted to a
+string. In this case,
+
+Arg1 is changed to a qualifier whose v-word points to the converted
+string in sbuf. This string does not necessarily begin at the
+beginning of sbuf. In any event, after a successful call to cvstr, the
+argument is an appropriate qualifier, regardless of whether a
+conversion actually was performed.
+
+\subsection{D.2.4 Constructing New Descriptors}
+
+Some functions need to construct new descriptors to return in
+Arg0. Sometimes it is convenient to construct a descriptor by
+assignment to its d- and v-words. Various macros are provided to
+simplify these assignments. As given in the function type previously,
+StrLen and StrLoc can be used to construct a qualifier. For example,
+to return a qualifier for the string
+{\textquotedbl}integer{\textquotedbl}, the following code suffices:
+
+{\ttfamily\mdseries
+StrLen(Arg0) = 7;}
+
+{\ttfamily\mdseries
+StrLoc(Arg0) = {\textquotedbl}integer{\textquotedbl};}
+
+{\ttfamily\mdseries
+Return;}
+
+Here, the returned qualifier points to a statically allocated C string.
+
+There also are macros and support routines for constructing certain
+kinds of descriptors. For example, the macro
+
+{\ttfamily\mdseries
+Mkint(i, dp);}
+
+constructs an integer descriptor containing the integer i in the
+descriptor pointed to by dp. The definition of Mkint depends on the
+word size of the computer. On 32-bit computers, Mkint simply produces
+assignments to the d-word and v-word of descriptor pointed to by
+dp. On computers with 16-bit words, which have both T\_Integer and
+T\_Long forms of integers, Mkint produces a call to a support routine.
+
+\subsection{D.2.5 Default Values}
+
+Many functions specify default values for null-valued arguments. There
+are support routines for providing default values. For example,
+
+{\ttfamily\mdseries
+defstr(Arg3, sbuf, \&q);}
+
+\noindent changes Arg3 to the string given by the qualifier q in case
+Arg3 is null-valued. If Arg3 is not null-valued, however, its value is
+converted to a string, if possible, by defstr. If this is not
+possible, defstr terminates execution with an error message.
+
+\subsection{D.2.6 Storage Allocation}
+
+Functions that construct new data objects often need to allocate
+storage. Allocation is done in the allocated string region or the
+allocated block region, depending on the nature of the object. Support
+routines are provided to perform the actual allocation.
+
+As mentioned in Sec. 11.4, predictive need requests \textit{must} be
+made before storage is actually allocated. The functions strreq(i) and
+blkreq(i) request i bytes of storage in the allocated string and block
+regions, respectively.
+
+Such a request generally should be made as soon as an upper bound on
+the amount of storage needed is known. It is not necessary to know the
+exact amount, but the amount requested must be at least as large as
+the amount that actually will be allocated. For example, the function
+reads(f. i) requests i bytes 0 string storage, although the string
+actually read may be shorter.
+
+\textbf{String Allocation}. The function alcstr(s, i) copies i bytes
+starting at s into the allocated string region and returns a pointer
+to the beginning of the copy. Fo example, a function double(s) that
+produces the concatenation of s with itself is written as follows:
+
+{\ttfamily\mdseries
+FncDcl(double. 1)}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+register int glen;}
+
+{\ttfamily\mdseries
+char sbuf[MaxCvtLen];}
+
+{\ttfamily\mdseries
+extern char *alcstrO;}
+
+{\ttfamily\mdseries
+if (cvstr(\&Arg1. sbuf) == NULL)}
+
+{\ttfamily\mdseries
+runerr(103, \&Arg1);}
+
+{\ttfamily\mdseries
+glen = StrLen(Arg1);}
+
+{\ttfamily\mdseries
+strreq(2 * glen);}
+
+{\ttfamily\mdseries
+StrLen(Arg0) = 2 * glen;}
+
+{\ttfamily\mdseries
+StrLoc(Arg0) = alcstr(StrLoc(Arg1). glen);}
+
+{\ttfamily\mdseries
+alcstr(StrLoc(Arg1), glen);}
+
+{\ttfamily\mdseries
+Return;}
+
+{\ttfamily\mdseries
+\}}
+
+
+If the first argument of alcstr is NULL, instead of being a pointer to
+a string, the space is allocated and a pointer to the beginning of it
+is returned, but nothing is copied into the space. This allows a
+function to construct a string directly in the allocated string
+region.
+
+If a string to be returned is in a buffer as a result of conversion
+from another type, care must be taken to copy this string into the
+allocated string region---otherwise the string in the buffer will
+be overwritten on subsequent calls. Copying such strings is
+illustrated by the function string(x) given in Sec. 12.1.
+
+\textbf{Block Allocation}. The routine alcblk(i) allocates i bytes in
+the allocated block region and returns a pointer to the beginning of
+the block. The argument of alcblk must correspond to a whole number of
+words. There are run-time support routines for allocating various
+kinds of blocks. These routines, in turn, call alcblk. Such support
+routines generally fill in part of the block as well. For example,
+alccset(i) allocates a block for a cset, fills in the title and size
+words, and zeroes the bits for the cset:
+
+{\ttfamily\mdseries
+struct b\_cset *alccset(size)}
+
+{\ttfamily\mdseries
+int size;}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+register struct b\_cset *blk;}
+
+{\ttfamily\mdseries
+register i;}
+
+{\ttfamily\mdseries
+extern union block *alcblk();}
+
+{\ttfamily\mdseries
+blk = (struct b\_cset *)alcblk((word)sizeof(struct b\_cset) , T\_Cset); blk-{\textgreater}size = size;}
+
+{\ttfamily\mdseries
+/*}
+
+{\ttfamily\mdseries
+* Zero the bit array.}
+
+{\ttfamily\mdseries
+*/}
+
+{\ttfamily\mdseries
+for (i = 0; i {\textless} CsetSize; i++)}
+
+{\ttfamily\mdseries
+blk-{\textgreater}bits[i] = 0; return blk;}
+
+
+\}
+
+
+See Sec. D.5.5 for a complete list of block-allocation functions.
+
+\subsection{D.2.7 Storage Management Considerations}
+
+In addition to assuring that predictive need requests are made before
+storage is allocated, it is essential to assure that all descriptors
+contain valid data at any time a garbage collection may occur, that
+all descriptors are accessible to the garbage collector, and that all
+pointers to allocated data are in the v-words of descriptors.
+
+Normally, all the descriptors that a function uses are on the
+interpreter stack and are referenced as Arg0, Arg1,... Such
+descriptors are processed by the garbage collector. Occasionally,
+additional descriptors are needed for intermediate computations. If
+such descriptors contain pointers in their v-words, it is \textit{not}
+correct to declare local descriptors, as in
+
+{\ttfamily\mdseries
+FncDcl(mesh,2)}
+
+{\ttfamily\mdseries
+\{}
+
+{\ttfamily\mdseries
+struct descrip d1, d2;}
+
+
+The problem with this approach is that d1 and d2 are on the C stack
+and the garbage collector has no way of knowing about them.
+
+However, since all descriptors on the interpreter stack are accessible
+to the garbage collector, intermediate computations can be performed
+on descriptors on the interpreter stack. Extra descriptors for this
+purpose can be provided by increasing the number of arguments
+specified for the function. Thus,
+
+{\ttfamily\mdseries
+\ \ FncDcl(mesh,4)}
+
+\noindent makes Arg3 and Arg4 available for intermediate
+computations. The initial values of Arg3 and Arg4 will be null because
+of argument adjustment performed by invoke unless mesh is called with
+extra arguments.
+
+Garbage collection can occur only during a predictive need
+request. However, a predictive need request can occur between the time
+a function suspends and the time it is resumed to produce another
+result. Consequently, if a pointer is kept in a C variable in a loop
+that is producing results by suspending, the pointer may be invalid
+when the function is resumed. Instead, the pointer should be kept in
+the v-word of a descriptor that is accessible to the garbage
+collector.
+
+\subsection{D.2.8 Error Termination}
+
+An Icon program may terminate abnormally for two reasons: as the
+result of a source-language programming error (such as an invalid type
+in a function call), or as a result of an error detected in the Icon
+system itself (such as a descriptor that should have been dereferenced
+but was not).
+
+In case a source-language error is detected, execution is terminated
+by a call of the form
+
+{\ttfamily\mdseries
+\ \ runerr(i, \&d);}
+
+\noindent where i is an error message number and d is the descriptor
+for the offending value. If there is no specific offending value, the
+second argument is 0.
+
+The array of error message numbers and corresponding messages is
+contained in iconx/imain.c. If there is no appropriate existing error
+message, a new one can be added, following the guidelines given in
+Appendix D of Griswold and Griswold 1983.
+
+In theory, there should be no errors in the Icon system itself, but no
+large, complex software system is totally free of errors. Some
+situations are recognizable as being potential sources of problems in
+case data does not have the expected values. In such situations,
+especially during program development, it is advisable to insert calls
+of the function syserr, which terminates execution, indicating that an
+error was detected in the Icon system, and prints its argument as an
+indication of the nature of the error. It is traditional to use calls
+of the form
+
+{\ttfamily\mdseries
+\ \ syserr({\textquotedbl}mesh: can't happen{\textquotedbl});}
+
+\noindent so that when, in fact, the
+{\textquotedbl}impossible{\textquotedbl} does happen, there is a
+reminder of human frailty.  More informative messages are desirable,
+of course.
+
+\subsection[D.2.9 Header Files]{D.2.9 Header Files}
+
+If a new function is added to an existing f file in iconx, the
+necessary header files normally will be included automatically. If a
+new function is placed in a new file, that file should begin with
+
+{\ttfamily\mdseries
+\ \ \#include {\textquotedbl}../h/rt.h{\textquotedbl}}
+
+
+This header file includes three other header files:
+
+
+\ \ ../h/config.h\ \ general configuration information\newline
+\ \ ../h/cpuconf.h\ \ definitions that depend on the computer word size\newline
+\ \ ../h/memsize.h\ \ definitions that depend on the computer address space
+
+
+All of these files contain appropriate information for the local
+installation, and no changes in them should be needed.
+
+
+In rare cases, it may be necessary to include other header files. For
+example, a function that deals directly with garbage collection might
+need to include \textsf{iconx/gc.h.}
+
+\subsection[D.2.10 Installing a New Function]{D.2.10 Installing a New Function}
+
+Both the linker and the run-time system must know the names of all
+functions. This infonnation is provided in the header file h/fdefs.h.
+
+
+In order to add a function, a line of the form
+
+{\ttfamily\mdseries
+\ \ FncDef(name)}
+
+\noindent must be inserted in h/fdefs.h in proper alphabetical order.
+
+Once this insertion is made, the Icon system must be recompiled to
+take into account the code for the new function. The steps involved in
+recompilation vary from system to system. Information concerning
+recompilation is available in system-specific installation documents.
+
+\section[D.3 Adding Data Types]{D.3 Adding Data Types}
+
+Adding a new data type is comparatively simple, although there are
+several places where changes need to be made. Failure to make all the
+required changes can produce mysterious bugs.
+
+\subsection{D.3.1 Type Codes}
+
+At present, type codes range from 0 to 18. Every type must have a
+distinct type code and corresponding definitions.  These additions are
+made in h/rt.h. First, a T -definition is needed. For example, if a
+Boolean type is added, a definition such as
+
+{\ttfamily\mdseries
+\ \ \#define T\ \ \_Boolean\ \ 19}
+
+\noindent is needed. The value of MaxType, which immediately follows
+the type code definitions, must be increased to 19 accordingly.
+Failure to set MaxType to the maximum type code may result in
+program malfunction during garbage collection. See Sec. 11.3.2.
+
+Next a 0- definition is needed for the d-word of the new type. For a
+Boolean type, this definition might be
+
+{\ttfamily\mdseries
+\ \ \#define D\_Boolean\ \ (T\_Boolean I F\_Nqual)}
+
+All nonstring types have the F \_Nqual flag and their T- type
+code. Types whose v-words contain pointers also have the F \_Ptr flag.
+
+\subsection{D.3.2 Structures}
+
+A value of a Boolean type such as the one suggested previously can be
+stored in the d-word of its descriptor. However, most types contain
+pointers to blocks in their v-words. In this case, a declaration of
+asttucture corresponding to the block must be added to h/rt.h. For
+example, a new rational number data type, with the type code
+T\_Rational, might be represented by a block containing two
+descriptors, one for the numerator and one for the denominator. An
+appropriate structure declaration for such a block is
+
+{\ttfamily\mdseries
+struct b\_rational \{}
+
+{\ttfamily\mdseries
+int title;}
+
+{\ttfamily\mdseries
+struct descrip numerator;}
+
+{\ttfamily\mdseries
+struct descrip denominator;}
+
+{\ttfamily\mdseries
+\};}
+
+
+Since rational blocks are fixed in size, no size field is
+needed. However, a vector type with code T\_Vector in which different
+vectors have different lengths needs a size field. The declaration for
+such a block might be
+
+{\ttfamily\mdseries
+struct b\_vector \{}
+
+{\ttfamily\mdseries
+int title;}
+
+{\ttfamily\mdseries
+int blksize;}
+
+{\ttfamily\mdseries
+struct descrip velems[1];}
+
+{\ttfamily\mdseries
+\};}
+
+
+As mentioned in Sec. 4.4.2, the size of one for the array of
+descriptors is needed to avoid problems with C compilers.  In
+practice, this structure conceptually overlays the allocated block
+region, and the number of elements varies from block to block.
+
+Any new structure declaration for a block must be added to the
+declaration union block in h/rt.h.
+
+\subsection[D.3.3 Information Needed for Storage Management]{D.3.3 Information Needed for Storage Management}
+
+All pointers to allocated data must be contained in the v-words of
+descriptors, since this is the only way the garbage collector can
+locate them. Furthermore, all non-descriptor data must precede any
+descriptors in a block. The amount of non-descriptor data, and hence
+the location of the first descriptor in a block, must be the same for
+all blocks of a given type.
+
+As described in Sec. 11.3.2, the garbage collector uses the array
+bsizes to determine the size of a block and the array firstd to
+determine the offset of the first descriptor in the block. These
+arrays are in iconx/rmemmgt.c. When a new data type is added,
+appropriate entries must be made in these arrays. Failure to do so may
+result in serious bugs that occur only in programs that perform
+garbage collection, and the symptoms may be mysterious.
+
+There is an entry in bsizes for each type code. If the type has no
+block, the entry is -1. If the type has a block of constant size, the
+entry is the size of the block. Otherwise, the entry is 0, indicating
+that the size is in the second word of the block. Thus, the entry for
+T\_Boolean would be -1, the entry for T\_Rational would be
+sizeof(struct b\_rational), and the size for T\_Vector would be O.
+
+There is a corresponding entry in firstd for each type code that gives
+the offset of the first descriptor in its corresponding block. If
+there is no block, the entry is -1. If the block contains no
+descriptors, the entry is O. For example, the entry for T\_Boolean
+would be -1, the entry for T\_Rational would be WordSize, and the
+entry for T\_Vector would be 2*WordSize, where WordSize is a defined
+constant that is the number of bytes in a word.
+
+A third array, blknames, provides string names for all block
+types. These names are only used for debugging, and an entry should be
+made in blknames for each new data type.
+
+\subsection{D.3.4 Changes to Existing Code}
+
+In addition to any functions that may be needed for operating on
+values of a new data type, there are several functions and operators
+that apply to all data types and which may, therefore, need to be
+changed for any new data type.
+
+These are
+
+\ \ *x\ \ size of x (in iconx/omisc.c)\newline
+\ \ copy(x)\ \ copy of x (in iconx/fmisc.c)\newline
+\ \ image(x)\ \ string image of x (in iconx/fmisc.c)\newline
+\ \ type(x)\ \ string name of type of x (in iconx/fmisc.c)
+
+There is not a concept of size for all data types. For example, a
+Boolean value presumably does not have a size, but the size of a
+vector presumably is the number of elements it contains. The size of a
+rational number is problematical.  Modifications to *x are easy; see
+Sec. 4.4.4.
+
+There must be some provision for copying any value. For structures,
+such as vectors, physical copies should be made so that they are
+treated consonantly with other Icon structures. For other data types,
+the {\textquotedbl}copy{\textquotedbl} consists of simply returning
+the value and not making a physically distinct copy.  This should be
+done for data types, such as Boolean, for which there are only
+descriptors and no associated blocks.  Whether or not a copy of a
+block for a rational value should be made is a more difficult decision
+and depends on how such values are treated conceptually, at the
+source-language level. It is, of course, easiest not to make a
+physical copy.
+
+Some image must be provided for every value. This image should contain
+enough information to distinguish values of different types and, where
+possible, to provide some useful additional information about the
+specific value. The amount of detail that it is practical to provide
+in the image of a value is limited by the fact that the image is a
+string that must be placed in the allocated string region.
+
+
+The type must be provided for all values and should consist of a
+simple string name. For example, if x is a Boolean value, type(x)
+should produce {\textquotedbl}boolean{\textquotedbl}. The coding for
+type is trivial; see Sec. D.2.3.
+
+There also are several run-time support routines that must be modified
+for any new type:
+
+
+\ \ outimage\ \ image for tracing (in iconx/rmisc.c)\newline
+\ \ order\ \ \ \ order for sorting (in iconx/rcomp.c)\newline
+\ \ anycmp\ \ comparison for sorting (in iconx/rcomp.c)\newline
+\ \ equiv\ \ \ \ equivalence comparison (in iconx/rcomp.c)
+
+
+The image produced for tracing purposes is similar to that produced by
+image and must be provided for all data types.  However, outimage
+produces output and is not restricted to constructing a string in
+allocated storage. It therefore can be more elaborate and informative.
+
+There must be some concept of sorting order for every Icon
+value. There are two aspects to sorting: the relative order of
+different data types and the ordering among values of the same
+type. The routine order produces an integer that corresponds to the
+order of the type. If the order of a type is important with respect to
+other types, this matter must be given some consideration. For
+example, a rational number probably belongs among the numeric types,
+which, in Icon, sort before structure types. On the other hand, it
+probably is not important whether vectors come before or after lists.
+
+
+The routine anycmp compares two values; if they have the same order,
+as defined previously, anycmp determines which is the
+{\textquotedbl}smaller.{\textquotedbl} For example, Boolean
+{\textquotedbl}false{\textquotedbl} might (or might not) come before
+{\textquotedbl}true,{\textquotedbl} but some ordering between the two
+should be provided. On the other hand, order among vectors probably is
+not important (or well-defined), and they can be lumped with the other
+structures in anycmp, for which ordering is arbitrary. Sometimes
+ordering can be quite complicated; a correct ordering of rational
+numbers is nontrivial.
+
+
+The routine equiv is used in situations, such as table subscripting
+and case expressions, to determine whether two values are equivalent
+in the Icon sense. Generally speaking, two structure values are
+considered to be equivalent if and only if they are identical. This
+comparison is included in equiv in a general way. For example, equiv
+need not be modified for vectors. Similarly, for data types that have
+no corresponding blocks, descriptor comparison suffices; equiv need
+not be modified for Boolean values either. However, determining the
+equivalence of numeric values, such as rational numbers, requires some
+thought.
+
+
+\section[D.4 Defined Constants and Macros]{D.4 Defined Constants and Macros}
+
+Defined constants and macros are used heavily in Icon to parameterize
+its code for different operating systems and computer architectures
+and to provide simple, high-level constructions for commonly occurring
+code sequences that otherwise would be complex and obscure.
+
+These defined constants and macros should be used consistently when
+making additions to Icon instead of using \textit{ad hoc}
+constructions. This improves portability, readability, and
+consistency.
+
+Learning the meanings and appropriate use of the existing defined
+constants and macro definitions requires investment of time and
+energy. Once learned, however, coding is faster, simpler, and less
+prone to error.
+
+\subsection{D.4.1 Defined Constants}
+
+The following defined constants are used frequently in the run-time
+system. This list is by no means exhaustive; for specialized
+constants, see existing functions.
+
+
+\ \ CsetSize\ \ number of words needed for 256 bits\newline
+\ \ LogHuge\ \ one plus the maximum base-lO exponent of a C double\newline
+\ \ LoglntSize\ \ base-210garithm of number of bits in a C int\newline
+\ \ MaxCvtLen\ \ length of the longest possible string obtained by conversion\newline
+\ \ MaxLong\ \ largest C long\newline
+\ \ MaxShort\ \ largest C short\newline
+\ \ MaxStrLen\ \ longest possible string\newline
+\ \ MinListSlots\ \ minimum number of slots in a list-element block\newline
+\ \ MinLong\ \ smallest C long\newline
+\ \ MinShort\ \ smallest C short\newline
+\ \ WordSize\ \ number of bytes in a word
+
+\subsection{D.4.2 Macros}
+
+The following macros are used frequently in the run-time system. See h
+/rt.h and iconx/gc.h for the definitions, and see existing routines
+for examples of usages.
+
+
+\ \ Arg(n)\ \ \ \ \ \ nth argument to function\newline
+\ \ ArgType(n)\ \ \ \ d-word of nth argument to function\newline
+\ \ ArgVal(n)\ \ \ \ integer value of v-word of nth argument to function\newline
+\ \ BlkLoc(d)\ \ \ \ pointer to block from v-word of d\newline
+\ \ BlkSize(cp)\ \ \ \ size of block pointed to by cp\newline
+\ \ BlkType(cp)\ \ \ \ type code of block pointed to by cp\newline
+\ \ ChkNull(d)\ \ \ \ true if d is a null-valued descriptor\newline
+\ \ CsetOff(b)\ \ \ \ offset in a word of cset bit b\newline
+\ \ CsetPtr(b, c)\ \ \ \ address of word c containing cset bit b\newline
+\ \ DeRef( d)\ \ \ \ dereference d\newline
+\ \ EqlDesc(d1, d2)\ \ true if d1 and d2 are identical descriptors\newline
+\ \ GetReal(dp, r)\ \ \ \ get real number into r from descriptor pointed to by dp\newline
+\ \ IntVal(d)\ \ \ \ integer value of v-word of d\newline
+\ \ Max(i, j)\ \ \ \ maximum of i and j\newline
+\ \ Min(i. j)\ \ \ \ minimum of i and j\newline
+\ \ Mkint(i, dp)\ \ \ \ make integer from i in descriptor pointed to by dp\newline
+\ \ Offset(d)\ \ \ \ offset from d-word of variable descriptor d\newline
+\ \ Pointer(d)\ \ \ \ true if v-word of d is a pointer\newline
+\ \ Qual(d)\ \ \ \ true if d is a qualifier\newline
+\ \ Setb(b, c)\ \ \ \ set bit b in cset c\newline
+\ \ SlotNum(i, j)\ \ \ \ Slot for hash number i given j total slots\newline
+\ \ StrLen(q)\ \ \ \ length of string referenced by q\newline
+\ \ StrLoc(q)\ \ \ \ location of string referenced by q\newline
+\ \ Testb(b, c)\ \ \ \ true if bit b in cset c is one\newline
+\ \ Tvar(d)\ \ \ \ true if d is a trapped variable\newline
+\ \ TvarLoc(d)\ \ \ \ pointer to trapped variable from v-word of d\newline
+\ \ Type(d)\ \ \ \ type code in d-word of d\newline
+\ \ Var(d)\ \ \ \ \ \ true if d is a variable descriptor\newline
+\ \ VarLoc(d)\ \ \ \ pointer to value descriptor from v-word of d\newline
+\ \ Vsizeof(x)\ \ \ \ size of structure x less variable array at end\newline
+\ \ Vwsizeof(x)\ \ \ \ size of structure x in words less variable array at end\newline
+\ \ Wsizeof(x)\ \ \ \ size of structure x in words
+
+\section{D.5 Support Routines}
+
+There are many support routines for performing tasks that occur
+frequently in the Icon run-time system. Most of these routines are in
+files in iconx that begin with the letter r. The uses of many of these
+support routines have been illustrated earlier; what follows is a
+catalog for reference.
+
+\subsection{D.5.1 Comparison}
+
+The following routines in iconx/rcomp.c perform comparisons:
+
+
+\ \ anycmp(dp1, dp2)\ \ Compare the descriptors pointed to by dp1 and
+dp2 as Icon values in sorting order, returning a value greater than 0,
+0, or less than 0 depending on whether the descriptor pointed to by
+dp1 is respectively greater than, equal to, or less than the
+descriptor pointed to by dp2.
+
+
+\ \ equiv(dp1, dp2)\ \ Test for equivalence of descriptors pointed to
+by dp1 and dp2, returning 1 if equivalent and 0 other
+
+\clearpage
+\bigskip

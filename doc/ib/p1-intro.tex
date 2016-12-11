@@ -1,0 +1,195 @@
+\chapter{Introduction}
+
+\textsc{Perspective}: The implementation of complex software systems
+is a fascinating subject --- and an important one. Its theoretical and
+practical aspects occupy the attention and energy of many persons, and
+it consumes vast amounts of computational resources. In general terms,
+it is a broad subject ranging from operating systems to programming
+languages to data-base systems to real-time control systems, and so
+on.
+
+
+Past work in these areas has resulted in an increasingly better
+understanding of implementation techniques, more sophisticated and
+efficient systems, and tools for automating various aspects of
+software production. Despite these advances, the implementation of
+complex software systems remains challenging and exciting. The
+problems are difficult, and every advance in the state of the art
+brings new and more difficult problems within reach.
+
+
+Part I of this book addresses a very small portion of the problem of
+implementing complex software systems{}---the implementation of a very
+high-level programming language that is oriented toward the
+manipulation of structures and strings of characters.
+
+
+In a narrow sense, this book describes an implementation of a specific
+programming language, Icon. In a broader sense, it deals with a
+language-design philosophy, an approach to implementation, and
+techniques that apply to the implementation of many programming
+languages as well as related types of software systems.
+
+
+The focus of this book is the implementation of programming language
+features that are at a high conceptual level{}---features that are
+easy for human beings to use as opposed to features that fit
+comfortably on conventional computer architectures. The orientation of
+the implementation is generality and flexibility, rather than maximum
+efficiency of execution. The problem domain is strings and structures
+rather than numbers. It is these aspects that set the implementation
+of Icon apart from more conventional programming-language
+implementations.
+
+\section{Implementing Programming Languages}
+
+In conventional programming languages, most of the operations that are
+performed when a program is executed can be determined, statically, by
+examining the text of the program. In addition, the operations of most
+programming languages have a fairly close correspondence to the
+architectural characteristics of the computers on which they are
+implemented.  When these conditions are met, source-code constructs
+can be mapped directly into machine instructions for the computer on
+which they are to be executed. The term \textit{compilation} is used
+for this translation process, and most persons think of the
+implementation of a programming language in terms of a compiler.
+
+Writing a compiler is a complex and difficult task that requires
+specialized training, and the subject of compilation has been studied
+extensively (Waite and Goos, 1984; Aho, Lam, Sethi and Ullman
+2006). Most of the issues of data representation and code generation
+are comparatively well understood, and there are now many tools for
+automating portions of the compiler-writing task (Lesk 1975, Johnson
+1975).
+
+
+In addition to the compiler proper, an implementation of a programming
+language usually includes a run-time component that contains
+subroutines for performing computations that are too complex to
+compile in-line, such as input, output, and mathematical functions.
+
+
+Some programming languages have features whose meanings cannot be
+determined statically from the text of a source-language program, but
+which may change during program execution. Such features include
+changes in the meaning of functions during execution, the creation of
+new data types at run time, and self-modifying programs. Some
+programming languages also have features, such as pattern matching,
+that do not have correspondences in the architecture of conventional
+computers. In such cases, a compiler cannot translate the source
+program directly into executable code.  Very high-level operations,
+such as pattern matching, and features like automatic storage
+management significantly increase the importance and complexity of the
+run-time system. For languages with these characteristics-{}-languages
+such as APL, LISP, SNOBOL4, SETL, Prolog, and Icon-much of the
+substance of the implementation is in the run-time system rather than
+in translation done by a compiler. While compiler writing is
+relatively well understood, run-time systems for most programming
+languages with dynamic features and very high-level operations are
+not.
+
+
+Programming languages with dynamic aspects and novel features are
+likely to become more important rather than less important. Different
+problems benefit from different linguistic mechanisms. New
+applications place different values on speed of execution, memory
+requirements, quick solutions, programmer time and talent, and so
+forth. For these reasons, programming languages continue to
+proliferate. New programming languages, by their nature, introduce new
+features.
+
+
+All of this creates difficulties for the implementer. Less of the
+effort involved in implementations for new languages lies in the
+comparatively familiar domain of compilation and more lies in new and
+unexplored areas, such as pattern matching and novel
+expression-evaluation mechanisms.
+
+The programming languages that are the most challenging to implement
+are also those that differ most from each other.  Nevertheless, there
+are underlying principles and techniques that are generally
+applicable, and existing implementations contain many ideas that can
+be used or extended in new implementations.
+
+\section{The Background for Icon}
+
+Before describing the Icon programming language and its
+implementation, some historical context is needed, since both the
+language and its implementation are strongly influenced by earlier
+work.
+
+Icon has its roots in a series of programming languages that bear the
+name SNOBOL. The first SNOBOL language was conceived and implemented
+in the early 1960s at Bell Telephone Laboratories in response to the
+need for a programming tool for manipulating strings of characters at
+a high conceptual level (Farber, Griswold, and Polonsky 1964). It
+emphasized ease of programming at the expense of efficiency of
+execution; the programmer was considered to be a more valuable
+resource than the computer.
+
+This rather primitive language proved to be popular, and it was
+followed by successively more sophisticated languages: SNOBOL2,
+SNOBOL3 (Farber, Griswold, and Polonsky 1966), and finally SNOBOL4
+(Griswold, Poage, and Polonsky 1971).  Throughout the development of
+these languages, the design emphasis was on ease of programming rather
+than on ease of implementation (Griswold 1981). Potentially valuable
+features were not discarded because they might be inefficient or
+difficult to implement. The aggressive pursuit of this philosophy led
+to unusual language features and to challenging implementation
+problems.
+
+SNOBOL4 still is in wide use. Considering its early origins, some of
+its facilities are remarkably advanced. It features a pattern-matching
+facility with backtracking control structures that effectively
+constitutes a sublanguage. SNOBOL4 also has a variety of data
+structures, including tables with associative lookup. Functions and
+operators can be defined and redefined during program execution.
+Identifiers can be created at run-time, and a program can even modify
+itself by means of run-time compilation.
+
+Needless to say, SNOBOL4 is a difficult language to implement, and
+most of the conventional compilation techniques have little
+applicability to it. Its initial implementation was, nonetheless,
+sufficiently successful to make SNOBOL4 widely available on machines
+ranging from large mainframes to personal computers (Griswold
+1972). Subsequent implementations introduced a variety of clever
+techniques and fast, compact implementations (Santos 1971; Gimpel
+1972a; Dewar and McCann 1977). The lesson here is that the design of
+programming languages should not be overly inhibited by perceived
+implementation problems, since new implementation techniques often can
+be devised to solve such problems effectively and efficiently.
+
+It is worth noting that the original implementation of SNOBOL4 was
+carried out concomitantly with language design. The implementation was
+sufficiently flexible to serve as a research tool in which
+experimental language features could be incorporated easily and tested
+before they were given a permanent place in the language.
+
+Work on the SNOBOL languages continued at the University of Arizona in
+the early 1970s. In 1975, a new language, called SL5
+({\textquotedbl}SNOBOL Language 5{\textquotedbl}), was developed to
+allow experimentation with a wider variety of programming-language
+constructs, especially a sophisticated procedure mechanism (Griswold
+and Hanson, 1977; Hanson and Griswold 1978). SL5 extended earlier work
+in pattern matching, but pattern matching remained essentially a
+sublanguage with its own control structures, separate from the rest of
+the language.
+
+The inspiration for Icon came in 1976 with a realization that the
+control structures that were so useful in pattern matching could be
+integrated with conventional computational control structures to yield
+a more coherent and powerful programming language.
+
+
+The first implementation of Icon (Griswold and Hanson 1979) was
+written in Ratfor, a preprocessor for Fortran that supports structured
+programming features (Kernighan 1975). Portability was a central
+concern in this implementation.  The implementation of Icon described
+in this book is a successor to that first implementation. It borrows
+much from earlier implementations of SNOBOL4, SL5, and the Ratfor
+implementation of Icon. As such, it is a distillation and refinement
+of implementation techniques that have been developed over a period of
+more than twenty years.
+
+
+\bigskip

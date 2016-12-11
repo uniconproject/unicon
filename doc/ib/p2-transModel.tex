@@ -1,0 +1,592 @@
+\clearpage\chapter{The Translation Model}
+
+Modern compilers seldom produce machine code directly. They translate
+a program into a form closer to machine code than the source language
+and depend on other tools to finish the translation. If the compiler
+produces an object module, it depends on a linker and a loader to
+produce executable code. If the compiler produces assembly language,
+it also depends on an assembler. A recent trend among compilers
+produced in research environments has been to produce C code
+[.cbook,ansi-c.], adding a C compiler to the list of tools required to
+finish the translation to machine code [.SR, Ramakrishnan, Bartlett
+89, Yuasa,Stroustrup,yacc,lex.]. The Icon compiler takes this approach
+and generates C code.
+
+
+There are several advantages to compiling a language into C. Low-level
+problems such as register allocation and the selection and
+optimization of machine instructions are handled by the C compiler. As
+long as these problems are outside the scope of the research addressed
+by the compiler, it is both reasonable and effective to allow another
+compiler to deal with them. In general, it is easier to generate code
+in a higher-level language, just as it is easier to program in a
+higher-level language. As long as the target language lies on a
+{\textasciigrave}{\textasciigrave}nearly direct path'{}' from the
+source language to machine code, this works well. C is closely matched
+to most modern machine architectures, so few tangential translations
+must be done in generating C code from Icon.
+
+
+Another advantage of generating C code is that it greatly increases
+the portability of the compiler and facilitates cross-compilation. The
+popularity of C in recent years has resulted in production-quality C
+compilers for most systems.  While the implementation of Icon in C
+contains some machine and system dependencies, C's conditional
+compilation, macro, and file inclusion facilities make these
+dependencies relatively easy to deal with when they arise. These facts
+make possible the development of a highly portable Icon compiler,
+allowing the compiler's effectiveness to be tested by Icon's large
+user community.
+
+\section{Data Representation}
+
+Because the target language is C, Icon data must be represented as C
+data. The careful representation of data and variables is important to
+the performance of an implementation of a high-level language such as
+Icon. In addition, information provided by type inferencing can be
+used to optimize these representations. However, such considerations
+are largely outside the scope of this current research. For this
+reason, the representations used in code produced by this compiler and
+the compiler's run-time system are largely unchanged from those of the
+Icon interpreter system described in Part I. The interpreter's
+run-time system is written in C. Therefore borrowing its data
+representations for the compiler system is simple. This choice of
+representation means that the run-time system for the compiler could
+be adapted directly from the run-time system for the interpreter, and
+it allowed the compiler development to concentrate on parts of the
+system addressed by this research. In addition, this choice of
+representation allows a meaningful comparison of the performance of
+compiled code to the performance of interpreted code.
+
+
+An Icon value is represented by a two-word descriptor (see Section
+4.1). The first word, the \textit{d-word}, contains type
+information. In the case of a string value, the type is indicated by
+zero in a high-order bit in the d-word, and the length of a string is
+stored in low-order bits of the d-word. All other types have a one in
+that bit and further type information elsewhere in the d-word. The
+\textit{v-word} of a descriptor indicates the value. The v-word of the
+null value is zero, the v-word of an Icon integer is the corresponding
+C integer value, and v-words of other types are pointers to data. A
+descriptor is implemented with the following C structure:
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ struct descrip \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ word dword; /* type field */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ union \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ word integr; /* integer value */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ char sptr; /* pointer to character string */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ union block bptr; /* pointer to a block */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ dptr descptr; /* pointer to a descriptor */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \} vword;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \};}
+
+
+word is defined to be a C integer type (one that is at least 32-bits long), block is a union of structures implementing
+various data types, and dptr is a pointer to a descrip structure. 
+
+\section{Intermediate Results}
+
+While the representation of data in the compiler is the same as in the
+interpreter, the method of storing the intermediate results of
+expression evaluation is not. Two basic approaches have been used in
+language implementations to store intermediate results. A stack-based
+approach is simple and dynamic. It requires no pre-analysis of
+expressions to allocate storage for the intermediate results, but the
+simple rigid protocol allows little room for optimization.  For Icon
+there is an additional problem with a stack-based
+approach. Goal-directed evaluation extends the lifetime of some
+intermediate results, requiring that the top elements of the
+evaluation stack be copied at critical points in execution [see Part
+I, or UA tr88-31]. In spite of the need for this extra copying, most
+previous implementations of Icon have been implemented with an
+evaluation stack.
+
+An alternative to using a stack is to pre-allocate a temporary
+variable for each intermediate result. In this model, operations take
+explicit locations as arguments. Therefore an operation can directly
+access program variables as arguments; there is no need to perform the
+extra operations of pushing addresses or values on a stack. In
+addition, the lifetime of a temporary variable is not determined by a
+rigid protocol. The compiler can assign an intermediate result to a
+temporary variable over an arbitrary portion of the program,
+eliminating the copying needed to preserve a value beyond the lifetime
+imposed by a stack-based approach. This compiler uses the
+temporary-variable model because it allows more opportunities to
+optimize parameter handling, a major goal of this research.
+
+
+Icon's automatic storage management dictates the use of a garbage
+collector in the run-time system. When this garbage collector is
+invoked, it must be able to locate all values that may be used later
+in the program. In the interpreter system, intermediate values and
+local variables are stored on the same stack. The garbage collector
+sweeps this stack to locate values. In the compiler, a different
+approach is taken to insure that all necessary values are locatable.
+Arrays of descriptors are allocated contiguously along with a count of
+the number of descriptors in the array. The arrays are chained
+together. An array of descriptors may be local to a C function, or it
+may be allocated with the malloc library function. The garbage
+collector locates values by following the chain and scanning the
+descriptors in each array. These descriptors are referred to as
+\textit{tended} descriptors.
+
+\section[14.3 Executable Code]{14.3 Executable Code}
+
+Even more important than where intermediate results are stored is how
+they are computed. Some aspects of Icon expression evaluation are
+similar to those of many other languages, but others aspects are
+not. Goal-directed evaluation with backtracking poses a particular
+challenge when implementing Icon expression evaluation. The Icon
+interpreter is based on a virtual machine that includes backtracking,
+as are Prolog interpreters based on the Warren Abstract Machine
+[.wam.]. While details differ between the Icon and Prolog virtual
+machines, their implementation of control backtracking is based on the
+same abstract data structures and state variables. Such a virtual
+machine contains a stack of procedure frames, but the stack is
+maintained differently from that of a virtual machine that does not
+implement goal-directed evaluation.
+
+The difference manifests itself when a procedure produces a result,
+but has alternate results that it can produce in the event of
+backtracking. When this occurs, the frame for the procedure remains on
+the stack after control returns to the caller of the procedure. This
+frame contains the information needed to produce the alternate
+results. The left stack in the following diagram shows that procedure
+f has called procedure g. The arrows on the left of the stack
+represent the \textit{backtracking chain} of procedures that can
+produce alternate results. btp points to the head of the backtracking
+chain which currently starts further down in the stack. The arrows on
+the right represent the call chain of procedures. fp points to the
+frame of the currently executing procedure.
+
+{\centering\selectlanguage{english}
+ \includegraphics[width=5.0319in,height=1.6346in]{kw/figure2-1.png}  
+\par}
+
+
+Suppose g produces the first of several possible results. Execution
+returns to f and g's frame is added to the backtracking chain. This is
+represented by the middle stack in the diagram. If f then calls h, its
+procedure frame is added to the top of the stack as shown in the right
+stack in the diagram.
+
+If h produces a result and is not capable of producing more, execution
+returns to f and the stack again looks like the one in the middle of
+the diagram (the program pointer within f is different, of course). If
+h produces a result and is capable of producing more, execution
+returns to f, but h's frame remains on the stack and is added to the
+head backtracking chain, similar to what was done when g produced a
+result. If h produces no results, backtracking occurs.  h's frame is
+removed from the stack, execution returns to the procedure g who's
+frame is at the head of the backtracking chain, and g's frame is
+removed from the head of the chain. The stack once again looks like
+left stack in the diagram and g proceeds to produce another result.
+
+
+Traditional languages such as Pascal or C present high-level virtual
+machines that contain no notion of backtracking and have no need to
+perform low-level stack manipulations. Icon expressions with
+goal-directed evaluation cannot be translated directly into such
+languages. This is the fundamental problem that must be addressed when
+designing a compiler for Icon. O'Bagy presents an elegant solution to
+this problem in her dissertation [.tr88-31.]. Her solution is used by
+this optimizing compiler as a basis for translating Icon expressions
+into C code. The rest of this section contains a brief explanation of
+the variation of her approach that is used in the compiler, while
+exploring useful ways of viewing the problem. O'Bagy's dissertation
+describes how control structures not covered in this discussion can be
+implemented using her model.
+
+Formal semantics is one tool that can be used in understanding a
+language [.gordon denote,stoy.]. The added complexity caused by Icon's
+goal-directed evaluation is reflected in Gudeman's description of Icon
+using denotational semantics [.gudeman denotational.]. While
+conventional programming languages can be described using one
+continuation for each expression, Icon requires two continuations. One
+continuation for an expression embodies the rest of the program if the
+expression succeeds, while the other embodies the rest of the program
+if the expression fails.
+
+The Icon compiler uses the notion of success continuations to
+implement goal-directed evaluation. However, these continuations
+violate some of the properties traditionally associated with
+continuations. A continuation in denotational semantics and in the
+language Scheme [.Abelson,[Rees 86].] is a function that never
+returns. However, the success continuations produced by the compiler
+implement backtracking by returning. In addition, these continuations
+implement the rest of the current bounded expression rather than the
+rest of the entire program. Note that unlike continuations in Scheme,
+these continuations are created at compile time, not at run time. Some
+Prolog compilers have been based on a similar continuation-passing
+technique [.Nilsson,Ramakrishnan.].
+
+The C language is oriented toward an imperative style of
+programming. In order to produce efficient code, the Icon compiler
+should not generate an excessive number of function
+calls. Specifically, it should avoid creating continuations for every
+expression. A more operational view of Icon's semantics and of C's
+semantics can be useful in understanding how to accomplish this. An
+operation in Icon can succeed or fail. In the view of denotational
+semantics, the question of what will be done in each case must be
+answered, with the answers taking the form of functions. In an
+operational view, the questions can take the form of where to go in
+each case. The answers to these questions can be any type of transfer
+of control supported by the C language: execute the next sequential
+instruction, execute a function, return from a function, or go to a
+label.
+
+Most operations in Icon are \textit{monogenic}. That is, they produce
+exactly one result, like operations in conventional languages. For
+these operations, the compiler can generate code whose execution
+simply falls through into the code that implements the subsequent
+operation.
+
+\textit{Conditional} operations are more interesting. These operations
+either produce a single value or fail. If such an operation succeeds,
+execution can fall through into code implementing the subsequent
+operation. However, if the operation fails, execution must transfer
+elsewhere in the program. This is accomplished by branching to a
+\textit{failure label}. If the code for the operation is put in-line,
+this is straightforward. However, if the operation (either a built-in
+operation or an Icon procedure) is implemented by a separate C
+function, the function must notify the caller whether it succeeded or
+failed and the caller must effect the appropriate transfer of control.
+
+By convention, C functions produced by the compiler and those
+implementing the run-time routines each return a signal (this
+convention is violated in some special cases). A signal is an integer
+(and is unrelated to Unix signals). If one of these C functions needs
+to return an Icon value, it does so through a pointer to a result
+location that is passed to it as an argument. Two standard signals are
+represented by the manifest constants A\_Continue and A\_Resume. A
+return (either an Icon return expression or the equivalent construct
+in a built-in operation) is implemented with code similar to
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ *result = \textit{operation result};}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return A\_Continue;}
+
+
+\noindent Failure is implemented with the code 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ return A\_Resume;}
+
+
+\noindent The code implementing the call of an operation consists of
+both a C call and signal-handling code.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ switch (\textit{operation}(\textit{args}, \&result)) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case A\_Continue: break;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case A\_Resume: goto failure label;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+
+This code clearly can be simplified. This form is general enough to
+handle the more complex signal handling that can arise during code
+generation. Simplifying signal handling code is described in Chapter
+21.
+
+
+Generators pose the real challenge in implementing Icon. A generator
+includes code that must be executed if subsequent failure occurs. In
+addition, a generator, in general, needs to retain state information
+between suspending and being resumed. As mentioned above, this is
+accomplished by calling a success continuation. The success
+continuation contains subsequent operations. If an operation in the
+continuation fails, an A\_Resume signal is returned to the generator,
+which then executes the appropriate code. The generator retains state
+information in local variables. If the generator is implemented as a C
+function, a pointer to the continuation is passed to it. Therefore, a
+function implementing a generative operation need not know its success
+continuation until run time.
+
+
+Consider the operation \textit{i to j}. This operation can be implemented in Icon with a procedure like 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ procedure To(i, j)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ while i {\textless}= j do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ suspend i}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ i +:= 1}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ fail}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ end}
+
+
+It can be implemented by an analogous C function similar to the
+following (for simplicity, C ints are used here instead of Icon
+values).
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ int to(i, j, result, succ\_cont)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ int i, j;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ int *result;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ int (*succ\_cont)();}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ int signal;}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ while (i {\textless}= j) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ *result = i;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ signal = (*succ\_cont)();}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ if (signal != A\_Resume)}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ return signal;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ ++i;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return A\_Resume;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+
+There is no explicit failure label in this code, but it is possible to
+view the code as if an implicit failure label occurs before the ++i.
+
+
+The Icon expression 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every write(1 to 3)}
+
+\noindent can be compiled into the following code (for simplicity, the
+write function has been translated into printf and scoping issues for
+result have been ignored). Note that the every simply introduces failure.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ switch (to(1, 3, \&result, sc)) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ /* standard signal-handling code */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \textit{...}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ int sc() \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ printf({\textquotedbl}\%d{\textbackslash}n{\textquotedbl}, result);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ return A\_Resume;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+
+The final aspect of Icon expression evaluation that must be dealt with
+is that of bounded expressions. Once execution leaves a bounded
+expression, that expression cannot be resumed. At this point, the
+state of the computation with respect to backtracking looks as it did
+when execution entered the bounded expression. This means that, in
+generated code, where to go on failure (either by branching to an
+explicit failure label or by returning an A\_Resume signal) must be
+the same. However, this failure action is only correct in the C
+function containing the start of the code for the bounded
+expression. If a function suspended by calling a success continuation,
+execution is no longer in that original C function. To accommodate
+this restoration of failure action, execution must return to that
+original function.
+
+This is accomplished by setting up a \textit{bounding label} in the
+original C function and allocating a signal that corresponds to the
+label. When the end of the bounded expression is reached, the signal
+for the bounding label is returned. When the signal reaches the
+function containing the label, it is converted into a goto. It can be
+determined statically which calls must convert which signals. Note
+that if the bounded expression ends in the original C function, the
+{\textasciigrave}{\textasciigrave}return signal'{}' is already in the
+context of the label. In this case, it is immediately transformed into
+a goto by the compiler, and there is no real signal handling.
+
+
+Consider the Icon expression 
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ move(1);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{...}}
+
+
+The move function suspends and the C function implementing it needs a
+success continuation. In this case, move is called in a bounded
+context, so the success continuation must return execution to the
+function that called move. The continuation makes use of the fact
+that, like the C function for to, the one for move only intercepts
+A\_Resume signals and passes all other signals on to its caller.
+
+This expression can be implemented with code similar to the
+following. There are two possible signals that might be returned. move
+itself might produce an A\_Resume signal or it might pass along the
+bounding signal from the success continuation. Note that for a
+compound expression, both the bounding label and the failure label are
+the same. In general, this is not true. In this context, the result of
+move(1) is discarded. The variable trashcan receives this value; it is
+never read.
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ switch (move(1, \&trashcan, sc)) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case 1:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ goto L1;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case A\_Resume:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \ \ \ goto L1;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ L1: /* bounding label \& failure label */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \textit{...}}
+
+
+\bigskip
+
+{\ttfamily\mdseries
+\ \ \ int sc() \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ return 1; /* bound signal */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+{\sffamily
+Calling Conventions}
+
+
+This discussion has touched on the subject of calling conventions for
+run-time routines. In Icon, it is, in general, impossible to know
+until run time what an invocation is invoking. This is handled in the
+compiler with a standard calling convention for the C functions
+implementing operations and procedures. This calling convention allows
+a C function to be called without knowing anything about the operation
+it implements.
+
+A function conforming to the standard calling convention has four
+parameters. These parameters are, in order of appearance, the number
+of Icon arguments (a C int), a pointer to the beginning of an array of
+descriptors holding the Icon arguments, a pointer to the descriptor
+used as the Icon result location, and a success continuation to use
+for suspension. The function itself is responsible for any argument
+conversions including dereferencing, and for argument list
+adjustment. As explained above, the function returns an integer
+signal. The function is allowed to return the signals A\_Resume,
+A\_Continue, and any signals returned by the success continuation. It
+may ignore the success continuation if it does not suspend. The
+function may be passed a null continuation. This indicates that the
+function will not be resumed. In this case, suspend acts like a simple
+return, passing back the signal A\_Continue (this is not shown in the
+examples). The outline of a standard-conforming function is
+
+{\ttfamily\mdseries
+\ \ \ int \textit{function-name}(nargs, args, result, succ\_cont)}
+
+{\ttfamily\mdseries
+\ \ \ int nargs; dptr args; dptr result;}
+
+{\ttfamily\mdseries
+\ \ \ continuation succ\_cont;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ ...}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \}}
+
+
+\textit{continuation} is defined to be a pointer to a function taking
+no arguments and returning an integer.
+
+Later sections of this dissertation describe the code generation
+process in more detail and describe optimizations of various parts of
+the code including parameter passing, continuations, signal handling,
+and branching.
+
+
+\bigskip
+
+\clearpage
+\bigskip

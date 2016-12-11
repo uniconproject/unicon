@@ -1,0 +1,353 @@
+\chapter{Organization of the Implementation}
+
+\textsc{Perspective}: Many factors influence the implementation of a
+programming language. The properties of the language itself, of
+course, are of paramount importance. Beyond this, goals, resources,
+and many other factors may affect the nature of an implementation in
+significant and subtle ways.
+
+In the case of the implementation of Icon described here, several
+unusual factors deserve mention. To begin with, Icon's origins were in
+a research project, and its implementation was designed not only to
+make the language available for use but also to support further
+language development. The language itself was less well defined and
+more subject to modification than is usually the case with an
+implementation. Therefore, flexibility and ease of modification were
+important implementation goals.
+
+Although the implementation was not a commercial enterprise, neither
+was it a toy or a system intended only for a few ``friendly users.''
+It was designed to be complete, robust, easy to maintain, and
+sufficiently efficient to be useful for real applications in its
+problem domain.
+
+Experience with earlier implementations of SNOBOL4, SL5, and the
+Ratfor implementation of Icon also influenced the implementation that
+is described here. They provided a repertoire of proven techniques and
+a philosophy of approach to the implementation of a programming
+language that has novel features.
+
+The computing environment also played a major role. The implementation
+started on a PDP-11/70 running under UNIX. The UNIX environment
+(Ritchie and Thompson 1978), with its extensive range of tools for
+program development, influenced several aspects of the implementation
+in a direct way. C (Kernighan and Ritchie 1978) is the natural
+language for writing such an implementation under UNIX, and its use
+for the majority of Icon had pervasive effects, which are described
+throughout this book. Tools, such as the Yacc parser-generator
+(Johnson 1975), influenced the approach to the translation portion of
+the implementation.
+
+Since the initial work was done on a PDP-11/70, with a user address
+space of only l28K bytes (combined instruction and data spaces), the
+size of the implementation was a significant concern. In particular,
+while the Ratfor implementation of Icon fit comfortably on computers
+with large address spaces, such as the DEC-10, CDC Cyber, and IBM 370,
+this implementation was much too large to fit on a PDP-11/70.
+
+\section{The Icon Virtual Machine}
+
+The implementation of Icon is organized around a virtual machine
+(Newey, Poole, and Waite 1972; Griswold 1977). Virtual machines,
+sometimes called abstract machines, serve as software design tools for
+implementations in which the operations of a language do not fit a
+particular computer architecture or where portability is a
+consideration and the attributes of several real computer
+architectures can be abstracted in a single common model. The
+expectation for most virtual machine models is that a translation will
+be performed to map the virtual machine operations onto a specific
+real machine. A virtual machine also provides a basis for developing
+an operational definition of a programming language in which details
+can be worked out in concrete terms.
+
+During the design and development phases of an implementation, a
+virtual machine serves as an idealized model that is free of the
+details and idiosyncrasies of any real machine. The virtual machine
+can be designed in such a way that treatment of specific,
+machine-dependent details can be deferred until it is necessary to
+translate the implementation of the virtual machine to a real one.
+
+Icon's virtual machine only goes so far. Unlike the SNOBOL4 virtual
+machine (Griswold 1972), it is incomplete and characterizes only the
+expression-evaluation mechanism of Icon and computations on Icon
+data. It does not, \textit{per se, }include a model for the
+organization of memory. There are many aspects of the Icon run-time
+system, such as type checking, storage allocation and garbage
+collection, that are not represented in the virtual machine. Instead
+Icon's virtual machine serves more as a guide and a tool for
+organizing the implementation than it does as a rigid structure that
+dominates the implementation.
+
+
+\section[3.2 Components of the Implementation]{3.2 \textbf{Components of the Implementation}}
+
+There are three major components of the virtual machine implementation
+of Icon: a translator, a linker, and a run-time system. The translator
+and linker are combined to form a single executable program, but they
+remain logically independent.
+
+The translator plays the role of a compiler for the Icon virtual
+machine. It analyzes source programs and converts them to virtual
+machine instructions. The output of the translator is called
+\textit{ucode}. Ucode is represented as ASCII which is helpful in
+debugging the implementation.
+
+The linker combines one or more ucode files into a single program for
+the virtual machine. This allows programs to be written and translated
+in a number of modules, and it is particularly useful for giving users
+access to pretranslated libraries of Icon procedures. The output of
+the linker, called \textit{icode, }is in binary format for compactness
+and ease of processing by the virtual machine. Ucode and icode
+instructions are essentially the same, differing mainly in their
+format.
+
+Translating and linking are done in two phases:
+
+\ \  \includegraphics[width=4.1681in,height=0.4543in]{ib-img/ib-img004.jpg} 
+
+
+These phases can be performed separately. If only the first phase is
+performed, the result is ucode, which can be saved and linked at
+another time.
+
+The run-time system consists of an interpreter for icode and a library
+of support routines to carry out the various operations that may occur
+when an Icon program is executed. The interpreter serves,
+conceptually, as a software realization of the Icon virtual
+machine. It decodes icode instructions and their operands and carries
+out the corresponding operations.
+
+It is worth noting that the organization of the Icon system does not
+depend in any essential way on the use of an interpreter. In fact, in
+the early versions of this implementation, the linker produced
+assembly-language code for the target machine. That code then was
+assembled and loaded with the run-time library. On the surface, the
+generation of machine code for a specific target machine rather than
+for a virtual machine corresponds to the conventional compilation
+approach. However, this is somewhat of an illusion, since the machine
+code consists largely of calls to run-time library routines
+corresponding to virtual machine instructions. Execution of machine
+code in such an implementation therefore differs only slightly from
+interpretation, in which instruction decoding is done in software
+rather than in hardware. The difference in speed in the case of Icon
+is relatively minor.
+
+An interpreter offers a number of advantages over the generation of
+machine code that offset the small loss of efficiency. The main
+advantage is that the interpreter gets into execution very quickly,
+since it does not require a loading phase to resolve assembly-language
+references to library routines. Icode files also are much smaller than
+the executable binary files produced by a loader, since the run-time
+library does not need to be included in them. Instead, only one
+sharable copy of the run-time system needs to be resident in memory
+when Icon is executing.
+
+
+\section[3.3 The Translator]{3.3 The Translator}
+
+The translator that produces ucode is relatively conventional. It is
+written entirely in C and is independent of the architecture of the
+target machine on which Icon runs. Ucode is portable from one target
+machine to another.
+
+The translator consists of a lexical analyzer, a parser, a code
+generator, and a few support routines. The lexical analyzer converts a
+source-language program into a stream of tokens that are provided to
+the parser as they are needed.  The parser generates abstract syntax
+trees on a per-procedure basis. These abstract syntax trees are in
+turn processed by the code generator to produce ucode. The parser is
+generated automatically by Yacc from a grammatical specification.
+Since the translator is relatively conventional and the techniques
+that it uses are described in detail elsewhere (Aho, Lam, Sethi, and
+Ullman 2006), it is not discussed here.
+
+There is one aspect of lexical analysis that deserves mention. The
+body of an Icon procedure consists of a series of expressions that are
+separated by semicolons. However, these semicolons usually do not need
+to be provided explicitly, as illustrated by examples in Chapter
+2. Instead, the lexical analyzer performs semicolon insertion. If a
+line of a program ends with a token that is legal for ending an
+expression, and if the next line begins with a token that is legal for
+beginning an expression, the lexical analyzer generates a semicolon
+token between the lines. For example, the two lines
+
+{\ttfamily
+\ \ \ i := j\textit{ }+ 3\newline
+ \ \ write(i)}
+
+\noindent are equivalent to
+
+{\ttfamily\mdseries
+\ \ \ i := j + 3;\newline
+ \ \ write(i)}
+
+\noindent since an integer literal is legal at the end of an
+expression and an identifier is legal at the beginning of an
+expression.
+
+If an expression spans two lines, the place to divide it is at a token
+that is not legal at the end of a line. For example,
+
+{\ttfamily\mdseries
+\ \ \ s1 := s2 {\textbar}{\textbar}\newline
+ \ \ \ \ \ s3}
+
+\noindent is equivalent to
+
+{\ttfamily\mdseries
+\ \ \ s1 := s2 {\textbar}{\textbar} s3}
+
+No semicolon is inserted, since \texttt{{\textbar}{\textbar}} is not
+legal at the end of an expression.
+
+\section[3.4 The Linker]{3.4 The Linker}
+
+The linker reads ucode files and writes icode files. An icode file
+consists of an executable header that loads the run-time system,
+descriptive information about the file, operation codes and operands,
+and data specific to the program. The linker, like the translator, is
+written entirely in C. While conversion of ucode to icode is largely a
+matter of reformatting, the linker performs two other functions.
+
+\subsection{Scope Resolution}
+
+The scope of an undeclared identifier in a procedure depends on global
+declarations (explicit or implicit) in the program in which the
+procedure occurs. Since the translator in general operates on only one
+module of a program, it cannot resolve the scope of undeclared
+identifiers, because not all global scope information is contained in
+any one module. The linker, on the other hand, processes all the
+modules of a program, and hence it has the task of resolving the scope
+of undeclared identifiers.
+
+An identifier may be global for several reasons:
+
+\liststyleLii
+\begin{itemize}
+\item 
+\ As the result of an explicit global declaration.
+\item 
+\ As the name in a record declaration.
+\item 
+\ As the name in a procedure declaration.
+\item 
+\ As the name of a built-in function.
+\end{itemize}
+
+If an identifier with no local declaration falls into one of these
+categories, it is global. Otherwise it is local.
+
+\subsection{Construction of Run-Time Structures}
+
+A number of aspects of a source-language Icon program are represented
+at run time by various data structures. These structures are described
+in detail in subsequent chapters. They include procedure blocks,
+strings, and blocks for cset and real literals that appear in the
+program.
+
+
+This data is represented in ucode in a machine-independent
+fashion. The linker converts this information into binary images that
+are dependent on the architecture of the target computer.
+
+\section[3.5 The Run{}-Time System]{3.5 The Run-Time System}
+
+Most of the interesting aspects of the implementation of Icon reside
+in its run-time system. This run-time system is written mostly in C,
+although there are a few lines of assembly-language code for checking
+for arithmetic overflow and for co-expressions. The C portion is
+mostly machine-independent and portable, although some
+machine-specific code is needed for some idiosyncratic computer
+architectures and to interface some operating-system environments.
+
+There are two main reasons for concentrating the implementation in the
+run-time system:
+
+\liststyleLiii
+\begin{itemize}
+
+\item Some features of Icon do not lend themselves to translation
+directly into executable code for the target machine, since there is
+no direct image for them in the target-machine architecture. The
+target machine code necessary to carry out these operations therefore
+is too large to place in line; instead, it is placed in library
+routines that are called from in-line code. Such features range from
+operations on structures to string scanning.
+
+\item Operations that cannot be determined at translation time must be
+done at run time. Such operations range from type checking to storage
+allocation and garbage collection.
+
+\end{itemize}
+
+The run-time system is logically divided into four main parts:
+initialization and termination routines, the interpreter, library
+routines called by the interpreter, and support routines called by
+library routines.
+
+
+\textbf{Initialization and Termination Routines.}\ \ The
+initialization routine sets up regions in which objects created at run
+time are allocated. It also initializes some structures that are used
+during program execution. Once these tasks are completed, control is
+transferred to the Icon interpreter.
+
+When a program terminates, either normally or because of an error,
+termination routines flush output buffers and return control to the
+operating system.
+
+\textbf{The Interpreter.} The interpreter analyzes icode instructions
+and their operands and performs corresponding operations. The
+interpreter is relatively simple, since most complex operations are
+performed by library routines. The interpreter itself is described in
+Chapter 8.
+
+\textbf{Library Routines. }Library routines are divided into three
+categories, depending on the way they are called by the interpreter:
+routines for Icon operators, routines for Icon built-in functions, and
+routines for complicated virtual machine instructions.
+
+The meanings of operators are known to the translator and linker, and
+hence they can be called directly. On the other hand, the meanings of
+functions cannot be determined until they are executed, and hence they
+are called indirectly.
+
+\textbf{Support Routines. }Support routines include storage allocation
+and garbage collection, as well as type checking and conversion. Such
+routines typically are called by library routines, although some are
+called by other support routines.
+
+\textsc{Retrospective}: Superficially, the implementation of Icon
+appears to be conventional. An Icon program is translated and linked
+to produce an executable binary file. The translator and linker
+\textit{are }conventional, except that they generate code and data
+structures for a virtual machine instead of for a specific computer.
+
+The run-time system dominates the implementation and plays a much
+larger role than is played by run-time systems in conventional
+implementations. This run-time system is the focus of the remainder of
+this book.
+
+{\sffamily\bfseries
+EXERCISES}
+
+
+3.1 Explain why there is only a comparatively small difference in
+execution times between a version of Icon that generates
+assembly-language code and one that generates virtual machine code
+that is interpreted.
+
+3.2 List all the tokens in the Icon grammar that are legal as the
+beginning of an expression and as the end of an expression. Are there
+any tokens that are legal as both? As neither?
+
+3.3 Is a semicolon inserted by the lexical analyzer between the
+following two program lines?
+
+{\ttfamily
+s1 := s2\newline
+\ \ {\textbar}{\textbar} s3}
+
+3.4 Is it possible for semicolon insertion to introduce syntactic
+errors into a program that would be syntactically correct without
+semicolon insertion?

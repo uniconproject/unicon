@@ -1,0 +1,46 @@
+\subsection{Preface to Part II}
+
+\bigskip
+
+There are many optimizations that can be applied while translating
+Icon programs. These optimizations and the analyses needed to apply
+them are of interest for two reasons. First, Icon's unique combination
+of characteristics requires developing new techniques for implementing
+them. Second, these optimizations are useful in variety of languages
+and Icon can be used as a medium for extending the state of the art.
+
+Many of these optimizations require detailed control of the generated
+code. Previous production implementations of the Icon programming
+language have been interpreters. The virtual machine code of an
+interpreter is seldom flexible enough to accommodate these
+optimizations and modifying the virtual machine to add the flexibility
+destroys the simplicity that justified using an interpreter in the
+first place. These optimizations can only reasonably be implemented in
+a compiler. In order to explore these optimizations for Icon programs,
+a compiler was developed. This part of the compendium describes the
+compiler and the optimizations it employs. It also describes a
+run-time system designed to support the analyses and optimizations.
+
+Icon variables are untyped. The compiler contains a type inferencing
+system that determines what values variables and expression may take
+on during program execution. This system is effective in the presence
+of values with pointer semantics and of assignments to components of
+data structures.
+
+The compiler stores intermediate results in temporary variables rather
+than on a stack. A simple and efficient algorithm was developed for
+determining the lifetimes of intermediate results in the presence of
+goal-directed evaluation. This allows an efficient allocation of
+temporary variables to intermediate results.
+
+The compiler uses information from type inferencing and liveness
+analysis to simplify generated code. Performance measurements on a
+variety of Icon programs show these optimizations to be effective.
+
+The optimizing compiler for Icon was developed by Ken Walker as part
+of his Ph.D. research, and this part of the Icon/Unicon Compendium is
+essentially a reprint of his dissertation, which also appeared as
+University of Arizona CS TR 91-16. Along with his consent, Ken kindly
+provided the original groff sources to his dissertation. Any
+typographical and formatting errors that remain are the fault of the
+editor.

@@ -1,0 +1,473 @@
+\chapter{Performance of Compiled Code}
+
+The performance of compiled code is affected by the various
+optimizations performed by the compiler. This chapter demonstrates the
+effects of these optimizations on the execution speed of Icon
+expressions. It also presents speed improvements and memory usage for
+compiled code versus interpreted code for a set of complete Icon
+programs. All timing results used in this chapter were obtained on a
+Sun 4/490 and are the average of the results from three runs.
+
+
+\section{Expression Optimizations}
+
+The effects of four categories of optimization are demonstrated. These
+are assignment optimizations, invocation optimizations, control flow
+optimizations, and optimizations using information from type
+inferencing. Expression timings for the first three categories were
+made using techniques described in the August 1990 issue of
+\textit{The Icon Analyst} [.ianl1.]. The following program skeleton is
+used to construct the programs to perform these timings.
+
+{\ttfamily\mdseries
+\ \ \ procedure main()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ local x, start, overhead, iters}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ iters := 1000000}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ start := \&time}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every 1 to iters do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ overhead := \&time - start}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ x := 0}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ start := \&time}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every 1 to iters do \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \textit{expression to be timed (may use x)}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ write(\&time - start - overhead)}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+The timings are performed both with and without the desired
+optimizations, and the results are compared by computing the ratio of
+the time without optimization to the time with optimization.
+
+The assignment optimizations are described in Chapter 10. The effect
+of the assignment optimizations on the expression
+
+{\ttfamily\mdseries
+\ \ \ x := \&null}
+
+\noindent is measured using the program outlined above. The analysis
+that produces the assignment optimization is disabled by enabling
+debugging features in the generated code. The only other effect this
+has on the assignment expression is to insert code to update the line
+number of the expression being executed. In this test, the line number
+code is removed before the C code is compiled, insuring that the
+assignment optimization is the only thing measured. The timing results
+for this test produce
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{3.32686in}m{0.69905984in}m{0.35315984in}}
+ Assignment Test\newline
+Time in Milliseconds Averaged over Three Runs &
+~
+ &
+~
+\\
+ Unoptimized &
+ Optimized &
+ Ratio\\
+ 1122  &
+ 478  &
+ 2.3 \\
+\end{supertabular}
+\end{center}
+
+The tests were performed with type inferencing enabled. Therefore,
+even the {\textquotedbl}unoptimized{\textquotedbl} version of the
+assignment has the standard operation optimizations applied to
+it. This test demonstrates the importance of performing the
+special-case assignment optimizations.
+
+The next category of optimization measured is invocation
+optimization. This results in the direct invocation of the C functions
+implementing operations, or in some cases results in the operations
+being generated in line. The execution time for the expression
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ tab(0)}
+
+\noindent is measured with and without invocation optimizations. As
+with the assignment optimizations, these optimizations are disabled by
+enabling debugging features. Once again the line number code is
+removed before the C code is compiled.  These optimizations interact
+with the optimizations that use information from type inferencing. The
+measurements are made with type inferencing disabled. Therefore, no
+type checking simplifications are performed. Without the invocation
+optimizations, the generated code consists of an indirect invocation
+through the global variable tab. With the invocation optimizations,
+the generated code consists of type checking/conversion code for the
+argument to tab and a call to the function implementing the body
+statement of tab. The timing results for tab(0) produce
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{3.24556in}m{0.6775598in}m{0.34275985in}}
+ Invocation Test\newline
+Time in Milliseconds Averaged over Three Runs &
+~
+ &
+~
+\\
+ Unoptimized &
+ Optimized &
+ Ratio\\
+ 8394  &
+ 4321  &
+ 1.9 \\
+\end{supertabular}
+\end{center}
+
+The third category of optimization is control flow optimization. As
+explained in Chapter 9, these optimizations only perform improvements
+that a C compiler will not perform when the code contains trivial call
+chains. One situation that produces trivial call chains is nested
+alternation. The execution time for the expression
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every x := ixor(x, 1 {\textbar} 2 {\textbar} 3 {\textbar} 4 {\textbar} 5)}
+
+\noindent is measured with and without control flow optimizations. The
+timing results for this every loop produce
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{3.2837598in}m{0.6726598in}m{0.36295986in}}
+ Control Flow Test\newline
+Time in Milliseconds Averaged over Three Runs &
+~
+ &
+~
+\\
+ Unoptimized &
+ Optimized &
+ Ratio\\
+ 6384  &
+ 4184  &
+ 1.5 \\
+\end{supertabular}
+\end{center}
+
+The final category of optimization results from type inferencing. The
+speed improvements result from generating operations in line,
+eliminating type checking, and generating success continuations in
+line. Use of the to operation is a good example of where these
+optimizations can be applied. This is demonstrated by measuring the
+speed of an every loop using the to operation. The program that
+performs the measurement is
+
+{\ttfamily\mdseries
+\ \ \ procedure main()}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ local x, start}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ start := \&time}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ every x := 1 to 5000000}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ write(\&time - start)}
+
+{\ttfamily\mdseries
+\ \ \ end}
+
+
+The timing results for this program produce 
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{3.2691598in}m{0.6830598in}m{0.33445984in}}
+ Type Inference Test\newline
+Time in Milliseconds Averaged over Three Runs &
+~
+ &
+~
+\\
+ Unoptimized &
+ Optimized &
+ Ratio\\
+ 9233  &
+ 2721  &
+ 3.3 \\
+\end{supertabular}
+\end{center}
+
+Another approach to determining the effectiveness of type inferencing
+is to measure how small a set it deduces for the possible types of
+operands to operations. This indicates whether future work should
+concentrate on improving type inferencing itself or simply concentrate
+on using type information more effectively in code generation. A
+simple measure is used here: the percentage of operands for which type
+inferencing deduces a unique Icon type. Measurements are made for
+operands of all operators, except optimized assignment, and for
+operands of all built-in functions appearing in optimized
+invocations. For the most part, these are the operations where the
+code generator can use type information. Measurements were made for a
+set of 14 programs (described below). Unique operand types within each
+program range from 63 percent to 100 percent of all operands, with an
+overall figure for the tests suite of 80 percent (this is a straight
+unweighted figure obtained by considering all operands in the test
+suite without regard to what program they belong to); even a perfect
+type inferencing system will not deduce unique types for 100 percent
+of all operands, because not all operands have unique types. This
+suggests that an improved type inferencing system may benefit some
+programs, but will have only a small overall impact. Future work
+should give priority to making better use of the type information
+rather than to increasing the accuracy of type inferencing.
+
+
+\section{Program Execution Speed}
+
+It has been demonstrated that the compiler optimizations are effective
+at improving the kinds of expressions they are directed toward. The
+question remains: How fast is compiled code (with and without
+optimizations) for complete programs as compared to interpreted code
+for the same programs? For some expressions, optimizations may
+interact to create significant cumulative speed improvements. For
+example, the fully optimized code for the every loop in the previous
+example is 30 times faster than the interpreted code; the improvement
+of 3.3 from type inferencing contributes one factor in the total
+improvement. Other expressions may spend so much time in the run-time
+system (which is unaffected by compiler optimizations) that no
+measurable improvements are produced.
+
+A set of 14 programs was selected mostly from contributions to the
+Icon program library [.tr90-7.] for testing the performance of the
+compiler. These programs were selected to represent a variety of
+applications and programming styles (an additional requirement is that
+they run long enough to obtain good timing results).
+
+The following table shows the speed improvements for the compiled code
+as compared to interpreted code. The compiler and interpreter used for
+the measurements both implement Version 8 of Icon. The execution time
+used to compute the speed improvements is the cpu time measured using
+the Bourne shell's time command. The first column in the table shows
+the execution time under the interpreter. The second column is for
+compiled code with debugging features enabled and optimizations
+disabled. This code is still better than what would be obtained by
+just removing the interpreter loop, because intelligent code
+generation is performed, especially for bounded expressions, and
+keywords are generated in line. The third column is for code with
+debugging features disabled and full optimization enabled.
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{3.3525598in}m{0.6143598in}m{0.7684598in}m{0.6434598in}}
+ Execution Time in Seconds Averaged over Three Runs &
+~
+ &
+~
+ &
+~
+\\
+ Program &
+ Interpreter &
+ Compiler \newline
+Unoptimized &
+ Compiler \newline
+Optimized\\
+ cksol  &
+ 49.9  &
+ 33.5 (1.48)  &
+ 22.5 (2.21) \\
+ concord  &
+ 31.1  &
+ 18.5 (1.68)  &
+ 9.8 (3.17) \\
+ iidecode  &
+ 60.3  &
+ 34.0 (1.77)  &
+ 12.9 (4.67) \\
+ iiencode  &
+ 50.4  &
+ 34.4 (1.46)  &
+ 10.5 (4.80) \\
+ impress  &
+ 44.6  &
+ 24.8 (1.79)  &
+ 14.0 (3.18) \\
+ list  &
+ 43.1  &
+ 24.5 (1.75)  &
+ 13.6 (3.16) \\
+ memfiltr  &
+ 60.8  &
+ 34.3 (1.77)  &
+ 15.3 (3.97) \\
+ mf  &
+ 30.1  &
+ 18.7 (1.60)  &
+ 14.7 (2.04) \\
+ pssplit  &
+ 64.0  &
+ 39.0 (1.64)  &
+ 26.6 (2.40) \\
+ roffcmds  &
+ 32.9  &
+ 18.1 (1.81)  &
+ 12.0 (2.74) \\
+ sentence  &
+ 34.3  &
+ 23.9 (1.43)  &
+ 16.2 (2.11) \\
+ spandex  &
+ 36.8  &
+ 23.3 (1.57)  &
+ 14.7 (2.50) \\
+ textcnt  &
+ 36.2  &
+ 18.4 (1.96)  &
+ 9.9 (3.65) \\
+ wrapper  &
+ 27.3  &
+ 15.9 (1.71)  &
+ 9.4 (2.90) \\
+\end{supertabular}
+\end{center}
+
+The numbers in parentheses are speed-up factors obtained by dividing
+the interpreter execution time by the execution time of compiled code.
+
+
+\section{Code Size}
+
+One advantage the compiler has over the interpreter is that, unless a
+program is compiled with full string invocation enabled, the
+executable code for a program need not include the full run-time
+system. For systems with limited memory, this can be a significant
+advantage.
+
+The sizes of executable code presented here are obtained from file
+sizes. All executable files have had debugging information stripped
+from them. The size of the executable code in the interpreter system
+is taken to be the size of the interpreter (278,528 bytes) plus the
+size of the icode for the program being measured (under Unix systems,
+the size of the executable header, 12,800 bytes for the Sun 4, is
+subtracted from the size of the icode file, because it is not present
+during interpretation). Measurements for the 14 test programs are:
+
+\begin{center}
+\tablefirsthead{}
+\tablehead{}
+\tabletail{}
+\tablelasttail{}
+\begin{supertabular}{m{1.5740598in}m{0.68795985in}m{0.60525984in}m{0.34695986in}}
+ Program Sizes in Bytes &
+~
+ &
+~
+ &
+~
+\\
+ Program &
+ Interpreter &
+ Compiler &
+ Ratio\\
+ cksol  &
+ 282,153  &
+ 81,920  &
+ 0.29 \\
+ concord  &
+ 284,416  &
+ 90,112  &
+ 0.31 \\
+ iidecode  &
+ 285,525  &
+ 98,304  &
+ 0.34 \\
+ iiencode  &
+ 283,567  &
+ 81,920  &
+ 0.28 \\
+ impress  &
+ 295,656  &
+ 114,688  &
+ 0.38 \\
+ list  &
+ 287,376  &
+ 98,304  &
+ 0.34 \\
+ memfiltr  &
+ 296,082  &
+ 114,688  &
+ 0.38 \\
+ mf  &
+ 282,739  &
+ 81,920  &
+ 0.28 \\
+ pssplit  &
+ 279,709  &
+ 73,728  &
+ 0.26 \\
+ roffcmds  &
+ 280,797  &
+ 81,920  &
+ 0.29 \\
+ sentence  &
+ 283,249  &
+ 81,920  &
+ 0.28 \\
+ spandex  &
+ 281,843  &
+ 81,920  &
+ 0.29 \\
+ textcnt  &
+ 280,397  &
+ 73,728  &
+ 0.26 \\
+ wrapper  &
+ 279,780  &
+ 73,728  &
+ 0.26 \\
+\end{supertabular}
+\end{center}
+
+Other factors create differences in memory usage between the
+interpreter and compiled code. For example, the interpreter allocates
+a stack for expression evaluation. On the Sun 4, this stack is 40,000
+bytes. The compiler, on the other hand, allocates work areas on a
+per-procedure basis and only allocates the maximum needed at any
+execution point within the procedure.

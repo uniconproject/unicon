@@ -1,0 +1,236 @@
+\chapter{The Optimizing Compiler}
+
+Iconc is a practical and complete optimizing compiler for a unique and
+complex programming language. Part II describes the theory behind
+several parts of the compiler and describes the implementation of all
+interesting aspects of the compiler.
+
+\section{Motivation}
+
+%% \newline
+
+The motivation for developing a compiler for the Icon programming
+language is to have a vehicle for exploring optimization
+techniques. Some performance improvements can be obtained by modifying
+the run-time system for the language, for example by implementing
+alternative data structures or storage management techniques. These
+improvements may apply to a broad class of programs and the techniques
+can reasonably be implemented in an interpreter system.  However,
+other techniques, such as eliminating unnecessary type checking, apply
+to expressions within specific programs. The Icon interpreter
+described in Part I is based on a virtual machine with a relatively
+small instruction set of powerful operations. A small instruction set
+is easier to implement and maintain than a large one, and the power of
+many of the individual operations insures that the overhead of the
+decoding loop is not excessive. The disadvantage of this instruction
+set is that an Icon translator that generates code for the interpreter
+does not have enough flexibility to do many of the possible
+program-specific optimizations. It is possible to devise a set of more
+primitive virtual machine instructions that expose more opportunities
+for these optimizations. Increasingly primitive instruction sets
+provide increasingly more opportunities for optimizations. In the
+extreme, the instruction set for a computer (hardware interpreter) can
+be used and the translator becomes a compiler. A compiler was chosen
+for this research because it is a good vehicle for exploring
+program-specific optimizations and eliminates the overhead of a
+software interpreter which might otherwise become excessive.
+
+\section{Type Inferencing}
+
+Most Icon operations require operands with specific types. The types
+of the actual operands in an expression must be checked and possibly
+converted to the required types. However, Icon variables are untyped;
+in general, this checking cannot done at translation time. The Icon
+interpreter takes the simple approach to the problem and performs all
+of the type checking for an expression every time it is executed. For
+most programs, a \textit{type inferencing system} can provide the
+information needed to do much of the checking at translation time,
+eliminating the need for these checks at run time. A type inferencing
+system determines the types that elements of a program (variables,
+expression, procedures, etc) can take on at run time. The Icon
+compiler contains an effective and practical type inferencing system,
+and implements code generation optimizations that make use of the
+information produced by the type inferencing system.
+
+Two basic approaches have been taken when developing type inferencing
+schemes. Schemes based on unification [.Milner,smltlk type,unify.]
+construct type signatures for procedures; schemes based on global data
+flow analysis [.typinfer, typrcsv, flwanal, progflw.] propagate
+throughout a program the types variables may take on. One strength of
+the unification approach is that it is effective at handling
+polymorphous procedures. Such schemes have properties that make them
+effective in implementing flexible compile-time type systems. Much of
+the research on them focuses on this fact. The primary purpose of the
+type inferencing system for the Icon compiler is to eliminate most of
+the run-time type checking rather than to report on type
+inconsistencies at compile time, so these properties have little
+impact on the choice of schemes used in the compiler. Type inferencing
+systems based on unification have a significant weakness.  Procedure
+type-signatures do not describe side effects to global variables. Type
+inferencing schemes based on unification must make crude assumptions
+about the types of these variables.
+
+Schemes based on global data flow analysis handle global variables
+effectively. Many Icon programs make significant use of global
+variables; this is a strong argument in favor of using this kind of
+type inferencing scheme for Icon. These schemes do a poor job of
+inferring types in the presence of polymorphous procedures. It is
+generally too expensive for them to compute the result type of a call
+in terms of the argument types of that specific call, so result types
+are computed based on the aggregate types from all calls. Poor type
+information only results if polymorphism is actually exploited within
+a program.
+
+The primary use of polymorphous procedures is to implement abstract
+data types. Icon, on the other hand, has a rich set of built-in data
+types. While Icon programs make heavy use of these built-in data types
+and of Icon's polymorphous built-in operations, they seldom make use
+of user-written polymorphous procedures. While a type inferencing
+scheme based on global data flow analysis is not effective in
+inferring the precise behavior of polymorphous procedures, it is
+effective in utilizing the predetermined behavior of built-in
+polymorphous operations. These facts combined with the observation
+that Icon programs often make use of global variables indicate that
+global data flow analysis is the approach of choice for type
+inferencing in the Icon compiler.
+
+Icon has several types of non-applicative data structures with pointer
+semantics. They all can be heterogeneous and can be combined to form
+arbitrary graphs. An effective type inferencing system must handle
+these data structures without losing too much information through
+crude assumptions. These composite data structures typically consist
+of a few basic elements used repeatedly and they logically have a
+recursive structure. A number of type inferencing systems handle
+recursion in applicative data structures [.analrcsv,prlgtyp,typrcsv.];
+the system described here handles Icon data types that have pointer
+semantics and handles destructive assignment to components of data
+structures. Analyses have been developed to handle pointer semantics
+for problems such as allocation optimizations and determining pointer
+aliasing to improve other analyses. However, most of these analyses
+lose too much information on heterogeneous structures of unbounded
+depth (such as the mutually referencing syntax trees and symbol tables
+commonly found in a translator) to be effective type inferencing
+systems [.progflw,depptr.].
+
+Work by Chase, Wegman, and Zadeck [.pntstr.] published subsequent to
+the original technical report on the Icon type inferencing system
+[.tr88-25.] presents a technique similar to the one used in this type
+inferencing system. They use a minimal language model to describe the
+use of the technique for pointer analysis. They speculate that the
+technique might be too slow for practical use and propose methods of
+improving the technique in the context of pointer analysis.  Use of
+the prototype Icon type inferencing system described in the original
+technical report indicates that memory usage is more of a problem than
+execution time. This problem is addressed in the implementation of
+type inferencing in the Icon compiler.
+
+\section{Liveness Analysis }
+
+Type checking optimizations can be viewed as forms of argument
+handling optimizations. Other argument handling optimizations are
+possible. For example, when it is safe to do so, it is more efficient
+to pass a variable argument by reference than to copy it to a separate
+location and pass a reference to that location (this particular
+opportunity for optimization arises because of implementation
+techniques borrowed from the Icon interpreter -- Icon values are
+larger than pointers and Icon parameter passing is built on top of C
+parameter passing). Such optimizations are not possible in a
+stack-based execution model; a temporary-variable model is needed and
+such a model is used by the Icon compiler.  Icon's goal-directed
+evaluation can extend the lifetime of the intermediate values stored
+in temporary variables. Icon presents a unique problem in
+\textit{liveness analysis}, which is the static determination of the
+lifetime of values in a program [ASU86, progflw.]. While this problem,
+like other liveness problems, can be solved with traditional
+techniques, it has enough structure that it can be solved without
+precomputing a flow graph or using expensive forms of data flow
+analysis.
+
+
+The only previous implementation of Icon using a temporary-variable
+model is a partial implementation by Christopher
+[.tccompile.]. Christopher uses the fact that Icon programs contain
+many instances of bounded goal-directed evaluation to deduce limits
+for the lifetimes of intermediate values. However, this approach
+produces a very crude estimate for these lifetimes. While
+overestimating the lifetime of intermediate values results in a safe
+allocation of temporary variables to these values, a fine-grained
+liveness analysis results in the use of fewer temporary variables. The
+Icon compiler addresses this problem of fine-grained liveness analysis
+in the presence of goal-directed evaluation and addresses the problem
+of applying the information to temporary variable allocation.
+
+\section{Analyzing Goal-Directed Evaluation}
+
+Many kinds of analyses of Icon programs must deal with Icon's
+goal-directed evaluation and its unique control structures. These
+analyses include type inferencing, liveness analysis, and the control
+flow analyses in O'Bagy's prototype compiler [.tr88-31.]. Determining
+possible execution paths through an Icon program is more complicated
+than it is for programs written in more conventional languages. The
+implementation of the type inferencing system and liveness analysis
+here explore variations on the techniques presented by O'Bagy.
+
+{\sffamily
+The Organization of Part II}
+
+
+Part II is logically divided into three subparts. Chapters 14 through
+16 present the main ideas upon which the compiler is based, Chapters
+17 through 22 describe the implementation of these ideas, and Chapter
+23 presents performance measurements of compiled code.
+
+Chapter 14 describes the code generated by the compiler. It explains
+how Icon data values, variables, and goal-directed evaluation are
+implemented, independent of the actual translation process. Chapter 15
+presents a theoretical model of the type inferencing system used in
+the compiler. The model includes the important ideas of the type
+inferencing system, while ignoring some purely pragmatic
+details. Chapter 16 explains the liveness analysis problem and
+presents the solution used in the compiler.
+
+The Icon compiler is designed to be a production-quality system. The
+compiler system consists of the compiler itself and a run-time
+system. The fact that these two components are not entirely
+independent must be carefully considered in the design of such a
+production-quality system. Chapter 17 describes the system as a whole
+and how the interactions between the components are handled.
+
+Chapter 18 presents the organization of the compiler itself. This
+chapter describes some parts of the compiler in detail, but defers
+major topics to other chapters. Chapter 19 builds on the model
+presented in Chapter 15 and describes the full type inferencing system
+used in the compiler and its implementation. Chapter 20 describes the
+translation techniques used to produce code from expressions that
+employ Icon's goal-directed evaluation scheme and its unique control
+structures. It also describes the allocation of temporary variables
+using the information produced by liveness analysis.
+
+The code generator does no look-ahead and as a result it often
+produces code that is poor when taken in context of subsequent
+code. This problem is shared with most code generators as are some of
+the solutions used in this compiler.  The unique code generation
+techniques required by Icon's goal-directed evaluation produce unusual
+variations of this problem and require some innovative solutions in
+addition to the standard ones. Chapter 21 describes the various
+techniques employed to handle this problem. Chapter 22 describes the
+optimizations that can be done using the results of type
+inferencing. These optimizations also make use of liveness
+information.
+
+Chapter 23 demonstrates the effects of the various optimizations used
+in the compiler on the performance of specific kinds of
+expressions. It also presents measurements of the performance of
+compiled code for a variety of complete programs, comparing the
+performance to that of the Icon interpreter. In addition, the sizes of
+the executable code for the complete programs are presented. The
+conclusions, Chapter 24, summarize what has been done and lists some
+work that remains to be explored. Chapter 25 describes one successful
+project to improve the compiler and make it usable on larger programs.
+
+
+\bigskip
+
+
+\bigskip
+

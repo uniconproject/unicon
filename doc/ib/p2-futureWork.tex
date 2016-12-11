@@ -1,0 +1,146 @@
+\chapter{Future Work on the Compiler}
+
+\section{Summary}
+
+The underlying ideas used in type inferencing, liveness analysis, and
+temporary variable allocation were explored using prototype systems
+before work was started on the compiler described in this
+dissertation. The fundamental reasons for creating the compiler were
+to prove that these ideas could be incorporated into a complete and
+practical compiler for Icon, to explore optimizations that are
+possible using the information from type inferencing, and to determine
+how well those optimizations perform. The goal of proving the
+usefulness of ideas continues a long tradition in the Icon language
+project and in the SNOBOL language project before it.
+
+The prototype type inferencing system demonstrates that a naive
+implementation uses too much memory; implementation techniques were
+developed for the compiler to greatly reduce this memory usage. As the
+design and implementation of the compiler progressed, other problems
+presented themselves, both large and small, and solutions were
+developed to solve them. These problems include how to elegantly
+produce code either with or without type checking, how to generate
+good code for simple assignments (a very important kind of expression
+in most Icon programs), how to generate code that uses the
+continuation-passing techniques chosen for the compilation model, and
+how to perform peephole optimizations in the presence of success
+continuations.
+
+This dissertation describes the problems addressed by the Icon
+compiler and why they are important to the compiler, along with
+innovative solutions. It presents a complete set of techniques used to
+implement the optimizing compiler.  Performance measurements
+demonstrate the improvements brought about by the various
+optimizations. They also demonstrate that, for most programs, compiled
+code runs much faster than interpreted code. Previous work has shown
+that simply eliminating the interpreter loop is not enough to produce
+large performance improvements [.tr88-31.]. Therefore, the
+measurements show that the set of techniques, in addition to being
+complete, is also effective.
+
+
+\section{Future Work}
+
+The Icon compiler builds upon and adds to a large body of work done
+previously by the Icon project. There are many problems and ideas
+relating to the implementation of Icon that remain to be explored in
+the future. Several are presented in earlier chapters. Others are
+described in the following list.
+
+\liststyleLxxxv
+\begin{itemize}
+\item 
+The quality of type inferencing can be improved. For example, if 
+
+{\ttfamily
+\ x {\textbar}{\textbar}{\textbar} y}
+
+\noindent is successfully executed, both x and y must contain
+lists. The current version of type inferencing in the compiler does
+not use this information; it updates the store based on result types
+and side effects, but not based on the argument types that must exist
+for successful execution without run-time error termination. Another
+improvement is to extend the type system to include constants and
+thereby perform constant propagation automatically as part of type
+inferencing.  The type system can also be extended to distinguish
+between values created in allocated storage and those that are
+constant and do not reside in allocated storage. A descriptor that
+never contains values from allocated storage does not need to be
+reachable by garbage collection.
+
+\item In spite of large improvements in the storage requirements of
+type inferencing over the prototype system, this analysis requires
+large amounts of memory for some programs. A suggestion by John
+Kececioglu [.johnk.] is to explore the use of applicative data
+structures that share structure with their predecessors.
+
+\item Type inferencing provides information about values that do not
+need run-time type information associated with them. In the case of
+integers and reals, this information along with information from the
+data base about run-time operations can be used to perform
+computations on pure C values and to demote Icon descriptor variables
+to simple C integer and double variables. The current compiler makes
+little use of these opportunities for optimization. Numerous other
+optimizations using the information from type inferencing are possible
+beyond what is currently being done. One of them is to choose the
+representation of a data structure based on how the data structure is used.
+
+\item Translating constant expressions involving integer and real
+values into the corresponding C expressions would allow the C compiler
+to perform constant folding on them. For other Icon types, constant
+folding must be performed by the Icon compiler. This is particularly
+important for csets, but is not presently being done.
+
+\item O'Bagy's prototype compiler performs two kinds of control flow
+optimizations. It eliminates unnecessary bounding and demotes
+generators that can not be resumed. The code generation techniques
+used in this compiler combined with the peephole optimizer
+automatically eliminate unnecessary bounding. The peephole optimizer
+also automatically demotes generators that are placed
+in-line. Enhancements to the peephole optimizer could effect the
+demotion of generators that are not placed in-line.
+
+\item The compiler uses a simple heuristic to decide when to use the
+in-line version of an operation and when to call the function
+implementing the operation using the standard calling
+conventions. More sophisticated heuristics should be explored.
+
+\item Temporary variables can retain pointers into allocated storage
+beyond the time that those pointers are needed. This reduces the
+effectiveness of garbage collection. Because garbage collection does
+not know which temporary variables are active and which are not, it
+retains all values pointed to by temporary variables. This problem can
+be solved by assigning the null value to temporary variables that are
+no longer active. However, this incurs significant overhead.  The
+trade off between assigning null values and the reduced effectiveness
+of garbage collection should be explored.
+
+\item The Icon compiler generates C code. If it generated assembly
+language code, it could make use of machine registers for state
+variables, such as the procedure frame pointer, and for holding
+intermediate results. This should result in a significant improvement
+in performance (at the cost of a less portable compiler and one that
+must deal with low-level details of code generation).
+
+\item Several of the analyses in the compiler rely on having the
+entire Icon program available. Separate compilation is very useful,
+but raises problems. On possible solution is to change the analyses to
+account for incomplete information. They could assume that undeclared
+variables can be either local or global and possibly initialized to a
+built-in function or unknown procedures, and that calls to unknown
+operations can fail, or return or suspend any value and perform any
+side-effect on any globally accessible variable. This would
+significantly reduce the effectiveness of some analyses.  Another
+approach is to do incremental analyses, storing partial or tentative
+results in a data base. This is a much harder approach, but can
+produce results as good as compiling the program at one time.
+
+\item Enhancements to the compiler can be complemented with
+improvements to the run-time system. One area that can use further
+exploration is storage management.
+
+\end{itemize}
+
+\clearpage
+\bigskip
+

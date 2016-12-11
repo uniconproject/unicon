@@ -1,0 +1,553 @@
+\chapter{The Interpreter}
+
+\textsc{Perspective}: The interpreter provides a software realization
+of Icon's virtual machine. This machine is stack-based. The basic
+units on which the Icon virtual machine operates are descriptors. The
+instructions for the virtual machine consist of operations that
+manipulate the stack, call C functions that carry out the built-in
+operations of Icon, and manage the flow of control. The Icon
+interpreter executes these virtual machine instructions.  It consists
+of a loop in which a virtual machine instruction is fetched and
+control is transferred to a section of code to perform the
+corresponding operation.
+
+\section{Stack-Based Evaluation}
+
+Virtual machine instructions typically push and pop data on the
+interpreter stack. The interpreter stack, which is distinct from the
+stack used for calls of C functions, is an array of words. The
+variable \texttt{sp} points to the last word pushed on the interpreter
+stack. Pushing increments \texttt{int}, while popping decrements
+it. When the interpreter executes code that corresponds to a built-in
+operation in Icon, it pushes descriptors for the arguments on the
+interpreter stack and calls a C function corresponding to that
+operation with a pointer to the place on the interpreter stack where
+the arguments begin. A null descriptor is pushed first to serve as a
+{\textquotedbl}zeroth{\textquotedbl} argument (Arg0) that receives, by
+convention, the result of the computation and becomes the top
+descriptor on the stack when the C function returns. On a more
+conventional virtual machine, the result of the computation would be
+pushed on the stack, instead of being returned in an argument. The
+latter method is more convenient in Icon.
+
+To illustrate this basic mechanism, consider the expression
+
+{\ttfamily\mdseries
+\ \ \ ?10}
+
+\noindent which produces a randomly selected integer between 1 and 10,
+inclusive. The corresponding virtual machine instructions are
+
+{\ttfamily\mdseries
+\ \ \ pnull\ \ \ \ \# push null descriptor for the result\newline
+ \ \ int\ \ 10\ \ \# push descriptor for the integer 10\newline
+ \ \ random\ \ \ \ \# compute random value}
+
+The instructions \texttt{pnull} and \texttt{int} operate directly on
+the stack. The instruction \texttt{random} calls a C function that
+computes random values.
+
+The \texttt{pnull} instruction pushes a null descriptor:
+
+\begin{center}
+\includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg}
+\end{center}
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip
+
+\clearpage
+The \texttt{int} instruction pushes a descriptor for the integer 10:
+
+
+\ \  \includegraphics[width=3.9543in,height=1.6063in]{ib-img/ib-img043.jpg} 
+
+Suppose that the C function for random computes 3. It replaces the
+null value of Arg0 by a descriptor for the integer 3.  When it
+returns, \texttt{sp} is set to point to Arg0 and the situation is
+
+
+\ \ \ \  \includegraphics[width=2.6717in,height=1.239in]{ib-img/ib-img044.jpg} 
+
+
+\section[8.2 Virtual Machine Instructions]{8.2 Virtual Machine Instructions}
+
+The various aspects of expressions that appear in Icon source-language
+programs are reflected, directly or indirectly, in the instruction set
+for the Icon virtual machine. References to constants (literals) and
+identifiers have direct correspondences in the instruction set of the
+virtual machine. There is a virtual machine instruction for each
+source-language operator. This is possible, since the meaning of an
+operation is fixed and cannot be changed during program execution. The
+meaning of a function call, however, cannot be determined until it is
+evaluated, and there is a single virtual machine instruction for
+function invocation. The invocation of functions is described in
+detail in Chapter 10.
+
+There are several virtual machine instructions related to control
+structures and the unique aspects of expression evaluation in
+Icon. These are discussed in the next two chapters. A complete list of
+virtual machine instructions is given in Appendix B.
+
+\subsection{Constants}
+
+Four kinds of data can be represented literally in Icon programs:
+integers, strings, csets, and real numbers. The four corresponding
+virtual machine instructions are
+
+{\ttfamily\mdseries
+\ \ int\ \ n\ \ \# integer n\newline
+\ \ str\ \ n, a\ \ \# string of length n at address a\newline
+\ \ cset\ \ a\ \ \# cset block at address a\newline
+\ \ real\ \ a\ \ \# real block at address a}
+
+The values of integer literals appear as arguments of int
+instructions. In the case of strings, the two arguments give its
+length and the address of its first character.
+
+The string itself is constructed by the linker and is loaded into
+memory from the icode file. For csets and real numbers, the linker
+constructs blocks, which are also loaded from the icode file. These
+blocks are identical in format to blocks that are constructed during
+program execution.
+
+The virtual machine instructions \texttt{str}, \texttt{cset}, and
+\texttt{real} push appropriate descriptors to reference the data as it
+appears in the icode. For example, the virtual machine instructions
+for
+
+{\ttfamily\mdseries
+\ \ \ ?{\textquotedbl}aeiou{\textquotedbl}}
+
+\noindent are
+
+{\ttfamily\mdseries
+\ \ \ pnull\newline
+ \ \ str\ \ 5, a\newline
+ \ \ random}
+
+\noindent where \texttt{\ \ a} is the address of the string
+\texttt{{\textquotedbl}aeiou{\textquotedbl}}. The \texttt{pnull}
+instruction pushes a null descriptor as in the previous example:
+
+\ \  \ \ \ \ \  \includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg} 
+
+The \texttt{str} instruction constructs a descriptor for the string
+\texttt{{\textquotedbl}aeiou{\textquotedbl}}:
+
+\ \  \includegraphics[width=4.0602in,height=1.4398in]{ib-img/ib-img045.jpg} 
+
+If \texttt{random} produces the string
+\texttt{{\textquotedbl}o{\textquotedbl}}, this string replaces the
+null descriptor and the stack becomes
+
+\ \ \ \  \includegraphics[width=2.778in,height=1.3047in]{ib-img/ib-img046.jpg} 
+
+\subsection[8.2.2 Identifiers]{8.2.2 Identifiers}
+
+From the viewpoint of the interpreter, there are four kinds of
+identifiers: global identifiers, static identifiers, local
+identifiers, and arguments. The values of global and static
+identifiers are in arrays of descriptors at fixed locations in
+memory. The values of local identifiers and arguments, on the other
+hand, are kept on the stack as part of the infonnation associated with
+a procedure call.
+
+The values of the arguments in the call of a procedure are pushed on
+the stack as the result of the evaluation of expressions prior to the
+invocation of the procedure. The initial null values for local
+identifiers are pushed on the stack when the procedure is called.
+
+The portion of the stack between the arguments and local identifiers
+is fixed in size and contains information that is saved when a
+procedure is called. This information is described in Chapter 10.
+
+There are four virtual machine instructions for constructing variable
+descriptors:
+
+
+\ \ \ global n
+
+\ \ \ static n
+
+\ \ \ arg n
+
+\ \ \ local n
+
+
+Identifiers of each kind are numbered starting at zero. Consequently,
+
+{\ttfamily\mdseries
+\ \ \ arg 0}
+
+\noindent pushes a variable descriptor for the first argument. In each
+case, the descriptor that is pushed on the stack is a variable that
+points to the descriptor for the value of the corresponding identifier.
+
+Consider the expression
+
+{\ttfamily\mdseries
+\ \ \ j := 1}
+
+The corresponding virtual machine instructions are
+
+{\ttfamily\mdseries
+\ \ \ pnull\ \ \ \ \# push null descriptor for the result}
+
+{\ttfamily\mdseries
+\ \ \ local\ \ 2\ \ \# push variable descriptor for j}
+
+{\ttfamily\mdseries
+\ \ \ int\ \ 1\ \ \# push descriptor for the integer 1}
+
+{\ttfamily\mdseries
+\ \ \ asgn\ \ \ \ \# perform assignment}
+
+
+When these instructions are interpreted. the succession of stack states is
+
+
+\ \  \includegraphics[width=3.2063in,height=3.7366in]{ib-img/ib-img047.jpg} 
+
+
+\ \ \ \ \ \ The Stack after \texttt{pnull}
+
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip
+
+ \includegraphics[width=4.0602in,height=4.1575in]{ib-img/ib-img048.jpg} 
+
+
+\ \ The Stack after \texttt{local 2}
+
+
+\ \  \includegraphics[width=3.3134in,height=4.7457in]{ib-img/ib-img049.jpg} 
+
+
+\ \ \ \ \ \ The Stack after \texttt{int 1}
+
+
+\bigskip
+
+
+\ \  \includegraphics[width=4.489in,height=3.7366in]{ib-img/ib-img050.jpg} 
+
+
+\ \ \ \ The Stack after \texttt{asgn}
+
+
+Note that \texttt{asgn} assigns the value of its second argument to
+\texttt{j} and overwrites Arg0 with a variable descriptor, which is
+left on the top of the stack.
+
+Similarly, the virtual machine instructions for
+
+{\ttfamily\mdseries
+\ \ \ z := x}
+
+are
+
+\ \ \ pnull
+
+\ \ \ local 0
+
+\ \ \ arg 0
+
+\ \ \ asgn
+
+\noindent the states of the stack are
+
+
+\ \  \includegraphics[width=4.0602in,height=3.8307in]{ib-img/ib-img051.jpg} 
+
+
+\ \ The Stack after \texttt{pnull}
+
+
+\ \  \includegraphics[width=4.5953in,height=4.1516in]{ib-img/ib-img052.jpg} 
+
+
+\ \ The Stack after \texttt{local 0}
+
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip
+
+
+\bigskip
+
+
+\ \  \includegraphics[width=2.6717in,height=4.3118in]{ib-img/ib-img053.jpg} 
+
+
+\ \ \ \ The Stack after \texttt{arg 0}
+
+
+\ \  \includegraphics[width=4.2752in,height=3.7335in]{ib-img/ib-img054.jpg} 
+
+
+\ \ \ \ The Stack after \texttt{asgn}
+
+
+\section[8.3 Operators]{8.3 \textbf{Operators}}
+
+There is a virtual machine instruction for each of the forty-two
+operators in Icon. The instructions random and asgn described
+previously are examples. Casting Icon operators as virtual machine
+instructions masks a considerable amount of complexity, since few Icon
+operators are simple. For example, although x + y appears to be a
+straightforward computation, it involves checking the types of x and
+y, converting them to numeric types if they are not already numeric,
+and terminating with an error message if this is not possible. If x
+and y are numeric or convertible to numeric, addition is
+performed. Even this is not simple, since the addition may be integer
+or floating-point, depending on the types of the arguments. For
+example, if x is an integer and y is a real number, the integer is
+converted to a real number. None of these computations is evident in
+the virtual machine instructions produced for this expression, which
+are
+
+{\ttfamily
+\ \ \ pnull}
+
+{\ttfamily
+\ \ \ local x}
+
+{\ttfamily
+\ \ \ local y}
+
+{\ttfamily
+\ \ \ plus}
+
+
+In the instructions given previously, the indices that are used to
+access identifiers have been replaced by the names of the identifiers,
+which are assumed to be local. This convention is followed in
+subsequent virtual machine instructions fo ease of reading.
+
+Augmented assignment operations do not have separate virtual machine
+instructions. Instead, the instruction \texttt{dup} first pushes a
+null descriptor and then pushes a duplicate of the descriptor that was
+previously on top of the stack.  For example, the virtual machine
+instructions for
+
+{\ttfamily\mdseries
+\ \ \ i +:= 1}
+
+are
+
+{\ttfamily\mdseries
+\ \ \ pnull}
+
+{\ttfamily\mdseries
+\ \ \ local i}
+
+{\ttfamily\mdseries
+\ \ \ dup}
+
+{\ttfamily\mdseries
+\ \ \ int 1}
+
+{\ttfamily\mdseries
+\ \ \ plus}
+
+{\ttfamily\mdseries
+\ \ \ asgn}
+
+
+The stack after the execution of \texttt{local} is
+
+
+\ \  \includegraphics[width=2.778in,height=1.5189in]{ib-img/ib-img055.jpg} 
+
+
+The execution of \texttt{dup} produces
+
+
+\ \  \includegraphics[width=3.4193in,height=2.4075in]{ib-img/ib-img056.jpg} 
+
+
+The \texttt{dup} instruction simply takes the place of the
+\texttt{pnull} and second \texttt{local} instructions in the virtual
+machine instructions for
+
+{\ttfamily\mdseries
+\ \ \ i := i + 1}
+
+which are
+
+{\ttfamily\mdseries
+\ \ \ pnull}
+
+{\ttfamily\mdseries
+\ \ \ local i}
+
+{\ttfamily\mdseries
+\ \ \ pnull}
+
+{\ttfamily\mdseries
+\ \ \ local i}
+
+{\ttfamily\mdseries
+\ \ \ int 1}
+
+{\ttfamily\mdseries
+\ \ \ plus}
+
+{\ttfamily\mdseries
+\ \ \ asgn}
+
+
+In this case, only a single \texttt{local} instruction is avoided. If
+the variable to which the assignment is made is not just an identifier
+but, instead, a more complicated construction, as in
+
+{\ttfamily\mdseries
+\ \ \ a[j] +:= 1}
+
+\noindent substantial computation may be saved by duplicating the
+result of the first argument expression instead of recomputing it.
+
+\subsection{Functions}
+
+While the meaning of an operation is fixed and can be translated into
+a specific virtual machine instruction, the meaning of a function call
+can change during program execution. The value of the function also
+can be computed. as in
+
+{\ttfamily\mdseries
+\ \ \ (p[i])(x, y)}
+
+The general form of a call is
+
+{\ttfamily\mdseries
+\textit{\ \ \ expr0(expr1, expr2, }..., \textit{exprn)}}
+
+The corresponding virtual machine instructions are
+
+{\ttfamily\mdseries
+\ \ \ code for expr0}
+
+{\ttfamily\mdseries
+\ \ \ code for expr1}
+
+{\ttfamily\mdseries
+\ \ \ code for expr2}
+
+{\ttfamily\itshape
+\ \ \ code for exprn}
+
+{\ttfamily\mdseries
+\textit{\ \ \ }invoke n}
+
+The \texttt{invoke} instruction is relatively complicated, since the
+value of \textit{expr0 }may be a procedure, an integer (for mutual
+evaluation), or even a value that is erroneous. Function invocation is
+discussed in detail in Chapter 10.
+
+\section[8.3 The Interpreter Proper]{8.3 The Interpreter Proper}
+\subsection[8.3. 1 The Interpreter Loop]{8.3. 1 The Interpreter Loop}
+
+The interpreter, which is called \texttt{interp()}, is basically
+simple in structure. It maintains a location in the icode
+(\texttt{ipc}) and begins by fetching the instruction pointed to by
+\texttt{ipc} and incrementing \texttt{ipc} to the next location. It
+then branches to a section of code for processing the virtual machine
+instruction that it fetched. The interpreter loop is
+
+{\ttfamily\mdseries
+\ \ \ for (;;) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ op = GetWord;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ switch (op) \{}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case Op\_Asgn:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ case Op\_Plus:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \}}
+
+\noindent
+where \texttt{GetWord} is a macro that is defined to be \texttt{(*ipc++)}.
+
+Macros are used extensively in the interpreter to avoid repetitious
+coding and to make the interpreter easier to read.  The coding is
+illustrated by the case clause for the instruction \texttt{plus}:
+
+{\ttfamily\mdseries
+\ \ \ case Op\_Plus:\ \ /* e1 + e2 */}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ Setup\_Op(2);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ DerefArg(1);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ DerefArg(2);}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ Call\_Op;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ break;}
+
+
+\texttt{Setup\_Op(n)} sets up a pointer to the address of Arg0 on the
+interpreter stack. The resulting code is
+
+{\ttfamily\mdseries
+\ \ \ rargp = (dptr)(sp - 1) - n;}
+
+The value of \texttt{n} is the number of arguments on the stack.
+
+\texttt{DerefArg(n)} dereferences argument \texttt{n}. If it is a
+variable, it is replaced by its value. Thus, dereferencing is done in
+place by changing descriptors on the interpreter stack.
+
+\texttt{Call\_Cond} calls the appropriate C function with a pointer to
+the interpreter stack as provided by \texttt{Setup\_Op(n)}. The
+function itself is obtained by looking up \texttt{op} in an array of
+pointers to functions.  The code produced by \texttt{Call\_Cond} is
+(almost)
+
+{\ttfamily\mdseries
+\ \ \ (*(optab(op]) )(rargp);}
+
+{\ttfamily\mdseries
+\ \ \ sp = (word * )rargp + 1:}
+
+
+\bigskip
+

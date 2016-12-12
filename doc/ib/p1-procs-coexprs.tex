@@ -16,7 +16,7 @@ Co-expressions, which require separate stacks for their evaluation,
 add complexities and dependencies on computer architecture that are
 not found elsewhere in the implementation.
 
-\section{Invocation Expressions}
+\section[10.1 Invocation Expressions]{10.1 Invocation Expressions}
 
 As mentioned in Sec. 8.2.4, the virtual machine code for an expression such as
 
@@ -72,7 +72,7 @@ with the appropriate arguments. A function or procedure value is
 represented by a descriptor that points to a block that contains
 information about the function or procedure.
 
-\section{Procedure Blocks}
+\section[10.2 Procedure Blocks]{10.2 Procedure Blocks}
 
 Functions and procedures have similar blocks, and there is no
 source-language type distinction between them.
@@ -219,7 +219,7 @@ not used
 \end{center}
 
 
-\section{Invocation}
+\section[10.3 Invocation]{10.3 Invocation}
 \subsection[10.3.1 Argument Processing]{10.3.1 Argument Processing}
 
 Argument processing begins by dereferencing the arguments in place on
@@ -852,7 +852,6 @@ execution continues in the newly activated co-expression. Control is
 transferred to the beginning of the interpreter loop, and the next
 instruction (from the \texttt{ipc} for the co-expression) is fetched.
 
-
 However, when a co-expression is activated for the first time, there
 are no register values to restore, since no C function has yet been
 called for the new co-expression. This is indicated, as mentioned
@@ -867,7 +866,6 @@ activation of a co-expression corresponds to the call to
 from the call to \texttt{interp()} made in \texttt{coswitch()}, since
 program execution can only terminate normally by a return from the
 main procedure, in \texttt{\&main}.
-
 
 The function \texttt{coswitch()} is fastest if it is
 machine-dependent. The version for the x86 with the GCC compiler is an
@@ -960,7 +958,6 @@ as many lines of C. The public interface in either case looks like:
 {\ttfamily\mdseries
 int coswitch(void *old\_cs, void *new\_cs, int first);}
 
-
 The variables \texttt{old\_cs} and \texttt{new\_cs} are pointers to
 the \texttt{cstate} arrays for the activating and activated
 co-expressions, respectively. The value of first is 0 if the
@@ -969,7 +966,6 @@ order to write \texttt{coswitch()} it is necessary to know how the
 first two arguments are accessed in assembly language. For the
 previous example, \texttt{old\_cs} and \texttt{new\_cs} are eight and
 twelve bytes from the \textit{ebp }register, respectively.
-
 
 \textbf{Refreshing a Co-Expression}. The operation
 \texttt{\textit{\^{}}}\textit{expr\TextSubscript{0}} creates a copy of
@@ -1029,12 +1025,11 @@ including a machine-dependent context switch.
 
 \subsection{EXERCISES}
 
-\textbf{10.1 }What happens if a call of a procedure or function
+\textbf{10.1} What happens if a call of a procedure or function
 contains an extra argument expression, but the evaluation of that
 expression fails?
 
-
-\textbf{10.2 }Sometimes it is useful to be able to specify a function
+\textbf{10.2} Sometimes it is useful to be able to specify a function
 or procedure by means of its string name. Icon supports
 {\textquotedbl}string invocation,{\textquotedbl} which allows the
 value of \textit{expr\TextSubscript{0}} in
@@ -1058,28 +1053,23 @@ Of course, such a string name is usually computed, as in
 {\ttfamily\mdseries
 \ \ \ (read())(s)}
 
-
 Describe what is involved in implementing this aspect of
 invocation. Operators also may be invoked by their string names, as in
 
 {\ttfamily\mdseries
 \ \ \ {\textquotedbl}+{\textquotedbl}(i,j)}
 
-
 What is needed in the implementation to support this facility? Can a
 control structure be invoked by a string name?
 
-
-\textbf{10.3 }If the result returned by a procedure is a variable, it
+\textbf{10.3} If the result returned by a procedure is a variable, it
 may need to be dereferenced. This is done in the code for
 \texttt{pret} and \texttt{psusp}. For example, if the result being
 returned is a local identifier, it must be replaced by its value What
 other kinds of variables must be dereferenced? Is there any difference
 in the dereferencing done by \texttt{pret} and \texttt{psusp}?
 
-
-\textbf{10.4 }How is the structure of a co-expression block different
+\textbf{10.4} How is the structure of a co-expression block different
 on a computer with an upward-growing C stack compared to one with a
 downward-growing C stack? What is the difference between the two cases
 in terms of potential storage fragmentation?
-

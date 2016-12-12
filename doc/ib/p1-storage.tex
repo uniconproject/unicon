@@ -72,7 +72,7 @@ Icon (Hanson 1980). The result is, of course, somewhat idiosyncratic,
 but it provides an interesting case study of a real storage-management
 system.
 
-\section{Memory Layout}
+\section[11.1 Memory Layout]{11.1 Memory Layout}
 
 During the execution of an Icon program, memory is divided into
 several regions. The sizes and locations of these regions are somewhat
@@ -106,7 +106,6 @@ the blocks for keyword trapped variables are statically allocated in
 the data area of the run-time system. Such blocks never move, but
 their contents may change. The size of the run-time system is
 machine-dependent.
-
 
 \textbf{The Icode Region}. One of the first things done by the
 run-time system is to read in the icode file for the program that is
@@ -179,7 +178,7 @@ corresponding Icon source-language file. An icode file for a short
 program might be 1,000 bytes, while one for a large program (by Icon
 standards) might be 20,000 bytes.
 
-\textbf{Allocated Storage. }The space for data objects that are
+\textbf{Allocated Storage.} The space for data objects that are
 constructed at run time is provided in allocated storage regions. This
 portion of memory is divided into three parts:
 
@@ -250,7 +249,7 @@ that runaway recursion would consume enormous resources before a
 collision occurred between the system stack and the allocated storage
 region.
 
-\section{Allocation}
+\section[11.2 Allocation]{11.2 Allocation}
 
 Storage allocation in Icon is designed to be fast and simple. Garbage
 collection is somewhat more complicated as a result. Part of the
@@ -263,7 +262,7 @@ other rationale for this approach is that the storage requirements of
 Icon do not readily lend themselves to more complex allocation
 strategies.
 
-\subsection{The Static Region}
+\subsection[11.2.1 The Static Region]{11.2.1 The Static Region}
 
 Data allocated in the static region is never moved, although it may be
 freed for reuse. Co-expression blocks are allocated in the static
@@ -272,7 +271,6 @@ both the computer and the C compiler and hence are difficult to
 relocate to another place in memory. Furthermore, since co-expression
 blocks are all the same size, it is economical and simple to free and
 reuse their space.
-
 
 The C library routines \texttt{malloc()} and \texttt{free()} are used
 to allocate and free co-expression blocks in the static region. These
@@ -325,7 +323,7 @@ exchanged for the process of reclaiming unused blocks and rearranging
 the block region so that all the free space is in one contiguous
 portion of the block region. This is done during garbage collection.
 
-\subsection{Strings}
+\subsection[11.2.3 Strings]{11.2.3 Strings}
 
 There is even less justification for a free-list approach for
 allocating strings. A newly created string may be one character long
@@ -346,7 +344,7 @@ is not enough space in the string region to satisfy an allocation
 request.
 
 
-\section{Garbage Collection}
+\section[11.3 Garbage Collection]{11.3 Garbage Collection}
 
 Allocation is simple, but garbage collection is not. The primary
 purpose of garbage collection is to reclaim the space occupied by
@@ -419,7 +417,6 @@ that it is not only necessary to locate all accessible objects, but it
 is also necessary to locate all pointers to objects that may be
 relocated.
 
-
 The location phase starts with a \textit{basis} that consists of
 descriptors that point to objects that may be accessible and from
 which other objects may be accessed. For example, \texttt{\&subject}
@@ -455,7 +452,7 @@ point to a list-header block that in turn points to a list-element
 block that contains elements pointing to strings and other
 blocks. Pointer chains also can be circular.
 
-\subsection{The Location Phase}
+\subsection[11.3.2 The Location Phase]{11.3.2 The Location Phase}
 
 For historical reasons, the location phase is sometimes called
 \textit{marking}. This term refers to the common practice of setting
@@ -1193,7 +1190,7 @@ pointed to by \texttt{cp}. The macro \texttt{BlkSize(cp)} uses the
 array \texttt{bsizes} to determine the size of the block pointed to by
 \texttt{cp}.
 
-\subsection{Pointer Adjustment and Compaction}
+\subsection[11.3.3 Pointer Adjustment and Compaction]{11.3.3 Pointer Adjustment and Compaction}
 
 \textbf{Strings}. When the location phase is complete, quallist
 contains a list pointers to all the qualifiers whose v-words point to
@@ -1869,7 +1866,7 @@ char *source;
 
 The routine \texttt{mvc(n, source, dest)} moves n bytes from source to dest.
 
-\subsection{Collecting Co-Expression Blocks}
+\subsection[11.3.4 Collecting Co-Expression Blocks]{11.3.4 Collecting Co-Expression Blocks}
 
 After the location phase of garbage collection is complete, all the
 live co-expression blocks are marked, but the dead co-expression
@@ -2000,7 +1997,7 @@ restored. The routine cofree that frees co-expression blocks is
 {\ttfamily\mdseries
 \ \ \ \}}
 
-\subsection{Multiple Regions}
+\subsection[11.3.5 Multiple Regions]{11.3.5 Multiple Regions}
 
 Garbage collection may not produce enough free space in a region to
 satisfy the request that caused the garbage collection. In this case,
@@ -2019,7 +2016,7 @@ collected, prior to allocating new, larger regions. If an older region
 frees enough space, it is made the active region instead of allocating
 a new one.
 
-\subsection{Storage Requirements during Garbage Collection}
+\subsection[11.3.6 Storage Requirements during Garbage Collection]{11.3.6 Storage Requirements during Garbage Collection}
 
 Garbage collection itself takes some work space. Space for pointers to
 qualifiers is provided in \texttt{quallist}, while C stack space is
@@ -2149,9 +2146,7 @@ calling a separate routine.
 In most systems that manage allocated storage dynamically, garbage
 collections are triggered by allocation requests that cannot be
 satisfied by the amount of free storage that remains. In these
-systems, garbage collections occur during calls to allocation
-routines.
-
+systems, garbage collections occur during calls to allocation routines.
 
 Whenever a garbage collection occurs, all potentially accessible data
 must be reachable from the basis, and any descriptors that are
@@ -2173,7 +2168,7 @@ the amount of space needed is requested in advance. There is a
 routine, \texttt{reserve(Region,n)}, for reserving space in
 advance. This routine checks the specified region to assure the amount
 of free space needed is actually available. If it is not, it calls the
-garbage collector. The code for reserve() is conceptually
+garbage collector. The code for \texttt{reserve()} is conceptually
 
 {\ttfamily\mdseries
 \ \ \ char *reserve(int r, uword n)}

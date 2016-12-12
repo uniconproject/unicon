@@ -11,7 +11,7 @@ of a loop in which a virtual machine instruction is fetched and
 control is transferred to a section of code to perform the
 corresponding operation.
 
-\section{Stack-Based Evaluation}
+\section[8.1 Stack-Based Evaluation]{8.1 Stack-Based Evaluation}
 
 Virtual machine instructions typically push and pop data on the
 interpreter stack. The interpreter stack, which is distinct from the
@@ -97,7 +97,7 @@ structures and the unique aspects of expression evaluation in
 Icon. These are discussed in the next two chapters. A complete list of
 virtual machine instructions is given in Appendix B.
 
-\subsection{Constants}
+\subsection[8.2.1 Constants]{8.2.1 Constants}
 
 Four kinds of data can be represented literally in Icon programs:
 integers, strings, csets, and real numbers. The four corresponding
@@ -311,7 +311,7 @@ are
 \ \ \ \ The Stack after \texttt{asgn}
 
 
-\section[8.3 Operators]{8.3 \textbf{Operators}}
+\subsection[8.2.3 Operators]{8.2.3 \textbf{Operators}}
 
 There is a virtual machine instruction for each of the forty-two
 operators in Icon. The instructions random and asgn described
@@ -430,7 +430,7 @@ but, instead, a more complicated construction, as in
 \noindent substantial computation may be saved by duplicating the
 result of the first argument expression instead of recomputing it.
 
-\subsection{Functions}
+\subsection[8.2.4 Functions]{8.2.4 Functions}
 
 While the meaning of an operation is fixed and can be translated into
 a specific virtual machine instruction, the meaning of a function call
@@ -468,7 +468,7 @@ evaluation), or even a value that is erroneous. Function invocation is
 discussed in detail in Chapter 10.
 
 \section[8.3 The Interpreter Proper]{8.3 The Interpreter Proper}
-\subsection[8.3. 1 The Interpreter Loop]{8.3. 1 The Interpreter Loop}
+\subsection[8.3.1 The Interpreter Loop]{8.3.1 The Interpreter Loop}
 
 The interpreter, which is called \texttt{interp()}, is basically
 simple in structure. It maintains a location in the icode
@@ -487,13 +487,28 @@ instruction that it fetched. The interpreter loop is
 \ \ \ \ \ \ switch (op) \{}
 
 {\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ ...}
+
+{\ttfamily\mdseries
 \ \ \ \ \ \ \ \ \ case Op\_Asgn:}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ ...}
 
 {\ttfamily\mdseries
 \ \ \ \ \ \ \ \ \ case Op\_Plus:}
 
 {\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ ...}
+
+{\ttfamily\mdseries
 \ \ \ \ \ \ \ \ \ \}}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ continue;}
+
+{\ttfamily\mdseries
+\ \ \ \ \ \ \ \ \ ...}
 
 {\ttfamily\mdseries
 \ \ \ \ \ \ \}}
@@ -551,3 +566,93 @@ pointers to functions.  The code produced by \texttt{Call\_Cond} is
 
 \bigskip
 
+In the case where a C function produces a result, as plus always does,
+that result is placed in the Arg0 descriptor on the interpreter stack,
+as illustrated by the examples in Chapters 4 and 5. The interpreter
+adjusts sp to point to the v-word of Arg0. The break transfers control
+to the end of the switch statement, where a continue statement
+transfers control to the beginning of the interpreter loop, and the
+next instruction is fetched.
+
+As illustrated earlier, some virtual machine instructions have
+operands, which follow the instructions in the icode. The interpreter
+code for such an instruction fetches its operands. An example is
+
+int n
+
+The interpreter code for int is
+
+case Op\_Int: /* integer */
+   PushVal(D\_Integer);
+   PushVal(GetWord);
+   break;
+
+PushVal(x) pushes x onto the interpreter stack. Thus, the descriptor
+for the integer is constructed by first pushing the constant D\_Integer
+for the d-word and then pushing the fetched operand for the v-word.
+
+\subsection[8.3.2 Interpreter State Variables]{8.3.2 Interpreter State Variables}
+
+The state of the interpreter is characterized by several variables,
+called \textit{i-state variables}. Two i-state variables mentioned
+previously are sp, the interpreter stack pointer, and ipc, the
+interpreter ``program counter.''
+
+The interpreter also pushes frames on the interpreter stack when
+procedures are called. Such frames are analogous to the frames pushed
+on the C stack when a C function is called, and contain information
+(typically i-state variables) that is saved when a procedure is called
+and restored when a procedure returns. There are other kinds of frames
+for special aspects of expression evaluation; these are described in
+Chapter 9. Pointers to frames are themselves i-state variables.
+
+The proper maintenance of i-state variables is a central aspect of the
+interpreter and is discussed in detail in the next two chapters.
+
+Retrospective: The interpreter models, in software, the hardware of a
+cpu. The instruction fetch, the execution of operations, and the flow
+of control are basically the same as that in hardware execution, as is
+the use of a stack.
+
+An interpreter offers great flexibility. It is easy to add virtual
+machine instructions, change existing ones, or change how they are
+implemented. Tracking and monitoring also are easy to add. The
+interpreter is machine-independent and portable. These advantages
+outweigh the loss in efficiency associated with emulating hardware in
+software.
+
+{\sffamily\bfseries
+EXERCISES}
+
+\liststyleLvi
+\begin{enumerate}
+\item Why is it advantageous for the first argument of str to be the
+length of the string, rather than its address?
+
+\item Show the states of the stack for the execution of the virtual
+machine instructions for the following Icon expressions:
+
+   i := i + 1
+
+   l := ???j
+
+\item Give an example for which
+
+expr1 := expr1 + expr2
+
+produces a different result from
+
+expr1 +:= expr2
+
+\item Describe, in general terms, what would be involved in adding a
+new operator to Icon.
+
+\item Describe, in general terms, what would be involved in adding a
+new kind of literal to Icon.
+
+\item Suppose that functions were bound at translation time instead of
+being source-language values. How might the virtual machine be
+modified to take advantage of such a feature?  What effect would this
+have on the interpreter?
+
+\end{enumerate}

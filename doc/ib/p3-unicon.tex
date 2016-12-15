@@ -1,39 +1,37 @@
 \chapter{The Unicon Translator}
 
-Unicon is implemented as a minimal addition to Icon. Most of its
+Unicon was originally a modest addition to Icon. As much as possible,
 features are implemented by extending existing functions with new
 semantics, and by the addition of new functions and keywords with no
 new syntax. Originally, the object-oriented facilities were
-implemented as a preprocessor named Idol (Icon-drived object
-language). After several years of experience and evolution, Idol
-became a part of Unicon. Concurrently with this name change, thanks to
-Ray Pereda developing a version of Berkeley YACC for Icon and Unicon,
-the Unicon translator was substantially modified from a line-oriented
-preprocessor to a full parser that generates code by traversing the
-syntax tree. At this point it is still reasonable to call the Unicon
-translator a preprocessor, but it has many of the traits of a
-compiler.
+implemented as a simple line-oriented preprocessor named Idol.  When
+Idol was merged with the Posix and ODBC facilities to become Unicon,
+the Idol preprocessor was substantially modified to a full to a full
+parser that generates code by traversing a syntax tree. It is still
+reasonable to call the Unicon translator a preprocessor, but it has
+many of the traits of a compiler.
 
-\section{Overview}
+
+\section[26.1 Overview]{26.1 Overview}
 
 The Unicon translator lives in uni/unicon/. In addition to many Unicon
 source files, it uses the external tools iyacc and merr to generate
 its parser and syntax error message tables, which depend on files
 unigram.y and meta.err, respectively. Unicon is written in Unicon,
-creating a bootstrapping problem. When building from sources, some of
+posing a bootstrapping problem. When building from sources, some of
 the .icn files can be translated by icont (the Icon translator, a C
 program). Those files that require Unicon itself in order to compile
 are included in precompiled object format (in .u files) in order to
 solve the bootstrapping problem.
 
-\section{Lexical Analysis}
+\section[26.2 Lexical Analysis]{26.2 Lexical Analysis}
 
-Unicon's lexical analyzer is written by hand, in Unicon, using a
-lex-compatible interface. Some of its design is borrowed from the Icon
-lexical analyzer (which is handwritten C code). It would be
+Unicon's lexical analyzer is written by hand using a lex-compatible
+interface required by iyacc. Some of its design is borrowed from the
+Icon lexical analyzer (which is handwritten C code). It would be
 interesting to replace Unicon's lexical analyzer with a machine
 generated lexical analyzer to reduce the amount of compiler source
-code we have to maintain. The lexical analyzer consists of a function
+code to maintain. The lexical analyzer consists of a function
 yylex() located in unicon/uni/unicon/unilex.icn, about 500 lines of
 code.
 
@@ -822,7 +820,7 @@ procedure do\_letters()}
 {\ttfamily\mdseries
 end}
 
-\section{The Unicon Parser}
+\section[26.3 The Unicon Parser]{26.3 The Unicon Parser}
 
 Unicon's parser is written using a YACC grammar; a graduate student
 (Ray Pereda) modified Berkeley's public domain version of YACC (byacc)
@@ -970,7 +968,7 @@ grammar. Merr also considers the current input token in deciding what
 error message to emit, making it fundamentally more precise than
 Icon's approach.
 
-\section{The Unicon Preprocessor}
+\section[26.4 The Unicon Preprocessor]{26.4 The Unicon Preprocessor}
 
 The Icon language originally did not include any preprocessor, but
 eventually, a simple one was introduced, with ability to include
@@ -1168,7 +1166,7 @@ encountered under a big-inhale, the saved state would contain the
 string of remaining file contents, instead of the open file value.
 
 
-\section{Semantic Analysis}
+\section[26.5 Semantic Analysis]{26.5 Semantic Analysis}
 
 The Unicon translator's semantic analysis is minimal, and revolves
 mainly around object-oriented features such as inheritance and package
@@ -1613,7 +1611,7 @@ identifier following a unary ampersand is one of the valid keyword
 names. The valid names are kept in a set data structure.
 
 
-\section{Object Oriented Facilities }
+\section[26.6 Object Oriented Facilities]{26.6 Object Oriented Facilities}
 
 Unicon features classes, packages, and a novel multiple inheritance
 mechanism. These items are implemented entirely within the Unicon

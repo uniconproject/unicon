@@ -11,11 +11,38 @@ facilities for examples where application-level networking is provided
 in Unicon). Portions of this chapter related to the messaging
 facilities were contributed by their author, Steve Lumos.
 
-\section{Networking Facilities}
+\section[28.1 Networking Facilities]{28.1 Networking Facilities}
 
-...
+\subsection{Sockets in the Unicon File Functions}
 
-\section{Messaging Facilities}
+UNIX file abstractions allow certain low-level file I/O
+operations to be performed across either files or network sockets.
+Unicon's treatment of network connections as a special type of file
+uses the same abstraction, but Icon's existing file operations are
+written in terms of the higher-level buffered file I/O in ANSI C.
+
+In general, the file operations have to call different underlying C calls 
+depending on what kind of file is being used.  File values in Unicon
+have a status word, and that word has various bits to indicate whether
+the file is really a network connection, graphics window, database, etc.
+
+\subsection{Simultaneous Input from Different File Types}
+
+Modern applications may need to allow asynchronous input from all
+types of files. Unicon's select() originally used UNIX C's select()
+function as-is to handle input from various network connections,
+including X Windows GUI input.  MS Windows required an elaborate
+alternative to be developed, since window input events do not
+arrive on file descriptors.  Eventually, the UNIX implementation
+was also migrated off the straight C select(), for greater flexibility
+in handling other file types.  The general approach is to break the
+input list of input file handles out into sublists of each type, and
+handle them with separate calls, which must be repeated until some
+input is found.  This polling approach can waste CPU. A small delay
+is included in the loop to prevent the CPU burning.
+
+
+\section[28.2 Messaging Facilities]{28.2 Messaging Facilities}
 \subsection{The Transfer Protocol Library}
 
 All of the message facilities are handled by the transfer protocol

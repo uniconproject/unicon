@@ -114,7 +114,7 @@ types. For example, type(x) produces a string corresponding to the
 type of x. Similarly, copy(x) produces a copy of x, regardless of its
 type. Other operations only apply to certain types. An example is:
 
-\iconcode{
+\iconline{
 \> *x
 }
 
@@ -126,35 +126,54 @@ randomly selected one-character substring of x if x is a string, and
 so on. In other cases, different operations for similar kinds of
 computations are syntactically distinguished. For example,
 
-{\ttfamily\mdseries
-\ \ \ i = j}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i = j}
+\iconline{
+\>i = j
+}
 
 \noindent compares the numeric values of i and j, while
 
-{\ttfamily\mdseries
-\ \ \ s1 == s2}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ s1 == s2}
+\iconline{
+\>s1 == s2
+}
 
 \noindent compares the string values of s1 and s2. There is also a
 general comparison operation that determines whether any two objects
 are the same:
 
-{\ttfamily\mdseries
-\ \ x1 === x2}
+%-% {\ttfamily\mdseries
+%-% \ \ x1 === x2}
+\iconline{
+\ \ x1 === x2
+}
+
 
 As mentioned previously, any kind of value can be assigned to any
 variable. For example, x might have an integer value at one time and a
 string value at another:
 
-{\ttfamily\mdseries
-\ \ \ x := 3 \\
-\ \ \ ... \\
-\ \ \ x := {\textquotedbl}hello{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ x := 3 \\
+%-% \ \ \ ... \\
+%-% \ \ \ x := {\textquotedbl}hello{\textquotedbl}}
+\iconcode{
+\>x := 3 \\
+\>... \\
+\>x := "hello"\\
+}
+
 
 Type checking is performed during program execution. For example, in
 
-{\ttfamily\mdseries
-\ \ \ i := x + 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := x + 1}
+\iconline{
+\>i := x + 1
+}
+
 
 the value of x is checked to be sure that it is numeric. If it is not
 numeric, an attempt is made to convert it to a numeric type. If the
@@ -164,37 +183,54 @@ an error message.
 Various conversions are supported. For example, a number always can be
 converted to a string. Thus,
 
-{\ttfamily\mdseries
-\ \ \ write(*s)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(*s)}
+\iconline{
+\>write(*s)
+}
+
 
 \noindent automatically converts the integer returned by *s to a
 string for the purpose of output.
 
 There also are explicit type-conversion functions. For example,
 
-{\ttfamily\mdseries
-\ \ \ s1 := string(*s2)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s1 := string(*s2)}
+\iconline{
+\>s1 := string(*s2)
+}
+
 
 \noindent assigns to s1 a string corresponding to the size of s2.
 
 A string can be converted to a number if it has the syntax of a number. Thus,
 
-{\ttfamily\mdseries
-\ \ \ i := i + {\textquotedbl}20{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := i + {\textquotedbl}20{\textquotedbl}}
+\iconline{
+\>i := i + "20"
+}
+
 
 \noindent produces the same result as
 
-{\ttfamily\mdseries
-\ \ \ i := i + 20}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := i + 20}
+\iconline{
+\>i := i + 20
+}
 
 Augmented assignments are provided for binary operations such as the
 previous one, where assignment is made to the same variable that
 appears as the left argument of the operation. Therefore, the previous
 expression can be written more concisely as
 
-{\ttfamily\mdseries
-\ \ \ i +:= 20}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i +:= 20}
+\iconline{
+\>i +:= 20
+}
 
 
 Icon also has the concept of a numeric type, which can be either an
@@ -214,14 +250,22 @@ sequence of results.
 produce one result, as they do in most programming languages. For
 example,
 
-{\ttfamily\mdseries
-\ \ \ i + j}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i + j}
+\iconline{
+\>i + j
+}
+
 
 \noindent produces a single result, the sum of the values of i and
 j. However, a comparison operation such as
 
-{\ttfamily\mdseries
-\ \ \ i {\textgreater} j}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i {\textgreater} j}
+\iconline{
+\>i > j
+}
+
 
 \noindent produces a result (the value of j) if the value of i is
 greater than the value of j but does not produce a result if the value
@@ -232,8 +276,12 @@ while an expression that produces a result is said to
 \textit{succeed}. Success and failure are used in several control
 structures to control program flow. For example,
 
-{\ttfamily\mdseries
-\ \ \ if i {\textgreater} j then write(i) else write(j)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if i {\textgreater} j then write(i) else write(j)}
+\iconline{
+\>if i > j then write(i) else write(j)
+}
+
 
 \noindent writes the maximum of i and j. Note that comparison
 operations do not produce Boolean values and that Boolean values are
@@ -251,13 +299,17 @@ exist. An example is provided by the function find(s1, s2), which
 produces the position of s1 as a substring of s2 but fails if s1 does
 not occur in s2.  For example,
 
-{\ttfamily\mdseries
-\ \ \ find({\textquotedbl}it{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ find({\textquotedbl}it{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+\iconline{
+\>find("it", "They sit like bumps on a log.")
+}
+
 
 \noindent
 produces the value 7 (positions in strings are counted starting at 1). However,
 
-\iconcode{
+\iconline{
 \> find("at", "They sit like bumps on a log.")
 }
 
@@ -279,46 +331,69 @@ writes the lines from the file f until an end of file causes read to fail, which
 
 Another use of success and failure is illustrated by the operation
 
-{\ttfamily\mdseries
-\ \ \ {\textbackslash}expr}
+%-% {\ttfamily\mdseries
+%-% \ \ \ {\textbackslash}expr}
+\iconline{
+\>{\textbackslash}expr
+}
+
 
 
 which fails if \textit{expr }is null-valued but produces the result of \textit{expr }otherwise. Since variables have the
 null value initially, this operation may be used to determine whether a value has been assigned to an identifier, as
 in
 
-{\ttfamily\mdseries
-\ \ \ if {\textbackslash}x then write(x) else write({\textquotedbl}x is null{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if {\textbackslash}x then write(x) else write({\textquotedbl}x is null{\textquotedbl})}
+\iconline{
+\>if {\textbackslash}x then write(x) else write("x is null")
+}
 
 
 If an expression that is enclosed in another expression does not produce a result, there is no value for the enclosing
 expression, it cannot perform a computation, and it also produces no result. For example. In
 
-{\ttfamily\mdseries
-\ \ \ write(find({\textquotedbl}at{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl}))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(find({\textquotedbl}at{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl}))}
+\iconline{
+\>write(find("at", "They sit like bumps on a log."))
+}
+
 
 \noindent the evaluation of find fails, there is no argument for write, and no value is written.
 
 Similarly, in
 
-{\ttfamily\mdseries
-\ \ \ i := find({\textquotedbl}at{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := find({\textquotedbl}at{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+\iconline{
+\>i := find("at", "They sit like bumps on a log.")
+}
+
 
 \noindent the assignment is not performed and the value of i is not changed.
 
 
 This {\textquotedbl}inheritance{\textquotedbl} of failure allows computations to be expressed concisely. For example,
 
-{\ttfamily\mdseries
-\ \ \ while write(read(f))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ while write(read(f))}
+\iconline{
+\>while write(read(f))
+}
+
 
 \noindent writes the lines from the file f just as the previous loop
 (the do clause in while-do is optional).
 
 The expression
 
-{\ttfamily\mdseries
-\ \ \ not \textit{expr}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ not \textit{expr}}
+\iconline{
+\>not \textit{expr}
+}
+
 
 \noindent inverts success and failure. It fails if \textit{expr}
 succeeds, but it succeeds, producing the null value, if \textit{expr}
@@ -327,13 +402,21 @@ fails.
 Some expressions produce variables, while others only produce
 values. For example,
 
-{\ttfamily\mdseries
-\ \ \ i + j}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i + j}
+\iconline{
+\>i + j
+}
+
 
 \noindent produces a value, while
 
-{\ttfamily\mdseries
-\ \ \ i := 10}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := 10}
+\iconline{
+\>i := 10
+}
+
 
 \noindent produces its left-argument variable. The term
 \textit{result} is used to refer to a value or a variable. The term
@@ -342,14 +425,22 @@ expression --- either its result or failure.
 
 \textbf{Loops}. \ There are several looping control structures in Icon in addition to while-do. For example,
 
-{\ttfamily\mdseries
-\ \ \ until \textit{expr1 }do \textit{expr2}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ until \textit{expr1 }do \textit{expr2}}
+\iconline{
+\>until \textit{expr1 }do \textit{expr2}
+}
+
 
 \noindent evaluates \textit{expr2} repeatedly until \textit{expr1}
 succeeds. The control structure
 
-{\ttfamily\mdseries
-\ \ \ repeat expr}
+%-% {\ttfamily\mdseries
+%-% \ \ \ repeat expr}
+\iconline{
+\>repeat expr
+}
+
 
 \noindent simply evaluates \textit{expr} repeatedly, regardless of
 whether it succeeds or fails.
@@ -357,8 +448,12 @@ whether it succeeds or fails.
 A loop itself produces no result if it completes, and hence it fails
 if used in a conditional context. That is, when
 
-{\ttfamily\mdseries
-\ \ \ while \textit{expr1 }do \textit{expr2}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ while \textit{expr1 }do \textit{expr2}}
+\iconline{
+\>while \textit{expr1 }do \textit{expr2}
+}
+
 
 \noindent terminates, its outcome is failure. This failure ordinarily
 goes unnoticed, since loops usually are not used as arguments of other
@@ -366,8 +461,12 @@ expressions.
 
 The control structure
 
-{\ttfamily\mdseries
-\ \ \ break \textit{expr}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ break \textit{expr}}
+\iconline{
+\>break \textit{expr}
+}
+
 
 \noindent causes the immediate termination of the evaluation of the
 loop in which it appears, and control is transferred to the point
@@ -377,10 +476,16 @@ to the null value.
 
 An example of the use of break is:
 
-{\ttfamily\mdseries
-\ \ \ while line := read(f) do\newline
- \ \ \ \ \ if line == {\textquotedbl}end{\textquotedbl} then break\newline
- \ \ \ \ \ else write(line)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ while line := read(f) do\newline
+%-%  \ \ \ \ \ if line == {\textquotedbl}end{\textquotedbl} then break\newline
+%-%  \ \ \ \ \ else write(line)}
+\iconcode{
+\>while line := read(f) do\\
+\>\ \ if line == "end" then break\\
+\>\ \ else write(line)\\
+}
+
 
 Evaluation of the loop terminates if read fails or if the file f
 contains a line consisting of {\textquotedbl}end{\textquotedbl}.
@@ -401,8 +506,12 @@ The break and next expressions can occur only in loops, and they apply
 to the innermost loop in which they appear. The argument of break can
 be a break or next expression, however, so that, for example,
 
-{\ttfamily\mdseries
-\ \ \ break break next}
+%-% {\ttfamily\mdseries
+%-% \ \ \ break break next}
+\iconline{
+\>break break next
+}
+
 
 \noindent breaks out of two levels of loops and transfers control to
 the beginning of the loop in which they occur.
@@ -413,35 +522,58 @@ selecting one of several expressions to evaluate based on the value of
 a control expression, rather than its success or failure. The case
 expression has the form
 
-{\ttfamily\mdseries
-\ \ \ case \textit{expr} of \{\\
-\ \ \ \ \ \ case clauses \\
-\ \ \ \ \ \ ... \\
-\ \ \ \ \ \ \}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ case \textit{expr} of \{\\
+%-% \ \ \ \ \ \ case clauses \\
+%-% \ \ \ \ \ \ ... \\
+%-% \ \ \ \ \ \ \}}
+\iconcode{
+\>case \textit{expr} of \{\\
+\>\>case clauses \\
+\>\>... \\
+\>\>\}\\
+}
+
 
 The value of \textit{expr }is used to select one of the case
 clauses. A case clause has the form
 
-{\ttfamily\mdseries
-\textit{\ \ \ expr1 }: \textit{expr2}}
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ expr1 }: \textit{expr2}}
+\iconline{
+\textit{\ \ \ expr1 }: \textit{expr2}
+}
+
 
 \noindent where the value of \textit{expr} is compared to the value of
 \textit{expr1}, and \textit{expr2} is evaluated if the comparison
 succeeds. There is also a default case clause, which has the form
 
-{\ttfamily\mdseries
-\ \ \ default: expr3}
+%-% {\ttfamily\mdseries
+%-% \ \ \ default: expr3}
+\iconline{
+\>default: expr3
+}
+
 
 
 If no other case clause is selected, expr3 in the default clause is
 evaluated. An example is
 
-{\ttfamily\mdseries
-\ \ \ case line := read(f) of \{\newline
- \ \ \ \ \ {\textquotedbl}end{\textquotedbl}:\ \ \ \ write({\textquotedbl}*** end ***{\textquotedbl})\newline
- \ \ \ \ \ {\textquotedbl}comment{\textquotedbl}:\ \ write({\textquotedbl}*** comment ***{\textquotedbl})\newline
- \ \ \ \ \ default:\ \ write(line)\newline
- \ \ \ \ \ \}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ case line := read(f) of \{\newline
+%-%  \ \ \ \ \ {\textquotedbl}end{\textquotedbl}:\ \ \ \ write({\textquotedbl}*** end ***{\textquotedbl})\newline
+%-%  \ \ \ \ \ {\textquotedbl}comment{\textquotedbl}:\ \ write({\textquotedbl}*** comment ***{\textquotedbl})\newline
+%-%  \ \ \ \ \ default:\ \ write(line)\newline
+%-%  \ \ \ \ \ \}}
+\iconcode{
+\>case line := read(f) of \{\\
+\>\ \ "end":\ \ \ \ write("*** end ***")\\
+\>\ \ "comment":\ \ write("*** comment ***")\\
+\>\ \ default:\ \ write(line)\\
+\>\ \ \}\\
+}
+
 
 
 If the evaluation of the control clause fails, as for an end of file in this example, the entire case expression fails.
@@ -452,8 +584,12 @@ Otherwise, the outcome of the case expression is the outcome of evaluating the s
 produce a sequence of results. This occurs in situations in which
 there is more than one possible result of a computation. An example is
 
-{\ttfamily\mdseries
-\ \ \ find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+\iconline{
+\>find("e", "They sit like bumps on a log.")
+}
+
 
 \noindent in which both 3 and 13 are possible results.
 
@@ -468,16 +604,26 @@ result: \textit{iteration} and \textit{goal-directed evaluation}.
 
 Iteration is designated by the control structure
 
-{\ttfamily\mdseries
-\ \ \ every expr1 do expr2}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every expr1 do expr2}
+\iconline{
+\>every expr1 do expr2
+}
+
 
 \noindent in which expr1 is repeatedly resumed to produce its
 results. For each such result, expr2 is evaluated. For example,
 
-{\ttfamily\mdseries
-\ \ \ every i := find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})
-do\newline
- \ \ \ \ \ write(i)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every i := find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})
+%-% do\newline
+%-%  \ \ \ \ \ write(i)}
+\iconcode{
+\>every i := find("e", "They sit like bumps on a log.")\\
+\>do\\
+\>\ \ write(i)\\
+}
+
 
 \noindent writes 3 and 13.
 
@@ -486,8 +632,12 @@ by the generator are provided to the enclosing expression{}---the
 sequence of results is inherited. Consequently, the previous
 expression can be written more compactly as
 
-{\ttfamily\mdseries
-\ \ \ every write(find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl}))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every write(find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl}))}
+\iconline{
+\>every write(find("e", "They sit like bumps on a log."))
+}
+
 
 
 Unlike iteration, which resumes a generator repeatedly to produce all
@@ -500,10 +650,15 @@ Icon's expression-evaluation mechanism.
 
 Goal-directed evaluation is illustrated by
 
-{\ttfamily\mdseries
-\ \ \ if find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log{\textquotedbl})
-{\textgreater} 10\newline
- \ \ then write({\textquotedbl}found{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log{\textquotedbl})
+%-% {\textgreater} 10\newline
+%-%  \ \ then write({\textquotedbl}found{\textquotedbl})}
+\iconcode{
+\>if find("e", "They sit like bumps on a log") > 10\\
+\>then write("found")\\
+}
+
 
 The first result produced by \texttt{find()} is 3, and the comparison
 operation fails. Because of goal-directed evaluation, find is
@@ -511,10 +666,15 @@ automatically resumed to produce another value. Since this value, 13,
 is greater than 10, the comparison succeeds, and found is written. On
 the other hand, in
 
-{\ttfamily\mdseries
-\ \ \ if find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})
-{\textgreater} 20\newline
- \ \ then write({\textquotedbl}found{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})
+%-% {\textgreater} 20\newline
+%-%  \ \ then write({\textquotedbl}found{\textquotedbl})}
+\iconcode{
+\>if find("e", "They sit like bumps on a log.") > 20\\
+\>then write("found")\\
+}
+
 
 \noindent the comparison fails for 3 and 13. When find is resumed
 again, it does not produce another result, the control clause of
@@ -524,8 +684,12 @@ There are several expressions in Icon that are generators, including
 string analysis functions that are similar in nature to find. Another
 generator is
 
-{\ttfamily\mdseries
-\ \ \ i to j by k}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i to j by k}
+\iconline{
+\>i to j by k
+}
+
 
 which generates the integers from \texttt{i} to \texttt{j} by
 increments of \texttt{k}. If the \texttt{by} clause is omitted, the
@@ -549,22 +713,34 @@ one-character substrings of \texttt{x}, so that
 structures related to generators. The \textit{alternation} control
 structure,
 
-{\ttfamily\mdseries
-\ \ \ expr1 {\textbar} expr2}
+%-% {\ttfamily\mdseries
+%-% \ \ \ expr1 {\textbar} expr2}
+\iconline{
+\>expr1 | expr2
+}
+
 
 \noindent
 generates the results of expr1 followed by the results of expr2. For example,
 
-{\ttfamily\mdseries
-\ \ \ every write({\textquotedbl}hello{\textquotedbl} {\textbar} {\textquotedbl}howdy{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every write({\textquotedbl}hello{\textquotedbl} {\textbar} {\textquotedbl}howdy{\textquotedbl})}
+\iconline{
+\>every write("hello" | "howdy")
+}
+
 
 \noindent writes two lines, hello and howdy.
 
 Since alternation succeeds if either of its arguments succeeds, it can
 be used to produce the effect of logical disjunction. An example is
 
-{\ttfamily\mdseries
-\ \ \ if (i {\textgreater} j) {\textbar} (j {\textgreater} k) then expr}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if (i {\textgreater} j) {\textbar} (j {\textgreater} k) then expr}
+\iconline{
+\>if (i > j) | (j > k) then expr
+}
+
 
 \noindent
 which evaluates expr if i is greater than j or if j is greater than k.
@@ -572,8 +748,12 @@ which evaluates expr if i is greater than j or if j is greater than k.
 Logical conjunction follows as a natural consequence of goal-directed
 evaluation. The operation
 
-{\ttfamily\mdseries
-\textit{\ \ \ expr1 }\& \textit{expr2}}
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ expr1 }\& \textit{expr2}}
+\iconline{
+\textit{\ \ \ expr1 }\& \textit{expr2}
+}
+
 
 \noindent is similar to other binary operations, such as
 \textit{expr1} + \textit{expr2}, except that it performs no
@@ -581,28 +761,44 @@ computation. Instead, it produces the result of \textit{expr2},
 provided that both
 \textit{expr1} and \textit{expr2} succeed. For example,
 
-{\ttfamily\mdseries
-\ \ \ if (i {\textgreater} j) \& (j {\textgreater} k) then \textit{expr}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if (i {\textgreater} j) \& (j {\textgreater} k) then \textit{expr}}
+\iconline{
+\>if (i > j) \& (j > k) then \textit{expr}
+}
+
 
 \noindent
 evaluates \textit{expr} only if i is greater than j and j is greater than k.
 
 Repeated alternation,
 
-{\ttfamily\mdseries
-\ \ \ {\textbar}expr}
+%-% {\ttfamily\mdseries
+%-% \ \ \ {\textbar}expr}
+\iconline{
+\>|expr
+}
+
 
 \noindent
 generates the results of \textit{expr }repeatedly and is roughly equivalent to
 
-{\ttfamily\mdseries
-\textit{\ \ \ expr }{\textbar} \textit{expr }{\textbar} \textit{expr }{\textbar} ...}
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ expr }{\textbar} \textit{expr }{\textbar} \textit{expr }{\textbar} ...}
+\iconline{
+\textit{\ \ \ expr }| \textit{expr }| \textit{expr }| ...
+}
+
 
 However, if \textit{expr} fails, the repeated alternation control
 structure stops generating results. For example,
 
-{\ttfamily\mdseries
-\ \ \ {\textbar}read(f)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ {\textbar}read(f)}
+\iconline{
+\>|read(f)
+}
+
 
 \noindent generates the lines from the file f (one line for each
 repetition of the alternation) but stops when read(f) fails.
@@ -610,14 +806,22 @@ repetition of the alternation) but stops when read(f) fails.
 Note that a generator may be capable of producing an infinite number
 of results. For example,
 
-{\ttfamily\mdseries
-\ \ \ {\textbar}(1 to 3)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ {\textbar}(1 to 3)}
+\iconline{
+\>|(1 to 3)
+}
+
 
 \noindent can produce 1, 2, 3, 1, 2, 3, 1, 2, 3,\ \ However, only as
 many results as are required by context are actually produced. Thus,
 
-{\ttfamily\mdseries
-\ \ \ i := {\textbar} (1 to 3)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := {\textbar} (1 to 3)}
+\iconline{
+\>i := | (1 to 3)
+}
+
 
 \noindent only assigns the value 1 to i, since there is no context to
 cause the repeated alternation control structure to be resumed for a
@@ -625,14 +829,22 @@ second result.
 
 The \textit{limitation }control structure
 
-{\ttfamily\mdseries
-\textit{\ \ \ expr1 }{\textbackslash} \textit{expr2}}
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ expr1 }{\textbackslash} \textit{expr2}}
+\iconline{
+\textit{\ \ \ expr1 }{\textbackslash} \textit{expr2}
+}
+
 
 \noindent
 limits \textit{expr1 }to at most \textit{expr2 }results. Consequently,
 
-{\ttfamily\mdseries
-\ \ \ {\textbar} (1 to 3) {\textbackslash} 5}
+%-% {\ttfamily\mdseries
+%-% \ \ \ {\textbar} (1 to 3) {\textbackslash} 5}
+\iconline{
+\>| (1 to 3) {\textbackslash} 5
+}
+
 
 is only capable of producing 1, 2, 3, 1, 2.
 
@@ -643,8 +855,12 @@ results is in last-in, first-out order. The result is
 {\textquotedbl}cross-product{\textquotedbl} generation of results in
 expressions that contain several generators. For example,
 
-{\ttfamily\mdseries
-\ \ \ every write((10 to 30 by 10) + (1 to 3))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every write((10 to 30 by 10) + (1 to 3))}
+\iconline{
+\>every write((10 to 30 by 10) + (1 to 3))
+}
+
 
 
 \ writes\ \ 11, 12, 13, 21, 22, 23, 31, 32, 33.
@@ -654,16 +870,25 @@ expressions that contain several generators. For example,
 control backtracking to obtain additional results from expressions
 that have previously produced results, as in
 
-{\ttfamily\mdseries
-\ \ \ if find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})
-{\textgreater} 10\newline
- \ \ then write({\textquotedbl}found{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if find({\textquotedbl}e{\textquotedbl}, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})
+%-% {\textgreater} 10\newline
+%-%  \ \ then write({\textquotedbl}found{\textquotedbl})}
+\iconcode{
+\>if find("e", "They sit like bumps on a log.") > 10\\
+\>then write("found")\\
+}
+
 
 Control backtracking is limited by a number of syntactic
 constructions. For example, in
 
-{\ttfamily\mdseries
-\ \ \ if \textit{expr1 }then \textit{expr2 }else \textit{expr3}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if \textit{expr1 }then \textit{expr2 }else \textit{expr3}}
+\iconline{
+\>if \textit{expr1 }then \textit{expr2 }else \textit{expr3}
+}
+
 
 \noindent if \textit{expr1} succeeds, but \textit{expr2} fails,
 \textit{expr1} is not resumed for another result. (If it were, the
@@ -673,9 +898,14 @@ expression is called a \textit{bounded expression}. The control
 clauses of loops also are bounded, as are the expressions within
 compound expressions:
 
-{\ttfamily\mdseries
-\ \ \ \{ \textit{expr}\textit{\TextSubscript{1}}\textit{; expr}\textit{\TextSubscript{2}}\textit{;
-expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \{ \textit{expr}\textit{\TextSubscript{1}}\textit{; expr}\textit{\TextSubscript{2}}\textit{;
+%-% expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}}
+\iconline{ % this one was fixed up manually ... it's just too weird for the automatic convertor
+\>\{ \textit{expr}\textit{\TextSubscript{1}}\textit{; expr}\textit{\TextSubscript{2}}\textit{;
+expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}\\
+}
+
 
 These expressions are evaluated in sequence, but once the evaluation
 of one is complete (whether it succeeds or fails), and the evaluation
@@ -686,17 +916,26 @@ bounded, however.
 Except in such specific situations, expressions are not bounded. For
 example, in
 
-{\ttfamily\mdseries
-\ \ \ if \textit{expr}\textit{\TextSubscript{1}}\textit{ }then \textit{expr}\textit{\TextSubscript{2}}\textit{ }else
-\textit{expr}\textit{\TextSubscript{3}}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ if \textit{expr}\textit{\TextSubscript{1}}\textit{ }then \textit{expr}\textit{\TextSubscript{2}}\textit{ }else
+%-% \textit{expr}\textit{\TextSubscript{3}}}
+\iconline{
+\>if \textit{expr}\textit{\TextSubscript{1}}\textit{ }then \textit{expr}\textit{\TextSubscript{2}}\textit{ }else
+\textit{expr}\textit{\TextSubscript{3}}\\
+}
+
 
 \noindent neither \textit{expr}\textit{\TextSubscript{2}} nor
 \textit{expr}\textit{\TextSubscript{3}} is bounded. Since Icon control
 structures are expressions that may return results, it is possible to
 write expressions such as
 
-{\ttfamily\mdseries
-\ \ \ every write(if i {\textgreater} j then j to i else i to j)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every write(if i {\textgreater} j then j to i else i to j)}
+\iconline{
+\>every write(if i > j then j to i else i to j)
+}
+
 
 \noindent
 which writes the integers from i to j in ascending sequence.
@@ -706,8 +945,12 @@ which writes the integers from i to j in ascending sequence.
 fundamental part of expression evaluation in Icon, data backtracking
 is not performed except in a few specific operations. For example, in
 
-{\ttfamily\mdseries
-\ \ \ (i := 3) \& read(f)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ (i := 3) \& read(f)}
+\iconline{
+\>(i := 3) \& read(f)
+}
+
 
 \noindent the value \texttt{3} is assigned to \texttt{i}. Even if
 \texttt{read(f)} fails, the former value of \texttt{i} is not
@@ -716,14 +959,22 @@ restored.
 There are, however, specific operations in which data backtracking is
 performed. For example, the \textit{reversible assignment} operation
 
-{\ttfamily\mdseries
-\ \ \ x {\textless}- y}
+%-% {\ttfamily\mdseries
+%-% \ \ \ x {\textless}- y}
+\iconline{
+\>x <- y
+}
+
 
 \noindent assigns the value of y to x, but it restores the former
 value of x if control backtracking into this expression occurs.  Thus,
 
-{\ttfamily\mdseries
-\ \ \ (i {\textless}- 3) \& read(f)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ (i {\textless}- 3) \& read(f)}
+\iconline{
+\>(i <- 3) \& read(f)
+}
+
 
 \noindent
 assigns 3 to i but restores the previous value of i if \texttt{read(f)} fails.
@@ -742,8 +993,12 @@ implemented.
 \textbf{Csets}. Csets are represented literally by surrounding their
 characters by single quotation marks. For example,
 
-{\ttfamily\mdseries
-\ \ \ vowels := 'aeiouAEIOU'}
+%-% {\ttfamily\mdseries
+%-% \ \ \ vowels := 'aeiouAEIOU'}
+\iconline{
+\>vowels := 'aeiouAEIOU'
+}
+
 
 \noindent assigns a cset of 10 characters to vowels.
 
@@ -758,8 +1013,12 @@ analysis. For example, the function \texttt{upto(c, s)} is analogous
 to \texttt{find(s1, s2)}, except that it generates the positions at
 which any character of \texttt{c} occurs in \texttt{s}. Thus,
 
-{\ttfamily\mdseries
-\ \ \ upto(vowels, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ upto(vowels, {\textquotedbl}They sit like bumps on a log.{\textquotedbl})}
+\iconline{
+\>upto(vowels, "They sit like bumps on a log.")
+}
+
 
 
 \noindent is capable of producing 3, 7, 11, 13, 16, 21, 24, and 27.
@@ -771,8 +1030,12 @@ quotation marks. The empty string, which contains no characters, is
 given by \texttt{{\textquotedbl}{\textquotedbl}}. The size of a string
 is given by \texttt{*s}. For example, if
 
-{\ttfamily\mdseries
-\ \ \ command := {\textquotedbl}Sit still!{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ command := {\textquotedbl}Sit still!{\textquotedbl}}
+\iconline{
+\>command := "Sit still!"
+}
+
 
 \noindent then the value of \texttt{*command} is 10. The value of
 \texttt{*{\textquotedbl}{\textquotedbl}} is 0. Space for strings is
@@ -782,14 +1045,22 @@ string.
 There are several operations that construct strings. The principal one
 is concatenation, denoted by
 
-{\ttfamily\mdseries
-\ \ \ s1 {\textbar}{\textbar} s2}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s1 {\textbar}{\textbar} s2}
+\iconline{
+\>s1 || s2
+}
+
 
 The function \texttt{repl(s, i)} produces the result of concatenating
 s i times. Thus,
 
-{\ttfamily\mdseries
-\ \ \ write(repl({\textquotedbl}*!{\textquotedbl},3))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(repl({\textquotedbl}*!{\textquotedbl},3))}
+\iconline{
+\>write(repl("*!",3))
+}
+
 
 \noindent writes \texttt{*!*!*!}.
 
@@ -808,16 +1079,24 @@ and ending positions of the desired substring.  Positions in strings
 are between characters, and the position before the first character of
 a string is numbered 1. For example,
 
-{\ttfamily\mdseries
-\ \ \ verb := command[1:4]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ verb := command[1:4]}
+\iconline{
+\>verb := command[1:4]
+}
+
 
 \noindent assigns the string
 \texttt{{\textquotedbl}Sit{\textquotedbl}} to
 \texttt{verb}. Substrings also can be specified by the beginning
 position and a length, as in
 
-{\ttfamily\mdseries
-\ \ \ verb := command[1+:3]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ verb := command[1+:3]}
+\iconline{
+\>verb := command[1+:3]
+}
+
 
 If the length of a substring is 1, only the first position need be
 given, so that the value of \texttt{command[2]} is
@@ -826,8 +1105,12 @@ given, so that the value of \texttt{command[2]} is
 Assignment can be made to a subscripted string to produce a new
 string. For example,
 
-{\ttfamily\mdseries
-\ \ \ command[1:4] := {\textquotedbl}Remain{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ command[1:4] := {\textquotedbl}Remain{\textquotedbl}}
+\iconline{
+\>command[1:4] := "Remain"
+}
+
 
 \noindent changes the value of command to
 \texttt{{\textquotedbl}Remain still!{\textquotedbl}}.
@@ -836,14 +1119,22 @@ String operations are applicative; no operation on a string in Icon
 changes the characters in it. The preceding example may appear to
 contradict this, but in fact
 
-{\ttfamily\mdseries
-\ \ \ command[1:4] := {\textquotedbl}Remain{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ command[1:4] := {\textquotedbl}Remain{\textquotedbl}}
+\iconline{
+\>command[1:4] := "Remain"
+}
+
 
 \noindent
 is an abbreviation for
 
-{\ttfamily\mdseries
-\ \ \ command := {\textquotedbl}Remain{\textquotedbl} {\textbar}{\textbar} command[5:11]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ command := {\textquotedbl}Remain{\textquotedbl} {\textbar}{\textbar} command[5:11]}
+\iconline{
+\>command := "Remain" || command[5:11]
+}
+
 
 Thus, a new string is constructed and then assigned to command.
 
@@ -866,8 +1157,12 @@ still!{\textquotedbl}},
 
 The subscript positions can be given in either order. Thus,
 
-{\ttfamily\mdseries
-\ \ \ command[11:5]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ command[11:5]}
+\iconline{
+\>command[11:5]
+}
+
 
 
 \noindent produces the same result as
@@ -880,8 +1175,12 @@ String-analysis functions like find and upto have optional third and
 fourth arguments that allow their range to be restricted to a
 particular portion of a string. For example,
 
-{\ttfamily\mdseries
-\ \ \ upto(vowels, {\textquotedbl}They sit like bumps on a log.{\textquotedbl}, 10, 20)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ upto(vowels, {\textquotedbl}They sit like bumps on a log.{\textquotedbl}, 10, 20)}
+\iconline{
+\>upto(vowels, "They sit like bumps on a log.", 10, 20)
+}
+
 
 \noindent only produces positions of vowels between positions 10 and
 20 of its second argument: 11, 13, and 16. If these arguments are
@@ -895,23 +1194,35 @@ obtained from a character substitution on s1. Each character of s1
 that occurs in s2 is replaced by the corresponding character in
 s3. For example,
 
-{\ttfamily\mdseries
-\ \ \ write(map({\textquotedbl}Remain still!{\textquotedbl}, {\textquotedbl}aeiou{\textquotedbl},
-{\textquotedbl}*****{\textquotedbl}))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(map({\textquotedbl}Remain still!{\textquotedbl}, {\textquotedbl}aeiou{\textquotedbl},
+%-% {\textquotedbl}*****{\textquotedbl}))}
+\iconline{
+\>write(map("Remain still!", "aeiou", "*****"))
+}
+
 
 \noindent writes R*m**n St*ll!. Characters in s1 that do not appear in
 s2 are unchanged, as this example shows. If a character occurs more
 than once in s2, its right-most correspondence in s3
 applies. Consequently,
 
-{\ttfamily\mdseries
-\ \ \ s2 := \&lcase {\textbar}{\textbar} \&ucase {\textbar}{\textbar} {\textquotedbl}aeiou{\textquotedbl}\newline
- \ \ s3 := repl({\textquotedbl}{\textbar}{\textquotedbl},26) {\textbar}{\textbar}
-repl({\textquotedbl}u{\textquotedbl},26) {\textbar}{\textbar} {\textquotedbl}*****{\textquotedbl}\newline
- \ \ write(map({\textquotedbl}Remain still!{\textquotedbl}, s2, s3))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s2 := \&lcase {\textbar}{\textbar} \&ucase {\textbar}{\textbar} {\textquotedbl}aeiou{\textquotedbl}\newline
+%-%  \ \ s3 := repl({\textquotedbl}{\textbar}{\textquotedbl},26) {\textbar}{\textbar}
+%-% repl({\textquotedbl}u{\textquotedbl},26) {\textbar}{\textbar} {\textquotedbl}*****{\textquotedbl}\newline
+%-%  \ \ write(map({\textquotedbl}Remain still!{\textquotedbl}, s2, s3))}
+\iconcode{
+\>s2 := \&lcase || \&ucase || "aeiou"\\
+\>s3 := repl("|",26) ||\\
+\>repl("u",26) || "*****"\\
+\>write(map("Remain still!", s2, s3))
+}
 
 \noindent
-writes u*{\textbar}**{\textbar} {\textbar}{\textbar}*{\textbar}{\textbar}!.
+%-% writes u*{\textbar}**{\textbar} {\textbar}{\textbar}*{\textbar}{\textbar}!.
+writes \verb+ u*|**| ||*||! +.
+
 
 {\sffamily\bfseries
 2.1.4 String Scanning}
@@ -925,8 +1236,12 @@ subject is maintained automatically.
 
 A string-scanning expression has the form
 
-{\ttfamily\mdseries
-\ \ \ expr1 ? expr2}
+%-% {\ttfamily\mdseries
+%-% \ \ \ expr1 ? expr2}
+\iconline{
+\>expr1 ? expr2
+}
+
 
 \noindent in which the evaluation of \textit{expr1} provides the
 subject. The position in the subject is 1 initially. The expression
@@ -953,8 +1268,12 @@ matching the remainder of the subject.
 
 An example of string scanning is
 
-{\ttfamily\mdseries
-\ \ \ line ? while write(move(2))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ line ? while write(move(2))}
+\iconline{
+\>line ? while write(move(2))
+}
+
 
 \noindent which writes successive two-character substrings of line,
 stopping when there are not two characters remaining.
@@ -964,8 +1283,12 @@ functions such as find and upto are omitted; the functions apply to
 the subject at the current position. Therefore, such functions can be
 used to provide arguments for matching functions. An example is
 
-{\ttfamily\mdseries
-\ \ \ line ? write(tab(find({\textquotedbl}::={\textquotedbl})))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ line ? write(tab(find({\textquotedbl}::={\textquotedbl})))}
+\iconline{
+\>line ? write(tab(find("::=")))
+}
+
 
 \noindent which writes the initial portion of line up to an occurrence
 of the string {\textquotedbl}::={\textquotedbl}.
@@ -975,9 +1298,14 @@ subject to the value that it had before the matching function was
 evaluated. For example, suppose that line contains the substring
 {\textquotedbl}::={\textquotedbl}. Then
 
-{\ttfamily\mdseries
-\ \ \ line ? \\
-\ \ \ \ \ \ ((tab(find({\textquotedbl}::={\textquotedbl}) + 3)) \& write(move(10)) {\textbar} write(tab(0)))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ line ? \\
+%-% \ \ \ \ \ \ ((tab(find({\textquotedbl}::={\textquotedbl}) + 3)) \& write(move(10)) {\textbar} write(tab(0)))}
+\iconcode{
+\>line ? \\
+\>\>((tab(find("::=") + 3)) \& write(move(10)) | write(tab(0)))\\
+}
+
 
 \noindent writes the 10 characters after
 {\textquotedbl}::={\textquotedbl}, provided there are 10 more
@@ -994,8 +1322,12 @@ before they were evaluated.
 The subject and position are directly accessible as the values of the
 keywords \&subject and \&pos, respectively. For example,
 
-{\ttfamily\mdseries
-\ \ \ \&subject := {\textquotedbl}Hello{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \&subject := {\textquotedbl}Hello{\textquotedbl}}
+\iconline{
+\>\&subject := "Hello"
+}
+
 
 \noindent assigns the string {\textquotedbl}Hello{\textquotedbl} to
 the subject. Whenever a value is assigned to the subject, \&pos is set
@@ -1012,20 +1344,32 @@ completes. Consequently, scanning expressions can be nested.
 A list is a linear aggregate of values
 ({\textquotedbl}elements{\textquotedbl}). For example,
 
-{\ttfamily\mdseries
-\ \ \ cities := [{\textquotedbl}Portland{\textquotedbl}, {\textquotedbl}Toledo{\textquotedbl},
-{\textquotedbl}Tampa{\textquotedbl}]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ cities := [{\textquotedbl}Portland{\textquotedbl}, {\textquotedbl}Toledo{\textquotedbl},
+%-% {\textquotedbl}Tampa{\textquotedbl}]}
+\iconline{
+\>cities := ["Portland", "Toledo", "Tampa"]
+}
+
 
 \noindent
 assigns a list of three strings to cities. Lists can be heterogeneous, as in
 
-{\ttfamily\mdseries
-\ \ \ language := [{\textquotedbl}Icon{\textquotedbl}, 1978, {\textquotedbl}The University of Arizona{\textquotedbl}]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ language := [{\textquotedbl}Icon{\textquotedbl}, 1978, {\textquotedbl}The University of Arizona{\textquotedbl}]}
+\iconline{
+\>language := ["Icon", 1978, "The University of Arizona"]
+}
 
-An empty list, containing no elements, is produced by []. The function
 
-{\ttfamily\mdseries
-\ \ \ list(i, x)}
+An empty list, containing no elements, is produced by {\tt [ ]}. The function
+
+%-% {\ttfamily\mdseries
+%-% \ \ \ list(i, x)}
+\iconline{
+\>list(i, x)
+}
+
 
 \noindent produces a list of i elements, each of which has the value
 of x. The size operation *x also applies to lists. The value of
@@ -1034,21 +1378,33 @@ of x. The size operation *x also applies to lists. The value of
 An element of a list is referenced by a subscripting expression that
 has the same form as the one for strings. For example,
 
-{\ttfamily\mdseries
-\ \ \ cities[3] := {\textquotedbl}Miami{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ cities[3] := {\textquotedbl}Miami{\textquotedbl}}
+\iconline{
+\>cities[3] := "Miami"
+}
+
 
 \noindent changes the value of cities to
 
-{\ttfamily\mdseries
-\ \ \ [{\textquotedbl}Portland{\textquotedbl}, {\textquotedbl}Toledo{\textquotedbl},
-{\textquotedbl}Miami{\textquotedbl}]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ [{\textquotedbl}Portland{\textquotedbl}, {\textquotedbl}Toledo{\textquotedbl},
+%-% {\textquotedbl}Miami{\textquotedbl}]}
+\iconline{
+\>["Portland", "Toledo", "Miami"]
+}
+
 
 The function sort (a) produces a sorted copy of a. For example,
 sort(cities) produces
 
-{\ttfamily\mdseries
-\ \ \ [{\textquotedbl}Miami{\textquotedbl}, {\textquotedbl}Portland{\textquotedbl},
-{\textquotedbl}Toledo{\textquotedbl}]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ [{\textquotedbl}Miami{\textquotedbl}, {\textquotedbl}Portland{\textquotedbl},
+%-% {\textquotedbl}Toledo{\textquotedbl}]}
+\iconline{
+\>["Miami", "Portland", "Toledo"]
+}
+
 
 List operations, unlike string operations, are not applicative. While
 assignment to a substring is an abbreviation for concatenation,
@@ -1059,39 +1415,85 @@ A list value is a pointer to a structure that contains the elements of
 the list. Assignment of a list value copies this pointer, but it does
 not copy the structure. Consequently, in
 
-{\ttfamily\mdseries
-\ \ \ states := [{\textquotedbl}Nevada{\textquotedbl}, {\textquotedbl}Texas{\textquotedbl},
-{\textquotedbl}Maine{\textquotedbl}, {\textquotedbl}Georgia{\textquotedbl}]\newline
- \ \ slist := states}
+%-% {\ttfamily\mdseries
+%-% \ \ \ states := [{\textquotedbl}Nevada{\textquotedbl}, {\textquotedbl}Texas{\textquotedbl},
+%-% {\textquotedbl}Maine{\textquotedbl}, {\textquotedbl}Georgia{\textquotedbl}]\newline
+%-%  \ \ slist := states}
+\iconcode{
+\>states := ["Nevada", "Texas", "Maine", "Georgia"]\\
+\>slist := states\\
+}
+
 
 \noindent
 both states and slist point to the \textit{same} structure. Because of this,
 
-{\ttfamily\mdseries
-\ \ \ states[2] := {\textquotedbl}Arkansas{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ states[2] := {\textquotedbl}Arkansas{\textquotedbl}}
+\iconline{
+\>states[2] := "Arkansas"
+}
+
 
 \noindent
 changes the second element of slist as well as the second element of states.
 
 The elements of a list may be of any type, including lists, as in
 
-{\ttfamily\mdseries
-\ \ \ tree := [{\textquotedbl}a{\textquotedbl}, [{\textquotedbl}b{\textquotedbl}, [{\textquotedbl}c{\textquotedbl}],
-[{\textquotedbl}d{\textquotedbl}]]]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ tree := [{\textquotedbl}a{\textquotedbl}, [{\textquotedbl}b{\textquotedbl}, [{\textquotedbl}c{\textquotedbl}],
+%-% [{\textquotedbl}d{\textquotedbl}]]]}
+\iconline{
+\>tree := ["a", ["b", ["c"], ["d"]]]
+}
+
 
 \noindent which can be depicted as
 
-\ \  \includegraphics[width=1.8161in,height=1.7134in]{ib-img/ib-img002.jpg} 
+%--%\ \  \includegraphics[width=1.8161in,height=1.7134in]{ib-img/ib-img002.jpg}
+\hspace{0.5in}
+\begin{picture}(130,130)(0,-5)
+\put(10,10){\circle{20}}
+\put(10,10){\makebox(0,0){c}}
+\put(110,10){\circle{20}}
+\put(110,10){\makebox(0,0){d}}
+\put(10,110){\circle{20}}
+\put(10,110){\makebox(0,0){a}}
+\put(60,60){\circle{20}}
+\put(60,60){\makebox(0,0){b}}
+\put(17,103){\vector(1,-1){36}}
+\put(67,53){\vector(1,-1){36}}
+\put(54,52){\vector(-1,-1){36}}
+\end{picture}
 
 Structures also can be used to represent loops, as in
 
-{\ttfamily\mdseries
-\ \ \ graph := [{\textquotedbl}a{\textquotedbl}, {\textquotedbl}{\textquotedbl}]\newline
- \ \ graph[2] := graph}
+%-% {\ttfamily\mdseries
+%-% \ \ \ graph := [{\textquotedbl}a{\textquotedbl}, {\textquotedbl}{\textquotedbl}]\newline
+%-% \ \ \ graph[2] := graph}
+\iconcode{
+\>graph := ["a", ""]\\
+\>graph[2] := graph\\
+}
+
 
 \noindent which can be depicted as
 
-\ \  \includegraphics[width=1.4193in,height=0.5992in]{ib-img/ib-img003.jpg} 
+%--%\ \  \includegraphics[width=1.4193in,height=0.5992in]{ib-img/ib-img003.jpg} 
+\hspace{0.5in}
+\begin{picture}(100,50)(20, -10)
+\put(50,10){\circle{20}}
+\put(50,10){\makebox(0,0){a}}
+\put(60,10){\line(1,0){20}}
+\put(80,12){\oval(4,4)[br]}
+\put(82,12){\line(0,1){16}}
+\put(80,28){\oval(4,4)[tr]}
+\put(20,30){\line(1,0){60}}
+\put(20,28){\oval(4,4)[tl]}
+\put(18,12){\line(0,1){16}}
+\put(20,12){\oval(4,4)[bl]}
+\put(20,10){\vector(1,0){20}}
+\end{picture}
 
 Lists are not fixed in size. Elements can be added to them or removed
 from them at their ends by queue and stack functions.
@@ -1101,15 +1503,25 @@ right end of the increasing its size by one.  Similarly,
 \texttt{push(a, x)} adds the value of \texttt{x} to the left end of
 \texttt{a}. For example,
 
-{\ttfamily\mdseries
-\ \ \ lines := []\newline
- \ \ while put(lines, read(f))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ lines := []\newline
+%-% \ \ \ while put(lines, read(f))}
+\iconcode{
+\>lines := []\\
+\>while put(lines, read(f))\\
+}
+
 
 \noindent constructs a list of the lines from the file f. Conversely,
 
-{\ttfamily\mdseries
-\ \ \ lines := []\newline
- \ \ while push(lines, read(f))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ lines := []\newline
+%-% \ \ \ while push(lines, read(f))}
+\iconcode{
+\>lines := []\\
+\>while push(lines, read(f))\\
+}
+
 
 \noindent constructs a list of lines in reverse order.
 
@@ -1117,10 +1529,16 @@ The functions \texttt{pop(a)} and \texttt{get(a)} are the same. They
 both remove an element from the left end of a and return it as the
 value of the function call, but they fail if a is empty. Consequently,
 
-{\ttfamily\mdseries
-\ \ \ lines := []\newline
- \ \ while push(lines, read(f))\newline
- \ \ while write(pop(lines))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ lines := []\newline
+%-% \ \ \ while push(lines, read(f))\newline
+%-% \ \ \ while write(pop(lines))}
+\iconcode{
+\>lines := []\\
+\>while push(lines, read(f))\\
+\>while write(pop(lines))\\
+}
+
 
 \noindent writes out the lines of \texttt{f} in reverse order. The
 function \texttt{pull(a)} is similar, but it removes an element from
@@ -1128,16 +1546,24 @@ the right end of \texttt{a}.
 
 Other operations on lists include concatenation, which is denoted by
 
-{\ttfamily\mdseries
-\ \ \ a1 {\textbar}{\textbar}{\textbar} a2}
+%-% {\ttfamily\mdseries
+%-% \ \ \ a1 {\textbar}{\textbar}{\textbar} a2}
+\iconline{
+\>a1 ||| a2
+}
+
 
 \noindent where \texttt{a1} and \texttt{a2} are lists. There is no
 automatic conversion of other types to lists.
 
 List sectioning is denoted by
 
-{\ttfamily
-\ \ \ a[i:j]}
+%-% {\ttfamily
+%-% \ \ \ a[i:j]}
+\iconline{
+\>a[i:j]
+}
+
 
 The result is a \textit{new} list containing values \texttt{i} through
 \texttt{j} of \texttt{a}.
@@ -1153,31 +1579,47 @@ contain only characters, sets are collections of Icon values that can
 be of any type. A set is constructed from a list by
 \texttt{set(a)}. For example,
 
-{\ttfamily\mdseries
-\ \ \ states := set([{\textquotedbl}Virginia{\textquotedbl}, {\textquotedbl}Rhode Island{\textquotedbl},
-{\textquotedbl}Kansas{\textquotedbl}, \ \ \ \ \ \ \ \  \ {\textquotedbl}Illinois{\textquotedbl}])}
+%-% {\ttfamily\mdseries
+%-% \ \ \ states := set([{\textquotedbl}Virginia{\textquotedbl}, {\textquotedbl}Rhode Island{\textquotedbl},
+%-% {\textquotedbl}Kansas{\textquotedbl}, \ \ \ \ \ \ \ \  \ {\textquotedbl}Illinois{\textquotedbl}])}
+\iconline{
+\>states := set(["Virginia", "Rhode Island", "Kansas",  "Illinois"])
+}
+
 
 \noindent
 assigns a set of four elements to \texttt{states}.
 
 The operation
 
-{\ttfamily\mdseries
-\ \ \ member(s, x)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ member(s, x)}
+\iconline{
+\>member(s, x)
+}
+
 
 \noindent
 succeeds if the value of \texttt{x} is a member of \texttt{s} but
 fails otherwise. The operation
 
-{\ttfamily\mdseries
-\ \ \ insert(s, x)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ insert(s, x)}
+\iconline{
+\>insert(s, x)
+}
+
 
 \noindent
 adds the value of \texttt{x} to \texttt{s} if it is not already a
 member of \texttt{s}, while
 
-{\ttfamily
-\ \ \ delete(s, x)}
+%-% {\ttfamily
+%-% \ \ \ delete(s, x)}
+\iconline{
+\>delete(s, x)
+}
+
 
 \noindent
 deletes the value of \texttt{x} from \texttt{s}. The operations of
@@ -1186,8 +1628,12 @@ union, intersection, and difference for sets also are provided.
 Like other structures, sets can be heterogeneous. A set can even be a
 member of itself, as in
 
-{\ttfamily\mdseries
-\ \ \ insert(s, s)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ insert(s, s)}
+\iconline{
+\>insert(s, s)
+}
+
 
 There is no contradiction here, since a set value is a pointer to the
 structure for the set.
@@ -1202,8 +1648,12 @@ be assigned to make up a pair called a table element.
 
 A table is created by
 
-{\ttfamily\mdseries
-\ \ \ table(x)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ table(x)}
+\iconline{
+\>table(x)
+}
+
 
 
 Tables are empty initially. The value of x is an assigned default
@@ -1211,21 +1661,33 @@ value that is produced if the table is subscripted with an entry value
 to which no value has been assigned (that is, for an element that is
 not in the table). For example,
 
-{\ttfamily\mdseries
-\ \ \ states := table(0)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ states := table(0)}
+\iconline{
+\>states := table(0)
+}
+
 
 \noindent assigns to states a table with a default value of 0. An
 element can be added to states by an assignment such as
 
-{\ttfamily\mdseries
-\ \ \ states[{\textquotedbl}Oregon{\textquotedbl}] := 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ states[{\textquotedbl}Oregon{\textquotedbl}] := 1}
+\iconline{
+\>states["Oregon"] := 1
+}
+
 
 \noindent which adds a table element for
 \texttt{{\textquotedbl}Oregon{\textquotedbl}} with the value
 \texttt{1} to \texttt{states}. On the other hand,
 
-{\ttfamily\mdseries
-\ \ \ write(states [{\textquotedbl}Utah{\textquotedbl}])}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(states [{\textquotedbl}Utah{\textquotedbl}])}
+\iconline{
+\>write(states ["Utah"])
+}
+
 
 \noindent writes \texttt{0}, the default value, if there is no element
 in the table for \texttt{{\textquotedbl}Utah{\textquotedbl}}.
@@ -1241,8 +1703,12 @@ A record is an aggregate of values that is referenced by named
 fields. Each record type has a separate name. A record type and the
 names of its fields are given in a declaration. For example,
 
-{\ttfamily\mdseries
-\ \ \ record rational(numerator, denominator)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ record rational(numerator, denominator)}
+\iconline{
+\>record rational(numerator, denominator)
+}
+
 
 \noindent
 declares a record of type rational with two fields: numerator and denominator.
@@ -1251,16 +1717,24 @@ An instance of a record is created by calling a record-constructor
 function corresponding to the form of the declaration for the record
 type. Thus,
 
-{\ttfamily\mdseries
-\ \ \ r := rational(3,5)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ r := rational(3,5)}
+\iconline{
+\>r := rational(3,5)
+}
+
 
 \noindent
 assigns to \texttt{r} a record of type rational with a
 numerator field of 3 and a denominator field of 5. Fields are
 referenced by name, as in
 
-{\ttfamily\mdseries
-\ \ \ write(r.numerator)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(r.numerator)}
+\iconline{
+\>write(r.numerator)
+}
+
 
 \noindent which writes 3. Fields can also be referred to by position;
 \texttt{r[1]} is equivalent to \texttt{r.numerator}.
@@ -1278,8 +1752,12 @@ standard input, standard output, and standard error output files are
 the values of \texttt{\&input}, \texttt{\&output}, and
 \texttt{\&errout}, respectively. The function
 
-{\ttfamily\mdseries
-\ \ \ open(s1,s2)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ open(s1,s2)}
+\iconline{
+\>open(s1,s2)
+}
+
 
 \noindent opens the file whose name is \texttt{s1} according to
 options given by \texttt{s2} and produces a value of type file.
@@ -1288,8 +1766,12 @@ opening for reading and \texttt{{\textquotedbl}w{\textquotedbl}} for
 opening for writing. The default is
 \texttt{{\textquotedbl}r{\textquotedbl}}. For example,
 
-{\ttfamily\mdseries
-\ \ \ log := open({\textquotedbl}grade.log{\textquotedbl}, {\textquotedbl}w{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ log := open({\textquotedbl}grade.log{\textquotedbl}, {\textquotedbl}w{\textquotedbl})}
+\iconline{
+\>log := open("grade.log", "w")
+}
+
 
 \noindent assigns a value of type file to log, corresponding to the
 data file grade.log, which is opened for writing. The function open
@@ -1302,22 +1784,34 @@ input if \texttt{f} is omitted.
 
 The result of
 
-{\ttfamily\mdseries
-\ \ \ write(x1,x2, ..., xn)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(x1,x2, ..., xn)}
+\iconline{
+\>write(x1,x2, ..., xn)
+}
+
 
 \noindent depends on the types of x1, x2, ..., xn. Strings and types
 convertible to strings are written, but if one of the arguments is a
 file, subsequent strings are written to that file. The default file is
 standard output. Thus,
 
-{\ttfamily\mdseries
-\ \ \ write(s1,s2)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(s1,s2)}
+\iconline{
+\>write(s1,s2)
+}
+
 
 \noindent
 writes the concatenation of \texttt{s1} and \texttt{s2} to standard output, but
 
-{\ttfamily\mdseries
-\ \ \ write(log,s)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(log,s)}
+\iconline{
+\>write(log,s)
+}
+
 
 \noindent
 writes \texttt{s} to the file grade.log. In any event, write returns
@@ -1325,8 +1819,12 @@ the string value of the last argument written.
 
 The function
 
-{\ttfamily\mdseries
-\ \ \ stop(x1, x2, ..., xn)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ stop(x1, x2, ..., xn)}
+\iconline{
+\>stop(x1, x2, ..., xn)
+}
+
 
 \noindent
 produces the same output as write, but it then terminates program execution.
@@ -1340,14 +1838,24 @@ begins with a call of the procedure main.
 
 An example of a procedure declaration is:
 
-{\ttfamily\mdseries
-\ \ \ procedure maxstr(slist)\newline
- \ \ \ \ \ local max, value\newline
- \ \ \ \ \ max := 0\newline
- \ \ \ \ \ every value := *!slist do\newline
- \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
- \ \ \ \ \ return max\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure maxstr(slist)\newline
+%-% \ \ \ \ \ \ local max, value\newline
+%-% \ \ \ \ \ \ max := 0\newline
+%-% \ \ \ \ \ \ every value := *!slist do\newline
+%-% \ \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
+%-% \ \ \ \ \ \ return max\newline
+%-% \ \ \ end}
+\iconcode{
+\>procedure maxstr(slist)\\
+\>\>local max, value\\
+\>\>max := 0\\
+\>\>every value := *!slist do\\
+\>\>\>if value> max then max := value\\
+\>\>return max\\
+\>end\\
+}
+
 
 
 This procedure computes the longest string in a list of strings. The
@@ -1358,10 +1866,16 @@ allocated when \texttt{maxstr()} is called and deallocated when
 
 A procedure call has the same form as a function call. For example,
 
-{\ttfamily\mdseries
-\ \ \ lines := []\newline
- \ \ while put(lines, read(f))\newline
- \ \ write(maxstr(lines))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ lines := []\newline
+%-% \ \ \ while put(lines, read(f))\newline
+%-% \ \ \ write(maxstr(lines))}
+\iconcode{
+\>lines := []\\
+\>while put(lines, read(f))\\
+\>write(maxstr(lines))\\
+}
+
 
 \noindent
 writes the length of the longest line in the file \texttt{f}.
@@ -1372,14 +1886,24 @@ procedure body in place of return. For example, the following
 procedure returns the length of the longest string in \texttt{slist}
 but fails if that length is less than limit:
 
-{\ttfamily\mdseries
-\ \ \ procedure maxstr(slist, limit)\newline
- \ \ \ \ \ local max, value\newline
- \ \ \ \ \ max := 0\newline
- \ \ \ \ \ every value := *!slist do\newline
- \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
- \ \ \ \ \ if max {\textless} limit then fail else return max\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure maxstr(slist, limit)\newline
+%-%  \ \ \ \ \ local max, value\newline
+%-%  \ \ \ \ \ max := 0\newline
+%-%  \ \ \ \ \ every value := *!slist do\newline
+%-%  \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
+%-%  \ \ \ \ \ if max {\textless} limit then fail else return max\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure maxstr(slist, limit)\\
+\>\>local max, value\\
+\>\>max := 0\\
+\>\>every value := *!slist do\\
+\>\>\>if value> max then max := value\\
+\>\>if max < limit then fail else return max\\
+\>end\\
+}
+
 
 Flowing off the end of a procedure body without an explicit return is
 equivalent to fail.
@@ -1392,30 +1916,49 @@ is called. The use of a static identifier and an initial clause is
 illustrated by the following procedure, which returns the longest of
 all the strings in the lists it has processed:
 
-{\ttfamily\mdseries
-\ \ \ procedure maxstrall(slist)\newline
- \ \ \ \ \ local value\newline
- \ \ \ \ \ static max\newline
- \ \ \ \ \ initial max := 0\newline
- \ \ \ \ \ every value := *!slist do\newline
- \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
- \ \ \ \ \ return max\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure maxstrall(slist)\newline
+%-%  \ \ \ \ \ local value\newline
+%-%  \ \ \ \ \ static max\newline
+%-%  \ \ \ \ \ initial max := 0\newline
+%-%  \ \ \ \ \ every value := *!slist do\newline
+%-%  \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
+%-%  \ \ \ \ \ return max\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure maxstrall(slist)\\
+\>\>local value\\
+\>\>static max\\
+\>\>initial max := 0\\
+\>\>every value := *!slist do\\
+\>\>\>if value> max then max := value\\
+\>\>return max\\
+\>end\\
+}
+
 
 \textbf{Procedures and Functions.} Procedures and functions are used
 in the same way. Their names have global scope.  Other identifiers can
 be declared to have global scope, as in
 
-{\ttfamily\mdseries
-\ \ \ global count}
+%-% {\ttfamily\mdseries
+%-% \ \ \ global count}
+\iconline{
+\>global count
+}
+
 
 Such global declarations are on a par with procedure declarations and
 cannot occur within procedure declarations.
 
 A call such as
 
-{\ttfamily\mdseries
-\ \ \ write(maxstr(lines))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(maxstr(lines))}
+\iconline{
+\>write(maxstr(lines))
+}
+
 
 \noindent
 applies the \textit{value} of the identifier \texttt{maxstr} to
@@ -1426,10 +1969,16 @@ of such identifiers. In this case, the initial value of
 declaration for it. Similarly, the initial value of \texttt{write} is
 a function. These values can be assigned to other variables, as in
 
-{\ttfamily\mdseries
-\ \ \ print := write\newline
- \ \ \ \ \ \ \ \ \ \ ...\newline
- \ \ \textrm{print(maxstr(lines))}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ print := write\newline
+%-%  \ \ \ \ \ \ \ \ \ \ ...\newline
+%-%  \ \ \textrm{print(maxstr(lines))}}
+\iconcode{
+\>print := write\\
+\>\>\>\ \ ...\\
+\>print(maxstr(lines))\\
+}
+
 
 \noindent in which the function that is the initial value of
 \texttt{write} is assigned to \texttt{print}.
@@ -1437,8 +1986,12 @@ a function. These values can be assigned to other variables, as in
 Similarly, nothing prevents an assignment to an identifier whose
 initial value is a procedure. Consequently,
 
-{\ttfamily\mdseries
-\ \ \ write := 3}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write := 3}
+\iconline{
+\>write := 3
+}
+
 
 \noindent
 assigns an integer to \texttt{write}, replacing its initial function value.
@@ -1447,9 +2000,14 @@ Although it is typical to call a procedure by using an identifier that
 has the procedure value, the procedure used in a call can be
 computed. The general form of a call is
 
-{\ttfamily\mdseries
-\textit{\ \ \ expr}\textit{\TextSubscript{0}}\textit{(expr}\textit{\TextSubscript{1}}\textit{,
-expr}\textit{\TextSubscript{2}}\textit{, }..., \textit{expr}\textit{\TextSubscript{n}}\textit{)}}
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ expr}\textit{\TextSubscript{0}}\textit{(expr}\textit{\TextSubscript{1}}\textit{,
+%-% expr}\textit{\TextSubscript{2}}\textit{, }..., \textit{expr}\textit{\TextSubscript{n}}\textit{)}}
+\iconline{
+\textit{\ \ \ expr}\textit{\TextSubscript{0}}\textit{(expr}\textit{\TextSubscript{1}}\textit{,expr}
+\textit{\TextSubscript{2}}\textit{, }..., \textit{expr}\textit{\TextSubscript{n}}\textit{)}
+}
+
 
 \noindent where the value of
 \textit{expr\TextSubscript{0}} is applied to the
@@ -1458,10 +2016,15 @@ arguments resulting from the evaluation of
 \textit{expr\TextSubscript{2}}, ...,
 \textit{expr\TextSubscript{n}}. For example,
 
-{\ttfamily\mdseries
-\ \ \ (proclist[i])\textit{(expr\TextSubscript{1}}, ,
-\textit{expr\TextSubscript{2}},
-..., \textit{expr\TextSubscript{n})}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ (proclist[i])\textit{(expr\TextSubscript{1}}, ,
+%-% \textit{expr\TextSubscript{2}},
+%-% ..., \textit{expr\TextSubscript{n})}}
+\iconline{
+\>(proclist[i])\textit{(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}},
+..., \textit{expr\TextSubscript{n})}
+}
+
 
 \noindent
 applies the procedure that is the \texttt{i}th element of \texttt{proclist}.
@@ -1470,23 +2033,40 @@ Procedures may be called recursively. The recursive nature of a call
 depends on the fact that procedure names are global. The
 {\textquotedbl}Fibonacci strings{\textquotedbl} provide an example:
 
-{\ttfamily\mdseries
-\ \ \ procedure fibstr(i)\newline
- \ \ \ \ \ if i = 1 then return {\textquotedbl}a{\textquotedbl}\newline
- \ \ \ \ \ else if i = 2 then return {\textquotedbl}b{\textquotedbl}\newline
- \ \ \ \ \ else return fibstr(i - 1) {\textbar}{\textbar} fibstr(i - 2)\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure fibstr(i)\newline
+%-%  \ \ \ \ \ if i = 1 then return {\textquotedbl}a{\textquotedbl}\newline
+%-%  \ \ \ \ \ else if i = 2 then return {\textquotedbl}b{\textquotedbl}\newline
+%-%  \ \ \ \ \ else return fibstr(i - 1) {\textbar}{\textbar} fibstr(i - 2)\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure fibstr(i)\\
+\>\>if i = 1 then return "a"\\
+\>\>else if i = 2 then return "b"\\
+\>\>else return fibstr(i - 1) || fibstr(i - 2)\\
+\>end\\
+}
+
 
 An identifier that is not declared in a procedure and is not global
 defaults to local. Thus, local declarations can be omitted, as in
 
-{\ttfamily\mdseries
-\ \ \ procedure maxstr(slist)\newline
- \ \ \ \ \ max := 0\newline
- \ \ \ \ \ every value := * !slist do\newline
- \ \ \ \ \ \ \ \ if value {\textgreater} max then max := value\newline
- \ \ \ \ \ return max\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure maxstr(slist)\newline
+%-%  \ \ \ \ \ max := 0\newline
+%-%  \ \ \ \ \ every value := * !slist do\newline
+%-%  \ \ \ \ \ \ \ \ if value {\textgreater} max then max := value\newline
+%-%  \ \ \ \ \ return max\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure maxstr(slist)\\
+\>\>max := 0\\
+\>\>every value := * !slist do\\
+\>\>\>if value > max then max := value\\
+\>\>return max\\
+\>end\\
+}
+
 
 
 \textbf{Procedures as Generators}. In addition to returning and
@@ -1495,19 +2075,32 @@ arguments and local identifiers are not destroyed, and the call can
 be resumed to produce another result in the same way a built-in
 generator can be resumed. An example of such a generator is
 
-{\ttfamily\mdseries
-\ \ \ procedure intseq(i)\newline
- \ \ \ \ \ repeat \{\newline
- \ \ \ \ \ \ \ \ suspend i\newline
- \ \ \ \ \ \ \ \ i +:= 1\newline
- \ \ \ \ \ \ \ \ \}\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure intseq(i)\newline
+%-%  \ \ \ \ \ repeat \{\newline
+%-%  \ \ \ \ \ \ \ \ suspend i\newline
+%-%  \ \ \ \ \ \ \ \ i +:= 1\newline
+%-%  \ \ \ \ \ \ \ \ \}\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure intseq(i)\\
+\>\>repeat \{\\
+\>\>\>suspend i\\
+\>\>\>i +:= 1\\
+\>\>\>\}\\
+\>end\\
+}
+
 
 A call \texttt{intseq(10)}, for example, is capable of generating the
 infinite sequence of integers 10, 11, 12, ... .  For example,
 
-{\ttfamily\mdseries
-\ \ \ every f(intseq(10) {\textbackslash} 5)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every f(intseq(10) {\textbackslash} 5)}
+\iconline{
+\>every f(intseq(10) {\textbackslash} 5)
+}
+
 
 \noindent
 calls f(10), f(11), f(12), f(13), and f(14).
@@ -1516,17 +2109,31 @@ If the argument of suspend is a generator, the generator is resumed
 when the call is resumed and the call suspends again with the result
 it produces. A generator of the Fibonacci strings provides an example:
 
-\ \ \ procedure fibstrseq()\newline
- \ \ \ \ \ local s1, s2, s3\newline
- \ \ \ \ \ s1 := {\textquotedbl}a{\textquotedbl}\newline
- \ \ \ \ \ s2 := {\textquotedbl}b{\textquotedbl}\newline
- \ \ \ \ \ suspend (s1 {\textbar} s2)\newline
- \ \ \ \ \ repeat \{\newline
- \ \ \ \ \ \ \ \ suspend s3 := s1 {\textbar}{\textbar} s2\newline
- \ \ \ \ \ \ \ \ s1 := s2\newline
- \ \ \ \ \ \ \ \ s2 := s3\newline
- \ \ \ \ \ \ \ \ \}\newline
- \ \ end
+%-%  Fixed this mess manually
+%-% \ \ \ procedure fibstrseq()\newline
+%-%  \ \ \ \ \ local s1, s2, s3\newline
+%-%  \ \ \ \ \ s1 := {\textquotedbl}a{\textquotedbl}\newline
+%-%  \ \ \ \ \ s2 := {\textquotedbl}b{\textquotedbl}\newline
+%-%  \ \ \ \ \ suspend (s1 {\textbar} s2)\newline
+%-%  \ \ \ \ \ repeat \{\newline
+%-%  \ \ \ \ \ \ \ \ suspend s3 := s1 {\textbar}{\textbar} s2\newline
+%-%  \ \ \ \ \ \ \ \ s1 := s2\newline
+%-%  \ \ \ \ \ \ \ \ s2 := s3\newline
+%-%  \ \ \ \ \ \ \ \ \}\newline
+%-%  \ \ end
+\iconcode{
+\>procedure fibstrseq()\\
+\>\>local s1, s2, s3\\
+\>\>s1 := "a"\\
+\>\>s2 := "b"\\
+\>\>suspend (s1 | s2)\\
+\>\>repeat \{\\
+\>\>\>suspend s3 := s1 || s2\\
+\>\>\>s1 := s2\\
+\>\>\>s2 := s3\\
+\>\>\>\}\\
+\>end\\
+}
 
 When this procedure is called, the first suspend expression produces
 the value of\ \ s1, {\textquotedbl}a{\textquotedbl}. If the call of
@@ -1540,10 +2147,16 @@ Repeated alternation often is useful in supplying an endless number of
 alternatives. For example, the procedure \texttt{intseq(i)} can be
 rewritten as
 
-{\ttfamily\mdseries
-\ \ \ procedure intseq(i)\newline
- \ \ \ \ \ suspend i {\textbar} (i +:= {\textbar}1)\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure intseq(i)\newline
+%-%  \ \ \ \ \ suspend i {\textbar} (i +:= {\textbar}1)\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure intseq(i)\\
+\>\>suspend i | (i +:= |1)\\
+\>end\\
+}
+
 
 Note that \texttt{{\textbar}1} is used to provide an endless sequence
 of increments.
@@ -1562,8 +2175,12 @@ of them have been evaluated. Dereferencing cannot fail. Since no
 argument is dereferenced until all argument expressions are evaluated,
 expressions with side effects can produce unexpected results. Thus, in
 
-{\ttfamily\mdseries
-\ \ \ write(s, s := {\textquotedbl}hello{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(s, s := {\textquotedbl}hello{\textquotedbl})}
+\iconline{
+\>write(s, s := "hello")
+}
+
 
 \noindent the value written is \texttt{hellohello}, regardless of the
 value of \texttt{s} before the evaluation of the second argument of
@@ -1578,17 +2195,28 @@ string-valued global identifier.
 In these exceptional cases, the variable is returned and assignment
 can be made to the procedure call. An example is
 
-{\ttfamily\mdseries
-\ \ \ procedure maxel(a, i, j)\newline
- \ \ \ \ \ if i {\textgreater} j then return a[i]\newline
- \ \ \ \ \ else return a[j]\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure maxel(a, i, j)\newline
+%-%  \ \ \ \ \ if i {\textgreater} j then return a[i]\newline
+%-%  \ \ \ \ \ else return a[j]\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure maxel(a, i, j)\\
+\>\>if i > j then return a[i]\\
+\>\>else return a[j]\\
+\>end\\
+}
+
 
 Here a list element, depending on the values of \texttt{i} and
 \texttt{j}, is returned. An assignment can be made to it, as in
 
-{\ttfamily\mdseries
-\ \ \ maxel(lines, i, j) := {\textquotedbl}end{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ maxel(lines, i, j) := {\textquotedbl}end{\textquotedbl}}
+\iconline{
+\>maxel(lines, i, j) := "end"
+}
+
 
 \noindent which assigns \texttt{{\textquotedbl}end{\textquotedbl}} to
 \texttt{lines[i]} or \texttt{lines[j]}, depending on the values of
@@ -1601,8 +2229,12 @@ Here a list element, depending on the values of \texttt{i} and
 \textit{mutual evaluation}, the result of the \texttt{i}th
 argument is produced. For example,
 
-{\ttfamily\mdseries
-\ \ \ i := 1(find(s1, line1), find(s2, line2))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := 1(find(s1, line1), find(s2, line2))}
+\iconline{
+\>i := 1(find(s1, line1), find(s2, line2))
+}
+
 
 \noindent assigns to \texttt{i} the position of \texttt{s1} in
 \texttt{line1}, provided \texttt{s1} occurs in \texttt{line1} and that
@@ -1613,9 +2245,14 @@ The selection integer in mutual evaluation can be negative, in which
 case it is interpreted relative to the end of the argument
 list. Consequently,
 
-{\ttfamily\mdseries
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ (-1)(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}}\textit{, }...,
+%-% \textit{expr\TextSubscript{n}}\textit{)}}
+\iconline{
 \textit{\ \ \ (-1)(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}}\textit{, }...,
-\textit{expr\TextSubscript{n}}\textit{)}}
+\textit{expr\TextSubscript{n}}\textit{)}
+}
+
 
 \noindent
 produces the result of \textit{expr\TextSubscript{n}} and is equivalent to
@@ -1635,8 +2272,12 @@ site as a result of iteration or goal-directed evaluation. For
 example, the results generated by \texttt{intseq(i)} described in
 Section 2.1.10 can only be produced where it is called, as in
 
-{\ttfamily\mdseries
-\ \ \ every f(intseq(10) {\textbackslash} 5)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ every f(intseq(10) {\textbackslash} 5)}
+\iconline{
+\>every f(intseq(10) {\textbackslash} 5)
+}
+
 
 It is often useful, however, to be able to produce the results of a
 generator at various places in the program as the need for them
@@ -1654,31 +2295,51 @@ The expression \textit{expr} is not evaluated at this time. Instead,
 an object is produced through which \textit{expr} can be resumed at a
 later time. For example,
 
-{\ttfamily\mdseries
-\ \ \ label := create ({\textquotedbl}L{\textquotedbl} {\textbar}{\textbar} (1 to 100) {\textbar}{\textbar}
-{\textquotedbl}:{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ label := create ({\textquotedbl}L{\textquotedbl} {\textbar}{\textbar} (1 to 100) {\textbar}{\textbar}
+%-% {\textquotedbl}:{\textquotedbl})}
+\iconline{
+\>label := create ("L" || (1 to 100) || ":")
+}
+
 
 \noindent assigns to label a co-expression for the expression
 
-{\ttfamily\mdseries
-\ \ \ {\textquotedbl}L{\textquotedbl} {\textbar}{\textbar} (1 to 100) {\textbar}{\textbar}
-{\textquotedbl}:{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ {\textquotedbl}L{\textquotedbl} {\textbar}{\textbar} (1 to 100) {\textbar}{\textbar}
+%-% {\textquotedbl}:{\textquotedbl}}
+\iconline{
+\>"L" || (1 to 100) || ":"
+}
+
 
 The operation \texttt{@label} activates this co-expression, which
 corresponds to resuming its expression. For example,
 
-{\ttfamily\mdseries
-\ \ \ write(@label)\newline
- \ \ write({\textquotedbl} \ \ \ tstl \ \ \ \ count{\textquotedbl})\newline
- \ \ write(@label)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(@label)\newline
+%-%  \ \ write({\textquotedbl} \ \ \ tstl \ \ \ \ count{\textquotedbl})\newline
+%-%  \ \ write(@label)}
+\iconcode{
+\>write(@label)\\
+\>write(" \ \ \ tstl \ \ \ \ count")\\
+\>write(@label)\\
+}
+
 
 \noindent
 writes
 
-{\ttfamily\mdseries
-\ \ \ L1:\newline
- \ \ \ \ \ \ \ tstl \ \ \ \ count\newline
- \ \ L2:}
+%-% {\ttfamily\mdseries
+%-% \ \ \ L1:\newline
+%-%  \ \ \ \ \ \ \ tstl \ \ \ \ count\newline
+%-%  \ \ L2:}
+\iconcode{
+\>L1:\\
+\>\>\ \ tstl \ \ \ \ count\\
+\>L2:\\
+}
+
 
 If the resumption of the expression in a co-expression does not
 produce a result, the co-expression activation fails.  For example,
@@ -1706,29 +2367,52 @@ they have at the time the create expression is evaluated. These copied
 identifiers subsequently are independent of the local identifiers in
 the procedure. Consider, for example,
 
-{\ttfamily\mdseries
-\ \ \ procedure labgen(tag)\newline
- \ \ \ \ \ local i, j\newline
-\ \  ...\newline
-\ \  i := 10\newline
-\ \  j := 20\newline
-\ \  e := create (tag {\textbar}{\textbar} (i to j) {\textbar}{\textbar} {\textquotedbl}:{\textquotedbl})\newline
-\ \  ...\newline
-\ \  i := j\newline
-\ \  if i {\textgreater} 15 then return e\newline
-\ \  ...\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% procedure labgen(tag)\newline
+%-% \ \ \ local i, j\newline
+%-% \ \ \  ...\newline
+%-% \ \ \  i := 10\newline
+%-% \ \ \  j := 20\newline
+%-% \ \ \  e := create (tag {\textbar}{\textbar} (i to j) {\textbar}{\textbar} {\textquotedbl}:{\textquotedbl})\newline
+%-% \ \ \  ...\newline
+%-% \ \ \  i := j\newline
+%-% \ \ \  if i {\textgreater} 15 then return e\newline
+%-% \ \ \  ...\newline
+%-% end}
+\iconcode{
+procedure labgen(tag)\\
+\>local i, j\\
+\> ...\\
+\> i := 10\\
+\> j := 20\\
+\> e := create (tag || (i to j) || ":")\\
+\> ...\\
+\> i := j\\
+\> if i > 15 then return e\\
+\> ...\\
+end\\
+}
+
 
 The expression
 
-{\ttfamily\mdseries
-\ \ \ labels := labgen({\textquotedbl}X{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ labels := labgen({\textquotedbl}X{\textquotedbl})}
+\iconline{
+\>labels := labgen("X")
+}
+
 
 \noindent assigns to labels a co-expression that is equivalent to evaluating
 
-{\ttfamily\mdseries
-\ \ \ create ({\textquotedbl}X{\textquotedbl} {\textbar}{\textbar} (10 to 20) {\textbar}{\textbar}
-{\textquotedbl}:{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ create ({\textquotedbl}X{\textquotedbl} {\textbar}{\textbar} (10 to 20) {\textbar}{\textbar}
+%-% {\textquotedbl}:{\textquotedbl})}
+\iconcode{
+\>create ("X" || (10 to 20) ||\\
+":")\\
+}
+
 
 The fact that \texttt{i} is changed after the co-expression was
 assigned to \texttt{e}, but before \texttt{e} returns, does not affect
@@ -1742,8 +2426,12 @@ co-expression is made, its expression is reset to its initial state,
 and the values of any local identifiers in it are reset to the values
 they had when the co-expression was created. For example,
 
-{\ttfamily\mdseries
-\ \ \ newlabels := \^{}labels}
+%-% {\ttfamily\mdseries
+%-% \ \ \ newlabels := \^{}labels}
+\iconline{
+\>newlabels := \^{}labels
+}
+
 
 \noindent assigns to \texttt{newlabels} a co-expression that is
 capable of producing the same results as labels, regardless of whether
@@ -1762,20 +2450,32 @@ the string name of the type of \texttt{x}, but the function
 \texttt{x}. For strings and csets, the value is shown with surrounding
 quotation marks in the fashion of program literals. For example,
 
-{\ttfamily\mdseries
-\ \ \ write(image({\textquotedbl}Hi there!{\textquotedbl}))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(image({\textquotedbl}Hi there!{\textquotedbl}))}
+\iconline{
+\>write(image("Hi there!"))
+}
+
 
 \noindent writes \texttt{{\textquotedbl}Hi there!{\textquotedbl}}, while
 
-{\ttfamily\mdseries
-\ \ \ write(image('aeiou'))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(image('aeiou'))}
+\iconline{
+\>write(image('aeiou'))
+}
+
 
 \noindent writes \texttt{{}'aeiou'}.
 
 For structures, the type name and size are given. For example,
 
-{\ttfamily\mdseries
-\ \ \ write(image([]))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(image([]))}
+\iconline{
+\>write(image([]))
+}
+
 
 \noindent writes \texttt{list(0)}.
 
@@ -1791,28 +2491,51 @@ for every trace message. Tracing stops if the value of
 \texttt{\&trace} becomes zero, which is its initial value. Suppose
 that the following program is contained in the file fibstr.icn:
 
-{\ttfamily\mdseries
-\ \ \ procedure main()\newline
- \ \ \ \ \ \&trace := -1\newline
- \ \ \ \ \ fibstr(3)\newline
- \ \ end\newline
-\newline
- \ \ procedure fibstr(i)\newline
- \ \ \ \ \ if i = 1 then return {\textquotedbl}a{\textquotedbl}\newline
- \ \ \ \ \ else if i = 2 then return {\textquotedbl}b{\textquotedbl}\newline
- \ \ \ \ \ else return fibstr(i -1) {\textbar}{\textbar} fibstr(i -2)\newline
- \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure main()\newline
+%-%  \ \ \ \ \ \&trace := -1\newline
+%-%  \ \ \ \ \ fibstr(3)\newline
+%-%  \ \ end\newline
+%-% \newline
+%-%  \ \ procedure fibstr(i)\newline
+%-%  \ \ \ \ \ if i = 1 then return {\textquotedbl}a{\textquotedbl}\newline
+%-%  \ \ \ \ \ else if i = 2 then return {\textquotedbl}b{\textquotedbl}\newline
+%-%  \ \ \ \ \ else return fibstr(i -1) {\textbar}{\textbar} fibstr(i -2)\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure main()\\
+\>\>\&trace := -1\\
+\>\>fibstr(3)\\
+\>end\\
+\\
+\>procedure fibstr(i)\\
+\>\>if i = 1 then return "a"\\
+\>\>else if i = 2 then return "b"\\
+\>\>else return fibstr(i -1) || fibstr(i -2)\\
+\>end\\
+}
+
 
 The trace output of this program is
 
-{\ttfamily\mdseries
-\textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\newline
- \ \ fibstr.icn: 9\ \ {\textbar} {\textbar} fibstr(2)\newline
- \ \ fibstr.icn: 8\ \ {\textbar} {\textbar} fibstr returned {\textquotedbl}b{\textquotedbl}\newline
- \ \ fibstr .icn: 9\ \ {\textbar} {\textbar} fibstr(1)\newline
- \ \ fibstr.icn: 7\ \ {\textbar} {\textbar} fibstr returned {\textquotedbl}b{\textquotedbl}\newline
- \ \ fibstr.icn: 9\ \ {\textbar} fibstr returned {\textquotedbl}ba{\textquotedbl}\newline
- \ \ fibstr.icn: 4\ \ main failed}
+%-% {\ttfamily\mdseries
+%-% \textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\newline
+%-%  \ \ fibstr.icn: 9\ \ {\textbar} {\textbar} fibstr(2)\newline
+%-%  \ \ fibstr.icn: 8\ \ {\textbar} {\textbar} fibstr returned {\textquotedbl}b{\textquotedbl}\newline
+%-%  \ \ fibstr .icn: 9\ \ {\textbar} {\textbar} fibstr(1)\newline
+%-%  \ \ fibstr.icn: 7\ \ {\textbar} {\textbar} fibstr returned {\textquotedbl}b{\textquotedbl}\newline
+%-%  \ \ fibstr.icn: 9\ \ {\textbar} fibstr returned {\textquotedbl}ba{\textquotedbl}\newline
+%-%  \ \ fibstr.icn: 4\ \ main failed}
+\iconcode{
+\textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\\
+\>fibstr.icn: 9\ \ | | fibstr(2)\\
+\>fibstr.icn: 8\ \ | | fibstr returned "b"\\
+\>fibstr .icn: 9\ \ | | fibstr(1)\\
+\>fibstr.icn: 7\ \ | | fibstr returned "b"\\
+\>fibstr.icn: 9\ \ | fibstr returned "ba"\\
+\>fibstr.icn: 4\ \ main failed\\
+}
+
 
 In addition to the indentation corresponding to the level of procedure
 call, the value of the keyword \texttt{\&level} also is the current
@@ -1826,49 +2549,88 @@ current level. If \texttt{i} is omitted, the default is
 to standard error output. The format of the listing produced by
 display is illustrated by the following program:
 
-{\ttfamily
-\ \ \ procedure main()\newline
- \ \ \ \ \ log := open({\textquotedbl}grade.log{\textquotedbl}, {\textquotedbl}w{\textquotedbl})\newline
- \ \ \ \ \ while write(log, check(readO))\newline
- \ \ end}
+%-% {\ttfamily
+%-% \ \ \ procedure main()\newline
+%-%  \ \ \ \ \ log := open({\textquotedbl}grade.log{\textquotedbl}, {\textquotedbl}w{\textquotedbl})\newline
+%-%  \ \ \ \ \ while write(log, check(readO))\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure main()\\
+\>\>log := open("grade.log", "w")\\
+\>\>while write(log, check(readO))\\
+\>end\\
+}
+
 
 
 \bigskip
 
-{\ttfamily
-\ \ \ procedure check(value)\newline
- \ \ \ \ \ static count\newline
- \ \ \ \ \ initial count := 0\newline
- \ \ \ \ \ if numeric(value) then \{\newline
- \ \ \ \ \ \ \ \ count +:= 1\newline
- \ \ \ \ \ \ \ \ return value\newline
- \ \ \ \ \ \ \ \ \}\newline
- \ \ \ \ \ else \{\newline
- \ \ \ \ \ \ \ \ display()\newline
- \ \ \ \ \ \ \ \ stop({\textquotedbl}nonnumeric value{\textquotedbl})\newline
- \ \ \ \ \ \ \ \ \}\newline
- \ \ end}
+%-% {\ttfamily
+%-% \ \ \ procedure check(value)\newline
+%-%  \ \ \ \ \ static count\newline
+%-%  \ \ \ \ \ initial count := 0\newline
+%-%  \ \ \ \ \ if numeric(value) then \{\newline
+%-%  \ \ \ \ \ \ \ \ count +:= 1\newline
+%-%  \ \ \ \ \ \ \ \ return value\newline
+%-%  \ \ \ \ \ \ \ \ \}\newline
+%-%  \ \ \ \ \ else \{\newline
+%-%  \ \ \ \ \ \ \ \ display()\newline
+%-%  \ \ \ \ \ \ \ \ stop({\textquotedbl}nonnumeric value{\textquotedbl})\newline
+%-%  \ \ \ \ \ \ \ \ \}\newline
+%-%  \ \ end}
+\iconcode{
+\>procedure check(value)\\
+\>\>static count\\
+\>\>initial count := 0\\
+\>\>if numeric(value) then \{\\
+\>\>\>count +:= 1\\
+\>\>\>return value\\
+\>\>\>\}\\
+\>\>else \{\\
+\>\>\>display()\\
+\>\>\>stop("nonnumeric value")\\
+\>\>\>\}\\
+\>end\\
+}
+
 
 
 Suppose that the tenth line of input is the nonnumeric string
 \texttt{{\textquotedbl}3.a{\textquotedbl}}. Then the output of
 \texttt{display()} is
 
-{\ttfamily\mdseries
-\ \ \ check local identifiers:\newline
- \ \ \ \ \ value = {\textquotedbl}3.a{\textquotedbl}\newline
- \ \ \ \ \ count = 9\newline
- \ \ main local identifiers:\newline
- \ \ \ \ \ log = file(grade.log)\newline
- \ \ global identifiers:\newline
- \ \ \ \ \ main = procedure main\newline
- \ \ \ \ \ check = procedure check\newline
- \ \ \ \ \ open = function open\newline
- \ \ \ \ \ write = function write\newline
- \ \ \ \ \ read = function read\newline
- \ \ \ \ \ numeric = function numeric\newline
- \ \ \ \ \ display = function display\newline
- \ \ \ \ \ stop = function stop}
+%-% {\ttfamily\mdseries
+%-% \ \ \ check local identifiers:\newline
+%-%  \ \ \ \ \ value = {\textquotedbl}3.a{\textquotedbl}\newline
+%-%  \ \ \ \ \ count = 9\newline
+%-%  \ \ main local identifiers:\newline
+%-%  \ \ \ \ \ log = file(grade.log)\newline
+%-%  \ \ global identifiers:\newline
+%-%  \ \ \ \ \ main = procedure main\newline
+%-%  \ \ \ \ \ check = procedure check\newline
+%-%  \ \ \ \ \ open = function open\newline
+%-%  \ \ \ \ \ write = function write\newline
+%-%  \ \ \ \ \ read = function read\newline
+%-%  \ \ \ \ \ numeric = function numeric\newline
+%-%  \ \ \ \ \ display = function display\newline
+%-%  \ \ \ \ \ stop = function stop}
+\iconcode{
+\>check local identifiers:\\
+\>\>value = "3.a"\\
+\>\>count = 9\\
+\>main local identifiers:\\
+\>\>log = file(grade.log)\\
+\>global identifiers:\\
+\>\>main = procedure main\\
+\>\>check = procedure check\\
+\>\>open = function open\\
+\>\>write = function write\\
+\>\>read = function read\\
+\>\>numeric = function numeric\\
+\>\>display = function display\\
+\>\>stop = function stop\\
+}
+
 
 
 \textbf{Error Messages}. If an error is encountered during program
@@ -1876,16 +2638,26 @@ execution, a message is written to standard error output and execution
 is terminated. For example, if the tenth line of a program contained
 in the file check.icn is
 
-{\ttfamily\mdseries
-\ \ \ i +:= {\textquotedbl}x{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i +:= {\textquotedbl}x{\textquotedbl}}
+\iconline{
+\>i +:= "x"
+}
+
 
 \noindent
 evaluation of this expression produces the error message
 
-{\ttfamily\mdseries
-\ \ \ Run-time error 102 at line 10 in check.icn\newline
- \ \ numeric expected\newline
- \ \ offending value: {\textquotedbl}x{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ Run-time error 102 at line 10 in check.icn\newline
+%-%  \ \ numeric expected\newline
+%-%  \ \ offending value: {\textquotedbl}x{\textquotedbl}}
+\iconcode{
+\>Run-time error 102 at line 10 in check.icn\\
+\>numeric expected\\
+\>offending value: "x"\\
+}
+
 
 
 \section[2.2 Language Features and the Implementation]{2.2 Language Features and the Implementation}
@@ -2070,16 +2842,28 @@ EXERCISES}
 \item 
 \ What is the outcome of the following expression if the file f contains a line consisting of
 {\textquotedbl}end{\textquotedbl}, or if it does not?\newline
- \ \ \ \ while line := read(f) do\newline
- \ \ \ \ \ \ \ \ \ if line == {\textquotedbl}end{\textquotedbl} then break\newline
- \ \ \ \ \ \ \ \ \ else write(line)
+%-%  \ \ \ \ while line := read(f) do\newline
+%-%  \ \ \ \ \ \ \ \ \ if line == {\textquotedbl}end{\textquotedbl} then break\newline
+%-%  \ \ \ \ \ \ \ \ \ else write(line)
+\iconcode{
+\>\ while line := read(f) do\\
+\>\>\>\ if line == "end" then break\\
+\>\>\>\ else write(line)\\
+}
+
 \item 
-\ What does\newline
- \ \ \ \ \ write({\textquotedbl}hello{\textquotedbl} {\textbar} {\textquotedbl}howdy{\textquotedbl})\newline
+\ What does
+%-% \ \ \ write({\textquotedbl}hello{\textquotedbl} {\textbar} {\textquotedbl}howdy{\textquotedbl})\newline
+\iconline{
+\>write("hello" | "howdy")
+}
 write?
 \item 
-\ What is the result of evaluating the following expression:\newline
-\texttt{ \ \ \ \ \ 1(1 to 3) {\textgreater} 10}
+\ What is the result of evaluating the following expression:
+%-% \ \ \ \ \ 1(1 to 3) {\textgreater} 10
+\iconline{
+\>\ \ 1(1 to 3) > 10
+}
 \item 
 \ Explain the rationale for dereferencing of variables when a procedure call returns.
 \item 

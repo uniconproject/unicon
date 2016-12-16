@@ -103,8 +103,15 @@ format.
 
 Translating and linking are done in two phases:
 
-\ \  \includegraphics[width=4.1681in,height=0.4543in]{ib-img/ib-img004.jpg} 
-
+%--%\ \  \includegraphics[width=4.1681in,height=0.4543in]{ib-img/ib-img004.jpg} 
+\begin{picture}(400, 60)(10,0)
+\put(-5,30){Icon program}
+\put(100,19){\framebox(60,30){translator}}
+\put(210,30){ucode}
+\put(280,19){\framebox(60,30){linker}}
+\put(380,30){icode}
+\multiput(75,33)(90,0){4}{\vector(1,0){20}}
+\end{picture}
 
 These phases can be performed separately. If only the first phase is
 performed, the result is ucode, which can be saved and linked at
@@ -171,15 +178,25 @@ expression, and if the next line begins with a token that is legal for
 beginning an expression, the lexical analyzer generates a semicolon
 token between the lines. For example, the two lines
 
-{\ttfamily
-\ \ \ i := j\textit{ }+ 3\newline
- \ \ write(i)}
+%-% {\ttfamily
+%-% \ \ \ i := j\textit{ }+ 3\newline
+%-%  \ \ write(i)}
+\iconcode{
+\>i := j\textit{ }+ 3\\
+\>write(i)\\
+}
+
 
 \noindent are equivalent to
 
-{\ttfamily\mdseries
-\ \ \ i := j + 3;\newline
- \ \ write(i)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := j + 3;\newline
+%-%  \ \ write(i)}
+\iconcode{
+\>i := j + 3;\\
+\>write(i)\\
+}
+
 
 \noindent since an integer literal is legal at the end of an
 expression and an identifier is legal at the beginning of an
@@ -188,14 +205,23 @@ expression.
 If an expression spans two lines, the place to divide it is at a token
 that is not legal at the end of a line. For example,
 
-{\ttfamily\mdseries
-\ \ \ s1 := s2 {\textbar}{\textbar}\newline
- \ \ \ \ \ s3}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s1 := s2 {\textbar}{\textbar}\newline
+%-%  \ \ \ \ \ s3}
+\iconcode{
+\>s1 := s2 ||\\
+\>\>s3\\
+}
+
 
 \noindent is equivalent to
 
-{\ttfamily\mdseries
-\ \ \ s1 := s2 {\textbar}{\textbar} s3}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s1 := s2 {\textbar}{\textbar} s3}
+\iconline{
+\>s1 := s2 || s3
+}
+
 
 No semicolon is inserted, since \texttt{{\textbar}{\textbar}} is not
 legal at the end of an expression.
@@ -344,9 +370,13 @@ any tokens that are legal as both? As neither?
 3.3 Is a semicolon inserted by the lexical analyzer between the
 following two program lines?
 
-{\ttfamily
-s1 := s2\newline
-\ \ {\textbar}{\textbar} s3}
+%-% {\ttfamily
+%-% s1 := s2\newline
+%-% \ \ {\textbar}{\textbar} s3}
+\iconcode{
+\>s1 := s2\\
+\>|| s3\\
+}
 
 3.4 Is it possible for semicolon insertion to introduce syntactic
 errors into a program that would be syntactically correct without

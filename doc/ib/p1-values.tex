@@ -2,7 +2,7 @@
 
 \textsc{Perspective}: No feature of the Icon programming language has
 a greater impact on the implementation than untyped
-variables-variables that have no specific type associated with
+variables --- variables that have no specific type associated with
 them. This feature originated in Icon's predecessors as a result of a
 desire for simplicity and flexibility.
 
@@ -88,9 +88,12 @@ a descriptor consists of two words, which are designated as the
 \textit{d-word} and the \textit{v-word}, indicating that the former
 contains descriptive information, while the latter contains the value
 
-
-\ \ \ \  \includegraphics[width=1.602in,height=0.5201in]{ib-img/ib-img005.jpg} 
-
+%--%\ \ \ \  \includegraphics[width=1.602in,height=0.5201in]{ib-img/ib-img005.jpg} 
+\begin{picture}(300,50)(0,8)
+\put(100,10){\dvbox{}{}{}}
+\put(220,36){d-word}
+\put(220,18){v-word}
+\end{picture}
 
 The dotted line between the two words of a descriptor is provided for
 readability. A descriptor is merely two words, and the fact that these
@@ -115,21 +118,20 @@ their least significant bits and flags in their most significant
 bits. There are twelve type codes that correspond to source-language
 data types:
 
-\ \ \textit{data type}\ \ \ \ \textit{type code}
-
-
-\ \ null\ \ \ \ \ \ null\newline
-\ \ integer\ \ \ \ \ \ integer or long\newline
-\ \ real number\ \ \ \ real\newline
-\ \ cset\ \ \ \ \ \ cset\newline
-\ \ file\ \ \ \ \ \ file\newline
-\ \ procedure\ \ \ \ proc\newline
-\ \ list\ \ \ \ \ \ list\newline
-\ \ set\ \ \ \ \ \ set\newline
-\ \ table\ \ \ \ \ \ table\newline
-\ \ record\ \ \ \ \ \ record\newline
-\ \ co-expression\ \ \ \ coexpr
-
+\begin{tabular}{l@{\hspace{1in}}l}
+\textit{data type} & \textit{type code} \\
+null & \texttt{null}\\
+integer & \texttt{integer} or \texttt{long}\\
+real number & \texttt{real}\\
+cset & \texttt{cset}\\
+file & \texttt{file}\\
+procedure & \texttt{proc}\\
+list & \texttt{list}\\
+set & \texttt{set}\\
+table & \texttt{table}\\
+record & \texttt{record}\\
+co-expression & \texttt{coexpr}\\
+\end{tabular}
 
 Other type codes exist for internal objects, which are on a par with
 source-language objects, from an implementation viewpoint, but which
@@ -147,7 +149,13 @@ string:
 
 
 \begin{center}
-\includegraphics[width=2.4898in,height=0.5193in]{ib-img/ib-img006.jpg}
+%--%\includegraphics[width=2.4898in,height=0.5193in]{ib-img/ib-img006.jpg}
+\begin{picture}(200,48)
+\put(0,0){\dvbox{\textit{n}}{}{}}
+\put(110,28){length}
+\put(80,12){\vector(1,0){50}}
+\put(140,12){\makebox(70,2)[r]{first character}}
+\end{picture}
 \end{center}
 
 String descriptors are called \textit{qualifiers}. In order to make
@@ -157,7 +165,13 @@ an address. For example, the qualifier for
 \texttt{{\textquotedbl}hello{\textquotedbl}} is depicted as
 
 \begin{center}
-\includegraphics[width=1.9693in,height=0.5598in]{ib-img/ib-img007.jpg}
+%--%\includegraphics[width=1.9693in,height=0.5598in]{ib-img/ib-img007.jpg}
+\begin{picture}(200,48)
+\put(0,0){\dvbox{5}{}{}}
+\put(110,28){length}
+\put(80,12){\vector(1,0){50}}
+\put(140,12){\makebox(36,2)[r]{"hello"}}
+\end{picture}
 \end{center}
 
 In order to distinguish qualifiers from other descriptors with type
@@ -172,7 +186,10 @@ position, the most significant bit of a 32- or 64-bit dword.
 A descriptor for the null value has the form
 
 \begin{center}
-\includegraphics[width=1.5193in,height=0.6598in]{ib-img/ib-img008.jpg}
+%--%\includegraphics[width=1.5193in,height=0.6598in]{ib-img/ib-img008.jpg}
+\begin{picture}(200,40)
+\put(0,0){\dvbox{null}{n}{0}}
+\end{picture}
 \end{center}
 
 As explained previously, the n flag occurs in this and all other
@@ -191,7 +208,10 @@ stored in the v-word of its descriptor.  For example, the integer
 13570 is represented by
 
 \begin{center}
-\includegraphics[width=1.2799in,height=0.5492in]{ib-img/ib-img009.jpg}
+%--%\includegraphics[width=1.2799in,height=0.5492in]{ib-img/ib-img009.jpg}
+\begin{picture}(200,40)
+\put(0,0){\dvbox{integer}{n}{13750}}
+\end{picture}
 \end{center}
 
 Note that the n flag distinguishes this descriptor from a string whose
@@ -222,7 +242,13 @@ blocks are fixed in size for all values of a given type. For example,
 on a computer with 16-bit words, the source language integer 80,000 is
 stored in a large integer block:
 
-\ \  \includegraphics[width=2.778in,height=0.8437in]{ib-img/ib-img010.jpg} 
+%--%\ \  \includegraphics[width=2.778in,height=0.8437in]{ib-img/ib-img010.jpg} 
+\begin{picture}(300,80)
+\put(0,32){\dvbox{long}{np}{}}
+\put(140,0){\blklrgbox{long}{80000}}
+\put(78,45){\vector(1,0){65}}
+\put(255,43){title}
+\end{picture}
 
 \noindent The p flag in the descriptor indicates that the v-word
 contains a pointer to a block.
@@ -239,38 +265,79 @@ Records, which differ in size depending on how many fields they have,
 are examples of blocks that contain their sizes.  For example, given
 the record declaration
 
-{\ttfamily\mdseries
-\ \ \ record complex(r, i)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ record complex(r, i)}
+\iconline{
+\>record complex(r, i)
+}
 
 and
 
-{\ttfamily\mdseries
-\ \ \ point := complex(1, 3)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ point := complex(1, 3)}
+\iconline{
+\>point := complex(1, 3)
+}
 
 the value of point is
 
-\begin{center}
-\includegraphics[width=5.3098in,height=2.3193in]{ib-img/ib-img011.jpg}
-\end{center}
+%--% \begin{center}
+%--% \includegraphics[width=5.3098in,height=2.3193in]{ib-img/ib-img011.jpg}
+%--% \end{center}
+\begin{picture}(300,150)(-20,0)
+\put(0,112){\dvbox{record}{np}{}}
+\put(140,96){\blkbox{record}{32}}
+\put(78,126){\vector(1,0){65}}
+\put(140,64){\dvbox{proc}{np}{}}
+\put(140,32){\dvbox{integer}{n}{1}}
+\put(140,0){\dvbox{integer}{n}{3}}
+\put(260,122){title}
+\put(260,106){size of block in bytes}
+\put(218,77){\vector(1,0){65}}
+\put(290,74){record-constructor block}
+\end{picture}
 
 The record-constructor block contains information that is needed to
 resolve field references.
 
 On the other hand, with the declaration
 
-{\ttfamily\mdseries
-\ \ \ record term(value, code, count)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ record term(value, code, count)}
+\iconline{
+\>record term(value, code, count)
+}
 
 and
 
-{\ttfamily\mdseries
-\ \ \ word := term({\textquotedbl}chair{\textquotedbl}, {\textquotedbl}noun{\textquotedbl}, 4)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ word := term({\textquotedbl}chair{\textquotedbl}, {\textquotedbl}noun{\textquotedbl}, 4)}
+\iconline{
+\>word := term("chair", "noun", 4)
+}
 
 the value of word is:
 
-\begin{center}
-\includegraphics[width=4.6398in,height=2.3799in]{ib-img/ib-img012.jpg}
-\end{center}
+%--% \begin{center}
+%--% \includegraphics[width=4.6398in,height=2.3799in]{ib-img/ib-img012.jpg}
+%--% \end{center}
+\begin{picture}(300,190)(-20,0)
+\put(0,144){\dvbox{record}{np}{}}
+\put(140,128){\blkbox{record}{40}}
+\put(78,158){\vector(1,0){65}}
+\put(140,96){\dvbox{proc}{np}{}}
+\put(140,64){\dvbox{5}{}{}}
+\put(140,32){\dvbox{4}{}{}}
+\put(140,0){\dvbox{integer}{n}{4}}
+\put(260,154){title}
+\put(260,138){size of block}
+\put(218,109){\vector(1,0){65}}
+\put(290,107){record-constructor block}
+\put(218,77){\vector(1,0){65}}
+\put(290,75){"chair"}
+\put(218,45){\vector(1,0){65}}
+\put(290,43){"noun"}
+\end{picture}
 
 As illustrated by these examples, blocks may contain descriptors as
 well as non-descriptor data. Non-descriptor data comes first in the
@@ -288,14 +355,25 @@ terms of storage and access. Variables for identifiers point to
 descriptors for the corresponding values. Variables always point to
 descriptors for values, never to other variables. For example, if
 
-{\ttfamily\mdseries
-\ \ \ s := {\textquotedbl}hello{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s := {\textquotedbl}hello{\textquotedbl}}
+\iconline{
+\>s := "hello"
+}
 
 \noindent then a variable for \texttt{s} has the form
 
-\begin{center}
-\includegraphics[width=3.8193in,height=0.8492in]{ib-img/ib-img013.jpg}
-\end{center}
+%--% \begin{center}
+%--% \includegraphics[width=3.8193in,height=0.8492in]{ib-img/ib-img013.jpg}
+%--% \end{center}
+\begin{picture}(300,64)(-30,0)
+\put(-10,46){\texttt{s}}
+\put(0,16){\dvbox{}{npv}{}}
+\put(78,28){\vector(1,0){65}}
+\put(140,0){\dvbox{5}{}{}}
+\put(218,12){\vector(1,0){65}}
+\put(290,10){"hello"}
+\end{picture}
 
 \noindent
 The v flag distinguishes descriptors for variables from descriptors for values.
@@ -316,9 +394,26 @@ words, rather than bytes, allows larger offsets, which is important
 for computers with 16-bit words. For example, the variable word.count
 for the record given in the preceding section is
 
-\begin{center}
-\includegraphics[width=5.2492in,height=2.4098in]{ib-img/ib-img014.jpg}
-\end{center}
+%--% \begin{center}
+%--% \includegraphics[width=5.2492in,height=2.4098in]{ib-img/ib-img014.jpg}
+%--% \end{center}
+\begin{picture}(300,180)(-20,0)
+\put(0,16){\dvbox{8}{npv}{}}
+\put(78,28){\vector(1,0){65}}
+\put(140,128){\blkbox{record}{40}}
+\put(140,96){\dvbox{proc}{np}{}}
+\put(140,64){\dvbox{5}{}{}}
+\put(140,32){\dvbox{4}{}{}}
+\put(140,0){\dvbox{integer}{n}{4}}
+%\put(260,154){title}
+%\put(260,138){size of block}
+\put(218,109){\vector(1,0){65}}
+\put(290,107){record-constructor block}
+\put(218,77){\vector(1,0){65}}
+\put(290,75){"chair"}
+\put(218,45){\vector(1,0){65}}
+\put(290,43){"noun"}
+\end{picture}
 
 The variable points directly to the value rather than to the title of
 the block so that access to the value is more efficient. Note that the
@@ -340,19 +435,33 @@ relationship:
 In an expression such as \texttt{write(s)}, \texttt{s} is dereferenced
 by fetching the descriptor pointed to by the v-word of the variable.
 
-\begin{center}
-\includegraphics[width=3.8492in,height=0.8492in]{ib-img/ib-img015.jpg}
-\end{center}
+\begin{picture}(300,64)(-30,0)
+\put(-10,46){\texttt{s}}
+\put(0,16){\dvbox{}{npv}{}}
+\put(78,28){\vector(1,0){65}}
+\put(140,0){\dvbox{5}{}{}}
+\put(218,12){\vector(1,0){65}}
+\put(290,10){"hello"}
+\end{picture}
 
 In the case of assignment, as in
 
-{\ttfamily\mdseries
-\ \ \ s := 13570}
+%-% {\ttfamily\mdseries
+%-% \ \ \ s := 13570}
+\iconline{
+\>s := 13570
+}
 
 \noindent the value descriptor pointed to by the v-word of the
 variable descriptor changed:
 
-\ \  \includegraphics[width=2.6717in,height=0.7374in]{ib-img/ib-img016.jpg} 
+%--%\ \  \includegraphics[width=2.6717in,height=0.7374in]{ib-img/ib-img016.jpg} 
+\begin{picture}(300,64)(-30,0)
+\put(-10,46){\texttt{s}}
+\put(0,16){\dvbox{}{npv}{}}
+\put(78,28){\vector(1,0){65}}
+\put(140,0){\dvbox{integer}{n}{13570}}
+\end{picture}
 
 These operations on variables correspond to indirect load and store
 instructions of a typical computer.
@@ -364,15 +473,21 @@ assignment and dereferencing. Consider, for example, the keyword
 \texttt{\&trace}. Its value must always be an integer. Consequently,
 in an assignment such as
 
-{\ttfamily\mdseries
-\ \ \ \&trace := \textit{expr}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \&trace := \textit{expr}}
+\iconline{
+\>\&trace := \textit{expr}
+}
 
 \noindent the value produced by \textit{expr} must be checked to be
 sure that it is an integer. If it is not, an attempt is made to
 convert it to an integer, so that in
 
-{\ttfamily\mdseries
-\ \ \ \&trace := {\textquotedbl}1{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \&trace := {\textquotedbl}1{\textquotedbl}}
+\iconline{
+\>\&trace := "1"
+}
 
 \noindent the value assigned to \texttt{\&trace} is the integer
 \texttt{1}, not the string \texttt{{\textquotedbl}1{\textquotedbl}}.
@@ -409,7 +524,18 @@ contains the value of the keyword, its string name, and a pointer to a
 C function that is called when assignment to the keyword is made. For
 example, the trapped variable for \texttt{\&trace} is:
 
-\ \  \includegraphics[width=3.9543in,height=1.4398in]{ib-img/ib-img017.jpg} 
+%--%\ \  \includegraphics[width=3.9543in,height=1.4398in]{ib-img/ib-img017.jpg} 
+\begin{picture}(300,140)(-20,0)
+\put(0,80){\dvbox{tvkywd}{nptv}{}}
+\put(78,94){\vector(1,0){65}}
+\put(140,64){\blkbox{tvkywd}{}}
+\put(218,78){\vector(1,0){65}}
+\put(290,76){assignment function}
+\put(140,32){\dvbox{integer}{n}{0}}
+\put(140,0){\dvbox{6}{}{}}
+\put(218,13){\vector(1,0){65}}
+\put(290,11){"\&trace"}
+\end{picture}
 
 It is worth noting that the more conventional approach to handling the
 problem of assignment to keywords is to compile special code if a
@@ -417,21 +543,30 @@ keyword occurs an assignment context. It is not always possible,
 however, to determine the context in which a variable is used in
 Icon. Consider a procedure of the form
 
-{\ttfamily\mdseries
-\ \ \ procedure diagnose(s)}
-
-{\ttfamily\mdseries
-\ \ return \&trace}
-
-{\ttfamily\mdseries
-\ \ \ end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure diagnose(s)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ return \&trace}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ end}
+\iconcode{
+\>procedure diagnose(s)\\
+\> ...\\
+\>return \&trace\\
+\>end\\
+}
 
 The semantics of Icon dictate that the result returned in this case
 should be a variable, not just its value, so that it is possible to
 write an expression such as
 
-{\ttfamily\mdseries
-\ \ \ diagnose(s) := 10}
+%-% {\ttfamily\mdseries
+%-% \ \ \ diagnose(s) := 10}
+\iconline{
+\>diagnose(s) := 10
+}
 
 \noindent
 which has the effect of assigning the value 10 to \texttt{\&trace}.
@@ -474,74 +609,99 @@ situation.
 
 \bigskip
 
-{\ttfamily\mdseries
-\ \ \ \#if IntBits != WordBits}
-
-{\ttfamily\color[rgb]{0.0,0.0,0.8}
-\ \ \ \ \ \ \#ifdef LongLongWord}
-
-{\ttfamily\color[rgb]{0.0,0.0,0.8}
-\ \ \ \ \ \ \ \ \ typedef long word;}
-
-{\ttfamily\color[rgb]{0.0,0.0,0.8}
-\ \ \ \ \ \ \ \ \ typedef unsigned long uword;}
-
-{\ttfamily\mdseries
-\textcolor[rgb]{0.0,0.0,0.8}{\ \ \ \ \ \ \#else\newline
-} \ \ \ \ \ \ \ \ typedef long word;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ typedef unsigned long uword;}
-
-{\ttfamily\mdseries
-\textcolor[rgb]{0.0,0.0,0.8}{\ \ \ \ \ \ \#endif\newline
-} \ \ \#else}
-
-{\ttfamily\mdseries
-\ \ \ typedef int word;}
-
-{\ttfamily\mdseries
-\ \ \ typedef unsigned int uword;\newline
- \ \ \#endif}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#if IntBits != WordBits}
+%-% 
+%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
+%-% \ \ \ \ \ \ \#ifdef LongLongWord}
+%-% 
+%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
+%-% \ \ \ \ \ \ \ \ \ typedef long word;}
+%-% 
+%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
+%-% \ \ \ \ \ \ \ \ \ typedef unsigned long uword;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \textcolor[rgb]{0.0,0.0,0.8}{\ \ \ \ \ \ \#else\newline
+%-% } \ \ \ \ \ \ \ \ typedef long word;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ typedef unsigned long uword;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \textcolor[rgb]{0.0,0.0,0.8}{\ \ \ \ \ \ \#endif\newline
+%-% } \ \ \#else}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ typedef int word;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ typedef unsigned int uword;\newline
+%-%  \ \ \#endif}
+\iconcode{
+\>\#if IntBits != WordBits\\
+\>\>\#ifdef LongLongWord\\
+\>\>\>typedef long word;\\
+\>\>\>typedef unsigned long uword;\\
+\>\>\#else\\
+\>\>\>typedef unsigned long uword;\\
+\>\>\#endif\\
+\>typedef int word;\\
+\>typedef unsigned int uword;\\
+\>\#endif\\
+}
 
 A descriptor is declared as a structure:
 
-{\ttfamily\mdseries
-\ \ \ struct descrip \{\ \ /* descriptor */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word dword;\ \ /*\ \ type field */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ union \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ word integr;\ \ /*\ \ integer value */}
-
-{\ttfamily\color[rgb]{0.0,0.0,0.8}
-\#ifdef DescriptorDouble}
-
-{\ttfamily\color[rgb]{0.0,0.0,0.8}
-\ \ \ \ \ \ \ \ \ double realval;}
-
-{\ttfamily\color[rgb]{0.0,0.0,0.8}
-\#endif}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ char *sptr;\ \ /*\ \ pointer to character string */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ union block *bptr;\ \ /*\ \ pointer to a block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ struct descrip *dptr;\ \ /*\ \ pointer to a descriptor */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \} vword;}
-
-{\ttfamily\mdseries
-\ \ \ \};}
+%-% {\ttfamily\mdseries
+%-% \ \ \ struct descrip \{\ \ /* descriptor */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word dword;\ \ /*\ \ type field */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ union \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ word integr;\ \ /*\ \ integer value */}
+%-% 
+%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
+%-% \#ifdef DescriptorDouble}
+%-% 
+%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
+%-% \ \ \ \ \ \ \ \ \ double realval;}
+%-% 
+%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
+%-% \#endif}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ char *sptr;\ \ /*\ \ pointer to character string */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ union block *bptr;\ \ /*\ \ pointer to a block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ struct descrip *dptr;\ \ /*\ \ pointer to a descriptor */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \} vword;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \};}
+\iconcode{
+\>struct descrip \{\ \ /* descriptor */\\
+\>\>word dword;\ \ /*\ \ type field */\\
+\>\>union \{\\
+\>\>\>word integr;\ \ /*\ \ integer value */\\
+\#ifdef DescriptorDouble\\
+\>\>\>double realval;\\
+\#endif\\
+\>\>\>char *sptr;\ \ /*\ \ pointer to character string */\\
+\>\>\>union block *bptr;\ \ /*\ \ pointer to a block */\\
+\>\>\>struct descrip *dptr;\ \ /*\ \ pointer to a descriptor */\\
+\>\>\} vword;\\
+\>\};\\
+}
 
 
 The v-word of a descriptor is a union that reflects its various uses:
@@ -553,30 +713,40 @@ to another descriptor (in the case of a variable).
 Each block type has a structure declaration. For example. the
 declaration for record blocks is
 
-{\ttfamily\mdseries
-\ \ \ struct b\_record \{\ \  \ \ \ \ \ \ \ /* record block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word title;\ \ \ \ \ \ /*\ \ T\_Record */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word blksize;\ \ \ \ \ \ /*\ \ size of block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct descrip recdesc; /* record constructor descriptor */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct descrip fields[1];/*\ \ fields */}
-
-{\ttfamily\mdseries
-\ \ \ \};}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ struct b\_record \{\ \  \ \ \ \ \ \ \ /* record block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word title;\ \ \ \ \ \ /*\ \ T\_Record */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word blksize;\ \ \ \ \ \ /*\ \ size of block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct descrip recdesc; /* record constructor descriptor */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct descrip fields[1];/*\ \ fields */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \};}
+\iconcode{
+\>struct b\_record \{\>\>\>\>\>\>\>\>\> /* record block */\\
+\>\>word title;\>\>\>\>\>\>\>\> /*\ T\_Record */\\
+\>\>word blksize;\>\>\>\>\>\>\>\> /*\ \ size of block */\\
+\>\>struct descrip recdesc;\>\>\>\>\>\>\>\> /* record constructor descriptor */\\
+\>\>struct descrip fields[1];\>\>\>\>\>\>\>\> /*\ \ fields */\\
+\>\};\\
+}
 
 Blocks for records vary in size, depending on the number of fields
 declared for the record type. The size of 1 in
 
-{\ttfamily\mdseries
-\ \ struct descrip fields[1];}
+%-% {\ttfamily\mdseries
+%-% \ \ struct descrip fields[1];}
+\iconline{
+\ \ struct descrip fields[1];
+}
 
 \noindent is provided to satisfy the C compiler. Actual blocks for
 records are constructed at run time in a region that is managed by
@@ -586,23 +756,31 @@ a means of accessing portions of such blocks from C.
 
 The declaration for keyword trapped-variable blocks is
 
-{\ttfamily\mdseries
-\ \ \ struct b\_tvkywd \{\ \ \ \ /* keyword trapped variable block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word title;\ \ \ \ /*\ \ T Tvkywd */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ int (*putval) ();\ \ /*\ \ assignment function */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct descrip kyval;\ \ /*\ \ keyword value */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct descrip kyname;/*\ \ keyword name */}
-
-{\ttfamily\mdseries
-\ \ \ \};}
+%-% {\ttfamily\mdseries
+%-% \ \ \ struct b\_tvkywd \{\ \ \ \ /* keyword trapped variable block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word title;\ \ \ \ /*\ \ T Tvkywd */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ int (*putval) ();\ \ /*\ \ assignment function */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct descrip kyval;\ \ /*\ \ keyword value */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct descrip kyname;/*\ \ keyword name */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \};}
+\iconcode{
+\>struct b\_tvkywd \{\ \ \ \ \ \ \ \ /* keyword trapped variable block */\\
+\>\>word title;\ \ \ \ \ \ \ \ \ \ \ \ \ /*\ \ T Tvkywd */\\
+\>\>int (*putval) ();\ \ \ \ \ \ /*\ \ assignment function */\\
+\>\>struct descrip kyval;\ \ \ \ /*\ \ keyword value */\\
+\>\>struct descrip kyname;\ \ /*\ \ keyword name */\\
+\>\};\\
+}
 
 Note that the title fields of \texttt{b\_record} and
 \texttt{b\_tvkywd} contain type codes, as indicated in previous
@@ -614,40 +792,61 @@ can be determined from their type.
 The block union given in the declaration of \texttt{struct descrip}
 consists of a union of all block types:
 
-{\ttfamily\mdseries
-\ \ \ union block \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct b\_real realblk;\newline
- \ \ \ \ \ struct b\_cset cset;\newline
- \ \ \ \ \ struct b\_file file;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct b\_proc proc;\newline
- \ \ \ \ \ struct b\_list list;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct b\_lelem lelem;\newline
- \ \ \ \ \ struct b\_table table;\newline
- \ \ \ \ \ struct b\_telem telem;\newline
- \ \ \ \ \ struct b\_set set;}
-
-
-\ \ \ \ \ \ struct b\_selem selem;\newline
- \ \ \ \ \ struct b\_record record;\newline
- \ \ \ \ \ struct b\_tvsubs tvsubs;\newline
- \ \ \ \ \ struct b\_tvtbl tvtbl;\newline
- \ \ \ \ \ struct b\_refresh refresh;\newline
- \ \ \ \ \ struct b\_coexpr coexpr;\newline
- \ \ \ \ \ struct b\_externl externl;
-
-
-\ \ \ \ \ \ struct b\_slots slots;
-
-
-\ \ \ \ \ \ struct b\_bignum bignumblk;\newline
- \ \ \ \ \ \};
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ union block \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct b\_real realblk;\newline
+%-%  \ \ \ \ \ struct b\_cset cset;\newline
+%-%  \ \ \ \ \ struct b\_file file;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct b\_proc proc;\newline
+%-%  \ \ \ \ \ struct b\_list list;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct b\_lelem lelem;\newline
+%-%  \ \ \ \ \ struct b\_table table;\newline
+%-%  \ \ \ \ \ struct b\_telem telem;\newline
+%-%  \ \ \ \ \ struct b\_set set;}
+%-% 
+%-% 
+%-% \ \ \ \ \ \ struct b\_selem selem;\newline
+%-%  \ \ \ \ \ struct b\_record record;\newline
+%-%  \ \ \ \ \ struct b\_tvsubs tvsubs;\newline
+%-%  \ \ \ \ \ struct b\_tvtbl tvtbl;\newline
+%-%  \ \ \ \ \ struct b\_refresh refresh;\newline
+%-%  \ \ \ \ \ struct b\_coexpr coexpr;\newline
+%-%  \ \ \ \ \ struct b\_externl externl;
+%-% 
+%-% 
+%-% \ \ \ \ \ \ struct b\_slots slots;
+%-% 
+%-% 
+%-% \ \ \ \ \ \ struct b\_bignum bignumblk;\newline
+%-%  \ \ \ \ \ \};
+\iconcode{
+\>union block \{\\
+\>\>struct b\_real realblk;\\
+\>\>struct b\_cset cset;\\
+\>\>struct b\_file file;\\
+\>\>struct b\_proc proc;\\
+\>\>struct b\_list list;\\
+\>\>struct b\_lelem lelem;\\
+\>\>struct b\_table table;\\
+\>\>struct b\_telem telem;\\
+\>\>struct b\_set set;\\
+\>\>struct b\_selem selem;\\
+\>\>struct b\_record record;\\
+\>\>struct b\_tvsubs tvsubs;\\
+\>\>struct b\_tvtbl tvtbl;\\
+\>\>struct b\_refresh refresh;\\
+\>\>struct b\_coexpr coexpr;\\
+\>\>struct b\_externl externl;\\
+\>\>struct b\_slots slots;\\
+\>\>struct b\_bignum bignumblk;\\
+\>\};\\
+}
 
 Note that there are several kinds of blocks in addition to those that
 correspond to source-language data types.
@@ -656,74 +855,99 @@ correspond to source-language data types.
 
 The type codes are defined symbolically:
 
-{\ttfamily\mdseries
-\ \ \ \#define T\_Null\ \ \ \ 0}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Integer\ \ \ \ 1}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Lrgint\ \ \ \ 2}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Real\ \ \ \ 3}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Cset\ \ \ \ 4}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_File\ \ \ \ 5}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Proc\ \ \ \ 6}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Record\ \ \ \ 7}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_List\ \ \ \ 8}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Lelem\ \ \ \ 9}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Set\ \ \ \ 10}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Selem\ \ \ \ 11}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Table\ \ \ \ 12}
-
-{\ttfamily\mdseries
-\ \ \ \#define T Telem\ \ \ \ 13}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Tvtbl\ \ \ \ 14}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Slots\ \ \ \ 15}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Tvsubs\ \ \ \ 16}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Refresh\ \ \ \ 17}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Coexpr\ \ \ \ 18}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_External\ \ \ \ 19}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Kywdint\ \ \ \ 20}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Kywdpos\ \ \ \ 21}
-
-{\ttfamily\mdseries
-\ \ \ \#define T\_Kywdsubj\ \ \ \ 22}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Null\ \ \ \ 0}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Integer\ \ \ \ 1}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Lrgint\ \ \ \ 2}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Real\ \ \ \ 3}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Cset\ \ \ \ 4}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_File\ \ \ \ 5}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Proc\ \ \ \ 6}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Record\ \ \ \ 7}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_List\ \ \ \ 8}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Lelem\ \ \ \ 9}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Set\ \ \ \ 10}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Selem\ \ \ \ 11}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Table\ \ \ \ 12}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T Telem\ \ \ \ 13}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Tvtbl\ \ \ \ 14}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Slots\ \ \ \ 15}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Tvsubs\ \ \ \ 16}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Refresh\ \ \ \ 17}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Coexpr\ \ \ \ 18}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_External\ \ \ \ 19}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Kywdint\ \ \ \ 20}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Kywdpos\ \ \ \ 21}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define T\_Kywdsubj\ \ \ \ 22}
+\iconcode{
+\>\#define T\_Null\ \ \ \ 0\\
+\>\#define T\_Integer\ \ \ \ 1\\
+\>\#define T\_Lrgint\ \ \ \ 2\\
+\>\#define T\_Real\ \ \ \ 3\\
+\>\#define T\_Cset\ \ \ \ 4\\
+\>\#define T\_File\ \ \ \ 5\\
+\>\#define T\_Proc\ \ \ \ 6\\
+\>\#define T\_Record\ \ \ \ 7\\
+\>\#define T\_List\ \ \ \ 8\\
+\>\#define T\_Lelem\ \ \ \ 9\\
+\>\#define T\_Set\ \ \ \ 10\\
+\>\#define T\_Selem\ \ \ \ 11\\
+\>\#define T\_Table\ \ \ \ 12\\
+\>\#define T Telem\ \ \ \ 13\\
+\>\#define T\_Tvtbl\ \ \ \ 14\\
+\>\#define T\_Slots\ \ \ \ 15\\
+\>\#define T\_Tvsubs\ \ \ \ 16\\
+\>\#define T\_Refresh\ \ \ \ 17\\
+\>\#define T\_Coexpr\ \ \ \ 18\\
+\>\#define T\_External\ \ \ \ 19\\
+\>\#define T\_Kywdint\ \ \ \ 20\\
+\>\#define T\_Kywdpos\ \ \ \ 21\\
+\>\#define T\_Kywdsubj\ \ \ \ 22\\
+}
 
 
 The type codes in diagrams are abbreviated, as indicated by previous examples.
@@ -731,85 +955,114 @@ The type codes in diagrams are abbreviated, as indicated by previous examples.
 
 The defined constants for d-word flags are
 
-{\ttfamily\mdseries
-\ \ \ n\ \ \ \ F\_Nqual}
-
-{\ttfamily\mdseries
-\ \ \ p\ \ \ \ F\_Ptr}
-
-{\ttfamily\mdseries
-\ \ \ v\ \ \ \ F\_Var}
-
-{\ttfamily\mdseries
-\ \ \ t\ \ \ \ F\_Tvar}
+%-% {\ttfamily\mdseries
+%-% \ \ \ n\ \ \ \ F\_Nqual}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ p\ \ \ \ F\_Ptr}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ v\ \ \ \ F\_Var}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ t\ \ \ \ F\_Tvar}
+\iconcode{
+\>n\ \ \ \ F\_Nqual\\
+\>p\ \ \ \ F\_Ptr\\
+\>v\ \ \ \ F\_Var\\
+\>t\ \ \ \ F\_Tvar\\
+}
 
 The values of these flags depend on the word size of the computer.
 
 
 The d-words of descriptors are defined in terms of flags and type codes:
 
-{\ttfamily\mdseries
-\ \ \ \#define D\_Null\ \ \ \ (T\_Null {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Integer\ \ \ \ (T\_Integer {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Long\ \ \ \ (T\_Long {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Real\ \ \ \ (T\_Real {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Cset\ \ \ \ (T\_Cset {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_File\ \ \ \ (T\_File {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Proc\ \ \ \ (T\_Proc {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_List\ \ \ \ (T\_List {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Table\ \ \ \ (T\_Table {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Set\ \ \ \ (T\_Set {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Selem\ \ \ \ (T\_Selem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Record\ \ \ \ (T\_Record {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Telem\ \ \ \ (T\_Telem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Lelem\ \ \ \ (T\_Lelem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Tvsubs\ \ \ \ (T\_Tvsubs {\textbar} D\_Tvar)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Tvtbl\ \ \ \ (T Tvtbl {\textbar} D\_Tvar)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Tvkywd\ \ \ \ (T\_Tvkywd {\textbar} D\_Tvar)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Coexpr\ \ \ \ (T\_Coexpr {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Refresh\ \ \ \ (T\_Refresh {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Var\ \ \ \ (F\_Var {\textbar} F\ \ \_Nqual {\textbar} F\ \ \_Ptr)}
-
-{\ttfamily\mdseries
-\ \ \ \#define D\_Tvar\ \ \ \ (D\_Var {\textbar} F\_Tvar)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Null\ \ \ \ (T\_Null {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Integer\ \ \ \ (T\_Integer {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Long\ \ \ \ (T\_Long {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Real\ \ \ \ (T\_Real {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Cset\ \ \ \ (T\_Cset {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_File\ \ \ \ (T\_File {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Proc\ \ \ \ (T\_Proc {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_List\ \ \ \ (T\_List {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Table\ \ \ \ (T\_Table {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Set\ \ \ \ (T\_Set {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Selem\ \ \ \ (T\_Selem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Record\ \ \ \ (T\_Record {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Telem\ \ \ \ (T\_Telem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Lelem\ \ \ \ (T\_Lelem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Tvsubs\ \ \ \ (T\_Tvsubs {\textbar} D\_Tvar)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Tvtbl\ \ \ \ (T Tvtbl {\textbar} D\_Tvar)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Tvkywd\ \ \ \ (T\_Tvkywd {\textbar} D\_Tvar)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Coexpr\ \ \ \ (T\_Coexpr {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Refresh\ \ \ \ (T\_Refresh {\textbar} F\_Ptr {\textbar} F\_Nqual)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Var\ \ \ \ (F\_Var {\textbar} F\ \ \_Nqual {\textbar} F\ \ \_Ptr)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define D\_Tvar\ \ \ \ (D\_Var {\textbar} F\_Tvar)}
+\iconcode{
+\>\#define D\_Null\ \ \ \ (T\_Null | F\_Nqual)\\
+\>\#define D\_Integer\ \ \ \ (T\_Integer | F\_Nqual)\\
+\>\#define D\_Long\ \ \ \ (T\_Long | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Real\ \ \ \ (T\_Real | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Cset\ \ \ \ (T\_Cset | F\_Ptr | F\_Nqual)\\
+\>\#define D\_File\ \ \ \ (T\_File | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Proc\ \ \ \ (T\_Proc | F\_Ptr | F\_Nqual)\\
+\>\#define D\_List\ \ \ \ (T\_List | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Table\ \ \ \ (T\_Table | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Set\ \ \ \ (T\_Set | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Selem\ \ \ \ (T\_Selem | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Record\ \ \ \ (T\_Record | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Telem\ \ \ \ (T\_Telem | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Lelem\ \ \ \ (T\_Lelem | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Tvsubs\ \ \ \ (T\_Tvsubs | D\_Tvar)\\
+\>\#define D\_Tvtbl\ \ \ \ (T Tvtbl | D\_Tvar)\\
+\>\#define D\_Tvkywd\ \ \ \ (T\_Tvkywd | D\_Tvar)\\
+\>\#define D\_Coexpr\ \ \ \ (T\_Coexpr | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Refresh\ \ \ \ (T\_Refresh | F\_Ptr | F\_Nqual)\\
+\>\#define D\_Var\ \ \ \ (F\_Var | F\ \ \_Nqual | F\ \ \_Ptr)\\
+\>\#define D\_Tvar\ \ \ \ (D\_Var | F\_Tvar)\\
+}
 
 As indicated previously, flags, type codes, and d-words are
 distinguished by the prefixes \texttt{F\_}, \texttt{T\_}, and
@@ -824,81 +1077,107 @@ for arguments and results. Some of these are illustrated by the RTL
 function for the Icon operator \texttt{*x}, which produces the size of
 \texttt{x}:
 
-{\ttfamily\mdseries
-\ \ \ operator\{1\} * size(x)}
-
-{\ttfamily\mdseries
-\ \ \ abstract \{ return integer \}}
-
-{\ttfamily\mdseries
-\ \ \ type\_case x of \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ string: inline \{ return C\_integer StrLen(x); \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ list: inline \{ return C\_integer BlkD(x,List)-{\textgreater}size; \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ table: inline \{ return C\_integer BlkD(x,Table)-{\textgreater}size; \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ set: inline \{ return C\_integer BlkD(x,Set)-{\textgreater}size; \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ cset: inline \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ register word i = BlkD(x,Cset)-{\textgreater}size;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ if (i {\textless} 0) i = cssize(\&x);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return C\_integer i;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ default: \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ * Try to convert it to a string.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ if !cnv:tmp\_string(x) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ runerr(112, x);\ \ /* no notion of size */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ inline \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ return C\_integer StrLen(x);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
-
-
-\ \ \ \ \ \ \ \ \ \ \ \}
-
-
-\ \ \ \ \ \ \}
-
-{\ttfamily
-end}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ operator\{1\} * size(x)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ abstract \{ return integer \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ type\_case x of \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ string: inline \{ return C\_integer StrLen(x); \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ list: inline \{ return C\_integer BlkD(x,List)-{\textgreater}size; \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ table: inline \{ return C\_integer BlkD(x,Table)-{\textgreater}size; \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ set: inline \{ return C\_integer BlkD(x,Set)-{\textgreater}size; \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ cset: inline \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ register word i = BlkD(x,Cset)-{\textgreater}size;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ if (i {\textless} 0) i = cssize(\&x);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ return C\_integer i;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ ...}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ default: \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * Try to convert it to a string.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ if !cnv:tmp\_string(x) then}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ runerr(112, x);\ \ /* no notion of size */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ inline \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ return C\_integer StrLen(x);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+%-% 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \}
+%-% 
+%-% 
+%-% \ \ \ \ \ \ \}
+%-% 
+%-% {\ttfamily
+%-% end}
+\iconcode{
+\>operator\{1\} * size(x)\\
+\>abstract \{ return integer \}\\
+\>type\_case x of \{\\
+\>\>string: inline \{ return C\_integer StrLen(x); \}\\
+\>\>list: inline \{ return C\_integer BlkD(x,List)->size; \}\\
+\>\>table: inline \{ return C\_integer BlkD(x,Table)->size; \}\\
+\>\>set: inline \{ return C\_integer BlkD(x,Set)->size; \}\\
+\>\>cset: inline \{\\
+\>\>\>register word i = BlkD(x,Cset)->size;\\
+\>\>\>if (i < 0) i = cssize(\&x);\\
+\>\>\>return C\_integer i;\\
+\>\>\>\}\\
+\>\>...\\
+\>\>default: \{\\
+\>\>\>\>/*\\
+\>\>\>\>\ * Try to convert it to a string.\\
+\>\>\>\>\ */\\
+\>\>\>\ \ if !cnv:tmp\_string(x) then\\
+\>\>\>\>\ \ runerr(112, x);\ \ /* no notion of size */\\
+\>\>\>\ \ inline \{\\
+\>\>\>\>\ \ return C\_integer StrLen(x);\\
+\>\>\>\>\ \ \}\\
+\>\>\>\ \ \}\\
+\>\>\}\\
+end\\
+}
 
 \texttt{operator} is an RTL construct that performs several
 operations. One of these operations is to provide a C function
@@ -918,25 +1197,34 @@ branches of code depending on the type of x. In the generated code
 there is a test to determine if descriptor \texttt{x} holds a
 qualifier. \texttt{Qual()} is a macro that is defined as
 
-{\ttfamily\mdseries
-\ \ \ \#define Qual(d)\ \ (!((d).dword \& F\_Nqual))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define Qual(d)\ \ (!((d).dword \& F\_Nqual))}
+\iconline{
+\>\#define Qual(d)\ \ (!((d).dword \& F\_Nqual))
+}
 
 If \texttt{x} is a qualifier, its length is placed in the v-word of
 the return value descriptor, using the macros IntVal and StrLen, which
 are defined as
 
-{\ttfamily\mdseries
-\ \ \ \#define IntVal(d)\ \ ((d).vword.integr)}
-
-{\ttfamily\mdseries
-\ \ \ \#define StrLen(d)\ \ ((d).dword)}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define IntVal(d)\ \ ((d).vword.integr)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define StrLen(d)\ \ ((d).dword)}
+\iconcode{
+\>\#define IntVal(d)\ \ ((d).vword.integr)\\
+\>\#define StrLen(d)\ \ ((d).dword)\\
+}
 
 If \texttt{x} is not a qualifier, then the size depends on the
 type. The macro \texttt{Type()} isolates the type code
 
-{\ttfamily\mdseries
-\ \ \ \#define Type(d)\ \ ((d).dword \& TypeMask)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define Type(d)\ \ ((d).dword \& TypeMask)}
+\iconline{
+\>\#define Type(d)\ \ ((d).dword \& TypeMask)
+}
 
 \noindent where the value of \texttt{TypeMask} is 63, providing
 considerable room for additions to Icon's internal types.
@@ -946,8 +1234,11 @@ source-language size is contained in their \texttt{size} field. The
 macro \texttt{BlkLoc()} accesses a pointer in the v-field of a
 descriptor and is defined as
 
-{\ttfamily\mdseries
-\ \ \ \#define BlkLoc(d) ((d).vword.bptr)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ \#define BlkLoc(d) ((d).vword.bptr)}
+\iconline{
+\>\#define BlkLoc(d) ((d).vword.bptr)
+}
 
 A more specialized macro \texttt{BlkD()} wraps uses of
 \texttt{BlkLoc()} and subsequent union member access, allowing

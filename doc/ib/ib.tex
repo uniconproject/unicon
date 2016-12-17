@@ -49,6 +49,52 @@
 \renewcommand\footnoterule{\vspace*{-0.0071in}\setlength\leftskip{0pt}\setlength\rightskip{0pt plus 1fil}\noindent\textcolor{black}{\rule{0.25\columnwidth}{0.0071in}}\vspace*{0.0398in}}
 
 \include{writerdefs}
+%-------------------------------------------------------------------------------
+% Macros for LaTeX pictures
+%
+% ToDo:  Find a better place for this stuff
+%
+% Draw a descriptor/value box  \dvbox{title}{flags}{value}
+\newcommand{\dvbox}[3]{
+\begin{picture}(120,32)
+\multiput(0,21)(2,0){50}{\line(1,0){1}}% The dotted line in the middle
+\put(0,5){\framebox(100,32){}}%          The box
+\put(-2,3){\makebox(100,32)[tr]{#1}}%    title
+\put(2,3){\makebox(100,32)[tl]{#2}}%     flags
+\put(-2,10){\makebox(100,32)[br]{#3}}%   value
+\end{picture}
+}
+% Draw a block box with a single value \blkbox{title}{value_1}
+\newcommand{\blkbox}[2]{
+\begin{picture}(120,32)
+\put(0,21){\line(1,0){100}}%             The line in the middle
+\put(0,5){\framebox(100,32){}}%          The box
+\put(-2,3){\makebox(100,32)[tr]{#1}}%    title
+\put(-2,10){\makebox(100,32)[br]{#2}}%   value
+\end{picture}
+}
+% Draw a block box with two values \blkboxtwo{title}{value_1}{value_2}
+\newcommand{\blkboxtwo}[3]{
+\begin{picture}(120,48)
+\put(0,21){\line(1,0){100}}%             Lower separator
+\put(0,37){\line(1,0){100}}%             Upper separator
+\put(0,5){\framebox(100,48){}}%          The box
+\put(-2,3){\makebox(100,48)[tr]{#1}}%    title
+\put(-2,30){\makebox(100,32)[br]{#2}}%   value_1
+\put(-2,10){\makebox(100,48)[br]{#3}}%   value_2
+\end{picture}
+}
+% Draw a block box with a large value \blklrgbox{title}{value}
+\newcommand{\blklrgbox}[2]{
+\begin{picture}(120,48)
+\put(0,37){\line(1,0){100}}%             Separator
+\multiput(0,21)(95,0){2}{\line(1,0){5}}% Decorative flim-flam
+\put(0,5){\framebox(100,48){}}%          The box
+\put(-2,3){\makebox(100,48)[tr]{#1}}%    title
+\put(0,5){\makebox(100,32){#2}}%         value
+\end{picture}
+}
+%-------------------------------------------------------------------------------
 
 \selectlanguage{english}
 \title{The Implementation of Icon and Unicon}

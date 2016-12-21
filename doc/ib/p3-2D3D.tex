@@ -252,7 +252,7 @@ categorized into several major areas:
 \ Window and context attribute manipulation
 \end{itemize}
 
-\subsection{Window Creation and Destruction}
+\subsection[27.4.1 Window Creation and Destruction]{27.4.1 Window Creation and Destruction}
 
 A graphics window is created when the Unicon program calls
 \textsf{open()} with file attribute
@@ -272,7 +272,7 @@ to it. A closed window remains in memory until all Unicon values that
 refer to it are closed. A call to \textsf{unbind()} removes a binding
 without necessarily closing the window.
 
-\subsection{Event Processing}
+\subsection[27.4.2 Event Processing]{27.4.2 Event Processing}
 
 The system software for each graphics platform has a huge number of
 different types of events. Unicon ignores most of them. Of the
@@ -328,14 +328,14 @@ but effective way to provide symbolic access
 requiring include files. Additional tables mapping strings to
 integers are found in the platform independent source files.
 
-\subsection{Resource Management}
+\subsection[27.4.3 Resource Management]{27.4.3 Resource Management}
 
 One of the most important tasks performed by platform-specific
 graphics functions is the management of resources, both the on-screen
 resources (windows) and the drawing context elements used by the
 window system in performing output.
 
-\subsection[Memory Management and r*rsc.ri Files]{Memory Management and r*rsc.ri Files}
+\subsection[27.4.4 Memory Management and r*rsc.ri Files]{27.4.4 Memory Management and r*rsc.ri Files}
 
 Memory management for internal window structures is independent of
 Unicon's standard memory management system. Xlib memory is allocated
@@ -353,7 +353,7 @@ easily reached, not lost in the block region. The window interface
 structures are reference counted and freed when the reference count
 reaches 0.
 
-\subsection[Color Management]{Color Management}
+\subsection[27.4.5 Color Management]{27.4.5 Color Management}
 
 Managing colors under X Windows is painful. In particular, if the same
 color is allocated twice the color table entry is shared (which is
@@ -364,7 +364,7 @@ impossible to detect when a particular color is no longer being
 displayed, and so colors are only freed on window closure or when a
 window is cleared.
 
-\subsection{Font Management}
+\subsection[27.4.6 Font Management]{27.4.6 Font Management}
 
 Unicon supports a portable font name syntax. Since the available fonts
 on systems vary widely, {\textquotedbl}interesting{\textquotedbl} code
@@ -399,7 +399,7 @@ written in a custom superset dialect of C called RTL [Walker94]. The
 3D facilities use the existing 2D facilities code for window creation
 and destruction, as well as handling keyboard and mouse input.
 
-\subsection[3D Facilities Requirements ]{\bfseries 3D Facilities Requirements }
+\subsection[27.6.1 3D Facilities Requirements]{27.6.1 3D Facilities Requirements}
 
 OpenGL 1.2 or later must be present on the system in order for
 Unicon's 3D graphics facilities to work. A check for this is performed
@@ -418,7 +418,7 @@ needed to implement the list structure that is used to redraw a
 window. More information can be found on redrawing of windows in
 section 7.3.
 
-\subsection[Files]{Files}
+\subsection[27.6.2 Files]{27.6.2 Files}
 
 Several existing files contain extensions to support the Unicon 3D
 graphics facilities under \#ifdef Graphics3D, including data.r (new
@@ -429,7 +429,7 @@ graphics.h (new 3D fields in canvas and context structures). Also a
 new file, ropengl.ri was added that contains the C helper functions
 for functions in \textsf{fwindow.r, rxwin.ri}, and \textsf{rwindow.r}.
 
-\subsection{Redrawing Windows}
+\subsection[27.6.3 Redrawing Windows]{27.6.3 Redrawing Windows}
 
 In the 2D graphics facilities, events that require the redrawing of a
 window are handled by using a pixmap. Instead of using a pixmap, for
@@ -459,7 +459,7 @@ functions and attributes, every function or attribute available in the
 that functions and attributes that have no effect in the 3D graphics
 facilities are not placed in this list.
 
-\subsection[Textures]{\bfseries Textures}
+\subsection[27.6.4 Textures]{27.6.4 Textures}
 
 In OpenGL, textures can be one, two, or three-dimensional and are
 represented as multi-dimensional arrays. In the Unicon 3D graphics
@@ -497,7 +497,7 @@ texture from the texture resources, possibly using up all texture
 resources. Future work might look into when to delete a texture an
 ways to check when the texture resources have been used up.
 
-\subsection{Texture Coordinates}
+\subsection[27.6.5 Texture Coordinates]{27.6.5 Texture Coordinates}
 
 The primitives as mentioned in previous sections are cubes, tori,
 cylinders, disks, partial disks, points, lines, polygons, spheres,
@@ -1674,21 +1674,17 @@ Foundation Classes. This makes it easier to build with different C
 compilers, and easier to port to different Windows implementations,
 such as Windows CE.
 
-\subsection{Installing, Configuring, and Compiling the Source Code}
+\subsection[27.9.1 Installing, Configuring, and Compiling the Source Code]{27.9.1 Installing, Configuring, and Compiling the Source Code}
 
-Building Unicon for Windows Version 11.0 requires Mingw32 GCC
-2.95.2. Newer versions of Windows GCC might be made to work, but
-thusfar have produced non-working executables. We hope to add Cygwin
-GCC support in the future. The sources may also build with modest
-revision under MS Visual C++ 2.0 or newer. I have built earlier
-versions with MSVC versions 2, 5, and 6. I encourage you to try
-building using other compilers, and send me your configuration
-files. You will need a robust Win32 platform to compile these sources;
-the build scripts and {\textquotedbl}make{\textquotedbl} process tend
-to fail on older versions of Windows.
+Building Unicon for Windows requires Mingw32 GCC. We hope to add
+Cygwin GCC support in the future. The sources may also build with
+modest revision under MS Visual C++. You are encouraged to try
+building using other compilers, and send Unicon Project your
+configuration files. You will need a robust Win32 platform to compile
+these sources; the build scripts and ``make'' process tend to fail on
+older versions of Windows.
 
-{\sffamily
-1. Unpack the sources.}
+{\sffamily 1. Unpack the sources.}
 
 Unpack uni.zip in such a way that it preserves its subdirectory
 structure. Unzip.exe is recommended rather than WinZip.  See Icon

@@ -59,67 +59,92 @@ used to hold list elements.
 
 The structure declarations for list-header blocks and list-element blocks are
 
-{\ttfamily\mdseries
-\ \ \ struct b\_list \{\ \ /* list-header block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word title;\ \ /*\ \ T\_List */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word size;\ \ /*\ \ current list size */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word id;\ \ \ \ /*\ \ identification number */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ union block *listhead; /* first list-element block \textit{*}/}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ union block *listtail; /* last list-element block \textit{*}/}
-
-{\ttfamily\mdseries
-\ \ \ \};}
-
-{\ttfamily\mdseries
-\ \ \ struct b\_lelem \{\ \ /* list-element block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word title;\ \ /*\ \ T\_Lelem */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word blksize;\ \ /*\ \ size of block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word nslots;\ \ /*\ \ total number of slots */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word first;\ \ /*\ \ index of first used slot */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word nused;\ \ /*\ \ number of used slots */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ union block *listprev; \ /* previous list-element block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ union block *listnext; \ /* next list-element block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct descrip lslots[1]; /* array of slots */}
-
-{\ttfamily\mdseries
-\ \ \ \};}
+%-% {\ttfamily\mdseries
+%-% \ \ \ struct b\_list \{\ \ /* list-header block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word title;\ \ /*\ \ T\_List */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word size;\ \ /*\ \ current list size */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word id;\ \ \ \ /*\ \ identification number */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ union block *listhead; /* first list-element block \textit{*}/}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ union block *listtail; /* last list-element block \textit{*}/}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \};}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ struct b\_lelem \{\ \ /* list-element block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word title;\ \ /*\ \ T\_Lelem */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word blksize;\ \ /*\ \ size of block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word nslots;\ \ /*\ \ total number of slots */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word first;\ \ /*\ \ index of first used slot */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word nused;\ \ /*\ \ number of used slots */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ union block *listprev; \ /* previous list-element block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ union block *listnext; \ /* next list-element block */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ struct descrip lslots[1]; /* array of slots */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \};}
+\iconcode{
+\>struct b\_list \{\>\>\>\>\>\>\>/* list-header block */\\
+\>\>word title;\>\>\>\>\>\>\>/*\ \ T\_List */\\
+\>\>word size;\>\>\>\>\>\>\>/*\ \ current list size */\\
+\>\>word id;\>\>\>\>\>\>\>/*\ \ identification number */\\
+\>\>union block *listhead;\>\>\>\>\>\>\>/* first list-element block \textit{*}/\\
+\>\>union block *listtail;\>\>\>\>\>\>\>/* last list-element block \textit{*}/\\
+\>\};\\
+\>struct b\_lelem \{\>\>\>\>\>\>\>/* list-element block */\\
+\>\>word title;\>\>\>\>\>\>\>/*\ \ T\_Lelem */\\
+\>\>word blksize;\>\>\>\>\>\>\>/*\ \ size of block */\\
+\>\>word nslots;\>\>\>\>\>\>\>/*\ \ total number of slots */\\
+\>\>word first;\>\>\>\>\>\>\>/*\ \ index of first used slot */\\
+\>\>word nused;\>\>\>\>\>\>\>/*\ \ number of used slots */\\
+\>\>union block *listprev;\>\>\>\>\>\>\>/* previous list-element block */\\
+\>\>union block *listnext;\>\>\>\>\>\>\>/* next list-element block */\\
+\>\>struct descrip lslots[1];\>\>\>\>\>\>\>/* array of slots */\\
+\>\};\\
+}
 
 
 When a list is created, either by
 
-{\ttfamily\mdseries
-\ \ \ list(n, x)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ list(n, x)}
+\iconline{
+\>list(n, x)
+}
 
 \noindent or by
 
-{\ttfamily\mdseries
-\ \ \ [x1 ,x2, ..., xn]}
+%-% {\ttfamily\mdseries
+%-% \ \ \ [x1 ,x2, ..., xn]}
+\iconline{
+\>[x1 ,x2, ..., xn]
+}
 
 \noindent there is only one list-element block. Other list-element
 blocks may be added to the chain as the result of pushs or puts.
@@ -133,200 +158,287 @@ diagrams to a manageable size.
 
 The code for the list function is
 
-{\ttfamily\mdseries
-function\{1\} list(n, x)}
-
-{\ttfamily\mdseries
-\ \ \ if is:set(n) then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return new list(store[type(n).set\_elem])}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \  \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ body \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ struct descrip d;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ cnv\_list(\&n, \&d); /* can't fail, we know n is a set */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return d;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ else \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if !def:C\_integer(n, 0L) then}
-
-{\ttfamily\mdseries
-\ \  runerr(101, n)}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return new list(type(x))}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ body \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ tended struct b\_list *hp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ register word i, size;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ word nslots;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ register struct b\_lelem *bp; /* doesnt need to be tended */}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ nslots = size = n;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * Ensure that the size is positive and that the}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * \ list-element block has at least MinListSlots slots.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (size {\textless} 0) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ irunerr(205, n);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ errorfail;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (nslots == 0)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ nslots = MinListSlots;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * Allocate the list-header block and a list-element block.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * \ nslots is the number of slots in the list-element}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * \ block while size is the number of elements in the list.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ Protect(hp = alclist\_raw(size, nslots), runerr(0));}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ bp = (struct b\_lelem *)hp-{\textgreater}listhead;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * Initialize each slot.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ for (i = 0; i {\textless} size; i++)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ bp-{\textgreater}lslots[i] = x;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ Desc\_EVValD(hp, E\_Lcreate, D\_List);}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * Return the new list.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return list(hp);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \}}
-
-{\ttfamily\mdseries
-end}
+%-% {\ttfamily\mdseries
+%-% function\{1\} list(n, x)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ if is:set(n) then \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ abstract \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ return new list(store[type(n).set\_elem])}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \  \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ body \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ struct descrip d;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ cnv\_list(\&n, \&d); /* can't fail, we know n is a set */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ return d;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ else \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ if !def:C\_integer(n, 0L) then}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  runerr(101, n)}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ abstract \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ return new list(type(x))}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ body \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ tended struct b\_list *hp;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ register word i, size;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ word nslots;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ register struct b\_lelem *bp; /* doesnt need to be tended */}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ nslots = size = n;}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * Ensure that the size is positive and that the}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * \ list-element block has at least MinListSlots slots.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ if (size {\textless} 0) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ irunerr(205, n);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ errorfail;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ if (nslots == 0)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ nslots = MinListSlots;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * Allocate the list-header block and a list-element block.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * \ nslots is the number of slots in the list-element}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * \ block while size is the number of elements in the list.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ Protect(hp = alclist\_raw(size, nslots), runerr(0));}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ bp = (struct b\_lelem *)hp-{\textgreater}listhead;}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * Initialize each slot.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ for (i = 0; i {\textless} size; i++)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ bp-{\textgreater}lslots[i] = x;}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ Desc\_EVValD(hp, E\_Lcreate, D\_List);}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * Return the new list.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ return list(hp);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% end}
+\iconcode{
+function\{1\} list(n, x)\\
+\>if is:set(n) then \{\\
+\>\>abstract \{\\
+\>\>\>return new list(store[type(n).set\_elem])\\
+\>\>\ \  \}\\
+\>\>body \{\\
+\>\>\>struct descrip d;\\
+\>\>\>cnv\_list(\&n, \&d); /* can't fail, we know n is a set */\\
+\>\>\>return d;\\
+\>\>\>\}\\
+\>\>\}\\
+\>else \{\\
+\>\>if !def:C\_integer(n, 0L) then\\
+\ \  runerr(101, n)\\
+\\
+\>abstract \{\\
+\>\>return new list(type(x))\\
+\>\>\}\\
+\\
+\>\>tended struct b\_list *hp;\\
+\>\>register word i, size;\\
+\>\>word nslots;\\
+\>\>register struct b\_lelem *bp; /* doesnt need to be tended */\\
+\\
+\>\>nslots = size = n;\\
+\\
+\>\>/*\\
+\>\>\ * Ensure that the size is positive and that the\\
+\>\>\ * \ list-element block has at least MinListSlots slots.\\
+\>\>\ */\\
+\>\>if (size < 0) \{\\
+\>\>\>irunerr(205, n);\\
+\>\>\>errorfail;\\
+\>\>\>\}\\
+\>\>if (nslots == 0)\\
+\>\>\>nslots = MinListSlots;\\
+\>\>/*\\
+\>\>\ * Allocate the list-header block and a list-element block.\\
+\>\>\ * \ nslots is the number of slots in the list-element\\
+\>\>\ * \ block while size is the number of elements in the list.\\
+\>\>\ */\\
+\>\>Protect(hp = alclist\_raw(size, nslots), runerr(0));\\
+\>\>bp = (struct b\_lelem *)hp->listhead;\\
+\\
+\>\>/*\\
+\>\>\ * Initialize each slot.\\
+\>\>\ */\\
+\>\>for (i = 0; i < size; i++)\\
+\>\>\>bp->lslots[i] = x;\\
+\\
+\>\>Desc\_EVValD(hp, E\_Lcreate, D\_List);\\
+\\
+\>\>/*\\
+\>\>\ * Return the new list.\\
+\>\>\ */\\
+\>\>return list(hp);\\
+\>\>\}\\
+\>\}\\
+end\\
+}
 
 The data structures produced for a list are illustrated by the result
 of evaluating
 
-{\ttfamily\mdseries
-\ \ \ a := list(1, 4)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ a := list(1, 4)}
+\iconline{
+\>a := list(1, 4)
+}
 
 \noindent which produces a one-element list containing the value 4:
 
-
-\bigskip
-
-
-\ \  \includegraphics[width=4.2752in,height=4.8362in]{ib-img/ib-img027.jpg} 
-
+%--%\ \  \includegraphics[width=4.2752in,height=4.8362in]{ib-img/ib-img027.jpg} 
+\begin{picture}(300,420)
+\put(130,0){\dvbox{null}{n}{0}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{null}{n}{0}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{null}{n}{0}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{0}{1}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+\put(130,288){\dvbox{lelem}{np}{}}
+\put(130,320){\lptr{36}}
+\put(130,320){\dvbox{lelem}{np}{}}
+\put(130,288){\lptr{36}}
+\put(114,332){\line(0,-1){64}}
+\put(114,268){\vector(1,0){20}}
+\put(130,352){\blkbox{list}{1}}
+\put(130,352){\brboxlabel{number of elements in the list}}
+\put(0,368){\dvptrbox{list}{np}{50}{}}
+\end{picture}
 
 \ \ \ \ Data Structures for \texttt{list(1,4)}
 
@@ -341,208 +453,326 @@ Elements in a list-element block are stored as a doubly-linked
 circular queue. If an element is added to the end of the list
 \texttt{a}, as in
 
-{\ttfamily\mdseries
-\ \ \ put(a, 5)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ put(a, 5)}
+\iconline{
+\>put(a, 5)
+}
 
 \noindent the elements of the list are 4 and 5. The value is added to
 the '{\textquotedbl}end{\textquotedbl} of the last list-element block,
 assuming there is an unused slot (as there is in this case). The code
 in \texttt{put()} to do this is
 
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * Point hp to the list-header block and bp to the last}
-
-{\ttfamily\mdseries
-\ \ \ \ * list-element block.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ hp = (struct b\_list *)BlkLoc(x);}
-
-{\ttfamily\mdseries
-\ \ \ bp = (struct b\_lelem *) hp-{\textgreater}listtail;}
-
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * If the last list-element block is full, allocate a new}
-
-{\ttfamily\mdseries
-\ \ \ \ *\ \ list-element block, make it the first list-element block,}
-
-{\ttfamily\mdseries
-\ \ \ \ *\ \ and make it the next block of the former last list-element}
-
-{\ttfamily\mdseries
-\ \ \ \ * block.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \  if (bp-{\textgreater}nused {\textgreater}= bp-{\textgreater}nslots) \{}
-
-{\ttfamily\mdseries
-\ \  \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * Set i to the size of block to allocate.}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \  \ \ \ i = hp-{\textgreater}size / two;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ if (i {\textless} MinListSlots)}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ \ i = MinListSlots;}
-
-{\ttfamily\mdseries
-\#ifdef MaxListSlots}
-
-{\ttfamily\mdseries
-\ \  \ \ \ if (i {\textgreater} MaxListSlots)}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ \ i = MaxListSlots;}
-
-{\ttfamily\mdseries
-\#endif\ \ \ \ \ \ \ \ \ \ /* MaxListSlots */}
-
-{\ttfamily\mdseries
-\ \  \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * Allocate a new list element block. \ If the block}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * \ can't be allocated, try smaller blocks.}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \  \ \ \ while ((bp = alclstb(i, (word)0, (word)0)) == NULL) \{}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ \ i /= 4;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ \ if (i {\textless} MinListSlots)}
-
-{\ttfamily\mdseries
-\ \ \ \  \ runerr(0);}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ \ \}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \  \ \ \ hp-{\textgreater}listtail-{\textgreater}lelem.listnext = (union block *) bp;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ bp-{\textgreater}listprev = hp-{\textgreater}listtail;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ hp-{\textgreater}listtail = (union block *) bp;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * Set i to position of new last element and assign val to}
-
-{\ttfamily\mdseries
-\ \ \ \ * that element.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ i = bp-{\textgreater}first + bp-{\textgreater}nused;}
-
-{\ttfamily\mdseries
-\ \ \ if (i {\textgreater}= bp-{\textgreater}nslots)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ i -= bp-{\textgreater}nslots;}
-
-{\ttfamily\mdseries
-\ \  bp-{\textgreater}lslots[i] = dp[val];}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \  /*}
-
-{\ttfamily\mdseries
-\ \  \ * Adjust block usage count and current list size.}
-
-{\ttfamily\mdseries
-\ \  \ */}
-
-{\ttfamily\mdseries
-\ \  bp-{\textgreater}nused++;}
-
-{\ttfamily\mdseries
-\ \  hp-{\textgreater}size++;}
-
-{\ttfamily\mdseries
-\ \  \}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * Return the list.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return x;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-end}
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * Point hp to the list-header block and bp to the last}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * list-element block.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ hp = (struct b\_list *)BlkLoc(x);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ bp = (struct b\_lelem *) hp-{\textgreater}listtail;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * If the last list-element block is full, allocate a new}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ *\ \ list-element block, make it the first list-element block,}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ *\ \ and make it the next block of the former last list-element}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * block.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  if (bp-{\textgreater}nused {\textgreater}= bp-{\textgreater}nslots) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * Set i to the size of block to allocate.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ i = hp-{\textgreater}size / two;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ if (i {\textless} MinListSlots)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ \ i = MinListSlots;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \#ifdef MaxListSlots}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ if (i {\textgreater} MaxListSlots)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ \ i = MaxListSlots;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \#endif\ \ \ \ \ \ \ \ \ \ /* MaxListSlots */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * Allocate a new list element block. \ If the block}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * \ can't be allocated, try smaller blocks.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ while ((bp = alclstb(i, (word)0, (word)0)) == NULL) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ \ i /= 4;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ \ if (i {\textless} MinListSlots)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \  \ runerr(0);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ \ \}}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ hp-{\textgreater}listtail-{\textgreater}lelem.listnext = (union block *) bp;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ bp-{\textgreater}listprev = hp-{\textgreater}listtail;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ hp-{\textgreater}listtail = (union block *) bp;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * Set i to position of new last element and assign val to}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * that element.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ i = bp-{\textgreater}first + bp-{\textgreater}nused;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ if (i {\textgreater}= bp-{\textgreater}nslots)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ i -= bp-{\textgreater}nslots;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  bp-{\textgreater}lslots[i] = dp[val];}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ * Adjust block usage count and current list size.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  bp-{\textgreater}nused++;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  hp-{\textgreater}size++;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \}}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ * Return the list.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ return x;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% end}
+\iconcode{
+\>/*\\
+\>\ * Point hp to the list-header block and bp to the last\\
+\>\ * list-element block.\\
+\>\ */\\
+\>hp = (struct b\_list *)BlkLoc(x);\\
+\>bp = (struct b\_lelem *) hp->listtail;\\
+\>/*\\
+\>\ * If the last list-element block is full, allocate a new\\
+\>\ *\ \ list-element block, make it the first list-element block,\\
+\>\ *\ \ and make it the next block of the former last list-element\\
+\>\ * block.\\
+\>\ */\\
+\>if (bp->nused >= bp->nslots) \{\\
+\>\>/*\\
+\>\>\ * Set i to the size of block to allocate.\\
+\>\>\ */\\
+\>\>i = hp->size / two;\\
+\>\>if (i < MinListSlots)\\\ \  \ \ \ \ \ \ i = MinListSlots;\\
+\#ifdef MaxListSlots\\
+\>\>if (i > MaxListSlots)\\
+\>\>\>i = MaxListSlots;\\
+\#endif\ \ \ \ \ \ \ \ \ \ /* MaxListSlots */\\
+\>\ \ /*\\
+\>\>* Allocate a new list element block. \ If the block\\
+\>\>* \ can't be allocated, try smaller blocks.\\
+\>\>*/\\
+\>\>while ((bp = alclstb(i, (word)0, (word)0)) == NULL) \{\\
+\>\>\>i /= 4;\\
+\>\>\>if (i < MinListSlots)\\
+\>\>\>\>runerr(0);\\
+\>\>\}\\
+\\
+\>\>hp->listtail->lelem.listnext = (union block *) bp;\\
+\>\>bp->listprev = hp->listtail;\\
+\>\>hp->listtail = (union block *) bp;\\
+\>\}\\
+\>/*\\
+\>\ * Set i to position of new last element and assign val to\\
+\>\ * that element.\\
+\>\ */\\
+\>i = bp->first + bp->nused;\\
+\>if (i >= bp->nslots)\\
+\>\>i -= bp->nslots;\\
+\>bp->lslots[i] = dp[val];\\
+\\
+\> /*\\
+\> \ * Adjust block usage count and current list size.\\
+\> \ */\\
+\> bp->nused++;\\
+\> hp->size++;\\
+\> \}\\
+\\
+\>\>/*\\
+\>\>\ * Return the list.\\
+\>\>\ */\\
+\>\>return x;\\
+\>\>\}\\
+end\\
+}
 
 The effect on the list-header block and list-element block is:
 
-\ \  \includegraphics[width=2.778in,height=3.8417in]{ib-img/ib-img028.jpg} 
+%--%\ \  \includegraphics[width=2.778in,height=3.8417in]{ib-img/ib-img028.jpg} 
+\begin{picture}(300,370)
+\put(130,0){\dvbox{null}{n}{0}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{null}{n}{0}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{integer}{n}{5}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{0}{2}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+%
+\put(0,224){\dvbox{lelem}{np}{}}
+\put(0,224){\ruptr{36}{32}}
+\put(0,256){\dvptrbox{lelem}{np}{50}{}}
+\put(0,288){\blkbox{list}{2}}
+\put(0,288){\brboxlabel{number of elements in the list}}
+\end{picture}
+
+\ \ \ \ The List Element-Block after a put
 
 Note that the increase in the number of elements in the header block
 and in the number of slots used in the list-element block.
 
 If an element is added to the beginning of a list, as in
 
-{\ttfamily\mdseries
-\ \ \ push(a,3)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ push(a,3)}
+\iconline{
+\>push(a,3)
+}
 
 \noindent the elements of the list are 3, 4, and 5. The new element is
 put at the '{\textquotedbl}beginning{\textquotedbl} of the first
 list-element block. The result is
 
-\ \  \includegraphics[width=4.0602in,height=3.8791in]{ib-img/ib-img029.jpg} 
+%--%\ \  \includegraphics[width=4.0602in,height=3.8791in]{ib-img/ib-img029.jpg} 
+\begin{picture}(300,370)
+\put(130,0){\dvbox{integer}{n}{3}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{null}{n}{0}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{integer}{n}{5}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{3}{3}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+%
+\put(0,224){\dvbox{lelem}{np}{}}
+\put(0,224){\ruptr{36}{32}}
+\put(0,256){\dvptrbox{lelem}{np}{50}{}}
+\put(0,288){\blkbox{list}{3}}
+\put(0,288){\brboxlabel{number of elements in the list}}
+\end{picture}
 
 \ \ \ \ The List Element-Block after a push
 
@@ -558,16 +788,88 @@ If an element is added to a list and no more slots are available in
 the appropriate list-element block, a new list-element block is
 allocated and linked in. For example, following evaluation of
 
-{\ttfamily\mdseries
-\ \ \ push(a.2)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ push(a.2)}
+\iconline{
+\>push(a.2)
+}
 
-{\ttfamily\mdseries
-\ \ \ push(a.1)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ push(a.1)}
+\iconline{
+\>push(a.1)
+}
+
 
 \noindent the list elements are 1,2,3,4, and 5. The resulting structures are
 
 
- \includegraphics[width=4.2752in,height=6.9661in]{ib-img/ib-img030.jpg} \newline
+%--% \includegraphics[width=4.2752in,height=6.9661in]{ib-img/ib-img030.jpg} \newline
+\begin{picture}(300,620)
+%
+\put(0,290){% The top list block
+\begin{picture}(300,300)
+\put(130,0){\dvbox{integer}{n}{1}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{null}{n}{0}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{null}{n}{0}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{null}{n}{0}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{lelem}{np}{}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,128){\lptr{34}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{3}{1}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+%
+\put(0,176){\dvbox{lelem}{np}{}}
+\put(0,176){\rdptr{32}{16}}
+\put(0,208){\dvbox{lelem}{np}{}}
+\put(0,208){\ruptr{32}{16}}
+\put(0,240){\blkbox{list}{5}}
+\put(116,236){\line(0,1){60}}
+\put(116,268){\vector(1,0){18}}
+\put(116,172){\line(0,-1){167}}
+\put(116,296){\line(1,0){200}}
+\put(416,296){\vector(-1,0){100}}
+\put(416,5){\vector(0,1){100}}
+\put(416,105){\line(0,1){191}}
+\end{picture}
+}
+\put(0,0){% The bottom list block
+\begin{picture}(300,370)
+\put(130,0){\dvbox{integer}{n}{3}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{integer}{n}{2}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{integer}{n}{5}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvptrbox{lelem}{np}{56}{}}
+\put(270,172){\line(1,0){146}}
+\put(416,172){\line(0,1){123}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{2}{4}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+\put(116,270){\line(0,1){25}}
+\put(116,270){\vector(1,0){18}}
+\end{picture}
+}
+\end{picture}
+
+
 \ \ The Addition of a List-Element Block
 
 
@@ -575,185 +877,308 @@ As elements are removed from a list by pop (which is synonymous with
 get) or pull. The indices in the appropriate list-element block are
 adjusted. The code for pop is
 
-{\ttfamily\mdseries
-int c\_get(hp, res)}
+%-% {\ttfamily\mdseries
+%-% int c\_get(hp, res)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% struct b\_list *hp;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% struct descrip *res;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ register word i;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ register struct b\_lelem *bp;}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * Fail if the list is empty.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ if (hp-{\textgreater}size {\textless}= 0)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ return 0;}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * Point bp at the first list block. \ If the first block has}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * \ no elements in use, point bp at the next list block.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ bp = (struct b\_lelem *) hp-{\textgreater}listhead;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ if (bp-{\textgreater}nused {\textless}= 0) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ bp = (struct b\_lelem *) bp-{\textgreater}listnext;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ hp-{\textgreater}listhead = (union block *) bp;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ bp-{\textgreater}listprev = NULL;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * Locate first element and assign it to result for return.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ i = bp-{\textgreater}first;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ *res = bp-{\textgreater}lslots[i];}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * Set bp-{\textgreater}first to new first element, or 0 if the block is}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * \ now empty. \ Decrement the usage count for the block and}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ * \ the size of the list.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ if (++i {\textgreater}= bp-{\textgreater}nslots)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ i = 0;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ bp-{\textgreater}first = i;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ bp-{\textgreater}nused-{}-;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ hp-{\textgreater}size-{}-;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ return 1;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \}}
+\iconcode{
+int c\_get(hp, res)\\
+struct b\_list *hp;\\
+struct descrip *res;\\
+\{\\
+\>register word i;\\
+\>register struct b\_lelem *bp;\\
+\\
+\>/*\\
+\>\ * Fail if the list is empty.\\
+\>\ */\\
+\>if (hp->size <= 0)\\
+\>\>return 0;\\
+\\
+\>/*\\
+\>\ * Point bp at the first list block. \ If the first block has\\
+\>\ * \ no elements in use, point bp at the next list block.\\
+\>\ */\\
+\>bp = (struct b\_lelem *) hp->listhead;\\
+\>if (bp->nused <= 0) \{\\
+\>\>bp = (struct b\_lelem *) bp->listnext;\\
+\>\>hp->listhead = (union block *) bp;\\
+\>\>bp->listprev = NULL;\\
+\>\>\}\\
+\\
+\>/*\\
+\>\ * Locate first element and assign it to result for return.\\
+\>\ */\\
+\>i = bp->first;\\
+\>*res = bp->lslots[i];\\
+\\
+\>/*\\
+\>\ * Set bp->first to new first element, or 0 if the block is\\
+\>\ * \ now empty. \ Decrement the usage count for the block and\\
+\>\ * \ the size of the list.\\
+\>\ */\\
+\>if (++i >= bp->nslots)\\
+\>\>i = 0;\\
+\>bp->first = i;\\
+\>bp->nused-{}-;\\
+\>hp->size-{}-;\\
+\>return 1;\\
+\}\\
+}
 
-{\ttfamily\mdseries
-struct b\_list *hp;}
+\noindent where the \texttt{c\_get()} helper function is invoked from RTL as follows:
 
-{\ttfamily\mdseries
-struct descrip *res;}
-
-{\ttfamily\mdseries
-\{}
-
-{\ttfamily\mdseries
-\ \ \ register word i;}
-
-{\ttfamily\mdseries
-\ \ \ register struct b\_lelem *bp;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * Fail if the list is empty.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ if (hp-{\textgreater}size {\textless}= 0)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return 0;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * Point bp at the first list block. \ If the first block has}
-
-{\ttfamily\mdseries
-\ \ \ \ * \ no elements in use, point bp at the next list block.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ bp = (struct b\_lelem *) hp-{\textgreater}listhead;}
-
-{\ttfamily\mdseries
-\ \ \ if (bp-{\textgreater}nused {\textless}= 0) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ bp = (struct b\_lelem *) bp-{\textgreater}listnext;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ hp-{\textgreater}listhead = (union block *) bp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ bp-{\textgreater}listprev = NULL;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * Locate first element and assign it to result for return.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ i = bp-{\textgreater}first;}
-
-{\ttfamily\mdseries
-\ \ \ *res = bp-{\textgreater}lslots[i];}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ * Set bp-{\textgreater}first to new first element, or 0 if the block is}
-
-{\ttfamily\mdseries
-\ \ \ \ * \ now empty. \ Decrement the usage count for the block and}
-
-{\ttfamily\mdseries
-\ \ \ \ * \ the size of the list.}
-
-{\ttfamily\mdseries
-\ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ if (++i {\textgreater}= bp-{\textgreater}nslots)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ i = 0;}
-
-{\ttfamily\mdseries
-\ \ \ bp-{\textgreater}first = i;}
-
-{\ttfamily\mdseries
-\ \ \ bp-{\textgreater}nused-{}-;}
-
-{\ttfamily\mdseries
-\ \ \ hp-{\textgreater}size-{}-;}
-
-{\ttfamily\mdseries
-\ \ \ return 1;}
-
-{\ttfamily\mdseries
-\}}
-
-
-where the \texttt{c\_get()} helper function is invoked from RTL as follows:
-
-{\ttfamily\mdseries
-function\{0,1\} get\_or\_pop(x)}
-
-{\ttfamily\mdseries
-\ \ \ if !is:list(x) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ runerr(108, x)}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return store[type(x).lst\_elem]}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ body \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (!c\_get((struct b\_list *)BlkLoc(x), \&result)) fail;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return result;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-end}
-
+%-% {\ttfamily\mdseries
+%-% function\{0,1\} get\_or\_pop(x)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ if !is:list(x) then}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ runerr(108, x)}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ abstract \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ return store[type(x).lst\_elem]}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ body \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ if (!c\_get((struct b\_list *)BlkLoc(x), \&result)) fail;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ return result;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% end}
+\iconcode{
+function\{0,1\} get\_or\_pop(x)\\
+\>if !is:list(x) then\\
+\>\>runerr(108, x)\\
+\\
+\>abstract \{\\
+\>\>return store[type(x).lst\_elem]\\
+\>\>\}\\
+\\
+\>body \{\\
+\>\>if (!c\_get((struct b\_list *)BlkLoc(x), \&result)) fail;\\
+\>\>return result;\\
+\>\>\}\\
+end\\
+}
 
 Thus, as a result of
 
-{\ttfamily\mdseries
-\ \ \ pop(a)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ pop(a)}
+\iconline{
+\>pop(a)
+}
 
 \noindent
 the list elements are 2, 3, 4, and 5. The resulting structures are
 
 
-\ \  \includegraphics[width=4.3811in,height=6.9937in]{ib-img/ib-img031.jpg} 
+%--%\ \  \includegraphics[width=4.3811in,height=6.9937in]{ib-img/ib-img031.jpg} 
+\begin{picture}(300,620)
+%
+\put(0,290){% The top list block
+\begin{picture}(300,300)
+\put(130,0){\dvbox{integer}{n}{1}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{null}{n}{0}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{null}{n}{0}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{null}{n}{0}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{lelem}{np}{}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,128){\lptr{34}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{0}{0}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+%
+\put(0,176){\dvbox{lelem}{np}{}}
+\put(0,176){\rdptr{32}{16}}
+\put(0,208){\dvbox{lelem}{np}{}}
+\put(0,208){\ruptr{32}{16}}
+\put(0,240){\blkbox{list}{4}}
+\put(116,236){\line(0,1){60}}
+\put(116,268){\vector(1,0){18}}
+\put(116,172){\line(0,-1){167}}
+\put(116,296){\line(1,0){200}}
+\put(416,296){\vector(-1,0){100}}
+\put(416,5){\vector(0,1){100}}
+\put(416,105){\line(0,1){191}}
+\end{picture}
+}
+\put(0,0){% The bottom list block
+\begin{picture}(300,370)
+\put(130,0){\dvbox{integer}{n}{3}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{integer}{n}{2}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{integer}{n}{5}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvptrbox{lelem}{np}{56}{}}
+\put(270,172){\line(1,0){146}}
+\put(416,172){\line(0,1){123}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{2}{4}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+\put(116,270){\line(0,1){25}}
+\put(116,270){\vector(1,0){18}}
+\end{picture}
+}
+\end{picture}
 
 
 \ \ \ \ The Result of Removing Elements from a List-Element Block
@@ -772,17 +1197,43 @@ list-element blocks.
 
 Continuing the previous example,
 
-{\ttfamily\mdseries
-\ \ \ pop(a)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ pop(a)}
+\iconline{
+\>pop(a)
+}
 
 \noindent leaves the list elements 3, 4, and 5. The empty list-element
 block is removed from the chain:
 
- \includegraphics[width=4.0602in,height=3.9307in]{ib-img/ib-img032.jpg} 
-
+%--% \includegraphics[width=4.0602in,height=3.9307in]{ib-img/ib-img032.jpg} 
+\begin{picture}(300,340)
+\put(130,0){\dvbox{integer}{n}{3}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{integer}{n}{2}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{integer}{n}{5}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{3}{3}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+%
+\put(0,224){\dvbox{lelem}{np}{}}
+\put(0,224){\ruptr{36}{32}}
+\put(0,256){\dvptrbox{lelem}{np}{50}{}}
+\put(0,288){\blkbox{list}{3}}
+\put(0,288){\brboxlabel{number of elements in the list}}
+\end{picture}
 
 \ \ Removal of an Empty List-Element Block
-
 
 Note that the value 2 is still physically in the list-element block,
 although it is logically inaccessible.
@@ -799,174 +1250,250 @@ until the appropriate one is reached. The result of evaluating
 
 The portion of the subscripting code that handles lists is
 
-{\ttfamily\mdseries
-\ \ \ type\_case dx of \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ list: \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ return type(dx).lst\_elem}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ * Make sure that y is a C integer.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ if !cnv:C\_integer(y) then \{}
-
-{\ttfamily\mdseries
-\ \  \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * If it isn't a C integer, but is a large integer,}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * fail on the out-of-range index.}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \  \ \ \ if cnv : integer(y) then inline \{ fail; \}}
-
-{\ttfamily\mdseries
-\ \  \ \ \ runerr(101, y)}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ body \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ word i, j;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ register union block *bp; /* no need to be tended */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ struct b\_list *lp; \ \ \ /* doesn't need to be tended */}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \  \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * Make sure that subscript y is in range.}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ lp = (struct b\_list *)BlkLoc(dx);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ i = cvpos((long)y, (long)lp-{\textgreater}size);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ if (i == CvtFail {\textbar}{\textbar} i {\textgreater} lp-{\textgreater}size)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fail;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ * Locate the list-element block containing the}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ * \ desired element.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ bp = lp-{\textgreater}listhead;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ j = 1;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * y is in range, so bp can never be null here. If it}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * was, a memory violation would occur in the code that}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * follows, anyhow, so exiting the loop on a NULL bp}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ * makes no sense.}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \  \ \ while (i {\textgreater}= j + bp-{\textgreater}lelem.nused) \{}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ j += bp-{\textgreater}lelem.nused;}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ bp = BlkLoc(bp-{\textgreater}lelem.listnext);}
-
-{\ttfamily\mdseries
-\ \  \ \ \ \ \ \}}
-
-
-\bigskip
-
-
-\ \  \ \ /*
-
-{\ttfamily
-\textrm{\ \  \ \ \ }* Locate desired element and return a pointer to it.}
-
-{\ttfamily
-\ \  \ \ \ */}
-
-{\ttfamily
-\ \  \ \ i += bp-{\textgreater}lelem.first - j;}
-
-{\ttfamily
-\ \  \ \ if (i {\textgreater}= bp-{\textgreater}lelem.nslots)}
-
-{\ttfamily
-\ \  \ \ \ \ \ i -= bp-{\textgreater}lelem.nslots;}
-
-{\ttfamily
-\ \  \ \ return struct\_var(\&bp-{\textgreater}lelem.lslots[i], bp);}
-
-{\ttfamily
-\ \  \ \ \}}
-
-{\ttfamily
-\ \  \}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ type\_case dx of \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ list: \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ abstract \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ return type(dx).lst\_elem}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ * Make sure that y is a C integer.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ if !cnv:C\_integer(y) then \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * If it isn't a C integer, but is a large integer,}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * fail on the out-of-range index.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ if cnv : integer(y) then inline \{ fail; \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ runerr(101, y)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ body \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ word i, j;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ register union block *bp; /* no need to be tended */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ struct b\_list *lp; \ \ \ /* doesn't need to be tended */}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * Make sure that subscript y is in range.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ lp = (struct b\_list *)BlkLoc(dx);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = cvpos((long)y, (long)lp-{\textgreater}size);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ if (i == CvtFail {\textbar}{\textbar} i {\textgreater} lp-{\textgreater}size)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fail;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * Locate the list-element block containing the}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * \ desired element.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ bp = lp-{\textgreater}listhead;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \ \ \ j = 1;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ /*}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * y is in range, so bp can never be null here. If it}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * was, a memory violation would occur in the code that}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * follows, anyhow, so exiting the loop on a NULL bp}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ * makes no sense.}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ while (i {\textgreater}= j + bp-{\textgreater}lelem.nused) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ j += bp-{\textgreater}lelem.nused;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ bp = BlkLoc(bp-{\textgreater}lelem.listnext);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \  \ \ \ \ \ \}}
+%-% 
+%-% 
+%-% \bigskip
+%-% 
+%-% 
+%-% \ \  \ \ /*
+%-% 
+%-% {\ttfamily
+%-% \textrm{\ \  \ \ \ }* Locate desired element and return a pointer to it.}
+%-% 
+%-% {\ttfamily
+%-% \ \  \ \ \ */}
+%-% 
+%-% {\ttfamily
+%-% \ \  \ \ i += bp-{\textgreater}lelem.first - j;}
+%-% 
+%-% {\ttfamily
+%-% \ \  \ \ if (i {\textgreater}= bp-{\textgreater}lelem.nslots)}
+%-% 
+%-% {\ttfamily
+%-% \ \  \ \ \ \ \ i -= bp-{\textgreater}lelem.nslots;}
+%-% 
+%-% {\ttfamily
+%-% \ \  \ \ return struct\_var(\&bp-{\textgreater}lelem.lslots[i], bp);}
+%-% 
+%-% {\ttfamily
+%-% \ \  \ \ \}}
+%-% 
+%-% {\ttfamily
+%-% \ \  \}}
+\iconcode{
+\>type\_case dx of \{\\
+\>\>list: \{\\
+\>\>\>abstract \{\\
+\>\>\>\>return type(dx).lst\_elem\\
+\>\>\>\>\}\\
+\>\>\>/*\\
+\>\>\>\ * Make sure that y is a C integer.\\
+\>\>\>\ */\\
+\>\>\>if !cnv:C\_integer(y) then \{\\
+\>\>/*\\
+\>\>\ * If it isn't a C integer, but is a large integer,\\
+\>\>\ * fail on the out-of-range index.\\
+\>\>\ */\\
+\>\>if cnv : integer(y) then inline \{ fail; \}\\
+\>\>runerr(101, y)\\
+\>\>\}\\
+\>\>\>body \{\\
+\>\>\>\>word i, j;\\
+\>\>\>\>register union block *bp; /* no need to be tended */\\
+\>\>\>\>struct b\_list *lp; \ \ \ /* doesn't need to be tended */\\
+\\
+\>\>/*\\
+\>\>\ * Make sure that subscript y is in range.\\
+\>\>\ */\\
+\>\>\>\>lp = (struct b\_list *)BlkLoc(dx);\\
+\>\>\>\>i = cvpos((long)y, (long)lp->size);\\
+\>\>\>\>if (i == CvtFail || i > lp->size)\\
+\>\>\>\>\>fail;\\
+\>\>\>\>/*\\
+\>\>\>\>\ * Locate the list-element block containing the\\
+\>\>\>\>\ * \ desired element.\\
+\>\>\>\>\ */\\
+\>\>\>\>bp = lp->listhead;\\
+\>\>\>\>j = 1;\\
+\>\>/*\\
+\>\>\ * y is in range, so bp can never be null here. If it\\
+\>\>\ * was, a memory violation would occur in the code that\\
+\>\>\ * follows, anyhow, so exiting the loop on a NULL bp\\
+\>\>\ * makes no sense.\\
+\>\>\ */\\
+\>\ \ while (i >= j + bp->lelem.nused) \{\\
+\>\>\ \ j += bp->lelem.nused;\\
+\>\>\ \ bp = BlkLoc(bp->lelem.listnext);\\
+\>\>\ \ \}\\
+\\
+\>\>/*\\
+\>\>* Locate desired element and return a pointer to it.\\
+\>\>*/\\
+\>\>i += bp->lelem.first - j;\\
+\>\>if (i >= bp->lelem.nslots)\\
+\>\>\>i -= bp->lelem.nslots;\\
+\>\>return struct\_var(\&bp->lelem.lslots[i], bp);\\
+\>\>\}\\
+\>\}\\
+}
 
 
 For the preceding example, \texttt{a[3]} produces a variable that
 points to the descriptor for the value 5:
 
- \includegraphics[width=4.1681in,height=3.3799in]{ib-img/ib-img033.jpg} 
-
+%--% \includegraphics[width=4.1681in,height=3.3799in]{ib-img/ib-img033.jpg} 
+\begin{picture}(300,280)
+\put(130,0){\dvbox{integer}{n}{3}}
+\put(130,0){\trboxlabel{slot 3}}
+\put(130,32){\dvbox{integer}{n}{2}}
+\put(130,32){\trboxlabel{slot 2}}
+\put(130,64){\dvbox{integer}{n}{5}}
+\put(130,64){\trboxlabel{slot 1}}
+\put(130,96){\dvbox{integer}{n}{4}}
+\put(130,96){\trboxlabel{slot 0}}
+\put(130,128){\dvbox{null}{n}{0}}
+\put(130,128){\trboxlabel{next list-element block}}
+\put(130,160){\dvbox{null}{n}{0}}
+\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,192){\blkbox{3}{3}}
+\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
+\put(130,224){\blkbox{68}{4}}
+\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
+\put(130,256){\wordbox{lelem}{}}
+%
+\put(0,80){\dvptrbox{11}{npv}{50}{}}
+\end{picture}
 
 \ \ \ \ Referencing a List Element
 

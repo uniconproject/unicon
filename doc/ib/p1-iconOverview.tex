@@ -71,8 +71,7 @@ is static: identifiers either are global or are local to procedures.
 Icon is an expression-based language with reserved-word syntax. It
 resembles C in appearance, for example (Kernighan and Ritchie 1978).
 
-{\sffamily\bfseries
-2.1.1 Data Types}
+\subsection[2.1.1 Data Types]{2.1.1 Data Types}
 
 Icon has many types of data --- including several that are not found in
 most programming languages. In addition to the usual integers and real
@@ -236,9 +235,8 @@ expression can be written more concisely as
 Icon also has the concept of a numeric type, which can be either an
 integer or a real (floating-point) number.
 
-{\sffamily\bfseries
-2.1.2 Expression Evaluation}
 
+\subsection[2.1.2 Expression Evaluation]{2.1.2 Expression Evaluation}
 
 In most programming languages --- Algol, Pascal, PL/I, and C, for
 example --- the evaluation of an expression always produces exactly
@@ -979,9 +977,8 @@ value of x if control backtracking into this expression occurs.  Thus,
 \noindent
 assigns 3 to i but restores the previous value of i if \texttt{read(f)} fails.
 
-{\sffamily\bfseries
-2.1.3 Csets and Strings}
 
+\subsection[2.1.3 Csets and Strings]{2.1.3 Csets and Strings}
 
 Csets are unordered sets of characters, while strings are sequences of
 characters. There are 256 different characters, the first 128 of which
@@ -1224,8 +1221,7 @@ applies. Consequently,
 writes \verb+ u*|**| ||*||! +.
 
 
-{\sffamily\bfseries
-2.1.4 String Scanning}
+\subsection[2.1.4 String Scanning]{2.1.4 String Scanning}
 
 String scanning is a high-level facility for string analysis that
 suppresses the computational details associated with the explicit
@@ -1337,16 +1333,11 @@ The values of \&subject and \&pos are saved at the beginning of a
 string-scanning expression and are restored when it
 completes. Consequently, scanning expressions can be nested.
 
-{\sffamily\bfseries
-2.1.5 Lists}
 
+\subsection[2.1.5 Lists]{2.1.5 Lists}
 
-A list is a linear aggregate of values
-({\textquotedbl}elements{\textquotedbl}). For example,
+A list is a linear aggregate of values (``elements''). For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ cities := [{\textquotedbl}Portland{\textquotedbl}, {\textquotedbl}Toledo{\textquotedbl},
-%-% {\textquotedbl}Tampa{\textquotedbl}]}
 \iconline{
 \>cities := ["Portland", "Toledo", "Tampa"]
 }
@@ -1355,8 +1346,6 @@ A list is a linear aggregate of values
 \noindent
 assigns a list of three strings to cities. Lists can be heterogeneous, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ language := [{\textquotedbl}Icon{\textquotedbl}, 1978, {\textquotedbl}The University of Arizona{\textquotedbl}]}
 \iconline{
 \>language := ["Icon", 1978, "The University of Arizona"]
 }
@@ -1571,8 +1560,8 @@ The result is a \textit{new} list containing values \texttt{i} through
 There is no inherent limit to the size of a list, either when it is
 originally created or as a result of adding elements to it.
 
-{\sffamily\bfseries
-2.1.6 Sets}
+
+\subsection[2.1.6 Sets]{2.1.6 Sets}
 
 A set is an unordered collection of values. Unlike csets, which
 contain only characters, sets are collections of Icon values that can
@@ -1638,8 +1627,8 @@ member of itself, as in
 There is no contradiction here, since a set value is a pointer to the
 structure for the set.
 
-{\sffamily\bfseries
-2.1.7 Tables}
+
+\subsection[2.1.7 Tables]{2.1.7 Tables}
 
 A table is a set of pairs of values. Tables provide an associative
 look mechanism as contrasted with positional references to lists. They
@@ -1696,8 +1685,8 @@ Tables can be heterogeneous and have a mixture of types for entry and
 assigned values. Tables grow automatically in size as new elements are
 added and there is no inherent limit on the size of a table.
 
-{\sffamily\bfseries
-2.1.8 Records}
+
+\subsection[2.1.8 Records]{2.1.8 Records}
 
 A record is an aggregate of values that is referenced by named
 fields. Each record type has a separate name. A record type and the
@@ -1744,8 +1733,8 @@ types. The same field names can be given for different record types,
 and such fields need not be in the same position for all such record
 types.
 
-{\sffamily\bfseries
-2.1.9 Input and Output}
+
+\subsection[2.1.9 Input and Output]{2.1.9 Input and Output}
 
 Input and output in Icon are sequential and comparatively simple. The
 standard input, standard output, and standard error output files are
@@ -1829,8 +1818,8 @@ The function
 \noindent
 produces the same output as write, but it then terminates program execution.
 
-{\sffamily\bfseries
-2.1.10 Procedures}
+
+\subsection[2.1.10 Procedures]{2.1.10 Procedures}
 
 \textbf{Procedure Declarations.} The executable portions of an Icon
 program are contained in procedure declarations.  Program execution
@@ -1838,14 +1827,6 @@ begins with a call of the procedure main.
 
 An example of a procedure declaration is:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure maxstr(slist)\newline
-%-% \ \ \ \ \ \ local max, value\newline
-%-% \ \ \ \ \ \ max := 0\newline
-%-% \ \ \ \ \ \ every value := *!slist do\newline
-%-% \ \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
-%-% \ \ \ \ \ \ return max\newline
-%-% \ \ \ end}
 \iconcode{
 \>procedure maxstr(slist)\\
 \>\>local max, value\\
@@ -1856,26 +1837,19 @@ An example of a procedure declaration is:
 \>end\\
 }
 
-
-
-This procedure computes the longest string in a list of strings. The
-formal parameter slist and the identifiers max and value are local to
+\noindent This procedure computes the longest string in a list of strings.
+The formal parameter slist and the identifiers max and value are local to
 calls of the procedure \texttt{maxstr()}. Storage for them is
 allocated when \texttt{maxstr()} is called and deallocated when
 \texttt{maxstr()} returns.
 
 A procedure call has the same form as a function call. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ lines := []\newline
-%-% \ \ \ while put(lines, read(f))\newline
-%-% \ \ \ write(maxstr(lines))}
 \iconcode{
 \>lines := []\\
 \>while put(lines, read(f))\\
 \>write(maxstr(lines))\\
 }
-
 
 \noindent
 writes the length of the longest line in the file \texttt{f}.
@@ -1886,14 +1860,6 @@ procedure body in place of return. For example, the following
 procedure returns the length of the longest string in \texttt{slist}
 but fails if that length is less than limit:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure maxstr(slist, limit)\newline
-%-%  \ \ \ \ \ local max, value\newline
-%-%  \ \ \ \ \ max := 0\newline
-%-%  \ \ \ \ \ every value := *!slist do\newline
-%-%  \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
-%-%  \ \ \ \ \ if max {\textless} limit then fail else return max\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure maxstr(slist, limit)\\
 \>\>local max, value\\
@@ -1903,7 +1869,6 @@ but fails if that length is less than limit:
 \>\>if max < limit then fail else return max\\
 \>end\\
 }
-
 
 Flowing off the end of a procedure body without an explicit return is
 equivalent to fail.
@@ -1916,15 +1881,6 @@ is called. The use of a static identifier and an initial clause is
 illustrated by the following procedure, which returns the longest of
 all the strings in the lists it has processed:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure maxstrall(slist)\newline
-%-%  \ \ \ \ \ local value\newline
-%-%  \ \ \ \ \ static max\newline
-%-%  \ \ \ \ \ initial max := 0\newline
-%-%  \ \ \ \ \ every value := *!slist do\newline
-%-%  \ \ \ \ \ \ \ \ if value{\textgreater} max then max := value\newline
-%-%  \ \ \ \ \ return max\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure maxstrall(slist)\\
 \>\>local value\\
@@ -1941,24 +1897,18 @@ all the strings in the lists it has processed:
 in the same way. Their names have global scope.  Other identifiers can
 be declared to have global scope, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ global count}
 \iconline{
 \>global count
 }
-
 
 Such global declarations are on a par with procedure declarations and
 cannot occur within procedure declarations.
 
 A call such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(maxstr(lines))}
 \iconline{
 \>write(maxstr(lines))
 }
-
 
 \noindent
 applies the \textit{value} of the identifier \texttt{maxstr} to
@@ -1969,10 +1919,6 @@ of such identifiers. In this case, the initial value of
 declaration for it. Similarly, the initial value of \texttt{write} is
 a function. These values can be assigned to other variables, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ print := write\newline
-%-%  \ \ \ \ \ \ \ \ \ \ ...\newline
-%-%  \ \ \textrm{print(maxstr(lines))}}
 \iconcode{
 \>print := write\\
 \>\>\>\ \ ...\\
@@ -1992,7 +1938,6 @@ initial value is a procedure. Consequently,
 \>write := 3
 }
 
-
 \noindent
 assigns an integer to \texttt{write}, replacing its initial function value.
 
@@ -2000,14 +1945,10 @@ Although it is typical to call a procedure by using an identifier that
 has the procedure value, the procedure used in a call can be
 computed. The general form of a call is
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ expr}\textit{\TextSubscript{0}}\textit{(expr}\textit{\TextSubscript{1}}\textit{,
-%-% expr}\textit{\TextSubscript{2}}\textit{, }..., \textit{expr}\textit{\TextSubscript{n}}\textit{)}}
 \iconline{
 \textit{\ \ \ expr}\textit{\TextSubscript{0}}\textit{(expr}\textit{\TextSubscript{1}}\textit{,expr}
 \textit{\TextSubscript{2}}\textit{, }..., \textit{expr}\textit{\TextSubscript{n}}\textit{)}
 }
-
 
 \noindent where the value of
 \textit{expr\TextSubscript{0}} is applied to the
@@ -2016,15 +1957,10 @@ arguments resulting from the evaluation of
 \textit{expr\TextSubscript{2}}, ...,
 \textit{expr\TextSubscript{n}}. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ (proclist[i])\textit{(expr\TextSubscript{1}}, ,
-%-% \textit{expr\TextSubscript{2}},
-%-% ..., \textit{expr\TextSubscript{n})}}
 \iconline{
 \>(proclist[i])\textit{(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}},
 ..., \textit{expr\TextSubscript{n})}
 }
-
 
 \noindent
 applies the procedure that is the \texttt{i}th element of \texttt{proclist}.
@@ -2033,12 +1969,6 @@ Procedures may be called recursively. The recursive nature of a call
 depends on the fact that procedure names are global. The
 {\textquotedbl}Fibonacci strings{\textquotedbl} provide an example:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure fibstr(i)\newline
-%-%  \ \ \ \ \ if i = 1 then return {\textquotedbl}a{\textquotedbl}\newline
-%-%  \ \ \ \ \ else if i = 2 then return {\textquotedbl}b{\textquotedbl}\newline
-%-%  \ \ \ \ \ else return fibstr(i - 1) {\textbar}{\textbar} fibstr(i - 2)\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure fibstr(i)\\
 \>\>if i = 1 then return "a"\\
@@ -2047,17 +1977,9 @@ depends on the fact that procedure names are global. The
 \>end\\
 }
 
-
 An identifier that is not declared in a procedure and is not global
 defaults to local. Thus, local declarations can be omitted, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure maxstr(slist)\newline
-%-%  \ \ \ \ \ max := 0\newline
-%-%  \ \ \ \ \ every value := * !slist do\newline
-%-%  \ \ \ \ \ \ \ \ if value {\textgreater} max then max := value\newline
-%-%  \ \ \ \ \ return max\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure maxstr(slist)\\
 \>\>max := 0\\
@@ -2067,21 +1989,12 @@ defaults to local. Thus, local declarations can be omitted, as in
 \>end\\
 }
 
-
-
 \textbf{Procedures as Generators}. In addition to returning and
 failing, a procedure can also suspend. In this case, the values of its
 arguments and local identifiers are not destroyed, and the call can
 be resumed to produce another result in the same way a built-in
 generator can be resumed. An example of such a generator is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure intseq(i)\newline
-%-%  \ \ \ \ \ repeat \{\newline
-%-%  \ \ \ \ \ \ \ \ suspend i\newline
-%-%  \ \ \ \ \ \ \ \ i +:= 1\newline
-%-%  \ \ \ \ \ \ \ \ \}\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure intseq(i)\\
 \>\>repeat \{\\
@@ -2091,36 +2004,19 @@ generator can be resumed. An example of such a generator is
 \>end\\
 }
 
-
 A call \texttt{intseq(10)}, for example, is capable of generating the
 infinite sequence of integers 10, 11, 12, ... .  For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ every f(intseq(10) {\textbackslash} 5)}
 \iconline{
 \>every f(intseq(10) {\textbackslash} 5)
 }
 
-
-\noindent
-calls f(10), f(11), f(12), f(13), and f(14).
+\noindent calls f(10), f(11), f(12), f(13), and f(14).
 
 If the argument of suspend is a generator, the generator is resumed
 when the call is resumed and the call suspends again with the result
 it produces. A generator of the Fibonacci strings provides an example:
 
-%-%  Fixed this mess manually
-%-% \ \ \ procedure fibstrseq()\newline
-%-%  \ \ \ \ \ local s1, s2, s3\newline
-%-%  \ \ \ \ \ s1 := {\textquotedbl}a{\textquotedbl}\newline
-%-%  \ \ \ \ \ s2 := {\textquotedbl}b{\textquotedbl}\newline
-%-%  \ \ \ \ \ suspend (s1 {\textbar} s2)\newline
-%-%  \ \ \ \ \ repeat \{\newline
-%-%  \ \ \ \ \ \ \ \ suspend s3 := s1 {\textbar}{\textbar} s2\newline
-%-%  \ \ \ \ \ \ \ \ s1 := s2\newline
-%-%  \ \ \ \ \ \ \ \ s2 := s3\newline
-%-%  \ \ \ \ \ \ \ \ \}\newline
-%-%  \ \ end
 \iconcode{
 \>procedure fibstrseq()\\
 \>\>local s1, s2, s3\\
@@ -2136,7 +2032,7 @@ it produces. A generator of the Fibonacci strings provides an example:
 }
 
 When this procedure is called, the first suspend expression produces
-the value of\ \ s1, {\textquotedbl}a{\textquotedbl}. If the call of
+the value of \texttt{s1}, \texttt{"a"}. If the call of
 \texttt{fibstrseq()} is resumed, the argument of \texttt{suspend} is
 resumed and produces the value of \texttt{s2},
 \texttt{{\textquotedbl}b{\textquotedbl}}. If the call is resumed
@@ -2147,10 +2043,6 @@ Repeated alternation often is useful in supplying an endless number of
 alternatives. For example, the procedure \texttt{intseq(i)} can be
 rewritten as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure intseq(i)\newline
-%-%  \ \ \ \ \ suspend i {\textbar} (i +:= {\textbar}1)\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure intseq(i)\\
 \>\>suspend i | (i +:= |1)\\
@@ -2160,7 +2052,6 @@ rewritten as
 
 Note that \texttt{{\textbar}1} is used to provide an endless sequence
 of increments.
-
 
 \textbf{Argument Transmission}. Omitted arguments in a procedure or
 function call (including trailing ones) default to the null
@@ -2181,7 +2072,6 @@ expressions with side effects can produce unexpected results. Thus, in
 \>write(s, s := "hello")
 }
 
-
 \noindent the value written is \texttt{hellohello}, regardless of the
 value of \texttt{s} before the evaluation of the second argument of
 \texttt{write()}.
@@ -2195,11 +2085,6 @@ string-valued global identifier.
 In these exceptional cases, the variable is returned and assignment
 can be made to the procedure call. An example is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure maxel(a, i, j)\newline
-%-%  \ \ \ \ \ if i {\textgreater} j then return a[i]\newline
-%-%  \ \ \ \ \ else return a[j]\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure maxel(a, i, j)\\
 \>\>if i > j then return a[i]\\
@@ -2211,8 +2096,6 @@ can be made to the procedure call. An example is
 Here a list element, depending on the values of \texttt{i} and
 \texttt{j}, is returned. An assignment can be made to it, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ maxel(lines, i, j) := {\textquotedbl}end{\textquotedbl}}
 \iconline{
 \>maxel(lines, i, j) := "end"
 }
@@ -2229,8 +2112,6 @@ Here a list element, depending on the values of \texttt{i} and
 \textit{mutual evaluation}, the result of the \texttt{i}th
 argument is produced. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i := 1(find(s1, line1), find(s2, line2))}
 \iconline{
 \>i := 1(find(s1, line1), find(s2, line2))
 }
@@ -2245,9 +2126,6 @@ The selection integer in mutual evaluation can be negative, in which
 case it is interpreted relative to the end of the argument
 list. Consequently,
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ (-1)(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}}\textit{, }...,
-%-% \textit{expr\TextSubscript{n}}\textit{)}}
 \iconline{
 \textit{\ \ \ (-1)(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}}\textit{, }...,
 \textit{expr\TextSubscript{n}}\textit{)}
@@ -2263,8 +2141,7 @@ produces the result of \textit{expr\TextSubscript{n}} and is equivalent to
 The selection integer can be omitted, in which case it defaults to -1.
 
 
-{\sffamily\bfseries
-2.1.11 Co-Expressions}
+\subsection[2.1.11 Co-Expressions]{2.1.11 Co-Expressions}
 
 The evaluation of an expression in Icon is limited to the site in the
 program where it appears. Its results can be produced only at that
@@ -2272,8 +2149,6 @@ site as a result of iteration or goal-directed evaluation. For
 example, the results generated by \texttt{intseq(i)} described in
 Section 2.1.10 can only be produced where it is called, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ every f(intseq(10) {\textbackslash} 5)}
 \iconline{
 \>every f(intseq(10) {\textbackslash} 5)
 }
@@ -2289,15 +2164,14 @@ program.
 
 A co-expression is constructed by
 
-\ \ \ create \textit{expr}
+\iconline{
+\> create \textit{expr}
+}
 
 The expression \textit{expr} is not evaluated at this time. Instead,
 an object is produced through which \textit{expr} can be resumed at a
 later time. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ label := create ({\textquotedbl}L{\textquotedbl} {\textbar}{\textbar} (1 to 100) {\textbar}{\textbar}
-%-% {\textquotedbl}:{\textquotedbl})}
 \iconline{
 \>label := create ("L" || (1 to 100) || ":")
 }
@@ -2305,9 +2179,6 @@ later time. For example,
 
 \noindent assigns to label a co-expression for the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ {\textquotedbl}L{\textquotedbl} {\textbar}{\textbar} (1 to 100) {\textbar}{\textbar}
-%-% {\textquotedbl}:{\textquotedbl}}
 \iconline{
 \>"L" || (1 to 100) || ":"
 }
@@ -2316,24 +2187,14 @@ later time. For example,
 The operation \texttt{@label} activates this co-expression, which
 corresponds to resuming its expression. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(@label)\newline
-%-%  \ \ write({\textquotedbl} \ \ \ tstl \ \ \ \ count{\textquotedbl})\newline
-%-%  \ \ write(@label)}
 \iconcode{
 \>write(@label)\\
 \>write(" \ \ \ tstl \ \ \ \ count")\\
 \>write(@label)\\
 }
 
+\noindent writes
 
-\noindent
-writes
-
-%-% {\ttfamily\mdseries
-%-% \ \ \ L1:\newline
-%-%  \ \ \ \ \ \ \ tstl \ \ \ \ count\newline
-%-%  \ \ L2:}
 \iconcode{
 \>L1:\\
 \>\>\ \ tstl \ \ \ \ count\\
@@ -2349,7 +2210,9 @@ co-expression \texttt{e} has produced is given by \texttt{*e}.
 
 The general form of the activation expression is
 
-\textit{\ \ \ expr1 }@ \textit{expr2}
+\iconline{
+\> \textit{\ \ \ expr1 }@ \textit{expr2}
+}
 
 \noindent which activates \textit{expr2} and transmits the result of
 \textit{expr1} to it. This form of activation can be used to return a
@@ -2367,18 +2230,6 @@ they have at the time the create expression is evaluated. These copied
 identifiers subsequently are independent of the local identifiers in
 the procedure. Consider, for example,
 
-%-% {\ttfamily\mdseries
-%-% procedure labgen(tag)\newline
-%-% \ \ \ local i, j\newline
-%-% \ \ \  ...\newline
-%-% \ \ \  i := 10\newline
-%-% \ \ \  j := 20\newline
-%-% \ \ \  e := create (tag {\textbar}{\textbar} (i to j) {\textbar}{\textbar} {\textquotedbl}:{\textquotedbl})\newline
-%-% \ \ \  ...\newline
-%-% \ \ \  i := j\newline
-%-% \ \ \  if i {\textgreater} 15 then return e\newline
-%-% \ \ \  ...\newline
-%-% end}
 \iconcode{
 procedure labgen(tag)\\
 \>local i, j\\
@@ -2396,8 +2247,6 @@ end\\
 
 The expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ labels := labgen({\textquotedbl}X{\textquotedbl})}
 \iconline{
 \>labels := labgen("X")
 }
@@ -2405,9 +2254,6 @@ The expression
 
 \noindent assigns to labels a co-expression that is equivalent to evaluating
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ create ({\textquotedbl}X{\textquotedbl} {\textbar}{\textbar} (10 to 20) {\textbar}{\textbar}
-%-% {\textquotedbl}:{\textquotedbl})}
 \iconcode{
 \>create ("X" || (10 to 20) ||\\
 ":")\\
@@ -2426,8 +2272,6 @@ co-expression is made, its expression is reset to its initial state,
 and the values of any local identifiers in it are reset to the values
 they had when the co-expression was created. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ newlabels := \^{}labels}
 \iconline{
 \>newlabels := \^{}labels
 }
@@ -2441,8 +2285,7 @@ The value of the keyword \texttt{\&main} is the co-expression for the
 call of \texttt{main()} that initiates program execution.
 
 
-{\sffamily\bfseries
-2.1.12 Diagnostic Facilities}
+\subsection[2.1.12 Diagnostic Facilities]{2.1.12 Diagnostic Facilities}
 
 \textbf{String Images}. The function \texttt{type(x)} only produces
 the string name of the type of \texttt{x}, but the function
@@ -2450,8 +2293,6 @@ the string name of the type of \texttt{x}, but the function
 \texttt{x}. For strings and csets, the value is shown with surrounding
 quotation marks in the fashion of program literals. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(image({\textquotedbl}Hi there!{\textquotedbl}))}
 \iconline{
 \>write(image("Hi there!"))
 }
@@ -2459,8 +2300,6 @@ quotation marks in the fashion of program literals. For example,
 
 \noindent writes \texttt{{\textquotedbl}Hi there!{\textquotedbl}}, while
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(image('aeiou'))}
 \iconline{
 \>write(image('aeiou'))
 }
@@ -2470,8 +2309,6 @@ quotation marks in the fashion of program literals. For example,
 
 For structures, the type name and size are given. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(image([]))}
 \iconline{
 \>write(image([]))
 }
@@ -2491,17 +2328,6 @@ for every trace message. Tracing stops if the value of
 \texttt{\&trace} becomes zero, which is its initial value. Suppose
 that the following program is contained in the file fibstr.icn:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure main()\newline
-%-%  \ \ \ \ \ \&trace := -1\newline
-%-%  \ \ \ \ \ fibstr(3)\newline
-%-%  \ \ end\newline
-%-% \newline
-%-%  \ \ procedure fibstr(i)\newline
-%-%  \ \ \ \ \ if i = 1 then return {\textquotedbl}a{\textquotedbl}\newline
-%-%  \ \ \ \ \ else if i = 2 then return {\textquotedbl}b{\textquotedbl}\newline
-%-%  \ \ \ \ \ else return fibstr(i -1) {\textbar}{\textbar} fibstr(i -2)\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure main()\\
 \>\>\&trace := -1\\
@@ -2518,14 +2344,6 @@ that the following program is contained in the file fibstr.icn:
 
 The trace output of this program is
 
-%-% {\ttfamily\mdseries
-%-% \textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\newline
-%-%  \ \ fibstr.icn: 9\ \ {\textbar} {\textbar} fibstr(2)\newline
-%-%  \ \ fibstr.icn: 8\ \ {\textbar} {\textbar} fibstr returned {\textquotedbl}b{\textquotedbl}\newline
-%-%  \ \ fibstr .icn: 9\ \ {\textbar} {\textbar} fibstr(1)\newline
-%-%  \ \ fibstr.icn: 7\ \ {\textbar} {\textbar} fibstr returned {\textquotedbl}b{\textquotedbl}\newline
-%-%  \ \ fibstr.icn: 9\ \ {\textbar} fibstr returned {\textquotedbl}ba{\textquotedbl}\newline
-%-%  \ \ fibstr.icn: 4\ \ main failed}
 \iconcode{
 \textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\\
 \>fibstr.icn: 9\ \ | | fibstr(2)\\
@@ -2549,11 +2367,6 @@ current level. If \texttt{i} is omitted, the default is
 to standard error output. The format of the listing produced by
 display is illustrated by the following program:
 
-%-% {\ttfamily
-%-% \ \ \ procedure main()\newline
-%-%  \ \ \ \ \ log := open({\textquotedbl}grade.log{\textquotedbl}, {\textquotedbl}w{\textquotedbl})\newline
-%-%  \ \ \ \ \ while write(log, check(readO))\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure main()\\
 \>\>log := open("grade.log", "w")\\
@@ -2565,19 +2378,6 @@ display is illustrated by the following program:
 
 \bigskip
 
-%-% {\ttfamily
-%-% \ \ \ procedure check(value)\newline
-%-%  \ \ \ \ \ static count\newline
-%-%  \ \ \ \ \ initial count := 0\newline
-%-%  \ \ \ \ \ if numeric(value) then \{\newline
-%-%  \ \ \ \ \ \ \ \ count +:= 1\newline
-%-%  \ \ \ \ \ \ \ \ return value\newline
-%-%  \ \ \ \ \ \ \ \ \}\newline
-%-%  \ \ \ \ \ else \{\newline
-%-%  \ \ \ \ \ \ \ \ display()\newline
-%-%  \ \ \ \ \ \ \ \ stop({\textquotedbl}nonnumeric value{\textquotedbl})\newline
-%-%  \ \ \ \ \ \ \ \ \}\newline
-%-%  \ \ end}
 \iconcode{
 \>procedure check(value)\\
 \>\>static count\\
@@ -2599,21 +2399,6 @@ Suppose that the tenth line of input is the nonnumeric string
 \texttt{{\textquotedbl}3.a{\textquotedbl}}. Then the output of
 \texttt{display()} is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ check local identifiers:\newline
-%-%  \ \ \ \ \ value = {\textquotedbl}3.a{\textquotedbl}\newline
-%-%  \ \ \ \ \ count = 9\newline
-%-%  \ \ main local identifiers:\newline
-%-%  \ \ \ \ \ log = file(grade.log)\newline
-%-%  \ \ global identifiers:\newline
-%-%  \ \ \ \ \ main = procedure main\newline
-%-%  \ \ \ \ \ check = procedure check\newline
-%-%  \ \ \ \ \ open = function open\newline
-%-%  \ \ \ \ \ write = function write\newline
-%-%  \ \ \ \ \ read = function read\newline
-%-%  \ \ \ \ \ numeric = function numeric\newline
-%-%  \ \ \ \ \ display = function display\newline
-%-%  \ \ \ \ \ stop = function stop}
 \iconcode{
 \>check local identifiers:\\
 \>\>value = "3.a"\\
@@ -2638,8 +2423,6 @@ execution, a message is written to standard error output and execution
 is terminated. For example, if the tenth line of a program contained
 in the file check.icn is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i +:= {\textquotedbl}x{\textquotedbl}}
 \iconline{
 \>i +:= "x"
 }
@@ -2648,10 +2431,6 @@ in the file check.icn is
 \noindent
 evaluation of this expression produces the error message
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ Run-time error 102 at line 10 in check.icn\newline
-%-%  \ \ numeric expected\newline
-%-%  \ \ offending value: {\textquotedbl}x{\textquotedbl}}
 \iconcode{
 \>Run-time error 102 at line 10 in check.icn\\
 \>numeric expected\\

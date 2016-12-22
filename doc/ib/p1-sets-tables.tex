@@ -56,11 +56,29 @@ spaces.
 
 The structure for an empty set, produced by
 
-\ \ \ s := set([])
+%-% \ \ \ s := set([])
+\iconline{
+\>s := set([])\\
+}
 
 \noindent is
 
-\ \  \includegraphics[width=4.1681in,height=3.0484in]{ib-img/ib-img034.jpg} 
+%--%\ \  \includegraphics[width=4.1681in,height=3.0484in]{ib-img/ib-img034.jpg} 
+\begin{picture}(300,250)(0,-30)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{slot 4}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{slot 3}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{slot 2}}
+\put(120,96){\dvbox{null}{n}{0}}
+\put(120,96){\trboxlabel{slot 1}}
+\put(120,128){\dvbox{null}{n}{0}}
+\put(120,128){\trboxlabel{slot 0}}
+\put(120,160){\blkbox{set}{0}}
+\put(0,176){\dvptrbox{set}{np}{40}{}}
+\put(120,0){\downetc}
+\end{picture}
 
 Each member of a set is contained in a separate set-element
 block. When a value is looked up in a set (for example, to add a new
@@ -73,7 +91,15 @@ corresponding hash number, and a pointer to the next set-element
 block, if any, on the linked list. For example, the set-element block
 for the integer 39 is:
 
-\ \ \ \ \ \  \includegraphics[width=2.4575in,height=1.2217in]{ib-img/ib-img035.jpg} 
+%--%\ \ \ \ \ \  \includegraphics[width=2.4575in,height=1.2217in]{ib-img/ib-img035.jpg} 
+\begin{picture}(300,90)
+\put(120,0){\dvbox{integer}{n}{39}}
+\put(120,0){\trboxlabel{member value}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{next set-element block}}
+\put(120,64){\blkbox{selem}{39}}
+\put(120,64){\trboxlabel{hash number}}
+\end{picture}
 
 As illustrated by this figure, the hash number for an integer is just
 the value of the integer. This member goes in slot 2 on computers with
@@ -82,12 +108,38 @@ slots is two. Hash computation is discussed in detail in Sec. 7.3.
 
 The structures for the set
 
-{\ttfamily\mdseries
-\ \ s := set([39,2])}
+%-% {\ttfamily\mdseries
+%-% \ \ s := set([39,2])}
+\iconline{
+\ \ s := set([39,2])
+}
 
 \noindent are
 
-\ \  \includegraphics[width=3.7402in,height=3.6366in]{ib-img/ib-img036.jpg} 
+%--%\ \  \includegraphics[width=3.7402in,height=3.6366in]{ib-img/ib-img036.jpg} 
+\begin{picture}(300,290)(-40,-90)
+\put(0,0){\dvbox{null}{n}{0}}
+\put(0,32){\dvbox{null}{n}{0}}
+\put(0,64){\dvptrbox{selem}{n}{40}{}}
+\put(0,96){\dvbox{null}{n}{0}}
+\put(0,128){\dvbox{null}{n}{0}}
+\put(0,160){\blkbox{set}{2}}
+\put(0,0){\downetc}
+\put(118,64){% 1st set member
+\begin{picture}(100,96)(2,78)
+\put(0,0){\dvbox{integer}{n}{2}}
+\put(0,32){\dvptrbox{selem}{np}{40}{}}
+\put(0,64){\blkbox{selem}{2}}
+\end{picture}
+}
+\put(236,64){% 2nd set member
+\begin{picture}(100,96)(0,124)
+\put(0,0){\dvbox{integer}{n}{39}}
+\put(0,32){\dvbox{null}{n}{0}}
+\put(0,64){\blkbox{selem}{39}}
+\end{picture}
+}
+\end{picture}
 
 This example was chosen for illustration, since both 2 and 39 go in slot 2.
 
@@ -110,8 +162,11 @@ If the value is not found and the lookup is being performed to insert
 a new member, a set-element block for the new member is created and
 linked into the list at that point. For example,
 
-{\ttfamily\mdseries
-\ \ \ insert(s, -39)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ insert(s, -39)}
+\iconline{
+\>insert(s, -39)
+}
 
 \noindent inserts a set-element block for -39 at the head of the list
 in slot 2, since its hash value is -39. The word in the set-header
@@ -155,12 +210,33 @@ default assigned value.
 
 An empty table with the default assigned value 0 is produced by
 
-{\ttfamily\mdseries
-\ \ \ t := table(0)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ t := table(0)}
+\iconline{
+\>t := table(0)
+}
 
 The structure of the table-header block is
 
-\ \  \includegraphics[width=4.2752in,height=4.2417in]{ib-img/ib-img037.jpg} 
+%--%\ \  \includegraphics[width=4.2752in,height=4.2417in]{ib-img/ib-img037.jpg} 
+\begin{picture}(300,280)(0,-30)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{slot 4}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{slot 3}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{slot 2}}
+\put(120,96){\dvbox{null}{n}{0}}
+\put(120,96){\trboxlabel{slot 1}}
+\put(120,128){\dvbox{null}{n}{0}}
+\put(120,128){\trboxlabel{slot 0}}
+\put(120,160){\dvbox{integer}{n}{0}}
+\put(120,160){\trboxlabel{default assigned value}}
+\put(120,192){\blkbox{table}{0}}
+\put(120,192){\brboxlabel{number of elements in the table}}
+\put(0,208){\dvptrbox{table}{np}{40}{}}
+\put(120,0){\downetc}
+\end{picture}
 
 Table lookup is more complicated than set lookup, since table elements
 contain both an entry value and an assigned value. Furthermore, table
@@ -170,12 +246,25 @@ entry value that is not in the table.
 
 The result of evaluating an assignment expression such as
 
-{\ttfamily\mdseries
-\ \ \ t[39] := 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ t[39] := 1}
+\iconline{
+\>t[39] := 1
+}
 
 \noindent illustrates the structure of a table-element block:
 
-\ \  \includegraphics[width=2.5654in,height=1.6634in]{ib-img/ib-img038.jpg} 
+%--%\ \  \includegraphics[width=2.5654in,height=1.6634in]{ib-img/ib-img038.jpg}
+\begin{picture}(300,150)(50,-10)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{assigned value}}
+\put(120,32){\dvbox{null}{n}{39}}
+\put(120,32){\trboxlabel{entry value}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{next table-element block}}
+\put(120,96){\blkbox{telem}{39}}
+\put(120,96){\brboxlabel{hash number}}
+\end{picture}
 
 In the case of a table reference such as \texttt{t[x]}, the hash
 number for the entry value x is used to select a slot, and the
@@ -189,22 +278,41 @@ variable that points to the corresponding assigned value is
 produced. For example, if 39 is in t as illustrated previously,
 \texttt{t[39]} produces
 
-\ \  \includegraphics[width=2.5654in,height=1.602in]{ib-img/ib-img039.jpg} 
+%--%\ \  \includegraphics[width=2.5654in,height=1.602in]{ib-img/ib-img039.jpg} 
+\begin{picture}(300,150)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,32){\dvbox{integer}{n}{39}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,96){\blkbox{telem}{39}}
+\put(0,16){\dvptrbox{6}{npv}{40}{}}
+\end{picture}
 
 If this variable is dereferenced, as in
 
-{\ttfamily\mdseries
-\ \ \ write(t[39])}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(t[39])}
+\iconline{
+\>write(t[39])
+}
 
 \noindent the value 1 is written. On the other hand, if an assignment
 is made to this variable, as in
 
-{\ttfamily\mdseries
-\ \ \ t[39] +:= 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ t[39] +:= 1}
+\iconline{
+\>t[39] +:= 1
+}
 
 \noindent the assigned value in the table-element block is changed:
 
-\ \  \includegraphics[width=1.1752in,height=1.6189in]{ib-img/ib-img040.jpg} 
+%--%\ \  \includegraphics[width=1.1752in,height=1.6189in]{ib-img/ib-img040.jpg} 
+\begin{picture}(300,150)(50,0)
+\put(120,0){\dvbox{integer}{n}{2}}
+\put(120,32){\dvbox{integer}{n}{39}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,96){\blkbox{telem}{39}}
+\end{picture}
 
 If a table element with a matching entry value is not found, the
 situation is very similar to that in a subscripted string: the
@@ -222,7 +330,17 @@ dereferencing or assignment.
 Suppose, for example, that the entry value \texttt{36} is not in the
 table \texttt{t}. Then \texttt{t[36]} produces the following result:
 
-\ \  \includegraphics[width=4.1681in,height=1.8071in]{ib-img/ib-img041.jpg} 
+%--%\ \  \includegraphics[width=4.1681in,height=1.8071in]{ib-img/ib-img041.jpg} 
+\begin{picture}(300,150)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{reserved for subsequent use}}
+\put(120,32){\dvbox{integer}{n}{36}}
+\put(120,32){\trboxlabel{entry value}}
+\put(120,64){\dvptrbox{table}{np}{40}{table header block for t}}
+\put(120,96){\blkbox{tvtbl}{36}}
+\put(120,96){\brboxlabel{hash number}}
+\put(0,112){\dvptrbox{tvtbl}{nptv}{40}{}}
+\end{picture}
 
 Note that the size of a table-element trapped-variable block is the
 same as the size of a table-element block. The last descriptor in the
@@ -231,8 +349,11 @@ as described below.
 
 If this trapped variable is dereferenced, as in
 
-{\ttfamily\mdseries
-\ \ \ write(t[36])}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(t[36])}
+\iconline{
+\>write(t[36])
+}
 
 \noindent the default assigned value, 0, which is in the table-header
 block for \texttt{t}, is produced. Unfortunately, the situation is not
@@ -240,8 +361,11 @@ always this simple. It is possible for elements to be inserted in a
 table between the time the table-element trapped-variable block is
 created and the time it is dereferenced. An example is
 
-{\ttfamily\mdseries
-\ \ \ write(t[36] , t[36] := 2)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(t[36] , t[36] := 2)}
+\iconline{
+\>write(t[36] , t[36] := 2)
+}
 
 Since functions do not dereference their arguments until all the
 arguments have been evaluated, the result of dereferencing the first
@@ -253,8 +377,11 @@ value.
 
 If an assignment is made to the table reference, as in
 
-{\ttfamily\mdseries
-\ \ \ t[36] +:= 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ t[36] +:= 1}
+\iconline{
+\>t[36] +:= 1
+}
 
 \noindent the table-element trapped-variable block is converted to a
 table-element block with the assigned value stored in the reserved
@@ -303,215 +430,323 @@ however, any kind of value can be the member of a set or the entry
 value in a table. The hash computation must, therefore, apply to any
 type of value. The support routine for computing hash numbers is
 
-uword hash(dp)
-
-dptr dp;
-
-\ \ \ \{
-
-\ \ \ register char *s;
-
-\ \ \ register uword i;
-
-\ \ \ register word j, n;
-
-\ \ \ register unsigned int *bitarr;
-
-\ \ \ double r;
-
-\ \ \ if (Qual(*dp)) \{
-
-\ \ \ hashstring:
-
-\ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ * Compute the hash value for the string based on a scaled 
-
-\ \ \ \ \ \ \ * \ sum of its first ten characters, plus its length.
-
-\ \ \ \ \ \ \ */
-
-\ \ \ \ \ \ i = 0;
-
-\ \ \ \ \ \ s = StrLoc(*dp);
-
-\ \ \ \ \ \ j = n = StrLen(*dp);
-
-\ \ \ \ \ \ if (j {\textgreater} 10)\ \ /* limit scan to first ten characters */
-
-\ \ \ \ \ \ \ \ \ j = 10;
-
-\ \ \ \ \ \ while (j-{}- {\textgreater} 0) \{
-
-\ \ \ \ \ \ \ \ \ i += *s++ \& 0xFF;\ \ /* add unsigned version of char */
-
-\ \ \ \ \ \ \ \ \ i *= 37;\ \ \ \ /* scale by a nice prime number */
-
-\ \ \ \ \ \ \ \ \ \}
-
-\ \ \ \ \ \ i += n;\ \ \ \ \ \ /* add (untruncated) string length */
-
-\ \ \ \ \ \ \}
-
-\ \ \ else \{
-
-\ \ \ \ \ \ switch (Type(*dp)) \{
-
-\ \ \ \ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ \ \ \ * The hash value of an integer is itself times eight 
-
-\ \ \ \ \ \ \ \ \ \ * \ times the golden ratio. \ We do this calculation in 
-
-\ \ \ \ \ \ \ \ \ \ * \ fixed point. \ We don't just use the integer itself, 
-
-\ \ \ \ \ \ \ \ \ \ * \ for that would give bad results with sets having
-
-\ \ \ \ \ \ \ \ \ \ * \ entries that are multiples of a power of two.
-
-\ \ \ \ \ \ \ \ \ \ */
-
-\ \ \ \ \ \ \ \ \ case T\_Integer:
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * (uword)IntVal(*dp)) {\textgreater}{\textgreater} 10;
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ \ \ \ * The hash value of a bignum is based on its length and 
-
-\ \ \ \ \ \ \ \ \ \ * \ its most and least significant digits.
-
-\ \ \ \ \ \ \ \ \ \ */
-
-\ \  case T\_Lrgint:
-
-\ \  \ \ \ \{
-
-\ \  \ \ \ struct b\_bignum *b = \&BlkLoc(*dp)-{\textgreater}bignumblk;
-
-\ \  \ \ \ i = ((b-{\textgreater}lsd - b-{\textgreater}msd) {\textless}{\textless} 16) \^{}
-
-\ \ \ \ (b-{\textgreater}digits[b-{\textgreater}msd] {\textless}{\textless} 8) \^{}
-b-{\textgreater}digits[b-{\textgreater}lsd];
-
-\ \  \ \ \ \}
-
-\ \  \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ \ \ \ * The hash value of a real number is itself times a 
-
-\ \ \ \ \ \ \ \ \ \ * \ constant, converted to an unsigned integer. \ The 
-
-\ \ \ \ \ \ \ \ \ \ * \ intent is to scramble the bits well, in the case of 
-
-\ \ \ \ \ \ \ \ \ \ * \ integral values, and to scale up fractional values 
-
-\ \ \ \ \ \ \ \ \ \ * \ so they don't all land in the same bin. The constant
-
-\ \ \ \ \ \ \ \ \ \ * \ below is 32749 / 29, the quotient of two primes,
-
-\ \ \ \ \ \ \ \ \ \ * \ and was observed to work well in empirical testing.
-
-\ \ \ \ \ \ \ \ \ \ */
-
-\ \ \ \ \ \ \ \ \ case T\_Real:
-
-\ \ \ \ \ \ \ \ \ \ \ \ GetReal(dp,r);
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = r * 1129.27586206896558;
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ \ \ \ * The hash value of a cset is based on a convoluted 
-
-\ \ \ \ \ \ \ \ \ \ * \ combination of all its bits.
-
-\ \ \ \ \ \ \ \ \ \ */
-
-\ \ \ \ \ \ \ \ \ case T\_Cset:
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = 0;
-
-\ \ \ \ \ \ \ \ \ \ \ \ bitarr = BlkLoc(*dp)-{\textgreater}cset.bits + CsetSize - 1;
-
-\ \ \ \ \ \ \ \ \ \ \ \ for (j = 0; j {\textless} CsetSize; j++) \{
-
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i += *bitarr-{}-;
-
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i *= 37;\ \ \ \ \ \ /* better distribution */
-
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}
-
-\ \ \ \ \ \ \ \ \ \ \ \ i \%= 1048583;\ \ \ \ /* scramble the bits */
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ \ \ \ * The hash value of a list, set, table, or record is 
-
-\ \ \ \ \ \ \ \ \ \ * \ its id, hashed like an integer.
-
-\ \ \ \ \ \ \ \ \ \ */
-
-\ \ \ \ \ \ \ \ \ case T\_List:
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}list.id) {\textgreater}{\textgreater} 10;
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ case T\_Set:
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}set.id) {\textgreater}{\textgreater} 10;
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ case T\_Table:
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}table.id) {\textgreater}{\textgreater} 10;
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ case T\_Record:
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}record.id) {\textgreater}{\textgreater} 10;
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \  case T\_Proc:
-
-\ \  \ \ \ dp = \&(BlkLoc(*dp)-{\textgreater}proc.pname);
-
-\ \  \ \ \ goto hashstring;
-
-\ \ \ \ \ \ \ \ \ default:
-
-\ \ \ \ \ \ \ \ \ \ \ \ /*
-
-\ \ \ \ \ \ \ \ \ \ \ \ \ * For other types, use the type code as the hash
-
-\ \ \ \ \ \ \ \ \ \ \ \ \ * \ value.
-
-\ \ \ \ \ \ \ \ \ \ \ \ \ */
-
-\ \ \ \ \ \ \ \ \ \ \ \ i = Type(*dp);
-
-\ \ \ \ \ \ \ \ \ \ \ \ break;
-
-\ \ \ \ \ \ \ \ \ \}
-
-\ \ \ \ \ \ \}
-
-\ \ \ return i;
-
-\ \ \ \}
-
+%-% {\ttfamily
+%-% uword hash(dp)
+%-% 
+%-% dptr dp;
+%-% 
+%-% \ \ \ \{
+%-% 
+%-% \ \ \ register char *s;
+%-% 
+%-% \ \ \ register uword i;
+%-% 
+%-% \ \ \ register word j, n;
+%-% 
+%-% \ \ \ register unsigned int *bitarr;
+%-% 
+%-% \ \ \ double r;
+%-% 
+%-% \ \ \ if (Qual(*dp)) \{
+%-% 
+%-% \ \ \ hashstring:
+%-% 
+%-% \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ * Compute the hash value for the string based on a scaled 
+%-% 
+%-% \ \ \ \ \ \ \ * \ sum of its first ten characters, plus its length.
+%-% 
+%-% \ \ \ \ \ \ \ */
+%-% 
+%-% \ \ \ \ \ \ i = 0;
+%-% 
+%-% \ \ \ \ \ \ s = StrLoc(*dp);
+%-% 
+%-% \ \ \ \ \ \ j = n = StrLen(*dp);
+%-% 
+%-% \ \ \ \ \ \ if (j {\textgreater} 10)\ \ /* limit scan to first ten characters */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ j = 10;
+%-% 
+%-% \ \ \ \ \ \ while (j-{}- {\textgreater} 0) \{
+%-% 
+%-% \ \ \ \ \ \ \ \ \ i += *s++ \& 0xFF;\ \ /* add unsigned version of char */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ i *= 37;\ \ \ \ /* scale by a nice prime number */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \}
+%-% 
+%-% \ \ \ \ \ \ i += n;\ \ \ \ \ \ /* add (untruncated) string length */
+%-% 
+%-% \ \ \ \ \ \ \}
+%-% 
+%-% \ \ \ else \{
+%-% 
+%-% \ \ \ \ \ \ switch (Type(*dp)) \{
+%-% 
+%-% \ \ \ \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * The hash value of an integer is itself times eight 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ times the golden ratio. \ We do this calculation in 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ fixed point. \ We don't just use the integer itself, 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ for that would give bad results with sets having
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ entries that are multiples of a power of two.
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_Integer:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * (uword)IntVal(*dp)) {\textgreater}{\textgreater} 10;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a bignum is based on its length and 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ its most and least significant digits.
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ */
+%-% 
+%-% \ \  case T\_Lrgint:
+%-% 
+%-% \ \  \ \ \ \{
+%-% 
+%-% \ \  \ \ \ struct b\_bignum *b = \&BlkLoc(*dp)-{\textgreater}bignumblk;
+%-% 
+%-% \ \  \ \ \ i = ((b-{\textgreater}lsd - b-{\textgreater}msd) {\textless}{\textless} 16) \^{}
+%-% 
+%-% \ \ \ \ (b-{\textgreater}digits[b-{\textgreater}msd] {\textless}{\textless} 8) \^{}
+%-% b-{\textgreater}digits[b-{\textgreater}lsd];
+%-% 
+%-% \ \  \ \ \ \}
+%-% 
+%-% \ \  \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a real number is itself times a 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ constant, converted to an unsigned integer. \ The 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ intent is to scramble the bits well, in the case of 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ integral values, and to scale up fractional values 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ so they don't all land in the same bin. The constant
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ below is 32749 / 29, the quotient of two primes,
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ and was observed to work well in empirical testing.
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_Real:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ GetReal(dp,r);
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = r * 1129.27586206896558;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a cset is based on a convoluted 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ combination of all its bits.
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_Cset:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = 0;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ bitarr = BlkLoc(*dp)-{\textgreater}cset.bits + CsetSize - 1;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ for (j = 0; j {\textless} CsetSize; j++) \{
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i += *bitarr-{}-;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i *= 37;\ \ \ \ \ \ /* better distribution */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i \%= 1048583;\ \ \ \ /* scramble the bits */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a list, set, table, or record is 
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ * \ its id, hashed like an integer.
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_List:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}list.id) {\textgreater}{\textgreater} 10;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_Set:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}set.id) {\textgreater}{\textgreater} 10;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_Table:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}table.id) {\textgreater}{\textgreater} 10;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ case T\_Record:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}record.id) {\textgreater}{\textgreater} 10;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \  case T\_Proc:
+%-% 
+%-% \ \  \ \ \ dp = \&(BlkLoc(*dp)-{\textgreater}proc.pname);
+%-% 
+%-% \ \  \ \ \ goto hashstring;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ default:
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ /*
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * For other types, use the type code as the hash
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * \ value.
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ \ */
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ i = Type(*dp);
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
+%-% 
+%-% \ \ \ \ \ \ \ \ \ \}
+%-% 
+%-% \ \ \ \ \ \ \}
+%-% 
+%-% \ \ \ return i;
+%-% 
+%-% \ \ \ \}
+%-% }
+\iconcode{
+uword hash(dp)\\
+dptr dp;\\
+\>\{\\
+\>register char *s;\\
+\>register uword i;\\
+\>register word j, n;\\
+\>register unsigned int *bitarr;\\
+\>double r;\\
+\>if (Qual(*dp)) \{\\
+\>hashstring:\\
+\>\>/*\\
+\>\>\ * Compute the hash value for the string based on a scaled \\
+\>\>\ * \ sum of its first ten characters, plus its length.\\
+\>\>\ */\\
+\>\>i = 0;\\
+\>\>s = StrLoc(*dp);\\
+\>\>j = n = StrLen(*dp);\\
+\>\>if (j > 10)\ \ /* limit scan to first ten characters */\\
+\>\>\>j = 10;\\
+\>\>while (j-{}- > 0) \{\\
+\>\>\>i += *s++ \& 0xFF;\ \ /* add unsigned version of char */\\
+\>\>\>i *= 37;\ \ \ \ /* scale by a nice prime number */\\
+\>\>\>\}\\
+\>\>i += n;\ \ \ \ \ \ /* add (untruncated) string length */\\
+\>\>\}\\
+\>else \{\\
+\>\>switch (Type(*dp)) \{\\
+\>\>\>/*\\
+\>\>\>\ * The hash value of an integer is itself times eight \\
+\>\>\>\ * \ times the golden ratio. \ We do this calculation in \\
+\>\>\>\ * \ fixed point. \ We don't just use the integer itself, \\
+\>\>\>\ * \ for that would give bad results with sets having\\
+\>\>\>\ * \ entries that are multiples of a power of two.\\
+\>\>\>\ */\\
+\>\>\>case T\_Integer:\\
+\>\>\>\>i = (13255 * (uword)IntVal(*dp)) >> 10;\\
+\>\>\>\>break;\\
+\>\>\>/*\\
+\>\>\>\ * The hash value of a bignum is based on its length and \\
+\>\>\>\ * \ its most and least significant digits.\\
+\>\>\>\ */\\
+\>\>case T\_Lrgint:\\
+\>\>\>\{\\
+\>\>\>struct b\_bignum *b = \&BlkLoc(*dp)->bignumblk;\\
+\>\>\>i = ((b->lsd - b->msd) <{}< 16) \^{}\\
+\>\>\>\>(b->digits[b->msd] <{}< 8) \^{}\\
+\>\>\>\>b->digits[b->lsd];\\
+\>\>\>\}\\
+\>\>\>break;\\
+\>\>\>/*\\
+\>\>\>\ * The hash value of a real number is itself times a \\
+\>\>\>\ * \ constant, converted to an unsigned integer. \ The \\
+\>\>\>\ * \ intent is to scramble the bits well, in the case of \\
+\>\>\>\ * \ integral values, and to scale up fractional values \\
+\>\>\>\ * \ so they don't all land in the same bin. The constant\\
+\>\>\>\ * \ below is 32749 / 29, the quotient of two primes,\\
+\>\>\>\ * \ and was observed to work well in empirical testing.\\
+\>\>\>\ */\\
+\>\>\>case T\_Real:\\
+\>\>\>\>GetReal(dp,r);\\
+\>\>\>\>i = r * 1129.27586206896558;\\
+\>\>\>\>break;\\
+\>\>\>/*\\
+\>\>\>\ * The hash value of a cset is based on a convoluted \\
+\>\>\>\ * \ combination of all its bits.\\
+\>\>\>\ */\\
+\>\>\>case T\_Cset:\\
+\>\>\>\>i = 0;\\
+\>\>\>\>bitarr = BlkLoc(*dp)->cset.bits + CsetSize - 1;\\
+\>\>\>\>for (j = 0; j < CsetSize; j++) \{\\
+\>\>\>\>\>i += *bitarr-{}-;\\
+\>\>\>\>\>i *= 37;\ \ \ \ \ \ /* better distribution */\\
+\>\>\>\>\>\}\\
+\>\>\>\>i \%= 1048583;\ \ \ \ /* scramble the bits */\\
+\>\>\>\>break;\\
+\>\>\>/*\\
+\>\>\>\ * The hash value of a list, set, table, or record is \\
+\>\>\>\ * \ its id, hashed like an integer.\\
+\>\>\>\ */\\
+\>\>\>case T\_List:\\
+\>\>\>\>i = (13255 * BlkLoc(*dp)->list.id) >> 10;\\
+\>\>\>\>break;\\
+\>\>\>case T\_Set:\\
+\>\>\>\>i = (13255 * BlkLoc(*dp)->set.id) >> 10;\\
+\>\>\>\>break;\\
+\>\>\>case T\_Table:\\
+\>\>\>\>i = (13255 * BlkLoc(*dp)->table.id) >> 10;\\
+\>\>\>\>break;\\
+\>\>\>case T\_Record:\\
+\>\>\>\>i = (13255 * BlkLoc(*dp)->record.id) >> 10;\\
+\>\>\>\>break;\\
+\ \  case T\_Proc:\\
+\ \  \ \ \ dp = \&(BlkLoc(*dp)->proc.pname);\\
+\ \  \ \ \ goto hashstring;\\
+\>\>\>default:\\
+\>\>\>\>/*\\
+\>\>\>\>\ * For other types, use the type code as the hash\\
+\>\>\>\>\ * \ value.\\
+\>\>\>\>\ */\\
+\>\>\>\>i = Type(*dp);\\
+\>\>\>\>break;\\
+\>\>\>\}\\
+\>\>\}\\
+\>return i;\\
+\>\}
+}
 
 To hash a string, its characters are added together as integers. At
 most ten characters are used, since strings can be very long and
@@ -630,24 +865,35 @@ the default value for the table. Why is this not done?
 What is the consequence of evaluating the following expressions?
 \end{enumerate}
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ t := table(0)}
-
-{\ttfamily\mdseries
-\ \ \ t[37] := 2}
-
-{\ttfamily\mdseries
-\ \ \ write(t[37], t := table(1))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ t := table(0)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ t[37] := 2}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(t[37], t := table(1))}
+\iconcode{
+\>t := table(0)\\
+\>t[37] := 2\\
+\>write(t[37], t := table(1))
+}
 
 What would happen if the last line given previously were
 
-{\ttfamily\mdseries
-\ \ \ write(t[37],t := list(100,3))}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(t[37],t := list(100,3))}
+\iconline{
+\>write(t[37],t := list(100,3))
+}
 
 or
 
-{\ttfamily\mdseries
-\ \ \ write(t[37], t := {\textquotedbl}hello{\textquotedbl})}
+%-% {\ttfamily\mdseries
+%-% \ \ \ write(t[37], t := {\textquotedbl}hello{\textquotedbl})}
+\iconline{
+\>write(t[37], t := "hello")
+}
 
 \liststyleLx
 \begin{enumerate}

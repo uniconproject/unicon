@@ -149,7 +149,6 @@ are the same:
 \ \ x1 === x2
 }
 
-
 As mentioned previously, any kind of value can be assigned to any
 variable. For example, x might have an integer value at one time and a
 string value at another:
@@ -161,9 +160,8 @@ string value at another:
 \iconcode{
 \>x := 3 \\
 \>... \\
-\>x := "hello"\\
+\>x := "hello"
 }
-
 
 Type checking is performed during program execution. For example, in
 
@@ -172,7 +170,6 @@ Type checking is performed during program execution. For example, in
 \iconline{
 \>i := x + 1
 }
-
 
 the value of x is checked to be sure that it is numeric. If it is not
 numeric, an attempt is made to convert it to a numeric type. If the
@@ -188,7 +185,6 @@ converted to a string. Thus,
 \>write(*s)
 }
 
-
 \noindent automatically converts the integer returned by *s to a
 string for the purpose of output.
 
@@ -200,7 +196,6 @@ There also are explicit type-conversion functions. For example,
 \>s1 := string(*s2)
 }
 
-
 \noindent assigns to s1 a string corresponding to the size of s2.
 
 A string can be converted to a number if it has the syntax of a number. Thus,
@@ -210,7 +205,6 @@ A string can be converted to a number if it has the syntax of a number. Thus,
 \iconline{
 \>i := i + "20"
 }
-
 
 \noindent produces the same result as
 
@@ -230,7 +224,6 @@ expression can be written more concisely as
 \iconline{
 \>i +:= 20
 }
-
 
 Icon also has the concept of a numeric type, which can be either an
 integer or a real (floating-point) number.
@@ -254,7 +247,6 @@ example,
 \>i + j
 }
 
-
 \noindent produces a single result, the sum of the values of i and
 j. However, a comparison operation such as
 
@@ -263,7 +255,6 @@ j. However, a comparison operation such as
 \iconline{
 \>i > j
 }
-
 
 \noindent produces a result (the value of j) if the value of i is
 greater than the value of j but does not produce a result if the value
@@ -279,7 +270,6 @@ structures to control program flow. For example,
 \iconline{
 \>if i > j then write(i) else write(j)
 }
-
 
 \noindent writes the maximum of i and j. Note that comparison
 operations do not produce Boolean values and that Boolean values are
@@ -302,7 +292,6 @@ not occur in s2.  For example,
 \iconline{
 \>find("it", "They sit like bumps on a log.")
 }
-
 
 \noindent
 produces the value 7 (positions in strings are counted starting at 1). However,
@@ -335,8 +324,6 @@ Another use of success and failure is illustrated by the operation
 \>{\textbackslash}expr
 }
 
-
-
 which fails if \textit{expr }is null-valued but produces the result of \textit{expr }otherwise. Since variables have the
 null value initially, this operation may be used to determine whether a value has been assigned to an identifier, as
 in
@@ -347,7 +334,6 @@ in
 \>if {\textbackslash}x then write(x) else write("x is null")
 }
 
-
 If an expression that is enclosed in another expression does not produce a result, there is no value for the enclosing
 expression, it cannot perform a computation, and it also produces no result. For example. In
 
@@ -356,7 +342,6 @@ expression, it cannot perform a computation, and it also produces no result. For
 \iconline{
 \>write(find("at", "They sit like bumps on a log."))
 }
-
 
 \noindent the evaluation of find fails, there is no argument for write, and no value is written.
 
@@ -367,7 +352,6 @@ Similarly, in
 \iconline{
 \>i := find("at", "They sit like bumps on a log.")
 }
-
 
 \noindent the assignment is not performed and the value of i is not changed.
 
@@ -380,7 +364,6 @@ This {\textquotedbl}inheritance{\textquotedbl} of failure allows computations to
 \>while write(read(f))
 }
 
-
 \noindent writes the lines from the file f just as the previous loop
 (the do clause in while-do is optional).
 
@@ -391,7 +374,6 @@ The expression
 \iconline{
 \>not \textit{expr}
 }
-
 
 \noindent inverts success and failure. It fails if \textit{expr}
 succeeds, but it succeeds, producing the null value, if \textit{expr}
@@ -406,7 +388,6 @@ values. For example,
 \>i + j
 }
 
-
 \noindent produces a value, while
 
 %-% {\ttfamily\mdseries
@@ -414,7 +395,6 @@ values. For example,
 \iconline{
 \>i := 10
 }
-
 
 \noindent produces its left-argument variable. The term
 \textit{result} is used to refer to a value or a variable. The term
@@ -429,7 +409,6 @@ expression --- either its result or failure.
 \>until \textit{expr1 }do \textit{expr2}
 }
 
-
 \noindent evaluates \textit{expr2} repeatedly until \textit{expr1}
 succeeds. The control structure
 
@@ -438,7 +417,6 @@ succeeds. The control structure
 \iconline{
 \>repeat expr
 }
-
 
 \noindent simply evaluates \textit{expr} repeatedly, regardless of
 whether it succeeds or fails.
@@ -452,7 +430,6 @@ if used in a conditional context. That is, when
 \>while \textit{expr1 }do \textit{expr2}
 }
 
-
 \noindent terminates, its outcome is failure. This failure ordinarily
 goes unnoticed, since loops usually are not used as arguments of other
 expressions.
@@ -464,7 +441,6 @@ The control structure
 \iconline{
 \>break \textit{expr}
 }
-
 
 \noindent causes the immediate termination of the evaluation of the
 loop in which it appears, and control is transferred to the point
@@ -481,9 +457,8 @@ An example of the use of break is:
 \iconcode{
 \>while line := read(f) do\\
 \>\ \ if line == "end" then break\\
-\>\ \ else write(line)\\
+\>\ \ else write(line)
 }
-
 
 Evaluation of the loop terminates if read fails or if the file f
 contains a line consisting of {\textquotedbl}end{\textquotedbl}.
@@ -510,7 +485,6 @@ be a break or next expression, however, so that, for example,
 \>break break next
 }
 
-
 \noindent breaks out of two levels of loops and transfers control to
 the beginning of the loop in which they occur.
 
@@ -529,9 +503,8 @@ expression has the form
 \>case \textit{expr} of \{\\
 \>\>case clauses \\
 \>\>... \\
-\>\>\}\\
+\>\>\}
 }
-
 
 The value of \textit{expr }is used to select one of the case
 clauses. A case clause has the form
@@ -542,7 +515,6 @@ clauses. A case clause has the form
 \textit{\ \ \ expr1 }: \textit{expr2}
 }
 
-
 \noindent where the value of \textit{expr} is compared to the value of
 \textit{expr1}, and \textit{expr2} is evaluated if the comparison
 succeeds. There is also a default case clause, which has the form
@@ -552,8 +524,6 @@ succeeds. There is also a default case clause, which has the form
 \iconline{
 \>default: expr3
 }
-
-
 
 If no other case clause is selected, expr3 in the default clause is
 evaluated. An example is
@@ -569,10 +539,8 @@ evaluated. An example is
 \>\ \ "end":\ \ \ \ write("*** end ***")\\
 \>\ \ "comment":\ \ write("*** comment ***")\\
 \>\ \ default:\ \ write(line)\\
-\>\ \ \}\\
+\>\ \ \}
 }
-
-
 
 If the evaluation of the control clause fails, as for an end of file in this example, the entire case expression fails.
 Otherwise, the outcome of the case expression is the outcome of evaluating the selected expression.
@@ -587,7 +555,6 @@ there is more than one possible result of a computation. An example is
 \iconline{
 \>find("e", "They sit like bumps on a log.")
 }
-
 
 \noindent in which both 3 and 13 are possible results.
 
@@ -608,7 +575,6 @@ Iteration is designated by the control structure
 \>every expr1 do expr2
 }
 
-
 \noindent in which expr1 is repeatedly resumed to produce its
 results. For each such result, expr2 is evaluated. For example,
 
@@ -619,9 +585,8 @@ results. For each such result, expr2 is evaluated. For example,
 \iconcode{
 \>every i := find("e", "They sit like bumps on a log.")\\
 \>do\\
-\>\ \ write(i)\\
+\>\ \ write(i)
 }
-
 
 \noindent writes 3 and 13.
 
@@ -635,8 +600,6 @@ expression can be written more compactly as
 \iconline{
 \>every write(find("e", "They sit like bumps on a log."))
 }
-
-
 
 Unlike iteration, which resumes a generator repeatedly to produce all
 its results, goal-directed evaluation resumes a generator only as
@@ -654,9 +617,8 @@ Goal-directed evaluation is illustrated by
 %-%  \ \ then write({\textquotedbl}found{\textquotedbl})}
 \iconcode{
 \>if find("e", "They sit like bumps on a log") > 10\\
-\>then write("found")\\
+\>then write("found")
 }
-
 
 The first result produced by \texttt{find()} is 3, and the comparison
 operation fails. Because of goal-directed evaluation, find is
@@ -670,9 +632,8 @@ the other hand, in
 %-%  \ \ then write({\textquotedbl}found{\textquotedbl})}
 \iconcode{
 \>if find("e", "They sit like bumps on a log.") > 20\\
-\>then write("found")\\
+\>then write("found")
 }
-
 
 \noindent the comparison fails for 3 and 13. When find is resumed
 again, it does not produce another result, the control clause of
@@ -687,7 +648,6 @@ generator is
 \iconline{
 \>i to j by k
 }
-
 
 which generates the integers from \texttt{i} to \texttt{j} by
 increments of \texttt{k}. If the \texttt{by} clause is omitted, the
@@ -717,7 +677,6 @@ structure,
 \>expr1 | expr2
 }
 
-
 \noindent
 generates the results of expr1 followed by the results of expr2. For example,
 
@@ -726,7 +685,6 @@ generates the results of expr1 followed by the results of expr2. For example,
 \iconline{
 \>every write("hello" | "howdy")
 }
-
 
 \noindent writes two lines, hello and howdy.
 
@@ -738,7 +696,6 @@ be used to produce the effect of logical disjunction. An example is
 \iconline{
 \>if (i > j) | (j > k) then expr
 }
-
 
 \noindent
 which evaluates expr if i is greater than j or if j is greater than k.
@@ -752,7 +709,6 @@ evaluation. The operation
 \textit{\ \ \ expr1 }\& \textit{expr2}
 }
 
-
 \noindent is similar to other binary operations, such as
 \textit{expr1} + \textit{expr2}, except that it performs no
 computation. Instead, it produces the result of \textit{expr2},
@@ -765,7 +721,6 @@ provided that both
 \>if (i > j) \& (j > k) then \textit{expr}
 }
 
-
 \noindent
 evaluates \textit{expr} only if i is greater than j and j is greater than k.
 
@@ -777,7 +732,6 @@ Repeated alternation,
 \>|expr
 }
 
-
 \noindent
 generates the results of \textit{expr }repeatedly and is roughly equivalent to
 
@@ -787,7 +741,6 @@ generates the results of \textit{expr }repeatedly and is roughly equivalent to
 \textit{\ \ \ expr }| \textit{expr }| \textit{expr }| ...
 }
 
-
 However, if \textit{expr} fails, the repeated alternation control
 structure stops generating results. For example,
 
@@ -796,7 +749,6 @@ structure stops generating results. For example,
 \iconline{
 \>|read(f)
 }
-
 
 \noindent generates the lines from the file f (one line for each
 repetition of the alternation) but stops when read(f) fails.
@@ -810,7 +762,6 @@ of results. For example,
 \>|(1 to 3)
 }
 
-
 \noindent can produce 1, 2, 3, 1, 2, 3, 1, 2, 3,\ \ However, only as
 many results as are required by context are actually produced. Thus,
 
@@ -819,7 +770,6 @@ many results as are required by context are actually produced. Thus,
 \iconline{
 \>i := | (1 to 3)
 }
-
 
 \noindent only assigns the value 1 to i, since there is no context to
 cause the repeated alternation control structure to be resumed for a
@@ -833,7 +783,6 @@ The \textit{limitation }control structure
 \textit{\ \ \ expr1 }{\textbackslash} \textit{expr2}
 }
 
-
 \noindent
 limits \textit{expr1 }to at most \textit{expr2 }results. Consequently,
 
@@ -842,7 +791,6 @@ limits \textit{expr1 }to at most \textit{expr2 }results. Consequently,
 \iconline{
 \>| (1 to 3) {\textbackslash} 5
 }
-
 
 is only capable of producing 1, 2, 3, 1, 2.
 
@@ -859,8 +807,6 @@ expressions that contain several generators. For example,
 \>every write((10 to 30 by 10) + (1 to 3))
 }
 
-
-
 \ writes\ \ 11, 12, 13, 21, 22, 23, 31, 32, 33.
 
 
@@ -874,9 +820,8 @@ that have previously produced results, as in
 %-%  \ \ then write({\textquotedbl}found{\textquotedbl})}
 \iconcode{
 \>if find("e", "They sit like bumps on a log.") > 10\\
-\>then write("found")\\
+\>then write("found")
 }
-
 
 Control backtracking is limited by a number of syntactic
 constructions. For example, in
@@ -886,7 +831,6 @@ constructions. For example, in
 \iconline{
 \>if \textit{expr1 }then \textit{expr2 }else \textit{expr3}
 }
-
 
 \noindent if \textit{expr1} succeeds, but \textit{expr2} fails,
 \textit{expr1} is not resumed for another result. (If it were, the
@@ -901,9 +845,8 @@ compound expressions:
 %-% expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}}
 \iconline{ % this one was fixed up manually ... it's just too weird for the automatic convertor
 \>\{ \textit{expr}\textit{\TextSubscript{1}}\textit{; expr}\textit{\TextSubscript{2}}\textit{;
-expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}\\
+expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}
 }
-
 
 These expressions are evaluated in sequence, but once the evaluation
 of one is complete (whether it succeeds or fails), and the evaluation
@@ -919,9 +862,8 @@ example, in
 %-% \textit{expr}\textit{\TextSubscript{3}}}
 \iconline{
 \>if \textit{expr}\textit{\TextSubscript{1}}\textit{ }then \textit{expr}\textit{\TextSubscript{2}}\textit{ }else
-\textit{expr}\textit{\TextSubscript{3}}\\
+\textit{expr}\textit{\TextSubscript{3}}
 }
-
 
 \noindent neither \textit{expr}\textit{\TextSubscript{2}} nor
 \textit{expr}\textit{\TextSubscript{3}} is bounded. Since Icon control
@@ -933,7 +875,6 @@ write expressions such as
 \iconline{
 \>every write(if i > j then j to i else i to j)
 }
-
 
 \noindent
 which writes the integers from i to j in ascending sequence.
@@ -949,7 +890,6 @@ is not performed except in a few specific operations. For example, in
 \>(i := 3) \& read(f)
 }
 
-
 \noindent the value \texttt{3} is assigned to \texttt{i}. Even if
 \texttt{read(f)} fails, the former value of \texttt{i} is not
 restored.
@@ -963,7 +903,6 @@ performed. For example, the \textit{reversible assignment} operation
 \>x <- y
 }
 
-
 \noindent assigns the value of y to x, but it restores the former
 value of x if control backtracking into this expression occurs.  Thus,
 
@@ -972,7 +911,6 @@ value of x if control backtracking into this expression occurs.  Thus,
 \iconline{
 \>(i <- 3) \& read(f)
 }
-
 
 \noindent
 assigns 3 to i but restores the previous value of i if \texttt{read(f)} fails.
@@ -996,7 +934,6 @@ characters by single quotation marks. For example,
 \>vowels := 'aeiouAEIOU'
 }
 
-
 \noindent assigns a cset of 10 characters to vowels.
 
 There are several built-in csets that are the values of
@@ -1016,8 +953,6 @@ which any character of \texttt{c} occurs in \texttt{s}. Thus,
 \>upto(vowels, "They sit like bumps on a log.")
 }
 
-
-
 \noindent is capable of producing 3, 7, 11, 13, 16, 21, 24, and 27.
 
 
@@ -1033,7 +968,6 @@ is given by \texttt{*s}. For example, if
 \>command := "Sit still!"
 }
 
-
 \noindent then the value of \texttt{*command} is 10. The value of
 \texttt{*{\textquotedbl}{\textquotedbl}} is 0. Space for strings is
 provided automatically and there is no inherent limit to the size of a
@@ -1048,7 +982,6 @@ is concatenation, denoted by
 \>s1 || s2
 }
 
-
 The function \texttt{repl(s, i)} produces the result of concatenating
 s i times. Thus,
 
@@ -1057,7 +990,6 @@ s i times. Thus,
 \iconline{
 \>write(repl("*!",3))
 }
-
 
 \noindent writes \texttt{*!*!*!}.
 
@@ -1082,7 +1014,6 @@ a string is numbered 1. For example,
 \>verb := command[1:4]
 }
 
-
 \noindent assigns the string
 \texttt{{\textquotedbl}Sit{\textquotedbl}} to
 \texttt{verb}. Substrings also can be specified by the beginning
@@ -1093,7 +1024,6 @@ position and a length, as in
 \iconline{
 \>verb := command[1+:3]
 }
-
 
 If the length of a substring is 1, only the first position need be
 given, so that the value of \texttt{command[2]} is
@@ -1108,7 +1038,6 @@ string. For example,
 \>command[1:4] := "Remain"
 }
 
-
 \noindent changes the value of command to
 \texttt{{\textquotedbl}Remain still!{\textquotedbl}}.
 
@@ -1122,7 +1051,6 @@ contradict this, but in fact
 \>command[1:4] := "Remain"
 }
 
-
 \noindent
 is an abbreviation for
 
@@ -1131,7 +1059,6 @@ is an abbreviation for
 \iconline{
 \>command := "Remain" || command[5:11]
 }
-
 
 Thus, a new string is constructed and then assigned to command.
 
@@ -1160,8 +1087,6 @@ The subscript positions can be given in either order. Thus,
 \>command[11:5]
 }
 
-
-
 \noindent produces the same result as
 
 
@@ -1177,7 +1102,6 @@ particular portion of a string. For example,
 \iconline{
 \>upto(vowels, "They sit like bumps on a log.", 10, 20)
 }
-
 
 \noindent only produces positions of vowels between positions 10 and
 20 of its second argument: 11, 13, and 16. If these arguments are
@@ -1197,7 +1121,6 @@ s3. For example,
 \iconline{
 \>write(map("Remain still!", "aeiou", "*****"))
 }
-
 
 \noindent writes R*m**n St*ll!. Characters in s1 that do not appear in
 s2 are unchanged, as this example shows. If a character occurs more
@@ -1238,7 +1161,6 @@ A string-scanning expression has the form
 \>expr1 ? expr2
 }
 
-
 \noindent in which the evaluation of \textit{expr1} provides the
 subject. The position in the subject is 1 initially. The expression
 \textit{expr2} is then evaluated in the context of this subject and
@@ -1270,7 +1192,6 @@ An example of string scanning is
 \>line ? while write(move(2))
 }
 
-
 \noindent which writes successive two-character substrings of line,
 stopping when there are not two characters remaining.
 
@@ -1285,7 +1206,6 @@ used to provide arguments for matching functions. An example is
 \>line ? write(tab(find("::=")))
 }
 
-
 \noindent which writes the initial portion of line up to an occurrence
 of the string {\textquotedbl}::={\textquotedbl}.
 
@@ -1299,9 +1219,8 @@ evaluated. For example, suppose that line contains the substring
 %-% \ \ \ \ \ \ ((tab(find({\textquotedbl}::={\textquotedbl}) + 3)) \& write(move(10)) {\textbar} write(tab(0)))}
 \iconcode{
 \>line ? \\
-\>\>((tab(find("::=") + 3)) \& write(move(10)) | write(tab(0)))\\
+\>\>((tab(find("::=") + 3)) \& write(move(10)) | write(tab(0)))
 }
-
 
 \noindent writes the 10 characters after
 {\textquotedbl}::={\textquotedbl}, provided there are 10 more
@@ -1324,7 +1243,6 @@ keywords \&subject and \&pos, respectively. For example,
 \>\&subject := "Hello"
 }
 
-
 \noindent assigns the string {\textquotedbl}Hello{\textquotedbl} to
 the subject. Whenever a value is assigned to the subject, \&pos is set
 to 1 automatically.
@@ -1342,14 +1260,12 @@ A list is a linear aggregate of values (``elements''). For example,
 \>cities := ["Portland", "Toledo", "Tampa"]
 }
 
-
 \noindent
 assigns a list of three strings to cities. Lists can be heterogeneous, as in
 
 \iconline{
 \>language := ["Icon", 1978, "The University of Arizona"]
 }
-
 
 An empty list, containing no elements, is produced by {\tt [ ]}. The function
 
@@ -1358,7 +1274,6 @@ An empty list, containing no elements, is produced by {\tt [ ]}. The function
 \iconline{
 \>list(i, x)
 }
-
 
 \noindent produces a list of i elements, each of which has the value
 of x. The size operation *x also applies to lists. The value of
@@ -1373,7 +1288,6 @@ has the same form as the one for strings. For example,
 \>cities[3] := "Miami"
 }
 
-
 \noindent changes the value of cities to
 
 %-% {\ttfamily\mdseries
@@ -1382,7 +1296,6 @@ has the same form as the one for strings. For example,
 \iconline{
 \>["Portland", "Toledo", "Miami"]
 }
-
 
 The function sort (a) produces a sorted copy of a. For example,
 sort(cities) produces
@@ -1393,7 +1306,6 @@ sort(cities) produces
 \iconline{
 \>["Miami", "Portland", "Toledo"]
 }
-
 
 List operations, unlike string operations, are not applicative. While
 assignment to a substring is an abbreviation for concatenation,
@@ -1410,9 +1322,8 @@ not copy the structure. Consequently, in
 %-%  \ \ slist := states}
 \iconcode{
 \>states := ["Nevada", "Texas", "Maine", "Georgia"]\\
-\>slist := states\\
+\>slist := states
 }
-
 
 \noindent
 both states and slist point to the \textit{same} structure. Because of this,
@@ -1422,7 +1333,6 @@ both states and slist point to the \textit{same} structure. Because of this,
 \iconline{
 \>states[2] := "Arkansas"
 }
-
 
 \noindent
 changes the second element of slist as well as the second element of states.
@@ -1435,7 +1345,6 @@ The elements of a list may be of any type, including lists, as in
 \iconline{
 \>tree := ["a", ["b", ["c"], ["d"]]]
 }
-
 
 \noindent which can be depicted as
 
@@ -1462,9 +1371,8 @@ Structures also can be used to represent loops, as in
 %-% \ \ \ graph[2] := graph}
 \iconcode{
 \>graph := ["a", ""]\\
-\>graph[2] := graph\\
+\>graph[2] := graph
 }
-
 
 \noindent which can be depicted as
 
@@ -1497,9 +1405,8 @@ right end of the increasing its size by one.  Similarly,
 %-% \ \ \ while put(lines, read(f))}
 \iconcode{
 \>lines := []\\
-\>while put(lines, read(f))\\
+\>while put(lines, read(f))
 }
-
 
 \noindent constructs a list of the lines from the file f. Conversely,
 
@@ -1508,9 +1415,8 @@ right end of the increasing its size by one.  Similarly,
 %-% \ \ \ while push(lines, read(f))}
 \iconcode{
 \>lines := []\\
-\>while push(lines, read(f))\\
+\>while push(lines, read(f))
 }
-
 
 \noindent constructs a list of lines in reverse order.
 
@@ -1525,9 +1431,8 @@ value of the function call, but they fail if a is empty. Consequently,
 \iconcode{
 \>lines := []\\
 \>while push(lines, read(f))\\
-\>while write(pop(lines))\\
+\>while write(pop(lines))
 }
-
 
 \noindent writes out the lines of \texttt{f} in reverse order. The
 function \texttt{pull(a)} is similar, but it removes an element from
@@ -1541,7 +1446,6 @@ Other operations on lists include concatenation, which is denoted by
 \>a1 ||| a2
 }
 
-
 \noindent where \texttt{a1} and \texttt{a2} are lists. There is no
 automatic conversion of other types to lists.
 
@@ -1552,7 +1456,6 @@ List sectioning is denoted by
 \iconline{
 \>a[i:j]
 }
-
 
 The result is a \textit{new} list containing values \texttt{i} through
 \texttt{j} of \texttt{a}.
@@ -1575,7 +1478,6 @@ be of any type. A set is constructed from a list by
 \>states := set(["Virginia", "Rhode Island", "Kansas",  "Illinois"])
 }
 
-
 \noindent
 assigns a set of four elements to \texttt{states}.
 
@@ -1587,7 +1489,6 @@ The operation
 \>member(s, x)
 }
 
-
 \noindent
 succeeds if the value of \texttt{x} is a member of \texttt{s} but
 fails otherwise. The operation
@@ -1598,7 +1499,6 @@ fails otherwise. The operation
 \>insert(s, x)
 }
 
-
 \noindent
 adds the value of \texttt{x} to \texttt{s} if it is not already a
 member of \texttt{s}, while
@@ -1608,7 +1508,6 @@ member of \texttt{s}, while
 \iconline{
 \>delete(s, x)
 }
-
 
 \noindent
 deletes the value of \texttt{x} from \texttt{s}. The operations of
@@ -1622,7 +1521,6 @@ member of itself, as in
 \iconline{
 \>insert(s, s)
 }
-
 
 There is no contradiction here, since a set value is a pointer to the
 structure for the set.
@@ -1643,8 +1541,6 @@ A table is created by
 \>table(x)
 }
 
-
-
 Tables are empty initially. The value of x is an assigned default
 value that is produced if the table is subscripted with an entry value
 to which no value has been assigned (that is, for an element that is
@@ -1656,7 +1552,6 @@ not in the table). For example,
 \>states := table(0)
 }
 
-
 \noindent assigns to states a table with a default value of 0. An
 element can be added to states by an assignment such as
 
@@ -1665,7 +1560,6 @@ element can be added to states by an assignment such as
 \iconline{
 \>states["Oregon"] := 1
 }
-
 
 \noindent which adds a table element for
 \texttt{{\textquotedbl}Oregon{\textquotedbl}} with the value
@@ -1676,7 +1570,6 @@ element can be added to states by an assignment such as
 \iconline{
 \>write(states ["Utah"])
 }
-
 
 \noindent writes \texttt{0}, the default value, if there is no element
 in the table for \texttt{{\textquotedbl}Utah{\textquotedbl}}.
@@ -1698,7 +1591,6 @@ names of its fields are given in a declaration. For example,
 \>record rational(numerator, denominator)
 }
 
-
 \noindent
 declares a record of type rational with two fields: numerator and denominator.
 
@@ -1712,7 +1604,6 @@ type. Thus,
 \>r := rational(3,5)
 }
 
-
 \noindent
 assigns to \texttt{r} a record of type rational with a
 numerator field of 3 and a denominator field of 5. Fields are
@@ -1723,7 +1614,6 @@ referenced by name, as in
 \iconline{
 \>write(r.numerator)
 }
-
 
 \noindent which writes 3. Fields can also be referred to by position;
 \texttt{r[1]} is equivalent to \texttt{r.numerator}.
@@ -1747,7 +1637,6 @@ the values of \texttt{\&input}, \texttt{\&output}, and
 \>open(s1,s2)
 }
 
-
 \noindent opens the file whose name is \texttt{s1} according to
 options given by \texttt{s2} and produces a value of type file.
 Typical options are \texttt{{\textquotedbl}r{\textquotedbl}} for
@@ -1760,7 +1649,6 @@ opening for writing. The default is
 \iconline{
 \>log := open("grade.log", "w")
 }
-
 
 \noindent assigns a value of type file to log, corresponding to the
 data file grade.log, which is opened for writing. The function open
@@ -1779,7 +1667,6 @@ The result of
 \>write(x1,x2, ..., xn)
 }
 
-
 \noindent depends on the types of x1, x2, ..., xn. Strings and types
 convertible to strings are written, but if one of the arguments is a
 file, subsequent strings are written to that file. The default file is
@@ -1791,7 +1678,6 @@ standard output. Thus,
 \>write(s1,s2)
 }
 
-
 \noindent
 writes the concatenation of \texttt{s1} and \texttt{s2} to standard output, but
 
@@ -1800,7 +1686,6 @@ writes the concatenation of \texttt{s1} and \texttt{s2} to standard output, but
 \iconline{
 \>write(log,s)
 }
-
 
 \noindent
 writes \texttt{s} to the file grade.log. In any event, write returns
@@ -1813,7 +1698,6 @@ The function
 \iconline{
 \>stop(x1, x2, ..., xn)
 }
-
 
 \noindent
 produces the same output as write, but it then terminates program execution.
@@ -1834,7 +1718,7 @@ An example of a procedure declaration is:
 \>\>every value := *!slist do\\
 \>\>\>if value> max then max := value\\
 \>\>return max\\
-\>end\\
+\>end
 }
 
 \noindent This procedure computes the longest string in a list of strings.
@@ -1848,7 +1732,7 @@ A procedure call has the same form as a function call. For example,
 \iconcode{
 \>lines := []\\
 \>while put(lines, read(f))\\
-\>write(maxstr(lines))\\
+\>write(maxstr(lines))
 }
 
 \noindent
@@ -1867,7 +1751,7 @@ but fails if that length is less than limit:
 \>\>every value := *!slist do\\
 \>\>\>if value> max then max := value\\
 \>\>if max < limit then fail else return max\\
-\>end\\
+\>end
 }
 
 Flowing off the end of a procedure body without an explicit return is
@@ -1889,9 +1773,8 @@ all the strings in the lists it has processed:
 \>\>every value := *!slist do\\
 \>\>\>if value> max then max := value\\
 \>\>return max\\
-\>end\\
+\>end
 }
-
 
 \textbf{Procedures and Functions.} Procedures and functions are used
 in the same way. Their names have global scope.  Other identifiers can
@@ -1922,9 +1805,8 @@ a function. These values can be assigned to other variables, as in
 \iconcode{
 \>print := write\\
 \>\>\>\ \ ...\\
-\>print(maxstr(lines))\\
+\>print(maxstr(lines))
 }
-
 
 \noindent in which the function that is the initial value of
 \texttt{write} is assigned to \texttt{print}.
@@ -1974,7 +1856,7 @@ depends on the fact that procedure names are global. The
 \>\>if i = 1 then return "a"\\
 \>\>else if i = 2 then return "b"\\
 \>\>else return fibstr(i - 1) || fibstr(i - 2)\\
-\>end\\
+\>end
 }
 
 An identifier that is not declared in a procedure and is not global
@@ -1986,7 +1868,7 @@ defaults to local. Thus, local declarations can be omitted, as in
 \>\>every value := * !slist do\\
 \>\>\>if value > max then max := value\\
 \>\>return max\\
-\>end\\
+\>end
 }
 
 \textbf{Procedures as Generators}. In addition to returning and
@@ -2001,7 +1883,7 @@ generator can be resumed. An example of such a generator is
 \>\>\>suspend i\\
 \>\>\>i +:= 1\\
 \>\>\>\}\\
-\>end\\
+\>end
 }
 
 A call \texttt{intseq(10)}, for example, is capable of generating the
@@ -2028,7 +1910,7 @@ it produces. A generator of the Fibonacci strings provides an example:
 \>\>\>s1 := s2\\
 \>\>\>s2 := s3\\
 \>\>\>\}\\
-\>end\\
+\>end
 }
 
 When this procedure is called, the first suspend expression produces
@@ -2046,9 +1928,8 @@ rewritten as
 \iconcode{
 \>procedure intseq(i)\\
 \>\>suspend i | (i +:= |1)\\
-\>end\\
+\>end
 }
-
 
 Note that \texttt{{\textbar}1} is used to provide an endless sequence
 of increments.
@@ -2089,9 +1970,8 @@ can be made to the procedure call. An example is
 \>procedure maxel(a, i, j)\\
 \>\>if i > j then return a[i]\\
 \>\>else return a[j]\\
-\>end\\
+\>end
 }
-
 
 Here a list element, depending on the values of \texttt{i} and
 \texttt{j}, is returned. An assignment can be made to it, as in
@@ -2099,7 +1979,6 @@ Here a list element, depending on the values of \texttt{i} and
 \iconline{
 \>maxel(lines, i, j) := "end"
 }
-
 
 \noindent which assigns \texttt{{\textquotedbl}end{\textquotedbl}} to
 \texttt{lines[i]} or \texttt{lines[j]}, depending on the values of
@@ -2116,7 +1995,6 @@ argument is produced. For example,
 \>i := 1(find(s1, line1), find(s2, line2))
 }
 
-
 \noindent assigns to \texttt{i} the position of \texttt{s1} in
 \texttt{line1}, provided \texttt{s1} occurs in \texttt{line1} and that
 \texttt{s2} occurs in line2. If either call of find fails, the
@@ -2130,7 +2008,6 @@ list. Consequently,
 \textit{\ \ \ (-1)(expr\TextSubscript{1}},\textit{expr\TextSubscript{2}}\textit{, }...,
 \textit{expr\TextSubscript{n}}\textit{)}
 }
-
 
 \noindent
 produces the result of \textit{expr\TextSubscript{n}} and is equivalent to
@@ -2152,7 +2029,6 @@ Section 2.1.10 can only be produced where it is called, as in
 \iconline{
 \>every f(intseq(10) {\textbackslash} 5)
 }
-
 
 It is often useful, however, to be able to produce the results of a
 generator at various places in the program as the need for them
@@ -2176,13 +2052,11 @@ later time. For example,
 \>label := create ("L" || (1 to 100) || ":")
 }
 
-
 \noindent assigns to label a co-expression for the expression
 
 \iconline{
 \>"L" || (1 to 100) || ":"
 }
-
 
 The operation \texttt{@label} activates this co-expression, which
 corresponds to resuming its expression. For example,
@@ -2190,7 +2064,7 @@ corresponds to resuming its expression. For example,
 \iconcode{
 \>write(@label)\\
 \>write(" \ \ \ tstl \ \ \ \ count")\\
-\>write(@label)\\
+\>write(@label)
 }
 
 \noindent writes
@@ -2198,9 +2072,8 @@ corresponds to resuming its expression. For example,
 \iconcode{
 \>L1:\\
 \>\>\ \ tstl \ \ \ \ count\\
-\>L2:\\
+\>L2:
 }
-
 
 If the resumption of the expression in a co-expression does not
 produce a result, the co-expression activation fails.  For example,
@@ -2241,9 +2114,8 @@ procedure labgen(tag)\\
 \> i := j\\
 \> if i > 15 then return e\\
 \> ...\\
-end\\
+end
 }
-
 
 The expression
 
@@ -2251,14 +2123,12 @@ The expression
 \>labels := labgen("X")
 }
 
-
 \noindent assigns to labels a co-expression that is equivalent to evaluating
 
 \iconcode{
 \>create ("X" || (10 to 20) ||\\
-":")\\
+":")
 }
-
 
 The fact that \texttt{i} is changed after the co-expression was
 assigned to \texttt{e}, but before \texttt{e} returns, does not affect
@@ -2275,7 +2145,6 @@ they had when the co-expression was created. For example,
 \iconline{
 \>newlabels := \^{}labels
 }
-
 
 \noindent assigns to \texttt{newlabels} a co-expression that is
 capable of producing the same results as labels, regardless of whether
@@ -2297,13 +2166,11 @@ quotation marks in the fashion of program literals. For example,
 \>write(image("Hi there!"))
 }
 
-
 \noindent writes \texttt{{\textquotedbl}Hi there!{\textquotedbl}}, while
 
 \iconline{
 \>write(image('aeiou'))
 }
-
 
 \noindent writes \texttt{{}'aeiou'}.
 
@@ -2312,7 +2179,6 @@ For structures, the type name and size are given. For example,
 \iconline{
 \>write(image([]))
 }
-
 
 \noindent writes \texttt{list(0)}.
 
@@ -2338,9 +2204,8 @@ that the following program is contained in the file fibstr.icn:
 \>\>if i = 1 then return "a"\\
 \>\>else if i = 2 then return "b"\\
 \>\>else return fibstr(i -1) || fibstr(i -2)\\
-\>end\\
+\>end
 }
-
 
 The trace output of this program is
 
@@ -2351,9 +2216,8 @@ The trace output of this program is
 \>fibstr .icn: 9\ \ | | fibstr(1)\\
 \>fibstr.icn: 7\ \ | | fibstr returned "b"\\
 \>fibstr.icn: 9\ \ | fibstr returned "ba"\\
-\>fibstr.icn: 4\ \ main failed\\
+\>fibstr.icn: 4\ \ main failed
 }
-
 
 In addition to the indentation corresponding to the level of procedure
 call, the value of the keyword \texttt{\&level} also is the current
@@ -2371,10 +2235,8 @@ display is illustrated by the following program:
 \>procedure main()\\
 \>\>log := open("grade.log", "w")\\
 \>\>while write(log, check(readO))\\
-\>end\\
+\>end
 }
-
-
 
 \bigskip
 
@@ -2390,10 +2252,8 @@ display is illustrated by the following program:
 \>\>\>display()\\
 \>\>\>stop("nonnumeric value")\\
 \>\>\>\}\\
-\>end\\
+\>end
 }
-
-
 
 Suppose that the tenth line of input is the nonnumeric string
 \texttt{{\textquotedbl}3.a{\textquotedbl}}. Then the output of
@@ -2413,10 +2273,8 @@ Suppose that the tenth line of input is the nonnumeric string
 \>\>read = function read\\
 \>\>numeric = function numeric\\
 \>\>display = function display\\
-\>\>stop = function stop\\
+\>\>stop = function stop
 }
-
-
 
 \textbf{Error Messages}. If an error is encountered during program
 execution, a message is written to standard error output and execution
@@ -2427,17 +2285,14 @@ in the file check.icn is
 \>i +:= "x"
 }
 
-
 \noindent
 evaluation of this expression produces the error message
 
 \iconcode{
 \>Run-time error 102 at line 10 in check.icn\\
 \>numeric expected\\
-\>offending value: "x"\\
+\>offending value: "x"
 }
-
-
 
 \section[2.2 Language Features and the Implementation]{2.2 Language Features and the Implementation}
 

@@ -32,16 +32,23 @@ latter method is more convenient in Icon.
 
 To illustrate this basic mechanism, consider the expression
 
-{\ttfamily\mdseries
-\ \ \ ?10}
+%-% {\ttfamily\mdseries
+%-% \ \ \ ?10}
+\iconline{ \>?10 }
 
 \noindent which produces a randomly selected integer between 1 and 10,
 inclusive. The corresponding virtual machine instructions are
 
-{\ttfamily\mdseries
-\ \ \ pnull\ \ \ \ \# push null descriptor for the result\newline
- \ \ int\ \ 10\ \ \# push descriptor for the integer 10\newline
- \ \ random\ \ \ \ \# compute random value}
+%-% {\ttfamily\mdseries
+%-% \ \ \ pnull\ \ \ \ \# push null descriptor for the result\newline
+%-%  \ \ int\ \ 10\ \ \# push descriptor for the integer 10\newline
+%-%  \ \ random\ \ \ \ \# compute random value}
+\goodbreak
+\iconcode{
+\>pnull\>\>\>\>\>\>\# push null descriptor for the result\\
+\>int\>\>\>10\>\>\>\# push descriptor for the integer 10\\
+\>random\>\>\>\>\>\>\# compute random value
+}
 
 The instructions \texttt{pnull} and \texttt{int} operate directly on
 the stack. The instruction \texttt{random} calls a C function that
@@ -49,34 +56,41 @@ computes random values.
 
 The \texttt{pnull} instruction pushes a null descriptor:
 
-\begin{center}
-\includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg}
-\end{center}
+%--% \begin{center}
+%--%\includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg}
+%--% \end{center}
+\begin{picture}(300,100)
+\put(120,32){\upetc}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{descriptor for result (Arg0)}}
+\put(120,32){\downbars}
+\put(120,32){\lregptr{sp}{20}}
+\end{picture}
 
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-\clearpage
 The \texttt{int} instruction pushes a descriptor for the integer 10:
 
-
-\ \  \includegraphics[width=3.9543in,height=1.6063in]{ib-img/ib-img043.jpg} 
+%--%\ \  \includegraphics[width=3.9543in,height=1.6063in]{ib-img/ib-img043.jpg} 
+\begin{picture}(300,130)
+\put(120,64){\upetc}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{descriptor for result (Arg0)}}
+\put(120,32){\dvbox{integer}{n}{10}}
+\put(120,32){\trboxlabel{argument of random (Arg1)}}
+\put(120,32){\downbars}
+\put(120,32){\lregptr{sp}{20}}
+\end{picture}
 
 Suppose that the C function for random computes 3. It replaces the
 null value of Arg0 by a descriptor for the integer 3.  When it
 returns, \texttt{sp} is set to point to Arg0 and the situation is
 
-
-\ \ \ \  \includegraphics[width=2.6717in,height=1.239in]{ib-img/ib-img044.jpg} 
-
+%--%\ \ \ \  \includegraphics[width=2.6717in,height=1.239in]{ib-img/ib-img044.jpg} 
+\begin{picture}(300,100)
+\put(120,32){\upetc}
+\put(120,32){\dvbox{integer}{n}{3}}
+\put(120,32){\downbars}
+\put(120,32){\lregptr{sp}{20}}
+\end{picture}
 
 \section[8.2 Virtual Machine Instructions]{8.2 Virtual Machine Instructions}
 
@@ -103,11 +117,19 @@ Four kinds of data can be represented literally in Icon programs:
 integers, strings, csets, and real numbers. The four corresponding
 virtual machine instructions are
 
-{\ttfamily\mdseries
-\ \ int\ \ n\ \ \# integer n\newline
-\ \ str\ \ n, a\ \ \# string of length n at address a\newline
-\ \ cset\ \ a\ \ \# cset block at address a\newline
-\ \ real\ \ a\ \ \# real block at address a}
+%-% {\ttfamily\mdseries
+%-% \ \ int\ \ n\ \ \# integer n\newline
+%-% \ \ str\ \ n, a\ \ \# string of length n at address a\newline
+%-% \ \ cset\ \ a\ \ \# cset block at address a\newline
+%-% \ \ real\ \ a\ \ \# real block at address a}
+\goodbreak
+\iconcode{
+\>int\>\>\>n\>\>\>\>\# integer n\\
+\>str\>\>\>n,\>a\>\>\>\# string of length n at address a\\
+\>cset\>\>\>a\>\>\>\>\# cset block at address a\\
+\>real\>\>\>a\>\>\>\>\# real block at address a
+}
+
 
 The values of integer literals appear as arguments of int
 instructions. In the case of strings, the two arguments give its
@@ -124,32 +146,62 @@ The virtual machine instructions \texttt{str}, \texttt{cset}, and
 appears in the icode. For example, the virtual machine instructions
 for
 
-{\ttfamily\mdseries
-\ \ \ ?{\textquotedbl}aeiou{\textquotedbl}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ ?{\textquotedbl}aeiou{\textquotedbl}}
+\iconline{ \>?"aeiou" }
 
 \noindent are
 
-{\ttfamily\mdseries
-\ \ \ pnull\newline
- \ \ str\ \ 5, a\newline
- \ \ random}
+%-% {\ttfamily\mdseries
+%-% \ \ \ pnull\newline
+%-%  \ \ str\ \ 5, a\newline
+%-%  \ \ random}
+\goodbreak
+\iconcode{
+\>pnull\\
+\>str\>\>\>5,\>a\\
+\>random
+}
+
 
 \noindent where \texttt{\ \ a} is the address of the string
 \texttt{{\textquotedbl}aeiou{\textquotedbl}}. The \texttt{pnull}
 instruction pushes a null descriptor as in the previous example:
 
-\ \  \ \ \ \ \  \includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg} 
+%--%\ \  \ \ \ \ \  \includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg} 
+\begin{picture}(300,100)
+\put(120,32){\upetc}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{descriptor for result (Arg0)}}
+\put(120,32){\downbars}
+\put(120,32){\lregptr{sp}{20}}
+\end{picture}
 
 The \texttt{str} instruction constructs a descriptor for the string
 \texttt{{\textquotedbl}aeiou{\textquotedbl}}:
 
-\ \  \includegraphics[width=4.0602in,height=1.4398in]{ib-img/ib-img045.jpg} 
+%--%\ \  \includegraphics[width=4.0602in,height=1.4398in]{ib-img/ib-img045.jpg} 
+\begin{picture}(300,130)
+\put(120,64){\upetc}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{descriptor for result (Arg0)}}
+\put(120,32){\dvptrbox{5}{}{40}{"aeiou"}}
+\put(120,32){\trboxlabel{argument of random (Arg1)}}
+\put(120,32){\downbars}
+\put(120,32){\lregptr{sp}{20}}
+\end{picture}
 
 If \texttt{random} produces the string
 \texttt{{\textquotedbl}o{\textquotedbl}}, this string replaces the
 null descriptor and the stack becomes
 
-\ \ \ \  \includegraphics[width=2.778in,height=1.3047in]{ib-img/ib-img046.jpg} 
+%--%\ \ \ \  \includegraphics[width=2.778in,height=1.3047in]{ib-img/ib-img046.jpg} 
+\begin{picture}(300,100)
+\put(120,32){\upetc}
+\put(120,32){\dvptrbox{1}{}{40}{"o"}}
+\put(120,32){\downbars}
+\put(120,32){\lregptr{sp}{20}}
+\end{picture}
 
 \subsection[8.2.2 Identifiers]{8.2.2 Identifiers}
 
@@ -158,13 +210,57 @@ identifiers: global identifiers, static identifiers, local
 identifiers, and arguments. The values of global and static
 identifiers are in arrays of descriptors at fixed locations in
 memory. The values of local identifiers and arguments, on the other
-hand, are kept on the stack as part of the infonnation associated with
+hand, are kept on the stack as part of the information associated with
 a procedure call.
 
 The values of the arguments in the call of a procedure are pushed on
 the stack as the result of the evaluation of expressions prior to the
 invocation of the procedure. The initial null values for local
 identifiers are pushed on the stack when the procedure is called.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Reinstate a missing page from the Icon IB here (P114)    %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Consider the following procedure declaration:
+\goodbreak
+\iconcode{
+\>procedure p(x,y)\\
+\>\>local z, i, j\\
+\>\>j := 1\\
+\>\>z := x\\
+\>\>\>...\\
+\>end
+}
+
+\noindent In the evaluation of a call to this procedure such as 
+\iconline{ \>p(10,20) }
+
+\goodbreak\noindent the stack is in the following state prior to the evaluation
+of the first expression in p:
+
+\begin{picture}(300,270)(0,-32)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\downbars}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%              End of Reinstatement                        %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The portion of the stack between the arguments and local identifiers
 is fixed in size and contains information that is saved when a
@@ -173,20 +269,26 @@ procedure is called. This information is described in Chapter 10.
 There are four virtual machine instructions for constructing variable
 descriptors:
 
-
-\ \ \ global n
-
-\ \ \ static n
-
-\ \ \ arg n
-
-\ \ \ local n
-
+%-% \ \ \ global n
+%-% 
+%-% \ \ \ static n
+%-% 
+%-% \ \ \ arg n
+%-% 
+%-% \ \ \ local n
+\goodbreak
+\iconcode{
+\>global\>\>\> n\\
+\>static\>\>\> n\\
+\>arg\>\>\> n\\
+\>local\>\>\> n
+}
 
 Identifiers of each kind are numbered starting at zero. Consequently,
 
-{\ttfamily\mdseries
-\ \ \ arg 0}
+%-% {\ttfamily\mdseries
+%-% \ \ \ arg 0}
+\iconline{ \>arg\>\>\> 0 }
 
 \noindent pushes a variable descriptor for the first argument. In each
 case, the descriptor that is pushed on the stack is a variable that
@@ -194,64 +296,176 @@ points to the descriptor for the value of the corresponding identifier.
 
 Consider the expression
 
-{\ttfamily\mdseries
-\ \ \ j := 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ j := 1}
+\iconline{ \>j := 1 }
 
 The corresponding virtual machine instructions are
 
-{\ttfamily\mdseries
-\ \ \ pnull\ \ \ \ \# push null descriptor for the result}
-
-{\ttfamily\mdseries
-\ \ \ local\ \ 2\ \ \# push variable descriptor for j}
-
-{\ttfamily\mdseries
-\ \ \ int\ \ 1\ \ \# push descriptor for the integer 1}
-
-{\ttfamily\mdseries
-\ \ \ asgn\ \ \ \ \# perform assignment}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ pnull\ \ \ \ \# push null descriptor for the result}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ local\ \ 2\ \ \# push variable descriptor for j}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ int\ \ 1\ \ \# push descriptor for the integer 1}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ asgn\ \ \ \ \# perform assignment}
+%-% 
+\goodbreak
+\iconcode{
+\>pnull\>\>\>\>\>\>\# push null descriptor for the result\\
+\>local\>\>\>2\>\>\>\# push variable descriptor for j\\
+\>int\>\>\>1\>\>\>\# push descriptor for the integer 1\\
+\>asgn\>\>\>\>\>\>\# perform assignment
+}
 
 When these instructions are interpreted. the succession of stack states is
 
+%--%\ \  \includegraphics[width=3.2063in,height=3.7366in]{ib-img/ib-img047.jpg} 
+\begin{picture}(300,240)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\downbars}
+\put(120,0){\trboxlabel{descriptor for result (Arg0)}}
+\end{picture}
 
-\ \  \includegraphics[width=3.2063in,height=3.7366in]{ib-img/ib-img047.jpg} 
+\ \ \ \ \ \ The Stack after \texttt{pnull}\vfill
 
+ %--%\includegraphics[width=4.0602in,height=4.1575in]{ib-img/ib-img048.jpg} 
+\begin{picture}(300,310)
+\put(-4,32){
+\begin{picture}(300,0)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{descriptor for result (Arg0)}}
+\end{picture}
+}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\dvptrbox{null}{nvp}{40}{}}
+\put(120,0){\downbars}
+\put(120,0){\trboxlabel{first argument of asgn (Arg1)}}
+\put(244,8){\line(1,0){160}}
+\put(404,8){\line(0,1){80}}
+\put(404,88){\vector(-1,0){120}}
+\end{picture}
 
-\ \ \ \ \ \ The Stack after \texttt{pnull}
+\ \ The Stack after \texttt{local 2}\vfill
 
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
- \includegraphics[width=4.0602in,height=4.1575in]{ib-img/ib-img048.jpg} 
-
-
-\ \ The Stack after \texttt{local 2}
-
-
-\ \  \includegraphics[width=3.3134in,height=4.7457in]{ib-img/ib-img049.jpg} 
-
+%--%\ \  \includegraphics[width=3.3134in,height=4.7457in]{ib-img/ib-img049.jpg} 
+\begin{picture}(300,380)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{descriptor for result (Arg0)}}
+\end{picture}
+}
+\put(120,0){\dvptrbox{0}{nvp}{40}{}}
+\put(120,0){\trboxlabel{first argument of asgn (Arg1)}}
+\put(244,8){\line(1,0){160}}
+\put(404,8){\line(0,1){80}}
+\put(404,88){\vector(-1,0){120}}
+\end{picture}
+}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{second argument of asgn (Arg2)}}
+\put(120,0){\downbars}
+\end{picture}
 
 \ \ \ \ \ \ The Stack after \texttt{int 1}
 
-
-\bigskip
-
-
-\ \  \includegraphics[width=4.489in,height=3.7366in]{ib-img/ib-img050.jpg} 
-
+%--%\ \  \includegraphics[width=4.489in,height=3.7366in]{ib-img/ib-img050.jpg} 
+\begin{picture}(300,330)(0,-30)
+\put(-4,32){
+\begin{picture}(300,0)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}% No idea why the next put must be 121 not 120
+\put(121,0){\dvptrbox{0}{nvp}{40}}
+\put(120,0){\trboxlabel{result returned by asgn}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\downbars}
+\put(244,8){\line(1,0){160}}
+\put(404,8){\line(0,1){48}}
+\put(404,56){\vector(-1,0){120}}
+\end{picture}
 
 \ \ \ \ The Stack after \texttt{asgn}
-
 
 Note that \texttt{asgn} assigns the value of its second argument to
 \texttt{j} and overwrites Arg0 with a variable descriptor, which is
@@ -259,54 +473,176 @@ left on the top of the stack.
 
 Similarly, the virtual machine instructions for
 
-{\ttfamily\mdseries
-\ \ \ z := x}
+%-% {\ttfamily\mdseries
+%-% \ \ \ z := x}
+\iconline{ \>z := x }
 
 are
 
-\ \ \ pnull
-
-\ \ \ local 0
-
-\ \ \ arg 0
-
-\ \ \ asgn
+%-% \ \ \ pnull
+%-% 
+%-% \ \ \ local 0
+%-% 
+%-% \ \ \ arg 0
+%-% 
+%-% \ \ \ asgn
+\goodbreak\iconcode{
+\>pnull\\
+\>local\>\>\>0\\
+\>arg\>\>\>0\\
+\>asgn
+}
 
 \noindent the states of the stack are
 
 
-\ \  \includegraphics[width=4.0602in,height=3.8307in]{ib-img/ib-img051.jpg} 
+%--%\ \  \includegraphics[width=4.0602in,height=3.8307in]{ib-img/ib-img051.jpg} 
+\begin{picture}(300,280)(0,-10)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{descriptor for result (Arg0)}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\downbars}
+\end{picture}
 
 
 \ \ The Stack after \texttt{pnull}
 
 
-\ \  \includegraphics[width=4.5953in,height=4.1516in]{ib-img/ib-img052.jpg} 
-
+%--%\ \  \includegraphics[width=4.5953in,height=4.1516in]{ib-img/ib-img052.jpg} 
+\begin{picture}(300,320)(0,-10)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{descriptor for result (Arg0)}}
+\end{picture}
+}
+\put(120,0){\dvptrbox{0}{nvp}{40}{}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\trboxlabel{first argument of asgn (Arg1)}}
+\put(244,8){\line(1,0){160}}
+\put(404,8){\line(0,1){144}}
+\put(404,152){\vector(-1,0){116}}
+\put(120,0){\downbars}
+\end{picture}
 
 \ \ The Stack after \texttt{local 0}
 
+%--%\ \  \includegraphics[width=2.6717in,height=4.3118in]{ib-img/ib-img053.jpg} 
 
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-
-\bigskip
-
-
-\ \  \includegraphics[width=2.6717in,height=4.3118in]{ib-img/ib-img053.jpg} 
-
+\begin{picture}(300,300)(0,5)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{null}{n}{0}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\dvbox{null}{n}{0}}
+\put(120,0){\trboxlabel{descriptor for result (Arg0)}}
+\put(120,0){\downbars}
+\end{picture}
+}
+\put(120,0){\dvptrbox{0}{nvp}{40}{}}
+\put(120,0){\trboxlabel{first argument of asgn (Arg1)}}
+\put(244,8){\line(1,0){160}}
+\put(404,8){\line(0,1){144}}
+\put(404,152){\vector(-1,0){116}}
+\end{picture}
+}
+\put(120,0){\dvptrbox{0}{nvp}{40}{}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\trboxlabel{second argument of asgn (Arg2)}}
+\put(120,0){\downbars}
+\put(244,8){\line(1,0){180}}
+\put(424,8){\line(0,1){288}}
+\put(424,296){\vector(-1,0){136}}
+\end{picture}
 
 \ \ \ \ The Stack after \texttt{arg 0}
 
-
-\ \  \includegraphics[width=4.2752in,height=3.7335in]{ib-img/ib-img054.jpg} 
-
+%--%\ \  \includegraphics[width=4.2752in,height=3.7335in]{ib-img/ib-img054.jpg} 
+\begin{picture}(300,260)(0,5)
+\put(-4,32){
+\begin{picture}(0,0)
+\put(120,0){\dvbox{integer}{n}{1}}
+\put(120,0){\trboxlabel{value of j}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\trboxlabel{value of i}}
+\put(120,64){\dvbox{integer}{n}{10}}
+\put(120,64){\trboxlabel{value of z}}
+\put(120,64){\tlboxlabel{locals}}
+\put(120,64){\upetc}
+\put(120,144){\dvbox{integer}{n}{20}}
+\put(120,144){\trboxlabel{value of y}}
+\put(120,144){\downetc}
+\put(120,176){\dvbox{integer}{n}{10}}
+\put(120,176){\trboxlabel{value of x}}
+\put(120,176){\tlboxlabel{arguments}}
+\put(120,176){\upetc}
+\end{picture}
+}
+\put(120,0){\dvptrbox{0}{nvp}{40}{}}
+\put(120,0){\trboxlabel{result returned by asgn}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\downbars}
+\put(244,8){\line(1,0){160}}
+\put(404,8){\line(0,1){112}}
+\put(404,120){\vector(-1,0){116}}
+\end{picture}
 
 \ \ \ \ The Stack after \texttt{asgn}
 
@@ -329,23 +665,29 @@ converted to a real number. None of these computations is evident in
 the virtual machine instructions produced for this expression, which
 are
 
-{\ttfamily
-\ \ \ pnull}
-
-{\ttfamily
-\ \ \ local x}
-
-{\ttfamily
-\ \ \ local y}
-
-{\ttfamily
-\ \ \ plus}
-
+%-% {\ttfamily
+%-% \ \ \ pnull}
+%-% 
+%-% {\ttfamily
+%-% \ \ \ local x}
+%-% 
+%-% {\ttfamily
+%-% \ \ \ local y}
+%-% 
+%-% {\ttfamily
+%-% \ \ \ plus}
+\goodbreak
+\iconcode{
+\>pnull\\
+\>local\>\>\> x\\
+\>local\>\>\> y\\
+\>plus
+}
 
 In the instructions given previously, the indices that are used to
 access identifiers have been replaced by the names of the identifiers,
 which are assumed to be local. This convention is followed in
-subsequent virtual machine instructions fo ease of reading.
+subsequent virtual machine instructions for ease of reading.
 
 Augmented assignment operations do not have separate virtual machine
 instructions. Instead, the instruction \texttt{dup} first pushes a
@@ -353,79 +695,116 @@ null descriptor and then pushes a duplicate of the descriptor that was
 previously on top of the stack.  For example, the virtual machine
 instructions for
 
-{\ttfamily\mdseries
-\ \ \ i +:= 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i +:= 1}
+\iconline{ \>i +:= 1 }
 
 are
 
-{\ttfamily\mdseries
-\ \ \ pnull}
-
-{\ttfamily\mdseries
-\ \ \ local i}
-
-{\ttfamily\mdseries
-\ \ \ dup}
-
-{\ttfamily\mdseries
-\ \ \ int 1}
-
-{\ttfamily\mdseries
-\ \ \ plus}
-
-{\ttfamily\mdseries
-\ \ \ asgn}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ pnull}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ local i}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ dup}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ int 1}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ plus}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ asgn}
+\goodbreak
+\iconcode{
+\>pnull\\
+\>local\>\>\> i\\
+\>dup\\
+\>int\>\>\> 1\\
+\>plus\\
+\>asgn
+}
 
 The stack after the execution of \texttt{local} is
 
-
-\ \  \includegraphics[width=2.778in,height=1.5189in]{ib-img/ib-img055.jpg} 
-
+%--%\ \  \includegraphics[width=2.778in,height=1.5189in]{ib-img/ib-img055.jpg} 
+\begin{picture}(300,90)(0,10)
+\put(120,0){\dvptrbox{0}{nvp}{40}{local i}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\downbars}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\upetc}
+\end{picture}
 
 The execution of \texttt{dup} produces
 
-
-\ \  \includegraphics[width=3.4193in,height=2.4075in]{ib-img/ib-img056.jpg} 
-
+%--%\ \  \includegraphics[width=3.4193in,height=2.4075in]{ib-img/ib-img056.jpg} 
+\begin{picture}(300,180)(0,-20)
+\put(-4,74){
+\begin{picture}(0,0)(0,10)
+\put(120,0){\dvptrbox{0}{nvp}{40}{local i}}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,32){\upetc}
+\end{picture}
+}
+\put(120,32){\dvbox{null}{n}{0}}
+\put(120,0){\dvbox{0}{nvp}{}}
+\put(120,0){\ruptr{30}{64}}
+\put(120,0){\lregptr{sp}{20}}
+\put(120,0){\downbars}
+\end{picture}
 
 The \texttt{dup} instruction simply takes the place of the
 \texttt{pnull} and second \texttt{local} instructions in the virtual
 machine instructions for
 
-{\ttfamily\mdseries
-\ \ \ i := i + 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ i := i + 1}
+\iconline{ \>i := i + 1 }
 
 which are
 
-{\ttfamily\mdseries
-\ \ \ pnull}
-
-{\ttfamily\mdseries
-\ \ \ local i}
-
-{\ttfamily\mdseries
-\ \ \ pnull}
-
-{\ttfamily\mdseries
-\ \ \ local i}
-
-{\ttfamily\mdseries
-\ \ \ int 1}
-
-{\ttfamily\mdseries
-\ \ \ plus}
-
-{\ttfamily\mdseries
-\ \ \ asgn}
-
+%-% {\ttfamily\mdseries
+%-% \ \ \ pnull}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ local i}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ pnull}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ local i}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ int 1}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ plus}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ asgn}
+\goodbreak
+\iconcode{
+\>pnull\\
+\>local\>\>\>i\\
+\>pnull\\
+\>local\>\>\>i\\
+\>int\>\>\>1\\
+\>plus\\
+\>asgn
+}
 
 In this case, only a single \texttt{local} instruction is avoided. If
 the variable to which the assignment is made is not just an identifier
 but, instead, a more complicated construction, as in
 
-{\ttfamily\mdseries
-\ \ \ a[j] +:= 1}
+%-% {\ttfamily\mdseries
+%-% \ \ \ a[j] +:= 1}
+\iconline{ \>a[j] +:= 1 }
 
 \noindent substantial computation may be saved by duplicating the
 result of the first argument expression instead of recomputing it.
@@ -437,30 +816,42 @@ a specific virtual machine instruction, the meaning of a function call
 can change during program execution. The value of the function also
 can be computed. as in
 
-{\ttfamily\mdseries
-\ \ \ (p[i])(x, y)}
+%-% {\ttfamily\mdseries
+%-% \ \ \ (p[i])(x, y)}
+\iconline{ \>(p[i])(x, y) }
 
 The general form of a call is
 
-{\ttfamily\mdseries
-\textit{\ \ \ expr0(expr1, expr2, }..., \textit{exprn)}}
-
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ expr0(expr1, expr2, }..., \textit{exprn)}}
+\iconline{
+\>\textit{expr0(expr1, expr2, } ..., \textit{exprn)}
+}
 The corresponding virtual machine instructions are
 
-{\ttfamily\mdseries
-\ \ \ code for expr0}
-
-{\ttfamily\mdseries
-\ \ \ code for expr1}
-
-{\ttfamily\mdseries
-\ \ \ code for expr2}
-
-{\ttfamily\itshape
-\ \ \ code for exprn}
-
-{\ttfamily\mdseries
-\textit{\ \ \ }invoke n}
+%-% {\ttfamily\mdseries
+%-% \ \ \ code for expr0}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ code for expr1}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ code for expr2}
+%-% 
+%-% {\ttfamily\itshape
+%-% \ \ \ code for exprn}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \textit{\ \ \ }invoke n}
+\goodbreak
+\iconcode{
+\>code for expr0\\
+\>code for expr1\\
+\>code for expr2\\
+\>\>...\\
+\>code for exprn\\
+\>invoke n
+}
 
 The \texttt{invoke} instruction is relatively complicated, since the
 value of \textit{expr0 }may be a procedure, an integer (for mutual
@@ -477,41 +868,56 @@ simple in structure. It maintains a location in the icode
 then branches to a section of code for processing the virtual machine
 instruction that it fetched. The interpreter loop is
 
-{\ttfamily\mdseries
-\ \ \ for (;;) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ op = GetWord;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (op) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case Op\_Asgn:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case Op\_Plus:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ continue;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+%-% {\ttfamily\mdseries
+%-% \ \ \ for (;;) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ op = GetWord;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ switch (op) \{}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ ...}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ case Op\_Asgn:}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ ...}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ case Op\_Plus:}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ ...}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ \}}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ continue;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \ \ \ ...}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ \}}
+\goodbreak
+\iconcode{
+\>for (;;) \{\\
+\>\>op = GetWord;\\
+\>\>switch (op) \{\\
+\>\>\>...\\
+\>\>\>case Op\_Asgn:\\
+\>\>\>...\\
+\>\>\>case Op\_Plus:\\
+\>\>\>...\\
+\>\>\>\}\\
+\>\>continue;\\
+\>\>\>...\\
+\>\>\}
+}
 
 \noindent
 where \texttt{GetWord} is a macro that is defined to be \texttt{(*ipc++)}.
@@ -520,30 +926,41 @@ Macros are used extensively in the interpreter to avoid repetitious
 coding and to make the interpreter easier to read.  The coding is
 illustrated by the case clause for the instruction \texttt{plus}:
 
-{\ttfamily\mdseries
-\ \ \ case Op\_Plus:\ \ /* e1 + e2 */}
+%-% {\ttfamily\mdseries
+%-% \ \ \ case Op\_Plus:\ \ /* e1 + e2 */}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ Setup\_Op(2);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ DerefArg(1);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ DerefArg(2);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ Call\_Op;}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ \ \ \ break;}
+\goodbreak
+\iconcode{
+\>case Op\_Plus:\ \ /* e1 + e2 */\\
+\>\>Setup\_Op(2);\\
+\>\>DerefArg(1);\\
+\>\>DerefArg(2);\\
+\>\>Call\_Op;\\
+\>\>break;
+}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ Setup\_Op(2);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ DerefArg(1);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ DerefArg(2);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ Call\_Op;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ break;}
 
 
 \texttt{Setup\_Op(n)} sets up a pointer to the address of Arg0 on the
 interpreter stack. The resulting code is
 
-{\ttfamily\mdseries
-\ \ \ rargp = (dptr)(sp - 1) - n;}
+%-% {\ttfamily\mdseries
+%-% \ \ \ rargp = (dptr)(sp - 1) - n;}
+\iconline{\>rargp = (dptr)(sp - 1) - n;}
 
 The value of \texttt{n} is the number of arguments on the stack.
 
@@ -557,14 +974,16 @@ function itself is obtained by looking up \texttt{op} in an array of
 pointers to functions.  The code produced by \texttt{Call\_Cond} is
 (almost)
 
-{\ttfamily\mdseries
-\ \ \ (*(optab(op]) )(rargp);}
-
-{\ttfamily\mdseries
-\ \ \ sp = (word * )rargp + 1:}
-
-
-\bigskip
+%-% {\ttfamily\mdseries
+%-% \ \ \ (*(optab(op]) )(rargp);}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ sp = (word * )rargp + 1:}
+\goodbreak
+\iconcode{
+\>(*(optab(op]) )(rargp);\\
+\>sp = (word * )rargp + 1:
+}
 
 In the case where a C function produces a result, as plus always does,
 that result is placed in the Arg0 descriptor on the interpreter stack,
@@ -578,17 +997,24 @@ As illustrated earlier, some virtual machine instructions have
 operands, which follow the instructions in the icode. The interpreter
 code for such an instruction fetches its operands. An example is
 
-int n
+\iconline{ \>int n }
 
 The interpreter code for int is
 
-case Op\_Int: /* integer */
-   PushVal(D\_Integer);
-   PushVal(GetWord);
-   break;
+%-% case Op\_Int: /* integer */
+%-%    PushVal(D\_Integer);
+%-%    PushVal(GetWord);
+%-%    break;
+\goodbreak
+\iconcode{
+\>case Op\_Int: /* integer */\\
+\>PushVal(D\_Integer);\\
+\>PushVal(GetWord);\\
+\>break;
+}
 
-PushVal(x) pushes x onto the interpreter stack. Thus, the descriptor
-for the integer is constructed by first pushing the constant D\_Integer
+\texttt{PushVal(x)} pushes x onto the interpreter stack. Thus, the descriptor
+for the integer is constructed by first pushing the constant \texttt{D\_Integer}
 for the d-word and then pushing the fetched operand for the v-word.
 
 \subsection[8.3.2 Interpreter State Variables]{8.3.2 Interpreter State Variables}

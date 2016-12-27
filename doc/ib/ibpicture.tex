@@ -13,8 +13,13 @@
 % \put(x,y){\leftboxlabels{top-left}{bottom-left}}
 % \put(x,y){\trboxlabel{top-right-label}}
 % \put(x,y){\rdptr{30}{20}}
+% \put(x,y){\upetc}
 %
 % produces a picture (roughly) like this
+%
+%                                 .
+%                                 .
+%                  |              .               |
 %                  |------------------------------|
 %       top-left   | flags                  title |   top-right-label
 %                  |..............................|
@@ -191,7 +196,20 @@
 \end{picture}
 }
 %-------------------------------------------------------------------------------
-% vertical dots
+% Register pointers (to the vword)
+\newcommand{\lregptr}[2]{
+\begin{picture}(32,32)
+\put(-2,12){\makebox(0,0)[r]{\makebox(0,-2){#1}\hspace{10pt}\vector(1,0){#2}}}
+\end{picture}
+}
+\newcommand{\rregptr}[2]{
+\begin{picture}(32,32)
+\put(102,8){\makebox(0,0)[l]{\hspace{#2pt}\vector(-1,0){#2}}}
+\put(98,12){\makebox(0,0)[l]{\hspace{#2pt}\hspace{10pt}{\makebox(0,-8)[l]{#1}}}}
+\end{picture}
+}
+%-------------------------------------------------------------------------------
+% vertical dots and bars
 \newcommand{\downetc}{% NB. This picture goes BELOW it's origin
 \begin{picture}(120,16)(-4,0)
 \put(0,0){\line(1,0){100}}
@@ -210,5 +228,19 @@
 \put(50,8){.}
 \put(50,16){.}
 \put(50,24){.}
+\end{picture}
+}
+\newcommand{\downbars}{% NB. This picture goes BELOW it's origin
+\begin{picture}(120,16)(-4,0)
+\put(0,0){\line(1,0){100}}
+\put(0,0){\line(0,-1){16}}
+\put(100,0){\line(0,-1){16}}
+\end{picture}
+}
+\newcommand{\upbars}{% NB this picture is offset up by 32
+\begin{picture}(120,16)(-4,-32)
+\put(0,0){\line(1,0){100}}
+\put(0,0){\line(0,1){16}}
+\put(100,0){\line(0,1){16}}
 \end{picture}
 }

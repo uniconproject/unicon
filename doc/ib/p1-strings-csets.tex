@@ -1116,16 +1116,19 @@ The C structure for a cset block is
 %-% {\ttfamily\mdseries
 %-% \ \ \ \};}
 \iconcode{
-\>struct b\_cset \{\ \ \ \ \ \ \ \ /* cset block */\\
-\>\>word title;\ \ \ \ \ \ \ \ /*\ \ T\_Cset */\\
-\>\>word size;\ \ \ \ \ \ \ \ /*\ \ size of cset */\\
-\>\>unsigned int bits [CsetSize];\ \ /*\ \ array of bits */\\
+\>struct b\_cset \{\>\>\>\>\>\>\>\>\>\> /* cset block */\\
+\>\>word title;\>\>\>\>\>\>\>\>\>\> /*\ \ T\_Cset */\\
+\>\>word size;\>\>\>\>\>\>\>\>\>\> /*\ \ size of cset */\\
+\>\>unsigned int bits [CsetSize];\>\>\>\>\>\>\>\>\>\> /*\ \ array of bits */\\
 \>\};
 }
 
 \noindent where CsetSize is the number of words required to make up a
 total of 256 bits. CsetSize is 8 on a computer with 32-bit words and 4
-on a computer with 64-bit words.
+on a computer with 64-bit words. Few programs use the size of Csets and the
+calculation of the size is expensive. The \texttt{size} field is set initially
+to -1 (by the routine \texttt{alccset()}) and the actual size is only computed if
+it is needed subsequently.
 
 Cset operations are comparatively straightforward. The characters in a
 cset are represented by a bit vector that is divided into words to
@@ -1209,6 +1212,7 @@ code for cset complementation is
 %-% 
 %-% {\ttfamily\mdseries
 %-% end}
+\goodbreak
 \iconcode{
 operator\{1\} \~{} compl(x)\\
 \>/*\\

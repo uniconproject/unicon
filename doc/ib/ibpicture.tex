@@ -29,7 +29,7 @@
 %                                                             V
 %
 %   The boxes are mostly 100pt wide and 32pt high, although some are 48pt high
-%   and there is one half-height (16pt) box, for use when there is an odd
+%   and there are three  half-height (16pt) boxes, for use when there is an odd
 %   number of 'slots' in the picture).
 %-------------------------------------------------------------------------------
 % Draw a descriptor/value box  \dvbox{title}{flags}{value}
@@ -45,15 +45,6 @@
 \put(-2,-4){\makebox(100,32)[tr]{#1}}%   title
 \put(2,-4){\makebox(100,32)[tl]{#2}}%    flags
 \put(-2,4){\makebox(100,32)[br]{#3}}%    value
-\end{picture}
-}
-%-------------------------------------------------------------------------------
-% Draw a word box (half height) \wordbox{title}{flags}
-\newcommand{\wordbox}[2]{
-\begin{picture}(120,16)
-\put(0,0){\framebox(100,16){}}%          The box
-\put(-2,-4){\makebox(100,16)[tr]{#1}}%   title
-\put(2,-4){\makebox(100,16)[tl]{#2}}%    flags
 \end{picture}
 }
 %-------------------------------------------------------------------------------
@@ -86,7 +77,7 @@
 \end{picture}
 }
 %-------------------------------------------------------------------------------
-% Draw a block box with a single value and an arrow \blptrkbox{title}{len}{value}
+% Draw a block box with a single value and an arrow \bklptrkbox{title}{len}{value}
 \newcommand{\blkptrbox}[3]{
 \begin{picture}(120,32)
 \put(0,16){\line(1,0){100}}%             The line in the middle
@@ -94,6 +85,18 @@
 \put(-2,-4){\makebox(100,32)[tr]{#1}}%   title
 \put(80,8){\vector(1,0){#2}}%            arrow
 \put(90,6){\hspace{#2pt}#3}%             value
+\end{picture}
+}
+%-------------------------------------------------------------------------------
+% Draw a block box with two arrows and values \dblptrkbox{len}{value1}{value2}
+\newcommand{\dblkptrbox}[3]{
+\begin{picture}(120,32)
+\put(0,16){\line(1,0){100}}%             The line in the middle
+\put(0,0){\framebox(100,32){}}%          The box
+\put(80,24){\vector(1,0){#1}}%           arrow
+\put(90,22){\hspace{#1pt}#2}%            value1
+\put(80,8){\vector(1,0){#1}}%            arrow
+\put(90,6){\hspace{#1pt}#3}%             value2
 \end{picture}
 }
 %-------------------------------------------------------------------------------
@@ -118,6 +121,37 @@
 \put(0,0){\framebox(100,48){}}%          The box
 \put(-2,-4){\makebox(100,48)[tr]{#1}}%   title
 \put(0,0){\makebox(100,32){#2}}%         value
+\end{picture}
+}
+%-------------------------------------------------------------------------------
+% Half height boxes
+%
+% Draw a word box (half height) \wordbox{title}{flags}
+\newcommand{\wordbox}[2]{
+\begin{picture}(120,16)
+\put(0,0){\framebox(100,16){}}%          The box
+\put(-2,-4){\makebox(100,16)[tr]{#1}}%   title
+\put(2,-4){\makebox(100,16)[tl]{#2}}%    flags
+\end{picture}
+}
+%-------------------------------------------------------------------------------
+% Draw a word box (half height) with an arrow \wordptr{len}{value}
+\newcommand{\wordptr}[2]{
+\begin{picture}(120,16)
+\put(0,0){\framebox(100,16){}}%          The box
+\put(80,8){\vector(1,0){#1}}%             arrow
+\put(90,6){\hspace{#1pt}#2}%              value
+\end{picture}
+}
+%-------------------------------------------------------------------------------
+% Draw a word box (half height) with a null pointer symbol and a label 
+% \nullptrbox{label}
+\newcommand{\nullptrbox}[1]{
+\begin{picture}(120,16)
+\put(0,16){\line(1,0){100}}%             The line in the middle
+\put(0,0){\framebox(100,16){}}%          The box
+\put(-2,4){\makebox(100,32)[br]{\o}}%    Null ptr symbol
+\put(10,8){\makebox(100,32)[br]{\makebox(0,0)[l]{#1}}}% label
 \end{picture}
 }
 %-------------------------------------------------------------------------------

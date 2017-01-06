@@ -6,10 +6,10 @@ semantics, and by the addition of new functions and keywords with no
 new syntax. Originally, the object-oriented facilities were
 implemented as a simple line-oriented preprocessor named Idol.  When
 Idol was merged with the Posix and ODBC facilities to become Unicon,
-the Idol preprocessor was substantially modified to a full to a full
-parser that generates code by traversing a syntax tree. It is still
-reasonable to call the Unicon translator a preprocessor, but it has
-many of the traits of a compiler.
+the Idol preprocessor was substantially modified to a full parser that
+generates code by traversing a syntax tree. It is still reasonable to
+call the Unicon translator a preprocessor, but it has many of the
+traits of a compiler.
 
 
 \section[26.1 Overview]{26.1 Overview}
@@ -26,613 +26,263 @@ solve the bootstrapping problem.
 
 \section[26.2 Lexical Analysis]{26.2 Lexical Analysis}
 
-Unicon's lexical analyzer is written by hand using a lex-compatible
-interface required by iyacc. Some of its design is borrowed from the
-Icon lexical analyzer (which is handwritten C code). It would be
-interesting to replace Unicon's lexical analyzer with a machine
+Unicon's lexical analyzer is adapted from a hand-written lex-compatible
+scanner written by Bob Alexander and used in the Jcon Java-based
+implementation of Icon. Some of its design is borrowed from the
+original Icon lexical analyzer (which is handwritten C code). It would
+be interesting to replace Unicon's lexical analyzer with a machine
 generated lexical analyzer to reduce the amount of compiler source
 code to maintain. The lexical analyzer consists of a function
 yylex() located in unicon/uni/unicon/unilex.icn, about 500 lines of
 code.
 
-{\sffamily
-Globals Comprising the Lex-compatible Public API }
-
+\subsection[26.2.1 Lex-compatible API]{26.2.1 Lex-compatible API}
 
 The global declarations that exist in order to provide a
 Lex-compatible API include:
 
-{\ttfamily\mdseries
-\$include {\textquotedbl}ytab\_h.icn{\textquotedbl} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# yacc's token categories}
+\iconcode{
+\$include "ytab\_h.icn" \> \> \> \> \> \> \> \> \> \> \> \# yacc's token categories \\
+global yytext \> \> \> \> \> \> \> \> \> \> \> \# lexeme \\
+global yyin \> \> \> \> \> \> \> \> \> \> \> \# source file we are reading \\
+global yytoken \> \> \> \> \> \> \> \> \> \> \> \# token (a record) \\
+global yylineno, yycolno, yyfilename \> \> \> \> \> \> \> \> \> \> \> \# source location
+}
 
-{\ttfamily\mdseries
-global yytext \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# lexeme}
-
-{\ttfamily\mdseries
-global yyin \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# source file we are reading}
-
-{\ttfamily\mdseries
-global yytoken \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \# token (a record)}
-
-{\ttfamily\mdseries
-global yylineno, yycolno, yyfilename \ \ \ \# source location}
-
-{\sffamily
-Character Categories }
-
+\subsection[26.2.2 Character Categories]{26.2.2 Character Categories}
 
 The lexical analyzer uses several csets for different character
 categories beyond the built-in ones:
 
-{\ttfamily\mdseries
-global O, D, L, H, R, FS, IS, W, idchars}
+\iconcode{
+global O, D, L, H, R, FS, IS, W, idchars\\
+\ \\
+procedure init\_csets() \\
+\>   O \ := '01234567' \\
+\>   D \ := \&digits \\
+\>   L \ := \&letters ++ '\_' \\
+\>   H \ := \&digits ++ 'abcdefABCDEF' \\
+\>   R \ := \&digits ++ \&letters \\
+\>   FS := 'fFlL' \\
+\>   IS := 'uUlL' \\
+\>   W \ := ' {\textbackslash}t{\textbackslash}v' \\
+\>   idchars := L ++ D \\
+end
+}
 
-
-\bigskip
-
-{\ttfamily\mdseries
-procedure init\_csets()}
-
-{\ttfamily\mdseries
-\ \ \ O \ := '01234567'}
-
-{\ttfamily\mdseries
-\ \ \ D \ := \&digits}
-
-{\ttfamily\mdseries
-\ \ \ L \ := ${\leq}$tters ++ '\_'}
-
-{\ttfamily\mdseries
-\ \ \ H \ := \&digits ++ 'abcdefABCDEF'}
-
-{\ttfamily\mdseries
-\ \ \ R \ := \&digits ++ ${\leq}$tters}
-
-{\ttfamily\mdseries
-\ \ \ FS := 'fFlL'}
-
-{\ttfamily\mdseries
-\ \ \ IS := 'uUlL'}
-
-{\ttfamily\mdseries
-\ \ \ W \ := ' {\textbackslash}t{\textbackslash}v'}
-
-{\ttfamily\mdseries
-\ \ \ idchars := L ++ D}
-
-{\ttfamily\mdseries
-end}
-
-{\sffamily
-The Token Type }
-
+\subsection[26.2.3 The Token Type]{26.2.3 The Token Type}
 
 The record type storing each token's information just bundles together
 the syntactic category (an integer), lexeme (a string), and location
 at which the token occurred. This is pretty minimalist.
 
-{\ttfamily\mdseries
-record token(tok, s, line, column, filename)}
+\iconline{
+record token(tok, s, line, column, filename)
+}
 
-{\sffamily
-Global Variables for Error Handling and Debugging }
+\subsection[26.2.4 Error Handling and Debugging]{26.2.4 Error Handling and Debugging}
 
-
-Several Remaining global variables are mainly used for error handling,
+Several remaining global variables are mainly used for error handling,
 and for debugging the lexical analyzer itself.
 
-{\sffamily
-Reserved Words }
+\subsection[26.2.5 Reserved Words]{26.2.5 Reserved Words}
+
+Global \texttt{reswords()} creates and becomes a table holding the
+Unicon reserved words. For each word, a pair of integers [tokenflags,
+category] is kept.  The tokenflags indicate whether the token allows
+semi-colon insertion if a newline immediately precedes it (Beginner)
+or comes after it (Ender); see section 26.2.7 below. Language design
+note: tables in this language need a literal format.
+
+\iconcode{
+procedure reswords() \\
+static t \\
+initial \{ \\
+\>   t := table([Beginner+Ender, IDENT]) \\
+\ \\
+\>   t[{\textquotedbl}abstract{\textquotedbl}] := [0, ABSTRACT] \\
+\>   t[{\textquotedbl}break{\textquotedbl}] := [Beginner+Ender, BREAK] \\
+\>   t[{\textquotedbl}by{\textquotedbl}] := [0, BY] \\
+
+\>   ... \\
+
+\>   t[{\textquotedbl}to{\textquotedbl}] := [0, TO] \\
+\>   t[{\textquotedbl}until{\textquotedbl}] := [Beginner, UNTIL] \\
+\>   t[{\textquotedbl}while{\textquotedbl}] := [Beginner, WHILE] \\
+\>   \} \\
+
+return t \\
+end
+}
+
+\subsection[26.2.6 Big-inhale Input]{26.2.6 Big-inhale Input}
 
 
-Global reswords() creates and becomes a table holding the Unicon
-reserved words. For each word, a pair of integers [tokenflags,
-category] is kept. Language design note: tables in this language need
-a {\textquotedbl}literal{\textquotedbl} format.
-
-{\ttfamily\mdseries
-procedure reswords()}
-
-{\ttfamily\mdseries
-static t}
-
-{\ttfamily\mdseries
-initial \{}
-
-{\ttfamily\mdseries
-\ \ \ t := table([Beginner+Ender, IDENT])}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}abstract{\textquotedbl}] := [0, ABSTRACT]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}break{\textquotedbl}] := [Beginner+Ender, BREAK]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}by{\textquotedbl}] := [0, BY]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}case{\textquotedbl}] := [Beginner, CASE]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}class{\textquotedbl}] := [0, CLASS]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}create{\textquotedbl}] := [Beginner, CREATE]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}default{\textquotedbl}] := [Beginner, DEFAULT]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}do{\textquotedbl}] := [0, DO]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}else{\textquotedbl}] := [0, ELSE]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}end{\textquotedbl}] := [Beginner, END]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}every{\textquotedbl}] := [Beginner, EVERY]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}fail{\textquotedbl}] := [Beginner+Ender, FAIL]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}global{\textquotedbl}] := [0, GLOBAL]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}if{\textquotedbl}] := [Beginner, IF]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}import{\textquotedbl}] := [0, IMPORT]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}initial{\textquotedbl}] := [Beginner, iconINITIAL]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}initially{\textquotedbl}] := [Ender, INITIALLY]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}invocable{\textquotedbl}] := [0, INVOCABLE]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}link{\textquotedbl}] := [0, LINK]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}local{\textquotedbl}] := [Beginner, LOCAL]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}method{\textquotedbl}] := [0, METHOD]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}next{\textquotedbl}] := [Beginner+Ender, NEXT]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}not{\textquotedbl}] := [Beginner, NOT]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}of{\textquotedbl}] := [0, OF]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}package{\textquotedbl}] := [0, PACKAGE]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}procedure{\textquotedbl}] := [0, PROCEDURE]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}record{\textquotedbl}] := [0, RECORD]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}repeat{\textquotedbl}] := [Beginner, REPEAT]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}return{\textquotedbl}] := [Beginner+Ender, RETURN]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}static{\textquotedbl}] := [Beginner, STATIC]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}suspend{\textquotedbl}] := [Beginner+Ender, SUSPEND]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}then{\textquotedbl}] := [0, THEN]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}to{\textquotedbl}] := [0, TO]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}until{\textquotedbl}] := [Beginner, UNTIL]}
-
-{\ttfamily\mdseries
-\ \ \ t[{\textquotedbl}while{\textquotedbl}] := [Beginner, WHILE]}
-
-{\ttfamily\mdseries
-\}}
-
-{\ttfamily\mdseries
-\ \ \ return t}
-
-{\ttfamily\mdseries
-end}
-
-{\sffamily
-Lexical Analyzer Initialization and the Big Inhale }
-
-
-A function, yylex\_reinit() is called the first time yylex() is
-called, along with each time the compiler moves to process a new file
-named on the command line. Along with initializing the public API
-variables, this function reads in the entire file, in a single global
-string variable, named {\textquotedbl}buffer{\textquotedbl}. This
-allows extremely fast subsequent processing, which does not file I/O
+A function, \texttt{yylex\_reinit()} is called the first time
+\texttt{yylex()} is called, along with each time the compiler moves to
+process a new file named on the command line. Along with initializing
+the public API variables, this function reads in the entire file, in a
+single global string variable, cleverly named \texttt{buffer}. This
+allows extremely fast subsequent processing, which does no file I/O
 for each token, while avoiding complex buffering sometimes done to
 reduce file I/O costs in compilers.
 
-This {\textquotedbl}big-inhale{\textquotedbl} model did not work well
-on original 128K PDP-11 UNIX computers, but works well in this
-century. At present, the code assumes Unicon source files are less
-than a megabyte -{}- a lazy programmer's error. Although Unicon
+This ``big-inhale'' model did not work well on the 128K PDP-11 UNIX
+computers Icon's C implementation were developed on, but works well in
+this century. At present, the code assumes Unicon source files are
+less than a megabyte -- a lazy programmer's error. Although Unicon
 programs are much shorter than C programs, an upper limit of 1MB is
 bound to be reached someday.
 
-{\ttfamily\mdseries
-procedure yylex\_reinit()}
-
-{\ttfamily\mdseries
-\ \ \ yytext := {\textquotedbl}{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ \ yylineno := 0}
-
-{\ttfamily\mdseries
-\ \ \ yycolno := 1}
-
-{\ttfamily\mdseries
-\ \ \ lastchar := {\textquotedbl}{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ \ if type(yyin) == {\textquotedbl}file{\textquotedbl} then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ buffer := reads(yyin, 1000000)}
-
-{\ttfamily\mdseries
-\ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ buffer := yyin}
-
-{\ttfamily\mdseries
-\ \ \ tokflags := 0}
-
-{\ttfamily\mdseries
-end}
-
-{\sffamily
-Semicolon Insertion }
+\iconcode{
+procedure yylex\_reinit() \\
+\>   yytext := "" \\
+\>   yylineno := 0 \\
+\>   yycolno := 1 \\
+\>   lastchar := "" \\
+\>   if type(yyin) == "file" then \\
+\> \>     buffer := reads(yyin, 1000000) \\
+\>   else \\
+\> \>     buffer := yyin \\
+\>   tokflags := 0 \\
+end
+}
 
 
-Icon and Unicon insert semicolons for you automatically. This is an
-easy lexical analyzer trick. The lexical analyzer requires one token
-of lookahead. Between each two tokens, it asks: was there a newline?
-If yes, was the token before the newline one that could conceivably be
-the end of an expression, and was the token at the start of the new
-line one that could conceivably start a new expression? If it would be
-legal to do so, it saves the new token and returns a semicolon
-instead.
+\subsection[26.2.7 Semicolon Insertion]{26.2.7 Semicolon Insertion}
+
+Icon and Unicon insert semicolons for the programmer
+automatically. This is an easy lexical analyzer trick. The lexical
+analyzer requires one token of lookahead. Between each two tokens, it
+asks: was there a newline?  If yes, was the token before the newline
+one that could conceivably be the end of an expression, and was the
+token at the start of the new line one that could conceivably start a
+new expression? If it would be legal to do so, it saves the new token
+and returns a semicolon instead.
 
 This little procedure is entirely hidden from the regular lexical
 analyzer code by writing that regular code in a helper function
-yylex2(), and writing the semicolon insertion logic in a yylex()
-function that calls yylex2 when it needs a new token.
+\texttt{yylex2()}, and writing the semicolon insertion logic in a
+\texttt{yylex()} function that calls \texttt{yylex2()} when it needs a
+new token.
 
-Initialization for the yylex() function shows the static variables
-used to implement the one token of lookahead. If the global variable
-buffer doesn't hold a string anymore, /buffer will succeed and it must
-be that we are at end-of-file and should return 0.
+Initialization for the \texttt{yylex()} function shows the static
+variables used to implement the one token of lookahead. If the global
+variable \texttt{buffer} doesn't hold a string anymore,
+\texttt{/buffer} will succeed and it must be that we are at
+end-of-file and should return 0.
 
-{\ttfamily\mdseries
-procedure yylex()}
-
-{\ttfamily\mdseries
-\ \ static saved\_tok, saved\_yytext}
-
-{\ttfamily\mdseries
-\ \ local rv, ender}
-
-{\ttfamily\mdseries
-\ \ initial \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if /buffer then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ yylex\_reinit()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ if /buffer then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if {\textbackslash}debuglex then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ write({\textquotedbl}yylex() : 0{\textquotedbl})}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return 0}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\iconcode{
+procedure yylex() \\
+static saved\_tok, saved\_yytext \\
+local rv, ender \\
+initial \{ \\
+\>   if /buffer then \\
+\> \>    yylex\_reinit() \\
+\> \>    \} \\
+\>   if /buffer then \{ \\
+\> \>     if {\textbackslash}debuglex then \\
+\> \> \>       write("yylex() : 0") \\
+\> \>     return 0 \\
+\> \>     \}
+}
 
 
-If we inserted a semicolon last time we were called, the saved\_tok will be the first token of the next line; we should
-return it. 
+If a semicolon was inserted the last time \texttt{yylex()} was called,
+the \texttt{saved\_tok} will be the first token of the next line; it
+should be returned.
 
-{\ttfamily\mdseries
-\ \ if {\textbackslash}saved\_tok then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ rv := saved\_tok}
-
-{\ttfamily\mdseries
-\ \ \ \ saved\_tok := $\nu $ll}
-
-{\ttfamily\mdseries
-\ \ \ \ yytext := saved\_yytext}
-
-{\ttfamily\mdseries
-\ \ \ \ yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)}
-
-{\ttfamily\mdseries
-\ \ \ \ if {\textbackslash}debuglex then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ write({\textquotedbl}yylex() : {\textquotedbl},tokenstr(rv),
-{\textquotedbl}{\textbackslash}t{\textquotedbl}, image(yytext))}
-
-{\ttfamily\mdseries
-\ \ \ \ return rv}
-
-{\ttfamily\mdseries
-\ \ \}}
+\iconcode{
+\>   if {\textbackslash}saved\_tok then \{ \\
+\> \>   rv := saved\_tok \\
+\> \>   saved\_tok := \&null \\
+\> \>   yytext := saved\_yytext \\
+\> \>   yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename) \\
+\> \>   if {\textbackslash}debuglex then \\
+\> \> \>    write("yylex() : ",tokenstr(rv),
+                  "{\textbackslash}t", image(yytext)) \\
+\> \>   return rv \\
+\> \> \}
+}
 
 Otherwise, we should obtain the next token by calling yylex2(). We
 have to check for end of file, remember if the last token could end an
 expression, call yylex2(), and update buffer to be the smaller string
 remaining after the token.
 
-{\ttfamily\mdseries
-\ \ ender := iand(tokflags, Ender)}
-
-{\ttfamily\mdseries
-\ \ tokflags := 0}
-
-{\ttfamily\mdseries
-\ \ if *buffer=0 then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ buffer := $\nu $ll}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if {\textbackslash}debuglex then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ write({\textquotedbl}yylex() : EOFX{\textquotedbl})}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return EOFX}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ buffer ? \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if rv := yylex2() then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ buffer := tab(0)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ buffer := $\nu $ll}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ yytext := {\textquotedbl}{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ if {\textbackslash}debuglex then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ write({\textquotedbl}yylex() : EOFX{\textquotedbl})}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return EOFX}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \}}
+\iconcode{
+\>   ender := iand(tokflags, Ender) \\
+\>   tokflags := 0 \\
+\>   if *buffer=0 then \{ \\
+\> \>     buffer := \&null \\
+\> \>     if {\textbackslash}debuglex then \\
+\> \> \>        write("yylex() : EOFX") \\
+\> \>     return EOFX \\
+\> \>    \} \\
+\>   buffer ? \{ \\
+\> \>     if rv := yylex2() then \{ \\
+\> \> \>        buffer := tab(0) \\
+\> \> \>        \} \\
+\> \>     else \{ \\
+\> \> \>       buffer := \&null \\
+\> \> \>       yytext := "" \\
+\> \> \>       if {\textbackslash}debuglex then \\
+\> \> \> \>          write("yylex() : EOFX") \\
+\> \> \>       return EOFX \\
+\> \> \>       \} \\
+\> \>    \}}
 
 After fetching a new token, we have to decide whether to insert a
 semicolon or not. This is based on global variable ender (whether the
 previous token could end an expression) and global variable tokflags
 (which holds both whether the current token could begin an expression,
 and whether a newline occurred between the last token and the current
-token).  iand() is a bitwise AND, equivalen to C language \& operator,
-used to pick bits out of a set of boolean flags encoded as bits within
-an integer.
+token).  \texttt{iand()} is a bitwise AND, equivalen to C language \&
+operator, used to pick bits out of a set of boolean flags encoded as
+bits within an integer.
 
-{\ttfamily\mdseries
-\ \ if ender\~{}=0 \& iand(tokflags, Beginner)\~{}=0 \& iand(tokflags, Newline)\~{}=0 then \{}
+\iconcode{
+\>   if ender\~{}=0 \& iand(tokflags, Beginner)\~{}=0 \& iand(tokflags, Newline)\~{}=0 then \{ \\
+\> \>   saved\_tok := rv \\
+\> \>   saved\_yytext := yytext \\
+\> \>   yytext := ";" \\
+\> \>   rv := SEMICOL \\
+\> \>   \}
+}
 
-{\ttfamily\mdseries
-\ \ \ \ saved\_tok := rv}
+Returning a token requires allocation of a \texttt{token()} record
+instance, which is stored in a global variable.
 
-{\ttfamily\mdseries
-\ \ \ \ saved\_yytext := yytext}
+\iconcode{
+\>   yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename) \\
+\>   if {\textbackslash}debuglex then \\
+\> \>     write("yylex() : ", tokenstr(rv), "{\textbackslash}t", image(yytext))\\
+\>   return rv \\
+end
+}
 
-{\ttfamily\mdseries
-\ \ \ \ yytext := {\textquotedbl};{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ \ \ rv := SEMICOL}
-
-{\ttfamily\mdseries
-\ \ \ \ \}}
-
-Returning a token requires allocation of a token() record instance,
-which is stored in a global variable.
-
-{\ttfamily\mdseries
-\ \ \ yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename)}
-
-{\ttfamily\mdseries
-\ \ \ if {\textbackslash}debuglex then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ write({\textquotedbl}yylex() : {\textquotedbl}, tokenstr(rv),
-{\textquotedbl}{\textbackslash}t{\textquotedbl}, image(yytext))}
-
-{\ttfamily\mdseries
-\ \ \ return rv}
-
-{\ttfamily\mdseries
-end}
-
-{\sffamily
-The Real Lexical Analyzer Function, yylex2()}
+\subsection[26.2.8 The Real Lexical Analyzer Function, yylex2()]{26.2.8 The Real Lexical Analyzer Function, yylex2()}
 
 This function maintains a table of functions, calling a helper
 function depending on what the first character in the token is.
 
-{\ttfamily\mdseries
-procedure yylex2()}
-
-{\ttfamily\mdseries
-static punc\_table}
-
-{\ttfamily\mdseries
-initial \{}
-
-{\ttfamily\mdseries
-\ \ \ init\_csets()}
-
-{\ttfamily\mdseries
-\ \ \ reswords := reswords()}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table := table(uni\_error)}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}'{\textquotedbl}] := do\_literal}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}{\textbackslash}{\textquotedbl}{\textquotedbl}] := do\_literal}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}!{\textquotedbl}] := do\_bang}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\%{\textquotedbl}] := do\_mod}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\&{\textquotedbl}] := do\_and}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}*{\textquotedbl}] := do\_star}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}+{\textquotedbl}] := do\_plus}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}-{\textquotedbl}] := do\_minus}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}.{\textquotedbl}] := do\_dot}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}/{\textquotedbl}] := do\_slash}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}:{\textquotedbl}] := do\_colon}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}{\textless}{\textquotedbl}] := do\_less}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}={\textquotedbl}] := do\_equal}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}{\textgreater}{\textquotedbl}] := do\_greater}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}?{\textquotedbl}] := do\_qmark}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}@{\textquotedbl}] := do\_at}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}{\textbackslash}{\textbackslash}{\textquotedbl}] := do\_backslash}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\^{}{\textquotedbl}] := do\_caret}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}{\textbar}{\textquotedbl}] := do\_or}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\~{}{\textquotedbl}] := do\_tilde}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}({\textquotedbl}] := do\_lparen}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}){\textquotedbl}] := do\_rparen}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}[{\textquotedbl}] := do\_lbrack}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}]{\textquotedbl}] := do\_rbrack}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\{{\textquotedbl}] := do\_lbrace}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\}{\textquotedbl}] := do\_rbrace}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl},{\textquotedbl}] := do\_comma}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl};{\textquotedbl}] := do\_semi}
-
-{\ttfamily\mdseries
-\ \ \ punc\_table[{\textquotedbl}\${\textquotedbl}] := do\_dollar}
-
-{\ttfamily\mdseries
-\ \ \ every punc\_table[!\&digits] := do\_digits}
-
-{\ttfamily\mdseries
-\ \ \ every punc\_table[{\textquotedbl}\_{\textquotedbl} {\textbar} !${\leq}$tters] := do\_letters}
-
-{\ttfamily\mdseries
-\ \ \ \}}
+\iconcode{
+procedure yylex2() \\
+static punc\_table \\
+initial \{ \\
+\>   init\_csets() \\
+\>   reswords := reswords() \\
+\>   punc\_table := table(uni\_error) \\
+\>   punc\_table["'"] := do\_literal \\
+\>   punc\_table["{\textbackslash}""] := do\_literal \\
+\>   punc\_table["!"] := do\_bang \\
+\>   punc\_table["\%"] := do\_mod \\
+\>   ... \\
+\>   punc\_table["\$"] := do\_dollar \\
+\>   every punc\_table[!\&digits] := do\_digits \\
+\>   every punc\_table["\_" {\textbar} !\&letters] := do\_letters \\
+\>   \}
+}
 
 
 The main lexical analyzer code strips comments and whitespace, and calls the function table for the first non-whitespace

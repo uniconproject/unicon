@@ -571,19 +571,21 @@ when the strings they point to are moved during the compaction of
 string region. See Sec. 11.3.3.
 
 \textbf{Blocks. }The location phase for blocks is more complicated
-than that for strings, since blocks can contain descriptors that point
-to strings as well as to other blocks. The objects that these
+than that for strings, since blocks may contain block pointers to
+other blocks as well as descriptors that either point to strings or
+point to other blocks.  The objects that these pointers and
 descriptors point to must be processed also.
 
 Unlike strings, in which a separate array is used to keep track of
 qualifier that have been located, no extra space is needed to keep
-track of descriptors that point to blocks. Instead, descriptors and
-the titles of the blocks they point to are modified temporarily.
+track of descriptors that point to blocks. Instead, block pointers,
+descriptors and the titles of the blocks they point to are modified
+temporarily.
 
 The title of any block located in the allocated block region is
 changed to point to a \textit{back chain} that contains all the
-descriptors that point to that block. The descriptors are linked
-through their v-words.
+descriptors and block pointers that point to that block. The
+descriptors are linked through their v-words.
 
 The following example illustrates the process. Suppose there is a
 record declaration
@@ -611,7 +613,8 @@ related as follows:
 %--%\ \  \includegraphics[width=3.9543in,height=2.2937in]{ib-img/ib-img090.jpg} 
 \begin{picture}(300,190)(-20,0)
 \put(140,128){\blkbox{record}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{record-constructor}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordptr{50}{record-constructor}}
 \put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
 \put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
@@ -634,7 +637,8 @@ previous contents of the title word. The result is
 %--%\ \  \includegraphics[width=3.7402in,height=2.3571in]{ib-img/ib-img091.jpg} 
 \begin{picture}(300,220)(-20,0)
 \put(140,128){\blkbox{}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{record-constructor}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordptr{50}{record-constructor}}
 \put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
 \put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
@@ -689,20 +693,74 @@ and \texttt{T\_Real}.  For \texttt{T\_Record}, the entry is 8 for
 32-bit computers, indicating that the first descriptor is at an offset
 of 8 bytes (2 words) from the beginning of the block. See Sec. 4.2.
 
-For the previous example, after the descriptors in the record block
-are processed, the location phase continues. When the descriptor that
-contains the value of y is processed, it is added to the back chain by
-again exchanging the contents of its v-word with the contents of the
-title of the block. As a result, the title of the block points to the
-descriptor for the value of y and its v-word points to the descriptor
-for the value of x:
+Extra information is required to handle blocks that contain block
+pointers.  It is necessary to know the location of pointers within the
+block. Two further arrays contain this information.  The first array,
+\texttt{firstp}, contains the offset in bytes from the start of the
+block to the first block pointer. There are three kinds of entry. An
+entry of -1 indicates a type for which there are no allocated
+blocks. A value of 0 means that there are no block pointers. Any other
+value is the offset in bytes of the first block pointer.  The second
+array, \texttt{ptrno} contains the number of block pointers in the
+block. As with \texttt{firstp}, an entry of -1 denotes a type for
+which there are no allocated blocks.  0 means that the rest of the
+block contains block pointers and a positive value indicate that there
+are exactly that many block pointers.
+
+The constraint that this design places on the implementation is that
+all the block pointers must be contiguous within a block and (since
+the descriptors must be at the end) before any descriptors.
+
+There is only one block pointer in a record, which points to the
+record constructor (of type \texttt{proc}). The result after
+processing the record block is that the record constructor block's
+back chain points to the block pointer in the record block (the
+record constructor block structure is not shown in detail).
+ 
+\begin{picture}(300,220)(-20,0)
+\put(140,128){\blkbox{}{40}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordbox{proc}}
+\put(320,96){\wordbox{}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
+\put(348,104){\vector(-1,0){104}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
+\put(140,0){\dvbox{integer}{n}{4}}
+\put(0,80){\dvbox{record}{np}{}}
+\put(0,80){\tlboxlabel{\texttt{y}{\hspace{20pt}}}}
+\put(0,144){\tlboxlabel{\texttt{x}{\hspace{20pt}}}}
+\put(0,144){\dvbox{record}{np}{record}{}}
+\put(80,88){\line(1,0){40}}
+\put(120,88){\line(0,1){66}}
+\put(120,154){\vector(1,0){24}}
+\put(220,154){\line(1,0){60}}
+\put(280,154){\line(0,1){40}}
+\put(280,194){\line(-1,0){290}}
+\put(-10,194){\line(0,-1){24}}
+\put(-10,170){\vector(1,0){14}}
+\end{picture}
+
+For the previous example, after the block pointers and descriptors in
+the record block are processed, the location phase continues. When the
+descriptor that contains the value of y is processed, it is added to
+the back chain by again exchanging the contents of its v-word with the
+contents of the title of the block. As a result, the title of the
+block points to the descriptor for the value of y and its v-word
+points to the descriptor for the value of x:
 
 %--%\ \  \includegraphics[width=4.3811in,height=2.3402in]{ib-img/ib-img092.jpg} 
 \begin{picture}(300,220)(-20,-20)
 \put(140,128){\blkbox{}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{}}
-\put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
-\put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordbox{proc}}
+\put(320,96){\wordbox{}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
+\put(348,104){\vector(-1,0){104}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
 \put(0,80){\dvbox{record}{np}{}}
 \put(0,80){\tlboxlabel{\texttt{y}{\hspace{20pt}}}}
@@ -712,9 +770,11 @@ for the value of x:
 \put(120,88){\line(0,1){40}}
 \put(120,128){\line(-1,0){130}}
 \put(-10,128){\line(0,1){42}}
-\put(220,154){\line(1,0){120}}
-\put(340,154){\line(0,-1){170}}
-\put(340,-16){\line(-1,0){350}}
+\put(220,154){\line(1,0){95}}
+\put(315,154){\line(0,-1){48}}
+\put(315,104){\oval(4,4)[r]}
+\put(315,102){\line(0,-1){118}}
+\put(315,-16){\line(-1,0){325}}
 \put(-10,-16){\line(0,1){120}}
 \put(-10,104){\vector(1,0){14}}
 \put(-10,170){\vector(1,0){14}}
@@ -770,9 +830,14 @@ variable descriptor is encountered is
 %--%\ \  \includegraphics[width=4.1681in,height=2.5654in]{ib-img/ib-img093.jpg} 
 \begin{picture}(300,220)(-20,-20)
 \put(140,128){\blkbox{}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{}}
-\put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
-\put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordbox{proc}}
+\put(320,96){\wordbox{}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
+\put(348,104){\vector(-1,0){104}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
 \put(0,80){\dvbox{record}{np}{}}
 \put(0,80){\tlboxlabel{\texttt{y}{\hspace{20pt}}}}
@@ -783,9 +848,11 @@ variable descriptor is encountered is
 \put(120,88){\line(0,1){40}}
 \put(120,128){\line(-1,0){130}}
 \put(-10,128){\line(0,1){42}}
-\put(220,154){\line(1,0){120}}
-\put(340,154){\line(0,-1){170}}
-\put(340,-16){\line(-1,0){350}}
+\put(220,154){\line(1,0){95}}
+\put(315,154){\line(0,-1){48}}
+\put(315,104){\oval(4,4)[r]}
+\put(315,102){\line(0,-1){118}}
+\put(315,-16){\line(-1,0){325}}
 \put(-10,-16){\line(0,1){120}}
 \put(-10,104){\vector(1,0){14}}
 \put(-10,170){\vector(1,0){14}}
@@ -800,9 +867,14 @@ the back chain.
 %--%\ \  \includegraphics[width=4.1681in,height=2.6217in]{ib-img/ib-img094.jpg} 
 \begin{picture}(300,220)(-20,-20)
 \put(140,128){\blkbox{}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{}}
-\put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
-\put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordbox{proc}}
+\put(320,96){\wordbox{}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
+\put(348,104){\vector(-1,0){104}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
 \put(0,80){\dvbox{record}{np}{}}
 \put(0,80){\tlboxlabel{\texttt{y}{\hspace{20pt}}}}
@@ -813,9 +885,11 @@ the back chain.
 \put(120,88){\line(0,1){40}}
 \put(120,128){\line(-1,0){130}}
 \put(-10,128){\line(0,1){42}}
-\put(220,154){\line(1,0){120}}
-\put(340,154){\line(0,-1){170}}
-\put(340,-16){\line(-1,0){350}}
+\put(220,154){\line(1,0){95}}
+\put(315,154){\line(0,-1){48}}
+\put(315,104){\oval(4,4)[r]}
+\put(315,102){\line(0,-1){118}}
+\put(315,-16){\line(-1,0){325}}
 \put(-10,-16){\line(0,1){56}}
 \put(-10,170){\vector(1,0){14}}
 \put(-10,40){\vector(1,0){14}}
@@ -2043,7 +2117,7 @@ indicate marked blocks, and clear areas indicate unmarked blocks:
 
 %--%\ \  \includegraphics[width=2.5654in,height=2.7811in]{ib-img/ib-img102.jpg} 
 \definecolor{lightgrey}{RGB}{180,180,180}
-\begin{picture}(300,180)
+\begin{picture}(300,200)
 \thicklines
 \put(80,183){\vector(1,0){20}}
 \put(75,183){\makebox(0,0)[r]{\texttt{blkbase}}}
@@ -2107,9 +2181,14 @@ situation is
 %--%\ \  \includegraphics[width=2.5654in,height=2.3602in]{ib-img/ib-img103.jpg} 
 \begin{picture}(300,220)(-20,-20)
 \put(140,128){\blkbox{}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{}}
-\put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
-\put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordbox{proc}}
+\put(320,96){\wordbox{}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
+\put(348,104){\vector(-1,0){104}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
 \put(0,80){\dvbox{record}{np}{}}
 \put(0,80){\tlboxlabel{\texttt{y}{\hspace{20pt}}}}
@@ -2120,9 +2199,11 @@ situation is
 \put(120,88){\line(0,1){40}}
 \put(120,128){\line(-1,0){130}}
 \put(-10,128){\line(0,1){42}}
-\put(220,154){\line(1,0){120}}
-\put(340,154){\line(0,-1){170}}
-\put(340,-16){\line(-1,0){350}}
+\put(220,154){\line(1,0){95}}
+\put(315,154){\line(0,-1){48}}
+\put(315,104){\oval(4,4)[r]}
+\put(315,102){\line(0,-1){118}}
+\put(315,-16){\line(-1,0){325}}
 \put(-10,-16){\line(0,1){56}}
 \put(-10,170){\vector(1,0){14}}
 \put(-10,40){\vector(1,0){14}}
@@ -2136,21 +2217,48 @@ situation is
 \noindent After processing the back chain, the situation is
 
 %--%\ \  \includegraphics[width=3.3134in,height=2.0772in]{ib-img/ib-img104.jpg} 
-\begin{picture}(300,190)
-\begin{picture}(0,0)(-90,-16)
+\begin{picture}(300,220)(20,-32)
+\begin{picture}(0,0)(-60,-16)
 \put(140,128){\dvbox{record}{m}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{}}
-\put(140,64){\dvptrbox{5}{}{50}{\texttt{"chair"}}}
-\put(140,32){\dvptrbox{4}{}{50}{\texttt{"noun"}}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordbox{proc}}
+\put(320,96){\wordbox{}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
+\put(348,104){\vector(-1,0){104}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
 \end{picture}
+\begin{picture}(0,0)(0,32)
 \put(0,80){\dvptrbox{record}{np}{40}{\texttt{dest}}}
 \put(0,144){\dvptrbox{record}{np}{40}{\texttt{dest}}}
 \put(0,16){\dvptrbox{8}{npv}{40}{\texttt{dest+32} (bytes)}}
 \end{picture}
+\end{picture}
 
-\noindent Note that the v-words of the descriptors point to where the block
-\textit{will be} after it is moved.
+\noindent Note that the v-words of the descriptors point to where the
+block \textit{will be} after it is moved. When the record constructor
+block is encountered and processed (assuming the value of
+\texttt{dest} at that time is \texttt{dest\_rc}), the situation
+becomes
+
+\begin{picture}(300,220)(20,-32)
+\begin{picture}(0,0)(-60,-16)
+\put(140,128){\dvbox{record}{m}{40}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordptr{50}{\texttt{dest\_rc}}}
+\put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
+\put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
+\put(140,0){\dvbox{integer}{n}{4}}
+\end{picture}
+\begin{picture}(0,0)(0,32)
+\put(0,80){\dvptrbox{record}{np}{40}{\texttt{dest}}}
+\put(0,144){\dvptrbox{record}{np}{40}{\texttt{dest}}}
+\put(0,16){\dvptrbox{8}{npv}{40}{\texttt{dest+32} (bytes)}}
+\end{picture}
+\end{picture}
+
 
 The routine for adjusting pointers to the allocated block region is
 

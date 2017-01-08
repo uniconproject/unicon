@@ -364,7 +364,13 @@ procedure preproc_scan_text(done_set)
                         repeat {
                             while tab(upto(interesting_in_quotes)) do {
                                 case move(1) of {
-                                    "\\": move(1)
+                                    "\\": {
+				       # backslash can eat multiple chars;
+				       # may need more than this
+				       case move(1) of {
+					  "^": move(1)
+					  }
+				       }
                                     default: {
                                         break break
                                     }

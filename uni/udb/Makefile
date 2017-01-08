@@ -10,6 +10,12 @@ CLEAN   = clean
 cflags  = $(UFLAGS) -c 
 ldflags = -u
 
+#
+# Add dependency on system include "evdefs.icn" because it is really sad
+# if udb gets broken.
+#
+EVD     = ../../ipl/mincl/evdefs.icn
+
 SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
             agent.icn internals.icn externals.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
@@ -62,10 +68,10 @@ session.u: session.icn defaults.icn state.u evaluator.u externals.u
 help.u: help.icn defaults.icn state.u
 	$(UC) $(cflags) help
 
-evaluator.u: evaluator.icn defaults.icn state.u data.u trace.u internals.u externals.u
+evaluator.u: evaluator.icn defaults.icn state.u data.u trace.u internals.u externals.u $(EVD)
 	$(UC) $(cflags) evaluator
 
-state.u: state.icn defaults.icn srcfile.u srccode.u icode.u
+state.u: state.icn defaults.icn srcfile.u srccode.u icode.u $(EVD)
 	$(UC) $(cflags) state
 
 srcfile.u: srcfile.icn
@@ -77,10 +83,10 @@ srccode.u: srccode.icn
 icode.u: icode.icn
 	$(UC) $(cflags) icode
 
-breakpoint.u: breakpoint.icn defaults.icn state.u
+breakpoint.u: breakpoint.icn defaults.icn state.u $(EVD)
 	$(UC) $(cflags) breakpoint
 
-watchpoint.u: watchpoint.icn defaults.icn state.u
+watchpoint.u: watchpoint.icn defaults.icn state.u $(EVD)
 	$(UC) $(cflags) watchpoint
 
 stepping.u: stepping.icn defaults.icn state.u
@@ -92,13 +98,13 @@ stack.u: stack.icn defaults.icn state.u
 data.u: data.icn defaults.icn state.u
 	$(UC) $(cflags) data
 
-trace.u: trace.icn defaults.icn state.u
+trace.u: trace.icn defaults.icn state.u $(EVD)
 	$(UC) $(cflags) trace
 
 agent.u: agent.icn state.u
 	$(UC) $(cflags) agent
 
-internals.u: internals.icn defaults.icn agent.u state.u
+internals.u: internals.icn defaults.icn agent.u state.u $(EVD)
 	$(UC) $(cflags) internals
 
 externals.u: externals.icn defaults.icn agent.u state.u

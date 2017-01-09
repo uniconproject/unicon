@@ -704,12 +704,14 @@ value is the offset in bytes of the first block pointer.  The second
 array, \texttt{ptrno} contains the number of block pointers in the
 block. As with \texttt{firstp}, an entry of -1 denotes a type for
 which there are no allocated blocks.  0 means that the rest of the
-block contains block pointers and a positive value indicate that there
+block contains block pointers and a positive value indicates that there
 are exactly that many block pointers.
 
 The constraint that this design places on the implementation is that
 all the block pointers must be contiguous within a block and (since
-the descriptors must be at the end) before any descriptors.
+the descriptors must be at the end) before any descriptors. Any block
+that may have a variable number of block pointers must have no
+descriptors and the pointers must be located at the end of the block.
 
 There is only one block pointer in a record, which points to the
 record constructor (of type \texttt{proc}). The result after
@@ -2244,13 +2246,18 @@ block is encountered and processed (assuming the value of
 becomes
 
 \begin{picture}(300,220)(20,-32)
-\begin{picture}(0,0)(-60,-16)
+\begin{picture}(0,0)(-36,-8)
 \put(140,128){\dvbox{record}{m}{40}}
 \put(140,112){\wordbox{\textit{id}}}
 \put(140,96){\wordptr{50}{\texttt{dest\_rc}}}
 \put(140,64){\dvptrbox{5}{}{40}{\texttt{"chair"}}}
 \put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
+\end{picture}
+\begin{picture}(0,0)(0,-56)
+\put(320,96){\wordbox{proc}}
+\put(320,96){\downetc}
+\put(326,110){\makebox(100,16){record-constructor}}
 \end{picture}
 \begin{picture}(0,0)(0,32)
 \put(0,80){\dvptrbox{record}{np}{40}{\texttt{dest}}}

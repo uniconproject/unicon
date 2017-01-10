@@ -1,3 +1,32 @@
+#
+# Implementation Compendium makefile
+# The Icon and Unicon implementation compendium is not considered part of the
+# source code, for example "make Unicon" probably does not build it.  It is
+# normally read in PDF form from the unicon.org website.  If you want to build
+# it from source, you should do this on a machine
+# that has the capacity to install LaTeX, potentially all of it.
+#
+# On Ubuntu, the following LaTeX packages were observed to be present on
+# the author's development machine, 1/2017.  The *-doc might not be needed.
+# Many might have been installed as requirements as one of the main packages
+# was installed.  Package names may change from distribution to distribution.
+#
+# tex-common, tex-gyre, texlive, texlive-base, texlive-binaries
+# texlive-extra-utils, texlive-font-utils, texlive-fonts-recommended
+# texlive-fonts-recommended-doc, texlive-generic-recommended
+# texlive-lang-french, texlive-latex-base, texlive-latex-base-doc
+# texlive-latex-extra, texlive-latex-extra-doc
+# texlive-latex-recommended, texlive-latex-recommended-doc
+# texlive-pictures, texlive-pictures-doc
+# texlive-pstricks, texlive-pstricks-doc
+#
+# The resulting PDF file is at present in flux/under construction and has many
+# warning messages indicating poor formatting, missing font shapes etc. For
+# example, texlive-fonts-recommended is supposed to provide the helvetica bold
+# font expected by Unicon books, but I am getting warnings that
+# 'T1/phvb/bx/n' and 'T1/phvb/m/n' are is missing.
+#
+
 P1= p1-intro.tex p1-iconOverview.tex p1-organization.tex p1-values.tex p1-strings-csets.tex p1-lists.tex p1-sets-tables.tex p1-interpreter.tex p1-exprEval.tex p1-procs-coexprs.tex p1-storage.tex p1-runTime.tex
 KW=kw/figure3-2.png kw/figure4-6.png
 P2=p2-preface.tex p2-compiler.tex p2-transModel.tex p2-typeTheory.tex p2-liveness.tex p2-overview.tex p2-iconcOrg.tex p2-typeInfer.tex p2-codeGen.tex p2-ctrlflow.tex p2-invoke.tex p2-codePerform.tex p2-futureWork.tex p2-iconcOpt.tex $(KW)

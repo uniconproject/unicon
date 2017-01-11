@@ -38,15 +38,15 @@
 %                  |..............................|
 %                  |                        value |
 %                  |------------------------------|
-\newcommand{\dvbox}[3]{
-\begin{picture}(120,32)
+\newcommand{\dvbox}[3]{%
+\begin{picture}(120,32)%
 \multiput(0,16)(2,0){50}{\line(1,0){1}}% The dotted line in the middle
 \put(0,0){\framebox(100,32){}}%          The box
 \put(-2,-4){\makebox(100,32)[tr]{#1}}%   title
 \put(2,-4){\makebox(100,32)[tl]{#2}}%    flags
 \put(-2,4){\makebox(100,32)[br]{#3}}%    value
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a descriptor/value box with an arrow \dvptrbox{title}{flags}{len}{value}
 % (len is the length of the arrow; value is placed after it, to the right)
@@ -55,247 +55,327 @@
 %                  |..............................|
 %                  |                       -------+---------------->  value
 %                  |------------------------------|
-\newcommand{\dvptrbox}[4]{
-\begin{picture}(120,32)
+\newcommand{\dvptrbox}[4]{%
+\begin{picture}(120,32)%
 \multiput(0,16)(2,0){50}{\line(1,0){1}}% The dotted line in the middle
 \put(0,0){\framebox(100,32){}}%          The box
 \put(-2,-4){\makebox(100,32)[tr]{#1}}%    title
 \put(2,-4){\makebox(100,32)[tl]{#2}}%     flags
 \put(80,8){\vector(1,0){#3}}%             arrow
 \put(90,6){\hspace{#3pt}#4}%              value
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a block box with a single value \blkbox{title}{value_1}
 % A block box is like a dvbox, but no flags and a solid separator line
-\newcommand{\blkbox}[2]{
-\begin{picture}(120,32)
+\newcommand{\blkbox}[2]{%
+\begin{picture}(120,32)%
 \put(0,16){\line(1,0){100}}%             The line in the middle
 \put(0,0){\framebox(100,32){}}%          The box
 \put(-2,-4){\makebox(100,32)[tr]{#1}}%    title
 \put(-2,4){\makebox(100,32)[br]{#2}}%     value
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a block box with a single value and an arrow \bklptrkbox{title}{len}{value}
-\newcommand{\blkptrbox}[3]{
-\begin{picture}(120,32)
+\newcommand{\blkptrbox}[3]{%
+\begin{picture}(120,32)%
 \put(0,16){\line(1,0){100}}%             The line in the middle
 \put(0,0){\framebox(100,32){}}%          The box
 \put(-2,-4){\makebox(100,32)[tr]{#1}}%   title
 \put(80,8){\vector(1,0){#2}}%            arrow
 \put(90,6){\hspace{#2pt}#3}%             value
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a block box with two arrows and values \dblptrkbox{len}{value1}{value2}
-\newcommand{\dblkptrbox}[3]{
-\begin{picture}(120,32)
+\newcommand{\dblkptrbox}[3]{%
+\begin{picture}(120,32)%
 \put(0,16){\line(1,0){100}}%             The line in the middle
 \put(0,0){\framebox(100,32){}}%          The box
 \put(80,24){\vector(1,0){#1}}%           arrow
 \put(90,22){\hspace{#1pt}#2}%            value1
 \put(80,8){\vector(1,0){#1}}%            arrow
 \put(90,6){\hspace{#1pt}#3}%             value2
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a block box with two values \blkboxtwo{title}{value_1}{value_2}
 % This box is 48pt high, rather than 32
-\newcommand{\blkboxtwo}[3]{
-\begin{picture}(120,48)
+\newcommand{\blkboxtwo}[3]{%
+\begin{picture}(120,48)%
 \put(0,16){\line(1,0){100}}%             Lower separator
 \put(0,32){\line(1,0){100}}%             Upper separator
 \put(0,0){\framebox(100,48){}}%          The box
 \put(-2,-4){\makebox(100,48)[tr]{#1}}%   title
-\put(-2,24){\makebox(100,32)[br]{#2}}%   value_1
+\put(-2,-4){\makebox(100,32)[tr]{#2}}%   value_1
 \put(-2,4){\makebox(100,48)[br]{#3}}%    value_2
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a block box with a large value \blklrgbox{title}{value}
-\newcommand{\blklrgbox}[2]{
-\begin{picture}(120,48)
+\newcommand{\blklrgbox}[2]{%
+\begin{picture}(120,48)%
 \put(0,32){\line(1,0){100}}%             Separator
 \multiput(0,16)(95,0){2}{\line(1,0){5}}% Decorative flim-flam
 \put(0,0){\framebox(100,48){}}%          The box
 \put(-2,-4){\makebox(100,48)[tr]{#1}}%   title
 \put(0,0){\makebox(100,32){#2}}%         value
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Half height boxes
 %
 % Draw a word box (half height) \wordbox{title}{flags}
-\newcommand{\wordbox}[2]{
-\begin{picture}(120,16)
-\put(1.5,0){\framebox(100,16){}}%          The box
+\newcommand{\wordbox}[2]{%
+\begin{picture}(120,16)%
+\put(0,0){\framebox(100,16){}}%          The box
 \put(-2,-4){\makebox(100,16)[tr]{#1}}%   title
 \put(2,-4){\makebox(100,16)[tl]{#2}}%    flags
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw a word box (half height) with an arrow \wordptr{len}{value}
-\newcommand{\wordptr}[2]{
-\begin{picture}(120,16)
+\newcommand{\wordptr}[2]{%
+\begin{picture}(120,16)%
 \put(0,0){\framebox(100,16){}}%          The box
 \put(80,8){\vector(1,0){#1}}%             arrow
 \put(90,6){\hspace{#1pt}#2}%              value
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
-% Draw a word box (half height) with a null pointer symbol and a label 
+% Draw a word box (half height) with a null pointer symbol and a label
 % \nullptrbox{label}
-\newcommand{\nullptrbox}[1]{
-\begin{picture}(120,16)
+\newcommand{\nullptrbox}[1]{%
+\begin{picture}(120,16)%
 \put(0,16){\line(1,0){100}}%             The line in the middle
 \put(0,0){\framebox(100,16){}}%          The box
 \put(-2,4){\makebox(100,32)[br]{\o}}%    Null ptr symbol
 \put(10,8){\makebox(100,32)[br]{\makebox(0,0)[l]{#1}}}% label
-\end{picture}
-}
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Box labels
 % Draw two right-aliged left hand labels  \leftboxlabels{top-left}{bottom-left}
-\newcommand{\leftboxlabels}[2]{
-\begin{picture}(120,32)
-\put(-10,-8){\makebox(100,32)[tl]{\makebox(0,0)[r]{#1}}}
-\put(-10,8){\makebox(100,32)[bl]{\makebox(0,0)[r]{#2}}}
-\end{picture}
-}
+\newcommand{\leftboxlabels}[2]{%
+\begin{picture}(120,32)%
+\put(-10,-8){\makebox(100,32)[tl]{\makebox(0,0)[r]{#1}}}%
+\put(-10,8){\makebox(100,32)[bl]{\makebox(0,0)[r]{#2}}}%
+\end{picture}%
+}%
 % Draw two left-aliged right hand labels  \rightboxlabels{top-right}{bottom-right}
-\newcommand{\rightboxlabels}[2]{
-\begin{picture}(120,32)
-\put(10,-8){\makebox(100,32)[tr]{\makebox(0,0)[l]{#1}}}
-\put(10,8){\makebox(100,32)[br]{\makebox(0,0)[l]{#2}}}
-\end{picture}
-}
+\newcommand{\rightboxlabels}[2]{%
+\begin{picture}(120,32)%
+\put(10,-8){\makebox(100,32)[tr]{\makebox(0,0)[l]{#1}}}%
+\put(10,8){\makebox(100,32)[br]{\makebox(0,0)[l]{#2}}}%
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Draw individual labels (tl = top left, br = bottom right etc.)
-\newcommand{\tlboxlabel}[1]{
-\begin{picture}(120,32)
-\put(-10,-8){\makebox(100,32)[tl]{\makebox(0,0)[r]{#1}}}
-\end{picture}
-}
-\newcommand{\blboxlabel}[1]{
-\begin{picture}(120,32)
-\put(-10,8){\makebox(100,32)[bl]{\makebox(0,0)[r]{#1}}}
-\end{picture}
-}
-\newcommand{\trboxlabel}[1]{
-\begin{picture}(120,32)
-\put(10,-8){\makebox(100,32)[tr]{\makebox(0,0)[l]{#1}}}
-\end{picture}
-}
-\newcommand{\brboxlabel}[1]{
-\begin{picture}(120,32)
-\put(10,8){\makebox(100,32)[br]{\makebox(0,0)[l]{#1}}}
-\end{picture}
-}
+\newcommand{\tlboxlabel}[1]{%
+\begin{picture}(120,32)%
+\put(-10,-8){\makebox(100,32)[tl]{\makebox(0,0)[r]{#1}}}%
+\end{picture}%
+}%
+\newcommand{\blboxlabel}[1]{%
+\begin{picture}(120,32)%
+\put(-10,8){\makebox(100,32)[bl]{\makebox(0,0)[r]{#1}}}%
+\end{picture}%
+}%
+\newcommand{\trboxlabel}[1]{%
+\begin{picture}(120,32)%
+\put(10,-8){\makebox(100,32)[tr]{\makebox(0,0)[l]{#1}}}%
+\end{picture}%
+}%
+\newcommand{\brboxlabel}[1]{%
+\begin{picture}(120,32)%
+\put(10,8){\makebox(100,32)[br]{\makebox(0,0)[l]{#1}}}%
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Arrows (from the v-word)
 \newcommand{\rptr}[1]{%  An arrow (of length #1) to the right
-\begin{picture}(120,32)
-\put(80,8){\vector(1,0){#1}}
-\end{picture}
-}
+\begin{picture}(120,32)%
+\put(80,8){\vector(1,0){#1}}%
+\end{picture}%
+}%
 \newcommand{\lptr}[1]{%  An arrow (of length #1) to the left
-\begin{picture}(120,32)
-\put(20,8){\vector(-1,0){#1}}
-\end{picture}
-}
+\begin{picture}(120,32)%
+\put(20,8){\vector(-1,0){#1}}%
+\end{picture}%
+}%
 % Arrows with a right-angle bend (ru = right then up, ld = left then down etc.)
-\newcommand{\rdptr}[2]{
-\begin{picture}(120,32)
-\put(80,8){\line(1,0){#1}}
-\put(80,8){\hspace{#1pt}\vector(0,-1){#2}}
-\end{picture}
-}
-\newcommand{\ruptr}[2]{
-\begin{picture}(120,32)
-\put(80,8){\line(1,0){#1}}
-\put(80,8){\hspace{#1pt}\vector(0,1){#2}}
-\end{picture}
-}
-\newcommand{\ldptr}[2]{
-\begin{picture}(120,32)
-\put(20,8){\line(-1,0){#1}}
-\put(20,8){\hspace{-#1pt}\vector(0,-1){#2}}
-\end{picture}
-}
-\newcommand{\luptr}[2]{
-\begin{picture}(120,32)
-\put(20,8){\line(-1,0){#1}}
-\put(20,8){\hspace{-#1pt}\vector(0,1){#2}}
-\end{picture}
-}
+\newcommand{\rdptr}[2]{%
+\begin{picture}(120,32)%
+\put(80,8){\line(1,0){#1}}%
+\put(80,8){\hspace{#1pt}\vector(0,-1){#2}}%
+\end{picture}%
+}%
+\newcommand{\ruptr}[2]{%
+\begin{picture}(120,32)%
+\put(80,8){\line(1,0){#1}}%
+\put(80,8){\hspace{#1pt}\vector(0,1){#2}}%
+\end{picture}%
+}%
+\newcommand{\ldptr}[2]{%
+\begin{picture}(120,32)%
+\put(20,8){\line(-1,0){#1}}%
+\put(20,8){\hspace{-#1pt}\vector(0,-1){#2}}%
+\end{picture}%
+}%
+\newcommand{\luptr}[2]{%
+\begin{picture}(120,32)%
+\put(20,8){\line(-1,0){#1}}%
+\put(20,8){\hspace{-#1pt}\vector(0,1){#2}}%
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % Register pointers (to the vword)
-\newcommand{\lregptr}[2]{
-\begin{picture}(32,32)
-\put(-2,12){\makebox(0,0)[r]{\makebox(0,-2)[r]{#1}\hspace{6pt}\vector(1,0){#2}}}
-\end{picture}
-}
-\newcommand{\rregptr}[2]{
-\begin{picture}(32,32)
-\put(102,8){\makebox(0,0)[l]{\hspace{#2pt}\vector(-1,0){#2}}}
-\put(98,12){\makebox(0,0)[l]{\hspace{#2pt}\hspace{10pt}{\makebox(0,-8)[l]{#1}}}}
-\end{picture}
-}
+\newcommand{\lregptr}[2]{%
+\begin{picture}(32,32)%
+\put(-2,13){\makebox(0,0)[r]{\makebox(0,0)[r]{#1}\hspace{6pt}\vector(1,0){#2}}}%
+\end{picture}%
+}%
+\newcommand{\rregptr}[2]{%
+\begin{picture}(32,32)%
+\put(102,8){\makebox(0,0)[l]{\hspace{#2pt}\vector(-1,0){#2}}}%
+\put(98,12){\makebox(0,0)[l]{\hspace{#2pt}\hspace{10pt}{\makebox(0,-10)[l]{#1}}}}%
+\end{picture}%
+}%
 % Register pointers (to the dword)
-\newcommand{\luregptr}[2]{
-\begin{picture}(32,32)
-\put(-2,28){\makebox(0,0)[r]{\makebox(0,-2){#1}\hspace{10pt}\vector(1,0){#2}}}
-\end{picture}
-}
-\newcommand{\ruregptr}[2]{
-\begin{picture}(32,32)
-\put(102,24){\makebox(0,0)[l]{\hspace{#2pt}\vector(-1,0){#2}}}
-\put(98,28){\makebox(0,0)[l]{\hspace{#2pt}\hspace{10pt}{\makebox(0,-8)[l]{#1}}}}
-\end{picture}
-}
+\newcommand{\luregptr}[2]{%
+\begin{picture}(32,32)%
+\put(-2,29){\makebox(0,0)[r]{\makebox(0,0)[r]{#1}\hspace{6pt}\vector(1,0){#2}}}%
+\end{picture}%
+}%
+\newcommand{\ruregptr}[2]{%
+\begin{picture}(32,32)%
+\put(102,24){\makebox(0,0)[l]{\hspace{#2pt}\vector(-1,0){#2}}}%
+\put(98,28){\makebox(0,0)[l]{\hspace{#2pt}\hspace{10pt}{\makebox(0,-10)[l]{#1}}}}%
+\end{picture}%
+}%
 %-------------------------------------------------------------------------------
 % vertical dots and bars
 \newcommand{\downetc}{% NB. This picture goes BELOW it's origin
-\begin{picture}(120,16)(-4,0)
-\put(0,0){\line(1,0){100}}
-\put(0,0){\line(0,-1){16}}
-\put(100,0){\line(0,-1){16}}
-\put(50,-8){.}
-\put(50,-16){.}
-\put(50,-24){.}
-\end{picture}
-}
+\begin{picture}(120,16)(0,0)%
+\put(0,0){\line(1,0){100}}%
+\put(0,0){\line(0,-1){16}}%
+\put(100,0){\line(0,-1){16}}%
+\put(48.5,-8){.}%
+\put(48.5,-16){.}%
+\put(48.5,-24){.}%
+\end{picture}%
+}%
 \newcommand{\upetc}{% NB this picture is offset up by 32
-\begin{picture}(120,16)(-4,-32)
-\put(0,0){\line(1,0){100}}
-\put(0,0){\line(0,1){16}}
-\put(100,0){\line(0,1){16}}
-\put(50,8){.}
-\put(50,16){.}
-\put(50,24){.}
-\end{picture}
-}
+\begin{picture}(120,16)(0,-32)%
+\put(0,0){\line(1,0){100}}%
+\put(0,0){\line(0,1){16}}%
+\put(100,0){\line(0,1){16}}%
+\put(48.5,8){.}%
+\put(48.5,16){.}%
+\put(48.5,24){.}%
+\end{picture}%
+}%
 \newcommand{\downbars}{% NB. This picture goes BELOW it's origin
-\begin{picture}(120,16)(-4,0)
-\put(0,0){\line(1,0){100}}
-\put(0,0){\line(0,-1){16}}
-\put(100,0){\line(0,-1){16}}
-\end{picture}
-}
+\begin{picture}(120,16)%
+\put(0,0){\line(1,0){100}}%
+\put(0,0){\line(0,-1){16}}%
+\put(100,0){\line(0,-1){16}}%
+\end{picture}%
+}%
 \newcommand{\upbars}{% NB this picture is offset up by 32
-\begin{picture}(120,16)(-4,-32)
-\put(0,0){\line(1,0){100}}
-\put(0,0){\line(0,1){16}}
-\put(100,0){\line(0,1){16}}
-\end{picture}
-}
+\begin{picture}(120,16)(0,-32)%
+\put(0,0){\line(1,0){100}}%
+\put(0,0){\line(0,1){16}}%
+\put(100,0){\line(0,1){16}}%
+\end{picture}%
+}%
 \newcommand{\updownbars}{% NB. This picture goes BELOW it's origin
-\begin{picture}(120,16)(-4,0)
-\put(0,0){\line(1,0){100}}
-\put(0,0){\line(0,-1){16}}
-\put(100,0){\line(0,-1){16}}
-\put(0,0){\line(0,1){16}}
-\put(100,0){\line(0,1){16}}
-\end{picture}
-}
+\begin{picture}(120,16)%
+\put(0,0){\line(1,0){100}}%
+\put(0,0){\line(0,-1){16}}%
+\put(100,0){\line(0,-1){16}}%
+\put(0,0){\line(0,1){16}}%
+\put(100,0){\line(0,1){16}}%
+\end{picture}%
+}%
+% ----------------------------------------------------------------------
+% Stuff to test alignment:
+%
+% \graphpaper{x-len}{y-len]{x-times}{y-times}
+%
+% Draw a 10pt grid with 1pt units.
+%
+% Useful for calculating line position/length and for checking alignment.
+% Best drawn before actual picture, so the picture goes on top of the graph.
+\newcommand{\graphpaper}[4]{%
+\begin{picture}(0,0)%
+{%
+\color[rgb]{0.8,0.8,0.8}%                 units grey
+\multiput(0,0)(10,0){#3}{%                draw 9 vertical lines
+\multiput(1,0)(1,0){9}{\line(0,1){#2}}%   at (1,0) (2,0) (3,0) ...
+}%
+\multiput(0,0)(0,10){#4}{%                draw 9 horizontal lines
+\multiput(0,1)(0,1){9}{\line(1,0){#1}}%   at (0,1) (0,2),(0,3) ...
+}%
+\color[rgb]{0.5,0.5,0.5}%                 tens grey (darker)
+\multiput(0,0)(10,0){#3}{\put(0,0){\line(0,1){#2}}}% vertical lines every (10,0)
+\multiput(0,0)(0,10){#4}{\put(0,0){\line(1,0){#1}}}% horizontal lines every (0,10)
+}%
+\end{picture}%
+}%
+%
+%----- Test Grid of 8 "cross-hairs. 
+% Parameters are width (usually 100)
+% and depth (usually 16)
+\newcommand{\crosshairs}[2]{%
+{\color{blue}%
+\multiput(0,0)(#1,0){2}{%
+\multiput(0,0)(0,#2){4}{%
+\put(0,-10){\vector(0,1){9.5}}%
+\put(-10,0){\vector(1,0){9.5}}%
+\put(10,0){\vector(-1,0){9.5}}%
+\put(0,10){\vector(0,-1){9.5}}%
+}}%
+}% color
+}%
+%
+%-------- test picture
+%% \noindent\begin{picture}(400,200)
+%% \put(0,0){\graphpaper{400}{200}{40}{20}}
+%% \put(20,20){\crosshairs{100}{16}}
+%% \begin{picture}(0,0)(-20,-20)
+%% \put(0,0){\dvbox{title}{flags}{value}}
+%% \put(0,0){\dvptrbox{title}{flags}{40}{stuff}}
+%% \put(0,0){\blkbox{title}{value}}
+%% \put(0,0){\blkptrbox{title}{40}{value}}
+%% \put(0,0){\dblkptrbox{40}{V1}{V2}}
+%% \put(0,0){\blkboxtwo{title}{$value_1$}{$value_2$}}
+%% \put(0,0){\blklrgbox{title}{value}}
+%% \put(0,0){\wordbox{value}}
+%% \put(0,32){\wordptr{40}{value}}
+%% \put(0,0){\nullptrbox{label}}
+%% \put(0,32){\leftboxlabels{top-left}{bottom-left}}
+%% \put(0,32){\rightboxlabels{top-right}{bottom-right}}
+%% \put(0,0){\tlboxlabel{top-left}}
+%% \put(0,0){\blboxlabel{bottom-left}}
+%% \put(0,0){\trboxlabel{top-right}}
+%% \put(0,0){\brboxlabel{bottom-right}}
+%% \put(0,16){\rptr{40}}
+%% \put(0,16){\lptr{40}}
+%% \put(0,32){\rdptr{40}{16}}
+%% \put(0,32){\ldptr{40}{16}}
+%% \put(0,0){\ruptr{40}{16}}
+%% \put(0,0){\luptr{40}{16}}
+%% \put(0,0){\lregptr{lreg}{10}}
+%% \put(0,0){\rregptr{rreg}{10}}
+%% \put(0,0){\luregptr{lreg}{10}}
+%% \put(0,0){\ruregptr{rreg}{10}}
+%% \put(0,0){\upetc}
+%% \put(0,0){\downetc}
+%% \put(0,0){\upbars}
+%% \put(0,0){\downbars}
+%% \put(0,0){\updownbars}
+%%
+%% \end{picture}
+%

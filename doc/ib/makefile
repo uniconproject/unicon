@@ -6,7 +6,11 @@
 # it from source, you should do this on a machine
 # that has the capacity to install LaTeX, potentially all of it.
 #
-# On Ubuntu, the following LaTeX packages were observed to be present on
+# Platform Notes:
+#
+# MacOS: installing TeXShop is an easy way to build the document.
+#
+# Ubuntu: the following LaTeX packages were observed to be present on
 # the author's development machine, 1/2017.  The *-doc might not be needed.
 # Many might have been installed as requirements as one of the main packages
 # was installed.  Package names may change from distribution to distribution.

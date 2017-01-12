@@ -1533,38 +1533,45 @@ The portion of the subscripting code that handles lists is
 }
 
 For the preceding example, \texttt{a[3]} produces a variable that
-points to the descriptor for the value 5:
+points indirectly to the descriptor for the value 5:
 
 %--% \includegraphics[width=4.1681in,height=3.3799in]{ib-img/ib-img033.jpg} 
-\begin{picture}(300,280)
-\put(130,0){\dvbox{integer}{n}{3}}
-\put(130,0){\trboxlabel{slot 3}}
-\put(130,32){\dvbox{integer}{n}{2}}
-\put(130,32){\trboxlabel{slot 2}}
-\put(130,64){\dvbox{integer}{n}{5}}
-\put(130,64){\trboxlabel{slot 1}}
-\put(130,96){\dvbox{integer}{n}{4}}
-\put(130,96){\trboxlabel{slot 0}}
-\put(130,128){\dvbox{null}{n}{0}}
-\put(130,128){\trboxlabel{next list-element block}}
-\put(130,160){\dvbox{null}{n}{0}}
-\put(130,160){\trboxlabel{previous list-element block}}
-\put(130,192){\blkbox{3}{3}}
-\put(130,192){\rightboxlabels{first slot used}{number of slots used}}
-\put(130,224){\blkbox{68}{4}}
-\put(130,224){\rightboxlabels{size of block}{number of slots in block}}
-\put(130,256){\wordbox{lelem}{}}
+\begin{picture}(300,250)(-20,0)
+\put(140,0){\dvbox{integer}{n}{3}}
+\put(140,0){\trboxlabel{slot 3}}
+\put(140,32){\dvbox{integer}{n}{2}}
+\put(140,32){\trboxlabel{slot 2}}
+\put(140,64){\dvbox{integer}{n}{5}}
+\put(140,64){\trboxlabel{slot 1}}
+\put(140,96){\dvbox{integer}{n}{4}}
+\put(140,96){\trboxlabel{slot 0}}
+\put(140,128){\nullptrbox{next list-element block}}
+\put(140,144){\nullptrbox{previous list-element block}}
+\put(140,160){\blkbox{3}{3}}
+\put(140,160){\rightboxlabels{first slot used}{number of slots used}}
+\put(140,192){\blkbox{60}{4}}
+\put(140,192){\rightboxlabels{size of block}{number of slots in block}}
+\put(140,224){\wordbox{lelem}{}}
 %
-\put(0,80){\dvptrbox{11}{npv}{50}{}}
+\put(0,80){\dvptrbox{9}{npv}{40}{}}
+\put(120,88){\line(0,1){144}}
+\put(120,232){\vector(1,0){20}}
+\multiput(120,88)(4,0){4}{\line(1,0){2}}
+\put(136,88){\vector(1,0){4}}
+{\color{blue}
+\multiput(126,136)(4,0){26}{\line(1,0){2}}
+\put(126,128){\blboxlabel{(Unicon) pointer to list header}}
+}
 \end{picture}
 
 \ \ \ \ Referencing a List Element
 
-
-Note the offset of eleven words in the d-word of the variable. This is
-present so that the title of the block to which the variable points
-can be located in case there is a garbage collection. See Chapter 11
-for details.
+Note the offset of nine words in the d-word of the variable.  In version 6 of
+Icon the descriptor pointed directly at the variable and the offset enabled the
+garbage collector to locate the top of the block. In current versions of Icon
+and Unicon the variable points to the top of the block and the offset enables
+the correct list-element to be referenced. This change was necessitated by the
+introduction of block pointers --- see Chapter 11 for details.
 
 \section[6.4 Arrays (Unicon only)]{6.4 Arrays (Unicon only)}
 

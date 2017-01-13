@@ -194,7 +194,7 @@ in the v-word could be any constant value, but zero is useful and
 easily identified---and suggests
 {\textquotedbl}null.{\textquotedbl}
 
-In the diagrams that follow, a null block-pointer is drawn as follows
+In the diagrams that follow, a null block-pointer is represented as
 \begin{center}
 \begin{picture}(200,16)
 \put(0,0){\nullptrbox{}}
@@ -289,14 +289,12 @@ the record declaration
 %--% \begin{center}
 %--% \includegraphics[width=5.3098in,height=2.3193in]{ib-img/ib-img011.jpg}
 %--% \end{center}
-\begin{picture}(300,128)(-20,0)
+\begin{picture}(300,150)(-20,0)
 \put(0,112){\dvptrbox{record}{np}{60}{}}
-%--[DonW]  Update this diagram to use block pointers.
-%--[DonW]  As this is their first appearance, consider two diagrams
-%--[DonW]  One Icon, one Unicon, with a brief explanation.
 \put(140,96){\blkbox{record}{32}}
 \put(140,96){\rightboxlabels{title}{size of block in bytes}}
-\put(140,64){\dvptrbox{proc}{np}{50}{record constructor}}
+\put(140,80){\wordbox{\textit{id}}}
+\put(140,64){\wordptr{50}{record constructor}}
 \put(140,32){\dvbox{integer}{n}{1}}
 \put(140,0){\dvbox{integer}{n}{3}}
 \end{picture}
@@ -304,7 +302,15 @@ the record declaration
 The record-constructor block contains information that is needed to
 resolve field references.
 
-On the other hand, with the declaration
+The \textit{id} field is present in many blocks. Its purpose is to
+distinguish between different blocks of the same type (for example, it
+is used in the computation of the hash value that determines where to
+place a value in a table --- see section 7.3 for details). The
+\textit{id} field is also printed out by diagnostic routines; it is
+incremented for each block created. The runtime system maintains
+separate {\em id} counters for blocks of different types.
+
+With the declaration
 
 %-% {\ttfamily\mdseries
 %-% \ \ \ record term(value, code, count)}
@@ -329,7 +335,8 @@ On the other hand, with the declaration
 \put(0,144){\dvptrbox{record}{np}{60}{}}
 \put(140,128){\blkbox{record}{40}}
 \put(140,128){\rightboxlabels{title}{size of block}}
-\put(140,96){\dvptrbox{proc}{np}{50}{record-constructor}}
+\put(140,112){\wordbox{\textit{id}}}
+\put(140,96){\wordptr{50}{record-constructor}}
 \put(140,64){\dvptrbox{5}{}{50}{"chair"}}
 \put(140,32){\dvptrbox{4}{}{50}{"noun"}}
 \put(140,0){\dvbox{integer}{n}{4}}
@@ -340,6 +347,9 @@ well as non-descriptor data. Non-descriptor data comes first in the
 block, followed by any descriptors, as illustrated by the preceding
 figure. The location of the first descriptor in a block is constant
 for all blocks of a given type, which facilitates garbage collection.
+Block-pointers may be placed anywhere before the descriptors, but the
+garbage collector expects them to be contiguous and in a fixed place
+for all blocks of a given type.
 
 Blocks for the remaining types are described in subsequent chapters.
 
@@ -378,32 +388,34 @@ by icode instructions that correspond to the use of the identifiers in
 the program.
 
 Some variables, such as record field references, are computed. A
-variable that references a value in a data structure points directly
-to the descriptor for the value. The least-significant bits of the
-d-word for such a variable contain the offset, in \textit{words}, of
-the value descriptor from the top of the block in which the value is
-contained. This offset is used by the garbage collector. The use of
-words, rather than bytes, allows larger offsets, which is important
-for computers with 16-bit words. For example, the variable word.count
-for the record given in the preceding section is
+variable that references a value in a data structure points to the
+start of the data structure. The least-significant bits of the d-word
+for such a variable contain the offset, in \textit{words}, of the
+value descriptor from the top of the block in which the value is
+contained. The use of words, rather than bytes, allows larger offsets,
+which is important for computers with 16-bit words. For example, the
+variable \texttt{word.count} for the record given in the preceding section is
 
 %--% \begin{center}
 %--% \includegraphics[width=5.2492in,height=2.4098in]{ib-img/ib-img014.jpg}
 %--% \end{center}
 \begin{picture}(300,180)(-20,0)
-\put(0,16){\dvptrbox{8}{npv}{60}{}}
-\put(140,128){\blkbox{record}{40}}
-\put(140,96){\dvptrbox{proc}{np}{50}{record-constructor block}}
-\put(140,64){\dvptrbox{5}{}{50}{"chair"}}
-\put(140,32){\dvptrbox{4}{}{50}{"noun"}}
-\put(140,0){\dvbox{integer}{n}{4}}
+\put(0,16){\dvptrbox{8}{npv}{40}{}}
+\put(150,128){\blkbox{record}{40}}
+\put(120,24){\line(0,1){128}}
+\multiput(120,24)(4,0){9}{\line(1,0){2}}
+\put(146,24){\vector(1,0){4}}
+\put(120,152){\vector(1,0){30}}
+\put(150,112){\wordbox{\textit{id}}}
+\put(150,96){\wordptr{50}{record-constructor block}}
+\put(150,64){\dvptrbox{5}{}{50}{"chair"}}
+\put(150,32){\dvptrbox{4}{}{50}{"noun"}}
+\put(150,0){\dvbox{integer}{n}{4}}
 \end{picture}
 
-The variable points directly to the value rather than to the title of
-the block so that access to the value is more efficient. Note that the
-variable \texttt{word.count} cannot be determined at translation time,
-since the type of word is not known then and different record types
-could have count fields in different positions.
+Note that the variable \texttt{word.count} cannot be determined at
+translation time, since the type of word is not known then and
+different record types could have count fields in different positions.
 
 \subsection[4.3.1 Operations on Variables]{4.3.1 Operations on Variables}
 
@@ -613,6 +625,7 @@ situation.
 %-% {\ttfamily\mdseries
 %-% \ \ \ typedef unsigned int uword;\newline
 %-%  \ \ \#endif}
+%--[DonW]  Preserve the colouring (above) in the code (below).
 \iconcode{
 \>\#if IntBits != WordBits\\
 \>\>\#ifdef LongLongWord\\
@@ -709,7 +722,8 @@ declaration for record blocks is
 \>struct b\_record \{\>\>\>\>\>\>\>\>\> /* record block */\\
 \>\>word title;\>\>\>\>\>\>\>\> /*\ T\_Record */\\
 \>\>word blksize;\>\>\>\>\>\>\>\> /*\ \ size of block */\\
-\>\>struct descrip recdesc;\>\>\>\>\>\>\>\> /* record constructor descriptor */\\
+\>\> word id;\>\>\>\>\>\>\>\> /*\ \ identification number */\\
+\>\>union block *recdesc;\>\>\>\>\>\>\>\> /*   pointer to record constructor */\\
 \>\>struct descrip fields[1];\>\>\>\>\>\>\>\> /*\ \ fields */\\
 \>\};
 }

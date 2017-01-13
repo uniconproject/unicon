@@ -6,12 +6,21 @@
 # it from source, you should do this on a machine
 # that has the capacity to install LaTeX, potentially all of it.
 #
+# Known Binaries/Packages/Class Files/Style Files Used
+# pdflatex
+# color, array, supertabular, hhline, makeidx, amsmath, amsfonts, amssymb,
+# textcomp, fontenc, hyperref, pdftex
+#
+#
 # Platform Notes:
 #
 # MacOS: installing TeXShop is an easy way to build the document.
 #
-# Ubuntu: the following LaTeX packages were observed to be present on
-# the author's development machine, 1/2017.  The *-doc might not be needed.
+# Ubuntu: pdflatex is in texlive-latex-base
+#         supertabular is in texlive-latex-extra
+# color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
+# textcomp, fontenc, hyperref, pdftex
+
 # Many might have been installed as requirements as one of the main packages
 # was installed.  Package names may change from distribution to distribution.
 #

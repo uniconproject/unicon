@@ -799,22 +799,23 @@ belongs to one of the following categories:
 \ global or static identifier
 \item 
 \ argument or local identifier
-\item 
-\ descriptor in a structure
+%\item 
+%\ descriptor in a structure
 \end{itemize}
 
+% Remove the Icon V6 special treatment of descriptors pointing within structures 
 A trapped variable, indicated by a t flag in its v-word, points to a
 block and is processed like any other descriptor that points to a
 block. The values of global and static identifiers are in the basis
 and are processed separately. The values of arguments and local
 identifiers are on an interpreter stack and are processed when its
-co-expression block is processed. A variable descriptor that points to
-a descriptor in a structure points \textit{within} a block, not to the
-title of a block. This is the only case in which the offset, which is
-contained in the least-significant portion of the d-word of a
-non-trapped-variable descriptor, is nonzero. Consequently, this offset
-is used to distinguish such variables from those in the second and
-third categories.
+co-expression block is processed. %A variable descriptor that points to
+%a descriptor in a structure points \textit{within} a block, not to the
+%title of a block. This is the only case in which the offset, which is
+%contained in the least-significant portion of the d-word of a
+%non-trapped-variable descriptor, is nonzero. Consequently, this offset
+%is used to distinguish such variables from those in the second and
+%third categories.
 
 Continuing the previous example, suppose that a garbage collection is
 triggered by evaluation of the expression
@@ -845,7 +846,11 @@ variable descriptor is encountered is
 \put(0,80){\tlboxlabel{\texttt{y}{\hspace{20pt}}}}
 \put(0,144){\tlboxlabel{\texttt{x}{\hspace{20pt}}}}
 \put(0,144){\dvbox{record}{np}{record}{}}
-\put(0,16){\dvptrbox{8}{npv}{60}{}}
+\put(0,16){\dvptrbox{8}{npv}{46}{}}
+\put(126,24){\line(0,1){128}}
+\put(126,152){\vector(1,0){14}}
+\multiput(126,24)(4,0){3}{\line(1,0){2}}
+\put(136,24){\vector(1,0){4}}
 \put(80,88){\line(1,0){40}}
 \put(120,88){\line(0,1){40}}
 \put(120,128){\line(-1,0){140}}
@@ -860,10 +865,11 @@ variable descriptor is encountered is
 \put(-20,170){\vector(1,0){20}}
 \end{picture}
 
+% Convert from V6 garbage collection to V8
 Note that the offset in the d-word of the variable descriptor is in
-words, not bytes. The offset, converted to bytes, is added to the
-v-word in the variable descriptor, and this descriptor is linked into
-the back chain.
+words, not bytes. %The offset, converted to bytes, is added to the
+%v-word in the variable descriptor, and this descriptor is linked into
+%the back chain.
 
 
 %--%\ \  \includegraphics[width=4.1681in,height=2.6217in]{ib-img/ib-img094.jpg} 
@@ -2160,10 +2166,38 @@ block sizes.
 
 If the title of the block pointed to by \texttt{source} is marked, its
 back chain of descriptors is processed, changing their v-words to
-point to where \texttt{dest} points. In the case of a variable
-descriptor that is not a trapped-variable descriptor, the offset in
-its d-word is added to its v-word, so that it points to the
-appropriate relative position with respect to \texttt{dest}.
+point to where \texttt{dest} points. 
+Version 6 of Icon (where some variable descriptors pointed to {\em
+  within} blocks) needed to treat such descriptors specially to
+account for the extra offset. A previous edition of this book said
+\begin{quote}
+``A variable descriptor that points to a descriptor in a structure
+points \textit{within} a block, not to the title of a block. This is
+the only case in which the offset, which is contained in the
+least-significant portion of the d-word of a non-trapped-variable
+descriptor, is nonzero. Consequently, this offset is used to
+distinguish such variables.''
+
+\hspace*{2.5in} \vdots
+
+``In the case of a variable descriptor that is not a trapped-variable
+descriptor, the offset in its d-word is added to its v-word, so that
+it points to the appropriate relative position with respect to
+\texttt{dest}.''
+\end{quote}
+Unfortunately in version 8 of Icon, which substituted block-pointers
+for the descriptors in blocks that pointed to other blocks (and hence
+introduced block-pointers into the back chain), it is no longer
+possible to identify offset descriptors because the value of the word
+immediately before the pointer in the chain can no longer be
+guaranteed to be the d-word of a descriptor. As a consequence, {\em
+  all} descriptors now point to the start of the block, so the
+previous special case is no longer neccessary. The previous treatment
+of offset descriptors was an optimization for speed of access during
+normal execution. With the introduction of block-pointers, which make
+all blocks smaller, we have effectively traded a reduction in space
+for all programs for a slightly increased execution time in some
+cases.
 
 The last descriptor in the back chain is identified by the fact that
 its v-word contains a type code (a value smaller than any possible
@@ -2219,8 +2253,8 @@ situation is
 \noindent After processing the back chain, the situation is
 
 %--%\ \  \includegraphics[width=3.3134in,height=2.0772in]{ib-img/ib-img104.jpg} 
-\begin{picture}(300,220)(20,-32)
-\begin{picture}(0,0)(-60,-16)
+\begin{picture}(300,220)(20,0)
+\begin{picture}(0,0)(-30,-10)
 \put(140,128){\dvbox{record}{m}{40}}
 \put(140,112){\wordbox{\textit{id}}}
 \put(140,96){\wordbox{proc}}
@@ -2232,11 +2266,9 @@ situation is
 \put(140,32){\dvptrbox{4}{}{40}{\texttt{"noun"}}}
 \put(140,0){\dvbox{integer}{n}{4}}
 \end{picture}
-\begin{picture}(0,0)(0,32)
 \put(0,80){\dvptrbox{record}{np}{40}{\texttt{dest}}}
 \put(0,144){\dvptrbox{record}{np}{40}{\texttt{dest}}}
-\put(0,16){\dvptrbox{8}{npv}{40}{\texttt{dest+32} (bytes)}}
-\end{picture}
+\put(0,16){\dvptrbox{8}{npv}{40}{\texttt{dest}}}
 \end{picture}
 
 \noindent Note that the v-words of the descriptors point to where the
@@ -2245,8 +2277,8 @@ block is encountered and processed (assuming the value of
 \texttt{dest} at that time is \texttt{dest\_rc}), the situation
 becomes
 
-\begin{picture}(300,220)(20,-32)
-\begin{picture}(0,0)(-36,-8)
+\begin{picture}(300,210)(20,0)
+\begin{picture}(0,0)(-36,-10)
 \put(140,128){\dvbox{record}{m}{40}}
 \put(140,112){\wordbox{\textit{id}}}
 \put(140,96){\wordptr{50}{\texttt{dest\_rc}}}
@@ -2259,10 +2291,10 @@ becomes
 \put(320,96){\downetc}
 \put(320,110){\makebox(100,16){record-constructor}}
 \end{picture}
-\begin{picture}(0,0)(0,32)
+\begin{picture}(0,0)
 \put(0,80){\dvptrbox{record}{np}{40}{\texttt{dest}}}
 \put(0,144){\dvptrbox{record}{np}{40}{\texttt{dest}}}
-\put(0,16){\dvptrbox{8}{npv}{40}{\texttt{dest+32} (bytes)}}
+\put(0,16){\dvptrbox{8}{npv}{40}{\texttt{dest}}}
 \end{picture}
 \end{picture}
 

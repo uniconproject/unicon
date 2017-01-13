@@ -302,28 +302,60 @@
 % ----------------------------------------------------------------------
 % Stuff to test alignment:
 %
-% \graphpaper{x-len}{y-len]{x-times}{y-times}
+%   set param2 to ten times param 1
+%   Ugly, but functional
+\newcommand{\tentimes}[2]{%
+\setcounter{#2}{#1}%
+\addtocounter{#2}{#1}\addtocounter{#2}{#1}\addtocounter{#2}{#1}%
+\addtocounter{#2}{#1}\addtocounter{#2}{#1}\addtocounter{#2}{#1}%
+\addtocounter{#2}{#1}\addtocounter{#2}{#1}\addtocounter{#2}{#1}%
+}%
 %
-% Draw a 10pt grid with 1pt units.
+%-----  \graphpaper{{x-times}{y-times}
+%
+% Draw a 10pt grid with 1pt units. 
+%    x-times is how many horizontal 10x10 squares
+%    y-times is how many vertical 10x10 squares
 %
 % Useful for calculating line position/length and for checking alignment.
 % Best drawn before actual picture, so the picture goes on top of the graph.
-\newcommand{\graphpaper}[4]{%
+\newcounter{ngpx}% 
+\newcounter{ngpy}%
+\newcommand{\graphpaper}[2]{%
 \begin{picture}(0,0)%
 {%
+\tentimes{#1}{ngpx}%  length of horizontal lines
+\tentimes{#2}{ngpy}%  length of vertical lines
 \color[rgb]{0.8,0.8,0.8}%                 units grey
-\multiput(0,0)(10,0){#3}{%                draw 9 vertical lines
-\multiput(1,0)(1,0){9}{\line(0,1){#2}}%   at (1,0) (2,0) (3,0) ...
+\multiput(0,0)(10,0){#1}{%                draw 9 vertical lines
+\multiput(1,0)(1,0){9}{\line(0,1){\value{ngpy}}}%   at (1,0) (2,0) (3,0) ...
 }%
-\multiput(0,0)(0,10){#4}{%                draw 9 horizontal lines
-\multiput(0,1)(0,1){9}{\line(1,0){#1}}%   at (0,1) (0,2),(0,3) ...
+\multiput(0,0)(0,10){#2}{%                draw 9 horizontal lines
+\multiput(0,1)(0,1){9}{\line(1,0){\value{ngpx}}}%   at (0,1) (0,2),(0,3) ...
 }%
 \color[rgb]{0.5,0.5,0.5}%                 tens grey (darker)
-\multiput(0,0)(10,0){#3}{\put(0,0){\line(0,1){#2}}}% vertical lines every (10,0)
-\multiput(0,0)(0,10){#4}{\put(0,0){\line(1,0){#1}}}% horizontal lines every (0,10)
+\multiput(0,0)(10,0){#1}{\put(0,0){\line(0,1){\value{ngpy}}}}% vertical lines every (10,0)
+\multiput(0,0)(0,10){#2}{\put(0,0){\line(1,0){\value{ngpx}}}}% horizontal lines every (0,10)
 }%
 \end{picture}%
 }%
+%% Old version (with four parameters \graphpaper{x-len}{y-len}{x-times}{y-times})
+%% \newcommand{\graphpaper}[4]{%
+%% \begin{picture}(0,0)%
+%% {%
+%% \color[rgb]{0.8,0.8,0.8}%                 units grey
+%% \multiput(0,0)(10,0){#3}{%                draw 9 vertical lines
+%% \multiput(1,0)(1,0){9}{\line(0,1){#2}}%   at (1,0) (2,0) (3,0) ...
+%% }%
+%% \multiput(0,0)(0,10){#4}{%                draw 9 horizontal lines
+%% \multiput(0,1)(0,1){9}{\line(1,0){#1}}%   at (0,1) (0,2),(0,3) ...
+%% }%
+%% \color[rgb]{0.5,0.5,0.5}%                 tens grey (darker)
+%% \multiput(0,0)(10,0){#3}{\put(0,0){\line(0,1){#2}}}% vertical lines every (10,0)
+%% \multiput(0,0)(0,10){#4}{\put(0,0){\line(1,0){#1}}}% horizontal lines every (0,10)
+%% }%
+%% \end{picture}%
+%% }%
 %
 %----- Test Grid of 8 "cross-hairs. 
 % Parameters are width (usually 100)

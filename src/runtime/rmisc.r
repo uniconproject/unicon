@@ -891,8 +891,26 @@ int noimage;
              *  call outimage to handle the value.
              */
             fprintf(f, "(variable = "); fflush(f);
-            dp = (dptr)((word *)VarLoc(*dp) + Offset(*dp));
-            outimage(f, dp, noimage);
+
+	    /* weird special cases for arrays, which are the only "variable"
+	     * descriptors that do not point at a variable descriptor.
+	     */
+	    if (Offset(*dp) &&
+		(((struct b_intarray *)VarLoc(*dp))->title == T_Intarray)) {
+	       fprintf(f, "%ld",
+		       ((struct b_intarray *)VarLoc(*dp))->a[Offset(*dp)-4]);
+	       }
+	    else if (Offset(*dp) &&
+		     (((struct b_realarray *)VarLoc(*dp))->title==T_Realarray)){
+	       char s[30];
+	       struct descrip rd;
+	       rtos(((struct b_realarray *)VarLoc(*dp))->a[Offset(*dp)-4], &rd, s);
+	       fprintf(f, "%s", StrLoc(rd));
+	       }
+	    else {
+	       dp = (dptr)((word *)VarLoc(*dp) + Offset(*dp));
+	       outimage(f, dp, noimage);
+	       }
             putc(')', f);
             }
          else if (Type(*dp) == T_External)
@@ -2126,7 +2144,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
       *result = *bi_pat(PI_EMPTY);
       return RunError;
       }
-   if (ep = Blk(ep,Pelem)->pthen) {
+   if ((ep = Blk(ep,Pelem)->pthen) != NULL) {
        if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
 	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
            Blk(ep,Pelem)->pcode != PC_Setcur &&
@@ -2334,12 +2352,13 @@ dptr bi_pat(int what)
  */
 int construct_image(dptr l, dptr s, dptr r, dptr result)
    {
-   int slen = StrLen(*l) + StrLen(*s) + StrLen(*r);
-   char *str;
+   int i, slen = StrLen(*l) + StrLen(*s) + StrLen(*r);
+   char *str, *p;
    Protect (reserve(Strings, slen), return RunError);
-   str = alcstr(StrLoc(*l), StrLen(*l));
-   alcstr(StrLoc(*s), StrLen(*s));
-   alcstr(StrLoc(*r), StrLen(*r));
+   p = str = alcstr(NULL, slen);
+   for(i=0;i<StrLen(*l);i++) *p++ = StrLoc(*l)[i];
+   for(i=0;i<StrLen(*s);i++) *p++ = StrLoc(*s)[i];
+   for(i=0;i<StrLen(*r);i++) *p++ = StrLoc(*r)[i];
    MakeStr(str, slen, result);
    return Succeeded; 
    }

@@ -49,35 +49,61 @@ Hash lookup and linked lists are used to provide an efficient way of
 locating set members. For every set there is a set-header block that
 contains a word for the number of members in the set and slots that
 serve as heads for (possibly empty) linked lists of set-element
-blocks. The number of slots is an implementation parameter. There are
-thirty-seven slots in table-header blocks on computers with large
-address spaces but only thirteen slots on computers with small address
-spaces.
+blocks. The number of slots is an implementation parameter. In version
+6 of Icon there were thirty-seven slots in table-header blocks on
+computers with large address spaces but only thirteen slots on
+computers with small address spaces.This worked well for small hash
+tables, but performance degraded for large tables due to the long hash
+chains in each slot.  
+
+Now, the hash table is segmented; each hash table starts out with a
+single segment containing a fixed number of slots (typically eight),
+but the number of slots doubles repeatedly as the number of segments
+grows. Small hash tables benefit from reduced memory requirements,
+while large tables show dramatic performance gains. The price paid is
+one extra indirection to get to the lists of members. The maximum
+number of segments in a set header block is a configuration parameter:
+The default is six on machines with small address spaces and ten
+otherwise.
+{\color{blue} Unicon allows up to twenty segments, which places an
+upper limit on the maximum possible number of slots (albeit quite a
+large one of $slots \times 2^{19}$).
+}
+To reduce the size of the diagrams the maximum number of segments is
+assumed to be six in the figures that follow but, even with this low
+number, the maximum number of slots is $256$ ($8 + 8 + 16 + 32 + 64
++ 128$), which is still a respectable increase compared to version 6.
 
 The structure for an empty set, produced by
 
 %-% \ \ \ s := set([])
 \iconline{
-\>s := set([])\\
+\>s := set()
 }
 
 \noindent is
 
 %--%\ \  \includegraphics[width=4.1681in,height=3.0484in]{ib-img/ib-img034.jpg} 
-\begin{picture}(300,250)(0,-30)
-\put(120,0){\dvbox{null}{n}{0}}
-\put(120,0){\trboxlabel{slot 4}}
-\put(120,32){\dvbox{null}{n}{0}}
-\put(120,32){\trboxlabel{slot 3}}
-\put(120,64){\dvbox{null}{n}{0}}
-\put(120,64){\trboxlabel{slot 2}}
-\put(120,96){\dvbox{null}{n}{0}}
-\put(120,96){\trboxlabel{slot 1}}
-\put(120,128){\dvbox{null}{n}{0}}
-\put(120,128){\trboxlabel{slot 0}}
+\begin{picture}(300,250)(0,-32)
+\put(120,32){\wordpile{5}{\nullptrbox{}}}
+\put(120,32){\blboxlabel{segment 5}}
+\put(120,94){\leftboxlabels{segment 0}{segment 1}}
+\put(120,112){\wordptr{60}{}}
+\begin{picture}(0,0)(-20,32)
+\put(240,94){\rightboxlabels{slot 0}{slot 1}}
+\put(360,80){\vdots}
+\put(240,0){\brboxlabel{slot 7}}
+\put(240,0){\wordpile{8}{\nullptrbox{}}}
+\put(240,128){\blkbox{slots}{40}}
+\put(240,128){\brboxlabel{size}}
+\end{picture}
+\put(80,80){\vdots}
+\put(120,128){\blkbox{\textit{id}}{7}}
+\put(120,128){\brboxlabel{mask}}
 \put(120,160){\blkbox{set}{0}}
+\put(120,160){\brboxlabel{number of elements in the set}}
 \put(0,176){\dvptrbox{set}{np}{40}{}}
-\put(120,0){\downetc}
+\put(0,176){\tlboxlabel{\texttt{s}}}
 \end{picture}
 
 Each member of a set is contained in a separate set-element
@@ -89,63 +115,84 @@ of slots is used to select a slot.
 Each set-element block contains a descriptor for its value, the
 corresponding hash number, and a pointer to the next set-element
 block, if any, on the linked list. For example, the set-element block
-for the integer 39 is:
+for the integer 10 is:
 
 %--%\ \ \ \ \ \  \includegraphics[width=2.4575in,height=1.2217in]{ib-img/ib-img035.jpg} 
 \begin{picture}(300,90)
-\put(120,0){\dvbox{integer}{n}{39}}
+\put(120,0){\dvbox{integer}{n}{10}}
 \put(120,0){\trboxlabel{member value}}
-\put(120,32){\dvbox{null}{n}{0}}
-\put(120,32){\trboxlabel{next set-element block}}
-\put(120,64){\blkbox{selem}{39}}
-\put(120,64){\trboxlabel{hash number}}
+\put(120,32){\wordbox{129}{}}
+\put(120,32){\brboxlabel{hash number}}
+\put(120,48){\nullptrbox{next set-element block}}
+\put(120,64){\wordbox{selem}{}}
 \end{picture}
 
-As illustrated by this figure, the hash number for an integer is just
-the value of the integer. This member goes in slot 2 on computers with
-large address spaces, since its remainder on division by the number of
-slots is two. Hash computation is discussed in detail in Sec. 7.3.
+As illustrated by this figure, the hash number for an integer is not
+the value of the integer (in Icon Version 6 it was). The hash number
+for an integer is the result of multiplying it by eight times the
+golden ratio using fixed point arithmetic. Hash computation is
+discussed in detail in Sec. 7.3.
 
 The structures for the set
 
 %-% {\ttfamily\mdseries
 %-% \ \ s := set([39,2])}
 \iconline{
-\ \ s := set([39,2])
+\ \ s := set([10,23])
 }
 
 \noindent are
 
 %--%\ \  \includegraphics[width=3.7402in,height=3.6366in]{ib-img/ib-img036.jpg} 
-\begin{picture}(300,290)(-40,-90)
-\put(-4,0){\dvbox{null}{n}{0}}
-\put(-4,32){\dvbox{null}{n}{0}}
-\put(-4,64){\dvptrbox{selem}{n}{40}{}}
-\put(-4,96){\dvbox{null}{n}{0}}
-\put(-4,128){\dvbox{null}{n}{0}}
-\put(-4,160){\blkbox{set}{2}}
-\put(-4,0){\downetc}
-\put(118,64){% 1st set member
-\begin{picture}(100,96)(2,78)
-\put(0,0){\dvbox{integer}{n}{2}}
-\put(0,32){\dvptrbox{selem}{np}{40}{}}
-\put(0,64){\blkbox{selem}{2}}
+\begin{picture}(300,240)(30,0)
+%\put(0,0){\graphpaper{40}{23}}
+%set header
+\put(0,70){\begin{picture}(0,0)
+\put(0,96){\blkbox{\textit{id}}{7}}
+\put(0,96){\brboxlabel{mask}}
+\put(0,128){\blkbox{set}{2}}
+\put(0,128){\brboxlabel{number of elements in the set}}
+\put(0,0){\wordpile{5}{\nullptrbox{}}}
+\put(0,80){\wordptr{60}{}}
 \end{picture}
 }
-\put(236,64){% 2nd set member
-\begin{picture}(100,96)(0,124)
-\put(0,0){\dvbox{integer}{n}{39}}
-\put(0,32){\dvbox{null}{n}{0}}
-\put(0,64){\blkbox{selem}{39}}
+%segment 0
+\put(140,8){\begin{picture}(0,0)
+\put(0,0){\brboxlabel{slot 7}}
+\put(0,0){\wordpile{6}{\nullptrbox{}}}
+\put(0,96){\wordptr{40}{}}
+\put(0,112){\nullptrbox{slot 0}}
+\put(0,128){\blkbox{slots}{40}}
+\put(0,128){\brboxlabel{size}}
 \end{picture}
 }
+% set element 1
+\put(260,40){\begin{picture}(0,0)
+\put(0,0){\dvbox{integer}{n}{10}}
+\put(0,32){\wordbox{129}{}}
+\put(0,32){\brboxlabel{}}
+\put(0,48){\wordptr{40}{}}
+\put(0,64){\wordbox{selem}{}}
+\end{picture}
+}
+% set element 2
+\put(380,24){\begin{picture}(0,0)
+\put(0,0){\dvbox{integer}{n}{23}}
+\put(0,32){\wordbox{297}{}}
+\put(0,32){\brboxlabel{}}
+\put(0,48){\nullptrbox{}}
+\put(0,64){\wordbox{selem}{}}
+\end{picture}
+}
+
+
 \end{picture}
 
-This example was chosen for illustration, since both 2 and 39 go in slot 2.
+This example was chosen for illustration, since both 10 and 23 go in slot 1.
 
 In searching the list, the hash number of the value being looked up is
 compared with the hash numbers in the set-element blocks. If a match
-is found, the value in the set-element block mayor may not be the same
+is found, the value in the set-element block may or may not be the same
 as the value being looked up, since collisions in the hash computation
 are unavoidable. Thus, if the hash numbers are the same, it is
 necessary to determine whether or not their values are equivalent. The
@@ -165,11 +212,11 @@ linked into the list at that point. For example,
 %-% {\ttfamily\mdseries
 %-% \ \ \ insert(s, -39)}
 \iconline{
-\>insert(s, -39)
+\>insert(s, 2)
 }
 
-\noindent inserts a set-element block for -39 at the head of the list
-in slot 2, since its hash value is -39. The word in the set-header
+\noindent inserts a set-element block for 2 at the head of the list
+in slot 1, since its hash value is 25. The word in the set-header
 block that contains the number of members is incremented to reflect
 the insertion.
 
@@ -216,26 +263,32 @@ An empty table with the default assigned value 0 is produced by
 \>t := table(0)
 }
 
-The structure of the table-header block is
+The structure of the table-header is
 
 %--%\ \  \includegraphics[width=4.2752in,height=4.2417in]{ib-img/ib-img037.jpg} 
-\begin{picture}(300,280)(0,-30)
-\put(120,0){\dvbox{null}{n}{0}}
-\put(120,0){\trboxlabel{slot 4}}
-\put(120,32){\dvbox{null}{n}{0}}
-\put(120,32){\trboxlabel{slot 3}}
-\put(120,64){\dvbox{null}{n}{0}}
-\put(120,64){\trboxlabel{slot 2}}
-\put(120,96){\dvbox{null}{n}{0}}
-\put(120,96){\trboxlabel{slot 1}}
-\put(120,128){\dvbox{null}{n}{0}}
-\put(120,128){\trboxlabel{slot 0}}
-\put(120,160){\dvbox{integer}{n}{0}}
-\put(120,160){\trboxlabel{default assigned value}}
-\put(120,192){\blkbox{table}{0}}
-\put(120,192){\brboxlabel{number of elements in the table}}
-\put(0,208){\dvptrbox{table}{np}{40}{}}
-\put(120,0){\downetc}
+\begin{picture}(400,250)(0,-32)
+%\put(0,-32){\graphpaper{40}{25}}
+\put(120,0){\dvbox{integer}{n}{0}}
+\put(120,0){\blboxlabel{default assigned value}}
+\put(120,32){\wordpile{5}{\nullptrbox{}}}
+\put(120,32){\blboxlabel{segment 5}}
+\put(120,94){\leftboxlabels{segment 0}{segment 1}}
+\put(120,112){\wordptr{60}{}}
+\begin{picture}(0,0)(-20,32)
+\put(240,94){\rightboxlabels{slot 0}{slot 1}}
+\put(360,80){\vdots}
+\put(240,0){\brboxlabel{slot 7}}
+\put(240,0){\wordpile{8}{\nullptrbox{}}}
+\put(240,128){\blkbox{slots}{40}}
+\put(240,128){\brboxlabel{size}}
+\end{picture}
+\put(80,80){\vdots}
+\put(120,128){\blkbox{\textit{id}}{7}}
+\put(120,128){\brboxlabel{mask}}
+\put(120,160){\blkbox{table}{0}}
+\put(120,160){\brboxlabel{number of elements in the table}}
+\put(0,176){\dvptrbox{table}{np}{40}{}}
+\put(0,176){\tlboxlabel{\texttt{t}}}
 \end{picture}
 
 Table lookup is more complicated than set lookup, since table elements
@@ -249,22 +302,33 @@ The result of evaluating an assignment expression such as
 %-% {\ttfamily\mdseries
 %-% \ \ \ t[39] := 1}
 \iconline{
-\>t[39] := 1
+\>t[10] := 1
 }
 
 \noindent illustrates the structure of a table-element block:
 
 %--%\ \  \includegraphics[width=2.5654in,height=1.6634in]{ib-img/ib-img038.jpg}
-\begin{picture}(300,150)(50,-10)
-\put(120,0){\dvbox{integer}{n}{1}}
-\put(120,0){\trboxlabel{assigned value}}
-\put(120,32){\dvbox{null}{n}{39}}
-\put(120,32){\trboxlabel{entry value}}
-\put(120,64){\dvbox{null}{n}{0}}
-\put(120,64){\trboxlabel{next table-element block}}
-\put(120,96){\blkbox{telem}{39}}
-\put(120,96){\brboxlabel{hash number}}
+\begin{picture}(300,120)(0,-32)
+\put(120,-32){\dvbox{integer}{n}{1}}
+\put(120,-32){\trboxlabel{assigned value}}
+\put(120,0){\dvbox{integer}{n}{10}}
+\put(120,0){\trboxlabel{entry value}}
+\put(120,32){\wordbox{129}{}}
+\put(120,32){\brboxlabel{hash number}}
+\put(120,48){\nullptrbox{next table-element block}}
+\put(120,64){\wordbox{telem}{}}
 \end{picture}
+
+%% \begin{picture}(300,150)(50,-10)
+%% \put(120,0){\dvbox{integer}{n}{1}}
+%% \put(120,0){\trboxlabel{assigned value}}
+%% \put(120,32){\dvbox{null}{n}{39}}
+%% \put(120,32){\trboxlabel{entry value}}
+%% \put(120,64){\dvbox{null}{n}{0}}
+%% \put(120,64){\trboxlabel{next table-element block}}
+%% \put(120,96){\blkbox{telem}{39}}
+%% \put(120,96){\brboxlabel{hash number}}
+%% \end{picture}
 
 In the case of a table reference such as \texttt{t[x]}, the hash
 number for the entry value x is used to select a slot, and the
@@ -275,16 +339,26 @@ the same.
 
 If a table-element block with a matching entry value is found, a
 variable that points to the corresponding assigned value is
-produced. For example, if 39 is in t as illustrated previously,
-\texttt{t[39]} produces
+produced. For example, if 10 is in t as illustrated previously,
+\texttt{t[10]} produces
 
 %--%\ \  \includegraphics[width=2.5654in,height=1.602in]{ib-img/ib-img039.jpg} 
-\begin{picture}(300,150)
-\put(120,0){\dvbox{integer}{n}{1}}
-\put(120,32){\dvbox{integer}{n}{39}}
-\put(120,64){\dvbox{null}{n}{0}}
-\put(120,96){\blkbox{telem}{39}}
-\put(0,16){\dvptrbox{6}{npv}{40}{}}
+\begin{picture}(300,120)(0,-32)
+%\put(0,-32){\graphpaper{30}{15}}
+\put(140,-32){\dvbox{integer}{n}{1}}
+\put(140,-32){\trboxlabel{assigned value}}
+\put(140,0){\dvbox{integer}{n}{10}}
+\put(140,0){\trboxlabel{entry value}}
+\put(140,32){\wordbox{129}{}}
+\put(140,32){\brboxlabel{hash number}}
+\put(140,48){\nullptrbox{next table-element block}}
+\put(140,64){\wordbox{telem}{}}
+%
+\put(0,-16){\dvptrbox{5}{npv}{40}{}}
+\put(120,-8){\line(0,1){80}}
+\put(120,72){\vector(1,0){20}}
+\multiput(120,-8)(4,0){4}{\line(1,0){2}}
+\put(136,-8){\vector(1,0){4}}
 \end{picture}
 
 If this variable is dereferenced, as in
@@ -292,7 +366,7 @@ If this variable is dereferenced, as in
 %-% {\ttfamily\mdseries
 %-% \ \ \ write(t[39])}
 \iconline{
-\>write(t[39])
+\>write(t[10])
 }
 
 \noindent the value 1 is written. On the other hand, if an assignment
@@ -301,17 +375,21 @@ is made to this variable, as in
 %-% {\ttfamily\mdseries
 %-% \ \ \ t[39] +:= 1}
 \iconline{
-\>t[39] +:= 1
+\>t[10] +:= 1
 }
 
 \noindent the assigned value in the table-element block is changed:
 
-%--%\ \  \includegraphics[width=1.1752in,height=1.6189in]{ib-img/ib-img040.jpg} 
-\begin{picture}(300,150)(50,0)
-\put(120,0){\dvbox{integer}{n}{2}}
-\put(120,32){\dvbox{integer}{n}{39}}
-\put(120,64){\dvbox{null}{n}{0}}
-\put(120,96){\blkbox{telem}{39}}
+%--%\ \  \includegraphics[width=1.1752in,height=1.6189in]{ib-img/ib-img040.jpg} \put(140,-32){\dvbox{integer}{n}{1}}
+\begin{picture}(300,120)(0,-32)
+\put(140,-32){\dvbox{integer}{n}{2}}
+\put(140,-32){\trboxlabel{assigned value}}
+\put(140,0){\dvbox{integer}{n}{10}}
+\put(140,0){\trboxlabel{entry value}}
+\put(140,32){\wordbox{129}{}}
+\put(140,32){\brboxlabel{hash number}}
+\put(140,48){\nullptrbox{next table-element block}}
+\put(140,64){\wordbox{telem}{}}
 \end{picture}
 
 If a table element with a matching entry value is not found, the
@@ -331,21 +409,20 @@ Suppose, for example, that the entry value \texttt{36} is not in the
 table \texttt{t}. Then \texttt{t[36]} produces the following result:
 
 %--%\ \  \includegraphics[width=4.1681in,height=1.8071in]{ib-img/ib-img041.jpg} 
-\begin{picture}(300,150)
-\put(120,0){\dvbox{null}{n}{0}}
-\put(120,0){\trboxlabel{reserved for subsequent use}}
-\put(120,32){\dvbox{integer}{n}{36}}
-\put(120,32){\trboxlabel{entry value}}
-\put(120,64){\dvptrbox{table}{np}{40}{table header block for t}}
-\put(120,96){\blkbox{tvtbl}{36}}
-\put(120,96){\brboxlabel{hash number}}
-\put(0,112){\dvptrbox{tvtbl}{nptv}{40}{}}
+\begin{picture}(300,100)
+\put(120,0){\dvbox{integer}{n}{36}}
+\put(120,0){\trboxlabel{entry value}}
+\put(120,32){\wordbox{465}{}}
+\put(120,32){\brboxlabel{hash number}}
+\put(120,48){\blkptrbox{tvtbl}{40}{table header block for t}}
+\put(0,64){\dvptrbox{tvtbl}{nptv}{40}{}}
 \end{picture}
 
-Note that the size of a table-element trapped-variable block is the
-same as the size of a table-element block. The last descriptor in the
-table-element trapped-variable block is reserved for subsequent use,
-as described below.
+%% [DonW]  None of this is true, post V6
+%% Note that the size of a table-element trapped-variable block is the
+%% same as the size of a table-element block. The last descriptor in the
+%% table-element trapped-variable block is reserved for subsequent use,
+%% as described below.
 
 If this trapped variable is dereferenced, as in
 
@@ -383,20 +460,25 @@ If an assignment is made to the table reference, as in
 \>t[36] +:= 1
 }
 
-\noindent the table-element trapped-variable block is converted to a
-table-element block with the assigned value stored in the reserved
-descriptor of the table-element trapped-variable block. The
-table-element block is then linked in the appropriate place. Note that
-the structures of table-element blocks and table-element
-trapped-variable blocks are the same, allowing this conversion without
-allocating a new table-element block.
+%----- post V6 processing
+\noindent the table-element trapped-variable block is copied to a new
+table-element block with the assigned value stored in the new block.
+%----- which replaces the V6 text
+%% \noindent the table-element trapped-variable block is converted to a
+%% table-element block with the assigned value stored in the reserved
+%% descriptor of the table-element trapped-variable block. The
+%% table-element block is then linked in the appropriate place. Note that
+%% the structures of table-element blocks and table-element
+%% trapped-variable blocks are the same, allowing this conversion without
+%% allocating a new table-element block.
 
-It then is necessary to search the linked list for its slot again to
+It then is necessary to search the linked list for its slot to % again to
 determine the place to insert the table-element block. As in the case
 of dereferencing, elements may have been inserted in the table between
 the time the table-element trapped variable was created and the time a
 value is assigned to it. Normally, no matching entry is found, and the
-table-element trapped-variable block, transformed into a table-element
+%table-element trapped-variable block, transformed into a table-element
+new table-element
 block, is inserted with the new assigned value.  If a matching entry
 is found, its assigned value is simply changed, and the block is
 discarded.
@@ -417,10 +499,11 @@ computation that produces few collisions.
 
 The subject of hash computation has been studied extensively and there
 is a substantial body of knowledge concerning useful techniques (Knuth
-1973, pp. 506-549). For example, it is known that the number of slots
-should be a prime that is not close to a power of two. This
-consideration motivated the choices of 37 and 13 for computers with
-large and small address spaces, respectively. In general, there is a
+1973, pp. 506-549). %% For example, it is known that the number of slots
+%% should be a prime that is not close to a power of two. This
+%% consideration motivated the choices of 37 and 13 for computers with
+%% large and small address spaces, respectively. 
+In general, there is a
 trade-off between faster lookup, on the average, and more storage
 overhead.
 
@@ -650,6 +733,78 @@ dptr dp;\\
 \>register unsigned int *bitarr;\\
 \>double r;\\
 \>if (Qual(*dp)) \{\\
+}
+\bluecode{
+\>/* Unicon uses different code for string hashes.\\
+\>\ * Neither the \#ifdef .. \#else ..\#endif or this comment\\
+\>\ * is actually in the code. In reality, they are different source\\
+\>\ * trees, but it makes it clear what the differences are.\\
+\>\ */\\
+\#ifdef Unicon\\
+\>hashstring:\\
+\>\> /*\\
+\>\>\  * Compute the hash value for the string based on a scaled sum\\
+\>\>\  *  of its first and last several characters, plus its length.\\
+\>\>\  *  Loops are unrolled.\\
+\>\>\  */\\
+\>\> i = 0;\\
+\>\> s = StrLoc(*dp);\\
+\>\> n = StrLen(*dp);\\
+\\
+\>\> switch(n)\{\\
+\>\>\> case 20:  i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 19:  i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 18:  i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 17:  i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 16:  i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 15:  i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 14:  i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 13:  i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 12:  i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 11:  i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 10:  i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 9:   i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 8:   i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 7:   i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 6:   i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 5:   i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 4:   i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 3:   i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 2:   i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\> case 1:   i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\> case 0:   break;\\
+\>\>\> default:\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>\\
+\>\>\>\>s += n - 20;\\
+\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\>\>i \^{}= (i <{}< 7)\^{}(*s++)\^{}(i >{}> 3);\\
+\>\>\>\>i \^{}= ~(i <{}< 11)\^{}(*s++)\^{}(i >{}> 5);\\
+\>\>\}\\
+\>\> i += n;\\
+\>\}\\
+\#else Icon
+}
+
+
+\iconcode{
 \>hashstring:\\
 \>\>/*\\
 \>\>\ * Compute the hash value for the string based on a scaled \\
@@ -663,9 +818,12 @@ dptr dp;\\
 \>\>while (j-{}- > 0) \{\\
 \>\>\>i += *s++ \& 0xFF;\ \ /* add unsigned version of char */\\
 \>\>\>i *= 37;\ \ \ \ /* scale by a nice prime number */\\
-\>\>\>\}\\
+\>\>\}\\
 \>\>i += n;\ \ \ \ \ \ /* add (untruncated) string length */\\
 \>\>\}\\
+}
+\bluecode{\#endif\>\>\> /* Icon / Unicon */\\}
+\iconcode{
 \>else \{\\
 \>\>switch (Type(*dp)) \{\\
 \>\>\>/*\\
@@ -749,7 +907,8 @@ dptr dp;\\
 }
 
 To hash a string, its characters are added together as integers. At
-most ten characters are used, since strings can be very long and
+most ten characters are used{\color{blue}\ (Unicon uses twenty)}, 
+since strings can be very long and
 adding many characters does not improve the hashing sufficiently to
 justify the time spent in the computation. The maximum of ten is,
 however, \textit{ad hoc}. To provide a measure of discrimination

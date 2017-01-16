@@ -155,6 +155,20 @@
 \end{picture}%
 }%
 %-------------------------------------------------------------------------------
+% Draw a vertical stack of n words   \wordpile{n}{\nullptrbox{}}
+\newcommand{\wordpile}[2]{%
+\begin{picture}(120,16)% A porky: it's really (120, 16*n)
+\multiput(0,0)(0,16){#1}{#2}%
+\end{picture}%
+}%
+%-------------------------------------------------------------------------------
+% Draw a vertical stack of n dwords   \dwordpile{n}{\dvbox{null}{n}{value}}
+\newcommand{\dwordpile}[2]{%
+\begin{picture}(120,32)% A porky: it's really (120, 32*n)
+\multiput(0,0)(0,32){#1}{#2}%
+\end{picture}%
+}%
+%-------------------------------------------------------------------------------
 % Box labels
 % Draw two right-aliged left hand labels  \leftboxlabels{top-left}{bottom-left}
 \newcommand{\leftboxlabels}[2]{%
@@ -357,19 +371,20 @@
 %% \end{picture}%
 %% }%
 %
-%----- Test Grid of 8 "cross-hairs. 
-% Parameters are width (usually 100)
-% and depth (usually 16)
-\newcommand{\crosshairs}[2]{%
+%----- Single cross-hair   \put(x,y){\crosshair}
+\newcommand{\crosshair}{%
 {\color{blue}%
-\multiput(0,0)(#1,0){2}{%
-\multiput(0,0)(0,#2){4}{%
 \put(0,-10){\vector(0,1){9.5}}%
 \put(-10,0){\vector(1,0){9.5}}%
 \put(10,0){\vector(-1,0){9.5}}%
 \put(0,10){\vector(0,-1){9.5}}%
-}}%
 }% color
+}%
+%----- Test Grid of 8 "cross-hairs. 
+% Parameters are width (usually 100)
+% and depth (usually 16)
+\newcommand{\crosshairs}[2]{%
+\multiput(0,0)(#1,0){2}{\multiput(0,0)(0,#2){4}{\crosshair}}%
 }%
 %
 %-------- test picture

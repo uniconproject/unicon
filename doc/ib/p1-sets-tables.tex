@@ -497,232 +497,30 @@ uniform. Even approaching this ideal requires an impractical amount of
 computation and space. In practice, it is desirable to have a fast
 computation that produces few collisions.
 
-The subject of hash computation has been studied extensively and there
-is a substantial body of knowledge concerning useful techniques (Knuth
-1973, pp. 506-549). %% For example, it is known that the number of slots
-%% should be a prime that is not close to a power of two. This
-%% consideration motivated the choices of 37 and 13 for computers with
-%% large and small address spaces, respectively. 
-In general, there is a
-trade-off between faster lookup, on the average, and more storage
-overhead.
+The subject of hash computation has been studied extensively.  In
+general, there is a trade-off between faster lookup, on the average,
+and more storage overhead. Beyond this, there is a substantial body of
+knowledge concerning useful techniques (Knuth 1973, pp. 506-549). For
+example, there are fewer collisions if the number of slots is a prime
+that is not close to a power of two. Originally, this consideration
+motivated the choices of 37 and 13 for number of hash table slots on
+computers with large and small address spaces, respectively. As
+computer memory sizes grew, the one-size-fits-all strategy was
+replaced with one that increases the number of slots as needed
+(Griswold and Townsend 1993).
 
 In most situations in which hashing techniques are used, all the
 values for which hash computations are performed are strings. In Icon,
 however, any kind of value can be the member of a set or the entry
 value in a table. The hash computation must, therefore, apply to any
-type of value. The support routine for computing hash numbers is
+type of value. The support routine for computing hash numbers first
+checks for a string, and then has a switch statement to handle all
+the other types.
 
-%-% {\ttfamily
-%-% uword hash(dp)
-%-% 
-%-% dptr dp;
-%-% 
-%-% \ \ \ \{
-%-% 
-%-% \ \ \ register char *s;
-%-% 
-%-% \ \ \ register uword i;
-%-% 
-%-% \ \ \ register word j, n;
-%-% 
-%-% \ \ \ register unsigned int *bitarr;
-%-% 
-%-% \ \ \ double r;
-%-% 
-%-% \ \ \ if (Qual(*dp)) \{
-%-% 
-%-% \ \ \ hashstring:
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ * Compute the hash value for the string based on a scaled 
-%-% 
-%-% \ \ \ \ \ \ \ * \ sum of its first ten characters, plus its length.
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% \ \ \ \ \ \ i = 0;
-%-% 
-%-% \ \ \ \ \ \ s = StrLoc(*dp);
-%-% 
-%-% \ \ \ \ \ \ j = n = StrLen(*dp);
-%-% 
-%-% \ \ \ \ \ \ if (j {\textgreater} 10)\ \ /* limit scan to first ten characters */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ j = 10;
-%-% 
-%-% \ \ \ \ \ \ while (j-{}- {\textgreater} 0) \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ i += *s++ \& 0xFF;\ \ /* add unsigned version of char */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ i *= 37;\ \ \ \ /* scale by a nice prime number */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ i += n;\ \ \ \ \ \ /* add (untruncated) string length */
-%-% 
-%-% \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ else \{
-%-% 
-%-% \ \ \ \ \ \ switch (Type(*dp)) \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * The hash value of an integer is itself times eight 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ times the golden ratio. \ We do this calculation in 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ fixed point. \ We don't just use the integer itself, 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ for that would give bad results with sets having
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ entries that are multiples of a power of two.
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_Integer:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * (uword)IntVal(*dp)) {\textgreater}{\textgreater} 10;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a bignum is based on its length and 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ its most and least significant digits.
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% \ \  case T\_Lrgint:
-%-% 
-%-% \ \  \ \ \ \{
-%-% 
-%-% \ \  \ \ \ struct b\_bignum *b = \&BlkLoc(*dp)-{\textgreater}bignumblk;
-%-% 
-%-% \ \  \ \ \ i = ((b-{\textgreater}lsd - b-{\textgreater}msd) {\textless}{\textless} 16) \^{}
-%-% 
-%-% \ \ \ \ (b-{\textgreater}digits[b-{\textgreater}msd] {\textless}{\textless} 8) \^{}
-%-% b-{\textgreater}digits[b-{\textgreater}lsd];
-%-% 
-%-% \ \  \ \ \ \}
-%-% 
-%-% \ \  \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a real number is itself times a 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ constant, converted to an unsigned integer. \ The 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ intent is to scramble the bits well, in the case of 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ integral values, and to scale up fractional values 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ so they don't all land in the same bin. The constant
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ below is 32749 / 29, the quotient of two primes,
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ and was observed to work well in empirical testing.
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_Real:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ GetReal(dp,r);
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = r * 1129.27586206896558;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a cset is based on a convoluted 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ combination of all its bits.
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_Cset:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = 0;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ bitarr = BlkLoc(*dp)-{\textgreater}cset.bits + CsetSize - 1;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ for (j = 0; j {\textless} CsetSize; j++) \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i += *bitarr-{}-;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i *= 37;\ \ \ \ \ \ /* better distribution */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i \%= 1048583;\ \ \ \ /* scramble the bits */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * The hash value of a list, set, table, or record is 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ its id, hashed like an integer.
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_List:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}list.id) {\textgreater}{\textgreater} 10;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_Set:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}set.id) {\textgreater}{\textgreater} 10;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_Table:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}table.id) {\textgreater}{\textgreater} 10;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case T\_Record:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = (13255 * BlkLoc(*dp)-{\textgreater}record.id) {\textgreater}{\textgreater} 10;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \  case T\_Proc:
-%-% 
-%-% \ \  \ \ \ dp = \&(BlkLoc(*dp)-{\textgreater}proc.pname);
-%-% 
-%-% \ \  \ \ \ goto hashstring;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ default:
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * For other types, use the type code as the hash
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ * \ value.
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ i = Type(*dp);
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ return i;
-%-% 
-%-% \ \ \ \}
-%-% }
+The string hashing implementation is important and deserves extra
+scrutiny. The Unicon implementation differs from Icon and is shown
+in blue; the \#ifdef is included for exposition and is not in the code.
+
 \iconcode{
 uword hash(dp)\\
 dptr dp;\\
@@ -735,11 +533,6 @@ dptr dp;\\
 \>if (Qual(*dp)) \{\\
 }
 \bluecode{
-\>/* Unicon uses different code for string hashes.\\
-\>\ * Neither the \#ifdef .. \#else ..\#endif or this comment\\
-\>\ * is actually in the code. In reality, they are different source\\
-\>\ * trees, but it makes it clear what the differences are.\\
-\>\ */\\
 \#ifdef Unicon\\
 \>hashstring:\\
 \>\> /*\\
@@ -906,17 +699,25 @@ dptr dp;\\
 \>\}
 }
 
-To hash a string, its characters are added together as integers. At
-most ten characters are used{\color{blue}\ (Unicon uses twenty)}, 
-since strings can be very long and
-adding many characters does not improve the hashing sufficiently to
-justify the time spent in the computation. The maximum of ten is,
-however, \textit{ad hoc}. To provide a measure of discrimination
-between strings with the same initial substring, the length of the
-string is added to the sum of the characters. This technique for
-hashing strings is not sophisticated, and others that produce better
-hashing results are known. However, the computation is simple, easy to
-write in C, and works well in practice.
+To hash a string, its characters are combined mathematically as
+integers. At most the first ten characters are used. {\color{blue}
+Unicon uses up to the first ten and the last ten, to distinguish
+long strings such as identifiers with differences at either end}.
+The limit on the number of characters used in the hash is important
+because strings can be very long and adding all the characters does
+not improve the hashing sufficiently to justify the time spent in the
+computation. A maximum of ten or twenty is, however, \textit{ad hoc}. To
+provide a measure of discrimination between strings with the same
+initial substring, the length of the string is added to the sum of the
+characters.
+
+Icon's technique for hashing strings is not sophisticated, and others
+that produce better hashing results are known. However, the
+computation is simple, easy to write in C, and works well on most data.
+Unicon's technique is adapted from one due to Arash Partow
+(http://www.partow.net/programming/hashfunctions/), with length
+caps and loop unrolling.  It was validated empirically on a wide
+range of data sets.
 
 For a numeric type, the hash value is derived from the number. In the
 case of a cset, the words containing the bits for the cset are

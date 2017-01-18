@@ -127,14 +127,14 @@ example, has the following bounded expressions:
 \begin{center}
 %--%\includegraphics[width=3.2819in,height=0.4736in]{ib-img/ib-img057.jpg}
 \begin{picture}(200,30)
-\put(0,10){\makebox(0,0){\{}}
-\put(30,10){\oval(40,16)}
-\put(30,10){\makebox(0,0){$expr_1;$}}
-\put(90,10){\oval(40,16)}
-\put(90,10){\makebox(0,0){$expr_2;$}}
-\put(130,10){\makebox(0,0){$ ...;$}}
-\put(170,10){\makebox(0,0){$expr_n$}}
-\put(200,10){\makebox(0,0){\}}}
+\put(0,16){\makebox(200,0)[l]{
+\makebox(10,16){\{}
+\makebox(40,16){\ovt{40}{16}{$expr_1;$}}
+\makebox(40,16){\ovt{40}{16}{$expr_2;$}}
+\makebox(10,16){$ ...;$}
+\makebox(40,16){$expr_n$}
+\makebox(10,16){\}}
+}}
 \end{picture}
 \end{center}
 
@@ -143,16 +143,16 @@ However, it may be part of a larger bounded expression, as in
 
 \begin{center}
 %--%\includegraphics[width=3.5425in,height=0.8173in]{ib-img/ib-img058.jpg}
-\begin{picture}(200,40)(0,-10)
-\put(0,10){\makebox(0,0){\{}}
-\put(30,10){\oval(40,16)}
-\put(30,10){\makebox(0,0){$expr_1;$}}
-\put(90,10){\oval(40,16)}
-\put(90,10){\makebox(0,0){$expr_2;$}}
-\put(130,10){\makebox(0,0){$ ...;$}}
-\put(170,10){\makebox(0,0){$expr_n$}}
-\put(220,10){\makebox(0,0){\} = 1;}}
-\put(110,10){\oval(260,40)}
+\begin{picture}(200,40)
+\put(120,20){\ovt{240}{40}{
+\makebox(240,32)[l]{
+\makebox(10,16){\{}
+\makebox(40,16){\ovt{40}{16}{$expr_1;$}}
+\makebox(40,16){\ovt{40}{16}{$expr_2;$}}
+\makebox(40,16){$ ...;$}
+\makebox(40,16){$expr_n$}
+\makebox(40,16){\} = 1;}
+}}}
 \end{picture}
 \end{center}
 
@@ -178,9 +178,10 @@ control expression is bounded but the other expressions are not:
 \begin{center}
 %--%\includegraphics[width=3.5508in,height=0.5244in]{ib-img/ib-img059.jpg}
 \begin{picture}(200,30)
-\put(32,10){\oval(35,16)}
 \put(0,10){\makebox(0,0)[l]{
-\texttt{if}\ \  $expr_1$\ \ \texttt{then}\ \  $expr_2$\ \  \texttt{else}\ \  $expr_3$
+\makebox(10,0){\texttt{if}}
+\makebox(40,-4){\ovt{35}{16}{$expr_1$}}
+\makebox(120,0){\texttt{then}\ \  $expr_2$\ \  \texttt{else}\ \  $expr_3$}
 }}
 \end{picture}
 \end{center}
@@ -192,9 +193,10 @@ bounded expression. An example is
 \begin{center}
 %--%\includegraphics[width=4.0839in,height=0.4571in]{ib-img/ib-img060.jpg}
 \begin{picture}(200,30)
-\put(65,10){\oval(30,16)}
-\put(0,10){\makebox(0,0)[l]{
-\texttt{write(\ \ if\ \ \ i < j \ \ \ then\ \ \  i\  to\  j\ \ \ else\ \ \  j\  to\  i\ \ )}
+\put(0,0){\makebox(0,0)[l]{
+\makebox(50,0){\texttt{write (\ \ if}}
+\makebox(40,0){\ovt{35}{16}{\texttt{i < j}}}
+\makebox(130,0){\texttt{then\ \ \  i\  to\  j\ \ \ else\ \ \  j\  to\  i\ )}}
 }}
 \end{picture}
 \end{center}
@@ -216,10 +218,13 @@ do clause are both bounded:
 \begin{center}
 %--%\includegraphics[width=2.8339in,height=0.4992in]{ib-img/ib-img061.jpg}
 \begin{picture}(200,30)
-\put(53,10){\oval(35,16)}
-\put(110,10){\oval(35,16)}
+%\put(53,10){\oval(35,16)}
+%\put(110,10){\oval(35,16)}
 \put(0,10){\makebox(0,0)[l]{
-\texttt{while}\ \  $expr_1$\ \ \texttt{do}\ \  $expr_2$
+\makebox(30,0){\texttt{while}}
+\makebox(36,-4){\ovt{36}{16}{$expr_1$}}
+\makebox(20,0){\texttt{do}}
+\makebox(36,-4){\ovt{36}{16}{$expr_2$}}
 }}
 \end{picture}
 \end{center}
@@ -433,14 +438,18 @@ discussed in Sec. 9.4. Nested expression frames also occur as a result
 of evaluating compound expressions, such as
 
 %-% {\ttfamily\mdseries
-%-% \ \ \ while expr1 do if expr2 then expr2 }n
+%-% \ \ \ while expr1 do if expr2 then expr2 }
 \begin{center}
 \begin{picture}(200,10)(50,15)
-\put(53,10){\oval(35,16)}
-\put(130,10){\oval(35,16)}
-\put(150,10){\oval(150,32)}
 \put(0,10){\makebox(0,0)[l]{
-\texttt{while}\ \  $expr_1$\ \ \ \ \texttt{do\ \ if}\ \  $expr_2$\ \ then \ $expr_3$
+\makebox(30,0){\texttt{while}}
+\makebox(36,-4){\ovt{36}{16}{$expr_1$}}
+\raisebox{-10.5pt}{\makebox(130,16){\ovt{130}{32}{
+\makebox(30,0){\texttt{do\ \ if}}
+\makebox(36,-4){\ovt{36}{16}{$expr_2$}}
+\makebox(20,0){then}
+\raisebox{-4pt}{$expr_3$}
+}}}
 }}
 \end{picture}
 \end{center}

@@ -17,12 +17,12 @@ Virtual machine instructions typically push and pop data on the
 interpreter stack. The interpreter stack, which is distinct from the
 stack used for calls of C functions, is an array of words. The
 variable \texttt{sp} points to the last word pushed on the interpreter
-stack. Pushing increments \texttt{int}, while popping decrements
-it. When the interpreter executes code that corresponds to a built-in
-operation in Icon, it pushes descriptors for the arguments on the
-interpreter stack and calls a C function corresponding to that
-operation with a pointer to the place on the interpreter stack where
-the arguments begin. A null descriptor is pushed first to serve as a
+stack. Pushing increments \texttt{sp}, while popping decrements it. When the
+interpreter executes code that corresponds to a built-in operation in
+Icon, it pushes descriptors for the arguments on the interpreter stack
+and calls a C function corresponding to that operation with a pointer
+to the place on the interpreter stack where the arguments begin. A
+null descriptor is pushed first to serve as a
 {\textquotedbl}zeroth{\textquotedbl} argument (Arg0) that receives, by
 convention, the result of the computation and becomes the top
 descriptor on the stack when the C function returns. On a more
@@ -32,17 +32,11 @@ latter method is more convenient in Icon.
 
 To illustrate this basic mechanism, consider the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ ?10}
-\iconline{ \>?10 }
+\iconline{ \>   ?10 }
 
 \noindent which produces a randomly selected integer between 1 and 10,
 inclusive. The corresponding virtual machine instructions are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull\ \ \ \ \# push null descriptor for the result\newline
-%-%  \ \ int\ \ 10\ \ \# push descriptor for the integer 10\newline
-%-%  \ \ random\ \ \ \ \# compute random value}
 \goodbreak
 \iconcode{
 \>pnull\>\>\>\>\>\>\# push null descriptor for the result\\
@@ -56,9 +50,7 @@ computes random values.
 
 The \texttt{pnull} instruction pushes a null descriptor:
 
-%--% \begin{center}
 %--%\includegraphics[width=3.7402in,height=1.0575in]{ib-img/ib-img042.jpg}
-%--% \end{center}
 \begin{picture}(300,100)
 \put(120,32){\upetc}
 \put(120,32){\dvbox{null}{n}{0}}
@@ -84,7 +76,7 @@ Suppose that the C function for random computes 3. It replaces the
 null value of Arg0 by a descriptor for the integer 3.  When it
 returns, \texttt{sp} is set to point to Arg0 and the situation is
 
-%--%\ \ \ \  \includegraphics[width=2.6717in,height=1.239in]{ib-img/ib-img044.jpg} 
+%--%\ \ \ \includegraphics[width=2.6717in,height=1.239in]{ib-img/ib-img044.jpg} 
 \begin{picture}(300,100)
 \put(120,32){\upetc}
 \put(120,32){\dvbox{integer}{n}{3}}
@@ -117,19 +109,13 @@ Four kinds of data can be represented literally in Icon programs:
 integers, strings, csets, and real numbers. The four corresponding
 virtual machine instructions are
 
-%-% {\ttfamily\mdseries
-%-% \ \ int\ \ n\ \ \# integer n\newline
-%-% \ \ str\ \ n, a\ \ \# string of length n at address a\newline
-%-% \ \ cset\ \ a\ \ \# cset block at address a\newline
-%-% \ \ real\ \ a\ \ \# real block at address a}
 \goodbreak
 \iconcode{
-\>int\>\>\>n\>\>\>\>\# integer n\\
-\>str\>\>\>n,\>a\>\>\>\# string of length n at address a\\
-\>cset\>\>\>a\>\>\>\>\# cset block at address a\\
-\>real\>\>\>a\>\>\>\>\# real block at address a
+\>  int  \>\>\>  n \>   \>\>\>\# integer n\\
+\>  str  \>\>\>  n,\> a \>\>\>\# string of length n at address a\\
+\>  cset \>\>\>  a \>   \>\>\>\# cset block at address a\\
+\>  real \>\>\>  a \>   \>\>\>\# real block at address a
 }
-
 
 The values of integer literals appear as arguments of int
 instructions. In the case of strings, the two arguments give its
@@ -146,23 +132,16 @@ The virtual machine instructions \texttt{str}, \texttt{cset}, and
 appears in the icode. For example, the virtual machine instructions
 for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ ?{\textquotedbl}aeiou{\textquotedbl}}
 \iconline{ \>?"aeiou" }
 
 \noindent are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull\newline
-%-%  \ \ str\ \ 5, a\newline
-%-%  \ \ random}
 \goodbreak
 \iconcode{
-\>pnull\\
-\>str\>\>\>5,\>a\\
-\>random
+\>   pnull \\
+\>   str\>\>\>5,\>a \\
+\>   random
 }
-
 
 \noindent where \texttt{\ \ a} is the address of the string
 \texttt{{\textquotedbl}aeiou{\textquotedbl}}. The \texttt{pnull}
@@ -191,9 +170,8 @@ The \texttt{str} instruction constructs a descriptor for the string
 \put(120,32){\lregptr{sp}{20}}
 \end{picture}
 
-If \texttt{random} produces the string
-\texttt{{\textquotedbl}o{\textquotedbl}}, this string replaces the
-null descriptor and the stack becomes
+If \texttt{random} produces the string \texttt{"o"}, this string
+replaces the null descriptor and the stack becomes
 
 %--%\ \ \ \  \includegraphics[width=2.778in,height=1.3047in]{ib-img/ib-img046.jpg} 
 \begin{picture}(300,100)
@@ -202,6 +180,8 @@ null descriptor and the stack becomes
 \put(120,32){\downbars}
 \put(120,32){\lregptr{sp}{20}}
 \end{picture}
+
+In reality, things are a bit more complicated. See Section 8.2.5.
 
 \subsection[8.2.2 Identifiers]{8.2.2 Identifiers}
 
@@ -218,18 +198,15 @@ the stack as the result of the evaluation of expressions prior to the
 invocation of the procedure. The initial null values for local
 identifiers are pushed on the stack when the procedure is called.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Reinstate a missing page from the Icon IB here (P114)    %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Consider the following procedure declaration:
 \goodbreak
 \iconcode{
-\>procedure p(x,y)\\
-\>\>local z, i, j\\
-\>\>j := 1\\
-\>\>z := x\\
-\>\>\>...\\
-\>end
+procedure p(x,y)  \\
+\>  local z, i, j \\
+\>  j := 1 \\
+\>  z := x \\
+\>  \>...  \\
+end
 }
 
 \noindent In the evaluation of a call to this procedure such as 
@@ -258,10 +235,6 @@ of the first expression in p:
 \put(120,176){\upetc}
 \end{picture}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%              End of Reinstatement                        %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 The portion of the stack between the arguments and local identifiers
 is fixed in size and contains information that is saved when a
 procedure is called. This information is described in Chapter 10.
@@ -269,13 +242,6 @@ procedure is called. This information is described in Chapter 10.
 There are four virtual machine instructions for constructing variable
 descriptors:
 
-%-% \ \ \ global n
-%-% 
-%-% \ \ \ static n
-%-% 
-%-% \ \ \ arg n
-%-% 
-%-% \ \ \ local n
 \goodbreak
 \iconcode{
 \>global\>\>\> n\\
@@ -296,24 +262,10 @@ points to the descriptor for the value of the corresponding identifier.
 
 Consider the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ j := 1}
 \iconline{ \>j := 1 }
 
 The corresponding virtual machine instructions are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull\ \ \ \ \# push null descriptor for the result}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local\ \ 2\ \ \# push variable descriptor for j}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int\ \ 1\ \ \# push descriptor for the integer 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ asgn\ \ \ \ \# perform assignment}
-%-% 
 \goodbreak
 \iconcode{
 \>pnull\>\>\>\>\>\>\# push null descriptor for the result\\
@@ -322,7 +274,7 @@ The corresponding virtual machine instructions are
 \>asgn\>\>\>\>\>\>\# perform assignment
 }
 
-When these instructions are interpreted. the succession of stack states is
+When these instructions are interpreted, the succession of stack states is
 
 %--%\ \  \includegraphics[width=3.2063in,height=3.7366in]{ib-img/ib-img047.jpg} 
 \begin{picture}(300,240)
@@ -473,19 +425,10 @@ left on the top of the stack.
 
 Similarly, the virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ z := x}
 \iconline{ \>z := x }
 
 are
 
-%-% \ \ \ pnull
-%-% 
-%-% \ \ \ local 0
-%-% 
-%-% \ \ \ arg 0
-%-% 
-%-% \ \ \ asgn
 \goodbreak\iconcode{
 \>pnull\\
 \>local\>\>\>0\\
@@ -695,29 +638,10 @@ null descriptor and then pushes a duplicate of the descriptor that was
 previously on top of the stack.  For example, the virtual machine
 instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i +:= 1}
 \iconline{ \>i +:= 1 }
 
 are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ dup}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ plus}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ asgn}
 \goodbreak
 \iconcode{
 \>pnull\\
@@ -761,32 +685,10 @@ The \texttt{dup} instruction simply takes the place of the
 \texttt{pnull} and second \texttt{local} instructions in the virtual
 machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i := i + 1}
 \iconline{ \>i := i + 1 }
 
 which are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ plus}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ asgn}
 \goodbreak
 \iconcode{
 \>pnull\\
@@ -802,8 +704,6 @@ In this case, only a single \texttt{local} instruction is avoided. If
 the variable to which the assignment is made is not just an identifier
 but, instead, a more complicated construction, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ a[j] +:= 1}
 \iconline{ \>a[j] +:= 1 }
 
 \noindent substantial computation may be saved by duplicating the
@@ -816,33 +716,15 @@ a specific virtual machine instruction, the meaning of a function call
 can change during program execution. The value of the function also
 can be computed. as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ (p[i])(x, y)}
 \iconline{ \>(p[i])(x, y) }
 
 The general form of a call is
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ expr0(expr1, expr2, }..., \textit{exprn)}}
 \iconline{
 \>\textit{expr0(expr1, expr2, } ..., \textit{exprn)}
 }
 The corresponding virtual machine instructions are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ code for expr0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ code for expr1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ code for expr2}
-%-% 
-%-% {\ttfamily\itshape
-%-% \ \ \ code for exprn}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ }invoke n}
 \goodbreak
 \iconcode{
 \>code for expr0\\
@@ -857,6 +739,80 @@ The \texttt{invoke} instruction is relatively complicated, since the
 value of \textit{expr0 }may be a procedure, an integer (for mutual
 evaluation), or even a value that is erroneous. Function invocation is
 discussed in detail in Chapter 10.
+
+\subsection[8.2.5 Self-Modifying Instructions]{8.2.5 Self-Modifying Instructions}
+
+Seven opcodes, including several described in the preceding
+sections, contain operands whose values are addresses within the
+virtual machine icode. The linker cannot know these run-time
+addresses, so instead, it generates the instructions with byte
+offsets, relative to the current instruction.  At runtime the
+interpreter obtains the address in question by adding the current
+instruction pointer to the offset.  In order to avoid repeating this
+calculation every time the instruction executes, the interpreter
+stores the pointer in place of the offset and modifies the opcode to
+indicate that the offset has been converted to a pointer.  The self
+modifying instructions and their address-holding counterparts are:
+
+\iconcode{
+\>   str    \>\>\>\> Astr \\
+\>   cset   \>\>\>\> Astr\\
+\>   real   \>\>\>\> Areal\\
+\>   global \>\>\>\> Aglobal \\
+\>   static \>\>\>\> Astatic\\
+\>   goto   \>\>\>\> Agoto\\
+\>   mark   \>\>\>\> Amark
+}
+
+The details of the \texttt{str} instruction illustrate the code for
+self-modifying instructions. There are several points of interest. The
+opcode must be modified from \texttt{Op\_Str} to \texttt{Op\_Astr} and
+its offset operand modified to contain a pointer.  Depending on
+whether Concurrent is enabled, the self-modification of the
+instruction is done by either two "Put" macros
+(\texttt{PutOp(Op\_Astr)} on the current opcode and
+\texttt{PutWord(opnd)}), or by a \texttt{PutInstr(Op\_Astr, opnd, 2)}
+after the instruction pointer is referring to the operand.  This is
+because these self-modifying instructions create a race condition when
+executed concurrently and thus require mutex locks.  After
+(potentially) waiting to obtain a lock, the instruction must check
+again to see if a competing thread has already modified its opcode,
+and if so, it jumps down to the code for \texttt{Op\_Astr}.
+
+
+\iconcode{
+\>\>\>	 case Op\_Str:		/* string */ \\
+\#ifdef Concurrent \\
+\>\>\>\>    MUTEX\_LOCKID(MTX\_OP\_ASTR); \\
+\>\>\>\>    if (ipc.op[-1] == Op\_Astr) \{ \\
+\>\>\>\>\>     MUTEX\_UNLOCKID(MTX\_OP\_ASTR); goto L\_astr; \} \\
+\#else					/*Concurrent*/ \\
+\>\>\>\>    PutOp(Op\_Astr); \\
+\#endif					/*Concurrent*/ \\
+\>\>\>\>    PushVal(GetWord) \\
+\ \\
+\>\>\>\>	... \\
+\>\>\>\>       opnd = (word)strcons + GetWord; \\
+\ \\
+\#ifdef Concurrent \\
+\>\>\>\>    PutInstr(Op\_Astr, opnd, 2); \\
+\#else					/*Concurrent*/ \\
+\>\>\>\>    PutWord(opnd); \\
+\#endif					/*Concurrent*/ \\
+\>\>\>\>    PushAVal(opnd); \\
+\>\>\>\>    InterpEVValD((dptr)(rsp-1), e\_literal); \\
+\ \\
+\>\>\>\>    MUTEX\_UNLOCKID(MTX\_OP\_ASTR); \\
+\>\>\>\>    break; \\
+\ \\
+\>\>\>	 case Op\_Astr:		/* string, absolute address */ \\
+L\_astr: \\
+\>\>\>\>    PushVal(GetWord); \\
+\>\>\>\>    PushAVal(GetWord); \\
+\>\>\>\>    InterpEVValD((dptr)(rsp-1), e\_literal); \\
+\>\>\>\>    break;
+}
+
 
 \section[8.3 The Interpreter Proper]{8.3 The Interpreter Proper}
 \subsection[8.3.1 The Interpreter Loop]{8.3.1 The Interpreter Loop}

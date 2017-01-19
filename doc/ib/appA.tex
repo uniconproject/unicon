@@ -1,7 +1,12 @@
 \chapter{Data Structures}
 
 This appendix summarizes, for reference purposes, all descriptor and
-block layouts in Icon.
+block layouts in Icon and Unicon.
+{\color{blue}
+Unicon adds extra fields to many structures in order to manage
+concurrent threads and to provide mutual exclusion between
+threads. These extra fields are drawn in blue.
+}
 
 \section{A.1 Descriptors}
 
@@ -154,7 +159,8 @@ circular queues. See Chapter 6 for details. An example is the list
 \noindent which is represented as
 
 %--%\ \  \includegraphics[width=4.489in,height=1.5563in]{ib-img/ib-img117.jpg} 
-\begin{picture}(300,420)
+\begin{picture}(300,480)
+%\put(0,0){\graphpaper{30}{48}}
 \put(130,0){\dvbox{null}{n}{0}}
 \put(130,0){\trboxlabel{slot 3}}
 \put(130,32){\dvbox{integer}{n}{3}}
@@ -163,27 +169,49 @@ circular queues. See Chapter 6 for details. An example is the list
 \put(130,64){\trboxlabel{slot 1}}
 \put(130,96){\dvbox{integer}{n}{1}}
 \put(130,96){\trboxlabel{slot 0}}
-\put(130,128){\dvbox{null}{n}{0}}
-\put(130,128){\trboxlabel{next list-element block}}
-\put(130,160){\dvbox{null}{n}{0}}
-\put(130,160){\trboxlabel{previous list-element block}}
+\put(130,128){\nullptrbox{next list-element block}}
+{\color{blue}
+\put(-10,136){\parbox{100pt}{Unicon replaces the null pointer used by Icon
+with a pointer to the list header block.}}
+\multiput(100,136)(4,0){30}{\line(1,0){2}}
+\put(370,136){\line(1,0){50}}
+\put(420,136){\line(0,1){324}}
+\put(420,460){\vector(-1,0){150}}
+\put(270,460){\line(-1,0){154}}
+\put(116,460){\vector(0,-1){20}}
+}
+\put(130,144){\nullptrbox{previous list-element block}}
+\begin{picture}(0,0)(0,32)
 \put(130,192){\blkbox{0}{3}}
 \put(130,192){\rightboxlabels{first slot used}{number of slots used}}
-\put(130,224){\blkbox{68}{4}}
+\put(130,224){\blkbox{60}{4}}
 \put(130,224){\rightboxlabels{size of block}{number of slots in block}}
 \put(130,256){\wordbox{lelem}{}}
-\put(130,288){\dvbox{lelem}{np}{}}
-\put(130,288){\brboxlabel{last list-element block}}
-\put(130,320){\lptr{36}}
-\put(130,320){\dvbox{lelem}{np}{}}
-\put(130,320){\brboxlabel{first list-element block}}
-\put(130,288){\lptr{36}}
-\put(114,327){\line(0,-1){64}}
-\put(114,263){\vector(1,0){16}}
-\put(130,352){\blkbox{list}{3}}
-\put(130,352){\brboxlabel{number of elements in the list}}
-\put(0,368){\dvptrbox{list}{np}{50}{}}
-\end{picture}
+\put(130,288){\blkbox{}{}}
+\put(130,288){\rightboxlabels{first list-element block (head)}
+{last list-element block(tail)}}
+{\color{blue}
+\put(130,320){\wordpile{7}{\wordbox{}{}}}
+\put(130,320){\brboxlabel{cvempty}}
+\put(130,336){\brboxlabel{cvfull}}
+\put(130,352){\brboxlabel{empty}}
+\put(130,368){\brboxlabel{full}}
+\put(130,386){\brboxlabel{max}}
+\put(130,402){\brboxlabel{mutexid}}
+\put(130,418){\brboxlabel{shared}}
+}
+\put(130,306){\lptr{40}}
+\put(130,288){\lptr{40}}
+\put(110,314){\line(0,-1){51}}
+\put(110,263){\vector(1,0){20}}
+\end{picture}%
+\begin{picture}(0,0)(0,-80)
+\put(130,320){\wordbox{\textit{id}}}
+\put(130,336){\blkbox{list}{3}}
+\put(130,336){\brboxlabel{number of elements in the list}}
+\put(0,352){\dvptrbox{list}{np}{50}{}}
+\end{picture}%
+\end{picture}%
 
 Here there is only one list-element block:
 
@@ -191,44 +219,105 @@ Here there is only one list-element block:
 
 \subsection{A.2.5 Sets}
 
-A set consists of a set-header block that contains slots for linked
-lists of set-element blocks. See Sec. 7.1 for details. An example is
-given by
+A set consists of a set-header block that contains segments that point
+to blocks containing slots for linked lists of set-element blocks. 
+A set header must be a proper prefix of a table header,
+and a set element must be a proper prefix of a table element.
+See Sec. 7.1 for details. An example is given by
 
 %-% {\ttfamily\mdseries
 %-% \ \ set([1, 2, 3, 4])}
-\iconline{ \ \ set([1, 2, 3, 4]) }
+\iconline{ \ \ set([100, 1, 2, 3]) }
 
 \noindent which is represented as
 
 %--%\ \  \includegraphics[width=4.3811in,height=3.6465in]{ib-img/ib-img119.jpg} 
-\begin{picture}(300,310)(0,-30)
-\put(130,0){\downetc}
-\multiput(130,0)(0,32){2}{\dvbox{null}{n}{0}}
-\multiput(130,64)(0,32){4}{\dvptrbox{selem}{np}{40}{set-element block}}
-\put(130,192){\dvbox{null}{n}{0}}
-\put(130,224){\blkbox{set}{4}}
-\put(130,224){\brboxlabel{size of set}}
-\put(130,0){\trboxlabel{slot 6}}
-\put(130,32){\trboxlabel{slot 5}}
-\put(130,64){\trboxlabel{slot 4}}
-\put(130,96){\trboxlabel{slot 3}}
-\put(130,128){\trboxlabel{slot 2}}
-\put(130,160){\trboxlabel{slot 1}}
-\put(130,192){\trboxlabel{slot 0}}
-\put(0,240){\dvptrbox{set}{np}{50}{}}
-\end{picture}
-
-The set-element block for the member 3 is
-
 %--%\ \  \includegraphics[width=3.5272in,height=1.5319in]{ib-img/ib-img120.jpg} 
-\begin{picture}(300,110)
-\put(100,0){\dvbox{integer}{n}{3}}
-\put(100,0){\trboxlabel{member value}}
-\put(100,32){\dvbox{null}{n}{0}}
-\put(100,32){\trboxlabel{next set-element block}}
-\put(100,64){\blkbox{selem}{3}}
-\put(100,64){\brboxlabel{hash number}}
+\begin{picture}(300,300)(20,-30)
+%\put(0,-30){\graphpaper{40}{30}}
+%set header
+\put(0,70){\begin{picture}(0,0)
+\put(0,96){\wordbox{7}{}}
+\put(-4,96){\brboxlabel{mask}}
+{\color{blue}
+\put(0,112){\wordbox{}{}}
+\put(-4,112){\brboxlabel{mutexid}}
+\put(0,128){\wordbox{}{}}
+\put(-4,128){\brboxlabel{shared}}
+}
+\put(0,144){\wordbox{\textit{id}}{}}
+\put(0,160){\blkbox{set}{4}}
+\put(-4,160){\brboxlabel{number of elements in the set}}
+\put(0,0){\wordpile{5}{\nullptrbox{}}}
+\put(0,80){\wordptr{50}{}}
+\end{picture}%
+}
+%segment 0
+\put(130,8){\begin{picture}(0,0)
+\put(0,0){\nullptrbox{}}
+\put(0,16){\wordptr{40}{}}
+\put(0,32){\nullptrbox{}}
+\put(0,48){\wordptr{50}{}}
+\put(0,64){\nullptrbox{}}
+\put(0,80){\nullptrbox{}}
+\put(0,96){\wordptr{40}{}}
+\put(0,112){\nullptrbox{}}
+\put(0,128){\blkbox{slots}{40}}
+\put(-4,128){\brboxlabel{size}}
+\end{picture}%
+}
+\put(250,112){\line(1,0){20}}
+\put(270,112){\line(0,1){120}}
+\put(270,232){\vector(1,0){20}}
+\put(260,64){\line(1,0){40}}
+\put(300,64){\line(0,1){68}}
+\put(300,132){\vector(1,0){20}}
+% set element 2
+\put(290,160){\begin{picture}(0,0)
+\put(0,0){\dvbox{integer}{n}{2}}
+\put(0,0){\brboxlabel{member value}}
+\put(0,32){\wordbox{25}{}}
+\put(0,32){\brboxlabel{hash number}}
+\put(0,32){\brboxlabel{}}
+\put(0,48){\nullptrbox{next set-element}}
+\put(0,64){\wordbox{selem}{}}
+\end{picture}%
+}
+% set element 1
+\put(320,60){\begin{picture}(0,0)
+\put(0,0){\dvbox{integer}{n}{1}}
+\put(0,32){\wordbox{12}{}}
+\put(0,32){\brboxlabel{}}
+\put(0,48){\nullptrbox{}}
+\put(0,64){\wordbox{selem}{}}
+\end{picture}%
+}
+% set element 3
+\put(250,-40){\begin{picture}(0,0)
+\put(0,0){\dvbox{integer}{n}{3}}
+\put(0,32){\wordbox{38}{}}
+\put(0,32){\brboxlabel{}}
+\put(0,48){\wordptr{40}{}}
+\put(0,64){\wordbox{selem}{}}
+\end{picture}%
+}
+% set element 4
+\put(370,-56){\begin{picture}(0,0)
+\put(0,0){\dvbox{integer}{n}{100}}
+\put(0,32){\wordbox{1294}{}}
+\put(0,32){\brboxlabel{}}
+\put(0,48){\nullptrbox{}}
+\put(0,64){\wordbox{selem}{}}
+\end{picture}%
+}
+{\color[rgb]{0.7,0.7,0.7}%
+\put(10,154){segment 0}
+\put(30,127){\vdots}
+\put(10,74){segment 5}
+\put(140,124){slot 0}
+\put(160,97){\vdots}
+\put(140,12){slot 7}
+}
 \end{picture}
 
 \subsection{A.2.6 Tables}

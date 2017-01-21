@@ -44,8 +44,8 @@ P1= p1-intro.tex p1-iconOverview.tex p1-organization.tex p1-values.tex p1-string
 KW=kw/figure3-2.png kw/figure4-6.png
 P2=p2-preface.tex p2-compiler.tex p2-transModel.tex p2-typeTheory.tex p2-liveness.tex p2-overview.tex p2-iconcOrg.tex p2-typeInfer.tex p2-codeGen.tex p2-ctrlflow.tex p2-invoke.tex p2-codePerform.tex p2-futureWork.tex p2-iconcOpt.tex $(KW)
 P3=p3-2D3D.tex p3-network-posix.tex p3-unicon.tex
-P4=
-SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) references.tex
+P4=appA.tex appB.tex appC.tex appD.tex app-projects.tex app-solutions.tex app-rtl.tex
+SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) $(P4) references.tex gnudoclicence.tex
 
 ib.pdf: $(SRC)
 	pdflatex ib.tex

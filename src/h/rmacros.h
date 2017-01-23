@@ -507,8 +507,8 @@
 #define T_Kywdevent	25	/* keyword &eventsource, etc. */
 
 #ifdef PatternType
-#define T_Pattern 	26	/* keyword &eventsource, etc. */
-#define T_Pelem 	27	/* keyword &eventsource, etc. */
+#define T_Pattern 	26	/* pattern header */
+#define T_Pelem 	27	/* pattern element */
 #endif					/* PatternType */
 
 #define T_Tvmonitored   28      /* Monitored trapped variable */

@@ -54,3 +54,9 @@ SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) $(P4) references.tex gnudocli
 
 ib.pdf: $(SRC)
 	pdflatex ib.tex
+
+publish: ib.pdf
+	scp ib.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ib.pdf
+
+nightly: ib.pdf
+	scp ib.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ib-nightly.pdf

@@ -312,25 +312,19 @@ separate {\em id} counters for blocks of different types.
 
 With the declaration
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ record term(value, code, count)}
 \iconline{
 \>record term(value, code, count)
 }
 
 \noindent and
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ word := term({\textquotedbl}chair{\textquotedbl}, {\textquotedbl}noun{\textquotedbl}, 4)}
 \iconline{
 \>word := term("chair", "noun", 4)
 }
 
 \noindent the value of word is:
 
-%--% \begin{center}
 %--% \includegraphics[width=4.6398in,height=2.3799in]{ib-img/ib-img012.jpg}
-%--% \end{center}
 \begin{picture}(300,190)(-20,0)
 \put(0,144){\dvptrbox{record}{np}{60}{}}
 \put(140,128){\blkbox{record}{40}}
@@ -361,17 +355,13 @@ terms of storage and access. Variables for identifiers point to
 descriptors for the corresponding values. Variables always point to
 descriptors for values, never to other variables. For example, if
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s := {\textquotedbl}hello{\textquotedbl}}
 \iconline{
-\>s := "hello"
+\>  s := "hello"
 }
 
 \noindent then a variable for \texttt{s} has the form
 
-%--% \begin{center}
 %--% \includegraphics[width=3.8193in,height=0.8492in]{ib-img/ib-img013.jpg}
-%--% \end{center}
 \begin{picture}(300,64)(-30,0)
 \put(0,16){\tlboxlabel{\texttt{s}}}
 \put(0,16){\dvptrbox{}{npv}{60}{}}
@@ -596,44 +586,17 @@ situation.
 
 \bigskip
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#if IntBits != WordBits}
-%-% 
-%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
-%-% \ \ \ \ \ \ \#ifdef LongLongWord}
-%-% 
-%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
-%-% \ \ \ \ \ \ \ \ \ typedef long word;}
-%-% 
-%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
-%-% \ \ \ \ \ \ \ \ \ typedef unsigned long uword;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \textcolor[rgb]{0.0,0.0,0.8}{\ \ \ \ \ \ \#else\newline
-%-% } \ \ \ \ \ \ \ \ typedef long word;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ typedef unsigned long uword;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \textcolor[rgb]{0.0,0.0,0.8}{\ \ \ \ \ \ \#endif\newline
-%-% } \ \ \#else}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ typedef int word;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ typedef unsigned int uword;\newline
-%-%  \ \ \#endif}
-%--[DonW]  Preserve the colouring (above) in the code (below).
+% re-insert colors
 \iconcode{
 \>\#if IntBits != WordBits\\
-\>\>\#ifdef LongLongWord\\
-\>\>\>typedef long word;\\
+\>\>{\color{blue}\#ifdef LongLongWord}\\
+\>\>\>{\color{blue}typedef long long int word;}\\
+\>\>\>{\color{blue}typedef unsigned long long int uword;}\\
+\>\>{\color{blue}\#else}\\
+\>\>\>typedef long int word;\\
 \>\>\>typedef unsigned long uword;\\
-\>\>\#else\\
-\>\>\>typedef unsigned long uword;\\
-\>\>\#endif\\
+\>\>{\color{blue}\#endif}\\
+\>\#else \>\>\>\>\>\>\> /* IntBits != WordBits */ \\
 \>typedef int word;\\
 \>typedef unsigned int uword;\\
 \>\#endif
@@ -641,50 +604,15 @@ situation.
 
 A descriptor is declared as a structure:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct descrip \{\ \ /* descriptor */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word dword;\ \ /*\ \ type field */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ union \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ word integr;\ \ /*\ \ integer value */}
-%-% 
-%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
-%-% \#ifdef DescriptorDouble}
-%-% 
-%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
-%-% \ \ \ \ \ \ \ \ \ double realval;}
-%-% 
-%-% {\ttfamily\color[rgb]{0.0,0.0,0.8}
-%-% \#endif}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ char *sptr;\ \ /*\ \ pointer to character string */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ union block *bptr;\ \ /*\ \ pointer to a block */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ struct descrip *dptr;\ \ /*\ \ pointer to a descriptor */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \} vword;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \};}
-%--[DonW]  Preserve the colouring (above) in the code (below).
 \iconcode{
 \>struct descrip \{\ \ /* descriptor */\\
 \>\>word dword;\ \ /*\ \ type field */\\
 \>\>union \{\\
 \>\>\>word integr;\ \ /*\ \ integer value */\\
-\#ifdef DescriptorDouble\\
-\>\>\>double realval;\\
-\#endif\\
+% blue
+{\color{blue}\#ifdef DescriptorDouble}\\
+\>\>\>{\color{blue}double realval;}\\
+{\color{blue}\#endif}\\
 \>\>\>char *sptr;\ \ /*\ \ pointer to character string */\\
 \>\>\>union block *bptr;\ \ /*\ \ pointer to a block */\\
 \>\>\>struct descrip *dptr;\ \ /*\ \ pointer to a descriptor */\\
@@ -701,23 +629,6 @@ to another descriptor (in the case of a variable).
 Each block type has a structure declaration. For example. the
 declaration for record blocks is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct b\_record \{\ \  \ \ \ \ \ \ \ /* record block */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word title;\ \ \ \ \ \ /*\ \ T\_Record */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word blksize;\ \ \ \ \ \ /*\ \ size of block */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct descrip recdesc; /* record constructor descriptor */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct descrip fields[1];/*\ \ fields */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \};}
 \iconcode{
 \>struct b\_record \{\>\>\>\>\>\>\>\>\> /* record block */\\
 \>\>word title;\>\>\>\>\>\>\>\> /*\ T\_Record */\\
@@ -731,8 +642,6 @@ declaration for record blocks is
 Blocks for records vary in size, depending on the number of fields
 declared for the record type. The size of 1 in
 
-%-% {\ttfamily\mdseries
-%-% \ \ struct descrip fields[1];}
 \iconline{
 \ \ struct descrip fields[1];
 }

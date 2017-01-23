@@ -20,6 +20,11 @@
 #         supertabular is in texlive-latex-extra
 # color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
 # textcomp, fontenc, hyperref, pdftex
+#
+# RHEL7: first install packages texlive-base and texlive-latex.
+# Then pdflatex is in texlive-collection-latex.
+# You might also need texlive-collection-latexrecommended.
+# Substituted texlive-xtab for supertabular.  Doesn't have anyfontsize.
 
 # Many might have been installed as requirements as one of the main packages
 # was installed.  Package names may change from distribution to distribution.

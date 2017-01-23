@@ -14,7 +14,7 @@
 #
 # Platform Notes:
 #
-# MacOS: installing TeXShop is an easy way to build the document.
+# MacOS: installing MacTex and TeXShop is an easy way to build the document.
 #
 # Ubuntu: pdflatex is in texlive-latex-base
 #         supertabular is in texlive-latex-extra

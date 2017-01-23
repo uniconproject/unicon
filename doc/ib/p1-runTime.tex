@@ -527,7 +527,7 @@ int cnv\_str(dptr s, dptr d)\\
 
 \section[12.2 Dereferencing and Assignment]{12.2 Dereferencing and Assignment}
 
-If there were no trapped variables, dereferencing and assignment would
+If there were no trapped or keyword variables, dereferencing and assignment would
 be trivial. For example, the descriptor \texttt{d} is dereferenced by
 
 %-% {\ttfamily\mdseries
@@ -674,7 +674,7 @@ dereferencing is simple:
 \>\>\>*d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
 }
 
-Otherwise, there are three types of trapped variables with a switch on the type:
+Otherwise, there are two types of trapped variables with a switch on the type:
 
 %-% {\ttfamily\mdseries
 %-% \ \ \ type\_case *s of \{}
@@ -826,7 +826,7 @@ the time it was dereferenced. If it is in the table, the corresponding
 assigned value is returned. If it is not in the table, the default
 assigned value is returned.
 
-The last case, keyword trapped variables, is almost the same as for
+The last case, keyword variables, is almost the same as for
 simple variables. These variables impose special semantics on
 assignment, but not on dereferencing.
 
@@ -963,7 +963,7 @@ trapped. The macro \texttt{GeneralAsgn()} begins as follows:
 \>type\_case x of \{
 }
 
-As for dereferencing, there are three types of trapped variables to be
+As for dereferencing, there are two types of trapped variables to be
 considered. Assignment to a substring trapped variable is rather
 complicated and deferred to a function \texttt{subs\_asgn()}:
 
@@ -1593,7 +1593,7 @@ int tvtbl\_asgn(dptr dest, const dptr src)\\
 \}
 }
 
-In the case of a keyword trapped variable, the semantic requirements
+In the case of a keyword variable, the semantic requirements
 of the keyword are expressed in the usual mixture of RTL and C, except
 that type information is guaranteed not to change. The code for
 \texttt{\&subject} is typical:

@@ -448,7 +448,7 @@ variable descriptor changed:
 These operations on variables correspond to indirect load and store
 instructions of a typical computer.
 
-\subsection[4.3.2 Trapped Variables]{4.3.2 Trapped Variables}
+\subsection[4.3.2 Special Variables]{4.3.2 Special Variables}
 
 Icon has several variables with special properties that complicate
 assignment and dereferencing. Consider, for example, the keyword
@@ -474,6 +474,102 @@ convert it to an integer, so that in
 \noindent the value assigned to \texttt{\&trace} is the integer
 \texttt{1}, not the string \texttt{{\textquotedbl}1{\textquotedbl}}.
 
+A naive way to handle assignment to these keywords is to check every
+variable during assignment to see whether it is one that
+requires special processing. This would place a significant
+computational burden on every assignment.  Instead, Icon divides
+variables into two classes: \textit{ordinary} and
+\textit{trapped}. Ordinary variables point to their values as
+illustrated previously and require no special processing. Trapped
+variables, so called because their processing is
+{\textquotedbl}trapped,{\textquotedbl} are distinguished from ordinary
+variables by a t flag. Thus, assignment only has to check a single
+flag to separate the majority of variables from those that require
+special processing.
+
+\subsection[4.3.2.1 Trapped Variables]{4.3.2.1 Trapped Variables}
+
+Icon Version 6 used the trapped variable approach to handle assignments to
+keywords, substrings and table elements. Subsequent versions of Icon (and
+Unicon) no longer use trapped variables for assignments to keywords:
+instead keyword variables have different types to ``normal''
+variables. Trapped variables are still in use however to deal with the
+special processing required for assignment to sub-strings and table
+elements --- see section 12.2.
+
+%% A trapped-variable descriptor for a keyword points to a block that
+%% contains the value of the keyword, its string name, and a pointer to a
+%% C function that is called when assignment to the keyword is made. For
+%% example, the trapped variable for \texttt{\&trace} is:
+
+%% %--%\ \  \includegraphics[width=3.9543in,height=1.4398in]{ib-img/ib-img017.jpg} 
+%% \begin{picture}(300,120)(-20,0)
+%% \put(0,80){\dvboxptr{tvkywd}{nptv}{60}{}}
+%% \put(140,64){\blkboxptr{tvkywd}{50}{assignment function}}
+%% \put(140,32){\dvbox{integer}{n}{0}}
+%% \put(140,0){\dvboxptr{6}{}{50}{"\&trace"}}
+%% \end{picture}
+
+It is worth noting that the more conventional approach to handling the
+problem of assignment to keywords and other special cases is to compile
+special code if the special case occurs an assignment context. It is not
+always possible, however, to determine the context in which a variable is
+used in Icon. Assume \texttt{tb} is a table and consider a procedure of the form
+
+%-% {\ttfamily\mdseries
+%-% \ \ \ procedure diagnose(s)}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ return \&trace}
+%-% 
+%-% {\ttfamily\mdseries
+%-% \ \ \ end}
+\iconcode{
+\>procedure tabvar(n)\\
+\> ...\\
+\>return tb[n]\\
+\>end
+}
+
+The semantics of Icon dictate that the result returned in this case
+should be a variable, not just its value, so that it is possible to
+write an expression such as
+
+%-% {\ttfamily\mdseries
+%-% \ \ \ diagnose(s) := 10}
+\iconline{
+\>tabvar(5) := 10
+}
+
+\noindent
+which has the effect of assigning the value 10 to \texttt{tb[5]}.
+
+The translator has no way of knowing that an assignment to the call
+\texttt{tabvar(5)} is equivalent to an assignment to \texttt{tb[5]}. In
+fact, the translator cannot even determine that the value of
+\texttt{tabvar} will be a function when the previous assignment is
+performed, much less that it will be the procedure given earlier.
+The trapped-variable mechanism provides a way to handle
+uniformly all such situations.
+
+\subsection[4.3.2.2 Keyword Variables]{4.3.2.2 Keyword Variables}
+Trapped variables are especially useful when dealing with cases where a
+variable sometimes needs special treatment and sometimes not. But keywords
+{\em always} require special treatment, so they have their own types,
+distinct from the everyday numerical and string types. The keyword type
+codes are defined symbolically (values for other types are given in
+section 4.4.3).
+
+\goodbreak
+\iconcode{
+\#define \>\>\>T\_Kywdint	\>\>\>\>\>\>\>20 \>\>\>\>/* integer keyword */\\
+\#define \>\>\>T\_Kywdpos	\>\>\>\>\>\>\>21 \>\>\>\>/* keyword \&pos */\\
+\#define \>\>\>T\_Kywdsubj  \>\>\>\>\>\>\>22 \>\>\>\>/* keyword \&subject */\\
+\#define \>\>\>T\_Kywdwin	\>\>\>\>\>\>\>23 \>\>\>\>/* keyword \&window */\\
+\#define \>\>\>T\_Kywdstr	\>\>\>\>\>\>\>24 \>\>\>\>/* string keyword */\\
+\#define \>\>\>T\_Kywdevent \>\>\>\>\>\>\>25 \>\>\>\>/* keyword \&eventsource, etc. */
+}
+
 There are four keyword variables that require special processing for
 assignment: \texttt{\&trace}, \texttt{\&random}, \texttt{\&subject},
 and \texttt{\&pos}. The keyword \texttt{\&random} is treated in
@@ -488,74 +584,7 @@ converted to the positive equivalent with respect to the length of
 assignment fails. Dereferencing these keywords, on the other hand,
 requires no special processing.
 
-A naive way to handle assignment to these keywords is to check every
-variable during assignment to see whether it is one of the four that
-requires special processing. This would place a significant
-computational burden on every assignment.  Instead, Icon divides
-variables into two classes: \textit{ordinary} and
-\textit{trapped}. Ordinary variables point to their values as
-illustrated previously and require no special processing. Trapped
-variables, so called because their processing is
-{\textquotedbl}trapped,{\textquotedbl} are distinguished from ordinary
-variables by a t flag. Thus, assignment only has to check a single
-flag to separate the majority of variables from those that require
-special processing.
-
-A trapped-variable descriptor for a keyword points to a block that
-contains the value of the keyword, its string name, and a pointer to a
-C function that is called when assignment to the keyword is made. For
-example, the trapped variable for \texttt{\&trace} is:
-
-%--%\ \  \includegraphics[width=3.9543in,height=1.4398in]{ib-img/ib-img017.jpg} 
-\begin{picture}(300,120)(-20,0)
-\put(0,80){\dvboxptr{tvkywd}{nptv}{60}{}}
-\put(140,64){\blkboxptr{tvkywd}{50}{assignment function}}
-\put(140,32){\dvbox{integer}{n}{0}}
-\put(140,0){\dvboxptr{6}{}{50}{"\&trace"}}
-\end{picture}
-
-It is worth noting that the more conventional approach to handling the
-problem of assignment to keywords is to compile special code if a
-keyword occurs an assignment context. It is not always possible,
-however, to determine the context in which a variable is used in
-Icon. Consider a procedure of the form
-
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure diagnose(s)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ return \&trace}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ end}
-\iconcode{
-\>procedure diagnose(s)\\
-\> ...\\
-\>return \&trace\\
-\>end
-}
-
-The semantics of Icon dictate that the result returned in this case
-should be a variable, not just its value, so that it is possible to
-write an expression such as
-
-%-% {\ttfamily\mdseries
-%-% \ \ \ diagnose(s) := 10}
-\iconline{
-\>diagnose(s) := 10
-}
-
-\noindent
-which has the effect of assigning the value 10 to \texttt{\&trace}.
-
-The translator has no way of knowing that an assignment to the call
-diagnose(s) is equivalent to an assignment to \texttt{\&trace}. In
-fact, the translator cannot even determine that the value of diagnose
-will be a function when the previous assignment is performed, much
-less that it will be the procedure given earlier.
-
-Thus, the trapped-variable mechanism provides a way to handle
-uniformly all the situations in which such a keyword can be used.
+See section 12.2 for a further discussion of keyword variables
 
 \section[4.4 Descriptors and Blocks in C]{4.4 Descriptors and Blocks in C}
 
@@ -652,77 +681,28 @@ Icon's storage allocator. Such blocks conform to the previous
 declaration, but the number of fields varies. The declaration provides
 a means of accessing portions of such blocks from C.
 
-The declaration for keyword trapped-variable blocks is
+The declaration for substring trapped-variable blocks is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct b\_tvkywd \{\ \ \ \ /* keyword trapped variable block */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word title;\ \ \ \ /*\ \ T Tvkywd */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ int (*putval) ();\ \ /*\ \ assignment function */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct descrip kyval;\ \ /*\ \ keyword value */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct descrip kyname;/*\ \ keyword name */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \};}
+\goodbreak
 \iconcode{
-\>struct b\_tvkywd \{\ \ \ \ \ \ \ \ /* keyword trapped variable block */\\
-\>\>word title;\ \ \ \ \ \ \ \ \ \ \ \ \ /*\ \ T Tvkywd */\\
-\>\>int (*putval) ();\ \ \ \ \ \ /*\ \ assignment function */\\
-\>\>struct descrip kyval;\ \ \ \ /*\ \ keyword value */\\
-\>\>struct descrip kyname;\ \ /*\ \ keyword name */\\
-\>\};
+struct b\_tvsubs \{\>\>\>\>\>\>\>\>/* substring trapped variable block */\\
+\>word title;\>\>\>\>\>\>\>	    /* T\_Tvsubs */\\
+\>word sslen;\>\>\>\>\>\>\>		/* length of substring */\\
+\>word sspos;\>\>\>\>\>\>\>		/*  position of substring */\\
+\>struct descrip ssvar;\>\>\>\>\>\>\>/* variable that substring is from */\\
+\};
 }
 
 Note that the title fields of \texttt{b\_record} and
-\texttt{b\_tvkywd} contain type codes, as indicated in previous
+\texttt{b\_tvsubs} contain type codes, as indicated in previous
 diagrams. The second field of \texttt{b\_record} is a size as
-mentioned previously, but \texttt{b\_tvkywd} has no size field, since
-all keyword trapped-variable blocks are the same size, which therefore
+mentioned previously, but \texttt{b\_tvsubs} has no size field, since
+all substring trapped-variable blocks are the same size, which therefore
 can be determined from their type.
 
 The block union given in the declaration of \texttt{struct descrip}
 consists of a union of all block types:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ union block \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct b\_real realblk;\newline
-%-%  \ \ \ \ \ struct b\_cset cset;\newline
-%-%  \ \ \ \ \ struct b\_file file;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct b\_proc proc;\newline
-%-%  \ \ \ \ \ struct b\_list list;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct b\_lelem lelem;\newline
-%-%  \ \ \ \ \ struct b\_table table;\newline
-%-%  \ \ \ \ \ struct b\_telem telem;\newline
-%-%  \ \ \ \ \ struct b\_set set;}
-%-% 
-%-% 
-%-% \ \ \ \ \ \ struct b\_selem selem;\newline
-%-%  \ \ \ \ \ struct b\_record record;\newline
-%-%  \ \ \ \ \ struct b\_tvsubs tvsubs;\newline
-%-%  \ \ \ \ \ struct b\_tvtbl tvtbl;\newline
-%-%  \ \ \ \ \ struct b\_refresh refresh;\newline
-%-%  \ \ \ \ \ struct b\_coexpr coexpr;\newline
-%-%  \ \ \ \ \ struct b\_externl externl;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ struct b\_slots slots;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ struct b\_bignum bignumblk;\newline
-%-%  \ \ \ \ \ \};
 \iconcode{
 \>union block \{\\
 \>\>struct b\_real realblk;\\
@@ -753,98 +733,27 @@ correspond to source-language data types.
 
 The type codes are defined symbolically:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Null\ \ \ \ 0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Integer\ \ \ \ 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Lrgint\ \ \ \ 2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Real\ \ \ \ 3}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Cset\ \ \ \ 4}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_File\ \ \ \ 5}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Proc\ \ \ \ 6}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Record\ \ \ \ 7}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_List\ \ \ \ 8}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Lelem\ \ \ \ 9}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Set\ \ \ \ 10}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Selem\ \ \ \ 11}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Table\ \ \ \ 12}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T Telem\ \ \ \ 13}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Tvtbl\ \ \ \ 14}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Slots\ \ \ \ 15}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Tvsubs\ \ \ \ 16}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Refresh\ \ \ \ 17}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Coexpr\ \ \ \ 18}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_External\ \ \ \ 19}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Kywdint\ \ \ \ 20}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Kywdpos\ \ \ \ 21}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define T\_Kywdsubj\ \ \ \ 22}
 \iconcode{
-\>\#define T\_Null\ \ \ \ 0\\
-\>\#define T\_Integer\ \ \ \ 1\\
-\>\#define T\_Lrgint\ \ \ \ 2\\
-\>\#define T\_Real\ \ \ \ 3\\
-\>\#define T\_Cset\ \ \ \ 4\\
-\>\#define T\_File\ \ \ \ 5\\
-\>\#define T\_Proc\ \ \ \ 6\\
-\>\#define T\_Record\ \ \ \ 7\\
-\>\#define T\_List\ \ \ \ 8\\
-\>\#define T\_Lelem\ \ \ \ 9\\
-\>\#define T\_Set\ \ \ \ 10\\
-\>\#define T\_Selem\ \ \ \ 11\\
-\>\#define T\_Table\ \ \ \ 12\\
-\>\#define T Telem\ \ \ \ 13\\
-\>\#define T\_Tvtbl\ \ \ \ 14\\
-\>\#define T\_Slots\ \ \ \ 15\\
-\>\#define T\_Tvsubs\ \ \ \ 16\\
-\>\#define T\_Refresh\ \ \ \ 17\\
-\>\#define T\_Coexpr\ \ \ \ 18\\
-\>\#define T\_External\ \ \ \ 19\\
-\>\#define T\_Kywdint\ \ \ \ 20\\
-\>\#define T\_Kywdpos\ \ \ \ 21\\
-\>\#define T\_Kywdsubj\ \ \ \ 22
+\#define\>\>\> T\_Null		\>\>\>\>\>0\\	
+\#define\>\>\> T\_Integer	\>\>\>\>\>1\\	
+\#define\>\>\> T\_Lrgint	\>\>\>\>\>2\\	
+\#define\>\>\> T\_Real		\>\>\>\>\>3\\	
+\#define\>\>\> T\_Cset		\>\>\>\>\>4\\	
+\#define\>\>\> T\_File		\>\>\>\>\>5\\	
+\#define\>\>\> T\_Proc		\>\>\>\>\>6\\	
+\#define\>\>\> T\_Record	\>\>\>\>\>7\\	
+\#define\>\>\> T\_List		\>\>\>\>\>8\\	
+\#define\>\>\> T\_Lelem		\>\>\>\>\>9\\	
+\#define\>\>\> T\_Set		\>\>\>\>\>10\\
+\#define\>\>\> T\_Selem		\>\>\>\>\>11\\
+\#define\>\>\> T\_Table		\>\>\>\>\>12\\
+\#define\>\>\> T Telem		\>\>\>\>\>13\\
+\#define\>\>\> T\_Tvtbl		\>\>\>\>\>14\\
+\#define\>\>\> T\_Slots		\>\>\>\>\>15\\
+\#define\>\>\> T\_Tvsubs	\>\>\>\>\>16\\
+\#define\>\>\> T\_Refresh	\>\>\>\>\>17\\
+\#define\>\>\> T\_Coexpr	\>\>\>\>\>18\\
+\#define\>\>\> T\_External	\>\>\>\>\>19
 }
 
 The type codes in diagrams are abbreviated, as indicated by previous examples.
@@ -852,113 +761,38 @@ The type codes in diagrams are abbreviated, as indicated by previous examples.
 
 The defined constants for d-word flags are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ n\ \ \ \ F\_Nqual}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ p\ \ \ \ F\_Ptr}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ v\ \ \ \ F\_Var}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ t\ \ \ \ F\_Tvar}
 \iconcode{
-\>n\ \ \ \ F\_Nqual\\
-\>p\ \ \ \ F\_Ptr\\
-\>v\ \ \ \ F\_Var\\
-\>t\ \ \ \ F\_Tvar
+\>n\>\>F\_Nqual\\
+\>p\>\>F\_Ptr\\
+\>v\>\>F\_Var\\
+\>t\>\>F\_Tvar
 }
 
 The values of these flags depend on the word size of the computer.
 
-
 The d-words of descriptors are defined in terms of flags and type codes:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Null\ \ \ \ (T\_Null {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Integer\ \ \ \ (T\_Integer {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Long\ \ \ \ (T\_Long {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Real\ \ \ \ (T\_Real {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Cset\ \ \ \ (T\_Cset {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_File\ \ \ \ (T\_File {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Proc\ \ \ \ (T\_Proc {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_List\ \ \ \ (T\_List {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Table\ \ \ \ (T\_Table {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Set\ \ \ \ (T\_Set {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Selem\ \ \ \ (T\_Selem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Record\ \ \ \ (T\_Record {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Telem\ \ \ \ (T\_Telem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Lelem\ \ \ \ (T\_Lelem {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Tvsubs\ \ \ \ (T\_Tvsubs {\textbar} D\_Tvar)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Tvtbl\ \ \ \ (T Tvtbl {\textbar} D\_Tvar)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Tvkywd\ \ \ \ (T\_Tvkywd {\textbar} D\_Tvar)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Coexpr\ \ \ \ (T\_Coexpr {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Refresh\ \ \ \ (T\_Refresh {\textbar} F\_Ptr {\textbar} F\_Nqual)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Var\ \ \ \ (F\_Var {\textbar} F\ \ \_Nqual {\textbar} F\ \ \_Ptr)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define D\_Tvar\ \ \ \ (D\_Var {\textbar} F\_Tvar)}
 \iconcode{
-\>\#define D\_Null\ \ \ \ (T\_Null | F\_Nqual)\\
-\>\#define D\_Integer\ \ \ \ (T\_Integer | F\_Nqual)\\
-\>\#define D\_Lrgint\ \ \ \ (T\_Lrgint | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Real\ \ \ \ (T\_Real | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Cset\ \ \ \ (T\_Cset | F\_Ptr | F\_Nqual)\\
-\>\#define D\_File\ \ \ \ (T\_File | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Proc\ \ \ \ (T\_Proc | F\_Ptr | F\_Nqual)\\
-\>\#define D\_List\ \ \ \ (T\_List | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Table\ \ \ \ (T\_Table | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Set\ \ \ \ (T\_Set | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Selem\ \ \ \ (T\_Selem | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Record\ \ \ \ (T\_Record | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Telem\ \ \ \ (T\_Telem | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Lelem\ \ \ \ (T\_Lelem | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Tvsubs\ \ \ \ (T\_Tvsubs | D\_Tvar)\\
-\>\#define D\_Tvtbl\ \ \ \ (T Tvtbl | D\_Tvar)\\
-\>\#define D\_Tvkywd\ \ \ \ (T\_Tvkywd | D\_Tvar)\\
-\>\#define D\_Coexpr\ \ \ \ (T\_Coexpr | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Refresh\ \ \ \ (T\_Refresh | F\_Ptr | F\_Nqual)\\
-\>\#define D\_Var\ \ \ \ (F\_Var | F\ \ \_Nqual | F\ \ \_Ptr)\\
-\>\#define D\_Tvar\ \ \ \ (D\_Var | F\_Tvar)
+\#define D\_Null	\>\>\>\>\>\>\>\>(T\_Null | F\_Nqual)\\                   
+\#define D\_Integer \>\>\>\>\>\>\>\>(T\_Integer | F\_Nqual)\\            	 
+\#define D\_Lrgint  \>\>\>\>\>\>\>\>(T\_Lrgint | F\_Ptr | F\_Nqual)\\     	 
+\#define D\_Real    \>\>\>\>\>\>\>\>(T\_Real | F\_Ptr | F\_Nqual)\\          
+\#define D\_Cset    \>\>\>\>\>\>\>\>(T\_Cset | F\_Ptr | F\_Nqual)\\          
+\#define D\_File    \>\>\>\>\>\>\>\>(T\_File | F\_Ptr | F\_Nqual)\\          
+\#define D\_Proc    \>\>\>\>\>\>\>\>(T\_Proc | F\_Ptr | F\_Nqual)\\          
+\#define D\_List    \>\>\>\>\>\>\>\>(T\_List | F\_Ptr | F\_Nqual)\\          
+\#define D\_Table   \>\>\>\>\>\>\>\>(T\_Table | F\_Ptr | F\_Nqual)\\       	 
+\#define D\_Set     \>\>\>\>\>\>\>\>(T\_Set | F\_Ptr | F\_Nqual)\\           
+\#define D\_Selem   \>\>\>\>\>\>\>\>(T\_Selem | F\_Ptr | F\_Nqual)\\       	 
+\#define D\_Record  \>\>\>\>\>\>\>\>(T\_Record | F\_Ptr | F\_Nqual)\\     	 
+\#define D\_Telem   \>\>\>\>\>\>\>\>(T\_Telem | F\_Ptr | F\_Nqual)\\       	 
+\#define D\_Lelem   \>\>\>\>\>\>\>\>(T\_Lelem | F\_Ptr | F\_Nqual)\\       	 
+\#define D\_Tvsubs  \>\>\>\>\>\>\>\>(T\_Tvsubs | D\_Tvar)\\               	 
+\#define D\_Tvtbl   \>\>\>\>\>\>\>\>(T Tvtbl | D\_Tvar)\\                  	 
+\#define D\_Coexpr  \>\>\>\>\>\>\>\>(T\_Coexpr | F\_Ptr | F\_Nqual)\\     	 
+\#define D\_Refresh \>\>\>\>\>\>\>\>(T\_Refresh | F\_Ptr | F\_Nqual)\\   	 
+\#define D\_Var     \>\>\>\>\>\>\>\>(F\_Var | F\_Nqual | F\_Ptr)\\   
+\#define D\_Tvar    \>\>\>\>\>\>\>\>(D\_Var | F\_Tvar)
 }
 
 As indicated previously, flags, type codes, and d-words are

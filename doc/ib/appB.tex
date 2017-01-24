@@ -20,19 +20,33 @@ virtual machine.}
 
 \begin{xtabular}{l@{\hspace{1.5cm}}p{13.5cm}}
 
-\uniconop{acset}\\
-\uniconop{aglobal}\\
-\uniconop{agoto}\\
-\uniconop{amark}\\
-\uniconop{apply}\\
-\uniconop{areal}\\
+\texttt{acset a} & Push a descriptor for the cset block at address
+\texttt{a} onto the stack. \\
+
+\texttt{aglobal a} & Push a variable descriptor pointing to global
+identifier at address \texttt{a} onto the stack.\\
+
+\texttt{agoto a} & Set \texttt{ipc} to address \texttt{a}.\\
+
+\texttt{amark a}    & Create an expression frame whose marker contains
+the failure
+\texttt{ipc} corresponding to the address \texttt{a}, the current \texttt{efp},
+\texttt{gfp}, and \texttt{ilevel}.\\
+
+\texttt{apply}   & $expr_1$ \texttt{!} $expr_2$\\
+
+\texttt{areal a} & Push a descriptor for the real number block at address
+\texttt{a} onto the stack.\\
 
 \texttt{arg n} & Push a variable descriptor pointing to argument \texttt{n}.\\
 
 \texttt{asgn}  & $expr_1$ \texttt{:=} $expr_2$\\
 
-\uniconop{astatic}\\
-\uniconop{astr}\\
+\texttt{astatic a} & Push a variable descriptor pointing to static
+identifier at address texttt{a}.\\
+
+\texttt{astr n, a} & Push a descriptor for the string of length \texttt{n} 
+at address \texttt{a}.\\
 
 \texttt{bang}  & \texttt{!$expr$}\\
 
@@ -71,8 +85,8 @@ current procedure frame marker, argument values, and local identifier
 values into the refresh block. Place a procedure frame for the current
 procedure on the stack of the new co-expression block.\\
 
-\texttt{cset a} & Push a descriptor for the cset block at address \texttt{a}
-onto the stack.\\
+\texttt{cset a} & Push a descriptor for the cset block at icode offset
+\texttt{a} onto the stack. Becomes opcode acset on subsequent executions.\\
 
 \texttt{diff}  & \texttt{$expr_1$ -{}- $expr_2$}\\
 
@@ -86,7 +100,8 @@ frame, resume its generator. Otherwise remove the current expression
 frame. If the \texttt{ipc} in its marker is nonzero, set \texttt{ipc} to it. If the
 failure \texttt{ipc} is zero, repeat \texttt{efail}.\\
 
-\uniconop{einit}\\
+\texttt{\color{blue}einit} & end of initial section. In concurrent
+ VMs, change the \texttt{init} instruction to a \texttt{goto} here. \\
 
 \texttt{eqv}   & \texttt{$expr_1$ === $expr_2$}\\
 
@@ -107,13 +122,14 @@ the stack that is needed if the generator is resumed.\\
 \texttt{field n} & Replace the record descriptor on the top of the stack by a
 descriptor for field \texttt{n} of that record.\\
 
-\uniconop{fquit}\\
+\texttt{global n} & Push a variable descriptor pointing to global
+identifier \texttt{n}. Becomes opcode aglobal on subsequent executions.\\
 
-\texttt{global n} & Push a variable descriptor pointing to global identifier \texttt{n}.\\
+\texttt{goto n} & Set \texttt{ipc} to offset \texttt{n}.
+Becomes opcode agoto on subsequent executions.\\
 
-\texttt{goto n} & Set \texttt{ipc} to \texttt{n}.\\
-
-\texttt{init n} & Change \texttt{init} instruction to \texttt{goto}.\\
+\texttt{init n} & Change \texttt{init} instruction to \texttt{goto}.
+{\color{blue}Concurrent VMs impose mutual exclusion at this point.}\\
 
 \texttt{int n}  & Push a descriptor for the integer \texttt{n}.\\
 
@@ -174,7 +190,8 @@ stack and remove the current expression frame from the stack.\\
 
 \texttt{nonnull} & \texttt{{\textbackslash}$expr$}\\
 
-\uniconop{noop}\\
+\texttt{\color{blue}noop}    & {\color{blue}Do nothing.
+Allows insertion of labels at certain points. Can be optimized away.} \\
 
 \texttt{null}    &\texttt{/$expr$}\\
 
@@ -229,8 +246,8 @@ the stack that is needed if the procedure call is resumed.\\
 \uniconop{rcv}\\
 \uniconop{rcvbk}\\
 
-\texttt{real a}  & Push a descriptor for the real number block at address
-\texttt{a} onto the stack.\\
+\texttt{real n}  & Push a descriptor for the real number block at offset
+\texttt{n} onto the stack.  Becomes opcode areal on subsequent executions.\\
 
 \texttt{refresh} & \texttt{\textasciicircum\ $expr$}\\
 
@@ -242,21 +259,21 @@ the stack that is needed if the procedure call is resumed.\\
 
 \texttt{size}    & \texttt{*$expr$}\\
 
-\texttt{static n} & Push a variable descriptor pointing to static identifier \texttt{n}.\\
+\texttt{static n} & Push a variable descriptor pointing to static
+identifier at offset \texttt{n}. Becomes opcode astatic on subsequent
+executions.\\
 
 \uniconop{snd}\\
 \uniconop{sndbk}\\
 
 \texttt{str n, a} & Push a descriptor for the string of length \texttt{n} 
-at address \texttt{a}.\\
+at offset \texttt{a}. Becomes opcode astr on subsequent executions. \\
 
 \texttt{subsc}   & \texttt{$expr_1$[$expr_2$]}\\
 
 \texttt{swap}    & \texttt{$expr_1$ :=: $expr_2$}\\
 
 \texttt{tabmat}  & \texttt{=$expr$}\\
-
-\uniconop{tally}\\
 
 \texttt{toby}    & \texttt{$expr_1$ to $expr_2$ by $expr_3$}\\
 
@@ -267,5 +284,5 @@ unwind the C stack.\\
 
 \texttt{value}   & \texttt{.$expr$}\\
 
-\uniconop{var}\\
+\texttt{var}     & Pseudo-instruction; declares variables in ucode.\\
 \end{xtabular}

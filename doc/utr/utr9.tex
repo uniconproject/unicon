@@ -4,12 +4,11 @@
 \usepackage[ascii]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
-\usepackage{amsmath}
-\usepackage{amssymb,amsfonts,textcomp}
 \usepackage{color}
 \usepackage{array}
-\usepackage{supertabular}
+\usepackage{xtab}
 \usepackage{hhline}
+\usepackage{fixltx2e}
 \usepackage{hyperref}
 \hypersetup{pdftex, colorlinks=true, linkcolor=blue, citecolor=blue, filecolor=blue, urlcolor=blue, pdftitle=Programming Language Support for Exploratory Graphics Applicati, pdfauthor=, pdfsubject=, pdfkeywords=}
 \usepackage[pdftex]{graphicx}
@@ -121,7 +120,7 @@ Unicon Technical Report \#9d
 \par}
 
 {\centering\selectlanguage{english}
-April 3, 2016
+January 26, 2017
 \par}
 
 \bigskip
@@ -134,17 +133,17 @@ April 3, 2016
 
 \bigskip
 
-{\centering\selectlanguage{english}\bfseries
+{\centering\bfseries
 Abstract
 \par}
 
 
 \bigskip
 
-{\selectlanguage{english}
-Version 12 of the Unicon language includes 3D graphics facilities.
-This document describes the design of the Unicon 3D
-graphics facilities, and provides several examples detailing their use.}
+Version 11 of the Unicon language introduced 3D graphics facilities,
+which have since been improved.  This document describes the design of
+the Unicon 3D graphics facilities, and provides several examples
+detailing their use.
 
 
 \bigskip
@@ -161,7 +160,7 @@ graphics facilities, and provides several examples detailing their use.}
 
 \bigskip
 
-{\centering\selectlanguage{english}
+{\centering
 University of Idaho\\
 Moscow, ID 83844
 \par}
@@ -218,7 +217,7 @@ This paper discusses the design and demonstrates the use of Unicon's
 3D graphics facilities. Examples and sample code can be found in
 section three. References for functions and attributes are found in
 section four. The implementation of the Unicon 3D graphics facilities
-is discussed in [JeffMart03].
+is discussed in [JeffMart14].
 
 
 \section[2. Design]{2. Design}
@@ -399,9 +398,9 @@ Table 1 -- types of primitives
 \begin{center}
 \tablefirsthead{}
 \tablehead{}
-\tabletail{}
+\tabletail{\hline}
 \tablelasttail{}
-\begin{supertabular}{|m{0.89835984in}|m{1.3677598in}|m{2.2177598in}|m{1.1962599in}|}
+\begin{xtabular}{|m{0.89835984in}|m{1.3677598in}|m{2.2177598in}|m{1.1962599in}|}
 \hline
 \centering{\selectlanguage{english} Primitive} &
 \centering{\selectlanguage{english} Function} &
@@ -451,7 +450,7 @@ outer circle. By specifying an additional two angle values a partial disk is obt
 {\selectlanguage{english}\sffamily DrawTorus()} &
 {\selectlanguage{english} the x, y, and z coordinates of the center, an inner radius and an outer radius. } &
 \centering\arraybslash  \includegraphics[width=0.9398in,height=0.6272in]{utr9/utr9-img012.png} \\\hline
-\end{supertabular}
+\end{xtabular}
 \end{center}
 
 Several functions from the 2D graphics facilities have been extended
@@ -681,21 +680,21 @@ Table 2 -- texture coordinates and primitives
 \begin{center}
 \tablefirsthead{}
 \tablehead{}
-\tabletail{}
+\tabletail{\hline}
 \tablelasttail{}
-\begin{supertabular}{|m{0.7400598in}|m{3.2761598in}|m{0.99975985in}|m{0.7483598in}|}
+\begin{xtabular}{|m{0.7400598in}|m{3.2761598in}|m{0.99975985in}|m{0.7483598in}|}
 \hline
-\centering{\selectlanguage{english}\bfseries Primitive} &
-{\centering\selectlanguage{english}\bfseries Default Texture Coordinates\par}
+\centering{\bfseries Primitive} &
+{\centering\bfseries Default Texture Coordinates\par}
 
-\centering{\selectlanguage{english} (from [OpenGL00] chapter 6)} &
-\centering{\selectlanguage{english}\bfseries Effect of Non-default Texture Coordinates} &
-\centering\arraybslash{\selectlanguage{english}\bfseries Picture}\\\hline
-{\selectlanguage{english} Cube} &
-{\selectlanguage{english} The texture image is applied to each face of the cube. } &
-{\selectlanguage{english} None} &
+\centering{(from [OpenGL00] chapter 6)} &
+\centering{\bfseries Effect of Non-default Texture Coordinates} &
+\centering\arraybslash{\bfseries Picture}\\\hline
+ Cube &
+ The texture image is applied to each face of the cube.  &
+{ None} &
  \includegraphics[width=0.728in,height=0.6689in]{utr9/utr9-img013.jpg} \\\hline
-{\selectlanguage{english} Sphere}
+ Sphere
 
 ~
 
@@ -743,13 +742,13 @@ p\textsubscript{1}x\textsubscript{0}+p\textsubscript{2}y\textsubscript{0}+p\text
  \includegraphics[width=0.7228in,height=0.7516in]{utr9/utr9-img017.jpg} 
  \includegraphics[width=0.7217in,height=0.8717in]{utr9/utr9-img018.jpg} 
  \includegraphics[width=0.7228in,height=0.7402in]{utr9/utr9-img019.jpg} \\\hline
-{\selectlanguage{english} Torus} &
-{\selectlanguage{english} The x and y texture coordinates are given by
+ Torus &
+{ The x and y texture coordinates are given by
 p\textsubscript{1}x\textsubscript{0}+p\textsubscript{2}y\textsubscript{0}+p\textsubscript{3}z\textsubscript{0}+p\textsubscript{4}w\textsubscript{0}}
 &
-{\selectlanguage{english} None} &
- \includegraphics[width=0.8016in,height=0.6453in]{utr9/utr9-img020.jpg} \\\hline
-\end{supertabular}
+ None &
+ \includegraphics[width=0.8016in,height=0.645in]{utr9/utr9-img020.jpg} \\\hline
+\end{xtabular}
 \end{center}
 
 
@@ -1611,9 +1610,10 @@ facilities that makes adding textures simpler than using OpenGL.
 
 \bigskip
 
-{\selectlanguage{english}
- \includegraphics[width=2.6543in,height=2.6693in]{utr9/utr9-img032.jpg} \textbf{ \ \ \ \ \ \ \ \ \ \ \ \ \ }
-\includegraphics[width=2.6846in,height=2.6693in]{utr9/utr9-img033.jpg} }
+
+ \includegraphics[width=2.6543in,height=2.6693in]{utr9/utr9-img032.jpg}
+  \ \ \ \ \ \ \ \ \ \ \ \ \
+\includegraphics[width=2.6846in,height=2.6693in]{utr9/utr9-img033.jpg}
 
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
 An untextured scene \hfill A textured scene
@@ -1622,217 +1622,68 @@ An untextured scene \hfill A textured scene
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-procedure main()}
-
-{\selectlanguage{english}\sffamily
+{\sffamily
+procedure main() \\
 \ \ \ \&window
-:=open({\textquotedbl}textured.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=black{\textquotedbl},{\textquotedbl}size=700,700{\textquotedbl})}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw the floor of the room}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texmode=on{\textquotedbl}, {\textquotedbl}texture=carpet.gif{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0,}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 7.0, -7.0, -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw the right wall}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texture=wall1.gif{\textquotedbl}, {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-1.0, 1.0{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0, 2.0, 0.4, -8.0)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw the left wall}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texture=wall2.gif{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0, 2.0, 0.4, -8.0)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw a picture}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texture=poster.gif{\textquotedbl}, {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
-1.0, 1.0{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2, 1.0, -2.6)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw another picture}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texture=unicorn.gif{\textquotedbl}, {\textquotedbl}texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-1.0, 1.0{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8, 4.0, -9.0)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw the lamp}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texmode=off{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Translate(0.7, 0.20, -0.5)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg({\textquotedbl}emission pale weak yellow{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-5.0, 1.0, 0.0, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate( 5.0, 0.0, 0.0, 1.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(-0.05, 0.570, -2.0, 0.15, 0.05, 0.17)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg({\textquotedbl}diffuse grey; emission black{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-5.0, 1.0, 0.0, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate( 6.0, 0.0, 0.0, 1.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(0.0, 0.0, -2.5, 0.7, 0.035, 0.035)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(6.0, 0.0, 0.0, 1.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawTorus(-0.02, -0.22, -2.5, 0.03, 0.05)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix() }
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix()}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ \# Draw the table }
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texcoord=auto{\textquotedbl}, {\textquotedbl}texmode=on{\textquotedbl},
-{\textquotedbl}texture=table.gif{\textquotedbl})}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-10.0, 1.0, 0.0,0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix()}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Translate(0.0, -0.09, -1.8)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(65.0, 1.0, 0.0, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29) }
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix()}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}texmode=off{\textquotedbl}, {\textquotedbl}fg=diffuse weak brown{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-20.0, 1.0, 0.0,0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ PopMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ while (e := Event()) \~{}== {\textquotedbl}q{\textquotedbl} do \{}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ write(image(e), {\textquotedbl}: {\textquotedbl}, \&x, {\textquotedbl},{\textquotedbl}, \&y)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ \}}
-
-{\selectlanguage{english}\sffamily
-end}
+:=open({\textquotedbl}textured.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=black{\textquotedbl},{\textquotedbl}size=700,700{\textquotedbl}) \\
+\ \ \ \# Draw the floor of the room \\
+\ \ \ WAttrib({\textquotedbl}texmode=on{\textquotedbl}, {\textquotedbl}texture=carpet.gif{\textquotedbl})  \\
+\ \ \ FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0,\\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 7.0, -7.0, -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0)\\
+\ \ \ \# Draw the right wall\\
+\ \ \ WAttrib({\textquotedbl}texture=wall1.gif{\textquotedbl}, {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0{\textquotedbl}) \\
+\ \ \ FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0, 2.0, 0.4, -8.0)\\
+\ \ \ \# Draw the left wall\\
+\ \ \ WAttrib({\textquotedbl}texture=wall2.gif{\textquotedbl})\\
+\ \ \ FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0, 2.0, 0.4, -8.0)\\
+\ \ \ \# Draw a picture\\
+\ \ \ WAttrib({\textquotedbl}texture=poster.gif{\textquotedbl}, {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0{\textquotedbl})\\
+\ \ \ FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2, 1.0, -2.6)\\
+\ \ \ \# Draw another picture\\
+\ \ \ WAttrib({\textquotedbl}texture=unicorn.gif{\textquotedbl}, {\textquotedbl}texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0{\textquotedbl})\\
+\ \ \ FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8, 4.0, -9.0)\\
+\ \ \ \# Draw the lamp\\
+\ \ \ WAttrib({\textquotedbl}texmode=off{\textquotedbl})\\
+\ \ \ PushMatrix()\\
+\ \ \ Translate(0.7, 0.20, -0.5)\\
+\ \ \ Fg({\textquotedbl}emission pale weak yellow{\textquotedbl})\\
+\ \ \ PushMatrix()\\
+\ \ \ Rotate(-5.0, 1.0, 0.0, 0.0)\\
+\ \ \ Rotate( 5.0, 0.0, 0.0, 1.0)\\
+\ \ \ DrawCylinder(-0.05, 0.570, -2.0, 0.15, 0.05, 0.17)\\
+\ \ \ PopMatrix()\\
+\ \ \ Fg({\textquotedbl}diffuse grey; emission black{\textquotedbl})\\
+\ \ \ PushMatrix()\\
+\ \ \ Rotate(-5.0, 1.0, 0.0, 0.0)\\
+\ \ \ Rotate( 6.0, 0.0, 0.0, 1.0)\\
+\ \ \ DrawCylinder(0.0, 0.0, -2.5, 0.7, 0.035, 0.035)\\
+\ \ \ PopMatrix()\\
+\ \ \ PushMatrix()\\
+\ \ \ Rotate(6.0, 0.0, 0.0, 1.0)\\
+\ \ \ DrawTorus(-0.02, -0.22, -2.5, 0.03, 0.05)\\
+\ \ \ PopMatrix() \\
+\ \ \ PopMatrix()\\
+\ \ \ \# Draw the table \\
+\ \ \ WAttrib({\textquotedbl}texcoord=auto{\textquotedbl}, {\textquotedbl}texmode=on{\textquotedbl}, {\textquotedbl}texture=table.gif{\textquotedbl})\\
+\ \ \ PushMatrix()\\
+\ \ \ Rotate(-10.0, 1.0, 0.0,0.0)\\
+\ \ \ DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3)\\
+\ \ \ PopMatrix()\\
+\ \ \ PushMatrix()\\
+\ \ \ Translate(0.0, -0.09, -1.8)\\
+\ \ \ Rotate(65.0, 1.0, 0.0, 0.0)\\
+\ \ \ DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29) \\
+\ \ \ PopMatrix()\\
+\ \ \ WAttrib({\textquotedbl}texmode=off{\textquotedbl}, {\textquotedbl}fg=diffuse weak brown{\textquotedbl})\\
+\ \ \ PushMatrix()\\
+\ \ \ Rotate(-20.0, 1.0, 0.0,0.0)\\
+\ \ \ DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1)\\
+\ \ \ PopMatrix()\\
+\ \ \ while (e := Event()) \~{}== {\textquotedbl}q{\textquotedbl} do \{}\\
+\ \ \ \ \ \ write(image(e), {\textquotedbl}: {\textquotedbl}, \&x, {\textquotedbl},{\textquotedbl}, \&y)\\
+\ \ \ \ \ \ \}\\
+end
+}
 
 
 \bigskip
@@ -2247,61 +2098,28 @@ to see what (if anything) the user was selecting.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-procedure main()}
-
-{\selectlanguage{english}\sffamily
+{\sffamily
+procedure main() \\
 \ \ \ \&window := w := open({\textquotedbl}picking{\textquotedbl} , {\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}size=400,300{\textquotedbl}) {\textbar}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ stop({\textquotedbl} failed to open 3d window! {\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ drawman()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Eye(-2,1.8,-12, \ 0,0,0, \ 0,1,0 )}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Refresh(w)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ repeat \{}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ case e := Event(w) of\{}
-
-{\selectlanguage{english}\sffamily
-\ \  {\textquotedbl}q{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}e{\textquotedbl} : \{ return \}
-\ \ \ \ \ \ \ \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \  \&lpress : \{\  \ }
-
-{\selectlanguage{english}\sffamily
-\ \  \ \ \ write({\textquotedbl} mouse click{\textquotedbl} )}
-
-{\selectlanguage{english}\sffamily
-\ \  \ \ \ every item := \&pick do\{}
-
-{\selectlanguage{english}\sffamily
-\ \  \ \ \ \ \ \ write( {\textquotedbl}on part:{\textquotedbl}, item)}
-
-{\selectlanguage{english}\sffamily
-\ \  \ \ \ \}}
-
-{\selectlanguage{english}\sffamily
-\ \  \}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ \}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \}}
-
-{\selectlanguage{english}\sffamily
-end}
+{\textquotedbl}size=400,300{\textquotedbl}) {\textbar} \\
+\ \ \ \ \ \ stop({\textquotedbl} failed to open 3d window! {\textquotedbl})\\
+\ \ \ drawman() \\
+\ \ \ Eye(-2,1.8,-12, \ 0,0,0, \ 0,1,0 ) \\
+\ \ \ Refresh(w) \\
+\ \ \ repeat \{ \\
+\ \ \ \ \ \ case e := Event(w) of \{ \\
+\ \ \ \ \ \ \ \ \ \ {\textquotedbl}q{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}e{\textquotedbl}
+: \{ return \} \\
+\ \ \ \ \ \ \ \ \ \ \&lpress : \{ \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ write({\textquotedbl} mouse click{\textquotedbl} ) \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ every item := \&pick do \{ \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ write( {\textquotedbl}on part:{\textquotedbl}, item) \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \} \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \} \\
+\ \ \ \ \ \ \ \ \ \ \} \\
+\ \ \ \ \ \ \} \\
+end
+}
 
 
 \subsubsection[3.8.4 Higher level Interface for 3D Object Selection]{3.8.4 Higher level Interface for 3D Object Selection}
@@ -2343,12 +2161,8 @@ any of these objects were selected. This table is called
 recognized by this class and to what table each of these events maps
 to are listed in Figure 2.
 
-
-
 \begin{center}
-\begin{minipage}{4.8445in}
-
-\bigskip
+\begin{minipage}{5.1in}
 
 \begin{tabular}{|l l l|}\hline
 \texttt{CLICK} & $\rightarrow$ & \texttt{Tleft}\_\texttt{click} and
@@ -2361,11 +2175,9 @@ to are listed in Figure 2.
 \texttt{RIGHT}\_\texttt{DRAG} &  $\rightarrow$ & \texttt{Tright}\_\texttt{drag}\\
 \hline
 \end{tabular}
-\end{minipage}
-\end{center}
 
-\begin{center}
-\begin{minipage}{5.1264in}
+\vspace{0.16in}
+
 {\selectlanguage{english}
 \textbf{Figure 2}. Events that are recognized by the selection3D class
 and the mapping between these events and their corresponding objects tables}
@@ -2406,8 +2218,8 @@ statement should be added at beginning of the source code.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-link Selection3D}
+{\sffamily
+link selection3D}
 
 
 \bigskip
@@ -2418,7 +2230,7 @@ it in a variable called \textsf{select3D:}
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
+{\sffamily
 select3D := Selection3D()}
 
 
@@ -2457,7 +2269,7 @@ that can then be passed to \textsf{WSection()} to mark a new
 
 {\selectlanguage{english}\sffamily
 select\_id := select3D.selectable({\textquotedbl}red ball{\textquotedbl}, on\_red\_ball)~~ \newline
-WSection(select\_id)}
+\ \ \ WSection(select\_id)}
 
 \bigskip
 
@@ -2500,56 +2312,59 @@ behavior. i.e. 3D object selection would not work as you expect. A
 correct way to use the method \textsf{handle\_event()} is
 shown toward the end of the following complete example
 
-\subsection[]{\color{black} }
-{\selectlanguage{english}\sffamily
+\ \\
+
+\noindent {\sffamily
 link selection3D\newline
 global select3D\newline
-procedure on\_red\_ball()\newline
- write({\textquotedbl} You picked the red ball!{\textquotedbl}) \newline
-end}
-
-{\selectlanguage{english}\sffamily
-procedure on\_blue\_ball()\newline
- write({\textquotedbl}You picked the blue ball{\textquotedbl})\newline
-end\newline
-\newline
-procedure main()\newline
- \&window := open({\textquotedbl}3D selection in Unicon{\textquotedbl},
-{\textquotedbl}gl{\textquotedbl},{\textquotedbl}size=500,500{\textquotedbl}) {\textbar}\newline
-\ \  stop({\textquotedbl}can't open 3D window{\textquotedbl}) \newline
- select3D := Selection3D()\newline
- \# begin a new selectable section/object with the name {\textquotedbl}red ball{\textquotedbl}\newline
- WAttrib({\textquotedbl}pick=on{\textquotedbl}) \#turn on 3D selection \newline
- select\_id := select3D.selectable({\textquotedbl}red ball{\textquotedbl}, on\_red\_ball) \newline
- WSection(select\_id)\newline
- \ \ Fg({\textquotedbl}red{\textquotedbl})\newline
- \ \ DrawSphere(1, 0.5, 0, 0.5)\newline
- \ \ WSection() \# end of the red ball \newline
-\newline
- \ \ \# Draw a nonselectable green ball\newline
- \ \ Wattrib({\textquotedbl}pick=off{\textquotedbl}) \#turn off 3D selection\newline
- \ \ Fg({\textquotedbl}green{\textquotedbl})\newline
- \ \ DrawSphere(-1, 0.5, 0, 0.5) \newline
-\newline
- \ \ \# begin a new selectable section/object with the name {\textquotedbl}blue ball{\textquotedbl} \newline
- \ \ WAttrib({\textquotedbl}pick=on{\textquotedbl}) \#turn on 3D selection\newline
- \ \ select\_id := select3D.selectable({\textquotedbl}blue ball{\textquotedbl}, on\_blue\_ball)\newline
- \ \ WSection(select\_id)\newline
- \ \ \ \ Fg({\textquotedbl}blue{\textquotedbl})\newline
- \ \ \ \ DrawSphere(0, -0.5, 0, 0.5)\newline
- \ \ WSection() \# end of the blue ball \newline
-\newline
- \ \ \#setup the eye just to make sure where are looking exactly at the spheres\newline
- \ \ Eye(0,0,4, 0,0,0, 0,1,0)\newline
- \ \ Refresh() \newline
- \ \ repeat\{ \ \ \ \ \ \ \# enter an event loop to handle user events \newline
- \ \ if (ev := {\textbackslash}Event()) then\{\newline
-\ \  select3D.handle\_event(ev)\newline
-\ \  if ev ===({\textquotedbl}{\textbackslash}e{\textquotedbl}{\textbar}{\textquotedbl}q{\textquotedbl}) then
-exit(0)\newline
-\ \  \} \newline
- \ \ \ \ \ \}\newline
-end}
+procedure on\_red\_ball() \\
+\ \ \ write({\textquotedbl} You picked the red ball!{\textquotedbl}) \\
+end \\
+\ \\
+procedure on\_blue\_ball() \\
+\ \ \ write({\textquotedbl}You picked the blue ball{\textquotedbl}) \\
+end \\
+\ \\
+procedure main() \\
+\ \ \ \&window := open({\textquotedbl}3D selection in Unicon{\textquotedbl},
+{\textquotedbl}gl{\textquotedbl},{\textquotedbl}size=500,500{\textquotedbl})
+{\textbar} \\
+\ \ \ \ \ \ stop({\textquotedbl}can't open 3D window{\textquotedbl}) \\
+\ \ \ select3D := Selection3D() \\
+\ \ \ \# begin a new selectable section/object with the name
+{\textquotedbl}red ball{\textquotedbl} \\
+\ \ \ WAttrib({\textquotedbl}pick=on{\textquotedbl}) \#turn on 3D selection \\
+\ \ \ select\_id := select3D.selectable({\textquotedbl}red ball{\textquotedbl}, on\_red\_ball) \\
+\ \ \ WSection(select\_id) \\
+\ \ \ Fg({\textquotedbl}red{\textquotedbl}) \\
+\ \ \ DrawSphere(1, 0.5, 0, 0.5) \\
+\ \ \ WSection() \# end of the red ball \\
+\ \\
+\ \ \ \# Draw a nonselectable green ball \\
+\ \ \ Wattrib({\textquotedbl}pick=off{\textquotedbl}) \#turn off 3D selection \\
+\ \ \ Fg({\textquotedbl}green{\textquotedbl}) \\
+\ \ \ DrawSphere(-1, 0.5, 0, 0.5) \\
+\ \\
+\ \ \ \# begin a new selectable section/object with the name {\textquotedbl}blue ball{\textquotedbl} \\
+\ \ \ WAttrib({\textquotedbl}pick=on{\textquotedbl}) \#turn on 3D selection \\
+\ \ \ select\_id := select3D.selectable({\textquotedbl}blue ball{\textquotedbl}, on\_blue\_ball) \\
+\ \ \ WSection(select\_id) \\
+\ \ \ \ \ Fg({\textquotedbl}blue{\textquotedbl}) \\
+\ \ \ \ \ DrawSphere(0, -0.5, 0, 0.5) \\
+\ \ \ WSection() \# end of the blue ball \\
+\ \\
+\ \ \ \#setup the eye just to make sure where are looking exactly at the spheres \\
+\ \ \ Eye(0,0,4, 0,0,0, 0,1,0) \\
+\ \ \ Refresh() \\
+\ \ \ repeat \{ \ \ \ \ \ \ \# enter an event loop to handle user events \\
+\ \ \ \ \ \ if ev := {\textbackslash}Event() then \{ \\
+\ \ \ \ \ \ \ \ \ select3D.handle\_event(ev) \\
+\ \ \ \ \ \ \ \ \ if ev ===({\textquotedbl}{\textbackslash}e{\textquotedbl}{\textbar}{\textquotedbl}q{\textquotedbl}) then
+exit(0)\\
+\ \ \ \ \ \ \ \ \ \} \\
+ \ \ \ \ \ \}\\
+end
+}
 
 
 
@@ -2636,7 +2451,7 @@ The display list element is returned. This procedure fails if the context attrib
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{DrawCylinder(file, real, real, real, real,
-real, real,{\dots}): record}}\hfill draws a cylinder}
+real, real,{\dots}): record}}\hfill draws a cylinder
 
 
 \bigskip
@@ -3192,7 +3007,7 @@ lights.
 \tablehead{}
 \tabletail{}
 \tablelasttail{}
-\begin{supertabular}{|m{0.56295985in}|m{0.5775598in}|m{1.1288599in}|m{1.2427598in}|m{1.0427599in}|m{0.9754599in}|}
+\begin{xtabular}{|m{0.56295985in}|m{0.5775598in}|m{1.1288599in}|m{1.2427598in}|m{1.0427599in}|m{0.9754599in}|}
 \hline
 \centering{\selectlanguage{english} Light} &
 \centering{\selectlanguage{english} On/Off} &
@@ -3212,7 +3027,7 @@ lights.
 \centering{\selectlanguage{english} black} &
 \centering{\selectlanguage{english} black} &
 \centering\arraybslash{\selectlanguage{english} (0.0,0.0,1.0)}\\\hline
-\end{supertabular}
+\end{xtabular}
 \end{center}
 
 \bigskip
@@ -3405,9 +3220,9 @@ http://unicon.org
 \bigskip
 
 \noindent
-[JeffMart03]\ \ Jeffery, Clinton and Martinez, Naomi.
-The Implementation of Graphics in Unicon Version 11. Unicon
-Technical Report \#5a, \href{http://unicon.org/}{http://unicon.org}, 2003.
+[JeffMart14]\ \ Jeffery, Clinton and Martinez, Naomi.
+The Implementation of Graphics in Unicon Version 12. Unicon
+Technical Report \#5b, \href{http://unicon.org/}{http://unicon.org}, 2014.
 
 \bigskip
 

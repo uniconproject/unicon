@@ -1117,7 +1117,7 @@ procedure AppendListCompTemps(lcls, body)
 	 }
       if (lcls === EmptyNode) |
 	  (type(lcls)==="treenode" & lcls.label==("locals2"|"locals3")) then {
-	 return node("locals2", lcls, copy(lcls.children[2]), vl, ";")
+	 return node("locals2", lcls, "local", vl, ";")
 	 }
       else
 	 write(&errout, "don't know what to do with ", image(lcls))

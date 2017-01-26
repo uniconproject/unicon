@@ -26,7 +26,7 @@ end
 procedure maketitle(L)
    i := 1
    # title starts after <body> tag
-   while L[i] ~== "<body bgcolor=\"#A0A0A0\" vlink=\"blue\" link=\"blue\">" do
+   while not match("<body bgcolor=", L[i]) do
       i +:= 1
    i +:= 1 # skip over "<body>"
    ii := i
@@ -132,6 +132,7 @@ procedure multiline_clean(L)
 end
 
 procedure line_clean(s)
+   s[find("<body bgcolor=\"#A0A0A0\"",s) +: 23] := "<body bgcolor=\"#FFFFFF\""
    while s[find("&#160;",s) +: 6] := " "
    while s[find("\e",s)] := "ff"
    while s[find("\x1c",s)] := "fi"

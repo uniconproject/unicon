@@ -18,6 +18,10 @@ procedure main(av)
     # create title page and move table of contents
     L := maketitle(L)
 
+    if match("utr9", av[1]) then {
+       L := fixUtr9Table1(L)
+       }
+
     f2 := open(av[1],"w")
     while write(f2, pop(L))
     close(f2)
@@ -141,5 +145,40 @@ procedure line_clean(s)
    while s[find("\x17",s)] := "\""
    while s[find("\^p",s)] := "\""
    while s[find("\^q",s)] := "\""
+   while s[find("-<br/>",s) +: 6] := ""
    return s
+end
+
+procedure fixUtr9Table1(L)
+   local i, j
+   i := 1
+   while i<=*L & not (match("Table 1", L[i]) & find("types of primitives",L[i])) do i +:= 1
+   if i < *L then {
+      j := i
+      while j>1 & not match("<a name=4>", L[j]) do j -:= 1
+
+      # replace i+1 ... i+4 with a table header
+      L[i+3] := "<th>"||L[i+1][1:-5]||"<th>"||L[i+2][1:-5]||"<th>"||L[i+3][1:-5]||"<th>"||L[i+4][1:-5]
+      L[i+1] := "<table border>"
+      L[i+2] := "<tr>"
+      L[i+4] := "<tr><td>" || L[i+6][1:-5]    # Cube
+      L[i+6] := "<td>" || L[i+5] || " " || L[i+8]
+      L[i+5] := "<td>" || L[i+7][1:-5]        # DrawCube()
+      L[i+7] := "<td>" || L[j][11:0]
+      L[j][11:0] := ""
+
+      L[i+8] := "<tr><td>" || L[i+10][1:-5]   # Cylinder
+      L[i+10] := "<td>" || L[i+9][1:-5] || " " || L[i+12][1:-5]
+      L[i+9] := "<td>" || L[i+11][1:-5]                 # DrawCylinder()
+      L[i+11] := "<td>" || L[j+1][1:-5] || " " || L[j+2][1:-5]
+      L[j+1] := L[j+2] := ""
+
+      L[i+12] := "<tr><td>" || L[i+14][1:-5]  # Disk
+      L[i+14] := "<td>" || L[i+13][1:-5] || " " || L[i+16][1:-5]
+      L[i+13] := "<td>" || L[i+15][1:-5]
+      L[i+15] := "<td>" || L[j+3][1:-5] || " " || L[j+4][1:-5]
+      L[j+3] := L[j+4] := ""
+      L[i+16] := "</table>"
+      }
+   return L
 end

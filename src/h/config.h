@@ -768,6 +768,7 @@ Deliberate Syntax Error
    #undef ExecImages		/* interpreter only */
    #undef HAVE_IODBC		/* ODBC interpreter only until dynamic */
    #undef ISQL			/* records get added to the compiler */
+   #undef OVLD			/* operator overloading -- not supported */
 
 #else					/* COMPILER */
 

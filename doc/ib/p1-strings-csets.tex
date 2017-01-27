@@ -302,16 +302,12 @@ while Icon considers a string to be an indivisible atomic object. It
 makes no more sense in Icon to try to change a character in a string
 than it does to try to change a digit in an integer. Thus, if
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i := j}
 \iconline{
 \>i := j
 }
 
 and
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ j := j + 1}
 \iconline{
 \>j := j + 1
 }
@@ -322,8 +318,6 @@ subsequent assignment to \texttt{j}. So it is with strings in Icon.
 Admittedly, there are operations in Icon that \textit{appear }to
 change the characters in a string. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s1[3] := {\textquotedbl}x{\textquotedbl}}
 \iconline{
 \>s1[3] := "x"
 }
@@ -332,8 +326,6 @@ change the characters in a string. For example,
 \texttt{s1} to \texttt{{\textquotedbl}x{\textquotedbl}}.  However,
 this expression is simply shorthand for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s1 := s1[1:3] {\textbar}{\textbar} {\textquotedbl}x{\textquotedbl} {\textbar}{\textbar} s1[4:0]}
 \iconline{
 \>s1 := s1[1:3] || "x" || s1[4:0]
 }
@@ -354,9 +346,6 @@ assigned to \texttt{s1}, as shown by
 Of course, the length of the string may be increased or decreased by
 assignment to a substring, as in
 
-%-% \ \ \ s1[3] := {\textquotedbl}xxx{\textquotedbl}
-%-% 
-%-% \ \ \ s1 [2:5] := {\textquotedbl}{\textquotedbl}
 \iconcode{
 \>s1[3] := "xxx"\\
 \>s1 [2:5] := ""
@@ -373,8 +362,6 @@ type that can be converted to a string is legitimate
 also. Unfortunately, the \textit{nature }of the operation, not just
 the details of its implementation, depends on the type. For strings,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s1 [3] := s2}
 \iconline{
 \>s1 [3] := s2
 }
@@ -383,8 +370,6 @@ the details of its implementation, depends on the type. For strings,
 and is equivalent to concatenation, as described previously.  For
 lists, tables, and records,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ x[3] := y}
 \iconline{
 \>x[3] := y
 }
@@ -400,8 +385,6 @@ meanings, depending on the context in which it appears.
 If \texttt{s} is a variable, then \texttt{s[i]} and \texttt{s[i:j]}
 also are variables. In a dereferencing context, such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(s[2:5])}
 \iconline{
 \>write(s[2:5])
 }
@@ -412,8 +395,6 @@ appropriate qualifier.
 
 Assignment to a subscripted string, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s[2:5] := {\textquotedbl}xxx{\textquotedbl}}
 \iconline{
 \>s[2:5] := "xxx"
 }
@@ -421,8 +402,6 @@ Assignment to a subscripted string, as in
 \noindent is not at all what it appears to be superficially. Instead,
 as already noted, it shorthand for an assignment to \texttt{s}:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s := s[1] {\textbar}{\textbar} {\textquotedbl}xxx{\textquotedbl} {\textbar}{\textbar} s[6:0]}
 \iconline{
 \>s := s[1] || "xxx" || s[6:0]
 }
@@ -461,8 +440,6 @@ the subscripting expression is dereferenced, or to construct a new
 string in case an assignment is made to the subscripting
 expression. For example, after an assignment such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s[2:5] := {\textquotedbl}x{\textquotedbl}}
 \iconline{
 \>s[2:5] := "x"
 }
@@ -491,8 +468,6 @@ the subscripted portion (\texttt{{\textquotedbl}a{\textquotedbl}} and
 of a multiple assignment to a subscripted string, only the original
 subscripted portion is changed. Thus, in
 
-%-% {\ttfamily
-%-% \ \ \ (s[2:5] := {\textquotedbl}x{\textquotedbl}) := \textit{{\textquotedbl}yyyyy{\textquotedbl}}}
 \iconline{
 \>(s[2:5] := "x") := \textit{{\textquotedbl}yyyyy{\textquotedbl}}
 }
@@ -505,386 +480,6 @@ subscripted portion is changed. Thus, in
 String mapping is interesting in its own right, and the RTL function
 that implements it illustrates several aspects of string processing:
 
-%-% {\ttfamily\mdseries
-%-% function\{1\} map(s1,s2,s3)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * s1 must be a string; s2 and s3 default to (string }
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * conversions of) \&ucase and \&lcase, respectively.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !cnv:string(s1) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(103,s1)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ ...}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return string}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ body \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ register int i;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ register word slen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ register char *str1, *str2, *str3;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \#ifndef Concurrent}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ static char maptab[256];}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \#endif\ \ \ \ \ \ \ \ \ \ /* Concurrent */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ CURTSTATE();}
-%-% 
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * Default is here, conversion only if cached maptab fails
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ if (is:null(s2))
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ s2 = ucase;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * Short-cut conversions of \&lcase and \&ucase.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ else \{
-%-% 
-%-% 
-%-% \ \  struct descrip \_k\_lcase\_, \_k\_ucase\_;
-%-% 
-%-% 
-%-% \ \  Klcase(\&\_k\_lcase\_);
-%-% 
-%-% 
-%-% \ \  Kucase(\&\_k\_ucase\_);
-%-% 
-%-% 
-%-% \ \  if (s2.dword == D\_Cset) \{
-%-% 
-%-% 
-%-% \ \  \ \ \ if (BlkLoc(s2) == BlkLoc(\_k\_lcase\_)) \{
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ s2 = lcase;
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ \}
-%-% 
-%-% 
-%-% \ \  \ \ \ else if (BlkLoc(s2) == BlkLoc(\_k\_ucase\_)) \{
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ s2 = ucase;
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ \}
-%-% 
-%-% 
-%-% \ \  \ \ \ \}
-%-% 
-%-% 
-%-% \ \  \}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ if (is:null(s3))
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ s3 = lcase;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * Short-cut conversions of \&lcase and \&ucase.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ else \{
-%-% 
-%-% 
-%-% \ \  struct descrip \_k\_lcase\_, \_k\_ucase\_;
-%-% 
-%-% 
-%-% \ \  Klcase(\&\_k\_lcase\_);
-%-% 
-%-% 
-%-% \ \  Kucase(\&\_k\_ucase\_);
-%-% 
-%-% 
-%-% \ \  if (s3.dword == D\_Cset) \{
-%-% 
-%-% 
-%-% \ \  \ \ \ if (BlkLoc(s3) == BlkLoc(\_k\_lcase\_)) \{
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ s3 = lcase;
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ \}
-%-% 
-%-% 
-%-% \ \  \ \ \ else if (BlkLoc(s3) == BlkLoc(\_k\_ucase\_)) \{
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ s3 = ucase;
-%-% 
-%-% 
-%-% \ \  \ \ \ \ \ \ \}
-%-% 
-%-% 
-%-% \ \  \ \ \ \}
-%-% 
-%-% 
-%-% \ \  \}
-%-% 
-%-% 
-%-% \#endif\ \ \ \ \ \ \ \ \ \ /* !COMPILER */
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * If s2 and s3 are the same as for the last call of map,
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * \ the current values in maptab can be used. Otherwise, the
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * \ mapping information must be recomputed.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ if (!EqlDesc(maps2,s2) {\textbar}{\textbar} !EqlDesc(maps3,s3)) \{
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ maps2 = s2;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ maps3 = s3;
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \#if !COMPILER
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ if (!cnv:string(s2,s2))
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ runerr(103,s2);
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ if (!cnv:string(s3,s3))
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ runerr(103,s3);
-%-% 
-%-% 
-%-% \#endif\ \ \ \ \ \ \ \ \ \ /* !COMPILER */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * s2 and s3 must be of the same length
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ if (StrLen(s2) != StrLen(s3))
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ runerr(208);
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * The array maptab is used to perform the mapping. \ First,
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ maptab[i] is initialized with i for i from 0 to 255.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ Then, for each character in s2, the position in maptab
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ corresponding to the value of the character is assigned
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ the value of the character in s3 that is in the same
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ * \ position as the character from s2.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ str2 = StrLoc(s2);
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ str3 = StrLoc(s3);
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ for (i = 0; i {\textless}= 255; i++)
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ maptab[i] = i;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ for (slen = 0; slen {\textless} StrLen(s2); slen++)
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ maptab[str2[slen]\&0377] = str3[slen];
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ slen = StrLen(s1);
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ if (slen == 0) \{
-%-% 
-%-% 
-%-% \ \  return emptystr;
-%-% 
-%-% 
-%-% \ \  \}
-%-% 
-%-% 
-%-% \ \ \ \ \ \ else if (slen == 1) \{
-%-% 
-%-% 
-%-% \ \  char c = maptab[*(StrLoc(s1)) \& 0xFF];
-%-% 
-%-% 
-%-% \ \  return string(1, (char *)\&allchars[FromAscii(c) \& 0xFF]);
-%-% 
-%-% 
-%-% \ \  \}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * The result is a string the size of s1; create the result
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * \ string, but specify no value for it.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ StrLen(result) = slen;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ Protect(StrLoc(result) = alcstr(NULL, slen), runerr(0));
-%-% 
-%-% 
-%-% \ \ \ \ \ \ str1 = StrLoc(s1);
-%-% 
-%-% 
-%-% \ \ \ \ \ \ str2 = StrLoc(result);
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ /*
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * Run through the string, using values in maptab to do the
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ * \ mapping.
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ */
-%-% 
-%-% 
-%-% \ \ \ \ \ \ while (slen-{}- {\textgreater} 0)
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ *str2++ = maptab[(*str1++)\&0377];
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% 
-%-% \ \ \ \ \ \ return result;
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \}
-%-% 
-%-% 
-%-% end
 %%
 %% [DPW]
 %% ToDo: Check if this code is actually the latest (I remember patching it recently
@@ -1041,8 +636,6 @@ null-valued arguments. Omitted arguments are supplied as null
 values. The defaults for \texttt{s2} and \texttt{s3} are
 \texttt{\&ucase} and \texttt{\&lcase}, respectively. Consequently,
 
-%-% {\ttfamily\mdseries
-%-% \ \ map(s)}
 \iconline{
 \>map(s)
 }
@@ -1050,8 +643,6 @@ values. The defaults for \texttt{s2} and \texttt{s3} are
 \noindent
 is equivalent to
 
-%-% {\ttfamily\mdseries
-%-% \ \ map(s, \&ucase, \&lcase)}
 \iconline{
 \>map(s, \&ucase, \&lcase)
 }
@@ -1087,20 +678,6 @@ those in ASCII character set.
 
 The C structure for a cset block is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct b\_cset \{\ \ \ \ \ \ \ \ /* cset block */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word title;\ \ \ \ \ \ \ \ /*\ \ T\_Cset */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word size;\ \ \ \ \ \ \ \ /*\ \ size of cset */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ unsigned int bits [CsetSize];\ \ /*\ \ array of bits */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \};}
 \iconcode{
 \>struct b\_cset \{\>\>\>\>\>\>\>\>\>\> /* cset block */\\
 \>\>word title;\>\>\>\>\>\>\>\>\>\> /*\ \ T\_Cset */\\
@@ -1121,83 +698,6 @@ cset are represented by a bit vector that is divided into words to
 accommodate conventional computer architectures. For example, the C
 code for cset complementation is
 
-%-% {\ttfamily\mdseries
-%-% operator\{1\} \~{} compl(x)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * x must be a cset.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !cnv:tmp\_cset(x) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(104, x)}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return cset}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ body \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ register int i;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct b\_cset *cp, *cpx;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Allocate a new cset and then copy each cset word from}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * \ x into the new cset words, complementing each bit.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ Protect(cp = alccset(), runerr(0));}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /* must come after alccset() since BlkLoc(x) could move */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ cpx = (struct b\_cset *)BlkLoc(x); }
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ for (i = 0; i {\textless} CsetSize; i++) }
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ cp-{\textgreater}bits[i] = \~{}cpx-{\textgreater}bits[i];}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return cset(cp);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% end}
 \goodbreak
 \iconcode{
 operator\{1\} \~{} compl(x)\\

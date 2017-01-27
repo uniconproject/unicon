@@ -20,29 +20,10 @@ not found elsewhere in the implementation.
 
 As mentioned in Sec. 8.2.4, the virtual machine code for an expression such as
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ expr0(expr1, expr2, }..., \textit{exprn)}}
 \iconline{ \textit{\ \ \ expr0(expr1, expr2, }..., \textit{exprn)} }
 
 \noindent is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ code for expr0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ code for expr1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ code for expr2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ ...}
-%-% 
-%-% {\ttfamily\itshape
-%-% \ \ \ code for exprn}
-%-% 
-%-% {\ttfamily
-%-% \ \ \ invoke n}
 \goodbreak
 \iconcode{
 \>code for expr0\\
@@ -131,26 +112,6 @@ arguments, local identifiers, and static identifiers, in that order.
 
 For example, the procedure declaration
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure calc(i,j)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local k}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ static base, index}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ .}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ .}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ .}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ end}
 \goodbreak
 \iconcode{
 \>procedure calc(i,j)\\
@@ -246,8 +207,6 @@ procedure block, this number is compared with the argument of
 If there are too many arguments, \texttt{sp} is set to point to the
 last one expected. For example, the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ numeric(i, j)}
 \iconline{ \ \ numeric(i, j) }
 
 \noindent results in
@@ -277,8 +236,6 @@ effectively popping the second argument:
 descriptors pushed to supply the missing arguments.  For example, the
 expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ left(s, i)}
 \iconline{ \ \ left(s, i) }
 
 \noindent results in
@@ -326,113 +283,6 @@ Like an operator, a function may fail, return a result, or
 suspend. The coding protocol is the same as for operators.  The
 function find is an example:
 
-%-% {\ttfamily\mdseries
-%-% function\{*\} find(s1,s2,i,j)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ str\_anal( s2, i, j )}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !cnv:string(s1) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(103,s1)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ body \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ register char *str1, *str2;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ C\_integer s1\_len, l, term;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Loop through s2[i:j] trying to find s1 at each point,}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * stopping when the remaining portion s2[i:j] is too short}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * to contain s1. Optimize me!}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ s1\_len = StrLen(s1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ term = cnv\_j - s1\_len;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ while (cnv\_i {\textless}= term) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ str1 = StrLoc(s1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ str2 = StrLoc(s2) + cnv\_i - 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ l \ \ \ = s1\_len;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * Compare strings on a byte-wise basis; if the end is}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * reached before inequality is found, suspend with the}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * position of the string.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ do \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ if (l-{}- {\textless}= 0) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ suspend C\_integer cnv\_i;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \} while (*str1++ == *str2++);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ cnv\_i++;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ fail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% end}
 \goodbreak
 \iconcode{
 function\{*\} find(s1,s2,i,j)\\
@@ -480,158 +330,6 @@ ending position. It produces declarations for these 3 names prepended
 with \texttt{cnv\_}. These variables will contain the converted
 versions of the arguments.
 
-%-% {\ttfamily\mdseries
-%-% \#begdef str\_anal(s, i, j)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ declare \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ C\_integer cnv\_ \#\# i;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ C\_integer cnv\_ \#\# j;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return integer}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if is:null(s) then \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ s = k\_subject;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if is:null(i) then inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ cnv\_ \#\# i = k\_pos;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ else \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if !cnv:string(s) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ runerr(103,s)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if is:null(i) then inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ cnv\_ \#\# i = 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !is:null(i) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if cnv:C\_integer(i,cnv\_ \#\# i) then inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if ((cnv\_ \#\# i = cvpos(cnv\_ \#\# i, StrLen(s))) ==}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ CvtFail)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ fail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ else}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ runerr(101,i)}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ if is:null(j) then inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ cnv\_ \#\# j = StrLen(s) + 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ else if cnv:C\_integer(j,cnv\_ \#\# j) then inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ if ((cnv\_ \#\# j = cvpos(cnv\_ \#\# j, StrLen(s))) == CvtFail)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ fail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ if (cnv\_ \#\# i {\textgreater} cnv\_ \#\# j) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ register C\_integer tmp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ tmp = cnv\_ \#\# i;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ cnv\_ \#\# i = cnv\_ \#\# j;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ cnv\_ \#\# j = tmp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ else}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ runerr(101,j)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \#enddef}
 \goodbreak
 \iconcode{
 \#begdef str\_anal(s, i, j)\\
@@ -720,8 +418,6 @@ is provided to make computations related to arguments more convenient.
 After the procedure marker is constructed, a null-valued descriptor is
 pushed for each local identifier. For example, the call
 
-%-% {\ttfamily\mdseries
-%-% \ \ calc(3,4)}
 \iconline{ \ \ calc(3,4) }
 
 \noindent for the procedure declaration given in Sec. 10.2 produces
@@ -759,14 +455,6 @@ continues in the interpreter with the new \texttt{ipc}.
 The three forms of return from a procedure are the same as those from
 a function and correspond to the source-language expressions
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ return e}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ fail}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ suspend e}
 \goodbreak
 \iconcode{
 \>return e\\
@@ -778,17 +466,10 @@ The corresponding virtual machine instructions are \texttt{pret},
 \texttt{pfail}, and \texttt{psusp}. For example, the virtual machine
 code for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ return \&null}
 \iconline{ \>return \&null }
 
 \noindent is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pret}
 \goodbreak
 \iconcode{
 \>pnull\\
@@ -864,47 +545,10 @@ possibly complete and unreachable.
 
 The virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ create \textit{expr\TextSubscript{0}}}
 \iconline{ \>create \textit{expr\TextSubscript{0}} }
 
 are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ goto L3}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ pop}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ mark L2}
-%-% 
-%-% {\ttfamily\itshape
-%-% \ \ \ \ \ \ code for expr\TextSubscript{0}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \textrm{\textit{\ \ \ \ \ \ }}\textrm{coret}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ efail}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L2:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ cofail}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ goto L2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L3:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ create\ \ L1}
 \goodbreak
 \iconcode{
 \>\>goto\>\>\>\> L3\\
@@ -946,20 +590,10 @@ that returns by means of \texttt{cofail} is activated again, the
 
 A co-expression is activated by the expression
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ expr1 }@ \textit{expr2}}
 \iconline{ \textit{\ \ \ expr1 }@ \textit{expr2} }
 
 \noindent for which the virtual machine code is
 
-%-% {\itshape
-%-% \ \ \ code for expr1}
-%-% 
-%-% {\itshape
-%-% \ \ \ code for expr2}
-%-% 
-%-% 
-%-% \ \ \ coact
 \goodbreak
 \iconcode{
 \>\textit{code for expr1}\\
@@ -1108,83 +742,6 @@ The function \texttt{coswitch()} is fastest if it is
 machine-dependent. The version for the x86 with the GCC compiler is an
 example:
 
-%-% {\ttfamily\mdseries
-%-% coswitch:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ pushl \%ebp}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl \%esp,\%ebp}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl 8(\%ebp),\%eax}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl \%esp,0(\%eax)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl \%ebp,4(\%eax)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl 12(\%ebp),\%eax}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ cmpl \$0,16(\%ebp)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl 0(\%eax),\%esp}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ je .L2}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl 4(\%eax),\%ebp}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ jmp .L1}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% .L2:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ movl \$0,\%ebp}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ pushl \$0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ pushl \$0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ call new\_context}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ pushl \$.LC0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ call syserr}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ addl \$12,\%esp}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% .L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ leave}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ ret}
 \goodbreak
 \iconcode{
 coswitch:\\
@@ -1220,8 +777,6 @@ with POSIX threads can use Icon 9.5.1's supported form of
 co-expressions, which is more than 100x slower and approximately twice
 as many lines of C. The public interface in either case looks like:
 
-%-% {\ttfamily\mdseries
-%-% int coswitch(void *old\_cs, void *new\_cs, int first);}
 \iconline{ int coswitch(void *old\_cs, void *new\_cs, int first); }
 
 The variables \texttt{old\_cs} and \texttt{new\_cs} are pointers to
@@ -1245,23 +800,6 @@ number of local identifiers for the procedure in which
 frame marker at the time of creation, and the values of the arguments
 and local identifiers at the time of creation. Consider, for example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ procedure labgen(s)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ local i, j, e}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ i := 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ j := 100}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ e := create (s {\textbar}{\textbar} (i to j) {\textbar}{\textbar} {\textquotedbl}:{\textquotedbl})}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ end}
 \goodbreak
 \iconcode{
 \>procedure labgen(s)\\
@@ -1333,9 +871,6 @@ or procedure by means of its string name. Icon supports
 {\textquotedbl}string invocation,{\textquotedbl} which allows the
 value of \textit{expr\TextSubscript{0}} in
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ expr\TextSubscript{0}(expr\TextSubscript{1},
-%-% expr\TextSubscript{2}, ..., expr\TextSubscript{n})}}
 \goodbreak
 \iconline{
 \>\textit{ expr\TextSubscript{0}(expr\TextSubscript{1},
@@ -1344,27 +879,19 @@ expr\TextSubscript{2}, ..., expr\TextSubscript{n})}
 
 \noindent to be a string. Thus,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ {\textquotedbl}write{\textquotedbl}(s)}
 \iconline{ \>"write"(s) }
 
 \noindent produces the same result as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(s)}
 \iconline{ \>write(s) }
 
 Of course, such a string name is usually computed, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ (read())(s)}
 \iconline{ \>(read())(s) }
 
 Describe what is involved in implementing this aspect of
 invocation. Operators also may be invoked by their string names, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ {\textquotedbl}+{\textquotedbl}(i,j)}
 \iconline{ \>"+"(i,j) }
 
 What is needed in the implementation to support this facility? Can a

@@ -246,8 +246,6 @@ descriptors:
 
 Identifiers of each kind are numbered starting at zero. Consequently,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ arg 0}
 \iconline{ \>arg\>\>\> 0 }
 
 \noindent pushes a variable descriptor for the first argument. In each
@@ -595,17 +593,6 @@ converted to a real number. None of these computations is evident in
 the virtual machine instructions produced for this expression, which
 are
 
-%-% {\ttfamily
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily
-%-% \ \ \ local x}
-%-% 
-%-% {\ttfamily
-%-% \ \ \ local y}
-%-% 
-%-% {\ttfamily
-%-% \ \ \ plus}
 \goodbreak
 \iconcode{
 \>pnull\\
@@ -809,41 +796,6 @@ simple in structure. It maintains a location in the icode
 then branches to a section of code for processing the virtual machine
 instruction that it fetched. The interpreter loop is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ for (;;) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ op = GetWord;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ switch (op) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ...}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ case Op\_Asgn:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ...}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ case Op\_Plus:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ...}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ continue;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ...}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 \>for (;;) \{\\
@@ -867,23 +819,6 @@ Macros are used extensively in the interpreter to avoid repetitious
 coding and to make the interpreter easier to read.  The coding is
 illustrated by the case clause for the instruction \texttt{plus}:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ case Op\_Plus:\ \ /* e1 + e2 */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ Setup\_Op(2);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ DerefArg(1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ DerefArg(2);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ Call\_Op;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ break;}
 \goodbreak
 \iconcode{
 \>case Op\_Plus:\ \ /* e1 + e2 */\\
@@ -899,8 +834,6 @@ illustrated by the case clause for the instruction \texttt{plus}:
 \texttt{Setup\_Op(n)} sets up a pointer to the address of Arg0 on the
 interpreter stack. The resulting code is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ rargp = (dptr)(sp - 1) - n;}
 \iconline{\>rargp = (dptr)(sp - 1) - n;}
 
 The value of \texttt{n} is the number of arguments on the stack.
@@ -915,11 +848,6 @@ function itself is obtained by looking up \texttt{op} in an array of
 pointers to functions.  The code produced by \texttt{Call\_Cond} is
 (almost)
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ (*(optab(op]) )(rargp);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ sp = (word * )rargp + 1:}
 \goodbreak
 \iconcode{
 \>(*(optab(op]) )(rargp);\\
@@ -942,10 +870,6 @@ code for such an instruction fetches its operands. An example is
 
 The interpreter code for int is
 
-%-% case Op\_Int: /* integer */
-%-%    PushVal(D\_Integer);
-%-%    PushVal(GetWord);
-%-%    break;
 \goodbreak
 \iconcode{
 \>case Op\_Int: /* integer */\\

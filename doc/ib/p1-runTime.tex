@@ -11,11 +11,6 @@ assignment, input and output, and diagnostic facilities.
 Type checking is relatively straightforward in Icon. If only one type
 is of interest a test of the d-word is sufficient, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (Type(Arg1) != T\_List)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(108, \&Arg1);}
 \goodbreak
 \iconcode{
 \>if (Type(Arg1) != T\_List)\\
@@ -32,14 +27,6 @@ strings. The RTL runtime language's \texttt{type\_case} statement
 looks like a switch, but is really performing a selection according to
 type generally of the form:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (is:string(Arg1))\textit{\ \ /* }string \textit{*/}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ else switch (Type(Arg1) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ case T\_List:\textit{\ \ /* }list \textit{*/}}
 \goodbreak
 \iconcode{
 \>if (is:string(Arg1))\textit{\ \ /* }string \textit{*/}\\
@@ -152,47 +139,6 @@ Rtt can generate special-case functions for each call to
 at that call site, and skip the checks and conversions where they are
 not necessary.
 
-%-% {\ttfamily\mdseries
-%-% function\{0,1\} numeric(n)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if cnv:(exact)integer(n) then \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ abstract \{ return integer \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ inline \ \ \{ return n; \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ else if cnv:real(n) then \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ abstract \{ return real \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ inline \ \ \{ return n; \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ else \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ abstract \{ return empty\_type \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ inline \ \ \{ fail; \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% end}
 \goodbreak
 \iconcode{
 function\{0,1\} numeric(n)\\
@@ -222,59 +168,6 @@ types of \texttt{n} and \texttt{m}. The RTL language was given an
 general form of the arithmetic operators looks like:
 
 
-%-% \ \ \ operator\{1\} icon\_op func\_name(x, y)
-%-% 
-%-% \ \ \ \ \ \ declare \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ tended struct descrip lx, ly;
-%-% 
-%-% \ \  C\_integer irslt;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ arith\_case (x, y) of \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ C\_integer: \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ abstract \{ return integer \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ inline \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ extern int over\_flow;
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ c\_int\_op(x,y);
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ integer: \{ /* large integers only */
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ abstract \{ return integer \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ inline \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ big\_ \#\# c\_int\_op(x,y);
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ C\_double: \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ abstract \{ return real \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ inline \{
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ c\_real\_op(x, y);
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \}
-%-% 
-%-% \ \ \ end
 \goodbreak
 \iconcode{
 \>operator\{1\} icon\_op func\_name(x, y)\\
@@ -323,89 +216,6 @@ to a string in order to convert it to a number. See Sec. 4.4.4. The
 code for the ``temporary string'' version of string conversion is in a
 function \texttt{tmp\_str()}:
 
-%-% {\ttfamily\mdseries
-%-% static int tmp\_str(char *sbuf, dptr s, dptr d)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ type\_case *s of \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ string:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ *d = *s;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ integer: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (Type(*s) == T\_Lrgint) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ word slen, dlen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ slen = (BlkLoc(*s)-{\textgreater}bignumblk.lsd -}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ BlkLoc(*s)-{\textgreater}bignumblk.msd +1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ dlen=slen * NB * 0.3010299956639812; /* 1/log2(10) */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ bigtos(s,d);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ else}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ itos(IntVal(*s), d, sbuf);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ real: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ double res;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ GetReal(s, res);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ rtos(res, d, sbuf);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ cset:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ cstos(BlkLoc(*s)-{\textgreater}cset.bits, d, sbuf);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ default:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ return 0;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ return 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \}}
 \goodbreak
 \iconcode{
 static int tmp\_str(char *sbuf, dptr s, dptr d)\\
@@ -453,56 +263,6 @@ destroyed when that routine returns. The fully general version of
 this function is heavily called, in reality the body of
 \texttt{tmp\_str()} is inlined in \texttt{cnv\_str()}.
 
-%-% {\ttfamily\mdseries
-%-% int cnv\_str(dptr s, dptr d)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ char sbuf[MaxCvtLen];}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ type\_case *s of \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ string: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ *d = *s;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ return 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ default: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (!tmp\_str(sbuf, s, d)) return 0;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ Protect(StrLoc(*d) =}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ alcstr(StrLoc(*d), StrLen(*d)), fatalerr(0,NULL));}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ return 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \}}
 \goodbreak
 \iconcode{
 int cnv\_str(dptr s, dptr d)\\
@@ -528,14 +288,10 @@ int cnv\_str(dptr s, dptr d)\\
 If there were no trapped or keyword variables, dereferencing and assignment would
 be trivial. For example, the descriptor \texttt{d} is dereferenced by
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ d = *VarLoc(d)}
 \iconline{ \>d = *VarLoc(d) }
 
 \noindent where \texttt{VarLoc} references the v-word of \texttt{d}:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \#define VarLoc(d) ((d).vword.dptr)}
 \iconline{\>\#define VarLoc(d) ((d).vword.dptr) }
 
 The dereferencing or assignment to a trapped variable, on the other
@@ -544,8 +300,6 @@ the meaning associated with the operation on the source-language
 expression that is represented in the implementation as a trapped
 variable. For example, as discussed previously, in
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ }x[y] := z}
 \iconline{ \textit{\ \ \ }x[y] := z }
 
 \noindent the value of \texttt{x} may be a list, a string, a table, or a
@@ -568,8 +322,6 @@ comparable complexity. Dereferencing is done in the interpreter loop
 for arguments of operators for which variables are not needed. For
 example, in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ n+m}
 \iconline{ \>n+m }
 
 \noindent the identifiers \texttt{n} and \texttt{m} are dereferenced before the function
@@ -591,44 +343,6 @@ what kind of result to produce.
 
 The dereferencing routine begins as follows:
 
-%-% {\ttfamily\mdseries
-%-% void deref(s, d)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% dptr s, d;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * no allocation is done, so nothing need be tended.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ register union block *bp, **ep;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct descrip v;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int res;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (!is:variable(*s)) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ *d = *s;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 void deref(s, d)\\
@@ -653,17 +367,6 @@ If \texttt{s} does not point to a variable descriptor, the remaining code is ski
 If \texttt{s} points to a variable that is not a trapped variable,
 dereferencing is simple:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * An ordinary variable is being dereferenced.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ *d = *(dptr)((word *)VarLoc(*s) + Offset(*s));}
 \goodbreak
 \iconcode{
 \>\>\>/*\\
@@ -674,104 +377,6 @@ dereferencing is simple:
 
 Otherwise, there are two types of trapped variables with a switch on the type:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ type\_case *s of \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tvsubs: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * A substring trapped variable is being dereferenced.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * \ Point bp to the trapped variable block and v to}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * \ the string.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ bp = BlkLoc(*s);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ deref(\&bp-{\textgreater}tvsubs.ssvar, \&v);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (!is:string(v))}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ fatalerr(103, \&v);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (bp-{\textgreater}tvsubs.sspos + bp-{\textgreater}tvsubs.sslen - 1 {\textgreater} StrLen(v))}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ fatalerr(205, NULL);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * Make a descriptor for the substring by getting the}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * \ length and pointing into the string.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ StrLen(*d) = bp-{\textgreater}tvsubs.sslen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ StrLoc(*d) = StrLoc(v) + bp-{\textgreater}tvsubs.sspos - 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tvtbl: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * Look up the element in the table.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ bp = BlkLoc(*s);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ep = memb(bp-{\textgreater}tvtbl.clink,\&bp-{\textgreater}tvtbl.tref,}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bp-{\textgreater}tvtbl.hashnum,\&res);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (res == 1)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ *d = (*ep)-{\textgreater}telem.tval;\ \ /* found; use value */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ else}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ *d = bp-{\textgreater}tvtbl.clink-{\textgreater}table.defvalue;/*use default */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 \>type\_case *s of \{\\
@@ -828,26 +433,6 @@ The last case, keyword variables, is almost the same as for
 simple variables. These variables impose special semantics on
 assignment, but not on dereferencing.
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdint:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdpos:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdsubj:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdevent:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdwin:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdstr:}
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ *d = *VarLoc(*s);
 \goodbreak
 \iconcode{
 \>\>kywdint:\\
@@ -872,56 +457,10 @@ source program.
 The macro \texttt{GeneralAsgn()} is used to perform all such
 operations. For example, the function for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ x := y}
 \iconline{ \>x := y }
 
 is
 
-%-% {\ttfamily\mdseries
-%-% operator\{0,1\} := asgn(underef x, y)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !is:variable(x) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(111, x)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return type(x)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ GeneralAsgn(x, y)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * The returned result is the variable to which assignment }
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * \ is being made.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return x;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% end}
 \goodbreak
 \iconcode{
 operator\{0,1\} := asgn(underef x, y)\\
@@ -948,13 +487,6 @@ out-of-range assignment to \texttt{\&pos} and is indicated by an RTL
 Like dereferencing, assignment is trivial for variables that are not
 trapped. The macro \texttt{GeneralAsgn()} begins as follows:
 
-%-% {\ttfamily\mdseries
-%-% \#begdef GeneralAsgn(x, y)}
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ type\_case x of \{}
 \goodbreak
 \iconcode{
 \#begdef GeneralAsgn(x, y)\\
@@ -965,32 +497,6 @@ As for dereferencing, there are two types of trapped variables to be
 considered. Assignment to a substring trapped variable is rather
 complicated and deferred to a function \texttt{subs\_asgn()}:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tvsubs: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ store[store[type(x).str\_var]] = string}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ if (subs\_asgn(\&x, (const dptr)\&y) == Error)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ runerr(0);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 \>\>tvsubs: \{\\
@@ -1006,254 +512,6 @@ complicated and deferred to a function \texttt{subs\_asgn()}:
 
 The function \texttt{subs\_asgn()}:
 
-%-% {\ttfamily\mdseries
-%-% int subs\_asgn(dptr dest, const dptr src)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tended struct descrip deststr, srcstr, rsltstr;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tended struct b\_tvsubs *tvsub;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ char *s, *s2;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ word i, len;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ word prelen;/* length of portion of string before substring */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ word poststrt, postlen; /* start and length of portion of}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ string following substring */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (!cnv:tmp\_string(*src, srcstr))}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ ReturnErrVal(103, *src, Error);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * Be sure that the variable in the trapped variable points}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ to a string and that the string is big enough to contain}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ the substring.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tvsub = (struct b\_tvsubs *)BlkLoc(*dest);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ deref(\&tvsub-{\textgreater}ssvar, \&deststr);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (!is:string(deststr))}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ ReturnErrVal(103, deststr, Error);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ prelen = tvsub-{\textgreater}sspos - 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ poststrt = prelen + tvsub-{\textgreater}sslen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (poststrt {\textgreater} StrLen(deststr))}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ ReturnErrNum(205, Error);}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * Form the result string.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ Start by allocating space for the entire result.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ len = prelen + StrLen(srcstr) + StrLen(deststr) - poststrt;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ Protect(s = alcstr(NULL, len), return Error);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ StrLoc(rsltstr) = s;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ StrLen(rsltstr) = len;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * First, copy the portion of the substring string to}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ the left of the substring into the string space.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s2 = StrLoc(deststr);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ for (i = 0; i {\textless} prelen; i++)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ *s++ = *s2++;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * Copy the string to be assigned into the string space,}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ effectively concatenating it.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s2 = StrLoc(srcstr);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ for (i = 0; i {\textless} StrLen(srcstr); i++)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ *s++ = *s2++;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * Copy the portion of the substring to the right of the}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ substring into the string space, completing the result.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ s2 = StrLoc(deststr) + poststrt;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ postlen = StrLen(deststr) - poststrt;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ for (i = 0; i {\textless} postlen; i++)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ *s++ = *s2++;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * Perform the assignment and update the trapped variable.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ type\_case tvsub-{\textgreater}ssvar of \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdevent: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ *VarLoc(tvsub-{\textgreater}ssvar) = rsltstr;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdstr: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ *VarLoc(tvsub-{\textgreater}ssvar) = rsltstr;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdsubj: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ *VarLoc(tvsub-{\textgreater}ssvar) = rsltstr;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ k\_pos = 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tvtbl: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (tvtbl\_asgn(\&tvsub-{\textgreater}ssvar, (const dptr)\&rsltstr) ==}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Error)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ return Error;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ default: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ Asgn(tvsub-{\textgreater}ssvar, rsltstr);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tvsub-{\textgreater}sslen = StrLen(srcstr);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ return Succeeded;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \}}
 \goodbreak
 \iconcode{
 int subs\_asgn(dptr dest, const dptr src)\\
@@ -1343,32 +601,6 @@ int subs\_asgn(dptr dest, const dptr src)\\
 Table-element trapped variables are once again deferred in
 \texttt{GeneralAsgn()} to call to a function, \texttt{tvtbl\_asgn()}:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tvtbl: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ store[store[type(x).trpd\_tbl].tbl\_val] = type(y)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ if (tvtbl\_asgn(\&x, (const dptr)\&y) == Error)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \ \ runerr(0);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 \>\>tvtbl: \{\\
@@ -1389,154 +621,6 @@ block into a table-element block and link it into a chain. Parameters
 cannot be tended, so their information must be preserved in tended
 variables before anything is allocated.
 
-%-% {\ttfamily\mdseries
-%-% int tvtbl\_asgn(dptr dest, const dptr src)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tended struct b\_tvtbl *bp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tended struct descrip tval;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct b\_telem *te;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ union block **slot;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct b\_table *tp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int res;}
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * Allocate table element now (even if we may not need it)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * because slot cannot be tended. Parameters have to be}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * preserved in tended variables first.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ bp = (struct b\_tvtbl *) BlkLoc(*dest);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ tval = *src;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ Protect(te = alctelem(), return Error);}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * First see if reference is in the table; if it is, just }
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * \ update the value. \ Otherwise, allocate a new table entry.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ slot = memb(bp-{\textgreater}clink, \&bp-{\textgreater}tref, bp-{\textgreater}hashnum, \&res);}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (res == 1) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Do not need new te, just update existing entry.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ deallocate((union block *) te);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ (*slot)-{\textgreater}telem.tval = tval;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ else \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Link te into table, fill in entry.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tp = (struct b\_table *) bp-{\textgreater}clink;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ tp-{\textgreater}size++;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ te-{\textgreater}clink = *slot;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ *slot = (union block *) te;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ te-{\textgreater}hashnum = bp-{\textgreater}hashnum;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ te-{\textgreater}tref = bp-{\textgreater}tref;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ te-{\textgreater}tval = tval;}
-%-% 
-%-% 
-%-% \bigskip
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if (TooCrowded(tp))\ \ /* grow hash table if now too full */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ hgrow((union block *)tp);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ return Succeeded;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \}}
 \goodbreak
 \iconcode{
 int tvtbl\_asgn(dptr dest, const dptr src)\\
@@ -1596,38 +680,6 @@ of the keyword are expressed in the usual mixture of RTL and C, except
 that type information is guaranteed not to change. The code for
 \texttt{\&subject} is typical:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ kywdsubj: \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * No side effect in the type realm = no abstract clause}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * \ \&subject is still a string and \&pos is still an int.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if !cnv:string(y, *VarLoc(x)) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ runerr(103, y);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ k\_pos = 1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 \>\>kywdsubj: \{\\
@@ -1694,8 +746,6 @@ For example, the value of \texttt{\&input} is
 
 Another example is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ out := open({\textquotedbl}log{\textquotedbl}, {\textquotedbl}a{\textquotedbl})}
 \iconline{ \>out := open("log", "a") }
 
 \noindent for which the value of \texttt{out} is
@@ -1715,8 +765,6 @@ writing and appending.
 
 Closing a file, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ close(out)}
 \iconline{ \>close(out) }
 
 \noindent merely changes its file status:
@@ -1759,14 +807,10 @@ intermediate buffer.
 
 Several strings can be concatenated on a file by
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(s1 , s2, ..., sn)}
 \iconline{ \>write(s1 , s2, ..., sn) }
 
 This avoids the internal allocation and concatenation that is required for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(s1 {\textbar}{\textbar} s2 {\textbar}{\textbar} ...{\textbar}{\textbar} sn)}
 \iconline{ \>write(s1 || s2 || ...|| sn) }
 
 \section[12.4 Diagnostic Facilities]{12.4 Diagnostic Facilities}

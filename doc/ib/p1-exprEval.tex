@@ -5,14 +5,6 @@ the interpreter and expression evaluation as it might take place in a
 conventional programming language in which every expression produces
 exactly one result. For example, expressions such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i := j}
-%-%
-%-% {\ttfamily\mdseries
-%-% \ \ \ k := i + j}
-%-%
-%-% {\ttfamily\mdseries
-%-% \ \ \ i +:= ?k}
 \iconcode{
 \>i := j \\
 \>k := i + j\\
@@ -56,18 +48,11 @@ important concepts of expression evaluation in Icon is that of a
 place. However, once a bounded expression has produced a result, it
 cannot be resumed for another result. For example, in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = find(s1,s2))}
 \iconline{ \>write(i = find(s1,s2)) }
 
 \noindent find may produce a result and may be resumed to produce
 another result if the comparison fails. On the other hand, in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = find(s1, s2))}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(j = find(s1, s3))}
 \goodbreak
 \iconcode{
 \>write(i = find(s1, s2))\\
@@ -81,11 +66,6 @@ line is not affected by whether the expression on the first line
 succeeds or fails. However, if the two lines are joined by a
 conjunction operation, as in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = find(s1, s2)) \&}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = find(s1, s3))}
 \goodbreak
 \iconcode{
 \>write(i = find(s1, s2)) \&\\
@@ -105,11 +85,6 @@ expression begins on the next line.
 
 Consequently, the first example is equivalent to
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = find(s1, s2));}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = find(s1 , s3))}
 \goodbreak
 \iconcode{
 \>write(i = find(s1, s2));\\
@@ -202,8 +177,6 @@ failure of $expr_2$ or $exp_3$ would result in
 backtracking into it and the if-then-else expression would be
 equivalent to
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ (expr1 }\& \textit{expr2) }{\textbar} \textit{expr3}}
 \iconline{\ \ \ ($expr_1$\  \&\ $expr_2$) \ | \ $expr_3$ \\}
 
 \noindent which is hardly what is meant by if-then-else.
@@ -233,8 +206,6 @@ if $expr_2$ fails, there is no control backtracking into $expr_1$.
 In the implementation of Icon, the scope of backtracking is delineated
 by \textit{expression frames}. The virtual machine instruction
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
 \iconline{ \>mark\>\>\> L1 }
 
 \noindent starts an expression frame. If the subsequent expression
@@ -276,20 +247,6 @@ and \texttt{ilevel}, which is related to suspended generators:
 
 An expression frame marker is declared as a C structure:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct ef\_marker \{\ \ \ \ /* expression frame marker */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word *ef\_failure;\ \ \ \ /*\ \ failure ipc */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct ef\_marker *ef\_efp;\ \ /*\ \ efp */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct gf\_marker *ef\_gfp;\ \ /*\ \ gfp */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word ef\_ilevel;\ \ \ \ \ \ /*\ \ ilevel */}
 \goodbreak
 \iconcode{
 \>struct ef\_marker \{\ \ \ \ \>\>\>\>\>\>\>\>\>\>/* expression frame marker */\\
@@ -305,41 +262,6 @@ This structure is overlaid on the interpreter stack in order to
 reference its components. The code for the \texttt{mark} instruction
 is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ case Op\_Mark:\textit{\ \ /* }create expression frame marker \textit{*/}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ newefp = (struct ef\_marker *)(sp + 1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ opnd = GetWord;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ opnd += (word)ipc;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ newefp-{\textgreater}ef\_failure = (word *)opnd;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ newefp-{\textgreater}ef\_gfp = gfp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ newefp-{\textgreater}ef\_efp = efp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ newefp-{\textgreater}ef\_ilevel = ilevel;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ sp += Wsizeof(*efp);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ efp = newefp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ gfp = 0;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ break;}
 \goodbreak
 \iconcode{
 \>case Op\_Mark:\>\>\>\>\>\>/* create expression frame marker */\\
@@ -360,8 +282,6 @@ The macro \texttt{Wsizeof(x)} produces the size of \texttt{x} in words.
 
 An expression frame is removed by the virtual machine instruction
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ unmark}
 \iconline{ \>unmark }
 
 \noindent which restores the previous \texttt{efp} and \texttt{gfp}
@@ -371,35 +291,10 @@ frame marker.
 
 The use of \texttt{mark} and \texttt{unmark} is illustrated by
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if expr1 then \textit{expr2 }else \textit{expr3}}
 \iconline{ \>if $expr_1$ then $expr_2$ else $expr_3$ }
 
 \noindent for which the virtual machine instructions are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ code for expr1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ code for expr2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ goto L2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ code for expr3}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L2:}
 \goodbreak
 \iconcode{
 \>\>mark L1\\
@@ -431,8 +326,6 @@ in interesting ways in some generative control structures, which are
 discussed in Sec. 9.4. Nested expression frames also occur as a result
 of evaluating compound expressions, such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ while expr1 do if expr2 then expr2 }
 \begin{center}
 \begin{picture}(200,10)(50,15)
 \put(0,10){\makebox(0,0)[l]{
@@ -463,11 +356,6 @@ In the absence of generators, if failure occurs anywhere in an
 expression, the entire expression fails without any further
 evaluation. For example, in the expressions
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i := numeric(s)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ line := read(f)}
 \goodbreak
 \iconcode{
 \>i := numeric(s)\\
@@ -484,59 +372,6 @@ marker.
 
 The virtual machine instructions for the previous example are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ global numeric}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local s}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ invoke 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ asgn}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local line}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ global read}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local f}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ invoke 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ asgn}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L2:}
 \goodbreak
 \iconcode{
 \>mark L1\\
@@ -577,8 +412,6 @@ some expression frame on the stack:
 
 The instruction
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
 \iconline{ \>mark\>\>\> L1 }
 
 \noindent starts a new expression frame. The execution of subsequent
@@ -627,8 +460,6 @@ evaluation of the expression on the first line:
 Control is transferred to the location in the icode corresponding to
 \texttt{L1}, and the execution of
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L2}
 \iconline{ \>mark\>\>\> L2 }
 
 \noindent starts a new expression frame by pushing a new expression
@@ -653,20 +484,6 @@ with different returned values.
 
 The code in the interpreter for a conditional operation is illustrated by
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ case Op\_Numlt:\ \ /* e1 {\textless} e2 */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ Setup\_Op(2);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ DerefArg(1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ DerefArg(2) ;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ Call\_Cond;}
 \goodbreak
 \iconcode{
 \>case Op\_Numlt:\ \ \>\>\>\>\>\>/* e1 < e2 */\\
@@ -692,44 +509,10 @@ flowing off the end of the procedure body. The virtual machine
 instructions generated for the three cases are similar. For example,
 the virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if i {\textless} j then fail else write(j)}
 \iconline{ \>if i < j then fail else write(j) }
 
 are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local j}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ numlt}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pfail}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ global write}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local j}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ invoke 1}
 \goodbreak
 \iconcode{
 \>mark\>\>\> L1\\
@@ -768,11 +551,6 @@ concerned, there is no difference between an expression that simply
 produces a result and an expression that produces a result and is
 capable of being resumed to produce mother one. For example, in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ i := numeric({\textquotedbl}2{\textquotedbl})}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ j := upto('aeiou', {\textquotedbl}Hello world{\textquotedbl})}
 \goodbreak
 \iconcode{
 \>i := numeric("2")\\
@@ -796,8 +574,6 @@ another result. For this to be possible, both the generator's state
 and the state of the interpreter stack must be preserved. For example,
 in
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ j := (i {\textless} upto('aeiou', {\textquotedbl}Hello world{\textquotedbl}))}
 \iconline{ \>j := (i < upto('aeiou', "Hello world")) }
 
 \noindent when the function \texttt{upto()} suspends, both \texttt{i}
@@ -850,27 +626,6 @@ generator frame is created:
 \end{picture}
 
 The corresponding C structure is
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ struct gf\_marker \{\textit{\ \ /* }generator frame marker \textit{*/}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word gf\_gentype;\textit{\ \ /*}\ \ type \textit{*/}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct ef\_marker *gf\_efp;\textit{\ \ /*}\ \ efp \textit{*/}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ struct gf\_marker *gf\_gfp;\textit{\ \ /*}\ \ gfp */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word *gf\_ipc;\textit{\ \ /*}\ \ ipc \textit{*/}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ word gf\_line;\textit{\ \ /*}\ \ line number */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \};}
 \goodbreak
 \iconcode{
 \>struct gf\_marker \>\>\>\>\>\>\>\>\>\>\>/* generator frame marker */\\
@@ -887,47 +642,10 @@ variable related to procedures. See Sec. 10.3.3.
 
 As an example, consider the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = (1 to 3));}
 \iconline{ \>write(i = (1 to 3)); }
 
 The virtual machine instructions for this expression are:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ global write}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int 3}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ push 1\ \ \# default increment}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ toby}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ numeq}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ invoke 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1 :}
 \goodbreak
 \iconcode{
 \>mark\>\>\> L1\\
@@ -970,14 +688,6 @@ The state of the stack after execution of the first seven instructions is
 The code in the interpreter for calling a generative operator with n
 arguments is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ rargp = (struct descrip *)(sp -1) -n;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ signal = (*(optab[op]))(rargp);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ goto C\_rtn\_term;}
 \goodbreak
 \iconcode{
 \>rargp = (struct descrip *)(sp -1) -n;\\
@@ -990,116 +700,6 @@ call to the C function for the operator.
 
 The RTL function for \texttt{toby} is
 
-%-% {\ttfamily\mdseries
-%-% operator\{*\} ... toby(from, to, by)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ * arguments must be integers.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !cnv:C\_integer(from) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(101, from)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !cnv:C\_integer(to) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(101, to)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if !cnv:C\_integer(by) then}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ runerr(101, by)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ abstract \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return integer}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ inline \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * by must not be zero.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if (by == 0) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ irunerr(211, by);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ errorfail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Count up or down (depending on relationship of from and}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * \ to) and suspend each value in sequence, failing when}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * \ the limit has been exceeded.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if (by {\textgreater} 0)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ for ( ; from {\textless}= to; from += by) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ suspend C\_integer from;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ else}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ for ( ; from {\textgreater}= to; from += by) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ suspend C\_integer from;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ fail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% end}
 \goodbreak
 \iconcode{
 operator\{*\} ... toby(from, to, by)\\
@@ -1144,8 +744,6 @@ end
 The RTL \texttt{operator} construct, which is similar to
 \texttt{function}, produces the C header
 
-%-% {\ttfamily\mdseries
-%-% int Otoby(dptr r\_args)}
 \iconline{ int Otoby(dptr r\_args) }
 
 \noindent so that \texttt{toby} is called with a pointer to
@@ -1169,17 +767,6 @@ is accomplished by calling \texttt{interp()} with arguments that
 signal it to build a generator frame. The C code generated for
 \texttt{suspend} is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if ((signal = interp(G\_Osusp, r\_args RTTCURTSTATARG)) !=}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ A\_Resume) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ return signal;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{
 \>if ((signal = interp(G\_Osusp, r\_args RTTCURTSTATARG)) != \ A\_Resume) \{\\
@@ -1243,8 +830,6 @@ had simply returned. However, the arguments of \texttt{toby} (and the
 between the two portions of the interpreter stack. The top of the
 stack corresponds to the evaluation of
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = 1);}
 \iconline{ \>write(i = 1); }
 
 \textbf{Resumption}.\ \ Suppose the value of \texttt{i} in the
@@ -1252,152 +837,6 @@ previous example is 2. The comparison fails and control is transferred
 to \texttt{efail}, as it is in the case of all operations that
 fail. The code for \texttt{efail} is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ case Op\_Efail:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ efail:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Failure has occurred in the current expression frame.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if (gfp == 0) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * There are no suspended generators to resume. Remove}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * the current expression frame, restoring values.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ *}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * If the failure ipc is 0, propagate failure to the}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * enclosing frame by branching back to efail.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * This happens, for example, in looping control}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * structures that fail when complete.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ipc = efp-{\textgreater}ef\_failure;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ gfp = efp-{\textgreater}ef-9fp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ sp = (word *)efp -1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ efp = efp-{\textgreater}ef\_efp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ if (ipc == 0)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ goto efail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ else \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * There is a, generator that can be resumed. Make}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * the stack adjustments and then switch on the}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ * type of the generator frame marker.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ register struct gf\_marker *resgfp = gfp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ tvoe = resgfp-{\textgreater}gf gentype;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ ipc = resgfp-{\textgreater}gf\_ipc;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ efp = resgfp-{\textgreater}gf\_efp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ line = resgfp-{\textgreater}gf\_line;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ gfp = resgfp-{\textgreater}gf\_gfp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ sp = (word * )resgfp -1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ switch (type) \{}
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ case G\_Csusp: \{
-%-% 
-%-% 
-%-% \ \ \ \ \ \ \ \ \ \ \ \ {}-{}-ilevel;
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ return A\_Resumption;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \textrm{break;}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ case G\_Esusp:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ goto efail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ case G\_Psusp:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \ \ \ break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
 \goodbreak
 \iconcode{\\
 \>case Op\_Efail:\\
@@ -1530,8 +969,6 @@ suspended the first time, except that the integer 2 is on the stack in
 place of the integer 1. The top of the stack corresponds to the
 evaluation of
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = 2);}
 \iconline{ \>write(i = 2); }
 
 Since the value of \texttt{i} is 2, \texttt{numeq} succeeds. It copies
@@ -1547,8 +984,6 @@ suspended.
 
 In the case of an expression such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ 1 to upto(c, s)}
 \iconline{ \>1 to upto(c, s) }
 
 \noindent \texttt{upto()} suspends first, followed by
@@ -1594,47 +1029,10 @@ of\textit{ }the current expression.
 
 Consider again the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i = (1 to 3));}
 \iconline{ \>write(i = (1 to 3)); }
 
 \noindent for which the virtua1 machine instructions are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ global write}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pnull}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ local i}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ int 3}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ push1\ \ \# default increment}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ toby}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ numeq}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ invoke 1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1 :}
 \goodbreak
 \iconcode{
 \>mark\>\>\> L1\\
@@ -1657,44 +1055,6 @@ the \texttt{unmark} instruction is executed, the C stack contains a
 frame for the call to \texttt{toby} and for its call to
 \texttt{interp()}. The code for \texttt{unmark} is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ case Op\_Unmark:\ \ /* remove expression frame */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ gfp = efp-{\textgreater}ef-9fp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ sp = (word *)efp -1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ * Remove any suspended C generators.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ Unmark\_uw:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if (efp-{\textgreater}ef\_ilevel {\textless} ilevel) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ {}-{}-ilevel;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ return A\_Unmark\_uw;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ efp = efp-{\textgreater}ef\_efp;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ break;}
 \goodbreak
 \iconcode{
 \>case Op\_Unmark:\ \ /* remove expression frame */\\
@@ -1718,59 +1078,6 @@ Note that in this case Suspend gets the return code
 \texttt{interp()}. The section of code in \texttt{interp()} that
 checks the signal that is returned from C functions is
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ C\_rtn\_term:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ switch (signal) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ case A\_Failure:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ goto efail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ case A\_Unmark\_uw:\ \ /* unwind for unmark */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ goto Unmark uw;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ case A\_Lsusp\_uw:\ \ /* unwind for Isusp */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ goto Lsusp\_uw;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ case A\_Eret\_uw:\ \ /* unwind for eret */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ goto Eret\_uw;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ case A\_Pret\_uw:\ \ /* unwind for pret */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ goto Pret\_uw;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ case A\_Pfail\_uw:\ \ /* unwind for pfail */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ goto Pfail\_uw;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ sp = (word * )rargp + 1;\ \ /* set sp to result */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ continue;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \}}
 \goodbreak
 \iconcode{
 \>C\_rtn\_term:\\
@@ -1810,32 +1117,9 @@ of virtual machine instructions.
 
 The virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \textit{expr\TextSubscript{2}} {\textbar} \textit{expr\TextSubscript{3}}}
 \iconline{ \>\>\textit{expr\TextSubscript{2}} | \textit{expr\TextSubscript{3}} }
 
 are
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\itshape
-%-% \ \ \ code for expr\TextSubscript{2}}
-%-% 
-%-% 
-%-% \textit{\ \ \ }esusp
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ goto L2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \textit{code for expr}\textit{\TextSubscript{3}}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% L2:}
 \goodbreak
 \iconcode{
 \>mark\>\>\> L1\\
@@ -1860,8 +1144,6 @@ alternation control structure. Next, \texttt{esusp} sets \texttt{efp}
 to point to the expression frame marker prior to the alternation
 marker. For example, in the expression
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ write(i := 1 {\textbar} 2)}
 \iconline{ \>write(i := 1 | 2) }
 
 \noindent the stack after the execution of \texttt{esusp} is
@@ -1922,16 +1204,12 @@ Alternation is the general model for generative control
 structures. Repeated alternation, \texttt{{\textbar}}\textit{expr}, is
 similar to alternation, and would be equivalent to
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ expr }{\textbar} \textit{expr }{\textbar} \textit{expr }{\textbar} ...}
 \iconline{ \textit{\ \ expr }| \textit{expr }| \textit{expr }| ... }
 
 \noindent except for a special termination condition that causes
 repeated alternation to stop if \textit{expr} does not produce a
 result. Without this termination condition, an expression such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ {\textbar}upto(c, s)}
 \iconline{ \>\ \ |upto(c, s) }
 
 \noindent would never return if \texttt{upto()} failed--expression
@@ -1939,8 +1217,6 @@ evaluation would vanish into a {\textquotedbl}black
 hole.{\textquotedbl} Expressions that produce results at one time but
 not at another also are useful. For example,
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ {\textbar}read()}
 \iconline{ \>\ \ |read() }
 
 \noindent generates the lines from the standard input file. Because of
@@ -1951,17 +1227,6 @@ hole,{\textquotedbl} it could not be used safely.
 If it were not for the termination condition, the virtual machine
 instructions for \texttt{{\textbar}}\textit{expr} would be
 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ mark L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \textit{code for expr}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ esusp}
 \goodbreak
 \iconcode{
 L1:\\
@@ -1977,20 +1242,6 @@ The termination condition is handled by an instruction that changes
 the failure \texttt{ipc} in the current expression marker. The actual
 virtual machine instructions for \texttt{{\textbar}}\textit{expr} are
 
-%-% {\ttfamily\mdseries
-%-% L1:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ mark0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ code for expr}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ chfail\ \ L1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ esusp}
 \goodbreak
 \iconcode{
 L1:\\
@@ -2082,35 +1333,14 @@ The difference between evaluation and resumption in a loop is
 illustrated by the virtual machine instructions for a conventional
 loop
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ while \textit{expr1 }do \textit{expr2}}
 \iconline{ \>while \textit{expr1 }do \textit{expr2} }
 
 \noindent and the iteration control structure
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ every \textit{expr1 }do \textit{expr2}}
 \iconline{ \>every \textit{expr1 }do \textit{expr2} }
 
 \noindent The instructions for \texttt{while-do} are
 
-%-% {\ttfamily
-%-% L1:}
-%-% 
-%-% {\ttfamily
-%-% \ \ mark0}
-%-% 
-%-% {\ttfamily
-%-% \textit{\ \ code for expr1\newline
-%-% \ \ }unmark}
-%-% 
-%-% {\ttfamily
-%-% \ \ mark L1\newline
-%-% \ \ \textit{code for expr2\newline
-%-% \ \ }unmark}
-%-% 
-%-% {\ttfamily
-%-% \ \ goto\ \ L1}
 \goodbreak
 \iconcode{
 L1:\\
@@ -2133,26 +1363,6 @@ removed and execution continues at the beginning of the loop.
 
 The instructions for \texttt{every-do} are
 
-%-% {\ttfamily\mdseries
-%-% \ \ mark0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ code for expr1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ pop}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ mark0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ code for expr2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ unmark}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ efail}
 \goodbreak
 \iconcode{
 \>mark0\\
@@ -2205,8 +1415,6 @@ stack-like fashion with respect to string-scanning expressions.
 
 The expression
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ expr1 }? \textit{expr2}}
 \iconline{\> \textit{expr1 }? \textit{expr2} }
 
 \noindent is a control structure, not an operation, since, by
@@ -2224,23 +1432,9 @@ another result.
 
 The virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ expr1 }? \textit{expr2}}
 \iconline{ \textit{\ \ expr1 }? \textit{expr2} }
 
 are
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ code for expr1}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ bscan}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ code for expr2}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ escan}
 \goodbreak
 \iconcode{
 \>\textit{code for expr1}\\
@@ -2285,8 +1479,6 @@ Suppose, for example, that the values of \texttt{\&subject} and
 \texttt{\&pos} are \texttt{{\textquotedbl}the{\textquotedbl}} and 2
 respectively, when the following expression is evaluated:
 
-%-% {\ttfamily\mdseries
-%-% \ \ read(f) ? move(4)}
 \iconline{ \ \ read(f) ? move(4) }
 
 Suppose \texttt{read(f)} produces the string
@@ -2299,9 +1491,6 @@ Suppose \texttt{read(f)} produces the string
 \put(100,32){\downbars}
 \end{picture}
 
-%-% {\ttfamily\mdseries
-%-% \&subject: {\textquotedbl}the{\textquotedbl}\newline
-%-% \&pos: 2}
 \goodbreak
 \iconcode{
 \>\&subject:\>\>\>\> "the"\\
@@ -2322,10 +1511,6 @@ of \texttt{\&subject} and \texttt{\&pos}:
 \put(100,96){\upetc}
 \end{picture}
 
-%-% {\ttfamily\mdseries
-%-% \&subject: {\textquotedbl}the{\textquotedbl}}
-%-% {\ttfamily\mdseries
-%-% \&pos: 2}
 \goodbreak
 \iconcode{
 \>\&subject:\>\>\>\> "the"\\
@@ -2351,9 +1536,6 @@ is evaluated. It suspends, and the top of the stack is
 \put(100,32){\downbars}
 \end{picture}
 
-%-% {\ttfamily\mdseries
-%-% \&subject: {\textquotedbl}coconuts{\textquotedbl}\newline
-%-% \&pos: 5}
 \goodbreak
 \iconcode{
 \>\&subject:\>\>\>\> "coconuts"\\
@@ -2377,9 +1559,6 @@ descriptor on the top of the stack to replace the result produced by
 \put(100,96){\upetc}
 \end{picture}
 
-%-% {\ttfamily\mdseries
-%-% \&subject: {\textquotedbl}the{\textquotedbl}\newline
-%-% \&pos: 2}
 \goodbreak
 \iconcode{
 \>\&subject:\>\>\>\> "the"\\
@@ -2433,29 +1612,6 @@ matching.{\textquotedbl}
 
 \textbf{9.1} Circle all the bounded expressions in the following segments of code:
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ while line := read() do}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ if *line = i then write(line)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ if (i = find(s1,s2)) \& (j = find(s1,s3)) then \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ write(i)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ write(j)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ line ? while write(move(1)) do}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \ \ \ \ \ \ move(1)}
 \goodbreak
 \iconcode{
 \>while line := read() do\\
@@ -2496,8 +1652,6 @@ without the marker.
 
 \textbf{9.7} Suppose that the virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ every \textit{expr1} do \textit{expr2}}
 \iconline{ \>every \textit{expr1} do \textit{expr2} }
 
 \noindent did not pop the result produced by \textit{expr1}. What
@@ -2505,23 +1659,10 @@ effect would this have?
 
 \textbf{9.8} The virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ every expr}
 \iconline{ \>every expr }
 
 are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ mark0}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \textit{code for expr}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ pop}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ efail}
 \goodbreak
 \iconcode{
 \>mark0\\
@@ -2534,17 +1675,10 @@ are
 keyword \texttt{\&fail} also fails, so that the virtual machine
 instructions for
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ \ expr }\& \&fail}
 \iconline{ \textit{\ \ \ expr }\& \&fail }
 
 are
 
-%-% {\ttfamily\mdseries
-%-% \ \ \ \textit{code for expr}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \ efail}
 \goodbreak
 \iconcode{
 \>\textit{code for expr}\\
@@ -2579,6 +1713,4 @@ and \texttt{\&pos} are \texttt{"the"} and
 \textbf{9.11} Write Icon procedures to emulate string
 scanning. \textit{Hint:} consider the virtual machine instructions for
 
-%-% {\ttfamily\mdseries
-%-% \textit{\ \ expr1 }? \textit{expr2}}
 \iconline{ \textit{\ \ expr1 }? \textit{expr2} }

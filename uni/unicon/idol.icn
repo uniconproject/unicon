@@ -13,8 +13,9 @@ link getpaths
 #
 # global variables
 #
-global fin,fout,fName,fLine,alpha,alphadot,white,nonwhite,nonalpha,reserved
+global fin,fout,fLine,alpha,alphadot,white,nonwhite,nonalpha,reserved
 global classes,comp,exec,strict,links,imports,loud,compiles,ct,tmpcount
+global yyfilename
 
 procedure reinitialize()
    classes  := taque()
@@ -383,7 +384,7 @@ class Class : declaration (supers,
        }
 
     nam := self.name
-    s := fName || "\nclass " || nam
+    s := yyfilename || "\nclass " || nam
     if *(superstr := self.supers$String()) > 0 then {
        s ||:= " : "; s ||:= superstr
        }
@@ -1089,7 +1090,7 @@ procedure readspec(name)
       stop("fatal: can't read spec for class ", name)
 
    s := dbe.entry
-   fName := name
+   yyfilename := name
    fLine := 0
    if /s then write("fetchspec ", name, " returned null")
    s ? {

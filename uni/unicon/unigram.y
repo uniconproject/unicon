@@ -389,19 +389,19 @@ invocop  : IDENT ;
 package  : PACKAGE lnkfile {
    if \thePackage then {
       if not (thePackage.name == $2.s) then {
-         yyerror(fName || " cannot be in both package "|| thePackage.name ||
+         yyerror(yyfilename || " cannot be in both package "|| thePackage.name ||
             " and package " || $2.s)
          $$ := EmptyNode
          }
       else { # this branch allowed for -C / iconc
-         thePackage.insertfname(fName)
+         thePackage.insertfname(yyfilename)
          thePackage.add_imported()
          }
       }
    else {
       $$ := node("package", $1,$2);
       thePackage := Package($2.s)
-      thePackage.insertfname(fName)
+      thePackage.insertfname(yyfilename)
       thePackage.add_imported()
       }
    } ;

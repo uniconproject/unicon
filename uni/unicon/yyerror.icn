@@ -102,7 +102,7 @@ initial {
 	 }
       istop("too many errors, aborting")
       }
-   prefix := (\fName||":") | ""
+   prefix := (\yyfilename||":") | ""
    if s == "syntax error" then
       s := t[(\statestk)[1], yychar]
    if s == "syntax error" then {
@@ -111,7 +111,7 @@ initial {
       }
    s := prefix ||yylineno||": # \""|| yytext || "\" " || s
    if \merrflag then {
-      if ferr2 := open(\fName) then {
+      if ferr2 := open(\yyfilename) then {
 	 iwrite(&errout, "Reporting (-M) your error to the Oracle (",
 	       merraddress, ") for assistance.")
 	 iwrite(&errout, "Type any question you have on the lines below.",

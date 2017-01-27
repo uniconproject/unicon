@@ -2838,7 +2838,7 @@ procedure AppendListCompTemps(lcls, body)
 	 vl := token(IDENT, ltmps[1], 0, 0, "lambda.icn")
 	 }
       if (lcls === EmptyNode) |
-         (type(lcls)==="treenode"& lcls.label==("locals2"|"locals3")) then {
+	  (type(lcls)==="treenode" & lcls.label==("locals2"|"locals3")) then {
 	 return node("locals2", lcls, "local", vl, ";")
 	 }
       else
@@ -3197,19 +3197,19 @@ procedure action_35()
 
    if \thePackage then {
       if not (thePackage.name == valstk[1].s) then {
-         yyerror(fName || " cannot be in both package "|| thePackage.name ||
+         yyerror(yyfilename || " cannot be in both package "|| thePackage.name ||
             " and package " || valstk[1].s)
          yyval := EmptyNode
          }
       else { # this branch allowed for -C / iconc
-         thePackage.insertfname(fName)
+         thePackage.insertfname(yyfilename)
          thePackage.add_imported()
          }
       }
    else {
       yyval := node("package", valstk[2],valstk[1]);
       thePackage := Package(valstk[1].s)
-      thePackage.insertfname(fName)
+      thePackage.insertfname(yyfilename)
       thePackage.add_imported()
       }
    

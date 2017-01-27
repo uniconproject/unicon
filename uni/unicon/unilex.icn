@@ -163,8 +163,9 @@ initial {
 		   if yylineno := integer(tab(many(&digits))) then {
 		       =" \""
 		       new_filename := tab(find("\"")|0)
-		       if map(new_filename[-3:0]) == ".icn" then
+		       if map(new_filename[-4:0]) == ".icn" then {
 			   yyfilename := new_filename
+			   }
 		   }
 	       }
 	       tab(find("\n") | 0)
@@ -603,8 +604,6 @@ procedure do_backquote()
    return PUNEVAL
 end
 
-global fName
-
 global errors
 
 procedure yylex_reinit()
@@ -706,9 +705,9 @@ end
 
 #procedure main(argv)
 #  local i
-#  fName := argv[1] | stop("usage: unilex filename")
+#  yyfilename := argv[1] | stop("usage: unilex filename")
 #  yyin := ""
-#  every yyin ||:= preprocessor(fName, predefs()) do yyin ||:= "\n"
+#  every yyin ||:= preprocessor(yyfilename, predefs()) do yyin ||:= "\n"
 #  yylex_reinit()
 
 #  while (i := yylex()) ~=== EOFX do

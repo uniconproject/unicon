@@ -15,20 +15,15 @@ Icon system.
 
 \section{D.1 File Organization}
 
-The Icon system is organized in a hierarchy. Under UNIX, the Icon
-hierarchy is rooted at v6 and is usually located at /usr/icon/v6. For
-other operating systems, Icon may be named differently. The v6
-directory has several subdirectories that contain source code, test
-programs, documents, and so forth. The source code is in v6/src. There
-are five subdirectories in src:
+The Icon system is organized in a hierarchy. Under UNIX, the root of
+the Icon hierarchy is called icon.git/trunk {\color{blue} (the Unicon
+root directory is called unicon)} and may be located anywhere.
+Neither Icon nor Unicon depends on the name of the root directory and,
+for other operating systems, it may be named differently.
 
-
-\ \ h\ \ common header files\newline
-\ \ icont\ \ command processor\newline
-\ \ iconx\ \ run-time system\newline
-\ \ link\ \ linker\newline
-\ \ tran\ \ translator
-
+The {\it root} directory has several subdirectories that contain
+source code, test programs, documents, and so forth. The source code
+is in {\it root}/src.  The subdirectories of src are shown below.
 
 The subdirectory h holds header files that are included by files in
 the other subdirectories. The file h/rt.h is particularly important,
@@ -36,7 +31,7 @@ since it contains most of the definitions and declarations used in the
 run-time system.
 
 The rest of the code related to the run-time system is in the
-subdirectory iconx. The first letters of files in this subdirectory
+subdirectory runtime. The first letters of files in this subdirectory
 indicate the nature of their contents. Files that begin with the
 letter f contain code for functions, while files that begin with o
 contain code for operators. Code related directly to the interpretive
@@ -46,8 +41,84 @@ as list construction that correspond to virtual machine instructions
 are in files that begin with the letter l. Finally, files that begin
 with the letter r hold run-time support routines.
 
-Within each category, routines are grouped by functionality. For example, string construction functions such as map are
-in fstr.c, while storage allocation and garbage collection routines are in rmemmgt.c.
+Within each category, routines are grouped by functionality. For
+example, string construction functions such as map are in fstr.c,
+while storage allocation and garbage collection routines are in
+rmemmgt.c.
+
+A simplified file structure is shown below. The emphasis is on
+directories that contain source or documentation. Directories that are
+common to both Icon and Unicon are in black; Icon specific directories are
+shown in grey; Unicon specific directories are shown in blue.
+In some cases there is additional sub-structure not shown here.
+
+\noindent
+\begin{picture}(450,370)(0,40)
+%\put(0,40){\graphpaper{45}{37}}
+  {\thicklines
+  \put(0,205){\makebox(80,20){Icon.git/trunk}}
+  \put(0,185){\color{blue}\makebox(80,20){unicon}}
+  \put(0,205){\line(1,0){80}}
+  \put(80,100){\line(0,1){280}}
+  \put(110,370){\makebox(0,20)[l]{bin}}
+  \put(150,370){\makebox(0,20)[l]
+    {\parbox{100pt}{\em Executable binaries and support files}}}
+  \put(110,330){\makebox(0,20)[l]{config}}
+  \put(150,330){\makebox(0,20)[l]{\parbox{70pt}{\em Configuration directories}}}
+  \put(110,290){\makebox(0,20)[l]{doc}}
+  \put(150,290){\makebox(0,20)[l]{\parbox{100pt}{\em Documents}}}
+  \put(110,250){\makebox(0,20)[l]{ipl}}
+  \put(150,250){\makebox(0,20)[l]{\parbox{70pt}{\em Icon program library}}}
+  {\color[rgb]{0.5,0.5,0.5}
+    \put(110,210){\makebox(0,20)[l]{man}}
+    \put(150,210){\makebox(0,20)[l]{\parbox{100pt}{\em Man pages}}}
+  }%grey
+  \put(110,170){\makebox(0,20)[l]{src}}
+  \put(130,180){\line(1,0){130}}
+  \put(110,130){\makebox(0,20)[l]{tests}}
+  \put(150,130){\parbox[l]{80pt}
+    {\em benchmarks, C~interface~tests, general~tests etc.}}
+  {\color{blue}
+    \put(110,90){\makebox(0,20)[l]{uni}}
+    \put(150,90){\makebox(0,20)[l]{\parbox{80pt}{Unicon library}}}
+  }%blue
+  \multiput(80,100)(0,40){8}{\line(1,0){20}}
+  %src tree
+  \begin{picture}(0,0)(0,30)
+  \put(260,80){\line(0,1){300}}
+  \multiput(260,80)(0,30){11}{\line(1,0){20}}
+  \put(290,370){\makebox(0,20)[l]{common}}
+  \put(350,370){\makebox(0,20)[l]{\em common source}}
+  \put(290,340){\makebox(0,20)[l]{h}}
+  \put(350,340){\makebox(0,20)[l]{\em header files}}
+  \put(290,310){\makebox(0,20)[l]{\color{blue}iconc}}
+  \put(350,310){\makebox(0,20)[l]{\color{blue}\em Icon compiler source}}
+  \put(290,280){\makebox(0,20)[l]{icont}}
+  \put(350,280){\makebox(0,20)[l]{\em Icon translator source}}
+  {\color{blue}
+    \put(290,250){\makebox(0,20)[l]{lib}}
+    \put(350,250){\makebox(0,20)[l]{
+        \parbox{100pt}{\em Additional libraries for some platforms}}}
+    \put(290,220){\makebox(0,20)[l]{libtp}}
+    \put(350,220){\makebox(0,20)[l]{
+        \parbox{120pt}{\em libtp transport protocol}}}
+  }%blue
+  \put(290,190){\makebox(0,20)[l]{preproc}}
+  \put(350,190){\makebox(0,20)[l]{\em preprocessor source}}
+  \put(290,160){\makebox(0,20)[l]{rtt}}
+  \put(350,160){\makebox(0,20)[l]{\em run-time translator source}}
+  \put(290,130){\makebox(0,20)[l]{runtime}}
+  \put(350,130){\makebox(0,20)[l]{\em run-time source}}
+  {\color[rgb]{0.5,0.5,0.5}
+    \put(290,100){\makebox(0,20)[l]{wincap}}
+    \put(350,100){\makebox(0,20)[l]{\em Wincap library source}}
+  }%grey
+  \put(290,70){\makebox(0,20)[l]{xpm}}
+  \put(350,70){\makebox(0,20)[l]{\em xpm library source}}
+  \end{picture}% src tree
+  }% thicklines
+\end{picture}
+
 
 \section{D.2 Adding Functions}
 

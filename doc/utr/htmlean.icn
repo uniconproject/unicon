@@ -1,6 +1,9 @@
 #
 # Clean html output from pdftohtml
 #
+# pdftohtml does not preserve the position of images in a usable form,
+# so manual cleanup will generally be required following this program.
+#
 procedure main(av)
     f := open(av[1],"r") | stop("can't open ", av[1]|", no filename given")
     L := []
@@ -20,7 +23,10 @@ procedure main(av)
 
     if match("utr9", av[1]) then {
        L := fixUtr9Table1(L)
+       L := fixUtr9Table2(L)
        }
+
+    system("cp " || av[1] || " " || av[1] || ".bak")
 
     f2 := open(av[1],"w")
     while write(f2, pop(L))
@@ -45,7 +51,8 @@ procedure maketitle(L)
    L[k] := "<a name=\"outline\"></a><h3>Contents</h3>"
 
    L := L[1:i] ||| ["<br><br><br><br><br><center><h3>"] |||
-         L[i:ii] ||| ["</h3><br><br>"] ||| [L[ii], "<br><br>"] |||L[ii+1:j] |||
+         L[i:ii-2] ||| ["</h3><br><br><br>"] |||         L[ii-2:ii+1] |||
+         ["<br><br><br>"] |||L[ii+1:j] |||
          ["</center><br><br><br><br><br>", L[j]] |||
 	 L[k:-2] ||| L[j+1:k] ||| L[-2:0]
 
@@ -56,17 +63,18 @@ procedure maketitle(L)
 end
 
 procedure pumpup_sectionheadings(L)
+local oa # optional <a ...> anchor
    every i := 1 to *L do {
       L[i] ? {
-	 if secnum := tab(any(&digits)) || ="." || (tab(any(&digits))|"") ||
-                       =" " & title := tab(find("<br/>")) then {
-	    L[i] := "<h3>" || secnum || title || "</h3>" || tab(0)
+	 oa := (="<a name=" || tab(many(&digits)) || ="></a>") | ""
+	 if secnum := tab(any(&digits)) || ="." || (tab(many(&digits))|"") ||
+                       =" " & title := tab(find("<br/>")) & secnum~=="0.0 " then {
+	    L[i] := oa || "<h3>" || secnum || title || "</h3>" || tab(0)
 	    }
-	 else if secnum := ((="<a name="||tab(many(&digits))||="></a>")|"") ||
-			    tab(any(&digits)) || ="." || tab(any(&digits)) ||
+	 else if secnum := tab(any(&digits)) || ="." || tab(any(&digits)) ||
 			   ="." || tab(any(&digits)) ||
-                           =" " & title := tab(find("<br/>")) then {
-	    L[i] := "<h4>" || secnum || title || "</h4>" || tab(0)
+                           =" " & title := tab(find("<br/>")) & secnum~=="0.0 " then {
+	    L[i] := oa || "<h4>" || secnum || title || "</h4>" || tab(0)
 	    }
 	 }
       }
@@ -149,50 +157,58 @@ procedure line_clean(s)
    return s
 end
 
+#
+# This spectacularly brittle/fragile code patches up Table 1 in UTR 9.
+#
 procedure fixUtr9Table1(L)
    local i, j
+   L := copy(L)
    i := 1
    while i<=*L & not (match("Table 1", L[i]) & find("types of primitives",L[i])) do i +:= 1
    if i < *L then {
       j := i
       while j>1 & not match("<a name=4>", L[j]) do j -:= 1
 
+      L[i] := "<center>" || L[i]
       # replace i+1 ... i+4 with a table header
       L[i+3] := "<th>"||L[i+1][1:-5]||"<th>"||L[i+2][1:-5]||"<th>"||L[i+3][1:-5]||"<th>"||L[i+4][1:-5]
       L[i+1] := "<table border>"
       L[i+2] := "<tr>"
-      L[i+4] := "<tr><td>" || L[i+6][1:-5]    # Cube
-      L[i+6] := "<td>" || L[i+5] || " " || L[i+8]
-      L[i+5] := "<td>" || L[i+7][1:-5]        # DrawCube()
-      L[i+7] := "<td>" || L[j][11:0]
-      L[j][11:0] := ""
+      L[i+4] := "<tr><td>move here</table></center>"
 
-      L[i+8] := "<tr><td>" || L[i+10][1:-5]   # Cylinder
-      L[i+10] := "<td>" || L[i+9][1:-5] || " " || L[i+12][1:-5]
-      L[i+9] := "<td>" || L[i+11][1:-5]                 # DrawCylinder()
-      L[i+11] := "<td>" || L[j+1][1:-5] || " " || L[j+2][1:-5]
-      L[j+1] := L[j+2] := ""
-
-      L[i+12] := "<tr><td>" || L[i+14][1:-5]  # Disk
-      L[i+14] := "<td>" || L[i+13][1:-5] || " " || L[i+16][1:-5]
-      L[i+13] := "<td>" || L[i+15][1:-5]
-      L[i+15] := "<td>" || L[j+3][1:-5] || " " || L[j+4][1:-5]
-      L[j+3] := L[j+4] := ""
-
-      L[i+16] := "<tr><td>"||L[i+27][1:15]||"<td>"||L[i+27][16:-5]||"<td>"||L[i+26][1:-5]||" "||L[i+28][1:-5]||"<td>" || L[i+19][11:-5]
-      L[i+17] := "<tr><td>"||L[i+30][1:-5]||"<td>"||L[i+31][1:-5]||"<td>"||L[i+29][1:-5]||" "||L[i+32][1:-5]||"<td>" || L[i+20][1:-5]
-      L[i+18] := "<tr><td>"||L[i+34][1:-5]||"<td>"||L[i+35][1:-5]||"<td>"||L[i+33][1:-5]||" "||L[i+36][1:-5]||"<td>" || L[i+21][1:-5]
-      L[i+19] := "<tr><td>"||L[i+38][1:-5]||"<td>"||L[i+39][1:-5]||"<td>"||L[i+37][1:-5]||" "||L[i+40][1:-5]||"<td>" || L[i+22][1:-5]
-      L[i+20] := "<tr><td>"||L[i+42][1:-5]||"<td>"||L[i+43][1:-5]||"<td>"||L[i+41][1:-5]||" "||L[i+44][1:-5]||"<td>" || L[i+23][1:-5]
-      L[i+21] := "<tr><td>"||L[i+46][1:-5]||"<td>"||L[i+47][1:-5]||"<td>"||L[i+45][1:-5]||" "||L[i+48][1:-5]||"<td>" || L[i+24][1:-5]
-      L[i+22] := "<tr><td>"||L[i+50][1:-5]||"<td>"||L[i+51][1:-5]||"<td>"||L[i+49][1:-5]||" "||L[i+52][1:-5]||"<td>" || L[i+25][1:-5]
-      L[i+23] := "</table>"
-      L[i+24] := L[i+25] := L[i+26] := L[i+27] := L[i+28] := ""
-      L[i+29] := L[i+30] := L[i+31] := L[i+32] := L[i+33] := ""
-      L[i+34] := L[i+35] := L[i+36] := L[i+37] := L[i+38] := ""
-      L[i+39] := L[i+40] := L[i+41] := L[i+42] := L[i+43] := ""
-      L[i+44] := L[i+45] := L[i+46] := L[i+47] := L[i+48] := ""
-      L[i+49] := L[i+50] := L[i+51] := L[i+52] := ""
       }
    return L
+end
+
+#
+# This spectacularly brittle/fragile code patches up Table 2 in UTR 9.
+#
+procedure fixUtr9Table2(L)
+   local i, j
+   L := copy(L)
+   i := 1
+   while i<=*L & not (match("Table 2", L[i]) & find("texture coordinates and primitives",L[i])) do i +:= 1
+   if i < *L then {
+      j := i
+      while j>1 & not match("<a name=4>", L[j]) do j -:= 1
+
+      L[i] := "<center>" || L[i]
+      # replace i+1 ... i+4 with a table header
+      L[i+3] := "<th>"||dbr(L[i+4])||
+	        "<th>"||dbr(L[i+2])||"<br>"||dbr(L[i+6])||
+	        "<th>"||dbr(L[i+1])||" "||dbr(L[i+3])||" "||dbr(L[i+7])||" "||dbr(L[i+8])||"<th>"||dbr(L[i+5])
+      L[i+1] := "<table border>"
+      L[i+2] := "<tr>"
+      L[i+4] := "<tr>"
+      L[i+5] := "<td>move here"
+      L[i+6] := "</table>"
+      L[i+7] := "</center>"
+      }
+   return L
+end
+
+# remove optional trailing <br/> tag
+procedure dbr(s)
+   if s[-5:0] == "<br/>" then s[-5:0] := ""
+   return s
 end

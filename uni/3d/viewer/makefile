@@ -1,5 +1,6 @@
 include ../../makedefs
 DEL = $(RM)
+BASE=../../..
 UC=$(UNICON)
 UFLAGS=-c -u
 
@@ -15,7 +16,7 @@ pure:
 
 $(TARGET): $(UFILES) 
 	$(UC) -o $(TARGET) $(UFILES)
-	
+
 # u3dview.u: u3dview.icn
 
 %.u:	%.icn 

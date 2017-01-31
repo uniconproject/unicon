@@ -1103,8 +1103,8 @@ int action;
   return;
 }
 
+#ifdef DEBUG
 #if !ConcurrentCOMPILER
-/* should probably be under some obscure Debug ifdef. */
 void howmanyblock()
 {
   int i=0;
@@ -1142,6 +1142,7 @@ void howmanyblock()
   printf(" local block= %d\n", i);
 }
 #endif                                /* ConcurrentCOMPILER */
+#endif				      /* DEBUG */
 
 void tlschain_add(struct threadstate *tstate, struct b_coexpr *cp)
 {

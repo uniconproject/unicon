@@ -265,11 +265,7 @@ end
 
 "trap() - trap a signal."
 
-#if NT
-function{0} trap(nsignal, handler)
-#else					/* NT */
 function{0,1} trap(nsignal, handler)
-#endif					/* NT */
    if !is:string(nsignal) then
       if !is:integer(nsignal) then
          runerr(170, nsignal)
@@ -296,9 +292,6 @@ function{0,1} trap(nsignal, handler)
 	 fail; 
       } 
 
-#if NT
-      fail;
-#else					/* NT */
       if (is:null(handler))
          signal(sig, SIG_DFL);
       else if (is:proc(handler)) {
@@ -310,7 +303,6 @@ function{0,1} trap(nsignal, handler)
       else
          runerr(106, handler);
       return register_sig(sig, handler);
-#endif					/* NT */
       }
 end
 

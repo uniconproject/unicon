@@ -4,6 +4,7 @@
 \usepackage[ascii]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
+\input icon.sty
 \usepackage{color}
 \usepackage{array}
 \usepackage{xtab}
@@ -111,15 +112,15 @@ User's Guide and Reference Manual
 \bigskip
 
 
-{\centering\selectlanguage{english}
+{\centering
 Naomi Martinez, Clinton Jeffery, and Jafar Al Gharaibeh
 \par}
 
-{\centering\selectlanguage{english}
+{\centering
 Unicon Technical Report \#9d
 \par}
 
-{\centering\selectlanguage{english}
+{\centering
 January 26, 2017
 \par}
 
@@ -179,10 +180,9 @@ Moscow, ID 83844
 
 \bigskip
 
-{\selectlanguage{english}
 This work was sponsored by the National Library of Medicine, the
-Alliance for Minority\\ Participation, and by NSF grants
-EIA-0220590 and EIA-9810732.}
+Alliance for Minority Participation, and by NSF grants
+EIA-0220590 and EIA-9810732.
 
 \pagebreak
 
@@ -267,46 +267,41 @@ with default parameters and eliminating unnecessary function calls.
 The first step in 3D graphics programming is opening windows to render
 3D graphics, as in the line:
 
-{\sffamily
-W := open(``win'', ``gl'')}
+\iconcode{
+W := open("win", "gl")}
 
 
 \bigskip
 
 To open a 3D graphics window, call the built in function
 \textsf{open()}, passing in the title of the window to be
-opened and mode \textsf{``gl''}. In the above example,
-\textsf{``win''} is the title of the window to be opened. The
-parameter \textsf{``gl''} indicates that a window for rendering 3D
+opened and mode \textsf{"gl"}. In the above example,
+\textsf{"win"} is the title of the window to be opened. The
+parameter \textsf{"gl"} indicates that a window for rendering 3D
 graphics should be opened. As in the 2D facilities, if a window is
 assigned to the keyword variable \textsf{\&window}, it is a default
 window for subsequent 3D function calls. The newly opened window can
 be queried for the specifications of the 3D graphics library. The
 following example demonstrates the use of such attributes:
 
-\textsf{procedure main(av)}
-
-\textsf{ \ \ \&window := open({\textquotedbl}gl attributes{\textquotedbl}, {\textquotedbl}gl{\textquotedbl},
-``canvas=hidden'')}
-
-\textsf{ \ \ write({\textquotedbl}glversion \ : {\textquotedbl},
- WAttrib({\textquotedbl}glversion{\textquotedbl}))}
-
-\textsf{ \ \ write({\textquotedbl}glvendor \ \ : {\textquotedbl},
- WAttrib({\textquotedbl}glvendor{\textquotedbl}))}
-
-\textsf{ \ \ write({\textquotedbl}glrenderer : {\textquotedbl},
- WAttrib({\textquotedbl}glrenderer{\textquotedbl}))}
-
-\textsf{end}
+\iconcode{
+procedure main(av) \\
+\>   \&window := open("gl attributes", "gl", "canvas=hidden") \\
+\>   write("glversion  : ", WAttrib("glversion")) \\
+\>   write("glvendor   : ", WAttrib("glvendor")) \\
+\>   write("glrenderer : ", WAttrib("glrenderer")) \\
+end
+}
 
 \noindent
 and here is a sample output of the program after running it on
-some specific hardware:\newline
-\newline
-\textsf{glversion \ : 2.1.2 NVIDIA 195.36.15\newline
-glvendor \ \ : NVIDIA Corporation\newline
-glrenderer : Quadro FX Go1400/PCI/SSE2}\newline
+some specific hardware:
+
+\iconcode{
+glversion \ : 2.1.2 NVIDIA 195.36.15 \\
+glvendor \ \ : NVIDIA Corporation \\
+glrenderer : Quadro FX Go1400/PCI/SSE2
+}
 
 
 \subsection[2.3 The Coordinate System]{2.3 The Coordinate System}
@@ -333,7 +328,7 @@ To help think about these attributes, imagine a person walking around
 a 3D coordinate system. What this person sees becomes the scene viewed
 on the screen. The eye position specifies where this person is
 standing. For instance if this person is standing at the origin,
-\textsf{(0, 0, 0),} then things close to the origin appear larger and
+\textsf{(0, 0, 0)}, then things close to the origin appear larger and
 seem closer than objects further from the origin. The eye direction
 supplies the direction in which the person is looking. Suppose the
 person is looking toward the negative z-axis. Then only the objects
@@ -382,7 +377,7 @@ the coordinates of each vertex as parameters, the value of
 \textsf{dim} specifies the number of parameters each vertex will
 have. For primitives that take x, y, and z coordinates, specifying
 only x and y coordinate is not sufficient. For this reason,
-\textsf{{}``dim = 2''} disallows the use of these primitives. These
+\textsf{"dim = 2"} disallows the use of these primitives. These
 functions are
 \textsf{DrawSphere(), DrawTorus(), DrawCube(), and DrawCylinder()}.
 By default the value of \textsf{dim} is
@@ -391,7 +386,7 @@ three. An example of drawing primitive can be found in section 3.2.
 
 \bigskip
 
-{\centering\selectlanguage{english}\bfseries
+{\centering\bfseries
 Table 1 -- types of primitives
 \par}
 
@@ -402,53 +397,55 @@ Table 1 -- types of primitives
 \tablelasttail{}
 \begin{xtabular}{|m{0.89835984in}|m{1.3677598in}|m{2.2177598in}|m{1.1962599in}|}
 \hline
-\centering{\selectlanguage{english} Primitive} &
-\centering{\selectlanguage{english} Function} &
-\centering{\selectlanguage{english} Parameters} &
-\centering\arraybslash{\selectlanguage{english} Picture}\\\hline
-{\selectlanguage{english} Cube} &
-{\selectlanguage{english}\sffamily DrawCube()} &
-{\selectlanguage{english} the x, y, and z coordinates of the lower left front corner, and the length of the sides. } &
+\centering{Primitive} &
+\centering{Function} &
+\centering{Parameters} &
+\centering\arraybslash{Picture}\\\hline
+Cube &
+{\sffamily DrawCube()} &
+{the x, y, and z coordinates of the lower left front corner, and the length of the sides.} &
 \centering\arraybslash  \includegraphics[width=0.9543in,height=0.772in]{utr9/utr9-img001.png} \\\hline
-{\selectlanguage{english} Cylinder} &
-{\selectlanguage{english}\sffamily DrawCylinder()} &
-{\selectlanguage{english} the x, y, and z coordinates of the center, the height, the radius of the top, the radius of
-the bottom. If one radius is smaller than the other a cone is formed. } &
+Cylinder &
+{\sffamily DrawCylinder()} &
+the x, y, and z coordinates of the center, the height, the radius of
+the top, the radius of the bottom. If one radius is smaller than the
+other a cone is formed. &
 {\centering  \includegraphics[width=0.798in,height=0.7035in]{utr9/utr9-img002.png} \par}
 \centering\arraybslash  \includegraphics[width=0.7965in,height=0.8772in]{utr9/utr9-img003.png} \\\hline
-{\selectlanguage{english} Disk} &
-{\selectlanguage{english}\sffamily DrawDisk()} &
-{\selectlanguage{english} the x, y, and z coordinates of center, the radius of the inner circle, and the radius of the
-outer circle. By specifying an additional two angle values a partial disk is obtained. } &
+Disk &
+{\sffamily DrawDisk()} &
+the x, y, and z coordinates of center, the radius of the inner circle,
+and the radius of the outer circle. By specifying an additional two
+angle values a partial disk is obtained. & 
 {\centering  \includegraphics[width=0.8992in,height=0.7571in]{utr9/utr9-img004.png} \par}
 \centering\arraybslash  \includegraphics[width=0.8992in,height=0.7598in]{utr9/utr9-img005.png} \\\hline
-{\selectlanguage{english} Filled Polygon} &
-{\selectlanguage{english}\sffamily FillPolygon()} &
-{\selectlanguage{english} the x, y, and z coordinates of each vertex of the polygon. } &
+Filled Polygon &
+{\sffamily FillPolygon()} &
+the x, y, and z coordinates of each vertex of the polygon. &
 \centering\arraybslash  \includegraphics[width=0.9429in,height=0.6217in]{utr9/utr9-img006.png} \\\hline
-{\selectlanguage{english} Line} &
-{\selectlanguage{english}\sffamily DrawLine()} &
-{\selectlanguage{english} the x, y, and z coordinates of each vertex of the line. } &
+Line &
+{\sffamily DrawLine()} &
+the x, y, and z coordinates of each vertex of the line. &
 \centering\arraybslash  \includegraphics[width=0.9417in,height=0.5957in]{utr9/utr9-img007.png} \\\hline
-{\selectlanguage{english} Polygon} &
-{\selectlanguage{english}\sffamily DrawPolygon()} &
-{\selectlanguage{english} the x, y, and z coordinates of each vertex of the polygon. } &
+Polygon &
+{\sffamily DrawPolygon()} &
+the x, y, and z coordinates of each vertex of the polygon. &
 \centering\arraybslash  \includegraphics[width=0.9417in,height=0.6043in]{utr9/utr9-img008.png} \\\hline
-{\selectlanguage{english} Point} &
-{\selectlanguage{english}\sffamily DrawPoint()} &
-{\selectlanguage{english} the x, y, and z coordinates of each individual point.} &
+Point &
+{\sffamily DrawPoint()} &
+the x, y, and z coordinates of each individual point. &
 \centering\arraybslash  \includegraphics[width=0.9429in,height=0.5957in]{utr9/utr9-img009.png} \\\hline
-{\selectlanguage{english} Segment} &
-{\selectlanguage{english}\sffamily DrawSegment()} &
-{\selectlanguage{english} the x, y, and z coordinates of each vertex of the line segments.} &
+Segment &
+{\sffamily DrawSegment()} &
+the x, y, and z coordinates of each vertex of the line segments. &
 \centering\arraybslash  \includegraphics[width=0.9362in,height=0.6425in]{utr9/utr9-img010.png} \\\hline
-{\selectlanguage{english} Sphere} &
-{\selectlanguage{english}\sffamily DrawSphere()} &
-{\selectlanguage{english} the x, y, and z coordinates of center and the radius of the sphere. } &
+Sphere &
+{\sffamily DrawSphere()} &
+the x, y, and z coordinates of center and the radius of the sphere. &
 \centering\arraybslash  \includegraphics[width=0.9307in,height=0.6543in]{utr9/utr9-img011.png} \\\hline
-{\selectlanguage{english} Torus} &
-{\selectlanguage{english}\sffamily DrawTorus()} &
-{\selectlanguage{english} the x, y, and z coordinates of the center, an inner radius and an outer radius. } &
+Torus &
+{\sffamily DrawTorus()} &
+the x, y, and z coordinates of the center, an inner radius and an outer radius. &
 \centering\arraybslash  \includegraphics[width=0.9398in,height=0.6272in]{utr9/utr9-img012.png} \\\hline
 \end{xtabular}
 \end{center}
@@ -579,16 +576,16 @@ Since not all scenes require the use of textures, the attribute
 default, textures are turned off. In order to turn on texturing in a
 scene use the following line of code
 
-{\selectlanguage{english}\ttfamily
-\ \ \ \textsf{WAttrib(W, ``texmode=on'')} }
+{\ttfamily
+\ \ \ \textsf{WAttrib(W, "texmode=on")} }
 
 Once textures are turned on and a texture image is given, the texture
 image will be applied to subsequent objects in the scene. By using the
 following line of code, textures will be disabled for all successive
 objects.
 
-{\selectlanguage{english}\ttfamily
-\ \ \ \textsf{WAttrib(W, ``texmode=off'')}}
+{\ttfamily
+\ \ \ \textsf{WAttrib(W, "texmode=off")}}
 
 Texture images in OpenGL programs are images that have been encoded
 into an array. So if a programmer wants to use a .gif image file, the
@@ -600,8 +597,8 @@ Unicon window, an image file, or a string. If the texture image is a
 string it must be encoded in one of two language standard
 formats. Either it is in the format
 
-{\selectlanguage{english}\sffamily
-{}``width,pallet,data'' \ \textrm{or} \ {}`` width,\#,data''}
+{\sffamily
+"width,pallet,data" \ \textrm{or} \ " width,\#,data"}
 
 \noindent where \textsf{pallet} is one of the pallets described in the 2D
 graphics facilities and data is a hexadecimal representation of an
@@ -623,7 +620,7 @@ in the first place. Section 3.4 contains examples on how to use
 textures specified in the different forms.
 
 A programmer can give the texture in one of two ways, one can use
-\textsf{WAttrib(``texture={\dots}'') }or the function
+\textsf{WAttrib("texture={\dots}") }or the function
 \textsf{Texture(t)}\texttt{.} These methods do differ in one important
 way, a window cannot be used as a texture with \textsf{WAttrib()}. So
 a function call must be made to \textsf{Texture()} if a window is to
@@ -645,13 +642,13 @@ simplify the process of mapping a texture onto an object by setting
 defaults for texture coordinates. There are several ways to specify
 texture coordinates. To use the defaults given by the Unicon 3D
 graphics facilities, one can either use
-\textsf{WAttrib(``texcoord=auto'')} or
-\textsf{Texcoord(``auto'')}. The defaults are dependent on the type of
+\textsf{WAttrib("texcoord=auto")} or
+\textsf{Texcoord("auto")}. The defaults are dependent on the type of
 primitive and are outlined in Table 2.
 
 If the programmer wishes to use texture coordinates other than the
 defaults, these can be specified in several ways.  One can use
-\textsf{WAttrib(``texcoord=s'')} where \textsf{s} is a comma separated
+\textsf{WAttrib("texcoord=s")} where \textsf{s} is a comma separated
 string of real number values between \textsf{0.0} and
 \textsf{1.0}. Each pair of values is to be taken as one texture
 coordinate; there must be an even number of decimal values or the
@@ -673,7 +670,7 @@ polygons. These specifications are given in the following table.
 
 \pagebreak
 
-{\centering\selectlanguage{english}\bfseries
+{\centering\bfseries
 Table 2 -- texture coordinates and primitives
 \par}
 
@@ -700,16 +697,16 @@ Table 2 -- texture coordinates and primitives
 
 ~
 
-{\selectlanguage{english} Cylinder} &
-{\selectlanguage{english} The y texture coordinate ranges linearly from 0.0 to 1.0. On spheres this is from\newline
-z= -radius to z=radius; on cylinders, from\newline
+Cylinder &
+The y texture coordinate ranges linearly from 0.0 to 1.0. On spheres this is from
+z= -radius to z=radius; on cylinders, from
 z = 0 to z = height. The x texture coordinate ranges from 0.0 at the positive y-axis to 0.25 at the positive x-axis,
-to 0.5 at the negative\newline
-y-axis to 0.75 at the negative x-axis back to 1.0 at the positive y-axis. } &
-{\selectlanguage{english} None} &
+to 0.5 at the negative
+y-axis to 0.75 at the negative x-axis back to 1.0 at the positive y-axis. &
+None &
  \includegraphics[width=0.7228in,height=0.7362in]{utr9/utr9-img014.jpg} 
  \includegraphics[width=0.7272in,height=0.6902in]{utr9/utr9-img015.jpg} \\\hline
-{\selectlanguage{english} Filled Polygon}
+Filled Polygon
 
 ~
 
@@ -719,13 +716,13 @@ y-axis to 0.75 at the negative x-axis back to 1.0 at the positive y-axis. } &
 
 ~
 
-{\selectlanguage{english} Line}
+Line
 
 ~
 
 ~
 
-{\selectlanguage{english} Polygon}
+Polygon
 
 ~
 
@@ -733,11 +730,12 @@ y-axis to 0.75 at the negative x-axis back to 1.0 at the positive y-axis. } &
 
 ~
 
-{\selectlanguage{english} Segment} &
-{\selectlanguage{english} The x and y texture coordinates are given by
+
+Segment &
+The x and y texture coordinates are given by
 p\textsubscript{1}x\textsubscript{0}+p\textsubscript{2}y\textsubscript{0}+p\textsubscript{3}z\textsubscript{0}+p\textsubscript{4}w\textsubscript{0}
-} &
-{\selectlanguage{english} A texture coordinate is assigned to a vertex. } &
+ &
+ A texture coordinate is assigned to a vertex. &
  \includegraphics[width=0.6602in,height=0.7335in]{utr9/utr9-img016.jpg} 
  \includegraphics[width=0.7228in,height=0.7516in]{utr9/utr9-img017.jpg} 
  \includegraphics[width=0.7217in,height=0.8717in]{utr9/utr9-img018.jpg} 
@@ -762,7 +760,7 @@ progressing from solid to near-invisible.
 
 \bigskip
 
-{\centering\selectlanguage{english}\bfseries
+{\centering\bfseries
 Table 3 -- transparency adjectives
 \par}
 
@@ -782,10 +780,10 @@ Transparency name & percent visible \\\hline
 
 
 
-When it is set \textsf{``on''}, the attribute \textsf{texmode} is used instead
+When it is set \textsf{"on"}, the attribute \textsf{texmode} is used instead
 of the current foreground color material specification; the two are
 mutually exclusive by default.  Attribute \textsf{texmode} may instead be set
-to \textsf{``texmode=blend''}, a mode in which the current color is
+to \textsf{"texmode=blend"}, a mode in which the current color is
 applied to the texture as it is output. By such a technique, a reddish
 brick texture could for example be blended with green or blue to provide
 bricks of different colors.
@@ -814,8 +812,8 @@ redraw the scene once.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WAttrib(w, ``eyepos=0.0,0.0,5.0'',``eyedir=0.0,0.0,1.0'')}
+{\sffamily
+WAttrib(w, "eyepos=0.0,0.0,5.0","eyedir=0.0,0.0,1.0")}
 
 
 \bigskip
@@ -829,8 +827,8 @@ the current eye position, call
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WAttrib(w, ``eyepos'')}
+{\sffamily
+WAttrib(w, "eyepos")}
 
 
 \bigskip
@@ -841,8 +839,8 @@ the user reads the current value of the eye direction and up direction.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-every put(attrList, WAttrib(w, ``eyedir'', ''eyeup'')}
+{\sffamily
+every put(attrList, WAttrib(w, "eyedir", "eyeup")}
 
 
 \subsection[3.2 Drawing Primitives]{3.2 Drawing Primitives}
@@ -852,38 +850,19 @@ draw primitives.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-Fg(w, {\textquotedbl}ambient yellow{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5, -5.0, 0.5, 1.0) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Fg(w, {\textquotedbl}diffuse white{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 225.0,1.0, 0.5, -5.0, 0.5,1.0,0.0,125.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Fg(w, {\textquotedbl}ambient pink{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawCylinder(w, \ 0.0, 1.0, -5.0, 1.0, 0.5, 0.3)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Fg(w, {\textquotedbl}specular navy{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawDisk(w, -0.5, -0.5, -2.0, 0.5, 0.3)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Fg(w, {\textquotedbl}emission green{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawSphere(w, 0.5, 1.0, -3.0, 0.5)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib(w, {\textquotedbl}light0=on, diffuse white{\textquotedbl})}
+\iconcode{
+Fg(w, "ambient yellow") \\
+DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5, -5.0, 0.5, 1.0) \\
+Fg(w, "diffuse white") \\
+DrawDisk(w, 0.4, -0.5, -4.0, 0.0, 1.0, 0.0, 225.0,1.0, 0.5, -5.0, 0.5,1.0,0.0,125.0) \\
+Fg(w, "ambient pink") \\
+DrawCylinder(w, \ 0.0, 1.0, -5.0, 1.0, 0.5, 0.3) \\
+Fg(w, "specular navy") \\
+DrawDisk(w, -0.5, -0.5, -2.0, 0.5, 0.3) \\
+Fg(w, "emission green") \\
+DrawSphere(w, 0.5, 1.0, -3.0, 0.5) \\
+WAttrib(w, "light0=on, diffuse white")
+}
 
  \includegraphics[width=2.8071in,height=2.1335in]{utr9/utr9-img021.png} 
 
@@ -909,7 +888,7 @@ away and/or how large the primitive is. Slices and rings attributes
 serve this purpose. Both attributes take integer vales greater than 0
 and denote how closely to approximate the abstract graphics shape when
 rendering with simpler graphics primitives such as triangles or
-quads. \textsf{WAttrib(``slices=10'', ``rings=10'')} for example sets
+quads. \textsf{WAttrib("slices=10", "rings=10")} for example sets
 them both to 10. Greater values achieve smoother and more fine
 detailed shapes but are more expensive to render, so these values
 should be picked with care. These attributes can also be used to
@@ -921,123 +900,39 @@ using the \textsf{DrawCylinder()} function. \textsf{Slices} and
 example and figure below illustrates the use of
 \textsf{slices} and \textsf{rings}.
 
-{\selectlanguage{english}\sffamily
-procedure main()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \&window := open({\textquotedbl}slices \& rings{\textquotedbl}, {\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}size=800,600{\textquotedbl}) {\textbar} stop({\textquotedbl}can't open window!{\textquotedbl})}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg({\textquotedbl}blue{\textquotedbl}) \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib( {\textquotedbl}slices=25{\textquotedbl}, {\textquotedbl}rings=25{\textquotedbl} ) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(-2.0, 2.0, 0, 0.5)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib( {\textquotedbl}slices=4{\textquotedbl}) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(-1.0, 2.0, 0, 0.5)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(45.0, 0, 1, 0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere( 0.0, 2.0, 0, 0.5)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-45.0, 0, 1, 0)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib( {\textquotedbl}slices=25{\textquotedbl}, {\textquotedbl}rings=4{\textquotedbl}) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg({\textquotedbl}red{\textquotedbl}) \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(-2.0, 0.5, 0, 0.5)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib( {\textquotedbl}slices=4{\textquotedbl}, {\textquotedbl}rings=4{\textquotedbl}) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(-1.0, 0.5, 0, 0.5)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(45.0, 0, 1, 0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(0.0, 0.5, 0, 0.5)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-45.0, 0, 1, 0)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib( {\textquotedbl}slices=25{\textquotedbl}, {\textquotedbl}rings=25{\textquotedbl}) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg({\textquotedbl}green{\textquotedbl}) \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(-2.0, -1, 0, .6, 0.5, 0.01)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib( {\textquotedbl}slices=4{\textquotedbl}, {\textquotedbl}rings=16{\textquotedbl}) \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(-1, -1, 0, .6, 0.5, 0.01)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(25.0, 0, 1, 0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(0, -1, 0, .6, 0.5, 0.01)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Rotate(-25.0, 0, 1, 0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Eye( 0 , 0.5, 5.2, \ {}-1,0.66,0, \ 0,1,0 )}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Refresh()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Event()}
-
-{\selectlanguage{english}\sffamily
-end}
+\iconcode{
+procedure main() \\
+\ \ \ \&window := open("slices \& rings", "gl",
+"size=800,600") {\textbar} stop("can't open window!") \\
+\ \ \ Fg("blue") \\
+\ \ \ WAttrib( "slices=25", "rings=25" ) \\
+\ \ \ DrawSphere(-2.0, 2.0, 0, 0.5) \\
+\ \ \ WAttrib( "slices=4") \\
+\ \ \ DrawSphere(-1.0, 2.0, 0, 0.5) \\
+\ \ \ Rotate(45.0, 0, 1, 0) \\
+\ \ \ DrawSphere( 0.0, 2.0, 0, 0.5) \\
+\ \ \ Rotate(-45.0, 0, 1, 0) \\
+\ \ \ WAttrib( "slices=25", "rings=4") \\
+\ \ \ Fg("red") \\
+\ \ \ DrawSphere(-2.0, 0.5, 0, 0.5) \\
+\ \ \ WAttrib( "slices=4", "rings=4") \\
+\ \ \ DrawSphere(-1.0, 0.5, 0, 0.5) \\
+\ \ \ Rotate(45.0, 0, 1, 0) \\
+\ \ \ DrawSphere(0.0, 0.5, 0, 0.5) \\
+\ \ \ Rotate(-45.0, 0, 1, 0) \\
+\ \ \ WAttrib( "slices=25", "rings=25") \\
+\ \ \ Fg("green") \\
+\ \ \ DrawCylinder(-2.0, -1, 0, .6, 0.5, 0.01) \\
+\ \ \ WAttrib( "slices=4", "rings=16") \\
+\ \ \ DrawCylinder(-1, -1, 0, .6, 0.5, 0.01) \\
+\ \ \ Rotate(25.0, 0, 1, 0) \\
+\ \ \ DrawCylinder(0, -1, 0, .6, 0.5, 0.01) \\
+\ \ \ Rotate(-25.0, 0, 1, 0) \\
+\ \ \ Eye( 0 , 0.5, 5.2, \ {}-1,0.66,0, \ 0,1,0 ) \\
+\ \ \ Refresh() \\
+\ \ \ Event() \\
+end
+}
 
 
 \bigskip
@@ -1051,22 +946,30 @@ end}
 \subsection[3.4 Lighting and Materials]{3.4 Lighting and Materials}
 
 
-{\selectlanguage{english}
+{
 There are a maximum of eight lights that can be used in each scene of the Unicon 3D graphics facilities. The lights are
 control by the context attributes \textsf{light0} through \textsf{light7}. Each light has five properties that can be
 changed throughout the program, ambient, diffuse, specular, position, and on/off. The properties of a light can be
 changed by using \textsf{WAttrib()} and one of \textsf{light0} through \textsf{light7}. To turn on or off a light,
-one can assign \textsf{{}``on''} or \textsf{{}``off''} to the light, followed by a comma and a lighting value.
+one can assign \textsf{"on"} or \textsf{"off"} to the light, followed by a comma and a lighting value.
 A lighting value is a string which contains one or more semi-colon separated lighting properties. A lighting property
 is of the form
 
 \bigskip
 
-$\left[
-\begin{array}{l}
-diffuse\\ambient\\specular
-\end{array}
-\right]$ \textsf{\textit{color name}}
+%
+% LaTeX replaced by image in order to facilitate .html generation.
+% Uncomment to reproduce via LaTeX.
+%
+%$\left[
+%\begin{array}{l}
+%diffuse\\ambient\\specular
+%\end{array}
+%\right]$
+\begin{tabular}{ll}
+\raisebox{-.4\height}{\includegraphics[width=0.7in,height=0.7in]{utr9/das.png}}
+ \textsf{\textit{color name}}
+\end{tabular}
 
 \bigskip
 
@@ -1076,8 +979,9 @@ on and gives it diffuse yellow and ambient gold lighting properties.
 
 \bigskip
 
-{\selectlanguage{english}
-\ \ \textsf{WAttrib(w, ``light1=on, diffuse yellow; ambient gold'')}}
+\iconcode{
+\ \ \ WAttrib(w, "light1=on, diffuse yellow; ambient gold")
+}
 
 \bigskip
 
@@ -1086,11 +990,9 @@ default values for the lighting properties.
 
 \bigskip
 
-{\sffamily
-WAttrib(w, ``light0=diffuse white; ambient black;}
-
-{\selectlanguage{english}\sffamily
-specular white; position 0.0, 1.0, 0.0'')}
+\iconcode{
+WAttrib(w, "light0=diffuse white; ambient black; specular white; position 0.0, 1.0, 0.0")
+}
 
 
 \bigskip
@@ -1112,91 +1014,29 @@ light. The scene in the lower left uses all three types of lighting.
 
 \bigskip
 
-
-\bigskip
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ w := open({\textquotedbl}ambient.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl}, {\textquotedbl}size=400,400{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib(w, {\textquotedbl}light0=on, ambient blue-green{\textquotedbl}, {\textquotedbl}fg=specular
-white{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(w,0.0, 0.59, -2.2, 0.3)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ x := open({\textquotedbl}diffuse.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl}, {\textquotedbl}size=400,400{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib(x, {\textquotedbl}light0=on, diffuse blue-green{\textquotedbl}, {\textquotedbl}fg=specular
-white{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(x, 0.0, 0.59, -2.2, 0.3)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ y := open({\textquotedbl}specular.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl}, {\textquotedbl}size=400,400{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib(y, {\textquotedbl}light0=on, specular blue-green{\textquotedbl}, {\textquotedbl}fg=specular
-white{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(y, 0.0, 0.59, -2.2, 0.3)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-\ \ \ z := open({\textquotedbl}all.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}bg=black{\textquotedbl}, {\textquotedbl}size=400,400{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib(z, {\textquotedbl}light0=on, diffuse blue-green; specular blue-green; \_}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ambient blue-green{\textquotedbl},
-{\textquotedbl}fg=specular white{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(z, 0.0, 0.59, -2.2, 0.3)}
+\iconcode{
+\ \ \ w := open("ambient.icn","gl","bg=black", "size=400,400") \\
+\ \ \ WAttrib(w, "light0=on, ambient blue-green", "fg=specular white") \\
+\ \ \ DrawCylinder(w, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\ \ \ DrawTorus(w,0.0, -0.2, -3.5, 0.3, 0.7) \\
+\ \ \ DrawSphere(w,0.0, 0.59, -2.2, 0.3) \\
+\ \ \ x := open("diffuse.icn","gl", "bg=black", "size=400,400") \\
+\ \ \ WAttrib(x, "light0=on, diffuse blue-green", "fg=specular white") \\
+\ \ \ DrawCylinder(x, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\ \ \ DrawTorus(x,0.0, -0.2, -3.5, 0.3, 0.7) \\
+\ \ \ DrawSphere(x, 0.0, 0.59, -2.2, 0.3) \\
+\ \ \ y := open("specular.icn","gl", "bg=black", "size=400,400") \\
+\ \ \ WAttrib(y, "light0=on, specular blue-green", "fg=specular white") \\
+\ \ \ DrawCylinder(y, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\ \ \ DrawTorus(y, 0.0, -0.2, -3.5, 0.3, 0.7) \\
+\ \ \ DrawSphere(y, 0.0, 0.59, -2.2, 0.3) \\
+\ \ \ z := open("all.icn","gl", "bg=black", "size=400,400") \\
+\ \ \ WAttrib(z, "light0=on, diffuse blue-green; specular blue-green; \_ \\
+ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ambient blue-green", "fg=specular white") \\
+\ \ \ DrawCylinder(z, 0.0, -0.2, -3.5, 0.75, 0.5, 0.0) \\
+\ \ \ DrawTorus(z, 0.0, -0.2, -3.5, 0.3, 0.7) \\
+\ \ \ DrawSphere(z, 0.0, 0.59, -2.2, 0.3)
+}
 
 
 \bigskip
@@ -1208,18 +1048,26 @@ properties. Material properties are of the form
 
 \bigskip
 
-$\left[
-\begin{array}{l}
-diffuse\\ambient\\specular\\emission
-\end{array}
-\right]$ \textsf{\textit{color name}} or \textsf{``shininess n''},
+%
+% LaTeX replaced by image in order to facilitate .html generation.
+% Uncomment to reproduce via LaTeX.
+%
+%$\left[
+%\begin{array}{l}
+%diffuse\\ambient\\specular\\emission
+%\end{array}
+%\right]$
+\begin{tabular}{ll}
+\raisebox{-.4\height}{\includegraphics[width=0.8in,height=0.8in]{utr9/dase.png}}
+\textsf{\textit{color name}} or \textsf{"shininess n"},
 where \textsf{n} is between \textsf{0} and \textsf{128}.
+\end{tabular}
 
 \bigskip
 
 The default material property type is diffuse, so the call
-\textsf{Fg({\textquotedbl}red{\textquotedbl})} is equivalent to
-\textsf{Fg({\textquotedbl}diffuse red{\textquotedbl})}. For shininess,
+\textsf{Fg("red")} is equivalent to
+\textsf{Fg("diffuse red")}. For shininess,
 a value of 0 spreads specular light broadly across an object and a
 value of 128 focuses specular light at a single point. The following
 line of code changes the current material property to diffuse green
@@ -1228,23 +1076,20 @@ and ambient orange.
 
 \bigskip
 
-{\selectlanguage{english}\ttfamily
-\ \ \ \textsf{WAttrib(w, ``fg=diffuse green; ambient orange'')}}
+{\ttfamily
+\ \ \ \textsf{WAttrib(w, "fg=diffuse green; ambient orange")}}
 
 
 \bigskip
 
-{\selectlanguage{english}
-The default values of the material properties are given in the following example. }
-
+The default values of the material properties are given in the following example.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-Fg(w, ``diffuse light grey; ambient grey; \_}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ specular black; emission black; shininess 50'')}
+\iconcode{
+\ \ \ Fg(w, "diffuse light grey; ambient grey; \_ \\
+\ \ \ \ \ \ specular black; emission black; shininess 50")
+}
 
 
 \bigskip
@@ -1252,36 +1097,22 @@ Fg(w, ``diffuse light grey; ambient grey; \_}
 The following is an example of several different material
 properties used within one scene.
 
+\bigskip
+
 {\centering  \includegraphics[width=1.6799in,height=1.7299in]{utr9/utr9-img024.png} \par}
 
 \bigskip
 
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-Fg(w, {\textquotedbl}diffuse blue{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-DrawCylinder(w, 0.0, -0.2, -3.5, 1.2, 1.0, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Fg(w, {\textquotedbl}diffuse red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawTorus(w, 0.0, -0.2, -3.5, 0.3, 1.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Fg(w, {\textquotedbl}diffuse white; ambient red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawTorus(w, 0.0, 0.2, -3.5, 0.3, 0.9)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Fg(w, {\textquotedbl}shininess 10; diffuse red; specular red; ambient black{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawTorus(w, 0.0, 0.55, -3.5, 0.3, 0.72)}
+\iconcode{
+\ \ \ Fg(w, "diffuse blue") \\
+\ \ \ DrawCylinder(w, 0.0, -0.2, -3.5, 1.2, 1.0, 0.0) \\
+\ \ \ Fg(w, "diffuse red") \\
+\ \ \ DrawTorus(w, 0.0, -0.2, -3.5, 0.3, 1.0) \\
+\ \ \ Fg(w, "diffuse white; ambient red") \\
+\ \ \ DrawTorus(w, 0.0, 0.2, -3.5, 0.3, 0.9) \\
+\ \ \ Fg(w, "shininess 10; diffuse red; specular red; ambient black") \\
+\ \ \ DrawTorus(w, 0.0, 0.55, -3.5, 0.3, 0.72)
+}
 
 
 \bigskip
@@ -1303,23 +1134,14 @@ The following example shows the effects of emission color on an object.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-\ \ \ Fg(w, {\textquotedbl}emission blue; diffuse yellow{\textquotedbl}) }
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(w, -1.5, 1.0, -5.0, 0.7)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg(w, {\textquotedbl}emission black{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(w, 0.0, 0.0, -5.0, 0.7)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Fg(w, {\textquotedbl}emission red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawSphere(w, 1.5, -1.0, -5.0, 0.7) }
+\iconcode{
+\ \ \ Fg(w, "emission blue; diffuse yellow") \\
+\ \ \ DrawSphere(w, -1.5, 1.0, -5.0, 0.7) \\
+\ \ \ Fg(w, "emission black") \\
+\ \ \ DrawSphere(w, 0.0, 0.0, -5.0, 0.7) \\
+\ \ \ Fg(w, "emission red") \\
+\ \ \ DrawSphere(w, 1.5, -1.0, -5.0, 0.7)
+}
 
 
 \bigskip
@@ -1351,19 +1173,17 @@ in 2.7.
 
 \bigskip
 
-{\selectlanguage{english}\ttfamily
-\textsf{\ \ \ \ }\textsf{WAttrib(w, {\textquotedbl}texmode=on{\textquotedbl},
-{\textquotedbl}texture=map.gif{\textquotedbl})}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4) }
+\iconcode{
+\ \ \ WAttrib(w, "texmode=on", "texture=map.gif") \\
+\ \ \ DrawTorus(w, 0.0, 0.0, -3.0, 0.3, 0.4)
+}
 
 
 \bigskip
 
-{\selectlanguage{english}
-Instead of using \textsf{WAttrib(w, {\textquotedbl}texture=map.gif{\textquotedbl})}\texttt{ }to specify the .gif file, a
-call to \textsf{Texture(w, {\textquotedbl}map.gif{\textquotedbl})} could be used to obtain the same result.}
+Instead of using \textsf{WAttrib(w, "texture=map.gif")} to
+specify the .gif file, a call to \textsf{Texture(w, "map.gif")} could
+be used to obtain the same result.
 
 
 \bigskip
@@ -1381,41 +1201,26 @@ texture on a cube using the default texture coordinates.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib(w, {\textquotedbl}texmode=on{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ sphere:= {\textquotedbl}16,g16, FFFFB98788AEFFFF{\textquotedbl} {\textbar}{\textbar}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ {\textquotedbl}FFD865554446AFFF FD856886544339FF E8579BA9643323AF{\textquotedbl}{\textbar}{\textbar}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ {\textquotedbl}A569DECA7433215E 7569CDB86433211A 5579AA9643222108{\textquotedbl}{\textbar}{\textbar}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ {\textquotedbl}4456776533221007 4444443332210007 4333333222100008{\textquotedbl}{\textbar}{\textbar}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ {\textquotedbl}533322221100000A 822222111000003D D41111100000019F{\textquotedbl}{\textbar}{\textbar}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ {\textquotedbl}FA200000000018EF FFA4000000028EFF FFFD9532248BFFFF{\textquotedbl}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ Texture(w, sphere)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ DrawCube(w, 0.0, 0.0, -3.0, 1.2)}
+\iconcode{
+\ \ \ WAttrib(w, "texmode=on") \\
+\ \ \ sphere:= "16,g16, FFFFB98788AEFFFF" {\textbar}{\textbar} \\
+\ \ \ \ \ "FFD865554446AFFF FD856886544339FF E8579BA9643323AF"{\textbar}{\textbar} \\
+\ \ \ \ \ "A569DECA7433215E 7569CDB86433211A 5579AA9643222108"{\textbar}{\textbar} \\
+\ \ \ \ \ "4456776533221007 4444443332210007 4333333222100008"{\textbar}{\textbar} \\
+\ \ \ \ \ "533322221100000A 822222111000003D D41111100000019F"{\textbar}{\textbar} \\
+\ \ \ \ \ "FA200000000018EF FFA4000000028EFF FFFD9532248BFFFF" \\
+\ \ \ Texture(w, sphere) \\
+\ \ \ DrawCube(w, 0.0, 0.0, -3.0, 1.2)
+}
 
 
 \bigskip
 
 The next example shows the use of another Unicon window as a
 texture. A simple scene of a lamp is drawn on the first window, which
-is opened in \textsf{{}``gl''} mode. This window is then captured and
+is opened in \textsf{"gl"} mode. This window is then captured and
 used as a texture on a cylinder. If a Unicon window opened in
-\textsf{{}``g''}\texttt{ }mode as a texture the same method can be
+\textsf{"g"}  mode as a texture the same method can be
 used. Note that in the following code the first window is opened with
 size 256 x 256. Texture images must have height and width that are
 powers of 2, or the system must rescale them. The default coordinates
@@ -1427,9 +1232,9 @@ for cylinders are used.
 
 \bigskip
 
-{\centering\selectlanguage{english}
- \includegraphics[width=1.4492in,height=1.4335in]{utr9/utr9-img028.jpg} \texttt{ \ \ }
-\includegraphics[width=1.939in,height=1.952in]{utr9/utr9-img029.jpg} \texttt{ \ \ }
+{\centering
+ \includegraphics[width=1.4492in,height=1.4335in]{utr9/utr9-img028.jpg} \ \ 
+\includegraphics[width=1.939in,height=1.952in]{utr9/utr9-img029.jpg} \ \ 
 \par}
 
 
@@ -1438,64 +1243,26 @@ for cylinders are used.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-w := open({\textquotedbl}win1{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=light
-blue{\textquotedbl},{\textquotedbl}size=256,256{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Fg(w, {\textquotedbl}emission pale grey{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ PushMatrix(w)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Rotate(w, -5.0, 1.0, 0.0, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ DrawCylinder(w, 0.0, 0.575, -2.0, 0.15, 0.05, 0.17)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ PopMatrix(w) \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Fg(w, {\textquotedbl}diffuse grey; emission black{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ PushMatrix(w)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Rotate(w, -5.0, 1.0, 0.0, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawCylinder(w, 0.0, 0.0, -2.5, 0.7, 0.035, 0.035)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ PopMatrix(w) \ \ \ \ \ \ \ }
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawTorus(w, 0.0, -0.22, -2.5, 0.03, 0.06)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ DrawTorus(w, 0.0, 0.6, -2.5, 0.05, 0.03)}
-
-
-\bigskip
-
-{\selectlanguage{english}\sffamily
-w2 :=
-open({\textquotedbl}win2.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=black{\textquotedbl},{\textquotedbl}size=400,400{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ WAttrib(w2, {\textquotedbl}texmode=on{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Texture(w2, w) }
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Fg(w2, {\textquotedbl}diffuse purple; ambient blue{\textquotedbl}) }
-
-{\selectlanguage{english}\sffamily
-DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)}
+\iconcode{
+\>   w := open("win1","gl","bg=light blue","size=256,256") \\
+\>   Fg(w, "emission pale grey") \\
+\>   PushMatrix(w) \\
+\>   Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
+\>   DrawCylinder(w, 0.0, 0.575, -2.0, 0.15, 0.05, 0.17) \\
+\>   PopMatrix(w) \\
+\>   Fg(w, "diffuse grey; emission black") \\
+\>   PushMatrix(w) \\
+\>   Rotate(w, -5.0, 1.0, 0.0, 0.0) \\
+\>   DrawCylinder(w, 0.0, 0.0, -2.5, 0.7, 0.035, 0.035) \\
+\>   PopMatrix(w) \\
+\>   DrawTorus(w, 0.0, -0.22, -2.5, 0.03, 0.06) \\
+\>   DrawTorus(w, 0.0, 0.6, -2.5, 0.05, 0.03) \\
+\>   w2 := open("win2.icn","gl","bg=black","size=400,400") \\
+\>   WAttrib(w2, "texmode=on") \\
+\>   Texture(w2, w) \\
+\>   Fg(w2, "diffuse purple; ambient blue") \\
+\>   DrawCylinder(w2, 0.0, 0.0, -3.5, 1.2, 0.7, \ 0.7)
+}
 
 
 \bigskip
@@ -1509,7 +1276,7 @@ first example uses the default texture coordinates for a filled
 polygon, which in this case is just a square with sides of length
 one. In this case the default texture coordinates are as follows. The
 coordinate \textsf{(0.0, 0.0) }of the texture image is mapped to the
-vertex\texttt{ }\textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(0.0,
+vertex \textsf{(0.0, 0.0, -2.0)} of the square, \textsf{(0.0,
   1.0) }is mapped to \textsf{(0.0, 1.0, -2.0), (1.0, 1.0)}\texttt{ }is
 mapped to \textsf{(1.0, 1.0, -2.0)}, and \textsf{(1.0, 0.0) }is mapped
 to \textsf{(1.0, 0.0, -2.0)}.
@@ -1524,16 +1291,11 @@ to \textsf{(1.0, 0.0, -2.0)}.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-\ \ \ \ WAttrib(w, {\textquotedbl}fg=white{\textquotedbl}, {\textquotedbl}bg=blue{\textquotedbl},
-{\textquotedbl}texmode=on{\textquotedbl}, {\textquotedbl}texture=4,\#8CA9{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ Fg(w, {\textquotedbl}diffuse purple; ambient blue{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0) }
-
+\iconcode{
+\>    WAttrib(w, "fg=white", "bg=blue", "texmode=on", "texture=4,\#8CA9") \\
+\>    Fg(w, "diffuse purple; ambient blue") \\
+\>    FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+}
 
 \bigskip
 
@@ -1557,17 +1319,11 @@ is mapped to \textsf{(1.0, 0.0, -2.0)}.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-\ \ \ \ WAttrib(w, {\textquotedbl}fg=white{\textquotedbl}, {\textquotedbl}bg=blue{\textquotedbl},
-{\textquotedbl}texmode=on{\textquotedbl},}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0{\textquotedbl},
-{\textquotedbl}texture=4,\#8CA9{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0) }
-
+\iconcode{
+\>    WAttrib(w, "fg=white", "bg=blue", "texmode=on", \\
+\> \> \> \> \>   "texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0", "texture=4,\#8CA9") \\
+\>    FillPolygon(w, 0.0, 0.0, -2.0, 0.0, 1.0, -2.0, 1.0, 1.0, -2.0, 1.0, 0.0, -2.0)
+}
 
 \bigskip
 
@@ -1577,8 +1333,9 @@ used. So the line
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WAttrib(w,{\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0{\textquotedbl})}
+\iconcode{
+\>    WAttrib(w,"texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0")
+}
 
 
 \bigskip
@@ -1588,8 +1345,8 @@ WAttrib(w,{\textquotedbl}texcoord=0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0{\textquo
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-Texcoord(w, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0)\newline
+\iconcode{
+\>    Texcoord(w, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0, 0.0)
 }
 
 \subsection[3.6 A Larger Textures Example]{3.6 A Larger Textures Example}
@@ -1615,44 +1372,41 @@ facilities that makes adding textures simpler than using OpenGL.
   \ \ \ \ \ \ \ \ \ \ \ \ \
 \includegraphics[width=2.6846in,height=2.6693in]{utr9/utr9-img033.jpg}
 
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
 An untextured scene \hfill A textured scene
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
 
 
 \bigskip
 
-{\sffamily
+\iconcode{
 procedure main() \\
-\ \ \ \&window
-:=open({\textquotedbl}textured.icn{\textquotedbl},{\textquotedbl}gl{\textquotedbl},{\textquotedbl}bg=black{\textquotedbl},{\textquotedbl}size=700,700{\textquotedbl}) \\
-\ \ \ \# Draw the floor of the room \\
-\ \ \ WAttrib({\textquotedbl}texmode=on{\textquotedbl}, {\textquotedbl}texture=carpet.gif{\textquotedbl})  \\
-\ \ \ FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0,\\
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 7.0, -7.0, -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0)\\
-\ \ \ \# Draw the right wall\\
-\ \ \ WAttrib({\textquotedbl}texture=wall1.gif{\textquotedbl}, {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0{\textquotedbl}) \\
+\>   \&window :=open("textured.icn","gl","bg=black","size=700,700") \\
+\>   \# Draw the floor of the room \\
+\>   WAttrib("texmode=on", "texture=carpet.gif") \\
+\>   FillPolygon(-7.0, -0.9, -14.0, -7.0, -7.0, -14.0,\\
+\> \> \> \>  \ \ 7.0, -7.0, -14.0, 7.0, -0.9, -14.0, 3.5, 0.8, -14.0)\\
+\>   \# Draw the right wall\\
+\>   WAttrib("texture=wall1.gif", "texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0") \\
 \ \ \ FillPolygon(2.0, 4.0, -8.0, 8.3, 8.0, -16.0, 8.3, -1.2, -16.0, 2.0, 0.4, -8.0)\\
 \ \ \ \# Draw the left wall\\
-\ \ \ WAttrib({\textquotedbl}texture=wall2.gif{\textquotedbl})\\
+\ \ \ WAttrib("texture=wall2.gif")\\
 \ \ \ FillPolygon(2.0, 4.0 ,-8.0, -9.0, 8.0, -16.0, -9.0,-1.2,-16.0, 2.0, 0.4, -8.0)\\
 \ \ \ \# Draw a picture\\
-\ \ \ WAttrib({\textquotedbl}texture=poster.gif{\textquotedbl}, {\textquotedbl}texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0{\textquotedbl})\\
+\ \ \ WAttrib("texture=poster.gif", "texcoord=0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0")\\
 \ \ \ FillPolygon(1.0, 1.2, -3.0, 1.0, 0.7, -3.0, 1.2, 0.5, -2.6, 1.2, 1.0, -2.6)\\
 \ \ \ \# Draw another picture\\
-\ \ \ WAttrib({\textquotedbl}texture=unicorn.gif{\textquotedbl}, {\textquotedbl}texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0{\textquotedbl})\\
+\ \ \ WAttrib("texture=unicorn.gif", "texcoord=1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0")\\
 \ \ \ FillPolygon(0.8, 2.0, -9.0, -3.0, 1.6, -9.0, 3.0, 3.9,-9.0, 0.8, 4.0, -9.0)\\
 \ \ \ \# Draw the lamp\\
-\ \ \ WAttrib({\textquotedbl}texmode=off{\textquotedbl})\\
+\ \ \ WAttrib("texmode=off")\\
 \ \ \ PushMatrix()\\
 \ \ \ Translate(0.7, 0.20, -0.5)\\
-\ \ \ Fg({\textquotedbl}emission pale weak yellow{\textquotedbl})\\
+\ \ \ Fg("emission pale weak yellow")\\
 \ \ \ PushMatrix()\\
 \ \ \ Rotate(-5.0, 1.0, 0.0, 0.0)\\
 \ \ \ Rotate( 5.0, 0.0, 0.0, 1.0)\\
 \ \ \ DrawCylinder(-0.05, 0.570, -2.0, 0.15, 0.05, 0.17)\\
 \ \ \ PopMatrix()\\
-\ \ \ Fg({\textquotedbl}diffuse grey; emission black{\textquotedbl})\\
+\ \ \ Fg("diffuse grey; emission black")\\
 \ \ \ PushMatrix()\\
 \ \ \ Rotate(-5.0, 1.0, 0.0, 0.0)\\
 \ \ \ Rotate( 6.0, 0.0, 0.0, 1.0)\\
@@ -1664,7 +1418,7 @@ procedure main() \\
 \ \ \ PopMatrix() \\
 \ \ \ PopMatrix()\\
 \ \ \ \# Draw the table \\
-\ \ \ WAttrib({\textquotedbl}texcoord=auto{\textquotedbl}, {\textquotedbl}texmode=on{\textquotedbl}, {\textquotedbl}texture=table.gif{\textquotedbl})\\
+\ \ \ WAttrib("texcoord=auto", "texmode=on", "texture=table.gif")\\
 \ \ \ PushMatrix()\\
 \ \ \ Rotate(-10.0, 1.0, 0.0,0.0)\\
 \ \ \ DrawCylinder(0.0, 0.2, -2.0, 0.1, 0.3, 0.3)\\
@@ -1674,13 +1428,13 @@ procedure main() \\
 \ \ \ Rotate(65.0, 1.0, 0.0, 0.0)\\
 \ \ \ DrawDisk(0.0, 0.0, 0.0, 0.0, 0.29) \\
 \ \ \ PopMatrix()\\
-\ \ \ WAttrib({\textquotedbl}texmode=off{\textquotedbl}, {\textquotedbl}fg=diffuse weak brown{\textquotedbl})\\
+\ \ \ WAttrib("texmode=off", "fg=diffuse weak brown")\\
 \ \ \ PushMatrix()\\
 \ \ \ Rotate(-20.0, 1.0, 0.0,0.0)\\
 \ \ \ DrawCylinder(0.0, 0.2, -2.2, 0.3, 0.1, 0.1)\\
 \ \ \ PopMatrix()\\
-\ \ \ while (e := Event()) \~{}== {\textquotedbl}q{\textquotedbl} do \{}\\
-\ \ \ \ \ \ write(image(e), {\textquotedbl}: {\textquotedbl}, \&x, {\textquotedbl},{\textquotedbl}, \&y)\\
+\ \ \ while (e := Event()) \~== "q" do \{ \\
+\ \ \ \ \ \ write(image(e), ": ", \&x, ",", \&y)\\
 \ \ \ \ \ \ \}\\
 end
 }
@@ -1706,8 +1460,9 @@ draw the table with a textured top and an untextured base, two
 cylinders and a disk are used. Texturing is applied to a cylinder and
 the disk. Notice the call
 
-{\selectlanguage{english}
-\ \ \ \textsf{WAttrib(w, {\textquotedbl}texcoord=auto{\textquotedbl})}}
+\iconcode{
+\ \ \ WAttrib(w, "texcoord=auto")
+}
 
 This resets the texture coordinates to the defaults. Finally,
 texturing is turned off to draw the base of the table.
@@ -1736,7 +1491,7 @@ WindowContents(). The elements of the list are Unicon records and
 lists containing the string names and parameters of graphics
 primitives. For example, a call to \textsf{DrawSphere(w,x,y,z,r)}
 returns (and adds to the display list) a record
-gl\_sphere(``DrawSphere'', x, y, z, r). Instead of redrawing the
+gl\_sphere("DrawSphere", x, y, z, r). Instead of redrawing the
 entire scene in order to move an object,
 you can modify its display list record and call \textsf{Refresh()}.  The
 following code fragment illustrates animation by causing a ball to
@@ -1745,29 +1500,16 @@ incorporate physics.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-sphere := DrawSphere(w, x, y, z, r)}
-
-{\selectlanguage{english}\sffamily
-increment := 0.2}
-
-{\selectlanguage{english}\sffamily
-every i := 1 to 100 do \{}
-
-{\selectlanguage{english}\sffamily
-\ \ \ every j := 1 to 100 do \{}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ sphere.y +:= increment}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ Refresh(w)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ \}}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \}}
+\iconcode{
+\>   sphere := DrawSphere(w, x, y, z, r) \\
+\>   increment := 0.2 \\
+\>   every i := 1 to 100 do \{ \\
+\>\>    every j := 1 to 100 do \{ \\
+\> \> \>   sphere.y +:= increment \\
+\> \> \>   Refresh(w) \\
+\> \> \>   \} \\
+\> \>   \}
+}
 
 \bigskip
 
@@ -1808,7 +1550,7 @@ mechanism used when data is copied and pasted between applications.
 
 \subsubsection[3.8.1 Controlling the selection state]{3.8.1 Controlling the selection state}
 
-Attribute \textsf{{}``pick''} turns on or off selection within
+Attribute \textsf{"pick"} turns on or off selection within
 portions of a rendered scene. To turn on 3D selection at any point in
 the program, the following statement should be inserted at that
 point:
@@ -1816,30 +1558,31 @@ point:
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WAttrib({\textquotedbl}pick=on{\textquotedbl})}
+\iconcode{
+WAttrib("pick=on")
+}
 
 
 \bigskip
 
-{\selectlanguage{english}
-To turn off the 3D selection, simply make another call to \textsf{WAttrib()}:}
+To turn off the 3D selection, simply make another call to \textsf{WAttrib()}:
 
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WAttrib({\textquotedbl}pick=off{\textquotedbl})}
+\iconcode{
+WAttrib("pick=off")
+}
 
 
 \bigskip
 
 To check the current 3D selection state (on or off), the function
 \texttt{WAttrib} can be called with the string parameter
-\textsf{{\textquotedbl}pick{\textquotedbl}} (i.e
-\textsf{WAttrib(``pick'')} ) and it will return a string value of
-\textsf{{\textquotedbl}on{\textquotedbl}} or
-\textsf{{\textquotedbl}off{\textquotedbl}} depending on the current 3D
+\textsf{"pick"} (i.e
+\textsf{WAttrib("pick")} ) and it will return a string value of
+\textsf{"on"} or
+\textsf{"off"} depending on the current 3D
 selection state. By default 3D selection is turned off. The program
 can turn on and off the 3D selection depending on the program
 requirements. For a better performance, selection should be turned off
@@ -1862,30 +1605,25 @@ unique to distinguish different objects from each other. Different
 objects could have the same name if the same action would be taken no
 matter which of these objects is picked. The following code fragment
 is an example of named 3D objects. It simply draws a red rectangle and
-gives it the name {\textquotedbl}redrect{\textquotedbl}.
+gives it the name "redrect".
 
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-WSection({\textquotedbl}redrect{\textquotedbl})\ \ \# beginning of a new object named redrect}
-
-{\selectlanguage{english}\sffamily
-Fg({\textquotedbl}red{\textquotedbl}) \ }
-
-{\selectlanguage{english}\sffamily
-FillPolygon(0,0,0, 0,1,0, 1,1,0, 1,0,0)}
-
-{\selectlanguage{english}\sffamily
-WSection()\ \ \ \ \ \ \# end of the object redrect}
+\iconcode{
+\> WSection("redrect")\ \ \# beginning of a new object named redrect \\
+\> Fg("red") \\
+\> FillPolygon(0,0,0, 0,1,0, 1,1,0, 1,0,0) \\
+\> WSection()\ \ \ \ \ \ \# end of the object redrect
+}
 
 
 \bigskip
 
 In the example above
-\textsf{WSection({\textquotedbl}redrect{\textquotedbl})} marks the
+\textsf{WSection("redrect")} marks the
 beginning of a new object with the name
-redrect. \textsf{Fg({\textquotedbl}red{\textquotedbl})} doesn't affect
+redrect. \textsf{Fg("red")} doesn't affect
 selection because it doesn't produce a rendered
 object. \textsf{FillPolygon(0,0,0, 0,1,0, 1,1,0, 1,0,0)} on the other
 hand does affect selection because it produces a rendered object, and
@@ -1909,11 +1647,10 @@ mouse click:
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-every picked\_object := \&pick do}
-
-{\selectlanguage{english}\sffamily
-\ \ \ write({\textquotedbl} picked object :{\textquotedbl}, picked\_object)}
+\iconcode{
+\>   every picked\_object := \&pick do \\
+\>   write(" picked object :", picked\_object)
+}
 
 
 \bigskip
@@ -1927,7 +1664,7 @@ right-clicks.
 
 These ideas are illustrated in the following example, which draws
 a crude humanoid figure. The rendering function turns
-\textsf{{}``pick=on''} and then uses \textsf{WSection()} calls to
+\textsf{"pick=on"} and then uses \textsf{WSection()} calls to
 identify different parts of the figure.
 
 
@@ -1940,155 +1677,58 @@ identify different parts of the figure.
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-procedure drawman()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ h := 2.0}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WAttrib({\textquotedbl}pick=on{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WSection({\textquotedbl}man{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection({\textquotedbl}body{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  Fg({\textquotedbl}green{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  DrawCylinder(0, 0, 0, h, 1.0, 1.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection({\textquotedbl}head{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  Fg({\textquotedbl}yellow{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  DrawSphere(0.0,h+0.5,0.0, 1.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection({\textquotedbl}rightleg{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection({\textquotedbl}upperrightleg{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \  Fg({\textquotedbl}red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \  DrawCylinder(-0.5, -h/2, 0, h/2, 0.25, 0.25)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection({\textquotedbl}lowerrightleg{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \  Fg({\textquotedbl}yellow{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \  DrawCylinder(-0.5, -h, 0, h/2, 0.25, 0.25)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection({\textquotedbl}leftleg{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \  WSection({\textquotedbl}upperleftleg{\textquotedbl})\ \ }
-
-{\selectlanguage{english}\sffamily
-\ \  \ \ \ Fg({\textquotedbl}red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  \ \ \ DrawCylinder(0.5, -h/2, 0, h/2, 0.25, 0.25)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \  WSection({\textquotedbl}lowerleftleg{\textquotedbl})\ }
-
-{\selectlanguage{english}\sffamily
-\ \  \ \ \ Fg({\textquotedbl}yellow{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  \ \ \ DrawCylinder(0.5, -h, 0, h/2, 0.25, 0.25)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  Translate(0.5, h-0.25, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  Rotate(-90, 0, 0, 1)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  WSection({\textquotedbl}leftarm{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  \ \ \ Fg({\textquotedbl}red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  \ \ \ DrawCylinder(0, 0, 0, h, 0.25, 0.25)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ \ PopMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ PushMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Translate(-0.5, h-0.25, 0.0)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ Rotate(90, 0, 0, 1)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ WSection({\textquotedbl}rightarm{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  \ \ Fg({\textquotedbl}red{\textquotedbl})}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \  \ \ DrawCylinder(0, 0, 0, h, 0.25, 0.25)}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ \ \ PopMatrix()}
-
-{\selectlanguage{english}\sffamily
-\ \ \ WSection()}
-
-{\selectlanguage{english}\sffamily
-end}
+\iconcode{
+procedure drawman() \\
+\ \ \ h := 2.0 \\
+\ \ \ WAttrib("pick=on") \\
+\ \ \ WSection("man") \\
+\ \ \ \ \ \ WSection("body") \\
+\ \ \ \ \  Fg("green") \\
+\ \ \ \ \  DrawCylinder(0, 0, 0, h, 1.0, 1.0) \\
+\ \ \ \ \ \ WSection() \\
+\ \ \ \ \ \ WSection("head") \\
+\ \ \ \ \  Fg("yellow") \\
+\ \ \ \ \  DrawSphere(0.0,h+0.5,0.0, 1.0) \\
+\ \ \ \ \ \ WSection() \\
+\ \ \ \ \ \ WSection("rightleg") \\
+\ \ \ \ \ \ WSection("upperrightleg") \\
+\ \  Fg("red") \\
+\ \  DrawCylinder(-0.5, -h/2, 0, h/2, 0.25, 0.25) \\
+\ \ \ \ \ \ WSection() \\
+\ \ \ \ \ \ WSection("lowerrightleg") \\
+\ \  Fg("yellow") \\
+\ \  DrawCylinder(-0.5, -h, 0, h/2, 0.25, 0.25) \\
+\ \ \ \ \ \ WSection() \\
+\ \ \ \ \ \ WSection() \\
+\ \ \ \ \ \ WSection("leftleg") \\
+\ \  WSection("upperleftleg") \\
+\ \  \ \ \ Fg("red") \\
+\ \ \ \ \  \ \ \ DrawCylinder(0.5, -h/2, 0, h/2, 0.25, 0.25) \\
+\ \ \ \ \  WSection() \\
+\ \  WSection("lowerleftleg") \\
+\ \  \ \ \ Fg("yellow") \\
+\ \ \ \ \  \ \ \ DrawCylinder(0.5, -h, 0, h/2, 0.25, 0.25) \\
+\ \ \ \ \  WSection() \\
+\ \ \ \ \ \ WSection() \\
+\ \ \ \ \ \ PushMatrix() \\
+\ \ \ \ \  Translate(0.5, h-0.25, 0.0) \\
+\ \ \ \ \  Rotate(-90, 0, 0, 1) \\
+\ \ \ \ \  WSection("leftarm") \\
+\ \ \ \ \  \ \ \ Fg("red") \\
+\ \ \ \ \  \ \ \ DrawCylinder(0, 0, 0, h, 0.25, 0.25) \\
+\ \ \ \ \  WSection() \\
+\ \ \ \ \ \ PopMatrix() \\
+\ \ \ \ \ PushMatrix() \\
+\ \ \ \ \ Translate(-0.5, h-0.25, 0.0) \\
+\ \ \ \ \ Rotate(90, 0, 0, 1) \\
+\ \ \ \ \ WSection("rightarm") \\
+\ \ \ \ \  \ \ Fg("red") \\
+\ \ \ \ \  \ \ DrawCylinder(0, 0, 0, h, 0.25, 0.25) \\
+\ \ \ \ \ WSection() \\
+\ \ \ \ \ PopMatrix() \\
+\ \ \ WSection() \\
+end
+}
 
 
 \bigskip
@@ -2098,22 +1738,22 @@ to see what (if anything) the user was selecting.
 
 \bigskip
 
-{\sffamily
+\iconcode{
 procedure main() \\
-\ \ \ \&window := w := open({\textquotedbl}picking{\textquotedbl} , {\textquotedbl}gl{\textquotedbl},
-{\textquotedbl}size=400,300{\textquotedbl}) {\textbar} \\
-\ \ \ \ \ \ stop({\textquotedbl} failed to open 3d window! {\textquotedbl})\\
+\ \ \ \&window := w := open("picking" , "gl",
+"size=400,300") {\textbar} \\
+\ \ \ \ \ \ stop(" failed to open 3d window! ")\\
 \ \ \ drawman() \\
 \ \ \ Eye(-2,1.8,-12, \ 0,0,0, \ 0,1,0 ) \\
 \ \ \ Refresh(w) \\
 \ \ \ repeat \{ \\
 \ \ \ \ \ \ case e := Event(w) of \{ \\
-\ \ \ \ \ \ \ \ \ \ {\textquotedbl}q{\textquotedbl}{\textbar}{\textquotedbl}{\textbackslash}e{\textquotedbl}
+\ \ \ \ \ \ \ \ \ \ "q"{\textbar}"{\textbackslash}e"
 : \{ return \} \\
 \ \ \ \ \ \ \ \ \ \ \&lpress : \{ \\
-\ \ \ \ \ \ \ \ \ \ \ \ \ write({\textquotedbl} mouse click{\textquotedbl} ) \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ write(" mouse click" ) \\
 \ \ \ \ \ \ \ \ \ \ \ \ \ every item := \&pick do \{ \\
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ write( {\textquotedbl}on part:{\textquotedbl}, item) \\
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ write( "on part:", item) \\
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \} \\
 \ \ \ \ \ \ \ \ \ \ \ \ \ \} \\
 \ \ \ \ \ \ \ \ \ \ \} \\
@@ -2178,9 +1818,8 @@ to are listed in Figure 2.
 
 \vspace{0.16in}
 
-{\selectlanguage{english}
 \textbf{Figure 2}. Events that are recognized by the selection3D class
-and the mapping between these events and their corresponding objects tables}
+and the mapping between these events and their corresponding objects tables
 \end{minipage}
 \end{center}
 
@@ -2205,8 +1844,7 @@ user). Figure 3 shows the two classes and their relationship
 \end{center}
 \begin{center}
 \begin{minipage}{5.1264in}
-{\selectlanguage{english}
-\textbf{Figure 3}. UML diagram for the classes used to manage/control 3D object selection}
+\textbf{Figure 3}. UML diagram for the classes used to manage/control 3D object selection
 \end{minipage}
 \end{center}
 
@@ -2245,18 +1883,15 @@ following order
 \bigskip
 
 \liststyleLix
-\begin{enumerate}
-\item {\selectlanguage{english}
-A string name of the 3D object. The name does not affect the selection behavior in any way. }
-\item {\selectlanguage{english}
-A procedure/method name to be called when this 3D object is selected}
-\item {\selectlanguage{english}
-An optional event type which could be any of the event types shown in Figure 2. The default event type is
-\textsf{LEFT\_CLICK}}
-\item {\selectlanguage{english}
-The class object that has the method name (second parameter). This is only valid (and mandatory) if the second
-parameter is a method which is part of a class object.}
-\end{enumerate}
+\begin{itemize}
+\item A string name of the 3D object. The name does not affect the selection behavior in any way.
+\item A procedure/method name to be called when this 3D object is selected
+\item An optional event type which could be any of the event types
+shown in Figure 2. The default event type is \textsf{LEFT\_CLICK}
+\item The class object that has the method name (second
+	parameter). This is only valid (and mandatory) if the second 
+	parameter is a method which is part of a class object.
+\end{itemize}
 
 \bigskip
 
@@ -2267,13 +1902,14 @@ that can then be passed to \textsf{WSection()} to mark a new
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-select\_id := select3D.selectable({\textquotedbl}red ball{\textquotedbl}, on\_red\_ball)~~ \newline
-\ \ \ WSection(select\_id)}
+\iconcode{
+select\_id := select3D.selectable("red ball", on\_red\_ball)~~ \\
+\ \ \ WSection(select\_id)
+}
 
 \bigskip
 
-In this example a 3D object named \textsf{{}``red ball''} was
+In this example a 3D object named \textsf{"red ball"} was
 registered to be selectable. The procedure \textsf{on\_red\_ball} will
 be called if this 3D object is selected. No event type was passed in
 the call so this 3D object will respond to mouse left
@@ -2296,8 +1932,8 @@ right click by calling the procedure \textsf{on\_right\_click():}
 
 \bigskip
 
-{\selectlanguage{english}\sffamily
-select3D.add\_action(select\_id, on\_right\_click, select3D.RIGHT\_CLICK)~~ \newline
+{\sffamily
+select3D.add\_action(select\_id, on\_right\_click, select3D.RIGHT\_CLICK)~~
 }
 
 The third and the last method in the Selection3D class is
@@ -2312,44 +1948,42 @@ behavior. i.e. 3D object selection would not work as you expect. A
 correct way to use the method \textsf{handle\_event()} is
 shown toward the end of the following complete example
 
-\ \\
-
-\noindent {\sffamily
-link selection3D\newline
-global select3D\newline
+\iconcode{
+link selection3D \\
+global select3D \\
 procedure on\_red\_ball() \\
-\ \ \ write({\textquotedbl} You picked the red ball!{\textquotedbl}) \\
+\ \ \ write(" You picked the red ball!") \\
 end \\
 \ \\
 procedure on\_blue\_ball() \\
-\ \ \ write({\textquotedbl}You picked the blue ball{\textquotedbl}) \\
+\ \ \ write("You picked the blue ball") \\
 end \\
 \ \\
 procedure main() \\
-\ \ \ \&window := open({\textquotedbl}3D selection in Unicon{\textquotedbl},
-{\textquotedbl}gl{\textquotedbl},{\textquotedbl}size=500,500{\textquotedbl})
+\ \ \ \&window := open("3D selection in Unicon",
+"gl","size=500,500")
 {\textbar} \\
-\ \ \ \ \ \ stop({\textquotedbl}can't open 3D window{\textquotedbl}) \\
+\ \ \ \ \ \ stop("can't open 3D window") \\
 \ \ \ select3D := Selection3D() \\
 \ \ \ \# begin a new selectable section/object with the name
-{\textquotedbl}red ball{\textquotedbl} \\
-\ \ \ WAttrib({\textquotedbl}pick=on{\textquotedbl}) \#turn on 3D selection \\
-\ \ \ select\_id := select3D.selectable({\textquotedbl}red ball{\textquotedbl}, on\_red\_ball) \\
+"red ball" \\
+\ \ \ WAttrib("pick=on") \#turn on 3D selection \\
+\ \ \ select\_id := select3D.selectable("red ball", on\_red\_ball) \\
 \ \ \ WSection(select\_id) \\
-\ \ \ Fg({\textquotedbl}red{\textquotedbl}) \\
+\ \ \ Fg("red") \\
 \ \ \ DrawSphere(1, 0.5, 0, 0.5) \\
 \ \ \ WSection() \# end of the red ball \\
 \ \\
 \ \ \ \# Draw a nonselectable green ball \\
-\ \ \ Wattrib({\textquotedbl}pick=off{\textquotedbl}) \#turn off 3D selection \\
-\ \ \ Fg({\textquotedbl}green{\textquotedbl}) \\
+\ \ \ Wattrib("pick=off") \#turn off 3D selection \\
+\ \ \ Fg("green") \\
 \ \ \ DrawSphere(-1, 0.5, 0, 0.5) \\
 \ \\
-\ \ \ \# begin a new selectable section/object with the name {\textquotedbl}blue ball{\textquotedbl} \\
-\ \ \ WAttrib({\textquotedbl}pick=on{\textquotedbl}) \#turn on 3D selection \\
-\ \ \ select\_id := select3D.selectable({\textquotedbl}blue ball{\textquotedbl}, on\_blue\_ball) \\
+\ \ \ \# begin a new selectable section/object with the name "blue ball" \\
+\ \ \ WAttrib("pick=on") \#turn on 3D selection \\
+\ \ \ select\_id := select3D.selectable("blue ball", on\_blue\_ball) \\
 \ \ \ WSection(select\_id) \\
-\ \ \ \ \ Fg({\textquotedbl}blue{\textquotedbl}) \\
+\ \ \ \ \ Fg("blue") \\
 \ \ \ \ \ DrawSphere(0, -0.5, 0, 0.5) \\
 \ \ \ WSection() \# end of the blue ball \\
 \ \\
@@ -2359,7 +1993,7 @@ procedure main() \\
 \ \ \ repeat \{ \ \ \ \ \ \ \# enter an event loop to handle user events \\
 \ \ \ \ \ \ if ev := {\textbackslash}Event() then \{ \\
 \ \ \ \ \ \ \ \ \ select3D.handle\_event(ev) \\
-\ \ \ \ \ \ \ \ \ if ev ===({\textquotedbl}{\textbackslash}e{\textquotedbl}{\textbar}{\textquotedbl}q{\textquotedbl}) then
+\ \ \ \ \ \ \ \ \ if ev ===("{\textbackslash}e"{\textbar}"q") then
 exit(0)\\
 \ \ \ \ \ \ \ \ \ \} \\
  \ \ \ \ \ \}\\
@@ -2444,9 +2078,10 @@ Unicon 3D graphics facilities.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{DrawCube(W, x, y, z, l{\dots}) }draws a cube with sides of length l at the position (x, y, z) on the window W.
-The display list element is returned. This procedure fails if the context attribute, dim, is set to 2. }
+\textsf{DrawCube(W, x, y, z, l{\dots})} draws a cube with sides of
+length l at the position (x, y, z) on the window W.  The display list
+element is returned. This procedure fails if the context attribute,
+dim, is set to 2.
 
 
 \noindent\hrulefill\\
@@ -2528,7 +2163,7 @@ matrix. The display list element is returned.
 \bigskip
 
 \textsf{MatrixMode(W, s)} changes the matrix mode to s. The string s
-must be either \textsf{{}``projection''} or \textsf{{}``modelview''},
+must be either \textsf{"projection"} or \textsf{"modelview"},
 otherwise this procedure fails. The display list element is returned.
 
 
@@ -2544,9 +2179,8 @@ otherwise this procedure fails. The display list element is returned.
 \textsf{MulMatrix(W, L)} multiply transformation matrix by the list L
 where *L is 16.
 
-{\selectlanguage{english}
-\textsf{MulMatrix(W, x}\textsf{\textsubscript{1}}\textsf{, {\dots}, x}\textsf{\textsubscript{16}}\textsf{) }multiply
-transformation matrix by the numbers x\textsubscript{1} ... x\textsubscript{16.}}
+\textsf{MulMatrix(W, x\textsubscript{1}, {\dots}, x\textsubscript{16})} multiply
+transformation matrix by the numbers x\textsubscript{1} ... x\textsubscript{16}.
 
 In both cases above, the values represent a matrix of size 4x4 stored
 in column format. The values should be {\em exactly\/} 16
@@ -2572,9 +2206,11 @@ In all cases the display list element is returned.
 
 \bigskip
 
-\textsf{PopMatrix(W)} pops the top matrix from the matrix stack. The matrix stack is determined by the current matrix
-mode, either \textsf{{}``projection''} or \textsf{{}``modelview''.} This procedure fails if there is only one matrix on
-the matrix stack. The display list element is returned.
+\textsf{PopMatrix(W)} pops the top matrix from the matrix stack. The
+matrix stack is determined by the current matrix mode, either
+\textsf{"projection"} or \textsf{"modelview"}. This procedure fails if
+there is only one matrix on the matrix stack. The display list element
+is returned.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{PushMatrix(file): record}}
@@ -2586,8 +2222,8 @@ the matrix stack. The display list element is returned.
 \textsf{PushMatrix(W)} pushes a copy of the current matrix onto the
 matrix stack. The current matrix mode determines what stack the new
 matrix is pushed upon. This procedure fails if the matrix mode is
-\textsf{{}``projection''} and there are already two matrices on the
-stack. If the matrix mode is \textsf{{}``modelview''} and there are
+\textsf{"projection"} and there are already two matrices on the
+stack. If the matrix mode is \textsf{"modelview"} and there are
 already thirty two matrices on the stack, then this procedure will
 fail. The display list element is returned.
 
@@ -2607,9 +2243,10 @@ The window W is returned.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{Rotate(W, a, x, y, z,{\dots})} rotates objects affected by this transformation by the angle a, in around the
-axis represented by the vector formed of the (x, y, z) values. The display list element is returned.}
+\textsf{Rotate(W, a, x, y, z,{\dots})} rotates objects affected by
+this transformation by the angle a, in around the axis represented by
+the vector formed of the (x, y, z) values. The display list element is
+returned.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{Scale(file, real, real, real,{\dots}): record}} \hfill
@@ -2638,7 +2275,7 @@ texture coordinate. Every x must match to a y otherwise the assignment of textur
 
 \textsf{Texcoord(W, s) }sets the texture coordinates to those
 specified by \textsf{s}. The string \textsf{s} must be
-\textsf{{}``auto''} otherwise the procedure will fail. In all cases
+\textsf{"auto"} otherwise the procedure will fail. In all cases
 the display list element is returned.
 
 \noindent\hrulefill\\
@@ -2674,9 +2311,9 @@ different places in the program.
 
 \bigskip
 
-{\selectlanguage{english}
-\textsf{Translate(W, x, y, z,{\dots})} moves objects affected by this transformation in the direction (x, y, z). The
-display list element is returned.}
+\textsf{Translate(W, x, y, z,{\dots})} moves objects affected by this
+transformation in the direction (x, y, z). The display list element is
+returned.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{WindowContents(file):list}}
@@ -2828,12 +2465,20 @@ drawn objects to the material properties specified by s. The string s
 must be one or more semi-colon separated material properties. A
 material property is of the form
 
-$\left[
-\begin{array}{l}
-diffuse\\ambient\\specular\\emission
-\end{array}
-\right]$ \textsf{\textit{color name}} or \textsf{``shininess n''},
+%
+% LaTeX replaced by image in order to facilitate .html generation.
+% Uncomment to reproduce via LaTeX.
+%
+%$\left[
+%\begin{array}{l}
+%diffuse\\ambient\\specular\\emission
+%\end{array}
+%\right]$
+\begin{tabular}{ll}
+\raisebox{-.4\height}{\includegraphics[width=0.8in,height=0.8in]{utr9/dase.png}}
+\textsf{\textit{color name}} or \textsf{"shininess n"},
 where \textsf{n} is between \textsf{0} and \textsf{128}.
+\end{tabular}
 
 If string s is omitted, the current values of the material properties
 will be returned.
@@ -2887,19 +2532,19 @@ added specifically for the 3D graphics facilities.
 \bigskip
 
 The functions
-\textsf{DrawLine(), DrawPolygon(), DrawSegment(), DrawPoint(),}
-and \textsf{FillPolygon(),} use the value of
+\textsf{DrawLine(), DrawPolygon(), DrawSegment(), DrawPoint()},
+and \textsf{FillPolygon()}, use the value of
 \textsf{dim} to determine how many coordinates each vertex has. If
-\textsf{{}``dim = 2''} then
+\textsf{"dim = 2"} then
 \textsf{DrawTorus(), DrawSphere(), DrawCube()}, and
 \textsf{DrawCylinder()} cannot be used.
 
 
 \bigskip
 
-Values: \textsf{{}``2''}, \textsf{{}``3''}, or \textsf{{}``4''}
+Values: \textsf{"2"}, \textsf{"3"}, or \textsf{"4"}
 
-Default value: \textsf{{}``3''}
+Default value: \textsf{"3"}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eye}} \hfill point of view
@@ -2913,7 +2558,7 @@ See also the \textsf{Eye()} function.
 
 \bigskip
 
-Default value: \ \textsf{{}``(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)''}
+Default value: \ \textsf{"(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)"}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eyedir}} \hfill eye direction
@@ -2926,7 +2571,7 @@ The eye direction is the direction in which the eye is looking.
 
 \bigskip
 
-Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}
+Default value: \ \textsf{"(0.0, 0.0, 0.0)"}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eyepos}} \hfill eye position
@@ -2939,7 +2584,7 @@ The eye position is the where the eye is currently located.
 
 \bigskip
 
-Default value: \ \textsf{{}``(0.0, 0.0, 0.0)''}
+Default value: \ \textsf{"(0.0, 0.0, 0.0)"}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{eyeup}} \hfill up direction
@@ -2952,7 +2597,7 @@ The eyeup attribute specifies what direction is up in the scene.
 
 \bigskip
 
-Default value: \ \textsf{{}``(0.0, 1.0, 0.0)''}
+Default value: \ \textsf{"(0.0, 1.0, 0.0)"}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{glrenderer}} \hfill 3D renderer
@@ -3009,24 +2654,24 @@ lights.
 \tablelasttail{}
 \begin{xtabular}{|m{0.56295985in}|m{0.5775598in}|m{1.1288599in}|m{1.2427598in}|m{1.0427599in}|m{0.9754599in}|}
 \hline
-\centering{\selectlanguage{english} Light} &
-\centering{\selectlanguage{english} On/Off} &
-\centering{\selectlanguage{english} Diffuse} &
-\centering{\selectlanguage{english} Ambient} &
-\centering{\selectlanguage{english} Specular} &
-\centering\arraybslash{\selectlanguage{english} Position}\\\hline
-{\selectlanguage{english} \textsf{\textbf{light0}} } &
-\centering{\selectlanguage{english} On} &
-\centering{\selectlanguage{english} white} &
-\centering{\selectlanguage{english} black} &
-\centering{\selectlanguage{english} white} &
-\centering\arraybslash{\selectlanguage{english} (0.0, 0.0, 1.0)}\\\hline
-{\selectlanguage{english}\sffamily\bfseries light1- light7} &
-\centering{\selectlanguage{english} Off} &
-\centering{\selectlanguage{english} black} &
-\centering{\selectlanguage{english} black} &
-\centering{\selectlanguage{english} black} &
-\centering\arraybslash{\selectlanguage{english} (0.0,0.0,1.0)}\\\hline
+\centering{Light} &
+\centering{On/Off} &
+\centering{Diffuse} &
+\centering{Ambient} &
+\centering{Specular} &
+\centering\arraybslash{Position}\\\hline
+\textsf{\textbf{light0}} &
+\centering{On} &
+\centering{white} &
+\centering{black} &
+\centering{white} &
+\centering\arraybslash{(0.0, 0.0, 1.0)}\\\hline
+{\sffamily\bfseries light1- light7} &
+\centering{Off} &
+\centering{black} &
+\centering{black} &
+\centering{black} &
+\centering\arraybslash{(0.0,0.0,1.0)}\\\hline
 \end{xtabular}
 \end{center}
 
@@ -3038,15 +2683,17 @@ lights.
 
 \bigskip
 
-The attribute \textsf{texcoord} can be assigned the value \textsf{{}``auto'',} or a string of texture coordinates. If
-\textsf{texcoord} has the value \textsf{{}``auto'',} texture coordinates are determined by the Unicon 3D graphics
-facilities. Otherwise texture coordinates, which are pairs (x, y) with x and y are between 0.0 and 1.0, are obtained
-from attribute \textsf{texture}.
+The attribute \textsf{texcoord} can be assigned the value
+\textsf{"auto"}, or a string of texture coordinates. If
+\textsf{texcoord} has the value \textsf{"auto"}, texture coordinates
+are determined by the Unicon 3D graphics facilities. Otherwise texture
+coordinates, which are pairs (x, y) with x and y are between 0.0 and
+1.0, are obtained from attribute \textsf{texture}.
 
 
 \bigskip
 
-Default:\ \ \textsf{{}``auto''}.
+Default:\ \ \textsf{"auto"}.
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{meshmode}} \hfill mesh mode type
@@ -3056,16 +2703,16 @@ Default:\ \ \textsf{{}``auto''}.
 
 The \textsf{meshmode} attribute changes how the coordinates passed to
 \textsf{DrawPolygon()} and \textsf{FillPolygon()} will be interpreted.
-This attribute can take the following values: \textsf{{}``points''},
-\textsf{{}``lines''}, \textsf{{}``linestrip''}, \textsf{{}``lineloop''},
-\textsf{{}``triangles''}, \textsf{{}``trianglefan''},
-\textsf{{}``trianglestrip''}, \textsf{{}``quads''},
-\textsf{{}``quadstrip''} and \textsf{{}``polygon''}.
+This attribute can take the following values: \textsf{"points"},
+\textsf{"lines"}, \textsf{"linestrip"}, \textsf{"lineloop"},
+\textsf{"triangles"}, \textsf{"trianglefan"},
+\textsf{"trianglestrip"}, \textsf{"quads"},
+\textsf{"quadstrip"} and \textsf{"polygon"}.
 
 
 \bigskip
 
-Default:\ \ \textsf{{}``polygon''}.
+Default:\ \ \textsf{"polygon"}.
 
 
 \bigskip
@@ -3076,13 +2723,13 @@ Default:\ \ \textsf{{}``polygon''}.
 
 \bigskip
 
-If normode has the value \textsf{{}``auto''}, then normals are
+If normode has the value \textsf{"auto"}, then normals are
 automatically generated for each drawn polygon so that the normal is
 perpendicular on the polygon and pointing away from it. If normode has
-the value of ``on'' then the user can supply custom normals using the
+the value of "on" then the user can supply custom normals using the
 \textsf{Normals()} function. Otherwise normode has the value
-\textsf{{}``off''}, which indicates objects are drawn using a default
-preset normal. By default normode has the value \textsf{{}``auto''.}
+\textsf{"off"}, which indicates objects are drawn using a default
+preset normal. By default normode has the value \textsf{"auto".}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{rings}} \hfill sets the number of rings
@@ -3118,10 +2765,10 @@ slices has the value 15.
 
 \bigskip
 
-If texmode has the value \textsf{{}``on'',} then textures are mapped
+If texmode has the value \textsf{"on"}, then textures are mapped
 onto drawn objects. Otherwise texmode has the value
-\textsf{{}``off''}, which indicates objects are drawn using the
-background color. By default texmode has the value \textsf{{}``off''.}
+\textsf{"off"}, which indicates objects are drawn using the
+background color. By default texmode has the value \textsf{"off".}
 
 \noindent\hrulefill\\
 \noindent\textsf{\textbf{texture}} \hfill texture image
@@ -3164,12 +2811,20 @@ this section.
 The string assigned to fg must be one or more semi-colon
 material properties. A material property is of the form
 
-$\left[
-\begin{array}{l}
-diffuse\\ambient\\specular\\emission
-\end{array}
-\right]$ \textsf{\textit{color name}} or \textsf{``shininess n''},
+%
+% LaTeX replaced by image in order to facilitate .html generation.
+% Uncomment to reproduce via LaTeX.
+%
+%$\left[
+%\begin{array}{l}
+%diffuse\\ambient\\specular\\emission
+%\end{array}
+%\right]$
+\begin{tabular}{ll}
+\raisebox{-.4\height}{\includegraphics[width=0.8in,height=0.8in]{utr9/dase.png}}
+\textsf{\textit{color name}} or \textsf{"shininess n"},
 where \textsf{n} is between \textsf{0} and \textsf{128}.
+\end{tabular}
 
 
 \noindent\hrulefill\\

@@ -1176,7 +1176,7 @@ Deliberate Syntax Error
 #endif					/* PresentationManager */
 #endif					/* OS2 */
 
-#if UNIX
+#if UNIX || NT
       /*
        * Just execute the file.  It knows how to find iconx.
        * First, though, must redirect stderr if requested.

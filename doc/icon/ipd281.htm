@@ -1,50 +1,2327 @@
-<HTML>
-<!-- status: complete -->
-<HEAD>
-    <TITLE>Graphics Facilities for the Icon Programming Language; Version 9.3</TITLE>
-</HEAD>
-<BODY>
-<H2>Graphics Facilities for the Icon Programming Language; Version 9.3</H2>
-Gregg M. Townsend<BR>
-Ralph E. Griswold<BR>
-Clinton L. Jeffery<BR>
-<BR>
-<BR>
-<TABLE><TR VALIGN="TOP"><TD><IMG SRC="../bluelogo.gif" WIDTH="130" HEIGHT=
-"130" ALIGN=bottom NATURALSIZEFLAG="3"></TD><TD> Department of Computer
-Science<BR>
-The University of Arizona<BR>
-Tucson, Arizona <BR>
-<BR>
-Division of Computer Science<BR>
-The University of Texas at San Antonio<BR>
-<BR>
-<BR>
-IPD281a<BR>
-October 3, 1997 <BR>
-http://www.cs.arizona.edu/icon/docs/ipd281.htm</TD></TR></TABLE> <BR>
-<HR>&copy; 1995, 1996, 1997 Gregg M. Townsend, Ralph E. Griswold, and Clinton
-L. Jeffery<BR>
-<BR>
+<html><!-- status: complete --><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+    <title>Graphics Facilities for the Icon Programming Language; Version 9.3</title>
+</head>
+<body>
+<h2>Graphics Facilities for the Icon Programming Language; Version 9.3</h2>
+Gregg M. Townsend<br>
+Ralph E. Griswold<br>
+Clinton L. Jeffery<br>
+<br>
+<br>
+<table><tbody><tr valign="TOP"><td><img src="ipd281_files/bluelogo.gif" naturalsizeflag="3" align="bottom" height="130" width="130"></td><td> Department of Computer
+Science<br>
+The University of Arizona<br>
+Tucson, Arizona <br>
+<br>
+Division of Computer Science<br>
+The University of Texas at San Antonio<br>
+<br>
+<br>
+IPD281a<br>
+October 3, 1997 <br>
+http://www.cs.arizona.edu/icon/docs/ipd281.htm</td></tr></tbody></table> <br>
+<hr>© 1995, 1996, 1997 Gregg M. Townsend, Ralph E. Griswold, and Clinton
+L. Jeffery<br>
+<br>
 This document may be reproduced freely in its present form, provided it
 is reproduced in its entirety. Other uses, such as incorporation in a compilation
-or a derivative work, require written permission. <BR>
-<HR><IMG SRC="images/gr_logo.gif" WIDTH="193" HEIGHT="193" ALIGN=bottom
-NATURALSIZEFLAG="3"><BR>
-<BR>
-<HR><A HREF="ipd281/gipd_1.htm">Summary Description</A><BR>
-<BR>
-<A HREF="ipd281/gipd_a.htm">Appendix A: Graphics Procedures</A><BR>
-<A HREF="ipd281/gipd_b.htm">Appendix B: Graphics Keywords</A><BR>
-<A HREF="ipd281/gipd_c.htm">Appendix C: Window Attributes</A><BR>
-<A HREF="ipd281/gipd_d.htm">Appendix D: Keyboard Symbols</A><BR>
-<A HREF="ipd281/gipd_e.htm">Appendix E: Event Queues</A><BR>
-<A HREF="ipd281/gipd_f.htm">Appendix F: Palettes</A><BR>
-<A HREF="ipd281/gipd_g.htm">Appendix G: Microsoft Windows</A><BR>
-<A HREF="ipd281/gipd_h.htm">Appendix H: The X Window System</A><BR>
-<BR>
-<HR>This document is also available in <A HREF="../ftp/doc/ipd281.zip">PostScript</A>
-or <A HREF="../ftp/doc/ipd281.pdf">PDF</A> form.<HR><A HREF="../index.htm">Icon
-home page</A> 
-</BODY>
-</HTML>
+or a derivative work, require written permission. <br>
+<hr><img src="ipd281_files/gr_logo.gif" naturalsizeflag="3" align="bottom" height="193" width="193"><br>
+<br>
+<hr>
+<a href="#intro">Introduction</a><br>
+<a href="#attributes">Attributes</a><br>
+<a href="#a">Appendix A: Graphics Procedures</a><br>
+<a href="#b">Appendix B: Graphics Keywords</a><br>
+<a href="#c">Appendix C: Window Attributes</a><br>
+<a href="#d">Appendix D: Keyboard Symbols</a><br>
+<a href="#e">Appendix E: Event Queues</a><br>
+<a href="#f">Appendix F: Palettes</a><br>
+<a href="#g">Appendix G: Microsoft Windows</a><br>
+<a href="#h">Appendix H: The X Window System</a><br>
+<br>
+<hr>
+
+<h2>Graphics Facilities for the Icon Programming Language</h2>
+
+<hr>
+<A name=intro><h3>Introduction</h3></A>
+
+The Icon programming language [<a href="#anchor4631137">1</a>] provides
+a large set of platform-independent facilities for graphical input and output.
+The implementation includes numerous functions and keywords specifically
+for graphics. These are augmented by additional library procedures that
+add higher-level capabilities.<br>
+<br>
+This document describes the graphics facilities of Version 9.3 of Icon [<a href="#anchor4648980">2</a>].
+Previous experience with computer graphics is helpful.<br>
+<br>
+The body of the text presents a survey Icon's graphics capabilities. Full
+descriptions of the functions, attributes, and other items appear in appendices.
+The Visual Interface Builder, VIB, is described in a separate document [<a href="#anchor4650911">3</a>].
+<br><br>
+A book on Icon graphics is expected in 1998 [4].
+<h4>A Simple Example</h4>
+This small program illustrates several aspects of graphics programming in
+Icon: 
+<pre>   link graphics
+
+   procedure main()
+      WOpen("size=400,300") | stop("can't open window")
+      repeat case Event() of {
+         "q":      exit()
+         &amp;lpress:  DrawCircle(&amp;x, &amp;y, 5)
+         &amp;mpress:  DrawCircle(&amp;x, &amp;y, 10)
+         &amp;rpress:  DrawCircle(&amp;x, &amp;y, 15)
+         }
+   end</pre>
+<img src="ipd281_files/gipd0.gif" naturalsizeflag="3" alt="bubbles" align="bottom" height="302" width="402"><br>
+<br>
+The image above shows what the window might look like after several clicks
+of the mouse.<br>
+<br>
+The <code>link</code> <code>graphics</code> declaration gives access to
+the standard set of graphics procedures in the Icon Program Library [<a href="#anchor4654234">5</a>]
+that supplement the built-in repertoire.<br>
+<br>
+The <code>WOpen()</code> call creates a window. The window is 400 pixels
+wide and 300 pixels high, with all other characteristics set by default.<br>
+<br>
+The main loop repeatedly calls <code>Event()</code> to receive input. An
+event code of <code>"q"</code> is returned when the <code>q</code>
+key is pressed; when this happens, the program exits.<br>
+<br>
+An event code matching <code>&amp;lpress</code>, <code>&amp;mpress</code>,
+or <code>&amp;rpress</code> is returned when the left, middle, or right
+mouse button is pressed. In response, the program draws a circle at the
+mouse location, obtaining this location from the keywords <code>&amp;x </code>and
+<code>&amp;y</code>. Circles of radius 5, 10, or 15 pixels are drawn depending
+on which mouse button was pressed. 
+
+<h4>Fundamentals</h4>
+A window in Icon is an object of type <code>window</code>. The value of
+the keyword <code>&amp;window</code> is the <i>subject window</i>. By default,
+almost all of the graphics functions use the subject window, and a typical
+program makes no explicit mention of any window value.<br>
+<br>
+When a window is given explicitly as the first argument to a graphics procedure,
+the procedure and the remaining arguments apply to that window. If the first
+argument of a graphics procedure is not a window, the procedure and its
+arguments apply to the subject window. A null first argument to a graphics
+procedure does not specify the subject window; it is illegal.<br>
+<br>
+Graphics actions are accomplished by calling built-in functions and library
+procedures. The distinction usually is unimportant and is indicated only
+in <A href="#a">Appendix A</A>.<br>
+<br>
+Many drawing functions accept extra sets of parameters to allow multiple
+drawing operations in a single call. These functions are indicated by the
+notation "......" in <a href="#a">Appendix A</a>.<br>
+<br>
+Most output is drawn using the <i>foreground color</i>, which is set by
+calling <code>Fg()</code>. A few operations make use of the <i>background
+color</i> set by <code>Bg()</code>. 
+
+<A name=attributes><h3>Attributes</h3></A>
+Window attributes describe and control various characteristics of a window.
+A full list of these attributes appears in <a href="#c">Appendix C</a>.<br>
+<br>
+<code>WAttrib()</code> reads and writes attributes. For example, <code>WAttrib("fg")</code>
+returns the value of the <code>fg</code> attribute, which is the current
+foreground color. <code>WAttrib("fg=brown",</code> <code>"linewidth=3")</code>
+assigns values to the <code>fg </code>and <code>linewidth</code> attributes.
+<code>WAttrib()</code> ignores invalid names and values.<br>
+<br>
+Some attributes can also be read or written using procedures such as <code>Fg()</code>,
+<code>Bg()</code>, and <code>Font()</code>. 
+
+<h3>Coordinate System</h3>
+Window locations and distances are measured in pixels. Angles are measured
+in radians.<br>
+<br>
+The origin (0,0) is the pixel in the upper-left corner of the window. A
+left-handed coordinate system is used: x increases towards the right and
+y increases toward the bottom. As a consequence, angles are measured in
+a clockwise direction.<br>
+<br>
+Rectangular areas are specified by four integers (x,y,w,h) giving the coordinates
+of a starting corner and the rectangle's width and height. w and/or h can
+be negative to extend the rectangle leftward or upward from (x,y).<br>
+<br>
+The effective origin can be moved from (0,0) to (dx,dy) by setting the <code>dx</code>
+and <code>dy</code> attributes.<br>
+<br>
+Output to the screen is limited to a clipping region that is set by calling
+<code>Clip(x,</code> <code>y,</code> <code>w,</code> <code>h)</code>. Drawing
+outside the clipping region is not an error, but no pixels outside the region
+are changed. Clipping is disabled by calling <code>Clip()</code> with no
+arguments; this is the initial state of a new window. 
+
+<h3>Drawing Operations</h3>
+<code>DrawPoint(x,</code> <code>y)</code> draws a single point.<br>
+<br>
+<code>DrawLine(x1,</code> <code>y1,</code> <code>x2,</code> <code>y2,</code>
+<code>...,</code> <code>xn,</code> <code>yn)</code> draws a line from (<code>x1</code>,<code>y1</code>)
+to (<code>x2</code>,<code>y2</code>). If more coordinates are given, (<code>x2</code>,<code>y2</code>)
+is then connected to (<code>x3</code>,<code>y3</code>), and so on.<br>
+<br>
+<code>DrawPolygon(x1,</code> <code>y1,</code> <code>x2,</code> <code>y2,</code>
+<code>...,</code> <code>xn, yn)</code> functions like <code>DrawLine()</code>
+with the addition that (<code>xn</code>,<code>yn</code>) is connected to
+(<code>x1</code>,<code>y1</code>) to form a closed path.<br>
+<br>
+<code>DrawSegment(x1,</code> <code>y1,</code> <code>x2,</code> <code>y2)</code>
+draws a line from (<code>x1</code>,<code>y1</code>) to (<code>x2</code>,<code>y2</code>).
+Additional pairs of coordinates can be provided to draw additional, disconnected
+segments.<br>
+<br>
+<code>DrawCurve(x1,</code> <code>y1,</code> <code>x2,</code> <code>y2,</code>
+<code>...,</code> <code>xn,</code> <code>yn) </code>draws a smooth curve
+that passes though the given points. If the first and last points are identical,
+a smoothly closed curve is produced.<br>
+<br>
+<code>DrawRectangle(x, y, w, h)</code> draws a rectangle having corners
+at (<code>x</code>,<code>y</code>) and (<code>x+w</code>,<code>y+h</code>).<br>
+<br>
+<code>DrawCircle(x,</code> <code>y,</code> <code>r,</code> <code>theta,</code>
+<code>alpha) </code>draws a circle or circular arc of radius r centered
+at (<code>x</code>,<code>y</code>). <code>theta</code> specifies the starting
+angle, in radians, and <code>alpha</code> is the angle (positive or negative)
+subtended by the arc. If <code>alpha</code> is omitted, <code>theta</code>
+is immaterial and a full circle is drawn.<br>
+<br>
+<code>DrawArc(x,</code> <code>y,</code> <code>w,</code> <code>h,</code>
+<code>theta,</code> <code>alpha)</code> draws an elliptical arc inscribed
+in the rectangle specified by (<code>x</code>,<code>y</code>,<code>w</code>,<code>h</code>).
+<code>theta</code> specifies the starting angle and <code>alpha</code> is
+the extent.<br>
+<br>
+<code>FillPolygon()</code>, <code>FillRectangle()</code>, <code>FillCircle()</code>,
+and <code>FillArc()</code> are similar to their <code>Draw</code> counterparts,
+but they fill in the interior of a figure as well as its outline.<br>
+<br>
+<code>EraseArea(x,</code> <code>y,</code> <code>w,</code> <code>h)</code>
+fills a rectangular area using the background color instead of the foreground
+color. 
+<h4>An Example</h4>
+The following code starts by drawing some simple figures. It then moves
+the origin, draws the new coordinate axes, and sets a clipping region. Circles
+are drawn around the new origin to show the effect of clipping, then partially
+erased. The <code>WDone()</code> procedure called at the end waits for the
+<code>q</code> key to be pressed. 
+<pre>   WOpen("size=400,300") | stop("can't open window")
+   DrawPolygon(40, 100, 70, 40, 100, 100)
+   DrawCurve(140, 100, 170, 40, 200, 100)
+   FillRectangle(240, 40, 40, 60)
+   WAttrib("dx=120", "dy=200")
+   DrawSegment(0, -1000, 0, 1000, 1000, 0, -1000, 0)
+   Clip(-20, -50, 100, 100)
+   every DrawCircle(0, 0, 20 to 100 by 5)
+   EraseArea(30, 10, 40, 20)
+   WDone()</pre>
+<img src="ipd281_files/gipd2.gif" naturalsizeflag="3" align="bottom" height="302" width="402">
+
+<h3>Drawing Attributes</h3>
+Functions that draw lines are affected by the <code>linewidth</code> and
+<code>linestyle</code> attributes. The <code>linewidth</code> attribute
+specifies the thickness of drawn lines. The <code>linestyle</code> attribute
+can be <code>solid</code>, <code>dashed</code>, or<code> striped</code>.
+A value of <code>dashed</code> causes lines to be drawn with regular gaps.
+A value of <code>striped </code>causes these gaps to be filled with the
+background color.<br>
+<br>
+The <code>fillstyle</code> and <code>pattern </code>attributes, discussed
+later, affect all drawing and filling functions.<br>
+<br>
+The <code>drawop</code> attribute specifies the way in which drawn pixels
+interact with existing pixels. Normally, with <code>drawop=cop</code>y,
+new pixels simply replace existing pixels. When the drawing operation is
+<code>reverse</code>, new pixels combine with old in such a way as to turn
+foreground-colored pixels into the background color, and vice versa; the
+effect on old pixels of any other color is unpredictable. 
+
+<h3>Text</h3>
+<code>WWrite()</code>, <code>WWrites()</code>, <code>WRead()</code>, and
+<code>WReads()</code> are analogous to <code>write()</code>, <code>writes()</code>,
+<code>read()</code>, and <code>reads()</code>, treating the window as a
+simple video terminal that scrolls when the bottom is reached.<br>
+<br>
+Output appears at the cursor location, which is defined by row and col attributes
+or equivalently by x and y attributes. The cursor is moved by <code>GotoRC(row,</code>
+<code>col) </code>or <code>GotoXY(x,</code> <code>y)</code>. The visibility
+of the cursor is controlled by the <code>cursor</code> attribute.<br>
+<br>
+Characters read by <code>WRead()</code> or <code>WReads()</code> are echoed
+to the screen at the cursor location if the echo attribute is set. When
+a character is written or echoed using the cursor, the area behind the character
+is filled with the background color.<br>
+<br>
+<code>DrawString(x,</code> <code>y,</code> <code>s)</code> outputs text
+string <code>s</code> without affecting the text cursor position or drawing
+the background. The first character appears at location (<code>x</code>,<code>y</code>).
+<code>CenterString()</code>, <code>LeftString()</code>, and <code>RightString()</code>
+output a string using different positionings.<br>
+<br>
+<code>TextWidth(s)</code> returns the width of a string, measured in pixels.
+
+<h3>Fonts</h3>
+<code>Font(s)</code> sets the text font. An Icon font specification is a
+comma-separated string giving the family name, style characteristics, and
+size (a height measured in pixels). Examples are <code>"Helvetica,bold,18"</code>
+and <code>"Times,bold,italic,14"</code>.<br>
+<br>
+Font names and characteristics are system-dependent. However, four portable
+family names are always available: 
+<pre>   mono        a monospaced, sans-serif font
+   <code>typewriter</code>  a monospaced, serif font
+   sans        a proportionally spaced, sans-serif font
+   serif       a proportionally spaced, serif font</pre>
+The actual fonts vary from one system to another; some systems may not be
+able to supply fonts with all the correct attributes.<br>
+<br>
+Font specifications are case-insensitive. As an alternative to an Icon font
+specification, a system-dependent font name can be supplied.<br>
+<br>
+Information about a font can be obtained from the following attributes:
+<pre>   fheight   font height
+   fwidth    font width
+   ascent    extent of the font above the baseline
+   descent   extent of the font below the baseline
+   leading   distance between baselines of successive text lines</pre>
+Only the <code>leading</code> attribute can be altered. 
+<h4>An Example</h4>
+The following example illustrates several aspects of text output. Note the
+use of newlines and leading spaces in strings in addition to more explicit
+positioning. 
+<pre>   WOpen("size=400,300") | stop("can't open window")
+   Font("typewriter,bold,18")
+   WWrite("line 1")
+   WWrite("line 2")
+   GotoRC(5, 3)
+   WWrite("line 5")
+   WWrite("line 6")
+   WWrite("\n ", &amp;lcase, &amp;ascii)
+   Font("Helvetica,18")
+   WWrite("\n ", &amp;lcase, &amp;ascii)
+   DrawSegment(110, 50, 130, 50, 120, 40, 120, 60)
+   DrawString(120, 50, "drawn at (120,50)")
+   WDone()
+
+<img src="ipd281_files/gipd3.gif" naturalsizeflag="3" align="bottom" height="302" width="402"></pre>
+
+<h3>Colors</h3>
+<code>Fg(s)</code> and <code>Bg(s)</code> set the foreground and background
+color respectively.<br>
+<br>
+Colors are named by English phrases using a system loosely based on [<a href="#anchor4656662">5</a>].
+Examples are "<code>brown"</code>, <code>"yellowish green"</code>,
+and <code>"moderate purple-gray"</code>. The syntax of a color
+name is<br>
+<br>
+<img src="ipd281_files/gipd10.gif" naturalsizeflag="3" align="bottom" height="114" width="235"><br>
+<br>
+where choices enclosed in brackets are optional and hue can be one of <code>black</code>,
+<code>gray</code>, <code>white</code>, <code>pink</code>, <code>violet</code>,
+<code>brown</code>, <code>red</code>, <code>orange</code>, <code>yellow</code>,
+<code>green</code>, <code>cyan</code>, <code>blue</code>, <code>purple</code>,
+or <code>magenta</code>. A single hyphen or space separates each word from
+its neighbor. Color names are insensitive to case; <code>purple</code> and
+<code>Purple</code> are equivalent<br>
+<br>
+Conventional English spelling is used. When adding <code>ish</code> to a
+hue ending in <code>e</code>, the <code>e</code> is dropped. For example,
+<code>purple</code> becomes <code>purplish</code>. The <code>ish</code>
+form of <code>red</code> is <code>reddish</code>.<br>
+<br>
+When two hues are supplied and the first hue has no <code>ish</code> suffix,
+the resulting hue is halfway between the two named hues. When a hue with
+an <code>ish</code> suffix precedes a hue, the resulting hue is three-fourths
+of the way from the <code>ish</code> hue to the main hue. The default lightness
+is <code>medium</code> and the default saturation is <code>vivid</code>.<br>
+<br>
+Colors can also be specified in terms of red, green, and blue brightness
+components. The decimal form uses three comma-separated values ranging from
+0 to 65535, as in <code>"12000,0,65535"</code>. The hexadecimal
+forms are <code>"#rgb"</code>, <code>"#rrggbb"</code>,
+<code>"#rrrgggbbb"</code>, and <code>"#rrrrggggbbbb"</code>,
+with the longer forms providing greater precision.<br>
+<br>
+Color specifications not recognized by Icon are passed to the graphics system
+for interpretation, allowing the use of system-dependent names.<br>
+<br>
+<code>ColorValue(s)</code> translates a color specification into decimal
+form. 
+
+<h4>Color Correction</h4>
+Icon colors use a linear scale: the 50% values in <code>"32767,32767,32767"
+</code>specify a medium gray. Real graphics hardware is nonlinear. When
+the underlying graphics system does not correct for this, Icon applies its
+own gamma correction. The <code>gamma</code> attribute controls the amount
+of such correction. A value of 1.0 provides no correction; values between
+2 and 3 are appropriate for most uncorrected monitors. 
+
+<h4>Mutable Colors</h4>
+On systems with changeable color maps, Icon supports color map access through
+<i>mutable colors</i>.<br>
+<br>
+<code>NewColor(s)</code> reserves a color map entry and returns a negative
+integer <code>n</code>, a mutable color representing that entry. If <code>s</code>
+is supplied, the entry is initialized to that color.<br>
+<br>
+An integer returned by <code>NewColor()</code> can be used as a color specification.
+For example, <code>Fg(n)</code> makes a mutable color the foreground color.<br>
+<br>
+<code>Color(n,</code> <code>s)</code> sets the color map entry of <code>n</code>
+to the color <code>s</code>. This changes the appearance of any pixels of
+color <code>n</code> already drawn as well as affecting those drawn subsequently.<br>
+<br>
+<code>FreeColor(n)</code> frees a color map entry when no longer needed,
+and can be used with normal color specifications as well as mutable colors.
+
+<h4>Color Palettes</h4>
+Color palettes are fixed sets of colors (or grays) used for drawing or reading
+images. Icon's color palettes are described in <a href="#f">Appendix F</a>.<br>
+<br>
+<code>PaletteKey(palette,</code> <code>color)</code> returns a character
+from the given palette representing an entry in the palette that is close
+to the given color.<br>
+<br>
+<code>PaletteColor(palette,</code> <code>s)</code> returns the color represented
+by the single character <code>s</code> in the given palette, or fails if
+the character is not a member of the palette. The color is returned in the
+same form as produced by <code>ColorValue()</code>.<br>
+<br>
+<code>PaletteChars(palette)</code> returns a string containing the characters
+that are valid in the given palette. If fails if the palette name is invalid.
+<code>PaletteGrays(palette)</code> returns only the characters corresponding
+to shades of gray, ordered from black to white. 
+
+<h3>Drawing Images</h3>
+<code>DrawImage(x,</code> <code>y,</code> <code>spec)</code> draws an arbitrarily
+complex figure in a rectangular area by giving a value to each pixel in
+the area. <code>x</code> and <code>y</code> specify the upper left corner
+of the area. spec is a string of the form <code>"width,palette,data"</code>
+where<code> width</code> gives the width of the area to be drawn, <code>palette</code>
+chooses the set of colors to be used, and <code>data</code> specifies the
+pixel values.<br>
+<br>
+Each character of <code>data</code> corresponds to one pixel in the output
+image. Pixels are written a row at a time, left to right, top to bottom.
+The amount of data determines the height of the area drawn. The area is
+always rectangular; the length of the data must be an integral multiple
+of the width.<br>
+<br>
+The data characters are interpreted in paint-by-number fashion according
+to the selected palette. Spaces and commas can be used as punctuation to
+aid readability. The characters <code>~</code> and <code>\377</code> specify
+transparent pixels that do not overwrite the pixels on the canvas when the
+image is drawn. Punctuation and transparency characters lose their special
+meanings in palettes in which they represent colors. 
+<h4>An Example</h4>
+The following example uses <code>DrawImage()</code> to draw spheres randomly.
+Transparent pixels are used for better appearance where the spheres overlap.
+The inset shows a magnified version of a single sphere. 
+<pre>   WOpen("size=400,300") | stop("can't open window")
+   sphere := "16,g16,  ~~~~B98788AE~~~~_
+      ~~D865554446A~~~ ~D856886544339~~ _
+      E8579BA9643323A~ A569DECA7433215E_
+      7569CDB86433211A 5579AA9643222108_
+      4456776533221007 4444443332210007_
+      4333333222100008 533322221100000A _
+      822222111000003D D41111100000019~_
+      ~A200000000018E~ ~~A4000000028E~~_
+      ~~~D9532248B~~~~"
+   every 1 to 100 do
+      DrawImage(?380, ?280, sphere)
+   WDone()
+
+<img src="ipd281_files/gipd4.gif" naturalsizeflag="3" align="bottom" height="302" width="402"></pre>
+<h4>Bi-Level Images</h4>
+<code>DrawImage()</code> accepts an alternative specification form <code>"width,#data"</code>
+for images composed of only the foreground and background colors. The <code>data</code>
+field is a series of hexadecimal digits specifying row values from top to
+bottom. Each row is specified by <code>width</code>/4 digits, with fractional
+values rounded up. An example of a 4-by-4 specification is <code>"4,#9BD9"</code>.<br>
+<br>
+The digits of each row are interpreted as a base-16 number. Each bit of
+this number corresponds to one pixel; a value of 0 selects the background
+color and a value of 1 selects the foreground color. The least significant
+bit corresponds to the left-most pixel.<br>
+<br>
+If the data field is preceded by the character <code>~</code> instead of
+<code>#</code>, the image is written transparently: Bit values of 0 preserve
+existing pixels instead of writing the background color. 
+
+<h4>Patterns</h4>
+The <code>fillstyle</code> attribute, normally <code>solid</code>, can be
+changed to cause the drawing operations to fill areas or draw lines using
+a pattern. If the fill style is <code>textured</code>, both the foreground
+and background colors are used. If the fill style is <code>masked,</code>
+pixels not set to the foreground color are left unchanged.<br>
+<br>
+<code>Pattern(spec)</code> sets the pattern attribute, the pattern to be
+used when the fill style is not <code>solid</code>. <code>spec</code> is
+a bi-level image specification of the type used with <code>DrawImage()</code>or
+one of the following predefined names:<br>
+<br>
+<img src="ipd281_files/gipd7.gif" naturalsizeflag="3" align="bottom" height="138" width="502">
+<h4>An Example</h4>
+The following example draws three rectangles using patterns. The first two,
+using the horizontal pattern, differ in fill style. The third uses a custom
+pattern given as a bi-level specification. 
+<pre>   WOpen("size=400,300") | stop("can't open window")
+   Fg("light gray")
+   FillRectangle()
+   WAttrib("fg=black", "fillstyle=masked")
+   Pattern("horizontal")
+   FillRectangle(40, 60, 80, 180)
+   WAttrib("fillstyle=textured")
+   FillRectangle(160, 60, 80, 180)
+   Pattern("8,#FF7F3F1F0F070301")
+   FillRectangle(280, 60, 80, 180)
+   WDone()
+<img src="ipd281_files/gipd5.gif" naturalsizeflag="3" align="bottom" height="302" width="402"></pre>
+
+<h3>Miscellaneous Operations</h3>
+<code>Alert()</code> produces a beep or other signal to attract attention.<br>
+<br>
+<code>CopyArea(x1,</code> <code>y1,</code> <code>w,</code> <code>h,</code>
+<code>x2,</code> <code>y2) </code>copies the rectangular area (<code>x1</code>,<code>y1</code>,<code>w</code>,<code>h</code>)
+to (<code>x2</code>,<code>y2</code>). Copying from one window to another
+is possible by explicitly specifying two window arguments: <code>CopyArea(W1,</code>
+<code>W2,</code> <code>x1,</code> <code>y1,</code> <code>w,</code> <code>h,</code>
+<code>x2,</code> <code>y2)</code>.<br>
+<br>
+<code>Pixel(x,</code> <code>y,</code> <code>w,</code> <code>h)</code> generates
+the colors of the pixels in a rectangle, left to right, top to bottom.<br>
+<br>
+<code>ReadImage(s,</code> <code>x,</code> <code>y,</code> <code>p)</code>
+displays an image from the file named <code>s</code> at (<code>x</code>,<code>y</code>).
+If <code>p</code> is supplied, the image is displayed using only the colors
+of palette <code>p</code>. <code>WriteImage(s,</code> <code>x,</code> <code>y,</code>
+<code>w,</code> <code>h)</code> writes a rectangular area to the file named
+<code>s</code>. Icon supports GIF format on all platforms; additional formats
+are also available on some platforms.<br>
+<br>
+<code>WDefault(program,</code> <code>option)</code> returns a custom value
+registered for the option named <code>option</code> of the program named
+<code>program</code>. 
+
+<h3>Events</h3>
+User actions are passed to an Icon program as <i>events</i>. These events
+do not interrupt execution; they are placed in a queue for retrieval. Events
+are generated by pressing a key (except modifier keys like the shift key),
+by resizing the window, by pressing or releasing a button on the mouse,
+or by moving the mouse while a button is pressed. User resizing of a window
+is allowed only if the <code>resize </code>attribute is set to <code>on</code>.<br>
+<br>
+Normal keyboard characters are encoded as one-character strings. Other keys
+such as the Home key produce integer codes; see <a href="#d">Appendix D</a>.<br>
+<br>
+The other events produce integer codes corresponding to keywords: 
+<pre>   &amp;lpress    left mouse press
+   &amp;ldrag     left mouse movement
+   &amp;lrelease  left mouse release
+   &amp;mpress    middle mouse press
+   &amp;mdrag     middle mouse movement
+   &amp;mrelease  middle mouse release
+   &amp;rpress    right mouse press
+   &amp;rdrag     right mouse movement
+   &amp;rrelease  right mouse release
+   &amp;resize    window resize</pre>
+An event is accepted by calling <code>Event()</code>, which returns the
+code for the next unprocessed event. If no event is available, <code>Event()</code>
+waits for one to occur.<br>
+<br>
+When <code>Event()</code> returns an event, it also sets the values of keywords
+that give further information about the event: 
+<pre>   &amp;x, &amp;y      mouse location in pixels
+   &amp;row, &amp;col  mouse location in characters
+   &amp;control    succeeds if the Control key was pressed
+   &amp;meta       succeeds if the Meta key was pressed
+   &amp;shift      succeeds if the Shift key was pressed
+   &amp;interval   time in milliseconds since previous event</pre>
+<code>Enqueue(a,</code> <code>x,</code> <code>y,</code> <code>s,</code>
+<code>i)</code> places event code <code>a</code> in the queue with <code>x</code>
+and <code>y</code> as the associated mouse coordinates. <code>s</code> is
+a string containing any of the characters <code>c</code>, <code>m</code>,
+or <code>s</code> to indicate modifier keys; <code>i</code> gives the interval.<br>
+<br>
+The event queue is an Icon list; <a href="#e">Appendix E</a> describes
+its format. <code>Pending()</code> returns the event list for direct access
+from Icon. The expression <code>*Pending()</code> returns the size of the
+list and can be used to check whether an event is available. 
+
+<h3>Dialogs</h3>
+Several library procedures display items in a window and then wait for input.<br>
+<br>
+<code>Notice(line1,</code> <code>line2,</code> <code>...)</code> displays
+one or more lines of text and then waits for the user to click an <code>Okay</code>
+button.<br>
+<br>
+<code>OpenDialog(caption,</code> <code>filename)</code> and <code>SaveDialog(caption,</code>
+<code>filename)</code> each request a text string, normally a file name;
+they differ in their sets of accompanying buttons. The resulting file name
+is stored in the global variable <code>dialog_value</code>.<br>
+<br>
+<code>TextDialog()</code> constructs a dialog containing arbitrary numbers
+of caption lines, text-entry fields, and buttons. <code>SelectDialog()</code>
+requests a choice from a list of items; <code>ToggleDialog()</code> displays
+a set of independently selectable buttons. <code>ColorDialog()</code> displays
+a color-selection window. See <a href="#a">Appendix A</a> for details.<br>
+<br>
+The VIB program [<a href="#anchor4650911">3</a>] supports interactive construction
+of dialog boxes with even more generality. It allows arbitrary placement
+of buttons and text within a dialog box and provides additional devices
+such as sliders and scroll bars. 
+
+<h3>Windows</h3>
+<code>WOpen()</code> opens a window and returns a value of type <code>window</code>.
+If <code>&amp;window</code> is null, <code>WOpen()</code> assigns the newly
+opened window to it. Attribute values can be given as arguments to <code>WOpen()</code>
+to configure the new window.<br>
+<br>
+<code>WFlush()</code> flushes the window's output buffer, forcing the immediate
+display of any output that has been buffered. <code>WSync()</code> flushes
+the buffer and does not return until all pending output has been displayed.
+<code>WDelay(i)</code> flushes the buffer and then delays <code>i</code>
+milliseconds. <code>WClose()</code> closes a window.<br>
+<br>
+The <code>size</code> and <code>pos</code> attributes (and other related
+attributes) can be used to resize or reposition a window. The <code>resize</code>
+attribute controls whether the user is allowed to resize the window. <code>Raise()</code>
+and <code>Lower()</code> adjust the window stacking order on the screen.<br>
+<br>
+The <code>canvas</code> attribute specifies window visibility. The default
+value is <code>normal</code>. With <code>canvas=maximal</code>, the window
+fills the screen. With <code>canvas=hidden</code>, the window is not visible
+on the screen. With <code>canvas=iconic</code>, a minimized icon or label
+is displayed. The attributes <code>iconlabel</code>, <code>iconimage</code>,
+and <code>iconpos</code> can affect the appearance of the window while in
+this state.<br>
+<br>
+<code>Active()</code> lets a program multiplex input from several windows.
+It checks all open windows and returns a window for which an event is available;
+it waits if there are no unprocessed events. 
+
+<h3>Graphics Contexts</h3>
+A window is composed of two parts: a canvas, the visible or invisible area
+used for drawing, and a graphics context, a set of parameters that control
+drawing.<br>
+<br>
+All the attributes of a window are associated with either its canvas or
+its graphics context. The tables in <A href="#c">Appendix C</A> list the
+attributes by category.<br>
+<br>
+<code>Clone()</code> creates a new graphics context coupled with an existing
+canvas. The resulting window value shares the canvas with an existing window
+but has an independent set of graphics attributes. These attributes are
+initialized to the same values as in the original window, then modified
+by any arguments passed to <code>Clone()</code>.<br>
+<br>
+<code>Couple(W1,</code> <code>W2)</code> produces a window that couples
+the canvas of <code>W1</code> with the graphics attributes of <code>W2</code>.
+This allows a set of graphics context attributes to be shared across multiple
+canvases.<br>
+<br>
+<code>Uncouple()</code> discards a window value. If there are no other references
+to the window's canvas, it disappears from the screen. 
+<h4>An Example</h4>
+This example illustrates the use of graphics contexts. First, several windows
+are created by cloning, each with different attributes. Note that the two
+clones of <code>wide</code> inherit its <code>linewidth</code> attribute.
+Then, the cloned windows are used to draw circles, showing the effects of
+the different attributes. 
+<pre>   WOpen("size=400,300") | stop("can't open window")
+   dashed := Clone("linestyle=dashed")
+   wide := Clone("linewidth=5")
+   gray := Clone(wide, "fg=gray")
+   patt := Clone(wide, "fillstyle=textured", "pattern=grains")
+
+   DrawCircle(100, 150, 70)
+   DrawCircle(dashed, 150, 150, 70)
+   DrawCircle(wide, 200, 150, 70)
+   DrawCircle(gray, 250, 150, 70)
+   DrawCircle(patt, 300, 150, 70)
+   WDone()
+
+<img src="ipd281_files/gipd6.gif" naturalsizeflag="3" align="bottom" height="302" width="402"></pre>
+
+<h3>Further Information</h3>
+<a href="#a">Appendix A</a> provides detailed documentation of
+all built-in graphics functions and all library procedures mentioned here.
+Additional library procedures are described in [<a href="#anchor4654234">4</a>].<br>
+<br>
+Some of the programs in the library can be run to help learn about color
+in Icon. The <code>colrbook</code> and <code>colrpick</code> programs allow
+interactive exploration of English and numeric color specifications, respectively.
+The <code>palette</code> program displays any of the predefined color palettes.<br>
+<br>
+Many other library procedures make extensive use of the graphics facilities.
+Much can be learned by browsing through the source code. 
+
+<h3>Acknowledgments</h3>
+Many people have assisted the development of Icon's graphics capabilities.
+Darren Merrill, Ken Walker, Nick Kline, and Jon Lipp contributed to the
+design. Darren Merrill, Sandy Miller, and Cheyenne Wills assisted with aspects
+of the implementation. Steve Wampler and Bob Alexander provided suggestions,
+bug reports, and program examples. 
+
+<h3>References</h3>
+<a name="anchor4631137"></a>1.&nbsp;R. E. Griswold and M. T. Griswold, <i>The
+Icon Programming Language</i>, Peer-to-Peer Communications, Inc., San Jose,
+CA, third edition, 1996.<br>
+<br>
+<a name="anchor4648980"></a>2.&nbsp;R. E. Griswold, C. L. Jeffery, and G.
+M. Townsend, <i>Version 9.3 of the Icon Programming Language</i>, The Univ.
+of Arizona Icon Project Document <a href="https://www2.cs.arizona.edu/icon/docs/ipd278.htm">IPD278</a> (<a href="https://www2.cs.arizona.edu/icon/ftp/doc/ipd278.zip">PostScript</a>,
+<a href="https://www2.cs.arizona.edu/icon/ftp/doc/ipd278.pdf">PDF</a>), 1996.<br>
+<br>
+<a name="anchor4650911"></a>3.&nbsp;G. M. Townsend and R. E. Griswold, <i>Visual
+Interfaces for Icon Programs</i>
+The Univ. of Arizona Icon Project
+Document <a href="https://www2.cs.arizona.edu/icon/docs/ipd284.htm">IPD284</a> (<a href="https://www2.cs.arizona.edu/icon/ftp/doc/ipd284.zip">PostScript</a>,
+<a href="https://www2.cs.arizona.edu/icon/ftp/doc/ipd284.pdf">PDF</a>), 1998.<br>
+<br>
+4. R. E. Griswold, C. L. Jeffery, and G. M. Townsend, <i>Graphics Programming
+in Icon</i>, Peer-to-Peer Communications, Inc., San Jose, CA, to appear.<br>
+<br>
+<a name="anchor4654234"></a>4.&nbsp;R. E. Griswold, <i>The Icon Program
+Library; Version 9.3,</i> The Univ. of Arizona Icon Project Document <a href="https://www2.cs.arizona.edu/icon/docs/ipd279.htm">IPD279</a>,
+(<a href="https://www2.cs.arizona.edu/icon/ftp/doc/ipd279.zip">PostScript</a>, <a href="https://www2.cs.arizona.edu/icon/ftp/doc/ipd279.pdf">PDF</a>),
+1996.<br>
+<br>
+<a name="anchor4656662"></a>5.&nbsp;Berk T., Brownstein L., and Kaufman
+A., "A New Color-Naming System for Graphics Languages", <i>IEEE
+Computer Graphics &amp; Applications</i>, May 1982, 37-44.<br>
+<br>
+
+
+<a name=a><h2>Appendix A</h2></A>
+<hr>
+<h3>Graphics Procedures</h3>
+In addition to the notation used in the Icon language book [<a href="#anchor4631137">1</a>]
+to denote argument types, the following characters have meaning as indicated:
+<pre>   W      window             graphics source or destination
+   a      any type           arbitrary value
+   x, y   integer            coordinate location
+   w, h   integer            width and height of a rectangle
+   theta  real               angle (measured in radians)
+   alpha  real               angle (measured in radians)
+   k      string or integer  color specification</pre>
+Either or both of <code>w</code> and <code>h</code> can be negative to indicate
+a rectangle that extends leftward or upward from its given coordinates.
+A color specification is either an integer obtained from <code>NewColor(</code>)
+or a string having one of these forms: 
+<pre>   [lightness] [saturation] [hue[ish]] hue
+   red,green,blue
+   #hexdigits
+   system-dependent-color-name</pre>
+Any window argument named <code>W</code> can be omitted, in which case the
+subject window, <code>&amp;window</code>, is used. Note that this is not
+the same as a default argument: to use the subject window, the argument
+is omitted entirely, not replaced by a null argument.<br>
+<br>
+The notation <code>"......"</code> in an argument list indicates
+that additional argument sets can be provided, producing the same effect
+as multiple calls. The optional window argument, <code>W</code>, is not
+repeated in these additional argument sets.<br>
+<br>
+The list that follows includes some procedures that are not built into Icon
+itself but are instead part of the library. For these, the corresponding
+link file is noted. Alternatively, <code>link graphics</code> incorporates
+all procedures listed.<br>
+<br>
+Only a small portion of the library is documented here; the full library
+[<a href="#anchor4654234">4</a>] is much more extensive.<br>
+<br>
+<hr><a name="Active"></a><code>Active() : W</code> -- produce active window<br>
+<br>
+<code>Active()</code> returns a window that has one or more events pending,
+waiting if necessary. Successive calls avoid window starvation by checking
+the open windows in a different order each time. <code>Active()</code> fails
+if no window is open. 
+<pre>See also: <a href="#Pending">Pending()</a></pre>
+<br>
+<hr><a name="Alert"></a><code>Alert(W) : W</code> -- alert user<br>
+<br>
+<code>Alert()</code> produces a beep or other signal to attract attention.<br>
+<br>
+<hr><a name="Bg"></a><code>Bg(W,</code> <code>k1) : k2</code> -- set or
+query background color<br>
+<br>
+<code>Bg()</code> returns the background color. If <code>k1</code> is supplied,
+the color is first set to that specification; failure occurs if the request
+cannot be satisfied. Setting the background color does not change the appearance
+of the window, but subsequent drawing operations that use the background
+color are affected. 
+<pre>See also: <a href="#EraseArea">EraseArea()</a>, <a href="#Fg">Fg()</a>, and <a href="#FreeColor">FreeColor()</a></pre>
+<hr><a name="CenterString"></a><code>CenterString(W,</code> <code>x,</code>
+<code>y,</code> <code>s) : W</code> -- draw centered string<br>
+<br>
+<code>CenterString()</code> draws a text string that is centered vertically
+and horizontally about (<code>x</code>,<code>y</code>). 
+<pre>Link: <code>gpxop
+</code>
+See also: <a href="#DrawString">DrawString()</a>, <a href="#LeftString">LeftString()</a>, and <a href="#RightString">RightString()</a></pre>
+<hr><a name="Clip"></a><code>Clip(W,</code> <code>x,</code> <code>y,</code>
+<code>w,</code> <code>h) : W</code> -- set clipping rectangle<br>
+<br>
+<code>Clip()</code> sets the clipping region to the specified rectangle;
+subsequent output extending outside its bounds is discarded. If <code>Clip()</code>
+is called with no arguments, clipping is disabled and the entire canvas
+is writable. 
+<pre>Defaults: w, h   to edge of window</pre>
+<hr><a name="clone"></a><code>Clone(W,</code> <code>s1,</code> <code>s2,...,</code>
+<code>sn) : W</code> -- create new context with existing canvas<br>
+<br>
+<code>Clone() </code>produces a new window value that combines the canvas
+of <code>W</code> with a new graphics context. The new graphics attributes
+are copied from <code>W</code> and modified by the arguments of <code>Clone()</code>.
+Invalid arguments produce failure as in <code>WAttrib()</code>. 
+<pre>See also: <a href="#Couple">Couple()</a> and <a href="#WAttrib">WAttrib()</a></pre>
+<hr><a name="Color"></a><code>Color(W, i, k1, ) : k2</code> -- set or query
+mutable color<br>
+<br>
+<code>Color()</code> returns the setting of mutable color <code>i</code>
+if <code>k1</code> is omitted. If <code>k1</code> is supplied, color <code>i</code>
+is changed as specified, with an immediate effect on any visible pixels
+of that color. Additional index and color pairs may be supplied to set multiple
+entries with one call. <code>Color()</code> fails if a color specification
+is invalid. 
+<pre>See also: <a href="#NewColor">NewColor()</a></pre>
+<hr><a name="ColorDialog"></a><code>ColorDialog(W,</code> <code>L,</code>
+<code>k,</code> <code>p,</code> <code>a) : s</code> -- display color selection
+dialog<br>
+<br>
+<code>ColorDialog()</code> displays a color selection dialog box with <code>Okay</code>
+and <code>Cancel</code> buttons. The box is headed by zero or more captions
+specified by the list <code>L</code>, or a single string argument if passed
+in place of a list. If <code>k</code> is supplied, it specifies a reference
+color to be displayed below the color being adjusted.<br>
+<br>
+If a callback procedure <code>p</code> is supplied, then <code>p(a,</code>
+<code>s)</code> is called whenever the color settings are adjusted. The
+argument <code>a</code> is an arbitrary value from the <code>ColorDialog()</code>
+call; <code>s</code> is the new color setting in the form returned by <code>ColorValue()</code>.<br>
+<br>
+The color initially is set to <code>k</code> , if supplied, or otherwise
+to the foreground color. The final color setting, in <code>ColorValue()</code>
+form, is stored in the global variable <code>dialog_value</code>. <code>ColorDialog()</code>
+returns the name of the button that was selected. 
+<pre>Defaults: L   "Select color:"
+
+Link: dialog</pre>
+<hr><a name="ColorValue"></a><code>ColorValue(W,</code> <code>k) : s</code>
+-- translate color to canonical form<br>
+<br>
+<code>ColorValue() </code>interprets the color <code>k</code> and returns
+a string of three comma-separated integer values denoting the color's red,
+green, and blue components. <code>ColorValue()</code> fails if <code>k</code>
+is not a valid color specification. <br>
+<br>
+<hr><a name="CopyArea"></a><code>CopyArea(W1,</code> <code>W2,</code> <code>x1,</code>
+<code>y1,</code> <code>w,</code> <code>h,</code> <code>x2,</code> <code>y2)
+: W1</code> -- copy rectangle<br>
+<br>
+<code>CopyArea()</code> copies a rectangular region (<code>x1</code>, <code>y1</code>,
+<code>w</code>, <code>h</code>) of window <code>W1</code> to location (<code>x2</code>,
+<code>y2</code>) on window <code>W2</code>. If <code>W2</code> is omitted,
+<code>W1</code> is used as both source and destination. If <code>W1</code>
+is omitted, the subject window is used. 
+<pre>Defaults: x1, y1   upper-left pixel
+          w, h     to edge of window
+          x2, y2   upper-left pixel</pre>
+<hr><a name="Couple"></a><code>Couple(W1, W2) : W3</code> -- couple canvas
+and context<br>
+<br>
+<code>Couple()</code> produces a new window value that binds the canvas
+of <code>W1</code> with the graphics context of <code>W2</code>. Both arguments
+are required. 
+<pre>See also: <a href="#Clone">Clone()</a> and <a href="#WAttrib">WAttrib()</a></pre>
+<hr><a name="DrawArc"></a><code>DrawArc(W, x, y, w, h, theta, alpha, ......
+) : W</code> -- draw arc<br>
+<br>
+<code>DrawArc()</code> draws an arc of the ellipse inscribed in the rectangle
+specified by (<code>x</code>, <code>y</code>, <code>w</code>, <code>h</code>).
+The arc begins at angle <code>theta</code> and extends by an angle <code>alpha</code>.
+<pre>Defaults: x, y   upper-left pixel
+          w, h   to edge of window
+          theta  0
+          alpha  2 pi
+
+See also: <a href="#DrawCircle">DrawCircle()</a> and <a href="#FillArc">FillArc()</a></pre>
+<hr><a name="DrawCircle"></a><code>DrawCircle(W, x, y, r, theta, alpha,
+......) : W</code> -- draw circle<br>
+<br>
+<code>DrawCircle()</code> draws an arc or circle of radius r centered at
+(<code>x</code>,<code>y</code>). <code>theta</code> is the starting angle
+and <code>alpha</code> is the extent of the arc. 
+<pre>Defaults: theta  0
+          alpha  2 pi
+
+See also: <a href="#DrawArc">DrawArc()</a> and <a href="#FillCircle">FillCircle()</a></pre>
+<hr><a name="DrawCurve"></a><code>DrawCurve(W, x1, y1, x2, y2, ... , xn,
+yn) : W</code> -- draw curve<br>
+<br>
+<code>DrawCurve()</code> draws a smooth curve through the points given as
+arguments. If the first and last point are the same, the curve is smooth
+and closed through that point. 
+<pre>See also: <a href="#DrawLine">DrawLine()</a> and <a href="#DrawPolygon">DrawPolygon()</a></pre>
+<hr><a name="DrawImage"></a><code>DrawImage(W, x, y, s) : i</code> -- draw
+rectangular figure<br>
+<br>
+<code>DrawImage()</code> draws an arbitrarily complex figure in a rectangular
+area at (<code>x</code>,<code>y</code>). <code>s</code> has one of these
+forms: 
+<pre>   "width,palette,data"  character-per-pixel image
+   "width,#hexdigits"    bi-level image
+   "width,~hexdigits"    transparent bi-level image</pre>
+<code>DrawImage()</code> normally returns the null value, but if some colors
+cannot be allocated, it returns the number of colors that cannot be allocated.
+<pre>Defaults: x, y   upper-left pixel
+
+See also: <a href="#Pattern">Pattern()</a> and <a href="#ReadImage">ReadImage()</a></pre>
+<hr><a name="DrawLine"></a><code>DrawLine(W, x1, y1, x2, y2, ... , xn, yn)
+: W</code> -- draw line<br>
+<br>
+<code>DrawLine()</code> draws line segments connecting a list of points
+in succession. 
+<pre>See also: <a href="#DrawCurve">DrawCurve()</a>, <a href="#DrawPolygon">DrawPolygon()</a>, and <a href="#DrawSegment">DrawSegment()</a></pre>
+<hr><a name="DrawPoint"></a><code>DrawPoint(W, x, y, ...... ) : W </code>--
+draw point<br>
+<br>
+<code>DrawPoint()</code> draws a point at each coordinate location given.
+<br>
+<br>
+<hr><a name="DrawPolygon"></a><code>DrawPolygon(W, x1, y1, ... , xn, yn)
+: W</code> -- draw polygon<br>
+<br>
+<code>DrawPolygon() </code>draws the outline of a polygon formed by connecting
+the given points in order, with <code>x1</code>,<code>y1</code> following
+<code>xn</code>,<code>yn</code>. 
+<pre>See also: <a href="#DrawCurve">DrawCurve()</a>, <a href="#DrawLine">DrawLine()</a>, and <a href="#FillPolygon">FillPolygon()</a></pre>
+<hr><a name="DrawRectangle"></a><code>DrawRectangle(W, x, y, w, h, ......
+) : W</code> -- draw rectangle<br>
+<br>
+<code>DrawRectangle() </code>draws the outline of the rectangle with corners
+at (<code>x</code>,<code>y</code>) and (<code>x+w</code>,<code>y+h</code>).
+<pre>Defaults: x, y   upper-left pixel
+          w, h   to edge of window
+
+See also: <a href="#FillRectangle">FillRectangle()</a></pre>
+<hr><a name="DrawSegment"></a><code>DrawSegment(W, x1, y1, x2, y2, ......
+) : W</code> -- draw line segment<br>
+<br>
+<code>DrawSegment()</code> draws a line between two points. Additional pairs
+of coordinates may be supplied to draw additional, disconnected segments.
+<pre>See also: <a href="#DrawLine">DrawLine()</a></pre>
+<hr><a name="DrawString"></a><code>DrawString(W, x, y, s, ...... ) : W</code>
+-- draw text<br>
+<br>
+<code>DrawString()</code> draws a string of characters starting at (<code>x</code>,<code>y</code>)
+without altering the text cursor. <br>
+<br>
+<hr><a name="Enqueue"></a><code>Enqueue(W, a, x, y, s, i) : W</code> --
+append event to queue<br>
+<br>
+<code>Enqueue()</code> adds event a to the window event list with an event
+location of (<code>x</code>,<code>y</code>). The string <code>s</code> specifies
+a set of modifier keys using the letters <code>c</code>, <code>m</code>,
+and <code>s</code> to represent <code>&amp;control</code>, <code>&amp;meta</code>,
+and <code>&amp;shif</code>t, respectively. <code>i</code> specifies a value
+for <code>&amp;interval</code>, in milliseconds. 
+<pre>Defaults: a   &amp;null
+          x   0
+          y   0
+          s   ""
+          i   0
+
+Link: enqueue
+
+See also: <a href="#Pending">Pending()</a></pre>
+<hr><a name="EraseArea"></a><code>EraseArea(W, x, y, w, h, ...... ) : W</code>
+-- clear rectangular area<br>
+<br>
+<code>EraseArea()</code> fills a rectangular area with the background color.
+<pre>Defaults: x, y   upper-left pixel
+          w, h   to edge of window
+
+See also: <a href="#FillRectangle">FillRectangle()</a></pre>
+<hr><a name="Event"></a><code>Event(W) : a</code> -- return next window
+event<br>
+<br>
+<code>Event()</code> returns the next event from a window, waiting if necessary.
+The keywords <code>&amp;x</code>, <code>&amp;y</code>, <code>&amp;row</code>,
+<code>&amp;col</code>, <code>&amp;interval</code>, <code>&amp;control</code>,
+<code>&amp;shift</code>, and <code>&amp;meta</code> are set as side effects
+of calling <code>Event()</code>. 
+<pre>See also: <a href="#Active">Active()</a>, <a href="#Enqueue">Enqueue()</a>, <a href="#Pending">Pending()</a>, <a href="#WRead">WRead()</a>, and <a href="#WReads">WReads()</a></pre>
+<hr><a name="Fg"></a><code>Fg(W, k1) : k2</code> -- set or query foreground
+color<br>
+<br>
+<code>Fg()</code> returns the foreground color. If <code>k1</code> is supplied,
+the color is first set to that specification; failure occurs if the request
+cannot be satisfied. Setting the foreground color does not change the appearance
+of the window, but subsequent drawing operations are affected. 
+<pre>See also: <a href="#Bg">Bg()</a>, <a href="#FreeColor">FreeColor()</a>, and <a href="#Shade">Shade()</a></pre>
+<hr><a name="FillArc"></a><code>FillArc(W, x, y, w, h, theta, alpha, ......
+) : W</code> -- draw filled arc<br>
+<br>
+<code>FillArc()</code> draws a filled arc of the ellipse inscribed in the
+rectangle specified by (<code>x</code>, <code>y</code>, <code>w</code>,
+<code>h</code>). The arc begins at angle <code>theta</code> and extends
+by an angle <code>alpha</code>. 
+<pre>Defaults: x, y   upper-left pixel
+          w, h   to edge of window
+          theta  0
+          alpha  2 pi
+
+See also: <a href="#DrawArc">DrawArc()</a> and <a href="#FillCircle">FillCircle()</a>
+
+<hr></pre>
+<a name="FillCircle"></a><code>FillCircle(W, x, y, r, theta, alpha, ......
+) : W</code> -- draw filled circle<br>
+<br>
+<code>FillCircle()</code> draws a filled arc or circle of radius <code>r</code>
+centered at (<code>x</code>,<code>y</code>). <code>theta</code> is the starting
+angle and <code>alpha</code> is the extent of the arc. 
+<pre>Defaults: theta   0
+          alpha   2 pi
+
+See also: <a href="#DrawCircle">DrawCircle()</a> and <a href="#FillArc">FillArc()</a></pre>
+<hr><a name="FillPolygon"></a><code>FillPolygon(W, x1, y1, x2, y2, ... ,
+xn, yn) : W</code> -- draw filled polygon <br>
+<br>
+<code>FillPolygon()</code> draws and fills the polygon formed by connecting
+the given points in order, with <code>x1</code>,<code>y1</code> following
+<code>xn</code>,<code>yn</code>. 
+<pre>See also: <a href="#DrawPolygon">DrawPolygon()</a></pre>
+<hr><a name="FillRectangle"></a><code>FillRectangle(W, x, y, w, h, ......
+) : W</code> -- draw filled rectangle<br>
+<br>
+<code>FillRectangle()</code> draws a filled rectangle. 
+<pre>Defaults: x, y   upper-left pixel
+                 w, h to edge of window
+
+See also: <a href="#DrawRectangle">DrawRectangle()</a> and <a href="#EraseArea">EraseArea()</a></pre>
+<hr><a name="Font"></a><code>Font(W, s1) : s2</code> -- set or query text
+font<br>
+<br>
+<code>Font()</code> returns the text font. If <code>s1</code> is supplied,
+the font is first set to that specification; failure occurs if the request
+cannot be satisfied. <br>
+<br>
+<hr><a name="FreeColor"></a><code>FreeColor(W, k, ...... ) : W</code> --
+free color<br>
+<br>
+<code>FreeColor(</code>) informs the graphics system that the color <code>k</code>
+no longer appears in the window. This may allow the system to reclaim some
+resources. Unpredictable results may occur if the color is still present
+in the window. 
+<pre>See also: <a href="#Bg">Bg()</a>, <a href="#Fg">Fg()</a>, and <a href="#NewColor">NewColor()</a></pre>
+<hr><a name="GotoRC"></a><code>GotoRC(W, i1, i2) : W</code> -- move text
+cursor to row and column<br>
+<br>
+<code>GotoRC()</code> sets the text cursor position to row <code>i1</code>
+and column <code>i2</code>, where the character position in the upper-left
+corner of the window is 1,1 and calculations are based on the current font
+attributes. 
+<pre>Defaults: x, y   1, 1
+
+See also: <a href="#GotoXY">GotoXY()</a></pre>
+<hr><a name="GotoXY"></a><code>GotoXY(W, x, y) : W</code> -- move text cursor
+to coordinate position<br>
+<br>
+<code>GotoXY()</code> sets the text cursor position to the specified coordinate
+position. 
+<pre>Defaults: x, y   0, 0
+
+See also: <a href="#GotoRC">GotoRC()</a></pre>
+<hr><a name="LeftString"></a><code>LeftString(W, x, y, s) : W</code> --
+draw left-justified string<br>
+<br>
+<code>LeftString()</code> draws a text string that is left-justified at
+position x and centered vertically about <code>y</code>. 
+<pre>Link: gpxop
+
+See also: <a href="#CenterString">CenterString()</a>, <a href="#DrawString">DrawString()</a>, and <a href="#RightString">RightString()</a></pre>
+<hr><a name="Lower"></a><code>Lower(W) : W</code> -- lower window to bottom
+of window stack<br>
+<br>
+<code>Lower()</code> sets a window to be "below" all other windows,
+causing it to become obscured by windows that overlap it. 
+<pre>See also: <a href="#Raise">Raise()</a></pre>
+<hr><a name="NewColor"></a><code>NewColor(W, k) : i </code>-- allocate mutable
+color<br>
+<br>
+<code>NewColor()</code> allocates a changeable entry in the color map and
+returns a small negative integer that serves as a handle to this entry.
+If <code>k</code> is supplied, the color map entry is initialized to that
+color. <code>NewColor()</code> fails if no mutable entry is available. 
+<pre>See also: <a href="#Color">Color()</a> and <a href="#FreeColor">FreeColor()</a></pre>
+<hr><a name="Notice"></a><code>Notice(W, s1, s2, ... , sn) : sm</code> --
+display strings and await response<br>
+<br>
+<code>Notice()</code> posts a dialog box with an <code>Okay</code> button
+and returns <code>"Okay"</code> after response by the user. Each
+string <code>sn</code> is displayed centered on a separate line in the dialog
+box. 
+<pre>Link: dialog
+
+See also: <a href="#TextDialog">TextDialog()</a></pre>
+<hr><a name="OpenDialog"></a><code>OpenDialog(W, s1, s2, i) : s3</code>
+-- display dialog for opening file<br>
+<br>
+<code>OpenDialog()</code> displays a dialog box allowing entry of a text
+string of up to <code>i</code> characters, normally a file name, along with
+<code>Okay</code> and <code>Cancel</code> buttons. <code>s1</code> supplies
+a caption to be displayed in the dialog box. <code>s2</code> is used as
+the initial value of the editable text string. The final text string value
+is stored in the global variable <code>dialog_value</code>. <code>OpenDialog()</code>
+returns the name of the button that was selected. 
+<pre>Defaults: s1   "Open:"
+          s2   ""
+          i    50
+
+Link: dialog
+
+See also: <a href="#SaveDialog">SaveDialog()</a> and <a href="#TextDialog">TextDialog()</a></pre>
+<hr><a name="PaletteChars"></a><code>PaletteChars(W, s1) : s2</code> --
+return characters of color palette<br>
+<br>
+<code>PaletteChars()</code> returns the string of characters that index
+the colors of palette <code>s1</code>. 
+<pre>Default: s1   "c1"
+
+See also: <a href="#PaletteColor">PaletteColor()</a>, <a href="#PaletteGrays">PaletteGrays()</a>, and <a href="#PaletteKey">PaletteKey()</a></pre>
+<hr><a name="PaletteColor"></a><code>PaletteColor(W, s1, s2) : s3</code>
+-- return color from palette<br>
+<br>
+<code>PaletteColor()</code> returns the color indexed by character <code>s2</code>
+in palette <code>s1</code>. The result is in the form produced by <code>ColorValue(</code>).
+<pre>Default: s1   "c1"
+
+See also: <a href="#ColorValue">ColorValue()</a>, <a href="#PaletteChars">PaletteChars()</a>, <a href="#PaletteGrays">PaletteGrays()</a>, and <a href="#PaletteKey">PaletteKey()</a></pre>
+<hr><a name="PaletteGrays"></a><code>PaletteGrays(W, s1) : s2 </code>--
+return grayscale entries of palette<br>
+<br>
+<code>PaletteGrays()</code> returns the string of characters that index
+the achromatic entries within palette <code>s1</code>, ordered from black
+to white. 
+<pre>Link: color
+
+See also: <a href="#PaletteChars">PaletteChars()</a>, <a href="#PaletteColor">PaletteColor()</a>, and <a href="#PaletteKey">PaletteKey()</a></pre>
+<hr><a name="PaletteKey"></a><code>PaletteKey(W, s1, k) : s2 </code>-- return
+character of closest color in palette<br>
+<br>
+<code>PaletteKey()</code> returns the character indexing the color of palette
+<code>s1</code> that is closest to the color <code>k</code>. 
+<pre>Default: s1   "c1"
+
+See also: <a href="#PaletteChars">PaletteChars()</a>, <a href="#PaletteGrays">PaletteGrays()</a>, and <a href="#PaletteColor">PaletteColor()</a></pre>
+<hr><a name="Pattern"></a><code>Pattern(W, s) : W</code> -- set fill pattern<br>
+<br>
+<code>Pattern()</code> sets a pattern to be used for drawing when the fill
+style is set to <code>"masked"</code> or <code>"textured"</code>.
+<code>s</code> can be a known pattern name or a specification of the form
+<code>"width,#data"</code> where the data is given by hexadecimal
+digits. <code>Pattern()</code> fails in the case of a bad specification
+or unknown name. 
+<pre>See also: <a href="#DrawImage">DrawImage()</a></pre>
+<hr><a name="Pending"></a><code>Pending(W) : L</code> -- produce event list<br>
+<br>
+<code>Pending()</code> returns the list that holds the pending events of
+a window. If no events are pending, this list is empty. 
+<pre>See also: <a href="#Enqueue">Enqueue()</a> and <a href="#Event">Event()</a></pre>
+<hr><a name="Pixel"></a><code>Pixel(W, x, y, w, h) : k1, k2, ... , kn</code>
+-- generate pixel values<br>
+<br>
+<code>Pixel()</code> generates the colors of the pixels in the given rectangle,
+left to right, top to bottom. 
+<pre>Defaults: x, y   upper-left pixel
+          w, h   to edge of window</pre>
+<hr><a name="Raise"></a><code>Raise(W) : W </code>-- raise window to top
+of window stack<br>
+<br>
+<code>Raise()</code> sets a window to be "above" all other windows
+so that it is not obscured by any other window. 
+<pre>See also: <a href="#Lower">Lower()</a></pre>
+<hr><a name="ReadImage"></a><code>ReadImage(W, s1, x, y, s2) : i </code>--
+load image file<br>
+<br>
+<code>ReadImage()</code> loads an image from file <code>s1</code>, placing
+its upper-left corner at <code>x</code>,<code>y</code>. If a palette <code>s2</code>
+is supplied, the colors of the image are mapped to those of the palette.
+<code>ReadImage()</code> fails if it cannot read an image from file <code>s1</code>.
+It normally returns the null value, but if some colors cannot be allocated,
+it returns the number of colors that cannot be allocated. 
+<pre>Defaults: x, y   upper-left pixel
+
+See also: <a href="#DrawImage">DrawImage()</a> and <a href="#WriteImage">WriteImage()</a></pre>
+<hr><a name="RightString"></a><code>RightString(W, x, y, s) : W</code> --
+draw right-justified string<br>
+<br>
+<code>RightString()</code> draws a text string that is right-justified at
+position <code>x</code> and centered vertically about <code>y</code>. 
+<pre>Link: gpxop
+
+See also: <a href="#CenterString">CenterString()</a>, <a href="#DrawString">DrawString()</a>, and <a href="#LeftString">LeftString()</a></pre>
+<hr><a name="SaveDialog"></a><code>SaveDialog(W, s1, s2, i) : s3</code>
+-- display dialog for saving file<br>
+<br>
+<code>SaveDialog()</code> displays a dialog box allowing entry of a text
+string of up to <code>i</code> characters, normally a file name, along with
+<code>Yes</code>, <code>No</code>, and <code>Cancel</code> buttons. <code>s1</code>
+supplies a caption to be displayed in the dialog box. <code>s2</code> is
+used as the initial value of the editable text string. The final text string
+value is stored in the global variable <code>dialog_value</code>. <code>SaveDialog(</code>)
+returns the name of the button that was selected. 
+<pre>Defaults: s1   "Save:"
+          s2   ""
+          i    50
+
+Link: dialog
+
+See also: <a href="#OpenDialog">OpenDialog()</a> and <a href="#TextDialog">TextDialog()</a></pre>
+<hr><a name="SelectDialog"></a><code>SelectDialog(W, L1, L2, s, L3, i) :
+s</code> -- display selection dialog<br>
+<br>
+<code>SelectDialog()</code> constructs and displays a dialog box and waits
+for the user to select a button. The box contains zero or more captions
+specified by the list <code>L1</code>, zero or more radio buttons specified
+by <code>L2</code> and <code>s</code>, and one or more buttons specified
+by <code>L3</code>. <code>i</code> specifies the index of the default button,
+with a value of 0 specifying that there is no default button. Any of the
+list arguments <code>Ln</code> can be specified by a single non-null value
+which is then treated as a one-element list.<br>
+<br>
+For the radio buttons, <code>L2</code> specifies the button names and <code>s</code>
+specifies the name for the default button. If <code>L2</code> is omitted,
+there are no buttons.<br>
+<br>
+<code>SelectDialog()</code> returns the name of the button that was selected
+to dismiss the dialog. The global variable <code>dialog_value</code> is
+assigned the name of the selected radio button. 
+<pre>Defaults: L1   []
+          L2   []
+          L3   ["Okay", "Cancel"]
+          i    1
+
+Link: dialog
+
+See also: <a href="#TextDialog">TextDialog()</a> and <a href="#ToggleDialog">ToggleDialog()</a></pre>
+<hr><a name="Shade"></a><code>Shade(W, k) : W</code> -- set foreground for
+area filling<br>
+<br>
+<code>Shade()</code> sets the foreground color to <code>k</code> on a color
+or grayscale display. On a bi-level display, it sets the fill style to <code>textured</code>
+and installs a dithering pattern that approximates the brightness of color
+<code>k</code>. 
+<pre>Link: color
+
+See also: <a href="#Fg">Fg()</a></pre>
+<hr><a name="TextDialog"></a><code>TextDialog(W, L1, L2, L3, L4, L5, i)
+: s </code>-- display text dialog<br>
+<br>
+<code>TextDialog()</code> constructs and displays a dialog box and waits
+for the user to select a button. The box contains zero or more captions
+specified by the list <code>L1</code>, zero or more text-entry fields specified
+by <code>L2</code>, <code>L3</code>, and <code>L4</code>, and one or more
+buttons specified by <code>L5</code>. <code>i</code> specifies the index
+of the default button, with a value of 0 specifying that there is no default
+button. Any of the list arguments <code>Ln</code> can be specified by a
+single non-null value which is then treated as a one-element list.<br>
+<br>
+For the text-entry fields, <code>L2</code> specifies the labels, <code>L3</code>
+specifies the default values, and <code>L4</code> specifies the maximum
+widths. If <code>L2</code>, <code>L3</code>, and <code>L4</code> are not
+the same length, the shorter lists are extended as necessary by duplicating
+the last element. If omitted entirely, the defaults are: no labels, no initial
+values, and a width of 10 (or more if necessary to hold a longer initial
+value).<br>
+<br>
+<code>TextDialog()</code> returns the name of the button that was selected
+to dismiss the dialog. The global variable <code>dialog_value</code> is
+assigned a list containing the name of the text fields. 
+<pre>Defaults: L1   []
+          L2   []
+          L3   []
+          L4   []
+          L5   ["Okay", "Cancel"]
+          i    1
+
+Link: dialog
+
+See also: <a href="#Notice">Notice()</a>, <a href="#OpenDialog">OpenDialog()</a>, <a href="#SaveDialog">SaveDialog()</a>, and <a href="#SelectDialog">SelectDialog()</a></pre>
+<hr><a name="TextWidth"></a><code>TextWidth(W, s) : i</code> -- return width
+of text string<br>
+<br>
+<code>TextWidth()</code> returns the width of string <code>s</code>, in
+pixels, as drawn using the current font. 
+<pre>See also: <a href="#DrawString">DrawString()</a></pre>
+<hr><a name="ToggleDialog"></a><code>ToggleDialog(W, L1, L2, L3, L4, i)
+: L</code> -- display toggle dialog<br>
+<br>
+<code>ToggleDialog()</code> constructs and displays a dialog box and waits
+for the user to select a button. The box contains zero or more captions
+specified by the list <code>L1</code>, zero or more toggle buttons specified
+by <code>L2</code>, zero or more toggle states (1 or null) specified by
+<code>L3</code>, and one or more buttons specified by <code>L4</code>. <code>i</code>
+specifies the index of the default button, with a value of 0 specifying
+that there is no default button. Any of the list arguments <code>Ln</code>
+can be specified by a single non-null value, which is then treated as a
+one-element list.<br>
+<br>
+For the toggle buttons, <code>L2</code> specifies the labels and <code>L3</code>
+specifies the corresponding states. If <code>L2</code> and <code>L3</code>
+are not the same length, the shorter list is extended as necessary by duplicating
+the last element. If omitted entirely, the defaults are: no labels and null
+states. <br>
+<br>
+<code>ToggleDialog()</code> returns the name of the button that was selected
+to dismiss the dialog. The global variable <code>dialog_value</code> is
+assigned a list containing the states of the toggle buttons. 
+<pre>Defaults: L1   []
+          L2   []
+          L3   []
+          L4   ["Okay", "Cancel"]
+          i    1
+
+Link: dialog
+
+See also: <a href="#SelectDialog">SelectDialog()</a> and <a href="#TextDialog">TextDialog()</a></pre>
+<hr><a name="Uncouple"></a><code>Uncouple(W) : W</code> -- uncouple window<br>
+<br>
+<code>Uncouple()</code> frees the window <code>W</code>. If no other bindings
+to the same canvas exist, the window is closed. 
+<pre>See also: <a href="#Clone">Clone()</a>, <a href="#Couple">Couple()</a>, and <a href="#WClose">WClose()</a></pre>
+<hr><a name="WAttrib"></a><code>WAttrib(W, s1, s2, ... , sn) : a1, a2, ...
+, an</code> -- set or query attributes<br>
+<br>
+<code>WAttrib()</code> sets and generates window attribute values. Each
+string of the form <code>name=value</code> sets a value; a string with just
+a name is an inquiry. First, any requested values are set. Then <code>WAttrib()</code>
+generates the values of all referenced attributes. Each value has the data
+type appropriate to the attribute it represents. <code>WAttrib()</code>
+ignores unrecognized names and illegal values, producing no result; if all
+arguments are invalid, <code>WAttrib()</code> fails.<br>
+<br>
+<hr><a name="WClose"></a><code>WClose(W) : W</code> -- close window<br>
+<br>
+<code>WClose()</code> closes a window. The window disappears from the screen,
+and all bindings of its canvas are rendered invalid. Closing the subject
+window sets <code>&amp;window</code> to the null value. 
+<pre>Link: wopen
+
+See also: <a href="#Uncouple">Uncouple()</a>, <a href="#WFlush">WFlush()</a>, and <a href="#WOpen">WOpen()</a></pre>
+<hr><a name="WDefault"></a><code>WDefault(W, s1, s2) : s3</code> -- get
+default value from environment<br>
+<br>
+<code>WDefault()</code> returns the value of option <code>s2</code> for
+the program named <code>s1</code> as registered with the graphics system.
+If no such value is available, or if the system provides no registry, <code>WDefault()</code>
+fails.<br>
+<br>
+<hr><a name="WDelay"></a><code>WDelay(W, i) : W</code> -- flush window and
+delay<br>
+<br>
+<code>WDelay()</code> flushes any pending output for window <code>W</code>
+and then delays for <code>i</code> milliseconds before returning. <br>
+<br>
+<code>Default: i   1</code>
+<pre>Link: wopen
+
+See also: <a href="#WFlush">WFlush()</a></pre>
+<hr><a name="WDone"></a><code>WDone(W)</code> -- wait for "quit"
+event, then exit<br>
+<br>
+<code>WDone()</code> waits until a <code>q</code> or <code>Q</code> is entered,
+then terminates program execution. It does not return. 
+<pre>Link: wopen
+
+See also: <a href="#WQuit">WQuit()</a></pre>
+<hr><a name="WFlush"></a><code>WFlush(W) : W</code> -- flush pending output
+to window<br>
+<br>
+<code>WFlush()</code> forces the execution of any window commands that have
+been buffered internally and not yet executed. 
+<pre>See also: <a href="#WClose">WClose()</a>, <a href="#WDelay">WDelay()</a>, and <a href="#WSync">WSync()</a></pre>
+<hr><a name="WOpen"></a><code>WOpen(s1, s2, ... , sn) : W</code> -- open
+and return window<br>
+<br>
+<code>WOpen()</code> creates and returns a new window having the attributes
+specified by the argument list. Invalid arguments produce failure or error
+as in <code>WAttrib()</code>. If <code>&amp;window</code> is null, the new
+window is assigned as the subject window. 
+<pre>Link: wopen
+
+See also: <a href="#WAttrib">WAttrib()</a> and <a href="#WClose">WClose()</a></pre>
+<hr><a name="WQuit"></a><code>WQuit(W) : W</code> -- check for "quit"
+event<br>
+<br>
+<code>WQuit()</code> consumes events until a <code>q</code> or <code>Q</code>
+is entered, at which point it returns. If the event queue is exhausted first,
+<code>WQuit()</code> fails. 
+<pre>Link: wopen
+
+See also: <a href="#WDone">WDone()</a></pre>
+<hr><a name="WRead"></a><code>WRead(W) : s</code> -- read line from window<br>
+<br>
+<code>WRead()</code> accumulates characters typed in a window until a newline
+or return is entered, then returns the resulting string (without the newline
+or return). Backspace and delete characters may be used for editing. The
+typed characters are displayed in the window if the <code>echo</code> attribute
+is set. 
+<pre>Link: wopen
+
+See also: <a href="#Event">Event()</a> and <a href="#WReads">WReads()</a></pre>
+<hr><a name="WReads"></a><code>WReads(W, i) : s</code> -- read characters
+from window<br>
+<br>
+<code>WReads()</code> returns the next <code>i</code> characters typed in
+a window. Backspace and delete characters may be used for editing prior
+to entry of character <code>i</code>. The typed characters are displayed
+in the window if the <code>echo</code> attribute is set. 
+<pre>Default: i   1
+
+Link: wopen
+
+See also: <a href="#Event">Event()</a> and <a href="#WRead">WRead()</a></pre>
+<hr><a name="WriteImage"></a><code>WriteImage(W, s, x, y, w, h) : W</code>
+-- write image to file<br>
+<br>
+<code>WriteImage()</code> writes an image of the rectangular area (<code>x</code>,<code>y</code>,<code>w</code>,<code>h</code>)
+to the file <code>s</code>. It fails if <code>s</code> cannot be written
+or if the specified area, after clipping by the window's edges, has a width
+or height of zero. The file is normally written in GIF format, but some
+forms of file names may select different formats on some graphics systems.
+<pre>Defaults: x, y   upper-left pixel
+          w, h   to edge of window
+
+See also: <a href="#ReadImage">ReadImage()</a></pre>
+<hr><a name="WSync"></a><code>WSync(W) : W</code> -- synchronize with server<br>
+<br>
+<code>WSync()</code> synchronizes the program with the graphics server on
+a client-server graphics system, returning after all pending output has
+been processed. On systems that maintain synchronization at all times, <code>WSync()</code>
+has no effect. 
+<pre>See also: <a href="#WFlush">WFlush()</a></pre>
+<hr><a name="WWrite"></a><code>WWrite(W, s1, s2, , sn) : sn</code> -- write
+line to window<br>
+<br>
+<code>WWrite()</code> writes a string to a window at the text cursor position.
+The area behind the written text is set to the background color. Newline,
+return, tab, backspace, and delete characters reposition the cursor. A implicit
+newline is output following the last argument. 
+<pre>Link: wopen
+
+See also: <a href="#DrawString">DrawString()</a> and <a href="#WWrites">WWrites()</a></pre>
+<hr><a name="WWrites"></a><code>WWrites(W, s1, s2, , sn) : sn</code> --
+write partial line to window<br>
+<br>
+<code>WWrite()</code> writes a string to a window at the text cursor position.
+The area behind the written text is set to the background color. Newline,
+return, tab, backspace, and delete characters reposition the cursor. Unlike<code>
+WWrite()</code>, no newline is added. 
+<pre>Link: wopen
+
+See also: <a href="#DrawString">DrawString()</a> and <a href="#WWrite">WWrite()</a> 
+
+<hr></pre>
+
+
+<A name=b><h2>Appendix B</h2></A>
+
+<hr>
+<h3>Graphics Keywords</h3>
+<hr><code>&amp;col : i </code>-- mouse column<br>
+<br>
+The value of <code>&amp;col</code>normally is the column location of the
+mouse at the time of the last received window event. If a window is open,
+<code>&amp;col</code> may also be changed by assignment, which also affects
+<code>&amp;x</code>, or as a side effect of assignment to <code>&amp;x</code>.<br>
+<br>
+<hr><code>&amp;control : n</code> -- state of control key during window
+event<br>
+<br>
+The value of <code>&amp;control</code> is the null value if the control
+key was depressed at the time of the last received window event; otherwise,
+a reference to <code>&amp;control </code>fails. <br>
+<br>
+<hr><code>&amp;interval : i </code>-- elapsed time between window events<br>
+<br>
+The value of <code>&amp;interval</code> is the time, in milliseconds, between
+the last received window event and the previous event in that window. <code>&amp;interval</code>
+is zero if this information is not available. <br>
+<br>
+<hr><code>&amp;ldrag : i </code>-- left-button drag event<br>
+<br>
+The value of <code>&amp;ldrag</code> is the integer that represents the
+event of dragging the mouse with the left button depressed.<br>
+<br>
+<hr><code>&amp;lpress : i </code>-- left-button press event<br>
+<br>
+The value of <code>&amp;lpress</code> is the integer that represents the
+event of pressing the left mouse button. <br>
+<br>
+<hr><code>&amp;lrelease : i </code>-- left-button release event<br>
+<br>
+The value of <code>&amp;lrelease</code> is the integer that represents the
+event of releasing the left mouse button.<br>
+<br>
+<hr><code>&amp;mdrag : i </code>-- middle-button drag event<br>
+<br>
+The value of <code>&amp;mdrag</code> is the integer that represents the
+event of dragging the mouse with the middle button depressed.<br>
+<br>
+<hr><code>&amp;meta : n</code> -- state of meta key during window event<br>
+<br>
+The value of <code>&amp;meta</code> is the null value if the meta key was
+depressed at the time of the last received window event; otherwise, a reference
+to <code>&amp;meta</code> fails.<br>
+<br>
+<hr><code>&amp;mpress : i </code>-- middle-button press event<br>
+<br>
+The value of <code>&amp;mpress</code> is the integer that represents the
+event of pressing the middle mouse button.<br>
+<br>
+<hr><code>&amp;mrelease : i </code>-- middle-button release event<br>
+<br>
+The value of <code>&amp;mrelease</code> is the integer that represents the
+event of releasing the middle mouse button.<br>
+<br>
+<hr><code>&amp;rdrag : i </code>-- right-button drag event<br>
+<br>
+The value of <code>&amp;rdrag</code> is the integer that represents the
+event of dragging the mouse with the right button depressed.<br>
+<br>
+<hr><code>&amp;resize : i </code>-- window resize event<br>
+<br>
+The value of <code>&amp;resize</code> is the integer that represents a window
+resizing event.<br>
+<br>
+<hr><code>&amp;row : i </code>-- mouse row location<br>
+<br>
+The value of <code>&amp;row</code> is normally the column location of the
+mouse at the time of the last received window event. If a window is open,
+<code>&amp;row</code> may also be changed by assignment, which also affects
+<code>&amp;y</code>, or as a side effect of assignment to <code>&amp;y</code>.<br>
+<br>
+<hr><code>&amp;rpress : i </code>-- right-button press event<br>
+<br>
+The value of <code>&amp;rpress</code> is the integer that represents the
+event of pressing the right mouse button.<br>
+<br>
+<hr><code>&amp;rrelease : i </code>-- right-button release event<br>
+<br>
+The value of <code>&amp;rrelease</code> is the integer that represents the
+event of releasing the right mouse button.<br>
+<br>
+<hr><code>&amp;shift : n </code>-- state of shift key during window event<br>
+<br>
+The value of <code>&amp;shift</code> is the null value if the shift key
+was depressed at the time of the last received window event; otherwise,
+a reference to <code>&amp;shift</code> fails.<br>
+<br>
+<hr><code>&amp;window : W </code>-- subject window<br>
+<br>
+The value of <code>&amp;window</code> is the subject window, the default
+window for most graphics procedures. It may be changed by assignment. If
+there is no subject window, <code>&amp;window</code> is null.<br>
+<br>
+<hr><code>&amp;x : i </code>-- mouse x-coordinate<br>
+<br>
+The value of <code>&amp;x</code> is normally the x-coordinate of the mouse
+at the time of the last received window event. If a window is open, <code>&amp;x</code>
+may also be changed by assignment, which also affects <code>&amp;col</code>,
+or as a side effect of assignment to <code>&amp;col</code>.<br>
+<br>
+<hr><code>&amp;y : i</code> -- mouse y-coordinate<br>
+<br>
+The value of <code>&amp;y</code> is normally the y-coordinate of the mouse
+at the time of the last received window event. If a window is open, <code>&amp;y</code>
+may also be changed by assignment, which also affects <code>&amp;row</code>,
+or as a side effect of assignment to <code>&amp;row</code>. <br>
+<br>
+<hr><br>
+
+
+
+<a name=c><h2>Appendix C</h2></a>
+<hr>
+<h3>Window Attributes</h3>
+Window attributes describe and control various characteristics of a window.
+Some attributes are fixed and can only be read; others can be set only when
+the window is opened. Most can be changed at any time.<br>
+<br>
+There are two classes of attributes: <i>canvas attributes</i> and <i>graphics
+context attributes</i>. In general, canvas attributes relate to aspects
+of the window itself, while graphics context attributes affect drawing operations.
+Alternate graphics contexts, each with its own set of graphics context attributes,
+are created by <code>Clone()</code>. Canvas attributes, however, are shared
+by all clones of a window.<br>
+<br>
+Initial attribute settings can be passed as arguments to <code>WOpen()</code>
+or <code>Window()</code>. For an existing window, attributes are read or
+written by calling <code>WAttrib()</code>. Specific procedures also exist
+for reading or writing certain attributes; these are noted in the See also
+sections of the individual attribute descriptions.<br>
+<br>
+In the tables that follow, the letter <code>R</code> indicates attributes
+that can be read by <code>WAttrib()</code> and the letter <code>W</code>
+indicates attributes that can be written -- either initially or by calling
+<code>WAttrib()</code>. Writable graphics context attributes can also be
+set by <code>Clone()</code>. 
+<h4>Canvas Attributes</h4>
+The following attributes are associated with a canvas and shared by all
+windows that reference that canvas. 
+<pre><hr>Usage   Canvas Attribute        Interpretation<hr>
+R, W    label                   window label (title)
+R, W    pos, posx, posy         window position on screen
+R, W    resize                  user resizing flag
+R, W    size, height, width     window size, in pixels
+R, W    lines, columns          window size, in characters
+   W    image                   initial canvas contents
+<hr>
+R, W    canvas                  window visibility state
+   W    iconpos                 icon position
+R, W    iconlabel               icon label
+R, W    iconimage               icon image
+<hr>
+R, W    echo                    character echoing flag
+R, W    cursor                  text cursor visibility flag
+R, W    x, y                    cursor location, in pixels
+R, W    row, col                cursor location, in characters
+<hr>
+R, W    pointer                 pointer (mouse) shape
+R, W    pointerx, pointery      pointer location, in pixels
+R, W    pointerrow, pointercol  pointer location, in characters
+<hr>
+R, W    display                 device on which the window appears
+R       depth                   display depth, in bits
+R       displayheight           display height, in pixels
+R       displaywidth            display width, in pixels
+<hr></pre>
+<h4>Graphics Context Attributes</h4>
+The following attributes are associated with a graphics context. 
+<pre><hr>Usage   Graphics Attribute      Interpretation<hr>
+R, W    fg                      foreground color
+R, W    bg                      background color
+R, W    reverse                 color reversal flag
+R, W    drawop                  drawing operation
+R, W    gamma                   color correction factor
+<hr>
+R, W    font                    text font
+R       fheight, fwidth         maximum character size
+R       ascent, descent         dimensions from baseline
+R, W    leading                 vertical advancement
+<hr>
+R, W    linewidth               line width
+R, W    linestyle               line style
+R, W    fillstyle               fill style
+R, W    pattern                 fill pattern
+<hr>
+R, W    clipx, clipy            clipping rectangle position
+R, W    clipw, cliph            clipping rectangle extent
+R, W    dx, dy                  output translation
+<hr></pre>
+<h4>Attribute Descriptions</h4>
+<hr><a name="ascent"></a><code>ascent </code>-- text font ascent<br>
+<br>
+The read-only graphics context attribute <code>ascent</code> gives the distance,
+in pixels, that the current text font extends above the baseline. 
+<pre>See also: <a href="#descent">descent</a> and <a href="#fheight">fheight</a></pre>
+<hr><a name="bg"></a><code>bg</code> -- background color<br>
+<br>
+The graphics context attribute <code>bg</code> specifies current background
+color.<br>
+<br>
+<code>Initial value: "white"</code> 
+<pre>See also: <a href="#fg">fg</a>, <a href="#drawop">drawop</a>, <a href="#gamma">gamma</a>, <a href="#reverse">reverse</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Bg">Bg()</a> </pre>
+<hr><a name="canvas"></a><code>canvas</code> -- window visibility<br>
+<br>
+The canvas attribute <code>canvas</code> specifies the window visibility.
+<pre>Values: "hidden", "iconic", "normal", "maximal"
+
+Initial value: "normal"</pre>
+<hr><a name="cliph"></a><code>cliph</code> -- height of clipping region<br>
+<br>
+The graphics context attribute <code>cliph</code> specifies the height of
+the clipping region. 
+<pre>Initial value: &amp;null (clipping disabled)
+
+See also: <a href="#clipw">clipw</a>, <a href="#clipx">clipx</a>, <a href="#clipy">clipy</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Clip">Clip()</a></pre>
+<hr><a name="clipw"></a><code>clipw</code> -- width of clipping region<br>
+<br>
+The graphics context attribute <code>clipw</code> specifies the width of
+the clipping region. 
+<pre>Initial value: &amp;null (clipping disabled)
+
+See also: <a href="#cliph">cliph</a>, <a href="#clipx">clipx</a>, <a href="#clipy">clipy</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Clip">Clip()</a></pre>
+<hr><a name="clipx"></a><code>clipx</code> -- x-coordinate of clipping region<br>
+<br>
+The graphics context attribute <code>clipx</code> specifies the left edge
+of the clipping region. 
+<pre>Initial value: &amp;null (clipping disabled)
+
+See also: <a href="#cliph">cliph</a>, <a href="#clipw">clipw</a>, <a href="#clipy">clipy</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Clip">Clip()</a></pre>
+<hr><a name="clipy"></a><code>clipy</code> -- y-coordinate of clipping region<br>
+<br>
+The graphics context attribute <code>clipy</code> specifies the top edge
+of the clipping region. 
+<pre>Initial value: &amp;null (clipping disabled)
+
+See also: <a href="#cliph">cliph</a>, <a href="#clipw">clipw</a>, <a href="#clipx">clipx</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Clip">Clip()</a></pre>
+<hr><a name="col"></a><code>col</code> -- text cursor column<br>
+<br>
+The canvas attribute <code>col</code> specifies the horizontal position
+of the text cursor, measured in characters. 
+<pre>See also: <a href="#cursor">cursor</a>, <a href="#row">row</a>, <a href="#x">x</a>, and <a href="#y">y</a></pre>
+<hr><a name="columns"></a><code>columns</code> -- window width in characters<br>
+<br>
+The graphics context attribute <code>columns</code> specifies the number
+of text columns available using the current font. 
+<pre>Initial value: 80
+
+See also: <a href="#lines">lines</a> and <a href="#width">width</a></pre>
+<hr><a name="cursor"></a><code>cursor</code> -- text cursor visibility flag<br>
+<br>
+The canvas attribute <code>cursor</code> specifies whether the text cursor
+is actually visible on the screen. The text cursor appears only when the
+program is blocked waiting for input. 
+<pre>Values: "on", "off"
+
+Initial value: "off"
+
+See also: <a href="#col">col</a>, <a href="#echo">echo</a>, <a href="#row">row</a>, <a href="#x">x</a>, and <a href="#y">y</a></pre>
+<hr><a name="depth"></a><code>depth</code> -- number of bits per pixel<br>
+<br>
+The read-only canvas attribute <code>depth</code> gives the number of bits
+allocated to each pixel by the graphics system.<br>
+<br>
+<hr><a name="descent"></a><code>descent</code> -- text font descent<br>
+<br>
+The read-only graphics context attribute <code>descent</code> gives the
+distance, in pixels, that the current text font extends below the baseline.
+<pre>See also: <a href="#ascent">ascent</a> and <a href="#fheight">fheight</a></pre>
+<hr><a name="display"></a><code>display</code> -- name of display screen<br>
+<br>
+The canvas attribute <code>display</code> specifies the particular monitor
+on which the window appears. It cannot be changed after the window is opened.<br>
+<br>
+<hr><a name="displayheight"></a><code>displayheight</code> -- height of
+display screen<br>
+<br>
+The read-only canvas attribute <code>displayheight</code> gives the height
+in pixels of the display screen on which the window is placed. 
+<pre>See also: <a href="#displaywidth">displaywidth</a></pre>
+<hr><a name="displaywidth"></a><code>displaywidth</code> -- width of display
+screen<br>
+<br>
+The read-only canvas attribute <code>displaywidth</code> gives the width
+in pixels of the display screen on which the window is placed. 
+<pre>See also: <a href="#displayheight">displayheight</a></pre>
+<hr><a name="drawop"></a><code>drawop</code> -- drawing mode<br>
+<br>
+The graphics context attribute <code>drawop</code> specifies the way in
+which newly drawn pixels are combined with the pixels that are already in
+a window. 
+<pre>Values: "copy", "reverse"
+
+Initial value: "copy"
+
+See also: <a href="#bg">bg</a>, <a href="#fg">fg</a>, and <a href="#reverse">reverse</a></pre>
+<hr><a name="dx"></a><code>dx</code> -- horizontal translation<br>
+<br>
+The graphics context attribute <code>dx</code> specifies a horizontal offset
+that is added to the x value of every coordinate pair before interpretation.
+<pre>Initial value: 0
+
+See also: <a href="#dy">dy</a></pre>
+<hr><a name="dy"></a><code>dy</code> -- vertical translation<br>
+<br>
+The graphics context attribute <code>dy</code> specifies a vertical offset
+that is added to the y value of every coordinate pair before interpretation.
+<pre>Initial value: 0
+
+See also: <a href="#dx">dx</a></pre>
+<hr><a name="echo"></a><code>echo</code> -- character echoing flag<br>
+<br>
+The canvas attribute <code>echo</code> specifies whether keyboard characters
+read by <code>WRead()</code> and <code>WReads()</code> are echoed in the
+window. When echoing is enabled, the characters are echoed at the text cursor
+position. 
+<pre>Values: "on", "off"
+
+Initial value: "on"
+
+See also: <a href="#cursor">cursor</a>, <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#WRead">WRead()</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#WReads">WReads()</a></pre>
+<hr><a name="fg"></a><code>fg</code> -- foreground color<br>
+<br>
+The graphics context attribute <code>fg</code> specifies the current foreground
+color. 
+<pre>Initial value: "black"
+
+See also: <a href="#bg">bg</a>, <a href="#drawop">drawop</a>, <a href="#gamma">gamma</a>, <a href="#reverse">reverse</a>, and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Fg">Fg()</a></pre>
+<hr><a name="fheight"></a><code>fheight</code> -- text font height<br>
+<br>
+The read-only graphics context attribute <code>fheight</code> gives the
+overall height of the current text font. 
+<pre>See also: <a href="#ascent">ascent</a>, <a href="#descent">descent</a>, <a href="#fwidth">fwidth</a>, and <a href="#leading">leading</a></pre>
+<hr><a name="fillstyle"></a><code>fillstyle</code> -- area filling style<br>
+<br>
+The graphics context attribute <code>fillstyle</code> specifies whether
+a pattern is to be used when drawing. The fill style affects lines and text
+as well as solid figures. The pattern itself is set by the <code>pattern</code>
+attribute. 
+<pre>Values: "solid", "textured", "masked"
+
+Initial value: "solid"
+
+See also: <a href="#linestyle">linestyle</a> and <a href="#pattern">pattern</a></pre>
+<hr>font -- text font name<br>
+<br>
+The graphics context attribute <code>font</code> specifies the current text
+font. 
+<pre>Initial value: "fixed"
+
+See also: <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Font">Font()</a></pre>
+<hr>fwidth -- text font width<br>
+<br>
+The read-only graphics context attribute <code>fwidth</code> gives the width
+of the widest character of the current text font. 
+<pre>See also: <a href="#fheight">fheight</a></pre>
+<hr><a name="gamma"></a><code>gamma</code> -- color correction factor<br>
+<br>
+The graphics context attribute <code>gamma</code> specifies the amount of
+color correction applied when converting between Icon color specifications
+and those of the underlying graphics system. A value of 1.0 results in no
+color correction. Larger values produce lighter, less saturated colors.
+<pre>Values: real values greater than zero
+
+Initial value: system dependent
+
+See also: <a href="#fg">fg</a> and <a href="#bg">bg</a></pre>
+<hr><a name="height"></a><code>height</code> -- window height in pixels<br>
+<br>
+The canvas attribute <code>height</code> specifies the height of the window.
+<pre>Initial value: enough for 12 lines of text
+
+See also: <a href="#lines">lines</a>, <a href="#size">size</a>, and <a href="#width">width</a></pre>
+<hr><a name="iconimage"></a><code>iconimage</code> -- window image when
+iconified<br>
+<br>
+The canvas attribute <code>iconimage</code> names a file containing an image
+to be used as the representation of the window when iconified. 
+<pre>Initial value: <code>""</code>
+
+See also: <a href="#iconlabel">iconlabel</a>, <a href="#iconpos">iconpos</a>, and <a href="#image">image</a></pre>
+<hr><a name="iconlabel"></a><code>iconlabel</code> -- window label when
+iconified<br>
+<br>
+The canvas attribute <code>iconlabel </code>specifies a label to be used
+as the representation of the window when iconified. 
+<pre>Initial value: initial value of label attribute
+
+See also: <a href="#iconimage">iconimage</a>, <a href="#iconpos">iconpos</a>, and <a href="#label">label</a></pre>
+<hr><a name="iconpos"></a><code>iconpos</code> -- window position when iconified<br>
+<br>
+The write-only canvas attribute <code>iconpos</code> specifies the location
+of the iconified window as a string containing comma-separated x- and y-coordinates.
+<pre>See also: <a href="#iconimage">iconimage</a> and <a href="#iconlabel">iconlabel</a></pre>
+<hr><a name="image"></a><code>image</code> -- source of window contents<br>
+<br>
+The write-only canvas attribute <code>image</code> names a file containing
+an image to be used as the initial contents of a window when it is opened.
+<pre>See also: <a href="#iconimage">iconimage</a></pre>
+<hr><a name="label"></a><code>label</code> -- window label<br>
+<br>
+The canvas attribute <code>label</code> specifies a title used to identify
+the window. 
+<pre>Initial value: ""
+
+See also: <a href="#iconlabel">iconlabel</a></pre>
+<hr><a name="leading"></a><code>leading</code> -- text line advancement<br>
+<br>
+The graphics context attribute <code>leading</code> specifies the vertical
+spacing of successive lines of text written in a window. 
+<pre>Initial value: font height
+
+See also: <a href="#fheight">fheight</a></pre>
+<hr><a name="lines"></a><code>lines</code> -- window height in characters<br>
+<br>
+The graphics context attribute <code>lines</code> specifies the number of
+text lines available using the current font. 
+<pre>Initial value: 12
+
+See also: <a href="#columns">columns</a> and <a href="#height">height</a></pre>
+<hr><a name="linestyle"></a><code>linestyle</code> -- line style<br>
+<br>
+The graphics context attribute <code>linestyle</code> specifies the form
+of drawn lines. 
+<pre>Values: "solid", "dashed", "striped"
+
+Initial value: "solid"
+
+See also: <a href="#fillstyle">fillstyle</a> and <a href="#linewidth">linewidth</a></pre>
+<hr><a name="linewidth"></a><code>linewidth</code> -- line width<br>
+<br>
+The graphics context attribute <code>linewidth</code> specifies the width
+of drawn lines. 
+<pre>Initial value: 1
+
+See also: <a href="#linestyle">linestyle</a></pre>
+<hr><a name="pattern"></a><code>pattern</code> -- filling pattern specification<br>
+<br>
+The graphics context attribute <code>pattern</code> specifies the particular
+pattern to be used for drawing when the <code>fillstyle</code> attribute
+is set to <code>"textured"</code> or <code>"masked"</code>.
+<pre>Values: "black", "verydark", "darkgray", "gray", "lightgray",
+        "verylight", "white", "vertical", "diagonal", "horizontal",
+        "grid", "trellis", "checkers", "grains", "scales", "waves",
+        "width,#hexdigits"
+
+Initial value: "black"
+
+See also: <a href="#fillstyle">fillstyle</a> and <a href="https://www2.cs.arizona.edu/icon/docs/ipd281/gipd_a.htm#Pattern">Pattern()</a></pre>
+<hr><a name="pointer"></a><code>pointer</code> -- shape of mouse indicator<br>
+<br>
+The canvas attribute <code>pointer</code> specifies the shape of the figure
+that represents the mouse position. 
+<pre>Values: system dependent
+
+Initial value: system dependent
+
+See also: <a href="#pointercol">pointercol</a>, <a href="#pointerrow">pointerrow</a>, <a href="#pointerx">pointerx</a>, and <a href="#pointery">pointery</a></pre>
+<br>
+<hr><a name="pointercol"></a><code>pointercol</code> -- mouse location column<br>
+<br>
+The canvas attribute <code>pointercol</code> gives the horizontal position
+of the mouse in terms of text columns. 
+<pre>See also: <a href="#pointer">pointer</a>, <a href="#pointerrow">pointerrow</a>, <a href="#pointerx">pointerx</a>, and <a href="#pointery">pointery</a></pre>
+<hr><a name="pointerrow"></a><code>pointerrow</code> -- mouse location row<br>
+<br>
+The canvas attribute <code>pointerrow</code> gives the vertical position
+of the mouse in terms of text lines. 
+<pre>See also: <a href="#pointer">pointer</a>, <a href="#pointercol">pointercol</a>, <a href="#pointerx">pointerx</a>, and <a href="#pointery">pointery</a></pre>
+<br>
+<hr><a name="pointerx"></a><code>pointerx</code> -- mouse location x-coordinate<br>
+<br>
+The canvas attribute <code>pointerx</code> specifies the horizontal position
+of the mouse in pixels. 
+<pre>See also: <a href="#pointer">pointer</a>, <a href="#pointercol">pointercol</a>, <a href="#pointerrow">pointerrow</a>, and <a href="#pointery">pointery</a></pre>
+<hr><a name="pointery"></a><code>pointery</code> -- mouse location y-coordinate<br>
+<br>
+The canvas attribute <code>pointery</code> specifies the vertical position
+of the mouse in pixels. 
+<pre>See also: <a href="#pointer">pointer</a>, <a href="#pointercol">pointercol</a>, <a href="#pointerrow">pointerrow</a>, and <a href="#pointerx">pointerx</a></pre>
+<hr><a name="pos"></a><code>pos</code> -- position of window on display
+screen<br>
+<br>
+The canvas attribute <code>pos</code> specifies the window position as a
+string containing comma-separated x- and y-coordinates. Attempts to read
+or write the position fail if the canvas is hidden. 
+<pre>See also: <a href="#posx">posx</a> and <a href="#posy">posy</a></pre>
+<hr><a name="posx"></a><code>posx</code> -- x-coordinate of window position<br>
+<br>
+The canvas attribute <code>posx</code> specifies the horizontal window position.
+Attempts to read or write the position fail if the canvas is hidden. 
+<pre>See also: <a href="#pos">pos</a> and <a href="#posy">posy</a></pre>
+<hr><a name="posy"></a><code>posy</code> -- y-coordinate of window position<br>
+<br>
+The canvas attribute <code>posy</code> specifies the vertical window position.
+Attempts to read or write the position fail if the canvas is hidden. 
+<pre>See also: <a href="#pos">pos</a> and <a href="#posx">posx</a></pre>
+<hr><a name="resize"></a><code>resize</code> -- user resizing flag<br>
+<br>
+The canvas attribute <code>resize</code> specifies whether the user is allowed
+to resize the window by interaction with the graphics system. 
+<pre>Values: "on", "off"
+
+Initial value: "off"</pre>
+<hr><a name="reverse"></a><code>reverse</code> -- color reversal flag<br>
+<br>
+The graphics context attribute <code>reverse</code> interchanges the foreground
+and background colors when it is changed from <code>"off"</code>
+to <code>"on"</code> or from <code>"on"</code> to <code>"off"</code>.
+<pre>Values: "on", "off"
+
+Initial value: "off"
+
+See also: <a href="#bg">bg</a>, <a href="#fg">fg</a>, and <a href="#drawop">drawop</a></pre>
+<hr><a name="row"></a><code>row</code> -- text cursor row<br>
+<br>
+The canvas attribute <code>row</code> specifies the vertical position of
+the text cursor, measured in characters. 
+<pre>See also: <a href="#col">col</a>, <a href="#cursor">cursor</a>, <a href="#x">x</a>, and <a href="#y">y</a></pre>
+<hr><a name="size"></a><code>size</code> -- window size in pixels<br>
+<br>
+The canvas attribute <code>size</code> specifies the window size as a string
+containing comma-separated width and height values. 
+<pre>Initial value: enough for 12 lines of 80-column text
+
+See also: <a href="#columns">columns</a>, <a href="#height">height</a>, <a href="#lines">lines</a>, and <a href="#width">width</a></pre>
+<hr><a name="width"></a><code>width</code> -- window width in pixels<br>
+<br>
+The canvas attribute <code>width</code> specifies the width of the window.
+<pre>Initial value: enough for 80 columns of text
+
+See also: <a href="#columns">columns</a>, <a href="#height">height</a>, and <a href="#size">size</a></pre>
+<hr><a name="x"></a><code>x</code> -- text cursor x-coordinate<br>
+<br>
+The canvas attribute <code>x</code> specifies the horizontal position of
+the text cursor, measured in pixels. 
+<pre>See also: <a href="#col">col</a>, <a href="#cursor">cursor</a>, <a href="#row">row</a>, and <a href="#y">y</a></pre>
+<hr><a name="y"></a><code>y</code> -- text cursor y-coordinate<br>
+<br>
+The canvas attribute <code>y</code> specifies the vertical position of the
+text cursor, measured in pixels. 
+<pre>See also: <a href="#col">col</a>, <a href="#cursor">cursor</a>, <a href="#row">row</a>, and <a href="#x">x</a></pre>
+<hr><br>
+
+
+<a name=d><h2>Appendix D</h2></a>
+<hr>
+<h3>Keyboard Symbols</h3>
+Pressing a key on the keyboard produces an Icon event unless the key is
+a modifier key such as the shift key. Releasing a key does not produce an
+event. <br>
+<br>
+A key that represents a member of the character set, including traditional
+actions such as return and backspace, produces a string containing a single
+character. The control and shift modifiers can affect the particular character
+produced: For example, pressing control-H produces <code>"\b"</code>
+(the backspace character).<br>
+<pre><hr>defined symbol   value    key
+<hr>Key_PrSc         65377    print screen
+Key_ScrollLock   65300    scroll lock
+Key_Pause        65299    pause
+<hr>Key_Insert       65379    insert
+Key_Home         65360    home
+Key_PgUp         65365    page up
+Key_End          65367    end
+Key_PgDn         65366    page down
+<hr>Key_Left         65361    arrow left
+Key_Up           65362    arrow up
+Key_Right        65363    arrow right
+Key_Down         65364    arrow down
+<hr>Key_F1           65470    function key F1
+Key_F2           65471    function key F2
+Key_F3           65472    function key F3
+Key_F4           65473    function key F4
+Key_F5           65474    function key F5
+Key_F6           65475    function key F6
+Key_F7           65476    function key F7
+Key_F8           65477    function key F8
+Key_F9           65478    function key F9
+Key_F10          65479    function key F10
+Key_F11          65480    function key F11
+Key_F12          65481    function key F12 </pre>
+<hr>
+Other keys, such as function and arrow keys, produce integer-valued events.
+These values may be referenced symbolically by including the definitions
+contained in the library file <code>keysyms.icn</code>. The following table
+lists the values of some of the most commonly used keys. 
+<hr><br>
+
+
+<a name=e><h2>Appendix E</h2></a>
+<hr>
+<h3>Event Queues</h3>
+<br>
+Each window has an event queue, which is an ordinary Icon list. <code>Pending()</code>
+produces an event queue. An event is represented by three consecutive values
+on the list. The first value is the event code: a string for a keypress
+event or an integer for any other event. The next two values are Icon integers
+whose lower-order 31 bits are interpreted as fields having this format:
+<pre>000 0000 0000 0SMC XXXX XXXX XXXX XXXX (second value)
+EEE MMMM MMMM MMMM YYYY YYYY YYYY YYYY (third value)</pre>
+The fields have these meanings:
+<pre><code>   X...X    &amp;x</code>: 16-bit signed x-coordinate value
+   <code>Y...Y    &amp;y:</code> 16-bit signed y-coordinate value
+   SMC      &amp;shift, &amp;meta, and &amp;control flags
+   E...M    &amp;interval, interpreted as M^16E milliseconds
+   0        unused; should be zero</pre>
+Coordinate values do not reflect any translation specified by <code>dx</code>
+and <code>dy</code> attributes; the translation is applied by <code>Event()</code>
+when an event is read.<br>
+<br>
+A malformed event queue error is reported if an error is detected when trying
+to read the event queue. Possible causes for the error include an event
+queue containing fewer than three values, or second or third entries that
+are not integer values or that are out of range. Only artificially constructed
+events can produce such errors. <br>
+<hr><br>
+<br>
+
+
+<a name=f><h2>Appendix F</h2></a>
+<hr>
+<h3>Palettes</h3>
+Palettes are predefined sets of colors that are used with <code>DrawImage()</code>.
+Palettes also can be used to limit the colors used by <code>ReadImage()</code>.<br>
+<br>
+This appendix documents the contents of Icon's palettes and serves as a
+reference for the programmer. It is hard, though, to understand a palette
+just by reading about it. The program <code>palette</code>, which displays
+and labels the colors of the palette, provides a clearer introduction. 
+<h4>Grayscale Palettes</h4>
+The <code>g16 </code>palette, shown below, provides 16 shades of gray specified
+by the hexadecimal characters <code>0123456789ABCDEF</code>, with <code>0</code>
+being black and <code>F</code> being white in accordance with the usual
+conventions of image processing.<br>
+<br>
+<img src="ipd281_files/gipd8.gif" naturalsizeflag="3" align="bottom" height="182" width="302"><br>
+<br>
+Actually, <code>g16</code> is just one member of a family of palettes named
+<code>g2</code> through <code>g64</code>, each providing the corresponding
+number of equally spaced shades from black to white. Each <code>g</code><i>n</i>
+palette uses the first <i>n</i> characters of this list: 
+<pre><code>   0123456789ABCXYZabcxyz{}</code></pre>
+In every case <code>0 </code>is black and the rightmost character is white.<br>
+<br>
+For palettes with more than 64 entries, it becomes more difficult and eventually
+impossible to stay within the printable characters. The remaining grayscale
+palettes, <code>g65</code> through <code>g256</code>, use the first <i>n</i>
+characters of <code>&amp;cset</code> instead of the list above. 
+<h4>The <code>c1</code> Palette</h4>
+The palette <code>c1</code> is designed for constructing color images by
+hand. It is defined using the Icon color-naming system by the table below.
+<pre><hr>hue          deep    dark    medium  light   pale    weak
+<hr>
+black                          0
+gray           1       2       3       4       5
+white                          6
+brown          !       p       ?       C       9
+red            n       N       A       a       #      @
+orange         o       O       B       b       $      % 
+red-yellow     p       P       C       c       &amp;      | 
+yellow         q       Q       D       d       ,      .
+yellow-green   r       R       E       e       ;      :
+green          s       S       F       f       +      -
+cyan-green     t       T       G       g       *      /
+cyan           u       U       H       h       `      '
+blue-cyan      v       V       I       i       &lt;      &gt;
+blue           w       W       J       j       (      )
+purple         x       X       K       k       [      ]
+magenta        y       Y       L       l       {      }
+magenta-red    z       Z       M       m       ^      =
+pink                           7
+violet                         8
+<hr></pre>
+Note that in the Icon color naming system, <code>"dark brown"</code>
+and <code>"light brown"</code> are the same as two shades of red-yellow.
+<h4>Uniform Color Palettes</h4>
+Programs that compute images can more easily use a palette having RGB colors
+that are in some sense "equally spaced". The <code>c3</code>,
+<code>c4</code>, <code>c5</code>, and <code>c6</code> palettes are designed
+with this in mind, and the <code>c2</code> palette can also be considered
+part of this family. The larger palettes allow better color selection and
+subtler shadings but use up more of the limited number of simultaneous colors.<br>
+<br>
+For any of these <code>c</code><i>n</i> palettes, the palette provides <i>n</i>
+levels of each RGB primary color; letting <i>m</i> = <i>n</i> - 1, these
+levels range from 0 (off) to <i>m</i> (full on). The palette also provides
+all the colors that can be obtained by mixing different levels of the primaries
+in any combination. Mixing equal levels produces black (0,0,0), white (<i>m</i>,<i>m</i>,<i>m</i>),
+or a shade of gray. Mixing unequal levels produces colors.<br>
+<br>
+Each <code>c</code><i>n</i> palette also provides (<i>n</i> - 1)^2 additional
+shades of gray to allow better rendering of monochrome images. <i>n</i>
+- 1 intermediate shades are added in each interval created by the original
+<i>n</i> regular achromatic entries, giving a total of <i>n</i>^2 - <i>n</i>
++ 1 grayscale entries.<br>
+<br>
+The lists below specify the characters used by each palette. The <i>n</i>
+^3 regular entries are ordered from (0,0,0) to (<i>m</i>,<i>m</i>,<i>m</i>),
+black to white, with the blue component varying most rapidly and the red
+component varying most slowly. These are followed in the right column by
+the additional shades of gray from darkest to lightest. 
+<pre>c2: kbgcrmyw                              x
+c3: @ABCDEFGHIJKLMNOPQRSTUVWXYZ           abcd
+c4: 0123456789ABC ... XYZabc ... wxyz{}   $%&amp;*-/?@
+c5: \000\001 ... yz{|                     }~\d\200\201 ... \214
+c6: \000\001 ... \327                     \330\331 ... \360</pre>
+For example, the regular portion of the <code>c3</code> palette is interpreted
+this way: 
+<pre><hr>char. r g b    char. r g b    char. r g b
+<hr>
+@     0 0 0    I     1 0 0    R     2 0 0
+A     0 0 1    J     1 0 1    S     2 0 1
+B     0 0 2    K     1 0 2    T     2 0 2
+C     0 1 0    L     1 1 0    U     2 1 0
+D     0 1 1    M     1 1 1    V     2 1 1
+E     0 1 2    N     1 1 2    W     2 1 2
+F     0 2 0    O     1 2 0    X     2 2 0
+G     0 2 1    P     1 2 1    Y     2 2 1
+H     0 2 2    Q     1 2 2    Z     2 2 2
+<hr></pre>
+The complete set of grayscale entries in <code>c3</code>, merging regular
+and extra entries, is <code>@abMcdZ</code> (from black to white).<br>
+<br>
+The sizes of <code>c5 </code>and <code>c6</code> require that they include
+some nonprinting characters, so they are better suited for computed images
+than direct specification.<br>
+
+
+
+<a name=g><h2>Appendix G</h2></a>
+<hr align="LEFT"><p></p>
+
+<h4>Microsoft Windows</h4>
+
+<p>Icon for Windows runs on PCs with Windows 3.1 (with Win32s), Windows
+95 and above, and Windows NT. Windows machines vary greatly in their hardware
+capabilities, so this section can't say precisely how things will work in
+all situations.</p>
+
+<h4>Color Specifications</h4>
+
+<p>Windows does not provide a built-in color naming model, so Icon's standard
+color names comprise the complete set of recognized names. </p>
+
+<p>Depending on the hardware configuration, Windows may use dithered colors
+in response to any particular color request. This results in an unattractive
+appearance in applications where solid colors are expected. Most colors
+are dithered on 16-color machines, and color-intensive applications are
+ugly or unusable on those systems.</p>
+
+<p>Color correction is controlled by the <code>gamma</code> attribute. The
+default value of the gamma attribute is 1.0.</p>
+
+<h4>Font Specifications</h4>
+
+<p>Windows comes with very few fonts. The set of fonts available on a given
+machine is a function of the set of applications and fonts that have been
+installed. As a result, Windows machines vary widely in their interpretation
+of font requests. The same specification in Icon can produce fonts of different
+appearance on different machines.</p>
+
+<p>Windows' native font specifications are complex structures that specify
+a set of desired characteristics, from which a "nearest match"
+is chosen by Windows when a font is requested. Windows has fonts based on
+different character sets. The standard Icon font names (<code>fixed</code>,
+<code>sans</code>, <code>serif</code>, <code>mono</code>, and <code>typewriter</code>)
+return a font that uses the so-called ANSI character set.</p>
+
+<h4>Images</h4>
+
+<p>In <code>ReadImage()</code>, if an image file is not a valid GIF file,
+an attempt is made to read it as a Windows bitmap file.</p>
+
+<p>In <code>WriteImage()</code>, if the file name ends in .bmp or .BMP,
+a Windows bitmap file is written. In all other cases a GIF file is written.</p>
+
+<h4>Keyboard Event Codes</h4>
+
+<p>Icon uses Windows scan codes as integer event codes for special keys.
+Symbolic definitions given in <a href="#d">Appendix D</a> and located in
+file keysyms.icn allow applications to refer to these special keys in a
+system independent way.</p>
+
+<h4>Pointers</h4>
+
+<p>The pointer attribute can take any of the values shown in this figure:</p>
+
+<p><img src="ipd281_files/wcursors.gif" naturalsizeflag="3" align="BOTTOM" height="71" width="223"></p>
+
+<h4>Limitations</h4>
+
+<ul>
+  <li>The attribute linestyle is ignored by Windows when the line width is
+  greater than 1; line widths greater than 1 are always drawn using a solid
+  line style.
+  </li><li>The attribute fillstyle does not support the value "masked".
+  When masked fills are requested, textured fills are performed instead.
+  </li><li>Mutable colors do not work correctly.
+  </li><li>The drawop attribute does not work correctly.
+</li></ul>
+
+
+<a name=h><h2>Appendix H</h2></a>
+<hr>
+<h4>The X Window System</h4>
+
+This appendix discusses issues that are specific to implementations of Icon
+running under the X Window System.<br>
+<br>
+Under X, an Icon program is a client that performs graphical I/O on a server.
+The client and server can be the same machine, as when a program runs and
+displays locally on a workstation, or on different machines. A remote server
+can be specified by using the display attribute when opening a window.<br>
+<br>
+There are many implementations of X, and different systems provide different
+features, so this appendix can't say precisely how things will work in all
+situations. 
+<h4>Color Specifications</h4>
+Color specifications that are not recognized by Icon are passed to X for
+interpretation. X servers typically offer large sets of color names, including
+unusual ones such as <code>orchid</code> and <code>papayawhip</code>.<br>
+<br>
+Color correction is controlled by the <code>gamma</code> attribute. The
+default value of <code>gamma</code> is based on the color returned by X
+for the device-independent X color specification <code>RGBi:.5/.5/.5</code>.
+On older X systems that do not recognize this specification, a configuration
+default value is used.<br>
+<br>
+The interpretation of <code>RGBi:.5/.5/.5</code> depends on <i>properties</i>
+associated with the root window. These properties are set by the<i> xcmsdb</i>
+utility. The library program <code>xgamma</code> can be used to set the
+properties to approximate a particular gamma value. 
+<h4>Font Specifications</h4>
+In interpreting a font specification, Icon recognizes the following font
+characteristics and tries to match them as well as possible against the
+available X fonts: 
+<pre>   condensed, narrow, normal, wide, extended
+   light, medium, demi, bold, demibold
+   roman, italic, oblique
+   mono, proportional
+   sans, serif</pre>
+The same specification can produce fonts of different appearance on different
+servers.<br>
+<br>
+If a font specification is not understood or matched by Icon's font naming
+system, it is passed verbatim to X as a font name. This allows the use of
+native X font specifications, including wild cards. As a special case, a
+font specification of <code>"fixed"</code> (without any size or
+other characteristics) is passed to X as a font name without interpretation.
+<h4>Images</h4>
+In <code>ReadImage()</code>, if an image file is not a valid GIF file, an
+attempt is made to read it as an X Bitmap or X Pixmap file.<br>
+<br>
+In <code>WriteImage()</code>, if the file name ends in <code>.xbm</code>
+or .<code>XBM</code>, an X Bitmap file written. If the file name ends in
+<code>.xpm</code> or <code>.XPM</code>, an X Pixmap file is written. If
+the file name ends in <code>.xpm.Z</code>, a compressed X Pixmap file is
+written. In all other cases a GIF image is written. 
+<h4>X Resources</h4>
+<code>Default()</code> returns values registered with the X Resource Manager.
+These values often are set by an .<code>Xresources</code> or <code>.Xdefaults</code>
+file. 
+<h4>Keyboard Event Codes</h4>
+Icon uses X <i>keysym</i> codes as event codes. The actual code returned
+for a particular key depends on the configuration of the X server; this
+can be altered dynamically by the <i>xmodmap</i> utility. For example, the
+Sun keypad has one key labeled "3", "PgDn", and "R15".
+Whether this key produces an Icon event <code>"3"</code>, <code>Key_PgDn</code>,
+<code>Key_R15</code>, or even something else depends on the X configuration.<br>
+<br>
+The library file <code>keysyms.icn</code>lists many of the possible codes. For
+maximum portability, use only those that appear in <a href="#d>Appendix D</a>.
+
+<h4>Cursors and Pointers</h4>
+The text cursor is an underscore character. It is visible only when the
+cursor attribute is on and the program is awaiting input in <code>WRead()</code>
+or <code>WReads()</code>. The cursor does not blink and may be hard to locate
+in a window containing a large amount of text.<br>
+<br>
+The mouse location indicator, set by the pointer attribute, is selected
+from the X <code>cursor</code> font. The following values are accepted:<br>
+<br>
+<img src="ipd281_files/gipd9.gif" naturalsizeflag="3" align="bottom" height="720" width="720"><br>
+<br>
+The default mouse location indicator is <code>"left ptr"</code>.
+
+</body></html>

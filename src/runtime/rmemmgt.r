@@ -262,8 +262,9 @@ int ptrno[] = {
      1,                       /* T_Pattern (26), pattern block */
      1,                       /* T_Pelem (27), pattern element block */
     -1,				/* T_Tvmonitored (28) */
-     1,				/* T_Intarray (29), integer array */
-     1,				/* T_Realarray (30), real array */
+     2,				/* T_Intarray (29), integer array */
+     2,				/* T_Realarray (30), real array */
+     2,				/* T_Cons (31), cons cell */
     };
 
 /*
@@ -301,6 +302,7 @@ char *blkname[] = {
    "monitor trapped variable",		/* T_Tvmonitored (28) */
    "integer array",			/* T_Intarray (29) */
    "real array",			/* T_Realarray (30) */
+   "cons",				/* T_Cons (31) */
    };
 
 /*

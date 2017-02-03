@@ -1,0 +1,41 @@
+###
+#  Subject : Unicon Shared Object Basic Class
+#  Author  : Jafar Al-Gharaibeh
+#  Date    : February 1, 2017
+#  Modified:
+###
+#  This file is in the public domain.
+###
+# Describtion: provides a basic abstraction for classes wrapped
+#              around shared objects.
+###
+
+package uso
+
+class USO()
+   # Initialize the library if needed
+   # must return on success or fail if the initialization couldn't be done
+   method init()
+      return
+   end
+
+   # Return a list of functions provided by the library
+   # AKA, its public api. These should be variable refernces
+   # and not just string names
+   method api()
+      return [
+              lang::find_method(self, "init"),
+              lang::find_method(self, "test"),
+              lang::find_method(self, "destroy")
+              ]
+   end
+
+   # Run a built-in test of the library
+   method test()
+   end
+
+   # Final clean up if needed
+   # must return on success or fail if the cleanup couldn't be done
+   method destroy()
+   end
+end

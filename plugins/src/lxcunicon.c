@@ -1,16 +1,16 @@
 /*
  ***
- *  Subject : Unicon Shared Object Basic Class
+ *  Subject : Unicon LXC Container Library
  *  Author  : Jafar Al-Gharaibeh
- *  Date    : February 1, 2017
+ *  Date    : February 3, 2017
  *  Modified:
  ***
  *  This file is in the public domain.
  ***
- * Describtion: provides a basic abstraction for classes wrapped
- *              around shared objects.
+ *  Describtion: provides basic function for creating and
+ *               managing LXC containers 
  ***
- * compile:  gcc -std=c99 -shared -fpic -o luxicon.so luxicon.c -llxc
+ *  compile:  gcc -std=c99 -shared -fpic -o luxicon.so luxicon.c -llxc
  ***
 */
  
@@ -18,6 +18,8 @@
 #include <lxc/lxccontainer.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "lxcunicon.h"
 
 /*
  * Error Codes

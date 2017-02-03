@@ -11,11 +11,10 @@ assignment, input and output, and diagnostic facilities.
 Type checking is relatively straightforward in Icon. If only one type
 is of interest a test of the d-word is sufficient, as in
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>if (Type(Arg1) != T\_List)\\
 \>\>runerr(108, \&Arg1);
-}
+\end{iconcode}
 
 It is necessary to test the entire d-word, since a qualifier may have
 a length that is the same as a type code. The d-word test takes care
@@ -27,14 +26,13 @@ strings. The RTL runtime language's \texttt{type\_case} statement
 looks like a switch, but is really performing a selection according to
 type generally of the form:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>if (is:string(Arg1))\textit{\ \ /* }string \textit{*/}\\
 \>\>\>\vdots\\
-\>else switch (Type(Arg1) \{\\
+\>else switch (Type(Arg1)) \{\\
 \>\> case T\_List:\textit{\ \ /* }list \textit{*/}\\
 \>\>\>\vdots
-}
+\end{iconcode}
 
 The real problems lie in type conversion, not type checking. At the
 source-language level, type conversion can occur explicitly, as a
@@ -139,8 +137,7 @@ Rtt can generate special-case functions for each call to
 at that call site, and skip the checks and conversions where they are
 not necessary.
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 function\{0,1\} numeric(n)\\
 \>if cnv:(exact)integer(n) then \{\\
 \>\>abstract \{ return integer \}\\
@@ -155,7 +152,7 @@ function\{0,1\} numeric(n)\\
 \>\>inline \ \ \{ fail; \}\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 Numeric conversion also occurs implicitly in polymorphic operations such as
 
@@ -168,8 +165,7 @@ types of \texttt{n} and \texttt{m}. The RTL language was given an
 general form of the arithmetic operators looks like:
 
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>operator\{1\} icon\_op func\_name(x, y)\\
 \>\>declare \{\\
 \>\>\>tended struct descrip lx, ly;\\
@@ -197,7 +193,7 @@ general form of the arithmetic operators looks like:
 \>\>\>\>\}\\
 \>\>\>\}\\
 \>end
-}
+\end{iconcode}
 
 Internally, a macro \texttt{GetReal()} is used to handle the \texttt{real}
 type, since some computers have restrictions on the alignment of
@@ -216,8 +212,7 @@ to a string in order to convert it to a number. See Sec. 4.4.4. The
 code for the ``temporary string'' version of string conversion is in a
 function \texttt{tmp\_str()}:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static int tmp\_str(char *sbuf, dptr s, dptr d)\\
 \>\{\\
 \>type\_case *s of \{\\
@@ -246,7 +241,7 @@ static int tmp\_str(char *sbuf, dptr s, dptr d)\\
 \>\>\}\\
 \>return 1;\\
 \>\}
-}
+\end{iconcode}
 
 If a conversion is required, \texttt{itos()}, \texttt{rtos()}, or
 \texttt{cstos()} does the actual work, placing its result in \texttt{sbuf} and
@@ -263,8 +258,7 @@ destroyed when that routine returns. The fully general version of
 this function is heavily called, in reality the body of
 \texttt{tmp\_str()} is inlined in \texttt{cnv\_str()}.
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 int cnv\_str(dptr s, dptr d)\\
 \>\{\\
 \>char sbuf[MaxCvtLen];\\
@@ -281,7 +275,7 @@ int cnv\_str(dptr s, dptr d)\\
 \>Protect(StrLoc(*d) = alcstr(StrLoc(*d), StrLen(*d)), fatalerr(0,NULL));\\
 \>return 1;\\
 \>\}
-}
+\end{iconcode}
 
 \section[12.2 Dereferencing and Assignment]{12.2 Dereferencing and Assignment}
 
@@ -343,8 +337,7 @@ what kind of result to produce.
 
 The dereferencing routine begins as follows:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 void deref(s, d)\\
 dptr s, d;\\
 \>\{\\
@@ -358,7 +351,7 @@ dptr s, d;\\
 \>if (!is:variable(*s)) \{\\
 \>\>*d = *s;\\
 \>\>\}
-}
+\end{iconcode}
 
 
 \noindent
@@ -367,18 +360,16 @@ If \texttt{s} does not point to a variable descriptor, the remaining code is ski
 If \texttt{s} points to a variable that is not a trapped variable,
 dereferencing is simple:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>\>/*\\
 \>\>\>\ * An ordinary variable is being dereferenced.\\
 \>\>\>\ */\\
 \>\>\>*d = *(dptr)((word *)VarLoc(*s) + Offset(*s));
-}
+\end{iconcode}
 
 Otherwise, there are two types of trapped variables with a switch on the type:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>type\_case *s of \{\\
 \>\>tvsubs: \{\\
 \>\>\>/*\\
@@ -412,7 +403,7 @@ Otherwise, there are two types of trapped variables with a switch on the type:
 \>\>\>else\\
 \>\>\>\>*d = bp->tvtbl.clink->table.defvalue;/*use default */\\
 \>\>\>\}
-}
+\end{iconcode}
 
 A table-element trapped variable may point to a table-element
 trapped-variable block or to a table-element block. The second
@@ -433,8 +424,7 @@ The last case, keyword variables, is almost the same as for
 simple variables. These variables impose special semantics on
 assignment, but not on dereferencing.
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>kywdint:\\
 \>\>kywdpos:\\
 \>\>kywdsubj:\\
@@ -442,7 +432,7 @@ assignment, but not on dereferencing.
 \>\>kywdwin:\\
 \>\>kywdstr:\\
 \>\>\>*d = *VarLoc(*s);
-}
+\end{iconcode}
 
 \subsection[12.2.2 Assignment]{12.2.2 Assignment}
 
@@ -461,8 +451,7 @@ operations. For example, the function for
 
 is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 operator\{0,1\} := asgn(underef x, y)\\
 \>if !is:variable(x) then\\
 \>\>runerr(111, x)\\
@@ -478,7 +467,7 @@ operator\{0,1\} := asgn(underef x, y)\\
 \>\>return x;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 Note that assignment may fail. This can occur as the result of an
 out-of-range assignment to \texttt{\&pos} and is indicated by an RTL
@@ -487,18 +476,16 @@ out-of-range assignment to \texttt{\&pos} and is indicated by an RTL
 Like dereferencing, assignment is trivial for variables that are not
 trapped. The macro \texttt{GeneralAsgn()} begins as follows:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \#begdef GeneralAsgn(x, y)\\
 \>type\_case x of \{
-}
+\end{iconcode}
 
 As for dereferencing, there are two types of trapped variables to be
 considered. Assignment to a substring trapped variable is rather
 complicated and deferred to a function \texttt{subs\_asgn()}:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>tvsubs: \{\\
 \>\>\ \ abstract \{\\
 \>\>\>\ \ store[store[type(x).str\_var]] = string\\
@@ -508,12 +495,11 @@ complicated and deferred to a function \texttt{subs\_asgn()}:
 \>\>\>\>\ \ runerr(0);\\
 \>\>\>\ \ \}\\
 \>\>\ \ \}
-}
+\end{iconcode}
 
 The function \texttt{subs\_asgn()}:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 int subs\_asgn(dptr dest, const dptr src)\\
 \>\{\\
 \>tended struct descrip deststr, srcstr, rsltstr;\\
@@ -596,13 +582,12 @@ int subs\_asgn(dptr dest, const dptr src)\\
 \>tvsub->sslen = StrLen(srcstr);\\
 \>return Succeeded;\\
 \>\}\\
-}
+\end{iconcode}
 
 Table-element trapped variables are once again deferred in
 \texttt{GeneralAsgn()} to call to a function, \texttt{tvtbl\_asgn()}:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>tvtbl: \{\\
 \>\>\ \ abstract \{\\
 \>\>\>\ \ store[store[type(x).trpd\_tbl].tbl\_val] = type(y)\\
@@ -612,7 +597,7 @@ Table-element trapped variables are once again deferred in
 \>\>\>\>\ \ runerr(0);\\
 \>\>\>\ \ \}\\
 \>\>\>\}
-}
+\end{iconcode}
 
 Table-element trapped variables have the same possibilities for
 assignment as for dereferencing. The processing is more complicated,
@@ -621,8 +606,7 @@ block into a table-element block and link it into a chain. Parameters
 cannot be tended, so their information must be preserved in tended
 variables before anything is allocated.
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 int tvtbl\_asgn(dptr dest, const dptr src)\\
 \{\\
 \>tended struct b\_tvtbl *bp;\\
@@ -673,15 +657,14 @@ int tvtbl\_asgn(dptr dest, const dptr src)\\
 \>\>\}\\
 \>return Succeeded;\\
 \}
-}
+\end{iconcode}
 
 In the case of a keyword variable, the semantic requirements
 of the keyword are expressed in the usual mixture of RTL and C, except
 that type information is guaranteed not to change. The code for
 \texttt{\&subject} is typical:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>kywdsubj: \{\\
 \>\>\>/*\\
 \>\>\>\ * No side effect in the type realm = no abstract clause\\
@@ -693,7 +676,7 @@ that type information is guaranteed not to change. The code for
 \>\>\>\>k\_pos = 1;\\
 \>\>\>\>\}\\
 \>\>\>\}
-}
+\end{iconcode}
 
 \section[12.3 Input and Output]{12.3 Input and Output}
 
@@ -900,12 +883,12 @@ perform assignment.
 \noindent {\bf 12.6} Assuming that \texttt{x}, \texttt{y}, \texttt{z},
 and \texttt{w} all have string values, diagram the structures that are
 produced in the course of evaluating the following expressions:
-\iconcode{
+\begin{iconcode}
 x[y] := z\\
 z := x[y]\\
 x[y] := z[w]\\
 x[y][z] := w
-}
+\end{iconcode}
 Repeat this exercise for the case where all the identifiers have tables as values.
 
 \noindent {\bf 12.7} Give an expression in which a table-element

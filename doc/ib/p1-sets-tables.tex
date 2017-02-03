@@ -494,7 +494,7 @@ The string hashing implementation is important and deserves extra
 scrutiny. The Unicon implementation differs from Icon and is shown
 in blue; the \#ifdef is included for exposition and is not in the code.
 
-\iconcode{
+\begin{iconcode}
 uword hash(dp)\\
 dptr dp;\\
 \>\{\\
@@ -504,8 +504,9 @@ dptr dp;\\
 \>register unsigned int *bitarr;\\
 \>double r;\\
 \>if (Qual(*dp)) \{\\
-}
-\bluecode{
+\end{iconcode}
+%
+\begin{specialcode}{\tt\color{blue}}
 \#ifdef Unicon\\
 \>hashstring:\\
 \>\> /*\\
@@ -566,11 +567,10 @@ dptr dp;\\
 \>\>\}\\
 \>\> i += n;\\
 \>\}\\
-\#else Icon
-}
-
-
-\iconcode{
+\#else /* Icon */
+\end{specialcode}%blue
+%
+\begin{iconcode}
 \>hashstring:\\
 \>\>/*\\
 \>\>\ * Compute the hash value for the string based on a scaled \\
@@ -587,9 +587,13 @@ dptr dp;\\
 \>\>\}\\
 \>\>i += n;\ \ \ \ \ \ /* add (untruncated) string length */\\
 \>\>\}\\
-}
-\bluecode{\#endif\>\>\> /* Icon / Unicon */\\}
-\iconcode{
+\end{iconcode}
+%
+\begin{specialcode}{\tt\color{blue}}
+\#endif\>\>\> /* Icon / Unicon */\\
+\end{specialcode}
+%
+\begin{iconcode}
 \>else \{\\
 \>\>switch (Type(*dp)) \{\\
 \>\>\>/*\\
@@ -670,7 +674,7 @@ dptr dp;\\
 \>\>\}\\
 \>return i;\\
 \>\}
-}
+\end{iconcode}
 
 To hash a string, its characters are combined mathematically as
 integers. At most the first ten characters are used. {\color{blue}
@@ -800,11 +804,11 @@ the default value for the table. Why is this not done?
 What is the consequence of evaluating the following expressions?
 \end{enumerate}
 \end{enumerate}
-\iconcode{
+\begin{iconcode}
 \>t := table(0)\\
 \>t[37] := 2\\
 \>write(t[37], t := table(1))
-}
+\end{iconcode}
 
 What would happen if the last line given previously were
 

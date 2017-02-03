@@ -948,12 +948,12 @@ detect that the descriptor table value being passed is a constant that
 can be propagated to all places where the descriptor table is used.
 For example, the following code fragment is fairly common:
 
-\iconcode{
+\begin{iconcode}
 \>   r\_frame.tend.d[4].dword = D\_Integer;\\
 \>   r\_frame.tend.d[4].vword.integr = 1;\\
 \>   irslt = sub(argp[0].vword.integr, \\
 \> \> \> \> \> r\_frame.tend.d[4].vword.integr);
-}
+\end{iconcode}
 
 In this section of code, the structure
 \texttt{r\_frame.tend.d[4].vword.integr} is assigned a value and then
@@ -988,14 +988,14 @@ assigned its own location. Because both these values are only literals
 in the Icon code, they are given temporary locations in the tended
 desciptor table that may be used over again.
 
-\iconcode{
+\begin{iconcode}
 \>   if (x\_val = 2.4) then \\
 \> \>   do\_something(x\_val) \\
 \>   ... \\
 \>   ... \\
 \>   if (str\_val == "foo") then \\
 \> \>   do\_something(str\_val)
-}
+\end{iconcode}
 
 
 For example, if the constant \texttt{2.4} is not used after the second
@@ -1015,7 +1015,7 @@ builds a table which contains information such as the scope of a
 descriptor entry, whether it is safe to propagate a literal, and the
 literal value. The table structure is given below.
 
-\iconcode{
+\begin{iconcode}
 struct lit\_tbl \{ \\
 \> int \ \ \ modified; \\
 \> int \ \ \ index; \\
@@ -1027,7 +1027,7 @@ struct lit\_tbl \{ \\
 \> struct lit\_tbl *prev; \\
 \> struct lit\_tbl *next; \\
 \};
-}
+\end{iconcode}
 
 The field \texttt{modified} is a flag which can be set to one of the
 enumerated types in Figure 24-7.
@@ -1085,7 +1085,7 @@ serves as a loop control variable while the use of location 7 may be
 replaced with its constant value 10 even though the same location is
 assigned a new value later on after label \texttt{L9}.
 
-\iconcode{
+\begin{iconcode}
 \>   r\_frame.tend.d[6].dword = D\_Integer; \\
 \>   r\_frame.tend.d[6].vword.integr = 1; \\
 \>   r\_frame.tend.d[7].dword = D\_Integer; \\
@@ -1112,7 +1112,7 @@ L8: \\
 L9: \\
 \>   r\_frame.tend.d[7].dword = D\_Integer; \\
 \>   r\_frame.tend.d[7].vword.integr = 7;
-}
+\end{iconcode}
 
 
 The field \texttt{index} is the index into the descriptor table for

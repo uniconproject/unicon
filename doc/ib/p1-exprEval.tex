@@ -5,11 +5,11 @@ the interpreter and expression evaluation as it might take place in a
 conventional programming language in which every expression produces
 exactly one result. For example, expressions such as
 
-\iconcode{
+\begin{iconcode}
 \>i := j \\
 \>k := i + j\\
 \>i +:= ?k
-}
+\end{iconcode}
 
 \noindent each produce a single result: they can neither fail nor can
 they produce sequences of results.
@@ -53,11 +53,10 @@ cannot be resumed for another result. For example, in
 \noindent find may produce a result and may be resumed to produce
 another result if the comparison fails. On the other hand, in
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>write(i = find(s1, s2))\\
 \>write(j = find(s1, s3))
-}
+\end{iconcode}
 
 \noindent the two lines constitute separate expressions. Once the
 evaluation of the expression on the first line is complete, it cannot
@@ -66,11 +65,10 @@ line is not affected by whether the expression on the first line
 succeeds or fails. However, if the two lines are joined by a
 conjunction operation, as in
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>write(i = find(s1, s2)) \&\\
 \>write(i = find(s1, s3))
-}
+\end{iconcode}
 
 \noindent they are combined into a larger single expression and the
 expression on the second line is not evaluated if the expression on
@@ -85,11 +83,10 @@ expression begins on the next line.
 
 Consequently, the first example is equivalent to
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>write(i = find(s1, s2));\\
 \>write(i = find(s1 , s3))
-}
+\end{iconcode}
 
 The difference between the semicolon and the conjunction operator is
 substantial. A semicolon bounds an expression, while an operator binds
@@ -247,14 +244,13 @@ and \texttt{ilevel}, which is related to suspended generators:
 
 An expression frame marker is declared as a C structure:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>struct ef\_marker \{\ \ \ \ \>\>\>\>\>\>\>\>\>\>/* expression frame marker */\\
 \>\>word *ef\_failure;\ \ \ \ \>\>\>\>\>\>\>\>\>/*\ \ failure ipc */\\
 \>\>struct ef\_marker *ef\_efp;\ \ \>\>\>\>\>\>\>\>\>/*\ \ efp */\\
 \>\>struct gf\_marker *ef\_gfp;\ \ \>\>\>\>\>\>\>\>\>/*\ \ gfp */\\
 \>\>word ef\_ilevel;\ \ \ \ \ \ \>\>\>\>\>\>\>\>\>/*\ \ ilevel */
-}
+\end{iconcode}
 
 
 
@@ -262,8 +258,7 @@ This structure is overlaid on the interpreter stack in order to
 reference its components. The code for the \texttt{mark} instruction
 is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>case Op\_Mark:\>\>\>\>\>\>/* create expression frame marker */\\
 \>\>newefp = (struct ef\_marker *)(sp + 1);\\
 \>\>opnd = GetWord;\\
@@ -276,7 +271,7 @@ is
 \>\>efp = newefp;\\
 \>\>gfp = 0;\\
 \>\>break;
-}
+\end{iconcode}
 
 The macro \texttt{Wsizeof(x)} produces the size of \texttt{x} in words.
 
@@ -295,8 +290,7 @@ The use of \texttt{mark} and \texttt{unmark} is illustrated by
 
 \noindent for which the virtual machine instructions are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>mark L1\\
 \>\>\textit{code for}\ $expr_1$\\
 \>\>unmark\\
@@ -305,7 +299,7 @@ The use of \texttt{mark} and \texttt{unmark} is illustrated by
 L1:\\
 \>\>\textit{code for}\ $expr_3$\\
 L2:
-}
+\end{iconcode}
 
 
 The \texttt{mark} instruction creates an expression frame for the
@@ -356,11 +350,10 @@ In the absence of generators, if failure occurs anywhere in an
 expression, the entire expression fails without any further
 evaluation. For example, in the expressions
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>i := numeric(s)\\
 \>line := read(f)
-}
+\end{iconcode}
 
 
 \noindent if \texttt{numeric(s)} fails in the first line, the
@@ -372,8 +365,7 @@ marker.
 
 The virtual machine instructions for the previous example are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark L1\\
 \>pnull\\
 \>local i\\
@@ -392,7 +384,7 @@ L1:\\
 \>asgn\\
 \>unmark\\
 L2:
-}
+\end{iconcode}
 
 
 Prior to the evaluation of the expression on the first line, there is
@@ -487,14 +479,13 @@ with different returned values.
 
 The code in the interpreter for a conditional operation is illustrated by
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>case Op\_Numlt:\ \ \>\>\>\>\>\>/* e1 < e2 */\\
 \>\>Setup\_Op(2);\\
 \>\>DerefArg(1);\\
 \>\>DerefArg(2);\\
 \>\>Call\_Cond;
-}
+\end{iconcode}
 
 The macro \texttt{Call\_Cond} is similar to \texttt{Call\_Op}
 described in Sec. 8.3.1, but it tests the signal returned by the C
@@ -516,8 +507,7 @@ the virtual machine instructions for
 
 are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark\>\>\> L1\\
 \>pnull\\
 \>local\>\>\> i\\
@@ -529,7 +519,7 @@ L1:\\
 \>global\>\>\> write\\
 \>local\>\>\> j\\
 \>invoke\>\>\> 1
-}
+\end{iconcode}
 
 The virtual machine instruction \texttt{pfail} first returns from the
 current procedure call (see Sec. 10.3), and then transfers to
@@ -554,11 +544,10 @@ concerned, there is no difference between an expression that simply
 produces a result and an expression that produces a result and is
 capable of being resumed to produce mother one. For example, in
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>i := numeric("2")\\
 \>j := upto('aeiou', "Hello world")
-}
+\end{iconcode}
 
 \noindent the two assignment operations are carried out in the same
 way, even though \texttt{upto()} is a generator and \texttt{numeric()}
@@ -629,8 +618,7 @@ generator frame is created:
 \end{picture}
 
 The corresponding C structure is
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>struct gf\_marker \>\>\>\>\>\>\>\>\>\>\>/* generator frame marker */\\
 \>\>word gf\_gentype;\>\>\>\>\>\>\>\>\>\>/*\ \ type */\\
 \>\>struct ef\_marker *gf\_efp;\>\>\>\>\>\>\>\>\>\>/*\ \ efp */\\
@@ -638,7 +626,7 @@ The corresponding C structure is
 \>\>word *gf\_ipc\>\>\>\>\>\>\>\>\>\>/*\ \ ipc */\\
 \>\>word gf\_line;\>\>\>\>\>\>\>\> \>\>/*\ \ line number */\\
 \>\};
-}
+\end{iconcode}
 
 Generators for procedure suspension contain, in addition, the i-state
 variable related to procedures. See Sec. 10.3.3.
@@ -649,8 +637,7 @@ As an example, consider the expression
 
 The virtual machine instructions for this expression are:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark\>\>\> L1\\
 \>global\>\>\> write\\
 \>local\>\>\> i\\
@@ -663,7 +650,7 @@ The virtual machine instructions for this expression are:
 \>invoke\>\>\> 1\\
 \>unmark\\
 L1 :
-}
+\end{iconcode}
 
 The state of the stack after execution of the first seven instructions is
 
@@ -692,20 +679,18 @@ The state of the stack after execution of the first seven instructions is
 The code in the interpreter for calling a generative operator with n
 arguments is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>rargp = (struct descrip *)(sp -1) -n;\\
 \>signal = (*(optab[op]))(rargp);\\
 \>goto C\_rtn\_term;
-}
+\end{iconcode}
 
 Note that \texttt{rargp} points to Arg0 and is the argument of the
 call to the C function for the operator.
 
 The RTL function for \texttt{toby} is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 operator\{*\} ... toby(from, to, by)\\
 \>/*\\
 \>\ * arguments must be integers.\\
@@ -743,7 +728,7 @@ operator\{*\} ... toby(from, to, by)\\
 \>\>fail;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 The RTL \texttt{operator} construct, which is similar to
 \texttt{function}, produces the C header
@@ -771,12 +756,11 @@ is accomplished by calling \texttt{interp()} with arguments that
 signal it to build a generator frame. The C code generated for
 \texttt{suspend} is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>if ((signal = interp(G\_Osusp, r\_args RTTCURTSTATARG)) != \ A\_Resume) \{\\
 \>\>return signal;\\
 \>\}
-}
+\end{iconcode}
 
 The argument \texttt{G\_Osusp} in the call of \texttt{interp()}
 indicates that a generator frame for C function that implements an
@@ -842,8 +826,7 @@ previous example is 2. The comparison fails and control is transferred
 to \texttt{efail}, as it is in the case of all operations that
 fail. The code for \texttt{efail} is
 
-\goodbreak
-\iconcode{\\
+\begin{iconcode}\\
 \>case Op\_Efail:\\
 \>efail:\\
 \>\>/*\\
@@ -894,7 +877,7 @@ fail. The code for \texttt{efail} is
 \>\>\>\}\\
 \>\>break;\\
 \>\>\}
-}
+\end{iconcode}
 
 If there were no generator frame (if \texttt{gfp} were 0), the entire
 expression frame would be removed, and the expression would fail as
@@ -1040,8 +1023,7 @@ Consider again the expression
 
 \noindent for which the virtua1 machine instructions are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark\>\>\> L1\\
 \>global\>\>\> write\\
 \>local\>\>\> i\\
@@ -1054,7 +1036,7 @@ Consider again the expression
 \>invoke\>\>\> 1\\
 \>unmark\\
 L1 :
-}
+\end{iconcode}
 
 
 When \texttt{toby} produces a result, it calls \texttt{interp()}. When
@@ -1062,8 +1044,7 @@ the \texttt{unmark} instruction is executed, the C stack contains a
 frame for the call to \texttt{toby} and for its call to
 \texttt{interp()}. The code for \texttt{unmark} is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>case Op\_Unmark:\ \ /* remove expression frame */\\
 \>\>gfp = efp->ef-gfp;\\
 \>\>sp = (word *)efp -1;\\
@@ -1077,7 +1058,7 @@ frame for the call to \texttt{toby} and for its call to
 \>\>\>\}\\
 \>\>efp = efp->ef\_efp;\\
 \>\>break;
-}
+\end{iconcode}
 
 
 Note that in this case Suspend gets the return code
@@ -1085,8 +1066,7 @@ Note that in this case Suspend gets the return code
 \texttt{interp()}. The section of code in \texttt{interp()} that
 checks the signal that is returned from C functions is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>C\_rtn\_term:\\
 \>\>switch (signal) \{\\
 \>\>case A\_Failure:\\
@@ -1105,7 +1085,7 @@ checks the signal that is returned from C functions is
 \>\>sp = (word * )rargp + 1;\ \ \>\>\>\>\>\>\>\>/* set sp to result */\\
 \>\>continue;\\
 \>\}
-}
+\end{iconcode}
 
 
 Thus, when \texttt{interp()} returns to a C function with an unwinding
@@ -1127,8 +1107,7 @@ The virtual machine instructions for
 \iconline{ \>\>\textit{expr\TextSubscript{2}} | \textit{expr\TextSubscript{3}} }
 
 are
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark\>\>\> L1\\
 \>\textit{code for expr}\TextSubscript{2}\\
 \>esusp\\
@@ -1136,7 +1115,7 @@ are
 L1:\\
 \>\textit{code for expr}\textit{\TextSubscript{3}}\\
 L2:
-}
+\end{iconcode}
 
 The mark instruction creates an expression frame marker for
 alternation whose purpose is to preserve the failure \texttt{ipc} for
@@ -1234,13 +1213,12 @@ hole,{\textquotedbl} it could not be used safely.
 If it were not for the termination condition, the virtual machine
 instructions for \texttt{{\textbar}}\textit{expr} would be
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 L1:\\
 \>\>mark\>\>\>\> L1\\
 \>\>\textit{code for expr}\\
 \>\>esusp
-}
+\end{iconcode}
 
 The {\textquotedbl}black hole{\textquotedbl} here is evident---if
 \textit{expr} fails, it is evaluated again and there is no way out.
@@ -1249,14 +1227,13 @@ The termination condition is handled by an instruction that changes
 the failure \texttt{ipc} in the current expression marker. The actual
 virtual machine instructions for \texttt{{\textbar}}\textit{expr} are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 L1:\\
 \>\>mark0\\
 \>\>code for expr\\
 \>\>chfail\>\>\>\>L1\\
 \>\>esusp
-}
+\end{iconcode}
 
 The virtual machine instruction \texttt{mark0} pushes an expression
 frame marker with a zero failure \texttt{ipc}. If a zero failure
@@ -1349,8 +1326,7 @@ loop
 
 \noindent The instructions for \texttt{while-do} are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 L1:\\
 \>mark0\\
 \>\textit{code for expr1}\\
@@ -1359,7 +1335,7 @@ L1:\\
 \>\textit{code for expr2}\\
 \>unmark\\
 \>goto\>\>\>L1
-}
+\end{iconcode}
 
 
 If \textit{expr1} fails, the entire expression fails and failure is
@@ -1371,8 +1347,7 @@ removed and execution continues at the beginning of the loop.
 
 The instructions for \texttt{every-do} are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark0\\
 \>\textit{code for expr1}\\
 \>pop\\
@@ -1380,7 +1355,7 @@ The instructions for \texttt{every-do} are
 \>\textit{code for expr2}\\
 \>unmark\\
 \>efail
-}
+\end{iconcode}
 
 
 
@@ -1443,13 +1418,12 @@ The virtual machine instructions for
 \iconline{ \textit{\ \ expr1 }? \textit{expr2} }
 
 are
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\textit{code for expr1}\\
 \>bscan\\
 \>\textit{code for expr2}\\
 \>escan
-}
+\end{iconcode}
 
 
 If \textit{expr1} succeeds, it leaves a result on the top of the
@@ -1499,11 +1473,10 @@ Suppose \texttt{read(f)} produces the string
 \put(100,32){\downbars}
 \end{picture}
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\&subject:\>\>\>\> "the"\\
 \>\&pos:\>\>\>\> 2
-}
+\end{iconcode}
 
 The \texttt{bscan} instruction is executed, pushing the current values
 of \texttt{\&subject} and \texttt{\&pos}:
@@ -1519,11 +1492,10 @@ of \texttt{\&subject} and \texttt{\&pos}:
 \put(100,96){\upetc}
 \end{picture}
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\&subject:\>\>\>\> "the"\\
 \>\&pos:\>\>\>\> 2
-}
+\end{iconcode}
 
 The \texttt{bscan} instruction sets \texttt{\&subject} to
 \texttt{{\textquotedbl}coconuts{\textquotedbl}} and \texttt{\&pos} to
@@ -1544,11 +1516,10 @@ is evaluated. It suspends, and the top of the stack is
 \put(100,32){\downbars}
 \end{picture}
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\&subject:\>\>\>\> "coconuts"\\
 \>\&pos:\>\>\>\> 5
-}
+\end{iconcode}
 
 The \texttt{escan} instruction is executed next. It copies the
 descriptor on the top of the stack to replace the result produced by
@@ -1567,11 +1538,10 @@ descriptor on the top of the stack to replace the result produced by
 \put(100,96){\upetc}
 \end{picture}
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\&subject:\>\>\>\> "the"\\
 \>\&pos\>\>\>\>: 2
-}
+\end{iconcode}
 
 The \texttt{escan} instruction then suspends, building a generator
 frame. The result of \textit{expr2} is placed on the top of the stack,
@@ -1620,8 +1590,7 @@ matching.{\textquotedbl}
 
 \textbf{9.1} Circle all the bounded expressions in the following segments of code:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>while line := read() do\\
 \>\>if *line = i then write(line)\\
 \\
@@ -1632,7 +1601,7 @@ matching.{\textquotedbl}
 \\
 \>line ? while write(move(1)) do\\
 \>\>\>move(1)
-}
+\end{iconcode}
 
 \textbf{9.2} Describe the effect of nested generators and generators in mutual
 evaluation on the interpreter level.
@@ -1671,13 +1640,12 @@ effect would this have?
 
 are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>mark0\\
 \>\textit{code for expr}\\
 \>pop\\
 \>efail
-}
+\end{iconcode}
 
 \noindent so that failure causes \textit{expr} to be resumed. The
 keyword \texttt{\&fail} also fails, so that the virtual machine
@@ -1687,11 +1655,10 @@ instructions for
 
 are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\textit{code for expr}\\
 \>efail
-}
+\end{iconcode}
 
 It is sometimes claimed that these two expressions are equivalent. If
 this were so, the shorter virtual machine instruction sequence for the

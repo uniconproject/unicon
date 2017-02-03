@@ -37,12 +37,11 @@ To illustrate this basic mechanism, consider the expression
 \noindent which produces a randomly selected integer between 1 and 10,
 inclusive. The corresponding virtual machine instructions are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>pnull\>\>\>\>\>\>\# push null descriptor for the result\\
 \>int\>\>\>10\>\>\>\# push descriptor for the integer 10\\
 \>random\>\>\>\>\>\>\# compute random value
-}
+\end{iconcode}
 
 The instructions \texttt{pnull} and \texttt{int} operate directly on
 the stack. The instruction \texttt{random} calls a C function that
@@ -106,13 +105,12 @@ Four kinds of data can be represented literally in Icon programs:
 integers, strings, csets, and real numbers. The four corresponding
 virtual machine instructions are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>  int  \>\>\>  n \>   \>\>\>\# integer n\\
 \>  str  \>\>\>  n,\> a \>\>\>\# string of length n at address a\\
 \>  cset \>\>\>  a \>   \>\>\>\# cset block at address a\\
 \>  real \>\>\>  a \>   \>\>\>\# real block at address a
-}
+\end{iconcode}
 
 The values of integer literals appear as arguments of int
 instructions. In the case of strings, the two arguments give its
@@ -133,12 +131,11 @@ for
 
 \noindent are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>   pnull \\
 \>   str\>\>\>5,\>a \\
 \>   random
-}
+\end{iconcode}
 
 \noindent where \texttt{\ \ a} is the address of the string
 \texttt{{\textquotedbl}aeiou{\textquotedbl}}. The \texttt{pnull}
@@ -193,15 +190,14 @@ invocation of the procedure. The initial null values for local
 identifiers are pushed on the stack when the procedure is called.
 
 Consider the following procedure declaration:
-\goodbreak
-\iconcode{
+\begin{iconcode}
 procedure p(x,y)  \\
 \>  local z, i, j \\
 \>  j := 1 \\
 \>  z := x \\
 \>  \>...  \\
 end
-}
+\end{iconcode}
 
 \noindent In the evaluation of a call to this procedure such as 
 \iconline{ \>p(10,20) }
@@ -236,13 +232,12 @@ procedure is called. This information is described in Chapter 10.
 There are four virtual machine instructions for constructing variable
 descriptors:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>global\>\>\> n\\
 \>static\>\>\> n\\
 \>arg\>\>\> n\\
 \>local\>\>\> n
-}
+\end{iconcode}
 
 Identifiers of each kind are numbered starting at zero. Consequently,
 
@@ -259,12 +254,12 @@ Consider the expression
 The corresponding virtual machine instructions are
 
 %\goodbreak
-\iconcode{
+\begin{iconcode}
 \>pnull\>\>\>\>\>\>\# push null descriptor for the result\\
 \>local\>\>\>2\>\>\>\# push variable descriptor for j\\
 \>int\>\>\>1\>\>\>\# push descriptor for the integer 1\\
 \>asgn\>\>\>\>\>\>\# perform assignment
-}
+\end{iconcode}
 
 When these instructions are interpreted, the succession of stack states is
 
@@ -419,12 +414,12 @@ Similarly, the virtual machine instructions for
 
 are
 
-\goodbreak\iconcode{
+\begin{iconcode}
 \>pnull\\
 \>local\>\>\>0\\
 \>arg\>\>\>0\\
 \>asgn
-}
+\end{iconcode}
 
 \noindent the states of the stack are
 
@@ -590,13 +585,12 @@ converted to a real number. None of these computations is evident in
 the virtual machine instructions produced for this expression, which
 are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>pnull\\
 \>local\>\>\> x\\
 \>local\>\>\> y\\
 \>plus
-}
+\end{iconcode}
 
 In the instructions given previously, the indices that are used to
 access identifiers have been replaced by the names of the identifiers,
@@ -613,15 +607,14 @@ instructions for
 
 are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>pnull\\
 \>local\>\>\> i\\
 \>dup\\
 \>int\>\>\> 1\\
 \>plus\\
 \>asgn
-}
+\end{iconcode}
 
 The stack after the execution of \texttt{local} is
 
@@ -658,8 +651,7 @@ machine instructions for
 
 which are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>pnull\\
 \>local\>\>\>i\\
 \>pnull\\
@@ -667,7 +659,7 @@ which are
 \>int\>\>\>1\\
 \>plus\\
 \>asgn
-}
+\end{iconcode}
 
 In this case, only a single \texttt{local} instruction is avoided. If
 the variable to which the assignment is made is not just an identifier
@@ -694,15 +686,14 @@ The general form of a call is
 }
 The corresponding virtual machine instructions are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>code for expr0\\
 \>code for expr1\\
 \>code for expr2\\
 \>\>...\\
 \>code for exprn\\
 \>invoke n
-}
+\end{iconcode}
 
 The \texttt{invoke} instruction is relatively complicated, since the
 value of \textit{expr0 }may be a procedure, an integer (for mutual
@@ -723,7 +714,7 @@ stores the pointer in place of the offset and modifies the opcode to
 indicate that the offset has been converted to a pointer.  The self
 modifying instructions and their address-holding counterparts are:
 
-\iconcode{
+\begin{iconcode}
 \>   str    \>\>\>\> Astr \\
 \>   cset   \>\>\>\> Astr\\
 \>   real   \>\>\>\> Areal\\
@@ -731,7 +722,7 @@ modifying instructions and their address-holding counterparts are:
 \>   static \>\>\>\> Astatic\\
 \>   goto   \>\>\>\> Agoto\\
 \>   mark   \>\>\>\> Amark
-}
+\end{iconcode}
 
 The details of the \texttt{str} instruction illustrate the code for
 self-modifying instructions. There are several points of interest. The
@@ -749,7 +740,7 @@ again to see if a competing thread has already modified its opcode,
 and if so, it jumps down to the code for \texttt{Op\_Astr}.
 
 
-\iconcode{
+\begin{iconcode}
 \>\>\>	 case Op\_Str:		/* string */ \\
 \#ifdef Concurrent \\
 \>\>\>\>    MUTEX\_LOCKID(MTX\_OP\_ASTR); \\
@@ -780,7 +771,7 @@ L\_astr: \\
 \>\>\>\>    PushAVal(GetWord); \\
 \>\>\>\>    InterpEVValD((dptr)(rsp-1), e\_literal); \\
 \>\>\>\>    break;
-}
+\end{iconcode}
 
 
 \section[8.3 The Interpreter Proper]{8.3 The Interpreter Proper}
@@ -793,8 +784,7 @@ simple in structure. It maintains a location in the icode
 then branches to a section of code for processing the virtual machine
 instruction that it fetched. The interpreter loop is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>for (;;) \{\\
 \>\>op = GetWord;\\
 \>\>switch (op) \{\\
@@ -807,7 +797,7 @@ instruction that it fetched. The interpreter loop is
 \>\>continue;\\
 \>\>\>...\\
 \>\>\}
-}
+\end{iconcode}
 
 \noindent
 where \texttt{GetWord} is a macro that is defined to be \texttt{(*ipc++)}.
@@ -816,15 +806,14 @@ Macros are used extensively in the interpreter to avoid repetitious
 coding and to make the interpreter easier to read.  The coding is
 illustrated by the case clause for the instruction \texttt{plus}:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>case Op\_Plus:\ \ /* e1 + e2 */\\
 \>\>Setup\_Op(2);\\
 \>\>DerefArg(1);\\
 \>\>DerefArg(2);\\
 \>\>Call\_Op;\\
 \>\>break;
-}
+\end{iconcode}
 
 
 
@@ -845,11 +834,10 @@ function itself is obtained by looking up \texttt{op} in an array of
 pointers to functions.  The code produced by \texttt{Call\_Cond} is
 (almost)
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>(*(optab(op]) )(rargp);\\
 \>sp = (word * )rargp + 1:
-}
+\end{iconcode}
 
 In the case where a C function produces a result, as plus always does,
 that result is placed in the Arg0 descriptor on the interpreter stack,
@@ -867,13 +855,12 @@ code for such an instruction fetches its operands. An example is
 
 The interpreter code for int is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>case Op\_Int: /* integer */\\
 \>PushVal(D\_Integer);\\
 \>PushVal(GetWord);\\
 \>break;
-}
+\end{iconcode}
 
 \texttt{PushVal(x)} pushes x onto the interpreter stack. Thus, the descriptor
 for the integer is constructed by first pushing the constant \texttt{D\_Integer}
@@ -921,10 +908,10 @@ length of the string, rather than its address?
 \item Show the states of the stack for the execution of the virtual
 machine instructions for the following Icon expressions:
 
-\iconcode{
+\begin{iconcode}
 \>   i := i + 1 \\
 \>   l := ???j
-}
+\end{iconcode}
 
 \item Give an example for which
 

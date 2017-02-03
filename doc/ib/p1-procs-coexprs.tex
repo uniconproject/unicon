@@ -24,15 +24,14 @@ As mentioned in Sec. 8.2.4, the virtual machine code for an expression such as
 
 \noindent is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>code for expr0\\
 \>code for expr1\\
 \>code for expr2\\
 \>...\\
 \>code for exprn\\
 \>invoke n
-}
+\end{iconcode}
 
 Consequently, the stack when the \texttt{invoke} instruction is executed is
 
@@ -113,14 +112,13 @@ arguments, local identifiers, and static identifiers, in that order.
 
 For example, the procedure declaration
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>procedure calc(i,j)\\
 \>local k\\
 \>static base, index\\
 \>\>\>\ \ \vdots\\
 \>end
-}
+\end{iconcode}
 
 \noindent has the following procedure block:
 
@@ -288,8 +286,7 @@ Like an operator, a function may fail, return a result, or
 suspend. The coding protocol is the same as for operators.  The
 function find is an example:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 function\{*\} find(s1,s2,i,j)\\
 \>str\_anal( s2, i, j )\\
 \>if !cnv:string(s1) then\\
@@ -326,7 +323,7 @@ function\{*\} find(s1,s2,i,j)\\
 \>\>fail;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 \texttt{str\_anal()} is an RTL multi-line macro for performing the
 standard conversions and defaulting for string analysis functions. It
@@ -335,8 +332,7 @@ ending position. It produces declarations for these 3 names prepended
 with \texttt{cnv\_}. These variables will contain the converted
 versions of the arguments.
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \#begdef str\_anal(s, i, j)\\
 \>declare \{\\
 \>\>C\_integer cnv\_ \#\# i;\\
@@ -387,7 +383,7 @@ versions of the arguments.
 \>\ else\\
 \>\>\ runerr(101,j)\\
 \#enddef
-}
+\end{iconcode}
 
 
 \subsection[10.3.3 Procedure Invocation]{10.3.3 Procedure Invocation}
@@ -461,12 +457,11 @@ continues in the interpreter with the new \texttt{ipc}.
 The three forms of return from a procedure are the same as those from
 a function and correspond to the source-language expressions
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>return e\\
 \>fail\\
 \>suspend e
-}
+\end{iconcode}
 
 The corresponding virtual machine instructions are \texttt{pret},
 \texttt{pfail}, and \texttt{psusp}. For example, the virtual machine
@@ -476,11 +471,10 @@ code for
 
 \noindent is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>pnull\\
 \>pret
-}
+\end{iconcode}
 
 In the case of \texttt{pret}, the result currently on the top of the
 interpreter stack is copied on top of the descriptor pointed to by
@@ -555,8 +549,7 @@ The virtual machine instructions for
 
 are
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>goto\>\>\>\> L3\\
 L1:\\
 \>\>pop\\
@@ -569,7 +562,7 @@ L2:\\
 \>\>goto\>\>\>\> L2\\
 L3:\\
 \>\>create\>\>\>\>L1
-}
+\end{iconcode}
 
 Control goes immediately to \texttt{L3}, where the instruction create
 constructs a co-expression block and returns a descriptor that points
@@ -600,12 +593,11 @@ A co-expression is activated by the expression
 
 \noindent for which the virtual machine code is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\textit{code for expr1}\\
 \>\textit{code for expr2}\\
 \>coact\\
-}
+\end{iconcode}
 
 The more common form of activation,
 \texttt{@}\textit{expr\TextSubscript{0}}, is just an abbreviation for
@@ -749,8 +741,7 @@ The function \texttt{coswitch()} is fastest if it is
 machine-dependent. The version for the x86 with the GCC compiler is an
 example:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 coswitch:\\
 \>pushl\>\> \%ebp\\
 \>movl\>\> \%esp,\%ebp\\
@@ -777,7 +768,7 @@ coswitch:\\
 .L1:\\
 \>leave\\
 \>ret
-}
+\end{iconcode}
 
 If no assembler co-expression switch is available, modern platforms
 with POSIX threads can use Icon 9.5.1's supported form of
@@ -807,15 +798,14 @@ number of local identifiers for the procedure in which
 frame marker at the time of creation, and the values of the arguments
 and local identifiers at the time of creation. Consider, for example,
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>procedure labgen(s)\\
 \>\>local i, j, e\\
 \>\>i := 1\\
 \>\>j := 100\\
 \>\>e := create (s || (i to j) || ":")\\
 \>end
-}
+\end{iconcode}
 
 
 For the call \texttt{labgen({\textquotedbl}L{\textquotedbl})}, the refresh block for \texttt{e} is
@@ -878,7 +868,6 @@ or procedure by means of its string name. Icon supports
 {\textquotedbl}string invocation,{\textquotedbl} which allows the
 value of \textit{expr\TextSubscript{0}} in
 
-\goodbreak
 \iconline{
 \>\textit{ expr\TextSubscript{0}(expr\TextSubscript{1},
 expr\TextSubscript{2}, ..., expr\TextSubscript{n})}

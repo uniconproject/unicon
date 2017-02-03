@@ -59,7 +59,7 @@ used to hold list elements.
 
 The structure declarations for list-header blocks and list-element blocks are
 
-\iconcode{
+\begin{iconcode}
 \>struct b\_list \{\>\>\>\>\>\>\>/* list-header block */\\
 \>\>word title;\>\>\>\>\>\>\>/*\ \ T\_List */\\
 \>\>word size;\>\>\>\>\>\>\>/*\ \ current list size */\\
@@ -77,7 +77,7 @@ The structure declarations for list-header blocks and list-element blocks are
 \>\>union block *listnext;\>\>\>\>\>\>\>/* next list-element block */\\
 \>\>struct descrip lslots[1];\>\>\>\>\>\>\>/* array of slots */\\
 \>\};
-}
+\end{iconcode}
 
 When a list is created, either by
 
@@ -103,8 +103,7 @@ to keep the diagrams to a manageable size.
 
 The code for the list function is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 function\{1\} list(n, x)\\
 \>if is:set(n) then \{\\
 \>\>abstract \{\\
@@ -164,7 +163,7 @@ function\{1\} list(n, x)\\
 \>\>\}\\
 \>\}\\
 end
-}
+\end{iconcode}
 
 The data structures produced for a list are illustrated by the result
 of evaluating
@@ -238,7 +237,7 @@ the '{\textquotedbl}end{\textquotedbl} of the last list-element block,
 assuming there is an unused slot (as there is in this case). The code
 in \texttt{put()} to do this is
 
-\iconcode{
+\begin{iconcode}
 \>/*\\
 \>\ * Point hp to the list-header block and bp to the last\\
 \>\ * list-element block.\\
@@ -297,7 +296,7 @@ in \texttt{put()} to do this is
 \>\>return x;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 The effect on the list-header block and list-element block is:
 
@@ -503,7 +502,7 @@ As elements are removed from a list by pop (which is synonymous with
 get) or pull. The indices in the appropriate list-element block are
 adjusted. The code for pop is
 
-\iconcode{
+\begin{iconcode}
 int c\_get(hp, res)\\
 struct b\_list *hp;\\
 struct descrip *res;\\
@@ -546,11 +545,11 @@ struct descrip *res;\\
 \>hp->size-{}-;\\
 \>return 1;\\
 \}
-}
+\end{iconcode}
 
 \noindent where the \texttt{c\_get()} helper function is invoked from RTL as follows:
 
-\iconcode{
+\begin{iconcode}
 function\{0,1\} get\_or\_pop(x)\\
 \>if !is:list(x) then\\
 \>\>runerr(108, x)\\
@@ -564,7 +563,7 @@ function\{0,1\} get\_or\_pop(x)\\
 \>\>return result;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 Thus, as a result of
 
@@ -724,8 +723,7 @@ until the appropriate one is reached. The result of evaluating
 
 The portion of the subscripting code that handles lists is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>type\_case dx of \{\\
 \>\>list: \{\\
 \>\>\>abstract \{\\
@@ -780,7 +778,7 @@ The portion of the subscripting code that handles lists is
 \>\>return struct\_var(\&bp->lelem.lslots[i], bp);\\
 \>\>\}\\
 \>\}
-}
+\end{iconcode}
 
 For the preceding example, \texttt{a[3]} produces a variable that
 points indirectly to the descriptor for the value 5:
@@ -907,8 +905,7 @@ conventional list. The code extract to convert an integer array to a list
 \texttt{x} is a descriptor that points to the array element and \texttt{y}
 is a descriptor that points to the new value.
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 if (BlkD(x,Intarray)->title==T\_Intarray)\{\\
 \>C\_integer ii;\\
 \>if (cnv:(exact)C\_integer(y, ii)) \\
@@ -934,7 +931,7 @@ if (BlkD(x,Intarray)->title==T\_Intarray)\{\\
 \>\>   *(dptr)(\&xlist->listhead->Lelem.lslots[i]) = y;\\
 \>  \}\\
 \}
-}
+\end{iconcode}
 
 The code to convert an array of real values is very similar to the code for
 integer arrays.

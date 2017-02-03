@@ -491,12 +491,12 @@ special code if the special case occurs an assignment context. It is not
 always possible, however, to determine the context in which a variable is
 used in Icon. Assume \texttt{tb} is a table and consider a procedure of the form
 
-\iconcode{
+\begin{iconcode}
 \>procedure tabvar(n)\\
 \> ...\\
 \>return tb[n]\\
 \>end
-}
+\end{iconcode}
 
 The semantics of Icon dictate that the result returned in this case
 should be a variable, not just its value, so that it is possible to
@@ -525,15 +525,14 @@ distinct from the everyday numerical and string types. The keyword type
 codes are defined symbolically (values for other types are given in
 section 4.4.3).
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \#define \>\>\>T\_Kywdint	\>\>\>\>\>\>\>20 \>\>\>\>/* integer keyword */\\
 \#define \>\>\>T\_Kywdpos	\>\>\>\>\>\>\>21 \>\>\>\>/* keyword \&pos */\\
 \#define \>\>\>T\_Kywdsubj  \>\>\>\>\>\>\>22 \>\>\>\>/* keyword \&subject */\\
 \#define \>\>\>T\_Kywdwin	\>\>\>\>\>\>\>23 \>\>\>\>/* keyword \&window */\\
 \#define \>\>\>T\_Kywdstr	\>\>\>\>\>\>\>24 \>\>\>\>/* string keyword */\\
 \#define \>\>\>T\_Kywdevent \>\>\>\>\>\>\>25 \>\>\>\>/* keyword \&eventsource, etc. */
-}
+\end{iconcode}
 
 There are four keyword variables that require special processing for
 assignment: \texttt{\&trace}, \texttt{\&random}, \texttt{\&subject},
@@ -581,7 +580,7 @@ situation.
 \bigskip
 
 % re-insert colors
-\iconcode{
+\begin{iconcode}
 \>\#if IntBits != WordBits\\
 \>\>{\color{blue}\#ifdef LongLongWord}\\
 \>\>\>{\color{blue}typedef long long int word;}\\
@@ -594,11 +593,11 @@ situation.
 \>typedef int word;\\
 \>typedef unsigned int uword;\\
 \>\#endif
-}
+\end{iconcode}
 
 A descriptor is declared as a structure:
 
-\iconcode{
+\begin{iconcode}
 \>struct descrip \{\ \ /* descriptor */\\
 \>\>word dword;\ \ /*\ \ type field */\\
 \>\>union \{\\
@@ -612,7 +611,7 @@ A descriptor is declared as a structure:
 \>\>\>struct descrip *dptr;\ \ /*\ \ pointer to a descriptor */\\
 \>\>\} vword;\\
 \>\};
-}
+\end{iconcode}
 
 The v-word of a descriptor is a union that reflects its various uses:
 an integer, a pointer to a string, a pointer to a block, or a pointer
@@ -623,7 +622,7 @@ to another descriptor (in the case of a variable).
 Each block type has a structure declaration. For example. the
 declaration for record blocks is
 
-\iconcode{
+\begin{iconcode}
 \>struct b\_record \{\>\>\>\>\>\>\>\>\> /* record block */\\
 \>\>word title;\>\>\>\>\>\>\>\> /*\ T\_Record */\\
 \>\>word blksize;\>\>\>\>\>\>\>\> /*\ \ size of block */\\
@@ -631,7 +630,7 @@ declaration for record blocks is
 \>\>union block *recdesc;\>\>\>\>\>\>\>\> /*   pointer to record constructor */\\
 \>\>struct descrip fields[1];\>\>\>\>\>\>\>\> /*\ \ fields */\\
 \>\};
-}
+\end{iconcode}
 
 Blocks for records vary in size, depending on the number of fields
 declared for the record type. The size of 1 in
@@ -648,15 +647,14 @@ a means of accessing portions of such blocks from C.
 
 The declaration for substring trapped-variable blocks is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 struct b\_tvsubs \{\>\>\>\>\>\>\>\>/* substring trapped variable block */\\
 \>word title;\>\>\>\>\>\>\>	    /* T\_Tvsubs */\\
 \>word sslen;\>\>\>\>\>\>\>		/* length of substring */\\
 \>word sspos;\>\>\>\>\>\>\>		/*  position of substring */\\
 \>struct descrip ssvar;\>\>\>\>\>\>\>/* variable that substring is from */\\
 \};
-}
+\end{iconcode}
 
 Note that the title fields of \texttt{b\_record} and
 \texttt{b\_tvsubs} contain type codes, as indicated in previous
@@ -668,7 +666,7 @@ can be determined from their type.
 The block union given in the declaration of \texttt{struct descrip}
 consists of a union of all block types:
 
-\iconcode{
+\begin{iconcode}
 \>union block \{\\
 \>\>struct b\_real realblk;\\
 \>\>struct b\_cset cset;\\
@@ -689,7 +687,7 @@ consists of a union of all block types:
 \>\>struct b\_slots slots;\\
 \>\>struct b\_bignum bignumblk;\\
 \>\};
-}
+\end{iconcode}
 
 Note that there are several kinds of blocks in addition to those that
 correspond to source-language data types.
@@ -698,7 +696,7 @@ correspond to source-language data types.
 
 The type codes are defined symbolically:
 
-\iconcode{
+\begin{iconcode}
 \#define\>\>\> T\_Null		\>\>\>\>\>0\\	
 \#define\>\>\> T\_Integer	\>\>\>\>\>1\\	
 \#define\>\>\> T\_Lrgint	\>\>\>\>\>2\\	
@@ -719,25 +717,25 @@ The type codes are defined symbolically:
 \#define\>\>\> T\_Refresh	\>\>\>\>\>17\\
 \#define\>\>\> T\_Coexpr	\>\>\>\>\>18\\
 \#define\>\>\> T\_External	\>\>\>\>\>19
-}
+\end{iconcode}
 
 The type codes in diagrams are abbreviated, as indicated by previous examples.
 
 
 The defined constants for d-word flags are
 
-\iconcode{
+\begin{iconcode}
 \>n\>\>F\_Nqual\\
 \>p\>\>F\_Ptr\\
 \>v\>\>F\_Var\\
 \>t\>\>F\_Tvar
-}
+\end{iconcode}
 
 The values of these flags depend on the word size of the computer.
 
 The d-words of descriptors are defined in terms of flags and type codes:
 
-\iconcode{
+\begin{iconcode}
 \#define D\_Null	\>\>\>\>\>\>\>\>(T\_Null | F\_Nqual)\\                   
 \#define D\_Integer \>\>\>\>\>\>\>\>(T\_Integer | F\_Nqual)\\            	 
 \#define D\_Lrgint  \>\>\>\>\>\>\>\>(T\_Lrgint | F\_Ptr | F\_Nqual)\\     	 
@@ -758,7 +756,7 @@ The d-words of descriptors are defined in terms of flags and type codes:
 \#define D\_Refresh \>\>\>\>\>\>\>\>(T\_Refresh | F\_Ptr | F\_Nqual)\\   	 
 \#define D\_Var     \>\>\>\>\>\>\>\>(F\_Var | F\_Nqual | F\_Ptr)\\   
 \#define D\_Tvar    \>\>\>\>\>\>\>\>(D\_Var | F\_Tvar)
-}
+\end{iconcode}
 
 As indicated previously, flags, type codes, and d-words are
 distinguished by the prefixes \texttt{F\_}, \texttt{T\_}, and
@@ -773,7 +771,7 @@ for arguments and results. Some of these are illustrated by the RTL
 function for the Icon operator \texttt{*x}, which produces the size of
 \texttt{x}:
 
-\iconcode{
+\begin{iconcode}
 \>operator\{1\} * size(x)\\
 \>abstract \{ return integer \}\\
 \>type\_case x of \{\\
@@ -799,7 +797,7 @@ function for the Icon operator \texttt{*x}, which produces the size of
 \>\>\>\ \ \}\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 \texttt{operator} is an RTL construct that performs several
 operations. One of these operations is to provide a C function
@@ -827,10 +825,10 @@ If \texttt{x} is a qualifier, its length is placed in the v-word of
 the return value descriptor, using the macros IntVal and StrLen, which
 are defined as
 
-\iconcode{
+\begin{iconcode}
 \>\#define IntVal(d)\ \ ((d).vword.integr)\\
 \>\#define StrLen(d)\ \ ((d).dword)
-}
+\end{iconcode}
 
 If \texttt{x} is not a qualifier, then the size depends on the
 type. The macro \texttt{Type()} isolates the type code

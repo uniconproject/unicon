@@ -147,11 +147,11 @@ As mentioned previously, any kind of value can be assigned to any
 variable. For example, x might have an integer value at one time and a
 string value at another:
 
-\iconcode{
+\begin{iconcode}
 \>x := 3 \\
 \>... \\
 \>x := "hello"
-}
+\end{iconcode}
 
 Type checking is performed during program execution. For example, in
 
@@ -278,10 +278,10 @@ is reached.
 
 Failure provides a natural way to control loops. For example,
 
-\iconcode{
+\begin{iconcode}
 \>  while line := read(f) do\\
 \> \>  write(line)
-}
+\end{iconcode}
 
 \noindent
 writes the lines from the file \texttt{f} until an end of file causes
@@ -403,11 +403,11 @@ to the null value.
 
 An example of the use of break is:
 
-\iconcode{
+\begin{iconcode}
 \>while line := read(f) do\\
 \>\ \ if line == "end" then break\\
 \>\ \ else write(line)
-}
+\end{iconcode}
 
 Evaluation of the loop terminates if read fails or if the file \texttt{f}
 contains a line consisting of ``end''.
@@ -415,11 +415,11 @@ contains a line consisting of ``end''.
 The expression next causes transfer to the beginning of the loop in
 which it occurs. For example,
 
-\iconcode {
+\begin{iconcode}
 \> while line := read(f) do \\
 \> \> if line == "comment" then next \\
 \> \> else write(line)
-}
+\end{iconcode}
 
 \noindent does not write the lines of f that consist of
 {\textquotedbl}comment{\textquotedbl}.
@@ -441,12 +441,12 @@ selecting one of several expressions to evaluate based on the value of
 a control expression, rather than its success or failure. The case
 expression has the form
 
-\iconcode{
+\begin{iconcode}
 \>case \textit{expr} of \{\\
 \>\>case clauses \\
 \>\>... \\
 \>\>\}
-}
+\end{iconcode}
 
 The value of \textit{expr} is used to select one of the case
 clauses. A case clause has the form
@@ -466,13 +466,13 @@ succeeds. There is also a default case clause, which has the form
 If no other case clause is selected, expr3 in the default clause is
 evaluated. An example is
 
-\iconcode{
+\begin{iconcode}
 \>case line := read(f) of \{\\
 \>\ \ "end":\ \ \ \ write("*** end ***")\\
 \>\ \ "comment":\ \ write("*** comment ***")\\
 \>\ \ default:\ \ write(line)\\
 \>\ \ \}
-}
+\end{iconcode}
 
 If the evaluation of the control clause fails, as for an end of file
 in this example, the entire case expression fails.  Otherwise, the
@@ -508,11 +508,11 @@ Iteration is designated by the control structure
 \noindent in which expr1 is repeatedly resumed to produce its
 results. For each such result, expr2 is evaluated. For example,
 
-\iconcode{
+\begin{iconcode}
 \>every i := find("e", "They sit like bumps on a log.")\\
 \>do\\
 \>\ \ write(i)
-}
+\end{iconcode}
 
 \noindent writes 3 and 13.
 
@@ -535,10 +535,10 @@ Icon's expression-evaluation mechanism.
 
 Goal-directed evaluation is illustrated by
 
-\iconcode{
+\begin{iconcode}
 \>if find("e", "They sit like bumps on a log") > 10\\
 \>then write("found")
-}
+\end{iconcode}
 
 The first result produced by \texttt{find()} is 3, and the comparison
 operation fails. Because of goal-directed evaluation, find is
@@ -546,10 +546,10 @@ automatically resumed to produce another value. Since this value, 13,
 is greater than 10, the comparison succeeds, and found is written. On
 the other hand, in
 
-\iconcode{
+\begin{iconcode}
 \>if find("e", "They sit like bumps on a log.") > 20\\
 \>then write("found")
-}
+\end{iconcode}
 
 \noindent the comparison fails for 3 and 13. When find is resumed
 again, it does not produce another result, the control clause of
@@ -704,10 +704,10 @@ writes\ \ 11, 12, 13, 21, 22, 23, 31, 32, 33.
 control backtracking to obtain additional results from expressions
 that have previously produced results, as in
 
-\iconcode{
+\begin{iconcode}
 \>if find("e", "They sit like bumps on a log.") > 10\\
 \>then write("found")
-}
+\end{iconcode}
 
 Control backtracking is limited by a number of syntactic
 constructions. For example, in
@@ -968,12 +968,12 @@ s2 are unchanged, as this example shows. If a character occurs more
 than once in s2, its right-most correspondence in s3
 applies. Consequently,
 
-\iconcode{
+\begin{iconcode}
 \>s2 := \&lcase || \&ucase || "aeiou"\\
 \>s3 := repl("|",26) ||\\
 \>repl("u",26) || "*****"\\
 \>write(map("Remain still!", s2, s3))
-}
+\end{iconcode}
 
 \noindent
 % this is just narrative text
@@ -1042,10 +1042,10 @@ subject to the value that it had before the matching function was
 evaluated. For example, suppose that line contains the substring
 {\textquotedbl}::={\textquotedbl}. Then
 
-\iconcode{
+\begin{iconcode}
 \>line ? \\
 \>\>((tab(find("::=") + 3)) \& write(move(10)) | write(tab(0)))
-}
+\end{iconcode}
 
 \noindent writes the 10 characters after \text{"::="}, provided there
 are 10 more characters. However, if there are not 10 characters
@@ -1129,10 +1129,10 @@ A list value is a pointer to a structure that contains the elements of
 the list. Assignment of a list value copies this pointer, but it does
 not copy the structure. Consequently, in
 
-\iconcode{
+\begin{iconcode}
 \>states := ["Nevada", "Texas", "Maine", "Georgia"]\\
 \>slist := states
-}
+\end{iconcode}
 
 \noindent
 both states and slist point to the \textit{same} structure. Because of this,
@@ -1169,10 +1169,10 @@ The elements of a list may be of any type, including lists, as in
 
 Structures also can be used to represent loops, as in
 
-\iconcode{
+\begin{iconcode}
 \>graph := ["a", ""]\\
 \>graph[2] := graph
-}
+\end{iconcode}
 
 \noindent which can be depicted as
 
@@ -1199,17 +1199,17 @@ right end of the increasing its size by one.  Similarly,
 \texttt{push(a, x)} adds the value of \texttt{x} to the left end of
 \texttt{a}. For example,
 
-\iconcode{
+\begin{iconcode}
 \>lines := []\\
 \>while put(lines, read(f))
-}
+\end{iconcode}
 
 \noindent constructs a list of the lines from the file f. Conversely,
 
-\iconcode{
+\begin{iconcode}
 \>lines := []\\
 \>while push(lines, read(f))
-}
+\end{iconcode}
 
 \noindent constructs a list of lines in reverse order.
 
@@ -1217,11 +1217,11 @@ The functions \texttt{pop(a)} and \texttt{get(a)} are the same. They
 both remove an element from the left end of a and return it as the
 value of the function call, but they fail if a is empty. Consequently,
 
-\iconcode{
+\begin{iconcode}
 \>lines := []\\
 \>while push(lines, read(f))\\
 \>while write(pop(lines))
-}
+\end{iconcode}
 
 \noindent writes out the lines of \texttt{f} in reverse order. The
 function \texttt{pull(a)} is similar, but it removes an element from
@@ -1459,7 +1459,7 @@ begins with a call of the procedure main.
 
 An example of a procedure declaration is:
 
-\iconcode{
+\begin{iconcode}
 \>procedure maxstr(slist)\\
 \>\>local max, value\\
 \>\>max := 0\\
@@ -1467,7 +1467,7 @@ An example of a procedure declaration is:
 \>\>\>if value> max then max := value\\
 \>\>return max\\
 \>end
-}
+\end{iconcode}
 
 \noindent This procedure computes the longest string in a list of strings.
 The formal parameter slist and the identifiers max and value are local to
@@ -1477,11 +1477,11 @@ allocated when \texttt{maxstr()} is called and deallocated when
 
 A procedure call has the same form as a function call. For example,
 
-\iconcode{
+\begin{iconcode}
 \>lines := []\\
 \>while put(lines, read(f))\\
 \>write(maxstr(lines))
-}
+\end{iconcode}
 
 \noindent
 writes the length of the longest line in the file \texttt{f}.
@@ -1492,7 +1492,7 @@ procedure body in place of return. For example, the following
 procedure returns the length of the longest string in \texttt{slist}
 but fails if that length is less than limit:
 
-\iconcode{
+\begin{iconcode}
 \>procedure maxstr(slist, limit)\\
 \>\>local max, value\\
 \>\>max := 0\\
@@ -1500,7 +1500,7 @@ but fails if that length is less than limit:
 \>\>\>if value> max then max := value\\
 \>\>if max < limit then fail else return max\\
 \>end
-}
+\end{iconcode}
 
 \noindent Flowing off the end of a procedure body without an explicit
 \texttt{return} is equivalent to \texttt{fail}.
@@ -1513,7 +1513,7 @@ is called. The use of a static identifier and an initial clause is
 illustrated by the following procedure, which returns the longest of
 all the strings in the lists it has processed:
 
-\iconcode{
+\begin{iconcode}
 \>procedure maxstrall(slist)\\
 \>\>local value\\
 \>\>static max\\
@@ -1522,7 +1522,7 @@ all the strings in the lists it has processed:
 \>\>\>if value> max then max := value\\
 \>\>return max\\
 \>end
-}
+\end{iconcode}
 
 \textbf{Procedures and Functions.} Procedures and functions are used
 in the same way. Their names have global scope.  Other identifiers can
@@ -1550,11 +1550,11 @@ of such identifiers. In this case, the initial value of
 declaration for it. Similarly, the initial value of \texttt{write} is
 a function. These values can be assigned to other variables, as in
 
-\iconcode{
+\begin{iconcode}
 \>print := write\\
 \>\>\>\ \ ...\\
 \>print(maxstr(lines))
-}
+\end{iconcode}
 
 \noindent in which the function that is the initial value of
 \texttt{write} is assigned to \texttt{print}.
@@ -1597,25 +1597,25 @@ Procedures may be called recursively. The recursive nature of a call
 depends on the fact that procedure names are global. The
 {\textquotedbl}Fibonacci strings{\textquotedbl} provide an example:
 
-\iconcode{
+\begin{iconcode}
 \>procedure fibstr(i)\\
 \>\>if i = 1 then return "a"\\
 \>\>else if i = 2 then return "b"\\
 \>\>else return fibstr(i - 1) || fibstr(i - 2)\\
 \>end
-}
+\end{iconcode}
 
 An identifier that is not declared in a procedure and is not global
 defaults to local. Thus, local declarations can be omitted, as in
 
-\iconcode{
+\begin{iconcode}
 \>procedure maxstr(slist)\\
 \>\>max := 0\\
 \>\>every value := * !slist do\\
 \>\>\>if value > max then max := value\\
 \>\>return max\\
 \>end
-}
+\end{iconcode}
 
 \textbf{Procedures as Generators}. In addition to returning and
 failing, a procedure can also suspend. In this case, the values of its
@@ -1623,14 +1623,14 @@ arguments and local identifiers are not destroyed, and the call can
 be resumed to produce another result in the same way a built-in
 generator can be resumed. An example of such a generator is
 
-\iconcode{
+\begin{iconcode}
 \>procedure intseq(i)\\
 \>\>repeat \{\\
 \>\>\>suspend i\\
 \>\>\>i +:= 1\\
 \>\>\>\}\\
 \>end
-}
+\end{iconcode}
 
 A call \texttt{intseq(10)}, for example, is capable of generating the
 infinite sequence of integers 10, 11, 12, ... .  For example,
@@ -1645,7 +1645,7 @@ If the argument of suspend is a generator, the generator is resumed
 when the call is resumed and the call suspends again with the result
 it produces. A generator of the Fibonacci strings provides an example:
 
-\iconcode{
+\begin{iconcode}
 \>procedure fibstrseq()\\
 \>\>local s1, s2, s3\\
 \>\>s1 := "a"\\
@@ -1657,7 +1657,7 @@ it produces. A generator of the Fibonacci strings provides an example:
 \>\>\>s2 := s3\\
 \>\>\>\}\\
 \>end
-}
+\end{iconcode}
 
 When this procedure is called, the first suspend expression produces
 the value of \texttt{s1}, \texttt{"a"}. If the call of
@@ -1671,11 +1671,11 @@ Repeated alternation often is useful in supplying an endless number of
 alternatives. For example, the procedure \texttt{intseq(i)} can be
 rewritten as
 
-\iconcode{
+\begin{iconcode}
 \>procedure intseq(i)\\
 \>\>suspend i | (i +:= |1)\\
 \>end
-}
+\end{iconcode}
 
 Note that \texttt{{\textbar}1} is used to provide an endless sequence
 of increments.
@@ -1710,12 +1710,12 @@ string-valued global identifier.
 In these exceptional cases, the variable is returned and assignment
 can be made to the procedure call. An example is
 
-\iconcode{
+\begin{iconcode}
 \>procedure maxel(a, i, j)\\
 \>\>if i > j then return a[i]\\
 \>\>else return a[j]\\
 \>end
-}
+\end{iconcode}
 
 Here a list element, depending on the values of \texttt{i} and
 \texttt{j}, is returned. An assignment can be made to it, as in
@@ -1805,19 +1805,19 @@ later time. For example,
 The operation \texttt{@label} activates this co-expression, which
 corresponds to resuming its expression. For example,
 
-\iconcode{
+\begin{iconcode}
 \>write(@label)\\
 \>write(" \ \ \ tstl \ \ \ \ count")\\
 \>write(@label)
-}
+\end{iconcode}
 
 \noindent writes
 
-\iconcode{
+\begin{iconcode}
 \>L1:\\
 \>\>\ \ tstl \ \ \ \ count\\
 \>L2:
-}
+\end{iconcode}
 
 If the resumption of the expression in a co-expression does not
 produce a result, the co-expression activation fails.  For example,
@@ -1847,7 +1847,7 @@ they have at the time the create expression is evaluated. These copied
 identifiers subsequently are independent of the local identifiers in
 the procedure. Consider, for example,
 
-\iconcode{
+\begin{iconcode}
 procedure labgen(tag)\\
 \>local i, j\\
 \> ...\\
@@ -1859,7 +1859,7 @@ procedure labgen(tag)\\
 \> if i > 15 then return e\\
 \> ...\\
 end
-}
+\end{iconcode}
 
 The expression
 
@@ -1870,9 +1870,9 @@ The expression
 \noindent assigns to \texttt{labels} a co-expression that is
 equivalent to evaluating
 
-\iconcode{
+\begin{iconcode}
 \>create ("X" || (10 to 20) || ":")
-}
+\end{iconcode}
 
 The fact that \texttt{i} is changed after the co-expression was
 assigned to \texttt{e}, but before \texttt{e} returns, does not affect
@@ -1938,7 +1938,7 @@ for every trace message. Tracing stops if the value of
 \texttt{\&trace} becomes zero, which is its initial value. Suppose
 that the following program is contained in the file fibstr.icn:
 
-\iconcode{
+\begin{iconcode}
 \>procedure main()\\
 \>\>\&trace := -1\\
 \>\>fibstr(3)\\
@@ -1949,11 +1949,11 @@ that the following program is contained in the file fibstr.icn:
 \>\>else if i = 2 then return "b"\\
 \>\>else return fibstr(i -1) || fibstr(i -2)\\
 \>end
-}
+\end{iconcode}
 
 The trace output of this program is
 
-\iconcode{
+\begin{iconcode}
 \textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\\
 \>fibstr.icn: 9\ \ | | fibstr(2)\\
 \>fibstr.icn: 8\ \ | | fibstr returned "b"\\
@@ -1961,7 +1961,7 @@ The trace output of this program is
 \>fibstr.icn: 7\ \ | | fibstr returned "b"\\
 \>fibstr.icn: 9\ \ | fibstr returned "ba"\\
 \>fibstr.icn: 4\ \ main failed
-}
+\end{iconcode}
 
 In addition to the indentation corresponding to the level of procedure
 call, the value of the keyword \texttt{\&level} also is the current
@@ -1975,16 +1975,16 @@ current level. If \texttt{i} is omitted, the default is
 to standard error output. The format of the listing produced by
 display is illustrated by the following program:
 
-\iconcode{
+\begin{iconcode}
 \>procedure main()\\
 \>\>log := open("grade.log", "w")\\
 \>\>while write(log, check(readO))\\
 \>end
-}
+\end{iconcode}
 
 \bigskip
 
-\iconcode{
+\begin{iconcode}
 \>procedure check(value)\\
 \>\>static count\\
 \>\>initial count := 0\\
@@ -1997,13 +1997,13 @@ display is illustrated by the following program:
 \>\>\>stop("nonnumeric value")\\
 \>\>\>\}\\
 \>end
-}
+\end{iconcode}
 
 Suppose that the tenth line of input is the nonnumeric string
 \texttt{{\textquotedbl}3.a{\textquotedbl}}. Then the output of
 \texttt{display()} is
 
-\iconcode{
+\begin{iconcode}
 \>check local identifiers:\\
 \>\>value = "3.a"\\
 \>\>count = 9\\
@@ -2018,7 +2018,7 @@ Suppose that the tenth line of input is the nonnumeric string
 \>\>numeric = function numeric\\
 \>\>display = function display\\
 \>\>stop = function stop
-}
+\end{iconcode}
 
 \textbf{Error Messages}. If an error is encountered during program
 execution, a message is written to standard error output and execution
@@ -2032,11 +2032,11 @@ in the file check.icn is
 \noindent
 evaluation of this expression produces the error message
 
-\iconcode{
+\begin{iconcode}
 \>Run-time error 102 at line 10 in check.icn\\
 \>numeric expected\\
 \>offending value: "x"
-}
+\end{iconcode}
 
 \section[2.2 Language Features and the Implementation]{2.2 Language Features and the Implementation}
 
@@ -2218,11 +2218,11 @@ to the balance of the implementation.
 \noindent \textbf{2.1} What is the outcome of the following expression if the
 file f contains a line consisting of ``end'', or if it does not?
 
-\iconcode{
+\begin{iconcode}
 \>\ while line := read(f) do\\
 \>\>\>\ if line == "end" then break\\
 \>\>\>\ else write(line)
-}
+\end{iconcode}
 
 \noindent \textbf{2.2} What does
 

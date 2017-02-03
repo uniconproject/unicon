@@ -179,10 +179,10 @@ string construction operation attempts to use another instance of a
 string that may exist somewhere else in the string region. As a
 result,
 
-\iconcode{
+\begin{iconcode}
 \> s1 := "ab" || "c"\\
 \> s2 := "a" || "bc"
-}
+\end{iconcode}
 
 \noindent produce two distinct strings:
 
@@ -198,7 +198,7 @@ result,
 
 The RTL code for the concatenation operation is
 
-\iconcode{
+\begin{iconcode}
 \>operator\{1\} || cater(x,y)\\
 \>if !cnv:string(x) then\\
 \>\>runerr(103, x)\\
@@ -255,7 +255,7 @@ The RTL code for the concatenation operation is
 \>\>return result;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 The function \texttt{strreq(n)} assures that there are at least
 \texttt{n} bytes available in the allocated string region. See Chapter
@@ -346,10 +346,10 @@ assigned to \texttt{s1}, as shown by
 Of course, the length of the string may be increased or decreased by
 assignment to a substring, as in
 
-\iconcode{
+\begin{iconcode}
 \>s1[3] := "xxx"\\
 \>s1 [2:5] := ""
-}
+\end{iconcode}
 
 \subsection[5.1.4 Assignment to Subscripted Strings]{5.1.4 Assignment to Subscripted Strings}
 
@@ -484,7 +484,7 @@ that implements it illustrates several aspects of string processing:
 %% [DPW]
 %% ToDo: Check if this code is actually the latest (I remember patching it recently
 %%       to make it thread safe)
-\iconcode{
+\begin{iconcode}
 function\{1\} map(s1,s2,s3)\\
 \>/*\\
 \>\ * s1 must be a string; s2 and s3 default to (string \\
@@ -613,7 +613,7 @@ function\{1\} map(s1,s2,s3)\\
 \>\>\>return result;\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 The mapping is done using the character array \texttt{maptab}. This
 array is set up by first assigning every possible character to its own
@@ -680,13 +680,13 @@ those in ASCII character set.
 
 The C structure for a cset block is
 
-\iconcode{
+\begin{iconcode}
 \>struct b\_cset \{\>\>\>\>\>\>\>\>\>\> /* cset block */\\
 \>\>word title;\>\>\>\>\>\>\>\>\>\> /*\ \ T\_Cset */\\
 \>\>word size;\>\>\>\>\>\>\>\>\>\> /*\ \ size of cset */\\
 \>\>unsigned int bits [CsetSize];\>\>\>\>\>\>\>\>\>\> /*\ \ array of bits */\\
 \>\};
-}
+\end{iconcode}
 
 \noindent where CsetSize is the number of words required to make up a
 total of 256 bits. CsetSize is 8 on a computer with 32-bit words and 4
@@ -700,8 +700,7 @@ cset are represented by a bit vector that is divided into words to
 accommodate conventional computer architectures. For example, the C
 code for cset complementation is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 operator\{1\} \~{} compl(x)\\
 \>/*\\
 \>\ * x must be a cset.\\
@@ -728,7 +727,7 @@ operator\{1\} \~{} compl(x)\\
 \>\>return cset(cp);\\
 \>\>\}\\
 end
-}
+\end{iconcode}
 
 \textsc{Retrospective}: The central role of strings in Icon and the
 nature of the operations performed on them leads to a representation
@@ -771,12 +770,12 @@ exists before allocating the space for it. Evaluate this proposal.
 \noindent\textbf{5.5} 
 Consider the following four expressions:
 
-\iconcode{
+\begin{iconcode}
 \> s1 [i] := s2\\
 \> s1 [i+:1] := s2\\
 \> a1 [i] := a2\\
 \> a1 [i+:1] := a2
-}
+\end{iconcode}
 
 \noindent where \texttt{s1} and \texttt{s2} have string values and \texttt{a1}
 and \texttt{a2} have list values. Describe the essential differences

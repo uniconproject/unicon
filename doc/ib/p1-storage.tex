@@ -387,11 +387,10 @@ possibility of computational access. For example, it is always
 possible to access the value of \texttt{\&subject}, and this value
 must be preserved by garbage collection. On the other hand, in
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>a := [1,2,3]\\
 \>a := list(10)
-}
+\end{iconcode}
 
 \noindent after the execution of the second assignment, the first list
 assigned to a is inaccessible and can be collected.
@@ -469,13 +468,12 @@ its v-word contains a pointer (that is, if its d-word contains a p
 flag). For a pointer \texttt{dp} to a descriptor, the following checks
 are performed:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>if (Qual(*dp))\\
 \>\>postqual(dp);\\
 \>else if (Pointer(*dp))\\
 \>\>markblock(dp);
-}
+\end{iconcode}
 
 
 \noindent
@@ -487,8 +485,7 @@ region, since strings in other parts of memory are not of interest
 during garbage collection. If the string is in the allocated string
 region, a pointer to the qualifier is placed in an array:
 
-\goodbreak
-\iconcode{\\
+\begin{iconcode}\\
 \>void postqual(dptr dp)\\
 \>\{\\
 \>\>\>\vdots\\
@@ -496,7 +493,7 @@ region, a pointer to the qualifier is placed in an array:
 \>\>*qualfree++ = dp;\\
 \>\>\}\\
 \>\}
-}
+\end{iconcode}
 
 
 
@@ -537,11 +534,10 @@ record declaration
 \noindent
 and that the following expressions are evaluated:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>x := term("chair", "noun",4)\\
 \>y := x 
-}
+\end{iconcode}
 
 The values of \texttt{x}, \texttt{y}, and the block they point to are
 related as follows:
@@ -872,8 +868,7 @@ marker is skipped and new frame pointers are set up from it.
 
 The routine for marking blocks is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static void markblock(dp)\\
 dptr dp;\\
 \>\{\\
@@ -1001,7 +996,7 @@ dptr dp;\\
 \>\>/* {\dots} code for blocks found in other regions */\\
 \>\>\}\\
 \>\}
-}
+\end{iconcode}
 
 The macro \texttt{BlkType(cp)} produces the type code of the block
 pointed to by \texttt{cp}. The macro \texttt{BlkSize(cp)} uses the
@@ -1070,7 +1065,6 @@ string region:
 \put(0,0){\tlboxlabel{q7}}
 \end{picture}
 
-\goodbreak
 The pointers to the allocated string region are
 
 \begin{center}
@@ -1166,7 +1160,7 @@ Continuing the previous example, \texttt{quallist} becomes
 The v-words of the qualifiers in the order of the pointers in
 \texttt{quallist} now are
 
-\iconcode{
+\begin{iconcode}
 \>\>\>strbase+400\\
 \>\>\>strbase+400\\
 \>\>\>strbase+400\\
@@ -1174,7 +1168,7 @@ The v-words of the qualifiers in the order of the pointers in
 \>\>\>strbase+420\\
 \>\>\>strbase+430\\
 \>\>\>strbase+430
-}
+\end{iconcode}
 
 Since qualifiers may reference overlapping strings, care must be taken
 to identify contiguous ``clumps'' of characters that may be shared by
@@ -1245,11 +1239,9 @@ and the seven qualifiers that point to it are
 \put(0,0){\tlboxlabel{q7}}
 \end{picture}
 
-\goodbreak
 The routine for compacting the allocated string region and adjusting pointers to it is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static void scollect(extra)\\
 word extra;\\
 \>\{\\
@@ -1312,7 +1304,7 @@ word extra;\\
 \>\>*dest++ = *source++;\\
 \>strfree = dest;\\
 \>\}
-}
+\end{iconcode}
 
 
 The argument \texttt{extra} provides an offset in case the string region is
@@ -1321,12 +1313,12 @@ moved. See Sec. 11.3.5.
 Sorting is done by the C library routine qsort, whose fourth argument
 is a routine that performs the comparison
 
-\iconcode{
+\begin{iconcode}
 \>static int qlcmp(dptr *q1, dptr *q2)\\
 \>\{\\
 \>\>return (int)(DiffPtrs(StrLoc(**q1),Strloc(**q2)));\\
 \>\}
-}
+\end{iconcode}
 
 
 \textbf{Blocks}. After the location phase, some blocks in the
@@ -1510,8 +1502,7 @@ becomes
 
 The routine for adjusting pointers to the allocated block region is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static void adjust(char *source, char *dest)\\
 \>\{\\
 \>register union block **nxtptr, **tptr;\\
@@ -1541,7 +1532,7 @@ static void adjust(char *source, char *dest)\\
 \>\>source += BlkSize(source);\\
 \>\>\}\\
 \>\}
-}
+\end{iconcode}
 
 When the pointer-adjustment phase is complete, the blocks can be
 moved. At this time, all the block titles contain type codes, and
@@ -1563,8 +1554,7 @@ relative situation is the same as it was before garbage collection.
 
 The routine for compacting the allocated block region is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static void compact(source)\\
 char *source;\\
 \{\\
@@ -1602,7 +1592,7 @@ char *source;\\
 \>\ */\\
 \>blkfree = dest;\\
 \}
-}
+\end{iconcode}
 
 The routine \texttt{mvc(n, source, dest)} moves n bytes from source to dest.
 
@@ -1617,8 +1607,7 @@ list. For live co-expressions, the type code in the title is
 restored. The routine \texttt{cofree} that frees co-expression blocks is
 
 \bigskip
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static void cofree()\\
 \{\\
 \>register struct b\_coexpr **ep, *xep;\\
@@ -1657,7 +1646,7 @@ static void cofree()\\
 \>\>\>\}\\
 \>\>\}\\
 \}
-}
+\end{iconcode}
 
 \subsection[11.3.5 Multiple Regions]{11.3.5 Multiple Regions}
 
@@ -1693,8 +1682,7 @@ small. Space for \texttt{quallist} is obtained in small increments
 
 This is done in \texttt{postqual()}, for which the complete routine is
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 static void postqual(dptr dp)\\
 \>\{\\
 \>char *newqual;\\
@@ -1722,7 +1710,7 @@ static void postqual(dptr dp)\\
 \>\>*qualfree++ = dp;\\
 \>\>\}\\
 \>\}
-}
+\end{iconcode}
 
 The amount of stack space required during garbage collection depends
 primarily on the depth of recursion in calls to \texttt{markblock()}
@@ -1768,15 +1756,14 @@ advance. This routine checks the specified region to assure the amount
 of free space needed is actually available. If it is not, it calls the
 garbage collector. The code for \texttt{reserve()} is conceptually
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>char *reserve(int r, uword n)\\
 \>\{\\
-\>\>if (DiffPtrs(regions[r]->end,regions[r]->free < n)\\
+\>\>if (DiffPtrs(regions[r]->end,regions[r]->free < n))\\
 \>\>\>collect(r,n);\\
 \>\>return regions[r]->free;\\
 \>\}
-}
+\end{iconcode}
 
 \noindent
 In practice, things are more complicated, as the current region may be
@@ -1787,8 +1774,7 @@ request.
 The string allocator mainly ensures space is available and then
 updates the free pointer:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>char *alcstr(char *s, word slen)\\
 \>\{\\
 \>tended struct descrip ts;\\
@@ -1823,7 +1809,7 @@ updates the free pointer:
 \>strfree = d;\\
 \>return ofree;\\
 \>\}
-}
+\end{iconcode}
 
 If a garbage collection occurs, a parameter is passed to be sure that
 enough space is collected to satisfy any remaining allocation
@@ -1848,8 +1834,7 @@ maximum space needed ahead of time guarantees subsequent calls to
 \texttt{alcstr()} will be contiguous. The maximum needed for image
 would be \texttt{StrLen(source)*4+2}, done using a shift operator:
 
-\goodbreak
-\iconcode{
+\begin{iconcode}
 \>\>\>s = StrLoc(source);\\
 \>\>\>len = StrLen(source);\\
 \>\>\>Protect (reserve(Strings,(len <{}< 2) + 2), return Error);\\
@@ -1860,7 +1845,7 @@ would be \texttt{StrLen(source)*4+2}, done using a shift operator:
 \>\>\>\>StrLen(*dp2) += doimage(*s++, '"');\\
 \>\>\>Protect(alcstr("{\textbackslash}"", (word)(1)), return Error);\\
 \>\>\>++StrLen(*dp2);
-}
+\end{iconcode}
 
 A disadvantage of predictive need is that the maximum amount of
 storage needed must be determined and care must be taken to make

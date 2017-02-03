@@ -41,20 +41,20 @@ code.
 The global declarations that exist in order to provide a
 Lex-compatible API include:
 
-\iconcode{
+\begin{iconcode}
 \$include "ytab\_h.icn" \> \> \> \> \> \> \> \> \> \> \> \# yacc's token categories \\
 global yytext \> \> \> \> \> \> \> \> \> \> \> \# lexeme \\
 global yyin \> \> \> \> \> \> \> \> \> \> \> \# source file we are reading \\
 global yytoken \> \> \> \> \> \> \> \> \> \> \> \# token (a record) \\
 global yylineno, yycolno, yyfilename \> \> \> \> \> \> \> \> \> \> \> \# source location
-}
+\end{iconcode}
 
 \subsection[26.2.2 Character Categories]{26.2.2 Character Categories}
 
 The lexical analyzer uses several csets for different character
 categories beyond the built-in ones:
 
-\iconcode{
+\begin{iconcode}
 global O, D, L, H, R, FS, IS, W, idchars\\
 \ \\
 procedure init\_csets() \\
@@ -68,7 +68,7 @@ procedure init\_csets() \\
 \>   W \ := ' {\textbackslash}t{\textbackslash}v' \\
 \>   idchars := L ++ D \\
 end
-}
+\end{iconcode}
 
 \subsection[26.2.3 The Token Type]{26.2.3 The Token Type}
 
@@ -94,7 +94,7 @@ semi-colon insertion if a newline immediately precedes it (Beginner)
 or comes after it (Ender); see section 26.2.7 below. Language design
 note: tables in this language need a literal format.
 
-\iconcode{
+\begin{iconcode}
 procedure reswords() \\
 static t \\
 initial \{ \\
@@ -113,7 +113,7 @@ initial \{ \\
 
 return t \\
 end
-}
+\end{iconcode}
 
 \subsection[26.2.6 Big-inhale Input]{26.2.6 Big-inhale Input}
 
@@ -134,7 +134,7 @@ less than a megabyte -- a lazy programmer's error. Although Unicon
 programs are much shorter than C programs, an upper limit of 1MB is
 bound to be reached someday.
 
-\iconcode{
+\begin{iconcode}
 procedure yylex\_reinit() \\
 \>   yytext := "" \\
 \>   yylineno := 0 \\
@@ -146,7 +146,7 @@ procedure yylex\_reinit() \\
 \> \>     buffer := yyin \\
 \>   tokflags := 0 \\
 end
-}
+\end{iconcode}
 
 
 \subsection[26.2.7 Semicolon Insertion]{26.2.7 Semicolon Insertion}
@@ -172,7 +172,7 @@ variable \texttt{buffer} doesn't hold a string anymore,
 \texttt{/buffer} will succeed and it must be that we are at
 end-of-file and should return 0.
 
-\iconcode{
+\begin{iconcode}
 procedure yylex() \\
 static saved\_tok, saved\_yytext \\
 local rv, ender \\
@@ -185,14 +185,14 @@ initial \{ \\
 \> \> \>       write("yylex() : 0") \\
 \> \>     return 0 \\
 \> \>     \}
-}
+\end{iconcode}
 
 
 If a semicolon was inserted the last time \texttt{yylex()} was called,
 the \texttt{saved\_tok} will be the first token of the next line; it
 should be returned.
 
-\iconcode{
+\begin{iconcode}
 \>   if {\textbackslash}saved\_tok then \{ \\
 \> \>   rv := saved\_tok \\
 \> \>   saved\_tok := \&null \\
@@ -203,14 +203,14 @@ should be returned.
                   "{\textbackslash}t", image(yytext)) \\
 \> \>   return rv \\
 \> \> \}
-}
+\end{iconcode}
 
 Otherwise, we should obtain the next token by calling yylex2(). We
 have to check for end of file, remember if the last token could end an
 expression, call yylex2(), and update buffer to be the smaller string
 remaining after the token.
 
-\iconcode{
+\begin{iconcode}
 \>   ender := iand(tokflags, Ender) \\
 \>   tokflags := 0 \\
 \>   if *buffer=0 then \{ \\
@@ -230,7 +230,8 @@ remaining after the token.
 \> \> \> \>          write("yylex() : EOFX") \\
 \> \> \>       return EOFX \\
 \> \> \>       \} \\
-\> \>    \}}
+\> \>    \}
+\end{iconcode}
 
 After fetching a new token, we have to decide whether to insert a
 semicolon or not. This is based on global variable ender (whether the
@@ -241,32 +242,32 @@ token).  \texttt{iand()} is a bitwise AND, equivalen to C language \&
 operator, used to pick bits out of a set of boolean flags encoded as
 bits within an integer.
 
-\iconcode{
+\begin{iconcode}
 \>   if ender\~{}=0 \& iand(tokflags, Beginner)\~{}=0 \& iand(tokflags, Newline)\~{}=0 then \{ \\
 \> \>   saved\_tok := rv \\
 \> \>   saved\_yytext := yytext \\
 \> \>   yytext := ";" \\
 \> \>   rv := SEMICOL \\
 \> \>   \}
-}
+\end{iconcode}
 
 Returning a token requires allocation of a \texttt{token()} record
 instance, which is stored in a global variable.
 
-\iconcode{
+\begin{iconcode}
 \>   yylval := yytoken := token(rv, yytext, yylineno, yycolno, yyfilename) \\
 \>   if {\textbackslash}debuglex then \\
 \> \>     write("yylex() : ", tokenstr(rv), "{\textbackslash}t", image(yytext))\\
 \>   return rv \\
 end
-}
+\end{iconcode}
 
 \subsection[26.2.8 The Real Lexical Analyzer Function, yylex2()]{26.2.8 The Real Lexical Analyzer Function, yylex2()}
 
 This function maintains a table of functions, calling a helper
 function depending on what the first character in the token is.
 
-\iconcode{
+\begin{iconcode}
 procedure yylex2() \\
 static punc\_table \\
 initial \{ \\
@@ -282,7 +283,7 @@ initial \{ \\
 \>   every punc\_table[!\&digits] := do\_digits \\
 \>   every punc\_table["\_" {\textbar} !\&letters] := do\_letters \\
 \>   \}
-}
+\end{iconcode}
 
 
 The main lexical analyzer code strips comments and whitespace, and calls the function table for the first non-whitespace

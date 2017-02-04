@@ -6,10 +6,23 @@
 # It has been built on several platforms with recent LaTeX versions that come
 # with a pdflatex binary.
 #
-# Platforms:		Comments
+# Platform Notes:
 #
-# Linux Mint 13		install texlive-latex-extra to get fonts
-# Fedora Core 18        install texlive-aeguill and texlive-supertabular
+# MacOS: installing MacTex and TeXShop is an easy way to build the document.
+#
+#
+# CENTOS: rm -rf ~/.texlive2012 (or ...2013) to fix bogus latex errors.
+#	  May need to install some weird xfntconfig package.
+#
+# Ubuntu: pdflatex is in texlive-latex-base
+#         supertabular is in texlive-latex-extra but its no longer needed
+#	  Need packages providing:
+# color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
+# textcomp, fontenc, hyperref, pdftex, xtab
+#
+# Fedora 24, RHEL7: install packages texlive-base, texlive-latex,
+# texlive-collection-latex, texlive-collection-latexrecommended,
+# and texlive-xtab.
 #
 
 SRC=admin.tex advanced.tex assoc.tex cgi.tex classes.tex database.tex diffs.tex genetic.tex graphics.tex gui.tex internet.tex intro.tex ipl.tex langref.tex large.tex lexyacc.tex port.tex preface.tex programs.tex referenc.tex string.tex struct.tex system.tex ub.tex ucl.tex usecase.tex install.tex

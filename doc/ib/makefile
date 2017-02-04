@@ -8,7 +8,7 @@
 #
 # Known Binaries/Packages/Class Files/Style Files Used
 # pdflatex
-# color, array, supertabular, hhline, makeidx, amsmath, amsfonts, amssymb,
+# color, array, xtab, hhline, makeidx, amsmath, amsfonts, amssymb,
 # textcomp, fontenc, hyperref, pdftex
 #
 #
@@ -16,15 +16,19 @@
 #
 # MacOS: installing MacTex and TeXShop is an easy way to build the document.
 #
-# Ubuntu: pdflatex is in texlive-latex-base
-#         supertabular is in texlive-latex-extra
-# color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
-# textcomp, fontenc, hyperref, pdftex
 #
-# RHEL7: first install packages texlive-base and texlive-latex.
-# Then pdflatex is in texlive-collection-latex.
-# You might also need texlive-collection-latexrecommended.
-# Substituted texlive-xtab for supertabular.  Doesn't have anyfontsize.
+# CENTOS: rm -rf ~/.texlive2012 (or ...2013) to fix bogus latex errors.
+#	  Needed to install some weird xfntconfig package.
+#
+# Ubuntu: pdflatex is in texlive-latex-base
+#         supertabular is in texlive-latex-extra but its no longer needed
+#	  Need packages providing:
+# color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
+# textcomp, fontenc, hyperref, pdftex, xtab
+#
+# Fedora 24, RHEL7: install packages texlive-base, texlive-latex,
+# texlive-collection-latex, texlive-collection-latexrecommended,
+# and texlive-xtab.
 
 # Many might have been installed as requirements as one of the main packages
 # was installed.  Package names may change from distribution to distribution.

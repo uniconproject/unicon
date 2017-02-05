@@ -178,7 +178,7 @@ it in the case of \texttt{spawn()}.  An important side effect of this
 process is avoiding race conditions, because each thread gets a copy
 of the variables instead of having all the threads competing over the
 same shared variables. Race conditions and thread-safe data will be
-covered in depth in the following section. The following example and
+covered in depth in the following sections. The following example and
 its output demonstrate the idea of an evaluation context:
 
 \begin{icode}
@@ -285,8 +285,110 @@ Since the lists are independent, there is no possibility of a race
 condition. The example shows that the second thread was the first to
 finish and print its result. If the problem solution requires sharing
 data or guaranteeing that one thread should finish before another,
-then a synchronization mechanism should be used. This is the subject
-of the next section.
+then a synchronization mechanism should be used. These topics are
+discussed in the next two sections.
+
+
+\section{Thread Safety}
+
+Threads cooperate with each other to get the job done; they can send
+information back and forth, as described later in the section on
+thread communication. Other than such intentional communication, when
+programming multiple threads it is important that each thread perform
+its required computation without interfering with the other threads and
+vice versa.  {\em Thread safety} is the property of multi-threaded
+code that ensures that threads do not alter each other's computations
+unintentionally.  The opposite is any operation, including data
+structure traversal, where threads may affect each other's correct
+operation, leading to data corruption or incorrect results. Such
+operations are called \emph{thread-unsafe}.
+
+An example of thread-unsafe code can be found in the Icon Program
+Library wrap.icn module:
+
+\iconcode{
+procedure wrap(s,i) \\
+\>   local t \\
+\>   static line \\
+\>   initial line := "" \\
+\>   /s := "" ; /i := 0 \\
+\>   if *(t := line {\textbar\textbar} s) $>$ i then \\
+\>\>	 return "" $\sim$== (s :=: line) \\
+\>   line := t \\
+end
+}
+
+If two threads were trying to use \texttt{wrap()} at the same time,
+they would overwrite each others' values for the static variable
+\texttt{line}.  To avoid this, one might require the caller to provide
+a means of storing its own line information in a third parameter. Since
+Unicon does not provide reference parameters, this might be passed,
+for example, as a record field.
+
+\iconcode{
+record lineinfo(line) \\
+procedure wrap(s,i,li) \\
+\>   local t \\
+\>   if /li then stop("wrap(): missing third parameter") \\
+\>   /(li.line) := "" \\
+\>   /s := "" ; /i := 0 \\
+\>   if *(t := li.line {\textbar\textbar} s) $>$ i then \\
+\>\>	 return "" $\sim$== (s :=: li.line) \\
+\>   li.line := t \\
+end
+}
+
+This example works and is thread-safe. Its chief flaw is that the
+programmer who wants to call \texttt{wrap()} now has a more
+complicated API to learn, and existing code that calls the old
+\texttt{wrap()} would have to be modified to use the thread-safe
+version. Millions of C programmers have suffered through this for
+years.  A more extreme solution that makes the existing API
+thread-safe is given below. To understand it, read the section on
+thread-synchronization below, particularly the subsection on
+thread-safe data structures. The static variable \texttt{line}
+is replaced with a table protected by a mutex; this table is indexed
+by the current thread \texttt{\&current} every time it is used
+inside of \texttt{wrap()}.  As an exercise for the reader,
+compare the performance of this approach with the
+previous approach that used an extra parameter.
+
+\iconcode{
+procedure wrap(s,i) \\
+\>   static line \\
+\>   local t \\
+\>   initial line := mutex(table()) \\
+\>   /(line[\&current]) := "" \\
+\>   /s := "" ; /i := 0 \\
+\>   if *(t := line[\&current] {\textbar\textbar} s) $>$ i then \\
+\>\>	 return "" $\sim$== (s :=: line[\&current]) \\
+\>   line[\&current] := t \\
+end
+}
+
+
+From such an example, one can infer some general principles for
+writing thread-safe code. Each thread's data must be completely
+independent of all other threads.  Each thread gets its own stack, so
+local variables and parameters are thread-safe for free.  Global
+variables, including statics, are totally the bane of multi-threaded
+programming, so to achieve thread-safety you may have to avoid or
+rewrite any procedures or class libraries that use globals or statics.
+For example, if part of a procedure's results were assigned to a
+global for the caller to use, you might need to rewrite it to return
+(or generate) such results instead of working through a global.
+
+A more subtle issue arises when referencing mutable structures such
+as lists, tables, or objects. Although each thread gets its own heap
+for allocation purposes, if another thread has a reference to such
+a structure, operations that alter the structure made by either
+thread, are unsafe. For some computations, you might avoid such a
+problem by making a separate copy of the structure for each thread
+to use independently, but when threads need to share a structure, the
+list or table or whatever constitutes part of their communication mechanism.
+In that case, thread-unsafe code or data structures can be made thread-safe
+via a synchronization mechanism to achieve correct behavior and results.
+Such mechanisms are presented in the next section.
 
 
 \section{Thread Synchronization}
@@ -296,8 +398,8 @@ problems require more synchronization than others. Some may require
 advanced synchronization mechanisms and rely on the language support
 to achieve full control over the execution of threads and protect
 shared data. This section covers many synchronization techniques in
-Unicon, introduces the concept of race condition in a multi-thread
-environment, and the concept of thread-safe code.
+Unicon, used primarily to avoid the problem of {\em race conditions\/}
+in multi-threaded code.
 
 \subsection*{The non-deterministic behavior of threads}
 
@@ -411,12 +513,7 @@ execute at a time or an error will occur. In the example discussed at
 the beginning of this chapter, two threads compete to increment the
 variable \texttt{x}. The end result might not be what the programmer
 intended. In such cases a mutex may be used to protect access to the
-variable \texttt{x}. Any operation, including data structure
-traversal, where more than one thread can execute
-non-deterministically, and which may lead to data corruption or
-incorrect results is called \emph{thread-unsafe}. Thread-unsafe code
-or data structures have to be handled correctly via synchronizations
-mechanism to achieve correct behavior and results.
+variable \texttt{x}.
 
 A mutex object is created using the \texttt{mutex()} function. The returned
 object can be locked/unlocked via the functions \texttt{lock()} and

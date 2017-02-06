@@ -234,8 +234,13 @@ $endif
 
    method on_saveas_btn(ev)
       local fd, filename, foo, index := i, warntxt, fexist := &null, L,
-	    i, oldwindow, win, fileslist, fext, isUnicon := 1, filedirectory
+	    i, oldwindow, win, fileslist, fext, isUnicon := 1, filedirectory,
+	    was_non_icn
 
+      if ide.CurrentTabItem().filename[-4:0] == ".icn" then was_non_icn := &null
+      else was_non_icn := 1
+
+      # this obviously is supposed to be used for something, and isn't yet.
       is_unicon(isUnicon)
 
       fileslist := []
@@ -300,6 +305,7 @@ $endif
                   self.resize() # recalc with new components in place
                   }
 	    }
+
 	 uidlog.FileBrowser.nodereplace(CurrentTabItem().filename)
 	 CurrentTabItem().set_label(file_name(filename))
 	 L := CurrentEditBox().get_contents() | []
@@ -307,6 +313,13 @@ $endif
 	 CurrentTabItem().filename := file_name(filename)
 	 CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
 	 save_file(CurrentTabItem())
+
+	 # if we changed from non-.icn to .icn extension, handle_closefile()
+	 # followed by an open, to enable syntax coloring
+	 if \was_non_icn & (filename[-4:0] == ".icn") then {
+	    handle_closefile()
+	    handle_openfile( , filename)
+	    }
 
 	 # The old IDE updated the file list on the File Menu when a
 	 # project file save occurred.  The new IDE should reload/reopen
@@ -646,12 +659,18 @@ $endif
          cmd2 := "wiconx -l" || wiconlog || " " || quotes(fdir || cmd)
       }
       
+      uidlog.MsgBox.set_contents(["Launching the program in its own window.",
+		"Finish the run and close that window to return to the IDE."
+		])
+      uidlog.MsgBox.refresh()
+      uidlog.MsgBox.display()
+
       # in order to switch to pty, we're going to have to open() something here
       # instead of calling system()
 
       if system(cmd2, L,,"Running " || fdir || ((\cmd|"??")\1) ) then {
-      # hope WICONLOG does trick?
-      showanyerror(wiconlog, L, 1)
+         # hope WICONLOG does trick?
+         showanyerror(wiconlog, L, 1)
       }
       else {
       s := "system(" || icodename || " " || xargs ||

@@ -162,23 +162,20 @@ natural structure is a list. This leads to the following code:
 \iconcode{
 procedure scan(dir) \\
 \>   f := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't access ", dir, " ",
-	sys\_errstr(\&errno)) \\
-\>   \ \ \ return \\
-\>   \ \ \ \}
+\>\>    write(\&errout, "Couldn't access ", dir, " ", sys\_errstr(\&errno)) \\
+\>\>    return \\
+\>\>    \} \\
 \>   while name := read(f) do \{ \\
-\>   \ \ \ filename := dir {\textbar}{\textbar}
-"/" {\textbar}{\textbar} name \\
-\>   \ \ \ r := stat(filename) \\
-\>   \ \ \ case r.mode[1] of \{ \\
-\>   \ \ \ \ \ \ "-" : \{ \\
-\>   \ \ \ \ \ \ \ \ \ /lengths[r.size] := list() \\
-\>   \ \ \ \ \ \ \ \ \ push(lengths[r.size], filename) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ "d" : name == ("."
-{\textbar} "..") {\textbar} scan(filename) \\
-\>   \ \ \ \} \\
-\>   \} \\
+\>\>    filename := dir {\textbar}{\textbar} "/" {\textbar}{\textbar} name \\
+\>\>    r := stat(filename) \\
+\>\>    case r.mode[1] of \{ \\
+\>\>\>     "-" : \{ \\
+\>\>\>\>      /lengths[r.size] := list() \\
+\>\>\>\>      push(lengths[r.size], filename) \\
+\>\>\>\>      \} \\
+\>\>\>     "d" : name == ("." {\textbar} "..") {\textbar} scan(filename) \\
+\>\>\>     \} \\
+\>\>    \} \\
 \>   close(f) \\
 end
 }

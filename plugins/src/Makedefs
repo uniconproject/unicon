@@ -1,0 +1,51 @@
+
+include $(BASE)/Makedefs
+
+UNI=$(BASE)/uni
+IPL=$(BASE)/ipl
+
+LIBD=$(BASE)/plugins/lib
+
+export IPATH:=$(UNI)/lib $(UNI)/unicon $(UNI)/gui $(UNI)/xml $(ICON_IPL)/lib
+export LPATH:=$(UNI)/gui $(IPL)/incl $(IPL)/gincl  $(IPL)/mincl
+
+UC=$(TDIR)/bin/unicon
+WUC=$(TDIR)/bin/unicon -G
+UFLAGS=-s -u -c
+SO=so
+CFDYN2= $(CFDYN) $(CFLAGS) -D_GNU_SOURCE -std=c11
+
+.SUFFIXES: .c .o
+
+do:	   default
+
+all:	   default
+
+# target lib
+TLIB = $(LNAME).$(SO)
+
+# Each dynamic library should have two rules
+
+# library
+$(LNAME): $(TLIB) $(LIBD)/$(LNAME).u
+	cp  $(TLIB) $(LIBD)/
+
+$(TLIB): $(COBJ)
+	$(CC) $(CFDYN2) -o $(TLIB) $(COBJ) $(MYLIBS)
+
+# Unicon interface
+$(LIBD)/%.u:	%.icn $(CSRC)
+	cp $< $(LIBD)/
+	cd $(LIBD); $(UC) $(UFLAGS) $< uso.u
+	rm $(LIBD)/$<
+
+%.o:	%.c
+	$(CC) $(CFLAGS) -c $<
+
+zip:
+	 zip $(LNAME).zip Makefile *.icn *.c *.h
+
+clean:
+	$(RM) *.u $(LIBD)/$(LNAME).u *.o *.$(SO) uniclass.* *~
+
+

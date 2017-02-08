@@ -1,47 +1,66 @@
+
 include ../../Makedefs
 
-export IPATH:=$(UNI)/lib $(UNI)/unicon $(UNI)/gui $(UNI)/xml $(ICON_IPL)/lib
-export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
+BASE=../..
+LIBD=$(BASE)/plugins/lib
 
-UC=../../bin/unicon
-WUC=../../bin/unicon -G
-UFLAGS=-s -c -u
+UC=$(BASE)/bin/unicon
+WUC=$(BASE)/bin/unicon -G
+
+UFLAGS=-s -u -c
 SO=so
 
-# list of libraries
-LXC=lxcunicon
+# plaform independent  plugins
+PCMN=upexample
 
+# Windows 
+PWIN=
 
+# *nix OS
+PNIX=lxcunicon
 
-all: uso.u $(LXC)
+# MacOS
+PMOS=
 
+.PHONY: clean zip $(PCMN) $(PWIN) $(PNIX) $(PMOS) windows linux macos
 
-# Each dynamic library should have two rules
+default:   $(LIBD)/uso.u $(PCMN)
 
-# LXC rules:
-$(LXC): $(LXC).$(SO) $(LXC).u
-	cp  $(LXC).$(SO) $(LXC).u uniclass.* ../lib/
+all: uso.u
 
-$(LXC).$(SO): $(LXC).u $(LXC).o
-	$(CC) -D_GNU_SOURCE -std=c11 -shared -fpic -o $(LXC).$(SO) $(LXC).o -llxc
+windows: $(PCMN) $(PWIN)
 
-# Foo rules
+linux: $(PCMN) $(PNIX)
 
-#1
+macos: $(PCMN) $(PMOS)
 
-#2
+# Build cross platforms plugins
+$(PCMN): $(LIBD)/uso.u
+	make -C $@
 
+# Build Windows plugins
+$(PWIN): $(LIBD)/uso.u
+	make -C $@
 
-# Generic rules
+# Build *nix plugins
+$(PNIX): $(LIBD)/uso.u
+	make -C $@
 
-%.u:	%.icn
-	 $(UC) $(UFLAGS) $<
+# Build Mac OS plugins
+$(PMOS): $(LIBD)/uso.u
+	make -C $@
 
-%.o:	%.c
-	 $(CC) $(CFLAGS) -D_GNU_SOURCE -std=c11 -shared -fpic -c $<
+# Unicon interface
+$(LIBD)/%.u:	%.icn $(CSRC)
+	cp $< $(LIBD)/
+	cd $(LIBD); $(UC) $(UFLAGS) $<
+	rm $(LIBD)/$<
 
+#TODO
 zip:
-	 zip uso.zip makefile *.icn *.c *.h
+	 zip uplugins.zip makefile *.icn *.c *.h
 
 clean:
-	$(RM) *.u *.o *.$(SO) uniclass.dir uniclass.pag *~
+	echo $(SO)
+	$(RM) *.u *.o *.$(SO) uniclass.* *~
+	$(RM) $(RM) ../lib/* */*.u */*.o */*.$(SO) */uniclass.* */*~

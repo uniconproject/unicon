@@ -3,9 +3,12 @@ $include "posix.icn"
 
 procedure main()
 
+   # For this test, unset restrictions imposed by umask so that mkdir results
+   # will be consistent.
+   umask(0)
    mkdir("./tmp", 8r0755) | stop("Couldn't make ./tmp: ", sys_errstr(&errno))
 
-   f := stat("tmp") | stop("Couldn't stat: ", sys_errstr(&errno))
+   f := stat("tmp") | stop("Couldn't stat after mkdir: ", sys_errstr(&errno))
 
    write(format(f, "tmp"))
    

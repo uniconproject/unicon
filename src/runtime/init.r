@@ -2047,6 +2047,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    struct b_coexpr *coexp = alccoexp(icodesize, stacksize);
    struct progstate *pstate = NULL;
    struct threadstate *tstate = NULL;
+
    if (coexp == NULL) return NULL;
    pstate = coexp->program;
    tstate = pstate->tstate;
@@ -2066,11 +2067,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
 
    init_progstate(pstate);
    
-#ifndef Concurrent
    init_threadstate(tstate);
-#else					/* Concurrent */  
-   init_threadheap(tstate, 0, 0);
-#endif					/* Concurrent */  
    pstate->Kywd_time_elsewhere = millisec();
    pstate->Kywd_time_out = 0;
    pstate->Mainhead= ((struct b_coexpr *)pstate)-1;
@@ -2092,7 +2089,7 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->collstr     = pstate->collblk    = 0;
 
 #ifdef Concurrent
-   init_threadheap(tstate, stringsiz, blocksiz);
+   init_threadheap(tstate, stringsiz, blocksiz, pstate);
    pstate->stringregion = tstate->Curstring;
    pstate->blockregion  = tstate->Curblock;   
 #else   
@@ -2100,7 +2097,6 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->blockregion  = (struct region *)malloc(sizeof(struct region));
    pstate->stringregion->size = stringsiz;
    pstate->blockregion->size = blocksiz;
-#endif					/* Concurrent */
 
    /*
     * the local program region list starts out with this region only
@@ -2109,8 +2105,9 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    pstate->blockregion->prev = NULL;
    pstate->stringregion->next = NULL;
    pstate->blockregion->next = NULL;
+
    /*
-    * the global region list links this region with curpstate's
+    * the global region list links this region after curpstate's
     */
    pstate->stringregion->Gprev = curpstate->stringregion;
    pstate->blockregion->Gprev = curpstate->blockregion;
@@ -2122,6 +2119,9 @@ struct b_coexpr *initprogram(word icodesize, word stacksize,
    if (curpstate->blockregion->Gnext)
       curpstate->blockregion->Gnext->Gprev = pstate->blockregion;
    curpstate->blockregion->Gnext = pstate->blockregion;
+
+#endif					/* Concurrent */
+
    initalloc(0, pstate);
 
    return coexp;

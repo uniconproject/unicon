@@ -714,7 +714,7 @@ void *nctramp(void *arg)
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
 
-   init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize);
+   init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize, NULL);
 
 #endif					/* Concurrent */
    SEM_WAIT(ce->semp);			/* wait for signal */
@@ -1237,11 +1237,20 @@ int region;
 /*
  * Initialize separate heaps for (concurrent) threads.
  * At present, PthreadCoswitch probably uses this for Pthread coexpressions.
+ *
+ * There are now two cases to consider: threadheap for a new thread in the
+ * current program, and threadheap for a newly loaded program.  Called from
+ * nctramp() you are a new thread in the current program.  Called from
+ * initprogram() in init.r, you are a newly loaded program (newp).
+ *
+ * 
  */
-void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
+void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
+		     struct progstate *newp)
 { 
    struct region *rp;
 
+   if (newp == NULL) newp = curpstate;
    /*
     *  new string and block region should be allocated.
     */
@@ -1255,32 +1264,53 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
       ts->Curstring =  curstring = rp;
    else if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
-      rp->prev = curstring;
-      rp->next = NULL;
-      curstring->next = rp;
-      rp->Gnext = curstring;
-      rp->Gprev = curstring->Gprev;
-      if (curstring->Gprev) curstring->Gprev->Gnext = rp;
-      curstring->Gprev = rp;
-      curstring = rp;
+
+      /* attach rp after program's string region on prev/next */
+      if (newp->stringregion) {
+	 rp->prev = newp->stringregion;
+	 rp->next = newp->stringregion->next;
+	 if (newp->stringregion->next)
+	    newp->stringregion->next->prev = rp;
+	 newp->stringregion->next = rp;
+	 }
+      else
+	 newp->stringregion = rp;
+
+      /* attach rp after curstring on Gprev/Gnext. */
+      rp->Gprev = curstring;
+      rp->Gnext = curstring->Gnext;
+      if (curstring->Gnext) curstring->Gnext->Gprev = rp;
+      curstring->Gnext = rp;
+
       MUTEX_UNLOCKID(MTX_STRHEAP);
       ts->Curstring = rp;
       }
     else
       syserr(" init_threadheap: insufficient memory for string region");
 
-   if((rp = reuse_region(blksiz, Blocks)) != 0)
+   if((rp = reuse_region(blksiz, Blocks)) != 0) {
       ts->Curblock =  curblock = rp;
+      }
    else if ((rp = newregion(blksiz, blksiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);
-      rp->prev = curblock;
-      rp->next = NULL;
-      curblock->next = rp;
-      rp->Gnext = curblock;
-      rp->Gprev = curblock->Gprev;
-      if (curblock->Gprev) curblock->Gprev->Gnext = rp;
-      curblock->Gprev = rp;
-      curblock = rp;
+
+      /* attach rp after program's block region on prev/next */
+      if (newp->blockregion) {
+	 rp->prev = newp->blockregion;
+	 rp->next = newp->blockregion->next;
+	 if (newp->blockregion->next)
+	    newp->blockregion->next->prev = rp;
+	 newp->blockregion->next = rp;
+	 }
+      else
+	 newp->blockregion = rp;
+
+      /* attach rp after curblock on Gprev/Gnext. */
+      rp->Gprev = curblock;
+      rp->Gnext = curblock->Gnext;
+      if (curblock->Gnext) curblock->Gnext->Gprev = rp;
+      curblock->Gnext = rp;
+
       MUTEX_UNLOCKID(MTX_BLKHEAP);
       ts->Curblock = rp;
       }

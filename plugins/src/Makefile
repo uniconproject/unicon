@@ -63,4 +63,4 @@ zip:
 clean:
 	echo $(SO)
 	$(RM) *.u *.o *.$(SO) uniclass.* *~
-	$(RM) $(RM) ../lib/* */*.u */*.o */*.$(SO) */uniclass.* */*~
+	$(RM) ../lib/* */*.u */*.o */*.$(SO) */uniclass.*

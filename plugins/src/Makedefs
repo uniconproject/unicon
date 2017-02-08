@@ -32,7 +32,8 @@ $(LNAME): $(TLIB) $(LIBD)/$(LNAME).u
 
 $(TLIB): $(COBJ)
 	$(CC) $(CFDYN2) -o $(TLIB) $(COBJ) $(MYLIBS)
-
+	cp $(TLIB) $(LIBD)
+	
 # Unicon interface
 $(LIBD)/%.u:	%.icn $(CSRC)
 	cp $< $(LIBD)/
@@ -46,6 +47,7 @@ zip:
 	 zip $(LNAME).zip Makefile *.icn *.c *.h
 
 clean:
-	$(RM) *.u $(LIBD)/$(LNAME).u *.o *.$(SO) uniclass.* *~
+	$(RM) *.u *.o *.$(SO)  uniclass.* *~
+	$(RM) $(LIBD)/$(LNAME).u  $(LIBD)/$(LNAME).$(SO)
 
 

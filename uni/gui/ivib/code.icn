@@ -127,6 +127,12 @@ class Code(
       encoded_canvas_out(f)
 
       close(f)
+      if f := open(s) then {
+	 ivib_maindialog.source := []
+	 while put(ivib_maindialog.source, read(f))
+	 close(f)
+	 }
+
       return
    end
 
@@ -143,7 +149,18 @@ class Code(
 
       add_setup_methods()
 
-      f := open(src_name) | return alert_error("Couldn't open " || src_name)
+      if not (f := open(src_name)) then {
+	 alert_error("warning, couldn't open " || src_name)
+	 # the file has disappeared, try writing it from the copy we saved
+	 if f := open(src_name, "w") then {
+	    every write(f, !ivib_maindialog.source)
+	    close(f)
+	    if not (f := open(src_name)) then
+	       return alert_error("Couldn't open " || src_name)
+	    }
+	 else
+	    return alert_error("Couldn't open " || src_name)
+	 }
 
       #
       # Save contents up to setup() method

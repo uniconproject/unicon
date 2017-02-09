@@ -176,8 +176,8 @@ class Main : CommonDialog(
    align_vert_button,
    grid_button,
    copy_button,
-   last_icn_dir
-
+   last_icn_dir,
+   source		    # source file (list of strings)
    )
 
    method show_tooltip(x, y, label)
@@ -784,7 +784,7 @@ class Main : CommonDialog(
    # Given a file f, return a Canvas object
    #
    method load_canvas(f, fname)
-      local s, L := [ ]
+      local s
       repeat {
 	 if not (s := read(f)) then {
 	    cd := ChoiceDialog("No Ivib layout in "||fname||", append one?")
@@ -794,11 +794,11 @@ class Main : CommonDialog(
 	    close(f)
 	    if f := open(fname, "w") then {
 	       # write L
-	       every write(f, !L)
+	       every write(f, !source)
 	       # write the empty layout
 	       append_ivib(f)
 	       close(f)
-	       L := [ ]
+	       source := [ ]
 	       if f := open(fname) then {
 		  alert_error("added an Ivib interface")
 		  next
@@ -812,7 +812,7 @@ class Main : CommonDialog(
 	    return load_v1(f, fname)
 	 if s == v2_marker then
 	    return load_v2(f, fname)
-	 put(L, s)
+	 put(source, s)
 	 }
    end
 
@@ -870,6 +870,7 @@ class Main : CommonDialog(
       local s, t
       t := ""
       while s := read(f) do {
+	 put(source, s)
          if s[1] == "#" then
             t ||:= s[2:0]
          else

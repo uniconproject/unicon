@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.org
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_13.0_Beta(64-bit)_rev4770
+OutputBaseFilename=setup-unicon_13.0_Beta(64-bit)_rev4777
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -43,7 +43,9 @@ Source: "\unicon\doc\icon\*.*"; DestDir: "{app}\doc\icon"; Flags: ignoreversion
 Source: "\unicon\doc\icon\faq_files\*.*"; DestDir: "{app}\doc\icon\fag_files"; Flags: ignoreversion
 
 Source: "\unicon\doc\utr\*.*"; DestDir: "{app}\doc\utr"; Flags: ignoreversion
+Source: "\unicon\doc\utr\utr6\*.*"; DestDir: "{app}\doc\utr\utr6"; Flags: ignoreversion
 Source: "\unicon\doc\utr\utr7\*.*"; DestDir: "{app}\doc\utr\utr7"; Flags: ignoreversion
+Source: "\unicon\doc\utr\utr12\*.*"; DestDir: "{app}\doc\utr\utr12"; Flags: ignoreversion
 
 Source: "\unicon\doc\unicon\*.*"; DestDir: "{app}\doc\unicon"; Flags: ignoreversion
 Source: "\unicon\doc\unicon\utr1\*.*"; DestDir: "{app}\doc\unicon\utr1"; Flags: ignoreversion
@@ -51,6 +53,8 @@ Source: "\unicon\doc\unicon\utr6\*.*"; DestDir: "{app}\doc\unicon\utr6"; Flags: 
 
 Source: "\unicon\doc\udb\*.html"; DestDir: "{app}\doc\udb"; Flags: ignoreversion
 Source: "\unicon\doc\udb\*.pdf"; DestDir: "{app}\doc\udb"; Flags: ignoreversion
+
+Source: "\unicon\doc\book\ub.pdf"; DestDir: "{app}\doc\book"; Flags: ignoreversion
 
 ;IPL
 Source: "\unicon\ipl\cfuncs\*.*"; DestDir: "{app}\ipl\cfuncs"; Flags: ignoreversion
@@ -158,6 +162,7 @@ Filename: "{app}\WU.url"; Section: "InternetShortcut"; Key: "URL"; String: "http
 Name: {group}\{cm:UninstallProgram,Windows Unicon}; Filename: {uninstallexe};IconFilename: "{app}\uninstall.ico"
 Name: "{group}\Windows Unicon on the Web"; Filename: "{app}\WU.url" ;IconFilename: "{app}\internet.ico"
 Name: "{group}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"
+Name: "{group}\Programming with Unicon"; Filename: "{app}\doc\book\ub.pdf"
 Name: "{group}\Unicon Software License"; Filename: "{app}\COPYING.txt" ;IconFilename: "{app}\internet.ico"
 Name: "{userdesktop}\Windows Unicon"; Filename: "{app}\bin\UI.EXE"; MinVersion: 4,4; Tasks: desktopicon
 

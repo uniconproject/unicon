@@ -1,0 +1,19 @@
+#
+# uget.icn - Unicon version of wget.
+#
+# See also: Phillip Thomas has a version that is actually tested.
+# We may want to replace this one with his.
+#
+
+link basename
+procedure main(av)
+   if av[1] == "-f" then force := pop(av[1])
+   match("http", av[1]) | stop("usage: uget URI")
+   f := open(av[1],"m") | stop("can't open URL ", av[1])
+   b := basename(av[1])
+   write(b)
+   if stat(b) & /f then stop("uget won't overwrite ", b, " without -f option")
+   fout := open(b, "w") | stop("can't open/write ", b)
+   while chunk := reads(f, 10000000) do writes(fout, chunk)
+   close(f); close(fout)
+end

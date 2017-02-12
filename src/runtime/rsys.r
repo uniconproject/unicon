@@ -1249,9 +1249,6 @@ FILE *popen (const char* cmd, const char *mode)
   strncpy(app_name, q, p - q );
   app_name[p - q] = '\0';
   pname[0] = '\0';
-#ifdef __TRACE
-  fprintf(stderr, "popen: app_name = %s\n", app_name);
-#endif
 
   /* Looking for appname on the path */
   for (s = suffixes, go_on = 1; go_on; *s++) {
@@ -1262,9 +1259,6 @@ FILE *popen (const char* cmd, const char *mode)
                    pname,       /* Address of destination buffer */
                    &fp)         /* File part of app_name */
       != 0) {
-#ifdef __TRACE
-      fprintf(stderr, "%s found with suffix %s\n", app_name, *s);
-#endif
       new_cmd = strdup(cmd);
       free(app_name);
       app_name = strdup(pname);
@@ -1276,9 +1270,6 @@ FILE *popen (const char* cmd, const char *mode)
     /* the app_name was not found */
     char tmpbuf[256];
     int tmpsize;
-#ifdef __TRACE
-    fprintf(stderr, "%s not found, concatenating comspec\n", app_name);
-#endif
     if (getenv_r("COMSPEC", tmpbuf, 255)==0)
       tmpsize=strlen(tmpbuf);
     else
@@ -1291,10 +1282,6 @@ FILE *popen (const char* cmd, const char *mode)
   }
   else {
   }
-#ifdef __TRACE
-  fprintf(stderr, "popen: app_name = %s\n", app_name);
-  fprintf(stderr, "popen: cmd_line = %s\n", new_cmd);
-#endif
 
   current_in = GetStdHandle(STD_INPUT_HANDLE);
   current_out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -1313,19 +1300,8 @@ FILE *popen (const char* cmd, const char *mode)
   if (strchr(mode, 'w')) {
     binary_mode |= _O_WRONLY;
     if (CreatePipe(&child_in, &father_out, &sa, 0) == FALSE) {
-#ifdef __TRACE
-      fprintf(stderr, "popen: error CreatePipe\n");
-#endif
       return NULL;
     }
-#if 0
-    if (SetStdHandle(STD_INPUT_HANDLE, child_in) == FALSE) {
-#ifdef __TRACE
-      fprintf(stderr, "popen: error SetStdHandle child_in\n");
-#endif
-      return NULL;
-    }
-#endif
     si.hStdInput = child_in;
     si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
@@ -1333,9 +1309,6 @@ FILE *popen (const char* cmd, const char *mode)
     if (DuplicateHandle(current_pid, father_out, 
                         current_pid, &father_out_dup, 
                         0, FALSE, DUPLICATE_SAME_ACCESS) == FALSE) {
-#ifdef __TRACE
-      fprintf(stderr, "popen: error DuplicateHandle father_out\n");
-#endif
       return NULL;
     }
     CloseHandle(father_out);
@@ -1347,17 +1320,8 @@ FILE *popen (const char* cmd, const char *mode)
   else if (strchr(mode, 'r')) {
     binary_mode |= _O_RDONLY;
     if (CreatePipe(&father_in, &child_out, &sa, 0) == FALSE) {
-#ifdef __TRACE
-      fprintf(stderr, "popen: error CreatePipe\n");
-#endif
       return NULL;
     }
-#if 0
-    if (SetStdHandle(STD_OUTPUT_HANDLE, child_out) == FALSE) {
-      fprintf(stderr, "popen: error SetStdHandle child_out\n");
-      return NULL;
-    }
-#endif
     si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     si.hStdOutput = child_out;
     si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
@@ -1373,9 +1337,6 @@ FILE *popen (const char* cmd, const char *mode)
     i = setvbuf( f, NULL, _IONBF, 0 );
   }
   else {
-#ifdef __TRACE
-    fprintf(stderr, "popen: invalid mode %s\n", mode);
-#endif
     return NULL;
   }
 
@@ -1391,20 +1352,9 @@ FILE *popen (const char* cmd, const char *mode)
                     &si,        /* pointer to STARTUPINFO */
                     &pi         /* pointer to PROCESS_INFORMATION */
                   ) == FALSE) {
-#ifdef __TRACE
-    fprintf(stderr,
-       "popen: CreateProcess(%s::%s) %x\n", app_name, new_cmd, GetLastError());
-#endif
     return NULL;
   }
   
-#if 0
-  /* Restoring saved values for stdin/stdout */
-  if (SetStdHandle(STD_INPUT_HANDLE, current_in) == FALSE) 
-    fprintf(stderr, "popen: error re-redirecting Stdin\n");  
-  if (SetStdHandle(STD_OUTPUT_HANDLE, current_out) == FALSE) 
-    fprintf(stderr, "popen: error re-redirecting Stdout\n");  
-#endif  
    /* Only the process handle is needed */
   if (CloseHandle(pi.hThread) == FALSE) {
     fprintf(stderr, "popen: error closing thread handle\n");

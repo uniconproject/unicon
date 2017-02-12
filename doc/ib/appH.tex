@@ -22,7 +22,12 @@ respective compilers that begin with one or two underscores.
 \begin{xtabular}{|m{1.8in}|m{0.5in}|m{4.0in}|}
 \hline
 Symbol & Where & Definition \\ \hline
+AAAConcurrent & U & pretend you don't see junk under AAA prefix \\
+AAArrays & U & pretend you don't see junk under AAA prefix \\
+AAAHaveProfil & U & JAG disabled profil() without concern over what that broke\\
+AAANativeCoswitch & U & pretend you don't see junk under AAA prefix \\
 AllocTrace & U & do printf's when alloc() is called (delete) \\
+AlphaArchitecture & IU & build on DEC Alpha (libXpm, delete) \\
 AMIGA & IU & build on Commodore Amiga platform (libXpm, delete) \\ 
 AMIGA\_ZERO & U & AMIGA should be defined to 0 after including xpm.h (delete) \\ 
 ArmFncs & IU & legacy Acorn Archimedes functions (delete) \\
@@ -42,7 +47,7 @@ ConsoleWindow & U & emulate a console window (graphics, mainly Windows) \\
 CONVEX & IU & build on Convex platform (should delete) \\
 CRAY & IU & build on Cray (gdbm, should delete) \\
 CRAY2 & IU & build on Cray 2 (gdbm, should delete) \\
-CXPMPROG & IU & add line and column information to xpm data (delete) \\
+CXPMPROG & IU & omit some functions (delete; libXpm) \\
 dangeresque & U & buggy code, do not use (delete) \\
 DARWIN\_PBUILDER & U & enable Mac OS X support in audio code \\
 Dbm & U & enable (N)DBM database support \\
@@ -55,9 +60,11 @@ DeBugTrans & IU & enable debugging features for the translator, itran \\
 DEBUG\_I00AFUNC & U & add debugging printf's (gdbm, should delete) \\
 Debug2 & 9 & enable debugging features (libXpm) \\
 DescriptorDouble & U & store reals in descriptors \\
+DL\_GETERRNO & U & some FreeBSD version <= 2.0 detectable symbol (delete) \\
+DLLICONX & U & build iconx as a .dll \\
+DMALLOC & U & enable debugging malloc (audio) \\
 DosFncs & IU & enable MS-DOS functions (should delete) \\
 Double & all & require C double alignment \\
-DMALLOC & U & enable debugging malloc (audio) \\
 dump\_htbl\_distribution & U & output iconc hash table distribution (delete) \\
 emacs & U & emacs usg workaround (gdbm, should delete) \\
 errno & U & undefine errno to allow use as a Unicon keyword \\
@@ -70,6 +77,7 @@ FieldTableCompression & U & Enable field table compression in icode \\
 FileSep & all & File path separator. Specific to common/filepart.c \\
 FncTrace & IU & enable call tracing keyword \&ftrace (delete) \\
 FOR\_MSW & IU & libXpm Microsoft Windows support \\
+FreeBSD & IU & building on FreeBSD platform \\
 GenericBSD & IU & build on generic BSD-based platform \\
 GETOPT\_COMPAT & U & non-POSIX getopt() compatible (gdbm, should delete) \\
 GNU & U & use "ndbm.h" not <ndbm.h> (gdbm) \\
@@ -81,6 +89,8 @@ HAVE\_ARPA\_INET\_H & U & system has <arpa/inet.h> (libtp) \\
 HAVE\_BCOPY & U & system has bcopy() (libtp) \\
 HAVE\_CLOCK\_GETTIME & U & system has clock\_gettime() \\
 HAVE\_CONFIG\_H & U & build library using Unicon's "config.h" \\
+HAVE\_CRYPT & U & system has crypt() \\
+HAVE\_CRYPT\_R & U & system has crypt\_r() \\
 HAVE\_ERRNO\_H & U & system has <errno.h> \\
 HAVE\_GETADDRINFO & U & system has getaddrinfo() \\
 HAVE\_GETRUSAGE & U & system has getrusage() \\
@@ -110,14 +120,19 @@ HAVE\_VOICE & U & system has voice over IP \\
 HAVE\_VSPRINTF & U & system has vsprintf() \\
 HAVE\_WORKING\_VFORK & U & system has a working vfork() function \\
 HAVE\_XFT & U & system has XFT library \\
+HaveProfil & IU & system has profil(). Should be autoconfed. \\
 HaveXpmFormat & 9 & yes we have Xpm support available \\
 Header & IU & system has an executable header of some kind \\
+HELPER\_THREAD & U & helper thread handles window input events
+	(pollevent() calls should be removed, not made a no-op) \\
 HighResTime & U & use high resolution timers if tracing type inferencing \\
 HP & IU & build on Hewlett Packard platform \\
 Iconc & IU & build optimizing compiler \\
+Iconify & IU & enable canvas=iconic to actually call XIconifyWindow \\
 IRIS4D & IU & build on SGI Iris platform \\
 ISQL & U & system supports SQL/ODBC \\
-Symbol & Where & Definition \\ \hline
+JCS\_EXTENSIONS & U & use libjpeg-turbo jpeg color space extensions \\
+KbhitPoll & U & use poll() to wait for keyboard input in lieu of kbhit() \\
 KeyboardFncs & all & support (raw) keyboard functions \\
 LargeInts & IU & system has arbitrary precision integers \\
 LineCodes & IU & support better debug/error/line number reporting \\
@@ -127,6 +142,7 @@ MacGraph & U & build graphics using (legacy pre OSX) Mac graphics (should delete
 MacOSX & U & build on modern UNIX-based Mac platform \\
 MAIN & U & build standalong executable to test file\_comp() (delete) \\
 MaxListSlots & all & Maximum number of list slots per block, if any \\
+MDEBUG & U & Include messaging debug output to standard error (delete) \\
 mdw & U & don't use "vector/word" vord type. (delete) \\
 mdw\_accessor\_maybe\_mutator & U & (??) (delete) \\
 mdw\_debug\_store\_usage & U & enable store instrumentation (delete) \\
@@ -140,6 +156,7 @@ mdw\_previous\_method & U & old code (delete) \\
 mdw\_replaced & U & old code (delete) \\
 mdw\_0 & U & not defined (change to \#if 0) \\
 Messaging & U & build in support for HTTP, POP, etc. \\
+MonitoredTrappedvar & U & support variable traps, apparently only on locals \\
 MSDOS & IU & build on Microsoft DOS and descendants (includes Windows, LOL) \\
 MSVC & IU & build on Microsoft Windows using Visual C/C++ \\
 MSWIN & 9 & build on Microsoft Windows \\
@@ -176,6 +193,7 @@ NTConsole & IU & build to use MS Windows native cmd.exe console \\
 NTGCC & U & build with GCC on MS Windows \\
 OF & U & undefine OF to avoid gcc warning on redefinition \\
 OldCode & IU & old code (delete) \\
+OpenAttributes & IU & support record I/O attribute args to open() (delete) \\
 opt\_try & U & optimization to try (need to analyze before deletion) \\
 opt\_try\_dangeresque & U & dangerous optimization to try  \\
 OptimizeDescriptorAssignments & U & Optimize descriptor assignments \\
@@ -189,17 +207,23 @@ PATH\_MAX & U & maximum path length for file names (posix) \\
 PatternImage & U & detailed images of (SNOBOL) pattern values (merge into PatternType) \\
 PatternType & U & support (SNOBOL) pattern data type \\
 Pipes & all & support (unidirectional) pipes, open() mode "p" \\
+Polling & IU & include periodic checks, e.g. for Window input \\
 PosixFns & U & support POSIX facilities \\
 PresentationManager & IU & build graphics using OS/2 PM (should delete) \\
+PRINTF\_DEBUG & U & enable debugging printf's for pattern facilities (rename) \\
+PROFIL\_CHAR\_P & IU & profil() requires char * in its first argument \\
 PseudoPty & U & enable pseudo-tty (bidirectional pipe-like) facilities \\
 PTHREAD\_STACK\_MIN & POSIX & Minimum thread stack size in bytes. \\
 PthreadCoswitch & U & build co-expression facilities using Pthreads \\
 ReadDirectory & 9 & support directory reading \\
-RecordIO & IU & (mainframe, binary) record(-at-a-time file) IO \\
+RecordIO & IU & (mainframe, binary) record(-at-a-time file) IO (delete) \\
 Redhat71 & U & system has Redhat 7.1 header bug (Xosdefs) \\
+RefPath & IU & default path used for includes, if any \\
 reverse\_logic & U & use reverse logic (delete) \\
 Rttx & 9 & build the interpreter runtime system (rtt -x, for iconx) \\
+SASC & IU & using SAS C (descended from Amiga Lattice) compiler (delete) \\
 SCCX\_MX & IU & some old compiler (delete) \\
+ScrollingConsoleWin & U & native editregion w/ scrollbars for console window (MS Windows) \\
 sequent & all & build on Sequent platform (libXpm) \\
 ShellHeader & IU & use a script in front of icode to launch iconx \\
 SoftThreads & U & Unicon-level threads (prototype, do not use) \\
@@ -207,6 +231,7 @@ SrcColumnInfo & IU & include column \# information in icode \\
 SrcSyntaxInfo & IU & include syntax information in icode \\
 StackCheck & IU & perform interpreter stack overflow checks \\
 stat & U & if system idiotically defines stat, undefine it \\
+STAT\_ZFILE & IU & stat() and uncompress from .Z file if needed (idiotically define stat, on Windows) (libXpm) \\
 static & U & some emacs usg workaround!? (gdbm, should delete) \\
 strlen & IU & if system idiotically defines strlen, undefine it \\
 STDC & U & system is using ANSI C \\
@@ -223,14 +248,19 @@ Type & U & undefine Type to avoid gcc warning on redefinition \\
 TypTrc & U & type tracing (iconc) \\
 Unicode & U & support Unicode strings and csets (prototype, do not use) \\
 unordered\_traversal & U & print iconc allocation statistics via unordered traversal (delete) \\
+UpStack & IU & C stack grows upwards \\
 USING\_ARIZONA\_RTL & U & iconc linking to a UA run-time library (delete) \\
+VOID\_SPRINTF & IU & system has a void sprintf() (libXpm, delete) \\
 VMS & 9 & build on DEC VMS operating system \\
 WIN32 & 9 & Predefined compiler symbol when building  on Windows \\
 WinExtns & 9 & support MS Windows-specific functions \\
 WinGraphics & 9 & build graphics using MS Windows (renamed) \\
+WITHOUT\_SPEEDUPS & IU & slower legacy code (libXpm, delete) \\
 X\_NOT\_STDC\_ENV & U & under Redhat 7.1, disable this bogus definition \\
 X\_WCHAR & U & under Redhat 7.1, disable this bogus definition \\
+XENIX\_386 & U & build on XENIX 32-bit x86 platform (delete) \\
 XpmFormat & all & build with libXpm support \\
+XpmFree & IU & facilitate redefining libXpm's free()  (delete) \\
 XWindows & all & build graphics using X11 \\
 YYLEX\_PARAM & IU & send a parameter to yylex() \\
 YYMAXDEPTH & IU & initial (icon[tc]) parse stack depth (byacc, yystacksize) \\

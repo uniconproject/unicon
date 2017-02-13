@@ -402,13 +402,18 @@ FILE *fd;
    word tally = 0;
    word n = 0;
 
-#if AAANT
+#ifdef NT_FIXFTELL
    /*
     * Under NT, ftell() used in Icon where() returns bad answers
     * after a wlongread().  We work around it here by fseeking after fread.
+    *
+    * Update (Feb/2017): This seems to have the opposite effect on newer
+    * systems, i.e. it breaks ftell rather than fixing it.
+    * We are keeping it under a special symbol and will only
+    * be turned on if it is asked for explicitly.
     */
    word pos = ftell(fd);
-#endif					/* NT */
+#endif					/* NT_FIXFTELL */
 
 #ifdef XWindows
    if (isatty(fileno(fd))) wflushall();
@@ -417,18 +422,18 @@ FILE *fd;
    while (len > 0) {
       n = gzread(fd,ts, width * ((int)((len < MaxIn) ? len : MaxIn)));
       if (n <= 0) {
-#if AAANT
+#ifdef NT_FIXFTELL
          gzseek(fd, pos + tally, SEEK_SET);
-#endif					/* NT */
+#endif					/* NT_FIXFTELL */
          return tally;
 	 }
       tally += n;
       ts += n;
       len -= n;
       }
-#if AAANT
+#ifdef NT_FIXFTELL
    gzseek(fd, pos + tally, SEEK_SET);
-#endif					/* NT */
+#endif					/* NT_FIXFTELL */
    return tally;
    }
 

@@ -1043,13 +1043,8 @@ Deliberate Syntax Error
    k_main.dword = D_Coexpr;
    BlkLoc(k_main) = (union block *) mainhead;
    k_current = k_main;
-#ifdef AAANativeCoswitch
-     mainhead->status = Ts_Main;
-#else					/* NativeCoswitch */
-     mainhead->status = Ts_Main | Ts_Attached | Ts_Async;
-#endif					/* NativeCoswitch */
+   mainhead->status = Ts_Main | Ts_Attached | Ts_Async;
 
-   /**/
 #ifdef Concurrent
    thread_call=0;		/* The thread who requested a GC */
    NARthreads=1;	/* Number of Async Running threads*/

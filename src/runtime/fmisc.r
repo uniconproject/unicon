@@ -2918,20 +2918,17 @@ function{1} Attrib(argv[argc])
       return integer
       }
    body {
+
+      /*
+       * TODO: Generalize Attrib() to accept data of other types
+       * such as arrays, and query/change their attributes.
+       */
+   
       struct b_coexpr *ccp;
       struct b_list *hp;
       word base=0, q, n;
 
       if (argc == 0) runerr(130, nulldesc);
-
-#ifdef AAArrays
-  /* pending: add support for Attrib(L, DATATYPE") */
-		   if (BlkD(x,List)->listtail==NULL){
-	    	      if (BlkType(BlkD(x,List)->listhead)==T_Realarray)
-      		         return C_string "realarray";
-      		      return C_string "intarray";
-	    	      } 
-#endif					/* Arrays*/
 
       if (is:coexpr(argv[0])) {
       	 if (argc == 1) runerr(130, nulldesc);

@@ -1255,13 +1255,14 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
     *  new string and block region should be allocated.
     */
 
-    if (strsiz <  MinStrSpace)
-       strsiz = MinStrSpace;
-    if (blksiz <  MinAbrSize)
-       blksiz = MinAbrSize;
+   if (strsiz <  MinStrSpace)
+      strsiz = MinStrSpace;
+   if (blksiz <  MinAbrSize)
+      blksiz = MinAbrSize;
 
-   if((rp = reuse_region(strsiz, Strings)) != 0)
+   if((rp = reuse_region(strsiz, Strings)) != 0){
       ts->Curstring =  curstring = rp;
+      }
    else if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
 

@@ -1313,15 +1313,12 @@ struct b_coexpr *popact(struct b_coexpr *ce)
    arp = &abp->arec[abp->nactivators - 1];
    actvtr = arp->activator;
 
-#ifdef AAAConcurrent
-   if (IS_TS_SYNC(ce->status)){
-#endif					/* Concurrent */
+/*
+ *    FIXME: check if this is OK for a thread
+ */
       if (--arp->acount == 0)
          abp->nactivators--;
       ce->es_actstk = abp;
-#ifdef AAAConcurrent
-      }
-#endif					/* Concurrent */
 
    return actvtr;
 

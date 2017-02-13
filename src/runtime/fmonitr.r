@@ -381,13 +381,13 @@ char typech[MaxType+1];	/* output character for each type */
 
 int noMTevents;			/* don't produce events in EVAsgn */
 
-#ifdef HaveProfil
+#if HAVE_PROFIL
 union { 			/* clock ticker -- keep in sync w/ interp.r */
    unsigned short s[16];	/* four counters */
    unsigned long l[8];		/* two longs are easier to check */
 } ticker;
 unsigned long oldtick;		/* previous sum of the two longs */
-#endif					/* HaveProfil */
+#endif					/* HAVE_PROFIL */
 
 #if UNIX
 /*
@@ -549,14 +549,14 @@ void EVInit()
     *  The reference to EVInit below just obtains an arbitrary address within
     *  the text segment.
     */
-#ifdef AAAHaveProfil
+#if HAVE_PROFIL
 #ifdef PROFIL_CHAR_P
    profil((char *)(ticker.s), sizeof(ticker.s), (long) EVInit & ~0x3FFFF, 2);
 #else					/* PROFIL_CHAR_P */
    profil((unsigned short *)(ticker.s), sizeof(ticker.s),
 	  (long) EVInit & ~0x3FFFF, 2);
 #endif					/* PROFIL_CHAR_P */
-#endif					/* HaveProfil*/
+#endif					/* HAVE_PROFIL */
 #endif					/* UNIX */
 
    }

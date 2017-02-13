@@ -197,11 +197,6 @@
    #define INTMAIN
 #endif					/* NoINTMAIN */
 
-#ifndef NoProfil
-   #undef HaveProfil
-   #define HaveProfil
-#endif					/* NoProfil */
-
 #ifndef NoMessaging
    #undef Messaging
    #define Messaging
@@ -862,6 +857,11 @@ Deliberate Syntax Error
 #define HAVE_LIBIODBC 0
 #define HAVE_LIBODBC 0
 #endif					/* NoODBC */
+
+#ifdef NoProfil
+#undef HAVE_PROFIL
+#define HAVE_PROFIL 0
+#endif					/* NoProfil */
 
 #ifndef HAVE_LIBZ
 #define HAVE_LIBZ 0

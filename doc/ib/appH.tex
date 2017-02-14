@@ -17,6 +17,9 @@ respective compilers that begin with one or two underscores. Also
 omitted are event codes beginning E\_ or e\_, which normally are
 integer constants but may be used as ifdef controls over whether
 individual events are instrumented within a runtime system build.
+Another category of omitted symbols are those that are the names
+of parameters in \#begdef multi-line macros; they are local in
+scope and cannot be modified in define.h or used anywhere else.
 
 
 \bigskip
@@ -31,6 +34,12 @@ AAArrays & U & pretend you don't see junk under AAA prefix \\
 AAAHaveProfil & U & JAG disabled profil() without concern over what that broke\\
 AAANativeCoswitch & U & pretend you don't see junk under AAA prefix \\
 AAANT & U & pretend you don't see junk under AAA prefix \\
+abs & IU & compute absolute value of x and y \\
+ActStkBlkEnts & IU & number of entries in an activation stack block \\
+AlcMax & IU & this many co-expressions or higher triggers aggressive
+	co-expression garbage collection (every new co-expression?!) \\
+ALIGN\_SIZE & U & alignment chunk size (gdbm) \\
+alloca & U & system provides alloca() \\
 AllocReg & IU & allocate a region \\
 AllocTrace & U & do printf's when alloc() is called (delete) \\
 AllocType & U & allocation type \\
@@ -42,38 +51,53 @@ ARM & IU & build on Acorn Archimedes legacy ARM platform (delete) \\
 ArmFncs & IU & legacy Acorn Archimedes functions (delete) \\
 Arrays & U & support C-compatible integer and real arrays \\
 \_AS\_HEADER & U & GNU portable shell tool, used as a header (libtp) \\
+AsmOver & IU & use assembler code overflow checks (remove) \\
 ATARI\_ST & IU & build on ATARI ST platform (delete) \\
 Audio & U & support audio file playback \\
 AZTEC\_C & IU & build on Aztec C compiler (Amiga, delete) \\
 BadCode & IU & workaround apparent code generation bug on old MS C compiler (delete) \\
 bcopy & IU & redefine bcopy as memcpy (libxpm; switch to memcpy) \\
+Big & IU & number above which string-to-numeric conversion starts to
+	get fuzzy\\
 BinaryHeader & 9 & executable header is an actual binary executable,
 		not a script \\
+BLKSIZE & IU & standard block region size \\
+BLOCKSIZE & IU & standard block region size \\
 Bool & IU & Boolean data type (xpm) \\
+BOOL & IU & Boolean data type; avoiding a double typedef \\
 BORLAND\_286 & IU & 16-bit Turbo C (delete) \\
 BORLAND\_386 & IU & 32-bit Turbo C (delete) \\
 BROKEN\_LIBIO & U & work around broken <libio.h> \\
 BSD & IU & build on BSD UNIX platform \\
 BSD\_4\_4\_LITE & U & accommodate BSD 4.4 Lite's unusual socket sin\_len/sun\_len behavior \\
+ByteBits & IU & number of bits in a byte \\
 bzero & IU & redefine bzero as memset (libxpm; switch to memset) \\
+CComp & IU & C compiler that iconc uses \\
 CDC\_VXVE & IU & strange uword typedef on CDC VXVE platform (delete) \\
 CLK\_TCK & all & clock ticks per second. Should change to CLOCKS\_PER\_SEC. \\
 CoClean & IU & cleanup co-expressions \\
 CoExpr & IU & support co-expressions \\
+COEXPSIZE & IU & standard co-expression stack size \\
 COMPILER & IU & build iconc optimizing compiler \\
 Concurrent & U & build with concurrent threads \\
 ConcurrentCOMPILER & U & build iconc with (preliminary) concurrency support \\
 ConsoleWindow & U & emulate a console window (graphics, mainly Windows) \\
+const & U & disable the const keyword when necessary \\
 CONVEX & IU & build on Convex platform (should delete) \\
+COpts & IU & C compiler command line options that iconc uses \\
 CRAY & IU & build on Cray (gdbm, should delete) \\
 CRAY2 & IU & build on Cray 2 (gdbm, should delete) \\
+CRAY\_STACK & U & legacy CRAY stack linkage structs (delete) \\
 CSET2 & IU & build using IBM CSet/2 compiler (delete) \\
 CSET2V2 & IU & build using version 2 of the IBM CSet/2 compiler (delete) \\
+CStateSize & IU & size of the C state (saved registers) for co-expressions \\
+CSuffix & IU & extension used for C source files \\
 CXPMPROG & IU & omit some functions (delete; libXpm) \\
 dangeresque & U & buggy code, do not use (delete) \\
 DARWIN\_PBUILDER & U & enable Mac OS X support in audio code \\
 DataParallel & U & support list-at-a-time data parallel operations \\
 Dbm & U & enable (N)DBM database support \\
+DBSuffix & IU & extension used for runtime system database files \\
 Debug & 9 & enable debugging features (libXpm) \\
 DEBUG & U & print debugging info (delete or rename) \\
 DebugOnly & U & output debugging statistics after type inferencing (rename) \\
@@ -83,12 +107,16 @@ DeBugIconx & IU & enable debugging features for the VM interpreter, iconx \\
 DeBugLinker & IU & enable debugging features for the linker, ilink \\
 DeBugTrans & IU & enable debugging features for the translator, itran \\
 DEBUG\_I00AFUNC & U & add debugging printf's (gdbm, should delete) \\
+DEBUG\_INTERP & IU & include VM interpreter debugging function stkdump() \\
 Debug2 & 9 & enable debugging features (libXpm) \\
 DefPath & IU & default IPATH/LPATH (legacy, situation more complicated now) \\
 DescriptorDouble & U & store reals in descriptors \\
+DiffPtrs & IU & difference/distance between two pointers \\
 DL\_GETERRNO & U & some FreeBSD version <= 2.0 detectable symbol (delete) \\
 DLLICONX & U & build iconx as a .dll \\
 DMALLOC & U & enable debugging malloc (audio) \\
+DMAXCOLORS & IU & display's maximum number of colors, if
+	indexed/allocated colors are in use \\
 DosFncs & IU & enable MS-DOS functions (should delete) \\
 DOS386 & IU & build using one of the 32-bit DOS extended C compilers (delete) \\
 Double & all & require C double alignment \\
@@ -98,30 +126,40 @@ emacs & U & emacs usg workaround (gdbm, should delete) \\
 errno & U & undefine errno to allow use as a Unicon keyword \\
 EventMon & IU & support program execution event monitoring \\
 ExecImages & IU & executable images (save() function), obsolete \\
+ExecSuffix & IU & extension used for executables \\
 ExpTools & IU & use TOOLS environment to modify patched executables (?) \\
 ExternalFunctions & IU & external functions; some kind of precursor to loadfunc() \\
+F\_Nqual & IU & flag: descriptor value is not a string/qualifier \\
+F\_Ptr & IU & flag: descriptor vword is a pointer \\
+F\_Typecode & IU & flag: descriptor dword contains a type code \\
+F\_Var & IU & flag: descriptor vword is a variable reference \\
 FAttrib & all & support file attributes \\
 FieldTableCompression & U & Enable field table compression in icode \\
 FileSep & all & File path separator. Specific to common/filepart.c \\
 FncTrace & IU & enable call tracing keyword \&ftrace (delete) \\
 FOR\_MSW & IU & libXpm Microsoft Windows support \\
 FreeBSD & IU & building on FreeBSD platform \\
+fsync & U & provide faux fsync() on Windows if needed \\
 GenericBSD & IU & build on generic BSD-based platform \\
 GC\_TIMING\_TUNING & U & measure and report garbage collection times (rename?)\\
 \_GETOPT\_H & U & "getopt.h" has already been included (gdbm) \\
 GETOPT\_COMPAT & U & non-POSIX getopt() compatible (gdbm, should delete) \\
 GNU & U & use "ndbm.h" not <ndbm.h> (gdbm) \\
+GranSize & IU & storage allocation granule size (dead, delete) \\
 Graphics & all & build with (2D) graphics facilities \\
 Graphics3D & U & build with 3D graphics facilities \\
 HardWiredPaths & IU & support patching the path to iconx into executable headers \\
 HAVE\_ALLOCA\_H & U & system has <alloca.h> (gdbm) \\
 HAVE\_ARPA\_INET\_H & U & system has <arpa/inet.h> (libtp) \\
+HAVE\_ASCTIME\_R & U & system has asctime\_r() \\
 HAVE\_BCOPY & U & system has bcopy() (libtp; switch to memcpy or memmove) \\
 HAVE\_BZERO & U & system has bzero() (libtp; switch to memset) \\
 HAVE\_CLOCK\_GETTIME & U & system has clock\_gettime() \\
 HAVE\_CONFIG\_H & U & build library using Unicon's "config.h" \\
 HAVE\_CRYPT & U & system has crypt() \\
 HAVE\_CRYPT\_R & U & system has crypt\_r() \\
+HAVE\_CTIME\_R & U & system has ctime\_r() \\
+HAVE\_D3D & U & system has Direct3D library \\
 HAVE\_ERRNO\_H & U & system has <errno.h> \\
 HAVE\_FCNTL\_H & U & system has <fcntl.h> \\
 HAVE\_FILE\_H & U & system has <file.h> \\
@@ -135,13 +173,20 @@ HAVE\_GETPWUID & U & system has getpwuid() \\
 HAVE\_GETRLIMIT & U & system has getrlimit() \\
 HAVE\_GETRUSAGE & U & system has getrusage() \\
 HAVE\_GETUID & U & system has getuid() \\
+HAVE\_GMTIME\_R & U & system has gmtime\_r() \\
+HAVE\_INET\_ATON & U & system has inet\_aton() \\
+HAVE\_INET\_PTON & U & system has inet\_pton() \\
 HAVE\_KEYWORD\_\_THREAD & U & system has \_\_thread \\
 HAVE\_LIBALUT & U & system has libalut, the openAL utility library \\
+HAVE\_LIBALTYPES & U & system has <AL/altypes.h> and <AL/alexttypes.h> \\
 HAVE\_LIBCL & U & system has libcl (opencl() function; unfinished business) \\
 HAVE\_LIBFTGL & U & system has FTGL, a font library for OpenGL \\
 HAVE\_LIBGL & U & system has OpenGL 3D library \\
 HAVE\_LIBIODBC & U & system has libiodbc \\
 HAVE\_LIBJPEG & U & system has JPEG image format \\
+HAVE\_LIBJVOIP & U & system has JVOIP \\
+HAVE\_LIBJRTP & U & system has JRTP \\
+HAVE\_LIBJTHREAD & U & system has JTHREAD \\
 HAVE\_LIBODBC & U & system has libodbc \\
 HAVE\_LIBOGG & U & system has OGG audio \\
 HAVE\_LIBOPENAL & U & system has OpenAL audio \\
@@ -150,9 +195,12 @@ HAVE\_LIBPTHREAD & U & system has posix threads library \\
 HAVE\_LIBSDL & U & system has SDL \\
 HAVE\_LIBSMPEG & U & system has SMPEG library \\
 HAVE\_LIBSSL & U & system has SSL encryption \\
+HAVE\_LIBVOIP & U & system has libvoip \\
 HAVE\_LIBVORBIS & U & system has vorbis \\
+HAVE\_LIBX11 & U & system has Xlib \\
 HAVE\_LIBXPM & U & system has libXpm (avoid gotchas when including xpm.h) \\
 HAVE\_LIBZ & U & system has libZ compression \\
+HAVE\_MEMCPY & U & system has memcpy() \\
 HAVE\_MEMORY\_H & U & system has <memory.h> \\
 HAVE\_MEMSET & U & system has memset() \\
 HAVE\_NET\_ERRNO\_H & U & system has <net/errno.h> \\
@@ -161,6 +209,8 @@ HAVE\_NETINET\_IN\_H & U & system has <netinet/in.h> \\
 HAVE\_OGG & U & system has libogg (merge into HAVE\_LIBOGG or delete) \\
 HAVE\_RENAME & U & system has rename() (gdbm) \\
 HAVE\_SETRLIMIT & U & system has setrlimit() \\
+HAVE\_SNPRINTF & U & system has snprintf() \\
+HAVE\_ST\_BLKSIZE & U & system stat() has st\_blksize field \\
 HAVE\_STDLIB\_H & U & system has <stdlib.h> (gdbm) \\
 HAVE\_STRERROR & U & system has strerror() \\
 HAVE\_STRING\_H & U & system has <string.h> \\
@@ -182,39 +232,72 @@ HAVE\_XFT & U & system has XFT library \\
 HaveProfil & IU & system has profil(). Should be autoconfed. \\
 HaveXpmFormat & 9 & yes we have Xpm support available \\
 Header & IU & system has an executable header of some kind \\
+HEAPSIZE & IU & standard allocated block region size \\
 HELPER\_THREAD & U & helper thread handles window input events
 	(pollevent() calls should be removed, not made a no-op) \\
 HIGHC\_386 & IU & legacy 386 DOS compiler (delete) \\
 HighResTime & U & use high resolution timers if tracing type inferencing \\
 HostStr & IU & host name to use instead of what uname() would give \\
 HP & IU & build on Hewlett Packard platform \\
+HSegs & IU & hash table segments \\
+HSlots & IU & hash table slots \\
+HSuffix & IU & extension used for C include files \\
+IcodeASuffix & IU & extension used for icode "a" files ? (delete) \\
+IcodeSuffix & IU & extension used for icode a files \\
 Iconc & IU & build optimizing compiler (merge with COMPILER?) \\
+ICONCORE & IU & environment variable that says errors should coredump \\
+ICONC\_XLIB & IU & link option to link graphics into iconc-generated executable\\
 Iconify & IU & enable canvas=iconic to actually call XIconifyWindow \\
+IN\_GCC & U & if maybe we are compiling using gcc (gdbm; consider delete) \\
 index & IU & define legacy index function as strchr (libxpm; just nuke index) \\
+INT\_16\_BITS & IU & C compiler's int is 16 bits (gdbm) \\
 IntBits & IU & number of bits in an int \\
 INTEL\_386 & IU & build with (legacy) Intel DOS 386 C compiler (delete) \\
 INTMAIN & IU & C compiler requires main to return int not void \\
+IPATH & IU & environment variable list of directories the linker searches for ucode modules \\
 IRIS4D & IU & build on SGI Iris platform \\
 ISQL & U & system supports SQL/ODBC \\
 JCS\_EXTENSIONS & U & use libjpeg-turbo jpeg color space extensions \\
 KbhitIoctl & U & implement kbhit() as a call to ioctl() \\
 KbhitPoll & U & use poll() to wait for keyboard input in lieu of kbhit() \\
 KeyboardFncs & all & support (raw) keyboard functions \\
+L\_SET & U & define alias for SEEK\_SET (gdbm; change code to just SEEK\_SET?) \\
 LargeInts & IU & system has arbitrary precision integers \\
 LATTICE & IU & build with LATTICE C compiler (delete) \\
+LibSuffix & IU & extension used for C (static) libraries \\
 LineCodes & IU & support better debug/error/line number reporting \\
+Linux & U & system is running Linux \\
 LoadFunc & all & support dynamically loaded C code via loadfunc() \\
+LOCK\_EX & U & provide a LOCK\_EX definition for flock() if one is missing (gdbm) \\
+LOCK\_NB & U & provide a LOCK\_NB definition for flock() if one is missing (gdbm) \\
+LOCK\_SH & U & provide a LOCK\_SH definition for flock() if one is missing (gdbm) \\
+LOCK\_UN & U & provide a LOCK\_UN definition for flock() if one is missing (gdbm) \\
+LogHSlots & IU & log(hash table slots) \\
+LogHuge & IU & maximum base 10 exponent (+ 1) of real/double, used to detect overflow \\
+LONG\_64\_BITS & IU & C compiler's long is 64 bits (gdbm) \\
 LongLongWord & U & use \texttt{long long int} for typedef of word \\
 LONG64 & IU & C compiler's long is 64 bits (xpm) \\
+LSC & IU & some legacy Mac compiler (LightSpeed C?) (delete) \\
 LWC & IU & Lightweight C/C++, legacy Mac compiler (delete) \\
+M\_PI & IU & constant value of Pi \\
 MacGraph & U & build graphics using (legacy pre OSX) Mac graphics (should delete)  \\
 MACINTOSH & IU & build on legacy Mac platform (delete?)  \\
 MacOSX & U & build on modern UNIX-based Mac platform \\
 MAIN & U & build standalong executable to test file\_comp() (delete) \\
-MaxBlock & IU & maximum size that can be allocated via malloc() \\
+max & IU & compute maximum of x and y \\
 MaxAbrSize & IU & maximum allocated block region size \\
+MaxBlock & IU & maximum size that can be allocated via malloc() \\
+MaxHdr & IU & maximum supported size of an executable header \\
+MaxHeader & IU & bytes offset at which the icode header will be found \\
+MaxHLoad & IU & average hash table bucket length that triggers expansion \\
+MAXHOSTNAMELEN & U & maximum host name length (change to use
+	HOST\_NAME\_MAX from <limits.h>) \\
 MaxLevel & IU & Maximum levels (fragment, delete) \\
 MaxListSlots & all & Maximum number of list slots per block, if any \\
+MaxLong & IU & largest long integer \\
+MaxNegInt & IU & string representation of smallest negative number \\
+MaxPath & IU & Maximum path length (merge with PATH\_MAX ?) \\
+MaxStrSpace & IU & maximum allocated string region size \\
 mc68881 & IU & Motorola FPU (delete) \\
 MDEBUG & U & Include messaging debug output to standard error (delete) \\
 mdw & U & don't use "vector/word" vord type. (delete) \\
@@ -231,10 +314,21 @@ mdw\_replaced & U & old code (delete) \\
 mdw\_0 & U & not defined (change to \#if 0) \\
 Messaging & U & build in support for HTTP, POP, etc. \\
 MICROSOFT & U & build on legacy Microsoft C compiler (delete) \\
+min & IU & compute minimum of x and y \\
+MinAbrSize & IU & minimum allocated block region size \\
+MinHLoad & IU & average hash table bucket length that triggers reduction \\
+MinLong & IU & smallest long integer \\
+MinMStackSize & IU & minimum main co-expression stack size \\
+MinQualLstSize & IU & minimum qualifier list size \\
+MinStackSize & IU & minimum stack size \\
+MinStatSize & IU & minimum static region size (delete) \\
+MinStrSpace & IU & minimum string region size (delete) \\
 MonitoredTrappedvar & U & support variable traps, apparently only on locals \\
 MPW & IU & build using Macintosh Programmer's Workship compiler \\
 \_MSC\_VER & IU & Microsoft C version, dated workaround, check for deletion \\
 MSDOS & IU & build on Microsoft DOS and descendants (includes Windows, LOL) \\
+MStackSize & IU & default main co-expression's interpreter stack size \\
+MSTKSIZE & IU & environment variable to override main co-expression's stack size \\
 MSVC & IU & build on Microsoft Windows using Visual C/C++ \\
 MSWIN & 9 & build on Microsoft Windows \\
 MSWIN64 & 9 & build on 64-bit Microsoft Windows \\
@@ -254,27 +348,63 @@ NEED\_STRSTR & 9 & provide strstr() if needed (libXpm) \\
 NEED\_UTIME & U & include <utime.h> if needed (posix facilities) \\
 NeedFunctionPrototypes & IU & check if compiler needs prototypes (libxpm, delete) \\
 Network & U & provide some crude web-reading code (consider deletion) \\
+Never & U & not defined (needs examination) \\
 no\_benefit & U & skip code if it provides no benefit (delete) \\
 NO\_CONFIG\_H & IU & don't use config.h build standalone (rename?) \\
 no\_longer\_used & U & no longer used (delete) \\
 NO\_ZPIPE & IU & don't uncompress .Z files via a piped process (libXpm) \\
+NoArrays & U & build without arrays \\
 NoAuto & U & build without autoconf (gdbm) \\
 NoCoExpr & IU & build without co-expressions \\
+NoConcurrent & U & build without concurrency \\
+NoDbm & U & build without DBM database support \\
+NOERRBUF & IU & environment variable, if set do not buffer standard error output\\
+NoEventMon & U & build without event monitoring \\
+NoExternalFunctions & U & build without external functions support \\
+NoDescriptorDouble & U & build without storing reals in descriptors \\
+NoFreeColorFix & IU & don't free any context's colors (perma-enable the fix)\\
 NoGL & U & build without OpenGL \\
+NoGraphics & IU & build without graphics facilities \\
+NoHeader & IU & build without executable headers \\
+NoIconify & IU & build without canvas=iconic ability in graphics facilities \\
+NoINTMAIN & IU & build without specifying that main() returns an int \\
 NoJPEG & U & build without JPEG \\
+NoKeyboardFncs & IU & build without keyboard functions \\
+NoLargeInts & U & build without arbitrary precision integers \\
 NoLIBZ & U & build without libz \\
-NoMultiThread & U & build without MultiThread \\
+NoLsExtensions & U & suppress GNU ls(1) extension on directory read \\
+NOMAIN & IU & build patchstr as a module to be linked, omit main() \\
+NoMessaging & U & build without messaging facilities \\
+NoMonitoredTrappedVar & U & build without variable trap support \\
+NoMouseWheel & IU & don't support mouse scroll wheel events (remove) \\
+NoMultiThread & U & build without multiple loaded programs support \\
+NoNativeCoswitch & U & build without a native co-expression switch \\
 NoODBC & U & build without SQL/ODBC \\
+NoPatternImage & U & build without extended pattern image() support (delete)\\
+NoPatternType & U & build without the pattern data type \\
 NoPNG & U & build without PNG \\
+NoPosixFns & U & build without Posix facilities \\
+NoProfil & IU & build without profil() \\
+NoPseudoPty & U & build without pseudo-tty / bidirectional pipes \\
+NoRandomize & U & do not set the random number seed \\
+NoSrcColumnInfo & IU & build without column information \\
+NoSrcSyntaxInfo & U & build without syntax structure information \\
+NoStackCheck & IU & build without checks for stack overflow \\
+NoStrInvoke & IU & build without string invocation \\
 NoVFork & U & build without vfork() \\
+NoWildCards & IU & build without support for asterisks in filenames \\
+NoXpmFormat & IU & build without Xpm color pixmap file format \\
 notdef & all & not defined (experimental or debugging code) (libXpm) \\
 now\_in\_tv\_module & U & code has moved (delete) \\
 now\_performed\_in\_tv\_init & U & code has moved (delete) \\
 NT & U & build on (modern) MS Windows \\
 NTConsole & IU & build to use MS Windows native cmd.exe console \\
 NTGCC & U & build with GCC on MS Windows \\
+NULL & U & define if not defined (delete) \\
+ObjSuffix & IU & extension used for C object modules \\
 ODBCVER & U & ODBC version \\
 OF & U & undefine OF to avoid gcc warning on redefinition \\
+OLD\_NTGCC & U & code for old versions of GCC on Windows (delete) \\
 OldCode & IU & old code (delete) \\
 OpenAttributes & IU & support record I/O attribute args to open() (delete) \\
 opt\_try & U & optimization to try (need to analyze before deletion) \\
@@ -292,48 +422,74 @@ OsNameDefines & all & provide OS\_NAME\_DEFINES (libXpm) \\
 PATH\_MAX & U & maximum path length for file names (posix) \\
 PathSep & IU & platform-dependent IPATH/LPATH separator character(s) \\
 PatternImage & U & detailed images of (SNOBOL) pattern values (merge into PatternType) \\
+PatternMatch & IU & support wildcards in rtt (merge into WildCards) \\
 PatternType & U & support (SNOBOL) pattern data type \\
 Pipes & all & support (unidirectional) pipes, open() mode "p" \\
 PIXEL\_ALREADY\_TYPEDEFED & IU & Pixel has already been typedefined (libxpm) \\
 Polling & IU & include periodic checks, e.g. for Window input \\
 PORT & IU & some vague abstract portable platform (delete) \\
 PosixFns & U & support POSIX facilities \\
+PPDirectives & IU & preprocessor directives RTT adds to C \\
+PPInit & IU & platform-specific predefined symbol additions \\
+Precision & IU & number of digits to use in string conversion of real number \\
 PresentationManager & IU & build graphics using OS/2 PM (should delete) \\
 PRINTF\_DEBUG & U & enable debugging printf's for pattern facilities (rename) \\
 PROFIL\_CHAR\_P & IU & profil() requires char * in its first argument \\
 PseudoPty & U & enable pseudo-tty (bidirectional pipe-like) facilities \\
 PTHREAD\_STACK\_MIN & POSIX & Minimum thread stack size in bytes. \\
 PthreadCoswitch & U & build co-expression facilities using Pthreads \\
+QLSIZE & IU & environment variable name to use for the size of the
+	qualifier list (number of live strings allowed during garbage collection) \\
+QSortFncCast & U & data type of system qsort()'s function argument \\
+QualLstSize & IU & default size of the qualifier list (number of live
+	strings allowed during garbage collection) \\ 
+ReadBinary & IU & read file in binary mode \\
 ReadDirectory & 9 & support directory reading \\
+ReadEndBinary & IU & open/update, read and write file in binary mode (rename?) \\
+ReadText & IU & read file in text mode \\
+ReadWriteBinary & IU & create/truncate, read and write file in binary mode \\
 RecordIO & IU & (mainframe, binary) record(-at-a-time file) IO (delete) \\
 Redhat71 & U & system has Redhat 7.1 header bug (Xosdefs) \\
 RefPath & IU & default path used for includes, if any \\
 REPO\_REVISION & U & software repository version \# \\
 reverse\_logic & U & use reverse logic (delete) \\
 rindex & IU & define legacy rindex function as strrchr (libxpm; just nuke rindex) \\
+RTLD\_LAZY & U & if this dload() parameter is not defined, supply a value \\
+RttSuffix & IU & extension used for RTT source files \\
 Rttx & 9 & build the interpreter runtime system (rtt -x, for iconx) \\
 RUSAGE\_THREAD & U & support getrusage("thread") (Linux-specific == boo) \\
 \_\_SASC & IU & using SAS C (descended from Lattice) compiler (delete) \\
 SASC & IU & using SAS C (descended from Amiga Lattice) compiler (delete) \\
 SCCX\_MX & IU & some old compiler (delete) \\
 ScrollingConsoleWin & U & native editregion w/ scrollbars for console window (MS Windows) \\
+SEEK\_SET & U & define SEEK\_SET as 0 if not defined (gdbm; remove) \\
 SEPARATE\_YYERROR & U & don't use legacy yyerror() in error.h, use merr (delete legacy?) \\
 sequent & all & build on Sequent platform (libXpm) \\
 sgi & U & build on Silicon graphics platform (gdbm, should delete) \\
 ShellHeader & IU & use a script in front of icode to launch iconx \\
+SigFncCast & U & data type of system signal()'s function argument \\
 \_SIMX\_H & IU "simx.h" has already been included (xpm) \\
+SM\_DIGITIZER & U & Windows touchscreen device can be queried \\
+SOCKET\_ERROR & U & provide a default value of SOCKET\_ERROR \\
 SoftThreads & U & Unicon-level threads (prototype, do not use) \\
+SourceSuffix & IU & extension used for Icon/Unicon source files \\
 sparc & U & build on Sun Sparc processor (gdbm, should delete) \\
+SQL\_LENORIND & U & data type ODBC uses for certain SQL args, usually SQLLEN \\
+Sqlinc & IU & Size of qualifier list increment \\
 SrcColumnInfo & IU & include column \# information in icode \\
 SrcSyntaxInfo & IU & include syntax information in icode \\
+STACK\_DIRECTION & U & C stack direction (gdbm) \\
+StackAlign & IU & align interpreter stack to this many bytes \\
 StackCheck & IU & perform interpreter stack overflow checks \\
 StackPic & IU & diagnostic stack pictures for debugging/monitoring \\
+StackSize & IU & default size of interpreter stack \\
 stat & U & if system idiotically defines stat, undefine it \\
-STAT\_ZFILE & IU & stat() and uncompress from .Z file if needed (idiotically define stat, on Windows) (libXpm) \\
+STAT\_ZFILE & IU & stat() and uncompress .Z file if needed (idiotically define stat, on Windows) (libXpm) \\
 static & U & some emacs usg workaround!? (gdbm, should delete) \\
-strlen & IU & if system idiotically defines strlen, undefine it \\
 STDC & U & system is using ANSI C \\
 STDC\_HEADERS & U & system has ANSI standard header files \\
+strlen & IU & if system idiotically defines strlen, undefine it \\
+STRSIZE & IU & name of environment variable for string region size \\
 sun & U & build on Sun Microsystems platform (gdbm, should delete) \\
 SUN & IU & build on Sun Microsystems platform (should delete) \\
 SVR4 & 9 & build on UNIX System V release 4 (libXpm, gdbm) \\
@@ -341,18 +497,23 @@ SysOpt & IU & use the system-provided getopt() instead of our own \\
 SysSelectH & U & system has <sys/select.h> (migrate to autoconf) \\
 SYSV & 9 & build on UNIX System V (libXpm) \\
 TallyOpt & U & add -T option, print an array of 16 counters on exit (delete) \\
+TargetDir & IU & Target directory, usually the current working directory \\
 test & IU & build a standalone test of mktemp() (rlocal, should delete) \\
 TEST & U & build a standalone test of getopt() (gdbm, should delete) \\
 THINK\_C & IU & build using legacy Macintosh Think C compiler (delete) \\
 TokDotH & 9 & filename that overrides the token.h file definitions to use \\
 \_\_TRACE & U & print a message on an internal GC (non)error (delete) \\
 TRACE & U & name of TRACE environment variable; monkey with POP protocol, add tracing (libtp, ask Steve) \\
+TraceOut & IU & trace output command (not used; delete) \\
 TranStats & IU & generate iconc translation statistics \\
 True & IU & non-zero (xpm) \\
 TSTATARG & U & pass thread state arguments (experiment, do not use) \\
 TURBO & IU & Borland Turbo C family of compilers (delete) \\
 Type & U & undefine Type to avoid gcc warning on redefinition \\
 TypTrc & U & type tracing (iconc) \\
+USuffix & U & Suffix used for combined ucode files \\
+U1Suffix & IU & Suffix used for ucode instructions (may be empty) \\
+U2Suffix & IU & Suffix used for ucode public interfaces \\
 Unicode & U & support Unicode strings and csets (prototype, do not use) \\
 UNICON\_IOCTL & U & provide a working ioctl() call (normalize to autoconf) \\
 UNIX & IU & system is a UNIX \\
@@ -372,23 +533,32 @@ WildCards & IU & support asterisks and such in filenames \\
 WIN32 & 9 & Predefined compiler symbol when building  on Windows \\
 WinExtns & 9 & support MS Windows-specific functions \\
 WinGraphics & 9 & build graphics using MS Windows (renamed) \\
+WINVER & IU & MS Windows version \\
 WITHOUT\_SPEEDUPS & IU & slower legacy code (libXpm, delete) \\
 WordBits & IU & number of bits in a machine word \\
 WORD64 & IU & C compiler's word is 64 bits (xpm) \\
+WriteBinary & IU & write file in binary mode \\
+WriteText & IU & write file in text mode \\
 X\_NOT\_STDC\_ENV & U & under Redhat 7.1, disable this bogus definition \\
+X\_OK & IU & access() execute permission check disabled under Windows \\
 X\_WCHAR & U & under Redhat 7.1, disable this bogus definition \\
 XENIX\_386 & U & build on XENIX 32-bit x86 platform (delete) \\
+XlibSpecificationRelease & version of X11 we are compiling with \\
 XPM\_h & IU & xpm.h has been included (rename XPM\_H?) \\
 XPMI\_h & IU & XpmI.h (internal header) has been included (rename XPMI\_H?) \\
 XPM\_NUMBERS & IU & ask xpm.h to give only version numbers (delete) \\
 XpmFormat & all & build with libXpm support \\
 XpmFree & IU & facilitate redefining libXpm's free()  (delete) \\
 XWindows & all & build graphics using X11 \\
+YY\_NO\_LEAKS & IU & free up yacc stack \\
+YYDEBUG & IU & include yacc (parser) debugging code \\
 YYLEX\_PARAM & IU & send a parameter to yylex() \\
 YYMAXDEPTH & IU & initial (icon[tc]) parse stack depth (byacc, yystacksize) \\
 YYPARSE\_PARAM & IU & parameter to (icon[tc]) yyparse() (byacc) \\
 YYPARSE\_PARAM\_TYPE & IU & type of parameter to (icon[tc]) yyparse() (byacc) \\
+YYPURE & IU & free up yacc stack \\
 YYSTACKSIZE & IU & initial (icon[tc]) parse stack depth (byacc, yymaxdepth) \\
+YYSTYPE & IU & yacc value stack type \\
 ZPIPE & 9 & uncompress .Z files via a piped process (libXpm) \\
 ZTC\_386 & IU & build with Zortech C DOS 386 compiler (delete) \\
 \hline

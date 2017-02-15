@@ -632,14 +632,6 @@ int f(dptr s, dptr p)
    EVValD(s, e_aconv);
    EVValD(&emptypatternd, e_tconv);
    type_case *s of {
-   string: {
-      tended union block *bp = pattern_make(0, &EOP,PC_String,1, *s);
-      EVVal(PC_String, e_patcode);
-      p->dword = D_Pattern;
-      BlkLoc(*p) = bp;
-      EVValD(p, e_sconv);
-      return 1;
-      }
    cset: {
       tended union block *bp = pattern_make(0, &EOP,PC_Any_CS,1, *s);
       EVVal(PC_Any_CS, e_patcode);
@@ -653,8 +645,17 @@ int f(dptr s, dptr p)
       return 1;
       }
    default: {
-      EVValD(s, e_fconv);
-      return 0;
+      tended union block *bp = NULL;
+      if (!cnv:string(*s, *s)) {
+	 EVValD(s, e_fconv);
+	 return 0;
+	 }
+      bp = pattern_make(0, &EOP,PC_String,1, *s);
+      EVVal(PC_String, e_patcode);
+      p->dword = D_Pattern;
+      BlkLoc(*p) = bp;
+      EVValD(p, e_sconv);
+      return 1;
       }
       }
 }

@@ -27,18 +27,14 @@
 
 SRC=admin.tex advanced.tex assoc.tex cgi.tex classes.tex database.tex diffs.tex genetic.tex graphics.tex gui.tex internet.tex intro.tex ipl.tex langref.tex large.tex lexyacc.tex port.tex preface.tex programs.tex referenc.tex string.tex struct.tex system.tex ub.tex ucl.tex usecase.tex install.tex
 
-ub.pdf: $(SRC) ub.ind
+ub.pdf: $(SRC)
+	pdflatex ub
+	makeindex ub.idx
 	pdflatex ub
 
 ub.ps: ub.pdf
 	echo "the following pdf2ps command runs silent and deep 1-2 minutes..."
 	pdf2ps ub.pdf
-
-ub.ind: ub.idx
-	makeindex ub.idx
-
-ub.idx: $(SRC)
-	pdflatex ub
 
 zip:
 	zip -r ub.zip $(SRC) makefile icon.sty ub-img

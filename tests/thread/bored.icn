@@ -2,35 +2,45 @@
 # Author: Jafar Al-Gharaibeh
 # 01/01/2011
 #
-# Bored threads : an example program that illustrates the use of threads and mutexes
+# Bored threads : a program that illustrates the use of threads and mutexes
+#
 # Story: Once upon a time, few threads were running on a computer in a small lab.
 # The computer was sitting idle, and the threads were just sitting doing nothing
-# most of the time. They got bored! so they decided to play a game. There was a thread
-# called  Master who is known to "lie" sometimes. And there were three other threads with
-# different personalities, they were called Trust, Notrust, Doubt.
-# The game is as follows, Master thread picks a number randomly (1 to max) and asks the other
-# threads to guess that number. When the threads make incorrect guesses the Master tries
-# to give them hints so they can make better guesses, but as mentioned earlier, the Master
-# can't be fully trusted.
+# most of the time. They got bored! so they decided to play a game. There was a
+# thread called Master who is known to "lie" sometimes. And there were three
+# other threads with different personalities, they were called Trust, Notrust,
+# and Doubt.
+#
+# The game is as follows, Master thread picks a number randomly (1 to max) and
+# asks the other threads to guess that number. When the threads make incorrect
+# guesses the Master tries to give them hints so they can make better guesses,
+# but as mentioned earlier, the Master # can't be fully trusted.
+#
 # The current implementation of the program assumes the following
 #  1. The game is over as soon as one of the threads makes a correct guess
-#  2. Master can't lie about a correct guess (otherwise the game will noe make sense).
-#  3. When a thread makes an uncorrect guess, the master tells him if the guess is
-#     less than the real answer or greater than it. But the master might lie.
-#  4. Master decided to give an honest answer 50% of the time, and a random answer
-#     in the remaining 50%. So, on average, Master is honest 75% of the time.
+#  2. Master can't lie about a correct guess (otherwise the game will not make
+#     sense).
+#  3. When a thread makes an uncorrect guess, the master tells him if the guess
+#     is less than the real answer or greater than it. But the master might lie.
+#  4. Master decided to give an honest answer 50% of the time, and a random
+#     answer in the remaining 50%. So, on average, Master is honest 75% of
+#     the time.
 #  5. Thread ***Trust has faith in Master. He always trusts Master's hints.
-#     currently, Trust uses Master's hints to do a binary serach for the correct answer
-#  6. Thread ***Notrust has no faith in Master and decided to ignore all of his hints.
-#      currently, he just make sequential guesses.
-#  7. Thread ***Doubt likes Master but he knows he can't trust him always. Doubt decided to
-#     follow Master's advice 2/3 of the time and make his random guess 1/3 of the time. He uses
-#      these information to do a binary search for the answer.
-#  8. Threads Trust and Doubt simply restart their search if they reach a deadend.
+#     currently, Trust uses Master's hints to do a binary serach for the
+#     correct answer
+#  6. Thread ***Notrust has no faith in Master and decided to ignore all of
+#     his hints. Currently, he just make sequential guesses.
+#  7. Thread ***Doubt likes Master but he knows he can't trust him always. Doubt
+#     decided to follow Master's advice 2/3 of the time and make his random
+#     guess 1/3 of the time. He uses these information to do a binary search
+#     for the answer.
+#  8. Threads Trust and Doubt simply restart their search if they reach a
+#     dead end.
 #
-#  That is it for now! future improvments might include variations of the behavior of the threads
-#  and the addition of new threads like a thread who picks his guesses randomly or a smart thread
-#  who remembers the history of the Master's hints and try to make a better guess based on that
+#  That is it for now! future improvments might include variations of the
+#  behavior of the threads and the addition of new threads like a thread who
+#  picks his guesses randomly or a smart thread who remembers the history of
+#  the Master's hints and try to make a better guess based on that.
 #
 #  Update (Feb 10, 2011)
 #     Add new threads that help the master evaluate the guesses. 
@@ -96,6 +106,9 @@ global msgs, # list that hold msgs between the threads and the master
                                                                                                   
 procedure main(argv)                                                                                
    local n:=3, threads:=[], answer, ways, names, guesses
+
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
 
     ways:=[trust, notrust, doubt]
     names := ["Trust", "Notrust", "Doubt"]

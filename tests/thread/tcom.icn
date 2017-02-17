@@ -5,10 +5,11 @@
 #
 
 #
-# The main thread creates three threads, (a), (b) and (c), then sends a token to (a) which pass it 
-# to (b), which pass it to (c). (c) send it back to (a) which in trun returns it back to main. The 
-# main thread prints a message representing the trip of the token marked by each stop at every thread
-# along the way. 
+# The main thread creates three threads, (a), (b) and (c), then sends a token to
+# (a) which pass it to (b), which pass it to (c). (c) send it back to (a) which
+# in turn returns it back to main. The main thread prints a message representing
+# the trip of the token marked by each stop at every thread along the way. 
+#
 # The trip of the token (output): Main ==> A ==> B ==> C ==> A ==> Main
 
 
@@ -16,13 +17,16 @@ $include "threadh.icn"
 import threads
 
 procedure main()
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
    write("testing thread communications, inbox/outbox messaging...")
   
    a := thread A()
    b := thread B()
    c := thread C()
 
-   # send refernces of threads to other threads which need them
+   # send references of threads to other threads which need them
 
     b @> a
     c @> b

@@ -3,10 +3,11 @@
 #  10/13/2012
 #  A program that demonstrates the use of channels to communicate between threads
 #
-# The main thread creates three threads, (a), (b) and (c), then sends a token to (a) which pass it 
-# to (b), which pass it to (c). (c) send it back to (a) which in trun returns it back to main. The 
-# main thread prints a message representing the trip of the token marked by each stop at every thread
-# along the way. 
+# The main thread creates three threads, (a), (b) and (c), then sends a token to
+# (a) which pass it to (b), which pass it to (c). (c) send it back to (a) which
+# in turn returns it back to main. The main thread prints a message representing
+# the trip of the token marked by each stop at every thread along the way.
+#
 # The trip of the token (output): Main ==> A ==> B ==> C ==> A ==> Main
 
 
@@ -14,13 +15,16 @@ $include "threadh.icn"
 import threads
 
 procedure main()
+   if not (&features == "concurrent threads") then
+      stop("This program requires concurrent threads.")
+
    write("testing private channels...")
 
    a := thread A()
    b := thread B()
    c := thread C()
 
-   # send refernces of threads to other threads which need them
+   # send references of threads to other threads which need them
 
     b @> a
     c @> a
@@ -39,10 +43,10 @@ procedure main()
     chMA := channel(a, "MA")
 
     # send the token to A and then wait until you hear back.
-    # Notice the use of the non blocking send @>. Since we are sending only a few 
-    # messages in this program we don't have to worry about failing or loosing messages.
-    # the use of the blocking receive is necessary however, since we need to wait to
-    # hear an answer.
+    # Notice the use of the non blocking send @>. Since we are sending only a
+    # few messages in this program we don't have to worry about failing or
+    # losing messages. The use of the blocking receive is necessary however,
+    # since we need to wait to hear an answer.
 
     "Main ==> " @> chMA   
     t := <<@ chAM
@@ -56,7 +60,7 @@ procedure main()
     else
        write("Wrong: Unexpected output!")
    
-   #wait(a | b | c)   # no need for this. Threads have finished what they need to do already!
+   #wait(a | b | c) # no need; threads have finished what they need to do already
 end
 
 procedure A()

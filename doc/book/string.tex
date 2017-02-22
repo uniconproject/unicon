@@ -548,8 +548,8 @@ Patterns are understood in terms of two different points in time, the
 point when the pattern is constructed, and the times at which it is
 used to match a string.  Most of the programming work for patterns
 involves formulating the pattern construction, but most of the
-computation occurs later on during the pattern matches.  Similarly in
-this chapter the next two subsections describe ways to
+computation occurs later on during the pattern matches.
+The next two subsections describe ways to
 create many and various complex patterns, while the two notations for
 using patterns are relatively simple and require little space.  All of
 this only becomes clear with numerous examples that will follow.
@@ -590,13 +590,16 @@ patterns in variables that can then be used at various places in
 larger patterns. Other times, they make it possible to write patterns
 are not easily written as regular expressions.
 
+\bigskip
+
 \begin{tabular}{|l|l|} \hline
 composer & constructs a pattern that... \\ \hline
 \texttt{p1 {\textbar\textbar} p2} & matches if pattern p1 is followed by pattern p2 \\
 \texttt{p1 .{\textbar} p2} & matches if pattern p1 or pattern p2 matches \\
-\texttt{s -$>$ v}   & assigns s to v if an entire pattern match succeeds \\
-\texttt{s =$>$ v}   & assigns s to v if a pattern match makes it here \\
+\texttt{p -$>$ v}   & assigns s to v if an entire pattern match succeeds \\
+\texttt{p =$>$ v}   & assigns s to v if a pattern match makes it here \\
 \texttt{.$>$ v}   & assigns the current position in the match to v \\
+\texttt{`v`}      & evaluates v at pattern match time \\
 \texttt{Abort()}  & causes an entire pattern match to fail immediately \\
 \texttt{Any(c)}   & matches a character in cset c \\
 \texttt{Arb()}    & matches anything \\
@@ -613,13 +616,38 @@ composer & constructs a pattern that... \\ \hline
 \texttt{Rem()}    & matches the remainder of the string \\
 \texttt{Span(c)}  & matches 1 or more characters in cset c, as many as possible \\
 \texttt{Succeed()}& causes the entire pattern match to succeed immediately \\
-\texttt{Tab(n)}   & matches from the current position to position n, moving to
+\texttt{Tab(i)}   & matches from the current position to position i, moving to
 	   that location \\
-\texttt{Rpos(n)}  & sets the position n characters from the right end of the
+\texttt{Rpos(i)}  & sets the position i characters from the right end of the
 	   string \\
-\texttt{Rtab(n)}  & matches from the current position to n
+\texttt{Rtab(i)}  & matches from the current position to i
 	   characters from the right end. \\ \hline
 \end{tabular}
+
+\bigskip
+
+This table summarizes a facility for which an entire chapter could be
+written. Besides what extra information you find on these functions in
+this chapter and in Appendix A, Unicon Technical Report 18 covers
+these constructors in more detail. The concepts generally are
+translated directly from SNOBOL4, so consulting SNOBOL4 books may also
+be of use.
+
+Most operands and arguments are required to be of type pattern, with the
+exception of those marked as type integer (i) or cset (c), and those
+which are variables (v). If a pattern is required, a cset may be
+supplied, with semantics equivalent to the pattern which will match
+any member of the cset. Otherwise if the argument is not a pattern
+it will be converted to a string; strings are converted to patterns
+that match the string.
+
+Variable operands may be simple variables or references with a
+subscript or field operator.  The translator may not currently handle
+arbitrarily complex variable references within patterns.  The
+unevaluated expression (backquotes) operator does handle
+function calls and simple method invocations in addition to
+variables.
+
 
 \subsection{Pattern Match Operators}
 
@@ -632,6 +660,24 @@ There is also a pattern match control structure, \texttt{s ?? p}, which creates
 a new string scanning environment for \texttt{s} and looks for pattern
 \texttt{p} within \texttt{s}, working from left to right.
 
+\subsection{Scopes of Unevaluated Variables}
+
+Since a pattern can be passed as a parameter, variables used in
+patterns might get used outside of the scope where the pattern was
+constructed, potentially anywhere in the program. In SNOBOL4 this was
+not an issue mostly because all variables were global.  In Unicon
+variables are not global by default, and the variables used
+during pattern matching are evaluated in the scope of the pattern match,
+not references to locals that existed back during pattern construction
+time.
+
+To make things more fun, it is impractical to apply the usual rules
+for implicit variable declaration to variables that do not appear in a
+procedure body because they are referenced in a pattern that was
+constructed elsewhere.  If you use a variable in a pattern and pass
+that pattern into a different scope, you must declare that variable
+explicitly, either as a global or in the scope where it is used in a
+pattern match.
 
 \section{String Scanning and Pattern Matching Miscellany}
 

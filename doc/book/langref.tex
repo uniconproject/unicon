@@ -29,7 +29,7 @@ sign at the head of the group.
 In a few instances, the ``Road Narrows'' sign is also used to highlight a general
 comment about concurrency (rather than a specific thread-safety issue).
 
-\section{Immutable Types: Numbers, Strings, Csets}
+\section{Immutable Types: Numbers, Strings, Csets, Patterns}
 
 Unicon's immutable types are integers, real numbers,
 strings, and csets. Values of these types cannot change. Operators and
@@ -123,6 +123,18 @@ literal.
 consist of 0 or more characters enclosed in single quotes. As with
 strings, a \index{cset literal}cset literal may include escape
 sequences that use multiple characters to encode special characters.
+
+\subsection*{Pattern}
+
+\index{pattern}Patterns are an immutable structure type used in
+matching, parsing or categorizing strings.  Pattern literals consist
+of regular expressions enclosed in less than ($<$) and greater than
+($>$) symbols. Within such marks, operators and reserved words do not
+have their normal meaning; instead concatenation becomes the implicit
+operator and a few characters have special interpretations, including
+asterisk, plus, question mark, curly braces, square brackets, and the
+period character.  In addition to pattern literals, patterns may be
+composed using a number of pattern constructor operators and functions.
 
 \section{Mutable Types: Containers and Files}
 
@@ -1267,11 +1279,16 @@ required numeric type.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf = string } \hfill {\bf tab/match}
+{\bf = pattern } \hfill {\bf anchored pattern match} \\
+{\bf = string } \hfill {\bf tab/match} \\
 
 \noindent
-\index{tab/match ( =s )}The tab/match operator is equivalent to calling
-\texttt{tab(match(s))} on its operand.
+\index{anchored pattern match ( =p )}The unary equals operator
+performs a pattern match on its operand in the current string scanning
+environment and advances the position beyond the matched string
+if successful.
+\index{tab/match ( =s )}When the operand is a string, this is
+equivalent to calling \texttt{tab(match(s))} on its operand.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1488,6 +1505,15 @@ with \texttt{\&subject} equal to string and \texttt{\&pos} starting at
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
+{\bf string ?? pattern } \hfill {\bf pattern match}
+
+\noindent
+\index{pattern match}Pattern matching produces the substring(s) where
+\textit{pattern} occurs within a string. It is conducted within a new
+string scanning environment as per string scanning above. It may be augmented.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
 {\bf x ! y } \hfill {\bf apply}
 
 \noindent
@@ -1537,11 +1563,15 @@ available.
 {\bf string1 {\textbar}{\textbar} string2 } \hfill {\bf concatenation}
 
 \noindent
+{\bf pattern1 {\textbar}{\textbar} pattern2 } \hfill {\bf pattern concatenation}
+
+\noindent
 {\bf list1 {\textbar}{\textbar}{\textbar} list2 } \hfill {\bf list concatenation}
 
 \noindent
 The \index{concatenation}concatenation operators produce new values
-containing a copy of the left operand followed by a copy of the right
+(or patterns that will match values)
+consisting of the left operand followed by the right
 operand. They may be augmented.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1552,11 +1582,44 @@ operand. They may be augmented.
 {\bf expr1 {\textbar} expr2 } \hfill {\bf alternation}
 
 \noindent
+{\bf pattern1 .{\textbar} pattern2 } \hfill {\bf pattern alternation}
+
+\noindent
 The \index{conjunction \&}conjunction operator produces \texttt{x2} if
-\texttt{x1} succeeds. The \index{alternation operator ( {\textbar} )}
+\texttt{x1} succeeds. Conjunction may be augmented.
+The \index{alternation operator ( {\textbar} )}
 alternation operator produces the results of \texttt{expr1} followed
 by the results of \texttt{expr2}; it is a \index{generator}generator.
-Conjunction may be augmented.
+The \index{pattern alternative operator ( .{\textbar} )}
+pattern alternation operator produces a pattern that will match
+the results of \texttt{pattern1} followed
+by the results of \texttt{pattern2}.
+
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
+{\bf p -$>$ v } \hfill {\bf conditional assignment}
+
+\noindent
+{\bf p =$>$ v } \hfill {\bf immediate assignment}
+
+\noindent
+{\bf  .$>$ v } \hfill {\bf cursor position assignment}
+
+\noindent
+The \index{conditional assignment} conditional assignment operator
+assigns the substring matched by its left operand (a pattern) to a
+variable (its right operand) at the end of matching, if the whole
+pattern match succeeds.
+The \index{immediate assignment} immediate assignment operator assigns
+the substring matched by its left operand (a pattern) to a variable
+(its right operand) at the point during the match that the pattern
+match of the left operand occurs, whether or not the whole match succeeds.
+The \index{cursor position assignment}cursor position assignment operator
+assigns the cursor position at a point during a pattern match to a
+variable (its operand).
+
+
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -4326,9 +4389,197 @@ is clicked on while attribute
 window \texttt{w} on those window systems that employ a client-server
 model. Output to the window is flushed, and \texttt{WSync()} waits
 for a reply from the server indicating all output has been processed.
-\ If \texttt{s} is \texttt{"yes"}, all
+If \texttt{s} is \texttt{"yes"}, all
 events pending on \texttt{w} are discarded. \texttt{WSync()} is a no-op
 on window systems that do not use a client-server model.
+
+\subsection*{Pattern functions}
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Abort}
+\noindent{\bf Abort()} \hfill{\bf pattern cancel}\\
+
+\noindent
+\texttt{Abort()} causes an immediate failure of the entire pattern match.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Any}
+\noindent{\bf Any(c)} \hfill{\bf match any}\\
+
+\noindent
+\texttt{Any(c)} matches any single character contained in c appearing
+in the subject string.\\
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Arb}
+\noindent{\bf Arb()} \hfill{\bf arbitrary pattern}\\
+
+\noindent
+\texttt{Arb()} matches zero or more characters in the subject string.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Arbno}
+\noindent{\bf Arbno(p)} \hfill{\bf repetitive arbitrary pattern}\\
+
+\noindent
+\texttt{Arbno(p)} matches repetitive sequences of p in the subject string.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Bal}
+\noindent{\bf Bal()} \hfill{\bf balanced parentheses}\\
+
+\noindent
+\texttt{Bal()} matches the shortest non-null string which parentheses
+are balanced in the subject string.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Break}
+\noindent{\bf Break(c)} \hfill{\bf pattern break}\\
+
+\noindent
+\texttt{Break(c)} matches any characters in the subject string up to
+but not including any of the characters in cset c.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Breakx}
+\noindent{\bf Breakx(c)} \hfill{\bf extended pattern break}\\
+
+\noindent
+\texttt{Breakx(c)} matches any characters up to any of the subject
+characters in c, and 
+will search beyond the break position for a possible larger match.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Fail}
+\noindent{\bf Fail()} \hfill{\bf pattern back}\\
+
+\noindent
+\texttt{Fail()} signals a failure in the current portion of the
+pattern match and sends 
+an instruction to go back and try a different alternative.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Fence}
+\noindent{\bf Fence()} \hfill{\bf pattern fence}\\
+
+\noindent
+\texttt{Fence()} signals a failure in the current portion of the pattern match
+if it is trying to backing up to try other alternatives.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Len}
+\noindent{\bf Len(i)} \hfill{\bf match fixed-length string}\\
+
+\noindent
+\texttt{Len(i)} matches a string of a length of \texttt{i} characters
+in the subject string.
+It fails if \texttt{i} is greater than the number of characters remaining
+in the subject string.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{NotAny}
+\noindent{\bf NotAny(c)} \hfill{\bf match anything but}\\
+
+\noindent
+\texttt{NotAny(c)} matches any single character not contained in
+character set \texttt{c} appearing in the subject string.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Nspan}
+\noindent{\bf Nspan(c)} \hfill{\bf optional pattern span}\\
+
+\noindent
+\texttt{Nspan()} matches the longest available sequence of zero or
+more characters from the subject string that are contained in \texttt{c}.  \\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Pos}
+\noindent{\bf Pos(i)} \hfill{\bf cursor position}\\
+
+\noindent
+\texttt{Pos(i)} sets the cursor or index position of the subject string to
+the position \texttt{i} according the Unicon index system shown below:
+\begin{verbatim}
+                   -6  -5  -4  -3  -2  -1  0
+                   | U | n | i | c | o | n |
+                   1   2   3   4   5   6   7
+\end{verbatim}
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Rem}
+\noindent{\bf Rem()} \hfill{\bf remainder pattern}\\
+
+\noindent
+\texttt{Rem()} matches the remainder of the subject string.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Span}
+\noindent{\bf Span(c)} \hfill{\bf pattern span}\\
+
+\noindent
+\texttt{Span(c)} matches one or more characters from the subject string that
+are contained in \texttt{c}.  It must match at least one character.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Succeed}
+\noindent{\bf Succeed()} \hfill{\bf pattern succeeds}\\
+
+\noindent
+\texttt{Succeed()} produces a pattern that, when matched, will cause
+the surrounding pattern match to succeed without further scrutiny.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Tab}
+\noindent{\bf Tab(n)} \hfill{\bf pattern tab}\\
+
+\noindent
+\texttt{Tab(n)} matches any characters from the current cursor or
+index position up to
+the specified position of the subject string.  \texttt{Tab()} uses the
+Unicon index system shown in \texttt{Pos()} and position \texttt{n} must
+be to the right of the current position.\\
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Rpos}
+\noindent{\bf Rpos(n)} \hfill{\bf reverse cursor position}\\
+
+\noindent
+\texttt{Rpos(n)} sets the cursor or index position of the subject string to
+the position \texttt{n} back from the end of the string, equivalent to
+using Unicon's negative indices in \texttt{Pos()}.
+\begin{verbatim}
+                   6   5   4   3   2   1   0
+                   | S | N | O | B | O | L |
+\end{verbatim}
+
+
+\bigskip\hrule\vspace{0.1cm}
+\index{Rtab}
+\noindent{\bf Rtab(i)} \hfill{\bf pattern reverse tab}\\
+
+\noindent
+\texttt{Rtab(i)} matches any characters from the current cursor or
+index position up to 
+the specified position (back from the end) of the subject string,
+equivalent to using a negative index in \texttt{Tab()}.
+Position \texttt{n} must be to the right of the current position.\\
+
 
 \section{Preprocessor}
 
@@ -4518,6 +4769,7 @@ error, the keywords \texttt{\&errornumber}, \texttt{\&errortext}, and
 128 \ \ \ \ \ \ \ unevaluated variable or function call expected\\
 129 \ \ \ \ \ \ \ unable to convert unevaluated variable to pattern\\
 130 \ \ \ \ \ \ \ incorrect number of arguments\\
+131 \ \ \ \ \ \ \ string is not a class name\\
 140 \ \ \ \ \ \ \ window expected\\
 141 \ \ \ \ \ \ \ program terminated by window manager\\
 142 \ \ \ \ \ \ \ attempt to read/write on closed window\\
@@ -4526,20 +4778,25 @@ error, the keywords \texttt{\&errornumber}, \texttt{\&errortext}, and
 145 \ \ \ \ \ \ \ bad window attribute\\
 146 \ \ \ \ \ \ \ incorrect number of arguments to drawing
 function\\
-147 \ \ \ \ \ \ \ window attribute cannot be read or written as
-requested\\
-150 \ \ \ \ \ \ \ "drawing a 3D object while in 2D mode\\
-151 \ \ \ \ \ \ \ "pushed/popped too many matrices\\
-152 \ \ \ \ \ \ \ "modelview or projection expected\\
-153 \ \ \ \ \ \ \ "texture not in correct format\\
-154 \ \ \ \ \ \ \ "must have an even number of texture coordinates\\
-155 \ \ \ \ \ \ \ "3D graphics is not enabled in this virtual machine\\
+147 \ \ \ \ \ \ \ window attribute cannot be read or written as requested\\
+150 \ \ \ \ \ \ \ drawing a 3D object while in 2D mode\\
+151 \ \ \ \ \ \ \ pushed/popped too many matrices\\
+152 \ \ \ \ \ \ \ modelview or projection expected\\
+153 \ \ \ \ \ \ \ texture not in correct format\\
+154 \ \ \ \ \ \ \ must have an even number of texture coordinates\\
+155 \ \ \ \ \ \ \ 3D graphics is not enabled in this virtual machine\\
+160 \ \ \ \ \ \ \ nonexistent variable name\\
+161 \ \ \ \ \ \ \ cannot convert unevaluated variable to pattern\\
+162 \ \ \ \ \ \ \ uninitialized pattern\\
+163 \ \ \ \ \ \ \ object, method, or method parameter problem in
+unevaluated expression\\
+164 \ \ \ \ \ \ \ unsupported unevaluated expression\\
+165 \ \ \ \ \ \ \ null pattern argument where name was expected\\
 %%----------------------------------------
 %% These codes are not in unicon/src/runtime/data.r or are different
 %% 160 \ \ \ \ \ \ \ cannot open file\\
 %% 161 \ \ \ \ \ \ \ bad file attribute\\
 %% 162 \ \ \ \ \ \ \ cannot open socket\\
-%% 170 \ \ \ \ \ \ \ string or integer expected\\
 %% 171 \ \ \ \ \ \ \ posix header file not included\\
 %% 172 \ \ \ \ \ \ \ posix record overridden by global value\\
 %% 173 \ \ \ \ \ \ \ directory opened for writing\\
@@ -4571,7 +4828,7 @@ the same time\\
 185 \ \ \ \ \ \ \ converting an active co-expression to a thread
 is not yet supported\\
 %%----------------------------------------
-190 \ \ \ \ \ \ \ database expected\\
+190 \ \ \ \ \ \ \ dbm database expected\\
 201 \ \ \ \ \ \ \ division by zero\\
 202 \ \ \ \ \ \ \ remaindering by zero\\
 203 \ \ \ \ \ \ \ integer overflow\\
@@ -4598,12 +4855,39 @@ length\\
 306 \ \ \ \ \ \ \ inadequate space in string region\\
 307 \ \ \ \ \ \ \ inadequate space in block region\\
 308 \ \ \ \ \ \ \ system stack overflow in co-expression\\
+309 \ \ \ \ \ \ \ pattern stack overflow\\
 316 \ \ \ \ \ \ \ interpreter stack too large\\
 318 \ \ \ \ \ \ \ co-expression stack too large\\
 401 \ \ \ \ \ \ \ co-expressions not implemented\\
 402 \ \ \ \ \ \ \ program not compiled with debugging option\\
 500 \ \ \ \ \ \ \ program malfunction\\
-600 \ \ \ \ \ \ \ vidget usage error
+600 \ \ \ \ \ \ \ vidget usage error\\
+1040 \ \ \ \ \ \ \ socket error \\
+1041 \ \ \ \ \ \ \ cannot initialize network library \\
+1042 \ \ \ \ \ \ \ fdup of closed file \\
+1043 \ \ \ \ \ \ \ invalid signal \\
+1044 \ \ \ \ \ \ \ invalid operation to flock/fcntl\\
+1045 \ \ \ \ \ \ \ invalid mode string\\
+1046 \ \ \ \ \ \ \ invalid permission string for umask\\
+1047 \ \ \ \ \ \ \ invalid protocol name\\
+1048 \ \ \ \ \ \ \ low-level read or select mixed with buffered read\\
+1100 \ \ \ \ \ \ \ ODBC connection expected\\
+1200 \ \ \ \ \ \ \ system error (see errno)\\
+1201 \ \ \ \ \ \ \ malformed URL\\
+1202 \ \ \ \ \ \ \ missing username in URL\\
+1203 \ \ \ \ \ \ \ unknown scheme in URL\\
+1204 \ \ \ \ \ \ \ cannot parse URL\\
+1205 \ \ \ \ \ \ \ cannot connect\\
+1206 \ \ \ \ \ \ \ unknown host\\
+1207 \ \ \ \ \ \ \ invalid field in header\\
+1208 \ \ \ \ \ \ \ messaging file expected\\
+1209 \ \ \ \ \ \ \ cannot determine smtpserver\\
+1210 \ \ \ \ \ \ \ cannot determine user return address\\
+1211 \ \ \ \ \ \ \ invalid email address\\
+1212 \ \ \ \ \ \ \ server error\\
+1213 \ \ \ \ \ \ \ POP messaging file expected\\
+1214 \ \ \ \ \ \ \ cannot find certificate store\\
+1215 \ \ \ \ \ \ \ cannot verify peer's certificate\\
 
 \subsection*{System errors}
 

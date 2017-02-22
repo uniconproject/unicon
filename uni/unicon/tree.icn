@@ -206,11 +206,12 @@ procedure process_uneval(node)
 		  return emit_code_for_uneval("pattern_unevalvar")
 		  }
 	       else {
-		  tab(upto(&letters))
-		  temp := tab(many(&letters))
-		  writes(yyout,"pattern_unevalvar( ")
+		  tab(upto(&letters++'_'))
+		  temp := tab(many(&letters++'_'++&digits))
+		  # emit (x,pattern_unevalvar("x")) so that var x is declared
+		  writes(yyout,"(",temp,",pattern_unevalvar( ")
 		  writes(yyout, "\"", temp, "\"")
-		  writes(yyout, ")")
+		  writes(yyout, "))")
 		  return
 		  }	
 	       }

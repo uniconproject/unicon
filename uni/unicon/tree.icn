@@ -349,12 +349,12 @@ procedure yyprint(node)
 	       yyprint(node.children[3])
 	       writes(yyout," := \"\" else ")
 	       }
-	    # generate spurious extra parameter so that the variable is
-	    # guaranteed to be declared: pattern_assign_immediate(p,"var",var)
 	    writes(yyout, " pattern_assign_immediate( ")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    emit_assign_code(node.children[3])
+	    # generate spurious extra parameter so that the variable is
+	    # guaranteed to be declared: pattern_assign_immediate(p,"var",var)
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
@@ -372,6 +372,10 @@ procedure yyprint(node)
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    emit_assign_code(node.children[3])
+	    # generate spurious extra parameter so that the variable is
+	    # guaranteed to be declared: pattern_setcur("var",var)
+	    writes(yyout, ",")
+	    yyprint(node.children[3])
 	    writes(yyout, " ) ")		
 	    if iconc===1 then writes(yyout, ")")
             fail
@@ -384,10 +388,10 @@ procedure yyprint(node)
 	       writes(yyout," := 1 else ")
 	       }
 
-	    # generate spurious extra parameter so that the variable is
-	    # guaranteed to be declared: pattern_setcur("var",var)
 	    writes(yyout, "pattern_setcur( ")
 	    emit_assign_code(node.children[2])
+	    # generate spurious extra parameter so that the variable is
+	    # guaranteed to be declared: pattern_setcur("var",var)
 	    writes(yyout, ",")
 	    yyprint(node.children[2])
 	    writes(yyout, " ) ")

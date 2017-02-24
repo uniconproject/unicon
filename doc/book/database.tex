@@ -51,8 +51,8 @@ If the entire database fits in memory at once, you can achieve vast
 speed-ups by avoiding the disk as much as possible. For example, all
 queries to read the database can be performed from memory.  The
 database may be modified in memory immediately, and updated on the
-disk later on. Memory-based databases are increasingly feasible as
-workstation main memories grow larger, they are an excellent choice
+disk later on. Memory-based databases become increasingly feasible
+as main memories grow larger. They are an excellent choice
 for many applications.
 
 One way to implement a memory-based database is to build up your
@@ -189,23 +189,26 @@ theory developed by E.F. Codd. A database is a collection of
 \textit{tables}, and each table is a collection of \textit{rows}. The
 rows in a table contain information of various types in a set of named
 \textit{columns}. Rows and columns are similar to records and fields,
-except that they are logical structures and do not describe physical
+except that they are logical structures and do not describe the physical
 form or layout of the data. There is an ANSI standard definition of
 SQL, but many vendors provide extensions, and most vendors are also
 missing features from the ANSI standard. Unicon allows you to send any
 string you want to the database server, so you can write portable
 ``vanilla SQL'' or you can write vendor-specific SQL as needed.
 
-SQL was originally intended for text-based interactive sessions between
-humans and their databases. Nowadays, SQL is primarily used
-``under the covers'' by database
-applications that accommodate novice users with
-a graphical interface that does not require any knowledge of SQL, while
-supporting a SQL ``escape hatch'' for
-advanced users who may wish to do custom queries. This duality is
-paralleled in the Unicon language by the fact that
-Unicon's built-in database operators and functions
-duplicate a subset of the capabilities of SQL. There are two ways to do
+SQL was originally intended for text-based interactive sessions
+between humans and their databases. Nowadays, SQL is primarily used
+``under the covers'' by database applications that accommodate novice
+users with a graphical interface that does not require any knowledge
+of SQL, while supporting a SQL ``escape hatch'' for advanced users who
+may wish to do custom queries. Such an escape hatch is also a major
+potential security and stability hole, so be cautious about allowing a
+user to type SQL commands themselves.
+
+The duality of pre-cooked GUI-supported SQL versus arbitrary SQL
+strings for power users is paralleled in the Unicon language by the
+fact that Unicon's built-in database operators and functions duplicate
+a subset of the capabilities of SQL. There are often two ways to do
 things: using Unicon operations or using SQL statements.
 
 SQL statements can be divided into several categories, the most
@@ -360,21 +363,30 @@ straightforward.
 
 \subsection*{Opening a SQL database}
 
-To connect to a SQL database, call \texttt{open()}
-with mode \texttt{"o"}. This establishes a
-session with a data source. The filename argument to \texttt{open()} is
-the data source to which you are connecting; it is associated with a
-particular ODBC driver, remote database server machine or IP number,
-and port within the ODBC driver manager. Mode \texttt{"o"} is followed
-by additional string arguments to \texttt{open()}. The first is an optional
-default table name used in the various functions that take a table
-name. Generally the arguments must then include the user name and
-password to use in
-connecting to the specified data source. Here is an example that
-establishes a connection to a database:
+To connect to a SQL database, call \texttt{open()} with mode
+\texttt{"o"}. This establishes a session with a data source. The
+filename argument to \texttt{open()} is the data source name to which
+you are connecting; it is associated with a particular ODBC driver,
+remote database server machine or IP number, and port within the ODBC
+driver manager.
+
+Mode \texttt{"o"} is followed by additional string arguments to
+\texttt{open()}. The first is an optional default table name used in
+the various functions that take a table name.  Applications that send
+their own custom SQL strings via the sql() function may find that
+their SQL strings always specify what table they are operating on,
+rendering this optional parameter unnecessary.  The next two arguments
+are the user name and password to use in connecting to the specified
+data source. Here is an example that establishes connections to a
+database (unicondb) as user scott with password tiger, with and
+without specifying an initial table mydbtable.  Most applications
+will not need two open connections to their database, but see below
+for an example that does.
 
 \iconcode{
-db := open("unicondb", "o", "scott", "tiger")}
+db := open("unicondb", "o", "mydbtable", "scott", "tiger") \\
+db2 := open("unicondb", "o", "scott", "tiger")
+}
 
 The \texttt{open()} function returns a value that supports many of the
 operations of both a file and a table, or fails if the connection

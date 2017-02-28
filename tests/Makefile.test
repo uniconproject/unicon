@@ -2,14 +2,14 @@
 
 UC=unicon -s
 
-%.u:	%.icn
+%.u: %.icn
 	@$(UC) $<
 
-%:	%.u local
-	@echo [Testing $@...]
-	@-./$@ >& local/$@.out  
-	@-diff -w stand/$@.std local/$@.out
-	@-rm $@
+%: %.u local
+	-@echo "[Testing $@...]"; \
+	./$@ > local/$@.out 2>&1; \
+	diff -w stand/$@.std local/$@.out ; \
+	rm $@
 
 local:
 	-mkdir local
@@ -17,5 +17,5 @@ local:
 .PHONY:  clean Clean TEST 
 
 clean Clean:
-	-rm -f *.out uniclass.* $(TARGETS)
+	-rm -f local/*.out *.u uniclass.* $(TARGETS)
 

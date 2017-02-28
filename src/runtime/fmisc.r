@@ -2089,10 +2089,10 @@ static stringint siKeywords[] = {
 	 /*
 	  * Preliminary version just reports space used in current regions.
 	  */
-	 suspend C_integer (curstring->free - curstring->base) +
-	    (curblock->free - curblock->base);
-	 suspend C_integer (curstring->free - curstring->base);
-	 suspend C_integer (curblock->free - curblock->base);
+	 suspend C_integer (tstate->Curstring->free - tstate->Curstring->base) +
+	    (tstate->Curblock->free - tstate->Curblock->base);
+	 suspend C_integer (tstate->Curstring->free - tstate->Curstring->base);
+	 suspend C_integer (tstate->Curblock->free - tstate->Curblock->base);
 #endif					/* Concurrent */
 	 fail;
 	 }

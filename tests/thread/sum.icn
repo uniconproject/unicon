@@ -17,7 +17,7 @@ procedure main(argv)
    write("The work will be divided equally between them. Please wait... ")
 
    t:=&now
-   every i:=!n do put(thrd, thread suma(d, i))
+   every i:=!n do put(thrd, thread suma(d))
    every wait(!thrd)
 
    # print the sum. (x-d*n) is just an error correction when using "odd" # of threads.
@@ -27,16 +27,16 @@ procedure main(argv)
       write("time:", &now-t, " seconds")
 end
 
-procedure suma(n, id)
+procedure suma(n)
    local sum:=0
    static region
-   initial  region := mutex()
+   initial  region := mutex() 
 
    every !n do sum+:=1
 
    critical region:  gsum +:= sum
 
    if (\usermode) then
-      write("Thread ", id , " is done")
+      write("Thread ", serial() , " is done")
 end
 

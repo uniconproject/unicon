@@ -1,52 +1,15 @@
 
-global gsum, mutex_gsum
-
-
 procedure main(argv)
    if not (&features == "concurrent threads") then
       stop("This program requires concurrent threads.")
          
-   gsum := 0
    thrd := []
-
-   if *argv>0 then
-      n := integer(argv[1]) | stop ("arg must be integer")
-   else
-      n := 4
-  
-   d := 10^2 / n
 
    write("The test should crash with a run time error now.")
    write("You should see only one runtime error message. Any repetition")
    write("of the error message indicates a problem in the threads system.")
 
-   write("Running ", n , " thread(s) please wait... ")
+   every !4  do put(thrd, thread (delay(?30+10), 1 + &null))
    
-   every i := 1 to n do {
-     th := thread suma(d, i)
-     put(thrd, th)
-     }
-
-   mutex_gsum := mutex()
-  
-   every i := 1 to *thrd do
-      wait(thrd[i])
-
-   write("sum=", gsum)
-   
-end
-
-
-procedure suma(n, id)
-   local sum := 0, error_null
-
-   every i := 1 to n do
-      sum +:= 1
-
-    sum := sum + error_null   
-   
-   lock(mutex_gsum)
-   gsum +:= sum
-   unlock(mutex_gsum)
-
+   every wait(!thrd)
 end

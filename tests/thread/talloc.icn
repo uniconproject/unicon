@@ -13,20 +13,24 @@ procedure main(argv)
    if *argv>0 then
       n:=integer(argv[1]) | stop ("arg must be integer")
     else
-      n:=1
-  
-   write("running ", n , " thread(s) please wait... ")
-   t:=&now
-   every i:= !n do put(thrd,thread talloc(i))
-   every wait(!thrd)
+       n:=4
    
-   write("time:", &now-t, " seconds")
+   every i := !n do put(thrd, create talloc(i))
+   every spawn(!thrd, 1M, 100K)
+   # pick up the results from all threads
+   every write( <<@!thrd )
+   #write("tot=", &allocated)
 end
 
 procedure talloc(id)
-    every i := !1000 do 
-	x := (? [list, table])(?100)
+    every i := !10  do {
+       x := list(10)
+       x := table(10)
+       }
 
-    write("Thread ", id, " allocated ", keyword("tallocated", thrd[id]))
+    # get the current thread allocation,
+    # i.e &allocated for the current thread
+    # queue up the result to be picked by &main
+    ("Thread " || id || " allocated " || keyword("tallocated")) @>>
 end
     

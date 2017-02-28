@@ -1,4 +1,4 @@
-global gsum, str, v, w
+global gsum, str, v, w, usermode
 
 procedure main(argv)
    if not (&features == "concurrent threads") then
@@ -11,6 +11,7 @@ procedure main(argv)
    if *argv>0 then{
       n:=integer(argv[1]) | stop ("arg must be integer")
       (n >= 10) | stop("arg must be >= 10")
+      usermode := 1
        }
     else
       n:=10
@@ -22,32 +23,17 @@ procedure main(argv)
    m := n/10
 
    t:=&now
- 
+
+   write("Busy work threads... ")
    every 1 to 9 do put(thrdL, thread dowork(m, d, x))
 
    v:=w:=""
 
-   write("---------firing A... ")
+   write("Interference threads...")
    a := thread (A())
-
-   write("---------waiting for  A... ")
-#   wait(a)
-   write("---------A is Done... ")
-
-   write("+++++++++++firing B... ")
    b := thread B()
-
-   write("+++++++++++waiting 4 B... ")
-#   wait(b)
-   write("************** firing C... ")
    c := thread C()
-
-   write("*************waiting 4 C ... ")
-   B()
-#   wait(c)
-
-   write("Done all... ")
-
+   
    dowork(m, d, x)
 
   every wait(!thrdL)
@@ -55,16 +41,19 @@ procedure main(argv)
  # print the sum. (x-d*n) is just an error correction when using "odd" # of threads.
    write("sum=",gsum+(x-d*n))
    
-   write("time:", &now-t, " seconds")
+   if \usermode then
+      write("time:", &now-t, " seconds")
 
 end
 
 procedure dowork(n, d, x)
    thrd := []
-   write(n , " thread(s) will sum ", x, " ones.")
-   write("The work will be divided equally between them. Please wait... ")
-
+   if \usermode then {
+      write(n , " thread(s) will sum ", x, " ones.")
+      write("The work will be divided equally between them. Please wait... ")
+      } 
    every i:=!n do put(thrd, thread suma(d, i))
+   B()
    every wait(!thrd)
 end
 
@@ -77,7 +66,8 @@ procedure suma(n, id)
 
    critical region:  gsum +:= sum
 
-   write("Thread ", id , " is done")
+   if \usermode then
+      write("Thread ", id , " is done")
 
 end
 
@@ -87,7 +77,7 @@ procedure A()
      if i%100=1 then { L:=[]; str:="A" }
      put(L, table())
      put(L, list(100))
-     x := "jafar"
+     x := "snow"
        str ||:= x
    } 
    
@@ -99,19 +89,19 @@ procedure A()
 end
 
 procedure B()
- /x:=[]
+   /x:=[]
    /str := ""
    every i:=1 to 1000 do {
-     if i%100=1 then{ L:=[]; str:="B" }
-     put(L, T:=table())
-     every j:=1 to 100 do T[j]:=j
-     put(L, list(1000))
-     x := "ray"
-     str ||:= x
- }
+      if i%100=1 then{ L:=[]; str:="B" }
+      put(L, T:=table())
+      every j:=1 to 100 do T[j]:=j
+      put(L, list(1000))
+      x := "ray"
+      str ||:= x
+      }
 
-w := x
-v ||:= w 
+   w := x
+   v ||:= w 
 
 end
 
@@ -119,14 +109,14 @@ procedure C()
    /str := ""
 
    every i:=1 to 10000 do {
-     if i%100=1 then L:=[]
-     if i%1000=999 then str := "C"
-     x := "hiba"
-     put(L, table())
-     put(L, list(1000))
-     str ||:= x
-   } 
-w := x
-v ||:= w
+      if i%100=1 then L:=[]
+      if i%1000=999 then str := "C"
+      x := "moon"
+      put(L, table())
+      put(L, list(1000))
+      str ||:= x
+      } 
+   w := x
+   v ||:= w
 
 end

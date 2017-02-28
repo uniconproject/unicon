@@ -2,20 +2,20 @@
 # This test illustrates how lists must be protected from race 
 # conditions with multi-thread.
 #
-global L
+global L, m
 procedure main()
    if not (&features == "concurrent threads") then
        stop("requires concurrent threads")
-   n := 3
+   n := 4
    L := mutex( [ ] )
-   
-   write ("firing threads...")
+   m := 100000
+   write ("firing threads please wait...")
    threads := []
    every i := !n do
        put(threads, thread work(i))
    
    every wait(!threads)
-   write("We just did 3,000,000 calls to put() from three threads\n",
+   write("We just did ", m*n, " calls to put() from ", n, " threads\n",
 	 "The list was protected by a mutex.\n",
 	 "How many elements do we have?")
    write(*L)
@@ -23,5 +23,5 @@ procedure main()
 end
 
 procedure work(i)
-    every j := 1 to 1000000 do put(L, j^i)
+    every j := 1 to m do put(L, j^i)
 end

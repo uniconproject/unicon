@@ -1,5 +1,5 @@
 #
-# talloc.icn -- thread allocation report test
+# rantest.icn -- random numbers test
 #
 
 global thrd
@@ -13,18 +13,31 @@ procedure main(argv)
    if *argv>0 then
       n:=integer(argv[1]) | stop ("arg must be integer")
     else
-      n:=1
-  
-   write("running ", n , " thread(s) please wait... ")
-   t:=&now
-   every i:= !n do put(thrd, thread talloc(d, i))
-   every wait(!thrd)
-
-   write("time:", &now-t, " seconds")
+       n:=4
+   
+   every i:= !n do put(thrd, thread talloc())
+    every write( <<@!thrd )
 end
 
-procedure talloc(id)
-    every i := !10 do
-	write("Thread ", id, " rand ", ?100)
+procedure talloc()
+   static mtx
+   initial{
+      mtx := mutex()
+      }
+
+   seed := serial()
+   str := ""
+   every i := !10 do{
+      critical mtx:{
+         &random := seed
+         x:= ?100
+         seed := &random
+         }
+         
+      str ||:=  x || " "
+      }
+
+   # queue the result in the outbox for &main to pickup
+   "Thread " ||  serial()-1 || " rand " || str @>> 
 end
     

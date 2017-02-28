@@ -1,0 +1,21 @@
+
+
+UC=unicon -s
+
+%.u:	%.icn
+	@$(UC) $<
+
+%:	%.u local
+	@echo [Testing $@...]
+	@-./$@ >& local/$@.out  
+	@-diff -w stand/$@.std local/$@.out
+	@-rm $@
+
+local:
+	-mkdir local
+
+.PHONY:  clean Clean TEST 
+
+clean Clean:
+	-rm -f *.out uniclass.* $(TARGETS)
+

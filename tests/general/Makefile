@@ -2,12 +2,16 @@
 
 
 SAMPLES = btrees diffwrds kross meander prefix recogn roman sieve wordcnt
+TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 
 
+# Do the tests
+Test: $(TARGETS)
 
-# default is to run all tests, using icont
+include ../Makefile.test
 
-Test Icont Test-icont:
+
+Icont Test-icont:
 		IC=icont sh Test-icon
 
 Samples Sicont Samples-icont:

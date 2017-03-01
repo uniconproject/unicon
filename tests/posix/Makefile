@@ -1,14 +1,16 @@
 SHELL=/bin/sh
 MAKE=make
 
-#what:
-#		@echo "what do you want to make?"
+TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 
 # default is to run all tests, using icont
+Test:  $(TARGETS)
 
-default: Test
 
-Test Icont Test-icont:
+include ../Makefile.test
+
+
+Icont Test-icont:
 		IC=icont sh Test-icont icont
 
 Iconc Test-iconc:

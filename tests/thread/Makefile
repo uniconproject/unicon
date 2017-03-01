@@ -14,6 +14,6 @@ skip:
 endif
 
 # Do the tests
-TEST: $(TARGETS)
+Test: $(TARGETS)
 
 include ../Makefile.test

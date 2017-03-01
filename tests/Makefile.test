@@ -5,16 +5,26 @@ UC=unicon -s
 %.u: %.icn
 	@$(UC) $<
 
-%: %.u local
-	-@echo "[Testing $@...]"; \
-	./$@ > local/$@.out 2>&1; \
+# For a test that does not have a data file
+# or standard output file, the following two
+# rule makes sure there are empty ones
+
+%.dat:
+	-@touch data/$@
+
+%.std:
+	-@touch stand/$@
+
+%: %.u local %.dat %.std
+	-@echo "[Testing $@...]";
+	-@./$@ < data/$@.dat  > local/$@.out 2>&1; \
 	diff -w stand/$@.std local/$@.out ; \
 	rm $@
 
 local:
 	-mkdir local
 
-.PHONY:  clean Clean TEST 
+.PHONY:  clean Clean Test 
 
 clean Clean:
 	-rm -f local/*.out *.u uniclass.* $(TARGETS)

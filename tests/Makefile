@@ -6,19 +6,41 @@ TESTS=general posix thread
 
 default: Test
 
+Test: Hdr
+	@for dir in $(TESTS); do \
+	$(MAKE) -C $$dir; \
+	done
+	@make -s Summary
 
-Test: $(TESTS)
-	@echo "[Test suite ran to compeletion]"
+all: Hdr
+	@for dir in $(TESTS); do \
+	$(MAKE) -C $$dir all; \
+	done
+	@make -s Summary
 
-%.u: %.icn
-	@$(UC) $<
+Hdr:  Hdr
+	@echo
+	@echo "   ====================================="
+	@echo "           Unicon Test Suite"
+	@echo -n "    "
+	@unicon -version
+	@echo "   ====================================="	
+	@echo
 
-$(TESTS):
-	@echo "[ ----- Running test suite: $@ ----- ]"
-	cd $@ && $(MAKE) Test
-	@echo "[ ----- Done with test suite: $@ ----- ]"
-	@echo ""
+Summary: Hdr
+	@for dir in $(TESTS); do \
+	 $(MAKE) -C $$dir Summary; \
+	done
 
+Report:  Hdr
+	@for dir in $(TESTS); do \
+	$(MAKE) -C $$dir Report; \
+	done
+	@make -s Summary
+	@echo "====================================="
+	@echo " This Unicon Build:"
+	@unicon -features
+	@echo "====================================="
 
 Test-icont:	; cd general; $(MAKE) Test; cd ../posix; $(MAKE) Test
 Samples Samples-icont:	; cd general; $(MAKE) Samples

@@ -6,7 +6,8 @@ TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 
 
 # Do the tests
-Test: $(TARGETS)
+Test: DoTest
+
 
 include ../Makefile.test
 
@@ -23,6 +24,3 @@ Iconc Test-iconc:
 Siconc Samples-iconc:
 		IC=iconc sh Test-icon $(SAMPLES)
 
-Clean:
-		-rm -f *.u? foo.baz local/*.out
-		-rm -f `find [a-z]* -type f -perm -100 -print`

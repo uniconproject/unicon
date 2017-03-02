@@ -4,7 +4,7 @@ MAKE=make
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 
 # default is to run all tests, using icont
-Test:  $(TARGETS)
+Test:  DoTest
 
 
 include ../Makefile.test
@@ -16,14 +16,5 @@ Icont Test-icont:
 Iconc Test-iconc:
 		IC=iconc sh Test-icont icont
 
-
-##########################################################
-#
-#  Clean up.
-#
-Clean:
-		rm -rf local/*
-		-mkdir -p local
-		touch local/.placeholder
 
 

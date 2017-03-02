@@ -1,6 +1,13 @@
 
+CWD=$(shell pwd)
+TESTNAME=$(shell basename $(CWD))
 
 UC=unicon -s
+
+
+# Do the tests
+DoTest: TestHdr $(TARGETS) RHdr
+	@echo
 
 %.u: %.icn
 	@$(UC) $<
@@ -15,17 +22,52 @@ UC=unicon -s
 %.std:
 	-@touch stand/$@
 
-%: %.u local %.dat %.std
-	-@echo "[Testing $@...]";
-	-@./$@ < data/$@.dat  > local/$@.out 2>&1; \
-	diff -w stand/$@.std local/$@.out ; \
-	rm $@
-
 local:
 	-mkdir local
 
-.PHONY:  clean Clean Test 
+%: %.icn local %.dat %.std
+	-@echo -n "[Testing $@]... "
+	@$(UC) $<
+	-@./$@ < data/$@.dat  > local/$@.out 2>&1 || true
+	-@diff -wq stand/$@.std local/$@.out >/dev/null; \
+	 if [ $$? -eq 0 ] ; then echo "OK"; \
+	 else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
+	-@rm $@
+
+FILES=$(patsubst %.diff,%.report,$(wildcard *.diff))
+ICNFILES=$(patsubst %.diff,%.icn,$(wildcard *.diff))
+
+%.report: %.diff %.icn
+	@echo "++++++++++++++++++++++++++++"
+	@echo " *** Test: $(filter-out $<,$^) ***"
+	@echo 
+	@echo "----- Expected Output ---------------------------------------- Actual Output -----"
+	@cat $<
+	@echo
+
+TestHdr:
+	@echo
+	@echo "========================="
+	@echo "   $(TESTNAME) Test Suite"
+	@echo "========================="	
+	@echo
+
+Summary:
+	@echo
+	@echo "========================"
+	@echo " Test  : $(TESTNAME)"
+	@echo " Failed: $(ICNFILES)"
+	@echo "========================"
+	@echo
+
+Report: Summary $(FILES)
+
+all: Test Report
+	
+.PHONY: clean Clean Test
 
 clean Clean:
-	-rm -f local/*.out *.u uniclass.* $(TARGETS)
-
+	-rm -f local/*.out *.diff *.u uniclass.* $(TARGETS)
+	-rm -f *.u? foo.baz local/*.out
+	-rm -f `find [a-z]* -type f -perm -100 -print`
+	-touch local/.placeholder	

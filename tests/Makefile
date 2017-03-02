@@ -10,13 +10,13 @@ Test: Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir; \
 	done
-	@make -s Summary
+	@make -s summary
 
 all: Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir all; \
 	done
-	@make -s Summary
+	@make -s summary
 
 Hdr:  Hdr
 	@echo
@@ -27,7 +27,9 @@ Hdr:  Hdr
 	@echo "   ====================================="	
 	@echo
 
-Summary: Hdr
+Summary: Hdr summary
+
+summary:
 	@for dir in $(TESTS); do \
 	 $(MAKE) -C $$dir Summary; \
 	done
@@ -36,7 +38,7 @@ Report:  Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir Report; \
 	done
-	@make -s Summary
+	@make -s summary
 	@echo "====================================="
 	@echo " This Unicon Build:"
 	@unicon -features

@@ -46,6 +46,14 @@ Report:  Hdr
 	@unicon -features
 	@echo "====================================="
 
+ARCH=$(shell unicon -features | grep Arch | cut -d " " -f 2)
+UNAME=$(shell uname )
+RNAME=unicon-$(UNAME)-$(ARCH).report
+
+publish:
+	make -s Report > $(RNAME)
+	scp $(RNAME) web.sf.net:/home/project-web/unicon/htdocs/test/auto/
+
 Test-icont:	; cd general; $(MAKE) Test; cd ../posix; $(MAKE) Test
 Samples Samples-icont:	; cd general; $(MAKE) Samples
 

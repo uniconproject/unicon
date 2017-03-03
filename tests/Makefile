@@ -52,7 +52,7 @@ Samples Samples-icont:	; cd general; $(MAKE) Samples
 Test-iconc:		; cd general; $(MAKE) Test-iconc
 Samples-iconc:		; cd general; $(MAKE) Samples-iconc
 
-.PHONY:  clean Clean Test $(TESTS)
+.PHONY:  clean Clean Test Test-icon Test-icont Test-iconc Samples $(TESTS)
 #  Clean up.
 
 Clean Pure:

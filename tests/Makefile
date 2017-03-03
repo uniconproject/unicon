@@ -2,7 +2,7 @@
 
 E=/bin/echo
 
-TESTS=general posix thread
+TESTS=general posix thread pattern
 
 #  The default is to run all tests, using icont.
 
@@ -12,15 +12,15 @@ Test: Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir; \
 	done
-	@make -s summary
+	@make -s Summary
 
 all: Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir all; \
 	done
-	@make -s summary
+	@make -s Summary
 
-Hdr:  Hdr
+Hdr:
 	@echo
 	@echo "   ====================================="
 	@echo "           Unicon Test Suite"
@@ -40,7 +40,7 @@ Report:  Hdr
 	@for dir in $(TESTS); do \
 	$(MAKE) -C $$dir Report; \
 	done
-	@make -s summary
+	@make -s Summary
 	@echo "====================================="
 	@echo " This Unicon Build:"
 	@unicon -features

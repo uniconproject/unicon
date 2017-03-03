@@ -2,7 +2,8 @@
 
 PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss nspantst pairss pany parb parbno pimmed plen ppos prem ptab sawss setcur
 
-TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
+#TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
+TARGETS=$(PATTERNTST)
 
 # Do the tests
 Test: DoTest

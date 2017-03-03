@@ -9,8 +9,8 @@ UC=unicon -s
 
 
 # Do the tests
-DoTest: TestHdr $(TARGETS) Summary
-	@echo
+DoTest: clean TestHdr $(TARGETS)
+	@make -s Summary
 
 %.u: %.icn
 	@$(UC) $<
@@ -70,7 +70,16 @@ all: Test Report
 
 .PHONY:  clean Clean Test Test-icon Test-icont Test-iconc Samples $(TESTS)
 
-clean Clean:
+#silent clean
+clean:
+	-@rm -f *.u uniclass.* $(TARGETS)
+	-@rm -f local/*.out *.diff
+	-@touch local/.placeholder
+
+#verbose clean
+Clean:
 	-rm -f *.u uniclass.* $(TARGETS)
 	-rm -f local/*.out *.diff
-	-touch local/.placeholder	
+	-touch local/.placeholder
+
+

@@ -1,5 +1,7 @@
 #  Makefile for testing Icon
 
+E=/bin/echo
+
 TESTS=general posix thread
 
 #  The default is to run all tests, using icont.
@@ -22,7 +24,7 @@ Hdr:  Hdr
 	@echo
 	@echo "   ====================================="
 	@echo "           Unicon Test Suite"
-	@echo -n "    "
+	@$E -n "    "
 	@unicon -version
 	@echo "   ====================================="	
 	@echo

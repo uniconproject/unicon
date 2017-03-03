@@ -1,4 +1,7 @@
 
+#SHELL=/bin/bash
+E=/bin/echo
+
 CWD=$(shell pwd)
 TESTNAME=$(shell basename $(CWD))
 
@@ -26,12 +29,12 @@ local:
 	-mkdir local
 
 %: %.icn local %.dat %.std
-	-@echo -n "[Testing $@]... "
+	-@$E -n "[Testing $@]... "
 	@$(UC) $<
 	-@./$@ < data/$@.dat  > local/$@.out 2>&1 || true
 	-@diff -wq stand/$@.std local/$@.out >/dev/null; \
-	 if [ $$? -eq 0 ] ; then echo "OK"; \
-	 else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
+	if [ $$? -eq 0 ] ; then echo "OK"; \
+	else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
 	-@rm $@
 
 FILES=$(patsubst %.diff,%.report,$(wildcard *.diff))
@@ -56,7 +59,8 @@ Summary:
 	@echo
 	@echo "========================"
 	@echo " Test  : $(TESTNAME)"
-	@echo " Failed: $(ICNFILES)"
+	@if [ -n "$(ICNFILES)" ]; then echo " Failed: $(ICNFILES)"; \
+	else echo " Status: All Good"; fi
 	@echo "========================"
 	@echo
 

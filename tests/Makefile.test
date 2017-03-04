@@ -28,6 +28,11 @@ DoTest: clean TestHdr $(TARGETS)
 local:
 	-mkdir local
 
+#skip rule: don't do these tests
+$(SKIP):
+	-@echo "[Testing $@]... Skip"
+
+
 %: %.icn local %.dat %.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $<

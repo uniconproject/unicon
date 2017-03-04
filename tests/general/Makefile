@@ -4,10 +4,11 @@
 SAMPLES = btrees diffwrds kross meander prefix recogn roman sieve wordcnt
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 
+# Do not include these tests in standard testing
+SKIP=mem01 mem02
 
 # Do the tests
 Test: DoTest
-
 
 include ../Makefile.test
 

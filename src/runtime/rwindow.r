@@ -4488,13 +4488,12 @@ int fill;
  *  Barry, Phillip J., and Goldman, Ronald N. (1988).
  *  A Recursive Evaluation Algorithm for a class of Catmull-Rom Splines.
  *  Computer Graphics 22(4), 199-204.
+ *
+ * TODO: this algorithm generates a good number of duplicate coordinates.
+ * Filter them as they are placed on the output array to be passed to helper.
  */
-void genCurve(w, p, n, helper)
-wbp w;
-XPoint *p;
-int n;
-void (*helper)	(wbp, XPoint [], int);
-   {
+void genCurve(wbp w, XPoint *p, int n, void (*helper) (wbp, XPoint [], int))
+{
    int    i, j, steps;
    float  ax, ay, bx, by, stepsize, stepsize2, stepsize3;
    float  x, dx, d2x, d3x, y, dy, d2y, d3y;
@@ -4575,6 +4574,26 @@ void (*helper)	(wbp, XPoint [], int);
       thepoints = NULL;
       }
    }
+
+void curveLister(wbp w, XPoint *pts, int n)
+{
+   int i;
+   struct descrip d;
+   struct descrip *dp = (struct descrip *) w;
+
+   /*
+    * Algorithm computes duplicate points, so filter them.
+    * w is actually a descrip ptr to a list to put into.
+    */
+   for(i=0; i<n; i++) {
+      if ((i==0) || (pts[i].x != pts[i-1].x) || (pts[i].y != pts[i-1].y)) {
+	 MakeInt(pts[i].x, &d);
+	 c_put(dp, &d);
+	 MakeInt(pts[i].y, &d);
+	 c_put(dp, &d);
+	 }
+      }
+}
 
 static void curveHelper(wbp w, XPoint *thepoints, int n)
    {

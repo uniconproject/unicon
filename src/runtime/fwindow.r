@@ -685,6 +685,7 @@ end
 /*
  * DrawCurve(w,x1,y1,...xN,yN)
  *  Draw a smooth curve through the given points.
+ *  If no window, return the list of computed points.
  */
 "DrawCurve(argv[]){1} - draw curve"
 
@@ -695,14 +696,41 @@ function{1} DrawCurve(argv[argc])
    body {
       wbp w;
       int i, n, closed = 0, warg = 0;
-      C_integer dx, dy, x0, y0, xN, yN;
+      C_integer dx = 0, dy = 0, x0, y0, xN, yN;
       XPoint *points;
 
-      OptWindow(w);
+      /* instead of the usual OptWindow(w); allow w/no window arguments */
+      if (argc>warg && is:file(argv[warg])) {
+         if ((BlkD(argv[warg],File)->status & Fs_Window) == 0)
+	    runerr(140,argv[warg]);
+         if ((BlkD(argv[warg],File)->status & (Fs_Read|Fs_Write)) == 0)
+	    fail;
+         (w) = BlkD(argv[warg],File)->fd.wb;
+#ifdef ConsoleWindow
+	 checkOpenConsole((FILE *)(w), NULL);
+#endif					/* ConsoleWindow */
+         if (ISCLOSED(w))
+	    fail;
+         warg++;
+         }
+      else {
+         if (!(is:file(kywd_xwin[XKey_Window]) &&
+	      (BlkD(kywd_xwin[XKey_Window],File)->status & Fs_Window)))
+	    w = NULL;
+         else if (!(BlkD(kywd_xwin[XKey_Window],File)->status & (Fs_Read|Fs_Write)))
+	    fail;
+         else {
+	    (w) = (wbp)BlkD(kywd_xwin[XKey_Window],File)->fd.fp;
+	    if (ISCLOSED(w))
+	       fail;
+	    }
+         }
       CheckArgMultiple(2);
 
-      dx = w->context->dx;
-      dy = w->context->dy;
+      if (w) {
+	 dx = w->context->dx;
+	 dy = w->context->dy;
+	 }
 
       Protect(points = (XPoint *)malloc(sizeof(XPoint) * (n+2)), runerr(305));
 
@@ -715,14 +743,14 @@ function{1} DrawCurve(argv[argc])
             closed = 1;               /* duplicate the next to last point */
 	    CnvCShort(argv[argc-4], points[0].x);
 	    CnvCShort(argv[argc-3], points[0].y);
-	    points[0].x += w->context->dx;
-	    points[0].y += w->context->dy;
+	    points[0].x += dx;
+	    points[0].y += dy;
             }
          else {                       /* duplicate the first point */
 	    CnvCShort(argv[warg], points[0].x);
 	    CnvCShort(argv[warg + 1], points[0].y);
-	    points[0].x += w->context->dx;
-	    points[0].y += w->context->dy;
+	    points[0].x += dx;
+	    points[0].y += dy;
             }
          for (i = 1; i <= n; i++) {
 	    int base = warg + (i-1) * 2;
@@ -737,11 +765,41 @@ function{1} DrawCurve(argv[argc])
          else {                       /* duplicate the last point */
             points[i] = points[i-1];
             }
-	 if (n < 3) {
-	    drawlines(w, points+1, n);
+
+	 if (w) {
+	    if (n == 2) {
+	       drawlines(w, points+1, 2);
+	       }
+	    else {
+	       drawCurve(w, points, n+2);
+	       }
 	    }
-	 else {
-	    drawCurve(w, points, n+2);
+	 else {  /* make a list to return instead of drawing */
+	    struct descrip d;
+
+	    /*
+	     * Give an upper bound on number of points in resulting list.
+	     * Every curve being 90 degree angles seems like a worst case.
+	     */
+	    int sum = n;
+	    for(i=1;i<n+1;i++)
+	       sum += abs(points[i].x - points[i+1].x) +
+		       abs(points[i].y - points[i+1].y);
+
+	    /* reserve enough memory so we won't gc during list puts */
+	    if (!reserve(Blocks, (word)(sizeof(struct b_list) +
+				   sizeof(struct b_lelem) +
+				   (2+sum) * 2 * sizeof(struct descrip))))
+	       fail;
+
+	    /* allocate a list */
+
+	    d.dword = D_List;
+	    BlkLoc(d) = (union block *)alclist(0, (sum+2)*2);
+
+	    genCurve((wbp) &d, points, n+2, curveLister);
+	    free(points);
+	    return d;
 	    }
          }
       free(points);
@@ -1355,7 +1413,7 @@ function{1} DrawString(argv[argc])
 #ifdef Graphics3D
       if (w->context->is_3D) {
 
-	 if (argc - warg < 3) fprintf(stderr, "not enough args!!\n");
+	 if (argc - warg < 3) fail;
 
 	 if (!constr) {
 	    if (!(constr = rec_structor3d("gl_drawstring3d")))
@@ -4872,10 +4930,8 @@ function{1} WSection(argv[argc])
 	 return f;			
 	 }
 		
-      if (argc - warg != 1) {
-         fprintf(stderr, "not enough args!!\n");
+      if (argc - warg != 1)
          fail;
-         }
 
       if (!constr && !(constr = rec_structor3d("gl_mark"))) {
 	     syserr("failed to create opengl record constructor");

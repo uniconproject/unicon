@@ -6,7 +6,7 @@ CWD=$(shell pwd)
 TESTNAME=$(shell basename $(CWD))
 
 UC=unicon -s
-
+EXE="$(shell where unicon | grep -o .exe)"
 
 # Do the tests
 DoTest: clean TestHdr $(TARGETS)
@@ -40,7 +40,7 @@ $(SKIP):
 	-@diff -wq stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \
 	else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
-	-@rm $@
+	-@rm $@$(EXE)
 
 FILES=$(patsubst %.diff,%.report,$(wildcard *.diff))
 ICNFILES=$(patsubst %.diff,%.icn,$(wildcard *.diff))
@@ -84,7 +84,7 @@ clean:
 #verbose clean
 Clean:
 	-rm -f *.u uniclass.* $(TARGETS)
-	-rm -f local/*.out *.diff
+	-rm -f local/*.out *.diff *.exe
 	-touch local/.placeholder
 
 

@@ -4,4 +4,4 @@ all:
 	cd parlett; make
 
 Clean:
-	cd parlett; make Clean
+	cd parlett; make clean

@@ -1,5 +1,5 @@
-BASE=../../..
-include ../../makedefs
+BASE=../../../..
+include ../../../makedefs
 
 .PHONY: all html library.out
 

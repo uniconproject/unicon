@@ -58,7 +58,6 @@ Makefiles:
 	cp gui.mak $(UNIDIR)/gui/makefile
 	cp native.mak $(UNIDIR)/native/makefile
 	cp guidemos.mak $(UNIDIR)/gui/guidemos/makefile
-	cp docs.mak $(UNIDIR)/unidoc/docs/makefile
 	cp ivib-v2.mak $(UNIDIR)/gui/ivib/makefile
 	cp uni-top.mak $(UNIDIR)/Makefile
 	cp iyacc.mak $(UNIDIR)/iyacc/Makefile

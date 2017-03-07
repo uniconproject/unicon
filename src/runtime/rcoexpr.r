@@ -1203,8 +1203,8 @@ int region;
    if (region == Strings){
       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
       for (curr = public_stringregion; curr; curr = curr->Tnext){
-         if ( (curr->size>=nbytes) &&  
-	      DiffPtrs(curr->end, curr->free) >= freebytes){
+         if ( (curr->size>=nbytes)/* &&  
+	      DiffPtrs(curr->end, curr->free) >= freebytes*/){
             if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
 	    else public_stringregion = curr->Tnext;	        
   	    if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
@@ -1218,8 +1218,8 @@ int region;
    else{
       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
       for (curr = public_blockregion; curr; curr = curr->Tnext){
-         if ( (curr->size>=nbytes) &&  
-	      DiffPtrs(curr->end, curr->free) >= freebytes){
+         if ( (curr->size>=nbytes) /* &&  
+	      DiffPtrs(curr->end, curr->free) >= freebytes*/){
             if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
 	    else public_blockregion = curr->Tnext;	        
   	    if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;

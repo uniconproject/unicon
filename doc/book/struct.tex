@@ -185,7 +185,9 @@ L := [: {\em expr\/} :]
 
 In a comprehension the constructed list's initial values are obtained
 by fully evaluating an expression and placing all of its results into the
-list, in order. The expression fails if {\em expr\/} fails.
+list, in order. The expression fails if {\em expr\/} fails; if you
+wanted that to be an empty list you may need to append
+\texttt{\textbar []}.
 
 Lists are dynamic. Lists grow or shrink as a result
 of stack and queue operations. The \index{push()}\texttt{push()} and
@@ -322,7 +324,11 @@ creates a set with three members: a string, a cset, and an integer. The
 equivalent set is produced by
 \texttt{set(["rock lobster","B", 52])}. To place a list in a set
 set constructor, wrap it in another list, as in \texttt{set([L])},
-or insert the list into the set after it is created.
+or insert the list into the set after it is created. Because the set
+constructor function initializes directly from a list argument,
+``set comprehension'' follows trivially from list comprehension. For
+example, \texttt{set([: 2 to 20 by 2 :])} creates a set containing the
+even integers from two to twenty.
 
 The functions \index{member()!set}\texttt{member()},
 \index{insert()!set}\texttt{insert()}, and

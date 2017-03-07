@@ -1500,8 +1500,6 @@ word nbytes,stdsize;
    uword minSize = MinAbrSize;
    struct region *rp;
 
-   printf("region\n");
-
 #if IntBits == 16
    if ((uword)nbytes > (uword)MaxBlock)
       return NULL;

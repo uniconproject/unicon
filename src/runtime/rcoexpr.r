@@ -1192,47 +1192,61 @@ void tlschain_remove(struct threadstate *tstate)
 
 /*
  * reuse_region - search region chain for a region having at least nbytes available
+ * updated Mar 8 2017: Relax the requirments to only require the region size 
+ *	               to be >= nbytes but not necessarily nbytes/4 >= freebytes.
+ *		       The rational is that some of that memory could be reclaimed
+ *		       after doing a garbage collection.
  */
-static struct region *reuse_region(nbytes, region)
-word nbytes;
-int region;
-   {
-   struct region *curr;
-   word freebytes = nbytes / 4;
-
-   if (region == Strings){
-      MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
-      for (curr = public_stringregion; curr; curr = curr->Tnext){
-         if ( (curr->size>=nbytes)/* &&  
-	      DiffPtrs(curr->end, curr->free) >= freebytes*/){
-            if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
-	    else public_stringregion = curr->Tnext;	        
-  	    if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
-            curr->Tnext= NULL;
-            curr->Tprev = NULL;
-	    break;
- 	    }
-         }
-      MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
+static struct region *reuse_region(word nbytes, int region)
+{
+  struct region *curr, **pubregion, *pick=NULL;
+  word freebytes = nbytes / 4;
+  int mtx_id;
+   
+  if (region == Strings){
+    mtx_id = MTX_PUBLICSTRHEAP;
+    MUTEX_LOCKID_CONTROLLED(mtx_id);
+    pubregion = &public_stringregion;
+  }
+  else{
+    mtx_id = MTX_PUBLICBLKHEAP;
+    MUTEX_LOCKID_CONTROLLED(mtx_id);
+    pubregion = &public_blockregion;
+  }
+       
+  for (curr = *pubregion; curr; curr = curr->Tnext) {
+    if (curr->size >= nbytes) {
+      // find a region that is big enough
+      if (!pick)
+	pick = curr;
+      if (DiffPtrs(curr->end, curr->free) >= freebytes) {
+	// if the region has "enough" free memory just take it
+	// and end the search
+	pick = curr;
+	break;
+        }
+      else if (DiffPtrs(pick->end, pick->free) < DiffPtrs(curr->end, curr->free))
+	// if this region has more free memory, switch to it
+	pick = curr;
       }
-   else{
-      MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
-      for (curr = public_blockregion; curr; curr = curr->Tnext){
-         if ( (curr->size>=nbytes) /* &&  
-	      DiffPtrs(curr->end, curr->free) >= freebytes*/){
-            if (curr->Tprev) curr->Tprev->Tnext = curr->Tnext;
-	    else public_blockregion = curr->Tnext;	        
-  	    if (curr->Tnext) curr->Tnext->Tprev = curr->Tprev;
-            curr->Tnext= NULL;
-            curr->Tprev = NULL;
-	    break;
- 	    }
-         }
-      MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
-      }
+    }
 
-   return curr;
-   }
+  if (pick){
+    if (pick->Tprev)
+      pick->Tprev->Tnext = pick->Tnext;
+    else
+      *pubregion = pick->Tnext;
+    
+    if (pick->Tnext)
+      pick->Tnext->Tprev = pick->Tprev;
+    
+    pick->Tnext= NULL;
+    pick->Tprev = NULL;
+  }
+      
+  MUTEX_UNLOCKID(mtx_id);
+  return pick;
+}
 
 /*
  * Initialize separate heaps for (concurrent) threads.

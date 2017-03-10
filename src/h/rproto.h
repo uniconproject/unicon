@@ -201,7 +201,6 @@ int		cpintarray	(dptr dp1,dptr dp2,word i,word j);
 void		cpslots		(dptr dp1,dptr slotptr,word i, word j);
 int		csetcmp		(unsigned int *cs1,unsigned int *cs2);
 int		cssize		(dptr dp);
-void		curveLister	(wbp w, XPoint *thepoints, int n);
 word		cvpos		(word pos, word len);
 void		datainit	(void);
 #ifdef MultiThread
@@ -248,7 +247,7 @@ int		findloc		(word *ipc_in);
 int		findsyntax	(word *ipc_in);
 int		fldlookup	(struct b_record *rec, const char * const fld);
 void		fpetrap		(void);
-void genCurve(wbp w, XPoint *p, int n, void (*helper)	(wbp, XPoint [], int));
+
 int		getenv_r	(const char *name, char *buf, size_t len);
 word		getrandom	(void);
 int		getvar		(char *s,dptr vp);
@@ -508,6 +507,8 @@ int checkOpenConsole( FILE *w, char *s );
    void	drawCurve	(wbp w, XPoint *p, int n);
    char	*evquesub	(wbp w, int i);
    void	genCurve	(wbp w, XPoint *p, int n, void (*h)());
+   void genCurve(wbp w, XPoint *p, int n, void (*helper)	(wbp, XPoint [], int));
+   void	curveLister	(wbp w, XPoint *thepoints, int n);
    wsp	getactivewindow	(void);
    int	getpattern	(wbp w, char *answer);
    char *getselection	(wbp w, char *buf);

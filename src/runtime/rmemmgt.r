@@ -435,8 +435,9 @@ int region;
    CURTSTATE_AND_CE();
 
 #ifdef Concurrent
-       curblock = curtblock;
-       curstring = curtstring;
+   /* what is this and why? */
+   curblock = curtblock;
+   curstring = curtstring;
 #endif					/* Concurrent */
 
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
@@ -520,7 +521,7 @@ int region;
     */
 #ifdef Concurrent
 
-/*  This is replaced by a better mechansim: point directly to the ce variable
+/*  This is replaced by a better mechanism: point directly to the ce variable
  * and don't host any of these variables in tstate.
  * Ex:
  *    instead of "tend" refering to 
@@ -578,6 +579,7 @@ int region;
    markthreads();
 #endif	                                /* ConcurrentCOMPILER */
 #endif					/* MultiThread */
+
    markblock(&k_main);
    markblock(&k_current);
 
@@ -755,13 +757,12 @@ static void markthread(struct threadstate *tcp)
 #ifdef Concurrent
 /*
  * Mark all the threads, because hey, they are live even if we don't
- * reach them. Skips the first thread, the one pointed at by
- * rootpstatep. Perhaps that is implicit/assumed covered by marking
- * co-expression &main.
+ * reach them.
  */
 static void markthreads()
 {
    struct threadstate *t;
+   markthread(&roottstate);
    for (t = roottstate.next; t != NULL; t = t->next)
       if (t->c && (IS_TS_THREAD(t->c->status))){
 	 markthread(t);
@@ -779,7 +780,6 @@ struct progstate *pstate;
    {
    struct descrip *dp;
 
-
    /* call markthread() on all the threads created from this program.
     * This replaces some of the former programstate marking below
     */
@@ -788,7 +788,7 @@ struct progstate *pstate;
 #else					/* Concurrent */
    markthread(pstate->tstate);
 #endif					/* Concurrent */
-   
+
    PostDescrip(pstate->K_main);
 
    PostDescrip(pstate->parentdesc);

@@ -59,6 +59,11 @@
 
 #define PatternType 1
 
+/* StackCheck seems to cause a crash when exiting through 
+ * pressing the [x] close window button, turn it off for now 
+ */
+#define NoStackCheck
+
 /*
  * The rule of thumb we aim for is: it includes everything that comes with
  * mingw out of the box. This includes pthreads, apparently, and 2D and 3D

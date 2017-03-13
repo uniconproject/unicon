@@ -98,11 +98,11 @@ class Sem(id)
    #
    method semop_poll(n, t)
       local c
-      c := util::curr_time_millis()
+      c := util::milliseconds()
       repeat {
          if semop_nowait(n) then
             return 
-         if util::curr_time_millis() - c > t then
+         if util::milliseconds() - c > t then
             fail
          util::sleep(50)
       }

@@ -87,15 +87,15 @@ class NetClient:Connectable:Error:SetFields(server, port, connection, sbuff, tim
          return syswrite(connection, s)
 
       fcntl(connection, "F", "d")
-      t := curr_time_millis()
+      t := milliseconds()
       while *s > 0 do {
          if i := syswrite(connection, s) then {
             s := s[i+1 : 0]
-            t := curr_time_millis()
+            t := milliseconds()
          } else {
             if &errno ~= EAGAIN then
                return error("Failed to write:" || strerror())
-            if curr_time_millis() - t > timeout then
+            if milliseconds() - t > timeout then
                return error("Send timed out")
             sleep(50)
          }

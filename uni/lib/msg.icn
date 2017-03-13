@@ -14,8 +14,8 @@ import lang
 import util
 
 #
-# This class provides an inter process messaging facility.  The implementation requires
-# the accompanying C library uniipclib.so to be on the library path.
+# This class provides an inter process messaging facility.  The implementation
+# requires the accompanying C library uniipclib.so to be on the library path.
 #
 # Instances of this class should not be created directly, but rather using the factory
 # procedures {open_public_msg}, {create_public_msg} and {create_private_msg}
@@ -63,11 +63,11 @@ class Msg(id)
    #
    method poll(t)
       local c, o
-      c := util::curr_time_millis()
+      c := util::milliseconds()
       repeat {
          if o := attempt() then
             return o
-         if util::curr_time_millis() - c > t then
+         if util::milliseconds() - c > t then
             fail
          util::sleep(50)
       }

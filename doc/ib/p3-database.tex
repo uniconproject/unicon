@@ -1,1 +1,69 @@
-\chapter{Implementation of Very High-Level Database Facilities}
+\chapter{ODBC Database Facilities}
+
+\section{Organization}
+
+The implementation of the ODBC interface includes changes to several
+files of the Unicon runtime system, as well as the addition of a new
+file for the new functions that were added.
+
+\subsection{New files}
+
+    FDB.R: This is the main file of Unicon ODBC. It contains the Unicon ODBC function set implementation. It is written in standard C with RTT extensions.
+    RDB.R: contains the C implementation of odbcerror function that is widely called in FDB.R.
+
+\subsection{Modified files}
+
+    RPROTO.H: contains odbcerror function definition.
+    OMISC.R: "*" operator implementation for ODBC file type.
+    FDEFS.H: ODBC function definitions.
+    DATA.R: runerr error code for ODBC file mismatch.
+    RSTRUCTS.H: ISQLFile definition (ODBC connection type).
+    REXTERNS.H: ISQLEnv extern definition.
+    RMACROS.H: Fs\_ODBC file status flag and ODBC error codes.
+    SYS.H: VisualC++ ODBC header files inclusion (windows.h and sqlext.h).
+    INIT.R: ODBC Environment structure release.
+    DEFINE.H: ISQL symbol definition for conditional compilation.
+    GRTTIN.H: new ODBC types definitions.
+    MAKEFILE.RUN: Runtime system makefile (FDB.R and RDB.R definitions added)
+    ICONX.LNK: Link file (XFDB.OBJ and XRDB.OBJ definitions added)
+
+\section{ISQLFile type}
+
+In Unicon an ODBC connection to a database is similar to a file
+operation. Internally this is represented by the following C
+structure:
+
+\begin{iconcode}
+\#ifdef ISQL\>\>\>\>\>\>\>\>\>\>             /* ODBC support */ \\
+\>  struct ISQLFile \{\>\>\>\>\>\>\>\>\>     /* SQL file     */ \\
+\>\>    SQLHDBC hdbc;\>\>\>\>\>\>\>\>        /* connection handle */ \\
+\>\>    SQLHSTMT hstmt;\>\>\>\>\>\>\>\>      /* statement handle  */ \\
+\>\>    char *query;\>\>\>\>\>\>\>\>         /* SQL query buffer */ \\
+\>\>    long qsize;\>\>\>\>\>\>\>\>          /* SQL query buffer size */ \\
+\>\>    char *tablename; \\
+\>\>    struct b\_proc *proc;\>\>\>\>\>\>\>\>/* record constructor for current query */ \\
+\>\>    int refcount; \\
+\>\>    struct ISQLFile *previous, *next; \\
+\>\>    \}; \\
+\#endif
+\end{iconcode}
+
+The field \texttt{hdbc} is used to keep the connection information associated
+to a particular ISQLFile file. \texttt{hstmt} is the statement structure that
+saves the results or dataset returned by an ODBC operation. The design
+of the interface is table oriented, which means that for each table we
+open a new connection.
+
+In the future we will consider the possibility to associate a file to
+a database. This would let us open a connection for each database and
+share the same connection for each table within the same database. In
+this way we can open a file and use more than a table.
+
+Actually when open(DSN,"o",user,password) is called Unicon allocates
+an ISQLFile object and initializes the structure fields in the
+following way:
+
+\begin{itemize}
+\item    hdbc is related to the DSN specified in open()
+\item    hstmt is related to hdbc
+\end{itemize}

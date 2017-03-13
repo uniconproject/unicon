@@ -1,0 +1,34 @@
+\chapter{Execution Monitoring}
+
+This chapter describes the implementation of program execution
+monitoring facilities in Unicon. Prior to these facilities, some
+simple monitors of Icon programs had been written in C, using
+instrumentation that was added to generate log files from the C
+implementation of Icon's virtual machine, iconx. Development of these
+tools in C was too labor intensive for experimental research work. The
+primary goal of the monitoring facilities is to allow monitors for
+Icon and Unicon to be written in Icon and Unicon instead of C.
+
+The monitoring facilities were added by writing a dynamic loader for
+Icon icode and extending the co-expression data type to allow the
+loading and execution of programs as co-expressions within the same
+virtual machine. This was considered necessary to achieve high
+performance, since the co-expression switch was frequently and
+publically lauded by Ralph Griswold as being very high performance
+(comparable to a procedure call in Icon), while transmitting
+monitoring information to a separate process via pipes, sockets or
+any other means that would require operating system synchronization
+was considered too expensive.
+
+Since that time, the co-expression type has gotten much slower in
+Icon, the current implementation having eliminated native assembler
+co-expressions in favor of a portable pthreads implementation. The
+monitoring facilities remain a compelling reason for Unicon to retain
+native co-expressions indefinitely, since they constitute the core
+of the Unicon debugger udb, and the profiler uprof.
+
+\section{Dynamic Loading and the Program State}
+
+\section{Instrumentation}
+
+\section{Event Requests, Filtering, and Reporting}

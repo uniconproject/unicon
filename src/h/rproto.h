@@ -1019,9 +1019,6 @@ void coclean(struct b_coexpr *cp);
 #endif
 void	cotrace		(struct b_coexpr *ccp, struct b_coexpr *ncp,
 			   int swtch_typ, dptr valloc);
-int	cvcset		(dptr dp,int * *cs,int *csbuf);
-int	cvnum		(dptr dp,union numeric *result);
-int	cvreal		(dptr dp,double *r);
 #ifdef MultiThread
 void	deref_0		(dptr dp1, dptr dp2);
 void	deref_1		(dptr dp1, dptr dp2);
@@ -1042,7 +1039,6 @@ void	hshrink		(union block *bp);
 C_integer iipow		(C_integer n1, C_integer n2, int *over_flowp);
 void	init		(char *name, int *argcp, char *argv[], int trc_init);
 int	kbhit		(void);
-int	mkreal		(double r,dptr dp);
 int	nthcmp		(dptr d1,dptr d2);
 void	nxttab		(C_integer *col, dptr *tablst, dptr endlst,
 			   C_integer *last, C_integer *interval);

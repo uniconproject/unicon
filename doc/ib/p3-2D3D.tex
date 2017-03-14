@@ -1,141 +1,124 @@
 \chapter{Portable 2D and 3D Graphics}
 
-Two-dimensional graphics were originally added to Icon version 8 as
-part of Clint Jeffery's response to Ralph Griswold's interest in
-software visualization. Visualization research called for rapid
-graphics prototyping and we were in possession of a rapid prototyping
-language. The facilities were successful enough to warrant painstaking
-porting (to OS/2 and then MS Windows) and documentation (Griswold wrote
-a larger book for the Icon graphics facilities than the Icon book) efforts.
-Two elaborate graphic user interface libraries (with interface
-builders) were developed, the first in Idol by Jon Lipp and Mary
-Cameron, and the second in Unicon by Robert Parlett.
-Unicon Version 11 introduced a powerful set of 3D graphics facilities,
-increasing the footprint of the graphics in the overall implementation.
+Two-dimensional graphics were originally added to Icon version 8 out
+of a desire to use Icon for software visualization. Visualization
+research called for rapid graphics prototyping and Icon is a rapid
+prototyping language. The facilities were successful enough to warrant
+painstaking porting (to OS/2 and then MS Windows) and documentation
+(Griswold wrote a larger book for the Icon graphics facilities than
+the Icon book) efforts.  Two elaborate graphic user interface
+libraries (with interface builders) were developed, the first in Idol
+by Jon Lipp and Mary Cameron, and the second in Unicon by Robert
+Parlett.  Unicon Version 11 introduced a powerful set of 3D graphics
+facilities, increasing the footprint of the graphics in the overall
+implementation.
 
 This chapter describes the design and implementation internals of the
 2D and 3D graphics facilities and their window system
 implementation. It is intended for persons extending the graphics
-facilities or porting Unicon to a new window system.This chapter is
+facilities or porting Unicon to a new window system. This chapter is
 derived from Unicon Technical Report \#5, by Clint Jeffery, Naomi
 Martinez and Jafar Al Gharaibeh.
 
+Much of the code is devoted to hiding specific features of C graphics
+interfaces that were deemed overly complex or not worth the coding
+effort they entail. Other implementation techniques are motivated by
+portability concerns. The graphics interface described below has been
+implemented to various levels of completeness on the X Window System,
+Microsoft Windows, OS/2 Presentation Manager, and Macintosh
+platforms. Most of this discussion is relevant also for Icon Version
+9.4; Unicon's graphics facilities include minor improvements.
 
-\section[27.1 Window Systems and Platform-Independence]{27.1 Window Systems and Platform-Independence}
-
-This chapter describes the internals of the implementation of Unicon's
-graphics and window system facilities. Much of the code is devoted to
-hiding specific features of C graphics interfaces that were deemed
-overly complex or not worth the coding effort they entail. Other
-implementation techniques are motivated by portability concerns. The
-graphics interface described below has been implemented to various
-levels of completeness on the X Window System, Microsoft Windows, OS/2
-Presentation Manager, and Macintosh platforms. Most of this discussion
-is relevant also for Icon Version 9.4; Unicon's graphics facilities
-include minor improvements.
-
-{\sffamily
-Relevant Source File Summary}
-
-This document assumes a familiarity with the general organization and
-layout of Unicon sources and the configuration and installation
-process. For more information on these topics, consult Icon Project
-Documents IPD 238 [TGJ96] and IPD 243 [TGJ98] for UNIX, and Appendix B
-of this document for MS Windows.
+\section{Graphics Source Files Summary}
 
 Unicon's window facilities consist of several source files, all in the
-runtime directory unless otherwise noted. They are discussed in more
+src/runtime directory unless otherwise noted. They are discussed in more
 detail later in this document.
 
-\textbf{header files} -- \textsf{h/graphics.h} contains structures and
+\textbf{header files} -- \texttt{h/graphics.h} contains structures and
 macros common across platforms. Each platform adds platform-specific
 elements to the common window structures defined in this file. In
 addition, each platform gets its own header file, currently these
-consist of X Windows (\textsf{h/xwin.h}), Microsoft Windows
-(\textsf{h/mswin.h}), OS/2 Presentation Manager
-(\textsf{h/pmwin.h}),and the Macintosh (\textsf{h/mac.h}). Every
-platform defines several common macros in the window-system specific
-header file in addition to its window system specific structures and
-macros. The common macros are used to insert platform-dependent pieces
-into platform-independent code.
+consist of X Windows (\texttt{h/xwin.h}) and Microsoft Windows
+(\texttt{h/mswin.h}). Every platform defines several common macros in
+the window-system specific header file in addition to its window
+system specific structures and macros. The common macros are used to
+insert platform-dependent pieces into platform-independent code.
 
-\textbf{Unicon functions} -- \textsf{fwindow.r} contains the RTL
+\textbf{Unicon functions} -- \texttt{fwindow.r} contains the RTL
 (Run-Time Language) interface code used to define built-in graphics
 functions for the Unicon interpreter and compiler. For most functions,
 this consists of type checking and conversion code followed by calls
 to platform-dependent graphics functions. The platform dependent
-functions are described later in this document; \textsf{fwindow.r} is
+functions are described later in this document; \texttt{fwindow.r} is
 platform independent. You will generally modify it only if you are
 adding a new built-in function. For example, the Windows native
 functions are at the bottom of this file.
 
-\textbf{internal support routines} -- \textsf{rwindow.r, rwinrsc.r,
-rgfxsys.r} and \textsf{rwinsys.r} are basically C files with some
+\textbf{internal support routines} -- \texttt{rwindow.r, rwinrsc.r,
+rgfxsys.r} and \texttt{rwinsys.r} are basically C files with some
 window system dependencies but mostly consisting of code that is used
-on all systems. For example, \textsf{rwindow.r} is almost 100
+on all systems. For example, \texttt{rwindow.r} is almost 100
 kilobytes of portable source code related to Unicon's event model,
 attribute/value system, portable color names, GIF and JPEG image file
 support, palettes, fonts, patterns, spline curves and so forth.
 
 \textbf{window-system specific files} -- Each window system gets its
-own source files for C code, included by the various \textsf{r*.r}
+own source files for C code, included by the various \texttt{r*.r}
 files in the previous section. Currently these include
-\textsf{rxwin.ri} and \textsf{rxrsc.ri} for X Window;
-\textsf{rmswin.ri} for MS Windows; \textsf{rpmwin.ri},
-\textsf{rpmrsc.ri}, and \textsf{rpmgraph.ri} for Presentation Manager;
-and \textsf{rmac.ri} for the Macintosh. Each platform will implement
-one or more such \textsf{r*.ri} files. In addition,
-\textsf{common/xwindow.c} contains so many X Window includes that it
+\texttt{rxwin.ri} and \texttt{rxrsc.ri} for X Windows, and
+\texttt{rmswin.ri} for MS Windows. Each platform will implement
+one or more such \texttt{r*.ri} files. In addition,
+\texttt{common/xwindow.c} contains so many X Window includes that it
 won't even compile under UNIX Sys V/386 R 3.2 if all of the Unicon
-includes are also present -- so its a \textsf{.c} file instead of a
-\textsf{.r} file.
+includes are also present -- so its a \texttt{.c} file instead of a
+\texttt{.r} file.
 
 \textbf{tainted {\textquotedbl}regular{\textquotedbl} Unicon sources}
--{}- Many of the regular Unicon source files include code under
-\textsf{\#ifdef Graphics} and/or one or more specific window system
-definitions such as \textsf{\#ifdef XWindows} or \textsf{\#ifdef
+-- Many of the regular Unicon source files include code under
+\texttt{\#ifdef Graphics} and/or one or more specific window system
+definitions such as \texttt{\#ifdef XWindows} or \texttt{\#ifdef
 PresentationManager}. The tainted files that typically have to be
-edited for a new window system include \textsf{h/grttin.h},
-\textsf{h/features.h}, \textsf{h/rexterns.h}, \textsf{h/rmacros.h},
-\textsf{h/rproto.h}, \textsf{h/rstructs.h}, and
-\textsf{h/sys.h}. Other files also contain \textsf{Graphics}
+edited for a new window system include \texttt{h/grttin.h},
+\texttt{h/features.h}, \texttt{h/rexterns.h}, \texttt{h/rmacros.h},
+\texttt{h/rproto.h}, \texttt{h/rstructs.h}, and
+\texttt{h/sys.h}. Other files also contain \texttt{Graphics}
 code. This means that most of the system has to be recompiled with rtt
-and cc after \textsf{Graphics} is defined in \textsf{h/define.h}. You
-will also want to study the \textsf{Graphics} stuff in
-\textsf{h/grttin.h} since several profound macros are there. Also, any
+and cc after \texttt{Graphics} is defined in \texttt{h/define.h}. You
+will also want to study the \texttt{Graphics} stuff in
+\texttt{h/grttin.h} since several profound macros are there. Also, any
 new types (such as structures) defined in your window system include
-files will need dummy declarations (of the form \textsf{typedef int
+files will need dummy declarations (of the form \texttt{typedef int
 foo;}) to be added there.
 
 Under UNIX the window facilities are turned on at configuration time by typing
 
-\textsf{make X-Configure name=system}
+\texttt{make X-Configure name=system}
 
-\noindent instead of the usual \textsf{make Configure} invocation. The
+\noindent instead of the usual \texttt{make Configure} invocation. The
 X configuration modifies makefiles and defines the symbolic constant
-\textsf{Graphics} in \textsf{h/define.h}. If OpenGL libraries are
+\texttt{Graphics} in \texttt{h/define.h}. If OpenGL libraries are
 detected, configuration enables them automatically. Similar but less
 automatic configuration handling is performed for other systems; for
-example, an alternate .\textsf{bat} file is used in place of
-\textsf{os2.bat} or \textsf{turbo.bat}.
+example, an alternate .\texttt{bat} file is used in place of
+\texttt{os2.bat} or \texttt{turbo.bat}.
 
 {\sffamily
 \textbf{Graphics \#define{}-d symbols}}
 
 The primary, window-system-independent defined symbol that turns on
-window facilities is simply \textsf{Graphics}.  Underneath this parent
-\textsf{\#ifdef}, the symbol \textsf{XWindows} is meant to mark all X
-Window code. \ Other window systems have a definition comparable to
-\textsf{XWindows}: for Microsoft Windows it is \textsf{MSWindows}, for
-OS/2 it is \textsf{PresentationManager}, and for the Macintosh,
-\textsf{MacGraph}. \ Turning on any of the platform specific graphics
-\textsf{\#define} symbols turns on \textsf{Graphics} implicitly.
+window facilities is simply \texttt{Graphics}.  Underneath this parent
+\texttt{\#ifdef}, the symbol \texttt{XWindows} is meant to mark all X
+Window code. Other window systems have a definition comparable to
+\texttt{XWindows}: for Microsoft Windows it is \texttt{MSWindows}.
+Turning on any of the platform specific graphics
+\texttt{\#define} symbols turns on \texttt{Graphics} implicitly.
 
 \section[27.2 Structures Defined in graphics.h]{27.2 Structures Defined in graphics.h}
 
-The header file \textsf{graphics.h} defines a collection of C
+The header file \texttt{graphics.h} defines a collection of C
 structures that contain pointers to other C structures from
-\textsf{graphics.h} as well as pointers into the window system library
+\texttt{graphics.h} as well as pointers into the window system library
 structures. \ The internals for the simplest Unicon window structure
 under X11 are depicted in Figure 1. The picture is slightly simpler
 under MS Windows, with no display state or related color or font
@@ -157,7 +140,7 @@ a large set of resources, including pens, brushes, fonts and bitmaps.
 
 At the top, Unicon level, there is a simple structure called a
 \textit{binding} that contains a pointer to a window state and a
-window context. Pointers to bindings are stored in the \textsf{FILE *}
+window context. Pointers to bindings are stored in the \texttt{FILE *}
 variable of the Unicon file structure, and most routines that deal
 with a window take a pointer to a binding as their first
 argument. Beneath this facade, several structures are accessed to
@@ -178,8 +161,8 @@ windows. This is a big win, and Unicon programs tend to use it
 heavily, so in porting the window functions a central design issue
 must be the effective use of a comparable facility on other window
 systems, or emulating the context abstraction if
-necessary. Nevertheless, one might start out with \textsf{Couple()}
-and \textsf{Clone()} disabled and only allow one hardwired context
+necessary. Nevertheless, one might start out with \texttt{Couple()}
+and \texttt{Clone()} disabled and only allow one hardwired context
 associated with each window.
 
 The display state contains whatever system resources (typically
@@ -197,23 +180,23 @@ Unicon's graphics interface routines employ coding conventions to
 simplify things. In order to avoid many extra memory references in
 accessing fields in the multi-level structure,
 {\textquotedbl}standard{\textquotedbl} local variables are declared in
-most of the platform dependent interface routines in \textsf{rxwin.ri}
-and \textsf{rmswin.ri}. \ The macro \textsf{STDLOCALS(w)} declares
+most of the platform dependent interface routines in \texttt{rxwin.ri}
+and \texttt{rmswin.ri}. \ The macro \texttt{STDLOCALS(w)} declares
 local variables pointing to the most commonly used pieces of the
 window binding, and initializes them from the supplied argument; each
 window system header should define an appropriate
-\textsf{STDLOCALS(w)} macro. Under some window systems, such as MS
-Windows, \textsf{STDLOCALS(w)} allocates resources which must be freed
+\texttt{STDLOCALS(w)} macro. Under some window systems, such as MS
+Windows, \texttt{STDLOCALS(w)} allocates resources which must be freed
 before execution continues, in which case a corresponding
-\textsf{FREE\_STDLOCALS(w)} macro is defined.
+\texttt{FREE\_STDLOCALS(w)} macro is defined.
 
-Some common standard locals are \textsf{wc}, \textsf{ws},
-\textsf{stdwin}, and \textsf{stdpix}. While \textsf{wc}, and
-\textsf{ws} are pointers to structures copied from the window binding,
-\textsf{stdwin}, and \textsf{stdpix} are actual X (or MS Window)
+Some common standard locals are \texttt{wc}, \texttt{ws},
+\texttt{stdwin}, and \texttt{stdpix}. While \texttt{wc}, and
+\texttt{ws} are pointers to structures copied from the window binding,
+\texttt{stdwin}, and \texttt{stdpix} are actual X (or MS Window)
 resources that are frequently supplied to the platform-dependent
 routines as arguments. Each window system will have its own standard
-locals. For example, MS Windows adds \textsf{stddc} and \textsf{pixdc}
+locals. For example, MS Windows adds \texttt{stddc} and \texttt{pixdc}
 since it uses a device context concept not found in X11.
 
 In much of the platform-dependent source code, the window system calls
@@ -224,8 +207,8 @@ windows. When the window is once again exposed, it is sent a message
 to redraw itself. Unicon hides this entirely, and remembers the
 contents of the window explicitly in a window-sized bitmap of
 memory. The calling of platform graphics routines twice is so common
-that a set of macros is defined in \textsf{xwin.h} to facilitate it.
-The macros are named \textsf{RENDER2} through \textsf{RENDER6}, and
+that a set of macros is defined in \texttt{xwin.h} to facilitate it.
+The macros are named \texttt{RENDER2} through \texttt{RENDER6}, and
 each of them takes an Xlib function and then some number of arguments
 to pass that function, and then calls that function twice, once on the
 window and once on the bitmap.
@@ -255,21 +238,21 @@ categorized into several major areas:
 \subsection[27.4.1 Window Creation and Destruction]{27.4.1 Window Creation and Destruction}
 
 A graphics window is created when the Unicon program calls
-\textsf{open()} with file attribute
-\textsf{{\textquotedbl}g{\textquotedbl}}. The window opening sequence
-consists of a call to \textsf{wopen()} to allocate appropriate Unicon
+\texttt{open()} with file attribute
+\texttt{{\textquotedbl}g{\textquotedbl}}. The window opening sequence
+consists of a call to \texttt{wopen()} to allocate appropriate Unicon
 structures for the window and evaluate any initial window attributes
-given in additional arguments to \textsf{open()}. After these
+given in additional arguments to \texttt{open()}. After these
 attributes have been evaluated, platform resources such as fonts and
 colors are allocated and and the window itself is instantiated. Under
-X, \textsf{wopen()} busy-waits until the window has received its first
+X, \texttt{wopen()} busy-waits until the window has received its first
 expose event, ensuring that no subsequent window operation takes place
 before the window has appeared onscreen.
 
-A window is closed by a call to \textsf{wclose()}; this removes the
+A window is closed by a call to \texttt{wclose()}; this removes the
 on-screen window even if other bindings (Unicon window values) refer
 to it. A closed window remains in memory until all Unicon values that
-refer to it are closed. A call to \textsf{unbind()} removes a binding
+refer to it are closed. A call to \texttt{unbind()} removes a binding
 without necessarily closing the window.
 
 \subsection[27.4.2 Event Processing]{27.4.2 Event Processing}
@@ -277,7 +260,7 @@ without necessarily closing the window.
 The system software for each graphics platform has a huge number of
 different types of events. Unicon ignores most of them. Of the
 remainder, some are handled by the runtime system code in the
-\textsf{.ri} files implicitly, and some are explicitly passed on to
+\texttt{.ri} files implicitly, and some are explicitly passed on to
 the Unicon program.
 
 Most native graphic systems require that applications be event-driven;
@@ -320,7 +303,7 @@ part of the window contents would be lost whenever the user
 accidentally made the window smaller than intended.
 
 The platform-dependent modules also contains tables of type
-\textsf{stringint}. These tables are supported by routines that map
+\texttt{stringint}. These tables are supported by routines that map
 strings for various attributes and values to native window system
 integer constants. Binary search is employed. This approach is a crude
 but effective way to provide symbolic access
@@ -339,7 +322,7 @@ window system in performing output.
 
 Memory management for internal window structures is independent of
 Unicon's standard memory management system. Xlib memory is allocated
-using \textsf{malloc(2)}.
+using \texttt{malloc(2)}.
 
 Most internal Unicon window structures could be allocated in Unicon's
 block region, but since they are acyclic and cannot contain any
@@ -371,14 +354,14 @@ on systems vary widely, {\textquotedbl}interesting{\textquotedbl} code
 has been written to support these portable names on various X servers.
 Each window system may need to include heuristics to pick an
 appropriate font in the font allocation routine in the window system's
-\textsf{r*.ri} file.
+\texttt{r*.ri} file.
 
 \section[27.5 External Image Files and Formats]{27.5 External Image Files and Formats}
 
 Reading and writing window contents to external files is accomplished
-by the routines \textsf{loadimage()} and \textsf{dumpimage()},
+by the routines \texttt{loadimage()} and \texttt{dumpimage()},
 implemented in each platform's window system specific file, such as
-\textsf{rxwin.ri}. These routines take a window binding and a string
+\texttt{rxwin.ri}. These routines take a window binding and a string
 filename and perform the I/O transfer. Presently, the file format is
 assumed to be indicated by the filename extension; this is likely to
 change. Ideally Unicon should tolerate different file formats more
@@ -403,9 +386,9 @@ and destruction, as well as handling keyboard and mouse input.
 
 OpenGL 1.2 or later must be present on the system in order for
 Unicon's 3D graphics facilities to work. A check for this is performed
-in \textsf{wopengl()} which can be found in the file
-\textsf{ropengl.ri}. The requirement of OpenGL 1.2 is based on the
-fact that the function \textsf{glTexBind(),}\texttt{ }which make the
+in \texttt{wopengl()} which can be found in the file
+\texttt{ropengl.ri}. The requirement of OpenGL 1.2 is based on the
+fact that the function \texttt{glTexBind(),}\texttt{ }which make the
 implementation of textures more efficient, is only available in OpenGL
 1.2 and later.
 
@@ -427,31 +410,31 @@ window display lists), rxwin.ri and rmswin.ri (modified wopen() and
 wmap() to support 3d mode), rwindow.r (new 3D attributes), and
 graphics.h (new 3D fields in canvas and context structures). Also a
 new file, ropengl.ri was added that contains the C helper functions
-for functions in \textsf{fwindow.r, rxwin.ri}, and \textsf{rwindow.r}.
+for functions in \texttt{fwindow.r, rxwin.ri}, and \texttt{rwindow.r}.
 
 \subsection[27.6.3 Redrawing Windows]{27.6.3 Redrawing Windows}
 
 In the 2D graphics facilities, events that require the redrawing of a
 window are handled by using a pixmap. Instead of using a pixmap, for
 the Unicon 3D graphics facilities, a Unicon list of lists is created
-for each window opened in \textsf{{}``gl''} mode. This list of lists
+for each window opened in \texttt{{}``gl''} mode. This list of lists
 keeps track of all objects in a 3D graphics scene. This list is called
-\textsf{funclist} and is found in the wstate structure of a
-\textsf{{\textquotedbl}gl{\textquotedbl}} window. The individual lists
+\texttt{funclist} and is found in the wstate structure of a
+\texttt{{\textquotedbl}gl{\textquotedbl}} window. The individual lists
 of contain the function name and the parameters of that function. Also
 placed on the list are attributes that affect the scene. These include
-\textsf{dim}, \textsf{linewidth}, \textsf{texcoord}, \textsf{texture},
-\textsf{texmode}, and \textsf{fg}. When a window receives an event
+\texttt{dim}, \texttt{linewidth}, \texttt{texcoord}, \texttt{texture},
+\texttt{texmode}, and \texttt{fg}. When a window receives an event
 that requires redrawing, the window is cleared, all attributes are
 reset to the defaults, and the Unicon list of lists is traversed to
 redraw every object in the scene.
 
 There are some functions and attributes that are not placed in the
 list. Instead they much either modify the list or call the list to
-redraw the scene. The function \textsf{EraseArea()}, not only clears
+redraw the scene. The function \texttt{EraseArea()}, not only clears
 the screen but also clears the contents of the list. The attributes
-\textsf{light0-light7}, \textsf{eye}, \textsf{eyeup}, \textsf{eyedir},
-and \textsf{eyepos} use the list to redraw the window with the new
+\texttt{light0-light7}, \texttt{eye}, \texttt{eyeup}, \texttt{eyedir},
+and \texttt{eyepos} use the list to redraw the window with the new
 attributes. So if the position of a light changes, the new lighting
 calculations are preformed and the scene is redraw. Besides these
 functions and attributes, every function or attribute available in the
@@ -475,24 +458,24 @@ increase the efficiency of converting the texture image into an
 array. Since lighting and texturing are fairly expensive operations,
 especially if several lights are activated, these features are
 temporarily deactivated. Despite these efforts, converting a
-{\textquotedbl}\textsf{g{\textquotedbl}} window to a texture is still
+{\textquotedbl}\texttt{g{\textquotedbl}} window to a texture is still
 fairly expensive. Possible future work includes ways to speed up this
 process.
 
 Instead of adding a texture to the list of lists as described in
 section 7.3, OpenGL's internal texture resources are used. OpenGL
 assigns to each texture a name. The names assigned to each texture in
-a Unicon scene are stored in \textsf{texname[]}, which can be found in
-a \textsf{``gl''} window's context. To ensure that a texture name is
-not reused, a call to \textsf{glGenTextures()} made which produces
+a Unicon scene are stored in \texttt{texname[]}, which can be found in
+a \texttt{``gl''} window's context. To ensure that a texture name is
+not reused, a call to \texttt{glGenTextures()} made which produces
 unused texture names. When a texture is applied to the scene, only the
-index of the array \textsf{texname[]} is stored in the list. When the
-list is traversed, a call to \textsf{glBindTexture()} is made which
+index of the array \texttt{texname[]} is stored in the list. When the
+list is traversed, a call to \texttt{glBindTexture()} is made which
 binds the texture to the subsequent objects in the scene. One problem
 of using this representation of textures is that it places an upper
 bound on the number of texture used. This is because
-\textsf{glGenTextures()} requires the number of texture names to
-generate. Also by using \textsf{glBindTexture()}, never deletes a
+\texttt{glGenTextures()} requires the number of texture names to
+generate. Also by using \texttt{glBindTexture()}, never deletes a
 texture from the texture resources, possibly using up all texture
 resources. Future work might look into when to delete a texture an
 ways to check when the texture resources have been used up.
@@ -504,36 +487,36 @@ cylinders, disks, partial disks, points, lines, polygons, spheres,
 line segments, and filled polygons. Some of these primitives are drawn
 using different aspect of the OpenGL library, with some using the glu
 library. Points, lines, line segments, polygons, and filled polygons
-are drawing using \textsf{glBegin()}, \textsf{glEnd()}, and vertices
+are drawing using \texttt{glBegin()}, \texttt{glEnd()}, and vertices
 in between the function calls. Cylinders, disks, partial disks, and
 spheres are implemented using the glu library. They are considered to
-be\textsf{ gluQuadrics} objects. Finally cubes and tori are a
+be\texttt{ gluQuadrics} objects. Finally cubes and tori are a
 composition of several polygons.
 
 The texturing method used is influenced by the how the primitive is
 composed. For the primitives built using the OpenGL library, default
 texture coordinates are obtain much differently than those primitives
 built using the glu library. For those primitives built using
-\textsf{glBegin()} and \textsf{glEnd()}, \textsf{glTexGen()} is used
+\texttt{glBegin()} and \texttt{glEnd()}, \texttt{glTexGen()} is used
 to determine the default parameters when
-\textsf{{\textquotedbl}texcoord=auto{\textquotedbl}}. In order to use
-this feature we must enable \textsf{GEN\_S} and \textsf{GEN\_T} with
-\textsf{glEnable().} This generates texture coordinates for a 2D
+\texttt{{\textquotedbl}texcoord=auto{\textquotedbl}}. In order to use
+this feature we must enable \texttt{GEN\_S} and \texttt{GEN\_T} with
+\texttt{glEnable().} This generates texture coordinates for a 2D
 textures. The texture coordinates for a torus are obtained in the same
 ways.
 
 Primitives built using the glu library, have texture coordinates
 associated with them. These texture coordinates can be obtained by
-calling \textsf{gluQuadricTexture()}.The use of the glu texture
+calling \texttt{gluQuadricTexture()}.The use of the glu texture
 coordinates verses the OpenGL coordinates, is due to the fact that the
 glu texture coordinate look nicer. In order to use these texture
 coordinates instead of the ones specified by OpenGL, it is necessary
-to disable \textsf{GEN\_S} and \textsf{GEN\_T}. After the object has
-been drawn, \textsf{GEN\_S} and \textsf{GEN\_T} are turned back on.
+to disable \texttt{GEN\_S} and \texttt{GEN\_T}. After the object has
+been drawn, \texttt{GEN\_S} and \texttt{GEN\_T} are turned back on.
 
 A cube uses default texture coordinates that map the texture onto each
 of the faces of a cube. In order to use these default coordinates, it
-is necessary to disable \textsf{GEN\_S} and \textsf{GEN\_T}, similar
+is necessary to disable \texttt{GEN\_S} and \texttt{GEN\_T}, similar
 to glu objects.
 
 \section[27.7 Graphics Facilities Porting Reference]{27.7 Graphics Facilities Porting Reference}
@@ -541,17 +524,17 @@ to glu objects.
 This section documents the window-system specific functions and macros
 that generally must be implemented in order to port Unicon's graphics
 facilities to a new window system. The list is compiled primarily by
-studying \textsf{fwindow.r}, \textsf{rwindow.r}, and the existing
+studying \texttt{fwindow.r}, \texttt{rwindow.r}, and the existing
 platforms.
 
 
-A note on types: \textsf{w} is a window binding pointer
-(\textsf{wbp}), the top level Unicon
-{\textquotedbl}window{\textquotedbl} value. \textsf{i} is an integer,
-\textsf{s} is a string. \textsf{wsp} is the window state
-(a.k.a. canvas) pointer, and \textsf{wcp} is the window context
-pointer. A \textsf{bool} return value returns one of the C macro
-values \textsf{Succeeded} or \textsf{Failed}, instead of the usual C
+A note on types: \texttt{w} is a window binding pointer
+(\texttt{wbp}), the top level Unicon
+{\textquotedbl}window{\textquotedbl} value. \texttt{i} is an integer,
+\texttt{s} is a string. \texttt{wsp} is the window state
+(a.k.a. canvas) pointer, and \texttt{wcp} is the window context
+pointer. A \texttt{bool} return value returns one of the C macro
+values \texttt{Succeeded} or \texttt{Failed}, instead of the usual C
 booleans 1 and 0.
 
 
@@ -598,7 +581,7 @@ may need to translate our coordinates.
 int blimage(w, x, y, width, height, ch, s, len)}
 
 Draws a bi-level (i.e. monochrome, 1-bit-per-pixel) image; used in
-\textsf{DrawImage()} which draws bitmap data stored in Unicon strings.
+\texttt{DrawImage()} which draws bitmap data stored in Unicon strings.
 
 {\sffamily\bfseries
 \bigskip\hrule\vspace{0.1cm}
@@ -667,9 +650,9 @@ drawarcs(w, thearcs, i)}
 
 
 Draw i arcs on w, given in an array of XArc structures. \ Define an appropriate XArc structure for your window system;
-it must include fields x, y and width and height fields accessible through macros \textsf{ARCWIDTH()} and
-\textsf{ARCHEIGHT()}. \ Also, a starting angle angle1 and arc extent angle2, assigned through macros \textsf{ANGLE()},
-\textsf{EXTENT()}, and \textsf{FULLARC}. \ This is currently a mess. \ Imitation of the X or PresentationManager code
+it must include fields x, y and width and height fields accessible through macros \texttt{ARCWIDTH()} and
+\texttt{ARCHEIGHT()}. \ Also, a starting angle angle1 and arc extent angle2, assigned through macros \texttt{ANGLE()},
+\texttt{EXTENT()}, and \texttt{FULLARC}. \ This is currently a mess. \ Imitation of the X or PresentationManager code
 is in order.
 
 
@@ -711,7 +694,7 @@ Draw string s at coordinate (x,y) on w. \ Note that y designates a baseline, not
 drawrectangles(w, rectangles, i)
 
 
-Draw \textsf{i} rectangles. \ Define an XRectangle structure appropriate to your window system.
+Draw \texttt{i} rectangles. \ Define an XRectangle structure appropriate to your window system.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -721,7 +704,7 @@ Draw \textsf{i} rectangles. \ Define an XRectangle structure appropriate to your
 int dumpimage(w, s, x, y, width, height)
 
 
-Write an image of a rectangular area in w to file s. Returns \textsf{Succeeded}, \textsf{Failed}, or \textsf{NoCvt} if
+Write an image of a rectangular area in w to file s. Returns \texttt{Succeeded}, \texttt{Failed}, or \texttt{NoCvt} if
 the platform doesn't support the requested format. \ Note that this is the {\textquotedbl}platform- dependent image
 writing function{\textquotedbl}; requests to write GIF \ or JPEG are handled outside of this function.
 
@@ -731,7 +714,7 @@ writing function{\textquotedbl}; requests to write GIF \ or JPEG are handled out
 eraseArea(w, x, y, width, height)
 
 
-Erase a rectangular area, that is, set it to the current background color. \ Compare with \textsf{fillrectangles()}.
+Erase a rectangular area, that is, set it to the current background color. \ Compare with \texttt{fillrectangles()}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -748,7 +731,7 @@ circle and does some weird type conversion.
 fillarcs(w, arcs, i)
 
 
-Fill wedge-like arc sections (pie pieces). \ See \textsf{drawarcs()}.
+Fill wedge-like arc sections (pie pieces). \ See \texttt{drawarcs()}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -756,7 +739,7 @@ Fill wedge-like arc sections (pie pieces). \ See \textsf{drawarcs()}.
 fillrectangles(w, rectangles, i)
 
 
-Fill i rectangles. \ See \textsf{drawrectangles()}.
+Fill i rectangles. \ See \texttt{drawrectangles()}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -772,7 +755,7 @@ Fill a polygon defined by i points. \ Connect first and last points if they are 
 FHEIGHT(w)
 
 
-Returns the pixel height of the current font, hopefully \textsf{ASCENT + DESCENT.}
+Returns the pixel height of the current font, hopefully \texttt{ASCENT + DESCENT.}
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -780,7 +763,7 @@ Returns the pixel height of the current font, hopefully \textsf{ASCENT + DESCENT
 free\_binding(w)
 
 
-Free binding associated with \textsf{w}. \ This gets rid of a binding that refers to \textsf{w}, without necessarily
+Free binding associated with \texttt{w}. \ This gets rid of a binding that refers to \texttt{w}, without necessarily
 closing the window itself (other bindings may point to that window).
 
 
@@ -789,7 +772,7 @@ closing the window itself (other bindings may point to that window).
 free\_context(wc)
 
 
-Free window context \textsf{wc}.
+Free window context \texttt{wc}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -797,7 +780,7 @@ Free window context \textsf{wc}.
 free\_mutable(w, i)
 
 
-Free mutable color index \textsf{i}.
+Free mutable color index \texttt{i}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -805,7 +788,7 @@ Free mutable color index \textsf{i}.
 free\_window(ws)
 
 
-Free window canvas \textsf{ws}.
+Free window canvas \texttt{ws}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -813,7 +796,7 @@ Free window canvas \textsf{ws}.
 freecolor(w, s)
 
 
-Free a color allocated on \textsf{w}{}'s display.
+Free a color allocated on \texttt{w}{}'s display.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -855,7 +838,7 @@ wsp getactivewindow()
 
 Return a window state pointer to an active window, blocking until a
 window is active. Probably will be generalized to include a
-non-blocking variant. Returns \textsf{NULL} if no windows are opened.
+non-blocking variant. Returns \texttt{NULL} if no windows are opened.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -863,7 +846,7 @@ non-blocking variant. Returns \textsf{NULL} if no windows are opened.
 getbg(w, s)
 
 
-Returns (writes into \textsf{s}) the current background color.
+Returns (writes into \texttt{s}) the current background color.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -871,7 +854,7 @@ Returns (writes into \textsf{s}) the current background color.
 getcanvas(w, s)
 
 
-Returns (writes into \textsf{s}) the current canvas state.
+Returns (writes into \texttt{s}) the current canvas state.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -935,7 +918,7 @@ by canvas attribute, getcanvas()).
 geticonpos(w, s)
 
 
-Return icon's position to \textsf{s}, an encoded
+Return icon's position to \texttt{s}, an encoded
 {\textquotedbl}x,y{\textquotedbl} format string.
 
 
@@ -1111,9 +1094,9 @@ Lower the window to the bottom of the stack.
 mutable\_color(w, dptr dp, i, C\_integer *result)
 
 
-Allocate a mutable color from color spec given by \textsf{dp} and
-\textsf{i}, placing result (a small negative integer) in
-\textsf{*result}.
+Allocate a mutable color from color spec given by \texttt{dp} and
+\texttt{i}, placing result (a small negative integer) in
+\texttt{*result}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1237,8 +1220,8 @@ Returns the number of bits per pixel.
 int setbg(w, s)
 
 
-Set the context background color to \textsf{s}. Returns
-\textsf{Succeeded} or \textsf{Failed}.
+Set the context background color to \texttt{s}. Returns
+\texttt{Succeeded} or \texttt{Failed}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1246,9 +1229,9 @@ Set the context background color to \textsf{s}. Returns
 setcanvas(w, s)
 
 
-Set canvas state to \textsf{s}, make it
-\textsf{{\textquotedbl}iconic{\textquotedbl}},
-\textsf{{\textquotedbl}hidden{\textquotedbl}} or whatever. A canvas
+Set canvas state to \texttt{s}, make it
+\texttt{{\textquotedbl}iconic{\textquotedbl}},
+\texttt{{\textquotedbl}hidden{\textquotedbl}} or whatever. A canvas
 value extension such as fullscreen would go here.  Changes in canvas
 state are tantamount to destroying the old window, creating a new
 window (with appropriate size and style) and adjusting the pixmap size
@@ -1261,7 +1244,7 @@ located in the event handlers for related window system events.
 setclip(w)
 
 
-Set (enable) clipping on \textsf{w} from its context.
+Set (enable) clipping on \texttt{w} from its context.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1311,7 +1294,7 @@ Set fill style to solid, masked, or textured.
 bool setfont(w, char **s)
 
 
-Set the context font to \textsf{s}. This function first attempts to
+Set the context font to \texttt{s}. This function first attempts to
 use the portable font naming mechanism; it resorts to the system font
 mechanism if the name is not in portable syntax.
 
@@ -1337,7 +1320,7 @@ Set the window's size and/or position.
 setheight(w, i)
 
 
-Set window height to \textsf{i}, whether or not window is open yet.
+Set window height to \texttt{i}, whether or not window is open yet.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1345,9 +1328,9 @@ Set window height to \textsf{i}, whether or not window is open yet.
 seticonicstate(w, s)
 
 
-Set window iconic state to \textsf{s}, it could be
-\textsf{{\textquotedbl}iconify{\textquotedbl}} or whatever. Obsolete;
-\textsf{setcanvas()} is more important.
+Set window iconic state to \texttt{s}, it could be
+\texttt{{\textquotedbl}iconify{\textquotedbl}} or whatever. Obsolete;
+\texttt{setcanvas()} is more important.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1355,7 +1338,7 @@ Set window iconic state to \textsf{s}, it could be
 seticonimage(w, dptr d)
 
 
-Set window icon to \textsf{d}. Could be string filename or existing
+Set window icon to \texttt{d}. Could be string filename or existing
 pixmap (i.e. another window's contents). Pixmap assignment no longer
 possible, so one could simplify this to just take a string parameter.
 
@@ -1365,7 +1348,7 @@ possible, so one could simplify this to just take a string parameter.
 seticonlabel(w, s)
 
 
-Set icon's string title to \textsf{s}.
+Set icon's string title to \texttt{s}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1373,7 +1356,7 @@ Set icon's string title to \textsf{s}.
 seticonpos(w, s)
 
 
-Move icon's position to \textsf{s}, an encoded
+Move icon's position to \texttt{s}, an encoded
 {\textquotedbl}x,y{\textquotedbl} format string.
 
 
@@ -1382,8 +1365,8 @@ Move icon's position to \textsf{s}, an encoded
 setimage(w, s)
 
 
-Set an initial image for the window from file \textsf{s}. Only valid
-during \textsf{open()}.
+Set an initial image for the window from file \texttt{s}. Only valid
+during \texttt{open()}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1391,9 +1374,9 @@ during \textsf{open()}.
 setleading(w, i)
 
 
-Set line spacing to \textsf{i} pixels from line to line. This includes
-font height and external leading, so \textsf{i {\textless} fontheight}
-means lines draw partly over preceding lines, \textsf{i {\textgreater}
+Set line spacing to \texttt{i} pixels from line to line. This includes
+font height and external leading, so \texttt{i {\textless} fontheight}
+means lines draw partly over preceding lines, \texttt{i {\textgreater}
 fontheight} means extra spacing.
 
 
@@ -1410,7 +1393,7 @@ Set line style to solid, dashed, or striped.
 setlinewidth(w, i)
 
 
-Set line width to \textsf{i}.
+Set line width to \texttt{i}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1418,7 +1401,7 @@ Set line width to \textsf{i}.
 set\_mutable(w, i, s)
 
 
-Set mutable color index \textsf{i} to color \textsf{s}.
+Set mutable color index \texttt{i} to color \texttt{s}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1426,10 +1409,10 @@ Set mutable color index \textsf{i} to color \textsf{s}.
 SetPattern(w, s, s\_len)
 
 
-Set fill pattern to bits given in \textsf{s}. Fill pattern is not used
+Set fill pattern to bits given in \texttt{s}. Fill pattern is not used
 unless fillstyle attribute is changed to
-\textsf{{\textquotedbl}patterned{\textquotedbl}} or
-\textsf{{\textquotedbl}opaquepatterned{\textquotedbl}}.
+\texttt{{\textquotedbl}patterned{\textquotedbl}} or
+\texttt{{\textquotedbl}opaquepatterned{\textquotedbl}}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1438,9 +1421,9 @@ SetPatternBits(w, width, bits, nbits)
 
 
 Set fill pattern to bits given in the array of integers named
-\textsf{bits}. Fill pattern is not used unless fillstyle attribute is
-changed to \textsf{{\textquotedbl}patterned{\textquotedbl}} or
-\textsf{{\textquotedbl}opaquepatterned{\textquotedbl}}.
+\texttt{bits}. Fill pattern is not used unless fillstyle attribute is
+changed to \texttt{{\textquotedbl}patterned{\textquotedbl}} or
+\texttt{{\textquotedbl}opaquepatterned{\textquotedbl}}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1448,7 +1431,7 @@ changed to \textsf{{\textquotedbl}patterned{\textquotedbl}} or
 setpointer(w, s)
 
 
-Set mouse pointer appearance to shape named \textsf{s}.
+Set mouse pointer appearance to shape named \texttt{s}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1456,7 +1439,7 @@ Set mouse pointer appearance to shape named \textsf{s}.
 setpos(w, s)
 
 
-Move window to \textsf{s}, a string encoded
+Move window to \texttt{s}, a string encoded
 {\textquotedbl}(x,y){\textquotedbl} thing.
 
 
@@ -1465,7 +1448,7 @@ Move window to \textsf{s}, a string encoded
 setwidth(w, i)
 
 
-Set window width to \textsf{i}, whether or not window is open yet.
+Set window width to \texttt{i}, whether or not window is open yet.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1473,7 +1456,7 @@ Set window width to \textsf{i}, whether or not window is open yet.
 setwindowlabel(w, s)
 
 
-Set window's string title to \textsf{s}.
+Set window's string title to \texttt{s}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1481,7 +1464,7 @@ Set window's string title to \textsf{s}.
 ShowCursor(wsp ws)
 
 
-Show the text cursor on window state \textsf{ws}.
+Show the text cursor on window state \texttt{ws}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1489,8 +1472,8 @@ Show the text cursor on window state \textsf{ws}.
 int strimage(w, x, y, width, height, e, s, len)
 
 
-Draws a character-per-pixel image, used in \textsf{DrawImage()}. See
-\textsf{blimage()}.
+Draws a character-per-pixel image, used in \texttt{DrawImage()}. See
+\texttt{blimage()}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1506,7 +1489,7 @@ Define this type to be the window system's RGB color structure.
 TEXTWIDTH(w, s, s\_len)
 
 
-Returns the integer text width of \textsf{s} using \textsf{w}{}'s current font.
+Returns the integer text width of \texttt{s} using \texttt{w}{}'s current font.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1514,7 +1497,7 @@ Returns the integer text width of \textsf{s} using \textsf{w}{}'s current font.
 toggle\_fgbg(w)
 
 
-Swap the foreground and background on \textsf{w}.
+Swap the foreground and background on \texttt{w}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1522,7 +1505,7 @@ Swap the foreground and background on \textsf{w}.
 unsetclip(w)
 
 
-Disable clipping on \textsf{w} from its context.
+Disable clipping on \texttt{w} from its context.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1530,7 +1513,7 @@ Disable clipping on \textsf{w} from its context.
 UpdateCursorPos(wsp ws, wcp wc)
 
 
-Move the text cursor on window state \textsf{ws} and context \textsf{wc}.
+Move the text cursor on window state \texttt{ws} and context \texttt{wc}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1538,7 +1521,7 @@ Move the text cursor on window state \textsf{ws} and context \textsf{wc}.
 walert(w, i)
 
 
-Sounds an alert (beep). \textsf{i} is a volume; it can range between
+Sounds an alert (beep). \texttt{i} is a volume; it can range between
 -100 and 100; 0 is normal.
 
 
@@ -1555,7 +1538,7 @@ Warp the mouse location to (x,y).
 wclose(w)
 
 
-Closes window \textsf{w}. If there are other bindings that refer to
+Closes window \texttt{w}. If there are other bindings that refer to
 the window, they are converted into pixmaps, i.e.  the window
 disappears but the canvas is still there and can be written on and
 copied from.
@@ -1574,8 +1557,8 @@ Flush output to window w; a no-op on some systems.
 wgetq(w, dptr result)
 
 
-Get an event from \textsf{w}{}'s pending queue, put results in
-descriptor \textsf{*res}. Returns -1 for an error, 1 for success
+Get an event from \texttt{w}{}'s pending queue, put results in
+descriptor \texttt{*res}. Returns -1 for an error, 1 for success
 (should fix this).
 
 
@@ -1584,7 +1567,7 @@ descriptor \textsf{*res}. Returns -1 for an error, 1 for success
 WINDOWLABEL(w)
 
 
-Produce \textsf{char *} for window's title if there is one.
+Produce \texttt{char *} for window's title if there is one.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -1596,9 +1579,9 @@ FILE *wopen(s, struct b\_list *lp, dptr attrs, i, int *err\_index, is\_3d)
 
 Open window named s, with various attributes. This ought to be merged
 from various window system dependent files, but presently each one
-defines its own. Copy and modify from \textsf{rxwin.ri} or
-\textsf{rmswin.ri}. The return value is really a \textsf{wbp}, cast to
-a \textsf{FILE *}.
+defines its own. Copy and modify from \texttt{rxwin.ri} or
+\texttt{rmswin.ri}. The return value is really a \texttt{wbp}, cast to
+a \texttt{FILE *}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1606,7 +1589,7 @@ a \textsf{FILE *}.
 wputc(c, w)
 
 
-Draw character \textsf{c} on window \textsf{w}, interpret newlines,
+Draw character \texttt{c} on window \texttt{w}, interpret newlines,
 carriage returns, tabs, deletes, backspaces, and the bell.
 
 
@@ -1623,7 +1606,7 @@ Synchronize server and client (a no-op on some systems).
 xdis(w, s, s\_len)
 
 
-Draw string s on window \textsf{w}, low-level.
+Draw string s on window \texttt{w}, low-level.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -1753,7 +1736,7 @@ int getselection(w, char *s)
 
 
 Return the current contents of the clipboard text. The design of this
-and \textsf{setselection()} need to be broadened a bit to support
+and \texttt{setselection()} need to be broadened a bit to support
 images.
 
 
@@ -1762,5 +1745,5 @@ images.
 int setselection(w, char *s)
 
 
-Set the clipboard text to \textsf{s}.
+Set the clipboard text to \texttt{s}.
 

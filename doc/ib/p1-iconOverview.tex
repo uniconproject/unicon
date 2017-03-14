@@ -596,7 +596,7 @@ generates the results of expr1 followed by the results of expr2. For example,
 \>every write("hello" | "howdy")
 }
 
-\noindent writes two lines, hello and howdy.
+\noindent writes two lines, \texttt{hello} and \texttt{howdy}.
 
 Since alternation succeeds if either of its arguments succeeds, it can
 be used to produce the effect of logical disjunction. An example is
@@ -724,9 +724,12 @@ expression is called a \textit{bounded expression}. The control
 clauses of loops also are bounded, as are the expressions within
 compound expressions:
 
-\iconline{ % this one was fixed up manually ... it's just too weird for the automatic convertor
-\>\{ \textit{expr}\textit{\TextSubscript{1}}\textit{; expr}\textit{\TextSubscript{2}}\textit{;
-expr}\textit{\TextSubscript{3}}\textit{; }...; \textit{expr}\textit{\TextSubscript{n}}\textit{ }\}
+\iconline{
+\>\{
+  \textit{expr}\textit{\TextSubscript{1}}
+  \textit{; expr}\textit{\TextSubscript{2}}
+  \textit{; expr}\textit{\TextSubscript{3}} \textit{; } \ldots;
+  \textit{ expr}\textit{\TextSubscript{n}}\textit{ }\}
 }
 
 These expressions are evaluated in sequence, but once the evaluation
@@ -753,7 +756,7 @@ write expressions such as
 }
 
 \noindent
-which writes the integers from i to j in ascending sequence.
+which writes the integers from \texttt{i} to \texttt{j} in ascending sequence.
 
 
 \textbf{Data Backtracking.} While control backtracking is a
@@ -764,7 +767,7 @@ is not performed except in a few specific operations. For example, in
 \>(i := 3) \& read(f)
 }
 
-\noindent the value \texttt{3} is assigned to \texttt{i}. Even if
+\noindent the value 3 is assigned to \texttt{i}. Even if
 \texttt{read(f)} fails, the former value of \texttt{i} is not
 restored.
 
@@ -775,15 +778,17 @@ performed. For example, the \textit{reversible assignment} operation
 \>x <- y
 }
 
-\noindent assigns the value of y to x, but it restores the former
-value of x if control backtracking into this expression occurs.  Thus,
+\noindent assigns the value of \texttt{y} to \texttt{x}, but it
+restores the former value of \texttt{x} if control backtracking into
+this expression occurs.  Thus,
 
 \iconline{
 \>(i <- 3) \& read(f)
 }
 
 \noindent
-assigns 3 to i but restores the previous value of i if \texttt{read(f)} fails.
+assigns 3 to \texttt{i} but restores the previous value of \texttt{i}
+if \texttt{read(f)} fails.
 
 
 \subsection[2.1.3 Csets and Strings]{2.1.3 Csets and Strings}
@@ -845,7 +850,7 @@ is concatenation, denoted by
 }
 
 The function \texttt{repl(s, i)} produces the result of concatenating
-s i times. Thus,
+\texttt{s} \texttt{i} times. Thus,
 
 \iconline{
 \>write(repl("*!",3))
@@ -939,9 +944,9 @@ The subscript positions can be given in either order. Thus,
 \>  command[5:11]
 }
 
-String-analysis functions like find and upto have optional third and
-fourth arguments that allow their range to be restricted to a
-particular portion of a string. For example,
+String-analysis functions like \texttt{find} and \texttt{upto} have
+optional third and fourth arguments that allow their range to be
+restricted to a particular portion of a string. For example,
 
 \iconline{
 \>upto(vowels, "They sit like bumps on a log.", 10, 20)
@@ -955,18 +960,18 @@ included in the analysis.
 
 \textbf{Mapping}. One of the more interesting string-valued functions
 in Icon is \texttt{map(s1, s2, s3)}. This function produces a string
-obtained from a character substitution on s1. Each character of s1
-that occurs in s2 is replaced by the corresponding character in
-s3. For example,
+obtained from a character substitution on \texttt{s1}. Each character
+of \texttt{s1} that occurs in \texttt{s2} is replaced by the
+corresponding character in \texttt{s3}. For example,
 
 \iconline{
 \>write(map("Remain still!", "aeiou", "*****"))
 }
 
-\noindent writes R*m**n St*ll!. Characters in s1 that do not appear in
-s2 are unchanged, as this example shows. If a character occurs more
-than once in s2, its right-most correspondence in s3
-applies. Consequently,
+\noindent writes R*m**n St*ll!. Characters in \texttt{s1} that do not
+appear in \texttt{s2} are unchanged, as this example shows. If a
+character occurs more than once in \texttt{s2}, its right-most
+correspondence in \texttt{s3} applies. Consequently,
 
 \begin{iconcode}
 \>s2 := \&lcase || \&ucase || "aeiou"\\
@@ -991,7 +996,7 @@ subject is maintained automatically.
 A string-scanning expression has the form
 
 \iconline{
-\>expr1 ? expr2
+\>\textit{expr1} ? \textit{expr2}
 }
 
 \noindent in which the evaluation of \textit{expr1} provides the
@@ -1002,11 +1007,13 @@ position.
 Although \textit{expr2} can contain any operation, two
 \textit{matching functions} are useful in analyzing the subject:
 
+\noindent
+\begin{tabular}{@{\hspace{1cm}}l@{\hspace{1cm}}l}
+\texttt{tab(i)}   & set the position in the subject to \texttt{i}\\
+\texttt{move(i)}  & increment the position in the subject by \texttt{i}\\
+\end{tabular}
 
-\ \ \ \texttt{tab(i)}\ \ \ \ set the position in the subject to i\newline
- \ \ \texttt{move(i)}\ \ increment the position in the subject by i
-
-
+\noindent
 Both of these functions return the substring of the subject between
 the old and new positions. If the position is out of the range of the
 subject, the matching function fails and the position is not
@@ -1026,9 +1033,10 @@ An example of string scanning is
 stopping when there are not two characters remaining.
 
 In string scanning, the trailing arguments of string analysis
-functions such as find and upto are omitted; the functions apply to
-the subject at the current position. Therefore, such functions can be
-used to provide arguments for matching functions. An example is
+functions such as \texttt{find} and \texttt{upto} are omitted; the
+functions apply to the subject at the current position. Therefore,
+such functions can be used to provide arguments for matching
+functions. An example is
 
 \iconline{
 \>line ? write(tab(find("::=")))
@@ -1043,8 +1051,7 @@ evaluated. For example, suppose that line contains the substring
 {\textquotedbl}::={\textquotedbl}. Then
 
 \begin{iconcode}
-\>line ? \\
-\>\>((tab(find("::=") + 3)) \& write(move(10)) | write(tab(0)))
+\>line ? ((tab(find("::=") + 3)) \& write(move(10)) | write(tab(0)))
 \end{iconcode}
 
 \noindent writes the 10 characters after \text{"::="}, provided there
@@ -1067,11 +1074,11 @@ keywords \texttt{\&subject} and \texttt{\&pos}, respectively. For example,
 }
 
 \noindent assigns the string {\textquotedbl}Hello{\textquotedbl} to
-the subject. Whenever a value is assigned to the subject, \&pos is set
+the subject. Whenever a value is assigned to the subject, \texttt{\&pos} is set
 to 1 automatically.
 
-The values of \&subject and \&pos are saved at the beginning of a
-string-scanning expression and are restored when it
+The values of \texttt{\&subject} and \texttt{\&pos} are saved at the
+beginning of a string-scanning expression and are restored when it
 completes. Consequently, scanning expressions can be nested.
 
 
@@ -1096,9 +1103,9 @@ An empty list, containing no elements, is produced by {\tt [ ]}. The function
 \>list(i, x)
 }
 
-\noindent produces a list of i elements, each of which has the value
-of x. The size operation *x also applies to lists. The value of
-*cities is 3, for example.
+\noindent produces a list of \texttt{i} elements, each of which has the value
+of \texttt{x}. The size operation \texttt{*x} also applies to lists. The value of
+\texttt{*cities} is 3, for example.
 
 An element of a list is referenced by a subscripting expression that
 has the same form as the one for strings. For example,
@@ -1113,8 +1120,8 @@ has the same form as the one for strings. For example,
 \>["Portland", "Toledo", "Miami"]
 }
 
-The function sort (a) produces a sorted copy of a. For example,
-sort(cities) produces
+The function \texttt{sort(a)} produces a sorted copy of \texttt{a}. For
+example, \texttt{sort(cities)} produces
 
 \iconline{
 \>["Miami", "Portland", "Toledo"]
@@ -1135,14 +1142,16 @@ not copy the structure. Consequently, in
 \end{iconcode}
 
 \noindent
-both states and slist point to the \textit{same} structure. Because of this,
+both \texttt{states} and \texttt{slist} point to the \textit{same}
+structure. Because of this,
 
 \iconline{
 \>states[2] := "Arkansas"
 }
 
 \noindent
-changes the second element of slist as well as the second element of states.
+changes the second element of \texttt{slist} as well as the second element
+of \texttt{states}.
 
 The elements of a list may be of any type, including lists, as in
 
@@ -1204,7 +1213,7 @@ right end of the increasing its size by one.  Similarly,
 \>while put(lines, read(f))
 \end{iconcode}
 
-\noindent constructs a list of the lines from the file f. Conversely,
+\noindent constructs a list of the lines from the file \texttt{f}. Conversely,
 
 \begin{iconcode}
 \>lines := []\\
@@ -1214,8 +1223,8 @@ right end of the increasing its size by one.  Similarly,
 \noindent constructs a list of lines in reverse order.
 
 The functions \texttt{pop(a)} and \texttt{get(a)} are the same. They
-both remove an element from the left end of a and return it as the
-value of the function call, but they fail if a is empty. Consequently,
+both remove an element from the left end of \texttt{a} and return it as the
+value of the function call, but they fail if \texttt{a} is empty. Consequently,
 
 \begin{iconcode}
 \>lines := []\\
@@ -1313,7 +1322,7 @@ A table is created by
 \>table(x)
 }
 
-Tables are empty initially. The value of x is an assigned default
+Tables are empty initially. The value of \texttt{x} is an assigned default
 value that is produced if the table is subscripted with an entry value
 to which no value has been assigned (that is, for an element that is
 not in the table). For example,
@@ -1330,8 +1339,8 @@ element can be added to states by an assignment such as
 }
 
 \noindent which adds a table element for
-\texttt{{\textquotedbl}Oregon{\textquotedbl}} with the value
-\texttt{1} to \texttt{states}. On the other hand,
+\texttt{{\textquotedbl}Oregon{\textquotedbl}} with the value 1 to
+\texttt{states}. On the other hand,
 
 \iconline{
 \>write(states ["Utah"])
@@ -1356,7 +1365,8 @@ names of its fields are given in a declaration. For example,
 }
 
 \noindent
-declares a record of type rational with two fields: numerator and denominator.
+declares a record of type rational with two fields: \texttt{numerator} and
+\texttt{denominator}.
 
 An instance of a record is created by calling a record-constructor
 function corresponding to the form of the declaration for the record
@@ -1367,9 +1377,9 @@ type. Thus,
 }
 
 \noindent
-assigns to \texttt{r} a record of type rational with a
-numerator field of 3 and a denominator field of 5. Fields are
-referenced by name, as in
+assigns to \texttt{r} a record of type rational with a \texttt{numerator}
+field of 3 and a \texttt{denominator} field of 5. Fields are referenced by
+name, as in
 
 \iconline{
 \>write(r.numerator)
@@ -1396,7 +1406,7 @@ the values of \texttt{\&input}, \texttt{\&output}, and
 }
 
 \noindent opens the file whose name is \texttt{s1} according to
-options given by \texttt{s2} and produces a value of type file.
+options given by \texttt{s2} and produces a value of type \texttt{file}.
 Typical options are \texttt{{\textquotedbl}r{\textquotedbl}} for
 opening for reading and \texttt{{\textquotedbl}w{\textquotedbl}} for
 opening for writing. The default is
@@ -1406,10 +1416,11 @@ opening for writing. The default is
 \>log := open("grade.log", "w")
 }
 
-\noindent assigns a value of type file to log, corresponding to the
-data file grade.log, which is opened for writing. The function open
-fails if the specified file cannot be opened according to the options
-given. The function \texttt{close(f)} closes the file \texttt{f}.
+\noindent assigns a value of type \texttt{file} to \texttt{log},
+corresponding to the data file \textfn{grade.log}, which is opened for
+writing. The function \texttt{open} fails if the specified file cannot be
+opened according to the options given. The function \texttt{close(f)}
+closes the file \texttt{f}.
 
 The function \texttt{read(f)} reads a line from the file \texttt{f}
 but fails if an end of file is encountered. The default is standard
@@ -1421,10 +1432,10 @@ The result of
 \>write(x1,x2, ..., xn)
 }
 
-\noindent depends on the types of x1, x2, ..., xn. Strings and types
-convertible to strings are written, but if one of the arguments is a
-file, subsequent strings are written to that file. The default file is
-standard output. Thus,
+\noindent depends on the types of \texttt{x1}, \texttt{x2}, \ldots,
+\texttt{xn}. Strings and types convertible to strings are written, but if
+one of the arguments is a file, subsequent strings are written to that
+file. The default file is standard output. Thus,
 
 \iconline{
 \>write(s1,s2)
@@ -1438,7 +1449,7 @@ writes the concatenation of \texttt{s1} and \texttt{s2} to standard output, but
 }
 
 \noindent
-writes \texttt{s} to the file grade.log. In any event, write returns
+writes \texttt{s} to the file \textfn{grade.log}. In any event, \texttt{write} returns
 the string value of the last argument written.
 
 The function
@@ -1448,14 +1459,14 @@ The function
 }
 
 \noindent
-produces the same output as write, but it then terminates program execution.
+produces the same output as \texttt{write}, but it then terminates program execution.
 
 
 \subsection[2.1.10 Procedures]{2.1.10 Procedures}
 
 \textbf{Procedure Declarations.} The executable portions of an Icon
 program are contained in procedure declarations.  Program execution
-begins with a call of the procedure main.
+begins with a call of the procedure \texttt{main}.
 
 An example of a procedure declaration is:
 
@@ -1470,10 +1481,10 @@ An example of a procedure declaration is:
 \end{iconcode}
 
 \noindent This procedure computes the longest string in a list of strings.
-The formal parameter slist and the identifiers max and value are local to
-calls of the procedure \texttt{maxstr()}. Storage for them is
-allocated when \texttt{maxstr()} is called and deallocated when
-\texttt{maxstr()} returns.
+The formal parameter \texttt{slist} and the identifiers \texttt{max} and
+\texttt{value} are local to calls of the procedure \texttt{maxstr()}.
+Storage for them is allocated when \texttt{maxstr()} is called and
+deallocated when \texttt{maxstr()} returns.
 
 A procedure call has the same form as a function call. For example,
 
@@ -1490,7 +1501,7 @@ A procedure call may fail to produce a result in the same way that a
 built-in operation can fail. This is indicated by fail in the
 procedure body in place of return. For example, the following
 procedure returns the length of the longest string in \texttt{slist}
-but fails if that length is less than limit:
+but fails if that length is less than \texttt{limit}:
 
 \begin{iconcode}
 \>procedure maxstr(slist, limit)\\
@@ -1552,7 +1563,7 @@ a function. These values can be assigned to other variables, as in
 
 \begin{iconcode}
 \>print := write\\
-\>\>\>\ \ ...\\
+\>\>\>\ \ \vdots\\
 \>print(maxstr(lines))
 \end{iconcode}
 
@@ -1595,7 +1606,7 @@ applies the procedure that is the \texttt{i}th element of \texttt{proclist}.
 
 Procedures may be called recursively. The recursive nature of a call
 depends on the fact that procedure names are global. The
-{\textquotedbl}Fibonacci strings{\textquotedbl} provide an example:
+``Fibonacci strings'' provide an example:
 
 \begin{iconcode}
 \>procedure fibstr(i)\\
@@ -1633,13 +1644,14 @@ generator can be resumed. An example of such a generator is
 \end{iconcode}
 
 A call \texttt{intseq(10)}, for example, is capable of generating the
-infinite sequence of integers 10, 11, 12, ... .  For example,
+infinite sequence of integers 10, 11, 12, \ldots .  For example,
 
 \iconline{
 \>every f(intseq(10) {\textbackslash} 5)
 }
 
-\noindent calls f(10), f(11), f(12), f(13), and f(14).
+\noindent calls \texttt{f(10)}, \texttt{f(11)}, \texttt{f(12)},
+\texttt{f(13)}, \texttt{f(14)}.
 
 If the argument of suspend is a generator, the generator is resumed
 when the call is resumed and the call suspends again with the result
@@ -1802,6 +1814,7 @@ later time. For example,
 \>"L" || (1 to 100) || ":"
 }
 
+\noindent
 The operation \texttt{@label} activates this co-expression, which
 corresponds to resuming its expression. For example,
 
@@ -1954,13 +1967,13 @@ that the following program is contained in the file fibstr.icn:
 The trace output of this program is
 
 \begin{iconcode}
-\textrm{\ \ \ fibstr.icn: 3\ \ {\textbar} fibstr(3)}\\
-\>fibstr.icn: 9\ \ | | fibstr(2)\\
-\>fibstr.icn: 8\ \ | | fibstr returned "b"\\
-\>fibstr .icn: 9\ \ | | fibstr(1)\\
-\>fibstr.icn: 7\ \ | | fibstr returned "b"\\
-\>fibstr.icn: 9\ \ | fibstr returned "ba"\\
-\>fibstr.icn: 4\ \ main failed
+\>fibstr.icn: 3  \>\>\>\>\>\>  | fibstr(3)\\
+\>fibstr.icn: 9  \>\>\>\>\>\>  | | fibstr(2)\\
+\>fibstr.icn: 8  \>\>\>\>\>\>  | | fibstr returned "b"\\
+\>fibstr.icn: 9  \>\>\>\>\>\>  | | fibstr(1)\\
+\>fibstr.icn: 7  \>\>\>\>\>\>  | | fibstr returned "b"\\
+\>fibstr.icn: 9  \>\>\>\>\>\>  | fibstr returned "ba"\\
+\>fibstr.icn: 4  \>\>\>\>\>\>  main failed
 \end{iconcode}
 
 In addition to the indentation corresponding to the level of procedure
@@ -2114,16 +2127,16 @@ time.
 \textbf{Polymorphic Operations.} Although the meanings of operations
 cannot be changed during program execution in the way that the
 meanings of calls can, several operations perform different
-computations depending on the types of their operands. Thus, x[i] may
-subscript a string, a list, or a table.
+computations depending on the types of their operands. Thus,
+\texttt{x[i]} may subscript a string, a list, or a table.
 
 The meanings of some operations also depend on whether they occur in
-an assignment or a dereferencing context. For example, if s has a
-string value, assignment to s [i] is an abbreviation for a
-concatenation followed by an assignment to s, while if s[i] occurs in
-a context where its value is needed, it is simply a substring
-operation. Moreover, the context cannot, in general, be determined at
-translation time.
+an assignment or a dereferencing context. For example, if \texttt{s}
+has a string value, assignment to \texttt{s[i]} is an abbreviation for
+a concatenation followed by an assignment to \texttt{s}, while if
+\texttt{s[i]} occurs in a context where its value is needed, it is
+simply a substring operation. Moreover, the context cannot, in
+general, be determined at translation time.
 
 The way subscripting operations are specified in Icon offers
 considerable convenience to the programmer at the expense of

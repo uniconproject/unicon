@@ -5287,3 +5287,73 @@ int i;
   for(;sip2<=sip+sip[0].i;sip2++) if (sip2->i == i) return sip2->s;
   return NULL;
 }
+
+char child_window_generic(wbp w, wbp wp, int child_window)
+{
+   wsp ws;
+   wcp wc;
+   struct wbind_list *curr;
+   wdp wd = wp->window->display;
+   int is_3d;
+
+   is_3d = (child_window==CHILD_WIN3D)? 1 : 0;
+
+   /*
+    * allocate a window state, and a context
+    */
+   
+   Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
+   ws = w->window;
+   CLRTITLEBAR(ws);
+   Protect(w->context = alc_context(w), { free_binding(w); return 0; });
+   wc = w->context;
+   
+   ws->display = wc->display = wd;
+   wd->refcount++;
+
+   ws->listp.dword = D_List;
+   BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
+   ws->width = ws->height = 0;
+
+   ws->children=NULL;
+   ws->parent = wp;
+   wp->refcount++;
+
+   curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
+   curr->child = w;
+   curr->next = wp->window->children;
+   wp->window->children = curr;
+   w->refcount++;
+
+   /*
+    * some attributes of the context determine window defaults
+    */
+
+#ifdef Graphics3D
+   ws->is_3D = wc->is_3D = is_3d;
+   if (is_3d){
+      if (init_3dcontext(wc) == Failed)
+      return 0;
+      }
+   if (child_window >= CHILD_WINTEXTURE ){
+      wtp wt = &(ws->display->stex[ws->texindex]);
+      ws->height = wt->height;
+      ws->width  = wt->width;
+      ws->y = 0;
+      ws->x = 0;
+      ws->texindex = child_window - CHILD_WINTEXTURE;
+      ws->type = TEXTURE_WSTATE;
+      wc->is_3D = 0;
+      wc->buffermode = 1;
+      }
+   else
+#endif					/* Graphics3D */
+      {
+      ws->y = 0;
+      ws->x = 0;
+      ws->y += wc->dy;
+      ws->x += wc->dx;
+      }
+  return 1;
+}
+

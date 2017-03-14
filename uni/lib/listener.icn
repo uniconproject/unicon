@@ -5,15 +5,18 @@
 #
 # Author: Robert Parlett (parlett@dial.pipex.com)
 #
+# What is a listener, really?  Formerly, it was a 3-tuple that held an
+# object, a method to call, and a "type" of event that could occur.
+# This abstraction has been renamed Subscription.  Arguably, the object
+# in the subscription is the listener.
+#
 
 package util
 
 #
 # This simply holds information about a single listener.
 #
-class Listener(obj,
-               meth,
-               type)
+class Subscription(obj, meth, type)
 
    #
    # Return the object which is listening
@@ -23,8 +26,7 @@ class Listener(obj,
    end
 
    #
-   # Return the method in the object which is invoked on an
-   # event.
+   # Return the method in the object which is invoked on an event.
    #
    method get_method()
       return meth

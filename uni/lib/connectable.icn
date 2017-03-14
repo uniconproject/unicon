@@ -18,8 +18,8 @@ class Connectable(listeners)
    end
 
    #
-   # Create and connect a Listener to this object.
-   # @return the Listener created and added.
+   # Create and connect a Subscription to this object.
+   # @return the Subscription created and added.
    #
    method connect(obj, meth, type)
       local l, p
@@ -31,13 +31,13 @@ class Connectable(listeners)
 	 if (l.obj === obj) & (l.meth === p) & (l.type === type) then
 	    fail
 
-      l := Listener(obj, p, type)
+      l := Subscription(obj, p, type)
       put(listeners, l)
       return l
    end
 
    #
-   # Remove all {Listener}s with the given object field.
+   # Remove all {Subscription}s with the given object field.
    #
    method disconnect_all(obj)
       local t, l
@@ -50,7 +50,7 @@ class Connectable(listeners)
    end
 
    #
-   # Remove a Listener previously returned by {connect}
+   # Remove a Subscription previously returned by {connect}
    #
    method disconnect(l)
       local t := []

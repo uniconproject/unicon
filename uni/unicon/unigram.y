@@ -335,11 +335,7 @@ initiallysection: { $$ := EmptyNode }
 optsemi : { $$ := EmptyNode } ; 
         | SEMICOL;
 
-cl: classhead SEMICOL END {
-   $$ := $1
-   $$.methods := methodstaque(&null, $$)
-   }
-   | classhead optsemi clocals methods optsemi initiallysection END {
+cl: classhead optsemi clocals methods optsemi initiallysection END {
     $$ := class_from_parts($1, $3, $4, $6)
    } ;
 

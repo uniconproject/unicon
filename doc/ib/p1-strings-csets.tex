@@ -25,8 +25,7 @@ advantage of string processing in Icon over other programming
 languages comes from the automatic management of storage for strings.
 
 Any of the 256 8-bit ASCII characters can appear in an Icon
-string. Even the {\textquotedbl}null{\textquotedbl} character is
-allowed.
+string. Even the ``null'' character is allowed.
 
 Several operations in Icon return substrings of other
 strings. Substrings tend to occur frequently, especially in programs
@@ -59,7 +58,7 @@ computer architectures without byte addressing and character
 operations, some string-manipulation languages represented strings by
 linked lists of words, each word containing a single character. Such a
 representation seems bizarre for modem computer architectures and
-obviously consumes a very large amount of memory-an intolerable amount
+obviously consumes a very large amount of memory --- an intolerable amount
 for a language like Icon.
 
 The C programming language represents strings (really arrays of
@@ -119,12 +118,13 @@ convenience. A more accurate representation is
 \begin{picture}(300,80)(0,8)
 \put(100,40){\dvbox{3}{}{}}
 \put(100,40){\rdptr{72}{18}}
-\put(233,20){ ...  t h e  ...}
+\put(235,20){ ...  \texttt{\underline{t h e}}  ...}
 \end{picture}
 
 The actual value of the v-word might be 0x569a (hexadecimal), where
-the character t is at memory location 0x569a, the character h is at
-location 0x569b, and the character e is at location 0x569c.
+the character \texttt{t} is at memory location \texttt{0x569a}, the
+character \texttt{h} is at location \texttt{0x569b}, and the character
+\texttt{e} is at location \texttt{0x569c}.
 
 \subsection[5.1.2 Concatenation]{5.1.2 Concatenation}
 
@@ -134,11 +134,10 @@ In an expression such as
 \ \ s := "hello"
 }
 
-\noindent the string {\textquotedbl}hello{\textquotedbl} is contained
-in data provided as part of the icode file, and a qualifier for it is
-assigned to s; no string is constructed. Some operations that produce
-strings require the allocation of new strings. Concatenation is a
-typical example:
+\noindent the string "hello" is contained in data provided as part of
+the icode file, and a qualifier for it is assigned to \texttt{s}; no
+string is constructed. Some operations that produce strings require
+the allocation of new strings. Concatenation is a typical example:
 
 \iconline{
 \ \ s1 := "ab" || "cdef"
@@ -151,9 +150,9 @@ produces a qualifier for the result:
 %% \includegraphics[width=2.6783in,height=0.9366in]{ib-img/ib-img020.png}
 \begin{picture}(300,80)(0,8)
 \put(100,40){\dvbox{6}{}{}}
-\put(100,40){\tlboxlabel{s1}}
+\put(100,40){\tlboxlabel{\texttt{s1}}}
 \put(100,40){\rdptr{72}{18}}
-\put(233,20){ ...  \underline{abcdef}  ...}
+\put(235,20){ ...  \texttt{\underline{a b c d e f}}  ...}
 \end{picture}
 
 This qualifier then becomes the value of \texttt{s1}.
@@ -188,12 +187,12 @@ result,
 
 \begin{picture}(300,120)(0,8)
 \put(100,80){\dvbox{3}{}{}}
-\put(100,80){\tlboxlabel{s2}}
-\put(100,80){\rdptr{92}{58}}
+\put(100,80){\tlboxlabel{\texttt{s2}}}
+\put(100,80){\rdptr{100}{58}}
 \put(100,40){\dvbox{3}{}{}}
-\put(100,40){\tlboxlabel{s1}}
+\put(100,40){\tlboxlabel{\texttt{s1}}}
 \put(100,40){\rdptr{72}{18}}
-\put(233,20){ ...  \underline{abc}\hspace{2pt}\underline{abc}  ...}
+\put(235,20){ ...  \texttt{\underline{a b c}\hspace{5pt}\underline{a b c}}  ...}
 \end{picture}
 
 The RTL code for the concatenation operation is
@@ -268,8 +267,7 @@ the end of the allocated string region.
 
 Many string operations do not require the allocation of a new string
 but only produce new qualifiers. For example, if the value of
-\texttt{s1} is \texttt{{\textquotedbl}abcdef{\textquotedbl}}, the
-substring formed by
+\texttt{s1} is \texttt{"abcdef"}, the substring formed by
 
 \iconline{
 \>s2 := s1[3:6]
@@ -278,17 +276,15 @@ substring formed by
 \noindent does not allocate a new string but only produces a qualifier
 that points to a substring of \texttt{s1}:
 
-
-
 \begin{picture}(300,120)(0,8)
 \put(100,80){\dvbox{3}{}{}}
-\put(100,80){\tlboxlabel{s2}}
-\put(100,80){\rdptr{85}{58}}
+\put(100,80){\tlboxlabel{\texttt{s2}}}
+\put(100,80){\rdptr{90}{58}}
 \put(100,40){\dvbox{6}{}{}}
-\put(100,40){\tlboxlabel{s1}}
+\put(100,40){\tlboxlabel{\texttt{s1}}}
 \put(100,40){\rdptr{72}{18}}
-\put(233,20){ ...  \underline{abcdef}  ...}
-\put(265,16){\line(1,0){16}}
+\put(237,20){ ...  \underline{a b c d e f}  ...}
+\put(270,16){\line(1,0){23}}
 \end{picture}
 
 In order for Icon string values to be represented in memory by
@@ -333,14 +329,14 @@ this expression is simply shorthand for
 A new string is created by concatenation and a new qualifier for it is
 assigned to \texttt{s1}, as shown by
 
-\begin{picture}(300,120)(0,8)
+\begin{picture}(330,120)(0,8)
 \put(100,80){\dvbox{6}{}{}}
-\put(100,80){\tlboxlabel{s1}}
-\put(100,80){\rdptr{107}{58}}
+\put(100,80){\tlboxlabel{\texttt{s1}}}
+\put(100,80){\rdptr{125}{58}}
 \put(100,40){\dvbox{3}{}{}}
-\put(100,40){\tlboxlabel{s2}}
-\put(100,40){\rdptr{85}{18}}
-\put(233,20){ ...  ab\underline{cde}f\hspace{2pt}\underline{abxdef}  ...}
+\put(100,40){\tlboxlabel{\texttt{s2}}}
+\put(100,40){\rdptr{90}{18}}
+\put(236,20){ ...  \texttt{a b \underline{c d e} f\hspace{5pt}\underline{a b x d e f}}  ...}
 \end{picture}
 
 Of course, the length of the string may be increased or decreased by
@@ -355,7 +351,7 @@ assignment to a substring, as in
 
 Expressions such as \texttt{x[i]} and \texttt{x[i:j]} represent a
 particular challenge in the implementation of Icon. In the first
-place, the translator cannot determine the type of x. In the case of
+place, the translator cannot determine the type of \texttt{x}. In the case of
 \texttt{x[i]}, there are four basic types that \texttt{x} may
 legitimately have: string, list, table, and record. Of course, any
 type that can be converted to a string is legitimate
@@ -375,7 +371,7 @@ lists, tables, and records,
 }
 
 \noindent changes the third \textit{element }of \texttt{x} to
-\texttt{y}{}--quite a different matter (see Exercise 5.5).
+\texttt{y} --- quite a different matter (see Exercise 5.5).
 
 This problem is pervasive in Icon and only needs to be noted in
 passing here. The more serious problem is that even if the subscripted
@@ -469,21 +465,16 @@ of a multiple assignment to a subscripted string, only the original
 subscripted portion is changed. Thus, in
 
 \iconline{
-\>(s[2:5] := "x") := \textit{{\textquotedbl}yyyyy{\textquotedbl}}
+\>(s[2:5] := "x") := "yyyyy"
 }
 
-\noindent the final value of \texttt{s} is
-\texttt{{\textquotedbl}ayyyyyef{\textquotedbl}}.
+\noindent the final value of \texttt{s} is \texttt{"ayyyyyef"}.
 
 \subsection[5.1.5 Mapping]{5.1.5 Mapping}
 
 String mapping is interesting in its own right, and the RTL function
 that implements it illustrates several aspects of string processing:
 
-%%
-%% [DPW]
-%% ToDo: Check if this code is actually the latest (I remember patching it recently
-%%       to make it thread safe)
 \begin{iconcode}
 function\{1\} map(s1,s2,s3)\\
 \>/*\\
@@ -545,7 +536,6 @@ function\{1\} map(s1,s2,s3)\\
 \>\>\>\>\>\}\\
 \>\>\>\>\}\\
 \>\>\>\}\\
-\#endif\ \ \ \ \ \ \ \ \ \ /* !COMPILER */\\
 \\
 \>\>/*\\
 \>\>\ * If s2 and s3 are the same as for the last call of map,\\
@@ -688,8 +678,8 @@ The C structure for a cset block is
 \>\};
 \end{iconcode}
 
-\noindent where CsetSize is the number of words required to make up a
-total of 256 bits. CsetSize is 8 on a computer with 32-bit words and 4
+\noindent where \texttt{CsetSize} is the number of words required to make up a
+total of 256 bits. \texttt{CsetSize} is 8 on a computer with 32-bit words and 4
 on a computer with 64-bit words. Few programs use the size of Csets and the
 calculation of the size is expensive. The \texttt{size} field is set initially
 to -1 (by the routine \texttt{alccset()}) and the actual size is only computed if

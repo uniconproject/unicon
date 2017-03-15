@@ -559,6 +559,7 @@ int checkOpenConsole( FILE *w, char *s );
    int	blimage		(wbp w, int x, int y, int wd, int h,
    			  int ch, unsigned char *s, word len);
    char child_window_stuff(wbp w, wbp wp, int child_window);
+   char child_window_generic(wbp w, wbp wp, int child_window);
    wcp	clone_context	(wbp w);
    int	copyArea	(wbp w,wbp w2,int x,int y,int wd,int h,int x2,int y2);
    int	do_config	(wbp w, int status);

@@ -1,18 +1,65 @@
 package util
 
+#
+# A Connectable is an object that is capable of sending events to objects
+# that want to be informed when something of interest happens. Generally it
+# is an object to which other objects may connect for info. In the GUI classes
+# for example, every component is a Connectable and those of them that
+# actually receive input are probably connected to by some object.  The
+# Connectable informs its subscribers of an event via its fire() method,
+# which generally calls one of their methods as specified when they connected.
+#
+# In many Connectable architectures there is only one listener so a list of
+# listeners is overkill. On the other hand, there are other connectable
+# architectures where a central Connectable is managing large numbers of
+# relationships. So Connectable is all about scalability. The code promotes
+# on demand down the following list of representations (it does not demote).
+#
+# 0  listeners: listeners is &null to begin with. Many connectables will
+#    have no listener.
+# 1  listener: listeners is the Subscription object. This is common in GUIs.
+# 2+ listeners, all the same type: listeners is a list
+# 2+ listeners, different types: listeners is a table of lists, keyed by type
+#
 class Connectable(listeners)
+   method genlisteners(typ)
+      case type(listeners) of {
+	 "table": suspend !\(listeners[typ])
+	 "list": every x := !listeners do
+		    if x.type === typ then suspend x
+	 default: if (\listeners).type === typ then return listeners
+	 }
+   end
+
    #
    # Helper method to create and fire an Event object from the given parameters.
    #
-   method fire(type, param)
+   method fire(typ, param)
       local e, l
 
-      if /type then stop("null type to fire")
-
-      e := Event(self, type, param)
-      every l := !listeners do {
-	 if /l.type | l.type === e.type then
-	    l.meth(l.obj, e)
+      e := Event(self, typ, param)
+      every l := genlisteners(\typ|&null) do {
+	 case type(l.obj) of {
+	    "procedure" | "string" | "integer": {
+	       suspend l.obj(self, typ, param)
+	       }
+	    # list invocation here uses substitution rules per future UniLib
+	    # integration.  This probably won't work well until that happens.
+	    "list": {
+	       a := copy(l.obj)
+	       fcn := pop(a)
+	       args := [self, typ, param]
+	       every i := 1 to *a do if a[i] === Arg then a[i] := pop(args)
+	       suspend fcn ! a
+	       }
+	    "co-expression": {
+	       args := [self, typ, param]
+	       while suspend args @ l.obj
+	       }
+	    default: {
+	       l.meth(l.obj, e)
+	       }
+	    }
 	 }
       return e
    end
@@ -21,43 +68,83 @@ class Connectable(listeners)
    # Create and connect a Subscription to this object.
    # @return the Subscription created and added.
    #
-   method connect(obj, meth, type)
-      local l, p
+   method connect(obj, meth, typ)
+      local l, p, sum
 
       p := lang::find_method(obj, meth) | stop("No such method ", meth)
 
       # omit duplicate requests
-      every l := !listeners do
-	 if (l.obj === obj) & (l.meth === p) & (l.type === type) then
+      every l := genlisteners(typ) do
+	 if (l.obj === obj) & (l.meth === p) & (l.type === typ) then
 	    fail
 
-      l := Subscription(obj, p, type)
-      put(listeners, l)
+      l := Subscription(obj, p, typ)
+
+      if /listeners then return listeners := l
+
+      else if type(listeners) ~== "list" & type(listeners) ~== "table" then
+	 listeners := [listeners] # promote to list and continue
+
+      if type(listeners) == "list" then {
+	 if (!listeners).type ~== typ then {
+	    T := table()
+	    every x := !listeners do {
+	       /T[x.type] := []
+	       put(T[x.type], x)
+	       }
+	    listeners := T # promote to table and continue
+	    }
+	 else { put(listeners, l); return l }
+	 }
+
+      /listeners[typ] := []
+      put(listeners[typ], l)
+
       return l
+   end
+
+   method disconnect_fromlist(L, obj)
+      local elem, newL := []
+      every elem := !L do if elem.obj ~=== obj then put(newL, elem)
+      return newL
    end
 
    #
    # Remove all {Subscription}s with the given object field.
    #
    method disconnect_all(obj)
-      local t, l
-      t := []
-      every l := !listeners do {
-	 if l.obj ~=== obj then
-	    put(t, l)
+      local k, t, l
+
+      if type(listeners) == "table" then {
+	 every k := key(listeners) do
+	    listeners[k] := disconnect_fromlist(listeners[k], obj)
 	 }
-      listeners := t
+      else if type(listeners) == "list" then
+	 listeners := disconnect_fromlist(listeners, obj)
+
+      else if type(listeners) == "Subscription" then
+	 if listeners.obj === obj then listeners := &null
+
    end
 
    #
    # Remove a Subscription previously returned by {connect}
    #
    method disconnect(l)
-      local t := []
-      every put(t, l ~=== !listeners)
-      listeners := t
-   end
+      local k := l.type, t
 
+      if l === listeners then listeners := &null
+
+      t := []
+
+      if type(listeners) == "list" then {
+	 every put(t, l ~=== !listeners)
+	 listeners := t
+	 }
+      else if type(listeners) == "table" then {
+	 every put(t, l ~=== !listeners[k])
+	 listeners[k] := t
+	 }
+   end
 initially
-   listeners := []
 end

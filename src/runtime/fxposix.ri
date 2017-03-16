@@ -40,22 +40,28 @@ extern int errno;
 "sys_errstr() - get the error string corresponding to an &errno value."
 
 function{0,1} sys_errstr(e)
-   if !cnv:C_integer(e) then
-      runerr(101, e)
    abstract {
       return string
       }
    inline {
+      C_integer ern;
+#if !ConcurrentCOMPILER
+      CURTSTATE();
+#endif					/* ConcurrentCOMPILER */
+
+      if (!def:C_integer(e, IntVal(amperErrno), ern))
+	 runerr(101, e);
+
 #ifdef HAVE_STRERROR
-      char *s = strerror(e);
-      String(result, alcstr(s, strlen(s)));
+      { char *s = strerror(ern);
+      String(result, alcstr(s, strlen(s))); }
 #else					/* HAVE_STRERROR */
 #ifdef HAVE_SYS_NERR
-      if (e <= 0 || e > sys_nerr)
+      if (ern <= 0 || ern > sys_nerr)
 	 fail;
 #endif
 #ifdef HAVE_SYS_ERRLIST
-      String(result, (char *)sys_errlist[e]);
+      String(result, (char *)sys_errlist[ern]);
 #else
       fail;
 #endif					/* HAVE_SYS_ERRLIST */

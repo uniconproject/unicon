@@ -146,8 +146,6 @@ A function begins with a call of the macro \texttt{\color{red}FncDcl(name, n)}, 
 name is the name of the function as it is called in a source-language
 program, and \texttt{n} is the number of arguments for the function. For
 example,
-%-% {\ttfamily\mdseries
-%-% FncDcl(map,3)}
 \iconline{ \color{red}FncDcl(map,3) }
 \noindent
 appears at the beginning of the function map. This macro declares the
@@ -164,11 +162,6 @@ that implements map is named \texttt{Xmap}. Although the Icon function map
 has three arguments, the corresponding C function has only one:
 \texttt{cargp}, which is a pointer to an array of descriptors on the
 interpreter stack.  For example, \texttt{\color{red}FncDcl(map, 3)} generates
-%-% {\ttfamily\mdseries
-%-% \ \ Xmap(cargp)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ register struct descrip *cargp;}
 \goodbreak
 \begin{iconcode}
 \ \ Xmap(cargp)\\
@@ -208,20 +201,6 @@ calling it, as described in Sec. 9.3.
 
 The use of \texttt{Return} is illustrated by the following trivial function
 that simply returns its argument:
-%-% {\ttfamily\mdseries
-%-% FncDcl(idem, 1)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Arg0 = Arg1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Return;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \}}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(idem, 1)\\
@@ -232,36 +211,11 @@ that simply returns its argument:
 \end{iconcode}
 \noindent
 For example,
-%-% {\ttfamily\mdseries
-%-% \ \ write(idem({\textquotedbl}hello{\textquotedbl}))}
 \iconline{ \ \ write(idem("hello")) }
 \noindent writes \texttt{hello}.
 
 The use of \texttt{Suspend} and \texttt{Fail} is illustrated by the following function,
 which generates its first and second arguments in succession:
-%-% {\ttfamily\mdseries
-%-% FncDcl(gen2,2)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Arg0 = Arg1;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Suspend;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Arg0 = Arg2;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Suspend;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Fail;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \}}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(gen2,2)\\
@@ -275,15 +229,9 @@ which generates its first and second arguments in succession:
 \end{iconcode}
 \noindent
 For example,
-%-% \ \ every write(gen2({\textquotedbl}hello{\textquotedbl}, {\textquotedbl}there{\textquotedbl}))
 \iconline{every write(gen2("hello", "there"))}
 \noindent
 writes
-%-% {\ttfamily\mdseries
-%-% \ \ hello}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ there}
 \goodbreak
 \begin{iconcode}
 \ \ hello\\
@@ -304,14 +252,6 @@ called with two arguments: the number of arguments in the call and a
 pointer to the corresponding array of descriptors. For example,
 \texttt{FncDcIV(write)} generates
 
-%-% {\ttfamily\mdseries
-%-% Xwrite(nargs, cargp)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% int nargs;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register struct descrip cargp;}
 \goodbreak
 \begin{iconcode}
 Xwrite(nargs, cargp)\\
@@ -324,31 +264,6 @@ the arguments are referenced using the macro \texttt{Arg(n}). For example, a
 function that takes an arbitrary number of arguments and suspends with
 them as values in succession is
 
-%-% {\ttfamily\mdseries
-%-% FncDcIV(gen)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register int n;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% for (n = 1; n {\textless}= nargs; n++) \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Arg0 = Arg(n);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Suspend;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Fail;}
-%-% 
-%-% {\ttfamily\mdseries
 \goodbreak
 \begin{iconcode}
 FncDcIV(gen)\\
@@ -364,9 +279,6 @@ FncDcIV(gen)\\
 
 \noindent
 For example,
-%-% {\ttfamily\mdseries
-%-% \ \ every
-%-% write(gen({\textquotedbl}hello{\textquotedbl},{\textquotedbl}there{\textquotedbl},{\textquotedbl}!{\textquotedbl}))}
 \iconline{
 \ \ every write(gen("hello","there","!"))
 }
@@ -374,14 +286,6 @@ For example,
 \noindent
 writes
 
-%-% {\ttfamily\mdseries
-%-% \ \ hello}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ there}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ !}
 \goodbreak
 \begin{iconcode}
 \ \ hello\\
@@ -399,80 +303,6 @@ function would not provide the return code that the interpreter expects.
 Some functions need to perform different operations, depending on the
 types of their arguments. An example is \texttt{type(x)}:
 
-%-% {\ttfamily\mdseries
-%-% \ \ FncDcl(type, 1)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ if (Qual(Arg1)) (}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLen(Arg0) = 6;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLoc(Arg0) = {\textquotedbl}string{\textquotedbl};}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% else \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ switch (Type(Arg1)) (}
-%-% 
-%-% {\ttfamily\mdseries
-%-% case T\_Null:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLen(Arg0) = 4;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLoc(Arg0) = {\textquotedbl}null{\textquotedbl};}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% case T\_Integer:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% case T\_Long:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLen(Arg0) = 7;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLoc(Arg0) = {\textquotedbl}integer{\textquotedbl};}
-%-% 
-%-% {\ttfamily\mdseries
-%-% break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% case T\_Real:}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLen(Arg0) = 4;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLoc(Arg0) = {\textquotedbl}real{\textquotedbl};}
-%-% 
-%-% {\ttfamily\mdseries
-%-% break;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \}}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ Return;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ \}}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(type, 1)\\
@@ -514,35 +344,6 @@ Sec. 12.1, type conversion routines are used for this purpose. For example,
 the function \texttt{tab(i)} requires that \texttt{i} be an integer. It
 begins as follows:
 
-%-% {\ttfamily\mdseries
-%-% FncDcl(tab, 1 )}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register word i, j;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% word t, oldpos;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% long 11;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ * Arg1 must be an integer.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \ \ */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% if (cvint(\&Arg1, \&11) == CvtFail)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% runerr(101, \&Arg1);}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(tab, 1 )\\
@@ -571,38 +372,6 @@ conversion of any value. This size is given by the defined constant
 \texttt{MaxCvtLen}. For example, the function to reverse a string begins as
 follows:
 
-%-% {\ttfamily\mdseries
-%-% FncDcl(reverse.1 )}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register char c. *floc. *lIoc;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register word slen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% char sbuf[MaxCvtLen];}
-%-% 
-%-% {\ttfamily\mdseries
-%-% extern char *alcstrO;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% * Make sure that Arg1 is a string.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% if (cvstr(\&Arg1. sbuf) == CvtFail)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% runerr(103. \&Arg1);}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(reverse,1)\\
@@ -634,14 +403,6 @@ v-words. Various macros are provided to simplify these assignments. As given in
 the function \texttt{type} previously, \texttt{StrLen} and \texttt{StrLoc} can
 be used to construct a qualifier. For example, to return a qualifier for the
 string \texttt{"integer"}, the following code suffices:
-%-% {\ttfamily\mdseries
-%-% StrLen(Arg0) = 7;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLoc(Arg0) = {\textquotedbl}integer{\textquotedbl};}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Return;}
 \goodbreak
 \begin{iconcode}
 StrLen(Arg0) = 7;\\
@@ -654,8 +415,6 @@ Here, the returned qualifier points to a statically allocated C string.
 There also are macros and support routines for constructing certain
 kinds of descriptors. For example, the macro
 
-%-% {\ttfamily\mdseries
-%-% Mkint(i, dp);}
 \iconline{\color{red} Mkint(i, dp); }
 
 \noindent
@@ -672,8 +431,6 @@ have both \texttt{T\_Integer} and \texttt{T\_Long} forms of integers,
 Many functions specify default values for null-valued arguments. There
 are support routines for providing default values. For example,
 
-%-% {\ttfamily\mdseries
-%-% defstr(Arg3, sbuf, \&q);}
 \iconline{ \color{red}defstr(Arg3, sbuf, \&q); }
 
 
@@ -708,48 +465,6 @@ the string actually read may be shorter.
 and returns a pointer to the beginning of the copy. For example, a function
 \texttt{double(s)} that produces the concatenation of \texttt{s} with
 itself is written as follows:
-%-% 
-%-% {\ttfamily\mdseries
-%-% FncDcl(double. 1)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register int glen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% char sbuf[MaxCvtLen];}
-%-% 
-%-% {\ttfamily\mdseries
-%-% extern char *alcstrO;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% if (cvstr(\&Arg1. sbuf) == NULL)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% runerr(103, \&Arg1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% glen = StrLen(Arg1);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% strreq(2 * glen);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLen(Arg0) = 2 * glen;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% StrLoc(Arg0) = alcstr(StrLoc(Arg1). glen);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% alcstr(StrLoc(Arg1), glen);}
-%-% 
-%-% {\ttfamily\mdseries
-%-% Return;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \}}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(double. 1)\\
@@ -788,44 +503,6 @@ various kinds of blocks. These routines, in turn, call \texttt{alcblk}.
 Such support routines generally fill in part of the block as well. For
 example, \texttt{alccset(i)} allocates a block for a cset, fills in the
 title and size words, and zeroes the bits for the cset:
-%-% 
-%-% {\ttfamily\mdseries
-%-% struct b\_cset *alccset(size)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% int size;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register struct b\_cset *blk;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% register i;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% extern union block *alcblk();}
-%-% 
-%-% {\ttfamily\mdseries
-%-% blk = (struct b\_cset *)alcblk((word)sizeof(struct b\_cset) , T\_Cset); blk-{\textgreater}size = size;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% /*}
-%-% 
-%-% {\ttfamily\mdseries
-%-% * Zero the bit array.}
-%-% 
-%-% {\ttfamily\mdseries
-%-% */}
-%-% 
-%-% {\ttfamily\mdseries
-%-% for (i = 0; i {\textless} CsetSize; i++)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% blk-{\textgreater}bits[i] = 0; return blk;
-%-% \}
-%-% }
 \goodbreak
 \begin{iconcode}
 struct b\_cset *alccset(size)\\
@@ -863,15 +540,6 @@ descriptors are processed by the garbage collector. Occasionally,
 additional descriptors are needed for intermediate computations. If such
 descriptors contain pointers in their v-words, it is \textit{not} correct
 to declare local descriptors, as in
-%-% 
-%-% {\ttfamily\mdseries
-%-% FncDcl(mesh,2)}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% struct descrip d1, d2;}
 \goodbreak
 \begin{iconcode}
 \color{red}FncDcl(mesh,2)\\
@@ -889,8 +557,6 @@ on descriptors on the interpreter stack. Extra descriptors for this
 purpose can be provided by increasing the number of arguments
 specified for the function. Thus,
 
-%-% {\ttfamily\mdseries
-%-% \ \ FncDcl(mesh,4)}
 \iconline{\color{red}FncDcl(mesh,4) }
 
 \noindent
@@ -919,8 +585,6 @@ but was not).
 In case a source-language error is detected, execution is terminated
 by a call of the form
 
-%-% {\ttfamily\mdseries
-%-% \ \ runerr(i, \&d);}
 \iconline{runerr(i, \&d); }
 
 \noindent where \texttt{i} is an error message number and \texttt{d} is the
@@ -941,8 +605,6 @@ development, it is advisable to insert calls of the function
 detected in the Icon system, and prints its argument as an indication of
 the nature of the error. It is traditional to use calls of the form
 
-%-% {\ttfamily\mdseries
-%-% \ \ syserr({\textquotedbl}mesh: can't happen{\textquotedbl});}
 \iconline{syserr("mesh: can't happen"); }
 
 \noindent so that when, in fact, the ``impossible'' does happen, there is a
@@ -955,8 +617,6 @@ If a new function is added to an existing f file in \textfn{runtime}, the
 necessary header files normally will be included automatically. If a
 new function is placed in a new file, that file should begin with
 
-%-% {\ttfamily\mdseries
-%-% \ \ \#include {\textquotedbl}../h/rt.h{\textquotedbl}}
 \iconline{\#include "../h/rt.h" }
 
 % The redefinition of arraystretch works as a way of reducing inter-row
@@ -1014,8 +674,6 @@ functions. This information is provided in the header file \textfn{h/fdefs.h}.
 
 
 In order to add a function, a line of the form
-%-% {\ttfamily\mdseries
-%-% \ \ FncDef(name)}
 \iconline{FncDef(name) }
 
 \noindent must be inserted in \textfn{h/fdefs.h} in proper alphabetical order.
@@ -1039,8 +697,6 @@ definitions.  These additions are made in \textfn{h/rmacros.h}. First, a
 \texttt{T\_}definition is needed. For example, if a Boolean type is added,
 a definition such as
 
-%-% {\ttfamily\mdseries
-%-% \ \ \#define T\ \ \_Boolean\ \ 19}
 \iconline{\#define T\_Boolean\ \ \ 26 }
 
 \noindent is needed. The value of \texttt{MaxType}, which immediately follows
@@ -1051,8 +707,6 @@ program malfunction during garbage collection. See Sec. 11.3.2.
 Next a \texttt{D\_} definition is needed for the d-word of the new type.
 For a Boolean type, this definition might be
 
-%-% {\ttfamily\mdseries
-%-% \ \ \#define D\_Boolean\ \ (T\_Boolean I F\_Nqual)}
 \iconline{\#define D\_Boolean\ \ (T\_Boolean | F\_Nqual) }
 
 \noindent
@@ -1071,20 +725,6 @@ For example, a new rational number data type, with the type code
 descriptors, one for the numerator and one for the denominator. An
 appropriate structure declaration for such a block is
 
-%-% {\ttfamily\mdseries
-%-% struct b\_rational \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% int title;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% struct descrip numerator;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% struct descrip denominator;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \};}
 \goodbreak
 \begin{iconcode}
 struct b\_rational \{\\
@@ -1099,20 +739,6 @@ a vector type with code \texttt{T\_Vector} in which different vectors have
 different lengths needs a size field. The declaration for such a block
 might be
 
-%-% {\ttfamily\mdseries
-%-% struct b\_vector \{}
-%-% 
-%-% {\ttfamily\mdseries
-%-% int title;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% int blksize;}
-%-% 
-%-% {\ttfamily\mdseries
-%-% struct descrip velems[1];}
-%-% 
-%-% {\ttfamily\mdseries
-%-% \};}
 \goodbreak
 \begin{iconcode}
 struct b\_vector \{\\
@@ -1320,10 +946,8 @@ The following defined constants are used frequently in the run-time
 system. This list is by no means exhaustive; for specialized
 constants, see existing functions.\\[1ex]
 
-% [DonW] xtabular gives a really stupid page break at this point
-%        so it is replaced by tabular.
 {\renewcommand{\arraystretch}{0.9}%
-\begin{tabular}{>{\hspace{1cm}\texttt\bgroup}l<{\egroup}@{\hspace{1cm}}p{11cm}}
+\begin{xtabular}{>{\hspace{1cm}\texttt\bgroup}l<{\egroup}@{\hspace{1cm}}p{11cm}}
 CsetSize     & number of words needed for 256 bits\\
 LogHuge      & one plus the maximum base-lO exponent of a C \texttt{double}\\
 LoglntSize   & base-2 logarithm of number of bits in a C \texttt{int}\\
@@ -1335,7 +959,7 @@ MinListSlots & minimum number of slots in a list-element block\\
 MinLong      & smallest C \texttt{long}\\
 MinShort     & smallest C \texttt{short}\\
 WordSize     & number of bytes in a \texttt{word}\\
-\end{tabular}
+\end{xtabular}
 }\\[1ex]
 
 \subsection[D.4.2 Macros]{D.4.2 Macros}
@@ -1621,7 +1245,7 @@ pointed to by \texttt{dp2}.\\
 
 \texttt{{\color{red}locate}(sp1, sp2)} &
 Return 1 if the set-element block pointed to by \texttt{sp2} is in the chain
-that starts at \texttt{sp1}, but rreturn 0 otherwise.\\
+that starts at \texttt{sp1}, but return 0 otherwise.\\
 
 \texttt{memb(sp, dp, i, ip)} &
 Set the value pointed to by \texttt{ip} to 1 if the descriptor pointed to by
@@ -1653,7 +1277,9 @@ Write \texttt{i} characters from \texttt{sbuf} on the file specified by \texttt{
 
 The following routines in \textfn{\hspace{0cm}\color{red}iconx/imain.c} cause error termination:
 
-\begin{xtabular}{l@{\hspace{1cm}}p{11cm}}
+% [DonW] xtabular gives a really stupid page break at this point
+%        so it is replaced by tabular.
+\begin{tabular}{l@{\hspace{1cm}}p{11cm}}
 
 \texttt{runerr(i, dp)} &
 Terminate execution with error message \texttt{i} showing the offending value in
@@ -1663,7 +1289,7 @@ the dexcriptor pointed to by \texttt{dp}, but omit it if \texttt{dp} is
 \texttt{syserr(sbuf)} &
 Terminate execution with system error message \texttt{sbuf}.\\
 
-\end{xtabular}
+\end{tabular}
 
 \subsection[D.5.9 Miscellaneous Operations]{D.5.9 Miscellaneous Operations}
 
@@ -1691,7 +1317,8 @@ null-terminated C-style string in \texttt{sbuf}.\\
 
 There are two routines in \textfn{runtime/rmemmgt.c} for producing diagnostic output:
 
-\begin{xtabular}{l@{\hspace{1cm}}p{11cm}}
+%xtabular produces a really stupid page break
+\begin{tabular}{l@{\hspace{1cm}}p{11cm}}
 
 \texttt{descr(dp)} &
 Write a diagnostic diagram of the descriptor pointed to by \texttt{dp} to
@@ -1700,7 +1327,7 @@ standard error output.\\
 \texttt{blkdump} &
 Write a diagnostic diagram of the allocated block region to standard error output.\\
 
-\end{xtabular}
+\end{tabular}
 
 
 \section[D.6 Debugging]{D.6 Debugging}
@@ -1737,5 +1364,504 @@ a value, a core dump is produced if an Icon program terminates as a result of
 \texttt{ICONCORE} when making modifications to Icon. For an extended debugging
 session, it may be convenient to set \texttt{dodump} in \textfn{runtime/init.r} to 1.
 
+\section{D.7 Adding new types to the compiler}
+\newcommand{\toklbra}{\texttt{~~(~~}}%
+\newcommand{\tokrbra}{\texttt{~~)~~}}%
+\newcommand{\toklcbra}{\texttt{~~\{~~}}%
+\newcommand{\tokrcbra}{\texttt{~~\}~~}}%
+\newcommand{\toklsbra}{\texttt{~~[~~}}%
+\newcommand{\tokrsbra}{\texttt{~~]~~}}%
+\newcommand{\tokcolon}{\texttt{~~:~~}}%
+\newcommand{\cceq}{{\normalfont~~::=~~}}%
+\newenvironment{ebnf}%
+{\begin{specialcode}{\itshape}}%
+{\end{specialcode}}%
+
+\begin{quote}
+Editorial Note: This section is derived from Appendix F of the RTL
+reference document [.ipd261.]. The RTL manual is reproduced here as
+appendix G.
+\end{quote}
+
+This section describes how to add new types to Icon. It deals with simple
+types, aggregate types whose values contain other Icon values, and keywords
+that are variables. These are the kinds of types that are most likely to be
+added to the language. Executable types such as procedures and
+co-expressions are beyond the scope of this section, as are types that
+require special representations and variable types that have special
+dereferencing semantics.
+
+\subsection{D.7.1 The implementation of Icon Types (reprise)}
+
+As discussed in part 1 and Appendix A of this compendium, an Icon value is
+implemented as a two-word \textit{descriptor} containing type information
+and value information. The first word of a descriptor is the {\em d-word}.
+For the types discussed here, the d-word contains a unique code that
+identifies the type. The second word of the descriptor is the {\em v-word};
+it contains the actual value or a reference to the value.  Actual values
+that are too large to fit in one word are usually put in the block
+region. This region is controlled by a storage management system that
+includes a garbage collector. The garbage collector is driven by
+information in arrays indexed using the type codes associated with the
+blocks. The block region contains values for both simple and aggregate
+types.
+
+There are several other parts of the run-time system besides the
+garbage collector that need information about Icon types. Some are Icon
+operations such as the \texttt{type()} function, while others are
+automatically invoked features such as error trace back. These are
+described in more detail below. Types, of course, typically have operations
+associated with them that create and use values of the type.
+
+
+\subsection{D.7.2 The Type Specification System}
+
+Icon types are used in several places in RTL and new types must be added to
+this language. These uses include type checking constructs,
+\texttt{return}/\texttt{suspend} statements, and abstract type computations.
+In addition, the Icon compiler needs information about types in order to
+perform type inferencing. These requirements are satisfied with a type
+specification system.
+
+This system is a simple declarative language for naming types and
+describing some of their properties. Information from the type
+specification system is incorporated in \texttt{rtt} and in \texttt{iconc}
+when they are built.
+
+All types specified by the system may be used in the RTL \texttt{is} and
+\texttt{type\_case} constructs. They may also be used in abstract type
+computations. Aggregate types may be used in a \texttt{new} type expression
+in an abstract type computation. A type specification may optionally
+indicate that RTL supports a special form of
+\texttt{return}/\texttt{suspend} statement that constructs a return value,
+in the form of a full descriptor, from a C value for the v-word of the
+descriptor.
+
+Type specifications are in the file \textfn{common/typespec.txt}.  Comments
+in the file start with \texttt{\#} and continue to the end of the line.
+
+This file is translated into a C header file by the program \texttt{typespec}.
+This is not part of the normal Icon build process; entries at the end of
+\textfn{common/Makefile} must be uncommented if \textfn{typespec.txt} is
+updated.
+
+A type definition in the specification system has the form:
+
+\begin{ebnf}
+type-def \cceq identifier opt-abrv \tokcolon kind opt-return
+\end{ebnf}
+
+\noindent
+where \textit{identifier} is the name of the type and \textit{opt-abrv} is an optional abbreviation for the type name. The abbreviation
+has the form:
+
+\begin{ebnf}
+opt-abrv \cceq nil |\\
+\>\>\>\> \toklcbra identifier \tokrcbra
+\end{ebnf}
+
+\noindent
+The abbreviation is used in tracing type inferencing and other places where
+a compact notation is desired. If no abbreviation is given, the full type
+name is used.
+
+There are three kinds of types: \texttt{simple}, \texttt{aggregate}, and
+\texttt{variable}. Their syntax and usage are described in separate
+sections below. \textit{opt-return} indicates optional RTL
+\texttt{return}/\texttt{suspend} support for the type. The four types of
+v-words supported by this construct are introduced below as needed. A
+complete grammar for the specification language is given near the end of
+this appendix.
+
+\subsection{D.7.3 Simple Value Types}
+Types with a kind clause of \texttt{simple} are simple in the sense that
+values of the type do not have components that contain other Icon
+values. These types may otherwise have sophisticated semantics.
+
+There are three ways to implement the values of a type: encode them as C
+integers (these are guaranteed to be at least 32 bits long), implement them
+as blocks in the block region, or implement them in storage allocated using
+\texttt{malloc()} (in theory values can also be put in the string region, but it is
+only well suited for Icon strings; descriptors pointing into this region
+must have a special form --- described in A.1.1). The choice of
+implementation determines the type of C value stored in the v-word of the
+descriptor representing the Icon value.
+
+The d-word of a descriptor for one of these types contains a fixed code. It
+consists of a small integer type code along with flags describing
+characteristics of the descriptor. The necessary changes to
+\textfn{rmacros.h} have been covered earlier in section D.3.1.
+
+
+
+Three of the \textit{opt-return} type specification clauses are useful
+for implementing value types (the fourth is used for variable types;
+see below). These clauses add \texttt{return}/\texttt{suspend}
+statements to RTL of the form
+\begin{ebnf}
+\>\texttt{return} \>\>\> type-name \toklbra expr \tokrbra\\
+\>\texttt{suspend}\>\>\> type-name \toklbra expr \tokrbra
+\end{ebnf}
+
+\noindent
+
+\textit{type-name} is the identifier naming the type. It determines
+the \texttt{D\_} constant used for the d-word of the operation's
+result descriptor. \textit{expr} is a C expression whose value is
+placed in the v-word of the result. The particular \textit{opt-return}
+clause chosen determines how the C value is stored in the v-word. The
+clauses are
+
+\begin{tabular}{>{\texttt\bgroup}l<{\egroup}%
+@{\hspace{1cm}}p{11cm}}
+return C\_integer     &%
+indicates that the value is cast to a C integer; see the definition of
+word in \textfn{h/typedefs.h} for the exact C type used.\\
+
+return block\_pointer &%
+indicates that the value is cast to \texttt{(union block *)}; this is
+usually used for pointers to blocks in the block region.\\
+
+return char\_pointer  &%
+indicates that the value is cast to \texttt{(char *)}. Note, only
+descriptors of a special form may point into the string region; the
+storage used with \texttt{return char\_pointer} must reside elsewhere.\\
+\end{tabular}
+ 
+As an example, the type specification for the cset type is
+\begin{iconcode}
+cset\{c\}:\>\>\> simple\\
+\>\>\>           return block\_pointer
+\end{iconcode}
+
+\noindent
+Suppose a variable \texttt{cp} within an Icon operation written in RTL
+points to a cset block. Then the statement
+\iconline{return cset(cp);}
+\noindent
+constructs a result descriptor for the cset and returns it.
+
+For a type with an associated block, a declaration for the block
+structure must be added to \textfn{h/rstructs.h}. By convention, the
+structure name is created by prepending \texttt{b\_} to the type name.
+The first word of a block must contain its \texttt{T\_} type code. If
+different instances of the block may vary in size, the second word of
+the block must contain this size in bytes. The structure name of the
+new block must be added to the \texttt{union block} declaration
+in \textfn{h/rstructs.h}. An allocation routine for the block must be
+added to \textfn{runtime/ralc.r}. The macros \texttt{AlcFixBlk()} and
+\texttt{AlcVarBlk()} are useful in such routines; see other allocation
+routines for guidelines.
+
+
+There are five arrays in \textfn{runtime/rmemmgt.r} that must be
+updated for all types (the details have been covered in section D.3.3).
+
+Storage for the values of a type usually should be allocated in the
+block region. However, for interfaces to packages written in C, it may
+be necessary to use storage that is not relocated by garbage
+collection. While it is possible to place types allocated with
+\texttt{malloc()} under control of garbage collection, this is
+complicated and beyond the scope of this appendix. See the
+implementation of co-expressions for an example of how this can be
+done.
+%
+% [DonW] Really? Just put up with a storage leak?
+%        This is what Ken wrote, but perhaps we should reconsider
+%        his advice or, (at least) note it as an unsatisfactory last resort.
+Alternatives are to ignore the storage leakage caused by unfreed
+storage or provide an Icon function, along the lines of \texttt{close()},
+that explicitly frees storage associated with a value.
+
+The necessary changes to built-in functions and support routines have
+been covered earlier in section D.3.4.
+
+At the end of this appendix is a check list of files that must be
+updated when a type is added to Icon.
+
+\subsection{D.7.4 Aggregate Types}
+
+Aggregate types have values with components that are other Icon values.
+The aggregate type specification provides more sophisticated RTL abstract
+type computations for the type. These in turn allow \texttt{iconc} to
+produce code that is better optimized.
+
+For interpreter-only implementations, abstract type computations are not
+used and are optional in RTL code; the \texttt{simple} type specification
+may be used in that case. However, the discussion later in this section on
+block layout and on the storage management arrays still applies.
+
+
+The \textit{kind} clause of an \texttt{aggregate} type specification
+establishes and names abstract components for the type. The clause is of
+the form
+
+\begin{ebnf}
+kind \cceq \texttt{aggregate} \toklbra component, \ldots \tokrbra\\
+\\
+component \cceq identifier |\\
+\>\>\>\>\>       \texttt{var} identifier opt-abrv
+\end{ebnf}
+
+\noindent
+Note, the opt-return clauses discussed in the previous section may be
+also used with \texttt{aggregate} types.
+
+The \texttt{aggregate} specification can be thought of as establishing a
+sort of ``abstract type record'' whose fields, the abstract components,
+summarize the type information of the actual components of values in the
+type. Most types are given one abstract component. For example, the set
+type has the specification
+\begin{iconcode}
+set\{S\}: \>\>\> aggregate(set\_elem)\\
+\>\>\>           return block\_pointer
+\end{iconcode}
+\noindent
+where \texttt{set\_elem} represents all the elements of a set.
+
+
+Abstract components can be accessed using dot notation, and the
+\texttt{new} abstract type computation can be used to establish a
+new subtype of the type (subtypes only exist internally in the
+compiler and have no existence at the Icon language level). A subtype
+can be returned by the operation and has its own component types
+independent of subtypes created elsewhere. The abstract type
+computation for Icon set intersection, the \texttt{**} operator, uses
+both dot notation and a \texttt{new} expression. It performs
+intersection in the abstract type realm. \texttt{x} and \texttt{y} are
+the parameters of the operation and may contain different subtypes of
+the set type:
+
+\iconline{
+return new set(store[type(x).set\_elem] ** store[type(y).set\_elem])
+}
+\noindent
+(Note that the components can be thought of as references to
+information contained in a \textit{type store} --- thus the indexing notation.)
+
+Components that represent Icon variables are preceded by \texttt{var} and may
+be given abbreviations for use in tracing type inferencing. For
+example, the list type has the specification
+\begin{iconcode}
+list\{L\}: \>\>\> aggregate(var lst\_elem\{LE\})\\
+\>\>\>            return block\_pointer
+\end{iconcode}
+
+\noindent
+
+These components may be returned from operations and represent the
+component as a variable. For example, the abstract type computation
+for element generation operator when applied to a list is
+
+\iconline{
+return type(dx).lst\_elem
+}
+
+\noindent
+where \texttt{dx} is the parameter of the operation. When a value rather
+than a variable is returned, the component must be ``dereferenced'' by
+indexing into the store, as in the abstract type computations of
+\texttt{get()}:
+
+\iconline{
+return store[type(x).lst\_elem]
+}
+
+\noindent
+Non-variable components must always be dereferenced.
+
+For types, such as tables, that contain Icon values serving different
+purposes, it may be effective to establish several abstract components.
+
+Aggregate types are implemented using blocks that contain descriptors, and
+they may be implemented using several kinds of blocks, with some blocks
+having pointers to others. When there are multiple blocks, there is always
+a \textit{header} block that uses the \texttt{T\_} code of the type. Other
+blocks are given internal type codes; these codes must be added to
+\textfn{h/rmacros.h} and entries must be made in the storage management
+arrays.
+
+Any descriptors in a block must be at the end. The type's entry in the
+\texttt{firstd} array is the location of the first descriptor. Any block
+pointers in the block must be contiguous. The type's entry in the
+\texttt{firstp} array is the location of the first pointer and its
+entry in the \texttt{ptrno} array is the number of pointers.
+
+\subsection{D.7.5 Keyword Variable Types}
+
+Keyword variable types have a type specification with a \textit{kind}
+clause of the form
+\begin{ebnf}
+kind \cceq \texttt{variable} var-type-spec\\
+\\
+var-type-spec \cceq \texttt{initially} type |\\
+\>\>\>\>\>\>        \texttt{always} type\\
+\\
+type \cceq type-name |\\
+\>\>\>     type \texttt{~~++~~} type-name\\
+\\
+type-name \cceq identifier
+\end{ebnf}
+
+The compiler must be able to infer the types of values stored in a
+keyword variable. The \texttt{initially} option causes the keyword
+variable type to be treated as a set of global variables, each
+initialized to the given type specified by the \textit{type}
+clause. The \texttt{always} option indicates that the keyword always
+contains values of the given type and the compiler does no actual
+inference on it. \textit{type} may be the union of several types; this
+indicates that the type is uncertain and may be any of the ones
+specified. A special \textit{type-name}, \texttt{any\_value},
+indicates complete uncertainty.
+
+\noindent The clause
+\iconline{
+always any-value
+}
+\noindent
+is a correct, although entirely imprecise, description of any keyword variable.
+
+This appendix assumes that keyword variables are implemented by global
+descriptors (though other techniques are possible). The \textit{opt-return}
+clause of the form
+\iconline{
+return descriptor\_pointer
+}
+\noindent
+is useful for implementing keyword variables. The v-word of a result
+descriptor from a corresponding \texttt{return}/\texttt{suspend}
+expression is of \texttt{type struct descrip *}.
+
+
+Some of the same files must be updated for variable types as for value
+types. Type codes must be added to \textfn{h/rmacros.h}.
+The \texttt{D\_} code must have the \texttt{F\_Var} flag set, for example:
+\iconline{
+\#define D\_Kywdint (T\_Kywdint | D\_Typecode | F\_Ptr | F\_Var)
+}
+\noindent
+The storage management tables and the \texttt{outimage()} routine also must be
+updated.
+
+
+Other updates are unique to variable types. The global descriptor must be
+established. \textfn{runtime/data.r} contains its declaration.
+\texttt{icon\_init()} in \textfn{runtime/init.r} initializes the descriptor,
+and \textfn{h/rexterns.h} contains an \texttt{extern} for it. Dereferencing
+must be updated; it is performed by \texttt{deref()} in \textfn{runtime/cnv.r}.
+Assignment must be updated; it is handled by the macro \texttt{GeneralAsgn()}
+in \textfn{runtime/oasgn.r}. The \texttt{name()} function is updated by
+changing the support routine \texttt{get\_name()} in \textfn{runtime/rdebug.r.}
+The \texttt{variable()} function is updated by changing the support
+routine \texttt{getvar()} in \textfn{runtime/rmisc.r}.
+
+The keyword itself goes in \textfn{runtime/keyword.r}. For example,
+\texttt{\&random} is of type \texttt{kywdint} and is implemented by the descriptor
+\texttt{kywd\_ran}; its definition is
+\begin{iconcode}
+keyword\{1\} random\\
+\>abstract \{\\
+\>\>return kywdint\\
+\>\}\\
+\>inline \{\\
+\>\>return kywdint(\&kywd\_ran);\\
+\>\}\\
+end
+\end{iconcode}
+\noindent
+For the interpreter, the keyword name must be added to
+\texttt{icont/key\_text.c}. These names are in alphabetical order.
+
+If the descriptor may contain a value under control of garbage collection,
+the support routine \texttt{collect()} in \textfn{runtime/rmemmgt.r} must be
+updated. \texttt{postqual()} preserves references to the string region;
+the macro \texttt{Qual()} is used to check for such references.
+\texttt{markblock()} preserves references to blocks; the macro \texttt{Pointer()}
+is used to check for such references.
+
 \clearpage
+\newpage
+\subsection{D.7.6 The Complete Grammar for the Type Specification System}
+\begin{ebnf}
+type-def \>\>\>\> \cceq \>\> identifier opt-abrv \tokcolon kind opt-return\\
+\\
+kind \>\>\>\>     \cceq \>\> \texttt{simple} |\\
+\>\>\>\>\>\>      \texttt{aggregate} \toklbra component, \ldots \tokrbra |\\
+\>\>\>\>\>\>      \texttt{variable} var-type-spec\\
+\\
+component \>\>\>\> \cceq \>\> identifier |\\
+\>\>\>\>\>\>                  \texttt{var} identifier opt-abrv\\
+\\
+var-type-spec \>\>\>\>\cceq \>\> \texttt{initially} type |\\
+\>\>\>\>\>\>                     \texttt{always} type\\
+\\
+type \>\>\>\> \cceq \>\> type-name |\\
+\>\>\>\>\>\>             type \texttt{~~++~~} type-name\\
+\\
+type-name \>\>\>\> \cceq \>\> identifier\\
+\\
+opt-abrv \>\>\>\>  \cceq \>\> nil |\\
+\>\>\>\>\>\>                    \toklcbra identifier \tokrcbra\\
+\\
+opt-return \>\>\>\>  \cceq \>\>nil |\\
+\>\>\>\>\>\>      \texttt{return  block\_pointer} |\\
+\>\>\>\>\>\>      \texttt{return  descriptor\_pointer} |\\
+\>\>\>\>\>\>      \texttt{return  char\_pointer} |\\
+\>\>\>\>\>\>      \texttt{return  C\_integer}\\
+\end{ebnf}
+
+\clearpage
+\newpage
+\section[D.8 A check list for adding types]%
+        {D.8 A check list for adding types%
+        {\hfill\small\textit{(on one page for easy photocopying)}}}
+%
+{\renewcommand{\arraystretch}{0.8}% Squeeze the lines together
+\begin{tabular}{%
+@{$\square$\hspace{0.5cm}}>{\textfn\bgroup}l<{\egroup}%
+@{\hspace{0.5cm}--\hspace{0.5cm}}l%
+}
+\multicolumn{2}{l}{\bf All Types}\\
+\multicolumn{2}{l}{}\\
+  common/typespec.txt & add type specification\\
+  common/Makefile   & uncomment entries near the end of the file\\
+  h/rmacros.h       & add T\_\textit{Type} macro\\
+  h/rmacros.h       & add D\_\textit{Type} macro\\
+  runtime/rmemmgt.r & \texttt{bsizes} table\\
+  runtime/rmemmgt.r & \texttt{firstd} table\\
+  runtime/rmemmgt.r & \texttt{firstp} table\\
+  runtime/rmemmgt.r & \texttt{ptrno} table\\
+  runtime/rmemmgt.r & \texttt{blkname} table\\
+  runtime/rmisc.r   & update \texttt{outimage()}\\
+\multicolumn{2}{l}{}\\
+\multicolumn{2}{l}{\bf All Value Types\vspace{2ex}}\\
+  runtime/fmisc.r   & update \texttt{copy()}\\
+  runtime/fmisc.r   & update \texttt{type()}\\
+  runtime/rcomp.r   & update \texttt{anycmp()}\\
+  runtime/rcomp.r   & update \texttt{order()}\\
+  runtime/rcomp.r   & update \texttt{equiv()}\\
+  runtime/rmisc.r   & update \texttt{getimage()}\\
+\multicolumn{2}{l}{}\\  
+\multicolumn{2}{l}{\bf Types Implemented In The Block Region\vspace{2ex}}\\
+  h/rstructs.h      & add declaration for the block structure\\
+  h/rstructs.h      & update the \texttt{union block} declaration\\
+  runtime/ralc.r    & add an allocation routine\\
+\multicolumn{2}{l}{}\\  
+\multicolumn{2}{l}{\bf Types With Sizes\vspace{2ex}}\\
+  runtime/omisc.r   & update size operator\\
+\multicolumn{2}{l}{}\\  
+\multicolumn{2}{l}{\bf  All Keyword Variable Types\vspace{2ex}}\\
+  h/rexterns.h      & extern for keyword descriptor\\
+  runtime/cnv.r     & update \texttt{deref()}\\
+  runtime/data.r    & declaration for keyword descriptor\\
+  runtime/init.r    & initialize keyword descriptor\\
+  runtime/keyword.r & add keyword declaration\\
+  runtime/oasgn.r   & update \texttt{GeneralAsgn()} macro\\
+  runtime/rdebug.r  & update \texttt{get\_name()}\\
+  runtime/rmisc.r   & update \texttt{getvar()}\\
+\multicolumn{2}{l}{}\\  
+\multicolumn{2}{l}{\bf Keyword Variables That Must Be Garbage Collected\vspace{2ex}}\\
+  runtime/rmemmgt.r & update \texttt{collect()}\\
+\end{tabular}
+}
 \bigskip

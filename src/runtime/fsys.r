@@ -348,6 +348,7 @@ Deliberate Syntax Error
 /*
  * End of operating-system specific code.
  */
+      IntVal(amperErrno) = 0;
       /*
        * get a C string for the file name
        */
@@ -833,7 +834,6 @@ Deliberate Syntax Error
 	 status = Fs_Pty | Fs_Read | Fs_Write;
 	 f = (FILE*) ptopen(fnamestr);
 #else
-	 fprintf(stderr, "This VM is not built with bidirectional pipes.\n");
 	 fail;
 #endif
 	 }
@@ -1024,8 +1024,10 @@ Deliberate Syntax Error
 		return file(fl);
 	    	}
 	    else
-	    if (errno == ENOENT && (status & Fs_Read))
+	    if (errno == ENOENT && (status & Fs_Read)) {
+	       IntVal(amperErrno) = errno;
 	       fail;
+	       }
 	    else {
 	       f = fopen(fnamestr, mode);
 	       }
@@ -1075,8 +1077,10 @@ Deliberate Syntax Error
       /*
        * Fail if the file cannot be opened.
        */
-      if (f == NULL)
+      if (f == NULL) {
+	 IntVal(amperErrno) = errno;
       	 fail;
+	 }
 
 #if MACINTOSH
 #if MPW

@@ -20,7 +20,6 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
    int  query;
 
 #ifdef XWindows
-   int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
    /*
     * Allocate a display structure. Note that this is just to check
     * whether the X server has GLX; wopen() will call it again and
@@ -38,16 +37,10 @@ FILE *wopengl(char *name, struct b_list *lp, dptr attr, int n, int *err_index)
       return NULL;
       }
 
-   if (!glXQueryExtension(wd->display, &query, &query)) {
-      fprintf(stderr, "X server has no OpenGL GLX extension\n");
-      return NULL;
-      }
-   wd->vis = glXChooseVisual(wd->display, wd->screen, visualparms);
-   if (wd->vis == NULL) {
-      fprintf(stderr, "glXChooseVisual: visual failed\n");
-      return NULL;
-      }
+    if (setglXVisual(wd) == 0)
+       return NULL;
 #endif					/* XWindows */
+
    f = wopen(name, lp, attr, n, err_index, 1);
 
    if (!f) return NULL;

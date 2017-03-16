@@ -760,6 +760,8 @@ int checkOpenConsole( FILE *w, char *s );
 
    #endif				/* XWindows */
 
+   int setglXVisual(wdp wd);
+
    #ifdef Graphics3D
       int init_3dcanvas(wbp  w);
       void apply_texmodechange(wbp w);

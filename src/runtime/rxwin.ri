@@ -4703,117 +4703,42 @@ wbp w;
    return 0;
    }
 
+int setglXVisual(wdp wd){
+#ifdef Graphics3D
+#if HAVE_LIBGL
+   int query;
+   int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
+   if (!glXQueryExtension(wd->display, &query, &query)) {
+      /*fprintf(stderr, "X server has no OpenGL GLX extension\n");*/
+      return 0;
+      }
+   wd->vis = glXChooseVisual(wd->display, wd->screen, visualparms);
+   if (wd->vis == NULL) {
+      /*fprintf(stderr, "glXChooseVisual: visual failed\n");*/
+      return 0;
+      }
+  return 1;
+#endif					/* HAVE_LIBGL */
+#else					/* Graphics3D */      
+      /* printf("3D subwindow requested on VM built without 3D facilities\n"); */
+      return 0;      
+#endif					/* Graphics3D */
+}
+
+/*
+ * initialize child window w from parent window wp
+ */
 char child_window_stuff(wbp w, wbp wp, int child_window)
 {
-   wsp ws;
-   wcp wc;
-   int is_3d=0, query;
-   struct wbind_list *curr;
-   wdp wd = wp->window->display;
-
-#if HAVE_LIBGL
-   int L[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
-#endif					/* HAVE_LIBGL */
-
    if (child_window==CHILD_WIN3D) {
-#ifdef Graphics3D
-      is_3d = 1;
-
-      /*
-       * create an opengl window
-       */
-#if HAVE_LIBGL
-      if (!glXQueryExtension(wd->display, &query, &query)) {
-         printf("X server has no OpenGL GLX extension");
-         return 0;
-         }
-
-      if (wd->vis==NULL) {
-         wd->vis = glXChooseVisual(wd->display, wd->screen, L);
-         if (wd->vis == NULL) {
-	    printf("visual failed\n");
-	    return 0;
-	    }
-	 }
-#endif					/* HAVE_LIBGL */
-#else					/* Graphics3D */
-      printf("3D subwindow requested on VM built without 3D facilities\n");
-#endif					/* Graphics3D */
+      if (setglXVisual(wp->window->display) == 0)
+         return 0;      
       }
 
-   if ((w->window = alc_winstate()) == NULL) {
-      free_binding(w);    
+   if (child_window_generic(w, wp, child_window) == 0)
       return 0;
-      }
-   ws = w->window;
-   if (child_window==CHILD_WIN2D || child_window >= CHILD_WINTEXTURE )
-     {
-      ws->display = wp->window->display;
-      wp->window->display->refcount++;
-#ifdef Graphics3D
-      if (child_window >= CHILD_WINTEXTURE){
-         ws->texindex = child_window - CHILD_WINTEXTURE;
-         ws->type = TEXTURE_WSTATE;
-         ws->iconic = HiddenState;
-         }
-#endif					/* Graphics3D */
-      }
-   else {
-      ws->display = wd;
-      wd->refcount++;
-      }
-   ws->vis = DefaultVisual(ws->display->display, ws->display->screen);
-
-   ws->children=NULL;
-   ws->parent = wp;
-   wp->refcount++;
-
-   curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
-   curr->child = w;
-   curr->next = wp->window->children;
-   wp->window->children = curr;
-   w->refcount++;
-  
-   ws->listp.dword = D_List;
-   BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
-  
-   if ((w->context = alc_context(w)) == NULL) {
-      /*      *err_index = -2; */
-      free_binding(w);
-      return 0;
-      }
-	
-   wc = w->context;
-   /*
-    * some attributes of the context determine window defaults
-    */
-#ifdef Graphics3D
-   if (child_window >= CHILD_WINTEXTURE ){
-      wtp wt = &(ws->display->stex[ws->texindex]);
-      ws->height = wt->height;
-      ws->width  = wt->width;
-      ws->y = 0;
-      ws->x = 0;
-      wc->is_3D = 0;
-      wc->buffermode = 1;
-      }
-   else{
-#endif					/* Graphics3D */
-      ws->height = wc->font->height * 12;
-      ws->width  = wc->font->fsp->max_bounds.width * 80;
-      ws->y = wc->font->fsp->max_bounds.ascent;
-      ws->x = 0;
-      ws->y += wc->dy;
-      ws->x += wc->dx;
-#ifdef Graphics3D
-       }
-
-   wc->is_3D = ws->is_3D = is_3d;
-
-   if (is_3d) {
-      if (init_3dcontext(wc) == Failed) return 0;
-      }
-#endif					/* Graphics3D */
+      
+   w->window->vis = DefaultVisual(w->window->display->display, w->window->display->screen);
    return 1;
 }
 
@@ -4835,21 +4760,14 @@ char my_wmap(wbp w)
    int child_window=CHILD_WIN2D;
 
 #ifdef Graphics3D
-
    if (ws->is_3D) {
-       int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
        child_window = CHILD_WIN3D;
-       if (wd->vis == NULL) {
-	  wd->vis = glXChooseVisual(wd->display, wd->screen, visualparms);
-	  if (wd->vis == NULL) {
-	     fprintf(stderr, "glXChooseVisual: visual failed\n");
-	     return 0;
-	     }
-	  }
+       if (setglXVisual(wd) == 0)
+         return 0;      
        }
        else
        if (ws->type >= CHILD_WIN3D)
-   child_window = CHILD_WIN3D;
+       	  child_window = CHILD_WIN3D;
 #endif					/* Graphics3D */
     wp = ws->parent;
    /*
@@ -5111,13 +5029,10 @@ char my_wmap(wbp w)
    }
 
 #ifdef Graphics3D
-   if (child_window==CHILD_WIN3D) {
-      /* set defaults for attributes */
-      if (init_3dcontext(w->context)==Failed)
-	 return 0;
-
-      /* set up the appropriate opengl states */
-      if (init_3dcanvas(w) == Failed) return 0;
+   /* set up the appropriate opengl states */
+   if (child_window == CHILD_WIN3D){
+      if (init_3dcanvas(w) == Failed)
+      	 return 0;
       }
 #endif					/* Graphics3D */
    return 1;

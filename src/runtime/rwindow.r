@@ -5304,11 +5304,13 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    
    Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
    ws = w->window;
-   CLRTITLEBAR(ws);
+   ws->display = wd;
+    CLRTITLEBAR(ws);
    Protect(w->context = alc_context(w), { free_binding(w); return 0; });
+
    wc = w->context;
-   
-   ws->display = wc->display = wd;
+   wc->display = wd;
+  
    wd->refcount++;
 
    ws->listp.dword = D_List;
@@ -5333,7 +5335,7 @@ char child_window_generic(wbp w, wbp wp, int child_window)
    ws->is_3D = wc->is_3D = is_3d;
    if (is_3d){
       if (init_3dcontext(wc) == Failed)
-      return 0;
+      	 return 0;
       }
    if (child_window >= CHILD_WINTEXTURE ){
       wtp wt = &(ws->display->stex[ws->texindex]);
@@ -5356,4 +5358,3 @@ char child_window_generic(wbp w, wbp wp, int child_window)
       }
   return 1;
 }
-

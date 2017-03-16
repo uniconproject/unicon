@@ -4995,93 +4995,17 @@ char *nativefiledialog(wbp w,
 
 char child_window_stuff(wbp w, wbp wp, int child_window)
 {
-   wsp ws;
-   wcp wc;
-   struct imgdata *imd;
-   char answer[256];
-   int i, r;
-   tended struct b_list *tlp;
-   tended struct descrip attrrslt;
-   HDC hdc, hdc2, hdc3;
-   DWORD winstyles = 0;
-   TEXTMETRIC	metrics;
-   LOGPALETTE logpal[4]; /* really 1 + space for an extra palette entry */
-   HBRUSH brush;
-   HBITMAP oldpix, oldpix2;
-   HFONT oldfont;
-   struct wbind_list *curr;
-   int is_3d=0;
-
-   if (child_window==CHILD_WIN3D) {
-       is_3d = 1;
-   }
-
-   /*
-    * allocate a window state, and a context
-    */
-   
-   Protect(w->window = alc_winstate(), { free_binding(w); return 0; });
-   ws = w->window;
-   CLRTITLEBAR(ws);
-
-  if (child_window==CHILD_WIN2D || child_window >= CHILD_WINTEXTURE )
-     {
-      ws->display = wp->window->display;
-      wp->window->display->refcount++;
-#ifdef Graphics3D
-      if (child_window >= CHILD_WINTEXTURE){
-         ws->texindex = child_window - CHILD_WINTEXTURE;
-         ws->type = TEXTURE_WSTATE;
-	 SETTOBEHIDDEN(ws);
+   if (child_window_generic(w, wp, child_window) > 0) {
+      CLRTITLEBAR(w->window);
+      if (child_window >= CHILD_WINTEXTURE ){
+         SETTOBEHIDDEN(w->window);
          }
-#endif					/* Graphics3D */
+      wp->window->no++;
+      w->window->no = wp->window->no;
+      return 1;
       }
-
-   Protect(w->context = alc_context(w), { free_binding(w); return 0; });
-
-
-   ws->listp.dword = D_List;
-   BlkLoc(ws->listp) = (union block *) alclist(0, MinListSlots);
-   ws->width = ws->height = 0;
-   wc = w->context;
-
-#ifdef Graphics3D
-   if (child_window >= CHILD_WINTEXTURE ){
-      wtp wt = &(ws->display->stex[ws->texindex]);
-      ws->height = wt->height;
-      ws->width  = wt->width;
-      ws->y = 0;
-      ws->x = 0;
-      wc->is_3D = 0;
-      wc->buffermode = 1;
-      }
-   else{
-#endif					/* Graphics3D */
-      ws->y = 0;
-      ws->x = 0;
-      ws->y += wc->dy;
-      ws->x += wc->dx;
-#ifdef Graphics3D
-      }
-
-   ws->is_3D = wc->is_3D = is_3d;
-   if (is_3d) {
-      if (init_3dcontext(wc) == Failed) return 0;
-      }
-#endif					/* Graphics3D */
-
-  ws->children=NULL;
-  ws->parent = wp;
-  wp->refcount++;
-
-  curr = (struct wbind_list *) malloc(sizeof(struct wbind_list));
-  curr->child = w;
-  curr->next = wp->window->children;
-  wp->window->children = curr;
-  w->refcount++;
-  wp->window->no++;
-  ws->no = wp->window->no;
-  return 1;
+   else
+      return 0;
 }
 
 char my_wmap(wbp w)
@@ -5277,16 +5201,19 @@ char my_wmap(wbp w)
    if (ws->win)
       UpdateWindow(ws->win);
 #ifdef Graphics3D
-   if (ws->is_3D) { /*child_window==2) { */
+{
+   int child_window = 0;
+   if (ws->is_3D)	
+      child_window = CHILD_WIN3D;
+   else if (ws->type >= CHILD_WIN3D)
+       	  child_window = CHILD_WIN3D;
 
-      /* set defaults for attributes */
-      if (init_3dcontext(w->context) == Failed) 
-         return 0;
-
+   if (child_window == CHILD_WIN3D){
       /* set up the appropriate 3D states; initialize canvas */
       if (init_3dcanvas(w) == Failed) 
          return 0;
    }
+}
 #endif
 #endif
    return 1;

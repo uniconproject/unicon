@@ -242,14 +242,18 @@ function{1} Clone(argv[argc])
 	    runerr(142,argv[warg]);
 	 if (ISCLOSED(BlkLoc(argv[warg])->File.fd.wb))
 	    runerr(142,argv[warg]);
-         if (child_window) child_window_stuff(w2, w, child_window);
-	 else Protect(w2->context =
+         if (child_window)
+	    child_window_stuff(w2, w, child_window);
+	 else
+	    Protect(w2->context =
 		 clone_context((wbp)BlkD(argv[warg],File)->fd.wb),runerr(0));
 	 warg++;
 	 }
       else {
-         if (child_window) child_window_stuff(w2, w, child_window);
-	 else Protect(w2->context = clone_context(w), runerr(0));
+         if (child_window)
+	    child_window_stuff(w2, w, child_window);
+	 else
+	    Protect(w2->context = clone_context(w), runerr(0));
 	 }
 
 #ifdef Graphics3D
@@ -269,7 +273,8 @@ function{1} Clone(argv[argc])
 	       }
 	    }
 	 }
-      if (child_window) my_wmap(w2);
+      if (child_window)
+      	 my_wmap(w2);
 
       Protect(BlkLoc(result) =
 	      (union block *)alcfile((FILE *)w2, Fs_Window|Fs_Read|Fs_Write

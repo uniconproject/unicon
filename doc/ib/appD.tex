@@ -6,9 +6,6 @@
 
 \chapter{Adding Functions and Data Types}
 
-{\color{red} This appendix is still being updated from the Icon V6
-documentation and is not consistent or correct.}
-
 Icon is designed so that new functions and data types can be added
 with comparative ease.  This appendix provides some guidelines for
 modifying the Icon run-time system and lists useful macro definitions
@@ -143,7 +140,7 @@ here.
 
 \subsection[D.2.1 Function Declarations]{D.2.1 Function Declarations}
 
-A function begins with the rtt header \texttt{function\{...\} name(args)},
+A function begins with the RTL header \texttt{function\{...\} name(args)},
 where
 name is the name of the function as it is called in a source-language
 program. For example,
@@ -159,7 +156,7 @@ names of other C routines in the run-time system.  Thus, the C function
 that implements map is named \texttt{Zmap}. Although the Icon function map
 has three arguments, the corresponding C function has only one:
 \texttt{r\_args}, which is a pointer to an array of descriptors on the
-interpreter stack.  For example, \texttt{function {1} map(s1,s2,s3)} generates
+interpreter stack.  For example, \texttt{function \{1\} map(s1,s2,s3)} generates
 \goodbreak
 \begin{iconcode}
 \ \ int Zmap(r\_args)\\
@@ -168,9 +165,9 @@ interpreter stack.  For example, \texttt{function {1} map(s1,s2,s3)} generates
 \noindent
 
 A new function must also be listed via a one-line macro in
-src/h/fdefs.h. For a fixed number of arguments the macro is
-FncDef(name,nargs) and for a variable number of arguments
-the macro is FncDefV(name).
+\texttt{src/h/fdefs.h}. For a fixed number of arguments the macro is
+\texttt{FncDef(name,nargs)} and for a variable number of arguments
+the macro is \texttt{FncDefV(name)}.
 
 \subsection[D.2.2 Returning from a Function]{D.2.2 Returning from a Function}
 
@@ -231,7 +228,7 @@ Most functions have a fixed number of arguments. A number of
 functions such as \texttt{write}, \texttt{writes},
 and \texttt{stop} in the standard Icon repertoire can be called with an
 arbitrary number of arguments. For a function that can be called with
-an arbitrary number of arguments, the final rtt argument is given a
+an arbitrary number of arguments, the final RTL argument is given a
 square brackets enclosing a number of arguments, as in
 \texttt{function{1} name(x[nargs])}. When this format is used, the function is
 called with two arguments: the number of arguments in the call and a
@@ -291,7 +288,7 @@ types of their arguments. An example is \texttt{type(x)}:
 
 \goodbreak
 \begin{iconcode}
-function{1} type(x)\\
+function\{1\} type(x)\\
 abstract \{ return string \} \\
 body \{\\
 \>type\_case x of  \{\\
@@ -312,99 +309,116 @@ RTL \texttt{type\_case} construct.
 
 For most functions, arguments must be of a specific type. As described in
 Sec. 12.1, type conversion routines are used for this purpose. For example,
-the function \texttt{tab(i)} requires that \texttt{i} be an integer. It
-begins as follows:
+the function \texttt{pos(i)} requires that \texttt{i} be an integer.
+It begins as follows:
 
 \goodbreak
 \begin{iconcode}
-function\{0,1+\} tab(i)\\
-\>   if !def:C\_integer(i, 0) then runerr(101, i); \\
-\>   abstract \{ return string \} \\
+function\{0,1\} pos(i)\\
+\>   if !cnv:C\_integer(i) then runerr(101, i); \\
+\>   abstract \{ return integer \} \\
 body \{\\
 \> \vdots
 \end{iconcode}
 
 \noindent
-Note that \texttt{cvint} is called with the addresses of \texttt{Arg1} and
-\texttt{I1}. If the conversion is successful, the resulting integer is assigned
-to \texttt{I1}. As indicated by this example, it is the responsibility of a
+The RTL syntax for type conversion and defaulting turns around and
+calls underlying C functions such as \texttt{cnv\_int()} which are
+defined in \texttt{src/runtime/cnv.r}.
+If the conversion is successful, the resulting integer is assigned
+to \texttt{i}. As indicated by this example, it is the responsibility of a
 function to terminate execution by calling \texttt{runerr} if a required
 conversion cannot be made.
 
-The routine \texttt{cvstr}, which converts values to strings, requires a buffer,
-which is supplied by the routine that calls it.  See Sec. 4.4.4. This buffer
-must be large enough to hold the longest string that can be produced by the
-conversion of any value. This size is given by the defined constant
-\texttt{MaxCvtLen}. For example, the function to reverse a string begins as
-follows:
+Two string conversion functions are available. cnv\_str() allocates
+space for the converted string from the heap, while cnv\_tstr()
+requires a buffer, which is supplied by the routine that calls it.
+See Sec. 4.4.4. This buffer must be large enough to hold the longest
+string that can be produced by the conversion of any value. This size
+is given by the defined constant \texttt{MaxCvtLen}. For example, the
+function to reverse a string begins as follows:
 
 \goodbreak
 \begin{iconcode}
-\color{red}FncDcl(reverse,1)\\
-\{\\
-\>register char c. *floc. *lloc;\\
-\>register word slen;\\
-\>char sbuf[MaxCvtLen];\\
-\>extern char *alcstr();\\
-\>/*\\
-\>\ * Make sure that Arg1 is a string.\\
-\>\ */\\
-\>if (cvstr(\&Arg1. sbuf) == CvtFail)\\
-\>\>runerr(103. \&Arg1);
+function\{0,1\} match(s1,s2,i,j)\\
+\>   \vdots \\
+\>   if !cnv:tmp\_string(s1) then runerr(103,s1)
+\end{iconcode}
+
+for which the generated C code looks like
+
+\begin{iconcode}
+int Zmatch(dptr r\_args)\\
+\>   \vdots \\
+\>   char r\_sbuf[1][MaxCvtLen]; \\
+\>   \vdots \\
+\>   if (!cnv\_tstr(r\_sbuf[0], \&(r\_args[1]), \&(r\_args[1]))) \{ \\
+      \{ err\_msg(103, \&(r\_args[1])); \} \}
 \end{iconcode}
 
 \noindent
 The buffer is used only if a nonstring value is converted to a string. In this
-case, \texttt{Arg1} is changed to a qualifier whose v-word points to the
-converted string in \texttt{sbuf}. This string does not necessarily begin at the
-beginning of \texttt{sbuf}. In any event, after a successful call to
-\texttt{cvstr}, the argument is an appropriate qualifier, regardless of whether
+case, \texttt{r\_args[1]} is changed to a qualifier whose v-word points to the
+converted string in \texttt{r\_sbuf[0]}. This string does not
+necessarily begin at the beginning of \texttt{r\_sbuf[0]}. In any
+event, after a successful call to \texttt{cnv\_tstr}, the argument
+is an appropriate qualifier, regardless of whether
 a conversion actually was performed.
 
 \subsection[D.2.4 Constructing New Descriptors]{D.2.4 Constructing New Descriptors}
 
-Some functions need to construct new descriptors to return in \texttt{Arg0}.
-Sometimes it is convenient to construct a descriptor by assignment to its d- and
-v-words. Various macros are provided to simplify these assignments. As given in
-the function \texttt{type} previously, \texttt{StrLen} and \texttt{StrLoc} can
-be used to construct a qualifier. For example, to return a qualifier for the
-string \texttt{"integer"}, the following code suffices:
+Some functions need to construct new descriptors to return.  RTL is
+aware that functions return descriptors and given type information,
+its return statement will construct a descriptor for you. As given
+in the function \texttt{type()} previously, for example, to return
+a qualifier for the string \texttt{"integer"}, the following code suffices:
+
+\begin{iconcode}
+return C\_string "integer";
+\end{iconcode}
+
+Sometimes it is convenient to explicitly construct a descriptor by
+assignment to its d- and v-words. Various macros are provided to
+simplify these assignments.  \texttt{StrLen()} and \texttt{StrLoc()} can
+be used to construct a qualifier.
 \goodbreak
 \begin{iconcode}
-StrLen(Arg0) = 7;\\
-StrLoc(Arg0) = "integer";\\
-Return;
+StrLen(result) = 7;\\
+StrLoc(result) = "integer";\\
+return result;
 \end{iconcode}
 \noindent
-Here, the returned qualifier points to a statically allocated C string.
+In these last two examples, the returned qualifier points to a
+statically allocated C string.
 
 There also are macros and support routines for constructing certain
 kinds of descriptors. For example, the macro
 
-\iconline{\color{red} Mkint(i, dp); }
+\iconline{MakeStr("integer", 7, \&result); }
+
+accomplishes the sames as the two assignments to StrLoc() and StrLen()
+in the preceding example, and
+
+\iconline{MakeInt(i, \&result); }
 
 \noindent
 constructs an integer descriptor containing the integer \texttt{i} in the
-descriptor pointed to by \texttt{dp}. The definition of \texttt{\color{red}Mkint}
-depends on the word size of the computer. On 32-bit computers,
-\texttt{\color{red}Mkint} simply produces assignments to the d-word and v-word of
-descriptor pointed to by \texttt{dp}. On computers with 16-bit words, which
-have both \texttt{T\_Integer} and \texttt{T\_Long} forms of integers,
-\texttt{\color{red}Mkint} produces a call to a support routine.
+descriptor \texttt{result}.
+
 
 \subsection[D.2.5 Default Values]{D.2.5 Default Values}
 
 Many functions specify default values for null-valued arguments. There
-are support routines for providing default values. For example,
+are RTL constructs for providing default values. For example,
 
-\iconline{ \color{red}defstr(Arg3, sbuf, \&q); }
+\iconline{ def:tmp\_string(arg, q) }
 
 
 \noindent
-changes \texttt{Arg3} to the string given by the qualifier \texttt{q} in
-case \texttt{Arg3} is null-valued. If \texttt{Arg3} is not null-valued,
+changes \texttt{arg} to the string given by the qualifier \texttt{q} in
+case \texttt{arg} is null-valued. If \texttt{arg} is not null-valued,
 however, its value is converted to a string, if possible, by
-\texttt{\color{red}defstr}. If this is not possible, \texttt{\color{red}defstr} terminates
+\texttt{def\_tstr}. If this is not possible, the function should terminate
 execution with an error message.
 
 \subsection[D.2.6 Storage Allocation]{D.2.6 Storage Allocation}
@@ -414,16 +428,17 @@ storage. Allocation is done in the allocated string region or the
 allocated block region, depending on the nature of the object. Support
 routines are provided to perform the actual allocation.
 
-As mentioned in Sec. 11.4, predictive need requests \textit{must} be made
-before storage is actually allocated. The functions \texttt{strreq(i)} and
-\texttt{blkreq(i)} request \texttt{i} bytes of storage in the allocated
-string and block regions, respectively.
+As mentioned in Sec. 11.4, under certain circumstances such as to
+guarantee that multiple string allocations are adjacent during a
+concatenation, predictive need requests may be required before storage
+is actually allocated.  The function \texttt{reserve(r, i)} requests
+\texttt{i} bytes of contiguous storage in region \texttt{r}.
 
 Such a request generally should be made as soon as an upper bound on the
 amount of storage needed is known. It is not necessary to know the exact
 amount, but the amount requested must be at least as large as the amount
 that actually will be allocated. For example, the function
-\texttt{reads(f. i)} requests \texttt{i} bytes of string storage, although
+\texttt{reads(f, i)} requests \texttt{i} bytes of string storage, although
 the string actually read may be shorter.
 
 \textbf{String Allocation}. The function \texttt{alcstr(s, i)} copies
@@ -433,19 +448,16 @@ and returns a pointer to the beginning of the copy. For example, a function
 itself is written as follows:
 \goodbreak
 \begin{iconcode}
-\color{red}FncDcl(double. 1)\\
-\{\\
-\>register int slen;\\
-\>char sbuf[MaxCvtLen];\\
-\>extern char *alcstr();\\
-\>if (cvstr(\&Arg1, sbuf) == NULL)\\
-\>\>runerr(103, \&Arg1);\\
-\>slen = StrLen(Arg1);\\
-\>strreq(2 * slen);\\
-\>StrLen(Arg0) = 2 * slen;\\
-\>StrLoc(Arg0) = alcstr(StrLoc(Arg1). slen);\\
-\>alcstr(StrLoc(Arg1), slen);\\
-\>Return;\\
+function{1} double(s)\\
+abstract \{ return string \} \\
+if !cnv:str(s) then runerr(103, s) \\
+body \{\\
+\>register int slen = StrLen(s);\\
+\>reserve(Strings, 2 * slen);\\
+\>StrLen(result) = 2 * slen;\\
+\>StrLoc(result) = alcstr(StrLoc(s), slen);\\
+\>alcstr(StrLoc(s), slen);\\
+\>return result;\\
 \}
 \end{iconcode}
 
@@ -461,24 +473,24 @@ allocated string region --- otherwise the string in the buffer will
 be overwritten on subsequent calls. Copying such strings is
 illustrated by the function \texttt{string(x)} given in Sec. 12.1.
 
-\textbf{Block Allocation}. The routine \texttt{alcblk(i)} allocates
-\texttt{i} bytes in the allocated block region and returns a pointer to the
-beginning of the block. The argument of \texttt{alcblk} must correspond to
-a whole number of words. There are run-time support routines for allocating
-various kinds of blocks. These routines, in turn, call \texttt{alcblk}.
-Such support routines generally fill in part of the block as well. For
-example, \texttt{alccset(i)} allocates a block for a cset, fills in the
+\textbf{Block Allocation}. The block allocation code all lives in
+src/runtime/ralc.r. Macros \texttt{AlcFixBlk(var,structname,typecode)}
+and \texttt{AlcVarBlk(var,structname,typecode,numdescriptors)}
+allocate fixed and variable-sized blocks, respectively. They are
+generally used internally by run-time support routines for allocating
+each kind of blocks.
+Such support routines generally initialize block as well. For
+example, \texttt{alccset()} allocates a block for a cset, fills in the
 title and size words, and zeroes the bits for the cset:
 \goodbreak
 \begin{iconcode}
-struct b\_cset *alccset(size)\\
-int size;\\
+struct b\_cset *alccset()\\
 \{\\
 \>register struct b\_cset *blk;\\
 \>register i;\\
-\>extern union block *alcblk();\\
-\>blk = (struct b\_cset *)alcblk((word)sizeof(struct b\_cset), T\_Cset);\\
-\>blk->size = size;\\
+\> \vdots \\
+\>AlcFixBlk(blk, b\_cset, T\_Cset); \\
+\>blk->size = -1; /* flag size as not yet computed */ \\
 \\
 \>/*\\
 \>\ * Zero the bit array.\\
@@ -501,43 +513,45 @@ all descriptors are accessible to the garbage collector, and that all
 pointers to allocated data are in the v-words of descriptors.
 
 Normally, all the descriptors that a function uses are on the interpreter
-stack and are referenced as \texttt{Arg0}, \texttt{Arg1}, \ldots.  Such
+stack.  Such
 descriptors are processed by the garbage collector. Occasionally,
 additional descriptors are needed for intermediate computations. If such
-descriptors contain pointers in their v-words, it is \textit{not} correct
-to declare local descriptors, as in
+descriptors contain pointers in their v-words, and if a function body
+allocates storage or suspends control to code that may allocate
+storage (potentially triggering a garbage collection), it is
+\textit{not} correct to declare local descriptors, as in
 \goodbreak
 \begin{iconcode}
-\color{red}FncDcl(mesh,2)\\
-\{\\
-\>struct descrip d1, d2;
+function\{1\} mesh(x,y)\\
+\> \vdots \\
+body \{\\
+\>struct descrip d1, d2; \\
+\> \vdots \\
+\> subsequent code that may allocate memory, or suspend
 \end{iconcode}
 
 \noindent
 The problem with this approach is that \texttt{d1} and \texttt{d2} are on
 the C stack and the garbage collector has no way of knowing about them.
 
-However, since all descriptors on the interpreter stack are accessible
-to the garbage collector, intermediate computations can be performed
-on descriptors on the interpreter stack. Extra descriptors for this
-purpose can be provided by increasing the number of arguments
-specified for the function. Thus,
+RTL syntax provides the \texttt{tended} keyword for this situation:
 
-\iconline{\color{red}FncDcl(mesh,4) }
+\begin{iconcode}
+function\{1\} mesh(x,y)
+\> \vdots \\
+body \{\\
+\>  tended struct descrip d1, d2; \\
+\>  \vdots \\
+\>  subsequent code that may allocate memory, or suspend
+\end{iconcode}
 
-\noindent
-makes \texttt{Arg3} and \texttt{Arg4} available for intermediate
-computations. The initial values of \texttt{Arg3} and \texttt{Arg4} will be
-null because of argument adjustment performed by invoke unless mesh is
-called with extra arguments.
-
-Garbage collection can occur only during a predictive need
-request. However, a predictive need request can occur between the time
+Garbage collection can occur only during an allocation or predictive need
+request. However, this can occur between the time
 a function suspends and the time it is resumed to produce another
 result. Consequently, if a pointer is kept in a C variable in a loop
 that is producing results by suspending, the pointer may be invalid
 when the function is resumed. Instead, the pointer should be kept in
-the v-word of a descriptor that is accessible to the garbage
+the v-word of a descriptor that is tended, i.e. accessible to the garbage
 collector.
 
 \subsection[D.2.8 Error Termination]{D.2.8 Error Termination}
@@ -560,7 +574,7 @@ value, the second argument is 0.
 The array of error message numbers and corresponding messages is
 contained in \textfn{runtime/data.r}. If there is no appropriate existing error
 message, a new one can be added, following the guidelines given in
-Appendix D of Griswold and Griswold 1983.
+Appendix G of Griswold and Griswold 1990.
 
 In theory, there should be no errors in the Icon system itself, but no
 large, complex software system is totally free of errors. Some situations
@@ -579,17 +593,22 @@ course.
 
 \subsection[D.2.9 Header Files]{D.2.9 Header Files}
 
-If a new function is added to an existing f file in \textfn{runtime}, the
-necessary header files normally will be included automatically. If a
-new function is placed in a new file, that file should begin with
+For RTL .r files, the necessary header files normally will be included
+automatically.  Several of them are processed by rtt itself; its input
+automatically includes src/h/grttin.h which includes several of the
+header files, special macros, and a bunch of {\em ersatz\/} typedef's
+to fool rtt into parsing successfully without the system includes.
 
-\iconline{\#include "../h/rt.h" }
+The rest of the includes actually happen during the C compile on rtt's
+output since system includes may use compiler-specific extensions that
+rtt would not know about.  rtt writes an include to src/h/rt.h to its
+output files to be processed by the C preprocessor.
 
 % The redefinition of arraystretch works as a way of reducing inter-row
 % spacing in the table, but maybe we should find a more elegant solution.
 {\renewcommand{\arraystretch}{0.9}%
 \noindent
-This header file includes ten other header files:\\[1ex]
+The header file rt.h includes the full suite of header files:\\[1ex]
 
 \noindent\hspace{0.5cm}% Indent the entire table
 % The magic spell ">{\textfn\bgroup} ... <{\egroup}" sets the font
@@ -599,7 +618,7 @@ This header file includes ten other header files:\\[1ex]
 ../h/define.h    & platform specific definitions\\
 ../h/arch.h      & (Icon only) automatically generated word size definitions\\
 ../h/config.h    & general configuration information\\ 
-../h/sys.h	     & system include files (\textfn{stdio.h} etc.)\\ 
+../h/sys.h	 & system include files (\textfn{stdio.h} etc.)\\ 
 ../h/typedefs.h  & type definitions for the run-time system\\
 ../h/cstructs.h  & structure definitions and constants for the
                    functions in the \textfn{src/common} directory\\
@@ -616,6 +635,12 @@ This header file includes ten other header files:\\[1ex]
     {\hspace{0cm}\color{blue}  (Unicon only) event code definitions}\\
 ../h/rmacros.h   & macros and manifest constants\\ 
 ../h/rstructs.h  & runtime data structures\\
+../h/graphics.h  & graphics facilities (if configured) \\
+../h/audio.h     & audio facilities (Unicon only; if configured) \\
+../h/posix.h     & posix facilities (Unicon only) \\
+../h/messagin.h  & messaging facilities (Unicon only) \\
+../h/rexterns.h  & extern declarations for global variables \\
+../h/rproto.h    & runtime system function prototypes
 \end{xtabular}
 }\\[1ex]
 % arraystretch is now back to normal
@@ -624,14 +649,6 @@ This header file includes ten other header files:\\[1ex]
 All of these files contain appropriate information for the local
 installation, and no changes in them should be needed.
 
-
-In rare cases, it may be necessary to include other header files.
-% [DonW] gc.h does not exist anymore. After looking at the Icon V6.7 gc.h,
-% most of the definitions have been absorbed into rmacros.h. If we can think of
-% another example then I suggest we reinstate the next sentence with it.
-%
-%  For example, a function that deals directly with garbage collection might
-%  need to include \textfn{iconx/gc.h}.
 
 \subsection[D.2.10 Installing a New Function]{D.2.10 Installing a New Function}
 
@@ -1013,46 +1030,39 @@ greater than, equal to or less than the number referenced by \texttt{dp2}\\
 
 \subsection[D.5.2 Type Conversion]{D.5.2 Type Conversion}
 
-The following routines in \textfn{\color{red}iconx/rconv.c} perform type conversions:
+The following routines in \textfn{src/runtime/cnv.r} perform type conversions:
 
 \begin{xtabular}{l@{\hspace{1cm}}p{11cm}}
 
-\texttt{\color{red}cvcset(dp, csp, sbuf)} &
-Convert the descriptor pointed to by \texttt{dp} to a cset and point
-\texttt{csp} to it, using \texttt{sbuf} as a conversion buffer if necessary.\\
+\texttt{cnv\_cset(s,d)} &
+Convert the descriptor pointed to by \texttt{s} to a cset and point
+\texttt{d} to it. Return 1 if the conversion can be performed (or is
+not needed) and 0 otherwise.\\
 
-\texttt{\color{red}cvint(dp,ip)} &
-Convert the descriptor pointed to by \texttt{dp} to an integer and store the
-value in the location pointed to by \texttt{ip}, returning the type if the
-conversion can be performed, but \texttt{NULL} otherwise.\\
+\texttt{cnv\_int(s,d)} &
+Convert the descriptor pointed to by \texttt{s} to an integer and store the
+value in the location pointed to by \texttt{d}, returning 1 if the
+conversion can be performed, but \texttt{0} otherwise.\\
 
-\texttt{\color{red}cvnum(dp,xp)} &
-Convert the descriptor pointed to by \texttt{dp} to a numeric value and store
-the value in the location pointed to by \texttt{xp}, returning the type if the
-conversion can be performed, but \texttt{NULL} otherwise.\\
+\texttt{ston(dp,union numeric *result)} &
+Convert the string descriptor pointed to by \texttt{dp} to a numeric
+value and store the value in the location pointed to by
+\texttt{result}, returning the type if the
+conversion can be performed, but \texttt{CvtFail} otherwise.\\
 
 \texttt{cvpos(i1, i2)} &
 Convert \texttt{i1} to a positive value with respect to the length \texttt{i2},
 returning 0 if the conversion is not possible.\\
 
-\texttt{\color{red}cvreal(dp,rp)} &
-Convert the descriptor pointed to by \texttt{dp} to a real number and store
-the value in the location pointed to by \texttt{rp}, returning the type if the
-conversion can be performed, but \texttt{NULL} otherwise.\\
+\texttt{cnv\_real(sp,dp)} &
+Convert the descriptor pointed to by \texttt{sp} to a real number and store
+the value in the location pointed to by \texttt{dp}, returning 1 if the
+conversion can be performed, but \texttt{0} otherwise.\\
 
-\texttt{\color{red}cvstr(dp, sbuf)} &
-Convert the descriptor pointed to \texttt{dp} to a string, using \texttt{sbuf}
-as a buffer if necessary, returning \texttt{Cvt} if a conversion was performed,
-\texttt{NoCvt} if a conversion was unneccessary, or \texttt{NULL} if the
-conversion cannot be performed.\\
-
-\texttt{\color{red}gcvt(n, i, sbuf)} &
-Convert the number \texttt{n}to a string in \texttt{sbuf}, producing \texttt{i}
-significant digits if possible, otherwise using exponent notation.\\
-
-\texttt{\color{red}mkreal(r, dp)} &
-Make a real number descriptor for \texttt{r} in the descriptor pointed to by
-\texttt{dp}.\\
+\texttt{cnv\_str(sp, dp)} &
+Convert the descriptor pointed to \texttt{sp} to a string,
+returning \texttt{1} if a resulting string was produced,
+but \texttt{0} otherwise.\\
 
 \texttt{strprc(dp, i)} &
 Convert the qualifier pointed to by \texttt{dp} to a procedure descriptor if
@@ -1063,56 +1073,32 @@ that represents an operator, returning 0 if the conversion cannot be performed.\
 
 \subsection[D.5.3 Defaults]{D.5.3 Defaults}
 
-The following routines in \textfn{\color{red}iconx/default.c} produce default values for
-omitted arguments:
+The following routines in \textfn{src/runtime/def.r} produce default values for
+omitted arguments. They are generally called internally by RTL constructs.
 
 \begin{xtabular}{l@{\hspace{1cm}}p{11cm}}
 
-\texttt{\color{red}defcset(dp, csp, sbuf, ip)} &
-If the descriptor pointed to by \texttt{dp} is null, store the cset pointed at
-by \texttt{ip} at the place pointed to by \texttt{csp} and return 1; otherwise
-convert the descripro pointed to by \texttt{dp} and return 0, but terminate with
-Error 104 if the conversion cannot be performed.\\
+\texttt{def\_cset(sp, df, dp)} &
+If the descriptor pointed to by \texttt{sp} is null, store the cset pointed at
+by \texttt{df} at the place pointed to by \texttt{dp} and return 1; otherwise
+convert the descriptor pointed to by \texttt{dp} and return 1 if successful.
+Return 0 if the conversion cannot be performed.\\
 
-\texttt{\color{red}deffile(dp1, dp2)} &
-If the descriptor pointed to by \texttt{dp} is null, replace it by the
-descriptor pointed to by \texttt{dp2} and return 1; otherwise return 0 if
-\texttt{dp1} points to a file descriptor but terminate with Error 105
-otherwise.\\
+\texttt{def\_int(sp, df, dp)} &
+If the descriptor pointed to by \texttt{sp} is null, store \texttt{df} at the
+location pointed to by \texttt{dp} and return 1. Otherwise convert the
+descriptor pointed to by \texttt{sp} to an integer, store it at the
+location pointed to by \texttt{dp}, and return 1. Return 0 if the
+conversion cannot be performed.\\
 
-\texttt{\color{red}defint(dp, ip, i)} &
-If the descriptor pointed to by \texttt{dp} is null, store \texttt{i} at the
-location pointed to by\texttt{ip} and return 1. Otherwise convert the descriptor
-pointed to by \texttt{dp} to an integer, store it at the location pointed to by
-\texttt{ip}, and return 0, but terminate with Error 101 if the conversion cannot
-be performed.\\
-
-\texttt{\color{red}defshort(dp,i)} &
-If the descriptor pointed to by \texttt{dp} is null, convert it to \texttt{i}
-and return 1. Otherwise convert the descriptor pointed to by \texttt{dp} to a
-short integer and return 0, but terminate with Error 101 if the conversion cannot
-be performed or Error 205 if the integer is too long.\\
-
-\texttt{\color{red}defstr(dp1, sbuf, dp2)} &
-If the descriptor pointed to by \texttt{dp1} is null,replace it by the
-descriptor pointed to by \texttt{dp2} and return 0. Otherwise convert the
-descriptor pointed by \texttt{dp1} to a string and return 0, but terminate with
-Error 103 if the conversion cannot be performed.\\
+\texttt{def\_str(sp, df, dp)} &
+If the descriptor pointed to by \texttt{sp} is null, replace it by the
+descriptor pointed to by \texttt{df} and return 1. Otherwise convert the
+descriptor pointed by \texttt{sp} to a string and return 1, but return
+0 if the conversion cannot be performed.\\
 
 \end{xtabular}
 
-
-\subsection[D.5.4 Assignment]{D.5.4 Assignment}
-
-The following routine in \textfn{\color{red}iconx/doasgn.c} is used for all source language
-assignments:
-
-\begin{xtabular}{l@{\hspace{1cm}}p{11cm}}
-\texttt{\color{red}doasgn(dp1,dp2)} &
-Assign the descriptor pointed to by \texttt{dp2} to the location referenced by
-the variable descriptor pointed to by \texttt{dp1}.\\
-
-\end{xtabular}
 
 \subsection[D.5.4 Allocation]{D.5.4 Allocation}
 
@@ -1209,10 +1195,6 @@ Copy the sublist from \texttt{i} to \texttt{j} of the list referenced by the
 descriptor pointed to by \texttt{dp1}, and place the result in the descriptor
 pointed to by \texttt{dp2}.\\
 
-\texttt{{\color{red}locate}(sp1, sp2)} &
-Return 1 if the set-element block pointed to by \texttt{sp2} is in the chain
-that starts at \texttt{sp1}, but return 0 otherwise.\\
-
 \texttt{memb(sp, dp, i, ip)} &
 Set the value pointed to by \texttt{ip} to 1 if the descriptor pointed to by
 \texttt{dp} is a member of the set pointed to by \texttt{dp} is a member of the
@@ -1228,8 +1210,7 @@ operations:
 
 \begin{xtabular}{l@{\hspace{1cm}}p{11cm}}
 
-% the replacement is probably getstrg
-\texttt{\color{red}getstr(sbuf, i, fp)} &
+\texttt{getstrg(sbuf, i, fp)} &
 Read a line of at most \texttt{i} characters from the file specified by
 \texttt{fp}, putting the result in \texttt{sbuf}, returning the number of
 characters read, but returning -1 on an end of file.\\
@@ -1241,16 +1222,25 @@ Write \texttt{i} characters from \texttt{sbuf} on the file specified by \texttt{
 
 \subsection[D.5.8 Error Termination]{D.5.8 Error Termination}
 
-The following routines in \textfn{\hspace{0cm}\color{red}iconx/imain.c} cause error termination:
+The RTL construct runerr() can appear appear outside the C code of a
+body or an inline block, reporting errors in parameters, or it may
+appear in a block of C code. Authors of new runtime system code
+generally use runerr() and may invent new run-time error codes if
+needed. Very rarely an internal error may warrant a syserr().
 
-% [DonW] xtabular gives a really stupid page break at this point
-%        so it is replaced by tabular.
+Interestingly, \texttt{runerr()} only works in top-level RTL functions
+and operators, not in underlying C functions. If an underlying runtime
+system function has a problem
+that should result in a runtime error, the C function will have to
+return an error code of some kind to the top-level RTL function or
+operator that called it, asking it to produce a runtime error.
+
 \begin{tabular}{l@{\hspace{1cm}}p{11cm}}
 
 \texttt{runerr(i, dp)} &
 Terminate execution with error message \texttt{i} showing the offending value in
-the dexcriptor pointed to by \texttt{dp}, but omit it if \texttt{dp} is
-\texttt{NULL}.\\
+the descriptor pointed to by \texttt{dp} (optional).
+\\
 
 \texttt{syserr(sbuf)} &
 Terminate execution with system error message \texttt{sbuf}.\\
@@ -1281,7 +1271,9 @@ null-terminated C-style string in \texttt{sbuf}.\\
 
 \subsection[D.5.10 Diagnostics]{D.5.10 Diagnostics}
 
-There are two routines in \textfn{runtime/rmemmgt.c} for producing diagnostic output:
+There are two routines in \textfn{runtime/rmemmgt.r} for producing
+diagnostic output. They are not included in the runtime system unless
+you build it with DeBugIconx defined in your define.h.
 
 %xtabular produces a really stupid page break
 \begin{tabular}{l@{\hspace{1cm}}p{11cm}}

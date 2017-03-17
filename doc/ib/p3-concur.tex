@@ -1,1 +1,55 @@
-\chapter{Concurrency and Thread-Safety in the Unicon Runtime System}
+\chapter{Concurrency and Thread-Safety}
+
+A {\em thread\/} is a fundamental build-ing block of an executing
+program, consisting of a set of registers (including a program counter
+indicating what instruction it is executing) and a stack with which
+to evaluate intermediate results, place parameters and perform
+function calls, etc.  If you have a running program, you have one
+thread; if you have multiple threads, you might have one running at
+a time and the threads taking turns, or you might have more than one
+running simultaneously, a condition known as concurrent execution.
+
+Icon's co-expression type is a thread-type that does not allow
+concurrent execution.  In fact, the current implementation of Icon
+uses posix threads with simple rules to ensure that only one of them
+at a time can ever execute.
+
+Since the turn of the 21st century, however, concurrency has become
+essential to utilizing modern computer processors.  Once CPU
+manufacturers hit physical limits and could no longer double the
+clock speed every 18 months, they have turned a large part of their
+attention to the addition of more and more execution cores at a given
+clock speed.  Because multiple cores are now ubiquitous, and
+concurrent programming is notoriously difficult, the pressure on
+very-high level languages to support concurrency is high, but
+adding concurrency to a very high-level language is more difficult
+than it might seem.  Most popular mainstream scripting languages
+offer pseudo-concurrency, but true concurrency is often limited by
+a ``global interpreter lock'', or GIL, that prevents simultaneous
+access by multiple threads to the same virtual machine.
+
+In order to provide true concurrency, Unicon extends Icon's posix
+threads co-expression implementation, and provides a thread-safe
+runtime system.  Some of this was accomplished by switching out unsafe
+C library functions for their thread-safe counterparts, but a far more
+substantial part of it was accomplished by making threads as
+independent of each other as possible, giving each thread its own copy
+of various interpreter state variables that formerly were
+globals. This is one of the few semantic differences between Icon and
+Unicon.
+
+\subsection{Thread State}
+
+Unicon's threads implementation was influenced heavily by the
+earlier development of dynamic loading and the ability to execute
+multiple programs as co-expressions within the same virtual machine.
+That earlier implementation produced a notion of a ``current program
+state'' embodied by a \texttt{struct progstate}. Concurrent threads
+share parts of what was the progstate, while giving each thread its
+own copy of as many parts as possible in order to minimize threads'
+interference with each other.  Those parts of the global state that
+are replicated on a per-thred basis form \texttt{struct threadstate}
+in src/h/rstructs.h.
+
+\begin{iconcode}
+\end{iconcode}

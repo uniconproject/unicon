@@ -19,47 +19,23 @@ made using techniques described in the August 1990 issue of
 \textit{The Icon Analyst} [.ianl1.]. The following program skeleton is
 used to construct the programs to perform these timings.
 
-{\ttfamily\mdseries
-\ \ \ procedure main()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ local x, start, overhead, iters}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ iters := 1000000}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ start := \&time}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ every 1 to iters do \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ overhead := \&time - start}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ x := 0}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ start := \&time}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ every 1 to iters do \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \textit{expression to be timed (may use x)}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ write(\&time - start - overhead)}
-
-{\ttfamily\mdseries
-\ \ \ end}
+\goodbreak
+\begin{iconcode}
+\>procedure main()\\
+\>\>local x, start, overhead, iters\\
+\>\>iters := 1000000\\
+\>\>start := \&time\\
+\>\>every 1 to iters do \{\\
+\>\>\>\}\\
+\>\>overhead := \&time - start\\
+\>\>x := 0\\
+\>\>start := \&time\\
+\>\>every 1 to iters do \{\\
+\>\>\>\textit{expression to be timed (may use x)}\\
+\>\>\>\}\\
+\>\>write(\&time - start - overhead)\\
+\>end\\
+\end{iconcode}
 
 The timings are performed both with and without the desired
 optimizations, and the results are compared by computing the ratio of
@@ -68,8 +44,7 @@ the time without optimization to the time with optimization.
 The assignment optimizations are described in Chapter 10. The effect
 of the assignment optimizations on the expression
 
-{\ttfamily\mdseries
-\ \ \ x := \&null}
+\iconline{ \>x := \&null }
 
 \noindent is measured using the program outlined above. The analysis
 that produces the assignment optimization is disabled by enabling
@@ -104,8 +79,7 @@ optimization. This results in the direct invocation of the C functions
 implementing operations, or in some cases results in the operations
 being generated in line. The execution time for the expression
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ tab(0)}
+\iconline{ \>\>\ tab(0) }
 
 \noindent is measured with and without invocation optimizations. As
 with the assignment optimizations, these optimizations are disabled by
@@ -115,10 +89,10 @@ with the optimizations that use information from type inferencing. The
 measurements are made with type inferencing disabled. Therefore, no
 type checking simplifications are performed. Without the invocation
 optimizations, the generated code consists of an indirect invocation
-through the global variable tab. With the invocation optimizations,
+through the global variable \texttt{tab}. With the invocation optimizations,
 the generated code consists of type checking/conversion code for the
-argument to tab and a call to the function implementing the body
-statement of tab. The timing results for tab(0) produce
+argument to \texttt{tab} and a call to the function implementing the body
+statement of \texttt{tab}. The timing results for \texttt{tab(0)} produce
 
 \begin{center}
 \begin{tabular}{@{}r@{\hspace{0.6in}}r@{\hspace{0.2in}}r@{}}
@@ -135,8 +109,7 @@ that a C compiler will not perform when the code contains trivial call
 chains. One situation that produces trivial call chains is nested
 alternation. The execution time for the expression
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ every x := ixor(x, 1 {\textbar} 2 {\textbar} 3 {\textbar} 4 {\textbar} 5)}
+\iconline{ \>\>every x := ixor(x, 1 | 2 | 3 | 4 | 5) }
 
 \noindent is measured with and without control flow optimizations. The
 timing results for this every loop produce
@@ -158,24 +131,15 @@ optimizations can be applied. This is demonstrated by measuring the
 speed of an every loop using the to operation. The program that
 performs the measurement is
 
-{\ttfamily\mdseries
-\ \ \ procedure main()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ local x, start}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ start := \&time}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ every x := 1 to 5000000}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ write(\&time - start)}
-
-{\ttfamily\mdseries
-\ \ \ end}
-
+\goodbreak
+\begin{iconcode}
+\>procedure main()\\
+\>\>local x, start\\
+\>\>start := \&time\\
+\>\>every x := 1 to 5000000\\
+\>\>write(\&time - start)\\
+\>end\\
+\end{iconcode}
 
 The timing results for this program produce 
 

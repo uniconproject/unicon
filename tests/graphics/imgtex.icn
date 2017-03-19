@@ -11,13 +11,15 @@ record renderObj(format, imgFile, shape, rot, tex)
 record windowObj(w, format)
 
 procedure win(title, imgFile)    
-   (w := open(title, "g", "image="|| imgFile)) |
-       (write("ERROR: Can't open JPEG Window with image:", imgFile)& fail)
-   write(w, "background:", imgFile)
-   ( ReadImage(w, imgFile) & write(w, "ReadImage(", imgFile,") OK" ))|
-       write("ERROR: ReadImage(",imgFile,")")
+   if w := open(title, "g", "image="|| imgFile) then {
+      write(w, "background:", imgFile)
+      return w
+      }
+end
 
-    return w
+procedure img(w, imgFile)
+   if ReadImage(w, imgFile) then
+      return
 end
 
 procedure main(argv)
@@ -27,23 +29,39 @@ procedure main(argv)
     windows:=[]
     renderList := []
     imgFormats := ["gif", "bmp", "jpg", "png"]
-    jpgFile := "unicon.jpg"
-    pngFile := "unicon.png"
     x := 1
     y := 1
     every format := !imgFormats do {
+        write("\nTesting ", format, "...")
 	fname := "unicon." || format
-	w:=win(format || " 2D Window", fname)
-	put(windows, \w)
-	WAttrib(w, "pos=" || x ||"," || y )
+        writes("\tOpen window with " , format, " background: ")
+	if w:=win(format || " 2D Window", fname) then {
+	   put(windows, w)
+           write("OK")
+           WAttrib(w, "pos=" || x ||"," || y )
+           writes("\tReadimage " , format, ": ")
+           if w:=img(w, fname) then
+              write("OK")
+           else
+              write("Failed")        
+            }
+        else
+           write("Failed ")
+
+           
    	x+:=256
     }
 
-
-    (w3d:= open("3d win", "gl", "size=1024,256", "bg=blue", "buffer=on")) | write("can't do 3D Graphics")
+    write("\nContinuing to texture test...\n")
+ 
+    (w3d:= open("3d win", "gl", "size=1024,256", "bg=blue", "buffer=on")) |
+    stop("Can't Open 3D window, textures can't be tested\n")
+    
     WAttrib(w3d, "pos=" || 1 ||"," || 290 )
+    
     (wtex := open("dyn tex", "gl", "size=1024,256", "bg=very dark gray", "pos=1,258", "buffer=on")) |
-	write("can't do 3D Graphics")
+       stop("Can't Open 3D window, textures can't be tested\n")
+    
     WAttrib(wtex, "pos=" || 1 ||"," || 580 )
 
     t:=&time

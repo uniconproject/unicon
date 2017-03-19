@@ -132,7 +132,7 @@ struct descrip maps3;			/* third cached argument of map */
 #if !(defined(MultiThread) || ConcurrentCOMPILER)
 struct descrip k_current;		/* current expression stack pointer */
 int k_errornumber = 0;			/* &errornumber */
-char *k_errortext = "";			/* &errortext */
+struct descrip k_errortext = {0,""};	/* &errortext */
 struct descrip k_errorvalue;		/* &errorvalue */
 int have_errval = 0;			/* &errorvalue has legal value */
 int t_errornumber = 0;			/* tentative k_errornumber value */
@@ -648,7 +648,7 @@ void init_threadstate( struct threadstate *ts)
    ts->T_errornumber = 0;
    ts->Have_errval = 0;
    ts->T_have_val = 0;
-   ts->K_errortext = "";
+   ts->K_errortext = emptystr;
    ts->K_errorvalue = nulldesc;
    ts->T_errorvalue = nulldesc;
 #ifdef PosixFns
@@ -1902,7 +1902,7 @@ void datainit()
 					/* In this module:	*/
    k_level = 0;				/* &level */
    k_errornumber = 0;			/* &errornumber */
-   k_errortext = "";			/* &errortext */
+   k_errortext = emptystr;			/* &errortext */
    currend = NULL;			/* current end of memory region */
    mstksize = MStackSize;		/* initial size of main stack */
    stksize = StackSize;			/* co-expression stack size */

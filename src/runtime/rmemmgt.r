@@ -739,15 +739,16 @@ static void markthread(struct threadstate *tcp)
    if(!is:null(tcp->K_current)) {
       PostDescrip(tcp->K_current);
       }
+   if(!is:null(tcp->K_errortext)) {
+      PostDescrip(tcp->K_errortext);
+      }
    if(!is:null(tcp->K_errorvalue)) {
       PostDescrip(tcp->K_errorvalue);
       }
    if(!is:null(tcp->T_errorvalue)) {
       PostDescrip(tcp->T_errorvalue);
       }
-   if(!is:null(tcp->AmperErrno)) {
-      PostDescrip(tcp->AmperErrno);
-      }
+   /* no need to tend AmperErrno -- it is always an integer */
    if(!is:null(tcp->Eret_tmp)) {
       PostDescrip(tcp->Eret_tmp);
       }

@@ -2716,10 +2716,13 @@ function{0,1} gethost(h, f)
 
     	    s = getaddrinfo(name, NULL, &hints, &inforesult);
     	    if (s != 0) {
+	       int buflen;
 	       char buf[512];
                sprintf(buf, "%s", gai_strerror(s));
+	       buflen = strlen(buf);
 	       k_errornumber = s;
-	       Protect(k_errortext =alcstr(buf, strlen(buf)), runerr(0));
+	       Protect(StrLoc(k_errortext) = alcstr(buf, buflen), runerr(0));
+	       StrLen(k_errortext) = buflen;
                fail;
     	       }
 

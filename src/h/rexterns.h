@@ -157,7 +157,7 @@ extern struct b_real realzero;		/* real zero block */
    extern dptr glbl_argp;		/* argument pointer */
    extern struct descrip value_tmp;	/* list argument to Op_Apply */
    extern struct descrip k_current;	/* &current */
-   extern char *k_errortext;		/* value of &errortext */
+   extern struct descrip k_errortext;	/* &errortext */
    extern int have_errval;		/* &errorvalue has a legal value */
    extern int k_errornumber;		/* value of &errornumber */
    extern int t_errornumber;		/* tentative k_errornumber value */

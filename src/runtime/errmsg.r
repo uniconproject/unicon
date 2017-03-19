@@ -68,10 +68,10 @@ void err_msg(int n, dptr v)
          }
       }
 
-   k_errortext = "";
+   MakeStr("", 0, &k_errortext);
    for (p = errtab; p->err_no > 0; p++)
       if (p->err_no == k_errornumber) {
-         k_errortext = p->errmsg;
+         MakeStr(p->errmsg,strlen(p->errmsg),&k_errortext);
          break;
          }
 
@@ -96,7 +96,7 @@ void err_msg(int n, dptr v)
       }
    else
       fprintf(stderr, "\nRun-time error %d in startup code\n", n);
-   fprintf(stderr, "%s\n", k_errortext);
+   fprintf(stderr, "%s\n", StrLoc(k_errortext));
 
    if (have_errval) {
       fprintf(stderr, "offending value: ");
@@ -131,7 +131,7 @@ void err_msg(int n, dptr v)
       fprintf(logfptr, "File %s; Line %ld\n", findfile(ipc.opnd),
 	      (long)findline(ipc.opnd));
 #endif					/* COMPILER */
-      fprintf(logfptr, "%s\n", k_errortext);
+      fprintf(logfptr, "%s\n", StrLoc(k_errortext));
       if (have_errval) {
 	 fprintf(logfptr, "offending value: ");
 	 outimage(logfptr, &k_errorvalue, 0);
@@ -154,7 +154,7 @@ void err_msg(int n, dptr v)
       abort();
 
 #if AMIGA && __SASC
-   PostClip(findfile(ipc.opnd), findline(ipc.opnd), k_errornumber, k_errortext);
+   PostClip(findfile(ipc.opnd), findline(ipc.opnd), k_errornumber, StrLoc(k_errortext));
    CallARexx(IconxRexx);
 #endif					/* AMIGA && __SASC */
 

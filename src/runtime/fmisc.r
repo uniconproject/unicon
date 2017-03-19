@@ -385,7 +385,7 @@ function{1} errorclear()
    body {
       CURTSTATE();
       k_errornumber = 0;
-      k_errortext = "";
+      k_errortext = emptystr;
       k_errorvalue = nulldesc;
       have_errval = 0;
       return nulldesc;
@@ -2123,7 +2123,7 @@ static stringint siKeywords[] = {
 	 return C_integer tstate->K_errornumber;
 	 }
       else if (strcmp(kname,"errortext") == 0) {
-	 return C_string tstate->K_errortext;
+	 return tstate->K_errortext;
 	 }
       else if (strcmp(kname,"errorvalue") == 0) {
 	 return tstate->K_errorvalue;
@@ -2493,7 +2493,7 @@ end
 
 "signal(x, y) - signal the condition variable x y times. Default y is 1, y=0 means broadcast"
 
-function{1} signal(x, y)
+function{0,1} signal(x, y)
    declare { C_integer Y=0;}
    if is:coexpr(x) then {
       abstract { return coexpr }
@@ -2501,13 +2501,16 @@ function{1} signal(x, y)
  	 /*
 	  * Transmit whatever is needed to wake it up.
 	  */
-	
+#ifdef PthreadCoswitch
 	 if (BlkD(x, Coexpr)->alive == 0)
 	    fail;
 
 	 sem_post(BlkD(x, Coexpr)->semp);
 
 	 return x;
+#else
+	 fail;
+#endif					/* PthreadCoswitch */
 	 }
       }
    else {
@@ -2806,6 +2809,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 	  }
 #endif 					/* SoftThreads */ 
 
+#ifdef PthreadCoswitch
 	 if (cp->alive == 1) {
 	    /*
 	     * The co-expression has already been Activated!
@@ -2813,7 +2817,7 @@ function{0,1} spawn(x, blocksize, stringsize, stacksize, soft)
 	     */
 	     runerr(185, x);
 	    }
-    
+#endif					/* PthreadCoswitch */
 
          if (!_bs_)
 	    _bs_ = rootblock.size/10 ;

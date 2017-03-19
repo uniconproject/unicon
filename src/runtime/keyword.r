@@ -288,7 +288,7 @@ keyword{0,1} errortext
 #endif					/* !ConcurrentCOMPILER */
       if (k_errornumber == 0)
          fail;
-      return C_string k_errortext;
+      return k_errortext;
       }
 end
 

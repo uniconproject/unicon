@@ -312,12 +312,14 @@ void odbcerror(struct ISQLFile *fp, int errornum)
    if (fp && (SQLError(ISQLEnv, fp->hdbc, fp->hstmt, SQLState, &NativeErr,
 		       ErrMsg, SQL_MAX_MESSAGE_LENGTH-1, &ErrMsgLen) !=
 	      SQL_NO_DATA_FOUND)) {
-      k_errortext = ErrMsg; /* can't alcstr here; k_errortext is untended */
+      StrLoc(k_errortext) = alcstr(ErrMsg, ErrMsgLen);
+      StrLen(k_errortext) = ErrMsgLen;
       }
    else {
       if (errornum - NOT_ODBC_FILE_ERR < sizeof(errmsg)/sizeof(char *))
-	 k_errortext=errmsg[errornum-NOT_ODBC_FILE_ERR];
-      else k_errortext = "unidentified odbc error";
+	 StrLoc(k_errortext)=errmsg[errornum-NOT_ODBC_FILE_ERR];
+      else StrLoc(k_errortext) = "unidentified odbc error";
+      StrLen(k_errortext)=strlen(StrLoc(k_errortext));
       }
 }
 

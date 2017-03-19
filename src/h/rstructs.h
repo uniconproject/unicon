@@ -568,16 +568,15 @@ struct threadstate {
 
    dptr Field_argp;			/* TLS -- see comment in imisc.r */
 
-
    struct descrip K_current;      /* TLS  */
    int K_errornumber;             /* TLS  */
-   int K_level;                      /* TLS  */
-   char *K_errortext;                     /* TLS  */
-   struct descrip K_errorvalue;           /* TLS  */
-   int Have_errval;                   /* TLS  */
-   int T_errornumber;                 /* TLS  */
+   int K_level;                   /* TLS  */
+   struct descrip K_errortext;    /* TLS  */
+   struct descrip K_errorvalue;   /* TLS  */
+   int Have_errval;               /* TLS  */
+   int T_errornumber;             /* TLS  */
    int T_have_val;
-   struct descrip T_errorvalue;           /* TLS  */
+   struct descrip T_errorvalue;   /* TLS  */
 
 #ifdef PosixFns
    struct descrip AmperErrno;  /* TLS */

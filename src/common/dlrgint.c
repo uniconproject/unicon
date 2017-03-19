@@ -215,7 +215,7 @@ dptr da, db, dx;
    r = iipow(IntVal(*da), IntVal(*db), &over_flow);
    if (over_flow) {
       k_errornumber = 203;
-      k_errortext = "";
+      k_errortext = emptystr;
       k_errorvalue = nulldesc;
       have_errval = 0;
       return RunError;

@@ -4,101 +4,130 @@
 # Feb 28, 2016
 #
 
-link ximage
-import util  # for timing functions
-
 record renderObj(format, imgFile, shape, rot, tex)
 record windowObj(w, format)
 
+#
+# Return the current time of day from the system clock, in milliseconds.
+#
+procedure milliseconds()
+   local t := gettimeofday()
+   return t.sec*1000 + t.usec/1000
+end
+
+procedure microseconds()
+   local t := gettimeofday()
+   return t.sec*1000000 + t.usec
+end
+
 procedure win(title, imgFile)    
-   if w := open(title, "g", "image="|| imgFile) then {
+   if w := open(title, "g", "image="|| imgFile, "inputmask=c") then {
       write(w, "background:", imgFile)
       return w
       }
 end
 
-procedure img(w, imgFile)
-   if ReadImage(w, imgFile) then
-      return
-end
-
 procedure main(argv)
     local windows, imgFormats, renderList
     
-    write("Unicon Image and Texture Test")
+    write("\nUnicon Image and Texture Test")
+    write("Beside succeeding or failing a test, look for visual artifacts")
+    write("possiable issues to look for:")
+    
     windows:=[]
     renderList := []
     imgFormats := ["gif", "bmp", "jpg", "png"]
     x := 1
     y := 1
     every format := !imgFormats do {
-        write("\nTesting ", format, "...")
-	fname := "unicon." || format
-        writes("\tOpen window with " , format, " background: ")
-	if w:=win(format || " 2D Window", fname) then {
-	   put(windows, w)
-           write("OK")
-           WAttrib(w, "pos=" || x ||"," || y )
-           writes("\tReadimage " , format, ": ")
-           if w:=img(w, fname) then
-              write("OK")
-           else
-              write("Failed")        
+       write("\nTesting ", format, "...")
+
+       if (format == "jpg" &  &features ~== "JPEG images") |
+          (format == "png" &  &features ~== "PNG images") then
+          write ("\t",format, " support is not enabled in this build") & next
+          
+       fname := "unicon." || format
+       writes("\tOpen window with " , format, " background: ")
+        
+       if w := win(format || " 2D Window", fname) then {
+          put(windows, w)
+          write("OK")
+          WAttrib(w, "pos=" || x ||"," || y )
+          writes("\tReadimage " , format, ": ")
+          if ReadImage(w, fname) then
+             write("OK")
+          else
+             write("Failed")        
             }
         else
            write("Failed ")
-
            
    	x+:=256
     }
 
     write("\nContinuing to texture test...\n")
- 
-    (w3d:= open("3d win", "gl", "size=1024,256", "bg=blue", "buffer=on")) |
-    stop("Can't Open 3D window, textures can't be tested\n")
-    
+
+    if (&features ~== "3D graphics") then {
+       write ("3D graphics support is not enabled in this build")
+       write ("Image textures and dynamic texxtures cannot be tested\n")
+       write ("Close any of the opened windows or press q/ESC in any window to exit...")
+       repeat
+          case Event(Active()) of {
+             "q" | "Q" | "\e" | -11: {
+                write("Exiting...")
+                every close(!windows)
+                exit(0)
+                }
+             }
+       }
+       
+    # Open a 3D window to test textures created from the different image formats
+    (w3d:= open("Image Textures", "gl", "size=1024,256", "bg=blue", "buffer=on")) |
+       stop("Can't Open 3D window, textures can't be tested\n")
+  
     WAttrib(w3d, "pos=" || 1 ||"," || 290 )
-    
-    (wtex := open("dyn tex", "gl", "size=1024,256", "bg=very dark gray", "pos=1,258", "buffer=on")) |
+
+    # Open a 3D window to test dynamic textures
+    (wtex := open("Dynamic Textures", "gl", "size=1024,256", "bg=very dark gray",
+                  "pos=1,258", "buffer=on")) |
        stop("Can't Open 3D window, textures can't be tested\n")
     
     WAttrib(wtex, "pos=" || 1 ||"," || 580 )
 
     t:=&time
     x:=-3
-    #if \is3D then{
+
     every format := !imgFormats do {
 	put(renderList, rObj:= renderObj(format,"unicon." || format))
 	renderBox(w3d, x, 0,0, 1, rObj)
 	x+:=2
     }
-    #}
 
     Eye(w3d, 0,0,8, 0,0,0, 0,1,0)
     Eye(wtex, 0,0,8, 0,0,0, 0,1,0)
     Refresh(w3d)
-
+    
     x:=-3
-    w := windows[1]
-    put(renderList, rObj:= renderObj("win",w))
+
+    WAttrib(w,"texmode=on")
+    
+    put(renderList, rObj:= renderObj("win",windows[1]))
     renderBox(wtex,x, 0,0, 1, rObj)
     x+:=2
 
-    w := w3d
-    put(renderList, rObj:= renderObj("win",w))
+    put(renderList, rObj:= renderObj("win",w3d))
     renderBox(wtex,x, 0,0, 1, rObj)
     x+:=2
 
-    w := windows[3]
-    put(renderList, texObj:= renderObj("win",w))
+    put(renderList, texObj:= renderObj("win",windows[3]))
     renderBox(wtex,x, 0,0, 1, texObj)
     x+:=2
 
-
-    w := windows[4]
-    put(renderList, texObj2:= renderObj("win",w))
+    put(renderList, texObj2:= renderObj("win",windows[4]))
     renderBox(wtex,x, 0,0, 1, texObj2)
     x+:=2
+    
+    WAttrib(w,"texmode=off")    
   
     Eye(w3d, 0,0,8, 0,0,0, 0,1,0)
 
@@ -121,8 +150,8 @@ procedure main(argv)
 	    i+:=1
 	    if *Pending(w)>0 then { 
 		case Event(w) of{
-		    "q" : {
-			shutdown := 1;
+		    "q" | "Q" | "\e" : {
+			shutdown := 1
 			break break
 		    }
 		    &lpress | &rpress  :{
@@ -175,15 +204,12 @@ procedure FPS()
    
 end
 
-
 procedure renderBox(w, x,y,z, r, rObj)
     Fg(w,"red")
     PushTranslate(w, x,y,z)
     rObj.rot := Rotate(w, 0, 0, 1, 0)
-    WAttrib(w,"texmode=on")
     rObj.tex := Texture(w, rObj.imgFile)
     rObj.shape := DrawCube(w, 0,0,0, r)
-    WAttrib(w,"texmode=off")
     PopMatrix(w)
 end
   

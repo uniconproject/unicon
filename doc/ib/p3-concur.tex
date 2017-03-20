@@ -48,18 +48,24 @@ state'' embodied by a \texttt{struct progstate}. Concurrent threads
 share parts of what was the progstate, while giving each thread its
 own copy of as many parts as possible in order to minimize threads'
 interference with each other.  Those parts of the global state that
-are replicated on a per-thred basis form \texttt{struct threadstate}
-in src/h/rstructs.h.
+are replicated on a per-thread basis form \texttt{struct threadstate}
+in \textfn{src/h/rstructs.h}.
 
 From a language design standpoint, adding concurrency to Unicon consisted of:
-(1) adding a way to tell co-expressions to execute concurrently instead of
-waiting to be activated, and (2) extending the activation operator @ and
-adding new operators to provide a simple mechanism for thread synchronization
-and communication. These were achieved by introducing a new reserved word thread
-and extending the @ operator to maintain producer-consumer queues for asynchronous
-operation in addition to operators for new forms of synchronization and
-communication as discussed later in this section. The thread syntax can be used
-in the following manner:
+\begin{enumerate}
+\item
+  adding a way to tell co-expressions to execute concurrently instead of
+  waiting to be activated.
+\item
+  extending the activation operator \texttt{@} and adding new
+  operators to provide a simple mechanism for thread synchronization
+  and communication. These were achieved by introducing a new reserved
+  word \texttt{thread} and extending the \texttt{@} operator to
+  maintain producer-consumer queues for asynchronous operation in
+  addition to operators for new forms of synchronization and
+  communication as discussed later in this section. The thread syntax
+  can be used in the following manner:
+\end{enumerate}
 
 \begin{iconcode}
 thread expr
@@ -68,182 +74,200 @@ thread expr
 The language was also extended with several new built-in functions for
 high-level access to mutual exclusion primitives and condition variables,
 in addition to extending a few existing functions to support new semantics.
-For example, the built-in function wait() was extended to allow a thread argument
-to support the semantics of join in thread programming. Many of the extensions
-have to do with synchronization. Some problems require using advanced synchronization
-mechanisms and rely on the language support to achieve full control over the execution
-of threads and protect shared data. This section covers the synchronization techniques
-introduced into the Unicon language. It also covers thread communication and the new
-communication operators. 
+For example, the built-in function \texttt{wait()} was extended to allow a
+thread argument to support the semantics of \texttt{join} in thread
+programming. Many of the extensions have to do with synchronization. Some
+problems require using advanced synchronization mechanisms and rely on the
+language support to achieve full control over the execution of threads and
+protect shared data. This section covers the synchronization techniques
+introduced into the Unicon language. It also covers thread communication
+and the new communication operators.
 
-\section{Syncronization}
+\section{Synchronization}
 \subsection{Critical Regions and Mutexes}
-A mutex is a synchronization object used to protect shared data and serialize threads
-in critical regions. For example when two threads compete to increment a variable,
-the end result might not be what the programmer intended. In such cases a mutex should
-be used to protect access to the variable. Any operation or data where more than one
-thread can execute non-deterministically, leading to data corruption or incorrect results
-is called thread unsafe. Thread unsafe code or data structures have to be handled correctly
-via synchronization mechanisms to achieve correct behavior with correct results.
-A mutex object can be created using the mutex() function. The returned mutex object can
-then be locked/unlocked via the functions lock() and unlock() to serialize execution in
-a critical region. Unicon provides a special syntax for critical regions which is equivalent
-to a lock()/unlock() pair, that aims mainly to guarantee that a mutex is released at the
-end of a critical region, beside enhancing the readability of the program. Here is the syntax:
+A mutex is a synchronization object used to protect shared data and
+serialize threads in critical regions. For example when two threads compete
+to increment a variable, the end result might not be what the programmer
+intended. In such cases a mutex should be used to protect access to the
+variable. Any operation or data where more than one thread can execute
+non-deterministically, leading to data corruption or incorrect results is
+called thread unsafe. Thread unsafe code or data structures have to be
+handled correctly via synchronization mechanisms to achieve correct
+behavior with correct results.  A mutex object can be created using the
+\texttt{mutex()} function. The returned mutex object can then be
+locked/unlocked via the functions \texttt{lock()} and \texttt{unlock()} to
+serialize execution in a critical region. Unicon provides a special syntax
+for critical regions which is equivalent to a
+\texttt{lock()}/\texttt{unlock()} pair, that aims mainly to guarantee that
+a mutex is released at the end of a critical region, beside enhancing the
+readability of the program. Here is the syntax:
 
-\begin{iconcode}
-critical mtx: expr
-\end{iconcode}
+\iconline{critical mtx: expr}
 
+\noindent
 This is equivalent to:
 
 \begin{iconcode}
-lock(mtx)
-expr
-unlock(mtx)
+lock(mtx)\\
+expr\\
+unlock(mtx)\\
 \end{iconcode}
 
-This initial clause is thread-safe. It can be thought of as a built-in critical region that
-is run only once. No thread is allowed to enter the procedure if there is a thread currently
-still executing in the initial block. This can be useful specifically in a concurrent
-environment to do critical initialization such as creating a new mutex object instead of
-declaring a mutex variable to be global and initializing it somewhere else or passing it from
-one function to another where it will be actually used. A concurrent version of seq() would
-look like this:
+The \texttt{initial} clause is thread-safe. It can be thought of as a
+built-in critical region that is run only once. No thread is allowed to
+enter the procedure if there is a thread currently still executing in the
+\texttt{initial} block. This can be useful specifically in a concurrent
+environment to do critical initialization such as creating a new mutex
+object instead of declaring a mutex variable to be global and initializing
+it somewhere else or passing it from one function to another where it will
+be actually used. A concurrent version of \texttt{seq()} would look like
+this:
 
 \begin{iconcode}
-procedure seq()
-   local n
-   static i, region
-   initial {i:=0; region:=mutex()}
-   critical region: n := i := i+1
-   return n
-end 
+procedure seq()\\
+\>local n\\
+\>static i, region\\
+\>initial \{i:=0; region:=mutex()\}\\
+\>critical region: n := i := i+1\\
+\>return n\\
+end \\
 \end{iconcode}
 
-Mutexes do not exist solely as independent objects, they are also used as attributes of other
-objects, namely attributes of the mutable data types. Any data structure in Unicon that can be
-used in a thread unsafe manner is better protected by a mutex. Instead of declaring a separate
-mutex, locking and unlocking it, the structure can just be marked as needs a mutex/protection
-and the language does an implicit locking/unlocking protecting the operations that might affect
-the integrity of the data structure.  For example, if several threads are pushing and popping
-elements into and out of a list, this creates thread-unsafe operations on the list that require
-protection. 
-Using a thread-safe list results in less lines of code compared with doing explicit locking, and
-also produces a more efficient program doing less locking and unlocking at the language level,
-or even not doing at all. For example, a list can be protected by passing it to the function
-mutex() as follows:
+Mutexes do not exist solely as independent objects, they are also used as
+attributes of other objects, namely attributes of the mutable data
+types. Any data structure in Unicon that can be used in a thread unsafe
+manner is better protected by a mutex. Instead of declaring a separate
+mutex, locking and unlocking it, the structure can just be marked as needs
+a mutex/protection and the language does an implicit locking/unlocking,
+protecting the operations that might affect the integrity of the data
+structure.  For example, if several threads are pushing and popping
+elements into and out of a list, this creates thread-unsafe operations on
+the list that require protection.  Using a thread-safe list results in less
+lines of code compared with doing explicit locking, and also produces a
+more efficient program doing less locking and unlocking at the language
+level, or even not doing at all. For example, a list can be protected by
+passing it to the function \texttt{mutex()} as follows:
+
+\iconline{mutex(L)}
+
+From this point on, any puts to the list or gets from \texttt{L} are
+protected by an implicit mutex locking mechanism. This helps make
+concurrent programming almost as easy as writing a sequential program.  The
+only needed step is to notify the language at the beginning that the data
+structure is shared, by passing it to the \texttt{mutex()} function. Having
+to explicitly mark structures as shared ensures that mutexes are only used
+where needed, and not wasting time on unnecessary locking/unlocking for
+structures that are not shared. The locking/unlocking of protected
+structures slows down structures operations by about 7\%. The
+\texttt{mutex()} function takes a second optional parameter denoting an
+existing mutex object or an object that is already marked as shared (has a
+mutex attribute) . Instead of creating a new mutex object for the data
+structure, the existing mutex is used as an attribute for the data
+structure. If the second object is a structure that is not marked as
+shared, a new mutex is created. This is useful when two objects need to be
+protected by the same mutex. For example, the list \texttt{L} and the table
+\texttt{T} in the following example share the same mutex:
 
 \begin{iconcode}
-   mutex(L)
+\>mtx := mutex()\\
+\>L := mutex([ ], mtx)\\
+\>T := mutex(table(), mtx)\\
 \end{iconcode}
 
-From this point on, any puts to the list or gets from L are protected by an implicit mutex locking
-mechanism. This helps make concurrent programming almost as easy as writing a sequential program.
-The only needed step is to notify the language at the beginning that the data structure is shared,
-by passing it to the mutex() function. Having to explicitly mark structures as shared ensures that
-mutexes are only used where needed, and not wasting time on unnecessary locking/unlocking for
-structures that are not shared. The locking/unlocking of protected structures slows down structures
-operations by about 7\%. The mutex() function takes a second optional parameter denoting an existing
-mutex object or an object that is already marked as shared (has a mutex attribute) . Instead of
-creating a new mutex object for the data structure, the existing mutex is used as an attribute for
-the data structure. If the second object is a structure that is not marked as shared, a new mutex is
-created. This is useful when two objects need to be protected by the same mutex. For example,
-the list L and the table T in the following example share the same mutex:
-
-\begin{iconcode}
-mtx := mutex()
-L := mutex([ ], mtx)
-T := mutex(table(), mtx)
-\end{iconcode}
-
+\noindent
 which is equivalent to the following if the mutex does not need to be explicit:
 
 \begin{iconcode}
-L := mutex([ ])
-T := mutex(table(0), L)
-or
-L := [ ]
-T := mutex(table(0), L)
+\>L := mutex([ ])\\
+\>T := mutex(table(0), L)\\
+{\textnormal {or}}\\
+\>L := [ ]\\
+\>T := mutex(table(0), L)\\
 \end{iconcode}
 
-In all cases, lock(L) and lock(T) lock the same mutex, serializing execution on both data structures.
-Not all operations on data structures produce correct results, only atomic operations do. In other
-words, implicit locking/unlocking takes place per operation, which means even if each one of the two
-operations is safe, the combination might not be. A critical region is still needed to combine the two.
-For example, if L[1] has the value of 3 and two threads are trying to increment L[1] as the following:
+In all cases, \texttt{lock(L)} and \texttt{lock(T)} lock the same mutex,
+serializing execution on both data structures.  Not all operations on data
+structures produce correct results, only atomic operations do. In other
+words, implicit locking/unlocking takes place per operation, which means
+even if each one of the two operations is safe, the combination might not
+be. A critical region is still needed to combine the two.  For example, if
+\texttt{L[1]} has the value of 3 and two threads are trying to increment
+\texttt{L[1]} as the following:
 
-\begin{iconcode}
-L[1] := L[1] + 1
-\end{iconcode}
+\iconline{L[1] := L[1] + 1}
 
-the result in L[1] could be 4 or 5. That is because reading L[1] (the right side of the assignment)
-and storing the result back in L[1] are two different operations (not atomic) and are actually
-separated in time. The good news is that solving such an issue does not require an extra explicit mutex.
-If L is marked as shared (passed to the mutex() function ) it can be passed to lock()/unlock() functions.
-It can be used with the critical syntax like the following:  
+\noindent
+the result in \texttt{L[1]} could be 4 or 5. That is because reading
+\texttt{L[1]} (the right side of the assignment) and storing the result
+back in \texttt{L[1]} are two different operations (not atomic) and are
+actually separated in time. The good news is that solving such an issue
+does not require an extra explicit mutex.  If \texttt{L} is marked as
+shared (passed to the \texttt{mutex()} function ) it can be passed to
+\texttt{lock()}/\texttt{unlock()} functions.  It can be used with the
+critical syntax like the following:
 
-\begin{iconcode}
-critical L: L[1] := L[1] + 1
-\end{iconcode}
-
+\iconline{critical L: L[1] := L[1] + 1}
 
 \subsection{Condition Variables}
-Mutexes protect shared data in critical regions, and block threads if more than
-one thread tries to enter the critical region. Condition variables provide
-thread blocking/resumption that is not tied to accessing
-shared data like a mutex. A condition variable allows a thread to block until
-an event happens or a condition changes. For example, in a producer/consumer
-problem, a consumer keeps spinning to get values out of the
-shared list. In similar situations in real life applications, any spinning could
-be a waste of resources; other threads including producer threads could be using
-the resources doing something useful instead. The consumer should block until
-there is data to process in the list. This is where a condition variable comes
-into play.  A condition variable can be created using the function condvar().
-The return object is a condition variable that can be used with wait() and
-signal() functions. wait(cv) blocks the current thread on the
-condition variable cv. The thread remains blocked until another thread does
-a signal(cv), which wakes up one
-thread blocked on cv. A very important aspect of using a condition variable is
-that the condition variable is always associated with a mutex. More specifically,
-the wait() function has to be always protected by a mutex.
-Unicon provides a built-in mutex for condition variables which can be thought
-of as an attribute, similar to thread safe data structures. This means a condition
-variable can also be used with lock()/unlock() functions
-or the critical clause. It is important to realize that not only wait() has to be
-protected by a critical region, but also the condition or the test that leads
-a thread to wait on a condition variable. The signal() function takes a second
-optional parameter denoting the number of threads to be woken up.
-By default, that number is one, but it can be any positive value. From example:
+Mutexes protect shared data in critical regions, and block threads if more
+than one thread tries to enter the critical region. Condition variables
+provide thread blocking/resumption that is not tied to accessing shared
+data like a mutex. A condition variable allows a thread to block until an
+event happens or a condition changes. For example, in a producer/consumer
+problem, a consumer keeps spinning to get values out of the shared list. In
+similar situations in real life applications, any spinning could be a waste
+of resources; other threads including producer threads could be using the
+resources doing something useful instead. The consumer should block until
+there is data to process in the list. This is where a condition variable
+comes into play.  A condition variable can be created using the function
+\texttt{condvar()}.  The return object is a condition variable that can be
+used with \texttt{wait()} and \texttt{signal()}
+functions. \texttt{wait(cv)} blocks the current thread on the condition
+variable \texttt{cv}. The thread remains blocked until another thread does
+a \texttt{signal(cv)}, which wakes up one thread blocked on \texttt{cv}. A
+very important aspect of using a condition variable is that the condition
+variable is always associated with a mutex. More specifically, the
+\texttt{wait()} function has to be always protected by a mutex.  Unicon
+provides a built-in mutex for condition variables which can be thought of
+as an attribute, similar to thread safe data structures. This means a
+condition variable can also be used with \texttt{lock()}/\texttt{unlock()}
+functions or the critical clause. It is important to realize that not only
+\texttt{wait()} has to be protected by a critical region, but also the
+condition or the test that leads a thread to wait on a condition
+variable. The \texttt{signal()} function takes a second optional parameter
+denoting the number of threads to be woken up.  By default, that number is
+one, but it can be any positive value. From example:
 
-every !4 do signal(cv)
+\iconline{every !4 do signal(cv)}
 
+\noindent
 Can be written as:
 
-signal(cv, 4)
+\iconline{signal(cv, 4)}
 
-Furthermore, if all of the threads waiting on cv needs to be woken up, a special 0
-( or CV\_BROADCAST) value can be passed to signal() causing it to broadcast a wakeup
-call for all threads waiting on cv:
+\noindent
+Furthermore, if all of the threads waiting on \texttt{cv} needs to be woken
+up, a special 0 ( or \texttt{CV\_BROADCAST}) value can be passed to
+\texttt{signal()} causing it to broadcast a wakeup call for all threads
+waiting on \texttt{cv}:
 
-signal(cv, 0) 
-Or
-signal(cv, CV\_BROADCAST) 
-
-
-
+\iconline{signal(cv, 0) }
+\noindent or
+\iconline{signal(cv, CV\_BROADCAST)}
 
 \section{Thread Communication}
-Co-expressions, as explained in Chapter 3, have a simple form of communication
-influenced by their synchronous execution. Threads on the other hand, run in parallel,
-creating a dynamic environment for communication. In many cases, a running thread
-must send a value to another thread without waiting for results, or receive
-a value from another thread if there is one without waiting. The @ operator is not
-suitable for this kind of (asynchronous) communication. Threads communication needs
-to go well beyond co-expressions, for which a single @ operator provided communication
-bundled with synchronization. Unicon adds four operators for asynchronous
-communication. These are @>, @>>, <@ and <<@. The operators correspond to send,
-blocking send, receive and blocking receive.
+Co-expressions, as explained in {\color{red} Chapter 3}, have a simple form
+of communication influenced by their synchronous execution. Threads on the
+other hand, run in parallel, creating a dynamic environment for
+communication. In many cases, a running thread must send a value to another
+thread without waiting for results, or receive a value from another thread
+if there is one without waiting. The \texttt{@} operator is not suitable
+for this kind of (asynchronous) communication. Threads communication needs
+to go well beyond co-expressions, for which a single \texttt{@} operator
+provided communication bundled with synchronization. Unicon adds four
+operators for asynchronous communication. These are \texttt{@>},
+\texttt{@>{}>}, \texttt{<@} and \texttt{<{}<@}. The operators correspond to
+send, blocking send, receive and blocking receive.
 
 \subsection{Thread messaging Queues}
 Thread communication is done through messaging queues that are initialized at thread
@@ -252,136 +276,168 @@ with the thread. When a thread sends a message with an explicit destination, the
 is queued in the destination's inbox. Otherwise it is queued into the sender's outbox.
 A thread can receive messages from another thread by dequeuing messages from the source's
 outbox if there is an explicit source, otherwise it dequeues messages from its own inbox.
-Figure 6.1 presents two threads with the inboxes and outboxes. 
-
+{\color{red} Figure 6.1} presents two threads with the inboxes and outboxes. 
 
 \subsection{Send and Receive Operators}
-The first two operators are @> (send) and <@ (receive). These operators communicate
-send/receive messages between threads. The semantics support co-expressions as well
-which also have inboxes and outboxes. It does not matter whether threads or co-expressions
-are involved in the communication, the semantics are the same. The send operator has the syntax 
-x@>T
-x can be any data type including null, which is equivalent to omitting it. T refers to a thread
-to which x is transmitted. x is placed in T's inbox. x can be picked by T using the receive
-operator which is presented later. The send operator can also have no destination such as:
-x@>
-In this case x is sent to no one, instead it is placed in the sender's outbox.
-The operator can be read as produce x. x can then be picked up later by any
-thread wanting a value from this sender. For example the sender thread in this case
-might be a thread creating prime numbers and placing them in its outbox to be ready
-for other worker threads.
+The first two operators are \texttt{@>} (send) and \texttt{<@}
+(receive). These operators communicate send/receive messages between
+threads. The semantics support co-expressions as well which also have
+inboxes and outboxes. It does not matter whether threads or co-expressions
+are involved in the communication, the semantics are the same. The send
+operator has the syntax
+
+\iconline{x@>T}
+
+\noindent
+\texttt{x} can be any data type including null, which is equivalent to
+omitting it. \texttt{T} refers to a thread to which \texttt{x} is
+transmitted. \texttt{x} is placed in \texttt{T}'s inbox. \texttt{x} can be
+picked by \texttt{T} using the receive operator which is presented
+later. The send operator can also have no destination such as:
+
+\iconline{x@>}
+
+\noindent
+In this case \texttt{x} is sent to no one, instead it is placed in the
+sender's outbox.  The operator can be read as ``produce \texttt{x}''.
+\texttt{x} can then be picked up later by any thread wanting a value from
+this sender. For example the sender thread in this case might be a thread
+creating prime numbers and placing them in its outbox to be ready for other
+worker threads.
+
 The receive operator is symmetric to the send operator and takes two forms, with
 explicit source or with no source as follows:
 
-<@T
+\begin{iconcode}
+<@T\\
+<@\\
+\end{iconcode}
 
-<@
+The first case reads: receive a value from \texttt{T}, which gets a value
+from \texttt{T}'s outbox, a value produced by \texttt{T}. Going back to the
+prime number example mentioned above, \texttt{<@T} would be the way to pick
+a prime number produced by the prime number generator thread
+\texttt{T}.\texttt{ <@} on the other hand reads values directly from the
+receiver's inbox.  It reads messages sent directly to the current thread
+doing the receive.  Both \texttt{@>} and \texttt{<@} can succeed or
+fail. In the case of \texttt{<@} the operator succeeds and returns a value
+from the corresponding queue (inbox/outbox) depending on the operand if the
+queue is not empty. If the queue is empty the operation fails directly.  In
+the case of \texttt{@>}, if the value is placed in the corresponding queue,
+the operation succeeds and returns the size of the queue. If the queue is
+full, the send operation fails. The inbox/outbox for each thread is
+initialized to have a limited size (it can hold up to 1024 values by
+default). This limit can be increased or decreased depending on the
+application needs. The limits are useful so that queue sizes do not explode
+quickly by default and also to have an implicit
+communication/synchronization as explained later in this section.
 
-The first case reads: receive a value from T, which gets a value from Ts outbox,
-a value produced by T. Going back to the prime number example mentioned above,
-<@T would be the way to pick a prime number produced by the prime number generator
-thread T. <@ on the other hand reads values directly from the receiver's inbox.
-It reads messages sent directly to the current thread doing the receive.
-Both @> and <@ can succeed or fail. In the case of <@ the operator succeeds and
-returns a value from the corresponding queue (inbox/outbox) depending on the operand
-if the queue is not empty. If the queue is empty the operation fails directly.
-In the case of @>, if the value is placed in the corresponding queue, the operation
-succeeds and returns the size of the queue. If the queue is full, the send operation
-fails. The inbox/outbox for each thread is initialized to have a limited size (it can
-hold up to 1024 values by default). This limit can be increased or decreased depending
-on the application needs. The limits are useful so that queue sizes do not explode
-quickly by default and also to have an implicit communication/synchronization as explained
-later in this section.  
-Each thread has exactly one inbox and one outbox, and each operator call is mapped to only
-one of these inboxes or outboxes as seen in Figure 1. All messages from all threads coming
-to thread B in the figure end up in its inbox. All threads trying to receive messages
-from A compete on its outbox. Both the inbox and the outbox queues are public communications
-channels, and it is impossible to distinguish the source of a message if there are several
-threads sending messages to the same thread at the same time. Furthermore, if <@ has an
-explicit source like A in Figure 6.1 it only looks in As outbox, and does not see messages
-from A coming directly to the inbox. Applications that require the sender's address can attach
-that information to messages by building them as records with two fields, one field for data and
-the other containing the sender's address. A better approach for private communications for some
-applications is the use of lists shared between the two communicating threads or the use of
-private communication channels discussed later in this chapter. 
+Each thread has exactly one inbox and one outbox, and each operator call is
+mapped to only one of these inboxes or outboxes as seen in {\color{red}
+Figure 1}. All messages from all threads coming to thread B in the figure
+end up in its inbox. All threads trying to receive messages from A compete
+on its outbox. Both the inbox and the outbox queues are public
+communications channels, and it is impossible to distinguish the source of
+a message if there are several threads sending messages to the same thread
+at the same time. Furthermore, if \texttt{<@} has an explicit source like A in
+{\color{red} Figure 6.1} it only looks in A's outbox, and does not see messages from A
+coming directly to the inbox. Applications that require the sender's
+address can attach that information to messages by building them as records
+with two fields, one field for data and the other containing the sender's
+address. A better approach for private communications for some applications
+is the use of lists shared between the two communicating threads or the use
+of private communication channels discussed later in this chapter.
 
 \subsection{Inbox/Outbox and the Attrib() Function}
 
 As seen in previous subsections, communications between threads is done though
 inbox/outbox queues which are governed by size limits. The size limit (defaults to 1024)
 and the actual size dictate how synchronization is melted with the communication.
-The size operator * can be used with a thread to query its actual outbox size
+The size operator \texttt{*} can be used with a thread to query its actual outbox size
 (how many values it contains, not the maximum limit) and can be used as follows:
 
-outbox\_size := *T
+\iconline{outbox\_size := *T}
 
-But this is only a single attribute for one queue. To access or change the different
-attributes, a new function was introduced to Unicon: Attrib(), which uses the form:
-Attrib(handle, attribcode, value, attribcode, value, ...)
-The integer codes used by the Attrib() function are supplied by an include file
-(threadh.icn) with \$define symbols for the attributes. This header file is part of
-a new thread package that is part of the Unicon distribution called package threads.
-It can be imported to a program via:
-import threads
-When values are omitted, Attrib() generally returns attribute values.
-To get the size of the outbox (similar to what the * operation does in the example
+\noindent
+But this is only a single attribute for one queue. To access or change the
+different attributes, a new function was introduced to Unicon:
+\texttt{Attrib()}, which uses the form:
+
+\iconline{Attrib(handle, attribcode, value, attribcode, value, ...)}
+
+\noindent
+The integer codes used by the \texttt{Attrib()} function are supplied by an
+include file (\textfn{threadh.icn}) with \texttt{\$define} symbols for the
+attributes. This header file is part of a new thread package that is part
+of the Unicon distribution called package threads.  It can be imported to a
+program via:
+
+\iconline{import threads}
+
+\noindent
+When values are omitted, \texttt{Attrib()} generally returns attribute values.
+To get the size of the outbox (similar to what the \texttt{*} operation does in the example
 presented earlier), the code is:
 
-outbox\_size := Attrib(T, OUTBOX\_SIZE)
+\iconline{outbox\_size := Attrib(T, OUTBOX\_SIZE)}
 
-similarly, 
+\noindent similarly, 
 
-inbox\_size := Attrib(T, INBOX\_SIZE)
+\iconline{inbox\_size := Attrib(T, INBOX\_SIZE)}
 
-gets the current size  of the inbox. On the other hand, 
+\noindent gets the current size  of the inbox. On the other hand, 
 
-Attrib(T, INBOX\_LIMIT, 64, OUTBOX\_LIMIT, 32)
+\iconline{Attrib(T, INBOX\_LIMIT, 64, OUTBOX\_LIMIT, 32)}
 
-sets the inbox and outbox size limits to 64 and 32 respectively. Table 6.1 summarizes
-all of the available attributes and their meanings.
+\noindent sets the inbox and outbox size limits to 64 and 32
+respectively. Table 6.1 summarizes all of the available attributes and
+their meanings.
 
-Table 6.1 Thread's communication queues attributes
-Attribute
-Meaning
-Read/Write
-INBOX\_SIZE
-Number of items in the inbox
-Read Only
-OUTBOX\_SIZE
-Number of items in the outbox
-Read Only
-INBOX\_LIMIT
-The maximum number of items allowed in the inbox
-Read/Write
-OUTBOX\_LIMIT
-The maximum number of items allowed in the outbox
-Read/Write
+\begin{tabular}{>{\texttt\bgroup}l<{\egroup}ll}
+{{\textnormal{Attribute}}} & Meaning & Read/Write\\
+INBOX\_SIZE   & Number of items in the inbox & Read Only\\
+OUTBOX\_SIZE  & Number of items in the outbox& Read Only\\
+INBOX\_LIMIT  & The maximum number of items allowed in the inbox & Read/Write\\
+OUTBOX\_LIMIT & The maximum number of items allowed in the outbox & Read/Write\\
+\end{tabular}
+
+{\color{red} Table 6.1} Thread's communication queues attributes
 
 \subsection{Blocking Send and Receive}
 In many situations, senders and receivers generate and consume messages at
-different speeds. For example if there is thread that generates prime numbers
-very fast to be used by other slow threads, the prime number generator thread
-should not continuously generate prime numbers, but create a batch and wait until
-it is all used before generating another batch. Instead of overloading slow
-receivers or busy waiting for slow senders, the two ends of communication require
-a synchronizing mechanism to tell when to send new messages or when a new message
-is available. Two more send and receive operators provide such functionality, these
-are the blocking send operator @>> and the blocking receive operator <<@. These
-operators can be used in the same way @> and <@ are used, except that instead of
-failing when the operation cannot be completed, the new operators block and wait
-until the operation succeeds. This is useful in situations where a value is
-required to proceed, allowing the thread to block instead of spinning waiting for
-a value.
+different speeds. For example if there is thread that generates prime
+numbers very fast to be used by other slow threads, the prime number
+generator thread should not continuously generate prime numbers, but create
+a batch and wait until it is all used before generating another
+batch. Instead of overloading slow receivers or busy waiting for slow
+senders, the two ends of communication require a synchronizing mechanism to
+tell when to send new messages or when a new message is available. Two more
+send and receive operators provide such functionality, these are the
+blocking send operator \texttt{@>{}>} and the blocking receive operator
+\texttt{<{}<@}. These operators can be used in the same way\texttt{ @>}
+and\texttt{ <@} are used, except that instead of failing when the operation
+cannot be completed, the new operators block and wait until the operation
+succeeds. This is useful in situations where a value is required to
+proceed, allowing the thread to block instead of spinning waiting for a
+value.
+
 In some cases, a thread might want to use a blocking receive to get values from
 a second thread, but it is not willing to block indefinitely; probably the thread
-can do some other useful work instead of waiting. The <<@  accepts a timeout parameter
+can do some other useful work instead of waiting. The \texttt{<{}<@}  accepts a timeout parameter
 to impose a limit on how long to wait for a result before giving up. Here is how
-<<@ would look like in this case:
+\texttt{<{}<@ }would look like in this case:
 
-result := timeout <<@ 		\#  get from the current thread inbox
-or 
-result := timeout <<@ T		\# get from T's outbox
-The timeout operand is a non-negative integer denoting the maximum time to wait in milliseconds. Negative integers are treated as a null value, an indefinite blocking receive. A 0 operand indicates no waiting time, making the end behavior effectively similar to a non-blocking receive. Table 6.2 summarizes the different forms of the send and receive operators and their operands:
+\iconline{result := timeout <{}<@\ \ \ \ \#  get from the current thread inbox}
+\noindent or 
+\iconline{result := timeout <{}<@ T\ \ \ \# get from T's outbox}
+  
+The timeout operand is a non-negative integer denoting the maximum time to
+wait in milliseconds. Negative integers are treated as a null value, an
+indefinite blocking receive. A 0 operand indicates no waiting time, making
+the end behavior effectively similar to a non-blocking receive. Table 6.2
+summarizes the different forms of the send and receive operators and their
+operands:
+  
 Table 6.2 Summary of the new communication operators
 Operator
 Operands
@@ -447,111 +503,145 @@ waiting for new messages to become available
 
 
 \section{Virtual Machine Changes}
-The Unicon virtual machine is the Icon virtual machine, extended to better accommodate
-object-oriented programming. The extensions made to support true concurrency would apply
-equally to the Icon implementation. Other similar languages face analogous situations,
-where the lessons learned here may be applicable. Two main issues had to be addressed
-in order to allow concurrent execution of multiple threads in the VM. First, the VMs
-state had to be replicated per thread, and second, self-modifying instructions and the
-initial clause had to be protected against race conditions. The two issues are discussed
-in the following two subsections.
+The Unicon virtual machine is the Icon virtual machine, extended to better
+accommodate object-oriented programming. The extensions made to support
+true concurrency would apply equally to the Icon implementation. Other
+similar languages face analogous situations, where the lessons learned here
+may be applicable. Two main issues had to be addressed in order to allow
+concurrent execution of multiple threads in the VM. First, the VM's state
+had to be replicated per thread, and second, self-modifying instructions
+and the \texttt{initial} clause had to be protected against race
+conditions. The two issues are discussed in the following two subsections.
 
 \subsection{VM Registers}
-Thread-local storage is utilized to provide each thread with its own copy of the virtual
-machine registers, which were formerly global variables in the VM C code. These include
-the program counter, stack pointer, the several frame pointers necessary to manage calls,
-returns, suspension and resumption on the stack, and other pieces of virtual machine state.
-To add concurrency, these elements of state are moved into a struct threadstate that is
-allocated for each thread, and keeps all thread-specific VM state information.
-The threadstate is fairly large, under the assumption that memory is cheap whereas
-thread synchronization is expensive. POSIX threads API calls are used to obtain references
-to the threadstate structure where it is needed.
-A key concern when using thread-local storage is performance. Initially, all references to
-VM registers were replaced, via macros, by references through a global threadstate pointer
-variable declared with the compiler storage specifier\_\_thread that is available in some
-compilers such as gcc and Sun's (now Oracle's) cc. This implementation is straightforward
-but incurs a substantial performance cost. In addition, the \_\_thread keyword is not currently
-available in the pthreads implementation on OS X and that of Mingw gcc on Microsoft Windows.
-Switching to the more portable pthreads API for thread-local storage using pthread\_getspecific()
-allows a faster implementation than \_\_thread. The straightforward implementation
-invoked pthread\_getspecific() once at the top of each C function containing references to
-VM register and state variables. The many calls to this API wherever the VM state is referenced
-in the runtime system entail an insignificant performance cost.
+Thread-local storage is utilized to provide each thread with its own copy
+of the virtual machine registers, which were formerly global variables in
+the VM C code. These include the program counter, stack pointer, the
+several frame pointers necessary to manage calls, returns, suspension and
+resumption on the stack, and other pieces of virtual machine state.  To add
+concurrency, these elements of state are moved into a \texttt{struct
+  threadstate} that is allocated for each thread, and keeps all
+thread-specific VM state information.  The \texttt{threadstate} is fairly
+large, under the assumption that memory is cheap whereas thread
+synchronization is expensive. POSIX threads API calls are used to obtain
+references to the \texttt{threadstate} structure where it is needed.  A key
+concern when using thread-local storage is performance. Initially, all
+references to VM registers were replaced, via macros, by references through
+a global threadstate pointer variable declared with the compiler storage
+specifier \texttt{\_\_thread} that is available in some compilers such as
+gcc and Sun's (now Oracle's) cc. This implementation is straightforward but
+incurs a substantial performance cost. In addition, the \texttt{\_\_thread}
+keyword is not currently available in the \texttt{pthreads} implementation
+on OS X and that of Mingw gcc on Microsoft Windows.  Switching to the more
+portable pthreads API for thread-local storage using
+\texttt{pthread\_getspecific()} allows a faster implementation than
+\texttt{\_\_thread}. The straightforward implementation invoked
+\texttt{pthread\_getspecific()} once at the top of each C function
+containing references to VM register and state variables. The many calls to
+this API wherever the VM state is referenced in the runtime system entail
+an insignificant performance cost.
 
 \subsection{Self-Modifying Instructions}
-The Unicon virtual machine has seven instructions that contain integer offsets as operands.
-These offsets refer to memory addresses within the instruction region, or to static data
-regions of the bytecode. They are used for several types of literals, globals,  static variables,
-and also for instructions that jump to addresses, such as Op\_Goto. For performance reasons,
-when the opcode is first encountered, offsets are converted to absolute pointers.
-The opcode is modified to indicate that the operand is now a pointer, and the instruction
-proceeds at full speed on subsequent executions.
-This implementation introduces a race condition when multiple threads execute the self-modifying
-instruction at the same time. The problem was solved by adding a mutex for each self-modifying
-instruction opcode. Figure 6.2 shows an example self-modifying instruction code protected with
-a mutex. Mutex contention could be reduced further by allocating a separate mutex for each instance
-of each opcode (requiring a number of mutexes proportional to the size of the program)
-instead of using just seven mutexes for the seven self-modifying opcodes; it is unlikely
-that this would be worth implementing, since the number of instances is large and each
-instance of a self-modifying instruction uses its mutex only once when it replaces itself. 
-To provide a thread safe initial clause (discussed in 6.1.2) at the language level, a similar
-technique used for self-modifying instructions was utilized, unlike self-modifying instructions,
-where locking and unlocking take place at the same instructions, with initial clause, the locking
-happens at the beginning of the clause, and the unlocking happens at the end. To allow such behavior,
-a new VM instruction was introduced which takes care of updating the instruction at the beginning
-of the clause, and unlocks the mutex. The updated instruction causes all of the subsequent calls to
-the function containing the initial clause made by any thread to skip over the clause.
-This mechanism effectively eliminates the need to do any locking/unlocking after it is initialized.
+The Unicon virtual machine has seven instructions that contain integer
+offsets as operands.  These offsets refer to memory addresses within the
+instruction region, or to static data regions of the bytecode. They are
+used for several types of literals, globals, static variables, and also for
+instructions that jump to addresses, such as \texttt{Op\_Goto}. For
+performance reasons, when the opcode is first encountered, offsets are
+converted to absolute pointers.  The opcode is modified to indicate that
+the operand is now a pointer, and the instruction proceeds at full speed on
+subsequent executions.
+
+This implementation introduces a race condition when multiple threads
+execute the self-modifying instruction at the same time. The problem was
+solved by adding a mutex for each self-modifying instruction
+opcode. {\color{red} Figure 6.2} shows an example self-modifying
+instruction code protected with a mutex. Mutex contention could be reduced
+further by allocating a separate mutex for each instance of each opcode
+(requiring a number of mutexes proportional to the size of the program)
+instead of using just seven mutexes for the seven self-modifying opcodes;
+it is unlikely that this would be worth implementing, since the number of
+instances is large and each instance of a self-modifying instruction uses
+its mutex only once when it replaces itself.  To provide a thread safe
+\texttt{initial} clause (discussed in {\color{red} 6.1.2}) at the language
+level, a similar technique used for self-modifying instructions was
+utilized, unlike self-modifying instructions, where locking and unlocking
+take place at the same instructions, with initial clause, the locking
+happens at the beginning of the clause, and the unlocking happens at the
+end. To allow such behavior, a new VM instruction was introduced which
+takes care of updating the instruction at the beginning of the clause, and
+unlocks the mutex. The updated instruction causes all of the subsequent
+calls to the function containing the initial clause made by any thread to
+skip over the clause.  This mechanism effectively eliminates the need to do
+any locking/unlocking after it is initialized.
 
 
 \subsection{Runtime System Support}
-Achieving thread-safety in the implementation without a global interpreter lock required
-extensive modifications to the runtime system to provide thread-safe environment.
-This includes safe use of the IO subsystem and the underlying libraries, but most
-importantly heap management in term of allocation and garbage collection.
-Input/Output Sub-system
-The Unicon input output sub-system includes very high-level facilities for accessing files,
-networks and messaging, 2D and 3D graphics, databases, pipes and pseudo-ttys. The underlying
-C library functions implementing these capabilities are often thread- safe [96]. However,
-Unicon language-level IO operations usually involve several underlying library calls that must
-be atomic with respect to threads. Each IO handle is assigned a mutex when it is opened.
-Any IO operation that uses this handle locks the mutex to guarantee the atomicity of such
-operations. The cost incurred by such locks is evaluated in section 7.4. 
-The atomicity of IO is guaranteed only within a single Unicon-level IO operation. For example
-write(x, y) is atomic and no other thread can write to the same file while write() is running.
-If multiple writes or reads are required to be made atomic with respect to other threads,
-an explicit lock is needed. In such a case, the IO handle can be passed to the lock()/unlock()
-functions to protect it from any access other than from the current thread during the execution
-of several IO operations. 
-C Library Thread Safety
-In addition to IO, many C library functions called in the Unicon VM were implemented before
-threads were widely used in operating systems. A subset of those functions is documented in
-the POSIX standards as thread-unsafe. About 40 function of those are used in the runtime system.
-Most calls to these thread-unsafe functions were replaced with the thread-safe alternatives available
-in modern C implementations. A few, infrequently called, thread-unsafe functions were protected by
-mutexes. A couple of the thread-safe alternatives were not portable; new wrapper functions or
-implementations were developed in such cases.
-Allocation and Separate Heaps
-Allocation is a frequent operation for which speed is a top priority in the Unicon virtual machine.
-Unicon programs start with a heap consisting of one string and one block (structure) region,
-and allocate more regions as needed. At any moment, the string and block regions used for allocation
-are together referred to as the current heap. If the memory request is bigger than what is available
-in the current heap, other regions are checked. If enough memory is found, the current heap is
-switched to use the satisfying region; otherwise a new region is allocated.
-With multiple threads, safety becomes a concern if only one shared heap is available.
-When a thread allocates memory in the current heap and updates the heap's state variables,
-the operation must be protected by a mutex. Otherwise different threads would corrupt each
-other's allocation requests, leaving the heap in an invalid state. A similar situation occurs
-when some operations in the runtime system deallocate memory after allocating it for a temporary use.
-After determining that the locks required in the shared heap strategy were significantly slowing
-down the frequent task of memory allocation, the decision was made to use separate, per-thread heaps.
-This allows threads to use their own private heaps at full speed, just like a single-threaded application.
-Heaps that are not owned by any thread are referred to as public heaps. Public heaps are a product of
-threads out-growing their private heaps. This happens when a thread requests more memory and that
-request can only be granted by allocating a new private heap. A program starts with no public heaps,
-and with one private heap for the main thread. A new private heap is allocated for each new thread if
-none of the public heap is sufficient. Figure 6.3 shows the heap layout with regards to threads. when
-a thread finishes, its heap goes back to the pool of public heaps.
+Achieving thread-safety in the implementation without a global interpreter
+lock required extensive modifications to the runtime system to provide a
+thread-safe environment.  This includes safe use of the IO subsystem and
+the underlying libraries, but most importantly heap management in term of
+allocation and garbage collection.
+
+\subsubsection{Input/Output Sub-system}
+The Unicon input output sub-system includes very high-level facilities for
+accessing files, networks and messaging, 2D and 3D graphics, databases,
+pipes and pseudo-ttys. The underlying C library functions implementing
+these capabilities are often thread- safe [96]. However, Unicon
+language-level IO operations usually involve several underlying library
+calls that must be atomic with respect to threads. Each IO handle is
+assigned a mutex when it is opened.  Any IO operation that uses this handle
+locks the mutex to guarantee the atomicity of such operations. The cost
+incurred by such locks is evaluated in {\color{red} section 7.4}.  The
+atomicity of IO is guaranteed only within a single Unicon-level IO
+operation. For example \texttt{write(x, y)} is atomic and no other thread
+can write to the same file while \texttt{write()} is running.  If multiple
+writes or reads are required to be made atomic with respect to other
+threads, an explicit lock is needed. In such a case, the IO handle can be
+passed to the \texttt{lock()}/\texttt{unlock()} functions to protect it
+from any access other than from the current thread during the execution of
+several IO operations.
+
+\subsubsection{C Library Thread Safety}
+In addition to IO, many C library functions called in the Unicon VM were
+implemented before threads were widely used in operating systems. A subset
+of those functions is documented in the POSIX standards as
+thread-unsafe. About 40 of these function were used in the runtime system.
+Most calls to these thread-unsafe functions were replaced with the
+thread-safe alternatives available in modern C implementations. A few,
+infrequently called, thread-unsafe functions were protected by mutexes. A
+couple of the thread-safe alternatives were not portable; new wrapper
+functions or implementations were developed in such cases.
+
+\subsubsection{Allocation and Separate Heaps}
+Allocation is a frequent operation for which speed is a top priority in the
+Unicon virtual machine.  Unicon programs start with a heap consisting of
+one string and one block (structure) region, and allocate more regions as
+needed. At any moment, the string and block regions used for allocation are
+together referred to as the current heap. If the memory request is bigger
+than what is available in the current heap, other regions are checked. If
+enough memory is found, the current heap is switched to use the satisfying
+region; otherwise a new region is allocated.  With multiple threads, safety
+becomes a concern if only one shared heap is available.  When a thread
+allocates memory in the current heap and updates the heap's state
+variables, the operation must be protected by a mutex. Otherwise different
+threads would corrupt each other's allocation requests, leaving the heap in
+an invalid state. A similar situation occurs when some operations in the
+runtime system deallocate memory after allocating it for a temporary use.
+
+After determining that the locks required in the shared heap strategy were
+significantly slowing down the frequent task of memory allocation, the
+decision was made to use separate, per-thread heaps.  This allows threads
+to use their own private heaps at full speed, just like a single-threaded
+application.  Heaps that are not owned by any thread are referred to as
+public heaps. Public heaps are a product of threads out-growing their
+private heaps. This happens when a thread requests more memory and that
+request can only be granted by allocating a new private heap. A program
+starts with no public heaps, and with one private heap for the main
+thread. A new private heap is allocated for each new thread if none of the
+public heap is sufficient. {\color {red} Figure 6.3} shows the heap layout
+with regards to threads. when a thread finishes, its heap goes back to the
+pool of public heaps.
 
 All heaps (public and private) are visible to all threads, so any thread can access variables
 and data structures in any heap at any time. The accesses can be controlled or protected at the
@@ -568,62 +658,82 @@ take place. If the memory request cannot be granted even after that, the thread 
 
 \subsection{Garbage Collection}
 
-The frequency of garbage collection depends on heap size and application memory usage patterns.
-Historically, many Icon applications ran to completion without ever garbage collecting. However,
-modern object oriented event-driven applications run for longer periods of time, and garbage
-collect proportionally often, despite increases in physical memory and heap size. When garbage
-collection does occur, it concerns every thread.
-Since garbage collection does not happen often (examples are given in Chapter 9), the design
-philosophy is to keep garbage collection as simple as possible under concurrent execution.
-To allow safe access to data in the heaps, garbage collection suspends all running threads
-except the thread which triggered it, referred to as the GC thread. The GC thread performs
-a conventional garbage collection, during which the program runs sequentially. 
+The frequency of garbage collection depends on heap size and application
+memory usage patterns.  Historically, many Icon applications ran to
+completion without ever garbage collecting. However, modern object oriented
+event-driven applications run for longer periods of time, and garbage
+collect proportionally often, despite increases in physical memory and heap
+size. When garbage collection does occur, it concerns every thread.  Since
+garbage collection does not happen often (examples are given in
+{\color{red} Chapter 9}), the design philosophy is to keep garbage
+collection as simple as possible under concurrent execution.  To allow safe
+access to data in the heaps, garbage collection suspends all running
+threads except the thread which triggered it, referred to as the GC
+thread. The GC thread performs a conventional garbage collection, during
+which the program runs sequentially.
 
 
-The GC thread first locks the garbage collection mutex MTX\_THREADCONTROL, and then sets a global
-flag that announces the need to perform garbage collection. It directs all running threads to
-converge to a special routine called thread\_control, the coordination point for thread suspension
-and resumption. The global flag is checked by all threads once per virtual machine instruction.
-The runtime system keeps track of how many threads are running using a global counter NARthreads,
-which is incremented and decremented by the threads depending on their state: before a thread
-blocks on a mutex it decrements the counter, and increments it after unblocking. The counter
-itself is protected by a mutex and can be incremented only if there is no garbage collection
-request pending or taking place (Figure 6.4). 
-After a call for garbage collection causes a thread to enter the thread\_control function,
-the thread decrements the running threads counter NARthreads and goes to sleep on the gc
-condition variable. The GC thread keeps testing the running threads counter until its value
-decreases to 1, meaning that the GC thread is the only thread running. Then the GC thread
-proceeds to perform the garbage collection. After finishing, the GC thread unlocks the
-garbage collection mutex, and does a broadcast to the gc condition variable. This wakes up
-all of the threads blocked on the gc variable, allowing them to resume their execution and
-return to where they called the thread\_control function in the first place. 
-In garbage collection-intensive applications, it may happen that two (or more) threads trigger
-a garbage collection at the same moment. This situation can be handled in various ways.
-The simplest solution is to block all of the threads requesting garbage collection after
-the first one and let the first one proceed and finish as described above (block all of the
-other threads and then wake them up again). A better solution, the one adopted in this design,
-is to make the threads that are competing for garbage collection aware of each other. Instead
-of a sequence of block all others followed by a wake up others performed by each GC thread,
-a GC thread can hand the control over to the next GC thread in line, if there is one, and then
-go to sleep. Only the last GC thread in the line wakes up all of the blocked threads. This strategy
-eliminates intermediate block/wakeup operations, leaving only one block others operation
-by the first GC thread and one wake up others operation by the last GC thread. A counting
-semaphore (gc semaphore) controls the queuing and synchronizing of several threads to garbage collect.
-The first thread to request a garbage collection does not block on the semaphore, but subsequent
-requesters do. After finishing garbage collection, each thread signals the semaphore to wake up
-the next GC thread and goes to sleep. The last GC thread to wake up is responsible for waking up
-all of the threads after finishing.
-An additional measure increases the effectiveness of the strategy just described: triggering an
-artificial garbage collection if another thread has a garbage collection request pending. After
-a thread triggers a garbage collection and starts the protocol to suspend all other threads,
-each thread answers the call, but before going to sleep on the gc condition variable it checks
-if its heap is nearly full. The nearly full value depends on the heap size, the number of
-threads, and the nature of the application. Tests indicate that generally, a value in the range
-90\%-95\% is reasonable for most applications (garbage collection example statistics are given
-in Table 9.1 ). Thus if the threads heap has only 5\%-10\% of its total size free, the thread
-queues up to do garbage collection instead of going to sleep on the gc condition variable.
-This technique forces several garbage collections that might be separated by very short periods
-of time to cluster together, requiring only a single suspension for all of the threads to do the
-several garbage collections. Figure 6.5 shows an abstract overview of garbage collection and
-concurrency control.
+The GC thread first locks the garbage collection mutex
+\texttt{MTX\_THREADCONTROL}, and then sets a global flag that announces the
+need to perform garbage collection. It directs all running threads to
+converge to a special routine called \texttt{thread\_control}, the
+coordination point for thread suspension and resumption. The global flag is
+checked by all threads once per virtual machine instruction.  The runtime
+system keeps track of how many threads are running using a global counter
+\texttt{NARthreads}, which is incremented and decremented by the threads
+depending on their state: before a thread blocks on a mutex it decrements
+the counter, and increments it after unblocking. The counter itself is
+protected by a mutex and can be incremented only if there is no garbage
+collection request pending or taking place ({\color{red} Figure 6.4}).
+
+After a call for garbage collection causes a thread to enter the
+\texttt{thread\_control} function, the thread decrements the running
+threads counter \texttt{NARthreads} and goes to sleep on the \texttt{gc}
+condition variable. The GC thread keeps testing the running threads counter
+until its value decreases to 1, meaning that the GC thread is the only
+thread running. Then the GC thread proceeds to perform the garbage
+collection. After finishing, the GC thread unlocks the garbage collection
+mutex, and does a broadcast to the \texttt{gc} condition variable. This
+wakes up all of the threads blocked on the \texttt{gc} variable, allowing
+them to resume their execution and return to where they called the
+\texttt{thread\_control} function in the first place.
+
+In garbage collection-intensive applications, it may happen that two (or
+more) threads trigger a garbage collection at the same moment. This
+situation can be handled in various ways.  The simplest solution is to
+block all of the threads requesting garbage collection after the first one
+and let the first one proceed and finish as described above (block all of
+the other threads and then wake them up again). A better solution, the one
+adopted in this design, is to make the threads that are competing for
+garbage collection aware of each other. Instead of a sequence of block all
+others followed by a wake up others performed by each GC thread, a GC
+thread can hand the control over to the next GC thread in line, if there is
+one, and then go to sleep. Only the last GC thread in the line wakes up all
+of the blocked threads. This strategy eliminates intermediate block/wakeup
+operations, leaving only one block others operation by the first GC thread
+and one wake up others operation by the last GC thread. A counting
+semaphore (gc semaphore) controls the queuing and synchronizing of several
+threads to garbage collect.  The first thread to request a garbage
+collection does not block on the semaphore, but subsequent requesters
+do. After finishing garbage collection, each thread signals the semaphore
+to wake up the next GC thread and goes to sleep. The last GC thread to wake
+up is responsible for waking up all of the threads after finishing.
+
+An additional measure increases the effectiveness of the strategy just
+described: triggering an artificial garbage collection if another thread
+has a garbage collection request pending. After a thread triggers a garbage
+collection and starts the protocol to suspend all other threads, each
+thread answers the call, but before going to sleep on the gc condition
+variable it checks if its heap is nearly full. The nearly full value
+depends on the heap size, the number of threads, and the nature of the
+application. Tests indicate that generally, a value in the range 90\%-95\%
+is reasonable for most applications (garbage collection example statistics
+are given in {\color{red} Table 9.1} ). Thus if the threads heap has only
+5\%-10\% of its total size free, the thread queues up to do garbage
+collection instead of going to sleep on the \texttt{gc} condition variable.
+This technique forces several garbage collections that might be separated
+by very short periods of time to cluster together, requiring only a single
+suspension for all of the threads to do the several garbage
+collections. {\color{red} Figure 6.5} shows an abstract overview of garbage
+collection and concurrency control.
 

@@ -1525,6 +1525,7 @@ word nbytes,stdsize;
          rp->free = rp->base = (char *)AllocReg(rp->size);
          if (rp->free != NULL) {
             rp->end = rp->base + rp->size;
+            rp->next = rp->prev = NULL;
 #ifdef Concurrent
 	    rp->Tnext=NULL;
 	    rp->Tprev=NULL;

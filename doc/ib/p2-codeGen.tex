@@ -51,48 +51,29 @@ procedure frame is implemented as a C structure embedded within the
 frame of its outer C function (that is, as a local struct
 definition). Code within the outer function can access the procedure
 frame directly. However, continuations must use a pointer to the
-frame. A global C variable, pfp, points to the frame of the currently
+frame. A global C variable, \texttt{pfp}, points to the frame of the currently
 executing procedure. For efficiency, continuations load this pointer
 into a local register variable. The frame for a main procedure might
 have the following declaration.
 
-{\ttfamily\mdseries
-\ \ \ struct PF00\_main \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct p\_frame old\_pfp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ dptr old\_argp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ dptr rslt;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ continuation succ\_cont;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ struct tend\_desc *previous;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ int num;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ struct descrip d[5];}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \} tend;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \};}
+\goodbreak
+\begin{iconcode}
+struct PF00\_main \{\\
+\>struct p\_frame old\_pfp;\\
+\>dptr old\_argp;\\
+\>dptr rslt;\\
+\>continuation succ\_cont;\\
+\>struct \{\\
+\>\>struct tend\_desc *previous;\\
+\>\>int num;\\
+\>\>struct descrip d[5];\\
+\>\>\} tend;\\
+\>\};\\
+\end{iconcode}
 
 \noindent with the definition
 
-{\ttfamily\mdseries
-\ \ \ struct PF00\_main frame;}
+\iconline{ \>struct PF00\_main frame; }
 
 \noindent in the procedure's outer function. A procedure frame always
 contains the following five items: a pointer to the frame of the
@@ -102,13 +83,13 @@ this call, and an array of tended descriptors for this procedure. It
 may also contain C integer variables, C double variables, and string
 and cset buffers for use in converting values. If debugging is
 enabled, additional information is stored in the frame. The structure
-p\_frame is a generic procedure frame containing a single tended
-descriptor. It is used to define the pointer old\_pfp because the
-caller can be any procedure.
+\texttt{p\_frame} is a generic procedure frame containing a single
+tended descriptor. It is used to define the pointer \texttt{old\_pfp}
+because the caller can be any procedure.
 
 The argument pointer, result location, and success continuation of the
 call must be available to the success continuations of the
-procedure. A global C variable, argp, points the argument list for the
+procedure. A global C variable, \texttt{argp}, points the argument list for the
 current call. This current argument list pointer could have been put
 in the procedure frame, but it is desirable to have quick access to
 it. Quick access to the result location and the success continuation
@@ -127,116 +108,52 @@ The final thing provided by the outer function is a \textit{control
 environment} in which code generation starts. In particular, it
 provides the bounding environment for the body of the procedure and
 the implicit failure at the end of the procedure. The following C
-function is the tailored outer function for a procedure named p. The
-procedure has arguments and returns a result. However, it does not
-suspend, so it needs no success continuation.
+function is the tailored outer function for a procedure named
+\texttt{p}. The procedure has arguments and returns a result. However,
+it does not suspend, so it needs no success continuation.
 
-{\ttfamily\mdseries
-\ \ \ static int P01\_p(args, rslt)}
+\goodbreak
+\begin{iconcode}
+static int P01\_p(args, rslt)\\
+dptr args;\\
+dptr rslt;\\
+\{\\
+\>struct PF01\_p frame;\\
+\>register int signal;\\
+\>int i;\\
+\>frame.old\_pfp = pfp;\\
+\>pfp = (struct p\_frame )\&frame;\\
+\>frame.old\_argp = argp;\\
+\>frame.rslt = rslt;\\
+\>frame.succ\_cont = NULL;\\
+\\
+\>for (i = 0; i < 3; ++i)\\
+\>\>frame.tend.d[i].dword = D\_Null;\\
+\>argp = args;\\
+\>frame.tend.num = 3;\\
+\>frame.tend.previous = tend;\\
+\>tend = (struct tend\_desc )\&frame.tend;\\
+\\
+\>\textit{translation of the body of procedure p}\\
+\\
+L10: /* bound */\\
+L4: /* proc fail */\\
+\>tend = frame.tend.previous;\\
+\>pfp = frame.old\_pfp;\\
+\>argp = frame.old\_argp;\\
+\>return A\_Resume;\\
+L8: /* proc return */\\
+\>tend = frame.tend.previous;\\
+\>pfp = frame.old\_pfp;\\
+\>argp = frame.old\_argp;\\
+\>return A\_Continue;\\
+\>\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ dptr args;}
-
-{\ttfamily\mdseries
-\ \ \ dptr rslt;}
-
-{\ttfamily\mdseries
-\ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct PF01\_p frame;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ register int signal;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ int i;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.old\_pfp = pfp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ pfp = (struct p\_frame )\&frame;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.old\_argp = argp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.rslt = rslt;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.succ\_cont = NULL;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ for (i = 0; i {\textless} 3; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ frame.tend.d[i].dword = D\_Null;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ argp = args;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.num = 3;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.previous = tend;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ tend = (struct tend\_desc )\&frame.tend;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{translation of the body of procedure p}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ L10: /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* proc fail */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ tend = frame.tend.previous;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ pfp = frame.old\_pfp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ argp = frame.old\_argp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ L8: /* proc return */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ tend = frame.tend.previous;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ pfp = frame.old\_pfp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ argp = frame.old\_argp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return A\_Continue;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-
+\noindent
 The initialization code reflects the fact that this function has three
 tended descriptors to use for local variables and intermediate
-results. L10 is both the bounding label and the failure label for the
+results. \texttt{L10} is both the bounding label and the failure label for the
 body of the procedure. Code to handle procedure failure and return
 (except for setting the result value) is at the end of the outer
 function. As with bounding labels, the labels for these pieces of code
@@ -254,13 +171,11 @@ Icon's goal-directed evaluation makes the implementation of control
 flow an important issue during code generation. Code for an expression
 is generated while walking the expression's syntax tree in forward
 execution order. During code generation there is always a
-\textit{current failure action}. This action is either
-{\textasciigrave}{\textasciigrave}branch to a label'{}' or
-{\textasciigrave}{\textasciigrave}return a signal'{}'. When the
-translation of a procedure starts, the failure action is to branch to
-the bounding label of the procedure body. The action is changed when
-generators are encountered or while control structures that use
-failure are being translated.
+\textit{current failure action}. This action is either ``branch to a
+label'' or ``return a signal''.  When the translation of a procedure
+starts, the failure action is to branch to the bounding label of the
+procedure body. The action is changed when generators are encountered
+or while control structures that use failure are being translated.
 
 The allocation of temporary variables to intermediate results is
 discussed in more detail later. However, some aspects of it will be
@@ -278,76 +193,63 @@ for other features of the language is similar.
 
 Consider the process of translating the following Icon expression: 
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ return if a = (1 {\textbar} 2) then {\textquotedbl}yes{\textquotedbl} else {\textquotedbl}no{\textquotedbl}}
+\iconline{return if a = (1 | 2) then "yes" else "no" }
 
+\noindent
 When this expression is encountered, there is some current failure
-action, perhaps a branch to a bounding label. The return expression
-produces no value, so whether a result location has been assigned to
-it is of no consequence. If the argument of a return fails, the
-procedure fails. To handle this possibility, the current failure
-action is set to branch to the label for procedure failure before
-translating the argument (in this example, that action is not used).
-The code for the argument is then generated with its result location
-set to the result location of the procedure itself. Finally the result
-location is dereferenced and control is transferred to the procedure
-return label. The dereferencing function, deref, takes two arguments:
-a pointer to a source descriptor and a pointer to a destination
-descriptor.
+action, perhaps a branch to a bounding label. The \texttt{return}
+expression produces no value, so whether a result location has been
+assigned to it is of no consequence. If the argument of a
+\texttt{return} fails, the procedure fails. To handle this
+possibility, the current failure action is set to branch to the label
+for procedure failure before translating the argument (in this
+example, that action is not used).  The code for the argument is then
+generated with its result location set to the result location of the
+procedure itself. Finally the result location is dereferenced and
+control is transferred to the procedure return label. The
+dereferencing function, \texttt{deref}, takes two arguments: a pointer
+to a source descriptor and a pointer to a destination descriptor.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{code for the if expression }}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(rslt, rslt);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L7 /* proc return */;}
+\goodbreak
+\begin{iconcode}
+\>\>\textit{code for the if expression }\\
+\>\>deref(rslt, rslt);\\
+\>\>goto L7 /* proc return */;\\
+\end{iconcode}
 
 
-The control clause of the if expression must be bounded. The code
-implementing the then clause must be generated following the bounding
-label for the control clause. A label must also be set up for the else
-clause with a branch to this label used as the failure action for the
-control clause. Note that the result location of each branch is the
-result location of the if expression which is in turn the result
-location of the procedure. Because neither branch of the if expression
-contains operations that suspend, the two control paths can be brought
-together with branch to a label.
+The control clause of the \texttt{if} expression must be bounded. The
+code implementing the \texttt{then} clause must be generated following
+the bounding label for the control clause. A label must also be set up
+for the \texttt{else} clause with a branch to this label used as the
+failure action for the control clause. Note that the result location
+of each branch is the result location of the \texttt{if} expression
+which is in turn the result location of the procedure. Because neither
+branch of the \texttt{if} expression contains operations that suspend,
+the two control paths can be brought together with a branch to a
+label.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{code for control clause}}
+\goodbreak
+\begin{iconcode}
+\>\>\textit{code for control clause}\\
+\>L4: /* bound */\\
+\>\>rslt->vword.sptr = "yes";\\
+\>\>rslt->dword = 3;\\
+\>\>goto L6 /* end if */;\\
+\>L5: /* else */\\
+\>\>rslt->vword.sptr = "no";\\
+\>\>rslt->dword = 2;\\
+\>L6: /* end if */\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ L4: /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}vword.sptr = {\textquotedbl}yes{\textquotedbl};}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}dword = 3;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L6 /* end if */;}
-
-{\ttfamily\mdseries
-\ \ \ L5: /* else */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}vword.sptr = {\textquotedbl}no{\textquotedbl};}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}dword = 2;}
-
-{\ttfamily\mdseries
-\ \ \ L6: /* end if */}
-
+\noindent
 Using a branch and a label to bring together the two control paths of
-the if expression is an optimization. If the then or the else clauses
-contain operations that suspend, the general continuation model must
-be used. In this model, the code following the if expression is put in
-a success continuation, which is then called at the end of both the
-code for the then clause and the code for the else clause.
+the \texttt{if} expression is an optimization. If the \texttt{then} or
+the \texttt{else} clauses contain operations that suspend, the general
+continuation model must be used. In this model, the code following the
+\texttt{if} expression is put in a success continuation, which is then
+called at the end of both the code for the \texttt{then} clause and
+the code for the \texttt{else} clause.
 
 Next consider the translation of the control clause. The numeric
 comparison operator takes two operands. In this translation, the
@@ -355,228 +257,119 @@ standard calling conventions are used for the library routine
 implementing the operator. Therefore, the operands must be in an array
 of descriptors. This array is allocated as a sub-array of the tended
 descriptors for the procedure. In this example, tended location 0 is
-occupied by the local variable, a. Tended locations 1 and 2 are free
+occupied by the local variable, \texttt{a}. Tended locations 1 and 2 are free
 to be allocated as the arguments to the comparison operator. The code
 for the first operand simply builds a variable reference.
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].dword = D\_Var;}
+\goodbreak
+\begin{iconcode}
+\>frame.tend.d[1].dword = D\_Var;\\
+\>frame.tend.d[1].vword.descptr = \&frame.tend.d[0] /* a */;\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].vword.descptr = \&frame.tend.d[0] /* a */;}
-
+\noindent
 However, the second operand is alternation. This is a generator and
 requires a success continuation. In this example, the continuation is
-given the name P02\_main (the Icon expression is part of the main
+given the name \texttt{P02\_main} (the Icon expression is part of the main
 procedure). The continuation contains the invocation of the run-time
 function implementing the comparison operator and the end of the
-bounded expression for the control clause of the if. The function
-O0o\_numeq implements the comparison operator. The if expression
+bounded expression for the control clause of the \texttt{if}. The function
+\texttt{O0o\_numeq} implements the comparison operator. The \texttt{if} expression
 discards the operator's result. This is accomplished by using the
-variable trashcan as the result location for the call. The compiler
+variable \texttt{trashcan} as the result location for the call. The compiler
 knows that this operation does not suspend, so it passes a null
 continuation to the function. The end of the bounded expression
 consists of a transfer of control to the bounding label. This is
 accomplished by returning a signal. The continuation is
 
-{\ttfamily\mdseries
-\ \ \ static int P02\_main()}
+\goodbreak
+\begin{iconcode}
+static int P02\_main()\\
+\{\\
+register struct PF00\_main *rpfp;\\
 
-{\ttfamily\mdseries
-\ \ \ \{}
+rpfp = (struct PF00\_main *)pfp;\\
+switch (O0o\_numeq(2, \&(rpfp->tend.d[1]), \&trashcan, (continuation)NULL))\\
+\>\{\\
+\>case A\_Continue:\\
+\>\>break;\\
+\>case A\_Resume:\\
+\>\>return A\_Resume;\\
+\>\}\\
+\ return 4; /* bound */\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ register struct PF00\_main *rpfp;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ rpfp = (struct PF00\_main *)pfp;}
-
-{\ttfamily\mdseries
-\ \ \ switch (O0o\_numeq(2, \&(rpfp-{\textgreater}tend.d[1]), \&trashcan, (continuation)NULL))}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Continue:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ break;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ return 4; /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \ \}}
-
-
+\noindent
 Each alternative of the alternation must compute the value of its
 subexpression and call the success continuation. The failure action
 for the first alternative is to branch to the second alternative. The
 failure action of the second alternative is the failure action of the
 entire alternation expression. In this example, the failure action is
-to branch to the else label of the if expression. In each alterative,
-a bounding signal from the continuation must be converted into a
-branch to the bounding label. Note that this bounding signal indicates
-that the control expression succeeded.
+to branch to the \texttt{else} label of the \texttt{if} expression. In
+each alterative, a bounding signal from the continuation must be
+converted into a branch to the bounding label. Note that this bounding
+signal indicates that the control expression succeeded.
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ switch (P02\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* alt */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case 4 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* alt */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].vword.integr = 2;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (P02\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L5 /* else */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case 4 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[2].dword = D\_Integer;\\
+frame.tend.d[2].vword.integr = 1;\\
+switch (P02\_main()) \{\\
+\>case A\_Resume:\\
+\>\>goto L2 /* alt */;\\
+\>case 4 /* bound */:\\
+\>\>goto L4 /* bound */;\\
+\>\}\\
+L2: /* alt */\\
+\>frame.tend.d[2].dword = D\_Integer;\\
+\>frame.tend.d[2].vword.integr = 2;\\
+\>switch (P02\_main()) \{\\
+\>\>case A\_Resume:\\
+\>\>\>goto L5 /* else */;\\
+\>\>case 4 /* bound */:\\
+\>\>\>goto L4 /* bound */;\\
+\>\>\}\\
+\end{iconcode}
 
 
-The code for the entire return expression is obtained by putting
+The code for the entire \texttt{return} expression is obtained by putting
 together all the pieces. The result is the following code (the code
-for P02\_main is not repeated).
+for \texttt{P02\_main} is not repeated).
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].dword = D\_Var;}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[1].dword = D\_Var;\\
+frame.tend.d[1].vword.descptr = \&frame.tend.d[0] /* a */;\\
+frame.tend.d[2].dword = D\_Integer;\\
+frame.tend.d[2].vword.integr = 1;\\
+switch (P02\_main()) \{\\
+\>case A\_Resume:\\
+\>\>goto L2 /* alt */;\\
+\>case 4 /* bound */:\\
+\>\>goto L4 /* bound */;\\
+\>\}\\
+L2: /* alt */\\
+\>frame.tend.d[2].dword = D\_Integer;\\
+\>frame.tend.d[2].vword.integr = 2;\\
+\>switch (P02\_main()) \{\\
+\>\>case A\_Resume:\\
+\>\>\>goto L5 /* else */;\\
+\>\>case 4 /* bound */:\\
+\>\>\>goto L4 /* bound */;\\
+\>\>\}\\
+L4: /* bound */\\
+\>rslt->vword.sptr = yes;\\
+\>rslt->dword = 3;\\
+\>goto L6 /* end if */;\\
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].vword.descptr = \&frame.tend.d[0] /* a */;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ switch (P02\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* alt */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case 4 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* alt */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].vword.integr = 2;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (P02\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L5 /* else */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case 4 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}vword.sptr = yes;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}dword = 3;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L6 /* end if */;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ L5: /* else */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}vword.sptr = no;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rslt-{\textgreater}dword = 2;}
-
-{\ttfamily\mdseries
-\ \ \ L6: /* end if */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(rslt, rslt);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L7 /* proc return */;}
+L5: /* else */\\
+\>rslt->vword.sptr = no;\\
+\>rslt->dword = 2;\\
+L6: /* end if */\\
+\>deref(rslt, rslt);\\
+\>goto L7 /* proc return */;\\
+\end{iconcode}
 
 
 \section[20.2 Signal Handling]{20.2 Signal Handling}
@@ -586,218 +379,134 @@ what signals may be returned from a call. These signals may be either
 directly produced by the operation (or procedure) being called or they
 may originate from a success continuation. Note that either the
 operation or the continuation may be missing from a call, but not
-both. The signals produced directly by an operation are A\_Resume,
-A\_Continue, and A\_FallThru (this last signal is only used internally
-within in-line code).
+both. The signals produced directly by an operation are
+\texttt{A\_Resume}, \texttt{A\_Continue}, and \texttt{A\_FallThru}
+(this last signal is only used internally within in-line code).
 
 The signals produced by a success continuation belong to one of three
-categories: A\_Resume, signals corresponding to labels within the
+categories: \texttt{A\_Resume}, signals corresponding to labels within the
 procedure the continuation belongs to, and signals corresponding to
 labels in procedures farther down in the call chain. The last category
 only occurs when the procedure suspends. The success continuation for
 the procedure call may return a signal belonging to the calling
 procedure. This is demonstrated in the following example (the
-generated code has been
-{\textasciigrave}{\textasciigrave}cleaned-up'{}' a little to make it
-easier to follow).  The Icon program being translated is
+generated code has been ``cleaned-up'' a little to make it easier to
+follow).  The Icon program being translated is
 
-{\ttfamily\mdseries
-\ \ \ procedure main()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ write(p())}
-
-{\ttfamily\mdseries
-\ \ \ end}
-
-{\ttfamily\mdseries
-\ \ \ procedure p()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ suspend 1 to 10}
-
-{\ttfamily\mdseries
-\ \ \ end}
+\goodbreak
+\begin{iconcode}
+procedure main()\\
+\>write(p())\\
+end\\
+procedure p()\\
+\>suspend 1 to 10\\
+end\\
+\end{iconcode}
 
 
-The generative procedure p is called in a bounded context. The code
+The generative procedure \texttt{p} is called in a bounded context. The code
 generated for the call is
 
-{\ttfamily\mdseries
-\ \ \ switch (P01\_p(\&frame.tend.d[0], P05\_main)) \{}
+\goodbreak
+\begin{iconcode}
+switch (P01\_p(\&frame.tend.d[0], P05\_main)) \{\\
+\>case 7 /* bound */:\\
+\>\>goto L7 /* bound */;\\
+\>case A\_Resume:\\
+\>\>goto L7 /* bound */;\\
+\>\}\\
+L7: /* bound */\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ case 7 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L7 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L7 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L7: /* bound */}
-
-
+\noindent
 This call uses the following success continuation. The continuation
-writes the result of the call to p then signals the end of the bounded
+writes the result of the call to \texttt{p} then signals the end of the bounded
 expression.
 
-{\ttfamily\mdseries
-\ \ \ static int P05\_main() \{}
+\goodbreak
+\begin{iconcode}
+static int P05\_main() \{\\
+\>register struct PF00\_main *rpfp;\\
+\\
+\>rpfp = (struct PF00\_main )pfp;\\
+\>F0c\_write(1, \&rpfp->tend.d[0], \&trashcan, (continuation)NULL);\\
+\>return 7; /* bound */\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ register struct PF00\_main *rpfp;}
+\noindent
+The \texttt{to} operator in procedure \texttt{p} needs a success
+continuation that implements procedure suspension. Suspension is
+implemented by switching to the old procedure frame pointer and old
+argument pointer, then calling the success continuation for the call
+to \texttt{p}. The success continuation is accessed with the
+expression \texttt{rpfp--{\textgreater}succ\_cont}.  In this example,
+the continuation will only be the \texttt{function P05\_main}. The
+suspend must check the signal returned by the procedure call's success
+continuation. However, the code generator does not try to determine
+exactly what signals might be returned by a continuation belonging to
+another procedure. Such a continuation may return an
+\texttt{A\_Resume} signal or a signal belonging to some procedure
+farther down in the call chain. In this example, bounding signal 7
+will be returned and it belongs to \texttt{main}.
 
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ rpfp = (struct PF00\_main )pfp;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ F0c\_write(1, \&rpfp-{\textgreater}tend.d[0], \&trashcan, (continuation)NULL);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return 7; /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \}}
-
-
-The to operator in procedure p needs a success continuation that
-implements procedure suspension. Suspension is implemented by
-switching to the old procedure frame pointer and old argument pointer,
-then calling the success continuation for the call to p. The success
-continuation is accessed with the expression
-rpfp-{\textgreater}succ\_cont.  In this example, the continuation will
-only be the function P05\_main. The suspend must check the signal
-returned by the procedure call's success continuation. However, the
-code generator does not try to determine exactly what signals might be
-returned by a continuation belonging to another procedure. Such a
-continuation may return an A\_Resume signal or a signal belonging to
-some procedure farther down in the call chain. In this example,
-bounding signal 7 will be returned and it belongs to main.
-
-If the call's success continuation returns A\_Resume, the procedure
+If the call's success continuation returns \texttt{A\_Resume}, the procedure
 frame pointer and argument pointer must be restored, and the current
 failure action must be executed. In this case, that action is to
-return an A\_Resume signal to the to operator. If the call's success
+return an \texttt{A\_Resume} signal to the \texttt{to} operator. If the call's success
 continuation returns any other signal, that signal must be propagated
 back through the procedure call. The following function is the success
-continuation for the to operator.
+continuation for the \texttt{to} operator.
 
-{\ttfamily\mdseries
-\ \ \ static int P03\_p()}
-
-{\ttfamily\mdseries
-\ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ register int signal;}
-
-{\ttfamily\mdseries
-\ \ \ register struct PF01\_p *rpfp;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ rpfp = (struct PF01\_p *)pfp;}
-
-{\ttfamily\mdseries
-\ \ \ deref(rpfp-{\textgreater}rslt, rpfp-{\textgreater}rslt);}
-
-{\ttfamily\mdseries
-\ \ \ pfp = rpfp-{\textgreater}old\_pfp;}
-
-{\ttfamily\mdseries
-\ \ \ argp = rpfp-{\textgreater}old\_argp;}
+\goodbreak
+\begin{iconcode}
+static int P03\_p()\\
+\{\\
+\>register int signal;\\
+\>register struct PF01\_p *rpfp;\\
+\\
+\>rpfp = (struct PF01\_p *)pfp;\\
+\>deref(rpfp->rslt, rpfp->rslt);\\
+\>pfp = rpfp->old\_pfp;\\
+\>argp = rpfp->old\_argp;\\
+\\
+\>signal = (*rpfp->succ\_cont)();\\
+\>if (signal != A\_Resume) \{\\
+\>\>return signal;\\
+\>\>\}\\
+\>pfp = (struct p\_frame *)rpfp;\\
+\>argp = NULL;\\
+\>return A\_Resume;\\
+\}\\
+\end{iconcode}
 
 
-\bigskip
+The following code implements the call to the \texttt{to}
+operator. The signal handling code associated with the call must pass
+along any signal from the procedure call's success continuation. These
+signals are recognized by the fact that the procedure frame for the
+calling procedure is still in effect. At this point, the signal is
+propagated out of the procedure \texttt{p}. Because the procedure
+frame is about to be removed from the C stack, the descriptors it
+contains must be removed from the tended list.
 
-{\ttfamily\mdseries
-\ \ \ signal = (*rpfp-{\textgreater}succ\_cont)();}
-
-{\ttfamily\mdseries
-\ \ \ if (signal != A\_Resume) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return signal;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ pfp = (struct p\_frame *)rpfp;}
-
-{\ttfamily\mdseries
-\ \ \ argp = NULL;}
-
-{\ttfamily\mdseries
-\ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \}}
-
-
-The following code implements the call to the to operator. The signal
-handling code associated with the call must pass along any signal from
-the procedure call's success continuation. These signals are
-recognized by the fact that the procedure frame for the calling
-procedure is still in effect. At this point, the signal is propagated
-out of the procedure p. Because the procedure frame is about to be
-removed from the C stack, the descriptors it contains must be removed
-from the tended list.
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].vword.integr = 10;}
-
-{\ttfamily\mdseries
-\ \ \ signal = O0k\_to(2, \&frame.tend.d[0], rslt, P03\_p);}
-
-{\ttfamily\mdseries
-\ \ \ if (pfp != (struct p\_frame )\&frame) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ tend = frame.tend.previous;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return signal;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ switch (signal) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* bound */}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[0].dword = D\_Integer;\\
+frame.tend.d[0].vword.integr = 1;\\
+frame.tend.d[1].dword = D\_Integer;\\
+frame.tend.d[1].vword.integr = 10;\\
+signal = O0k\_to(2, \&frame.tend.d[0], rslt, P03\_p);\\
+if (pfp != (struct p\_frame )\&frame) \{\\
+\>tend = frame.tend.previous;\\
+\>return signal;\\
+\>\}\\
+switch (signal) \{\\
+\>case A\_Resume:\\
+\>\>goto L2 /* bound */;\\
+\>\}\\
+L2: /* bound */\\
+\end{iconcode}
 
 
 So far, this discussion has not addressed the question of how the code
@@ -819,7 +528,7 @@ success continuations.
 The code generator constructs a call graph of the continuations for a
 procedure. Some of these calls are indirect calls to a continuation
 through an operation. However, the only effect of an operation on
-signals returned by a continuation is to intercept A\_Resume
+signals returned by a continuation is to intercept \texttt{A\_Resume}
 signals. All other signals are just passed along. This is true even if
 the operation is a procedure. This call graph of continuations does
 not contain the procedure call graph nor does it contain continuations
@@ -838,7 +547,7 @@ point it processes a call, it has determined what signals might be
 returned by the called continuation. It uses this information to
 complete the signal handling code associated with the call and to
 determine what signals might be passed along to continuations higher
-up the DAG. If a continuation contains code for a suspend, the fix-up
+up the DAG. If a continuation contains code for a \texttt{suspend}, the fix-up
 pass notes that the continuation may return a \textit{foreign} signal
 belonging to another procedure call. As explained above, foreign
 signals are handled by special code that checks the procedure frame
@@ -893,16 +602,15 @@ first-fit algorithm to find a large enough subarray that does not have
 a conflicting allocation. Consider the problem of allocating temporary
 variables to the expression
 
-{\ttfamily\mdseries
-\ \ \ f1(f2(f3(x, f4())), y)}
+\iconline{ \>f1(f2(f3(x, f4())), y) }
 
-\noindent where f1 can fail and f4 is a generator. The syntax tree for
-this expression is shown below. Note that invocation nodes show the
-operation as part of the node label and not as the first operand to
-general invocation. This reflects the direct invocation optimization
-that is usually performed on invocations. Each node in the graph is
-given a numeric label. These labels increase in value in forward
-execution order.
+\noindent where \texttt{f1} can fail and \texttt{f4} is a
+generator. The syntax tree for this expression is shown below. Note
+that invocation nodes show the operation as part of the node label and
+not as the first operand to general invocation. This reflects the
+direct invocation optimization that is usually performed on
+invocations. Each node in the graph is given a numeric label. These
+labels increase in value in forward execution order.
 
 {\centering\selectlanguage{english}
 \includegraphics[width=3.0in,height=3.0in]{kw/figure8-1.png}
@@ -911,10 +619,10 @@ execution order.
 The following figure shows the operations in forward execution order
 with lines on the left side of the diagram showing the lifetime of
 intermediate values. This represents the output of the liveness
-analysis phase of the compiler. Because f4 can be resumed by f1, the
-value of the expression x has a lifetime that extends to the
-invocation of f1. The extended portion of the lifetime is indicated
-with a dotted line.
+analysis phase of the compiler. Because \texttt{f4} can be resumed by
+\texttt{f1}, the value of the expression \texttt{x} has a lifetime
+that extends to the invocation of \texttt{f1}. The extended portion of
+the lifetime is indicated with a dotted line.
 
 {\centering\selectlanguage{english}
 \includegraphics[width=1.3in,height=1.6in]{kw/figure8-2.png}
@@ -941,17 +649,17 @@ corresponding element is set to \textit{I}.
 Temporary variables are reserved while walking down the syntax
 tree. The tree illustrated below on the left shows the state of
 allocation after temporary variables have been allocated for the
-operands of f1. Two contiguous variables are needed. All variables are
-free, so the first-fit algorithm allocates variables 0 and 1. The
-status array is updated to indicate that these variables are reserved
-for nodes \textit{4} and \textit{5} respectively, and the nodes are
-annotated with these variable numbers. The lifetime information in the
-previous figure indicates that these variables should be deallocated
-after f1 is executed, so the deallocation array for node \textit{6} is
-updated.
+operands of \texttt{f1}. Two contiguous variables are needed. All
+variables are free, so the first-fit algorithm allocates variables 0
+and 1. The status array is updated to indicate that these variables
+are reserved for nodes \textit{4} and \textit{5} respectively, and the
+nodes are annotated with these variable numbers. The lifetime
+information in the previous figure indicates that these variables
+should be deallocated after \texttt{f1} is executed, so the
+deallocation array for node \textit{6} is updated.
 
 The next step is the allocation of a temporary variable to the operand
-of f2. The intermediate value has a lifetime extending from node
+of \texttt{f2}. The intermediate value has a lifetime extending from node
 \textit{3} to node \textit{4}. This conflicts with the allocation of
 variable 0, but not the allocation of variable 1. Therefore, variable
 1 is allocated to node \textit{3} and the deallocation list for node

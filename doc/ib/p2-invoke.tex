@@ -33,36 +33,30 @@ standard implementation or a tailored implementation.  If the compiler
 decides to produce a tailored implementation, the caller of the
 procedure is responsible for dereferencing. When type inferencing
 determines that an operand is not a variable reference, no
-dereferencing code is generated. Suppose p is a procedure that takes
-one argument and always fails. If P01\_p is the tailored C function
-implementing p, then it takes one argument: a pointer to a descriptor
-containing the dereferenced Icon argument.  Without using type
-information, the call p(3) translates into
+dereferencing code is generated. Suppose \texttt{p} is a procedure
+that takes one argument and always fails. If \texttt{P01\_p} is the
+tailored C function implementing \texttt{p}, then it takes one
+argument: a pointer to a descriptor containing the dereferenced Icon
+argument.  Without using type information, the call \texttt{p(3)}
+translates into
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0].dword = D\_Integer;}
+\goodbreak
+\begin{iconcode}
+\>frame.tend.d[0].dword = D\_Integer;\\
+\>frame.tend.d[0].vword.integr = 3;\\
+\>deref(\&frame.tend.d[0], \&frame.tend.d[0]);\\
+\>P01\_p(\&frame.tend.d[0]);\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0].vword.integr = 3;}
+\noindent
+With the use of type information, the call to \texttt{deref} is eliminated: 
 
-{\ttfamily\mdseries
-\ \ \ deref(\&frame.tend.d[0], \&frame.tend.d[0]);}
-
-{\ttfamily\mdseries
-\ \ \ P01\_p(\&frame.tend.d[0]);}
-
-
-With the use of type information, the call to deref is eliminated: 
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0].vword.integr = 3;}
-
-{\ttfamily\mdseries
-\ \ \ P01\_p(\&frame.tend.d[0]);}
-
+\goodbreak
+\begin{iconcode}
+\>frame.tend.d[0].dword = D\_Integer;\\
+\>frame.tend.d[0].vword.integr = 3;\\
+\>P01\_p(\&frame.tend.d[0]);\\
+\end{iconcode}
 
 \section[22.2 Invocation and In-lining of Built-in Operations]{22.2 Invocation and In-lining of Built-in Operations}
 
@@ -81,192 +75,134 @@ checking and conversions of the operation (although they may be
 optimized away during the tailoring process). However, detailed code
 is placed in-line only if it is specified with an inline statement in
 the run-time system. If the detailed code is specified with a body
-statement, the {\textasciigrave}{\textasciigrave}in-line'{}' code is a
-function call to a routine in the run-time library. The difference can
-be seen by comparing the code produced by compiling the expression
-\~{}x to that produced by compiling the expression /x. The definition
+statement, the ``in-line'' code is a function call to a routine in the
+run-time library. The difference can be seen by comparing the code
+produced by compiling the expression \texttt{\textasciitilde{}x} to
+that produced by compiling the expression \texttt{/x}. The definition
 in the run-time implementation language of cset complement is
 
-{\ttfamily\mdseries
-\ \ \ operator\{1\} \~{} compl(x)}
+\goodbreak
+\begin{iconcode}
+\>operator\{1\} \textasciitilde{} compl(x)\\
+\>\>if !cnv:tmp\_cset(x) then\\
+\>\>\>runerr(104, x)\\
+\>\>abstract \{ return cset \}\\
+\>\>body \{\\
+\>\>\textit{...}\\
+\>\>\}\\
+\>\ end\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ if !cnv:tmp\_cset(x) then}
+\noindent
+The conversion to \texttt{tmp\_cset} is a conversion to a cset that
+does not use space in the block region. Instead the cset is
+constructed in a temporary local buffer. The data base entry for the
+operation indicates that the argument must be dereferenced. The entry
+has a C translation of the type conversion code with a call to the
+support routine, \texttt{cnv\_tcset}, to do the actual
+conversion. \texttt{cnv\_tcset} takes three arguments: a buffer, a
+source descriptor, and a destination descriptor. The entry in the data
+base has a call to the function \texttt{O160\_compl} in place of the
+body statement. This function takes as arguments the argument and the
+result location of the operation. The code generator ignores the
+abstract clause. The in-line code for \texttt{\textasciitilde{}x} is
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ runerr(104, x)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ abstract \{ return cset \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ body \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{...}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ end}
-
-The conversion to tmp\_cset is a conversion to a cset that does not
-use space in the block region. Instead the cset is constructed in a
-temporary local buffer. The data base entry for the operation
-indicates that the argument must be dereferenced. The entry has a C
-translation of the type conversion code with a call to the support
-routine, cnv\_tcset, to do the actual conversion. cnv\_tcset takes
-three arguments: a buffer, a source descriptor, and a destination
-descriptor. The entry in the data base has a call to the function
-O160\_compl in place of the body statement. This function takes as
-arguments the argument and the result location of the operation. The
-code generator ignores the abstract clause. The in-line code for \~{}x
-is
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[3].dword = D\_Var;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[3].vword.descptr = \&frame.tend.d[0] /* x */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(\&frame.tend.d[3], \&frame.tend.d[3]);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[3]), \&(frame.tend.d[3])))}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L1 /* then: compl */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ err\_msg(104, \&(frame.tend.d[3]));}
-
-{\ttfamily\mdseries
-\ \ \ L1: /* then: compl */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ O160\_compl(\&(frame.tend.d[3]) , \&frame.tend.d[2]);}
+\goodbreak
+\begin{iconcode}
+\>\>frame.tend.d[3].dword = D\_Var;\\
+\>\>frame.tend.d[3].vword.descptr = \&frame.tend.d[0] /* x */;\\
+\>\>deref(\&frame.tend.d[3], \&frame.tend.d[3]);\\
+\>\>if (cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[3]), \&(frame.tend.d[3])))\\
+\>\>\>goto L1 /* then: compl */;\\
+\>\>err\_msg(104, \&(frame.tend.d[3]));\\
+\>L1: /* then: compl */\\
+\>\>O160\_compl(\&(frame.tend.d[3]) , \&frame.tend.d[2]);\\
+\end{iconcode}
 
 
-The following is the definition of the {\textasciigrave}/'
-operator. Note that both undereferenced and dereferenced versions of
-the argument are used.
+The following is the definition of the ``\texttt{/}'' operator. Note
+that both undereferenced and dereferenced versions of the argument are
+used.
 
-{\ttfamily\mdseries
-operator\{0,1\} / null(underef x -{\textgreater} dx)}
+\goodbreak
+\begin{iconcode}
+operator\{0,1\} / null(underef x -> dx)\\
+\>abstract \{\\
+\>\>return type(x)\\
+\>\>\}\\
+\>if is:null(dx) then\\
+\>\>inline \{\\
+\>\>\>return x;\\
+\>\>\>\}\\
+\>else inline \{\\
+\>\>fail;\\
+\>\>\}\\
+end\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return type(x)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ if is:null(dx) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ inline \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return x;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ else inline \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ fail;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-end}
-
-
+\noindent
 In this operation, all detailed code is specified with inline
-statements. The generated code for /x follows. Note that the order of
-the then and else clauses is reversed to simplify the test. L3 is the
-failure label of the expression. The return is implemented as an
-assignment to the result location, frame.tend.d[2], with execution
-falling off the end of the in-line code.
+statements. The generated code for \texttt{/x} follows. Note that the
+order of the \texttt{then} and \texttt{else} clauses is reversed to
+simplify the test. \texttt{L3} is the failure label of the expression.
+The \texttt{return} is implemented as an assignment to the result
+location, \texttt{frame.tend.d[2]}, with execution falling off the end
+of the in-line code.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[3].dword = D\_Var;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[3].vword.descptr = \&frame.tend.d[0] /* x */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(\&frame.tend.d[3], \&frame.tend.d[4]);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (frame.tend.d[4].dword == D\_Null)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* then: null */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L3 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* then: null */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2] = frame.tend.d[3];}
+\goodbreak
+\begin{iconcode}
+\>\>frame.tend.d[3].dword = D\_Var;\\
+\>\>frame.tend.d[3].vword.descptr = \&frame.tend.d[0] /* x */;\\
+\>\>deref(\&frame.tend.d[3], \&frame.tend.d[4]);\\
+\>\>if (frame.tend.d[4].dword == D\_Null)\\
+\>\>\>goto L2 /* then: null */;\\
+\>\>goto L3 /* bound */;\\
+\>L2: /* then: null */\\
+\>\>frame.tend.d[2] = frame.tend.d[3];\\
+\end{iconcode}
 
 
-If type inferencing determines a unique type for x in each of these
-expressions, the type checking is eliminated from the code. Suppose
-type inferencing determines that x can only be of type cset in the
-expression
+If type inferencing determines a unique type for \texttt{x} in each of
+these expressions, the type checking is eliminated from the code.
+Suppose type inferencing determines that \texttt{x} can only be of type
+cset in the expression
 
+\iconline{ \>a := \textasciitilde{}x }
 
-\ \ \ a := \~{}x
-
-
+\noindent
 If parameter passing and assignment optimizations (these are explained
 below) are combined with the elimination of type checking, the
 resulting code is
 
-{\ttfamily\mdseries
-\ \ \ O160\_compl(\&(frame.tend.d[0] /* x */), \&frame.tend.d[1] /* a */);}
+\iconline{ \>O160\_compl(\&(frame.tend.d[0] /* x */), \&frame.tend.d[1] /* a */); }
 
-
+\noindent
 The form of this translated code meets the goals of the compiler
 design for the invocation of a complicated operation: a simple call to
 a type-specific C function with minimum parameter passing. The
 implementation language for run-time operations requires that type
-conversions be specified in the control clause of an if
+conversions be specified in the control clause of an \texttt{if}
 statement. However, some conversions, such as converting a string to a
 cset, are guaranteed to succeed. If the code generator recognizes one
-of these conversions, it eliminates the if statement. The only code
-generated is the conversion and the code to be executed when the
-conversion succeeds. Suppose type inferencing determines that x in the
-preceding example can only be a string. Then the generated code for
-the example is
+of these conversions, it eliminates the \texttt{if} statement. The
+only code generated is the conversion and the code to be executed when
+the conversion succeeds. Suppose type inferencing determines that
+\texttt{x} in the preceding example can only be a string. Then the
+generated code for the example is
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2] = frame.tend.d[0] /* x */;}
-
-{\ttfamily\mdseries
-\ \ \ cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[2]), \&(frame.tend.d[2]));}
-
-{\ttfamily\mdseries
-\ \ \ O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] / a /);}
+\goodbreak
+\begin{iconcode}
+\>frame.tend.d[2] = frame.tend.d[0] /* x */;\\
+\>cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[2]), \&(frame.tend.d[2]));\\
+\>O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] / a /);\\
+\end{iconcode}
 
 
 \section[22.3 Heuristic for Deciding to In-line]{22.3 Heuristic for Deciding to In-line}
 
 The in-line code for the operators shown so far in the section is
 relatively small. However, the untailored in-line code for operations
-like the element generation operator, !, is large. If tailoring the
+like the element generation operator, \texttt{!}, is large. If tailoring the
 code does not produce a large reduction in size, it is better to
 generate a call to the C function in the run-time library that uses
 the standard calling conventions. A heuristic is needed for deciding
@@ -276,50 +212,40 @@ when to use in-line code and when to call the standard C function.
 A simple heuristic is to use in-line code only when all type checking
 and conversions can be eliminated. However, this precludes the
 generation of in-lining code in some important situations. The
-operator / is used to direct control flow.  It should always be used
+operator \texttt{/} is used to direct control flow.  It should always be used
 with an operand whose type can vary at run time, and the generated
 code should always be in-lined. Consider the Icon expression
 
-{\ttfamily\mdseries
-\ \ \ if /x then x := }
+\iconline{if /x then x := ""}
 
+\noindent
 The compiler applies parameter-passing optimizations to the
-sub-expression /x. It also eliminates the return value of the
+sub-expression \texttt{/x}. It also eliminates the return value of the
 operator, because the value is discarded. An implementation convention
 for operations allows the compiler to discard the expression that
 computes the return value. The convention requires that a return
 expression of an operation not contain user-visible side effects
 (storage allocation is an exception to the rule; it is visible, but
 the language makes no guarantees as to when it will occur). The code
-for /x is reduced to a simple type check. The code generated for the
+for \texttt{/x} is reduced to a simple type check. The code generated for the
 if expression is
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ if ((frame.tend.d[0] /* x */).dword == D\_Null)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L3 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[0] /* x */.vword.sptr = ;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[0] /* x */.dword = 0;}
-
-{\ttfamily\mdseries
-\ \ \ L3: /* bound */}
+\goodbreak
+\begin{iconcode}
+\>\>if ((frame.tend.d[0] /* x */).dword == D\_Null)\\
+\>\>\>goto L2 /* bound */;\\
+\>\>goto L3 /* bound */;\\
+\>L2: /* bound */\\
+\>\>frame.tend.d[0] /* x */.vword.sptr = ;\\
+\>\>frame.tend.d[0] /* x */.dword = 0;\\
+\>L3: /* bound */\\
+\end{iconcode}
 
 
 To accommodate expressions like those in the preceding example, the
 heuristic used in the compiler is to produce tailored in-line code
 when that code contains no more than one type check. Only conversions
-retaining their if statements are counted as a type checks. This
+retaining their \texttt{if} statements are counted as a type checks. This
 simple heuristic produces reasonable code. Future work includes
 examining more sophisticated heuristics.
 
@@ -333,140 +259,81 @@ continuation, it is better not to put the code in a continuation. The
 code should be generated at the site of the suspension. Consider the
 expression
 
-{\ttfamily\mdseries
-\ \ \ every p(1 to 10)}
+\iconline{ \>every p(1 to 10) }
 
+\noindent
+The implementation of the \texttt{to} operator is 
 
-The implementation of the to operator is 
+\goodbreak
+\begin{iconcode}
+\>operator\{*\} ... to(from, to)\\
+\>\>/*\\
+\>\>\ * arguments must be integers.\\
+\>\>\ */\\
+\>\>if !cnv:C\_integer(from) then\\
+\>\>\>runerr(101, from)\\
+\>\>if !cnv:C\_integer(to) then\\
+\>\>\>runerr(101, to)\\
+\>\>abstract \{\\
+\>\>\>return integer\\
+\>\>\>\}\\
+\>\>inline \{\\
+\>\>\>for ( ; from <= to; ++from) \{\\
+\>\>\>\>suspend C\_integer from;\\
+\>\>\>\>\}\\
+\>\>\>fail;\\
+\>\>\>\}\\
+\>end\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ operator\{\} ... to(from, to)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ /*}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ * arguments must be integers.}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if !cnv:C\_integer(from) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ runerr(101, from)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if !cnv:C\_integer(to) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ runerr(101, to)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return integer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ inline \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ for ( ; from {\textless}= to; ++from) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ suspend C\_integer from;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ fail;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ end}
-
-
+\noindent
 The arguments are known to be integers, so the tailored version
-consists of just the code in the inline statement. The for statement
-is converted to gotos and conditional gotos, so the control flow
-optimizer can handle it (this conversion is done by rtt before putting
-the code in the data base). The suspend is translated into code to set
-the result value and a failure label used for the code of the rest of
-the bounded expression. This code is generated before the label and
-consists of a call to the procedure p and the failure introduced by
-the every expression. The generated code follows. The failure for the
-every expression is translated into goto L4, where L4 is the failure
-label introduced by the suspend. The control flow optimizer removes
-both the goto and the label. They are retained here to elucidate the
+consists of just the code in the inline statement. The \texttt{for}
+statement is converted to \texttt{goto}s and conditional
+\texttt{goto}s, so the control flow optimizer can handle it (this
+conversion is done by \texttt{rtt} before putting the code in the data
+base). The \texttt{suspend} is translated into code to set the result
+value and a failure label used for the code of the rest of the bounded
+expression. This code is generated before the label and consists of a
+call to the procedure \texttt{p} and the failure introduced by the
+\texttt{every} expression. The generated code follows. The failure for
+the \texttt{every} expression is translated into \texttt{goto L4},
+where \texttt{L4} is the failure label introduced by the
+\texttt{suspend}. The control flow optimizer removes both the
+\texttt{goto} and the label. They are retained here to elucidate the
 code generation process.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[1].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[1].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].vword.integr = 10;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ L1: /* within: to */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (!(frame.tend.d[1].vword.integr {\textless}= frame.tend.d[2].vword.integr) )}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[0].vword.integr = frame.tend.d[1].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[0].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ P01\_p(\&frame.tend.d[0]);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L4 /* end suspend: to */;}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* end suspend: to */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ ++frame.tend.d[1].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L1 /* within: to */;}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* bound */}
+\goodbreak
+\begin{iconcode}
+\>\>frame.tend.d[1].dword = D\_Integer;\\
+\>\>frame.tend.d[1].vword.integr = 1;\\
+\>\>frame.tend.d[2].dword = D\_Integer;\\
+\>\>frame.tend.d[2].vword.integr = 10;\\
+\\
+\>L1: /* within: to */\\
+\>\>if (!(frame.tend.d[1].vword.integr <= frame.tend.d[2].vword.integr) )\\
+\>\>\>goto L2 /* bound */;\\
+\>\>frame.tend.d[0].vword.integr = frame.tend.d[1].vword.integr;\\
+\>\>frame.tend.d[0].dword = D\_Integer;\\
+\>\>P01\_p(\&frame.tend.d[0]);\\
+\>\>goto L4 /* end suspend: to */;\\
+\>L4: /* end suspend: to */\\
+\>\>++frame.tend.d[1].vword.integr;\\
+\>\>goto L1 /* within: to */;\\
+\>L2: /* bound */\\
+\end{iconcode}
 
 
-This is an example of a generator within an every expression being
-converted into an in-line loop. Except for the fact that descriptors
-are being used instead of C integers, this is nearly as good as the C
-code
+This is an example of a generator within an \texttt{every} expression
+being converted into an in-line loop. Except for the fact that
+descriptors are being used instead of C integers, this is nearly as
+good as the C code
 
-{\ttfamily\mdseries
-\ \ \ for (i = 1; i {\textless}= 10; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ p(i);}
+\goodbreak
+\begin{iconcode}
+\>for (i = 1; i <= 10; ++i)\\
+\>\>p(i);\\
+\end{iconcode}
 
 
 \section[22.5 Parameter Passing Optimizations]{22.5 Parameter Passing Optimizations}
@@ -491,60 +358,47 @@ possible when expression results are discarded. If the corresponding
 argument is missing, the compiler refrains from supplying a null value
 for it. Consider the invocation
 
-{\ttfamily\mdseries
-\ \ \ insert(x, 3)}
+\iconline{ \>insert(x, 3) }
 
-\noindent insert takes three arguments. If x is a table, the third
-argument is used as the entry value and must be supplied in the
-generated code. In the following generated code, the default value for
-the third argument is computed into frame.tend.d[2].dword:
+\noindent \texttt{insert} takes three arguments. If \texttt{x} is a
+table, the third argument is used as the entry value and must be
+supplied in the generated code. In the following generated code, the
+default value for the third argument is computed into
+\texttt{frame.tend.d[2].dword}:
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].dword = D\_Integer;}
+\goodbreak
+\begin{iconcode}
+\>frame.tend.d[1].dword = D\_Integer;\\
+\>frame.tend.d[1].vword.integr = 3;\\
+\>frame.tend.d[2].dword = D\_Null;\\
+\>frame.tend.d[3] = frame.tend.d[0] /* x */;\\
+\>F1o0\_insert(\&(frame.tend.d[2]), \&(frame.tend.d[1]), \&(frame.tend.d[3]),\\
+\>\>\&trashcan);\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].vword.integr = 3;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Null;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[3] = frame.tend.d[0] /* x */;}
-
-{\ttfamily\mdseries
-\ \ \ F1o0\_insert(\&(frame.tend.d[2]), \&(frame.tend.d[1]), \&(frame.tend.d[3]),}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \&trashcan);}
-
-
-Because F1o0\_insert uses a tailored calling convention, its arguments
+\noindent
+Because \texttt{F1o0\_insert} uses a tailored calling convention, its arguments
 can be in a different order from those of the Icon function. It
-appears that the argument expression x is computed in the wrong place
+appears that the argument expression \texttt{x} is computed in the wrong place
 in the execution order.  However, this is not true; the expression is
 not computed at all. If it were, the result would be a variable
-reference.  Instead, the assignment of the value in x to the temporary
+reference.  Instead, the assignment of the value in \texttt{x} to the temporary
 variable is a form of optimized dereferencing. Therefore, it must be
 done as part of the operation, not as part of the argument
 computations. This is explained below.
 
-If the value of x in this expression is a set instead of a table, the
+If the value of \texttt{x} in this expression is a set instead of a table, the
 entry value is not used. This is illustrated by the following
 code. Note that a different C function is called for a set than for a
 table; this is because a different body statement is selected.
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[1].vword.integr = 3;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2] = frame.tend.d[0] /* x */;}
-
-{\ttfamily\mdseries
-\ \ \ F1o1\_insert(\&(frame.tend.d[1]) , \&(frame.tend.d[2]) , \&trashcan);}
-
+\goodbreak
+\begin{iconcode}
+\>frame.tend.d[1].dword = D\_Integer;\\
+\>frame.tend.d[1].vword.integr = 3;\\
+\>frame.tend.d[2] = frame.tend.d[0] /* x */;\\
+\>F1o1\_insert(\&(frame.tend.d[1]) , \&(frame.tend.d[2]) , \&trashcan);\\
+\end{iconcode}
 
 In general, an operation must copy its argument to a new descriptor
 before using it. This is because an operation is allowed to modify the
@@ -554,104 +408,59 @@ re-executed without recomputing the argument. Therefore, the original
 value must be available. This is demonstrated with the following
 expression.
 
-{\ttfamily\mdseries
-\ \ \ every p(0 to (1 to 3))}
+\iconline{ \>every p(0 to (1 to 3)) }
 
+\noindent
+This is a double loop. The outer \texttt{to} expression is the inner
+loop, while the inner \texttt{to} expression is the outer loop.
+\texttt{to} modifies its first argument while counting. However,
+the first argument to the outer \texttt{to} has an extended lifetime
+due to the fact that the second argument is a generator. Therefore,
+this \texttt{to} operator must make a copy of its first argument.  The
+generated code for this \texttt{every} expression is
 
-This is a double loop. The outer to expression is the inner loop,
-while the inner to expression is the outer loop. to modifies its first
-argument while counting. However, the first argument to the outer to
-has an extended lifetime due to the fact that the second argument is a
-generator. Therefore, this to operator must make a copy of its first
-argument.  The generated code for this every expression is
+\goodbreak
+\begin{iconcode}
+\>\>frame.tend.d[2].dword = D\_Integer;\\
+\>\>frame.tend.d[2].vword.integr = 0;\\
+\>\>frame.tend.d[4].dword = D\_Integer;\\
+\>\>frame.tend.d[4].vword.integr = 1;\\
+\>\>frame.tend.d[5].dword = D\_Integer;\\
+\>\>frame.tend.d[5].vword.integr = 3;\\
+\>L1: /* within: to */\\
+\>\>if (!(frame.tend.d[4].vword.integr <= frame.tend.d[5].vword.integr))\\
+\>\>\>goto L2 /* bound */;\\
+\>\>frame.tend.d[3].vword.integr = frame.tend.d[4].vword.integr;\\
+\>\>frame.tend.d[3].dword = D\_Integer;\\
+\>\>frame.tend.d[6] = frame.tend.d[2];\\
+\>L3: /* within: to */\\
+\>\>if (!(frame.tend.d[6].vword.integr <= frame.tend.d[3].vword.integr))\\
+\>\>\>goto L4 /* end suspend: to */;\\
+\>\>frame.tend.d[1].vword.integr = frame.tend.d[6].vword.integr;\\
+\>\>frame.tend.d[1].dword = D\_Integer;\\
+\>\>P01\_p(\&frame.tend.d[1]);\\
+\>\>++frame.tend.d[6].vword.integr;\\
+\>\>goto L3 /* within: to */;\\
+\>L4: /* end suspend: to */\\
+\>\>++frame.tend.d[4].vword.integr;\\
+\>\>goto L1 /* within: to */;\\
+\>L2: /* bound */\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].vword.integr = 0;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[4].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[4].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[5].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[5].vword.integr = 3;}
-
-{\ttfamily\mdseries
-\ \ \ L1: /* within: to */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (!(frame.tend.d[4].vword.integr {\textless}= frame.tend.d[5].vword.integr))}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[3].vword.integr = frame.tend.d[4].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[3].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[6] = frame.tend.d[2];}
-
-{\ttfamily\mdseries
-\ \ \ L3: /* within: to */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (!(frame.tend.d[6].vword.integr {\textless}= frame.tend.d[3].vword.integr))}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L4 /* end suspend: to */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[1].vword.integr = frame.tend.d[6].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[1].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ P01\_p(\&frame.tend.d[1]);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ ++frame.tend.d[6].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L3 /* within: to */;}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* end suspend: to */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ ++frame.tend.d[4].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L1 /* within: to */;}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* bound */}
-
-
+\noindent
 The first argument to the outer to is copied with the statement 
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[6] = frame.tend.d[2];}
+\iconline{ \>frame.tend.d[6] = frame.tend.d[2]; }
 
-
+\noindent
 The copying of the other arguments has been eliminated because of two
-observations: the second argument of to is never modified and the
-first argument of the inner to (outer loop) is never reused without
-being recomputed. This second fact is determined while the lifetime
-information is being calculated. There is no generator occurring
-between the computation of the argument and the execution of the
-operator. Even if there were, it would only necessitate copying if the
-generator could be resumed after the operator started executing.
+observations: the second argument of \texttt{to} is never modified and
+the first argument of the inner \texttt{to} (outer loop) is never
+reused without being recomputed. This second fact is determined while
+the lifetime information is being calculated. There is no generator
+occurring between the computation of the argument and the execution of
+the operator. Even if there were, it would only necessitate copying if
+the generator could be resumed after the operator started executing.
 
 As noted above, another set of optimizations involves deferencing
 named variables. If an operation needs only the dereferenced value of
@@ -665,34 +474,31 @@ argument.
 
 As shown in the code presented above for 
 
-{\ttfamily\mdseries
-\ \ \ insert(x, 3)}
+\iconline{ \>insert(x, 3) }
 
 \noindent
 dereferencing can be implemented as simple assignment rather than a
-call to the deref function:
+call to the \texttt{deref} function:
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[3] = frame.tend.d[0] /* x */;}
+\iconline{ \>frame.tend.d[3] = frame.tend.d[0] /* x */; }
 
-
+\noindent
 In fact, unless certain conditions interfere, the variable can be used
 directly as the argument descriptor and no copying is needed. This is
 reflected in the code generated in a previous example:
 
-{\ttfamily\mdseries
-\ \ \ if /x then \textit{...}}
+\iconline{ \>if /x then \textit{...} }
 
 
-x is used directly in the in-line code for /: 
+\texttt{x} is used directly in the in-line code for \texttt{/}: 
 
-{\ttfamily\mdseries
-\ \ \ if ((frame.tend.d[0] /* x */).dword == D\_Null)}
+\goodbreak
+\begin{iconcode}
+\>if ((frame.tend.d[0] /* x */).dword == D\_Null)\\
+\>\>goto L2 /* bound */;\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L2 /* bound */;}
-
-
+\noindent
 This optimization cannot be performed if the operation modifies the
 argument, nor can it be performed if the variable's value might change
 while the operation is executing. Performing the optimization in the
@@ -718,52 +524,42 @@ variables are treated as special cases. The optimizations are divided
 into the cases where the right-hand-side might produce a variable
 reference and those where it produces a simple Icon value.
 
-
 There are two cases when the right-hand-side of the assignment
 evaluates to a variable reference. If the right-hand-side is a named
 variable, a dereferencing optimization can be used. Consider
 
-{\ttfamily\mdseries
-\ \ \ s := s1}
+\iconline{ \>s := s1 }
 
+\noindent This Icon expression is translated into 
 
-This Icon expression is translated into 
+\iconline{ \>frame.tend.d[0] /* s */ = frame.tend.d[1] /* s1 */; }
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[0] /* s */ = frame.tend.d[1] /* s1 */;}
-
-
+\noindent
 This is the ideal translation of this expression. For other
-situations, the deref function must be used. For example the
+situations, the \texttt{deref} function must be used. For example the
 expression
 
-{\ttfamily\mdseries
-\ \ \ s := ?x}
+\iconline{ \>s := ?x }
 
 \noindent is translated into 
 
-{\ttfamily\mdseries
-\ \ \ if (O0f2\_random(\&(frame.tend.d[0] /* x */), \&frame.tend.d[2]) == A\_Resume)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L1 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ deref(\&frame.tend.d[2], \&frame.tend.d[1] /* s */);}
+\goodbreak
+\begin{iconcode}
+\>if (O0f2\_random(\&(frame.tend.d[0] /* x */), \&frame.tend.d[2]) == A\_Resume)\\
+\>\>goto L1 /* bound */;\\
+\>deref(\&frame.tend.d[2], \&frame.tend.d[1] /* s */);\\
+\end{iconcode}
 
 
 When the right-hand-side computes to a simple Icon value, the named
 variable on the left-hand-side can often be used directly as the
 result location of the operation. This occurs in the earlier example
 
-{\ttfamily\mdseries
-\ \ \ a := \~{}x}
+\iconline{ \>a := \textasciitilde{}x }
 
 \noindent which translates into
 
-{\ttfamily\mdseries
-\ \ \ O160\_compl(\&(frame.tend.d[0] /* x */), \&frame.tend.d[1] /* a */);}
-
+\iconline{ \>O160\_compl(\&(frame.tend.d[0] /* x */), \&frame.tend.d[1] /* a */); }
 
 This optimization is safe as long as setting the result location is
 the last thing the operation does. If the operation uses the result
@@ -774,88 +570,59 @@ and the Icon assignment implemented as a C assignment. String
 concatenation is an example of an operation that uses its result
 location as a work area. The expression
 
-{\ttfamily\mdseries
-\ \ \ s := s1 {\textbar}{\textbar} s}
+\iconline{ \>s := s1 || s }
+
+\noindent is translated into 
+
+\goodbreak
+\begin{iconcode}
+\>if (StrLoc(frame.tend.d[1] /* s1 */) + StrLen(frame.tend.d[1] /* s1 */)\\
+\>\>== strfree )\\
+\>\>goto L1 /* within: cater */;\\
+\>StrLoc(frame.tend.d[2]) = alcstr(StrLoc(frame.tend.d[1] /* s1 */),\\
+\>\>StrLen(frame.tend.d[1] /* s1 */));\\
+\>StrLen(frame.tend.d[2]) = StrLen(frame.tend.d[1] /* s1 */);\\
+\>goto L2 /* within: cater */;\\
+L1: /* within: cater */\\
+\>frame.tend.d[2] = frame.tend.d[1] /* s1 */;\\
+L2: /* within: cater */\\
+\>alcstr(StrLoc(frame.tend.d[0] /* s */), StrLen(frame.tend.d[0] /* s */));\\
+\>StrLen(frame.tend.d[2]) = StrLen(frame.tend.d[1] /* s1 */) +\\
+\>\>StrLen(frame.tend.d[0] /* s */);\\
+\\
+\>frame.tend.d[0] /* s */ = frame.tend.d[2];\\
+\end{iconcode}
 
 
-is translated into 
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (StrLoc(frame.tend.d[1] /* s1 */) + StrLen(frame.tend.d[1] /* s1 */)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ == strfree )}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L1 /* within: cater */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ StrLoc(frame.tend.d[2]) = alcstr(StrLoc(frame.tend.d[1] /* s1 */),}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ StrLen(frame.tend.d[1] /* s1 */));}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ StrLen(frame.tend.d[2]) = StrLen(frame.tend.d[1] /* s1 */);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L2 /* within: cater */;}
-
-{\ttfamily\mdseries
-\ \ \ L1: /* within: cater */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2] = frame.tend.d[1] /* s1 */;}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* within: cater */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ alcstr(StrLoc(frame.tend.d[0] /* s */), StrLen(frame.tend.d[0] /* s */));}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ StrLen(frame.tend.d[2]) = StrLen(frame.tend.d[1] /* s1 */) +}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ StrLen(frame.tend.d[0] /* s */);}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[0] /* s */ = frame.tend.d[2];}
-
-
-frame.tend.d[2] is the result location. If frame.tend.d[0] (the
-variable s) were used instead, the code would be wrong.
+\noindent \texttt{frame.tend.d[2]} is the result location. If
+\texttt{frame.tend.d[0]} (the variable \texttt{s}) were used instead,
+the code would be wrong.
 
 
 There are still some optimizations falling under the category covered
 by this chapter to be explored as future work. For example, as shown
 earlier,
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ a := \~{}x}
+\iconline{ \>\>a := \textasciitilde{}x }
 
 \noindent is translated into
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2] = frame.tend.d[0] /* x */;}
+\goodbreak
+\begin{iconcode}
+\>\>frame.tend.d[2] = frame.tend.d[0] /* x */;\\
+\>\>cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[2]), \&(frame.tend.d[2]));\\
+\>\>O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] /* a */);\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[2]), \&(frame.tend.d[2]));}
+\noindent when \texttt{x} is a string. The assignment to
+\texttt{frame.tend.d[2]} can be combined with the conversion to
+produce the code
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] /* a */);}
-
-\noindent when x is a string. The assignment to frame.tend.d[2] can be
-combined with the conversion to produce the code
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[0] /* x */), \&(frame.tend.d[2]));}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] /* a */);}
+\goodbreak
+\begin{iconcode}
+\>\>cnv\_tcset(\&(frame.cbuf[0]), \&(frame.tend.d[0] /* x */), \&(frame.tend.d[2]));\\
+\>\>O160\_compl(\&(frame.tend.d[2]) , \&frame.tend.d[1] /* a */);\\
+\end{iconcode}
 
 There is, of course, always room for improvement in code generation
 for specific cases. However, the optimizations in this chapter combine

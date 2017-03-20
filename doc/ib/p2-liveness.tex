@@ -6,20 +6,20 @@ conventional languages such as C and Pascal. O'Bagy explains this in
 her dissertation [.tr88-31.]:
 
 \begin{quote}
-{\textquotedbl}Generators prolong the lifetime of temporary values. For example, in 
+``Generators prolong the lifetime of temporary values. For example, in 
 
+\iconline{\>\>i = find(s1,s2)}
 
-\ \ \ \ \ \ \ \ \ \ \ i = find(s1,s2)
-
-\noindent the operands of the comparison operation cannot be discarded
-when find produces its result. If find is resumed, the comparison is
-performed again with subsequent results from find(s1,s2), and the left
-operand must still be available.{\textquotedbl}
+\noindent
+the operands of the comparison operation cannot be discarded when
+\texttt{find} produces its result. If \texttt{find} is resumed, the
+comparison is performed again with subsequent results from
+\texttt{find(s1,s2}), and the left operand must still be available.''
 \end{quote}
 
 \noindent In some implementation models, it is equally important that
-the operands of find still be available if that function is resumed
-(this depends on whether the operand locations are used during
+the operands of \texttt{find} still be available if that function is
+resumed (this depends on whether the operand locations are used during
 resumption or whether all needed values are saved in the local state
 of the function).
 
@@ -53,11 +53,11 @@ attribute grammar.
 
 Goal-directed evaluation extends the lifetime of intermediate values
 by creating implicit loops within an expression. In O'Bagy's example,
-the start of the loop is the generator find and the end of the loop is
-the comparison that may fail.  An intermediate value may be used
-within such a loop, but if its value is computed before the loop is
-entered, it is not recomputed on each iteration and the temporary
-variable must not be reused until the loop is exited.
+the start of the loop is the generator \texttt{find} and the end of
+the loop is the comparison that may fail.  An intermediate value may
+be used within such a loop, but if its value is computed before the
+loop is entered, it is not recomputed on each iteration and the
+temporary variable must not be reused until the loop is exited.
 
 The following fragment of C code contains a loop and is therefore
 analogous to code generated for goal-directed evaluation. It is used
@@ -65,108 +65,73 @@ to demonstrate the liveness information needed by a temporary variable
 allocator. In the example, \textit{v1} through \textit{v4} represent
 intermediate values that must be assigned to program variables.
 
-{\ttfamily\mdseries
-\ \ \ \textit{v1} = f1();}
+\goodbreak
+\begin{iconcode}
+\ttit{v1} = f1();\\
+while (-{}-\ttit{v1}) \{\\
+\>\ttit{v2} = f2();\\
+\>\ttit{v3} = \ttit{v1} + \ttit{v2};\\
+\>f3(\ttit{v3});\\
+\>\}\\
+\ttit{v4} = 8;\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ while (-{}-v1) \{}
+Separate variables must be allocated for \textit{v1} and \textit{v2} because
+they are both needed for the addition. Here, \texttt{x} is chosen for
+\textit{v1} and \texttt{y} is chosen for \textit{v2}.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ v2 = f2();}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ v3 = v1 + v2;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ f3(v3);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ v4 = 8;}
-
-Separate variables must be allocated for v1 and \textit{v2} because
-they are both needed for the addition. Here, x is chosen for
-\textit{v1} and y is chosen for \textit{v2}.
-
-{\ttfamily\mdseries
-\ \ \ x = f1();}
-
-{\ttfamily\mdseries
-\ \ \ while (-{}-x) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ y = f2();}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{v3} = x + y;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ f3(v3);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ v4 = 8;}
+\goodbreak
+\begin{iconcode}
+x = f1();\\
+while (-{}-x) \{\\
+\>y = f2();\\
+\>\ttit{v3} = x + y;\\
+\>f3(\ttit{v3});\\
+\>\}\\
+\ttit{v4} = 8;\\
+\end{iconcode}
 
 
-x cannot be used to hold \textit{v3}, because x is needed in
+
+\texttt{x} cannot be used to hold \textit{v3}, because \texttt{x} is needed in
 subsequent iterations of the loop. Its lifetime must extend through
-the end of the loop. y, on the other hand, can be used because it is
+the end of the loop. \texttt{y}, on the other hand, can be used because it is
 recomputed in subsequent iterations.  Either variable may be used to
 hold \textit{v4}.
 
-{\ttfamily\mdseries
-\ \ \ x = f1();}
-
-{\ttfamily\mdseries
-\ \ \ while (-{}-x) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ y = f2();}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ y = x + y;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ f3(y);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ x = 8;}
+\goodbreak
+\begin{iconcode}
+x = f1();\\
+while (-{}-x) \{\\
+\>y = f2();\\
+\>y = x + y;\\
+\>f3(y);\\
+\>\}\\
+x = 8;\\
+\end{iconcode}
 
 Before temporary variables can be allocated, the extent of the loops
 created by goal-directed evaluation must be estimated. Suppose
 O'Bagy's example
 
-{\ttfamily\mdseries
-\ \ \ i = find(s1, s2)}
+\iconline{i = find(s1, s2) }
 
 \noindent
 appears in the following context 
 
-{\ttfamily\mdseries
-\ \ \ procedure p(s1, s2, i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if i = find(s1, s2) then return i + *s1}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ fail}
-
-{\ttfamily\mdseries
-\ \ \ end}
-
+\goodbreak
+\begin{iconcode}
+procedure p(s1, s2, i)\\
+\>if i = find(s1, s2) then return i + *s1\\
+\>fail\\
+end\\
+\end{iconcode}
 
 The simplest and most pessimistic analysis assumes that a loop can
 appear anywhere within the procedure, requiring the conclusion that an
 intermediate value in the expression may live to the end of the
 procedure. Christopher's simple analysis [.tccompile.] notices that
-the expression appears within the control clause of an if
+the expression appears within the control clause of an \texttt{if}
 expression. This is a bounded context; implicit loops cannot extend
 beyond the end of the control clause. His allocation scheme reuses, in
 subsequent expressions, temporary variables used in this control
@@ -185,22 +150,22 @@ those loops.
 It is instructive to look at a specific example where intermediate
 values must be retained beyond (in a lexical sense) the point of their
 use. The following expression employs goal-directed evaluation to
-conditionally write sentences in the data structure x to an output
-file. Suppose f is either a file or null. If f is a file, the
-sentences are written to it; if f is null, the sentences are not
+conditionally write sentences in the data structure \texttt{x} to an output
+file. Suppose \texttt{f} is either a file or null. If \texttt{f} is a file, the
+sentences are written to it; if \texttt{f} is null, the sentences are not
 written.
 
-{\ttfamily\mdseries
-\ \ \ every write({\textbackslash}f, !x, {\textquotedbl}.{\textquotedbl})}
+\iconline{every write({\textbackslash}f, !x, ".") }
 
+\noindent
 In order to avoid the complications of control structures at this
 point in the discussion, the following equivalent expression is used
 in the analysis:
 
-{\ttfamily\mdseries
-\ \ \ write({\textbackslash}f, !x, {\textquotedbl}.{\textquotedbl}) \& \&fail}
+\iconline{ \>write({\textbackslash}f, !x, ".") \& \&fail }
 
-This expression can be converted into a sequence of primitive
+\noindent
+this expression can be converted into a sequence of primitive
 operations producing intermediate values (\textit{v1}, \textit{v2},
 ...). This is shown in diagram. For convenience, the operations are
 expressed in Icon, except that the assignments do not dereference
@@ -213,25 +178,26 @@ their right-hand operands.
 Whether or not the program variables and constants are actually placed
 in temporary variables depends on the machine model, implementation
 conventions, and what optimizations are performed. Clearly a temporary
-variable is not needed for \&fail. However, temporary variables are
+variable is not needed for \texttt{\&fail}. However, temporary variables are
 needed if the subexpressions are more complex; intermediate values are
 shown for all subexpressions for explanatory purposes.
 
-When \&fail is executed, the ! operation is resumed. This creates an
-implicit loop from the ! to \&fail, as shown by the arrow in the above
-diagram. The question is: What intermediate values must be retained up
-to \&fail? A more instructive way to phrase the question is: After
-\&fail is executed, what intermediate values could be reused without
-being recomputed? From the sequence of primitive operations, it is
-clear that the reused values include \textit{v1} and \textit{v3}, and,
-if the element generation operator, !, references its argument after
-resumption, then the reused values include \textit{v4. v2} is not used
-within the loop, \textit{v5} and \textit{v6} are recomputed within the
-loop, and \textit{v7} and \textit{v8} are not used. The lines in the
-diagram to the left of the code indicate the lifetime of the
-intermediate values. The dotted portion of each line represents the
-region of the lifetime beyond what would exist in the absence of
-backtracking.
+When \texttt{\&fail} is executed, the \texttt{!} operation is
+resumed. This creates an implicit loop from the \texttt{!} to
+\texttt{\&fail}, as shown by the arrow in the above diagram. The
+question is: What intermediate values must be retained up to
+\texttt{\&fail}? A more instructive way to phrase the question is:
+After \texttt{\&fail} is executed, what intermediate values could be
+reused without being recomputed? From the sequence of primitive
+operations, it is clear that the reused values include \textit{v1} and
+\textit{v3}, and, if the element generation operator, \texttt{!},
+references its argument after resumption, then the reused values
+include \textit{v4}.\textit{ v2} is not used within the loop,
+\textit{v5} and \textit{v6} are recomputed within the loop, and
+\textit{v7} and \textit{v8} are not used. The lines in the diagram to
+the left of the code indicate the lifetime of the intermediate
+values. The dotted portion of each line represents the region of the
+lifetime beyond what would exist in the absence of backtracking.
 
 Liveness information could be computed by making the implicit loops
 explicit then performing a standard liveness analysis in the form of a
@@ -245,18 +211,18 @@ order within Icon expressions. \textit{Forward execution order} is the
 order in which operations would be executed at run time in the absence
 of goal-directed evaluation and explicit loops. Goal-directed
 evaluation involves both failure and the resumption of suspended
-generators. The control clause of an if-then-else expression may fail,
-but instead of resuming a suspending generator, it causes the else
+generators. The control clause of an \texttt{if-then-else} expression may fail,
+but instead of resuming a suspending generator, it causes the \texttt{else}
 clause to be executed. This failure results in forward execution
 order. Forward execution order imposes a partial ordering on
-operations. It produces no ordering between the then and the else
-clauses of an if expression. \textit{Backtracking order} is the
+operations. It produces no ordering between the \texttt{then} and the \texttt{else}
+clauses of an \texttt{if} expression. \textit{Backtracking order} is the
 reverse of forward execution order. This is due to the LIFO resumption
 of suspended generators. The backward flow of control caused by
 looping control structures does not contribute to this liveness
 analysis (intermediate results used within a looping control structure
 are also computed within the loop), but is dealt with in later
-chapters. The every control structure is generally viewed as a looping
+chapters. The \texttt{every} control structure is generally viewed as a looping
 control structure.  However, it simply introduces failure. Looping
 only occurs when it is used with a generative control clause, in which
 case the looping is treated the same as goal-directed evaluation.
@@ -282,8 +248,9 @@ tree for the example above is:
 In this notation, the forward execution order of operations (which
 includes constants and references to program variables) is
 left-to-right and the backtracking order is right-to-left. In this
-example, the backtracking order is \&fail, invoke,
-{\textquotedbl}.{\textquotedbl}, !, x, {\textbackslash}, f, and write.
+example, the backtracking order is \texttt{\&fail}, \texttt{invoke},
+\texttt{"."}, \texttt{!}, \texttt{x}, \texttt{\textbackslash},
+\texttt{f}, and \texttt{write}.
 
 As explained above, the use of an intermediate value must appear in an
 implicit loop for the value to have an extended lifetime. Two events
@@ -308,7 +275,7 @@ isolation.
 
 In order for these uses to be in a loop, backtracking must be
 initiated from outside; that is, beyond the subexpression (in the
-example, only \&fail and \& are beyond the subexpression).
+example, only \texttt{\&fail} and \texttt{\&} are beyond the subexpression).
 
 In addition, for an intermediate value to have an extended lifetime,
 the beginning of the loop must start after the intermediate value is
@@ -317,7 +284,7 @@ the operation itself may be resumed. In this case, execution continues
 forward within the operation. It may reuse any of its operands and
 none of them are recomputed. The operation does not have to actually
 generate more results. For example, reversible swap (the operator
-{\textless}-{\textgreater}) can be resumed to reuse both of its
+{\textless}--{\textgreater}) can be resumed to reuse both of its
 operands, but it does not generate another result. Whether an
 operation actually reuses its operands on resumption depends on its
 implementation. In the Icon compiler, operations implemented with a C
@@ -366,8 +333,9 @@ assumed that the variable write is not changed anywhere in the
 program).
 
 In the example, the rightmost operation that can fail is
-\&fail. Resumption points are ! and the subexpressions corresponding
-to the intermediate values \textit{v5} and \textit{v7}.
+\texttt{\&fail}. Resumption points are \texttt{!} and the
+subexpressions corresponding to the intermediate values \textit{v5}
+and \textit{v7}.
 
 Once the resumption points have been identified, the rule for
 determining extended lifetimes can be applied. If there are no
@@ -379,8 +347,7 @@ values that have extended lifetimes.
 Similar techniques can be used for liveness analysis of Prolog
 programs, where goal-directed evaluation also creates implicit
 loops. One difference is that a Prolog clause is a linear sequence of
-calls. It does not need to be
-{\textasciigrave}{\textasciigrave}linearized'{}' by construction a
+calls. It does not need to be ``linearized'' by constructing a
 postfix tree. Another difference is that all intermediate values in
 Prolog programs are stored in explicit variables. A Prolog variable
 has a lifetime that extends to the right of its last use if an
@@ -403,235 +370,186 @@ node can be viewed as representing either an operation, an entire
 subexpression, or an intermediate value.
 
 This analysis associates four attributes with each node (this ignores
-attributes needed to handle break expressions).  The goal of the
-analysis is to produce the lifetime attribute. The other three
-attributes are used to propagate information needed to compute the
-lifetime.
+attributes needed to handle \texttt{break} expressions).  The goal of
+the analysis is to produce the \texttt{lifetime} attribute. The other
+three attributes are used to propagate information needed to compute
+the \texttt{lifetime}.
 
 \liststyleLxix
 \begin{itemize}
 
-\item resumer is either the rightmost operation (represented as a
-node) that can initiate backtracking into the subexpression or it is
-null if the subexpression cannot be resumed.
+\item \texttt{resumer} is either the rightmost operation (represented
+as a node) that can initiate backtracking into the subexpression or it
+is null if the subexpression cannot be resumed.
 
-\item failer is related to resumer. It is the rightmost operation that
-can initiate backtracking that can continue past the subexpression. It
-is the same as resumer, unless the subexpression itself contains the
-rightmost operation that can fail.
+\item \texttt{failer} is related to \texttt{resumer}. It is the
+rightmost operation that can initiate backtracking that can continue
+past the subexpression. It is the same as \texttt{resumer}, unless the
+subexpression itself contains the rightmost operation that can fail.
 
-\item gen is a boolean attribute. It is true if the subexpression can
-generate multiple results if resumed.
+item \texttt{gen} is a boolean attribute. It is true if the
+subexpression can generate multiple results if resumed.
 
-\item lifetime is the operation beyond which the intermediate value is
-no longer needed. It is either the parent node, the resumer of the
-parent node, or null. The lifetime is the parent node if the value is
-never reused after execution leaves the parent operation. The lifetime
-is the resumer of the parent if the parent operation or a generative
-sibling to the right can be resumed. A lifetime of null is used to
-indicate that the intermediate value is never used. For example, the
-value of the control clause of an if expression is never used.
+\item \texttt{lifetime} is the operation beyond which the intermediate
+value is no longer needed. It is either the parent node, the
+\texttt{resumer} of the parent node, or null. The \texttt{lifetime} is
+the parent node if the value is never reused after execution leaves
+the parent operation. The \texttt{lifetime} is the \texttt{resumer} of
+the parent if the parent operation or a generative sibling to the
+right can be resumed. A lifetime of null is used to indicate that the
+intermediate value is never used. For example, the value of the
+control clause of an \texttt{if} expression is never used.
 
 \end{itemize}
 
 Attribute computations are associated with productions in the
-grammar. The attribute computations for failer and gen are always for
-the non-terminal on the left-hand side of the production. These values
-are then used at the parent production; they are effectively passed up
-the syntax tree. The computations for resumer and lifetime are always
-for the attributes of non-terminals on the right-hand side of the
-production. resumer is then used at the productions defining these
-non-terminals; it is effectively passed down the syntax tree. lifetime
-is usually saved just for the code generator, but it is sometimes used
-by child nodes.
+grammar. The attribute computations for \texttt{failer} and
+\texttt{gen} are always for the non-terminal on the left-hand side of
+the production. These values are then used at the parent production;
+they are effectively passed up the syntax tree. The computations for
+\texttt{resumer} and \texttt{lifetime} are always for the attributes
+of non-terminals on the right-hand side of the
+production. \texttt{resumer} is then used at the productions defining
+these non-terminals; it is effectively passed down the syntax
+tree. \texttt{lifetime} is usually saved just for the code generator,
+but it is sometimes used by child nodes.
 
 
 \section[16.4 Primary Expressions]{16.4 Primary Expressions}
 
 Variables, literals, and keywords are primary expressions. They have
 no subexpressions, so their productions contain no computations for
-resumer or lifetime. The attribute computations for a literal
-follow. A literal itself cannot fail, so backtracking only passes
-beyond it if the backtracking was initiated before (to the right of)
-it. A literal cannot generate multiple results.
+\texttt{resumer} or \texttt{lifetime}. The attribute computations for
+a literal follow. A literal itself cannot fail, so backtracking only
+passes beyond it if the backtracking was initiated before (to the
+right of) it. A literal cannot generate multiple results.
 
-{\ttfamily\mdseries
-\ \ \ expr ::= literal \{}
+\goodbreak
+\begin{iconcode}
+\>expr ::= literal \>\>\>\>\ \{\\
+\>\>\>\>\>\>expr.failer := expr.resumer\\
+\>\>\>\>\>\>expr.gen := false\\
+\>\>\>\>\>\ \}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := false}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
 
 
 Another example of a primary expression is the keyword
-\&fail. Execution cannot continue past \&fail, so it must be the
-rightmost operation within its bounded expression that can fail. A
-pre-existing attribute, node, is assumed to exist for every symbol in
-the grammar. It is the node in the syntax tree that corresponds to the
-symbol.
+\texttt{\&fail}. Execution cannot continue past \texttt{\&fail}, so it
+must be the rightmost operation within its bounded expression that can
+fail. A pre-existing attribute, \texttt{node}, is assumed to exist for
+every symbol in the grammar. It is the node in the syntax tree that
+corresponds to the symbol.
 
-{\ttfamily\mdseries
-\ \ \ expr ::= \&fail \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := false}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= \&fail\>\>\>\> \{\\
+\>\>\>\>\>\>expr.failer := expr.node\\
+\>\>\>\>\>\>expr.gen := false\\
+\>\>\>\>\>\}\\
+\end{iconcode}
 
 
 \section[16.5 Operations with Subexpressions]{16.5 Operations with Subexpressions}
 
 Addition provides an example of the attribute computations involving
-subexpressions. The following diagram shows how resumer, failer, and
-gen information would be passed through the postfix tree.
+subexpressions. The following diagram shows how \texttt{resumer},
+\texttt{failer}, and \texttt{gen} information would be passed through
+the postfix tree.
 
 \noindent\includegraphics[width=5.9in,height=2.3in]{kw/figure4-5.png}
 
-This information would then be used to compute lifetime information
-for \textit{v1} and \textit{v2}. The next figure shows how the
-attribute information is actually passed through the syntax tree.
+This information would then be used to compute \texttt{lifetime}
+information for \textit{v1} and \textit{v2}. The next figure shows how
+the attribute information is actually passed through the syntax tree.
 
 
  \includegraphics[width=6.0in,height=2.2in]{kw/figure4-6.png}  
-The lifetime attributes are computed for the roots of the subtrees for expr\TextSubscript{1} and expr\TextSubscript{2}.
+
+\noindent
+The \texttt{lifetime} attributes are computed for the roots of the
+subtrees for \texttt{expr}\TextSubscript{1} and
+\texttt{expr}\TextSubscript{2}.
 
 
 The details of the attribute computations depend, in part, on the
 characteristics of the individual operation. Addition does not fail,
-so the rightmost resumer, if there is one, of expr\TextSubscript{2} is
-the rightmost resumer of the entire expression. The rightmost resumer
-of expr\TextSubscript{1} is the rightmost operation that can initiate
-backtracking that continues past expr\TextSubscript{2}. Addition does
-not suspend, so the lifetime of the value produced by
-expr\TextSubscript{2} only extends through the operation (that is, it
-always is recomputed in the presence of goal-directed evaluation). If
-expr\TextSubscript{2} is a generator, then the result of
-expr\TextSubscript{1} must be retained for as long as
-expr\TextSubscript{2} might be resumed. Otherwise, it need only be
-retained until the addition is performed. expr\TextSubscript{1} is the
-first thing executed in the expression, so its failer is the failer
-for the entire expression. The expression is a generator if either
-expr\TextSubscript{1} or expr\TextSubscript{2} is a generator (note
-that the operation {\textbar} is logical \textit{or}, not Icon's
-alternation control structure):
+so the rightmost resumer, if there is one, of
+\texttt{expr}\TextSubscript{2} is the rightmost resumer of the entire
+expression. The rightmost resumer of \texttt{expr}\TextSubscript{1} is
+the rightmost operation that can initiate backtracking that continues
+past \texttt{expr}\TextSubscript{2}. Addition does not suspend, so the
+lifetime of the value produced by \texttt{expr}\TextSubscript{2} only
+extends through the operation (that is, it always is recomputed in the
+presence of goal-directed evaluation). If
+\texttt{expr}\TextSubscript{2} is a generator, then the result of
+\texttt{expr}\TextSubscript{1} must be retained for as long as
+\texttt{expr}\TextSubscript{2} might be resumed. Otherwise, it need
+only be retained until the addition is
+performed. \texttt{expr}\TextSubscript{1} is the first thing executed
+in the expression, so its \texttt{failer} is the \texttt{failer} for
+the entire expression. The expression is a generator if either
+\texttt{expr}\TextSubscript{1} or \texttt{expr}\TextSubscript{2} is a
+generator (note that the operation {\textbar} is logical \textit{or},
+not Icon's alternation control structure):
 
-{\ttfamily\mdseries
-\ \ \ expr ::= expr1 + expr2 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.lifetime := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.resumer := expr2.failer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if expr2.gen \& (expr.resumer ${\neq}$ null) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.lifetime := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.lifetime := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr1.failer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := (expr1.gen {\textbar} expr2.gen)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= expr\TextSubscript{1} + expr\TextSubscript{2} \{\\
+\>\>\>\>\>expr\TextSubscript{2}.resumer := expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{2}.lifetime := expr.node\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr\TextSubscript{2}.failer\\
+\>\>\>\>\>if expr\TextSubscript{2}.gen \& (expr.resumer ${\neq}$ null) then\\
+\>\>\>\>\>\>expr\TextSubscript{1}.lifetime := expr.resumer\\
+\>\>\>\>\>else\\
+\>\>\>\>\>\>expr\TextSubscript{1}.lifetime := expr.node\\
+\>\>\>\>\>expr.failer := expr\TextSubscript{1}.failer\\
+\>\>\>\>\>expr.gen := (expr\TextSubscript{1}.gen | expr\TextSubscript{2}.gen)\\
+\>\>\>\>\>\}\\
+\end{iconcode}
 
 
-/expr provides an example of an operation that can fail. If there is
-no rightmost resumer of the entire expression, it is the rightmost
-resumer of the operand. The lifetime of the operand is simply the
-operation, by the same argument used for expr\TextSubscript{2} of
-addition. The computation of failer is also analogous to that of
-addition. The expression is a generator if the operand is a generator:
+\texttt{/expr} provides an example of an operation that can fail. If
+there is no rightmost resumer of the entire expression, it is the
+rightmost resumer of the operand. The lifetime of the operand is
+simply the operation, by the same argument used for
+\texttt{expr}\TextSubscript{2} of addition. The computation of
+\texttt{failer} is also analogous to that of addition. The expression
+is a generator if the operand is a generator:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= /expr1 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if expr.resumer = null then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.resumer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.lifetime := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr1.failer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := expr1.gen}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= /expr\TextSubscript{1} \{\\
+\>\>\>\>if expr.resumer = null then\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr.node\\
+\>\>\>\>else\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr.resumer\\
+\>\>\>\>expr\TextSubscript{1}.lifetime := expr.node\\
+\>\>\>\>expr.failer := expr\TextSubscript{1}.failer\\
+\>\>\>\>expr.gen := expr\TextSubscript{1}.gen\\
+\>\>\>\>\}\\
+\end{iconcode}
 
 
-!expr differs from /expr in that it can generate multiple results. If
-it can be resumed, the result of the operand must be retained through
-the rightmost resumer:
+\texttt{!expr} differs from \texttt{/expr} in that it can generate
+multiple results. If it can be resumed, the result of the operand must
+be retained through the rightmost \texttt{resumer}:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= !expr1 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if expr.resumer = null then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.resumer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.lifetime := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr1.lifetime := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr1.failer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := true}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= !expr\TextSubscript{1} \{\\
+\>\>\>\>if expr.resumer = null then \{\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr.node\\
+\>\>\>\>\>expr\TextSubscript{1}.lifetime := expr.node\\
+\>\>\>\>\>\}\\
+\>\>\>\>else \{\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{1}.lifetime := expr.resumer\\
+\>\>\>\>\>\}\\
+\>\>\>\>expr.failer := expr\TextSubscript{1}.failer\\
+\>\>\>\>expr.gen := true\\
+\>\>\>\>\}\\
+\end{iconcode}
 
 
 \section[16.6 Control Structures]{16.6 Control Structures}
@@ -639,69 +557,44 @@ the rightmost resumer:
 Other operations follow the general pattern of the ones presented
 above. Control structures, on the other hand, require unique attribute
 computations. In particular, several control structures bound
-subexpressions, limiting backtracking.  For example, not bounds its
-argument and discards the value. If it has no resumer, then it is the
-rightmost operation that can fail. The expression is not a generator:
+subexpressions, limiting backtracking.  For example, \texttt{not}
+bounds its argument and discards the value. If it has no
+\texttt{resumer}, then it is the rightmost operation that can
+fail. The expression is not a generator:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= not expr1 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.resumer := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.lifetime := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if expr.resumer = null then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr.failer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr.failer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := false}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= not expr\TextSubscript{1} \{\\
+\>\>\>\>expr\TextSubscript{1}.resumer := null\\
+\>\>\>\>expr\TextSubscript{1}.lifetime := null\\
+\>\>\>\>if expr.resumer = null then\\
+\>\>\>\>\>expr.failer := expr.node\\
+\>\>\>\>else\\
+\>\>\>\>\>expr.failer := expr.resumer\\
+\>\>\>\>expr.gen := false\\
+\>\>\>\>\}\\
+\end{iconcode}
 
 
-expr\TextSubscript{1}; expr\TextSubscript{2} bounds
-expr\TextSubscript{1} and discards the result. Because the result of
-expr\TextSubscript{2} is the result of the entire expression, the code
-generator makes their result locations synonymous. This is reflected
-in the lifetime computations. Indeed, all the attributes of
-expr\TextSubscript{2} and those of the expression as a whole are the
-same:
+\texttt{expr}\TextSubscript{1} \texttt{; expr}\TextSubscript{2} bounds
+\texttt{expr}\TextSubscript{1} and discards the result. Because the
+result of \texttt{expr}\TextSubscript{2} is the result of the entire
+expression, the code generator makes their result locations
+synonymous. This is reflected in the lifetime computations. Indeed,
+all the attributes of \texttt{expr}\TextSubscript{2} and those of the
+expression as a whole are the same:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= expr1 ; expr2 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.resumer := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.lifetime := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.lifetime := expr.lifetime}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr2.failer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := expr2.gen}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= expr\TextSubscript{1} ; expr\TextSubscript{2} \{\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := null\\
+\>\>\>\>\>expr\TextSubscript{1}.lifetime := null\\
+\>\>\>\>\>expr\TextSubscript{2}.resumer := expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{2}.lifetime := expr.lifetime\\
+\>\>\>\>\>expr.failer := expr\TextSubscript{2}.failer\\
+\>\>\>\>\>expr.gen := expr\TextSubscript{2}.gen\\
+\>\>\>\>\>\}\\
+\end{iconcode}
 
 
 A reasonable implementation of alternation places the result of each
@@ -709,126 +602,84 @@ subexpression into the same location: the location associated with the
 expression as a whole. This is reflected in the lifetime
 computations. The resumer of the entire expression is also the resumer
 of each subexpression. Backtracking out of the entire expression
-occurs when backtracking out of expr\TextSubscript{2} occurs. This
-expression is a generator:
+occurs when backtracking out of \texttt{expr}\TextSubscript{2}
+occurs. This expression is a generator:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= expr1 {\textbar} expr2 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.resumer:= expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.lifetime := expr.lifetime}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.lifetime := expr.lifetime}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr2.failer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := true}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= expr\TextSubscript{1} | expr\TextSubscript{2} \{\\
+\>\>\>\>\>expr\TextSubscript{2}.resumer:= expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{2}.lifetime := expr.lifetime\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{1}.lifetime := expr.lifetime\\
+\>\>\>\>\>expr.failer := expr\TextSubscript{2}.failer\\
+\>\>\>\>\>expr.gen := true\\
+\>\>\>\>\>\}\\
+\end{iconcode}
 
 
-The first operand of an if expression is bounded and its result is
-discarded. The other two operands are treated similar to those of
-alternation. Because there are two independent execution paths, the
-rightmost resumer may not be well-defined. However, it is always
-conservative to treat the resumer as if it is farther right than it
-really is; this just means that an intermediate value is kept around
-longer than needed. If there is no resumer beyond the if expression,
-but at least one of the branches can fail, the failure is treated as
-if it came from the end of the if expression (represented by the node
-for the expression). Because backtracking out of an if expression is
-rare, this inaccuracy is of little practical consequence. The if
-expression is a generator if either branch is a generator:
+The first operand of an \texttt{if} expression is bounded and its
+result is discarded. The other two operands are treated similar to
+those of alternation. Because there are two independent execution
+paths, the rightmost resumer may not be well-defined. However, it is
+always conservative to treat the resumer as if it is farther right
+than it really is; this just means that an intermediate value is kept
+around longer than needed. If there is no resumer beyond the
+\texttt{if} expression, but at least one of the branches can fail, the
+failure is treated as if it came from the end of the \texttt{if}
+expression (represented by the node for the expression). Because
+backtracking out of an \texttt{if} expression is rare, this inaccuracy
+is of little practical consequence. The \texttt{if} expression is a
+generator if either branch is a generator:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= if expr1 then expr2 else expr3 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr3.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr3.lifetime := expr.lifetime}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.resumer := expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.lifetime := expr.lifetime}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.resumer := null expr1.lifetime := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if expr.resumer = null \& (expr1.failer null {\textbar} expr2.failer null) then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr.failer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ expr.failer = expr.resumer}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := (expr2.gen {\textbar} expr3.gen)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= if expr\TextSubscript{1} then expr\TextSubscript{2}~%
+                                    else expr\TextSubscript{3} \{\\
+\>\>\>\>\>expr\TextSubscript{3}.resumer := expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{3}.lifetime := expr.lifetime\\
+\>\>\>\>\>expr\TextSubscript{2}.resumer := expr.resumer\\
+\>\>\>\>\>expr\TextSubscript{2}.lifetime := expr.lifetime\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := null\\
+\>\>\>\>\>expr\TextSubscript{1}.lifetime := null\\
+\>\>\>\>\>if expr.resumer = null \& (expr\TextSubscript{1}.failer $\neq$ null |~%
+                                  expr\TextSubscript{2}.failer $\neq$ null) then\\
+\>\>\>\>\>\>expr.failer := expr.node\\
+\>\>\>\>\>else\\
+\>\>\>\>\>\>expr.failer = expr.resumer\\
+\>\>\>\>\>expr.gen := (expr\TextSubscript{2}.gen | expr\TextSubscript{3}.gen)\\
+\>\>\>\>\>\}\\
+\end{iconcode}
 
 
-The do clause of every is bounded and its result discarded. The
-control clause is always resumed at the end of the loop and can never
-be resumed by anything else. The value of the control clause is
-discarded. Ignoring break expressions, the loop always fails:
+The \texttt{do} clause of \texttt{every} is bounded and its result
+discarded. The control clause is always resumed at the end of the loop
+and can never be resumed by anything else. The value of the control
+clause is discarded. Ignoring \texttt{break} expressions, the loop
+always fails:
 
-{\ttfamily\mdseries
-\ \ \ expr ::= every expr1 do expr2 \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.resumer := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr2.lifetime := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.resumer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr1.lifetime := null}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.failer := expr.node}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ expr.gen := false}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>expr ::= every expr\TextSubscript{1} do expr\TextSubscript{2} \{\\
+\>\>\>\>\>expr\TextSubscript{2}.resumer := null\\
+\>\>\>\>\>expr\TextSubscript{2}.lifetime := null\\
+\>\>\>\>\>expr\TextSubscript{1}.resumer := expr.node\\
+\>\>\>\>\>expr\TextSubscript{1}.lifetime := null\\
+\>\>\>\>\>expr.failer := expr.node\\
+\>\>\>\>\>expr.gen := false\\
+\>\>\>\>\>\}\\
+\end{iconcode}
 
 
-Handling break expressions requires some stack-like attributes. These
-are similar to the ones used in the control flow analyses described in
-O'Bagy's dissertation [.tr88-31.] and the ones used to construct flow
-graphs in the original technical report on type inferencing.
+Handling \texttt{break} expressions requires some stack-like
+attributes. These are similar to the ones used in the control flow
+analyses described in O'Bagy's dissertation [.tr88-31.] and the ones
+used to construct flow graphs in the original technical report on type
+inferencing.
 
 The attributes presented here can be computed with one walk of the
 syntax tree. At a node, subtrees are processed in reverse execution
-order: first the resumer and lifetime attributes of a subtree are
-computed, then the subtree is walked. Next the failer and gen
-attributes for the node itself are computed, and the walk moves back
-up to the parent node.
-
-\bigskip
-
-\bigskip
+order: first the \texttt{resumer} and \texttt{lifetime} attributes of
+a subtree are computed, then the subtree is walked. Next the
+\texttt{failer} and \texttt{gen} attributes for the node itself are
+computed, and the walk moves back up to the parent node.

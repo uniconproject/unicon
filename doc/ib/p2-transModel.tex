@@ -21,7 +21,7 @@ by the compiler, it is both reasonable and effective to allow another
 compiler to deal with them. In general, it is easier to generate code
 in a higher-level language, just as it is easier to program in a
 higher-level language. As long as the target language lies on a
-{\textasciigrave}{\textasciigrave}nearly direct path'{}' from the
+``nearly direct path'' from the
 source language to machine code, this works well. C is closely matched
 to most modern machine architectures, so few tangential translations
 must be done in generating C code from Icon.
@@ -70,36 +70,24 @@ null value is zero, the v-word of an Icon integer is the corresponding
 C integer value, and v-words of other types are pointers to data. A
 descriptor is implemented with the following C structure:
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ struct descrip \{}
+\goodbreak
+\begin{iconcode}
+struct descrip \{\\
+\>word dword; /* type field */\\
+\>union \{\\
+\>\>word integr; /* integer value */\\
+\>\>char sptr; /* pointer to character string */\\
+\>\>union block bptr; /* pointer to a block */\\
+\>\>dptr descptr; /* pointer to a descriptor */\\
+\>\} vword;\\
+\};\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ word dword; /* type field */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ union \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ word integr; /* integer value */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ char sptr; /* pointer to character string */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ union block bptr; /* pointer to a block */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ dptr descptr; /* pointer to a descriptor */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \} vword;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \};}
-
-
-word is defined to be a C integer type (one that is at least 32-bits long), block is a union of structures implementing
-various data types, and dptr is a pointer to a descrip structure. 
+\noindent
+\texttt{word} is defined to be a C integer type (one that is at least
+32-bits long), \texttt{block} is a union of structures implementing
+various data types, and \texttt{dptr} is a pointer to
+a \texttt{descrip} structure.
 
 \section[14.2 Intermediate Results]{14.2 Intermediate Results}
 
@@ -169,35 +157,38 @@ backtracking. When this occurs, the frame for the procedure remains on
 the stack after control returns to the caller of the procedure. This
 frame contains the information needed to produce the alternate
 results. The left stack in the following diagram shows that procedure
-f has called procedure g. The arrows on the left of the stack
-represent the \textit{backtracking chain} of procedures that can
-produce alternate results. btp points to the head of the backtracking
-chain which currently starts further down in the stack. The arrows on
-the right represent the call chain of procedures. fp points to the
-frame of the currently executing procedure.
+\texttt{f} has called procedure \texttt{g}. The arrows on the left of
+the stack represent the \textit{backtracking chain} of procedures that
+can produce alternate results. \texttt{btp} points to the head of the
+backtracking chain which currently starts further down in the
+stack. The arrows on the right represent the call chain of procedures.
+\texttt{fp} points to the frame of the currently executing procedure.
 
 {\centering\selectlanguage{english}
  \includegraphics[width=5.0319in,height=1.6346in]{kw/figure2-1.png}  
 \par}
 
 
-Suppose g produces the first of several possible results. Execution
-returns to f and g's frame is added to the backtracking chain. This is
-represented by the middle stack in the diagram. If f then calls h, its
+Suppose \texttt{g} produces the first of several possible
+results. Execution returns to \texttt{f} and \texttt{g}'s frame is
+added to the backtracking chain. This is represented by the middle
+stack in the diagram. If \texttt{f} then calls \texttt{h}, its
 procedure frame is added to the top of the stack as shown in the right
 stack in the diagram.
 
-If h produces a result and is not capable of producing more, execution
-returns to f and the stack again looks like the one in the middle of
-the diagram (the program pointer within f is different, of course). If
-h produces a result and is capable of producing more, execution
-returns to f, but h's frame remains on the stack and is added to the
-head backtracking chain, similar to what was done when g produced a
-result. If h produces no results, backtracking occurs.  h's frame is
-removed from the stack, execution returns to the procedure g who's
-frame is at the head of the backtracking chain, and g's frame is
-removed from the head of the chain. The stack once again looks like
-left stack in the diagram and g proceeds to produce another result.
+If \texttt{h} produces a result and is not capable of producing more,
+execution returns to \texttt{f} and the stack again looks like the one
+in the middle of the diagram (the program pointer within \texttt{f} is
+different, of course). If \texttt{h} produces a result and is capable
+of producing more, execution returns to \texttt{f}, but \texttt{h}'s
+frame remains on the stack and is added to the head backtracking
+chain, similar to what was done when \texttt{g} produced a result.
+If \texttt{h} produces no results, backtracking occurs.  \texttt{h}'s
+frame is removed from the stack, execution returns to the
+procedure \texttt{g} who's frame is at the head of the backtracking
+chain, and \texttt{g}'s frame is removed from the head of the
+chain. The stack once again looks like left stack in the diagram
+and \texttt{g} proceeds to produce another result.
 
 
 Traditional languages such as Pascal or C present high-level virtual
@@ -275,37 +266,32 @@ convention is violated in some special cases). A signal is an integer
 (and is unrelated to Unix signals). If one of these C functions needs
 to return an Icon value, it does so through a pointer to a result
 location that is passed to it as an argument. Two standard signals are
-represented by the manifest constants A\_Continue and A\_Resume. A
-return (either an Icon return expression or the equivalent construct
-in a built-in operation) is implemented with code similar to
+represented by the manifest constants \texttt{A\_Continue} and
+\texttt{A\_Resume}. A return (either an Icon return expression or
+the equivalent construct in a built-in operation) is implemented with
+code similar to
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ *result = \textit{operation result};}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return A\_Continue;}
-
+\goodbreak
+\begin{iconcode}
+*result = \textit{operation result};\\
+return A\_Continue;\\
+\end{iconcode}
 
 \noindent Failure is implemented with the code 
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ return A\_Resume;}
+\iconline{return A\_Resume; }
 
 
 \noindent The code implementing the call of an operation consists of
 both a C call and signal-handling code.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (\textit{operation}(\textit{args}, \&result)) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Continue: break;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume: goto failure label;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+switch (\textit{operation}(\textit{args}, \&result)) \{\\
+\>case A\_Continue: break;\\
+\>case A\_Resume: goto failure label;\\
+\}\\
+\end{iconcode}
 
 
 This code clearly can be simplified. This form is general enough to
@@ -320,7 +306,7 @@ addition, a generator, in general, needs to retain state information
 between suspending and being resumed. As mentioned above, this is
 accomplished by calling a success continuation. The success
 continuation contains subsequent operations. If an operation in the
-continuation fails, an A\_Resume signal is returned to the generator,
+continuation fails, an \texttt{A\_Resume} signal is returned to the generator,
 which then executes the appropriate code. The generator retains state
 information in local variables. If the generator is implemented as a C
 function, a pointer to the continuation is passed to it. Therefore, a
@@ -328,119 +314,70 @@ function implementing a generative operation need not know its success
 continuation until run time.
 
 
-Consider the operation \textit{i to j}. This operation can be implemented in Icon with a procedure like 
+Consider the operation \texttt{i to j}. This operation can be
+implemented in Icon with a procedure like
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ procedure To(i, j)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ while i {\textless}= j do \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ suspend i}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ i +:= 1}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ fail}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ end}
+\goodbreak
+\begin{iconcode}
+procedure To(i, j)\\
+\>while i <= j do \{\\
+\>\>suspend i\\
+\>\>i +:= 1\\
+\>\}\\
+\>fail\\
+end\\
+\end{iconcode}
 
 
 It can be implemented by an analogous C function similar to the
 following (for simplicity, C ints are used here instead of Icon
 values).
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ int to(i, j, result, succ\_cont)}
+\goodbreak
+\begin{iconcode}
+int to(i, j, result, succ\_cont)\\
+\>int i, j;\\
+\>int *result;\\
+\>int (*succ\_cont)();\\
+\{\\
+\>int signal;\\
+\\
+\>while (i <= j) \{\\
+\>\>*result = i;\\
+\>\>signal = (*succ\_cont)();\\
+\>\>if (signal != A\_Resume)\\
+\>\>\>return signal;\\
+\>\>++i;\\
+\>\}\\
+\>return A\_Resume;\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ int i, j;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ int *result;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ int (*succ\_cont)();}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ int signal;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ while (i {\textless}= j) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ *result = i;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ signal = (*succ\_cont)();}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ if (signal != A\_Resume)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ return signal;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ ++i;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-
+\noindent
 There is no explicit failure label in this code, but it is possible to
-view the code as if an implicit failure label occurs before the ++i.
+view the code as if an implicit failure label occurs before the \texttt{++i}.
 
 
 The Icon expression 
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ every write(1 to 3)}
+\iconline{every write(1 to 3) }
 
 \noindent can be compiled into the following code (for simplicity, the
-write function has been translated into printf and scoping issues for
-result have been ignored). Note that the every simply introduces failure.
+\texttt{write} function has been translated into \texttt{printf} and
+scoping issues for result have been ignored). Note that the \texttt{every}
+simply introduces failure.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (to(1, 3, \&result, sc)) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ /* standard signal-handling code */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \textit{...}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ int sc() \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ printf({\textquotedbl}\%d{\textbackslash}n{\textquotedbl}, result);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+switch (to(1, 3, \&result, sc)) \{ /* standard signal-handling code */\\
+\>\textit{...}\\
+\}\\
+\\
+int sc() \{\\
+\>printf("\%d{\textbackslash}n", result);\\
+\>return A\_Resume;\\
+\}\\
+\end{iconcode}
 
 
 The final aspect of Icon expression evaluation that must be dealt with
@@ -449,9 +386,9 @@ expression, that expression cannot be resumed. At this point, the
 state of the computation with respect to backtracking looks as it did
 when execution entered the bounded expression. This means that, in
 generated code, where to go on failure (either by branching to an
-explicit failure label or by returning an A\_Resume signal) must be
-the same. However, this failure action is only correct in the C
-function containing the start of the code for the bounded
+explicit failure label or by returning an \texttt{A\_Resume} signal)
+must be the same. However, this failure action is only correct in the
+C function containing the start of the code for the bounded
 expression. If a function suspended by calling a success continuation,
 execution is no longer in that original C function. To accommodate
 this restoration of failure action, execution must return to that
@@ -461,75 +398,59 @@ This is accomplished by setting up a \textit{bounding label} in the
 original C function and allocating a signal that corresponds to the
 label. When the end of the bounded expression is reached, the signal
 for the bounding label is returned. When the signal reaches the
-function containing the label, it is converted into a goto. It can be
-determined statically which calls must convert which signals. Note
-that if the bounded expression ends in the original C function, the
-{\textasciigrave}{\textasciigrave}return signal'{}' is already in the
-context of the label. In this case, it is immediately transformed into
-a goto by the compiler, and there is no real signal handling.
+function containing the label, it is converted into
+a \texttt{goto}. It can be determined statically which calls must
+convert which signals. Note that if the bounded expression ends in the
+original C function, the ``return signal'' is already in the context
+of the label. In this case, it is immediately transformed into
+a \texttt{goto} by the compiler, and there is no real signal handling.
 
 
 Consider the Icon expression 
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ move(1);}
+\goodbreak
+\begin{iconcode}
+move(1);\\
+\>\textit{...}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{...}}
-
-
-The move function suspends and the C function implementing it needs a
-success continuation. In this case, move is called in a bounded
-context, so the success continuation must return execution to the
-function that called move. The continuation makes use of the fact
-that, like the C function for to, the one for move only intercepts
-A\_Resume signals and passes all other signals on to its caller.
+\noindent
+The \texttt{move} function suspends and the C function implementing it
+needs a success continuation. In this case, \texttt{move} is called in
+a bounded context, so the success continuation must return execution
+to the function that called \texttt{move}. The continuation makes use
+of the fact that, like the C function for \texttt{to}, the one
+for \texttt{move} only intercepts \texttt{A\_Resume} signals and
+passes all other signals on to its caller.
 
 This expression can be implemented with code similar to the
-following. There are two possible signals that might be returned. move
-itself might produce an A\_Resume signal or it might pass along the
-bounding signal from the success continuation. Note that for a
-compound expression, both the bounding label and the failure label are
-the same. In general, this is not true. In this context, the result of
-move(1) is discarded. The variable trashcan receives this value; it is
-never read.
+following. There are two possible signals that might be returned.
+\texttt{move} itself might produce an \texttt{A\_Resume} signal or it
+might pass along the bounding signal from the success continuation.
+Note that for a compound expression, both the bounding label and the
+failure label are the same. In general, this is not true. In this
+context, the result of \texttt{move(1)} is discarded. The variable
+\texttt{trashcan} receives this value; it is never read.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (move(1, \&trashcan, sc)) \{}
+\goodbreak
+\begin{iconcode}
+\>switch (move(1, \&trashcan, sc)) \{\\
+\>\>case 1:\\
+\>\>\>goto L1;\\
+\>\>case A\_Resume:\\
+\>\>\>goto L1;\\
+\>\}\\
+L1: /* bounding label \& failure label */\\
+\>\textit{...}\\
+\end{iconcode}
+\goodbreak
+\begin{iconcode}
+int sc() \{\\
+\>return 1; /* bound signal */\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case 1:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L1;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L1;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L1: /* bounding label \& failure label */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{...}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ int sc() \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return 1; /* bound signal */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
+\noindent
 {\sffamily
 Calling Conventions}
 
@@ -550,34 +471,27 @@ used as the Icon result location, and a success continuation to use
 for suspension. The function itself is responsible for any argument
 conversions including dereferencing, and for argument list
 adjustment. As explained above, the function returns an integer
-signal. The function is allowed to return the signals A\_Resume,
-A\_Continue, and any signals returned by the success continuation. It
-may ignore the success continuation if it does not suspend. The
-function may be passed a null continuation. This indicates that the
-function will not be resumed. In this case, suspend acts like a simple
-return, passing back the signal A\_Continue (this is not shown in the
-examples). The outline of a standard-conforming function is
+signal. The function is allowed to return the signals
+\texttt{A\_Resume}, \texttt{A\_Continue}, and any signals returned by
+the success continuation. It may ignore the success continuation if it
+does not suspend. The function may be passed a null continuation. This
+indicates that the function will not be resumed. In this case, suspend
+acts like a simple return, passing back the signal \texttt{A\_Continue}
+(this is not shown in the examples). The outline of a
+standard-conforming function is
 
-{\ttfamily\mdseries
-\ \ \ int \textit{function-name}(nargs, args, result, succ\_cont)}
+\goodbreak
+\begin{iconcode}
+int \textit{function-name}(nargs, args, result, succ\_cont)\\
+int nargs; dptr args; dptr result;\\
+continuation succ\_cont;\\
+\{\\
+\>\ ...\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ int nargs; dptr args; dptr result;}
-
-{\ttfamily\mdseries
-\ \ \ continuation succ\_cont;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \}}
-
-
-\textit{continuation} is defined to be a pointer to a function taking
+\noindent
+\texttt{continuation} is defined to be a pointer to a function taking
 no arguments and returning an integer.
 
 Later sections of this dissertation describe the code generation

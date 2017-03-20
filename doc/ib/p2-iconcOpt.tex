@@ -123,57 +123,29 @@ All the changes made to the Icon compiler in order to implement these
 optimizations were done with C compiler directives so that each
 optimization can be turned on or off during compilation.
 
-All directives are included in \texttt{src/c/define.h}. The following
+All directives are included in \textfn{src/c/define.h}. The following
 code turns on all optimizations which are type, redundant functions,
 literal propagation, and loop optimizations respectively.
 
-{\ttfamily\mdseries
-\ \ \#ifndef OptimizeType}
-
-{\ttfamily\mdseries
-\ \ \#define OptimizeType}
-
-{\ttfamily\mdseries
-\ \ \#endif}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \#ifndef OptimizePoll}
-
-{\ttfamily\mdseries
-\ \ \#define OptimizePoll}
-
-{\ttfamily\mdseries
-\ \ \#endif}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \#ifndef OptimizeLit}
-
-{\ttfamily\mdseries
-\ \ \#define OptimizeLit}
-
-{\ttfamily\mdseries
-\ \ \#endif}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \#ifndef OptimizeLoop}
-
-{\ttfamily\mdseries
-\ \ \#define OptimizeLoop}
-
-{\ttfamily\mdseries
-\ \ \#define LoopThreshold \ 6}
-
-{\ttfamily\mdseries
-\ \ \#endif}
+\goodbreak
+\begin{iconcode}
+\#ifndef OptimizeType\\
+\#define OptimizeType\\
+\#endif\\
+\\
+\#ifndef OptimizePoll\\
+\#define OptimizePoll\\
+\#endif\\
+\\
+\#ifndef OptimizeLit\\
+\#define OptimizeLit\\
+\#endif\\
+\\
+\#ifndef OptimizeLoop\\
+\#define OptimizeLoop\\
+\#define LoopThreshold \ 6\\
+\#endif\\
+\end{iconcode}
 
 
 In the last directive, \texttt{LoopThreshold} is declared to have the
@@ -263,6 +235,7 @@ assigned their own types in the bit vector.
 \bigskip
 
 {\centering\selectlanguage{english}
+  {\color{red} Missing Figure}\\
 Figure 24-2: Sample Bit Vector
 \par}
 
@@ -289,23 +262,19 @@ a simple integer.
 Unfortunately, it was discovered that several different locations
 referenced the same type vector, and any change to one would not be
 apparent to the other. The second plan which was actually adopted was
-to create a structure that could contain a packed representation or a
+to create a structure that could contain a packed representation of a
 pointer to a full length type vector. This allowed multiple variables
 to reference the same structure which would always be current since
 only the fields of a structure were being modified.  The following
 structure is the new type vector.
 
-{\ttfamily\mdseries
-\ \ \ struct typinfo \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ unsigned int *bits;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ unsigned int packed;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \};}
+\goodbreak
+\begin{iconcode}
+struct typinfo \{\\
+\>unsigned int *bits;\\
+\>unsigned int packed;\\
+\};\\
+\end{iconcode}
 
 
 The \texttt{bits} field is a pointer to an array of unsigned integers
@@ -332,19 +301,19 @@ values of this field.
 \tablelasttail{}
 \begin{xtabular}{|m{0.6629598in}|m{0.42545983in}|m{0.8122598in}|}
 \hline
- NULL\_T &
+\texttt{ NULL\_T} &
 \raggedleft 1 &
  Null type\\\hline
- REAL\_T &
+ \texttt{REAL\_T} &
 \raggedleft 2 &
  Real type\\\hline
- INT\_T &
+ \texttt{INT\_T} &
 \raggedleft 4 &
  Integer type\\\hline
- CSET\_T &
+ \texttt{CSET\_T} &
 \raggedleft 8 &
  C Set type\\\hline
- STR\_T &
+ \texttt{STR\_T} &
 \raggedleft 16 &
  String type\\\hline
 \end{xtabular}
@@ -354,7 +323,7 @@ Figure 25-3: Valid Packed Types
 \par}
 
 The \texttt{typinfo} structure and defined constants for builtin types
-were added to \texttt{csym.h}.
+were added to \textfn{csym.h}.
 
 \subsection[24.2.2 How Type Allocation Works]{24.2.2 How Type Allocation Works}
 
@@ -428,57 +397,38 @@ functions that inspect, modify, or delete type bits were
 isolated. These functions required modification so that they could
 handle the packed type representation. In order to facilitate the
 understanding of these changes, these functions and macros that
-manipulate type vectors moved from \texttt{typinfer.c} to a new file
-called \texttt{types.c}. The following macros were modified or moved
-to \texttt{types.c}.
+manipulate type vectors moved from \textfn{typinfer.c} to a new file
+called \textfn{types.c}. The following macros were modified or moved
+to \textfn{types.c}.
 
-{\ttfamily\mdseries
-\ \ NumInts(n\_bits)}
+\goodbreak
+\begin{iconcode}
+NumInts(n\_bits)\\
+ClrTyp (size, typ)\\
+CpyTyp (nsize, src, dest)\\
+MrgTyp (nsize, src, dest)\\
+ChkMrgTyp(nsize, src, dest)\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ ClrTyp (size, typ)}
+\texttt{ClrTyp}, \texttt{CpyTyp}, \texttt{MrgTyp}, and
+\texttt{ChkMrgTyp} were modified to handle the compact vectors while
+NumInts moved for the sake of consistency. The functionality of these
+macros has not changed.
 
-{\ttfamily\mdseries
-\ \ CpyTyp (nsize, src, dest)}
+The following functions were also modifed or moved to \textfn{types.c}.
 
-{\ttfamily\mdseries
-\ \ MrgTyp (nsize, src, dest)}
-
-{\ttfamily\mdseries
-\ \ ChkMrgTyp(nsize, src, dest)}
-
-ClrTyp, CpyTyp, MrgTyp, and ChkMrgTyp were modified to handle the
-compact vectors while NumInts moved for the sake of consistency. The
-functionality of these macros has not changed.
-
-The following functions were also modifed or moved to \texttt{types.c}.
-
-{\ttfamily\mdseries
-\ \ struct typinfo *alloc\_typ(unsigned int n\_types);}
-
-{\ttfamily\mdseries
-\ \ novalue set\_typ(struct typinfo *type, unsigned int bit);}
-
-{\ttfamily\mdseries
-\ \ novalue clr\_typ(struct typinfo *type, unsigned int bit);}
-
-{\ttfamily\mdseries
-\ \ int has\_type(struct typinfo *type, int typcd, int clear);}
-
-{\ttfamily\mdseries
-\ \ int other\_type(struct typinfo *type, int typcd);}
-
-{\ttfamily\mdseries
-\ \ int bitset(struct typinfo *type, int bit);}
-
-{\ttfamily\mdseries
-\ \ int is\_empty(struct typinfo *type);}
-
-{\ttfamily\mdseries
-\ \ novalue bitrange(int typcd, int *frst\_bit, int *last\_bit);}
-
-{\ttfamily\mdseries
-\ \ novalue typecd\_bits(int typcd, struct type *type);}
+\goodbreak
+\begin{iconcode}
+struct typinfo *alloc\_typ(unsigned int n\_types);\\
+novalue set\_typ(struct typinfo *type, unsigned int bit);\\
+novalue clr\_typ(struct typinfo *type, unsigned int bit);\\
+int has\_type(struct typinfo *type, int typcd, int clear);\\
+int other\_type(struct typinfo *type, int typcd);\\
+int bitset(struct typinfo *type, int bit);\\
+int is\_empty(struct typinfo *type);\\
+novalue bitrange(int typcd, int *frst\_bit, int *last\_bit);\\
+novalue typecd\_bits(int typcd, struct type *type);\\
+\end{iconcode}
 
 
 All the above functions required modification for the new type
@@ -487,18 +437,16 @@ representation except for \texttt{bitrange} and \texttt{typecd}.
 \subsection[24.2.4 New Functions]{24.2.4 New Functions}
 
 The following functions were added to support the new type
-representation and were placed in \texttt{types.c}. A description of
+representation and were placed in \textfn{types.c}. A description of
 the purpose of each function is provided after the prototypes.
 
-{\ttfamily\mdseries
-unsigned int *alloc\_mem\_type(int unsigned int n\_ntypes)}
+\iconline{ unsigned int *alloc\_mem\_type(int unsigned int n\_ntypes) }
 
 Allocates an actual bit vector large enough to hold \texttt{n\_types}
 number of bits. The pointer to the \texttt{unsigned int} array is
 returned.
 
-{\ttfamily\mdseries
-novalue xfer\_packed\_types(struct typinfo *type)}
+\iconline{ novalue xfer\_packed\_types(struct typinfo *type) }
 
 Transfers the types in the packed representation to the full length
 bit vector in the same \texttt{struct typinfo} variable. It assumes
@@ -507,41 +455,35 @@ valid. The transfer is done by finding the appropriate word in the
 array where a specific bit is supposed to be and creating a mask that
 is ANDed to that position in the array.
 
-{\ttfamily\mdseries
-int xfer\_packed\_to\_bits(struct typinfo *src, struct typinfo *dest, int nsize)}
+\iconline{ int xfer\_packed\_to\_bits(struct typinfo *src, struct typinfo *dest, int nsize) }
 
 Transfers the types in the packed representation from \texttt{src} to
 a full length bit vector, \texttt{dest}, of type \texttt{struct
 typinfo} upto a certain type (bit) in the vector represented by
 \texttt{nsize}.
 
-{\ttfamily\mdseries
-novalue and\_bits\_to\_packed(struct typinfo *src, struct typinfo *dest, int nsize)}
+\iconline{ novalue and\_bits\_to\_packed(struct typinfo *src, struct typinfo *dest, int nsize) }
 
 Performs a bitwise AND on two type vectors. Appropriate measures
 will be taken for both packed and full type representation.
 
-{\ttfamily\mdseries
-unsigned int get\_bit\_vector(struct typinfo *src, int pos)}
+\iconline{ unsigned int get\_bit\_vector(struct typinfo *src, int pos) }
 
 Builds a slice (selected word) of a full length bit vector from a
 compact type form.
 
-{\ttfamily\mdseries
-novalue clr\_packed(struct typinfo *src, int nsize)}
+\iconline{ novalue clr\_packed(struct typinfo *src, int nsize) }
 
 Zeros out the bits of the packed representation.
 
-{\ttfamily\mdseries
-novalue cpy\_packed\_to\_packed(struct typinfo *src, struct typinfo *dest, int nsize)}
+\iconline{ novalue cpy\_packed\_to\_packed(struct typinfo *src, struct typinfo *dest, int nsize) }
 
 Copies the packed vector from one variable to the packed
 representation of another variable. That is, the source variable's
 types are copied into the destination if the type is within the first
 \texttt{nsize} types.
 
-{\ttfamily\mdseries
-int mrg\_packed\_to\_packed(struct typinfo *src, struct typinfo *dest, int nsize)}
+\iconline{ int mrg\_packed\_to\_packed(struct typinfo *src, struct typinfo *dest, int nsize) }
 
 Merges two packed vectors into one. This performs a logical AND of
 all types within the first \texttt{nsize} types.
@@ -552,8 +494,8 @@ Other significant changes had to accompany the switch over to the new
 type representation. All pointer variables of type \texttt{unsigned
 int} that referred to a type had to be changed to a pointer to type
 \texttt{struct typinfo}. This included changes in the following
-compiler source files: \texttt{cproto.h}, \texttt{csym.h},
-\texttt{ctree.h}, and \texttt{typinfer.c}. Note that this also
+compiler source files: \textfn{cproto.h}, \textfn{csym.h},
+\textfn{ctree.h}, and \textfn{typinfer.c}. Note that this also
 includes function parameters. Additionally, there were functions that
 had code embedded in them to manipulate the bits of a type vector
 manually. In these places, the code required reworking either to
@@ -562,31 +504,25 @@ order to take advantage of the compact types. These functions are
 listed in the following list followed by a list of brief explanations
 of the modifications.
 
-{\ttfamily\mdseries
-novalue typinfer(void)}
+\iconline{ novalue typinfer(void) }
 
 Allocates a special variable with all the bits on. This required a
 call to \texttt{alloc\_mem\_type} in order to allocate a full length
 type vector. All the bits were then set to on.
 
-{\ttfamily\mdseries
-struct store *alloc\_stor(int store\_sz, int n\_types)}
+\iconline{ struct store *alloc\_stor(int store\_sz, int n\_types) }
 
 Allocates a store which includes type information. This required
 changing the \texttt{alloc} call to allocate \texttt{struct typinfo}
 instead of \texttt{unsigned int}.
 
-{\ttfamily\mdseries
-struct symtyps *symtyps(int n\_syms)}
-
+\iconline{ struct symtyps *symtyps(int n\_syms) }
 
 Allocates symbol tables. This also required changing the
 \texttt{alloc} call to allocate \texttt{struct typinfo} instead of
 \texttt{unsigned int}.
 
-{\ttfamily\mdseries
-novalue typ\_deref(struct typinfo *src, struct typinfo *dest, int chk)}
-
+\iconline{ novalue typ\_deref(struct typinfo *src, struct typinfo *dest, int chk) }
 
 Before the type dereferencing is performed the \texttt{src} was merged
 with the \texttt{dest} parameters. This required checking for packed
@@ -595,16 +531,13 @@ boundary between first class and intermediate types falls in the
 middle of a word, those intermediate types on the boundary word are
 zeroed out.
 
-{\ttfamily\mdseries
-novalue abstr\_typ(struct il\_code *il, struct type *typ)}
-
+\iconline{ novalue abstr\_typ(struct il\_code *il, struct type *typ) }
 
 In one of the cases of a \texttt{switch} statement two type vectors
 are ANDed together. This requires placing a function call to
 \texttt{and\_bits\_to\_packed} in place of the existing code.
 
-{\ttfamily\mdseries
-int eval\_cnv(int type\_cd, int index, int def, int *cnv\_flags)}
+\iconline{ int eval\_cnv(int type\_cd, int index, int def, int *cnv\_flags) }
 
 This function determines if a type conversion on a type will
 succeed. To do this, a type vector is ANDed with several different bit
@@ -614,8 +547,7 @@ function \texttt{get\_vector} is called to build a word with the
 appropriate type bits set if they fall in the selected word of the
 type vector.
 
-{\ttfamily\mdseries
-struct argtyps *get\_argtyp(void)}
+\iconline{ struct argtyps *get\_argtyp(void) }
 
 Allocates an argument list. This required changing the
 \texttt{alloc} call to allocate \texttt{struct typinfo} instead of
@@ -651,7 +583,7 @@ This section briefly describes how the intermediate C code is
 represented and generated internally by the Icon compiler.  The
 majority of the functions that generate this internal representation
 and print it to a file are contained in the following compiler source
-files: \texttt{ccode.c}, \texttt{codegen.c}, and \texttt{inline.c}.
+files: \textfn{ccode.c}, \textfn{codegen.c}, and \textfn{inline.c}.
 
 {\sffamily
 How Code is Generated}
@@ -672,23 +604,15 @@ internally, the code is then written to the file.
 The internal C code is represented through a C structure called
 \texttt{struct code} which is shown below.
 
-{\ttfamily\mdseries
-struct code \{}
-
-{\ttfamily\mdseries
-\ \ \ int cd\_id;}
-
-{\ttfamily\mdseries
-\ \ \ struct code *next;}
-
-{\ttfamily\mdseries
-\ \ \ struct code *prev;}
-
-{\ttfamily\mdseries
-\ \ \ union \ cd\_fld \ fld[1];}
-
-{\ttfamily\mdseries
-\ \ \ \};}
+\goodbreak
+\begin{iconcode}
+struct code \{\\
+\>int cd\_id;\\
+\>struct code *next;\\
+\>struct code *prev;\\
+\>union \ cd\_fld \ fld[1];\\
+\};\\
+\end{iconcode}
 
 
 The \texttt{cd\_id} field is an identifier signaling what type of code
@@ -709,12 +633,12 @@ short description.
 {\itshape Description}\\}
 \tabletail{}
 \tablelasttail{}
-\begin{xtabular}{|m{0.9906598in}|m{0.42545983in}|m{2.42956in}|}
+\begin{xtabular}{|>{\texttt\bgroup}m{1in}<{\egroup}|m{0.5in}|m{2.5in}|}
 \hline
-{\ttfamily C\_Null} &
+C\_Null &
 \raggedleft 0 &
  No code in this struct\\\hline
-{\ttfamily C\_CallSig} &
+C\_CallSig &
 \raggedleft 1 &
  Call a signal (function)\\\hline
  C\_RetSig &
@@ -793,7 +717,8 @@ length of \texttt{cd\_fld} unions. In this case all even indices into
 the array are tags describing the contents of the following array
 element. There is a special marker, \texttt{A\_End}, that signifies
 the end of the array.
-Figure\~{}{\textbackslash}ref\{fig:struct\_code\_assign\_full\} shows
+
+Figure{\color{red}\~{}{\textbackslash}ref\{fig:struct\_code\_assign\_full\}} shows
 these field identifiers along with their corresponding fields for an
 assignment statement. It is important to note that only when the
 \texttt{cd\_id} is \texttt{C\_CdAry} will the field identifiers be
@@ -851,7 +776,7 @@ the next and previous \texttt{struct code} structures in the chain.
 
 \bigskip
 
-
+\begin{center}{\color{red} Missing figure}\end{center}
 \bigskip
 
 {\centering\selectlanguage{english}
@@ -889,9 +814,7 @@ code}, and it is always assigned to the location of the last
 \texttt{ccode.c}. The prototypes for the two new functions are as
 follows:
 
-{\ttfamily\mdseries
-int analyze\_poll(void)}
-
+\iconline{ int analyze\_poll(void) }
 
 This function analyzes the code between the last occurrence of the
 \texttt{Poll()} macro and the current position. If there are no
@@ -949,10 +872,9 @@ can be propagated to all places where the descriptor table is used.
 For example, the following code fragment is fairly common:
 
 \begin{iconcode}
-\>   r\_frame.tend.d[4].dword = D\_Integer;\\
-\>   r\_frame.tend.d[4].vword.integr = 1;\\
-\>   irslt = sub(argp[0].vword.integr, \\
-\> \> \> \> \> r\_frame.tend.d[4].vword.integr);
+r\_frame.tend.d[4].dword = D\_Integer;\\
+r\_frame.tend.d[4].vword.integr = 1;\\
+irslt = sub(argp[0].vword.integr, r\_frame.tend.d[4].vword.integr);
 \end{iconcode}
 
 In this section of code, the structure
@@ -1104,7 +1026,7 @@ L9: \\
 \>   r\_frame.tend.d[6].dword = D\_Integer; \\
 \>   r\_frame.tend.d[6].vword.integr = 1; \\
 L8: \\
-\>   if (!(r\_frame.tend.d[6].vword.integr\${\textless}=\$ 10) ) \\
+\>   if (!(r\_frame.tend.d[6].vword.integr {\textless}= 10) ) \\
 \> \>    goto L9; \\
 \>   ... \\
 \>   ++r\_frame.tend.d[6].vword.integr; \\
@@ -1161,6 +1083,7 @@ may only be propagated between.
 \bigskip
 
 {\centering\selectlanguage{english}
+  {\color{red}Missing Figure}\\
 Figure 24-8: Literal
 \par}
 
@@ -1183,6 +1106,7 @@ replaced by its literal.
 \bigskip
 
 {\centering\selectlanguage{english}
+  {\color{red}Missing Figure}\\
 Figure 24-9: Assignment
 \par}
 
@@ -1190,12 +1114,10 @@ Figure 24-9: Assignment
 
 The following functions were created to support the contant
 propagation optimization. All these functions are placed in the
-compiler source file \texttt{ccode.c}. Each function used in the
+compiler source file \textfn{ccode.c}. Each function used in the
 constant propagation is prototyped and described below.
 
-{\ttfamily\mdseries
-struct lit\_tbl *alc\_tbl(void)}
-
+\iconline{ struct lit\_tbl *alc\_tbl(void) }
 
 This function allocates a \texttt{struct lit\_tbl} entry that contains
 information about a literal and its usage. It first checks a global
@@ -1204,19 +1126,15 @@ table structures that may be reused. If there are no free structures
 in this list then a new structure is allocated. Lastly, the fields are
 initialized to predefined values.
 
-{\ttfamily\mdseries
-novalue free\_tbl(void)}
-
+\iconline{ novalue free\_tbl(void) }
 
 This function frees the memory used for the current table by attaching
 the current table to the list of free table structures
-(free\_lit\_tbl).
+(\texttt{free\_lit\_tbl}).
 
-{\ttfamily\mdseries
-novalue tbl\_add(struct lit\_tbl *add)}
+\iconline{ novalue tbl\_add(struct lit\_tbl *add) }
 
-
-This function adds a new struct lit\_tbl structure into the current
+This function adds a new \texttt{struct lit\_tbl} structure into the current
 table. The insertion is to the end of the table plus it checks for the
 previous use of the descriptor location used in the element being
 added. For the previous use of the same element, that location's
@@ -1225,9 +1143,7 @@ being added. In essence, this defines a scope for each descriptor
 location. Once \texttt{end} is set for the first time, it should not
 be changed later.
 
-{\ttfamily\mdseries
-int substr(const char *str, const char *sub)}
-
+\iconline{ int substr(const char *str, const char *sub) }
 
 This function is used to scan strings for logical operators
 (\texttt{==}, \texttt{!=}, \texttt{{\textgreater}=},
@@ -1236,17 +1152,14 @@ is found in \texttt{str} then \texttt{TRUE} is returned. It is
 necessary to identify these operators so a string is not propagated as
 an operand to one of these operators which is not valid C syntax.
 
-{\ttfamily\mdseries
-int instr(const char *str, int chr)}
-
+\iconline{ int instr(const char *str, int chr) }
 
 This function is used to determine if a string contains an assignment
 operator. \ This function will return \texttt{TRUE} if the string
 \texttt{str} contains any type of assignment (\texttt{=}, \texttt{+=},
 \texttt{{}-=}, \texttt{*=}, \texttt{/=}, or \texttt{\%=}).
 
-{\ttfamily\mdseries
-novalue invalidate(struct val\_loc *v, struct code *end, int code)}
+\iconline{ novalue invalidate(struct val\_loc *v, struct code *end, int code) }
 
 
 This function sets values for an element in the literal table. For all
@@ -1257,8 +1170,7 @@ represented by \texttt{v} the \texttt{end} field is set to
 values: \texttt{NO\_LIMIT}, \texttt{LIMITED},
 \texttt{LIMITED\_TO\_INT}, or \texttt{NO\_TOUCH}.
 
-{\ttfamily\mdseries
-novalue analyze\_literals(struct code *start, struct code *top, int lvl)}
+\iconline{ novalue analyze\_literals(struct code *start, struct code *top, int lvl) }
 
 
 This function steps through the \texttt{struct code} list for each
@@ -1268,9 +1180,7 @@ control variables, when and if the value of a constant descriptor
 location changes, and checks to see if a descriptor location is passed
 by reference to any functions.
 
-{\ttfamily\mdseries
-novalue propagate\_literals(void)}
-
+\iconline{ novalue propagate\_literals(void) }
 
 This function steps through each entry in the literal table and begins
 to replace occurences of the descriptor location with the literal
@@ -1278,9 +1188,7 @@ between the \texttt{struct code} structures from the \texttt{initial}
 field to the \texttt{end} field.  The function \texttt{eval\_code} is
 called to do the actual propagation.
 
-{\ttfamily\mdseries
-int eval\_code(struct code *cd, struct lit\_tbl *cur)}
-
+\iconline{ int eval\_code(struct code *cd, struct lit\_tbl *cur) }
 
 This function first checks to see if the descriptor index of the code
 currently being examined matches that of the current literal table
@@ -1339,15 +1247,15 @@ The first optimization to the variable initialization was to eliminate
 never executed. In some cases the loops that initialize the
 descriptor tables resembled this:
 
-{\ttfamily\mdseries
-\ \ \ for (i = 0; i {\textless} 0; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ r\_frame.tend.d[i] = nulldesc;}
+\goodbreak
+\begin{iconcode}
+for (i = 0; i < 0; ++i)\\
+\>r\_frame.tend.d[i] = nulldesc;\\
+\end{iconcode}
 
 
 This code is generated for Icon library functions in the function
-\texttt{outerfnc} located in \texttt{codegen.c}. There is a separate
+\texttt{outerfnc} located in \textfn{codegen.c}. There is a separate
 function that outputs similar code for user written functions which
 does check to see if the loop will ever execute. Both functions
 contain a variable \texttt{ntend} which hold the number of descriptor
@@ -1360,11 +1268,11 @@ value of the null descriptor \texttt{nulldesc} at the beginning of the
 function. It is a simple one-line \texttt{for} loop similar to the
 following code fragment.
 
-{\ttfamily\mdseries
-\ \ \ for (i = 0; i {\textless} 3; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ r\_frame.tend.d[i] = nulldesc;}
+\goodbreak
+\begin{iconcode}
+for (i = 0; i < 3; ++i)\\
+\>r\_frame.tend.d[i] = nulldesc;\\
+\end{iconcode}
 
 
 Also, upon examining the C code generated from several programs, the
@@ -1373,56 +1281,38 @@ this is a relatively small number, these loops can be unrolled into a
 series of assignments, and the loop may be removed. The following code
 is the above loop unrolled.
 
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[0] = nulldesc;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[1] = nulldesc;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[2] = nulldesc;}
-
+\goodbreak
+\begin{iconcode}
+r\_frame.tend.d[0] = nulldesc;\\
+r\_frame.tend.d[1] = nulldesc;\\
+r\_frame.tend.d[2] = nulldesc;\\
+\end{iconcode}
 
 While this will increase the size of the generated code, the loop
 overhead is eliminated. There is a limit placed on the number of loop
 iterations that will be unrolled which is defined in
-\texttt{define.h}. Currently, this value, \texttt{LoopThreshold}, is
+\textfn{define.h}. Currently, this value, \texttt{LoopThreshold}, is
 set to 6. Because this number and the number of descriptor table
 entries is small, the number of unrolled elements is reasonable, and
 the code size is not greatly affected.
 
 
 The code that unrolls these loops is in the function \texttt{outerfnc}
-in the file \texttt{codegen.c}. Because this change is only several
+in the file \textfn{codegen.c}. Because this change is only several
 lines, the code that implements loop unrolling is included below.
 
-{\ttfamily\mdseries
-\ \ \ \#ifdef OptimizeLoop}
-
-{\ttfamily\mdseries
-\ \ \ if (ntend {\textgreater} 0) \ \ \ \ \ \ \ \ \ \ /* Check for dead code */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ for (i=0; i {\textless} ntend ;i++)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ fprintf(codefile,}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textquotedbl} \ \ r\_frame.tend.d[\%d] = nulldesc; {\textbackslash}n{\textquotedbl},
-i);}
-
-{\ttfamily\mdseries
-\ \ \ \#else}
-
-{\ttfamily\mdseries
-\ \ \ fprintf(codefile, {\textquotedbl}for (i=0; i {\textless} \%d ;i++) {\textbackslash}n{\textquotedbl}, ntend);}
-
-{\ttfamily\mdseries
-\ \ \ fprintf(codefile, {\textquotedbl} \ \ f\_frame.tend.d[i] = nulldesc;{\textbackslash}n;{\textquotedbl});}
-
-{\ttfamily\mdseries
-\ \ \ \#endif}
+\goodbreak
+\begin{iconcode}
+\#ifdef OptimizeLoop\\
+if (ntend > 0) \ \ \ \ \ \ \ \ \ \ /* Check for dead code */\\
+\>for (i=0; i < ntend ;i++)\\
+\>\>fprintf(codefile,\\
+\>\>\>\>\ \ " \ \ r\_frame.tend.d[\%d] = nulldesc; {\textbackslash}n",i);\\
+\#else\\
+fprintf(codefile, "for (i=0; i < \%d ;i++) {\textbackslash}n", ntend);\\
+fprintf(codefile, " \ \ f\_frame.tend.d[i] = nulldesc;{\textbackslash}n;");\\
+\#endif\\
+\end{iconcode}
 
 \subsection[24.3.7 Results of Code Generation Optimizations]{24.3.7 Results of Code Generation Optimizations}
 
@@ -1981,29 +1871,20 @@ organized in the order of the easiest to hardest to implement.
 For the unrolled descriptor initializations change the indexing array to pointer arithmetic which is faster. For example
 the following code fragment is modified as follows: 
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[0] = nulldesc;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[1] = nulldesc;}
-
-{\ttfamily\mdseries
-\ \ \ \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ register dptr p;}
-
-{\ttfamily\mdseries
-\ \ \ p = r\_frame.tend.d;}
-
-{\ttfamily\mdseries
-\ \ \ (p++)-{\textgreater}dword = nulldesc;}
-
-{\ttfamily\mdseries
-\ \ \ (p++)-{\textgreater}dword = nulldesc;}
+\goodbreak
+\begin{iconcode}
+r\_frame.tend.d[0] = nulldesc;\\
+r\_frame.tend.d[1] = nulldesc;\\
+r\_frame.tend.d[2] = nulldesc;\\
+\end{iconcode}
+\goodbreak
+\makebox[0.5\textwidth]{\hrulefill}
+\begin{iconcode}
+register dptr p;\\
+p = r\_frame.tend.d;\\
+(p++)->dword = nulldesc;\\
+(p++)->dword = nulldesc;\\
+\end{iconcode}
 
 \liststyleLxxxvii
 \begin{enumerate}
@@ -2011,17 +1892,13 @@ the following code fragment is modified as follows:
 Analyze the logic of loops and also unroll smaller ones. For example,
 the following loop appears at the beginning of most functions.
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ for (i = 0; i {\textless} r\_nargs ; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(\&r\_args[i], \&r\_frame.tend.d[i + 0]);}
-
-{\ttfamily\mdseries
-\ \ \ for(i = r\_nargs; i {\textless} 2 ; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ r\_frame.tend.d[i + 0] = nulldesc;}
+\goodbreak
+\begin{iconcode}
+for (i = 0; i < r\_nargs ; ++i)\\
+\>deref(\&r\_args[i], \&r\_frame.tend.d[i + 0]);\\
+for(i = r\_nargs; i < 2 ; ++i)\\
+\>r\_frame.tend.d[i + 0] = nulldesc;\\
+\end{iconcode}
 
 
 In this case \texttt{r\_nargs} cannot be greater than two because it
@@ -2030,32 +1907,18 @@ to guarantee that \texttt{r\_nargs} can never be more than two, but if
 it is certain that there are exactly two elements then we can write
 the initialization loop as follows:
 
-{\ttfamily\mdseries
-\ \ \ if(r\_nargs {\textgreater} 0) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(\&r\_args[0], \&r\_frame.tend.d[0]);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ if (r\_nargs {\textgreater} 1)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ deref(\&r\_args[1], \&r\_frame.tend.d[1]);}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ tend.d[1].dword = D\_Null;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ else}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ tend.d[0].dword = D\_Null;}
+\goodbreak
+\begin{iconcode}
+if(r\_nargs > 0) \{\\
+\>deref(\&r\_args[0], \&r\_frame.tend.d[0]);\\
+\>if (r\_nargs > 1)\\
+\>\>deref(\&r\_args[1], \&r\_frame.tend.d[1]);\\
+\>else\\
+\>\>tend.d[1].dword = D\_Null;\\
+\>\}\\
+else\\
+\>tend.d[0].dword = D\_Null;\\
+\end{iconcode}
 
 
 This optimization could lead to a gain in execution speed. For
@@ -2065,52 +1928,44 @@ of one or two, approximately 40\% of these loops would be unrolled.
 \liststyleLxxxviii
 \begin{enumerate}
 
-\item An easy and obvious solution would be to simplify expressions
-like i + 0 which commonly occur. This will not improve execution time
-because the C compiler will catch this, but by removing it before
+\item An easy and obvious solution would be to simplify expressions like
+\texttt{i + 0} which commonly occur. This will not improve execution
+time because the C compiler will catch this, but by removing it before
 writing the statement to the intermediate file, the compile time of
 the C compiler will be improved.
 
-\item \ Another easy optimization would be to shorten variable
+\item Another easy optimization would be to shorten variable
 names. This causes a penalty by having to write long names such as
-\{{\textbackslash}tt\{r\_frame.tend.d\}\} to file and then having the
-C compiler read it back in. This could be changed to
-\{{\textbackslash}tt\{r\_f.t.d\}\}. While this makes the
-intermediate C code hard to read, the intermediate code is not meant
-to be inspected by the user and will result in faster compilations.
+\texttt{r\_frame.tend.d} to file and then having the C compiler read
+it back in. This could be changed to \texttt{r\_f.t.d}. While this
+makes the intermediate C code hard to read, the intermediate code is
+not meant to be inspected by the user and will result in faster
+compilations.
 
-\item For the initialization loops present in all functions, remove
-the initialization of the loop control variable when
-unnecessary. Consider the following loop:
+\item For the initialization loops present in all functions, remove the
+initialization of the loop control variable when unnecessary. Consider
+the following loop:
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ for (i = 0; i {\textless} r\_nargs ; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(\&r\_args[i], \&r\_frame.tend.d[i + 0]);}
-
-{\ttfamily\mdseries
-\ \ \ for(i = r\_nargs; i {\textless} 2 ; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ r\_frame.tend.d[i + 0] = nulldesc;}
+\goodbreak
+\begin{iconcode}
+for (i = 0; i < r\_nargs ; ++i)\\
+\>deref(\&r\_args[i], \&r\_frame.tend.d[i + 0]);\\
+for(i = r\_nargs; i < 2 ; ++i)\\
+\>r\_frame.tend.d[i + 0] = nulldesc;\\
+\end{iconcode}
 
 
 The variable \texttt{i} in the second loop does not need to be
 initialized since it is already at the value that it is supposed to be
 for the second loop. The next fragment of code illustrates this change.
 
-{\ttfamily\mdseries
-\ \ \ for (i = 0; i {\textless} r\_nargs ; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ deref(\&r\_args[i], \&r\_frame.tend.d[i + 0]);}
-
-{\ttfamily\mdseries
-\ \ \ for( ; i {\textless} 2 ; ++i)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ r\_frame.tend.d[i + 0] = nulldesc;}
+\goodbreak
+\begin{iconcode}
+for (i = 0; i < r\_nargs ; ++i)\\
+\>deref(\&r\_args[i], \&r\_frame.tend.d[i + 0]);\\
+for( ; i < 2 ; ++i)\\
+\>r\_frame.tend.d[i + 0] = nulldesc;\\
+\end{iconcode}
 
 
 While this change is very easy, it is questionable whether this will
@@ -2122,20 +1977,17 @@ where these loops are very common.
 \item 
 \ Assignments of the \texttt{r\_frame.tend.d} structures may be simplified. Consider the following assignment:
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[2] /* i */.vword.integr =}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ r\_frame.tend.d[4].vword.integr;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[2] /* i */.dword = D\_Integer;}
+\goodbreak
+\begin{iconcode}
+r\_frame.tend.d[2] /* i */.vword.integr =\\
+\>r\_frame.tend.d[4].vword.integr;\\
+r\_frame.tend.d[2] /* i */.dword = D\_Integer;\\
+\end{iconcode}
 
 
 This could be changed into a single assignment as follows:
 
-{\ttfamily\mdseries
-\ \ r\_frame.tend.d[2] = r\_frame.tend.d[4];}
+\iconline{ \ \ r\_frame.tend.d[2] = r\_frame.tend.d[4]; }
 
 
 This optimization would require more work than the previously
@@ -2150,17 +2002,16 @@ common and could lead to substantial gains in execution speed.
 \ Similarly, perform the same simplified descriptor assignment on global descriptor locations. A method needs to be
 created for changing global assignments such as:
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ globals[63] /* rnode */.dword = D\_Integer;}
+\goodbreak
+\begin{iconcode}
+globals[63] /* rnode */.dword = D\_Integer;\\
+globals[63] /* rnode */.vword.integr = 1;\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ globals[63] /* rnode */.vword.integr = 1;}
-
-
+\noindent
 into
 
-{\ttfamily\mdseries
-\ \ \ globals[63] /* rnode */ = onedesc;}
+\iconline{globals[63] /* rnode */ = onedesc; }
 
 \noindent where \texttt{onedesc} is a single descriptor that already
 contains the values of the \texttt{dword} and \texttt{vword} being
@@ -2179,31 +2030,22 @@ being derefenced and the location where the dereferenced value is to be placed. 
 another version of \texttt{deref}, perhaps named \texttt{deref1}, that takes a single argument, dereferences it, and
 places the dereferenced value into the parameter location.
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ deref(\&r\_frame.tend.d[7], \&r\_frame.tend.d[7]);}
+\iconline{deref(\&r\_frame.tend.d[7], \&r\_frame.tend.d[7]); }
 
 \liststyleLxlii
 \begin{enumerate}
 \item 
 \ Another issue is redundant constant initializations. Consider the following code:
 \end{enumerate}
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[8].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[8].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ if (!(argp[1] /* level */.vword.integr== 1) )}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L19 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[8].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ r\_frame.tend.d[8].vword.integr = 1;}
+\goodbreak
+\begin{iconcode}
+r\_frame.tend.d[8].dword = D\_Integer;\\
+r\_frame.tend.d[8].vword.integr = 1;\\
+if (!(argp[1] /* level */.vword.integr== 1) )\\
+\>goto L19 /* bound */;\\
+r\_frame.tend.d[8].dword = D\_Integer;\\
+r\_frame.tend.d[8].vword.integr = 1;\\
+\end{iconcode}
 
 
 The descriptor location 8 is assigned the value of 1 and then a conditional statement is performed which is followed by

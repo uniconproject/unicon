@@ -127,16 +127,14 @@ base. A new clause in an abstract type computation indicates that a
 structure can be created. The following example is the abstract type
 computation from the built-in function list. It indicates the the
 function creates and returns a new list with elements whose type is
-the same as that of the parameter x (the second parameter).
+the same as that of the parameter \texttt{x} (the second parameter).
 
-{\ttfamily\mdseries
-\ \ \ abstract \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ return new list(type(x))}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>abstract \{\\
+\>\>return new list(type(x))\\
+\>\>\}\\
+\end{iconcode}
 
 This is the clause as written by the programmer developing the
 run-time library; it is translated into an internal form for storage
@@ -287,9 +285,9 @@ types are
 \item 
 integer keyword variable types 
 \item 
-\&pos 
+\texttt{\&pos} 
 \item 
-\&subject 
+\texttt{\&subject}
 \item 
 substring trapped variable types 
 \item 
@@ -306,22 +304,22 @@ global variable reference types
 local variable reference types 
 \end{itemize}
 
-\&random and \&trace behave the same way from the perspective of the
-type inferencing system, so they are grouped under one type as integer
-keyword variables. The fact that \&pos can cause assignment to fail is
-reflected in the type inferencing system, so it is given a separate
-type. \&subject is the only string keyword variable so it is in a type
-by itself.
+\texttt{\&random} and \texttt{\&trace} behave the same way from the
+perspective of the type inferencing system, so they are grouped under
+one type as integer keyword variables. The fact that \texttt{\&pos}
+can cause assignment to fail is reflected in the type inferencing
+system, so it is given a separate type. \texttt{\&subject} is the only
+string keyword variable so it is in a type by itself.
 
 Substring trapped variables and table-element trapped variables are
-{\textasciigrave}{\textasciigrave}hidden'{}' structures in the
-implementation of Icon. They appear as intermediate results, but are
-only indirectly observable in the semantics of Icon. In order to
-reflect these semantics in the type inferencing system, there are
-substring trapped variable types and table-element trapped variable
-types. These are structure types similar to sets, but are variable
-reference types rather than first-class types. The substring trapped
-variable types are allocated with
+``hidden'' structures in the implementation of Icon. They appear as
+intermediate results, but are only indirectly observable in the
+semantics of Icon. In order to reflect these semantics in the type
+inferencing system, there are substring trapped variable types and
+table-element trapped variable types. These are structure types
+similar to sets, but are variable reference types rather than
+first-class types. The substring trapped variable types are allocated
+with
 
 \liststyleLxxx
 \begin{itemize}
@@ -365,15 +363,14 @@ local variable, but the bit vector indexes and store indexes are
 reused between procedures. The next section describes why this reuse
 is possible.
 
-Icon's operators use a number of internal values that never
-{\textasciigrave}{\textasciigrave}escape'{}' as intermediate
-results. Some of these internal values are reflected in the type
-system in order to describe the semantics of the operations in the
-abstract interpretation. The full set of types that can be used to
-express these semantics are presented in the syntax of the abstract
-type computations of the run-time implementation language; see
-Appendix A. In addition to the types of intermediate results, these
-types include
+Icon's operators use a number of internal values that never ``escape''
+as intermediate results. Some of these internal values are reflected
+in the type system in order to describe the semantics of the
+operations in the abstract interpretation. The full set of types that
+can be used to express these semantics are presented in the syntax of
+the abstract type computations of the run-time implementation
+language; see Appendix G. In addition to the types of intermediate
+results, these types include
 
 \liststyleLxxxiii
 \begin{itemize}
@@ -468,20 +465,14 @@ value. On the first call to the procedure, static variables are also
 initialized to the null value. The initialization code for the
 standard semantics is similar to
 
-{\ttfamily\mdseries
-\ \ \ \textit{initialize locals}}
-
-{\ttfamily\mdseries
-\ \ \ if (first\_call) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ initialize statics}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ user initialization code}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
+\goodbreak
+\begin{iconcode}
+\>\textit{initialize locals}\\
+\>if (first\_call) \{\\
+\>\>initialize statics\\
+\>\>user initialization code\\
+\>\}\\
+\end{iconcode}
 
 In type inferencing, the variables are initialized to the null type
 and the condition on the if is ignored. Type inferencing simply knows
@@ -502,30 +493,22 @@ In order to determine the types of variables at the points where they
 are used, type inferencing must compute the contents of the stores
 along edges in the flow graph. Permanently allocating the store on
 each edge can use a large amount of memory. The usage is
-
-{\ttfamily\mdseries
-\ \ \ M = E (G + S + L) T / 8}
-
-\noindent where 
-
-{\ttfamily\mdseries
-\ \ \ M = total memory, expressed in bytes, used by stores}
-
-{\ttfamily\mdseries
-\ \ \ E = the number of edges in the program flow graph}
-
-{\ttfamily\mdseries
-\ \ \ G = the number of global variables in the program}
-
-{\ttfamily\mdseries
-\ \ \ S = the number of static variables in the program}
-
-{\ttfamily\mdseries
-\ \ \ L = the maximum number of local variables in any procedure}
-
-{\ttfamily\mdseries
-\ \ \ T = the number of types in the type system}
-
+\begin{displaymath}
+  M = E (G + S + L) T / 8
+\end{displaymath}
+\begin{center}
+\renewcommand{\arraystretch}{0.9}% Squeeze the lines together
+\begin{tabular}{@{\hspace{1cm}}>{$\bgroup}l<{\egroup$}@{\hspace{3ex}---\hspace{3ex}}l}
+M & total memory, expressed in bytes, used by stores.\\
+E & the number of edges in the program flow graph.\\
+G & the number of global variables in the program.\\
+S & the number of static variables in the program.\\
+L & the maximum number of local variables in any procedure.\\
+T & the number of types in the type system.\\
+\end{tabular}
+\end{center}
+  
+\medskip\noindent
 Large programs with many structure creation points can produce
 thousands of edges, dozens of variables, and hundreds of types,
 requiring megabytes of memory to represent the stores.
@@ -545,7 +528,7 @@ store on the edge entering the node is no longer needed. If updates
 are done carefully, they can be done in-place, so that the same memory
 can be used for both the store entering a node and the one leaving it.
 
-In the case of branching control paths (as in a case expression),
+In the case of branching control paths (as in a \texttt{case} expression),
 abstract interpretation must proceed along one path at a time. The
 store at the start the branching of paths must be saved for use with
 each path. However, it need only be saved until the last path is
@@ -606,7 +589,7 @@ store kept at the node for that operation. A new failure store is
 established whenever a resumable operation is encountered. This works
 because abstract interpretation is performed in forward execution
 order and resumption is LIFO. Control structures, such as
-if-then-else, with branching and joining paths of execution, cause
+\texttt{if-then-else}, with branching and joining paths of execution, cause
 difficulties because there may be more than one possible suspended
 operation when execution leaves the control structure. This results in
 more than one failure store during abstract interpretation. Rather
@@ -687,5 +670,3 @@ used in the next iteration of abstract interpretation. The flag is
 cleared between iterations. If the flag is not set during an
 iteration, a fixed point has been reached and the interpretation
 halts.
-
-\bigskip

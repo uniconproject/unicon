@@ -135,16 +135,17 @@ reason for exposing this code is explained in the implementation
 language reference manual in the section on scoping.)
 
 An operation header starts with one of the three reserved words
-operator, function, or keyword. The header contains a description of
-the operation's \textit{result sequence}, that is, how many results it
-can produce. This includes both the minimum and maximum number of
-results, with indicating an unbounded number. In addition, it
-indicates, by a trailing +, when an operation can be resumed to
-perform a side-effect after it has produced its last result. This
-information is somewhat more detailed than can easily be inferred by
-looking at the returns, suspends, and fails in the detailed C
-code. The information is put in the data base for use by the analysis
-phases of iconc.
+\texttt{operator}, \texttt{function}, or \texttt{keyword}.
+The header contains a description of the operation's
+\textit{result sequence}, that is, how many results it can produce.
+This includes both the minimum and maximum number of results, with
+\texttt{*} indicating an unbounded number. In addition, it indicates,
+by a trailing \texttt{+}, when an operation can be resumed to perform
+a side-effect after it has produced its last result. This information
+is somewhat more detailed than can easily be inferred by looking at
+the \texttt{returns}, \texttt{suspends}, and \texttt{fails} in the
+detailed C code. The information is put in the data base for use by
+the analysis phases of iconc.
 
 An operation header also includes an identifier. This provides the
 name for built-in functions and keywords. For all types of operations,
@@ -152,7 +153,7 @@ rtt uses the identifier to construct the names of the C functions that
 implement the operations.  The headers for operators also include an
 operator symbol. The parser for iconc is not required to use this
 symbol for the syntax of the operation, but for most operations it
-does so; list creation, [\textit{...}], is an example of an
+does so; list creation, \texttt{[\textit{\ldots}]}, is an example of an
 exception. The headers for built-in functions and operators include a
 parameter list. The list provides names for the parameters and
 indicates whether dereferenced and/or undereferenced versions of the
@@ -162,59 +163,53 @@ whether the operation takes a variable number of arguments.
 
 The following are five examples of operation headers. 
 
-{\ttfamily\mdseries
-\ \ \ function\{0,1+\} move(i)}
+\goodbreak
+\begin{iconcode}
+\>function\{0,1+\} move(i)\\\\
+\>function\{\} bal(c1,c2,c3,s,i,j)\\\\
+\>operator\{1\} [...] llist(elems[n])\\\\
+\>operator\{0,1\} / null(underef x --> dx)\\\\
+\>keyword\{3\} regions
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ function\{\} bal(c1,c2,c3,s,i,j)}
-
-{\ttfamily\mdseries
-\ \ \ operator\{1\} [...] llist(elems[n])}
-
-{\ttfamily\mdseries
-\ \ \ operator\{0,1\} / null(underef x -{\textgreater} dx)}
-
-{\ttfamily\mdseries
-\ \ \ keyword\{3\} regions}
-
-\noindent move is a function that takes one argument. It may produce
+\noindent
+\texttt{move} is a function that takes one argument. It may produce
 zero or one result and may be resumed to produce a side effect after
-its last result. bal is a function that takes six arguments. It
-produces an arbitrary number of results.  The list-creation operator
-is given the symbol [...] (which may be used for string invocation, if
-string invocation is enabled) and is given the name llist. It takes an
-arbitrary number of arguments with elems being the array of arguments
-and n being the number of arguments. List creation always produces one
-result. The / operator is given the name null.  It takes one argument,
-but both undereferenced and dereferenced versions are needed by the
-operation. It produces either zero or one result. \&regions is a
-keyword that produces three results.
+its last result. \texttt{bal} is a function that takes six arguments.
+It produces an arbitrary number of results.  The list-creation operator
+is given the symbol \texttt{[...]} (which may be used for string
+invocation, if string invocation is enabled) and is given the name
+\texttt{llist}. It takes an arbitrary number of arguments with
+\texttt{elems} being the array of arguments and \texttt{n} being the
+number of arguments. List creation always produces one result. The
+\texttt{/} operator is given the name \texttt{null}.  It takes one
+argument, but both undereferenced and dereferenced versions are needed
+by the operation. It produces either zero or one result.
+\texttt{\&regions} is a keyword that produces three results.
 
-Type checking and type conversion constructs consist of an if-then
-construct, an if-then-else construct, a type\_case construct that
-selects code to execute based on the type of an argument, and a
-len\_case construct that selects code to execute based on the number
-of arguments in the variable part of a variable-length argument
-list. The conditions in the if-then and if-then-else constructs are
-composed of operations that check the types of arguments or attempt to
-convert arguments to specific types.
+Type checking and type conversion constructs consist of an
+\texttt{if-then} construct, an \texttt{if-then-else} construct, a
+\texttt{type\_case} construct that selects code to execute based on
+the type of an argument, and a \texttt{len\_case} construct that
+selects code to execute based on the number of arguments in the
+variable part of a variable-length argument list. The conditions in
+the \texttt{if-then} and \texttt{if-then-else} constructs are composed
+of operations that check the types of arguments or attempt to convert
+arguments to specific types.
 
-A type check starts with {\textasciigrave}is:'. This is followed by
-the name of a type and an argument in parentheses.  For example, the
-then clause of the following if is executed if x is a list.
+A type check starts with ``\texttt{is:}''. This is followed by the
+name of a type and an argument in parentheses.  For example, the then
+clause of the following \texttt{if} is executed if \texttt{x} is a
+list.
 
-{\ttfamily\mdseries
-\ \ \ if is:list(x) then \textit{...}}
-
+\iconline{if is:list(x) then \textit{...} }
 
 A type conversion is similar to a type check, but starts with
-{\textasciigrave}cnv:'. For example, the following code attempts to
-convert s to a string. If the conversion succeeds, the then clause of
-the if is executed.
+``\texttt{cnv:}''. For example, the following code attempts to convert
+\texttt{s} to a string. If the conversion succeeds, the \texttt{then}
+clause of the \texttt{if} is executed.
 
-{\ttfamily\mdseries
-\ \ \ if cnv:string(s) then \textit{...}}
-
+\iconline{if cnv:string(s) then \textit{...} }
 
 There are forms of conversion that convert a null value into a
 specified default value, forms that put a converted value in a
@@ -223,25 +218,20 @@ into certain types of C values. The later type of conversion is
 convenient because the detailed code is expressed in C. In addition,
 exposing conversions back and forth between Icon and C values leaves
 open the possibility of future optimizations to eliminate unnecessary
-conversions to Icon values. The control clause of an if may also use
-limited forms of expressions involving boolean operators. The full
-syntax and semantics of conversions are described in the
+conversions to Icon values. The control clause of an \texttt{if} may
+also use limited forms of expressions involving boolean operators. The
+full syntax and semantics of conversions are described in the
 implementation language reference manual.
 
 Detailed code is expressed in a slightly extended version of C and is
 introduced by one of two constructs. The first is
 
-
-{\ttfamily\mdseries
-\ \ \ inline \{ extended C \}}
-
+\iconline{inline \{ extended C \} }
 
 This indicates that it is reasonable for the Icon compiler to put the
 detailed code in line. The second construct is
 
-{\ttfamily\mdseries
-\ \ \ body \{ extended C \}}
-
+\iconline{ \>body \{ extended C \} }
 
 This indicates that the detailed code is too large to be put in line
 and should only appear as part of a C function in the run-time

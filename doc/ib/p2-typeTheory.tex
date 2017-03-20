@@ -22,15 +22,16 @@ abstract of the formal models is the type inferencing system.
 
 Variables in the Icon programming language are untyped. That is, a
 variable may take on values of different types as the execution of a
-program proceeds. In the following example, x contains a string after
-the read (if the read succeeds), but it is then assigned an integer or
-real, provided the string can be converted to a numeric type.
+program proceeds. In the following example, \texttt{x} contains a
+string after the read (if the read succeeds), but it is then assigned
+an integer or real, provided the string can be converted to a numeric
+type.
 
-{\ttfamily\mdseries
-\ \ \ x := read()}
-
-{\ttfamily\mdseries
-\ \ \ if numeric(x) then x +:= 4}
+\goodbreak
+\begin{iconcode}
+x := read()\\
+if numeric(x) then x +:= 4\\
+\end{iconcode}
 
 
 In general, it is impossible to know the type of an operator's
@@ -46,11 +47,11 @@ typical Icon programs reveals that the types of most variables remain
 consistent throughout execution (except for the initial null value)
 and that these types can often be determined by inspection. Consider
 
-{\ttfamily\mdseries
-\ \ \ if x := read() then}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ y := x {\textbar}{\textbar} {\textquotedbl};{\textquotedbl}}
+\goodbreak
+\begin{iconcode}
+if x := read() then\\
+\>y := x || ";"\\
+\end{iconcode}
 
 
 Clearly both operands of {\textbar}{\textbar} are strings so no
@@ -74,20 +75,19 @@ based on data flow analysis techniques.
 
 Data flow analysis can be viewed as a form of abstract interpretation
 [.absintrp.]. This can be particularly useful for understanding type
-inferencing. A {\textasciigrave}{\textasciigrave}concrete'{}'
-interpreter for a language implements the standard (operational)
-semantics of the language, producing a sequence of states, where a
-state consists of an execution point, bindings of program variables to
-values, and so forth. An abstract interpreter does not implement the
-semantics, but rather computes information related to the
-semantics. For example, an abstract interpretation may compute the
-sign of an arithmetic expression rather than its value. Often it
-computes a {\textasciigrave}{\textasciigrave}conservative'{}' estimate
-for the property of interest rather than computing exact
-information. Data flow analysis is simply a form of abstract
-interpretation that is guaranteed to terminate. This chapter presents
-a sequence of approximations to Icon semantics, culminating in one
-suitable for type inferencing.
+inferencing. A ``concrete'' interpreter for a language implements the
+standard (operational) semantics of the language, producing a sequence
+of states, where a state consists of an execution point, bindings of
+program variables to values, and so forth. An abstract interpreter
+does not implement the semantics, but rather computes information
+related to the semantics. For example, an abstract interpretation may
+compute the sign of an arithmetic expression rather than its
+value. Often it computes a ``conservative'' estimate for the property
+of interest rather than computing exact information. Data flow
+analysis is simply a form of abstract interpretation that is
+guaranteed to terminate. This chapter presents a sequence of
+approximations to Icon semantics, culminating in one suitable for type
+inferencing.
 
 Consider a simplified operational semantics for Icon, consisting only
 of program points (with the current execution point maintained in a
@@ -96,62 +96,36 @@ environment). As an example of these semantics, consider the following
 program. Four program points are annotated with numbers using comments
 (there are numerous intermediate points not annotated).
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ procedure main()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ local s, n}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \# 1:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ s := read()}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \# 2:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ every n := 1 to 2 do \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \# 3:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ write(s[n])}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \# 4:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ end}
+\goodbreak
+\begin{iconcode}
+procedure main()\\
+local s, n\\
+\\
+\>\# 1:\\
+\>s := read()\\
+\>\# 2:\\
+\>every n := 1 to 2 do \{\\
+\>\>\# 3:\\
+\>\>write(s[n])\\
+\>\>\}\\
+\>\# 4:\\
+end\\
+\end{iconcode}
 
 
-If the program is executed with an input of abc, the following states
+If the program is executed with an input of \texttt{abc}, the following states
 are included in the execution sequence (only the annotated points are
 listed). States are expressed in the form \textit{program point}:
 \textit{environment}.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ 1: [s = null, n = null]}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ 2: [s = {\textquotedbl}abc{\textquotedbl}, n = null]}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ 3: [s = {\textquotedbl}abc{\textquotedbl}, n = 1]}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ 3: [s = {\textquotedbl}abc{\textquotedbl}, n = 2]}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ 4: [s = {\textquotedbl}abc{\textquotedbl}, n = 2]}
+\goodbreak
+\begin{specialcode}{}
+\>\>1: [\texttt{s} = null, \texttt{n} = null]\\
+\>\>2: [\texttt{s} = "\texttt{abc}", \texttt{n} = null]\\
+\>\>3: [\texttt{s} = "\texttt{abc}", \texttt{n} = 1]\\
+\>\>3: [\texttt{s} = "\texttt{abc}", \texttt{n} = 2]\\
+\>\>4: [\texttt{s} = "\texttt{abc}", \texttt{n} = 2]\\
+\end{specialcode}
 
 
 It is customary to use the \textit{collecting semantics} of a language
@@ -168,29 +142,17 @@ of producing any string. Representing this general case, the set of
 environments (once again showing only variable bindings) that can
 occur at point 3 is
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = {\textquotedbl}{\textquotedbl}, n = 1],}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = {\textquotedbl}{\textquotedbl}, n = 2],}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = {\textquotedbl}a{\textquotedbl}, n = 1],}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = {\textquotedbl}a{\textquotedbl}, n = 2],}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = {\textquotedbl}abcd{\textquotedbl}, n = 1],}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = {\textquotedbl}abcd{\textquotedbl}, n = 2],}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ ...}
+\goodbreak
+\begin{specialcode}{}
+\>\>[\texttt{s} = "", \texttt{n} = 1],\\
+\>\>[\texttt{s} = "", \texttt{n} = 2],\\
+\>\>[\texttt{s} = "a", \texttt{n} = 1],\\
+\>\>[\texttt{s} = "a", \texttt{n} = 2],\\
+\>\>\>\ \ldots\\
+\>\>[\texttt{s} = "\texttt{abcd}", \texttt{n} = 1],\\
+\>\>[\texttt{s} = "\texttt{abcd}", \texttt{n} = 2],\\
+\>\>\> \ldots\\
+\end{specialcode}
 
 
 A type inferencing abstraction further approximates this information,
@@ -204,29 +166,30 @@ explained in detail later. For atomic types, Icon's type system is
 used as is. For point 3 in the preceding example the associations
 between variables and types are
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ [s = string, n = integer]}
-
+\begin{specialcode}{}
+\>\>[\texttt{s} = string, \texttt{n} = integer]\\
+\end{specialcode}
 
 The type inferencing system presented in this chapter is best
 understood as the culmination of a sequence of abstractions to the
 semantics of Icon, where each abstraction discards certain
 information. For example, the collecting semantics discards sequencing
 information among states; in the preceding program, collecting
-semantics determine that, at point 3, states may occur with n equal to
-1 and with n equal to 2, but does not determine the order in which
-they must occur. This sequencing information is discarded because
-desired type information is a static property of the program.
+semantics determine that, at point 3, states may occur with \texttt{n}
+equal to 1 and with \texttt{n} equal to 2, but does not determine the
+order in which they must occur. This sequencing information is
+discarded because desired type information is a static property of the
+program.
 
 
 The first abstraction beyond the collecting semantics discards dynamic
 control flow information for goal directed evaluation. The second
 abstraction collects, for each variable, the value associated with the
 variable in each environment. It discards information such as,
-{\textasciigrave}{\textasciigrave}x has the value 3 when y has the
-value 7'{}', replacing it with {\textasciigrave}{\textasciigrave}x may
-have the value 3 sometime and y may have the value 7 sometime.'{}'. It
-effectively decouples associations between variables.
+``\texttt{x} has the value 3 when \texttt{y} has the value 7'',
+replacing it with ``\texttt{x} may have the value 3 sometime
+and \texttt{y} may have the value 7 sometime.''. It effectively
+decouples associations between variables.
 
 This second abstraction associates a set of values with a variable,
 but this set may be any of an infinite number of sets and it may
@@ -261,23 +224,21 @@ operate on sets of environments.
 
 For an example of a flow graph, consider the Icon program 
 
-{\ttfamily\mdseries
-\ \ \ procedure main()}
+\goodbreak
+\begin{iconcode}
+procedure main()\\
+\>every write(1 to 3)\\
+end\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ every write(1 to 3)}
-
-{\ttfamily\mdseries
-\ \ \ end}
-
-
+\noindent
 The diagram below on the left shows the abstract syntax tree for this
-procedure, including the implicit fail at the end of the
+procedure, including the implicit \texttt{fail} at the end of the
 procedure. The invoke node in the syntax tree represents procedure
 invocation. Its first argument must evaluate to the procedure to be
 invoked; in this case the first argument is the global variable
-write. The rest of the arguments are used as the arguments to the
-procedure. pfail represents procedure failure (as opposed to
+\texttt{write}. The rest of the arguments are used as the arguments to the
+procedure. \texttt{pfail} represents procedure failure (as opposed to
 expression failure within a procedure). Nodes corresponding to
 operations that produce values are numbered for purposes explained
 below.
@@ -297,9 +258,9 @@ to \texttt{to} is a resumption path induced by the control structure
 \texttt{every}. The path from \texttt{to} to \texttt{pfail} is the
 failure path for \texttt{to}. It is a forward execution path rather
 than a resumption path because the compound expression (indicated by
-;) limits backtracking out of its left-hand sub-expression. Chapter 7
-describes how to determine the edges of the flow graph for an Icon
-program.
+\texttt{;}) limits backtracking out of its left-hand sub-expression.
+Chapter 19 describes how to determine the edges of the flow graph for
+an Icon program.
 
 Both the standard semantics and the abstract semantics must deal with
 the intermediate results of expression evaluation.  A
@@ -310,17 +271,16 @@ a trivial assignment of temporary variables to intermediate
 results. Temporary variables are not reused. Each node that produces a
 result is assigned some temporary variable \textit{ri} in the
 environment. Assuming that temporary variables are assigned to the
-example according to the node numbering, the to operation has the
-effect of
+example according to the node numbering, the \texttt{to} operation has
+the effect of
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \textit{r3 := r4 to r5}}
+\iconline{\>\>\ttit{r3} := \ttit{r4} to \ttit{r5} }
 
+\noindent
 Expressions that represent alternate computations must be assigned the
 same temporary variable, as in the following example for the
-subexpression x := ({\textquotedbl}a{\textquotedbl} {\textbar}
-{\textquotedbl}b{\textquotedbl}). The syntax tree below on the left
-and the flow graph are shown on the right.
+subexpression \texttt{x := ("a" {\textbar} "b")}. The syntax tree
+below on the left and the flow graph are shown on the right.
 
 \begin{picture}(400,180)
 %\put(0,0){\graphpaper{40}{18}}
@@ -328,13 +288,14 @@ and the flow graph are shown on the right.
 \put(200,0){\includegraphics[width=2.4154in,height=2.3in]{kw/figure3-4.png}}
 \end{picture}
 
-The if and case control structures are handled similarly. In addition
-to temporary variables for intermediate results, some generators may
-need additional temporary variables to hold internal states during
-suspension. It is easy to devise a scheme to allocate them where they
-are needed; details are not presented here. The syntax tree is kept
-during abstract interpretation and used to determine the temporary
-variables associated with an operation and its operands.
+The \texttt{if} and \texttt{case} control structures are handled
+similarly. In addition to temporary variables for intermediate
+results, some generators may need additional temporary variables to
+hold internal states during suspension. It is easy to devise a scheme
+to allocate them where they are needed; details are not presented
+here. The syntax tree is kept during abstract interpretation and used
+to determine the temporary variables associated with an operation and
+its operands.
 
 The equations that determine the collecting semantics of the program
 are derived directly from the standard semantics of the language. The
@@ -347,47 +308,33 @@ It requires a rather complex environment to capture the full
 operational semantics (and collecting semantics) of a language like
 Icon. For example, the environment needs to include a representation
 of the external file system.  However, later abstractions only use the
-fact that the function read produces strings. This discussion assumes
-that it is possible to represent the file system in the environment,
-but does not give a representation. Other complexities of the
-environment are discussed later. For the moment, examples only show
-the bindings of variables to unstructured (atomic) values.
+fact that the function \texttt{read} produces strings. This discussion
+assumes that it is possible to represent the file system in the
+environment, but does not give a representation. Other complexities of
+the environment are discussed later. For the moment, examples only
+show the bindings of variables to unstructured (atomic) values.
 
 As an example of environments associated with the edges of a flow
 graph, consider the assignment at the end of the following code
 fragment. The comments in the if expression are assertions that are
 assumed to hold at those points in the example.
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ if x = 7 then \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \# x is 7 and y is 3}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ else \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ ...}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \# (x is null and y is 1) or (x is {\textquotedbl}abc{\textquotedbl} and y is 2)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ x := y + 2}
+\goodbreak
+\begin{iconcode}
+\>if x = 7 then \{\\
+\>\>...\\
+\>\>\# x is 7 and y is 3\\
+\>\>\}\\
+\>else \{\\
+\>\>...\\
+\>\>\# (x is null and y is 1) or (x is "abc" and y is 2)\\
+\>\>\}\\
+\>x := y + 2\\
+\end{iconcode}
 
 
-Because of the preceding if expression, there are two paths reaching
-the assignment. The diagram below shows the flow graph and
+Because of the preceding \texttt{if} expression, there are two paths
+reaching the assignment. The diagram below shows the flow graph and
 accompanying environments for the expression; the diagram ignores the
 fact that the assignment expression requires several primitive
 operations to implement.
@@ -457,114 +404,84 @@ list.  A list is a partial mapping from integers to
 variables. Representing other data types with pointer semantics is
 straightforward; this is discussed in Chapter 19.
 
-The first abstraction is called Model 1. The notations
-envir\TextSubscript{[}\textit{\TextSubscript{n}}\TextSubscript{]},
-store\TextSubscript{[}\textit{\TextSubscript{n}}\TextSubscript{]}, and
-heap\TextSubscript{[}\textit{\TextSubscript{n}}\TextSubscript{]} refer
-to the sets of possible environments, stores, and heaps respectively
-in model \textit{n}. For example, envir\TextSubscript{[1]} is the set
-of possible environments in the first abstraction. In the following
-set of definitions, \textit{X} {\texttimes} \textit{Y} is the set of
-ordered pairs where the first value in the pair is from \textit{X} and
-the second value is from \textit{Y}. \textit{X} ${\rightarrow}$
-\textit{Y} is the set of partial functions from \textit{X} to
-\textit{Y}. The definition of the set possible environments for model
-1 is
+The first abstraction is called Model 1. The notations envir$_{[n]}$,
+store$_{[n]}$, and heap$_{[n]}$ refer to the sets of possible
+environments, stores, and heaps respectively in model $n$. For
+example, envir$_{[1]}$ is the set of possible environments in the
+first abstraction. In the following set of definitions, $X \times Y$
+is the set of ordered pairs where the first value in the pair is from
+$X$ and the second value is from $Y$. $ X \rightarrow Y$ is the set of
+partial functions from $X$ to $Y$. The definition of the set of
+possible environments for model 1 is
 
-{\ttfamily\mdseries
-\ \ \ envir\TextSubscript{[1]} = store\TextSubscript{[1]} {\texttimes} heap\TextSubscript{[1]}}
-
-{\ttfamily\mdseries
-\ \ \ store\TextSubscript{[1]} = variables \textrm{${\rightarrow}$ }values}
-
-{\ttfamily\mdseries
-\ \ \ values = integers \textrm{${\cup}$} strings \textrm{${\cup}$}... \textrm{${\cup}$} pointers \textrm{${\cup}$}
-variables}
-
-{\ttfamily\mdseries
-\ \ \ heap\TextSubscript{[1]} = pointers \textrm{${\rightarrow}$} lists, where lists = integers \textrm{${\rightarrow}$}
-variables}
+\goodbreak
+\begin{specialcode}{}
+\>envir$_{[1]}$ = store$_{[1]}$ $\times$ heap$_{[1]}$\\
+\>store$_{[1]}$ = variables $\rightarrow$ values\\
+\>values       = integers $\cup$ strings $\cup$ \ldots $\cup$ pointers $\cup$ variables\\
+\>heap$_{[1]}$  = pointers \textrm{${\rightarrow}$} lists,~%
+                 where lists = integers $\rightarrow$ variables\\
+\end{specialcode}
 
 
 For example, the expression 
 
-{\ttfamily\mdseries
-\ \ \ a := [{\textquotedbl}abc{\textquotedbl}]}
+\iconline{ \>a := ["abc"] }
 
-\noindent creates a list of one element whose value is the string abc
-and assigns the list to the variable a. Let
-\textit{p}\textit{\TextSubscript{1}} be the pointer to the list and
-let \textit{v}\textit{\TextSubscript{1}} be the (anonymous) variable
-within the list. The resulting environment, e ${\in}$
-envir\TextSubscript{[1]}, might be
+\noindent creates a list of one element whose value is the string \texttt{abc}
+and assigns the list to the variable \texttt{a}. Let $p_1$ be the
+pointer to the list and let $v_1$ be the (anonymous) variable within
+the list. The resulting environment, e $\in$ envir$_{[1]}$, might be
 
-{\ttfamily\mdseries
-\ \ \ e = (s,h), where s \textrm{${\in}$} store\TextSubscript{[1]}, h \textrm{${\in}$} heap\TextSubscript{[1]}}
+\goodbreak
+\begin{specialcode}{}
+\>e = $(s,h)$, where $s \in $ store$_{[1]}$, $h \in $ heap$_{[1]}$\\
+\>$s($\texttt{a}$) = p_1$\\
+\>$s(v_1) = $ "\texttt{abc}"\\
+\\
+\>$h(p_1) = L_1$, where $L_1 \in$ lists\\
+\\
+\>$L_1(1) = v_1$\\
+\end{specialcode}
 
-{\ttfamily\mdseries
-\ \ \ s(a) = \ \textit{p}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ \ \ s(\textit{v}\textit{\TextSubscript{1}}) = {\textquotedbl}abc{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ \ h(\textit{p}\textit{\TextSubscript{1}}) = L\TextSubscript{1}, where L\TextSubscript{1} \textrm{${\in}$} lists}
-
-{\ttfamily\mdseries
-\ \ \ L\TextSubscript{1}(1) = \textit{v}\textit{\TextSubscript{1}}}
-
-
+\noindent
 If the statement 
 
-{\ttfamily\mdseries
-\ \ \ a[1] := {\textquotedbl}xyz{\textquotedbl}}
-
-\noindent is executed, the subscripting operation dereferences a
-producing \textit{p}\textit{\TextSubscript{1}}, then uses the heap to
-find L\TextSubscript{1}, which it applies to 1 to produce the result
-\textit{v}\textit{\TextSubscript{1}}. The only change in the
-environment at this point is to temporary variables that are not
-shown. The assignment then updates the store, producing
-
-{\ttfamily\mdseries
-\ \ e\TextSubscript{1} = (s\TextSubscript{1}, h)}
-
-{\ttfamily\mdseries
-\ \ s\TextSubscript{1}(a) = \textit{p}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ \ s\TextSubscript{1}(\textit{v}\textit{\TextSubscript{1}}) = {\textquotedbl}xyz{\textquotedbl}}
+\iconline{ \>a[1] := "xyz" }
 
 
+\noindent is executed, the subscripting operation dereferences \texttt{a}
+producing $p_1$, then uses the heap to find $L_1$, which it applies to
+1 to produce the result $v_1$. The only change in the environment at
+this point is to temporary variables that are not shown. The
+assignment then updates the store, producing
+
+\goodbreak
+\begin{iconcode}
+\>$e_1 = (s_1 , h)$\\
+\>$s_1$(\texttt{a})$ = p_1$\\
+\>$s_1(v_1) =$ "xyz"\\
+\end{iconcode}
+
+\noindent
 Assignment does not change the heap. On the other hand, the expression 
 
-{\ttfamily\mdseries
-\ \ put(a, {\textquotedbl}xyz{\textquotedbl})}
+\iconline{ \ \ put(a, "xyz") }
 
-\noindent adds the string xyz to the end of the list; if it is
-executed in the environment e, it alters the heap along with adding a
+\noindent adds the string \texttt{xyz} to the end of the list; if it is
+executed in the environment $e$, it alters the heap along with adding a
 new variable to the store.
 
-{\ttfamily\mdseries
-\ \ e\TextSubscript{1} = (s\TextSubscript{1}, h\TextSubscript{1})}
-
-{\ttfamily\mdseries
-\ \ s\TextSubscript{1} (a) = \textit{p}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ \ s\TextSubscript{1} (\textit{v}\textit{\TextSubscript{1}}) = {\textquotedbl}abc{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ s\TextSubscript{1} (\textit{v}\textit{\TextSubscript{2}}) = {\textquotedbl}xyz{\textquotedbl}}
-
-{\ttfamily\mdseries
-\ \ h\TextSubscript{1} (\textit{p}\textit{\TextSubscript{1}}) = L\TextSubscript{2}}
-
-{\ttfamily\mdseries
-\ \ L\TextSubscript{2}(1) = \textit{v}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ \ L\TextSubscript{2}(2) = \textit{v}\textit{\TextSubscript{2}}}
+\goodbreak
+\begin{specialcode}{}
+\>$e_1 = (s_1 , h_1$)\\
+\>$s_1($\texttt{a}$) = p_1$\\
+\>$s_1(v_1) =$ "\texttt{abc}"\\
+\>$s_1(v_2) =$ "\texttt{xyz}"\\
+\>$h_1(p_1) = L_2$\\
+\>$L_2(1) = v_1$\\
+\>$L_2(2) = v_2$\\
+\end{specialcode}
 
 
 If a formal model were developed for the collecting semantics, it
@@ -596,193 +513,148 @@ environments in the set associated with the point in Model 1.
 
 The definition of Model 2 is 
 
-{\ttfamily\mdseries
-\ \ envir\TextSubscript{[2]} = store\TextSubscript{[2]} {\texttimes} heap\TextSubscript{[2]}}
 
-{\ttfamily\mdseries
-\ \ store\TextSubscript{[2]} = 2\textsuperscript{variables} \textrm{${\rightarrow}$} 2\textsuperscript{values}}
-
-{\ttfamily\mdseries
-\ \ heap\TextSubscript{[2]} = 2\textsuperscript{pointers} $\rightarrow $2\textsuperscript{lists}}
-
+\goodbreak
+\begin{specialcode}{}
+\>envir$_{[2]}$  =  store$_{[2]} \times $ heap$_{[2]}$\\
+\>store$_{[2]}$  =  $2^{\textrm{variables}} \rightarrow 2^{\textrm{values}}$ \\
+\>heap$_{[2]}$   =  $2^{\textrm{pointers}} \rightarrow 2^{\textrm{lists}}$ \\
+\end{specialcode}
 
 In Model 1, operations produce elements from the set
 \textit{values}. In Model 2, operations produce subsets of this
-set. It is in this model that read is taken to produce the set of all
-strings and that the existence of an external file system can be
-ignored.
+set. It is in this model that \texttt{read} is taken to produce the
+set of all strings and that the existence of an external file system
+can be ignored.
 
 Suppose a program point is annotated with the set containing the
 following two environments from Model 1.
 
-{\ttfamily\mdseries
-\ e\TextSubscript{1},e\TextSubscript{2} ${\in}$ envir\TextSubscript{[1]}}
+\goodbreak
+\begin{iconcode}
+\> $e_1,e_2 \in$ envir$_{[1]}$\\
+\> $e_1 = (s_1, h_1)$\\
+\> $s_1($\texttt{x}$) = 1$\\
+\> $s_1($\texttt{y}$) = p_1$\\
+\> $h_1(p_1) = L_1$\\
+\\
+\> $e_2 = (s_2, h_2)$\\
+\> $s_2($\texttt{x}$) = 2$\\
+\> $s_2($\texttt{y}$) = p_1$\\
+\> $h_2(p_1) = L_2$\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ e\TextSubscript{1} = (s\TextSubscript{1}, h\TextSubscript{1})}
-
-{\ttfamily\mdseries
-\ s\TextSubscript{1}(x) = 1}
-
-{\ttfamily\mdseries
-\ s\TextSubscript{1}(y) = \textit{p}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ h\TextSubscript{1}(\textit{p}\textit{\TextSubscript{1}}) = L\TextSubscript{1}}
-
-{\ttfamily\mdseries
-\ e\TextSubscript{2} = (s\TextSubscript{2}, h\TextSubscript{2})}
-
-{\ttfamily\mdseries
-\ s\TextSubscript{2} (x) = 2}
-
-{\ttfamily\mdseries
-\ s\TextSubscript{2} (y) = \textit{p}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ h\TextSubscript{2} (\textit{p}\textit{\TextSubscript{1}}) = L\TextSubscript{2}}
-
+\noindent
 Under Model 2 the program point is annotated with the single
-environment \^e ${\in}$ envir\TextSubscript{[2]}, where
+environment $\hat{e} {\in}$ envir$_{[2]}$, where
 
-{\ttfamily\mdseries
-\ \ \^e = (\^s,\^h)}
+\goodbreak
+\begin{iconcode}
+\> $\hat{e} = (\hat{s},\hat{h})$\\
+\> $\hat{s}(\{$\texttt{x}\}$) = \{1,2\}$\\
+\> $\hat{s}(\{$\texttt{y}\}$) = \{p_1\}$\\
+\> $\hat{s}(\{$\texttt{x}, \texttt{y}\}$) = \{1, 2, p_1\}$\\
+\> $\hat{h}(\{p_1\}) = \{L_1, L_2\}$\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \^s(\{x\}) = \{1,2\}}
-
-{\ttfamily\mdseries
-\ \ \^s(\{y\}) = \{\textit{p}\textit{\TextSubscript{1}}\}}
-
-{\ttfamily\mdseries
-\ \ \^s(\{x, y\}) = \{1, 2, \textit{p}\textit{\TextSubscript{1}}\}}
-
-{\ttfamily\mdseries
-\ \ \^h(\{\textit{p}\textit{\TextSubscript{1}}\}) = \{L\TextSubscript{1}, L\TextSubscript{2}\}}
-
-
+\noindent
 Note that a store in Model 2 is distributive over union. That is, 
 
-{\ttfamily\mdseries
-\ \^s(X \textrm{${\cup}$} Y) = \^s(X) \textrm{${\cup}$} \^s(Y)}
 
-\noindent so listing the result of \texttt{\^s}(\{x, y\}) is
+$\hat{s}(X \cup Y) = \hat{s}(X) \cup \hat{s}(Y)$
+
+\noindent
+so listing the result of $\hat{s}(\{$\texttt{x}, \texttt{y}$\})$ is
 redundant. A heap in Model 2 also is distributive over union.
 
 In going to Model 2 information is lost. In the last example, the fact
-that x = 1 is paired with \textit{p}\textit{\TextSubscript{1}} =
-L\TextSubscript{1} and x = 2 is paired with
-\textit{p}\textit{\TextSubscript{1}} = L\TextSubscript{2} is not
-represented in Model 2.
+that \texttt{x = 1} is paired with $p_1 =L_1$ and \texttt{x = 2} is
+paired with $p_1 = L_2$ is not represented in Model 2.
 
-Just as read is extended to produce a set of values, so are all other
-operations. These {\textquotedbl}extended{\textquotedbl} operations
-are then used to set up the equations whose solution formally defines
-Model 2. This extension is straightforward. For example, the result of
-applying a unary operator to a set is the set obtained by applying the
-operator to each of the elements in the operand. The result of
-applying a binary operator to two sets is the set obtained by applying
-the operator to all pairs of elements from the two
-operands. Operations with more operands are treated similarly. For
-example
+Just as \texttt{read} is extended to produce a set of values, so are
+all other operations. These "extended" operations are then used to set
+up the equations whose solution formally defines Model 2. This
+extension is straightforward. For example, the result of applying a
+unary operator to a set is the set obtained by applying the operator
+to each of the elements in the operand. The result of applying a
+binary operator to two sets is the set obtained by applying the
+operator to all pairs of elements from the two operands. Operations
+with more operands are treated similarly. For example
 
-{\ttfamily\mdseries
-\ \{1, 3, 5\} + \{2, 4\} = \{1 + 2, 1 + 4, 3 + 2, 3 + 4, 5 + 2, 5 + 4\}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ = \{3, 5, 5, 7, 7, 9\}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ = \{3, 5, 7, 9\}}
+\begin{eqnarray*}
+\{1, 3, 5\} + \{2, 4\} & = & \{1 + 2, 1 + 4, 3 + 2, 3 + 4, 5 + 2, 5 + 4\}\\
+                       & = & \{3, 5, 5, 7, 7, 9\}\\
+                       & = & \{3, 5, 7, 9\}\\
+\end{eqnarray*}
 
 The loss of information mentioned above affects the calculation of
 environments in Model 2. Suppose the addition in the last example is
 from
 
-{\ttfamily\mdseries
-\ \ \ z := x + y}
+\iconline{\>z := x + y }
 
 \noindent and that Model 1 has the following three environments at the
 point before the calculation
 
-{\ttfamily\mdseries
-\ \ \ [x = 1, y = 2, z = 0]}
+\goodbreak
+\begin{iconcode}
+\>[x = 1, y = 2, z = 0]\\
+\>[x = 3, y = 2, z = 0]\\
+\>[x = 5, y = 4, z = 0]\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ [x = 3, y = 2, z = 0]}
-
-{\ttfamily\mdseries
-\ \ \ [x = 5, y = 4, z = 0]}
 
 After the calculation the three environments will be 
 
-{\ttfamily\mdseries
-\ \ \ [x = 1, y = 2, z = 3]}
-
-{\ttfamily\mdseries
-\ \ \ [x = 3, y = 2, z = 5]}
-
-{\ttfamily\mdseries
-\ \ \ [x = 5, y = 4, z = 9]}
+\goodbreak
+\begin{iconcode}
+\>[x = 1, y = 2, z = 3]\\
+\>[x = 3, y = 2, z = 5]\\
+\>[x = 5, y = 4, z = 9]\\
+\end{iconcode}
 
 If these latter three environments are translated into an environment
 of Model 2, the result is
 
-{\ttfamily\mdseries
-\ \ \ [x = \{1, 3, 5\}, y = \{2, 4\}, z = \{3, 5, 9\}]}
+\iconline{ \>[x = \{1, 3, 5\}, y = \{2, 4\}, z = \{3, 5, 9\}] }
+
 
 However, when doing the computation using the semantics of + in Model
-2, the value for z is \{3, 5, 7, 9\}. The solution to the equations in
-Model 2 overestimates (that is, gives a conservative estimate for) the
-values obtained by computing a solution using Model 1 and translating
-it into the domain of Model 2.
+2, the value for \texttt{z} is \texttt{\{3, 5, 7, 9\}}. The solution
+to the equations in Model 2 overestimates (that is, gives a
+conservative estimate for) the values obtained by computing a solution
+using Model 1 and translating it into the domain of Model 2.
 
 Consider the following code with respect to the semantics of
 assignment in Model 2. (Assume that the code is executed once, so only
 one list is created.)
 
-{\ttfamily\mdseries
-\ \ \ x := [10, 20]}
+\goodbreak
+\begin{iconcode}
+\>x := [10, 20]\\
+\>i := if read() then 1 else 2\\
+\>x[i] := 30\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ i := if read() then 1 else 2}
-
-{\ttfamily\mdseries
-\ \ \ x[i] := 30}
-
-After the first two assignments, the store maps x to a set containing
-one pointer and maps i to a set containing 1 and 2. The third
+After the first two assignments, the store maps \texttt{x} to a set containing
+one pointer and maps \texttt{i} to a set containing 1 and 2. The third
 assignment is not as straightforward. Its left operand evaluates to
 two variables; the most that can be said about one of these variables
-after the assignment is that it might have been assigned 30. If (s, h)
+after the assignment is that it might have been assigned 30. If $(s, h)$
 is the environment after the third assignment then
 
-{\ttfamily\mdseries
-\ \ \ s(\{x\}) = \{ \textit{p}\textit{\TextSubscript{1}} \}}
-
-{\ttfamily\mdseries
-\ \ \ s(\{i\}) = \{1, 2\}}
-
-{\ttfamily\mdseries
-\ \ \ s(\{\textit{v}\textit{\TextSubscript{1}}\}) = \{10, 30\}}
-
-{\ttfamily\mdseries
-\ \ \ s(\{\textit{v}\textit{\TextSubscript{2}}\}) = \{20, 30\}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ h(\{\textit{p}\textit{\TextSubscript{1}}\}) = \{L\TextSubscript{1}\}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ L\TextSubscript{1}(1) = \textit{v}\textit{\TextSubscript{1}}}
-
-{\ttfamily\mdseries
-\ \ \ L\TextSubscript{1}(2) = \textit{v}\textit{\TextSubscript{2}}}
+\goodbreak
+\begin{specialcode}{}
+\>$s(\{$\texttt{x}$\}) = \{ p_1 \}$\\
+\>$s(\{$\texttt{i}$\}) = \{1, 2\}$\\
+\>$s(\{v_1\}) = \{10, 30\}$\\
+\>$s(\{v_2\}) = \{20, 30\}$\\
+\\
+\>$h(\{p_1\}) = \{L_1\}$\\
+\\
+\>$L_1(1) = v_1$\\
+\>$L_1(2) = v_2$\\
+\end{specialcode}
 
 
 Clearly all assignments could be treated as \textit{weak updates}
@@ -798,11 +670,11 @@ cases. These are implemented as \textit{strong updates}.
 The environments in Model 2 can contain infinite amounts of
 information, as in the program
 
-{\ttfamily\mdseries
-\ \ \ x := 1}
-
-{\ttfamily\mdseries
-\ \ \ repeat x +:= 1}
+\goodbreak
+\begin{iconcode}
+\>x := 1\\
+\>repeat x +:= 1\\
+\end{iconcode}
 
 \noindent where the set of values associated with x in the loop
 consists of all the counting numbers. Because equations in Model 2 can
@@ -818,8 +690,8 @@ groups pointers together according to the lexical point of their
 creation. This is similar to the method used to handle recursive data
 structures in Jones and Muchnick [.analrcsv.]. Consider the code
 
-{\ttfamily\mdseries
-\ \ \ every insert(x, [1 to 5])}
+\iconline{ \>every insert(x, [1 to 5]) }
+
 
 If this code is executed once, five lists are created, but they are
 all created at the same point in the program, so they all belong to
@@ -830,24 +702,24 @@ points in a program may have components of different types.
 
 The third classification of basic types handles variable
 references. Each named variable and temporary variable is given a type
-to itself. Therefore, if a is a named variable, \{a\} is a
-type. Structure variables are grouped into types according to the
-program point where the pointer to the structure is created. This is
-not necessarily the point where the variable is created; in the
-following code, a pointer to a list is created at one program point,
-but variables are added to the list at different points
+to itself. Therefore, if \texttt{a} is a named variable,
+\texttt{\{a\}} is a type. Structure variables are grouped into types
+according to the program point where the pointer to the structure is
+created. This is not necessarily the point where the variable is
+created; in the following code, a pointer to a list is created at one
+program point, but variables are added to the list at different points
 
-{\ttfamily\mdseries
-\ \ x := []}
+\goodbreak
+\begin{iconcode}
+\ \ x := []\\
+\ \ push(x, 1)\\
+\ \ push(x ,2)\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ push(x, 1)}
-
-{\ttfamily\mdseries
-\ \ push(x ,2)}
 
 References to these variables are grouped into a type associated with
-the program point for [], not the point for the corresponding push.
+the program point for \texttt{[]}, not the point for the corresponding
+push.
 
 If a program contains k non-structure variables and there are n
 locations where pointers can be created, then the basic types for the
@@ -862,9 +734,11 @@ have a finite number of basic types. The set of all types for a
 program is the smallest set that is closed under union and contains
 the empty set along with the basic types:
 
-
-\ \ \ types = \{\{\}, integers, strings,..., (integers ${\cup}$ \ strings),..., (integers ${\cup}$ strings ${\cup}$ ...
-${\cup}$ \{v\TextSubscript{k}\})\}
+\begin{specialcode}{}
+\>types = \{\{\}, integers, strings,...,~%
+    (integers ${\cup}$ \ strings),...,~%
+    (integers ${\cup}$ strings ${\cup}$ ... ${\cup}$ \{v\TextSubscript{k}\})\}
+\end{specialcode}
 
 Model 3 replaces the arbitrary sets of values of Model 2 by
 types. This replacement reduces the precision of the information, but
@@ -880,128 +754,79 @@ structure variables. A set of values from Model 2 is converted to a
 type in Model 3 by mapping that set to the smallest type containing
 it. For example, the set
 
-{\ttfamily\mdseries
-\ \ \ \{1, 4, 5, {\textquotedbl}23{\textquotedbl}, {\textquotedbl}0{\textquotedbl}\}}
+\iconline{ \>\{1, 4, 5, "23", "0"\} }
 
 \noindent is mapped to
 
-{\ttfamily\mdseries
-\ \ \ integer ${\cup}$ string}
+\begin{specialcode}{}
+\>integer ${\cup}$ string\\
+\end{specialcode}
 
+\noindent
+The definition of envir$_{[3]}$ is 
 
-The definition of envir\TextSubscript{[3]} is 
+\goodbreak
+\begin{specialcode}{}
+\>envir$_{[3]} = $ store$_{[3]} \times $ heap$_{[3]}$\\
+\>store$_{[3]} = $ variable-types $\rightarrow $ types\\
+\>heap$_{[3]} = $ pointer-types $\rightarrow $ structure-variable-types\\
+\>types ${\subseteq}$ 2\textsuperscript{values}\\
+\>variable-types ${\subseteq}$ types\\
+\>structure-variable-types ${\subseteq}$ variable-types\\
+\>pointer-types ${\subseteq}$ types\\
+\end{specialcode}
 
-{\ttfamily\mdseries
-\ \ \ envir\TextSubscript{[3]} = store[3] {\texttimes} heap[3]}
-
-{\ttfamily\mdseries
-\ \ \ store\TextSubscript{[3]} = variable-types $\rightarrow $ types}
-
-{\ttfamily\mdseries
-\ \ \ heap\TextSubscript{[3]} = pointer-types $\rightarrow $ structure-variable-types}
-
-{\ttfamily\mdseries
-\ \ \ types ${\subseteq}$ 2\textsuperscript{values}}
-
-{\ttfamily\mdseries
-\ \ \ variable-types ${\subseteq}$ types}
-
-{\ttfamily\mdseries
-\ \ \ structure-variable-types ${\subseteq}$ variable-types}
-
-{\ttfamily\mdseries
-\ \ \ pointer-types ${\subseteq}$ types}
 
 There is exactly one variable type for each pointer type in this
 model. The heap simply consists of this one-to-one mapping; the heap
 is of the form
 
 {\ttfamily\mdseries
-\ \ \ h( P\TextSubscript{i} ) = V\TextSubscript{i}}
+\ \ \ $h$( P\TextSubscript{i} ) = V\TextSubscript{i}}
 
 This mapping is invariant over a given program. Therefore, the type
-equations for a program can be defined over store\TextSubscript{[3]}
-rather than envir\TextSubscript{[3]} with the heap embedded within the
-type equations.
+equations for a program can be defined over store$_{[3]}$ rather than
+envir$_{[3]}$ with the heap embedded within the type equations.
 
 Suppose an environment from Model 2 is 
 
-{\ttfamily\mdseries
-\ \ e \textrm{${\in}$ }envir\TextSubscript{[2]}}
-
-{\ttfamily\mdseries
-\ \ e = (s, h)}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ s(\{a\}) = \{ p\TextSubscript{1} , p\TextSubscript{2}\}}
-
-{\ttfamily\mdseries
-\ \ s(\{v\TextSubscript{1}\}) = \{1, 2\}}
-
-{\ttfamily\mdseries
-\ \ s(\{v\TextSubscript{2}\}) = \{1\}}
-
-{\ttfamily\mdseries
-\ \ s(\{v\TextSubscript{3}\}) = \{12.03\}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ h(\{p\TextSubscript{1}\}) = \{L\TextSubscript{1}, L\TextSubscript{2}\}}
-
-{\ttfamily\mdseries
-\ \ h(\{p\TextSubscript{2}\}) = \{L\TextSubscript{3}\}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ L\TextSubscript{1}(1) = v\TextSubscript{1}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ L\TextSubscript{2}(1) = v\TextSubscript{1}}
-
-{\ttfamily\mdseries
-\ \ L\TextSubscript{2}(2) = v\TextSubscript{2}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ L\TextSubscript{3}(1) = v\TextSubscript{3}}
+\goodbreak
+\begin{specialcode}{}
+\> $e \in $ envir$_{[2]}$\\
+\> $e = (s, h)$\\
+\\
+\> $s(\{$\texttt{a}$\}) = \{ p_1 , p_2\}$\\
+\> $s(\{v_1\}) = \{1, 2\}$\\
+\> $s(\{v_2\}) = \{1\}$\\
+\> $s(\{v_3\}) = \{12.03\}$\\
+\\
+\> $h(\{p_1\}) = \{L_1, L_2\}$\\
+\> $h(\{p_2\}) = \{L_3\}$\\
+\\
+\> $L_1(1) = v_1$\\
+\\
+\> $L_2(1) = v_1$\\
+\> $L_2(2) = v_2$\\
+\\
+\> $L_3(1) = v_3$\\
+\end{specialcode}
 
 Suppose the pointers p\TextSubscript{1} and p\TextSubscript{2} are
 both created at program point 1. Then the associated pointer type is
 P\TextSubscript{1} and the associated variable type is
 V\TextSubscript{1}. The corresponding environment in Model 3 is
 
-{\ttfamily\mdseries
-\ \ \ \^e \textrm{${\in}$} envir\TextSubscript{[3]}}
+\goodbreak
+\begin{specialcode}{}
+\>$\hat{e} \in $ envir$_{[3]}$\\
+\>$\hat{e} = (\hat{s},\hat{h})$\\
 
-{\ttfamily\mdseries
-\ \ \ \^e = (\^s,\^h\textrm{ })}
+\>$\hat{s}(\{$\texttt{a}$\}) =  $ P$_1$\\
+\>$\hat{s}($V$_1) = $ integer  $\cup$ real\\
 
+\>$\hat{h}($P$_1) = $ V$_1$\\
+\end{specialcode}
 
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \^s(\{a\}) = \ P\TextSubscript{1}}
-
-{\ttfamily\mdseries
-\ \ \ \^s(V\TextSubscript{1}) = integer \textrm{${\cup}$ }real}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ \^h(P\TextSubscript{1}) = V\TextSubscript{1}}
 
 
 The collecting semantics of a program establishes a set of (possibly)
@@ -1022,4 +847,3 @@ Chapter 19 also extends type inferencing to handle the entire Icon
 language. Chapter 22 uses the information from type inferencing to
 optimize the generated code.
 
-\bigskip

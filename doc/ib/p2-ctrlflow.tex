@@ -22,22 +22,16 @@ code where control flow can be handled much better. For example, it is
 possible to entirely eliminate the following code fragment generated
 for the example explaining procedure suspension.
 
-{\ttfamily\mdseries
-\ \ \ switch (signal) \{}
+\goodbreak
+\begin{iconcode}
+\>switch (signal) \{\\
+\>\>case A\_Resume:\\
+\>\>\>goto L2 /* bound */;\\
+\>\}\\
+L2: /* bound */\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ L2: /* bound */}
-
-
+\noindent
 This code is produced because the code generator does not take into
 account the fact that the bounding label happens to immediately follow
 the test.
@@ -51,129 +45,68 @@ could eliminate. However, it is unlikely that a C compiler would
 optimize naively generated success continuations. An earlier example
 of code generation produced the continuation:
 
-{\ttfamily\mdseries
-\ \ \ static int P02\_main()}
+\goodbreak
+\begin{iconcode}
+static int P02\_main()\\
+\{\\
+\>register struct PF00\_main *rpfp;\\
+\\
+\>rpfp = (struct PF00\_main *)pfp;\\
+\>switch (O0o\_numeq(2, \&(rpfp->tend.d[1]), \&trashcan, (continuation)NULL)) \{\\
+\>\>case A\_Continue:\\
+\>\>\>break;\\
+\>\>case A\_Resume:\\
+\>\>\>return A\_Resume;\\
+\>\>\}\\
+\>return 4; /* bound */\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ register struct PF00\_main *rpfp;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ rpfp = (struct PF00\_main *)pfp;}
-
-{\ttfamily\mdseries
-\ \ \ switch (O0o\_numeq(2, \&(rpfp-{\textgreater}tend.d[1]), \&trashcan, (continuation)NULL)) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Continue:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ break;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ return 4; /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \}}
-
-
+\noindent
 If the statement 
 
-{\ttfamily\mdseries
-\ \ \ return 4; /* bound */}
+\iconline{return 4; /* bound */ }
 
-\noindent is brought into the switch statement, replacing the break,
-then P02\_main consists of a simple operation call (a C call with
-associated associated signal handling code). This operation call is
+\noindent
+is brought into the \texttt{switch} statement, replacing the
+\texttt{break}, then \texttt{P02\_main} consists of a simple operation
+call (a C call with associated associated signal handling code). This
+operation call is
 
-{\ttfamily\mdseries
-\ \ \ switch (O0o\_numeq(2, \&(rpfp-{\textgreater}tend.d[1]), \&trashcan, (continuation)NULL)) \{}
+\goodbreak
+\begin{iconcode}
+switch (O0o\_numeq(2, \&(rpfp->tend.d[1]), \&trashcan, (continuation)NULL)) \{\\
+\>case A\_Continue:\\
+\>\>return 4; /* bound */\\
+\>case A\_Resume:\\
+\>\>return A\_Resume;\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Continue:}
+\noindent
+\texttt{P02\_main} is called directly in two places in the following code. 
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return 4; /* bound */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-
-P02\_main is called directly in two places in the following code. 
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ switch (P02\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* alt */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case 4 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* alt */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].vword.integr = 2;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (P02\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L5 /* else */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case 4 /* bound */:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* bound */}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[2].dword = D\_Integer;\\
+frame.tend.d[2].vword.integr = 1;\\
+switch (P02\_main()) \{\\
+\>case A\_Resume:\\
+\>\>goto L2 /* alt */;\\
+\>case 4 /* bound */:\\
+\>\>goto L4 /* bound */;\\
+\>\}\\
+L2: /* alt */\\
+\>frame.tend.d[2].dword = D\_Integer;\\
+\>frame.tend.d[2].vword.integr = 2;\\
+\>switch (P02\_main()) \{\\
+\>\>case A\_Resume:\\
+\>\>\>goto L5 /* else */;\\
+\>\>case 4 /* bound */:\\
+\>\>\>goto L4 /* bound */;\\
+\>\>\}\\
+L4: /* bound */\\
+\end{iconcode}
 
 
 A direct call to a trivial function can reasonably be replaced by the
@@ -183,7 +116,7 @@ a continuation with that of the call. This is accomplished by
 replacing each return statement in the body with the action in the
 call corresponding to the signal returned. The following table
 illustrates the signal handling composition for the first call in the
-code.  The resulting code checks the signal from O0o\_numeq and
+code.  The resulting code checks the signal from \texttt{O0o\_numeq} and
 performs the final action.
 
 \begin{center}
@@ -191,115 +124,61 @@ performs the final action.
 \tablehead{}
 \tabletail{}
 \tablelasttail{}
-\begin{xtabular}{|m{1.7879599in}|m{1.6031599in}|m{1.0469599in}|}
+%\begin{xtabular}{|m{1.8in}|m{1.8in}|m{1.1in}|}
+\begin{xtabular}{|c|c|c|}
 \hline
- signal from O0o\_numeq  &
- signal from P02\_main  &
- final action \\\hline
- A\_Continue\newline
-A\_Resume  &
- 4\newline
-A\_Resume  &
- goto L4;\newline
-goto L2; \\\hline
+~~signal from \texttt{O0o\_numeq}~~  &
+~~signal from \texttt{P02\_main}~~  &
+~~final action~~ \\\hline
+\texttt{A\_Continue} & 4                  & \texttt{goto L4;}\\
+\texttt{A\_Resume}   & \texttt{A\_Resume} & \texttt{goto L2;}\\\hline
 \end{xtabular}
 \end{center}
 
-The result of in-lining P02\_main is 
+\noindent
+The result of in-lining \texttt{P02\_main} is 
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Integer;}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[2].dword = D\_Integer;\\
+frame.tend.d[2].vword.integr = 1;\\
+switch (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan, (continuation)NULL)) \{\\
+\>case A\_Continue:\\
+\>\>goto L4 /* bound */;\\
+\>case A\_Resume:\\
+\>\>goto L2 /* alt */;\\
+\>\}\\
+L2: /* alt */\\
+\>frame.tend.d[2].dword = D\_Integer;\\
+\>frame.tend.d[2].vword.integr = 2;\\
+\>switch (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan,%
+                    (continuation)NULL)) \{\\
+\>\>case A\_Continue:\\
+\>\>\>goto L4 /* bound */;\\
+\>\>case A\_Resume:\\
+\>\>\>goto L5 /* else */;\\
+\>\}\\
+L4: /* bound */\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.integr = 1;}
+With a little more manipulation, the \texttt{switch} statements can be
+converted into \texttt{if} statements and the label \texttt{L2} can be
+eliminated:
 
-{\ttfamily\mdseries
-\ \ \ switch (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan, (continuation)NULL)) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Continue:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L2 /* alt */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L2: /* alt */}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ frame.tend.d[2].vword.integr = 2;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan,}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (continuation)NULL)) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Continue:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ goto L5 /* else */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* bound */}
-
-
-With a little more manipulation, the switch statements can be
-converted into if statements and the label L2 can be eliminated:
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.integr = 1;}
-
-{\ttfamily\mdseries
-\ \ \ if (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan,}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (continuation)NULL) == A\_Continue)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L4 /* bound */;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Integer;}
-
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.integr = 2;}
-
-{\ttfamily\mdseries
-\ \ \ if (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan,}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (continuation)NULL) == A\_Resume)}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ goto L5 /* else */;}
-
-{\ttfamily\mdseries
-\ \ \ L4: /* bound */}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[2].dword = D\_Integer;\\
+frame.tend.d[2].vword.integr = 1;\\
+if (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan,%
+              (continuation)NULL) == A\_Continue)\\
+\>goto L4 /* bound */;\\
+frame.tend.d[2].dword = D\_Integer;\\
+frame.tend.d[2].vword.integr = 2;\\
+if (O0o\_numeq(2, \&frame.tend.d[1], \&trashcan,%
+              (continuation)NULL) == A\_Resume)\\
+\>goto L5 /* else */;\\
+L4: /* bound */\\
+\end{iconcode}
 
 
 The Icon compiler's peephole optimizer recognizes two kinds of trivial
@@ -334,44 +213,46 @@ deletion of unused continuations
 simplification of signal checking 
 \end{itemize}
 
-Unreachable code follows a goto or a return, and it continues to the
-first referenced label or to the end of the function. This
-optimization may eliminate code that returns signals, thereby reducing
-the number of signals that must be handled by a continuation
+Unreachable code follows a \texttt{goto} or a \texttt{return}, and it
+continues to the first referenced label or to the end of the function.
+This optimization may eliminate code that returns signals, thereby
+reducing the number of signals that must be handled by a continuation
 call. This provides another reason for performing this traditional
 optimization in the Icon compiler rather than letting the C compiler
 do it. This code is eliminated when the fix-up pass for signal
-handling is being performed. gotos immediately preceding their labels
+handling is being performed. \texttt{goto}s immediately preceding their labels
 also are eliminated at this time.
 
 Unused labels usually are eliminated when the code is written out, but
 they may be deleted as part of a segment of unreachable code. Unused
 continuations are simply not written out.
 
-A branch chain is formed when the destination of a goto is another
-goto or a return. A break in a switch statement is treated as a
-goto. There may be several gotos in a chain. Each goto is replaced by
-the goto or return at the end of the chain. This may leave some labels
-unreferenced and may leave some of the intermediate gotos
-unreachable. Branch chains are collapsed during the fix-up pass.
+A branch chain is formed when the destination of a \texttt{goto} is
+another \texttt{goto} or a \texttt{return}. A \texttt{break} in a
+\texttt{switch} statement is treated as a \texttt{goto}. There may be
+several \texttt{goto}s in a chain. Each \texttt{goto} is replaced by
+the \texttt{goto} or \texttt{return} at the end of the chain. This may
+leave some labels unreferenced and may leave some of the intermediate
+\texttt{goto}s unreachable. Branch chains are collapsed during the
+fix-up pass.
 
 Inter-function optimization is not traditionally considered a peephole
 optimization. This is because human beings seldom write trivial
 functions and most code generators do not produce continuations. The
 Icon compiler, however, uses calls to success continuations as freely
-as it uses gotos. Therefore collapsing trivial call chains is as
-important as collapsing branch chains.
+as it uses \texttt{goto}s. Therefore collapsing trivial call chains is
+as important as collapsing branch chains.
 
 There are two kinds of calls to trivial continuations: direct calls
 and indirect calls through an operation. A direct call always can be
 replaced by the body of the continuation using signal handling code
 that is a composition of that in the continuation and that of the
-call. If the continuation consists of just a return statement, this
-means that the call is replaced by the action associated with the
-returned signal: either another return statement or a goto
-statement. For continuations consisting of a call, the composition is
-more complicated, as demonstrated by the example given earlier in this
-chapter.
+call. If the continuation consists of just a \texttt{return}
+statement, this means that the call is replaced by the action
+associated with the returned signal: either another \texttt{return}
+statement or a \texttt{goto} statement. For continuations consisting
+of a call, the composition is more complicated, as demonstrated by the
+example given earlier in this chapter.
 
 In the case of an indirect call through an operation, the continuation
 cannot be placed in line. However, there is an optimization that can
@@ -379,111 +260,74 @@ be applied. Under some circumstances, the compiler produces a
 continuation that simply calls another continuation. For example, this
 occurs when compiling the Icon expression
 
-{\ttfamily\mdseries
-\ \ \ every write(!x {\textbar} end)}
+\iconline{every write(!x | end) }
 
 The compiler allocates a continuation for the alternation, then
-compiles the expression !x. The element generation operator suspends,
-so the compiler allocates a continuation for it and code generation
-proceeds in this continuation.  However, the end of the first
-alternative has been reached so the only code for this continuation is
-a call to the continuation for the alternation. The continuation for
-the alternation contains the code for the invocation of write and for
-the end of the every control structure. The code for the first
-alternative is
+compiles the expression \texttt{!x}. The element generation operator
+suspends, so the compiler allocates a continuation for it and code
+generation proceeds in this continuation.  However, the end of the
+first alternative has been reached so the only code for this
+continuation is a call to the continuation for the alternation. The
+continuation for the alternation contains the code for the invocation
+of \texttt{write} and for the end of the \texttt{every} control
+structure. The code for the first alternative is
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].dword = D\_Var;}
+\goodbreak
+\begin{iconcode}
+frame.tend.d[2].dword = D\_Var;\\
+frame.tend.d[2].vword.descptr = \&frame.tend.d[0] /* x */;\\
+\\
+switch (O0e\_bang(1, \&frame.tend.d[2], \&frame.tend.d[1], P02\_main)) \{\\
+\>case A\_Resume:\\
+\>\>goto L1 /* alt */;\\
+\>\}\\
+\ L1: /* alt */\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ frame.tend.d[2].vword.descptr = \&frame.tend.d[0] /* x */;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ switch (O0e\_bang(1, \&frame.tend.d[2], \&frame.tend.d[1], P02\_main)) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ goto L1 /* alt */;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ L1: /* alt */}
-
-
+\noindent
 The code for the two continuations are 
 
-{\ttfamily\mdseries
-\ \ \ static int P02\_main()}
+\goodbreak
+\begin{iconcode}
+static int P02\_main()\\
+\{\\
+\>switch (P03\_main()) \{\\
+\>\>case A\_Resume:\\
+\>\>\>return A\_Resume;\\
+\>\>\}\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \{}
+\begin{iconcode}
+static int P03\_main()\\
+\{\\
+\>register struct PF00\_main *rpfp;\\
+\\
+\>rpfp = (struct PF00\_main *)pfp;\\
+\>F0c\_write(1, \&rpfp->tend.d[1], \&trashcan, (continuation)NULL);\\
+\>return A\_Resume;\\
+\}\\
+\end{iconcode}
 
-{\ttfamily\mdseries
-\ \ \ \ \ \ switch (P03\_main()) \{}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ case A\_Resume:}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \ \ \ \}}
-
-{\ttfamily\mdseries
-\ \ \ \ \ \ \}}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ static int P03\_main()}
-
-{\ttfamily\mdseries
-\ \ \ \{}
-
-{\ttfamily\mdseries
-\ \ \ register struct PF00\_main *rpfp;}
-
-
-\bigskip
-
-{\ttfamily\mdseries
-\ \ \ rpfp = (struct PF00\_main *)pfp;}
-
-{\ttfamily\mdseries
-\ \ \ F0c\_write(1, \&rpfp-{\textgreater}tend.d[1], \&trashcan, (continuation)NULL);}
-
-{\ttfamily\mdseries
-\ \ \ return A\_Resume;}
-
-{\ttfamily\mdseries
-\ \ \ \}}
-
-The call to O0e\_bang can be optimized by passing the continuation
-P03\_main in place of P02\_main.
+\noindent
+The call to \texttt{O0e\_bang} can be optimized by passing the
+continuation \texttt{P03\_main} in place of \texttt{P02\_main}.
 
 The optimizations that collapse trivial call chains are performed
 during the fix-up pass for signal handling.
 
 The final peephole optimization involves simplifying the signal
 handling code associated with a call. In general, signals are handled
-with a switch statement containing a case clause for each signal. The
-C compiler does not know that these signals are the only values that
-are ever tested by the switch statement, nor is the C compiler likely
-to notice that some cases simply pass along to the next function down
-in the call chain the signal that was received. The Icon compiler can
-use this information to optimize the signal handling beyond the level
-to which the C compiler is able to optimize it. The optimizer may
-replace the general form of the switch statement with a switch
-statement utilizing a default clause or with an if statement. In some
+with a \texttt{switch} statement containing a \texttt{case} clause for
+each signal. The C compiler does not know that these signals are the
+only values that are ever tested by the \texttt{switch} statement, nor
+is the C compiler likely to notice that some cases simply pass along
+to the next function down in the call chain the signal that was
+received. The Icon compiler can use this information to optimize the
+signal handling beyond the level to which the C compiler is able to
+optimize it. The optimizer may replace the general form of the
+\texttt{switch} statement with a \texttt{switch} statement utilizing a
+\texttt{default} clause or with an \texttt{if} statement. In some
 cases, the optimizer completely eliminates signal checking. This
 optimization is done when the code is written.
 

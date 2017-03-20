@@ -42,8 +42,8 @@ procedure main(argv)
     every format := !imgFormats do {
        write("\nTesting ", format, "...")
 
-       if (format == "jpg" &  &features ~== "JPEG images") |
-          (format == "png" &  &features ~== "PNG images") then
+       if (format == "jpg" & not (&features == "JPEG images")) |
+          (format == "png" & not (&features == "PNG images")) then
           write ("\t",format, " support is not enabled in this build") & next
           
        fname := "unicon." || format
@@ -65,9 +65,7 @@ procedure main(argv)
    	x+:=256
     }
 
-    write("\nContinuing to texture test...\n")
-
-    if (&features ~== "3D graphics") then {
+    if not (&features == "3D graphics") then {
        write ("3D graphics support is not enabled in this build")
        write ("Image textures and dynamic texxtures cannot be tested\n")
        write ("Close any of the opened windows or press q/ESC in any window to exit...")
@@ -80,7 +78,8 @@ procedure main(argv)
                 }
              }
        }
-       
+    write("\nContinuing to texture test...\n")
+    
     # Open a 3D window to test textures created from the different image formats
     (w3d:= open("Image Textures", "gl", "size=1024,256", "bg=blue", "buffer=on")) |
        stop("Can't Open 3D window, textures can't be tested\n")
@@ -108,8 +107,6 @@ procedure main(argv)
     Refresh(w3d)
     
     x:=-3
-
-    WAttrib(w,"texmode=on")
     
     put(renderList, rObj:= renderObj("win",windows[1]))
     renderBox(wtex,x, 0,0, 1, rObj)
@@ -126,9 +123,7 @@ procedure main(argv)
     put(renderList, texObj2:= renderObj("win",windows[4]))
     renderBox(wtex,x, 0,0, 1, texObj2)
     x+:=2
-    
-    WAttrib(w,"texmode=off")    
-  
+      
     Eye(w3d, 0,0,8, 0,0,0, 0,1,0)
 
     put(windows, \w3d)
@@ -191,14 +186,14 @@ procedure FPS()
     local len:=5000
    static t, fps
    initial{ 
-      t:=util::milliseconds()
+      t:=milliseconds()
       fps:=0
       }
    fps+:=1
    if (d:=milliseconds()-t) > len then{
        fpsTmp := fps*1000/d
        fps:=0
-       t:=util::milliseconds()
+       t:=milliseconds()
        return fpsTmp
       }
    
@@ -208,8 +203,10 @@ procedure renderBox(w, x,y,z, r, rObj)
     Fg(w,"red")
     PushTranslate(w, x,y,z)
     rObj.rot := Rotate(w, 0, 0, 1, 0)
+    WAttrib(w,"texmode=on")
     rObj.tex := Texture(w, rObj.imgFile)
     rObj.shape := DrawCube(w, 0,0,0, r)
+    WAttrib(w,"texmode=off")
     PopMatrix(w)
 end
   

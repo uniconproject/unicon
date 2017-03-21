@@ -642,8 +642,8 @@
    #define curtblock		(curtstate->Curblock)
 
 
-#define TURN_ON_CONCURRENT() if (!is_concurrent){ \
-	is_concurrent=1; global_curtstate = NULL;}
+#define TURN_ON_CONCURRENT() do if (!is_concurrent) { \
+      is_concurrent=1; global_curtstate = NULL; } while (0)
 
 /*
 #ifdef HAVE_KEYWORD__THREAD
@@ -652,11 +652,11 @@
 #else
 */
 
-#define SYNC_GLOBAL_CURTSTATE()  if (!is_concurrent) global_curtstate = \
-		(struct threadstate *) pthread_getspecific(tstate_key);
+#define SYNC_GLOBAL_CURTSTATE()  do if (!is_concurrent) global_curtstate = \
+      (struct threadstate *) pthread_getspecific(tstate_key); while (0)
 
 #define TLS_CURTSTATE_ONLY()  struct threadstate *curtstate = \
-		     (struct threadstate *) pthread_getspecific(tstate_key);
+      (struct threadstate *) pthread_getspecific(tstate_key);
 
 
 #define GET_CURTSTATE()  struct threadstate *curtstate = \
@@ -1245,9 +1245,9 @@
 	else if (errno != EINTR) {perror("sem_wait()"); syserr("sem_wait error");} }
 
 #ifndef NamedSemaphores
-#define SEM_CLOSE(sem_s) sem_destroy(sem_s);
+#define SEM_CLOSE(sem_s) sem_destroy(sem_s)
 #else
-#define SEM_CLOSE(sem_s) sem_close(sem_s);
+#define SEM_CLOSE(sem_s) sem_close(sem_s)
 #endif /* NamedSemaphores */
 
 #define FUNC_MUTEX_LOCK		1
@@ -1273,25 +1273,26 @@
       pthread_attr_t attr;						\
       pthread_attr_init(&attr);						\
       pthread_attr_setstacksize(&attr, t_stksize);			\
-      retval = pthread_create(&cp->thread, &attr, nctramp, cp);	\
+      retval = pthread_create(&cp->thread, &attr, nctramp, cp);		\
     }									\
     else								\
-      retval = pthread_create(&cp->thread, NULL, nctramp, cp);	\
+      retval = pthread_create(&cp->thread, NULL, nctramp, cp);		\
     if (retval) handle_thread_error(retval, FUNC_THREAD_CREATE, msg);	\
   } while (0)
 
-#define THREAD_JOIN( thrd, opt ) { int retval; \
-    if ((retval=pthread_join(thrd, opt)) != 0) \
-      handle_thread_error(retval, FUNC_THREAD_JOIN, NULL); }
+#define THREAD_JOIN( thrd, opt ) do { int retval;		\
+	if ((retval=pthread_join(thrd, opt)) != 0)		\
+	  handle_thread_error(retval, FUNC_THREAD_JOIN, NULL);	\
+      } while (0)
 
-#define CREATE_CE_THREAD(cp, t_stksize, msg) do {		\
-   THREAD_CREATE(cp, t_stksize, msg);				\
-   cp->alive = 1;						\
-   cp->have_thread = 1;						\
-   SET_FLAG(cp->status, Ts_Attached);				\
-   SET_FLAG(cp->status, Ts_Posix);				\
-   /*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/	\
-   } while (0)
+#define CREATE_CE_THREAD(cp, t_stksize, msg) do {			\
+	THREAD_CREATE(cp, t_stksize, msg);				\
+	cp->alive = 1;							\
+	cp->have_thread = 1;						\
+	SET_FLAG(cp->status, Ts_Attached);				\
+	SET_FLAG(cp->status, Ts_Posix);					\
+	/*if (!(nstat & Ts_Sync ))pthread_detach(&new->thread);*/	\
+      } while (0)
 #else                                  /* PthreadCoswitch */
 #define THREAD_CREATE(cp, t_stksize, msg)
 #define THREAD_JOIN(thrd, opt)
@@ -1381,104 +1382,155 @@
  *  error tracing.
  */
 
-#define MUTEX_LOCK( mtx, msg) { int retval; \
-  if ( is_concurrent && (retval=pthread_mutex_lock(&(mtx))) != 0) \
-    handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
+#define MUTEX_LOCK( mtx, msg)						\
+      do {								\
+	if (is_concurrent) {						\
+	  int __rv;							\
+	  if ((__rv=pthread_mutex_lock(&(mtx))) != 0)			\
+	    handle_thread_error(__rv, FUNC_MUTEX_LOCK, msg);		\
+	}								\
+      } while (0)
 
-#define MUTEX_UNLOCK( mtx, msg) { int retval; \
-  if ( is_concurrent && (retval=pthread_mutex_unlock(&(mtx))) != 0) \
-    handle_thread_error(retval, FUNC_MUTEX_LOCK, msg); }
+#define MUTEX_UNLOCK( mtx, msg)						\
+      do {								\
+	if ( is_concurrent ) {						\
+	  int __rv;							\
+	  if ((__rv=pthread_mutex_unlock(&(mtx))) != 0)			\
+	    handle_thread_error(__rv, FUNC_MUTEX_LOCK, msg);		\
+	}								\
+      } while (0)
 
-#define MUTEX_TRYLOCK(mtx, isbusy, msg) { \
-  if ( is_concurrent ){ \
-     if (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY)	\
-        {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg); isbusy=0;} \
-  }else isbusy=0; }
+#define MUTEX_TRYLOCK(mtx, isbusy, msg)					\
+      do {								\
+	if (is_concurrent ) {						\
+	  if (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY){ \
+	  handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg);		\
+	  isbusy=0;							\
+	}								\
+      } else isbusy=0;							\
+      } while (0)
 
-#define MUTEX_INIT( mtx, attr ) { int retval; \
-    if ((retval=pthread_mutex_init(&(mtx), attr)) != 0) \
-      handle_thread_error(retval, FUNC_MUTEX_INIT, NULL); }
-
+#define MUTEX_INIT( mtx, attr )					\
+      do { int __rv;						\
+	if ((__rv=pthread_mutex_init(&(mtx), attr)) != 0)	\
+	  handle_thread_error(__rv, FUNC_MUTEX_INIT, NULL);	\
+      } while (0)
 
 /*
  *  Lock mutex mutexes[mtx].
  */
 
-#define MUTEX_INITID( mtx, attr ) { int retval;{	\
-  mutexes[mtx] = malloc(sizeof(pthread_mutex_t)); \
-  if ((retval=pthread_mutex_init(mutexes[mtx], attr)) != 0) \
-    handle_thread_error(retval, FUNC_MUTEX_INIT, NULL); }}
+#define MUTEX_INITID( mtx, attr )					\
+      do {								\
+	int __rv;							\
+	mutexes[mtx] = malloc(sizeof(pthread_mutex_t));			\
+	if ((__rv=pthread_mutex_init(mutexes[mtx], attr)) != 0)	\
+	  handle_thread_error(__rv, FUNC_MUTEX_INIT, NULL);		\
+      } while (0)
 
 #define MUTEXID(mtx) mutexes[mtx]
 
 
-#define MUTEX_LOCKID(mtx) { int retval;\
-  if ( is_concurrent && (retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
-    handle_thread_error(retval, FUNC_MUTEX_LOCK, NULL); }
+#define MUTEX_LOCKID(mtx)						\
+      do {								\
+	if ( is_concurrent ) {						\
+	  int __rv;							\
+	  if ((__rv=pthread_mutex_lock(mutexes[mtx])) != 0)		\
+	  handle_thread_error(__rv, FUNC_MUTEX_LOCK, NULL);		\
+	}								\
+      } while (0)
 
-#define MUTEX_UNLOCKID(mtx) { int retval; \
-  if ( is_concurrent && (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)  \
-    handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
-
-
-#define MUTEX_LOCKID_FORCE(mtx) { int retval;				\
-  if ((retval=pthread_mutex_lock(mutexes[mtx])) != 0) \
-    handle_thread_error(retval, FUNC_MUTEX_LOCK, NULL); }
-
-#define MUTEX_UNLOCKID_FORCE(mtx) { int retval;			\
-  if ( (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)		\
-    handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL); }
-
-
-#define MUTEX_TRYLOCKID(mtx, isbusy){ \
-    if ( is_concurrent ){ \
-      if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
-         {handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL); isbusy=0;} \
-    } else isbusy = 0;}
-
-#define INC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx)}
-#define DEC_LOCKID(x, mtx) {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx)}
-
-#define INC_NARTHREADS_CONTROLLED { \
-   MUTEX_LOCKID(MTX_THREADCONTROL); \
-   MUTEX_LOCKID(MTX_NARTHREADS); \
-   NARthreads++;		   \
-   MUTEX_UNLOCKID(MTX_NARTHREADS); \
-   MUTEX_UNLOCKID(MTX_THREADCONTROL); }
-
-#define DEC_NARTHREADS { \
-   MUTEX_LOCKID(MTX_NARTHREADS); \
-   NARthreads--; \
-   MUTEX_UNLOCKID(MTX_NARTHREADS); }
+#define MUTEX_UNLOCKID(mtx)						\
+      do {								\
+	if ( is_concurrent ) {						\
+	  int __rv;							\
+	  if ((__rv=pthread_mutex_unlock(mutexes[mtx])) != 0)		\
+	    handle_thread_error(__rv, FUNC_MUTEX_UNLOCK, NULL);		\
+	}								\
+      } while (0)
 
 
-#define MUTEX_LOCKID_CONTROLLED(mtx) { int retval; \
-      MUTEX_TRYLOCKID(mtx, retval); \
-      if (retval==EBUSY){ \
-	 DEC_NARTHREADS;      \
-         MUTEX_LOCKID(mtx); \
-	 INC_NARTHREADS_CONTROLLED;}}
+#define MUTEX_LOCKID_FORCE(mtx)					\
+      do {							\
+	int __rv;						\
+	if ((__rv=pthread_mutex_lock(mutexes[mtx])) != 0)	\
+	  handle_thread_error(__rv, FUNC_MUTEX_LOCK, NULL);	\
+      } while (0)
 
-#define MUTEX_LOCK_CONTROLLED(mtx, msg) { int retval; \
-      MUTEX_TRYLOCK(mtx, retval, msg); \
-      if (retval==EBUSY){ \
-	 DEC_NARTHREADS;      \
-         MUTEX_LOCK(mtx, msg); \
-	 INC_NARTHREADS_CONTROLLED;}}
+#define MUTEX_UNLOCKID_FORCE(mtx)					\
+      do {								\
+	int retval;							\
+	if ( (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)		\
+	  handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL);		\
+      } while (0)
+
+
+#define MUTEX_TRYLOCKID(mtx, isbusy)					\
+      do {								\
+	if ( is_concurrent ) {						\
+	  if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
+	    {								\
+	      handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL);	\
+	      isbusy=0;							\
+	    }								\
+	} else isbusy = 0;						\
+      } while (0)
+
+#define INC_LOCKID(x, mtx) do {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx);} while (0)
+#define DEC_LOCKID(x, mtx) do {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx);} while (0)
+      
+#define INC_NARTHREADS_CONTROLLED   \
+      do {			    \
+	MUTEX_LOCKID(MTX_THREADCONTROL);	\
+	MUTEX_LOCKID(MTX_NARTHREADS);		\
+	NARthreads++;				\
+	MUTEX_UNLOCKID(MTX_NARTHREADS);		\
+	MUTEX_UNLOCKID(MTX_THREADCONTROL); \
+      } while (0)
+
+#define DEC_NARTHREADS				\
+      do {					\
+	MUTEX_LOCKID(MTX_NARTHREADS);		\
+	NARthreads--;				\
+	MUTEX_UNLOCKID(MTX_NARTHREADS);		\
+      } while (0)
+
+      
+#define MUTEX_LOCKID_CONTROLLED(mtx)		\
+      do {					\
+	int __rv;				\
+	MUTEX_TRYLOCKID(mtx, __rv);		\
+	if (__rv==EBUSY){				\
+	  DEC_NARTHREADS;			\
+	  MUTEX_LOCKID(mtx);			\
+	  INC_NARTHREADS_CONTROLLED;		\
+	}					\
+      } while (0)
+
+#define MUTEX_LOCK_CONTROLLED(mtx, msg)		\
+      do {					\
+	int __rv;				\
+	MUTEX_TRYLOCK(mtx, __rv, msg);		\
+	if (__rv==EBUSY){			\
+	  DEC_NARTHREADS;			\
+	  MUTEX_LOCK(mtx, msg);			\
+	  INC_NARTHREADS_CONTROLLED;		\
+	}					\
+      } while (0)
 
 
 /********** block macros *************/
 #define MUTEX_LOCKBLK(bp, msg) \
-   if (bp->shared) MUTEX_LOCKID(bp->mutexid)
+      do if (bp->shared) MUTEX_LOCKID(bp->mutexid); while (0)
 
 #define MUTEX_LOCKBLK_CONTROLLED(bp, msg) \
-   if (bp->shared) MUTEX_LOCKID_CONTROLLED(bp->mutexid)
+      do if (bp->shared) MUTEX_LOCKID_CONTROLLED(bp->mutexid); while (0)
 
 #define MUTEX_UNLOCKBLK(bp, msg) \
-   if (bp->shared) MUTEX_UNLOCKID(bp->mutexid)
+      do if (bp->shared) MUTEX_UNLOCKID(bp->mutexid); while (0)
 
 #define MUTEX_TRYLOCKBLK(bp, isbusy, msg) \
-   if (bp->shared) MUTEX_TRYLOCKID(bp->mutexid, isbusy)
+      do if (bp->shared) MUTEX_TRYLOCKID(bp->mutexid, isbusy); while (0)
 
 
 /* assume that the block is shared! */
@@ -1496,42 +1548,62 @@
    MUTEX_TRYLOCKID(bp->mutexid, isbusy)
 
 
-#define C_PUT_PROTECTED(L, v){ MUTEX_LOCKBLK(BlkD(L, List))	\
-                c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));}
+#define C_PUT_PROTECTED(L, v)					\
+      do {							\
+	MUTEX_LOCKBLK(BlkD(L, List));				\
+	c_put(&L, &v); MUTEX_UNLOCKBLK(BlkD(L, List));		\
+      } while (0)
 
-#define MUTEX_INITBLK(bp){if (!bp->shared){ \
-   bp->mutexid = get_mutex(&rmtx_attr); \
-   bp->shared = 1; }}
+#define MUTEX_INITBLK(bp)			\
+      do {					\
+	if (!bp->shared){			\
+	  bp->mutexid = get_mutex(&rmtx_attr);	\
+	  bp->shared = 1;			\
+	}					\
+      } while (0)
 
-#define MUTEX_INITBLKID(bp, mtx){if (!bp->shared){	\
-   bp->mutexid = mtx; \
-   bp->shared = 1; }}
+#define MUTEX_INITBLKID(bp, mtx)		\
+      do {					\
+	if (!bp->shared){			\
+	  bp->mutexid = mtx;			\
+	  bp->shared = 1;			\
+	}					\
+      } while (0)
 
 #define MUTEX_GETBLK(bp) mutexes[bp->mutexid]
 
 #define CV_GETULLTBLK(bp) condvars[bp->cvfull]
 #define CV_GETULLTBLK(bp) condvars[bp->cvfull]
 
-#define CV_INITBLK(bp) {  MUTEX_INITBLK(bp) \
-     bp->cvfull = get_cv(bp->mutexid); \
-     bp->cvempty = get_cv(bp->mutexid); \
-     bp->full = 0; \
-     bp->empty = 0; \
-     bp->max = 1024; }
+#define CV_INITBLK(bp)				\
+      do {					\
+	MUTEX_INITBLK(bp);			\
+	bp->cvfull = get_cv(bp->mutexid);	\
+	bp->cvempty = get_cv(bp->mutexid);	\
+	bp->full = 0;				\
+	bp->empty = 0;				\
+	bp->max = 1024;				\
+      } while (0)
 
 #define CV_WAIT_ON_EXPR(expr, cv, mtxid)				\
   while (expr) pthread_cond_wait(cv, MUTEXID(mtxid));
 
-#define CV_WAIT(cv, mtxid) { int rv;				   \
-    if ((rv=pthread_cond_wait(cv, MUTEXID(mtxid)))<0 ){		     \
-	fprintf(stderr, "condition variable wait failure %d\n", rv); \
-      	exit(-1); \
-      	 }}
+#define CV_WAIT(cv, mtxid)						\
+      do {								\
+	int __rv;							\
+	if ((__rv=pthread_cond_wait(cv, MUTEXID(mtxid)))<0 ){		\
+	  fprintf(stderr, "condition variable wait failure %d\n", __rv); \
+	  exit(-1);							\
+	}								\
+      } while (0)
 
-#define CV_INIT(cv, msg) { int rv;					\
-    if ((rv=pthread_cond_init(cv, NULL))<0 ){				\
-      handle_thread_error(rv, FUNC_COND_INIT, msg);			\
-    }}
+#define CV_INIT(cv, msg)						\
+      do{								\
+	int __rv;							\
+	if ((__rv=pthread_cond_init(cv, NULL))<0 ){			\
+	  handle_thread_error(__rv, FUNC_COND_INIT, msg);		\
+	}								\
+      } while (0)
 
 #define CV_WAIT_FULLBLK(bp) \
     pthread_cond_wait(condvars[bp->cvfull], MUTEX_GETBLK(bp));

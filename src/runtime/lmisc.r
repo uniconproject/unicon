@@ -675,10 +675,10 @@ end
  *  file: the same semantics of read()
  *  list: get a value from y
  * 
- *  fails if a value is not avalaible in y (ex: y is empty).
+ *  fails if a value is not available in y (ex: y is empty).
  *  produces whatever value it reads from y;
  *
- *  Expermintal: if x is not &null then this is a "query/set" operation 
+ *  Experimental: if x is not &null then this is a "query/set" operation 
  *  for the max size of the queue where if y is:
  *  list: 
         x==0: return the "max" size of y 

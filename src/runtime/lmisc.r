@@ -971,12 +971,23 @@ operator{0,1} <<@ rcvbk(x,y)
 	 default :{
   	    struct timespec   ts;
   	    struct timeval    tp;
-    		
 	    gettimeofday(&tp, NULL);
-	    /* Convert from timeval to timespec */
-    	    ts.tv_sec  = tp.tv_sec;
-    	    ts.tv_nsec = tp.tv_usec * 1000 + x % 1000;
-    	    ts.tv_sec += x / 1000;
+	    /*
+	     * The argument is in milli seconds,
+	     * timeval returns micro seconds
+	     * timespec needs nano seconds
+	     * Do the conversion:
+	     */
+    	    tp.tv_usec += (x % 1000) * 1000;
+	    if(tp.tv_usec<1000000) {
+    	       ts.tv_sec  = tp.tv_sec +  x / 1000;
+    	       ts.tv_nsec = tp.tv_usec * 1000;
+	       }
+	    else {
+	       /* make sure tv_usec overflows to seconds */
+	       ts.tv_sec  = tp.tv_sec +  x / 1000 + 1;
+    	       ts.tv_nsec = (tp.tv_usec-1000000) * 1000;
+	       }
 
    	    MUTEX_LOCKBLK_CONTROLLED(hp, "receive(): list mutex");
    	    if (hp->size==0){ 

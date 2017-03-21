@@ -1383,32 +1383,34 @@
  */
 
 #define MUTEX_LOCK( mtx, msg)						\
-      do {								\
+      do								\
 	if (is_concurrent) {						\
 	  int __rv;							\
 	  if ((__rv=pthread_mutex_lock(&(mtx))) != 0)			\
 	    handle_thread_error(__rv, FUNC_MUTEX_LOCK, msg);		\
 	}								\
-      } while (0)
+      while (0)
 
 #define MUTEX_UNLOCK( mtx, msg)						\
-      do {								\
-	if ( is_concurrent ) {						\
+      do								\
+	if (is_concurrent) {						\
 	  int __rv;							\
 	  if ((__rv=pthread_mutex_unlock(&(mtx))) != 0)			\
 	    handle_thread_error(__rv, FUNC_MUTEX_LOCK, msg);		\
 	}								\
-      } while (0)
+      while (0)
 
 #define MUTEX_TRYLOCK(mtx, isbusy, msg)					\
-      do {								\
-	if (is_concurrent ) {						\
-	  if (isbusy=pthread_mutex_trylock(&(mtx))) != 0 && isbusy!=EBUSY){ \
-	  handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg);		\
-	  isbusy=0;							\
-	}								\
-      } else isbusy=0;							\
-      } while (0)
+      do								\
+	if (is_concurrent) {						\
+	  if ((isbusy=pthread_mutex_trylock(&(mtx))) != 0) {	\
+	    if (isbusy != EBUSY){					\
+	      handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, msg);	\
+	      isbusy = 0;						\
+	    }								\
+	  }								\
+	} else isbusy = 0;						\
+      while (0)
 
 #define MUTEX_INIT( mtx, attr )					\
       do { int __rv;						\
@@ -1420,6 +1422,7 @@
  *  Lock mutex mutexes[mtx].
  */
 
+      
 #define MUTEX_INITID( mtx, attr )					\
       do {								\
 	int __rv;							\
@@ -1430,107 +1433,139 @@
 
 #define MUTEXID(mtx) mutexes[mtx]
 
+//BASIC: don't define __rv or check is_concurrent, enclosing code will do it
+#define MUTEX_LOCKID_BASIC(mtx)						\
+      if ((__rv=pthread_mutex_lock(mutexes[mtx])) != 0)			\
+	  handle_thread_error(__rv, FUNC_MUTEX_LOCK, NULL);
 
-#define MUTEX_LOCKID(mtx)						\
-      do {								\
-	if ( is_concurrent ) {						\
-	  int __rv;							\
-	  if ((__rv=pthread_mutex_lock(mutexes[mtx])) != 0)		\
-	  handle_thread_error(__rv, FUNC_MUTEX_LOCK, NULL);		\
-	}								\
-      } while (0)
-
-#define MUTEX_UNLOCKID(mtx)						\
-      do {								\
-	if ( is_concurrent ) {						\
-	  int __rv;							\
+#define MUTEX_UNLOCKID_BASIC(mtx)					\
 	  if ((__rv=pthread_mutex_unlock(mutexes[mtx])) != 0)		\
-	    handle_thread_error(__rv, FUNC_MUTEX_UNLOCK, NULL);		\
+	    handle_thread_error(__rv, FUNC_MUTEX_UNLOCK, NULL);
+      
+
+#define MUTEX_TRYLOCKID_BASIC(mtx, isbusy)				\
+      if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0) {		\
+	if (isbusy != EBUSY){						\
+	  handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL);	\
+	  isbusy = 0;							\
 	}								\
-      } while (0)
-
-
-#define MUTEX_LOCKID_FORCE(mtx)					\
-      do {							\
-	int __rv;						\
-	if ((__rv=pthread_mutex_lock(mutexes[mtx])) != 0)	\
-	  handle_thread_error(__rv, FUNC_MUTEX_LOCK, NULL);	\
-      } while (0)
-
-#define MUTEX_UNLOCKID_FORCE(mtx)					\
+      }
+      
+// AWLAYS: Always lock the mutex, don't check is_concurrent
+#define MUTEX_LOCKID_ALWAYS(mtx)					\
       do {								\
-	int retval;							\
-	if ( (retval=pthread_mutex_unlock(mutexes[mtx])) != 0)		\
-	  handle_thread_error(retval, FUNC_MUTEX_UNLOCK, NULL);		\
+	int __rv;							\
+	MUTEX_LOCKID_BASIC(mtx)						\
       } while (0)
 
-
-#define MUTEX_TRYLOCKID(mtx, isbusy)					\
+#define MUTEX_UNLOCKID_ALWAYS(mtx)					\
       do {								\
-	if ( is_concurrent ) {						\
-	  if ((isbusy=pthread_mutex_trylock(mutexes[mtx])) != 0 && isbusy!=EBUSY) \
-	    {								\
-	      handle_thread_error(isbusy, FUNC_MUTEX_TRYLOCK, NULL);	\
-	      isbusy=0;							\
-	    }								\
-	} else isbusy = 0;						\
+	  int __rv;							\
+	  MUTEX_UNLOCKID_BASIC(mtx);					\
       } while (0)
+
+#define MUTEX_LOCKID(mtx) do if ( is_concurrent )  MUTEX_LOCKID_ALWAYS(mtx);  while (0)
+
+#define MUTEX_UNLOCKID(mtx) do if ( is_concurrent )  MUTEX_UNLOCKID_ALWAYS(mtx);  while (0)
+
+#define MUTEX_TRYLOCKID(mtx, isbusy)	     \
+      do				     \
+	if (is_concurrent) {		     \
+	  MUTEX_TRYLOCKID_BASIC(mtx, isbusy) \
+	    }  else isbusy = 0;		     \
+      while (0)
 
 #define INC_LOCKID(x, mtx) do {MUTEX_LOCKID(mtx);  x++; MUTEX_UNLOCKID(mtx);} while (0)
 #define DEC_LOCKID(x, mtx) do {MUTEX_LOCKID(mtx);  x--; MUTEX_UNLOCKID(mtx);} while (0)
+
+#define INC_NARTHREADS_CONTROLLED_BASIC			\
+	  MUTEX_LOCKID_BASIC(MTX_THREADCONTROL);	\
+	  MUTEX_LOCKID_BASIC(MTX_NARTHREADS);		\
+	  NARthreads++;					\
+	  MUTEX_UNLOCKID_BASIC(MTX_NARTHREADS);		\
+	  MUTEX_UNLOCKID_BASIC(MTX_THREADCONTROL);
+
+#define INC_NARTHREADS_CONTROLLED_ALWAYS		\
+      do {						\
+	int __rv;					\
+	INC_NARTHREADS_CONTROLLED_BASIC;		\
+      } while (0)
       
-#define INC_NARTHREADS_CONTROLLED   \
-      do {			    \
-	MUTEX_LOCKID(MTX_THREADCONTROL);	\
-	MUTEX_LOCKID(MTX_NARTHREADS);		\
-	NARthreads++;				\
-	MUTEX_UNLOCKID(MTX_NARTHREADS);		\
-	MUTEX_UNLOCKID(MTX_THREADCONTROL); \
+#define INC_NARTHREADS_CONTROLLED			\
+      do						\
+	if (is_concurrent) {				\
+	  int __rv;					\
+	  INC_NARTHREADS_CONTROLLED_BASIC;		\
+	}						\
+	else						\
+      	  NARthreads++;					\
+      while (0)
+
+#define DEC_NARTHREADS_BASIC				\
+	  MUTEX_LOCKID_BASIC(MTX_NARTHREADS);		\
+	  NARthreads--;				      	\
+	  MUTEX_UNLOCKID_BASIC(MTX_NARTHREADS);
+
+#define DEC_NARTHREADS_ALWAYS		      		\
+      do {			       			\
+	int __rv;	       				\
+	DEC_NARTHREADS_BASIC;		       		\
+      } while (0)
+      
+      
+#define DEC_NARTHREADS			       		\
+      do {			       			\
+	if (is_concurrent) {		      		\
+	  int __rv;		       			\
+	  DEC_NARTHREADS_BASIC;		      		\
+	}			       			\
+	else		       				\
+	  NARthreads--;	       				\
       } while (0)
 
-#define DEC_NARTHREADS				\
-      do {					\
-	MUTEX_LOCKID(MTX_NARTHREADS);		\
-	NARthreads--;				\
-	MUTEX_UNLOCKID(MTX_NARTHREADS);		\
+#define MUTEX_LOCKID_CONTROLLED_ALWAYS(mtx)	  	\
+      do {			       			\
+	  int __rv;		       	       		\
+	  MUTEX_TRYLOCKID_BASIC(mtx, __rv);        	\
+	  if (__rv==EBUSY){	      	       		\
+	    DEC_NARTHREADS_BASIC;     		       	\
+	    MUTEX_LOCKID_BASIC(mtx);   	       		\
+	    INC_NARTHREADS_CONTROLLED_BASIC;	       	\
+	  }				       		\
       } while (0)
-
       
 #define MUTEX_LOCKID_CONTROLLED(mtx)		\
-      do {					\
-	int __rv;				\
-	MUTEX_TRYLOCKID(mtx, __rv);		\
-	if (__rv==EBUSY){				\
-	  DEC_NARTHREADS;			\
-	  MUTEX_LOCKID(mtx);			\
-	  INC_NARTHREADS_CONTROLLED;		\
-	}					\
-      } while (0)
+      do					\
+	if (is_concurrent)		      	\
+	  MUTEX_LOCKID_CONTROLLED_ALWAYS(mtx);	\
+      while (0)
 
 #define MUTEX_LOCK_CONTROLLED(mtx, msg)		\
       do {					\
-	int __rv;				\
-	MUTEX_TRYLOCK(mtx, __rv, msg);		\
-	if (__rv==EBUSY){			\
-	  DEC_NARTHREADS;			\
-	  MUTEX_LOCK(mtx, msg);			\
-	  INC_NARTHREADS_CONTROLLED;		\
+	if (is_concurrent) {			\
+	  MUTEX_LOCKID_CONTROLLED_ALWAYS(mtx)	\
+	  int __rv;				\
+	  MUTEX_TRYLOCK(mtx, __rv, msg);	\
+	  if (__rv==EBUSY){			\
+	    DEC_NARTHREADS_BASIC;		\
+	    MUTEX_LOCK(mtx, msg);		\
+	    INC_NARTHREADS_CONTROLLED_BASIC;	\
+	  }					\
 	}					\
       } while (0)
 
-
 /********** block macros *************/
 #define MUTEX_LOCKBLK(bp, msg) \
-      do if (bp->shared) MUTEX_LOCKID(bp->mutexid); while (0)
+      do if (bp->shared) {MUTEX_LOCKID_ALWAYS(bp->mutexid);} while (0)
 
 #define MUTEX_LOCKBLK_CONTROLLED(bp, msg) \
-      do if (bp->shared) MUTEX_LOCKID_CONTROLLED(bp->mutexid); while (0)
+      do if (bp->shared) {MUTEX_LOCKID_CONTROLLED_ALWAYS(bp->mutexid);} while (0)
 
 #define MUTEX_UNLOCKBLK(bp, msg) \
-      do if (bp->shared) MUTEX_UNLOCKID(bp->mutexid); while (0)
+      do if (bp->shared) {MUTEX_UNLOCKID_ALWAYS(bp->mutexid);} while (0)
 
 #define MUTEX_TRYLOCKBLK(bp, isbusy, msg) \
-      do if (bp->shared) MUTEX_TRYLOCKID(bp->mutexid, isbusy); while (0)
+      do if (bp->shared) {MUTEX_TRYLOCKID_BASIC(bp->mutexid, isbusy);} while (0)
 
 
 /* assume that the block is shared! */
@@ -1642,8 +1677,8 @@
 #define MUTEX_UNLOCKID(mtx)
 #define MUTEX_TRYLOCKID(mtx, isbusy)
 
-#define MUTEX_LOCKID_FORCE(mtx)
-#define MUTEX_UNLOCKID_FORCE(mtx)
+#define MUTEX_LOCKID_ALWAYS(mtx)
+#define MUTEX_UNLOCKID_ALWAYS(mtx)
 
 #define MUTEX_LOCK_CONTROLLED(mtx, msg)
 #define MUTEX_LOCKID_CONTROLLED(mtx)
@@ -1651,7 +1686,9 @@
 #define DEC_LOCKID(x, mtx)
 #define INC_NARTHREADS_CONTROLLED
 #define DEC_NARTHREADS
-
+#define INC_NARTHREADS_CONTROLLED_ALWAYS
+#define DEC_NARTHREADS_CONTROLLED_ALWAYS
+      
 #define MUTEX_INITBLK(bp)
 #define MUTEX_INITBLKID(bp, mtx)
 #define MUTEX_LOCKBLK(bp, msg)

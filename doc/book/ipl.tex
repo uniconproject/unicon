@@ -2321,9 +2321,8 @@ procedures -{}- see ``fields'', above.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printf}\hfill (WHM, CW, PLT)}
 
-This module provides Icon versions of the
-\index{printf()}\texttt{printf()} family of formatted output functions
-from the C language.
+This module provides a family of formatted output functions
+modeled on those found in the C language.
 
 \texttt{printf(fmt:string, args[])} formats and writes arguments to
 \texttt{\&output}.\\
@@ -2332,14 +2331,31 @@ to \texttt{f}.\\
 \texttt{sprintf(fmt:string, args[]) : string} formats arguments and
 produces a string result.
 
-These procedures support normal \texttt{d}, \texttt{s}, \texttt{o}, and
-\texttt{x} formats. An \texttt{"r"} format
-prints real numbers in a manner similar to that of
-printf's \texttt{"f"}, but
-will produce a result in an exponential format if the number is larger
-than the largest integer plus one. Left or right justification and
-field width control are provided as in \texttt{printf()}. \texttt{\%s}
-and \texttt{\%r} handle precision specifications.
+The format string \texttt{fmt} is modified by substituting arguments
+in place of the ``format specifiers'' within it, consisting of a
+percent sign followed by a specifier code.  Specifier codes include
+
+\begin{center}
+\begin{xtabular}{m{0.5in} m{4.5in}}
+specifier & arg is printed the form of \\ \hline
+   \%d    & decimal integer \\
+   \%e    & scientific (exponential) notation \\
+   \%i    & image \\
+   \%o    & octal \\
+   \%r    & real number. Exponential format if number is larger than int \\
+   \%s    & string \\
+   \%x    & hexadecimal
+\end{xtabular}
+\end{center}
+
+An hyphen after the percent sign indicates left justification,
+otherwise right justification is used. A number of digits after the
+percent sign may specify the width of the field to use, or after a
+period they specify a number of digits of precision. For example,
+\texttt{printf("\%-5.2r", x)} specifies that real number x be
+formatted as a string of at least 5 characters, left justified,
+with two digits after the decimal point.
+
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{prockind}}
 

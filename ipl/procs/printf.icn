@@ -18,18 +18,36 @@
 #
 ############################################################################
 #
-#     This procedure behaves somewhat like the standard printf.
-#  Supports d, e, s, o, and x formats like printf.  An "r" format
-#  prints real numbers in a manner similar to that of printf's "f",
-#  but will produce a result in an exponential format if the number
-#  is larger than the largest integer plus one.  Though "e" differs
-#  from printf in some details, it always produces exponential format.
+# This module provides a family of formatted output functions
+# modeled on those found in the C language.
 #
-#     Left or right justification and field width control are pro-
-#  vided as in printf.   %s, %r, and %e handle precision specifications.
+# printf(fmt:string, args[]) formats and writes arguments to &output.
+# fprintf(f:file,fmt:string,args[]) formats and writes arguments to f.
+# sprintf(fmt:string, args[]) : string formats arguments and returns a string.
+#
+# The format string fmt is modified by substituting arguments
+# in place of the ``format specifiers'' within it, consisting of a
+# percent sign followed by a specifier code.  Specifier codes include
+#
+# specifier     arg is printed the form of
+# %d		decimal integer
+# %e		scientific notation
+# %i		image
+# %o		octal
+# %r		real number. Exponential format if number is larger than int
+# %s		string
+# %x		hexadecimal
+#
+# An hyphen after the percent sign indicates left justification,
+# otherwise right justification is used. A number of digits after the
+# percent sign may specify the width of the field to use, or after a
+# period they specify a number of digits of precision. For example,
+# printf("%-5.2r", x) specifies that real number x be
+# formatted as a string of at least 5 characters, left justified,
+# with two digits after the decimal point.
 #
 #     Code contributions for %f and %g formats that work like 
-#  printf are welcome.
+#  C's printf() would be welcome.
 #
 #     Possible new formats:
 #

@@ -286,7 +286,8 @@ keyword{0,1} errortext
       /* plausible to omit as there is only one program, and maybe globals */
       CURTSTATE();
 #endif					/* !ConcurrentCOMPILER */
-      if (k_errornumber == 0)
+      if (((k_errornumber == 0) && IntVal(amperErrno)==0) ||
+	  (StrLoc(k_errortext) == NULL))
          fail;
       return k_errortext;
       }

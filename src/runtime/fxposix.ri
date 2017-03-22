@@ -36,6 +36,40 @@ extern int errno;
       StrLen(d) = len;                                  \
 } while (0)
 
+#ifdef HAVE_STRERROR_R
+/*
+ * Dynamically allocated, arbitrarily sized, thread-safe and localized.
+ * adapted from stackoverflow.com, user25148
+ * TODO: save a pool of results, so we don't keep allocating these?
+ * Possible failures: EINVAL
+ */
+char *alc_strerror(int n)
+{
+   int rv;
+   char *s;
+   size_t size = 256; /* localization == 3x, max message ~50 */
+   CURTSTATE();
+   s = alcstr(NULL, size);
+   if (s == NULL) {
+      k_errornumber = 306;
+      return NULL;
+      }
+   while ((rv=strerror_r(n, s, size)) != 0 && errno == ERANGE) {
+      size *= 2;
+      if ((s = alcstr(NULL, size)) == NULL) {
+	 k_errornumber = 306;
+	 return NULL;
+	 }
+      }
+   if (rv != 0) {
+      k_errornumber = errno; /* EINVAL, don't call recursively to get text */
+      StrLoc(k_errortext) = "invalid error number";
+      StrLen(k_errortext) = strlen(StrLoc(k_errortext));
+      return NULL;
+      }
+   return s;
+}
+#endif					/* HAVE_STRERROR_R */
 
 "sys_errstr() - get the error string corresponding to an &errno value."
 
@@ -52,6 +86,14 @@ function{0,1} sys_errstr(e)
       if (!def:C_integer(e, IntVal(amperErrno), ern))
 	 runerr(101, e);
 
+#ifdef HAVE_STRERROR_R
+      if (StrLoc(result) = alc_strerror(ern))
+	 StrLen(result) = strlen(StrLoc(result));
+      else {
+	if (errno == EINVAL) fail;
+	runerr(0);
+      }
+#else					/* HAVE_STRERROR_R */
 #ifdef HAVE_STRERROR
       { char *s = strerror(ern);
       String(result, alcstr(s, strlen(s))); }
@@ -66,6 +108,7 @@ function{0,1} sys_errstr(e)
       fail;
 #endif					/* HAVE_SYS_ERRLIST */
 #endif					/* HAVE_STRERROR */
+#endif					/* HAVE_STRERROR_R */
       return result;
       }
 end

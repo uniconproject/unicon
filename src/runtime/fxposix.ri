@@ -36,40 +36,53 @@ extern int errno;
       StrLen(d) = len;                                  \
 } while (0)
 
-#ifdef HAVE_STRERROR_R
 /*
- * Dynamically allocated, arbitrarily sized, thread-safe and localized.
- * adapted from stackoverflow.com, user25148
+ * alc_strerror - return a (usually heap-allocated) error string.
+ * Dynamically allocated, arbitrarily sized, thread-safe (where available)
+ * and localized (where available).
+ *
  * TODO: save a pool of results, so we don't keep allocating these?
  * Possible failures: EINVAL
  */
 char *alc_strerror(int n)
 {
-   int rv;
+   int rv=0;
    char *s;
    size_t size = 256; /* localization == 3x, max message ~50 */
    CURTSTATE();
+#ifdef HAVE_STRERROR_R
    s = alcstr(NULL, size);
-   if (s == NULL) {
-      k_errornumber = 306;
-      return NULL;
-      }
-   while ((rv=strerror_r(n, s, size)) != 0 && errno == ERANGE) {
-      size *= 2;
-      if ((s = alcstr(NULL, size)) == NULL) {
-	 k_errornumber = 306;
+   if (s != NULL) {
+      while ((rv=strerror_r(n, s, size)) != 0 && errno == ERANGE) {
+	 size *= 2;
+	 if ((s = alcstr(NULL, size)) == NULL) break;
+	 }
+      if (rv != 0) {
+	 k_errornumber = errno; /* EINVAL, don't call recursively to get text */
+	 StrLoc(k_errortext) = "invalid error number";
+	 StrLen(k_errortext) = strlen(StrLoc(k_errortext));
 	 return NULL;
 	 }
       }
-   if (rv != 0) {
-      k_errornumber = errno; /* EINVAL, don't call recursively to get text */
-      StrLoc(k_errortext) = "invalid error number";
-      StrLen(k_errortext) = strlen(StrLoc(k_errortext));
-      return NULL;
-      }
+#else					/* HAVE_STRERROR_R */
+#ifdef HAVE_STRERROR
+      s = strerror(n);
+      s = alcstr(s, strlen(s));
+#else					/* HAVE_STRERROR */
+
+#if defined(HAVE_SYS_NERR) && defined(HAVE_SYS_ERRLIST)
+      if (n <= 0 || n > sys_nerr)
+	 return NULL;
+      s = (char *)sys_errlist[n];
+#endif					/* HAVE_SYS_NERR && HAVE_SYS_ERRLIST */
+
+#endif					/* HAVE_STRERROR */
+#endif					/* HAVE_STRERROR_R */
+
+   if (s == NULL)
+      k_errornumber = 306;
    return s;
 }
-#endif					/* HAVE_STRERROR_R */
 
 "sys_errstr() - get the error string corresponding to an &errno value."
 
@@ -86,29 +99,12 @@ function{0,1} sys_errstr(e)
       if (!def:C_integer(e, IntVal(amperErrno), ern))
 	 runerr(101, e);
 
-#ifdef HAVE_STRERROR_R
       if (StrLoc(result) = alc_strerror(ern))
 	 StrLen(result) = strlen(StrLoc(result));
       else {
-	if (errno == EINVAL) fail;
-	runerr(0);
-      }
-#else					/* HAVE_STRERROR_R */
-#ifdef HAVE_STRERROR
-      { char *s = strerror(ern);
-      String(result, alcstr(s, strlen(s))); }
-#else					/* HAVE_STRERROR */
-#ifdef HAVE_SYS_NERR
-      if (ern <= 0 || ern > sys_nerr)
-	 fail;
-#endif
-#ifdef HAVE_SYS_ERRLIST
-      String(result, (char *)sys_errlist[ern]);
-#else
-      fail;
-#endif					/* HAVE_SYS_ERRLIST */
-#endif					/* HAVE_STRERROR */
-#endif					/* HAVE_STRERROR_R */
+	 if (errno == EINVAL) fail;
+	 runerr(0);
+	 }
       return result;
       }
 end
@@ -3182,9 +3178,6 @@ function{0, 1} setenv(name, value)
       return nulldesc;
    }
 end
-
-
-
 
 #else				/* POSIX_FUNCS */
 /* static char junk;			/* avoid empty module */

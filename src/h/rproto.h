@@ -82,6 +82,9 @@ struct b_pelem	*alcpelem(word pattern_code, word *origin_ipc);
 #ifdef Arrays
 struct b_list   *alclisthdr	(uword size, union block *bptr);
 #endif					/* Arrays */
+
+char		*alc_strerror	(int);
+
 struct b_cons   *alccons	(union block *);
 
 int		anycmp		(dptr dp1,dptr dp2);

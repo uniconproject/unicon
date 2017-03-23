@@ -301,6 +301,7 @@ struct errtab errtab[] = {
    145, "bad window attribute",
    146, "incorrect number of arguments to drawing function",
    147, "window attribute cannot be read or written as requested",
+   148, "graphics is not enabled in this virtual machine",
 /*#endif*/					/* Graphics */
 
 /*#ifdef Graphics3D*/
@@ -346,6 +347,7 @@ struct errtab errtab[] = {
 
 #ifdef Dbm
    190, "dbm database expected",
+   191, "cannot open dbm database",
 #endif					/* Dbm */
 
    201, "division by zero",
@@ -365,6 +367,7 @@ struct errtab errtab[] = {
    215, "attempt to refresh &main",
    216, "external function not found",
    217, "unsafe inter-program variable assignment",
+   218, "invalid file name",
 
    301, "evaluation stack overflow",
    302, "memory violation",
@@ -390,6 +393,7 @@ struct errtab errtab[] = {
 
    500, "program malfunction",		/* for use by runerr() */
    600, "vidget usage error",		/* yeah! */
+
 #ifdef PosixFns
    1040, "socket error",		 
    1041, "cannot initialize network library",
@@ -401,6 +405,10 @@ struct errtab errtab[] = {
    1047, "invalid protocol name",
    1048, "low-level read or select mixed with buffered read",
 #endif					/* PosixFns */
+
+   1050, "command not found",
+   1051, "cannot create temporary file",
+
 #ifdef ISQL
    1100, "ODBC connection expected",
 #endif					/* ISQL */

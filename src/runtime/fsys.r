@@ -357,6 +357,7 @@ Deliberate Syntax Error
 
       /* poison NUL resistance. */
       if (strlen(fnamestr) != StrLen(fname)) {
+	 set_errortext(218);
 	 fail;
 	 }
 
@@ -459,6 +460,7 @@ Deliberate Syntax Error
 #endif					/* XWindows */
 	       continue;
 #else					/* Graphics */
+	       set_errortext(148);
 	       fail;
 #endif					/* Graphics */
 
@@ -477,6 +479,7 @@ Deliberate Syntax Error
 		  continue;
 		  }
 #else					/* Graphics3D */
+	       set_errortext(1045);
 	       fail;
 #endif					/* Graphics3D */
 
@@ -487,6 +490,7 @@ Deliberate Syntax Error
 	       status |= Fs_Dbm;
 	       continue;
 #else
+	       set_errortext(1045);
 	       fail;
 #endif	   				/* DBM */
 
@@ -496,6 +500,7 @@ Deliberate Syntax Error
 	       status |= Fs_Messaging|Fs_Read|Fs_Write;
 	       continue;
 #else
+	       set_errortext(1045);
 	       fail;
 #endif                                  /* Messaging */
 
@@ -506,6 +511,7 @@ Deliberate Syntax Error
 	       continue;
 
 #else 					/* PosixFns */
+	       set_errortext(1045);
 	       fail;
 #endif 					/* PosixFns */
 
@@ -517,30 +523,23 @@ Deliberate Syntax Error
 	       continue;
 
 #else 					/* ISQL */
+	       set_errortext(1045);
 	       fail;
 #endif 					/* ISQL */
 	    case 'v':
 	    case 'V':
+#ifdef Messaging
+	       if (status & Fs_Messaging) {
+	          status |= Fs_Verify;
+		  continue;
+		  }
+#endif                                  /* Messaging */
 #ifdef HAVE_VOICE
-#ifdef Messaging
-	       if (status & Fs_Messaging){
-	          status |= Fs_Verify;
-		  continue;
-		  }
-	       else
-#endif                                  /* Messaging */
-	          status |= Fs_Voice;
-	          continue;
-
+	       status |= Fs_Voice;
+	       continue;
 #else 					/* HAVE_VOICE */
-#ifdef Messaging
-	       if (status & Fs_Messaging){
-	          status |= Fs_Verify;
-		  continue;
-		  }
-	       else
-#endif                                  /* Messaging */
-	          fail;
+	       set_errortext(1045);
+	       fail;
 #endif 					/* HAVE_VOICE */
 
             case 'z':
@@ -548,13 +547,11 @@ Deliberate Syntax Error
 
 #if HAVE_LIBZ      
 	       status |= Fs_Compress;
-
                continue; 
 #else					/* HAVE_LIBZ */
+	       set_errortext(1045);
                fail; 
 #endif					/* HAVE_LIBZ */
-
-
 
 	    default:
 	       runerr(209, spec);
@@ -684,7 +681,10 @@ Deliberate Syntax Error
 
 	 if (f == NULL) {
 	    if (err_index >= 0) runerr(145, attr[err_index]);
-	    else if (err_index == -1) fail;
+	    else if (err_index == -1) {
+	       /* wopen() failed with a -1, do we know what failed? */
+	       fail;
+	       }
 	    else runerr(305);
 	    }
 	 } else
@@ -745,7 +745,7 @@ Deliberate Syntax Error
 		     default:
 #ifdef PosixFns
 			if (errno != 0) {
-			   IntVal(amperErrno) = errno;
+			   set_syserrortext(errno);
 			   }
 #endif                                  /* PosixFns */
 			runerr(1204, fname);
@@ -759,23 +759,17 @@ Deliberate Syntax Error
 		     case 0:
 			break;
 		     case TP_ECONNECT:
-			/*
-			 * used to be runerr 1205
-			 */
+		        set_errortext(1205);
 			fail;
 		     case TP_EHOST:
-			/*
-			 * used to be runerr 1206
-			 */
+			 set_errortext(1206);
 			fail;
 		     case TP_ESERVER:
 			runerr(1212, fname);
 			break;
 		     case TP_ETRUST:
-		        IntVal(amperErrno) = errno;		     
-		     	fail;
 		     case TP_EVERIFY:
-	 	        IntVal(amperErrno) = errno;		     
+		        set_syserrortext(errno);
 		     	fail;
 		     case TP_EMEM:
 		     case TP_EOPEN:
@@ -808,19 +802,21 @@ Deliberate Syntax Error
    if (status & Fs_Voice) {
       /* check arguments, number and type */
       /* attr[0] is a destination */
-      if( n > 0){
-      	tended char *tmps; 
+      if (n > 0) {
+	 tended char *tmps; 
       	
-	if (is:null(attr[0])) 
-		attr[0] = emptystr;
+	 if (is:null(attr[0])) 
+	    attr[0] = emptystr;
 	
-	if (!is:string(attr[0])) 
-		runerr(109, attr[0]);
+	 if (!is:string(attr[0])) 
+	    runerr(109, attr[0]);
 	
-	if (cnv:C_string(attr[0], tmps))
-		f = (FILE*) CreateVoiceSession(fnamestr,tmps);
-	else
-		fail;
+	 if (cnv:C_string(attr[0], tmps))
+	    f = (FILE*) CreateVoiceSession(fnamestr,tmps);
+	 else {
+	    set_errortext(306);
+	    fail;
+	    }
       }
       else
       	f = (FILE*) CreateVoiceSession(fnamestr,NULL);
@@ -834,6 +830,7 @@ Deliberate Syntax Error
 	 status = Fs_Pty | Fs_Read | Fs_Write;
 	 f = (FILE*) ptopen(fnamestr);
 #else
+	 set_errortext(1045);
 	 fail;
 #endif
 	 }
@@ -856,8 +853,10 @@ Deliberate Syntax Error
 	 if ((my_s = strchr(sbuf, ' ')) != NULL) *my_s = '\0';
 	 if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
 	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen); /* +1? */
-	    if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL)
+	    if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL) {
+	       set_errortext(1050);
 	       fail;
+	       }
 	    fnamestr = sbuf2;
 	    if (my_s) {
 	       strcat(fnamestr, " ");
@@ -867,8 +866,10 @@ Deliberate Syntax Error
 
 	 f = popen(fnamestr, mode);
 	 if (!strcmp(mode,"r")) {
+	    /* try and read a byte. if we can't treat it as a "bad command" */
 	    if ((c = getc(f)) == EOF) {
 	       pclose(f);
+	       set_errortext(1050);
 	       fail;
 	       }
 	    else
@@ -891,8 +892,8 @@ Deliberate Syntax Error
 	 else
 	   mode = O_RDONLY;
 
-	 f = (FILE *)dbm_open(fnamestr, mode, 0666);
-	 if (!f) {
+	 if ((f = (FILE *)dbm_open(fnamestr, mode, 0666)) == NULL) {
+	    set_errortext(191);
 	    fail;
 	    }
       }
@@ -944,9 +945,8 @@ Deliberate Syntax Error
 	    else
 	       status = Fs_Socket | Fs_Read | Fs_Write;
 
-
 	    if (!fd) {
-	       IntVal(amperErrno) = errno;
+	       set_syserrortext(errno);
 	       fail;
 	       }
 
@@ -960,7 +960,7 @@ Deliberate Syntax Error
 	    /* stat reported an error; file does not exist */
 
             if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
-		char tempbuf[1024];
+	       char tempbuf[1024];
 #if UNIX
 		/*
 		 * attemped to open a wildcard, produce ls(1) output.
@@ -984,8 +984,14 @@ Deliberate Syntax Error
          	if (*tempbuf) {
 		   struct b_cons *flnk;
             	   FINDDATA_T fd;
-	    	   if (!FINDFIRST(tempbuf, &fd)) fail;
-            	   if ((f = mstmpfile()) == NULL) fail;
+	    	   if (!FINDFIRST(tempbuf, &fd)) {
+		      set_errortext(218);
+		      fail;
+		      }
+            	   if ((f = mstmpfile()) == NULL) {
+		      set_errortext(1051);
+		      fail;
+		      }
             	   do {
                	      fprintf(f, "%s\n", FILENAME(&fd));
                	      } while (FINDNEXT(&fd));
@@ -1009,7 +1015,11 @@ Deliberate Syntax Error
 		 * Return the resulting file value. Duplicate of code below,
 		 * because rtt does not support goto statements.
 		 */
-		if (f == NULL) fail;
+		if (f == NULL) {
+		   if ((StrLoc(k_errortext) = alc_strerror(errno)) != NULL)
+		      StrLen(k_errortext) = strlen(StrLoc(k_errortext));
+		   fail;
+		   }
 		StrLen(filename) = strlen(fnamestr);
 		StrLoc(filename) = fnamestr;
 		Protect(fl = alcfile(f, status, &filename), runerr(0));
@@ -1025,7 +1035,7 @@ Deliberate Syntax Error
 	    	}
 	    else
 	    if (errno == ENOENT && (status & Fs_Read)) {
-	       IntVal(amperErrno) = errno;
+	       set_syserrortext(errno);
 	       fail;
 	       }
 	    else {
@@ -1051,8 +1061,14 @@ Deliberate Syntax Error
 		  strcat(tempbuf, "*.*");
 		  if (*tempbuf) {
 		     FINDDATA_T fd;
-		     if (!FINDFIRST(tempbuf, &fd)) fail;
-		     if ((f = mstmpfile()) == NULL) fail;
+		     if (!FINDFIRST(tempbuf, &fd)) {
+		        set_errortext(218);
+		        fail;
+		        }
+		     if ((f = mstmpfile()) == NULL) {
+		        set_errortext(1051);
+		        fail;
+		        }
 		     do {
 			fprintf(f, "%s\n", FILENAME(&fd));
 			}
@@ -1078,7 +1094,7 @@ Deliberate Syntax Error
        * Fail if the file cannot be opened.
        */
       if (f == NULL) {
-	 IntVal(amperErrno) = errno;
+	 set_syserrortext(errno);
       	 fail;
 	 }
 
@@ -1143,6 +1159,9 @@ function{0,1} read(f)
       SOCKET ws;
 #endif					/* PosixFns */
 
+      k_errornumber = 0;
+      IntVal(amperErrno) = 0;
+
       /*
        * Get a pointer to the file and be sure that it is open for reading.
        */
@@ -1163,13 +1182,14 @@ function{0,1} read(f)
 	     ws = (SOCKET)BlkD(f,File)->fd.fd;
       	     DEC_NARTHREADS;
 	     if ((slen = sock_getstrg(sbuf, MaxReadStr, ws)) == -1) {
-	        /*IntVal(amperErrno) = errno; */
+	        /* EOF is no error */
       	        INC_NARTHREADS_CONTROLLED;
 	        fail;
 		}
       	     INC_NARTHREADS_CONTROLLED;
-	     if (slen == -3)
+	     if (slen == -3) {
 		fail;
+	        }
 	     if (slen == 1 && *sbuf == '\n')
 		break;
 	     rlen = slen < 0 ? (word)MaxReadStr : slen;
@@ -1214,7 +1234,9 @@ function{0,1} read(f)
       /* add more restriction on non-seekable entities. */
       if ((status & Fs_Writing) && !(status & Fs_BPipe)) {
 	 if (fseek(fp, 0L, SEEK_CUR) != 0) {
-	    /* add bad stuff here, almost certainly EBADF not-seekable */
+	    /* errors, e.g. EBADF not-seekable */
+	    set_syserrortext(errno);
+	    fail;
 	    }
 	 BlkLoc(f)->File.status &= ~Fs_Writing;
 	 }
@@ -1268,8 +1290,10 @@ function{0,1} read(f)
       	     DEC_NARTHREADS;
 	     d = readdir((DIR *)fp);
       	     INC_NARTHREADS_CONTROLLED;
-	     if (!d)
+	     if (!d) {
+	        set_syserrortext(errno);
 	        fail;
+	     }
 	     s = d->d_name;
 	     while(*s && slen++ < MaxReadStr)
 	        *p++ = *s++;
@@ -1332,7 +1356,7 @@ function{0,1} read(f)
 
 	 if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
 #ifdef PosixFns
-	    IntVal(amperErrno) = errno;
+	    set_syserrortext(errno);
 #endif					/* PosixFns */
 	    fail;
 	    }
@@ -1583,8 +1607,10 @@ function{0,1} reads(f,i)
       	 DEC_NARTHREADS;
          de = readdir((DIR*) fp);
       	 INC_NARTHREADS_CONTROLLED;
-         if (de == NULL)
+         if (de == NULL) {
+	    set_syserrortext(errno);
             fail;
+	    }
          nbytes = strlen(de->d_name);
          if (nbytes > i)
             nbytes = i;
@@ -1614,7 +1640,6 @@ function{0,1} reads(f,i)
        */
       else if (i <= 0) {
 	 irunerr(205, i);
-
 	 errorfail;
 	 }
 
@@ -1630,7 +1655,7 @@ function{0,1} reads(f,i)
 
 	 IntVal(amperErrno) = 0;
       	 DEC_NARTHREADS;
-	 if (u_read(fd, i, &s) == 0){
+	 if (u_read(fd, i, &s) == 0) {
       	    INC_NARTHREADS_CONTROLLED;
 	    fail;
 	    }
@@ -1654,11 +1679,17 @@ function{0,1} reads(f,i)
 	    fail;
 	    }
       	 DEC_NARTHREADS;
-	 slen = gzread((gzFile)fp,StrLoc(s),i);
+	 slen = gzread((gzFile) fp, StrLoc(s), i);
       	 INC_NARTHREADS_CONTROLLED;
-	 if (slen == 0)
+	 if (slen == 0) {
+	    int ern, slen;
+	    char *s;
+	    if (gzeof(fp)) fail;
+	    /* an underlying read error, but gzread() returned 0? */
+	    set_gzerrortext((gzFile) fp);
 	    fail;
-	 else if (slen == -1)
+	    }
+	 else if (slen < 0)
 	    runerr(214);
 	 return string(slen, StrLoc(s));
 	 }
@@ -1724,7 +1755,7 @@ function{0,1} remove(s)
 #define rmdir _rmdir
 #endif					/* NT */
 	 if (rmdir(s) != 0) {
-	    IntVal(amperErrno) = errno;
+	    set_syserrortext(errno);
 	    fail;
             }
 #endif					/* PosixFns */
@@ -1752,19 +1783,14 @@ function{0,1} rename(s1,s2)
       }
 
    body {
+      if (rename(s1,s2) == 0) return nulldesc;
 #if NT
-      int i;
-      if ((i = rename(s1,s2)) != 0) {
-	 remove(s2);
-	 if (rename(s1,s2) != 0)
-	    fail;
-	 }
-      return nulldesc;
-#else					/*NT*/
-      if (rename(s1,s2) != 0)
-	 fail;
-      return nulldesc;
+      /* try again. Windows is difficult. */
+      remove(s2);
+      if (rename(s1,s2) == 0) return nulldesc;
 #endif					/* NT */
+      set_syserrortext(errno);
+      fail;
       }
 end
 
@@ -1841,22 +1867,32 @@ function{0,1} seek(f,o)
 	 fail;
 
 #ifdef ReadDirectory
-      if (BlkLoc(f)->File.status & Fs_Directory)
+      if (BlkLoc(f)->File.status & Fs_Directory) {
+	 set_errortext(174);
 	 fail;
+	 }
 #endif					/* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
-      if (BlkD(f,File)->status & Fs_Window)
+      if (BlkD(f,File)->status & Fs_Window) {
+	 set_errortext(174);
 	 fail;
+	 }
 #endif					/* Graphics */
 
 
 #if HAVE_LIBZ
       if (BlkD(f,File)->status & Fs_Compress) {
-	 if ((o<0) || (gzseek(fd, o - 1, SEEK_SET)==-1))
+	 if (o<0) {
+	    set_errortext(214);
+	    }
+	 if (gzseek(fd, o - 1, SEEK_SET) == -1) {
+	    if (gzeof(fd)) fail;
+	    set_gzerrortext((gzFile) fd);
 	    fail;
+	    }
 	 else
 	    return f;        
 	 }
@@ -2222,7 +2258,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    free(margv);
             }
 	 if (i != 0) {
-	    IntVal(amperErrno) = errno;
+	    set_syserrortext(errno);
 	    fail;
 	    }
          }

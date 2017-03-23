@@ -275,11 +275,21 @@ procedure main()
 
 end
 
+# for output, truncate real's to a portable multiplatform number of digits
+procedure unreal(x)
+   if type(x) == "real" then {
+      s := string(x)
+      s := s[1:10]
+      return s
+      }
+   else return x
+end
+
 procedure gen(p, a[])			#: test a simple procedure or generator
    &random := 4747
    outp := (image(p) ? (=("procedure "|"function ") & tab(0)))
    writes(left(outp, LSIZE - 1))
-   every writes(" ", ((p ! a) \ GENLIMIT) | "\n")
+   every writes(" ", unreal((p ! a) \ GENLIMIT) | "\n")
    return
 end
 

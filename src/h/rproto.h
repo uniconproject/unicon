@@ -84,6 +84,9 @@ struct b_list   *alclisthdr	(uword size, union block *bptr);
 #endif					/* Arrays */
 
 char		*alc_strerror	(int);
+void		 set_errortext	(int i);
+void		 set_gzerrortext(gzFile f);
+void		 set_syserrortext(int ern);
 
 struct b_cons   *alccons	(union block *);
 

@@ -17,6 +17,47 @@ extern struct errtab errtab[];		/* error numbers and messages */
 char *logopt;                            /* Log option destination */ 
 
 /*
+ * set &errornumber and &errortext to a given (run-time error) number
+ */
+void set_errortext(int i)
+{
+   register struct errtab *p;
+   CURTSTATE();
+   k_errornumber = i;
+   MakeStr("", 0, &k_errortext);
+   for (p = errtab; p->err_no > 0; p++)
+      if (p->err_no == i) {
+         MakeStr(p->errmsg,strlen(p->errmsg),&k_errortext);
+         break;
+         }
+}
+
+/*
+ * set &errno and &errortext based on a system call failure that set errno.
+ */
+void set_syserrortext(int ern)
+{
+   CURTSTATE();
+   IntVal(amperErrno) = ern;
+   if ((StrLoc(k_errortext) = alc_strerror(ern)) != NULL)
+      StrLen(k_errortext) = strlen(StrLoc(k_errortext));
+}
+
+/*
+ * set &errno and &errortext based on a libz error.
+ */
+void set_gzerrortext(gzFile f)
+{
+   int ern, slen;
+   char *s = gzerror(f, &ern);
+   CURTSTATE();
+   slen = strlen(s);
+   IntVal(amperErrno) = 214;
+   if ((StrLoc(k_errortext) = alcstr(s, slen)) != NULL)
+      StrLen(k_errortext) = slen;
+}
+
+/*
  * err_msg - print run-time error message, performing trace back if required.
  *  This function underlies the rtt runerr() construct.
  */

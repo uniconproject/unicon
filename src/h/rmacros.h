@@ -1005,7 +1005,7 @@
       #define coll_str  (curpstate->collstr)
       #define coll_blk  (curpstate->collblk)
 
-#ifdef Concurrent 
+#ifdef Concurrent
       /* coexpr local*/
       #define lastop    (curtstate_ce->Lastop)
       #define lastopnd  (curtstate_ce->Lastopnd)
@@ -1048,7 +1048,7 @@
       #define lastline  (curtstate->Lastline)
       #define lastcol   (curtstate->Lastcol)
 
-#ifdef Concurrent 
+#ifdef Concurrent
       #define tend        (curtstate_ce->es_tend)
       #define pfp         (curtstate_ce->es_pfp)
 #if !ConcurrentCOMPILER
@@ -1299,7 +1299,7 @@
 #define CREATE_CE_THREAD(cp, t_stksize, msg)      
 #endif                                  /* PthreadCoswitch */
 
-#ifdef Concurrent 
+#ifdef Concurrent
 
    #define MTX_OP_ASTR		0
    #define MTX_OP_AREAL		1

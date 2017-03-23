@@ -48,10 +48,9 @@ FILE *fd;
 #define SOCKET_ERROR -1
 #endif
 /*
- * sock_getstrg - read a line into buf from socket.  
- *  At most maxi characters are read.  sock_getstrg returns the 
- *  length of the line, not counting the newline.  Returns -1 
- *  if EOF and -3 if a socket error occur.
+ * sock_getstrg - read a line into buf from socket.  At most maxi
+ * characters are read.  Returns the length of the line, not counting
+ * the newline.  Returns -1 if EOF, and -3 if a socket error occurs.
  */
 int sock_getstrg(buf, maxi, fd)
 register char *buf;
@@ -67,7 +66,7 @@ SOCKET fd;
       if(WSAGetLastError() == WSAESHUTDOWN)   
 	 return -1;
 #endif					/* NT */
-      k_errornumber = 1040;
+      set_errortext(1040);
       return -3;
       }
    if (r == 0) return -1;
@@ -91,7 +90,7 @@ SOCKET fd;
       if (WSAGetLastError() == WSAESHUTDOWN)
 	 return -1;
 #endif					/* NT */
-      k_errornumber = 1040;
+      set_errortext(1040);
       return -3;
       }
    return r;
@@ -1150,14 +1149,10 @@ FILE *mstmpfile()
    char *temp;
    FILE *f;
 
-   if ((temp = _tempnam(NULL, "uni")) == NULL) {
-      fprintf(stderr, "_tempnam(TEMP) failed\n");
+   if ((temp = _tempnam(NULL, "uni")) == NULL)
       return NULL;
-      }
 
    if ((f = fopen(temp, "w+b")) == NULL) {
-      fprintf(stderr, "fopen(%s) w+b failed: ", temp);
-      perror("");
       free(temp);
       return NULL;
       }
@@ -1630,6 +1625,9 @@ struct ptstruct *ptopen(char *command)
 /*
  * ptgetstrt() - pseudo-pty getstr with timeout.  Actually, read() does not
  * have a timeout, not sure this should either. I guess timeout is optional.
+ * Returns -1 for various (unfortunate) errors: bad parameters, bad
+ * master file descriptor, no bytes read ...  probably needs finer-grained
+ * error reporting.
  */
 int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 	      unsigned long waittime, int longread)

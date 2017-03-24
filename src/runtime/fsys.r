@@ -2030,80 +2030,84 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
          cnv:C_string(argv, cmdline);
 #if !NT
 	{
-	 char *s;
+	 char *s = cmdline;
+
 	 /*
 	  * If we have a string it may have redirection orders.
 	  * Since execl("/bin/sh"...) doesn't seem to handle those
 	  * redirections for us, figure out how to do them ourselves.
 	  * This is a lame hack. Someone needs to think through
-	  * a general solution and rewrite it.
+	  * a general solution and rewrite it.  Worst case (at present)
+	  * that we are planning for is >filename 2>&1.
 	  */
-	 if ((s = strstr(cmdline, "&>"))) {
-	    *s = '\0';
-	    s += 2;
-	    while (*s == ' ') s++;
-	    StrLen(d_stdout) = StrLen(d_stderr) = strlen(s);
-	    StrLoc(d_stdout) = StrLoc(d_stderr) = s;
-	    while (*s) {
-	       if (*s == ' ') {
-		  *s = '\0';
-		  break;
-		  }
+	 while ((s = strstr(s, ">")) != NULL) {
+	    if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
+	       s[-1] = '\0';
 	       s++;
+	       while (*s == ' ') s++;
+	       StrLoc(d_stdout) = StrLoc(d_stderr) = s;
+	       while (*s) {
+		  if (*s == ' ') {
+		     *s++ = '\0';
+		     break;
+		     }
+		  s++;
+	          }
+	       StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
 	       }
-	    }
-	 else if ((s = strstr(cmdline, "2>"))) {
-	    *s = '\0';
-	    s += 2;
-	    while (*s == ' ') s++;
-	    StrLen(d_stderr) = strlen(s);
-	    StrLoc(d_stderr) = s;
-	    while (*s) {
-	       if (*s == ' ') {
-		  *s = '\0';
-		  break;
-		  }
+	    else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
+	       s[-1] = '\0';
 	       s++;
+	       while (*s == ' ') s++;
+	       StrLoc(d_stderr) = s;
+	       while (*s) {
+		  if (*s == ' ') {
+		     *s++ = '\0';
+		     break;
+		     }
+		  s++;
+		  }
+	       StrLen(d_stderr) = strlen(StrLoc(d_stderr));
+	       if (!strcmp(StrLoc(d_stderr), "&1")) {
+		  d_stderr = d_stdout;
+		  }
 	       }
-	    }
-	 else if ((s = strstr(cmdline, ">>"))) {
-	    tended char *s_stdout;
-	    *s = '\0';
-	    s += 2;				/* skip over >> */
-	    while (*s == ' ') s++;
-	    StrLen(d_stdout) = strlen(s);
-	    StrLoc(d_stdout) = s;
+	    else if (s[1] == '>') { /* >> */
+	       *s = '\0';
+	       s += 2;				/* skip over >> */
+	       while (*s == ' ') s++;
+	       StrLoc(d_stdout) = s;
+	       while (*s) {
+		  if (*s == ' ') {
+		     *s++ = '\0';
+		     break;
+		     }
+		  s++;
+	          }
+	       StrLen(d_stdout) = strlen(StrLoc(d_stdout));
 
-            cnv:C_string(d_stdout, s_stdout);
-	    d_stdout.dword = D_Integer;
-	    d_stdout.vword.integr =
+	       d_stdout.dword = D_Integer;
+	       d_stdout.vword.integr =
 #if UNIX
-	       open(s_stdout, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
+		 open(StrLoc(d_stdout), O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
 #endif
 #if NT
-	       _open(s_stdout, O_WRONLY|O_CREAT|O_APPEND, _S_IWRITE|_S_IREAD);
+	         _open(StrLoc(d_stdout), O_WRONLY|O_CREAT|O_APPEND, _S_IWRITE|_S_IREAD);
 #endif
-
-	    while (*s) {
-	       if (*s == ' ') {
-		  *s = '\0';
-		  break;
-		  }
-	       s++;
 	       }
-	    }
-	 else if ((s = strchr(cmdline, '>'))) {
-	    *s = '\0';
-	    s++;
-	    while (*s == ' ') s++;
-	    StrLen(d_stdout) = strlen(s);
-	    StrLoc(d_stdout) = s;
-	    while (*s) {
-	       if (*s == ' ') {
-		  *s = '\0';
-		  break;
-		  }
+	    else { /* > */
+	       *s = '\0';
 	       s++;
+	       while (*s == ' ') s++;
+	       StrLoc(d_stdout) = s;
+	       while (*s) {
+		  if (*s == ' ') {
+		     *s++ = '\0';
+		     break;
+		     }
+		  s++;
+	          }
+	       StrLen(d_stdout) = strlen(StrLoc(d_stdout));
 	       }
 	    }
 	}

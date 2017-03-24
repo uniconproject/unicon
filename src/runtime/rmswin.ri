@@ -272,6 +272,10 @@ int mswinsystem(char *s)
 
 /*
  * wopen
+ * If it returns NULL, per fsys.r, wopen() should set err_idx to one of:
+ *  >= 0: the index of an offending attribute value
+ *  -1  : ordinary failure
+ *  -2  : out of memory
  */
 FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int is_3d)
    {
@@ -299,26 +303,31 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       }
 
    tlp = lp;
-
    /*
-    * allocate a binding, a window state, and a context
+    * Allocate a binding, a window state, and a context.
+    * If anything goes wrong, a free_binding() call clears it all out.
     */
-   Protect(w = alc_wbinding(), return NULL);
-   Protect(w->window = alc_winstate(), { free_binding(w); return NULL; });
-   Protect(w->window->display = alc_display(NULL),{free_binding(w);return NULL;});
-   Protect(w->context = alc_context(w), { free_binding(w); return NULL; });
-   ws = w->window;
+   if (((w               = alc_wbinding()) == NULL) ||
+       ((ws = w->window  = alc_winstate()) == NULL) ||
+       ((ws->display     = alc_display(NULL)) == NULL) ||
+       ((wc = w->context = alc_context(w)) == NULL)) {
+      if (w) free_binding(w);
+      *err_idx = -2;
+      return NULL;
+      }
+   
    ws->listp.dword = D_List;
    BlkLoc(ws->listp) = (union block *) tlp;
    ws->width = ws->height = 0;
-   wc = w->context;
 
 #ifdef Graphics3D
    ws->is_3D = wc->is_3D = is_3d;
    if (is_3d) {
       /* create an empty list for list of function calls */
-      if (create_display_list(w, 40000) == Failed)
+      if (create_display_list(w, 40000) == Failed) {
+	 *err_idx = -2;
 	 return NULL;
+	 }
       }
 #endif					/* Graphics3D */
 
@@ -329,11 +338,12 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       switch (wattrib(w, StrLoc(attr[i]), StrLen(attr[i]), &attrrslt,
 			answer)) {
       case Failed:
-	 wclose(w);
+	 wclose(w); /* suspicious; didn't get it opened OK */
+	 *err_idx = -1;
 	 return NULL;
       case RunError:
-	 /* think of something to do here */
-	 break;
+	 *err_idx = i;
+	 return NULL;
 	 }
 
    /*
@@ -419,9 +429,11 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
       }
 
    if (alc_rgb(w, wc->fg) == Failed) {
+      *err_idx = -1; /* review */
       return 0;
       }
    if (alc_rgb(w, wc->bg) == Failed) {
+      *err_idx = -1; /* review */
       return 0;
       }
    ws->pixwidth = ws->width;
@@ -494,6 +506,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_idx, int i
 	 free((pointer)imd->data);
 	 imd->width = 0;
 	 if (r < 0) {
+	    *err_idx = -1; /* review. when does strimage fail? */
 	    return 0;
 	    }
 	 }

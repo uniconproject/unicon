@@ -235,9 +235,10 @@ $endif
    method on_saveas_btn(ev)
       local fd, filename, foo, index := i, warntxt, fexist := &null, L,
 	    i, oldwindow, win, fileslist, fext, isUnicon := 1, filedirectory,
-	    was_non_icn
+	    was_non_icn, c
 
-      if ide.CurrentTabItem().filename[-4:0] == ".icn" then was_non_icn := &null
+      if (\(ide.CurrentTabItem().filename))[-4:0] == ".icn" then
+	 was_non_icn := &null
       else was_non_icn := 1
 
       # this obviously is supposed to be used for something, and isn't yet.
@@ -314,11 +315,13 @@ $endif
 	 CurrentTabItem().filedirectory := filename[1:-*file_name(filename)]
 	 save_file(CurrentTabItem())
 
-	 # if we changed from non-.icn to .icn extension, handle_closefile()
-	 # followed by an open, to enable syntax coloring
+	 # If we changed from non-.icn to .icn extension, do a close/reopen
+	 # to enable syntax coloring. Open first, so whole IDE doesn't exit
+         # if this is the only buffer.
 	 if \was_non_icn & (filename[-4:0] == ".icn") then {
-	    handle_closefile()
+            c := CurrentTabItem()
 	    handle_openfile( , filename)
+	    handle_closefile( , c)
 	    }
 
 	 # The old IDE updated the file list on the File Menu when a
@@ -540,6 +543,7 @@ $endif
    #
    method comp1file(s)
       local extended
+      if s[1]==s[-1]=="\"" then s := s[2:-1] # de-quote if needed
       if find(".icn", CurrentTabItem().label) then {
 	 s[find(".icn", map(s)) : 0] := "" # truncate extension
 	 extended := s || ".icn"

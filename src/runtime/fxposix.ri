@@ -2328,11 +2328,11 @@ function{0,1} select(files[nargs])
       /*
        * prepass: pull out windows, into their own list
        */
-      if ((lws = alclist(0, MinListSlots)) == NULL) fail;
+      if ((lws = alclist(0, MinListSlots)) == NULL) runerr(307);
       d2.dword = D_List;
       BlkLoc(d2) = (union block *)lws;
 #if defined(PseudoPty) && defined(MSWindows)
-      if ((lps = alclist(0, MinListSlots)) == NULL) fail;
+      if ((lps = alclist(0, MinListSlots)) == NULL) runerr(307);
       d3.dword = D_List;
       BlkLoc(d3) = (union block *)lps;
 #endif					/* PseudoPty */
@@ -2453,7 +2453,7 @@ function{0,1} select(files[nargs])
 #if NT
 	    IntVal(amperErrno) = WSAGetLastError();
 #else
-	    IntVal(amperErrno) = errno;
+	    set_syserrortext(errno);
 #endif
 	    if (IntVal(amperErrno) != 0)
 	       fail;
@@ -2485,7 +2485,7 @@ function{0,1} select(files[nargs])
 	 }
 
       if (lp == NULL) {
-	 if ((lp = alclist(0, MinListSlots)) == NULL) fail;
+	 if ((lp = alclist(0, MinListSlots)) == NULL) runerr(307);
          }
 
       d.dword = D_List;
@@ -2496,7 +2496,7 @@ function{0,1} select(files[nargs])
 
 #if HAVE_LIBZ
            if (BlkD(files[k],File)->status & Fs_Compress) { 
-               fail;
+	       runerr(214);
                }
 #endif					/* HAVE_LIBZ */
 	    post_if_ready(&d, files+k, &fds);
@@ -2514,7 +2514,7 @@ function{0,1} select(files[nargs])
 		  if (is:file(f)) {
 #if HAVE_LIBZ
 		     if (BlkD(f,File)->status & Fs_Compress) { 
-	                fail;
+		        runerr(214);
 	                }
 #endif					/* HAVE_LIBZ */
 		     post_if_ready(&d, &f, &fds);

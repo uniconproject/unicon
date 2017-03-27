@@ -50,12 +50,14 @@ void set_syserrortext(int ern)
 void set_gzerrortext(gzFile f)
 {
    int ern, slen;
-   char *s = gzerror(f, &ern);
+   const char *s = gzerror(f, &ern);
    CURTSTATE();
    slen = strlen(s);
    IntVal(amperErrno) = 214;
-   if ((StrLoc(k_errortext) = alcstr(s, slen)) != NULL)
+   if ((StrLoc(k_errortext) = alcstr(NULL, slen)) != NULL) {
+      strcpy(StrLoc(k_errortext), s);
       StrLen(k_errortext) = slen;
+      }
 }
 #endif					/* HAVE_LIBZ */
 

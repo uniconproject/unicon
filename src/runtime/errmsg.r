@@ -43,6 +43,7 @@ void set_syserrortext(int ern)
       StrLen(k_errortext) = strlen(StrLoc(k_errortext));
 }
 
+#if HAVE_LIBZ
 /*
  * set &errno and &errortext based on a libz error.
  */
@@ -56,6 +57,7 @@ void set_gzerrortext(gzFile f)
    if ((StrLoc(k_errortext) = alcstr(s, slen)) != NULL)
       StrLen(k_errortext) = slen;
 }
+#endif					/* HAVE_LIBZ */
 
 /*
  * err_msg - print run-time error message, performing trace back if required.

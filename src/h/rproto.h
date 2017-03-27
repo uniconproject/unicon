@@ -85,8 +85,10 @@ struct b_list   *alclisthdr	(uword size, union block *bptr);
 
 char		*alc_strerror	(int);
 void		 set_errortext	(int i);
-void		 set_gzerrortext(gzFile f);
 void		 set_syserrortext(int ern);
+#if HAVE_LIBZ
+void		 set_gzerrortext(gzFile f);
+#endif					/* HAVE_LIBZ */
 
 struct b_cons   *alccons	(union block *);
 

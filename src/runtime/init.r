@@ -132,7 +132,7 @@ struct descrip maps3;			/* third cached argument of map */
 #if !(defined(MultiThread) || ConcurrentCOMPILER)
 struct descrip k_current;		/* current expression stack pointer */
 int k_errornumber = 0;			/* &errornumber */
-struct descrip k_errortext = {0,""};	/* &errortext */
+struct descrip k_errortext = {0,(word)""};	/* &errortext */
 struct descrip k_errorvalue;		/* &errorvalue */
 int have_errval = 0;			/* &errorvalue has legal value */
 int t_errornumber = 0;			/* tentative k_errornumber value */

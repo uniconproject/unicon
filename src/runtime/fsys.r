@@ -2521,6 +2521,8 @@ end
 #if terminate
 	    syserr("tp_write failed in stop()");
 #else
+	    /* tp_write has failed in write() or writes() */
+	    set_errortext(214);
 	    fail;
 #endif
 	    }
@@ -2538,6 +2540,7 @@ end
 #if terminate
 	    syserr("sock_write failed in stop()");
 #else
+	    set_syserrortext(errno);
 	    fail;
 #endif
 	  }
@@ -2786,6 +2789,7 @@ function {1} name(x[nargs])
 #if terminate
 			      syserr("tp_write failed in stop()");
 #else
+			      set_errortext(214);
 			      fail;
 #endif
 			      }
@@ -2809,6 +2813,7 @@ function {1} name(x[nargs])
 #if terminate
 			      syserr("sock_write failed in stop()");
 #else
+			      set_syserrortext(errno);
 			      fail;
 #endif
 			     }
@@ -2946,6 +2951,7 @@ function {1} name(x[nargs])
 #if terminate
 			   syserr("sock_write failed in stop()");
 #else
+			   set_syserrortext(errno);
 			   fail;
 #endif
 			   }

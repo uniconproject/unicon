@@ -2851,8 +2851,13 @@ function{0,1} getserv(s, proto)
   
 	    if (p && !getprotobyname(p))
 	       runerr(1047, proto);
-	    if ((serv = getservbyname(name, p)) == NULL)
+	    if ((serv = getservbyname(name, p)) == NULL) {
+#if NT
+/* TODO: call WSAGetLastError to find out what went wrong and set errortext */
+#endif
+	       set_errortext(1049);
 	       fail;
+	       }
 
 	    if (make_serv(serv, &result) == 0)
 	       syserr("failed to create posix record constructor");
@@ -2873,8 +2878,13 @@ function{0,1} getserv(s, proto)
 	    if (p && !getprotobyname(p))
 	       runerr(1047, proto);
             real_port = htons((unsigned short)port);
-	    if ((serv = getservbyport((int)real_port, p)) == NULL)
+	    if ((serv = getservbyport((int)real_port, p)) == NULL) {
+#if NT
+/* TODO: call WSAGetLastError to find out what went wrong and set errortext */
+#endif
+	       set_errortext(1049);
 	       fail;
+	       }
 
 	    if (make_serv(serv, &result) == 0)
 	       syserr("failed to create posix record constructor");
@@ -2886,8 +2896,10 @@ function{0,1} getserv(s, proto)
 #if NT
 	    fail;
 #else					/* NT */
-	    if ((serv = getservent()) == NULL)
+	    if ((serv = getservent()) == NULL) {
+	       set_errortext(1049);
 	       fail;
+	       }
 
 	    if (make_serv(serv, &result) == 0)
 	       syserr("failed to create posix record constructor");

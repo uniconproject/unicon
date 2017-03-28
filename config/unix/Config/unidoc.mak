@@ -3,5 +3,5 @@
 all:
 	cd parlett; make
 
-Clean:
+clean Clean:
 	cd parlett; make clean

@@ -821,20 +821,27 @@ void clean_threads()
     * no args, for example.
     */
 
-   pthread_cond_destroy(&cond_tc);
-   if (sem_tcp)
-      SEM_CLOSE(sem_tcp);		/* close/destroy TC semaphore */
-
-/* 
+  /* 
  * IMPORTANT NOTICE:
  * Disable mutex/condvars clean up for now. Leave this to the OS.
  * Some code/libraries think this should be alive, even though we 
- * are doing this at exit time. 
+ * are doing this at exit time.
+ *
+ * update ON March 28, 2017: clean cond_tc/sem_tcp was commented out as well
+ * destorying these while other threads still waiting on them leaves
+ * the system ins a state of "limbo" causing it to hang in some cases
  */
 
-#if 0
+  
+  #if 0
    {
-   int i;
+        int i;
+
+   pthread_cond_destroy(&cond_tc);
+
+   if (sem_tcp)
+      SEM_CLOSE(sem_tcp);		/* close/destroy TC semaphore */
+   
    /*  keep MTX_SEGVTRAP_N alive	*/
    for(i=1; i<nmutexes; i++){
       pthread_mutex_destroy(mutexes[i]);
@@ -871,6 +878,8 @@ int action;
 {
    static int tc_queue=0;        /* how many threads are waiting for TC */
    static int action_in_progress=TC_NONE;
+   // Keep track of the thread who is in control
+   static word master_thread = 0;
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */
    struct timeval    tp; 
@@ -886,7 +895,7 @@ int action;
 #endif
 
    CURTSTATE();
-
+   
    switch (action){
       case TC_ANSWERCALL:{
          /*---------------------------------*/
@@ -895,10 +904,10 @@ int action;
       	       #ifdef CoClean
      	       coclean(BlkD(k_current, Coexpr));
 	       #else
-      	       DEC_NARTHREADS;	
+      	       DEC_NARTHREADS;
+	       #endif
       	       pthread_exit(NULL);
-               #endif
-	       break;
+  	       break;
 	       }
       	    default:{
       	       /*
@@ -967,7 +976,6 @@ int action;
 	    MUTEX_LOCKID(MTX_NARTHREADS);
 	    NARthreads++;
 	    MUTEX_UNLOCKID(MTX_NARTHREADS);
-
 	    return;
             }
          /* 
@@ -999,18 +1007,31 @@ int action;
         first_thread=0;
 #endif
 
+         master_thread = 0;
+
          /* broadcast a wakeup call to all threads waiting on cond_tc */
          pthread_cond_broadcast(&cond_tc);
 
          return;
          }
       case TC_STOPALLTHREADS:{
+
+	/*
+	 * First make sure this thread is not requesting this
+	 * in the middle of another request made by the same thread.
+	 * typically this happens if something went bad like 
+	 * a segfault in the middle of an ongoing GC.
+	 * If this is the case, we can safely return.
+	 */
+	if (master_thread == curtstate->c->id)
+	  return;
+
          /*
           * If there is a pending TC request, then block/sleep.
           * Make sure we do not start a GC in the middle of starting
           * a new Async thread. Precaution to avoid problems.
           */
-
+	
          MUTEX_LOCKID(MTX_NARTHREADS);
          NARthreads--;
          tc_queue++;
@@ -1082,6 +1103,7 @@ int action;
           * Now it is safe to proceed with TC with only the current thread running
           */
          tc_queue--;
+	 master_thread = curtstate->c->id;
          return;
          }
       case TC_KILLALLTHREADS:{
@@ -1092,7 +1114,9 @@ int action;
 	    if (NARthreads  <= 1) break;  /* unlock MTX_NARTHREADS after GC*/
 	    usleep(50);
 	    }
+
          /*action_in_progress = TC_NONE;*/
+	 master_thread = curtstate->c->id;
 	 return;
          }
       default:{

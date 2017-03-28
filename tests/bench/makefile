@@ -185,7 +185,7 @@ shuffle.u:
 	unicon $(UFLAGS) shuffle.icn
 
 
-clean:
+Clean clean:
 	rm -f *.u uni* *.o *.exe thread-ring spectral-norm		\
 	reverse-complement regex-dna pidigits n-body binary-trees	\
 	chameneos-redux fannkuch fasta k-nucleotide mandelbrot		\

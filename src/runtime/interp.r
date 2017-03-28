@@ -75,13 +75,13 @@ word *stackend; 			/* End of interpreter stack */
 int lock_count_mtx_init;
 #endif					/* Concurrent */
 
-#if UNIX && E_Tick
+#if HAVE_PROFIL && E_Tick
 extern union { 			/* clock ticker -- keep in sync w/ fmonitor.r */
    unsigned short s[16];	/* 16 counters */
    unsigned long l[8];		/* 8 longs are easier to check */
 } ticker;
 extern unsigned long oldtick;	/* previous sum of the two longs */
-#endif					/* UNIX && E_Tick */
+#endif					/* HAVE_PROFIL && E_Tick */
 
 
 #ifndef MultiThread
@@ -570,7 +570,7 @@ int interp_x(int fsig,dptr cargp)
          }
 #endif					/* MultiThread */
 
-#if UNIX && e_tick
+#if HAVE_PROFIL && e_tick
       if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
 	  ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {
 	 /*
@@ -589,7 +589,7 @@ int interp_x(int fsig,dptr cargp)
 	 oldsum = sum;
 	 EntInterp_sp;
 	 }
-#endif					/* UNIX && e_tick */
+#endif					/* HAVE_PROFIL && e_tick */
 
 #if e_line || e_loc
    /*
@@ -2670,7 +2670,7 @@ register struct b_coexpr *ncp;
    /*
     * flush any accumulated ticks
     */
-#if UNIX && E_Tick
+#if HAVE_PROFIL && E_Tick
    if (ticker.l[0] + ticker.l[1] + ticker.l[2] + ticker.l[3] +
        ticker.l[4] + ticker.l[5] + ticker.l[6] + ticker.l[7] != oldtick) {
       word sum /*, nticks */;
@@ -2684,7 +2684,7 @@ register struct b_coexpr *ncp;
       /* nticks = sum - oldsum; */
       oldsum = sum;
       }
-#endif					/* UNIX && E_Tick */
+#endif					/* HAVE_PROFIL && E_Tick */
 
    return rv;
 }

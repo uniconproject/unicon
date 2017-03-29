@@ -6,6 +6,8 @@
 #
 SYS=`uname -a | sed 's/ /_/g'`
 case "$SYS" in
+   Darwin*_x86_64)
+      if [ $SHLVL -lt 3 ]; then { make build name=x86_64_macos; }; else { echo "Can't run interactive options menu at shell level $SHLVL"; }; fi;;
    Darwin*Version_10*i386)
       if [ $SHLVL -lt 3 ]; then { make build name=x86_64_macos; }; else { echo "Can't run interactive options menu at shell level $SHLVL"; }; fi;;
    Darwin*Version_9*i386)

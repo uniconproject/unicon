@@ -1180,8 +1180,9 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       return NULL;
       }
    if ((w->window->display = alc_display(display)) == NULL) {
-      *err_index = -1; /* might be out of memory, probably bad DISPLAY var. */
+      *err_index = -1;
       free_binding(w);
+      set_errortext(145); /* maybe out of memory, probably bad DISPLAY var. */
       return NULL;
       }
    ws = w->window;
@@ -1218,6 +1219,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
    if (is_3d) {
       /* create an empty list for list of function calls */
       if (create_display_list(w, 40000) == Failed)
+	 *err_index = -2;
 	 return NULL;
       }
 #endif					/* Graphics3D */
@@ -1238,6 +1240,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 	 case Failed:
 	    free_binding((wbp)w);
 	    *err_index = -1;
+	    set_errortext(145);
 	    return NULL;
 	    }
 	 }
@@ -1250,7 +1253,10 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
 	 }
       }
    if ((i = wmap(w)) != Succeeded) {
-      if (i == Failed) *err_index = -1;
+      if (i == Failed) {
+	 /* why would wmap() fail? either 144 or 145; have it say which */
+	 *err_index = -1;
+	 }
       else *err_index = 0;
       return NULL;
       }
@@ -1424,8 +1430,11 @@ int wmap(wbp w)
 					wd->colors[wc->fg].c,
 					wd->colors[wc->bg].c));
 
-      if (ws->win == (Window) NULL)
+      if (ws->win == (Window) NULL) {
+	 /* consider freeing window binding/resources */
+	 set_errortext(144);
 	 return Failed;
+	 }
       stdwin = ws->win;
       XClearWindow(stddpy, stdwin);
 
@@ -1481,14 +1490,21 @@ int wmap(wbp w)
    if (stdgc == NULL) {
       wc->gc = XCreateGC(stddpy, stdpix, gcmask, &gcv);
       stdgc = wc->gc;
-      if (stdgc == NULL) return Failed;
+      if (stdgc == NULL) {
+	 /* consider freeing window resources */
+	 set_errortext(144);
+	 return Failed;
+	 }
       }
    else
       XChangeGC(stddpy, stdgc, gcmask, &gcv);
 
 #ifdef Graphics3D
    if (wc->is_3D) {
-      if (create3Dcontext(w) == Failed) return Failed;
+      if (create3Dcontext(w) == Failed) {
+	 set_errortext(144);
+	 return Failed;
+	 }
       }
 #endif					/* Graphics3D */
 
@@ -1510,8 +1526,10 @@ int wmap(wbp w)
 	 free((pointer)imd->paltbl);
       free((pointer)imd->data);
       imd->width = 0;
-      if (r < 0)
-         return Failed;
+      if (r < 0) {
+	 set_errortext(145);
+	 return Failed;
+	 }
       }
 
    imd = &ws->initicon;
@@ -1521,15 +1539,19 @@ int wmap(wbp w)
       free((pointer)imd->paltbl);
       free((pointer)imd->data);
       imd->width = 0;
-      if (r < 0)
-         return Failed;
+      if (r < 0) {
+	 set_errortext(145);
+	 return Failed;
+	 }
       wmhints.icon_window = ws->iconwin;
       ws->wmhintflags |= IconWindowHint;
       }
 
    if (wc->patternname != NULL) {
-      if (SetPattern(w, wc->patternname, strlen(wc->patternname)) != Succeeded)
+      if (SetPattern(w, wc->patternname, strlen(wc->patternname)) != Succeeded) {
+	 set_errortext(145);
 	 return Failed;
+	 }
       }
 
    /*
@@ -1596,7 +1618,10 @@ int wmap(wbp w)
    XGetWindowAttributes(stddpy, stdwin, &attrs);
    ws->width = attrs.width;
    ws->height = attrs.height;
-   if (!resizePixmap(w, ws->width, ws->height)) return Failed;
+   if (!resizePixmap(w, ws->width, ws->height)) {
+      set_errortext(144);
+      return Failed;
+      }
 
    if (stdwin) {
       i = ws->theCursor;

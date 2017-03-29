@@ -348,7 +348,12 @@ Deliberate Syntax Error
 /*
  * End of operating-system specific code.
  */
-      IntVal(amperErrno) = 0;
+
+      /*
+       * reset &errno and &errortext to 0: no error so far.
+       */
+      set_syserrortext(0);
+
       /*
        * get a C string for the file name
        */
@@ -682,7 +687,7 @@ Deliberate Syntax Error
 	 if (f == NULL) {
 	    if (err_index >= 0) runerr(145, attr[err_index]);
 	    else if (err_index == -1) {
-	       /* wopen() failed with a -1, do we know what failed? */
+	       /* count on wopen() to set &errortext */
 	       fail;
 	       }
 	    else runerr(305);

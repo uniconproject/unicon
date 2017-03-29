@@ -33,6 +33,7 @@ config/unix/$(name)/status src/h/define.h:
 	:
 	@exit 1
 
+.PHONY: Configure
 
 ##################################################################
 #

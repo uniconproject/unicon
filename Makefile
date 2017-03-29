@@ -27,10 +27,12 @@ help:
 	@echo "All: after configuration, run \"make (or nmake) Unicon\"."
 	@echo
 
-# Configure the code for a specific system.
-# "Conf" alias added for case-insensitive filesystems e.g. OS X
 
-Conf Configure:	config/unix/$(name)/status
+.PHONY: Configure
+
+# Configure the code for a specific system.
+
+Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
 		sh ./configure

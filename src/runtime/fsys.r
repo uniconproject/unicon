@@ -767,7 +767,7 @@ Deliberate Syntax Error
 		        set_errortext(1205);
 			fail;
 		     case TP_EHOST:
-			 set_errortext(1206);
+			set_errortext(1206);
 			fail;
 		     case TP_ESERVER:
 			runerr(1212, fname);
@@ -1021,8 +1021,7 @@ Deliberate Syntax Error
 		 * because rtt does not support goto statements.
 		 */
 		if (f == NULL) {
-		   if ((StrLoc(k_errortext) = alc_strerror(errno)) != NULL)
-		      StrLen(k_errortext) = strlen(StrLoc(k_errortext));
+		   set_syserrtext(errno);
 		   fail;
 		   }
 		StrLen(filename) = strlen(fnamestr);

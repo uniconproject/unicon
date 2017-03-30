@@ -42,14 +42,17 @@ extern int errno;
  * and localized (where available).
  *
  * TODO: save a pool of results, so we don't keep allocating these?
+ * Consider moving to rposix.r
  * Possible failures: EINVAL
  */
 char *alc_strerror(int n)
 {
    int rv=0;
-   char *s;
+   char *s = NULL;
    size_t size = 256; /* localization == 3x, max message ~50 */
    CURTSTATE();
+   if (n==0) return "Success";
+
 #ifdef HAVE_STRERROR_R
    s = alcstr(NULL, size);
    if (s != NULL) {
@@ -67,7 +70,7 @@ char *alc_strerror(int n)
 #else					/* HAVE_STRERROR_R */
 #ifdef HAVE_STRERROR
       s = strerror(n);
-      s = alcstr(s, strlen(s));
+      s = alcstr(s, strlen(s)+1);
 #else					/* HAVE_STRERROR */
 
 #if defined(HAVE_SYS_NERR) && defined(HAVE_SYS_ERRLIST)
@@ -1926,7 +1929,7 @@ function{0,1} stat(f)
 	
 	    IntVal(amperErrno) = 0;
 	    if (lstat(fname, &sbuf) != 0) {
-	       IntVal(amperErrno) = errno;
+	       set_syserrortext(errno);
 	       fail;
 	       }
 	    if (!constr)
@@ -1957,7 +1960,7 @@ function{0,1} stat(f)
 		  /* reset free pointer */
 		  strfree = StrLoc(rp->fields[13]);
 
-		  IntVal(amperErrno) = errno;
+		  set_syserrortext(errno);
 		  fail;
 	       }
 
@@ -1997,7 +2000,7 @@ function{0,1} stat(f)
 	       tended char *fname;
 	       cnv:C_string((BlkD(f,File)->fname), fname);
 	       if (lstat(fname, &sbuf) != 0) {
-		  IntVal(amperErrno) = errno;
+		  set_syserrortext(errno);
 		  fail;
 		  }
 	       }
@@ -2005,7 +2008,7 @@ function{0,1} stat(f)
 	       if ((fd = get_fd(f, 0)) < 0)
 		  runerr(174, f);
 	       if (fstat(fd, &sbuf) != 0) {
-		  IntVal(amperErrno) = errno;
+		  set_syserrortext(errno);
 		  fail;
 		  }
 	       }

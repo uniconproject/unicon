@@ -1021,7 +1021,7 @@ Deliberate Syntax Error
 		 * because rtt does not support goto statements.
 		 */
 		if (f == NULL) {
-		   set_syserrtext(errno);
+		   set_syserrortext(errno);
 		   fail;
 		   }
 		StrLen(filename) = strlen(fnamestr);

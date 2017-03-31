@@ -1,29 +1,9 @@
 <p>
 <p>
-
-
-
-
-
-
-
-
-<p>
-
-
-
-<p>
-
-
-
-
-
-
-
 <p>
 <p>
-
-
+<p>
+<p>
 <p>
 <p>
 <TITLE>Unicon Language Reference</TITLE>
@@ -32,7 +12,7 @@
 <h4><P ALIGN="center">Clinton Jeffery, Shamim Mohamed, Jafar Al Gharaibeh<BR>
 
 TR #8c<BR>
-February 14, 2015
+February 23, 2017
 </p></h4>
 <p>
 <p>
@@ -47,6 +27,8 @@ online documentation purposes from Appendix A of "Programming
 with Unicon", by Jeffery, Mohamed, Al Gharaibeh, Pereda, and Parlett.
 
 <BR><BR><BR><BR><BR><BR><BR><CENTER>
+<p>Unicon Project<br>
+http://unicon.org<br>
 <P>Department of Computer Science<br>
 The University of Idaho<br>
 Moscow, ID 83844
@@ -172,6 +154,25 @@ consist of 0 or more characters enclosed in single quotes. As with
 strings, a <A name="cset literal"> </A>cset literal may include escape
 sequences that use multiple characters to encode special characters.
 <p>
+<p>
+<h3>Pattern</h3>
+<p>
+
+<A name="pattern"> </A>Patterns are an immutable structure type used in
+matching, parsing or categorizing strings. Pattern literals consist of
+regular expressions enclosed in less than (&lt;) and greater than (&gt;)
+symbols.  Within such marks, operators and reserved words do not have their
+normal meaning; instead concatenation becomes the implicit operator and a
+few characters have special interpretations, including asterisk, plus,
+question mark, curly braces, square brackets, and the period character.  In
+addition to pattern literals, patterns may be composed using a number of
+pattern constructor operators and functions.
+
+
+
+
+
+<p>
 <H2>Mutable Types: Containers and Files</H2>
 <p>
 Mutable types' values may be altered. Changes to a
@@ -182,6 +183,8 @@ connections and <A name="database"> </A>databases. These types are described in
 the entries for <A name="constructor"> </A>constructors that
 create them. <A name="structure types"> </A>Structure types hold
 collections of elements that may be of arbitrary, mixed type.
+Mutable types are not thread-safe. Mutual exclusion may be imposed for
+mutable values accessed by multiple threads, at a cost in performance.
 <p>
 <H3>List</H3>
 <p>
@@ -253,7 +256,7 @@ aliased, because those types are immutable.
 Global variables are visible everywhere in the program, and exist at the same
 location for the entire program execution. Declaring a procedure declares a
 global variable initialized to the procedure value that corresponds to the
-code for that procedure.
+code for that procedure. Global variables are not thread-safe.
 <p>
 <H3>Local</H3>
 <p>
@@ -274,15 +277,18 @@ are the same as those of assignment.
 Static variables are visible only within a single procedure or method, but exist
 at the same location for the entire program execution. The value stored in a
 static variable is preserved between multiple calls to the procedure in which it
-is declared.
+is declared. Static variables are not thread-safe.
 <p>
 <H3>Class</H3>
 <p>
+
 Class variables are visible within the methods of a declared class.  Class
-variables are created for each <A name="instance!class"> </A>instance (object) of the
-class. The lifespan of class variables is the life span of the instance to which
-they belong. The value stored in a class variable is preserved between multiple
-calls to the methods of the class in which it is declared.
+variables are created for each <A name="instance!class"> </A>instance
+(object) of the class. The lifespan of class variables is the life span of
+the instance to which they belong. The value stored in a class variable is
+preserved between multiple calls to the methods of the class in which it is
+declared.  Class variables are not thread-safe.
+
 <p>
 <H2>Keywords</H2>
 <p>
@@ -605,6 +611,9 @@ entering a string scanning environment, moving or tabbing within the
 environment, or assigning a new value to &amp;subject.
 &amp;pos may not be assigned a value that is outside the range of
 legal indices for the current &amp;subject string.
+Each thread has its own instance of &pos; assigning a value to it
+in one thread does not affect the string scanning environment of
+any another thread.
 <p>
 <p><hr />
 
@@ -656,10 +665,12 @@ backward compatibility reasons.
 <div style="text-align:left; float:left;"><STRONG>&amp;subject := string </STRONG> </div><div style="text-align:right; float:right"> <STRONG>string scanning subject</STRONG></div><br>
 <p>
 
-<A name="subject, string scanning"> </A>&amp;subject holds the default
-value used in string scanning and analysis functions. Assigning to
-&amp;subject implicitly assigns the value 1 to
-&amp;pos.
+<A name="subject, string scanning"> </A>&amp;subject holds the default value
+used in string scanning and analysis functions. Assigning to &amp;subject
+implicitly assigns the value 1 to &amp;pos.  Each thread has its own
+instance of &subject; assigning a value to it in one thread does not affect
+the string scanning environment of any another thread.
+
 <p>
 <p><hr />
 
@@ -1034,10 +1045,15 @@ with the package name.
 <p><hr />
 
 <div style="text-align:left; float:left;"><STRONG>initial expr </STRONG> </div><div style="text-align:right; float:right"> <STRONG>execute on first invocation</STRONG></div><br>
+
 <p>
 
-<A name="initial"> </A>The initial expression is executed the first
-time a procedure or method is invoked.
+<A name="initial"> </A>The initial expression is executed the first time a
+procedure or method is invoked. Any subsequent invocations (of the procedure
+or method) will not proceed until the initial expression has finished
+execution. A recursive invocation of the procedure inside the initial
+expression causes a runtime error.
+
 <p>
 <p><hr />
 
@@ -1375,7 +1391,12 @@ by a <code>:=</code> the left operand must be a variable, and the
 expression <code>x </code><code><em>op</em></code><code>:= y</code> is equivalent
 to <code>x := x </code><code><em>op</em></code><code> y</code>. For example,
 <code>x +:= 5</code> is equivalent but faster than the expression
-  <code>x := x+5.</code>
+<code>x := x+5.</code>
+In general, augmented operators are not thread-safe. They are only safe if
+applied to a local (non static) variable that has an atomic type. For
+example, sets are mutable (not safe anywhere) whereas csets are atomic
+(unsafe if global or static; safe if local).
+
 <p>
 <p><hr />
 
@@ -1506,6 +1527,11 @@ may be augmented.
 The several <A name="assignment"> </A>assignment
 operators all require variables for their left operands, and swap
 operators also require variables for their right operands.
+Assignment operators are usually thread safe but there are some situations
+where they are not.  See the discussion of thread safe assignment without a
+mutex (in Chapter 8 of the Unicon book) for details. If in doubt, protect
+the global variable with a mutex.
+
 <p>
 <p><hr />
 
@@ -1517,6 +1543,16 @@ with <code>&amp;subject</code> equal to string and <code>&amp;pos</code> startin
 1. It may be augmented.
 <p>
 <p><hr />
+
+<div style="text-align:left; float:left;"><STRONG>string ?? pattern </STRONG> </div><div style="text-align:right; float:right"> <STRONG>pattern match</STRONG></div><br>
+<p>
+
+<A name="pattern match"> </A>Pattern matching produces the substring(s)
+where pattern occurs within a string. It is conducted within a new string
+scanning environment as per string scanning above. It may be augmented.
+<p>
+<p><hr />
+
 
 <div style="text-align:left; float:left;"><STRONG>x ! y </STRONG> </div><div style="text-align:right; float:right"> <STRONG>apply</STRONG></div><br>
 <p>
@@ -1567,11 +1603,15 @@ available.
 <div style="text-align:left; float:left;"><STRONG>string1 || string2 </STRONG> </div><div style="text-align:right; float:right"> <STRONG>concatenation</STRONG></div><br>
 <p>
 
+<div style="text-align:left; float:left;"><STRONG>pattern1 || pattern2 </STRONG> </div><div style="text-align:right; float:right"> <STRONG>pattern concatenation</STRONG></div><br>
+<p>
+
 <div style="text-align:left; float:left;"><STRONG>list1 ||| list2 </STRONG> </div><div style="text-align:right; float:right"> <STRONG>list concatenation</STRONG></div><br>
 <p>
 
 The <A name="concatenation"> </A>concatenation operators produce new values
-containing a copy of the left operand followed by a copy of the right
+(or patterns that will match values) consisting
+of the left operand followed by the right
 operand. They may be augmented.
 <p>
 <p><hr />
@@ -1851,9 +1891,11 @@ character encoded by integer <code>i</code>.
 <div style="text-align:left; float:left;"><STRONG>chdir(s) : string </STRONG> </div><div style="text-align:right; float:right"> <STRONG>change directory</STRONG></div><br>
 <p>
 
-<A name="directory"> </A><A name="chdir()"> </A><code>chdir(s)</code> changes the current
-working directory to <code>s</code>. <code>chdir()</code> returns the current
-working directory.
+<A name="directory"> </A><A name="chdir()"> </A><code>chdir(s)</code>
+changes the current working directory to <code>s</code>.
+<code>chdir()</code> returns the current working directory.
+The current working directory is shared between threads.
+
 <p>
 <p>
 <hr />
@@ -3493,20 +3535,23 @@ last argument.
 <p>
 <H3>Graphics functions</H3>
 <p>
+
 The names of built-in graphics functions begin with upper case. The built-in
 graphics functions are listed here. These functions are more thoroughly
-described in [Griswold98]. Extensive procedure and class libraries for graphics
-are described in [Griswold98] and in Appendix B.  In 2D, arguments named
-<code>x</code> and <code>y</code> are pixel locations in zero-based integer
-coordinates. In 3D windows coordinates are given using real numbers, and
-functions by default take three coordinates (<code>x,y,z</code>) per
-vertex. Attribute <code>dim</code> can be set to 2 or 4, changing most 3D functions
-to take vertices in a (<code>x,y</code>) or (<code>x,y,z,w</code>) format. Arguments
-named <code>row</code> and <code>col</code> are cursor locations in one-based integer
-text coordinates. Most functions' first parameter named
-<code>w</code> defaults to <code>&amp;window</code> and the window argument can be omitted
-in the default case.
+described in [Griswold98]. Extensive procedure and class libraries for
+graphics are described in [Griswold98] and in Appendix B.  In 2D, arguments
+named <code>x</code> and <code>y</code> are pixel locations in zero-based
+integer coordinates. In 3D windows coordinates are given using real numbers,
+and functions by default take three coordinates (<code>x,y,z</code>) per
+vertex. Attribute <code>dim</code> can be set to 2 or 4, changing most 3D
+functions to take vertices in a (<code>x,y</code>) or (<code>x,y,z,w</code>)
+format. Arguments named <code>row</code> and <code>col</code> are cursor
+locations in one-based integer text coordinates. Most functions' first
+parameter named <code>w</code> defaults to <code>&amp;window</code> and the
+window argument can be omitted in the default case.
+Most graphics functions are not thread-safe.
 <p>
+
 <p><hr />
 <A name="Active"> </A>
 
@@ -4346,12 +4391,204 @@ for a reply from the server indicating all output has been processed.
 events pending on <code>w</code> are discarded. <code>WSync()</code> is a no-op
 on window systems that do not use a client-server model.
 <p>
+
+<h3> Pattern functions </h3>
+
+
+<p><hr />
+<A name="Abort"> </A>
+<div style="text-align:left; float:left;"><STRONG>Abort()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern cancel</STRONG></div><br>
+<p>
+
+Abort() causes an immediate failure of the entire pattern match.
+
+<p><hr />
+<A name="Any"> </A>
+<div style="text-align:left; float:left;"><STRONG>Any(c)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+match any</STRONG></div><br>
+<p>
+
+Any(c) matches any single character contained in c appearing in the subject string.
+
+<p><hr />
+<A name="Arb"> </A>
+<div style="text-align:left; float:left;"><STRONG>Arb()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+arbitrary pattern</STRONG></div><br>
+<p>
+
+Arb() matches zero or more characters in the subject string.
+
+<p><hr />
+<A name="Arbno"> </A>
+<div style="text-align:left; float:left;"><STRONG>Arbno(p)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+repetitive arbitrary pattern</STRONG></div><br>
+<p>
+
+Arbno(p) matches repetitive sequences of p in the subject string.
+
+<p><hr />
+<A name="Bal"> </A>
+<div style="text-align:left; float:left;"><STRONG>Bal()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+balanced parentheses</STRONG></div><br>
+<p>
+
+Bal() matches the shortest non-null string which parentheses are balanced in
+the subject string.
+
+<p><hr />
+<A name="Break"> </A>
+<div style="text-align:left; float:left;"><STRONG>Break(c)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern break</STRONG></div><br>
+<p>
+
+Break(c) matches any characters in the subject string up to but not
+including any of the characters in cset c.
+
+<p><hr />
+<A name="Breakx"> </A>
+<div style="text-align:left; float:left;"><STRONG>Breakx(c)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+extended pattern break</STRONG></div><br>
+<p>
+
+Breakx(c) matches any characters up to any of the subject characters in c,
+and will search beyond the break position for a possible larger match.
+
+<p><hr />
+<A name="Fail"> </A>
+<div style="text-align:left; float:left;"><STRONG>Fail()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern back</STRONG></div><br>
+<p>
+
+Fail() signals a failure in the current portion of the pattern match and
+sends an instruction to go back and try a different alternative.
+
+<p><hr />
+<A name="Fence"> </A>
+<div style="text-align:left; float:left;"><STRONG>Fence()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern fence</STRONG></div><br>
+<p>
+
+Fence() signals a failure in the current portion of the pattern match if it
+is trying to backing up to try other alternatives.
+
+<p><hr />
+<A name="Len"> </A>
+<div style="text-align:left; float:left;"><STRONG>Len(i)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+match fixed-length string</STRONG></div><br>
+<p>
+
+Len(i) matches a string of a length of i characters in the subject
+string. It fails if i is greater than the number of characters remaining in
+the subject string.
+
+<p><hr />
+<A name="NotAny"> </A>
+<div style="text-align:left; float:left;"><STRONG>NotAny(c)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+match anything but</STRONG></div><br>
+<p>
+
+NotAny(c) matches any single character not contained in character set c
+appearing in the subject string.
+
+<p><hr />
+<A name="Nspan"> </A>
+<div style="text-align:left; float:left;"><STRONG>Nspan(c)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+optional pattern span</STRONG></div><br>
+<p>
+
+Nspan() matches the longest available sequence of zero or more characters
+from the subject string that are contained in c.
+
+<p><hr />
+<A name="Pos"> </A>
+<div style="text-align:left; float:left;"><STRONG>Pos(i)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+cursor position</STRONG></div><br>
+<p>
+
+Pos(i) sets the cursor or index position of the subject string to the
+position i according the Unicon index system shown below:
+
+<pre>
+-6 -5 -4 -3 -2 -1  0
+ |U |n |i |c |o |n |
+ 1  2  3  4  5  6  7
+</pre>
+
+<p><hr />
+<A name="Rem"> </A>
+<div style="text-align:left; float:left;"><STRONG>Rem()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+remainder pattern</STRONG></div><br>
+<p>
+
+Rem() matches the remainder of the subject string.
+
+<p><hr />
+<A name="Span"> </A>
+<div style="text-align:left; float:left;"><STRONG>Span(c)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern span</STRONG></div><br>
+<p>
+
+Span(c) matches one or more characters from the subject string that are
+contained in c. It must match at least one character.
+
+<p><hr />
+<A name="Succeed"> </A>
+<div style="text-align:left; float:left;"><STRONG>Succeed()</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern succeeds</STRONG></div><br>
+<p>
+
+Succeed() produces a pattern that, when matched, will cause the surrounding
+pattern match to succeed without further scrutiny.
+
+<p><hr />
+<A name="Tab"> </A>
+<div style="text-align:left; float:left;"><STRONG>Tab(n)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern tab</STRONG></div><br>
+<p>
+
+Tab(n) matches any characters from the current cursor or index position up
+to the specified position of the subject string. Tab() uses the Unicon index
+system shown in Pos() and position n must be to the right of the current
+position.
+
+<p><hr />
+<A name="Rpos"> </A>
+<div style="text-align:left; float:left;"><STRONG>Rpos(n)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+reverse cursor position</STRONG></div><br>
+<p>
+
+Rpos(n) sets the cursor or index position of the subject string to the
+position n back from the end of the string, equivalent to using Unicon’s
+negative indices in Pos().
+
+<pre>
+6 5 4 3 2 1 0
+|S|N|O|B|O|L|
+</pre>
+
+<p><hr />
+<A name="Rtab"> </A>
+<div style="text-align:left; float:left;"><STRONG>Rtab(i)</STRONG> </div><div style="text-align:right; float:right"> <STRONG>
+pattern reverse tab</STRONG></div><br>
+<p>
+
+Rtab(i) matches any characters from the current cursor or index position up
+to the specified position (back from the end) of the subject string,
+equivalent to using a negative index in Tab(). Position n must be to the
+right of the current position.
+
+
+
+
 <H2>Preprocessor</H2>
 <p>
-Unicon features a simple <A name="preprocessor"> </A>preprocessor that supports file
-inclusion and symbolic constants. It is a subset of the capabilities found in
-the C preprocessor, and is used primarily to support platform-specific code
-sections and large collections of symbols.
+
+Unicon features a simple <A name="preprocessor"> </A>preprocessor that
+supports file inclusion and symbolic constants. It is a subset of the
+capabilities found in the C preprocessor, and is used primarily to support
+platform-specific code sections and large collections of symbols.
+
 <p>
 <H3>Preprocessor commands</H3>
 <p>
@@ -4559,6 +4796,7 @@ read<br>
 182               not a UDP socket<br>
 183               invalid protocol name<br>
 184               invalid permission string for umask<br>
+185               converting an active co-expression to a thread is not supported<br>
 190               database expected<br>
 201               division by zero<br>
 202               remaindering by zero<br>
@@ -4577,6 +4815,7 @@ length<br>
 214               input/output error<br>
 215               attempt to refresh &amp;main<br>
 216               external function not found<br>
+217               unsafe inter-program variable assignment<br>
 301               evaluation stack overflow<br>
 302               memory violation<br>
 303               inadequate space for evaluation stack<br>
@@ -4585,26 +4824,36 @@ length<br>
 306               inadequate space in string region<br>
 307               inadequate space in block region<br>
 308               system stack overflow in co-expression<br>
+309               pattern stack overflow<br>
+316               interpreter stack too large<br>
+318               co-expression stack too large<br>
 401               co-expressions not implemented<br>
 402               program not compiled with debugging option<br>
 500               program malfunction<br>
 600               vidget usage error
 <p>
+
 <H3>System errors</H3>
 <p>
-If an error occurs during the execution of a <A name="error!system"> </A>system
-function, by default the function fails and keywords &amp;errornumber, &amp;errortext
-and &amp;errorvalue will be set. This contrasts with runtime errors, which
-terminate execution by default. Whereas runtime errors can be converted to
-failure by setting &amp;error, system errors can be converted to a runtime error by
-setting keyword &amp;syserr to a non-null value.
+
+If an error occurs during the execution of a <A name="error!system">
+</A>system function, by default the function fails and keywords
+&amp;errornumber, &amp;errortext and &amp;errorvalue will be set. This
+contrasts with runtime errors, which terminate execution by default. Whereas
+runtime errors can be converted to failure by setting &amp;error, system
+errors can be converted to a runtime error by setting keyword &amp;syserr to
+a non-null value.
+
 <p>
-The complete set of <A name="system error"> </A>system errors is by definition platform
-specific. Error numbers above the value 1000 are used for system errors. Many of
-the POSIX standard system errors are supported across platforms, and error
-numbers between 1001 and 1040 are reserved for the system errors listed
-below. Platforms may report other system error codes so long as they do not
-conflict with existing runtime or system error codes.
+
+The complete set of <A name="system error"> </A>system errors is by
+definition platform specific. Error numbers above the value 1000 are used
+for system errors. Many of the POSIX standard system errors are supported
+across platforms, and error numbers between 1001 and 1040 are reserved for
+the system errors listed below. Platforms may report other system error
+codes so long as they do not conflict with existing runtime or system error
+codes.
+
 <p>
 1001           Operation not permitted<br>
 1002           No such file or directory<br>
@@ -4642,7 +4891,25 @@ conflict with existing runtime or system error codes.
 1036           File name too long<br>
 1037           No record locks available<br>
 1038           Function not implemented<br>
-1039           Directory not empty
-<p>
-<p>
+1039           Directory not empty<br>
+1040           socket error<br>
 
+1041           cannot initialize network library<br>
+1042           fdup of closed file<br>
+1043           invalid signal<br>
+1044           invalid operation to flock/fcntl<br>
+1045           invalid mode string<br>
+1046           invalid permission string for umask<br>
+1047           invalid protocol name<br>
+1048           low-level read or select mixed with buffered read<br>
+1100           ODBC connection expected<br>
+1200           system error (see errno)<br>
+1201           malformed URL<br>
+1202           missing username in URL<br>
+1203           unknown scheme in URL<br>
+1204           cannot parse URL<br>
+1205           cannot connect<br>
+1206           unknown host<br>
+1207           invalid field in header<br>
+1208           messaging file expected<br>
+1209           cannot determine smtpserver (set UNICON_SMTPSERVER)<br>

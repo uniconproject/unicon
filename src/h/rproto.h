@@ -339,8 +339,10 @@ union block 	*pattern_make_pelem	(int stck_size, struct b_pelem * pe);
 #endif					/* PatternType */
 struct b_coexpr	*popact		(struct b_coexpr *ce);
 #if NT
+unsigned long long int memorysize(int);
 unsigned long long int physicalmemorysize();
 #else                           /* NT */
+unsigned long memorysize(int);
 unsigned long physicalmemorysize();
 #endif                          /* NT */
 word		prescan		(dptr d);

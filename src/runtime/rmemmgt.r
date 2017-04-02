@@ -1810,42 +1810,61 @@ void blkdump()
    }
 #endif                                  /* DeBugIconx */
 
+/*
+ * memorysize() - return physical or available memory, in bytes.
+ *
+ * memorysize() was originally done for physical memory only (available==0).
+ * If available==1 it reports current memory available, instead.
+ * It returns 0 if we don't know how to return the requested information
+ * on this system.
+ */
 #if NT
-unsigned long long int physicalmemorysize()
+unsigned long long int memorysize(int available)
 #else					/* NT */
-unsigned long physicalmemorysize()
+unsigned long memorysize(int available)
 #endif					/* NT */
 {
-unsigned long i;
-#if UNIX
-#ifdef SUN
-/*
- * New method: call sysconf(). How portable is this?  POSIX knows
- * about _SC_PAGE_SIZE but not _SC_PHYS_PAGES?
- */
-   i = sysconf(_SC_PHYS_PAGES);
-   i *= sysconf(_SC_PAGE_SIZE);
-   return i;
-#else					/* SUN */
-#ifdef MacOSX
-   unsigned long mem;
-   size_t len = sizeof(mem);
-   sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
-   i = mem;
-   return i;
-#else					/* MacOSX */
-   {
    FILE *f;
-   char buf[80], *p;
+   char buf[80], *p, *fieldname;
+   unsigned long i;
 
-   /*
-    * old method:, use meminfo, if it is present
-    */
-   f = fopen("/proc/meminfo", "r");
-   if (f) {
+#if UNIX
+
+/*
+ * Method #1: call sysconf(). POSIX knows about _SC_PAGE_SIZE but
+ * apparently not _SC_PHYS_PAGES or _SC_AVPHYS_PAGES.  Maybe SUN only?
+ */
+#if defined(_SC_PHYS_PAGES) && defined(_SC_PAGE_SIZE)
+   if (!available) return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
+#endif					/* _SC_PHYS_PAGES && _SC_PAGE_SIZE */
+#if defined(_SC_AVPHYS_PAGES) && defined(_SC_PAGE_SIZE)
+   if (available) return sysconf(_SC_AVPHYS_PAGES) * sysconf(_SC_PAGE_SIZE);
+#endif					/* _SC_AVPHYS_PAGES && _SC_PAGE_SIZE */
+
+/*
+ * Method #2: call sysctlbyname(). MacOS and maybe BSD too.
+ * Todo: write autoconf rule, change to HAVE_SYSCTLBYNAME.
+ */
+#ifdef MacOSX
+   if (!available) {
+
+      unsigned long mem;
+      size_t len = sizeof(mem);
+      sysctlbyname("hw.memsize", &mem, &len, NULL, 0);
+      i = mem;
+      return i;
+      }
+#endif					/* MacOSX */
+
+/*
+ * Method #3: read /proc/meminfo. Linux.
+ */
+   fieldname = (available ? "MemFree: " : "MemTotal: ");
+
+   if ((f = fopen("/proc/meminfo", "r")) != NULL) {
       while (fgets(buf, 80, f)) {
-	 if (!strncmp("MemTotal: ", buf, strlen("MemTotal: "))) {
-	    p = buf+strlen("MemTotal: ");
+	 if (!strncmp(fieldname, buf, strlen(fieldname))) {
+	    p = buf+strlen(fieldname);
 	    while (isspace(*p)) p++;
 	    i = atol(p);
 	    while (isdigit(*p)) p++;
@@ -1858,30 +1877,30 @@ unsigned long i;
 	 }
       fclose(f);
       }
-   }
-   return 0;
-   /*
-    * No meminfo? Could try "top", but don't want to launch external process
-    * during initialization...
-    */
-#endif					/* MacOSX */
-#endif					/* SUN */
 
-#else					/* UNIX */
+#endif					/* UNIX */
+
 #if NT
-#if 1
    MEMORYSTATUSEX ms; 
    ms.dwLength = sizeof(ms);
    GlobalMemoryStatusEx(&ms);
-   return ms.ullTotalPhys; 
-#else					/* WordBits */
-   MEMORYSTATUS ms;	
-   GlobalMemoryStatus(&ms);
-   return ms.dwTotalPhys;		
-#endif	  				/* WordBits */
-
-#else					/* NT */
-   return 0;
+   return (available ? ms.ullAvailPhys : ms.ullTotalPhys);
 #endif					/* NT */
-#endif					/* UNIX */
+
+   /*
+    * Out of methods. Could try "top", but don't want to launch
+    * external process during initialization.
+    */
+   return 0;
+}
+
+
+
+#if NT
+unsigned long long int physicalmemorysize()
+#else					/* NT */
+unsigned long physicalmemorysize()
+#endif					/* NT */
+{
+return memorysize(0);
 }

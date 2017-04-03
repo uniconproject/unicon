@@ -9,7 +9,7 @@
 #-------------------------------------------------------------------------------
 # The big picture is the program analyses the files one paragraph at a time. For
 # each paragraph, it makes a table of all the words together with where they occur
-# (line number and ordinal position). It then places index hits after the line
+# (line number and ordinal position). It then places index hits before the line
 # where they occur. An index term in, its full glory, can be something like
 #
 #      (V|v)irtual( |-)machine(|s)+3+performance:Virtual Machine!Performance
@@ -20,7 +20,7 @@
 # or the two word phrases 
 #     Virtual machine, virtual machine, Virtual machines, virtual machines
 # occur three words or fewer before the word "performance". In each case the
-# index command will be placed on the line after the first word of the match.
+# index command will be placed on the line before the first word of the match.
 #
 # Words may separated by white space, including line breaks and LaTeX comments:
 # the program treats "-" as part of a word, so "virtual-machine" is one word,
@@ -495,8 +495,8 @@ procedure nextParagraph(p: paragraph)
 		
 		line ? {
 			tab(many(whitespace))
-			if match("\\index") then { # ignore any line starting with \index"
-				next
+			if match("\\index") | match("\\protect\\index") then {
+				next    # ignore any line starting with \index"
 			}
 
 			while notWord := tab(upto(texWord)) do {
@@ -625,6 +625,10 @@ procedure postIndex(filename: string, waiter)
 						if 0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1 then {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
+							if o2.line > o1.line then {
+								/(opList[o2.line]) := set()
+								insert(opList[o2.line], indexTerm)
+							}	
 							insert(fileTerms,search)
 							filehits +:= 1
 						}
@@ -639,6 +643,10 @@ procedure postIndex(filename: string, waiter)
 						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) then {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
+							if o3.line > o1.line then {
+								/(opList[o3.line]) := set()
+								insert(opList[o3.line], indexTerm)
+							}
 							insert(fileTerms,search)
 							filehits +:= 1
 						}							   
@@ -655,6 +663,10 @@ procedure postIndex(filename: string, waiter)
 						   (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) then {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
+							if o4.line > o1.line then {
+								/(opList[o4.line]) := set()
+								insert(opList[o4.line], indexTerm)
+							}
 							insert(fileTerms,search)
 							filehits +:= 1
 						}							   
@@ -670,6 +682,10 @@ procedure postIndex(filename: string, waiter)
 						   (0 < ( ((o5 <- !(para.words[w5])).wpos) - (o4.wpos) ) <= diff4) then {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
+							if o5.line > o1.line then {
+								/(opList[o5.line]) := set()
+								insert(opList[o5.line], indexTerm)
+							}
 							insert(fileTerms,search)
 							filehits +:= 1
 						}							   
@@ -694,10 +710,10 @@ procedure postIndex(filename: string, waiter)
 		lineno := 0
 		every line := !para.lines do {
 			lineno +:= 1
-			if \writeNewFile then write(outf, line); 
 			every indexTerm := !\opList[lineno] do {
-				write(outf, "\\index{", indexTerm, "}%")
+				write(outf, "\\protect\\index{", indexTerm, "}%")
 			}
+			if \writeNewFile then write(outf, line); 
 		}
 		write(outf) # paragraph separator
 

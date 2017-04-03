@@ -1,6 +1,7 @@
 BASE=../..
 include ../makedefs
 
+# add idxGen to dependencies, when ready
 all: ie uprof
 	$(CP) ie uprof ../../bin
 
@@ -15,3 +16,6 @@ umake: umake.icn
 
 umake.u: umake.icn
 	$(UNICON) -c umake
+
+idxGen: idxGen.icn
+	$(UNICON) -u idxGen

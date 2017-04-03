@@ -7,7 +7,7 @@ name=unspecified
 dest=/must/specify/dest/
 
 help:
-	@echo "UNIX: Run \"make Configure name=system\" (make Conf for MacOS) or \"make X-Configure name=system\" or \"make build name=system\""
+	@echo "UNIX: Run \"make Configure name=system\" or \"make X-Configure name=system\" or \"make build name=system\""
 	@echo "   where system is one of those in config/unix."
 	@echo "Windows (MSVC): Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
 	@echo "Windows (GCC): Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
@@ -41,10 +41,12 @@ config/unix/$(name)/status src/h/define.h:
 #
 # $Id: top.mak,v 1.30 2010-05-06 23:13:56 jeffery Exp $
 
+# needed especially for MacOS
+.PHONY: Configure
 
 # Configure the code for a specific system.
 
-Conf Configure:	config/unix/$(name)/status
+Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
 		$(MAKE) cfg

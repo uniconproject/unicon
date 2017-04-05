@@ -1,0 +1,1159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE LaTeX_Index
+[
+  <!ELEMENT LaTeX_Index (Terms*)>
+  <!ELEMENT Terms (File*,idx*)>
+  <!ATTLIST Terms ApplyTo (All|NamedFiles|AllBut|None) "All"  NotFound (Error|Suppress) "Error">
+  <!ELEMENT idx (#PCDATA)>
+  <!ELEMENT File (#PCDATA)>
+]>
+<LaTeX_Index>
+<!--
+================================================================================
+
+This is a file of indexing terms to apply to a set of LaTeX files.
+
+Each line within <idx> ... </idx> is either an indexing term
+or search-string:index-term.
+In the second case, the program searches for instances of search-string
+and places \index{index-term}% on the line afterwards.
+
+A line without a colon means that the search-term and the index-term
+are identical. i.e
+   <idx>fribble</idx>
+has the same effect as
+   <idx>fribble:fribble</idx>
+
+A line with leading plus signs will be stored as is, but the search term will
+ignore the plus signs.  This allows the same index term to have multiple
+occurrences in the index. For instance
+    <idx>virtual-machine</idx>
+    <idx>+virtual-machine:Interpreter!virtual machine</idx>
+allows the word "virtal-machine" to be indexed by itself and also as a
+sub-category of "Interpreter". More than one leading plus sign
+is allowed (to cater for several alternative index titles).
+
+Previously ...
+   SPACES ARE SIGNIFICANT! (You probably don't want any spaces because the "word
+   based" matching will not work: i.e. "bill ben" ~== "bill+ben" and "bill ben"
+   will never be a term that is passed to the matcher).  And "virtual-machine"
+   is probably better expressed as "virtual+machine"; see below.
+   (virtual-machine is one word; virtual+machine is "virtual" followed by
+   "machine".  Of course, depending on the text, you might need both).
+But now ...
+   As a special convenience(tm), the program treats whitespace as a plus sign.
+   i.e. "bill     ben" becomes the search term "bill+ben"
+
+Extended Indexing Terms:
+========================
+The plus sign within a search-term means "before" (i.e. separated by white space
+including a line break within a paragraph). So "string+assignment" will match
+    blah-blah string     assignmnent is the best thing ...
+or
+	blah-blah string
+    assignment is the best thing ....
+or even
+    blah-blah string
+    % a comment!
+    assignment is the best thing ....
+but not
+    blah-blah string. assignmnent ...
+or
+	blah-blah string
+
+    assignment is the best thing ...
+The last case has a paragraph break (and matching across paragraphs is
+suppresssed).
+
+To include some "noise words" between search terms, use term+n+term. For example
+"string+5+assignment" will match with up to five other words in between "string"
+and "assignmnent".
+
+Note: To preserve idempotency - i.e. idxgen(file) == idxgen(idxgen(file)) -
+embedded \index{ ... } commands are treated as comments (and will not cause
+further index hits).
+
+Note:  "string+2+assignmnent" WILL match
+    blah-blah string. assignment
+because the simple minded word distance calculation treats "." as a word.
+
+Alternative Search Terms (using the (...|...|...) syntax:
+=========================================================
+A search term may contain
+alternatives in parenthesis and separated by vertical bars For example
+    <idx>(E|e)at(en|ing)+food(|s):Food Consumption</idx>
+will generate eight search terms (and index them all under "Food Consumption")
+    Eaten+food  Eaten+foods  Eating+food  Eating+foods
+    eaten+food  eaten+foods  eating+food  eating+foods
+Note that food(|s) generates "food" and "foods", so that
+    "(V|v)irtual( |-)machine(|s)
+probably catches all the likely variants: note the space in "( |-)". Since the
+generation of alternatives happens before the fixing up of embedded spaces, the
+expression generates
+    "Virtual+machine" "Virtual+machines" "virtual+machine" "virtual+machines"
+    "Virtual-machine"  "Virtual-machines" "virtual-machine"  "virtual-machines"	
+(the second four are a single word match).
+	
+LaTeX commands may be matched, but the backslash must be included; for example
+<\idx>\Chapter</idx> matches "\Chapter" but not "Chapter" (and <idx>Chapter</idx>
+does not match "\Chapter"). If, for some reason, you want both use
+     <idx>(|\)Chapter</idx>
+
+All search terms only match within a single LaTeX paragraph. There may be up to
+five words in an extended search term.
+
+As a convenience, the LaTeX comment symbol (%) is ignored by the program after
+the XML has been parsed (in practice, this means that individual index terms
+may be commented out, but % doesn't work as a comment except in <idx>  </idx>)
+and at the beginning of the index term. i.e. <idx>% blah blah</idx> will work
+but <idx>blah % blah<idx> probably wont.
+
+<idx> terms are grouped together in a <Terms> tag.
+The attributes of the tag govern what is done with the <idx> terms within it.
+
+ApplyTo="All" (Default)
+    The <idx> terms in the group are applied to all files.
+ApplyTo="NamedFiles"
+    Each of the files (named in a <File> ... </File> tag) will be searched
+    for the specified <idx> terms.
+ApplyTo="AllBut"
+    All of the files (except those named in any <File> ... </File> tag) will 
+    be searched for the specified <idx> terms.
+ApplyTo="None"
+    The <idx> terms will be ignored (useful for temporarily suppressing a
+    group of <idx> terms without commenting each of them away with %).
+
+NotFound="Error" (Default)
+    An <idx> term that results in no hits will be reported.
+NotFound="Suppress"
+    Suppress "not found" reporting for the <idx> terms in the group.
+
+================================================================================
+================================================================================
+
+The following index ,terms started off by being extracted from the IBV6 index PDF.
+After that, they got added to and extended.
+
+-->
+
+
+<!-- A list of index terms that are known not to be present in
+     any file and are not to be reported as absent.             -->
+<Terms>
+<!-- Temporary "Sin Bin": reinstate later -->
+</Terms>
+
+<!--
+    These index terms have been added (or should be added) manually to the files
+	so we don't need to (or actually can't, in the case of C++)  index them automatically
+-->
+<Terms ApplyTo="None">
+<idx>adjust:C functions!adjust</idx>
+<idx>cater:C functions!cater</idx>
+<idx>hash::C functions!hash</idx>
+<idx>scollect:C functions!\texttt{scollect}</idx>
+<idx>%C++</idx> <!-- This is a syntax error; Oops -->
+<idx>Control expressions</idx>
+</Terms>
+
+<!-- A fine collection of languages -->
+<Terms>
+<idx>Algol</idx>
+<idx>Alphard</idx>
+<idx>APL</idx>
+<idx>CLU</idx>
+<idx>InterLisp</idx>
+<idx>IPL-V</idx>
+<idx>LISP</idx>
+<idx>Pascal</idx>
+<idx>PL+2+I:PL/I</idx> <!-- "PL/I" is treated as two words "PL" and "I" with a / between them -->
+<idx>Prolog</idx>
+<idx>Python:Python</idx>
+<idx>Ratfor</idx>
+<idx>SETL</idx>
+<idx>SITBOL</idx><!-- When Appendix E (Future Projects) is resurrected ... -->
+<idx>SL5</idx>
+<idx>SNOBOL+1+4:SNOBOL4</idx>
+<idx>SNOBOL4</idx>
+</Terms>
+
+<!-- To do: These are too all-encompassing. See if they're really needed -->
+<Terms ApplyTo="None">
+<idx>+data</idx>
+<idx>+value</idx>
+<idx>+size</idx>
+<idx>+Pointer</idx>
+<idx>+Pointers</idx>
+<idx>computed</idx>
+<idx>Characters</idx>
+</Terms>
+
+<!-- To do: review these and either remove them, or move them to A .. Z -->
+<Terms>
+<idx>Conjunction operations</idx>
+<idx>Conversion</idx>
+<idx>Copying values</idx>
+<idx>Data objects</idx>
+<idx>Data structures</idx>
+<idx>Declarations</idx>
+<idx>Dereferencing</idx>
+<idx>Efficiency</idx>
+<idx>Element generation</idx>
+<idx>Elements</idx>
+<idx>Expressions</idx>
+<idx>Failure</idx>
+<idx>Flags</idx>
+<idx>FncDcl</idx><!-- This should be a fossil, but isn't -->
+<idx>Function calls</idx>
+<idx>Functions</idx>
+<idx>Goal-directed evaluation</idx>
+<idx>goal-directed</idx>
+<idx>Identifiers</idx>
+<idx>Invocation expressions</idx>
+<idx>Iteration</idx>
+<idx>Library routines</idx>
+<idx>limitation expressions</idx>
+<idx>Linker</idx>
+<idx>Local identifiers</idx>
+<idx>Lookup</idx>
+<idx>Mapping characters</idx>
+<idx>mapping</idx>
+<idx>matching</idx>
+<idx>Max</idx>
+<idx>Min</idx>
+<idx>Offset</idx>
+<idx>Operators</idx>
+<idx>Performance</idx>
+<idx>Pipes</idx>
+<idx>Positions in strings</idx>
+<idx>Range specifications</idx>
+<idx>referencing</idx>
+<idx>Results</idx>
+<idx>scalar</idx>
+<idx>Scope resolution</idx>
+<idx>Selection expressions</idx>
+<idx>Side effects</idx>
+<idx>Size limitations</idx>
+<idx>Size operations</idx>
+<idx>SlotNum</idx>
+<idx>sorting</idx>
+<idx>Storage allocation</idx>
+<idx>Storage management</idx>
+<idx>Structure declarations</idx>
+<idx>Structures</idx>
+<idx>Subscripting expressions</idx>
+<idx>Success</idx>
+<idx>Support routines</idx>
+<idx>Suspend</idx>
+<idx>Titles</idx>
+<idx>Translator</idx>
+<idx>Type checking</idx>
+<idx>Type codes</idx>
+<idx>Type conversion</idx>
+<idx>Type declarations</idx>
+<idx>Types</idx>
+<idx>Values</idx>
+</Terms>
+
+<Terms ApplyTo="AllBut">
+  <File>ib.tex</File>
+  <File>appB.tex</File>
+  <File>appC.tex</File>
+  <File>p1-interpreter.tex</File>
+<idx>+swap:swap</idx>
+</Terms>
+
+<!-- Index terms beginning with A -->
+<Terms>
+<idx>(A|a)llocated+block+region:Allocated block region</idx>
+<idx>address spaces:Address spaces</idx>
+<idx>Allocation</idx>
+<idx>(A|a)lternation:Alternation</idx>
+<idx>(A|a)lternation+6+expression(|s):Alternation expressions</idx>
+
+<idx>(A|a)llocated+string+region(|s):Allocated string region</idx>
+<idx>(A|a)pplicative+3+operation(|s):Applicative Operation</idx>
+<idx>+argp:argp@\texttt{argp}</idx>
+<!-- Arguments -->
+<idx>(E|e)valuation+3+argument(|s):Arguments!evaluation</idx>
+<idx>(A|a)rgument+evaluation:Arguments!evaluation</idx>
+<idx>extra+3+argument(|s):Arguments!extra</idx>
+<idx>(A|a)rgument+list+adjustment:Argument list adjustment</idx>
+<idx>(A|a)rgument+(P|p)rocessing:Argument list adjustment</idx>
+<idx>+(A|a)rgument+(P|p)rocessing:Argument processing</idx>
+<idx>Argument+Transmission:Argument transmission</idx>
+<idx>(variable|arbitrary)+number+3+arguments:Arguments!variable number of</idx>
+<idx>omitted+argument(|s):Arguments!omitted</idx>
+<idx>argument(|s)+2+omitted:Arguments!omitted</idx>
+<idx>argument(|s)+5+operat(or|ion):Arguments!operator</idx>
+<idx>(O|o)perator+(A|a)rgument(|s):Arguments!operator</idx>
+<idx>argument(|s)+5+procedure:Arguments!procedure</idx>
+<idx>(P|p)rocedure+(A|a)rgument(|s):Arguments!procedure</idx>
+<idx>argument(|s)+5+function:Arguments!function</idx>
+<idx>(F|f)unction+(A|a)rgument(|s):Arguments!function</idx>
+
+<idx>%-% No hits %%argument(|s)+5+preserv(e|ed|ation):Arguments!preservation of</idx>
+<idx>%-% No hits %%preserv(e|ation)+5+argument(|s):Arguments!preservation of</idx>
+
+<idx>arithmetic overflow:Arithmetic!arithmetic overflow</idx>
+<idx>real+4+arithmetic:Arithmetic!real arithmetic</idx>
+<idx>integer+4+arithmetic:Arithmetic!integer arithmetic</idx>
+<idx>pointer+4+arithmetic:Arithmetic!pointer arithmetic</idx>
+<idx>fixed+point+4+arithmetic:Arithmetic!fixed point arithmetic</idx>
+
+<idx>ASCII</idx>
+<idx>(A|a)ssembly(-|+)language:Assembly language</idx>
+
+<idx>assign(ment|ed)+to:Assignment operations</idx>
+<idx>\(|sub)section+12+Assignment:Assignment</idx>
+
+<idx>(left+3+|left-|right+3+|right-)associative:Associativity</idx>
+<idx>(A|a)ssociative+look(|up|+up|-up):Associative lookup</idx>
+
+<idx>(A|a)ugmented+assignment+operation(|s):Augmented assignment operations</idx>
+</Terms>
+
+<!-- Index terms beginning with B -->
+
+<!-- "basis" is used too widely in the text, so we restrict indexing it
+	 to the storage chapter (and answers to questions). -->
+<Terms ApplyTo="NamedFiles">
+  <File>p1-storage.tex</File>
+  <File>app-solutions.tex</File>
+<idx>(B|b)asis:Basis, the</idx>
+<idx>+(B|b)asis:Garbage collection!basis</idx>
+</Terms>
+
+<Terms>
+<idx>(B|b)ack+chain:Back chain</idx>
+<idx>Backtracking</idx>
+<idx>(C|c)ontrol+backtracking:Backtracking!control</idx>
+<idx>(D|d)ata backtracking:Backtracking!data</idx>
+<idx>(B|b)ig(+|-)(I|i)nhale:Big inhale@``Big inhale''</idx>
+<idx>bit+value:Bits</idx>
+<idx>(T|t)able-element+block(|s):Blocks!Table-element</idx>
+<idx>(T|t)able-element+2+trapped(+|-)variable+2+block(|s):Blocks!Table-element!Trapped variable</idx>
+<idx>(T|t)able-header+block(|s):Blocks!Table-header</idx>
+<idx>(B|b)lock+3+size(|s):Block size</idx>
+<idx>size(|s)+3+(B|b)lock(|s):Block size</idx>
+<idx>(B|b)ounded+(E|e)xpression(|s):Bounded expressions</idx>
+<idx>(B|b)reathing(-|+)room:Breathing room</idx>
+<idx>(B|b)uffer(|s):Buffer</idx>
+</Terms>
+
+<!-- Index terms beginning with C -->
+<Terms>
+<idx>CDC+Cyber:CDC Cyber</idx>
+<idx>C+double(|s):C double</idx> 
+<idx>addmem:C functions!\texttt{addmem}</idx>
+<idx>alcblk:C functions!\texttt{alcblk}</idx>
+<idx>alccoexp:C functions!\texttt{alccoexp}</idx>
+<idx>alcfile:C functions!\texttt{alcfile}</idx>
+<idx>alclint:C functions!\texttt{alclint}</idx>
+<idx>alclist:C functions!\texttt{alclist}</idx>
+<idx>alclstb:C functions!\texttt{alclstb}</idx>
+<idx>alcreal:C functions!\texttt{alcreal}</idx>
+<idx>alcrecd:C functions!\texttt{alcrecd}</idx>
+<idx>alcrefresh:C functions!\texttt{alcrefresh}</idx>
+<idx>alcselem:C functions!\texttt{alcselem}</idx>
+<idx>alcset:C functions!\texttt{alcset}</idx>
+<idx>alcstr:C functions!\texttt{alcstr}</idx>
+<idx>alcsubs:C functions!\texttt{alcsubs}</idx>
+<idx>alctable:C functions!\texttt{alctable}</idx>
+<idx>alctelem:C functions!\texttt{alctelem}</idx>
+<idx>alctvtbl:C functions!\texttt{alctvtbl}</idx>
+<idx>anycmp:C functions!\texttt{anycmp}</idx>
+<idx>asgn:C functions!\texttt{asgn}</idx>
+<idx>blkdump:C functions!\texttt{blkdump}</idx>
+<idx>blkreq:C functions!\texttt{blkreq}</idx>
+<idx>cofree:C functions!\texttt{cofree}</idx>
+<idx>coswitch:C functions!\texttt{coswitch}</idx>
+<idx>cplist:C functions!\texttt{cplist}</idx>
+<idx>cnv\_cset:C functions!\texttt{cnv\_cset}</idx>
+<idx>cnv\_int:C functions!\texttt{cnv\_int}</idx>
+<idx>cvpos:C functions!\texttt{cvpos}</idx>
+<idx>cnv\_real:C functions!\texttt{cnv\_real}</idx>
+<idx>cnv\_str:C functions!\texttt{cnv\_str}</idx>
+<idx>def\_int:C functions!\texttt{def\_int}</idx>
+<idx>def\_cset:C functions!\texttt{def\_cset}</idx>
+<idx>deref:C functions!\texttt{deref}</idx>
+<idx>descr:C functions!\texttt{descr}</idx>
+<idx>equiv:C functions!\texttt{equiv}</idx>
+<idx>find+5+function:C functions!\texttt{find}</idx>
+<idx>function+5+find:C functions!\texttt{find}</idx>
+<idx>result+6+find:C functions!\texttt{find}</idx>
+<idx>find+6+result:C functions!\texttt{find}</idx>
+<idx>getstr:C functions!\texttt{getstr}</idx>
+<idx>interp:C functions!\texttt{interp}</idx>
+<idx>lexcmp:C functions!\texttt{lexcmp}</idx>
+<idx>malloc:C functions!\texttt{malloc}</idx>
+<idx>memb:C functions!\texttt{memb}</idx>
+<idx>mvc:C functions!\texttt{mvc}</idx>
+<idx>numcmp:C functions!\texttt{numcmp}</idx>
+<idx>convert(|s)+5+numeric:C functions!\texttt{numeric}</idx>
+<idx>numeric+5+convert(|s):C functions!\texttt{numeric}</idx>
+<idx>postqual:C functions!\texttt{postqual}</idx>
+<idx>routine(|s)+8+free:C functions!\texttt{free}</idx>
+<idx>markblock:C functions!\texttt{markblock}</idx>
+<idx>routine+2+order:C functions!\texttt{order}</idx>
+<idx>outimage:C functions!\texttt{outimage}</idx>
+<idx>putstr:C functions!\texttt{putstr}</idx>
+<idx>qsort:C functions!\texttt{qsort}</idx>
+<idx>qtos:C functions!\texttt{qtos}</idx>
+<idx>repl:C functions!\texttt{repl}</idx>
+<idx>runerr:C functions!\texttt{runerr}</idx>
+<idx>strprc:C functions!\texttt{strprc}</idx>
+<idx>strreq:C functions!\texttt{strreq}</idx>
+<idx>sweep:C functions!\texttt{sweep}</idx>
+<idx>syserr:C functions!\texttt{syserr}</idx>
+
+<idx>C+(F|f)rame(|s):C!C Frames</idx>
+<idx>C+programming+language:C!Programming language</idx>
+<idx>C+state:C!C state</idx>
+<idx>C+string(|s):C!C strings</idx>
+<idx>C+structure(|s):C!C structures</idx>
+
+<idx>set(|s)+of+characters:Character sets</idx>
+<idx>circular+3+queue(|s):Circular Queue</idx>
+<idx>collating+sequence:Collating sequence</idx>
+<idx>(C|c)ontext+switch:Context Switch</idx>
+<idx>(C|c)omparison+operation(|s):Comparison operations</idx>
+<idx>(C|c)omparison+routine(|s):Comparison routines</idx>
+<idx>routine(|s)+15+(C|c)omparison(|s):Comparison routines</idx>
+<idx>compilation+25+compiler:Compilation</idx>
+<idx>compiler+25+compilation:Compilation</idx>
+<idx>(S|s)eparate+compilation:Compilation</idx>
+<idx>(C|c)onditional+compilation:Compilation</idx>
+<idx>+(S|s)eparate+compilation:Compilation!separate</idx>
+<idx>+(C|c)onditional+compilation:Compilation!conditional</idx>
+<idx>(C|c)ompound+expression(|s):Compound expressions</idx>
+<idx>computer+architecture:Computer architecture</idx>
+<idx>(C|c)o-expression(|s):Co--expression</idx>
+<idx>activation:Co--expression!activation</idx>
+<idx>(C|c)o-expression+block(|s):Co--expression blocks</idx>
+<idx>(R|r)efresh+block(|s):Co--expression!refresh block</idx>
+<idx>(C|c)o-expression+8+refresh(|ed):Co--expression!refresh</idx>
+<idx>refresh(|ed)+8+(C|c)o-expression:Co--expression!refresh</idx>
+<idx>Constants</idx>
+<idx>(C|c)set(|s):Csets</idx>
+<idx>(C|c)set+4+literal(|s):Cset literals</idx>
+<idx>(C|c)set block(|s):Cset blocks</idx>
+<idx>+(C|c)ontrol+backtracking:Control backtracking</idx>
+
+<idx>(C|c)ontrol+(S|s)tructure(|s):Control structures</idx>
+<idx>break+4+expression(|s):Control structures!break@\texttt{break} expression</idx>
+<idx>(\textttt|\iconline)+3+break:Control structures!break@\texttt{break} expression</idx>
+<idx>case+4+clause(|s):Control structures!case@\texttt{case} clause</idx>
+<idx>case+2+expression(|s):Control structures!case@\texttt{case} expression</idx>
+<idx>create+4+expression(|s):Control structures!create@\texttt{create} expression</idx>
+<idx>every-do:Control structures!every@\texttt{every--do} expression</idx>
+<idx>fail+4+expression(|s):Control structures!fail@\texttt{fail} expression</idx>
+<idx>expression+4+fail:Control structures!fail@\texttt{fail} expression</idx>
+<idx>if-then-else+expression:Control structures!if@\texttt{if--then--else} expression</idx>
+<idx>not+4+expression(|s):Control structures!not@\texttt{not} expression</idx>
+<idx>next+4+expression(|s):Control structures!next@\texttt{next} expression</idx>
+<idx>return+expression(|s):Control structures!return@\texttt{return} expression</idx>
+<idx>repeat+expression(|s):Control structures!repeat@\texttt{repeat} expression</idx>
+<idx>(R|r)epeated+(A|a)lternation:Control structures!repeated alternation expressions</idx>
+<idx>suspend+expression(|s):Control structures!suspend@\texttt{suspend} expression</idx>
+<idx>+until+2+do:Control Structures!until@\texttt{until--do} expression</idx>
+<idx>while-do:Control structures!while@\texttt{while--do} expression</idx>
+<idx>+(\textttt|\iconline)+3+case:Control structures!case@\texttt{case} clause</idx>
+<idx>(\textttt|\iconline)+3+case:Control structures!case@\texttt{case} expression</idx>
+<idx>(\textttt|\iconline)+3+create:Control structures!create@\texttt{create} expression</idx>
+<idx>(\textttt|\iconline)+3+every:Control structures!every@\texttt{every--do} expression</idx>
+<idx>(\textttt|\iconline)+3+fail:Control structures!fail@\texttt{fail} expression</idx>
+<idx>(\textttt|\iconline)+3+expression:Control structures!fail@\texttt{fail} expression</idx>
+<idx>(\textttt|\iconline)+3+if:Control structures!if@\texttt{if--then--else} expression</idx>
+<idx>(\textttt|\iconline)+3+not:Control structures!not@\texttt{not} expression</idx>
+<idx>(\textttt|\iconline)+3+next:Control structures!next@\texttt{next} expression</idx>
+<idx>(\textttt|\iconline)+3+return:Control structures!return@\texttt{return} expression</idx>
+<idx>(\textttt|\iconline)+3+repeat:Control structures!repeat@\texttt{repeat} expression</idx>
+<idx>(\textttt|\iconline)+3+suspend:Control structures!suspend@\texttt{suspend} expression</idx>
+<idx>(\textttt|\iconline)+3++until:Control Structures!until@\texttt{until--do} expression</idx>
+<idx>(\textttt|\iconline)+3+while:Control structures!while@\texttt{while--do} expression</idx>
+
+<idx>C+stack:C!C stack</idx>
+<idx>C+stack+overflow:C!C stack overflow</idx>
+<idx>C+stack+registers:C!C stack registers</idx>
+
+<idx>downward-growing+3+stack:C stack!downward-growing</idx>
+<idx>upward-growing+3+stack:C stack!upward-growing</idx>
+<idx>(U|u)nwind(|s|ing):C stack!unwinding</idx>
+<idx>built-in+4+cset(|s):Csets!built-in</idx>
+</Terms>
+
+<!-- Index terms beginning with D -->
+<Terms>
+<idx>+(D|d)ata+backtracking:Data backtracking</idx>
+<idx>first-class+3+data:Data Objects, first-class</idx>
+<idx>(D|d)ata+type(|s):Data type</idx>
+<idx>(C|c)onver(ting|sion|t|ted)+3+(type|data+type)(|s):Data type!conversion of</idx>
+<idx>type(|s)+4+integer:Data type!integer</idx>
+<idx>(I|i)nteger+4+type(|s):Data type!integer</idx>
+<idx>(T|t)ype+3+conver(ting|sion|t|ted):Data type!conversion of</idx>
+<idx>conversion+of+4+to:Data type!conversion of</idx>
+<idx>(D|d)ead+2+(O|o)bject(|s):Dead objects</idx>
+<idx>Debugging</idx>
+<idx>DEC-10</idx>
+<idx>default clause(|s):Default clause</idx>
+<idx>Defaults</idx>
+<idx>(D|d)efined+constant(|s):Defined constant</idx>
+<idx>CsetSize:Defined constant!\texttt{CsetSize}</idx>
+<idx>IntBits:Defined constant!\texttt{IntBits}</idx>
+<idx>LogHuge:Defined constant!\texttt{LogHuge}</idx>
+<idx>LogIntSize:Defined constant!\texttt{LogIntSize}</idx>
+<idx>MaxCvtLen:Defined constant!\texttt{MaxCvtLen}</idx>
+<idx>MaxLong:Defined constant!\texttt{MaxLong}</idx>
+<idx>MaxShort:Defined constant!\texttt{MaxShort}</idx>
+<idx>MaxStrLen:Defined constant!\texttt{MaxStrLen}</idx>
+<idx>MinListSlots:Defined constant!\texttt{MinListSlots}</idx>
+<idx>MinLong:Defined constant!\texttt{MinLong}</idx>
+<idx>MinShort:Defined constant!\texttt{MinShort}</idx>
+<idx>WordSize:Defined constant!\texttt{WordSize}</idx>
+<idx>WordBits:Defined constant!\texttt{WordBits}</idx>
+
+<idx>Descriptors</idx>
+<idx>(T|t)ended+2+(D|d)escriptor(|s):Descriptors!tended</idx>
+<idx>d-word:Descriptors!d-word</idx>
+<idx>v-word:Descriptors!v-word</idx>
+<idx>(N|n)ull+2+descriptor(|s):Descriptors!null</idx>
+<idx>(D|d)iagnostic(|s):Diagnostics</idx>
+</Terms>
+
+<!-- Index terms beginning with E -->
+<Terms>
+<idx>EBCDIC</idx>
+<idx>+efp:efp@\texttt{efp}</idx>
+<idx>empty+list:Empty List</idx>
+<idx>empty+string:Empty String</idx>
+<idx>empty+table:Empty Table</idx>
+<idx>empty+set:Empty Set</idx>
+<idx>(E|e)rror+message(|s):Error Message</idx>
+<idx>(E|e)rror+check(|s|ing):Error checking</idx>
+<idx>(E|e)rror+termination:Error termination</idx>
+
+<idx>black+hole(|s):Evaluation of expressions!black holes</idx>
+<idx>(O|o)rder+3+(E|e)valuation:Expressions!evaluation order</idx>
+<idx>(E|e)valuation+3+expression(|s):Expressions!evaluation of</idx>
+<idx>(E|e)xpression-evaluation:Expressions!evaluation of</idx>
+<idx>(R|r)esum(e|ing|ption)(|+of)+3+(E|e)xpression(|s):Expressions!resumption of</idx>
+<idx>++(R|r)epeated+(A|a)lternation:Expressions!repeated alternation</idx>
+<idx>outcome+10+expression:Expressions!evaluation!outcome</idx>
+<idx>(E|e)xpression+frame+pointer(|s):Expression frame pointer (\texttt{efp})</idx>
+<idx>to-by+2+expression(|s):Expression!to-by</idx>
+<idx>until-do+expression(|s):Expression!until-do</idx>
+<idx>until+2+do:Expression!until-do</idx>
+</Terms>
+
+<!-- Index terms beginning with F -->
+<Terms>
+<idx>field+name(|s):Field Names</idx>
+<idx>name(s|d)+3+field(|s):Field Names</idx>
+<idx>field+reference(|s):Field References</idx>
+<idx>(O|o)pen(|ed)+12+option(|s):File!Open options</idx>
+<idx>close(|s)+5+file:File!closing</idx>
+<idx>(O|o)pen(|s|ing)+5+file:File!opening</idx>
+<idx>(E|e)nd(+of+|-of-)file:File!end of file</idx>
+<idx>Files:File</idx>
+<idx>(F|f)ile+(O|o)rganization:File Organization</idx>
+<idx>%-% Too many hits %% file</idx>
+<idx>file+status:File!file status</idx>
+<idx>Frames</idx>
+<idx>(P|p)rocedure+(F|f)rame(|s):Frames!procedure</idx>
+<idx>(E|e)xpression+(F|f)rame(|s):Frames!expression</idx>
+<idx>(G|g)enerator+(F|f)rame(|s):Frames!generator</idx>
+<idx>(F|f)ree+list:Free list</idx>
+<idx>(F|f)ree+(S|s)pace:Free space</idx>
+<idx>built-in+4+function(|s):Functions!built-in</idx>
+<idx>return(|ing)+from+3+(F|f)unction:Functions!returning from</idx>
+</Terms>
+
+<!-- Index terms beginning with G -->
+<Terms>
+<idx>Garbage collection</idx>
+<idx>(C|c)ompaction:Garbage collection!compaction</idx>
+<idx>(L|l)ocation+(P|p)hase:Garbage collection!location</idx>
+<idx>(P|p)ointer (A|a)djustment(|s):Garbage collection!pointer adjustment</idx>
+<idx>Generation</idx>
+<idx>+generator:Generators</idx>
+<idx>Generator(|s):Generators</idx>
+<idx>generator frame pointer:Generator frame pointer</idx>
+<idx>+gfp:gfp@\texttt{gfp}</idx>
+
+<idx>(G|g)lobal+declaration(|s):Global declarations</idx>
+<idx>(G|g)lobal+identifier(|s):Global identifiers</idx>
+<idx>(G|g)enerative+(C|c)ontrol+(S|s)tructure(|s):Generative control structures</idx>
+</Terms>
+
+<!-- Index terms beginning with H -->
+<Terms>
+<idx>(C|c)omput(ing|ation)+4+hash:Hash computations</idx>
+<idx>(H|h)ash+(calcul|comput)ation(|s):Hash computations</idx>
+<idx>(H|h)ash+look(-|+)up:Hash lookup</idx>
+<idx>look(|-|+)up+15+hash:Hash lookup</idx>
+<idx>(H|h)ash number(|s):Hash number</idx>
+<idx>(H|h)eader+file(|s):Header files</idx>
+<idx>(H|h)eterog(eneous|eneity):Heterogeneous structures</idx>
+<idx>(H|h)euristic(|s):Heuristics</idx>
+<idx>human+frailty:Human frailty</idx>
+</Terms>
+
+<!-- Index terms beginning with I -->
+<Terms>
+<idx>IBM+1+370:IBM 370</idx>
+
+<idx>Icode</idx>
+<idx>(I|i)code+file(|s):Icode!files</idx>
+<idx>(I|i)code+region:Icode!Region</idx>
+
+<idx>Icon functions</idx>
+<idx>+close+5+file:Icon functions!\texttt{close}</idx>
+<idx>+open+5+file:Icon functions!\texttt{open}</idx>
+<idx>+function+3+display:Icon functions!\texttt{display}</idx>
+<idx>+function+3+image:Icon functions!\texttt{image}</idx>
+<idx>+function+3+type:Icon functions!\texttt{type}</idx>
+<idx>(\texttt|\iconline)+3+close:Icon functions!\texttt{close}</idx>
+<idx>(\texttt|\iconline)+3+copy:Icon functions!\texttt{copy}</idx>
+<idx>(\texttt|\iconline)+3+delete:Icon functions!\texttt{delete}</idx>
+<idx>(\texttt|\iconline)+3+display:Icon functions!\texttt{display}</idx>
+<idx>(\texttt|\iconline)+3+find:Icon functions!\texttt{find}</idx>
+<idx>(\texttt|\iconline)+3+get:Icon functions!\texttt{get}</idx>
+<idx>(\texttt|\iconline)+3+image:Icon functions!\texttt{image}</idx>
+<idx>(\texttt|\iconline)+3+insert:Icon functions!\texttt{insert}</idx>
+<idx>(\texttt|\iconline)+3+left:Icon functions!\texttt{left}</idx>
+<idx>(\texttt|\iconline)+3+list:Icon functions!\texttt{list}</idx>
+<idx>(\texttt|\iconline)+3+map:Icon functions!\texttt{map}</idx>
+<idx>(\texttt|\iconline)+3+member:Icon functions!\texttt{member}</idx>
+<idx>(\texttt|\iconline)+3+move:Icon functions!\texttt{move}</idx>
+<idx>(\texttt|\iconline)+3+numeric:Icon functions!\texttt{numeric}</idx>
+<idx>(\texttt|\iconline)+3+open:Icon functions!\texttt{open}</idx>
+<idx>(\texttt|\iconline)+3+pop:Icon functions!\texttt{pop}</idx>
+<idx>(\texttt|\iconline)+3+pull:Icon functions!\texttt{pull}</idx>
+<idx>(\texttt|\iconline)+3+push:Icon functions!\texttt{push}</idx>
+<idx>(\texttt|\iconline)+3+put:Icon functions!\texttt{put}</idx>
+<idx>(\texttt|\iconline)+3+read:Icon functions!\texttt{read}</idx>
+<idx>(\texttt|\iconline)+3+reads:Icon functions!\texttt{reads}</idx>
+<idx>(\texttt|\iconline)+3+repl:Icon functions!\texttt{repl}</idx>
+<idx>(\texttt|\iconline)+3+reverse:Icon functions!\texttt{reverse}</idx>
+<idx>(\texttt|\iconline)+3+set:Icon functions!\texttt{set}</idx>
+<idx>(\texttt|\iconline)+3+sort:Icon functions!\texttt{sort}</idx>
+<idx>(\texttt|\iconline)+3+stop:Icon functions!\texttt{stop}</idx>
+<idx>(\texttt|\iconline)+3+string:Icon functions!\texttt{string}</idx>
+<idx>(\texttt|\iconline)+3+tab:Icon functions!\texttt{tab}</idx>
+<idx>(\texttt|\iconline)+3+table:Icon functions!\texttt{table}</idx>
+<idx>(\texttt|\iconline)+3+type:Icon functions!\texttt{type}</idx>
+<idx>(\texttt|\iconline)+3+upto:Icon functions!\texttt{upto}</idx>
+<idx>(\texttt|\iconline)+3+write:Icon functions!\texttt{write}</idx>
+<idx>(\texttt|\iconline)+3+writes:Icon functions!\texttt{writes}</idx>
+
+<idx>function+2+display:Identifier Values, displaying</idx>
+<idx>Displaying+2+Identifier+2+Values:Identifier Values, displaying</idx>
+<idx>Idol</idx>
+<idx>Input</idx>
+<idx>extra+2+indirection:Indirection!extra</idx>
+<idx>initial clause(|s):initial@\texttt{initial} clause</idx>
+<idx>(I|i)nitialization+routine(|s):Initialization routines</idx>
+<idx>infinite+sequence:Infinite result sequence</idx>
+<idx>infinite+number+3+values:Infinite result sequence</idx>
+<idx>Icon+6+integer(|s):Integer</idx>
+<idx>(I|i)nteger+4+literal(|s):Integer literals</idx>
+<idx>Integer(|s):Integer</idx>
+<idx>(I|i)nteger+sequence(|s):Integer sequence</idx>
+<idx>sequence(|s)+of+3+(I|i)nteger(|s):Integer sequence</idx>
+
+<idx>Interpreter</idx>
+<idx>interpreter+level:Interpreter level</idx>
+<idx>interpreter+loop:Interpreter loop</idx>
+<idx>interpreter+stack:Interpreter stack</idx>
+<idx>interpreter+stack+overflow:Interpreter stack overflow</idx>
+<idx>(Interpreter|interpreter|i-state)+(V|v)ariable(|s):Interpreter state variables</idx>
+<idx>(I|i)nterpreter+(S|s)tate+(V|v)ariable(|s):Interpreter state variables</idx>
+<idx>argp:Interpreter state variables!argp@\texttt{argp}</idx>
+<idx>efp:Interpreter state variables!efp@\texttt{efp}</idx>
+<idx>ilevel:Interpreter state variables!ilevel@\texttt{ilevel}</idx>
+<idx>ipc:Interpreter state variables!ipc@\texttt{ipc}</idx>
+<idx>pfp:Interpreter state variables!pfp@\texttt{pfp}</idx>
+<idx>sp:Interpreter state variables!sp@\texttt{sp}</idx>
+<idx>++argp:Interpreter frame pointers!argp@\texttt{argp}</idx>
+<idx>++efp:Interpreter frame pointers!efp@\texttt{efp}</idx>
+<idx>++ilevel:Interpreter frame pointers!ilevel@\texttt{ilevel}</idx>
+<idx>++ipc:Interpreter frame pointers!ipc@\texttt{ipc}</idx>
+<idx>++pfp:Interpreter frame pointers!pfp@\texttt{pfp}</idx>
+<idx>++sp:Interpreter frame pointers!sp@\texttt{sp}</idx>
+
+<idx>+ilevel:ilevel@\texttt{ilevel}</idx>
+<idx>+ipc:ipc@\texttt{ipc}</idx>
+</Terms>
+
+<!-- Index terms beginning with J -->
+<Terms>
+</Terms>
+
+<!-- Index terms beginning with K -->
+<Terms>
+<idx>(K|k)eyword(|s):Keywords</idx>
+<idx>built-in+4+keyword(|s):Keywords!built-in</idx>
+<idx>\&amp;ascii:Keywords!\&amp;ascii</idx>
+<idx>\&amp;cset:Keywords!\&amp;cset</idx>
+<idx>\&amp;date:Keywords!\&amp;date</idx>
+<idx>\&amp;fail:Keywords!\&amp;fail</idx>
+<idx>\&amp;input:Keywords!\&amp;input</idx>
+<idx>\&amp;lcase:Keywords!\&amp;lcase</idx>
+<idx>\&amp;level:Keywords!\&amp;level</idx>
+<idx>\&amp;main:Keywords!\&amp;main</idx>
+<idx>\&amp;null:Keywords!\&amp;null</idx>
+<idx>\&amp;output:Keywords!\&amp;output</idx>
+<idx>\&amp;pos:Keywords!\&amp;pos</idx>
+<idx>\&amp;random:Keywords!\&amp;random</idx>
+<idx>\&amp;subject:Keywords!\&amp;subject</idx>
+<idx>\&amp;trace:Keywords!\&amp;trace</idx>
+<idx>\&amp;ucase:Keywords!\&amp;ucase</idx>
+</Terms>
+
+<!-- Index terms beginning with L -->
+<Terms>
+<idx>(L|l)arge( |-)memory model:Large memory model</idx>
+<idx>(L|l)exical+analy(sis|zer):Lexical analysis</idx>
+<idx>limit+value:Limitation counter</idx>
+<idx>limit(|ation)+counter:Limitation counter</idx>
+<idx>positional+6+access:List!positional access</idx>
+<idx>(C|c)oncatenation+3+list:List!concatenation</idx>
+<idx>(L|l)ist(|s)+3+(C|c)oncatenation:List!concatenation</idx>
+<idx>list(+|-)element+block(|s):List--Element block</idx>
+<idx>list(+|-)header+block(|s):List--Header block</idx>
+<idx>(L|l)ist+section(s|ing):List!sections</idx>
+<idx>(S|s)tructures+for+(L|l)ists:List!structures for</idx>
+<idx>(L|l)inked+(L|l)ist(|s):Linked lists</idx>
+<idx>(L|l)ive+2+object(|s):Live objects</idx>
+<idx>(L|l)oader:Loader</idx>
+<idx>(L|l)(ong|arge)+(I|i)nteger(|s):Long/Large integers</idx>
+<idx>(L|l)(ong|arge)(-|+)(I|i)nteger+4+block(|s):Long/Large integer blocks</idx>
+
+</Terms>
+
+<!-- Index terms beginning with M -->
+<Terms>
+<idx>(M|m)acro(|s):Macro</idx>
+<idx>Arg:Macro!\texttt{Arg}</idx>
+<idx>ArgVal:Macro!\texttt{ArgVal}</idx>
+<idx>ArgType:Macro!\texttt{ArgType}</idx>
+<idx>BlkLoc:Macro!\texttt{BlkLoc}</idx>
+<idx>BlkSize:Macro!\texttt{BlkSize}</idx>
+<idx>BlkType:Macro!\texttt{BlkType}</idx>
+<idx>ChkNull:Macro!\texttt{ChkNull}</idx>
+<idx>CsetOff:Macro!\texttt{CsetOff}</idx>
+<idx>CsetPtr:Macro!\texttt{CsetPtr}</idx>
+<idx>DeRef:Macro!\texttt{DeRef}</idx>
+<idx>GetReal:Macro!\texttt{GetReal}</idx>
+<idx>IntVal:Macro!\texttt{IntVal}</idx>
+<idx>Qual:Macro!\texttt{Qual}</idx>
+<idx>macro+3+Pointer:Macro!\texttt{Pointer}</idx>
+<idx>Mkint:Macro!\texttt{Mkint}</idx>
+<idx>Pointer+macro:Macro!\texttt{Pointer}</idx>
+<idx>Setb:Macro!\texttt{Setb}</idx>
+<idx>StrLen:Macro!\texttt{StrLen}</idx>
+<idx>StrLoc:Macro!\texttt{StrLoc}</idx>
+<idx>Testb:Macro!\texttt{Testb}</idx>
+<idx>Tvar:Macro!\texttt{Tvar}</idx>
+<idx>TvarLoc:Macro!\texttt{TvarLoc}</idx>
+<idx>Var:Macro!\texttt{Var}</idx>
+<idx>VarLoc:Macro!\texttt{VarLoc}</idx>
+<idx>Vsizeof:Macro!\texttt{Vsizeof}</idx>
+<idx>Vwsizeof:Macro!\texttt{Vwsizeof}</idx>
+
+<idx>main+procedure:Main@\texttt{main} procedure</idx>
+<idx>(M|m)arking:Marking</idx>
+<idx>(M|m)emory+4+expan(ded|sion):Memory expansion</idx>
+<idx>(M|m)emory+(L|l)ayout:Memory layout</idx>
+<idx>(M|m)emory+5+(R|r)egion(|s):Memory regions</idx>
+<idx>(M|m)utual+(E|e)valuation:Mutual evaluation</idx>
+<idx>(M|m)utual+(E|e)xclusion:Mutual exclusion</idx>
+
+</Terms>
+
+<!-- Index terms beginning with N -->
+<Terms>
+<idx>(N|n)ull+2+character(|s):Null Character</idx>
+<idx>+(N|n)ull+2+descriptor(|s):Null Descriptor</idx>
+<idx>(N|n)ull+2+value(|s):Null value</idx>
+</Terms>
+
+<!-- Index terms beginning with O -->
+<Terms>
+<idx>built-in+4+operator(|s):Operators!built-in</idx>
+<idx>Output</idx>
+</Terms>
+
+<!-- Index terms beginning with P -->
+<Terms>
+<idx>(variable|arbitrary)+number+3+parameters:Parameters!variable number</idx>
+<idx>(P|p)attern(-|+)matching:Pattern matching</idx>
+<idx>PDP-11</idx>
+<idx>+pfp:pfp@\texttt{pfp}</idx>
+<idx>(P|p)ointer+loop(|s):Pointer loops</idx>
+<idx>(P|p)ointer+5+circular:Pointer loops</idx>
+<idx>circular+5+pointer:Pointer loops</idx>
+<idx>(P|p)olymorphic+operation(|s):Polymorphic operations</idx>
+<idx>(P|p)redictive+(N|n)eed:Predictive need</idx>
+<idx>(P|p)rocedure+2+block(|s):Procedure blocks</idx>
+<idx>(P|p)rocedure+2+call(|s):Procedure calls</idx>
+<idx>(P|p)rocedure+3+declaration(|s):Procedure declarations</idx>
+<idx>procedure+8+computed:Procedures!computed</idx>
+<idx>%procedure</idx>
+<idx>Procedure(|s):Procedures</idx>
+<idx>+main+procedure:Procedures!main procedure</idx>
+<idx>(P|p)rocedures+4+(G|g)enerator(|s):Procedures!as generators</idx>
+<idx>initial+value+6+(P|p)rocedure(|s):Procedures!as values</idx>
+<idx>return(|ing)+from+3+(P|p)rocedure:Procedures!returning from</idx>
+<idx>procedure+6+suspend(|s|ing):Procedures!suspending from</idx>
+<idx>suspend(|s|ing)+from+5+procedure:Procedures!suspending from</idx>
+<idx>(P|p)rime+number:Prime number</idx>
+</Terms>
+
+<!-- Index terms beginning with Q -->
+<Terms>
+<idx>(Q|q)ualifier(|s):Qualifiers</idx>
+<idx>(Q|q)ueue+3+(A|a)ccess:Queue access</idx>
+</Terms>
+
+<!-- Index terms beginning with R -->
+<Terms>
+<idx>(R|r)andom+element(|s):Random element</idx>
+<idx>random+number+seed:Random number!seed</idx>
+<idx>(R|r)andom+number(|s):Random number</idx>
+<idx>(R|r)ational+number(|s):Rational number</idx>
+<idx>function(|s)+6+read:read</idx>
+<idx>read+6+function(|s):read</idx>
+<idx>Reading+3+Data:Reading Data</idx>
+
+
+<idx>(R|r)eal+4+literal(|s):Real literals</idx>
+<idx>(R|r)eal+number(|s):Real number</idx>
+<idx>(F|f)loating-point+2+number(|s):Real number</idx>
+<idx>(R|r)eal-number+block:Real-number block</idx>
+
+<idx>(R|r)ecord(|s):Records</idx>
+<idx>record+blocks:Record Blocks</idx>
+<idx>record+constructor(|s):Records!Constructor</idx>
+<idx>record+declaration(|s):Records!Declaration</idx>
+
+<idx>(R|e)claim(|ed|ing)+5+space:Reclaiming space</idx>
+<idx>(S|s)pace+6+(R|r)eclaim(|ed|ing|ation):Reclaiming space</idx>
+<idx>Recursion</idx>
+<idx>recursive+4+call(|s):Recursive calls</idx>
+<idx>call(|ed)+recursively:Recursive calls</idx>
+<idx>(R|r)egion+4+expan(d|ds|ded|sion):Region expansion</idx>
+<idx>(R|r)elocat(e|ed|ion):Relocation</idx>
+<idx>+(R|r)epeated+(A|a)lternation:Repeated alternation expressions</idx>
+<idx>(R|r)eserved+word(|s):Reserved words</idx>
+
+<idx>(R|r)eversible+assignment:Reversible assignment</idx>
+<idx>(R|r)eversible+swap:Reversible swap</idx>
+
+<idx>(R|r)un-time+(|support+)operation(|s):Run-time support operations</idx>
+<idx>(R|r)un-time+system(|s):Run-time system</idx>
+
+</Terms>
+
+<!-- Index terms beginning with S -->
+<Terms>
+<idx>%scalar+3+operations:Scalar operations</idx> <!-- Future projects -->
+<idx>(S|s)canning+(E|e)xpression(|s):Scanning expressions</idx>
+<idx>Scanning</idx>
+<idx>self+modifying+instructions:Self Modifying Instruction</idx>
+<idx>(S|s)emi(|-)colon+insertion:Semi-colon insertion</idx>
+<idx>(I|i)nsertion+4+semi(|-)colon(|s):Semi-colon insertion</idx>
+<idx>+set(|s)+of+(character|integer)(|s):Set</idx>
+<idx>(S|s)ets+5+collection(|s):Set</idx>
+<idx>(S|s)ets+5+Icon(|s):Set</idx>
+<idx>member+5+(S|s)et(|s):Set</idx>
+<idx>member(s|ship)+5+(S|s)et(|s):Set!members</idx>
+<idx>lookup+5+(S|s)et(|s):Set!lookup</idx>
+<idx>(S|s)et(+|-)element+block(|s):Set-element blocks</idx>
+<idx>(S|s)et(+|-)header+block(|s):Set-header blocks</idx>
+<idx>(S|s)lot(|s):Slots</idx>
+<idx>+sp:sp@\texttt{sp}</idx>
+<idx>(S|s)tack(-|+)(B|b)ased+(E|e)valuation:Stack-based evaluation</idx>
+<idx>(S|s)tack+3+(A|a)ccess:Stack access</idx>
+<idx>Stack access methods</idx>
+<idx>storage+throughput:Storage throughput</idx>
+<idx>(S|s)(pace|torage)+5+overhead(|s):Storage overhead</idx>
+<idx>overhead(|s)+5+(space|storage):Storage overhead</idx>
+<idx>(C|c)oncatenat(e|ion|ing)+6+(S|s)(|ubs)tring(|s):Strings!concatenation</idx>
+<idx>(S|s)(|ubs)tring(|s)+6+(C|c)oncatenat(ed|ion):Strings!concatenation</idx>
+<idx>(H|h)ashing+3+(S|s)tring(|s):Strings!hashing</idx>
+<idx>(S|s)tring+3+(H|h)ashing:Strings!hashing</idx>
+<idx>+(S|s)ubstring(|s)+6+(C|c)oncatenat(ed|ion):Strings!substring concatenation</idx>
+<idx>(S|s)tring+length:Strings!length</idx>
+<idx>length+4+string:Strings!length</idx>
+<idx>(S|s)tring+4+literal(|s):Strings!literals</idx>
+<idx>(S|s)tring+(I|i)mage(|s):Strings!images</idx>
+<idx>Representation of Strings:Strings!representation of</idx>
+
+<idx>(S|s)tring(|s):Strings</idx>
+
+<idx>static+3+identifier(|s):Static Identifier</idx>
+<idx>(S|s)tatic+region:Static region</idx>
+<idx>static+3+variable(|s):Static Variable</idx>
+<idx>(F|f)ragment(ed|ation):Storage fragmentation</idx>
+<idx>(S|s)tring+invocation:String Invocation</idx>
+<idx>(S|s)tring+region:String Region</idx>
+<idx>string+3+scanning:String scanning</idx>
+<idx>position+4+subject:String scanning!position</idx>
+<idx>subject+4+position:String scanning!position</idx>
+<idx>+position+4+subject:String scanning!subject</idx>
+<idx>+subject+4+position:String scanning!subject</idx>
+<idx>(S|s)ubscripting:Subscripting</idx>
+<idx>(S|s)ub(|-)string(|s):Substring</idx>
+<idx>(S|s)ubstring+trapped(-|+)variable(|s):Substring Trapped variable</idx>
+<idx>(S|s)ubstring+trapped(-|+)variable block(|s):Substring Trapped variable block</idx>
+<idx>(P|p)rocedure+4+(S|s)uspen(sion|ding|ded|d):Suspended procedures</idx>
+<idx>Suspension</idx>
+<idx>(S|s)yntax+error(|s):Syntax errors</idx>
+<idx>(S|s)ystem+stack:System stack</idx>
+</Terms>
+
+<!-- Index terms beginning with T -->
+<Terms>
+<idx>Table(|s):Tables</idx>
+<idx>+empty+table:Tables!empty</idx>
+<idx>create+2+table:Tables!creation</idx>
+<idx>assigned+value:Tables!assigned values</idx>
+<idx>default+3+value(|s)+3+(T|t)able(|s):Tables!default assigned values</idx>
+<idx>(T|t)able+2+creat(e|ed|ing|ion):Tables!creation</idx>
+<idx>entry+value+6+table(|s):Tables!entry value</idx>
+<idx>lookup+6+table(|s):Tables!lookup</idx>
+<idx>(T|t)able+lookup:Tables!lookup</idx>
+<idx>(T|t)able+3+referenc(e|ed|ing):Tables!referencing</idx>
+<idx>size+3+table:Tables!size</idx>
+<idx>(T|t)able+size:Tables!size</idx>
+
+<idx>(T|t)able-element+2+trapped(+|-)variable(|s):Table-element!Trapped variable</idx>
+<idx>(T|t)ended descriptor(|s):Tended Descriptor</idx>
+<idx>(T|t)ermination+(R|r)outine(|s):Termination routines</idx>
+<idx>thrashing:Thrashing</idx>
+<idx>Trace messages</idx>
+<idx>(T|t)rac(e|ing)+7+output:Trace messages</idx>
+<idx>(T|t)racing:Tracing</idx>
+
+<idx>(T|t)ransmi(t|ts|tted|ssion)+4+result:Transmission operations</idx>
+<idx>(R|r)esult(|s)+4+(T|t)ransmi(t|ts|tted|ssion):Transmission operations</idx>
+
+<idx>(T|t)rapped(-|+)variable(|s):Trapped variable</idx>
+<idx>typedef(|s):typedefs</idx>
+</Terms>
+
+<!-- Index terms beginning with U -->
+<Terms>
+<idx>Ucode</idx>
+<idx>(UNIX|Unix):UNIX</idx>
+<idx>extra+3+field(|s):Unicon!extra fields</idx>
+</Terms>
+
+<!-- Index terms beginning with V -->
+<Terms>
+<idx>first-class+3+value(|s):Values, first-class</idx>
+<idx>(O|o)perations+on+3+(V|v)ariable(|s):Variables!operations on</idx>
+<idx>(T|t)able-element+2+trapped+2+variables:Variables!Table-element trapped variables</idx>
+<idx>VAX</idx>
+
+
+</Terms>
+
+<!-- These VM instructions cause too many hits in the wrong context-->
+<Terms ApplyTo="NamedFiles">
+  <File>appB.tex</File>
+  <File>appC.tex</File>
+  <File>p1-interpreter.tex</File>
+<idx>apply:Virtual Machine!Instruction!apply</idx>
+<idx>create:Virtual Machine!Instruction!create</idx>
+<idx>+cset:Virtual Machine!Instruction!cset</idx>
+<idx>field:Virtual Machine!Instruction!field</idx>
+<idx>global:Virtual Machine!Instruction!global</idx>
+<idx>goto:Virtual Machine!Instruction!goto</idx>
+<idx>int:Virtual Machine!Instruction!int</idx>
+<idx>invoke:Virtual Machine!Instruction!invoke</idx>
+<idx>limit:Virtual Machine!Instruction!limit</idx>
+<idx>line:Virtual Machine!Instruction!line</idx>
+<idx>nonnull:Virtual Machine!Instruction!nonnull</idx>
+<idx>number:Virtual Machine!Instruction!number</idx>
+<idx>null:Virtual Machine!Instruction!null</idx>
+<idx>plus:Virtual Machine!Instruction!plus</idx>
+<idx>pop:Virtual Machine!Instruction!pop</idx>
+<idx>random:Virtual Machine!Instruction!random</idx>
+<idx>real:Virtual Machine!Instruction!real</idx>
+<idx>refresh:Virtual Machine!Instruction!refresh</idx>
+<idx>size:Virtual Machine!Instruction!size</idx>
+<idx>static:Virtual Machine!Instruction!static</idx>
+<idx>swap:Virtual Machine!Instruction!swap</idx>
+<idx>value:Virtual Machine!Instruction!value</idx>
+</Terms>
+
+<Terms> <!-- VM instructions -->
+<idx>acset:Virtual Machine!Instruction!acset</idx>
+<idx>aglobal:Virtual Machine!Instruction!aglobal</idx>
+<idx>agoto:Virtual Machine!Instruction!agoto</idx>
+<idx>amark:Virtual Machine!Instruction!amark</idx>
+<idx>areal:Virtual Machine!Instruction!areal</idx>
+<idx>arg:Virtual Machine!Instruction!arg</idx>
+<idx>+asgn:Virtual Machine!Instruction!asgn</idx>
+<idx>astatic:Virtual Machine!Instruction!astatic</idx>
+<idx>astr:Virtual Machine!Instruction!astr</idx>
+<idx>bang:Virtual Machine!Instruction!bang</idx>
+<idx>bscan:Virtual Machine!Instruction!bscan</idx>
+<idx>cat:Virtual Machine!Instruction!cat</idx>
+<idx>ccase:Virtual Machine!Instruction!ccase</idx>
+<idx>chfail:Virtual Machine!Instruction!chfail</idx>
+<idx>coact:Virtual Machine!Instruction!coact</idx>
+<idx>cofail:Virtual Machine!Instruction!cofail</idx>
+<idx>compl:Virtual Machine!Instruction!compl</idx>
+<idx>coret:Virtual Machine!Instruction!coret</idx>
+<idx>diff:Virtual Machine!Instruction!diff</idx>
+<idx>div:Virtual Machine!Instruction!div</idx>
+<idx>dup:Virtual Machine!Instruction!dup</idx>
+<idx>efail:Virtual Machine!Instruction!efail</idx>
+<idx>einit:Virtual Machine!Instruction!einit</idx>
+<idx>eqv:Virtual Machine!Instruction!eqv</idx>
+<idx>eret:Virtual Machine!Instruction!eret</idx>
+<idx>escan:Virtual Machine!Instruction!escan</idx>
+<idx>esusp:Virtual Machine!Instruction!esusp</idx>
+<idx>init:Virtual Machine!Instruction!init</idx>
+<idx>inter:Virtual Machine!Instruction!inter</idx>
+<idx>keywd:Virtual Machine!Instruction!keywd</idx>
+<idx>lconcat:Virtual Machine!Instruction!lconcat</idx>
+<idx>lexeq:Virtual Machine!Instruction!lexeq</idx>
+<idx>lexge:Virtual Machine!Instruction!lexge</idx>
+<idx>lexgt:Virtual Machine!Instruction!lexgt</idx>
+<idx>lexle:Virtual Machine!Instruction!lexle</idx>
+<idx>lexlt:Virtual Machine!Instruction!lexlt</idx>
+<idx>lexne:Virtual Machine!Instruction!lexne</idx>
+<idx>llistn:Virtual Machine!Instruction!llistn</idx>
+<idx>localn:Virtual Machine!Instruction!localn</idx>
+<idx>lsusp:Virtual Machine!Instruction!lsusp</idx>
+<idx>mark:Virtual Machine!Instruction!mark</idx>
+<idx>mark0:Virtual Machine!Instruction!mark0</idx>
+<idx>minus:Virtual Machine!Instruction!minus</idx>
+<idx>mod:Virtual Machine!Instruction!mod</idx>
+<idx>mult:Virtual Machine!Instruction!mult</idx>
+<idx>neg:Virtual Machine!Instruction!neg</idx>
+<idx>neqv:Virtual Machine!Instruction!neqv</idx>
+<idx>noop:Virtual Machine!Instruction!noop</idx>
+<idx>numeq:Virtual Machine!Instruction!numeq</idx>
+<idx>numge:Virtual Machine!Instruction!numge</idx>
+<idx>numgt:Virtual Machine!Instruction!numgt</idx>
+<idx>numle:Virtual Machine!Instruction!numle</idx>
+<idx>numlt:Virtual Machine!Instruction!numlt</idx>
+<idx>numne:Virtual Machine!Instruction!numne</idx>
+<idx>pfail:Virtual Machine!Instruction!pfail</idx>
+<idx>pnull:Virtual Machine!Instruction!pnull</idx>
+<idx>power:Virtual Machine!Instruction!power</idx>
+<idx>pret:Virtual Machine!Instruction!pret</idx>
+<idx>psusp:Virtual Machine!Instruction!psusp</idx>
+<idx>push1:Virtual Machine!Instruction!push1</idx>
+<idx>pushn1:Virtual Machine!Instruction!pushn1</idx>
+<idx>quit:Virtual Machine!Instruction!quit</idx>
+<idx>rasgn:Virtual Machine!Instruction!rasgn</idx>
+<idx>rcv:Virtual Machine!Instruction!rcv</idx>
+<idx>rcvbk:Virtual Machine!Instruction!rcvbk</idx>
+<idx>rswap:Virtual Machine!Instruction!rswap</idx>
+<idx>sdup:Virtual Machine!Instruction!sdup</idx>
+<idx>sect:Virtual Machine!Instruction!sect</idx>
+<idx>str:Virtual Machine!Instruction!str</idx>
+<idx>subsc:Virtual Machine!Instruction!subsc</idx>
+<idx>tabmat:Virtual Machine!Instruction!tabmat</idx>
+<idx>toby:Virtual Machine!Instruction!toby</idx>
+<idx>unions:Virtual Machine!Instruction!unions</idx>
+<idx>unmark:Virtual Machine!Instruction!unmark</idx>
+<idx>var:Virtual Machine!Instruction!var</idx>
+
+<idx>(V|v)irtual(-|+)machine+instruction(|s):Virtual Machine!Instruction</idx>
+<idx>+self+modifying+instructions:Virtual Machine!Self Modifying Instruction</idx>
+<idx>(V|v)irtual(-|+)machine(|s):Virtual Machine</idx>
+<idx>(V|v)irtual(-|+)memory:Virtual Memory</idx>
+</Terms>
+
+<Terms>
+<idx>C+(integer+||double+)variable(|s):Variable!C variable</idx>
+<idx>(C|c)lass+variable(|s):Variable!class variable</idx>
+<idx>(C|c)ondition+variable(|s):Variable!condition variable</idx>
+<idx>(V|v)ariable+descriptor(|s):Variable!variable descriptor</idx>
+<idx>(E|e)nvironment+variable(|s):Variable!environment variable</idx>
+<idx>(G|g)lobal+variable(|s):Variable!global variable</idx>
+<idx>(K|k)eyword+variable(|s):Variable!keyword variable</idx>
+<idx>(L|l)ist+variable(|s):Variable!list variable</idx>
+<idx>(L|l)ocal+variable(|s):Variable!local variable</idx>
+<idx>(L|l)oop+control+variable(|s):Variable!loop control variable</idx>
+<idx>(M|m)ethod+variable(|s):Variable!method variable</idx>
+<idx>(N|n)amed+variable(|s):Variable!named variable</idx>
+<idx>(P|p)rocedure+variable(|s):Variable!procedure variable</idx>
+<idx>(R|r)egister+variable(|s):Variable!register variable</idx>
+<idx>(S|s)pecial+variable(|s):Variable!special variable</idx>
+<idx>(S|s)tatic+variable(|s):Variable!static variable</idx>
+<idx>(S|s)tructure+variable(|s):Variable!structure variable</idx>
+<idx>(S|s)ubscripted+variable(|s):Variable!subscripted variable</idx>
+<idx>(T|t)ended+variable(|s):Variable!tended variable</idx>
+<idx>(T|t)emporary+variable(|s):Variable!temporary variable</idx>
+<idx>(T|t)hread-local+variable(|s):Variable!thread--local variable</idx>
+<idx>(U|u)ndeclared+variable(|s):Variable!undeclared variable</idx>
+<idx>(V|v)ariable(|s)+3+not+declared:Variable!undeclared variable</idx>
+
+<idx>%Icon+6+variable(|s):Variable</idx>
+<idx>Variables:Variable</idx>
+
+<idx>+(V|v)ariable+(D|d)escriptor(|s):Variable Descriptor</idx>
+
+<idx>(T|t)emporary-variable+model:Temporary variable model</idx>
+<idx>(T|t)emporary(+|-)variable+lifetime:Temporary variable lifetime</idx>
+<idx>(L|l)ifetime+8+temporary(+|-)variable(|s):Temporary variable lifetime</idx>
+</Terms>
+<!-- Index terms beginning with W -->
+<Terms>
+<idx>(MS|Microsoft)+(W|w)indows:Windows@Microsoft Windows</idx>
+<idx>X+(W|w)indows:Windows@X Windows</idx>
+<idx>Writing+3+Data:Writing Data</idx>
+</Terms>
+<!-- Index terms beginning with X -->
+<Terms>
+<idx>XPL</idx>
+</Terms>
+<!-- Index terms beginning with Y -->
+<Terms>
+<idx>(Y|y)acc:Yacc</idx>
+</Terms>
+<!-- Index terms beginning with Z -->
+<Terms>
+</Terms>
+
+
+<!-- Fossils: stuff that used to be in the Icon IB (and in the index)
+	 but isn't in the Unicon (and Icon V9.5) implementation -->
+<Terms ApplyTo="None">
+<idx>deffile:C functions!deffile</idx>
+<idx>doasgn:C functions!doasgn</idx>
+<idx>defshort:C functions!defshort</idx>
+<idx>defstr:C functions!defstr</idx>
+<idx>defint:C functions!defint</idx>
+<idx>compact::C functions!compact</idx>
+<idx>cvcset:C functions!cvcset</idx>
+<idx>cvnum:C functions!cvnum</idx>
+<idx>cvint:C functions!cvint</idx>
+<idx>cvreal:C functions!cvreal</idx>
+<idx>cvstr:C functions!cvstr</idx>
+<idx>gcvt:C functions!gcvt</idx>
+<idx>putsub:C functions!putsub</idx>
+<idx>FncDclV</idx>
+<idx>IntSize</idx>
+<idx>Keyword trapped variables</idx>
+<idx>Keyword trapped-variable blocks</idx>
+<idx>mkreal</idx>
+<idx>MixedSizes</idx>
+<idx>oper</idx>
+<idx>OpDcl</idx>
+<idx>PtrSize</idx>
+<idx>Region relocation</idx>
+<idx>sbrk</idx>
+<idx>bit-string:Bit String</idx>
+</Terms>
+
+</LaTeX_Index>

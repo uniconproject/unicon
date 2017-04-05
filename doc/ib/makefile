@@ -7,7 +7,7 @@
 # that has the capacity to install LaTeX, potentially all of it.
 #
 # Known Binaries/Packages/Class Files/Style Files Used
-# pdflatex
+# pdflatex, makeindex
 # color, array, xtab, hhline, makeidx, amsmath, amsfonts, amssymb,
 # textcomp, fontenc, hyperref, pdftex
 #
@@ -54,9 +54,9 @@ KW=kw/figure3-2.png kw/figure4-6.png
 P2=p2-preface.tex p2-compiler.tex p2-transModel.tex p2-typeTheory.tex p2-liveness.tex p2-overview.tex p2-iconcOrg.tex p2-typeInfer.tex p2-codeGen.tex p2-ctrlflow.tex p2-invoke.tex p2-codePerform.tex p2-futureWork.tex p2-iconcOpt.tex $(KW)
 P3=p3-2D3D.tex p3-concur.tex p3-database.tex p3-network-posix.tex p3-unicon.tex
 P4=appA.tex appB.tex appC.tex appD.tex app-projects.tex app-solutions.tex app-rtl.tex appH.tex
-SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) $(P4) references.tex gnudoclicence.tex
+SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) $(P4) references.tex gnudoclicence.tex idxterms.xml
 
-ib.pdf: $(SRC)
+ib.pdf: $(SRC) ib.ind
 	pdflatex ib.tex
 
 publish: ib.pdf
@@ -64,3 +64,31 @@ publish: ib.pdf
 
 nightly: ib.pdf
 	scp ib.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ib-nightly.pdf
+
+# Indexing:
+#    The index terms are either put into the individual tex files manually, or
+#    are inserted by the automatic indexer program idxGen.  IdxGen inserts
+#    literally *thousands* of \index commands, which would make the original
+#    source very hard to read. So, a "sacrificial copy" of the source is made in
+#    a temporary directory, the indexing is done on the copy and the final
+#    result (index.ind) is copied back into the main directory.
+#
+index: ib.ind
+
+ib.ind: idxtmp $(SRC)
+	../../uni/progs/idxGen -Dir idxtmp/ib -wait 10 *.tex
+# Suppress the output from the two pdflatex commands in idxtmp
+	(cd idxtmp/ib; pdflatex ib.tex ; makeindex ib; pdflatex ib.tex) >/dev/null
+	cp idxtmp/ib/ib.ind .
+
+idxtmp:
+	test ! -d idxtmp && mkdir idxtmp
+	(cd ..; tar -c -f - --exclude '*idxtmp*' *.sty ib/* ) | (cd idxtmp; tar -x -f - )
+
+CLEAN:
+	rm -f *.aux *.log ib.ind
+	rm -rdf idxtmp
+
+# Temporary development aid: Just run idxGen with maximum output
+indexrun:
+	../../uni/progs/idxGen -V -Dir idxtmp/ib -wait 10 *.tex

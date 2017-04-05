@@ -14,8 +14,8 @@
 #
 #      (V|v)irtual( |-)machine(|s)+3+performance:Virtual Machine!Performance
 #
-# which will place an "\index{Virtual Machine!Performance}" command after the first
-# line in which any of the words 
+# which will place an "\index{Virtual Machine!Performance}" command before the
+# first line in which any of the words 
 #      Virtual-machine, virtual-machine, Virtual-machines, virtual-machines
 # or the two word phrases 
 #     Virtual machine, virtual machine, Virtual machines, virtual machines
@@ -47,8 +47,10 @@ global logging           # enable progress/debug information on &errout
 global hits              # total number of index insertions
 
 global stats             # index statistics
-global idxTerms          # index terms that were found
+global idxTerms          # index terms that were placed in the index
+global idxCandidates     # All possible index terms
 global noComplaints      # Suppress "not found" for these index terms
+global maxPlus           # The highest number of leading "+" chars seen in a search term
 #--------------------------------------------------------------------------------
 
 # A paragraph record holds the remaining text of the whole file, together with
@@ -77,8 +79,10 @@ procedure main(args)
 #-------------------- Initialisation & option processing
 	whitespace := ' \t'
 	hits := 0
+	maxPlus := 0
 	stats := mutex(table(0))
 	idxTerms := mutex(set())
+	idxCandidates := set()
 
 	logging := \opt["v"] | \opt["V"]
 	if \opt["help"] | \opt["?"] then usage()
@@ -88,7 +92,7 @@ procedure main(args)
 
 #-------------------- Read in the index terms
 	totalTerms := getIndexTerms(\opt["idxFile"] | "idxterms.xml")
-	if /totalTerms | (totalTerms = 0)
+	if /totalTerms | (totalTerms = 0) | (*idxCandidates = 0)
 	then stop("Stopping because no index terms have been defined")
 #	write(ximage(idx))
 #	write(ximage(idx_ex))
@@ -118,24 +122,14 @@ procedure main(args)
 		Log(stats["files"], " files processed, ",
 			stats["hits"], " index entries inserted")
 
-		n := totalTerms - *idxTerms - *noComplaints
+		n := *idxCandidates - *idxTerms - *noComplaints
 		
 		if n > 0 then {
-			Log(n, " index terms were not found (-V for list)")
+			Log(n, " index terms were not placed (-V for list)")
 
 			# -V (as opposed to -v) generates details of non matching terms
 			if \opt["V"] then {
-				# List index terms that generated no hits
-				# First, smash all per-file search terms into one set
-				perFileTerms := set()
-				every k := key(perFileidx) do {
-					every insert(perFileTerms, key(perFileidx[k]))
-				}
-
-				# Log("idx: ", *idx, "    idx_ex: ", *idx_ex, "    perFile: ", *perFileTerms) 
-				# print the terms that didn't result in an index entry.
-				every Log(!(perFileTerms ++ set([: key(idx) :]) ++ set([: key(idx_ex) :]) --
-							idxTerms -- noComplaints))
+				every Log(!(idxCandidates -- idxTerms -- noComplaints))
 			}
 		}
 
@@ -247,10 +241,16 @@ procedure getIndexTerms(filename: string)
 
 					# Generate every alternative search term
 					every line := Alt(searchLine) do {
+						if find("???", line) then {
+							Warn("Problem analysing \"", searchLine, "\",\n",
+								 "    returned value is \"", line, "\"")
+							break next # skip every alternative: go to next idx term
+						}
 						multiTerm := searchTerm := indexTerm := &null
 						if extendedSearch(line) then { # multiple word search
 							line ? {
 								tab(many(whitespace))
+								maxPlus <:= (many("+") - 1)
 								if multiTerm := tab(upto(':')) then {
 									move(1); indexTerm := tab(0)
 									searchList := multiSearch(deSpace(multiTerm))
@@ -263,6 +263,7 @@ procedure getIndexTerms(filename: string)
 						} else { # single word search
 							line ? {
 								tab(many(whitespace))
+								maxPlus <:= (many("+") - 1)
 								if = "%" then next	# Skip commented lines
 
 								# An index item is either searchTerm:indexTerm
@@ -289,8 +290,9 @@ procedure getIndexTerms(filename: string)
 						}
 
 						totalTerms +:= 1
+						insert(idxCandidates, indexTerm)
 						# apply the new search term to the appropriate structures
-						if x_NotFound == "Suppress" then insert(noComplaints, searchTerm)
+						if x_NotFound == "Suppress" then insert(noComplaints, indexTerm)
 						if \searchTerm & \idx[searchTerm] then {
 							Warn(searchTerm, " is already defined")
 						}
@@ -333,8 +335,8 @@ procedure getIndexTerms(filename: string)
 		Log(*specialFiles, " Files treated specially")
 		every Log("   ", !specialFiles)
 	}
-	Log(totalTerms, " index terms acquired in ", Timer(\ms), " mS")
-
+	
+	Log(*idxCandidates, " index terms (",totalTerms , " search terms) acquired in ", Timer(\ms), " mS")
 	return totalTerms
 end
 
@@ -374,18 +376,18 @@ procedure Alt(s)
 	if /s then return "?"
 	s ? {
 		if = "(" then {
-			alt := tab(upto(")")); move(1); suffix := tab(0)
+			alt := tab(upto(")")) | "???" ; move(1); suffix := tab(0) | "???"
 			if find("|",alt) then {
 				every suspend Alt(alt) || Alt(suffix)
 			} else { # no alternatives, re-enclose alt in brackets and treat as a prefix
 				every suspend "(" || alt || ")" || Alt(suffix)
 			}
 		} else if (prefix := tab(upto("("))) then {
-			suffix := tab(0)
+			suffix := tab(0) | "???"
 			every suspend prefix || Alt(suffix)
 		} else 	if find("|") then {
 			repeat {
-				alt := tab(upto('|)')) 
+				alt := tab(upto('|)')) | "???"
 				if = "|" then {
 					/alt := ""
 					suspend alt
@@ -513,6 +515,12 @@ procedure nextParagraph(p: paragraph)
 				if word[-1] == "'" & word[-2] == "'" then {
 					word := word[1:-2]
 				}
+				# yet another: if the last two characters are "\\" it's a line break
+				# not part of the word
+				if word[-1] == "\\" & word[-2] == "\\" then {
+					word := word[1:-2]
+				}
+				
 				if (word ~== "") then {
 					wordNumber +:= 1
 					/(p.words[word]) := []
@@ -576,12 +584,11 @@ procedure postIndex(filename: string, waiter)
 			# For each word in the paragraph, if it is an index hit insert the lines
 			# where it occurs (plus the indexing term) into the output list.
 			every plusWord:= word := key(para.words) do {
-				every 0 to 2 do {# look for "word", "+word", "++word"
+				every 0 to maxPlus do {# look for "word", "+word", "++word" ...
 					indexTerm := (\idx[plusWord]) |
 						(\perFileidx[basename] & \perFileidx[basename][plusWord]) |
 						&null
 					if \indexTerm & not member(\suppressed[basename], plusWord) then {
-						insert(fileTerms, plusWord)
 						every occurs := !(para.words[word]) do {
 							/(opList[occurs.line]) := set()
 							insert(opList[occurs.line], indexTerm)
@@ -612,7 +619,6 @@ procedure postIndex(filename: string, waiter)
 					write(&errout, ximage(indexTerm))
 					stop("IndexTerm not a string")
 				}
-
 			
 				case *sL of {
 					3: { # two words:   word1 distance word2
@@ -629,8 +635,6 @@ procedure postIndex(filename: string, waiter)
 								/(opList[o2.line]) := set()
 								insert(opList[o2.line], indexTerm)
 							}	
-							insert(fileTerms,search)
-							filehits +:= 1
 						}
 					}
 					
@@ -647,8 +651,6 @@ procedure postIndex(filename: string, waiter)
 								/(opList[o3.line]) := set()
 								insert(opList[o3.line], indexTerm)
 							}
-							insert(fileTerms,search)
-							filehits +:= 1
 						}							   
 					}
 
@@ -667,8 +669,6 @@ procedure postIndex(filename: string, waiter)
 								/(opList[o4.line]) := set()
 								insert(opList[o4.line], indexTerm)
 							}
-							insert(fileTerms,search)
-							filehits +:= 1
 						}							   
 					}
 
@@ -686,8 +686,6 @@ procedure postIndex(filename: string, waiter)
 								/(opList[o5.line]) := set()
 								insert(opList[o5.line], indexTerm)
 							}
-							insert(fileTerms,search)
-							filehits +:= 1
 						}							   
 					}
 
@@ -705,12 +703,14 @@ procedure postIndex(filename: string, waiter)
 			}
 		} 
 
-		# write the paragraph, one line at a time with any index terms after it
+		# write the paragraph, one line at a time with any index terms before it
 
 		lineno := 0
 		every line := !para.lines do {
 			lineno +:= 1
 			every indexTerm := !\opList[lineno] do {
+				filehits +:= 1
+				insert(fileTerms,indexTerm)
 				write(outf, "\\protect\\index{", indexTerm, "}%")
 			}
 			if \writeNewFile then write(outf, line); 
@@ -730,6 +730,7 @@ procedure postIndex(filename: string, waiter)
 		# the terms that resulted in no hits at the end of the run)
 		critical idxTerms: {
 			every insert(idxTerms, !fileTerms)
+#			idxTerms ++:= fileTerms
 		}
 	}
 

@@ -101,6 +101,10 @@ pthread_key_t tstate_key;
 
 #endif						/* Concurrent */
 
+void set_errortext(int i){
+
+}
+
 struct tend_desc *tend;
 char *reserve_0(int r, word n) { return malloc(1); }
 

@@ -1099,6 +1099,25 @@ dptr dp;
       }
    }
 
+int is_in_a_block_region(char *block)
+{
+   struct region *rp;
+   CURTSTATE();
+
+   if (InRange(blkbase,block,blkfree)) return 1;
+
+   /*
+    * Look for this block in other allocated block regions.
+    */
+   for (rp = curblock->Gnext;rp;rp = rp->Gnext)
+     if (InRange(rp->base,block,rp->free)) return 1;
+
+   for (rp = curblock->Gprev;rp;rp = rp->Gprev)
+     if (InRange(rp->base,block,rp->free)) return 1;
+
+   return 0;
+}
+
 /*
  * markptr - just like mark block except the object pointing at the block
  *  is just a block pointer, not a descriptor.
@@ -1327,14 +1346,19 @@ struct b_coexpr *ce;
 
    while ((fp != 0) || nargs) {         /* Keep going until current fp is
                                             0 and no arguments are left. */
-#ifdef PatternType
-       if ((fp != NULL) && (fp->pattern_cache != NULL))
-	   markptr((union block **)&fp->pattern_cache);
-#endif       
       if (s_sp == (word *)fp + Vwsizeof(*pfp) - 1) {
                                         /* sp has reached the upper
                                             boundary of a procedure frame,
                                             process the frame. */
+
+#ifdef PatternType
+       if ((fp != NULL) && is_in_a_block_region((char *)(fp->pattern_cache))) {
+	 if (fp->pattern_cache->title == T_Table) {
+	   markptr((union block **)&(fp->pattern_cache));
+	 }
+       }
+#endif       
+
          s_efp = fp->pf_efp;            /* Get saved efp out of frame */
          s_gfp = fp->pf_gfp;            /* Get save gfp */
          if (s_gfp != 0) {
@@ -1859,7 +1883,7 @@ unsigned long memorysize(int available)
 /*
  * Method #3: read /proc/meminfo. Linux.
  */
-   fieldname = (available ? "MemFree: " : "MemTotal: ");
+   fieldname = (available ? "MemAvailable: " : "MemTotal: ");
 
    if ((f = fopen("/proc/meminfo", "r")) != NULL) {
       while (fgets(buf, 80, f)) {

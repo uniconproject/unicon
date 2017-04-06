@@ -54,7 +54,7 @@ KW=kw/figure3-2.png kw/figure4-6.png
 P2=p2-preface.tex p2-compiler.tex p2-transModel.tex p2-typeTheory.tex p2-liveness.tex p2-overview.tex p2-iconcOrg.tex p2-typeInfer.tex p2-codeGen.tex p2-ctrlflow.tex p2-invoke.tex p2-codePerform.tex p2-futureWork.tex p2-iconcOpt.tex $(KW)
 P3=p3-2D3D.tex p3-concur.tex p3-database.tex p3-network-posix.tex p3-unicon.tex
 P4=appA.tex appB.tex appC.tex appD.tex app-projects.tex app-solutions.tex app-rtl.tex appH.tex
-SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) $(P4) references.tex gnudoclicence.tex idxterms.xml
+SRC=ib.tex intro.tex preface.tex $(P1) $(P2) $(P3) $(P4) references.tex gnudoclicence.tex idxterms.xml index-xref.tex
 
 ib.pdf: $(SRC) ib.ind
 	pdflatex ib.tex
@@ -78,7 +78,9 @@ index: ib.ind
 ib.ind: idxtmp $(SRC)
 	../../uni/progs/idxGen -Dir idxtmp/ib -wait 10 *.tex
 # Suppress the output from the two pdflatex commands in idxtmp
-	(cd idxtmp/ib; pdflatex ib.tex ; makeindex ib; pdflatex ib.tex) >/dev/null
+# Also ignore errors (because the error messages are also swallowed).
+# Any errors will be seen when the final pdflatex command (above) is executed.
+	-(cd idxtmp/ib; pdflatex -interaction=nonstopmode ib.tex ; makeindex ib; pdflatex -interaction=nonstopmode ib.tex) >/dev/null
 	cp idxtmp/ib/ib.ind .
 
 idxtmp:

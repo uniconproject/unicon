@@ -18,4 +18,4 @@ umake.u: umake.icn
 	$(UNICON) -c umake
 
 idxGen: idxGen.icn
-	$(UNICON) -u idxGen
+	IPATH=../xml/ LPATH=../xml/ $(UNICON) -u idxGen

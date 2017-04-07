@@ -13,7 +13,9 @@
 
 LIBS = -L/usr/lib64 $(AC_JV_LDFLAGS) $(AC_GL_LDFLAGS) $(AC_LIBS) -lm
 CC = gcc
-# Useful development flags: -Wall -Wno-missing-braces
+# Useful development flags: -g -Wall -Wno-missing-braces -fsanitize=address -fno-omit-frame-pointer
+# -g and -fsanitize=address should also be added to the linker flags
+# make sure to also change the optimization to level 0 or 1
 
 CFLAGS = -O2 -fno-strict-aliasing -fno-unit-at-a-time -I../libtp -I../gdbm -I../xpm $(AC_GL_CFLAGS) -I/usr/X11R6/include
 LDFLAGS= -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu $(AC_LDFLAGS)

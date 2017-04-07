@@ -281,9 +281,9 @@ int		interp_1	(int fsig,dptr cargp, struct threadstate *curtstate);
 int		interp_0	(int fsig,dptr cargp);
 int		interp_1	(int fsig,dptr cargp);
 #endif		 	   	  	 /* TSTATARG */
-#else
+#else					/* MultiThread */
 int		interp		(int fsig,dptr cargp);
-#endif
+#endif					/* MultiThread */
 #ifdef PatternType
 #ifdef MultiThread
 int 		internal_match_0(char * pat_sub, int Length, int Pat_S,
@@ -301,6 +301,7 @@ int 		internal_match	(char * pat_sub, int Length, int Pat_S,
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
 int		iselect		(int fd, int t);
+int		is_in_a_block_region(char *block);
 int		Kascii		(dptr cargp);
 int		Kcset		(dptr cargp);
 int		Kdigits		(dptr cargp);
@@ -1242,3 +1243,4 @@ void init_sighandlers();
 #if UNIX && defined(HAVE_WORKING_VFORK)
 void push_filepid(int pid, FILE *fp, word status);
 #endif 	    		     	  /* UNIX && defined(HAVE_WORKING_VFORK */
+

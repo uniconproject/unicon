@@ -368,11 +368,20 @@ MUTEX_LOCKID_CONTROLLED(MTX_ALCNUM);
    if (alcce_queues(ep) == Failed)
       ReturnErrNum(307, NULL);
 
-   ep->ini_blksize = rootblock.size/100;
+   {
+   unsigned long available = memorysize(1);
+   word size;
+   if (NARthreads <= 32)       size = available * 0.005;
+   else if (NARthreads <= 96)  size = available * 0.004;
+   else if (NARthreads <= 224) size = available * 0.003;
+   else if (NARthreads <= 480) size = available * 0.002;
+   else                        size = available * 0.001;
+   ep->ini_blksize = ep->ini_ssize = size;
+   }
+
    if (ep->ini_blksize < MinAbrSize)
       ep->ini_blksize = MinAbrSize;
 
-   ep->ini_ssize = rootstring.size/100;
    if (ep->ini_ssize < MinStrSpace)
       ep->ini_ssize = MinStrSpace;
 #endif					/* Concurrent */

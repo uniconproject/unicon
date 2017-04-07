@@ -815,19 +815,19 @@ MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
    rootblock.size  = MaxAbrSize;
 
    /*
-    * Set default string and block regions to 1% of physical memory.
-    * Set the default interpreter stack size to (1%/4) of physical memory.
+    * Set default string and block regions to 2% of available memory.
+    * Set the default interpreter stack size to (2%/4) of available memory.
     */
-   { unsigned long l, onepercent;
-     if ((l = physicalmemorysize())) {
-	onepercent = l / 100;
-	if (rootstring.size < onepercent) rootstring.size = onepercent;
-	if (rootblock.size < onepercent) rootblock.size = onepercent;
-	if (mstksize < (onepercent / 4) / WordSize) {
-	   mstksize = (onepercent / 4) / WordSize;
+   { unsigned long l, twopercent;
+     if ((l = memorysize(1))) {
+	twopercent = l * 2 / 100;
+	if (rootstring.size < twopercent) rootstring.size = twopercent;
+	if (rootblock.size < twopercent) rootblock.size = twopercent;
+	if (mstksize < (twopercent / 4) / WordSize) {
+	   mstksize = (twopercent / 4) / WordSize;
 	   }
-	if (stksize < (onepercent / 100) / WordSize) {
-	   stksize = (onepercent / 100) / WordSize;
+	if (stksize < (twopercent / 100) / WordSize) {
+	   stksize = (twopercent / 100) / WordSize;
 	   }
 	}
    }

@@ -16,8 +16,8 @@ nographics:
 	cd lib; $(MAKE)
 	cd udb; $(MAKE)
 	cd udb; $(MAKE) tools
-	cd progs; $(MAKE)
 	cd xml; $(MAKE)
+	cd progs; $(MAKE)
 	cd parser; $(MAKE)
 	cd unidep; $(MAKE)
 	cd util; $(MAKE)

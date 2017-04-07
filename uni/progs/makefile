@@ -1,8 +1,7 @@
 BASE=../..
 include ../makedefs
 
-# add idxGen to dependencies, when ready
-all: ie uprof
+all: ie uprof idxGen
 	$(CP) ie uprof ../../bin
 
 ie: ie.icn

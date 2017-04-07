@@ -501,6 +501,10 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
       pfp->pattern_cache->defvalue = nulldesc;
       }
    else { /* we have a table check if the pattern is already resolved */
+      if ((pfp->pattern_cache)->title != T_Table) {
+	 syserr("corrupt pattern_cache\n");
+	 }
+
       pd = memb( (union block *)pfp->pattern_cache,&key,hn,&res);
       if (res != 0) { /*the element is in the table*/
 	 te = (struct b_telem *) *pd;
@@ -1982,28 +1986,71 @@ int f(char * pat_sub, int Length, int Pat_S,
 		   int Anchored_Mode
 		   )
 {
+   int i, Stack_Ptr, Stack_Base;
+   int Assign_OnM = 0, Region_Level = 0;
    tended struct b_cons *Stack;
-   int Stack_Ptr, Stack_Base;
-   tended struct b_pelem *tpattern = pat;
+   tended struct b_pelem *tpattern;
    tended struct descrip evalue;
-   tended struct b_pelem * Node = NULL;
+   tended struct b_pelem * Node;
 #if COMPILER
-   tended struct b_pelem * PE_Unanchored = alcpelem(PC_Unanchored);
+   tended struct b_pelem * PE_Unanchored;
 #else					/* COMPILER */
-   tended struct b_pelem * PE_Unanchored = alcpelem(PC_Unanchored, ipc.opnd);
+   tended struct b_pelem * PE_Unanchored;
 #endif					/* COMPILER */
-   int Assign_OnM = 0;
-   int Region_Level = 0;
-   tended struct b_intarray *biap;
-   tended struct b_lelem *blep;
 
+   /*
+    * And now for something weird.  A pattern stack, allocated on the stack,
+    * which is an array, which we have to tend, which rtt does not support.
+    * If you change struct b_intarray or struct b_lelem in h/rstructs.h, you
+    * must change this compatibly.
+    */
+   struct b_sized_intarray {
+      word title;
+      word blksize;
+      union block *listp;
+      union block *dims;
+      word a[Stack_Size];
+      } bsia;
+   struct b_sized_lelem {
+      word title;
+      word blksize;
+      union block *listprev;
+      union block *listnext;
+      word nslots;
+      word first;
+      word nused;
+      struct descrip lslots[Stack_Size];
+      } bsle;
+   struct b_cons bcons;
+
+   tpattern = pat;
+   Node = NULL;
+#if COMPILER
+   PE_Unanchored = alcpelem(PC_Unanchored);
+#else					/* COMPILER */
+   PE_Unanchored = alcpelem(PC_Unanchored, ipc.opnd);
+#endif					/* COMPILER */
    PE_Unanchored->pthen = (union block *)tpattern;
    PE_Unanchored->parameter = nulldesc;
 
-   biap = alcintarray(Stack_Size);
-   blep = alclstb(Stack_Size,0,0);
-   Stack = alccons((union block *)biap);
-   Stack->next = (union block *)blep;
+   bsia.title = T_Intarray;
+   bsia.blksize = sizeof(bsia);
+   bsia.dims = NULL; bsia.listp = NULL;
+
+   bsle.title = T_Lelem;
+   bsle.blksize = sizeof(bsle);
+   bsle.listprev = NULL;
+   bsle.listnext = NULL;
+   bsle.nslots = Stack_Size;
+   bsle.first = 0;
+   bsle.nused = 0;
+   for(i=0; i<Stack_Size; i++) bsle.lslots[i] = nulldesc;
+
+   bcons.title = T_Cons;
+   bcons.data = (union block *)&bsia;
+   bcons.next = (union block *)&bsle;
+
+   Stack = &bcons;
 
    EVVal(Anchored_Mode, e_patattempt);
    DEBUGF(2, (stdout,

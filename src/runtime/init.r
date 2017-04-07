@@ -101,6 +101,8 @@ extern struct errtab errtab[];		/* error numbers and messages */
 word mstksize = MStackSize;		/* initial size of main stack */
 word stksize = StackSize;		/* co-expression stack size */
 
+int runtime_status;
+
 #ifndef MultiThread
 #if !ConcurrentCOMPILER
 int k_level = 0;			/* &level */
@@ -1439,7 +1441,11 @@ void segvtrap()
    fatalerr(302, NULL);
    MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
    }
-
+
+#ifdef Concurrent
+int is_startup_error;
+#endif					/* Concurrent */
+
 /*
  * error - print error message from s1 and s2; used only in startup code.
  */
@@ -1469,11 +1475,12 @@ char *s1, *s2;
 		MB_OK|MB_ICONHAND|MB_MOVEABLE);
 #endif					/* PresentationManager */
 
+   is_startup_error = 1;
    if (dodump)
       abort();
    c_exit(EXIT_FAILURE);
    }
-
+
 /*
  * syserr - print s as a system error.
  */
@@ -1554,8 +1561,9 @@ int i;
         * some cleanup and free memory so it wont be safe to leave 
 	* any other thread running after this point.
 	*/
-        thread_control(TC_KILLALLTHREADS);
-#endif					/* PresentationManager */
+	if (!is_startup_error)
+           thread_control(TC_KILLALLTHREADS);
+#endif					/* Concurrent */
 
 #if UNIX && defined(HAVE_WORKING_VFORK)
    clear_all_filepids();

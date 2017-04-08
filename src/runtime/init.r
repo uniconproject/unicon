@@ -1475,7 +1475,9 @@ char *s1, *s2;
 		MB_OK|MB_ICONHAND|MB_MOVEABLE);
 #endif					/* PresentationManager */
 
+#ifdef Concurrent
    is_startup_error = 1;
+#endif					/* Concurrent */
    if (dodump)
       abort();
    c_exit(EXIT_FAILURE);

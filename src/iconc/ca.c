@@ -229,7 +229,10 @@ ca_init(fname, argc, argv)
    /*
     * read firstperi
     */
-   fgets(buf_, MaxLineLen, f);
+   if (fgets(buf_, MaxLineLen, f) == NULL) {
+      fprintf(stderr, "ca-init: fgets error in %s.\n", fname);
+      return -1;
+      }
    for (p=buf_; *p && *p != ':'; p++)
       ;
    *p++ = 0;
@@ -857,8 +860,14 @@ read_bndl_class(f)
    /* this parses a gdbm entry for a given class
     * in a given bundle. it is as ugly as the entry. */
    /* skip first line in gdbm entry (it's nonsense?) */
-   fgets(buf_, MaxLineLen, f);
-   fgets(buf_, MaxLineLen, f);
+   if (fgets(buf_, MaxLineLen, f) == NULL) {
+      fprintf(stderr, "fgets fail in read_bndl_class\n");
+      exit(1);
+      }
+   if (fgets(buf_, MaxLineLen, f) == NULL) {
+      fprintf(stderr, "fgets fail#2 in read_bndl_class\n");
+      exit(1);
+      }
    p = buf_;
    /* parse to ':' or '(' */
 next_class_token:
@@ -903,7 +912,10 @@ next_member:
       }
    /* read class methods */
    for (;;) {
-      fgets(buf_, MaxLineLen, f);
+      if (fgets(buf_, MaxLineLen, f) == NULL) {
+	 fprintf(stderr, "fgets fail#3 in read_bndl_class\n");
+	 exit(1);
+	 }
       len = strlen(buf_);
       buf_[len-1] = 0; /* clobber cr */
       if (strcmp(buf_, "end") == 0)

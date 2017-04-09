@@ -4,9 +4,9 @@
 #
 #	Subject:  Procedures to map string into bit representation
 #
-#	Author:   Ralph E. Griswold
+#	Author:   Ralph E. Griswold & Don Ward
 #
-#	Date:     December 5, 1995
+#	Date:     December 5, 1995  & April 2017
 #
 ############################################################################
 #
@@ -24,13 +24,38 @@
 #
 ############################################################################
 
+############################################################################
+#      Don Ward
+#      April 2017
+# This version is faster and has O(n) performance.
+############################################################################
+
+procedure mapbit(s)
+    static bits, B
+    local x
+    initial {
+        bits := create((0 to 1) || (0 to 1) || (0 to 1) || (0 to 1) ||
+                       (0 to 1) || (0 to 1) || (0 to 1) || (0 to 1))
+        B := table() # B is a map from char to bitstring representation.
+        every B[!&cset] := @bits
+    }
+    x := ""
+    every x ||:= B[!s]
+    return x
+end
+
+############################################################################
+#
+# This is the (renamed) original, which works without using a co-expression.
+#
+############################################################################
 link strings
 
 procedure bilit(text,alpha,first,second)
    return collate(map(text,alpha,first),map(text,alpha,second))
 end
 
-procedure mapbit(s)
+procedure mapbit_nocoexpr(s)
    static all, base16, hex1, hex2, quad1, quad2, pair1, pair2
 
    #  The following is a bit ornate, but then ... .  It could be

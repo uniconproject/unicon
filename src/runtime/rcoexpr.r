@@ -1292,7 +1292,7 @@ static struct region *reuse_region(word nbytes, int region)
  *
  * 
  */
-#ifdef COMPILER
+#if COMPILER
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
 #else
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
@@ -1301,7 +1301,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 { 
    struct region *rp;
 
-#ifndef COMPILER
+#if !COMPILER
    if (newp == NULL) newp = curpstate;
 #endif
    /*

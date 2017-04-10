@@ -3087,14 +3087,18 @@ function{0,1} chdir(s)
       if (is:string(s)) {
 	 tended char *dir;
 	 cnv:C_string(s, dir);
-	 if (chdir(dir) != 0)
+	 if (chdir(dir) != 0) {
+	    set_syserrortext(errno);
 	    fail;
+	    }
 	 }
 #ifndef PATH_MAX
 #define PATH_MAX 512
 #endif					/* PATH_MAX */
-      if (getcwd(path, PATH_MAX) == NULL)
-	  fail;
+      if (getcwd(path, PATH_MAX) == NULL) {
+	 set_syserrortext(errno);
+	 fail;
+	 }
 
       len = strlen(path);
       Protect(StrLoc(result) = alcstr(path, len), runerr(0));

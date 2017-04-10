@@ -80,8 +80,12 @@ ib.ind: idxtmp $(SRC)
 # Suppress the output from the two pdflatex commands in idxtmp
 # Also ignore errors (because the error messages are also swallowed).
 # Any errors will be seen when the final pdflatex command (above) is executed.
-	-(cd idxtmp/ib; pdflatex -interaction=nonstopmode ib.tex ; makeindex ib; pdflatex -interaction=nonstopmode ib.tex) >/dev/null
-	cp idxtmp/ib/ib.ind .
+	-(cd idxtmp/ib; \
+	pdflatex -interaction=nonstopmode ib.tex; \
+	makeindex ib; \
+	pdflatex -interaction=nonstopmode ib.tex; \
+	makeindex ib ) >/dev/null
+	mv idxtmp/ib/*.aux idxtmp/ib/*.[io]* idxtmp/ib/*.toc .
 
 idxtmp:
 	test ! -d idxtmp && mkdir idxtmp

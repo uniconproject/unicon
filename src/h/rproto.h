@@ -1223,8 +1223,12 @@ int msg_receive( dptr dccp, dptr dncp, dptr msg, int timeout);
 int msg_send( dptr dccp, dptr dncp, dptr msg, int timeout);
 word get_mutex( pthread_mutexattr_t *mattr);
 word get_cv(word mtx);
+#if COMPILER
+void init_threadheap(struct threadstate *ts, word blksiz, word strsiz);
+#else					/* COMPILER */
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 			struct progstate *newp);
+#endif					/* COMPILER */
 int alcce_queues(struct b_coexpr *ep);
 struct region *swap2publicheap(struct region * curr_private, 
 			       struct region * curr_public, 

@@ -732,7 +732,7 @@ struct progstate {
    word mutexid_blocktotal;
    word mutexid_coll;
    
-   struct region *Public_stringregion;         /*  separate regions vs shared      */
+   struct region *Public_stringregion;         /*  separate regions vs shared */
    struct region *Public_blockregion;          /*     same above     */
 #endif					/* Concurrent */
 

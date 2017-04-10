@@ -719,7 +719,11 @@ void *nctramp(void *arg)
    k_current.dword = D_Coexpr;
    BlkLoc(k_current) = (union block *)ce;
 
+#if COMPILER
+   init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize);
+#else
    init_threadheap(curtstate, ce->ini_blksize, ce->ini_ssize, NULL);
+#endif
 
 #endif					/* Concurrent */
    SEM_WAIT(ce->semp);			/* wait for signal */
@@ -1288,12 +1292,18 @@ static struct region *reuse_region(word nbytes, int region)
  *
  * 
  */
+#ifdef COMPILER
+void init_threadheap(struct threadstate *ts, word blksiz, word strsiz)
+#else
 void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 		     struct progstate *newp)
+#endif
 { 
    struct region *rp;
 
+#ifndef COMPILER
    if (newp == NULL) newp = curpstate;
+#endif
    /*
     *  new string and block region should be allocated.
     */
@@ -1309,6 +1319,12 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
    else if ((rp = newregion(strsiz, strsiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_STRHEAP);
 
+#if COMPILER
+      rp->prev = curstring;
+      rp->next = curstring->next;
+      if (curstring->next) curstring->next->prev = rp;
+      curstring->next = rp;
+#else
       /* attach rp after program's string region on prev/next */
       if (newp->stringregion) {
 	 rp->prev = newp->stringregion;
@@ -1319,6 +1335,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 	 }
       else
 	 newp->stringregion = rp;
+#endif
 
       /* attach rp after curstring on Gprev/Gnext. */
       rp->Gprev = curstring;
@@ -1338,6 +1355,12 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
    else if ((rp = newregion(blksiz, blksiz)) != 0) {
       MUTEX_LOCKID_CONTROLLED(MTX_BLKHEAP);
 
+#if COMPILER
+      rp->prev = curblock;
+      rp->next = curblock->next;
+      if (curblock->next) curblock->next->prev = rp;
+      curblock->next = rp;
+#else
       /* attach rp after program's block region on prev/next */
       if (newp->blockregion) {
 	 rp->prev = newp->blockregion;
@@ -1348,6 +1371,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 	 }
       else
 	 newp->blockregion = rp;
+#endif
 
       /* attach rp after curblock on Gprev/Gnext. */
       rp->Gprev = curblock;

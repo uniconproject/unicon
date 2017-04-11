@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Windows Unicon
-AppVerName=Windows Unicon Version 13.0 Beta
+AppVerName=Windows Unicon Version 13.0
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.org
 AppSupportURL=http://unicon.org
@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.org
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_13.0_Beta(64-bit)_rev4777
+OutputBaseFilename=setup-unicon_13.0_Beta(64-bit)_rev5040
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -141,7 +141,7 @@ Source: "\unicon\uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: igno
 
 ; Thread tests
 Source: "\unicon\tests\thread\*.icn"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
-Source: "\unicon\tests\thread\*.std"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
+Source: "\unicon\tests\thread\stand\*.std"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 Source: "\unicon\tests\thread\README"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 Source: "\unicon\tests\thread\makefile"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 

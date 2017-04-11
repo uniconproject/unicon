@@ -99,8 +99,14 @@ function{1} close(f)
 
 #if HAVE_LIBZ
       if (BlkD(f,File)->status & Fs_Compress) {
+	 int rv;
 	 BlkLoc(f)->File.status = 0;
-	 if (gzclose((gzFile) fp)) fail;
+	 rv = gzclose((gzFile) fp);
+	 if (rv) {
+	    if (rv == Z_ERRNO) set_syserrortext(errno);
+	    /* could also be Z_STREAM_ERROR or Z_BUF_ERROR */
+	    fail;
+	    }
 	 return C_integer 0;
 	 }
 #endif					/* HAVE_LIBZ */

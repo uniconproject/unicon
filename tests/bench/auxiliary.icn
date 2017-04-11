@@ -262,15 +262,23 @@ procedure get_CPU()
 end
    
 procedure get_clockspeed()
-   local f, result := "unknown"
+   local f, entry := 0.0, result := "unknown"
    if f := open("/proc/cpuinfo") then {
       while line := read(f) do {
+	 # cores may run at different speeds, report the fastest
 	 if match("cpu MHz", line) then {
-	    result := sprintf("%1.1r GHz", line[find(":",line)+2:0] / 1000)
-	    break
+	    entry <:= line[find(":",line)+2:0]
+	    }
+	 else if match("model name", line) & (i := find("GHz", line)) then {
+	    ghz := trim(reverse(line[1:i]))
+	    if ghz ?:= tab(many(&digits++'.')) then {
+	       mhz := reverse(ghz) * 1000 # comparing against cpu MHz
+	       entry <:= mhz
+	       }
 	    }
 	 }
       close(f)
+      result := sprintf("%1.1r GHz", \entry / 1000)
       }
    return result
 end

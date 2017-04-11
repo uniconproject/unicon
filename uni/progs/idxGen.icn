@@ -56,8 +56,11 @@ global maxPlus           # The highest number of leading "+" chars seen in a sea
 # A paragraph record holds the remaining text of the whole file, together with
 # a list of lines of the current paragraph and a map from each word to a list of
 # occurrences in the paragraph. An occurrence is (line no, ordinal position)
+# inProgress is a set of index terms that are being defined by
+# \PrimaryIndexBegin{term} ... \PrimaryIndexEnd{term}. Normal index hits for
+# term are suppressed in between the PrimaryIndexBegin ... End lines.
 # 
-record paragraph (sourceText, lines, words)
+record paragraph (sourceText, lines, words, inProgress)
 record occurrence (line, wpos)
 
 # A multiple word search record contains the index term to be used plus the
@@ -465,7 +468,9 @@ procedure nextParagraph(p: paragraph)
 		notEOL := cset(&cset -- "\n")
 		texWord := &letters ++ &digits ++ cset("'\\_-&")
 	}
-	if *p.sourceText = 0 then return fail     # end of text
+	if *p.sourceText = 0 then {
+		return fail     # end of text
+	}
 
 	# Split the text up into lines up to the next paragraph boundary
 	# Note that none of this causes new string space to be created:
@@ -497,8 +502,14 @@ procedure nextParagraph(p: paragraph)
 		
 		line ? {
 			tab(many(whitespace))
-			if ="\\index" | ="\\protect\\index" | ="\\PrimaryIndex" then {
-				next    # ignore any line starting with \index"
+			if ="\\PrimaryIndexBegin{" then { # suppress normal indexing for this term
+				insert(p.inProgress, tab(upto("}")))
+				next
+			} else if ="\\PrimaryIndexEnd{" then { # re-enable normal indexing
+				delete(p.inProgress, tab(upto("}")))
+				next
+			} else if ="\\index" | ="\\protect\\index" | ="\\PrimaryIndex" then {
+				next    # ignore any indexing line 
 			}
 
 			while notWord := tab(upto(texWord)) do {
@@ -566,7 +577,7 @@ procedure postIndex(filename: string, waiter)
 		write(outf, "Index terms for ", filename)
 	}
 
-	para := paragraph(entireFile(filename), list(), table())
+	para := paragraph(entireFile(filename), list(), table(), set())
 
 	# analyse the file one paragraph at a time, placing index commands after each line
 	while nextParagraph(para) do {
@@ -711,7 +722,9 @@ procedure postIndex(filename: string, waiter)
 			every indexTerm := !\opList[lineno] do {
 				filehits +:= 1
 				insert(fileTerms,indexTerm)
-				write(outf, "\\protect\\index{", indexTerm, "}%")
+				if not member(para.inProgress, indexTerm) then {
+					write(outf, "\\protect\\index{", indexTerm, "}%")
+				}
 			}
 			if \writeNewFile then write(outf, line); 
 		}
@@ -721,6 +734,11 @@ procedure postIndex(filename: string, waiter)
 		para.lines := list()
 		para.words := table()
 	} # End of per-paragraph processing
+
+	if *para.inProgress > 0 then {
+			Warn(filename, ": These primary index terms should not still be active:")
+			every Warn(filename, ": ", !(para.inProgress))
+		}
 
 	if 0 < filehits then {
 		critical stats: {

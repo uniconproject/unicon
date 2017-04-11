@@ -2,8 +2,12 @@
 # makefile
 #
 
-UFLAGS=-c
-CFLAGS=-DMAIN -o
+#
+# CFLAGS is universal for "compile flags"
+# LDFLAGS stands for "link flags"
+#
+CFLAGS=-c
+LDFLAGS=-DMAIN
 
 EXE=binary-trees chameneos-redux fannkuch fasta fasta k-nucleotide	\
 	mandelbrot meteor-contest n-body pidigits reverse-complement	\
@@ -38,151 +42,151 @@ generate: generate.u
 	unicon -o generate generate.u
 
 generate.u: generate.icn 
-	unicon $(UFLAGS) generate.icn
+	unicon $(CFLAGS) generate.icn
 
 run-test: run-test.u $(OBJ)
 	unicon -o run-test run-test.u auxiliary.u
 
 run-test.u: run-test.icn 
-	unicon $(UFLAGS) run-test.icn 
+	unicon $(CFLAGS) run-test.icn 
 
 run-benchmark: run-benchmark.u $(OBJ)
 	unicon -o run-benchmark run-benchmark.u auxiliary.u
 
 run-benchmark.u: run-benchmark.icn 
-	unicon $(UFLAGS) run-benchmark.icn 
+	unicon $(CFLAGS) run-benchmark.icn 
 
 run-med: run-med.u $(OBJ)
 	unicon -o run-med run-med.u auxiliary.u
 
 run-med.u: run-med.icn $(OBJ)
-	unicon $(UFLAGS) run-med.icn 
+	unicon $(CFLAGS) run-med.icn 
 
 run-shootout: run-shootout.u $(OBJ)
 	unicon -o run-shootout run-shootout.u auxiliary.u
 
 run-shootout.u: run-shootout.icn 
-	unicon $(UFLAGS) run-shootout.icn
+	unicon $(CFLAGS) run-shootout.icn
 
 auxiliary.u: auxiliary.icn
-	unicon $(UFLAGS) auxiliary.icn
+	unicon $(CFLAGS) auxiliary.icn
 
 fasta.o: fasta.c
-	gcc $(UFLAGS) fasta.c
+	gcc $(CFLAGS) fasta.c
 
 pool.u: pool.icn 
-	unicon $(UFLAGS) pool.icn 
+	unicon $(CFLAGS) pool.icn 
 
 binary-trees: binary-trees.icn pool.u
-	unicon $(CFLAGS) binary-trees binary-trees.icn pool.u
+	unicon $(LDFLAGS) binary-trees.icn pool.u
 
 binary-trees.u: binary-trees.icn
-	unicon $(UFLAGS) binary-trees.icn
+	unicon $(CFLAGS) binary-trees.icn
 
 chameneos-redux: chameneos-redux.icn
-	unicon $(CFLAGS) chameneos-redux chameneos-redux.icn
+	unicon $(LDFLAGS) chameneos-redux.icn
 
 chameneos-redux.u: chameneos-redux.icn
-	unicon $(UFLAGS) chameneos-redux.icn
+	unicon $(CFLAGS) chameneos-redux.icn
 
 fannkuch: fannkuch.icn
-	unicon $(CFLAGS) fannkuch fannkuch.icn 
+	unicon $(LDFLAGS) fannkuch.icn 
 
 fannkuch.u: fannkuch.icn
-	unicon $(UFLAGS) fannkuch.icn
+	unicon $(CFLAGS) fannkuch.icn
 
 fasta: fasta.icn
-	unicon $(CFLAGS) fasta fasta.icn 
+	unicon $(LDFLAGS) fasta.icn 
 
 fasta.u: fasta.icn
-	unicon $(UFLAGS) fasta.icn
+	unicon $(CFLAGS) fasta.icn
 
 k-nucleotide: k-nucleotide.icn
-	unicon $(CFLAGS) k-nucleotide k-nucleotide.icn 
+	unicon $(LDFLAGS) k-nucleotide.icn 
 
 k-nucleotide.u: k-nucleotide.icn
-	unicon $(UFLAGS) k-nucleotide.icn
+	unicon $(CFLAGS) k-nucleotide.icn
 
 mandelbrot: mandelbrot.icn pool.u
-	unicon $(CFLAGS) mandelbrot mandelbrot.icn pool.u
+	unicon $(LDFLAGS) mandelbrot.icn pool.u
 
 mandelbrot.u: mandelbrot.icn
-	unicon $(UFLAGS) mandelbrot.icn
+	unicon $(CFLAGS) mandelbrot.icn
 
 meteor-contest: meteor-contest.icn
-	unicon $(CFLAGS) meteor-contest meteor-contest.icn 
+	unicon $(LDFLAGS) meteor-contest.icn 
 
 meteor-contest.u: meteor-contest.icn
-	unicon $(UFLAGS) meteor-contest.icn
+	unicon $(CFLAGS) meteor-contest.icn
 
 n-body: n-body.icn
-	unicon $(CFLAGS) n-body n-body.icn 
+	unicon $(LDFLAGS) n-body.icn 
 
 n-body.u: n-body.icn
-	unicon $(UFLAGS) n-body.icn
+	unicon $(CFLAGS) n-body.icn
 
 pidigits: pidigits.icn
-	unicon $(CFLAGS) pidigits pidigits.icn 
+	unicon $(LDFLAGS) pidigits.icn 
 
 pidigits.u: pidigits.icn
-	unicon $(UFLAGS) pidigits.icn
+	unicon $(CFLAGS) pidigits.icn
 
 reverse-complement: reverse-complement.icn
-	unicon $(CFLAGS) reverse-complement reverse-complement.icn 
+	unicon $(LDFLAGS) reverse-complement.icn 
 
 reverse-complement.u: reverse-complement.icn
-	unicon $(UFLAGS) reverse-complement.icn
+	unicon $(CFLAGS) reverse-complement.icn
 
 regex-dna: regex-dna.icn pool.u
-	unicon $(CFLAGS) regex-dna regex-dna.icn pool.u
+	unicon $(LDFLAGS) regex-dna.icn pool.u
 
 regex-dna.u: regex-dna.icn
-	unicon $(UFLAGS) regex-dna.icn
+	unicon $(CFLAGS) regex-dna.icn
 
 spectral-norm: spectral-norm.icn
-	unicon $(CFLAGS) spectral-norm spectral-norm.icn
+	unicon $(LDFLAGS) spectral-norm.icn
 
 spectral-norm.u: spectral-norm.icn
-	unicon $(UFLAGS) spectral-norm.icn
+	unicon $(CFLAGS) spectral-norm.icn
 
 thread-ring: thread-ring.icn
-	unicon $(CFLAGS) thread-ring thread-ring.icn 
+	unicon $(LDFLAGS) thread-ring.icn 
 
 thread-ring.u: thread-ring.icn
-	unicon $(UFLAGS) thread-ring.icn
+	unicon $(CFLAGS) thread-ring.icn
 
 concord:
-	unicon $(CFLAGS) concord concord.icn 
+	unicon $(LDFLAGS) concord.icn 
 
 concord.u:
-	unicon $(UFLAGS) concord.icn 
+	unicon $(CFLAGS) concord.icn 
 
-deal:
-	unicon $(CFLAGS) deal deal.icn 
+deal: deal.icn
+	unicon $(LDFLAGS) deal.icn 
 
-deal.u:
-	unicon $(UFLAGS) deal.icn 
+deal.u: deal.icn
+	unicon $(CFLAGS) deal.icn 
 
 ipxref:
-	unicon $(CFLAGS) ipxref ipxref.icn 
+	unicon $(LDFLAGS) ipxref.icn 
 
 ipxref.u:
-	unicon $(UFLAGS) ipxref.icn 
+	unicon $(CFLAGS) ipxref.icn 
 
 queens:
-	unicon $(CFLAGS) queens queens.icn 
+	unicon $(LDFLAGS) queens.icn 
 
 queens.u:
-	unicon $(UFLAGS) queens.icn 
+	unicon $(CFLAGS) queens.icn 
 
 rsg:
-	unicon $(CFLAGS) rsg rsg.icn 
+	unicon $(LDFLAGS) rsg.icn 
 
 rsg.u:
-	unicon $(UFLAGS) rsg.icn 
+	unicon $(CFLAGS) rsg.icn 
 
 shuffle.u:
-	unicon $(UFLAGS) shuffle.icn
+	unicon $(CFLAGS) shuffle.icn
 
 
 Clean clean:

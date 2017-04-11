@@ -69,6 +69,8 @@ class UIDE : Dialog(
 
    method component_setup()
       local error_msg := pre_ui_initialize()
+      # most error messages are reported in a MsgBox, but this one is fatal
+      if error_msg === "can't open window" then stop(error_msg)
       self.setup()
       pnlToolbar := Panel()
       pnlToolbar.set_pos("0", "4.5%")
@@ -109,7 +111,7 @@ class UIDE : Dialog(
       if \ui_Preferences.syntax_check_box_state == "" then
 	  ui_Preferences.syntax_check_box_state := &null
       if not (blank_window := open("u_ide_blank", "g", "canvas=hidden")) then
-	 fail
+	 return "can't open window"
       if /win_position then win_position := "2,3"
       if /height then height := WAttrib(blank_window, "displayheight") - 150
       if /width then width := WAttrib(blank_window, "displaywidth") - 150

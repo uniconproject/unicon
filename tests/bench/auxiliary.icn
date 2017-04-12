@@ -244,6 +244,12 @@ procedure get_CPU()
        read(f) # skip the first line which is "Name"
        result := read(f) # read the actual name
        close(f)
+       }
+   else if &features == ("MacOSX"|"MacOS") then {
+       if f := open("sysctl -n machdep.cpu.brand_string", "p") then {
+       read(f) ? result := tab(find("CPU"))
+       close(f)
+       }
    }
    else {
        if f := open("/proc/cpuinfo") then {
@@ -289,12 +295,19 @@ procedure get_clockspeed()
 	  close(f)
       }
       else if &features == ("MS Windows NT") then {       
-	  f := open("wmic cpu get maxclockspeed", "p")
-	  read(f) # skip the first line which is "maxclockspeed"
-	  entry := read(f) # read the actual clock speed
-	  result := sprintf("%1.1r GHz", \entry / 1000.0)
-	  close(f)
+	  if f := open("wmic cpu get maxclockspeed", "p") then {
+             read(f) # skip the first line which is "maxclockspeed"
+             entry := read(f) # read the actual clock speed
+             result := sprintf("%1.1r GHz", \entry / 1000.0)
+             close(f)
+             }
           }
+      else if &features == ("MacOSX"|"MacOS") then {
+         if f := open("sysctl -n machdep.cpu.brand_string", "p") then {
+            read(f) ? (tab(find("@") + 2) & result := tab(0))
+            close(f)
+            }
+         }
       }
    return result
 end

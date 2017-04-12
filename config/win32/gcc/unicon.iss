@@ -11,7 +11,7 @@ AppUpdatesURL=http://unicon.org
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_13.0_Beta(64-bit)_rev5040
+OutputBaseFilename=setup-unicon_13.0(64-bit)_rev5050
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -81,8 +81,11 @@ Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; Flags: ignoreversion
 ; uni misc
 Source: "\unicon\uni\makedefs"; DestDir: "{app}\uni\"; Flags: ignoreversion
 Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; Flags: ignoreversion
-Source: "\unicon\uni\util\*.*"; DestDir: "{app}\uni\util"; Flags: ignoreversion
-Source: "\unicon\uni\xml\*.*"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "\unicon\uni\xml\*.icn"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "\unicon\uni\xml\*.u"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "\unicon\uni\xml\makefile"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "\unicon\uni\util\*.icn"; DestDir: "{app}\uni\util"; Flags: ignoreversion
+Source: "\unicon\uni\util\makefile"; DestDir: "{app}\uni\util"; Flags: ignoreversion
 Source: "\unicon\uni\progs\makefile"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
 Source: "\unicon\uni\progs\*.icn"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
 

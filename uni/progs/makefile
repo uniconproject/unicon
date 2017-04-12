@@ -1,8 +1,8 @@
 BASE=../..
 include ../makedefs
 
-all: ie uprof idxGen
-	$(CP) ie uprof ../../bin
+all: ie uprof idxGen umake
+	$(CP) ie uprof umake ../../bin
 
 ie: ie.icn
 	$(UNICON) ie

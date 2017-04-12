@@ -240,10 +240,10 @@ end
 procedure get_CPU()
    local f, result := "unknown"
    if &features == ("MS Windows NT"|"Win32") then {
-       result := getenv("PROCESSOR_ARCHITECTURE") # not very good, but its a start
-       if map(getenv("PROCESSOR_IDENTIFIER")) ? find("genuineintel") then
-	   result := "Intel " || result
-       result ||:= ":" || getenv("PROCESSOR_LEVEL") # not very good, but its a start
+       f := open("wmic cpu get name", "p")
+       read(f) # skip the first line which is "Name"
+       result := read(f) # read the actual name
+       close(f)
    }
    else {
        if f := open("/proc/cpuinfo") then {
@@ -279,6 +279,13 @@ procedure get_clockspeed()
 	 }
       close(f)
       result := sprintf("%1.1r GHz", \entry / 1000)
-      }
+     }
+   else if &features == ("MS Windows NT"|"Win32") then {
+       f := open("wmic cpu get maxclockspeed", "p")
+       read(f) # skip the first line which is "maxclockspeed"
+       result := read(f) # read the actual clock speed
+       result := sprintf("%1.1r GHz", \result / 1000.0)
+       close(f)
+   }
    return result
 end

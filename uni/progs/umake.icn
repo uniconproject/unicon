@@ -161,6 +161,16 @@ initially(filename)
 	    else if pos(0) then { # skip empty lines
 	       continue
 	       }
+	    else if ="export" & tab(many(' \t')) &
+	       (envname := tab(many(filechars))) & =":=" & (val:=tab(0)) then {
+		  #what the heck, let's expand macro names
+		  val := macroexpand(val)
+		  if \verbose then
+		     write("setting ", envname, " to ", image(val))
+# if Windows... do we need to map PATH to Path, or is PATH OK?
+# need to test.  Mebbe PATH is OK.
+		  setenv(envname, val)
+		  }
 	    else if (target:=tab(many(filechars++' '))) & =":" then { # build a target or targets
 	       tab(many(' '))
 	       deps := []
@@ -195,16 +205,6 @@ initially(filename)
 		  if \verbose then
 		     write("including ", image(inclname))
 		  f := open(inclname)
-		  }
-	    else if ="export" & tab(many(' \t')) &
-	       (envname := tab(many(filechars))) & =":=" & (val:=tab(0)) then {
-		  #what the heck, let's expand macro names
-		  val := macroexpand(val)
-		  if \verbose then
-		     write("setting ", envname, " to ", image(val))
-# if Windows... do we need to map PATH to Path, or is PATH OK?
-# need to test.  Mebbe PATH is OK.
-		  setenv(envname, val)
 		  }
 	    else write("??? ", image(line))
 	    }

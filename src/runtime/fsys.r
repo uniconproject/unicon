@@ -1714,7 +1714,7 @@ function{0,1} reads(f,i)
 	    runerr(141);
 	 else if (tally == -2)
 	    runerr(143);
-	 else if (tally == -3)
+	 else if (tally == -3) /* EOF */
             fail;
 	 }
       else {
@@ -1726,7 +1726,7 @@ function{0,1} reads(f,i)
       }
 #endif					/* Graphics */
 
-      if (tally == 0)
+      if (tally == 0) /* EOF */
 	 fail;
       StrLen(s) = tally;
       /*
@@ -1764,11 +1764,9 @@ function{0,1} remove(s)
 #if NT && !defined(MSWIN64)
 #define rmdir _rmdir
 #endif					/* NT */
-	 if (rmdir(s) != 0) {
-	    set_syserrortext(errno);
-	    fail;
-            }
+	 if (rmdir(s) == 0) return nulldesc;
 #endif					/* PosixFns */
+	 set_syserrortext(errno);
 	 fail;
          }
       return nulldesc;
@@ -1826,16 +1824,19 @@ function{0,1} save(s)
       /*
        * Open the file for the executable image.
        */
-      f = creat(s, 0777);
-      if (f == -1)
+      if ((f = creat(s, 0777)) == -1) {
+	 set_errortext(1051);
 	 fail;
+	 }
       fsz = wrtexec(f);
       /*
        * It happens that most wrtexecs don't check the system call return
        *  codes and thus they'll never return -1.  Nonetheless...
        */
-      if (fsz == -1)
+      if (fsz == -1) {
+	 set_errortext(214);
 	 fail;
+	 }
       /*
        * Return the size of the data space.
        */
@@ -1873,8 +1874,10 @@ function{0,1} seek(f,o)
 #endif					/* Graphics */
 
       fd = BlkD(f,File)->fd.fp;
-      if (BlkLoc(f)->File.status == 0)
+      if (BlkLoc(f)->File.status == 0) {
+	 set_errortext(214);
 	 fail;
+	 }
 
 #ifdef ReadDirectory
       if (BlkLoc(f)->File.status & Fs_Directory) {
@@ -1911,11 +1914,13 @@ function{0,1} seek(f,o)
       if (o > 0) {
 /* fseek returns a non-zero value on error for CSET2, not -1 */
 #if CSET2
-	 if (fseek(fd, o - 1, SEEK_SET))
+	 if (fseek(fd, o - 1, SEEK_SET)) {
 #else
-	 if (fseek(fd, o - 1, SEEK_SET) == -1)
+	 if (fseek(fd, o - 1, SEEK_SET) == -1) {
 #endif					/* CSET2 */
+	    set_syserrortext(errno);
 	    fail;
+	 }
 
 	 }
 
@@ -1934,12 +1939,15 @@ function{0,1} seek(f,o)
 	size = ftell(fd);
 	/* try to accomplish the fixed-up seek */
 	if (fseek(fd, size + o, SEEK_SET)) {
-	   fseek(fd, save_pos, SEEK_SET);
+	   set_syserrortext(errno);
+	   fseek(fd, save_pos, SEEK_SET);/* huh? */
 	   fail;
 	   }  /* End of if - seek failed, reset position */
 #else
-	 if (fseek(fd, o, SEEK_END) == -1)
+	 if (fseek(fd, o, SEEK_END) == -1) {
+	    set_syserrortext(errno);
 	    fail;
+	    }
 #endif					/* CSET2 */
 
 	 }
@@ -2211,6 +2219,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	  break;
       case -1:
          if (margv) free(margv);
+	 set_syserrortext(errno);
 	 fail;
 	 break;
       default:
@@ -2417,24 +2426,32 @@ function{0,1} where(f)
 
       fd = BlkD(f,File)->fd.fp;
 
-      if (BlkLoc(f)->File.status == 0)
+      if (BlkLoc(f)->File.status == 0) {
+	 set_errortext(212);
 	 fail;
+	 }
 
 #ifdef ReadDirectory
-      if ((BlkLoc(f)->File.status & Fs_Directory) != 0)
+      if ((BlkLoc(f)->File.status & Fs_Directory) != 0) {
+	 set_errortext(174);
          fail;
+	 }
 #endif					/* ReadDirectory */
 
 #ifdef Graphics
       pollctr >>= 1;
       pollctr++;
-      if (BlkLoc(f)->File.status & Fs_Window)
+      if (BlkLoc(f)->File.status & Fs_Window) {
+	 set_errortext(214);
 	 fail;
+	 }
 #endif					/* Graphics */
 
       pos = ftell(fd) + 1;
-      if (pos == 0)
+      if (pos == 0) {
+	 set_syserrortext(errno);
 	 fail;	/* may only be effective on ANSI systems */
+      }
 
       return C_integer pos;
       }

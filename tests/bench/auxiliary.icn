@@ -278,14 +278,23 @@ procedure get_clockspeed()
 	    }
 	 }
       close(f)
-      result := sprintf("%1.1r GHz", \entry / 1000)
-     }
-   else if &features == ("MS Windows NT"|"Win32") then {
-       f := open("wmic cpu get maxclockspeed", "p")
-       read(f) # skip the first line which is "maxclockspeed"
-       result := read(f) # read the actual clock speed
-       result := sprintf("%1.1r GHz", \result / 1000.0)
-       close(f)
+      result := sprintf("%1.1r GHz", ( 0 ~= \entry) / 1000)
    }
+
+   if result == "unknown" then {
+      if f:=open( "lscpu","p") then {
+	  while line := read(f) do 
+	      line ? (="CPU max MHz:" & entry := tab(0))
+	  result := sprintf("%1.1r GHz", \entry / 1000.0)
+	  close(f)
+      }
+      else if &features == ("MS Windows NT") then {       
+	  f := open("wmic cpu get maxclockspeed", "p")
+	  read(f) # skip the first line which is "maxclockspeed"
+	  entry := read(f) # read the actual clock speed
+	  result := sprintf("%1.1r GHz", \entry / 1000.0)
+	  close(f)
+          }
+      }
    return result
 end

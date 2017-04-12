@@ -15,7 +15,7 @@ pure:
 	$(MAKE) all
 
 $(TARGET): $(UFILES) 
-	$(UC) -o $(TARGET) $(UFILES)
+	$(UC) -G -o $(TARGET) $(UFILES)
 
 # u3dview.u: u3dview.icn
 

@@ -133,6 +133,15 @@ class DependencyGraph(targets, initialtarget, marked)
 	 }
       targets[targ].make()
    end
+   method get_targets(target)
+   local s
+      # for version 0, just break on spaces
+      target ? {
+	 while s := tab(find(" ")) do { suspend s; =" " }
+	 s := tab(0)
+	 suspend s
+	 }
+   end
 initially(filename)
    filechars := &letters ++ './_%-'
    targets := table()
@@ -146,14 +155,13 @@ initially(filename)
          line ? {
 	    tab(many(' '))
 	    if ="#" then { # skip comment
-	       write("comment: ", image(line))
+	       # write("comment: ", image(line))
 	       continue
 	       }
 	    else if pos(0) then { # skip empty lines
 	       continue
 	       }
-	    else if (target:=tab(many(filechars))) &
-               (tab(many(' '))|"") & =":" then { # build a target
+	    else if (target:=tab(many(filechars++' '))) & =":" then { # build a target or targets
 	       tab(many(' '))
 	       deps := []
 	       buildrules := []
@@ -168,8 +176,10 @@ initially(filename)
 		  line := &null
 		  }
 	       put(readahead, \line)
-	       r := Rule(target,deps,buildrules)
-	       targets[target] := r
+	       every t := get_targets(target) do {
+		  r := Rule(target,deps,buildrules)
+		  targets[t] := r
+		  }
 	       if not find("%", target, 1) then
 		  /initialtarget := target
 	       }
@@ -223,24 +233,23 @@ class Rule(target, dependencies, buildrules)
       return newRule
    end
    method make()
+   local s
       if depgraph.ismarked(target) then {
-	 write("umake ", target, " (already made)")
+	 if \verbose then write("umake ", target, " (already made)")
 	 }
       else {
-	 write("umaking ", target)
+	 if \verbose then write("umaking ", target)
 	 depgraph.mark(target)
 	 }
       # first, recursively build dependencies
       every depgraph.node(!dependencies).make()
 
       # check timestamps of dependencies against my timestamp
-      every d := !dependencies do {
-	 if newer(d) then {      # if needed, execute build rules
-	    exec()
-	    return
-	    }
+      if (not stat(target)) | newer(!dependencies) then {
+	 exec()
+	 return
 	 }
-      write("umake: `",target, "' is up to date")
+      if \verbose then write("umake: `",target, "' is up to date")
    end
    # check me (target timestamp) against d and succeed if d is newer
    method newer(d)

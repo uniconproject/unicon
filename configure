@@ -658,6 +658,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -750,6 +751,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1002,6 +1004,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1139,7 +1150,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1292,6 +1303,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -11132,62 +11144,62 @@ echo "--------------------------------------------------"
 echo ""
 echo    "* Features"
 echo    "|___.* Compression"
-echo -n "|   |--> ZLIB      : "
+/bin/echo -n "|   |--> ZLIB      : "
 if test "$zlib_cv_libz"   = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 
 echo    "|___.* Graphics"
-echo -n "|   |--> XLIB      : "
+/bin/echo -n "|   |--> XLIB      : "
 if test "$xlib_cv_libx" = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> JPEG      : "
+/bin/echo -n "|   |--> JPEG      : "
 if test "$jpeg_cv_libjpeg" = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> PNG       : "
+/bin/echo -n "|   |--> PNG       : "
 if test "$png_cv_libpng"   = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> XFT       : "
+/bin/echo -n "|   |--> XFT       : "
 if test "$xft_cv_libxft"   = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> Freetype  : "
+/bin/echo -n "|   |--> Freetype  : "
 if test "$freetype_cv_libfreetype"   = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 
 echo    "|___.* 3D Graphics"
-echo -n "|   |--> OpenGL    : "
+/bin/echo -n "|   |--> OpenGL    : "
 if test "$opengl_cv_libGL"   = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> GLU       : "
+/bin/echo -n "|   |--> GLU       : "
 if test "$opengl_cv_libGLU"  = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> FTG       : "
+/bin/echo -n "|   |--> FTG       : "
 if test "$FTGLlib_cv_libFTGL"   = yes ; then echo "yes"; else echo "no"; fi
 echo "|"
 
 echo    "|___.* Concurrency"
-echo -n "|   |--> Threads   : "
+/bin/echo -n "|   |--> Threads   : "
 if test "$pthread_cv_libpthread"  = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 
 echo    "|___. * Audio"
-echo -n "|   |--> OpenAL    : "
+/bin/echo -n "|   |--> OpenAL    : "
 if test "$libopenal_cv_libopenal" = yes ; then echo "yes"; else echo "no"; fi
-echo -n "|   |--> alut      : "
+/bin/echo -n "|   |--> alut      : "
 if test "$libalut_cv_libalut"     = yes ; then echo "yes"; else echo "no"; fi
 echo    "|   |__One group of:"
-echo -n "|   | |> Ogg,vorbis: "
+/bin/echo -n "|   | |> Ogg,vorbis: "
 if test "$ogglib_cv_libogg"       = yes; then echo -n "yes,"; else echo -n "no,"; fi
 if test "$ogglib_cv_libvorbis"    = yes; then echo "yes"; else echo "no"; fi
-echo -n "|   | |> SDL,smpeg : "
+/bin/echo -n "|   | |> SDL,smpeg : "
 if test "$libsdl_cv_libsdl"       = yes; then echo -n "yes,"; else echo -n "no,"; fi
 if test "$libsmpeg_cv_libsmpeg"   = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 
 echo    "|___.* VOIP"
-echo -n "|   |--> jvoip     : "
+/bin/echo -n "|   |--> jvoip     : "
 if test "$jvlib_cv_libjv"         = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 
 echo    "|___.* Database"
-echo -n "|   |--> ODBC      : "
+/bin/echo -n "|   |--> ODBC      : "
 if test "$odbc_cv_libodbc"        = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 
 echo    "|___.* Misc"
-echo -n "    |--> SSL       : "
+/bin/echo -n "    |--> SSL       : "
 if test "$openssl_cv_libssl"      = yes ; then echo "yes"; else echo "no"; fi
 echo ""

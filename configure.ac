@@ -101,10 +101,10 @@ if test "$libopenal_cv_libopenal" = yes ; then echo "yes"; else echo "no"; fi
 if test "$libalut_cv_libalut"     = yes ; then echo "yes"; else echo "no"; fi
 echo    "|   |__One group of:"
 /bin/echo -n "|   | |> Ogg,vorbis: "
-if test "$ogglib_cv_libogg"       = yes; then echo -n "yes,"; else echo -n "no,"; fi
+if test "$ogglib_cv_libogg"       = yes; then /bin/echo -n "yes,"; else echo -n "no,"; fi
 if test "$ogglib_cv_libvorbis"    = yes; then echo "yes"; else echo "no"; fi
 /bin/echo -n "|   | |> SDL,smpeg : "
-if test "$libsdl_cv_libsdl"       = yes; then echo -n "yes,"; else echo -n "no,"; fi
+if test "$libsdl_cv_libsdl"       = yes; then /bin/echo -n "yes,"; else echo -n "no,"; fi
 if test "$libsmpeg_cv_libsmpeg"   = yes ; then echo "yes"; else echo "no"; fi
 echo    "|"
 

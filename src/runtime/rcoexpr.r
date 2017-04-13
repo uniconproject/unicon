@@ -643,7 +643,7 @@ void coclean(struct b_coexpr *cp) {
 void makesem(struct b_coexpr *cp) {
    #ifdef NamedSemaphores		/* if cannot use unnamed semaphores */
       char name[50];
-      sprintf(name, "i%ld.sem", (long)getpid());
+      sprintf(name, "i%ld-%ld.sem", (long)getpid(), (long) cp->id);
       cp->semp = sem_open(name, O_CREAT, S_IRUSR | S_IWUSR, 0);
       if (cp->semp == (sem_t *)SEM_FAILED)
          handle_thread_error(errno, FUNC_SEM_OPEN, "make_sem():cannot create semaphore");

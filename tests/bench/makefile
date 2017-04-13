@@ -9,11 +9,10 @@
 CFLAGS=-s -c
 LDFLAGS=-s -DMAIN
 
-EXE=binary-trees chameneos-redux fannkuch fasta k-nucleotide		\
+EXE=binary-trees chameneos-redux fannkuch fasta k-nucleotide rsg	\
 	mandelbrot meteor-contest n-body pidigits reverse-complement	\
-	regex-dna spectral-norm thread-ring generate run-test		\
-	run-shootout run-benchmark run-med concord deal ipxref queens	\
-	rsg
+	regex-dna spectral-norm thread-ring concord deal ipxref queens	\
+	generate run-test run-shootout run-benchmark run-med 
 
 SRC=binary-trees.icn chameneos-redux.icn fannkuch.icn fasta.icn		\
 	k-nucleotide.icn mandelbrot.icn meteor-contest.icn		\
@@ -161,10 +160,10 @@ concord:
 concord.u:
 	unicon $(CFLAGS) concord.icn 
 
-deal: deal.icn
+deal: deal.icn shuffle.u
 	unicon $(LDFLAGS) deal.icn 
 
-deal.u: deal.icn
+deal.u: deal.icn shuffle.u
 	unicon $(CFLAGS) deal.icn 
 
 ipxref:

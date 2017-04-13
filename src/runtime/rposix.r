@@ -1971,15 +1971,19 @@ dptr d;
       StrLoc(*d) = strfree;
       StrLen(*d) = 0;
       for(;;) {
-	 int kk=0;
+	 int srv, kk=0;
 	 fd_set readset;
 	 struct timeval tv;
 	 FD_ZERO(&readset);
 	 FD_SET(fd, &readset);
 	 tv.tv_sec = tv.tv_usec = 0;
-	 if (select(fd+1, &readset, NULL, NULL, &tv) == 0) {
+	 if ((srv = select(fd+1, &readset, NULL, NULL, &tv)) == 0) {
  	    /* Nothing more is available */
 	    break;
+	    }
+	 else if (srv == -1) {
+	    set_syserrortext(errno);
+	    return 0;
 	    }
 
 	 /* Something is available: allocate another chunk */
@@ -2010,6 +2014,7 @@ tryagain:
 	    default:
 	       strtotal += bufsize;
 	       strfree = StrLoc(*d);
+	       set_errortext(214);
 	       return 0;
                }
 	    }

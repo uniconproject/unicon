@@ -63,10 +63,13 @@ SOCKET fd;
   
    if ((r=recv(fd, buf, maxi, MSG_PEEK))==SOCKET_ERROR) {
 #if NT
-      if(WSAGetLastError() == WSAESHUTDOWN)   
+      i = WSAGetLastError();
+      if (i == WSAESHUTDOWN)   
 	 return -1;
+      set_errortext(1040); /* could use i to do better */
+#else					/* NT */
+      set_syserrortext(errno);
 #endif					/* NT */
-      set_errortext(1040);
       return -3;
       }
    if (r == 0) return -1;
@@ -2116,8 +2119,7 @@ extern char **environ;
 char *
 __findenv(const char *name, int *offset);
 
-int
-getenv_r(const char *name, char *buf, size_t len)
+int getenv_r(const char *name, char *buf, size_t len)
 {
 	int offset;
 	char *result;

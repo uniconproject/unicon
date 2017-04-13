@@ -114,7 +114,7 @@ function{1} close(f)
 #ifdef ISQL
       if (BlkD(f,File)->status & Fs_ODBC) {
 	 BlkLoc(f)->File.status = 0;
-	 if (dbclose((struct ISQLFile *)fp)) fail;
+	 if (dbclose((struct ISQLFile *)fp)) fail; /* sets errornumber/text*/
 	 return C_integer 0;
 	 }
 #endif					/* ISQL */
@@ -250,8 +250,10 @@ function{0,1} getenv(s)
 	 Protect(p = alcstr(sbuf,l),runerr(0));
 	 return string(l,p);
 	 }
-      else 				/* fail if not in environment */
+      else {				/* fail if not in environment */
+	 set_syserrortext(errno);
 	 fail;
+	 }
       }
 end
 
@@ -1198,6 +1200,7 @@ function{0,1} read(f)
 		}
       	     INC_NARTHREADS_CONTROLLED;
 	     if (slen == -3) {
+	       /* sock_getstrg sets errornumber/text */
 		fail;
 	        }
 	     if (slen == 1 && *sbuf == '\n')
@@ -1284,7 +1287,7 @@ function{0,1} read(f)
 	       runerr(141);
 	    else if (slen == -2)
 	       runerr(143);
-	    else if (slen == -3)
+	    else if (slen == -3) /* EOF */
                fail;
 	    }
 	 else
@@ -1350,6 +1353,7 @@ function{0,1} read(f)
 	      if ((slen = ptgetstr(sbuf, MaxReadStr, (struct ptstruct *)fp, 0))
 		== -1){
       		 INC_NARTHREADS_CONTROLLED;
+		 set_errortext(214);
 		 fail;
 		 }
       	      INC_NARTHREADS_CONTROLLED;
@@ -1524,6 +1528,7 @@ function{0,1} reads(f,i)
       	 DEC_NARTHREADS;
 	 if ((slen = ptlongread(s, i, p)) == -1) {
       	    INC_NARTHREADS_CONTROLLED;
+	    set_errortext(214);
 	    fail;
 	    }
       	 INC_NARTHREADS_CONTROLLED;
@@ -1555,8 +1560,10 @@ function{0,1} reads(f,i)
 		        return s;
 		}
       	        INC_NARTHREADS_CONTROLLED;
-		if (slen == -3)
+		if (slen == -3) {
+		    /* sock_getstrg sets errortext */
 		    fail;
+		   }
 
 		if (slen > 0)
 		    bytesread += slen;
@@ -1633,16 +1640,16 @@ function{0,1} reads(f,i)
        * For ordinary files, reads -1 means the whole file.
        */
       if ((i == -1) && (status == (Fs_Read|Fs_Buff))) {
-	 if ((fd = fileno(fp)) == -1) fail;
-	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
+	 if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
+	 if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
 	 i = statbuf.st_size;
 	 }
       /*
        * For suspiciously large reads on normal files, cap at file size.
        */
       else if ((i >= 65535) && (status == (Fs_Read|Fs_Buff))) {
-	 if ((fd = fileno(fp)) == -1) fail;
-	 if ((kk = fstat(fd, &statbuf)) == -1) fail;
+	 if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
+	 if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
 	 if (i > statbuf.st_size) i = statbuf.st_size;
 	 }
       /*
@@ -1665,7 +1672,7 @@ function{0,1} reads(f,i)
 
 	 IntVal(amperErrno) = 0;
       	 DEC_NARTHREADS;
-	 if (u_read(fd, i, &s) == 0) {
+	 if (u_read(fd, i, &s) == 0) { /* EOF, or sets errortext */
       	    INC_NARTHREADS_CONTROLLED;
 	    fail;
 	    }

@@ -6,8 +6,8 @@
 # CFLAGS is universal for "compile flags"
 # LDFLAGS stands for "link flags"
 #
-CFLAGS=-c
-LDFLAGS=-DMAIN
+CFLAGS=-s -c
+LDFLAGS=-s -DMAIN
 
 EXE=binary-trees chameneos-redux fannkuch fasta k-nucleotide		\
 	mandelbrot meteor-contest n-body pidigits reverse-complement	\
@@ -39,31 +39,31 @@ input:
 	./generate
 
 generate: generate.u
-	unicon -o generate generate.u
+	unicon -s -o generate generate.u
 
 generate.u: generate.icn 
 	unicon $(CFLAGS) generate.icn
 
 run-test: run-test.u $(OBJ)
-	unicon -o run-test run-test.u auxiliary.u
+	unicon -s -o run-test run-test.u auxiliary.u
 
 run-test.u: run-test.icn 
 	unicon $(CFLAGS) run-test.icn 
 
 run-benchmark: run-benchmark.u $(OBJ)
-	unicon -o run-benchmark run-benchmark.u auxiliary.u
+	unicon -s -o run-benchmark run-benchmark.u auxiliary.u
 
 run-benchmark.u: run-benchmark.icn 
 	unicon $(CFLAGS) run-benchmark.icn 
 
 run-med: run-med.u $(OBJ)
-	unicon -o run-med run-med.u auxiliary.u
+	unicon -s -o run-med run-med.u auxiliary.u
 
 run-med.u: run-med.icn $(OBJ)
 	unicon $(CFLAGS) run-med.icn 
 
 run-shootout: run-shootout.u $(OBJ)
-	unicon -o run-shootout run-shootout.u auxiliary.u
+	unicon -s -o run-shootout run-shootout.u auxiliary.u
 
 run-shootout.u: run-shootout.icn 
 	unicon $(CFLAGS) run-shootout.icn

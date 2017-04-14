@@ -16,7 +16,7 @@ UFILES=gui.u file_dlg.u db.u \
  stringbuff.u \
  texthandler.u time.u timezone.u typehandler.u \
  undoableedit.u undomanager.u url.u webup.u \
- event.u md5.u httprequest.u httpresponse.u \
+ notification.u md5.u httprequest.u httpresponse.u \
  thread.u
 
 # COPYINS are library files copied in from other directories for

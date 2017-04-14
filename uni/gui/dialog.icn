@@ -513,7 +513,9 @@ $endif
 
       ww := WAttrib(self.win, "width")
       wh := WAttrib(self.win, "height")
-      cw := Clone(self.cwin, "bg=pale yellow", "font=sans,14", "fg=black")
+      if not (cw := Clone(self.cwin, "bg=pale yellow", "font=sans,14", "fg=black")) then
+	 # try again with default font
+	 if not (cw := Clone(self.cwin, "bg=pale yellow", "fg=black")) then fail
       fh := WAttrib(cw, "fheight")
 
       if find("\n", obj.tooltip) then multiline := 1

@@ -67,6 +67,21 @@ class UIDE : Dialog(
    ui_Preferences
    )
 
+   # as inherited from Dialog, except non-fatal if the requested font fails.
+   method open_win()
+      local i
+      if not (self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs))) then {
+	 every i := 1 to *self.attribs do if match("font=", self.attribs[i]) then {
+	    delete(self.attribs, i)
+	    if not (self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs))) then fatal("couldn't open window")
+	    else break # might need to do more here to indicate font setting was lost
+	    }
+	 }
+      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fatal("couldn't open window")
+      Raise(self.win)
+      return
+   end
+
    method component_setup()
       local error_msg := pre_ui_initialize()
       # most error messages are reported in a MsgBox, but this one is fatal

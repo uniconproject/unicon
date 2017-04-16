@@ -19,4 +19,7 @@ unidep$(EXE): $(UFILES)
 	$(UNICON) -o unidep $(UFILES)
 	$(CP) unidep$(EXE) $(BIN)
 
+%.u: %.icn
+	IPATH=../parser/ LPATH=../parser/ $(UNICON) $(UFLAGS) -c $<
+
 include deps.out

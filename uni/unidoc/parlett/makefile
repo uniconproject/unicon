@@ -19,4 +19,7 @@ unidoc$(EXE): $(UFILES)
 	$(UNICON) -o unidoc linkfiles.icn
 	$(CP) unidoc$(EXE) $(BIN)
 
+%.u: %.icn
+	IPATH=../../parser/ LPATH=../../parser/ $(UNICON) $(UFLAGS) -c $<
+
 include deps.out

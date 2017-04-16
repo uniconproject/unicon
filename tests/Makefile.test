@@ -7,7 +7,12 @@ TESTNAME=$(shell basename $(CWD))
 
 UC=unicon -s
 
-EXE="$(shell ls ../../bin/unicon* | grep -o .exe)"
+ifeq ($(OS),Windows_NT)
+    TOS := Windows
+    EXE=".exe"
+else
+    getTOS := $(shell uname -s)
+endif
 
 # Do the tests
 DoTest: clean TestHdr $(TARGETS)
@@ -33,6 +38,11 @@ local:
 $(SKIP):
 	-@echo "[Testing $@]... Skip"
 
+
+#skip on Mac OS
+$(MACOSSKIP):
+	-@echo "[Testing $@]... Skip on Mac OS"
+
 $(IGNORE):
 	-@$E -n "[Testing $@]... "
 	@$(UC) $@
@@ -43,6 +53,11 @@ $(IGNORE):
 	else echo "Ignored"; fi || true
 	-@rm $@$(EXE)
 
+#skip on Windows
+$(WINSKIP):
+	-@echo "[Testing $@]... Skip on Windows"
+
+# Compile and test, generate a short diff file if there are differences
 %: %.icn local %.dat %.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $<

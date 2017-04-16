@@ -4,6 +4,8 @@ MAKE=make
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 IGNORE=rusage
 
+WINSKIP=pty_uni tcp rusage
+
 # default is to run all tests, using icont
 Test:  DoTest
 

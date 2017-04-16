@@ -7,6 +7,8 @@ TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 # Do not include these tests in standard testing
 SKIP=mem01 mem02
 
+WINSKIP=cfuncs
+
 # Do the tests
 Test: DoTest
 

@@ -1339,7 +1339,7 @@ char *f(int region, word nbytes)
     */
 
 #ifdef Concurrent
-   fprintf(stderr, " !!! Low memory!! Trying all options !!!\n ");
+   //   fprintf(stderr, " !!! Low memory!! Trying all options !!!\n ");
    /* look in the public heaps, */
    SUSPEND_THREADS(); 
 
@@ -1350,7 +1350,7 @@ char *f(int region, word nbytes)
       p_publicheap = &public_blockregion;
 
    for (rp = *p_publicheap; rp; rp = rp->Tnext)
-      if (rp->size < want) {		/* if not collected earlier */
+      if (rp->size >= want) {		/* if not collected earlier */
          curr_private = swap2publicheap(curr_private, rp, p_publicheap);
          *pcurr = curr_private;
          collect(region);
@@ -1364,7 +1364,7 @@ char *f(int region, word nbytes)
    
 #else 					/* Concurrent */
    for (rp = curr_private; rp; rp = rp->prev)
-      if (rp->size < want) {		/* if not collected earlier */
+      if (rp->size >= want) {		/* if not collected earlier */
          *pcurr = rp;
          collect(region);
          if (DiffPtrs(rp->end,rp->free) >= want)

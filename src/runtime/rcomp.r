@@ -182,6 +182,15 @@ dptr dp1, dp2;
             return Equal;
          return ((lresult > 0) ? Greater : Less);
 
+      case T_Pattern:
+         /*
+          * Collate on pattern id.
+          */
+         lresult = (BlkD(*dp1,Pattern)->id - BlkD(*dp2,Pattern)->id);
+         if (lresult == 0)
+            return Equal;
+         return ((lresult > 0) ? Greater : Less);
+
       case T_External:
 	 /*
           * Collate these values according to the relative positions of
@@ -240,8 +249,10 @@ dptr dp;
 	 return 10;
       case T_Record:
 	 return 11;
-      case T_External:
+      case T_Pattern:
          return 12;
+      case T_External:
+         return 13;
       default:
 	 syserr("order: unknown datatype.");
 	 /*NOTREACHED*/

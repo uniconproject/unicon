@@ -4,6 +4,7 @@
 [Setup]
 AppName=Windows Unicon
 AppVerName=Windows Unicon Version 13.0
+VersionInfoVersion=13.0.0.0
 AppPublisher=Unicon Project
 AppPublisherURL=http://unicon.org
 AppSupportURL=http://unicon.org
@@ -11,7 +12,7 @@ AppUpdatesURL=http://unicon.org
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_13.0(64-bit)_rev5050
+OutputBaseFilename=setup-unicon_13.0(64-bit)_rev5080
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -24,6 +25,7 @@ WizardSmallImageFile=setupsmall.bmp
 
 ; This eliminates the need for restart for the new PATH to be effective
 ChangesEnvironment=yes
+ShowLanguageDialog=yes
 
 
 [Tasks]
@@ -141,6 +143,23 @@ Source: "\unicon\uni\3d\uniclass.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversi
 Source: "\unicon\uni\3d\viewer\*.icn"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "\unicon\uni\3d\viewer\makefile"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "\unicon\uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: ignoreversion
+
+; tests
+Source: "\unicon\tests\makefile"; DestDir: "{app}\tests"; Flags: ignoreversion
+Source: "\unicon\tests\makefile.test"; DestDir: "{app}\tests"; Flags: ignoreversion
+
+; general tests
+Source: "\unicon\tests\general\*.icn"; DestDir: "{app}\tests\general"; Flags: ignoreversion
+Source: "\unicon\tests\general\foo.baz"; DestDir: "{app}\tests\general"; Flags: ignoreversion
+Source: "\unicon\tests\general\stand\*.std"; DestDir: "{app}\tests\general"; Flags: ignoreversion
+Source: "\unicon\tests\general\README"; DestDir: "{app}\tests\general"; Flags: ignoreversion
+Source: "\unicon\tests\general\makefile"; DestDir: "{app}\tests\general"; Flags: ignoreversion
+
+; posix tests
+Source: "\unicon\tests\posix\*.icn"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
+Source: "\unicon\tests\posix\stand\*.std"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
+Source: "\unicon\tests\posix\makefile"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
+
 
 ; Thread tests
 Source: "\unicon\tests\thread\*.icn"; DestDir: "{app}\tests\thread"; Flags: ignoreversion

@@ -34,13 +34,13 @@ all: $(EXE) input
 
 build: $(EXE)
 
-input:
+input: generate
 	./generate
 
-generate: generate.u
+generate:  generate.u
 	unicon -s -o generate generate.u
 
-generate.u: generate.icn 
+generate.u: generate.icn binary-trees.u
 	unicon $(CFLAGS) generate.icn
 
 run-test: run-test.u $(OBJ)

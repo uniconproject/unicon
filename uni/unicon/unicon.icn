@@ -509,6 +509,16 @@ procedure unicon(argv)
                   return 0
                   }
                "-x"      : { exec := i; break } # exit the every loop
+	       #
+	       # Really, -e should redirect *our* stderr output, and then
+	       # tell the icont invocation to append its stderr output.
+	       #
+	       "-e"      : {
+		  if (i=1) | (argv[i-1]) ~=== "-e" then {
+		     icontopt ||:= "-e " || quotes(argv[i+1])
+		     argv[i+1] := "-e"
+		     }
+		  }
                "-o"      : {
                   if (i=1) | (argv[i-1] ~=== "-o") then {
                      exename := " -o " || quotes(argv[i+1]) || " "

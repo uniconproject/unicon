@@ -8,15 +8,25 @@ ifeq ($(DOG),$(GG))
 GUI=graphics
 endif
 
+.PHONY: all iyacc unicon lib xml gui
+
 all: nographics $(GUI)
 
-nographics:
+iyacc:
 	cd iyacc; $(MAKE)
+
+unicon: iyacc
 	cd unicon; $(MAKE)
+
+lib: unicon
 	cd lib; $(MAKE)
+
+xml:
+	cd xml; $(MAKE)
+
+nographics: lib xml
 	cd udb; $(MAKE)
 	cd udb; $(MAKE) tools
-	cd xml; $(MAKE)
 	cd progs; $(MAKE)
 	cd parser; $(MAKE)
 	cd unidep; $(MAKE)
@@ -24,9 +34,11 @@ nographics:
 	cd unidoc; $(MAKE)
 
 
-graphics:
+gui: nographics
 	cd gui; $(MAKE)
 	cd gui/ivib; $(MAKE)
+
+graphics: gui
 	cd ide; $(MAKE)
 	cd 3d; $(MAKE)
 

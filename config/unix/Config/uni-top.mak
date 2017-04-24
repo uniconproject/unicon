@@ -21,10 +21,10 @@ unicon: iyacc
 lib: unicon
 	cd lib; $(MAKE)
 
-xml:
+xml: lib
 	cd xml; $(MAKE)
 
-nographics: lib xml
+nographics: xml
 	cd udb; $(MAKE)
 	cd udb; $(MAKE) tools
 	cd progs; $(MAKE)

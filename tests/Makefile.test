@@ -11,7 +11,7 @@ ifeq ($(OS),Windows_NT)
     TOS := Windows
     EXE=".exe"
 else
-    getTOS := $(shell uname -s)
+    TOS := $(shell uname -s)
 endif
 
 # Do the tests
@@ -38,11 +38,6 @@ local:
 $(SKIP):
 	-@echo "[Testing $@]... Skip"
 
-
-#skip on Mac OS
-$(MACOSSKIP):
-	-@echo "[Testing $@]... Skip on Mac OS"
-
 $(IGNORE):
 	-@$E -n "[Testing $@]... "
 	@$(UC) $@
@@ -53,9 +48,21 @@ $(IGNORE):
 	else echo "Ignored"; fi || true
 	-@rm $@$(EXE)
 
+# special skip rules for different platforms
+ifeq ($(TOS),Windows)
 #skip on Windows
 $(WINSKIP):
 	-@echo "[Testing $@]... Skip on Windows"
+else
+ifeq ($(TOS),Darwin)
+#skip on Mac OS
+$(MACOSSKIP):
+	-@echo "[Testing $@]... Skip on Mac OS"
+else
+$(LINUXSKIP):
+
+endif
+endif
 
 # Compile and test, generate a short diff file if there are differences
 %: %.icn local %.dat %.std

@@ -891,9 +891,24 @@ function {1} Breakx(char_set)
       }
 end
 
-#begdef ConvertPatternArgumentInt(arg, bp, ptype)
-   type_case arg of{
-      pattern: {
+/*
+ * ConvertPatternArgumentInt() - macro for the bodies of integer-argument
+ * functions that construct patterns.
+ *
+ * The negint_ptype, if non-zero, means that there is a "reverse" pattern
+ * whose integer indices are interpreted as distance backward from the end,
+ * so if we have a negative literal, we might as well use the pattern for that.
+ * Since the integers values are more generally not known until pattern match
+ * time, the regular version of the pattern had better handle/interpret negative
+ * indices anyhow. Maybe this feels like overkill, it is just trying to utilize
+ * the pattern types that were translated over from the Ada.
+ */
+#begdef ConvertPatternArgumentInt(arg, ptype, negflag, negintptype)
+   abstract {
+      return pattern;
+      }
+   if is:pattern(arg) then body {
+         union block *bp;
 	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(arg);
 	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
 	 switch(pe->pcode){
@@ -902,7 +917,7 @@ end
 					      1, pe->parameter);
             EVVal(ptype ## _NP, E_PatCode);
 	    break;
-    }
+	    }
 	 case PC_Pred_Func:
 	 case PC_String_VF: {
 	    bp =  (union block *)pattern_make(0, &EOP,ptype ## _NF,
@@ -921,123 +936,46 @@ end
 	    runerr(128);
 	    }
 	    }
-	 }
-      default: {
-	 if (!cnv_int(&arg, &arg))
-	    runerr(102, arg);
+      return pattern(bp);
+      }
+   else if cnv:integer(arg) then body {
+      union block *bp;
+#if negflag
+      if (IntVal(arg) <= 0) {
+	 IntVal(arg) = -IntVal(arg);
+	 bp =  (union block *)pattern_make(0, &EOP, negintptype ## _Nat,1, arg);
+	 EVVal(negintptype ## _Nat, E_PatCode);
+         }
+      else
+#endif
+	 {
 	 bp =  (union block *)pattern_make(0, &EOP, ptype ## _Nat,1, arg);
-         EVVal(ptype ## _Nat, E_PatCode);
+	 EVVal(ptype ## _Nat, E_PatCode);
 	 }
-	 }
+      return pattern(bp);
+      }
+   else runerr(102, arg)
 #enddef
 
+
 function {1} Len(count)
-   abstract {
-      return pattern;
-      }
-   if is:pattern(count) then body {
-         union block *bp;
-	 struct b_pattern *pat = (struct b_pattern *)BlkLoc(count);
-	 tended struct b_pelem *pe = (struct b_pelem *)pat->pe;
-	 switch(pe->pcode){
-	 case PC_Rpat: {
-	    bp =  (union block *)pattern_make(0, &EOP,PC_Len_NP,
-					      1, pe->parameter);
-            EVVal(PC_Len_NP, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_Func:
-	 case PC_String_VF: {
-	    bp =  (union block *)pattern_make(0, &EOP,PC_Len_NF,
-					      1, pe->parameter);
-            EVVal(PC_Len_NF, E_PatCode);
-	    break;
-	    }
-	 case PC_Pred_MF:
-	 case PC_String_MF: {
-	    bp =  (union block *)pattern_make(0, &EOP,PC_Len_NMF,
-					      1, pe->parameter);
-            EVVal(PC_Len_NMF, E_PatCode);
-	    break;
-	    }
-	 default: {
-	    runerr(128);
-	    }
-	    }
-      return pattern(bp);
-      }
-   else if cnv:integer(count) then body {
-      union block *bp;
-      bp =  (union block *)pattern_make(0, &EOP, PC_Len_Nat,1, count);
-      EVVal(PC_Len_Nat, E_PatCode);
-      return pattern(bp);
-      }
-   else runerr(102, count)
+   ConvertPatternArgumentInt(count, PC_Len, 0, 0)
 end
 
 function {1} Pos(position)
-   abstract {
-      return pattern;
-      }
-   body {
-      union block *bp;
-      /*
-       * check if position is negative
-       */
-      if (is:integer(position) && (position.vword.integr < 1)) {
-         /* change position to a positive value and use RPos */
-         position.vword.integr = -position.vword.integr;
-         ConvertPatternArgumentInt(position,bp,PC_RPos);
-	 } 
-      else {
-         ConvertPatternArgumentInt(position,bp,PC_Pos);
-         }
-      return pattern(bp);
-      }
+   ConvertPatternArgumentInt(position, PC_Pos, 1, PC_RPos)
 end
 
 function {1} Rpos(position)
-   abstract {
-      return pattern;
-      }
-   body {
-      union block *bp;
-      ConvertPatternArgumentInt(position,bp,PC_RPos);
-      return pattern(bp);
-      }
+   ConvertPatternArgumentInt(position, PC_RPos, 0, 0)
 end
 
 function {1} Tab(count)
-   abstract {
-      return pattern;
-      }
-   body {
-      union block *bp;
-      /*
-       * check if count is negative
-       */
-      if (is:integer(count) && (count.vword.integr < 1)) {
-         /* change count to a positive value and use RTab */
-         count.vword.integr = -count.vword.integr;
-         ConvertPatternArgumentInt(count,bp,PC_RTab);
-	 }
-      else {
-         ConvertPatternArgumentInt(count,bp,PC_Tab);
-         }
-      return pattern(bp);
-      }
+   ConvertPatternArgumentInt(count, PC_Tab, 1, PC_RTab)
 end
 
 function {1} Rtab(count)
-   abstract {
-      return pattern;
-      }
-   /* don't cnv:int here, macro below does everything */
-   body {
-      union block *bp;
-      ConvertPatternArgumentInt(count,bp,PC_RTab);
-      return pattern(bp);
-      }
+   ConvertPatternArgumentInt(count, PC_RTab, 0, 0)
 end
 
 

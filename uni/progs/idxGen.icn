@@ -374,6 +374,7 @@ end
 #   (E|e)at(en||ing)    ->   Eaten, Eat, Eating, eaten, eat, eating
 #   science( |-)fiction ->   science fiction, science-fiction
 # etc.
+#   A malformed line results in "???"
 procedure Alt(s)
 	local prefix, alt, suffix
 	if /s then return "?"
@@ -545,7 +546,7 @@ procedure nextParagraph(p: paragraph)
 end
 
 #--------------------------------------------------------------------------------
-# index a file by looking for index terms and placing \index commands afterwards
+# index a file by looking for index terms and placing \index commands beforehand
 procedure postIndex(filename: string, waiter)
 	# waiter (if non null) is the id of the thread that is waiting for everyone
 	# to finish, if the index is being produced in parallel.
@@ -579,7 +580,7 @@ procedure postIndex(filename: string, waiter)
 
 	para := paragraph(entireFile(filename), list(), table(), set())
 
-	# analyse the file one paragraph at a time, placing index commands after each line
+	# analyse the file one paragraph at a time, placing index commands before each matching line
 	while nextParagraph(para) do {
 		if \para.words["%dump"] then {   # Output debugging info for this paragraph
 			delete(para.words, "%dump")  # note that %dump never normally occurs.
@@ -714,8 +715,8 @@ procedure postIndex(filename: string, waiter)
 			}
 		} 
 
-		# write the paragraph, one line at a time with any index terms before it
-
+		# write the paragraph, one line at a time with any index terms that match
+		# before the line containing the first matching word
 		lineno := 0
 		every line := !para.lines do {
 			lineno +:= 1
@@ -827,7 +828,7 @@ procedure usage(s)
 		  cmd,
 		  "",
 		  "Read in a file of index terms and annotate the files with",
-		  " \\index{ ...} commands after the lines that contain the terms.",
+		  " \\index{ ...} commands before the lines that contain the terms.",
 		  "",
 		  "   -Dir d      Place the indexed files in directory d.",
 		  "   -idxFile f  f is an xml file containing the indexing terms, one term per line.",

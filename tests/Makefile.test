@@ -25,9 +25,6 @@ DoTest: clean TestHdr $(TARGETS)
 # or standard output file, the following two
 # rule makes sure there are empty ones
 
-%.dat:
-	-@touch data/$@
-
 %.std:
 	-@touch stand/$@
 
@@ -65,10 +62,12 @@ endif
 endif
 
 # Compile and test, generate a short diff file if there are differences
-%: %.icn local %.dat %.std
+%: %.icn local %.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $<
-	-@./$@ < data/$@.dat  > local/$@.out 2>&1 || true
+	@if [ -f data/$@.dat ] ; then \
+	./$@ < data/$@.dat  > local/$@.out 2>&1; \
+	else ./$@ > local/$@.out 2>&1; fi || true
 	-@diff -wq stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \
 	else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true

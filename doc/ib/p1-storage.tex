@@ -1,5 +1,33 @@
 \chapter{Storage Management}
 
+\begin{quote}
+Editorial Note: As the capability of computer hardware has increased
+and the facilities provided by the underlying operating systems have
+changed, the implementation of storage management has undergone
+several major revisions since Icon V6 --- the version that was
+described by the original implementation book, from which this chapter
+is derived.
+
+Almost all of the detailed discussion of how garbage collection works
+that was presented in the original implementation book is still valid
+--- the exception being the alterations necessitated by the introduction
+of block pointers. What has changed is the big picture of how the
+different regions of memory are organized.
+
+It is a challenging (and perhaps impossible) task to present the
+material in a way that does not require a forward reference to matters
+that have not yet been discussed. This problem is exacerbated by our
+choice to present mostly Icon material in this part of the book,
+leaving Unicon specific material largely to Part 3. We have attempted
+to ameliorate this problem by first presenting a brief history of the
+implementation of storage management starting from Version 6.  Each of
+the following sections starts with the original (Icon V6)
+implementation followed by details of the current Icon implementation
+(V9.5) where it differs --- intermediate implementations are usually
+not discussed. Where necessary, forward references to Unicon specific
+topics are inserted.
+\end{quote}
+
 \textsc{Perspective}: The implementation of storage management must
 accommodate a wide range of allocation requirements.  At the same
 time, the implementation must provide generality and some compromise
@@ -72,6 +100,33 @@ Icon (Hanson 1980). The result is, of course, somewhat idiosyncratic,
 but it provides an interesting case study of a real storage-management
 system.
 
+\pagebreak[4]
+\noindent\textbf{A brief history of Icon's storage management}\\
+\nopagebreak[4]
+The main changes in the overall approach to storage management since
+version 6 have been in the treatment of the Allocated Storage region,
+which is discussed in section 11.1 below.
+
+\noindent
+\begin{xtabular}{l@{\hspace{1cm}}p{13cm}}
+Icon V6 & Allocated storage is a single contiguous memory extent that
+          may be expanded by using \texttt{sbrk()}\\
+Icon V7 & May be configured to use either the V6 allocation strategy
+          or may split the allocated storage into three fixed size
+          extents (static, string and block).\\
+Icon V8 & Introduction of pointers to replace most descriptors in
+          blocks.\\
+Icon V9 & Storage regions do not expand. Additional storage regions
+          are allocated if garbage collection fails to provide enough
+          free space to satisfy an allocation request. Storage regions
+          that are full may subsequently have space freed and be reused.\\
+{\color{blue}Unicon}
+        & {\color{blue}Follows the V9 approach with the addition that
+          each thread uses it's own string and block storage regions
+          for allocation. A thread that performs garbage collection
+          must first suspend every other thread before proceeding.}\\
+\end{xtabular}
+
 \section[11.1 Memory Layout]{11.1 Memory Layout}
 
 During the execution of an Icon program, memory is divided into
@@ -89,7 +144,12 @@ typically they have the following form:
 \end{picture}
 \end{center}
 
-This diagram is not drawn to scale; some regions are much larger than others.
+This diagram is not drawn to scale; some regions are much larger than
+others.
+
+In Icon V9 the regions are no longer contiguous; each is allocated
+seperately. The free space is managed by the underlying operating
+system rather than by the Icon runtime.
 
 
 \textbf{The Run-Time System}. The run-time system contains the
@@ -162,7 +222,7 @@ corresponding Icon source-language file. An icode file for a short
 program might be 1,000 bytes, while one for a large program (by Icon
 standards) might be 20,000 bytes.
 
-\textbf{Allocated Storage.} The space for data objects that are
+\textbf{Allocated Storage (Historical).} The space for data objects that are
 constructed at run time is provided in allocated storage regions. This
 portion of memory is divided into three parts:
 
@@ -214,7 +274,23 @@ these regions are increased at run time if necessary, but there is no
 provision for decreasing the size of a region once it has grown to a
 given size.
 
-\textbf{Free Space and the System Stack}. On computers with system
+\textbf{Allocated Storage (Current).}  In Icon V9 and Unicon, the
+string and block storage regions do not expand.  If a string or block
+region cannot satisfy a storage request after it has been garbage
+collected, a new region is allocated and the old region placed in a
+pool of available regions. Subsequently, as part of the processing to
+allocate new storage, if the current region cannot satisfy the request
+the pool is searched to see if there is an existing region that can
+satisfy the request. Only if no region can satisfy the request is a
+new region allocated (and the old region assigned to the pool).
+
+{\color{blue} Concurrent programs in Unicon do not share their string
+or block regions between threads (after this was found to be a
+performance problem because of the mutual exclusion involved). Instead
+each thread makes allocations from its own string or block region.
+}
+
+\textbf{Free Space and the System Stack (Historical)}. On computers with system
 stacks that grow downward, such as the VAX, the system stack grows
 toward the allocated storage region. Between the two regions is a
 region of free space into which the allocated storage region may grow
@@ -252,7 +328,7 @@ strategies.
 
 \subsection[11.2.1 The Static Region]{11.2.1 The Static Region}
 
-Data allocated in the static region is never moved, although it may be
+In Icon V6, data allocated in the static region is never moved, although it may be
 freed for reuse. Co-expression blocks are allocated in the static
 region, since their C stacks contain internal pointers that depend on
 both the computer and the C compiler and hence are difficult to
@@ -277,6 +353,10 @@ system calls \texttt{malloc()}, Icon's own routine handles the
 request. This means that the static region may contain space allocated
 for data other than co-expression blocks, although this normally is
 not the case.
+
+Icon V9 no longer allocates co-expression blocks in the static
+region. Storage for co-expression blocks is allocated
+directly using the system's \texttt{malloc()}.
 
 \subsection[11.2.2 Blocks]{11.2.2 Blocks}
 
@@ -309,7 +389,6 @@ pointer, \texttt{blkfree}, is incremented by \textit{n} and the
 previous value of the free pointer is returned as the location of the
 newly allocated block. This process is fast and free of the
 complexities of the free-list approach.
-
 
 Note that this technique really amounts to a free list with only one
 block. The problem of reclaiming fragmented space on the free list is
@@ -371,14 +450,26 @@ in the holes left by dead ones. This is done by compacting the
 allocated portion of these regions, relocating live objects toward the
 beginning of these regions and squeezing out dead objects. In turn,
 pointers to live objects have to be adjusted to correspond to their
-new locations. There are two phases in garbage collection:
+new locations. There are two phases in garbage collection
+{\color{blue} (four in Unicon)}:
 
 \liststyleLxii
 \begin{itemize}
+{\color{blue}
+\item
+  Suspension of all threads except the thread that wishes to perform a
+  garbage collection.
+}
 \item 
-\ \ Location of live objects and all the pointers to them.
+  Location of live objects and all the pointers to them.
 \item 
-\ \ Compaction of live objects and adjustment of the pointers to them.
+  Compaction of live objects and adjustment of the pointers to them.
+{\color{blue}
+\item
+  Re-enabling of suspended threads. This may cause further garbage
+  collections if a suspended thread's regions are ``nearly full'' ---
+  see chapter 30 in part 3 for details.
+}
 \end{itemize}
 
 ``Garbage collection'' is somewhat of a misnomer, since the process is
@@ -451,6 +542,12 @@ values of static identifiers
 saved values of map arguments
 \item 
 tended descriptors
+\item
+file and list values for graphics windows
+{\color{blue}
+\item
+(Unicon) per-thread values of keywords and the co-expression block
+associated with each thread (see Chapter 30 in part 3) }
 \end{itemize}
 
 The tended descriptors provide temporary storage for a run-time
@@ -1677,6 +1774,33 @@ linked list. Older, ``tenured'' regions are revisited, and garbage
 collected, prior to allocating new, larger regions. If an older region
 frees enough space, it is made the active region instead of allocating
 a new one.
+
+{\color{blue}
+Unicon takes advantage of multiple regions to implement the storage
+allocations made by threads efficiently.  Each thread has its own
+string and block region from which it makes allocations. This design
+avoids delays caused by mutual exclusion, which would be necessary if
+the threads shared a common string or block region.
+
+Note that the use of a dedicated per-thread region does not mean that
+a thread may perform a garbage collection whilst other threads are
+running. Although it is likely that most of the data in a thread's
+dedicated region has been allocated by the thread itself, because the
+regions can be swapped between threads (by a region becoming full,
+then being garbage collected and assigned to another thread) there is
+no guarantee that {\em all} of the allocations in a thread's dedicated
+region have been made by that thread.
+
+A thread that requires a garbage collection must first suspend all the
+other threads before proceeding, which it does by signalling to the
+runtime system that a collection is required: Each thread checks
+whether a garbage collection request has been made after every
+instruction. If so it suspends itself.
+
+Chapter 30 in Part 3 has more details of storage layout for
+multi-threaded programs and how garbage collection is coordinated
+when several threads are active.
+}
 
 \subsection[11.3.6 Storage Requirements during Garbage Collection]{11.3.6 Storage Requirements during Garbage Collection}
 

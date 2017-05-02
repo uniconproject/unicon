@@ -114,7 +114,7 @@ Window code. Other window systems have a definition comparable to
 Turning on any of the platform specific graphics
 \texttt{\#define} symbols turns on \texttt{Graphics} implicitly.
 
-\section[27.2 Structures Defined in graphics.h]{27.2 Structures Defined in graphics.h}
+\section[29.2 Structures Defined in graphics.h]{29.2 Structures Defined in graphics.h}
 
 The header file \texttt{graphics.h} defines a collection of C
 structures that contain pointers to other C structures from
@@ -130,6 +130,7 @@ a large set of resources, including pens, brushes, fonts and bitmaps.
 
 
 \bigskip
+\begin{center}{\color{red} Missing figure}\end{center}
 
 
 \bigskip
@@ -173,7 +174,7 @@ structure required by all X library calls to denote the connection to
 the X server.
 
 
-\section[27.3 Platform Macros and Coding Conventions]{27.3 Platform Macros and Coding Conventions}
+\section[29.3 Platform Macros and Coding Conventions]{29.3 Platform Macros and Coding Conventions}
 
 Since the above structure is many layers deep and sometimes confusing,
 Unicon's graphics interface routines employ coding conventions to
@@ -218,7 +219,7 @@ effort. In practice however it seems most window systems have redraw
 events even if they implement retained windows (for example, MGR
 [Uhler88]).
 
-\section[27.4 Window Manipulation in rxwin.ri and rmswin.ri]{27.4 Window Manipulation in rxwin.ri and rmswin.ri}
+\section[29.4 Window Manipulation in rxwin.ri and rmswin.ri]{29.4 Window Manipulation in rxwin.ri and rmswin.ri}
 
 The platform-dependent calls in the Unicon run-time system can be
 categorized into several major areas:
@@ -235,7 +236,7 @@ categorized into several major areas:
 \ Window and context attribute manipulation
 \end{itemize}
 
-\subsection[27.4.1 Window Creation and Destruction]{27.4.1 Window Creation and Destruction}
+\subsection[29.4.1 Window Creation and Destruction]{29.4.1 Window Creation and Destruction}
 
 A graphics window is created when the Unicon program calls
 \texttt{open()} with file attribute
@@ -255,7 +256,7 @@ to it. A closed window remains in memory until all Unicon values that
 refer to it are closed. A call to \texttt{unbind()} removes a binding
 without necessarily closing the window.
 
-\subsection[27.4.2 Event Processing]{27.4.2 Event Processing}
+\subsection[29.4.2 Event Processing]{29.4.2 Event Processing}
 
 The system software for each graphics platform has a huge number of
 different types of events. Unicon ignores most of them. Of the
@@ -311,14 +312,14 @@ but effective way to provide symbolic access
 requiring include files. Additional tables mapping strings to
 integers are found in the platform independent source files.
 
-\subsection[27.4.3 Resource Management]{27.4.3 Resource Management}
+\subsection[29.4.3 Resource Management]{29.4.3 Resource Management}
 
 One of the most important tasks performed by platform-specific
 graphics functions is the management of resources, both the on-screen
 resources (windows) and the drawing context elements used by the
 window system in performing output.
 
-\subsection[27.4.4 Memory Management and r*rsc.ri Files]{27.4.4 Memory Management and r*rsc.ri Files}
+\subsection[29.4.4 Memory Management and r*rsc.ri Files]{29.4.4 Memory Management and r*rsc.ri Files}
 
 Memory management for internal window structures is independent of
 Unicon's standard memory management system. Xlib memory is allocated
@@ -336,7 +337,7 @@ easily reached, not lost in the block region. The window interface
 structures are reference counted and freed when the reference count
 reaches 0.
 
-\subsection[27.4.5 Color Management]{27.4.5 Color Management}
+\subsection[29.4.5 Color Management]{29.4.5 Color Management}
 
 Managing colors under X Windows is painful. In particular, if the same
 color is allocated twice the color table entry is shared (which is
@@ -347,7 +348,7 @@ impossible to detect when a particular color is no longer being
 displayed, and so colors are only freed on window closure or when a
 window is cleared.
 
-\subsection[27.4.6 Font Management]{27.4.6 Font Management}
+\subsection[29.4.6 Font Management]{29.4.6 Font Management}
 
 Unicon supports a portable font name syntax. Since the available fonts
 on systems vary widely, {\textquotedbl}interesting{\textquotedbl} code
@@ -356,7 +357,7 @@ Each window system may need to include heuristics to pick an
 appropriate font in the font allocation routine in the window system's
 \texttt{r*.ri} file.
 
-\section[27.5 External Image Files and Formats]{27.5 External Image Files and Formats}
+\section[29.5 External Image Files and Formats]{29.5 External Image Files and Formats}
 
 Reading and writing window contents to external files is accomplished
 by the routines \texttt{loadimage()} and \texttt{dumpimage()},
@@ -374,7 +375,7 @@ independent of name. They are checked in system-independent code
 before platform-specific image reading code is invoked.
 
 
-\section[27.6 Implementation of 3D Facilities]{27.6 Implementation of 3D Facilities}
+\section[29.6 Implementation of 3D Facilities]{29.6 Implementation of 3D Facilities}
 
 In order to implement the 3D facilities, the Unicon runtime system was
 modified to support 2D and 3D windows. The Unicon runtime system is
@@ -382,7 +383,7 @@ written in a custom superset dialect of C called RTL [Walker94]. The
 3D facilities use the existing 2D facilities code for window creation
 and destruction, as well as handling keyboard and mouse input.
 
-\subsection[27.6.1 3D Facilities Requirements]{27.6.1 3D Facilities Requirements}
+\subsection[29.6.1 3D Facilities Requirements]{29.6.1 3D Facilities Requirements}
 
 OpenGL 1.2 or later must be present on the system in order for
 Unicon's 3D graphics facilities to work. A check for this is performed
@@ -401,7 +402,7 @@ needed to implement the list structure that is used to redraw a
 window. More information can be found on redrawing of windows in
 section 7.3.
 
-\subsection[27.6.2 Files]{27.6.2 Files}
+\subsection[29.6.2 Files]{29.6.2 Files}
 
 Several existing files contain extensions to support the Unicon 3D
 graphics facilities under \#ifdef Graphics3D, including data.r (new
@@ -412,7 +413,7 @@ graphics.h (new 3D fields in canvas and context structures). Also a
 new file, ropengl.ri was added that contains the C helper functions
 for functions in \texttt{fwindow.r, rxwin.ri}, and \texttt{rwindow.r}.
 
-\subsection[27.6.3 Redrawing Windows]{27.6.3 Redrawing Windows}
+\subsection[29.6.3 Redrawing Windows]{29.6.3 Redrawing Windows}
 
 In the 2D graphics facilities, events that require the redrawing of a
 window are handled by using a pixmap. Instead of using a pixmap, for
@@ -442,7 +443,7 @@ functions and attributes, every function or attribute available in the
 that functions and attributes that have no effect in the 3D graphics
 facilities are not placed in this list.
 
-\subsection[27.6.4 Textures]{27.6.4 Textures}
+\subsection[29.6.4 Textures]{29.6.4 Textures}
 
 In OpenGL, textures can be one, two, or three-dimensional and are
 represented as multi-dimensional arrays. In the Unicon 3D graphics
@@ -480,7 +481,7 @@ texture from the texture resources, possibly using up all texture
 resources. Future work might look into when to delete a texture an
 ways to check when the texture resources have been used up.
 
-\subsection[27.6.5 Texture Coordinates]{27.6.5 Texture Coordinates}
+\subsection[29.6.5 Texture Coordinates]{29.6.5 Texture Coordinates}
 
 The primitives as mentioned in previous sections are cubes, tori,
 cylinders, disks, partial disks, points, lines, polygons, spheres,
@@ -519,7 +520,7 @@ of the faces of a cube. In order to use these default coordinates, it
 is necessary to disable \texttt{GEN\_S} and \texttt{GEN\_T}, similar
 to glu objects.
 
-\section[27.7 Graphics Facilities Porting Reference]{27.7 Graphics Facilities Porting Reference}
+\section[29.7 Graphics Facilities Porting Reference]{29.7 Graphics Facilities Porting Reference}
 
 This section documents the window-system specific functions and macros
 that generally must be implemented in order to port Unicon's graphics
@@ -1624,7 +1625,7 @@ YTOROW(w, i)
 
 Return integer conversion from a 0-based pixel coordinate to text row.
 
-\section[27.8 The X Implementation]{27.8 The X Implementation}
+\section[29.8 The X Implementation]{29.8 The X Implementation}
 
 The reference implementation of Unicon's graphics facilities is
 written in terms of Xlib, the lower-level X Window C interface
@@ -1649,7 +1650,7 @@ analogous to the built-in X black-and-white bitmap routines. In
 addition to the image formats native to each platform, Unicon also
 supports GIF and JPEG as portable image file formats.
 
-\section[27.9 The MS Windows Implementation]{27.9 The MS Windows Implementation}
+\section[29.9 The MS Windows Implementation]{29.9 The MS Windows Implementation}
 
 The Microsoft Windows implementation of Unicon is written using Win32,
 the lower-level 32-bit Windows API. It does not use the Microsoft
@@ -1657,7 +1658,7 @@ Foundation Classes. This makes it easier to build with different C
 compilers, and easier to port to different Windows implementations,
 such as Windows CE.
 
-\subsection[27.9.1 Installing, Configuring, and Compiling the Source Code]{27.9.1 Installing, Configuring, and Compiling the Source Code}
+\subsection[29.9.1 Installing, Configuring, and Compiling the Source Code]{29.9.1 Installing, Configuring, and Compiling the Source Code}
 
 Building Unicon for Windows requires Mingw32 GCC. We hope to add
 Cygwin GCC support in the future. The sources may also build with

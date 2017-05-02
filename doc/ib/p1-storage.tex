@@ -1789,7 +1789,9 @@ dedicated region has been allocated by the thread itself, because the
 regions can be swapped between threads (by a region becoming full,
 then being garbage collected and assigned to another thread) there is
 no guarantee that {\em all} of the allocations in a thread's dedicated
-region have been made by that thread.
+region have been made by that thread. Furthermore, threads may pass references
+to each other's data strcutures which makes it necessary to suspend all
+threads to sweep across all regions and update any shared references.
 
 A thread that requires a garbage collection must first suspend all the
 other threads before proceeding, which it does by signalling to the

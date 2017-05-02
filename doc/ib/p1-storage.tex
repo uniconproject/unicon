@@ -1,31 +1,10 @@
 \chapter{Storage Management}
 
 \begin{quote}
-Editorial Note: As the capability of computer hardware has increased
-and the facilities provided by the underlying operating systems have
-changed, the implementation of storage management has undergone
-several major revisions since Icon V6 --- the version that was
-described by the original implementation book, from which this chapter
-is derived.
-
-Almost all of the detailed discussion of how garbage collection works
-that was presented in the original implementation book is still valid
---- the exception being the alterations necessitated by the introduction
-of block pointers. What has changed is the big picture of how the
-different regions of memory are organized.
-
-It is a challenging (and perhaps impossible) task to present the
-material in a way that does not require a forward reference to matters
-that have not yet been discussed. This problem is exacerbated by our
-choice to present mostly Icon material in this part of the book,
-leaving Unicon specific material largely to Part 3. We have attempted
-to ameliorate this problem by first presenting a brief history of the
-implementation of storage management starting from Version 6.  Each of
-the following sections starts with the original (Icon V6)
-implementation followed by details of the current Icon implementation
-(V9.5) where it differs --- intermediate implementations are usually
-not discussed. Where necessary, forward references to Unicon specific
-topics are inserted.
+Editorial Note: the implementation of storage management has transformed
+over time as computer hardware capabilities have changed. Despite this,
+the main principles of Icon and Unicon's garbage collector are
+unmodified after several decades.
 \end{quote}
 
 \textsc{Perspective}: The implementation of storage management must
@@ -100,39 +79,57 @@ Icon (Hanson 1980). The result is, of course, somewhat idiosyncratic,
 but it provides an interesting case study of a real storage-management
 system.
 
-\pagebreak[4]
+%\pagebreak[4]
 \noindent\textbf{A brief history of Icon's storage management}\\
-\nopagebreak[4]
+%\nopagebreak[4]
 The main changes in the overall approach to storage management since
-version 6 have been in the treatment of the Allocated Storage region,
-which is discussed in section 11.1 below.
+version 6 have been in the treatment of the Allocated Storage areas,
+which is discussed in section 11.1 below. Since different programs
+have different memory usage patterns, the main issues have always
+been: how much memory to set aside, and when, for the different uses
+of allocated memory.
 
 \noindent
 \begin{xtabular}{l@{\hspace{1cm}}p{13cm}}
-Icon V6 & Allocated storage is a single contiguous memory extent that
-          may be expanded by using \texttt{sbrk()}\\
-Icon V7 & May be configured to use either the V6 allocation strategy
-          or may split the allocated storage into three fixed size
+Icon V6 & Originally, Icon expected to control all memory itself.
+	  Allocated storage was a single contiguous memory extent. On
+	  some systems, it could be expanded using the UNIX
+	  \texttt{sbrk()} system call.\\
+Icon V7 & In order to port Icon widely, an alternative that did not
+	  depend on \texttt{sbrk()} was developed in which
+          the allocated storage was split into three fixed size
           extents (static, string and block).\\
-Icon V8 & Introduction of pointers to replace most descriptors in
-          blocks.\\
-Icon V9 & Storage regions do not expand. Additional storage regions
+Icon V8 & The Icon compiler iconc introduced improvements to storage handling.
+	  Internally, pointers replace many descriptors in blocks, saving space.
+	  The process of registering tended variables with the garbage
+	  collector becomes organized and gains syntactic support via RTL.
+	  For the sake of systems like MS-DOS, which had 64K
+	  allocation limits, multiple string or block storage regions
           are allocated if garbage collection fails to provide enough
           free space to satisfy an allocation request. Storage regions
-          that are full may subsequently have space freed and be reused.\\
+          that are full may subsequently have space freed and be reused.
+\\
+Icon V9 & By this point, \texttt{sbrk()} is abandoned and multiple,
+	  fixed regions are standard. \\
 {\color{blue}Unicon}
-        & {\color{blue}Follows the V9 approach with the addition that
-          each thread uses it's own string and block storage regions
+        & {\color{blue}
+          Each thread uses its own string and block storage regions
           for allocation. A thread that performs garbage collection
           must first suspend every other thread before proceeding.}\\
 \end{xtabular}
 
 \section[11.1 Memory Layout]{11.1 Memory Layout}
 
-During the execution of an Icon program, memory is divided into
-several regions. The sizes and locations of these regions are somewhat
-dependent on computer architecture and the operating system used, but
-typically they have the following form:
+During the execution of an Icon program, memory is logically divided
+into several areas based on how the memory is used. The word
+``region'' may generically refer to the different sections in the
+diagram; in the implementation, it is used more specifically to refer
+to individually-allocated chunks of memory within the allocated
+storage area.
+
+The sizes and locations of memory regions are dependent on computer
+architecture and the operating system used, but typically they have
+the following form:
 \begin{center}
 \begin{picture}(300,200)
 %\put(0,0){\graphpaper{30}{20}}
@@ -145,22 +142,21 @@ typically they have the following form:
 \end{center}
 
 This diagram is not drawn to scale; some regions are much larger than
-others.
-
-In Icon V9 the regions are no longer contiguous; each is allocated
-seperately. The free space is managed by the underlying operating
-system rather than by the Icon runtime.
+others.  It is also an abstraction; the regions might or might not be
+contiguous, and each is allocated seperately. The free space is
+managed by the underlying operating system rather than by the Icon runtime.
 
 
 \textbf{The Run-Time System}. The run-time system contains the
 executable code for the interpreter, built-in operators and functions,
 support routines, and so forth. It also contains static storage for
 some Icon strings and blocks that appear in C functions.
-%% [DonW] Provide another example?
-%%For example, the blocks for keyword trapped variables are statically
-%%allocated in the data area of the run-time system.
-Such blocks never move, but their contents may change. The size of the
-run-time system is machine-dependent.
+For example, runtime/data.r contains statically-allocated blocks for
+many runtime system entities such as built-in csets.
+Such blocks never move, but in some cases their contents may change.
+{\color{blue}In Unicon, most non-constant data that was global in Icon
+has been moved into a per-program or per-thread structure.}
+The size of the run-time system is machine-dependent.
 
 \textbf{The Icode Region}. One of the first things done by the
 run-time system is to read in the icode file for the program that is
@@ -217,26 +213,30 @@ once in the string section of the icode region.
 Data in the icode region is never moved, although some components of
 it may change at run time. The size of the icode region depends
 primarily on the size of the corresponding source program. As a rule
-of thumb, an icode region is approximately twice as large as the
-corresponding Icon source-language file. An icode file for a short
-program might be 1,000 bytes, while one for a large program (by Icon
-standards) might be 20,000 bytes.
+of thumb, an icode region is approximately 2-4x as large as the
+corresponding Icon source-language file.
 
-\textbf{Allocated Storage (Historical).} The space for data objects that are
-constructed at run time is provided in allocated storage regions. This
-portion of memory is divided into three parts:
 
-\begin{center}
-\begin{picture}(300,120)
-%\put(0,0){\graphpaper{30}{12}}
-\put(60,80){\framebox(180,40){\sffamily\bfseries static region}}
-\put(60,40){\framebox(180,40){\sffamily\bfseries string region}}
-\put(60,0){\framebox(180,40){\sffamily\bfseries block region}}
-\end{picture}
-\end{center}
+\textbf{Allocated Storage.} The space for data objects that are
+constructed at run time is provided in allocated storage regions.
+Historically this portion of memory consisted of three parts: a
+static region, a string region, and a block region.
 
-The static region contains co-expression blocks. The remainder of the
-allocated storage region is divided into strings and blocks as
+%\begin{center}
+%\begin{picture}(300,120)
+%%\put(0,0){\graphpaper{30}{12}}
+%\put(60,80){\framebox(180,40){\sffamily\bfseries static region}}
+%\put(60,40){\framebox(180,40){\sffamily\bfseries string region}}
+%\put(60,0){\framebox(180,40){\sffamily\bfseries block region}}
+%\end{picture}
+%\end{center}
+
+The static region was originally just for co-expression blocks.
+Once expandable regions via \texttt{sbrk()} were retired, the
+management of static region(s) was returned to the C library,
+using standard functions such as \texttt{malloc()} and \texttt{free()}.
+
+The remaining allocated storage regions are divided into strings and blocks as
 shown. The string region contains only characters. The block region,
 on the other hand, contains pointers. This leads to a number of
 differences in allocation and garbage-collection techniques in
@@ -249,69 +249,51 @@ may be moved in order to enlarge the string region.
 
 The initial sizes of the allocated storage regions vary considerably
 from computer to computer, depending on the size of the user address
-space. On a computer with a small address space, such as the PDP-ll,
-Icon was implemented with region sizes as small as:
+space. In Icon, initial sizes of 500,000 bytes or 2,000,000 bytes per
+region are common. {\color{blue}Unicon allocates a percentage of
+available memory for each string and block region.} The user may
+establish different initial sizes prior to program execution by using
+environment variables STRSIZE and BLKSIZE. As indicated previously,
+new larger regions are allocated at run time if necessary, but there
+is no provision for decreasing the size of a region once it has been
+allocated a given size.
 
-% [DonW] LaTeX is not completely happy(tm) when \index commands are
-% mixed up with \hline commands
-\begin{noIndex}
-\begin{tabular}{l@{\hspace{1cm}}l@{\hspace{1cm}}l}
-static region: & 4,096 bytes & (2,048 words)\\
-string region: & 10,240 bytes & (5,120 words)\\
-block region: & 10,240 bytes & (5,120 words)\\
-\hline
-total: & 24,576 bytes & (12,288 words)\\
-\end{tabular}
-\end{noIndex}
-\bigskip
-
-On modern machines, initial sizes of 500,000 bytes or 2,000,000 bytes
-per region are common. Unicon allocates 1\% of physical memory for
-each of the string and block region. The user may establish different
-initial sizes prior to program execution by using environment
-variables STRSIZE and BLKSIZE. As indicated previously, the sizes of
-these regions are increased at run time if necessary, but there is no
-provision for decreasing the size of a region once it has grown to a
-given size.
-
-\textbf{Allocated Storage (Current).}  In Icon V9 and Unicon, the
-string and block storage regions do not expand.  If a string or block
-region cannot satisfy a storage request after it has been garbage
-collected, a new region is allocated and the old region placed in a
-pool of available regions. Subsequently, as part of the processing to
-allocate new storage, if the current region cannot satisfy the request
-the pool is searched to see if there is an existing region that can
-satisfy the request. Only if no region can satisfy the request is a
-new region allocated (and the old region assigned to the pool).
+If a string or block region cannot satisfy a storage request after it
+has been garbage collected, a new region is allocated and the old
+region placed in a pool of available regions. Subsequently, as part of
+the processing to allocate new storage, if the current region cannot
+satisfy the request the pool is searched to see if there is an
+existing region that can satisfy the request. Only if no region can
+satisfy the request is a new region allocated (and the old region
+assigned to the pool).
 
 {\color{blue}
-Concurrent programs in Unicon do not make allocations from common string
-or block regions shared between threads (after this was found to be a
-performance problem because of the mutual exclusion involved). Instead
-each thread makes allocations from its own string or block region.
+In concurrent Unicon programs, each thread allocates from its own string and block regions.
 }
 
-\textbf{Free Space and the System Stack (Historical)}. On computers with system
-stacks that grow downward, such as the VAX, the system stack grows
-toward the allocated storage region. Between the two regions is a
-region of free space into which the allocated storage region may grow
-upward. Excessive recursion in C may cause collision of the system
-stack and the allocated storage region. This is an unrecoverable
-condition, and the result is termination of program execution.
-Similarly, more space may be needed for allocated storage than is
-available. This also results in termination of program execution. In
-practice, the actual situation depends to a large extent on the size
-of the user address space, which is the total amount of memory that is
-available for all the regions shown previously. On a computer with a
-small user address space, such as the PDP-11, the amount of memory
-available for allocated storage is a limiting factor for some
-programs. Furthermore, collision of the allocated storage region and
-the system stack is a serious problem. On a computer that supports a
-large virtual memory, the size of the system stack is deliberately
-limited, since the the total amount of memory available is so large
-that runaway recursion would consume enormous resources before a
-collision occurred between the system stack and the allocated storage
-region.
+\textbf{Free Space and the Stacks}.  It was originally intended that
+the ``free space'' depicted in the diagram at the top of this section
+would be managed by the Icon runtime system, cleverly sharing this
+memory between the allocated storage (heaps) and system stack as
+needed. Some programs might use more structures, while others might
+employ algorithms that were stack-heavy.
+
+In fact, the implementation of Icon was never this simple. The system
+stack grew downwards on some systems and upwards on others, and there
+was also an interpreter stack. After the introduction of multiple
+regions, the notion of ``free space'' was given up (or assumed to be
+managed by the C library and/or operating system) and Icon and Unicon
+more or less came to accept a massively fragmented memory model. New
+heaps can be allocated as needed, but all stacks (except the system
+stack, also called the C stack) had better be big enough up front.
+
+System stacks may be limited in size by the operating system, although on
+some systems the program can request increases and on other systems
+the size is very large. Besides the possibility of a heavily recursive
+Icon or Unicon algorithm needing a very large stack, the implementor
+must also recognize that the garbage collection algorithm is
+recursive, and given large enough structures, it will trigger stack
+overflows and machine crashes.
 
 \section[11.2 Allocation]{11.2 Allocation}
 
@@ -329,16 +311,18 @@ strategies.
 
 \subsection[11.2.1 The Static Region]{11.2.1 The Static Region}
 
-In Icon V6, data allocated in the static region is never moved, although it may be
-freed for reuse. Co-expression blocks are allocated in the static
-region, since their C stacks contain internal pointers that depend on
-both the computer and the C compiler and hence are difficult to
-relocate to another place in memory. Furthermore, since co-expression
-blocks are all the same size, it is economical and simple to free and
-reuse their space.
+The ``static region'' is now a logical rather than physical
+designation, denoting potentially many discontiguous blocks of memory.
+The term refers generically to data that not managed or moved
+by the garbage collector. This memory is managed by the C library
+using its usual semantics.
 
+For example, co-expression blocks are allocated in the static
+region. Their C stacks contain internal pointers that depend on
+both the computer and the C compiler and hence are difficult to
+relocate to another place in memory.
 The C library routines \texttt{malloc()} and \texttt{free()} are used
-to allocate and free co-expression blocks in the static region. These
+to allocate and free co-expression blocks. These
 routines maintain a list of blocks of free space. The routine
 \texttt{malloc()} finds a block of the requested size, dividing a
 larger block if necessary, and revises the free list accordingly. The
@@ -346,18 +330,6 @@ routine \texttt{free()} returns the freed space to the free list,
 coalescing it with adjacent free blocks if possible. See Kernighan and
 Ritchie 1978 for a discussion of free-list allocation.
 
-Icon contains its own version of these routines to assure that space
-is allocated in its own static region and to allow its overall memory
-region to be expanded without conflict with other users of
-\texttt{malloc()}. Thus, if a user extension to Icon or the operating
-system calls \texttt{malloc()}, Icon's own routine handles the
-request. This means that the static region may contain space allocated
-for data other than co-expression blocks, although this normally is
-not the case.
-
-Icon V9 no longer allocates co-expression blocks in the static
-region. Storage for co-expression blocks is allocated
-directly using the system's \texttt{malloc()}.
 
 \subsection[11.2.2 Blocks]{11.2.2 Blocks}
 
@@ -494,7 +466,7 @@ must be preserved by garbage collection. On the other hand, in
 \end{iconcode}
 
 \noindent after the execution of the second assignment, the first list
-assigned to a is inaccessible and can be collected.
+assigned to \texttt{a} is inaccessible and can be collected.
 
 It is essential to save any object that may be accessed, but there is
 no way, in general, to know if a specific object \textit{will} be
@@ -616,7 +588,7 @@ pointers point to all the qualifiers whose v-word must be adjusted
 when the strings they point to are moved during the compaction of
 string region. See Sec. 11.3.3.
 
-\textbf{Blocks. }The location phase for blocks is more complicated
+\textbf{Blocks.} The location phase for blocks is more complicated
 than that for strings, since blocks may contain block pointers to
 other blocks as well as descriptors that either point to strings or
 point to other blocks.  The objects that these pointers and

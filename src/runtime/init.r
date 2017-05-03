@@ -871,9 +871,9 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || TURBO || ZTC_386 || SCCX_MX
+#if MICROSOFT || TURBO || SCCX_MX
    signal(SIGFPE, SigFncCast fpetrap);
-#endif					/* MICROSOFT || TURBO || ZTC_386 || SCCX_MX */
+#endif					/* MICROSOFT || TURBO || SCCX_MX */
 #endif					/* MSDOS */
 
 #if UNIX || VMS

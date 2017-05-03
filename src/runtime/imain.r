@@ -10,7 +10,7 @@
 #include "../h/opdefs.h"
 
 #if MSDOS || OS2
-#if !HIGHC_386 && !ZTC_386 && !INTEL_386 && !WATCOM && !BORLAND_386 && !SCCX_MX
+#if !HIGHC_386 && !INTEL_386 && !WATCOM && !BORLAND_386 && !SCCX_MX
    static union {
       pointer stkadr;
       word stkint;

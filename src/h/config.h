@@ -585,10 +585,6 @@ Deliberate Syntax Error
       #define WATCOM 0
    #endif				/* WATCOM */
 
-   #ifndef ZTC_386
-      #define ZTC_386 0
-   #endif				/* ZTC_386 */
-
    #ifndef NT
       #define NT 0
    #endif				/* NT */

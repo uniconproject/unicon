@@ -608,7 +608,7 @@ Deliberate Syntax Error
 #if MICROSOFT || TURBO || BORLAND_286 || BORLAND_386
       execvp(ofile,argv);
 #endif					/* MICROSOFT || ... */
-#if HIGHC_386 || INTEL_386 || ZTC_386 || WATCOM
+#if HIGHC_386 || INTEL_386 || WATCOM
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif					/* HIGHC_386 || ... */

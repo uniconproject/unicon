@@ -145,12 +145,6 @@ extern char *optarg;		/* argument associated with option */
 unsigned _stklen = 30000;
 #endif					/* TURBO */
 
-#if ZTC_386
-#ifndef DOS386
-int _stack = 32 * 1024;		/* need large stack	*/
-#endif				/* DOS386 */
-#endif				/* ZTC_386 */
-
 #ifdef ConsoleWindow
 int ConsolePause = 1;
 #endif					/* ConsoleWindow */

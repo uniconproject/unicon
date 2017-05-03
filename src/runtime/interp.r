@@ -10,7 +10,7 @@ extern fptr fncentry[];
 extern word istart[4]; extern int mterm;
 
 #if MSDOS || OS2
-#if !HIGHC_386 && !ZTC_386 && !INTEL_386 && !WATCOM && !BORLAND_386 && !SCCX_MX
+#if !HIGHC_386 && !INTEL_386 && !WATCOM && !BORLAND_386 && !SCCX_MX
    static union {
       pointer stkadr;
       word stkint;
@@ -368,14 +368,14 @@ Deliberate Syntax Error
 #endif					/* AMIGA || ARM || ... */
 
 #if MSDOS || OS2
-#if HIGHC_386 || ZTC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
+#if HIGHC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
 #define PushAVal(x) PushVal(x)
-#else					/* HIGHC_386 || ZTC_386 || ... */
+#else					/* HIGHC_386 || ... */
 #define PushAVal(x) {rsp++; \
 		       stkword.stkadr = (char *)(x); \
 		       *rsp = stkword.stkint; \
 		       }
-#endif					/* HIGH_386 || ZTC_386 || ... */
+#endif					/* HIGHC_386 || ... */
 #endif					/* MSDOS || OS2 */
 
 /*

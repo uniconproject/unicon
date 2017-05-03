@@ -798,14 +798,14 @@
    #endif				/* AMIGA || ARM || ATARI_ST ... */
    
    #if MSDOS || OS2
-      #if HIGHC_386 || ZTC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
+      #if HIGHC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
          #define PushAVal(x) PushVal(x)
-      #else				/* HIGHC_386 || ZTC_386 || ... */
+      #else				/* HIGHC_386 || ... */
          
          #define PushAVal(x)  {sp++; \
          			stkword.stkadr = (char *)(x); \
          			*sp = stkword.stkint;}
-      #endif				/* HIGHC_386 || ZTC_386 || ... */
+      #endif				/* HIGHC_386 || ... */
    #endif				/* MSDOS || OS2 */
    
    /*

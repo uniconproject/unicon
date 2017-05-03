@@ -33,13 +33,6 @@ static char *options =
 [-A(S|C|M|L|H)] [-Za] [-J] [files]";
 #endif					/* MICROSOFT || INTEL_386 || ...  */
 
-#if ZTC_386 
-static char *ostr = "CPD:I:U:o:m:AuJWf234";
-static char *options = 
-   "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath[;path...]] [-ofile]\n    \
-[-m(t|s|c|m|l|v|r|p|x|z)] [-A] [-u] [-J] [-W] [-f] [-(2|3|4)] [files]";
-#endif					/* ZTC_386 */
-
 #if TURBO || BORLAND_286 || BORLAND_386 
 static char *ostr = "CPD:I:U:o:m:p";
 static char *options = 
@@ -137,18 +130,6 @@ Deliberate Syntax Error
          case 'J':
          case 'Z':
 #endif					/* MICROSOFT */
-
-#if ZTC_386
-         case 'm':
-         case 'A':
-         case 'u':
-         case 'J':
-         case 'W':
-         case 'f':
-         case '2':
-         case '3':
-         case '4':
-#endif					/* ZTC_386 */
 
 #if TURBO || BORLAND_286 || BORLAND_386 
          case 'm':

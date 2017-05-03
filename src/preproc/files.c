@@ -33,7 +33,7 @@ char *FileNameMacConvert(char *(*func)(char *),char *fn);
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || INTEL_386 || HIGHC_386 || ZTC_386 || WATCOM
+#if MICROSOFT || INTEL_386 || HIGHC_386 || WATCOM
    /* nothing is needed */
 #endif					/* MICROSOFT || INTEL_386 || ... */
 #if TURBO || BORLAND_286 || BORLAND_386
@@ -391,56 +391,6 @@ Deliberate Syntax Error
       }
 #endif					/* MICROSOFT || NT */
 
-#if ZTC_386
-   char *syspath;
-   char *cl_var;
-   char *incl_var;
-   
-   incl_var = getenv("INCLUDE");
-   cl_var = getenv("CFLAGS");
-   n_paths = 0;
-
-   /*
-    * Check the CFLAGS environment variable for -I options.
-    */
-   if (cl_var != NULL) {
-      s = cl_var;
-      while (*s != '\0') {
-         if (*s == '/' || *s == '-') {
-            ++s;
-            if (*s == 'I') {
-               ++n_paths;
-               ++s;
-               while (*s == ' ' || *s == '\t')
-                  ++s;
-               while (*s != ' ' && *s != '\t' && *s != '\0') {
-                  if (*s == ';')
-                  	++n_paths;
-                  ++s;
-                  }
-               }
-            }
-         if (*s != '\0')
-            ++s;
-         }
-      }
-
-   /*
-    * Check the INCLUDE environment variable for standard places to
-    *  search.
-    */
-   if (incl_var == NULL)
-      syspath = "";
-   else {
-      syspath = (char *)strdup(incl_var);
-      if (*incl_var != '\0')
-         ++n_paths;
-      while (*incl_var != '\0')
-         if (*incl_var++ == ';' && *incl_var != '\0')
-            ++n_paths;
-      }
-#endif					/* ZTC_386 */
-
 #if TURBO || BORLAND_286 || BORLAND_386
     char *cfg_fname;
     FILE *cfg_file = NULL;
@@ -547,48 +497,6 @@ Deliberate Syntax Error
             ++cl_var;
          }
 #endif					/* MICROSOFT */
-
-#if ZTC_386
-   /*
-    * Get locations from -I options from the CL environment variable.
-    * Each -I may have multiple options separated by semi-colons.
-    */
-   if (cl_var != NULL)
-      while (*cl_var != '\0') {
-         if (*cl_var == '/' || *cl_var == '-') {
-            ++cl_var;
-            if (*cl_var == 'I') {
-                  ++cl_var;
-                  while (*cl_var == ' ' || *cl_var == '\t')
-                     ++cl_var;
-                  i = 0;
-                  while (cl_var[i] != ' ' && cl_var[i] != '\t' &&
-                    cl_var[i] != '\0') {
-                     while (cl_var[i] != ' ' && cl_var[i] != '\t' &&
-                       cl_var[i] != ';' && cl_var[i] != '\0')
-                        ++i;
-                     s1 = (char *) alloc((unsigned int)(i + 1));
-                     strncpy(s1, cl_var, i);
-                     s1[i] = '\0';
-                     /*
-                      * Convert back slashes to slashes for internal consistency.
-                      */
-                     for (s = s1; *s != '\0'; ++s)
-                        if (*s == '\\')
-                           *s = '/';
-                     incl_search[j++] = s1;
-                     if (cl_var[i] == ';') {
-		                 cl_var += (i + 1);
-		                 i = 0;
-		                 }
-                     }
-                  cl_var += i;
-               }
-            }
-         if (*cl_var != '\0')
-            ++cl_var;
-         }
-#endif					/* ZTC_386 */
 
 #if HIGHC_386 || INTEL_386 || WATCOM
    /* something is needed */

@@ -50,11 +50,7 @@ Global char *patharg	Init(0);	/* -p: path for finding iconx */
 #endif					/* ATARI_ST */
 
 #if MSDOS
-#if ZTC_386
-Global int makeExe	Init(0);	/* -I: create .icx instead of .exe */
-#else					/* ZTC_386 */
 Global int makeExe	Init(1);	/* -X: create .exe instead of .icx */
-#endif					/* ZTC_386 */
 Global long fileOffsetOfStuffThatGoesInICX
 			Init(0);	/* remains 0 -f -X is not used */
 #endif					/* MSDOS */

@@ -358,12 +358,6 @@ int _stack = (8 * 1024);
 extern unsigned _stklen = 8192;
 #endif					/* TURBO */
 
-#if ZTC_386
-#ifndef DOS386
-int _stack = (8 * 1024);
-#endif					/* DOS386 */
-#endif					/* ZTC_386 */
-
 #endif					/* MSDOS */
 
 #if MVS || VM

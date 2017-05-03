@@ -573,11 +573,7 @@ void iconx(int argc, char** argv){
 
 #if MSDOS
          case 'X':			/* -X */
-#if ZTC_386
-            fprintf(stderr, "Warning: -X option is not available\n");
-#else					/* ZTC_386 */
             makeExe = 1;
-#endif					/* ZTC_386 */
             break;
          case 'I':			/* -C */
             makeExe = 0;
@@ -1153,7 +1149,7 @@ Deliberate Syntax Error
       execvp(iconxloc,argv);	/* execute with path search */
 #endif					/* MICROSOFT || ... */
 
-#if INTEL_386 || ZTC_386 || HIGHC_386 || WATCOM || SCCX_MX
+#if INTEL_386 || HIGHC_386 || WATCOM || SCCX_MX
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif					/* INTEL_386 || ... */

@@ -20,13 +20,6 @@ char *p;
 #endif					/* PORT */
 
 #if AMIGA
-   #if AZTEC_C
-       /*
-        * If it doesn't work, try trick used for HIGH_C, below.
-        */
-       stderr->_unit  = stdout->_unit;
-       stderr->_flags = stdout->_flags;
-   #endif				/* AZTEC C */
    #if LATTICE || __SASC
       /*
        * The following code varies from compiler to compiler, or even

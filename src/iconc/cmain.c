@@ -585,10 +585,6 @@ Deliberate Syntax Error
 #endif					/* PORT */
 
 #if AMIGA
-#if AZTEC_C
-      execvp(ofile,argv);
-      return;
-#endif					/* AZTEC_C */
 #if LATTICE
       {
       struct ProcID procid;

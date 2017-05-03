@@ -18,24 +18,6 @@ Deliberate Syntax Error
 #if LATTICE || __SASC
 unsigned long _STACK = 20000;   /*   MNEED ALSO, PLEASE */
 #endif					/* LATTICE || __SASC */
-#if AZTEC_C
-/*
- * abs
- */
-abs(i)
-int i;
-{
-   return ((i<0)? (-i) : i);
-}
-
-/*
- * getfa - get file attribute -1 == OK, 0 == ERROR, 1 == DIRECTORY
- */
-getfa()
-{
-   return -1;
-}
-#endif					/* AZTEC_C */
 #endif					/* AMIGA */
 
 #if ARM

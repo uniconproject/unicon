@@ -414,16 +414,6 @@ void iconx(int argc, char** argv){
 #endif					/* SSCX_MX */
 
 #if AMIGA
-#if AZTEC_C
-   struct Process *FindTask();
-   struct Process *Process = FindTask(0L);
-   ULONG stacksize = *((ULONG *)Process->pr_ReturnAddr);
-
-   if (stacksize < ICONTMINSTACK) {
-      fprintf(stderr,"Icont needs \"stack %d\" to run\n",ICONTMINSTACK);
-      exit(-1);
-      }
-#endif					/* AZTEC_C */
 #if __SASC
    if ( argc == 0 ) {    /* We were started from the WorkBench. */
       struct FileRequester *fr;
@@ -1075,10 +1065,6 @@ Deliberate Syntax Error
 #endif					/* PORT */
 
 #if AMIGA
-#if AZTEC_C
-      execvp(iconxloc,argv);
-      return;
-#endif					/* AZTEC_C */
 #if LATTICE
       {
       struct ProcID procid;

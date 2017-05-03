@@ -632,9 +632,6 @@ Deliberate Syntax Error
       #define __SASC 0
    #endif				/* __SASC */
 
-   #ifndef WATERLOO_C_V3_0
-      #define WATERLOO_C_V3_0 0
-   #endif				/* WATERLOO_C_V3_0 */
 #endif					/* MVS || VM */
 
 #if MACINTOSH && MPW

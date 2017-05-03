@@ -733,21 +733,9 @@ SetFloatTrap(void (*fpetrap)()) {
    environment e;
 
    getenvironment(&e);
-      #ifdef mc68881
-	 e.FPCR |= CURUNDERFLOW|CUROVERFLOW|CURDIVBYZERO;
-      #else					/* mc68881 */
 	 e |= UNDERFLOW|OVERFLOW|DIVBYZERO;
-      #endif					/* mc68881 */
    setenvironment(e);
-   #ifdef mc68881
-      {
-      static trapvector tv =
-         {fpetrap,fpetrap,fpetrap,fpetrap,fpetrap,fpetrap,fpetrap};
-      settrapvector(&tv);
-      }
-   #else					/* mc68881 */
       sethaltvector((haltvector)fpetrap);
-   #endif					/* mc68881 */
    }
 
 

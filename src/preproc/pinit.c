@@ -25,7 +25,7 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || HIGHC_386 || INTEL_386 || WATCOM
+#if MICROSOFT || HIGHC_386 || INTEL_386
    /* nothing is needed */
 #endif					/* MICROSOFT || HIGHC_386 || ... */
 #if TURBO || BORLAND_386
@@ -350,7 +350,7 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386 || WATCOM
+#if HIGHC_386 || INTEL_386
    /* something may be needed */
 #endif					/* HIGHC_386 || INTEL_386 || ... */
 #endif					/* MSDOS */

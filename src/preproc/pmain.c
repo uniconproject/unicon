@@ -25,7 +25,7 @@ Deliberate Syntax Error
 #endif					/* AMIGA || ... */
 
 #if MSDOS
-#if MICROSOFT || INTEL_386 || HIGHC_386 || WATCOM
+#if MICROSOFT || INTEL_386 || HIGHC_386
    /* this really isn't right for anything but Microsoft */
 static char *ostr = "CPD:I:U:o:A:Z:J";
 static char *options = 
@@ -136,7 +136,7 @@ Deliberate Syntax Error
          case 'p':
 #endif					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386 || WATCOM
+#if HIGHC_386 || INTEL_386
    /* something is needed */
 #endif					/* HIGHC_386 || INTEL_386 || ... */
 #endif					/* MSDOS */

@@ -1123,7 +1123,7 @@ Deliberate Syntax Error
       execvp(iconxloc,argv);	/* execute with path search */
 #endif					/* MICROSOFT || ... */
 
-#if INTEL_386 || HIGHC_386 || WATCOM || SCCX_MX
+#if INTEL_386 || HIGHC_386 || SCCX_MX
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif					/* INTEL_386 || ... */

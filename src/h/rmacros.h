@@ -798,7 +798,7 @@
    #endif				/* AMIGA || ARM ... */
    
    #if MSDOS || OS2
-      #if HIGHC_386 || INTEL_386 || WATCOM || BORLAND_386 || SCCX_MX
+      #if HIGHC_386 || INTEL_386 || BORLAND_386 || SCCX_MX
          #define PushAVal(x) PushVal(x)
       #else				/* HIGHC_386 || ... */
          

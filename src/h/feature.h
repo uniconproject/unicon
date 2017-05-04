@@ -39,7 +39,7 @@
 #endif					/* MacOSX */
 
 #if MSDOS
-#if INTEL_386 || HIGHC_386 || WATCOM || BORLAND_386 || SCCX_MX
+#if INTEL_386 || HIGHC_386 || BORLAND_386 || SCCX_MX
    Feature(1, "_MSDOS_386", "MS-DOS/386")
 #else					/* INTEL_386 || HIGHC_386 ... */
 #if NT

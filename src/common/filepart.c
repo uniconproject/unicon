@@ -49,7 +49,7 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    #define FileSep ':'
    #if MPW || LWC
       #define DefPath ":"
-   #endif				/* MPW || LSC */
+   #endif				/* MPW */
    #if MPW
       #define PathSep ","
    #endif				/* MPW */

@@ -42,9 +42,6 @@
 #endif					/* AMIGA */
 
 #if MACINTOSH
-   #if LSC
-      #include <unix.h>
-   #endif				/* LSC */
    #if MPW
       #define create xx_create	/* prevent duplicate definition of create() */
       #include <Types.h>

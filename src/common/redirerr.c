@@ -49,9 +49,6 @@ char *p;
 
 
 #if MACINTOSH
-   #if LSC
-      /* cannot do */
-   #endif				/* LSC */
    #if MPW
       close(fileno(stderr));
       dup(fileno(stdout));

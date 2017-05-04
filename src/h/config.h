@@ -593,15 +593,6 @@ Deliberate Syntax Error
    #endif				/* HIGHC_386 */
 #endif					/* MSDOS || OS2 */
 
-#if MACINTOSH
-   #if LSC
-      /*
-       * LightSpeed C requires that #define tokens appear after prototypes
-       */
-      #define malloc mlalloc
-   #endif				/* LSC */
-#endif					/* MACINTOSH */
-
 #if MVS || VM
 
    /*

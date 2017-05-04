@@ -657,9 +657,6 @@ Deliberate Syntax Error
 #if MPW
    printf("Echo '%s:' > Dev:StdErr\n",s);
 #endif					/* MPW */
-#if LSC
-   fprintf(stderr,"%s:\n",s);
-#endif					/* LSC */
 #endif					/* MACINTOSH */
 
 /*

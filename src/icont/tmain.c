@@ -125,10 +125,6 @@ char *libpath (char *prog, char *envname);
    char pathToIconDOS[129];
 #endif					/* MSDOS */
 
-#if ATARI_ST
-   char *patharg;
-#endif					/* ATARI_ST */
-
 #if MACINTOSH
    #if MPW
       #include <CursorCtl.h>
@@ -612,14 +608,6 @@ void iconx(int argc, char** argv){
 
          case 'O':			/* -O file: name input file */
             pofile = optarg;
-            break;
-
-         case 'p':			/* -p path: iconx path [ATARI] */
-
-#if ATARI_ST
-            patharg = optarg;
-#endif					/* ATARI_ST */
-
             break;
 
 #ifdef ConsoleWindow
@@ -1122,10 +1110,10 @@ Deliberate Syntax Error
    }
 #endif					/* ARM */
 
-#if ATARI_ST || MACINTOSH
+#if MACINTOSH
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
-#endif					/* ATARI_ST || ... */
+#endif					/* MACINTOSH */
 
 #if MSDOS
       /* No special handling is needed for an .exe files, since iconx

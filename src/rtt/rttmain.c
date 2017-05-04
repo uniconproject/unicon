@@ -45,10 +45,6 @@ char *src_file_nm;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ATARI_ST
-Deliberate Syntax Error
-#endif					/* ATARI_ST ... */
-
 #if AMIGA
 char *grttin_path = "/src/h/grttin.h";
 char *rt_path = "/src/h/rt.h";

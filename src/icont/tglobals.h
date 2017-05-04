@@ -45,10 +45,6 @@ Global char *progname	Init("wicont");	/* program name for diagnostics */
 Global char *progname	Init("icont");	/* program name for diagnostics */
 #endif					/* MSWindows */
 
-#if ATARI_ST
-Global char *patharg	Init(0);	/* -p: path for finding iconx */
-#endif					/* ATARI_ST */
-
 #if MSDOS
 Global int makeExe	Init(1);	/* -X: create .exe instead of .icx */
 Global long fileOffsetOfStuffThatGoesInICX

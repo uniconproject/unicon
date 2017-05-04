@@ -36,11 +36,7 @@ typedef unsigned int DIGIT;
    #endif
 #else					/* IntBits != WordBits */
    typedef int word;
-   #ifdef CDC_VXVE
-      typedef uword;
-   #else				/* CDC_VXVE */
-      typedef unsigned int uword;
-   #endif				/* CDC_VXVE */
+   typedef unsigned int uword;
 #endif					/* IntBits != WordBits */
 
 #ifndef PointerDef

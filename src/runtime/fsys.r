@@ -4,10 +4,6 @@
  *  [save], seek, stop, system, where, write, writes, [getch, getche, kbhit]
  */
 
-#if MICROSOFT
-#define BadCode
-#endif					/* MICROSOFT */
-
 #ifdef XENIX_386
 #define register
 #endif					/* XENIX_386 */
@@ -2707,9 +2703,6 @@ function {1} name(x[nargs])
 #endif					/* ConsoleWindow */
 #endif					/* terminate */
 
-#ifdef BadCode
-      struct descrip temp;
-#endif					/* BadCode */
       }
 
 #if terminate

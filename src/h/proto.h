@@ -38,7 +38,7 @@
       #include <dos.h>
       int	brk		(pointer p);
    #endif				/* INTEL_386 */
-   #if MICROSOFT || TURBO || WATCOM || NT || BORLAND_286 || BORLAND_386 || SCCX_MX
+   #if MICROSOFT || TURBO || WATCOM || NT || BORLAND_386 || SCCX_MX
 #ifndef LCC
       #include <dos.h>
 #endif					/* not LCC */
@@ -48,12 +48,6 @@
 /*
  * End of operating-system specific code.
  */
-
-#ifdef MSWindows
-   #if BORLAND_286
-      #define lstrlen longstrlen
-   #endif				/* Borland_286 */
-#endif					/* MSWindows */
 
 #include "../h/mproto.h"
 

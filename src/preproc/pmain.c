@@ -33,12 +33,12 @@ static char *options =
 [-A(S|C|M|L|H)] [-Za] [-J] [files]";
 #endif					/* MICROSOFT || INTEL_386 || ...  */
 
-#if TURBO || BORLAND_286 || BORLAND_386 
+#if TURBO || BORLAND_386 
 static char *ostr = "CPD:I:U:o:m:p";
 static char *options = 
    "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile]\n    \
 [-m(t|s|m|c|l|h)] [-p] [files]";
-#endif					/* TURBO || BORLAND_286 ... */
+#endif					/* TURBO ... */
 #endif					/* MSDOS */
  
 #if VM || MVS
@@ -131,10 +131,10 @@ Deliberate Syntax Error
          case 'Z':
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_286 || BORLAND_386 
+#if TURBO || BORLAND_386 
          case 'm':
          case 'p':
-#endif					/* TURBO || BORLAND_286 ... */
+#endif					/* TURBO ... */
 
 #if HIGHC_386 || INTEL_386 || WATCOM
    /* something is needed */

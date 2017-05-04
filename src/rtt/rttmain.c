@@ -223,9 +223,6 @@ int_PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
    ncmdShow = nCmdShow;
    argc = CmdParamToArgv(lpszCmdParam, &argv);
    MSStartup(argc, argv, hInstance, hPrevInstance);
-#if BORLAND_286
-   _InitEasyWin();
-#endif					/* BORLAND_286 */
    (void)rtt(argc, argv);
    fclose(stderr);
    fclose(fopen("icont.fin","w"));

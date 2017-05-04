@@ -28,12 +28,12 @@ Deliberate Syntax Error
 #if MICROSOFT || HIGHC_386 || INTEL_386 || WATCOM
    /* nothing is needed */
 #endif					/* MICROSOFT || HIGHC_386 || ... */
-#if TURBO || BORLAND_286 || BORLAND_386
+#if TURBO || BORLAND_386
 #include <dir.h>
 #define Strng(s) #s
 #define StrMBody(m) Strng(m)
 #define CBufSz 200
-#endif 					/* TURBO || BORLAND_286 ... */
+#endif 					/* TURBO ... */
 #endif					/* MSDOS */
  
 #if MVS
@@ -245,7 +245,7 @@ Deliberate Syntax Error
          }
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_286 ||  BORLAND_386
+#if TURBO || BORLAND_386
    char *undef_models = "#undef __TINY__\n#undef __SMALL__\n#undef __MEDIUM__\n\
 #undef __COMPACT__\n#undef __LARGE__\n#undef __HUGE__\n";
    char dir_buf[60];
@@ -348,7 +348,7 @@ Deliberate Syntax Error
           }
        fclose(cfg_file);
        }
-#endif 					/* TURBO || BORLAND_286 ... */
+#endif 					/* TURBO ... */
 
 #if HIGHC_386 || INTEL_386 || WATCOM
    /* something may be needed */
@@ -489,7 +489,7 @@ Deliberate Syntax Error
              break;
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_286 || BORLAND_386
+#if TURBO || BORLAND_386
          case 'm':
             /*
              * Memory model. Define the appropriate macro after
@@ -531,7 +531,7 @@ Deliberate Syntax Error
             do_directive("#undef __PASCAL__\n#undef __CDECL__\n");
             do_directive("#define __PASCAL__ 1\n");
             break;
-#endif					/* TURBO || BORLAND_286 ... */
+#endif					/* TURBO ... */
 
 #if HIGHC_386 || INTEL_386
    /* something may be needed */

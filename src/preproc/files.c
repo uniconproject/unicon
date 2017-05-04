@@ -36,9 +36,9 @@ char *FileNameMacConvert(char *(*func)(char *),char *fn);
 #if MICROSOFT || INTEL_386 || HIGHC_386 || WATCOM
    /* nothing is needed */
 #endif					/* MICROSOFT || INTEL_386 || ... */
-#if TURBO || BORLAND_286 || BORLAND_386
+#if TURBO || BORLAND_386
 #include <dir.h>
-#endif 					/* TURBO || BORLAND_286 ... */
+#endif 					/* TURBO ... */
 #define IsRelPath(fname) (fname[0] != '/')
 #endif					/* MSDOS */
 
@@ -391,7 +391,7 @@ Deliberate Syntax Error
       }
 #endif					/* MICROSOFT || NT */
 
-#if TURBO || BORLAND_286 || BORLAND_386
+#if TURBO || BORLAND_386
     char *cfg_fname;
     FILE *cfg_file = NULL;
     struct str_buf *sbuf;
@@ -413,7 +413,7 @@ Deliberate Syntax Error
              c = getc(cfg_file);
           }
        }
-#endif 					/* TURBO || BORLAND_286 ... */
+#endif 					/* TURBO ... */
 
 #if HIGHC_386 || INTEL_386 || WATCOM
    /* something may be needed */
@@ -613,7 +613,7 @@ Deliberate Syntax Error
       }
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_286 || BORLAND_386
+#if TURBO || BORLAND_386
     /*
      * Get the locations from the -I options in the configuration file.
      */
@@ -638,7 +638,7 @@ Deliberate Syntax Error
        rel_sbuf(sbuf);
        fclose(cfg_file);
        }
-#endif 					/* TURBO || BORLAND_286 ... */
+#endif 					/* TURBO ... */
 
 #if HIGHC_386 || INTEL_386 || WATCOM
   /* something is needed */

@@ -1119,7 +1119,7 @@ Deliberate Syntax Error
       /* No special handling is needed for an .exe files, since iconx
        * recognizes it from the extension andfrom internal .exe data.
        */
-#if MICROSOFT || TURBO || BORLAND_286 || BORLAND_386
+#if MICROSOFT || TURBO || BORLAND_386
       execvp(iconxloc,argv);	/* execute with path search */
 #endif					/* MICROSOFT || ... */
 

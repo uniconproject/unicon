@@ -582,10 +582,6 @@ Deliberate Syntax Error
       #define NT 0
    #endif				/* NT */
 
-   #ifndef BORLAND_286
-      #define BORLAND_286 0
-   #endif				/* BORLAND_286 (16-bit protected mode)*/
-
    #ifndef BORLAND_386
       #define BORLAND_386 0
    #endif				/* BORLAND_386 (32-bit protected mode)*/
@@ -635,7 +631,7 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH && MPW */
 
 #ifndef NoWildCards
-   #if NT || BORLAND_286 || BORLAND_386 || MICROSOFT || SCCX_MX
+   #if NT || BORLAND_386 || MICROSOFT || SCCX_MX
       #define WildCards 1
    #else				/* NT || ... */
       #define WildCards 0

@@ -471,13 +471,6 @@ void		xmfree		(void);
    #endif				/* MPW */
 #endif					/* MACINTOSH */
 
-#if MVS || VM
-   #if SASC
-      #define brk(x) sbrk(((char *)(x))-sbrk(0))
-      char *sbrk(int incr);
-   #endif				/* SASC */
-#endif                                  /* MVS || VM */
-
 void checkpollevent();
 void detectRedirection();
 

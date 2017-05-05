@@ -651,18 +651,6 @@ Deliberate Syntax Error
        * Open the file with fopen or popen.
        */
 
-#ifdef OpenAttributes
-#if SASC
-#ifdef RecordIO
-	 f = afopen(fnamestr, mode, status & Fs_Record ? "seq" : "",
-		    attrstring);
-#else					/* RecordIO */
-	 f = afopen(fnamestr, mode, "", attrstring);
-#endif					/* RecordIO */
-#endif					/* SASC */
-
-#else					/* OpenAttributes */
-
 
 #ifdef Graphics
       if (status & Fs_Window) {
@@ -1096,7 +1084,6 @@ Deliberate Syntax Error
 #else					/* PosixFns */
   	 f = fopen(fnamestr, mode);
 #endif 					/* PosixFns */
-#endif					/* OpenAttributes */
 
       /*
        * Fail if the file cannot be opened.

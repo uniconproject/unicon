@@ -2894,11 +2894,7 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MVS || VM
-#if SASC
-   return isascii(c) && !iscntrl(c);
-#else					/* SASC */
    return isprint(c);
-#endif					/* SASC */
 #endif                                  /* MVS || VM */
 
 /*

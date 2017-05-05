@@ -36,16 +36,6 @@ Deliberate Syntax Error
 #endif 					/* TURBO ... */
 #endif					/* MSDOS */
  
-#if MVS
-#if SASC 
-char *_style = "tso:";
-#endif                                  /* SASC */
-#endif                                  /* MVS */
-
-#if VM
-   /* ??? */
-#endif					/* VM */
-
 #if UNIX || VMS
    /* nothing is needed */
 #endif					/* UNIX || VMS */
@@ -114,10 +104,6 @@ Deliberate Syntax Error
 
 #if AMIGA
    do_directive("#define AMIGA 1\n");
-#if __SASC
-   do_directive("#define __SASC 1\n");
-   do_directive("#define LATTICE 0\n");
-#endif                                  /* __SASC */
 #endif					/* AMIGA */
 
 #if MACINTOSH
@@ -355,23 +341,6 @@ Deliberate Syntax Error
 #endif					/* HIGHC_386 || INTEL_386 || ... */
 #endif					/* MSDOS */
  
-#if MVS || VM
-#if SASC 
-   do_directive("#define I370 1\n");
-   {
-      char sascbuf[sizeof("#define __SASC__ nnnn\n")];
-      sprintf(sascbuf, "#define __SASC__ %d\n", __SASC__);
-      do_directive(sascbuf);
-   }
-#if MVS
-   do_directive("#define OSVS 1\n");
-#endif                                  /* MVS */
-#if VM
-   do_directive("#define CMS 1\n");
-#endif                                  /* VM */
-#endif                                  /* SASC */
-#endif                                  /* MVS || VM */
-
 #if UNIX
    do_directive("#define unix 1\n");
    do_directive(PPInit);   /* defines that vary between Unix systems */

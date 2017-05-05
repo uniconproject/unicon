@@ -1426,12 +1426,6 @@ void segvtrap()
       }
    n++;
 
-#if MVS || VM
-#if SASC
-   btrace(0);
-#endif					/* SASC */
-#endif					/* MVS || VM */
-
    fatalerr(302, NULL);
    MUTEX_UNLOCKID(MTX_SEGVTRAP_N);
    }

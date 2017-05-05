@@ -204,11 +204,7 @@ char *outname;
    outfile = tmpfile();         /* write icode to temporary file to
                                    avoid fseek-PDS limitations */
 #else					/* MVS */
-   #if AMIGA && __SASC
-      outfile = fopen(outname, ReadWriteBinary);
-   #else				/* AMIGA && __SASC */
       outfile = fopen(outname, WriteBinary);
-   #endif				/* AMIGA && __SASC */
 #endif					/* MVS */
 
 /*
@@ -602,27 +598,6 @@ char *fname;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-   #if __SASC
-      if (fname != NULL) {
-      struct DiskObject *dob;
-   
-      chmod(fname,S_ISCRIPT|S_IREAD|S_IWRITE|S_IEXECUTE|S_IDELETE);
-      /* Create a WorkBench Icon if necessary. */
-      dob = GetDiskObject(fname);
-      if (dob == NULL) {
-         dob = GetDiskObject(IconIcon);
-         if ( dob ) {
-            dob->do_CurrentX = NO_ICON_POSITION;
-            dob->do_CurrentY = NO_ICON_POSITION;
-            PutDiskObject(fname, dob);
-            }
-         }
-      if ( dob ) FreeDiskObject(dob);
-      }
-   #endif                                  /* __SASC */
-#endif					/* AMIGA */
 
 #if ARM
    {

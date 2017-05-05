@@ -13,10 +13,6 @@
 extern int  __merr_errors;
 static	char	*mapterm	(int typ,struct node *val);
 
-#if AMIGA && __SASC
-   extern void PostClip(char *file, int line, int number, char *text);
-#endif				/* AMIGA && __SASC */
-
 #ifndef SEPARATE_YYERROR
 /*
  * yyerror produces syntax error messages.  tok is the offending token
@@ -54,9 +50,6 @@ nodeptr lval;
          fprintf(stderr, "\"%s\": ", mapterm(tok,lval));
       for (p = errtab; p->e_state != state && p->e_state >= 0; p++) ;
       fprintf(stderr, "%s\n", p->e_mesg);
-#if AMIGA && __SASC
-      if (tok_loc.n_file) PostClip(tok_loc.n_file, line, 0, p->e_mesg);
-#endif				/* AMIGA && __SASC */
       }
 #ifdef ConsoleWindow
       }
@@ -125,15 +118,6 @@ char *s1, *s2;
       fprintf(stderr, "\"%s\": ", s2);
    fprintf(stderr, "%s\n", s1);
 
-#if AMIGA && __SASC
-   if (tok_loc.n_file) {
-      char text[512];
-      if (s2)
-         sprintf(text, "\"%s\": ", s2);
-      strcat(text, s1);
-      PostClip(tok_loc.n_file, tok_loc.n_line, 0, text);
-      }
-#endif				/* AMIGA && __SASC */
 #ifdef ConsoleWindow
       }
    else if (flog != NULL) {
@@ -165,16 +149,6 @@ char *s1, *s2;
    if (s2)
       fprintf(stderr, "\"%s\": ", s2);
    fprintf(stderr, "%s\n", s1);
-
-#if AMIGA && __SASC
-   if (n != NULL) {
-      char text[512];
-      if (s2)
-         sprintf(text, "\"%s\": ", s2);
-      strcat(text, s1);
-      PostClip(File(n), Line(n), 0, text);
-      }
-#endif				/* AMIGA && __SASC */
 
    __merr_errors++;
    nocode++;

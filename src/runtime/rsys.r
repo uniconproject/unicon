@@ -12,9 +12,6 @@
 void flushrec(fd)
 FILE *fd;
 {
-#if SASC
-   afwrite("", 1, 0, fd);
-#endif					/* SASC */
 }
 
 /*
@@ -30,16 +27,6 @@ register char *buf;
 int maxi;
 FILE *fd;
    {
-#ifdef SASC
-   register int l;
-
-   l = afreadh(buf, 1, maxi+1, fd);     /* read record or maxi+1 chars */
-   if (l == 0) return -1;
-   if (l <= maxi) return l;
-   ungetc(buf[maxi], fd);               /* if record not used up, push
-                                           back last char read */
-   return -2;
-#endif					/* SASC */
    }
 #endif					/* RecordIO */
 
@@ -452,26 +439,6 @@ int putrec(f, d)
 register FILE *f;
 dptr d;
    {
-#if SASC
-   register char *s;
-   register word l;
-
-   l = StrLen(*d);
-   if (l == 0)
-      return Succeeded;
-   s = StrLoc(*d);
-
-   if (afwriteh(s,1,l,f) < l)
-      return Failed;
-   else
-      return Succeeded;
-   /*
-    * Note:  Because RecordIO depends on SASC, and because SASC
-    *  uses its own malloc rather than the Icon malloc, file usage
-    *  cannot cause a garbage collection.  This may require
-    *  reevaluation if RecordIO is supported for any other compiler.
-    */
-#endif					/* SASC */
    }
 #endif					/* RecordIO */
 
@@ -560,11 +527,6 @@ int n;
    return Succeeded;
 #endif					/* VMS */
 
-#if SASC
-   sleepd(0.001*n);
-   return Succeeded;
-#endif                                   /* SASC */
-
 #if UNIX
    {
    struct timeval t;
@@ -599,12 +561,7 @@ int n;
 
 
 #if AMIGA
-#if __SASC
-   Delay(n/20);
-   return Succeeded;
-#else					/* __SASC */
    return Failed
-#endif                                  /* __SASC */
 #endif					/* AMIGA */
 
 #if PORT || ARM || MVS || VM

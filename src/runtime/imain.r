@@ -42,16 +42,6 @@ int GetArgs (char **argv);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA && __SASC
-extern int _WBargc;     /* These are filled in by auto-initialization */
-extern char **_WBargv;  /* code in rlocal.r                           */
-char __stdiowin[] = "CON:10/40/640/200/IconX Console Window";
-   /* These override environment variables if set from ToolTypes. */
-extern uword WBstrsize;
-extern uword WBblksize;
-extern uword WBmstksize;
-#endif					/* AMIGA && __SASC */
-
 #if MACINTOSH
 #if MPW
 int NoOptions = 0;

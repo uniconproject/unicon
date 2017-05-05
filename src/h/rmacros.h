@@ -343,11 +343,6 @@
 /*
  * Absolute value, maximum, and minimum.
  */
-#if (MVS || VM) && SASC
-   #define Abs(x) __builtin_abs(x)
-   #define Max(x,y)     __builtin_max(x,y)
-   #define Min(x,y)     __builtin_min(x,y)
-#else					/* SASC */
    #define Abs(x) (((x) < 0) ? (-(x)) : (x))
    /*
     * gcc docs recommends these type-safe definitions for Max/Min
@@ -360,7 +355,6 @@
      ({ typeof (a) _a = (a); \
         typeof (b) _b = (b); \
         _a < _b ? _a : _b; })
-#endif					/* SASC */
 
 /*
  * Number of elements of a C array, and element size.

@@ -7,11 +7,6 @@ extern MRESULT_N_EXPENTRY RuntimeErrorDlgProc(HWND, ULONG, MPARAM, MPARAM);
 HAB HInterpAnchorBlock;
 #endif					/* PresentationManager */
 
-#if AMIGA && __SASC
-extern void PostClip(char *file, int line, int number, char *text);
-extern void CallARexx(char *script);
-#endif					/* AMIGA && __SASC */
-
 extern struct errtab errtab[];		/* error numbers and messages */
 
 char *logopt;                            /* Log option destination */ 
@@ -197,11 +192,6 @@ void err_msg(int n, dptr v)
 
    if (dodump)
       abort();
-
-#if AMIGA && __SASC
-   PostClip(findfile(ipc.opnd), findline(ipc.opnd), k_errornumber, StrLoc(k_errortext));
-   CallARexx(IconxRexx);
-#endif					/* AMIGA && __SASC */
 
    c_exit(EXIT_FAILURE);
 #else					/* PresentationManager */

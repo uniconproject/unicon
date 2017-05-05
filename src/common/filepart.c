@@ -56,9 +56,6 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
 #if MVS
    #define Prefix ""
    #define FileSep '('
-   #if SASC
-      #define DefPath "iconlib ddn:::lib"
-   #endif				/* SASC */
 #endif					/* MVS */
 
 #if VM
@@ -387,16 +384,6 @@ char *dest, *d, *name, *e;
 #else					/* ARM */
 
 #if MVS
-#if SASC
-   {
-      char *colons;
-      colons = strstr(fp.name, ":::");
-      if (colons) {
-         memcpy(colons+1, e+1, 2);
-         fp.ext = "";
-      }
-   }
-#endif					/* SASC */
    if (*fp.member)
       sprintf(dest,"%s%s%s(%s", fp.dir, fp.name, fp.ext, fp.member);
    else

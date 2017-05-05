@@ -32,13 +32,6 @@
    #include <libraries/dosextens.h>
    #include <libraries/dos.h>
    #include <workbench/startup.h>
-   #if __SASC
-      #include <proto/dos.h>
-      #include <proto/icon.h>
-      #include <proto/wb.h>
-      #undef GLOBAL
-      #undef STATIC			/* defined in <exec/types.h> */
-   #endif				/* __SASC */
 #endif					/* AMIGA */
 
 #if MACINTOSH
@@ -143,18 +136,6 @@
    #undef lst1
    #undef lst2
 #endif					/* MSDOS */
-
-
-#if MVS || VM
-   #ifdef RecordIO
-      #if SASC
-         #include <lcio.h>
-      #endif				/* SASC */
-   #endif				/* RecordIO */
-   #if SASC
-      #include <lcsignal.h>
-   #endif				/* SASC */
-#endif					/* MVS || VM */
 
 #if OS2
    #define INCL_DOS

@@ -39,11 +39,6 @@ static	void	execute	(char *ofile,char *efile,char * *args);
 static	void	usage (void);
 char *libpath (char *prog, char *envname);
 
-#if AMIGA && __SASC
-   extern void PostClip(char *file, int line, int number, char *text);
-   extern void CallARexx(char *script);
-#endif					/* AMIGA && __SASC */
-
 /*
  * The following code is operating-system dependent [@tmain.01].  Include
  *  files and such.
@@ -54,19 +49,7 @@ char *libpath (char *prog, char *envname);
 #endif					/* PORT */
 
 #if AMIGA
-   #if __SASC
-      #include <dos.h>
-      #include <libraries/dos.h>
-      #include <proto/dos.h>
-      #include <proto/asl.h>
-      extern int _WBargc;
-      extern char **_WBargv;
-      char __stdiowin[] = "CON:10/40/640/200/IconT Console Window";
-      char OptTemplate[] = "NoLink/S,StrInv/S,Silent/S,Trace/S,UWarn/S,Output/K,Verbosity/K";
-      enum {opt_nolink,opt_strinv,opt_silent,opt_trace,opt_uwarn,opt_output,opt_verbosity,numopts}; 
-   #else				/* __SASC */
       #include <libraries/dosextens.h>
-   #endif				/* __SASC */
 #endif					/* AMIGA */
 
 #if ARM || MVS || UNIX || VM || VMS
@@ -325,100 +308,6 @@ void iconx(int argc, char** argv){
    FINDDATA_T fd;
    int j;
 #endif					/* WildCards */
-
-#if AMIGA
-#if __SASC
-   if ( argc == 0 ) {    /* We were started from the WorkBench. */
-      struct FileRequester *fr;
-      int  n, Rargc = 0;
-      char *pattern, **Rargv;
-      struct WBArg *wba;
-      struct RDArgs *rda;
-      long *options;
-
-   /* Get options from the IcontOptions environment variable. */ 
-      rda = (struct RDArgs *)alloc(sizeof(struct RDArgs));
-      options = (long *)alloc(numopts*sizeof(long));
-      if (rda->RDA_Source.CS_Buffer = getenv("IcontOptions") ) {
-         rda->RDA_Source.CS_Length = strlen(rda->RDA_Source.CS_Buffer);
-         ReadArgs(OptTemplate, options, rda);
-         FreeArgs(rda);
-
-         if (options[opt_nolink]   ) nolink = 1; 
-         if (options[opt_strinv]   ) strinv = 1;
-         if (options[opt_silent]   ) {silent = 1; verbose = 0;}
-         if (options[opt_trace]    ) trace = -1;
-         if (options[opt_uwarn]    ) uwarn = 1  ;
-         if (options[opt_output]   ) ofile = salloc((char *)options[opt_output]) ;
-         if (options[opt_verbosity]) {
-            if (sscanf( (char *)options[opt_verbosity], "%d%c", &verbose, &ch) != 1)
-               quitf("bad operand to -v option: %s",optarg);
-            if (verbose == 0)
-               silent = 1;
-            }
-         }
-   
-   /* Get file arguments from the WorkBench startup message. */
-      sprintf(buf, "#?%s", SourceSuffix);
-      pattern = salloc(buf);
-      fr = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
-           ASL_Hail,     "Select Icon source files",
-           ASL_Pattern,  (ULONG)pattern,
-           ASL_FuncFlags, FILF_MULTISELECT | FILF_PATGAD,
-           ASL_Dir,      "Icon:",
-           TAG_DONE);
-   
-      if ( fr != NULL) {
-         if (_WBargc == 1 ) {  /* No input files were specified */
-            if ( AslRequest(fr, NULL) ) {
-               Rargv = (char **)alloc((fr->fr_NumArgs + 2)*sizeof(char *));
-               Rargv[0] = _WBargv[0];
-               Rargc = 1;
-               wba = fr->fr_ArgList;
-               for(n = 0; n < fr->fr_NumArgs; n++, wba++){
-                  if (wba->wa_Name != NULL &&
-                     NameFromLock(wba->wa_Lock, buf, sizeof(buf)) != 0) {
-                     AddPart(buf, wba->wa_Name, sizeof(buf));
-                     Rargv[Rargc] = salloc(buf);
-                     Rargc++;
-                     }
-                  }
-               Rargv[Rargc] = NULL;
-               }
-            }
-   
-         /* Initialize argv and argc */
-         if ( Rargc > 1 ) {
-            argc = Rargc;
-            argv = Rargv;
-            }
-         else {
-            argc = _WBargc;
-            argv = _WBargv;
-            }
-   
-         /* The Workbench args come in random order.  So if we have
-            more than one ask for the name of the output file. */
-         if (ofile == NULL && nolink == 0 && argc > 2) {
-            strcpy(buf, argv[1]);
-            *PathPart(buf) = '\0';
-            if ( AslRequestTags(fr,
-                  ASL_Hail,      "Specify output (icode) file",
-                  ASL_Pattern,   NULL,
-                  ASL_FuncFlags, FILF_SAVE,
-                  ASL_Dir,       buf,
-                  ASL_File,      NULL,
-                  TAG_DONE) ) {
-               SetCurrentDirName(fr->fr_Drawer);
-               ofile = salloc(fr->fr_File);
-               }
-            }
-         FreeAslRequest(fr);
-         }
-      }
-#endif					/* __SASC */
-#endif					/* AMIGA */
-
 
 #if MACINTOSH
 #if MPW
@@ -706,10 +595,6 @@ void iconx(int argc, char** argv){
          report("Translating");
       errors = trans(tfiles);
       if (errors > 0) {			/* exit if errors seen */
-#if AMIGA && __SASC
-         PostClip("END", 0, 0, "END");
-         CallARexx(IcontRexx);
-#endif					/* AMIGA && __SASC */
          exit(EXIT_FAILURE);
 	 }
       }
@@ -733,10 +618,6 @@ void iconx(int argc, char** argv){
       }
 #endif					/* MPW */
 #endif					/* MACINTOSH */
-
-#if AMIGA && __SASC
-      if ( !silent && _WBenchMsg != NULL ) fprintf(stderr,"Done.\n");
-#endif				/* AMIGA && __SASC */
 
       exit(EXIT_SUCCESS);
       }
@@ -879,10 +760,6 @@ void iconx(int argc, char** argv){
       }
 #endif					/* !(MACINTOSH && MPW) */
 
-#if AMIGA && __SASC
-   if (!silent && _WBenchMsg != NULL) fprintf(stderr, "Done.\n");
-#endif				/* AMIGA && __SASC */
-
    free(tfiles);
    free(lfiles);
    free(rfiles);
@@ -974,23 +851,6 @@ Deliberate Syntax Error
          }
       }
 #endif					/* LATTICE */
-#if __SASC
-      {
-      struct ProcID procid;
-      struct FORKENV env = { 0,       /* priority */
-                             20000,   /* stack    */
-                             NULL,    /* default stdin */
-                             NULL,    /* default stdout */
-                             NULL,    /* default console */
-                             NULL};   /* default message port */
-      env.std_in = Input();
-      env.std_out = Output();
-      if (forkv(iconxloc,argv,&env,&procid) == 0) { 
-         wait(&procid);
-         return;
-         }
-      }
-#endif					/* __SASC */
 #endif					/* AMIGA */
 
 #if ARM
@@ -1043,9 +903,6 @@ Deliberate Syntax Error
 #endif					/* MSDOS */
 
 #if MVS || VM
-#if SASC
-	  exit(sysexec(iconxloc, argv));
-#endif					/* SASC */
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif                                  /* MVS || VM */

@@ -79,20 +79,11 @@ char FromEBCDIC[256] = {        /* EBCDIC->ASCII translation */
 int tonum(c)
 int c;
 {
-#if SASC 
-   const static char *alphanum = "0123456789abcdefghijklmnopqrstuvwxyz" ;
-   char *where;
- 
-   where = memchr(alphanum, tolower(c), 36);
-   if (where == 0) return -1;
-   return where - alphanum;
-#else                                   /* SASC */
    if(isdigit(c)) return (c - '0');
    if( (c | ' ') >= 'A' & (c | ' ') <= 'I') return(((c | ' ') - 'A') + 10);
    if( (c | ' ') >= 'J' & (c | ' ') <= 'R') return(((c | ' ') - 'J') + 19);
    if( (c | ' ') >= 'S' & (c | ' ') <= 'Z') return(((c | ' ') - 'S') + 28);
    return 0;
-#endif                                  /* SASC */
 }
 
 #else                                   /* EBCDIC */

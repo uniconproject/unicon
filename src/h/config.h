@@ -589,23 +589,6 @@ Deliberate Syntax Error
    #endif				/* HIGHC_386 */
 #endif					/* MSDOS || OS2 */
 
-#if MVS || VM
-
-   /*
-    *  Define compiler-specific symbols to be zero if not already
-    *  defined.
-    */
-
-   #ifndef SASC
-      #define SASC 0
-   #endif				/* SASC */
-
-   #ifndef __SASC
-      #define __SASC 0
-   #endif				/* __SASC */
-
-#endif					/* MVS || VM */
-
 #if MACINTOSH && MPW
    #ifndef NoHeader
       #undef Header

@@ -1,10 +1,6 @@
 #include "../h/gsupport.h"
 #include "../h/esctab.h"
 
-#if (MVS || VM) && SASC
-    #include <lctype.h>
-#endif                                  /* SASC */
-
 /*
  * Prototypes.
  */
@@ -179,11 +175,7 @@ int len;
             break;
          default:
 
-#if (MVS || VM) && SASC
-            if (isascii(c) && !iscntrl(c))
-#else                                   /* SASC */
             if (isprint(c))
-#endif                                  /* SASC */
                fprintf(f, "%c", c);
             else
                fprintf(f, "\\%03o", (int)c);

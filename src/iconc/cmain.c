@@ -611,9 +611,6 @@ Deliberate Syntax Error
 #endif					/* MSDOS */
 
 #if MVS || VM
-#if SASC
-	  exit(sysexec(ofile, argv));
-#endif					/* SASC */
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif                                  /* MVS || VM */

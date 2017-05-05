@@ -10,7 +10,7 @@
 #include "../h/opdefs.h"
 
 #if MSDOS || OS2
-#if !HIGHC_386 && !INTEL_386 && !BORLAND_386 && !SCCX_MX
+#if !HIGHC_386 && !INTEL_386 && !BORLAND_386
    static union {
       pointer stkadr;
       word stkint;
@@ -18,21 +18,6 @@
 #endif
 #endif				/* MSDOS || OS2 */
 
-
-#if SCCX_MX
-/*
- * The setsize program will replace "frog" with the file size of
- * iconx.exe.  The file size is used to scan to the end of the file
- * to see if a .icx file has been concatenated to the end.
- */
-setint_t    sizevar = {'f','r','o','g'};
-int  thisIsIconx;
-char settingsname[260];
-
-/* This sets the stack size so it runs in a Windows DOS box */
-unsigned _stack = 100000;
-
-#endif  /* SCCX_MX */
 
 /*
  * Prototypes.
@@ -568,10 +553,6 @@ void main(int argc, char **argv)
 #else 		 	   	  	 /* TSTATARG */
    interp(0,(dptr)NULL);                        /*      [[I?]] */
 #endif 		 	   	  	 /* TSTATARG */
-
-#if SCCX_MX
-    dos_set_ctrl_break(ctrlbrk);   /* Restore original Ctrl-C operation */
-#endif
 
    c_exit(EXIT_SUCCESS);
 #ifdef INTMAIN

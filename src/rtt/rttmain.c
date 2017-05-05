@@ -6,9 +6,6 @@
 #include <console.h>
 #endif					/* MACINTOSH */
 
-#if SCCX_MX
-unsigned _stack = 100000;
-#endif
 /*
  * prototypes for static functions.
  */

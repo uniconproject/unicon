@@ -1,15 +1,4 @@
 /*
- * Type for an externally findable & setable integer, used by "setsize". CS
- */
-
-#if SCCX_MX
-   typedef union {
-      char magicText[4];
-      int  value;
-   } setint_t;
-#endif 					/* SCCX_MX */
-
-/*
  * typdefs for the run-time system.
  */
 

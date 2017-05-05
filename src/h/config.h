@@ -78,10 +78,6 @@
    #define MSDOS 0
 #endif					/* MSDOS */
 
-#ifndef SCCX_MX
-   #define SCCX_MX 0
-#endif					/* SCCX_MX */
-
 #ifndef MVS
    #define MVS 0
 #endif					/* MVS */
@@ -618,7 +614,7 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH && MPW */
 
 #ifndef NoWildCards
-   #if NT || BORLAND_386 || MICROSOFT || SCCX_MX
+   #if NT || BORLAND_386 || MICROSOFT
       #define WildCards 1
    #else				/* NT || ... */
       #define WildCards 0

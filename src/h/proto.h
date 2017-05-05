@@ -38,7 +38,7 @@
       #include <dos.h>
       int	brk		(pointer p);
    #endif				/* INTEL_386 */
-   #if MICROSOFT || TURBO || NT || BORLAND_386 || SCCX_MX
+   #if MICROSOFT || TURBO || NT || BORLAND_386
 #ifndef LCC
       #include <dos.h>
 #endif					/* not LCC */

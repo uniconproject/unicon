@@ -583,17 +583,12 @@ int n;
 #endif					/* UNIX */
 
 #if MSDOS
-#if SCCX_MX
-   msleep(n);
-   return Succeeded;
-#else					/* SCCX_MX */
 #if NT
    Sleep(n);
    return Succeeded;
 #else					/* NT */
    return Failed;
 #endif					/* NT */
-#endif					/* SCCX_MX */
 #endif					/* MSDOS */
 
 #if MACINTOSH

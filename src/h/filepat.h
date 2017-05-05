@@ -61,7 +61,7 @@ typedef struct ffblk FINDDATA_T;
 
 #endif				        /* BORLAND_386 */
 
-#if MICROSOFT || SCCX_MX
+#if MICROSOFT
 
 #include <dos.h>
 
@@ -72,7 +72,7 @@ typedef struct _find_t FINDDATA_T;
 #define FILENAME(pfd)	( (pfd)->name )
 #define FINDCLOSE(pfd)	( (void) 0 )
 
-#endif					/* MICROSOFT || SCCX_MX */
+#endif					/* MICROSOFT */
 
 #if PORT
 Deliberate Syntax Error                 /* Give it some thought */

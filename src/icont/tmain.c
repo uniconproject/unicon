@@ -326,14 +326,6 @@ void iconx(int argc, char** argv){
    int j;
 #endif					/* WildCards */
 
-#if SCCX_MX
-    syntax error!
-    The Symantec license agreement requires you to include a copyright
-    notice in your program.  This is a good place for it.
-   fprintf( stderr,
-    "Copyright (c) 1995, Your Name, Your City, Your State.\n");
-#endif					/* SSCX_MX */
-
 #if AMIGA
 #if __SASC
    if ( argc == 0 ) {    /* We were started from the WorkBench. */
@@ -489,11 +481,6 @@ void iconx(int argc, char** argv){
          case 'I':			/* -C */
             makeExe = 0;
             break;
-#ifdef SCCX_MX
-         case 'A':
-            makeExe = 2;
-            break;
-#endif                  /* SCCX_MX */
 #endif					/* MSDOS */
 
          case 'V':
@@ -1048,7 +1035,7 @@ Deliberate Syntax Error
       execvp(iconxloc,argv);	/* execute with path search */
 #endif					/* MICROSOFT || ... */
 
-#if INTEL_386 || HIGHC_386 || SCCX_MX
+#if INTEL_386 || HIGHC_386
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif					/* INTEL_386 || ... */

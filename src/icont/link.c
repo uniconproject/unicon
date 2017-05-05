@@ -7,12 +7,6 @@
 #include "tglobals.h"
 #include "../h/header.h"
 
-#if SCCX_MX
-   #undef ISICONT
-   #define ISICONT
-   #include "ixhdr.h"
-#endif					/* SCCX_MX */
-
 #ifdef Header
    #ifndef ShellHeader
       #include "hdr.h"
@@ -271,41 +265,6 @@ char *outname;
 
    if (makeExe) {
 
-#if SCCX_MX
-    unsigned long i;
-
-    if( makeExe == 1)
-    {
-        for( i=0; i<IXHDRSIZE; ++i)
-            fputc( ixhdrarray[i], outfile);
-        fileOffsetOfStuffThatGoesInICX = IXHDRSIZE;
-    }
-    else
-    {
-        FILE *fIconDOS = fopen(pathToIconDOS, "rb");
-        char oneChar;
-
-        if (!fIconDOS)
-            quit("unable to find iconx.exe in same dir as icont");
-
-        if (setvbuf(fIconDOS, 0, _IOFBF, 4096))
-        {
-            if (setvbuf(fIconDOS, 0, _IOFBF, 128))
-                quit("setvbuf() failure");
-        }
-
-        fseek( fIconDOS, 0, 0);
-        while( oneChar = fgetc( fIconDOS), !feof( fIconDOS) )
-        {
-            if( ferror( fIconDOS)  ||  ferror( outfile) )
-                quit("Error copying iconx.exe");
-            fputc( oneChar, outfile);
-        }
-
-        fclose (fIconDOS);
-        fileOffsetOfStuffThatGoesInICX = ftell (outfile);
-    }
-#else					/* SCCX_MX */
       FILE *fIconDOS = fopen(pathToIconDOS, "rb");
       char bytesThatBeginEveryExe[2] = {0,0}, oneChar;
       unsigned short originalExeBytesMod512, originalExePages;
@@ -350,7 +309,6 @@ char *outname;
 
       fclose (fIconDOS);
       fileOffsetOfStuffThatGoesInICX = ftell (outfile);
-#endif					/* SCCX_MX */
       }
 #endif                                  /* MSDOS && (!NT) */
 

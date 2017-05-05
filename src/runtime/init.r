@@ -12,12 +12,6 @@
 static FILE * readhdr	(char *name, struct header *hdr);
 #endif					/* !COMPILER */
 
-#if SCCX_MX
-extern  int         thisIsIconx;
-extern  char        settingsname[];
-extern  setint_t    sizevar;
-#endif  /* SCCX_MX */
-
 /*
  * Prototypes.
  */
@@ -871,9 +865,9 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || TURBO || SCCX_MX
+#if MICROSOFT || TURBO
    signal(SIGFPE, SigFncCast fpetrap);
-#endif					/* MICROSOFT || TURBO || SCCX_MX */
+#endif					/* MICROSOFT || TURBO */
 #endif					/* MSDOS */
 
 #if UNIX || VMS

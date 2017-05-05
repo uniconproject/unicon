@@ -146,10 +146,6 @@
    Feature(1, "_PTY", "pseudo terminals")
 #endif					/* PseudoPty */
 
-#ifdef RecordIO
-   Feature(1, "_RECORD_IO", "record I/O")
-#endif					/* RecordIO */
-
    Feature(1, "_SYSTEM_FUNCTION", "system function")
 
 #ifdef Messaging

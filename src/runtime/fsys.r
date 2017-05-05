@@ -425,18 +425,11 @@ Deliberate Syntax Error
 		  continue;
 		  }
 #endif                                  /* Messaging */
-#ifdef RecordIO
-	       status |= Fs_Untrans;
-	       status |= Fs_Record;
-#endif					/* RecordIO */
 	       continue;
 
 	    case 't':
 	    case 'T':
 	       status &= ~Fs_Untrans;
-#ifdef RecordIO
-               status &= ~Fs_Record;
-#endif                                  /* RecordIO */
 	       continue;
 
 	    case 'u':
@@ -446,9 +439,6 @@ Deliberate Syntax Error
 #endif					/* PosixFns */
 	       if ((status & Fs_Socket)==0)
 		  status |= Fs_Untrans;
-#ifdef RecordIO
-	       status &= ~Fs_Record;
-#endif					/* RecordIO */
 	       continue;
 
 #if AMIGA || ARM || OS2 || UNIX || VMS || NT
@@ -1344,20 +1334,12 @@ function{0,1} read(f)
 	 else
 #endif					/* PseudoPty */
 
-#ifdef RecordIO
-	 if ((slen = (status & Fs_Record ? getrec(sbuf, MaxReadStr, fp) :
-			   getstrg(sbuf, MaxReadStr, BlkD(f,File))))
-	     == -1)
-	     fail;
-#else					/* RecordIO */
-
 	 if ((slen = getstrg(sbuf, MaxReadStr, BlkD(f,File))) == -1) {
 #ifdef PosixFns
 	    set_syserrortext(errno);
 #endif					/* PosixFns */
 	    fail;
 	    }
-#endif					/* RecordIO */
 
 	 /*
 	  * Allocate the string read and make s a descriptor for it.
@@ -2522,9 +2504,6 @@ end
    else
 #endif					/* HAVE_LIBZ */
 
-#ifdef RecordIO
-      if (!(status & Fs_Record)) {
-#endif					/* RecordIO */
 #ifdef Messaging
       if (status & Fs_Messaging) {
 	 struct MFile *mf = f.mf;
@@ -2566,9 +2545,6 @@ end
 #endif					/* PosixFns */
 	 putc('\n', f.fp);
 
-#ifdef RecordIO
-      }
-#endif					/* RecordIO */
 #endif					/* nl */
 
    /*
@@ -2583,10 +2559,6 @@ end
 #ifdef PseudoPty
    if (!(status & Fs_Pty)) {
 #endif
-#ifdef RecordIO
-      if (status & Fs_Record)
-	 flushrec(f.fp);
-#endif					/* RecordIO */
 
 #ifdef PosixFns
       if (!(status & Fs_Socket)) {
@@ -2779,11 +2751,6 @@ function {1} name(x[nargs])
 #endif					/* HAVE_LIBZ */
 
 
-#ifdef RecordIO
-			if (status & Fs_Record)
-			   flushrec(f.fp);
-			else
-#endif					/* RecordIO */
 #ifdef Messaging
                         if (status & Fs_Messaging) {
 			   struct MFile *mf = f.mf;
@@ -2939,10 +2906,6 @@ function {1} name(x[nargs])
 #endif					/* HAVE_LIBZ */
 
 
-#ifdef RecordIO
-		     if ((status & Fs_Record ? putrec(f.fp, &t) :
-					     putstr(f.fp, &t)) == Failed)
-#else					/* RecordIO */
 #ifdef Messaging
                      if (status & Fs_Messaging) {
 			struct MFile *mf = f.mf;
@@ -2972,7 +2935,6 @@ function {1} name(x[nargs])
 		     } else {
 #endif					/* PosixFns */
 		     if (putstr(f.fp, &t) == Failed)
-#endif					/* RecordIO */
 			{
 	    		MUTEX_UNLOCKID(fblk->mutexid);
 			runerr(214, x[n]);

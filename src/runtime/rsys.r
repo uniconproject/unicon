@@ -3,33 +3,6 @@
  *  Contents: [flushrec], [getrec], getstrg, host, longread, [putrec], putstr
  */
 
-#ifdef RecordIO
-/*
- * flushrec - force buffered output to be written with a record break.
- *  Applies only to files with mode "s".
- */
-
-void flushrec(fd)
-FILE *fd;
-{
-}
-
-/*
- * getrec - read a record into buf from file fd. At most maxi characters
- *  are read.  getrec returns the length of the record.
- *  Returns -1 if EOF and -2 if length was limited by
- *  maxi. [[ Needs ferror() check. ]]
- *  This function is meaningful only for files opened with mode "s".
- */
-
-int getrec(buf, maxi, fd)
-register char *buf;
-int maxi;
-FILE *fd;
-   {
-   }
-#endif					/* RecordIO */
-
 #ifdef PosixFns
 #ifndef SOCKET_ERROR
 #define SOCKET_ERROR -1
@@ -429,18 +402,6 @@ FILE *fd;
 #endif					/* HAVE_LIBZ */
 
 
-#ifdef RecordIO
-/*
- * Write string referenced by descriptor d, avoiding a record break.
- *  Applies only to files openend with mode "s".
- */
-
-int putrec(f, d)
-register FILE *f;
-dptr d;
-   {
-   }
-#endif					/* RecordIO */
 
 /*
  * Print string referenced by descriptor d. Note, d must not move during

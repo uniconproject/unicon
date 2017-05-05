@@ -42,9 +42,7 @@
 #define Fs_Pipe		020	/* reading or writing on a pipe */
 				/* see also: BPipe down below */
 
-#ifdef RecordIO
-   #define Fs_Record    040	/* record structured file */
-#endif					/* RecordIO */
+/*                      040        this bit is now available */
 
 #define Fs_Reading     0100     /* last file operation was read */
 #define Fs_Writing     0200     /* last file operation was write */

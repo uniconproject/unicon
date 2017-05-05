@@ -25,9 +25,9 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || HIGHC_386 || INTEL_386
+#if MICROSOFT || INTEL_386
    /* nothing is needed */
-#endif					/* MICROSOFT || HIGHC_386 || ... */
+#endif					/* MICROSOFT || ... */
 #if TURBO || BORLAND_386
 #include <dir.h>
 #define Strng(s) #s
@@ -336,9 +336,9 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
    /* something may be needed */
-#endif					/* HIGHC_386 || INTEL_386 || ... */
+#endif					/* INTEL_386 */
 #endif					/* MSDOS */
  
 #if UNIX
@@ -502,9 +502,9 @@ Deliberate Syntax Error
             break;
 #endif					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
    /* something may be needed */
-#endif					/* HIGHC_386 || INTEL_386 */
+#endif					/* INTEL_386 */
 #endif					/* MSDOS */
  
 #if MVS || VM

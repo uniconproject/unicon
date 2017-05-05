@@ -37,11 +37,7 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    #define Prefix "/:\\"
    #define DefPath ";"
    #define PathSep " ;"
-   #if HIGHC_386
-      #define FileSep '\\'
-   #else				/* HIGHC_386 */
-      #define FileSep '/'
-   #endif				/* HIGHC_386 */
+   #define FileSep '/'
 #endif					/* MSDOS || OS2 */
 
 #if MACINTOSH

@@ -18,10 +18,6 @@
 #endif					/* AMIGA */
 
 #if MSDOS || OS2
-   #if HIGHC_386
-      int	brk		(pointer p);
-      pointer sbrk		(msize n);
-   #endif				/* HIGHC_386 */
    #if INTEL_386
       #include <dos.h>
       int	brk		(pointer p);

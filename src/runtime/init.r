@@ -37,12 +37,6 @@ uword WBblksize = 0;
 uword WBmstksize = 0;
 #endif					/* AMIGA */
 
-#if MSDOS
-#if HIGHC_386
-int _fmode = 0;				/* force CR-LF on std.. files */
-#endif					/* HIGHC_386 */
-#endif					/* MSDOS */
-
 #if ARM || MACINTOSH || MVS || VM || UNIX || VMS
    /* nothing needed */
 #endif					/* ARM || MACINTOSH ... */
@@ -1179,7 +1173,6 @@ Deliberate Syntax Error
 #endif					/* ARM || MACINTOSH ... */
 
 #if MSDOS
-#if !HIGHC_386
    if (noerrbuf)
       setbuf(stderr, NULL);
    else {
@@ -1190,7 +1183,6 @@ Deliberate Syntax Error
       setbuf(stderr, buf);
 #endif					/* MSWindows */
       }
-#endif					/* !HIGHC_386 */
 #endif					/* MSDOS */
 
 /*

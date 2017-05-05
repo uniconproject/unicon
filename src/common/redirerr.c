@@ -35,16 +35,16 @@ char *p;
 #endif					/* ARM || MVS || VM */
 
 #if MSDOS || OS2 || VMS
-   #if HIGHC_386 || NT
+   #if NT
       /*
        * Don't like doing this, but it seems to work.
        */
       setbuf(stdout,NULL);
       setbuf(stderr,NULL);
       stderr->_file = stdout->_file;
-   #else				/* HIGHC_386 || NT */
+   #else				/* NT */
       dup2(fileno(stdout),fileno(stderr));
-   #endif				/* HIGHC_386 || NT */
+   #endif				/* NT */
 #endif					/* MSDOS || OS2 ... */
 
 

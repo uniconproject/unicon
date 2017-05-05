@@ -33,7 +33,7 @@ char *FileNameMacConvert(char *(*func)(char *),char *fn);
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || INTEL_386 || HIGHC_386
+#if MICROSOFT || INTEL_386
    /* nothing is needed */
 #endif					/* MICROSOFT || INTEL_386 || ... */
 #if TURBO || BORLAND_386
@@ -333,10 +333,10 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
    /* punt for now */
    n_paths = 0;
-#endif					/* HIGHC_386 || INTEL_386 || ... */
+#endif					/* INTEL_386 */
 
 #if MICROSOFT || NT
    char *syspath;
@@ -411,9 +411,9 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
    /* something may be needed */
-#endif					/* HIGHC_386 || INTEL_386 || ... */
+#endif					/* INTEL_386 || ... */
 #endif					/* MSDOS */
 
 #if UNIX
@@ -494,9 +494,9 @@ Deliberate Syntax Error
          }
 #endif					/* MICROSOFT */
 
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
    /* something is needed */
-#endif					/* HIGHC_386 || INTEL_386 || ... */
+#endif					/* INTEL_386 || ... */
 #endif					/* MSDOS */
 
 #if UNIX || VMS || MACINTOSH
@@ -636,9 +636,9 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
   /* something is needed */
-#endif					/* HIGHC_386 || INTEL_386 || ... */
+#endif					/* INTEL_386 */
 #endif					/* MSDOS */
 
 #if UNIX || MACINTOSH

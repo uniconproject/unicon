@@ -39,15 +39,15 @@
 #endif					/* MacOSX */
 
 #if MSDOS
-#if INTEL_386 || HIGHC_386 || BORLAND_386
+#if INTEL_386 || BORLAND_386
    Feature(1, "_MSDOS_386", "MS-DOS/386")
-#else					/* INTEL_386 || HIGHC_386 ... */
+#else					/* INTEL_386 || ... */
 #if NT
    Feature(1, "_MS_WINDOWS_NT", "MS Windows NT")
 #else					/* NT */
    Feature(1, "_MSDOS", "MS-DOS")
 #endif					/* NT */
-#endif					/* INTEL_386 || HIGHC_386 ... */
+#endif					/* INTEL_386 || ... */
 #endif					/* MSDOS */
 
 #if MVS

@@ -562,10 +562,6 @@ Deliberate Syntax Error
       #define TURBO 0
    #endif				/* TURBO */
 
-   #ifndef HIGHC_386
-      #define HIGHC_386 0
-   #endif				/* HIGHC_386 */
-
    #ifndef INTEL_386
       #define INTEL_386 0
    #endif				/* INTEL_386 */
@@ -578,15 +574,6 @@ Deliberate Syntax Error
       #define BORLAND_386 0
    #endif				/* BORLAND_386 (32-bit protected mode)*/
 
-   #if HIGHC_386
-      /*
-       * MetaWare's HighC 386 macro putc doesn't handle putc('\n') correctly -
-       * sometimes a CR is not written out before the LF.  So, redefine
-       * macro putc to actually issue an fputc.
-       */
-      #undef putc
-      #define putc(c,f) fputc(c,f)
-   #endif				/* HIGHC_386 */
 #endif					/* MSDOS || OS2 */
 
 #if MACINTOSH && MPW

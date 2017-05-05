@@ -25,13 +25,13 @@ Deliberate Syntax Error
 #endif					/* AMIGA || ... */
 
 #if MSDOS
-#if MICROSOFT || INTEL_386 || HIGHC_386
+#if MICROSOFT || INTEL_386
    /* this really isn't right for anything but Microsoft */
 static char *ostr = "CPD:I:U:o:A:Z:J";
 static char *options = 
    "[-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-ofile]\n    \
 [-A(S|C|M|L|H)] [-Za] [-J] [files]";
-#endif					/* MICROSOFT || INTEL_386 || ...  */
+#endif					/* MICROSOFT || INTEL_386  */
 
 #if TURBO || BORLAND_386 
 static char *ostr = "CPD:I:U:o:m:p";
@@ -136,9 +136,9 @@ Deliberate Syntax Error
          case 'p':
 #endif					/* TURBO ... */
 
-#if HIGHC_386 || INTEL_386
+#if INTEL_386
    /* something is needed */
-#endif					/* HIGHC_386 || INTEL_386 || ... */
+#endif					/* INTEL_386 */
 #endif					/* MSDOS */
 
 #if MVS || VM

@@ -454,15 +454,7 @@ void		xmfree		(void);
    int		bigrand		(dptr da, dptr dx);
 #endif					/* LargeInts */
 
-
-
-#if !HIGHC_386
    int dup2(int h1, int h2);
-#endif					/* !HIGHC_386 */
-
-#if HIGHC_386
-   int	brk(char *p);
-#endif					/* HIGHC_386 */
 
 #if MACINTOSH
    #if MPW

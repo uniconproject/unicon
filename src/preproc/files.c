@@ -317,16 +317,12 @@ Deliberate Syntax Error
    n_paths = 1;
 #endif					/* AMIGA */
 
-#if VM || MVS || (MACINTOSH && !MPW && !THINK_C)
+#if VM || MVS || (MACINTOSH && !MPW)
    /* probably needs something */
 Deliberate Syntax Error
 #endif					/* VM || MVS || ... */
 
 #if MACINTOSH
-#if THINK_C
-   char *sysdir = FileNameMacConvert(FileNameMacToUnix, "MacintoshHD:THINK C:THINK C:Standard Libraries:C headers");
-   n_paths = 1;
-#endif
 #if MPW
    /*
     * For MPW, environment variable CIncludes says where to look.
@@ -657,7 +653,7 @@ Deliberate Syntax Error
    }
 
 #if MACINTOSH
-#if MPW || THINK_C
+#if MPW
 /*
  * Extra functions specific to the Macintosh MPW implementation:
  *  functions to convert a UNIX-type file name to Mac-type
@@ -749,5 +745,5 @@ FileNameMacConvert(char *(*func)(char *),char *fn) {
    strcpy(newmem,newfp);
    return newmem;
 }
-#endif					/* MPW || THINK_C */
+#endif					/* MPW */
 #endif					/* MACINTOSH */

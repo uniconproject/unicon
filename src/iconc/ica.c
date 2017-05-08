@@ -381,22 +381,6 @@ void
 rdecl_imprison(rdecl)
    struct rdecl * rdecl;
 {
-#ifdef OldCode
-   struct gcell * cell;
-
-   for (cell=jail; cell; cell=cell->next) {
-      if (cell->ent == rdecl->ent)
-         /* this rdecl is already in jail */
-         return;
-      }
-   /*
-    * goto jail
-    */
-   cell = alloc(sizeof(struct gcell));
-   cell->ent = rdecl->ent;
-   cell->next = jail;
-   jail = cell;
-#endif
    gentry_imprison(rdecl->ent);
 }
 

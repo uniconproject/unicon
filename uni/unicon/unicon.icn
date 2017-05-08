@@ -328,7 +328,9 @@ procedure get_abs_file_name(fname)
     if pair[1] == "" then
         pair[1] := "."
     cwd := chdir()
-    rslt := chdir(pair[1])
+    if not (rslt := chdir(pair[1])) then {
+       halt("chdir(", image(pair[1]|fname), ") failed: ", &errortext)
+       }
     chdir(cwd)
     if not (rslt[-1] == PATHCHAR) then
         rslt ||:= PATHCHAR
@@ -382,6 +384,7 @@ procedure unicon_help()
    "   -c          : compile only, do not link",
    "   -C          : generate (optimized) C code executable",
    "   -Dsym[=val] : define preprocessor symbol",
+   "   -e efile    : redirect icont's standard error output to efile",
    "   -E          : preprocess only, do not compile",
    "   -features   : report Unicon features supported in this build",
    "   -fs         : prevent removal of unreferenced declarations",

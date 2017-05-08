@@ -1178,13 +1178,8 @@
 #define CsetPtr(b,c)	(BlkD(c,Cset)->bits + (((b)&0377) >> LogIntBits))
 
 #if MSDOS
-   #if (MICROSOFT && defined(M_I86HM)) || (TURBO && defined(__HUGE__))
-      #define ptr2word(x) ((uword)((char huge *)x - (char huge *)zptr))
-      #define word2ptr(x) ((char huge *)((char huge *)zptr + (uword)x))
-   #else				/* MICROSOFT ... */
       #define ptr2word(x) (uword)x
       #define word2ptr(x) ((char *)x)
-   #endif				/* MICROSOFT ... */
 #endif					/* MSDOS */
 
 #if NT

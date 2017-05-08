@@ -3059,11 +3059,23 @@ function{0,1} chdir(s)
       if (is:string(s)) {
 	 tended char *dir;
 	 cnv:C_string(s, dir);
+
+	 /*
+	  * Preliminary tilde $HOME support. Need to extend to Windows,
+	  * and flesh out support for tilde-based syntax.
+	  */
+	 if (strlen(dir)>2 && dir[0] == '~' && dir[1] == '/') {
+	    getenv_r("HOME", path, 1023);
+	    strcat(path, dir+1);
+	    dir = path;
+	    }
+
 	 if (chdir(dir) != 0) {
 	    set_syserrortext(errno);
 	    fail;
 	    }
 	 }
+
 #ifndef PATH_MAX
 #define PATH_MAX 512
 #endif					/* PATH_MAX */

@@ -157,7 +157,7 @@ thread-ring.u: thread-ring.icn
 concord:
 	unicon $(LDFLAGS) concord.icn 
 
-concord.u:
+concord.u: concord.icn
 	unicon $(CFLAGS) concord.icn 
 
 deal: deal.icn shuffle.u
@@ -169,22 +169,22 @@ deal.u: deal.icn shuffle.u
 ipxref:
 	unicon $(LDFLAGS) ipxref.icn 
 
-ipxref.u:
+ipxref.u: ipxref.icn
 	unicon $(CFLAGS) ipxref.icn 
 
 queens:
 	unicon $(LDFLAGS) queens.icn 
 
-queens.u:
+queens.u: queens.icn
 	unicon $(CFLAGS) queens.icn 
 
 rsg:
 	unicon $(LDFLAGS) rsg.icn 
 
-rsg.u:
+rsg.u: rsg.icn
 	unicon $(CFLAGS) rsg.icn 
 
-shuffle.u:
+shuffle.u: shuffle.icn
 	unicon $(CFLAGS) shuffle.icn
 
 

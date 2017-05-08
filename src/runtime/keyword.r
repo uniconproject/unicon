@@ -288,7 +288,7 @@ keyword{0,1} errortext
 #endif					/* !ConcurrentCOMPILER */
       if (((k_errornumber == 0) && IntVal(amperErrno)==0) ||
 	  (StrLoc(k_errortext) == NULL))
-         fail;
+         return nulldesc; // fail or return an empty string?
       return k_errortext;
       }
 end

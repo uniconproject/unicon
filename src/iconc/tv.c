@@ -249,14 +249,6 @@ tv_bits_cpy(dst, src, nbits)
    if (dst->ent == src->ent)
       return; 
    nvords = NumVords(nbits);
-#ifdef no_benefit
-   if (nvords >= n_rttyp_vords) {
-      dst->ent = src->ent;
-      return;
-      }
-   if (MemEqu(dst->ent->bits, src->ent->bits, nvords * sizeof(vord)))
-      return;
-#endif
    tmpent->raw_hash = dst->ent->raw_hash;
    tmpent->raw_hash -= (ull)dst->ent->bits[0];
    for (i=1; i<nvords; i++)

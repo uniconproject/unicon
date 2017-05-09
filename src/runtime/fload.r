@@ -95,6 +95,27 @@ function{0,1} loadfunc(filename,funcname)
          curfile = salloc(filename);	/* save the new name */
          handle = dlopen(filename, RTLD_LAZY);	/* get the handle */
          }
+
+      /*
+       * If not found, look in our plugins/lib directroty
+       * We are assuming that the plugins directory is one
+       * level up from iconx which should be on the path.
+       * TODO: this code is used at least in one other place
+       *       (keyword.r), so it should be pulled into a util
+       *       function.
+       * TODO: fix on Windows
+       */
+#if UNIX
+      if (!handle) {
+	 char path[MaxPath];
+	 if (findonpath("iconx", path, MaxPath)) {
+	    int n = strlen(path);
+	    snprintf(path+n-strlen("iconx"), MaxPath - n, "../plugins/lib/%s", filename );
+	    handle = dlopen(path, RTLD_LAZY);	/* get the handle */
+	    }
+         }
+#endif					/* UNIX */
+
       /*
        * Load the function.  Diagnose both library and function errors here.
        */

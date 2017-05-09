@@ -11,7 +11,7 @@ COBJ = $(LNAME).o
 CSRC = $(LNAME).c
 
 # @Replace: If additinal libraries need to be linked in append them here:
-$MYLIBS=$(LIBS)
+MYLIBS=$(LIBS) -llxc
 
 # 
 BASE=../../..

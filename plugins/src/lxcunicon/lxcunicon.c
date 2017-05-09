@@ -14,7 +14,7 @@
  ***
 */
  
-#include "../../ipl/cfuncs/icall.h"
+#include "../icall.h"
 #include <lxc/lxccontainer.h>
 #include <string.h>
 #include <stdio.h>

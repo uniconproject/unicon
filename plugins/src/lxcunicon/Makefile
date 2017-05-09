@@ -16,8 +16,11 @@ $MYLIBS=$(LIBS)
 # 
 BASE=../../..
 
+# lib relative to top
+TDIR=../..
+
 include ../Makedefs
 
-default:	$(LNAME).u $(TLIB)
+default:	$(LIBD)/$(LNAME).u $(TLIB)
 
 

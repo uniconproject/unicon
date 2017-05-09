@@ -895,11 +895,6 @@ Deliberate Syntax Error
       execvp(iconxloc,argv);	/* execute with path search */
 #endif					/* MICROSOFT || ... */
 
-#if INTEL_386
-      fprintf(stderr,"-x not supported\n");
-      fflush(stderr);
-#endif					/* INTEL_386 */
-
 #endif					/* MSDOS */
 
 #if MVS || VM

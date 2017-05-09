@@ -33,9 +33,9 @@ char *FileNameMacConvert(char *(*func)(char *),char *fn);
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || INTEL_386
+#if MICROSOFT
    /* nothing is needed */
-#endif					/* MICROSOFT || INTEL_386 || ... */
+#endif					/* MICROSOFT */
 #if TURBO
 #include <dir.h>
 #endif 					/* TURBO */
@@ -333,10 +333,6 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if INTEL_386
-   /* punt for now */
-   n_paths = 0;
-#endif					/* INTEL_386 */
 
 #if MICROSOFT || NT
    char *syspath;
@@ -411,9 +407,6 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO */
 
-#if INTEL_386
-   /* something may be needed */
-#endif					/* INTEL_386 || ... */
 #endif					/* MSDOS */
 
 #if UNIX
@@ -494,9 +487,6 @@ Deliberate Syntax Error
          }
 #endif					/* MICROSOFT */
 
-#if INTEL_386
-   /* something is needed */
-#endif					/* INTEL_386 || ... */
 #endif					/* MSDOS */
 
 #if UNIX || VMS || MACINTOSH
@@ -636,9 +626,6 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO ... */
 
-#if INTEL_386
-  /* something is needed */
-#endif					/* INTEL_386 */
 #endif					/* MSDOS */
 
 #if UNIX || MACINTOSH

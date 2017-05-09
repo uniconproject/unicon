@@ -562,10 +562,6 @@ Deliberate Syntax Error
       #define TURBO 0
    #endif				/* TURBO */
 
-   #ifndef INTEL_386
-      #define INTEL_386 0
-   #endif				/* INTEL_386 */
-
    #ifndef NT
       #define NT 0
    #endif				/* NT */

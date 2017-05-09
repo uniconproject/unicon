@@ -18,10 +18,6 @@
 #endif					/* AMIGA */
 
 #if MSDOS || OS2
-   #if INTEL_386
-      #include <dos.h>
-      int	brk		(pointer p);
-   #endif				/* INTEL_386 */
    #if MICROSOFT || TURBO || NT
       #include <dos.h>
    #endif				/* MICROSOFT || TURBO ... */

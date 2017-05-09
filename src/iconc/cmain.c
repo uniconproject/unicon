@@ -604,10 +604,6 @@ Deliberate Syntax Error
 #if MICROSOFT || TURBO
       execvp(ofile,argv);
 #endif					/* MICROSOFT || ... */
-#if INTEL_386
-      fprintf(stderr,"-x not supported\n");
-      fflush(stderr);
-#endif					/* INTEL_386 */
 #endif					/* MSDOS */
 
 #if MVS || VM

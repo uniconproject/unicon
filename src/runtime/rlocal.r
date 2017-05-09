@@ -813,52 +813,6 @@ MacDelay(int n) {
 /*********************************** MSDOS ***********************************/
 
 #if MSDOS
-#if INTEL_386
-/*  sbrk(incr) - adjust the break value by incr.
- *  Returns the new break value, or -1 if unsuccessful.
- */
-
-pointer sbrk(incr)
-msize incr;
-{
-   static pointer base = 0;		/* base of the sbrk region */
-   static pointer endofmem, curr;
-   pointer result;
-   union REGS rin, rout;
-
-   if (!base) {					/* if need to initialize				*/
-      rin.w.eax = 0x80004800;	/* use DOS allocate function with max	*/
-      rin.w.ebx = 0xffffffff;	/*  request to determine size of free	*/
-      intdos(&rin, &rout);		/*  memory (including virtual memory.	*/
-	  rin.w.ebx = rout.w.ebx;	/* DOS allocate all of memory.			*/
-      intdos(&rin, &rout);
-      if (rout.w.cflag)
-         return (pointer)-1;
-      curr = base = (pointer)rout.w.eax;
-      endofmem = (pointer)((char *)base + rin.w.ebx);
-      }
-	
-   if ((char *)curr + incr > (char *)endofmem)
-      return (pointer)-1;
-   result = curr;
-   curr = (pointer)((char *)curr + incr);
-   return result;
-
-}
-
-/*  brk(addr) - set the break address to the given value, rounded up to a page.
- *  returns 0 if successful, -1 if not.
- */
-
-int brk(addr)
-pointer addr;
-{
-   int result;
-   result = sbrk((char *)addr - (char *)sbrk(0)) == (pointer)-1 ? -1 : 0;
-   return result;
-}
-
-#endif					/* INTEL_386 */
 
 #if TURBO
 extern unsigned _stklen = 16 * 1024;

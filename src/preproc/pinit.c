@@ -25,9 +25,9 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || INTEL_386
+#if MICROSOFT
    /* nothing is needed */
-#endif					/* MICROSOFT || ... */
+#endif					/* MICROSOFT */
 #if TURBO
 #include <dir.h>
 #define Strng(s) #s
@@ -336,9 +336,6 @@ Deliberate Syntax Error
        }
 #endif 					/* TURBO */
 
-#if INTEL_386
-   /* something may be needed */
-#endif					/* INTEL_386 */
 #endif					/* MSDOS */
  
 #if UNIX
@@ -502,9 +499,6 @@ Deliberate Syntax Error
             break;
 #endif					/* TURBO ... */
 
-#if INTEL_386
-   /* something may be needed */
-#endif					/* INTEL_386 */
 #endif					/* MSDOS */
  
 #if MVS || VM

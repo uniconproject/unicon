@@ -10,12 +10,10 @@
 #include "../h/opdefs.h"
 
 #if MSDOS || OS2
-#if !INTEL_386 && !BORLAND_386
    static union {
       pointer stkadr;
       word stkint;
    } stkword;
-#endif
 #endif				/* MSDOS || OS2 */
 
 

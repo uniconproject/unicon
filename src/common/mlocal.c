@@ -350,6 +350,9 @@ char *libpath(char *prog, char *envname) {
    quotestrcat(buf, relfile(prog, "/../../uni/lib"));
    strcat(buf, " ");
    quotestrcat(buf, relfile(prog, "/../../uni/gui"));
+   strcat(buf, " ");
+   quotestrcat(buf, relfile(prog, "/../../plugins/lib"));
+
    return salloc(buf);
    }
 

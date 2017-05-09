@@ -36,9 +36,9 @@ char *FileNameMacConvert(char *(*func)(char *),char *fn);
 #if MICROSOFT || INTEL_386
    /* nothing is needed */
 #endif					/* MICROSOFT || INTEL_386 || ... */
-#if TURBO || BORLAND_386
+#if TURBO
 #include <dir.h>
-#endif 					/* TURBO ... */
+#endif 					/* TURBO */
 #define IsRelPath(fname) (fname[0] != '/')
 #endif					/* MSDOS */
 
@@ -387,7 +387,7 @@ Deliberate Syntax Error
       }
 #endif					/* MICROSOFT || NT */
 
-#if TURBO || BORLAND_386
+#if TURBO
     char *cfg_fname;
     FILE *cfg_file = NULL;
     struct str_buf *sbuf;
@@ -409,7 +409,7 @@ Deliberate Syntax Error
              c = getc(cfg_file);
           }
        }
-#endif 					/* TURBO ... */
+#endif 					/* TURBO */
 
 #if INTEL_386
    /* something may be needed */
@@ -609,7 +609,7 @@ Deliberate Syntax Error
       }
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_386
+#if TURBO
     /*
      * Get the locations from the -I options in the configuration file.
      */

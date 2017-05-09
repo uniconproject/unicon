@@ -10,7 +10,7 @@ extern fptr fncentry[];
 extern word istart[4]; extern int mterm;
 
 #if MSDOS || OS2
-#if !INTEL_386 && !BORLAND_386
+#if !INTEL_386
    static union {
       pointer stkadr;
       word stkint;
@@ -368,14 +368,14 @@ Deliberate Syntax Error
 #endif					/* AMIGA || ARM || ... */
 
 #if MSDOS || OS2
-#if INTEL_386 || BORLAND_386
+#if INTEL_386
 #define PushAVal(x) PushVal(x)
-#else					/* INTEL_386 || ... */
+#else					/* INTEL_386 */
 #define PushAVal(x) {rsp++; \
 		       stkword.stkadr = (char *)(x); \
 		       *rsp = stkword.stkint; \
 		       }
-#endif					/* INTEL_386 || ... */
+#endif					/* INTEL_386 */
 #endif					/* MSDOS || OS2 */
 
 /*
@@ -2499,7 +2499,7 @@ void stkdump(op)
 #endif					/* ARM */
 
 #if MSDOS || OS2
-#if MICROSOFT || TURBO || BORLAND_386
+#if MICROSOFT || TURBO
 void stkdump(op)
    int op;
    {

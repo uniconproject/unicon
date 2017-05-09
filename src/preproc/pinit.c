@@ -28,12 +28,12 @@ Deliberate Syntax Error
 #if MICROSOFT || INTEL_386
    /* nothing is needed */
 #endif					/* MICROSOFT || ... */
-#if TURBO || BORLAND_386
+#if TURBO
 #include <dir.h>
 #define Strng(s) #s
 #define StrMBody(m) Strng(m)
 #define CBufSz 200
-#endif 					/* TURBO ... */
+#endif 					/* TURBO */
 #endif					/* MSDOS */
  
 #if UNIX || VMS
@@ -231,7 +231,7 @@ Deliberate Syntax Error
          }
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_386
+#if TURBO
    char *undef_models = "#undef __TINY__\n#undef __SMALL__\n#undef __MEDIUM__\n\
 #undef __COMPACT__\n#undef __LARGE__\n#undef __HUGE__\n";
    char dir_buf[60];
@@ -334,7 +334,7 @@ Deliberate Syntax Error
           }
        fclose(cfg_file);
        }
-#endif 					/* TURBO ... */
+#endif 					/* TURBO */
 
 #if INTEL_386
    /* something may be needed */
@@ -458,7 +458,7 @@ Deliberate Syntax Error
              break;
 #endif					/* MICROSOFT */
 
-#if TURBO || BORLAND_386
+#if TURBO
          case 'm':
             /*
              * Memory model. Define the appropriate macro after

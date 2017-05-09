@@ -1302,9 +1302,9 @@ Deliberate Syntax Error
 #endif					/* ARM || OS2 */
 
 #if MSDOS
-#if TURBO || BORLAND_386
+#if TURBO
       signal(SIGFPE, SIG_DFL);
-#endif					/* TURBO || BORLAND_386 */
+#endif					/* TURBO */
 #endif					/* MSDOS */
 
 #if MVS || VM
@@ -1656,10 +1656,10 @@ int i;
       WSACleanup();
 #endif
 
-#if TURBO || BORLAND_386
+#if TURBO
    flushall();
    _exit(i);
-#else					/* TURBO || BORLAND_386 */
+#else					/* TURBO */
 #ifdef PresentationManager
    /* tell thread 1 to shut down */
    WinPostQueueMsg(HMainMessageQueue, WM_QUIT, (MPARAM)0, (MPARAM)0);
@@ -1672,7 +1672,7 @@ int i;
 #endif					/* PresentationManager */
    exit(i);
 #endif					/* PresentationManager */
-#endif					/* TURBO || BORLAND_386 */
+#endif					/* TURBO */
 
 }
 

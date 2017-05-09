@@ -44,9 +44,9 @@ void	setexe	(char *fname);
 
 #if MSDOS
    extern char pathToIconDOS[];
-   #if MICROSOFT || TURBO || BORLAND_386
+   #if MICROSOFT || TURBO
       #include <fcntl.h>
-   #endif				/* MICROSOFT || TURBO ... */
+   #endif				/* MICROSOFT || TURBO */
 #endif					/* MSDOS */
 
 #if MVS
@@ -222,9 +222,9 @@ char *outname;
 #endif					/* AMIGA || ARM || ... */
 
 #if MSDOS
-   #if MICROSOFT || TURBO || BORLAND_386
+   #if MICROSOFT || TURBO
       setmode(fileno(outfile),O_BINARY);	/* set for untranslated mode */
-   #endif				/* MICROSOFT || TURBO ... */
+   #endif				/* MICROSOFT || TURBO */
 #endif					/* MSDOS */
 
 #if OS2
@@ -630,9 +630,9 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-   #if MICROSOFT || TURBO || BORLAND_386
+   #if MICROSOFT || TURBO
       chmod(fname,0755);	/* probably could be smarter... */
-   #endif				/* MICROSOFT || TURBO ... */
+   #endif				/* MICROSOFT || TURBO */
 #endif					/* MSDOS */
 
 #if OS2

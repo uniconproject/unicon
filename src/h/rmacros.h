@@ -790,14 +790,14 @@
    #endif				/* AMIGA || ARM ... */
    
    #if MSDOS || OS2
-      #if INTEL_386 || BORLAND_386
+      #if INTEL_386
          #define PushAVal(x) PushVal(x)
-      #else				/* INTEL_386 || ... */
+      #else				/* INTEL_386 */
          
          #define PushAVal(x)  {sp++; \
          			stkword.stkadr = (char *)(x); \
          			*sp = stkword.stkint;}
-      #endif				/* INTEL_386 || ... */
+      #endif				/* INTEL_386 */
    #endif				/* MSDOS || OS2 */
    
    /*

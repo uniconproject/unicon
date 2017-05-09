@@ -601,7 +601,7 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH */
 
 #if MSDOS
-#if MICROSOFT || TURBO || BORLAND_386
+#if MICROSOFT || TURBO
       execvp(ofile,argv);
 #endif					/* MICROSOFT || ... */
 #if INTEL_386

@@ -570,10 +570,6 @@ Deliberate Syntax Error
       #define NT 0
    #endif				/* NT */
 
-   #ifndef BORLAND_386
-      #define BORLAND_386 0
-   #endif				/* BORLAND_386 (32-bit protected mode)*/
-
 #endif					/* MSDOS || OS2 */
 
 #if MACINTOSH && MPW
@@ -584,7 +580,7 @@ Deliberate Syntax Error
 #endif					/* MACINTOSH && MPW */
 
 #ifndef NoWildCards
-   #if NT || BORLAND_386 || MICROSOFT
+   #if NT || MICROSOFT
       #define WildCards 1
    #else				/* NT || ... */
       #define WildCards 0

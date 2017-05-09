@@ -22,7 +22,7 @@
       #include <dos.h>
       int	brk		(pointer p);
    #endif				/* INTEL_386 */
-   #if MICROSOFT || TURBO || NT || BORLAND_386
+   #if MICROSOFT || TURBO || NT
       #include <dos.h>
    #endif				/* MICROSOFT || TURBO ... */
 #endif					/* MSDOS || OS2 */

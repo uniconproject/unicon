@@ -48,19 +48,6 @@ typedef struct _FINDFILE_TAG {
 
 #endif 					/* NT */
 
-#if BORLAND_386
-
-#include <dos.h>
-
-typedef struct ffblk FINDDATA_T;
-
-#define FINDFIRST(pattern, pfd)	( !findfirst ( (pattern), (pfd), FA_NORMAL ) )
-#define FINDNEXT(pfd)	( !findnext ( (pfd) ) )
-#define FILENAME(pfd)	( (pfd)->ff_name )
-#define FINDCLOSE(pfd)	( (void) 0 )
-
-#endif				        /* BORLAND_386 */
-
 #if MICROSOFT
 
 #include <dos.h>

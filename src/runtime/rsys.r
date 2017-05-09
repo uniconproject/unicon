@@ -89,18 +89,6 @@ struct b_file *fbp;
    static int nsaved = 0;
 #endif					/* PosixFns */
 
-#if AMIGA
-#if LATTICE
-   /* This code is special for Lattice 4.0.  It was different for
-    *  Lattice 3.10 and probably won't work for other C compilers.
-    */
-   extern struct UFB _ufbs[];
-
-   if (IsInteractive(_ufbs[fileno(fd)].ufbfh))
-      return read(fileno(fd),buf,maxi);
-#endif					/* LATTICE */
-#endif					/* AMIGA */
-
 #ifdef Messaging
    if (fbp->status & Fs_Messaging) {
       struct MFile* mf = (struct MFile *)fd;

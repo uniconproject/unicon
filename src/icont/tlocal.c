@@ -14,12 +14,6 @@
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-#if LATTICE
-unsigned long _STACK = 20000;   /*   MNEED ALSO, PLEASE */
-#endif					/* LATTICE */
-#endif					/* AMIGA */
-
 #if ARM
 #include "kernel.h"
 
@@ -259,15 +253,6 @@ extern unsigned _stklen = 12 * 1024;
 #endif					/* TURBO */
 
 #endif					/* MSDOS */
-
-#if OS2
-#endif					/* OS2 */
-
-#if UNIX
-#endif					/* UNIX */
-
-#if VMS
-#endif					/* VMS */
 
 /*
  * End of operating-system specific code.

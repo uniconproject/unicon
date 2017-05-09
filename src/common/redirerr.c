@@ -19,17 +19,6 @@ char *p;
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   #if LATTICE
-      /*
-       * The following code varies from compiler to compiler, or even
-       *  between versions of the same compiler (e.g. lattice 3.1 vs. 4.0).
-       */
-      stderr->_file = stdout->_file;
-      stderr->_flag = stdout->_flag;
-   #endif				/* LATTICE */
-#endif					/* AMIGA */
-
 #if ARM || MVS || VM
    /* cannot do this */
 #endif					/* ARM || MVS || VM */

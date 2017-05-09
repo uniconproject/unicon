@@ -794,13 +794,6 @@ char *ofile, *efile, **args;
 
    *p++ = ofile;			/* pass icode file name */
 
-#if AMIGA && LATTICE
-   *p = *args;
-   while (*p++) {
-      *p = *args;
-      args++;
-   }
-#else					/* AMIGA && LATTICE */
 #ifdef MSWindows
 #ifndef NTConsole
    {
@@ -827,7 +820,6 @@ char *ofile, *efile, **args;
 
    while ((*p++ = *args++) != 0)      /* copy args into argument vector */
       ;
-#endif					/* AMIGA && LATTICE */
 
    *p = NULL;
 
@@ -840,18 +832,6 @@ char *ofile, *efile, **args;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-#if LATTICE
-      {
-      struct ProcID procid;
-      if (forkv(iconxloc,argv,NULL,&procid) == 0) {
-         wait(&procid);
-         return;
-         }
-      }
-#endif					/* LATTICE */
-#endif					/* AMIGA */
 
 #if ARM
    {

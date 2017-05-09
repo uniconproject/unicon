@@ -556,16 +556,8 @@ char *ofile, *efile, **args;
 
    *p++ = ofile;			/* set executable file */
 
-#if AMIGA && LATTICE
-   *p = *args;
-   while (*p++) {
-      *p = *args;
-      args++;
-      }
-#else					/* AMIGA && LATTICE */
    while ((*p++ = *args++) != NULL)		/* copy args into argument vector */
       ;
-#endif					/* AMIGA && LATTICE */
 
    *p = NULL;
 
@@ -583,18 +575,6 @@ char *ofile, *efile, **args;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-#if LATTICE
-      {
-      struct ProcID procid;
-      if (forkv(ofile,argv,NULL,&procid) == 0) { 
-         wait(&procid);
-         return;
-         }
-      }
-#endif					/* LATTICE */
-#endif					/* AMIGA */
 
 #if MACINTOSH
       fprintf(stderr,"-x not supported\n"); fflush(stderr);

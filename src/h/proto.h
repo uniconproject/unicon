@@ -11,12 +11,6 @@
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   #if LATTICE
-      #include <dos.h>
-   #endif				/* LATTICE */
-#endif					/* AMIGA */
-
 #if MSDOS || OS2
    #if MICROSOFT || TURBO || NT
       #include <dos.h>

@@ -35,12 +35,6 @@ static void vanq_proc (struct ef_marker *efp_v, struct gf_marker *gfp_v);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-#if LATTICE
-extern int chkbreak;
-#endif					/* LATTICE */
-#endif					/* AMIGA */
-
 #if ARM || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing needed */
 #endif					/* ARM || ... */
@@ -694,15 +688,6 @@ int interp_x(int fsig,dptr cargp)
 #if PORT
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-#if LATTICE
-      ExInterp_sp;
-      if (chkbreak > 0)
-	 chkabort();			/* check for CTRL-C or CTRL-D break */
-      EntInterp_sp;
-#endif					/* LATTICE */
-#endif					/* AMIGA */
 
 #if ARM || MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing to do */

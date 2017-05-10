@@ -275,26 +275,6 @@ char *name;
       tfatal("cannot resolve reference to file name", name);
       }
 
-#ifdef mdw_old
-/*
- * src_file - add the file name to the list of source files to be translated,
- *   if it is not already on the list.
- */
-void src_file_original(name)
-char *name;
-   {
-   struct srcfile **pp;
-   struct srcfile *p;
-
-   for (pp = &srclst; *pp != NULL; pp = &(*pp)->next)
-     if (strcmp((*pp)->name, name) == 0)
-        return;
-   p = NewStruct(srcfile);
-   p->name = salloc(name);
-   p->next = NULL;
-   *pp = p;
-}
-#endif /* mdw_old */
 
 void src_file(name, srclist)
 char *name;

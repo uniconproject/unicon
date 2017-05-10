@@ -485,7 +485,10 @@ tv_init(infer, nicntyp, nintrtyp, nrttyp)
    tmpent->raw_hash = 0ULL;
 
    /*
-    * create the val_mask to differentiate between icntyps and intrtyps
+    * Create the val_mask to differentiate between icntyps and intrtyps.
+    *  The division between bits for first-class types and variables types
+    *  generally occurs in the middle of a word. Set up a mask for extracting
+    *  the first-class types from this word.
     */
    val_mask = 0ULL;
    i = n_icntyp_bits - (n_icntyp_vords - 1) * VordBits;

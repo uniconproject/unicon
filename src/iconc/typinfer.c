@@ -140,9 +140,6 @@ static unsigned int nxt_bit;    /* next unassigned bit in bit vector */
 unsigned int n_icntyp;   /* number of non-variable types */
 unsigned int n_intrtyp;  /* number of types in intermediate values */
 unsigned int n_rttyp;    /* number of types in runtime computations */
-#ifdef now_in_tv_module
-unsigned int val_mask;   /* mask for non-var types in last int of type */
-#endif
 
 unsigned int null_bit;   /* bit for null type */
 unsigned int str_bit;    /* bit for string type */
@@ -201,7 +198,7 @@ void typeinfer()
    int i, j, k;
    int size;
    int flag;
-/* mdw */long lastchanged;
+   long lastchanged;
 #ifdef DebugOnly
 struct rusage ru_in, ru_out;
 getrusage(RUSAGE_SELF, &ru_in);
@@ -498,7 +495,7 @@ getrusage(RUSAGE_SELF, &ru_in);
 
    n_rttyp = nxt_bit; /* total size of type system */
 
-/* mdw: init ti vectors */
+/* init ti vectors */
 Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
 
 #ifdef TypTrc
@@ -515,29 +512,6 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
          }
       }
 #endif					/* TypTrc */
-
-   /*
-    * The division between bits for first-class types and variables types
-    *  generally occurs in the middle of a word. Set up a mask for extracting
-    *  the first-class types from this word.
-    *
-    * mdw: this is width-dependent; if an int is 32 bits and a word is 64 bits,
-    * this methodology needs to be refined in order to use words in typevects.
-    */
-#ifdef now_performed_in_tv_init
-#ifdef mdw
-   val_mask = 0;
-#else
-   val_mask = (vord)0;
-#endif
-#ifdef mdw
-   i = n_icntyp - (NumInts(n_icntyp) - 1) * IntBits;
-#else
-   i = n_icntyp - (NumVords(n_icntyp) - 1) * VordBits;
-#endif
-   while (i--)
-      val_mask = (val_mask << 1) | 1;
-#endif /* now_performed_in_tv_init */
 
    if (do_typinfer) {
       /*

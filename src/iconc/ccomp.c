@@ -294,11 +294,12 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 2, " ", ICONC_XLIB);
 #endif					/* Graphics */
 
-#ifdef mdw_0
+#if 0
+/* ODBC support is not finished in iconc. Enable this if you are working on it. */
 #ifdef ISQL
    buf = growcat(buf, &buflen, 1, " -liodbc");
-#endif /* ISQL */
-#endif /* mdw_0 */
+#endif					/* ISQL */
+#endif					/* 0 */
 
 #if HAVE_LIBZ
    buf = growcat(buf, &buflen, 1, " -lz");

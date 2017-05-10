@@ -23,8 +23,8 @@ class LXC : uso::USO (
     LXCRename,
     LXCInit,
     vernum,
-    arch,
-    ErrorTable
+    ark,
+    errorTable
     )
 
    method exist(name)
@@ -40,7 +40,7 @@ class LXC : uso::USO (
    end
 
    method arch()
-      return arch
+      return ark
    end
 
    method init()
@@ -65,12 +65,12 @@ class LXC : uso::USO (
       (LXCInit     := loadfunc(path, "lxcinit"))) |
          stop("can't load LXC library from ", image(path))
       
-      ErrorTable := table()
+      errorTable := table()
       LXC := self
       vernum := LXC.LXCInit()
       
       # The default architecture 
-      /arch := (&features ?(="Arch " & 
+      /ark := (&features ?(="Arch " & 
             (if ="x86_" then
                if ="32" then
                   "i386"
@@ -114,15 +114,19 @@ class LXContainer(
    method reboot()
       return LXC.LXCReboot(handle)
    end
-   method State()
+
+   method state()
       return LXC.LXCState(handle)
    end
+
    method shutdown(timeout:30)
       return LXC.LXCShutdown(handle, timeout)
    end
+
    method stop(timeout:30)
       return LXC.LXCStop(handle, timeout)
-   end   
+   end
+
    method destroy()
       return LXC.LXCDestroy(handle)
    end
@@ -134,5 +138,5 @@ class LXContainer(
       /dist := "ubuntu"
       /release := "xenial"
       # use a default arch that matches the current Unicon binaries
-      /arch := LXC.Arch()
+      /arch := LXC.arch()
  end

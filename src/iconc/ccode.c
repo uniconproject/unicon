@@ -4093,23 +4093,8 @@ field_ref(p, n, rslt)
       rp = fp->rlist;
       while (rp != NULL) {
          offset = rp->offset;
-#ifdef mdw_original
          while (rp != NULL && rp->offset == offset) {
-            if (rp->mark) {
-               rp->mark = 0;
-               cd = alc_ary(3);
-               cd->ElemTyp(0) = A_Str;
-               cd->Str(0) =              "   case ";
-               cd->ElemTyp(1) = A_Intgr;
-               cd->Intgr(1) =            rp->rec->rec_num;
-               cd->ElemTyp(2) = A_Str;
-               cd->Str(2) =              ":";
-               cd_add(cd);
-               }
-            rp = rp->next;
-            }
-#endif
-         while (rp != NULL && rp->offset == offset) {
+	    /* originally this body was only done if rp->mark was on. */
             rp->mark = 0;
             cd = alc_ary(3);
             cd->ElemTyp(0) = A_Str;

@@ -115,15 +115,11 @@ int trans(char *argv0)
 
    lpath = (char *)libpath(argv0, "LPATH");	/* remains null if unspecified */
 
-#ifdef mdw_original
-   for (sf = srclst; sf != NULL; sf = sf->next)
-      trans1(sf->name);	/* translate each file in turn */
-#else
    if (opt_ca && ca_first_perifile) {
       /*
        * translate all non-peri files
        */
-      for (sf=srclst; sf; sf=sf->next) {
+      for (sf = srclst; sf != NULL; sf = sf->next) {
          if (strcmp(sf->name, ca_first_perifile) == 0)
             break;
          trans1(sf->name);
@@ -139,8 +135,6 @@ int trans(char *argv0)
       for (sf = srclst; sf != NULL; sf = sf->next)
          trans1(sf->name);	/* translate each file in turn */
       }
-#endif
-
 
    if (!pponly) {
       /*

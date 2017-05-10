@@ -31,17 +31,16 @@
    #include "../h/rproto.h"
 #endif					/* ConsoleWindow */
 
-#ifdef mdw_Instrument_Allocations
+#ifdef IconcLogAllocations
 extern void * _alloc(unsigned int, char *, int);
 #define alloc(n) (_alloc((n),__FILE__,__LINE__))
-#endif /* mdw_Instrument_Allocations */
+#endif					/* IconcLogAllocations */
 
-/* mdw: squelch redef of "OF" as gcc warning */
+/* squelch redef of "OF" and "Type" - avoid gcc warning */
 #ifdef OF
 #undef OF
 #endif
 
-/* mdw: squelch redef of "Type" as gcc warning */
 #ifdef Type
 #undef Type
 #endif

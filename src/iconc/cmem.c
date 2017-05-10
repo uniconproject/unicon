@@ -137,7 +137,7 @@ init_rec(name)
    sym_ent->val.rec = r;
 }
 
-#ifdef mdw_Instrument_Allocations
+#ifdef IconcLogAllocations
 static
 void *
 alloc_original(n)
@@ -251,5 +251,4 @@ _alloc(n, fname, line)
    rslt = alloc_original(n);
    return rslt;
 }
-#endif /* mdw_Instrument_Allocations */
-
+#endif					/* IconcLogAllocations */

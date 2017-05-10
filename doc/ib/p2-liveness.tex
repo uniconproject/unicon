@@ -171,9 +171,42 @@ operations producing intermediate values (\textit{v1}, \textit{v2},
 expressed in Icon, except that the assignments do not dereference
 their right-hand operands.
 
-{\centering\color{green}
- \includegraphics[width=1.7252in,height=1.6866in]{kw/figure4-1.png}  
-\par}
+%-% {\centering\color{green}
+%-%  \includegraphics[width=1.7252in,height=1.6866in]{kw/figure4-1.png}  
+%-%  \par}
+
+\begin{center}
+ \begin{tikzpicture}[>=latex, ultra thick,
+      node distance= 1mm and 1mm,
+      every label/.style={font=\small\it}
+    ]
+\node (t) {(};
+\node (v1) [below=of t.south west, label=right:{v1 := {\tt write},}] {};
+\node (v2) [below=of v1, label=right:{v2 := {\tt f},}] {};
+\node (v3) [below=of v2, label=right:{v3 := {\tt \textbackslash}v2,}] {};
+\node (v4) [below=of v3, label=right:{v4 := {\tt x},}] {};
+\node (v5) [below=of v4, label=right:{v5 := {\tt !}v4,}] {};
+\node (v6) [below=of v5, label=right:{v6 := {\tt \".\"},}] {};
+\node (v7) [below=of v6, label=right:{v7 := v1(v3,v5,v6),}] {};
+\node (v8) [below=of v7, label=right:{v8 := {\tt \&{}fail}}] {};
+\node (b)  [below=of v8.south east] {)};
+
+\draw (v1.west) -| ($(v7.west) - (1.2cm,0)$);
+\draw (v2.west) -| ($(v3.west) - (1.0cm,0)$);
+\draw (v3.west) -| ($(v7.west) - (0.8cm,0)$);
+\draw (v4.west) -| ($(v5.west) - (0.6cm,0)$);
+\draw (v5.west) -| ($(v7.west) - (0.4cm,0)$);
+\draw (v6.west) -| ($(v7.west) - (0.2cm,0)$);
+\begin{scope}[dotted]
+\draw ($(v7.west) - (1.2cm,0)$) -- ($(v8.west) - (1.2cm,0)$);
+\draw ($(v7.west) - (0.8cm,0)$) -- ($(v8.west) - (0.8cm,0)$);
+\draw ($(v5.west) - (0.6cm,0)$) -- ($(v8.west) - (0.6cm,0)$);
+\end{scope}
+
+\draw[thick,->] ($(v8.east) + (2.2cm,0)$)
+   to[out=0, in=0, distance= 3cm] ($(v5.east) + (2.2cm,0)$);
+\end{tikzpicture}
+\end{center}
 
 Whether or not the program variables and constants are actually placed
 in temporary variables depends on the machine model, implementation
@@ -241,9 +274,42 @@ each intermediate value is the subexpression that computes it. This
 representation is referred to as a \textit{postfix tree}. The postfix
 tree for the example above is:
 
-{\centering\color{green}
- \includegraphics[width=5.1098in,height=1.9366in]{kw/figure4-2.png}  
-\par}
+%-% {\centering\color{green}
+%-%  \includegraphics[width=5.1098in,height=1.9366in]{kw/figure4-2.png}  
+%-% \par}
+
+\begin{center}
+\begin{tikzpicture} [thick,font=\it,
+     rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm, anchor=west}
+   ]
+% Use a matrix to establish positions, then paint stuff on top
+\matrix [column sep=6mm, row sep=10mm]{
+&&&&&&\node(v7){};&&&&&&&&\node(v8){};&&\node(amp){};\\
+\node(v1){};&&&\node(v3){};&&&\node(v5){};&&&\node(v6){};&&\node(invoke){};&&&\node(fail){};&&\\
+\node(write){};&&\node(v2){};&\node(v2c){};&\node(bslash){};&\node(v4){};&\node(v4c){};&
+      \node(shriek){};&&\node(dot){};&&&&&&&&\\
+&&\node(f){};&&&\node(x){};&&&&&&&&&&&\\
+};
+% Paint lines before filled rectangles before labels so the masking works.
+\draw (v7) -- (v5) (v8) -- (fail);
+\draw (v1) -- (write) (v3) -- (v2c) (v5) -- (v4c) (v6) -- (dot);
+\draw (v2) -- (f) (v4) -- (x);
+% Paint round rectangles
+\node[rr, minimum width=9cm] at ($(v7.west) - (0.5cm,0)$) {};
+\node[rr, minimum width=10.5cm] at ($(v1.west) - (0.5cm,0)$) {};
+\foreach \n in {dot,f,x} {\node[rr, minimum width=1cm] at ($(\n.west) - (0.25cm,0)$) {};};
+\foreach \n in {fail,write} {\node[rr, minimum width=1.5cm] at ($(\n.west) - (0.5cm,0)$) {};};
+\foreach \n in {v2,v4} {\node[rr, minimum width=2.6cm] at ($(\n.west) - (0.2cm,0)$) {};};
+% Paint labels
+\foreach \n in {v7,v8,v1,v3,v5,v6,v2,v4} {\node at (\n) {\n};};
+\foreach \n in {invoke,write,f,x} {\node at (\n) {\tt\small \n};};
+\node at (amp) {\tt\small \&};
+\node at (fail) {{\tt\small \&{}fail}};
+\node[anchor=east] at (bslash) {\textbackslash};
+\node[anchor=east] at (shriek) {\tt\small !};
+\node at (dot) {\".\"};
+\end{tikzpicture}
+\end{center}
 
 In this notation, the forward execution order of operations (which
 includes constants and references to program variables) is
@@ -269,9 +335,23 @@ subexpression. For example, invoke uses the intermediate values
 figure shows these intermediate results and the operation in
 isolation.
 
-{\centering\color{green}
- \includegraphics[width=2.4937in,height=0.3402in]{kw/figure4-3.png}  
-\par}
+%-% {\centering\color{green}
+%-%  \includegraphics[width=2.4937in,height=0.3402in]{kw/figure4-3.png}  
+%-% \par}
+
+\begin{center}
+\begin{tikzpicture} [thick,
+     rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm, anchor=west}
+   ]
+% Use a matrix to establish positions, then paint stuff on top
+\matrix [column sep=6mm, row sep=10mm]{
+\node(v1){};&&&\node(v3){};&&&\node(v5){};&&&\node(v6){};&&\node(invoke){};\\
+};
+\node[rr, minimum width=10cm] at ($(v1.west) - (0.5cm,0)$) {};
+\foreach \n in {v1,v3,v5,v6} {\node at (\n) {\it \n};};
+\node[anchor=west] at (invoke) {\tt\small invoke};
+\end{tikzpicture}
+\end{center}
 
 In order for these uses to be in a loop, backtracking must be
 initiated from outside; that is, beyond the subexpression (in the
@@ -363,7 +443,27 @@ from a postfix tree to a syntax tree is trivial. It is accomplished by
 deleting the explicit intermediate values. A syntax tree for the
 example is:
 
-\includegraphics[width=3.1638in,height=3.198in]{kw/figure4-4.png}
+%-% \includegraphics[width=3.1638in,height=3.198in]{kw/figure4-4.png}
+
+\begin{center}
+\begin{tikzpicture} [thick,font=\small\tt,
+     rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm}
+   ]
+
+\node (root) [rr] {\&}
+  child
+  { node[rr]{invoke}
+    child { node [rr] {write} }
+    child { node [rr] {\textbackslash}
+            child { node[rr] {f}}
+          }
+    child { node [rr] {!} child { node[rr] {x} } }
+    child {node [rr] {"."} }
+  }
+  child[missing]
+  child { node[rr] {\&{}fail} };
+\end{tikzpicture}
+\end{center}
 
 Several interpretations can be given to a node in a syntax tree. A
 node can be viewed as representing either an operation, an entire
@@ -457,14 +557,103 @@ subexpressions. The following diagram shows how \texttt{resumer},
 \texttt{failer}, and \texttt{gen} information would be passed through
 the postfix tree.
 
-\noindent\includegraphics[width=5.9in,height=2.3in]{kw/figure4-5.png}
+%-% \noindent\includegraphics[width=5.9in,height=2.3in]{kw/figure4-5.png}
+
+\begin{center}
+\begin{tikzpicture} [thick,>=latex, font=\small\tt,
+     rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm, anchor=west}
+   ]
+% Use a matrix to establish positions, then paint stuff on top
+\matrix [column sep=20mm, row sep=20mm]{
+&[5mm]&[20mm]\node(outT){};&[5mm]&\\[-3mm]
+\node(outL){};&\node(v1){};&\node(v2){};&\node(pl){};&\node(inR){};\\[5mm]
+&\node(ex1){};&\node(ex2){};&&\\
+};
+\draw [dashed,->] (v2) to node[right] {gen} (outT);
+\draw (ex1) -- (v1) (ex2) -- (v2);
+\foreach \p in {ex1,ex2} {
+  \draw [dashed,->] ($(\p) + (0.3cm,0)$) to node[right] {gen} ($(\p) + (0.3cm,1.7cm)$);
+};
+\node[rr, minimum width=9cm] at ($(v1.west) - (0.7cm,0)$) {};
+\foreach \n in {v1,v2} {\node at (\n) {\it \n};};
+\node (plus) at (pl) {+};
+\node (expr1) [rr,anchor=center] at (ex1) {expr$_1$};
+\node (expr2) [rr,anchor=center] at (ex2) {expr$_2$};
+\draw [dashed,->] (plus.west) to[out=180,in=0] node[near end, right] {~resumer} (expr2.east);
+\draw [dashed,->] (inR) -- (plus.east);
+\node [above] at (inR) {resumer};
+\draw [dashed,->] (expr2.west) to node[below]{resumer\hspace{0.7cm}failer} (expr1.east);
+\draw [dashed,->] (expr1.west) to[out=180,in=0] (outL);
+\node [above] at (outL) {failer};
+\end{tikzpicture}
+\end{center}
 
 This information would then be used to compute \texttt{lifetime}
 information for \textit{v1} and \textit{v2}. The next figure shows how
 the attribute information is actually passed through the syntax tree.
 
+%-% \includegraphics[width=6.0in,height=2.2in]{kw/figure4-6.png}  
 
- \includegraphics[width=6.0in,height=2.2in]{kw/figure4-6.png}  
+%% \begin{center}
+%% \begin{tikzpicture} [draw,thick,>=latex, font=\small\tt,
+%%      rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm}
+%%    ]
+%% % Make a simple column/row grid of labelled points
+%% \begin{scope}[inner sep=0]
+%%   \foreach \c in {0,...,9} {
+%%     \foreach \r in {0,...,6} {
+%%       \node[name=p\c\r] at (\c,\r) {};
+%%       };
+%%   };
+%% \end{scope}
+
+%% \node (pl) [rr] at (p54) {+};
+%% \node (e1) [rr] at (p21) {expr$_1$};
+%% \node (e2) [rr] at (p81) {expr$_2$};
+%% \draw ($(p55) -(0,0.25)$) -- (pl) -- (e1) (pl) -- (e2);
+%% \draw[dashed,->] ($(p22) -(0.5,0.5)$) -- (p44) to[in=270] ($(p45) + (0.5,0)$)
+%%       node[at start, left] {failer};
+%% \draw[dashed,->] ($(p55) + (0.5,0)$) -- ($(pl) + (0.5,0)$) node[at start, right] {resumer};
+%% \node[xshift=0.5cm,anchor=east] at (p45) {failer};
+%% \draw[dashed,->] (p84) -- (p85) node[at end,right] {gen};
+%% \draw[dashed,->] ($(p64) - (0,0.5)$) -- ($(e2) + (0,0.5)$) node[at end,right] {resumer};
+
+%% \draw[dashed,->] ($(e2.west)+(0,0.25)$)
+%%    .. controls (p63) and (p43)
+%%    .. ($(e1.east)+(0,0.25)$)
+%%    node[at start,left] {failer~} node[at end, right] {~resumer};
+
+%% \draw[dashed,->] ($(p92)+(1.5,-0.5)$) -- (p93) node[at start,right] {gen};
+%% \draw[dashed,->] ($(p01)+(-0.5,0.5)$) -- (p13) node[at start, left] {gen};
+%% \end{tikzpicture}
+%% \end{center}
+
+\begin{center}
+\begin{tikzpicture} [draw,thick,>=latex, font=\small\tt,
+     rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm}
+   ]
+% Draw the nodes
+\node (pl) [rr] at (5,4) {+};
+\node (e1) [rr] at (2,1) {expr$_1$};
+\node (e2) [rr] at (8,1) {expr$_2$};
+% connect the nodes
+\draw (5,4.75) -- (pl) -- (e1) (pl) -- (e2);
+% draw failer and resumer lines
+\draw[dashed,->] (1.5,1.5) -- (4,4) to[in=270] (4.5,5) node[at start, left] {failer};
+\draw[dashed,->] (5.5,5) -- ($(pl) + (0.5,0)$) node[at start, right] {resumer};
+\node[xshift=0.5cm,anchor=east] at (4,5) {failer};
+\draw[dashed,->] (6,3.5) -- ($(e2) + (0,0.5)$) node[at end,right] {resumer};
+% Now the complicated bit: draw a nice bendy line between e2 and e1
+\draw[dashed,->] ($(e2.west)+(0,0.25)$)
+   .. controls (6,3) and (4,3)
+   .. ($(e1.east)+(0,0.25)$)
+   node[at start,left] {failer~} node[at end, right] {~resumer};
+% Draw the "gen" lines
+\draw[dashed,->] (8,4) -- (8,5) node[at end,right] {gen};
+\draw[dashed,->] (10.5,1.5) -- (9.5,2.5) node[at start,right] {gen};
+\draw[dashed,->] (-0.5,1.5) -- (0.5,2.5) node[at start,left] {gen};
+\end{tikzpicture}
+\end{center}
 
 \noindent
 The \texttt{lifetime} attributes are computed for the roots of the

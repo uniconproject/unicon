@@ -165,11 +165,75 @@ stack. The arrows on the right represent the call chain of procedures.
 \texttt{fp} points to the frame of the currently executing procedure.
 
 {\centering\selectlanguage{english}
-% \includegraphics[width=5.0319in,height=1.6346in]{kw/figure2-1.png}
-\includegraphics[width=5in]{ib-img/BackTrackingChain.pdf}
- 
-\par}
+%-% \includegraphics[width=5in]{ib-img/BackTrackingChain.pdf}
+%-% \includegraphics[width=5.0319in,height=1.6346in]{kw/figure2-1.png}
 
+\begin{tikzpicture}[>=latex]
+\matrix [thick, nodes={minimum height=4mm, minimum width=12mm, font=\tt}]
+{
+% uppper dots
+% The matrix column sep option appears to add an extra separation after the final column
+% so we use the first row to define the column separations
+\node{.}; &[3.2cm] \node{.}; &[3.2cm] \node{.}; \\
+\node{.}; & \node{.}; & \node{.}; \\
+\node{.}; & \node{.}; & \node{.}; \\
+
+% top row of empty boxes (tl = top left, tm = top middle, tr = top right)
+\node (tl) [draw, minimum height=8mm] {}; &
+\node (tm) [draw, minimum height=8mm] {}; &
+\node (tr) [draw, minimum height=8mm] {};\\
+
+% middle dots
+\node{.}; & \node{.}; & \node{.}; \\
+\node (mdl) {.}; & \node (mdm) {.}; & \node (mdr) {.}; \\ % mdl = middle dot left etc.
+\node{.}; & \node{.}; & \node{.}; \\
+
+% f boxes (left middle and right)
+\node (fl) [draw, minimum height=8mm] {f}; & 
+\node (fm) [draw, minimum height=8mm] {f}; &
+\node (fr) [draw, minimum height=8mm] {f};\\[-0.8pt] % subtract width of a thick line to avoid a very thick line between boxes
+
+% g boxes (left middle and right)
+\node (gl) [draw, minimum height=8mm] {g}; &
+\node (gm) [draw, minimum height=8mm] {g}; &
+\node (gr) [draw, minimum height=8mm] {g}; &\\[-0.8pt]
+
+ % h box (right only)
+ & & \node (hr) [draw, minimum height=8mm] {h}; \\
+};
+
+% draw connecting arrows between the labelled nodes
+\begin{scope}[thick,font=\tt\small]
+\foreach \s / \d in {gm/tm, gr/tr} { % draw backtracking chain on the left
+   \draw[->] ($(\s.north west) -(0,2mm)$) to [distance=1.2cm, out=155, in=205] ($(\d.south west) +(-1mm,2mm)$);
+}
+\foreach \s / \d in {gl/fl, gm/fm, gr/fr} { % connect g boxes to f boxes on the right
+   \draw[->] ($(\s.north east) -(0,2mm)$) to [distance=1cm, out=0, in=0] ($(\d.south east)+ (0,2mm)$);
+}
+\foreach \s / \d in {mdl/tl, mdm/tm, mdr/tr} { % connect middle dots and top boxes
+   \draw[->] (\s.north east) to [distance=1cm, out=0, in=0] ($(\d.south east)+ (0,2mm)$);
+}
+\foreach \s / \d in {fl/mdl, fm/mdm, fr/mdr} { %connect f boxes and middle dots
+   \draw[->] ($(\s.north east) -(0,2mm)$) to [distance=1cm, out=0, in=0] (\d.south east);
+}
+\foreach \n in {tl, gm, gr} { % add btp pointers
+  \draw ($(\n.west) - (1cm,0)$) node (x) {btp} ;
+  \draw[->] (x.east) -- (\n.west);
+}
+\foreach \n in {gl, fm, hr} { % add fp pointers
+  \draw ($(\n.east) + (1cm,0)$) node (x) {fp} ;
+  \draw[->] (x.west) -- (\n.east);
+}
+\foreach \n in {tl,tm,tr} { % add left and right back pointers to top boxes
+  \draw[->] ($(\n.north west) - (0,2mm)$) to [out=180, in=270] +(-0.4cm,0.5cm);
+  \draw[->] ($(\n.north east) - (0,2mm)$) to [out=0, in=270] +(0.4cm,0.5cm);
+}
+\draw[->] ($(hr.north east) - (0,2mm)$) to [distance=1.5cm, out=0, in=0] ($(fr.east) + (0.25cm,0)$);
+\end{scope}
+%\draw[red] (current bounding box.south west) rectangle (current bounding box.north east);
+\end{tikzpicture}
+
+\par}
 
 Suppose \texttt{g} produces the first of several possible
 results. Execution returns to \texttt{f} and \texttt{g}'s frame is

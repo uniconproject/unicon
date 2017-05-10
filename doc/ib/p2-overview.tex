@@ -7,7 +7,54 @@ and the compiler itself. This organization is illustrated below. In
 the diagram, labeled boxes represent programs, other text (some of it
 delimited by braces) represents files, and arrows represent data flow.
 
-\noindent\includegraphics[width=6.0in,height=3.3in]{kw/figure5-1.png}
+%-%\noindent\includegraphics[width=6.0in,height=3.3in]{kw/figure5-1.png}
+
+\noindent
+\begin{tikzpicture}[very thick, >=latex, arrows=->,
+    box/.style={rectangle, minimum width=10mm, draw},
+    txt/.style={align=left, inner sep=0.5em},
+    tbox/.style={rectangle,draw,align=left},
+  ]
+\matrix[row sep=0.4cm, column sep=0.7cm]{
+% Row 1
+  & \node(gth) {grttin.h}; &  &  &  & &[-0.7cm]  \\
+% Row 2
+\node(rttf)[txt]{oasgn.rtt\\~~\ldots\\fstructs.rtt\\~~\ldots};
+  & \node(rtt)[box] {rtt};
+  & \node(csf)[txt] {C\\Source\\Files};
+  & \node(cc) [tbox]{C\\Compiler};
+  & \node(of) [txt] {Object\\Files};
+  & \node(lmp)[tbox]{Library\\Maintenance\\Program};\\
+% Row 3
+  &  & \node(rmc)[txt] {rmemmgt.c\\~~\ldots};   &  &  &  \\
+% Row 4
+\node(ds){};  & \node(rtdb) {rt.db}; &  & \node(rth) {rt.h};  &  & \node(rta) {rt.a}; & \node(de){};\\[1cm]
+% Row 5
+\node(picn) {prog.icn};
+  & \node(iconc)[box]{iconc};
+  & \node(pch)[txt]{prog.c\\prog.h};
+  & \node(ccl)[tbox]{C\\Compiler /\\Linker};
+  & \node(prog){prog};& \\
+};
+\draw (gth) -- (rtt); \draw[<->] (rtt) -- (rtdb); \draw (rtdb) -- (iconc);
+\draw[dashed,arrows=-] (ds.west) -- (rtdb) -- (rth) -- (rta) -- (de.east)[xshift=1cm];
+\draw[<->] (lmp) -- (rta);
+\draw (rth) -- (cc); \draw (rth) -- (ccl);
+\draw (rmc.east) -- (cc);
+\draw (rta) -- ($(ccl.north) + (0.2,0.05)$);
+
+
+\draw[-,decorate,decoration=brace] ($(rttf.north east)-(0.15,0)$) -- ($(rttf.south east)-(0.15,0)$);
+\foreach \n in {csf, rmc, pch, of} {
+  \draw[-,decorate,decoration=brace] ($(\n.south west)+(0.15,0)$) -- ($(\n.north west)+(0.15,0)$);
+  \draw[-,decorate,decoration=brace] ($(\n.north east)-(0.15,0)$) -- ($(\n.south east)-(0.15,0)$);
+};
+\draw (rttf.east) -- (rtt); \draw (rtt) -- (csf.west);
+\draw (csf.east) -- (cc);   \draw (cc) -- (of.west); \draw (of.east) -- (lmp);
+
+\draw (picn) -- (iconc);   \draw (iconc) -- (pch.west);
+\draw (pch.east) -- (ccl); \draw (ccl) -- (prog);
+\end{tikzpicture}
 
 The run-time system appears above the dotted line and the compiler
 itself appears below the line. The programs shown with the run-time

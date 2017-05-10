@@ -245,11 +245,60 @@ below.
 
 A flow graph can be derived from the syntax tree. This is shown on the right. 
 
-\begin{picture}(400,250)
-%\put(0,0){\graphpaper{40}{25}}
-\put(0,0){\includegraphics[width=2.4in,height=3.4in]{kw/figure3-1.png}}
-\put(200,20){\includegraphics[width=2.2in,height=3.1in]{kw/figure3-2.png}}
-\end{picture}
+%% \begin{picture}(400,250)
+%% %\put(0,0){\graphpaper{40}{25}}
+%% \put(0,0){\includegraphics[width=2.4in,height=3.4in]{kw/figure3-1.png}}
+%% \put(200,20){\includegraphics[width=2.2in,height=3.1in]{kw/figure3-2.png}}
+%% \end{picture}
+
+\begin{center}
+\begin{tikzpicture} [draw,thick,font=\small\tt,
+% define a "curved box" style
+   level distance=12mm,
+   cbox/.style={rounded rectangle, rounded rectangle arc length=90, minimum width=10mm, draw},
+   every label/.style={font=\small\it}
+   ]
+
+\node (lhs) [draw,shape=rounded rectangle, rounded rectangle arc length=180] {procedure main}
+  child { node [cbox] {;}
+      child {node [cbox] {every}
+          child {node[cbox,label=left:1] {invoke}
+              child { node[cbox, label=left:2] {write}}
+              child[missing]
+              child { node[cbox, label=left:3] {to}
+                  child {node[cbox, label=left:4] {1}}
+                  child {node[cbox, label=left:5] {3}}
+              }
+          }
+      }
+      child[missing]
+      child {node [cbox] {pfail}}
+  };
+
+\begin{scope}[>=latex, edge from parent/.style={draw,arrows=-latex}]
+\node(rhs) [right=5cm, draw,shape=rounded rectangle, rounded rectangle arc length=180,
+] {procedure main}
+  child
+  { node [cbox,label=left:2] {write}
+      child {node[cbox,label=left:4] {1}
+         child {node[cbox,label=left:5] {3}
+            child {node (to) [cbox, label=left:3] {to}
+              child [missing]
+              child[missing]
+              child { node (invoke) [cbox, label=left:1] {invoke}}
+              child [missing]
+              child { node [cbox] {pfail}}
+            }
+         }
+      }
+  };
+%\draw[blue] (current bounding box.south west) rectangle (current bounding box.north east);
+\draw[->] (invoke.south) to[out=225, in=135,distance=3cm] (to.north west);
+%\draw[red] (current bounding box.south west) rectangle (current bounding box.north east);
+\end{scope}
+\end{tikzpicture}
+\vspace*{-2cm} % The last draw command's control points extend the bounding box too far.
+\end{center}
 
 The node labeled procedure main is the \textit{start node} for the
 procedure; it performs any necessary initializations to establish the
@@ -282,11 +331,46 @@ same temporary variable, as in the following example for the
 subexpression \texttt{x := ("a" {\textbar} "b")}. The syntax tree
 below on the left and the flow graph are shown on the right.
 
-\begin{picture}(400,180)
-%\put(0,0){\graphpaper{40}{18}}
-\put(0,0){\includegraphics[width=2.2492in,height=2.2398in]{kw/figure3-3.png}}
-\put(200,0){\includegraphics[width=2.4154in,height=2.3in]{kw/figure3-4.png}}
-\end{picture}
+%-% \begin{picture}(400,180)
+%-% %\put(0,0){\graphpaper{40}{18}}
+%-% \put(0,0){\includegraphics[width=2.2492in,height=2.2398in]{kw/figure3-3.png}}
+%-% \put(200,0){\includegraphics[width=2.4154in,height=2.3in]{kw/figure3-4.png}}
+%-% \end{picture}
+
+\begin{center}
+\begin{tikzpicture} [draw,thick,font=\small\tt,
+   level distance=12mm,
+% define a "curved box" style
+   cbox/.style={rounded rectangle, rounded rectangle arc length=90, minimum width=10mm, draw},
+   every label/.style={font=\small\it}
+   ]
+
+\node (lhs) {}
+    child
+    { node [cbox,label=left:1] {:=}
+        child { node[cbox,label=left:2] {x}}
+        child[missing]
+        child { node[cbox] {alt}
+               child { node[cbox, label=left:3] {"a"}}
+               child [label=right:lab] { node[cbox, label=left:3] (bottom) {"b"}}
+              }
+    };
+
+% The flow graph part of the diagram is best drawn "bottom up"
+\begin{scope}[edge from parent/.style={draw,arrows=latex-}, grow'=up]
+\node(rhs) at ($(bottom.south) + (5cm,-1cm)$) {}
+  child
+  { node [cbox,label=left:1] {:=}
+      child {
+              node[cbox,label=left:3] {"a"}
+              child {node[cbox, label=left:2] {x} child{}}
+            }
+      child[missing]
+      child { node[cbox,label=left:3] {"b"} child {}}
+  };
+\end{scope}
+\end{tikzpicture}
+\end{center}
 
 The \texttt{if} and \texttt{case} control structures are handled
 similarly. In addition to temporary variables for intermediate
@@ -340,7 +424,29 @@ fact that the assignment expression requires several primitive
 operations to implement.
 
 
- \includegraphics[width=6.0in,height=2.1in]{kw/figure3-5.png}  
+ %-% \includegraphics[width=6.0in,height=2.1in]{kw/figure3-5.png}
+
+\begin{center}
+% This tree is best drawn upside down
+\begin{tikzpicture}[draw, edge from parent/.style={draw,arrows=latex-}, grow'=up,
+                    thick,font=\small\tt,
+                    level distance=2cm
+                    ]
+\node (root) {}
+  child
+  {
+    node [rounded rectangle, draw] {x := y + 2}
+    { child { edge from parent coordinate (inL)}
+      child[missing]
+      child { edge from parent coordinate (inR)}
+    }
+    edge from parent coordinate (out)
+  };
+\node[anchor=east] at ([xshift=-0.3cm]inL) {\{~[x=null,y=1]~,~[x="abc",y=2]~\}};
+\node[anchor=west] at ([xshift=0.3cm]inR) {\{~[x=7,y=3]~\}};
+\node[anchor=east] at ([xshift=-0.3cm]out) {\{~[x=3,y=1]~,~[x=4,y=2]~,~[x=5,y=3]~\}};
+\end{tikzpicture}
+\end{center}
 
 
 For a conditional expression, an incoming environment is propagated to
@@ -349,7 +455,32 @@ semantics. This requires distinguishing the paths to be taken on
 failure (backtracking paths) from those to be taken on success. The
 following diagram shows an example of this.
 
-{\centering  \includegraphics[width=5.3992in,height=2.2299in]{kw/figure3-6.png} \par}
+%-%{\centering  \includegraphics[width=5.3992in,height=2.2299in]{kw/figure3-6.png} \par}
+
+\begin{center}
+\begin{tikzpicture}[
+    draw, edge from parent/.style={draw,arrows=-latex},
+    thick,font=\small\tt, level distance=2cm,
+    cbox/.style={rounded rectangle, rounded rectangle arc length=90, minimum width=10mm, draw}
+   ]
+\node (root) {}
+  child
+  {
+    node [cbox] {x < y}
+    { child { edge from parent coordinate (outL)}
+      child[missing]
+      child { edge from parent coordinate (outR)}
+    }
+    edge from parent coordinate (in)
+  };
+\node[anchor=east] at ([xshift=-0.3cm]in) {\{~[x=1,y=2]~,~[x=1,y=1]~,~[x=3,y=100]~\}};
+\node[anchor=east] at ([xshift=-0.5cm,yshift=-0.2cm]outL) {\{~[x=1,y=2]~,~[x=3,y=100]~\}};
+\node[anchor=east] at ([yshift=0.5cm]outL) {\it success};
+\node[anchor=west] at ([xshift=0.5cm,yshift=-0.2cm]outR) {\{~[x=1,y=1]~\}};
+\node[anchor=west] at ([yshift=0.5cm]outR) {\it failure};
+
+\end{tikzpicture}
+\end{center}
 
 In general there may be several possible backtracking paths. The
 environments in the standard and collecting semantics need to include

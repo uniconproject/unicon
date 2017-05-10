@@ -1870,11 +1870,7 @@ nodeptr n;
     */
    store = proc->out_store;
    for (i = 0; i < n_gbl; ++i)
-#ifdef dangeresque
-      Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
-#else
       tv_cpy(succ_store->types[i], store->types[i]);
-#endif
 
    /*
     * If the procedure can fail, merge variable types into the failure
@@ -2103,11 +2099,7 @@ infer_prc(proc, n)
     */
    store = proc->out_store;
    for (i = 0; i < n_gbl; ++i)
-#ifdef dangeresque
-      Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
-#else
       tv_cpy(succ_store->types[i], store->types[i]);
-#endif
 
    /*
     * If the procedure can fail, merge variable types into the failure

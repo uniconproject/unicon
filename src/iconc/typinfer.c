@@ -2173,32 +2173,6 @@ cpy_store(src)
 /*
  * mrg_store - merge the source store into the destination store.
  */
-#ifdef mdw_replaced
-static
-void
-mrg_store(source, dest)
-   struct store *source;
-   struct store *dest;
-{
-   int i;
-
-   if (source == NULL)
-      return;
-   /*
-    * Is this store included in the state that must be checked for a fixed
-    *  point?
-    */
-   if (dest->perm) {
-      for (i = 0; i < n_gbl + n_loc; ++i)
-         Vpp(ChkMrgTyp(n_icntyp, source->types[i], dest->types[i]));
-      }
-   else {
-      for (i = 0; i < n_gbl + n_loc; ++i)
-         Vpp(MrgTyp(n_icntyp, source->types[i], dest->types[i]));
-      }
-}
-#endif /* mdw_replaced */
-
 static
 inline
 void
@@ -2214,30 +2188,7 @@ mrg_store(src, dst)
    i = n_gbl + n_loc - 1;
    nints = NumInts(n_icntyp) - 1;
 
-#ifdef mdw_previous_method
-   /*
-    * Is this store included in the state that must be checked for a fixed
-    *  point?
-    */
-   if (dst->perm) {
-      while (i >= 0) {
-         /* Vpp(ChkMrgTyp(n_icntyp, src->types[i], dst->types[i])); */
-         if (src->types[i]->ent != dst->types[i]->ent)
-            Vpp(ChkMrgTyp2(nints, src->types[i], dst->types[i]));
-         i--;
-         }
-      }
-   else {
-      while (i >= 0) {
-         /* Vpp(MrgTyp(n_icntyp, src->types[i], dst->types[i])); */
-         if (src->types[i]->ent != dst->types[i]->ent)
-            Vpp(MrgTyp2(nints, src->types[i], dst->types[i]));
-         i--;
-         }
-      }
-#else
    tv_stores_or(dst, src, 0, i);
-#endif /* mdw_previous_method */
 }
 
 /*

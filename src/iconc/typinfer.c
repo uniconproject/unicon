@@ -540,10 +540,6 @@ Vcall(vects_init(do_typinfer, n_icntyp, n_intrtyp, n_rttyp));
     * Set up a type bit vector with all bits on.
     */
    any_typ = Vcall(alc_set(n_rttyp));
-   /* mdw: done in dg_alc_set
-   for (i = 0; i < NumInts(n_rttyp); ++i)
-      any_typ[i] = ~(unsigned int)0;
-   */
 
    /*
     *  Initialize stores and return values for procedures. Also initialize
@@ -1059,19 +1055,6 @@ alloc_stor(stor_sz, n_types)
    rslt->perm = 1;
    for (i=0; i<stor_sz; i++)
       rslt->types[i] = (typeinfo_t *)Vcall(alloc_typ(n_types));
-#ifdef mdw_debug_store_usage
-   {
-   /*
-    * enqueue the store for instrumentation
-    */
-   struct sto * sto;
-   sto = alloc(sizeof(struct sto));
-   sto->s = rslt;
-   sto->n = stor_sz;
-   sto->next = stos;
-   stos = sto;
-   }
-#endif /* mdw_debug_store_usage */
    return rslt;
 }
 

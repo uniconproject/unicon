@@ -1880,22 +1880,10 @@ infer_prc(proc, n)
     *  backtracking paths to the suspends of the procedure and propagate
     *  types of locals to the success store of the call.
     */
-#ifdef mdw_opt_try
-   if (proc->ret_flag & DoesSusp && n->store != NULL) {
-      for (i = 0; i < n_gbl; ++i)
-         Vpp(ChkMrgTyp(n_icntyp, n->store->types[i],
-            proc->susp_store->types[i]));
-
-      for (i = 0; i < n_loc; ++i)
-         Vpp(MrgTyp(n_icntyp, n->store->types[n_gbl + i],
-            succ_store->types[n_gbl + i]));
-      }
-#else
    if (proc->ret_flag & DoesSusp && n->store != NULL) {
       tv_stores_or(proc->susp_store, n->store, 0, n_gbl - 1);
       tv_stores_or(succ_store, n->store, n_gbl, n_gbl + n_loc - 1);
       }
-#endif /* mdw_opt_try */
 
    /*
     * Merge the types of global variables into the "in store" of the
@@ -1906,12 +1894,7 @@ infer_prc(proc, n)
     *  into the body.
     */
    store = proc->in_store;
-#ifdef mdw_opt_try
-   for (i=0; i<n_gbl; i++)
-      Vpp(ChkMrgTyp(n_icntyp, succ_store->types[i], store->types[i]));
-#else
    tv_stores_or(store, succ_store, 0, n_gbl - 1);
-#endif /* mdw_opt_try */
 
 #ifdef TypTrc
    /*
@@ -2552,11 +2535,7 @@ nodeptr n;
          for (i = 0; i < num_lst; ++i)
             if (Vcall(bitset(lst_types->bits, frst_lst + i)))
                Vpp(MrgTyp(n_icntyp, lstel_stor->types[i], wktyp->bits));
-#ifdef mdw_accessor_maybe_mutator
-Vcall(bitset(wktyp->bits, null_bit)); /* arg list extension might be done */
-#else
-Vcall(set_typ(wktyp->bits, null_bit));
-#endif
+	 Vcall(set_typ(wktyp->bits, null_bit));
          sav_nargs = num_args;
          sav_argtyp = arg_typs;
          num_args = max_prm;

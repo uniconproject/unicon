@@ -167,7 +167,7 @@ in the analysis:
 \noindent
 this expression can be converted into a sequence of primitive
 operations producing intermediate values (\textit{v1}, \textit{v2},
-...). This is shown in diagram. For convenience, the operations are
+...). This is shown in figure \ref{p2-tempLifetime}. For convenience, the operations are
 expressed in Icon, except that the assignments do not dereference
 their right-hand operands.
 
@@ -175,6 +175,9 @@ their right-hand operands.
 %-%  \includegraphics[width=1.7252in,height=1.6866in]{kw/figure4-1.png}  
 %-%  \par}
 
+%FLOAT! [DonW] LaTeX really, really, doesn't want to place this figure here. Don't know why.
+%              And, if you specify just [!h], it moans and replaces it with [ht]
+\begin{figure}[!htb]
 \begin{center}
  \begin{tikzpicture}[>=latex, ultra thick,
       node distance= 1mm and 1mm,
@@ -207,6 +210,10 @@ their right-hand operands.
    to[out=0, in=0, distance= 3cm] ($(v5.east) + (2.2cm,0)$);
 \end{tikzpicture}
 \end{center}
+\caption{\label{p2-tempLifetime}%
+The lifetime of temporary variables (with backtracking)}
+
+\end{figure}
 
 Whether or not the program variables and constants are actually placed
 in temporary variables depends on the machine model, implementation
@@ -278,6 +285,7 @@ tree for the example above is:
 %-%  \includegraphics[width=5.1098in,height=1.9366in]{kw/figure4-2.png}  
 %-% \par}
 
+\begin{figure}[htb]
 \begin{center}
 \begin{tikzpicture} [thick,font=\it,
      rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm, anchor=west}
@@ -310,6 +318,8 @@ tree for the example above is:
 \node at (dot) {\".\"};
 \end{tikzpicture}
 \end{center}
+\caption{A postfix tree for \texttt{write({\textbackslash}f, !x, ".") \& \&fail}}
+\end{figure}
 
 In this notation, the forward execution order of operations (which
 includes constants and references to program variables) is
@@ -339,6 +349,7 @@ isolation.
 %-%  \includegraphics[width=2.4937in,height=0.3402in]{kw/figure4-3.png}  
 %-% \par}
 
+\begin{figure}[htb]
 \begin{center}
 \begin{tikzpicture} [thick,
      rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm, anchor=west}
@@ -352,6 +363,8 @@ isolation.
 \node[anchor=west] at (invoke) {\tt\small invoke};
 \end{tikzpicture}
 \end{center}
+\caption{The temporary values used by \texttt{invoke}}
+\end{figure}
 
 In order for these uses to be in a loop, backtracking must be
 initiated from outside; that is, beyond the subexpression (in the
@@ -445,6 +458,7 @@ example is:
 
 %-% \includegraphics[width=3.1638in,height=3.198in]{kw/figure4-4.png}
 
+\begin{figure}[htb]
 \begin{center}
 \begin{tikzpicture} [thick,font=\small\tt,
      rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm}
@@ -464,6 +478,8 @@ example is:
   child { node[rr] {\&{}fail} };
 \end{tikzpicture}
 \end{center}
+\caption{A syntax tree for \texttt{write({\textbackslash}f, !x, ".") \& \&fail}}
+\end{figure}
 
 Several interpretations can be given to a node in a syntax tree. A
 node can be viewed as representing either an operation, an entire
@@ -559,6 +575,7 @@ the postfix tree.
 
 %-% \noindent\includegraphics[width=5.9in,height=2.3in]{kw/figure4-5.png}
 
+\begin{figure}[htb]
 \begin{center}
 \begin{tikzpicture} [thick,>=latex, font=\small\tt,
      rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm, anchor=west}
@@ -588,13 +605,18 @@ the postfix tree.
 \node [above] at (outL) {failer};
 \end{tikzpicture}
 \end{center}
+\caption{/ref{p2-attInfo-PostfixTree}%
+Passing attribute information through a postfix tree}
+\end{figure}
 
 This information would then be used to compute \texttt{lifetime}
-information for \textit{v1} and \textit{v2}. The next figure shows how
+information for \textit{v1} and \textit{v2}. Figure \ref{p2-attInfo-SyntaxTree} shows how
 the attribute information is actually passed through the syntax tree.
 
 %-% \includegraphics[width=6.0in,height=2.2in]{kw/figure4-6.png}  
 
+%FLOAT! [DonW] LaTeX places this figure at the top of the next page
+\begin{figure}[htb]
 \begin{center}
 \begin{tikzpicture} [draw,thick,>=latex, font=\small\tt,
      rr/.style={rounded rectangle, fill=white, draw, minimum height=6mm}
@@ -621,6 +643,9 @@ the attribute information is actually passed through the syntax tree.
 \draw[dashed,->] (-0.5,1.5) -- (0.5,2.5) node[at start,left] {gen};
 \end{tikzpicture}
 \end{center}
+\caption{\label{p2-attInfo-SyntaxTree}%
+Passing attribute information through a syntax tree}
+\end{figure}
 
 \noindent
 The \texttt{lifetime} attributes are computed for the roots of the

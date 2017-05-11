@@ -34,17 +34,6 @@ extern unsigned _stklen = 8192;
 
 #endif					/* MSDOS */
 
-#if MVS || VM
-#endif					/* MVS || VM */
-
-#if OS2
-#endif					/* OS2 */
-
-#if UNIX
-#endif					/* UNIX */
-
-#if VMS
-#endif					/* VMS */
 
 /*
  * End of operating-system specific code.

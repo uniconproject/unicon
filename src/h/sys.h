@@ -39,9 +39,6 @@
 #endif					/* MACINTOSH */
 
 #ifdef ISQL
-#if UNIX
-#undef OS2
-#endif					/* OS2 */
   #undef Type
   #undef Precision
 #endif					/* ISQL */
@@ -111,32 +108,6 @@
    #undef lst1
    #undef lst2
 #endif					/* MSDOS */
-
-#if OS2
-   #define INCL_DOS
-   #define INCL_ERRORS
-   #define INCL_RESOURCES
-   #define INCL_DOSMODULEMGR
-
-   #ifdef PresentationManager
-      #define INCL_PM
-   #endif				/* PresentationManager */
-
-   #include <os2.h>
-   /* Pipe support for OS/2 */
-   #include <stddef.h>
-   #include <process.h>
-   #include <fcntl.h>
-
-   #if CSET2V2
-      #include <io.h>
-      #include <direct.h>
-      #define IN_SYS_H
-      #include "../h/local.h"		/* Include #pragmas */
-      #undef IN_SYS_H
-   #endif				/* CSet/2 version 2 */
-
-#endif					/* OS2 */
 
 #if UNIX
    #include <dirent.h>
@@ -325,9 +296,6 @@
 #endif
   #define Precision 16
 
-#if UNIX
-#define OS2 0
-#endif					/* UNIX */
 #endif					/* ISQL */
 
 #ifdef Messaging

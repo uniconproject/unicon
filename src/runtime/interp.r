@@ -9,12 +9,12 @@
 extern fptr fncentry[];
 extern word istart[4]; extern int mterm;
 
-#if MSDOS || OS2
+#if MSDOS
    static union {
       pointer stkadr;
       word stkint;
    } stkword;
-#endif				/* MSDOS || OS2 */
+#endif				/* MSDOS */
    
 #ifdef OVLD
 extern int *OpTab;
@@ -35,7 +35,7 @@ static void vanq_proc (struct ef_marker *efp_v, struct gf_marker *gfp_v);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if ARM || MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
    /* nothing needed */
 #endif					/* ARM || ... */
 
@@ -359,12 +359,12 @@ Deliberate Syntax Error
 #define PushAVal(x) PushVal(x)
 #endif					/* ARM || ... */
 
-#if MSDOS || OS2
+#if MSDOS
 #define PushAVal(x) {rsp++; \
 		       stkword.stkadr = (char *)(x); \
 		       *rsp = stkword.stkint; \
 		       }
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 /*
  * End of operating-system specific code.
@@ -689,7 +689,7 @@ int interp_x(int fsig,dptr cargp)
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if ARM || MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
 #endif					/* ARM || ... */
 
@@ -2463,7 +2463,7 @@ void stkdump(op)
    }
 #endif					/* ARM */
 
-#if MSDOS || OS2
+#if MSDOS
 #if MICROSOFT || TURBO
 void stkdump(op)
    int op;
@@ -2488,7 +2488,7 @@ void stkdump(op)
    fflush(stderr);
    }
 #endif					/* MICROSOFT || TURBO ... */
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 #if UNIX || VMS
 void stkdump(op)

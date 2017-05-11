@@ -61,10 +61,6 @@ Global int strinv	Init(0);	/* -f s: allow full string invocation */
 Global int verbose	Init(1);	/* -v n: verbosity of commentary */
 
 
-#if OS2
-Global int noexe	Init(0);	/* -i: stop with .ICX file */
-#endif
-
 #ifdef DeBugLinker
 Global int Dflag	Init(0);	/* -L: linker debug (write .ux file) */
 #endif					/* DeBugLinker */

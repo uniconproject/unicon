@@ -28,12 +28,12 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    #define DefPath "Icon: Lib:Icon."
 #endif					/* ARM */
 
-#if MSDOS || OS2
+#if MSDOS
    #define Prefix "/:\\"
    #define DefPath ";"
    #define PathSep " ;"
    #define FileSep '/'
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 #if MACINTOSH
    #define Prefix ":"
@@ -483,7 +483,7 @@ int pathFind(char target[], char buf[], int n)
 
 
 
-#if MSDOS || OS2
+#if MSDOS
 int pathOpenHandle(char *fname, char *mode)
    {
    char buf[260 + 1];
@@ -520,7 +520,7 @@ FILE *pathOpen(char *fname, char *mode)
    return fdopen(handle, mode);
 }
 
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 /*
  * Global variables for logfiles.

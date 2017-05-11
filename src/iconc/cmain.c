@@ -343,7 +343,7 @@ Deliberate Syntax Error
          addlib(argv[optind]);		/* assume linker option */
 #endif					/* UNIX ... */
 
-#if MACINTOSH || MSDOS || MVS || OS2 || VM || VMS
+#if MACINTOSH || MSDOS || MVS || VM || VMS
       /*
        * Linker options on command line not supported.
        */
@@ -387,7 +387,7 @@ Deliberate Syntax Error
             addlib(argv[optind]);
 #endif					/* UNIX ... */
 
-#if MACINTOSH || MSDOS || MVS || OS2 || VM || VMS
+#if MACINTOSH || MSDOS || MVS || VM || VMS
             /*
              * Pass no files to the linker.
              */
@@ -590,9 +590,9 @@ Deliberate Syntax Error
       fflush(stderr);
 #endif                                  /* MVS || VM */
 
-#if OS2 || UNIX || VMS
+#if UNIX || VMS
       execvp(ofile,argv);
-#endif					/* OS2 || UNIX || VMS */
+#endif					/* UNIX || VMS */
 
 
 /*
@@ -617,7 +617,7 @@ char *s;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if MSDOS || MVS || UNIX || VM || VMS
    fprintf(stderr,"%s:\n",s);
 #endif					/* MSDOS || ... */
 

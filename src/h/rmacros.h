@@ -789,11 +789,11 @@
       #define PushAVal(x) PushVal(x)
    #endif				/* ARM ... */
    
-   #if MSDOS || OS2
+   #if MSDOS
          #define PushAVal(x)  {sp++; \
          			stkword.stkadr = (char *)(x); \
          			*sp = stkword.stkint;}
-   #endif				/* MSDOS || OS2 */
+   #endif				/* MSDOS */
    
    /*
     * End of operating-system specific code.

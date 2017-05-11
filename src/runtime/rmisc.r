@@ -2877,7 +2877,7 @@ int c;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MSDOS || OS2 || UNIX || VMS
+#if MSDOS || UNIX || VMS
    return (isascii(c) && isprint(c));
 #endif					/* MSDOS ... */
 

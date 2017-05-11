@@ -17,7 +17,7 @@
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
 #endif					/* MSDOS ... */
 
@@ -155,7 +155,7 @@ function{1} close(f)
 #endif					/* NTGCC */
 #endif					/* NT */
 
-#if ARM || OS2 || UNIX || VMS || NT
+#if ARM || UNIX || VMS || NT
       /*
        * Close pipe if pipes are supported.
        * should we consider treating Fs_BPipe in the same way?!
@@ -165,7 +165,7 @@ function{1} close(f)
 	 return C_integer((pclose(fp) >> 8) & 0377);
 	 }
       else
-#endif					/* ARM || OS2 || ... */
+#endif					/* ARM || ... */
          fclose(fp);
 
       BlkLoc(f)->File.status = 0;
@@ -322,7 +322,7 @@ function{0,1} open(fname, spec)
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH || MSDOS || MVS || OS2 || VM
+#if MACINTOSH || MSDOS || MVS || VM
    /* nothing is needed */
 #endif					/* MACINTOSH || ... */
 
@@ -335,9 +335,9 @@ Deliberate Syntax Error
       int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
 #endif					/* PosixFns */
 
-#if OS2 || UNIX || VMS || NT
+#if UNIX || VMS || NT
       extern FILE *popen();
-#endif					/* OS2 || UNIX || VMS || NT */
+#endif					/* UNIX || VMS || NT */
 
 /*
  * End of operating-system specific code.
@@ -431,12 +431,12 @@ Deliberate Syntax Error
 		  status |= Fs_Untrans;
 	       continue;
 
-#if ARM || OS2 || UNIX || VMS || NT
+#if ARM || UNIX || VMS || NT
 	    case 'p':
 	    case 'P':
 	       status |= Fs_Pipe;
 	       continue;
-#endif					/* ARM || OS2 || UNIX ... */
+#endif					/* ARM || UNIX ... */
 
 	    case 'x':
 	    case 'X':
@@ -600,20 +600,13 @@ Deliberate Syntax Error
       else if ((status & Fs_Untrans) != 0) mode[1] = 'b';
 #endif					/* MACINTOSH */
 
-#if MSDOS || OS2
+#if MSDOS
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
 	 mode[1] = '+';
-#if CSET2
-         /* we don't have the 't' in C Set/2 */
-         if ((status & Fs_Untrans) != 0) mode[2] = 'b';
-         } /* End of if - open file for reading or writing */
-      else if ((status & Fs_Untrans) != 0) mode[1] = 'b';
-#else					/* CSET2 */
 	 mode[2] = ((status & Fs_Untrans) != 0) ? 'b' : 't';
 	 }
       else mode[1] = ((status & Fs_Untrans) != 0) ? 'b' : 't';
-#endif					/* CSET2 */
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 #if MVS || VM
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
@@ -813,7 +806,7 @@ Deliberate Syntax Error
 	 }
       else
 
-#if ARM || OS2 || UNIX || VMS || NT
+#if ARM || UNIX || VMS || NT
       if (status & Fs_Pipe) {
 	 tended char *sbuf, *sbuf2, *my_s = NULL;
 	 int c, fnamestrlen = strlen(fnamestr);
@@ -854,7 +847,7 @@ Deliberate Syntax Error
 	    }
 	 }
       else
-#endif					/* ARM || OS2 || ... */
+#endif					/* ARM || ... */
 
 #ifdef Dbm
       if (status & Fs_Dbm) {
@@ -3030,7 +3023,7 @@ function{0,1} chdir(s)
 #if ARM || MACINTOSH || MVS || VM
       runerr(121);
 #endif                                  /* ARM || MACINTOSH ... */
-#if MSDOS || OS2 || UNIX || VMS || NT
+#if MSDOS || UNIX || VMS || NT
 
       char path[PATH_MAX];
       int len;

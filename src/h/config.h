@@ -78,14 +78,6 @@
    #define MVS 0
 #endif					/* MVS */
 
-#ifndef OS2
-   #define OS2 0
-#endif					/* OS2 */
-
-#ifndef OS2_32
-   #define OS2_32 0
-#endif					/* OS32 */
-
 #ifndef UNIX
    #define UNIX 0
 #endif					/* UNIX */
@@ -426,9 +418,9 @@
  */
 
 #ifndef Pipes
-   #if ARM || OS2 || UNIX || VMS
+   #if ARM || UNIX || VMS
       #define Pipes
-   #endif				/* ARM || OS2 || UNIX || VMS */
+   #endif				/* ARM || UNIX || VMS */
 #endif					/* Pipes */
 
 #ifndef KeyboardFncs
@@ -535,7 +527,7 @@ Deliberate Syntax Error
    #define LibSuffix ".olb"
 #endif					/* VMS */
 
-#if MSDOS || OS2
+#if MSDOS
 
    /*
     *  Define compiler-specific symbols to be zero if not already
@@ -562,7 +554,7 @@ Deliberate Syntax Error
       #define NT 0
    #endif				/* NT */
 
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 #ifndef NoWildCards
    #if NT || MICROSOFT
@@ -723,10 +715,10 @@ Deliberate Syntax Error
 #undef HAVE_WORKING_VFORK
 #endif
 
-#if (MSDOS || OS2) && !NT
+#if MSDOS && !NT
    #undef DirectExecution
    #define DirectExecution
-#endif					/* (MSDOS || OS2) && !NT */
+#endif					/* MSDOS && !NT */
 
 #ifdef Header
    #undef DirectExecution

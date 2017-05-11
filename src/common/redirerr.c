@@ -23,7 +23,7 @@ char *p;
    /* cannot do this */
 #endif					/* ARM || MVS || VM */
 
-#if MSDOS || OS2 || VMS
+#if MSDOS || VMS
    #if NT
       /*
        * Don't like doing this, but it seems to work.
@@ -34,7 +34,7 @@ char *p;
    #else				/* NT */
       dup2(fileno(stdout),fileno(stderr));
    #endif				/* NT */
-#endif					/* MSDOS || OS2 ... */
+#endif					/* MSDOS || ... */
 
 
 #if UNIX

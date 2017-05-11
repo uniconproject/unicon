@@ -1138,7 +1138,7 @@ btinit:
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || UNIX || OS2 || VMS
+#if ARM || MACINTOSH || UNIX || VMS
    if (noerrbuf)
       setbuf(stderr, NULL);
    else {
@@ -1251,7 +1251,7 @@ void envset()
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if ARM || MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
 #endif					/* ARM || ... */
 
@@ -1275,10 +1275,10 @@ Deliberate Syntax Error
    /* can't handle */
 #endif					/* MACINTOSH */
 
-#if ARM || OS2
+#if ARM
       signal(SIGSEGV, SIG_DFL);
       signal(SIGFPE, SIG_DFL);
-#endif					/* ARM || OS2 */
+#endif					/* ARM */
 
 #if MSDOS
 #if TURBO

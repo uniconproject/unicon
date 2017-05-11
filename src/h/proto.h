@@ -11,11 +11,11 @@
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MSDOS || OS2
+#if MSDOS
    #if MICROSOFT || TURBO || NT
       #include <dos.h>
    #endif				/* MICROSOFT || TURBO ... */
-#endif					/* MSDOS || OS2 */
+#endif					/* MSDOS */
 
 /*
  * End of operating-system specific code.

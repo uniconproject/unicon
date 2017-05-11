@@ -46,10 +46,6 @@
    Feature(1, "_MVS", "MVS")
 #endif					/* MVS */
 
-#if OS2
-   Feature(1, "_OS2", "OS/2")
-#endif					/* OS2 */
-
 #if PORT
    Feature(1, "_PORT", "PORT")
 #endif					/* PORT */

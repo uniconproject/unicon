@@ -9,12 +9,12 @@
 #include "../h/header.h"
 #include "../h/opdefs.h"
 
-#if MSDOS || OS2
+#if MSDOS
    static union {
       pointer stkadr;
       word stkint;
    } stkword;
-#endif				/* MSDOS || OS2 */
+#endif				/* MSDOS */
 
 
 /*
@@ -40,7 +40,7 @@ int GetArgs (char **argv);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MSDOS || MVS || VM || OS2 || UNIX || VMS
+#if ARM || MSDOS || MVS || VM || UNIX || VMS
    /* nothing needed */
 #endif					/* ARM || ... */
 

@@ -124,9 +124,9 @@ int t;
 #endif					/* MSWindows */
 	 if (pollevent() < 0)				/* poll all windows */
 	    break;					/* break on error */
-#if UNIX || VMS || OS2_32
+#if UNIX || VMS
          idelay(XICONSLEEP);
-#endif					/* UNIX || VMS || OS2_32 */
+#endif					/* UNIX || VMS */
 #ifdef MSWindows
 	 Sleep(20);
 #endif					/* MSWindows */
@@ -278,12 +278,12 @@ wsp getactivewindow()
 	    next = j;
 	    return ws;
 	    }
-#if UNIX || VMS || OS2_32
+#if UNIX || VMS
       /*
        * couldn't find a pending event - wait awhile
        */
       idelay(XICONSLEEP);
-#endif					/* UNIX || VMS || OS2_32 */
+#endif					/* UNIX || VMS */
       }
    }
 

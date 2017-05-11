@@ -56,9 +56,6 @@ char *libpath (char *prog, char *envname);
    char pathToIconDOS[129];
 #endif					/* MSDOS */
 
-#if OS2
-   #include <process.h>
-#endif					/* OS2 */
 /*
  * End of operating-system specific code.
  */
@@ -371,12 +368,6 @@ void iconx(int argc, char** argv){
             if (strchr(optarg, 's') || strchr(optarg, 'a'))
                strinv = 1;		/* this is the only icont feature */
             break;
-
-#if OS2
-	 case 'i':                      /* -i: Don't create .EXE file */
-	    noexe = 1;
-	    break;
-#endif					/* OS2 */
 
          case 'm':			/* -m: preprocess using m4(1) [UNIX] */
             m4pre = 1;
@@ -837,14 +828,6 @@ Deliberate Syntax Error
       fprintf(stderr,"-x not supported\n");
       fflush(stderr);
 #endif                                  /* MVS || VM */
-
-#if OS2
-#ifdef PresentationManager
-      fputs("-x not supported\n", stderr);
-#else					/* PresentationManager */
-      execvp(iconxloc,argv);	/* execute with path search */
-#endif					/* PresentationManager */
-#endif					/* OS2 */
 
 #if UNIX || NT
       /*

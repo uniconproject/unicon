@@ -254,10 +254,6 @@ typedef int pid_t;
  */
 typedef int clock_t, time_t, fd_set;
 
-#if OS2_32
-   typedef int HFILE, ULONG;
-#endif					/* OS2_32 */
-
 #if WildCards
    typedef int FINDDATA_T;
 #endif					/* WildCards */

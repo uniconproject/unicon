@@ -53,12 +53,6 @@ void	setexe	(char *fname);
    char *routname;			/* real output file name */
 #endif					/* MVS */
 
-#if OS2
-   #if MICROSOFT || CSET2
-      #include <fcntl.h>
-   #endif				/* MICROSOFT || CSET2 */
-#endif					/* OS2 */
-
 #if UNIX
    #ifdef CRAY
       #define word word_fubar
@@ -226,12 +220,6 @@ char *outname;
       setmode(fileno(outfile),O_BINARY);	/* set for untranslated mode */
    #endif				/* MICROSOFT || TURBO */
 #endif					/* MSDOS */
-
-#if OS2
-   #if MICROSOFT || CSET2
-      setmode(fileno(outfile),O_BINARY);
-   #endif				/* MICROSOFT || CSET2 */
-#endif					/* OS2 */
 
 /*
  * End of operating-system specific code.
@@ -571,52 +559,6 @@ Deliberate Syntax Error
       chmod(fname,0755);	/* probably could be smarter... */
    #endif				/* MICROSOFT || TURBO */
 #endif					/* MSDOS */
-
-#if OS2
-    /*
-     *	Obtain the EXE stub resource from icont (or xicont)
-     *	and write it out as the executable name.  Invoke the resource
-     *	compiler to add the icode file as a resource to the executable
-     *	This should be portable to Windows NT I believe.  Cheyenne.
-     */
-    {
-	char	*exeres;		/* EXE stub resource pointer */
-	unsigned long exereslen;	/* Length of resource */
-	char loadmoderr[256];
-
-	char exename[256];
-	char rcname[256];
-	char cmdbuffer[256];
-	FILE *exefile;
-	FILE *rcfile;
-
-	if( noexe ) return;		/* Nothing to do.. */
-
-	DosGetResource(0,0x4844,1,&exeres);
-	DosQueryResourceSize(0,0x4844,1,&exereslen);
-
-	makename(exename,NULL,fname,".exe");
-	exefile = fopen(exename,WriteBinary);
-	fwrite( exeres, sizeof(char), exereslen, exefile);
-	fclose(exefile);
-	DosFreeResource(exeres);
-
-	makename(rcname,NULL,fname,".rc");
-	rcfile = fopen(rcname,WriteText);
-
-	fprintf(rcfile,"RESOURCE 0x4843 1 %s\n",fname);
-	fclose(rcfile);
-
-	sprintf(cmdbuffer,"rc %s %s",rcname,exename);
-
-	system(cmdbuffer);
-
-	remove(rcname);
-	makename(rcname,NULL,fname,".res");
-	remove(rcname);
-	remove(fname);
-    }
-#endif					/* OS2 */
 
 #if UNIX
       {

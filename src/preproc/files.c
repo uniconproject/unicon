@@ -13,13 +13,6 @@
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   /* Amiga paths are not converted. 
-    *  Absolute paths have the form Volume:dir/dir/.../file
-    */
-#define IsRelPath(fname) (strchr(fname, ':') == NULL)
-#endif					/* AMIGA */
-
 #if VM || MVS
    /* something may be needed */
 Deliberate Syntax Error
@@ -81,10 +74,6 @@ FILE *f;
    /* something may be needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-   /* nothing is needed */
-#endif					/* AMIGA */
 
 #if VM || MVS
    /* something may be needed */
@@ -311,12 +300,6 @@ Deliberate Syntax Error
       }
 #endif					/* VMS */
 
-#if AMIGA
-   static char *sysdir = "include:";
-
-   n_paths = 1;
-#endif					/* AMIGA */
-
 #if VM || MVS || (MACINTOSH && !MPW)
    /* probably needs something */
 Deliberate Syntax Error
@@ -443,10 +426,6 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   /* nothing is needed */
-#endif					/* AMIGA */
-
 #if VM || MVS
    /* something may be needed */
 Deliberate Syntax Error
@@ -518,10 +497,6 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   /* nothing is needed */
-#endif					/* AMIGA */
-
 #if VM || MVS
    /* something might be needed */
 Deliberate Syntax Error
@@ -566,10 +541,6 @@ Deliberate Syntax Error
    for ( ; vmsi; vmsi--)
       incl_search[n_paths - vmsi] = syspaths[vmsi-1];
 #endif					/* VMS */
-
-#if AMIGA
-   incl_search[n_paths - 1] = sysdir;
-#endif					/* AMIGA */
 
 #if VM || MVS
    /* probably needs something */

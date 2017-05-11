@@ -42,11 +42,6 @@ char *src_file_nm;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-char *grttin_path = "/src/h/grttin.h";
-char *rt_path = "/src/h/rt.h";
-#endif					/* AMIGA */
-
 #if MACINTOSH
 char *grttin_path = "::h:grttin.h";
 char *rt_path = "::h:rt.h";

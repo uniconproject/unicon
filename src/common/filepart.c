@@ -23,11 +23,6 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   #define Prefix "/:"
-   #define FileSep '/'
-#endif					/* AMIGA */
-
 #if ARM
    #define Prefix ".:"
    #define DefPath "Icon: Lib:Icon."

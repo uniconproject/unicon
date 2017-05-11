@@ -33,9 +33,9 @@ void	setexe	(char *fname);
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || MACINTOSH || VM || VMS
+#if MACINTOSH || VM || VMS
    /* nothing to do */
-#endif					/* AMIGA || ... */
+#endif					/* MACINTOSH || ... */
 
 #if ARM
    #include "kernel.h"
@@ -217,9 +217,9 @@ char *outname;
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ARM || MACINTOSH || MVS || UNIX || VM || VMS
+#if ARM || MACINTOSH || MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* AMIGA || ARM || ... */
+#endif					/* ARM || ... */
 
 #if MSDOS
    #if MICROSOFT || TURBO
@@ -321,23 +321,6 @@ char *outname;
     */
    {
    char script[2 * MaxPath + 300];
-
-#if AMIGA
-   sprintf(script,
-   "/* ARexx header for direct execution of Icon code */\n\
-   PARSE SOURCE type flag filename fullname ext host\n\
-   PARSE ARG 1 args 1\n\
-   SIGNAL ON ERROR\n\
-   ADDRESS command\n\
-   \"%s\" fullname args\n\
-   ERROR:\n\
-   EXIT\n\
-   /*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*\n[executable Icon binary follows]\n",
-   iconxloc);
-   strcat(script, "        \n\f\n" + ((int)(strlen(script) + 4) % 8));
-   hdrsize = strlen(script) + 1;	/* length includes \0 at end */
-   fwrite(script, hdrsize, 1, outfile);	/* write header */
-#endif                                  /* AMIGA */
 
 #if NT
    /*
@@ -481,44 +464,6 @@ char *outname;
 
    gentables();		/* Generate record, field, global, global names,
 			   static, and identifier tables. */
-
-#if AMIGA
-#ifdef ShellHeader
-   /* The icode is enclosed in a deeply nested ARexx comment.
-      Here we close up the comment. */
-     {
-     int c, count = 0, state = 0;
-
-     rewind(outfile);
-     while ((c = fgetc(outfile)) != EOF)
-       switch(state){
-         case 0:  /* start state */
-           if (c == '/' || c == '*') state = c;
-           break;
-         case '/':
-           if (c == '*') count++;
-           state = 0;
-           break;
-         case '*':
-           if (c == '/') count--;
-           state = 0;
-           break;
-         }
-     if (count < 0){
-       fprintf(stderr, "       Failed to write direct execution header.\n\
-       You will have to use iconx to execute %s.\n", outname);
-       outname = NULL;
-       }
-     else {
-       fseek(outfile, 0, SEEK_END);
-       while (0 < count--){
-         fputc('*', outfile);
-         fputc('/', outfile);
-         }
-       }
-     }
-#endif					/* ShellHeader */
-#endif					/* AMIGA */
 
    fclose(outfile);
    lmfree();

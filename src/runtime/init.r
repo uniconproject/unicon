@@ -29,14 +29,6 @@ FILE		*pathOpen       (char *fname, char *mode);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-int chkbreak;				/* if nonzero, check for ^C */
-  /* These override environment variables if set from ToolTypes. */
-uword WBstrsize = 0;
-uword WBblksize = 0;
-uword WBmstksize = 0;
-#endif					/* AMIGA */
-
 #if ARM || MACINTOSH || MVS || VM || UNIX || VMS
    /* nothing needed */
 #endif					/* ARM || MACINTOSH ... */
@@ -1292,9 +1284,9 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || MACINTOSH
+#if MACINTOSH
    /* can't handle */
-#endif					/* AMIGA || ... */
+#endif					/* MACINTOSH */
 
 #if ARM || OS2
       signal(SIGSEGV, SIG_DFL);

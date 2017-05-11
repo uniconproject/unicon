@@ -190,7 +190,7 @@ FUNC(xpmSetInfo, void, (XpmInfo *info, XpmAttributes *attributes));
 FUNC(xpmSetAttributes, void, (XpmAttributes *attributes, XpmImage *image,
 			      XpmInfo *info));
 
-#if !defined(FOR_MSW) && !defined(AMIGA)
+#if !defined(FOR_MSW)
 FUNC(xpmCreatePixmapFromImage, void, (Display *display, Drawable d,
 				      XImage *ximage, Pixmap *pixmap_return));
 
@@ -260,7 +260,6 @@ FUNC(xpmFreeRgbNames, void, (xpmRgbName *rgbn, int rgbn_max));
 FUNC(xpmGetRGBfromName,int, (char *name, int *r, int *g, int *b));
 #endif
 
-#ifndef AMIGA
 FUNC(xpm_xynormalizeimagebits, void, (register unsigned char *bp,
 				      register XImage *img));
 FUNC(xpm_znormalizeimagebits, void, (register unsigned char *bp,
@@ -308,7 +307,6 @@ FUNC(xpm_znormalizeimagebits, void, (register unsigned char *bp,
 #define ZINDEX8(x, y, img) ((y) * img->bytes_per_line) + (x)
 
 #define ZINDEX1(x, y, img) ((y) * img->bytes_per_line) + ((x) >> 3)
-#endif /* not AMIGA */
 
 #ifdef __STDC__
 #define Const const

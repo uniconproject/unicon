@@ -508,11 +508,6 @@ int n;
    return Succeeded;
 #endif					/* MACINTOSH */
 
-
-#if AMIGA
-   return Failed
-#endif					/* AMIGA */
-
 #if PORT || ARM || MVS || VM
    return Failed;
 #endif					/* PORT || ARM || ... */

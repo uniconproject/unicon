@@ -62,10 +62,6 @@
    #define PORT 0
 #endif					/* PORT */
 
-#ifndef AMIGA
-   #define AMIGA 0
-#endif					/* AMIGA */
-
 #ifndef ARM
    #define ARM 0
 #endif					/* ARM */

@@ -32,11 +32,6 @@
 *  Developed by Arnaud Le Hors                                                *
 \*****************************************************************************/
 
-/*
- * The code related to AMIGA has been added by
- * Lorens Younes (d93-hyo@nada.kth.se) 4/96
- */
-
 #include "XpmI.h"
 #if !defined(NO_ZPIPE) && defined(WIN32)
 # define popen _popen
@@ -110,9 +105,6 @@ XpmWriteFileFromXpmImage(filename, image, info)
 	name = filename;
 #else
 	if (!(name = rindex(filename, '/'))
-#ifdef AMIGA
-	    && !(name = rindex(filename, ':'))
-#endif
      )
 	    name = filename;
 	else

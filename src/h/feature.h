@@ -18,10 +18,6 @@
 
    Feature(1, "_V9", 0)			/* Version 9 (unconditional) */
 
-#if AMIGA
-   Feature(1, "_AMIGA", "Amiga")
-#endif					/* AMIGA */
-
 #if ARM
    Feature(1, "_ACORN", "Acorn Archimedes")
 #endif					/* ARM */

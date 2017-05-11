@@ -785,9 +785,9 @@
       Deliberate Syntax Error
    #endif				/* PORT */
    
-   #if AMIGA || ARM || MACINTOSH || MVS || UNIX || VM || VMS
+   #if ARM || MACINTOSH || MVS || UNIX || VM || VMS
       #define PushAVal(x) PushVal(x)
-   #endif				/* AMIGA || ARM ... */
+   #endif				/* ARM ... */
    
    #if MSDOS || OS2
          #define PushAVal(x)  {sp++; \

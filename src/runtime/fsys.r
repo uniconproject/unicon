@@ -17,11 +17,6 @@
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-extern FILE *popen(const char *, const char *);
-extern int pclose(FILE *);
-#endif AMIGA                            /* AMIGA */
-
 #if MSDOS || MVS || OS2 || UNIX || VM || VMS
    /* nothing to do */
 #endif					/* MSDOS ... */
@@ -165,7 +160,7 @@ function{1} close(f)
 #endif					/* NTGCC */
 #endif					/* NT */
 
-#if AMIGA || ARM || OS2 || UNIX || VMS || NT
+#if ARM || OS2 || UNIX || VMS || NT
       /*
        * Close pipe if pipes are supported.
        * should we consider treating Fs_BPipe in the same way?!
@@ -175,7 +170,7 @@ function{1} close(f)
 	 return C_integer((pclose(fp) >> 8) & 0377);
 	 }
       else
-#endif					/* AMIGA || ARM || OS2 || ... */
+#endif					/* ARM || OS2 || ... */
          fclose(fp);
 
       BlkLoc(f)->File.status = 0;
@@ -332,9 +327,9 @@ function{0,1} open(fname, spec)
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || MACINTOSH || MSDOS || MVS || OS2 || VM
+#if MACINTOSH || MSDOS || MVS || OS2 || VM
    /* nothing is needed */
-#endif					/* AMIGA || ... */
+#endif					/* MACINTOSH || ... */
 
 #if ARM
       extern FILE *popen(const char *, const char *);
@@ -441,12 +436,12 @@ Deliberate Syntax Error
 		  status |= Fs_Untrans;
 	       continue;
 
-#if AMIGA || ARM || OS2 || UNIX || VMS || NT
+#if ARM || OS2 || UNIX || VMS || NT
 	    case 'p':
 	    case 'P':
 	       status |= Fs_Pipe;
 	       continue;
-#endif					/* AMIGA || ARM || OS2 || UNIX ... */
+#endif					/* ARM || OS2 || UNIX ... */
 
 	    case 'x':
 	    case 'X':
@@ -597,10 +592,10 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ARM || UNIX || VMS
+#if ARM || UNIX || VMS
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write))
 	 mode[1] = '+';
-#endif					/* AMIGA || ARM || UNIX || VMS */
+#endif					/* ARM || UNIX || VMS */
 
 #if MACINTOSH
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
@@ -823,7 +818,7 @@ Deliberate Syntax Error
 	 }
       else
 
-#if AMIGA || ARM || OS2 || UNIX || VMS || NT
+#if ARM || OS2 || UNIX || VMS || NT
       if (status & Fs_Pipe) {
 	 tended char *sbuf, *sbuf2, *my_s = NULL;
 	 int c, fnamestrlen = strlen(fnamestr);
@@ -864,7 +859,7 @@ Deliberate Syntax Error
 	    }
 	 }
       else
-#endif					/* AMIGA || ARM || OS2 || ... */
+#endif					/* ARM || OS2 || ... */
 
 #ifdef Dbm
       if (status & Fs_Dbm) {
@@ -3051,7 +3046,7 @@ function{0,1} chdir(s)
 #if ARM || MACINTOSH || MVS || VM
       runerr(121);
 #endif                                  /* ARM || MACINTOSH ... */
-#if AMIGA || MSDOS || OS2 || UNIX || VMS || NT
+#if MSDOS || OS2 || UNIX || VMS || NT
 
       char path[PATH_MAX];
       int len;

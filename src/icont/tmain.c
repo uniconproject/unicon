@@ -48,10 +48,6 @@ char *libpath (char *prog, char *envname);
    Deliberate syntax error
 #endif					/* PORT */
 
-#if AMIGA
-      #include <libraries/dosextens.h>
-#endif					/* AMIGA */
-
 #if ARM || MVS || UNIX || VM || VMS
    /* nothing is needed */
 #endif					/* ARM || ... */

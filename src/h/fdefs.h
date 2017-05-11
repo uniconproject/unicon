@@ -3,7 +3,6 @@
  */
 
 #undef exit		/* may be defined under ConsoleWindow */
-#undef getenv		/* may be defined under AMIGA */
 
 #if defined(Audio)
 FncDef(PlayAudio,1)

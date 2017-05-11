@@ -26,14 +26,6 @@
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   #include <fcntl.h>
-   #include <ios1.h>
-   #include <libraries/dosextens.h>
-   #include <libraries/dos.h>
-   #include <workbench/startup.h>
-#endif					/* AMIGA */
-
 #if MACINTOSH
    #if MPW
       #define create xx_create	/* prevent duplicate definition of create() */
@@ -256,14 +248,7 @@
 #endif					/* Redhat71 */
 
       #ifdef HAVE_LIBXPM
-#if !AMIGA
-#define AMIGA_ZERO
-#undef AMIGA
-#endif					/* !AMIGA */
          #include "../xpm/xpm.h"
-#ifdef AMIGA_ZERO
-#define AMIGA 0
-#endif					/* !AMIGA */
       #else				/* HAVE_LIBXPM */
          #include <X11/Xlib.h>
       #endif				/* HAVE_LIBXPM */

@@ -355,9 +355,9 @@ deliberate syntax error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || ARM || MACINTOSH || MVS || UNIX || VM || VMS
+#if ARM || MACINTOSH || MVS || UNIX || VM || VMS
 #define PushAVal(x) PushVal(x)
-#endif					/* AMIGA || ARM || ... */
+#endif					/* ARM || ... */
 
 #if MSDOS || OS2
 #define PushAVal(x) {rsp++; \
@@ -2448,9 +2448,9 @@ interp_macro(interp,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || MACINTOSH || MVS || VM || VMS
+#if MACINTOSH || MVS || VM || VMS
    /* not included */
-#endif					/* AMIGA || ... */
+#endif					/* MACINTOSH || ... */
 
 #if DEBUG_INTERP
 void stkdump(op)

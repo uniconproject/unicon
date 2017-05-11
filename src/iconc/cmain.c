@@ -343,11 +343,11 @@ Deliberate Syntax Error
          addlib(argv[optind]);		/* assume linker option */
 #endif					/* UNIX ... */
 
-#if AMIGA || MACINTOSH || MSDOS || MVS || OS2 || VM || VMS
+#if MACINTOSH || MSDOS || MVS || OS2 || VM || VMS
       /*
        * Linker options on command line not supported.
        */
-#endif					/* AMIGA || ... */
+#endif					/* MACINTOSH || ... */
 
 /*
  * End of operating-system specific code.
@@ -387,12 +387,12 @@ Deliberate Syntax Error
             addlib(argv[optind]);
 #endif					/* UNIX ... */
 
-#if AMIGA || MACINTOSH || MSDOS || MVS || OS2 || VM || VMS
+#if MACINTOSH || MSDOS || MVS || OS2 || VM || VMS
             /*
              * Pass no files to the linker.
              */
             quitf("bad argument %s",argv[optind]);
-#endif					/* AMIGA || ... */
+#endif					/* MACINTOSH || ... */
 
 /*
  * End of operating-system specific code.
@@ -622,9 +622,9 @@ char *s;
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA || MSDOS || MVS || OS2 || UNIX || VM || VMS
+#if MSDOS || MVS || OS2 || UNIX || VM || VMS
    fprintf(stderr,"%s:\n",s);
-#endif					/* AMIGA || ... */
+#endif					/* MSDOS || ... */
 
 #if MACINTOSH
 #if MPW

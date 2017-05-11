@@ -16,10 +16,6 @@
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if AMIGA
-   /* nothing is needed */
-#endif					/* AMIGA */
-
 #if MACINTOSH
    /* nothing is needed */
 #endif					/* MACINTOSH */
@@ -101,10 +97,6 @@ char **opt_args;
    /* something may be needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-   do_directive("#define AMIGA 1\n");
-#endif					/* AMIGA */
 
 #if MACINTOSH
    /* nothing is needed */
@@ -379,10 +371,6 @@ Deliberate Syntax Error
    /* something may be needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if AMIGA
-   /* nothing is needed */
-#endif					/* AMIGA */
 
 #if MACINTOSH
    /* nothing is needed */

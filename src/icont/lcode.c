@@ -53,10 +53,6 @@ static void	shortout	(short oint);
    static void	dumpblock	(char *addr,int count);
 #endif					/* DeBugLinker */
 
-#if AMIGA
-   #include <fcntl.h>
-#endif					/* AMIGA */
-
 #if MSDOS
    extern long fileOffsetOfStuffThatGoesInICX;
    /* defined in Globals.h, set in link.c, used below */

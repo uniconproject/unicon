@@ -540,7 +540,6 @@ static void execute(ofile,efile,args)
 char *ofile, *efile, **args;
    {
 
-#if !(MACINTOSH && MPW)
    int n;
    char **argv, **p;
 
@@ -602,10 +601,6 @@ Deliberate Syntax Error
 
    quitf("could not run %s",ofile);
 
-#else					/* !(MACINTOSH && MPW) */
-   printf("-x not supported\n");
-#endif					/* !(MACINZTOSH && MPW) */
-
    }
 
 static void report(s)
@@ -626,12 +621,6 @@ Deliberate Syntax Error
    fprintf(stderr,"%s:\n",s);
 #endif					/* MSDOS || ... */
 
-#if MACINTOSH
-#if MPW
-   printf("Echo '%s:' > Dev:StdErr\n",s);
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
 /*
  * End of operating-system specific code.
  */
@@ -645,17 +634,7 @@ Deliberate Syntax Error
 static void rmfile(fname)
 char *fname;
    {
-
-#if MACINTOSH && MPW
-      /*
-       * MPW generates commands rather than doing the actions
-       *  at this time.
-       */
-   fprintf(stdout,"Delete %s\n", fname);
-#else					/* MACINTOSH && MPW */
    remove(fname);
-#endif					/* MACINTOSH && MPW */
-
    }
 
 /*

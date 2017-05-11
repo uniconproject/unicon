@@ -56,13 +56,6 @@ char *libpath (char *prog, char *envname);
    char pathToIconDOS[129];
 #endif					/* MSDOS */
 
-#if MACINTOSH
-   #if MPW
-      #include <CursorCtl.h>
-      void SortOptions();
-   #endif				/* MPW */
-#endif					/* MACINTOSH */
-
 #if OS2
    #include <process.h>
 #endif					/* OS2 */
@@ -304,13 +297,6 @@ void iconx(int argc, char** argv){
    FINDDATA_T fd;
    int j;
 #endif					/* WildCards */
-
-#if MACINTOSH
-#if MPW
-   InitCursorCtl(NULL);
-   SortOptions(argv);
-#endif					/* MPW */
-#endif					/* MACINTOSH */
 
    if ((int)strlen(patchpath) > 18)
       iconxloc = patchpath+18;	/* use stated iconx path if patched */
@@ -599,22 +585,6 @@ void iconx(int argc, char** argv){
     * Link .u files to make an executable.
     */
    if (nolink) {			/* exit if no linking wanted */
-
-#if MACINTOSH
-#if MPW
-      /*
-       *  Set type of translator output ucode (.u) files
-       *  to 'TEXT', so they can be easily viewed by editors.
-       */
-      {
-      char **p;
-      void setfile();
-      for (p = rfiles; *p; ++p)
-         setfile(*p,'TEXT','UCOD');
-      }
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
       exit(EXIT_SUCCESS);
       }
 
@@ -726,13 +696,6 @@ void iconx(int argc, char** argv){
     *  Execute the linked program if so requested and if there were no errors.
     */
 
-#if MACINTOSH
-#if MPW
-   /* Set file type to TEXT so it will be executable as a script. */
-   setfile(ofile,'TEXT','ICOD');
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
    for (rptr = rfiles; *rptr; rptr++)	/* delete intermediate files */
       remove(*rptr);
    if (errors > 0) {			/* exit if linker errors seen */
@@ -749,12 +712,10 @@ void iconx(int argc, char** argv){
       report("No errors\n");
 #endif					/* ConsoleWindow */
 
-#if !(MACINTOSH && MPW)
    if (optind < argc)  {
       report("Executing");
       execute (ofile, efile, argv+optind+1);
       }
-#endif					/* !(MACINTOSH && MPW) */
 
    free(tfiles);
    free(lfiles);
@@ -772,7 +733,6 @@ static void execute(ofile,efile,args)
 char *ofile, *efile, **args;
    {
 
-#if !(MACINTOSH && MPW)
    int n;
    char **argv, **p;
 
@@ -916,10 +876,6 @@ Deliberate Syntax Error
 
    quitf("could not run %s",iconxloc);
 
-#else					/* !(MACINTOSH && MPW) */
-   printf("-x not supported\n");
-#endif					/* !(MACINTOSH && MPW) */
-
    }
 
 void report(s)
@@ -942,10 +898,8 @@ static void usage()
    {
 #if MVS || VM
    fprintf(stderr,"usage: %s %s file ... <-x args>\n", progname, Usage);
-#elif MPW
-   fprintf(stderr,"usage: %s %s file ...\n", progname, Usage);
 #else
    fprintf(stderr,"usage: %s %s file ... [-x args]\n", progname, Usage);
-#endif					/* MVS || VM || MPW */
+#endif					/* MVS || VM */
    exit(EXIT_FAILURE);
    }

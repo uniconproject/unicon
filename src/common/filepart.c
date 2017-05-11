@@ -38,10 +38,6 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
 #if MACINTOSH
    #define Prefix ":"
    #define FileSep ':'
-   #if MPW
-      #define DefPath ":"
-      #define PathSep ","
-   #endif				/* MPW */
 #endif					/* MACINTOSH */
 
 #if MVS

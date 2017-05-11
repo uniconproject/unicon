@@ -27,23 +27,6 @@
 #endif					/* PORT */
 
 #if MACINTOSH
-   #if MPW
-      #define create xx_create	/* prevent duplicate definition of create() */
-      #include <Types.h>
-      #include <Events.h>
-      #include <Files.h>
-      #include <FCntl.h>
-      #include <Files.h>
-      #include <IOCtl.h>
-      #include <fp.h>
-      #include <OSUtils.h>
-      #include <Memory.h>
-      #include <Errors.h>
-      #include "time.h"
-      #include <Quickdraw.h>
-      #include <ToolUtils.h>
-      #include <CursorCtl.h>
-   #endif				/* MPW */
    #ifdef MacGraph
       #include <console.h>
       #include <AppleEvents.h>

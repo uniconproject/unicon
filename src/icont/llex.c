@@ -9,13 +9,6 @@
 
 int nlflag = 0;		/* newline last seen */
 
-#if MACINTOSH
-   #if MPW
-      #include <CursorCtl.h>
-      #define CURSORINTERVAL 100
-   #endif				/* MPW */
-#endif					/* MACINTOSH */
-
 #if !EBCDIC
    #define tonum(c)	(isdigit(c) ? (c - '0') : ((c & 037) + 9))
 #endif					/* !EBCDIC */

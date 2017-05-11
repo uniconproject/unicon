@@ -456,13 +456,6 @@ void		xmfree		(void);
 
    int dup2(int h1, int h2);
 
-#if MACINTOSH
-   #if MPW
-      char *brk(char *addr);
-      char *sbrk(int incr);
-   #endif				/* MPW */
-#endif					/* MACINTOSH */
-
 void checkpollevent();
 void detectRedirection();
 

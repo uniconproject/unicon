@@ -40,12 +40,6 @@ int GetArgs (char **argv);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if MACINTOSH
-#if MPW
-int NoOptions = 0;
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
 #if ARM || MSDOS || MVS || VM || OS2 || UNIX || VMS
    /* nothing needed */
 #endif					/* ARM || ... */
@@ -616,57 +610,9 @@ int *ip;
    maxsp = 0;
 #endif					/* MaxLevel */
 
-#if MACINTOSH
-#if MPW
-   InitCursorCtl(NULL);
-   /*
-    * To support the icode and iconx interpreter bundled together in
-    * the same file, we might have to use this code file as the icode
-    * file, too.  We do this if the command name is not 'iconx'.
-    */
-   {
-   char *p,*q,c,fn[6];
-
-   /*
-    * Isolate the filename from the path.
-    */
-   q = strrchr(*argv,':');
-   if (q == NULL)
-       q = *argv;
-   else
-       ++q;
-   /*
-    * See if it's the real iconx -- case independent compare.
-    */
-   p = fn;
-   if (strlen(q) == 5)
-      while (c = *q++) *p++ = tolower(c);
-   *p = '\0';
-   if (strcmp(fn,"iconx") != 0) {
-     /*
-      * This technique of shifting arguments relies on the fact that
-      * argv[0] is never referenced, since this will make it invalid.
-      */
-      --argv;
-      ++argc;
-      --(*ip);
-      /*
-       * We don't want to look for any command line options in this
-       * case.  They could interfere with options for the icon
-       * program.
-       */
-      NoOptions = 1;
-      }
-   }
-#endif					/* MPW */
-#endif                                  /* MACINTOSH */
-
 /*
  * Handle command line options.
 */
-#if MACINTOSH && MPW
-   if (!NoOptions)
-#endif					/* MACINTOSH && MPW */
    while ( argv[1] != 0 && *argv[1] == '-' ) {
       char optletter = *(argv[1]+1);
       switch ( optletter ) {

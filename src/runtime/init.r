@@ -837,19 +837,6 @@ Deliberate Syntax Error
    signal(SIGSEGV, SigFncCast segvtrap);
 #endif					/* ARM */
 
-#if MACINTOSH
-#if MPW
-   {
-      void MacInit(void);
-      void SetFloatTrap(void (*fpetrap)());
-      void fpetrap();
-
-      MacInit();
-      SetFloatTrap(fpetrap);
-   }
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
 #if MSDOS
 #if MICROSOFT || TURBO
    signal(SIGFPE, SigFncCast fpetrap);

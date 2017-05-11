@@ -37,13 +37,6 @@ char *p;
 #endif					/* MSDOS || OS2 ... */
 
 
-#if MACINTOSH
-   #if MPW
-      close(fileno(stderr));
-      dup(fileno(stdout));
-   #endif				/* MPW */
-#endif					/* MACINTOSH */
-
 #if UNIX
       /*
        * This relies on the way UNIX assigns file numbers.

@@ -564,13 +564,6 @@ Deliberate Syntax Error
 
 #endif					/* MSDOS || OS2 */
 
-#if MACINTOSH && MPW
-   #ifndef NoHeader
-      #undef Header
-      #define Header
-   #endif				/* NoHeader */
-#endif					/* MACINTOSH && MPW */
-
 #ifndef NoWildCards
    #if NT || MICROSOFT
       #define WildCards 1

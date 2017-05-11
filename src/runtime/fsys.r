@@ -21,11 +21,6 @@ Deliberate Syntax Error
    /* nothing to do */
 #endif					/* MSDOS ... */
 
-#if MACINTOSH && MPW
-extern int MPWFlush(FILE *f);
-#define fflush(f) MPWFlush(f)
-#endif					/* MACINTOSH && MPW*/
-
 #ifdef PosixFns
 extern int errno;
 #endif					/* PosixFns */
@@ -1077,17 +1072,6 @@ Deliberate Syntax Error
 	 set_syserrortext(errno);
       	 fail;
 	 }
-
-#if MACINTOSH
-#if MPW
-      {
-	 void SetFileToMPWText(const char *fname);
-
-	 if (status & Fs_Write)
-	    SetFileToMPWText(fnamestr);
-      }
-#endif					/* MPW */
-#endif					/* MACINTOSH */
 
       /*
        * Return the resulting file value.

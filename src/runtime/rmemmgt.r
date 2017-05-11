@@ -505,15 +505,6 @@ int region;
       }
 #endif					/* !COMPILER */
 
-#if MACINTOSH
-#if MPW
-   {
-      void SetWatchCursor(void);
-      SetWatchCursor();
-      }
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
    /*
     * Sync the values (used by sweep) in the coexpr block for &current
     *  with the current values.

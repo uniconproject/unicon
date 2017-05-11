@@ -693,20 +693,6 @@ Deliberate Syntax Error
    /* nothing to do */
 #endif					/* ARM || ... */
 
-#if MACINTOSH
-#if MPW
-   {
-      #define CursorCheckInterval 800 /* virtual machine instructions */
-      void RotateTheCursor(void);
-      static short cursorcount = 1;
-      if (--cursorcount == 0) {
-	 RotateTheCursor();
-	 cursorcount = CursorCheckInterval;
-	 }
-   }
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
 /*
  * End of operating-system specific code.
  */

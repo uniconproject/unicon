@@ -676,18 +676,6 @@ int nextchar()
    {
    register int c;
 
-#if MACINTOSH
-#if MPW
-   {
-   static short cursorcount = CURSORINTERVAL;
-   if (--cursorcount == 0) {
-      RotateCursor(0);
-      cursorcount = CURSORINTERVAL;
-      }
-   }
-#endif					/* MPW */
-#endif					/* MACINTOSH */
-
    if ((c = peekc) != 0) {
       peekc = 0;
       return c;

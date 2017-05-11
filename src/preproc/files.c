@@ -300,20 +300,10 @@ Deliberate Syntax Error
       }
 #endif					/* VMS */
 
-#if VM || MVS || (MACINTOSH && !MPW)
+#if VM || MVS || MACINTOSH
    /* probably needs something */
 Deliberate Syntax Error
 #endif					/* VM || MVS || ... */
-
-#if MACINTOSH
-#if MPW
-   /*
-    * For MPW, environment variable CIncludes says where to look.
-    */
-   char *sysdir = FileNameMacConvert(FileNameMacToUnix,getenv("CIncludes"));
-   n_paths = 1;
-#endif					/* MPW */
-#endif					/* MACINTOSH */
 
 #if MSDOS
 
@@ -609,99 +599,3 @@ Deliberate Syntax Error
 
    incl_search[n_paths] = NULL;
    }
-
-#if MACINTOSH
-#if MPW
-/*
- * Extra functions specific to the Macintosh MPW implementation:
- *  functions to convert a UNIX-type file name to Mac-type
- *  and vice versa.
- *
- *  Result is pointer to a static string, or maybe a pointer
- *  to the input string if it is unchanged.
- */
-
-static char FileName_newfn[100];
-
-char *
-FileNameUnixToMac(char *fn) {
-  char *q,*e,*r;
-  int full;
-  
-  if (strchr(fn,'/') == NULL) return fn;
-  e = fn + strlen(fn);
-  r = FileName_newfn;
-  if (*fn == '/') {
-    full = 1;
-    ++fn;
-  }
-  else full = 0;
-  for (;;) {
-    (q = strchr(fn,'/')) || (q = e);
-    if (fn == q || q - fn == 1 && *fn == '.') {}
-    else if (q - fn == 2 && *fn == '.' && *(fn + 1) == '.')
-        *r++ = ':';
-    else {
-      *r++ = ':';
-      memcpy(r,fn,q - fn);
-      r += q - fn;
-    }
-    if (q == e) break;
-    fn = q + 1;
-  }
-  if (*(r - 1) == ':') *r++ = ':';
-  else if (*(e - 1) == '/') *r++ = ':';
-  *r = '\0';
-  return full ? FileName_newfn + 1 : FileName_newfn;
-}
-
-char *
-FileNameMacToUnix(char *fn) {
-  char *q,*e,*r;
-  
-  if (strchr(fn,':') == NULL) return fn;
-  r = FileName_newfn;
-  if (*fn == ':') ++fn;
-  else *r++ = '/';
-  q = fn;
-  e = fn + strlen(fn);
-  for (;;) {
-    while (*fn == ':') {
-      ++fn;
-      memcpy(r,"../",3);
-      r += 3;
-    }
-    if (fn == e) break;
-    (q = strchr(fn,':')) || (q = e);
-    memcpy(r,fn,q - fn);
-    r += q - fn;
-    *r++ = '/';
-    if (q == e) break;
-    fn = q + 1;
-  }
-  *--r = '\0';
-  return FileName_newfn;
-}
-
-/*
- *  Helper function to make filename conversions more convenient.
- *
- *  This function calls either of the two above filename conversion functions
- *  and returns the resulting filename in allocated memory.  Ownership of
- *  the allocated memory is transferred to the caller -- i.e. it is the
- *  caller's responsibility to eventually free it.
- *
- *  Example:  FileNameMacConvert(FileNameMacToUnix,":MyDir:MyFile")
- */
-char *
-FileNameMacConvert(char *(*func)(char *),char *fn) {
-   char *newfp, *newmem;
-
-   newfp = (*func)(fn);
-   newmem = (char *)malloc(strlen(newfp) + 1);
-   if (newmem == NULL) return NULL;
-   strcpy(newmem,newfp);
-   return newmem;
-}
-#endif					/* MPW */
-#endif					/* MACINTOSH */

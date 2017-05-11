@@ -2886,11 +2886,7 @@ Deliberate Syntax Error
 #endif					/* ARM */
 
 #if MACINTOSH
-#if MPW
-   return (isascii(c) && isprint(c));
-#else					/* MPW */
    return isprint(c);
-#endif					/* MPW */
 #endif					/* MACINTOSH */
 
 #if MVS || VM

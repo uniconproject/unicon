@@ -1,0 +1,61 @@
+import LXC
+
+procedure main(arg)
+   local c, name, we_did_it, cmd, cmds, fout
+
+    name := arg[1] | "uniconvm"
+   
+   write("Initialize LXC library...")
+   #LXC("./lxcunicon.so")
+   LXC()
+
+   c := LXC.container(name)
+
+   if c.exist() then
+      write("container ", name, " already exists")
+   else{
+      write("creating a container named ", name, "...")
+      c.creat() | stop("can't create container ", name)
+      we_did_it := 1
+      }
+   
+   write("booting ", name, "...");
+   c.start() | stop("couldn't do it")
+
+   
+   write("run some commands inside ", name)
+   cmds := ["uname",
+            "uname -a",
+            "uname -r" ,
+            "hostname",
+            "whoami",
+            "pwd",
+            "apt-get install htop"]
+   
+   every writes(left(cmd:=!cmds, 12), ": ") & c.attach(cmd)
+
+   write("\n\nStdout redirection: 'lsb_release  -a' output is going to ", name, ".log")
+   fout := open(name || ".log", "w") | stop("failed to open ", name, ".log")
+   c.attach("lsb_release -a", &null, fout) # &null => no change to stdin. stdout is redirected. 
+   close(fout)
+   
+   write("loop for 20 seconds report the state every 5 seconds")
+   every 1 to 4 do {
+      write(c.name, " is ", image(c.state()))
+      delay(5000)
+     }
+
+   # stop the conainter, could also use shutdown()
+   c.stop()
+
+   # report the container state
+   write(c.name, " is ", image(c.state()))
+
+   if (\we_did_it) then{ # make sure we don't accidentally
+                        # delete someone else's container
+      write("Time for cleanup, destroying ", name)
+      c.destroy() | stop("couldn't destroy ", name)
+     }      
+   
+   write("All OK, Goodbye!")
+end

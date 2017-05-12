@@ -4,9 +4,6 @@
  *  [save], seek, stop, system, where, write, writes, [getch, getche, kbhit]
  */
 
-#ifdef XENIX_386
-#define register
-#endif					/* XENIX_386 */
 /*
  * The following code is operating-system dependent [@fsys.01]. Include
  *  system-dependent files and declarations.

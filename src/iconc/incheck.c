@@ -136,13 +136,6 @@ can_il(p, n, impl)
    struct implement * ip;
    extern int num_dynrec_ctors;
 
-#ifdef USING_ARIZONA_RTL
-   /*
-    * If we're linking to the Arizona RTL, we can always inline.
-    */
-   return 1;
-#endif
-
    if (impl->oper_typ == 'K')
       return 1;
    if (num_dynrec_ctors > 0)

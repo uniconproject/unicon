@@ -6,73 +6,6 @@
 
 #ifdef ExecImages
 
-/*
- * save(s) -- for the Convex.
- */
-
-#ifdef CONVEX
-#define TEXT0 0x80001000		/* address of first .text page */
-#define DATA0 ((int) &environ & -4096)	/* address of first .data page */
-#define START TEXT0			/* start address */
-
-#include <convex/filehdr.h>
-#include <convex/opthdr.h>
-#include <convex/scnhdr.h>
-
-extern char environ;
-
-wrtexec (ef)
-int ef;
-{
-    struct filehdr filehdr;
-    struct opthdr opthdr;
-    struct scnhdr texthdr;
-    struct scnhdr datahdr;
-
-    int foffs = 0;
-    int ooffs = foffs + sizeof filehdr;
-    int toffs = ooffs + sizeof opthdr;
-    int doffs = toffs + sizeof texthdr;
-
-    int tsize = DATA0 - TEXT0;
-    int dsize = (sbrk (0) - DATA0 + 4095) & -4096;
-
-    bzero (&filehdr, sizeof filehdr);
-    bzero (&opthdr, sizeof opthdr);
-    bzero (&texthdr, sizeof texthdr);
-    bzero (&datahdr, sizeof datahdr);
-    
-    filehdr.h_magic = SOFF_MAGIC;
-    filehdr.h_nscns = 2;
-    filehdr.h_scnptr = toffs;
-    filehdr.h_opthdr = sizeof opthdr;
-
-    opthdr.o_entry = START;
-    opthdr.o_flags = OF_EXEC | OF_STRIPPED;
-
-    texthdr.s_vaddr = TEXT0;
-    texthdr.s_size = tsize;
-    texthdr.s_scnptr = 0x1000;
-    texthdr.s_prot = VM_PG_R | VM_PG_E;
-    texthdr.s_flags = S_TEXT;
-
-    datahdr.s_vaddr = DATA0;
-    datahdr.s_size = dsize;
-    datahdr.s_scnptr = 0x1000 + tsize;
-    datahdr.s_prot = VM_PG_R | VM_PG_W;
-    datahdr.s_flags = S_DATA;
-
-    write (ef, &filehdr, sizeof filehdr);
-    write (ef, &opthdr, sizeof opthdr);
-    write (ef, &texthdr, sizeof texthdr);
-    write (ef, &datahdr, sizeof datahdr);
-    lseek (ef, 0x1000, 0);
-    write (ef, TEXT0, tsize + dsize);
-    close (ef);
-
-    return dsize;
-}
-#endif					/* CONVEX */
 
 /*
  * save(s) -- for generic BSD systems.

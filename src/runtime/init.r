@@ -29,9 +29,9 @@ FILE		*pathOpen       (char *fname, char *mode);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MVS || VM || UNIX || VMS
+#if MACINTOSH || MVS || VM || UNIX || VMS
    /* nothing needed */
-#endif					/* ARM || MACINTOSH ... */
+#endif					/* MACINTOSH ... */
 
 /*
  * End of operating-system specific code.
@@ -832,11 +832,6 @@ MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM
-   signal(SIGFPE, SigFncCast fpetrap);
-   signal(SIGSEGV, SigFncCast segvtrap);
-#endif					/* ARM */
-
 #if MSDOS
 #if MICROSOFT || TURBO
    signal(SIGFPE, SigFncCast fpetrap);
@@ -1138,7 +1133,7 @@ btinit:
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || UNIX || VMS
+#if MACINTOSH || UNIX || VMS
    if (noerrbuf)
       setbuf(stderr, NULL);
    else {
@@ -1149,7 +1144,7 @@ Deliberate Syntax Error
 	 fatalerr(305, NULL);
       setbuf(stderr, buf);
       }
-#endif					/* ARM || MACINTOSH ... */
+#endif					/* MACINTOSH ... */
 
 #if MSDOS
    if (noerrbuf)
@@ -1251,9 +1246,9 @@ void envset()
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
+#if MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* ARM || ... */
+#endif					/* MACINTOSH || ... */
 
 /*
  * End of operating-system specific code.
@@ -1274,11 +1269,6 @@ Deliberate Syntax Error
 #if MACINTOSH
    /* can't handle */
 #endif					/* MACINTOSH */
-
-#if ARM
-      signal(SIGSEGV, SIG_DFL);
-      signal(SIGFPE, SIG_DFL);
-#endif					/* ARM */
 
 #if MSDOS
 #if TURBO

@@ -152,7 +152,7 @@ function{1} close(f)
 #endif					/* NTGCC */
 #endif					/* NT */
 
-#if ARM || UNIX || VMS || NT
+#if UNIX || VMS || NT
       /*
        * Close pipe if pipes are supported.
        * should we consider treating Fs_BPipe in the same way?!
@@ -162,7 +162,7 @@ function{1} close(f)
 	 return C_integer((pclose(fp) >> 8) & 0377);
 	 }
       else
-#endif					/* ARM || ... */
+#endif					/* UNIX || ... */
          fclose(fp);
 
       BlkLoc(f)->File.status = 0;
@@ -323,11 +323,6 @@ Deliberate Syntax Error
    /* nothing is needed */
 #endif					/* MACINTOSH || ... */
 
-#if ARM
-      extern FILE *popen(const char *, const char *);
-      extern int pclose(FILE *);
-#endif					/* ARM */
-
 #ifdef PosixFns
       int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
 #endif					/* PosixFns */
@@ -428,12 +423,12 @@ Deliberate Syntax Error
 		  status |= Fs_Untrans;
 	       continue;
 
-#if ARM || UNIX || VMS || NT
+#if UNIX || VMS || NT
 	    case 'p':
 	    case 'P':
 	       status |= Fs_Pipe;
 	       continue;
-#endif					/* ARM || UNIX ... */
+#endif					/* UNIX ... */
 
 	    case 'x':
 	    case 'X':
@@ -584,10 +579,10 @@ Deliberate Syntax Error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || UNIX || VMS
+#if UNIX || VMS
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write))
 	 mode[1] = '+';
-#endif					/* ARM || UNIX || VMS */
+#endif					/* UNIX || VMS */
 
 #if MACINTOSH
       if ((status & (Fs_Read|Fs_Write)) == (Fs_Read|Fs_Write)) {
@@ -803,7 +798,7 @@ Deliberate Syntax Error
 	 }
       else
 
-#if ARM || UNIX || VMS || NT
+#if UNIX || VMS || NT
       if (status & Fs_Pipe) {
 	 tended char *sbuf, *sbuf2, *my_s = NULL;
 	 int c, fnamestrlen = strlen(fnamestr);
@@ -844,7 +839,7 @@ Deliberate Syntax Error
 	    }
 	 }
       else
-#endif					/* ARM || ... */
+#endif					/* UNIX || ... */
 
 #ifdef Dbm
       if (status & Fs_Dbm) {
@@ -2985,9 +2980,9 @@ function{0,1} chdir(s)
 #if PORT
    Deliberate Syntax Error
 #endif                                  /* PORT */
-#if ARM || MACINTOSH || MVS || VM
+#if MACINTOSH || MVS || VM
       runerr(121);
-#endif                                  /* ARM || MACINTOSH ... */
+#endif                                  /* MACINTOSH ... */
 #if MSDOS || UNIX || VMS || NT
 
       char path[PATH_MAX];

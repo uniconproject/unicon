@@ -48,9 +48,9 @@ char *libpath (char *prog, char *envname);
    Deliberate syntax error
 #endif					/* PORT */
 
-#if ARM || MVS || UNIX || VM || VMS
+#if MVS || UNIX || VM || VMS
    /* nothing is needed */
-#endif					/* ARM || ... */
+#endif					/* MVS || ... */
 
 #if MSDOS
    char pathToIconDOS[129];
@@ -470,19 +470,9 @@ void iconx(int argc, char** argv){
 	    *lptr++ = *rptr++ = salloc(buf);
 	    }
 	 else {
-#if ARM
-	/* Different file naming, so we need a different strategy... */
-	*tptr++ = "-";
-	/* Use makename(), pretending we had an input file named "Stdin" */
-	makename(buf,TargetDir,"Stdin",U1Suffix);
-	*lptr++ = *rptr++ = salloc(buf);	/* link & remove .u1 */
-	makename(buf,TargetDir,"Stdin",U2Suffix);
-	*rptr++ = salloc(buf);		/* also remove .u2 */
-#else					/* ARM */
-         *tptr++ = "-";				/* "-" means standard input */
-         *lptr++ = *rptr++ = "stdin.u";
-#endif					/* ARM */
-	}
+	    *tptr++ = "-";				/* "-" means standard input */
+	    *lptr++ = *rptr++ = "stdin.u";
+	    }
          }
       else if (pofile != NULL) {
 	    fp = fparse(pofile);
@@ -779,35 +769,6 @@ char *ofile, *efile, **args;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if ARM
-   {
-      int i = 7 + strlen(iconxloc);
-      int j;
-      char *s;
-      char buffer[255];
-      extern int armquote(char *, char **);
-
-      sprintf(buffer, "Chain:%s ", iconxloc);
-      for (p = argv + 1; *p; ++p)
-      {
-         j = armquote(*p, &s);
-
-         if (j == -1 || i + j >= 255)
-         {
-            fprintf(stderr, "Cannot execute: command line too long");
-            fflush(stderr);
-            return;
-         }
-
-         strcpy(buffer + i, s);
-         i += j;
-         buffer[i] = ' ';
-      }
-      buffer[i] = '\0';
-      system(buffer);
-   }
-#endif					/* ARM */
 
 #if MACINTOSH
       fprintf(stderr,"-x not supported\n");

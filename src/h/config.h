@@ -62,10 +62,6 @@
    #define PORT 0
 #endif					/* PORT */
 
-#ifndef ARM
-   #define ARM 0
-#endif					/* ARM */
-
 #ifndef MACINTOSH
    #define MACINTOSH 0
 #endif					/* MACINTOSH */
@@ -411,9 +407,9 @@
  */
 
 #ifndef Pipes
-   #if ARM || UNIX || VMS
+   #if UNIX || VMS
       #define Pipes
-   #endif				/* ARM || UNIX || VMS */
+   #endif				/* UNIX || VMS */
 #endif					/* Pipes */
 
 #ifndef KeyboardFncs

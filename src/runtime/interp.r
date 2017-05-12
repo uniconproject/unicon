@@ -35,9 +35,9 @@ static void vanq_proc (struct ef_marker *efp_v, struct gf_marker *gfp_v);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
+#if MACINTOSH || MSDOS || MVS || UNIX || VM || VMS
    /* nothing needed */
-#endif					/* ARM || ... */
+#endif					/* MACINTOSH || ... */
 
 /*
  * End of operating-system specific code.
@@ -355,9 +355,9 @@ deliberate syntax error
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MVS || UNIX || VM || VMS
+#if MACINTOSH || MVS || UNIX || VM || VMS
 #define PushAVal(x) PushVal(x)
-#endif					/* ARM || ... */
+#endif					/* MACINTOSH || ... */
 
 #if MSDOS
 #define PushAVal(x) {rsp++; \
@@ -689,9 +689,9 @@ int interp_x(int fsig,dptr cargp)
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MSDOS || MVS || UNIX || VM || VMS
+#if MSDOS || MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* ARM || ... */
+#endif					/* MSDOS || ... */
 
 /*
  * End of operating-system specific code.
@@ -2461,7 +2461,7 @@ void stkdump(op)
    fprintf(stderr,"> ----------\n");
    fflush(stderr);
    }
-#endif					/* ARM */
+#endif					/* DEBUG_INTERP */
 
 #if MSDOS
 #if MICROSOFT || TURBO

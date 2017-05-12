@@ -19,9 +19,9 @@ char *p;
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MVS || VM
+#if MVS || VM
    /* cannot do this */
-#endif					/* ARM || MVS || VM */
+#endif					/* MVS || VM */
 
 #if MSDOS || VMS
    #if NT

@@ -40,9 +40,9 @@ int GetArgs (char **argv);
 Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MSDOS || MVS || VM || UNIX || VMS
+#if MSDOS || MVS || VM || UNIX || VMS
    /* nothing needed */
-#endif					/* ARM || ... */
+#endif					/* MSDOS || ... */
 
 /*
  * End of operating-system specific code.

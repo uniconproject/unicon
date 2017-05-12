@@ -23,11 +23,6 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM
-   #define Prefix ".:"
-   #define DefPath "Icon: Lib:Icon."
-#endif					/* ARM */
-
 #if MSDOS
    #define Prefix "/:\\"
    #define DefPath ";"
@@ -177,127 +172,6 @@ char *s;
    int n;
    char *p, *q;
 
-#if ARM
-   char *ext = 0;
-   char *extend = 0;
-   char *dirend = 0;
-   char *s1;
-   char *bp = buf;
-
-   /* First, skip any filing system prefix */
-   s1 = strchr(s,':');
-   if (s1 == NULL)
-      s1 = s;
-   else
-      ++s1;
-
-   /* Now, scan backwards through the filename, looking for dots.
-    * Record the positions of the final two, for later use.
-    */
-   p = s1 + strlen(s1);
-   fp.name = 0;
-   
-   while (--p > s1)
-   {
-         if (*p != '.')
-            continue;
-
-      if (fp.name == NULL)
-      {
-         fp.name = p + 1;
-         extend = p;
-      }
-      else
-      {
-         ext = p + 1;
-         dirend = p;
-         break;
-      }
-   }
-
-   /* This is the simple case. The filename is a simple name, with no
-    * directory part. The extension is therefore null, and the directory
-    * is just the filing system prefix, if any.
-    */
-   if (fp.name == NULL)
-   {
-      fp.name = s1;
-
-      if (s1 == s)
-      {
-         fp.ext = "";
-         fp.dir = "";
-      }
-      else
-      {
-         fp.ext = "";
-         strncpy(buf, s, s1 - s);
-         buf[s1-s] = '\0';
-         fp.dir = buf;
-      }
-
-      return &fp;
-   }
-
-   /* Now worry about the more complicated cases. First, check the
-    * supposed extension, to see if it is one of the valid cases,
-    * SourceSuffix, U1Suffix, U2Suffix, or USuffix. For this code
-    * to work, these four defined values must start with a dot, and
-    * be all in lower case.
-    */
-   *buf = '.';
-   bp = buf + 1;
-
-   for (p = ext ? ext : s1; p < extend; ++p)
-   {
-      *bp++ = tolower(*p);
-   }
-
-   *bp++ = '\0';
-
-   if (strcmp(buf,SourceSuffix) == 0 || strcmp(buf,U1Suffix) == 0
-    || strcmp(buf,U2Suffix) == 0 || strcmp(buf,USuffix) == 0)
-   {
-      fp.ext = buf;
-   }
-   else
-   {
-      fp.ext = "";
-      bp = buf;
-      dirend = extend;
-   }
-
-   /* We now have the name and extension sorted out. So we just need
-    * to copy the directory part into buf (at bp), and set fp.dir.
-    */
-   if (dirend == NULL)
-   {
-      if (s1 == s)
-         fp.dir = "";
-      else
-      {
-         fp.dir = bp;
-
-         while (s < s1)
-            *bp++ = *s++;
-
-         *bp = '\0';
-      }
-   }
-   else
-   {
-      fp.dir = bp;
-
-      while (s <= dirend)
-         *bp++ = *s++;
-
-      *bp = '\0';
-   }
-
-   return &fp;
-
-#else					/* ARM */
-
 #if MVS
    static char extbuf [MaxFileName+2] ;
 
@@ -346,7 +220,6 @@ char *s;
 #endif                                  /* VMS */
 
    return &fp;
-#endif					/* ARM */
    }
 
 /*
@@ -362,14 +235,6 @@ char *dest, *d, *name, *e;
    if (e != NULL)
       fp.ext = e;
 
-#if ARM
-   {
-      char *p = (*fp.ext ? fp.ext + 1 : "");
-      sprintf(dest, "%s%s%s%s", fp.dir, p, (*p ? "." : ""), fp.name);
-   }
-
-#else					/* ARM */
-
 #if MVS
    if (*fp.member)
       sprintf(dest,"%s%s%s(%s", fp.dir, fp.name, fp.ext, fp.member);
@@ -377,7 +242,6 @@ char *dest, *d, *name, *e;
 #endif					/* MVS */
 
    sprintf(dest,"%s%s%s",fp.dir,fp.name,fp.ext);
-#endif					/* ARM */
 
    return dest;
    }

@@ -147,16 +147,7 @@ skipOP: switch (op) {
 	    k = getrest();
             name = &lsspace[k];	/* get the name */
 
-            #if ARM
-               {
-                char *flipname (char *);
-
-                /* put it on the list of files to link */
-                alsolink(flipname(name));
-               }
-            #else			/* ARM */
-               alsolink(name);	/*  put it on the list of files to link */
-            #endif			/* ARM */
+	    alsolink(name);	/*  put it on the list of files to link */
 
             newline();
             break;

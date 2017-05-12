@@ -508,9 +508,9 @@ int n;
    return Succeeded;
 #endif					/* MACINTOSH */
 
-#if PORT || ARM || MVS || VM
+#if PORT || MVS || VM
    return Failed;
-#endif					/* PORT || ARM || ... */
+#endif					/* PORT || ... */
 
    /*
     * End of operating-system dependent code.

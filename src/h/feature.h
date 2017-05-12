@@ -18,10 +18,6 @@
 
    Feature(1, "_V9", 0)			/* Version 9 (unconditional) */
 
-#if ARM
-   Feature(1, "_ACORN", "Acorn Archimedes")
-#endif					/* ARM */
-
 #if VM
    Feature(1, "_CMS", "CMS")
 #endif					/* VM */

@@ -37,11 +37,6 @@ void	setexe	(char *fname);
    /* nothing to do */
 #endif					/* MACINTOSH || ... */
 
-#if ARM
-   #include "kernel.h"
-   #include "swis.h"
-#endif					/* ARM */
-
 #if MSDOS
    extern char pathToIconDOS[];
    #if MICROSOFT || TURBO
@@ -211,9 +206,9 @@ char *outname;
    Deliberate Syntax Error
 #endif					/* PORT */
 
-#if ARM || MACINTOSH || MVS || UNIX || VM || VMS
+#if MACINTOSH || MVS || UNIX || VM || VMS
    /* nothing to do */
-#endif					/* ARM || ... */
+#endif					/* MACINTOSH || ... */
 
 #if MSDOS
    #if MICROSOFT || TURBO
@@ -531,21 +526,6 @@ char *fname;
    /* something is needed */
 Deliberate Syntax Error
 #endif					/* PORT */
-
-#if ARM
-   {
-      _kernel_swi_regs regs;
-
-      regs.r[0] = 31;
-      regs.r[1] = (int)"Icon";
-      if (_kernel_swi(OS_FSControl,&regs,&regs) == NULL)
-      {
-         regs.r[0] = 18;
-         regs.r[1] = (int)fname;
-         _kernel_swi(OS_File,&regs,&regs);
-      }
-   }
-#endif					/* ARM */
 
 #if MSDOS || MVS || VM || VMS
    /*

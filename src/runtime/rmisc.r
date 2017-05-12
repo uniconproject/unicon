@@ -2881,10 +2881,6 @@ Deliberate Syntax Error
    return (isascii(c) && isprint(c));
 #endif					/* MSDOS ... */
 
-#if ARM
-   return (c >= 0x00 && c <= 0x7F && isprint(c));
-#endif					/* ARM */
-
 #if MACINTOSH
    return isprint(c);
 #endif					/* MACINTOSH */

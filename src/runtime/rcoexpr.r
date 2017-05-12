@@ -578,7 +578,7 @@ void coclean(struct b_coexpr *cp) {
 #ifdef Concurrent
       CURTSTATE();
       cp->alive = -1;			/* signal thread to exit */
-      if (cp->tstate==curtstate){
+      if (cp->id==curtstate->c->id){
        /* 
         * If the thread is cleaning itself, exit, what about tls chain? 
         */

@@ -129,7 +129,6 @@ static void posix_recs_init(void);
 static void prc_add_invk(struct prc *, struct invk *);
 static void prc_free(struct prc *);
 static struct prc * prc_lkup(char *, struct caf **);
-static void prc_parse_name(struct prc *, char *, char *);
 static void read_bndl_class(void *);
 static void read_bndl_name(void);
 static void read_caf_class(void);
@@ -795,38 +794,6 @@ prc_lkup(name, pcaf)
       *pcaf = bkt->caf;
    return bkt ? bkt->prc : NULL;
 }
-
-#ifdef no_longer_used
-/*
- * attempt to parse a procedure name into components. if the proc name has
- * a pkg-spec (e.g. gui__), param "a" will contain all chars up to and not
- * including "__". param "b" will contain all chars after "__" (if present)
- * up to and not including the next "_" if one is present. both params a and
- * be are null-terminated. if the proc name contains no pkg-spec, param a
- * will be empty; param b will always contain something.
- */
-static
-void
-prc_parse_name(prc, a, b)
-   struct prc * prc;
-   char * a;
-   char * b;
-{
-   char * p;
-   char * q;
-
-   p = prc->name;
-   q = strstr(prc->name, "__");
-   while (p < q)
-      *a++ = *p++;
-   *a = 0;
-   while (*p && *p == '_')
-      p++;
-   while (*p && *p != '_')
-      *b++ = *p++;
-   *b = 0;
-}
-#endif /* no_longer_used */
 
 static
 void

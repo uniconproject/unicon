@@ -73,7 +73,7 @@ AtomMake(name, data)			/* makes an atom */
 #define HASH_TABLE_GROWS  size = size * 2;
 
 /* aho-sethi-ullman's HPJ (sizes should be primes)*/
-#ifdef notdef
+#if 0
 #define HASH_FUNCTION	hash <<= 4; hash += *hp++; \
     if(hash2 = hash & 0xf0000000) hash ^= (hash2 >> 24) ^ hash2;
 #define INITIAL_HASH_SIZE 4095		/* should be 2^n - 1 */

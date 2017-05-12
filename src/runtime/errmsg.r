@@ -2,11 +2,6 @@
  * errmsg.r -- err_msg, irunerr, drunerr
  */
 
-#ifdef PresentationManager
-extern MRESULT_N_EXPENTRY RuntimeErrorDlgProc(HWND, ULONG, MPARAM, MPARAM);
-HAB HInterpAnchorBlock;
-#endif					/* PresentationManager */
-
 extern struct errtab errtab[];		/* error numbers and messages */
 
 char *logopt;                            /* Log option destination */ 
@@ -66,10 +61,6 @@ void err_msg(int n, dptr v)
    char *lfile = NULL;
    FILE *logfptr = NULL;
    
-#ifdef PresentationManager
-   HMODULE modhand;
-#endif
-
 #ifdef Messaging
    int saveerrno = errno;
 #endif                                  /* Messaging */
@@ -117,7 +108,6 @@ void err_msg(int n, dptr v)
 
    EVVal((word)k_errornumber,E_Error);
 
-#ifndef PresentationManager
    if (pfp != NULL) {
       if (IntVal(kywd_err) == 0 || !err_conv) {
          fprintf(stderr, "\nRun-time error %d\n", k_errornumber);
@@ -194,30 +184,6 @@ void err_msg(int n, dptr v)
       abort();
 
    c_exit(EXIT_FAILURE);
-#else					/* PresentationManager */
-
-  if (pfp != NULL) {
-     if (IntVal(kywd_err) == 0 || !err_conv) {
-	 DosQueryModuleHandle("xiconxdl.dll",&modhand);
-	 if (WinDlgBox(HWND_DESKTOP, HWND_DESKTOP, RuntimeErrorDlgProc, modhand,
-		IDD_RUNERR, NULL) == DID_ERROR) {
-
-	  WinMessageBox(HWND_DESKTOP, HWND_DESKTOP,
-		  "An Error occurred, but the dialog cannot be loaded.\nExecution halting.",
-		  "Icon Runtime System", 0, MB_OK|MB_ICONHAND|MB_MOVEABLE);
-	 }
-     }
-     else {
-	IntVal(kywd_err)--;
-	return;
-     }
-  }
-
-  if (dodump)
-    abort();
-
-  c_exit(EXIT_FAILURE);
-#endif					/* PresentationManager */
 }
 
 /*

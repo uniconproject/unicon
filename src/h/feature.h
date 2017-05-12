@@ -159,10 +159,6 @@
 #endif					/* NT */
 #endif					/* MSWindows */
 
-#ifdef PresentationManager
-   Feature(1, "_PRESENTATION_MGR", "Presentation Manager")
-#endif					/* PresentationManager */
-
 #ifdef ArmFncs
    Feature(1, "_ARM_FUNCTIONS", "Archimedes extensions")
 #endif					/* ArmFncs */

@@ -586,13 +586,11 @@ int checkOpenConsole( FILE *w, char *s );
    char my_wmap         (wbp w);
    int	nativecolor	(wbp w, char *s, long *r, long *g, long *b);
 
-   #ifndef PresentationManager
-      /* Exclude those functions defined as macros */
-      int pollevent	(void);
+   /* Exclude those functions defined as macros */
+   int pollevent	(void);
 #ifndef MSWindows
       void wflush	(wbp w);
 #endif
-   #endif				/* PresentationManager */
 
    int	query_pointer	(wbp w, XPoint *pp);
    int	query_rootpointer (XPoint *pp);
@@ -905,67 +903,6 @@ int checkOpenConsole( FILE *w, char *s );
       void closelog();
 
 #endif				/* MSWindows */
-
-   #ifdef PresentationManager
-      /*
-       * Implementation routines specific to OS/2 Presentation Manager
-       */
-      wsp ObtainEvents(wsp ws, SHORT blockflag, ULONG messg, QMSG *msg);
-      void InterpThreadStartup(void *args);
-      void InterpThreadShutdown(void);
-      void DestroyWindow(wsp ws);
-      void LoadDefAttrs(wbinding *wb, wsp ws, wcp wc);
-      void ResizeBackingBitmap(wsp ws, SHORT x, SHORT y);
-      int  moveResizeWindow(wbp w,int x, int y, int width, int height);
-      void moveWindow(wbp w, int x, int y);
-      int  resizeWindow(wbp w,int width,int height);
-      int SetNewBitPattern(wcp wc, PBYTE bits);
-      int LoadFont(wbp wb, char *family, LONG attr, ULONG fontsize);
-      void FreeIdTable(void);
-      void FreeLocalID(LONG id);
-
-      /* -- not needed because of macro definitions
-      void SetCharContext(wbp wb, wsp ws, wcp wc);
-      void SetAreaContext(wbp wb, wsp ws, wcp wc);
-      void SetLineContext(wbp wb, wsp ws, wcp wc);
-      void SetImageContext(wbp wb, wsp ws, wcp wc);
-         -- */
-
-      void SetClipContext(wbp wb, wsp ws, wcp wc);
-      void UnsetContext(wcp wc, void (*f)(wcp, wsp));
-      void UCharContext(wcp wc, wsp ws);
-      void ULineContext(wcp wc, wsp ws);
-      void UAreaContext(wcp wc, wsp ws);
-      void UImageContext(wcp wc, wsp ws);
-      void UClipContext(wcp wc, wsp ws);
-      void UAllContext(wcp wc, wsp ws);
-      void drawpoints(wbp wb, XPoint *pts, int npts);
-      void drawsegments(wbp wb, XSegment *segs, int nsegs);
-      void drawstrng(wbp wb, int x, int y, char *str, int slen);
-      void drawarcs(wbp w, XArc *arcs, int narcs);
-      void drawlines(wbp wb, XPoint *pts, int npts);
-      void drawrectangles(wbp wb, XRectangle *recs, int nrecs);
-      int dumpimage(wbp wb, char *filename, int x, int y, int width, int height);
-      void fillpolygon(wbp wb, XPoint *pts, int npts);
-      HBITMAP loadimage(wbp wb, char *filename, int *width, int *height);
-      void InitializeIdTable(void);
-      void InitializeColorTable(void);
-      void FreeColorTable(void);
-      LONG GetColorIndex(char *buf, double gamma);
-      void AddLocalIdToWindow(wsp ws, LONG id);
-      void ReleaseLocalId(LONG id);
-      void ReleaseColor(LONG indx);
-      void ColorInitPS(wbp wb);
-      void GetColorName(LONG indx, char *buf, int len);
-      void EnsureColorAvailable(LONG indx);
-      int GetTextWidth(wbp wb, char *text, int len);
-      int AddWindowDep(wsp ws, wcp wc);
-      int AddContextDep(wsp ws, wcp wc);
-      FILE *PMOpenConsole(void);
-      void UpdateCursorConfig(wsp ws, wcp wc);
-      void UpdateCursorPos(wsp ws, wcp wc);
-
-   #endif				/* PresentationManager */
 
 #endif					/* Graphics */
 

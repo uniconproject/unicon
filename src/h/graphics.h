@@ -12,10 +12,6 @@
    #include "../h/xwin.h"
 #endif					/* XWindows */
 
-#ifdef PresentationManager
-   #include "../h/pmwin.h"
-#endif					/* PresentationManager */
-
 #ifdef MSWindows
    #include "../h/mswin.h"
 #endif					/* MSWindows */
@@ -194,17 +190,6 @@
 #define CLRTOBEHIDDEN(ws)  ((ws)->bits &= ~4096)
 #endif					/* MSWindows */
 
-#ifdef PresentationManager
-#define ISMINPEND(w)    ((w)->window->bits & 2048)
-#define ISMINPENDW(ws)   ((ws)->bits & 2048)
-#define SETINITIAL(w)   ((w)->window->bits |= 1)
-#define SETMINPEND(w)   ((w)->window->bits |= 2048)
-#define CLRINITIAL(w)   ((w)->window->bits &= ~1)
-#define CLRINITIALW(w)  ((w)->bits &= ~1)
-#define CLRMINPEND(w)   ((w)->window->bits &= ~2048)
-#define CLRMINPENDW(w)  ((w)->bits &= ~2048)
-#endif					/* PresentationManager */
-
 #define ISTITLEBAR(ws) ((ws)->bits & 8192)
 #define SETTITLEBAR(ws) ((ws)->bits |= 8192)
 #define CLRTITLEBAR(ws) ((ws)->bits &= ~8192)
@@ -249,13 +234,6 @@ typedef struct _wfont {
   XFontStruct *	fsp;			/* X font pointer */
 #endif					/* HAVE_XFT */
 #endif					/* XWindows */
-#ifdef PresentationManager
-   /*
-    * XXX replace this HUGE structure with single fields later - when we know
-    * conclusively which ones we need.
-    */
-  FONTMETRICS	metrics;		/* more than you ever wanted to know */
-#endif					/* PresentationManager */
 #ifdef MSWindows
   char		*name;			/* name for WAttrib and fontsearch */
   HFONT		font;
@@ -404,34 +382,6 @@ typedef struct _wdisplay {
   struct _wdisplay *previous, *next;
 } *wdp;
 
-#ifdef PresentationManager
-/*
- * Presentation space local id's are used to identify fonts, bitmaps
- * and markers.  Since we have 2 presentation spaces for each window,
- * and contexts can be associated with different windows through bindings,
- * the local identifier map must be identical throughout all ps (since the
- * context can identify a font as ID 2 on one space and that must be valid
- * on each space it is bound to).  This will be handled by a global array
- * of lclIdentifier.
- */
-#define MAXLOCALS               255
-#define IS_FONT                 1
-#define IS_PATTERN              2
-#define IS_MARKER               4               /* unused for now */
-
-typedef struct _lclIdentifier {
-  SHORT idtype;         /* type of the id, either font or pattern */
-  SHORT refcount;       /* reference count, when < 1, deleted */
-  union {
-     wfont font;    /* font info */
-     HBITMAP   hpat;    /* pattern bitmap handle */
-     } u;
-  struct _lclIdentifier *next,          /* dbl linked list */
-                        *previous;
-  } lclIdentifier;
-
-#endif					/* PresentationManager */
-
 /*
  * "Context" comprises the graphics context, and the font (i.e. text context).
  * Foreground and background colors (pointers into the display color table)
@@ -463,18 +413,6 @@ typedef struct _wcontext {
   int		linewidth;
   int		leading;		/* inter-line leading */
 #endif					/* XWindows */
-#ifdef PresentationManager
-  /* attribute bundles */
-  CHARBUNDLE	charBundle;		/* text attributes */
-  LINEBUNDLE	lineBundle;		/* line/arc attributes */
-  AREABUNDLE	areaBundle;		/* polygon attributes... */
-  IMAGEBUNDLE	imageBundle;		/* attributes use in blit of mono bms */
-  LONG 		fntLeading;		/* external leading for font - user */
-  SHORT		currPattern;		/* id of current pattern */
-  LONG		numDeps;		/* number of window dependants */
-  LONG		maxDeps;		/* maximum number of deps in current table */
-  struct _wstate **depWindows;           /* array of window dependants */
-#endif					/* PresentationManager */
 #ifdef MSWindows
   LOGPEN	pen;
   LOGPEN	bgpen;
@@ -645,36 +583,6 @@ typedef struct _wstate {
   unsigned int	iconw, iconh;		/* width and height of icon */
   long		wmhintflags;		/* window manager hints */
 #endif					/* XWindows */
-#ifdef PresentationManager
-  HWND		hwnd;			/* handle to the window (client) */
-  HWND		hwndFrame;		/* handle to the frame window */
-  HMTX		mutex;			/* window access mutex sem */
-  HDC		hdcWin;			/* handle to window device context */
-  HPS		hpsWin;			/* pres space for window */
-  HPS		hpsBitmap;		/* pres space for the backing bitmap */
-  HBITMAP	hBitmap;		/* handle to the backing bitmap */
-  HDC		hdcBitmap;		/* handle to the bit, memory DC */
-  wcontext	*charContext;		/* context currently loaded in PS's */
-  wcontext	*lineContext;		
-  wcontext 	*areaContext;
-  wcontext	*imageContext;
-  wcontext	*clipContext;
-  LONG 		winbg;			/* window background color */
-  HBITMAP	hInitialBitmap;		/* the initial image to display */
-  HPOINTER	hPointer;		/* handle to window's current pointer*/
-  CURSORINFO	cursInfo;		/* cursor information stored on lose focus */
-  LONG		numDeps;		/* number of context dependants */
-  LONG		maxDeps;
-  wcontext      **depContexts;          /* array of context dependants */
-  /* XXX I don't like this next line, but it will do for now - until I figure
-     out something better.  Following the charContext pointer to find the
-     descender value is not enough as it could be NULL */
-  SHORT         lastDescender;          /* the font descender value from last wc */
-  HRGN		hClipWindow;		/* clipping regions */
-  HRGN		hClipBitmap;
-  BYTE		winState;               /* window state: icon, window, maximized */
-  HBITMAP       hIconBitmap;            /* bitmap to display when iconized */
-#endif					/* PresentationManager */
 #ifdef MSWindows
   HWND		win;			/* client window */
   HWND		iconwin;		/* client window when iconic */

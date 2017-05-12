@@ -282,12 +282,7 @@
    #define Graphics 1
 #endif					/* MacGraph */
 
-#ifdef PresentationManager
-   #define Graphics 1
-   #define ConsoleWindow 1
-#endif					/* PresentationManager */
-
-#if defined(NoGraphics) || (!defined(MSWindows) && !defined(MacGraph) && !defined(PresentationManager) && !defined(HAVE_LIBX11))
+#if defined(NoGraphics) || (!defined(MSWindows) && !defined(MacGraph) && !defined(HAVE_LIBX11))
 #undef Graphics
 #endif
 
@@ -302,12 +297,10 @@
    #endif				/* NoXpmFormat */
 
    #ifndef MSWindows
-      #ifndef PresentationManager
          #ifndef MacGraph
             #undef XWindows
             #define XWindows 1
          #endif				/* MacGraph */
-      #endif				/* PresentationManager */
    #endif				/* MSWindows */
 
    #undef LineCodes

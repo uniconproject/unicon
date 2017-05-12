@@ -17,10 +17,6 @@ static void xtrace
 /*
  * tracebk - print a trace of procedure calls.
  */
-#ifdef PresentationManager
-/* have to add COMPILER support too */
-void tracebk(void *foo, dptr argp, HWND hwndMLE)
-#else					/* PresentationManager */
 void tracebk(lcl_pfp, argp, logfptr)
 
 #if COMPILER
@@ -31,7 +27,6 @@ struct pf_marker *lcl_pfp;
 
 dptr argp;
 FILE *logfptr; 
-#endif					/* PresentationManager */
    {
    struct b_proc *cproc;
    long depth = 0, iteration = 0;
@@ -71,10 +66,6 @@ FILE *logfptr;
     */
 
    while (pfp) {
-#ifdef PresentationManager
-      /* point at the beginning of the string */
-      ConsoleStringBufPtr = ConsoleStringBuf;
-#endif					/* PresentationManager */
       arg = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
       cproc = (struct b_proc *)BlkLoc(arg[0]);    
       /*
@@ -87,27 +78,15 @@ FILE *logfptr;
       xtrace(cproc, pfp->pf_nargs, &arg[0], findline(cipc.opnd),
         findfile(cipc.opnd), logfptr);
 	
-#ifdef PresentationManager
-      /* insert the text in the MLE */
-      WinSendMsg(hwndMLE, MLM_INSERT, MPFROMP(ConsoleStringBuf), (MPARAM)0);
-#endif					/* PresentationManager */
       /*
        * On the last call, show both the call and the offending expression.
        */
       if (pfp == origpfp) {
-#ifdef PresentationManager
-         /* make sure we are at the beginning of the buffer */
-         ConsoleStringBufPtr = ConsoleStringBuf;
-         ttrace();
-         /* add it to the MLE */
-         WinSendMsg(hwndMLE, MLM_INSERT, MPFROMP(ConsoleStringBuf), (MPARAM)0);
-#else					/* PresentationManager */
 	 if(logfptr != NULL)
 	    ttrace(logfptr); 
 	 ttrace(stderr); 
 	 if (logfptr != NULL)
 	    fprintf(logfptr, "\n\n\n"); 
-#endif					/* PresentationManager */
          break;
          }
  
@@ -130,11 +109,9 @@ char *pfile;
 FILE *logfile; 
    {
 
-#ifndef PresentationManager 
    fprintf(stderr, "   ");
    if (logfile != NULL)
       fprintf(logfile, "   "); 
-#endif					/* PresentationManager */
    if (bp == NULL) {
       fprintf(stderr, "????");
       if (logfile != NULL)
@@ -697,9 +674,7 @@ FILE *f;
    dptr reset; 
    CURTSTATE_AND_CE();
 
-#ifndef PresentationManager
    fprintf(f, "   ");
-#endif					/* PresentationManager */
 
    reset = xargp; 
 
@@ -862,9 +837,7 @@ oneop:
    if (ipc.opnd != NULL)
       fprintf(f, " from line %d in %s", findline(ipc.opnd),
          findfile(ipc.opnd));
-#ifndef PresentationManager
    putc('\n', f);
-#endif					/* PresentationManager */
    xargp = reset; 
    fflush(f);
    }

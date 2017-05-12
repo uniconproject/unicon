@@ -2565,17 +2565,6 @@ end
 
 #ifdef Graphics
       }
-#ifdef PresentationManager
-    /* must be writing to a window, then, if it is not the console,
-       we have to set the background mix mode of the character bundle
-       back to LEAVEALONE so the background is no longer clobbered */
-    else if (f != ConsoleBinding) {
-      /* have to set the background mode back to leave-alone */
-      ((wbp)f)->context->charBundle.usBackMixMode = BM_LEAVEALONE;
-      /* force the reload on next use */
-      ((wbp)f)->window->charContext = NULL;
-      } /* End of else if - not the console window we're writing to */
-#endif					/* PresentationManager */
 #endif					/* Graphics */
 #ifdef PseudoPty
    }
@@ -2792,16 +2781,6 @@ function {1} name(x[nargs])
 		     }
 #endif					/* nl */
 
-#ifdef PresentationManager
-                 /* have to put the background mix back on the current file */
-                 if (f != NULL && (status & Fs_Window) && f != ConsoleBinding) {
-                   /* set the background back to leave-alone */
-                   ((wbp)f)->context->charBundle.usBackMixMode = BM_LEAVEALONE;
-                   /* unload the context from this window */
-                   ((wbp)f)->window->charContext = NULL;
-                   }
-#endif					/* PresentationManager */
-
 		  /*
 		   * Switch the current file to the file named by the current
 		   * argument providing it is a file.
@@ -2827,17 +2806,6 @@ function {1} name(x[nargs])
                      status = Fs_Read | Fs_Write | Fs_Window;
                      }
 #endif					/* ConsoleWindow */
-#ifdef PresentationManager
-                  if (status & Fs_Window) {
-                     /*
-		      * have to set the background to overpaint - the one
-                      * difference between DrawString and write(s)
-		      */
-                    f.wb->context->charBundle.usBackMixMode = BM_OVERPAINT;
-                    /* unload the context from the window so it will be reloaded */
-                    f.wb->window->charContext = NULL;
-                    }
-#endif					/* PresentationManager */
 		  }
 	       else {
 		  /*

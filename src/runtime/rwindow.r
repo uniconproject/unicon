@@ -43,10 +43,6 @@ extern HPALETTE palette;
 extern int numColors;
 #endif					/* MSWindows */
 
-#ifdef PresentationManager
-extern LONG ScreenBitsPerPel;
-#endif					/* PresentationManager */
-
 #ifndef MultiThread
 struct descrip amperX = {D_Integer};
 struct descrip amperY = {D_Integer};
@@ -225,12 +221,8 @@ dptr res;
       return i;
    i = *StrLoc(*res);
    if ((0 <= i) && (i <= 127) && (ISECHOON(w))) {
-#ifndef PresentationManager
       wputc(i, w);
       if (i == '\r') wputc((int)'\n', w); /* CR -> CR/LF */
-#else					/* PresentationManager */
-     wputc(((i == '\r') ? '\n' : i), w);
-#endif					/* PresentationManager */
       }
    return 1;
    }

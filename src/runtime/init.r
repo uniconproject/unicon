@@ -1412,27 +1412,12 @@ void error(s1, s2)
 char *s1, *s2;
    {
 
-#ifdef PresentationManager
-   ConsoleFlags |= OutputToBuf;
-   if (!s1 && s2)
-      fprintf(stderr, s2);
-   else if (s1 && s2)
-      fprintf(stderr, "%s: %s\n", s1, s2);
-#else					/* PresentationManager */
    if (!s1)
       fprintf(stderr, "error in startup code\n%s\n", s2);
    else
       fprintf(stderr, "error in startup code\n%s: %s\n", s1, s2);
-#endif					/* PresentationManager */
 
    fflush(stderr);
-
-#ifdef PresentationManager
-   /* bring up the message box to display the error we constructed */
-   WinMessageBox(HWND_DESKTOP, HWND_DESKTOP, ConsoleStringBuf,
-		"Icon Runtime Initialization", 0,
-		MB_OK|MB_ICONHAND|MB_MOVEABLE);
-#endif					/* PresentationManager */
 
 #ifdef Concurrent
    is_startup_error = 1;
@@ -1450,9 +1435,6 @@ char *s;
    {
    CURTSTATE_AND_CE();
 
-#ifdef PresentationManager
-   ConsoleFlags |= OutputToBuf;
-#endif					/* PresentationManager */
    fprintf(stderr, "System error");
    if (pfp == NULL)
       fprintf(stderr, " in startup code");
@@ -1466,9 +1448,6 @@ char *s;
 #endif					/* COMPILER */
       }
   fprintf(stderr, "\n%s\n", s);
-#ifdef PresentationManager
-  error(NULL, NULL);
-#endif					/* PresentationManager */
 
    fflush(stderr);
    if (dodump)
@@ -1639,18 +1618,11 @@ int i;
    flushall();
    _exit(i);
 #else					/* TURBO */
-#ifdef PresentationManager
-   /* tell thread 1 to shut down */
-   WinPostQueueMsg(HMainMessageQueue, WM_QUIT, (MPARAM)0, (MPARAM)0);
-   /* bye, bye */
-   InterpThreadShutdown();
-#else
 #ifdef Concurrent
      clean_threads();
     /*pthread_exit(EXIT_SUCCESS);*/
-#endif					/* PresentationManager */
+#endif
    exit(i);
-#endif					/* PresentationManager */
 #endif					/* TURBO */
 
 }

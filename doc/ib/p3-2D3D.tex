@@ -25,9 +25,10 @@ interfaces that were deemed overly complex or not worth the coding
 effort they entail. Other implementation techniques are motivated by
 portability concerns. The graphics interface described below has been
 implemented to various levels of completeness on the X Window System,
-Microsoft Windows, OS/2 Presentation Manager, and Macintosh
-platforms. Most of this discussion is relevant also for Icon Version
-9.4; Unicon's graphics facilities include minor improvements.
+Microsoft Windows, OS/2 Presentation Manager, (pre OS X) Macintosh,
+and Borland Graphics Interface platforms. Most of this discussion is
+relevant also for Icon Version 9; Unicon's graphics facilities
+include minor improvements.
 
 \section{Graphics Source Files Summary}
 
@@ -78,7 +79,7 @@ includes are also present -- so its a \texttt{.c} file instead of a
 -- Many of the regular Unicon source files include code under
 \texttt{\#ifdef Graphics} and/or one or more specific window system
 definitions such as \texttt{\#ifdef XWindows} or \texttt{\#ifdef
-PresentationManager}. The tainted files that typically have to be
+MSWindows}. The tainted files that typically have to be
 edited for a new window system include \texttt{h/grttin.h},
 \texttt{h/features.h}, \texttt{h/rexterns.h}, \texttt{h/rmacros.h},
 \texttt{h/rproto.h}, \texttt{h/rstructs.h}, and
@@ -201,8 +202,8 @@ locals. For example, MS Windows adds \texttt{stddc} and \texttt{pixdc}
 since it uses a device context concept not found in X11.
 
 In much of the platform-dependent source code, the window system calls
-are performed twice. This is because most platforms including X, MS
-Windows, and PresentationManager do not remember the contents of
+are performed twice. This is because most platforms including X11 and MS
+Windows do not remember the contents of
 windows when they are reduced to iconic size or obscured behind other
 windows. When the window is once again exposed, it is sent a message
 to redraw itself. Unicon hides this entirely, and remembers the
@@ -545,9 +546,7 @@ ANGLE(a)
 
 
 Convert from radians into window system units. For example, under X
-these are 1/64 of a degree integer values, while under
-PresentationManager it converts to units of 1/65536 of a degree in a
-fixed-point format.
+these are 1/64 of a degree integer values.
 
 {\sffamily\bfseries
 \bigskip\hrule\vspace{0.1cm}
@@ -650,11 +649,12 @@ w-{\textgreater}window-{\textgreater}width.
 drawarcs(w, thearcs, i)}
 
 
-Draw i arcs on w, given in an array of XArc structures. \ Define an appropriate XArc structure for your window system;
-it must include fields x, y and width and height fields accessible through macros \texttt{ARCWIDTH()} and
-\texttt{ARCHEIGHT()}. \ Also, a starting angle angle1 and arc extent angle2, assigned through macros \texttt{ANGLE()},
-\texttt{EXTENT()}, and \texttt{FULLARC}. \ This is currently a mess. \ Imitation of the X or PresentationManager code
-is in order.
+Draw i arcs on w, given in an array of XArc structures. Define an
+appropriate XArc structure for your window system; it must include
+fields x, y and width and height fields accessible through macros
+\texttt{ARCWIDTH()} and \texttt{ARCHEIGHT()}. Also, a starting angle
+angle1 and arc extent angle2, assigned through macros
+\texttt{ANGLE()}, \texttt{EXTENT()}, and \texttt{FULLARC}.
 
 
 \bigskip\hrule\vspace{0.1cm}
@@ -723,8 +723,9 @@ Erase a rectangular area, that is, set it to the current background color. \ Com
 EXTENT(a)
 
 
-Convert from radians into window system units, e.g. under PresentationManager it converts to units of 1/65536 of a
-circle and does some weird type conversion.
+Convert from radians into window system units. Under
+PresentationManager it had to convert to units of 1/65536 of a circle
+along with a weird type conversion.
 
 
 \bigskip\hrule\vspace{0.1cm}

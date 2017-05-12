@@ -274,18 +274,6 @@ FncDef(fetch,2)
 #endif					/* DosFncs */
 
 /*
- * Functions for the Archimedes.
- */
-#ifdef ArmFncs
-   FncDef(Swi,2)
-   FncDef(Peek,2)
-   FncDef(Poke,2)
-   FncDef(GetSpace,1)
-   FncDef(FreeSpace,1)
-#endif					/* ArmFncs */
-
-
-/*
  * Graphics functions.  These are always defined; in virtual machines
  * without graphics facilities, calling them is a runtime error.
  */

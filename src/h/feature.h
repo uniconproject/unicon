@@ -159,10 +159,6 @@
 #endif					/* NT */
 #endif					/* MSWindows */
 
-#ifdef ArmFncs
-   Feature(1, "_ARM_FUNCTIONS", "Archimedes extensions")
-#endif					/* ArmFncs */
-
 #ifdef DosFncs
    Feature(1, "_DOS_FUNCTIONS", "MS-DOS extensions")
 #endif					/* DosFncs */

@@ -62,7 +62,7 @@ typedef struct {int dummy[10];} *GDBM_FILE;
 #define GDBM_Proto(x) x
 #else
 #define GDBM_Proto(x) ()
-#endif /* NeedFunctionPrototypes */
+#endif
 
 /* External variable, the gdbm build release string. */
 extern char *gdbm_version;	

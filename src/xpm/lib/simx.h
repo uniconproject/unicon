@@ -74,7 +74,7 @@ typedef void *Colormap;			/* should be COLORPALETTE, not done
 
 typedef COLORREF Pixel;
 
-#define PIXEL_ALREADY_TYPEDEFED		/* to let xpm.h know about it */
+#define PIXEL_T				/* let xpm.h know about above typedef */
 
 typedef struct {
     Pixel pixel;

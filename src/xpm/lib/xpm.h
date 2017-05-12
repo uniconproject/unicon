@@ -70,9 +70,9 @@
 #endif /* FOR_MSW */
 
 /* let's define Pixel if it is not done yet */
-#if ! defined(_XtIntrinsic_h) && ! defined(PIXEL_ALREADY_TYPEDEFED)
+#if ! defined(_XtIntrinsic_h) && ! defined(PIXEL_T)
 typedef unsigned long Pixel;	/* Index into colormap */
-# define PIXEL_ALREADY_TYPEDEFED
+# define PIXEL_T
 #endif
 
 

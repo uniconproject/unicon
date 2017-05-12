@@ -2517,9 +2517,10 @@ int textureimg(wbp w, int width, int height,
    int c, v, i;
    unsigned int ix = 0, iy = height -1;
    GLubyte *tex = (GLubyte *)malloc(height * width * 4 + 1);
-
+   if (tex == NULL)
+      return Failed;
+     
    makecurrent(w);
-   if (tex == NULL) return Failed;
 
    /*
     * convert string s into an array that can be used by opengl as a texture.
@@ -2579,6 +2580,8 @@ int bltex(wbp w, int width, int height, int ch, char *s, word len)
    unsigned int m, msk1, c, ix, iy;
    int r, b, g, i, l;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
+   if (tex == NULL)
+      return Failed;
 
    makecurrent(w);
 
@@ -2930,8 +2933,9 @@ int texture_24img(wbp w, struct imgdata im)
    int i, j;
    unsigned char *t;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
+   if (tex == NULL)
+      return Failed;
    makecurrent(w);
-   if (tex == NULL) return Failed;
 
    /*
     * convert string s into an array that can be used by opengl as a texture.
@@ -3763,8 +3767,10 @@ int texwindow2D(wbp w, wbp w2d)
    wsp ws = w2d->window;
    GLubyte *tex = (GLubyte *)malloc(ws->height * ws->width * 3);
    wcp wc = w->context;
-
    makecurrent(w);
+
+   if (tex == NULL)
+      return Failed;
 
    copyareaToTex2D(w2d, tex, 0, 0, ws->width, ws->height, 
    		      0, 0, ws->width, ws->height);
@@ -3797,6 +3803,8 @@ int texwindow3D(wbp w1, wbp w2)
    int height = ws->height;
    int i;
    GLubyte *tex = (GLubyte *)malloc(height * width * 3);
+   if (tex == NULL)
+      return Failed;   
 
    /* change the current context to w2's context */
 #ifdef XWindows

@@ -7,17 +7,6 @@
 
 #include "../h/header.h"
 
-#ifdef MAIN
-int main(int argc, char *argv[])
-{
-   if (argc != 2) {
-      printf("Usage: file_comp filename\n");
-      return 1;
-      }
-  return file_comp(argv[1]);
-}
-#endif					/* MAIN */
-
 int file_comp(char *filename)
 {
    gzFile f; 

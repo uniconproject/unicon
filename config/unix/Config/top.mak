@@ -1,4 +1,4 @@
-#  Top Level Makefile for Unicon, post-configuration, for UNIX-based systems
+#  Top Level Makefile for Unicon
 #
 
 #  configuration parameters
@@ -7,12 +7,25 @@ name=unspecified
 dest=/must/specify/dest/
 
 help:
-	@echo "UNIX: Run \"make Configure name=system\" or \"make X-Configure name=system\" or \"make build name=system\""
-	@echo "   where system is one of those in config/unix."
-	@echo "Windows (MSVC): Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
-	@echo "Windows (GCC): Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
-	@echo "Windows (both): Then add the Unicon bin directory to your path."
+	@echo
+	@echo Unicon Build Instructions:
+	@echo
+	@echo Start by adding the Unicon bin directory to your path.
+	@echo
+	@echo Platform
+	@echo "  UNIX:" 
+	@echo "      Run \"make Configure name=system\""
+	@echo "       or \"make X-Configure name=system\""
+	@echo "       or \"make build name=system\""
+	@echo "      where system is one of those in config/unix."
+	@echo
+	@echo "  Windows:"
+	@echo "      MSVC: Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
+	@echo "      GCC : Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
+	@echo "            For a fully-automated build Run \"make WUnicon\" ."
+	@echo
 	@echo "All: after configuration, run \"make (or nmake) Unicon\"."
+	@echo
 
 ##################################################################
 #
@@ -33,8 +46,6 @@ config/unix/$(name)/status src/h/define.h:
 	:
 	@exit 1
 
-.PHONY: Configure
-
 ##################################################################
 #
 # Code configuration.
@@ -50,6 +61,7 @@ Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
 		$(MAKE) cfg
+		@echo Remember to add unicon/bin to your path
 
 cfg:
 		sh ./configure --without-xlib --without-jpeg --without-png \
@@ -75,7 +87,7 @@ X-Configure:	config/unix/$(name)/status
 			echo "X11 libraries or headers missing; graphics" ; \
 			echo "not enabled. " ; \
 		fi
-
+		@echo Remember to add unicon/bin to your path
 
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -85,15 +97,57 @@ Thin-X-Configure:	config/unix/$(name)/status
 
 V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
-		-cd src/lib/voice;		$(MAKE)
+		-cd src/lib/voice; $(MAKE)
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
 		$(MAKE) cfg
 
 VX-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
-		-cd src/lib/voice;		$(MAKE)
+		-cd src/lib/voice; $(MAKE)
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
+		@echo Remember to add unicon/bin to your path
+
+XUnicon:
+	Make X-Configure name=x86_64_linux
+	Make Unicon
+
+WUnicon:
+	@echo Reloading the Makefile from config/win32/gcc/makefile.top
+	cp config/win32/gcc/makefile.top Makefile
+	@echo Done.
+	@echo
+	@echo Ready to build Windows Unicon
+	@echo Make sure the Unicon bin directory is in your path before continuing, then run:
+	@echo
+	@echo "   - " \"make WUnicon32\" for a 32-bit build, or
+	@echo "   - " \"make WUnicon64\" for a 64-bit build - requires MinGW64.
+	@echo
+
+NT-Configure:
+		cmd /C "cd config\win32\msvc && config"
+		@echo Now remember to add unicon/bin to your path
+
+W-Configure:
+		cmd /C "cd config\win32\msvc && w-config"
+		@echo Now remember to add unicon/bin to your path
+
+W-Configure-GCC:
+		cd config/win32/gcc && sh w-config.sh
+		@echo Now remember to add unicon/bin to your path
+		@echo Then run "make Unicon" to build
+
+NT-Configure-GCC:
+		cd config/win32/gcc && sh config.sh
+		@echo Now remember to add unicon/bin to your path
+		@echo Then run "make Unicon" to build
+
+Fresh-Makefile:
+	@echo
+	@echo Reloading the Makefile from makefile.top
+	cp makefile.top Makefile
+	@echo Done.
+	@echo
 
 ##################################################################
 # 
@@ -268,28 +322,8 @@ Pure:
 		fi
 		cd config/unix; 	$(MAKE) Pure
 
-
-
 #  (This is used at Arizona to prepare source distributions.)
 
 Dist-Clean:
 		rm -rf `find * -type d -name CVS`
 		rm -f `find * -type f | xargs grep -l '<<ARIZONA-[O]NLY>>'`
-
-##################################################################
-
-NT-Configure:
-	cd config\win32\msvc
-	config
-
-W-Configure:
-	cd config\win32\msvc
-	w-config
-
-W-Configure-GCC:
-	cd config/win32/gcc && sh w-config.sh
-	echo Run "make Unicon" to build
-
-NT-Configure-GCC:
-	cd config/win32/gcc && sh config.sh
-	echo Run "make Unicon" to build

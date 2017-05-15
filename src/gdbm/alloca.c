@@ -24,6 +24,7 @@
 /* include system configuration before all else. */
 #include "autoconf.h"
 
+#include <stdio.h>
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -59,10 +60,6 @@ long i00afunc ();
 typedef void *pointer;
 #else
 typedef char *pointer;
-#endif
-
-#ifndef NULL
-#define	NULL	0
 #endif
 
 /* Define STACK_DIRECTION if you know the direction of stack

@@ -8,7 +8,6 @@
 
 /* #include "../h/rt.h" */
 typedef long int word;
-#define NULL 0L
 void		syserr		(char *s);
 void		new_context	(int fsig, void * cargp);
 
@@ -63,7 +62,7 @@ int	first;
 	 mov	esp, SP_OFF [ eax ]
 	 mov	ebp, esp
 	 }
-      new_context( 0, (void *)NULL );
+      new_context( 0, (void *)0L );
       syserr( "interp() returned in coswitch" );
       }
 

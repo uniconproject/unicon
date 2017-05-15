@@ -246,13 +246,8 @@ end
 " and attributes given in trailing arguments."
 function{0,1} open(fname, spec, attr[n])
 #else						/* Graphics */
-#ifdef OpenAttributes
-"open(fname, spec, attrstring) - open file fname with specification spec."
-function{0,1} open(fname, spec, attrstring)
-#else						/* OpenAttributes */
 "open(fname, spec) - open file fname with specification spec."
 function{0,1} open(fname, spec)
-#endif						/* OpenAttributes */
 #endif						/* Graphics */
    declare {
       tended struct descrip filename;
@@ -271,14 +266,6 @@ function{0,1} open(fname, spec)
     */
    if !def:tmp_string(spec, letr) then
       runerr(103, spec)
-
-#ifdef OpenAttributes
-   /*
-    * Convert attrstr to a string, defaulting to "".
-    */
-   if !def:C_string(attrstring, emptystr) then
-      runerr(103, attrstring)
-#endif					/* OpenAttributes */
 
    abstract {
       return file

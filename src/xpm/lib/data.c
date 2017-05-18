@@ -32,7 +32,6 @@
 *  Developed by Arnaud Le Hors                                                *
 \*****************************************************************************/
 
-#ifndef CXPMPROG
 /* Official version number */
 static char *RCS_Version = "$XpmVersion: 3.4k $";
 
@@ -40,13 +39,11 @@ static char *RCS_Version = "$XpmVersion: 3.4k $";
 static char *RCS_Id = "$Id: data.c,v 1.1.1.1 2001-05-05 08:33:38 jeffery Exp $";
 
 #include "XpmI.h"
-#endif
+
 #include <ctype.h>
 
-#ifndef CXPMPROG
 #define Getc(data, file) getc(file)
 #define Ungetc(data, c, file) ungetc(c, file)
-#endif
 
 static int
 ParseComment(data)

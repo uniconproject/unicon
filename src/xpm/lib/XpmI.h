@@ -120,10 +120,6 @@ typedef struct {
     char Comment[XPMMAXCMTLEN];
     char *Bcmt, *Ecmt, Bos, Eos;
     int format;			/* 1 if XPM1, 0 otherwise */
-#ifdef CXPMPROG
-    int lineNum;
-    int charNum;
-#endif
 }      xpmData;
 
 #define XPMARRAY 0

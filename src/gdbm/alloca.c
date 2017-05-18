@@ -32,20 +32,6 @@
 /* If compiling with GCC, this file's not needed.  */
 #ifndef alloca
 
-#ifdef emacs
-#ifdef static
-/* actually, only want this if static is defined as ""
-   -- this is for usg, in which emacs must undefine static
-   in order to make unexec workable
-   */
-#ifndef STACK_DIRECTION
-you
-lose
--- must know STACK_DIRECTION at compile-time
-#endif /* STACK_DIRECTION undefined */
-#endif /* static */
-#endif /* emacs */
-
 /* If your stack is a linked list of frames, you have to
    provide an "address metric" ADDRESS_FUNCTION macro.  */
 

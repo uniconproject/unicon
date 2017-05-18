@@ -744,19 +744,9 @@ tv_stats(bgn, end)
       bktsz[i] = n;
       }
    printf("tv-stats:\n");
-#ifdef dump_htbl_distribution
-   for (i=0,n=0; i<n_tvtbl_bkts; i++) {
-      printf("%d ", bktsz[i]);
-      if (i && ((i % 16) == 0))
-         printf("\n");
-      n += bktsz[i];
-      }
-   printf("\n   total-vects: %d\n", n);
-#else
    for (i=0,n=0; i<n_tvtbl_bkts; i++)
       n += bktsz[i];
    printf("  total-vects: %d\n", n);
-#endif /* dump_htbl_distribution */
 
    if (bgn < 0)
       goto exit_point;

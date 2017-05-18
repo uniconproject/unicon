@@ -35,12 +35,7 @@
 /* If your stack is a linked list of frames, you have to
    provide an "address metric" ADDRESS_FUNCTION macro.  */
 
-#ifdef CRAY
-long i00afunc ();
-#define ADDRESS_FUNCTION(arg) (char *) i00afunc (&(arg))
-#else
 #define ADDRESS_FUNCTION(arg) &(arg)
-#endif
 
 #if __STDC__
 typedef void *pointer;

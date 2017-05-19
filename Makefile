@@ -109,8 +109,8 @@ VX-Configure:	config/unix/$(name)/status
 		@echo Remember to add unicon/bin to your path
 
 XUnicon:
-	Make X-Configure name=x86_64_linux
-	Make Unicon
+	make X-Configure name=x86_64_linux
+	make Unicon
 
 WUnicon:
 	@echo Reloading the Makefile from config/win32/gcc/makefile.top

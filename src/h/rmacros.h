@@ -317,18 +317,18 @@
  * Get floating-point number from real block.
  */
 #ifdef Double
-#ifdef DebugHeap
-   #define GetReal(dp,res) (BlkD(*dp, Real), *((struct size_dbl *)&(res)) =\
-         *((struct size_dbl *)&(BlkLoc(*dp)->Real.realval)))
-#else					/* DebugHeap */
 #ifdef DescriptorDouble
    #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
          *((struct size_dbl *)&((dp)->vword.realval))
 #else					/* DescriptorDouble */
+#ifdef DebugHeap
+   #define GetReal(dp,res) (BlkD(*dp, Real), *((struct size_dbl *)&(res)) =\
+         *((struct size_dbl *)&(BlkLoc(*dp)->Real.realval)))
+#else					/* DebugHeap */
    #define GetReal(dp,res) *((struct size_dbl *)&(res)) =\
          *((struct size_dbl *)&((BlkLoc(*dp)->Real.realval)))
-#endif					/* DescriptorDouble */
 #endif					/* DebugHeap */
+#endif					/* DescriptorDouble */
 
 #else					/* Double */
 #ifdef DescriptorDouble

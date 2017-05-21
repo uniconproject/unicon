@@ -743,8 +743,8 @@ void f(dptr s, dptr d)
 
       default: {
 #ifdef Arrays
-	 if ( Offset(*s)>0 ) {
-	    if (BlkD(*s, Realarray)->title==T_Realarray) {
+	 if (Offset(*s) > 0) {
+	    if (BlkLoc(*s)->Realarray.title == T_Realarray) {
 #ifdef DescriptorDouble
 	       d->vword.realval = *(double *)((word *)VarLoc(*s) + Offset(*s));
 #else					/* DescriptorDouble */
@@ -754,7 +754,7 @@ void f(dptr s, dptr d)
 #endif					/* DescriptorDouble */
 	       d->dword = D_Real;
 	    }
-	    else if (BlkD(*s,Intarray)->title==T_Intarray) {
+	    else if (BlkLoc(*s)->Intarray.title == T_Intarray) {
 	       d->vword.integr = (word) *((word *)(VarLoc(*s)) +  Offset(*s)) ;
 	       d->dword = D_Integer;
 	    }

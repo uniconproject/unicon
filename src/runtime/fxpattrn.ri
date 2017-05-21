@@ -34,7 +34,14 @@ union block *pattern_make(int stck_size, struct b_pelem * pnext,
    pelem->pthen = (union block *) lpnext;
    pelem->parameter = lparam;
    pelem->index = index;
-   BlkPH(bp,Pattern,pe) = (union block *)pelem;
+   /*
+    * BlkPH is not showing up as an lvalue under gcc 4.8.4 and presumably other
+    * common compilers, needed for DebugHeap. Instead of the simple assignment,
+    * we resort to a lower level replacement technique for the following. Note
+    * that DebugHeap BlkPH was only for sets and tables anyhow.
+    * BlkPH(bp,Pattern,pe) = (union block *)pelem;
+    */
+   Blk(bp,Pattern)->pe = (union block *)pelem;
    return bp;
 }
 
@@ -42,7 +49,7 @@ union block *pattern_make_pelem(int stck_size, struct b_pelem * pe)
 {
    tended struct b_pelem *lpe = pe;
    union block * bp = (union block *)alcpattern(stck_size);
-   BlkPH(bp,Pattern,pe) = (union block *)lpe;
+   Blk(bp,Pattern)->pe = (union block *)lpe;
    return bp;
 }
 

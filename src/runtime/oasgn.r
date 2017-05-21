@@ -141,7 +141,8 @@
          inline {
 #ifdef Arrays 
 	    if ( Offset(x)>0 ) {
-	       if (BlkD(x, Realarray)->title==T_Realarray){
+	       /* don't know actual title, don't use checking BlkD macro */
+	       if (BlkLoc(x)->Realarray.title==T_Realarray){
 		  double yy;
 		  if (cnv:C_double(y, yy)){
 		     *(double *)( (word *) VarLoc(x) + Offset(x)) = yy;
@@ -167,7 +168,8 @@
 		     *(dptr)(&xlist->listhead->Lelem.lslots[i]) = y;
 		     }
 	       }
-	       else if (BlkD(x,Intarray)->title==T_Intarray){
+	       /* don't know actual title, don't use checking BlkD macro */
+	       else if (BlkLoc(x)->Intarray.title==T_Intarray){
 		  C_integer ii;
 		  if (cnv:(exact)C_integer(y, ii)) 
 		     *((word *)VarLoc(x) + Offset(x)) = ii;

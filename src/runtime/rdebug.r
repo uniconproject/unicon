@@ -1218,8 +1218,8 @@ char *pi, *pj;
 #ifdef DebugHeap
 void heaperr(char *msg, union block *p, int t)
 {
-   char buf[256];
-   sprintf(buf, "%s : %p : %d / %d\n",msg,p,ValidPtr(p)?p->File.title:-1,t);
+   char buf[512];
+   sprintf(buf, "%s : %p : %ld / %d\n",msg,p,ValidPtr(p)?p->File.title:-1,t);
    syserr(buf);
 }
 #endif					/* DebugHeap */

@@ -731,7 +731,7 @@ int handle_misc(wdp wd, wbp w)
 	       else if (event.xselectionrequest.target == ct)
 		  fprintf(stderr, "unlikely\n");
 	       else
-		  fprintf(stderr, "wtf\n");
+		  fprintf(stderr, "idk\n");
 	       }
 
 /* TODO: check timestamp to verify that we owned selection at that time. */
@@ -1179,6 +1179,7 @@ FILE *wopen(char *name, struct b_list *lp, dptr attr, int n, int *err_index, int
       free_binding(w);
       return NULL;
       }
+
    if ((w->window->display = alc_display(display)) == NULL) {
       *err_index = -1;
       free_binding(w);
@@ -4735,12 +4736,10 @@ int setglXVisual(wdp wd){
    int query;
    int visualparms[] = {GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16, None};
    if (!glXQueryExtension(wd->display, &query, &query)) {
-      /*fprintf(stderr, "X server has no OpenGL GLX extension\n");*/
       return 0;
       }
    wd->vis = glXChooseVisual(wd->display, wd->screen, visualparms);
    if (wd->vis == NULL) {
-      /*fprintf(stderr, "glXChooseVisual: visual failed\n");*/
       return 0;
       }
   return 1;

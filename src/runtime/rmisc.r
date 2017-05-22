@@ -1706,6 +1706,17 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
+
+	  /* Alternations in Unicon are unique as it pertains to pelems
+           * if there is a pattern for example: (Span('\t') .| "") .> x)
+           * then internally this is represented as Span('\t') .> x .| "" .> x
+           * This is just the way the pelems are. The pattern images will
+           * also follow this literal interpration. These images can get
+           * large fast if there are multiple alternation in a pattern because
+           * each permutation/path is followed. Below the function follows
+           * the alternation (the parameter and the next pelem). and then
+           * concatenates the two together */ 
+ 
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
              if ((pattern_image(Blk(ep,Pelem)->pthen, arbnoBool, &left,
@@ -1807,7 +1818,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
           case PC_NSpan_VF: {
 	     if ((construct_funcimage(ep, PT_VF, PF_NSpan, result)) ==
 		 RunError) return RunError;
-/*	     peCount++; why not here ??? */
+	     peCount++;
 	     break;
              }
           case PC_Span_VF: {
@@ -1980,6 +1991,13 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     break;
              } 
           case PC_Arbno_S: {
+
+	  /* Arbno is cyclical in the way that it operates
+           * it will go back to PC_Arbno_S after it has finished
+           * marking the parameters of the Arbno. arbnobool 
+           * makes sure we don't cycle around again. 
+          /* 
+
              union block *arb;
              if (arbnoBool == 1) {
 		*result = *bi_pat(PI_EMPTY);
@@ -1993,8 +2011,8 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 		return RunError;
 	     /* ?? */
 	     peCount++;
-             arbnoBool = 0;
-	     break;
+             arbnoBool = 0;  
+	     break;         
              }             
           case PC_Arbno_X: {
              union block *arb;
@@ -2141,6 +2159,14 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
       *result = *bi_pat(PI_EMPTY);
       return RunError;
       }
+
+    /* This serves to add the implied concatenation. This checks
+     * for ->, =>, .>, PC_EOP, Arbno_S's, Arbno_Y's because all of those
+     * don't have implied concatenation here. Also peCount checks to see
+     * if we are at the beginning of the pattern and if we are then it 
+     * also ignores the implied concatenation. 
+     */ 
+
    if ((ep = Blk(ep,Pelem)->pthen) != NULL) {
        if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
 	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&

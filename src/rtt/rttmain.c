@@ -384,7 +384,7 @@ char **argv;
       src_file_nm = argv[optind];
 #endif                                  /* MVS */
 
-#if PatternMatch
+#if WildCards
       FINDDATA_T fd;
 
       if (!FINDFIRST(argv[optind], &fd)) {
@@ -393,13 +393,13 @@ char **argv;
 	 exit(EXIT_FAILURE);
          }
       do {
-      argv[optind] = FILENAME(&fd);
-#endif					/* PatternMatch */
-      trans(argv[optind]);
-#if PatternMatch
+         argv[optind] = FILENAME(&fd);
+         trans(argv[optind]);
       } while (FINDNEXT(&fd));
       FINDCLOSE(&fd);
-#endif					/* PatternMatch */
+#else					/* WildCards */
+      trans(argv[optind]);
+#endif					/* WildCards */
       optind++;
       }
 

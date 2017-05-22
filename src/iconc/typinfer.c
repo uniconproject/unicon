@@ -2057,11 +2057,7 @@ infer_prc(proc, n)
 /*
  * cpy_store - make a copy of a store.
  */
-#ifdef opt_try_dangeresque
-static
-struct store *
-cpy_store(src)
-   struct store * src;
+static struct store * cpy_store(struct store * src)
 {
    int i;
    int stor_sz;
@@ -2072,43 +2068,24 @@ cpy_store(src)
    else {
       stor_sz = n_gbl + n_loc;
       dst = get_store(0);
-      for (i = 0; i < stor_sz; ++i)
-         Vpp(CpyTyp(n_icntyp, src->types[i], dst->types[i]));
+      for (i = 0; i < stor_sz; i++) {
+	 /*
+	  * This optimization, used for years, assumes that reference-based
+	  * semantics will suffice for copying of vectors contained within
+	  * stores. There may be situations where this can have side effects.
+	  * The original code (see below) only copied the first n_icntyp bits
+	  * in each vector contained within a store.
+	  *
+	  * Vpp(CpyTyp(n_icntyp, src->types[i], dst->types[i]));
+	  *
+	  * TODO: consider for this and subsequent/related calls to macro
+	  * tv_cpy(), whether more and better type vector copying is needed.
+	  */
+	 tv_cpy(dst->types[i], src->types[i]);
+	 }
       }
    return dst;
 }
-#else
-/*
- * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE
- *
- * This is a dangeresque optimization; we assume that reference-based
- * semantics will suffice for copying of vectors contained within stores.
- * There may be situations where this can have side effects, especially
- * since the original code (see above) only copied the first n_icntyp bits
- * in each vector contained within a store.
- *
- * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE * DANGERESQUE
- */
-static
-struct store *
-cpy_store(src)
-   struct store * src;
-{
-   int i;
-   int stor_sz;
-   struct store * rslt;
-
-   if (src == NULL) {
-      rslt = get_store(1);
-      return rslt;
-      }
-   stor_sz = n_gbl + n_loc;
-   rslt = get_store(0);
-   for (i=0; i<stor_sz; i++)
-      rslt->types[i]->ent = src->types[i]->ent;
-   return rslt;
-}
-#endif
 
 /*
  * mrg_store - merge the source store into the destination store.
@@ -2183,11 +2160,9 @@ deref_lcl(src, dest)
     * Make a copy of the type to be dereferenced.
     */
    wktyp = get_wktyp();
-#ifdef dangeresque
-   Vpp(CpyTyp(n_intrtyp, src, wktyp->bits));
-#else
+
+   /* was: Vpp(CpyTyp(n_intrtyp, src, wktyp->bits)); */
    tv_cpy(wktyp->bits, src);
-#endif
 
    /*
     * Determine which variable types must be dereferenced.  Merge the
@@ -2992,12 +2967,12 @@ nodeptr n;
                 *  resumption.
                 */
                store = cur_proc->susp_store;
-               for (i = 0; i < n_gbl; ++i)
-#ifdef dangeresque
-                  Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
-#else
+               for (i = 0; i < n_gbl; ++i) {
+		  /* was:
+		   Vpp(CpyTyp(n_icntyp, store->types[i], succ_store->types[i]));
+		   */
                   tv_cpy(succ_store->types[i], store->types[i]);
-#endif
+		  }
 
                /*
                 * Next in the do clause resumes the control clause as
@@ -3461,12 +3436,14 @@ infer_act(n)
     *  fail.
     */
    e_store = get_store(1);
-   for (i = 0; i < n_loc; ++i)
-#ifdef dangeresque
-      Vpp(CpyTyp(n_icntyp, succ_store->types[n_gbl + i], e_store->types[n_gbl + i]));
-#else
+   for (i = 0; i < n_loc; ++i) {
+      /*
+       * was:
+       * Vpp(CpyTyp(n_icntyp, succ_store->types[n_gbl + i],
+       *            e_store->types[n_gbl + i]));
+       */	    
       tv_cpy(e_store->types[n_gbl + i], succ_store->types[n_gbl + i]);
-#endif
+      }
 
    if (fail_store->perm) {
       for (i = 0; i < n_loc; ++i) {
@@ -3862,11 +3839,8 @@ infer_impl(impl, n, symtyps, rslt_typ)
    j = 0;
    for (i = 0; i < num_args && i < nparms; ++i) {
       if (impl->arg_flgs[i] & RtParm) {
-#ifdef dangeresque
-         Vpp(CpyTyp(n_intrtyp, arg_typs->types[i], symtyps->types[j]));
-#else
+	 /* was:Vpp(CpyTyp(n_intrtyp, arg_typs->types[i], symtyps->types[j]));*/
          tv_cpy(symtyps->types[j], arg_typs->types[i]);
-#endif
 
 #ifdef TypTrc
          if (trcfile != NULL) {
@@ -4764,11 +4738,8 @@ type_case(il, fnc, case_anlz)
    else
      typ = cur_symtyps->types[sym_indx];
    wktyp = get_wktyp();
-#ifdef dangeresque
-   Vpp(CpyTyp(n_intrtyp, typ, wktyp->bits));
-#else
+   /* was: Vpp(CpyTyp(n_intrtyp, typ, wktyp->bits)); */
    tv_cpy(wktyp->bits, typ);
-#endif
    typ = wktyp->bits;
 
    /*
@@ -5403,11 +5374,8 @@ mark_recs(fp, typ, num_offsets, offset, bad_recs)
    *bad_recs = 0;
 
    wktyp = get_wktyp();
-#ifdef dangeresque
-   Vpp(CpyTyp(n_icntyp, typ, wktyp->bits));
-#else
+   /* was: Vpp(CpyTyp(n_icntyp, typ, wktyp->bits)); */
    tv_cpy(wktyp->bits, typ);
-#endif
 
    /*
     * For each record containing this field, see if the record is

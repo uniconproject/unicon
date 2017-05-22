@@ -1,6 +1,7 @@
 #  Makefile for testing Icon
 
 E=/bin/echo
+UC=../bin/unicon
 
 TESTS=general posix thread pattern
 
@@ -25,7 +26,7 @@ Hdr:
 	@echo "   ====================================="
 	@echo "           Unicon Test Suite"
 	@$E -n "    "
-	@unicon -version
+	@$(UC) -version
 	@echo "   ====================================="	
 	@echo
 
@@ -43,10 +44,10 @@ Report:  Hdr
 	@make -s Summary
 	@echo "====================================="
 	@echo " This Unicon Build:"
-	@unicon -features
+	@$(UC) -features
 	@echo "====================================="
 
-ARCH=$(shell unicon -features | grep Arch | cut -d " " -f 2)
+ARCH=$(shell $(UC) -features | grep Arch | cut -d " " -f 2)
 UNAME=$(shell uname )
 RNAME=unicon-$(UNAME)-$(ARCH).report
 

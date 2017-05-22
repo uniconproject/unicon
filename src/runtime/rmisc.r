@@ -1671,7 +1671,7 @@ int c, q;
       }
    }
 
-#ifdef PatternImage
+#ifdef PatternType
 
 /*
  * Construct a pattern image of pe.  Returns Succeeded or RunError.
@@ -2371,7 +2371,7 @@ static int construct_funcimage(union block *pe, int aicode,
    return construct_image(bi_pat(bpcode), result, bi_pat(PI_BPAREN), result);
 }
 
-#endif					/* PatternImage */
+#endif					/* PatternType */
 
 /*
  * getimage(dp1,dp2) - return string image of object dp1 in dp2.
@@ -2709,13 +2709,10 @@ dptr dp1, dp2;
           * where n is the current size of the pattern.
           */
 	 register union block *ep;
-#ifdef PatternImage
 	 tended struct descrip pimage;
-#endif					/* PatternImage */
          bp = BlkLoc(*dp1);
 	 ep = Blk(bp,Pattern)->pe;
 
-#ifdef PatternImage
          if (pattern_image(ep, 0, &pimage, 0) == RunError) return RunError;
          t = alcstr(NULL, StrLen(pimage) + 29);
 	 sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
@@ -2725,12 +2722,6 @@ dptr dp1, dp2;
 	  for(i=0;i<StrLen(pimage);i++) t[len+i] = StrLoc(pimage)[i];
          }
 	 len += StrLen(pimage);
-#else					/* PatternImage */
-	 sprintf(sbuf, "pattern_%ld(%ld)", (long)(Blk(bp,Pattern)->id),
-	 	        (long)(Blk(ep,Pelem)->index));
-         len = strlen(sbuf);
-         Protect(t = alcstr(sbuf, len), return RunError);
-#endif					/* PatternImage */
          StrLoc(*dp2) = t;
          StrLen(*dp2) = len;
          }

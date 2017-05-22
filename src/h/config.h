@@ -610,10 +610,7 @@ Deliberate Syntax Error
 
 #ifndef NoPatternType
    #define PatternType 1
-#endif					/* PatternType */
-#ifndef NoPatternImage
-   #define PatternImage 1
-#endif					/* PatternImage */
+#endif					/* PatternType */		      
 
 #ifndef ExecSuffix
    #define ExecSuffix ""

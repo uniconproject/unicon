@@ -575,9 +575,9 @@ void coclean(struct b_coexpr *cp) {
 #endif					/* Concurrent */
 
    if (!IS_TS_THREAD(cp->status) || cp->alive==-1){
-#ifdef Concurrent
       CURTSTATE();
       cp->alive = -1;			/* signal thread to exit */
+#ifdef Concurrent
       if (cp->id==curtstate->c->id){
        /* 
         * If the thread is cleaning itself, exit, what about tls chain? 
@@ -586,12 +586,14 @@ void coclean(struct b_coexpr *cp) {
          pthread_exit(0);
          }
 #endif					/* Concurrent */
-      cp->alive = -1;			/* signal thread to exit */
       if (cp->have_thread){
          sem_post(cp->semp);		/* unblock it */
          THREAD_JOIN(cp->thread, NULL);	/* wait for thread to exit */
          cp->alive = -2;			/* mark it as joined */
          }
+      if (!IS_TS_THREAD(cp->status))
+	  return;
+       
       }
    else if (cp->alive==1) { /* the current thread is done, called this to exit */
       /* give up the heaps owned by the thread */
@@ -623,7 +625,7 @@ void coclean(struct b_coexpr *cp) {
     * Give up the heaps owned by the old thread, 
     * only GC thread is running, no need to lock 
     */
-    if (!IS_TS_THREAD(cp->status) && blkregion){
+   if (CHECK_FLAG(cp->status, Ts_Posix) && blkregion){
        MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
        swap2publicheap(blkregion, NULL,  &public_blockregion);
        MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);

@@ -57,8 +57,6 @@
 #define XpmRevision 11
 #define XpmIncludeVersion ((XpmFormat * 100 + XpmVersion) * 100 + XpmRevision)
 
-#ifndef XPM_NUMBERS
-
 #ifdef FOR_MSW
 # define SYSV			/* uses memcpy string.h etc. */
 # include <malloc.h>
@@ -475,5 +473,4 @@ extern "C" {
 #define XCreateDataFromPixmap(dpy, data, pix, mask, att) \
     XpmCreateDataFromPixmap(dpy, data, pix, mask, att)
 
-#endif /* XPM_NUMBERS */
 #endif

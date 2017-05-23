@@ -7,9 +7,9 @@
  * is defined.
  */
 
-#if !defined(Iconc) && !defined(VarTran)
+#if !defined(Iconc)
    #include "../h/esctab.h"
-#endif					/* !Iconc && !VarTran */
+#endif					/* !Iconc */
 
 /*
  * Prototypes.
@@ -23,11 +23,11 @@ static	struct toktab   *getstring	(int ac,int *cc);
 static	int		setfilenm	(int c);
 static	int		setlineno	(void);
 
-#if !defined(Iconc) && !defined(VarTran)
+#if !defined(Iconc)
    static	int	ctlesc		(void);
    static	int	hexesc		(void);
    static	int	octesc		(int ac);
-#endif					/* !Iconc && !VarTran */
+#endif					/* !Iconc */
 
 #define isletter(s)	(isupper(c) | islower(c))
 
@@ -473,7 +473,7 @@ int *cc;
          if (c == EOF)
             break;
 
-#if defined(Iconc) || defined(VarTran)
+#if defined(Iconc)
          AppChar(lex_sbuf, Escape);
          if (c == '^') {
             c = NextChar;
@@ -481,7 +481,7 @@ int *cc;
                break;
             AppChar(lex_sbuf, '^');
             }
-#else					/* Iconc || VarTran */
+#else					/* Iconc */
 	 if (isoctal(c))
 	    c = octesc(c);
 	 else if (c == 'x')
@@ -490,7 +490,7 @@ int *cc;
 	    c = ctlesc();
 	 else
 	    c = esctab[c];
-#endif					/* Iconc || VarTran */
+#endif					/* Iconc */
 
 	 }
       AppChar(lex_sbuf, c);
@@ -524,7 +524,7 @@ int *cc;
       }
    }
 
-#if !defined(Iconc) && !defined(VarTran)
+#if !defined(Iconc)
 
 /*
  * ctlesc - translate a control escape -- backslash followed by
@@ -613,7 +613,7 @@ static int hexesc()
 
    }
 
-#endif					/* !Iconc && !VarTran */
+#endif					/* !Iconc */
 
 /*
  * setlineno - set line number from #line comment, return following char.

@@ -221,13 +221,13 @@ char *msg, *arg;
       }
 #endif					/* ConsoleWindow */
 
-#if !defined(VarTran) && !defined(Iconc)
+#if !defined(Iconc)
    {
       extern char *ofile;
       if (ofile)
 	 remove(ofile);			/* remove bad icode file */
    }
-#endif					/* !VarTran && !Iconc */
+#endif					/* !Iconc */
 
    exit(EXIT_FAILURE);
    }

@@ -96,7 +96,6 @@ char *filename;
       return;
       }
 
-#ifndef VarTran
    /*
     * Form names for the .u1 and .u2 files and open them.
     *  Write the ucode version number to the .u2 file.
@@ -137,7 +136,6 @@ char *filename;
       quitf("cannot create %s", oname2);
    writecheck(fprintf(globfile,"version\t%s\n",UVersion));
    writeUID(oname1, globfile);
-#endif					/* VarTran */
 
    tok_loc.n_file = filename;
    in_line = 1;
@@ -149,10 +147,8 @@ char *filename;
     * Close the output files.
     */
 
-#ifndef VarTran
    if (fclose(codefile) != 0 || fclose(globfile) != 0)
       quit("cannot close ucode file");
-#endif					/* VarTran */
 
    if (__merr_errors) {
       remove(oname1);

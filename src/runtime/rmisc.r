@@ -2200,15 +2200,12 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 				      bi_pat(PI_QUOTE), result);
                }
             cset: {
-               if(!cnv:string(param,param))
-		  ReturnErrNum(103, RunError);
-               return construct_image(bi_pat(PI_SQUOTE), &param,
-				      bi_pat(PI_SQUOTE), result);
+	       getimage(&param, result); 
+               return construct_image(bi_pat(PI_EMPTY), result, 
+	       	       bi_pat(PI_EMPTY), result);
                }
             integer: {
-               if(!cnv:string(param, param))
-		  ReturnErrNum(103, RunError);
-	       *result = param;
+               getimage(&param, result); 
                return Succeeded;
                }
             default: {

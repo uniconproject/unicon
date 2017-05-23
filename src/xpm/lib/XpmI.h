@@ -39,8 +39,8 @@
  * HeDu (hedu@cul-ipn.uni-kiel.de) 4/94
  */
 
-#ifndef XPMI_h
-#define XPMI_h
+#ifndef XPMI_H
+#define XPMI_H
 
 #include "xpm.h"
 

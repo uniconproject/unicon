@@ -37,8 +37,8 @@
  * HeDu (hedu@cul-ipn.uni-kiel.de) 4/94
  */
 
-#ifndef XPM_h
-#define XPM_h
+#ifndef XPM_H
+#define XPM_H
 
 /*
  * first some identification numbers:

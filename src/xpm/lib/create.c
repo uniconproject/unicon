@@ -1248,11 +1248,6 @@ static unsigned long byteorderpixel = MSBFirst << 24;
 
 #endif
 
-/*
-   WITHOUT_SPEEDUPS is a flag to be turned on if you wish to use the original
-   3.2e code - by default you get the speeded-up version.
-*/
-
 static void
 PutImagePixels32(image, width, height, pixelindex, pixels)
     XImage *image;
@@ -1265,45 +1260,6 @@ PutImagePixels32(image, width, height, pixelindex, pixels)
     unsigned int *iptr;
     int y;
     Pixel pixel;
-
-#ifdef WITHOUT_SPEEDUPS
-
-    int x;
-    unsigned char *addr;
-
-    data = (unsigned char *) image->data;
-    iptr = pixelindex;
-#if !defined(WORD64) && !defined(LONG64)
-    if (*((char *) &byteorderpixel) == image->byte_order) {
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX32(x, y, image)];
-		*((unsigned long *) addr) = pixels[*iptr];
-	    }
-    } else
-#endif
-    if (image->byte_order == MSBFirst)
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX32(x, y, image)];
-		pixel = pixels[*iptr];
-		addr[0] = pixel >> 24;
-		addr[1] = pixel >> 16;
-		addr[2] = pixel >> 8;
-		addr[3] = pixel;
-	    }
-    else
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX32(x, y, image)];
-		pixel = pixels[*iptr];
-		addr[0] = pixel;
-		addr[1] = pixel >> 8;
-		addr[2] = pixel >> 16;
-		addr[3] = pixel >> 24;
-	    }
-
-#else  /* WITHOUT_SPEEDUPS */
 
     int bpl = image->bytes_per_line;
     unsigned char *data_ptr, *max_data;
@@ -1355,8 +1311,6 @@ PutImagePixels32(image, width, height, pixelindex, pixels)
 	    }
 	    data += bpl;
 	}
-
-#endif /* WITHOUT_SPEEDUPS */
 }
 
 /*
@@ -1374,30 +1328,6 @@ PutImagePixels16(image, width, height, pixelindex, pixels)
     unsigned char *data;
     unsigned int *iptr;
     int y;
-
-#ifdef WITHOUT_SPEEDUPS
-
-    int x;
-    unsigned char *addr;
-
-    data = (unsigned char *) image->data;
-    iptr = pixelindex;
-    if (image->byte_order == MSBFirst)
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX16(x, y, image)];
-		addr[0] = pixels[*iptr] >> 8;
-		addr[1] = pixels[*iptr];
-	    }
-    else
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX16(x, y, image)];
-		addr[0] = pixels[*iptr];
-		addr[1] = pixels[*iptr] >> 8;
-	    }
-
-#else  /* WITHOUT_SPEEDUPS */
 
     Pixel pixel;
 
@@ -1436,8 +1366,6 @@ PutImagePixels16(image, width, height, pixelindex, pixels)
 	    }
 	    data += bpl;
 	}
-
-#endif /* WITHOUT_SPEEDUPS */
 }
 
 /*
@@ -1456,18 +1384,6 @@ PutImagePixels8(image, width, height, pixelindex, pixels)
     unsigned int *iptr;
     int y;
 
-#ifdef WITHOUT_SPEEDUPS
-
-    int x;
-
-    data = image->data;
-    iptr = pixelindex;
-    for (y = 0; y < height; y++)
-	for (x = 0; x < width; x++, iptr++)
-	    data[ZINDEX8(x, y, image)] = pixels[*iptr];
-
-#else  /* WITHOUT_SPEEDUPS */
-
     int bpl = image->bytes_per_line;
     char *data_ptr, *max_data;
 
@@ -1483,8 +1399,6 @@ PutImagePixels8(image, width, height, pixelindex, pixels)
 
 	data += bpl;
     }
-
-#endif /* WITHOUT_SPEEDUPS */
 }
 
 /*
@@ -1505,31 +1419,6 @@ PutImagePixels1(image, width, height, pixelindex, pixels)
 	unsigned int *iptr;
 	int y;
 	char *data;
-
-#ifdef WITHOUT_SPEEDUPS
-
-	int x;
-
-	data = image->data;
-	iptr = pixelindex;
-	if (image->bitmap_bit_order == MSBFirst)
-	    for (y = 0; y < height; y++)
-		for (x = 0; x < width; x++, iptr++) {
-		    if (pixels[*iptr] & 1)
-			data[ZINDEX1(x, y, image)] |= 0x80 >> (x & 7);
-		    else
-			data[ZINDEX1(x, y, image)] &= ~(0x80 >> (x & 7));
-		}
-	else
-	    for (y = 0; y < height; y++)
-		for (x = 0; x < width; x++, iptr++) {
-		    if (pixels[*iptr] & 1)
-			data[ZINDEX1(x, y, image)] |= 1 << (x & 7);
-		    else
-			data[ZINDEX1(x, y, image)] &= ~(1 << (x & 7));
-		}
-
-#else  /* WITHOUT_SPEEDUPS */
 
 	char value;
 	char *data_ptr, *max_data;
@@ -1600,8 +1489,6 @@ PutImagePixels1(image, width, height, pixelindex, pixels)
 		}
 		data += bpl;
 	    }
-
-#endif /* WITHOUT_SPEEDUPS */
     }
 }
 

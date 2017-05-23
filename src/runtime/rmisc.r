@@ -1991,13 +1991,6 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     break;
              } 
           case PC_Arbno_S: {
-
-	  /* Arbno is cyclical in the way that it operates
-           * it will go back to PC_Arbno_S after it has finished
-           * marking the parameters of the Arbno. arbnobool 
-           * makes sure we don't cycle around again. 
-          /* 
-
              union block *arb;
              if (arbnoBool == 1) {
 		*result = *bi_pat(PI_EMPTY);

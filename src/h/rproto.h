@@ -643,9 +643,7 @@ int checkOpenConsole( FILE *w, char *s );
 #if HAVE_LIBJPEG
    int writeJPEG(wbp w, char *filename, int x, int y, int width, int height);
 #endif					/* HAVE_LIBJPEG */
-#ifndef MSWindows
    void	wsync		(wbp w);
-#endif					/* MSWindows */
    void	xdis		(wbp w, char *s, int n);
 
    #ifdef ConsoleWindow

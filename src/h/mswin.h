@@ -34,7 +34,6 @@
 #define DISPLAYHEIGHT(w) devicecaps(w, VERTRES)
 #define DISPLAYWIDTH(w) devicecaps(w, HORZRES)
 #define wflush(w) /* noop */
-#define wsync(w) /* noop */
 #define SysColor unsigned long
 #define RED(x) GetRValue(x)
 #define GREEN(x) GetGValue(x)

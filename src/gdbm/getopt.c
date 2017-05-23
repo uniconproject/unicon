@@ -31,7 +31,7 @@
 #ifdef __GNUC__
 #define alloca __builtin_alloca
 #else /* not __GNUC__ */
-#if defined (HAVE_ALLOCA_H) || (defined(sparc) && (defined(sun) || (!defined(USG) && !defined(SVR4) && !defined(__svr4__))))
+#if defined (HAVE_ALLOCA_H) || (defined(sparc) && (defined(sun)))
 #include <alloca.h>
 #else
 #ifndef _AIX

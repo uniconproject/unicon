@@ -2192,13 +2192,16 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
    return Succeeded;
    }
 
+
+/* Construct image for Pattern Function Parameters */ 
+
 int arg_image(struct descrip arg, int pcode, dptr result)
    {
    struct descrip image;
    tended struct descrip param = arg;
    if(!is:list(param)) {
-      if(pcode == PT_EVAL) {
-         type_case param of {
+      if(pcode == PT_EVAL) {   /*Parameter is a string, cset, int */ 
+         type_case param of { /* or unevaluated variable */ 
             string: {
                return construct_image(bi_pat(PI_QUOTE), &param,
 				      bi_pat(PI_QUOTE), result);
@@ -2221,7 +2224,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
             }
 	 }
       else {
-         return construct_image(bi_pat(PI_BQUOTE), &param,
+         return construct_image(bi_pat(PI_BQUOTE), &param,  /*uneval var */
 				 bi_pat(PI_BQUOTE), result);
          }
       }
@@ -2236,7 +2239,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
       else   
 	 AsgnCStr(*result, StrLoc(le->lslots[le->first]));
       switch(pcode) {
-      case PT_VP: {
+      case PT_VP: { /*Parameter image is unevaluated class member */ 
          do {
             if (construct_image(result, bi_pat(PI_PERIOD),
 				&(le->lslots[leCurrent]), result) ==
@@ -2247,7 +2250,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	 return construct_image(bi_pat(PI_BQUOTE), result,
 				 bi_pat(PI_BQUOTE), result);
 	 }
-       case PT_MF: {
+       case PT_MF: { /*Parameter image is unevaluated method function */ 
          if (construct_image(result, bi_pat(PI_PERIOD),
 			     &(le->lslots[leCurrent]), result) == RunError)
 	    return RunError;
@@ -2255,6 +2258,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
          break;
          }
        case PT_VF: {
+           /* Parameter image is unevaluated variable function */ 
          break;
          }
        default: {
@@ -2262,6 +2266,9 @@ int arg_image(struct descrip arg, int pcode, dptr result)
          break;
          }
          }
+
+	 /* There are no parameters for this function/method */ 
+
        if((pcode != PT_MF && (le->nslots == 1)) || 
          ((pcode == PT_MF) && (le->nslots == 2))) {
           if (construct_image(bi_pat(PI_EMPTY), result,
@@ -2270,6 +2277,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
           return construct_image(bi_pat(PI_BQUOTE), result,
 				 bi_pat(PI_BQUOTE), result);
 	  }
+
       /* this is the part at which we go bad */
        if (!is:string(le->lslots[leCurrent]) &&
 	   is:variable(le->lslots[leCurrent])) {
@@ -2280,6 +2288,9 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	   * using slots, right?
 	   */
 	  }
+
+
+	  /* Attach front paren and first argument */ 
 
        if (!is:string(le->lslots[leCurrent])) {
           get_name(&le->lslots[leCurrent], &arg);
@@ -2292,6 +2303,9 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 			      &(le->lslots[leCurrent]), result) == RunError)
 	     return RunError;
 	  }
+
+	  /* attach rest of parameters for uneval method/function */ 
+
        leCurrent++;
        if (((pcode != PT_MF) && (le->nslots != 2)) || 
            ((pcode == PT_MF) && (le->nslots != 3))) {

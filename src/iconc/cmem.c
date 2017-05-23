@@ -211,14 +211,6 @@ alc_stats(void)
       for(ent=alc_tbl[i]; ent; ent=ent->next)
          n_bytes += ent->total_bytes;
       }
-#ifdef unordered_traversal
-   for (i=0; i<AlcTblSize; i++) {
-      for (ent=alc_tbl[i]; ent; ent=ent->next) {
-         printf("%d.%s: %ld bytes\n", ent->line_num, ent->fname,
-            ent->total_bytes);
-         }
-      }
-#else
    max_val = 1L;
    while (max_val > 0L) {
       max_val = 0L;
@@ -234,7 +226,6 @@ alc_stats(void)
             max_ent->total_bytes);
          max_ent->total_bytes = 0UL;
       }
-#endif
    printf("  *** total-bytes: %ld\n", n_bytes);
    printf("  ### alc-stats end ###\n");
 }

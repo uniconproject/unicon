@@ -4,8 +4,8 @@
 *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
 \**********************************************************************/
 
-#ifndef _UNIX_DISC_H_
-#define _UNIX_DISC_H_
+#ifndef TPDUNIX_H
+#define TPDUNIX_H
 
 typedef struct _tpunixdisc_s Tpunixdisc_t;
 
@@ -15,4 +15,4 @@ struct _tpunixdisc_s
   int fd;        /* File descriptor for file or socket */
 };
 
-#endif /* !_UNIX_DISC_H_ */
+#endif /* !TPDUNIX_H */

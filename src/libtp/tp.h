@@ -3,8 +3,8 @@
  *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
  */
 
-#ifndef _TP_H
-#define _TP_H 1
+#ifndef TP_H
+#define TP_H 1
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -198,4 +198,4 @@ extern Tpdisc_t* TpdSSL;
 
 #endif /* !_LIBTP_ */
 
-#endif /* _TP_H */
+#endif /* TP_H */

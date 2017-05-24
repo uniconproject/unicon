@@ -168,7 +168,7 @@ int main(int argc, char **argv)
   disc = tp_newdisc(TpdUnix);
   tpexcept = disc->exceptf;
   disc->exceptf = exception;
-#ifdef TRACE
+#if 0
   tpread = disc->readf;
   disc->readf = readf;
   tpreadln = disc->readlnf;

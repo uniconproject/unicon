@@ -4,18 +4,12 @@
 *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.        *
 \**********************************************************************/
 
-#ifndef _UNIX_DISC_H_
-#define _UNIX_DISC_H_
+#ifndef UNIX_DISC_H
+#define UNIX_DISC_H
 
 #include "tp.h"
 
-typedef struct _tpunixdisc_s Tpunixdisc_t;
-
-struct _tpunixdisc_s
-{
-  Tpdisc_t tpdisc;
-  int fd;        /* File descriptor for file or socket */
-};
+#include "tpdunix.h"
 
 enum _tperr {
   TP_RETURNERROR = -1,
@@ -31,4 +25,4 @@ enum _tperr {
   TP_EWRITE
 };
 
-#endif /* !_UNIX_DISC_H_ */
+#endif /* !UNIX_DISC_H */

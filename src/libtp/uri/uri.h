@@ -4,8 +4,8 @@
 *   (c) Copyright 1999-2000 by Steve Lumos.  All rights reserved.      *
 \**********************************************************************/
 
-#ifndef __URI_H__
-#define __URI_H__
+#ifndef URI_H
+#define URI_H
 
 enum URIERR {
   URI_SUCCESS = 0,     /* URI was parsed correctly */
@@ -16,9 +16,7 @@ enum URIERR {
   URI_ECHECKERRNO      /* Look at errno for error code */
 };
 
-#if !defined(_URI_C_)
- extern const char* const _uri_errlist[];
-#endif
+extern const char* const _uri_errlist[];
 
 /* A parsed URI */
 typedef struct _uri {
@@ -36,4 +34,4 @@ PURI uri_parse(char *uri);
 PURI uri_new(void);
 void uri_free(PURI puri);
 
-#endif /* defined __URI_H__ */
+#endif /* defined URI_H */

@@ -15,7 +15,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define _URI_C_ 1
 #include "uri.h"
 #include "uri_schm.h"
 

@@ -5,8 +5,8 @@
 *    (c) Copyright 1999-2000 by Steve Lumos.  All rights reserved.     *
 \**********************************************************************/
 
-#ifndef __URI_SCHEMES_H__
-#define __URI_SCHEMES_H__
+#ifndef URI_SCHM_H
+#define URI_SCHM_H
 
 #include "uri.h"
 
@@ -21,4 +21,4 @@ typedef struct _scheme {
 
 extern SCHEME *schemes[];
 
-#endif /* defined __URI_SCHEMES_H__ */
+#endif /*! URI_SCHM_H */

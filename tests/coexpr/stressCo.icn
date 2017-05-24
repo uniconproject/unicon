@@ -1,0 +1,135 @@
+#unicon program stressCo.icn
+# by cvevans
+# based on stress.icn
+# tests coexpression op
+
+ global gsum, str, v, w, usermode
+
+ procedure main(argv)
+   if not (&features == "co-expressions") then
+       stop("This program requires co-expressions.")
+   start := &now
+   stt := gettimeofday()
+   gsum := 0
+
+   thrdL := []
+
+   if *argv > 0 then{
+      n := integer(argv[1]) | stop ("arg must be integer")
+      (n >= 10) | stop("arg must be >= 10")
+      usermode := 1
+       }
+    else
+      n := 10
+
+
+   x := 10^8
+   d := x / n
+
+   m := n / 10
+
+   t := &now
+
+   v := w := ""
+   
+   write("Busy work Coexprs... ")
+   every 1 to 9 do put(thrdL, create dowork(m, d, x))
+
+
+   write("Interference Coexprs...")
+   a := create (A())
+   b := create B()
+   c := create C()
+   
+   dowork(m, d, x)
+
+  every @(!thrdL)
+
+ # print the sum. (x-d*n) is just an error correction when using "odd"  # of threads.
+   write("sum=",gsum + (x - d*n))
+   
+   if \usermode then
+      write("time:", &now-t, " seconds")
+  write (&now - start)
+   endt := gettimeofday()
+   write ( "elasped: ", (endt[1] - stt[1]) + (endt[2] - stt[2])/1000000.0)
+   write ("CPU time: ", &time/1000.0)
+
+ end # main 
+
+ procedure dowork(n, d, x)
+   thrd := []
+   if \usermode then {
+      write(n , " coexpr(s) will sum ", x, " ones.")
+      write("The work will be divided equally between them. Please wait... ")
+      } 
+   every i:=!n do put(thrd, create suma(d, i))
+   B()
+   every @(!thrd)
+ end
+
+ procedure suma(n, id)
+   local sum := 0
+ #   static region
+ #   initial  region := mutex()
+
+   every !n do sum+:=1
+
+  # critical region:  
+    gsum +:= sum
+ #    	write("collecting:")
+ #	   collect()
+   if \usermode then
+      write("Coexpr ", id , " is done")
+
+ end
+
+ procedure A()
+   /str := ""
+   every i:=1 to 100 do {
+     if i%100 = 1 then { L := []; str := "A" } 
+     put(L, table())
+     put(L, list(100))
+     x := "snow"
+       str ||:= x
+   } 
+   
+   w := x
+   v := w
+
+   return L
+
+ end
+
+ procedure B()
+   /x:=[]
+   /str := ""
+   every i := 1 to 1000 do {
+      if i%100 = 1 then{ L := []; str := "B" }
+      put(L, T:=table())
+      every j := 1 to 100 do T[j] := j
+      put(L, list(1000))
+      x := "ray"
+      str ||:= x
+      }
+
+   w := x
+   v ||:= w 
+
+ end
+
+ procedure C()
+   /str := ""
+
+   every i := 1 to 10000 do {
+      if i%100 = 1 then L := []
+      if i%1000 = 999 then str := "C"
+      x := "moon"
+      put(L, table())
+      put(L, list(1000))
+      str ||:= x
+      } 
+   w := x
+   v ||:= w
+
+ end

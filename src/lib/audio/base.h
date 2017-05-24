@@ -1,5 +1,5 @@
-#ifndef TESTLIB_H_
-#define TESTLIB_H_
+#ifndef BASE_H
+#define BASE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,4 +116,4 @@ ALboolean SourceIsPlaying(ALuint sid);
 }
 #endif /* __cplusplus */
 
-#endif /* TESTLIB_H_ */
+#endif /* BASE_H */

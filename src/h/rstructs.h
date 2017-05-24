@@ -762,8 +762,6 @@ struct progstate {
   int Longest_dr;
   struct b_proc_list **Dr_arrays;
 
-#ifdef MultiThread  
-  
    /*
     * Function Instrumentation Fields.
     */
@@ -815,9 +813,7 @@ struct progstate {
    void (*Deallocate)(union block *);
    char * (*Reserve)(int, word);
 
-#endif					/* MultiThread */
-  
-  struct threadstate *tstate, maintstate;
+   struct threadstate *tstate, maintstate;
   
    };
 #endif					/* MultiThread */

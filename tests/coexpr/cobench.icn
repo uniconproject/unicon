@@ -1,0 +1,53 @@
+#unicon program cobench.icn
+# by cvevans
+# benchmarks coexpression performance
+
+procedure main () 
+  if not (&features == "co-expressions") then
+       stop("This program requires co-expressions.")
+  per := 10000
+  if &features == "native coswitch" then
+      write ("Native coswitch found") & per := 1000000
+  else 
+      write ("No native coswitch")
+  every write ("With native coswitch, this test does "|
+"200M coswitches in about 15 seconds on an Intel or AMD CPU at 3Ghz,"|
+"doing about 10-15M per second running iconx."|
+"compiling with unicon -C, it should do 20-40M/s"|
+"Typically another 12 seconds is spent measuring test overhead."|
+"Debug builds will be slower."|
+"Without native coswitch, only 2M coswitches will be done."
+  )
+# ^ debug builds are half as fast. 
+  n := 0
+  x := create 1 to 1000000
+  every  i := 1 to 100 do { 
+      x := ^x
+      every 1 to 1000000 do 
+          n +:= 1; 
+      writes (".")
+  }
+  write()
+  write(n / 1000000 || "M")
+  t := &time
+  write(t / 1000.0, " seconds overhead.")
+  n := 0
+  x := create 1 to per
+  every  i := 1 to 100 do { 
+      x := ^x; 
+      while @x do 
+          n +:= 1; 
+      writes (".")
+  }
+  write()
+  dt := &time - t
+  write(dt / 1000.0, " seconds CPU time,")
+  writes(n / 1000000, "M coacts in ")
+#  write(&time )
+  dtc:= &time - t * 2
+  write(dtc / 1000.0, " seconds.")
+  coact := n / dtc
+  write (coact, "K coacts/s")
+  write (coact * 2, "K coswitches/s")
+
+end # main 

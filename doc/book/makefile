@@ -25,7 +25,7 @@
 # and texlive-xtab.
 #
 
-SRC=admin.tex advanced.tex assoc.tex cgi.tex classes.tex database.tex diffs.tex genetic.tex graphics.tex gui.tex internet.tex intro.tex ipl.tex langref.tex large.tex lexyacc.tex port.tex preface.tex programs.tex referenc.tex string.tex struct.tex system.tex ub.tex ucl.tex usecase.tex install.tex
+SRC=admin.tex advanced.tex assoc.tex cgi.tex classes.tex database.tex diffs.tex genetic.tex graphics.tex gui.tex internet.tex intro.tex ipl.tex langref.tex large.tex lexyacc.tex port.tex preface.tex programs.tex referenc.tex string.tex struct.tex system.tex thread.tex ub.tex ucl.tex usecase.tex install.tex
 
 ub.pdf: $(SRC)
 	pdflatex ub

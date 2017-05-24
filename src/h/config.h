@@ -466,10 +466,6 @@
  * Customize output if not pre-defined.
  */
 
-#ifndef TraceOut
-   #define TraceOut(s) fprintf(stderr,s)
-#endif					/* TraceOut */
-
 #if EBCDIC
    #define BackSlash "\xe0"
 #else					/* EBCDIC */

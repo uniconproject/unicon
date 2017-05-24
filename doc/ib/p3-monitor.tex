@@ -7,27 +7,214 @@ instrumentation that was added to generate log files from the C
 implementation of Icon's virtual machine, iconx. Development of these
 tools in C was too labor intensive for experimental research work. The
 primary goal of the monitoring facilities is to allow monitors for
-Icon and Unicon to be written in Icon and Unicon instead of C.
+Icon and Unicon to be written in Unicon instead of C.
 
 The monitoring facilities were added by writing a dynamic loader for
 Icon icode and extending the co-expression data type to allow the
 loading and execution of programs as co-expressions within the same
-virtual machine. This was considered necessary to achieve high
+virtual machine. This was considered viable to achieve high
 performance, since the co-expression switch was frequently and
-publically lauded by Ralph Griswold as being very high performance
+publically extolled by Ralph Griswold as being very high performance
 (comparable to a procedure call in Icon), while transmitting
 monitoring information to a separate process via pipes, sockets or
 any other means that would require operating system synchronization
 was considered too expensive.
 
 Since that time, the co-expression type has gotten much slower in
-Icon, the current implementation having eliminated native assembler
-co-expressions in favor of a portable pthreads implementation. The
-monitoring facilities remain a compelling reason for Unicon to retain
-native co-expressions indefinitely, since they constitute the core
-of the Unicon debugger udb, and the profiler uprof.
+Icon, whose current implementation has eliminated native assembler
+co-expressions in favor of a portable pthreads implementation and
+removed the monitoring facilities entirely. In Unicon, the monitoring
+facilities remain a compelling reason to retain native co-expressions
+indefinitely, since they constitute the core of the Unicon debugger
+udb, and the profiler uprof.
 
 \section{Dynamic Loading and the Program State}
+
+Several major changes were required in order to support multiple
+programs in the virtual machine. Loading the icode into a separate
+malloced area was the easy part.  Numerous global and/or static C
+variables contained program-specific state -- on a abstract level
+they could be considered ``registers'' of the Icon virtual machine.
+In practice, they must be saved/restored whenever switching between
+programs, and it was quickly found that they were too numerous to
+easily save and restore: switching time would be too slow. Instead,
+these variables were all moved into a new structure, and a pointer
+to this structure became the one variable that needed to be
+saved/restored whenever switching between programs. The variable
+was named {\tt curpstate} and the structure in src/h/rstructs.h
+looks like:
+
+\begin{iconcode}
+/* \\
+ * Program state encapsulation.  This consists \\
+ * of the VARIABLE parts of many global structures. \\
+ */ \\
+struct progstate \{ \\
+   long hsize;				/* size of icode */ \\
+	/* hsize is a constant defined at load time, MT safe */ \\
+   struct progstate *parent; \\
+	/* parent is a constant defined at load time, MT safe */ \\
+   struct progstate *next; \\
+	/* next is a link list, seldom used, needs mutex */ \\
+   struct descrip parentdesc;		/* implicit \&parent */ \\
+	/* parentdesc is a constant defined at load time, MT safe */ \\
+   struct descrip eventmask;		/* implicit \&eventmask */ \\
+	/* eventmask is read-only (to me), MT safe */ \\
+   struct descrip eventcount;		/* implicit \&eventcount */ \\
+   struct descrip valuemask; \\
+   struct descrip eventcode;		/* \&eventcode */ \\
+   struct descrip eventval;		/* \&eventval */ \\
+   struct descrip eventsource;		/* \&eventsource */ \\
+\ \\
+   /* Systems don't have more than, oh, about 50 signals, eh? \\
+    * Currently in the system there is 40 of them            */ \\
+   struct descrip Handlers[41]; \\
+   /*int Inited; not used anymore */ \\
+   int signal; \\
+   /* \\
+    * trapped variable keywords' values \\
+    */ \\
+   struct descrip Kywd\_err;          /* Probably mutex. not important now */ \\
+   struct descrip Kywd\_prog; \\
+\ \\
+   struct descrip Kywd\_trc;         /* leave global for now   */ \\
+   struct b\_coexpr *Mainhead; \\
+   char *Code; \\
+   char *Ecode; \\
+   word *Records; \\
+   int *Ftabp; \\
+   \#ifdef FieldTableCompression \\
+      short Ftabwidth, Foffwidth; \\
+      unsigned char *Ftabcp, *Focp; \\
+      short *Ftabsp, *Fosp; \\
+      int *Fo; \\
+      char *Bm; \\
+   \#endif				/* FieldTableCompression */ \\
+   dptr Fnames, Efnames; \\
+   dptr Globals, Eglobals; \\
+   dptr Gnames, Egnames; \\
+   dptr Statics, Estatics; \\
+   int NGlobals, NStatics; \\
+   char *Strcons; \\
+   struct ipc\_fname *Filenms, *Efilenms; \\
+   struct ipc\_line *Ilines, *Elines; \\
+  struct ipc\_line * Current\_line\_ptr;  /* not used or what ?*/ \\
+\ \\
+   \#ifdef Graphics \\
+      struct descrip AmperX, AmperY, AmperRow, AmperCol; \\
+      struct descrip AmperInterval;			/* \&interval */ \\
+      struct descrip LastEventWin;			/* last Event() win */\\
+      int LastEvFWidth; \\
+      int LastEvLeading; \\
+      int LastEvAscent; \\
+      uword PrevTimeStamp;				/* previous timestamp */ \\
+      uword Xmod\_Control, Xmod\_Shift, Xmod\_Meta;	/* control,shift,meta */ \\
+      struct descrip Kywd\_xwin[2];			/* \&window + ... */\\
+\ \\
+   \#ifdef Graphics3D \\
+      struct descrip AmperPick;				/* \&pick */ \\
+   \#endif				/* Graphics3D */ \\
+   \#endif				/* Graphics */ \\
+\ \\   
+   word Coexp\_ser;			/* this program's serial numbers */\\
+   word List\_ser; \\
+   word Intern\_list\_ser; \\
+\#ifdef PatternType \\
+   word Pat\_ser; \\
+\#endif					/* PatternType */\\
+   word Set\_ser; \\
+   word Table\_ser; \\
+\ \\
+   word Kywd\_time\_elsewhere;		/* ???? TLS vs global \&time spent in other programs */ \\
+   word Kywd\_time\_out;			/* ????  TLS vs global \&time at last program switch out */ \\
+\ \\
+\#ifdef Concurrent \\
+   word mutexid\_stringtotal; \\
+   word mutexid\_blocktotal; \\
+   word mutexid\_coll;\\
+\ \\
+   struct region *Public\_stringregion;         /*  separate regions vs shared */ \\
+   struct region *Public\_blockregion;          /*     same above   */ \\
+\#endif					/* Concurrent */
+\ \\
+   struct region *stringregion;         /*  separate regions vs shared      */\\
+   struct region *blockregion;          /*     same above     */ \\
+\ \\
+  /* in case we have separate heaps, i.e ThreadHeap is defined\\
+   * total here will be only for "dead" threads */\\
+   uword stringtotal;			/* cumulative total allocation */\\
+   uword blocktotal;			/* cumulative total allocation */\\
+\ \\
+   word colltot;			/*  m      total number of collections */\\
+   word collstat;			/*  u      number of static collect requests */\\
+   word collstr;			/*  t      number of string collect requests */\\
+   word collblk;			/*  ex     number of block collect requests */\\
+\ \\
+   struct descrip K\_main;\\
+   struct b\_file K\_errout;\\
+   struct b\_file K\_input;\\
+   struct b\_file K\_output;\\
+\ \\
+   /* dynamic record types */\\
+  int yyy;\\
+  int Longest\_dr;\\
+  struct b\_proc\_list **Dr\_arrays;\\
+\ \\
+   /*\\
+    * Function Instrumentation Fields.\\
+    */\\
+\#ifdef Arrays \\
+   int (*Cprealarray)(dptr, dptr, word, word);\\
+   int (*Cpintarray)(dptr, dptr, word, word);\\
+\#endif					/* Arrays */\\
+   int (*Cplist)(dptr, dptr, word, word);\\
+   int (*Cpset)(dptr, dptr, word);\\
+   int (*Cptable)(dptr, dptr, word);\\
+   void (*EVstralc)(word);\\
+\#ifdef TSTATARG\\
+   int (*Interp)(int,dptr, struct threadstate*);\\
+\#else 		 	   	  	 /* TSTATARG */\\
+   int (*Interp)(int,dptr);\\
+\#endif 		 	   	  	 /* TSTATARG */\\
+   int (*Cnvcset)(dptr,dptr);\\
+   int (*Cnvint)(dptr,dptr);\\
+   int (*Cnvreal)(dptr,dptr);\\
+   int (*Cnvstr)(dptr,dptr);\\
+   int (*Cnvtcset)(struct b\_cset *,dptr,dptr);\\
+   int (*Cnvtstr)(char *,dptr,dptr);\\
+   void (*Deref)(dptr,dptr);\\
+   struct b\_bignum * (*Alcbignum)(word);\\
+   struct b\_cset * (*Alccset)();\\
+   struct b\_file * (*Alcfile)(FILE*,int,dptr);\\
+   union block * (*Alchash)(int);\\
+   struct b\_slots * (*Alcsegment)(word);\\
+\#ifdef PatternType\\
+   struct b\_pattern * (*Alcpattern)(word);\\
+   struct b\_pelem * (*Alcpelem)(word, word *);\\
+   int (*Cnvpattern)(dptr,dptr);\\
+   int (*Internalmatch)(char*,int,int,struct b\_pelem*,int*,int*,int,int);\\
+\#endif					/* PatternType */\\
+   struct b\_list *(*Alclist\_raw)(uword,uword);\\
+   struct b\_list *(*Alclist)(uword,uword);\\
+   struct b\_lelem *(*Alclstb)(uword,uword,uword);\\
+\#ifndef DescriptorDouble\\
+   struct b\_real *(*Alcreal)(double);\\
+\#endif					/* DescriptorDouble */\\
+   struct b\_record *(*Alcrecd)(int, union block *);\\
+   struct b\_refresh *(*Alcrefresh)(word *, int, int);\\
+   struct b\_selem *(*Alcselem)(dptr, uword);\\
+   char *(*Alcstr)(char *, word);\\
+   struct b\_tvsubs *(*Alcsubs)(word, word, dptr);\\
+   struct b\_telem *(*Alctelem)(void);\\
+   struct b\_tvtbl *(*Alctvtbl)(dptr, dptr, uword);\\
+   struct b\_tvmonitored *(*Alctvmonitored) (dptr);\\
+   void (*Deallocate)(union block *);\\
+   char * (*Reserve)(int, word);\\
+\ \\
+  struct threadstate *tstate, maintstate;\\
+   \};
+\end{iconcode}
+
 
 \section{Event Instrumentation, Filtering and Reporting}
 

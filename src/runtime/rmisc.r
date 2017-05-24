@@ -2268,20 +2268,14 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 				 bi_pat(PI_BQUOTE), result);
 	  }
 
-      /* this is the part at which we go bad */
+        /* Attach front paren and first argument */ 
        if (!is:string(le->lslots[leCurrent]) &&
 	   is:variable(le->lslots[leCurrent])) {
-          struct descrip d;
-          get_name(&(le->lslots[leCurrent]), &d);
-	  /*
-	   * OK, what do we do with this variable name, use it instead of
-	   * using slots, right?
-	   */
+          get_name(&(le->lslots[leCurrent]), &arg);
+	  if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
+              RunError)
+             return RunError; 
 	  }
-
-
-	  /* Attach front paren and first argument */ 
-
        if (!is:string(le->lslots[leCurrent])) {
           get_name(&le->lslots[leCurrent], &arg);
 	  if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==

@@ -285,6 +285,7 @@ procedure preproc_scan_directive()
         }
         "line": {
             #if /preproc_if_state then {
+                new_line := new_filename := &null
                 if new_line := integer(tab(many(&digits))) &
                         preproc_opt_space() &
                         (new_filename := preproc_qword() | &null) \ 1 &
@@ -293,8 +294,11 @@ procedure preproc_scan_directive()
                     preproc_filename := \new_filename
                     preproc_line := new_line
                 } else {
-		   if \preproc_dollar_or_pound == "$" then
-		      preproc_error("$line: expected a line number.")
+		   if \preproc_dollar_or_pound == "$" then {
+		       if /new_line then 
+		           preproc_error("$line: expected a line number.")
+		       else preproc_error("$line: expected only \"file\" after line number.")
+		   } 
 		   else # it was just a comment beginning with #line
 		      tab(find("\n") | 0)
                 }
@@ -575,7 +579,7 @@ procedure preproc_sync_lines()
         #   "; preproc_print_line = ",image(preproc_print_line),
         #   "; delta = ",image(delta))
         if delta ~= 1 then {
-            if delta < 20 then {
+            if 1 < delta < 20 then {
                 suspend 2 to delta & ""
             } else {
                 suspend "#line " || preproc_line - 1 || " " ||

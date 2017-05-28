@@ -90,7 +90,7 @@ unigram.u: unigram.icn
 #	idol -c unigram.iol
 
 #yyerror.icn: unigram.icn
-#	merr unicon
+#	merr -u unicon
 
 yyerror.u: yyerror.icn
 	$(ICONT) -c yyerror

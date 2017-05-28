@@ -8,7 +8,7 @@
 \title{Adding New Diagnostic Syntax Error Messages to Unicon}
 \author{Clinton Jeffery}
 \trnumber{19}
-\date{2017-05-26}
+\date{2017-05-28}
 
 \begin{document}
 \abstract{
@@ -83,16 +83,19 @@ In order to run merr, the lines
 
 \iconcode{
 \#yyerror.icn: unigram.icn \\
-\# \>\>\>	merr unicon
+\# \>\>\>	merr -u unicon
 }
 
-\noindent must be uncommented.
+\noindent must be uncommented.  On some platforms you may need to say
+\texttt{./merr -u ./unicon} or similar, to avoid path problems.
 
 Adding these makefile rules will cause merr to run, and generate a new
 yyerror.icn whenever unigram.icn is changed, generally due to iyacc
-being run on unigram.y.  Unfortunately, the Unicon translator uses
-some slight modifications to the generic yyerror.icn that {\em merr\/}
-generates. As a result, the yyerror.icn should be hand-modified after
+being run on unigram.y.  The Unicon translator uses some slight
+modifications to the generic yyerror.icn that {\em merr\/} generates
+by default. The -u option asks merr to update the existing yyerror.icn
+body with the current state tables calculated using the error fragments.
+If merr is run without -u, the yyerror.icn should be hand-modified after
 merr is run, to fix things up as follows.
 
 \begin{itemize}
@@ -168,13 +171,15 @@ end\\
 ::: Assignment is missing right operand value.
 }
 
-Run the commands ``unicon merr'' followed by ``merr unicon''. If all
-went well, a new yyerror.icn was written, adding a table entry for
-parse state 232 that we needed, and unfortunately losing many lines
-that we will put back manually. A diff shows what Unicon's yyerror
-customizes compared with the generic yyerror.icn that merr writes out.
+Run the commands ``unicon merr'' followed by ``merr -u unicon''; again
+you may need to put ./ or .\textbackslash in front of merr and unicon
+in these examples. If all goes
+well, a new yyerror.icn is written, adding a table entry for
+parse state 232 that we need. A diff taken by running merr without the
+-u option shows what Unicon's yyerror() customizes compared with the
+generic yyerror.icn that merr writes out.
 Customization adds about 20 lines to be copied back into yyerror.icn
-each time merr is run.
+if merr is run without -u.
 
 \iconcode{
 --- yyerror.icn	(revision 5236)\\
@@ -241,12 +246,12 @@ synerr.icn:3: \# "end": Assignment is missing right operand value.
 
 \section{Conclusions}
 
-Using Merr to update the Unicon translator with new messages is fairly
-easy, but does involve some manual steps. It will be nice if there
+Using Merr to update the Unicon translator with new messages is
+easy, but all computational tasks require care. It will be nice if there
 someday exists a tool that will generate {\em all\/} error fragments
-directly from the grammar, so that no undefined error messages could
-occur unless new grammar rules were added. Until that day, we will add
-error fragments as they are encountered.
+directly from the grammar, so that no undefined error messages occur
+unless new grammar rules were added. Until that day, error fragments
+should be added as they are encountered.
 
 \section*{References}
 

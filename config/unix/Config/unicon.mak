@@ -89,8 +89,12 @@ unigram.u: unigram.icn
 #	mv unigram.icn unigram.iol
 #	idol -c unigram.iol
 
+#
+# If you have other unicon binaries on your path (!) you might need this to say "./merr -u ./unicon".
+# If you need it to run on Windows, you might have to use .\ instead of ./
+#
 #yyerror.icn: unigram.icn
-#	merr -u unicon
+#	./merr -u unicon
 
 yyerror.u: yyerror.icn
 	$(ICONT) -c yyerror

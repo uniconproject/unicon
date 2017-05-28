@@ -17,6 +17,7 @@ global calloc, yywritefn, ytabh, inclfile
 global maxiter # user specified number of iterations
 global genfrag # option to generate possible error fragments
 global phase   # phase1 creates tokens / phase2 creates error fragments
+global update  # preserve original/custom yyerror body, just update table
 
 procedure main(argv)
 
@@ -33,6 +34,7 @@ procedure main(argv)
    i := 1
    while i <= *argv do {
 	case argv[i] of {
+	    "-u": { update := [] }
 	    "-y": { C := byacc := 1 }
 	    "-Y": { C := att := "yy_state" }
 	    "-B": { C := bison := "yystate" }
@@ -69,6 +71,13 @@ procedure main(argv)
 	}
 	i+:= 1
     }
+   if \update then {
+      if \C then stop("update only supported on Unicon, so far")
+      if fin := open(ofile) then {
+	 while put(update, read(fin))
+	 }
+      else stop("merr update: can't open ", image(ofile), " for reading")
+      }
    if (\genfrag = 1) | \phase=1 then {
       merr2()
       }
@@ -110,6 +119,43 @@ $endif
 	 generr(t, prog, msg)
 	 }
       gen(t)
+      }
+   if \update then {
+      if resultf := open(ofile) then {
+	 result := []
+	 while put(result, read(resultf))
+	 close(resultf)
+	 if not (resultf := open(ofile, "w")) then
+	    stop("can't update/write ", image(ofile))
+	 while line := pop(update) do {
+	    write(resultf, line)
+	    if line == "initial {" then break
+	    }
+	 if line ~== "initial {" then
+	    stop("can't update, initial ", image(ofile), " had no initial {")
+	 line := &null
+	 while line := pop(result) do {
+	    if line == "initial {" then break
+	    }
+	 if line ~== "initial {" then
+	    stop("can't update, result ", image(ofile), " had no initial {")
+	 while line := pop(result) do {
+	    write(resultf, line)
+	    if line == "   }" then break
+	    }
+	 if line ~== "   }" then
+	    stop("can't update, result ", image(ofile), " had no ending    }")
+	 line := &null
+	 while line := pop(update) do {
+	    if line == "   }" then break
+	    }	 
+	 if line ~== "   }" then
+	    stop("can't update, initial ", image(ofile), " had no ending    }")
+	 line := &null
+	 while line := pop(update) do write(resultf, line)
+	 close(resultf)
+	 write("updated ", image(ofile))
+	 }
       }
 end
 

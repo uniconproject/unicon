@@ -309,7 +309,7 @@ xrwinrsc.$(O): rwinrsc.r $(HDRS) $(GRAPHICSHDRS) rxrsc.ri
 	$(CC) $(CFLAGS) -c xrwinrsc.c
 	$(RM) xrwinrsc.c
 
-xraudio.$(O): raudio.r
+xraudio.$(O): raudio.r $(HDRS)
 	$(RTT) -x raudio.r
 	$(CC) $(CFLAGS) -c xraudio.c
 	$(RM) xraudio.c

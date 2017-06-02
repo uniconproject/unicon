@@ -5,7 +5,9 @@ procedure main()
               end")
     close(f)
     write("compiling a.icn")
-    if ss := system("icont a.icn") then {
+    icont:= "icont"
+    getenv("ICONT")? (find("icont") , icont:=tab(0))
+    if ss := system(icont||" a.icn") then {
 	if ss ~= 0 then stop("compile returned ", image(ss))
         }
     else stop("system(icont a.icn) failed")

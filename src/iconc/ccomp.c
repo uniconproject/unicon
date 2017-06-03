@@ -329,7 +329,7 @@ Deliberate Syntax Error
 
 #if UNIX
    /* needs to be more precise, add a HAVE_LIBDL or some such */
-   buf = growcat(buf, &buflen, 1, " -ldl");
+   buf = growcat(buf, &buflen, 1, " -ldl -export-dynamic ");
 #endif					/* UNIX */
 
 #endif					/* UNIX || NTGCC */

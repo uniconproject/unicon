@@ -891,7 +891,7 @@ struct b_coexpr {		/* co-expression stack block */
    word title;			/*   T_Coexpr */
    word size;			/*   number of results produced */
    word id;			/*   identification number */
-   word status;			/*   status (native/posix, sync/async, etc) */
+   word status;			/*   status (native/posix, sync/async, 	etc) */
 #ifdef Concurrent
    word shared;
    word mutexid;
@@ -922,7 +922,7 @@ struct b_coexpr {		/* co-expression stack block */
    struct p_frame *es_pfp;	/*   current procedure frame pointer */
    char *file_name;		/*   current file name */
    word line_num;		/*   current line_number */
-   struct p_frame pf;           /*   initial procedure frame */
+/* see p_frame pf below */ 
 #else					/* COMPILER */
    struct pf_marker *es_pfp;	/*   current pfp */
    struct ef_marker *es_efp;	/*   efp */
@@ -956,7 +956,17 @@ struct b_coexpr {		/* co-expression stack block */
 #endif					/* PthreadCoswitch */
 
      word cstate[CStateSize];	/*   C state information (registers, etc.) */
-   };
+#if COMPILER
+   struct p_frame pf;           /*   initial procedure frame */
+#endif 
+/* WARNING:   pf ^ _must_ be the LAST item in b_coexpr
+ * es_pfp points ^ HERE, so 
+ * the new pframes will be put _right_ after this!
+ * anything you add after pf will be _clobbered_
+ * ref: rcoexpr.r: sblkp->es_pfp = &sblkp->pf;
+ * ref: rstructs.h, 2001 version 
+ */
+   }; /* b_coexpr */
 
 struct b_refresh {		/* co-expression refresh block */
    word title;			/*   T_Refresh */

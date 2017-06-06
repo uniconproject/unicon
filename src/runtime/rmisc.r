@@ -2924,9 +2924,7 @@ Deliberate Syntax Error
  *  file.
  */
 
-word add(a, b, over_flowp)
-word a, b;
-int *over_flowp;
+word add(word a, word b, int *over_flowp)
 {
    if ((a ^ b) >= 0 && (a >= 0 ? b > MaxLong - a : b < MinLong - a)) {
       *over_flowp = 1;
@@ -2938,9 +2936,7 @@ int *over_flowp;
      }
 }
 
-word sub(a, b, over_flowp)
-word a, b;
-int *over_flowp;
+word sub(word a, word b, int *over_flowp)
 {
    if ((a ^ b) < 0 && (a >= 0 ? b < a - MaxLong : b > a - MinLong)) {
       *over_flowp = 1;
@@ -2952,9 +2948,7 @@ int *over_flowp;
       }
 }
 
-word mul(a, b, over_flowp)
-word a, b;
-int *over_flowp;
+word mul(word a, word b, int *over_flowp)
 {
    if (b != 0) {
       if ((a ^ b) >= 0) {
@@ -2975,9 +2969,7 @@ int *over_flowp;
 
 /* MinLong / -1 overflows; need div3 too */
 
-word mod3(a, b, over_flowp)
-word a, b;
-int *over_flowp;
+word mod3(word a, word b, int *over_flowp)
 {
    word retval;
 
@@ -3007,9 +2999,7 @@ int *over_flowp;
    return retval;
 }
 
-word div3(a, b, over_flowp)
-word a, b;
-int *over_flowp;
+word div3(word a, word b, int *over_flowp)
 {
    if ( ( b == 0 ) ||	/* Not really an overflow, but definitely an error */
         ( b == -1 && a == MinLong ) ) {
@@ -3023,9 +3013,7 @@ int *over_flowp;
 
 /* MinLong / -1 overflows; need div3 too */
 
-word neg(a, over_flowp)
-word a;
-int *over_flowp;
+word neg(word a, int *over_flowp)
 {
    if (a == MinLong) {
       *over_flowp = 1;

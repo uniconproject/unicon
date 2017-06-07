@@ -335,6 +335,25 @@ procedure yyprint(node)
 	    }	
          else if node.label == "BPmatch" then {
 	    iconc_fd := 1	    
+
+	    # Determine the line number of leftmost token.  Use it to emit
+	    # a #line directive if needed.
+	    # Conceivably might need to get trickier than this while loop.
+	    leftmost := node
+	    while type(leftmost) == "treenode" do {
+	       leftmost := leftmost.children[1]
+	       }
+	    write(&errout, "after looping, leftmost child is ", type(leftmost))
+	    if type(leftmost) == "token" then {
+	       if outline ~=== leftmost.line then {
+		  write(yyout,"\n#line ", leftmost.line-1," \"", leftmost.filename,"\"")
+		  outline := leftmost.line
+		  outcol := 1
+		  if leftmost.column > 1 then writes(yyout, repl(" ",leftmost.column-1))
+		  outfilename := leftmost.filename
+		  }
+	       }
+
 	    writes(yyout, "( \"\" ? pattern_match(")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")

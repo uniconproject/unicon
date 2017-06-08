@@ -8,13 +8,17 @@
 
 $include "evdefs.icn"
 $include "defaults.icn"
+$include "patdefs.icn"
 
 class Stepping(
    DState,      # (Alias) object of type State class
    step_count,  # the cmdStep optional counter, initial value 0, default 1
    next_count,  # the cmdNext optional counter, initial value 0, default 1
    nex_level,   # used with the next command to skip over a call
-   msg          # a string with latest message from this class 
+   msg,         # a string with latest message from this class
+   pline,       # stores the previous pattern line number
+   ppos,        # stores the previous cursor position for pattern match      
+   pelem        # stores the current pelem being match
    )
 
 #
@@ -24,6 +28,8 @@ class Stepping(
 method checkNext()
    local  level
    static once:=0 # To help not coming back to the calling line
+
+   if \ pline then pline := &null
 
    level := keyword("level", Monitored)
 
@@ -76,6 +82,8 @@ end
 #
 method cmdReturn(cmd)
 
+   if \ pline then pline := &null  
+
    if DState.State = PAUSE & DState.RunCode ~= ERROR then {
       #if count := integer(cmd[2]) then
       #   next_count := count
@@ -100,15 +108,23 @@ end
 method checkStep()
    local cur_line, cur_file
 
+   cur_file := keyword("file", Monitored)
+   cur_line := keyword("line", Monitored)
+
+   if DState.RunCode = PSTEP then {
+      pline := &null 
+      msg := "\n   No pattern event detected before: " || cur_file ||
+             ", line " || cur_line
+      msg||:= "\n   Stepping \n"
+      DState.Write(msg)
+      }
+
    if step_count > 1 then {
       step_count -:= 1
       DState.State := RUN
       DState.RunCode := STEP
       }
    else if step_count = 1 then {
-      cur_file := keyword("file", Monitored)
-      cur_line := keyword("line", Monitored)
-
       if cur_file == "__faux.icn" then {
 	 DState.State := RUN
 	 DState.RunCode := STEP
@@ -117,7 +133,7 @@ method checkStep()
 
       step_count -:= 1
 
-      msg  :="\n   file "||cur_file||", line "||cur_line||"."
+      msg:="\n   file "||cur_file||", line "||cur_line||"."
       msg||:="\n   "||cur_line-1||":"||
              DState.srcFile.getSrcLine(cur_file, cur_line-1)
       msg||:="\n-->"||cur_line||":"||
@@ -156,10 +172,114 @@ method cmdStep(cmd)
 end
 
 #
+# while step_count > 0, keep step until it is 0,
+# then stop there and make State := PSTEP
+#
+method checkPStep()
+   local cur_line, cur_file
+
+   ## the way patterns are organized sometimes
+   ## the ipc is associated the pattern creation
+   ## line rather than the line the match happens at
+   ## to avoid this we use a member variable pline to
+   ## store the current pattern match line
+
+   cur_file := keyword("file", Monitored)
+   if / pline then {
+      cur_line := keyword("line", Monitored)
+      pline := cur_line
+   }
+   else cur_line := pline
+
+   if step_count > 1 then {
+      step_count -:= 1
+      DState.State := RUN
+      DState.RunCode := PSTEP
+      }
+   else if step_count = 1 then {
+      if cur_file == "__faux.icn" then {
+	 DState.State := RUN
+	 DState.RunCode := PSTEP
+	 return
+	 }
+
+      step_count -:= 1
+
+      if &eventcode = E_PatAttempt then {
+         ppos := 1
+         msg := "\n    Pattern match started"
+         msg ||:="\n   file "||cur_file||", line "||cur_line||"."
+         msg||:="\n   "||cur_line-1||":"||
+                DState.srcFile.getSrcLine(cur_file, cur_line-1)
+         msg||:="\n-->"||cur_line||":"||
+                DState.srcFile.getSrcLine(cur_file, cur_line)
+         msg||:="\n   "||cur_line+1||":"||
+         DState.srcFile.getSrcLine(cur_file, cur_line+1)
+         DState.Write(msg)
+      }
+      else if &eventcode = E_PelemMatch |
+              &eventcode = E_PelemFail then {
+         case pelem of {
+         PC_RTab_Nat | PC_RTab_NF  | PC_RTab_NP  | PC_RTab_NMF : {
+            msg := "\n   RTab"
+            }
+         PC_Assign_Imm | PC_Assign_OnM :{
+            msg := "\n   Assignment"
+            }
+         default :{
+            msg := "\n   file " || cur_file || ", line " || cur_line
+                   || ", pattern TBD"
+            if &pos ~= ppos then {
+               &subject ? {
+                  tab(ppos)
+                  prvMatch := tab(&pos)
+                  }
+               msg ||:= "\n   Previous Match: \"" || prvMatch || "\""  
+               msg ||:= "\n   Next Pattern Element: To be implemented"
+               }
+            }
+         }
+      }
+      DState.Write(msg)
+      DState.State := PAUSE
+      DState.RunCode := PSTEP
+}
+end
+
+#
+# Steps during pattern execution or on line if a
+# E_Line event has been triggered. 
+# [pstep], [pstep n]; n's default value is one
+#
+method cmdPStep(cmd)
+   local count
+
+   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
+      if count := integer(cmd[2]) then
+         step_count := count
+      else
+         step_count := 1
+      DState.Update(PSTEP)
+      DState.Write("   Pattern Stepping.")
+      }
+   else {
+      DState.State := ERROR
+      msg := "\n   The program is not being run._
+              \n   Try \"run\", or Type \"help\" for assistance"
+      DState.Write(msg)
+      }
+end
+
+method recordPelem()
+   pelem := &eventvalue
+end
+#
 # Continue the full speed execution after a PAUSE
 # [cont]
 #
 method cmdContinue()
+
+   if \ pline then pline := &null
 
    if DState.State = PAUSE & DState.RunCode ~= ERROR then{
       DState.Update(CONTINUE)
@@ -171,6 +291,12 @@ method cmdContinue()
               \n   Try \"run\", or Type \"help\" for assistance"
       DState.Write(msg)
       }
+end
+
+method clearPStep()
+   pline := &null
+   ppos := 1
+   pelem := &null
 end
 
 #

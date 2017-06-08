@@ -11,7 +11,7 @@ COBJ = $(LNAME).o
 CSRC = $(LNAME).c
 
 # @Replace: If additinal libraries need to be linked in append them here:
-$MYLIBS=$(LIBS)
+MYLIBS=$(LIBS)
 
 # Relative to top level
 BASE=../../..
@@ -21,6 +21,6 @@ TDIR=../..
 
 include ../Makedefs
 
-default:	$(LIBD)/$(LNAME).u $(TLIB)
+default:	$(LIBD)/$(LNAME).u
 
 

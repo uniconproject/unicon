@@ -21,6 +21,5 @@ TDIR=../..
 
 include ../Makedefs
 
-default:	$(LIBD)/$(LNAME).u $(TLIB)
-
+default:	 $(LIBD)/$(LNAME).u
 

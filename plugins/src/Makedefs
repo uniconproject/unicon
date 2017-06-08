@@ -17,8 +17,6 @@ CFDYN2= $(CFDYN) $(CFLAGS) -D_GNU_SOURCE -std=c11
 
 .SUFFIXES: .c .o
 
-do:	   default
-
 all:	   default
 
 # target lib
@@ -35,12 +33,12 @@ $(TLIB): $(COBJ)
 	cp $(TLIB) $(LIBD)
 	
 # Unicon interface
-$(LIBD)/%.u:	%.icn $(CSRC)
+$(LIBD)/%.u: %.icn  $(TLIB)
 	cp $< $(LIBD)/
 	cd $(LIBD); $(UC) $(UFLAGS) $< uso.u
 	rm $(LIBD)/$<
 
-%.o:	%.c
+%.o: %.c
 	$(CC) $(CFDYN2) -c $<
 
 zip:

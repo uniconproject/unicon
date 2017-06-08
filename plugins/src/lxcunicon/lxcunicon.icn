@@ -1,13 +1,20 @@
 #
-# Jafar Al-Gharaibeh
-# 09/29/2016
+#
 #
 
 package LXC
 
 global LXC
 
+#
+# This is the main LXC plugin class. It holds references to the C functions
+# And also provides utility functions to be used with lxc containers. 
+#
+# @Author Jafar Al-Gharaibeh
+#         09/29/2016
+
 class LXC : uso::USO (
+    # Variables to hold C functions references
     LXCCreate,
     LXCStart,
     LXCAttach,
@@ -22,23 +29,38 @@ class LXC : uso::USO (
     LXCClone,
     LXCRename,
     LXCInit,
+    # 
     vernum,
     ark,
     errorTable
     )
 
-   method exist(name)
-      return LXCExist(\name)
+   #
+   # Check whether a container exists
+   # @param name the name of the container
+   #
+   method exist(name:string)
+      return LXCExist(name)
    end
 
-   method container(name)
-      return LXContainer(\name)
+   #
+   # Create a container
+   # @param name the name of the container
+   #
+   method container(name:string)
+      return LXContainer(name)
    end
 
+   #
+   # Return the version of the underlying lxc library
+   #
    method version()
       return vernum
    end
 
+   #
+   # Return the architecture of the current system
+   #
    method arch()
       return ark
    end
@@ -48,6 +70,7 @@ class LXC : uso::USO (
    end
 
    initially(path)
+       # Load the shared library and setup the various function references to C
       /path	   :="../lib/lxcunicon.so"
       ((LXCCreate  := loadfunc(path, "create")),
       (LXCStart    := loadfunc(path, "start")),
@@ -91,42 +114,86 @@ class LXContainer(
             arch,
             handle,
             lasterrorcode
-            )
-   method creat(d, r, a)
+		  )
+   #
+   # Create an lxc container
+   # @param d the OS distribution of the container
+   # @param r the desired release
+   # @param a the desired architecture
+   # @example
+   # @   c.creat("ubuntu", "trusty", "amd64")
+   # @   c.creat("fedora", "22", "i386")
+   #
+   method creat(d:string, r:string, a:string)
       dist := \d; release := \r; arch := \a
       return handle := LXC.LXCCreate(name, dist, release, arch)
    end
-   
+
+   #
+   # Check whether this container exists (created already)
+   #   
    method exist()
       return handle := LXC.LXCExist(name)
    end
-   
+
+   #
+   # Start/boot the container
+   #      
    method start()
       /handle := name
       return handle := LXC.LXCStart(handle)
    end
 
-   method attach(arg, stdi, stdo, stde)
+   #
+   # Perform an attach operation on the container and execute the list of  
+   # commands in args
+   # @param arg
+   # @param stdi file to use as a standard input
+   # @param stdo file to use as a standard output
+   # @param stde file to use as a standard error
+   #   
+   method attach(arg:string, stdi, stdo, stde)
       string(arg) & (arg || " X")
       return LXC.LXCAttach(handle, arg, stdi, stdo, stde)
    end
-   
+
+   #
+   # Reboot the container
+   #
+
    method reboot()
       return LXC.LXCReboot(handle)
    end
+
+   #
+   # Report the state of the container
+   #
 
    method state()
       return LXC.LXCState(handle)
    end
 
+   #
+   # Shutdown the container
+   # @param timeout time to wait before forcing a shudtown
+   #
+
    method shutdown(timeout:30)
       return LXC.LXCShutdown(handle, timeout)
    end
+
+   #
+   # Stop the container
+   # @param timeout time to wait before forcing a stop
+   #
 
    method stop(timeout:30)
       return LXC.LXCStop(handle, timeout)
    end
 
+   #
+   # Remove the container completely from the system
+   #
    method destroy()
       return LXC.LXCDestroy(handle)
    end

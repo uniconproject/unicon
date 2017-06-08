@@ -14,7 +14,6 @@
  ***
 */
  
-#include "../icall.h"
 #include <lxc/lxccontainer.h>
 #include <string.h>
 #include <stdio.h>

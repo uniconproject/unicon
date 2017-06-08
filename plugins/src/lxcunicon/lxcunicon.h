@@ -14,6 +14,22 @@
  ***
 */
 
+#include "../icall.h"
+
+/**********************************************************/
+/*                    Plugin C API                        */
+/**********************************************************/
+
+/*
+ *  @function{1} bitcount(value@i)
+ *  @return : i
+ *
+ *  count bits in an integer
+ *
+ *  returns the number of bits that are set in the integer i.
+ *  It works only for "normal" integers, not large integers.
+ *
+ */
 word
 lxcinit(int argc, descriptor *argv);
 

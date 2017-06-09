@@ -1289,7 +1289,7 @@ procedure regexp(n)
 			   return node("concat", newt,
 			     "pattern_alternate("|| n.children[1].s ||",\"\"))")
 			   }
-			default: runerr("regex error: surprise token " ||
+			default: stop("regex error: surprise token ",
 					image(n.children[1].s))
 			}
 		     }
@@ -1298,7 +1298,7 @@ procedure regexp(n)
 				 regexp(n.children[1]),", \"\")")
 		     }
 		  default: {
-		     runerr("regex error: operand to ? supported")
+		     stop("regex error: operand to ? supported")
 		     }
 		  }
 	       }
@@ -1353,7 +1353,6 @@ procedure csetify(n)
 	       return n.s
 	       }
 	    default: {
-	       runerr("csetify", n.tok)
 	       stop("csetify ", image(n.tok))
 	       }
 	    }

@@ -34,7 +34,7 @@ Clean:
 
 Makefiles:
 	-if [ -f ../$(name)/top.hdr ]; \
-	    then echo "found top.hdr" && cat ../$(name)/top.hdr ../Config/top.mak > $(TOPDIR)/Makefile;
+	    then echo "found top.hdr" && cat ../$(name)/top.hdr ../Config/top.mak > $(TOPDIR)/Makefile; fi
 	cat ../Config/rtt.mak > $(SRCDIR)/rtt/Makefile
 	cat ../Config/common.mak > $(SRCDIR)/common/Makefile
 	cat ../Config/iconc.mak > $(SRCDIR)/iconc/Makefile

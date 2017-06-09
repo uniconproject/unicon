@@ -1,4 +1,53 @@
-AC_INIT([Unicon],[12.1],[jeffery@cs.uidaho.edu])
+AC_INIT([Unicon],[13.0],[jeffery@cs.uidaho.edu], [Unicon], [http://www.unicon.org])
+
+AC_CANONICAL_HOST
+
+# not needed yet
+#AC_CANONICAL_BUILD	
+#AC_CANONICAL_TARGET
+
+
+case $host_os in
+     *linux*)
+        unicon_host="$host_cpu"_linux
+        ;;
+     *solaris*)
+        unicon_host="$host_cpu"_solaris
+        ;;
+     *aix*)
+        unicon_host="$host_cpu"_aix
+        ;;
+     *bsd*)
+       # freebsd for now
+        unicon_host="$host_cpu"_freebsd
+        ;;
+     *darwin*)
+        unicon_host="$host_cpu"_macos
+        ;;
+     *cygwin*)
+        unicon_host="$host_cpu"_windows
+        ;;
+esac
+
+echo "##########################################"
+echo "Configuring Unicon Host: $unicon_host"
+echo "##########################################"
+
+AC_ARG_ENABLE([graphics], [AS_HELP_STRING([--disable-graphics], [Build without the graphics subsystem])], [graphics=no], [graphics=yes])
+#AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
+
+
+
+if test "x$graphics" = xyes; then
+  echo "Building with graphics..."
+  make -C config/unix Setup-Graphics name=$unicon_host
+else
+  echo "Building without graphics..."
+  make -C config/unix Setup-NoGraphics name=$unicon_host
+fi
+
+AC_GNU_SOURCE
+
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 AC_PROG_CC
 AC_PROG_CXX
@@ -25,27 +74,43 @@ AC_REPLACE_FUNCS(getopt)
 AC_FUNC_FORK()
 AC_CHECK_LIB(dbm,main)
 AC_CHECK_LIB(ndbm,main)
-AC_SEARCH_LIBS([getaddrinfo],[socket],AC_DEFINE(HAVE_GETADDRINFO))
-AC_SEARCH_LIBS([clock_gettime],[rt],AC_DEFINE(HAVE_CLOCK_GETTIME))
-AC_SEARCH_LIBS([crypt],[crypt],AC_DEFINE(HAVE_CRYPT))
-AC_CHECK_FUNC(getrusage,AC_DEFINE(HAVE_GETRUSAGE))
-AC_CHECK_FUNC(sysconf,AC_DEFINE(HAVE_SYSCONF))
-AC_CHECK_FUNC(profil,AC_DEFINE(HAVE_PROFIL))
+
+AC_SEARCH_LIBS([getaddrinfo],[socket],
+	[AC_DEFINE([HAVE_GETADDRINFO], [1], [getaddinfo])])
+AC_SEARCH_LIBS([clock_gettime],[rt],
+	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [gettime])])
+AC_SEARCH_LIBS([crypt],[crypt],
+	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
+
+AC_CHECK_FUNC(getrusage,
+	[AC_DEFINE([HAVE_GETRUSAGE], [1], [getrusage])])
+AC_CHECK_FUNC(sysconf,
+	[AC_DEFINE([HAVE_SYSCONF], [1], [sysconf])])
+AC_CHECK_FUNC(profil,
+	[AC_DEFINE([HAVE_PROFIL], [1], [profil])])
+	
 CHECK_FREETYPE()
-CHECK_FTGL()
 CHECK_OGG()
 CHECK_SDL()
 CHECK_SMPEG()
 CHECK_OPENAL()
 CHECK_VOICE()
+
 CHECK_ZLIB()
-CHECK_XLIB()
-CHECK_JPEG()
-CHECK_PNG()
-CHECK_OPENGL()
+
+if test "$graphics" = yes; then
+  CHECK_XLIB()
+  CHECK_XFT()
+  CHECK_JPEG()
+  CHECK_PNG()
+  CHECK_OPENGL()
+  CHECK_FTGL()
+fi
+
 CHECK_ODBC()
 CHECK_PTHREAD()
 CHECK_OPENSSL()
+
 AC_CHECK_FUNCS(getrlimit setrlimit strerror strerror_r vfork)
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
@@ -53,7 +118,6 @@ AC_VAR_TIMEZONE_EXTERNALS()
 AC_STRUCT_TIMEZONE()
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
-CHECK_XFT()
 AC_OUTPUT
 
 echo "" 
@@ -122,3 +186,14 @@ echo    "|___.* Misc"
 /bin/echo -n "    |--> SSL       : "
 if test "$openssl_cv_libssl"      = yes ; then echo "yes"; else echo "no"; fi 
 echo ""
+
+if test "$xlib_cv_libx" = yes ; then
+  echo "Think we found X11, you are good to go."
+else
+  if test "$graphics" = yes; then
+     echo "X11 libraries or headers missing; graphics"
+     echo "not enabled. "
+  fi
+fi
+
+echo Remember to add unicon/bin to your path

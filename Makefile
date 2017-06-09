@@ -6,6 +6,9 @@ VERSION=v940
 name=unspecified
 dest=/must/specify/dest/
 
+doit: XUnicon
+
+
 help:
 	@echo
 	@echo Unicon Build Instructions:
@@ -57,18 +60,12 @@ config/unix/$(name)/status src/h/define.h:
 
 # Configure the code for a specific system.
 
-Configure:	config/unix/$(name)/status
-		$(MAKE) Pure >/dev/null
-		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-		$(MAKE) cfg
-		@echo Remember to add unicon/bin to your path
+Configure:
+		./configure --disable-graphics
 
-cfg:
-		sh ./configure --without-xlib --without-jpeg --without-png \
-		--without-opengl --without-xft --without-FTGL CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
+X-Configure:
+		./configure
 
-x-cfg:
-		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 Thin-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -76,18 +73,6 @@ Thin-Configure:	config/unix/$(name)/status
 		@echo 'using ./thin for Thin configuration'
 		sh ./thin
 
-X-Configure:	config/unix/$(name)/status
-		$(MAKE) Pure >/dev/null
-		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
-		$(MAKE) x-cfg
-		@if grep -q "HAVE_LIBX11 1" src/h/auto.h; then \
-			echo "Think we found X11, you are good to go."; \
-		else \
-			$(MAKE) Configure name=$(name); \
-			echo "X11 libraries or headers missing; graphics" ; \
-			echo "not enabled. " ; \
-		fi
-		@echo Remember to add unicon/bin to your path
 
 Thin-X-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -99,7 +84,7 @@ V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
 		-cd src/lib/voice; $(MAKE)
 		cd config/unix; $(MAKE) Setup-NoGraphics name=$(name)
-		$(MAKE) cfg
+		sh ./configure --disable-graphics CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 
 VX-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null

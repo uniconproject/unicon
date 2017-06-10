@@ -666,7 +666,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -760,7 +759,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1013,15 +1011,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1159,7 +1148,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1312,7 +1301,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -2724,28 +2712,44 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 #AC_CANONICAL_BUILD
 #AC_CANONICAL_TARGET
 
+case $host_cpu in
+     *armv7*)
+        unicon_cpu="arm_32"
+        ;;
+     *armv6*)
+        unicon_cpu="arm_32"
+        ;;
+     *armv8*)
+        unicon_cpu="arm_64"
+        ;;
+     *)
+        unicon_cpu="$host_cpu"
+        ;;
+esac
 
 case $host_os in
      *linux*)
-        unicon_host="$host_cpu"_linux
+        unicon_os="linux"
         ;;
      *solaris*)
-        unicon_host="$host_cpu"_solaris
+        unicon_os="solaris"
         ;;
      *aix*)
-        unicon_host="$host_cpu"_aix
+        unicon_os="aix"
         ;;
      *bsd*)
        # freebsd for now
-        unicon_host="$host_cpu"_freebsd
+        unicon_os="freebsd"
         ;;
      *darwin*)
-        unicon_host="$host_cpu"_macos
+        unicon_os="macos"
         ;;
      *cygwin*)
-        unicon_host="$host_cpu"_windows
+        unicon_os="windows"
         ;;
 esac
+
+unicon_host="$unicon_cpu"_"$unicon_os"
 
 echo "##########################################"
 echo "Configuring Unicon Host: $unicon_host"

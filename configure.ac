@@ -6,28 +6,44 @@ AC_CANONICAL_HOST
 #AC_CANONICAL_BUILD	
 #AC_CANONICAL_TARGET
 
+case $host_cpu in
+     *armv7*)
+        unicon_cpu="arm_32"
+        ;;	
+     *armv6*)
+        unicon_cpu="arm_32"
+        ;;
+     *armv8*)
+        unicon_cpu="arm_64"
+        ;;	
+     *)
+        unicon_cpu="$host_cpu"
+        ;;
+esac
 
 case $host_os in
      *linux*)
-        unicon_host="$host_cpu"_linux
+        unicon_os="linux"
         ;;
      *solaris*)
-        unicon_host="$host_cpu"_solaris
+        unicon_os="solaris"
         ;;
      *aix*)
-        unicon_host="$host_cpu"_aix
+        unicon_os="aix"
         ;;
      *bsd*)
        # freebsd for now
-        unicon_host="$host_cpu"_freebsd
+        unicon_os="freebsd"
         ;;
      *darwin*)
-        unicon_host="$host_cpu"_macos
+        unicon_os="macos"
         ;;
      *cygwin*)
-        unicon_host="$host_cpu"_windows
+        unicon_os="windows"
         ;;
 esac
+
+unicon_host="$unicon_cpu"_"$unicon_os"
 
 echo "##########################################"
 echo "Configuring Unicon Host: $unicon_host"

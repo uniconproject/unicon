@@ -49,12 +49,25 @@ echo "##########################################"
 echo "Configuring Unicon Host: $unicon_host"
 echo "##########################################"
 
-AC_ARG_ENABLE([graphics], [AS_HELP_STRING([--disable-graphics], [Build without the graphics subsystem])], [graphics=no], [graphics=yes])
+AC_ARG_ENABLE([graphics],
+	[AS_HELP_STRING([--disable-graphics], [Build the graphics subsystem])],
+			[graphics=no], [graphics=yes])
+AC_ARG_ENABLE([graphics3d],
+	[AS_HELP_STRING([--disable-graphics3d], [Add 3D graphics support])],
+		        [graphics3d=no], [graphics3d=yes])
+AC_ARG_ENABLE([concurrency],
+	[AS_HELP_STRING([--disable-concurrency], [Build with concurrent thread support])],
+			[concurrency=no], [concurrency=yes])
+AC_ARG_ENABLE([pattern],
+	[AS_HELP_STRING([--disable-pattern], [Build with pattern type support])],
+			[pattern=no], [pattern=yes])
+AC_ARG_ENABLE([thin],
+	[AS_HELP_STRING([--enable-thin], [Do a minimalist build (thin build)])],
+			[thin=yes], [thin=no])
+
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
-
-
-if test "x$graphics" = xyes; then
+if test "x$graphics" = "xyes"; then
   echo "Building with graphics..."
   make -C config/unix Setup-Graphics name=$unicon_host
 else

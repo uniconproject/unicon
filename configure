@@ -692,6 +692,10 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_graphics
+enable_graphics3d
+enable_concurrency
+enable_pattern
+enable_thin
 with_freetype
 with_ogg
 with_libsdl
@@ -1334,7 +1338,11 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --disable-graphics      Build without the graphics subsystem
+  --disable-graphics      Build the graphics subsystem
+  --disable-graphics3d    Add 3D graphics support
+  --disable-concurrency   Build with concurrent thread support
+  --disable-pattern       Build with pattern type support
+  --enable-thin           Do a minimalist build (thin build)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2762,11 +2770,38 @@ else
   graphics=yes
 fi
 
+# Check whether --enable-graphics3d was given.
+if test "${enable_graphics3d+set}" = set; then :
+  enableval=$enable_graphics3d; graphics3d=no
+else
+  graphics3d=yes
+fi
+
+# Check whether --enable-concurrency was given.
+if test "${enable_concurrency+set}" = set; then :
+  enableval=$enable_concurrency; concurrency=no
+else
+  concurrency=yes
+fi
+
+# Check whether --enable-pattern was given.
+if test "${enable_pattern+set}" = set; then :
+  enableval=$enable_pattern; pattern=no
+else
+  pattern=yes
+fi
+
+# Check whether --enable-thin was given.
+if test "${enable_thin+set}" = set; then :
+  enableval=$enable_thin; thin=yes
+else
+  thin=no
+fi
+
+
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
-
-
-if test "x$graphics" = xyes; then
+if test "x$graphics" = "xyes"; then
   echo "Building with graphics..."
   make -C config/unix Setup-Graphics name=$unicon_host
 else

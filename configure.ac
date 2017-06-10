@@ -16,6 +16,12 @@ case $host_cpu in
      *armv8*)
         unicon_cpu="arm_64"
         ;;	
+     *i386*)
+        unicon_cpu="x86_32"
+        ;;	
+     *i686*)
+        unicon_cpu="x86_32"
+        ;;	
      *)
         unicon_cpu="$host_cpu"
         ;;

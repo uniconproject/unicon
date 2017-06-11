@@ -118,7 +118,7 @@ Icon V9 & By this point, \texttt{sbrk()} is abandoned and multiple,
           must first suspend every other thread before proceeding.}\\
 \end{xtabular}
 
-\section[11.1 Memory Layout]{11.1 Memory Layout}
+\section{Memory Layout}
 
 During the execution of an Icon program, memory is logically divided
 into several areas based on how the memory is used. The word
@@ -290,7 +290,7 @@ must also recognize that the garbage collection algorithm is
 recursive, and given large enough structures, it will trigger stack
 overflows and machine crashes.
 
-\section[11.2 Allocation]{11.2 Allocation}
+\section{Allocation}
 
 \PrimaryIndexBegin{Allocation}
 Storage allocation in Icon is designed to be fast and simple. Garbage
@@ -304,7 +304,7 @@ other rationale for this approach is that the storage requirements of
 Icon do not readily lend themselves to more complex allocation
 strategies.
 
-\subsection[11.2.1 The Static Region]{11.2.1 The Static Region}
+\subsection{The Static Region}
 
 The ``static region'' is now a logical rather than physical
 designation, denoting potentially many discontiguous blocks of memory.
@@ -326,7 +326,7 @@ coalescing it with adjacent free blocks if possible. See Kernighan and
 Ritchie 1978 for a discussion of free-list allocation.
 
 
-\subsection[11.2.2 Blocks]{11.2.2 Blocks}
+\subsection{Blocks}
 
 \PrimaryIndex{Allocated block region}
 For other kinds of blocks, Icon takes advantage of the fact that its
@@ -364,7 +364,7 @@ exchanged for the process of reclaiming unused blocks and rearranging
 the block region so that all the free space is in one contiguous
 portion of the block region. This is done during garbage collection.
 
-\subsection[11.2.3 Strings]{11.2.3 Strings}
+\subsection{Strings}
 
 \PrimaryIndex{Allocated string region}
 There is even less justification for a free-list approach for
@@ -401,7 +401,7 @@ request.
 \PrimaryIndexEnd{Allocation}
 
 
-\section[11.3 Garbage Collection]{11.3 Garbage Collection}
+\section{Garbage Collection}
 
 \PrimaryIndexBegin{Garbage collection}
 Allocation is simple, but garbage collection is not. The primary
@@ -444,7 +444,7 @@ new locations. There are two phases in garbage collection
 oriented toward saving ``non-garbage'' objects; garbage disappears as
 a byproduct of this operation.
 
-\subsection[11.3.1 The Basis]{11.3.1 The Basis}
+\subsection{The Basis}
 
 The challenging problem for garbage collection is the location of
 objects that have to be saved, as well as all pointers to them. An
@@ -527,7 +527,7 @@ point to a list-header block that in turn points to a list-element
 block that contains elements pointing to strings and other
 blocks. Pointer chains also can be circular.
 
-\subsection[11.3.2 The Location Phase]{11.3.2 The Location Phase}
+\subsection{The Location Phase}
 
 For historical reasons, the location phase is sometimes called
 \textit{marking}. This term refers to the common practice of setting
@@ -1077,7 +1077,7 @@ pointed to by \texttt{cp}. The macro \texttt{BlkSize(cp)} uses the
 array \texttt{bsizes} to determine the size of the block pointed to by
 \texttt{cp}.
 
-\subsection[11.3.3 Pointer Adjustment and Compaction]{11.3.3 Pointer Adjustment and Compaction}
+\subsection{Pointer Adjustment and Compaction}
 
 \textbf{Strings}. When the location phase is complete, quallist
 contains a list pointers to all the qualifiers whose v-words point to
@@ -1672,7 +1672,7 @@ char *source;\\
 
 The routine \texttt{mvc(n, source, dest)} moves n bytes from source to dest.
 
-\subsection[11.3.4 Collecting Co-Expression Blocks]{11.3.4 Collecting Co-Expression Blocks}
+\subsection{Collecting Co-Expression Blocks}
 
 After the location phase of garbage collection is complete, all the
 live co-expression blocks are marked, but the dead co-expression
@@ -1724,7 +1724,7 @@ static void cofree()\\
 \}
 \end{iconcode}
 
-\subsection[11.3.5 Multiple Regions]{11.3.5 Multiple Regions}
+\subsection{Multiple Regions}
 
 Garbage collection may not produce enough free space in a region to
 satisfy the request that caused the garbage collection. In this case,
@@ -1772,7 +1772,7 @@ multi-threaded programs and how garbage collection is coordinated
 when several threads are active.
 }
 
-\subsection[11.3.6 Storage Requirements during Garbage Collection]{11.3.6 Storage Requirements during Garbage Collection}
+\subsection{Storage Requirements during Garbage Collection}
 
 Garbage collection itself takes some work space. Space for pointers to
 qualifiers is provided in \texttt{quallist}, while C stack space is
@@ -1832,7 +1832,7 @@ needed in recursive calls, and by incorporating the code for
 processing co-expression blocks in \texttt{markblock()}, rather than
 calling a separate routine.
 
-\section[11.4 Predictive Need]{11.4 Predictive Need}
+\section{Predictive Need}
 
 In most systems that manage allocated storage dynamically, garbage
 collections are triggered by allocation requests that cannot be

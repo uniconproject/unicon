@@ -39,7 +39,7 @@ every context and to all kinds of data has a pervasive effect on the
 implementation.
 
 
-\section[9.1 Bounded Expressions]{9.1 Bounded Expressions}
+\section{Bounded Expressions}
 
 A clear understanding of the semantics of expression evaluation in
 Icon is necessary to understand the implementation.  One of the most
@@ -198,7 +198,7 @@ The two bounded expressions ensure that the expressions are evaluated
 independently of each other and any surrounding context. For example,
 if $expr_2$ fails, there is no control backtracking into $expr_1$.
 
-\subsection[9.1.1 Expression Frames]{9.1.1 Expression Frames}
+\subsection{Expression Frames}
 
 In the implementation of Icon, the scope of backtracking is delineated
 by \textit{expression frames}. The virtual machine instruction
@@ -336,7 +336,7 @@ of evaluating compound expressions, such as
 \end{center}
 
 
-\section[9.2 Failure]{9.2 Failure}
+\section{Failure}
 
 The interesting aspects of implementing expression evaluation in Icon
 can be divided into two cases: without generators and with
@@ -526,7 +526,7 @@ current procedure call (see Sec. 10.3), and then transfers to
 \texttt{efail}.
 
 
-\section[9.3 Generators and Goal{}-Directed Evaluation]{9.3 Generators and Goal-Directed Evaluation}
+\section{Generators and Goal-Directed Evaluation}
 
 The capability of an expression not to produce a result is useful for
 controlling program flow and for bypassing unneeded computation, but
@@ -1094,13 +1094,13 @@ same as it was when the current expression frame was created. Note
 that there are several cases in addition to \texttt{unmark} where
 unwinding is necessary.
 
-\section[9.4 Generative Control Structures]{9.4 Generative Control Structures}
+\section{Generative Control Structures}
 
 In addition to functions and operators that may generate more than one
 result, there are several generative control structures at the level
 of virtual machine instructions.
 
-\subsection[9.4.1 Alternation]{9.4.1 Alternation}
+\subsection{Alternation}
 
 The virtual machine instructions for
 
@@ -1184,7 +1184,7 @@ generator that suspended, it is resumed. Otherwise, control is
 transferred to \texttt{efail} and \texttt{ipc} is set to a value
 corresponding to \texttt{L1}, so that \textit{expr3} is evaluated next.
 
-\subsection[9.4.2 Repeated Alternation]{9.4.2 Repeated Alternation}
+\subsection{Repeated Alternation}
 
 Alternation is the general model for generative control
 structures. Repeated alternation, \texttt{{\textbar}}\textit{expr}, is
@@ -1250,7 +1250,7 @@ changes the failure \texttt{ipc} in the current expression marker on
 the stack.  Subsequent execution of \texttt{mark0} creates a new
 expression frame whose marker has a zero failure \texttt{ipc}.
 
-\subsection[9.4.3 Limitation]{9.4.3 Limitation}
+\subsection{Limitation}
 
 In the limitation control structure,
 
@@ -1312,7 +1312,7 @@ between the end of the last expression or generator frame marker and
 the limit value to the top of the stack. Note that no generator frame
 is needed.
 
-\section[9.5 Iteration]{9.5 Iteration}
+\section{Iteration}
 
 The difference between evaluation and resumption in a loop is
 illustrated by the virtual machine instructions for a conventional
@@ -1383,7 +1383,7 @@ is no generator frame, \texttt{efail} removes its expression frame,
 and failure is transmitted to the enclosing expression frame.
 
 
-\section[9.6 String Scanning]{9.6 String Scanning}
+\section{String Scanning}
 
 String scanning is one of the most useful operations in Icon. Its
 implementation, however, is comparatively simple.  There is no special

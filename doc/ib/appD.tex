@@ -21,7 +21,7 @@ Appendix G which contains a detailed description of the RTL language
 in which the run-time system is written.
 
 
-\section[D.1 File Organization]{D.1 File Organization}
+\section{File Organization}
 
 The Icon system is organized in a hierarchy. Under UNIX, the root of
 the Icon hierarchy is called icon.git/trunk {\color{blue} (the Unicon
@@ -130,7 +130,7 @@ In some cases there is additional sub-structure not shown here.
 \end{picture}
 
 
-\section[D.2 Adding Functions]{D.2 Adding Functions}
+\section{Adding Functions}
 
 There are several conventions and rules of protocol that must be followed
 in writing a new function. The situations that arise most frequently are
@@ -138,7 +138,7 @@ covered in the following sections. The existing functions in f files in
 \textfn{runtime} provide many examples to supplement the information given
 here.
 
-\subsection[D.2.1 Function Declarations]{D.2.1 Function Declarations}
+\subsection{Function Declarations}
 
 A function begins with the RTL header \texttt{function\{...\} name(args)},
 where
@@ -169,7 +169,7 @@ A new function must also be listed via a one-line macro in
 \texttt{FncDef(name,nargs)} and for a variable number of arguments
 the macro is \texttt{FncDefV(name)}.
 
-\subsection[D.2.2 Returning from a Function]{D.2.2 Returning from a Function}
+\subsection{Returning from a Function}
 
 A function returns control to the interpreter by use of one of three
 reserved words
@@ -281,7 +281,7 @@ Note the use of \texttt{fail} at the end of the function; the omission of
 \texttt{fail} would be an error, since returning by flowing off the end of the
 function would not provide the return code that the interpreter expects.
 
-\subsection[D.2.3 Type Checking and Conversion]{D.2.3 Type Checking and Conversion}
+\subsection{Type Checking and Conversion}
 
 Some functions need to perform different operations, depending on the
 types of their arguments. An example is \texttt{type(x)}:
@@ -365,7 +365,7 @@ event, after a successful call to \texttt{cnv\_tstr}, the argument
 is an appropriate qualifier, regardless of whether
 a conversion actually was performed.
 
-\subsection[D.2.4 Constructing New Descriptors]{D.2.4 Constructing New Descriptors}
+\subsection{Constructing New Descriptors}
 
 Some functions need to construct new descriptors to return.  RTL is
 aware that functions return descriptors and given type information,
@@ -406,7 +406,7 @@ constructs an integer descriptor containing the integer \texttt{i} in the
 descriptor \texttt{result}.
 
 
-\subsection[D.2.5 Default Values]{D.2.5 Default Values}
+\subsection{Default Values}
 
 Many functions specify default values for null-valued arguments. There
 are RTL constructs for providing default values. For example,
@@ -421,7 +421,7 @@ however, its value is converted to a string, if possible, by
 \texttt{def\_tstr}. If this is not possible, the function should terminate
 execution with an error message.
 
-\subsection[D.2.6 Storage Allocation]{D.2.6 Storage Allocation}
+\subsection{Storage Allocation}
 
 Functions that construct new data objects often need to allocate
 storage. Allocation is done in the allocated string region or the
@@ -503,7 +503,7 @@ struct b\_cset *alccset()\\
 \noindent
 See Sec. D.5.5 for a complete list of block-allocation functions.
 
-\subsection[D.2.7 Storage Management Considerations]%
+\subsection%
            {D.2.7 Storage Management Considerations}
 
 In addition to assuring that predictive need requests are made before
@@ -554,7 +554,7 @@ when the function is resumed. Instead, the pointer should be kept in
 the v-word of a descriptor that is tended, i.e. accessible to the garbage
 collector.
 
-\subsection[D.2.8 Error Termination]{D.2.8 Error Termination}
+\subsection{Error Termination}
 
 An Icon program may terminate abnormally for two reasons: as the
 result of a source-language programming error (such as an invalid type
@@ -591,7 +591,7 @@ the nature of the error. It is traditional to use calls of the form
 reminder of human frailty.  More informative messages are desirable, of
 course.
 
-\subsection[D.2.9 Header Files]{D.2.9 Header Files}
+\subsection{Header Files}
 
 For RTL .r files, the necessary header files normally will be included
 automatically.  Several of them are processed by rtt itself; its input
@@ -650,7 +650,7 @@ All of these files contain appropriate information for the local
 installation, and no changes in them should be needed.
 
 
-\subsection[D.2.10 Installing a New Function]{D.2.10 Installing a New Function}
+\subsection{Installing a New Function}
 
 Both the linker and the run-time system must know the names of all
 functions. This information is provided in the header file \textfn{h/fdefs.h}.
@@ -666,13 +666,13 @@ take into account the code for the new function. The steps involved in
 recompilation vary from system to system. Information concerning
 recompilation is available in system-specific installation documents.
 
-\section[D.3 Adding Data Types]{D.3 Adding Data Types}
+\section{Adding Data Types}
 
 Adding a new data type is comparatively simple, although there are
 several places where changes need to be made. Failure to make all the
 required changes can produce mysterious bugs.
 
-\subsection[D.3.1 Type Codes]{D.3.1 Type Codes}
+\subsection{Type Codes}
 
 At present, type codes range from 0 to 25 {\color{blue} (31 for
 Unicon)}. Every type must have a distinct type code and corresponding
@@ -697,7 +697,7 @@ All nonstring types have the \texttt{F\_Nqual} flag and their \texttt{T\_}
 type code. Types whose v-words contain pointers also have the
 \texttt{F\_Ptr} flag.
 
-\subsection[D.3.2 Structures]{D.3.2 Structures}
+\subsection{Structures}
 
 A value of a Boolean type such as the one suggested previously can be
 stored in the d-word of its descriptor. However, most types contain
@@ -742,7 +742,7 @@ union \texttt{block} in \textfn{h/rstructs.h}. The order of the fields in a
 new structure must follow the rules (discussed next) imposed by the garbage
 collector.
 
-\subsection[D.3.3 Information Needed for Storage Management]%
+\subsection%
            {D.3.3 Information Needed for Storage Management}
 
 In Icon version 8 and later, allocated data may be referred to in two ways:
@@ -802,7 +802,7 @@ A fifth array, \texttt{blknames}, provides string names for all block
 types. These names are only used for debugging, and an entry should be
 made in \texttt{blknames} for each new data type.
 
-\subsection[D.3.4 Changes to Existing Code]{D.3.4 Changes to Existing Code}
+\subsection{Changes to Existing Code}
 
 In addition to any functions that may be needed for operating on
 values of a new data type, there are several functions and operators
@@ -906,7 +906,7 @@ of these be modified. A good start to locating code that potentially
 requires modification is to search for expressions of the form
 \iconline{case \ldots type( \ldots ) \ldots of}
 
-\section[D.4 Defined Constants and Macros]{D.4 Defined Constants and Macros}
+\section{Defined Constants and Macros}
 
 Defined constants and macros are used heavily in Icon to parameterize
 its code for different operating systems and computer architectures
@@ -923,7 +923,7 @@ constants and macro definitions requires investment of time and
 energy. Once learned, however, coding is faster, simpler, and less
 prone to error.
 
-\subsection[D.4.1 Defined Constants]{D.4.1 Defined Constants}
+\subsection{Defined Constants}
 
 The following defined constants are used frequently in the run-time
 system. This list is by no means exhaustive; for specialized
@@ -945,7 +945,7 @@ WordSize     & number of bytes in a \texttt{word}\\
 \end{xtabular}
 }\\[1ex]
 
-\subsection[D.4.2 Macros]{D.4.2 Macros}
+\subsection{Macros}
 
 The following macros are used frequently in the run-time system.  See
 \textfn{h/rmacros.h} for most of the definitions and the files included by
@@ -990,14 +990,14 @@ Wsizeof(x)        & size of structure \texttt{x} in words\\
 \end{xtabular}
 }\\[1ex]
 
-\section[D.5 Support Routines]{D.5 Support Routines}
+\section{Support Routines}
 
 There are many support routines for performing tasks that occur frequently in
 the Icon run-time system. Most of these routines are in files in \textfn{runtime}
 that begin with the letter r. The uses of many of these support routines have
 been illustrated earlier; what follows is a catalog for reference.
 
-\subsection[D.5.1 Comparison]{D.5.1 Comparison}
+\subsection{Comparison}
 
 The following routines in \textfn{runtime/rcomp.r} perform comparisons:
 
@@ -1028,7 +1028,7 @@ greater than, equal to or less than the number referenced by \texttt{dp2}\\
 
 \end{xtabular}
 
-\subsection[D.5.2 Type Conversion]{D.5.2 Type Conversion}
+\subsection{Type Conversion}
 
 The following routines in \textfn{src/runtime/cnv.r} perform type conversions:
 
@@ -1071,7 +1071,7 @@ that represents an operator, returning 0 if the conversion cannot be performed.\
 
 \end{xtabular}
 
-\subsection[D.5.3 Defaults]{D.5.3 Defaults}
+\subsection{Defaults}
 
 The following routines in \textfn{src/runtime/def.r} produce default values for
 omitted arguments. They are generally called internally by RTL constructs.
@@ -1100,7 +1100,7 @@ descriptor pointed by \texttt{sp} to a string and return 1, but return
 \end{xtabular}
 
 
-\subsection[D.5.4 Allocation]{D.5.4 Allocation}
+\subsection{Allocation}
 
 The following routines in \textfn{runtime/ralc.r} all return pointers to the
 objects they allocate:
@@ -1180,7 +1180,7 @@ Request \texttt{i} bytes of space in the allocated string region.\\
 \end{xtabular}
 }
 
-\subsection[D.5.6 Operations on Structures]{D.5.6 Operations on Structures}
+\subsection{Operations on Structures}
 
 The following routines in \textfn{runtime/rstruct.r} perform operations on structures:
 
@@ -1203,7 +1203,7 @@ otherwise.\\
 
 \end{xtabular}
 
-\subsection[D.5.7 Input and Output]{D.5.7 Input and Output}
+\subsection{Input and Output}
 
 The following routines in \textfn{runtime/rsys.r} perform input and output
 operations:
@@ -1220,7 +1220,7 @@ Write \texttt{i} characters from \texttt{sbuf} on the file specified by \texttt{
 
 \end{xtabular}
 
-\subsection[D.5.8 Error Termination]{D.5.8 Error Termination}
+\subsection{Error Termination}
 
 The RTL construct runerr() can appear appear outside the C code of a
 body or an inline block, reporting errors in parameters, or it may
@@ -1247,7 +1247,7 @@ Terminate execution with system error message \texttt{sbuf}.\\
 
 \end{tabular}
 
-\subsection[D.5.9 Miscellaneous Operations]{D.5.9 Miscellaneous Operations}
+\subsection{Miscellaneous Operations}
 
 The following miscellaneous operations are in \textfn{h/rmacros.h} or \textfn{runtime/rmisc.r}:
 
@@ -1269,7 +1269,7 @@ null-terminated C-style string in \texttt{sbuf}.\\
 
 \end{xtabular}
 
-\subsection[D.5.10 Diagnostics]{D.5.10 Diagnostics}
+\subsection{Diagnostics}
 
 There are two routines in \textfn{runtime/rmemmgt.r} for producing
 diagnostic output. They are not included in the runtime system unless
@@ -1288,7 +1288,7 @@ Write a diagnostic diagram of the allocated block region to standard error outpu
 \end{tabular}
 
 
-\section[D.6 Debugging]{D.6 Debugging}
+\section{Debugging}
 
 Debugging a modification to Icon can be difficult unless the overall structure of
 the Icon system is understood. It is especially important to understand the way
@@ -1322,7 +1322,7 @@ a value, a core dump is produced if an Icon program terminates as a result of
 \texttt{ICONCORE} when making modifications to Icon. For an extended debugging
 session, it may be convenient to set \texttt{dodump} in \textfn{runtime/init.r} to 1.
 
-\section{D.7 Adding new types to the compiler}
+\section{Adding new types to the compiler}
 \newcommand{\toklbra}{\texttt{~~(~~}}%
 \newcommand{\tokrbra}{\texttt{~~)~~}}%
 \newcommand{\toklcbra}{\texttt{~~\{~~}}%
@@ -1349,7 +1349,7 @@ co-expressions are beyond the scope of this section, as are types that
 require special representations and variable types that have special
 dereferencing semantics.
 
-\subsection{D.7.1 The implementation of Icon Types (reprise)}
+\subsection{The implementation of Icon Types (reprise)}
 
 As discussed in part 1 and Appendix A of this compendium, an Icon value is
 implemented as a two-word \textit{descriptor} containing type information
@@ -1372,7 +1372,7 @@ described in more detail below. Types, of course, typically have operations
 associated with them that create and use values of the type.
 
 
-\subsection{D.7.2 The Type Specification System}
+\subsection{The Type Specification System}
 
 Icon types are used in several places in RTL and new types must be added to
 this language. These uses include type checking constructs,
@@ -1431,7 +1431,7 @@ v-words supported by this construct are introduced below as needed. A
 complete grammar for the specification language is given near the end of
 this appendix.
 
-\subsection{D.7.3 Simple Value Types}
+\subsection{Simple Value Types}
 Types with a kind clause of \texttt{simple} are simple in the sense that
 values of the type do not have components that contain other Icon
 values. These types may otherwise have sophisticated semantics.
@@ -1534,7 +1534,7 @@ been covered earlier in section D.3.4.
 At the end of this appendix is a check list of files that must be
 updated when a type is added to Icon.
 
-\subsection{D.7.4 Aggregate Types}
+\subsection{Aggregate Types}
 
 Aggregate types have values with components that are other Icon values.
 The aggregate type specification provides more sophisticated RTL abstract
@@ -1642,7 +1642,7 @@ pointers in the block must be contiguous. The type's entry in the
 \texttt{firstp} array is the location of the first pointer and its
 entry in the \texttt{ptrno} array is the number of pointers.
 
-\subsection{D.7.5 Keyword Variable Types}
+\subsection{Keyword Variable Types}
 
 Keyword variable types have a type specification with a \textit{kind}
 clause of the form
@@ -1736,7 +1736,7 @@ is used to check for such references.
 
 \clearpage
 \newpage
-\subsection{D.7.6 The Complete Grammar for the Type Specification System}
+\subsection{The Complete Grammar for the Type Specification System}
 \begin{ebnf}
 type-def \>\>\>\> \cceq \>\> identifier opt-abrv \tokcolon kind opt-return\\
 \\
@@ -1767,8 +1767,8 @@ opt-return \>\>\>\>  \cceq \>\>nil |\\
 
 \clearpage
 \newpage
-\section[D.8 A check list for adding types]%
-        {D.8 A check list for adding types%
+\section%
+        {A check list for adding types%
         {\hfill\small\textit{(on one page for easy photocopying)}}}
 %
 {\renewcommand{\arraystretch}{0.8}% Squeeze the lines together

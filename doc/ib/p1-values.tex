@@ -64,7 +64,7 @@ Icon's data types, balancing considerations of size, ease of type
 testing, and efficiency of accessing the actual data.
 
 
-\section[4.1 Descriptors]{4.1 Descriptors}
+\section{Descriptors}
 
 Since every Icon value is represented by a descriptor, it is important
 that descriptors be as small as possible. On the other hand, a
@@ -137,7 +137,7 @@ are not visible at the source-language level. The actual values of
 these codes are not important, and they are indicated in diagrams by
 their type code names.
 
-\subsection[4.1.1. Strings]{4.1.1. Strings}
+\subsection{Strings}
 
 There is no type code for strings. They have a special representation
 in which the d-word contains the length of the string (the number of
@@ -173,7 +173,7 @@ d-word. The d-words of qualifiers do not have this \texttt{n} flag, and string
 lengths are restricted to prevent their overflow into this flag
 position, the most significant bit of a 32- or 64-bit dword.
 
-\subsection[4.1.2 The Null Value]{4.1.2 The Null Value}
+\subsection{The Null Value}
 
 A descriptor for the null value has the form
 
@@ -201,7 +201,7 @@ In the diagrams that follow, a null block-pointer is represented as
 Icon version 6 used descriptors in blocks to refer to other blocks (see section
 4.2). Subsequent versions switched to using pointers.
 
-\subsection[4.1.3 Integers]{4.1.3 Integers}
+\subsection{Integers}
 
 Icon supports word-size integers at least 32-bits in size. Such
 integers therefore are typically C longs, depending on the computer
@@ -229,7 +229,7 @@ contained in blocks pointed to by the v-words of their descriptors.
 Thus, there are two internal types for one source-language data type.
 
 
-\section[4.2 Blocks]{4.2 Blocks}
+\section{Blocks}
 
 All other types of Icon data are represented by descriptors with
 v-words that point to blocks of words. These blocks have a
@@ -333,7 +333,7 @@ for all blocks of a given type.
 
 Blocks for the remaining types are described in subsequent chapters.
 
-\section[4.3 Variables]{4.3 Variables}
+\section{Variables}
 
 Variables are represented by descriptors, just as values are. This
 representation allows values and variables to be treated uniformly in
@@ -389,7 +389,7 @@ Note that the variable \texttt{word.count} cannot be determined at
 translation time, since the type of word is not known then and
 different record types could have count fields in different positions.
 
-\subsection[4.3.1 Operations on Variables]{4.3.1 Operations on Variables}
+\subsection{Operations on Variables}
 
 There are two fundamentally different contexts in which a variable can
 be used: \textit{dereferencing} and \textit{assignment}.
@@ -427,7 +427,7 @@ variable descriptor changed:
 These operations on variables correspond to indirect load and store
 instructions of a typical computer.
 
-\subsection[4.3.2 Special Variables]{4.3.2 Special Variables}
+\subsection{Special Variables}
 
 Icon has several variables with special properties that complicate
 assignment and dereferencing. Consider, for example, the keyword
@@ -462,7 +462,7 @@ variables by a \texttt{t} flag. Thus, assignment only has to check a single
 flag to separate the majority of variables from those that require
 special processing.
 
-\subsubsection[4.3.2.1 Trapped Variables]{4.3.2.1 Trapped Variables}
+\subsubsection{Trapped Variables}
 
 Icon Version 6 used the trapped variable approach to handle assignments to
 keywords, substrings and table elements. Subsequent versions of Icon (and
@@ -518,7 +518,7 @@ The trapped-variable mechanism provides a way to handle
 uniformly all such situations.
 
 \PrimaryIndexBegin{Keywords}
-\subsubsection[4.3.2.2 Keyword Variables]{4.3.2.2 Keyword Variables}
+\subsubsection{Keyword Variables}
 Trapped variables are especially useful when dealing with cases where a
 variable sometimes needs special treatment and sometimes not. But keywords
 {\em always} require special treatment, so they have their own types,
@@ -552,7 +552,7 @@ requires no special processing.
 See section 12.2 for a further discussion of keyword variables
 \PrimaryIndexEnd{Keywords}
 
-\section[4.4 Descriptors and Blocks in C]{4.4 Descriptors and Blocks in C}
+\section{Descriptors and Blocks in C}
 
 Descriptors and blocks of data are described and depicted abstractly
 in the previous sections of this chapter. In order to understand the
@@ -565,7 +565,7 @@ and operations that appear frequently in the C code are included as
 well. Other operations are introduced in subsequent chapters. as they
 are needed.
 
-\subsection[4.4.1 Descriptors]{4.4.1 Descriptors}
+\subsection{Descriptors}
 
 As mentioned in Sec. 4.1, for C compilers in which ints and pointers
 are the same size, the size of a word is the size of an int, while if
@@ -619,7 +619,7 @@ The v-word of a descriptor is a union that reflects its various uses:
 an integer, a pointer to a string, a pointer to a block, or a pointer
 to another descriptor (in the case of a variable).
 
-\subsection[4.4.2 Blocks]{4.4.2 Blocks}
+\subsection{Blocks}
 
 Each block type has a structure declaration. For example. the
 declaration for record blocks is
@@ -694,7 +694,7 @@ consists of a union of all block types:
 Note that there are several kinds of blocks in addition to those that
 correspond to source-language data types.
 
-\subsection[4.4.3 Defined Constants]{4.4.3 Defined Constants}
+\subsection{Defined Constants}
 
 The type codes are defined symbolically:
 
@@ -764,7 +764,7 @@ As indicated previously, flags, type codes, and d-words are
 distinguished by the prefixes \texttt{F\_}, \texttt{T\_}, and
 \texttt{D\_}, respectively.
 
-\subsection[4.4.4 RTL Coding]{4.4.4 RTL Coding}
+\subsection{RTL Coding}
 
 Since the optimizing compiler was introduced in versions 8 and 9 of
 Icon, the routines for the run-time system use an extended C syntax

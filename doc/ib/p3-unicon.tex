@@ -12,7 +12,7 @@ call the Unicon translator a preprocessor, but it has many of the
 traits of a compiler.
 
 
-\section[26.1 Overview]{26.1 Overview}
+\section{Overview}
 
 The Unicon translator lives in uni/unicon/. In addition to many Unicon
 source files, it uses the external tools iyacc and merr to generate
@@ -24,7 +24,7 @@ program). Those files that require Unicon itself in order to compile
 are included in precompiled object format (in .u files) in order to
 solve the bootstrapping problem.
 
-\section[26.2 Lexical Analysis]{26.2 Lexical Analysis}
+\section{Lexical Analysis}
 
 Unicon's lexical analyzer is adapted from a hand-written lex-compatible
 scanner written by Bob Alexander and used in the Jcon Java-based
@@ -36,7 +36,7 @@ code to maintain. The lexical analyzer consists of a function
 yylex() located in unicon/uni/unicon/unilex.icn, about 500 lines of
 code.
 
-\subsection[26.2.1 Lex-compatible API]{26.2.1 Lex-compatible API}
+\subsection{Lex-compatible API}
 
 The global declarations that exist in order to provide a
 Lex-compatible API include:
@@ -49,7 +49,7 @@ global yytoken \> \> \> \> \> \> \> \> \> \> \> \# token (a record) \\
 global yylineno, yycolno, yyfilename \> \> \> \> \> \> \> \> \> \> \> \# source location
 \end{iconcode}
 
-\subsection[26.2.2 Character Categories]{26.2.2 Character Categories}
+\subsection{Character Categories}
 
 The lexical analyzer uses several csets for different character
 categories beyond the built-in ones:
@@ -70,7 +70,7 @@ procedure init\_csets() \\
 end
 \end{iconcode}
 
-\subsection[26.2.3 The Token Type]{26.2.3 The Token Type}
+\subsection{The Token Type}
 
 The record type storing each token's information just bundles together
 the syntactic category (an integer), lexeme (a string), and location
@@ -80,12 +80,12 @@ at which the token occurred. This is pretty minimalist.
 record token(tok, s, line, column, filename)
 }
 
-\subsection[26.2.4 Error Handling and Debugging]{26.2.4 Error Handling and Debugging}
+\subsection{Error Handling and Debugging}
 
 Several remaining global variables are mainly used for error handling,
 and for debugging the lexical analyzer itself.
 
-\subsection[26.2.5 Reserved Words]{26.2.5 Reserved Words}
+\subsection{Reserved Words}
 
 Global \texttt{reswords()} creates and becomes a table holding the
 Unicon reserved words. For each word, a pair of integers [tokenflags,
@@ -115,7 +115,7 @@ return t \\
 end
 \end{iconcode}
 
-\subsection[26.2.6 Big-inhale Input]{26.2.6 Big-inhale Input}
+\subsection{Big-inhale Input}
 
 
 A function, \texttt{yylex\_reinit()} is called the first time
@@ -149,7 +149,7 @@ end
 \end{iconcode}
 
 
-\subsection[26.2.7 Semicolon Insertion]{26.2.7 Semicolon Insertion}
+\subsection{Semicolon Insertion}
 
 Icon and Unicon insert semicolons for the programmer
 automatically. This is an easy lexical analyzer trick. The lexical
@@ -262,7 +262,7 @@ instance, which is stored in a global variable.
 end
 \end{iconcode}
 
-\subsection[26.2.8 The Real Lexical Analyzer Function, yylex2()]{26.2.8 The Real Lexical Analyzer Function, yylex2()}
+\subsection{The Real Lexical Analyzer Function, yylex2()}
 
 This function maintains a table of functions, calling a helper
 function depending on what the first character in the token is.
@@ -471,7 +471,7 @@ procedure do\_letters()}
 {\ttfamily\mdseries
 end}
 
-\section[26.3 The Unicon Parser]{26.3 The Unicon Parser}
+\section{The Unicon Parser}
 
 Unicon's parser is written using a YACC grammar; a graduate student
 (Ray Pereda) modified Berkeley's public domain version of YACC (byacc)
@@ -606,7 +606,7 @@ from their unary brethren. The 20 levels of nonterminals approach is
 inherited from Icon and probably makes the parser larger than it has
 to be, but taking these nonterminals out doesn't seem to help much.
 
-\subsection[26.3.1 Syntax Error Handling]{26.3.1 Syntax Error Handling}
+\subsection{Syntax Error Handling}
 
 Icon employed a relatively clever approach to doing syntax error
 messages with YACC --- the parse state at the time of error is enough
@@ -619,7 +619,7 @@ grammar. Merr also considers the current input token in deciding what
 error message to emit, making it fundamentally more precise than
 Icon's approach.
 
-\section[26.4 The Unicon Preprocessor]{26.4 The Unicon Preprocessor}
+\section{The Unicon Preprocessor}
 
 The Icon language originally did not include any preprocessor, but
 eventually, a simple one was introduced, with ability to include
@@ -817,7 +817,7 @@ encountered under a big-inhale, the saved state would contain the
 string of remaining file contents, instead of the open file value.
 
 
-\section[26.5 Semantic Analysis]{26.5 Semantic Analysis}
+\section{Semantic Analysis}
 
 The Unicon translator's semantic analysis is minimal, and revolves
 mainly around object-oriented features such as inheritance and package
@@ -1262,7 +1262,7 @@ identifier following a unary ampersand is one of the valid keyword
 names. The valid names are kept in a set data structure.
 
 
-\section[26.6 Object Oriented Facilities]{26.6 Object Oriented Facilities}
+\section{Object Oriented Facilities}
 
 Unicon features classes, packages, and a novel multiple inheritance
 mechanism. These items are implemented entirely within the Unicon
@@ -1602,7 +1602,7 @@ from parent superclasses iterates until no new information can be
 added, after which the subclass is said to be closed on its
 parents. Other forms of closure appear frequently in CS.
 
-\subsection[26.6.1 Implementing Multiple Inheritance in Unicon]{26.6.1 Implementing Multiple Inheritance in Unicon}
+\subsection{Implementing Multiple Inheritance in Unicon}
 
 The actual code in the Unicon translator is, by analogy to transitive
 closure, looking for things to inherit via a depthfirst traversal of
@@ -1923,7 +1923,7 @@ resolve}
 {\ttfamily\mdseries
 end}
 
-\subsection[26.6.2 Unicon's Progend() revisited]{26.6.2 Unicon's Progend() revisited}
+\subsection{Unicon's Progend() revisited}
 
 Having presented scope resolution, inheritance, and importing packages
 and inheriting classes from other files via the uniclass.dir NDBM
@@ -2091,7 +2091,7 @@ cl.linkfile)}
 {\ttfamily\mdseries
 \ \ \ write(yyout)}
 
-\subsection[26.6.3 Other OOP Issues]{26.6.3 Other OOP Issues}
+\subsection{Other OOP Issues}
 
 The primary mechanisms for object-oriented programming that we have
 discussed so far include: classes, method invocation,
@@ -2120,7 +2120,7 @@ Aggregation and delegation patterns are used a lot. A class is an aggregate of m
 of its work to objects created for subparts of its overall syntax. 
 \end{itemize}
 
-\subsection[26.6.4 On Public Interfaces and Runtime Type Checking]{26.6.4 On Public Interfaces and Runtime Type Checking}
+\subsection{On Public Interfaces and Runtime Type Checking}
 
 Object-oriented facilities are usually discussed in the context of
 large complex applications where software engineering is an issue. We

@@ -8,7 +8,7 @@ concurrent threads and to provide mutual exclusion between
 threads. These extra fields are drawn in blue.
 }
 
-\section{A.1 Descriptors}
+\section{Descriptors}
 
 Descriptors consist of two words (normally C ints): a d-word and a
 v-word. The d-word contains flags in its most significant bits and
@@ -25,7 +25,7 @@ value or a pointer. The flags are
 \texttt{t} & trapped variable\\
 \end{tabular}
 
-\subsection{A.1.1 Values}
+\subsection{Values}
 
 There are three significantly different descriptor layouts for
 values. A qualifier for a string is distinguished from other
@@ -58,7 +58,7 @@ typical:
 \put(100,0){\dvboxptr{record}{np}{40}{block for the record}}
 \end{picture}
 
-\subsection[A.1.2 Variables]{A.1.2 Variables}
+\subsection{Variables}
 
 There are two formats for variable descriptors. The v-word of an
 ordinary variable points to the descriptor for the corresponding
@@ -79,7 +79,7 @@ kind of trapped variable in its d-word and a pointer to the block for
 the trapped variable in its v-word. The trapped variable may either be
 a substring or a table element. Both are drawn in section A.2.9.
 
-\section[A.2 Blocks]{A.2 Blocks}
+\section{Blocks}
 
 With the exception of the null value, integers, and strings, the data
 for Icon values is kept in blocks. The first word of every block is a
@@ -90,7 +90,7 @@ type, except that all non-descriptor data precedes all descriptor
 data. With the exception of the long integer block, the diagrams that
 follow correspond to blocks for computers with 32-bit words.
 
-\subsection[A.2.1 Long Integers]{A.2.1 Long Integers}
+\subsection{Long Integers}
 
 %% On computers with 16-bit words, integers that are too large to fit in
 %% the d-word of a descriptor are stored in blocks.  For example, the
@@ -110,7 +110,7 @@ Thus, there are two internal types for one source-language data type.
 \put(140,17){\trboxlabel{title}}
 \end{picture}
 
-\subsection[A.2.2 Real Numbers]{A.2.2 Real Numbers}
+\subsection{Real Numbers}
 
 Real numbers are represented by C doubles. For example, on computers
 with 32-bit words, the real number 1.0 is represented by
@@ -120,7 +120,7 @@ with 32-bit words, the real number 1.0 is represented by
 \put(140,0){\blklrgbox{real}{1.0}}
 \end{picture}
 
-\subsection{A.2.3 Csets}
+\subsection{Csets}
 
 The block for a cset contains the usual type code, followed by a word
 that contains the number of characters in the cset. Words totaling 256
@@ -138,7 +138,7 @@ is not. For example, \texttt{\&ascii} is
 \put(20,144){\dvboxptr{cset}{np}{50}{}}
 \end{picture}
 
-\subsection{A.2.4 Lists}
+\subsection{Lists}
 
 A list consists of a list-header block that points to a doubly-linked
 list of list-element blocks, in which the list elements are stored in
@@ -205,7 +205,7 @@ with a pointer to the list header block.}}
 Here there is only one list-element block:
 
 
-\subsection{A.2.5 Sets}
+\subsection{Sets}
 
 A set consists of a set-header block that contains segments that point
 to blocks containing slots for linked lists of set-element blocks. 
@@ -303,7 +303,7 @@ See Sec. 7.1 for details. An example is given by
 }
 \end{picture}
 
-\subsection{A.2.6 Tables}
+\subsection{Tables}
 
 A table is similar to a set, except that a table-header block contains
 the default assigned value as well as slots for linked lists of
@@ -401,7 +401,7 @@ The table \texttt{t} is represented as
 }
 \end{picture}
 
-\subsection[A.2.7 Procedures]{A.2.7 Procedures}
+\subsection{Procedures}
 
 The procedure blocks for procedures and functions are similar. For a
 procedure declaration such as
@@ -478,7 +478,7 @@ of arguments, the number of arguments is given as -1:
 \put(100,0){\dvboxptr{5}{}{40}{"write"}}
 \end{picture}
 
-\subsection{A.2.8 Files}
+\subsection{Files}
 
 The block for a file contains a pointer to the corresponding file, a
 word containing the file status, and a qualifier for the name of the
@@ -506,7 +506,7 @@ The file status values are
 16 & open as a pipe\\
 \end{tabular}
 
-\subsection{A.2.9 Trapped Variables}
+\subsection{Trapped Variables}
 
 There are two kinds of trapped variables:
 substring trapped variables, and table-element trapped variables. The
@@ -550,7 +550,7 @@ a table, the table-element trapped-variable block for \texttt{t[36]} is
 \put(0,112){\dvboxptr{tvtbl}{nptv}{40}{}}
 \end{picture}
 
-\subsection{A.2.10 Co-Expressions}
+\subsection{Co-Expressions}
 
 A co-expression block consists of heading information, an array of
 words for saving the C state, an interpreter stack, and a C stack:

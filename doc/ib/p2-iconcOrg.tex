@@ -38,8 +38,94 @@ the compiler checks to see whether the variable name matches that of a
 built-in function. If the name is still not resolved, it is considered
 to be a local variable.
 
-\includegraphics[width=5.5484in,height=5.822in]{kw/figure6-1.png}  
+%--% \includegraphics[width=5.5484in,height=5.822in]{kw/figure6-1.png}  
 
+\noindent
+\begin{figure}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,>=Latex,arrows=->,
+    box/.style={rectangle, minimum width=4cm, thick, minimum height=0.9cm,draw},
+    elps/.style={ellipse,ellipse,draw,minimum width=2cm},
+]`
+%  \draw[help lines] (0,0) grid (15,15);
+
+% column headers
+  \node at (1,15) {external files};
+  \node at (7,15) {Icon compiler};
+  \node at (13.5,15) {internal data};
+  \foreach \x in {3.75, 10.25} {
+    \draw[-,dashed, dash pattern=on 0.3cm off 0.3cm, line width=1.4pt]
+        (\x,15) -- (\x, -0.5);
+  };
+  
+% draw the boxes and ellipses
+  \node(rtdb)[elps] at (1,14)      {rt.db};
+  \node(progicn)[elps] at (1,12.5)   {prog.icn};
+  \node(database)[elps] at (13.5,12.5) {database};
+  \node(symt) at (13.5,8) [elps, align=center]
+       {symbol tables\\and annotated\\syntax trees};
+  \node(init)[box] at (7,14)   {initialization};
+  \node(src)[box] at (7,12.5)  {source analysis};
+  \node(symres)[box] at (7,11) {symbol resolution};
+  \node(naio)[box] at (7,9.5)  {naive optimization};
+  \node(ti)[box] at (7,8)      {type inferencing};
+  \node(opm)[box,align=center] at (7,6)
+       {output{:}\\C main function\\globals\\constants};
+  \node(opf)[box,align=center] at (7,3.5)
+       {output{:}\\C functions for\\each procedure};
+  \node(progh)[elps] at (1,4)  {prog.h};
+  \node(progc)[elps] at (1,3)  {prog.c};
+  \node(frags)[elps, align=center] at (13.5,3.5) {fragmentary\\C code};
+  \node(opr)[box,align=center] at (7,1.5)
+       {output{:}\\record constructors};
+  \node(cc)[box] at (7,0)    {invoke C compiler};
+
+% Connect compiler boxes to files etc.
+  \draw (rtdb) -- (init); \draw (init.east) -- (database);
+  \draw (progicn) -- (src);
+  \draw (database) -- (src); \draw (database) -- (node cs:name=symres,angle=5);
+  \draw (node cs:name=src,angle=-5) -- (symt);
+  \draw [<->] (node cs:name=symres,angle=-5) -- (symt);
+  \draw [<->] (naio.east) -- (symt);
+  \draw [<->] (ti.east) -- (symt);
+  \draw[loosely dashed] (symt) -- node[right=0.3,align=center]
+       {internal\\links} (database);
+  \draw (symt) -- (opm.east);
+  \draw [<->] (symt) -- (node cs:name=opf, angle=10);
+  \draw (symt) -- (opr.east);
+  \draw (node cs:name=opm, angle=160) -- (node cs:name=progh, angle=20);
+  \draw (node cs:name=opm, angle=200) -- (node cs:name=progc, angle=10);
+  \draw (node cs:name=opf, angle=166) -- (progh);
+  \draw (node cs:name=opf,angle=194) --  (progc);
+  \draw (node cs:name=opr, angle=170) -- (node cs:name=progh, angle=340);
+  \draw (node cs:name=opr, angle=190) -- (node cs:name=progc, angle=350);
+  \draw [<->] (opf) -- (frags);
+
+% Draw the flow of control
+  \begin{scope}[line width=1.8pt, >=Stealth]
+    \draw (init) -- (src);
+    \draw (src) -- (symres);
+    \draw (symres) -- (naio);
+    \draw (naio) -- (ti);
+    \draw (ti) -- (opm);
+    \draw (opm) -- (opf);
+    \draw (opf) -- (opr);
+    \draw (opr) -- (cc);
+% whilst the foc arrows are set up, draw the foc key arrow
+    \draw (11.45,0.5) -- (12.2,0.5);
+  \end{scope}
+
+
+% draw the key block
+  \draw (11.1,1.6) -- (12.2,1.6);
+ \node[anchor=west] at (12.25,1.6) {data flow};
+  \draw[<->] (11.1,1) -- (12.2,1);
+  \node[anchor=west] at (12.25,1) {data flow and update};
+   \node[anchor=west] at (12.25,0.5) {control flow};
+  \draw[thin] (11,0) rectangle (16.2,2);
+  
+\end{tikzpicture}
+\caption{Compiler phases and data flow}
+\end{figure}
 
 \section[18.2 Naive Optimizations]{18.2 Naive Optimizations}
 
@@ -122,8 +208,57 @@ organization of the compiler rather than its physical organization.
 
 The physical organization of this phase is shown in the following diagram.
 
-\includegraphics[width=5.1311in,height=3.9063in]{kw/figure6-2.png} 
+%--%\includegraphics[width=5.1311in,height=3.9063in]{kw/figure6-2.png} 
 
+\noindent
+\begin{figure}[hb]
+\begin{tikzpicture}[draw,very thick,font=\small\tt,>=Latex,arrows=->,
+    box/.style={rectangle, minimum width=4cm, thick, minimum height=1.4cm,draw},
+    elps/.style={ellipse,ellipse,draw,minimum width=2cm},
+]`
+%  \draw[help lines] (0,2) grid (15,13);
+
+% column headers
+  \node at (1,13) {external files};
+  \node at (13.5,13) {internal data};
+  \foreach \x in {3.5, 10.5} {
+    \draw[-,dashed, dash pattern=on 0.3cm off 0.3cm, line width=1.4pt]
+        (\x,13) -- (\x, 2);
+  };
+  
+% draw the boxes and ellipses
+  \node(symt) at (13.5,11) [elps, align=center]
+       {symbol tables\\and annotated\\syntax trees};
+  \node(la)[box] at (7,11)  {liveness analysis};
+  \node(cg)[box,align=center] at (7,8.5)      {code generation for\\a procedure};
+  \node(fix)[box,align=center] at (7,6)
+       {\\fix-up and peephole\\optimization\\};
+  \node(op)[box,align=center] at (7,3.5)
+       {\\output\\};
+  \node(progh)[elps] at (1,4)  {prog.h};
+  \node(progc)[elps] at (1,3)  {prog.c};
+  \node(frags)[elps, align=center] at (13.5,6) {fragmentary\\C code};
+
+% Connect compiler boxes to files etc.
+  \draw[<->] (la) -- (symt);
+  \draw (symt) -- (node cs:name=cg, angle=10);
+  \draw (node cs:name=cg,angle=350) -- (frags);
+  \draw [<->] (frags) -- (fix);
+  \draw (frags) -- (op.east);
+  \draw (node cs:name=op,angle=166) -- (progh);
+  \draw (node cs:name=op, angle=194) -- (progc);
+
+% Draw the flow of control
+  \begin{scope}[line width=2.5pt, >=Stealth]
+    \draw (la) -- (cg);
+    \draw (cg) -- (fix);
+    \draw (fix) -- (op);
+    \draw (op) -- (7,2) -- (4.2,2) -- (4.2,12.5) -- (7,12.5) -- (la);
+  \end{scope}
+
+\end{tikzpicture}
+\caption{The physical organization of the code generation phase}
+\end{figure}
 
 \bigskip
 

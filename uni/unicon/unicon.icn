@@ -43,8 +43,8 @@ global warnings
 #
 global iconc, iconc_links, iconc_parsed, iconc_imports
 global iconc_posixloc, iconc_parsed_posix, iconc_perifile_idx
-global iconc_fd	# if iconc is used, add the -fd option
-
+global iconc_fd	# if iconc is used, add the -fd option (off by default)
+global no_iconc_fs # don't add -fs by default, if iconc is used
 
 link basename, io, paths
 
@@ -768,6 +768,7 @@ procedure unicon(argv)
       cmd := (getenv("ICONC")|"iconc") || " "
       cmd ||:= \icontopt
       if \iconc_fd & (not find("-fd", icontopt)) then cmd ||:= " -fd "
+      if /no_iconc_fs & (not find("-fs", icontopt)) then cmd ||:= " -fs "
       cmd ||:= \ilinkopt
       # create exename (and option) if none supplied
       if /exename then {

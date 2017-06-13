@@ -1753,6 +1753,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     if ((construct_funcimage(ep, PT_MF, PF_BreakX, result)) ==
 		 RunError) return RunError;
 	     peCount++;
+	     ep = Blk(ep,Pelem)->pthen; /* Skip the BreakX_X Pelem) */ 
 	     break;
              }
           case PC_NotAny_MF: {
@@ -1819,6 +1820,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     if ((construct_funcimage(ep, PT_VF, PF_BreakX, result)) ==
 		 RunError) return RunError;
 	     peCount++;
+	     ep = Blk(ep,Pelem)->pthen; 
 	     break;
              }
           case PC_NotAny_VF: {
@@ -1885,6 +1887,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     if ((construct_funcimage(ep, PT_VP, PF_BreakX, result)) ==
 		 RunError) return RunError;
 	     peCount++;
+	     ep = Blk(ep,Pelem)->pthen; 
 	     break;
              }
           case PC_NotAny_VP: {
@@ -1951,7 +1954,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     if ((construct_funcimage(ep, PT_EVAL, PF_BreakX, result)) ==
 		 RunError) return RunError;
 	     peCount++;
-	     ep = Blk(ep,Pelem)->pthen;  /* ?? why here ?? */
+	     ep = Blk(ep,Pelem)->pthen; 
 	     break;
              }
           case PC_NotAny_CS: {
@@ -2142,7 +2145,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     peCount++;
 	     break;
              }
-	  case PC_BreakX_X: {
+	  case PC_BreakX_X: {             /*this should never trigger... */
              *result = *bi_pat(PI_EMPTY);
 	     break;
              }

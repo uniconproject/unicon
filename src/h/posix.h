@@ -17,9 +17,7 @@
 #include <time.h>
 #include <dirent.h>
 #include <unistd.h>
-#ifdef NEED_UTIME
 #include <utime.h>
-#endif
 #include <sys/resource.h>
 
 #include <fcntl.h>

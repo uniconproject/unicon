@@ -564,6 +564,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
    body {
       int start, stop;
       tended struct b_pelem *phead;
+      struct descrip mon_sub; 
 
       int subject_len;
 #if !ConcurrentCOMPILER
@@ -578,6 +579,9 @@ function {*} pattern_match(underef psub -> dpsub, pat)
        */
       k_pos = 1;
       k_subject = dpsub;
+      StrLoc(mon_sub) = StrLoc(k_subject);
+      StrLen(mon_sub) = StrLen(k_subject);
+      EVValD(&mon_sub, E_Snew);
       subject_len = StrLen(k_subject);
 
       if (! cnv_pattern(&pat, &pat)) {
@@ -610,7 +614,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 	    }
 	 /* Deref again, in case psub was altered. */ 
 	 deref(&psub,&dpsub);
-	 k_subject = dpsub;
+ k_subject = dpsub;
 	 /*
 	  * Someone has monkeyed with the string we are scanning.
 	  * Update &pos, and check that it remains in bounds.
@@ -2191,6 +2195,8 @@ Node_Succeed:
       break;
       }
 #endif					/* e_patarg */
+   fprintf(stdout, "This is the Node->index:  %d\n", Node->index); 
+   k_patindex = Node->index; 
 
 #if !COMPILER
    /*

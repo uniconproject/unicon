@@ -508,7 +508,7 @@
 #define T_Realarray	30      /* real array */
 #define T_Cons		31	/* generic link list element */
 
-#define MaxType		31	/* maximum type number */
+#define MaxType		32	/* maximum type number */
 
 /*
  * Definitions for keywords.
@@ -1015,18 +1015,21 @@
 #endif					/* MultiThread */
 
 #if defined(MultiThread) || ConcurrentCOMPILER
-      #define glbl_argp (curtstate->Glbl_argp)  
+      #define glbl_argp      (curtstate->Glbl_argp)  
 
-      #define kywd_pos  (curtstate->Kywd_pos)
-      #define k_subject (curtstate->ksub)
-      #define kywd_ran  (curtstate->Kywd_ran)
-      #define value_tmp (curtstate->Value_tmp)
+      #define kywd_pos       (curtstate->Kywd_pos)
+      #define k_subject      (curtstate->ksub)
+      #define kywd_ran       (curtstate->Kywd_ran)
+      #define value_tmp      (curtstate->Value_tmp)
 
       #define k_current     (curtstate->K_current)
       #define k_errornumber (curtstate->K_errornumber)
       #define k_level       (curtstate->K_level)
       #define k_errortext   (curtstate->K_errortext)
       #define k_errorvalue  (curtstate->K_errorvalue)
+#ifdef PatternType
+      #define k_patindex    (curtstate->K_patindex)
+#endif
       #define have_errval   (curtstate->Have_errval)
       #define t_errornumber (curtstate->T_errornumber)
       #define t_have_val    (curtstate->T_have_val)
@@ -1058,7 +1061,7 @@
       #define savedbuf       (curtstate->Savedbuf)
       #define nsaved         (curtstate->Nsaved)
 #endif					/* PosixFns */
-
+      
 #endif					/* Concurrent */
 
 #if !ConcurrentCOMPILER

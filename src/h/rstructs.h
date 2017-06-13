@@ -565,6 +565,10 @@ struct threadstate {
    struct descrip Kywd_pos;         /* TLS */
    struct descrip ksub;             /* TLS */
    struct descrip Kywd_ran;        /*  TLS  */
+#ifdef PatternType
+   int  K_patindex;                /* TLS */
+#endif                                 /* PatternType */ 
+
 
    dptr Field_argp;			/* TLS -- see comment in imisc.r */
 
@@ -607,6 +611,7 @@ struct threadstate {
 #ifdef MultiThread
   struct progstate *pstate;
 #endif
+
 
 /*
  * Structure for chaining threadstate structs.

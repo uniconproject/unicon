@@ -166,6 +166,9 @@ extern struct b_real realzero;		/* real zero block */
    extern int k_level;			/* &level */
    extern struct descrip k_subject;	/* &subject */
    extern struct descrip kywd_pos;	/* descriptor for &pos */
+#ifdef PatternType
+   extern int k_patindex;               /* index for pattern element */
+#endif                         /* Pattern Type */ 
    extern struct descrip kywd_ran;	/* descriptor for &random */
    extern struct descrip t_errorvalue;	/* tentative k_errorvalue value */
 

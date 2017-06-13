@@ -637,6 +637,10 @@ void init_threadstate( struct threadstate *ts)
    ts->AmperErrno = zerodesc;
 #endif					/* PosixFns */
 
+#ifdef PatternType
+   ts->K_patindex = 0;
+#endif                                  /* PatternType */
+
 #if !COMPILER
    ts->Xargp = NULL;
    ts->Xnargs = 0;

@@ -29,7 +29,7 @@ all:
 
 rtt:	$(OBJ)
 	$(CC) $(LDFLAGS) -o rtt $(OBJ)
-	cp rtt ../../bin
+	cp rtt ../../bin/
 	strip ../../bin/rtt
 
 library:	$(OBJ)

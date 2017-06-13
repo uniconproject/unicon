@@ -1689,11 +1689,20 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
    struct descrip punct;
 
    if (ep != NULL) {
-      struct b_pelem *P, *A, *E, *X = Blk(ep,Pelem);
+
+     /* the code below is to counter any cycles we
+      * may find in arbno images. This does not actually 
+      * get us the image of Arbno but prevents the images 
+      * from encountering seg faults. I have placed a fix
+      * in the case statement and if a long enough amount of 
+      * time passes without bugs we should remove this code block 
+      * - June 13, 2017
+
+         struct b_pelem *P, *A, *E, *X = Blk(ep,Pelem);
       if (!is:string(X->parameter) &&
 	  (Type(X->parameter) == T_Pelem) &&
 	  (E = BlkD(X->parameter, Pelem)) &&
-	  (E->title == T_Pelem)) { /* potential cycle */
+	  (E->title == T_Pelem)) {  potential cycle
 	 P = Blk(E->pthen,Pelem);
 	 if (P && (P->title == T_Pelem) &&
 	     (!is:string(P->parameter)) &&
@@ -1702,7 +1711,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	    return construct_image(bi_pat(PF_Arbno), bi_pat(PI_PERIOD),
 				   bi_pat(PI_BPAREN), result);
 	    }
-	 }
+	 }*/ 
 
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
@@ -2004,7 +2013,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 		return RunError;
 	     /* ?? */
 	     peCount++;
-             arbnoBool = 0;  
+             arbnoBool = 0;   
 	     break;         
              }             
           case PC_Arbno_X: {
@@ -2013,16 +2022,15 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, arbnoBool, &image, 0) == RunError)
+                if (pattern_image(arb, 2, &image, 0) == RunError)
 		   return RunError;
                 if (construct_image(bi_pat(PF_Arbno), &image,
-					bi_pat(PI_BPAREN), result) == RunError)
+		   		bi_pat(PI_BPAREN), result) == RunError)
 		   return RunError;
-		return Succeeded;
                 }
              else {
                 syserr("PC_Arbno_X whose param is not a PC_R_Enter");
-                }
+                } 
 	     peCount++;
 	     break;
              }
@@ -2051,7 +2059,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     break;
              }
           case PC_Arbno_Y: {
-	     *result = *bi_pat(PI_EMPTY);
+	     return Succeeded;
              break;
              }
           case PC_Arb_X: {

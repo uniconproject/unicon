@@ -30,19 +30,24 @@ esac
 case $host_os in
      *linux*)
         unicon_os="linux"
+	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *solaris*)
         unicon_os="solaris"
+	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *aix*)
         unicon_os="aix"
+	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *bsd*)
        # freebsd for now
         unicon_os="freebsd"
+	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *darwin*)
         unicon_os="macos"
+	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *cygwin*)
         unicon_os="windows"
@@ -94,8 +99,12 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
 		 stdlib.h string.h fcntl.h memory.h sys/file.h sys/resource.h \
                  netinet/in.h sys/errno.h sys/socket.h sys/types.h)
-AC_INT_16_BITS
-AC_LONG_64_BITS
+
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long int)
+AC_CHECK_SIZEOF(int *)
+
 AC_WORDS_BIGENDIAN
 AC_C_CONST
 AC_TYPE_SIZE_T
@@ -103,8 +112,11 @@ AC_FUNC_ALLOCA
 AC_TYPE_OFF_T
 AC_ST_BLKSIZE
 AC_CHECK_TYPE(ssize_t, signed)
+
 AC_CHECK_FUNCS(socket bcopy bzero memcpy memset inet_aton inet_pton \
-	       snprintf vsprintf rename ftruncate flock fsync)
+	       snprintf vsprintf rename ftruncate flock fsync \
+	       getrlimit setrlimit strerror strerror_r vfork)
+
 AC_REPLACE_FUNCS(getopt)
 AC_FUNC_FORK()
 AC_CHECK_LIB(dbm,main)
@@ -122,7 +134,11 @@ AC_CHECK_FUNC(getrusage,
 AC_CHECK_FUNC(sysconf,
 	[AC_DEFINE([HAVE_SYSCONF], [1], [sysconf])])
 AC_CHECK_FUNC(profil,
-	[AC_DEFINE([HAVE_PROFIL], [1], [profil])])
+	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
+
+AC_CHECK_LIB(dl, dlopen)
+#AC_CHECK_FUNC(dlopen,
+#	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 	
 CHECK_FREETYPE()
 CHECK_OGG()
@@ -146,7 +162,6 @@ CHECK_ODBC()
 CHECK_PTHREAD()
 CHECK_OPENSSL()
 
-AC_CHECK_FUNCS(getrlimit setrlimit strerror strerror_r vfork)
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
 AC_VAR_TIMEZONE_EXTERNALS()

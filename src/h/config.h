@@ -44,6 +44,7 @@
 #include "../h/auto.h"
 #endif					/* NoAuto */
 
+
 /*
  * If COMPILER is not defined, code for the interpreter is compiled.
  */
@@ -278,8 +279,10 @@
    #define Graphics 1
 #endif					/* MacGraph */
 
-#if defined(NoGraphics) || (!defined(MSWindows) && !defined(MacGraph) && !defined(HAVE_LIBX11))
-#undef Graphics
+#if !defined(NoGraphics) && !defined(MSWindows) && !defined(MacGraph)
+   #if HAVE_LIBX11
+   #define Graphics 1
+   #endif
 #endif
 
 
@@ -375,15 +378,15 @@
 #endif					/* MaxPath */
 
 #ifndef StackAlign
-   #define StackAlign 2
+   #define StackAlign (SIZEOF_INT_P * 2)
 #endif					/* StackAlign */
 
 #ifndef WordBits
-   #define WordBits 32
+   #define WordBits (SIZEOF_LONG_INT * 8)
 #endif					/* WordBits */
 
 #ifndef IntBits
-   #define IntBits WordBits
+   #define IntBits (SIZEOF_INT * 8)
 #endif					/* IntBits */
 
 #ifndef SourceSuffix
@@ -814,6 +817,14 @@ Deliberate Syntax Error
 
 #endif					/* SQL_LENORIND */
 #endif					/* ISQL */
+
+#ifndef NoLoadFunc
+#if HAVE_LIBDL
+#define LoadFunc
+#endif					/* HAVE_LIBDL */
+#endif
+
+#define Double
 
 /*
  *  Vsizeof is for use with variable-sized (i.e., indefinite)

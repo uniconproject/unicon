@@ -8,7 +8,7 @@ SRC = $(TOP)/src
 
 Setup-Common:
 	cd Config; $(MAKE) Makefiles name=$(name)
-	cp $(name)/define.h $(SRC)/h
+#	cp $(name)/define.h $(SRC)/h
 	cp $(name)/rswitch.[cs] $(SRC)/common
 	echo 'AC_JV_LDFLAGS= @JV_LDFLAGS@' > $(TOP)/Makedefs
 	echo 'AC_GL_LDFLAGS= @GL_LDFLAGS@' >> $(TOP)/Makedefs
@@ -32,7 +32,6 @@ Setup-Graphics:  Setup-Common
 	echo 'XPM=xpm'				>> $(TOP)/Makedefs.in
 	echo 'DRAWSTRING=drawstring3d.o'	>> $(TOP)/Makedefs.in
 	echo 'COMMONDRAWSTRING=../common/drawstring3d.o'	>> $(TOP)/Makedefs.in
-	echo '#define Graphics 1'		>> $(SRC)/h/define.h
 
 Setup-Thin: Setup-Common
 	cp $(name)/Makedefs $(TOP)/Makedefs

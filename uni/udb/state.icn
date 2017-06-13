@@ -86,7 +86,7 @@ end
 method constructEventMask()
    local x
 
-   write("----> state.icn: re-constructing all of event mask and value mask")
+   ## write("----> state.icn: re-constructing all of event mask and value mask")
    if *internalMask >0 | *externalMask >0    | 
       *traceMask >0    | *assertEventMask >0 then{
       eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
@@ -98,10 +98,7 @@ method constructEventMask()
             member(internalMask,E_Line) | member(externalMask,E_Line) then
             delete(valueMask,E_Line)
          else{
-            eventMask ++:= cset(E_Line) ++
-                           cset(E_PatAttempt || E_PatMatch) ++
-                           cset(E_PatFail || E_PelemAttempt) ++
-                           cset(E_PelemFail || E_PelemMatch)
+            eventMask ++:= cset(E_Line) 
             valueMask[E_Line] := breakMask ++ assertLoc
             }
          }
@@ -141,10 +138,7 @@ method constructEventMask()
       eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
                    cset(E_Collect || E_EndCollect)
       if *breakMask > 0 then{
-         eventMask ++:= cset(E_Line) ++
-                        cset(E_PatAttempt || E_PatMatch) ++
-                        cset(E_PatFail || E_PelemAttempt) ++
-                        cset(E_PelemFail || E_PelemMatch)
+         eventMask ++:= cset(E_Line)
          valueMask[E_Line] := breakMask
 
          }
@@ -208,15 +202,12 @@ method Update(state)
 	if \valueMask[E_PatMatch] then         delete(valueMask, E_PatMatch)
         if not member(eventMask, E_PatFail)  then eventMask ++:= cset(E_PatFail)
         if \valueMask[E_Fail] then             delete(valueMask, E_PatFail)
-        if not member(eventMask, E_PelemAttempt) then eventMask ++:=
-	                                       cset(E_PelemAttempt)
-	if \valueMask[E_PelemAttempt] then     delete(valueMask, E_PelemAttempt)
         if not member(eventMask, E_PelemMatch) then eventMask ++:=
 	                                       cset(E_PelemMatch)
 	if \valueMask[E_PelemMatch] then     delete(valueMask, E_PelemMatch)
         if not member(eventMask, E_PelemFail) then eventMask ++:=
 	                                       cset(E_PelemFail)
-	if \valueMask[E_PelemFail] then     delete(valueMask, E_PelemFail)
+        if \valueMask[E_PelemFail] then     delete(valueMask, E_PelemFail)
         eventMask ++:= internalMask ++ externalMask
         }
      default:{

@@ -43,13 +43,13 @@ method startEvaluator()
    local obj, eventMask, valueMask
    eventMask := DState.eventMask
    valueMask := DState.valueMask
-
    while EvGet(eventMask, valueMask) do {
       #write("----->",evnames(&eventcode), ": ", syntname(&eventvalue))
 
       # Classical Debugging Tehniques --This is Bad for watchpoints 
       #if *(\DState.MaskTable[&eventcode]) > 0 then 
       #   BuiltIns[&eventcode](self) ???????!!! checklater
+
       case &eventcode of{
         E_Line:{
           if *DState.breakMask > 0  then{ Break.checkBreakpoint() }
@@ -68,11 +68,11 @@ method startEvaluator()
         E_Spos | E_Snew:{
           if *DState.watchChangeMask > 0  then Watch.checkWatchScan()
           }
-        E_PatAttempt | E_PatMatch | E_PatFail | E_PelemMatch | E_PelemFail:{
-          if DState.RunCode = PSTEP then{ Step.checkPStep()        }
+        E_PatAttempt | E_PelemMatch | E_PelemFail:{
+          if DState.RunCode = PSTEP then{ Step.checkPStep()       }
           }
-        E_PelemAttempt:{
-          if DState.RunCode = PSTEP then{ Step.recordPelem()       }
+        E_PatMatch | E_PatFail:{
+          Step.pEnd()
           }
         E_Exit:  { handle_Exit()    }
         E_Error: { handle_Error()   }
@@ -99,7 +99,10 @@ method startEvaluator()
       # Temporal Assertions
       if *DTA.assertTable > 0 then  DTA.forward()
      
-      if DState.State = PAUSE then{ suspend }
+      if DState.State = PAUSE then{
+         suspend
+         eventMask := DState.eventMask   ##the eventMask may have been updated
+         }
       else
       if DState.State = END   then{ return  }
       }

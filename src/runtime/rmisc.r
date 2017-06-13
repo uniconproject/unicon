@@ -1732,7 +1732,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 				     peCount)) == RunError) return RunError;
              if ((pattern_image(r, arbnoBool, &right, peCount)) ==
 		 RunError) return RunError;
-             return construct_image(&left, bi_pat(PI_ALT), &right, result);
+             if(construct_image(&left, bi_pat(PI_ALT), &right, result) == 
+                 RunError) return RunError;
+             return construct_image(bi_pat(PI_FPAREN), result, bi_pat(PI_BPAREN),
+                                    result);
              } 
           case PC_Any_MF: {
 	     if ((construct_funcimage(ep, PT_MF, PF_Any, result)) ==
@@ -2073,16 +2076,16 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	      * consider Resolved patterns. do we need to check
 	      * if parameter is a string, or a variable?
 	      */
-             if ((construct_image(bi_pat(PI_EMPTY), &image,
-				       &(Blk(ep,Pelem)->parameter), result)) ==
+             if ((construct_image(&image, &(Blk(ep,Pelem)->parameter), 
+                                  bi_pat(PI_BPAREN), result)) ==
 		 RunError) return RunError;
 	     peCount++;
 	     break;
              }
           case PC_Assign_Imm: {
              AsgnCStr(image, " => ");
-             if ((construct_image(bi_pat(PI_EMPTY), &image,
-				    &(Blk(ep,Pelem)->parameter), result)) ==
+             if ((construct_image(&image, &(Blk(ep,Pelem)->parameter), 
+                                  bi_pat(PI_BPAREN), result)) ==
 		 RunError) return RunError;
 	     peCount++;
              break;
@@ -2111,7 +2114,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     break;
              }
           case PC_Fence: {
-             AsgnCStr(*result, "Fence()");
+             AsgnCStr(*result, "Fence()"); 
 	     peCount++;
 	     break;
              }
@@ -2148,7 +2151,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	     break;
              }
           case PC_R_Enter: {
-             *result = *bi_pat(PI_EMPTY);
+             *result = *bi_pat(PI_FPAREN);
 	     break;
              }
           default: {
@@ -2180,7 +2183,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	      ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){
 	     if ((pattern_image(ep, arbnoBool, &image, peCount)) ==
 		 RunError) return RunError;
-	     return construct_image(result, bi_pat(PI_CONCAT), &image, result);
+             if(strcmp(StrLoc(*result), "(") != 0) 
+	        return construct_image(result, bi_pat(PI_CONCAT), &image, result);
+             else
+ 	        return construct_image(result, bi_pat(PI_EMPTY), &image, result);
 	     }
 	  else return pattern_image(ep, arbnoBool, result, peCount);
           }

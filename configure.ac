@@ -16,12 +16,9 @@ case $host_cpu in
      *armv8*)
         unicon_cpu="arm_64"
         ;;	
-     *i386*)
+     *i.86*)
         unicon_cpu="x86_32"
-        ;;	
-     *i686*)
-        unicon_cpu="x86_32"
-        ;;	
+	;;
      *)
         unicon_cpu="$host_cpu"
         ;;
@@ -35,6 +32,8 @@ case $host_os in
      *solaris*)
         unicon_os="solaris"
 	AC_DEFINE([UNIX], [1], [Unix platform])
+	AC_DEFINE([SOLARIS], [1], [Solaris OS])
+	AC_DEFINE([SUN], [1], [Sun platform])
         ;;
      *aix*)
         unicon_os="aix"
@@ -44,10 +43,12 @@ case $host_os in
        # freebsd for now
         unicon_os="freebsd"
 	AC_DEFINE([UNIX], [1], [Unix platform])
+	AC_DEFINE([FreeBSD], [1], [FreeBSD OS])
         ;;
      *darwin*)
         unicon_os="macos"
 	AC_DEFINE([UNIX], [1], [Unix platform])
+	AC_DEFINE([MacOS], [1], [Mac OS])
         ;;
      *cygwin*)
         unicon_os="windows"

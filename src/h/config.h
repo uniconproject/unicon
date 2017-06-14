@@ -4,6 +4,11 @@
 
 /*
  * System-specific definitions are in define.h
+ * update June 2017:: 
+ *    System-specific definitions are being handleded 
+ *    by the confure script. Some remaining definitions are
+ *    moved here so they are all in one place for all systems.
+ *    Many of these options will be automated as well. 
  */
 
 /*
@@ -35,6 +40,51 @@
  *	Double		align reals at double-word boundaries
  *
  */
+
+#if MacOS
+#define COpts "-I/usr/X11R6/include"
+#define SQL_LENORIND SQLLEN
+#define NoLIBZ
+
+#define NamedSemaphores
+#define MacOSX
+#define INTMAIN
+#define PROFIL_CHAR_P
+#endif					/* MacOS */
+
+#if SUN
+#define INTMAIN
+
+#define SysOpt   1
+#define NoRanlib
+#define COpts " -m64 -I/usr/X11R6/include -L/usr/X11R6/lib/64 "
+
+#define Messaging  1
+#define PosixFns   1
+#define NoVFork
+#endif 					/* SUN */
+
+
+#if FreeBSD
+#define GenericBSD
+#define BSD_4_4_LITE    1	/* This is new, for 4.4Lite specific stuff */
+
+#define NEED_UTIME
+#define Messaging 1
+
+#define SysOpt
+#define ExecImages
+
+#define MaxStatSize 40960
+
+#define CComp "gcc"
+#define COpts "-O2"
+#define LinkLibs " -lm"
+
+#define HAVE_GETHOSTNAME 1
+#define HAVE_GETPWUID 1
+#define HAVE_GETUID 1
+#endif					/* FreeBSD */
 
 /*
  * If define.h does not specify NoAuto, supplement config info with
@@ -825,6 +875,8 @@ Deliberate Syntax Error
 #endif
 
 #define Double
+
+
 
 /*
  *  Vsizeof is for use with variable-sized (i.e., indefinite)

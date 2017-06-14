@@ -73,7 +73,7 @@ function{0,1} dbcolumns(f,table_name)
     
     HSTMT hstmt;
     
-#ifdef MacOSX
+#ifdef MacOS
     static struct descrip colnames[12];
     static int cnm=0;
     if (!cnm) {
@@ -90,14 +90,14 @@ function{0,1} dbcolumns(f,table_name)
        AsgnCStr(colnames[cnm++], "nullable");
        AsgnCStr(colnames[cnm++], "remarks");
        };
-#else					/* MacOSX */
+#else					/* MacOS */
     static struct descrip colnames[12] = {
        {7,(word)"catalog"}, {6,(word)"schema"}, {9,(word)"tablename"},
        {7,(word)"colname"}, {8,(word)"datatype"}, {8,(word)"typename"},
        {7,(word)"colsize"}, {6,(word)"buflen"}, {9,(word)"decdigits"},
        {12,(word)"numprecradix"}, {8,(word)"nullable"}, {7,(word)"remarks"}
        };
-#endif					/* MacOSX */
+#endif					/* MacOS */
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -246,7 +246,7 @@ function {0,1} dbdriver(f)
     static int  is_str[DBDRVNCOLS]={1,1,1,0,0,1};
                                
     /* unicon field names */
-#ifdef MacOSX
+#ifdef MacOS
     static struct descrip colnames[6];
     static int cnm=0;
     if (!cnm) {
@@ -257,11 +257,11 @@ function {0,1} dbdriver(f)
        AsgnCStr(colnames[cnm++], "statements");
        AsgnCStr(colnames[cnm++], "dsn");
        }
-#else					/* MacOSX */
+#else					/* MacOS */
     static struct descrip colnames[6]={
        {4,(word)"name"}, {3,(word)"ver"}, {7,(word)"odbcver"},
        {11,(word)"connections"}, {10,(word)"statements"}, {3,(word)"dsn"}};
-#endif					/* MacOSX */
+#endif					/* MacOS */
                                
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -330,15 +330,15 @@ function{1} dbkeys(f, table_name)
 
     short i;
     
-#ifdef MacOSX
+#ifdef MacOS
     static struct descrip colnames[2];
     static int cnm=0;
     if (!cnm) {
        AsgnCStr(colnames[cnm++], "col"); AsgnCStr(colnames[cnm++], "seq");
        }
-#else					/* MacOSX */
+#else					/* MacOS */
     static struct descrip colnames[2]={{3,(word)"col"}, {3,(word)"seq"}};
-#endif					/* MacOSX */
+#endif					/* MacOS */
     
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC mode */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -443,7 +443,7 @@ function {0,1} dblimits(f)
 
     static int is_str[DBLIMITSNCOLS]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0};
     
-#ifdef MacOSX
+#ifdef MacOS
     static struct descrip colnames[19];
     static int cnm=0;
     if (!cnm) {
@@ -467,7 +467,7 @@ function {0,1} dblimits(f)
        AsgnCStr(colnames[cnm++], "maxselecttbls");
        AsgnCStr(colnames[cnm++], "maxusernamelen");
        }
-#else					/* MacOSX */
+#else					/* MacOS */
     static struct descrip colnames[19]={{12,(word)"maxbinlitlen"},
          {13,(word)"maxcharlitlen"}, {13,(word)"maxcolnamelen"},
          {14,(word)"maxgroupbycols"}, {14,(word)"maxorderbycols"},
@@ -478,7 +478,7 @@ function {0,1} dblimits(f)
          {10,(word)"maxrowsize"}, {14,(word)"maxrowsizelong"},
          {10,(word)"maxstmtlen"}, {13,(word)"maxtblnamelen"},
          {13,(word)"maxselecttbls"}, {14,(word)"maxusernamelen"}};
-#endif					/* MacOSX */
+#endif					/* MacOS */
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* not an ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);
@@ -534,7 +534,7 @@ function {0,1} dbproduct(f)
       static struct b_proc *proc;
       short i;
       static int sql_parm[DBPRODNCOLS]={SQL_DBMS_NAME, SQL_DBMS_VER};
-#ifdef MacOSX
+#ifdef MacOS
       static struct descrip colnames[2];
       static int cnm=0;
       if (!cnm) {
@@ -645,7 +645,7 @@ function{0,1} dbtables(f)
     
     short i;
     
-#ifdef MacOSX
+#ifdef MacOS
       static struct descrip colnames[5];
       static int cnm=0;
       if (!cnm) {
@@ -655,12 +655,12 @@ function{0,1} dbtables(f)
 	 AsgnCStr(colnames[cnm++], "type");
 	 AsgnCStr(colnames[cnm++], "remarks");
 	 }
-#else					/* MacOSX */
+#else					/* MacOS */
     static struct descrip colnames[5]={
       {9,(word)"qualifier"}, {5,(word)"owner"}, {4,(word)"name"},
       {4,(word)"type"}, {7,(word)"remarks"}
     };
-#endif					/* MacOSX */
+#endif					/* MacOS */
 
     if ((FSTATUS(f) & Fs_ODBC)!=Fs_ODBC) { /* ODBC file */
       runerr(NOT_ODBC_FILE_ERR, f);

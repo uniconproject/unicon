@@ -1860,7 +1860,7 @@ unsigned long memorysize(int available)
  * Method #2: call sysctlbyname(). MacOS and maybe BSD too.
  * Todo: write autoconf rule, change to HAVE_SYSCTLBYNAME.
  */
-#ifdef MacOSX
+#ifdef MacOS
    if (!available) {
 
       unsigned long mem;
@@ -1869,7 +1869,7 @@ unsigned long memorysize(int available)
       i = mem;
       return i;
       }
-#endif					/* MacOSX */
+#endif					/* MacOS */
 
 /*
  * Method #3: read /proc/meminfo. Linux.

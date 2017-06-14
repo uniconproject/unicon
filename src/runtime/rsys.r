@@ -1381,9 +1381,9 @@ void ptclose(struct ptstruct *ptStruct)
 struct ptstruct *ptopen(char *command)
 {
    char **av;
-#if defined(MacOSX) || defined(FreeBSD)
+#if defined(MacOS) || defined(FreeBSD)
    char *tmps;
-#endif					/* MacOSX || FreeBSD */
+#endif					/* MacOS || FreeBSD */
 #if NT
    HANDLE hOutputReadMaster,hOutputRead,hOutputWrite;
    HANDLE hInputWriteMaster,hInputRead,hInputWrite;
@@ -1471,14 +1471,14 @@ struct ptstruct *ptopen(char *command)
    if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 	              sizeof(newPtStruct->slave_filename)) != 0) {
 #else					/* SUN */
-#if defined(MacOSX) || defined(FreeBSD)
+#if defined(MacOS) || defined(FreeBSD)
    if (((tmps = ptsname(newPtStruct->master_fd)) == NULL) ||
       (strlen(tmps) > sizeof(newPtStruct->slave_filename)-1) ||
       (!strcpy(newPtStruct->slave_filename, tmps))){
-#else					/* MacOSX || FreeBSD */
+#else					/* MacOS || FreeBSD */
    if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
 		sizeof(newPtStruct->slave_filename)) != 0) {
-#endif					/* MacOSX || FreeBSD */
+#endif					/* MacOS || FreeBSD */
 #endif					/* SUN */
       EXITERROR(newPtStruct);
       }

@@ -41,9 +41,21 @@
  *
  */
 
+
+/*
+ * If define.h does not specify NoAuto, supplement config info with
+ * autoconf-generated symbols.
+ */
+#ifndef NoAuto
+#include "../h/auto.h"
+#endif					/* NoAuto */
+
+/* make SQL_LENORIND definition global for now*/
+#define SQL_LENORIND SQLLEN
+
 #if MacOS
 #define COpts "-I/usr/X11R6/include"
-#define SQL_LENORIND SQLLEN
+
 #define NoLIBZ
 
 #define NamedSemaphores
@@ -85,14 +97,6 @@
 #define HAVE_GETPWUID 1
 #define HAVE_GETUID 1
 #endif					/* FreeBSD */
-
-/*
- * If define.h does not specify NoAuto, supplement config info with
- * autoconf-generated symbols.
- */
-#ifndef NoAuto
-#include "../h/auto.h"
-#endif					/* NoAuto */
 
 
 /*

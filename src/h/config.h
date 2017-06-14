@@ -54,7 +54,7 @@
 #define SQL_LENORIND SQLLEN
 
 #if MacOS
-#define COpts "-I/usr/X11R6/include"
+//#define COpts "-I/usr/X11R6/include"
 
 #define NoLIBZ
 
@@ -69,7 +69,7 @@
 
 #define SysOpt   1
 #define NoRanlib
-#define COpts " -m64 -I/usr/X11R6/include -L/usr/X11R6/lib/64 "
+//#define COpts " -m64 -I/usr/X11R6/include -L/usr/X11R6/lib/64 "
 
 #define Messaging  1
 #define PosixFns   1
@@ -89,8 +89,6 @@
 
 #define MaxStatSize 40960
 
-#define CComp "gcc"
-#define COpts "-O2"
 #define LinkLibs " -lm"
 
 #define HAVE_GETHOSTNAME 1

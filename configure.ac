@@ -167,6 +167,7 @@ if test "x$graphics" = "xyes"; then
     CHECK_FTGL()
 
     echo "Building with graphics..."
+    GRAPHICS=graphics
     XL="-L../../bin -lXpm \$(XLIBS)"
     XPM=xpm
     DRAWSTRING=drawstring3d.o
@@ -198,6 +199,7 @@ else
 fi
 
   AC_SUBST(XLIBS)
+  AC_SUBST(GRAPHICS)
   AC_SUBST(XL)
   AC_SUBST(XPM)
   AC_SUBST(DRAWSTRING)

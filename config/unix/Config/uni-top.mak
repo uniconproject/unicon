@@ -1,14 +1,5 @@
 include ../Makedefs
 
-# check if we have Graphics, this should be replaced by
-# a configuration variable
-GG=\#define HAVE_LIBX11 1
-DOG=$(shell grep -o '$(GG)' ../src/h/config.h)
-
-ifeq ($(DOG),$(GG))
-GUI=graphics
-endif
-
 .PHONY: all iyacc unicon lib xml gui
 
 all: nographics $(GUI)

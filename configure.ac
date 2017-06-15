@@ -113,8 +113,8 @@ case $unicon_host in
       AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
-      RLIBS="-lnsl"
-      CFDYN="-fPIC -shared"
+      RLIBS="-lnsl -lcrypt "
+      CFDYN="-fPIC -shared "
         ;;
      *solaris*)
 	;;
@@ -123,6 +123,7 @@ case $unicon_host in
      *bsd*)
         ;;
      *macos*)
+       AC_CFLAG([-Wparentheses-equality])
        CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
 	;;
      *windows*)

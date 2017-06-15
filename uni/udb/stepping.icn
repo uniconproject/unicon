@@ -16,6 +16,7 @@ class Stepping(
    next_count,  # the cmdNext optional counter, initial value 0, default 1
    nex_level,   # used with the next command to skip over a call
    msg,         # a string with latest message from this class
+   pat,         # store the current pstep pattern 	       
    pline,       # stores the previous pattern line number
    ppos        # stores the previous cursor position for pattern match
    )	
@@ -187,7 +188,7 @@ method checkPStep()
    else cur_line := pline
    pos := keyword("pos", Monitored)
    sub := keyword("subject", Monitored)
-   index := keyword("patindex", Monitored)
+index := keyword("patindex", Monitored)
    
    write("this is the index ", index) 
 
@@ -207,6 +208,7 @@ method checkPStep()
 
       if &eventcode === E_PatAttempt then {
          ppos := 1
+         pat := &eventvalue
          msg := "\n   Pattern match started"
          msg ||:="\n   file "||cur_file||", line "||cur_line||"."
          msg||:="\n   "||cur_line-1||":"||
@@ -218,6 +220,7 @@ method checkPStep()
       }
       else if &eventcode === E_PelemMatch |
               &eventcode === E_PelemFail then {
+         index := keyword("patindex", Monitored)
          case &eventvalue of {
          PC_RTab_Nat | PC_RTab_NF  | PC_RTab_NP  | PC_RTab_NMF : {
             msg := "\n   RTab"
@@ -234,7 +237,8 @@ method checkPStep()
                   }
                ppos := pos
                msg ||:= "\n   Previous Match: \"" || prvMatch || "\""  
-               msg ||:= "\n   Next Pattern Element: To be implemented"
+               msg ||:= "\n   Next Pattern Element: "
+               msg ||:= pindex_image(pat, index)
                }
             }
          }
@@ -289,8 +293,9 @@ method pEnd()
          DState.Write(msg)
          DState.RunCode := STEP
          }
-      }
+}
 
+   pat := &null
    pline := &null
    ppos := 1
 end
@@ -321,6 +326,7 @@ initially()
    step_count := 0
    next_count := 0
    nex_level  := &null
+   pat   := &null
    pline := &null
    ppos := 1
 end

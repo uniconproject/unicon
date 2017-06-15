@@ -2128,6 +2128,9 @@ static stringint siKeywords[] = {
       else if (strcmp(kname,"errorvalue") == 0) {
 	 return tstate->K_errorvalue;
 	 }
+      else if (strcmp(kname,"patindex") == 0) {
+         return C_integer tstate->K_patindex;
+         } 
       else if (strcmp(kname,"errout") == 0) {
 	 return file(&(p->K_errout));
 	 }

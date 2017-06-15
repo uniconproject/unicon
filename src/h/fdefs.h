@@ -133,6 +133,7 @@ FncDefV(writes)
      FncDef(Rpos,1)
      FncDef(Tab,1)
      FncDef(Rtab,1)
+     FncDef(pindex_image, 1)
 #endif					/* PatternType */
 
 

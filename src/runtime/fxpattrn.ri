@@ -579,10 +579,8 @@ function {*} pattern_match(underef psub -> dpsub, pat)
        */
       k_pos = 1;
       k_subject = dpsub;
-      StrLoc(mon_sub) = StrLoc(k_subject);
-      StrLen(mon_sub) = StrLen(k_subject);
-      EVValD(&mon_sub, E_Snew);
       subject_len = StrLen(k_subject);
+      EVValD(&pat, E_PatAttempt);
 
       if (! cnv_pattern(&pat, &pat)) {
 	 runerr(127, pat);
@@ -1925,7 +1923,7 @@ else {
 #define Stack_Init 1
 #define Stack_Size 200
 
-#begdef internal_match_macro(f,e_patattempt,e_patfail,e_patmatch,e_patarg,e_pelemattempt,e_pelemmatch,e_pelemfail,e_assign,e_value,e_spos)
+#begdef internal_match_macro(f,e_patfail,e_patmatch,e_patarg,e_pelemattempt,e_pelemmatch,e_pelemfail,e_assign,e_value,e_spos)
 /*
  * internal_match() - primary pattern match engine.
  */
@@ -2001,7 +1999,6 @@ int f(char * pat_sub, int Length, int Pat_S,
 
    Stack = &bcons;
 
-   EVVal(Anchored_Mode, e_patattempt);
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
 	      Length,pat_sub,Length, k_pos));
@@ -2112,7 +2109,6 @@ Node_Fail:
    Node   = (struct b_pelem *)StackNode(Stack_Ptr);
    Stack_Ptr--;
    Stack->next->Lelem.nused--;
-   EVVal(k_pos, e_spos);
    goto Match;
 Node_Succeed:
 /*
@@ -3437,10 +3433,10 @@ Node_Succeed:
 #enddef
 
 #ifdef MultiThread
-internal_match_macro(internal_match_0,0,0,0,0,0,0,0,0,0,0)
-internal_match_macro(internal_match_1,E_PatAttempt,E_PatFail,E_PatMatch,E_PatArg,E_PelemAttempt,E_PelemMatch,E_PelemFail,E_Assign,E_Value,E_Spos)
+internal_match_macro(internal_match_0,0,0,0,0,0,0,0,0,0)
+internal_match_macro(internal_match_1,E_PatFail,E_PatMatch,E_PatArg,E_PelemAttempt,E_PelemMatch,E_PelemFail,E_Assign,E_Value,E_Spos)
 #else					/* MultiThread */
-internal_match_macro(internal_match,0,0,0,0,0,0,0,0,0,0)
+internal_match_macro(internal_match,0,0,0,0,0,0,0,0,0)
 #endif					/* MultiThread */
 
 /* keep this at the end so the #undef Fail affects no-one else */

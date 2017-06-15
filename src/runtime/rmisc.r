@@ -1678,7 +1678,8 @@ int c, q;
  * peCount helps to know whether there is a previous thing on which
  * to concatenate.
  */
-int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
+int pattern_image(union block *pe, int arbnoBool, dptr result, 
+                  int peCount, int pe_index)
    {
    tended union block * ep = pe;
    tended union block * r;
@@ -1729,13 +1730,14 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
              if ((pattern_image(Blk(ep,Pelem)->pthen, arbnoBool, &left,
-				     peCount)) == RunError) return RunError;
-             if ((pattern_image(r, arbnoBool, &right, peCount)) ==
-		 RunError) return RunError;
-             if(construct_image(&left, bi_pat(PI_ALT), &right, result) == 
-                 RunError) return RunError;
-             return construct_image(bi_pat(PI_FPAREN), result, bi_pat(PI_BPAREN),
-                                    result);
+				     peCount, pe_index)) == RunError) 
+                  return RunError;
+             if ((pattern_image(r, arbnoBool, &right, peCount, pe_index)) 
+                                == RunError) return RunError;
+             if(construct_image(&left, bi_pat(PI_ALT), &right, result) 
+                                == RunError) return RunError;
+             return construct_image(bi_pat(PI_FPAREN), result, 
+                                    bi_pat(PI_BPAREN), result);
              } 
           case PC_Any_MF: {
 	     if ((construct_funcimage(ep, PT_MF, PF_Any, result)) ==
@@ -2012,12 +2014,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
                 return Succeeded;
 		}
              arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
-             if (pattern_image((union block *)arb, 1, &image, 0) == RunError)
-		return RunError;
-             if (construct_image(bi_pat(PF_Arbno), &image,
-				     bi_pat(PI_BPAREN), result) == RunError)
-		return RunError;
-	     /* ?? */
+             if (pattern_image((union block *)arb, 1, &image, 0, pe_index) 
+                               == RunError) return RunError;
+             if (construct_image(bi_pat(PF_Arbno), &image, bi_pat(PI_BPAREN), 
+                                 result) == RunError) return RunError;
 	     peCount++;
              arbnoBool = 0;   
 	     break;         
@@ -2028,7 +2028,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, 2, &image, 0) == RunError)
+                if (pattern_image(arb, 2, &image, 0, pe_index) == RunError)
 		   return RunError;
                 if (construct_image(bi_pat(PF_Arbno), &image,
 		   		bi_pat(PI_BPAREN), result) == RunError)
@@ -2184,18 +2184,18 @@ int pattern_image(union block *pe, int arbnoBool, dptr result, int peCount)
 	   ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)) {
 	  if ((StrLen(*result)>0) ||
 	      ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){
-	     if ((pattern_image(ep, arbnoBool, &image, peCount)) ==
-		 RunError) return RunError;
+	     if ((pattern_image(ep, arbnoBool, &image, peCount, pe_index)) 
+                   == RunError) return RunError;
              if(strcmp(StrLoc(*result), "(") != 0) 
 	        return construct_image(result, bi_pat(PI_CONCAT), &image, result);
              else
  	        return construct_image(result, bi_pat(PI_EMPTY), &image, result);
 	     }
-	  else return pattern_image(ep, arbnoBool, result, peCount);
+	  else return pattern_image(ep, arbnoBool, result, peCount, pe_index);
           }
        else {
-	  if ((pattern_image(ep, arbnoBool, &image, peCount)) == RunError)
-	     return RunError;
+	  if ((pattern_image(ep, arbnoBool, &image, peCount, pe_index)) 
+                             == RunError) return RunError;
           return construct_image(bi_pat(PI_EMPTY), result, &image, result);
           }
        }
@@ -2411,6 +2411,30 @@ static int construct_funcimage(union block *pe, int aicode,
       return RunError;
    return construct_image(bi_pat(bpcode), result, bi_pat(PI_BPAREN), result);
 }
+
+function{1} pindex_image(x, i)
+   if ! cnv:C_integer(i) then 
+      runerr(101, i);
+
+   abstract {
+      return string
+      }
+   body {
+
+   tended union block * bp;
+   register union block * ep;
+
+   if(! cnv_pattern(&x, &x)) 
+      runerr(127, x);
+
+   bp = BlkLoc(x);
+   ep = Blk(bp, Pattern)->pe; 
+
+   if (pattern_image(ep, 0, &result, 0, i) == RunError) 
+      runerr(0);
+   else return result;
+   }
+end
 
 #endif					/* PatternType */
 
@@ -2754,7 +2778,7 @@ dptr dp1, dp2;
          bp = BlkLoc(*dp1);
 	 ep = Blk(bp,Pattern)->pe;
 
-         if (pattern_image(ep, 0, &pimage, 0) == RunError) return RunError;
+         if (pattern_image(ep, 0, &pimage, 0, -1) == RunError) return RunError;
          t = alcstr(NULL, StrLen(pimage) + 29);
 	 sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
 	 	        (long)(Blk(ep,Pelem)->index));

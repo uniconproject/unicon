@@ -102,13 +102,30 @@ AC_CFLAG([-fno-omit-frame-pointer])
 #AC_CFLAG([-Wmissing-prototypes])
 #AC_CFLAG([-Wmissing-declarations])
 AC_CFLAG([-fno-strict-aliasing])
-AC_CFLAG([-fno-unit-at-a-time])
 
 if test x"${enable_werror}" = x"yes" ; then
   WERROR="-Werror"
 fi
-AC_SUBST(WERROR)
 
+# OS specific flags go here
+case $host_os in
+     *linux*)
+      AC_CFLAG([-fno-unit-at-a-time])
+        ;;
+     *solaris*)
+	;;
+     *aix*)
+        ;;
+     *bsd*)
+        ;;
+     *darwin*)
+	;;
+     *cygwin*)
+        ;;
+esac
+
+
+AC_SUBST(WERROR)
 AC_SUBST(CC)
 
 # Do we have rdynamic?
@@ -130,24 +147,54 @@ AC_LANG_POP(C)
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
 if test "x$graphics" = "xyes"; then
-  echo "Building with graphics..."
-  XL="-L../../bin -lXpm \$\$(XLIBS)"
-  XPM=xpm
-  DRAWSTRING=drawstring3d.o
-  COMMONDRAWSTRING=../common/drawstring3d.o
 
-  AC_SUBST(XL)
-  AC_SUBST(XPM)
-  AC_SUBST(DRAWSTRING)
-  AC_SUBST(COMMONDRAWSTRING)
+  CHECK_XLIB()
+  if test "x$xlib_cv_libx" = xyes ; then
+
+    CHECK_FREETYPE()
+    CHECK_XFT()
+    CHECK_JPEG()
+    CHECK_PNG()
+    CHECK_OPENGL()
+    CHECK_FTGL()
+
+    echo "Building with graphics..."
+    XL="-L../../bin -lXpm \$\$(XLIBS)"
+    XPM=xpm
+    DRAWSTRING=drawstring3d.o
+    COMMONDRAWSTRING=../common/drawstring3d.o
+
+#    Any system specific graphics related config can go here
+    case $host_os in
+     *linux*)
+        ;;
+     *solaris*)
+        XLIBS = -L/usr/X11R6/lib/64 -R/usr/X11R6/lib/64 -lXpm -lX11       ;;
+     *aix*)
+        ;;
+     *bsd*)
+        ;;
+     *darwin*)
+        XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lXpm -lX11"
+	;;
+     *cygwin*)
+        ;;
+    esac
+    
+  else
+    echo "Graphics library missing: building without graphics..."
+  fi
   
 else
   echo "Building without graphics..."
+fi
+
+  AC_SUBST(XLIBS)
   AC_SUBST(XL)
   AC_SUBST(XPM)
   AC_SUBST(DRAWSTRING)
   AC_SUBST(COMMONDRAWSTRING)
-fi
+
 
  make -C config/unix/Config Makefiles name=$unicon_host
 	
@@ -212,16 +259,6 @@ CHECK_OPENAL()
 CHECK_VOICE()
 
 CHECK_ZLIB()
-
-if test "$graphics" = yes; then
-  CHECK_FREETYPE()
-  CHECK_XLIB()
-  CHECK_XFT()
-  CHECK_JPEG()
-  CHECK_PNG()
-  CHECK_OPENGL()
-  CHECK_FTGL()
-fi
 
 CHECK_ODBC()
 CHECK_PTHREAD()

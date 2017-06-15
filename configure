@@ -623,19 +623,20 @@ ac_includes_default="\
 
 ac_unique_file="src/runtime/imain.r"
 ac_subst_vars='LTLIBOBJS
-GL_LDFLAGS
-GL_CFLAGS
 JV_LDFLAGS
 LIBOBJS
 ALLOCA
 RANLIB
-ac_ct_CXX
-CXXFLAGS
-CXX
 COMMONDRAWSTRING
 DRAWSTRING
 XPM
 XL
+XLIBS
+ac_ct_CXX
+CXXFLAGS
+CXX
+GL_LDFLAGS
+GL_CFLAGS
 WERROR
 EGREP
 GREP
@@ -702,19 +703,19 @@ enable_graphics3d
 enable_concurrency
 enable_pattern
 enable_thin
+with_xlib
 with_freetype
+with_xft
+with_jpeg
+with_png
+with_opengl
+with_FTGL
 with_ogg
 with_libsdl
 with_libsmpeg
 with_libopenal
 with_jvoiplib
 with_zlib
-with_xlib
-with_xft
-with_jpeg
-with_png
-with_opengl
-with_FTGL
 with_odbc
 with_pthread
 with_openssl
@@ -1364,9 +1365,25 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-xlib=DIR root directory path of xlib installation looks in
+          /usr/X11 /usr/X11R6 /usr/openwin /opt/X11 /usr/local
+  --without-xlib to disable xlib usage completely
   --with-freetype2=DIR root directory path of freetype installation defaults to
                     /usr/include or /usr if not found in /usr/lib64
   --without-freetype to disable freetype usage completely
+  --with-xft=DIR root directory path of Xft installation defaults to /usr/local
+  --without-xft to disable xft usage completely
+  --with-jpeg=DIR root directory path of jpeg installation defaults to
+                    /usr/local or /usr if not found in /usr/local
+  --without-jpeg to disable jpeg usage completely
+  --with-png=DIR root directory path of png installation defaults to
+                    /usr/local or /usr if not found in /usr/local
+  --without-png to disable png usage completely
+  --with-opengl=DIR root directory path of opengl installation defaults to
+                    /usr/local or /usr if not found in /usr/local
+  --without-opengl to disable opengl usage completely
+  --with-FTGL=DIR root directory path of FTGL installation defaults to /usr/local/ftgl
+  --without-FTGL to disable FTGL usage completely
   --with-ogg=DIR root directory path of libogg installation defaults to
                     /usr/local or /usr if not found in /usr/local
   --without-ogg to disable ogg usage completely
@@ -1385,22 +1402,6 @@ Optional Packages:
   --with-zlib=DIR root directory path of zlib installation defaults to
                     /usr/local or /usr if not found in /usr/local
   --without-zlib to disable zlib usage completely
-  --with-xlib=DIR root directory path of xlib installation looks in
-          /usr/X11 /usr/X11R6 /usr/openwin /opt/X11 /usr/local
-  --without-xlib to disable xlib usage completely
-  --with-xft=DIR root directory path of Xft installation defaults to /usr/local
-  --without-xft to disable xft usage completely
-  --with-jpeg=DIR root directory path of jpeg installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-jpeg to disable jpeg usage completely
-  --with-png=DIR root directory path of png installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-png to disable png usage completely
-  --with-opengl=DIR root directory path of opengl installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-opengl to disable opengl usage completely
-  --with-FTGL=DIR root directory path of FTGL installation defaults to /usr/local/ftgl
-  --without-FTGL to disable FTGL usage completely
   --with-odbc=DIR root directory path of odbc installation defaults to
                     /usr/local or /usr if not found in /usr/local
   --without-odbc to disable odbc usage completely
@@ -4384,7 +4385,15 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
-{
+
+if test x"${enable_werror}" = x"yes" ; then
+  WERROR="-Werror"
+fi
+
+# OS specific flags go here
+case $host_os in
+     *linux*)
+      {
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4428,10 +4437,19 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
+        ;;
+     *solaris*)
+	;;
+     *aix*)
+        ;;
+     *bsd*)
+        ;;
+     *darwin*)
+	;;
+     *cygwin*)
+        ;;
+esac
 
-if test x"${enable_werror}" = x"yes" ; then
-  WERROR="-Werror"
-fi
 
 
 
@@ -4482,24 +4500,1659 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
 if test "x$graphics" = "xyes"; then
-  echo "Building with graphics..."
-  XL="-L../../bin -lXpm \$\$(XLIBS)"
-  XPM=xpm
-  DRAWSTRING=drawstring3d.o
-  COMMONDRAWSTRING=../common/drawstring3d.o
 
+  #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if xlib is wanted" >&5
+$as_echo_n "checking if xlib is wanted... " >&6; }
 
-
-
-
-
+# Check whether --with-xlib was given.
+if test "${with_xlib+set}" = set; then :
+  withval=$with_xlib; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  XLIB_HOME="$withval"
 else
-  echo "Building without graphics..."
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+XLIB_HOME=/usr/X11
+if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+then
+        XLIB_HOME=/usr/X11R6
+	if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+	then
+	        XLIB_HOME=/usr/openwin
+		if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+		then
+		        XLIB_HOME=/opt/X11
+			if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
+			then
+				XLIB_HOME=/usr/local
+			fi
+		fi
+	fi
+fi
+
+fi
 
 
+#
+# Locate Xlib, if wanted
+#
+if test -n "${XLIB_HOME}"
+then
+        XLIB_OLD_LDFLAGS=$LDFLAGS
+        XLIB_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${XLIB_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${XLIB_HOME}/include"
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XAllocColorCells in -lX11" >&5
+$as_echo_n "checking for XAllocColorCells in -lX11... " >&6; }
+if ${ac_cv_lib_X11_XAllocColorCells+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lX11  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char XAllocColorCells ();
+int
+main ()
+{
+return XAllocColorCells ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_X11_XAllocColorCells=yes
+else
+  ac_cv_lib_X11_XAllocColorCells=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_X11_XAllocColorCells" >&5
+$as_echo "$ac_cv_lib_X11_XAllocColorCells" >&6; }
+if test "x$ac_cv_lib_X11_XAllocColorCells" = xyes; then :
+  xlib_cv_libx=yes
+else
+  xlib_cv_libx=no
+fi
+
+        for ac_header in X11/Xlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "X11/Xlib.h" "ac_cv_header_X11_Xlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_X11_Xlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_X11_XLIB_H 1
+_ACEOF
+ xlib_cv_xlib_h=yes
+else
+  xlib_cv_xlib_h=no
+fi
+
+done
+
+        ac_fn_c_check_header_mongrel "$LINENO" "X11/Xos.h" "ac_cv_header_X11_Xos_h" "$ac_includes_default"
+if test "x$ac_cv_header_X11_Xos_h" = xyes; then :
+  xlib_cv_xos_h=yes
+else
+  xlib_cv_xos_h=no
+fi
+
+
+        ac_fn_c_check_header_compile "$LINENO" "X11/Xutil.h" "ac_cv_header_X11_Xutil_h" "#ifdef HAVE_X11_XLIB_H
+#include <X11/Xlib.h>
+#endif
+"
+if test "x$ac_cv_header_X11_Xutil_h" = xyes; then :
+  xlib_cv_xutil_h=yes
+else
+  xlib_cv_xutil_h=no
+fi
+
+
+        ac_fn_c_check_header_mongrel "$LINENO" "X11/Xatom.h" "ac_cv_header_X11_Xatom_h" "$ac_includes_default"
+if test "x$ac_cv_header_X11_Xatom_h" = xyes; then :
+  xlib_cv_xatom_h=yes
+else
+  xlib_cv_xatom_h=no
+fi
+
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        if test "$xlib_cv_libx" = "yes" -a "$xlib_cv_xlib_h" = "yes" -a "$xlib_cv_xos_h" = "yes" -a "$xlib_cv_xutil_h" = "yes" -a "$xlib_cv_xatom_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XAllocColorCells in -lX11" >&5
+$as_echo_n "checking for XAllocColorCells in -lX11... " >&6; }
+if ${ac_cv_lib_X11_XAllocColorCells+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lX11  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char XAllocColorCells ();
+int
+main ()
+{
+return XAllocColorCells ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_X11_XAllocColorCells=yes
+else
+  ac_cv_lib_X11_XAllocColorCells=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_X11_XAllocColorCells" >&5
+$as_echo "$ac_cv_lib_X11_XAllocColorCells" >&6; }
+if test "x$ac_cv_lib_X11_XAllocColorCells" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBX11 1
+_ACEOF
+
+  LIBS="-lX11 $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
+$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
+$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
+                LDFLAGS="$XLIB_OLD_LDFLAGS"
+                CPPFLAGS="$XLIB_OLD_CPPFLAGS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+fi
+
+
+  if test "x$xlib_cv_libx" = xyes ; then
+
+    #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
+$as_echo_n "checking if freetype is wanted... " >&6; }
+
+# Check whether --with-freetype was given.
+if test "${with_freetype+set}" = set; then :
+  withval=$with_freetype; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  FREETYPE_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+FREETYPE_HOME=/usr/X11
+if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
+then
+FREETYPE_HOME=/usr/local
+if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
+then
+        FREETYPE_HOME=/usr
+fi
+fi
+
+fi
+
+#
+# Locate freetype, if wanted
+#
+if test -n "${FREETYPE_HOME}"
+then
+	FREETYPE_OLD_LDFLAGS=$LDFLAGS
+	FREETYPE_OLD_CPPFLAGS=$CPPFLAGS
+	LDFLAGS="$LDFLAGS -L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include -I${FREETYPE_HOME}/include/freetype2/freetype -I${FREETYPE_HOME}/include/freetype2"
+	echo "$CPPFLAGS"
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_Open_Face in -lfreetype" >&5
+$as_echo_n "checking for FT_Open_Face in -lfreetype... " >&6; }
+if ${ac_cv_lib_freetype_FT_Open_Face+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfreetype  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char FT_Open_Face ();
+int
+main ()
+{
+return FT_Open_Face ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_freetype_FT_Open_Face=yes
+else
+  ac_cv_lib_freetype_FT_Open_Face=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_Open_Face" >&5
+$as_echo "$ac_cv_lib_freetype_FT_Open_Face" >&6; }
+if test "x$ac_cv_lib_freetype_FT_Open_Face" = xyes; then :
+  freetype_cv_libfreetype=yes
+else
+  freetype_cv_libfreetype=no
+fi
+
+        ac_fn_c_check_header_mongrel "$LINENO" "ft2build.h" "ac_cv_header_ft2build_h" "$ac_includes_default"
+if test "x$ac_cv_header_ft2build_h" = xyes; then :
+  freetype_cv_ft2build_h=yes
+else
+  freetype_cv_ft2build_h=no
+fi
+
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        if test "$freetype_cv_libfreetype" = "yes" -a "$freetype_cv_ft2build_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_Open_Face in -lfreetype" >&5
+$as_echo_n "checking for FT_Open_Face in -lfreetype... " >&6; }
+if ${ac_cv_lib_freetype_FT_Open_Face+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfreetype  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char FT_Open_Face ();
+int
+main ()
+{
+return FT_Open_Face ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_freetype_FT_Open_Face=yes
+else
+  ac_cv_lib_freetype_FT_Open_Face=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_Open_Face" >&5
+$as_echo "$ac_cv_lib_freetype_FT_Open_Face" >&6; }
+if test "x$ac_cv_lib_freetype_FT_Open_Face" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBFREETYPE 1
+_ACEOF
+
+  LIBS="-lfreetype $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
+$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
+$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
+		LDFLAGS="$FREETYPE_OLD_LDFLAGS"
+		CPPFLAGS="$FREETYPE_OLD_CPPFLAGS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+fi
+
+
+    #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if xft is wanted" >&5
+$as_echo_n "checking if xft is wanted... " >&6; }
+
+# Check whether --with-xft was given.
+if test "${with_xft+set}" = set; then :
+  withval=$with_xft; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  XFT_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+XFT_HOME=/usr/X11
+if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
+then
+XFT_HOME=/usr/local
+if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
+then
+        XFT_HOME=/usr
+fi
+fi
+
+fi
+
+#
+# Locate XFT, if wanted
+#
+if test -n "${XFT_HOME}"
+then
+	XFT_OLD_LDFLAGS=$LDFLAGS
+	XFT_OLD_CPPFLAGS=$CPPFLAGS
+	LDFLAGS="$LDFLAGS -L${XFT_HOME}/lib64 -L${XFT_HOME}/lib"
+	CPPFLAGS="$CPPFLAGS -I${XFT_HOME}/include/X11/Xft -I${XFT_HOME}/include/freetype2"
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XftFontOpenPattern in -lXft" >&5
+$as_echo_n "checking for XftFontOpenPattern in -lXft... " >&6; }
+if ${ac_cv_lib_Xft_XftFontOpenPattern+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXft  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char XftFontOpenPattern ();
+int
+main ()
+{
+return XftFontOpenPattern ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_Xft_XftFontOpenPattern=yes
+else
+  ac_cv_lib_Xft_XftFontOpenPattern=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xft_XftFontOpenPattern" >&5
+$as_echo "$ac_cv_lib_Xft_XftFontOpenPattern" >&6; }
+if test "x$ac_cv_lib_Xft_XftFontOpenPattern" = xyes; then :
+  xft_cv_libxft=yes
+else
+  xft_cv_libxft=no
+fi
+
+        ac_fn_c_check_header_mongrel "$LINENO" "Xft.h" "ac_cv_header_Xft_h" "$ac_includes_default"
+if test "x$ac_cv_header_Xft_h" = xyes; then :
+  xft_cv_xft_h=yes
+else
+  xft_cv_xft_h=no
+fi
+
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        if test "$xft_cv_libxft" = "yes" -a "$xft_cv_xft_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXft" >&5
+$as_echo_n "checking for main in -lXft... " >&6; }
+if ${ac_cv_lib_Xft_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXft  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_Xft_main=yes
+else
+  ac_cv_lib_Xft_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xft_main" >&5
+$as_echo "$ac_cv_lib_Xft_main" >&6; }
+if test "x$ac_cv_lib_Xft_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBXFT 1
+_ACEOF
+
+  LIBS="-lXft $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
+$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
+$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
+		LDFLAGS="$XFT_OLD_LDFLAGS"
+		CPPFLAGS="$XFT_OLD_CPPFLAGS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+fi
+
+
+    #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if jpeg is wanted" >&5
+$as_echo_n "checking if jpeg is wanted... " >&6; }
+
+# Check whether --with-jpeg was given.
+if test "${with_jpeg+set}" = set; then :
+  withval=$with_jpeg; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  JPEG_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+JPEG_HOME=/usr/local
+if test ! -f "${JPEG_HOME}/include/jpeglib.h"
+then
+        JPEG_HOME=/usr
+fi
+
+fi
+
+
+#
+# Locate JPEG, if wanted
+#
+if test -n "${JPEG_HOME}"
+then
+        JPEG_OLD_LDFLAGS=$LDFLAGS
+        JPEG_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${JPEG_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${JPEG_HOME}/include"
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_destroy_decompress in -ljpeg" >&5
+$as_echo_n "checking for jpeg_destroy_decompress in -ljpeg... " >&6; }
+if ${ac_cv_lib_jpeg_jpeg_destroy_decompress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljpeg  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char jpeg_destroy_decompress ();
+int
+main ()
+{
+return jpeg_destroy_decompress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_jpeg_jpeg_destroy_decompress=yes
+else
+  ac_cv_lib_jpeg_jpeg_destroy_decompress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_destroy_decompress" >&5
+$as_echo "$ac_cv_lib_jpeg_jpeg_destroy_decompress" >&6; }
+if test "x$ac_cv_lib_jpeg_jpeg_destroy_decompress" = xyes; then :
+  jpeg_cv_libjpeg=yes
+else
+  jpeg_cv_libjpeg=no
+fi
+
+        ac_fn_c_check_header_mongrel "$LINENO" "jpeglib.h" "ac_cv_header_jpeglib_h" "$ac_includes_default"
+if test "x$ac_cv_header_jpeglib_h" = xyes; then :
+  jpeg_cv_jpeglib_h=yes
+else
+  jpeg_cv_jpeglib_h=no
+fi
+
+
+        ac_fn_c_check_header_mongrel "$LINENO" "jerror.h" "ac_cv_header_jerror_h" "$ac_includes_default"
+if test "x$ac_cv_header_jerror_h" = xyes; then :
+  jpeg_cv_jerror_h=yes
+else
+  jpeg_cv_jerror_h=no
+fi
+
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        if test "$jpeg_cv_libjpeg" = "yes" -a "$jpeg_cv_jpeglib_h" = "yes" -a "$jpeg_cv_jerror_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_destroy_decompress in -ljpeg" >&5
+$as_echo_n "checking for jpeg_destroy_decompress in -ljpeg... " >&6; }
+if ${ac_cv_lib_jpeg_jpeg_destroy_decompress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljpeg  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char jpeg_destroy_decompress ();
+int
+main ()
+{
+return jpeg_destroy_decompress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_jpeg_jpeg_destroy_decompress=yes
+else
+  ac_cv_lib_jpeg_jpeg_destroy_decompress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_destroy_decompress" >&5
+$as_echo "$ac_cv_lib_jpeg_jpeg_destroy_decompress" >&6; }
+if test "x$ac_cv_lib_jpeg_jpeg_destroy_decompress" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBJPEG 1
+_ACEOF
+
+  LIBS="-ljpeg $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
+$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
+$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
+                LDFLAGS="$JPEG_OLD_LDFLAGS"
+                CPPFLAGS="$JPEG_OLD_CPPFLAGS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+fi
+
+
+    #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if png is wanted" >&5
+$as_echo_n "checking if png is wanted... " >&6; }
+
+# Check whether --with-png was given.
+if test "${with_png+set}" = set; then :
+  withval=$with_png; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  PNG_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+PNG_HOME=/usr/local
+if test ! -f "${PNG_HOME}/include/png.h"
+then
+        PNG_HOME=/usr
+fi
+
+fi
+
+
+#
+# Locate PNG, if wanted
+#
+if test -n "${PNG_HOME}"
+then
+        PNG_OLD_LDFLAGS=$LDFLAGS
+        PNG_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -L${PNG_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${PNG_HOME}/include"
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_read_image in -lpng" >&5
+$as_echo_n "checking for png_read_image in -lpng... " >&6; }
+if ${ac_cv_lib_png_png_read_image+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpng  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char png_read_image ();
+int
+main ()
+{
+return png_read_image ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_png_png_read_image=yes
+else
+  ac_cv_lib_png_png_read_image=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_png_png_read_image" >&5
+$as_echo "$ac_cv_lib_png_png_read_image" >&6; }
+if test "x$ac_cv_lib_png_png_read_image" = xyes; then :
+  png_cv_libpng=yes
+else
+  png_cv_libpng=no
+fi
+
+        ac_fn_c_check_header_mongrel "$LINENO" "png.h" "ac_cv_header_png_h" "$ac_includes_default"
+if test "x$ac_cv_header_png_h" = xyes; then :
+  png_cv_png_h=yes
+else
+  png_cv_png_h=no
+fi
+
+
+#	AC_CHECK_HEADER(pngconf.h, [png_cv_pngconf_h=yes], [png_cv_pngconf_h=no])
+#	AC_CHECK_HEADER(zlib.h, [png_cv_zlib_h=yes], [png_cv_zlib_h=no])
+#	AC_CHECK_HEADER(zconf.h, [png_cv_zconf_h=yes], [png_cv_zconf_h=no])
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes"
+	   # -a "$png_cv_pngconf_h" = "yes" -a "$png_cv_zlib_h" = "yes" -a "$png_cv_zconf_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_read_image in -lpng" >&5
+$as_echo_n "checking for png_read_image in -lpng... " >&6; }
+if ${ac_cv_lib_png_png_read_image+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpng  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char png_read_image ();
+int
+main ()
+{
+return png_read_image ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_png_png_read_image=yes
+else
+  ac_cv_lib_png_png_read_image=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_png_png_read_image" >&5
+$as_echo "$ac_cv_lib_png_png_read_image" >&6; }
+if test "x$ac_cv_lib_png_png_read_image" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPNG 1
+_ACEOF
+
+  LIBS="-lpng $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
+$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
+$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
+                LDFLAGS="$PNG_OLD_LDFLAGS"
+                CPPFLAGS="$PNG_OLD_CPPFLAGS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+fi
+
+    #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if opengl is wanted" >&5
+$as_echo_n "checking if opengl is wanted... " >&6; }
+
+# Check whether --with-opengl was given.
+if test "${with_opengl+set}" = set; then :
+  withval=$with_opengl; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  OPENGL_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+OPENGL_HOME=/usr/local
+if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
+then
+        OPENGL_HOME=/usr/X11R6
+fi
+if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
+then
+        OPENGL_HOME=/usr
+fi
+
+fi
+
+
+#
+# Locate OPENGL, if wanted
+#
+if test -n "${OPENGL_HOME}"
+then
+        OPENGL_OLD_LDFLAGS=$LDFLAGS
+        OPENGL_OLD_CPPFLAGS=$LDFLAGS
+        LDFLAGS="$LDFLAGS -lm -L${OPENGL_HOME}/lib"
+        CPPFLAGS="$CPPFLAGS -I${OPENGL_HOME}/include"
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
+$as_echo_n "checking for glAccum in -lGL... " >&6; }
+if ${ac_cv_lib_GL_glAccum+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lGL  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char glAccum ();
+int
+main ()
+{
+return glAccum ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_GL_glAccum=yes
+else
+  ac_cv_lib_GL_glAccum=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GL_glAccum" >&5
+$as_echo "$ac_cv_lib_GL_glAccum" >&6; }
+if test "x$ac_cv_lib_GL_glAccum" = xyes; then :
+  opengl_cv_libGL=yes
+else
+  opengl_cv_libGL=no
+fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
+$as_echo_n "checking for gluBeginCurve in -lGLU... " >&6; }
+if ${ac_cv_lib_GLU_gluBeginCurve+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lGLU -lGL $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gluBeginCurve ();
+int
+main ()
+{
+return gluBeginCurve ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_GLU_gluBeginCurve=yes
+else
+  ac_cv_lib_GLU_gluBeginCurve=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GLU_gluBeginCurve" >&5
+$as_echo "$ac_cv_lib_GLU_gluBeginCurve" >&6; }
+if test "x$ac_cv_lib_GLU_gluBeginCurve" = xyes; then :
+  opengl_cv_libGLU=yes
+else
+  opengl_cv_libGLU=no
+fi
+
+        ac_fn_c_check_header_mongrel "$LINENO" "GL/gl.h" "ac_cv_header_GL_gl_h" "$ac_includes_default"
+if test "x$ac_cv_header_GL_gl_h" = xyes; then :
+  opengl_cv_gl_h=yes
+else
+  opengl_cv_gl_h=no
+fi
+
+
+        ac_fn_c_check_header_mongrel "$LINENO" "GL/glx.h" "ac_cv_header_GL_glx_h" "$ac_includes_default"
+if test "x$ac_cv_header_GL_glx_h" = xyes; then :
+  opengl_cv_glx_h=yes
+else
+  opengl_cv_glx_h=no
+fi
+
+
+        ac_fn_c_check_header_mongrel "$LINENO" "GL/glu.h" "ac_cv_header_GL_glu_h" "$ac_includes_default"
+if test "x$ac_cv_header_GL_glu_h" = xyes; then :
+  opengl_cv_glu_h=yes
+else
+  opengl_cv_glu_h=no
+fi
+
+
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+        if test "$opengl_cv_libGL" = "yes" -a "$opengl_cv_libGLU" = "yes" -a "$opengl_cv_gl_h" = "yes" -a "$opengl_cv_glx_h" = "yes" -a "$opengl_cv_glu_h" = "yes"
+        then
+                #
+                # If both library and headers were found, use them
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
+$as_echo_n "checking for glAccum in -lGL... " >&6; }
+if ${ac_cv_lib_GL_glAccum+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lGL  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char glAccum ();
+int
+main ()
+{
+return glAccum ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_GL_glAccum=yes
+else
+  ac_cv_lib_GL_glAccum=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GL_glAccum" >&5
+$as_echo "$ac_cv_lib_GL_glAccum" >&6; }
+if test "x$ac_cv_lib_GL_glAccum" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGL 1
+_ACEOF
+
+  LIBS="-lGL $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
+$as_echo_n "checking for gluBeginCurve in -lGLU... " >&6; }
+if ${ac_cv_lib_GLU_gluBeginCurve+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lGLU  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gluBeginCurve ();
+int
+main ()
+{
+return gluBeginCurve ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_GLU_gluBeginCurve=yes
+else
+  ac_cv_lib_GLU_gluBeginCurve=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GLU_gluBeginCurve" >&5
+$as_echo "$ac_cv_lib_GLU_gluBeginCurve" >&6; }
+if test "x$ac_cv_lib_GLU_gluBeginCurve" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGLU 1
+_ACEOF
+
+  LIBS="-lGLU $LIBS"
+
+fi
+
+	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
+
+	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
+$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
+$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
+                LDFLAGS="$OPENGL_OLD_LDFLAGS"
+                CPPFLAGS="$OPENGL_OLD_CPPFLAGS"
+	        GL_CFLAGS=
+
+	        GL_LDFLAGS=
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+fi
+
+
+    #
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if FTGL is wanted" >&5
+$as_echo_n "checking if FTGL is wanted... " >&6; }
+
+# Check whether --with-FTGL was given.
+if test "${with_FTGL+set}" = set; then :
+  withval=$with_FTGL; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  FTGL_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+FTGL_HOME=/usr/local
+if test ! -f "${FTGL_HOME}/include/FTGL/FTGLExtrdFont.h"
+then
+        FTGL_HOME=/usr
+fi
 
 
 fi
+
+
+#
+# Locate FTGL, if wanted
+#
+if test -n "${FTGL_HOME}"
+then
+    FTGL_OLD_LDFLAGS=$LDFLAGS
+    FTGL_OLD_CPPFLAGS=$CPPFLAGS
+    LDFLAGS="$LDFLAGS -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib"
+    CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+if test -z "$CXX"; then
+  if test -n "$CCC"; then
+    CXX=$CCC
+  else
+    if test -n "$ac_tool_prefix"; then
+  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
+  do
+    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
+set dummy $ac_tool_prefix$ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$CXX"; then
+  ac_cv_prog_CXX="$CXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_CXX="$ac_tool_prefix$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+CXX=$ac_cv_prog_CXX
+if test -n "$CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
+$as_echo "$CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    test -n "$CXX" && break
+  done
+fi
+if test -z "$CXX"; then
+  ac_ct_CXX=$CXX
+  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_ac_ct_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_CXX"; then
+  ac_cv_prog_ac_ct_CXX="$ac_ct_CXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_CXX="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_CXX=$ac_cv_prog_ac_ct_CXX
+if test -n "$ac_ct_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_CXX" >&5
+$as_echo "$ac_ct_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ac_ct_CXX" && break
+done
+
+  if test "x$ac_ct_CXX" = x; then
+    CXX="g++"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    CXX=$ac_ct_CXX
+  fi
+fi
+
+  fi
+fi
+# Provide some information about the compiler.
+$as_echo "$as_me:${as_lineno-$LINENO}: checking for C++ compiler version" >&5
+set X $ac_compile
+ac_compiler=$2
+for ac_option in --version -v -V -qversion; do
+  { { ac_try="$ac_compiler $ac_option >&5"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_compiler $ac_option >&5") 2>conftest.err
+  ac_status=$?
+  if test -s conftest.err; then
+    sed '10a\
+... rest of stderr output deleted ...
+         10q' conftest.err >conftest.er1
+    cat conftest.er1 >&5
+  fi
+  rm -f conftest.er1 conftest.err
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we are using the GNU C++ compiler" >&5
+$as_echo_n "checking whether we are using the GNU C++ compiler... " >&6; }
+if ${ac_cv_cxx_compiler_gnu+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+#ifndef __GNUC__
+       choke me
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_compiler_gnu=yes
+else
+  ac_compiler_gnu=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+ac_cv_cxx_compiler_gnu=$ac_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_compiler_gnu" >&5
+$as_echo "$ac_cv_cxx_compiler_gnu" >&6; }
+if test $ac_compiler_gnu = yes; then
+  GXX=yes
+else
+  GXX=
+fi
+ac_test_CXXFLAGS=${CXXFLAGS+set}
+ac_save_CXXFLAGS=$CXXFLAGS
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX accepts -g" >&5
+$as_echo_n "checking whether $CXX accepts -g... " >&6; }
+if ${ac_cv_prog_cxx_g+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_save_cxx_werror_flag=$ac_cxx_werror_flag
+   ac_cxx_werror_flag=yes
+   ac_cv_prog_cxx_g=no
+   CXXFLAGS="-g"
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_prog_cxx_g=yes
+else
+  CXXFLAGS=""
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  ac_cxx_werror_flag=$ac_save_cxx_werror_flag
+	 CXXFLAGS="-g"
+	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_cv_prog_cxx_g=yes
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   ac_cxx_werror_flag=$ac_save_cxx_werror_flag
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cxx_g" >&5
+$as_echo "$ac_cv_prog_cxx_g" >&6; }
+if test "$ac_test_CXXFLAGS" = set; then
+  CXXFLAGS=$ac_save_CXXFLAGS
+elif test $ac_cv_prog_cxx_g = yes; then
+  if test "$GXX" = yes; then
+    CXXFLAGS="-g -O2"
+  else
+    CXXFLAGS="-g"
+  fi
+else
+  if test "$GXX" = yes; then
+    CXXFLAGS="-O2"
+  else
+    CXXFLAGS=
+  fi
+fi
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+    #
+    # Test whether we found a C++ compiler; for now, only a true g++.  We used
+    # to use AC_LANG_CPLUSPLUS, but it dies with a FATAL error if no C++ found
+    #
+    if test "$CXX" = "g++" -a "$GXX" = "yes"
+    then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
+$as_echo_n "checking for _ZN6FTFaceD2Ev in -lftgl... " >&6; }
+if ${ac_cv_lib_ftgl__ZN6FTFaceD2Ev+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lftgl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char _ZN6FTFaceD2Ev ();
+int
+main ()
+{
+return _ZN6FTFaceD2Ev ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=yes
+else
+  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&5
+$as_echo "$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&6; }
+if test "x$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" = xyes; then :
+  FTGL_cv_libFTGL=yes
+else
+  FTGL_cv_libFTGL=no
+fi
+
+	ac_fn_c_check_header_mongrel "$LINENO" "FTGLExtrdFont.h" "ac_cv_header_FTGLExtrdFont_h" "$ac_includes_default"
+if test "x$ac_cv_header_FTGLExtrdFont_h" = xyes; then :
+  FTGL_cv_FTGL_h=yes
+else
+  FTGL_cv_FTGL_h=no
+fi
+
+
+        if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
+        then
+                #
+                # If both library and header were found, use them.
+		# At the moment, this looks deplorably Linux-specific.
+		# sort|tail ensures that /usr/lib64 is preferred to /usr/lib
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
+$as_echo_n "checking for _ZN6FTFaceD2Ev in -lftgl... " >&6; }
+if ${ac_cv_lib_ftgl__ZN6FTFaceD2Ev+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lftgl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char _ZN6FTFaceD2Ev ();
+int
+main ()
+{
+return _ZN6FTFaceD2Ev ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=yes
+else
+  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&5
+$as_echo "$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&6; }
+if test "x$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBFTGL 1
+_ACEOF
+
+  LIBS="-lftgl $LIBS"
+
+fi
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
+$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
+		LIBS="$LIBS -lstdc++"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
+$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
+		LDFLAGS="$FTGL_OLD_LDFLAGS"
+		CPPFLAGS="$FTGL_OLD_CPPFLAGS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+        fi
+    else
+	echo "missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+    fi
+fi
+
+
+
+    echo "Building with graphics..."
+    XL="-L../../bin -lXpm \$\$(XLIBS)"
+    XPM=xpm
+    DRAWSTRING=drawstring3d.o
+    COMMONDRAWSTRING=../common/drawstring3d.o
+
+#    Any system specific graphics related config can go here
+    case $host_os in
+     *linux*)
+        ;;
+     *solaris*)
+        XLIBS = -L/usr/X11R6/lib/64 -R/usr/X11R6/lib/64 -lXpm -lX11       ;;
+     *aix*)
+        ;;
+     *bsd*)
+        ;;
+     *darwin*)
+        XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lXpm -lX11"
+	;;
+     *cygwin*)
+        ;;
+    esac
+
+  else
+    echo "Graphics library missing: building without graphics..."
+  fi
+
+else
+  echo "Building without graphics..."
+fi
+
+
+
+
+
+
+
 
  make -C config/unix/Config Makefiles name=$unicon_host
 
@@ -7000,179 +8653,6 @@ fi
 #
 # Handle user hints
 #
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
-$as_echo_n "checking if freetype is wanted... " >&6; }
-
-# Check whether --with-freetype was given.
-if test "${with_freetype+set}" = set; then :
-  withval=$with_freetype; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  FREETYPE_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-FREETYPE_HOME=/usr/X11
-if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
-then
-FREETYPE_HOME=/usr/local
-if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
-then
-        FREETYPE_HOME=/usr
-fi
-fi
-
-fi
-
-#
-# Locate freetype, if wanted
-#
-if test -n "${FREETYPE_HOME}"
-then
-	FREETYPE_OLD_LDFLAGS=$LDFLAGS
-	FREETYPE_OLD_CPPFLAGS=$CPPFLAGS
-	LDFLAGS="$LDFLAGS -L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include -I${FREETYPE_HOME}/include/freetype2/freetype -I${FREETYPE_HOME}/include/freetype2"
-	echo "$CPPFLAGS"
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_Open_Face in -lfreetype" >&5
-$as_echo_n "checking for FT_Open_Face in -lfreetype... " >&6; }
-if ${ac_cv_lib_freetype_FT_Open_Face+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lfreetype  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char FT_Open_Face ();
-int
-main ()
-{
-return FT_Open_Face ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_freetype_FT_Open_Face=yes
-else
-  ac_cv_lib_freetype_FT_Open_Face=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_Open_Face" >&5
-$as_echo "$ac_cv_lib_freetype_FT_Open_Face" >&6; }
-if test "x$ac_cv_lib_freetype_FT_Open_Face" = xyes; then :
-  freetype_cv_libfreetype=yes
-else
-  freetype_cv_libfreetype=no
-fi
-
-        ac_fn_c_check_header_mongrel "$LINENO" "ft2build.h" "ac_cv_header_ft2build_h" "$ac_includes_default"
-if test "x$ac_cv_header_ft2build_h" = xyes; then :
-  freetype_cv_ft2build_h=yes
-else
-  freetype_cv_ft2build_h=no
-fi
-
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        if test "$freetype_cv_libfreetype" = "yes" -a "$freetype_cv_ft2build_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_Open_Face in -lfreetype" >&5
-$as_echo_n "checking for FT_Open_Face in -lfreetype... " >&6; }
-if ${ac_cv_lib_freetype_FT_Open_Face+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lfreetype  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char FT_Open_Face ();
-int
-main ()
-{
-return FT_Open_Face ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_freetype_FT_Open_Face=yes
-else
-  ac_cv_lib_freetype_FT_Open_Face=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_Open_Face" >&5
-$as_echo "$ac_cv_lib_freetype_FT_Open_Face" >&6; }
-if test "x$ac_cv_lib_freetype_FT_Open_Face" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBFREETYPE 1
-_ACEOF
-
-  LIBS="-lfreetype $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
-$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
-$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
-		LDFLAGS="$FREETYPE_OLD_LDFLAGS"
-		CPPFLAGS="$FREETYPE_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-fi
-
-
-#
-# Handle user hints
-#
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if oggvorbis is wanted" >&5
 $as_echo_n "checking if oggvorbis is wanted... " >&6; }
 
@@ -8991,1448 +10471,6 @@ $as_echo "failed" >&6; }
 fi
 
 
-
-if test "$graphics" = yes; then
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if xlib is wanted" >&5
-$as_echo_n "checking if xlib is wanted... " >&6; }
-
-# Check whether --with-xlib was given.
-if test "${with_xlib+set}" = set; then :
-  withval=$with_xlib; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  XLIB_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-XLIB_HOME=/usr/X11
-if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-then
-        XLIB_HOME=/usr/X11R6
-	if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-	then
-	        XLIB_HOME=/usr/openwin
-		if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-		then
-		        XLIB_HOME=/opt/X11
-			if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-			then
-				XLIB_HOME=/usr/local
-			fi
-		fi
-	fi
-fi
-
-fi
-
-
-#
-# Locate Xlib, if wanted
-#
-if test -n "${XLIB_HOME}"
-then
-        XLIB_OLD_LDFLAGS=$LDFLAGS
-        XLIB_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${XLIB_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${XLIB_HOME}/include"
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XAllocColorCells in -lX11" >&5
-$as_echo_n "checking for XAllocColorCells in -lX11... " >&6; }
-if ${ac_cv_lib_X11_XAllocColorCells+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lX11  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char XAllocColorCells ();
-int
-main ()
-{
-return XAllocColorCells ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_X11_XAllocColorCells=yes
-else
-  ac_cv_lib_X11_XAllocColorCells=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_X11_XAllocColorCells" >&5
-$as_echo "$ac_cv_lib_X11_XAllocColorCells" >&6; }
-if test "x$ac_cv_lib_X11_XAllocColorCells" = xyes; then :
-  xlib_cv_libx=yes
-else
-  xlib_cv_libx=no
-fi
-
-        for ac_header in X11/Xlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "X11/Xlib.h" "ac_cv_header_X11_Xlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_X11_Xlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_X11_XLIB_H 1
-_ACEOF
- xlib_cv_xlib_h=yes
-else
-  xlib_cv_xlib_h=no
-fi
-
-done
-
-        ac_fn_c_check_header_mongrel "$LINENO" "X11/Xos.h" "ac_cv_header_X11_Xos_h" "$ac_includes_default"
-if test "x$ac_cv_header_X11_Xos_h" = xyes; then :
-  xlib_cv_xos_h=yes
-else
-  xlib_cv_xos_h=no
-fi
-
-
-        ac_fn_c_check_header_compile "$LINENO" "X11/Xutil.h" "ac_cv_header_X11_Xutil_h" "#ifdef HAVE_X11_XLIB_H
-#include <X11/Xlib.h>
-#endif
-"
-if test "x$ac_cv_header_X11_Xutil_h" = xyes; then :
-  xlib_cv_xutil_h=yes
-else
-  xlib_cv_xutil_h=no
-fi
-
-
-        ac_fn_c_check_header_mongrel "$LINENO" "X11/Xatom.h" "ac_cv_header_X11_Xatom_h" "$ac_includes_default"
-if test "x$ac_cv_header_X11_Xatom_h" = xyes; then :
-  xlib_cv_xatom_h=yes
-else
-  xlib_cv_xatom_h=no
-fi
-
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        if test "$xlib_cv_libx" = "yes" -a "$xlib_cv_xlib_h" = "yes" -a "$xlib_cv_xos_h" = "yes" -a "$xlib_cv_xutil_h" = "yes" -a "$xlib_cv_xatom_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XAllocColorCells in -lX11" >&5
-$as_echo_n "checking for XAllocColorCells in -lX11... " >&6; }
-if ${ac_cv_lib_X11_XAllocColorCells+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lX11  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char XAllocColorCells ();
-int
-main ()
-{
-return XAllocColorCells ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_X11_XAllocColorCells=yes
-else
-  ac_cv_lib_X11_XAllocColorCells=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_X11_XAllocColorCells" >&5
-$as_echo "$ac_cv_lib_X11_XAllocColorCells" >&6; }
-if test "x$ac_cv_lib_X11_XAllocColorCells" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBX11 1
-_ACEOF
-
-  LIBS="-lX11 $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
-$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
-$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
-                LDFLAGS="$XLIB_OLD_LDFLAGS"
-                CPPFLAGS="$XLIB_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-fi
-
-
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if xft is wanted" >&5
-$as_echo_n "checking if xft is wanted... " >&6; }
-
-# Check whether --with-xft was given.
-if test "${with_xft+set}" = set; then :
-  withval=$with_xft; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  XFT_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-XFT_HOME=/usr/X11
-if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
-then
-XFT_HOME=/usr/local
-if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
-then
-        XFT_HOME=/usr
-fi
-fi
-
-fi
-
-#
-# Locate XFT, if wanted
-#
-if test -n "${XFT_HOME}"
-then
-	XFT_OLD_LDFLAGS=$LDFLAGS
-	XFT_OLD_CPPFLAGS=$CPPFLAGS
-	LDFLAGS="$LDFLAGS -L${XFT_HOME}/lib64 -L${XFT_HOME}/lib"
-	CPPFLAGS="$CPPFLAGS -I${XFT_HOME}/include/X11/Xft -I${XFT_HOME}/include/freetype2"
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XftFontOpenPattern in -lXft" >&5
-$as_echo_n "checking for XftFontOpenPattern in -lXft... " >&6; }
-if ${ac_cv_lib_Xft_XftFontOpenPattern+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lXft  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char XftFontOpenPattern ();
-int
-main ()
-{
-return XftFontOpenPattern ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_Xft_XftFontOpenPattern=yes
-else
-  ac_cv_lib_Xft_XftFontOpenPattern=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xft_XftFontOpenPattern" >&5
-$as_echo "$ac_cv_lib_Xft_XftFontOpenPattern" >&6; }
-if test "x$ac_cv_lib_Xft_XftFontOpenPattern" = xyes; then :
-  xft_cv_libxft=yes
-else
-  xft_cv_libxft=no
-fi
-
-        ac_fn_c_check_header_mongrel "$LINENO" "Xft.h" "ac_cv_header_Xft_h" "$ac_includes_default"
-if test "x$ac_cv_header_Xft_h" = xyes; then :
-  xft_cv_xft_h=yes
-else
-  xft_cv_xft_h=no
-fi
-
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        if test "$xft_cv_libxft" = "yes" -a "$xft_cv_xft_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXft" >&5
-$as_echo_n "checking for main in -lXft... " >&6; }
-if ${ac_cv_lib_Xft_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lXft  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_Xft_main=yes
-else
-  ac_cv_lib_Xft_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_Xft_main" >&5
-$as_echo "$ac_cv_lib_Xft_main" >&6; }
-if test "x$ac_cv_lib_Xft_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBXFT 1
-_ACEOF
-
-  LIBS="-lXft $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
-$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
-$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
-		LDFLAGS="$XFT_OLD_LDFLAGS"
-		CPPFLAGS="$XFT_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-fi
-
-
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if jpeg is wanted" >&5
-$as_echo_n "checking if jpeg is wanted... " >&6; }
-
-# Check whether --with-jpeg was given.
-if test "${with_jpeg+set}" = set; then :
-  withval=$with_jpeg; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  JPEG_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-JPEG_HOME=/usr/local
-if test ! -f "${JPEG_HOME}/include/jpeglib.h"
-then
-        JPEG_HOME=/usr
-fi
-
-fi
-
-
-#
-# Locate JPEG, if wanted
-#
-if test -n "${JPEG_HOME}"
-then
-        JPEG_OLD_LDFLAGS=$LDFLAGS
-        JPEG_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${JPEG_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${JPEG_HOME}/include"
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_destroy_decompress in -ljpeg" >&5
-$as_echo_n "checking for jpeg_destroy_decompress in -ljpeg... " >&6; }
-if ${ac_cv_lib_jpeg_jpeg_destroy_decompress+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ljpeg  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char jpeg_destroy_decompress ();
-int
-main ()
-{
-return jpeg_destroy_decompress ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_jpeg_jpeg_destroy_decompress=yes
-else
-  ac_cv_lib_jpeg_jpeg_destroy_decompress=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_destroy_decompress" >&5
-$as_echo "$ac_cv_lib_jpeg_jpeg_destroy_decompress" >&6; }
-if test "x$ac_cv_lib_jpeg_jpeg_destroy_decompress" = xyes; then :
-  jpeg_cv_libjpeg=yes
-else
-  jpeg_cv_libjpeg=no
-fi
-
-        ac_fn_c_check_header_mongrel "$LINENO" "jpeglib.h" "ac_cv_header_jpeglib_h" "$ac_includes_default"
-if test "x$ac_cv_header_jpeglib_h" = xyes; then :
-  jpeg_cv_jpeglib_h=yes
-else
-  jpeg_cv_jpeglib_h=no
-fi
-
-
-        ac_fn_c_check_header_mongrel "$LINENO" "jerror.h" "ac_cv_header_jerror_h" "$ac_includes_default"
-if test "x$ac_cv_header_jerror_h" = xyes; then :
-  jpeg_cv_jerror_h=yes
-else
-  jpeg_cv_jerror_h=no
-fi
-
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        if test "$jpeg_cv_libjpeg" = "yes" -a "$jpeg_cv_jpeglib_h" = "yes" -a "$jpeg_cv_jerror_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_destroy_decompress in -ljpeg" >&5
-$as_echo_n "checking for jpeg_destroy_decompress in -ljpeg... " >&6; }
-if ${ac_cv_lib_jpeg_jpeg_destroy_decompress+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ljpeg  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char jpeg_destroy_decompress ();
-int
-main ()
-{
-return jpeg_destroy_decompress ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_jpeg_jpeg_destroy_decompress=yes
-else
-  ac_cv_lib_jpeg_jpeg_destroy_decompress=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_destroy_decompress" >&5
-$as_echo "$ac_cv_lib_jpeg_jpeg_destroy_decompress" >&6; }
-if test "x$ac_cv_lib_jpeg_jpeg_destroy_decompress" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBJPEG 1
-_ACEOF
-
-  LIBS="-ljpeg $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
-$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
-$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
-                LDFLAGS="$JPEG_OLD_LDFLAGS"
-                CPPFLAGS="$JPEG_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-fi
-
-
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if png is wanted" >&5
-$as_echo_n "checking if png is wanted... " >&6; }
-
-# Check whether --with-png was given.
-if test "${with_png+set}" = set; then :
-  withval=$with_png; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  PNG_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-PNG_HOME=/usr/local
-if test ! -f "${PNG_HOME}/include/png.h"
-then
-        PNG_HOME=/usr
-fi
-
-fi
-
-
-#
-# Locate PNG, if wanted
-#
-if test -n "${PNG_HOME}"
-then
-        PNG_OLD_LDFLAGS=$LDFLAGS
-        PNG_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${PNG_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${PNG_HOME}/include"
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_read_image in -lpng" >&5
-$as_echo_n "checking for png_read_image in -lpng... " >&6; }
-if ${ac_cv_lib_png_png_read_image+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpng  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char png_read_image ();
-int
-main ()
-{
-return png_read_image ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_png_png_read_image=yes
-else
-  ac_cv_lib_png_png_read_image=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_png_png_read_image" >&5
-$as_echo "$ac_cv_lib_png_png_read_image" >&6; }
-if test "x$ac_cv_lib_png_png_read_image" = xyes; then :
-  png_cv_libpng=yes
-else
-  png_cv_libpng=no
-fi
-
-        ac_fn_c_check_header_mongrel "$LINENO" "png.h" "ac_cv_header_png_h" "$ac_includes_default"
-if test "x$ac_cv_header_png_h" = xyes; then :
-  png_cv_png_h=yes
-else
-  png_cv_png_h=no
-fi
-
-
-#	AC_CHECK_HEADER(pngconf.h, [png_cv_pngconf_h=yes], [png_cv_pngconf_h=no])
-#	AC_CHECK_HEADER(zlib.h, [png_cv_zlib_h=yes], [png_cv_zlib_h=no])
-#	AC_CHECK_HEADER(zconf.h, [png_cv_zconf_h=yes], [png_cv_zconf_h=no])
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes"
-	   # -a "$png_cv_pngconf_h" = "yes" -a "$png_cv_zlib_h" = "yes" -a "$png_cv_zconf_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_read_image in -lpng" >&5
-$as_echo_n "checking for png_read_image in -lpng... " >&6; }
-if ${ac_cv_lib_png_png_read_image+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpng  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char png_read_image ();
-int
-main ()
-{
-return png_read_image ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_png_png_read_image=yes
-else
-  ac_cv_lib_png_png_read_image=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_png_png_read_image" >&5
-$as_echo "$ac_cv_lib_png_png_read_image" >&6; }
-if test "x$ac_cv_lib_png_png_read_image" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPNG 1
-_ACEOF
-
-  LIBS="-lpng $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
-$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
-$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
-                LDFLAGS="$PNG_OLD_LDFLAGS"
-                CPPFLAGS="$PNG_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-fi
-
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if opengl is wanted" >&5
-$as_echo_n "checking if opengl is wanted... " >&6; }
-
-# Check whether --with-opengl was given.
-if test "${with_opengl+set}" = set; then :
-  withval=$with_opengl; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  OPENGL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-OPENGL_HOME=/usr/local
-if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
-then
-        OPENGL_HOME=/usr/X11R6
-fi
-if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
-then
-        OPENGL_HOME=/usr
-fi
-
-fi
-
-
-#
-# Locate OPENGL, if wanted
-#
-if test -n "${OPENGL_HOME}"
-then
-        OPENGL_OLD_LDFLAGS=$LDFLAGS
-        OPENGL_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -lm -L${OPENGL_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${OPENGL_HOME}/include"
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
-$as_echo_n "checking for glAccum in -lGL... " >&6; }
-if ${ac_cv_lib_GL_glAccum+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGL  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char glAccum ();
-int
-main ()
-{
-return glAccum ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_GL_glAccum=yes
-else
-  ac_cv_lib_GL_glAccum=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GL_glAccum" >&5
-$as_echo "$ac_cv_lib_GL_glAccum" >&6; }
-if test "x$ac_cv_lib_GL_glAccum" = xyes; then :
-  opengl_cv_libGL=yes
-else
-  opengl_cv_libGL=no
-fi
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
-$as_echo_n "checking for gluBeginCurve in -lGLU... " >&6; }
-if ${ac_cv_lib_GLU_gluBeginCurve+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGLU -lGL $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gluBeginCurve ();
-int
-main ()
-{
-return gluBeginCurve ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_GLU_gluBeginCurve=yes
-else
-  ac_cv_lib_GLU_gluBeginCurve=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GLU_gluBeginCurve" >&5
-$as_echo "$ac_cv_lib_GLU_gluBeginCurve" >&6; }
-if test "x$ac_cv_lib_GLU_gluBeginCurve" = xyes; then :
-  opengl_cv_libGLU=yes
-else
-  opengl_cv_libGLU=no
-fi
-
-        ac_fn_c_check_header_mongrel "$LINENO" "GL/gl.h" "ac_cv_header_GL_gl_h" "$ac_includes_default"
-if test "x$ac_cv_header_GL_gl_h" = xyes; then :
-  opengl_cv_gl_h=yes
-else
-  opengl_cv_gl_h=no
-fi
-
-
-        ac_fn_c_check_header_mongrel "$LINENO" "GL/glx.h" "ac_cv_header_GL_glx_h" "$ac_includes_default"
-if test "x$ac_cv_header_GL_glx_h" = xyes; then :
-  opengl_cv_glx_h=yes
-else
-  opengl_cv_glx_h=no
-fi
-
-
-        ac_fn_c_check_header_mongrel "$LINENO" "GL/glu.h" "ac_cv_header_GL_glu_h" "$ac_includes_default"
-if test "x$ac_cv_header_GL_glu_h" = xyes; then :
-  opengl_cv_glu_h=yes
-else
-  opengl_cv_glu_h=no
-fi
-
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        if test "$opengl_cv_libGL" = "yes" -a "$opengl_cv_libGLU" = "yes" -a "$opengl_cv_gl_h" = "yes" -a "$opengl_cv_glx_h" = "yes" -a "$opengl_cv_glu_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
-$as_echo_n "checking for glAccum in -lGL... " >&6; }
-if ${ac_cv_lib_GL_glAccum+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGL  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char glAccum ();
-int
-main ()
-{
-return glAccum ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_GL_glAccum=yes
-else
-  ac_cv_lib_GL_glAccum=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GL_glAccum" >&5
-$as_echo "$ac_cv_lib_GL_glAccum" >&6; }
-if test "x$ac_cv_lib_GL_glAccum" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGL 1
-_ACEOF
-
-  LIBS="-lGL $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
-$as_echo_n "checking for gluBeginCurve in -lGLU... " >&6; }
-if ${ac_cv_lib_GLU_gluBeginCurve+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGLU  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gluBeginCurve ();
-int
-main ()
-{
-return gluBeginCurve ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_GLU_gluBeginCurve=yes
-else
-  ac_cv_lib_GLU_gluBeginCurve=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GLU_gluBeginCurve" >&5
-$as_echo "$ac_cv_lib_GLU_gluBeginCurve" >&6; }
-if test "x$ac_cv_lib_GLU_gluBeginCurve" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGLU 1
-_ACEOF
-
-  LIBS="-lGLU $LIBS"
-
-fi
-
-	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
-
-	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
-$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
-$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
-                LDFLAGS="$OPENGL_OLD_LDFLAGS"
-                CPPFLAGS="$OPENGL_OLD_CPPFLAGS"
-	        GL_CFLAGS=
-
-	        GL_LDFLAGS=
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-fi
-
-
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if FTGL is wanted" >&5
-$as_echo_n "checking if FTGL is wanted... " >&6; }
-
-# Check whether --with-FTGL was given.
-if test "${with_FTGL+set}" = set; then :
-  withval=$with_FTGL; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  FTGL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-FTGL_HOME=/usr/local
-if test ! -f "${FTGL_HOME}/include/FTGL/FTGLExtrdFont.h"
-then
-        FTGL_HOME=/usr
-fi
-
-
-fi
-
-
-#
-# Locate FTGL, if wanted
-#
-if test -n "${FTGL_HOME}"
-then
-    FTGL_OLD_LDFLAGS=$LDFLAGS
-    FTGL_OLD_CPPFLAGS=$CPPFLAGS
-    LDFLAGS="$LDFLAGS -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib"
-    CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-if test -z "$CXX"; then
-  if test -n "$CCC"; then
-    CXX=$CCC
-  else
-    if test -n "$ac_tool_prefix"; then
-  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CXX"; then
-  ac_cv_prog_CXX="$CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CXX="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-CXX=$ac_cv_prog_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$CXX" && break
-  done
-fi
-if test -z "$CXX"; then
-  ac_ct_CXX=$CXX
-  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CXX"; then
-  ac_cv_prog_ac_ct_CXX="$ac_ct_CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CXX="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CXX=$ac_cv_prog_ac_ct_CXX
-if test -n "$ac_ct_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_CXX" >&5
-$as_echo "$ac_ct_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_CXX" && break
-done
-
-  if test "x$ac_ct_CXX" = x; then
-    CXX="g++"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_ct_CXX
-  fi
-fi
-
-  fi
-fi
-# Provide some information about the compiler.
-$as_echo "$as_me:${as_lineno-$LINENO}: checking for C++ compiler version" >&5
-set X $ac_compile
-ac_compiler=$2
-for ac_option in --version -v -V -qversion; do
-  { { ac_try="$ac_compiler $ac_option >&5"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_compiler $ac_option >&5") 2>conftest.err
-  ac_status=$?
-  if test -s conftest.err; then
-    sed '10a\
-... rest of stderr output deleted ...
-         10q' conftest.err >conftest.er1
-    cat conftest.er1 >&5
-  fi
-  rm -f conftest.er1 conftest.err
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-done
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we are using the GNU C++ compiler" >&5
-$as_echo_n "checking whether we are using the GNU C++ compiler... " >&6; }
-if ${ac_cv_cxx_compiler_gnu+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-#ifndef __GNUC__
-       choke me
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_compiler_gnu=yes
-else
-  ac_compiler_gnu=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-ac_cv_cxx_compiler_gnu=$ac_compiler_gnu
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_compiler_gnu" >&5
-$as_echo "$ac_cv_cxx_compiler_gnu" >&6; }
-if test $ac_compiler_gnu = yes; then
-  GXX=yes
-else
-  GXX=
-fi
-ac_test_CXXFLAGS=${CXXFLAGS+set}
-ac_save_CXXFLAGS=$CXXFLAGS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX accepts -g" >&5
-$as_echo_n "checking whether $CXX accepts -g... " >&6; }
-if ${ac_cv_prog_cxx_g+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_save_cxx_werror_flag=$ac_cxx_werror_flag
-   ac_cxx_werror_flag=yes
-   ac_cv_prog_cxx_g=no
-   CXXFLAGS="-g"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_cv_prog_cxx_g=yes
-else
-  CXXFLAGS=""
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-
-else
-  ac_cxx_werror_flag=$ac_save_cxx_werror_flag
-	 CXXFLAGS="-g"
-	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_cv_prog_cxx_g=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   ac_cxx_werror_flag=$ac_save_cxx_werror_flag
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cxx_g" >&5
-$as_echo "$ac_cv_prog_cxx_g" >&6; }
-if test "$ac_test_CXXFLAGS" = set; then
-  CXXFLAGS=$ac_save_CXXFLAGS
-elif test $ac_cv_prog_cxx_g = yes; then
-  if test "$GXX" = yes; then
-    CXXFLAGS="-g -O2"
-  else
-    CXXFLAGS="-g"
-  fi
-else
-  if test "$GXX" = yes; then
-    CXXFLAGS="-O2"
-  else
-    CXXFLAGS=
-  fi
-fi
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-    #
-    # Test whether we found a C++ compiler; for now, only a true g++.  We used
-    # to use AC_LANG_CPLUSPLUS, but it dies with a FATAL error if no C++ found
-    #
-    if test "$CXX" = "g++" -a "$GXX" = "yes"
-    then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
-$as_echo_n "checking for _ZN6FTFaceD2Ev in -lftgl... " >&6; }
-if ${ac_cv_lib_ftgl__ZN6FTFaceD2Ev+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lftgl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char _ZN6FTFaceD2Ev ();
-int
-main ()
-{
-return _ZN6FTFaceD2Ev ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=yes
-else
-  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&5
-$as_echo "$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&6; }
-if test "x$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" = xyes; then :
-  FTGL_cv_libFTGL=yes
-else
-  FTGL_cv_libFTGL=no
-fi
-
-	ac_fn_c_check_header_mongrel "$LINENO" "FTGLExtrdFont.h" "ac_cv_header_FTGLExtrdFont_h" "$ac_includes_default"
-if test "x$ac_cv_header_FTGLExtrdFont_h" = xyes; then :
-  FTGL_cv_FTGL_h=yes
-else
-  FTGL_cv_FTGL_h=no
-fi
-
-
-        if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them.
-		# At the moment, this looks deplorably Linux-specific.
-		# sort|tail ensures that /usr/lib64 is preferred to /usr/lib
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
-$as_echo_n "checking for _ZN6FTFaceD2Ev in -lftgl... " >&6; }
-if ${ac_cv_lib_ftgl__ZN6FTFaceD2Ev+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lftgl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char _ZN6FTFaceD2Ev ();
-int
-main ()
-{
-return _ZN6FTFaceD2Ev ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=yes
-else
-  ac_cv_lib_ftgl__ZN6FTFaceD2Ev=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&5
-$as_echo "$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" >&6; }
-if test "x$ac_cv_lib_ftgl__ZN6FTFaceD2Ev" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBFTGL 1
-_ACEOF
-
-  LIBS="-lftgl $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
-$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
-		LIBS="$LIBS -lstdc++"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
-$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
-		LDFLAGS="$FTGL_OLD_LDFLAGS"
-		CPPFLAGS="$FTGL_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-    else
-	echo "missing or untrusted C++; CXX is $CXX and GXX is $GXX"
-    fi
-fi
-
-
-fi
 
 #
 # Handle user hints

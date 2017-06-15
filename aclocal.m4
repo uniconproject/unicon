@@ -1079,15 +1079,23 @@ fi
 
 ])
 
-AC_DEFUN([AC_FAKESTUFF],
-if test -f "thin"
-then
-	echo "doing FAKESTUFF"
-	JV_LDFLAGS=
-	AC_SUBST(JV_LDFLAGS)
-	GL_LDFLAGS=
-	AC_SUBST(GL_LDFLAGS)
-	GL_CFLAGS=
-	AC_SUBST(GL_CFLAGS)
-fi
-)
+AC_DEFUN([AC_CFLAG], [{
+	AC_LANG_PUSH(C)
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS $1"
+	AC_MSG_CHECKING([[whether $CC supports $1]])
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[]])],
+		[
+			AC_MSG_RESULT([yes])
+			m4_if([$3], [], [], [
+				CFLAGS="$ac_c_flag_save"
+				$3
+			])
+		], [
+			CFLAGS="$ac_c_flag_save"
+			AC_MSG_RESULT([no])
+			$2
+		])
+	AC_LANG_POP(C)
+	}])

@@ -2,6 +2,7 @@ AC_INIT([Unicon],[13.0],[jeffery@cs.uidaho.edu], [Unicon], [http://www.unicon.or
 
 AC_CANONICAL_HOST
 
+
 # not needed yet
 #AC_CANONICAL_BUILD	
 #AC_CANONICAL_TARGET
@@ -77,16 +78,79 @@ AC_ARG_ENABLE([thin],
 	[AS_HELP_STRING([--enable-thin], [Do a minimalist build (thin build)])],
 			[thin=yes], [thin=no])
 
+# Save flags 
+CFLAGS="${CFLAGS:-}"
+orig_cflags="$CFLAGS"
+AC_LANG([C])
+AC_USE_SYSTEM_EXTENSIONS
+# Try CC 99, or better
+ac_cc="$CC"
+CC="${CC% -std=c99}"
+
+AC_CFLAG([-std=gnu11], [CC="$ac_cc"], [CC="$CC -std=gnu11"])
+
+# honor custom flags
+if test "z$orig_cflags" = "z"; then
+  AC_CFLAG([-g])
+  AC_CFLAG([-O2], [
+    AC_CFLAG([-Os])
+  ])
+fi
+
+# We always want these CFLAGS
+AC_CFLAG([-fno-omit-frame-pointer])
+#AC_CFLAG([-Wmissing-prototypes])
+#AC_CFLAG([-Wmissing-declarations])
+AC_CFLAG([-fno-strict-aliasing])
+AC_CFLAG([-fno-unit-at-a-time])
+
+if test x"${enable_werror}" = x"yes" ; then
+  WERROR="-Werror"
+fi
+AC_SUBST(WERROR)
+
+AC_SUBST(CC)
+
+# Do we have rdynamic?
+AC_LANG_PUSH(C)
+ac_ld_flag_save="$LDFLAGS"
+LDFLAGS="$LDFLAGS -rdynamic"
+AC_MSG_CHECKING([[whether linker supports -rdynamic]])
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[]])],
+	[AC_MSG_RESULT([yes])],
+	[
+		LDFLAGS="$ac_ld_flag_save"
+		AC_MSG_RESULT([no])
+	])
+AC_LANG_POP(C)
+
+
+
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
 if test "x$graphics" = "xyes"; then
   echo "Building with graphics..."
-  make -C config/unix Setup-Graphics name=$unicon_host
+  XL="-L../../bin -lXpm \$\$(XLIBS)"
+  XPM=xpm
+  DRAWSTRING=drawstring3d.o
+  COMMONDRAWSTRING=../common/drawstring3d.o
+
+  AC_SUBST(XL)
+  AC_SUBST(XPM)
+  AC_SUBST(DRAWSTRING)
+  AC_SUBST(COMMONDRAWSTRING)
+  
 else
   echo "Building without graphics..."
-  make -C config/unix Setup-NoGraphics name=$unicon_host
+  AC_SUBST(XL)
+  AC_SUBST(XPM)
+  AC_SUBST(DRAWSTRING)
+  AC_SUBST(COMMONDRAWSTRING)
 fi
 
+ make -C config/unix/Config Makefiles name=$unicon_host
+	
 AC_GNU_SOURCE
 
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
@@ -141,7 +205,6 @@ AC_CHECK_LIB(dl, dlopen)
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 	
-CHECK_FREETYPE()
 CHECK_OGG()
 CHECK_SDL()
 CHECK_SMPEG()
@@ -151,6 +214,7 @@ CHECK_VOICE()
 CHECK_ZLIB()
 
 if test "$graphics" = yes; then
+  CHECK_FREETYPE()
   CHECK_XLIB()
   CHECK_XFT()
   CHECK_JPEG()

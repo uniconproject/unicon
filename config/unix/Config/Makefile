@@ -10,6 +10,11 @@ UNIDIR=../../../uni
 all:
 	@echo "what do you want to make"
 
+
+Clean Pure:
+	rm -f $(TOPDIR)/Makedefs
+	rm -f $(SRCDIR)/common/rswitch.[csS]
+
 Setup:
 	make -f ../Config/Makefile Clean
 	make -f ../Config/Makefile Localcode
@@ -61,6 +66,9 @@ Makefiles:
 	cp uni-top.mak $(UNIDIR)/Makefile
 	cp iyacc.mak $(UNIDIR)/iyacc/Makefile
 	cp uni-makedefs $(UNIDIR)/makedefs
+	cp ../$(name)/rswitch.[cs] $(SRCDIR)/common
+	if [ -f ../$(name)/custom.sh ]; then cd ../$(name); sh custom.sh; fi
+
 
 Localcode:
 	cp define.h $(SRCDIR)/h

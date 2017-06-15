@@ -67,18 +67,12 @@ X-Configure:
 		./configure
 
 
-Thin-Configure:	config/unix/$(name)/status
-		$(MAKE) Pure >/dev/null
-		cd config/unix;$(MAKE) Setup-NoGraphics Setup-Thin name=$(name)
-		@echo 'using ./thin for Thin configuration'
-		sh ./thin
+Thin-Configure:
+		./configure --enable-thin
 
 
-Thin-X-Configure:	config/unix/$(name)/status
-		$(MAKE) Pure >/dev/null
-		cd config/unix; $(MAKE) Setup-Graphics Setup-Thin name=$(name)
-		@echo 'using ./thin for Thin configuration'
-		sh ./thin
+Thin-X-Configure:
+		./configure --enable-thinx
 
 V-Configure:	config/unix/$(name)/status
 		$(MAKE) Pure >/dev/null
@@ -305,7 +299,9 @@ Pure:
 		if [ -f uni/Makefile ] ; then \
 			cd uni;			$(MAKE) Clean ;\
 		fi
-		cd config/unix; 	$(MAKE) Pure
+		rm -f Makedefs
+		rm -f src/common/rswitch.[csS]
+
 
 #  (This is used at Arizona to prepare source distributions.)
 

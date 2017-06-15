@@ -637,6 +637,9 @@ CXXFLAGS
 CXX
 GL_LDFLAGS
 GL_CFLAGS
+CFDYN
+RLIBS
+RLINK
 WERROR
 EGREP
 GREP
@@ -4391,7 +4394,7 @@ if test x"${enable_werror}" = x"yes" ; then
 fi
 
 # OS specific flags go here
-case $host_os in
+case $unicon_host in
      *linux*)
       {
 	ac_ext=c
@@ -4437,6 +4440,10 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
+      LDFLAGS="$LDFLAGS -rdynamic "
+      RLINK="-rdynamic -Wl,-E "
+      RLIBS="-lnsl"
+      CFDYN="-fPIC -shared"
         ;;
      *solaris*)
 	;;
@@ -4444,9 +4451,10 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         ;;
      *bsd*)
         ;;
-     *darwin*)
+     *macos*)
+       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
 	;;
-     *cygwin*)
+     *windows*)
         ;;
 esac
 
@@ -4454,46 +4462,21 @@ esac
 
 
 
+
+
 # Do we have rdynamic?
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-ac_ld_flag_save="$LDFLAGS"
-LDFLAGS="$LDFLAGS -rdynamic"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linker supports -rdynamic" >&5
-$as_echo_n "checking whether linker supports -rdynamic... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-
-		LDFLAGS="$ac_ld_flag_save"
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
+#AC_LANG_PUSH(C)
+#ac_ld_flag_save="$LDFLAGS"
+#LDFLAGS="$LDFLAGS -rdynamic"
+#AC_MSG_CHECKING([[whether linker supports -rdynamic]])
+#AC_LINK_IFELSE(
+#	[AC_LANG_PROGRAM([[]])],
+#	[AC_MSG_RESULT([yes])],
+#	[
+#		LDFLAGS="$ac_ld_flag_save"
+#		AC_MSG_RESULT([no])
+#	])
+#AC_LANG_POP(C)
 
 
 
@@ -6117,13 +6100,13 @@ fi
 
 
     echo "Building with graphics..."
-    XL="-L../../bin -lXpm \$\$(XLIBS)"
+    XL="-L../../bin -lXpm \$(XLIBS)"
     XPM=xpm
     DRAWSTRING=drawstring3d.o
     COMMONDRAWSTRING=../common/drawstring3d.o
 
 #    Any system specific graphics related config can go here
-    case $host_os in
+    case $unicon_host in
      *linux*)
         ;;
      *solaris*)
@@ -6132,10 +6115,10 @@ fi
         ;;
      *bsd*)
         ;;
-     *darwin*)
+     *macos*)
         XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lXpm -lX11"
 	;;
-     *cygwin*)
+     *windows*)
         ;;
     esac
 

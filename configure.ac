@@ -108,9 +108,13 @@ if test x"${enable_werror}" = x"yes" ; then
 fi
 
 # OS specific flags go here
-case $host_os in
+case $unicon_host in
      *linux*)
       AC_CFLAG([-fno-unit-at-a-time])
+      LDFLAGS="$LDFLAGS -rdynamic "
+      RLINK="-rdynamic -Wl,-E "
+      RLIBS="-lnsl"
+      CFDYN="-fPIC -shared"
         ;;
      *solaris*)
 	;;
@@ -118,29 +122,32 @@ case $host_os in
         ;;
      *bsd*)
         ;;
-     *darwin*)
+     *macos*)
+       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
 	;;
-     *cygwin*)
+     *windows*)
         ;;
 esac
 
-
 AC_SUBST(WERROR)
 AC_SUBST(CC)
+AC_SUBST(RLINK)
+AC_SUBST(RLIBS)
+AC_SUBST(CFDYN)
 
 # Do we have rdynamic?
-AC_LANG_PUSH(C)
-ac_ld_flag_save="$LDFLAGS"
-LDFLAGS="$LDFLAGS -rdynamic"
-AC_MSG_CHECKING([[whether linker supports -rdynamic]])
-AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM([[]])],
-	[AC_MSG_RESULT([yes])],
-	[
-		LDFLAGS="$ac_ld_flag_save"
-		AC_MSG_RESULT([no])
-	])
-AC_LANG_POP(C)
+#AC_LANG_PUSH(C)
+#ac_ld_flag_save="$LDFLAGS"
+#LDFLAGS="$LDFLAGS -rdynamic"
+#AC_MSG_CHECKING([[whether linker supports -rdynamic]])
+#AC_LINK_IFELSE(
+#	[AC_LANG_PROGRAM([[]])],
+#	[AC_MSG_RESULT([yes])],
+#	[
+#		LDFLAGS="$ac_ld_flag_save"
+#		AC_MSG_RESULT([no])
+#	])
+#AC_LANG_POP(C)
 
 
 
@@ -159,13 +166,13 @@ if test "x$graphics" = "xyes"; then
     CHECK_FTGL()
 
     echo "Building with graphics..."
-    XL="-L../../bin -lXpm \$\$(XLIBS)"
+    XL="-L../../bin -lXpm \$(XLIBS)"
     XPM=xpm
     DRAWSTRING=drawstring3d.o
     COMMONDRAWSTRING=../common/drawstring3d.o
 
 #    Any system specific graphics related config can go here
-    case $host_os in
+    case $unicon_host in
      *linux*)
         ;;
      *solaris*)
@@ -174,10 +181,10 @@ if test "x$graphics" = "xyes"; then
         ;;
      *bsd*)
         ;;
-     *darwin*)
+     *macos*)
         XLIBS="-L/opt/X11/lib -L/usr/X11R6/lib -L/usr/local/lib -lXpm -lX11"
 	;;
-     *cygwin*)
+     *windows*)
         ;;
     esac
     

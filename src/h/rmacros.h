@@ -1950,17 +1950,19 @@
 #define   PI_EMPTY	12
 #define   PI_FPAREN	13
 #define   PI_BPAREN	14
-#define   PI_BQUOTE	15
-#define   PI_QUOTE	16
-#define   PI_SQUOTE	17
-#define   PI_COMMA	18
-#define   PI_PERIOD	19
-#define   PI_CONCAT	20
-#define   PI_ALT	21
-#define   PI_ONM	22
-#define   PI_IMM	23
-#define   PI_SETCUR	24
-#define   NUM_PATIMGS	25
+#define   PI_FBRACE     15
+#define   PI_BBRACE     16
+#define   PI_BQUOTE	17
+#define   PI_QUOTE	18
+#define   PI_SQUOTE	19
+#define   PI_COMMA	20
+#define   PI_PERIOD	21
+#define   PI_CONCAT	22
+#define   PI_ALT	23
+#define   PI_ONM	24
+#define   PI_IMM	25
+#define   PI_SETCUR	26
+#define   NUM_PATIMGS	27
 
 /* pattern argument-type codes. argument #2 to arg_image(). */
 #define   PT_MF  25

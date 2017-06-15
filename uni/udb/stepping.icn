@@ -188,9 +188,7 @@ method checkPStep()
    else cur_line := pline
    pos := keyword("pos", Monitored)
    sub := keyword("subject", Monitored)
-index := keyword("patindex", Monitored)
-   
-   write("this is the index ", index) 
+   index := keyword("patindex", Monitored)
 
    if step_count > 1 then {
       step_count -:= 1
@@ -226,7 +224,9 @@ index := keyword("patindex", Monitored)
             msg := "\n   RTab"
             }
          PC_Assign_Imm | PC_Assign_OnM :{
-            msg := "\n   Assignment"
+               msg := "\n   Assignment"
+               msg ||:= "\n   Next Pattern Element: "
+               msg ||:= pindex_image(pat, index)
             }
          default :{
             if pos ~= ppos then {

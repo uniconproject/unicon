@@ -1,0 +1,34 @@
+#  CC       C compiler
+#  CFLAGS   flags for building C files
+#  CFDYN    additional flags for dynamic functions
+#  RLINK    flags for linking run-time system
+#  RLIBS    libraries to link with run-time system
+#  XLIBS    libraries to link for graphics
+#  XPMDEFS  definitions for building XPM library
+
+# Note: -lsocket is not available on some Linux systems,
+# but if your system has it you might need to add it to RLIBS
+# Useful development flags: -g -Wall -Wno-missing-braces -fsanitize=address -fno-omit-frame-pointer
+# -g and -fsanitize=address should also be added to the linker flags
+# make sure to also change the optimization to level 0 or 1
+
+CC = @CC@
+
+CFLAGS = @CFLAGS@ -I../libtp -I../gdbm -I../xpm
+LDFLAGS= @LDFLAGS@
+LIBS= @LIBS@
+
+CFDYN = -fPIC -shared
+RLINK = -rdynamic -Wl,-E -L../../bin @LDFLAGS@
+RLIBS = -ltp $(LIBS) -L../../bin -lm -lgdbm -lnsl -ldl -lcrypt
+
+XPMDEFS = -DZPIPE
+GDBM=gdbm
+LIBTP=libtp
+
+
+# If graphics is enabled
+XL= @XL@
+XPM= @XPM@
+DRAWSTRING= @DRAWSTRING@
+COMMONDRAWSTRING= @COMMONDRAWSTRING@

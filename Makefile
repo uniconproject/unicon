@@ -6,7 +6,8 @@ VERSION=v940
 name=unspecified
 dest=/must/specify/dest/
 
-doit: XUnicon
+default:
+	make Unicon
 
 
 help:

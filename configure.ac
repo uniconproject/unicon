@@ -17,9 +17,12 @@ case $host_cpu in
      *armv8*)
         unicon_cpu="arm_64"
         ;;	
-     *i.86*)
+     *i386*)
         unicon_cpu="x86_32"
 	;;
+     *i686*)
+        unicon_cpu="x86_32"
+	;;	
      *)
         unicon_cpu="$host_cpu"
         ;;
@@ -74,22 +77,25 @@ AC_ARG_ENABLE([concurrency],
 AC_ARG_ENABLE([pattern],
 	[AS_HELP_STRING([--disable-pattern], [No pattern type support])],
 			[pattern=no], [pattern=yes])
-AC_ARG_ENABLE([pattern],
+AC_ARG_ENABLE([database],
 	[AS_HELP_STRING([--disable-database], [No database support])],
 			[database=no], [database=yes])
-AC_ARG_ENABLE([pattern],
-	[AS_HELP_STRING([--disable-sound], [No sound support])],
-			[sound=no], [sound=yes])
-AC_ARG_ENABLE([pattern],
+AC_ARG_ENABLE([audio],
+	[AS_HELP_STRING([--disable-audio], [No audio support])],
+			[audio=no], [ovld=yes])
+AC_ARG_ENABLE([voip],
 	[AS_HELP_STRING([--disable-voip], [No VOIP support])],
 			[voip=no], [voip=yes])
-AC_ARG_ENABLE([pattern],
+AC_ARG_ENABLE([plugins],
 	[AS_HELP_STRING([--disable-plugins], [No loadfunc or plugins support])],
-			[voip=no], [voip=yes])
+			[plugins=no], [plugins=yes])
 AC_ARG_ENABLE([thin],
 	[AS_HELP_STRING([--enable-thin], [Do a minimalist build disabling non critical features])],
 			[thin=yes], [thin=no])
-
+AC_ARG_ENABLE([ovld],
+	[AS_HELP_STRING([--enable-ovld], [enable operator overloading])],
+			[ovld=yes], [ovld=no])
+			
 # Save flags 
 CFLAGS="${CFLAGS:-}"
 orig_cflags="$CFLAGS"
@@ -168,7 +174,7 @@ graphics=no
 graphics3d=no
 concurrency=no
 pattern=no
-sound=no
+audio=no
 database=no
 voip=no
 
@@ -184,6 +190,9 @@ if test "x$pattern" = "xno"; then
   AC_DEFINE([NoPattern], [1], [No PatternType])
 fi
 
+if test "x$ovld" = "xyes"; then
+  AC_DEFINE([OVLD], [1], [Enable Operator Overloading])
+fi
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
 if test "x$graphics" = "xyes"; then
@@ -305,13 +314,13 @@ fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
-if test "x$sound" = "xyes"; then
+if test "x$audio" = "xyes"; then
    CHECK_OGG()
    CHECK_SDL()
    CHECK_SMPEG()
    CHECK_OPENAL()
 else
-  AC_DEFINE([NoSound], [1], [No Sound])
+  AC_DEFINE([NoAudio], [1], [No Audio])
 fi
 
 if test "x$voip" = "xyes"; then

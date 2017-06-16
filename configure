@@ -706,7 +706,12 @@ enable_graphics
 enable_graphics3d
 enable_concurrency
 enable_pattern
+enable_database
+enable_audio
+enable_voip
+enable_plugins
 enable_thin
+enable_ovld
 with_xlib
 with_freetype
 with_xft
@@ -1365,11 +1370,12 @@ Optional Features:
   --disable-concurrency   No concurrent thread support
   --disable-pattern       No pattern type support
   --disable-database      No database support
-  --disable-sound         No sound support
+  --disable-audio         No audio support
   --disable-voip          No VOIP support
   --disable-plugins       No loadfunc or plugins support
   --enable-thin           Do a minimalist build disabling non critical
                           features
+  --enable-ovld           enable operator overloading
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2758,7 +2764,10 @@ case $host_cpu in
      *armv8*)
         unicon_cpu="arm_64"
         ;;
-     *i.86*)
+     *i386*)
+        unicon_cpu="x86_32"
+	;;
+     *i686*)
         unicon_cpu="x86_32"
 	;;
      *)
@@ -2849,32 +2858,32 @@ else
   pattern=yes
 fi
 
-# Check whether --enable-pattern was given.
-if test "${enable_pattern+set}" = set; then :
-  enableval=$enable_pattern; database=no
+# Check whether --enable-database was given.
+if test "${enable_database+set}" = set; then :
+  enableval=$enable_database; database=no
 else
   database=yes
 fi
 
-# Check whether --enable-pattern was given.
-if test "${enable_pattern+set}" = set; then :
-  enableval=$enable_pattern; sound=no
+# Check whether --enable-audio was given.
+if test "${enable_audio+set}" = set; then :
+  enableval=$enable_audio; audio=no
 else
-  sound=yes
+  ovld=yes
 fi
 
-# Check whether --enable-pattern was given.
-if test "${enable_pattern+set}" = set; then :
-  enableval=$enable_pattern; voip=no
+# Check whether --enable-voip was given.
+if test "${enable_voip+set}" = set; then :
+  enableval=$enable_voip; voip=no
 else
   voip=yes
 fi
 
-# Check whether --enable-pattern was given.
-if test "${enable_pattern+set}" = set; then :
-  enableval=$enable_pattern; voip=no
+# Check whether --enable-plugins was given.
+if test "${enable_plugins+set}" = set; then :
+  enableval=$enable_plugins; plugins=no
 else
-  voip=yes
+  plugins=yes
 fi
 
 # Check whether --enable-thin was given.
@@ -2882,6 +2891,13 @@ if test "${enable_thin+set}" = set; then :
   enableval=$enable_thin; thin=yes
 else
   thin=no
+fi
+
+# Check whether --enable-ovld was given.
+if test "${enable_ovld+set}" = set; then :
+  enableval=$enable_ovld; ovld=yes
+else
+  ovld=no
 fi
 
 
@@ -4562,7 +4578,7 @@ graphics=no
 graphics3d=no
 concurrency=no
 pattern=no
-sound=no
+audio=no
 database=no
 voip=no
 
@@ -4584,6 +4600,11 @@ $as_echo "#define NoPattern 1" >>confdefs.h
 
 fi
 
+if test "x$ovld" = "xyes"; then
+
+$as_echo "#define OVLD 1" >>confdefs.h
+
+fi
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
 if test "x$graphics" = "xyes"; then
@@ -8758,7 +8779,7 @@ fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
-if test "x$sound" = "xyes"; then
+if test "x$audio" = "xyes"; then
    #
 # Handle user hints
 #
@@ -9717,7 +9738,7 @@ fi
 
 else
 
-$as_echo "#define NoSound 1" >>confdefs.h
+$as_echo "#define NoAudio 1" >>confdefs.h
 
 fi
 

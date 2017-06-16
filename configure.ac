@@ -63,19 +63,31 @@ echo "Configuring Unicon Host: $unicon_host"
 echo "##########################################"
 
 AC_ARG_ENABLE([graphics],
-	[AS_HELP_STRING([--disable-graphics], [Build the graphics subsystem])],
+	[AS_HELP_STRING([--disable-graphics], [No graphics subsystem])],
 			[graphics=no], [graphics=yes])
 AC_ARG_ENABLE([graphics3d],
-	[AS_HELP_STRING([--disable-graphics3d], [Add 3D graphics support])],
+	[AS_HELP_STRING([--disable-graphics3d], [No 3D graphics support])],
 		        [graphics3d=no], [graphics3d=yes])
 AC_ARG_ENABLE([concurrency],
-	[AS_HELP_STRING([--disable-concurrency], [Build with concurrent thread support])],
+	[AS_HELP_STRING([--disable-concurrency], [No concurrent thread support])],
 			[concurrency=no], [concurrency=yes])
 AC_ARG_ENABLE([pattern],
-	[AS_HELP_STRING([--disable-pattern], [Build with pattern type support])],
+	[AS_HELP_STRING([--disable-pattern], [No pattern type support])],
 			[pattern=no], [pattern=yes])
+AC_ARG_ENABLE([pattern],
+	[AS_HELP_STRING([--disable-database], [No database support])],
+			[database=no], [database=yes])
+AC_ARG_ENABLE([pattern],
+	[AS_HELP_STRING([--disable-sound], [No sound support])],
+			[sound=no], [sound=yes])
+AC_ARG_ENABLE([pattern],
+	[AS_HELP_STRING([--disable-voip], [No VOIP support])],
+			[voip=no], [voip=yes])
+AC_ARG_ENABLE([pattern],
+	[AS_HELP_STRING([--disable-plugins], [No loadfunc or plugins support])],
+			[voip=no], [voip=yes])
 AC_ARG_ENABLE([thin],
-	[AS_HELP_STRING([--enable-thin], [Do a minimalist build (thin build)])],
+	[AS_HELP_STRING([--enable-thin], [Do a minimalist build disabling non critical features])],
 			[thin=yes], [thin=no])
 
 # Save flags 
@@ -151,6 +163,26 @@ AC_SUBST(CFDYN)
 #AC_LANG_POP(C)
 
 
+if test "x$thin" = "xyes"; then
+graphics=no
+graphics3d=no
+concurrency=no
+pattern=no
+sound=no
+database=no
+voip=no
+
+  AC_DEFINE([NoMultiThread], [1], [No MultiThread])
+  # what else we need to disable?
+fi
+
+if test "x$concurrent" = "xno"; then
+  AC_DEFINE([NoConcurrent], [1], [No Concurrency])
+fi
+
+if test "x$pattern" = "xno"; then
+  AC_DEFINE([NoPattern], [1], [No PatternType])
+fi
 
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
@@ -163,8 +195,13 @@ if test "x$graphics" = "xyes"; then
     CHECK_XFT()
     CHECK_JPEG()
     CHECK_PNG()
-    CHECK_OPENGL()
-    CHECK_FTGL()
+
+    if test "x$graphics3d" = "xyes"; then
+       CHECK_OPENGL()
+       CHECK_FTGL()
+    else
+      AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])   
+    fi    
 
     echo "Building with graphics..."
     GRAPHICS=graphics
@@ -196,6 +233,8 @@ if test "x$graphics" = "xyes"; then
   
 else
   echo "Building without graphics..."
+  AC_DEFINE([NoGraphics], [1], [No Graphics])
+  AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])   
 fi
 
   AC_SUBST(XLIBS)
@@ -258,19 +297,37 @@ AC_CHECK_FUNC(sysconf,
 AC_CHECK_FUNC(profil,
 	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
 
-AC_CHECK_LIB(dl, dlopen)
+if test "x$plugins" = "xno"; then
+  AC_CHECK_LIB(dl, dlopen)
+else
+  AC_DEFINE([NoLoadFunc], [1], [No LoadFunc])
+fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
-	
-CHECK_OGG()
-CHECK_SDL()
-CHECK_SMPEG()
-CHECK_OPENAL()
-CHECK_VOICE()
+
+if test "x$sound" = "xyes"; then
+   CHECK_OGG()
+   CHECK_SDL()
+   CHECK_SMPEG()
+   CHECK_OPENAL()
+else
+  AC_DEFINE([NoSound], [1], [No Sound])
+fi
+
+if test "x$voip" = "xyes"; then
+   CHECK_VOICE()
+else
+  AC_DEFINE([NoVoip], [1], [No VOIP])
+fi
 
 CHECK_ZLIB()
 
-CHECK_ODBC()
+if test "x$database" = "xyes"; then
+   CHECK_ODBC()
+else
+  AC_DEFINE([NoDatabase], [1], [No Database])
+fi
+
 CHECK_PTHREAD()
 CHECK_OPENSSL()
 

@@ -1360,11 +1360,16 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --disable-graphics      Build the graphics subsystem
-  --disable-graphics3d    Add 3D graphics support
-  --disable-concurrency   Build with concurrent thread support
-  --disable-pattern       Build with pattern type support
-  --enable-thin           Do a minimalist build (thin build)
+  --disable-graphics      No graphics subsystem
+  --disable-graphics3d    No 3D graphics support
+  --disable-concurrency   No concurrent thread support
+  --disable-pattern       No pattern type support
+  --disable-database      No database support
+  --disable-sound         No sound support
+  --disable-voip          No VOIP support
+  --disable-plugins       No loadfunc or plugins support
+  --enable-thin           Do a minimalist build disabling non critical
+                          features
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2842,6 +2847,34 @@ if test "${enable_pattern+set}" = set; then :
   enableval=$enable_pattern; pattern=no
 else
   pattern=yes
+fi
+
+# Check whether --enable-pattern was given.
+if test "${enable_pattern+set}" = set; then :
+  enableval=$enable_pattern; database=no
+else
+  database=yes
+fi
+
+# Check whether --enable-pattern was given.
+if test "${enable_pattern+set}" = set; then :
+  enableval=$enable_pattern; sound=no
+else
+  sound=yes
+fi
+
+# Check whether --enable-pattern was given.
+if test "${enable_pattern+set}" = set; then :
+  enableval=$enable_pattern; voip=no
+else
+  voip=yes
+fi
+
+# Check whether --enable-pattern was given.
+if test "${enable_pattern+set}" = set; then :
+  enableval=$enable_pattern; voip=no
+else
+  voip=yes
 fi
 
 # Check whether --enable-thin was given.
@@ -4524,6 +4557,32 @@ esac
 #AC_LANG_POP(C)
 
 
+if test "x$thin" = "xyes"; then
+graphics=no
+graphics3d=no
+concurrency=no
+pattern=no
+sound=no
+database=no
+voip=no
+
+
+$as_echo "#define NoMultiThread 1" >>confdefs.h
+
+  # what else we need to disable?
+fi
+
+if test "x$concurrent" = "xno"; then
+
+$as_echo "#define NoConcurrent 1" >>confdefs.h
+
+fi
+
+if test "x$pattern" = "xno"; then
+
+$as_echo "#define NoPattern 1" >>confdefs.h
+
+fi
 
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
@@ -5433,7 +5492,9 @@ $as_echo "failed" >&6; }
         fi
 fi
 
-    #
+
+    if test "x$graphics3d" = "xyes"; then
+       #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if opengl is wanted" >&5
@@ -5717,7 +5778,7 @@ $as_echo "failed" >&6; }
 fi
 
 
-    #
+       #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if FTGL is wanted" >&5
@@ -6143,6 +6204,11 @@ $as_echo "failed" >&6; }
 fi
 
 
+    else
+
+$as_echo "#define NoGraphics3D 1" >>confdefs.h
+
+    fi
 
     echo "Building with graphics..."
     GRAPHICS=graphics
@@ -6174,6 +6240,12 @@ fi
 
 else
   echo "Building without graphics..."
+
+$as_echo "#define NoGraphics 1" >>confdefs.h
+
+
+$as_echo "#define NoGraphics3D 1" >>confdefs.h
+
 fi
 
 
@@ -8632,7 +8704,8 @@ $as_echo "#define HAVE_PROFIL 1" >>confdefs.h
 fi
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
+if test "x$plugins" = "xno"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
 $as_echo_n "checking for dlopen in -ldl... " >&6; }
 if ${ac_cv_lib_dl_dlopen+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -8677,10 +8750,16 @@ _ACEOF
 
 fi
 
+else
+
+$as_echo "#define NoLoadFunc 1" >>confdefs.h
+
+fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
-#
+if test "x$sound" = "xyes"; then
+   #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if oggvorbis is wanted" >&5
@@ -9037,7 +9116,7 @@ $as_echo "failed" >&6; }
 fi
 
 
-#
+   #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libsdl is wanted" >&5
@@ -9205,7 +9284,7 @@ $as_echo "failed" >&6; }
         fi
 fi
 
-#
+   #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libsmpeg is wanted" >&5
@@ -9373,7 +9452,7 @@ $as_echo "failed" >&6; }
         fi
 fi
 
-#
+   #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libopenal is wanted" >&5
@@ -9636,6 +9715,13 @@ $as_echo "failed" >&6; }
         fi
 fi
 
+else
+
+$as_echo "#define NoSound 1" >>confdefs.h
+
+fi
+
+if test "x$voip" = "xyes"; then
 
 #
 # Handle user hints
@@ -10331,6 +10417,11 @@ $as_echo "failed" >&6; }
 fi
 
 
+else
+
+$as_echo "#define NoVoip 1" >>confdefs.h
+
+fi
 
 #
 # Handle user hints
@@ -10502,7 +10593,8 @@ fi
 
 
 
-#
+if test "x$database" = "xyes"; then
+   #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if odbc is wanted" >&5
@@ -10768,6 +10860,12 @@ $as_echo "failed" >&6; }
         fi
 fi
 
+
+else
+
+$as_echo "#define NoDatabase 1" >>confdefs.h
+
+fi
 
 #
 # Handle user hints

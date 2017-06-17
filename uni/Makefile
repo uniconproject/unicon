@@ -2,7 +2,7 @@ include ../Makedefs
 
 .PHONY: all iyacc unicon lib xml gui
 
-all: nographics $(GUI)
+all: nographics $(GRAPHICS)
 
 iyacc:
 	cd iyacc; $(MAKE)

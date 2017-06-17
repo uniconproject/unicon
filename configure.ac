@@ -254,8 +254,20 @@ fi
   AC_SUBST(COMMONDRAWSTRING)
 
 
- make -C config/unix/Config Makefiles name=$unicon_host
-	
+if test -f src/asm/$unicon_host-rswitch.s; then
+    echo "Native coswitch detected"
+    cp src/asm/$unicon_host-rswitch.s src/common/rswitch.s
+else
+   if test -f src/asm/$unicon_host-rswitch.c; then
+      echo "Native coswitch detected"
+      cp src/asm/$unicon_host-rswitch.c src/common/rswitch.c
+   else
+      echo "No native coswitch for $unicon_host , switching to pthreadcoswitch..."
+      AC_DEFINE([NoNativeCoswitch], [1], [No Native coswitch])
+      cp src/common/pthreadcoswitch.c src/common/rswitch.c
+   fi
+fi
+
 AC_GNU_SOURCE
 
 AC_CONFIG_SRCDIR([src/runtime/imain.r])

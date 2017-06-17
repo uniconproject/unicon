@@ -1,7 +1,7 @@
 # makefile for v2-gui Unicon IDE
 
 BASE=../..
-include ../makedefs
+include ../Makedefs
 
 export IPATH:=$(UNI)/lib $(UNI)/unicon $(UNI)/gui $(UNI)/xml $(ICON_IPL)/lib
 export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl

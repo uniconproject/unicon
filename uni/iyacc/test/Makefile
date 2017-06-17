@@ -1,5 +1,5 @@
 BASE=../../..
-include ../../makedefs
+include ../../Makedefs
 
 test: 		calc.out 
 		diff calc.out calc.correct

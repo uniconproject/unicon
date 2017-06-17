@@ -5,7 +5,7 @@
 # June 2009
 #
 BASE=../../..
-include ../../makedefs
+include ../../Makedefs
 
 UC      = ../../../bin/unicon
 CFLAGS     = $(UFLAGS) -c

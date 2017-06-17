@@ -1,5 +1,5 @@
 BASE=../..
-include ../makedefs
+include ../Makedefs
 
 all: ie uprof idxGen umake
 	$(CP) ie uprof umake ../../bin

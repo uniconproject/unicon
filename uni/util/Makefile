@@ -1,5 +1,5 @@
 BASE=../..
-include ../makedefs
+include ../Makedefs
 
 all:	ivibmigrate$(EXE)
 

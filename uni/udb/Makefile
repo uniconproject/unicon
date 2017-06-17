@@ -2,7 +2,7 @@
 # Makefile
 #
 BASE=../..
-include ../makedefs
+include ../Makedefs
 UC      = ../../bin/unicon
 EXEs    = udb
 DEL     = -rm

@@ -1,4 +1,4 @@
-include ../../makedefs
+include ../../Makedefs
 DEL = $(RM)
 BASE=../../..
 UC=$(UNICON)

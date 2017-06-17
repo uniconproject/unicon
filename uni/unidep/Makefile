@@ -1,5 +1,5 @@
 BASE=../..
-include ../makedefs
+include ../Makedefs
 
 UFILES = filearg.u fileargclass.u main.u symbolinfo.u symboltable.u util.u
 

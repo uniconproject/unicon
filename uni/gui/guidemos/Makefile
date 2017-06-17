@@ -1,5 +1,5 @@
 BASE=../../..
-include ../../makedefs
+include ../../Makedefs
 
 PROGS=lines$(EXE) editor$(EXE) multi$(EXE) tickdemo$(EXE) explorer$(EXE) \
 	secondtest$(EXE) menudemo$(EXE) demo$(EXE) palette$(EXE) tabs$(EXE) \

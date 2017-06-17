@@ -5,7 +5,7 @@
 # e-mail: zsharif@gmail.com
 #
 BASE=../../..
-include ../../makedefs
+include ../../Makedefs
 UC         = ../../../bin/unicon
 CFLAGS     = $(UFLAGS) -c
 LDFLAGS    = -u

@@ -18,8 +18,7 @@ help:
 	@echo
 	@echo Platform
 	@echo "  UNIX:" 
-	@echo "      Run \"make Configure name=system\""
-	@echo "       or \"make X-Configure name=system\""
+	@echo "      Run \"./configure\""
 	@echo "       or \"make build name=system\""
 	@echo "      where system is one of those in config/unix."
 	@echo
@@ -88,10 +87,6 @@ VX-Configure:	config/unix/$(name)/status
 		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 		@echo Remember to add unicon/bin to your path
 
-XUnicon:
-	make X-Configure name=x86_64_linux
-	make Unicon
-
 WUnicon:
 	@echo Reloading the Makefile from config/win32/gcc/makefile.top
 	cp config/win32/gcc/makefile.top Makefile
@@ -121,13 +116,6 @@ NT-Configure-GCC:
 		cd config/win32/gcc && sh config.sh
 		@echo Now remember to add unicon/bin to your path
 		@echo Then run "make Unicon" to build
-
-Fresh-Makefile:
-	@echo
-	@echo Reloading the Makefile from makefile.top
-	cp makefile.top Makefile
-	@echo Done.
-	@echo
 
 ##################################################################
 # 
@@ -292,7 +280,6 @@ Clean:
 		cd tests;		$(MAKE) Clean
 
 Pure:
-		touch Makedefs
 		rm -rf icon.* bin/[a-z]* lib/[a-z]*
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure

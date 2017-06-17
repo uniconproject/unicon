@@ -95,6 +95,12 @@ AC_ARG_ENABLE([thin],
 AC_ARG_ENABLE([ovld],
 	[AS_HELP_STRING([--enable-ovld], [enable operator overloading])],
 			[ovld=yes], [ovld=no])
+AC_ARG_ENABLE([debug],
+	[AS_HELP_STRING([--enable-debug], [Add debugging symbols])],
+			[debug=yes], [debug=no])
+AC_ARG_ENABLE([devmode],
+	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
+			[devmode=yes], [devmode=no])
 			
 # Save flags 
 CFLAGS="${CFLAGS:-}"
@@ -107,19 +113,31 @@ CC="${CC% -std=c99}"
 
 AC_CFLAG([-std=gnu11], [CC="$ac_cc"], [CC="$CC -std=gnu11"])
 
+if test x"devmode" = x"yes" ; then
+  debug=yes
+fi
+
 # honor custom flags
 if test "z$orig_cflags" = "z"; then
-  AC_CFLAG([-g])
-  AC_CFLAG([-O2], [
+  if test x"$devmode" = x"yes" ; then
+     AC_CFLAG([-g])
+     AC_CFLAG([-O0])
+  else
+    AC_CFLAG([-O2], [
     AC_CFLAG([-Os])
-  ])
+    ])
+  fi
 fi
 
 # We always want these CFLAGS
 AC_CFLAG([-fno-omit-frame-pointer])
-#AC_CFLAG([-Wmissing-prototypes])
-#AC_CFLAG([-Wmissing-declarations])
 AC_CFLAG([-fno-strict-aliasing])
+
+if test x"$devmode" = x"yes" ; then
+  AC_CFLAG([-Wall])
+  AC_CFLAG([-Wmissing-prototypes])
+  AC_CFLAG([-Wmissing-declarations])
+fi
 
 if test x"${enable_werror}" = x"yes" ; then
   WERROR="-Werror"
@@ -268,7 +286,7 @@ else
    fi
 fi
 
-AC_GNU_SOURCE
+#AC_GNU_SOURCE
 
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
 AC_PROG_CC

@@ -34,7 +34,7 @@ tools: listener.u $(Tools)
 	cp $(Tools) ../../../bin
 
 $(Tools): $%
-	$(UC) $(STANDALONE) $(LDFLAGS) $@
+	$(UC) $(UFLAGS) $(STANDALONE) $(LDFLAGS) $@
 
 listener.u: listener.icn
 	$(UC) $(CFLAGS) listener.icn

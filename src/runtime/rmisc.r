@@ -2082,7 +2082,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
              break;
              }
           case PC_Arb_X: {
+             struct b_pelem * arbY;
              AsgnCStr(*result, "Arb()");
+             arbY = BlkD(Blk(ep, Pelem)->parameter, Pelem);
+             if(arbY->index == pe_index) index_image = 1; 
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
@@ -2090,40 +2093,42 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     break;
 	     }
           case PC_Assign_OnM: {
-             AsgnCStr(image, " -> ");
 	     /*
 	      * consider Resolved patterns. do we need to check
 	      * if parameter is a string, or a variable?
 	      */
              if (index_image == 1){
-                if ((construct_image(bi_pat(PI_FBRACE), &image, 
+                 AsgnCStr(image, ") [-> ");
+                if ((construct_image(bi_pat(PI_EMPTY), &image, 
                            &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
                            return RunError;
                 if ((construct_image(result, bi_pat(PI_BBRACE), 
-                                     bi_pat(PI_BPAREN), result)) ==  RunError) 
+                                     bi_pat(PI_EMPTY), result)) ==  RunError) 
                            return RunError;
                 }
              else{
+                AsgnCStr(image, ") -> "); 
                 if ((construct_image(&image, &(Blk(ep,Pelem)->parameter), 
-                                     bi_pat(PI_BPAREN), result)) ==
+                                     bi_pat(PI_EMPTY), result)) ==
 		    RunError) return RunError;
                    }             
 	     peCount++;
 	     break;
              }
           case PC_Assign_Imm: {
-             AsgnCStr(image, " => ");
              if (index_image == 1){
-                if ((construct_image(bi_pat(PI_FBRACE), &image, 
+	        AsgnCStr(image, ") [=> ");
+                if ((construct_image(bi_pat(PI_EMPTY), &image, 
                            &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
                            return RunError;
                 if ((construct_image(result, bi_pat(PI_BBRACE), 
-                                     bi_pat(PI_BPAREN), result)) ==  RunError) 
+                                     bi_pat(PI_EMPTY), result)) ==  RunError) 
                            return RunError;
                 }
              else{
+	        AsgnCStr(image, ") => ");
                 if ((construct_image(&image, &(Blk(ep,Pelem)->parameter), 
-                                     bi_pat(PI_BPAREN), result)) ==
+                                     bi_pat(PI_EMPTY), result)) ==
 		    RunError) return RunError;
                    }
 	     peCount++;
@@ -2949,7 +2954,7 @@ dptr dp;
 	    return ("&ucase");
 	 }
       else if (n == 10 && *CsetPtr('0',*dp) == (01777 << CsetOff('0')))
-	 return ("&digits");
+ return ("&digits");
       }
    else /* n > 52 */ {
       if (n == 256)

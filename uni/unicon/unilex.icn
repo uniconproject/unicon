@@ -156,7 +156,7 @@ initial {
 
    repeat {
        if pos(0) then fail
-       if 
+       if
 #	   tokflags >= Newline &
 	   ="#" then {
 	       if ="line " then {
@@ -330,15 +330,15 @@ end
 
 procedure do_at()
     if yytext ||:= =":=" then { return AUGAT }
-    if yytext ||:= =">>" then { 
+    if yytext ||:= =">>" then {
        tokflags +:= Beginner + Ender
-       return SNDBK 
+       return SNDBK
        }
     if yytext ||:= =">" then {
        tokflags +:= Beginner + Ender
-       return SND 
+       return SND
        }
-    
+
     tokflags +:= Beginner
     return AT
 end
@@ -406,7 +406,7 @@ procedure do_less()
 	      if yytext ||:= ="<" then {
 		  if yytext ||:= ="@" then {
 		     tokflags +:= Beginner + Ender
-		     return RCVBK 
+		     return RCVBK
 		  }
 		  if yytext ||:= =":=" then { return AUGSLT }
 		  if yytext ||:= ="=" then {
@@ -518,7 +518,7 @@ procedure do_and()
 $ifndef _PATTERNS
       warning("pattern operator && is non-standard, did you mean & ?");
 $endif
-      return PAND 
+      return PAND
       }
    tokflags +:= Beginner
    return AND
@@ -594,7 +594,7 @@ procedure do_backquote()
 	    }
 	 }
       }
-   yytext ? { 
+   yytext ? {
       if tab(upto(unallowedchars)) then
 	 uni_error(": character "||move(1)|| " not supported in ` ` expresssion")
 #			if *yytext = bal() then {}

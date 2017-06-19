@@ -102,7 +102,7 @@ local i
    every temp := L[i := 1 to *L] do {
       if type(temp) == "list" then {
 	 writes_code_for_uneval(temp)
-	 } 
+	 }
       else {
 	 writes(yyout, image(temp))
 	 if i = 1 then {
@@ -111,7 +111,7 @@ local i
 	       put(list_of_invocables, temp)
 	    }
 	 if i < *L then {
-	    writes(yyout, ", ")	
+	    writes(yyout, ", ")
 	    }
 	 }
       }
@@ -140,7 +140,7 @@ static word
 initial { word := &letters ++ &digits ++ '\'\"&~_' }
    L := []
    tab(many('`'))
-   temp := tab(upto('(.')) 
+   temp := tab(upto('(.'))
    if \temp == "\\" then temp := "\\\\"
    put(L, \temp)
    L := make_list_for_uneval(L, word)
@@ -171,7 +171,7 @@ end
 
 # the unevaluated expressions in pattern matching has the following major cases
 # 1. local/global variable ( indicated by absence of . and ( )
-# 2. member field          ( indicated by presence of . and absence of ( )  
+# 2. member field          ( indicated by presence of . and absence of ( )
 # 3. procedure invocation  ( indicated by presence of ( and absence of . )
 # 4. method invocation     ( indicated by presence of both . ( )
 # Currently we return error for cases like x.y.z or x.y.z() ( possible future work
@@ -189,10 +189,10 @@ procedure process_uneval(node)
 		  }
 	       else if find ("(") then {
 		  return emit_code_for_uneval("pattern_stringfunccall")
-		  }	
+		  }
 	       else
 		  yyerror("`` must enclose function call", node)
-	       }	
+	       }
 	    }
 	 else {
 	    node.s ? {
@@ -201,7 +201,7 @@ procedure process_uneval(node)
 		  }
 	       else if find ("(") then {
 		  return emit_code_for_uneval("pattern_boolfunccall")
-		  }	
+		  }
 	       else if find(".") then {
 		  return emit_code_for_uneval("pattern_unevalvar")
 		  }
@@ -213,10 +213,10 @@ procedure process_uneval(node)
 		  writes(yyout, "\"", temp, "\"")
 		  writes(yyout, "))")
 		  return
-		  }	
+		  }
 	       }
 	    }
-	 }	
+	 }
       default :
 	 write("Error string expected but got  ", type(node))
       }
@@ -260,7 +260,7 @@ procedure emit_assign_code(node)
 	    # need to apply this technique to the treenode cases above.
 	    faketok := copy(node)
 	    faketok.tok := STRINGLIT
-	    faketok.s := "\"" || var || "\""	    
+	    faketok.s := "\"" || var || "\""
 
 	    if \rec then {
 	       writes(yyout,"[",rec,",")
@@ -316,25 +316,25 @@ procedure yyprint(node)
 	    next
 	    }
          else if node.label == "BPand" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
             writes(yyout, " pattern_concat( ")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
 	    writes(yyout, " ) ")
             fail
-	    }	
+	    }
          else if node.label == "BPor" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
 	    writes(yyout, " pattern_alternate( ")
 	    yyprint(node.children[1])
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
-	    writes(yyout, " ) ")		
+	    writes(yyout, " ) ")
             fail
-	    }	
+	    }
          else if node.label == "BPmatch" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
 
 	    # Determine the line number of leftmost token.  Use it to emit
 	    # a #line directive if needed.
@@ -359,9 +359,9 @@ procedure yyprint(node)
 	    yyprint(node.children[3])
 	    writes(yyout, ")) ")
             fail
-	    }	
+	    }
          else if node.label == "BPiam" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
 	    if iconc===1 then {
 	       writes(yyout, "(if getenv(\"NONSENSE\") then ")
 	       yyprint(node.children[3])
@@ -375,12 +375,12 @@ procedure yyprint(node)
 	    # guaranteed to be declared: pattern_assign_immediate(p,"var",var)
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
-	    writes(yyout, " ) ")		
+	    writes(yyout, " ) ")
 	    if iconc===1 then writes(yyout, ")")
             fail
-	    }	
+	    }
          else if node.label == "BPaom" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
 	    if iconc===1 then {
 	       writes(yyout, "(if getenv(\"NONSENSE\") then ")
 	       yyprint(node.children[3])
@@ -394,12 +394,12 @@ procedure yyprint(node)
 	    # guaranteed to be declared: pattern_setcur("var",var)
 	    writes(yyout, ",")
 	    yyprint(node.children[3])
-	    writes(yyout, " ) ")		
+	    writes(yyout, " ) ")
 	    if iconc===1 then writes(yyout, ")")
             fail
-	    }	
+	    }
          else if node.label == "upsetcur" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
 	    if iconc===1 then {
 	       writes(yyout, "(if getenv(\"NONSENSE\") then ")
 	       yyprint(node.children[2])
@@ -415,12 +415,12 @@ procedure yyprint(node)
 	    writes(yyout, " ) ")
 	    if iconc===1 then writes(yyout,")")
             fail
-	    }	
+	    }
          else if node.label == "BPuneval" then {
-	    iconc_fd := 1	    
+	    iconc_fd := 1
 	    process_uneval(node.children[1])
 	    fail
-            }	
+            }
 	 else if node.label == ("varlist2"|"stalist2") then {
 	    yyprint(node.children[1])
 	    fail
@@ -573,7 +573,7 @@ procedure mangle_sym(sym)
          write("------")
       }
    }
-                               
+
    #
    # First check if it is in the package-level symbols defined in this file.
    # These override any imports.
@@ -658,7 +658,7 @@ end
 # This is a set of the package-level symbols defined in this file, ie
 # class names, global variables, record names and procedure names.  It
 # is called immediately after parsing has completed.  As it comes
-# across the symbols it must add, they are mangled. 
+# across the symbols it must add, they are mangled.
 #
 procedure set_package_level_syms(node)
    local n
@@ -675,7 +675,7 @@ procedure set_package_level_syms(node)
                   if type(n) == "token" then {
                      ident_into_package_level_syms(n)
                      return
-                  } 
+                  }
                   ident_into_package_level_syms(n.children[3])
                   n := n.children[1]
                }
@@ -913,7 +913,7 @@ procedure scopecheck_expr(node, local_vars, self_vars)
             if not member(\local_vars, node.s) then {
                if classfield_member(\self_vars, node.s) then
                   node.s := "self." || node.s
-               else 
+               else
                   node.s := mangle_sym(node.s)
             }
          }
@@ -954,7 +954,7 @@ procedure scopecheck_field(node, local_vars, self_vars)
 
       node := lhs
    }
-   
+
    scopecheck_expr(node, local_vars, self_vars)
 end
 
@@ -1135,7 +1135,7 @@ procedure node_isconst(n)
 	       else { # whole expr is not const, but check subtree
 		   node_isconst(n.children[3])
 	       }
-	       
+
 	   }
 	   default: {
 	       # know nothing; check whole tree
@@ -1162,7 +1162,7 @@ procedure get_constantvalue(n)
 	   "Bstar" : {
 	       constval := get_constantvalue(n.children[1]) *
 		   get_constantvalue(n.children[3])
-	       
+
 	       return constval
 	   }
        }
@@ -1396,7 +1396,7 @@ procedure csetrange(char1,char2)
       rv ++:= char(i)
       }
    return rv
-end	 
+end
 
 procedure firstofcset(c)
    if type(c) == "token" & c.tok = IDENT then return c.s[1]

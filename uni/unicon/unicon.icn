@@ -443,9 +443,9 @@ procedure handle_C(arg)
 end
 
 procedure unicon(argv)
-   local tmpfnames, tmpopt, dash_v, skip, dash_s, parseonly,
+   local tmpfnames, tmpopt, skip, parseonly,
       EmptyNode, N_Empty, i, thepath, tmp_s, ucodefile,
-      cmd, wilog, j, flog2, locallinks, localimports, k,
+      cmd, wilog, flog2, locallinks, localimports, k,
       files, n, local_name, v, mw_tmpname, rv, pe
    initialize()
    if *argv = 0 then {
@@ -489,7 +489,6 @@ procedure unicon(argv)
                "-quiet"  : loud := &null
                "-s"      : {
                   silent := 1
-                  dash_s := 1
                   icontopt ||:= "-s "
                   ilinkopt ||:= "-s "
                   }
@@ -550,7 +549,6 @@ procedure unicon(argv)
                      stop("bad verbosity value: ", image(argv[i+1]))
                   
                   if integer(argv[i+1]) = 0 then{
-                     dash_s := 1
                      silent := 1
                      }                        
                   skip := 1
@@ -558,14 +556,11 @@ procedure unicon(argv)
                "-v0": {
                   ilinkopt ||:= "-v0 "
                   icontopt ||:= "-v0 "
-                  dash_v := 1
-                  dash_s := 1
                   silent := 1
                   }
                "-v1"|"-v2"|"-v3" : {
                   ilinkopt ||:= argv[i] || " "
                   icontopt ||:= argv[i] || " "                  
-                  dash_v := 1
                   }
                
 	       "-nofs": no_iconc_fs := 1
@@ -643,7 +638,7 @@ procedure unicon(argv)
 	     if rv ~=== 0 then yynerrs +:= 1
 	     if &features=="MS Windows NT" & &features=="console window" then {
 		# copy icont log to our console
-		every j := 1 to 5 do {
+		every 1 to 5 do {
 		    if flog2 := open(wilog) then {
 			while iwrite(&errout, read(flog2))
 			close(flog2)

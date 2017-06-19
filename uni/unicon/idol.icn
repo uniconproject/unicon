@@ -344,10 +344,10 @@ class Class : declaration (supers,
 
     if s~=="class" &
        ((("initially" == (m := (methods$foreach()))$name()) &
-       (m.fields ~=== EmptyNode)) |
+       (m.fields ~=== &null)) |
        (((mn := !(self.imethods)).ident == "initially") &
         (m := classes.lookup(mn.Class).methods.lookup("initially")) &
-        (m.fields ~=== EmptyNode)) ) then {
+        (m.fields ~=== &null)) ) then {
        yyprint(m.fields)
        }
     else {
@@ -527,10 +527,10 @@ class Class : declaration (supers,
     writes(f,"  self := ",nam,"__state(&null,",nam,"__oprec")
 
     if (("initially" == (m := (methods$foreach()))$name()) &
-       (m.fields ~=== EmptyNode)) |
+       (m.fields ~=== &null)) |
    (((mn := !(self.imethods)).ident == "initially") &
     (m := classes.lookup(mn.Class).methods.lookup("initially")) &
-    (m.fields ~=== EmptyNode))
+    (m.fields ~=== &null))
    then {
        yyprint(")\n  self.__s := self\n")
        if \ (m.fields.varg) then {
@@ -697,7 +697,7 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag, first
     writes(f, self.Class$name(), "_")
     yyprint(name)
     writes(f, "(self")
-    if fields ~=== EmptyNode & fields$size()>0 then {
+    if fields ~=== &null & fields$size()>0 then {
        writes(f,",")
        }
     yyprint(fields)
@@ -706,7 +706,7 @@ class Method : declaration (Class, locals, initl, procbody, abstract_flag, first
        yyprint(locals)
        if exists_statlists(locals) then {
 	  yyprint("\ninitial {")
-          if initl ~=== EmptyNode then { # append into existing initial
+          if initl ~=== &null then { # append into existing initial
 	     yyprint(initl.children[2])
 	     yyprint(";\n")
 	     }
@@ -881,7 +881,7 @@ class idTaque : taque(punc)
 		  every \(x := traverse(!nod.children, isClassLocal)) do {
 		     put(accum, x)
 		     }
-	          accumtree := EmptyNode
+	          accumtree := &null
 	          while x := pull(accum) do
 		     accumtree := node("procbody", x, ";", accumtree)
 		  return accumtree

@@ -299,9 +299,9 @@ end
  * This file is the iYacc input for building Icon-based Icon tools.
  */
 
-program	: decls EOFX { Progend($1);} ;
+program	: decls EOFX { Progend($1) } ;
 
-decls	: { $$ := EmptyNode } ;
+decls	: { $$ := &null } ;
 	| decls decl {
 	     if /parsingErrors | *parsingErrors = 0 then iwrites(&errout,".")
 	     $$ := node("decls", $1, $2)
@@ -317,9 +317,9 @@ decl	: record
 	| cl
 	;
 
-initiallysection: { $$ := EmptyNode }
+initiallysection: { $$ := &null }
 	| INITIALLY SEMICOL locals initial procbody {
-	   $$ := Method( , , , , , $1, "initially", EmptyNode, "method", "(", ")")
+	   $$ := Method( , , , , , $1, "initially", &null, "method", "(", ")")
 	   $$.locals := $3
 	   $$.initl := $4
 	   $$.procbody := $5
@@ -332,7 +332,7 @@ initiallysection: { $$ := EmptyNode }
 	}
 	;
 
-optsemi : { $$ := EmptyNode } ; 
+optsemi : { $$ := &null } ; 
         | SEMICOL;
 
 cl: classhead optsemi clocals methods optsemi initiallysection END {
@@ -358,7 +358,7 @@ classhead : CLASS IDENT supers LPAREN carglist RPAREN {
    $$.rptoken := $6
    } ;
 
-supers: { $$ := EmptyNode } ;
+supers: { $$ := &null } ;
    | COLON IDENT supers { $$ := node("supers", $1, $2, $3) }
    | COLON packageref supers { $$ := node("supers", $1, $2, $3) }
    ;
@@ -367,27 +367,27 @@ packageref : IDENT COLONCOLON IDENT { $$ := node("packageref", $1,$2,$3) }
    | COLONCOLON IDENT { $$ := node("packageref", $1,$2) }  
    ;
 
-methods: { $$ := EmptyNode } ;
+methods: { $$ := &null } ;
    | meth methods { $$ := node("methods", $1,$2) }
    | global methods { $$ := node("methods", $1,$2) }
    | record methods { $$ := node("methods", $1,$2) }
    ;
 
-invocable : INVOCABLE invoclist { $$ := node("invocable", $1, $2);} ;
+invocable : INVOCABLE invoclist { $$ := node("invocable", $1, $2) } ;
 
 invoclist : invocop;
-	  | invoclist COMMA invocop { $$ := node("invoclist", $1,$2,$3);} ;
+	  | invoclist COMMA invocop { $$ := node("invoclist", $1,$2,$3) } ;
 
 invocop  : IDENT ;
 	 | STRINGLIT ;
-	 | STRINGLIT COLON INTLIT {$$ := node("invocop3", $1,$2,$3);} ;
+	 | STRINGLIT COLON INTLIT {$$ := node("invocop3", $1,$2,$3) } ;
 
 package  : PACKAGE lnkfile {
    if \thePackage then {
       if not (thePackage.name == $2.s) then {
          yyerror(yyfilename || " cannot be in both package "|| thePackage.name ||
             " and package " || $2.s)
-         $$ := EmptyNode
+         $$ := &null
          }
       else { # this branch allowed for -C / iconc
          thePackage.insertfname(yyfilename)
@@ -407,13 +407,13 @@ import: IMPORT implist {
    import_class($2)
    } ;
 
-link	: LINK lnklist { $$ := node("link", $1,$2," "); } ;
+link	: LINK lnklist { $$ := node("link", $1,$2," ") } ;
 
 lnklist	: lnkfile ;
-	| lnklist COMMA lnkfile { $$ := node("lnklist", $1,$2,$3); } ;
+	| lnklist COMMA lnkfile { $$ := node("lnklist", $1,$2,$3) } ;
 
 implist	: lnkfile ;
-	| implist COMMA lnkfile { $$ := node("implist", $1,$2,$3); } ;
+	| implist COMMA lnkfile { $$ := node("implist", $1,$2,$3) } ;
 
 lnkfile	: IDENT ;
 	| STRINGLIT ;
@@ -426,7 +426,7 @@ record	: RECORD IDENT LPAREN fldlist RPAREN {
 		   ca_add_proc(yyfilename, $2.s)
 		} ;
 
-fldlist	: { $$ := EmptyNode } ;
+fldlist	: { $$ := &null } ;
 	| idlist ;
 
 proc	: prochead SEMICOL locals initial procbody END {
@@ -497,168 +497,168 @@ arg	: IDENT ;
 
 carg	: priv arg { $$ := $2 };
 
-priv: { $$ := EmptyNode;} ;
+priv: { $$ := &null } ;
 	| PLUS  ;
 	| MINUS ; 
 
-clocals	: { $$ := EmptyNode;} ;
-	| clocals LOCAL varlist optsemi { $$ := node("locals2", $1,$2,$3,";");} ;
+clocals	: { $$ := &null } ;
+	| clocals LOCAL varlist optsemi { $$ := node("locals2", $1,$2,$3,";") } ;
 
-locals	: { $$ := EmptyNode;} ;
-	| locals LOCAL varlist SEMICOL { $$ := node("locals2", $1,$2,$3,";");} ;
-	| locals STATIC stalist SEMICOL { $$ := node("locals3", $1,$2,$3,";");} ;
+locals	: { $$ := &null } ;
+	| locals LOCAL varlist SEMICOL { $$ := node("locals2", $1,$2,$3,";") } ;
+	| locals STATIC stalist SEMICOL { $$ := node("locals3", $1,$2,$3,";") } ;
 
-initial	: { $$ := EmptyNode } ;
+initial	: { $$ := &null } ;
 	| iconINITIAL expr SEMICOL {
 	   $$ := node("initial", $1, $2,";")
 	      } ;
 
-procbody: { $$ := EmptyNode } ;
-	| nexpr SEMICOL procbody { $$ := node("procbody", $1,";",$3);} ;
+procbody: { $$ := &null } ;
+	| nexpr SEMICOL procbody { $$ := node("procbody", $1,";",$3) } ;
 
-nexpr	: { $$ := EmptyNode } ;
+nexpr	: { $$ := &null } ;
 	| expr ;
 
 expr	: expr1a ;
 	| expr AND expr1a	{ $$ := node("and", $1,$2,$3) } ;
 
 expr1a	: expr1 ;
-	| expr1a QMARK expr1	{ $$ := node("binques", $1,$2,$3);} ;
+	| expr1a QMARK expr1	{ $$ := node("binques", $1,$2,$3) } ;
 
 expr1	: expr2a ;
-	| expr2a SWAP expr1      { $$ := node("swap", $1,$2,$3);} ;
+	| expr2a SWAP expr1      { $$ := node("swap", $1,$2,$3) } ;
 	| expr2a ASSIGN expr1    { 
           $$ := parenthesize_assign(node("assign",$1,$2,$3));
           } ;
-	| expr2a REVSWAP expr1   { $$ := node("revswap", $1,$2,$3);} ;
-	| expr2a REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3);} ;
-	| expr2a AUGCONCAT expr1 { $$ := node("augcat", $1,$2,$3);} ;
-	| expr2a AUGLCONCAT expr1 { $$ := node("auglcat", $1,$2,$3);} ;
-	| expr2a AUGDIFF expr1   { $$ := node("Bdiffa", $1,$2,$3);} ;
-	| expr2a AUGUNION expr1  { $$ := node("Buniona", $1,$2,$3);} ;
-	| expr2a AUGPLUS expr1   { $$ := node("Bplusa", $1,$2,$3);} ;
-	| expr2a AUGMINUS expr1  { $$ := node("Bminusa", $1,$2,$3);} ;
-	| expr2a AUGSTAR expr1   { $$ := node("Bstara", $1,$2,$3);} ;
-	| expr2a AUGINTER expr1  { $$ := node("Bintera", $1,$2,$3);} ;
-	| expr2a AUGSLASH expr1  { $$ := node("Bslasha", $1,$2,$3);} ;
-	| expr2a AUGMOD expr1    { $$ := node("Bmoda", $1,$2,$3);} ;
-	| expr2a AUGCARET expr1  { $$ := node("Bcareta", $1,$2,$3);} ;
-	| expr2a AUGNMEQ expr1   { $$ := node("Baugeq", $1,$2,$3);} ;
-	| expr2a AUGEQUIV expr1  { $$ := node("Baugeqv", $1,$2,$3);} ;
-	| expr2a AUGNMGE expr1   { $$ := node("Baugge", $1,$2,$3);} ;
-	| expr2a AUGNMGT expr1   { $$ := node("Bauggt", $1,$2,$3);} ;
-	| expr2a AUGNMLE expr1   { $$ := node("Baugle", $1,$2,$3);} ;
-	| expr2a AUGNMLT expr1   { $$ := node("Bauglt", $1,$2,$3);} ;
-	| expr2a AUGNMNE expr1   { $$ := node("Baugne", $1,$2,$3);} ;
-	| expr2a AUGNEQUIV expr1 { $$ := node("Baugneqv", $1,$2,$3);} ;
-	| expr2a AUGSEQ expr1    { $$ := node("Baugseq", $1,$2,$3);} ;
-	| expr2a AUGSGE expr1    { $$ := node("Baugsge", $1,$2,$3);} ;
-	| expr2a AUGSGT expr1    { $$ := node("Baugsgt", $1,$2,$3);} ;
-	| expr2a AUGSLE expr1    { $$ := node("Baugsle", $1,$2,$3);} ;
-	| expr2a AUGSLT expr1    { $$ := node("Baugslt", $1,$2,$3);} ;
-	| expr2a AUGSNE expr1    { $$ := node("Baugsne", $1,$2,$3);} ;
-	| expr2a AUGQMARK expr1  { $$ := node("Baugques", $1,$2,$3);} ;
-	| expr2a AUGAND expr1    { $$ := node("Baugamper", $1,$2,$3);} ;
-	| expr2a AUGAT expr1     { $$ := node("Baugact", $1,$2,$3);} ;
+	| expr2a REVSWAP expr1   { $$ := node("revswap", $1,$2,$3) } ;
+	| expr2a REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3) } ;
+	| expr2a AUGCONCAT expr1 { $$ := node("augcat", $1,$2,$3) } ;
+	| expr2a AUGLCONCAT expr1 { $$ := node("auglcat", $1,$2,$3) } ;
+	| expr2a AUGDIFF expr1   { $$ := node("Bdiffa", $1,$2,$3) } ;
+	| expr2a AUGUNION expr1  { $$ := node("Buniona", $1,$2,$3) } ;
+	| expr2a AUGPLUS expr1   { $$ := node("Bplusa", $1,$2,$3) } ;
+	| expr2a AUGMINUS expr1  { $$ := node("Bminusa", $1,$2,$3) } ;
+	| expr2a AUGSTAR expr1   { $$ := node("Bstara", $1,$2,$3) } ;
+	| expr2a AUGINTER expr1  { $$ := node("Bintera", $1,$2,$3) } ;
+	| expr2a AUGSLASH expr1  { $$ := node("Bslasha", $1,$2,$3) } ;
+	| expr2a AUGMOD expr1    { $$ := node("Bmoda", $1,$2,$3) } ;
+	| expr2a AUGCARET expr1  { $$ := node("Bcareta", $1,$2,$3) } ;
+	| expr2a AUGNMEQ expr1   { $$ := node("Baugeq", $1,$2,$3) } ;
+	| expr2a AUGEQUIV expr1  { $$ := node("Baugeqv", $1,$2,$3) } ;
+	| expr2a AUGNMGE expr1   { $$ := node("Baugge", $1,$2,$3) } ;
+	| expr2a AUGNMGT expr1   { $$ := node("Bauggt", $1,$2,$3) } ;
+	| expr2a AUGNMLE expr1   { $$ := node("Baugle", $1,$2,$3) } ;
+	| expr2a AUGNMLT expr1   { $$ := node("Bauglt", $1,$2,$3) } ;
+	| expr2a AUGNMNE expr1   { $$ := node("Baugne", $1,$2,$3) } ;
+	| expr2a AUGNEQUIV expr1 { $$ := node("Baugneqv", $1,$2,$3) } ;
+	| expr2a AUGSEQ expr1    { $$ := node("Baugseq", $1,$2,$3) } ;
+	| expr2a AUGSGE expr1    { $$ := node("Baugsge", $1,$2,$3) } ;
+	| expr2a AUGSGT expr1    { $$ := node("Baugsgt", $1,$2,$3) } ;
+	| expr2a AUGSLE expr1    { $$ := node("Baugsle", $1,$2,$3) } ;
+	| expr2a AUGSLT expr1    { $$ := node("Baugslt", $1,$2,$3) } ;
+	| expr2a AUGSNE expr1    { $$ := node("Baugsne", $1,$2,$3) } ;
+	| expr2a AUGQMARK expr1  { $$ := node("Baugques", $1,$2,$3) } ;
+	| expr2a AUGAND expr1    { $$ := node("Baugamper", $1,$2,$3) } ;
+	| expr2a AUGAT expr1     { $$ := node("Baugact", $1,$2,$3) } ;
 
 expr2a  : expr2;
-	| expr2a PMATCH expr2	{ $$ := node("BPmatch", $1,$2,$3);} ;
+	| expr2a PMATCH expr2	{ $$ := node("BPmatch", $1,$2,$3) } ;
            
 expr2	: expr3 ;
-	| expr2 TO expr3 { $$ := node("to", $1,$2,$3);} ;
-	| expr2 TO expr3 BY expr3 { $$ := node("toby", $1,$2,$3,$4,$5);} ;
-        | expr2 POR expr3 { $$ := node("BPor", $1,$2,$3); };
+	| expr2 TO expr3 { $$ := node("to", $1,$2,$3) } ;
+	| expr2 TO expr3 BY expr3 { $$ := node("toby", $1,$2,$3,$4,$5) } ;
+        | expr2 POR expr3 { $$ := node("BPor", $1,$2,$3) };
 
 expr3	: expr4 ;
-        | expr4 PAND expr3 { $$ := node("BPand", $1,$2,$3); };
-	| expr4 BAR expr3  {$$ := node(BAR, $1,$2,$3);} ;
+        | expr4 PAND expr3 { $$ := node("BPand", $1,$2,$3) };
+	| expr4 BAR expr3  {$$ := node(BAR, $1,$2,$3) } ;
 
 expr4	: expr5;
-	| expr4 SEQ expr5 { $$ := node("Bseq", $1,$2,$3);} ;
-	| expr4 SGE expr5 { $$ := node("Bsge", $1,$2,$3);} ;
-	| expr4 SGT expr5 { $$ := node("Bsgt", $1,$2,$3);} ;
-	| expr4 SLE expr5 { $$ := node("Bsle", $1,$2,$3);} ;
-	| expr4 SLT expr5 { $$ := node("Bslt", $1,$2,$3);} ;
-	| expr4 SNE expr5 { $$ := node("Bsne", $1,$2,$3);} ;
-	| expr4 NMEQ expr5 { $$ := node("Beq", $1,$2,$3);} ;
-	| expr4 NMGE expr5 { $$ := node("Bge", $1,$2,$3);} ;
-	| expr4 NMGT expr5 { $$ := node("Bgt", $1,$2,$3);} ;
-	| expr4 NMLE expr5 { $$ := node("Ble", $1,$2,$3);} ;
-	| expr4 NMLT expr5 { $$ := node("Blt", $1,$2,$3);} ;
-	| expr4 NMNE expr5 { $$ := node("Bne", $1,$2,$3);} ;
-	| expr4 EQUIV expr5 { $$ := node("Beqv", $1,$2,$3);} ;
-	| expr4 NEQUIV expr5 { $$ := node("Bneqv", $1,$2,$3);} ;
+	| expr4 SEQ expr5 { $$ := node("Bseq", $1,$2,$3) } ;
+	| expr4 SGE expr5 { $$ := node("Bsge", $1,$2,$3) } ;
+	| expr4 SGT expr5 { $$ := node("Bsgt", $1,$2,$3) } ;
+	| expr4 SLE expr5 { $$ := node("Bsle", $1,$2,$3) } ;
+	| expr4 SLT expr5 { $$ := node("Bslt", $1,$2,$3) } ;
+	| expr4 SNE expr5 { $$ := node("Bsne", $1,$2,$3) } ;
+	| expr4 NMEQ expr5 { $$ := node("Beq", $1,$2,$3) } ;
+	| expr4 NMGE expr5 { $$ := node("Bge", $1,$2,$3) } ;
+	| expr4 NMGT expr5 { $$ := node("Bgt", $1,$2,$3) } ;
+	| expr4 NMLE expr5 { $$ := node("Ble", $1,$2,$3) } ;
+	| expr4 NMLT expr5 { $$ := node("Blt", $1,$2,$3) } ;
+	| expr4 NMNE expr5 { $$ := node("Bne", $1,$2,$3) } ;
+	| expr4 EQUIV expr5 { $$ := node("Beqv", $1,$2,$3) } ;
+	| expr4 NEQUIV expr5 { $$ := node("Bneqv", $1,$2,$3) } ;
 
 expr5	: expr6 ;
-	| expr5 CONCAT expr6 { $$ := node("Bcat", $1,$2,$3);} ;
-	| expr5 LCONCAT expr6 { $$ := node("Blcat", $1,$2,$3);} ;
+	| expr5 CONCAT expr6 { $$ := node("Bcat", $1,$2,$3) } ;
+	| expr5 LCONCAT expr6 { $$ := node("Blcat", $1,$2,$3) } ;
 
 expr6	: expr7 ;
-	| expr6 PIMDASSN expr7 { $$ := node("BPiam", $1,$2,$3);} ;
-	| expr6 PASSNONMATCH expr7 { $$ := node("BPaom", $1,$2,$3);} ;
-	| expr6 PLUS expr7 { $$ := node("Bplus", $1,$2,$3);} ;
-	| expr6 DIFF expr7 { $$ := node("Bdiff", $1,$2,$3);} ;
-	| expr6 UNION expr7 { $$ := node("Bunion", $1,$2,$3);} ;
-	| expr6 MINUS expr7 { $$ := node("Bminus", $1,$2,$3);} ;
+	| expr6 PIMDASSN expr7 { $$ := node("BPiam", $1,$2,$3) } ;
+	| expr6 PASSNONMATCH expr7 { $$ := node("BPaom", $1,$2,$3) } ;
+	| expr6 PLUS expr7 { $$ := node("Bplus", $1,$2,$3) } ;
+	| expr6 DIFF expr7 { $$ := node("Bdiff", $1,$2,$3) } ;
+	| expr6 UNION expr7 { $$ := node("Bunion", $1,$2,$3) } ;
+	| expr6 MINUS expr7 { $$ := node("Bminus", $1,$2,$3) } ;
 
 expr7	: expr8 ;
-	| expr7 STAR expr8 { $$ := node("Bstar", $1,$2,$3);} ;
-	| expr7 INTER expr8 { $$ := node("Binter", $1,$2,$3);} ;
-	| expr7 SLASH expr8 { $$ := node("Bslash", $1,$2,$3);} ;
-	| expr7 MOD expr8 { $$ := node("Bmod", $1,$2,$3);} ;
+	| expr7 STAR expr8 { $$ := node("Bstar", $1,$2,$3) } ;
+	| expr7 INTER expr8 { $$ := node("Binter", $1,$2,$3) } ;
+	| expr7 SLASH expr8 { $$ := node("Bslash", $1,$2,$3) } ;
+	| expr7 MOD expr8 { $$ := node("Bmod", $1,$2,$3) } ;
 
 expr8	: expr9 ;
 	| postfixthreadop ;
-	| expr9 CARET expr8 { $$ := node("Bcaret", $1,$2,$3);} ;
+	| expr9 CARET expr8 { $$ := node("Bcaret", $1,$2,$3) } ;
 
 postfixthreadop:
-	  expr9 SND { $$ := node("Bsnd", $1,$2,EmptyNode);} ;
-	| expr9 SNDBK { $$ := node("Bsndbk", $1,$2,EmptyNode);} ;
-	| expr9 RCV { $$ := node("Brcv", $1,$2,EmptyNode);} ;
-	| expr9 RCVBK { $$ := node("Brcvbk", $1,$2,EmptyNode);} ;
+	  expr9 SND { $$ := node("Bsnd", $1,$2,&null) } ;
+	| expr9 SNDBK { $$ := node("Bsndbk", $1,$2,&null) } ;
+	| expr9 RCV { $$ := node("Brcv", $1,$2,&null) } ;
+	| expr9 RCVBK { $$ := node("Brcvbk", $1,$2,&null) } ;
 
 expr9	: expr10 ;
-	| expr9 BACKSLASH expr10 { $$ := node("limit", $1,$2,$3);} ;
-	| expr9 AT expr10 { $$ := node("at", $1,$2,$3);} ;
-	| expr9 SND expr10 { $$ := node("Bsnd", $1,$2,$3);} ;
-	| expr9 SNDBK expr10 { $$ := node("Bsndbk", $1,$2,$3);} ;
-	| expr9 RCV expr10 { $$ := node("Brcv", $1,$2,$3);} ;
-	| expr9 RCVBK expr10 { $$ := node("Brcvbk", $1,$2,$3);} ;
-	| expr9 BANG expr10 { $$ := node("apply", $1,$2,$3);};
+	| expr9 BACKSLASH expr10 { $$ := node("limit", $1,$2,$3) } ;
+	| expr9 AT expr10 { $$ := node("at", $1,$2,$3) } ;
+	| expr9 SND expr10 { $$ := node("Bsnd", $1,$2,$3) } ;
+	| expr9 SNDBK expr10 { $$ := node("Bsndbk", $1,$2,$3) } ;
+	| expr9 RCV expr10 { $$ := node("Brcv", $1,$2,$3) } ;
+	| expr9 RCVBK expr10 { $$ := node("Brcvbk", $1,$2,$3) } ;
+	| expr9 BANG expr10 { $$ := node("apply", $1,$2,$3) };
 
 expr10	: expr11 ;
-	| AT expr10 { $$ := node("uat", $1,$2);} ;
-	| SND expr10 { $$ := node("Bsnd", EmptyNode,$1,$2);} ;
-	| SNDBK expr10 { $$ := node("Bsndbk", EmptyNode,$1,$2);} ;
-	| RCV expr10 { $$ := node("Brcv", EmptyNode,$1,$2);} ;
-	| RCVBK expr10 { $$ := node("Brcvbk", EmptyNode,$1,$2);} ;
-	| NOT expr10 { $$ := node("unot", $1,$2);} ;
-	| BAR expr10 { $$ := node("ubar", $1,$2);} ;
-	| CONCAT expr10 { $$ := node("uconcat", $1,$2);} ;
-	| LCONCAT expr10 { $$ := node("ulconcat", $1,$2);} ;
-	| DOT expr10 { $$ := node("udot", $1,$2);} ;
-	| BANG expr10 { $$ := node("ubang", $1,$2);} ;
-	| DIFF expr10 { $$ := node("udiff", $1,$2);} ;
-	| PLUS expr10 { $$ := node("uplus", $1,$2);} ;
-	| STAR expr10 { $$ := node("ustar", $1,$2);} ;
-	| SLASH expr10 { $$ := node("uslash", $1,$2);} ;
-	| CARET expr10 { $$ := node("ucaret", $1,$2);} ;
-	| INTER expr10 { $$ := node("uinter", $1,$2);} ;
-	| TILDE expr10 { $$ := node("utilde", $1,$2);} ;
-	| MINUS expr10 { $$ := node("uminus", $1,$2);} ;
-	| NMEQ expr10 { $$ := node("unumeq", $1,$2);} ;
-	| NMNE expr10 { $$ := node("unumne", $1,$2);} ;
-	| SEQ expr10 { $$ := node("ulexeq", $1,$2);} ;
-	| SNE expr10 { $$ := node("ulexne", $1,$2);} ;
-	| EQUIV expr10 { $$ := node("uequiv", $1,$2);} ;
-	| UNION expr10 { $$ := node("uunion", $1,$2);} ;
-	| QMARK expr10 { $$ := node("uqmark", $1,$2);} ;
-	| NEQUIV expr10 { $$ := node("unotequiv", $1,$2);} ;
-	| BACKSLASH expr10 { $$ := node("ubackslash", $1,$2);} ;
-	| PSETCUR expr10 { $$ := node("upsetcur", $1,$2);} ;
+	| AT expr10 { $$ := node("uat", $1,$2) } ;
+	| SND expr10 { $$ := node("Bsnd", &null,$1,$2) } ;
+	| SNDBK expr10 { $$ := node("Bsndbk", &null,$1,$2) } ;
+	| RCV expr10 { $$ := node("Brcv", &null,$1,$2) } ;
+	| RCVBK expr10 { $$ := node("Brcvbk", &null,$1,$2) } ;
+	| NOT expr10 { $$ := node("unot", $1,$2) } ;
+	| BAR expr10 { $$ := node("ubar", $1,$2) } ;
+	| CONCAT expr10 { $$ := node("uconcat", $1,$2) } ;
+	| LCONCAT expr10 { $$ := node("ulconcat", $1,$2) } ;
+	| DOT expr10 { $$ := node("udot", $1,$2) } ;
+	| BANG expr10 { $$ := node("ubang", $1,$2) } ;
+	| DIFF expr10 { $$ := node("udiff", $1,$2) } ;
+	| PLUS expr10 { $$ := node("uplus", $1,$2) } ;
+	| STAR expr10 { $$ := node("ustar", $1,$2) } ;
+	| SLASH expr10 { $$ := node("uslash", $1,$2) } ;
+	| CARET expr10 { $$ := node("ucaret", $1,$2) } ;
+	| INTER expr10 { $$ := node("uinter", $1,$2) } ;
+	| TILDE expr10 { $$ := node("utilde", $1,$2) } ;
+	| MINUS expr10 { $$ := node("uminus", $1,$2) } ;
+	| NMEQ expr10 { $$ := node("unumeq", $1,$2) } ;
+	| NMNE expr10 { $$ := node("unumne", $1,$2) } ;
+	| SEQ expr10 { $$ := node("ulexeq", $1,$2) } ;
+	| SNE expr10 { $$ := node("ulexne", $1,$2) } ;
+	| EQUIV expr10 { $$ := node("uequiv", $1,$2) } ;
+	| UNION expr10 { $$ := node("uunion", $1,$2) } ;
+	| QMARK expr10 { $$ := node("uqmark", $1,$2) } ;
+	| NEQUIV expr10 { $$ := node("unotequiv", $1,$2) } ;
+	| BACKSLASH expr10 { $$ := node("ubackslash", $1,$2) } ;
+	| PSETCUR expr10 { $$ := node("upsetcur", $1,$2) } ;
 
 expr11	: literal ;
-	| NMLT { next_gt_is_ender := 1 } regex NMGT { $$ := node("regex", $3); }
+	| NMLT { next_gt_is_ender := 1 } regex NMGT { $$ := node("regex", $3) }
 	| section ;
 	| return ;
 	| if ;
@@ -667,12 +667,12 @@ expr11	: literal ;
 	| until ;
 	| every ;
 	| repeat ;
-	| SND { $$ := node("Bsnd", EmptyNode,$1,EmptyNode);} ;
-	| SNDBK { $$ := node("Bsndbk", EmptyNode,$1,EmptyNode);} ;
-	| RCV { $$ := node("Brcv", EmptyNode,$1,EmptyNode);} ;
-	| RCVBK { $$ := node("Brcvbk", EmptyNode,$1,EmptyNode);} ;
-	| PUNEVAL { $$ := node("BPuneval", $1);} ;
-	| CREATE expr { $$ := node("create", $1,$2);} ;
+	| SND { $$ := node("Bsnd", &null,$1,&null) } ;
+	| SNDBK { $$ := node("Bsndbk", &null,$1,&null) } ;
+	| RCV { $$ := node("Brcv", &null,$1,&null) } ;
+	| RCVBK { $$ := node("Brcvbk", &null,$1,&null) } ;
+	| PUNEVAL { $$ := node("BPuneval", $1) } ;
+	| CREATE expr { $$ := node("create", $1,$2) } ;
 	| THREAD expr {
 	      fakeThreadIdent := Clone1stToken($1)
 	      fakeThreadIdent.tok := IDENT
@@ -691,18 +691,18 @@ expr11	: literal ;
 				     node("create", fakeCreate, $2),
 				     fakeRParen);
 	      } ;
-	| CRITICAL expr2a COLON expr { $$ := node("critical", $1,$2,$3,$4);} ;
+	| CRITICAL expr2a COLON expr { $$ := node("critical", $1,$2,$3,$4) } ;
 	| IDENT ;
-	| NEXT { $$ := node("Next", $1);} ;
-	| BREAK nexpr { $$ := node("Break", $1,$2);} ;
-	| LPAREN exprlist RPAREN { $$ := node("Paren", $1,$2,$3);} ;
-	| LBRACE compound RBRACE { $$ := node("Brace", $1,$2,$3);} ;
-	| LBRACK caselist RBRACK { $$ := tablelit($1,$2,$3);} ;
-	| LBRACK exprlist RBRACK { $$ := node("Brack", $1,$2,$3);} ;
-	| LBRACK COLON expr COLON RBRACK { $$ := ListComp($3);} ;
-	| expr11 LBRACK exprlist RBRACK { $$ := node("Subscript", $1,$2,$3,$4);} ;
-	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3);} ;
-	| expr11 LBRACE pdcolist RBRACE { $$ := node("Pdco1", $1,$2,$3,$4);} ;
+	| NEXT { $$ := node("Next", $1) } ;
+	| BREAK nexpr { $$ := node("Break", $1,$2) } ;
+	| LPAREN exprlist RPAREN { $$ := node("Paren", $1,$2,$3) } ;
+	| LBRACE compound RBRACE { $$ := node("Brace", $1,$2,$3) } ;
+	| LBRACK caselist RBRACK { $$ := tablelit($1,$2,$3) } ;
+	| LBRACK exprlist RBRACK { $$ := node("Brack", $1,$2,$3) } ;
+	| LBRACK COLON expr COLON RBRACK { $$ := ListComp($3) } ;
+	| expr11 LBRACK exprlist RBRACK { $$ := node("Subscript", $1,$2,$3,$4) } ;
+	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3) } ;
+	| expr11 LBRACE pdcolist RBRACE { $$ := node("Pdco1", $1,$2,$3,$4) } ;
 	| expr11 LPAREN exprlist RPAREN {
            $$ := SimpleInvocation($1,$2,$3,$4);
       } ;
@@ -750,29 +750,29 @@ while	: WHILE expr {
 	    $$ := node("While1", $1,$2,$3,$4);
 	    } ;
 
-until	: UNTIL expr { $$ := node("until", $1,$2);} ;
-	| UNTIL expr DO expr { $$ := node("until1", $1,$2,$3,$4);} ;
+until	: UNTIL expr { $$ := node("until", $1,$2) } ;
+	| UNTIL expr DO expr { $$ := node("until1", $1,$2,$3,$4) } ;
 
-every	: EVERY expr { $$ := node("every", $1,$2);} ;
-	| EVERY expr DO expr { $$ := node("every1", $1,$2,$3,$4);} ;
+every	: EVERY expr { $$ := node("every", $1,$2) } ;
+	| EVERY expr DO expr { $$ := node("every1", $1,$2,$3,$4) } ;
 
-repeat	: REPEAT expr { $$ := node("repeat", $1,$2);} ;
+repeat	: REPEAT expr { $$ := node("repeat", $1,$2) } ;
 
 return	: FAIL ;
-	| RETURN nexpr { $$ := node("return", $1, $2);} ;
-	| SUSPEND nexpr { $$ := node("Suspend0", $1,$2);} ;
-        | SUSPEND expr DO expr { $$ := node("Suspend1", $1,$2,$3,$4);};
+	| RETURN nexpr { $$ := node("return", $1, $2) } ;
+	| SUSPEND nexpr { $$ := node("Suspend0", $1,$2) } ;
+        | SUSPEND expr DO expr { $$ := node("Suspend1", $1,$2,$3,$4) };
 
-if	: IF expr THEN expr { $$ := node("If0", $1,$2,$3,$4);} ;
-	| IF expr THEN expr ELSE expr { $$ := node("If1", $1,$2,$3,$4,$5,$6);} ;
+if	: IF expr THEN expr { $$ := node("If0", $1,$2,$3,$4) } ;
+	| IF expr THEN expr ELSE expr { $$ := node("If1", $1,$2,$3,$4,$5,$6) } ;
 
-case	: CASE expr OF LBRACE caselist RBRACE { $$ := node("Case", $1,$2,$3,$4,$5,$6);} ;
+case	: CASE expr OF LBRACE caselist RBRACE { $$ := node("Case", $1,$2,$3,$4,$5,$6) } ;
 
 caselist: cclause ;
-	| caselist SEMICOL cclause { $$ := node("Caselist", $1,";",$3);} ;
+	| caselist SEMICOL cclause { $$ := node("Caselist", $1,";",$3) } ;
 
-cclause	: DEFAULT COLON expr { $$ := node("cclause0", $1,$2,$3);} ;
-	| expr COLON expr { $$ := node("cclause1", $1,$2,$3);} ;
+cclause	: DEFAULT COLON expr { $$ := node("cclause0", $1,$2,$3) } ;
+	| expr COLON expr { $$ := node("cclause1", $1,$2,$3) } ;
 
 exprlist: nexpr ;
 	| exprlist COMMA nexpr {
@@ -784,7 +784,7 @@ exprlist: nexpr ;
 	   } ;
 
 pdcolist: nexpr { $$ := node("pdcolist0", $1) } ;
-	| pdcolist COMMA nexpr { $$ := node("pdcolist1", $1,$2,$3); } ;
+	| pdcolist COMMA nexpr { $$ := node("pdcolist1", $1,$2,$3) } ;
 
 literal	: INTLIT ;
 	| REALLIT ;
@@ -836,7 +836,7 @@ neregex3:  IDENT
 	| STRINGLIT
 	| CSETLIT
 	| DOT
-	| LPAREN regex RPAREN { $$ := node("Paren",$1,$2,$3); }
+	| LPAREN regex RPAREN { $$ := node("Paren",$1,$2,$3) }
 	| LBRACK brackchars RBRACK {
 	      $$ := node("acset", $1, $2, $3)
 	      if type($2) == "token" then {
@@ -891,18 +891,18 @@ brackchars2: IDENT | INTLIT | REALLIT | DOT
 	   }
 	;
 
-section	: expr11 LBRACK expr sectop expr RBRACK { $$ := node("section", $1,$2,$3,$4,$5,$6);} ;
+section	: expr11 LBRACK expr sectop expr RBRACK { $$ := node("section", $1,$2,$3,$4,$5,$6) } ;
 
 sectop	: COLON ;
 	| PCOLON ;
 	| MCOLON ;
 
 compound: nexpr ;
-	| nexpr SEMICOL compound { $$ := node("compound", $1,";",$3);} ;
+	| nexpr SEMICOL compound { $$ := node("compound", $1,";",$3) } ;
 
 program	: error decls EOFX ;
-proc	: prochead error procbody END { $$ := node("error", $1,$3,$4); } ;
-expr	: error { $$ := node("error"); } ;
+proc	: prochead error procbody END { $$ := node("error", $1,$3,$4) } ;
+expr	: error { $$ := node("error") } ;
 
 %%
 
@@ -966,7 +966,7 @@ procedure InvocationNode(args[])
 
 	     args[4], node("exprlist",
 	     if n1 === args[1] then args[1] else "__"||tmpcount,
-	     if args[5] === EmptyNode then EmptyNode else ",",args[5]),args[6])
+	     if args[5] === &null then &null else ",",args[5]),args[6])
 	     ,")")
       }
    else {
@@ -976,7 +976,7 @@ procedure InvocationNode(args[])
 			 "." , args[3]),".",args[5]),
 		       args[6], node("exprlist",
 				if n1 === args[1] then args[1] else "__"||tmpcount,
-				if args[7] === EmptyNode then EmptyNode else ",",args[7]),args[8])
+				if args[7] === &null then &null else ",",args[7]),args[8])
 		      ,")")
       else return SuperMethodInvok ! args
    }
@@ -1042,7 +1042,7 @@ procedure SuperMethodInvok(args[])
       Field(args[3], ".", args[5]),
       args[6], node("exprlist",
       if n1 === args[1] then args[1] else "__" || tmpcount,
-      if args[7] === EmptyNode then EmptyNode else ",", args[7]), args[8]),
+      if args[7] === &null then &null else ",", args[7]), args[8]),
       ")", ))
 end
 
@@ -1111,7 +1111,7 @@ procedure AppendListCompTemps(lcls, body)
 	 # the varlist will just be an IDENT
 	 vl := token(IDENT, ltmps[1], 0, 0, "lambda.icn")
 	 }
-      if (lcls === EmptyNode) |
+      if (lcls === &null) |
 	  (type(lcls)==="treenode" & lcls.label==("locals2"|"locals3")) then {
 	 return node("locals2", lcls, "local", vl, ";")
 	 }

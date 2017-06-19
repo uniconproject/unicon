@@ -437,7 +437,7 @@ procedure yyprint(node)
 	    if exists_statlists(node.children[3]) then {
 	       ini := node.children[4]
 	       yyprint("\ninitial {")
-               if ini ~=== EmptyNode then { # append into existing initial
+               if ini ~=== &null then { # append into existing initial
 		  yyprint(ini.children[2])
 		  yyprint(";\n")
 	          }
@@ -756,7 +756,7 @@ procedure scopecheck_superclass_dec(c)
 
    tmp := idTaque(":")
    x := c.supers_node
-   while x ~=== EmptyNode do {
+   while x ~=== &null do {
       sc := x.children[2]
 
       if type(sc) == "token" then
@@ -810,7 +810,7 @@ procedure scopecheck_proc(node)
    extract_identifiers(node.children[3], local_vars)
 
    # The expression in the intially section (if any)
-   if node.children[4] ~=== EmptyNode then
+   if node.children[4] ~=== &null then
       scopecheck_expr(node.children[4].children[2], local_vars)
 
    # The procbody expressions
@@ -835,7 +835,7 @@ procedure scopecheck_methods(c)
       extract_identifiers(m.locals, local_vars)
 
       # The expression in the intially section (if any)
-      if m.initl ~=== EmptyNode then
+      if m.initl ~=== &null then
          scopecheck_expr(m.initl.children[2], local_vars, self_vars)
       scopecheck_locals(m.locals, local_vars, self_vars)
       scopecheck_procbody(m.procbody, local_vars, self_vars)
@@ -877,7 +877,7 @@ end
 # Scope-check a procbody parse node.
 #
 procedure scopecheck_procbody(n, local_vars, self_vars)
-   while n ~=== EmptyNode do {
+   while n ~=== &null do {
       scopecheck_expr(n.children[1], local_vars, self_vars)
       n := n.children[3]
       }
@@ -1419,25 +1419,25 @@ procedure class_from_parts(head, clocals, methods, initiallysection)
    local rv
    rv := head
 
-   if clocals ~=== EmptyNode then {
+   if clocals ~=== &null then {
       if clocals.label == "locals3" then
          yyerror("static class variables not yet implemented")
       # splice in any class locals into the field list
       classinitializers := rv.fields.traverse(clocals, "classlocal")
       }
-   if initiallysection ~=== EmptyNode then
+   if initiallysection ~=== &null then
       methods := node("methods", methods, initiallysection)
    rv.methods := methodstaque(methods, rv)
    if \ (ini := rv.methods.lookup("initially")) then {
       if not (type(ini) == ("Method"|"Method__state")) then
 	 yyerror("unexpected initially situation on " || type(ini))
       # splice in any class local initializers into initially procbody
-      if clocals ~=== EmptyNode then {
+      if clocals ~=== &null then {
 	  ini.procbody := splicein(\classinitializers, ini.procbody)
 	  }
       }
    else {
-      if clocals ~=== EmptyNode then {
+      if clocals ~=== &null then {
 	 write("what, no initially? but I have to stick these somewhere?")
 	 }
       }

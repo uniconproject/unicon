@@ -17,9 +17,10 @@ http://www.chesterproductions.net.nz/blogs/it/c/an-ssl-client-using-openssl/245/
 
 #ifdef STDC_HEADERS
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #endif
+
+#include <stdlib.h>
 
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
@@ -272,7 +273,7 @@ char get_storepath(Tpdisc_t *tpdisc, char *store_path)
    if (sslpathFind("openssl", path_to_ssl, 1024) == 1) {
       FILE *f;
       f = popen("openssl version -a | grep OPENSSLDIR", "r");
-      fgets(path_to_ssl, 1023, f);
+      //fgets(path_to_ssl, 1023, f);
       pclose(f);
       if (sscanf(path_to_ssl, "OPENSSLDIR: \"%s\"", store_path) == 1) {
 	 /* sscanf was OK */

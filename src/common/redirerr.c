@@ -32,7 +32,8 @@ char *p;
       setbuf(stderr,NULL);
       stderr->_file = stdout->_file;
    #else				/* NT */
-      dup2(fileno(stdout),fileno(stderr));
+      if (dup2(fileno(stdout),fileno(stderr)))
+	retrun 0;
    #endif				/* NT */
 #endif					/* MSDOS || ... */
 
@@ -42,7 +43,8 @@ char *p;
        * This relies on the way UNIX assigns file numbers.
        */
       close(fileno(stderr));
-      dup(fileno(stdout));
+      if (dup(fileno(stdout) == -1))
+	  return 0;
 #endif					/* UNIX */
 
 /*

@@ -56,7 +56,11 @@ char *alc_strerror(int n)
 #ifdef HAVE_STRERROR_R
    s = alcstr(NULL, size);
    if (s != NULL) {
+#ifdef _GNU_SOURCE
+      while ((s=strerror_r(n, s, size)) != NULL && errno == ERANGE) {
+#else
       while ((rv=strerror_r(n, s, size)) != 0 && errno == ERANGE) {
+#endif      
 	 size *= 2;
 	 if ((s = alcstr(NULL, size)) == NULL) break;
 	 }

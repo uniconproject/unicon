@@ -602,6 +602,8 @@ int *ip;
       argc++;
       (*ip)--;
       }
+
+   free(tmp);
    }
 
 #ifdef MaxLevel

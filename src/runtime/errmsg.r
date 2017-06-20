@@ -121,6 +121,8 @@ void err_msg(int n, dptr v)
          }
       else {
          IntVal(kywd_err)--;
+         if (logfptr != NULL)
+      	    fclose(logfptr);	 
          return;
          }
       }

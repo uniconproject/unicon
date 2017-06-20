@@ -688,7 +688,9 @@ FILE *f;
          nargs = xnargs;
          if (xargp[0].dword == D_Proc) {
 	    bp = BlkD(*xargp, Proc);
+	    if (bp)
             putstr(f, &(bp->pname));
+	    else fprintf(f,"???");
 	    }
          else
             outimage(f, xargp, 0);

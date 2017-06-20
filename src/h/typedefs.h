@@ -28,9 +28,7 @@ typedef unsigned int DIGIT;
    typedef unsigned int uword;
 #endif					/* IntBits != WordBits */
 
-#ifndef PointerDef
    typedef void *pointer;
-#endif					/* PointerDef */
 
 /*
  * Typedefs to make some things easier.

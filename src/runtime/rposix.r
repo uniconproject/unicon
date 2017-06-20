@@ -1382,8 +1382,10 @@ int sock_recv(int s, struct b_record **rp)
 
    hp = gethostbyaddr((char *)&saddr_in.sin_addr,
 	 sizeof(saddr_in.sin_addr), saddr_in.sin_family);
-   if (hp != NULL)
-      sprintf(buf, "%s:%d", hp->h_name, ntohs(saddr_in.sin_port));
+   if (hp != NULL){
+      if ((snprintf(buf, BUFSIZE,"%s:%d", hp->h_name, ntohs(saddr_in.sin_port)))>=BUFSIZE)
+         ;// TODO: handle buffer too small
+      }
    else { /* Note: does not work for IPv6 addresses */
       unsigned int addr = ntohl(saddr_in.sin_addr.s_addr);
       sprintf(buf, "%d.%d.%d.%d:%d",

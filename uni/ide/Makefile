@@ -8,8 +8,7 @@ export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
 
 # nothing to configure here yet
 
-UC=../../bin/unicon
-WUC=../../bin/unicon -G
+WUC=$(UC) -G
 UFLAGS=-s -c -u
 UFLAGS2=-s -c
 

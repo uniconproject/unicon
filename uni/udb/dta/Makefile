@@ -7,7 +7,6 @@
 BASE=../../..
 include ../../Makedefs
 
-UC      = ../../../bin/unicon
 CFLAGS     = $(UFLAGS) -c
 
 UFILES  = atomic_agent.u temporals.u

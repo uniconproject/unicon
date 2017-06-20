@@ -3,7 +3,7 @@
 #
 BASE=../..
 include ../Makedefs
-UC      = ../../bin/unicon
+
 EXEs    = udb
 DEL     = -rm
 CLEAN   = clean

@@ -6,7 +6,6 @@
 #
 BASE=../../..
 include ../../Makedefs
-UC         = ../../../bin/unicon
 CFLAGS     = $(UFLAGS) -c
 LDFLAGS    = -u
 STANDALONE = -DStandAlone

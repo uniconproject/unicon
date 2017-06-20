@@ -289,7 +289,7 @@ function{0,1} kill(pid, signal)
 	    runerr(1043, signal);
          }
       else {
-         cnv:C_integer(signal, sig);
+         if (!cnv:C_integer(signal, sig)) runerr(101, signal);
 	 if (sig < 0 || sig > 50)
 	    runerr(1043, signal);
 	 }
@@ -331,7 +331,7 @@ function{0,1} trap(nsignal, handler)
 	    runerr(1043, nsignal);
          }
       else {
-         cnv:C_integer(nsignal, sig);
+         if (!cnv:C_integer(nsignal, sig)) runerr(101, nsignal);
 	 if (sig < 0 || sig > 50)
 	    runerr(1043, nsignal);
          }
@@ -374,7 +374,7 @@ function{0,1} chown(s, u, g)
       }
       integer: {
 	 body {
-	    cnv:C_integer(u, i_u);
+	    if (!cnv:C_integer(u, i_u)) runerr(101, u);
 	 }
       }
       null: {
@@ -397,7 +397,7 @@ function{0,1} chown(s, u, g)
       }
       integer: {
 	 body {
-	    cnv:C_integer(g, i_g);
+	    if (!cnv:C_integer(g, i_g)) runerr(101, g);
 	 }
       }
       null: {
@@ -484,7 +484,7 @@ function{0,1} chmod(s, m)
 		  runerr(1045, m);
 	       }
 	    else {
-	       cnv:C_integer(m, i);
+	       if (!cnv:C_integer(m, i)) runerr(101, m);
 	       }
 #if NT
 #define chmod _chmod
@@ -518,7 +518,7 @@ function{0,1} chmod(s, m)
 		  runerr(1045, m);
 	    }
 	    else
-	       cnv:C_integer(m, i);
+	       if (!cnv:C_integer(m, i)) runerr(101, m);
 #if NT
 	    fail;
 #else					/* NT */
@@ -616,7 +616,7 @@ function{0,1} mkdir(s, m)
 	    runerr(1045, m);
       }
       else {
-         cnv:C_integer(m, mode);
+         if (!cnv:C_integer(m, mode)) runerr(101, m);
       }
 
       IntVal(amperErrno) = 0;
@@ -931,7 +931,7 @@ function{0,1} fcntl(f, action, options)
 	      default: runerr(1044, options);
 	      }
 	 } else
-	    cnv:C_integer(options, o);
+	    if (!cnv:C_integer(options, o)) runerr(101, options);
 
 	 IntVal(amperErrno) = 0;
 	 if ((retval = fcntl(fd, cmd, o)) < 0) {
@@ -2381,8 +2381,9 @@ function{0,1} select(files[nargs])
 	 for(k=0;k<nargs;k++) {
 	    /* Traverse the list, build fd_set of sockets */
 	    if (!is:list(files[k])) {
-	       if ((k+1 == nargs) && is:integer(files[k]))
-		  cnv:C_integer(files[k], timeout);
+	       if ((k+1 == nargs) && is:integer(files[k])) {
+		  if (!cnv:C_integer(files[k], timeout)) runerr(101, files[k]);
+		  }
 	       else
 		  if ((rv = set_if_selectable(files+k, &fds, &n)))
 		     runerr(rv, files[k]);
@@ -2596,7 +2597,7 @@ function{0,1} getpw(u)
 	    fail;
 #else					/* NT */
 	    C_integer uid;
-	    cnv:C_integer(u, uid);
+	    if (!cnv:C_integer(u, uid)) runerr(101, u);
 	    
 	    if(getpwuid_r(uid, &pwbuf, buf, 1024, &pw)!=0)
 	       fail;
@@ -2665,7 +2666,7 @@ function{0,1} getgr(g)
    integer: {
 	 body {
 	    C_integer gid;
-	    cnv:C_integer(g, gid);
+	    if (!cnv:C_integer(g, gid)) runerr(101, g);
 #if NT
 	    fail;
 #else					/* NT */
@@ -2873,7 +2874,7 @@ function{0,1} getserv(s, proto)
 	    C_integer port;
 	    unsigned short real_port;
 	    p = 0;
-	    cnv:C_integer(s, port);
+	    if (!cnv:C_integer(s, port)) runerr(101, s);
             if (!is:null(proto))
 	       if (!cnv:C_string(proto, p))
 		  runerr(103, proto);

@@ -1926,7 +1926,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 
       /* Decode the mode */
       if (is:integer(mode))
-	 cnv:C_integer(mode, i_mode);
+	 if (!cnv:C_integer(mode, i_mode)) runerr(101, mode);
       else if (is:string(mode)) {
 	 tended char *s_mode;
          cnv:C_string(mode, s_mode);

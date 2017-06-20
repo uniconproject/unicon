@@ -891,6 +891,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  Tprequest_t req = { LIST, NULL, 0 };
 		  long int msglen;
 		  char buf[100];
+		  buf[0]='\0';
 
 		  req.args = c_y;
 		  tp_freeresp(mf->tp, mf->resp);

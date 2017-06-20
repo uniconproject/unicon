@@ -798,7 +798,6 @@ struct il_c *value;
    {
    struct code *cd;
    struct val_loc *new_vloc;
-   char  *new_str;
    int rv = 0;
 
    cd = alc_ary(4);
@@ -809,21 +808,23 @@ struct il_c *value;
    sub_ilc(value, cd, 2);                /* value */
    cd->ElemTyp(3) = A_Str;
    cd->Str(3) =                             ";";
-#ifdef OptimizeDescriptorAssignments
+
+   /*
+    * TODO: review ifdef below, validate or remove.
+    */
+#ifdef OptimizeDescripAsgn
    if ((strstr(cd->Str(1), "vword.integr =") != NULL) &&
        (cd->ElemTyp(2) == A_ValLoc) && 
        (cd->ValLoc(0)->mod_access == M_None) &&
        (cd->ValLoc(2)->mod_access == M_CInt)) {
-      new_str = (char *)strdup(" = /*Q*/ ");
-      cd->Str(1) = new_str;
-      new_vloc = (struct val_loc *)malloc(sizeof(struct val_loc));
+      new_vloc = (struct val_loc *)alloc(sizeof(struct val_loc));
       memcpy(new_vloc, cd->ValLoc(2), sizeof(struct val_loc));
       new_vloc->mod_access = M_None;
-      cd->Str(1)    = new_str;
+      cd->Str(1)    = (char *)strdup(" = /*Q*/ "); /* why strdup?  why Q ? */
       cd->ValLoc(2) = new_vloc;
       rv = 1;
    }
-#endif				/* OptimizeDescriptorAssignments */
+#endif				/* OptimizeDescripAsgn */
    cd_add(cd);
    return rv;
    }

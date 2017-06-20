@@ -59,8 +59,8 @@ method startEvaluator()
           }
         E_Assign | E_Value :{
           # check for Watch point on changed vars & keywords
-          if DState.RunCode = PSTEP then { Step.totalMatch := &eventvalue } 
-          if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
+          if DState.RunCode = PSTEP then { Step.totalMatch := &eventvalue }
+          else if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
           }
         E_Deref:{
           # check for Watch point on read vars & keywords

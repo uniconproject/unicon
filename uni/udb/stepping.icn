@@ -19,7 +19,8 @@ class Stepping(
    pat,         # store the current pstep pattern 	       
    pline,       # stores the previous pattern line number
    oldLen,      # stores the old match length
-   totalMatch   # stores the total match	       
+   totalMatch,  # stores the total match
+   assignVal    # stores the value of a variable assignment in a pattern	       
    )	
 	       
 #
@@ -182,7 +183,7 @@ method checkPStep()
    ## store the current pattern match line
 
    cur_file := keyword("file", Monitored)
-   if pline ~= 0 then {
+   if pline = 0 then {
       cur_line := keyword("line", Monitored)
       pline := cur_line
    }
@@ -253,14 +254,14 @@ method checkPStep()
 
          index := keyword("patindex", Monitored)
 
-         if oldLen === *totalMatch then { curMatch := &null      }
-         else if oldLen = 0 then        {
+         if oldLen = *totalMatch then    { curMatch := &null      }
+         else if oldLen = 0 then {
             curMatch := totalMatch
             oldLen := *totalMatch
             }
-         else if *totalMatch > 0 then{
+         else if *totalMatch > 0 then {
             totalMatch ? {
-               tab(oldLen)
+               tab(oldLen + 1)
                curMatch := tab(0)
                }
             oldLen := *totalMatch
@@ -278,9 +279,10 @@ method checkPStep()
             PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF : {
                msg ||:= "\n   "||"Cursor Position: "||keyword("pos", Monitored)                }   
             PC_Assign_Imm | PC_Assign_OnM : {
-               msg ||:= "\n   Assignment Value: "||image(curMatch)
+               assignVal := totalMatch   #in this case the event value returned the assign val
+               msg ||:= "\n   Assignment Value: "||image(totalMatch)
                msg ||:= "\n   Assigned Pattern Element: "
-               msg ||:= pindex_image(pat, index)
+               msg ||:= "\n   "||pindex_image(pat, index)
                DState.Write(msg)
                DState.State := PAUSE
                DState.RunCode := PSTEP
@@ -342,8 +344,8 @@ method pEnd()
    if DState.RunCode = PSTEP then {
       if &eventcode = E_PatMatch then{
          msg := "\n   Pattern matched on string"
-         msg ||:= "\n   Matched String:  TBD"
-         msg ||:= "\n   Resuming normal stepping"
+         msg ||:= "\n   Total Matched String: "||totalMatch
+         msg ||:= "\n   Resuming normal stepping..."
          DState.Write(msg)
          DState.State := PAUSE
          DState.RunCode := STEP

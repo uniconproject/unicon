@@ -1,5 +1,5 @@
-#ifndef RT_DOT_H	/* only include once */
-#define RT_DOT_H 1
+#ifndef RT_H	/* only include once */
+#define RT_H 1
 
 /*
  * Include files.

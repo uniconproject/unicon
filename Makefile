@@ -6,9 +6,12 @@ VERSION=v940
 name=unspecified
 dest=/must/specify/dest/
 
-default:
+default: Makedefs
 	make Unicon
 
+
+Makedefs: Makedefs.in
+	./configure
 
 help:
 	@echo
@@ -19,8 +22,6 @@ help:
 	@echo Platform
 	@echo "  UNIX:" 
 	@echo "      Run \"./configure\""
-	@echo "       or \"make build name=system\""
-	@echo "      where system is one of those in config/unix."
 	@echo
 	@echo "  Windows:"
 	@echo "      MSVC: Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
@@ -274,9 +275,6 @@ Clean:
 		touch Makedefs
 		rm -rf icon.*
 		cd src;			$(MAKE) Clean
-		if [ -f uni/Makefile ] ; then \
-			cd uni;			$(MAKE) Clean ;\
-		fi
 		cd tests;		$(MAKE) Clean
 
 Pure:
@@ -284,9 +282,6 @@ Pure:
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
-		if [ -f uni/Makefile ] ; then \
-			cd uni;			$(MAKE) Clean ;\
-		fi
 		rm -f Makedefs
 		rm -f src/common/rswitch.[csS]
 

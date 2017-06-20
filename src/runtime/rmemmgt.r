@@ -1489,7 +1489,7 @@ static void cofree()
             abp = abp->astk_nxt;
             if ( xabp->nactivators == 0 )
                free((pointer)xabp);
-#ifdef __TRACE
+#if 0
             else 
 	       fprintf(stderr,"Warning: internal gc error: activator list is not empty.\n"); 
 #endif

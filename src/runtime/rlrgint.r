@@ -100,8 +100,8 @@ static void itobig	(word i, struct b_bignum *x, dptr dx);
 
 static void decout	(FILE *f, DIGIT *n, word l);
 
-static int bigaddi	(dptr da, word i, dptr dx);
-static int bigsubi	(dptr da, word i, dptr dx);
+int bigaddi	(dptr da, word i, dptr dx);
+int bigsubi	(dptr da, word i, dptr dx);
 static int bigmuli	(dptr da, word i, dptr dx);
 static int bigdivi	(dptr da, word i, dptr dx);
 static int bigmodi	(dptr da, word i, dptr dx);
@@ -1627,7 +1627,7 @@ dptr da, dx;
  *  da + i -> dx
  */
 
-static int bigaddi(da, i, dx)
+int bigaddi(da, i, dx)
 dptr da, dx;
 word i;
 {
@@ -1671,7 +1671,7 @@ word i;
  *  da - i -> dx
  */
 
-static int bigsubi(da, i, dx)
+int bigsubi(da, i, dx)
 dptr da, dx;
 word i;
 {

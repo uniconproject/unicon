@@ -1758,7 +1758,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
           case PC_BreakX_MF: {
 	     if ((construct_funcimage(ep, PT_MF, PF_BreakX, result, index_image))                                     == RunError) return RunError;
 	     peCount++;
-	     ep = Blk(ep,Pelem)->pthen; /* Skip the BreakX_X Pelem) */ 
+	     ep = Blk(ep,Pelem)->pthen; /* Skip the Alt Pelem) */
+             if(Blk(ep, Pelem)->index + 1 == pe_index) /*check BreakX_X index */
+                construct_image(bi_pat(PI_FBRACE), result, 
+                                bi_pat(PI_BBRACE), result);
 	     break;
              }
           case PC_NotAny_MF: {
@@ -1825,6 +1828,9 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 )                                    == RunError) return RunError;
 	     peCount++;
 	     ep = Blk(ep,Pelem)->pthen; 
+             if(Blk(ep, Pelem)->index + 1 == pe_index) 
+                construct_image(bi_pat(PI_FBRACE), result, 
+                                bi_pat(PI_BBRACE), result);
 	     break;
              }
           case PC_NotAny_VF: {
@@ -1892,6 +1898,9 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 )                                    == RunError) return RunError;
 	     peCount++;
 	     ep = Blk(ep,Pelem)->pthen; 
+             if(Blk(ep, Pelem)->index + 1 == pe_index) 
+                construct_image(bi_pat(PI_FBRACE), result, 
+                                bi_pat(PI_BBRACE), result);
 	     break;
              }
           case PC_NotAny_VP: {
@@ -1958,6 +1967,9 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     if ((construct_funcimage(ep, PT_EVAL, PF_BreakX, result, index_image))                                  == RunError) return RunError;
 	     peCount++;
 	     ep = Blk(ep,Pelem)->pthen; 
+             if(Blk(ep, Pelem)->index + 1 == pe_index) 
+                construct_image(bi_pat(PI_FBRACE), result, 
+                                bi_pat(PI_BBRACE), result);
 	     break;
              }
           case PC_NotAny_CS: {

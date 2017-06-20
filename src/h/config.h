@@ -440,6 +440,10 @@
    #define IntBits (SIZEOF_INT * 8)
 #endif					/* IntBits */
 
+#if (WordBits == 64)
+#define Double
+#endif
+
 #ifndef SourceSuffix
    #define SourceSuffix ".icn"
 #endif					/* SourceSuffix */
@@ -874,9 +878,6 @@ Deliberate Syntax Error
 #define LoadFunc
 #endif					/* HAVE_LIBDL */
 #endif
-
-#define Double
-
 
 
 /*

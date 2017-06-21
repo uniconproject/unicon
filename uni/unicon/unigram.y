@@ -1,6 +1,6 @@
 /*
  * NOTE: these %token declarations are generated
- *  automatically by mktoktab from tokens.txt and 
+ *  automatically by mktoktab from tokens.txt and
  *  op.txt.
  */
 
@@ -139,8 +139,8 @@
 %token  POR        /* .|         */
 %token  PUNEVAL      /* ` */
 %token  PASSNONMATCH  /* -> */
-%token  PIMDASSN      /* $$ */  
-%token  PSETCUR       /* .$ */  
+%token  PIMDASSN      /* $$ */
+%token  PSETCUR       /* .$ */
 
 %token	SND          /* @>       */
 %token	SNDBK        /* @>>      */
@@ -199,7 +199,7 @@ end
 global outline, outcol, outfilename,package_level_syms,package_level_class_syms
 
 procedure Progend(x1)
-   
+
    if *\parsingErrors > 0 then {
       every pe := !parsingErrors do {
 	 write(&errout, pe.errorMessage)
@@ -332,7 +332,7 @@ initiallysection: { $$ := &null }
 	}
 	;
 
-optsemi : { $$ := &null } ; 
+optsemi : { $$ := &null } ;
         | SEMICOL;
 
 cl: classhead optsemi clocals methods optsemi initiallysection END {
@@ -363,8 +363,8 @@ supers: { $$ := &null } ;
    | COLON packageref supers { $$ := node("supers", $1, $2, $3) }
    ;
 
-packageref : IDENT COLONCOLON IDENT { $$ := node("packageref", $1,$2,$3) } 
-   | COLONCOLON IDENT { $$ := node("packageref", $1,$2) }  
+packageref : IDENT COLONCOLON IDENT { $$ := node("packageref", $1,$2,$3) }
+   | COLONCOLON IDENT { $$ := node("packageref", $1,$2) }
    ;
 
 methods: { $$ := &null } ;
@@ -499,7 +499,7 @@ carg	: priv arg { $$ := $2 };
 
 priv: { $$ := &null } ;
 	| PLUS  ;
-	| MINUS ; 
+	| MINUS ;
 
 clocals	: { $$ := &null } ;
 	| clocals LOCAL varlist optsemi { $$ := node("locals2", $1,$2,$3,";") } ;
@@ -527,7 +527,7 @@ expr1a	: expr1 ;
 
 expr1	: expr2a ;
 	| expr2a SWAP expr1      { $$ := node("swap", $1,$2,$3) } ;
-	| expr2a ASSIGN expr1    { 
+	| expr2a ASSIGN expr1    {
           $$ := parenthesize_assign(node("assign",$1,$2,$3));
           } ;
 	| expr2a REVSWAP expr1   { $$ := node("revswap", $1,$2,$3) } ;
@@ -563,7 +563,7 @@ expr1	: expr2a ;
 
 expr2a  : expr2;
 	| expr2a PMATCH expr2	{ $$ := node("BPmatch", $1,$2,$3) } ;
-           
+
 expr2	: expr3 ;
 	| expr2 TO expr3 { $$ := node("to", $1,$2,$3) } ;
 	| expr2 TO expr3 BY expr3 { $$ := node("toby", $1,$2,$3,$4,$5) } ;
@@ -739,7 +739,7 @@ while	: WHILE expr {
 	       $2.children[3].label == "to" & *($2.children[3].children)=3 &
 		     (type($2.children[3].children[1]) ===
 		      type($2.children[3].children[3]) === "token") &
-		     ($2.children[3].children[1].tok = 
+		     ($2.children[3].children[1].tok =
 		      $2.children[3].children[3].tok = INTLIT) &
 		     $2.children[3].children[1].s<=$2.children[3].children[3].s
 	    then {

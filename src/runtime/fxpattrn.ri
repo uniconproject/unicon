@@ -2104,9 +2104,6 @@ Node_Fail:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-   StrLen(evalue) = (k_pos - 1) - StackCursor(Stack_Init);
-   StrLoc(evalue) = pat_sub + StackCursor(Stack_Init);
-   EVValD(&evalue, e_value);
    EVVal(Node->pcode, e_pelemfail);
    k_pos = StackCursor(Stack_Ptr) + 1;
    Node   = (struct b_pelem *)StackNode(Stack_Ptr);
@@ -2122,9 +2119,6 @@ Node_Succeed:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-    StrLen(evalue) = (k_pos - 1) - StackCursor(Stack_Init);
-    StrLoc(evalue) = pat_sub + StackCursor(Stack_Init);
-    EVValD(&evalue, e_value);
     EVVal(Node->pcode, e_pelemmatch);
     Node = (struct b_pelem *)Node->pthen;
 /*
@@ -2387,7 +2381,7 @@ Node_Succeed:
 	 fputc('\n', f->fd.fp);
 	 }
       else {
-	 EVVar(&varref, e_assign);
+	 EVVar(&varref, E_Assign);
          StrLen(*pvar) = (k_pos - 1) - StackCursor(Stack_Base - 1);
          StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
 	 EVValD(pvar, e_value);

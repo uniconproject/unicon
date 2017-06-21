@@ -59,8 +59,7 @@ method startEvaluator()
           }
         E_Assign | E_Value :{
           # check for Watch point on changed vars & keywords
-          if DState.RunCode = PSTEP then { Step.totalMatch := &eventvalue }
-          else if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
+          if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
           }
         E_Deref:{
           # check for Watch point on read vars & keywords
@@ -69,7 +68,7 @@ method startEvaluator()
         E_Spos | E_Snew:{
           if *DState.watchChangeMask > 0  then Watch.checkWatchScan()
           }
-        E_PatAttempt | E_PelemMatch | E_PelemFail:{
+        E_PatAttempt | E_PelemMatch | E_PelemFail | E_PelemAttempt:{
           if DState.RunCode = PSTEP then{ Step.checkPStep()       }
           }
         E_PatMatch | E_PatFail:{

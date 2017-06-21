@@ -2043,7 +2043,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, 2, &image, 0, pe_index) == RunError)
+                if (pattern_image(arb, 0, &image, 0, pe_index) == RunError)
 		   return RunError;
                 if (construct_image(bi_pat(PF_Arbno), &image,
 		   		bi_pat(PI_BPAREN), result) == RunError)
@@ -2051,7 +2051,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
                 if (index_image == 1)
                    if (construct_image(bi_pat(PI_FBRACE), result,
                                        bi_pat(PI_BBRACE), result) == RunError) 
-                                          return RunError;
+                                       return RunError;
                 }
              else {
                 syserr("PC_Arbno_X whose param is not a PC_R_Enter");
@@ -2109,9 +2109,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	      * consider Resolved patterns. do we need to check
 	      * if parameter is a string, or a variable?
 	      */
+             tended struct descrip op;
              if (index_image == 1){
-                 AsgnCStr(image, ") [-> ");
-                if ((construct_image(bi_pat(PI_EMPTY), &image, 
+                 AsgnCStr(op, ") [-> ");
+                if ((construct_image(bi_pat(PI_EMPTY), &op, 
                            &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
                            return RunError;
                 if ((construct_image(result, bi_pat(PI_BBRACE), 
@@ -2119,8 +2120,8 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
                            return RunError;
                 }
              else{
-                AsgnCStr(image, ") -> "); 
-                if ((construct_image(&image, &(Blk(ep,Pelem)->parameter), 
+                AsgnCStr(op, ") -> "); 
+                if ((construct_image(&op, &(Blk(ep,Pelem)->parameter), 
                                      bi_pat(PI_EMPTY), result)) ==
 		    RunError) return RunError;
                    }             
@@ -2128,9 +2129,10 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     break;
              }
           case PC_Assign_Imm: {
+             tended struct descrip op;
              if (index_image == 1){
-	        AsgnCStr(image, ") [=> ");
-                if ((construct_image(bi_pat(PI_EMPTY), &image, 
+	        AsgnCStr(op, ") [=> ");
+                if ((construct_image(bi_pat(PI_EMPTY), &op, 
                            &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
                            return RunError;
                 if ((construct_image(result, bi_pat(PI_BBRACE), 
@@ -2138,8 +2140,8 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
                            return RunError;
                 }
              else{
-	        AsgnCStr(image, ") => ");
-                if ((construct_image(&image, &(Blk(ep,Pelem)->parameter), 
+	        AsgnCStr(op, ") => ");
+                if ((construct_image(&op, &(Blk(ep,Pelem)->parameter), 
                                      bi_pat(PI_EMPTY), result)) ==
 		    RunError) return RunError;
                    }
@@ -2225,7 +2227,7 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     peCount++;
 	     break;
              }
-	  case PC_BreakX_X: {             /*this should never trigger... */
+	  case PC_BreakX_X: {          
              *result = *bi_pat(PI_EMPTY);
 	     break;
              }

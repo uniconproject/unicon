@@ -18,9 +18,9 @@ class Stepping(
    msg,         # a string with latest message from this class
    pat,         # store the current pstep pattern 	       
    pline,       # stores the previous pattern line number
-   oldLen,      # stores the old match length
-   totalMatch,  # stores the total match
-   assignVal    # stores the value of a variable assignment in a pattern	       
+   oldPos,      # stores the old position of a pattern match 
+   assignPos,   # stores the position of the beginning of a potential nested assignment	       
+   totalMatch   # stores the total match      
    )	
 	       
 #
@@ -220,7 +220,28 @@ method checkPStep()
          DState.State := PAUSE
          DState.RunCode := PSTEP
          return
-      }
+         }
+      else if &eventcode === E_PelemAttempt then {
+         if &eventvalue = PC_R_Restore then {
+            msg := "\n   file "||cur_file||", line "||cur_line||", pattern:"
+            msg ||:= "\n   " || image(pat)
+            msg ||:= "\n   Pattern Element Failed, Entering Nest Pattern... "
+            msg ||:= "\n   Total Match: "||image(totalMatch)
+            oldPos := keyword("pos", Monitored)
+            }
+         else if &eventvalue = PC_R_Remove then {
+            msg := "\n   file "||cur_file||", line "||cur_line||", pattern:"
+            msg ||:= "\n   " || image(pat)
+            msg ||:= "\n   Nested Pattern Failed to Match, Exiting... "
+            msg ||:= "\n   Total Match: "||image(totalMatch)
+            }
+         else if &eventvalue = PC_R_Enter then { assignPos := keyword("pos", Monitored) } 
+         if step_count > 1 then return
+         else {
+            step_count := 1
+            return
+            }
+         }
       else if &eventcode === E_PelemFail then {
 
          index := keyword("patindex", Monitored)
@@ -244,6 +265,7 @@ method checkPStep()
                msg ||:= "\n   Failed Pattern Element: "
                msg ||:= "\n   " || pindex_image(pat, index)
                DState.Write(msg)
+               oldPos := keyword("pos", Monitored)
                DState.State := PAUSE
                DState.RunCode := PSTEP
                return
@@ -253,18 +275,17 @@ method checkPStep()
       else if &eventcode === E_PelemMatch then {
 
          index := keyword("patindex", Monitored)
+         sub := keyword("subject", Monitored)
 
-         if oldLen = *totalMatch then    { curMatch := &null      }
-         else if oldLen = 0 then {
-            curMatch := totalMatch
-            oldLen := *totalMatch
-            }
-         else if *totalMatch > 0 then {
-            totalMatch ? {
-               tab(oldLen + 1)
-               curMatch := tab(0)
+         if &eventvalue ~= PC_Assign_OnM | &eventvalue ~= PC_Assign_Imm then{
+            sub ? {
+               tab(oldPos)
+               oldPos := keyword("pos", Monitored)
+               curMatch := tab(oldPos)
+               if / totalMatch then      { totalMatch := curMatch }
+               else if / curMatch then   { totalMatch := totalMatch }
+               else                      { totalMatch := totalMatch || curMatch }
                }
-            oldLen := *totalMatch
             }
 
          msg := "\n   file "||cur_file||", line "||cur_line||", pattern:"
@@ -272,24 +293,30 @@ method checkPStep()
          msg ||:= "\n   Total Matched String: "||image(totalMatch)
 
          case &eventvalue of {
-            PC_RTab_Nat | PC_RTab_NF  | PC_RTab_NP  | PC_RTab_NMF : {
-               msg ||:= "\n   Matched String: "||image(curMatch) 
-               }
             PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
             PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF : {
-               msg ||:= "\n   "||"Cursor Position: "||keyword("pos", Monitored)                }   
+               msg ||:= "\n   "||"Cursor Position: "||keyword("pos", Monitored)
+               }
             PC_Assign_Imm | PC_Assign_OnM : {
-               assignVal := totalMatch   #in this case the event value returned the assign val
-               msg ||:= "\n   Assignment Value: "||image(totalMatch)
+
+               sub ? {
+                  tab(assignPos)
+                  newPos := keyword("pos", Monitored)
+                  assignMatch := tab(newPos)
+                  if / assignMatch then   { assignMatch := "" }
+                  }
+               if &eventvalue = PC_Assign_Imm then { msg ||:= "\n   Assignment Value: " }
+               else                                { msg ||:= "\n   Assignment Value if Match: "}
+               msg ||:= image(assignMatch)
                msg ||:= "\n   Assigned Pattern Element: "
                msg ||:= "\n   "||pindex_image(pat, index)
                DState.Write(msg)
                DState.State := PAUSE
                DState.RunCode := PSTEP
+               assignPos := -1
                return 
                }
-            PC_Unanchored | PC_Assign | PC_Fence_X |
-            PC_R_Enter | PC_R_Remove | PC_R_Restore | PC_EOP: { 
+            PC_Unanchored | PC_Assign | PC_Fence_X | PC_R_Enter | PC_EOP: { 
                DState.State := RUN
                DState.RunCode := PSTEP
                if step_count > 1 then return
@@ -361,8 +388,9 @@ method pEnd()
 
    pat := &null
    pline := 0
-   oldLen := 0
-   totalMatch := &null
+   oldPos := 1
+   assignPos := -1 
+   totalMatch := &null 
 end
 
 #
@@ -391,8 +419,9 @@ initially()
    step_count := 0
    next_count := 0
    pline := 0
-   oldLen := 0
+   oldPos := 1
+   assignPos := -1
    nex_level  := &null
    pat   := &null
-   totalMatch := &null
+   totalMatch := &null 
 end

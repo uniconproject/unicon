@@ -219,8 +219,7 @@ method handle_pstep_fail()
    cur_line := keyword("line", Monitored)
 
    case &eventvalue of {
-      PC_Unanchored | PC_Assign | PC_Fence_X |
-      PC_R_Enter | PC_R_Remove | PC_R_Restore | PC_EOP :{
+      PC_Assign | PC_R_Remove | PC_R_Restore :{
          checkCursor()
          DState.State := RUN
          DState.RunCode := PSTEP
@@ -257,8 +256,8 @@ method handle_pstep_attempt()
    if &eventvalue = PC_R_Restore then {
       msg := "\n   file "||cur_file||", line "||cur_line||", pattern:"
       msg ||:= "\n   " || image(pat)
-      msg ||:= "\n   Pattern Element Failed, Entering Nest Pattern... "
       msg ||:= "\n   Total Match: "||image(totalMatch)
+      msg ||:= "\n   Pattern Element Failed, Entering Nest Pattern... "
       checkCursor()
       DState.Write(msg)
       DState.State := PAUSE
@@ -267,8 +266,8 @@ method handle_pstep_attempt()
    else if &eventvalue = PC_R_Remove then {
       msg := "\n   file "||cur_file||", line "||cur_line||", pattern:"
       msg ||:= "\n   " || image(pat)
-      msg ||:= "\n   Nested Pattern Failed to Match, Exiting... "
       msg ||:= "\n   Total Match: "||image(totalMatch)
+      msg ||:= "\n\n   Nested Pattern Failed to Match, Exiting... "
       checkCursor()
       DState.Write(msg)
       DState.State := PAUSE
@@ -301,8 +300,10 @@ method handle_pstep_match()
       PC_Assign_Imm | PC_Assign_OnM : {
          assign_match := getSubstring()
          msg ||:= "\n   Total Matched String: "||image(totalMatch)
-         if &eventvalue = PC_Assign_Imm then { msg ||:= "\n   Assignment Value: "}
-         else { msg ||:= "\n   Assignment Value if Match: "}
+         if &eventvalue = PC_Assign_Imm then
+            msg ||:= "\n   Assignment Value: "
+         else
+            msg ||:= "\n   Assignment Value if Match: "
          msg ||:= image(assign_match)
          msg ||:= "\n   Assigned Pattern Element: "
          msg ||:= "\n   "||pindex_image(pat, cur_index)
@@ -313,13 +314,20 @@ method handle_pstep_match()
          DState.RunCode := PSTEP
          return 
          }
-      PC_Assign | PC_Fence_X | PC_R_Enter | PC_EOP | PC_Unanchored: { 
+      PC_Fence_X | PC_R_Enter | PC_EOP : { ## no ops 
          DState.State := RUN
          DState.RunCode := PSTEP
          checkCursor()
          return 
-         }   
-      default :{  
+         }
+      PC_Unanchored : { ## Match is retrying. Set new position and reset totalMatch
+         DState.State := RUN
+         DState.RunCode := PSTEP
+         totalMatch := &null
+         checkCursor()
+         return 
+         }
+      default : {  
          step_count -:= 1
          cur_match := getSubstring()
          msg ||:= "\n   Total Matched String: "||image(totalMatch)

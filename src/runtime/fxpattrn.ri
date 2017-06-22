@@ -2193,25 +2193,7 @@ Node_Succeed:
 #endif					/* e_patarg */
 
    k_patindex = Node->index; 
-
-#if !COMPILER
-   /*
-    * How do program execution monitors tell where they are in the pattern?
-    * Options:
-    * 1. generate E_Loc (but what about file?)
-    * 2. temporarily set &file, &line, &column for duration of E_PelemAttempt
-    * 3. create new keyword(s) or function(s)
-    * Seems like a really bad idea, but ugly as it is, we prefer 2.
-    */
-   if (Node->origin_ipc) {
-      inst savedipc = ipc;   /* save ipc */
-      ipc.opnd = Node->origin_ipc;
-      EVVal(Node->pcode, e_pelemattempt);
-      ipc = savedipc;        /* restore ipc */
-      }
-   else
-#endif					/* COMPILER */
-      EVVal(Node->pcode, e_pelemattempt);
+   EVVal(Node->pcode, e_pelemattempt);
 
    switch(Node->pcode) {
    case PC_Alt: {

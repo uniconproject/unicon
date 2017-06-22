@@ -178,7 +178,7 @@ method checkPStep()
    cur_line := keyword("line", Monitored)
 
    if step_count > 1 then {
-      step_count -:= 1
+      performStep()
       DState.State := RUN
       DState.RunCode := PSTEP
       }
@@ -189,7 +189,7 @@ method checkPStep()
 	 return
          }
 
-   if &eventcode === E_PatAttempt then {
+      if &eventcode === E_PatAttempt then {
          pat := &eventvalue
          msg := "\n   Pattern match started"
          msg||:="\n   file "||cur_file||", line "||cur_line||"."
@@ -233,7 +233,6 @@ method handle_pstep_fail()
          msg ||:= "\n   Total Match: "||image(totalMatch)
          msg ||:= "\n   Failed Pattern Element: "
          msg ||:= "\n   " || pindex_image(pat, cur_index)
-         oldPos := keyword("pos", Monitored)
          step_count -:= 1
          DState.Write(msg)
          DState.State := PAUSE
@@ -375,6 +374,35 @@ end
 method checkCursor()
    local new_pos := keyword("pos", Monitored)
    if oldPos ~= new_pos then { oldPos := new_pos }
+end
+
+method performStep()
+
+   if &eventcode == E_PatAttempt then { step_count -:= 1 }
+   else if &eventcode == E_PelemAttempt then {
+      if &eventvalue = PC_R_Enter then {
+         assignPos := keyword("pos", Monitored)
+         return  #keep track of assign position begins
+         }
+      }
+   else {
+    case &eventvalue of {
+       PC_Fence_X | PC_R_Enter | PC_EOP | 
+       PC_Assign | PC_R_Remove | PC_R_Restore : {
+          checkCursor()
+          return
+          }
+       PC_Unanchored :{
+          totalMatch := &null
+          checkCursor()
+          return 
+          }
+       default : {
+          step_count -:= 1
+          getSubstring()  ##make sure totalMatch stays correct
+          }
+       }
+   }
 end
 
 #

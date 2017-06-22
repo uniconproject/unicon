@@ -30,11 +30,11 @@ keyword{4} allocated
       blktot = curpstate->blocktotal;
       strtot = curpstate->stringtotal;
       tstate = curpstate->tstate; 
-      do{
-	blktot += tstate->blocktotal;
-	strtot += tstate->stringtotal;
-	tstate=tstate->next;
-        }while (tstate!=NULL);
+      do {
+	 blktot += tstate->blocktotal;
+	 strtot += tstate->stringtotal;
+	 tstate = tstate->next;
+	 } while (tstate!=NULL);
       MUTEX_UNLOCKID(MTX_TLS_CHAIN);
       suspend C_integer stattotal + strtot + blktot;
       suspend C_integer stattotal;

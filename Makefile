@@ -276,7 +276,7 @@ clean Clean:
 Pure:
 		touch Makedefs Makedefs.uni
 		rm -rf icon.* bin/[a-z]* lib/[a-z]*
-		cd unicon;		$(MAKE) Clean
+		cd uni;		$(MAKE) Clean
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure

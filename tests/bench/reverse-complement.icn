@@ -7,6 +7,7 @@
 # Python program
 
 procedure mapseq(str)
+local head, ns, H, M, chars
    head := ""
    ns := ""
    H := []
@@ -41,9 +42,11 @@ procedure mapseq(str)
 end
 
 procedure run_reversecomplement(argv)
+local fin, str, L, i, s
    fin := open(argv[1]) | stop("can't open ", image(argv[1]|"(no argv[1])"))
    str := reads(fin, stat(argv[1]).size)
-   L := mapseq(str)  
+   L := mapseq(str)
+   close(fin)
    i := 1
    while i < 4 do {
       write(output, L[1,i])
@@ -55,7 +58,6 @@ procedure run_reversecomplement(argv)
          }
       i +:= 1
       }
-   
 end
 
 $ifdef MAIN

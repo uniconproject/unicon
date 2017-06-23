@@ -72,7 +72,7 @@ procedure run_ipxref(argv)
    gproc := "global"
    letters := &letters ++ '_'
    alphas := letters ++ &digits
-
+   nonwhite := ~' \t\n'
    infile := open(argv[1],"r")
 
    while word := getword() do
@@ -135,6 +135,7 @@ procedure run_ipxref(argv)
    every write(output, !sort(L))
    close(infile)
    resword := letters := alphas := var := buffer := localvar := lin := &null
+   nonwhite := &null
 end
 
 procedure addword(word,gproc,lineno)
@@ -151,10 +152,11 @@ procedure addword(word,gproc,lineno)
       }
 end
 
+global nonwhite
+
 procedure getword()
    local j, c
-   static i, nonwhite
-   initial nonwhite := ~' \t\n'
+   static i
 
    repeat {
       if *buffer > 0 then return get(buffer)

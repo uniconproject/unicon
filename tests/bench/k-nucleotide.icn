@@ -9,6 +9,7 @@
 link printf, sort
 
 procedure gen_freq(sequ, frame)
+local ns, frequences, ii, nucleo
    ns := *sequ + 1 - frame
    frequences := table(0)
    every ii := 1 to ns do {
@@ -21,10 +22,12 @@ procedure gen_freq(sequ, frame)
    return [ns, frequences]
 end
 
+# TODO: replace with built-in reverse(L)
 procedure rev(L)
+local i, temp
    i := *L
    temp := []
-   while i > 0 do{
+   while i > 0 do {
       put(temp, L[i])
       i -:= 1
       }
@@ -32,7 +35,7 @@ procedure rev(L)
 end
 
 procedure sort_sequ(sequ, length)
-   local results, l, reverse
+   local results, l, reverse, frequences, pair, st, fr
    results := gen_freq(sequ, length)
    n := results[1]
    frequences := results[2]
@@ -47,7 +50,7 @@ procedure sort_sequ(sequ, length)
 end
 
 procedure find_sequ(sequ, s)
-   local results := []
+   local n, t, results := []
    results := gen_freq(sequ, *s)
    n := results[1]
    t := results[2]
@@ -55,7 +58,8 @@ procedure find_sequ(sequ, s)
 end
 
 procedure run_knucleotide(argv)
-   fin := open(argv[1]) | stop("can't open ", image(argv[1]|"(no argv[1])"))
+local fin, se, line, sequ, sequence, nl, s
+   fin := open(argv[1]) | stop("can't open ", image(argv[1])|"(no argv[1])")
    se := [
           "GGT", "GGTA", "GGTATT", 
           "GGTATTTTAATT", "GGTATTTTAATTTATAGT"
@@ -68,6 +72,7 @@ procedure run_knucleotide(argv)
    sequ := ""
    while line := read(fin) do
       sequ ||:= line 
+   close(fin)
    sequence := map(sequ, &lcase, &ucase)
    every nl := 1 to 2 do
       sort_sequ(sequence, nl)

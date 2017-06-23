@@ -21,6 +21,7 @@ procedure threadfun(number, my_lock, next_lock)
 end
 
 procedure run_threadring_old(argv)
+local my_lock, next_lock, number
    n := argv[1]
    main_lock := condvar()
    next_lock := first_lock := condvar()
@@ -34,6 +35,7 @@ procedure run_threadring_old(argv)
 end
 
 procedure threadfun2(number)
+local next_thread
    next_thread := <<@        # wait for &main to send me my next thread
    repeat {
       delay(-1)              # delay/block forever! until some thread signals me 
@@ -49,6 +51,7 @@ procedure threadfun2(number)
 end
 
 procedure threadfun3(number)
+local next_thread
    next_thread := <<@        # wait for &main to send me my next thread
    while ((0 < <<@) - 1) @>> next_thread
    write(output, number)
@@ -67,6 +70,7 @@ procedure run_threadring(argv)
 end
 
 procedure run_threadring_new(argv)
+local n, first_thread, prev_thread, number, new_thread
    n := argv[1]
    first_thread :=  prev_thread := spawn(create threadfun2(1), 1K, 1K, 64K)
    signal(first_thread)
@@ -80,6 +84,7 @@ procedure run_threadring_new(argv)
 end
 
 procedure run_threadring_new2(argv)
+local n, first_thread, prev_thread, number, new_thread
    n := argv[1]
    first_thread :=  prev_thread := spawn(create threadfun3(1), 1K, 1K, 64K)
    every number := 2 to 503 do {

@@ -1601,7 +1601,7 @@ void gentables()
    /*
     * write out the op2fieldnum map 
     */
-   hdr.OpTab = pc;
+   hdr.OPTab = pc;
 #ifdef OVLD_DEBUG
    fprintf(stdout, "#OPcode = %d\n", NUMOPCODES);
    for ( i = 0; i < NUMOPCODES; i++) {

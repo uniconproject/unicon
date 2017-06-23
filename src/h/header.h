@@ -18,7 +18,7 @@ struct header {
    word linenums;		/* location of ipc/line number table */
    word config[16];		/* icode version */
 #ifdef OVLD
-  word OpTab;
+  word OPTab;
 #endif
 #ifdef FieldTableCompression
    short FtabWidth;		/* width of field table entries, 1 | 2 | 4 */

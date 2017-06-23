@@ -913,7 +913,7 @@ Deliberate Syntax Error
     */
    endcode = code + hdr.Records;
 #ifdef OVLD
-    OpTab = (int *)(code + hdr.OpTab);
+    OpTab = (int *)(code + hdr.OPTab);
 #endif
    records = (word *)endcode;
    ftabp = (int *)(code + hdr.Ftab);

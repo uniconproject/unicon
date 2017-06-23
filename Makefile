@@ -11,7 +11,18 @@ default: Makedefs
 
 
 Makedefs: Makedefs.in configure
-	./configure
+	sh configure
+
+# If new AC_DEFINE symbols were introduced please run the tool
+# autoconf
+# manually to update src/h/auto.h.in in addition to the configure script
+# itself instead of autoreconf -i
+#
+configure: configure.ac aclocal.m4
+	autoreconf -i
+
+config: configure
+	sh configure	
 
 help:
 	@echo

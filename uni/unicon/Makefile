@@ -72,8 +72,8 @@ ca.u : ca.icn
 
 # Commented out to avoid bootstrap problem.
 # Uncomment if you modify unigram.y/unigram.icn
-unigram.u: unigram.icn
-	$(ICONT) -c unigram
+#unigram.u: unigram.icn
+#	$(ICONT) -c unigram
 
 # build iyacc, and uncomment these lines, if you change the language grammar
 #unigram.icn : unigram.y ytab_h.icn

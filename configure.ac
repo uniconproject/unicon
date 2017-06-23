@@ -57,6 +57,9 @@ case $host_os in
      *cygwin*)
         unicon_os="windows"
         ;;
+     *mingw*)
+        unicon_os="windows"
+        ;;
 esac
 
 unicon_host="$unicon_cpu"_"$unicon_os"
@@ -82,7 +85,7 @@ AC_ARG_ENABLE([database],
 			[database=no], [database=yes])
 AC_ARG_ENABLE([audio],
 	[AS_HELP_STRING([--disable-audio], [No audio support])],
-			[audio=no], [ovld=yes])
+			[audio=no], [audio=yes])
 AC_ARG_ENABLE([voip],
 	[AS_HELP_STRING([--disable-voip], [No VOIP support])],
 			[voip=no], [voip=yes])
@@ -163,9 +166,12 @@ case $unicon_host in
        CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
 	;;
      *windows*)
+       EXE=".exe"
         ;;
 esac
 
+AC_SUBST(EXE)
+AC_SUBST(unicon_os)
 AC_SUBST(WERROR)
 AC_SUBST(CC)
 AC_SUBST(RLINK)
@@ -375,6 +381,7 @@ AC_CHECK_GLOBAL(sys_errlist)
 AC_VAR_TIMEZONE_EXTERNALS()
 AC_STRUCT_TIMEZONE()
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
+AC_CONFIG_FILES([Makedefs.uni:Makedefs.uni.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
 AC_OUTPUT
 

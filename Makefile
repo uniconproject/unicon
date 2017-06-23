@@ -156,10 +156,6 @@ Unicon:		Icont
 		cd ipl/lib; $(MAKE)
 		cd uni ; $(MAKE)
 
-#		cd uni/unicon; $(MAKE) unicon
-#		cd uni/ivib; PATH=${PWD}/bin:${PATH} $(MAKE) ivib
-#		cd uni/ide; PATH=${PWD}/bin:${PATH} $(MAKE) ui
-
 # The interpreter: icont and iconx.
 
 Icont bin/icont: Common
@@ -201,7 +197,7 @@ Uniconc bin/iconc: Common
 # Installation:  "make Install dest=new-parent-directory"
 
 D=$(dest)
-Install:
+install Install:
 		test -d $D || mkdir $D
 		test -d $D/bin || mkdir $D/bin
 		test -d $D/ipl || mkdir $D/ipl
@@ -271,20 +267,21 @@ Benchmark-icont:
 # "make Clean" removes intermediate files, leaving executables and library.
 # "make Pure"  also removes binaries, library, and configured files.
 
-Clean:
-		touch Makedefs
+clean Clean:
+		touch Makedefs Makedefs.uni
 		rm -rf icon.*
 		cd src;			$(MAKE) Clean
 		cd tests;		$(MAKE) Clean
 
 Pure:
+		touch Makedefs Makedefs.uni
 		rm -rf icon.* bin/[a-z]* lib/[a-z]*
+		cd unicon;		$(MAKE) Clean
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
-		rm -f Makedefs
 		rm -f src/common/rswitch.[csS]
-
+		rm -f Makedefs Makedefs.uni
 
 #  (This is used at Arizona to prepare source distributions.)
 

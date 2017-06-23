@@ -642,6 +642,8 @@ CFDYN
 RLIBS
 RLINK
 WERROR
+unicon_os
+EXE
 EGREP
 GREP
 CPP
@@ -2827,6 +2829,9 @@ $as_echo "#define MacOS 1" >>confdefs.h
      *cygwin*)
         unicon_os="windows"
         ;;
+     *mingw*)
+        unicon_os="windows"
+        ;;
 esac
 
 unicon_host="$unicon_cpu"_"$unicon_os"
@@ -2874,7 +2879,7 @@ fi
 if test "${enable_audio+set}" = set; then :
   enableval=$enable_audio; audio=no
 else
-  ovld=yes
+  audio=yes
 fi
 
 # Check whether --enable-voip was given.
@@ -4752,8 +4757,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
        CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
 	;;
      *windows*)
+       EXE=".exe"
         ;;
 esac
+
+
 
 
 
@@ -11885,6 +11893,8 @@ fi
 
 ac_config_files="$ac_config_files Makedefs:Makedefs.in"
 
+ac_config_files="$ac_config_files Makedefs.uni:Makedefs.uni.in"
+
 ac_config_headers="$ac_config_headers src/h/auto.h:src/h/auto.in"
 
 cat >confcache <<\_ACEOF
@@ -12579,6 +12589,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makedefs") CONFIG_FILES="$CONFIG_FILES Makedefs:Makedefs.in" ;;
+    "Makedefs.uni") CONFIG_FILES="$CONFIG_FILES Makedefs.uni:Makedefs.uni.in" ;;
     "src/h/auto.h") CONFIG_HEADERS="$CONFIG_HEADERS src/h/auto.h:src/h/auto.in" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

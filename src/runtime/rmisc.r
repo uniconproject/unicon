@@ -2368,14 +2368,18 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	  }
 
         /* Attach front paren and first argument */ 
-       if (!is:string(le->lslots[leCurrent]) &&
-	   is:variable(le->lslots[leCurrent])) {
+        /* If string then we are working with resolved copy */ 
+
+       if (is:string(le->lslots[leCurrent]))
+          AsgnCStr(arg, StrLoc(le->lslots[leCurrent]));
+       else if (is:variable(le->lslots[leCurrent]))
           get_name(&(le->lslots[leCurrent]), &arg);
-	  if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
-              RunError)
-             return RunError; 
-	  }
-       if (!is:string(le->lslots[leCurrent])) {
+       else return RunError; 
+
+       if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
+              RunError) return RunError;
+
+       /*if (!is:string(le->lslots[leCurrent])) {
           get_name(&le->lslots[leCurrent], &arg);
 	  if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==
 	      RunError)
@@ -2385,7 +2389,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	  if (construct_image(result, bi_pat(PI_FPAREN),
 			      &(le->lslots[leCurrent]), result) == RunError)
 	     return RunError;
-	  }
+	  }*/ 
 
 	  /* attach rest of parameters for uneval method/function */ 
 
@@ -2393,17 +2397,17 @@ int arg_image(struct descrip arg, int pcode, dptr result)
        if (((pcode != PT_MF) && (le->nslots != 2)) || 
            ((pcode == PT_MF) && (le->nslots != 3))) {
           do {
-	     if(!is:string(le->lslots[leCurrent])) {
+	     if(is:string(le->lslots[leCurrent]))
+                AsgnCStr(arg, StrLoc(le->lslots[leCurrent]));
+             else if(is:variable(le->lslots[leCurrent]))
 	        get_name(&le->lslots[leCurrent], &arg);
-                if((construct_image(result, bi_pat(PI_COMMA), &arg, 
-					    result)) == RunError)
-		return RunError;
-                }
-             else {
+             if((construct_image(result, bi_pat(PI_COMMA), &arg, 
+	      		    result)) == RunError) return RunError;
+             /*else {
 		if (construct_image(result, bi_pat(PI_COMMA),
 				&(le->lslots[leCurrent]), result) == RunError)
 		return RunError;
-		}
+		}*/ 
 	     leCurrent++;
 	     }
 	  while (leCurrent != le->nslots);

@@ -86,6 +86,9 @@ int runtime_status;
 #ifndef MultiThread
 #if !ConcurrentCOMPILER
 int k_level = 0;			/* &level */
+#ifdef PatternType
+int k_patindex = 0;
+#endif                                  /* PatternType */ 
 #endif                                  /* ConcurrentCOMPILER */
 struct descrip k_main;			/* &main */
 #endif					/* MultiThread */
@@ -1836,6 +1839,7 @@ void datainit()
     */
 					/* In this module:	*/
    k_level = 0;				/* &level */
+   k_patindex = 0; 
    k_errornumber = 0;			/* &errornumber */
    k_errortext = emptystr;			/* &errortext */
    currend = NULL;			/* current end of memory region */

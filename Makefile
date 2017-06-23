@@ -10,7 +10,7 @@ default: Makedefs
 	make Unicon
 
 
-Makedefs: Makedefs.in
+Makedefs: Makedefs.in configure
 	./configure
 
 help:

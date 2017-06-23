@@ -18,8 +18,8 @@ Makedefs: Makedefs.in configure
 # manually to update src/h/auto.h.in in addition to the configure script
 # itself instead of autoreconf -i
 #
-configure: configure.ac aclocal.m4
-	autoreconf -i
+#configure: configure.ac aclocal.m4
+#	autoreconf -i
 
 config: configure
 	sh configure	

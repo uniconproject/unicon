@@ -18,6 +18,14 @@ procedure main()
 	write(image(regx))
 	match_string(s, regx)
 
+	# SNOBOL (and at present, Icon) matches the first match possible,
+	# and the shortest match first.  The third alternative below will
+	# never be used, because the second alternative effectively masks it.
+	# The SNOBOL'er solution would be to move "Icont" before "Icon" in
+	# the pattern. If this pattern had a following context that had to
+	# match, that might also cause Icont to get matched if Icon didn't
+	# satisfy the rest of the pattern.
+
 	write("Multi Group Alternation")
 	regx := <("Unicon" | "Icon" | "Icont")>
 	write(image(regx))

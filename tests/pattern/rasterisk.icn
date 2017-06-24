@@ -2,6 +2,21 @@
 ## Paden Rumsey
 ## July 10, 2016
 
+#
+# Current semantics of asterisk will match the shortest match possible first,
+# and only consider non-empty iterations of the pattern if the 0-iteration
+# match fails for some reason, so almost all these tests are no-ops. Switching
+# to a new semantics might make these tests more meaningful.
+#
+
+#
+# These tests of asterisk on various basic tokens are well and good, but
+# asterisk needs to be tested on (parenthesized) complex expressions with
+# alternations and concatenations inside, and nested non-immediate asterisks.
+# Examples (abc | (de*d) | xyz ghi)*
+#
+
+
 procedure main()
     while s := read() do {
 	write("Simple Arbno/Asterisk")
@@ -63,7 +78,7 @@ procedure match_string(s, r)
     r := r -> out || Rem() -> remain
     write("The string is: ", s)
     if s ?? r then {
-	write("The matched string is ", out, " the remainder is ", remain)
+	write("The matched string is ", image(out), " the remainder is ", image(remain))
 	}
     else
 	write("The regex failed to match")

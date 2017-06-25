@@ -975,6 +975,7 @@ union numeric *result;
    double power;	/* holds successive squares of 5 to compute fiveto */
    int err_no;
    char *ssave;         /* holds original ptr for bigradix */
+   int suffix = 0;	/* number of times to multiply 1024 into the result */
 
    if (StrLen(*sptr) == 0)
       return CvtFail;
@@ -1075,7 +1076,13 @@ union numeric *result;
    /*
     * Get exponent part.
     */
-   if (c == 'e' || c == 'E') {
+   switch (c) {
+   case 'k': case 'K': { suffix = 1; c = (s < end_s) ? *s++ : ' '; break; }
+   case 'm': case 'M': { suffix = 2; c = (s < end_s) ? *s++ : ' '; break; }
+   case 'g': case 'G': { suffix = 3; c = (s < end_s) ? *s++ : ' '; break; }
+   case 't': case 'T': { suffix = 4; c = (s < end_s) ? *s++ : ' '; break; }
+   case 'p': case 'P': { suffix = 5; c = (s < end_s) ? *s++ : ' '; break; }
+   case 'e': case 'E': {
       realflag++;
       c = (s < end_s) ? *s++ : ' ';
       if (c == '+' || c == '-') {
@@ -1090,6 +1097,7 @@ union numeric *result;
 	 }
       scale += (esign == '+') ? exponent : -exponent;
       }
+      }
 
    /*
     * Skip trailing white space and make sure there is nothing else left
@@ -1100,6 +1108,12 @@ union numeric *result;
       c = *s++;
    if (!isspace(c))
       return CvtFail;
+
+   /* KMGTP suffixes multiply by 1024, some number (1-5) of times */
+   while (suffix--) {
+      mantissa *= 1024;
+      lresult *= 1024;
+      }
 
    /*
     * Test for integer.

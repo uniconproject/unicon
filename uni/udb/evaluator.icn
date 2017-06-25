@@ -8,6 +8,7 @@
 
 $include "evdefs.icn"
 $include "defaults.icn"
+$include "patdefs.icn"
 
 link evinit
 link image
@@ -57,7 +58,15 @@ method startEvaluator()
           if DState.RunCode = STEP  then{ Step.checkStep()        }
           if DState.RunCode = PSTEP then{ Step.checkStep()        }  
           }
-        E_Assign | E_Value :{
+        E_Assign | E_Value :{ 
+          if DState.RunCode = PSTEP & &eventcode == E_Value then {
+             if \ Step.curPelem then {
+                if Step.curPelem = PC_Assign_OnM then
+                   Step.assignVal := &eventvalue
+                if Step.curPelem = PC_Assign_Imm then 
+                   Step.assignVal := &eventvalue 
+                }
+             }
           # check for Watch point on changed vars & keywords
           if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
           }

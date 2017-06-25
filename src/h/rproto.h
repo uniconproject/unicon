@@ -285,16 +285,19 @@ int		interp		(int fsig,dptr cargp);
 #endif					/* MultiThread */
 #ifdef PatternType
 #ifdef MultiThread
-int 		internal_match_0(char * pat_sub, int Length, int Pat_S,
-				struct b_pelem * pattern, int *Start, int *Stop,
-				int initial_cursor, int Anchored_Mode);
-int 		internal_match_1(char * pat_sub, int Length, int Pat_S,
-				struct b_pelem * pattern, int *Start, int *Stop,
-				int initial_cursor, int Anchored_Mode);
+int 		internal_match_0(char * pat_sub, int Length, int Pat_S, 
+				 struct descrip op, struct b_pelem * pattern,
+				 int *Start, int *Stop, int initial_cursor,
+				 int Anchored_Mode);
+int 		internal_match_1(char * pat_sub, int Length, int Pat_S, 
+				 struct descrip op, struct b_pelem * pattern,
+				 int *Start, int *Stop, int initial_cursor,
+				 int Anchored_Mode);
 #else					/* MultiThread */
-int 		internal_match	(char * pat_sub, int Length, int Pat_S,
-				struct b_pelem * pattern, int *Start, int *Stop,
-				int initial_cursor, int Anchored_Mode);
+int 		internal_match	(char * pat_sub, int Length, int Pat_S, 
+				 struct descrip op, struct b_pelem * pattern,
+				 int *Start, int *Stop, int initial_cursor,
+				 int Anchored_Mode);
 #endif					/* MultiThread */
 #endif					/* PatternType */
 void		inttrap		(void);

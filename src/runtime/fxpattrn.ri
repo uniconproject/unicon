@@ -10,7 +10,7 @@
 dptr processFuncCallList(struct b_list *list);
 dptr processMethodCallList(struct b_list *list);
 #ifndef MultiThread
-int internal_match(char * pat_sub, int Length, int Pat_S,
+int internal_match(char * pat_sub, int Length, int Pat_S, struct descrip op,
 		   struct b_pelem * pattern, int *Start, int *Stop,
 		   int initial_cursor, int Anchored_Mode);
 #endif					/* MultiThread */
@@ -579,7 +579,6 @@ function {*} pattern_match(underef psub -> dpsub, pat)
       k_pos = 1;
       k_subject = dpsub;
       subject_len = StrLen(k_subject);
-      EVValD(&pat, E_PatAttempt);
 
       if (! cnv_pattern(&pat, &pat)) {
 	 runerr(127, pat);
@@ -589,7 +588,7 @@ function {*} pattern_match(underef psub -> dpsub, pat)
 
       while ((k_pos >= 0) &&
 	     internal_match(StrLoc(k_subject), subject_len, ((struct b_pattern *)BlkLoc(pat))->stck_size,
-			    phead, &start, &stop, k_pos, 0)
+			   pat,  phead, &start, &stop, k_pos, 0)
 	     ){
 	 /* check if psub no longer refers to what k_subject holds.
 	  * if so, we can't suspend a trapped variable reference to it.
@@ -1926,7 +1925,7 @@ else {
 /*
  * internal_match() - primary pattern match engine.
  */
-int f(char * pat_sub, int Length, int Pat_S,
+int f(char * pat_sub, int Length, int Pat_S, struct descrip op, 
 		   struct b_pelem * pat, int *Start, int *Stop,
 		   int initial_cursor,
 		   int Anchored_Mode
@@ -1968,7 +1967,8 @@ int f(char * pat_sub, int Length, int Pat_S,
       struct descrip lslots[Stack_Size];
       } bsle;
    struct b_cons bcons;
-
+   
+   EVValD(&op, E_PatAttempt);
    tpattern = pat;
    Node = NULL;
 #if COMPILER
@@ -1997,7 +1997,7 @@ int f(char * pat_sub, int Length, int Pat_S,
    bcons.next = (union block *)&bsle;
 
    Stack = &bcons;
-
+ 
    DEBUGF(2, (stdout,
 	  "Initiating pattern match\nsubject = \"%*s\", len = %d, pos = %ld\n",
 	      Length,pat_sub,Length, k_pos));
@@ -2118,7 +2118,10 @@ Node_Succeed:
  *       --    Stack_Base    current stack base
  *       --    Stack_Ptr     current stack pointer
  */
-    EVVal(Node->pcode, e_pelemmatch);
+
+    StrLen(evalue) = (k_pos - 1) - StackCursor(Stack_Init);
+    StrLoc(evalue) = pat_sub + StackCursor(Stack_Init);
+    EVValD(&evalue, e_pelemmatch);
     Node = (struct b_pelem *)Node->pthen;
 /*
  *       --  Come here to match the next pattern element
@@ -2363,12 +2366,16 @@ Node_Succeed:
 	 fwrite(pat_sub + StackCursor(Stack_Base - 1), 1,
 		(k_pos - 1) - StackCursor(Stack_Base - 1), f->fd.fp);
 	 fputc('\n', f->fd.fp);
+	 
+	 StrLen(*pvar) = (k_pos - 1) - StackCursor(Stack_Base - 1);
+         StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
+	 EVValD(pvar, E_Value);
 	 }
       else {
 	 EVVar(&varref, E_Assign);
          StrLen(*pvar) = (k_pos - 1) - StackCursor(Stack_Base - 1);
          StrLoc(*pvar) = pat_sub + StackCursor(Stack_Base - 1);
-	 EVValD(pvar, e_value);
+	 EVValD(pvar, E_Value);
 	 }
       Pop_Region();
       goto Node_Succeed;
@@ -2378,6 +2385,11 @@ Node_Succeed:
        */
    case PC_Assign_OnM : {
       StackNode(Stack_Base - 1) = (union block *)Node;
+
+      StrLen(evalue) = (k_pos - 1) - StackCursor(Stack_Base - 1);
+      StrLoc(evalue) = pat_sub + StackCursor(Stack_Base - 1);
+      EVValD(&evalue, E_Value);
+      
       Push (&CP_Assign);
       Pop_Region();
       Assign_OnM = 1;

@@ -186,7 +186,7 @@ operator{*} = tabmat(x)
 	  * a sub-string if it succeeds.
 	  */
 	 if (internal_match(pattern_subject, subject_len, pattern->stck_size,
-	    phead, &start, &stop, k_pos - 1, 1)){
+	    x, phead, &start, &stop, k_pos - 1, 1)){
 	    /*
 	     * Set new &pos.
 	     */ 

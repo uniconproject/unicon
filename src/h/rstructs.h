@@ -799,7 +799,8 @@ struct progstate {
    struct b_pattern * (*Alcpattern)(word);
    struct b_pelem * (*Alcpelem)(word, word *);
    int (*Cnvpattern)(dptr,dptr);
-   int (*Internalmatch)(char*,int,int,struct b_pelem*,int*,int*,int,int);
+   int (*Internalmatch)(char*,int,int,struct descrip,
+		       struct b_pelem*,int*,int*,int,int);
 #endif					/* PatternType */
    struct b_list *(*Alclist_raw)(uword,uword);
    struct b_list *(*Alclist)(uword,uword);

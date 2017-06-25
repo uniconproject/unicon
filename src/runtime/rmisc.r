@@ -2290,7 +2290,8 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 int arg_image(struct descrip arg, int pcode, dptr result)
    {
    struct descrip image;
-   tended struct descrip param = arg;
+   tended struct descrip param = arg;  
+   
    if(!is:list(param)) {
       if(pcode == PT_EVAL) {   /*Parameter is a string, cset, int */ 
          type_case param of { /* or unevaluated variable */ 
@@ -2327,6 +2328,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
          get_name(&le->lslots[le->first], result);
       else   
 	 AsgnCStr(*result, StrLoc(le->lslots[le->first]));
+
       switch(pcode) {
       case PT_VP: { /*Parameter image is unevaluated class member */ 
          do {
@@ -2360,6 +2362,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 
        if((pcode != PT_MF && (le->nslots == 1)) || 
          ((pcode == PT_MF) && (le->nslots == 2))) {
+
           if (construct_image(bi_pat(PI_EMPTY), result,
                       bi_pat(PI_BPAREN), result) == RunError)
 	     return RunError;
@@ -2370,10 +2373,10 @@ int arg_image(struct descrip arg, int pcode, dptr result)
         /* Attach front paren and first argument */ 
         /* If string then we are working with resolved copy */ 
 
-       if (is:string(le->lslots[leCurrent]))
-          AsgnCStr(arg, StrLoc(le->lslots[leCurrent]));
+       if (cnv:string(le->lslots[leCurrent], arg))
+          AsgnCStr(arg, StrLoc(le->lslots[leCurrent])); 
        else if (is:variable(le->lslots[leCurrent]))
-          get_name(&(le->lslots[leCurrent]), &arg);
+          get_name(&le->lslots[leCurrent], &arg);
        else return RunError; 
 
        if (construct_image(result, bi_pat(PI_FPAREN), &arg, result) ==

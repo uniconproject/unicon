@@ -2026,9 +2026,9 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
                 return Succeeded;
 		}
              arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
-             if (pattern_image((union block *)arb, 1, &image, 0, pe_index) 
+             if (pattern_image((union block *)arb, 1, result, 0, pe_index) 
                                == RunError) return RunError;
-             if (construct_image(bi_pat(PF_Arbno), &image, bi_pat(PI_BPAREN), 
+             if (construct_image(bi_pat(PF_Arbno), result, bi_pat(PI_BPAREN), 
                                  result) == RunError) return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
@@ -2043,9 +2043,9 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, 0, &image, 0, pe_index) == RunError)
+                if (pattern_image(arb, 0, result, 0, pe_index) == RunError)
 		   return RunError;
-                if (construct_image(bi_pat(PF_Arbno), &image,
+                if (construct_image(bi_pat(PF_Arbno), result,
 		   		bi_pat(PI_BPAREN), result) == RunError)
 		   return RunError;
                 if (index_image == 1)

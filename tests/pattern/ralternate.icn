@@ -2,9 +2,8 @@
 ## Paden Rumsey
 ## July 10, 2016
 
-## I mentioned a little bit about grouping in rconcat. Also the preprocessor
-## seems to be doing similar things to what was happening in rconcat.icn
-## Look at the -E option for more information. 
+## Tests grouping/images of alternation with and without parenthesis in
+## regular expressions. 
 
 procedure main()
     while s := read() do {
@@ -18,26 +17,18 @@ procedure main()
 	write(image(regx))
 	match_string(s, regx)
 
-	# SNOBOL (and at present, Icon) matches the first match possible,
-	# and the shortest match first.  The third alternative below will
-	# never be used, because the second alternative effectively masks it.
-	# The SNOBOL'er solution would be to move "Icont" before "Icon" in
-	# the pattern. If this pattern had a following context that had to
-	# match, that might also cause Icont to get matched if Icon didn't
-	# satisfy the rest of the pattern.
-
 	write("Multi Group Alternation")
-	regx := <("Unicon" | "Icon" | "Icont")>
+	regx := <("Unicon" | "Icont" | "Icon")>
 	write(image(regx))
         match_string(s, regx)
 
 	write("Multi Group Alternation with Concatenation")
-	regx := <("Unicon" | ("Ic" "on") | "Icont")>
+	regx := <(("Uni" "con") | ("Icon" "t") | ("I" "con"))>
 	write(image(regx))
 	match_string(s, regx)
 
 	write("Multi Group Alternation with Concatenation minus Parens")
-	regx := <("Unicon" | "Ic" "on" | "Icont")>
+	regx := <("Uni" "con" | "Icon" "t" | "Ic" "on")>
 	write(image(regx))
 	match_string(s, regx)
     }

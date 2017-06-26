@@ -15,52 +15,26 @@ procedure main()
 	write(image(regx))
 	match_string(s, regx)
 
-	## Works when you don't use cset literals but instead use the
-	## brackets. But I know know that it works with a semi complex
-	## pattern... is it the alternation? Just checked. Not the alternation
-	## What?
-
-	    ## Error is...
-	##Parsing rcurly.icn: treenode label "Paren"
-	##treenode label "Paren"
-	##..
-	##/home/paden/unicon/bin/icont -c   -O rcurly.icn /tmp/uni57375952
-	##Translating:
-	##rcurly.icn:
-	##rcurly.icn:24: # "s": invalid argument in augmented assignment
-	##File rcurly.icn; Line 59 # traverse: undefined node type
-
 	write(" Curly Brace Alternation with Parenthesis")
-	regx := <([l]){2} ([s]{2})?>
+	regx := <([l]){2} | ([s]{2})>
 	write(image(regx))
 	match_string(s, regx)
 
-	## Also works when 'a' is using curly braces as well
-	
 	write("Curly Brace Concatenation")
-	regx := <[a] [l]{2}>
+	regx := <[i] [l]{2}>
 	write(image(regx))
 	match_string(s, regx)
-
-	## same parenthetical issue will only check for replications of "lly"
 	
 	write("Curly Braces Used on Semi-Complex Pattern")
-	regx := <[s]."lly"{2}>
+	regx := <[w]."l"{2}>
 	write(image(regx))
 	match_string(s, regx)
-
-	## wait what? the duplication works on this pattern here but not for
-	## any of the simpler ones without parens? You can verify above...
-	## using the csets with parens. Also flags a compiler error if
-	## you use strings in parens as well...
 	
 	write("Curly Braces Used on Semi-Complex Pattern with Parens")
-	regx := <([s]."lly"){2}>
+	regx := <([w]."l"){2}>
 	write(image(regx))
 	match_string(s, regx)
 
-	## For further examples of curly braces used with other operators
-	## check rquestion, rasterisk, and rplus
     }
 
 end

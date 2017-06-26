@@ -10,48 +10,33 @@
 procedure main()
     while s := read() do {
 
-	##Exact quote taken from compilation error
-	
-	##Parsing rplus.icn: need to implement 1-or-more on string literal
-
 	write("Plus Operator Alternation with Strings")
-	regx := <"ll"+>
+	regx := <"a"+ | "b"+> || 'd'
 	write(image(regx))
 	match_string(s, regx)
 
         write("Plus Operator Alternation on Csets")
-        regx := <[a]+ | [b]+>
+        regx := <[a]+ | [b]+> || 'd'
 	write(image(regx))
 	match_string(s, regx)
 	
 	write("Plus Operator Concatenation")
-	regx := <[a]+ [b]+>
+	regx := <[a]+ [b]+> || 'd'
 	write(image(regx))
-	match_string(s, regx)
-
-	##cannot use the string literal with plus operator
-	##same problem with parenthesis. we only include the cset 'ly'
-	## as a part of the postfix operator. 
+	match_string(s, regx) 
 	
-	write("Question Mark Used on Semi-Complex Pattern")
-	regx := <[s].[ly]+>
+	write("Plus Operator Used on Semi-Complex Pattern")
+	regx := <[a].[b]+> || 'd'
 	write(image(regx))
 	match_string(s, regx)
-
-	#uncomment for error - Parenthesis causes a compilation error
 	
 	write("Plus Operator Used on Semi-Complex Pattern with Parens")
-	regx := <([s].[ly])+>
+	regx := <([a].[b])+> || 'd'
 	write(image(regx))
 	match_string(s, regx)
-
-	## Flagged compiler error when we use the braces - 
-	## Parsing rplus.icn: treenode label "Paren"
-	## * operand label is regexconcat
-	## regex, * operand type treenode
 	
-	write("Question Mark Used With Curly Braces")
-	regx := <[s]{2}+>
+	write("Plus Operator Used With Curly Braces")
+	regx := <[a]{2}+> || 'c'
 	write(image(regx))
 	match_string(s, regx)
     }

@@ -19,58 +19,25 @@
 
 procedure main()
     while s := read() do {
-	write("Simple Arbno/Asterisk")
-	regx :=  <[s]* "i">
+	write("Asterisk Concatenation with csets")
+	regx :=  <'a'* 'b'* 'c'* > || 'd'
 	write(image(regx))
 	match_string(s, regx)
 
-	write("String Asterisk")
-	regx := <"the"*>
-	write(image(regx))
-	match_string(s, regx)
-
-	write("Asterisk Alternation with Csets")
-	regx := <[a]* | [b]*>
+        write("Asterisk Concatenation with csets with Any('a')")
+	regx :=  Any('a') || <'a'* 'b'* 'c'* > || 'd'
 	write(image(regx))
 	match_string(s, regx)
 	
-        write("Asterisk Alternation with Parenthesis")
-	regx := <"ll"* | "ss"*>
-	write(image(regx))
-	match_string(s, regx)
-	
-	write("Cset Asterisk")
-	regx := <'i'*>
+        write("Asterisk Concatenation with strings")
+	regx := <"aa"* "bb"* "cc"*> || 'd'
 	write(image(regx))
 	match_string(s, regx)
 
-	write("Cset Asterisk with Cset Brackets")
-	regx := <[i]*>
+	write("Nested Asterisks")
+	regx := <("abc" | ('a' 'b'* 'c') | ('a' 'b') 'c'*)*> || 'd'
 	write(image(regx))
 	match_string(s, regx)
-
-	## This "nested Arbno" actually gives us a seg fault. Weird. 
-
-	write("Arbno in Arbno (Complex Arbno)")
-	regx := Arbno(<"s"*>)
-	write(image(regx))
-	match_string(s, regx)
-
-        write("Asterisk in Asterisk (Complex Arbno)")
-	regx :=<("s"*)*>
-	write(image(regx))
-	match_string(s, regx)
-
-	write("Asterisk Used with Brackets")
-	regx := <[s]{2}*>
-	write(image(regx))
-	match_string(s, regx)
-
-	write("The same as <[s]{2}*>) but written with pattern functions")
-	regx := Arbno(pattern_concat('s', 's'))
-	write(image(regx))
-	match_string(s, regx)
-
     }
 end
 

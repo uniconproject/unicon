@@ -5,60 +5,37 @@
 procedure main()
     while s := read() do {
 	write("Question Mark Alternation with Strings")
-	regx := <"ll"? | "ss"?>
+	regx := <"all"? | "none"?>
 	write(image(regx))
 	match_string(s, regx)
-
-	## Works when you don't use cset literals but instead use the
-	## brackets. 
 
 	write("Question Mark Alternation with Csets")
 	regx := <[a]? | [b]?>
 	write(image(regx))
 	match_string(s, regx)
 
-	## when using parens with a question mark we seem to get some issues
-	## it just doesn't get dismantled by the preprocessor (-E shows). It
-	## doesn't like what it sees. I don't know if this is good
-	## regex syntax but what if I wanted to create a grouped expression
-	## then have that group expression matched zero or once? 
-	
         write("Question Mark Alternation with Parenthesis")
-	regx := <("ll")? | ("ss")?>
+	regx := <("all")? | ("none")?>
 	write(image(regx))
 	match_string(s, regx)
 
-	## this next regx shows a weird behavior I've been seeing with
-	## the "some or none" operators. If the desired string (in this case
-	## all) is not at the very beginning of the string you will get no match
-        ## to the string. Compare the output from "ally sells sea shells" and
-	## "sally sells sea shells" to see the problem
-	
 	write("Question Mark Concatenation")
 	regx := <"a"? "ll"?>
 	write(image(regx))
 	match_string(s, regx)
 
-	## NOTE: this tries to match zero or one "lly" instead of the
-	## entire pattern match. This is an example of the parenthesis problem
-	## that I stated above. Wrapping '[s]."lly"' in parenthesis gives us
-	## a compilation error. 
 	write("Question Mark Used on Semi-Complex Pattern")
 	regx := <[s]."lly"?>
 	write(image(regx))
 	match_string(s, regx)
 
-	#uncomment for error
-	
 	write("Question Mark Used on Semi-Complex Pattern with Parens")
 	regx := <([s]."lly")?>
 	write(image(regx))
 	match_string(s, regx)
 
-	## actually preprocesses and compiles correctly with the -E options
-	
 	write("Question Mark Used With Curly Braces")
-	regx := <'s'{2}?>
+	regx := <'a' ('l'{2}?)>
 	write(image(regx))
 	match_string(s, regx)
     }

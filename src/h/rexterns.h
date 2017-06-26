@@ -58,7 +58,12 @@ extern word stksize;		/* size of co-expression stacks in words */
 extern word qualsize;		/* size of string qualifier list */
 extern word memcushion;		/* memory region cushion factor */
 extern word memgrowth;		/* memory region growth factor */
+#ifdef DescripAmpAllocated
+extern struct descrip stattotal;/* cumulative total of all static allocations */
+extern int blktotalIncrFlag;
+#else					/* DescripAmpAllocated */
 extern uword stattotal;		/* cumulative total of all static allocations */
+#endif					/* DescripAmpAllocated */
 				/* N.B. not currently set */
 
 #ifdef HAVE_LIBPTHREAD
@@ -172,8 +177,13 @@ extern struct b_real realzero;		/* real zero block */
    extern struct descrip kywd_ran;	/* descriptor for &random */
    extern struct descrip t_errorvalue;	/* tentative k_errorvalue value */
 
+#ifdef DescripAmpAllocated
+   extern struct descrip blktotal;	/* cumul total of all block allocs */
+   extern struct descrip strtotal;	/* cumul total of all string allocs */
+#else					/* DescripAmpAllocated */
    extern uword blktotal;		/* cumul total of all block allocs */
    extern uword strtotal;		/* cumul total of all string allocs */
+#endif					/* DescripAmpAllocated */
 #endif					/* ConcurrentCOMPILER */
    extern struct b_file k_errout;	/* value of &errout */
    extern struct b_file k_input;	/* value of &input */

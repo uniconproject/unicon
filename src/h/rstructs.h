@@ -596,8 +596,13 @@ struct threadstate {
 #ifdef Concurrent
   struct region *Curstring;    /*  separate regions vs shared      */
   struct region *Curblock;     /*     same above     */
+#ifdef DescripAmpAllocated
+  struct descrip stringtotal;			/* cumulative total allocation */
+  struct descrip blocktotal;			/* cumulative total allocation */
+#else					/* DescripAmpAllocated */
   uword stringtotal;			/* cumulative total allocation */
   uword blocktotal;			/* cumulative total allocation */
+#endif					/* DescripAmpAllocated */
 
 #ifdef SoftThreads
   int sthrd_tick;
@@ -746,8 +751,13 @@ struct progstate {
 
   /* in case we have separate heaps, i.e ThreadHeap is defined
    * total here will be only for "dead" threads */
+#ifdef DescripAmpAllocated
+   struct descrip stringtotal;			/* cumulative total allocation */
+   struct descrip blocktotal;			/* cumulative total allocation */
+#else					/* DescripAmpAllocated */
    uword stringtotal;			/* cumulative total allocation */
    uword blocktotal;			/* cumulative total allocation */
+#endif					/* DescripAmpAllocated */
 
    word colltot;			/*  m      total number of collections */
    word collstat;			/*  u      number of static collect requests */

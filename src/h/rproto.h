@@ -1159,3 +1159,8 @@ void init_sighandlers();
 void push_filepid(int pid, FILE *fp, word status);
 #endif 	    		     	  /* UNIX && defined(HAVE_WORKING_VFORK */
 
+#ifdef DescripAmpAllocated
+int bigaddi      (dptr da, word i, dptr dx);
+int bigsubi      (dptr da, word i, dptr dx);
+int checkTypeInt (dptr da1, dptr da2, word n );
+#endif					/* DescripAmpAllocated */

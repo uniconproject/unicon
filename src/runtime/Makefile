@@ -327,16 +327,11 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 	rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
 	rposix.r rmsg.r
 
-comp_all:
+comp_all comp_all_uniconc:
 	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o $(XPM) $(GDBM) $(LIBTP)
 	$(MAKE) db_lib
 
-comp_all_uniconc:
-	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o $(XPM) $(GDBM) $(LIBTP)
-	$(MAKE) db_lib_uniconc
-
 db_lib: rt.db rt.a
-db_lib_uniconc: rt.db.uniconc rt.a
 
 #
 # if rt.db is missing or any header files have been updated, recreate
@@ -346,12 +341,6 @@ rt.db: $(HDRS)
 	$(RM) rt.db rt.a
 	$(RTT) $(RTLSRC)
 	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
-
-rt.db.uniconc: $(HDRS)
-	$(RM) rt.db rt.a
-	$(RTT) -DUniconc $(RTLSRC)
-	$(CC) $(CFLAGS) -DUniconc -c `sed 's/$$/.c/' rttcur.lst`
 	$(RM) `sed 's/$$/.c/' rttcur.lst`
 
 rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O)\

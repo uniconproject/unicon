@@ -175,7 +175,7 @@ Icont bin/icont: Common
 
 # The compiler: rtt, the run-time system, and iconc.
 
-Iconc: Common
+Iconc Uniconc bin/iconc: Common
 		cd src/runtime;		$(MAKE) comp_all
 		cd src/iconc;		$(MAKE)
 
@@ -192,13 +192,6 @@ Ilib:		bin/icont
 
 Ibin:		bin/icont
 		cd ipl;			$(MAKE) Ibin
-
-#
-# Uniconc
-#
-Uniconc bin/iconc: Common
-	cd src/runtime; $(RM) *.o; $(MAKE) comp_all_uniconc
-	cd src/iconc; $(MAKE)
 
 ##################################################################
 #

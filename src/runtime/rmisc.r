@@ -2509,6 +2509,7 @@ static int construct_funcimage(union block *pe, int aicode,
       return Succeeded; 
 }
 
+#if !COMPILER
 function{1} pindex_image(x, i)
    if ! cnv:C_integer(i) then 
       runerr(101, i);
@@ -2532,6 +2533,7 @@ function{1} pindex_image(x, i)
    else return result;
    }
 end
+#endif                                  /* COMPILER */ 
 
 #endif					/* PatternType */
 

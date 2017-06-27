@@ -1,60 +1,24 @@
 ### Paden Rumsey
 ### rtab.icn
-### test Rtab() on a variety of inputs 
+### test Rtab() on a variety of inputs
+
+## Tests Rtab by increasing the size of the tab from the right. This results
+## in a decreasing string that is matched by Rtab() and a greater remaining
 
 procedure main()
-    f := foo()
-while input := read() do {
-    iteration := 1 
-    while iteration ~= 11 do {
-       case iteration of {
-	   1 : param := 1
-	   2 : param := 5
-	   3 : param := 10 
-	   4 : param := -1
-	   5 : param := -5
-	   6 : param := -10
-	   7 : param := 3.14159
-	   8 : param := 2.71
-	   9 : param := -3.14159
-	  10: param := -2.71
-       }
-       write(param, "this", input)
-	f.a := param
-	x := f.a
-	p := Rtab(param) -> out
-	input ?? p 
-        param2 := param
-	write("Evaluated Variable    ", out)
-	p := Rtab(`int_return(param)`) -> out
-	input ?? p
-	write("Unevaluated Function  ", out)
-	p := Rtab(`f.int_return(param)`) -> out
-	input ?? p
-	write("Unevaluated Method    ", out)
-	p := Rtab(`f.a`) -> out
-	input ?? p
-	write("Unevaluated Variable  ", out)
-	p := Rtab(`x`) -> out
-	input ?? p
-	write("Unevaluated Member    ", out)
-	##p := Pos(5) || (Rtab(param) -> out)
-	##input ?? p 
-	##write("Result of Rtab() after assigning position to 5 ", out)
-        iteration +:= 1
-   }
-}
+    
+    while input := read() do {
+      inputSize := *input 	    
+      while inputSize >= 0 do {	    
+          tabsize := (*input - inputSize )
+          pat := Rtab(tabsize) -> out || Rem() -> remain
+	  input ?? pat
+          write_output(out, remain)
+          inputSize -:= 1
+          }
+      }
 end
 
-procedure int_return(rv)
-    return rv
-end	
-
-class foo(a,b,c)
-
-method int_return(rv)
-   return rv
-end
-
-initially()
+procedure write_output(out, remainder)
+    write("The match by Rtab is: " || out || " and remainder is: " || remainder)
 end

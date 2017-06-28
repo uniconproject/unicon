@@ -1925,13 +1925,14 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
       IntVal(amperErrno) = 0;
 
       /* Decode the mode */
-      if (is:integer(mode))
+      if (is:integer(mode)) {
 	 if (!cnv:C_integer(mode, i_mode)) runerr(101, mode);
+	 }
       else if (is:string(mode)) {
 	 tended char *s_mode;
-         cnv:C_string(mode, s_mode);
+	 if (!cnv:C_string(mode, s_mode)) runerr(103, mode);
 	 i_mode = (strcmp(s_mode, "nowait") == 0);
-      }
+	 }
 
       if (is:list(argv)) {
          margv = (char **)malloc((BlkD(argv,List)->size+3) * sizeof(char *));

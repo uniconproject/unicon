@@ -8,6 +8,7 @@ Ilib:	../bin/libcfunc.so
 	cp incl/*.icn gincl/*.icn cfuncs/icall.h ../lib
 	$(MAKE) -C procs
 	$(MAKE) -C gprocs
+	$(MAKE) -C mprocs
 	cd cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont
 	mv cfuncs/*.u? lib
 	mv cfuncs/libcfunc.so ../bin
@@ -56,6 +57,7 @@ clean Clean Pure:
 	cd cfuncs && $(MAKE) Clean
 	$(MAKE) -C procs Clean
 	$(MAKE) -C gprocs Clean
+	$(MAKE) -C mprocs Clean
 	cd gpacks/carpets && $(MAKE) Clean
 	cd gpacks/drawtree && $(MAKE) Clean
 	cd gpacks/ged && $(MAKE) Clean

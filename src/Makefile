@@ -1,8 +1,40 @@
 #  Icon source Makefile, normally used only for cleanup.
 
+include ../Makedefs
 
-what:
-	@echo "What do you want to make?"
+# Common components.
+
+Common:
+	$(MAKE) -C common
+	$(MAKE) -C rtt
+
+# The interpreter: icont and iconx.
+
+Icont:	Common Iconx
+	$(MAKE) -C icont
+
+Iconx:	Common
+	$(MAKE) -C runtime interp_all
+
+
+Iconc: Common
+	$(MAKE) -C runtime comp_all_uniconc
+	$(MAKE) -C iconc
+
+Clean Pure:
+	cd iconc;	rm -f *.o iconc
+	cd common;	rm -f *.o doincl patchstr
+	cd preproc;	rm -f *.o pp
+	cd rtt;		rm -f *.o rtt
+	cd runtime;	rm -f *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx
+	cd icont;	rm -f *.o icont
+	cd xpm;		rm -f *.o *.a
+	cd xpm/lib;	rm -f *.o *.a
+	cd libtp;	rm -f *.o *.a config.cache
+	cd libtp/uri;	rm -f *.o *.a
+	cd libtp/tests;	rm -f *.o *.a
+	cd gdbm;        rm -f *.o *.a
+
 
 Clean Pure:
 	cd iconc;	rm -f *.o iconc

@@ -6,8 +6,8 @@
 Ilib:	../bin/libcfunc.so
 ../bin/libcfunc.so:  ../bin/icont
 	cp incl/*.icn gincl/*.icn cfuncs/icall.h ../lib
-	cd procs;  LPATH= ../../bin/icont -usc *.icn; mv *.u? ../../lib
-	cd gprocs; LPATH= ../../bin/icont -usc *.icn; mv *.u? ../../lib
+	$(MAKE) -C procs
+	$(MAKE) -C gprocs
 	cd cfuncs; LPATH= $(MAKE) ICONT=../../bin/icont
 	mv cfuncs/*.u? lib
 	mv cfuncs/libcfunc.so ../bin
@@ -51,9 +51,11 @@ Check:
 
 #  Clean up.
 
-Clean Pure:
+clean Clean Pure:
 	rm -rf iexe */*.u */*.zip
 	cd cfuncs && $(MAKE) Clean
+	$(MAKE) -C procs Clean
+	$(MAKE) -C gprocs Clean
 	cd gpacks/carpets && $(MAKE) Clean
 	cd gpacks/drawtree && $(MAKE) Clean
 	cd gpacks/ged && $(MAKE) Clean

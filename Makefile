@@ -8,7 +8,7 @@ dest=/must/specify/dest/
 
 default: Makedefs
 	make Unicon
-
+#	make Uniconc
 
 Makedefs: Makedefs.in configure
 	sh configure
@@ -169,29 +169,26 @@ Unicon:		Icont
 
 # The interpreter: icont and iconx.
 
-Icont bin/icont: Common
-		cd src/icont;		$(MAKE)
-		cd src/runtime;		$(MAKE) interp_all
+Icont bin/icont:
+		$(MAKE) -C src Icont
 
 # The compiler: rtt, the run-time system, and iconc.
 
-Iconc Uniconc bin/iconc: Common
-		cd src/runtime;		$(MAKE) comp_all
-		cd src/iconc;		$(MAKE)
+Iconc Uniconc bin/iconc:
+		$(MAKE) -C src Iconc
 
 # Common components.
 
-Common:		src/h/define.h
-		cd src/common;		$(MAKE)
-		cd src/rtt;		$(MAKE)
+Common:
+		$(MAKE) -C src Common
 
 # The Icon program library.
 
 Ilib:		bin/icont
-		cd ipl;			$(MAKE)
+		$(MAKE) -C ipl
 
 Ibin:		bin/icont
-		cd ipl;			$(MAKE) Ibin
+		$(MAKE) -C ipl Ibin
 
 ##################################################################
 #

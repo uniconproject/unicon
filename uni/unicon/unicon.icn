@@ -123,22 +123,18 @@ procedure calc_posix_loc()
          close(\f)
          iconc_posixloc := (bpath || "../ipl/procs/posix.icn")
          }
+   else istop("cannot calculate location of posix.icn relative to iconx")
 end
 
 procedure iconc_linkref_resolve(srcfname, ref)
-   static lpaths, ipaths, sep, bpath
+   static lpaths, ipaths, sep
    local i, f, path, base, comps, rslt, fil
 
    initial {
       sep := PATHCHAR
       lpaths := lpaths_get()
       ipaths := ipaths_get()
-      if (bpath := (&features ? (="Binaries at " & tab(0)))) |
-         ((f := open((bpath := getpaths()) ||
-         ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
-         close(\f)
-         iconc_posixloc := (bpath || "../ipl/procs/posix.icn")
-         }
+      if /iconc_posixloc then calc_posix_loc()
       }
 
    if ref[1] == '"' then

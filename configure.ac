@@ -129,9 +129,11 @@ AC_CFLAG([-std=gnu11], [CC="$ac_cc"], [CC="$CC -std=gnu11"])
 if test x"$verbosebuild" = x"yes" ; then
   CMNT="#"
   SLNT=
+  DASHS=
 else
   CMNT=
   SLNT="@"
+  DASHS="-s"
 fi
 
 if test x"$devmode" = x"yes" ; then
@@ -296,6 +298,7 @@ fi
   AC_SUBST(COMMONDRAWSTRING)
   AC_SUBST(CMNT)
   AC_SUBST(SLNT)
+  AC_SUBST(DASHS)
 
 if test -f src/asm/$unicon_host-rswitch.s; then
     echo "Native coswitch detected"

@@ -136,9 +136,7 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 
 %.$(O): %.r $(HDRS)
-	$(RTT) $<
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(RTT) -c -O "$(CFLAGS)" $<
 
 fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 

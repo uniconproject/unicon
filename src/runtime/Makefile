@@ -59,7 +59,7 @@ iconx: $(OBJS)
 	fi
 
 x%.$(O): %.r $(HDRS)
-	$(CMNT)	@echo "   [ICONX] $<"
+	$(CMNT)	@echo "   [ICONX RTT] $<"
 	$(SLNT)$(RTT) -x $<
 	$(SLNT)$(CC) $(CFLAGS) -c x$*.c
 	$(SLNT)$(RM) x$*.c
@@ -71,7 +71,7 @@ xfsys.$(O): fsys.r $(HDRS) $(GRAPHICSHDRS)
 xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h
-	$(CMNT)	@echo "   [ICONX] $<  (revision:$(REPO_REV))"
+	$(CMNT)	@echo "   [ICONX RTT] $<  (revision:$(REPO_REV))"
 	$(SLNT)$(RTT) -DREPO_REVISION=$(REPO_REV) -x keyword.r
 	$(SLNT)$(CC) $(CFLAGS) -DREPO_REVISION=$(REPO_REV) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
@@ -115,10 +115,11 @@ db_lib: rt.db rt.a
 # rt.db from scratch along with the .$(O) files.
 #
 rt.db: $(HDRS)
-	$(RM) rt.db rt.a
-	$(RTT) $(RTLSRC)
-	$(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(RM) `sed 's/$$/.c/' rttcur.lst`
+	@echo "   [ICONC] This might take a while..."
+	$(SLNT)$(RM) rt.db rt.a
+	$(SLNT)$(RTT) $(RTLSRC)
+	$(SLNT) $(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
+	$(SLNT)$(RM) `sed 's/$$/.c/' rttcur.lst`
 
 rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O)\
       cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \
@@ -136,7 +137,8 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 
 %.$(O): %.r $(HDRS)
-	$(RTT) -c -O "$(CFLAGS)" $<
+	$(CMNT)@echo "   [ICONC RTT] $<"
+	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS)" $<
 
 fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 

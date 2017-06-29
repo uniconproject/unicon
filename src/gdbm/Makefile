@@ -33,8 +33,9 @@ manext = 3
 
 #### End of system configuration section. ####
 
-.c.o:
-	$(CC) -c $(CPPFLAGS) $(DEFS) -I. -I$(srcdir) $(CFLAGS) $<
+%.o: %.c
+	$(CMNT)@echo "   [GDBM] $<"
+	$(SLNT)$(CC) -c $(CPPFLAGS) $(DEFS) -I. -I$(srcdir) $(CFLAGS) $<
 
 SHELL = /bin/sh
 
@@ -67,7 +68,7 @@ TEX_F = gdbm.aux gdbm.cp gdbm.dvi gdbm.fn gdbm.ky gdbm.log gdbm.pg \
 	gdbm.toc gdbm.tp gdbm.vr
 
 TEXI_F = gdbm.info
-     
+
 SRCS = $(DBM_CF) $(NDBM_CF) $(GDBM_CF) $(TEST_CF)
 
 OBJS = $(DBM_OF) $(NDBM_OF) $(GDBM_OF) 

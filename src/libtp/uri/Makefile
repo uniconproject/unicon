@@ -28,6 +28,10 @@ clean:
 distclean: clean
 	$(RM) liburi.a Makefile
 
+%.o: %.c
+	$(CMNT)@echo "   [TP URI] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 uri.o: uri.c uri.h uri_schm.h
 uri_file.o: uri_file.c uri.h uri_schm.h
 uri_fing.o: uri_fing.c uri.h uri_schm.h

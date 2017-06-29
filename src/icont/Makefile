@@ -33,6 +33,10 @@ $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
 
 $(COBJS):	../h/mproto.h
 
+%.o: %.c
+	$(CMNT)@echo "   [ICONT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 tmain.o:	tglobals.h ../h/version.h
 tglobals.o:	tglobals.h
 util.o:		tglobals.h tree.h ../h/fdefs.h

@@ -19,6 +19,10 @@ common:
 pp: pmain.o $(OBJS)
 	$(CC) -o pp pmain.o $(OBJS)
 
+%.o: %.c
+	$(CMNT)@echo "   [PREPROC] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 pmain.o:	$(DOT_H)
 p_out.o:	$(DOT_H)
 pchars.o:	$(DOT_H)

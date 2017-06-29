@@ -36,6 +36,10 @@ $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 
 $(COBJS):	../h/mproto.h
 
+%.o: %.c
+	$(CMNT)@echo "   [ICONC] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 ccomp.o:	ccomp.c
 		$(CC) $(CFLAGS) -DICONC_XLIB="\"$(LIBS)\"" -c ccomp.c
 

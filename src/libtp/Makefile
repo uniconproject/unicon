@@ -66,6 +66,10 @@ dist: Makefile distclean
 	$(SHTOOL) tarball -o libtp-$V.tar.gz -c 'gzip -9' \
                           -e 'CVS,\.cvsignore,\.[oa]$$,\.core$$,~$$,^\.#' .
 
+%.o: %.c
+	$(CMNT)@echo "   [TP] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 tp.o: tp.c config.h tp.h util.h uri/uri.h
 tpdunix.o: tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h
 tpdssl.o: tpdssl.c config.h util.h tp.h uri/uri.h tpdssl.h

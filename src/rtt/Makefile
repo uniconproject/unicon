@@ -39,43 +39,57 @@ library:	$(OBJ)
 
 $(ROBJS): rtt.h rtt1.h rttproto.h $(P_DOT_H)
 
+%.o: %.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 rttdb.o: ../h/version.h
 rttparse.o : ../h/gsupport.h ../h/config.h ../h/cstructs.h \
 	../h/proto.h ../h/typedefs.h ../h/cpuconf.h ../h/define.h
 
 pout.o: $(PP_DIR)pout.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)pout.c 
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 pchars.o: $(PP_DIR)pchars.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)pchars.c 
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 perr.o: $(PP_DIR)perr.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)perr.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 pmem.o: $(PP_DIR)pmem.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)pmem.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 bldtok.o: $(PP_DIR)bldtok.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)bldtok.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 macro.o: $(PP_DIR)macro.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)macro.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 preproc.o: $(PP_DIR)preproc.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)preproc.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 evaluate.o: $(PP_DIR)evaluate.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)evaluate.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 files.o: $(PP_DIR)files.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)files.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 gettok.o: $(PP_DIR)gettok.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)gettok.c
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 pinit.o: $(PP_DIR)pinit.c $(P_DOT_H)
-	$(CC) -c $(CFLAGS) $(PP_DIR)pinit.c
-
+	$(CMNT)@echo "   [RTT] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
 #
 # The following entry is to help everyone remember how to run the
 # merr program when it is needed.

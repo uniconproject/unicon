@@ -20,8 +20,9 @@ OBJS1 = data.o create.o misc.o rgb.o scan.o parse.o hashtab.o \
 	  RdFToDat.o WrFFrDat.o \
 	  Attrib.o CrIFrP.o CrPFrI.o Image.o Info.o RdFToBuf.o WrFFrBuf.o
 
-.c.o:
-	$(CC) -c $(CFLAGS) $(XPMDEFS) $*.c
+%.o: %.c
+	$(CMNT)@echo "   [XPM] $<"
+	$(SLNT)$(CC) -c $(CFLAGS) $(XPMDEFS) $<
 
 libXpm.a: $(OBJS1)
 	$(RM) $@

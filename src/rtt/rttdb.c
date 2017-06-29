@@ -1180,6 +1180,8 @@ int line_left;
    }
 #endif					/* Rttx */
 
+extern char *fulllst_string;
+
 /*
  * full_lst - print a full list of all files produced by translations
  *  as represented in the dependencies section of the data base.
@@ -1201,6 +1203,8 @@ char *fname;
    if (f2 == NULL) err2("cannot open ", "rttfull.lnk");
 #endif					/* NT */
 
+   fulllst_string = strdup("");
+
    f = fopen(fname, "w");
    if (f == NULL)
       err2("cannot open ", fname);
@@ -1218,6 +1222,9 @@ char *fname;
             else
 #endif                                  /* MVS */
 
+	    fulllst_string = realloc(fulllst_string, strlen(fulllst_string) +
+				     strlen(fp->name) + 6);
+	    sprintf(fulllst_string + strlen(fulllst_string)," %s.o",fp->name);
             fprintf(f, "%s\n", fp->name);
 #if NT
 #if NTGCC

@@ -71,15 +71,15 @@ char *rt_path = "../src/h/rt.h";
  * End of operating-system specific code.
  */
 
-static char *ostr = "ECPD:I:U:O:d:cir:st:x";
+static char *ostr = "AECPD:I:U:O:d:cir:st:x";
 
 #if EBCDIC
 static char *options =
-   "<-E> <-C> <-P> <-s> <-Dname<=<text>>> <-Uname> <-Ipath> <-dfile>\n    \
+   "<-A> <-E> <-C> <-P> <-c> <-O copts> <-s> <-Dname<=<text>>> <-Uname> <-Ipath> <-dfile>\n    \
 <-rpath> <-tname> <-x> <files>";
 #else                                   /* EBCDIC */
 static char *options =
-   "[-E] [-C] [-P] [-s] [-Dname[=[text]]] [-Uname] [-Ipath] [-dfile]\n    \
+   "[-A] [-E] [-C] [-P] [-c] [-O copts] [-s] [-Dname[=[text]]] [-Uname] [-Ipath] [-dfile]\n    \
 [-rpath] [-tname] [-x] [files]";
 #endif                                  /* EBCDIC */
 
@@ -100,12 +100,14 @@ char *largeints = NULL;
 int iconx_flg = 0;
 int enable_out = 0;
 
+int archive_flg = 0;
 int ccomp_flg = 0;
 char *ccomp_opts = NULL;
 
 static char *curlst_nm = "rttcur.lst";		/* name of rttcur.lst file */
 static FILE *curlst;				/* FILE * of rttcur.lst */
 char *curlst_string;				/* string of files, with .c */
+char *fulllst_string;
 
 static char *cur_src;				/* current source (.r) file */
 
@@ -293,6 +295,9 @@ char **argv;
 	 case 'P': /* do not produce #line directives in output */
             line_cntrl = 0;
             break;
+	 case 'A': /* produce a .a archive file, as if rttfull.cur */
+            archive_flg = 1;
+            break;
 	 case 'c': /* go ahead and C compile */
 	    ccomp_flg = 1;
 	    break;
@@ -363,15 +368,17 @@ char **argv;
    opt_lst[nopts] = '\0';
 
    /*
-    * At least one file name must be given on the command line.
+    * At least one file name must be given on the command line, except
+    * if -A was used.
     */
-   if (optind == argc)
+   if ((optind == argc) && !archive_flg)
      show_usage();
 
    /*
     * When creating the compiler run-time system, rtt outputs a list
     *  of names of C files created, because most of the file names are
-    *  not derived from the names of the input files.
+    *  not derived from the names of the input files. TODO: get rid of
+    *  the file curlst; curlst_string subsumes it.
     */
    if (!iconx_flg) {
       curlst = fopen(curlst_nm, "w");
@@ -457,6 +464,25 @@ char **argv;
 #endif					/* NT */
       dumpdb(dbname);
       full_lst("rttfull.lst");
+      if (archive_flg) {
+	 char *archive_line;
+	 struct stat sb;
+
+	 archive_line = alloc(strlen("ar qc rt.a ") +
+			 strlen(fulllst_string) + strlen(ccomp_opts) + 3);
+
+	 if (stat("rt.a", &sb) == 0)
+	    remove("rt.a"); 
+
+	 if (ccomp_opts == NULL) ccomp_opts = "";
+
+	 sprintf(archive_line, "%s %s %s", "ar qc rt.a",
+		 fulllst_string, ccomp_opts);
+
+	 if (!silent)
+	    fprintf(stdout, "%s\n", archive_line);
+	 if (system(archive_line)) return EXIT_FAILURE;
+	 }
       }
 #endif					/* Rttx */
 

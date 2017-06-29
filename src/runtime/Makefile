@@ -129,10 +129,7 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
       rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
       rmsg.$(O) rposix.$(O) rwindow.$(O)\
       ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)
-	 $(RM) rt.a
-	ar qc rt.a `sed 's/$$/.o/' rttfull.lst` ../common/rswitch.$(O)\
-	    ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O)\
-	    ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)
+	rtt -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
 	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 

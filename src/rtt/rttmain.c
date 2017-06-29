@@ -75,11 +75,11 @@ static char *ostr = "ECPD:I:U:O:d:cir:st:x";
 
 #if EBCDIC
 static char *options =
-   "<-E> <-C> <-P> <-Dname<=<text>>> <-Uname> <-Ipath> <-dfile>\n    \
+   "<-E> <-C> <-P> <-s> <-Dname<=<text>>> <-Uname> <-Ipath> <-dfile>\n    \
 <-rpath> <-tname> <-x> <files>";
 #else                                   /* EBCDIC */
 static char *options =
-   "[-E] [-C] [-P] [-Dname[=[text]]] [-Uname] [-Ipath] [-dfile]\n    \
+   "[-E] [-C] [-P] [-s] [-Dname[=[text]]] [-Uname] [-Ipath] [-dfile]\n    \
 [-rpath] [-tname] [-x] [files]";
 #endif                                  /* EBCDIC */
 
@@ -108,6 +108,8 @@ static FILE *curlst;				/* FILE * of rttcur.lst */
 char *curlst_string;				/* string of files, with .c */
 
 static char *cur_src;				/* current source (.r) file */
+
+static int silent = 0;
 
 extern int line_cntrl;
 
@@ -294,11 +296,13 @@ char **argv;
 	 case 'c': /* go ahead and C compile */
 	    ccomp_flg = 1;
 	    break;
+         case 's': /* silent */
+	    silent = 1;
+	    break;
 	 case 'O': /* options to pass to C compiler */
 	    ccomp_opts = optarg;
 	    ++nopts;
 	    break;
-
 	 case 'd': /* -d name: name of data base */
             dbname = optarg;
             break;
@@ -472,10 +476,12 @@ char **argv;
       ccomp_line = alloc(strlen(CComp) + strlen(ccomp_opts) +
 			 strlen(curlst_string) + 6);
       sprintf(ccomp_line, "%s -c %s%s", CComp, ccomp_opts, curlst_string);
-      fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
+      if (!silent)
+	fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
       if (system(ccomp_line)) return EXIT_FAILURE;
       sprintf(ccomp_line, "%s%s", "rm", curlst_string);
-      fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
+      if (!silent)
+	fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
       if (system(ccomp_line)) return EXIT_FAILURE;
       }
 

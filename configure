@@ -627,6 +627,8 @@ JV_LDFLAGS
 LIBOBJS
 ALLOCA
 RANLIB
+SLNT
+CMNT
 COMMONDRAWSTRING
 DRAWSTRING
 XPM
@@ -712,8 +714,10 @@ enable_database
 enable_audio
 enable_voip
 enable_plugins
-enable_thin
 enable_ovld
+enable_iconc
+enable_verbosebuild
+enable_thin
 enable_debug
 enable_devmode
 with_xlib
@@ -1377,9 +1381,11 @@ Optional Features:
   --disable-audio         No audio support
   --disable-voip          No VOIP support
   --disable-plugins       No loadfunc or plugins support
+  --enable-ovld           enable operator overloading
+  --enable-iconc          Build Unicon Compiler (Iconc/Uniconc)
+  --enable-verbosebuild   Show full CC build lines with all compiler arguments
   --enable-thin           Do a minimalist build disabling non critical
                           features
-  --enable-ovld           enable operator overloading
   --enable-debug          Add debugging symbols
   --enable-devmode        Developper mode: turn on warnings and debugging
                           options
@@ -2896,18 +2902,36 @@ else
   plugins=yes
 fi
 
-# Check whether --enable-thin was given.
-if test "${enable_thin+set}" = set; then :
-  enableval=$enable_thin; thin=yes
-else
-  thin=no
-fi
 
 # Check whether --enable-ovld was given.
 if test "${enable_ovld+set}" = set; then :
   enableval=$enable_ovld; ovld=yes
 else
   ovld=no
+fi
+
+
+# Check whether --enable-iconc was given.
+if test "${enable_iconc+set}" = set; then :
+  enableval=$enable_iconc; iconc=yes
+else
+  iconc=no
+fi
+
+
+# Check whether --enable-verbosebuild was given.
+if test "${enable_verbosebuild+set}" = set; then :
+  enableval=$enable_verbosebuild; verbosebuild=yes
+else
+  verbosebuild=no
+fi
+
+
+# Check whether --enable-thin was given.
+if test "${enable_thin+set}" = set; then :
+  enableval=$enable_thin; thin=yes
+else
+  thin=no
 fi
 
 # Check whether --enable-debug was given.
@@ -4234,13 +4258,21 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
 
-if test x"devmode" = x"yes" ; then
+if test x"$verbosebuild" = x"yes" ; then
+  CMNT="#"
+  SLNT=
+else
+  CMNT=
+  SLNT="@"
+fi
+
+if test x"$devmode" = x"yes" ; then
   debug=yes
 fi
 
 # honor custom flags
 if test "z$orig_cflags" = "z"; then
-  if test x"$devmode" = x"yes" ; then
+  if test x"$debug" = x"yes" ; then
      {
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4557,94 +4589,8 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	}
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wmissing-prototypes"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wmissing-prototypes" >&5
-$as_echo_n "checking whether $CC supports -Wmissing-prototypes... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-else
-
-			CFLAGS="$ac_c_flag_save"
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-  {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wmissing-declarations"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wmissing-declarations" >&5
-$as_echo_n "checking whether $CC supports -Wmissing-declarations... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-else
-
-			CFLAGS="$ac_c_flag_save"
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
+#  AC_CFLAG([-Wmissing-prototypes])
+#  AC_CFLAG([-Wmissing-declarations])
 fi
 
 if test x"${enable_werror}" = x"yes" ; then
@@ -4718,9 +4664,9 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wparentheses-equality"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wparentheses-equality" >&5
-$as_echo_n "checking whether $CC supports -Wparentheses-equality... " >&6; }
+	CFLAGS="$CFLAGS -Wno-parentheses-equality"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-parentheses-equality" >&5
+$as_echo_n "checking whether $CC supports -Wno-parentheses-equality... " >&6; }
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6479,6 +6425,7 @@ $as_echo "#define NoGraphics 1" >>confdefs.h
 $as_echo "#define NoGraphics3D 1" >>confdefs.h
 
 fi
+
 
 
 
@@ -13173,80 +13120,64 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
+
+
+if test "$zlib_cv_libz"   = yes ; then ctmp=" +ZLIB"; else ctmp=" -ZLIB"; fi
+
+gtmp=""
+if test "$xlib_cv_libx"    = yes ; then gtmp="$gtmp {+XLIB} "; else gtmp="$gtmp {-XLIB} "; fi
+if test "$jpeg_cv_libjpeg" = yes ; then gtmp="$gtmp +JPG " ; else gtmp="$gtmp -JPG " ; fi
+if test "$png_cv_libpng"   = yes ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
+if test "$xft_cv_libxft"   = yes ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+if test "$freetype_cv_libfreetype"   = yes ; then
+   gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
+
+gdtmp=""
+if test "$opengl_cv_libGL"   = yes ; then gdtmp="$gdtmp {+OpenGL " ; else gdtmp="$gdtmp {-OpenGL " ; fi
+if test "$opengl_cv_libGLU"  = yes ; then gdtmp="$gdtmp +GLU} "    ; else gdtmp="$gdtmp -GLU} " ; fi
+if test "$FTGL_cv_libFTGL"   = yes ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
+
+if test "$pthread_cv_libpthread"  = yes ; then contmp=" +pthread" ; else contmp=" -pthread" ; fi
+
+atmp=""
+if test "$libopenal_cv_libopenal" = yes ; then atmp="$atmp {+OpenAL " ; else atmp="$atmp {-OpenAL " ; fi
+if test "$libalut_cv_libalut"     = yes ; then atmp="$atmp +alut} " ; else atmp="$atmp -alut} " ; fi
+
+
+atmp="$atmp{("
+if test "$ogglib_cv_libogg"       = yes; then atmp="$atmp +ogg " ; else atmp="$atmp -ogg " ; fi
+if test "$ogglib_cv_libvorbis"    = yes; then atmp="$atmp +vorbis " ; else atmp="$atmp -vorbis " ; fi
+
+atmp="$atmp) | ("
+if test "$libsmpeg_cv_libsmpeg"   = yes ; then
+   atmp="$atmp +SDL +SMPEG " ; else atmp="$atmp -SDL -SMPEG " ; fi
+
+atmp="$atmp)}"
+
+
+if test "$jvlib_cv_libjv"         = yes ; then vtmp=" +jvoip" ; else vtmp=" -jvoip" ; fi
+
+if test "$odbc_cv_libodbc"        = yes ; then dtmp=" +odbc" ; else dtmp=" -odbc" ; fi
+
+if test "$openssl_cv_libssl"      = yes ; then mtmp=" +ssl" ; else mtmp=" -ssl" ; fi
+
 echo ""
 echo "--------------------------------------------------"
 echo "           Configuration Summary"
 echo "--------------------------------------------------"
+echo "CFLAGS  : $CFLAGS"
+echo "LDFLAGS : $LDFLAGS"
+echo "Verbose :  $verbosebuild"
 echo ""
-echo    "* Features"
-echo    "|___.* Compression"
-/bin/echo -n "|   |--> ZLIB      : "
-if test "$zlib_cv_libz"   = yes ; then echo "yes"; else echo "no"; fi
-echo    "|"
+echo "* Features (+Available   -Missing)"
+echo "|___ Compression: $ctmp"
+echo "|___ Graphics   : $gtmp"
+echo "|___ 3D Graphics: $gdtmp"
+echo "|___ Concurrency: $contmp"
+echo "|___ Audio      : $atmp"
+echo "|___ VOIP       : $vtmp"
+echo "|___ Database   : $dtmp"
+echo "|___ Misc       : $mtmp"
 
-echo    "|___.* Graphics"
-/bin/echo -n "|   |--> XLIB      : "
-if test "$xlib_cv_libx" = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> JPEG      : "
-if test "$jpeg_cv_libjpeg" = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> PNG       : "
-if test "$png_cv_libpng"   = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> XFT       : "
-if test "$xft_cv_libxft"   = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> Freetype  : "
-if test "$freetype_cv_libfreetype"   = yes ; then echo "yes"; else echo "no"; fi
-echo    "|"
-
-echo    "|___.* 3D Graphics"
-/bin/echo -n "|   |--> OpenGL    : "
-if test "$opengl_cv_libGL"   = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> GLU       : "
-if test "$opengl_cv_libGLU"  = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> FTG       : "
-if test "$FTGL_cv_libFTGL"   = yes ; then echo "yes"; else echo "no"; fi
-echo "|"
-
-echo    "|___.* Concurrency"
-/bin/echo -n "|   |--> Threads   : "
-if test "$pthread_cv_libpthread"  = yes ; then echo "yes"; else echo "no"; fi
-echo    "|"
-
-echo    "|___. * Audio"
-/bin/echo -n "|   |--> OpenAL    : "
-if test "$libopenal_cv_libopenal" = yes ; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   |--> alut      : "
-if test "$libalut_cv_libalut"     = yes ; then echo "yes"; else echo "no"; fi
-echo    "|   |__One group of:"
-/bin/echo -n "|   | |> Ogg,vorbis: "
-if test "$ogglib_cv_libogg"       = yes; then /bin/echo -n "yes,"; else /bin/echo -n "no,"; fi
-if test "$ogglib_cv_libvorbis"    = yes; then echo "yes"; else echo "no"; fi
-/bin/echo -n "|   | |> SDL,smpeg : "
-if test "$libsdl_cv_libsdl"       = yes; then /bin/echo -n "yes,"; else /bin/echo -n "no,"; fi
-if test "$libsmpeg_cv_libsmpeg"   = yes ; then echo "yes"; else echo "no"; fi
-echo    "|"
-
-echo    "|___.* VOIP"
-/bin/echo -n "|   |--> jvoip     : "
-if test "$jvlib_cv_libjv"         = yes ; then echo "yes"; else echo "no"; fi
-echo    "|"
-
-echo    "|___.* Database"
-/bin/echo -n "|   |--> ODBC      : "
-if test "$odbc_cv_libodbc"        = yes ; then echo "yes"; else echo "no"; fi
-echo    "|"
-
-echo    "|___.* Misc"
-/bin/echo -n "    |--> SSL       : "
-if test "$openssl_cv_libssl"      = yes ; then echo "yes"; else echo "no"; fi
 echo ""
-
-if test "$xlib_cv_libx" = yes ; then
-  echo "Think we found X11, you are good to go."
-else
-  if test "$graphics" = yes; then
-     echo "X11 libraries or headers missing; graphics"
-     echo "not enabled. "
-  fi
-fi
-
-echo Remember to add unicon/bin to your path
+echo "Remember to add unicon/bin to your path"

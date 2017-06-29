@@ -71,7 +71,7 @@ char *rt_path = "../src/h/rt.h";
  * End of operating-system specific code.
  */
 
-static char *ostr = "ECPD:I:U:d:cir:st:x";
+static char *ostr = "ECPD:I:U:O:d:cir:st:x";
 
 #if EBCDIC
 static char *options =
@@ -100,9 +100,14 @@ char *largeints = NULL;
 int iconx_flg = 0;
 int enable_out = 0;
 
-static char *curlst_nm = "rttcur.lst";
-static FILE *curlst;
-static char *cur_src;
+int ccomp_flg = 0;
+char *ccomp_opts = NULL;
+
+static char *curlst_nm = "rttcur.lst";		/* name of rttcur.lst file */
+static FILE *curlst;				/* FILE * of rttcur.lst */
+char *curlst_string;				/* string of files, with .c */
+
+static char *cur_src;				/* current source (.r) file */
 
 extern int line_cntrl;
 
@@ -280,13 +285,21 @@ char **argv;
             if (whsp_image == NoSpelling)
                whsp_image = NoComment;
             break;
-         case 'C':  /* retain spelling of white space, only effective with -E */
+	 case 'C':  /* retain spelling of white space, only effective with -E */
             whsp_image = FullImage;
             break;
-          case 'P': /* do not produce #line directives in output */
+	 case 'P': /* do not produce #line directives in output */
             line_cntrl = 0;
             break;
-          case 'd': /* -d name: name of data base */
+	 case 'c': /* go ahead and C compile */
+	    ccomp_flg = 1;
+	    break;
+	 case 'O': /* options to pass to C compiler */
+	    ccomp_opts = optarg;
+	    ++nopts;
+	    break;
+
+	 case 'd': /* -d name: name of data base */
             dbname = optarg;
             break;
 #ifdef ConsoleWindow
@@ -360,6 +373,7 @@ char **argv;
       curlst = fopen(curlst_nm, "w");
       if (curlst == NULL)
          err2("cannot open ", curlst_nm);
+      curlst_string = strdup("");
       }
 
    /*
@@ -407,13 +421,14 @@ char **argv;
    /*
     * Unless the user just requested the preprocessor be run, we
     *   have created C files and updated the in-memory data base.
-    *   If this is the compiler's run-time system, we must dump
-    *   to data base to a file and create a list of all output files
+    *   If this is the compiler's run-time system, we must dump the
+    *   data base to a file and create a list of all output files
     *   produced in all runs of rtt that created the data base.
     */
    if (!(pp_only || iconx_flg)) {
       if (fclose(curlst) != 0)
          err2("cannot close ", curlst_nm);
+
 #if NT
       /*
        * We have just finished making a list of the files without extensions.
@@ -443,6 +458,27 @@ char **argv;
 
    if ( yynerrs > 0 || __merr_errors > 0)
       return EXIT_FAILURE;
+
+   /*
+    * If -c was used, go ahead and invoke a C compiler on curlst_string.
+    * If the compile did not report an error, remove the .c files afterwards.
+    * Note that the remove command is at present hardwired to "rm"; for
+    * greater portability (e.g. Windows) perhaps it should be rewritten to
+    * a loop of C library remove() calls.
+    */
+   if (ccomp_flg) {
+      char *ccomp_line;
+      if (ccomp_opts == NULL) ccomp_opts = "";
+      ccomp_line = alloc(strlen(CComp) + strlen(ccomp_opts) +
+			 strlen(curlst_string) + 6);
+      sprintf(ccomp_line, "%s -c %s%s", CComp, ccomp_opts, curlst_string);
+      fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
+      if (system(ccomp_line)) return EXIT_FAILURE;
+      sprintf(ccomp_line, "%s%s", "rm", curlst_string);
+      fprintf(stdout, "%s\n", ccomp_line); fflush(stderr);
+      if (system(ccomp_line)) return EXIT_FAILURE;
+      }
+
    return EXIT_SUCCESS;
    }
 
@@ -595,6 +631,7 @@ char *fname;
 int keep;
    {
    struct fileparts *fp;
+   int oldlen = strlen(curlst_string);
 
    fp = fparse(fname);
 
@@ -605,6 +642,9 @@ int keep;
 #endif                                  /* MVS */
 
    fprintf(curlst, "%s\n", fp->name);
+   curlst_string = realloc(curlst_string,oldlen + strlen(fp->name)+4);
+   sprintf(curlst_string + oldlen, " %s.c", fp->name);
+
    if (keep)
       add_dpnd(src_lkup(cur_src), fname);
    }

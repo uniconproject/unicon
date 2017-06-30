@@ -72,6 +72,10 @@ test:		$(PROGRAM)
 		@cd test; $(MAKE)
 
 ###
+%.o: %.c
+	$(CMNT)@echo "   [IYACC] $<"
+	$(SLNT)$(CC) $(CFLAGS) -c $<
+
 closure.o: defs.h
 error.o: defs.h
 lalr.o: defs.h

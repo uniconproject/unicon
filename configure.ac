@@ -364,7 +364,7 @@ AC_CHECK_FUNC(sysconf,
 AC_CHECK_FUNC(profil,
 	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
 
-if test "x$plugins" = "xno"; then
+if test "x$plugins" = "xyes"; then
   AC_CHECK_LIB(dl, dlopen)
 else
   AC_DEFINE([NoLoadFunc], [1], [No LoadFunc])

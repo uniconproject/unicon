@@ -104,8 +104,6 @@ int archive_flg = 0;
 int ccomp_flg = 0;
 char *ccomp_opts = NULL;
 
-static char *curlst_nm = "rttcur.lst";		/* name of rttcur.lst file */
-static FILE *curlst;				/* FILE * of rttcur.lst */
 char *curlst_string;				/* string of files, with .c */
 char *fulllst_string;
 
@@ -375,15 +373,11 @@ char **argv;
      show_usage();
 
    /*
-    * When creating the compiler run-time system, rtt outputs a list
-    *  of names of C files created, because most of the file names are
-    *  not derived from the names of the input files. TODO: get rid of
-    *  the file curlst; curlst_string subsumes it.
+    * When creating the compiler run-time system, rtt creates a string that
+    *  is a space-separated list of names of C files created, because most
+    *  of the file names are not derived from the names of the input files.
     */
    if (!iconx_flg) {
-      curlst = fopen(curlst_nm, "w");
-      if (curlst == NULL)
-         err2("cannot open ", curlst_nm);
       curlst_string = strdup("");
       }
 
@@ -437,33 +431,16 @@ char **argv;
     *   produced in all runs of rtt that created the data base.
     */
    if (!(pp_only || iconx_flg)) {
-      if (fclose(curlst) != 0)
-         err2("cannot close ", curlst_nm);
 
 #if NT
       /*
-       * We have just finished making a list of the files without extensions.
-       * Windows does not have sed(1), so write out a copy with extensions.
+       * We used to write out an rttcur.lnk file of filenames with .c extensions
+       * for a separate invocation of gcc or lcc but that is now subsumed by
+       * curlst_string.
        */
-      if (curlst = fopen(curlst_nm,"r")) {
-	 FILE *f2 = fopen("rttcur.lnk","w");
-	 if (f2 == NULL) {
-	    fclose(curlst);
-	    err2("cannot open ", "rttcur.lnk");
-	    }
-	 else {
-	    char line[1024];
-	    while (fgets(line, 1023, curlst)) {
-	       if (line[strlen(line)-1] == '\n') line[strlen(line)-1] = '\0';
-	       fprintf(f2, "%s.c\n", line);
-	       }
-	    fclose(f2);
-	    fclose(curlst);
-	    }
-	 }
 #endif					/* NT */
       dumpdb(dbname);
-      full_lst("rttfull.lst");
+      full_lst();
       if (archive_flg) {
 	 char *archive_line;
 	 struct stat sb;
@@ -667,13 +644,6 @@ int keep;
 
    fp = fparse(fname);
 
-#if MVS
-   if (*fp->member)
-      fprintf(curlst, "%s(%s\n", fp->name, fp->member);
-   else
-#endif                                  /* MVS */
-
-   fprintf(curlst, "%s\n", fp->name);
    curlst_string = realloc(curlst_string,oldlen + strlen(fp->name)+4);
    sprintf(curlst_string + oldlen, " %s.c", fp->name);
 

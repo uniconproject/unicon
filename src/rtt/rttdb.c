@@ -1183,31 +1183,18 @@ int line_left;
 extern char *fulllst_string;
 
 /*
- * full_lst - print a full list of all files produced by translations
- *  as represented in the dependencies section of the data base.
+ * full_lst - create a string containing a full list of all files produced by
+ *  translations as represented in the dependencies section of the data base.
  */
-void full_lst(fname)
-char *fname;
+void full_lst()
    {
    unsigned hashval;
    struct srcfile *sfile;
    struct cfile *clst;
    struct fileparts *fp;
-   FILE *f;
-#if NT
-   /*
-    * under Windows we do not have sed(1), so go ahead and emit a version of
-    * rttfull.lst called rttfull.lnk with .obj extensions appended.
-    */
-   FILE *f2 = fopen("rttfull.lnk","w");
-   if (f2 == NULL) err2("cannot open ", "rttfull.lnk");
-#endif					/* NT */
 
    fulllst_string = strdup("");
 
-   f = fopen(fname, "w");
-   if (f == NULL)
-      err2("cannot open ", fname);
    for (hashval = 0; hashval < DHSize; ++hashval)
       for (sfile = dhash[hashval]; sfile != NULL; sfile = sfile->next)
          for (clst = sfile->dependents; clst != NULL; clst = clst->next) {
@@ -1216,30 +1203,10 @@ char *fname;
              */
             fp = fparse(clst->name);
 
-#if MVS
-            if (*fp->member)
-               fprintf(f, "%s(%s\n", fp->name, fp->member);
-            else
-#endif                                  /* MVS */
-
 	    fulllst_string = realloc(fulllst_string, strlen(fulllst_string) +
 				     strlen(fp->name) + 6);
 	    sprintf(fulllst_string + strlen(fulllst_string)," %s.o",fp->name);
-            fprintf(f, "%s\n", fp->name);
-#if NT
-#if NTGCC
-            fprintf(f2, "%s.o\n", fp->name);
-#else					/* NTGCC */
-            fprintf(f2, "%s.obj\n", fp->name);
-#endif					/* NTGCC */
-#endif					/* NT */
             }
-   if (fclose(f) != 0)
-      err2("cannot close ", fname);
-#if NT
-   if (fclose(f2) != 0)
-      err2("cannot close ", "rttfull.lnk");
-#endif					/* NT */
    }
 
 /*

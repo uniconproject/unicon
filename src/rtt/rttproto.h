@@ -29,7 +29,7 @@ void           force_nl  (int indent);
 void           free_sym  (struct sym_entry *sym);
 void           free_tree (struct node *n);
 void           free_tend (void);
-void           full_lst  (char *fname);
+void           full_lst  ();
 void           func_def  (struct node *dcltor);
 void           id_def    (struct node *dcltor, struct node *x);
 void           keepdir   (struct token *s);

@@ -22,8 +22,9 @@ SRCS = daytime.c fing.c hhead.c pop.c testuri.c wtrace.c
 
 all: Makefile $(PROGS)
 
-.c.o:
-	$(CC) $(CFLAGS) -I.. -I../uri -c $*.c
+%.o: %.c
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) $(CFLAGS) -I.. -I../uri -c $<
 
 clean:
 	$(RM) $(OBJS)
@@ -32,19 +33,25 @@ distclean: clean
 	$(RM) $(PROGS) Makefile
 
 daytime: daytime.o ../libtp.a
-	$(CC) -o daytime daytime.o $(LDFLAGS) $(LDLIBS)
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) -o daytime daytime.o $(LDFLAGS) $(LDLIBS)
 
 fing: fing.o ../libtp.a
-	$(CC) -o fing fing.o $(LDFLAGS) $(LDLIBS)
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) -o fing fing.o $(LDFLAGS) $(LDLIBS)
 
 hhead: hhead.o ../libtp.a
-	$(CC) -o hhead hhead.o $(LDFLAGS) $(LDLIBS)
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) -o hhead hhead.o $(LDFLAGS) $(LDLIBS)
 
 pop: pop.o ../libtp.a
-	$(CC) -o pop pop.o $(LDFLAGS) $(LDLIBS)
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) -o pop pop.o $(LDFLAGS) $(LDLIBS)
 
 testuri: testuri.o ../libtp.a
-	$(CC) -o testuri testuri.o $(LDFLAGS) $(LDLIBS)
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) -o testuri testuri.o $(LDFLAGS) $(LDLIBS)
 
 wtrace: wtrace.o ../libtp.a
-	$(CC) -o wtrace wtrace.o $(LDFLAGS) $(LDLIBS)
+	$(CMNT)@echo "   [TP TESTS] $<"
+	$(SLNT)$(CC) -o wtrace wtrace.o $(LDFLAGS) $(LDLIBS)

@@ -28,7 +28,7 @@ icont:		$(OBJS) common
 		strip ../../bin/icont
 
 $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
-		   ../h/proto.h ../h/mproto.h \
+		   ../h/proto.h ../h/mproto.h ../h/auto.h \
 		   ../h/typedefs.h ../h/cstructs.h tproto.h
 
 $(COBJS):	../h/mproto.h

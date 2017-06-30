@@ -117,9 +117,7 @@ db_lib: rt.db rt.a
 rt.db: $(HDRS)
 	@echo "   [ICONC] This might take a while..."
 	$(SLNT)$(RM) rt.db rt.a
-	$(SLNT)$(RTT) $(RTLSRC)
-	$(SLNT) $(CC) $(CFLAGS) -c `sed 's/$$/.c/' rttcur.lst`
-	$(SLNT)$(RM) `sed 's/$$/.c/' rttcur.lst`
+	$(MAKE) rt.a
 
 rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O)\
       cnv.$(O) data.$(O) def.$(O) errmsg.$(O) fconv.$(O) fdb.$(O) fload.$(O) fmath.$(O) fmisc.$(O) fmonitr.$(O) \

@@ -1248,14 +1248,18 @@ procedure regexp(n)
 		  "token": {
 		     case n.children[1].tok of {
 			IDENT: {
-			   if *n.children[1].s > 1 then {
-			      return "(\"" || n.children[1].s || "\"||" ||
-				      "Arbno(\"" || n.children[1].s[-1]||"\"))"
-			      }
+			   # repeat whole ident, plus 0 or more repeats of
+			   # last letter. Precedence of abc+ is (ab)c+.
+			   return "(\"" || n.children[1].s || "\"||" ||
+				     "Arbno(\"" || n.children[1].s[-1]||"\"))"
 			   }
 			STRINGLIT: {
 			   return "(" || n.children[1].s ||
 				" || Arbno(" || n.children[1].s ||  "))"
+			   }
+			default: {
+			   stop("regex error: + not supported on '",
+				image(n.children[1].tok),"'")
 			   }
 			}
 		     }
@@ -1358,20 +1362,20 @@ procedure csetify(n)
 	 }
       stop("csetify ", type(n),"?")
       }
-    case n.label of {
-       "brackchars": {
-	  write(type(n.children[1], " vs. ", n.children[3]))
-	  }
-       "acset": {
-	  n := n.children[2]
-	  }
-       "notany": {
-	  n := n.children[3]
-	  }
-       default: {
-	  stop("csetify ", image(n.label), " kids ", *n.children)
-	  }
-       }
+   case n.label of {
+      "brackchars": {
+	 write(type(n.children[1], " vs. ", n.children[3]))
+	 }
+      "acset": {
+	 n := n.children[2]
+	 }
+      "notany": {
+	 n := n.children[3]
+	 }
+      default: {
+	 stop("csetify ", image(n.label), " kids ", *n.children)
+	 }
+      }
    if type(n) == "treenode" & n.label == "brackchars" then {
       # only way you get this node is you are a range. What about two ranges?
       cs1 := csetify(n.children[1]) | stop("can't csetify ",image(n.children[1]))

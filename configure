@@ -13170,14 +13170,14 @@ if test "$graphics3d" = yes ; then
 
   if test "$opengl_cv_libGL"   = yes ; then
     gdtmp="$gdtmp+OpenGL "
-    ong3d = 1
+    ong3d=1
   else
     gdtmp="$gdtmp-OpenGL "
   fi
 
   if test "$opengl_cv_libGLU"  = yes ; then
     gdtmp="$gdtmp +GLU "
-    if test $ong3d = 1 ; then ong3d = 2 ; fi
+    if test $ong3d = 1 ; then ong3d=2 ; fi
   else
     gdtmp="$gdtmp -GLU "
   fi
@@ -13212,48 +13212,51 @@ if test "$audio" = yes ; then
   onAudio=0
   if test "$libopenal_cv_libopenal" = yes ; then
     atmp="$atmp +OpenAL "
-    onAudio=1
+    onAudio="1"
   else
     atmp="$atmp -OpenAL "
   fi
 
   if test "$libalut_cv_libalut"     = yes ; then
     atmp="$atmp +alut "
-    if test $onAudio = 1 ; then onAudio = 2; fi
+    if test "$onAudio" = 1 ; then onAudio=2 ; fi
   else
     atmp="$atmp -alut "
   fi
 
 
   atmp="$atmp("
-  if test "$ogglib_cv_libogg"       = yes; then
+  if test "$ogglib_cv_libogg"       = yes ; then
     atmp="$atmp +ogg "
-    if test $onAudio = 2 ; then onAudio = 3; fi
+    if test "$onAudio" = 2 ; then onAudio=3 ; fi
   else
     atmp="$atmp -ogg "
   fi
-  if test "$ogglib_cv_libvorbis"    = yes; then
+
+  if test "$ogglib_cv_libvorbis"    = yes ; then
     atmp="$atmp +vorbis "
-    if test $onAudio = 3 ; then onAudio = 4; else onAudio = 2; fi
+    if test "$onAudio" = 3 ; then onAudio=4 ; fi
   else
     atmp="$atmp -vorbis "
-    if test $onAudio = 3 ; then onAudio = 2; fi
   fi
+
+  # if ogg was present bu vorbis was missing, reset
+  if test "$onAudio" = 3 ; then onAudio=2 ; fi
 
   atmp="$atmp) | ("
   if test "$libsmpeg_cv_libsmpeg"   = yes ; then
     atmp="$atmp +SDL +SMPEG "
-    if test $onAudio = 2 ; then onAudio = 4; fi
+    if test "$onAudio" = 2 ; then onAudio=4 ; fi
   else
     atmp="$atmp -SDL -SMPEG "
   fi
 
   atmp="$atmp)"
 
-  if test $onAudio = 4; then
+  if test "$onAudio" = 4 ; then
     atmp=" + $atmp"
   else
-    atmp=" - $atmp"
+    atmp=" $onAudio - $atmp"
   fi
 
 else

@@ -95,3 +95,14 @@ typedef int (*continuation) (void);
    #endif				/* IntBits != WordBits */
       
 #endif					/* COMPILER */
+
+enum TRuntime_Status {
+  RTMODE_NORMAL=0,	/* Normal operation       */
+  RTMODE_GC,		/* Garbage collection     */
+  RTMODE_Signal,	/* Normal Signal Handling */
+  RTMODE_EXIT,		/* Normal Shutdown        */
+  RTMODE_RUNERROR,	/* Runtime Error shutdown */
+  RTMODE_SYSERROR,	/* System Error shutdown  */
+  RTMODE_HARDERROR	/* Hardware Error shutdown, triggered by signals
+			   SIGBUS, SIGFPE, SIGILL, and SIGSEGV */
+  };

@@ -1,0 +1,50 @@
+#<p>
+#   Read from a text file with the ability to <i>push back</i>
+#   input lines.  Multiple lines may be pushed back onto the
+#   file.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package util
+
+import lang
+
+#<p>
+#  Reads in lines from a file, but allows lines to be pushed back
+#   back into the input stream for rereading.  There is no limit
+#   (aside from memory constraints) on the number of lines pushed back.
+#</p>
+class PushBack : Object(f,        # Input file (defaults to <tt>&input</tt>)
+                        pbBuffer, # pushback buffer
+                        reader    # hook to real <tt>read</tt> procedure
+                       )
+
+   #<p>
+   #   Read in the next line.  Reads in any pushed back lines first
+   #   before reading a line from the file.
+   #</p>
+   method read()
+      return pop(pbBuffer) | reader(f)
+   end
+
+   #<p>
+   #   Push a line back onto the input stream.
+   #</p>
+   method pushback(line)  # line to push back onto input stream
+      push(pbBuffer, line)
+   end
+
+#<p>
+#   Provide an instance of a pushback file reader.
+#</p>
+initially (aFile) # File to read from
+   /aFile := &input
+   f := aFile
+   pbBuffer := []
+   reader := proc("read")
+end

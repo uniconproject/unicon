@@ -1,0 +1,67 @@
+#<p>
+#<b>
+# A class to manage application properties.
+#</b>
+#</p>
+#<p>
+# A <i>property</i> is a simple name/value pair that represents an
+# item of information that is available to all components in an
+# application.  While a global table could be used to record
+# properties, this exposes the implementation and limits the
+# possible behaviors.
+#</p>
+#<p>
+# This class provides a simple implementation of a generic Property
+# service. Additional functionality can be added through subclassing.
+#</p>
+
+package lang
+
+#<p>
+# A singleton class that provides global access to a set of
+# properties.
+# The following simple example illustrates the use of the
+# <tt>Property</tt> singleton class:
+#<pre>
+#   import lang
+#
+#    procedure main()
+#        # Set a few properties...
+#        Property().setP("A", 5)
+#        Property().setP("B", 6)
+#    
+#        # Now, get the values (this could be anywhere in the program,
+#        #  of course)...
+#        write("A is ",Property().getP("A"))
+#        write("B is ",Property().getP("B"))
+#    end
+#</pre>
+#</p>
+class Property : Object (pTable)
+
+   # <p>
+   # Set a property's value.
+   # <[param name name of the property]>
+   # <[param value value for the named property]>
+   # </p>
+   method setP(name, value)
+      /pTable := table()
+      pTable[name] := value
+   end
+
+   # <p>
+   # Produce a property's value.
+   # <[param name name of the property]>
+   # <[return the current value of the named property]>
+   # </p>
+   method getP(name)
+      /pTable := table()
+      return pTable[name]
+   end
+
+#<p>
+# Construct a single Property class.
+#</p>
+initially()
+   Property := create |self
+end

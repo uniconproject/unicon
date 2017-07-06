@@ -1,0 +1,135 @@
+#<p>
+#   General purpose test procedures contributed by various people:
+#<pre>
+#       Art Eschenlauer
+#       Kevin Wampler
+#       Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</pre>
+#   This is one of several files contributing to the lang package.
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package lang
+
+#<p>
+# How to tell if something is a class.
+# <i>This can be tricked, but only by evil people.</i>
+# <[returns <tt>var</tt> if it's a class]>
+# <[fails if <tt>var</tt> is not a class]>
+#</p>
+procedure isClass(var)       # Object to examine
+   return (match("__state", type(var), -7), var)
+end
+
+#<p>
+# A version of the type command designed to work on classes.
+# For non class objects it behaves exactly as the standard type()
+# function.  For classes it generates the name of the class and
+# the names of all classes that it inherits from
+#  <[generates name of class <tt>var</tt> and all superclasses or standard
+#              Unicon type if <tt>var</tt> is not a class]>
+#</p>
+#<p>
+#   <p>Note:</b> For classes and records in packages, returns user-level
+#      form of name, e.g.: "package::class".
+#</p>
+#<p>
+#   <i>As with <tt>isClass()</tt>, this can be tricked by evil people.</i>
+#</p>
+procedure Type(var)      # Object to examine
+   if isClass(var) then {
+      suspend mapPackageInt2Ext(util::zapSuffix(type(var), "__state") |
+				util::zapSuffix(type(!var.__m), "__methods"))
+      }
+   else return mapPackageInt2Ext(type(var))
+end
+
+#<p>
+#  <i>Intended for internal use only.</i>
+#  Map "package__object" into "package::object"
+#</p>
+procedure mapPackageInt2Ext(s)
+   local ns := ""
+   s ? {
+      ns ||:= tab(find("__")) || (move(2),"::")
+      ns ||:= tab(0)
+      }
+   return ns
+end
+
+#<p>
+# Is className an ancestor of class x?
+#   Any class is considered as an ancestor of itself.
+#   <[returns <tt>x</tt> if <tt>x</tt> is an instance of <tt>className</tt>]>
+#</p>
+procedure instanceof(x,         # Object to examine
+                     className) # Classname to check against
+   # The call to isClass is just to ensure x is a class, since
+   #   istype(...) doesn't care.
+   return (isClass(x) & istype(x, className))
+end
+
+#<p>
+# Is the type of x s?  Works even if s is "class" or "record".
+#   Also, will accept s as "numeric" to check if x is either
+#      a real or an integer.
+#   <[returns <tt>x</tt> if it's of type <tt>s</tt>]>
+#   <[fails if <tt>x</tt> is not of type <tt>s</tt>]>
+#</p>
+procedure istype(x,         # Object to examine
+                 s)          # Type to check against
+   case string(s) of {
+      "class"  : return isClass(x)
+      "record" : return isRecord(x)
+      "numeric": return 2(numeric(x), x)
+      default  : return 2(string(s) == Type(x), x )
+      }
+end
+
+#<p>
+# Is x a list?
+#   <[returns <tt>x</tt> if <tt>x</tt> is a list]>
+#   <[fails if <tt>x</tt> is not a list]>
+#</p>
+procedure isList(x)          # Object to examine
+   return istype(x, "list")
+end
+
+#<p>
+# Is x a table?
+#   <[returns <tt>x</tt> if <tt>x</tt> is a table]>
+#   <[fails if <tt>x</tt> is not a table]>
+#</p>
+procedure isTable(x)         # Object to examine
+   return istype(x, "table")
+end
+
+#<p>
+# Is x a set?
+#   <[returns <tt>x</tt> if <tt>x</tt> is a set]>
+#   <[fails if <tt>x</tt> is not a set]>
+#</p>
+procedure isSet(x)           # Object to examine
+   return istype(x, "set")
+end
+
+#<p>
+# Is x a record?
+#   A class is NOT a record!
+#   <[returns <tt>x</tt> if <tt>x</tt> is a record]>
+#   <[fails if <tt>x</tt> is not a record]>
+#</p>
+procedure isRecord(x)        # Object to examine
+   return 3(image(x)[1:7] == "record", not isClass(x), x)
+end
+
+#<p>
+# Is x a procedure?
+#   <[returns <tt>x</tt> if <tt>x</tt> is a procedure]>
+#   <[fails if <tt>x</tt> is not a procedure]>
+#</p>
+procedure isProcedure(x)     # Object to examine
+   return istype(x, "procedure")
+end

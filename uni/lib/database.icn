@@ -1,0 +1,222 @@
+#<p>
+# Support for SQL database access
+#</p>
+#<p>
+#  Normal use is to create class instance with DSN and table name
+#    as parameters and then open database with open(user,password)
+#    method call...
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+link DButils
+
+#<p>
+# Encapsulates an ODBC accessible database.
+#</p>
+class Database : Object (dsn, db_table, db, dbu, blockDepth)
+
+   #<p>
+   # Open a database with automatic access to a specific table
+   # <[returns a database access]>
+   # <[fails if unable to open database]>
+   #</p>
+   method open(user,      # Valid database user id
+	       password)   # Password for that user.
+      static real_open
+      initial real_open := proc("open")
+      return \accessDb(real_open(dsn,"o",db_table,user,password))
+   end
+
+   #<p>
+   # Access the underlying database.
+   #    <[param newdb if present, database to associate with this object]>
+   #    <[returns current database, which will be <tt>newdb</tt> if non-null]>
+   #</p>
+   method accessDb(newdb)   # Name of database to start accessing
+      db := \newdb
+      return db
+   end
+
+   #<p>
+   # Change the name of the table to access.
+   #    <[param newTable if present, table to associate with this object]>
+   #    <[returns current table, which will be <tt>newTable</tt> if non-null]>
+   #</p>
+   method accessTable(newTable)  # Name of table to start accessing
+      db_table := \newTable
+      return db_table
+   end
+
+   #<p>
+   # Fetch selected rows from the database.
+   #    Note that, unlike the native 'fetch(db)' procedure, this
+   #       method is a generator.
+   #  <[generates rows that have been selected from the database]>
+   #</p>
+   method fetch()
+      static real_fetch := proc("fetch")
+      suspend |real_fetch(\accessDb())
+   end
+
+   #<p>
+   # Close the database.
+   #  <[returns nothing useful]>
+   #  <[fails if cannot close the database]>
+   #</p>
+   method close()
+      static real_close := proc("close")
+      return real_close(\accessDb())
+   end
+
+   #<p>
+   # Execute an arbitrary SQL command/query on the database
+   #   <[returns result of executing <tt>sqlstatement</tt>]>
+   #</p>
+   method sql(sqlstatement)  # Arbitrary SQL statement
+      static real_sql := proc("sql")
+      return real_sql(\accessDb(), sqlstatement)
+   end
+
+   ### unfinished implementations of former built-ins below here
+
+   #<p>
+   # Delete entries from the database table based on some filter.
+   #   e.g. <tt>db.delete("name = 'fred'")</tt> would remove all
+   #  data base entries whose name field is <tt>fred</tt>.
+   #  <i>Note that calling <tt>delete</tt> with no argument
+   #  deletes all entries in the table!</i>
+   #</p>
+   method delete(filter)
+      filterClause := " WHERE " || ("" ~== \filter)
+      return sql("DELETE FROM "||db_table||filterClause)
+   end
+
+   #<p>
+   # Insert the contents of the parameter (a table or record)
+   #    into the currently active database table.
+   # <[returns result of doing the insert]>
+   #</p>
+   method insert(rec) # table of fields (key is field name,
+                      #    entry is new field value) to update
+                      # <i>(Can also be a record)</i>
+      s := "INSERT INTO " || db_table || "("
+      every k := key(rec) do { s ||:= k; s||:= "," }
+      s := s[1:-1] # delete trailing comma?
+      s ||:= ") VALUES ("
+      every k := key(rec) do { s ||:= "'"||dbu.escape(rec[k])||"'," }
+      s := s[1:-1] # delete trailing comma?
+      s ||:= ")"
+      return sql(s)
+   end
+    
+   #<p>
+   # Select rows from the currently active database table.
+   #   <[returns result of performing query]>
+   #</p>
+   method select(cols:"*", # Columns to display (default is <b>"*"</b>)
+                 filter,   # SQL where clause (w/o the 'WHERE')
+                           #   that identifies rows to display
+                 order     # SQL order clause (w/o the 'ORDER BY')
+                 )
+      s := "SELECT " || cols || " FROM " || db_table
+      if *\filter > 0 then
+         s ||:= " WHERE " || filter
+      # ok to omit order
+      if *\order > 0 then
+         s ||:= " ORDER BY " || order
+      return sql(s)
+   end
+    
+   #<p>
+   # Update rows in the currently active database table.
+   #  <[returns result of updating rows]>
+   #</p>
+   method update(rec,          # table of fields (key is field name,
+                               #    entry is new field value) to update
+                               # <i>(Can also be a record)</i>
+		 whereClause   # SQL where clause (w/o the 'WHERE')
+                               #    that identifies rows to modify
+                 )
+      s := "UPDATE " || db_table || " SET "
+      every k := key(rec) do {
+	 s ||:= k ||"="||"'"||dbu.escape(rec[k])||"',"
+	 }
+      s := s[1:-1]  # delete trailing comma?
+      s ||:= " WHERE "||\whereClause
+      return sql(s)
+   end
+
+   #<p>
+   # Get record of database metadata.
+   #   <[returns database metadata record]>
+   #</p>
+   method product()
+      return dbproduct(accessDb())
+   end
+
+   #<p>
+   # Get record of database odbc driver metadata
+   #  <[returns database driver metadata record]>
+   #</p>
+   method driver()
+      return dbdriver(accessDb())
+   end
+
+   #<p>
+   # Get record of database limits
+   #  <[returns database limits]>
+   #</p>
+   method limits()
+      return dblimits(accessDb())
+   end
+
+   #<p>
+   # Start a block transaction if not in one already.
+   # Counts nested blocks to ensure correct handling
+   #   of block ends.
+   #</p>
+   method startBlock()
+      if blockDepth = 0 then {
+	 sql("BEGIN")
+	 }
+      blockDepth +:= 1
+   end
+
+   #<p>
+   # Terminate a block transaction.  Correctly handles
+   #   nested blocks by only terminating when leaving
+   #   outermost block.
+   #</p>
+   method endBlock()
+      if blockDepth > 0 then {
+	 blockDepth -:= 1
+	 if blockDepth = 0 then {
+	    sql("COMMIT")
+	    }
+	 }
+   end
+
+   #<p>
+   #  Abort a block transaction.
+   #</p>
+   method abortBlock()
+      if blockDepth > 0 then {
+	 sql("ROLLBACK")
+	 }
+      blockDepth := 0
+   end
+
+initially(DSN,          # Data store name (odbc)
+	  DB_TABLE)     # Table to access at that DSN
+   dsn        := DSN
+   db_table   := DB_TABLE
+   dbu        := DButils()
+   blockDepth := 0
+end

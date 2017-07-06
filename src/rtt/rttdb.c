@@ -1010,37 +1010,17 @@ struct il_c *ilc;
    }
 
 /*
- * ret_flag - put a return/suspend/fail/fall-through flag in the data base
- *  file.
+ * ret_flag - put return/suspend/fail/fall-through flags in the data base
+ *  file. f means: can fail. r means: can return. s means: can suspend.
+ * e means: can do error conversion. t means: can fall through.
+ *  _ means cannot/does not. may_fthru is for body functions only.
  */
-static void ret_flag(db, flag, may_fthru)
-FILE *db;
-int flag;
-int may_fthru;
+static void ret_flag(FILE *db, int flag, int may_fthru)
    {
-   if (flag & DoesFail)
-      fprintf(db, "f");      /* can fail */
-   else
-      fprintf(db, "_");      /* cannot fail */
-   if (flag & DoesRet)
-      fprintf(db, "r");      /* can return */
-   else
-      fprintf(db, "_");      /* cannot return */
-   if (flag & DoesSusp)
-      fprintf(db, "s");      /* can suspend */
-   else
-      fprintf(db, "_");      /* cannot suspend */
-   if (flag & DoesEFail)
-      fprintf(db, "e");      /* can do error conversion */
-   else
-      fprintf(db, "_");      /* cannot do error conversion */
-   if (may_fthru) {          /* body functions only: */
-      if (flag & DoesFThru)
-         fprintf(db, "t");      /* can fall through */
-      else
-         fprintf(db, "_");      /* cannot fall through */
-      }
-  fprintf(db, " ");
+   fprintf(db, "%c%c%c%c%s ", ((flag & DoesFail)?'f':'_'),
+	   ((flag & DoesRet)?'r':'_'), ((flag & DoesSusp)?'s':'_'),
+	   ((flag & DoesEFail)?'e':'_'),
+	   (may_fthru?((flag & DoesFThru)?"t":"_"):""));
   }
 
 /*

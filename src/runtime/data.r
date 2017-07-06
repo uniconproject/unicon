@@ -404,6 +404,7 @@ struct errtab errtab[] = {
    1046, "invalid permission string for umask",
    1047, "invalid protocol name",
    1048, "low-level read or select mixed with buffered read",
+   1049, "nonexistent service or services database error",
 #endif					/* PosixFns */
 
    1050, "command not found",

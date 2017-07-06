@@ -1381,7 +1381,7 @@
 	if (is_concurrent) {						\
 	  int __rv;							\
 	  if ((__rv=pthread_mutex_unlock(&(mtx))) != 0)			\
-	    handle_thread_error(__rv, FUNC_MUTEX_LOCK, msg);		\
+	    handle_thread_error(__rv, FUNC_MUTEX_UNLOCK, msg);		\
 	}								\
       while (0)
 

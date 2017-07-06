@@ -1391,7 +1391,7 @@ void init_threadheap(struct threadstate *ts, word blksiz, word strsiz,
 #endif 					/* Concurrent */
 
 
-#ifdef PthreadCoswitch
+#if HAVE_LIBPTHREAD
 
 /*
  *  pthread errors handler
@@ -1472,4 +1472,4 @@ void handle_thread_error(int val, int func, char* msg)
       syserr("");
       return;
 }
-#endif                                  /* PthreadCoswitch */
+#endif                                  /* HAVE_LIBPTHREAD */

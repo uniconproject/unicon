@@ -1,0 +1,194 @@
+#<p>
+# This file contains a simple exception handling system for Unicon.
+#</p>
+#<p>
+#  Example use of the classes in this package:
+#<pre>
+#   case x := Try().call{ f(1) } of {
+#       Try().isException(x): write(x.getMessage(),": ",x.getLocation())
+#       default: write("x is ",x)
+#       }
+#</pre>
+#  or, alternatively:
+#<pre>
+#   case x := Try().call{ f(1) } of {
+#       Try().catch(): {
+#           x := Try().getException()
+#           write(x.getMessage(),": ",x.getLocation())
+#           }
+#       default: write("x is ",x)
+#       }
+#</pre>
+#  The Exception itself can be thrown as easily as:
+#<pre>
+#   Exception().throw("format error")
+#</pre>
+#</p>
+#<p>
+# There are some limitations to this implementation of exceptions.
+# For example, the stack trace associated with an exception is
+# constrained to the current co-expression stack.
+# Also, the code executed in the <tt>Try().call{...}</tt> clause
+# is a bounded expression that can produce at most one result.
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package exception
+
+import lang
+import util
+
+#<p>
+# The <i>singleton</i> <tt>Try</tt> class implements the basic try structure.
+#</p>
+class Try : Object (sources, exceptions, lastException)
+
+   #<p>
+   # A PDCO (makes a co-expression out of its argument) that
+   #   evaluates the argument in an environment supporting
+   #   Exceptions.
+   #</p>
+   #<p>
+   # <[returns an exception or the result of evaluating the
+   #   <i>try-clause</i>]>
+   # <[fails if the <i>try-clause</i> fails]>
+   #</p>
+   method call(L)  # Array of co-expressions when called as PDCO.
+                   # Only the first is used as the <i>try-clause</i>.
+      local result
+
+      push(sources, &current)
+      push(exceptions, &null)     # placeholder
+      #  Consider making this a generator!
+      if result := (@L[1])\1 then {
+	 pop(sources)
+	 lastException := pop(exceptions) | &null
+	 return result
+	 }
+      else {
+	 pop(sources)
+	 lastException := pop(exceptions) | &null
+	 fail
+	 }
+    end
+
+   #<p>
+   #  Throw an exception.  <i>Not called directly, but called
+   #    indirectly by</i> <tt>Exception.throw()</tt>.
+   #</p>
+   method throw(exception) # Exception to throw.
+
+      while *sources > 0 do {
+	 # Save the exception for checking with catch() later.
+	 exceptions[1] := exception
+	 exception @ sources[1]
+	 # If we get back here, nothing caught exception, propagate up
+	 #   (the sources stack has been popped)
+	 }
+
+      # Quit if exception isn't caught at all...
+      #    If the exception is thrown inside a Try() that doesn't
+      #    catch it, this code is never reached.  I.e. uncaught
+      #    exceptions are ignored if any are tried to be caught.
+      stop("Exception thrown outside of Try call: ",
+	   exception.getMessage(),":\n",exception.getLocation())
+
+   end
+
+   #<p>
+   #  Catch an exception.  Succeeds if the last thrown Exception
+   #    is an instance of the named Exception.  A null argument
+   #    defaults to <tt>"Exceptions::Exception"</tt>.
+   #  <[returns the matched exception]>
+   #  <[fails if no match]>
+   #</p>
+   method catch(exceptionName) # name of exception to catch
+      return isException(lastException, exceptionName)
+   end
+
+   #<p>
+   #  <[returns <tt>x</tt> if <tt>x</tt> is an <tt>Exception</tt>]>
+   #  <[fails if <tt>x</tt> is not an <tt>Exception</tt>]>
+   #  <[param x possible <tt>Exception</tt>]>
+   #  <[param eName subclass of <tt>Exception</tt> that <tt>x</tt> must match]>
+   #</p>
+   method isException(x, eName)
+      /eName := "Exceptions::Exception"
+      return lang::instanceof(x, eName)
+   end
+
+   #<p>
+   #  <[returns last thrown exception.  Only valid when used after a
+   #    <tt>throw()</tt>.  Returns <tt>&null</tt> if no exception throws]>
+   #</p>
+   method getException()
+      return lastException
+   end
+
+#<p>
+#  Get access to the <i>singleton</i> Try object.  Once you
+#  have access to it  you can call <b>call{}</b> and <b>catch()</b>
+#  to perform exception handling.
+#</p>
+initially ()
+   sources := []       # Stack of 'try' clauses
+   exceptions := []    # Stack of thrown exceptions (probably always
+		       #   <= size 1) - this needs more thought!
+   Try := create |self # Convert to a singleton object
+end        
+
+#<p>
+# The <b>Exception</b> provides the basics.  It can be subclassed to
+# provide differ types of exceptions.
+#</p>
+class Exception : Object (message, location)
+
+   #<p>
+   #  <i>Typically, this is the only method overridden by subclasses.</i>
+   #  <[returns the message attached to this exception]>
+   #</p>
+   method getMessage()
+      return "Exception: " || (\message | "unknown")
+   end
+
+   #<p>
+   #  <[returns a stack trace (as a list) from the point of Exception]>
+   #</p>
+   method getStackTrace()
+      return \location | ["no stack trace"]
+   end
+
+   #<p>
+   #  <[returns a stack trace (as a string) from the point of Exception]>
+   #</p>
+   method getLocation()
+      local s
+      every (s := "") ||:= ("    "||!\location||"\n")
+      if *s = 0 then s := "no stack trace"
+      return s
+   end
+
+   #<p>
+   #   Throw the Exception with an attached message.
+   #</p>
+   method throw(aMessage) # message to attach to this exception throw
+      message := \aMessage
+      location := util::buildStackTrace(2)
+      Try().throw(self)
+   end
+
+#<p>
+#   Create an exception.
+#   Although you can attach a message at this point, it's
+#   more common to attach the message when calling the <b>throw</b>
+#   method.
+#</p>
+initially (aMessage)  # default message to attach to this exception.
+   message := aMessage
+   location := util::buildStackTrace(2) # allow getLocation() to work
+                                        #   without a throw()
+end    

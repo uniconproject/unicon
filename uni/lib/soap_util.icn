@@ -1,0 +1,265 @@
+#<p>
+#  Procedures supporting SOAP communications.
+#   (Preliminary implementation only - <i>needs work!</i>
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package soap
+
+import util	    # does it use this, or just lang::
+import xml          # From Robert Parlett's class library
+
+#<p>
+#  Wrap a SOAP message into an HTTP-compatible message
+#  <[param msg SOAP-formatted message]>
+#  <[returns msg wrapped in http message headers]>
+#</p>
+procedure httpWrap(msg)
+   static httpHead := "Content-Type: text/xml; charset=\"utf-8\"\n"
+   return httpHead||"Content-Length: "||*msg||"\n\n"||msg
+end
+
+#<p>
+# Build the head of the SOAP envelope: All the boiler-plate stuff
+#    for the start of the body.  (<b><i>After</i></b> the HTTP
+#    content stuff, though.)
+#  <i>Internal use only.</i>
+# <[returns standard SOAP envelope header]>
+#</p>
+procedure soapHead()
+   static s :=  "<SOAP-ENV:Envelope\n"                                  ||
+      " xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\"\n"      ||
+      " xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\"\n" ||
+      " xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" ||
+      " xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\"\n"               ||
+      " SOAP-ENV:encodingStyle="                                        ||
+                 "\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+   return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"||s
+end
+    
+#<p>
+# Build the tail of the SOAP envelope: All the boiler-plate stuff for the
+#    end of the envelope.
+# <[returns standard SOAP envelope tail]>
+#</p>
+procedure soapTail()
+   static s := "</SOAP-ENV:Envelope>"
+   return s
+end
+
+#<p>
+# Produce a list of the 'non-whitespace' children of an XML document
+# node.  Has to be done on explicit request because the significance
+# of whitespace is context-dependent.
+# <[param x XML document node]>
+# <[return list of non-whitespace children of <tt>x</tt>]>
+#</p>
+procedure getNonWSChildren(x)
+   local a := [], e
+
+   every e := !x.get_children() do {
+      if ::type(e) ~== "string" then {
+	 put(a, e)
+	 }
+      }
+   return a
+end
+
+#<p>
+# Produce a SOAP-compatible XML encoding for a message element,
+#   based on its Unicon type.  <i>This version does <b>not</b>
+#   handle cyclic structured types.</i>
+#  <[returns XML encoding for <tt>x</tt>]>
+#</p>
+procedure encode(x,                     # Message element
+                prefix:"",              # Prefix for use when pretty-printing
+                i, label)
+   local s := prefix
+
+   /i := create seq()
+   /label := "value"||@i
+
+   if lang::istype(x, "string"|"cset"|"numeric") then {
+      s := prefix || mkTag(label, x) || x || "</"||label||">"
+      }
+   else if lang::istype(x, "null") then {
+      s := prefix || "<"||label||" type=null></"||label||">"
+      }
+   else if lang::istype(x, "table"|"record") then {
+      s := "\n"||prefix||"<"||label||">\n"
+      every k := key(x) do {
+	 s ||:= prefix||"  "||encode(x[k], prefix,i,k)||"\n"
+	 }
+      s ||:= prefix||"</"||label||">\n"
+      }
+   else if lang::istype(x, "list") then {
+      s := "\n"||prefix||"<"||label||" xsi:type=\"SOAP-ENC:Array\" "||
+	   " SOAP-ENC:arrayType=\"xsd:ur-type["||*x||"]\">\n"
+      every s ||:= encode(!x, prefix||"  ", i) || "\n"
+      s ||:= prefix||"</"||label||">\n"
+      }
+   return s
+end  
+
+#<p>
+# Internal procedure to help construct SOAP tags.
+#</p>
+#<p><i>Internal use only.</i></p>
+procedure mkTag(label, x)
+   local s
+   static typeMap
+   initial {
+      typeMap := table("")
+      typeMap["string"]  := " xsi:type=\"xsd:string\""
+      typeMap["integer"] := " xsi:type=\"xsd:int\""
+      typeMap["real"]    := " xsi:type=\"xsd:decimal\""
+      }
+
+   s := "<"||label||typeMap[::type(x)]||">"
+   return s
+end
+
+#<p>
+# Decode a SOAP message element back into a Unicon type.  <i>This
+# version does <b>not</b> handle cyclic structures.</i>
+# <[param x XML element]>
+# <[return Unicon type equivalent to <tt>x</tt>]>
+#</p>
+procedure decode(x)
+   local a, child
+
+   case getElementType(x) of {
+      "string"  : return x.get_children()[1]
+      "real"    : return real(x.get_children()[1])
+      "integer" : return integer(x.get_children()[1])
+      "null"    : return &null
+      "list"    : {
+	 every put(a := [], decode(!getNonWSChildren(x)))
+	 return a
+	 }
+      "table"   : {
+	 a := table()
+	 every child := !getNonWSChildren(x) do {
+	    a[child.get_name()] := decode(child)
+	    }
+	 return a
+	 }
+      }
+   return x[1]
+end
+
+#<p>
+# Attempt to figure out the type of value represented by an
+#   element.  <i>Very crude.</i>
+# <[param x XML element]>
+# <[returns best quess as to type of value in <tt>x</tt>]>
+#</p>
+#<p><i>Internal use only.</i></p>
+procedure getElementType(x)
+   local a, k
+   static typeMap
+   initial {       # no doubt very incomplete!
+      typeMap := table()
+      typeMap["string"] := "string"
+      typeMap["int"]    := "integer"
+      typeMap["decimal"]:= "real"
+      typeMap["float"]  := "real"
+      typeMap["array"]  := "list"
+      }
+
+   a := x.get_attributes()
+   every k := key(a) do {
+      k ? {
+	 &pos := upto(':')+1                     # skip any namespace id
+	 if ="type" & pos(0) then {
+	    a[k] ? {
+	       &pos := any('\'"')
+	       &pos := upto(':')+1             # skip any namespace id
+	       return typeMap[map(tab(upto('\'"')|0))]
+	       }
+	    }
+	 }
+      }
+   return "table"                # wild guess!
+end
+
+#<p>
+# Only want one copy of XmlParser, so XML error messages all get logged
+#   to the same file.
+# <[param errFile file to hold errors]>
+# <[returns (singleton) XmlParser]>
+#</p>
+#<p><i>Internal use only.</i></p>
+procedure getXmlParser(errFile)
+   static parser
+   initial {
+      parser := xml::XmlParser()
+      parser.set_error_handler(ErrHandler())
+      }
+
+   parser.error_handler.set_out_file(open(\errFile,"w"))
+   return parser
+end
+
+#<p>
+# SOAP messages can't be validated, so this ErrorHandler
+#   subclass ignores validity errors.  <i>It also defaults
+#   the error output file to &null, effectively disabling
+#   error messages until changed.</i>
+#</p>
+#<p><i>Internal use only.</i></p>
+class ErrHandler : xml::DefaultErrorHandler (out_file)
+
+   #<p>
+   #  Record a fatal error.
+   #  <[param msg message to record]>
+   #  <[stack stack trace]>
+   #</p>
+   method fatal_error(msg:"", stack)
+      writes(\out_file, "Fatal error: " || msg)
+      if \stack then {
+	 write(\out_file, " at:")
+	 show_stack(stack)
+	 }
+   end
+
+   #<p>
+   #  Record a validity error. (<b>no-op!</b>)
+   #  <[param msg message to record]>
+   #  <[stack stack trace]>
+   #</p>
+   method validity_error(msg, stack)
+   end
+
+   #<p>
+   #  Record a warning error. (<b>no-op!</b>)
+   #  <[param msg message to record]>
+   #  <[stack stack trace]>
+   #</p>
+   method warning(msg, stack)
+   end
+
+   #<p>
+   #  Display stack trace.
+   #  <[param stack stact trace]>
+   method show_stack(stack)
+      local x, i, t
+
+      every x := !stack do {
+	 if \x.id then {
+	    t := x.subject[1:x.pos]
+	    i := 1
+	    every find("\n", t) do i +:= 1
+	    write(\out_file, x.id || ": "||i)
+	    }
+	 }
+    end
+
+initially ()
+   self$DefaultErrorHandler.set_out_file(&null)
+end

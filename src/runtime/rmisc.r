@@ -538,7 +538,7 @@ int noimage;
 #ifdef LongLongWord
             fprintf(f, "%lld", (word)IntVal(*dp));
 #else					/* LongLongWord */
-            fprintf(f, "%ld", (word)IntVal(*dp));
+            fprintf(f, "%ld", (long)IntVal(*dp));
 #endif					/* LongLongWord */
 
       real: {
@@ -897,7 +897,7 @@ int noimage;
 	     */
 	    if (Offset(*dp) &&
 		(((struct b_intarray *)VarLoc(*dp))->title == T_Intarray)) {
-	       fprintf(f, "%ld",
+	       fprintf(f, "%ld",(long)
 		       ((struct b_intarray *)VarLoc(*dp))->a[Offset(*dp)-4]);
 	       }
 	    else if (Offset(*dp) &&

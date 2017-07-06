@@ -1,0 +1,73 @@
+#<p>
+# Singleton class that provides convenient access to program arguments.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+package util
+
+#<p>
+# The <tt>Args</tt> class accepts a list of strings corresponding
+#   to the program argument list and provides convenient and
+#   efficient handling of those arguments.  If arguments are duplicated,
+#   only the last is made available.
+#</p>
+class Args : Object (argMap)
+
+   #<p>
+   #  Produce the value of an argument.
+   #   <[param arg name of argument]>
+   #   <[param defValue default value to use if argument exists, but
+   #           has no value.  Defaults to <tt>&null</tt>]>
+   #   <[returns first value given to argument]>
+   #   <[fails if this argument doesn't exist]>
+   #</p>
+   method get(argName, defValue)
+      value := \argMap[argName] | fail
+      return value[1] | defValue
+   end
+
+   #<p>
+   #  Produce the value of an argument.
+   #   <[param arg name of argument]>
+   #   <[param defValue default value to use if argument does not exist
+   #           Defaults to <tt>&null</tt>]>
+   #   <[returns first value given to argument]>
+   #</p>
+   method getDef(argName, defValue)
+      return (\(argMap[argName]))[1] | defValue
+   end
+
+   #<p>
+   #  Produce the value of an argument.
+   #   <[param arg name of argument]>
+   #   <[param defValue default value to use if argument does not exist
+   #           Defaults to <tt>&null</tt>]>
+   #   <[returns all values given to argument]>
+   #</p>
+   method getDefs(argName)
+      return \(argMap[argName]) | defValue
+   end
+
+#<p>
+#   Accept a list of arguments and process for efficient handling
+#</p>
+initially (args) # List of arguments
+   argMap := table()
+   every arg := !args do {
+      arg ? {
+	 tab(many('-'))
+	 aName := tab(upto('=')|0)
+	 aValue := (="=", tab(0)) | &null
+	 /argMap[aName] := []
+	 put(argMap[aName], \aValue)
+	 }
+      }
+   Args := create |self
+end

@@ -1,0 +1,108 @@
+#<p>
+#  Efficient byte-level transpositions
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package util
+
+import lang
+
+#<p>
+# Efficiently rearrange bytes in a string.  This is a class so that
+#    multiple simultaneous rearrangements can be carried out efficiently.
+#    Use a different class instance for each different rearrangement.
+#</p>
+#<p>
+# Handles any transposition that can be expressed in multiples of
+#   256-bytes or less.
+#</p>
+class MapBytes: Object (inM, inMap, outM, outMap, blkSize)
+
+   #<p>
+   # <[param s string to be transposed by map]>
+   # <[return a copy of <tt>s</tt> with the bytes rearranged by map]>
+   #</p>
+   method mapIn(s:"")
+      local ns := ""
+      s ? {
+	 while ns ||:= map(outMap, inMap, move(*inMap))
+	 while ns ||:= map(outM,   inM,   move(*inM))
+	 ns ||:= tab(0)
+	 }
+      return ns
+   end
+
+   #<p>
+   # Reverse the byte rearrangement
+   # <[param s string to be transposed by map inverse]>
+   # <[return a copy of <tt>s</tt> with the bytes rearranged by map inverse]>
+   #</p>
+   method mapOut(s:"")
+      local ns := ""
+      s ? {
+	 while ns ||:= map(inMap, outMap, move(*outMap))
+	 while ns ||:= map(inM,   outM,   move(*outM))
+	 ns ||:= tab(0)
+	 }
+      return ns
+   end
+
+   #<p>
+   # Copy one file to another with mapping (leaves files open).
+   #</p>
+   method mapInFile(inFile,    # Input file (already opened for reading)
+		    outFile,   # Output file (already opened for writing)
+		    blockSize  # If present, overrides class' blkSize
+                    )
+      blockSize := adjBlockSize(blockSize)
+      while writes(outFile, mapIn(reads(inFile, blockSize)))
+   end
+
+   #<p>
+   # Copy one file to another with reverse mapping (leaves files open)
+   #</p>
+   method mapOutFile(inFile,    # Input file (already opened for reading)
+		     outFile,   # Output file (already opened for writing)
+		     blockSize  # If present, overrides class' blkSize
+                     )
+      blockSize := adjBlockSize(blockSize)
+      while writes(outFile, mapOut(reads(inFile, blockSize)))
+   end
+
+   #<p>
+   #  Adjust the given blockSize for file reads() to a valid value.
+   #  <[param blockSize desired block size, may be adjusted internally]>
+   #  <[return adjusted block size]>
+   #  <i>Used internally.</i>
+   #</p>
+   method adjBlockSize(blockSize)
+      /blockSize := blkSize;
+      blockSize <:= *inM                       # Won't work with less!
+      return blockSize - (blockSize % (*inM))  # Must be multiple of *inM!
+   end
+
+#<p>
+#  Create a class instance suitable for transposing bytes in
+#  in a string.  Efficiently handles large strings.
+#</p>
+initially(in,        # Arrangement of bytes found in input string
+	  out,       # Rearrangement of those bytes for output string
+	  blockSize  # Default size of file read/write operations (bytes).
+		     # <i>Adjusted automatically to be a multiple of *in</i>.
+	  )
+   inM  := \in  | "1"
+   outM := \out | in                # Default is identity mapping
+   blkSize := 64*1024               # Default is large blocks
+   blkSize := adjBlockSize(blockSize)
+
+   # bootStrap to longest possible transposition strings...
+   inMap := string(&cset)
+   inMap := inMap[1+:(*inMap - (*inMap % (*inM)))]
+   outMap := ""
+   inMap ? while(outMap ||:= map(outM, inM, move(*inM)))
+end

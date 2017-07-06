@@ -1,0 +1,111 @@
+#<p>
+# Base class that can map between strings and structures.
+# Probably <i>always</i> subclassed!  This base class converts
+# between a string and a set.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+# This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+#<p>
+# The Struct class simply provides methods for converting between string
+#   and structure representations of information.  A good example of
+#   it's use in the the addressbook package, where subclasses
+#   of this class are used to convert data back and forth
+#   between strings (as stored in a DB) and various structures.
+#</p>
+class Struct : Object (sType, struct)
+
+   #<p>
+   #  Add a single element to the structure.
+   #   <[param e element to add]>
+   #   <[returns nothing useful]>
+   #   <[fails if structure is not a <tt>set</tt> or <tt>list</tt>]>
+   #</p>
+   method addElement(e)
+      if type(struct) == "set" then return insert(struct, e)
+      else if type(struct) == "list" then return put(struct, e)
+   end
+
+   #<p>
+   #  Remove an element from the structure (semi-abstract, only
+   #     works with set structure - <b>must be overridden</b> for
+   #     other structures).
+   #   <[param e element to remove]>
+   #</p>
+   method remove(e)
+      delete(struct, e)
+   end
+
+   #<p>
+   #  <[generates elements in this structure]>
+   #</p>
+   method gen()
+      suspend !struct
+   end
+
+   #<p>
+   #  Produce a string form (required for storing to DB)
+   #  <[param prefix added to head of each string structure element]>
+   #  <[param terminator added to tail of each string structure element]>
+   #  <[return string formed from elements in this structure]>
+   #</p>
+   method toString(prefix:"", terminator:"\n")
+      local s := ""
+      every s ||:= prefix || gen() || terminator
+      return s
+   end
+
+   #<p>
+   #  Convert from string form.
+   #  <[param s string form]>
+   #  <[param prefix to remove from head of each string structure element]>
+   #  <[param terminator to remove from tail of each string structure element]>
+   #  <[returns this structure]>
+   #</p>
+   method fromString(s, prefix:"", terminator:'\n')
+      terminator := cset(terminator)
+      string(s) ? {
+	 struct := sType()        # Clear out old, if any
+	 while not pos(0) do {
+	    =prefix
+	    addElement(tab(upto(terminator)|0))
+	    move(1)        # skip terminator
+	    }
+	 }
+      return self
+   end
+
+   #<p>
+   #  Convert from a Unicon structure form.
+   #  <[param s Unicon structured type]>
+   #  <[returns this structure after conversion]>
+   #</p>
+   method fromIStruct(s)
+      struct := sType()        # Clear out old, if any
+      every addElement(!s)
+      return self
+   end
+
+   #<p>
+   #   Produce a Unicon structure form.
+   #   <[returns (a copy of internal) structure]>
+   #</p>
+   method toIStruct()
+      return copy(struct)
+   end
+
+#<p>
+#   Given a structure type, map it into a Struct class.
+#</p>
+initially (sTypeCons # type of structure, e.g. <b>set</b> or <b>list</b>.
+                     #   Default is <b>set</b>.
+           )
+   sType := \sTypeCons | set
+   struct := sType()
+end

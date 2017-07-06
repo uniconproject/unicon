@@ -1,0 +1,245 @@
+#<p>
+# Provides some useful utilities for mimicking some functional
+# language elements
+#</p>
+#<p>
+# Author: Kevin Wampler (kevin@tapestry.tucson.az.us)
+# Additional code added by Steve Wampler (sbw@tapestry.tucson.az.us)
+#</p>
+#<p>
+# <i>This file is in the public domain.</i>
+#</p>
+
+package lang
+
+#<p>
+# Compose multiple single-argument functions into a
+#   new function.  The composite functions are evaluated
+#   right-to-left.
+#</p>
+#<p>
+#Examples:
+#<p>
+#Given:
+#<pre>
+#   h := compose(sqrt, abs)
+#   k := compose(integer, sqrt, ord)
+#   g := compose(h, k)
+#</pre>
+#the call <tt>g("1")</tt> is equivalent to:
+#<pre>
+#   sqrt(abs(integer(sqrt(ord("1")))))
+#</pre>
+#</p>   
+#<p>
+#Any Unicon entity that can be evaluated using
+#the standard single-argument function call syntax
+#can be composed.  E.g. Given
+#<pre>
+#   m := compose(sqrt, closure("^", 2, Arg))
+#</pre>
+#The call <tt>m(3.5)</tt> is equivalent to:
+#<pre>
+#   sqrt(2^3.5)
+#<pre>
+#</p>   
+procedure compose(fL[])
+   fL := reverse(fL)
+   return makeProc { {saveSource := &source
+                       repeat {
+                           x := (x@saveSource)[1]
+                           saveSource := &source
+                           every f := !fL do x := f(x)
+                           }
+                      }
+                    }
+end 
+
+#<p>
+#  A closure binds some function parameters at definition time,
+#    leaving others unbound until invocation.  This procedure
+#    defines a closure based on a function and a partial argument
+#    list.  Unbound parameters are marked with instances of the
+#    <tt>Arg</tt> record constructor (note that the constructor is
+#    <i>not</i> called, it is simply a marker).  Unbound parameters
+#    may be bound at the point of call by providing the values
+#    (in order) as arguments.  Missing unbound parameters are replaced by
+#    <tt>&null</tt>.  Extra arguments are appended.
+#<p>
+#<p>
+# Sample uses:
+# <pre>
+#<pre>
+#    h := closure("^",Arg, 2)      # x^2
+#    h := closure("^",2, Arg)      # 2^x
+#    h := closure("^",2)           # also 2^x
+#</pre>
+#</p>
+procedure closure(f,paramList[])
+   # Produce the new, single-argument 'procedure'
+   return makeProc{
+        {saveSource := &source
+         repeat {
+             x := (x@saveSource)    # Synchronization point
+             saveSource := &source
+
+             # Construct the new argument list, binding unbound parameters
+             argList := []
+             every arg := !paramList do {
+                if arg === Arg then {   # Replace unbound parameter
+                    put(argList, get(x) | &null) #    with argument
+                    }
+                else put(argList, arg)           # Use bound parameter
+                }
+             every put(argList, !x)    # append extra arguments
+
+             # Invoke the procedure
+             x := f ! argList
+             }
+         }
+        }
+end
+
+#<p>
+#   A Closure object encapsulates a function and partial argument
+#     list.  The missing arguments can be filled in at the point of call
+#     using the call(args) method.  This is an alternative to the
+#     <tt>closure</tt> procedure.j
+#</p>
+class Closure : Object (fcn)
+
+   #<p>
+   #   Call this Closure object with args as the missing parameters.
+   #   Parameters that are still missing are set to &null.  Extra
+   #   arguments are appended to the parameter list.
+   #   <[generates results from invoking Closure with supplied arguments]>
+   #</p>
+   method call(args[])
+      suspend doInvocation(fcn,args)
+   end
+
+   #<p>
+   # <b><i>Internal use only.</i></b>
+   # Merges the argument list into the Closure object and then
+   #  invokes it.  Missing arguments are mapped to &null.
+   #</p>
+   method doInvocation(fcn, args)
+      local i
+
+      fcn := copy(fcn)
+      /args := list()
+      every i := 2 to *fcn do
+	 if fcn[i] === Arg then
+	    fcn[i] := pop(args) | &null
+      suspend invoke ! (fcn ||| args)
+   end
+
+#<p>
+#   Given a function and a list of arguments, produces an Closure object.
+#   Any argument whose value is Arg is filled at the point
+#   of invocation using arguments to the calls() method.
+#</p>
+initially (f,       # function that closure is built around
+	   args[]   # remaining parameters are arguments supplied
+                    #  as part of closure
+           )
+   /args := []
+   fcn := [f] ||| args
+end
+
+#<p>
+# A PDCO for constructing anonymous 'functions' from co-expressions.
+#   It preactivates the co-expression argument to advance it to
+#   the first synchronization point.  This allows the first 'call'
+#   to the anonymous function to pass a value in.  The standard
+#   boiler plate for such anonymous functions is:
+#<pre>
+#    C := makeProc {
+#             repeat {
+#                 inVal := outVal@&source
+#                 # Code for the function goes here, where
+#                 #    any arguments are in the list inVal.
+#                 #    The return result goes into outVal
+#                 }
+#             }
+#</pre>
+# Note that this example assumes that the resulting 'function' will be
+#  called using <b>procedure invocation syntax</b>, as in:
+#<pre>
+#    a := C(3,4,5)
+#</pre>
+# which is equivalent to:
+#<pre>
+#    a := [3,4,5]@C
+#</pre>
+#</p>
+procedure makeProc(A)
+   if type(A) == "co-expression" then return (@A,A)    # Not called as PDCO!
+   return (@A[1], A[1])
+end
+
+#<p>
+# invokes its first argument with the parameters provided by the
+# remaining arguments, returning the result.  Supported types are:
+#<pre>
+# procedure - calls fcn!args
+#
+# integer - calls fcn!args
+#
+# string - calls fcn!args
+#
+# list - calls fcn[1]!(fcn[2:0] ||| args)
+#
+# co-expression - calls args@fcn
+#
+# Closure - calls fcn.call ! args
+#</pre>
+# <[param fcn thing (see explanation) to invoke]>
+# <[param args remaining arguments are missing parameters in closure]>
+# <[generates results of evaluating <tt>fcn</tt>, using <tt>args</tt>
+#    to fill in gaps in closure]>
+#</p>
+procedure invoke(fcn, args[])
+   local i
+   /args := list()
+   case type(fcn) of {
+      "procedure" | "integer" | "string" : {
+	 suspend fcn!args
+	 }
+      "list" : {
+	 fcn := copy(fcn)
+	 every i := 2 to *fcn do {
+	    if fcn[i] === Arg then {
+	       fcn[i] := pop(args) | &null
+	       }
+	    }
+	 suspend invoke!(fcn ||| args)
+	 }
+      "co-expression" : {
+	 while suspend args@fcn
+	 }
+      default : {
+	 if isClass(fcn) & fcn.instanceOf("lang::Closure") then {
+	    suspend fcn.call ! args
+	    }
+	 else {
+	    suspend fcn!args
+	    }
+	 }
+      }
+end
+
+#<p>
+#  A marker that can be used in a list of function
+#  parameters to indicate a spot where an argument can be
+#  mapped.  For example:
+#<pre>
+#     invoke([f,3,Arg,5],4,6,7)
+#</pre>
+#  invokes f(3,4,5,6,7)
+#</p>
+#<p>
+#   <i>This is a <i>singleton</i> class.  At most one instance
+#   will ever exist, so the === test can be used.</i>
+#</p>
+record Arg()

@@ -1,0 +1,316 @@
+#<p>
+#   General purpose scanning routines contributed by various people.
+#</p><p>
+#   This is one of several files contributing to the util package.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package util
+
+import lang
+
+#<p>
+# Produce a 'snapshot' of string scanning showing the current
+#   scanning position.
+#   This is a (trivially) matching procedure.
+#   <[returns an empty string, corresponding to a <tt>move(0)</tt>]>
+#</p>
+procedure snapshot(prefix:"")   # Precedes any output (default is "")
+   write(prefix, "'",&subject,"'")
+   write(prefix, " ",repl(" ",&pos-1),"^")
+   return ""   # Makes this a matching procedure!
+end
+
+#<p>
+# Similar to snapshot(), but displays only a portion of very long
+#   scan subjects.
+#   This is a (trivially) matching procedure.
+#   <[returns an empty string, corresponding to a <tt>move(0)</tt>]>
+#</p>
+procedure scanlocus(prefix:"", # Precedes any output (default is "")
+                    n:80)      # amount of &subject to show (default is 80)
+   local p1, p2, hn
+
+   p1 := if &pos < n then 1 else &pos-(n/2)
+   p2 := if (p1+n) > *&subject then 0 else p1+n
+   write(&errout, prefix, &subject[p1:p2])
+   write(&errout, prefix, repl(" ",&pos-p1), "^ ", &pos)
+
+   return ""
+end
+
+#<p>
+#  Produce everything up to a substring and skip past that substring.
+#    This is a matching procedure.
+#    On success, the scanning position is left after the substring.
+#    <[returns tabbed over portion, omitting skipped substring]>
+#</p>
+procedure tabSkip(s)     # substring to tab up to and skip over
+   suspend 1(tab(find(s)),move(*s))
+end
+
+#<p>
+# Skip whitespace.
+#   This is a matching procedure.
+#   <[returns skipped over whitespace, if any]>
+#   <[fails if no whitespace]>
+#</p>
+procedure WS()
+   static WS := ' \t'
+   suspend tab(many(WS))
+end
+
+#<p>
+# Matches 0 or more whitespace characters  (Cannot fail)
+#   This is a matching procedure.
+#   <[returns skipped over whitespace, if any]>
+#</p>
+procedure ws()
+   suspend WS() | ""
+end
+
+#<p>
+# Tabmatch past a Unicon variable name.
+#   This is a matching procedure.
+# <[returns matched Unicon variable name]>
+#</p>
+procedure matchVar()
+   static fc := &letters ++ '_',
+          wc := fc ++ &digits
+   suspend tab(any(fc)) || (tab(many(wc))|"")
+end
+
+#<p>
+# Like find, but accepts a list of strings and finds them by
+#   their order of appearance in the subject string.
+# <i>The list of strings is searched in order.  To locate the longest
+# substring first, sort the list in reverse order, as in:</i>
+# <pre>
+#     findFirst(reverse(sort(a)))
+# </pre>
+#</p>
+#<p>
+#  <i><b>Deprecated</b> in favor of the FindFirst class.</i>
+#</p>
+procedure findFirst(a)   # List of strings to look for.
+   local fc := '', p
+   every fc ++:= (!a)[1]
+   suspend 1(p := upto(fc), match(!a,,p))
+end
+
+#<p>
+# Finds substrings in the order in which they appear in the
+#   subject string.  If the substrings are submitted as a
+#   list, then the substrings are matched in order (i.e. given
+#   two potential matches [because one is a prefix of the other]
+#   FindFirst matches the first one found in the list).  To
+#   find the shortest substring first, sort the list.  To
+#   find the longest substring first, sort the list in reverse
+#   order.
+#</p>
+#<p>
+# This is a class to avoid the overhead of creating the internal
+#   structures on each invocation (while allowing different
+#   instances of FirstFirst to be used concurrently).
+#</p>
+class FindFirst : Object(fchars,cMaps,subs,lastMatch)
+
+   #<p>
+   # Like find, but locates substrings in the order of
+   #   their appearance in the subject string.
+   #   This is a matching procedure.
+   # <[generates positions (left-to-right) of matched substrings]>
+   #</p>
+   method locate(s,    # subject, defaults to &subject
+                 i,    # start position, defaults to &pos
+                 j     # final position, defaults to 0
+                 )
+      /s := &subject
+      /i := &pos
+      /j := 0
+      if *\s > 0 then {
+	 suspend 1(p := upto(fchars,s,i,j),
+		   match(lastMatch <- !cMaps[s[p]],s,p,j))
+	 }
+   end
+
+   #<p>
+   #  Produce the last matched substring.  (<i>Only valid if locate()
+   #    succeeded!</i>)
+   #  <[returns last matched substring from call to <tt>locate()</tt>]>
+   #</p>
+   method getMatch()
+      return \lastMatch
+   end
+
+   #<p>
+   #  Forget the last matched substring.
+   #</p>
+   method clearMatch()
+      lastMatch := &null
+   end
+
+   #<p>
+   #  Move past the match, returning it.  Fails if no match yet.
+   #   This is a matching procedure.
+   #  <[returns matched substring]>
+   #</p>
+   method moveMatch(s,i,j)
+      return 1(\lastMatch, move(*lastMatch,s,i,j))
+   end
+
+   #<p>
+   #  Change the set of substrings to look for.  <i>Not normally used
+   #  externally</i>.
+   #</p>
+   method setKeys(a)    # a set of substrings
+      local k
+
+      subs := a
+      cMaps := table()
+      fchars := ''
+      every k := !subs do {
+	 fchars ++:= k[1]
+	 /cMaps[k[1]] := []
+	 put(cMaps[k[1]], k)
+	 }
+      lastMatch := &null
+   end
+
+initially (a)    # a collection of substrings
+   setKeys(a)
+end
+
+#<p>
+# Tabmatch past the next unescaped character in cs
+#   Fails if no such unescaped character exists.
+#   This is a matching procedure.
+#   <[generates matched substrings]>
+#</p>
+procedure tabPast(cs)    # cset of characters to tab past.
+   local sPos := &pos
+   s := ""
+   while s ||:= isEscapeSeq(tab(upto(cs))) || move(1)
+   suspend s ||:= tab(upto(cs))\1 || move(1)
+   &pos := sPos
+end
+
+#<p>
+# Tabmatch a Unicon string
+#   This is a matching procedure.
+#   <[generates matched substrings]>
+#</p>
+procedure matchString()
+   suspend ="\"" || tabPast('"')
+end
+
+#<p>
+# Tabmatch a Unicon cset
+#   This is a matching procedure.
+#   <[generates matched substrings]>
+#</p>
+procedure matchCSet()
+   suspend ="\'" || tabPast('\'')
+end
+
+#<p>
+# Succeed if string s ends in an odd number of escape characters.
+#  This is a specialty procedure - it's intended to simplify
+#  the task of determining if the 'next' character of the
+#  string that has s as a substring is escaped or not.
+#  If this procedure succeeds, that 'next' character is
+#  escaped and s is returned.
+# <[returns <tt>s<tt> if it ends in an odd number of escape characters]>
+#</p>
+#<p>
+# The second parameter defaults to a backslash, the traditional
+# escape character.
+#</p>
+#<p>
+# This is not a scanning procedure, but is placed in this source file
+#  to avoid circular dependencies when building.
+#</p>
+procedure isEscapeSeq(s,        # String to examine
+                      esc:'\\'  # Escape character (defaults to <tt>\</tt>)
+                     )
+   reverse(s) ? if *tab(many(esc)) % 2 = 1 then return s
+end
+
+#<p>
+# Skip to a position in the subject string.
+#  This is similar to tab(), but doesn't construct a substring.
+#  <[param p position to jump to in subject string]>
+#</p>
+procedure skipTo(p)
+   suspend &pos <- p
+end
+
+#<p>
+# Skip over n characters in subject string.
+#  This is similar to move(), but doesn't construct a substring.
+#  <[param n number of characters to move over in subject string]>
+#</p>
+procedure skipOver(n)
+   suspend &pos <- &pos+n
+end
+
+#<p>
+# Match strings the same way bal() matches characters.
+#   The input table is a tagged set of strings to match.  The key is
+#   the <I>start</I> string while the value is the <I>end</I> string.
+#   This makes sure the start and stop strings are balanced w.r.t
+#   each other.
+#   <[param keyStrings table of start->stop pairs]>
+#   <[generates matching substrings]>
+#</p>
+#<p>
+# For example, given the table:
+#<pre>
+#
+#     t := table()
+#     t["begin"] := "end"
+#
+#</pre>
+#  then the code:
+#<pre>
+#
+#     if match("begin") then
+#        clause := sbal(t)
+#
+#</pre>
+# assigns to <tt>clause</tt> the substring from <tt>begin</tt> through
+# the matching <tt>end</tt>.  (Assuming, of course, that there are no
+# conflicts along the way...)
+#</p>
+#<p>
+# <b>This is an unoptimized preliminary version that may contain bugs.</b>
+#</p>
+procedure sbal(keyStrings)
+   local startStrings, stopStrings, allStrings, w, ff, bCount
+
+   every insert(startStrings := set(), key(keyStrings))
+   every insert(stopStrings  := set(), !keyStrings)
+   every put(allStrings := [], !(startStrings|stopStrings))
+
+   ff := FindFirst(allStrings)
+   inside := 0
+    
+   while tab(ff.locate()) do {
+      p1 := &pos
+      w := ff.moveMatch()
+      if member(startStrings, w) then {
+	 if (inside +:= 1) = 1 then sPos := p1
+	 }
+      else if member(stopStrings, w) then {
+	 if (inside -:= 1) = 0 then {
+	    suspend .&subject[sPos:&pos]
+	    }
+	 }
+      if inside < 0 then fail
+      }
+end

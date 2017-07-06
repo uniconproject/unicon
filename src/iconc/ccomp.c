@@ -350,7 +350,7 @@ Deliberate Syntax Error
       strcpy(buf, "strip ");
       s = buf + 6;
       strcpy(s, exename);
-      system(buf);
+      if (system(buf) != 0) return EXIT_FAILURE;
       }
 #endif						/* UNIX */
 

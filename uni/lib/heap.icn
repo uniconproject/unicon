@@ -1,0 +1,121 @@
+#<p>
+#  This file provides a class definition for a "Heap" - a priority
+#  queue implemented as a dense binary tree.  The algorithms for
+#  manipulating the Heap are taken from code written by Kazimir
+#  Majorinc.
+#</p>
+#<p>
+#  A hallmark of this implementation is the flexibility - virtually
+#  any definition of "priority" may be used to define the ordering
+#  within the queue.
+#</p>
+#<p>
+#  Author: Steve Wampler (sbw@tapestry.tucson.az.us)
+#</p>
+#<p>
+#  <i>This file is in the public domain.</i>
+#</p>
+
+
+
+#<p>
+#  The collection package provides advanced data structures.
+#</p>
+package collection
+
+import lang
+import util
+
+#<p>
+#   A Heap is a dense binary tree ordered as a <i>priority queue</i>.
+#   The priority order is from lowest to highest priority where the
+#   priority of two elements can be compared through the results
+#   of invoking the operation <i>f</i> on each.  The priority operation
+#   <i>p</i> defaults to "<" but can be any binary comparison operation.
+#</p>
+#<p>
+#   Both f and p may be any of lang::Closure, procedure, function,
+#   integer, or string-invocation symbol.  f is invoked with a single
+#   argument (a heap element) and p is invoked to compare the results
+#   of two calls to f.
+#</p>
+class Heap : Object (L, f, p)
+
+   #<p>
+   #   <[generates the heap elements(non-destructively) in order]>
+   #</p>
+   method gen()
+      local temp := Heap(,f,p)
+      temp.L := copy(L)
+      suspend |temp.get()
+   end
+
+   #<p>
+   #   <[returns the number of heap elements]>
+   #</p>
+   method size()
+      return *L
+   end
+
+   #<p>
+   #   <[returns the top of the heap (non-destructively)]>
+   #</p>
+   method top()
+      return L[1]
+   end
+
+   #<p>
+   #   <[return the next heap element (destructively, in order)]>
+   #</p>
+   method get()
+      local up, down, result
+      static call
+      initial call := lang::invoke
+      if *L > 0 then {
+         L[up:=1] :=: L[-1]
+	 result := pull(L)
+	 while (down := 2*up) <= *L do {
+	    if call(p,call(f,L[down+1]), call(f,L[down])) then down +:= 1
+	    if call(p,call(f,L[down]),call(f,L[up])) then L[up]:=:L[down]
+	    up := down
+	    }
+	 return result
+	 }
+   end
+
+   #<p>
+   #   Add a new element to the heap.
+   #   <[returns <tt>a</tt>]>
+   #</p>
+   method add(a   # element to add
+              )
+      local i
+      static call
+      initial call := lang::invoke
+      put(L,a)
+      i := *L
+      while call(p,call(f,L[i]), call(f,L[i/2])) do {
+	 L[i] :=: L[i/2]
+	 i /:= 2
+	 }
+      return a
+   end
+
+#<p>
+# Construct a Heap.
+#   <[param S optional list of initial values to insert into heap]>
+#   <[param fVal a <tt>lang::Closure</tt>, procedure, integer, or
+#           string-invocation to use in comparisons.  When needed,
+#           the operation is invoked with a single argument that is
+#           a heap element.  Defaults to 1 [i.e. the identity operation]]>
+#   <[param pVal a <tt>lang::Closure</tt>, procedure, integer, or
+#           string-invocation implementing a comparison operation
+#           on the results of invoking fVal on two Heap elements.
+#           Defaults to "<"]>
+#</p>
+initially (S, fVal, pVal)
+   L := []
+   f := \fVal | 1
+   p := \pVal | "<"
+   every self.add(!\S)
+end

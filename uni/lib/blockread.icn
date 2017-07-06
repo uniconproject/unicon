@@ -1,0 +1,186 @@
+#<p>
+#   Read in large ASCII files efficiently as large strings.
+#   Newlines are embedded in the strings, which always end
+#   at a new line.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+package util
+
+#<p>
+#   Provide an encapsulation class for reading in an ASCII text
+#    file in large chunks, but guarantee an integral number of
+#    lines in each chunk. (I.e. each chunk ends in a newline).
+#</p>
+#<p>
+#   This is a specialized class for efficiently reading in large
+#   text files.  For example, comparing the performance of the
+#   following programs on the same hardware and input file:
+#</p>
+#<p>
+#<pre>
+#     procedure main(args)
+#         i := 0
+#         every i +:= (!&input, 1)
+#         write(&errout, i)
+#     end
+#</pre>
+#and
+#<pre>
+#     import util
+#     
+#     procedure main(args)
+#         bRead := BlockRead()
+#         i := 0
+#         while s := bRead.readBlock() do {
+#             every i +:= (upto('\n',s),1)
+#             }
+#         write(&errout, i)
+#     end
+#</pre>
+#</p>
+#<p>
+#  The second program runs (on sufficiently large files) three times faster.
+#  <i>(Note that this example is contrived, as using the function reads()
+#  would work just as well and would be slightly faster...)</i>
+#</p>
+#<p>
+#  The following program cannot easily be replaced by one using reads():
+#<pre>
+#     import util
+#
+#     procedure main(args)
+#         wFreq := table(0)
+#         every wFreq[genWords(BlockRead().genBlocks())] +:= 1
+#         every wPair := !reverse(sort(wFreq,2)) \ 20 do {
+#             write(right(wPair[2],10),": ",wPair[1])
+#             }
+#     end
+#</pre>
+#and can be almost twice as fast (<i>see caveat one</i>, below) as:
+#<pre>
+#     import util
+#
+#     procedure main(args)
+#         wFreq := table(0)
+#         every wFreq[genWords(!&input)] +:= 1
+#         every wPair := !reverse(sort(wFreq,2)) \ 20 do {
+#             write(right(wPair[2],10),": ",wPair[1])
+#             }
+#     end
+#</pre>
+#<p>
+#  <b>Caveat one:</b> It is not always better to read in large chunks of lines -
+#  the actions you perform on those chunks have a large influence on
+#  overall program efficiency and using large chunks may, in some cases,
+#  slow your program down!  Choosing a good block size for use in your
+#  application is an art.
+#</p>
+#<p>
+#  <b>Caveat two:</b> You cannot easily mix reads using this class with
+#  reads of the same file using other functions.
+#</p>
+class BlockRead : Object (f, bSize, buffer)
+
+   #<p>
+   #   Read in at most <b>n</b> characters from the file.  However,
+   #   always terminate the read at the last newline prior to reaching
+   #   <b>n</b> characters.
+   #</p>
+   #<p>
+   #   <[param n maximum amount to read.  Defaults to <tt>blockSize</tt>]>
+   #   <[returns string of upto <tt>n</tt> characters from the file,
+   #   terminating with a newline]>
+   #   <[fails if unable to read any characters]>
+   #</p>
+   method readBlock(n)
+      /n := bSize
+      if s := reads(f, n) then {
+	 i := *s
+	 while (i > 0) & (s[i] ~== "\n") do {
+	    i -:= 1
+	    }
+	 nbuf := buffer
+	 buffer := s[i+1:0]
+	 return nbuf || s[1+:i]
+	 }
+      else if *buffer > 0 then {
+	 nbuf := buffer
+	 buffer := ""
+	 return nbuf
+	 }
+      else fail
+   end
+
+   #<p>
+   #  Generate blocks of at most <b>n</b> characters from the file,
+   #  using the same criteria for defining a block as in <b>readBlock</b>.
+   #</p>
+   #<p>
+   #   <[param n maximum amount to read.  Defaults to <tt>blockSize</tt>]>
+   #   <[generates blocks from the file as strings]>
+   #</p>
+   method genBlocks(n)
+      suspend |readBlock(n)
+   end
+
+   #<p>
+   #  Produce the current <i>read-ahead</i> buffer.  This buffer contains
+   #  input characters that were read on the previous block read, but
+   #  followed the last newline in the block.
+   # <[returns read-ahead buffer]>
+   #</p>
+   #<p>
+   #  This is a convenience method to help when input needs to be
+   #  mixed with non-block reads.
+   #</p>
+   method getReadahead()
+      return buffer
+   end
+
+   #<p>
+   #  Set the current <i>read-ahead</i> buffer.  The previous value is
+   #  lost.  It is difficult to imagine a use for this method except
+   #  to empty the preread when mixing block reads with normal input
+   #  operations.
+   #  <[param nBuf new contents for the read-ahead buffer]>
+   #</p>
+   method setReadahead(nBuf)
+      buffer := nBuf
+   end
+
+#<p>
+#   Provide an instance of <b>BlockRead</b> for reading in
+#   <b>blockSize</b> chunks at a time from <b>fileName</b>.
+#   <[param fileOrName file or filename to read from.  Defaults to
+#     <tt>&input</tt>.]>
+#   <[para blockSize default blocksize for this instance.
+#    Defaults to <tt>409600</tt>.]>
+#</p>
+#<p>
+#   The first argument may be an already opened file.
+#</p>
+initially (fileOrName, blockSize)
+   if /fileOrName then {
+      f := &input
+      }
+   else {
+      if type(fileOrName) == "string" then {
+	 f := open(fileOrName) |
+	    stop("BlockRead: Cannot open '",fileOrName,"'!")
+	 }
+      else {
+	 f := fileOrName     # Assume it's a file
+	 }
+      }
+   /blockSize := 409600        # default to 1/2 MB reads
+   bSize := blockSize
+   buffer := ""
+end

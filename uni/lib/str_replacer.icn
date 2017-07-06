@@ -1,0 +1,54 @@
+#<p>
+#   A class to efficiently replace substrings.
+#<pre>
+#       Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</pre>
+#   This is one of several files contributing to the util package.
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package util
+
+import lang
+
+#<p>
+#  This class prebuilds some objects to make wholesale substring replacements
+#    more efficient.  The constructor takes a table mapping strings to their
+#    replacements.  The method replace(s) then returns a copy of string s
+#    with all substrings found in the table with the corresponding
+#    replacement string.
+#</p>
+#<p>
+# <tt>StringReplacer</tt> is most useful when you have a lot of replacements
+# to perform across a lot of text.  For simple cases, the
+# <tt>util::replaceStrs</tt> procedure is likely to be faster.
+#</p>
+class StringReplacer : Object (tbl, ff)
+
+   #<p>
+   #  Perform substring replacement on the string s
+   #  <[return a copy of s with substrings replaced]>
+   #</p>
+   method replace(s)
+      local ns := ""
+      s ? {
+	 while ns ||:= tab(ff.locate()) do {
+	    ns ||:= tbl[ff.moveMatch()]
+	    }
+	 ns ||:= tab(0)
+	 }
+      return ns
+   end
+
+#<p>
+#   Construct a StringReplacer based on the string mappings found
+#     in mapTable.
+#</p>
+initially (mapTable)
+   local a
+   tbl := mapTable
+   every put(a := [], key(tbl))
+   ff := FindFirst(reverse(sort(a)))
+end

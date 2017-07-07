@@ -1,0 +1,356 @@
+#<p>
+#  Provides utilities for creating and manipulating matrices
+#</p>
+#<p>
+# <b>Author:</b> Kevin Wampler (<i>kevin@tapestry.tucson.az.us</i>)
+#<br>Minor adjustments (cosmetic) by Steve Wampler
+#    (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+# <i>This file is in the public domain.</i>
+#</p>
+   
+package util
+
+#<p>
+#  <[param M a matrix]>
+#  <[returns a copy of matrix <tt>M</tt>]>
+#</p>
+procedure m_copy(M)
+   local i, R := list(*M)
+   every i := 1 to *R do
+      R[i] := copy(M[i])
+   return R
+end
+
+#<p>
+#  <[param m number of rows]>
+#  <[param n number of columns]>
+#  <[param x initial value of every element]>
+#  <[returns a <tt>m</tt> x <tt>n<tt> matrix with <tt>x</tt> everywhere]>
+#</p>
+procedure m_constant(m,n,x:0.0)
+   local A
+   /n := m
+    
+   A := list(m)
+   every !A := list(n,x)
+   return A
+end
+
+#<p>
+#  Creates a m x n matrix with ones on the diagonal and zeros everywhere else
+#  <[param m number of rows]>
+#  <[param n number of columns]>
+#  <[param zero (<i>optional</i>) can be used in place of <tt>0.0</tt>]>
+#  <[param one (<i>optional</i>) can be used in place of <tt>1.0</tt>]>
+#  <[returns <tt>m</tt>X<tt>n</tt> identify matrix]>
+#</p>
+procedure m_identity(m,n, zero:0.0,one:1.0)
+   local A, i
+   /n := m
+    
+   A := m_constant(m,n,zero)
+   every i := 1 to m > n | m do A[i,i] := one
+   return A
+end
+
+#<p>
+#  Swaps rows a and b of M
+#  <[param M matrix]>
+#  <[param a first row to swap]>
+#  <[param b second row to swap]>
+#</p>
+procedure m_rowswap(M,a,b)
+   M[a] :=: M[b]
+end
+
+#<p>
+#  Swaps columns a and b of M
+#  <[param M matrix]>
+#  <[param a first column to swap]>
+#  <[param b second column to swap]>
+#</p>
+procedure m_colswap(M,a,b)
+   local i
+    
+   every i := 1 to *M do {
+      M[i,a] :=: M[i,b]
+      }
+end
+
+#<p>
+#  <[param M matrix]>
+#  <[param a column to return from <tt>M</tt>]>
+#  <[returns column <tt>a</tt> of <tt>M</tt>]>
+#</p>
+procedure m_col(M,a)
+   return [: M[1 to *M,a] :]
+end
+
+#<p>
+#  <[param M matrix]>
+#  <[returns the transpose of <tt>M</tt>]>
+#</p>
+procedure m_transpose(M)
+   local R, i, j
+   R := m_constant(*M[1], *M)
+   every (i := 1 to *R, j := 1 to *R[1]) do R[i,j] := M[j,i]
+   return R
+end
+
+#<p>
+#  Generic binary operation across two matrices.
+#  <[param M1 first matrix]>
+#  <[param M2 second matrix]>
+#  <[param op binary operation to invoke]>
+#  <[returns <tt>M1 op M2</tt>, with <tt>op</tt> defaulting to
+#    <tt>proc("+",2)</tt>]>
+#</p>
+procedure m_binop(M1, M1, op)
+   local R, i, j
+   /op := proc("+", 2)
+
+   if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
+      runerr(500, "nonequal matrix dimensions to m_binop")
+
+   R = m_constant(*M1, *M1[1])
+   every (i := 1 to *M1, j := 1 to *M1[1]) do
+      R[i,j] := invoke(op,M1[i,j],M2[i,j])
+   return R
+end
+
+#<p>
+#  <[param M1 first matrix]>
+#  <[param M2 second matrix]>
+#  <[returns <tt>M1+M2</tt>]>
+#</p>
+procedure m_add(M1, M2)
+   if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
+      runerr(500, "nonequal matrix dimensions to m_add")
+   return m_binop(M1,M2,proc("+",2))
+end
+
+#<p>
+#  <[param M1 first matrix]>
+#  <[param M2 second matrix]>
+#  <[returns <tt>M1-M2</tt>]>
+#</p>
+procedure m_subtract(M1, M2)
+   if (*M1 ~= *M2) | (*M1[1] ~= *M2[1]) then
+      runerr(500, "nonequal matrix dimensions to m_subtract")
+   return m_binop(M1,M2,proc("-",2))
+end
+
+#<p>
+#  Generic unary operation across a matrix.
+#  <[param M matrix]>
+#  <[param op unary operation to invoke]>
+#  <[returns <tt>op M</tt>, with <tt>op</tt> defaulting to
+#            <tt>proc("-",1)</tt>]>
+#<p>
+procedure m_unaryop(M, op)
+   local R, i, j
+   /op := proc("-", 1)
+
+   R = m_constant(*M, *M[1])
+   every (i := 1 to *M, j := 1 to *M[1]) do
+      R[i,j] := invoke(op, M[i,j])
+   return R
+end
+
+#<p>
+#  <[param M matrix]>
+#  <[returns <tt>-M</tt>]>
+#</p>
+procedure m_negative(M)
+   return m_unaryop(M, proc("-", 1))
+end
+
+#<p>
+#  <[param M1 first matrix]>
+#  <[param M2 second matrix]>
+#  <[param addident (<i>optional</i>) additive identify replacement]>
+#  <[param addfcn (<i>optional</i>) addition operation replacement]>
+#  <[param mulfcn (<i>optional</i>) multiplication operation replacement]>
+#  <[returns <tt>M1*M2</tt>]>
+#</p>
+procedure m_multiply(M1, M2, addident:0, addfcn, mulfcn)
+   local R, i, j, k
+   /addfcn := proc("+", 2)
+   /mulfcn := proc("*", 2)
+
+   if (*M1[1] ~= *M2) then
+      runerr(500, "incompatible matrix dimensions to m_multiply")
+
+   R := m_constant(*M1, *M2[1])
+   every (i := 1 to *R, j := 1 to *R[1]) do {
+      R[i,j] := addident
+      every k := 1 to *M2 do 
+         R[i,j] := invoke(addfcn, R[i,j], invoke(mulfcn, M1[i,k],M2[k,j]))
+      }
+   return R
+end
+
+#<p>
+#  <[returns the LUP decomposition of M, fails if M is singular]>
+#  The result is returned as a list [L, U, p] of matrices such that
+#   P*M = L*U, and p is a list representing the permutation to create P.
+#</p>
+#<p>
+#  Additional optional arguments allow you to customize the operation
+#  by overriding various functions and constants used internally.
+#</p>
+procedure m_lupDecomposition(M, subfcn, mulfcn, divfcn,
+                             invertMetric, addident:0.0, mulident:1.0)
+   local n, i, b, k, k2, p, j, L, U
+   /subfcn := proc("-", 2)
+   /mulfcn := proc("*", 2)
+   /divfcn := proc("/", 2)
+   /invertMetric := proc("abs", 1)
+
+   M := m_copy(M)
+   n := *M
+   b := list(n)
+   every i := 1 to n do b[i] := i
+   every k := 1 to n do {
+      p := 0
+      every i := k to n do
+         if invoke(invertMetric, M[i,k]) > p then {
+            p := abs(M[i,k])
+            k2 := i
+	    }
+      if p = 0 then fail
+      b[k] :=: b[k2]
+      every i := 1 to n do
+	 M[k,i] :=: M[k2,i]
+      every i := k+1 to n do {
+	 M[i,k] := invoke(divfcn, M[i,k], M[k,k]) | fail
+	 every j := k+1 to n do
+	    M[i,j] := invoke(subfcn,M[i,j],invoke(mulfcn,M[i,k],M[k,j]))
+	 }
+      }
+   L := m_constant(*M, *M[1], addident)
+   U := m_constant(*M, *M[1], addident)
+   every (i := 1 to *M, j := 1 to *M[i]) do
+      if i > j then
+	 L[i,j] := M[i,j]
+      else
+	 U[i,j] := M[i,j]
+   every i := 1 to *M do
+      L[i,i] := mulident
+   return [L,U,b]
+end
+
+#<p>
+#  <[returns the solution <tt>x</tt> to <tt>A*x = b</tt> where the LUP
+#            decomposition of <tt>A</tt> is <tt>[L,U,p]</tt>]>
+#</p>
+#<p>
+#  Additional optional arguments allow you to customize the operation
+#  by overriding various functions and constants used internally.
+#</p>
+procedure m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident:0.0)
+   local n, i, j, y, x
+   /addfun := proc("+", 2)
+   /subfun := proc("-", 2)
+   /mulfun := proc("*", 2)
+   /divfun := proc("/", 2)
+
+   n := *L
+   y := list(n)
+   x := list(n)
+   every i := 1 to n do {
+      s := addident
+      every j := 1 to i-1 do
+	 s := invoke(addfun,s,invoke(mulfun,L[i,j],y[j]))
+      y[i] := invoke(subfun,b[p[i]],s)
+      }
+   every i := n to 1 by -1 do {
+      s := addident
+      every j := i+1 to n do
+	 s := invoke(addfun,s,invoke(mulfun,U[i,j],x[j]))
+      x[i] := invoke(divfun,invoke(subfun,y[i],s),U[i,i]) | fail
+      }
+   return x
+end
+
+#<p>
+#  <[returns the solution <tt>x</tt> to <tt>A*x = b</tt>]>
+#</p>
+#<p>
+#  Additional optional arguments allow you to customize the operation
+#  by overriding various functions and constants used internally.
+#</p>
+procedure m_linearSolve(A,b,addfun,subfun,mulfun,divfun,
+                        addident,mulident,invertMetric)
+   local lup, L, U, p
+   lup := m_lupDecomposition(A,subfun,mulfun,divfun,
+			     invertMetric,addident,mulident) | fail
+   L := lup[1]
+   U := lup[2]
+   p := lup[3]
+   N := m_lupSolve(L,U,p,b,addfun,subfun,mulfun,divfun,addident) | fail
+   return N
+end
+
+#<p>
+#  <[returns a matrix <tt>X</tt> such that <tt>M2*X = M1</tt>]>
+#</p>
+#<p>
+#  Additional optional arguments allow you to customize the operation
+#  by overriding various functions and constants used internally.
+#</p>
+procedure m_divide(M1,M2,addfun,subfun,mulfun,divfun,
+                   addident,mulident,invertMetric)
+   local X, i, n, x
+   n := *M1
+   X := list()
+   every i := 1 to n do {
+      x := m_linearSolve(M2,m_col(M1, i),addfun,subfun,mulfun,divfun,
+			 addident,mulident,invertMetric) | fail
+      put(X, x)
+      }
+   return m_transpose(X)
+end
+
+#<p>
+#  <[returns the (multiplicative) inverse of M]>
+#</p>
+#<p>
+#  Additional optional arguments allow you to customize the operation
+#  by overriding various functions and constants used internally.
+#</p>
+procedure m_inverse(M,addfun,subfun,mulfun,divfun,
+                    addident,mulident,invertMetric)
+   return m_divide(m_identity(*M,*M,addident,mulident),
+		   M,addfun,subfun,mulfun,divfun,addident,
+		   mulident,invertMetric)
+end
+
+#<p>
+#    Output matrices.
+#</p>
+#<p>
+#    A file argument changes output of subsequent arguments to that
+#    file (default is &output).  String arguments are output as they
+#    appear.  Matrices are output one row per line of output followed
+#    by a blank line.
+#</p>
+procedure m_write(args[])   # Matrices and output files
+   local i, outfile
+   outfile := &output
+   while arg := get(args) do {
+      case type(arg) of {
+	 "file": outfile := arg
+	 "list": {    # Assume it's a matrix!
+	    every i := !M do {
+	       every writes(outfile, !i," ")
+	       write(outfile)
+	       }
+	    }
+	 default: writes(outfile, arg)
+	 }
+      }
+   write(outfile)
+end

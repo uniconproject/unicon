@@ -1,0 +1,189 @@
+#<p>
+# Provides a rudimentary SOAP client.  Assumes the body of the
+#   SOAP request is a single service (with arguments).
+#   <i>Needs work - for example, can only talk with SOAP servers
+#   that accept HTTP POST messages!</i>
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package soap
+
+import lang
+import util
+import xml          # From Robert Parlett's class library
+
+#<p>
+# A simple SoapClient.  Really meant to be subclassed.  Only handles
+#   procedure calls.  
+#</p>
+#<p>
+# Here is a sample client based on this class.  The URI and
+#   proxy are imaginary:
+#</p>
+#<pre>
+# import soap
+# 
+# procedure main()
+#     soap := SoapClient(URI_GOES_HERE, PROXY_GOES_HERE)
+#     result := soap.call("query","*","host = 'weaver'","date DESC")
+# 
+#     every row := !result do {
+#         write("  ",row["host"],"  ",row["percent"],"  ",
+#                    row["date"],"  ",row["filesys"])
+#         }
+# end    
+#</pre>
+class SoapClient : Object (uri, proxy, port, debugFile)
+
+   #<p>
+   # Turn on some debugging output by setting a file to which
+   # debug messages are written.  Turn off by setting to <tt>&null</tt>.
+   # <[param f name of file to write debug messages to]>
+   #</p>
+   method setDebugFile(f)
+      if ::type(f) == "string" then {
+	 f := open(f, "w") | fail
+	 }
+      debugFile := f
+   end
+
+   #<p>
+   # Print a debug message.
+   #  <[param msg array of all parameters.  These parameters make up
+   #     the message, one parameter per message line.]>
+   #</p>
+   #<p><i>Internal use only.</i></p>
+   method debugMsg(msg[])
+      write ! push(msg, \debugFile)
+   end
+
+   #<p>
+   # Make a SOAP-wrapped RPC call and produce the result.  <i>This is the
+   # normal access to the SoapClient class.</i>
+   #   <[returns result of RPC call]>
+   #</p>
+   method call(rpc,        # Name of remote service to invoke
+	       args[])      # Remaining arguments are arguments to use on rpc
+      local msg, host, svc, result
+      msg := buildSoapMsg ! ([rpc] ||| args)
+      msg := mkHttpMesgForm(msg)
+      debugMsg("Sending: \n",msg)
+
+      host := getHost() | stop("Cannot figure out host!")
+      svc := open(host||":"||port, "n") |
+	 stop("Cannot get '",host,"' connection: ", &errortext)
+
+      write(svc, msg) | stop("Cannot send msg: ",&errortext)
+      result := ""
+      while result ||:= reads(svc, 8192)
+      close(svc)
+      debugMsg("\n\n\nGot: \n",result)
+
+      result := convertRawMsg(result)
+      return result
+   end
+
+   #<p>
+   # Take the raw http response, strip all the http headers, and
+   #   then decode the result back into Unicon.  Throws away
+   #   everything except the return value (i.e. ignores in/out, out
+   #   parameters!).
+   #   <[param result - http response]>
+   #   <[returns return value contained in <tt>result</tt>]>
+   #</p>
+   #<p><i>Internal use only.</i></p>
+   method convertRawMsg(result)
+      local XDoc, p, root
+      static parser
+      initial parser := soap::getXmlParser()
+
+      map(result) ? {
+	 if p := find("<soap-env:envelope") then {
+	    result := result[p:0]
+	    }
+	 }
+
+      root := parser.parse(result).get_root_element()
+      xDoc := root.search_children("SOAP-ENV:Body")
+      (result := (!xDoc.get_children()), ::type(result) ~== "string")
+      return soap::decode((soap::getNonWSChildren(result))[1])
+   end
+
+   #<p>
+   # Extract the host from the proxy (crudely).
+   #  <[returns host portion of proxy string]>
+   #</p>
+   #<p><i>Internal use only.</i></p>
+   method getHost()
+      proxy ? {
+	 ="http://"
+	 return tab(upto('/'))
+	 }
+   end
+
+   #<p>
+   # Extract the target from the proxy (crudely).
+   #  <[returns target portion of proxy string]>
+   #</p>
+   #<p><i>Internal use only.</i></p>
+   method getTarget()
+      proxy ? {
+	 ="http://"
+	 (&pos := upto('/')) & return tab(0)
+	 }
+   end
+
+   #<p>
+   # Build a soap message wrapping an rpc call.
+   #  <[returns message wrapped by SOAP headers]>
+   #</p>
+   #<p><i>Internal use only.</i></p>
+   method buildSoapMsg(rpc,        # Name of remote service to invoke
+		       args[])      # Remaining args are args to use on rpc
+      local msg, i
+
+      i := create seq()
+      msg :=   " <SOAP-ENV:Body>\n"
+      msg ||:= "  <namesp:"||rpc||" xmlns:namesp=\""||uri||"\">\n"
+      if *args > 0 then every msg ||:= soap::encode(!args,"    ",i)||"\n"
+      msg ||:= "  </namesp:"||rpc||">\n"
+      msg ||:= " </SOAP-ENV:Body>\n"
+
+      return soapHead()||msg||soapTail()
+   end
+
+   #<p>
+   #  Produce the SOAP message as a part of a multiple form.
+   #  <[param msg SOAP message]>
+   #  <[returns <tt>msg</tt> wrapped by http multipart form]>
+   #</p>
+   #<p><i>Internal use only.</i></p>
+   method mkHttpMesgForm(msg)
+      local s := ""
+
+      s ||:= "POST "||getTarget()||" HTTP/1.1\n"
+      s ||:= "Host: "||getHost()||"\n"
+      s ||:= "Content-Type: text/xml; charset=\"utf-8\"\n"
+      s ||:= "Content-Length: "||*msg||"\n"
+      s ||:= "SOAPAction: \""||proxy||"\"\n"
+      s ||:= "\n"
+      s ||:= msg
+      return s
+   end
+
+#<p>
+# Create a new SOAP client. 
+#</p>
+initially (newUri,      # URI for server
+	   newProxy,    # 'Proxy' information for server (defaults to URI)
+	   newPort)      # Port on server (defaults to 80)
+   uri := newUri
+   proxy := \newProxy | uri
+   port := \newPort | getserv("http").port | "80"
+   debugFile := &null
+end

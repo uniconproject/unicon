@@ -222,8 +222,8 @@ class Dialog : Component(
    end
 
    method open_win()
-      self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs)) | fatal("couldn't open window")
-      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fatal("couldn't open window")
+      self.win := (WOpen ! (["inputmask=mc"] ||| self.attribs)) | fail
+      self.buffer_win := (WOpen ! (["canvas=hidden"] ||| self.attribs)) | fail
       Raise(self.win)
       return
    end
@@ -328,8 +328,20 @@ class Dialog : Component(
    end
 
    method show()
+   local i
       self.component_setup()
-      self.open_win()
+
+      # open a window, die if not successful. one weird special case is fonts.
+      # if we don't get the font we want, try a common size of "fixed" before
+      # giving up and aborting the whole program.
+
+      if (not self.open_win()) &
+	 ((not match("font=",attribs[i:=1 to *\attribs])) |
+	    ((attribs[i] := 
+  "font=-misc-fixed-medium-r-semicondensed--13-100-100-100-c-60-iso8859-1") &
+	     (not self.open_win()))) then
+	 fatal("couldn't open/show window")
+
       self.init()
       self.is_open := 1
       self.resize()
@@ -515,7 +527,10 @@ $endif
       wh := WAttrib(self.win, "height")
       if not (cw := Clone(self.cwin, "bg=pale yellow", "font=sans,14", "fg=black")) then
 	 # try again with default font
-	 if not (cw := Clone(self.cwin, "bg=pale yellow", "fg=black")) then fail
+	 if not (cw := Clone(self.cwin, "bg=pale yellow", "fg=black")) then
+	    if not (cw := Clone(self.cwin, "bg=pale yellow", "fg=black",
+				"font=-misc-fixed-medium-r-semicondensed--13-100-100-100-c-60-iso8859-1")) then
+	       fail
       fh := WAttrib(cw, "fheight")
 
       if find("\n", obj.tooltip) then multiline := 1

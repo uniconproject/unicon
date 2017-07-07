@@ -1,0 +1,188 @@
+#<p>
+# Generate HTML documentation from Unicon (<i>or Icon</i>) source files.
+#</p>
+#<p>Syntax:<pre>
+# <b>UniDoc</b> <i>arg...</i>
+# </pre>
+#</p>
+#<p>
+# where <i>arg</i> may be an option or a Unicon source file name.
+# Options apply from the point of occurrence until changed later
+# in the argument list.
+#</p>
+#<p>
+# Options:
+# <table>
+# <tr>
+# <td valign=top align=left><tt><b>--resolve</b>  </tt></td>
+# <td valign=top >-- Attempt to generate HTML from files listed in
+#                    <tt>link</tt> and <tt>import</tt> statements.</td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--noresolve</b>  </tt></td>
+# <td valign=top >-- Don't try to find files listed in
+#                    <tt>link</tt> and <tt>import</tt> statements.
+#                    (<i>default</i>)</td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--linkSrc</b>  </tt></td>
+# <td valign=top >-- Include links from documentation back to source code.
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--nolinkSrc</b>  </tt></td>
+# <td valign=top >-- Don't include links from documentation back to source code.
+#                    (<i>default</i>)</td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--indexFile=FILE</b>  </tt></td>
+# <td valign=top >-- Name of base HTML file (default is
+#                    <tt>index.html</tt>)</td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--targetDir=DIR</b>  </tt></td>
+# <td valign=top >-- where to put generated HTML documents</td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--sourcePath=PATH</b>  </tt></td>
+# <td valign=top >-- where to look for source files (besides "<tt>.</tt>")
+#                    <tt>PATH</tt> is a space-separated list of directories</td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--linkPath=PATH</b>  </tt></td>
+# <td valign=top >-- where to look for existing HTML files for entities that
+#                    can't be found in source files.
+#                    <b><i>Not yet implemented</i></b>
+#                    </td>
+# </tr>
+# <tr>
+# <td valign=top align=left><tt><b>--title=TITLE</b>  </tt></td>
+# <td valign=top >-- Title for display on base HTML index page.
+#                    (default is "<tt>Generated Documentation</tt>"</td>
+# </tr>
+# </table>
+#</p>
+#<p>
+# Methods, constructors, and procedures may include some special
+#  <i>UniDoc tag</i> fields:<br>
+# <ul>
+# <li type="square">
+#   <b><tt>&lt;[param</tt> <i>parameter</i></b>
+#      <i>description of parameter</i><b><tt>]&gt;</tt></b><br>
+# <li type="square">
+#   <b><tt>&lt;[generates</tt></b>
+#      <i>description of generated results</i><b><tt>]&gt;</tt></b><br>
+# <li type="square">
+#   <b><tt>&lt;[returns</tt></b>
+#      <i>description of returned result</i><b><tt>]&gt;</tt></b><br>
+# <li type="square">
+#   <b><tt>&lt;[fails</tt></b>
+#      <i>description of failure causes</i><b><tt>]&gt;</tt></b><br>
+# <li type="square">
+#   <b><tt>&lt;[throws</tt> <i>exception</i></b>
+#      <i>description of cause of exception</i><b><tt>]&gt;</tt></b><br>
+# </ul>
+#</p>
+#<p>
+# <b><i>This version is preliminary and no doubt contains numerous bugs
+#   and omissions.</i></b>
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import util
+import UniDoc
+
+global linkPath,  # Path to search when looking for already-generated HTML
+       targetDir, # Directory into which all generated HTML is placed
+       title,     # Title for base document
+       indexFile, # Name of base index file
+       debug      # Debug flag
+
+procedure main(args)
+   local uniAll, html
+
+   if *args = 0 then helpMesg()
+
+   uniAll := UniAll()
+   processArgs(args, uniAll)
+   uniAll.dumpStatistics("yes")
+
+   html := UniHTML(title, uniAll, targetDir, indexFile, linkPath, debug)
+   html.buildPages()
+end
+
+# <p>
+# Process the arguments, passing flags as appropriate to parser.
+# </p>
+procedure processArgs(args,   # Command line arguments
+                      uniAll) # Unicon parser (instance of <tt>UniAll</tt>)
+   local arg
+
+   indexFile := "index.html"
+   targetDir := "./htmlDoc"
+   # Some parameters are global, find them now.
+   linkPath  := zapPrefix(!args, "--linkPath=")
+   indexFile := zapPrefix(!args, "--indexFile=")
+   title     := zapPrefix(!args, "--title=")
+
+   while arg := ::get(args) do {
+      if match("--",arg) then {
+	 case arg of {
+	    "--help"     : helpMesg()
+	    "--resolve"  : uniAll.fullyResolve("yes")
+	    "--noresolve": uniAll.fullyResolve("no")
+	    "--debug"    : debug := "yes"
+	    "--nodebug"  : debug := &null
+	    "--linkSrc"  : uniAll.setSaveSrc("yes")
+	    "--nolinkSrc": uniAll.setSaveSrc()
+	    }
+	 uniAll.setSourcePath(zapPrefix(arg, "--sourcePath="))
+	 targetDir := zapPrefix(!args, "--targetDir=")
+	 uniAll.setTargetDir(targetDir)
+	 }
+      else {
+	 uniAll.processFile(arg)
+	 }
+      }
+end
+
+# <p>
+# Quit after displaying a short usage message.
+# </p>
+procedure helpMesg()
+   write("Usage: UniDoc [argument ...]")
+   write()
+   write("  Arguments may be options or file names and are processed")
+   write("  from left to right.  Some options remain in effect from the")
+   write("  point they appear until negated by a later option.  Other")
+   write("  options affect all files.")
+   write()
+   write("Options:")
+   write()
+   write("--resolve    - Try to resolve entities referenced in any")
+   write("               of the following named source files.")
+   write()
+   write("--noresolve  - Don't try to resolve entities referenced in")
+   write("               any of the following named source files. (default)")
+   write()
+   write("--targetDir=DIR - Put the generated HTML documents in DIR")
+   write("                  (DIR defaults to \"./htmlDoc/\"")
+   write()
+   write("--sourcePath=DIRLIST - also look in DIRLIST for source files")
+   write()
+   write("--indexFile=FILE - Name the base index file FILE.")
+   write("                  (FILE defaults to \"index.html\"")
+   write()
+   write("--title=TITLE    - Use TITLE as the title for output")
+   write("                  (TITLE defaults to \"Generated Documentation\"")
+   write("--linkSrc    - Try to include links back to the source code.")
+   write("                  (Note: can be tricked if multiple source files")
+   write("                   have the same name!)")
+   write()
+   write("--nolinkSrc  - Don't include links to the source code (default).")
+   stop()
+end

@@ -1506,6 +1506,11 @@ int i;
    clear_all_filepids();
 #endif
 
+#if defined(Audio) && defined(HAVE_LIBOPENAL)
+   if (isPlaying != -1)
+      audio_exit();
+#endif					/* Audio && HAVE_LIBOPENAL */
+
 #ifdef TallyOpt
    {
    int j;

@@ -346,7 +346,8 @@ typedef struct {
    typedef int HMIXER, MIXERLINE, MMRESULT, HMIXEROBJ, MIXERCAPS;
    typedef int MIXERCONTROL, MIXERLINECONTROLS, MIXERCONTROLDETAILS;
    typedef int MIXERCONTROLDETAILS_UNSIGNED, MIXERCONTROLDETAILS_BOOLEAN;
-#ifdef HAVE_LIBOPENAL   
+#ifdef HAVE_LIBOPENAL
+   typedef int ALCcontext, ALCdevice;
    typedef int pthread_t, pthread_mutex_t, pthread_attr_t;
    typedef int ALfloat, ALuint, ALint, ALenum, ALvoid, ALboolean, ALsizei;
    typedef int ALubyte;

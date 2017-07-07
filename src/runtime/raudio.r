@@ -16,6 +16,7 @@ struct sSources
 {
    ALuint source;
    int inUse;
+   int numBuffers;
    char filename[255];
    ALuint buffer[4];
    ALuint wBuffer;
@@ -37,6 +38,36 @@ int isPlaying = -1;
 int isSet = 0;
 int gIndex;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
+void audio_exit()
+{
+   int i;
+   ALCcontext *Context;
+   ALCdevice *Device;
+
+   if (isPlaying == -1) return;
+
+   if (pthread_mutex_lock(&mutex) != 0) return;
+
+   for (i=0; i<16; i++) {
+      alDeleteBuffers(4, arraySource[i].buffer);
+      alDeleteBuffers(1, &(arraySource[i].mBuffer));
+      alDeleteBuffers(1, &(arraySource[i].wBuffer));
+      alDeleteSources(1, &(arraySource[i].source));
+      }
+
+   Context = alcGetCurrentContext();
+   Device = alcGetContextsDevice(Context);
+   alcMakeContextCurrent(NULL);
+   alcDestroyContext(Context);
+   alcCloseDevice(Device);
+
+/* we are dieing. The audio threads can just hang. we certainly don't want
+   them trying to use our freed-up buffers and sources and stuff.
+  if (pthread_mutex_unlock(&mutex) != 0) return; */
+
+}
 
 /*
  * Get a valid audio Source struct to work with. Return -1 on error.
@@ -562,30 +593,31 @@ int OggStreamBuf(ALuint buffer, int index)
  */
 int OggPlayback(int index)
 {
-   int numbuffers = 0;
    ALenum state;
 
    alGetSourcei(arraySource[index].source, AL_SOURCE_STATE, &state);
    if(state == AL_PLAYING)
       return 0;
 
+   arraySource[index].numBuffers = 0;
+
    if(OggStreamBuf(arraySource[index].buffer[0], index) == 1) { /* no data */
       return 1;
       }
    else { /* some data, support up to 4 buffers */
-      numbuffers++;
+      arraySource[index].numBuffers++;
       if(OggStreamBuf(arraySource[index].buffer[1], index) != 1) {
-	 numbuffers++;
+	 arraySource[index].numBuffers++;
 	 if(OggStreamBuf(arraySource[index].buffer[2], index) != 1) {
-	    numbuffers++;
+	    arraySource[index].numBuffers++;
 	    if(OggStreamBuf(arraySource[index].buffer[3], index) != 1) {
-	       numbuffers++;
+	       arraySource[index].numBuffers++;
 	       }
 	    }
 	 }
       }
 
-   alSourceQueueBuffers(arraySource[index].source, numbuffers,
+   alSourceQueueBuffers(arraySource[index].source, arraySource[index].numBuffers,
 			arraySource[index].buffer);
    alSourcePlay(arraySource[index].source);
    return 0;
@@ -614,6 +646,7 @@ void OggExit(int index)
    ov_clear(&arraySource[index].oggStream);
    alSourcei(arraySource[index].source, AL_BUFFER, 0);
    arraySource[index].inUse -= 1;
+   /* deletion of buffers and sources is handled in audio_exit() */
    pthread_mutex_unlock(&mutex);
 }
 
@@ -673,7 +706,6 @@ void * OpenAL_PlayOgg(void * args)
    pthread_exit(NULL);
 }
 
-
 #endif 	/* #if(HAVE_LIBOPENAL && HAVE_LIBOGG)*/
 
 #ifdef HAVE_LIBOPENAL
@@ -690,6 +722,12 @@ void * OpenAL_PlayWAV(void * args)
    pthread_mutex_lock(&mutex);
    isPlaying += 1;
    pthread_mutex_unlock(&mutex);
+
+   /* startaudiothread ran before we did, and initialized wbuffer, but we
+    * want to use an alut function that creates a buffer, so free whatever
+    * is in there already.
+    */
+   alDeleteBuffers(1, &(arraySource[indexSource].wBuffer));
    arraySource[indexSource].wBuffer =
       alutCreateBufferFromFile(arraySource[indexSource].filename);
    alSourceQueueBuffers(arraySource[indexSource].source, 1,
@@ -722,7 +760,7 @@ int StartAudioThread(char filename[])
    if (pthread_mutex_lock(&mutex) != 0) return -1;
    if (isPlaying == -1) {
       if (alutInit(NULL, NULL) != AL_TRUE) return -1;
-      for(i = 0; i <= 15 ; ++i) {
+      for(i = 0; i < 16 ; ++i) {
          alGenSources(1, &arraySource[i].source);
          alGenBuffers(4, arraySource[i].buffer);
          alGenBuffers(1, &arraySource[i].mBuffer);

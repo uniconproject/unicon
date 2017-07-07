@@ -405,3 +405,7 @@ extern struct b_pelem EOP;
 #if NT
 extern struct  b_cons *LstTmpFiles;
 #endif					/* NT */
+
+#ifdef Audio
+extern int isPlaying;
+#endif					/* Audio */

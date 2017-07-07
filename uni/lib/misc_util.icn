@@ -1,0 +1,295 @@
+#<p>
+#<b>General purpose routines contributed by various people.</b>
+#
+#   This is one of several files contributing to the util package.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+package util
+
+#<p>
+# Initialize the random number seed to a 'random' value, so a
+# different random sequence is generated on each run of the
+# program.  Meant to be called once, in procedure main().
+# <[returns the intial seed]>.
+#
+# Unicon now initializes the seed by default, so this is largely moot.
+#</p>
+procedure initRandom()
+   return &random := integer(map("smhSMH","Hh:Mm:Ss",&clock))
+end
+
+#<p>
+# Invert a table (<i>will lose data unless <tt>tbl</tt> is a 1-1
+#  mapping</i>).
+# <[returns a copy of the inverted table <tt>tbl</tt>]>
+#</p>
+procedure invertTable(tbl)   # Table to invert
+   local nTbl := table(), k
+   every k := key(tbl) do {
+      nTbl[tbl[k]] := k
+      }
+   return nTbl
+end
+
+#<p>
+# <[generates all permutations of the elements in list <tt>L</tt>]>
+#</p>
+procedure permuteList(L)    # List to permute
+   if *L = 0 then return []
+   suspend L[(i := 1 to *L)+:1] ||| permuteList( L[1:i] ||| L[i+1:0] )
+end
+
+#<p>
+# <tt>deepcopy(A)</tt> produces a full copy of the structure <tt>A</tt>.
+# All structures are handled, including all <i>dags</i> and <i>cycylic
+# graphs</i>.
+# <[param A - structure to copy]>
+# <[returns a deep copy of any structure, including cyclic ones]>
+#</p>
+procedure deepcopy(A, cache)
+   local k
+
+   /cache := table()       # used to handle multireferenced objects
+   if \cache[A] then return cache[A]
+
+   case type(A) of {
+      "table"|"list": {
+	 cache[A] := copy(A)
+	 every cache[A][k := key(A)] := deepcopy(A[k], cache)
+	 }
+      "set": {
+	 cache[A] := set()
+	 every insert(cache[A], deepcopy(!A, cache))
+	 }
+      default: {
+	 cache[A] := copy(A)
+	 if match("record ",image(A)) then {
+	    every cache[A][k := key(A)] := deepcopy(A[k], cache)
+	    }
+	 }
+      }
+   return .cache[A]
+end
+
+#<p>
+# Breadth-first walk of a connected graph (nodes are visited exactly once).
+# <[generates the nodes in sequence that are reachable from the <tt>root</tt>]>
+# <i>Note that the graph can be a tree.</i>
+#</p>
+#<p>
+# The second argument should be a function that, when given a node,
+# generates the links from that node.  If omitted, it defaults to:
+#</p>
+#<pre>
+#     procedure defaultGenChildren(node)
+#        suspend !\node[2]
+#     end
+#</pre>
+procedure breadthwalk(root,        # node of graph to start walk at
+		      getChildren) # function that generates a node's children
+   local node, child, queue, visited
+   /getChildren := defaultGenChildren
+   queue := [root]
+   visited := set([root])
+   while node := get(queue) do {
+      every child := getChildren(node) do {
+	 if not member(visited, child) then {
+	    insert(visited, child)
+	    put(queue, child)
+	    }
+	 }
+      suspend node
+      }
+end
+
+#<p>
+# Depth-first walk of a connected graph (nodes are visited exactly once).
+# <[generates the nodes in sequence that are reachable from the <tt>root</tt>]>
+# <i>Note that the graph can be a tree.</i>
+#</p>
+#<p>
+# The second argument should be a function that, when given a node,
+# generates the links from that node.  If omitted, it defaults to:
+#</p>
+#<pre>
+#     procedure defaultGenChildren(node)
+#        suspend !\node[2]
+#     end
+#</pre>
+#<p>
+# The third argument is used internally and should not
+#  be given by the user.
+#</p>
+procedure depthwalk(root,        # node of graph to start walk at
+		    getChildren, # function that generates a node's children
+		    visited)     # ignore, <i>used internally.</i>
+   /getChildren := defaultGenChildren
+   /visited := set()
+   if not member(visited, root) then {
+      insert(visited, root)
+      suspend root | depthwalk(getChildren(root), getChildren, visited)
+      }
+end
+
+#<p>
+# Given node represented by an indexable structure where the 2nd element
+#   is a list of links from that node, generate those links.
+#<i>Used as default in <tt>breadthwalk()</tt> and <tt>depthwalk()</tt></i>.
+# <[param node graph node to produce children from]>
+# <[generates child nodes of <tt>node</tt>]>
+#</p>
+procedure defaultGenChildren(node)
+   suspend !\node[2]
+end
+
+#<p>
+# A PDCO that wraps a result sequence <tt>sq</tt> and produces all results
+#   <i>after</i> the first <tt>n</tt> results.  <b><tt>n</tt></b> defaults
+#   to <tt>0</tt>.
+#   <[param n (<i>first coexpression in <tt>L</tt></i>) produce results
+#       after first <tt>n</tt> results]>
+#   <[param sq (<i>second coexpression in <tt>L</tt></i>) sequence to
+#       produce results from]>
+#   <[generates all results after the first <tt>n</tt> from <tt>sq</tt>]>
+#</p>
+procedure skipFirst(L)  # first arg is <b>n</b>, second is <b>sq</b>.
+   local n := @L[1] | 0,
+         x := L[2]
+   suspend {every |@x\n; |@x}
+end
+
+#<p>
+# A PDCO that interleaves results from its arguments.
+# For example, the following code produces a (<i>very fast</i>)
+# 'spinner':
+#<pre>
+#   every writes(weave{!|"-\\|/", !|"\b"})
+#</pre>
+# <[param L - arbitrary number of co-expressions]>
+# <[generates results from all the co-expressions in <tt>L</tt> by
+#             interleaving]>
+#</p>
+procedure weave(L)  # Expressions whose results are to be woven together
+   suspend |@!L
+end
+
+#<p>
+# A PDCO that produces only the even results from its argument.
+# <[param L - list of co-expressions, only the first is used\>
+# <[generates even-positioned results from evaluating <tt>L[1]</tt>]>
+#</p>
+procedure evenResults(L) # First argument must be a co-expression.
+   local x := L[1]
+   suspend |{@x; @x}
+end
+
+#<p>
+# A PDCO that produces only the odd results from its argument.
+# <[param L - list of co-expressions, only the first is used\>
+# <[generates odd-positioned results from evaluating <tt>L[1]</tt>]>
+#</p>
+procedure oddResults(L) # First argument must be a co-expression
+   local x := L[1]
+   suspend |@x do @x
+end
+
+#<p>
+# A PDCO that wraps a result sequence <tt>sq</tt> and produces every
+#   <tt>n</tt>th result.  <b><tt>n</tt></b> defaults to <tt>1</tt>.
+#   <[param n (<i>first coexpression in <tt>L</tt></i>) produce every
+#       <tt>n</tt>th result]>
+#   <[param sq (<i>second coexpression in <tt>L</tt></i>) sequence to
+#       produce results from]>
+#   <[generates every <tt>n</tt>th result from <tt>sq</tt>]>
+#</p>
+procedure nthResults(L)  # first arg is <b>n</b>, second is <b>sq</b>.
+   local n := @L[1] | 1,
+         x := L[2]
+
+   suspend |{every |@x\(n-1); @x}
+end
+
+#<p>
+# A PDCO that can be used to time expressions.
+# <i>(Only accurate to the millisecond level.)</i>
+# <[returns the time in milliseconds to execute its argument.]>
+#</p>
+#<p>
+# Examples:
+#<pre>
+#   write(" [",time { writes("fib(",n,") = ",fib(n)) }, "ms]" )
+#
+#   write(" [", time { {every 1 to limit do {
+#                      f := fib(n)
+#                      }
+#                  writes("fib(",n,") = ",f, " run ",limit," times.")
+#                 }   # Note extra braces for compound expression!
+#               }
+#        , "ms]")
+#</pre>
+#</p>
+procedure time(L)    # First arg is expression to time
+   local startTime, stopTime
+
+   startTime := &time
+   @L[1]
+   stopTime  := &time
+   return stopTime-startTime
+end
+
+#<p>
+# Returns the method named <i>s</i> of the class instance <i>c</i>.
+# The method is not dereferenced and thus can be assigned to.  Methods
+# of superclasses may be accessed by making <i>s</i> a period delimited list,
+# for example getMethod(foo, "A.b") returns the method <i>b</i> of the
+# superclass of type <i>A</i> that foo inherits from.
+# <[param c instance of a class]>
+# <[param s name of method to produce from <tt>c</tt>]>
+# <[returns method named <tt>s</tt>]>
+#</p>
+procedure getMethod(c, s:string)
+   local L := list()
+   c := c["__m"]
+   every put(L, genFieldsOne(s, '.'))
+   every c := c[L[1 to *L-1]]
+   return c[L[-1]]
+end
+
+#<p>
+#  Returns the field named <i>s</i> from the class instance <i>c</i>.
+#  The field is not dereferenced and thus can be assigned to.
+# <[param c instance of a class]>
+# <[param s name of field to produce from <tt>c</tt>]>
+# <[returns field named <tt>s</tt>]>
+#</p>
+procedure getClassField(c, s:string)
+   return c[s]
+end
+
+#<p>
+#  Compute the current stack trace.  Starting at level <i>n</i> above
+#  the current procedure.  Here, <i>n</i> defaults to 0, which will
+#  include this procedure in the stack trace.
+#  <i>ce</i> defaults to &current.
+#  <i>This only works with newer versions of Unicon!</i>
+#  <[generates the stacktrace from current call back to first
+#   in the co-expression]>
+#</p>
+procedure buildStackTrace(n:0,  # starting distance from this call
+                          ce)    # co-expr to trace stack in [&current]
+   local L := []
+   /ce := &current
+   n -:= 1
+   while pName := image(proc(ce, n+:=1)) do {
+      fName := keyword("&file",ce, n) | "no file name"
+      fLine := keyword("&line",ce, n) | "no line number"
+      put(L, pName||" ["||fName||":"||fLine||"]" )
+      }
+   return L
+end

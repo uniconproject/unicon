@@ -1,0 +1,445 @@
+#<p>
+#   Interface to the address book database.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+#<p>
+#   Provide a simple addressbook.
+#</p>
+package addressbook
+
+link "database"
+link "struct"
+
+#<p>
+# A record whose field names match the column names in the addressbook DB.
+# <i>Used internally.</i>
+#</p>
+record address(name, address, email, phone, company, misc, category)
+
+#<p>
+# Categories that an address belongs to.  A set of:
+#    <b>Family</b>, <b>Friend</b>, <b>Work</b>, <b>Business</b>,
+#    or <b>Other</b>.
+#</p>
+class Category : Struct()
+
+#<p>
+# <[param s 
+# a string consisting of categories, each terminated with
+# a newline (<b>\n</b>).  (This string is how the set of
+# of categories is held in the address book database.) ]>
+#</p>
+initially(s)
+   self.Struct.initially(::set)
+   fromString(s)
+end
+
+#<p>
+# An actual address is a list of lines.
+#</p>
+class ALines : Struct()
+
+   #<p>
+   #  Add a single element to the structure.
+   #  <[param e element to add to structure]>
+   #  <[returns <i>nothing useful</i>]>
+   #</p>
+   method addElement(e)
+      return put(struct, e)
+   end
+
+   #<p>
+   #  Remove lines from the address (<b>no-op!</b>)
+   #  <[param e element to remove]>
+   #</p>
+   method remove(e)
+   end
+
+#<p>
+# <[param s
+# a string consisting of address lines, each terminated
+# with a newline (<b>\n</b>).  (This string is how an address
+# is held in the address book database.)]>
+#</p>
+initially(s)
+   self.Struct.initially(list)
+   fromString(s)
+end
+
+#<p>
+# The "Misc" field is actually a list of lines.
+#</p>
+class MLines : Struct()
+
+   #<p>
+   #  Add a single element to the structure.
+   #  <[returns <i>nothing useful</i>]>
+   #</p>
+   #</p>
+   method addElement(e)
+      return put(struct, e)
+   end
+
+   #<p>
+   #  Remove lines from the address (no-op!)
+   #  <[param e element to remove]>
+   #</p>
+   method remove(e)
+   end
+
+#<p>
+# <[param s
+# a string consisting of misc-info lines, each terminated
+# with a newline (<b>\n</b>).  (This string is how misc-info
+# is held in the address book database.) ]>
+#</p>
+initially(s)
+   self.Struct.initially(list)
+   fromString(s)
+end
+
+#<p>
+# The Address class wraps some access methods around an address.
+#   In particular, it provides methods for mapping an address to/from
+#   the forms needed for database storage and for GUI processing.
+#</p>
+class Address : Object(aRec)
+
+   #<p>
+   #  Produce this address in form suitable for storing into DB.
+   #  <[returns address as an <tt>address</tt> record]>
+   #<p>
+   method toRecord()
+      a := address()
+      a.name := aRec.name
+      a.address := aRec.address.toString()
+      a.email := aRec.email
+      a.phone := aRec.phone
+      a.company := aRec.company
+      a.misc := aRec.misc.toString()
+      a.category := aRec.category.toString()
+      return a
+   end
+
+   #<p>
+   #  Produce this address in a form suitable for GUI display.
+   #  (i.e. all Unicon structures)
+   #  <[returns address as an <tt>address</tt> record]>
+   #<p>
+   method toIRecord()
+      a := address()
+      a.name := aRec.name
+      a.address := aRec.address.toIStruct()
+      a.email := aRec.email
+      a.phone := aRec.phone
+      a.company := aRec.company
+      a.misc := aRec.misc.toIStruct()
+      a.category := aRec.category.toIStruct()
+      return a
+   end
+
+   #<p>
+   #  Build this address from its DB equivalent.
+   #  <[param rec an <tt>address</tt> record]>
+   #  <[returns <i>self</i>]>
+   #</p>
+   method fromRecord(rec)
+      aRec.name := rec.name
+      aRec.address := ALines(rec.address)
+      aRec.email := rec.email
+      aRec.phone := rec.phone
+      aRec.company := rec.company
+      aRec.misc := MLines(rec.misc)
+      aRec.category := Category(rec.category)
+      return self
+   end
+
+   #<p>
+   #  Build this address from its GUI equivalent.
+   #  <[param rec an <tt>address</tt> record]>
+   #  <[returns <i>self</i>]>
+   #</p>
+   method fromIRecord(rec)
+      aRec.name := rec.name
+      aRec.address := ALines()
+      aRec.address.fromIStruct(rec.address)
+      aRec.email := rec.email
+      aRec.phone := rec.phone
+      aRec.company := rec.company
+      aRec.misc := MLines()
+      aRec.misc.fromIStruct(rec.misc)
+      aRec.category := Category()
+      aRec.category.fromIStruct(rec.category)
+      return self
+   end
+
+   #<p>
+   #  Produce a readable version of the Address (mainly for debugging)
+   #  <[returns multiline string representation of this address]>
+   #</p>
+   method toString()
+      s := ""
+      s ||:= "Name:     "||aRec.name||"\n"
+      s ||:= "Addr:\n"||aRec.address.toString("\t","\n")
+      s ||:= "Email:    "||aRec.email||"\n"
+      s ||:= "Phone:    "||aRec.phone||"\n"
+      s ||:= "Keywords:  "||aRec.company||"\n"
+      s ||:= "Misc:\n"||aRec.misc.toString("\t","\n")
+      s ||:= "Category: "||aRec.category.toString(""," ")
+      return s
+   end
+
+initially()
+   aRec := address()
+end
+
+#<p>
+# The AddressView class is a list of Address instances constituting
+#   a <i>view</i> into the address book database.
+#</p>
+class AddressView : Object(aList)
+
+   #<p>
+   #  Load from a list of (database) records.
+   #  <[param recs source of database records to load]>
+   #</p>
+   method load(recs)
+      aList := []        # Clear old view, if any
+      every r := !\recs do {
+         addRecord(r)
+         }
+   end
+
+   #<p>
+   #  Add an address from a (database) record.
+   #  <[param rec database record to load]>
+   #</p>
+   method addRecord(rec)
+      a := Address()
+      a.fromRecord(rec)
+      put(aList, a)
+   end
+       
+   #<p>
+   #  Add an address from a (GUI) record.
+   #  <[param rec GUI record to load]>
+   #</p>
+   method addIRecord(rec)
+      a := Address()
+      a.fromIRecord(rec)
+      put(aList, a)
+   end
+
+   #<p>
+   #  <[generates all the addresses]>
+   #</p>
+   method gen()
+      suspend !aList
+   end
+       
+#<p>
+#  The constructor takes a list of (database) records and
+#    converts each into the internal model of an address.
+#  <[param recs <b><i>currently ignored!</i></b>]>
+#</p>
+initially (recs)
+   aList := []
+   #load(\recs)
+end
+
+#<p>
+# The AddressDB class provides an addressbook-oriented interface to the
+#    address book database.  In particular, all SQL commands are hidden
+#    within this class.
+#</p>
+#<p>
+# <i><b>The addressbook database table must be created and properly configured
+# before using this class!</b></i>  The following SQL commands can be used
+# with <b>PostgreSQL</b> to build the database table:
+#<pre>
+# SET search_path = public, pg_catalog;
+# 
+# CREATE FUNCTION plpgsql_call_handler () RETURNS language_handler
+#     AS '/usr/lib/pgsql/plpgsql.so', 'plpgsql_call_handler'
+#        LANGUAGE c;
+# 
+# CREATE TRUSTED PROCEDURAL LANGUAGE plpgsql HANDLER plpgsql_call_handler;
+# 
+# CREATE TABLE addressbook (
+#     name character varying(64),
+#     address text,
+#     email character varying(64),
+#     phone character varying(64),
+#     company character varying(64),
+#     misc text,
+#     category character varying(128)
+#     );
+# 
+# CREATE FUNCTION insertabook () RETURNS "trigger"
+#     AS '
+#         DECLARE a_rec record;
+#         BEGIN
+#             SELECT * INTO a_rec FROM addressbook WHERE name=new.name;
+#             IF NOT FOUND THEN RETURN new;
+#             ELSE UPDATE addressbook SET address=new.address,email=new.email,
+#                                         phone=new.phone,
+#                                         company=new.company,misc=new.misc,
+#                                         category=new.category
+#                                     WHERE name=new.name;
+#                  RETURN null;
+#             END IF;
+#         END;'
+#     LANGUAGE plpgsql;
+# 
+# CREATE TRIGGER trigger_insert
+#     BEFORE INSERT ON addressbook
+#     FOR EACH ROW
+#     EXECUTE PROCEDURE insertabook ();
+#</pre>
+#</p>
+#<p>
+#  <i>Access to this database table must be made available through Unicon's
+#  <b>ODBC</b> support.</i>
+#</p>
+class AddressDB : Object(db, tablName, criteria, order)
+
+   #<p>
+   #  Produce an AddressView matching some criteria from the DB.
+   #  <[param criteria SQL query criteria (for WHERE clause)]>
+   #  <[param order sort results by this field.  Default is <tt>"name"</tt>]>
+   #  <[returns an <tt>AddressView</tt> of all addresses matching
+   #    <tt>criteria</tt>]>
+   #</p>
+   method loadView(criteria, order:"name")
+      # Remember criteria and order for possible reloading.
+      self.criteria := criteria
+      self.order := order
+
+      db.select("*",criteria,order)
+      aView := AddressView()
+      cnt := 0
+      every row := db.fetch() do {
+         cnt +:= 1
+         aView.addRecord(row)
+         }
+      return aView
+   end
+
+   #<p>
+   #  Store an Address into the DB.
+   #  <[param addr address to store]>
+   #</p>
+   method storeAddress(addr)
+      a := addr.toRecord()
+      db.insert(addr.toRecord()) | write(&errout, "Store of address failed!")
+   end
+
+   #<p>
+   #  Reload based on the last view's criteria
+   #  <[returns reloaded <tt>AddressView</tt>]>
+   #</p>
+   method reload()
+      return loadView(criteria, order)
+   end
+
+   #<p>
+   #  Given a record that represents the search criteria,
+   #   returns a view of all addresses matching that criteria
+   #  <[param addr used as key for search.  All addresses matching
+   #   the the information in <tt>addr</tt> are returned.]>
+   #  <[returns <tt>AddressView</tt> for matching addresses]>
+   #</p>
+   method performSearch(addr)
+      a := addr.toIRecord()
+
+      # Construct the SQL WHERE clause
+      wc := ""
+      wc := setCondition(wc,"name","ilike",a.name)
+      wc := setCondition(wc,"phone","ilike",a.phone)
+      wc := setCondition(wc,"company","ilike",a.company)
+      wc := setCondition(wc,"email","ilike",a.email)
+      wc := setCatCondition(wc,a.category)
+
+      if *wc > 0 then {        # have criteria to restrict search
+         return loadView(wc)
+         }
+      else {                        # load everything...
+         return loadView()
+         }
+   end
+
+   #<p>
+   #   Add a condition to the SQL WHERE clause, if the test value
+   #     is valid.
+   #   <[param wc existing WHERE clause]>
+   #   <[param id name of field to test]>
+   #   <[param test comparison operation, eg: <tt>"="</tt>]>
+   #   <[param value the field given by <tt>id</tt> is tested against
+   #     this value]>
+   #   <[returns modified WHERE clause with new condition added]>
+   #</p>
+   method setCondition(wc,id,test,value)
+      if isValid(value) then {
+         return DButils().addCondition(wc,id,test,"%"||value||"%")
+         }
+   end
+
+   #<p>
+   #   Search conditions on categories have to take into account
+   #   the special formatting of the category column in the database.
+   #   This method does so.
+   #   <[param wc existing WHERE clause]>
+   #   <[param cats set of categories to use in condition]>
+   #   <[param terminator terminate for a category, default is <tt>\n</tt>]>
+   #   <[returns modified WHERE clause with new conditions added]>
+   #</p>
+   method setCatCondition(wc,cats,terminator:"\n")
+      if *cats > 0 then {
+         every put(cList := [],"%"||(!cats)||terminator||"%")
+         return DButils().addCondition(wc,"category","like",cList)
+         }
+   end
+
+   #<p>
+   #   Check a string to see if it can be used in an SQL WHERE clause
+   #   (non-null, non-empty).
+   #   <[param s string to check]>
+   #   <[returns <tt>s</tt> if valid]>
+   #   <[fails if <tt>s</tt> is null or empty [except for whitespace]]>
+   #</p>
+   method isValid(s)
+      if *trim(\s,'\t ') > 0 then return s
+   end
+
+   #<p>
+   #  Remove an address from the database
+   #  <[param addr address to remove]>
+   #  <[returns result of attempting the removal of <tt>addr</tt>]>
+   #</p>
+   method remove(addr)
+      return db.delete("name='"||addr.toRecord().name||"'")
+   end
+
+#<p>
+#   Attach to a database and attach to the addressbook table, if
+#     possible.
+#   <[param user database user name]>
+#   <[param passwd database password for <tt>user</tt>]>
+#   <[param dsn ODBC dsn.  Defaults to <tt>user</tt>]>
+#   <[param tabl database table access.
+#           Defaults to <tt>"addressbook"</tt>]>
+#</p>
+initially (user, passwd, dsn, tabl:"addressbook")
+   /dsn := user
+   tablName := tabl
+   db := Database(dsn,tabl)
+   db.open(user,passwd) | fail
+end

@@ -438,7 +438,7 @@ void EVVariable(dptr dx, int eventcode)
    if (i == GlobalName) {
       if (reserve(Strings, StrLen(parent->eventval) + 1) == NULL) {
 	 fprintf(stderr, "failed to reserve %ld bytes for global\n",
-		 StrLen(parent->eventval)+1);
+		 (long)(StrLen(parent->eventval)+1));
 	 syserr("monitoring out-of-memory error");
 	 }
       StrLoc(parent->eventval) =
@@ -449,8 +449,8 @@ void EVVariable(dptr dx, int eventcode)
    else if ((i == StaticName) || (i == LocalName) || (i == ParamName)) {
       if (!reserve(Strings, StrLen(parent->eventval) + StrLen(*procname) + 1)) {
 	 fprintf(stderr,"failed to reserve %ld bytes for %d, %ld+%ld\n",
-		StrLen(parent->eventval)+StrLen(*procname)+1, i,
-		 StrLen(parent->eventval), StrLen(*procname));
+		(long)(StrLen(parent->eventval)+StrLen(*procname)+1), i,
+		 (long)StrLen(parent->eventval), (long)StrLen(*procname));
 	 syserr("monitoring out-of-memory error");
 	 }
       StrLoc(parent->eventval) =

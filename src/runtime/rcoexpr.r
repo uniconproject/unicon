@@ -701,7 +701,7 @@ void *nctramp(void *arg)
 
    k_level = ce->tmplevel;
    if (ce->title != T_Coexpr) {
-      fprintf(stderr, "warning ce title is %ld\n", ce->title);
+      fprintf(stderr, "warning ce title is %ld\n", (long)ce->title);
       }
 #if 0
    pfp = ce->es_pfp;

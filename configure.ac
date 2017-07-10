@@ -533,7 +533,7 @@ if test "$audio" = yes ; then
     atmp="$atmp -vorbis "
   fi
 
-  # if ogg was present bu vorbis was missing, reset
+  # if ogg was present but vorbis was missing, reset
   if test "$onAudio" = 3 ; then onAudio=2 ; fi
 
   atmp="$atmp) | ("
@@ -603,7 +603,8 @@ echo "CC       :  $CC"
 echo "CFLAGS   :$CFLAGS"
 echo "CPPFLAGS :$CPPFLAGS"
 echo "LDFLAGS  :$LDFLAGS"
-echo "LIBS     :  $LIBS"
+echo "LIBS     : $LIBS"
+echo "CXX      :  $CXX  (Required only with FTGL and VOIP)" 
 echo "Verbose  :  $verbosebuild"
 echo "Debug    :  $debug"
 echo "Devmode  :  $devmode"

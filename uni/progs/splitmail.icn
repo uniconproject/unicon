@@ -1,0 +1,259 @@
+#<p>
+# SplitMail -- split messages from system mailbox by matching substrings in
+#              Subject: and/or From: lines.  Can handle arbitrary sized
+#              system mailboxes.
+#</p>
+#<p>
+# Options:
+#<ul>
+#  <li><tt>--help</tt> -- display a usage message and quit
+#  <li><tt>--name=USER</tt> -- read from this user's mailbox
+#  <li><tt>--file=FILENAME</tt> -- read from this file
+#  <li><tt>--subject=SUBSTRING</tt> (<i>may be repeated</i>) <tt>Subject:</tt>
+#                              substring to search for
+#  <li><tt>--from=SUBSTRING</tt> (<i>may be repeated</i>) <tt>From:</tt>
+#                              substring to search for
+#  <li><tt>--withfile=FILENAME</tt> (<i>optional</i>) file to hold messages
+#                              matching any of the search criteria
+#  <li><tt>--withoutfile=FILENAME</tt> (<i>optional</i>) file to hold messages
+#                              matching none of the search criteria
+#  <li><tt>--verbose</tt> (<i>optional</i>) show how each message is checked,
+#                         <tt>+++</tt> indicates a match, <tt>---</tt> a
+#                         mismatch
+#  <li><tt>--append</tt> (<i>optional</i>) append messages to output files
+#                         instead of overwriting on each run
+#  <li><tt>--dryrun</tt> (<i>optional</i>) turn on verbose mode but don't
+#                         create output files
+#</ul>
+#<p>
+#Exactly one of <tt>--name</tt> or <tt>--file</tt> is <i>required</i>.
+#When <tt>--file</tt> is used, the default names for the output files start with
+#<tt>basename</tt> of the named file.
+#</p>
+#<p>
+#You must have at least one instance of <tt>--subject</tt> or <tt>--from</tt>.
+#When the option uses <tt>--subject=</tt> or <tt>--from=</tt> then the
+#match is case sensitive.  Replacing <tt>=</tt> with <tt>~</tt> as in
+#<tt>--subject~happy</tt> results in a case insensitive match.
+#</p>
+#<p>
+#<tt>FILENAME</tt> may be <tt>/dev/null</tt> to suppress output,
+#and defaults to <i>USER</i><tt>.with</tt> for <tt>--withfile</tt> and
+#<i>USER</i><tt>.without</tt> for <tt>--withoutfile</tt>.
+#</p>
+
+import util
+
+record message(from,subject,date,text)  # Internal form for mail message
+
+global dryrun,    # If non-null, don't create output files
+       verbose,   # If non-null, show how messages are categorized
+       append,    # If non-null, append to output files instead of overwriting
+       sList,     # List of Subject: substrings to look for
+       fList,     # List of From: substrings to look for
+       sCiList,   # List of case-insensitive Subject: substrings to look for
+       fCiList    # List of case-insensitive From: substrings to look for
+
+#<p>
+#  Read a user's system mailbox and split messages into two separate files
+#   based on substrings found in From: and Subject: lines.
+#</p>
+procedure main(args)
+    if "--help" == !args then stop(helpMesg())
+    if whoami := zapPrefix(!args, "--name=") then {
+        mailFileName := "/var/spool/mail/"||whoami
+        fileName := whoami
+        }
+    if inFile := zapPrefix(!args, "--file=") then {
+        mailFileName := inFile
+        fileName := basename(mailFileName)
+        }
+    if /whoami & /inFile then stop(helpMesg())
+    if \whoami & \inFile then stop(helpMesg())
+
+    withFile    := zapPrefix(!args, "--withfile=")    | (fileName||".with")
+    withoutFile := zapPrefix(!args, "--withoutfile=") | (fileName||".without")
+
+    every sList := put([], zapPrefix(!args, "--subject="))
+    every fList := put([], zapPrefix(!args, "--from="))
+    every sCiList := put([], map(zapPrefix(!args, "--subject~")))
+    every fCiList := put([], map(zapPrefix(!args, "--from~")))
+    if /sList & /fList & /sCiList & / fCiList then stop(helpMesg())
+
+    verbose     := ("--verbose" == !args)
+    append      := ("--append" == !args)
+    dryrun      := ("--dryrun" == !args)
+
+    oMode := if \append then "wa" else "w"
+    if \dryrun then verbose := "yes"
+    if \verbose then {
+        if \append then write(&errout, "append mode")
+        if \sList then showList(&errout, "Subject phrases", sList)
+        if \sCiList then showList(&errout, "Case insensitive subject phrases",
+                                           sCiList)
+        if \fList then showList(&errout, "From phrases", fList)
+        if \fCiList then showList(&errout, "Case insensitive from phrases",
+                                           fCiList)
+        write(&errout)
+        }
+
+    if /dryrun then f1 := open(withFile, oMode)
+    if /dryrun then f2 := open(withoutFile, oMode)
+
+    while routeMessage(readMessages(mailFileName), f1, f2)
+
+    if /dryrun then every close(f1|f2)
+end
+
+#<p>
+#  Display the usage information to standard error.
+#</p>
+procedure helpMesg()
+    write(&errout, "Usage: SplitMail (--name=USER | --file=FILENAME)")
+    write(&errout, "                 --subject=SUBJECT_SUBSTRING")
+    write(&errout, "                 --from=FROM_SUBSTRING")
+    write(&errout, "                 [--withfile=FILENAME]")
+    write(&errout, "                 [--withoutfile=FILENAME]")
+    write(&errout, "                 [--append] [--verbose] [--dryrun]")
+    write(&errout)
+    write(&errout, "splits the USER's system mailbox into two sets of")
+    write(&errout, "messages: USER.with holds all messages whose subject")
+    write(&errout, "and from lines contains any of the SUBJECT_SUBSTRINGs")
+    write(&errout, "or any of the FROM_SUBSTRINGs; USER.without holds all")
+    write(&errout, "remaining mail messages.  The original system mailbox")
+    write(&errout, "is untouched.  Both --subject and --from arguments may")
+    write(&errout, "be repeated 0 or more times, but at least one should")
+    write(&errout, "be used.")
+    write(&errout)
+    write(&errout, "When the option uses --subject= or --from= then the")
+    write(&errout, "match is case sensitive.  Replacing = with ~ as in")
+    write(&errout, "--subject~happy results in a case insensitive match.")
+    write(&errout)
+    write(&errout, "The --file option may be used in place of --user to")
+    write(&errout, "explicitly name an input file.  When --file is used,")
+    write(&errout, "output file names start with the basename of the filename")
+    write(&errout, "unless overridden with --withfile and/or --withoutfile")
+    write(&errout)
+    write(&errout, "The --withfile and --withoutfile options may be used to")
+    write(&errout, "override the default output file names.  Unix/Linux users")
+    write(&errout, "may find --withoutfile=/dev/null appealing.")
+    write(&errout)
+    write(&errout, "With --append, appends to both files instead of overwriting them.")
+    write(&errout, "With --verbose, shows simple header for messages that")
+    write(&errout, "match the search criteria (prefixed by '+++') and don't")
+    write(&errout, "match the search criteria (prefixed by '---').")
+    write(&errout)
+    write(&errout, "The --dryrun option adds --verbose and disables the actual")
+    write(&errout, "splitting of the messages into files.")
+    return
+end
+
+#<p>
+# Generate the mail messages from the users system mailbox.
+# Produces each mail messages in internal form.
+#</p>
+procedure readMessages(mailFileName)
+    mailFile := PushBack(open(mailFileName)) | fail
+    while line := mailFile.read() do {
+        if match("From ",line) then {
+            suspend getMessage(line, mailFile) 
+            }
+        }
+end
+
+#<p>
+#  Read a single mail message from a mail file.
+#</p>
+procedure getMessage(line, mailFile)
+    static WS := ' \t'
+    local date, from, subject
+    lines := [line]
+
+    line ?  date := (word(),word(),tab(0))
+    while line := mailFile.read() do {
+        line ? {
+            if      ="From: "      then /from := tab(0)
+            else if =("Subject: " |
+                      "subject: ") then /subject := tab(0)
+            else if match("From ") then {
+                break mailFile.pushback(line)
+                }
+            }
+        put(lines, line)
+        }
+
+    return message((\from)|"Unknown!",(\subject)|"No subject!",date, lines)
+end
+
+#<p>
+#  Given a single mail message, routes it to the appropriate
+#  output file based on the selection criteria.
+#</p>
+procedure routeMessage(message, file1, file2)
+    msCi := map(message.subject)
+    mfCi := map(message.from)
+    if find(!\sList,   message.subject) |
+       find(!\sCiList, msCi)            |
+       find(!\fList,   message.from)    |
+       find(!\fCiList, mfCi)            then {
+        if \verbose then showHeader(&errout, "+++",message)
+        if /dryrun then every write(file1, !message.text)
+        }
+    else {
+        if \verbose then showHeader(&errout, "---",message)
+        if /dryrun then every write(file2, !message.text)
+        }
+        
+end
+
+#<p>
+#  String scanning procedure that generates the next word
+#</p>
+procedure word()
+    static WS := ' \t'
+    suspend (tab(many(WS)),tab(many(~WS)))
+end
+
+#<p>
+#  Produce the filename at the end of a Unix pathname.
+#</p>
+procedure basename(s)
+    reverse(s) ? {
+        return (reverse(tab(upto('/'))) | s)
+        }
+end
+
+#<p>
+#  Display a list of values on one line, preceded by some prefix.
+#  <i>Used in verbose mode.</i>
+#</p>
+procedure showList(f, prefix, aList)
+    if \aList then {
+        writes(f, prefix,":")
+        every writes(f, " ",!aList)
+        write(f)
+        }
+end
+
+#<p>
+#   Show a summary of a mail message's header.
+#   <i>Used in verbose mode.</i>
+#</p>
+procedure showHeader(f, prefix, h)
+    write(f, prefix, left(mapFrom(h.from),20),": ",left(h.subject,57),
+          " (",*(h.text),")")
+end
+
+#<p>
+#   Produce the 'from' information from a From: line.
+#   <i>Used in verbose mode.</i>
+#</p>
+procedure mapFrom(s)
+    local ns := ""
+    \s ? {
+        ns := if      ="\"" then tab(upto('"'))
+              else if ="<"  then tab(upto('>'))
+              else               tab(upto('<(')|0)
+        }
+    return trim(ns," \t")
+end

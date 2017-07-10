@@ -1,0 +1,206 @@
+#
+# A simple reverse-polish calculator (works with numeric and string operations)
+#
+#   Accepts numeric and string operands, operations, and function calls.
+#   Strings that "look like" variables can be used as variables.
+#
+#   Note: given an overloaded operator/function, this
+#          always calls the largest (one with the most arguments).
+#          However, can fool by using 'nil' as arguments to ignore.
+#          So, for example:
+#               nil "abcdef" *
+#          outputs '6'.
+#   Note: cannot handle functions with more than 3 arguments.
+#   Note: command line arguments are handled first
+#
+global mem          # simulates the calculator's memory...
+global stack        #    and the rpn stack...
+
+invocable all
+
+procedure main(params)
+   local token, opcode, argl, v
+
+   stack := []
+   mem   := table()
+   mem["pi"] := &pi
+   mem["e"]  := &e
+
+   exit :=: Exit
+   every token := gettoken(params) do {
+
+      if opcode := proc(token, 3|2|1) then {
+
+         case token of {
+
+            ":=" : {    # special case assignment...
+               if mem[var(v := Pop(stack))\1] := deref(Pop(stack)) then
+                  push(stack,v) & Write(deref(v))
+               else
+                  write("\t\t", "assignment not done!")
+               }
+
+           ":=:": {    # ...and swap
+               if mem[var(v := Pop(stack))] :=: mem[var(Pop(stack))] then
+                  push(stack,v) & Write(deref(v))
+               else
+                  write("\t\t", "assignment not done!")
+               }
+
+            default: { # others are easy (simple operations on rvalues)
+               argl := []
+               every 1 to abs(args(opcode)) do {
+                  arg := Pop(stack) | break next
+                  # ignore "nil" arguments (used to override the
+                  #   'apply opcode with most arguments' rule).
+                  push(argl, deref("nil" ~== arg))
+                  }
+               # Recompute in case arg list has shrunk
+               opcode := proc(token, *argl)
+               &error := -1  # trap runtime errors during invocation
+               every push(stack, Write(opcode!argl))
+               if &error < -1 then {
+                   write("\t\tRuntime error on ",token,": ",&errortext)
+                   }
+               &error := 0
+               }
+            }
+
+         }
+
+      else push(stack, tokType(token)) |
+           write("\t\t", token,"\t: Invalid entry")
+      }
+
+end
+
+# generate the tokens in the input stream
+#
+procedure gettoken(params)
+   static NS := ~' \t'
+   every (!\params | |read()) ? {
+       while tab(upto(NS)) do {
+           if ="\"" then suspend "\""||tab(upto("\"")+1) \ 1 # " (sigh)
+           else suspend tab(many(NS)) \ 1
+           }
+       }
+end
+
+# Identify a token as a value or a variable
+#
+procedure tokType(s)
+   s ? return (numeric(tab(0)) | s)
+end
+
+# If stack is empty, write an error message and fail
+#
+procedure Pop(stack)
+    suspend pop(stack)
+    write(&errout,"\t\t\t: Stack empty")
+end
+
+# return s only if it's a legal variable name...
+#
+procedure var(s)
+   static firstch := &letters++"_", restch := firstch++&digits
+   return s ? 1(tab(any(firstch))||(tab(many(restch))|""), pos(0))
+end
+
+# Dereference 's'.
+#
+procedure deref(s)
+   return numeric(s) | (string(s) ? 2(="\"",tab(-1),="\"")) | \mem[s] | s
+end
+
+# Produce printable form of a value.
+#
+procedure printable(x)
+   return (numeric|string|image)(x)
+end
+
+# Display a value
+#
+procedure Write(v)
+   write("\t-> ",printable(v))
+   return v
+end
+
+# Quit the calculator
+#
+procedure Exit()
+   Exit(0)
+end
+
+# Some useful functions to allow in addition to the usual Icon/Unicon ones...
+
+# Duplicate the value on top of the stack
+#
+procedure dup()
+   push(stack, stack[1])
+end
+
+# Convert a value on the stack to a string
+#
+procedure tostring()
+   stack[1] ?:= if not ="\"" then "\""||tab(0)||"\"" # " (keep beautifier happy)
+end
+
+# Display calculator stack
+#
+procedure showstack()
+   writes("\t\tStack is:")
+   every writes(" ",printable(!stack))
+   write()
+end
+
+# Display calculator memory
+#
+procedure showmem()
+   write("\t\tMemory contents:")
+   every pair := !sort(mem) do
+      write("\t\t\t",right(pair[1],10)," -> ",right(printable(pair[2]),20," ."))
+end
+
+# Flip top two on stack
+#
+procedure flip()
+   stack[1] :=: stack[2]
+end
+
+# Pop off stack top
+#
+procedure popstack()
+   Pop(stack)
+end
+
+# Turn on tracing
+#
+procedure traceon()
+   &trace := -1
+end
+
+# Turn off tracing
+#
+procedure traceoff()
+   &trace := 0
+end
+
+# Display a help message
+#
+procedure help()
+   write("RPN - a reverse polish notation calculator")
+   write()
+   write("\tAccepts most Icon operators and functions.")
+   write()
+   write("\tSpecial operations are:")
+   write()
+   write("\t\tdup       -- duplicate the top of stack")
+   write("\t\ttostring  -- force string value (not a variable)")
+   write("\t\tshowmem   -- display calculator memory")
+   write("\t\tshowstack -- display calculator stack")
+   write("\t\tflip      -- flip top two stack elements")
+   write("\t\tpopstack  -- pop top stack element")
+   write("\t\ttraceon   -- turn tracing on")
+   write("\t\ttraceoff  -- turn tracing off")
+   write()
+end

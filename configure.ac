@@ -376,7 +376,9 @@ AC_CHECK_FUNC(profil,
 	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
 
 if test "x$plugins" = "xyes"; then
-  AC_CHECK_LIB(dl, dlopen)
+  AC_SEARCH_LIBS([dlopen], [dl dld],
+        [AC_DEFINE([HAVE_LIBDL], [1], [define to 1 if you have dlopen])],
+	[])
 else
   AC_DEFINE([NoLoadFunc], [1], [No LoadFunc])
 fi
@@ -620,9 +622,13 @@ echo "$dtmp"
 echo "$stmp"
 
 if test "$plugins"      = yes ; then
-echo " + plugins"
+  if test $ac_cv_search_dlopen = no ; then
+    echo " - plugins"
+  else
+    echo " + plugins"
+  fi
 else
-echo " ! plugins"
+  echo " ! plugins"
 fi
 
 if test "$iconc"      = yes ; then

@@ -2,7 +2,11 @@
 # arsgs: additionals cflags, ldflags and cppflags.  
 AC_DEFUN([save_flags],
 [
-  	for part in $1
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+	for part in $1
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -34,25 +38,6 @@ AC_DEFUN([save_flags],
 		fi
 	done
 
-  	for part in $3
-  	do
-		FOUND=
-		for itm in $CXXFLAGS -a -z $FOUND
-    		do
-			if test $itm = $part
-      			then
-				FOUND=1
-      			fi
-    		done
-
-		if test -z $FOUND ; then
-	   	   CXXFLAGS="$CXXFLAGS $part"     
-		fi
-	done
-
-	TMP_CPPFLAGS=$CPPFLAGS
- 	TMP_LDFLAGS=$LDFLAGS
- 	TMP_CFLAGS=$CFLAGS
 ])
 
 #assuming a call was already made to save the flags

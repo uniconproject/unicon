@@ -1,17 +1,18 @@
+#<p>
+#<b>General purpose string routines contributed by various people.</b>
 #
-# $Id: str_util.icn,v 1.1 2004-02-12 17:07:57 rparlett Exp $
-#
-# This file is in the public domain.
-#
-# Author: Robert Parlett (parlett@dial.pipex.com)
-#
+#   This is one of several files contributing to the util package.
+#</p>
+#<p>
+# <b>Authors:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#                 Robert Parlett (parlett@dial.pipex.com)
+#    and others.
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
 
 package util
-
-#
-# strings.iol
-# - string utilities
-#
 
 #
 # Utility to get next integer
@@ -20,3 +21,407 @@ procedure get_int()
    suspend tab(upto(&digits)) & integer(tab(many(&digits)))
 end
 
+#<p>
+# Does string s end in suffix?
+#   <[returns the prefix on a successful match]>
+#   <[fails if suffix does not match]>
+#</p>
+procedure zapSuffix(s,      # String to examine
+                    suffix  # Suffix to find and remove
+                   )
+    return (string(s), string(suffix), s[-*suffix:0] == suffix, s[1:-*suffix])
+end
+
+#<p>
+# Does string <b>s</b> start with <b>prefix</b>?
+#   <[returns the suffix on a successful match]>
+#   <[fails if prefix does not match]>
+#</p>
+procedure zapPrefix(s,      # String to examine
+                    prefix  # Prefix to find and remove
+                   )
+    return (string(s), string(prefix), s[1+:*prefix] == prefix, s[*prefix+1:0])
+end
+
+#<p>
+# Strip suffix from string s.
+#   <[returns <tt>s</tt> with <tt>suffix</tt> removed, or <tt>s</tt>
+#      if <tt>suffix</tt> not found]>
+#</p>
+procedure delSuffix(s,      # String to examine
+                    suffix  # Suffix to remove if present
+                   )
+    return zapSuffix(s, suffix) | string(s)
+end
+
+#<p>
+# Strip prefix from string s.
+#   <[returns <tt>s</tt> with <tt>prefix</tt> removed, or <tt>s</tt>
+#      if <tt>prefix</tt> not found]>
+#</p>
+procedure delPrefix(s,      # String to examine
+                    prefix  # Suffix to remove if present
+                   )
+    return zapPrefix(s, prefix) | string(s)
+end
+
+#<p>
+# Trim all characters in cs from the left edge of s.
+#    Same parameters and defaults as trim(s,cs).
+#  <[returns <tt>s</tt> with prefix of characters in <tt>cs</tt> stripped]>
+#</p>
+procedure lTrim(s,      # String to examine
+                cs      # Characters to strip from beginning of <tt>s</tt>.
+               )
+    return reverse(trim(reverse(s),cs))
+end
+
+#<p>
+# <[generate the "words" in s.  By default, words are defined
+# as sequences of 1 or more letters]>
+#</p>
+procedure genWords(s,   # String to examine
+                   cs   # Characters comprising words (default: &letters)
+                  )
+    /cs := &letters
+    s ? while &pos := upto(cs) do {
+        suspend tab(many(cs))\1
+        }
+end
+
+
+#<p>
+# <[generate the fields in s that are _separated_ by sequences of
+#   <i>one or more</i> characters in cs.]>
+#</p>
+procedure genFields(s,  # String to examine
+                    cs:' \t\n'
+                   )
+    local s1
+
+    lTrim(s, cs) ? {
+        while s1 := tab(upto(cs)|0) do {
+            suspend s1
+            tab(many(cs)) | fail
+            }
+        }
+end
+
+#<p>
+# <[generate the fields in s that are _separated_ by exactly one
+#   of the characters in cs (i.e. can have empty fields).
+#   Leading characters in cs are treated as separating empty fields.]>
+#</p>
+procedure genFieldsOne(s,   # String to examine
+                       cs:' \t\n'
+                      )
+    s ? {
+        while s1 := tab(upto(cs)|0) do {
+            suspend s1
+            move(1) | fail
+            }
+        }
+end
+
+#<p>
+# Hide escaped instances of characters.  Often, string scanning
+# can be simplified if some characters are 'hidden' whenever they
+# are escaped. (For example, consider running <b>bal()</b> on <b>"(\))"</b>.)
+# This procedure can be used to hide/unhide such escaped characters
+# by converting them to other (typically in <b>&cset--&ascii</b>).
+# <i>Unhiding is accomplished by switching the second and third arguments.</i>
+#   <[returns <tt>s</tt> with characters in <tt>s1</tt> hidden by
+#        replacing them with corresponding characters in <tt>s2</tt>]>
+# </p><p>
+# The second and third parameters behave as in <b>map()</b>, except
+# that s1 defaults to <b>"("</b> and s2 defaults to a character string
+# selected from <b>&cset--&ascii</b>.  <i>Note that accepting the
+# defaults makes it more challenging to <b>unhide</b> the characters
+# later!</i>
+# </p><p>
+# The fourth parameter defaults to a backslash.
+# </p><p>
+# Probably doesn't work right when trying to hide escapes...
+# </p>
+procedure hideEscapedChars(s,       # String to examine
+                           s1:"(",  # Look for these characters
+                           s2,      # ... and replace with these
+                           esc:'\\' # Escape character
+                          )
+    local c1 := cset(s1), ns := ""
+
+    /s2 := hideAllChars(s1)
+
+    s ? {
+        while ns ||:= tab(upto(c1)) do {
+            if isEscapeSeq(ns, esc) then {
+                ns ||:= map(move(1), s1, s2)
+                }
+            else {
+                ns ||:= move(1)
+                }
+            }
+        ns ||:= tab(0)
+        }
+
+    return ns
+end
+
+#<p>
+# Shift all the characters in a string into characters outside of <b>&ascii</b>.
+# This procedure is intended as aid when using <b>hideEscapedChars()</b> by
+# making it easier to construct the third argument, as in:
+# <pre>
+#    s := Utils::hideEscapedChars(s, s1, Utils::hideAllChars(s1))
+# </pre>
+#  <[returns string with all characters mapped out of <b>&ascii</b>]>
+#</p>
+procedure hideAllChars(s    # String of characters to hide.
+                      )
+    return map(s, &ascii, &cset--&ascii)
+end
+
+#<p>
+# Given a string and a table of strings (keys and entries), replaces
+#   occurrences of the table key values with the corresponding entry values.
+#   <i>Finds longest sequence matching a key value.</i>
+#  <[returns copy of <tt>s</tt> with replaced substrings]>
+#</p>
+#<p>
+# <tt>replaceStrs</tt> is most useful in simple cases where you have only
+# a few replacements to make on comparatively short text.  For large numbers
+# of replacements across a lot of text, the <tt>StringReplacer</tt> class
+# is likely to faster.
+#</p>
+procedure replaceStrs(s,    # String to examine
+                      tbl   # Table of replacement strings.
+                            #   Keys are substrings to locate,
+                            #   entries are corresponding replacements
+                     )
+    local a, ns := ""
+    every put(a := [], key(tbl))
+    a := reverse(sort(a))
+    s ? {
+        while ns ||:= tab(findFirst(a)) do {
+            ns ||:= tbl[=!a]
+            }
+        ns ||:= tab(0)
+        }
+    return ns
+end
+
+#<p>
+# Given two strings, produces the longest prefix they share in common.
+#   <[returns longest common prefix of <tt>s1</tt> and <tt>s2</tt>]>
+#</p>
+procedure lcp(s1,s2)
+   return s2 ? =s1[1+:*(if *s1 > *s2 then s2 else s1) to 0 by -1]
+end
+
+#<p>
+# Given two strings, produces the longest suffix they share in common.
+#   <[returns longest common suffix of <tt>s1</tt> and <tt>s2</tt>]>
+#</p>
+procedure lcs(s1,s2)
+   return reverse(lcp(reverse(s1),reverse(s2)))
+end
+
+#<p>
+# <b><i>Deprecated in favor of the MapBytes class</i></b>
+#</p>
+#<p>
+# Do byte reorderings efficiently.
+#   Assumes that the length of string <b>s</b> is a multiple of
+#   the length of <b>in</b>.  If this isn't the case, the remaining
+#   characters in s are appended unmapped.
+#<p>
+# <i>The default action is the identity mapping</i>
+#</p>
+#<p>
+# To work, <b>in</b> and <b>out</b> must be the same length.
+#</p>
+procedure mapBytes(s,   # String to re-arrange
+                   in,  # Input byte order,  e.g. "1234"
+                   out  # Output byte order, e.g.: "4321"
+                  )
+    local  ns := ""
+    static inMap, outMap, saveIn, saveOut
+
+    if /in then {       # default to identity mapping
+        in  := "1"
+        out := "1"
+        }
+
+    # bootstrap...
+    if (/saveIn  | (saveIn  ~==  in)) |
+       (/saveOut | (saveOut ~== out)) then {
+        saveIn  := in
+        saveOut := out
+        inMap   := string(&cset)
+        inMap   := inMap[1+:((*inMap/*in)*(*in))]
+        outMap  := ""
+        inMap ? while(outMap ||:= map(in,out,move(*in)))
+        }
+    
+    # now do the work
+    s ? {
+        while ns ||:= map(inMap,outMap,move(*inMap))
+        while ns ||:= map(in,out,move(*in))  # catch short strings
+        ns ||:= tab(0)                       # just append last tidbit
+        }
+    return ns
+end
+
+#<p>
+#   Convert of string with (possibly) embedded separators into a list.
+#  <[param s string to convert into list of strings]>
+#  <[param sep character to break string on (defaults to newline)]>
+#  <[returns list of strings from <tt>s</tt>]>
+#</p>
+procedure stringToList(s, sep:'\n')
+    local a := []
+
+    if s[0] == sep then s := s[1:-1]       # strip only last sep
+
+    s ? {
+        while put(a, tab(upto(sep)|0)) do move(1) | break
+        }
+        
+    return a
+end
+
+#<p>
+#   Convert a list of strings into a single string.
+#  <[param a list to join elements from into a string]>
+#  <[param sep character to join elements on (defaults to newline)]>
+#  <[returns string formed by joining elements in <tt>a</tt>.
+#</p>
+procedure listToString(a, sep:"\n")
+   local s := ""
+
+   every s ||:= !a || sep
+   return s
+end
+
+#<p>
+#  Pad a string on the left if it is too short.
+#  This method is similar to the function <tt>left</tt> except that
+#  <tt>lPad</tt> returns the original string if it is longer than
+#  the specified field, while <tt>left</tt> truncates the string to
+#  fit in the field.
+#  <[param s string to pad]>
+#  <[param n desired field width.  The actual width will be max(*s, n)]>
+#  <[param p string to use as padding]>
+#</p>
+procedure lPad(s,n,p)
+   return if *s < n then left(s,n,p) else s
+end
+
+#<p>
+#  Pad a string on the right if it is too short.
+#  This method is similar to the function <tt>right</tt> except that
+#  <tt>rPad</tt> returns the original string if it is longer than
+#  the specified field, while <tt>right</tt> truncates the string to
+#  fit in the field.
+#  <[param s string to pad]>
+#  <[param n desired field width.  The actual width will be max(*s, n)]>
+#  <[param p string to use as padding]>
+#</p>
+procedure rPad(s,n,p)
+   return if *s < n then right(s,n,p) else s
+end
+
+#<p>
+# Generate the fields from a CSV-encoded string.  Fails on any field that
+#  isn't well-formed:<br><br>
+#  - fields with doubles quotes or embedded separators must be enclosed
+#      in double quotes<br>
+#  - double quotes in fields must be doubled: e.g. to embed "five", use
+#      ""five""<br>
+#  - leading and trailing whitespace (blanks and tabs) is stripped unless
+#    embedded inside a double-quoted field<br>
+#  - if blank and/or tab are used as separators, they are not considered
+#    whitespace<br>
+#
+# Also, any characters except double quotes and newlines may be used
+#  as separators.
+# <[generate the fields in CSV-formatted string <tt>s</tt>]>
+# <[param s CSV string to parse]>
+# <[param sep set of characters (default <tt>','</tt>) to separate fields]>
+# <[param spanFlag if non-null, indicates that fields are separated by one or
+#                           more separators instead of just one]>
+#</p>
+procedure genCSV(s, sep, spanFlag)
+    local WS, r, spanner
+    static span, nospan
+    initial {
+        # Default to not treating spans of separators as single separators
+        nospan := makeProc { repeat { @&source; move(1) } }
+        span   := makeProc { repeat { sep := @&source; tab(many(\sep[1])) } }
+        }
+
+    spanner := if /spanFlag then nospan else span
+    
+    /sep := ","
+    WS := ' \t\n' -- sep  # Can't include separators in whitespace
+                          #  (The '\n' is a trick so there's always
+                          #  something at the end of the last field.)
+
+    (s||WS) ? {
+        while not pos(0) do {
+            tab(many(WS))
+            if ="\"" then {    # Quoted string
+                r := ""
+                while r ||:= tabSkip("\"") do {
+                    if not ="\"" then break     # End of quoted string
+                    r ||:= "\""
+                    }
+                suspend (tab((upto(sep))|0)\1, r) do spanner(sep)     
+                }
+            else suspend trim(tab((upto(sep))|0)\1,WS) do spanner(sep)
+            }
+        }
+end
+
+#<p>
+#  Produce a list of the fields from a CSV-formatted string.
+# <[returns a list of the fields in the string <tt>s</tt>]>
+# <[param s CSV string to parse]>
+# <[param sep set of characters (default <tt>','</tt>) to separate fields]>
+# <[param spanFlag if non-null, indicates that fields are separated by one or
+#                           more separators instead of just one]>
+#</p>
+procedure parseCSV(s, sep, spanFlag)
+    local A
+    every put(A := [], genCSV(s, sep, spanFlag))
+    return A
+end
+
+#<p>
+# Produce a CVS-formatted string from a list of field values
+# <[returns a CSV-formatted string for the list of fields]>
+# <[param A list to put into CSV-formatted string]>
+# <[param sep character used to separate fields (default <tt>','</tt>)]>
+#</p>
+procedure encodeCSV(A, sep)
+    local r
+    /sep := ","
+    every (r := "") ||:= encodeCsvField(!A) || sep
+    r := r[1:-1]
+    return r
+end
+
+#<p>
+# Put a single field into legal CSV form.
+# <[returns the field in legal CSV format]>
+# <[param s field to format]>
+#</p>
+procedure encodeCsvField(field)
+    local r
+    r := ""
+    field ? {
+        while r ||:= tab(upto('"')+1) do r ||:= "\""
+        r := "\"" || r || tab(0) || "\""
+        }
+    return r
+end

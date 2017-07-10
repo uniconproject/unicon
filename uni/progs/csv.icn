@@ -1,0 +1,62 @@
+# <p>
+# Process a <b>properly formatted</b> CSV file.
+#   You can change the separator from the default <tt>,</tt>
+#   to any set of characters using the <tt>--separator=CSET</tt>
+#   argument.
+# </p>
+# <p>
+#   Each separator denotes a field separation (e.g. "a,,,b,"
+#   contains five fields) unless you give the <tt>--span</tt> argument.
+#   If you give the <tt>--span</tt> argument, then the fields
+#   as considered to be separated by <i>one or more</i> spans
+#   of the separator instead of exactly one and the above input
+#   contains three fields instead of five (in both cases, the last
+#   field is the empty string).
+# </p>
+# <p>
+#  Assumes that:<br><br>
+#  a. Fields containing the separator are enclosed in double
+#     quotes.<br>
+#  b. Fields containing double quotes have those quotes
+#     duplicated with the entire field inclosed in double
+#     quotes.<br>
+#  c. Leading and trailing whitespace (blanks and tabs) are
+#     to be removed unless used as separators.<br>
+#  d. Double quotes and newlines are <i>never</i> separators.<br>
+#</p>
+
+import util
+
+procedure helpMesg()
+    write(&errout, "Usage: csv [OPTIONS] <CSV_FILE")
+    write(&errout)
+    write(&errout," where OPTIONS may be:")
+    write(&errout,"\t--separator=\"SEPARATORS\"")
+    write(&errout,"\t     SEPARATORS is the set of characters that")
+    write(&errout,"\t     to separate fields [defaults to ',']")
+    write(&errout,"\t     Normally, fields are separated by exactly one")
+    write(&errout,"\t     separator, so \"a,,b\" has three fields.")
+    write(&errout,"\t--span -- fields separated by one or more SEPARATORS")
+    write(&errout,"\t     So \"a,,b\" has two fields.")  
+    stop()
+end
+
+procedure main(args)
+
+    if "--help" == !args then helpMesg()
+    # Allow changing the separator from the default
+    sep := zapPrefix(!args, "--separator=") | ","
+    sep --:= ('"\n')  # Some characters are illegal as separators
+    # Allow span of separators as single field separator?
+    spanner := ("--span" == !args)
+
+    every line := parseCSV(!&input, sep, spanner) do {
+        # Code to process the array of values from each line goes
+        #   here in place of this simple output of each field on
+        #   a separate line, enclosed in single quotes.
+        every write("\t'",!line,"'")
+        # For grins, convert the array back into a CSV string
+        write("\t",encodeCSV(line))
+        }
+
+end

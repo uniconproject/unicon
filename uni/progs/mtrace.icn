@@ -1,0 +1,205 @@
+#<p>
+#  Read the output log from the GCC mtrace facility (man mtrace)
+#    and produce a summary of problems that have been found.
+#    Maps problems back to source file and line where possible.
+#  Three types of errors can be detected and reported:<br><br>
+#  -- cases where memory is allocated, but not freed<br>
+#  -- cases where an attempt is made to free already freed memory<br>
+#  -- cases where an attempt is made to free memory that was never allocated<br>
+#</p>
+#<p>
+# For example, here is the output from this program when run
+#   on a test program:
+#<pre>
+#Allocation that is not freed: 
+#        0x8831f90[    1024 bytes] <- test.c:[197]
+#        0x88337c0[    1024 bytes] <- test.c:[197]
+#        0x8832fb0[    1024 bytes] <- test.c:[197]
+#        0x8831780[    1024 bytes] <- test.c:[197]
+#        0x88327a0[    1024 bytes] <- test.c:[197]
+#        0x88333d8[      50 bytes] <- test.c:[159]
+#
+#Duplicated free: 
+#        0x98c1378[    1024 bytes] <- test.c:[209] <test.c[197]>
+#        0x98c1b88[    1024 bytes] <- test.c:[209] <test.c[197]>
+#        0x98c2398[    1024 bytes] <- test.c:[209] <test.c[197]>
+#        0x98c2ba8[    1024 bytes] <- test.c:[209] <test.c[197]>
+#        0x98c33b8[    1024 bytes] <- test.c:[209] <test.c[197]>
+#
+#</pre>
+#(There were no attempts to free unallocated memory in this example)
+# The first field of each record is the memory address of the
+# region that is being allocated/freed, the second (when present) is
+# the size of that allocation, the third is the source code file
+# and the fourth is the line number in that file where the allocation/free
+# took place.
+# Note that the report on each duplicate free provides the location
+# where the free was attempted and also the location where the allocation
+# took place as a fifth field.
+#</p>
+
+import util
+
+global noMalloc, noFree, dupFree
+
+procedure helpMesg(errMsg)
+    write(&errout, errMsg)
+    write(&errout, "Usage: mtrace --log=LOGFILE")
+    stop()
+end
+
+procedure main(args)
+
+    traceFileName := zapPrefix(!args, "--log=")
+    if /traceFileName then helpMesg("Missing --log=LOGFILE argument")
+    traceFile := open(traceFileName) |
+                 helpMesg("Can't open '"||traceFileName||"'")
+
+    process(traceFile)
+
+    show("Free of non-allocated pointer: ", noMalloc)
+    show("Allocation that is not freed: ", noFree)
+    show("Duplicated free: ", dupFree)
+
+end
+
+#<p>
+# Displays all the record lines for a specific category.
+# <[param prompt -- header line identifying the trace category]>
+# <[param A -- list of trace records]>
+#</p>
+procedure show(prompt, A)
+    if *A > 0 then {
+        write(prompt)
+        every write("\t",!A)
+        write()
+        }
+end
+
+#<p>
+# traceRecords are used within the <tt>process</tt> procedure
+#   to track the allocation/free cycles for memory requests.
+#</p>
+record traceRecord(fName, size, memAddr, alloAddr, freeAddr)
+
+#<p>
+#  Process the lines in a gcc mtrace log file.
+#  This procedure builds up three lists of information based
+#  on the contents of that log file:<br><br>
+#  -- a list of those malloc()s that don't have associated
+#      frees (global variable <tt>noFree</tt>)<br>
+#  -- a list of those free()s that attempt to free memory
+#      that was never allocated (<tt>noMalloc</tt>)<br>
+#  -- a list of those free()s that attempt to free memory
+#      that as already be freed (<tt>dupFree</tt>)<br>
+#</p>
+procedure process(f)
+    local name, traceMap, line, codeLoc, action, memLoc, size, tr
+
+    traceMap := table()
+    noMalloc := []
+    noFree   := []
+    dupFree  := []
+
+    every line := !f do {
+        if line == ("= Start"|"= End") then next
+        else {
+            line ? {
+                name := (move(2), tab(upto(':')))
+                codeLoc := (tab(upto('[')+1),tab(upto(']')))
+                action := 2(move(2),move(1),move(1))
+                memLoc := tab(upto(' \t')|0)
+                tab(many(' \t'))
+                size := tab(0)
+                }
+             size ?:= (="0x","16r")||tab(0)	# Size to Unicon hex form
+
+             if "+" == action then {	        # malloc
+                 traceMap[memLoc] :=
+                      traceRecord(name, size, memLoc, codeLoc, &null)
+                 }
+             else if "-" == action then {       # free
+                 tr := traceMap[memLoc] | &null
+                 if /tr then {		        # No matching malloc?
+                     put(noMalloc, mkRec(name, codeLoc, memLoc))
+                     }
+                 else if \tr.freeAddr then {	# Already freed?
+                     put(dupFree, mkFreeRec(name, codeLoc, memLoc, tr))
+                     }
+                 else {
+                     tr.freeAddr := memLoc	# Normal free
+                     }
+                 }
+             }
+          }
+    
+    every tr := !traceMap do {
+        if /tr.freeAddr then {	# No free for malloc?
+            put(noFree, mkRec(tr.fName, tr.alloAddr, tr.memAddr, tr.size))
+            }
+        }
+
+end
+
+#<p>
+# Construct a report line from the information parsed from the
+#    gcc mtrace log.  This includes determining the source file
+#    name and line number within that source file where the
+#    allocation/free took place that caused this record to exist.
+# <[param fName -- name of executable unit involved]>
+# <[param codeLoc -- hexadecimal address within that unit]>
+# <[param alloLoc -- location in heap of the allocation
+# <[param alloSize -- size (if known) of the allocation
+#</p>
+procedure mkRec(fName, codeLoc, alloLoc, alloSize)
+    local result, lineNo, fileName
+
+    result := getFileAndLine(fName, codeLoc)
+    fileName := result[1]
+    lineNo   := result[2]
+
+    # Include the allocation size, if known
+    alloSize := ("["||rPad(0+\alloSize,8)||" bytes]") | ""
+
+    # Now display the source file and line number and address of allocation
+    return alloLoc||alloSize||" <- "||fileName||":["||lineNo||"]"
+
+end
+
+#<p>
+# Construct a record of a duplicated free.
+#  Includes both the source location of the free, but also of the
+#    original allocation.
+#</p>
+procedure mkFreeRec(fName, codeLoc, alloLoc, tr)
+    local target, result
+
+    target := mkRec(fName, codeLoc, alloLoc, tr.size)
+    result := getFileAndLine(fName, tr.alloAddr)
+    return target ||" <"|| result[1] ||"["||result[2]||"]>"
+end
+
+#<p>
+#  Produces a list containing the source file name and source line
+#    number (in order), given the object file name and byte offset
+#    into the code.
+#</p>
+procedure getFileAndLine(fName, codeLoc)
+    local cmdLine, cmd, lineNo, fileName
+
+    # Start by figuring out where the allocation took place...
+    #   (Use gdb to do all the heavy lifting - then extract the results)
+    cmdLine := "gdb -q "||
+           fName|| "<<HERE_FILE\ninfo line *"||codeLoc||"\nquit\nHERE_FILE"
+    cmd := open(cmdLine,"rp")
+    read(cmd)		# Skip first line
+    lineNo := "???"
+    fileName := "<unknown>"
+    read(cmd) ? {	# extract source file name and line number
+        lineNo   := (tab(find("Line ")),  ="Line ",  tab(upto(' ')))
+        fileName := (tab(find(" of \"")), =" of \"", tab(upto('"')))
+        }
+    close(cmd)
+
+    return [fileName, lineNo]
+end

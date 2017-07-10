@@ -1,0 +1,21 @@
+#<p>
+#  A solution to the <i>accumulator generator</i> problem.
+#  (This illustrates how to implement a <i>closure</i>
+#  using a co-expression.)
+#</p>
+
+import lang
+
+procedure main(args)
+
+    f := genAcc(3)
+    g := genAcc(5)
+    write(f(4)," ",g(4))
+    write(f(2)," ",g(3))
+    write(f(1.5)," ",g(4.2))
+
+end
+
+procedure genAcc(n)
+    return makeProc { while i := (n@&source)[1] do n +:= i }
+end

@@ -61,7 +61,7 @@ iconx: $(OBJS)
 x%.$(O): %.r $(HDRS)
 	$(CMNT)	@echo "   [ICONX RTT] $<"
 	$(SLNT)$(RTT) -x $<
-	$(SLNT)$(CC) $(CFLAGS) -c x$*.c
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c x$*.c
 	$(SLNT)$(RM) x$*.c
 
 xdata.$(O): data.r $(HDRS) ../h/kdefs.h ../h/fdefs.h ../h/odefs.h
@@ -73,7 +73,7 @@ xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h
 	$(CMNT)	@echo "   [ICONX RTT] $<  (revision:$(REPO_REV))"
 	$(SLNT)$(RTT) -DREPO_REVISION=$(REPO_REV) -x keyword.r
-	$(SLNT)$(CC) $(CFLAGS) -DREPO_REVISION=$(REPO_REV) -c xkeyword.c
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -DREPO_REVISION=$(REPO_REV) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
 xrposix.$(O): rposix.r $(HDRS) ../h/posix.h

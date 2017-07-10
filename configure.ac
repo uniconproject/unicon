@@ -257,7 +257,12 @@ if test "x$graphics" = "xyes"; then
 
     if test "x$graphics3d" = "xyes"; then
        CHECK_OPENGL()
-       CHECK_FTGL()
+       # A C++ compiler must be present and usable
+       if test "$CXX" = "g++" -a "$GXX" = "yes"; then
+         CHECK_FTGL()
+       else
+         echo "FTGL: missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+       fi
     else
       AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])   
     fi    
@@ -388,7 +393,12 @@ else
 fi
 
 if test "x$voip" = "xyes"; then
-   CHECK_VOICE()
+    # A C++ compiler must be present and usable
+    if test "$CXX" = "g++" -a "$GXX" = "yes"; then
+      CHECK_VOICE()
+    else
+         echo "VOIP: missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+    fi
 else
   AC_DEFINE([NoVoip], [1], [No VOIP])
 fi
@@ -403,6 +413,12 @@ fi
 
 CHECK_PTHREAD()
 CHECK_OPENSSL()
+
+
+AC_SUBST(JV_LDFLAGS)
+AC_SUBST(GL_CFLAGS)
+AC_SUBST(GL_LDFLAGS)
+
 
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
@@ -533,7 +549,7 @@ if test "$audio" = yes ; then
   if test "$onAudio" = 4 ; then
     atmp=" + $atmp"
   else
-    atmp=" $onAudio - $atmp"
+    atmp=" - $atmp"
   fi
 
 else
@@ -582,14 +598,15 @@ echo "--------------------------------------------------"
 echo "           Configuration Summary"
 echo "--------------------------------------------------" 
 echo "*** Build Environment"
-echo "Host    :  $host_os  ($unicon_host)"
-echo "CC      :  $CC"
-echo "CFLAGS  :$CFLAGS"
-echo "LDFLAGS :$LDFLAGS"
-echo "LIBS    : $LIBS"
-echo "Verbose :  $verbosebuild"
-echo "Debug   :  $debug"
-echo "Devmode :  $devmode"
+echo "Host     :  $host_os  ($unicon_host)"
+echo "CC       :  $CC"
+echo "CFLAGS   :$CFLAGS"
+echo "CPPFLAGS :$CPPFLAGS"
+echo "LDFLAGS  :$LDFLAGS"
+echo "LIBS     :  $LIBS"
+echo "Verbose  :  $verbosebuild"
+echo "Debug    :  $debug"
+echo "Devmode  :  $devmode"
 echo ""
 echo "*** Features (+Available   -Missing   !Disabled)"
 echo "$ctmp"

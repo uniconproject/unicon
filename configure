@@ -623,6 +623,8 @@ ac_includes_default="\
 
 ac_unique_file="src/runtime/imain.r"
 ac_subst_vars='LTLIBOBJS
+GL_LDFLAGS
+GL_CFLAGS
 JV_LDFLAGS
 LIBOBJS
 ALLOCA
@@ -636,11 +638,10 @@ XPM
 XL
 GRAPHICS
 XLIBS
+CXXCPP
 ac_ct_CXX
 CXXFLAGS
 CXX
-GL_LDFLAGS
-GL_CFLAGS
 CFDYN
 RLIBS
 RLINK
@@ -750,7 +751,8 @@ CPPFLAGS
 CPP
 CXX
 CXXFLAGS
-CCC'
+CCC
+CXXCPP'
 
 
 # Initialize some variables set by options.
@@ -1454,6 +1456,7 @@ Some influential environment variables:
   CPP         C preprocessor
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
+  CXXCPP      C++ preprocessor
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -1859,6 +1862,180 @@ fi
 
 } # ac_fn_cxx_try_compile
 
+# ac_fn_cxx_try_link LINENO
+# -------------------------
+# Try to link conftest.$ac_ext, and return whether this succeeded.
+ac_fn_cxx_try_link ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  rm -f conftest.$ac_objext conftest$ac_exeext
+  if { { ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_link") 2>conftest.err
+  ac_status=$?
+  if test -s conftest.err; then
+    grep -v '^ *+' conftest.err >conftest.er1
+    cat conftest.er1 >&5
+    mv -f conftest.er1 conftest.err
+  fi
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 test -x conftest$ac_exeext
+       }; then :
+  ac_retval=0
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_retval=1
+fi
+  # Delete the IPA/IPO (Inter Procedural Analysis/Optimization) information
+  # created by the PGI compiler (conftest_ipa8_conftest.oo), as it would
+  # interfere with the next link command; also delete a directory that is
+  # left behind by Apple's compiler.  We do this before executing the actions.
+  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+  as_fn_set_status $ac_retval
+
+} # ac_fn_cxx_try_link
+
+# ac_fn_cxx_try_cpp LINENO
+# ------------------------
+# Try to preprocess conftest.$ac_ext, and return whether this succeeded.
+ac_fn_cxx_try_cpp ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if { { ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.err
+  ac_status=$?
+  if test -s conftest.err; then
+    grep -v '^ *+' conftest.err >conftest.er1
+    cat conftest.er1 >&5
+    mv -f conftest.er1 conftest.err
+  fi
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } > conftest.i && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then :
+  ac_retval=0
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+    ac_retval=1
+fi
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+  as_fn_set_status $ac_retval
+
+} # ac_fn_cxx_try_cpp
+
+# ac_fn_cxx_check_header_mongrel LINENO HEADER VAR INCLUDES
+# ---------------------------------------------------------
+# Tests whether HEADER exists, giving a warning if it cannot be compiled using
+# the include files in INCLUDES and setting the cache variable VAR
+# accordingly.
+ac_fn_cxx_check_header_mongrel ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if eval \${$3+:} false; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 usability" >&5
+$as_echo_n "checking $2 usability... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+#include <$2>
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ac_header_compiler=yes
+else
+  ac_header_compiler=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
+$as_echo_n "checking $2 presence... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <$2>
+_ACEOF
+if ac_fn_cxx_try_cpp "$LINENO"; then :
+  ac_header_preproc=yes
+else
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in #((
+  yes:no: )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $2: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $2: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $2:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $2: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $2:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
+( $as_echo "## ------------------------------------ ##
+## Report this to jeffery@cs.uidaho.edu ##
+## ------------------------------------ ##"
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+$as_echo_n "checking for $2... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  eval "$3=\$ac_header_compiler"
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+fi
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_cxx_check_header_mongrel
+
 # ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
 # --------------------------------------------
 # Tries to find the compile-time value of EXPR in a program that includes
@@ -2219,52 +2396,6 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_member
-
-# ac_fn_cxx_try_link LINENO
-# -------------------------
-# Try to link conftest.$ac_ext, and return whether this succeeded.
-ac_fn_cxx_try_link ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  rm -f conftest.$ac_objext conftest$ac_exeext
-  if { { ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_link") 2>conftest.err
-  ac_status=$?
-  if test -s conftest.err; then
-    grep -v '^ *+' conftest.err >conftest.er1
-    cat conftest.er1 >&5
-    mv -f conftest.er1 conftest.err
-  fi
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && {
-	 test -z "$ac_cxx_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 test -x conftest$ac_exeext
-       }; then :
-  ac_retval=0
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_retval=1
-fi
-  # Delete the IPA/IPO (Inter Procedural Analysis/Optimization) information
-  # created by the PGI compiler (conftest_ipa8_conftest.oo), as it would
-  # interfere with the next link command; also delete a directory that is
-  # left behind by Apple's compiler.  We do this before executing the actions.
-  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-  as_fn_set_status $ac_retval
-
-} # ac_fn_cxx_try_link
 
 # ac_fn_c_check_decl LINENO SYMBOL VAR INCLUDES
 # ---------------------------------------------
@@ -4827,12 +4958,60 @@ fi
 #
 if test -n "${XLIB_HOME}"
 then
-        XLIB_OLD_LDFLAGS=$LDFLAGS
-        XLIB_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${XLIB_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${XLIB_HOME}/include"
 
-        ac_ext=c
+  	for part in -I${XLIB_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${XLIB_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -4921,17 +5100,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
+$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
 
         if test "$xlib_cv_libx" = "yes" -a "$xlib_cv_xlib_h" = "yes" -a "$xlib_cv_xos_h" = "yes" -a "$xlib_cv_xutil_h" = "yes" -a "$xlib_cv_xatom_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XAllocColorCells in -lX11" >&5
 $as_echo_n "checking for XAllocColorCells in -lX11... " >&6; }
 if ${ac_cv_lib_X11_XAllocColorCells+:} false; then :
@@ -4977,21 +5155,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
-$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking xlib in ${XLIB_HOME}" >&5
-$as_echo_n "checking xlib in ${XLIB_HOME}... " >&6; }
-                LDFLAGS="$XLIB_OLD_LDFLAGS"
-                CPPFLAGS="$XLIB_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -5034,13 +5217,61 @@ fi
 #
 if test -n "${FREETYPE_HOME}"
 then
-	FREETYPE_OLD_LDFLAGS=$LDFLAGS
-	FREETYPE_OLD_CPPFLAGS=$CPPFLAGS
-	LDFLAGS="$LDFLAGS -L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include -I${FREETYPE_HOME}/include/freetype2/freetype -I${FREETYPE_HOME}/include/freetype2"
-	echo "$CPPFLAGS"
 
-        ac_ext=c
+  	for part in -I${FREETYPE_HOME}/include -I${FREETYPE_HOME}/include/freetype2/freetype -I${FREETYPE_HOME}/include/freetype2
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -5096,17 +5327,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
+$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
 
         if test "$freetype_cv_libfreetype" = "yes" -a "$freetype_cv_ft2build_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_Open_Face in -lfreetype" >&5
 $as_echo_n "checking for FT_Open_Face in -lfreetype... " >&6; }
 if ${ac_cv_lib_freetype_FT_Open_Face+:} false; then :
@@ -5152,21 +5382,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
-$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking freetype in ${FREETYPE_HOME}" >&5
-$as_echo_n "checking freetype in ${FREETYPE_HOME}... " >&6; }
-		LDFLAGS="$FREETYPE_OLD_LDFLAGS"
-		CPPFLAGS="$FREETYPE_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -5207,10 +5442,58 @@ fi
 #
 if test -n "${XFT_HOME}"
 then
-	XFT_OLD_LDFLAGS=$LDFLAGS
-	XFT_OLD_CPPFLAGS=$CPPFLAGS
-	LDFLAGS="$LDFLAGS -L${XFT_HOME}/lib64 -L${XFT_HOME}/lib"
-	CPPFLAGS="$CPPFLAGS -I${XFT_HOME}/include/X11/Xft -I${XFT_HOME}/include/freetype2"
+
+  	for part in -I${XFT_HOME}/include/X11/Xft -I${XFT_HOME}/include/freetype2
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${XFT_HOME}/lib64 -L${XFT_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5268,17 +5551,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
+$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
 
         if test "$xft_cv_libxft" = "yes" -a "$xft_cv_xft_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lXft" >&5
 $as_echo_n "checking for main in -lXft... " >&6; }
 if ${ac_cv_lib_Xft_main+:} false; then :
@@ -5318,21 +5600,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
-$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking XFT in ${XFT_HOME}" >&5
-$as_echo_n "checking XFT in ${XFT_HOME}... " >&6; }
-		LDFLAGS="$XFT_OLD_LDFLAGS"
-		CPPFLAGS="$XFT_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -5370,10 +5657,58 @@ fi
 #
 if test -n "${JPEG_HOME}"
 then
-        JPEG_OLD_LDFLAGS=$LDFLAGS
-        JPEG_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${JPEG_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${JPEG_HOME}/include"
+
+  	for part in -I${JPEG_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${JPEG_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5439,17 +5774,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
+$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
 
         if test "$jpeg_cv_libjpeg" = "yes" -a "$jpeg_cv_jpeglib_h" = "yes" -a "$jpeg_cv_jerror_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_destroy_decompress in -ljpeg" >&5
 $as_echo_n "checking for jpeg_destroy_decompress in -ljpeg... " >&6; }
 if ${ac_cv_lib_jpeg_jpeg_destroy_decompress+:} false; then :
@@ -5495,21 +5829,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
-$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jpeg in ${JPEG_HOME}" >&5
-$as_echo_n "checking jpeg in ${JPEG_HOME}... " >&6; }
-                LDFLAGS="$JPEG_OLD_LDFLAGS"
-                CPPFLAGS="$JPEG_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -5547,10 +5886,58 @@ fi
 #
 if test -n "${PNG_HOME}"
 then
-        PNG_OLD_LDFLAGS=$LDFLAGS
-        PNG_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${PNG_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${PNG_HOME}/include"
+
+  	for part in -I${PNG_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${PNG_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5611,11 +5998,8 @@ fi
 #	AC_CHECK_HEADER(pngconf.h, [png_cv_pngconf_h=yes], [png_cv_pngconf_h=no])
 #	AC_CHECK_HEADER(zlib.h, [png_cv_zlib_h=yes], [png_cv_zlib_h=no])
 #	AC_CHECK_HEADER(zconf.h, [png_cv_zconf_h=yes], [png_cv_zconf_h=no])
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
+$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
 
 	if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes"
 	   # -a "$png_cv_pngconf_h" = "yes" -a "$png_cv_zlib_h" = "yes" -a "$png_cv_zconf_h" = "yes"
@@ -5623,6 +6007,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
                 #
                 # If both library and headers were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_read_image in -lpng" >&5
 $as_echo_n "checking for png_read_image in -lpng... " >&6; }
 if ${ac_cv_lib_png_png_read_image+:} false; then :
@@ -5668,21 +6054,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
-$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking png in ${PNG_HOME}" >&5
-$as_echo_n "checking png in ${PNG_HOME}... " >&6; }
-                LDFLAGS="$PNG_OLD_LDFLAGS"
-                CPPFLAGS="$PNG_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -5725,10 +6116,58 @@ fi
 #
 if test -n "${OPENGL_HOME}"
 then
-        OPENGL_OLD_LDFLAGS=$LDFLAGS
-        OPENGL_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -lm -L${OPENGL_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${OPENGL_HOME}/include"
+
+  	for part in -I${OPENGL_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -lm -L${OPENGL_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5844,17 +6283,15 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
+$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
         if test "$opengl_cv_libGL" = "yes" -a "$opengl_cv_libGLU" = "yes" -a "$opengl_cv_gl_h" = "yes" -a "$opengl_cv_glx_h" = "yes" -a "$opengl_cv_glu_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
 $as_echo_n "checking for glAccum in -lGL... " >&6; }
 if ${ac_cv_lib_GL_glAccum+:} false; then :
@@ -5946,71 +6383,35 @@ _ACEOF
 fi
 
 	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
-
 	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
-$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
-$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
-                LDFLAGS="$OPENGL_OLD_LDFLAGS"
-                CPPFLAGS="$OPENGL_OLD_CPPFLAGS"
 	        GL_CFLAGS=
-
 	        GL_LDFLAGS=
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
-fi
-
-
-       #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if FTGL is wanted" >&5
-$as_echo_n "checking if FTGL is wanted... " >&6; }
-
-# Check whether --with-FTGL was given.
-if test "${with_FTGL+set}" = set; then :
-  withval=$with_FTGL; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-  FTGL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-FTGL_HOME=/usr/local
-if test ! -f "${FTGL_HOME}/include/FTGL/FTGLExtrdFont.h"
-then
-        FTGL_HOME=/usr
-fi
-
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
 
-#
-# Locate FTGL, if wanted
-#
-if test -n "${FTGL_HOME}"
-then
-    FTGL_OLD_LDFLAGS=$LDFLAGS
-    FTGL_OLD_CPPFLAGS=$CPPFLAGS
-    LDFLAGS="$LDFLAGS -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib"
-    CPPFLAGS="$CPPFLAGS -I${FTGL_HOME}/include/FTGL"
-    ac_ext=cpp
+       # A C++ compiler must be present and usable
+       if test "$CXX" = "g++" -a "$GXX" = "yes"; then
+         ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -6261,19 +6662,244 @@ else
     CXXFLAGS=
   fi
 fi
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-    #
-    # Test whether we found a C++ compiler; for now, only a true g++.  We used
-    # to use AC_LANG_CPLUSPLUS, but it dies with a FATAL error if no C++ found
-    #
-    if test "$CXX" = "g++" -a "$GXX" = "yes"
-    then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to run the C++ preprocessor" >&5
+$as_echo_n "checking how to run the C++ preprocessor... " >&6; }
+if test -z "$CXXCPP"; then
+  if ${ac_cv_prog_CXXCPP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+      # Double quotes because CXXCPP needs to be expanded
+    for CXXCPP in "$CXX -E" "/lib/cpp"
+    do
+      ac_preproc_ok=false
+for ac_cxx_preproc_warn_flag in '' yes
+do
+  # Use a header file that comes with gcc, so configuring glibc
+  # with a fresh cross-compiler works.
+  # Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+  # <limits.h> exists even on freestanding compilers.
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp. "Syntax error" is here to catch this case.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+		     Syntax error
+_ACEOF
+if ac_fn_cxx_try_cpp "$LINENO"; then :
+
+else
+  # Broken: fails on valid input.
+continue
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+
+  # OK, works on sane cases.  Now check whether nonexistent headers
+  # can be detected and how.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ac_nonexistent.h>
+_ACEOF
+if ac_fn_cxx_try_cpp "$LINENO"; then :
+  # Broken: success on invalid input.
+continue
+else
+  # Passes both tests.
+ac_preproc_ok=:
+break
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+
+done
+# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
+rm -f conftest.i conftest.err conftest.$ac_ext
+if $ac_preproc_ok; then :
+  break
+fi
+
+    done
+    ac_cv_prog_CXXCPP=$CXXCPP
+
+fi
+  CXXCPP=$ac_cv_prog_CXXCPP
+else
+  ac_cv_prog_CXXCPP=$CXXCPP
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXXCPP" >&5
+$as_echo "$CXXCPP" >&6; }
+ac_preproc_ok=false
+for ac_cxx_preproc_warn_flag in '' yes
+do
+  # Use a header file that comes with gcc, so configuring glibc
+  # with a fresh cross-compiler works.
+  # Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+  # <limits.h> exists even on freestanding compilers.
+  # On the NeXT, cc -E runs the code through the compiler's parser,
+  # not just through cpp. "Syntax error" is here to catch this case.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+		     Syntax error
+_ACEOF
+if ac_fn_cxx_try_cpp "$LINENO"; then :
+
+else
+  # Broken: fails on valid input.
+continue
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+
+  # OK, works on sane cases.  Now check whether nonexistent headers
+  # can be detected and how.
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ac_nonexistent.h>
+_ACEOF
+if ac_fn_cxx_try_cpp "$LINENO"; then :
+  # Broken: success on invalid input.
+continue
+else
+  # Passes both tests.
+ac_preproc_ok=:
+break
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
+
+done
+# Because of `break', _AC_PREPROC_IFELSE's cleaning code was skipped.
+rm -f conftest.i conftest.err conftest.$ac_ext
+if $ac_preproc_ok; then :
+
+else
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "C++ preprocessor \"$CXXCPP\" fails sanity check
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+#
+# Handle user hints
+#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if FTGL is wanted" >&5
+$as_echo_n "checking if FTGL is wanted... " >&6; }
+
+# Check whether --with-FTGL was given.
+if test "${with_FTGL+set}" = set; then :
+  withval=$with_FTGL; if test "$withval" != no ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  FTGL_HOME="$withval"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+else
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+FTGL_HOME=/usr/local
+if test ! -f "${FTGL_HOME}/include/FTGL/FTGLExtrdFont.h"
+then
+        FTGL_HOME=/usr
+fi
+
+
+fi
+
+
+#
+# Locate FTGL, if wanted
+#
+if test -n "${FTGL_HOME}"
+then
+
+  	for part in -I${FTGL_HOME}/include/FTGL
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
+$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
 $as_echo_n "checking for _ZN6FTFaceD2Ev in -lftgl... " >&6; }
 if ${ac_cv_lib_ftgl__ZN6FTFaceD2Ev+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6298,7 +6924,7 @@ return _ZN6FTFaceD2Ev ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
+if ac_fn_cxx_try_link "$LINENO"; then :
   ac_cv_lib_ftgl__ZN6FTFaceD2Ev=yes
 else
   ac_cv_lib_ftgl__ZN6FTFaceD2Ev=no
@@ -6315,7 +6941,7 @@ else
   FTGL_cv_libFTGL=no
 fi
 
-	ac_fn_c_check_header_mongrel "$LINENO" "FTGLExtrdFont.h" "ac_cv_header_FTGLExtrdFont_h" "$ac_includes_default"
+    ac_fn_cxx_check_header_mongrel "$LINENO" "FTGLExtrdFont.h" "ac_cv_header_FTGLExtrdFont_h" "$ac_includes_default"
 if test "x$ac_cv_header_FTGLExtrdFont_h" = xyes; then :
   FTGL_cv_FTGL_h=yes
 else
@@ -6323,13 +6949,15 @@ else
 fi
 
 
-        if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
-        then
+    if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
+    then
                 #
                 # If both library and header were found, use them.
 		# At the moment, this looks deplorably Linux-specific.
 		# sort|tail ensures that /usr/lib64 is preferred to /usr/lib
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6FTFaceD2Ev in -lftgl" >&5
 $as_echo_n "checking for _ZN6FTFaceD2Ev in -lftgl... " >&6; }
 if ${ac_cv_lib_ftgl__ZN6FTFaceD2Ev+:} false; then :
@@ -6355,7 +6983,7 @@ return _ZN6FTFaceD2Ev ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
+if ac_fn_cxx_try_link "$LINENO"; then :
   ac_cv_lib_ftgl__ZN6FTFaceD2Ev=yes
 else
   ac_cv_lib_ftgl__ZN6FTFaceD2Ev=no
@@ -6375,28 +7003,33 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
-$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
 		LIBS="$LIBS -lstdc++"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
+    else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking FTGL in ${FTGL_HOME}" >&5
-$as_echo_n "checking FTGL in ${FTGL_HOME}... " >&6; }
-		LDFLAGS="$FTGL_OLD_LDFLAGS"
-		CPPFLAGS="$FTGL_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
-        fi
-    else
-	echo "missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+
     fi
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
+       else
+         echo "FTGL: missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+       fi
     else
 
 $as_echo "#define NoGraphics3D 1" >>confdefs.h
@@ -9002,12 +9635,60 @@ fi
 #
 if test -n "${LIBOGG_HOME}"
 then
-        LIBOGG_OLD_LDFLAGS=$LDFLAGS
-        LIBOGG_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${LIBOGG_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${LIBOGG_HOME}/include/ogg -I${LIBOGG_HOME}/include/vorbis"
 
-        ac_ext=c
+  	for part in -I${LIBOGG_HOME}/include/ogg -I${LIBOGG_HOME}/include/vorbis
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${LIBOGG_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -9163,17 +9844,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking oggvorbis in ${LIBOGG_HOME}" >&5
+$as_echo_n "checking oggvorbis in ${LIBOGG_HOME}... " >&6; }
 
         if test "$ogglib_cv_libogg" = "yes" -a "$ogglib_cv_libvorbis" = "yes" -a "$libvorbisfile_cv_libvorbisfile" = "yes" -a "$ogglib_cv_ogglib_h" = "yes" -a "$libvorbis_cv_libvorbis_h" = "yes" -a "$libvorbis_cv_codec_h" = "yes"
         then
                 #
                 # If all libraries were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for oggpack_write in -logg" >&5
 $as_echo_n "checking for oggpack_write in -logg... " >&6; }
 if ${ac_cv_lib_ogg_oggpack_write+:} false; then :
@@ -9309,19 +9989,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking oggvorbis in ${LIBOGG_HOME}" >&5
-$as_echo_n "checking oggvorbis in ${LIBOGG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking oggvorbis in ${LIBOGG_HOME}" >&5
-$as_echo_n "checking oggvorbis in ${LIBOGG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -9359,12 +10046,60 @@ fi
 #
 if test -n "${LIBSDL_HOME}"
 then
-        LIBSDL_OLD_LDFLAGS=$LDFLAGS
-        LIBSDL_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${LIBSDL_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${LIBSDL_HOME}/include/SDL"
 
-        ac_ext=c
+  	for part in -I${LIBSDL_HOME}/include/SDL
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${LIBSDL_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -9420,17 +10155,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking libsdl in ${LIBSDL_HOME}" >&5
+$as_echo_n "checking libsdl in ${LIBSDL_HOME}... " >&6; }
 
         if test "$libsdl_cv_libsdl" = "yes" -a "$libsdl_cv_libsdl_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SDL_AudioInit in -lSDL" >&5
 $as_echo_n "checking for SDL_AudioInit in -lSDL... " >&6; }
 if ${ac_cv_lib_SDL_SDL_AudioInit+:} false; then :
@@ -9476,21 +10210,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking libsdl in ${LIBSDL_HOME}" >&5
-$as_echo_n "checking libsdl in ${LIBSDL_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking libsdl in ${LIBSDL_HOME}" >&5
-$as_echo_n "checking libsdl in ${LIBSDL_HOME}... " >&6; }
-                LDFLAGS="$LIBSDL_OLD_LDFLAGS"
-                CPPFLAGS="$LIBSDL_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
    #
@@ -9527,12 +10266,60 @@ fi
 #
 if test -n "${LIBSMPEG_HOME}"
 then
-        LIBSMPEG_OLD_LDFLAGS=$LDFLAGS
-        LIBSMPEG_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${LIBSMPEG_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${LIBSMPEG_HOME}/include/smpeg"
 
-        ac_ext=c
+  	for part in -I${LIBSMPEG_HOME}/include/smpeg
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${LIBSMPEG_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -9588,17 +10375,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libsmpeg in ${LIBSMPEG_HOME}" >&5
+$as_echo_n "checking libsmpeg in ${LIBSMPEG_HOME}... " >&6; }
 
         if test "$libsmpeg_cv_libsmpeg" = "yes" -a "$libsmpeg_cv_libsmpeg_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SMPEG_playAudio in -lsmpeg" >&5
 $as_echo_n "checking for SMPEG_playAudio in -lsmpeg... " >&6; }
 if ${ac_cv_lib_smpeg_SMPEG_playAudio+:} false; then :
@@ -9644,21 +10430,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking libsmpeg in ${LIBSMPEG_HOME}" >&5
-$as_echo_n "checking libsmpeg in ${LIBSMPEG_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking libsmpeg in ${LIBSMPEG_HOME}" >&5
-$as_echo_n "checking libsmpeg in ${LIBSMPEG_HOME}... " >&6; }
-                LDFLAGS="$LIBSMPEG_OLD_LDFLAGS"
-                CPPFLAGS="$LIBSMPEG_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
    #
@@ -9695,12 +10486,60 @@ fi
 #
 if test -n "${LIBOPENAL_HOME}"
 then
-        LIBOPENAL_OLD_LDFLAGS=$LDFLAGS
-        LIBOPENAL_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${LIBOPENAL_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${LIBOPENAL_HOME}/include/AL"
 
-        ac_ext=c
+  	for part in -I${LIBOPENAL_HOME}/include/AL
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${LIBOPENAL_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -9806,17 +10645,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking libopenal in ${LIBOPENAL_HOME}" >&5
+$as_echo_n "checking libopenal in ${LIBOPENAL_HOME}... " >&6; }
 
         if test "$libopenal_cv_libopenal" = "yes" -a "$libopenal_cv_libopenal_h" = "yes" -a "$libalut_cv_libalut" = "yes" -a "$libalut_cv_libalut_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for alGetSourceiv in -lopenal" >&5
 $as_echo_n "checking for alGetSourceiv in -lopenal... " >&6; }
 if ${ac_cv_lib_openal_alGetSourceiv+:} false; then :
@@ -9907,21 +10745,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking libopenal in ${LIBOPENAL_HOME}" >&5
-$as_echo_n "checking libopenal in ${LIBOPENAL_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking libopenal in ${LIBOPENAL_HOME}" >&5
-$as_echo_n "checking libopenal in ${LIBOPENAL_HOME}... " >&6; }
-                LDFLAGS="$LIBOPENAL_OLD_LDFLAGS"
-                CPPFLAGS="$LIBOPENAL_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 else
@@ -9931,8 +10774,9 @@ $as_echo "#define NoAudio 1" >>confdefs.h
 fi
 
 if test "x$voip" = "xyes"; then
-
-#
+    # A C++ compiler must be present and usable
+    if test "$CXX" = "g++" -a "$GXX" = "yes"; then
+      #
 # Handle user hints
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jvoiplib is wanted" >&5
@@ -9962,270 +10806,60 @@ fi
 #
 if test -n "${JVOIPLIB_HOME}"
 then
-        JVOIPLIB_OLD_LDFLAGS=$LDFLAGS
-        JVOIPLIB_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${JVOIPLIB_HOME}"
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${JVOIPLIB_HOME}
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+
 	ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-if test -z "$CXX"; then
-  if test -n "$CCC"; then
-    CXX=$CCC
-  else
-    if test -n "$ac_tool_prefix"; then
-  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CXX"; then
-  ac_cv_prog_CXX="$CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CXX="$ac_tool_prefix$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-CXX=$ac_cv_prog_CXX
-if test -n "$CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
-$as_echo "$CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-    test -n "$CXX" && break
-  done
-fi
-if test -z "$CXX"; then
-  ac_ct_CXX=$CXX
-  for ac_prog in g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_CXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CXX"; then
-  ac_cv_prog_ac_ct_CXX="$ac_ct_CXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_CXX="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CXX=$ac_cv_prog_ac_ct_CXX
-if test -n "$ac_ct_CXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_CXX" >&5
-$as_echo "$ac_ct_CXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ac_ct_CXX" && break
-done
-
-  if test "x$ac_ct_CXX" = x; then
-    CXX="g++"
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CXX=$ac_ct_CXX
-  fi
-fi
-
-  fi
-fi
-# Provide some information about the compiler.
-$as_echo "$as_me:${as_lineno-$LINENO}: checking for C++ compiler version" >&5
-set X $ac_compile
-ac_compiler=$2
-for ac_option in --version -v -V -qversion; do
-  { { ac_try="$ac_compiler $ac_option >&5"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_compiler $ac_option >&5") 2>conftest.err
-  ac_status=$?
-  if test -s conftest.err; then
-    sed '10a\
-... rest of stderr output deleted ...
-         10q' conftest.err >conftest.er1
-    cat conftest.er1 >&5
-  fi
-  rm -f conftest.er1 conftest.err
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
-done
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we are using the GNU C++ compiler" >&5
-$as_echo_n "checking whether we are using the GNU C++ compiler... " >&6; }
-if ${ac_cv_cxx_compiler_gnu+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-#ifndef __GNUC__
-       choke me
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_compiler_gnu=yes
-else
-  ac_compiler_gnu=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-ac_cv_cxx_compiler_gnu=$ac_compiler_gnu
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cxx_compiler_gnu" >&5
-$as_echo "$ac_cv_cxx_compiler_gnu" >&6; }
-if test $ac_compiler_gnu = yes; then
-  GXX=yes
-else
-  GXX=
-fi
-ac_test_CXXFLAGS=${CXXFLAGS+set}
-ac_save_CXXFLAGS=$CXXFLAGS
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX accepts -g" >&5
-$as_echo_n "checking whether $CXX accepts -g... " >&6; }
-if ${ac_cv_prog_cxx_g+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_save_cxx_werror_flag=$ac_cxx_werror_flag
-   ac_cxx_werror_flag=yes
-   ac_cv_prog_cxx_g=no
-   CXXFLAGS="-g"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_cv_prog_cxx_g=yes
-else
-  CXXFLAGS=""
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-
-else
-  ac_cxx_werror_flag=$ac_save_cxx_werror_flag
-	 CXXFLAGS="-g"
-	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  ac_cv_prog_cxx_g=yes
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   ac_cxx_werror_flag=$ac_save_cxx_werror_flag
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cxx_g" >&5
-$as_echo "$ac_cv_prog_cxx_g" >&6; }
-if test "$ac_test_CXXFLAGS" = set; then
-  CXXFLAGS=$ac_save_CXXFLAGS
-elif test $ac_cv_prog_cxx_g = yes; then
-  if test "$GXX" = yes; then
-    CXXFLAGS="-g -O2"
-  else
-    CXXFLAGS="-g"
-  fi
-else
-  if test "$GXX" = yes; then
-    CXXFLAGS="-O2"
-  else
-    CXXFLAGS=
-  fi
-fi
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-    if test "$CXX" = "g++" -a "$GXX" = "yes"
-    then
-
-        ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -10400,25 +11034,16 @@ else
   jvlib_cv_libv=no
 fi
 
-
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking jvoiplib in ${JVOIPLIB_HOME}" >&5
+$as_echo_n "checking jvoiplib in ${JVOIPLIB_HOME}... " >&6; }
 
         if test "$jvlib_cv_libjv" = "yes" -a "$jvlib_cv_libjt" = "yes" -a "$jvlib_cv_libjr" = "yes" -a "$jvlib_cv_libjv" = "yes"
         then
                 #
                 # If all libraries were found, use them
                 #
-
-	        ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN9RTPPacket5ClearEv in -ljrtp" >&5
 $as_echo_n "checking for _ZN9RTPPacket5ClearEv in -ljrtp... " >&6; }
 if ${ac_cv_lib_jrtp__ZN9RTPPacket5ClearEv+:} false; then :
@@ -10599,33 +11224,35 @@ _ACEOF
 
 fi
 
-	        ac_ext=c
+		JV_LDFLAGS=" -L../../bin -lvoip -ljvoip -ljthread -ljrtp -lpthread -lstdc++ "
+        else
+                #
+                # If either header or library was not found, revert and bomb
+                #
+		JV_LDFLAGS=
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+
+        fi
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jvoiplib in ${JVOIPLIB_HOME}" >&5
-$as_echo_n "checking jvoiplib in ${JVOIPLIB_HOME}... " >&6; }
-		JV_LDFLAGS=" -L../../bin -lvoip -ljvoip -ljthread -ljrtp -lpthread -lstdc++ "
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking jvoiplib in ${JVOIPLIB_HOME}" >&5
-$as_echo_n "checking jvoiplib in ${JVOIPLIB_HOME}... " >&6; }
-		JV_LDFLAGS=
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-        fi
-    fi
 fi
 
 
+    else
+         echo "VOIP: missing or untrusted C++; CXX is $CXX and GXX is $GXX"
+    fi
 else
 
 $as_echo "#define NoVoip 1" >>confdefs.h
@@ -10666,10 +11293,58 @@ fi
 #
 if test -n "${ZLIB_HOME}"
 then
-        ZLIB_OLD_LDFLAGS=$LDFLAGS
-        ZLIB_OLD_CPPFLAGS=$CPPFLAGS
-        LDFLAGS="$LDFLAGS -L${ZLIB_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${ZLIB_HOME}/include"
+
+  	for part in -I${ZLIB_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${ZLIB_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -10727,17 +11402,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking zlib in ${ZLIB_HOME}" >&5
+$as_echo_n "checking zlib in ${ZLIB_HOME}... " >&6; }
 
         if test "$zlib_cv_libz" = "yes" -a "$zlib_cv_zlib_h" = "yes"
         then
                 #
                 # If both library and header were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflateEnd in -lz" >&5
 $as_echo_n "checking for inflateEnd in -lz... " >&6; }
 if ${ac_cv_lib_z_inflateEnd+:} false; then :
@@ -10783,21 +11457,26 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking zlib in ${ZLIB_HOME}" >&5
-$as_echo_n "checking zlib in ${ZLIB_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking zlib in ${ZLIB_HOME}" >&5
-$as_echo_n "checking zlib in ${ZLIB_HOME}... " >&6; }
-                LDFLAGS="$ZLIB_OLD_LDFLAGS"
-                CPPFLAGS="$ZLIB_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -10837,10 +11516,58 @@ fi
 #
 if test -n "${ODBC_HOME}"
 then
-        ODBC_OLD_LDFLAGS=$LDFLAGS
-        ODBC_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${ODBC_HOME}/lib -L${ODBC_HOME}/lib64"
-        CPPFLAGS="$CPPFLAGS -I${ODBC_HOME}/include"
+
+  	for part in -I${ODBC_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${ODBC_HOME}/lib -L${ODBC_HOME}/lib64
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -10940,17 +11667,16 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking odbc in ${ODBC_HOME}" >&5
+$as_echo_n "checking odbc in ${ODBC_HOME}... " >&6; }
 
         if test "$odbc_cv_libiodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SQLAllocConnect in -liodbc" >&5
 $as_echo_n "checking for SQLAllocConnect in -liodbc... " >&6; }
 if ${ac_cv_lib_iodbc_SQLAllocConnect+:} false; then :
@@ -10996,16 +11722,14 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking odbc in ${ODBC_HOME}" >&5
-$as_echo_n "checking odbc in ${ODBC_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
         if test "$odbc_cv_libodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SQLAllocConnect in -lodbc" >&5
 $as_echo_n "checking for SQLAllocConnect in -lodbc... " >&6; }
 if ${ac_cv_lib_odbc_SQLAllocConnect+:} false; then :
@@ -11051,22 +11775,27 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking odbc in ${ODBC_HOME}" >&5
-$as_echo_n "checking odbc in ${ODBC_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking odbc in ${ODBC_HOME}" >&5
-$as_echo_n "checking odbc in ${ODBC_HOME}... " >&6; }
-                LDFLAGS="$ODBC_OLD_LDFLAGS"
-                CPPFLAGS="$ODBC_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
         fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 
@@ -11110,10 +11839,58 @@ fi
 #
 if test -n "${PTHREAD_HOME}"
 then
-        PTHREAD_OLD_LDFLAGS=$LDFLAGS
-        PTHREAD_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${PTHREAD_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${PTHREAD_HOME}/include"
+
+  	for part in -I${PTHREAD_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${PTHREAD_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -11171,77 +11948,38 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking pthread in ${PTHREAD_HOME}" >&5
+$as_echo_n "checking pthread in ${PTHREAD_HOME}... " >&6; }
 
 	if test "$pthread_cv_libpthread" = "yes" -a "$pthread_cv_pthread_h" = "yes"
         then
                 #
                 # If both library and headers were found, use them
                 #
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5
-$as_echo_n "checking for pthread_create in -lpthread... " >&6; }
-if ${ac_cv_lib_pthread_pthread_create+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpthread  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char pthread_create ();
-int
-main ()
-{
-return pthread_create ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pthread_pthread_create=yes
-else
-  ac_cv_lib_pthread_pthread_create=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread_pthread_create" >&5
-$as_echo "$ac_cv_lib_pthread_pthread_create" >&6; }
-if test "x$ac_cv_lib_pthread_pthread_create" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPTHREAD 1
-_ACEOF
-
-  LIBS="-lpthread $LIBS"
-
-fi
-
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking pthread in ${PTHREAD_HOME}" >&5
-$as_echo_n "checking pthread in ${PTHREAD_HOME}... " >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking pthread in ${PTHREAD_HOME}" >&5
+$as_echo_n "checking pthread in ${PTHREAD_HOME}... " >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking pthread in ${PTHREAD_HOME}" >&5
-$as_echo_n "checking pthread in ${PTHREAD_HOME}... " >&6; }
-                LDFLAGS="$PTHREAD_OLD_LDFLAGS"
-                CPPFLAGS="$PTHREAD_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
 
 #
@@ -11278,10 +12016,58 @@ fi
 #
 if test -n "${OPENSSL_HOME}"
 then
-        OPENSSL_OLD_LDFLAGS=$LDFLAGS
-        OPENSSL_OLD_CPPFLAGS=$LDFLAGS
-        LDFLAGS="$LDFLAGS -L${OPENSSL_HOME}/lib"
-        CPPFLAGS="$CPPFLAGS -I${OPENSSL_HOME}/include"
+
+  	for part in -I${OPENSSL_HOME}/include
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${OPENSSL_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $CXXFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CXXFLAGS="$CXXFLAGS $part"
+		fi
+	done
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
 
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -11381,17 +12167,15 @@ else
 fi
 
 
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking ssl in ${OPENSSL_HOME}" >&5
+$as_echo_n "checking ssl in ${OPENSSL_HOME}... " >&6; }
 	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes" -a "$openssl_cv_libcrypto" = "yes"
         then
                 #
                 # If libraries and headers were found, use them
                 #
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_library_init in -lssl" >&5
 $as_echo_n "checking for SSL_library_init in -lssl... " >&6; }
 if ${ac_cv_lib_ssl_SSL_library_init+:} false; then :
@@ -11482,22 +12266,33 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking ssl in ${OPENSSL_HOME}" >&5
-$as_echo_n "checking ssl in ${OPENSSL_HOME}... " >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
         else
                 #
                 # If either header or library was not found, revert and bomb
                 #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking ssl in ${OPENSSL_HOME}" >&5
-$as_echo_n "checking ssl in ${OPENSSL_HOME}... " >&6; }
-                LDFLAGS="$OPENSSL_OLD_LDFLAGS"
-                CPPFLAGS="$OPENSSL_OLD_CPPFLAGS"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
+
         fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 fi
+
+
+
+
+
+
 
 
 for ac_global in sys_nerr
@@ -13256,7 +14051,7 @@ if test "$audio" = yes ; then
   if test "$onAudio" = 4 ; then
     atmp=" + $atmp"
   else
-    atmp=" $onAudio - $atmp"
+    atmp=" - $atmp"
   fi
 
 else
@@ -13305,14 +14100,15 @@ echo "--------------------------------------------------"
 echo "           Configuration Summary"
 echo "--------------------------------------------------"
 echo "*** Build Environment"
-echo "Host    :  $host_os  ($unicon_host)"
-echo "CC      :  $CC"
-echo "CFLAGS  :$CFLAGS"
-echo "LDFLAGS :$LDFLAGS"
-echo "LIBS    : $LIBS"
-echo "Verbose :  $verbosebuild"
-echo "Debug   :  $debug"
-echo "Devmode :  $devmode"
+echo "Host     :  $host_os  ($unicon_host)"
+echo "CC       :  $CC"
+echo "CFLAGS   :$CFLAGS"
+echo "CPPFLAGS :$CPPFLAGS"
+echo "LDFLAGS  :$LDFLAGS"
+echo "LIBS     :  $LIBS"
+echo "Verbose  :  $verbosebuild"
+echo "Debug    :  $debug"
+echo "Devmode  :  $devmode"
 echo ""
 echo "*** Features (+Available   -Missing   !Disabled)"
 echo "$ctmp"

@@ -1,0 +1,46 @@
+#<p>
+#  Copy a file, replacing strings.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import util
+
+#<p>
+#  Copy standard input to standard output, replacing substrings with
+#  matching replacement.
+#</p>
+#<p>
+#  Arguments are of the form <b>oldString=newString</b>, where
+#  <b>oldString</b> will be replaced by <b>newString</b>.
+#</p>
+#<p>
+#   Note that <b>oldString</b> cannot include "<b>=</b>", but that
+#   <b>newString</b> can.
+#</p>
+procedure main(args)
+
+     if (*args = 0) | ("--help" == !args) then 
+         stop("Usage: mapStrings [oldString=newString]... <infile >outfile")
+
+     sr := StringReplacer(buildMap(args))
+     bRead := BlockRead(&input,4096)
+     while writes(sr.replace(bRead.readBlock()))
+     
+end
+
+#<p>
+#  Construct the replacement map.
+#  <i>Used internally.</i>
+#</p>
+procedure buildMap(args)
+    local mapTable := table()
+    every arg := !args do {
+        arg ? mapTable[tab(upto('='))] := (move(1),tab(0))
+        }
+    return mapTable
+end

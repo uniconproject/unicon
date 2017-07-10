@@ -5,6 +5,7 @@ AC_DEFUN([save_flags],
 	TMP_CPPFLAGS=$CPPFLAGS
  	TMP_LDFLAGS=$LDFLAGS
  	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
 
 	for part in $1
   	do
@@ -46,6 +47,7 @@ AC_DEFUN([restore_flags],
 	CFLAGS=$TMP_CFLAGS  
 	LDFLAGS=$TMP_LDFLAGS
 	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
 ])
 
 AC_DEFUN([fail_and_restore],
@@ -720,7 +722,7 @@ then
                 # If both library and headers were found, use them
                 #
                 AC_MSG_RESULT(ok)
-                AC_MSG_CHECKING(pthread in ${PTHREAD_HOME})
+                AC_CHECK_LIB(pthread, pthread_create)
         else
                 #
                 # If either header or library was not found, revert and bomb

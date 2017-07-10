@@ -41,7 +41,7 @@ $(ROBJS): rtt.h rtt1.h rttproto.h $(P_DOT_H)
 
 %.o: %.c
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 rttdb.o: ../h/version.h
 rttparse.o : ../h/gsupport.h ../h/config.h ../h/cstructs.h \
@@ -49,47 +49,47 @@ rttparse.o : ../h/gsupport.h ../h/config.h ../h/cstructs.h \
 
 pout.o: $(PP_DIR)pout.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 pchars.o: $(PP_DIR)pchars.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 perr.o: $(PP_DIR)perr.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 pmem.o: $(PP_DIR)pmem.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 bldtok.o: $(PP_DIR)bldtok.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 macro.o: $(PP_DIR)macro.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 preproc.o: $(PP_DIR)preproc.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 evaluate.o: $(PP_DIR)evaluate.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 files.o: $(PP_DIR)files.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 gettok.o: $(PP_DIR)gettok.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 pinit.o: $(PP_DIR)pinit.c $(P_DOT_H)
 	$(CMNT)@echo "   [RTT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 #
 # The following entry is to help everyone remember how to run the
 # merr program when it is needed.

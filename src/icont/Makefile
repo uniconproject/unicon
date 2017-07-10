@@ -35,7 +35,7 @@ $(COBJS):	../h/mproto.h
 
 %.o: %.c
 	$(CMNT)@echo "   [ICONT] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 tmain.o:	tglobals.h ../h/version.h
 tglobals.o:	tglobals.h

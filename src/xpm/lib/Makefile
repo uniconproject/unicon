@@ -22,7 +22,7 @@ OBJS1 = data.o create.o misc.o rgb.o scan.o parse.o hashtab.o \
 
 %.o: %.c
 	$(CMNT)@echo "   [XPM] $<"
-	$(SLNT)$(CC) -c $(CFLAGS) $(XPMDEFS) $<
+	$(SLNT)$(CC) -c $(CPPFLAGS) $(CFLAGS) $(XPMDEFS) $<
 
 libXpm.a: $(OBJS1)
 	$(RM) $@

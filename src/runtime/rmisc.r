@@ -16,6 +16,7 @@ static void	listimage       (FILE *f,struct b_list *lp, int noimage);
 static void	printimage	(FILE *f,int c,int q);
 static char *	csname		(dptr dp);
 static int construct_funcimage(union block *pe, int aicode, int bpcode, dptr result, int index);
+int        find_cindex(union block *l, union block *r); 
 
 
 /* 
@@ -1676,10 +1677,13 @@ int c, q;
 /*
  * Construct a pattern image of pe.  Returns Succeeded or RunError.
  * peCount helps to know whether there is a previous thing on which
- * to concatenate.
+ * to concatenate. pe_index aids UDB in identifying current indices. stop_index
+ * is the index at which an alternate halts its recursion (to prevent
+ * (duplication). prev_index stores the index of the last Arbno_S so we know where to
+ * halt the image recursion (avoids infinite loops)
  */
-int pattern_image(union block *pe, int arbnoBool, dptr result, 
-                  int peCount, int pe_index)
+int pattern_image(union block *pe, int prev_index, dptr result, 
+                  int peCount, int pe_index, int stop_index)
    {
    tended union block * ep = pe;
    tended union block * r;
@@ -1689,282 +1693,141 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
    tended struct descrip arg;
    struct descrip punct;
    int index_image = 0; 
-
+   int flag = 0; 
    if (ep != NULL) {
 
-     /* the code below is to counter any cycles we
-      * may find in arbno images. This does not actually 
-      * get us the image of Arbno but prevents the images 
-      * from encountering seg faults. I have placed a fix
-      * in the case statement and if a long enough amount of 
-      * time passes without bugs we should remove this code block 
-      * - June 13, 2017
+       if(Blk(ep, Pelem)->index == pe_index)
+          index_image = 1; 
 
-         struct b_pelem *P, *A, *E, *X = Blk(ep,Pelem);
-      if (!is:string(X->parameter) &&
-	  (Type(X->parameter) == T_Pelem) &&
-	  (E = BlkD(X->parameter, Pelem)) &&
-	  (E->title == T_Pelem)) {  potential cycle
-	 P = Blk(E->pthen,Pelem);
-	 if (P && (P->title == T_Pelem) &&
-	     (!is:string(P->parameter)) &&
-	     (Type(P->parameter) == T_Pelem) &&
-	     (BlkD(P->parameter, Pelem)->pthen == (union block *)X)) {
-	    return construct_image(bi_pat(PF_Arbno), bi_pat(PI_PERIOD),
-				   bi_pat(PI_BPAREN), result);
-	    }
-	 }*/ 
-
-     if(Blk(ep, Pelem)->index == pe_index)
-        index_image = 1; 
-
+      /* while(Blk(ep, Pelem) != NULL)
+       {  
+       fprintf(stdout, "Loop Code: %d\n", Blk(ep, Pelem)->pcode);  
+       if(Blk(ep, Pelem)->pcode == PC_Alt)
+          ep = (union block *)BlkLoc(Blk(ep, Pelem)->parameter);
+       else if(Blk(ep, Pelem)->pcode == PC_Arbno_S && flag != 2){
+          ep = (union block *)BlkLoc(Blk(ep, Pelem)->parameter);
+          flag += 1; }
+       else
+          ep = Blk(ep, Pelem)->pthen;
+       }*/ 
+ 
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
-
-	  /* Alternations in Unicon are unique as it pertains to pelems
-           * if there is a pattern for example: (Span('\t') .| "") .> x)
-           * then internally this is represented as Span('\t') .> x .| "" .> x
-           * This is just the way the pelems are. The pattern images will
-           * also follow this literal interpration. These images can get
-           * large fast if there are multiple alternation in a pattern because
-           * each permutation/path is followed. Below the function follows
-           * the alternation (the parameter and the next pelem). and then
-           * concatenates the two together */ 
- 
+             int common_index;
+             union block * temp;  
              arg = Blk(ep,Pelem)->parameter;
              r = (union block *)(BlkLoc(arg));
-             if ((pattern_image(Blk(ep,Pelem)->pthen, arbnoBool, &left,
-				     peCount, pe_index)) == RunError) 
-                  return RunError;
-             if ((pattern_image(r, arbnoBool, &right, peCount, pe_index)) 
-                                == RunError) return RunError;
+        
+             /* Find the common index of the two sides (if there is something
+              * that follow the left hand alternation)
+              */ 
+     
+             if(Blk(ep, Pelem)->pthen != NULL)
+                common_index = find_cindex(Blk(ep, Pelem)->pthen, r); 
+       
+             /* Traverse through the two sides until you get to the most
+              * recent common indexed element (if it exists)
+              */ 
+
+             if ((pattern_image(Blk(ep,Pelem)->pthen, prev_index, &left,
+				peCount, pe_index, common_index)) == RunError) 
+                  return RunError;         
+             if ((pattern_image(r, prev_index, &right, peCount, pe_index, 
+                                common_index)) == RunError) return RunError;
+        
              if(construct_image(&left, bi_pat(PI_ALT), &right, result) 
                                 == RunError) return RunError;
-             return construct_image(bi_pat(PI_FPAREN), result, 
-                                    bi_pat(PI_BPAREN), result);
-             } 
-          case PC_Any_MF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_Any, result, index_image)) 
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Break_MF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_Break, result, index_image))
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_BreakX_MF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_BreakX, result, index_image))                                     == RunError) return RunError;
-	     peCount++;
-	     ep = Blk(ep,Pelem)->pthen; /* Skip the Alt Pelem) */
-             if(Blk(ep, Pelem)->index + 1 == pe_index) /*check BreakX_X index */
-                construct_image(bi_pat(PI_FBRACE), result, 
-                                bi_pat(PI_BBRACE), result);
-	     break;
-             }
-          case PC_NotAny_MF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_NotAny, result, index_image))                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_NSpan_MF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_NSpan, result, index_image))
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Span_MF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_Span, result, index_image))
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Len_NMF: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Len, result, index_image)) 
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Pos_NMF: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Pos, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_RPos_NMF: {
-	     if ((construct_funcimage(ep, PT_MF, PF_RPos, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Tab_NMF: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Tab, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
+             construct_image(bi_pat(PI_FPAREN), result, 
+                             bi_pat(PI_BPAREN), result);
+
+             /* if the most recent common element existed traverse to that
+              * on the left so we can include it in our print
+              */ 
+
+             if(common_index != -1){
+                while(Blk(Blk(ep, Pelem)->pthen, Pelem)->index != common_index)
+                   ep = Blk(ep,Pelem)->pthen;
+                } 
+
              break;
              } 
-          case PC_RTab_NMF: {
-	     if ((construct_funcimage(ep, PT_VP, PF_RTab, result, index_image))
-                                     == RunError) return RunError;
+          case PC_Any_MF:
+          case PC_Break_MF:
+          case PC_NotAny_MF:
+          case PC_NSpan_MF:
+          case PC_Span_MF: {
+	     if ((construct_funcimage(ep, PT_MF, Blk(ep, Pelem)->pcode, 
+                            result, index_image)) == RunError) return RunError;
 	     peCount++;
 	     break;
              }
-          case PC_Any_VF: {   
-	     if ((construct_funcimage(ep, PT_VF, PF_Any, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Break_VF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_Break, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_BreakX_VF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_BreakX, result, index_image)
-)                                    == RunError) return RunError;
-	     peCount++;
-	     ep = Blk(ep,Pelem)->pthen; 
-             if(Blk(ep, Pelem)->index + 1 == pe_index) 
-                construct_image(bi_pat(PI_FBRACE), result, 
-                                bi_pat(PI_BBRACE), result);
-	     break;
-             }
-          case PC_NotAny_VF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_NotAny, result, index_image)
-)                                    == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_NSpan_VF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_NSpan, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Span_VF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_Span, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Len_NF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_Len, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Pos_NF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_Pos, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_RPos_NF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_RPos, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
-          case PC_Tab_NF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_Tab, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
-          case PC_RTab_NF: {
-	     if ((construct_funcimage(ep, PT_VF, PF_RTab, result, index_image))
-                                     == RunError) return RunError;
+          case PC_Any_VF   :
+          case PC_Break_VF :
+          case PC_NotAny_VF:
+          case PC_NSpan_VF :
+          case PC_Span_VF  :
+          case PC_Len_NF   : 
+          case PC_Pos_NF   :
+          case PC_RPos_NF  :
+          case PC_Tab_NF   :
+          case PC_RTab_NF  : {
+	     if ((construct_funcimage(ep, PT_VF, Blk(ep, Pelem)->pcode, 
+                            result, index_image)) == RunError) return RunError;
 	     peCount++;
 	     break;
 	     }
-          case PC_Any_VP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Any, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Break_VP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Break, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_BreakX_VP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_BreakX, result, index_image)
-)                                    == RunError) return RunError;
-	     peCount++;
-	     ep = Blk(ep,Pelem)->pthen; 
-             if(Blk(ep, Pelem)->index + 1 == pe_index) 
-                construct_image(bi_pat(PI_FBRACE), result, 
-                                bi_pat(PI_BBRACE), result);
-	     break;
-             }
-          case PC_NotAny_VP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_NotAny, result, index_image)
-)                                    == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_NSpan_VP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_NSpan, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Span_VP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Span, result, index_image))
-                                     == RunError) return RunError;
+          case PC_Any_VP   :
+          case PC_Break_VP :
+          case PC_NotAny_VP:
+          case PC_NSpan_VP :
+          case PC_Span_VP  :
+          case PC_Len_NP   :
+          case PC_Pos_NP   :
+          case PC_RPos_NP  :
+          case PC_Tab_NP   :
+          case PC_RTab_NP  : 
+          case PC_Len_NMF  :
+          case PC_Pos_NMF  :
+          case PC_RPos_NMF :
+          case PC_Tab_NMF  :
+          case PC_RTab_NMF : {
+	     if ((construct_funcimage(ep, PT_VP, Blk(ep, Pelem)->pcode, 
+                            result, index_image)) == RunError) return RunError;
 	     peCount++;
 	     break;
              } 
-          case PC_Len_NP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Len, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Pos_NP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Pos, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_RPos_NP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_RPos, result, index_image))
-                                     == RunError) return RunError;
+          case PC_Any_CS   : 
+          case PC_Break_CS :
+          case PC_NotAny_CS:
+          case PC_NSpan_CS : 
+          case PC_Span_CS  :
+          case PC_Len_Nat  :
+          case PC_Pos_Nat  :
+          case PC_RPos_Nat :
+          case PC_Tab_Nat  :
+          case PC_RTab_Nat : {
+	     if ((construct_funcimage(ep, PT_EVAL, Blk(ep, Pelem)->pcode, 
+                            result, index_image)) == RunError) return RunError;
 	     peCount++;
 	     break;
              } 
-          case PC_Tab_NP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_Tab, result, index_image)) 
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
-          case PC_RTab_NP: {
-	     if ((construct_funcimage(ep, PT_VP, PF_RTab, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
-          case PC_Any_CS: { 
-	     if ((construct_funcimage(ep, PT_EVAL, PF_Any, result, index_image))
-                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Break_CS: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_Break, result, index_image
-))                                   == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
+          case PC_BreakX_VF:
+          case PC_BreakX_VP:
+          case PC_BreakX_MF:
           case PC_BreakX_CS: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_BreakX, result, index_image))                                  == RunError) return RunError;
+             int image_case; 
+
+             if (Blk(ep, Pelem)->pcode == PC_BreakX_VF)
+                image_case = PT_VF;
+             else if(Blk(ep, Pelem)->pcode == PC_BreakX_VP)
+                image_case = PT_VP;
+             else if(Blk(ep, Pelem)->pcode == PC_BreakX_MF)
+                image_case = PT_MF;
+             else if(Blk(ep, Pelem)->pcode == PC_BreakX_CS)
+                image_case = PT_EVAL; 
+
+	     if (construct_funcimage(ep, image_case, Blk(ep, Pelem)->pcode, 
+                             result, index_image) == RunError) return RunError;
 	     peCount++;
 	     ep = Blk(ep,Pelem)->pthen; 
              if(Blk(ep, Pelem)->index + 1 == pe_index) 
@@ -1972,69 +1835,23 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
                                 bi_pat(PI_BBRACE), result);
 	     break;
              }
-          case PC_NotAny_CS: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_NotAny, result, index_image))                                  == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_NSpan_CS: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_NSpan, result, index_image
-))                                   == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Span_CS: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_Span, result, index_image)
-)                                    == RunError) return RunError;
-	     peCount++;
-	     break;
-             }   
-          case PC_Len_Nat: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_Len, result, index_image))
-                                      == RunError) return RunError;	     
-             peCount++;
-	     break;
-             }
-          case PC_Pos_Nat: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_Pos, result, index_image))
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_RPos_Nat: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_RPos, result, index_image)
-)                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Tab_Nat: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_Tab, result, index_image))
-                                      == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_RTab_Nat: {
-	     if ((construct_funcimage(ep, PT_EVAL, PF_RTab, result, index_image)
-)                                     == RunError) return RunError;
-	     peCount++;
-	     break;
-             } 
           case PC_Arbno_S: {
              union block *arb;
-             if (arbnoBool == 1) {
+             int last_index = Blk(ep, Pelem)->index; 
+
+             if (Blk(ep, Pelem)->index == prev_index) {
 		*result = *bi_pat(PI_EMPTY);
                 return Succeeded;
 		}
              arb = (union block *) BlkLoc(Blk(ep,Pelem)->parameter);
-             if (pattern_image((union block *)arb, 1, result, 0, pe_index) 
-                               == RunError) return RunError;
+             if (pattern_image((union block *)arb, last_index, result, 0, pe_index, 
+                               stop_index) == RunError) return RunError;
              if (construct_image(bi_pat(PF_Arbno), result, bi_pat(PI_BPAREN), 
                                  result) == RunError) return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
-	     peCount++;
-             arbnoBool = 0;   
+	     peCount++;   
 	     break;         
              }             
           case PC_Arbno_X: {
@@ -2043,8 +1860,8 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
              arbParam = (struct b_pelem *)BlkLoc(Blk(ep,Pelem)->parameter);
              if (arbParam->pcode == PC_R_Enter) {
                 arb = arbParam->pthen;
-                if (pattern_image(arb, 0, result, 0, pe_index) == RunError)
-		   return RunError;
+                if (pattern_image(arb, prev_index, result, 0, pe_index, stop_index) 
+                    == RunError) return RunError;
                 if (construct_image(bi_pat(PF_Arbno), result,
 		   		bi_pat(PI_BPAREN), result) == RunError)
 		   return RunError;
@@ -2079,20 +1896,6 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     peCount++;
 	     break;
              }
-          case PC_String_MF: {
-             AsgnCStr(*result, "Stringmethodcall");
-	     peCount++;
-	     break;
-	     }
-          case PC_String_VF: {
-             AsgnCStr(*result, "Stringfunccall");
-	     peCount++;
-	     break;
-             }
-          case PC_Arbno_Y: {
-	     return Succeeded;
-             break;
-             }
           case PC_Arb_X: {
              struct b_pelem * arbY;
              AsgnCStr(*result, "Arb()");
@@ -2104,14 +1907,20 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     peCount++;
 	     break;
 	     }
+          case PC_Assign_Imm: 
           case PC_Assign_OnM: {
 	     /*
 	      * consider Resolved patterns. do we need to check
 	      * if parameter is a string, or a variable?
 	      */
              tended struct descrip op;
+
              if (index_image == 1){
-                 AsgnCStr(op, ") [-> ");
+                if(Blk(ep, Pelem)->pcode == PC_Assign_OnM)
+                   AsgnCStr(op, ") [-> ");
+                else
+                   AsgnCStr(op, ") [=> ");
+
                 if ((construct_image(bi_pat(PI_EMPTY), &op, 
                            &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
                            return RunError;
@@ -2120,33 +1929,18 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
                            return RunError;
                 }
              else{
-                AsgnCStr(op, ") -> "); 
+
+                if(Blk(ep, Pelem)->pcode == PC_Assign_OnM)
+                   AsgnCStr(op, ") -> ");
+                else 
+                   AsgnCStr(op, ") => "); 
+ 
                 if ((construct_image(&op, &(Blk(ep,Pelem)->parameter), 
                                      bi_pat(PI_EMPTY), result)) ==
 		    RunError) return RunError;
                    }             
 	     peCount++;
 	     break;
-             }
-          case PC_Assign_Imm: {
-             tended struct descrip op;
-             if (index_image == 1){
-	        AsgnCStr(op, ") [=> ");
-                if ((construct_image(bi_pat(PI_EMPTY), &op, 
-                           &(Blk(ep,Pelem)->parameter), result)) ==  RunError) 
-                           return RunError;
-                if ((construct_image(result, bi_pat(PI_BBRACE), 
-                                     bi_pat(PI_EMPTY), result)) ==  RunError) 
-                           return RunError;
-                }
-             else{
-	        AsgnCStr(op, ") => ");
-                if ((construct_image(&op, &(Blk(ep,Pelem)->parameter), 
-                                     bi_pat(PI_EMPTY), result)) ==
-		    RunError) return RunError;
-                   }
-	     peCount++;
-             break;
              }
           case PC_Setcur: {
              AsgnCStr(image, " .> ");
@@ -2159,48 +1953,25 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
 	     peCount++;
 	     break;
 	     }
-          case PC_Bal: {
-             AsgnCStr(*result, "Bal()");
-             if (index_image == 1)
-                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
-                                    ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Abort: {
-             AsgnCStr(*result, "Abort()");
-             if (index_image == 1)
-                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
-				    ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Fail: {
-             AsgnCStr(*result, "Fail()");
-             if (index_image == 1)
-                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
-		   		    ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
-          case PC_Fence: {
-             AsgnCStr(*result, "Fence()");
-             if (index_image == 1)
-                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
-                                    ,result) == RunError) return RunError; 
-	     peCount++;
-	     break;
-             }
-          case PC_Rest: {
-             AsgnCStr(*result, "Rem()");
-             if (index_image == 1)
-                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
-                                    ,result) == RunError) return RunError;
-	     peCount++;
-	     break;
-             }
+          case PC_Bal    :
+          case PC_Abort  :
+          case PC_Fail   :
+          case PC_Fence  :
+          case PC_Rest   :
           case PC_Succeed: {
-             AsgnCStr(*result, "Succeed()");
+             if(Blk(ep, Pelem)->pcode == PC_Succeed)
+                AsgnCStr(*result, "Succeed()");
+             else if(Blk(ep, Pelem)->pcode == PC_Rest)
+                AsgnCStr(*result, "Rem()");
+             else if(Blk(ep, Pelem)->pcode == PC_Fence)
+                AsgnCStr(*result, "Fence()");
+             else if(Blk(ep, Pelem)->pcode == PC_Fail)
+                AsgnCStr(*result, "Fail()"); 
+             else if(Blk(ep, Pelem)->pcode == PC_Abort)
+                AsgnCStr(*result, "Abort()");
+             else if(Blk(ep, Pelem)->pcode == PC_Bal)
+                AsgnCStr(*result, "Bal()"); 
+
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
@@ -2231,10 +2002,6 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
              *result = *bi_pat(PI_EMPTY);
 	     break;
              }
-          case PC_EOP: {
-	     *result = *bi_pat(PI_EMPTY);
-	     break;
-             }
           case PC_R_Enter: {
              *result = *bi_pat(PI_FPAREN);
 	     break;
@@ -2257,27 +2024,32 @@ int pattern_image(union block *pe, int arbnoBool, dptr result,
      */ 
 
    if ((ep = Blk(ep,Pelem)->pthen) != NULL) {
-       if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
+
+      if(Blk(ep, Pelem)->pcode == PC_Arbno_Y  || 
+         Blk(ep, Pelem)->pcode == PC_EOP      ||
+         Blk(ep, Pelem)->index == prev_index  ||
+         Blk(ep, Pelem)->index == stop_index)
+          return Succeeded;  
+
+      if (Blk(ep,Pelem)->pcode != PC_Assign_Imm &&
 	   Blk(ep,Pelem)->pcode != PC_Assign_OnM &&
-           Blk(ep,Pelem)->pcode != PC_Setcur &&
-	   Blk(ep,Pelem)->pcode != PC_EOP &&
-           (Blk(ep,Pelem)->pcode != PC_Arbno_S || arbnoBool != 1) &&
-           Blk(ep,Pelem)->pcode != PC_Arbno_Y ||
+           Blk(ep,Pelem)->pcode != PC_Setcur ||
 	   ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)) {
 	  if ((StrLen(*result)>0) ||
 	      ((Blk(ep,Pelem)->pcode == PC_R_Enter) && peCount != 0)){
-	     if ((pattern_image(ep, arbnoBool, &image, peCount, pe_index)) 
-                   == RunError) return RunError;
+	     if ((pattern_image(ep, prev_index, &image, peCount, pe_index, 
+                  stop_index)) == RunError) return RunError;
              if(strcmp(StrLoc(*result), "(") != 0) 
 	        return construct_image(result, bi_pat(PI_CONCAT), &image, result);
              else
  	        return construct_image(result, bi_pat(PI_EMPTY), &image, result);
 	     }
-	  else return pattern_image(ep, arbnoBool, result, peCount, pe_index);
+	  else return pattern_image(ep,prev_index,result,peCount,pe_index, 
+                                    stop_index);
           }
        else {
-	  if ((pattern_image(ep, arbnoBool, &image, peCount, pe_index)) 
-                             == RunError) return RunError;
+	  if ((pattern_image(ep, prev_index, &image, peCount, pe_index, 
+               stop_index)) == RunError) return RunError;
           return construct_image(bi_pat(PI_EMPTY), result, &image, result);
           }
        }
@@ -2500,6 +2272,90 @@ static int construct_funcimage(union block *pe, int aicode,
 {
    if (arg_image(Blk(pe,Pelem)->parameter, aicode, result) != Succeeded)
       return RunError;
+
+   switch (bpcode) {
+      case PC_Any_MF:
+      case PC_Any_VF:
+      case PC_Any_VP:
+      case PC_Any_CS: { 
+         bpcode = PF_Any;
+         break; 
+         } 
+      case PC_Break_MF:
+      case PC_Break_VF:
+      case PC_Break_VP:
+      case PC_Break_CS:  { 
+         bpcode = PF_Break;
+         break; 
+         } 
+      case PC_NotAny_MF:
+      case PC_NotAny_VF:
+      case PC_NotAny_VP:
+      case PC_NotAny_CS: { 
+         bpcode = PF_NotAny;
+         break; 
+         } 
+      case PC_BreakX_MF:
+      case PC_BreakX_VF:
+      case PC_BreakX_VP:
+      case PC_BreakX_CS: { 
+         bpcode = PF_BreakX;
+         break; 
+         } 
+      case PC_Span_MF:
+      case PC_Span_VF:
+      case PC_Span_VP:
+      case PC_Span_CS: { 
+         bpcode = PF_Span;
+         break; 
+         } 
+      case PC_NSpan_MF:
+      case PC_NSpan_VF:
+      case PC_NSpan_VP:
+      case PC_NSpan_CS:  { 
+         bpcode = PF_NSpan;
+         break; 
+         } 
+      case PC_Len_NF:
+      case PC_Len_NP:
+      case PC_Len_NMF:
+      case PC_Len_Nat:  { 
+         bpcode = PF_Len;
+         break; 
+         } 
+      case PC_Pos_NF:
+      case PC_Pos_NP:
+      case PC_Pos_NMF:
+      case PC_Pos_Nat: { 
+         bpcode = PF_Pos;
+         break; 
+         } 
+      case PC_RPos_NF:
+      case PC_RPos_NP:
+      case PC_RPos_NMF:
+      case PC_RPos_Nat:  { 
+         bpcode = PF_RPos;
+         break; 
+         } 
+      case PC_Tab_NF:
+      case PC_Tab_NP:
+      case PC_Tab_NMF:
+      case PC_Tab_Nat: { 
+         bpcode = PF_Tab;
+         break; 
+         } 
+      case PC_RTab_NF:
+      case PC_RTab_NP:
+      case PC_RTab_NMF:
+      case PC_RTab_Nat: { 
+         bpcode = PF_RTab;
+         break; 
+         }
+      default: {
+         return RunError;
+         }
+      }
+    
    if (construct_image(bi_pat(bpcode), result, bi_pat(PI_BPAREN), 
                    result) == RunError) return RunError;
    if (index == 1)
@@ -2507,6 +2363,39 @@ static int construct_funcimage(union block *pe, int aicode,
                              result);
    else
       return Succeeded; 
+}
+
+/* Alternations need to find the most recent index that is common
+ * to determine where to cut off the image. The function below fills
+ * an array with 1's if the index exists in the right pattern. If 
+ * the same index exists in the left side then that is the first 
+ * most common element
+ */ 
+
+int find_cindex(union block *l, union block *r)
+{  
+   int pat_size = Blk(l, Pelem)->index;
+   int pat_array[pat_size];
+   int i; 
+
+   for(i = 0; i < pat_size; i++)
+      pat_array[i] = 0;
+   
+   while(Blk(r, Pelem)->pcode != PC_EOP){
+      pat_array[Blk(r, Pelem)->index] = 1;
+      if((r = Blk(r,Pelem)->pthen) == NULL) 
+         break;  
+      } 
+   
+   while(1){
+      if(pat_array[Blk(l, Pelem)->index] == 1)
+         return Blk(l, Pelem)->index;
+      if(Blk(l, Pelem)->pthen)
+         l = Blk(l, Pelem)->pthen; 
+      else break; 
+      }
+      
+   return -1; 
 }
 
 #if !COMPILER
@@ -2528,7 +2417,7 @@ function{1} pindex_image(x, i)
    bp = BlkLoc(x);
    ep = Blk(bp, Pattern)->pe; 
 
-   if (pattern_image(ep, 0, &result, 0, i) == RunError) 
+   if (pattern_image(ep, -1, &result, 0, i, -1) == RunError) 
       runerr(0);
    else return result;
    }
@@ -2876,8 +2765,9 @@ dptr dp1, dp2;
 	 tended struct descrip pimage;
          bp = BlkLoc(*dp1);
 	 ep = Blk(bp,Pattern)->pe;
-
-         if (pattern_image(ep, 0, &pimage, 0, -1) == RunError) return RunError;
+	 
+         if (pattern_image(ep, -1, &pimage, 0, -1, -1) == RunError)
+	    return RunError;
          t = alcstr(NULL, StrLen(pimage) + 29);
 	 sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
 	 	        (long)(Blk(ep,Pelem)->index));

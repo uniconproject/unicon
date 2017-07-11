@@ -604,12 +604,12 @@ echo "--------------------------------------------------"
 echo "           Configuration Summary"
 echo "--------------------------------------------------" 
 echo "*** Build Environment"
-echo "Host     :  $host_os  ($unicon_host)"
-echo "CC       :  $CC"
-echo "CFLAGS   :$CFLAGS"
-echo "CPPFLAGS :$CPPFLAGS"
-echo "LDFLAGS  :$LDFLAGS"
-echo "LIBS     : $LIBS"
+AC_MSG_RESULT([Host     :  $host_os  ($unicon_host)])
+AC_MSG_RESULT([CC       :  $CC])
+AC_MSG_RESULT([CFLAGS   :$CFLAGS"])
+AC_MSG_RESULT([CPPFLAGS :$CPPFLAGS"])
+AC_MSG_RESULT([LDFLAGS  :$LDFLAGS"])
+AC_MSG_RESULT([LIBS     : $LIBS"])
 echo "CXX      :  $CXX  (Required only with FTGL and VOIP)" 
 echo "Verbose  :  $verbosebuild"
 echo "Debug    :  $debug"

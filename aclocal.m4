@@ -197,9 +197,9 @@ if test -n "${FTGL_HOME}"
 then
     save_flags([-I${FTGL_HOME}/include/FTGL], [-L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib] , [])
     AC_LANG_PUSH([C++])
-    AC_MSG_CHECKING(FTGL in ${FTGL_HOME})
-    AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev, [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no], [stdc++])
+    AC_CHECK_LIB(ftgl, [_ZN6FTFaceD2Ev], [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
     AC_CHECK_HEADER(FTGLExtrdFont.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
+    AC_MSG_CHECKING([FTGL in ${FTGL_HOME}])
     if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
     then
                 #

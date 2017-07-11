@@ -1,0 +1,64 @@
+#<p>
+# <b>
+# An approach to writing singleton classes.
+# </b>
+#</p>
+#<p>
+# This shows how to get a 'uniform' singleton class (where
+# the same syntax can be used on every reference).
+# (It is trivial to defeat this approach, but the same applies
+#  to any other attempt to provide singleton classes at the
+#  application level.)
+#</p>
+#<p>
+# There are easier ways to get singleton classes (see the Unicon book,
+# for example).  However these other approaches require you to
+# distinguish the first reference to the singleton class from all
+# subsequent references.  The approach shown here allows you to
+# use <i>exactly</i> the same syntax on <i>all</i> references.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+# <p>
+# A singleton class.
+# </p>
+class Singleton : Object ()
+
+   # <p>
+   # A method that can be invoked to prove that the class is available.
+   # </p>
+   method print()
+      write("\t\thi there!")
+   end
+
+# <p>
+# Each time the constructor is called, a message is printed out.
+# Since this is a singleton class, the message should appear
+# <i>exactly</i> once.
+# </p>
+initially
+   write("in constructor")
+   # replace the constructor with a self-factory co-expression
+   Singleton := create |self
+end
+
+procedure main()
+   write()
+   Singleton().print()
+   write()
+   write("Once more, with feeling...")
+   write()
+   Singleton().print()
+   write()
+   write("And again, after assignment...")
+   write()
+   s := Singleton()
+   s.print()
+end

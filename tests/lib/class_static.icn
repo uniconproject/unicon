@@ -1,0 +1,51 @@
+# <p><b>
+# Test of 'trick' to get effect of static class variables.
+# </b></p><p>
+# The current implementation of Unicon doesn't directly support
+# the equivalent of Java's static class variables.  However, you
+# can <i>almost</i> get the same effect by creating a method
+# to control access to a static variable.
+# </p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+# <p>
+# A simple class with a static field wrapped in a method.
+# </p>
+class A : Object()
+
+   #<p>
+   #  This method gives all class instances access to the 'class
+   #  variable' <tt>var</tt>.  When called with a single
+   #  non-null argument, that value is assigned to the variable.
+   #  When called with no arguments, returns the current value
+   #  of the variable.  When called with a second, non-null
+   #  argument, sets the variable to &null.
+   #</p>
+   method var(nV, setNull)
+      static v
+      v := if /setNull then \nV else &null
+      return v
+   end
+end
+
+# <p>
+# Creates two instances of the above class and shows how the
+# "static" variable is shared between them.
+# </p>
+procedure main(args)
+   a := A()
+   b := A()
+   a.var(5)
+   write("In instance b, var is ",b.var())
+   b.var(1)
+   write("In instance a, var is ",a.var())
+   b.var(,1)
+   write("In instance a, var is ",\(a.var())|" &null")
+end

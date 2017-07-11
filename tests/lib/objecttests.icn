@@ -1,0 +1,164 @@
+#<p>
+# <b>
+# Illustrate some features of the Object class (UniLib Class API)
+# </b>
+#<p>
+#<p>
+# Test cases for various and sundry features provided
+#   by the Object class.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
+
+import lang
+
+# <p>
+# A Simple class.
+# </p>
+class ATest : Object ()
+end
+
+# <p>
+# Another Simple class.
+# </p>
+class BTest: ATest ()
+end
+
+# <p>
+# Another Simple class.
+# </p>
+class CTest: Object ()
+end
+
+# <p>
+# A class with two superclasses.
+# </p>
+class DTest: ATest : CTest ()
+   method write(a,b,c)
+      "write"(a,b,c)
+   end
+end
+
+# <p>
+# One of a pair of classes that are subclasses of each other.
+# </p>
+class ETest: FTest: Object ()
+end
+
+# <p>
+# One of a pair of classes that are subclasses of each other.
+# </p>
+class FTest: ETest: Object  ()
+end
+
+# <p>
+# A class with fields
+# </p>
+class GTest: Object (one,two,three)
+end
+
+# <p>
+# A class with subfields
+# </p>
+class HTest: GTest (four,five,six)
+initially (a,b,c)
+   one   := 1
+   two   := 2
+   three := 3
+   four  := a
+   five  := b
+   six   := c
+end
+
+# <p>
+# Create some instances of some classes and perform various acts
+# on those instances.
+# </p>
+procedure main()
+   a := ATest()
+   b := BTest()
+   c := CTest()
+   d := DTest()
+   e := ETest()
+   f := FTest()
+   g := GTest(1,2,3)
+   h := HTest(4,5,6)
+
+   write("Check to see if d is an instance of Class.")
+   write()
+   if lang::instanceof(d, "Class") then {
+      write("\td is an instance of Class")
+      }
+   else {
+      write("\td is NOT an instance of Class!")
+      }
+   write()
+
+   write("Test string invocation of method names...should see '123'")
+   write()
+   d.invoke("invoke","invoke","invoke","write","\t"||1,2,3)
+   write()
+
+   write("List all the methods in class D...")
+   write()
+   every write("\t",d.genMethods())
+   write()
+
+   write("Check the inheritance hierarchy")
+   write()
+   checkInherit(a,"Class")
+   checkInherit(a,"BTest")
+   checkInherit(b,"ATest")
+   checkInherit(b,"BTest")
+   checkInherit(c,"Class")
+   checkInherit(c,"ATest")
+   checkInherit(d,"Class")
+   checkInherit(d,"ATest")
+   checkInherit(d,"BTest")
+   checkInherit(d,"CTest")
+   checkInherit(e,"Class")
+   checkInherit(e,"FTest")
+   checkInherit(f,"ETest")
+   write()
+
+   writes("d inherits from:")
+   every writes(" ",d.Type())
+   write()
+   write()
+
+   writes("e inherits from:")
+   every writes(" ",e.Type())
+   write()
+   write()
+
+   writes("g fields:")
+   every writes(" ",g.fieldNames())
+   write()
+
+   writes("h fields:")
+   every writes(" ",h.fieldNames())
+   write()
+
+   write("h.one -> ",h.getField("one"))
+   h.setField("one","One")
+   write("h.one -> ",h.getField("one"))
+
+   writes("Attempt to set non-existent field: ")
+   if h.setField("a",3) then write("BAD! - field exists after all")
+                        else write("ok - field doesn't exist")
+   
+end
+
+# <p>
+# Output a message on whether or not one class inherits from another.
+# </p>
+procedure checkInherit(class1, class2name)
+   if class1.instanceOf(class2name) then
+      write("\t",class1.className()," is an instance of ",class2name)
+   else
+      write("\t",class1.className()," is NOT an instance of ",class2name)
+end

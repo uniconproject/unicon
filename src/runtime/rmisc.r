@@ -1704,13 +1704,13 @@ int pattern_image(union block *pe, int prev_index, dptr result,
        fprintf(stdout, "Loop Code: %d\n", Blk(ep, Pelem)->pcode);  
        if(Blk(ep, Pelem)->pcode == PC_Alt)
           ep = (union block *)BlkLoc(Blk(ep, Pelem)->parameter);
-       else if(Blk(ep, Pelem)->pcode == PC_Arbno_S && flag != 2){
+       else if(Blk(ep, Pelem)->pcode == PC_Arbno_X && flag != 1){
           ep = (union block *)BlkLoc(Blk(ep, Pelem)->parameter);
           flag += 1; }
-       else
+       else  
           ep = Blk(ep, Pelem)->pthen;
-       }*/ 
- 
+       }*/  
+
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
              int common_index;
@@ -1721,10 +1721,10 @@ int pattern_image(union block *pe, int prev_index, dptr result,
              /* Find the common index of the two sides (if there is something
               * that follow the left hand alternation)
               */ 
-     
+
              if(Blk(ep, Pelem)->pthen != NULL)
                 common_index = find_cindex(Blk(ep, Pelem)->pthen, r); 
-       
+        
              /* Traverse through the two sides until you get to the most
               * recent common indexed element (if it exists)
               */ 
@@ -2374,27 +2374,47 @@ static int construct_funcimage(union block *pe, int aicode,
 
 int find_cindex(union block *l, union block *r)
 {  
-   int pat_size = Blk(l, Pelem)->index;
-   int pat_array[pat_size];
+   int pat_size = -1;
+   int * pat_array; 
    int i; 
+   union block * tmp; 
+ 
+   tmp = r; 
+   while(Blk(tmp, Pelem) != NULL){
+      if(pat_size < Blk(tmp, Pelem)->index)
+         pat_size = Blk(tmp, Pelem)->index;
+      tmp = Blk(tmp, Pelem)->pthen;
+      }
 
-   for(i = 0; i < pat_size; i++)
+   tmp = l;
+   while(Blk(tmp, Pelem) != NULL){
+      if(pat_size < Blk(tmp, Pelem)->index)
+         pat_size = Blk(tmp, Pelem)->index;
+      tmp = Blk(tmp, Pelem)->pthen; 
+      }
+
+   pat_array = (int *) malloc((pat_size + 1) * sizeof(int));
+
+   for(i = 0; i < pat_size + 1; i++)
       pat_array[i] = 0;
-   
-   while(Blk(r, Pelem)->pcode != PC_EOP){
+
+   while(1){ 
       pat_array[Blk(r, Pelem)->index] = 1;
       if((r = Blk(r,Pelem)->pthen) == NULL) 
          break;  
-      } 
-   
+      }  
+
    while(1){
-      if(pat_array[Blk(l, Pelem)->index] == 1)
+      if(pat_array[Blk(l, Pelem)->index] == 1){
+         free(pat_array); 
          return Blk(l, Pelem)->index;
+         }
       if(Blk(l, Pelem)->pthen)
          l = Blk(l, Pelem)->pthen; 
       else break; 
       }
-      
+
+   free(pat_array); 
    return -1; 
 }
 

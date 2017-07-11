@@ -125,7 +125,7 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
       keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
       ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
       rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
-      rmsg.$(O) rposix.$(O) rwindow.$(O)\
+      rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
       ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)
 	$(RTT) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
 	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin

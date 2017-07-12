@@ -624,31 +624,33 @@ else
   stmp=" ! SSL"
 fi
 
-echo "" 
-echo "--------------------------------------------------" 
-echo "           Configuration Summary"
-echo "--------------------------------------------------" 
-echo "*** Build Environment"
-AC_MSG_RESULT([Host     :  $host_os  ($unicon_host)])
-AC_MSG_RESULT([CC       :  $CC])
-AC_MSG_RESULT([CFLAGS   :$CFLAGS"])
-AC_MSG_RESULT([CPPFLAGS :$CPPFLAGS"])
-AC_MSG_RESULT([LDFLAGS  :$LDFLAGS"])
-AC_MSG_RESULT([LIBS     : $LIBS"])
-echo "CXX      :  $CXX  (Required only with FTGL and VOIP)" 
-echo "Verbose  :  $verbosebuild"
-echo "Debug    :  $debug"
-echo "Devmode  :  $devmode"
-echo ""
-echo "*** Features (+Available   -Missing   !Disabled)"
-echo "$ctmp"
-echo "$gtmp"
-echo "$gdtmp"
-echo "$contmp"
-echo "$atmp"
-echo "$vtmp"
-echo "$dtmp"
-echo "$stmp"
+AC_MSG_RESULT([
+
+--------------------------------------------------
+           Configuration Summary
+--------------------------------------------------
+*** Build Environment
+Host     :  $host_os  ($unicon_host)
+CC       :  $CC
+CFLAGS   :$CFLAGS
+CPPFLAGS :$CPPFLAGS
+LDFLAGS  :$LDFLAGS
+LIBS     : $LIBS
+CXX      :  $CXX  (Required only with FTGL and VOIP)
+Verbose  :  $verbosebuild
+Debug    :  $debug
+Devmode  :  $devmode
+
+*** Features (+Available   -Missing   !Disabled)
+$ctmp
+$gtmp
+$gdtmp
+$contmp
+$atmp
+$vtmp
+$dtmp
+$stmp
+])
 
 if test "$plugins"      = yes ; then
   if test $ac_cv_search_dlopen = no ; then

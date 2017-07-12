@@ -53,7 +53,40 @@ AC_DEFUN([restore_flags],
 AC_DEFUN([fail_and_restore],
 [
 	restore_flags()
+	AC_MSG_CHECKING(checking lib $1)
 	AC_MSG_RESULT(failed)
+])
+
+# 
+# $1 libname
+# $2 path to the libraray
+# $3 headers to check 
+# $4 function to check in the library
+# $5 the symobol to define if the function/lib exist
+# $6 lang (C or C++)
+AC_DEFUN([do_lib_check],
+[
+if test -n $2
+then
+	save_flags([-I$2/include], [-L$2/lib], [])
+        AC_LANG_PUSH([$6])
+	# If we have mulltiple headers, any missing one will set this to no
+	cv_libthislib_h=yes
+        AC_CHECK_HEADERS([$3], [], [cv_libthislib_h=no], [])
+	if test $cv_libthislib_h = yes ;  then
+	  AC_SEARCH_LIBS([$4], [$1],
+	     [cv_lib$1=yes
+	      if test -n $5 ; then
+	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
+	      fi
+	     ],
+	     [fail_and_restore()])
+        else
+          fail_and_restore([$1 in $2])
+	fi
+	AC_LANG_POP([$6])
+fi
+
 ])
 
 AC_DEFUN([CHECK_ZLIB],
@@ -79,32 +112,7 @@ then
 fi
 ])
 
-#
-# Locate zlib, if wanted
-#
-if test -n "${ZLIB_HOME}"
-then
-	save_flags([-I${ZLIB_HOME}/include], [-L${ZLIB_HOME}/lib], [])
-        AC_LANG_PUSH([C])
-        AC_CHECK_LIB(z, inflateEnd, [zlib_cv_libz=yes], [zlib_cv_libz=no])
-        AC_CHECK_HEADER(zlib.h, [zlib_cv_zlib_h=yes], [zlib_cv_zlib_h=no])
-        AC_MSG_CHECKING(zlib in ${ZLIB_HOME})
-
-        if test "$zlib_cv_libz" = "yes" -a "$zlib_cv_zlib_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(z, inflateEnd)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-                fail_and_restore()
-        fi
-        AC_LANG_POP([C])
-fi
+do_lib_check([z], [${ZLIB_HOME}], [zlib.h], [inflateEnd], [HAVE_LIBZ], [C])
 
 ])
 
@@ -134,35 +142,9 @@ then
 fi
 fi
 ])
-#
-# Locate freetype, if wanted
-#
-if test -n "${FREETYPE_HOME}"
-then
-	save_flags(
-	  [-I${FREETYPE_HOME}/include -I${FREETYPE_HOME}/include/freetype2/freetype -I${FREETYPE_HOME}/include/freetype2],
-	  [-L${FREETYPE_HOME}/lib64 -L${FREETYPE_HOME}/lib], [])
-	
-	AC_LANG_PUSH([C])
-        AC_CHECK_LIB(freetype, FT_Open_Face, [freetype_cv_libfreetype=yes], [freetype_cv_libfreetype=no])
-        AC_CHECK_HEADER(ft2build.h, [freetype_cv_ft2build_h=yes], [freetype_cv_ft2build_h=no])
-	AC_MSG_CHECKING(freetype in ${FREETYPE_HOME})
 
-        if test "$freetype_cv_libfreetype" = "yes" -a "$freetype_cv_ft2build_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(freetype, FT_Open_Face)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
+do_lib_check([freetype], [${FREETYPE_HOME}], [freetype2/freetype/freetype.h],
+			 [FT_Open_Face], [HAVE_LIBFREETYPE], [C])
 
 ])
 
@@ -190,35 +172,10 @@ fi
 
 ])
 
-#
-# Locate FTGL, if wanted
-#
-if test -n "${FTGL_HOME}"
-then
-    save_flags([-I${FTGL_HOME}/include/FTGL], [-L${FTGL_HOME}/lib64 -L${FTGL_HOME}/lib] , [])
-    AC_LANG_PUSH([C++])
-    AC_CHECK_LIB(ftgl, [_ZN6FTFaceD2Ev], [FTGL_cv_libFTGL=yes], [FTGL_cv_libFTGL=no])
-    AC_CHECK_HEADER(FTGLExtrdFont.h, [FTGL_cv_FTGL_h=yes], [FTGL_cv_FTGL_h=no])
-    AC_MSG_CHECKING([FTGL in ${FTGL_HOME}])
-    if test "$FTGL_cv_libFTGL" = "yes" -a "$FTGL_cv_FTGL_h" = "yes"
-    then
-                #
-                # If both library and header were found, use them.
-		# At the moment, this looks deplorably Linux-specific.
-		# sort|tail ensures that /usr/lib64 is preferred to /usr/lib
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(ftgl, _ZN6FTFaceD2Ev)
-		LIBS="$LIBS -lstdc++"
-    else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-    fi
-    AC_LANG_POP([C++])
+do_lib_check([ftgl], [${FTGL_HOME}], [FTGL/FTGLExtrdFont.h], [_ZN6FTFaceD2Ev], [HAVE_LIBFTGL], [C++])
+if test "$cv_libftgl" = "yes" ; then
+   LIBS="$LIBS -lstdc++"
 fi
-
 ])
 
 #---------------------------------------
@@ -247,38 +204,9 @@ then
 fi
 ])
 
-#
-# Locate libogg, if wanted
-#
-if test -n "${LIBOGG_HOME}"
-then
-        save_flags([-I${LIBOGG_HOME}/include/ogg -I${LIBOGG_HOME}/include/vorbis], [-L${LIBOGG_HOME}/lib], [])
-	AC_LANG_PUSH([C])
-        AC_CHECK_LIB(ogg, oggpack_write, [ogglib_cv_libogg=yes], [ogglib_cv_libogg=no])
-        AC_CHECK_LIB(vorbis, vorbis_bitrate_init, [ogglib_cv_libvorbis=yes], [ogglib_cv_libvorbis=no])
-        AC_CHECK_LIB(vorbisfile, ov_open, [libvorbisfile_cv_libvorbisfile=yes], [libvorbisfile_cv_libvorbisfile=no])
-        AC_CHECK_HEADER(ogg.h, [ogglib_cv_ogglib_h=yes], [ogglib_cv_ogglib_h=no])
-        AC_CHECK_HEADER(vorbisfile.h, [libvorbis_cv_libvorbis_h=yes], [libvorbis_cv_libvorbis_h=no])
-        AC_CHECK_HEADER(codec.h, [libvorbis_cv_codec_h=yes], [libvorbis_cv_codec_h=no])
-        AC_MSG_CHECKING(oggvorbis in ${LIBOGG_HOME})
-
-        if test "$ogglib_cv_libogg" = "yes" -a "$ogglib_cv_libvorbis" = "yes" -a "$libvorbisfile_cv_libvorbisfile" = "yes" -a "$ogglib_cv_ogglib_h" = "yes" -a "$libvorbis_cv_libvorbis_h" = "yes" -a "$libvorbis_cv_codec_h" = "yes"
-        then
-                #
-                # If all libraries were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(ogg, oggpack_write)
-                AC_CHECK_LIB(vorbis, vorbis_bitrate_init)
-                AC_CHECK_LIB(vorbisfile, ov_open)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
+do_lib_check([ogg], [${LIBOGG_HOME}], [ogg/ogg.h], [oggpack_write], [HAVE_LIBOGG], [C])
+do_lib_check([vorbis], [${LIBOGG_HOME}], [vorbis/codec.h], [vorbis_bitrate_init,], [HAVE_LIBVORBIS], [C])
+do_lib_check([vorbisfile], [${LIBOGG_HOME}], [vorbis/vorbisfile.h], [ov_open], [HAVE_LIBVORBISFILE], [C])
 
 ])
 
@@ -308,32 +236,8 @@ then
 fi
 ])
 
-#
-# Locate libSDL, if wanted
-#
-if test -n "${LIBSDL_HOME}"
-then
-        save_flags([-I${LIBSDL_HOME}/include/SDL], [-L${LIBSDL_HOME}/lib],[])
-	AC_LANG_PUSH([C])
-        AC_CHECK_LIB(SDL, SDL_AudioInit, [libsdl_cv_libsdl=yes], [libsdl_cv_libsdl=no])
-        AC_CHECK_HEADER(SDL_audio.h, [libsdl_cv_libsdl_h=yes], [libsdl_cv_libsdl_h=no])
-        AC_MSG_CHECKING(libsdl in ${LIBSDL_HOME})
-	
-        if test "$libsdl_cv_libsdl" = "yes" -a "$libsdl_cv_libsdl_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(SDL, SDL_AudioInit)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
+do_lib_check([SDL], [${LIBSDL_HOME}], [SDL/SDL_audio.h], [SDL_AudioInit], [HAVE_LIBSDL], [C])
+
 ])
 
 #-----------------------------------------------------------
@@ -362,32 +266,8 @@ then
 fi
 ])
 
-#
-# Locate libsmpeg, if wanted
-#
-if test -n "${LIBSMPEG_HOME}"
-then
-        save_flags([-I${LIBSMPEG_HOME}/include/smpeg], [-L${LIBSMPEG_HOME}/lib], [])
-	AC_LANG_PUSH([C])
-        AC_CHECK_LIB(smpeg, SMPEG_playAudio, [libsmpeg_cv_libsmpeg=yes], [libsmpeg_cv_libsmpeg=no])
-        AC_CHECK_HEADER(smpeg.h, [libsmpeg_cv_libsmpeg_h=yes], [libsmpeg_cv_libsmpeg_h=no])
-	AC_MSG_CHECKING(libsmpeg in ${LIBSMPEG_HOME})
-	
-        if test "$libsmpeg_cv_libsmpeg" = "yes" -a "$libsmpeg_cv_libsmpeg_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(smpeg, SMPEG_playAudio)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
+do_lib_check([smpeg], [${LIBSMPEG_HOME}], [smpeg.h], [SMPEG_playAudio], [HAVE_LIBSMPEG], [C])
+
 ])
 
 #---------------------------------------
@@ -416,35 +296,10 @@ then
 fi
 ])
 
-#
-# Locate libopenal, if wanted
-#
-if test -n "${LIBOPENAL_HOME}"
-then
-        save_flags([-I${LIBOPENAL_HOME}/include/AL], [-L${LIBOPENAL_HOME}/lib], [])
-	AC_LANG_PUSH([C])
-        AC_CHECK_LIB(openal, alGetSourceiv, [libopenal_cv_libopenal=yes], [libopenal_cv_libopenal=no])
-        AC_CHECK_HEADER(al.h, [libopenal_cv_libopenal_h=yes], [libopenal_cv_libopenal_h=no])
-        AC_CHECK_LIB(alut, alutGetMajorVersion, [libalut_cv_libalut=yes], [libalut_cv_libalut=no], [-lopenal])
-        AC_CHECK_HEADER(alut.h, [libalut_cv_libalut_h=yes], [libalut_cv_libalut_h=no])
-        AC_MSG_CHECKING(libopenal in ${LIBOPENAL_HOME})
 
-        if test "$libopenal_cv_libopenal" = "yes" -a "$libopenal_cv_libopenal_h" = "yes" -a "$libalut_cv_libalut" = "yes" -a "$libalut_cv_libalut_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(openal, alGetSourceiv)
-                AC_CHECK_LIB(alut, alutGetMajorVersion)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
+do_lib_check([openal], [${LIBOPENAL_HOME}], [AL/al.h], [alGetSourceiv], [HAVE_LIBOPENAL], [C])
+do_lib_check([alut], [${LIBOPENAL_HOME}], [AL/alut.h], [alutGetMajorVersion], [HAVE_LIBALUT], [C])
+
 ])
 
 AC_DEFUN([CHECK_VOICE],
@@ -496,7 +351,7 @@ then
                 # If either header or library was not found, revert and bomb
                 #
 		JV_LDFLAGS=
-		fail_and_restore()
+		fail_and_restore([voip in $JVOIPLIB_HOME])
         fi
 
 	AC_LANG_POP([C++])
@@ -539,38 +394,8 @@ then
 fi
 ])
 
-#
-# Locate Xlib, if wanted
-#
-if test -n "${XLIB_HOME}"
-then
-        save_flags([-I${XLIB_HOME}/include], [-L${XLIB_HOME}/lib], [])
-	AC_LANG_PUSH([C])
-        AC_CHECK_LIB(X11, XAllocColorCells, [xlib_cv_libx=yes], [xlib_cv_libx=no])
-        AC_CHECK_HEADERS(X11/Xlib.h, [xlib_cv_xlib_h=yes], [xlib_cv_xlib_h=no])
-        AC_CHECK_HEADER(X11/Xos.h, [xlib_cv_xos_h=yes], [xlib_cv_xos_h=no])
-        AC_CHECK_HEADER(X11/Xutil.h, [xlib_cv_xutil_h=yes], [xlib_cv_xutil_h=no],[#ifdef HAVE_X11_XLIB_H
-#include <X11/Xlib.h>
-#endif])
-        AC_CHECK_HEADER(X11/Xatom.h, [xlib_cv_xatom_h=yes], [xlib_cv_xatom_h=no])
-	AC_MSG_CHECKING(xlib in ${XLIB_HOME})
-	
-        if test "$xlib_cv_libx" = "yes" -a "$xlib_cv_xlib_h" = "yes" -a "$xlib_cv_xos_h" = "yes" -a "$xlib_cv_xutil_h" = "yes" -a "$xlib_cv_xatom_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(X11, XAllocColorCells)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
-
+do_lib_check([X11], [${XLIB_HOME}], [X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h],
+		    [XAllocColorCells], [HAVE_LIBX11], [C])
 ])
 
 
@@ -597,33 +422,7 @@ then
 fi
 ])
 
-#
-# Locate JPEG, if wanted
-#
-if test -n "${JPEG_HOME}"
-then
-	save_flags([-I${JPEG_HOME}/include], [-L${JPEG_HOME}/lib], [])
-        AC_LANG_PUSH([C])
-        AC_CHECK_LIB(jpeg, jpeg_destroy_decompress, [jpeg_cv_libjpeg=yes], [jpeg_cv_libjpeg=no])
-        AC_CHECK_HEADER(jpeglib.h, [jpeg_cv_jpeglib_h=yes], [jpeg_cv_jpeglib_h=no])
-        AC_CHECK_HEADER(jerror.h, [jpeg_cv_jerror_h=yes], [jpeg_cv_jerror_h=no])
-	AC_MSG_CHECKING(jpeg in ${JPEG_HOME})
-
-        if test "$jpeg_cv_libjpeg" = "yes" -a "$jpeg_cv_jpeglib_h" = "yes" -a "$jpeg_cv_jerror_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(jpeg, jpeg_destroy_decompress)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-	AC_LANG_POP([C])
-fi
+do_lib_check([jpeg], [${JPEG_HOME}], [jpeglib.h jerror.h], [jpeg_destroy_decompress], [HAVE_LIBJPEG], [C])
 
 ])
 
@@ -650,36 +449,7 @@ then
 fi
 ])
 
-#
-# Locate PNG, if wanted
-#
-if test -n "${PNG_HOME}"
-then
-	save_flags([-I${PNG_HOME}/include], [-L${PNG_HOME}/lib], [])
-        AC_LANG_PUSH([C])
-	AC_CHECK_LIB(png, png_read_image, [png_cv_libpng=yes], [png_cv_libpng=no])
-        AC_CHECK_HEADER(png.h, [png_cv_png_h=yes], [png_cv_png_h=no])
-#	AC_CHECK_HEADER(pngconf.h, [png_cv_pngconf_h=yes], [png_cv_pngconf_h=no])
-#	AC_CHECK_HEADER(zlib.h, [png_cv_zlib_h=yes], [png_cv_zlib_h=no])
-#	AC_CHECK_HEADER(zconf.h, [png_cv_zconf_h=yes], [png_cv_zconf_h=no])
-        AC_MSG_CHECKING(png in ${PNG_HOME})
-	
-	if test "$png_cv_libpng" = "yes" -a "$png_cv_png_h" = "yes" 
-	   # -a "$png_cv_pngconf_h" = "yes" -a "$png_cv_zlib_h" = "yes" -a "$png_cv_zconf_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                AC_MSG_RESULT(ok)
-		AC_CHECK_LIB(png, png_read_image)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-        AC_LANG_POP([C])
-fi
+do_lib_check([png], [${PNG_HOME}], [png.h], [png_read_image], [HAVE_LIBPNG], [C])
 ])
 
 AC_DEFUN([CHECK_PTHREAD],
@@ -705,32 +475,8 @@ then
 fi
 ])
 
-#
-# Locate pthread, if wanted
-#
-if test -n "${PTHREAD_HOME}"
-then
-        save_flags([-I${PTHREAD_HOME}/include], [-L${PTHREAD_HOME}/lib], [])
-        AC_LANG_PUSH([C])
-	AC_CHECK_LIB(pthread, pthread_create, [pthread_cv_libpthread=yes], [pthread_cv_libpthread=no])
-        AC_CHECK_HEADER(pthread.h, [pthread_cv_pthread_h=yes], [pthread_cv_pthread_h=no])
-        AC_MSG_CHECKING(pthread in ${PTHREAD_HOME})
+do_lib_check([pthread], [${PTHREAD_HOME}], [pthread.h], [pthread_create], [HAVE_LIBPTHREAD], [C])
 
-	if test "$pthread_cv_libpthread" = "yes" -a "$pthread_cv_pthread_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(pthread, pthread_create)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-        AC_LANG_POP([C])
-fi
 ])
 
 
@@ -738,7 +484,7 @@ AC_DEFUN([CHECK_OPENSSL],
 #
 # Handle user hints
 #
-[AC_MSG_CHECKING(if OPENSSL is wanted)
+[AC_MSG_CHECKING(if ssl is wanted)
 AC_ARG_WITH(openssl,
 [  --with-openssl=DIR root directory path of openssl installation [defaults to
                     /usr/local or /usr if not found in /usr/local]
@@ -751,39 +497,16 @@ else
 fi], [
 AC_MSG_RESULT(yes)
 OPENSSL_HOME=/usr/local
-if test ! -f "${SSL_HOME}/include/openssl/bio.h"
+if test ! -f "${SSL_HOME}/include/openssl/ssl.h"
 then
         OPENSSL_HOME=/usr
 fi
 ])
 
-#
-# Locate openssl, if wanted
-#
-if test -n "${OPENSSL_HOME}"
-then
-        save_flags([-I${OPENSSL_HOME}/include], [-L${OPENSSL_HOME}/lib], [])
-        AC_LANG_PUSH([C])
-	AC_CHECK_LIB(ssl, SSL_library_init, [openssl_cv_libssl=yes], [openssl_cv_libssl=no])
-	AC_CHECK_LIB(crypto, BIO_read, [openssl_cv_libcrypto=yes], [openssl_cv_libcrypto=no])
-        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
-	AC_MSG_CHECKING(ssl in ${OPENSSL_HOME})
-	if test "$openssl_cv_libssl" = "yes" -a "$openssl_cv_bio_h" = "yes" -a "$openssl_cv_libcrypto" = "yes"
-        then
-                #
-                # If libraries and headers were found, use them
-                #
-                AC_MSG_RESULT(ok)
-		AC_CHECK_LIB(ssl, SSL_library_init)
-		AC_CHECK_LIB(crypto, BIO_read)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-        AC_LANG_POP([C])
-fi
+do_lib_check([ssl], [${OPENSSL_HOME}], [openssl/ssl.h], [SSL_library_init], [HAVE_LIBSSL], [C])
+do_lib_check([crypto], [${OPENSSL_HOME}], [openssl/bio.h], [BIO_read], [HAVE_LIBCRYPTO], [C])
+
+#        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
 ])
 
 
@@ -843,7 +566,7 @@ then
                 #
 	        GL_CFLAGS=
 	        GL_LDFLAGS=
-		fail_and_restore()
+		fail_and_restore([opengl in $OPENGL_HOME])
         fi
         AC_LANG_POP([C])
 fi
@@ -873,41 +596,10 @@ then
 fi
 ])
 
-#
-# Locate ODBC, if wanted
-#
-if test -n "${ODBC_HOME}"
-then
-        save_flags([-I${ODBC_HOME}/include], [-L${ODBC_HOME}/lib -L${ODBC_HOME}/lib64], [])
-        AC_LANG_PUSH([C])
-        AC_CHECK_LIB(iodbc, SQLAllocConnect, [odbc_cv_libiodbc=yes], [odbc_cv_libiodbc=no])
-        AC_CHECK_LIB(odbc, SQLAllocConnect, [odbc_cv_libodbc=yes], [odbc_cv_libodbc=no])
-        AC_CHECK_HEADER(sqlext.h, [odbc_cv_sqlext_h=yes], [odbc_cv_sqlext_h=no])
-        AC_MSG_CHECKING(odbc in ${ODBC_HOME})
-	
-        if test "$odbc_cv_libiodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(iodbc, SQLAllocConnect)
-        else
-        if test "$odbc_cv_libodbc" = "yes" -a "$odbc_cv_sqlext_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(odbc, SQLAllocConnect)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-        fi
-        AC_LANG_POP([C])
+do_lib_check([iodbc], [${ODBC_HOME}], [sqlext.h], [SQLAllocConnect], [HAVE_LIBIODBC], [C])
+
+if test "$cv_libiodbc" != "yes" ; then
+  do_lib_check([odbc], [${ODBC_HOME}], [sqlext.h], [SQLAllocConnect], [HAVE_LIBODBC], [C])
 fi
 
 ])
@@ -992,33 +684,8 @@ then
 fi
 fi
 ])
-#
-# Locate XFT, if wanted
-#
-if test -n "${XFT_HOME}"
-then
-	save_flags([-I${XFT_HOME}/include/X11/Xft -I${XFT_HOME}/include/freetype2],
-		   [-L${XFT_HOME}/lib64 -L${XFT_HOME}/lib], [])
-        AC_LANG_PUSH([C])
-        AC_CHECK_LIB(Xft, XftFontOpenPattern, [xft_cv_libxft=yes], [xft_cv_libxft=no])
-        AC_CHECK_HEADER(Xft.h, [xft_cv_xft_h=yes], [xft_cv_xft_h=no])
-	AC_MSG_CHECKING(XFT in ${XFT_HOME})
 
-        if test "$xft_cv_libxft" = "yes" -a "$xft_cv_xft_h" = "yes"
-        then
-                #
-                # If both library and header were found, use them
-                #
-                AC_MSG_RESULT(ok)
-                AC_CHECK_LIB(Xft, main)
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
-		fail_and_restore()
-        fi
-        AC_LANG_POP([C])
-fi
+do_lib_check([Xft], [${XFT_HOME}], [X11/Xft/Xft.h], [XftFontOpenPattern], [HAVE_LIBXFT], [C])
 
 ])
 

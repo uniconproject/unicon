@@ -193,14 +193,6 @@ case $unicon_host in
         ;;
 esac
 
-AC_SUBST(EXE)
-AC_SUBST(unicon_os)
-AC_SUBST(WERROR)
-AC_SUBST(CC)
-AC_SUBST(RLINK)
-AC_SUBST(RLIBS)
-AC_SUBST(CFDYN)
-
 
 #AC_GNU_SOURCE
 
@@ -228,6 +220,34 @@ AC_FUNC_ALLOCA
 AC_TYPE_OFF_T
 AC_ST_BLKSIZE
 AC_CHECK_TYPE(ssize_t, signed)
+
+case $ac_cv_sizeof_int_p in
+     *1)
+     BITS=8
+     ;;
+     *2)
+     BITS=16
+     ;;
+     *4)
+     BITS=32
+     ;;
+     *8)
+     BITS=64
+     ;;
+esac
+
+OBJ=O
+
+AC_SUBST(EXE)
+AC_SUBST(OBJ)
+AC_SUBST(BITS)
+AC_SUBST(unicon_os)
+
+AC_SUBST(CC)
+AC_SUBST(RLINK)
+AC_SUBST(RLIBS)
+AC_SUBST(CFDYN)
+
 
 # Do we have rdynamic?
 #AC_LANG_PUSH(C)

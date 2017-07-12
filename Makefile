@@ -274,7 +274,7 @@ clean Clean:
 		cd src;			$(MAKE) Clean
 		cd tests;		$(MAKE) Clean
 
-Pure:
+distclean Pure:
 		touch Makedefs Makedefs.uni
 		rm -rf icon.* bin/[a-z]* lib/[a-z]*
 		cd uni;		$(MAKE) Clean

@@ -217,8 +217,8 @@ AC_CHECK_HEADERS(errno.h netdb.h unistd.h strings.h arpa/inet.h net/errno.h \
                  netinet/in.h sys/errno.h sys/socket.h sys/types.h)
 
 AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(long int)
+AC_CHECK_SIZEOF(long long int)
 AC_CHECK_SIZEOF(int *)
 
 AC_WORDS_BIGENDIAN
@@ -276,7 +276,7 @@ fi
 if test "x$graphics" = "xyes"; then
 
   CHECK_XLIB()
-  if test "x$xlib_cv_libx" = xyes ; then
+  if test "x$cv_libX11" = xyes ; then
 
     CHECK_FREETYPE()
     CHECK_XFT()
@@ -300,7 +300,7 @@ if test "x$graphics" = "xyes"; then
     XL="-L../../bin -lXpm \$(XLIBS)"
     XPM=xpm
 
-    if test "$FTGL_cv_libFTGL" = "yes"; then
+    if test "$cv_libFTGL" = "yes"; then
         DRAWSTRING=drawstring3d.o
     	COMMONDRAWSTRING=../common/drawstring3d.o
    fi
@@ -437,7 +437,7 @@ AC_OUTPUT
 
 
 
-if test "$zlib_cv_libz"   = yes ; then
+if test "$cv_libz"   = yes ; then
    ctmp=" + Compression        : +ZLIB"
 else
    ctmp=" - Compression        : -ZLIB"
@@ -446,18 +446,19 @@ fi
 # want graphics
 if test "$graphics" = yes ; then
   gtmp="Graphics           :"
-  if test "$xlib_cv_libx"    = yes ; then
-    gtmp=" + $gtmp +XLIB "
+  if test "$cv_libX11"    = yes ; then
+    gtmp=" + $gtmp +X11 "
   else
-    gtmp=" - $gtmp -XLIB "
+    gtmp=" - $gtmp -X11 "
   fi
 
-  if test "$jpeg_cv_libjpeg" = yes ; then gtmp="$gtmp +JPG " ; else gtmp="$gtmp -JPG " ; fi
+  if test "$cv_libjpeg" = yes ; then gtmp="$gtmp +JPG " ; else gtmp="$gtmp -JPG " ; fi
 
-  if test "$png_cv_libpng"   = yes ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
+	
+  if test "$cv_libpng"  = yes ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
-  if test "$xft_cv_libxft"   = yes ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
-  if test "$freetype_cv_libfreetype"   = yes ; then
+  if test "$cv_libxft"   = yes ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+  if test "$cv_libfreetype"   = yes ; then
     gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
 else
 #disbaled graphics
@@ -495,7 +496,7 @@ fi
 
 # want concurrency
 if test "$concurrency" = yes ; then
-  if test "$pthread_cv_libpthread"  = yes ; then
+  if test "$cv_libpthread"  = yes ; then
     contmp=" + Concurrency        : +pthread"
   else
     contmp=" - Concurrency        : -pthread"
@@ -543,7 +544,7 @@ if test "$audio" = yes ; then
   if test "$onAudio" = 3 ; then onAudio=2 ; fi
 
   atmp="$atmp) | ("
-  if test "$libsmpeg_cv_libsmpeg"   = yes ; then
+  if test "$cv_libsmpeg"   = yes ; then
     atmp="$atmp +SDL +SMPEG "
     if test "$onAudio" = 2 ; then onAudio=4 ; fi
   else
@@ -577,10 +578,14 @@ fi
 
 # want database
 if test "$database" = yes ; then
-  if test "$odbc_cv_libodbc"        = yes ; then
+  if test "$cv_libodbc"        = yes ; then
     dtmp=" + Database           : +odbc"
   else
-    dtmp=" - Database           : -odbc"
+  if test "$cv_libiodbc"       = yes ; then
+    dtmp=" + Database           : +iodbc"
+  else
+    dtmp=" - Database           : -odbc | -iodbc"
+  fi
   fi
 else
 #disbaled databse
@@ -589,7 +594,7 @@ fi
 
 # want ssl
 if test "$ssl" = yes ; then
-  if test "$openssl_cv_libssl"      = yes ; then
+  if test "$cv_libssl"      = yes ; then
     stmp=" + SSL                : +ssl"
   else
     stmp=" - SSL                : -ssl"

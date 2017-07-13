@@ -174,7 +174,7 @@ char *exename;
    {
    struct lib *l;
    char sbuf[MaxFileName];		/* file name construction buffer */
-   int   buflen;
+   int  rv, buflen;
    char *buf, objname[MaxFileName];
    char *s;
    char *dlrgint;
@@ -229,7 +229,7 @@ Deliberate Syntax Error
    if (verbose > 2)
       fprintf(stdout, "%s\n", buf);
 
-   if (system(buf) != 0)
+   if ((rv = system(buf)) != 0)
       return EXIT_FAILURE;
 
    /* then, the link */
@@ -341,8 +341,10 @@ Deliberate Syntax Error
       fprintf(stdout, "%s\n", buf);
 
    /* Execute the (compile+)link */
-   if (system(buf) != 0)
-      return EXIT_FAILURE;
+   if ((rv = system(buf)) == -1)
+      return EXIT_FAILURE;	/* fork() failed, or whatever */
+   if (WEXITSTATUS(rv) != 0)
+      return EXIT_FAILURE;	/* command failed */
 
 #if UNIX || NTGCC
    /* Strip debug symbols from target unless they were requested. */
@@ -350,7 +352,8 @@ Deliberate Syntax Error
       strcpy(buf, "strip ");
       s = buf + 6;
       strcpy(s, exename);
-      if (system(buf) != 0) return EXIT_FAILURE;
+      if ((rv = system(buf)) == -1) return EXIT_FAILURE;
+      if (WEXITSTATUS(rv) != 0) return EXIT_FAILURE;
       }
 #endif						/* UNIX */
 
@@ -369,11 +372,6 @@ Deliberate Syntax Error
    buf[strlen(buf)-1] = '\0';
    buf = growcat(buf, &buflen, 1, "obj");
 
-#if 0
-   if (!largeints) {
-      buf = growcat(buf, &buflen, 2, ",", dlrgint);
-      }
-#endif
    for (l = liblst; l != NULL; l = l->next) {
       buf = growcat(buf, &buflen, 2, ",", l->libname);
       }

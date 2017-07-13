@@ -1751,11 +1751,16 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 
              break;
              } 
-          case PC_Any_MF:
-          case PC_Break_MF:
+          case PC_Any_MF   :
+          case PC_Break_MF :
           case PC_NotAny_MF:
-          case PC_NSpan_MF:
-          case PC_Span_MF: {
+          case PC_NSpan_MF :
+          case PC_Span_MF  : 
+          case PC_Len_NMF  :
+          case PC_Pos_NMF  :
+          case PC_RPos_NMF :
+          case PC_Tab_NMF  :
+          case PC_RTab_NMF : {
 	     if ((construct_funcimage(ep, PT_MF, Blk(ep, Pelem)->pcode, 
                             result, index_image)) == RunError) return RunError;
 	     peCount++;
@@ -1785,12 +1790,7 @@ int pattern_image(union block *pe, int prev_index, dptr result,
           case PC_Pos_NP   :
           case PC_RPos_NP  :
           case PC_Tab_NP   :
-          case PC_RTab_NP  : 
-          case PC_Len_NMF  :
-          case PC_Pos_NMF  :
-          case PC_RPos_NMF :
-          case PC_Tab_NMF  :
-          case PC_RTab_NMF : {
+          case PC_RTab_NP  : {
 	     if ((construct_funcimage(ep, PT_VP, Blk(ep, Pelem)->pcode, 
                             result, index_image)) == RunError) return RunError;
 	     peCount++;
@@ -2164,7 +2164,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	  if (construct_image(result, bi_pat(PI_FPAREN),
 			      &(le->lslots[leCurrent]), result) == RunError)
 	     return RunError;
-	  }*/ 
+	  }*/  
 
 	  /* attach rest of parameters for uneval method/function */ 
 

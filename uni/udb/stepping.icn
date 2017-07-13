@@ -18,7 +18,8 @@ class Stepping(
    msg,         # a string with latest message from this class
    pat,         # store the current pstep pattern
    assignVal,   # assignment value	       
-   curPelem,    # the current pelem we are on	       
+   curPelem,    # the current pelem we are on
+   pPos,        # stores the previous position of the current total match       
    totalMatch   # stores the total match      
    )	
 	       
@@ -230,9 +231,11 @@ method handle_pstep_fail()
          return
          }
    default :{
-         msg := "\n   file "||cur_file||", line "||cur_line
-         msg ||:= "\n   Pattern Element Failed to Match "
-         msg ||:= "\n   Total Match: "||image(totalMatch)
+         msg := "\n   ?? at "||cur_file||":"||cur_line||", failed to match at "
+         msg ||:= "pos:"||keyword("pos", Monitored)|| " out of string length "
+         msg ||:= *keyword("subject", Monitored)
+         msg ||:= "\n   Sub: " || truncateLine()
+         msg ||:= "\n" || getUnderlined()
          msg ||:= "\n   Failed Pattern Element: "
          msg ||:= "\n   " || pindex_image(pat, cur_index)
          DState.Write(msg)
@@ -298,9 +301,10 @@ method handle_pstep_match()
    cur_index := keyword("patindex", Monitored)
    cur_file := keyword("file", Monitored)
    cur_line := keyword("line", Monitored)
-   cur_match := getSubstring()
 
-   msg := "\n   file "||cur_file||", line "||cur_line
+   msg := "\n   ?? at "||cur_file||":"||cur_line||", matched "
+   msg ||:= pPos||":"||keyword("pos", Monitored)|| " out of string length "
+   msg ||:= *keyword("subject", Monitored)
 
    case curPelem of {
       PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
@@ -343,19 +347,20 @@ method handle_pstep_match()
          msg := "\n   Match has failed with no alternatives,"
          msg ||:= " starting from the beginning..."
          totalMatch := &null
+         pPos := keyword("pos", Monitored) 
          step_count := 1
          DState.Write(msg) 
          DState.State := RUN
          DState.RunCode := PSTEP
          return 
          }
-      default : {  
-         msg ||:= "\n   Total Matched String: "||image(totalMatch)
-         msg ||:= "\n   Matched String: "||image(cur_match)
+      default : {
+           msg ||:= "\n   Sub: " || truncateLine()
+           msg ||:= "\n" || getUnderlined()
          }
       }
       msg ||:= "\n   Matched Pattern Element: "
-      msg ||:= "\n   " ||pindex_image(pat, cur_index)  
+      msg ||:= "\n   " || pindex_image(pat, cur_index)  
       DState.Write(msg)
       DState.State := PAUSE
       DState.RunCode := PSTEP
@@ -377,6 +382,85 @@ method getSubstring()
    return cur_match 
 end
 
+method getUnderlined()
+   local buff_len := 8         ##"   Sub: <string>"
+   local image_max := 72
+   local ellipse := 6
+   local underlined := ""
+   local cur_pos := keyword("pos", Monitored)
+   local sub := keyword("subject", Monitored)
+
+   line_max := image_max + buff_len
+
+   if cur_pos >= (image_max - ellipse) then {
+      sub ? {
+         every 1 to buff_len do underlined ||:= " " 
+
+         if pPos < (image_max - ellipse) then {
+            underlined ||:= "..."
+            tab(cur_pos - ((image_max - ellipse)/2))
+
+            while &pos ~= cur_pos do {
+               move(1)
+               underlined ||:= "."
+               }
+             }
+         else {
+            underlined ||:= "   "
+            tab(cur_pos - ((image_max - ellipse)/2))
+
+            while &pos ~= pPos do{
+               move(1)
+               underlined ||:= " "
+               }
+            while &pos ~= cur_pos do {
+               move(1)
+               underlined ||:= "."
+               }
+            }
+         underlined ||:= "^"
+         return underlined
+         }
+      underlined ||:= "^"
+      return underlined
+      }
+   else{
+      every 1 to (buff_len +(pPos - 1)) do underlined ||:= " "
+      every pPos to cur_pos - 1 do underlined ||:= "."
+      underlined ||:= "^"
+      }
+
+   return underlined
+
+end
+
+method truncateLine()
+   local sub := keyword("subject", Monitored)
+   local cur_pos := keyword("pos", Monitored)
+   local image := ""
+   local image_max := 72
+   local ellipse := 6
+   local count := 1
+
+   if *sub + 1 > image_max then {
+      sub ? {
+         if cur_pos >= (image_max - ellipse) then {
+            image := "..."
+            tab(cur_pos - ((image_max - ellipse)/2))
+            }
+         image ||:= tab(cur_pos) || "|"
+         while(&pos < (*sub + 1) & *image < (image_max - ellipse)) do{
+            image ||:= move(1)
+            count +:= 1
+            }
+         if &pos ~= *sub + 1 then image ||:= "..."
+         }
+      return image
+      }
+   else
+      return sub
+end
+
 method silentStep()
 
    if &eventcode == E_PatAttempt then {
@@ -390,7 +474,8 @@ method silentStep()
           return
           }
        PC_Unanchored :{
-          totalMatch := &null
+          totalMatch := null
+          pPos := keyword("pos", Monitored)
           return 
           }
        default : {
@@ -435,21 +520,18 @@ method pEnd()
       step_count -:= 1
       if &eventcode = E_PatMatch then{
          msg := "\n   Pattern matched on string"
-         msg ||:= "\n   Total Matched String: "||totalMatch
          msg ||:= "\n   Resuming normal stepping..."
-         DState.Write(msg)
-         DState.State := PAUSE
-         DState.RunCode := STEP
          }
       else{
          msg := "\n   Pattern failed to match on string"
          msg ||:= "\n   Resuming normal stepping..."
-         DState.Write(msg)
-         DState.State := PAUSE
-         DState.RunCode := STEP
          }
+      DState.Write(msg)
+      DState.State := PAUSE
+      DState.RunCode := STEP
       }
 
+   pPos := 1 
    pat := &null
    assignVal := &null 
    totalMatch := &null 
@@ -480,6 +562,7 @@ initially()
    
    step_count := 0
    next_count := 0
+   pPos := 1 
    nex_level  := &null
    pat   := &null
    assignVal := &null 

@@ -114,18 +114,19 @@ initial {
    s := prefix ||yylineno||": # \""|| yytext || "\" " || s
    if \merrflag then {
       if ferr2 := open(\yyfilename) then {
-	 iwrite(&errout, "Reporting (-M) your error to the Oracle (",
-	       merraddress, ") for assistance.")
-	 iwrite(&errout, "Type any question you have on the lines below.",
-	       " Type a blank line to finish.")
-	 ferr := open("mail " || merraddress, "pw")
-	 while iwrite(ferr, "" ~== read())
-	 iwrite(ferr)
-	 iwrite(ferr, s)
-	 iwrite(ferr)
-	 while iwrite(ferr, read(ferr2))
+	 if ferr := open("mail " || merraddress, "pw") then {
+	    iwrite(&errout, "Reporting (-M) your error to the Oracle (",
+		   merraddress, ") for assistance.")
+	    iwrite(&errout, "Type any question you have on the lines below.",
+		   " Type a blank line to finish.")
+	    while iwrite(ferr, "" ~== read())
+	    iwrite(ferr)
+	    iwrite(ferr, s)
+	    iwrite(ferr)
+	    while iwrite(ferr, read(ferr2))
+	    close(ferr)
+	    }
 	 close(ferr2)
-	 close(ferr)
          }
       }
    /parsingErrors := []

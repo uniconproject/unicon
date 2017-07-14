@@ -63,9 +63,6 @@ extern int unixexcept(int type, void *obj, Tpdisc_t* tpdisc);
 #endif
 
 #define MAX_NAME_LOOKUPS 3
-#ifndef MAXADDRS
-# define MAXADDRS 35
-#endif
 
 static int ssl_is_initialized;
 
@@ -256,6 +253,7 @@ static int sslpathFind(char target[], char buf[], int n)
 
 /*
  * upgrade to use something in discipline?
+ * returns 'f' for file, 'd' for directory, or NUL for error.
  */
 char get_storepath(Tpdisc_t *tpdisc, char *store_path)
 {
@@ -273,7 +271,7 @@ char get_storepath(Tpdisc_t *tpdisc, char *store_path)
    if (sslpathFind("openssl", path_to_ssl, 1024) == 1) {
       FILE *f;
       f = popen("openssl version -a | grep OPENSSLDIR", "r");
-      //fgets(path_to_ssl, 1023, f);
+      if (fgets(path_to_ssl, 1023, f) == NULL) return '\0';
       pclose(f);
       if (sscanf(path_to_ssl, "OPENSSLDIR: \"%s\"", store_path) == 1) {
 	 /* sscanf was OK */
@@ -294,7 +292,7 @@ int sslconnect(char* host, u_short port, Tpdisc_t* tpdisc)
    char *host_and_port = malloc(strlen(host)+7);
    sprintf(host_and_port, "%s:%d", host, port);
 
-   store_type = get_storepath(tpdisc, store_path);
+   if ((store_type = get_storepath(tpdisc, store_path)) == 0) return -1;
 
    if (!ssl_is_initialized) {
       init_openssl();

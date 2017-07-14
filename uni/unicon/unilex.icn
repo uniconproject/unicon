@@ -201,6 +201,7 @@ procedure do_letters()
 end
 
 procedure do_digits()
+   local c
 	      yytext ||:= tab(many(&digits))
 	      tokflags +:= Beginner+Ender
 	      if yytext ||:= ="." then {
@@ -220,20 +221,23 @@ procedure do_digits()
 		  if yytext ||:= tab(any('rR')) then {
 		     yytext ||:= tab(many(R))
 		     }
-		  else if tab(any('kK')) then {
+		  else if c := tab(any('kK')) then {
 		     yytext := string(yytext * 1024)
 		     }
-		  else if tab(any('mM')) then {
+		  else if c := tab(any('mM')) then {
 		     yytext := string(yytext * 1024^2)
 		     }
-		  else if tab(any('gG')) then {
+		  else if c := tab(any('gG')) then {
 		     yytext := string(yytext * 1024^3)
 		     }
-		  else if tab(any('tT')) then {
+		  else if c := tab(any('tT')) then {
 		     yytext := string(yytext * 1024^4)
 		     }
-		  else if tab(any('pP')) then {
+		  else if c := tab(any('pP')) then {
 		     yytext := string(yytext * 1024^5)
+		     }
+		  if \c & any(&letters) then {
+		     uni_error("missing space or malformed token")
 		     }
 		  return INTLIT
 	      }

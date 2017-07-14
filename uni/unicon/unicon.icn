@@ -103,15 +103,23 @@ procedure iconc_make_exename_opt(args)
    local cmpnts
 
    rslt := "-o "
-   every i := 1 to *args do {
+   i := 1
+   while i <= *args do {
       arg := args[i]
-      if arg[1] == "-" then
+      if arg == "-v" then {
+	 i +:= 2
+	 next
+	 }
+      else if arg[1] == "-" then {
+	 i +:= 1
          next
+	 }
       cmpnts := suffix(arg)
       rslt ||:= cmpnts[1]
       rslt ||:= " "
       break
       }
+   if rslt == "-o " then rslt ||:= "a.out"
    return rslt
 end
 
@@ -218,7 +226,7 @@ procedure iconc_linkref_resolve(srcfname, ref)
    # a .u exists for it and the ref is valid.
    #
    put(rslt, fil)
-   # write("mdw: link-ref: \"" || lpaths[i] || sep || ref || ".icn\".");
+
    return rslt
 end
 
@@ -464,6 +472,7 @@ procedure unicon(argv)
 
       if \skip then { # if we forward processed this argument then skip it
          skip := &null
+write("so we skipped ", image(argv[i]))
          next
          }
       
@@ -538,15 +547,18 @@ procedure unicon(argv)
                "-yydbg": parseonly := yydbg := 1
                "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
                "-v" : {
-                  if i=*argv then
-                     stop("missing verbosity value at: ", image((argv[i])))
+                  if i = *argv then
+                     stop("missing verbosity value after -v")
+
+		  varg := (integer(argv[i+1]) || " ") |
+		     stop("bad verbosity value: ", image(argv[i+1]))
+
+		  icontopt ||:= argv[i] || varg
+		  ilinkopt ||:= argv[i] || varg
                   
-                  (ilinkopt ||:= argv[i] || integer(argv[i+1]) || " ")|
-                     stop("bad verbosity value: ", image(argv[i+1]))
-                  
-                  if integer(argv[i+1]) = 0 then{
+                  if integer(argv[i+1]) = 0 then
                      silent := 1
-                     }                        
+
                   skip := 1
                   }
                "-v0": {
@@ -713,7 +725,6 @@ procedure unicon(argv)
                if k == "posix" then
                   iconc_parsed_posix := 1
                if member(locallinks, k) then {
-                  # write("mdw: redundant linkref: " || k)
                   delete(iconc_links, k)
                   next
                   }
@@ -754,7 +765,7 @@ procedure unicon(argv)
       }
 
    if \iconc & (*tmpfnames > 0) & (\rv = errors = yynerrs = 0) then {
-      # mdw: xform idol output for iconc
+      # transform idol output for iconc
       every k := 1 to *tmpfnames do
          cfy(tmpfnames[k], (tmpfnames[k] || "-iconc"));
       cmd := (getenv("ICONC")|"iconc") || " "
@@ -762,10 +773,10 @@ procedure unicon(argv)
       if \iconc_fd & (not find("-fd", icontopt)) then cmd ||:= " -fd "
       if /no_iconc_fs & (not find("-fs", icontopt)) then cmd ||:= " -fs "
       cmd ||:= \ilinkopt
+
       # create exename (and option) if none supplied
       if /exename then {
          exename := iconc_make_exename_opt(argv)
-         # write("synthesized exename: \"", exename, "\"...")
          }
       cmd ||:= \exename
       if \iconc_perifile_idx then {
@@ -777,8 +788,7 @@ procedure unicon(argv)
          cmd ||:= tmpfnames[k]
          cmd ||:= "-iconc "
          }
-      # mdw: dbg only...
-      # ca_dbg_dump()
+
       rv := mysystem(cmd)
 
       # comment out if you want to look at tmp files...

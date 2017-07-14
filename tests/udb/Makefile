@@ -31,11 +31,11 @@ internals:
 	udb watchme < proctime.udb
 	udb watchme < procprofile.udb
 
-info:
+info: watchme
 	udb watchme < info.udb
 
-assert:
+assert: watchme
 	udb watchme <assert.udb
 
-trace:
-	udb trace <trace.udb
+trace: watchme
+	udb watchme <trace.udb

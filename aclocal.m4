@@ -224,13 +224,30 @@ AC_DEFUN([CHECK_XLIB],
 do_arg_with([xlib])
 
 if test "x$with_jpeg" != "xno"; then
-  #AC_CHECK_HEADER(X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
-  #XLIB_HOME=/usr/X11
-  #XLIB_HOME=/usr/X11R6
-  #XLIB_HOME=/usr/openwin
-  #XLIB_HOME=/opt/X11
-  #XLIB_HOME=/usr/local
+  AC_CHECK_HEADER(X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
 
+  if test "x$with_libx" = "xno"; then
+    AC_CHECK_HEADER(X11R6/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+    if test "x$with_libx" = "xyes"; then
+      XLIB_HOME=/usr/X11R6
+    fi
+
+    if test "x$with_libx" = "xno"; then
+      AC_CHECK_HEADER(/opt/X11/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+      if test "x$with_libx" = "xyes"; then
+        XLIB_HOME=/opt/X11
+      fi
+    fi
+
+    if test "x$with_libx" = "xno"; then
+      AC_CHECK_HEADER(/usr/openwin/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+      if test "x$with_libx" = "xyes"; then
+        XLIB_HOME=/usr/openwin
+      fi
+    fi
+    
+  fi
+ 
   do_lib_check([X11], [${X11_HOME}], [X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h],
 		    [XAllocColorCells], [HAVE_LIBX11], [C])
 fi

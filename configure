@@ -726,20 +726,20 @@ enable_debug
 enable_devmode
 with_xlib
 with_freetype
-with_xft
+with_Xft
 with_jpeg
 with_png
 with_opengl
-with_FTGL
+with_ftgl
 with_ogg
-with_libsdl
-with_libsmpeg
-with_libopenal
-with_jvoiplib
+with_SDL
+with_smpeg
+with_openal
+with_jvoip
 with_zlib
 with_odbc
 with_pthread
-with_openssl
+with_ssl
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1399,52 +1399,22 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-xlib=DIR root directory path of xlib installation looks in
-          /usr/X11 /usr/X11R6 /usr/openwin /opt/X11 /usr/local
-  --without-xlib to disable xlib usage completely
-  --with-freetype2=DIR root directory path of freetype installation defaults to
-                    /usr/include or /usr if not found in /usr/lib64
-  --without-freetype to disable freetype usage completely
-  --with-xft=DIR root directory path of Xft installation defaults to /usr/local
-  --without-xft to disable xft usage completely
-  --with-jpeg=DIR root directory path of jpeg installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-jpeg to disable jpeg usage completely
-  --with-png=DIR root directory path of png installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-png to disable png usage completely
-  --with-opengl=DIR root directory path of opengl installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-opengl to disable opengl usage completely
-  --with-FTGL=DIR root directory path of FTGL installation defaults to /usr/local/ftgl
-  --without-FTGL to disable FTGL usage completely
-  --with-ogg=DIR root directory path of libogg installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-ogg to disable ogg usage completely
-  --with-libsdl=DIR root directory path of libsdl installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-libsdl to disable lib usage completely
-  --with-libsmpeg=DIR root directory path of libsmpeg installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-libsmpeg to disable libsmpeg usage completely
-  --with-libopenal=DIR root directory path of libopenal installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-libopenal to disable libopenal usage completely
-  --with-jvoiplib=DIR root directory path of jvoiplib installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-jvoiplib to disable jvoiplib usage completely
-  --with-zlib=DIR root directory path of zlib installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-zlib to disable zlib usage completely
-  --with-odbc=DIR root directory path of odbc installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-odbc to disable odbc usage completely
-  --with-pthread=DIR root directory path of pthread installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-pthread to disable pthread usage completely
-  --with-openssl=DIR root directory path of openssl installation defaults to
-                    /usr/local or /usr if not found in /usr/local
-  --without-openssl to disable openssl usage completely
+  --with-xlib[=DIR]       Use xlib package (DIR: custom library path)
+  --with-freetype[=DIR]   Use freetype package (DIR: custom library path)
+  --with-Xft[=DIR]        Use Xft package (DIR: custom library path)
+  --with-jpeg[=DIR]       Use jpeg package (DIR: custom library path)
+  --with-png[=DIR]        Use png package (DIR: custom library path)
+  --with-opengl[=DIR]     Use opengl package (DIR: custom library path)
+  --with-ftgl[=DIR]       Use ftgl package (DIR: custom library path)
+  --with-ogg[=DIR]        Use ogg package (DIR: custom library path)
+  --with-SDL[=DIR]        Use SDL package (DIR: custom library path)
+  --with-smpeg[=DIR]      Use smpeg package (DIR: custom library path)
+  --with-openal[=DIR]     Use openal package (DIR: custom library path)
+  --with-jvoip[=DIR]      Use jvoip package (DIR: custom library path)
+  --with-zlib[=DIR]       Use zlib package (DIR: custom library path)
+  --with-odbc[=DIR]       Use odbc package (DIR: custom library path)
+  --with-pthread[=DIR]    Use pthread package (DIR: custom library path)
+  --with-ssl[=DIR]        Use ssl package (DIR: custom library path)
 
 Some influential environment variables:
   CC          C compiler command
@@ -6851,49 +6821,39 @@ fi
 
 if test "x$graphics" = "xyes"; then
 
-  #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if xlib is wanted" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if xlib is wanted" >&5
 $as_echo_n "checking if xlib is wanted... " >&6; }
 
 # Check whether --with-xlib was given.
 if test "${with_xlib+set}" = set; then :
-  withval=$with_xlib; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_xlib; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  XLIB_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      xlib_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-XLIB_HOME=/usr/X11
-if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-then
-        XLIB_HOME=/usr/X11R6
-	if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-	then
-	        XLIB_HOME=/usr/openwin
-		if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-		then
-		        XLIB_HOME=/opt/X11
-			if test ! -f "${XLIB_HOME}/include/X11/Xlib.h"
-			then
-				XLIB_HOME=/usr/local
-			fi
-		fi
-	fi
-fi
-
 fi
 
 
 
-if test -n ${XLIB_HOME}
+
+if test "x$with_jpeg" != "xno"; then
+  #AC_CHECK_HEADER(X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+  #XLIB_HOME=/usr/X11
+  #XLIB_HOME=/usr/X11R6
+  #XLIB_HOME=/usr/openwin
+  #XLIB_HOME=/opt/X11
+  #XLIB_HOME=/usr/local
+
+
+if test  x${X11_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -6901,7 +6861,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${XLIB_HOME}/include
+	for part in -I${X11_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -6917,7 +6877,7 @@ then
 		fi
 	done
 
-  	for part in -L${XLIB_HOME}/lib
+  	for part in -L${X11_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -6934,6 +6894,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7041,8 +7042,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in ${XLIB_HOME}" >&5
-$as_echo_n "checking checking lib X11 in ${XLIB_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in ${X11_HOME}" >&5
+$as_echo_n "checking checking lib X11 in ${X11_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7053,47 +7054,38 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
-
-
 
   if test "x$cv_libX11" = xyes ; then
 
-    #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if freetype is wanted" >&5
 $as_echo_n "checking if freetype is wanted... " >&6; }
 
 # Check whether --with-freetype was given.
 if test "${with_freetype+set}" = set; then :
-  withval=$with_freetype; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_freetype; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  FREETYPE_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      freetype_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-FREETYPE_HOME=/usr/X11
-if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
-then
-FREETYPE_HOME=/usr/local
-if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h"
-then
-        FREETYPE_HOME=/usr
-fi
-fi
-
 fi
 
 
 
-if test -n ${FREETYPE_HOME}
+if test "x$with_freetype" != "xno"; then
+
+if test  x${freetype_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -7101,7 +7093,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${FREETYPE_HOME}/include
+	for part in -I${freetype_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7117,7 +7109,7 @@ then
 		fi
 	done
 
-  	for part in -L${FREETYPE_HOME}/lib
+  	for part in -L${freetype_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -7134,6 +7126,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7240,8 +7273,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in ${FREETYPE_HOME}" >&5
-$as_echo_n "checking checking lib freetype in ${FREETYPE_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in ${freetype_HOME}" >&5
+$as_echo_n "checking checking lib freetype in ${freetype_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7252,46 +7285,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Xft is wanted" >&5
+$as_echo_n "checking if Xft is wanted... " >&6; }
 
-    #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if xft is wanted" >&5
-$as_echo_n "checking if xft is wanted... " >&6; }
-
-# Check whether --with-xft was given.
-if test "${with_xft+set}" = set; then :
-  withval=$with_xft; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+# Check whether --with-Xft was given.
+if test "${with_Xft+set}" = set; then :
+  withval=$with_Xft; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  XFT_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      Xft_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-XFT_HOME=/usr/X11
-if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
-then
-XFT_HOME=/usr/local
-if test ! -f "${XFT_HOME}/include/X11/Xft/Xft.h"
-then
-        XFT_HOME=/usr
-fi
-fi
-
 fi
 
 
 
-if test -n ${XFT_HOME}
+if test "x$with_Xft" != "xno"; then
+
+if test  x${Xft_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -7299,7 +7322,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${XFT_HOME}/include
+	for part in -I${Xft_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7315,7 +7338,7 @@ then
 		fi
 	done
 
-  	for part in -L${XFT_HOME}/lib
+  	for part in -L${Xft_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -7332,6 +7355,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7438,8 +7502,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in ${XFT_HOME}" >&5
-$as_echo_n "checking checking lib Xft in ${XFT_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in ${Xft_HOME}" >&5
+$as_echo_n "checking checking lib Xft in ${Xft_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7450,42 +7514,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
 
-
-    #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if jpeg is wanted" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jpeg is wanted" >&5
 $as_echo_n "checking if jpeg is wanted... " >&6; }
 
 # Check whether --with-jpeg was given.
 if test "${with_jpeg+set}" = set; then :
-  withval=$with_jpeg; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_jpeg; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  JPEG_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      jpeg_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-JPEG_HOME=/usr/local
-if test ! -f "${JPEG_HOME}/include/jpeglib.h"
-then
-        JPEG_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${JPEG_HOME}
+if test "x$with_jpeg" != "xno"; then
+
+if test  x${jpeg_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -7493,7 +7551,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${JPEG_HOME}/include
+	for part in -I${jpeg_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7509,7 +7567,7 @@ then
 		fi
 	done
 
-  	for part in -L${JPEG_HOME}/lib
+  	for part in -L${jpeg_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -7526,6 +7584,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7633,8 +7732,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in ${JPEG_HOME}" >&5
-$as_echo_n "checking checking lib jpeg in ${JPEG_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in ${jpeg_HOME}" >&5
+$as_echo_n "checking checking lib jpeg in ${jpeg_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7645,42 +7744,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
 
-
-    #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if png is wanted" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if png is wanted" >&5
 $as_echo_n "checking if png is wanted... " >&6; }
 
 # Check whether --with-png was given.
 if test "${with_png+set}" = set; then :
-  withval=$with_png; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_png; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  PNG_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      png_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-PNG_HOME=/usr/local
-if test ! -f "${PNG_HOME}/include/png.h"
-then
-        PNG_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${PNG_HOME}
+if test "x$with_png" != "xno"; then
+
+if test  x${png_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -7688,7 +7781,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${PNG_HOME}/include
+	for part in -I${png_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7704,7 +7797,7 @@ then
 		fi
 	done
 
-  	for part in -L${PNG_HOME}/lib
+  	for part in -L${png_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -7721,6 +7814,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -7827,8 +7961,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib png in ${PNG_HOME}" >&5
-$as_echo_n "checking checking lib png in ${PNG_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib png in ${png_HOME}" >&5
+$as_echo_n "checking checking lib png in ${png_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7839,57 +7973,43 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
-
-
     if test "x$graphics3d" = "xyes"; then
-       #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if opengl is wanted" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if opengl is wanted" >&5
 $as_echo_n "checking if opengl is wanted... " >&6; }
 
 # Check whether --with-opengl was given.
 if test "${with_opengl+set}" = set; then :
-  withval=$with_opengl; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_opengl; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  OPENGL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      opengl_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-OPENGL_HOME=/usr/local
-if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
-then
-        OPENGL_HOME=/usr/X11R6
-fi
-if test ! -f "${OPENGL_HOME}/include/GL/gl.h"
-then
-        OPENGL_HOME=/usr
-fi
-
 fi
 
 
-#
-# Locate OPENGL, if wanted
-#
-if test -n "${OPENGL_HOME}"
-then
+
+if test "x$with_opengl" != "xno"; then
 
 	TMP_CPPFLAGS=$CPPFLAGS
  	TMP_LDFLAGS=$LDFLAGS
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${OPENGL_HOME}/include
+	for part in -I${OPENGL_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7922,13 +8042,29 @@ then
 	done
 
 
-        ac_ext=c
+  ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
+
+  for ac_header in GL/gl.h GL/glu.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  cv_opengl_h=no
+fi
+
+done
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
 $as_echo_n "checking for glAccum in -lGL... " >&6; }
 if ${ac_cv_lib_GL_glAccum+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7965,12 +8101,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GL_glAccum" >&5
 $as_echo "$ac_cv_lib_GL_glAccum" >&6; }
 if test "x$ac_cv_lib_GL_glAccum" = xyes; then :
-  opengl_cv_libGL=yes
+  cv_libGL=yes
 else
-  opengl_cv_libGL=no
+  cv_libGL=no
 fi
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
 $as_echo_n "checking for gluBeginCurve in -lGLU... " >&6; }
 if ${ac_cv_lib_GLU_gluBeginCurve+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -8007,45 +8143,29 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_GLU_gluBeginCurve" >&5
 $as_echo "$ac_cv_lib_GLU_gluBeginCurve" >&6; }
 if test "x$ac_cv_lib_GLU_gluBeginCurve" = xyes; then :
-  opengl_cv_libGLU=yes
+  cv_libGLU=yes
 else
-  opengl_cv_libGLU=no
-fi
-
-        ac_fn_c_check_header_mongrel "$LINENO" "GL/gl.h" "ac_cv_header_GL_gl_h" "$ac_includes_default"
-if test "x$ac_cv_header_GL_gl_h" = xyes; then :
-  opengl_cv_gl_h=yes
-else
-  opengl_cv_gl_h=no
+  cv_libGLU=no
 fi
 
 
-        ac_fn_c_check_header_mongrel "$LINENO" "GL/glx.h" "ac_cv_header_GL_glx_h" "$ac_includes_default"
+  if test "x$cv_libX11" = "xyes" ; then
+     ac_fn_c_check_header_mongrel "$LINENO" "GL/glx.h" "ac_cv_header_GL_glx_h" "$ac_includes_default"
 if test "x$ac_cv_header_GL_glx_h" = xyes; then :
-  opengl_cv_glx_h=yes
+  cv_glx_h=yes
 else
-  opengl_cv_glx_h=no
+  cv_glx_h=no
 fi
 
 
-        ac_fn_c_check_header_mongrel "$LINENO" "GL/glu.h" "ac_cv_header_GL_glu_h" "$ac_includes_default"
-if test "x$ac_cv_header_GL_glu_h" = xyes; then :
-  opengl_cv_glu_h=yes
-else
-  opengl_cv_glu_h=no
-fi
+  else
+    cv_glx_h="yes"
+  fi
 
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking GL in ${OPENGL_HOME}" >&5
-$as_echo_n "checking GL in ${OPENGL_HOME}... " >&6; }
-        if test "$opengl_cv_libGL" = "yes" -a "$opengl_cv_libGLU" = "yes" -a "$opengl_cv_gl_h" = "yes" -a "$opengl_cv_glx_h" = "yes" -a "$opengl_cv_glu_h" = "yes"
-        then
-                #
-                # If both library and headers were found, use them
-                #
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
+  if test "x$cv_libGL" = "xyes" -a "x$cv_libGLU" = "xyes" -a "$xcv_opengl_h" != "xno" -a x$cv_glx_h = "yes" ; then
+	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
+	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
+  		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for glAccum in -lGL" >&5
 $as_echo_n "checking for glAccum in -lGL... " >&6; }
 if ${ac_cv_lib_GL_glAccum+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -8090,7 +8210,7 @@ _ACEOF
 
 fi
 
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
+  		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gluBeginCurve in -lGLU" >&5
 $as_echo_n "checking for gluBeginCurve in -lGLU... " >&6; }
 if ${ac_cv_lib_GLU_gluBeginCurve+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -8135,12 +8255,7 @@ _ACEOF
 
 fi
 
-	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
-	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
-        else
-                #
-                # If either header or library was not found, revert and bomb
-                #
+  else
 	        GL_CFLAGS=
 	        GL_LDFLAGS=
 
@@ -8150,20 +8265,19 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib opengl in $OPENGL_HOME" >&5
-$as_echo_n "checking checking lib opengl in $OPENGL_HOME... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib OpenGL" >&5
+$as_echo_n "checking checking lib OpenGL... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
-        fi
-        ac_ext=c
+  fi
+  ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
-
 
        # A C++ compiler must be present and usable
        if test "$CXX" = "g++" -a "$GXX" = "yes"; then
@@ -8302,38 +8416,31 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-#
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if FTGL is wanted" >&5
-$as_echo_n "checking if FTGL is wanted... " >&6; }
 
-# Check whether --with-FTGL was given.
-if test "${with_FTGL+set}" = set; then :
-  withval=$with_FTGL; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ftgl is wanted" >&5
+$as_echo_n "checking if ftgl is wanted... " >&6; }
+
+# Check whether --with-ftgl was given.
+if test "${with_ftgl+set}" = set; then :
+  withval=$with_ftgl; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  FTGL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      ftgl_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-FTGL_HOME=/usr/local
-if test ! -f "${FTGL_HOME}/include/FTGL/FTGLExtrdFont.h"
-then
-        FTGL_HOME=/usr
-fi
-
-
 fi
 
 
 
-if test -n ${FTGL_HOME}
+if test "x$with_ftgl" != "xno"; then
+
+if test  x${ftgl_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -8341,7 +8448,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${FTGL_HOME}/include
+	for part in -I${ftgl_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -8357,7 +8464,7 @@ then
 		fi
 	done
 
-  	for part in -L${FTGL_HOME}/lib
+  	for part in -L${ftgl_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -8374,6 +8481,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -8480,8 +8628,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in ${FTGL_HOME}" >&5
-$as_echo_n "checking checking lib ftgl in ${FTGL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in ${ftgl_HOME}" >&5
+$as_echo_n "checking checking lib ftgl in ${ftgl_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -8492,11 +8640,12 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
-if test "$cv_libftgl" = "yes" ; then
-   LIBS="$LIBS -lstdc++"
+
+   if test "$cv_libftgl" = "yes" ; then
+      LIBS="$LIBS -lstdc++"
+   fi
 fi
 
        else
@@ -9172,37 +9321,31 @@ fi
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])
 
 if test "x$audio" = "xyes"; then
-   #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if oggvorbis is wanted" >&5
-$as_echo_n "checking if oggvorbis is wanted... " >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ogg is wanted" >&5
+$as_echo_n "checking if ogg is wanted... " >&6; }
 
 # Check whether --with-ogg was given.
 if test "${with_ogg+set}" = set; then :
-  withval=$with_ogg; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_ogg; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  LIBOGG_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      ogg_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-LIBOGG_HOME=/usr/local
-if test ! -f "${LIBOGG_HOME}/include/ogg/ogg.h"
-then
-	LIBOGG_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${LIBOGG_HOME}
+if test "x$with_ogg" != "xno"; then
+
+if test  x${ogg_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -9210,7 +9353,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBOGG_HOME}/include
+	for part in -I${ogg_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9226,7 +9369,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBOGG_HOME}/lib
+  	for part in -L${ogg_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -9243,6 +9386,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9349,8 +9533,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in ${LIBOGG_HOME}" >&5
-$as_echo_n "checking checking lib ogg in ${LIBOGG_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in ${ogg_HOME}" >&5
+$as_echo_n "checking checking lib ogg in ${ogg_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9361,11 +9545,11 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
-if test -n ${LIBOGG_HOME}
+
+if test  x${ogg_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -9373,7 +9557,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBOGG_HOME}/include
+	for part in -I${ogg_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9389,7 +9573,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBOGG_HOME}/lib
+  	for part in -L${ogg_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -9406,6 +9590,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9512,8 +9737,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in ${LIBOGG_HOME}" >&5
-$as_echo_n "checking checking lib vorbis in ${LIBOGG_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in ${ogg_HOME}" >&5
+$as_echo_n "checking checking lib vorbis in ${ogg_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9524,11 +9749,11 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
-if test -n ${LIBOGG_HOME}
+
+if test  x${ogg_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -9536,7 +9761,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBOGG_HOME}/include
+	for part in -I${ogg_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9552,7 +9777,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBOGG_HOME}/lib
+  	for part in -L${ogg_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -9569,6 +9794,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9675,8 +9941,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in ${LIBOGG_HOME}" >&5
-$as_echo_n "checking checking lib vorbisfile in ${LIBOGG_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in ${ogg_HOME}" >&5
+$as_echo_n "checking checking lib vorbisfile in ${ogg_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9687,42 +9953,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if SDL is wanted" >&5
+$as_echo_n "checking if SDL is wanted... " >&6; }
 
-   #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if libsdl is wanted" >&5
-$as_echo_n "checking if libsdl is wanted... " >&6; }
-
-# Check whether --with-libsdl was given.
-if test "${with_libsdl+set}" = set; then :
-  withval=$with_libsdl; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+# Check whether --with-SDL was given.
+if test "${with_SDL+set}" = set; then :
+  withval=$with_SDL; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  LIBSDL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      SDL_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-LIBSDL_HOME=/usr/local
-if test ! -f "${LIBSDL_HOME}/include/SDL/SDL_audio.h"
-then
-        LIBSDL_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${LIBSDL_HOME}
+if test "x$with_SDL" != "xno"; then
+
+if test  x${SDL_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -9730,7 +9990,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBSDL_HOME}/include
+	for part in -I${SDL_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9746,7 +10006,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBSDL_HOME}/lib
+  	for part in -L${SDL_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -9763,6 +10023,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -9869,8 +10170,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in ${LIBSDL_HOME}" >&5
-$as_echo_n "checking checking lib SDL in ${LIBSDL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in ${SDL_HOME}" >&5
+$as_echo_n "checking checking lib SDL in ${SDL_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9881,42 +10182,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if smpeg is wanted" >&5
+$as_echo_n "checking if smpeg is wanted... " >&6; }
 
-   #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if libsmpeg is wanted" >&5
-$as_echo_n "checking if libsmpeg is wanted... " >&6; }
-
-# Check whether --with-libsmpeg was given.
-if test "${with_libsmpeg+set}" = set; then :
-  withval=$with_libsmpeg; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+# Check whether --with-smpeg was given.
+if test "${with_smpeg+set}" = set; then :
+  withval=$with_smpeg; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  LIBSMPEG_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      smpeg_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-LIBSMPEG_HOME=/usr/local
-if test ! -f "${LIBSMPEG_HOME}/include/smpeg/smpeg.h"
-then
-        LIBSMPEG_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${LIBSMPEG_HOME}
+if test "x$with_smpeg" != "xno"; then
+
+if test  x${smpeg_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -9924,7 +10219,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBSMPEG_HOME}/include
+	for part in -I${smpeg_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9940,7 +10235,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBSMPEG_HOME}/lib
+  	for part in -L${smpeg_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -9957,6 +10252,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10063,8 +10399,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in ${LIBSMPEG_HOME}" >&5
-$as_echo_n "checking checking lib smpeg in ${LIBSMPEG_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in ${smpeg_HOME}" >&5
+$as_echo_n "checking checking lib smpeg in ${smpeg_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10075,43 +10411,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if openal is wanted" >&5
+$as_echo_n "checking if openal is wanted... " >&6; }
 
-   #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if libopenal is wanted" >&5
-$as_echo_n "checking if libopenal is wanted... " >&6; }
-
-# Check whether --with-libopenal was given.
-if test "${with_libopenal+set}" = set; then :
-  withval=$with_libopenal; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+# Check whether --with-openal was given.
+if test "${with_openal+set}" = set; then :
+  withval=$with_openal; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  LIBOPENAL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      openal_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-LIBOPENAL_HOME=/usr/local
-if test ! -f "${LIBOPENAL_HOME}/include/AL/al.h"
-then
-        LIBOPENAL_HOME=/usr
-fi
-
 fi
 
 
 
+if test "x$with_openal" != "xno"; then
 
-if test -n ${LIBOPENAL_HOME}
+if test  x${openal_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -10119,7 +10448,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBOPENAL_HOME}/include
+	for part in -I${openal_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10135,7 +10464,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBOPENAL_HOME}/lib
+  	for part in -L${openal_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -10152,6 +10481,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10258,8 +10628,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib openal in ${LIBOPENAL_HOME}" >&5
-$as_echo_n "checking checking lib openal in ${LIBOPENAL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib openal in ${openal_HOME}" >&5
+$as_echo_n "checking checking lib openal in ${openal_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10270,11 +10640,11 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
-if test -n ${LIBOPENAL_HOME}
+
+if test  x${openal_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -10282,7 +10652,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${LIBOPENAL_HOME}/include
+	for part in -I${openal_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10298,7 +10668,7 @@ then
 		fi
 	done
 
-  	for part in -L${LIBOPENAL_HOME}/lib
+  	for part in -L${openal_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -10315,6 +10685,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -10421,8 +10832,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib alut in ${LIBOPENAL_HOME}" >&5
-$as_echo_n "checking checking lib alut in ${LIBOPENAL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib alut in ${openal_HOME}" >&5
+$as_echo_n "checking checking lib alut in ${openal_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10433,10 +10844,10 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
-
-
-
 
 else
 
@@ -10447,36 +10858,29 @@ fi
 if test "x$voip" = "xyes"; then
     # A C++ compiler must be present and usable
     if test "$CXX" = "g++" -a "$GXX" = "yes"; then
-      #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if jvoiplib is wanted" >&5
-$as_echo_n "checking if jvoiplib is wanted... " >&6; }
 
-# Check whether --with-jvoiplib was given.
-if test "${with_jvoiplib+set}" = set; then :
-  withval=$with_jvoiplib; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jvoip is wanted" >&5
+$as_echo_n "checking if jvoip is wanted... " >&6; }
+
+# Check whether --with-jvoip was given.
+if test "${with_jvoip+set}" = set; then :
+  withval=$with_jvoip; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  JVOIPLIB_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      jvoip_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-JVOIPLIB_HOME=bin
-
 fi
 
 
-#
-# Locate jvoiplib, if wanted
-#
-if test -n "${JVOIPLIB_HOME}"
-then
+
+#JVOIPLIB_HOME=bin
 
 	TMP_CPPFLAGS=$CPPFLAGS
  	TMP_LDFLAGS=$LDFLAGS
@@ -10516,14 +10920,14 @@ then
 	done
 
 
-	ac_ext=cpp
+ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-        #  _ZN7JThread13ThreadStartedEv
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN9RTPPacket5ClearEv in -ljrtp" >&5
+#  _ZN7JThread13ThreadStartedEv
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN9RTPPacket5ClearEv in -ljrtp" >&5
 $as_echo_n "checking for _ZN9RTPPacket5ClearEv in -ljrtp... " >&6; }
 if ${ac_cv_lib_jrtp__ZN9RTPPacket5ClearEv+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10560,12 +10964,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jrtp__ZN9RTPPacket5ClearEv" >&5
 $as_echo "$ac_cv_lib_jrtp__ZN9RTPPacket5ClearEv" >&6; }
 if test "x$ac_cv_lib_jrtp__ZN9RTPPacket5ClearEv" = xyes; then :
-  jvlib_cv_libjr=yes
+  cv_libjrtp=yes
 else
-  jvlib_cv_libjr=no
+  cv_libjrtp=no
 fi
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6JMutex4InitEv in -ljthread" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6JMutex4InitEv in -ljthread" >&5
 $as_echo_n "checking for _ZN6JMutex4InitEv in -ljthread... " >&6; }
 if ${ac_cv_lib_jthread__ZN6JMutex4InitEv+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10602,12 +11006,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jthread__ZN6JMutex4InitEv" >&5
 $as_echo "$ac_cv_lib_jthread__ZN6JMutex4InitEv" >&6; }
 if test "x$ac_cv_lib_jthread__ZN6JMutex4InitEv" = xyes; then :
-  jvlib_cv_libjt=yes
+  cv_libjthread=yes
 else
-  jvlib_cv_libjt=no
+  cv_libjthread=no
 fi
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _Z19JVOIPGetErrorStringi in -ljvoip" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _Z19JVOIPGetErrorStringi in -ljvoip" >&5
 $as_echo_n "checking for _Z19JVOIPGetErrorStringi in -ljvoip... " >&6; }
 if ${ac_cv_lib_jvoip__Z19JVOIPGetErrorStringi+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10644,12 +11048,12 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jvoip__Z19JVOIPGetErrorStringi" >&5
 $as_echo "$ac_cv_lib_jvoip__Z19JVOIPGetErrorStringi" >&6; }
 if test "x$ac_cv_lib_jvoip__Z19JVOIPGetErrorStringi" = xyes; then :
-  jvlib_cv_libjv=yes
+  cv_libjvoip=yes
 else
-  jvlib_cv_libjv=no
+  cv_libjvoip=no
 fi
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _Z11dummy_printc in -lvoip" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _Z11dummy_printc in -lvoip" >&5
 $as_echo_n "checking for _Z11dummy_printc in -lvoip... " >&6; }
 if ${ac_cv_lib_voip__Z11dummy_printc+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10686,22 +11090,21 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_voip__Z11dummy_printc" >&5
 $as_echo "$ac_cv_lib_voip__Z11dummy_printc" >&6; }
 if test "x$ac_cv_lib_voip__Z11dummy_printc" = xyes; then :
-  jvlib_cv_libv=yes
+  cv_libvoip=yes
 else
-  jvlib_cv_libv=no
+  cv_libvoip=no
 fi
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking jvoiplib in ${JVOIPLIB_HOME}" >&5
-$as_echo_n "checking jvoiplib in ${JVOIPLIB_HOME}... " >&6; }
+#AC_MSG_CHECKING(jvoiplib in ${JVOIPLIB_HOME})
 
-        if test "$jvlib_cv_libjv" = "yes" -a "$jvlib_cv_libjt" = "yes" -a "$jvlib_cv_libjr" = "yes" -a "$jvlib_cv_libjv" = "yes"
+if test "$cv_libjvoip" = "yes" -a "$cv_libjthread" = "yes" -a "$cv_libjrtp" = "yes" -a "$cv_libjvoip" = "yes"
         then
                 #
                 # If all libraries were found, use them
                 #
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN9RTPPacket5ClearEv in -ljrtp" >&5
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN9RTPPacket5ClearEv in -ljrtp" >&5
 $as_echo_n "checking for _ZN9RTPPacket5ClearEv in -ljrtp... " >&6; }
 if ${ac_cv_lib_jrtp__ZN9RTPPacket5ClearEv+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -10882,7 +11285,7 @@ _ACEOF
 fi
 
 		JV_LDFLAGS=" -L../../bin -lvoip -ljvoip -ljthread -ljrtp -lpthread -lstdc++ "
-        else
+else
                 #
                 # If either header or library was not found, revert and bomb
                 #
@@ -10899,15 +11302,14 @@ $as_echo_n "checking checking lib voip in $JVOIPLIB_HOME... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
-        fi
+fi
 
-	ac_ext=c
+ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
     else
@@ -10919,37 +11321,31 @@ $as_echo "#define NoVoip 1" >>confdefs.h
 
 fi
 
-#
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if zlib is wanted" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if zlib is wanted" >&5
 $as_echo_n "checking if zlib is wanted... " >&6; }
 
 # Check whether --with-zlib was given.
 if test "${with_zlib+set}" = set; then :
-  withval=$with_zlib; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_zlib; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  ZLIB_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      zlib_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-ZLIB_HOME=/usr/local
-if test ! -f "${ZLIB_HOME}/include/zlib.h"
-then
-        ZLIB_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${ZLIB_HOME}
+  if test "x$with_zlib" != "xno"; then
+
+if test  x${zlib_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -10957,7 +11353,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ZLIB_HOME}/include
+	for part in -I${zlib_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10973,7 +11369,7 @@ then
 		fi
 	done
 
-  	for part in -L${ZLIB_HOME}/lib
+  	for part in -L${zlib_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -10990,6 +11386,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -11096,8 +11533,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in ${ZLIB_HOME}" >&5
-$as_echo_n "checking checking lib z in ${ZLIB_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in ${zlib_HOME}" >&5
+$as_echo_n "checking checking lib z in ${zlib_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11108,44 +11545,38 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
+  fi
 
 
 if test "x$database" = "xyes"; then
-   #
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if odbc is wanted" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if odbc is wanted" >&5
 $as_echo_n "checking if odbc is wanted... " >&6; }
 
 # Check whether --with-odbc was given.
 if test "${with_odbc+set}" = set; then :
-  withval=$with_odbc; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_odbc; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  ODBC_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      odbc_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-ODBC_HOME=/usr/local
-if test ! -f "${ODBC_HOME}/include/sqlext.h"
-then
-        ODBC_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${ODBC_HOME}
+if test "x$with_odbc" != "xno"; then
+
+if test  x${odbc_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -11153,7 +11584,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ODBC_HOME}/include
+	for part in -I${odbc_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11169,7 +11600,7 @@ then
 		fi
 	done
 
-  	for part in -L${ODBC_HOME}/lib
+  	for part in -L${odbc_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11186,6 +11617,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -11292,8 +11764,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in ${ODBC_HOME}" >&5
-$as_echo_n "checking checking lib iodbc in ${ODBC_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in ${odbc_HOME}" >&5
+$as_echo_n "checking checking lib iodbc in ${odbc_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11304,13 +11776,13 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
-if test "$cv_libiodbc" != "yes" ; then
 
-if test -n ${ODBC_HOME}
+  if test "$cv_libiodbc" != "yes" ; then
+
+if test  x${odbc_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -11318,7 +11790,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ODBC_HOME}/include
+	for part in -I${odbc_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11334,7 +11806,7 @@ then
 		fi
 	done
 
-  	for part in -L${ODBC_HOME}/lib
+  	for part in -L${odbc_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11351,6 +11823,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -11457,8 +11970,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in ${ODBC_HOME}" >&5
-$as_echo_n "checking checking lib odbc in ${ODBC_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in ${odbc_HOME}" >&5
+$as_echo_n "checking checking lib odbc in ${odbc_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11469,11 +11982,11 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
+  fi
 fi
-
-
-fi
-
 
 else
 
@@ -11481,37 +11994,31 @@ $as_echo "#define NoDatabase 1" >>confdefs.h
 
 fi
 
-#
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if POSIX threads are wanted" >&5
-$as_echo_n "checking if POSIX threads are wanted... " >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if pthread is wanted" >&5
+$as_echo_n "checking if pthread is wanted... " >&6; }
 
 # Check whether --with-pthread was given.
 if test "${with_pthread+set}" = set; then :
-  withval=$with_pthread; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  withval=$with_pthread; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  PTHREAD_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      pthread_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-PTHREAD_HOME=/usr/local
-if test ! -f "${PTHREAD_HOME}/include/pthread.h"
-then
-        PTHREAD_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${PTHREAD_HOME}
+  if test "x$with_pthread" != "xno"; then
+
+if test  x${pthread_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -11519,7 +12026,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${PTHREAD_HOME}/include
+	for part in -I${pthread_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11535,7 +12042,7 @@ then
 		fi
 	done
 
-  	for part in -L${PTHREAD_HOME}/lib
+  	for part in -L${pthread_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11552,6 +12059,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -11658,8 +12206,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in ${PTHREAD_HOME}" >&5
-$as_echo_n "checking checking lib pthread in ${PTHREAD_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in ${pthread_HOME}" >&5
+$as_echo_n "checking checking lib pthread in ${pthread_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11670,42 +12218,36 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
+  fi
 
-#
-# Handle user hints
-#
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if ssl is wanted" >&5
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ssl is wanted" >&5
 $as_echo_n "checking if ssl is wanted... " >&6; }
 
-# Check whether --with-openssl was given.
-if test "${with_openssl+set}" = set; then :
-  withval=$with_openssl; if test "$withval" != no ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+# Check whether --with-ssl was given.
+if test "${with_ssl+set}" = set; then :
+  withval=$with_ssl; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-  OPENSSL_HOME="$withval"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      ssl_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
+    fi
 else
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-OPENSSL_HOME=/usr/local
-if test ! -f "${SSL_HOME}/include/openssl/ssl.h"
-then
-        OPENSSL_HOME=/usr
-fi
-
 fi
 
 
 
-if test -n ${OPENSSL_HOME}
+if test "x$with_ssl" != "xno"; then
+
+if test  x${ssl_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -11713,7 +12255,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${OPENSSL_HOME}/include
+	for part in -I${ssl_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11729,7 +12271,7 @@ then
 		fi
 	done
 
-  	for part in -L${OPENSSL_HOME}/lib
+  	for part in -L${ssl_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11746,6 +12288,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -11852,8 +12435,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in ${OPENSSL_HOME}" >&5
-$as_echo_n "checking checking lib ssl in ${OPENSSL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in ${ssl_HOME}" >&5
+$as_echo_n "checking checking lib ssl in ${ssl_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11864,11 +12447,11 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-fi
 
 
 
-if test -n ${OPENSSL_HOME}
+
+if test  x${ssl_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -11876,7 +12459,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${OPENSSL_HOME}/include
+	for part in -I${ssl_HOME}/include
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11892,7 +12475,7 @@ then
 		fi
 	done
 
-  	for part in -L${OPENSSL_HOME}/lib
+  	for part in -L${ssl_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -11909,6 +12492,47 @@ then
 	done
 
 
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
         ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -12015,8 +12639,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in ${OPENSSL_HOME}" >&5
-$as_echo_n "checking checking lib crypto in ${OPENSSL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in ${ssl_HOME}" >&5
+$as_echo_n "checking checking lib crypto in ${ssl_HOME}... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12027,10 +12651,10 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
 fi
-
-
-
 #        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
 
 
@@ -13751,14 +14375,14 @@ fi
 if test "$audio" = yes ; then
   atmp="Audio              :"
   onAudio=0
-  if test "$libopenal_cv_libopenal" = yes ; then
+  if test "$cv_libopenal" = yes ; then
     atmp="$atmp +OpenAL "
     onAudio="1"
   else
     atmp="$atmp -OpenAL "
   fi
 
-  if test "$libalut_cv_libalut"     = yes ; then
+  if test "$cv_libalut"     = yes ; then
     atmp="$atmp +alut "
     if test "$onAudio" = 1 ; then onAudio=2 ; fi
   else
@@ -13767,14 +14391,14 @@ if test "$audio" = yes ; then
 
 
   atmp="$atmp("
-  if test "$ogglib_cv_libogg"       = yes ; then
+  if test "$cv_libogg"       = yes ; then
     atmp="$atmp +ogg "
     if test "$onAudio" = 2 ; then onAudio=3 ; fi
   else
     atmp="$atmp -ogg "
   fi
 
-  if test "$ogglib_cv_libvorbis"    = yes ; then
+  if test "$cv_libvorbis"    = yes ; then
     atmp="$atmp +vorbis "
     if test "$onAudio" = 3 ; then onAudio=4 ; fi
   else
@@ -13807,11 +14431,31 @@ fi
 
 # want voip
 if test "$voip" = yes ; then
-  if test "$jvlib_cv_libjv"         = yes ; then
-    vtmp=" + VOIP               : +jvoip"
+  if test "$cv_libvoip"         = yes ; then
+    vtmp=" + VOIP               : +voip"
   else
-    vtmp=" - VOIP               : -jvoip"
+    vtmp=" - VOIP               : -voip"
   fi
+
+  if test "$cv_libjvoip"         = yes ; then
+    vtmp="$vtmp +jvoip"
+  else
+    vtmp="$vtmp -jvoip"
+  fi
+
+  if test "$cv_libjthread"         = yes ; then
+    vtmp="$vtmp +jthread"
+  else
+    vtmp="$vtmp -jthread"
+  fi
+
+  if test "$cv_libjrtp"         = yes ; then
+    vtmp="$vtmp +jrtp"
+  else
+    vtmp="$vtmp -jrtp"
+  fi
+
+
 else
 #disbaled Voip
   vtmp=" ! VOIP"
@@ -13858,6 +14502,7 @@ CPPFLAGS :$CPPFLAGS
 LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
+CXXFLAGS : $CXXFLAGS
 Verbose  :  $verbosebuild
 Debug    :  $debug
 Devmode  :  $devmode
@@ -13885,6 +14530,7 @@ CPPFLAGS :$CPPFLAGS
 LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
+CXXFLAGS : $CXXFLAGS
 Verbose  :  $verbosebuild
 Debug    :  $debug
 Devmode  :  $devmode

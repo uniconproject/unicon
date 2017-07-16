@@ -530,14 +530,14 @@ fi
 if test "$audio" = yes ; then
   atmp="Audio              :"
   onAudio=0
-  if test "$libopenal_cv_libopenal" = yes ; then
+  if test "$cv_libopenal" = yes ; then
     atmp="$atmp +OpenAL "
     onAudio="1"
   else
     atmp="$atmp -OpenAL "
   fi
 
-  if test "$libalut_cv_libalut"     = yes ; then
+  if test "$cv_libalut"     = yes ; then
     atmp="$atmp +alut "
     if test "$onAudio" = 1 ; then onAudio=2 ; fi
   else
@@ -546,14 +546,14 @@ if test "$audio" = yes ; then
 
 
   atmp="$atmp("
-  if test "$ogglib_cv_libogg"       = yes ; then
+  if test "$cv_libogg"       = yes ; then
     atmp="$atmp +ogg "
     if test "$onAudio" = 2 ; then onAudio=3 ; fi
   else
     atmp="$atmp -ogg "
   fi
   
-  if test "$ogglib_cv_libvorbis"    = yes ; then
+  if test "$cv_libvorbis"    = yes ; then
     atmp="$atmp +vorbis "
     if test "$onAudio" = 3 ; then onAudio=4 ; fi
   else
@@ -586,11 +586,31 @@ fi
 
 # want voip
 if test "$voip" = yes ; then
-  if test "$jvlib_cv_libjv"         = yes ; then
-    vtmp=" + VOIP               : +jvoip"
+  if test "$cv_libvoip"         = yes ; then
+    vtmp=" + VOIP               : +voip"
   else
-    vtmp=" - VOIP               : -jvoip"
+    vtmp=" - VOIP               : -voip"
   fi
+
+  if test "$cv_libjvoip"         = yes ; then
+    vtmp="$vtmp +jvoip"
+  else
+    vtmp="$vtmp -jvoip"
+  fi
+
+  if test "$cv_libjthread"         = yes ; then
+    vtmp="$vtmp +jthread"
+  else
+    vtmp="$vtmp -jthread"
+  fi
+
+  if test "$cv_libjrtp"         = yes ; then
+    vtmp="$vtmp +jrtp"
+  else
+    vtmp="$vtmp -jrtp"
+  fi
+
+
 else
 #disbaled Voip
   vtmp=" ! VOIP"
@@ -637,6 +657,7 @@ CPPFLAGS :$CPPFLAGS
 LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
+CXXFLAGS : $CXXFLAGS
 Verbose  :  $verbosebuild
 Debug    :  $debug
 Devmode  :  $devmode

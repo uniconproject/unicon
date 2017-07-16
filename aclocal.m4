@@ -227,20 +227,20 @@ if test "x$with_xlib" != "xno"; then
   AC_CHECK_HEADER(X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
 
   if test "x$cv_libx_h" = "xno"; then
-    AC_CHECK_HEADER(X11R6/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+    AC_CHECK_HEADER(X11R6/include/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
     if test "x$cv_libx_h" = "xyes"; then
       XLIB_HOME=/usr/X11R6
     fi
 
     if test "x$cv_libx_h" = "xno"; then
-      AC_CHECK_HEADER(/opt/X11/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+      AC_CHECK_HEADER(/opt/X11/include/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
       if test "x$cv_libx_h" = "xyes"; then
         XLIB_HOME=/opt/X11
       fi
     fi
 
     if test "x$cv_libx_h" = "xno"; then
-      AC_CHECK_HEADER(/usr/openwin/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
+      AC_CHECK_HEADER(/usr/openwin/include/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
       if test "x$cv_libx_h" = "xyes"; then
         XLIB_HOME=/usr/openwin
       fi

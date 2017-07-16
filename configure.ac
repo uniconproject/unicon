@@ -673,8 +673,8 @@ $dtmp
 $stmp
 ])
 
-if test "$plugins"      = yes ; then
-  if test $ac_cv_search_dlopen = no ; then
+if test "x$plugins"      = "xyes" ; then
+  if test "x$ac_cv_search_dlopen" = "xno" ; then
     echo " - plugins"
   else
     echo " + plugins"
@@ -683,22 +683,22 @@ else
   echo " ! plugins"
 fi
 
-if test "$iconc"      = yes ; then
-echo " + Compiler "
+if test "x$iconc"      = "xyes" ; then
+  echo " + Compiler "
 else
-echo " ! Compiler"
+  echo " ! Compiler"
 fi
 
-if test "$pattern"      = yes ; then
-echo " + Patterns"
+if test "x$pattern"      = "xyes" ; then
+  echo " + Patterns"
 else
-echo " ! Patterns"
+  echo " ! Patterns"
 fi
 
-if test "$ovld"      = yes ; then
-echo " + Overlodading"
+if test "x$ovld"      = "xyes" ; then
+  echo " + Overlodading"
 else
-echo " ! Overloading"
+  echo " ! Overloading"
 fi
 
 echo "" 

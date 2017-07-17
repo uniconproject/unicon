@@ -19,8 +19,7 @@ class Stepping(
    pat,         # store the current pstep pattern
    assignVal,   # assignment value	       
    curPelem,    # the current pelem we are on
-   pPos,        # stores the previous position of the current total match       
-   totalMatch   # stores the total match      
+   pPos         # stores the previous position of the current total match       
    )	
 	       
 #
@@ -161,7 +160,6 @@ method cmdStep(cmd)
          step_count := 1
 
       DState.Update(STEP)
-      DState.Write("   Stepping.")
       }
    else {
       DState.State := ERROR
@@ -224,7 +222,7 @@ method handle_pstep_fail()
    cur_line := keyword("line", Monitored)
 
    case &eventvalue of {
-      PC_Assign | PC_R_Remove | PC_R_Restore :{
+      PC_Assign | PC_R_Remove | PC_R_Restore | PC_Arbno_Y :{
          step_count := 1     ##Restore Stepping, not really a "step"
          DState.State := RUN
          DState.RunCode := PSTEP
@@ -236,8 +234,9 @@ method handle_pstep_fail()
          msg ||:= *keyword("subject", Monitored)
          msg ||:= "\n   Sub: " || truncateLine()
          msg ||:= "\n" || getUnderlined()
-         msg ||:= "\n   Failed Pattern Element: "
-         msg ||:= "\n   " || pindex_image(pat, cur_index)
+         patElem := getPatElem(pat, cur_index)
+         msg ||:= "\n   Pat: "||patElem[1]
+         msg ||:= "\n" || patElem[2]
          DState.Write(msg)
          DState.State := PAUSE
          DState.RunCode := PSTEP
@@ -297,6 +296,7 @@ end
 
 method handle_pstep_match()
    local cur_line, cur_file, cur_index, cur_match, assign_match
+   local patElem
 
    cur_index := keyword("patindex", Monitored)
    cur_file := keyword("file", Monitored)
@@ -337,7 +337,7 @@ method handle_pstep_match()
          DState.RunCode := PSTEP
          return 
          }
-      PC_Fence_X | PC_R_Enter | PC_EOP : { ## no ops 
+      PC_Fence_X | PC_R_Enter | PC_EOP |PC_Arbno_Y : { ## no ops 
          step_count := 1
          DState.State := RUN
          DState.RunCode := PSTEP
@@ -346,7 +346,6 @@ method handle_pstep_match()
       PC_Unanchored : { ## Match is retrying. Set new position,reset totalMatch
          msg := "\n   Match has failed with no alternatives,"
          msg ||:= " starting from the beginning..."
-         totalMatch := &null
          pPos := keyword("pos", Monitored) 
          step_count := 1
          DState.Write(msg) 
@@ -355,31 +354,16 @@ method handle_pstep_match()
          return 
          }
       default : {
-           msg ||:= "\n   Sub: " || truncateLine()
-           msg ||:= "\n" || getUnderlined()
+         msg ||:= "\n   Sub: " || truncateLine()
+         msg ||:= "\n" || getUnderlined()
          }
       }
-      msg ||:= "\n   Matched Pattern Element: "
-      msg ||:= "\n   " || pindex_image(pat, cur_index)  
+      patElem := getPatElem(pat, cur_index)
+      msg ||:= "\n   Pat: "||patElem[1]
+      msg ||:= "\n" || patElem[2]
       DState.Write(msg)
       DState.State := PAUSE
       DState.RunCode := PSTEP
-end
-
-method getSubstring()
-   local cur_match := &eventvalue
-
-   if totalMatch === &null then     { totalMatch := cur_match}
-   else if cur_match === &null then { totalMatch := totalMatch              }
-   else {
-      cur_match ? {
-         find(totalMatch)
-         move(*totalMatch)
-         cur_match := tab(0)
-         totalMatch := &eventvalue
-      }
-   }
-   return cur_match 
 end
 
 method getUnderlined()
@@ -418,8 +402,6 @@ method getUnderlined()
                underlined ||:= "."
                }
             }
-         underlined ||:= "^"
-         return underlined
          }
       underlined ||:= "^"
       return underlined
@@ -448,7 +430,7 @@ method truncateLine()
             image := "..."
             tab(cur_pos - ((image_max - ellipse)/2))
             }
-         image ||:= tab(cur_pos) || "|"
+         image ||:= tab(cur_pos)
          while(&pos < (*sub + 1) & *image < (image_max - ellipse)) do{
             image ||:= move(1)
             count +:= 1
@@ -459,6 +441,75 @@ method truncateLine()
       }
    else
       return sub
+end
+
+method getPatElem(pat, index)
+   local patImage, patImageB
+   local elemStart, elemEnd
+   local final_image := ""
+   local under_image := "        "
+   local image_max := 72
+   local ellipse := 6
+
+   patImage := pindex_image(pat, -1)
+   patImageB := pindex_image(pat, index)
+  
+   ##Do a character by character comparison on a bracketed images and a non-
+   ##bracketed images. The positions that are different mark the start
+   ##and end to the pattern element we are looking for
+
+   patImage ? {
+      while &pos < *patImage + 2 do {
+         if (patImage[&pos:&pos+1] ~== patImageB[&pos:&pos+1]) then{
+            elemStart := &pos
+            break
+            }
+         if &pos = 0 then write("Error: No indicated element before EOP")
+         move(1)
+         }
+
+      while &pos < *patImage + 2 do {
+      if (patImage[&pos:&pos+1] ~=== patImageB[&pos+1:&pos+2] |
+          (&pos = *patImage + 1 & patImageB[&pos+1:&pos+2] == ']')) then{
+            elemEnd := &pos
+            break
+            }
+         move(1)
+         }
+     }
+
+   patImage ? {
+      if elemStart > (image_max/2) then { ##if start pos is greater than 1/2
+         final_image ||:= "..."           ##of the available space then truncate
+         under_image ||:= "   "
+         tab(elemStart - ((image_max - ellipse)/2))
+         while(&pos ~= elemStart) do {
+            final_image ||:= move(1)
+            under_image ||:= " "
+            }
+         }
+      else {                              ##else tab to the element and then   
+         add_image := tab(elemStart)      ##allocate white space underneath line
+         every 1 to *add_image do under_image ||:= " "
+         final_image ||:= add_image
+         }
+
+     ##While the image hasn't been fully processed move through
+     ##while allocating dots until the endElem position has been reached
+     ##Go to the end of the line. If that exceeds available, truncate
+      write("here")
+      while(&pos < *patImage + 1) do {
+         final_image ||:= move(1)
+         if &pos <= elemEnd then         under_image ||:= "."
+         else if &pos = elemEnd + 1 then under_image ||:= "^"
+         if *final_image >= (image_max - (ellipse/2)) then {
+            final_image ||:= "..."
+            if &pos < elemEnd then under_image ||:= ".^ "
+            return L := [final_image, under_image]
+            }
+         }
+      }
+   return L := [final_image, under_image]
 end
 
 method silentStep()
@@ -500,7 +551,6 @@ method cmdPStep(cmd)
       else
          step_count := 1
          DState.Update(PSTEP)
-         DState.Write("   Pattern Stepping.")
          }
    else {
       DState.State := ERROR
@@ -533,8 +583,8 @@ method pEnd()
 
    pPos := 1 
    pat := &null
-   assignVal := &null 
-   totalMatch := &null 
+   assignVal := &null
+   curPelem := &null
 end
 
 #
@@ -565,6 +615,6 @@ initially()
    pPos := 1 
    nex_level  := &null
    pat   := &null
-   assignVal := &null 
-   totalMatch := &null 
+   assignVal := &null
+   curPelem := &null
 end

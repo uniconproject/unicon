@@ -1,0 +1,127 @@
+import gui
+$include "guih.icn"
+package gui
+$include "guih.icn"
+
+$ifndef CUSTOMYESNODIALOG
+
+#
+# Untested yes/no dialog based on legacy stddlg code.
+#
+class YesNoDialog : sdialog()
+initially(message)
+   self$sdialog.initially()
+   /message := "Yes or No?"
+   if type(message) == "string" then {
+      mesg := stringToList(message)
+      }
+   else if type(message) == "list" then {
+      if *message = 0 then message := ["Yes or No?"]
+      mesg := message
+      }
+   else stop("bad YesNoDialog argument")
+   captions := mesg
+   choices := []
+   dflt := "Yes"
+   buttons := ["Yes", "No"]
+   index := 1
+   win := WOpen("canvas=hidden", "bg=gray")
+   choice_width := 0
+   every choice_width <:= TextWidth(win, !labels)
+   if choice_width > 0 then choice_width +:= 15
+   WClose(win)
+end
+
+$else
+
+#
+# untested IVIB-based yes/no dialog
+#
+class YesNoDialog : Dialog(text_button_1, text_button_3, text_list_1)
+   method component_setup()
+      self.setup()
+   end
+
+   method end_dialog()
+   end
+
+   method handle_noButton(ev)
+   end
+
+   method handle_yesButton(ev)
+   end
+
+   method init_dialog()
+   end
+
+   method setup()
+      self.set_attribs("size=644,399", "resize=on")
+      text_button_1 := TextButton()
+      text_button_1.set_pos("33%-47", "75%-21")
+      text_button_1.set_size("94", "42")
+      text_button_1.clear_toggles()
+      text_button_1.set_label("Yes")
+      text_button_1.set_internal_alignment("c")
+      self.add(text_button_1)
+      text_button_3 := TextButton()
+      text_button_3.set_pos("66%-47", "75%-21")
+      text_button_3.set_size("94", "42")
+      text_button_3.connect(self, "handle_noButton", ACTION_EVENT)
+      text_button_3.clear_toggles()
+      text_button_3.set_label("No")
+      text_button_3.set_internal_alignment("c")
+      self.add(text_button_3)
+      text_list_1 := TextList()
+      text_list_1.set_pos("5%", "10%")
+      text_list_1.set_size("90%", "51%-21")
+      text_list_1.set_draw_border()
+      text_list_1.set_contents([""])
+      self.add(text_list_1)
+      self.connect(self, "handle_yesButton", ACTION_EVENT)
+   end
+
+   initially
+      self.Dialog.initially()
+end
+
+$endif
+
+### Ivib-v2 layout ##
+#class|Canvas|17|Name Table|table|integer|0|2|string|text_button|intege
+#r|3|string|text_list|integer|1|SuperClass Name|string|Dialog|Import Na
+#me|string|gui|Button Groups|class|ButtonGroupSet|2|Parent Canvas|1|Box
+#es|list|0|Checkbox Groups|class|CheckBoxGroupSet|2|Parent Canvas|1|Box
+#es|list|0|Gen Indent|integer|3|Gen Main|null|Gen Component Setup|integ
+#er|1|Gen Init Dialog|integer|1|Gen Initially|integer|1|Dialog Struct|c
+#lass|CDialog|4|Min Width|null|Min Height|null|Ticker Rate|null|Attribs
+#|list|1|string|resize=on|Name|string|YesNoDialog|Width|integer|644|Hei
+#ght|integer|399|Items|list|3|class|CanvasTextButton|36|Parent Canvas|1
+#|Name|string|text_button_1|Class Name|string|TextButton|Import Name|st
+#ring|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H 
+#Default|null|X Spec|string|33%-47|Y Spec|string|75%-21|W Spec|string|9
+#4|H Spec|string|42|X Align|string|l|Y Align|string|t|Is shaded|null|Is
+# Button Subclass|integer|1|Draw Border|null|Attribs|list|0|Tooltip|nul
+#l|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Com
+#ponent|1|Label|string|Yes|No Keyboard|null|Img Up|null|Img Down|null|I
+#mg Width|null|Img Height|null|Is Checked Flag|null|Is Checkbox Flag|nu
+#ll|Parent CheckBoxGroup|null|Parent Button Group|null|Internal Align|s
+#tring|c|class|CanvasTextButton|36|Parent Canvas|1|Name|string|text_but
+#ton_3|Class Name|string|TextButton|Import Name|string|gui|X Fix|null|Y
+# Fix|null|W Fix|null|H Fix|null|W Default|null|H Default|null|X Spec|s
+#tring|66%-47|Y Spec|string|75%-21|W Spec|string|94|H Spec|string|42|X 
+#Align|string|l|Y Align|string|t|Is shaded|null|Is Button Subclass|inte
+#ger|1|Draw Border|null|Attribs|list|0|Tooltip|null|Accel|null|Event Ha
+#ndlers|list|1|list|2|string|ACTION_EVENT|string|handle_noButton|Class 
+#Variable|integer|1|Parent Component|1|Label|string|No|No Keyboard|null
+#|Img Up|null|Img Down|null|Img Width|null|Img Height|null|Is Checked F
+#lag|null|Is Checkbox Flag|null|Parent CheckBoxGroup|null|Parent Button
+# Group|null|Internal Align|string|c|class|CanvasTextList|29|Parent Can
+#vas|1|Name|string|text_list_1|Class Name|string|TextList|Import Name|s
+#tring|gui|X Fix|null|Y Fix|null|W Fix|null|H Fix|null|W Default|null|H
+# Default|null|X Spec|string|5%|Y Spec|string|10%|W Spec|string|90%|H S
+#pec|string|51%-21|X Align|string|l|Y Align|string|t|Is shaded|null|Is 
+#Button Subclass|null|Draw Border|integer|1|Attribs|list|0|Tooltip|null
+#|Accel|null|Event Handlers|list|0|Class Variable|integer|1|Parent Comp
+#onent|1|Select One|null|Select Many|null|Checked|list|1|null|Contents|
+#list|1|string||Initial Focus|null|Event Handlers|list|1|list|2|string|
+#ACTION_EVENT|string|handle_yesButton|

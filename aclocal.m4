@@ -68,7 +68,7 @@ AC_DEFUN([do_lib_check],
 [
 if test  x$2 != "x"
 then
-	save_flags([-I$2/include], [-L$2/lib], [])
+	save_flags([-I$2/include -I$2], [-L$2/lib], [])
 else
 	save_flags([], [], [])
 fi
@@ -76,16 +76,16 @@ fi
 	# If we have mulltiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
         AC_CHECK_HEADERS([$3], [], [cv_libthislib_h=no], [])
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  AC_SEARCH_LIBS([$4], [$1],
 	     [cv_lib$1=yes
 	      if test -n $5 ; then
 	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
 	      fi
 	     ],
-	     [fail_and_restore($1)], [$7])
+	     [fail_and_restore([$1 in ($2)])], [$7])
         else
-          fail_and_restore([$1 in $2])
+          fail_and_restore([$1 in ($2)])
 	fi
 	AC_LANG_POP([$6])
 
@@ -118,9 +118,27 @@ AC_DEFUN([CHECK_ZLIB],
 AC_DEFUN([CHECK_FREETYPE],
 [
 do_arg_with([freetype])
+
+ftsave_CPPFLAGS=$CPPFLAGS
+if test "x$freetype_HOME" = "x" ; then
+   FREETYPE_HOME=/usr/X11
+   if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
+      FREETYPE_HOME=/usr/local
+      if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
+        FREETYPE_HOME=/usr
+      fi
+   fi
+else
+   FREETYPE_HOME=$freetype_HOME
+fi
+
 if test "x$with_freetype" != "xno"; then
-  do_lib_check([freetype], [${freetype_HOME}], [freetype2/freetype/freetype.h],
+  CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include/freetype2 "   
+  do_lib_check([freetype], [${freetype_HOME}], [freetype2/ft2build.h],
 			 [FT_Open_Face], [HAVE_LIBFREETYPE], [C])
+   if test "x$cv_freetype" = "xno" ; then
+      CPPFLAGS=$ftsave_CPPFLAGS
+   fi
 fi
 ])
 
@@ -130,7 +148,7 @@ AC_DEFUN([CHECK_FTGL],
 do_arg_with([ftgl])
 if test "x$with_ftgl" != "xno"; then
    do_lib_check([ftgl], [${ftgl_HOME}], [FTGL/FTGLExtrdFont.h], [_ZN6FTFaceD2Ev], [HAVE_LIBFTGL], [C++])
-   if test "$cv_libftgl" = "yes" ; then
+   if test "x$cv_libftgl" = "xyes" ; then
       LIBS="$LIBS -lstdc++"
    fi
 fi

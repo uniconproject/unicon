@@ -7437,7 +7437,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${X11_HOME}/include
+	for part in -I${X11_HOME}/include -I${X11_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7534,7 +7534,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing XAllocColorCells" >&5
 $as_echo_n "checking for library containing XAllocColorCells... " >&6; }
 if ${ac_cv_search_XAllocColorCells+:} false; then :
@@ -7603,8 +7603,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11" >&5
-$as_echo_n "checking checking lib X11... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${X11_HOME})" >&5
+$as_echo_n "checking checking lib X11 in (${X11_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7618,8 +7618,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in ${X11_HOME}" >&5
-$as_echo_n "checking checking lib X11 in ${X11_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${X11_HOME})" >&5
+$as_echo_n "checking checking lib X11 in (${X11_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7659,7 +7659,22 @@ fi
 
 
 
+
+ftsave_CPPFLAGS=$CPPFLAGS
+if test "x$freetype_HOME" = "x" ; then
+   FREETYPE_HOME=/usr/X11
+   if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
+      FREETYPE_HOME=/usr/local
+      if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
+        FREETYPE_HOME=/usr
+      fi
+   fi
+else
+   FREETYPE_HOME=$freetype_HOME
+fi
+
 if test "x$with_freetype" != "xno"; then
+  CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include/freetype2 "
 
 if test  x${freetype_HOME} != "x"
 then
@@ -7669,7 +7684,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${freetype_HOME}/include
+	for part in -I${freetype_HOME}/include -I${freetype_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7751,12 +7766,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	# If we have mulltiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
-        for ac_header in freetype2/freetype/freetype.h
+        for ac_header in freetype2/ft2build.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "freetype2/freetype/freetype.h" "ac_cv_header_freetype2_freetype_freetype_h" "$ac_includes_default"
-if test "x$ac_cv_header_freetype2_freetype_freetype_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "freetype2/ft2build.h" "ac_cv_header_freetype2_ft2build_h" "$ac_includes_default"
+if test "x$ac_cv_header_freetype2_ft2build_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_FREETYPE2_FREETYPE_FREETYPE_H 1
+#define HAVE_FREETYPE2_FT2BUILD_H 1
 _ACEOF
 
 else
@@ -7765,7 +7780,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing FT_Open_Face" >&5
 $as_echo_n "checking for library containing FT_Open_Face... " >&6; }
 if ${ac_cv_search_FT_Open_Face+:} false; then :
@@ -7834,8 +7849,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib freetype" >&5
-$as_echo_n "checking checking lib freetype... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in (${freetype_HOME})" >&5
+$as_echo_n "checking checking lib freetype in (${freetype_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7849,8 +7864,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in ${freetype_HOME}" >&5
-$as_echo_n "checking checking lib freetype in ${freetype_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib freetype in (${freetype_HOME})" >&5
+$as_echo_n "checking checking lib freetype in (${freetype_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7864,6 +7879,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+   if test "x$cv_freetype" = "xno" ; then
+      CPPFLAGS=$ftsave_CPPFLAGS
+   fi
 fi
 
 
@@ -7898,7 +7916,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${Xft_HOME}/include
+	for part in -I${Xft_HOME}/include -I${Xft_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7994,7 +8012,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing XftFontOpenPattern" >&5
 $as_echo_n "checking for library containing XftFontOpenPattern... " >&6; }
 if ${ac_cv_search_XftFontOpenPattern+:} false; then :
@@ -8063,8 +8081,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib Xft" >&5
-$as_echo_n "checking checking lib Xft... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in (${Xft_HOME})" >&5
+$as_echo_n "checking checking lib Xft in (${Xft_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -8078,8 +8096,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in ${Xft_HOME}" >&5
-$as_echo_n "checking checking lib Xft in ${Xft_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib Xft in (${Xft_HOME})" >&5
+$as_echo_n "checking checking lib Xft in (${Xft_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -8127,7 +8145,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${jpeg_HOME}/include
+	for part in -I${jpeg_HOME}/include -I${jpeg_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -8224,7 +8242,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing jpeg_destroy_decompress" >&5
 $as_echo_n "checking for library containing jpeg_destroy_decompress... " >&6; }
 if ${ac_cv_search_jpeg_destroy_decompress+:} false; then :
@@ -8293,8 +8311,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg" >&5
-$as_echo_n "checking checking lib jpeg... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in (${jpeg_HOME})" >&5
+$as_echo_n "checking checking lib jpeg in (${jpeg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -8308,8 +8326,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in ${jpeg_HOME}" >&5
-$as_echo_n "checking checking lib jpeg in ${jpeg_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib jpeg in (${jpeg_HOME})" >&5
+$as_echo_n "checking checking lib jpeg in (${jpeg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -8357,7 +8375,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${png_HOME}/include
+	for part in -I${png_HOME}/include -I${png_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -8453,7 +8471,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing png_read_image" >&5
 $as_echo_n "checking for library containing png_read_image... " >&6; }
 if ${ac_cv_search_png_read_image+:} false; then :
@@ -8522,8 +8540,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib png" >&5
-$as_echo_n "checking checking lib png... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib png in (${png_HOME})" >&5
+$as_echo_n "checking checking lib png in (${png_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -8537,8 +8555,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib png in ${png_HOME}" >&5
-$as_echo_n "checking checking lib png in ${png_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib png in (${png_HOME})" >&5
+$as_echo_n "checking checking lib png in (${png_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9123,7 +9141,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ftgl_HOME}/include
+	for part in -I${ftgl_HOME}/include -I${ftgl_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9219,7 +9237,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing _ZN6FTFaceD2Ev" >&5
 $as_echo_n "checking for library containing _ZN6FTFaceD2Ev... " >&6; }
 if ${ac_cv_search__ZN6FTFaceD2Ev+:} false; then :
@@ -9288,8 +9306,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl" >&5
-$as_echo_n "checking checking lib ftgl... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in (${ftgl_HOME})" >&5
+$as_echo_n "checking checking lib ftgl in (${ftgl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9303,8 +9321,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in ${ftgl_HOME}" >&5
-$as_echo_n "checking checking lib ftgl in ${ftgl_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ftgl in (${ftgl_HOME})" >&5
+$as_echo_n "checking checking lib ftgl in (${ftgl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9318,7 +9336,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-   if test "$cv_libftgl" = "yes" ; then
+   if test "x$cv_libftgl" = "xyes" ; then
       LIBS="$LIBS -lstdc++"
    fi
 fi
@@ -9499,7 +9517,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ogg_HOME}/include
+	for part in -I${ogg_HOME}/include -I${ogg_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9595,7 +9613,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing oggpack_write" >&5
 $as_echo_n "checking for library containing oggpack_write... " >&6; }
 if ${ac_cv_search_oggpack_write+:} false; then :
@@ -9664,8 +9682,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ogg" >&5
-$as_echo_n "checking checking lib ogg... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in (${ogg_HOME})" >&5
+$as_echo_n "checking checking lib ogg in (${ogg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9679,8 +9697,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in ${ogg_HOME}" >&5
-$as_echo_n "checking checking lib ogg in ${ogg_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ogg in (${ogg_HOME})" >&5
+$as_echo_n "checking checking lib ogg in (${ogg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9703,7 +9721,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ogg_HOME}/include
+	for part in -I${ogg_HOME}/include -I${ogg_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -9799,7 +9817,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing vorbis_info_init" >&5
 $as_echo_n "checking for library containing vorbis_info_init... " >&6; }
 if ${ac_cv_search_vorbis_info_init+:} false; then :
@@ -9868,8 +9886,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis" >&5
-$as_echo_n "checking checking lib vorbis... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in (${ogg_HOME})" >&5
+$as_echo_n "checking checking lib vorbis in (${ogg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9883,8 +9901,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in ${ogg_HOME}" >&5
-$as_echo_n "checking checking lib vorbis in ${ogg_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbis in (${ogg_HOME})" >&5
+$as_echo_n "checking checking lib vorbis in (${ogg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -9907,7 +9925,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ogg_HOME}/include
+	for part in -I${ogg_HOME}/include -I${ogg_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10003,7 +10021,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing ov_open" >&5
 $as_echo_n "checking for library containing ov_open... " >&6; }
 if ${ac_cv_search_ov_open+:} false; then :
@@ -10072,8 +10090,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile" >&5
-$as_echo_n "checking checking lib vorbisfile... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in (${ogg_HOME})" >&5
+$as_echo_n "checking checking lib vorbisfile in (${ogg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10087,8 +10105,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in ${ogg_HOME}" >&5
-$as_echo_n "checking checking lib vorbisfile in ${ogg_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib vorbisfile in (${ogg_HOME})" >&5
+$as_echo_n "checking checking lib vorbisfile in (${ogg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10136,7 +10154,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${SDL_HOME}/include
+	for part in -I${SDL_HOME}/include -I${SDL_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10232,7 +10250,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SDL_AudioInit" >&5
 $as_echo_n "checking for library containing SDL_AudioInit... " >&6; }
 if ${ac_cv_search_SDL_AudioInit+:} false; then :
@@ -10301,8 +10319,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib SDL" >&5
-$as_echo_n "checking checking lib SDL... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in (${SDL_HOME})" >&5
+$as_echo_n "checking checking lib SDL in (${SDL_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10316,8 +10334,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in ${SDL_HOME}" >&5
-$as_echo_n "checking checking lib SDL in ${SDL_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib SDL in (${SDL_HOME})" >&5
+$as_echo_n "checking checking lib SDL in (${SDL_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10365,7 +10383,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${smpeg_HOME}/include
+	for part in -I${smpeg_HOME}/include -I${smpeg_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10461,7 +10479,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SMPEG_playAudio" >&5
 $as_echo_n "checking for library containing SMPEG_playAudio... " >&6; }
 if ${ac_cv_search_SMPEG_playAudio+:} false; then :
@@ -10530,8 +10548,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg" >&5
-$as_echo_n "checking checking lib smpeg... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in (${smpeg_HOME})" >&5
+$as_echo_n "checking checking lib smpeg in (${smpeg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10545,8 +10563,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in ${smpeg_HOME}" >&5
-$as_echo_n "checking checking lib smpeg in ${smpeg_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib smpeg in (${smpeg_HOME})" >&5
+$as_echo_n "checking checking lib smpeg in (${smpeg_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10594,7 +10612,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${openal_HOME}/include
+	for part in -I${openal_HOME}/include -I${openal_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10690,7 +10708,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing alGetSourceiv" >&5
 $as_echo_n "checking for library containing alGetSourceiv... " >&6; }
 if ${ac_cv_search_alGetSourceiv+:} false; then :
@@ -10759,8 +10777,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib openal" >&5
-$as_echo_n "checking checking lib openal... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib openal in (${openal_HOME})" >&5
+$as_echo_n "checking checking lib openal in (${openal_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10774,8 +10792,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib openal in ${openal_HOME}" >&5
-$as_echo_n "checking checking lib openal in ${openal_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib openal in (${openal_HOME})" >&5
+$as_echo_n "checking checking lib openal in (${openal_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10798,7 +10816,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${openal_HOME}/include
+	for part in -I${openal_HOME}/include -I${openal_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -10894,7 +10912,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing alutGetMajorVersion" >&5
 $as_echo_n "checking for library containing alutGetMajorVersion... " >&6; }
 if ${ac_cv_search_alutGetMajorVersion+:} false; then :
@@ -10963,8 +10981,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib alut" >&5
-$as_echo_n "checking checking lib alut... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib alut in (${openal_HOME})" >&5
+$as_echo_n "checking checking lib alut in (${openal_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -10978,8 +10996,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib alut in ${openal_HOME}" >&5
-$as_echo_n "checking checking lib alut in ${openal_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib alut in (${openal_HOME})" >&5
+$as_echo_n "checking checking lib alut in (${openal_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11499,7 +11517,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${zlib_HOME}/include
+	for part in -I${zlib_HOME}/include -I${zlib_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11595,7 +11613,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing inflateEnd" >&5
 $as_echo_n "checking for library containing inflateEnd... " >&6; }
 if ${ac_cv_search_inflateEnd+:} false; then :
@@ -11664,8 +11682,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z" >&5
-$as_echo_n "checking checking lib z... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
+$as_echo_n "checking checking lib z in (${zlib_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11679,8 +11697,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in ${zlib_HOME}" >&5
-$as_echo_n "checking checking lib z in ${zlib_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
+$as_echo_n "checking checking lib z in (${zlib_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11730,7 +11748,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${odbc_HOME}/include
+	for part in -I${odbc_HOME}/include -I${odbc_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -11826,7 +11844,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SQLAllocConnect" >&5
 $as_echo_n "checking for library containing SQLAllocConnect... " >&6; }
 if ${ac_cv_search_SQLAllocConnect+:} false; then :
@@ -11895,8 +11913,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc" >&5
-$as_echo_n "checking checking lib iodbc... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in (${odbc_HOME})" >&5
+$as_echo_n "checking checking lib iodbc in (${odbc_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11910,8 +11928,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in ${odbc_HOME}" >&5
-$as_echo_n "checking checking lib iodbc in ${odbc_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib iodbc in (${odbc_HOME})" >&5
+$as_echo_n "checking checking lib iodbc in (${odbc_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -11936,7 +11954,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${odbc_HOME}/include
+	for part in -I${odbc_HOME}/include -I${odbc_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -12032,7 +12050,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SQLConnect" >&5
 $as_echo_n "checking for library containing SQLConnect... " >&6; }
 if ${ac_cv_search_SQLConnect+:} false; then :
@@ -12101,8 +12119,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib odbc" >&5
-$as_echo_n "checking checking lib odbc... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in (${odbc_HOME})" >&5
+$as_echo_n "checking checking lib odbc in (${odbc_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12116,8 +12134,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in ${odbc_HOME}" >&5
-$as_echo_n "checking checking lib odbc in ${odbc_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib odbc in (${odbc_HOME})" >&5
+$as_echo_n "checking checking lib odbc in (${odbc_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12172,7 +12190,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${pthread_HOME}/include
+	for part in -I${pthread_HOME}/include -I${pthread_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -12268,7 +12286,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing pthread_create" >&5
 $as_echo_n "checking for library containing pthread_create... " >&6; }
 if ${ac_cv_search_pthread_create+:} false; then :
@@ -12337,8 +12355,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib pthread" >&5
-$as_echo_n "checking checking lib pthread... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in (${pthread_HOME})" >&5
+$as_echo_n "checking checking lib pthread in (${pthread_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12352,8 +12370,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in ${pthread_HOME}" >&5
-$as_echo_n "checking checking lib pthread in ${pthread_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib pthread in (${pthread_HOME})" >&5
+$as_echo_n "checking checking lib pthread in (${pthread_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12401,7 +12419,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ssl_HOME}/include
+	for part in -I${ssl_HOME}/include -I${ssl_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -12497,7 +12515,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SSL_library_init" >&5
 $as_echo_n "checking for library containing SSL_library_init... " >&6; }
 if ${ac_cv_search_SSL_library_init+:} false; then :
@@ -12566,8 +12584,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl" >&5
-$as_echo_n "checking checking lib ssl... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12581,8 +12599,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in ${ssl_HOME}" >&5
-$as_echo_n "checking checking lib ssl in ${ssl_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12605,7 +12623,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${ssl_HOME}/include
+	for part in -I${ssl_HOME}/include -I${ssl_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -12701,7 +12719,7 @@ fi
 
 done
 
-	if test $cv_libthislib_h = yes ;  then
+	if test x$cv_libthislib_h != xno ;  then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing BIO_read" >&5
 $as_echo_n "checking for library containing BIO_read... " >&6; }
 if ${ac_cv_search_BIO_read+:} false; then :
@@ -12770,8 +12788,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto" >&5
-$as_echo_n "checking checking lib crypto... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib crypto in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12785,8 +12803,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in ${ssl_HOME}" >&5
-$as_echo_n "checking checking lib crypto in ${ssl_HOME}... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib crypto in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 

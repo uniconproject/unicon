@@ -41,7 +41,7 @@ $(COBJS):	../h/mproto.h
 	$(SLNT)$(CC) $(CFLAGS) -c $<
 
 ccomp.o:	ccomp.c
-		$(CC) $(CFLAGS) -DICONC_XLIB="\"$(LIBS)\"" -c ccomp.c
+		$(CC) $(CFLAGS) -DICONC_LIB="\"$(LIBS)\"" -c ccomp.c
 
 ccode.o:	../h/lexdef.h ctoken.h
 chkinv.o:	ctoken.h

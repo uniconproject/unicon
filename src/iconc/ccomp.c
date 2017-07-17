@@ -291,15 +291,9 @@ Deliberate Syntax Error
 #ifdef Graphics3D
    buf = growcat(buf, &buflen, 1, " -lGL -lGLU");
 #endif					/* Graphics3D */
-   buf = growcat(buf, &buflen, 2, " ", ICONC_XLIB);
 #endif					/* Graphics */
 
-#if 0
-/* ODBC support is not finished in iconc. Enable this if you are working on it. */
-#ifdef ISQL
-   buf = growcat(buf, &buflen, 1, " -liodbc");
-#endif					/* ISQL */
-#endif					/* 0 */
+   buf = growcat(buf, &buflen, 2, " ", ICONC_LIB);
 
 #if HAVE_LIBZ
    buf = growcat(buf, &buflen, 1, " -lz");

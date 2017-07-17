@@ -459,28 +459,28 @@ AC_OUTPUT
 
 
 
-if test "$cv_libz"   = yes ; then
+if test "x$cv_libz"   = "xyes" ; then
    ctmp=" + Compression        : +ZLIB"
 else
    ctmp=" - Compression        : -ZLIB"
 fi
 
 # want graphics
-if test "$graphics" = yes ; then
+if test "x$graphics" = "xyes" ; then
   gtmp="Graphics           :"
-  if test "$cv_libX11"    = yes ; then
+  if test "x$cv_libX11"    = "xyes" ; then
     gtmp=" + $gtmp +X11 "
   else
     gtmp=" - $gtmp -X11 "
   fi
 
-  if test "$cv_libjpeg" = yes ; then gtmp="$gtmp +JPG " ; else gtmp="$gtmp -JPG " ; fi
+  if test "x$cv_libjpeg" = "xyes" ; then gtmp="$gtmp +JPG " ; else gtmp="$gtmp -JPG " ; fi
 
 	
-  if test "$cv_libpng"  = yes ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
+  if test "x$cv_libpng"  = "xyes" ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
-  if test "$cv_libxft"   = yes ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
-  if test "$cv_libfreetype"   = yes ; then
+  if test "x$cv_libxft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+  if test "x$cv_libfreetype"   = "xyes" ; then
     gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
 else
 #disbaled graphics
@@ -517,8 +517,8 @@ else
 fi
 
 # want concurrency
-if test "$concurrency" = yes ; then
-  if test "$cv_libpthread"  = yes ; then
+if test "x$concurrency" = "xyes" ; then
+  if test "x$cv_libpthread"  = "xyes" ; then
     contmp=" + Concurrency        : +pthread"
   else
     contmp=" - Concurrency        : -pthread"
@@ -529,17 +529,17 @@ else
 fi
 
 # want audio
-if test "$audio" = yes ; then
+if test "x$audio" = "xyes" ; then
   atmp="Audio              :"
   onAudio=0
-  if test "$cv_libopenal" = yes ; then
+  if test "x$cv_libopenal" = "xyes" ; then
     atmp="$atmp +OpenAL "
     onAudio="1"
   else
     atmp="$atmp -OpenAL "
   fi
 
-  if test "$cv_libalut"     = yes ; then
+  if test "x$cv_libalut"     = "xyes" ; then
     atmp="$atmp +alut "
     if test "$onAudio" = 1 ; then onAudio=2 ; fi
   else
@@ -548,14 +548,14 @@ if test "$audio" = yes ; then
 
 
   atmp="$atmp("
-  if test "$cv_libogg"       = yes ; then
+  if test "x$cv_libogg"       = "xyes" ; then
     atmp="$atmp +ogg "
     if test "$onAudio" = 2 ; then onAudio=3 ; fi
   else
     atmp="$atmp -ogg "
   fi
   
-  if test "$cv_libvorbis"    = yes ; then
+  if test "x$cv_libvorbis"    = "xyes" ; then
     atmp="$atmp +vorbis "
     if test "$onAudio" = 3 ; then onAudio=4 ; fi
   else
@@ -566,7 +566,7 @@ if test "$audio" = yes ; then
   if test "$onAudio" = 3 ; then onAudio=2 ; fi
 
   atmp="$atmp) | ("
-  if test "$cv_libsmpeg"   = yes ; then
+  if test "x$cv_libsmpeg"   = "xyes" ; then
     atmp="$atmp +SDL +SMPEG "
     if test "$onAudio" = 2 ; then onAudio=4 ; fi
   else
@@ -587,31 +587,30 @@ else
 fi
 
 # want voip
-if test "$voip" = yes ; then
-  if test "$cv_libvoip"         = yes ; then
+if test "x$voip" = "xyes" ; then
+  if test "x$cv_libvoip"         = "xyes" ; then
     vtmp=" + VOIP               : +voip"
   else
     vtmp=" - VOIP               : -voip"
   fi
 
-  if test "$cv_libjvoip"         = yes ; then
+  if test "x$cv_libjvoip"         = "xyes" ; then
     vtmp="$vtmp +jvoip"
   else
     vtmp="$vtmp -jvoip"
   fi
 
-  if test "$cv_libjthread"         = yes ; then
+  if test "x$cv_libjthread"         = "xyes" ; then
     vtmp="$vtmp +jthread"
   else
     vtmp="$vtmp -jthread"
   fi
 
-  if test "$cv_libjrtp"         = yes ; then
+  if test "x$cv_libjrtp"         = "xyes" ; then
     vtmp="$vtmp +jrtp"
   else
     vtmp="$vtmp -jrtp"
   fi
-
 
 else
 #disbaled Voip
@@ -619,11 +618,11 @@ else
 fi
 
 # want database
-if test "$database" = yes ; then
+if test "x$database" = "xyes" ; then
   if test "$cv_libodbc"        = yes ; then
     dtmp=" + Database           : +odbc"
   else
-  if test "$cv_libiodbc"       = yes ; then
+  if test "x$cv_libiodbc"       = "xyes" ; then
     dtmp=" + Database           : +iodbc"
   else
     dtmp=" - Database           : -odbc | -iodbc"
@@ -635,8 +634,8 @@ else
 fi
 
 # want ssl
-if test "$ssl" = yes ; then
-  if test "$cv_libssl"      = yes ; then
+if test "x$ssl" = "xyes" ; then
+  if test "x$cv_libssl"      = "xyes" ; then
     stmp=" + SSL                : +ssl"
   else
     stmp=" - SSL                : -ssl"

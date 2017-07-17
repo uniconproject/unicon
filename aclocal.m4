@@ -214,7 +214,7 @@ AC_CHECK_LIB(jvoip, _Z19JVOIPGetErrorStringi, [cv_libjvoip=yes], [cv_libjvoip=no
 AC_CHECK_LIB(voip, _Z11dummy_printc, [cv_libvoip=yes], [cv_libvoip=no])
 #AC_MSG_CHECKING(jvoiplib in ${JVOIPLIB_HOME})
 
-if test "$cv_libjvoip" = "yes" -a "$cv_libjthread" = "yes" -a "$cv_libjrtp" = "yes" -a "$cv_libjvoip" = "yes"
+if test "x$cv_libjvoip" = "xyes" -a "x$cv_libjthread" = "xyes" -a "x$cv_libjrtp" = "xyes" -a "x$cv_libjvoip" = "xyes"
         then
                 #
                 # If all libraries were found, use them
@@ -349,7 +349,7 @@ if test "x$with_opengl" != "xno"; then
   else
 	        GL_CFLAGS=
 	        GL_LDFLAGS=
-		cv_opengl=no		
+		cv_opengl=no
 		fail_and_restore([OpenGL])
   fi
   AC_LANG_POP([C])
@@ -362,7 +362,7 @@ do_arg_with([odbc])
 if test "x$with_odbc" != "xno"; then
   do_lib_check([iodbc], [${odbc_HOME}], [sqlext.h], [SQLAllocConnect], [HAVE_LIBIODBC], [C])
 
-  if test "$cv_libiodbc" != "yes" ; then
+  if test "x$cv_libiodbc" != "xyes" ; then
     do_lib_check([odbc], [${odbc_HOME}], [sqlext.h], [SQLConnect], [HAVE_LIBODBC], [C])
   fi
 fi

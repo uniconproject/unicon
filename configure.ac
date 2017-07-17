@@ -280,6 +280,31 @@ ssl=no
   # what else we need to disable?
 fi
 
+
+AC_CHECK_FUNCS(socket bcopy bzero memcpy memset inet_aton inet_pton \
+	       snprintf vsprintf rename ftruncate flock fsync \
+	       getrlimit setrlimit strerror strerror_r vfork)
+
+AC_REPLACE_FUNCS(getopt)
+AC_FUNC_FORK()
+AC_CHECK_LIB(dbm,main)
+AC_CHECK_LIB(ndbm,main)
+
+AC_SEARCH_LIBS([getaddrinfo],[socket],
+	[AC_DEFINE([HAVE_GETADDRINFO], [1], [getaddinfo])])
+AC_SEARCH_LIBS([clock_gettime],[rt],
+	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [gettime])])
+AC_SEARCH_LIBS([crypt],[crypt],
+	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
+
+AC_CHECK_FUNC(getrusage,
+	[AC_DEFINE([HAVE_GETRUSAGE], [1], [getrusage])])
+AC_CHECK_FUNC(sysconf,
+	[AC_DEFINE([HAVE_SYSCONF], [1], [sysconf])])
+AC_CHECK_FUNC(profil,
+	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
+
+
 if test "x$concurrent" = "xno"; then
   AC_DEFINE([NoConcurrent], [1], [No Concurrency])
 fi
@@ -376,29 +401,6 @@ else
    fi
 fi
 
-AC_CHECK_FUNCS(socket bcopy bzero memcpy memset inet_aton inet_pton \
-	       snprintf vsprintf rename ftruncate flock fsync \
-	       getrlimit setrlimit strerror strerror_r vfork)
-
-AC_REPLACE_FUNCS(getopt)
-AC_FUNC_FORK()
-AC_CHECK_LIB(dbm,main)
-AC_CHECK_LIB(ndbm,main)
-
-AC_SEARCH_LIBS([getaddrinfo],[socket],
-	[AC_DEFINE([HAVE_GETADDRINFO], [1], [getaddinfo])])
-AC_SEARCH_LIBS([clock_gettime],[rt],
-	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [gettime])])
-AC_SEARCH_LIBS([crypt],[crypt],
-	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
-
-AC_CHECK_FUNC(getrusage,
-	[AC_DEFINE([HAVE_GETRUSAGE], [1], [getrusage])])
-AC_CHECK_FUNC(sysconf,
-	[AC_DEFINE([HAVE_SYSCONF], [1], [sysconf])])
-AC_CHECK_FUNC(profil,
-	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
-
 if test "x$plugins" = "xyes"; then
   AC_SEARCH_LIBS([dlopen], [dl dld],
         [AC_DEFINE([HAVE_LIBDL], [1], [define to 1 if you have dlopen])],
@@ -486,25 +488,25 @@ else
 fi
 
 # want graphics3d
-if test "$graphics3d" = yes ; then
+if test "x$graphics3d" = "xyes" ; then
 
-  if test "$opengl_cv_libGL"   = yes ; then
+  if test "x$cv_libGL"   = "xyes" ; then
     gdtmp="$gdtmp+OpenGL "
     ong3d=1
   else
     gdtmp="$gdtmp-OpenGL "
   fi
 
-  if test "$opengl_cv_libGLU"  = yes ; then
+  if test "x$cv_libGLU"  = "xyes" ; then
     gdtmp="$gdtmp +GLU "
     if test $ong3d = 1 ; then ong3d=2 ; fi
   else
     gdtmp="$gdtmp -GLU "
   fi
 
-  if test "$FTGL_cv_libFTGL"   = yes ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
+  if test "x$cv_libFTGL"   = "xyes" ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
 
-  if test "$opengl_cv_libGL" = yes && test "$opengl_cv_libGLU"  = yes ; then
+  if test "x$cv_opengl" = "xyes" ; then
     gdtmp=" + Graphics3D         : $gdtmp"
   else
     gdtmp=" - Graphics3D         : $gdtmp"

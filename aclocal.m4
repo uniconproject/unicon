@@ -83,7 +83,7 @@ fi
 	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
 	      fi
 	     ],
-	     [fail_and_restore($1)])
+	     [fail_and_restore($1)], [$7])
         else
           fail_and_restore([$1 in $2])
 	fi
@@ -144,7 +144,7 @@ AC_DEFUN([CHECK_OGG],
 do_arg_with([ogg])
 if test "x$with_ogg" != "xno"; then
    do_lib_check([ogg], [${ogg_HOME}], [ogg/ogg.h], [oggpack_write], [HAVE_LIBOGG], [C])
-   do_lib_check([vorbis], [${ogg_HOME}], [vorbis/codec.h], [vorbis_bitrate_init,], [HAVE_LIBVORBIS], [C])
+   do_lib_check([vorbis], [${ogg_HOME}], [vorbis/codec.h], [vorbis_info_init], [HAVE_LIBVORBIS], [C])
    do_lib_check([vorbisfile], [${ogg_HOME}], [vorbis/vorbisfile.h], [ov_open], [HAVE_LIBVORBISFILE], [C])
 fi
 ])
@@ -292,11 +292,19 @@ fi
 
 AC_DEFUN([CHECK_OPENGL],
 [
+
 do_arg_with([opengl])
+
 if test "x$with_opengl" != "xno"; then
-  save_flags([-I${OPENGL_HOME}], [-lm -L${OPENGL_HOME}/lib], [])
-  AC_LANG_PUSH([C])
+
+  if test  "x$opengl_HOME" != "x" ; then
+    save_flags([-I${opengl_HOME}], [-L${opengl_HOME}/lib], [])
+  else
+    save_flags([], [], [])
+  fi
   
+  AC_LANG_PUSH([C])
+
   AC_CHECK_HEADERS([GL/gl.h GL/glu.h], [], [cv_opengl_h=no])
   AC_CHECK_LIB(GL, glAccum, [cv_libGL=yes], [cv_libGL=no])
   AC_CHECK_LIB(GLU, gluBeginCurve, [cv_libGLU=yes], [cv_libGLU=no], [-lGL])
@@ -307,14 +315,23 @@ if test "x$with_opengl" != "xno"; then
     cv_glx_h="yes"
   fi
 
-  if test "x$cv_libGL" = "xyes" -a "x$cv_libGLU" = "xyes" -a "$xcv_opengl_h" != "xno" -a x$cv_glx_h = "yes" ; then
-	        GL_CFLAGS=" -I${OPENGL_HOME}/include"
-	        GL_LDFLAGS=" -L${OPENGL_HOME}/lib"
+  if test "x$cv_libGL" = "xyes" -a "x$cv_libGLU" = "xyes" -a "x$cv_opengl_h" != "xno" -a "x$cv_glx_h" = "xyes" ; then
+
+       if test  "x$opengl_HOME" != "x" ; then
+	        GL_CFLAGS=" -I${opengl_HOME}/include"
+	        GL_LDFLAGS=" -L${opengl_HOME}/lib"
+       else
+	        GL_CFLAGS=
+	        GL_LDFLAGS=
+       fi
+  		AC_CHECK_LIB(m, cos)
   		AC_CHECK_LIB(GL, glAccum)
   		AC_CHECK_LIB(GLU, gluBeginCurve)
+		cv_opengl=yes
   else
 	        GL_CFLAGS=
 	        GL_LDFLAGS=
+		cv_opengl=no		
 		fail_and_restore([OpenGL])
   fi
   AC_LANG_POP([C])

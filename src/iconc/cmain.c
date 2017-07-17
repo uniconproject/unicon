@@ -484,17 +484,14 @@ Deliberate Syntax Error
       fprintf(stderr, "*** C compile and link failed ***\n");
       rmfile(ofile);
       }
-
-   /*
-    * Finish by removing C files.
-    */
-#if !MSDOS
-   /* mdw
-   rmfile(cfile);
-   rmfile(hfile);
-   */
-#endif					/* !MSDOS */
-   rmfile(makename(buf,TargetDir,cfile,ObjSuffix));
+   else {
+      /*
+       * Finish by removing C files.
+       */
+      rmfile(cfile);
+      rmfile(hfile);
+      rmfile(makename(buf,TargetDir,cfile,ObjSuffix));
+      }
 #ifdef IconcLogAllocations
    alc_stats();
 #endif					/* IconcLogAllocations */

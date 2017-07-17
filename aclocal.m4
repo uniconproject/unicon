@@ -83,7 +83,7 @@ fi
 	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
 	      fi
 	     ],
-	     [fail_and_restore()])
+	     [fail_and_restore($1)])
         else
           fail_and_restore([$1 in $2])
 	fi
@@ -328,7 +328,7 @@ if test "x$with_odbc" != "xno"; then
   do_lib_check([iodbc], [${odbc_HOME}], [sqlext.h], [SQLAllocConnect], [HAVE_LIBIODBC], [C])
 
   if test "$cv_libiodbc" != "yes" ; then
-    do_lib_check([odbc], [${odbc_HOME}], [sqlext.h], [SQLAllocConnect], [HAVE_LIBODBC], [C])
+    do_lib_check([odbc], [${odbc_HOME}], [sqlext.h], [SQLConnect], [HAVE_LIBODBC], [C])
   fi
 fi
 ])

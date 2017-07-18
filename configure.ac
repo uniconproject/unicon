@@ -56,9 +56,11 @@ case $host_os in
         ;;
      *cygwin*)
         unicon_os="windows"
+	AC_DEFINE([Windows], [1], [Windows platform])
         ;;
      *mingw*)
         unicon_os="windows"
+	AC_DEFINE([Windows], [1], [Windows platform])	
         ;;
 esac
 
@@ -479,7 +481,7 @@ if test "x$graphics" = "xyes" ; then
 	
   if test "x$cv_libpng"  = "xyes" ; then gtmp="$gtmp +PNG " ; else gtmp="$gtmp -PNG " ; fi
 
-  if test "x$cv_libxft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
+  if test "x$cv_libXft"   = "xyes" ; then gtmp="$gtmp +XFT " ; else gtmp="$gtmp -XFT " ; fi
   if test "x$cv_libfreetype"   = "xyes" ; then
     gtmp="$gtmp+Freetype " ; else gtmp="$gtmp-FreeType " ; fi
 else
@@ -504,7 +506,7 @@ if test "x$graphics3d" = "xyes" ; then
     gdtmp="$gdtmp -GLU "
   fi
 
-  if test "x$cv_libFTGL"   = "xyes" ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
+  if test "x$cv_libftgl"   = "xyes" ; then gdtmp="$gdtmp +FTGL "   ; else gdtmp="$gdtmp -FTGL " ; fi
 
   if test "x$cv_opengl" = "xyes" ; then
     gdtmp=" + Graphics3D         : $gdtmp"

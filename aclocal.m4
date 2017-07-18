@@ -1,4 +1,5 @@
 
+
 # arsgs: additionals cflags, ldflags and cppflags.  
 AC_DEFUN([save_flags],
 [
@@ -83,7 +84,8 @@ fi
 	        AC_DEFINE([$5], [1], [Define to 1 if you lib $1])
 	      fi
 	     ],
-	     [fail_and_restore([$1 in ($2)])], [$7])
+	     [cv_lib$1=no
+	      fail_and_restore([$1 in ($2)])], [$7])
         else
           fail_and_restore([$1 in ($2)])
 	fi
@@ -237,36 +239,31 @@ AC_LANG_POP([C++])
 
 ])
 
+
 AC_DEFUN([CHECK_XLIB],
 [
 do_arg_with([xlib])
 
 if test "x$with_xlib" != "xno"; then
-  AC_CHECK_HEADER(X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
-
-  if test "x$cv_libx_h" = "xno"; then
-    AC_CHECK_HEADER(X11R6/include/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
-    if test "x$cv_libx_h" = "xyes"; then
-      XLIB_HOME=/usr/X11R6
+  if test "x$xlib_HOME" = "x" ; then
+    XLIB_HOME=/usr/X11
+    if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+       XLIB_HOME=/usr/X11R6
+       if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+          XLIB_HOME=/usr/openwin
+	  if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+	     XLIB_HOME=/opt/X11
+	     if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+	        XLIB_HOME=/usr/local
+             fi
+	  fi
+       fi
     fi
-
-    if test "x$cv_libx_h" = "xno"; then
-      AC_CHECK_HEADER(/opt/X11/include/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
-      if test "x$cv_libx_h" = "xyes"; then
-        XLIB_HOME=/opt/X11
-      fi
-    fi
-
-    if test "x$cv_libx_h" = "xno"; then
-      AC_CHECK_HEADER(/usr/openwin/include/X11/Xlib.h, [cv_libx_h=yes], [cv_libx_h=no])
-      if test "x$cv_libx_h" = "xyes"; then
-        XLIB_HOME=/usr/openwin
-      fi
-    fi
-    
+  else
+    XLIB_HOME=$xlib_HOME
   fi
- 
-  do_lib_check([X11], [${X11_HOME}], [X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h],
+
+  do_lib_check([X11], [${XLIB_HOME}], [X11/Xlib.h X11/Xos.h X11/Xutil.h X11/Xatom.h],
 		    [XAllocColorCells], [HAVE_LIBX11], [C])
 fi
 ])

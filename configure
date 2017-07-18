@@ -7376,60 +7376,26 @@ fi
 
 
 if test "x$with_xlib" != "xno"; then
-  ac_fn_c_check_header_mongrel "$LINENO" "X11/Xlib.h" "ac_cv_header_X11_Xlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_X11_Xlib_h" = xyes; then :
-  cv_libx_h=yes
-else
-  cv_libx_h=no
-fi
-
-
-
-  if test "x$cv_libx_h" = "xno"; then
-    ac_fn_c_check_header_mongrel "$LINENO" "X11R6/include/X11/Xlib.h" "ac_cv_header_X11R6_include_X11_Xlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_X11R6_include_X11_Xlib_h" = xyes; then :
-  cv_libx_h=yes
-else
-  cv_libx_h=no
-fi
-
-
-    if test "x$cv_libx_h" = "xyes"; then
-      XLIB_HOME=/usr/X11R6
+  if test "x$xlib_HOME" = "x" ; then
+    XLIB_HOME=/usr/X11
+    if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+       XLIB_HOME=/usr/X11R6
+       if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+          XLIB_HOME=/usr/openwin
+	  if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+	     XLIB_HOME=/opt/X11
+	     if test ! -f "${XLIB_HOME}/include/X11/Xlib.h" ; then
+	        XLIB_HOME=/usr/local
+             fi
+	  fi
+       fi
     fi
-
-    if test "x$cv_libx_h" = "xno"; then
-      ac_fn_c_check_header_mongrel "$LINENO" "/opt/X11/include/X11/Xlib.h" "ac_cv_header__opt_X11_include_X11_Xlib_h" "$ac_includes_default"
-if test "x$ac_cv_header__opt_X11_include_X11_Xlib_h" = xyes; then :
-  cv_libx_h=yes
-else
-  cv_libx_h=no
-fi
-
-
-      if test "x$cv_libx_h" = "xyes"; then
-        XLIB_HOME=/opt/X11
-      fi
-    fi
-
-    if test "x$cv_libx_h" = "xno"; then
-      ac_fn_c_check_header_mongrel "$LINENO" "/usr/openwin/include/X11/Xlib.h" "ac_cv_header__usr_openwin_include_X11_Xlib_h" "$ac_includes_default"
-if test "x$ac_cv_header__usr_openwin_include_X11_Xlib_h" = xyes; then :
-  cv_libx_h=yes
-else
-  cv_libx_h=no
-fi
-
-
-      if test "x$cv_libx_h" = "xyes"; then
-        XLIB_HOME=/usr/openwin
-      fi
-    fi
-
+  else
+    XLIB_HOME=$xlib_HOME
   fi
 
 
-if test  x${X11_HOME} != "x"
+if test  x${XLIB_HOME} != "x"
 then
 
 	TMP_CPPFLAGS=$CPPFLAGS
@@ -7437,7 +7403,7 @@ then
  	TMP_CFLAGS=$CFLAGS
  	TMP_LIBS=$LIBS
 
-	for part in -I${X11_HOME}/include -I${X11_HOME}
+	for part in -I${XLIB_HOME}/include -I${XLIB_HOME}
   	do
 		FOUND=
 		for itm in $CPPFLAGS -a -z $FOUND
@@ -7453,7 +7419,7 @@ then
 		fi
 	done
 
-  	for part in -L${X11_HOME}/lib
+  	for part in -L${XLIB_HOME}/lib
   	do
 		FOUND=
 		for itm in $LDFLAGS -a -z $FOUND
@@ -7596,6 +7562,7 @@ $as_echo "#define HAVE_LIBX11 1" >>confdefs.h
 	      fi
 
 else
+  cv_libX11=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -7603,8 +7570,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${X11_HOME})" >&5
-$as_echo_n "checking checking lib X11 in (${X11_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${XLIB_HOME})" >&5
+$as_echo_n "checking checking lib X11 in (${XLIB_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7618,8 +7585,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${X11_HOME})" >&5
-$as_echo_n "checking checking lib X11 in (${X11_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib X11 in (${XLIB_HOME})" >&5
+$as_echo_n "checking checking lib X11 in (${XLIB_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -7842,6 +7809,7 @@ $as_echo "#define HAVE_LIBFREETYPE 1" >>confdefs.h
 	      fi
 
 else
+  cv_libfreetype=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -8074,6 +8042,7 @@ $as_echo "#define HAVE_LIBXFT 1" >>confdefs.h
 	      fi
 
 else
+  cv_libXft=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -8304,6 +8273,7 @@ $as_echo "#define HAVE_LIBJPEG 1" >>confdefs.h
 	      fi
 
 else
+  cv_libjpeg=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -8533,6 +8503,7 @@ $as_echo "#define HAVE_LIBPNG 1" >>confdefs.h
 	      fi
 
 else
+  cv_libpng=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -9299,6 +9270,7 @@ $as_echo "#define HAVE_LIBFTGL 1" >>confdefs.h
 	      fi
 
 else
+  cv_libftgl=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -9675,6 +9647,7 @@ $as_echo "#define HAVE_LIBOGG 1" >>confdefs.h
 	      fi
 
 else
+  cv_libogg=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -9879,6 +9852,7 @@ $as_echo "#define HAVE_LIBVORBIS 1" >>confdefs.h
 	      fi
 
 else
+  cv_libvorbis=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -10083,6 +10057,7 @@ $as_echo "#define HAVE_LIBVORBISFILE 1" >>confdefs.h
 	      fi
 
 else
+  cv_libvorbisfile=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -10312,6 +10287,7 @@ $as_echo "#define HAVE_LIBSDL 1" >>confdefs.h
 	      fi
 
 else
+  cv_libSDL=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -10541,6 +10517,7 @@ $as_echo "#define HAVE_LIBSMPEG 1" >>confdefs.h
 	      fi
 
 else
+  cv_libsmpeg=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -10770,6 +10747,7 @@ $as_echo "#define HAVE_LIBOPENAL 1" >>confdefs.h
 	      fi
 
 else
+  cv_libopenal=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -10974,6 +10952,7 @@ $as_echo "#define HAVE_LIBALUT 1" >>confdefs.h
 	      fi
 
 else
+  cv_libalut=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -11675,6 +11654,7 @@ $as_echo "#define HAVE_LIBZ 1" >>confdefs.h
 	      fi
 
 else
+  cv_libz=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -11906,6 +11886,7 @@ $as_echo "#define HAVE_LIBIODBC 1" >>confdefs.h
 	      fi
 
 else
+  cv_libiodbc=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -12112,6 +12093,7 @@ $as_echo "#define HAVE_LIBODBC 1" >>confdefs.h
 	      fi
 
 else
+  cv_libodbc=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -12348,6 +12330,7 @@ $as_echo "#define HAVE_LIBPTHREAD 1" >>confdefs.h
 	      fi
 
 else
+  cv_libpthread=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -12577,6 +12560,7 @@ $as_echo "#define HAVE_LIBSSL 1" >>confdefs.h
 	      fi
 
 else
+  cv_libssl=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -12781,6 +12765,7 @@ $as_echo "#define HAVE_LIBCRYPTO 1" >>confdefs.h
 	      fi
 
 else
+  cv_libcrypto=no
 
 
 	CFLAGS=$TMP_CFLAGS

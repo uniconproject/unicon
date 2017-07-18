@@ -347,7 +347,7 @@ if test "x$graphics" = "xyes"; then
     XL="-L../../bin -lXpm \$(XLIBS)"
     XPM=xpm
 
-    if test "$cv_libFTGL" = "yes"; then
+    if test "$cv_libftgl" = "yes"; then
         DRAWSTRING=drawstring3d.o
     	COMMONDRAWSTRING=../common/drawstring3d.o
    fi

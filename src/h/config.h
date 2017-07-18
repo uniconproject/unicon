@@ -96,6 +96,71 @@
 #endif					/* FreeBSD */
 
 
+#if Windows
+
+/*
+ * 0x501 => WindowsXP or later
+ */
+
+#if !defined(WINVER) || (WINVER < 0x0501)
+#undef WINVER
+#define WINVER 0x0501
+#define HAVE_GETADDRINFO
+#endif
+
+#define HostStr "Win32 Intel GCC"
+#define IconAlloc
+#define Precision 16
+#define IcodeSuffix ".exe"
+#define IcodeASuffix ".EXE"
+#define SystemFnc
+#define SysTime <sys/time.h>
+#define Standard
+/*
+ * Header is used in winnt.h; careful how we define it here
+ */
+#define Header header
+#define NT 1
+#define NTGCC 1
+#define CComp "gcc"
+#define ShellHeader
+
+#define index strchr
+#define rindex strrchr
+#define strdup _strdup
+#define unlink _unlink
+
+#define MSDOS 1
+#define StandardC
+#define ZERODIVIDE
+#define QSortFncCast int (*)(const void *,const void *)
+
+/* #define Eve */
+#define PosixFns
+#define KeyboardFncs
+#define ISQL
+#define NoCrypt
+#define Dbm
+#define Messaging 1
+#define HAVE_STRERROR
+
+#if defined(Messaging) && defined(OLD_NTGCC)
+#define ssize_t signed
+#endif					/* Messaging && OLD_NTGCC */
+
+#define LoadFunc
+#define FieldTableCompression 1
+#define HAVE_LIBGL 1
+
+
+/* StackCheck seems to cause a crash when exiting through 
+ * pressing the [x] close window button, turn it off for now 
+ */
+#define NoStackCheck
+
+#endif					/* Windows */
+
+
 /*
  * If COMPILER is not defined, code for the interpreter is compiled.
  */
@@ -433,7 +498,11 @@
 #endif					/* StackAlign */
 
 #ifndef WordBits
-   #define WordBits (SIZEOF_LONG_INT * 8)
+   #if Windows
+      #define WordBits (SIZEOF_INT_P * 8)
+   #else
+      #define WordBits (SIZEOF_LONG_INT * 8)
+   #endif				/* Windows */
 #endif					/* WordBits */
 
 #ifndef IntBits
@@ -441,7 +510,13 @@
 #endif					/* IntBits */
 
 #if (WordBits == 64)
-#define Double
+   #if Windows
+      #define MSWIN64
+      #define LongLongWord
+   #endif				/* Windows */
+   #ifndef OLD_NTGCC
+      #define Double
+   #endif				/* OLD_NTGCC */
 #endif
 
 #ifndef SourceSuffix

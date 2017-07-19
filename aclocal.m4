@@ -121,7 +121,7 @@ AC_DEFUN([CHECK_FREETYPE],
 [
 do_arg_with([freetype])
 
-ftsave_CPPFLAGS=$CPPFLAGS
+
 if test "x$freetype_HOME" = "x" ; then
    FREETYPE_HOME=/usr/X11
    if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
@@ -130,13 +130,25 @@ if test "x$freetype_HOME" = "x" ; then
         FREETYPE_HOME=/usr
       fi
    fi
+#   AC_PATH_PROG(FREETYPE_CONFIG,freetype-config)   
 else
    FREETYPE_HOME=$freetype_HOME
+#   AC_PATH_PROG(FREETYPE_CONFIG,freetype-config,,[$freetype_HOME/bin:$PATH])
 fi
 
 if test "x$with_freetype" != "xno"; then
-  CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include/freetype2 "   
-  do_lib_check([freetype], [${freetype_HOME}], [freetype2/ft2build.h],
+  ftsave_CPPFLAGS=$CPPFLAGS
+#  if test -n "$FREETYPE_CONFIG"; then
+#     FREETYPE_CFLAGS=`$FREETYPE_CONFIG --cflags`
+#     FREETYPE_LIBS=`$FREETYPE_CONFIG --libs`
+#     echo $FREETYPE_CONFIG reports cflags=$FREETYPE_CFLAGS  libs=$FREETYPE_LIBS
+#  else
+     FREETYPE_CFLAGS="-I$FREETYPE_HOME/include/freetype2"
+#  fi
+
+  CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS "
+
+  do_lib_check([freetype], [${freetype_HOME}], [freetype/fttypes.h],
 			 [FT_Open_Face], [HAVE_LIBFREETYPE], [C])
    if test "x$cv_freetype" = "xno" ; then
       CPPFLAGS=$ftsave_CPPFLAGS

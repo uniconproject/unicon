@@ -7633,7 +7633,7 @@ fi
 
 
 
-ftsave_CPPFLAGS=$CPPFLAGS
+
 if test "x$freetype_HOME" = "x" ; then
    FREETYPE_HOME=/usr/X11
    if test ! -f "${FREETYPE_HOME}/include/freetype2/freetype/freetype.h" ; then
@@ -7642,12 +7642,24 @@ if test "x$freetype_HOME" = "x" ; then
         FREETYPE_HOME=/usr
       fi
    fi
+#   AC_PATH_PROG(FREETYPE_CONFIG,freetype-config)
 else
    FREETYPE_HOME=$freetype_HOME
+#   AC_PATH_PROG(FREETYPE_CONFIG,freetype-config,,[$freetype_HOME/bin:$PATH])
 fi
 
 if test "x$with_freetype" != "xno"; then
-  CPPFLAGS="$CPPFLAGS -I${FREETYPE_HOME}/include/freetype2 "
+  ftsave_CPPFLAGS=$CPPFLAGS
+#  if test -n "$FREETYPE_CONFIG"; then
+#     FREETYPE_CFLAGS=`$FREETYPE_CONFIG --cflags`
+#     FREETYPE_LIBS=`$FREETYPE_CONFIG --libs`
+#     echo $FREETYPE_CONFIG reports cflags=$FREETYPE_CFLAGS  libs=$FREETYPE_LIBS
+#  else
+     FREETYPE_CFLAGS="-I$FREETYPE_HOME/include/freetype2"
+#  fi
+
+  CPPFLAGS="$CPPFLAGS $FREETYPE_CFLAGS "
+
 
 if test  x${freetype_HOME} != "x"
 then
@@ -7739,12 +7751,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	# If we have mulltiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
-        for ac_header in freetype2/ft2build.h
+        for ac_header in freetype/fttypes.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "freetype2/ft2build.h" "ac_cv_header_freetype2_ft2build_h" "$ac_includes_default"
-if test "x$ac_cv_header_freetype2_ft2build_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "freetype/fttypes.h" "ac_cv_header_freetype_fttypes_h" "$ac_includes_default"
+if test "x$ac_cv_header_freetype_fttypes_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_FREETYPE2_FT2BUILD_H 1
+#define HAVE_FREETYPE_FTTYPES_H 1
 _ACEOF
 
 else

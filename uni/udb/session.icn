@@ -74,7 +74,6 @@ end
 # Parse a command
 #
 method parse_Command(cmd)
-
    case cmd[1] of{
      #-The start of the standard debugging commands
      "load"   :{  cmdLoad(cmd)                      }
@@ -258,6 +257,15 @@ method cmdPrint(cmd)
       Debug.Internal.cmdPrintInfo(cmd[3])
    else if \cmd[2] & cmd[2] == "-trace" then
       Debug.Watch.cmdPrintTrace(cmd)
+   else if \cmd[1] & cmd[1] == "pat" then {
+      if Debug.DState.RunCode ~= PSTEP then {
+         DState.State := ERROR
+        Message   := "\n   No pattern match environment active"||
+                     "\n   Try \"help\" for assistance."
+         DState.Write(Message)
+         }
+      else Debug.Step.cmdPrintPat(cmd)
+      }
    else
       Debug.Print.cmdPrint(cmd)
 end

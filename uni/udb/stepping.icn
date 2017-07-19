@@ -16,8 +16,7 @@ class Stepping(
    next_count,  # the cmdNext optional counter, initial value 0, default 1
    nex_level,   # used with the next command to skip over a call
    msg,         # a string with latest message from this class
-   pat,         # store the current pstep pattern
-   assignVal,   # assignment value	       
+   pat,         # store the current pstep pattern	       
    curPelem,    # the current pelem we are on
    pPos         # stores the previous position of the current total match       
    )	
@@ -233,8 +232,9 @@ method handle_pstep_fail()
          msg ||:= "pos:"||keyword("pos", Monitored)|| " out of string length "
          msg ||:= *keyword("subject", Monitored)
          msg ||:= "\n   Sub: " || truncateLine()
-         msg ||:= "\n" || getUnderlined()
+         msg ||:= getUnderlined()
          patElem := getPatElem(pat, cur_index)
+         if DState.State = ERROR then return
          msg ||:= "\n   Pat: "||patElem[1]
          msg ||:= "\n" || patElem[2]
          DState.Write(msg)
@@ -267,19 +267,18 @@ method handle_pstep_attempt()
       DState.RunCode := PSTEP
       return 
       }
-   else if curPelem = PC_Arbno_X | curPelem = PC_Arbno_S then {
+   else if curPelem = PC_Arbno_X|curPelem = PC_Arbno_S|curPelem = PC_Arb_X then {
       cur_index := keyword("patindex", Monitored)
-      msg := "\n\n   Placing Arbno on the pattern stack, Continuing... "
-      msg ||:= "\n   "||pindex_image(pat, cur_index)
-      step_count := 1
-      DState.Write(msg)
-      DState.State := RUN
-      DState.RunCode := PSTEP
-      }
-   else if curPelem = PC_Arb_X then {
-      cur_index := keyword("patindex", Monitored)
-      msg := "\n\n   Placing Arb on the pattern stack, Continuing... "
-      msg ||:= "\n   "||pindex_image(pat, cur_index - 1)
+      if curPelem = PC_Arbno_X | curPelem = PC_Arbno_S then {
+         msg := "\n\n   Placing Arbno on the pattern stack, Continuing... "
+         patElem := getPatElem(pat, cur_index)
+         }
+      else {
+         msg := "\n\n   Placing Arb on the pattern stack, Continuing... "
+         patElem := getPatElem(pat, cur_index - 1) ##PC_Arb_Y is imaged
+         }
+      msg ||:= "\n   Pat: "||patElem[1]
+      msg ||:= "\n" || patElem[2]
       step_count := 1
       DState.Write(msg)
       DState.State := RUN
@@ -287,8 +286,7 @@ method handle_pstep_attempt()
       }
    else if curPelem = PC_R_Enter then {
       step_count := 1
-      assignPos := keyword("pos", Monitored)
-      return  #keep track of assign position begins
+      return 
       }
 
    step_count := 1 ##could get here via other pelem_attempts
@@ -308,54 +306,43 @@ method handle_pstep_match()
 
    case curPelem of {
       PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
-      PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF : {
-         msg ||:= "\n   Total Matched String: "||image(totalMatch)
-         msg ||:= "\n   "||"Cursor Position: "||keyword("pos", Monitored)
-         }
-      PC_Setcur : {
-         msg ||:= "\n   Total Matched String: "||image(totalMatch)
-         msg ||:= "\n   "||"Cursor Position on Assignment: "
-         msg ||:= keyword("pos", Monitored)
-         msg ||:= "\n   Assigned Pattern Element: "
-         msg ||:= "\n   "||pindex_image(pat, cur_index)
-         DState.Write(msg)
-         DState.State := PAUSE
-         DState.RunCode := PSTEP
-         return
-      }
-      PC_Assign_Imm | PC_Assign_OnM : {
-         msg ||:= "\n   Total Matched String: "||image(totalMatch)
+      PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF |
+      PC_Assign_Imm | PC_Assign_OnM | PC_Setcur: {
          if curPelem = PC_Assign_Imm then
-            msg ||:= "\n   Assignment Value: "
-         else
-            msg ||:= "\n   Assignment Value if Match: "
-         msg ||:= image(assignVal)
-         msg ||:= "\n   Assigned Pattern Element: "
-         msg ||:= "\n   "||pindex_image(pat, cur_index)
-         DState.Write(msg)
-         DState.State := PAUSE
-         DState.RunCode := PSTEP
-         return 
+            msg := "\n   Value assigned "
+         else if curPelem = PC_Assign_OnM then 
+            msg := "\n   Value assigned on match "
+         else if curPelem = PC_Setcur then 
+            msg := "\n   "||"pos:"||keyword("pos", Monitored)||" assigned"
+         else {
+            msg := "\n   "||"Cursor position matched at pos:"
+            msg ||:= keyword("pos", Monitored)
          }
-      PC_Fence_X | PC_R_Enter | PC_EOP |PC_Arbno_Y : { ## no ops 
+         patElem := getPatElem(pat, cur_index)
+         msg ||:= "\n   Pat: "||patElem[1]
+         msg ||:= "\n" || patElem[2]
          step_count := 1
+         DState.Write(msg)
          DState.State := RUN
          DState.RunCode := PSTEP
          return 
          }
-      PC_Unanchored : { ## Match is retrying. Set new position,reset totalMatch
-         msg := "\n   Match has failed with no alternatives,"
-         msg ||:= " starting from the beginning..."
-         pPos := keyword("pos", Monitored) 
+      PC_Fence_X | PC_R_Enter | PC_EOP |PC_Arbno_Y | PC_Unanchored: {  
+         if curPelem = PC_Unanchored then { ## Match is retrying. Set new pos
+            msg := "\n   Match has failed with no alternatives,_
+                    starting from the beginning..."
+            pPos := keyword("pos", Monitored)
+            DState.Write(msg)
+            }
          step_count := 1
-         DState.Write(msg) 
          DState.State := RUN
          DState.RunCode := PSTEP
          return 
          }
       default : {
          msg ||:= "\n   Sub: " || truncateLine()
-         msg ||:= "\n" || getUnderlined()
+         msg ||:= getUnderlined()
+         if DState.State = ERROR then return
          }
       }
       patElem := getPatElem(pat, cur_index)
@@ -370,7 +357,7 @@ method getUnderlined()
    local buff_len := 8         ##"   Sub: <string>"
    local image_max := 72
    local ellipse := 6
-   local underlined := ""
+   local underlined := "\n        "
    local cur_pos := keyword("pos", Monitored)
    local sub := keyword("subject", Monitored)
 
@@ -378,8 +365,6 @@ method getUnderlined()
 
    if cur_pos >= (image_max - ellipse) then {
       sub ? {
-         every 1 to buff_len do underlined ||:= " " 
-
          if pPos < (image_max - ellipse) then {
             underlined ||:= "..."
             tab(cur_pos - ((image_max - ellipse)/2))
@@ -407,7 +392,7 @@ method getUnderlined()
       return underlined
       }
    else{
-      every 1 to (buff_len +(pPos - 1)) do underlined ||:= " "
+      every 1 to pPos - 1 do underlined ||:= " "
       every pPos to cur_pos - 1 do underlined ||:= "."
       underlined ||:= "^"
       }
@@ -459,16 +444,20 @@ method getPatElem(pat, index)
    ##and end to the pattern element we are looking for
 
    patImage ? {
-      while &pos < *patImage + 2 do {
+      repeat {
          if (patImage[&pos:&pos+1] ~== patImageB[&pos:&pos+1]) then{
             elemStart := &pos
             break
             }
-         if &pos = 0 then write("Error: No indicated element before EOP")
+         if &pos = *patImage + 1 then{
+             DState.State := ERROR
+             msg := "\n Error: No Bracketed Image found before EOP"
+             DState.Write(msg)
+             }
          move(1)
          }
 
-      while &pos < *patImage + 2 do {
+      repeat {
       if (patImage[&pos:&pos+1] ~=== patImageB[&pos+1:&pos+2] |
           (&pos = *patImage + 1 & patImageB[&pos+1:&pos+2] == ']')) then{
             elemEnd := &pos
@@ -476,7 +465,7 @@ method getPatElem(pat, index)
             }
          move(1)
          }
-     }
+      }
 
    patImage ? {
       if elemStart > (image_max/2) then { ##if start pos is greater than 1/2
@@ -497,7 +486,7 @@ method getPatElem(pat, index)
      ##While the image hasn't been fully processed move through
      ##while allocating dots until the endElem position has been reached
      ##Go to the end of the line. If that exceeds available, truncate
-      write("here")
+
       while(&pos < *patImage + 1) do {
          final_image ||:= move(1)
          if &pos <= elemEnd then         under_image ||:= "."
@@ -515,17 +504,20 @@ end
 method silentStep()
 
    if &eventcode == E_PatAttempt then {
-      pat := curPelem
+      pat := &eventvalue
       step_count -:= 1
       }
+   else if &eventcode == E_PelemAttempt then curPelem := &eventvalue
    else {
     case curPelem of {
        PC_Fence_X | PC_R_Enter | PC_EOP | PC_Arbno_X | PC_Arbno_S | 
-       PC_Assign | PC_Arb_X | PC_R_Remove | PC_R_Restore : {
+       PC_Assign | PC_Arb_X | PC_R_Remove | PC_R_Restore |
+       PC_Assign_Imm | PC_Assign_OnM | PC_Setcur |
+       PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
+       PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF : {
           return
           }
        PC_Unanchored :{
-          totalMatch := null
           pPos := keyword("pos", Monitored)
           return 
           }
@@ -534,6 +526,82 @@ method silentStep()
           }
        }
    }
+end
+
+method cmdPrintPat(option)
+   local cur_subject, cur_pos, cur_index
+   local sub_image
+   local patImage, patImageB
+   local final_image := "\n   Pat: "
+   local max_len := 72
+   local not_both := 0
+
+   cur_subject := keyword("subject", Monitored)
+   cur_pos := keyword("pos", Monitored)
+   cur_index := keyword("patindex", Monitored)
+
+   if option[2] == "-p" | option[2] == "-s" then {not_both := 1}
+
+   if not_both = 0 | option[2] == "-s" then {
+      sub_image := "\n   Sub: "
+      if *cur_subject <= max_len then
+         sub_image ||:= truncateLine() || getUnderlined()
+      else {
+         cur_subject ? {
+            sub_image ||:= tab(pPos)
+            sub_image ||:= "-->"
+            sub_image ||:= tab(cur_pos)
+            sub_image ||:= "<--"
+            sub_image ||:= tab(0)
+            }
+         }
+      }
+   if not_both = 0 | option[2] =="-p" then {
+      patImage := pindex_image(pat, -1)
+
+      if *patImage <= max_len then {  ##patImage is less than full line
+         patElem := getPatElem(pat, cur_index)
+         final_image := "\n   Pat: "||patElem[1]
+         final_image ||:= "\n" || patElem[2]
+         }
+      else {
+         final_image := "\n   Pat: "
+         if curPelem == PC_Arb_X then cur_index := cur_index - 1
+         patImageB := pindex_image(pat, cur_index)
+
+         patImage ? {  ##similar in methodology to truncateLine/getUnderlined()
+            repeat {
+               if (patImage[&pos:&pos+1] ~== patImageB[&pos:&pos+1]) then{
+                  final_image ||:= "==> "
+                  break
+                  }
+               if &pos = *patImage + 1 then{
+                  DState.State := ERROR
+                  msg := "\n Error: No Bracketed Image found before EOP"
+                  DState.Write(msg)
+                  }
+               final_image ||:= move(1)
+               }
+            repeat {
+               if patImage[&pos:&pos+1] ~=== patImageB[&pos+1:&pos+2] |
+                  (&pos = *patImage + 1 & patImageB[&pos+1:&pos+2] == ']') then{
+                  final_image ||:= " <=="
+                  break
+                  }
+                final_image ||:= move(1)
+                }
+            while &pos ~= *patImage + 1 do final_image ||:= move(1)
+            }
+         }
+      }
+   if not_both = 0 then
+      msg := sub_image || "\n" || final_image
+   else if option[2] == "-p" then
+      msg := final_image
+   else
+      msg := sub_image
+
+   DState.Write(msg)
 end
 
 #
@@ -583,7 +651,6 @@ method pEnd()
 
    pPos := 1 
    pat := &null
-   assignVal := &null
    curPelem := &null
 end
 
@@ -615,6 +682,5 @@ initially()
    pPos := 1 
    nex_level  := &null
    pat   := &null
-   assignVal := &null
    curPelem := &null
 end

@@ -2365,10 +2365,6 @@ Node_Succeed:
 	 fwrite(pat_sub + StackCursor(Stack_Base - 1), 1,
 		(k_pos - 1) - StackCursor(Stack_Base - 1), f->fd.fp);
 	 fputc('\n', f->fd.fp);
-	 
-	 StrLen(evalue) = (k_pos - 1) - StackCursor(Stack_Base - 1);
-         StrLoc(evalue) = pat_sub + StackCursor(Stack_Base - 1);
-	 EVValD(&evalue, E_Value);
 	 }
       else {
 	 EVVar(&varref, E_Assign);
@@ -2384,11 +2380,6 @@ Node_Succeed:
        */
    case PC_Assign_OnM : {
       StackNode(Stack_Base - 1) = (union block *)Node;
-
-      StrLen(evalue) = (k_pos - 1) - StackCursor(Stack_Base - 1);
-      StrLoc(evalue) = pat_sub + StackCursor(Stack_Base - 1);
-      EVValD(&evalue, E_Value);
-      
       Push (&CP_Assign);
       Pop_Region();
       Assign_OnM = 1;

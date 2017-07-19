@@ -21,6 +21,8 @@ Iconc: Common
 	$(MAKE) -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 
+.PHONY: Common Icont Iconx Iconc Clean Pure
+
 Clean Pure:
 	cd iconc;	rm -f *.o iconc
 	cd common;	rm -f *.o doincl patchstr

@@ -363,9 +363,9 @@ method getUnderlined()
 
    line_max := image_max + buff_len
 
-   if cur_pos >= (image_max - ellipse) then {
+   if cur_pos >= (image_max - ellipse) then { ##line exceeds length
       sub ? {
-         if pPos < (image_max - ellipse) then {
+         if pPos < (image_max - ellipse) then { ## pPos is before truncate
             underlined ||:= "..."
             tab(cur_pos - ((image_max - ellipse)/2))
 
@@ -374,7 +374,7 @@ method getUnderlined()
                underlined ||:= "."
                }
              }
-         else {
+         else {  ##pPos not before truncate. Tab to it and start dotting under
             underlined ||:= "   "
             tab(cur_pos - ((image_max - ellipse)/2))
 
@@ -391,7 +391,7 @@ method getUnderlined()
       underlined ||:= "^"
       return underlined
       }
-   else{
+   else{ ## line doesn't exceed length. Find pPos and underline
       every 1 to pPos - 1 do underlined ||:= " "
       every pPos to cur_pos - 1 do underlined ||:= "."
       underlined ||:= "^"
@@ -409,18 +409,18 @@ method truncateLine()
    local ellipse := 6
    local count := 1
 
-   if *sub + 1 > image_max then {
+   if *sub + 1 > image_max then { ## sub exceeds the max_len
       sub ? {
-         if cur_pos >= (image_max - ellipse) then {
+         if cur_pos >= (image_max - ellipse) then { ##cursor is beyond max_len
             image := "..."
-            tab(cur_pos - ((image_max - ellipse)/2))
+            tab(cur_pos - ((image_max - ellipse)/2)) #tab halfway behind cursor
             }
-         image ||:= tab(cur_pos)
+         image ||:= tab(cur_pos) #tab to the current position (no ellipses)
          while(&pos < (*sub + 1) & *image < (image_max - ellipse)) do{
             image ||:= move(1)
             count +:= 1
             }
-         if &pos ~= *sub + 1 then image ||:= "..."
+         if &pos ~= *sub + 1 then image ||:= "..." ##end is beyond max_len
          }
       return image
       }
@@ -468,7 +468,7 @@ method getPatElem(pat, index)
       }
 
    patImage ? {
-      if elemStart > (image_max/2) then { ##if start pos is greater than 1/2
+      if *patImage > (image_max) & elemStart > (image_max/2) then {
          final_image ||:= "..."           ##of the available space then truncate
          under_image ||:= "   "
          tab(elemStart - ((image_max - ellipse)/2))
@@ -491,7 +491,7 @@ method getPatElem(pat, index)
          final_image ||:= move(1)
          if &pos <= elemEnd then         under_image ||:= "."
          else if &pos = elemEnd + 1 then under_image ||:= "^"
-         if *final_image >= (image_max - (ellipse/2)) then {
+         if *final_image >= image_max - (ellipse/2) & *patImage > image_max then{
             final_image ||:= "..."
             if &pos < elemEnd then under_image ||:= ".^ "
             return L := [final_image, under_image]

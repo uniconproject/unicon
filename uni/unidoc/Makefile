@@ -36,6 +36,7 @@ help:
 
 UniDoc: $(UFILES) UniDoc.icn
 	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) UniDoc
+	$(CP) UniDoc$(EXE) ../../bin/
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)

@@ -1,5 +1,8 @@
 SHELL=/bin/sh
 
+BASE=../..
+include ../Makedefs
+
 ########################################################
 # Manage the construction of the UniDoc program        #
 ########################################################
@@ -29,14 +32,14 @@ help:
 #    commonly used suffixes.
 #
 %.u:	%.icn
-	IPATH=../parser/ LPATH=../parser/ unicon -c $?
+	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) -c $?
 
 UniDoc: $(UFILES) UniDoc.icn
-	IPATH=../parser/ LPATH=../parser/ unicon UniDoc
+	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) UniDoc
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
-	IPATH=../parser/ LPATH=../parser/ unicon -c $?
+	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) -c $?
 
 doc docs:	UniDoc
 	./buildDocs.sh

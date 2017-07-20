@@ -11,7 +11,7 @@
 
 UDB=udb -line
 
-all: basic watchpoints internals info assert trace
+all: basic print watchpoints internals info assert trace
 
 basic: watchme
 	$(UDB) watchme <basic.udb &>basic.out
@@ -21,8 +21,15 @@ watchpoints: watchme
 	$(UDB) watchme <watch.udb &>watch.out
 	-diff watch.std watch.out
 
+print: printme
+	$(UDB) printme <print.udb &>print.out
+	-diff print.std print.out
+
 watchme: watchme.icn
 	unicon watchme
+
+printme: printme.icn
+	unicon printme
 
 internals:
 	$(UDB) watchme < counter_line.udb &>counter_line.out

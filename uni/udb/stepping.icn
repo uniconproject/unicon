@@ -114,7 +114,10 @@ method checkStep()
       DState.Write(msg)
       }
    else if DState.RunCode = PSTEP & step_count > 1 then {
-      return ##do nothing... still checking for pattern events 
+      step_count -:= 1
+      DState.State := RUN
+      DState.RunCode := PSTEP
+      return 
       }
 
    if step_count > 1 then {

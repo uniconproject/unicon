@@ -171,31 +171,6 @@ if test x"${enable_werror}" = x"yes" ; then
   WERROR="-Werror"
 fi
 
-# OS specific flags go here
-case $unicon_host in
-     *linux*)
-      AC_CFLAG([-fno-unit-at-a-time])
-      LDFLAGS="$LDFLAGS -rdynamic "
-      RLINK="-rdynamic -Wl,-E "
-      RLIBS="-lnsl -lcrypt "
-      CFDYN="-fPIC -shared "
-        ;;
-     *solaris*)
-	;;
-     *aix*)
-        ;;
-     *bsd*)
-        ;;
-     *macos*)
-       AC_CFLAG([-Wno-parentheses-equality])
-       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
-	;;
-     *windows*)
-       EXE=".exe"
-        ;;
-esac
-
-
 #AC_GNU_SOURCE
 
 AC_CONFIG_SRCDIR([src/runtime/imain.r])
@@ -239,6 +214,34 @@ case $ac_cv_sizeof_int_p in
 esac
 
 OBJ=O
+
+# OS specific flags go here
+case $unicon_host in
+     *linux*)
+      AC_CFLAG([-fno-unit-at-a-time])
+      LDFLAGS="$LDFLAGS -rdynamic "
+      RLINK="-rdynamic -Wl,-E "
+      RLIBS="-lnsl -lcrypt "
+      CFDYN="-fPIC -shared "
+        ;;
+     *solaris*)
+	;;
+     *aix*)
+        ;;
+     *bsd*)
+        ;;
+     *macos*)
+       AC_CFLAG([-Wno-parentheses-equality])
+       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
+       DASHX=-x
+	;;
+     *windows*)
+       EXE=".exe"
+       LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB -Xlinker --stack -Xlinker "
+       CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+        ;;
+esac
+
 
 AC_SUBST(EXE)
 AC_SUBST(OBJ)
@@ -388,6 +391,7 @@ fi
   AC_SUBST(CMNT)
   AC_SUBST(SLNT)
   AC_SUBST(DASHS)
+  AC_SUBST(DASHX)
 
 if test -f src/asm/$unicon_host-rswitch.s; then
     echo "Native coswitch detected"

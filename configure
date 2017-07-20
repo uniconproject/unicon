@@ -626,6 +626,7 @@ ac_subst_vars='LTLIBOBJS
 GL_LDFLAGS
 GL_CFLAGS
 JV_LDFLAGS
+DASHX
 DASHS
 SLNT
 CMNT
@@ -4717,117 +4718,6 @@ if test x"${enable_werror}" = x"yes" ; then
   WERROR="-Werror"
 fi
 
-# OS specific flags go here
-case $unicon_host in
-     *linux*)
-      {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -fno-unit-at-a-time"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fno-unit-at-a-time" >&5
-$as_echo_n "checking whether $CC supports -fno-unit-at-a-time... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-else
-
-			CFLAGS="$ac_c_flag_save"
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-      LDFLAGS="$LDFLAGS -rdynamic "
-      RLINK="-rdynamic -Wl,-E "
-      RLIBS="-lnsl -lcrypt "
-      CFDYN="-fPIC -shared "
-        ;;
-     *solaris*)
-	;;
-     *aix*)
-        ;;
-     *bsd*)
-        ;;
-     *macos*)
-       {
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	ac_c_flag_save="$CFLAGS"
-	CFLAGS="$CFLAGS -Wno-parentheses-equality"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-parentheses-equality" >&5
-$as_echo_n "checking whether $CC supports -Wno-parentheses-equality... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-else
-
-			CFLAGS="$ac_c_flag_save"
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	}
-       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
-	;;
-     *windows*)
-       EXE=".exe"
-        ;;
-esac
-
-
 #AC_GNU_SOURCE
 
 
@@ -6761,6 +6651,120 @@ case $ac_cv_sizeof_int_p in
 esac
 
 OBJ=O
+
+# OS specific flags go here
+case $unicon_host in
+     *linux*)
+      {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -fno-unit-at-a-time"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -fno-unit-at-a-time" >&5
+$as_echo_n "checking whether $CC supports -fno-unit-at-a-time... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+      LDFLAGS="$LDFLAGS -rdynamic "
+      RLINK="-rdynamic -Wl,-E "
+      RLIBS="-lnsl -lcrypt "
+      CFDYN="-fPIC -shared "
+        ;;
+     *solaris*)
+	;;
+     *aix*)
+        ;;
+     *bsd*)
+        ;;
+     *macos*)
+       {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Wno-parentheses-equality"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-parentheses-equality" >&5
+$as_echo_n "checking whether $CC supports -Wno-parentheses-equality... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+       CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
+       DASHX=-x
+	;;
+     *windows*)
+       EXE=".exe"
+       LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB -Xlinker --stack -Xlinker "
+       CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+        ;;
+esac
+
 
 
 
@@ -9380,6 +9384,7 @@ $as_echo "#define NoGraphics 1" >>confdefs.h
 $as_echo "#define NoGraphics3D 1" >>confdefs.h
 
 fi
+
 
 
 

@@ -121,8 +121,8 @@ AC_ARG_ENABLE([devmode],
 			[devmode=yes], [devmode=no])
 			
 # Save flags 
-CFLAGS="${CFLAGS:-}"
-orig_cflags="$CFLAGS"
+orig_cflags="${CFLAGS:-}"
+CFLAGS=""
 AC_LANG([C])
 AC_USE_SYSTEM_EXTENSIONS
 # Try CC 99, or better
@@ -242,6 +242,9 @@ case $unicon_host in
         ;;
 esac
 
+if test "x$orig_cflags" != "x" ; then
+  CFLAGS="$CFLAGS $orig_cflags"
+fi
 
 AC_SUBST(EXE)
 AC_SUBST(OBJ)

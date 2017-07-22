@@ -95,7 +95,14 @@ struct	node *tree6		(int type,struct node *loc_model,
 struct node *buildarray		(struct node *a,struct node *lb,
 					struct node *e, struct node *rb);
 void	treeinit		(void);
+#if __clang__
+/* Declaring tsyserr as noreturn stops clang from emitting false positive 
+      "uninitialized variable" warning messages   */
+void    tsyserr    (char *s) __attribute__ ((noreturn,nothrow));
+#else
 void	tsyserr			(char *s);
+#endif
+
 void	writecheck		(int rc);
 void	yyerror			(char *s,int state);
 int	yylex			(void);

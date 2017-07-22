@@ -136,7 +136,13 @@ struct node      *tree5      (int type, struct node *loc_model,
 struct node      *tree6      (int type,struct node *loc_model,
 			       struct node *c, struct node *d,
 			       struct node *e, struct node *f);
+#if __clang__
+/* Declaring tsyserr as noreturn stops clang from emitting false positive 
+      "uninitialized variable" warning messages   */
+void              tsyserr    (char *s) __attribute__ ((noreturn,nothrow));
+#else
 void	          tsyserr    (char *s);
+#endif
 void	          twarn      (char *s1,char *s2);
 struct code      *typ_chk    (struct il_code *var, int typcd);
 int               type_case  (struct il_code *il, int (*fnc)(),

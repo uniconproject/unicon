@@ -2195,6 +2195,52 @@ $as_echo "$ac_res" >&6; }
 
 } # ac_fn_c_check_member
 
+# ac_fn_c_check_decl LINENO SYMBOL VAR INCLUDES
+# ---------------------------------------------
+# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
+# accordingly.
+ac_fn_c_check_decl ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  as_decl_name=`echo $2|sed 's/ *(.*//'`
+  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
+$as_echo_n "checking whether $as_decl_name is declared... " >&6; }
+if eval \${$3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+#ifndef $as_decl_name
+#ifdef __cplusplus
+  (void) $as_decl_use;
+#else
+  (void) $as_decl_name;
+#endif
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval "$3=yes"
+else
+  eval "$3=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+eval ac_res=\$$3
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_decl
+
 # ac_fn_cxx_try_cpp LINENO
 # ------------------------
 # Try to preprocess conftest.$ac_ext, and return whether this succeeded.
@@ -2368,52 +2414,6 @@ fi
   as_fn_set_status $ac_retval
 
 } # ac_fn_cxx_try_link
-
-# ac_fn_c_check_decl LINENO SYMBOL VAR INCLUDES
-# ---------------------------------------------
-# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
-# accordingly.
-ac_fn_c_check_decl ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  as_decl_name=`echo $2|sed 's/ *(.*//'`
-  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
-$as_echo_n "checking whether $as_decl_name is declared... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-#ifndef $as_decl_name
-#ifdef __cplusplus
-  (void) $as_decl_use;
-#else
-  (void) $as_decl_name;
-#endif
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  eval "$3=yes"
-else
-  eval "$3=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_decl
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -6816,7 +6816,8 @@ fi
 
 for ac_func in socket bcopy bzero memcpy memset inet_aton inet_pton \
 	       snprintf vsprintf rename ftruncate flock fsync \
-	       getrlimit setrlimit strerror strerror_r vfork
+	       getrlimit setrlimit strerror vfork \
+	       getrusage sysconf profil
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -6827,6 +6828,99 @@ _ACEOF
 
 fi
 done
+
+
+ac_fn_c_check_decl "$LINENO" "strerror_r" "ac_cv_have_decl_strerror_r" "$ac_includes_default"
+if test "x$ac_cv_have_decl_strerror_r" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_STRERROR_R $ac_have_decl
+_ACEOF
+
+for ac_func in strerror_r
+do :
+  ac_fn_c_check_func "$LINENO" "strerror_r" "ac_cv_func_strerror_r"
+if test "x$ac_cv_func_strerror_r" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STRERROR_R 1
+_ACEOF
+
+fi
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether strerror_r returns char *" >&5
+$as_echo_n "checking whether strerror_r returns char *... " >&6; }
+if ${ac_cv_func_strerror_r_char_p+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    ac_cv_func_strerror_r_char_p=no
+    if test $ac_cv_have_decl_strerror_r = yes; then
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+
+	  char buf[100];
+	  char x = *strerror_r (0, buf, sizeof buf);
+	  char *p = strerror_r (0, buf, sizeof buf);
+	  return !p || x;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_func_strerror_r_char_p=yes
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    else
+      # strerror_r is not declared.  Choose between
+      # systems that have relatively inaccessible declarations for the
+      # function.  BeOS and DEC UNIX 4.0 fall in this category, but the
+      # former has a strerror_r that returns char*, while the latter
+      # has a strerror_r that returns `int'.
+      # This test should segfault on the DEC system.
+      if test "$cross_compiling" = yes; then :
+  :
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+	extern char *strerror_r ();
+int
+main ()
+{
+char buf[100];
+	  char x = *strerror_r (0, buf, sizeof buf);
+	  return ! isalpha (x);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv_func_strerror_r_char_p=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+    fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_strerror_r_char_p" >&5
+$as_echo "$ac_cv_func_strerror_r_char_p" >&6; }
+if test $ac_cv_func_strerror_r_char_p = yes; then
+
+$as_echo "#define STRERROR_R_CHAR_P 1" >>confdefs.h
+
+fi
 
 
 ac_fn_c_check_func "$LINENO" "getopt" "ac_cv_func_getopt"
@@ -7321,29 +7415,6 @@ $as_echo "#define HAVE_CRYPT 1" >>confdefs.h
 fi
 
 
-ac_fn_c_check_func "$LINENO" "getrusage" "ac_cv_func_getrusage"
-if test "x$ac_cv_func_getrusage" = xyes; then :
-
-$as_echo "#define HAVE_GETRUSAGE 1" >>confdefs.h
-
-fi
-
-ac_fn_c_check_func "$LINENO" "sysconf" "ac_cv_func_sysconf"
-if test "x$ac_cv_func_sysconf" = xyes; then :
-
-$as_echo "#define HAVE_SYSCONF 1" >>confdefs.h
-
-fi
-
-ac_fn_c_check_func "$LINENO" "profil" "ac_cv_func_profil"
-if test "x$ac_cv_func_profil" = xyes; then :
-
-$as_echo "#define HAVE_PROFIL 1" >>confdefs.h
-
-fi
-
-
-
 if test "x$concurrent" = "xno"; then
 
 $as_echo "#define NoConcurrent 1" >>confdefs.h
@@ -7615,7 +7686,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
-  if test "x$cv_libX11" = xyes ; then
+  # if we have X11 or if we are running on MS Windows check for graphics libs
+  if test "x$cv_libX11" = xyes -o "x$unicon_os" = "xwindows" ; then
 
 
 
@@ -8969,7 +9041,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 fi
 
        # A C++ compiler must be present and usable
-       if test "$CXX" = "g++" -a "$GXX" = "yes"; then
+       if test "x$CXX" = "xg++" -a "x$GXX" = "xyes"; then
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'

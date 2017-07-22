@@ -289,9 +289,12 @@ ssl=no
 fi
 
 
-AC_CHECK_FUNCS(socket bcopy bzero memcpy memset inet_aton inet_pton \
+AC_CHECK_FUNCS([socket bcopy bzero memcpy memset inet_aton inet_pton \
 	       snprintf vsprintf rename ftruncate flock fsync \
-	       getrlimit setrlimit strerror strerror_r vfork)
+	       getrlimit setrlimit strerror vfork \
+	       getrusage sysconf profil])
+
+AC_FUNC_STRERROR_R()
 
 AC_REPLACE_FUNCS(getopt)
 AC_FUNC_FORK()
@@ -304,14 +307,6 @@ AC_SEARCH_LIBS([clock_gettime],[rt],
 	[AC_DEFINE([HAVE_CLOCK_GETTIME], [1], [gettime])])
 AC_SEARCH_LIBS([crypt],[crypt],
 	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
-
-AC_CHECK_FUNC(getrusage,
-	[AC_DEFINE([HAVE_GETRUSAGE], [1], [getrusage])])
-AC_CHECK_FUNC(sysconf,
-	[AC_DEFINE([HAVE_SYSCONF], [1], [sysconf])])
-AC_CHECK_FUNC(profil,
-	[AC_DEFINE([HAVE_PROFIL], [1], [profil for profiling loaded programs])])
-
 
 if test "x$concurrent" = "xno"; then
   AC_DEFINE([NoConcurrent], [1], [No Concurrency])
@@ -329,7 +324,8 @@ fi
 if test "x$graphics" = "xyes"; then
 
   CHECK_XLIB()
-  if test "x$cv_libX11" = xyes ; then
+  # if we have X11 or if we are running on MS Windows check for graphics libs
+  if test "x$cv_libX11" = xyes -o "x$unicon_os" = "xwindows" ; then
 
     CHECK_FREETYPE()
     CHECK_XFT()
@@ -339,7 +335,7 @@ if test "x$graphics" = "xyes"; then
     if test "x$graphics3d" = "xyes"; then
        CHECK_OPENGL()
        # A C++ compiler must be present and usable
-       if test "$CXX" = "g++" -a "$GXX" = "yes"; then
+       if test "x$CXX" = "xg++" -a "x$GXX" = "xyes"; then
          CHECK_FTGL()
        else
          echo "FTGL: missing or untrusted C++; CXX is $CXX and GXX is $GXX"

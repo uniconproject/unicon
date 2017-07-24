@@ -18,7 +18,10 @@ class Stepping(
    msg,         # a string with latest message from this class
    pat,         # store the current pstep pattern	       
    curPelem,    # the current pelem we are on
-   pPos         # stores the previous position of the current total match       
+   pPos,        # stores the previous position of the current total match       
+   evalVal,     # stores the value of an unevaluated resolved expression
+   origPat,     # stores original pattern in case of unevaluated pattern
+   realIndex    # stores the index of the unevaluated pattern element 
    )	
 	       
 #
@@ -230,22 +233,45 @@ method handle_pstep_fail()
          DState.RunCode := PSTEP
          return
          }
-   default :{
+      default :{
          msg := "\n   ?? at "||cur_file||":"||cur_line||", failed to match at "
          msg ||:= "pos:"||keyword("pos", Monitored)|| " out of string length "
          msg ||:= *keyword("subject", Monitored)
          msg ||:= "\n   Sub: " || truncateLine()
          msg ||:= getUnderlined()
-         patElem := getPatElem(pat, cur_index)
-         if DState.State = ERROR then return
-         msg ||:= "\n   Pat: "||patElem[1]
-         msg ||:= "\n" || patElem[2]
+
+         ## we are in a resolved pattern from unevaluated. Print the original
+         ## pattern element (the unevaluated image) and the pattern produced
+         ## by the resolution of the expression
+
+         if \origPat then {
+           patElem := getPatElem(origPat, realIndex)
+           if DState.State = ERROR then {
+              DState.Write("\n   Error in pattern element imaging - UDB")
+              return
+              }
+           msg ||:= "\n   Pat: "||patElem[1]
+           msg ||:= "\n"||patElem[2]
+           }
+
+         ## PC_Pred_Func/MF, PC_Rpat are going to overlap due to handling 
+         ##
+
+         if cur_index ~= realIndex then patElem := getPatElem(pat, cur_index)
+
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
+         if /origPat then msg ||:= "\n   Pat: "||patElem[1]
+         else             msg ||:= "\n   Val: "||patElem[1]
+         msg ||:= "\n"||patElem[2]
          DState.Write(msg)
          DState.State := PAUSE
          DState.RunCode := PSTEP
          return
          }
-      }
+}
 end
 
 ## several pcodes related to pushing and popping
@@ -258,41 +284,49 @@ method handle_pstep_attempt()
    cur_file := keyword("file", Monitored)
    cur_line := keyword("line", Monitored)
    curPelem := &eventvalue
+   step_count := 1 ## none of these count as "steps"
 
    if curPelem = PC_R_Restore | curPelem = PC_R_Remove then {
       if curPelem = PC_R_Restore then 
          msg := "\n   Pattern Element Failed, Entering Nest Pattern... "
       else
          msg := "\n   Nested Pattern Failed to Match, Exiting... "
-      step_count := 1
       DState.Write(msg)
       DState.State := RUN
       DState.RunCode := PSTEP
       return 
       }
-   else if curPelem = PC_Arbno_X|curPelem = PC_Arbno_S|curPelem = PC_Arb_X then {
+   else if curPelem = PC_Arbno_X | curPelem = PC_Arbno_S | curPelem = PC_Arb_X then {
       cur_index := keyword("patindex", Monitored)
       if curPelem = PC_Arbno_X | curPelem = PC_Arbno_S then {
          msg := "\n\n   Placing Arbno on the pattern stack, Continuing... "
          patElem := getPatElem(pat, cur_index)
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
          }
       else {
          msg := "\n\n   Placing Arb on the pattern stack, Continuing... "
          patElem := getPatElem(pat, cur_index - 1) ##PC_Arb_Y is imaged
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
          }
       msg ||:= "\n   Pat: "||patElem[1]
       msg ||:= "\n" || patElem[2]
-      step_count := 1
       DState.Write(msg)
       DState.State := RUN
       DState.RunCode := PSTEP
       }
-   else if curPelem = PC_R_Enter then {
-      step_count := 1
-      return 
-      }
-
-   step_count := 1 ##could get here via other pelem_attempts
+   else if curPelem = PC_EOP then {
+      if \origPat then {
+         pat := origPat
+         origPat := &null
+         return
+         }
+   }
 end
 
 method handle_pstep_match()
@@ -320,7 +354,7 @@ method handle_pstep_match()
          else {
             msg := "\n   "||"Cursor position matched at pos:"
             msg ||:= keyword("pos", Monitored)
-         }
+            }
          patElem := getPatElem(pat, cur_index)
          msg ||:= "\n   Pat: "||patElem[1]
          msg ||:= "\n" || patElem[2]
@@ -330,11 +364,13 @@ method handle_pstep_match()
          DState.RunCode := PSTEP
          return 
          }
-      PC_Fence_X | PC_R_Enter | PC_EOP |PC_Arbno_Y | PC_Unanchored: {  
-         if curPelem = PC_Unanchored then { ## Match is retrying. Set new pos
+      PC_Fence_X | PC_R_Enter | PC_Arbno_Y | PC_Unanchored: {
+         if curPelem = PC_Unanchored then { ## Match is retrying. Reset State
             msg := "\n   Match has failed with no alternatives,_
                     starting from the beginning..."
             pPos := keyword("pos", Monitored)
+            pat := origPat
+            origPat := &null 
             DState.Write(msg)
             }
          step_count := 1
@@ -348,9 +384,35 @@ method handle_pstep_match()
          if DState.State = ERROR then return
          }
       }
-      patElem := getPatElem(pat, cur_index)
-      msg ||:= "\n   Pat: "||patElem[1]
-      msg ||:= "\n" || patElem[2]
+
+      ## we are in a resolved pattern from unevaluated. Print the original
+      ## pattern element (the unevaluated image) and the pattern produced
+      ## by the resolution of the expression
+
+      if \origPat then { 
+         patElem := getPatElem(origPat, realIndex)
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
+         msg ||:= "\n   Pat: "||patElem[1]
+         msg ||:= "\n"||patElem[2]
+         }
+
+      ## PC_Pred_Func/MF, PC_Rpat are going to overlap, print original only
+
+      if cur_index ~= realIndex then patElem := getPatElem(pat, cur_index)
+
+      if DState.State = ERROR then {
+         DState.Write("\n   Error in pattern element imaging - UDB")
+         return
+         }
+      if /origPat then msg ||:= "\n   Pat: "||patElem[1]
+      else             msg ||:= "\n   Val: "||patElem[1]
+      msg ||:= "\n"||patElem[2]
+   
+      if curPelem = PC_Rpat | curPelem = PC_Pred_Func | curPelem = PC_Pred_MF then
+      msg ||:= "\n   Val: " || image(evalVal)
       DState.Write(msg)
       DState.State := PAUSE
       DState.RunCode := PSTEP
@@ -441,7 +503,7 @@ method getPatElem(pat, index)
 
    patImage := pindex_image(pat, -1)
    patImageB := pindex_image(pat, index)
-  
+
    ##Do a character by character comparison on a bracketed images and a non-
    ##bracketed images. The positions that are different mark the start
    ##and end to the pattern element we are looking for
@@ -456,6 +518,7 @@ method getPatElem(pat, index)
              DState.State := ERROR
              msg := "\n Error: No Bracketed Image found before EOP"
              DState.Write(msg)
+             return 
              }
          move(1)
          }
@@ -510,21 +573,27 @@ method silentStep()
       pat := &eventvalue
       step_count -:= 1
       }
-   else if &eventcode == E_PelemAttempt then curPelem := &eventvalue
+   else if &eventcode == E_PelemAttempt then {
+      if &eventvalue = PC_EOP & \ origPat then {
+         pat := origPat
+         origPat := &null
+         }
+      curPelem := &eventvalue
+      }
    else {
     case curPelem of {
        PC_Fence_X | PC_R_Enter | PC_EOP | PC_Arbno_X | PC_Arbno_S | 
        PC_Assign | PC_Arb_X | PC_R_Remove | PC_R_Restore |
        PC_Assign_Imm | PC_Assign_OnM | PC_Setcur |
        PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
-       PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF : {
+       PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF: {
           return
           }
-       PC_Unanchored :{
+       PC_Unanchored: {
           pPos := keyword("pos", Monitored)
           return 
           }
-       default : {
+       default: {
           step_count -:= 1
           }
        }
@@ -652,9 +721,12 @@ method pEnd()
       DState.RunCode := STEP
       }
 
-   pPos := 1 
-   pat := &null
-   curPelem := &null
+   pPos      := 1
+   realIndex := -1
+   pat       := &null
+   curPelem  := &null
+   evalVal   := &null
+   origPat   := &null
 end
 
 #
@@ -680,10 +752,14 @@ end
 #
 initially()
    
-   step_count := 0
+   step_count := 0 
    next_count := 0
-   pPos := 1 
+   pPos       := 1 
+   realIndex  := -1
    nex_level  := &null
-   pat   := &null
-   curPelem := &null
+   pat        := &null
+   curPelem   := &null
+   evalVal    := &null
+   origPat    := &null
+
 end

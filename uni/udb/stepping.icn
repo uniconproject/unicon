@@ -256,8 +256,8 @@ method handle_pstep_fail()
 
          ## PC_Pred_Func/MF, PC_Rpat are going to overlap due to handling 
          ##
-
-         if cur_index ~= realIndex then patElem := getPatElem(pat, cur_index)
+         write(image(origPat))
+         patElem := getPatElem(pat, cur_index)
 
          if DState.State = ERROR then {
             DState.Write("\n   Error in pattern element imaging - UDB")
@@ -369,8 +369,10 @@ method handle_pstep_match()
             msg := "\n   Match has failed with no alternatives,_
                     starting from the beginning..."
             pPos := keyword("pos", Monitored)
-            pat := origPat
-            origPat := &null 
+            if \origPat then {   #reset nested pattern unevaluated env
+               pat := origPat
+               origPat := &null 
+               }
             DState.Write(msg)
             }
          step_count := 1
@@ -401,7 +403,7 @@ method handle_pstep_match()
 
       ## PC_Pred_Func/MF, PC_Rpat are going to overlap, print original only
 
-      if cur_index ~= realIndex then patElem := getPatElem(pat, cur_index)
+      patElem := getPatElem(pat, cur_index)
 
       if DState.State = ERROR then {
          DState.Write("\n   Error in pattern element imaging - UDB")

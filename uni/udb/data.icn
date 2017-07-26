@@ -94,7 +94,7 @@ method getVarValue(Expr, level)
    every x := !Expr do expr ||:= x
 
    # if the string in the expr is not a litteral (string value)
-   if expr[1] ~== "\"" then{
+   if expr[1] ~== "\"" then {
       index := parsePrintExpression(Expr)
       if *index = 0 then fail
 
@@ -339,15 +339,15 @@ end
 method printVar(Expr, action, level)
    local Var, var, ref, index, x, expr:=""
   
-   index := parsePrintExpression(Expr)
+   every x := !Expr do expr ||:= x
+
+   index := parsePrintExpression(expr)
    if *index = 0 then {
       Message :="\n   \""||expr||"\" is an unknown expression."
       DState.Write(Message)
       return
       }
    
-   every x := !Expr do expr ||:= x
-
    var := get(index)
    if Var := variable(var, Monitored, level) then
       if (ref := getVarReference(Var, index, level)) & *index = 0 then {
@@ -428,20 +428,20 @@ method cmdPrint(cmd)
 
    cur_level := keyword("level",Monitored)
    level     := DState.cur_Frame
-   if level > cur_level then{ 
+   if level > cur_level then {
       Message   :="\n   Frame #"||level||" is not valid."
       Message ||:="\n   The stack currently has "||cur_level||" frame(s)."
       DState.Write(Message)
       return            
       }
 
-   if \cmd[1] then{
+   if \cmd[1] then {
       if cmd[1] == ("*"|"!"|"?") then{
          action := cmd[1]
          delete(cmd,1)
          }
-      every j := 1 to *cmd do{
-         if cmd[j] == ("="|":=") then{
+      every j := 1 to *cmd do {
+         if cmd[j] == ("="|":=") then {
             left   := cmd[1:j]
             right  := cmd[j+1:0]
             action := ":=" 
@@ -695,7 +695,7 @@ end
 method parsePrintExpression(expr)
     local i, j, x, tokens := []
 
-    every i := 1 to *expr do{
+    every i := 1 to *expr do {
        x := expr[i]
        if not (x == ("["|"]"|","|":")) then {
           if not numeric(x) & j:=find(".", x) then{

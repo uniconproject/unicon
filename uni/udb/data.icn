@@ -144,9 +144,15 @@ method getVarReference(Var, index, level)
            x1 := get(index)
            x2 := get(index)
            if \x1 & /x2 then{
-              v := variable(x1, Monitored, level) | integer(x1)
-              Var := Var[v]
-              return Var
+              if v := variable(x1, Monitored, level) | integer(x1) then {
+		 Var := Var[v]
+		 return Var
+		 }
+	      else {
+		 write("can't get variable reference ", image(Var),
+		       "[", image(v), "]")
+		 fail
+		 }
               }
            else if \x1 & \x2 then{
               i1 := variable(x1, Monitored, level) | integer(x1) 
@@ -339,9 +345,10 @@ end
 method printVar(Expr, action, level)
    local Var, var, ref, index, x, expr:=""
   
+   index := parsePrintExpression(Expr)
+
    every x := !Expr do expr ||:= x
 
-   index := parsePrintExpression(expr)
    if *index = 0 then {
       Message :="\n   \""||expr||"\" is an unknown expression."
       DState.Write(Message)
@@ -689,8 +696,10 @@ method isGenKeyword(expr, action)
 end
 
 #
-# parse the expression into tokens, mainVar is tokens[1]
+# parse the expression into a list of tokens, mainVar is tokens[1]
 # ie L[2], L[3][4], L[1].x, S[5:-5], L[3][3][3], L[3][3][2:4]
+# Input is already semi-tokenized, i.e. a list, but this method
+# needs to break it down further.
 #
 method parsePrintExpression(expr)
     local i, j, x, tokens := []

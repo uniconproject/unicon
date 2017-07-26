@@ -239,8 +239,8 @@ case $unicon_host in
        EXE=".exe"
        NT="NT"
        DNT="-DNT"
-       ICONXFLAGS
-       LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB -Xlinker --stack -Xlinker "
+       WINSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
+       LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
         ;;
 esac
@@ -250,6 +250,7 @@ if test "x$orig_cflags" != "x" ; then
 fi
 
 AC_SUBST(EXE)
+AC_SUBST(WINSTKLDFLAG)
 AC_SUBST(NT)
 AC_SUBST(DNT)
 AC_SUBST(OBJ)

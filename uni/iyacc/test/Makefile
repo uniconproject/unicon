@@ -11,9 +11,9 @@ calc: 		calc.icn
 		$(BIN)/icont -s calc.icn
 
 calc.icn: 	calc.y
-		./iyacc -i calc.y
+		$(BIN)/iyacc -i calc.y
 
 clean:		
-		@rm -f *.icn *.out calc iyacc *~
+		@rm -f *.icn *.out calc *~
 
 

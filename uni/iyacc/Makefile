@@ -23,7 +23,7 @@ OBJS	      = closure.o \
 
 PRINT	      = pr -f -l88
 
-PROGRAM	      = iyacc
+PROGRAM	      = iyacc$(EXE)
 
 SRCS	      = closure.c \
 		error.c \
@@ -43,7 +43,7 @@ all:		$(PROGRAM)
 $(PROGRAM):     $(OBJS) $(LIBS)
 		@echo -n "Loading $(PROGRAM) ... "
 		@$(LINKER) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
-		@cp iyacc test
+		@cp $(PROGRAM) ../../bin/
 		@cd test; $(MAKE)
 		@echo "done"
 
@@ -74,7 +74,7 @@ test:		$(PROGRAM)
 ###
 %.o: %.c
 	$(CMNT)@echo "   [IYACC] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CFLAGS) $(DNT) -c $<
 
 closure.o: defs.h
 error.o: defs.h

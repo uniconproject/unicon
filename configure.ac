@@ -237,6 +237,9 @@ case $unicon_host in
 	;;
      *windows*)
        EXE=".exe"
+       NT="NT"
+       DNT="-DNT"
+       ICONXFLAGS
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB -Xlinker --stack -Xlinker "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
         ;;
@@ -247,6 +250,8 @@ if test "x$orig_cflags" != "x" ; then
 fi
 
 AC_SUBST(EXE)
+AC_SUBST(NT)
+AC_SUBST(DNT)
 AC_SUBST(OBJ)
 AC_SUBST(BITS)
 AC_SUBST(unicon_os)

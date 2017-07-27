@@ -133,6 +133,3 @@ clean:
 
 cleantools:
 	cd $(LIB); $(MAKE) cleantools
-
-
-

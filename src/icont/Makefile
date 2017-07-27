@@ -2,30 +2,48 @@
 
 include ../../Makedefs
 
-TRANS=		trans.o tcode.o tlex.o lnklist.o tparse.o tsym.o tmem.o \
-		 tree.o tglobals.o yyerror.o
+TRANS= trans.$(O) tcode.$(O) tlex.$(O) lnklist.$(O) tparse.$(O) tsym.$(O) tmem.$(O) tree.$(O) yyerror.$(O) tglobals.$(O)
 
-LINKR=		link.o lglob.o lcode.o llex.o lmem.o lsym.o opcode.o lcompres.o
+LINKR= link.$(O) lglob.$(O) lcode.$(O) llex.$(O) lmem.$(O) lsym.$(O) opcode.$(O) lcompres.$(O)
 
-OBJS=		tmain.o util.o tlocal.o $(TRANS) $(LINKR)
+OBJS=  tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
 
-COBJS=		../common/long.o ../common/getopt.o ../common/alloc.o \
-		   ../common/filepart.o ../common/strtbl.o ../common/ipp.o \
-		   ../common/mlocal.o
+COBJS= ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
+       ../common/filepart.$(O) ../common/strtbl.$(O)\
+       ../common/mlocal.$(O) ../common/ipp.$(O)
 
-ICOBJS=		long.o getopt.o alloc.o filepart.o strtbl.o ipp.o
+ICOBJS=   long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O) mlocal.$(O)
 
-PGMS=		icont
+WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
+	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
 
-all:		$(PGMS)
+
+
+PGMS=		icont$(EXE)
+
+all:		icont
 
 common:
 		cd ../common; $(MAKE) $(ICOBJS)
 
-icont:		$(OBJS) common
+icont :		$(OBJS) common
 		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) $(COBJS) $(LIBS)
-		cp icont ../../bin
-		strip ../../bin/icont
+		cp $(PGMS) ../../bin
+		strip ../../bin/$(PGMS)
+
+
+wicont:
+	$(RM) tmain.$(O)
+	$(RM) link.$(O)
+	$(MAKE) wicont2
+
+wicont2: $(OBJS) common
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS) $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WINGLIBS)
+	$(CP) wicont.exe ../../bin
+
+common: $(COBJS) $(DCONSOLE)
+
+
 
 $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
 		   ../h/proto.h ../h/mproto.h ../h/auto.h \
@@ -66,6 +84,8 @@ lsym.o:		tglobals.h
 opcode.o:	opcode.h ../h/opdefs.h
 lcompres.o:	tglobals.h ../h/header.h
 
+Clean clean:
+	$(RM) *.$(O) $(PMGS)
 
 #  The following sections are commented out because they do not need to be
 #  performed unless changes are made to cgrammar.c, ../h/grammar.h,

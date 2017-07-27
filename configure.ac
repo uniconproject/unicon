@@ -213,7 +213,7 @@ case $ac_cv_sizeof_int_p in
      ;;
 esac
 
-OBJ=O
+OBJ=o
 
 # OS specific flags go here
 case $unicon_host in

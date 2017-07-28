@@ -1034,6 +1034,20 @@
 #define E_PatVal 0
 #endif
 
+#if defined(EventMon) || defined(E_PatPush)
+#undef E_PatPush
+#define E_PatPush '\073'
+#else
+#define E_PatPush 0
+#endif
+
+#if defined(EventMon) || defined(E_PatPop)
+#undef E_PatPop
+#define E_PatPop '\074'
+#else
+#define E_PatPop 0
+#endif
+
 /*
  * Events for hash table details. The table events like E_Tsub
  * already provide keys.  E_HashNum is a number returned by hash().
@@ -1074,7 +1088,7 @@
 040 041 042 043 047			32
 050 051     053 054     056 057
 
-            073 074 075 076 077
+                    075 076 077
 -------------------------------			blank line for readability
                         106		64
 110                 115     117

@@ -1522,7 +1522,7 @@ static struct b_pelem CP_R_Restore =
  *          Stack_Ptr := Stack_Ptr + 1;
  *          Stack (Stack_Ptr).Cursor := Stack_Base;
  *          Stack (Stack_Ptr).Node   := CP_R_Restore'Access;
- *          Stack_Base := Stack (Stack_Base).Cursor;
+emacs *          Stack_Base := Stack (Stack_Base).Cursor;
  *       end if;
  *    end Pop_Region;
  */
@@ -1538,11 +1538,13 @@ static struct b_pelem CP_R_Restore =
 
 #begdef Pop_Region()
 if (Stack_Ptr == Stack_Base) {
+   EVVal(0, E_PatPop);
    Stack_Ptr = Stack_Base - 2;
    Stack_Base = StackCursor(Stack_Ptr + 2);
    Stack->next->Lelem.nused -= 2;
 }
 else {
+   EVVal(1, E_PatPop); 
    Stack_Ptr++;
    StackCursor(Stack_Ptr) = Stack_Base;
    StackNode(Stack_Ptr) = (union block *)&CP_R_Restore;
@@ -1562,6 +1564,7 @@ else {
  */
 
 #begdef Push(Node)
+EVVal(0, E_PatPush); 
 Stack_Ptr++;
 StackCursor(Stack_Ptr) = k_pos - 1;
 StackNode(Stack_Ptr)   = (union block *)Node;
@@ -1581,6 +1584,7 @@ Stack->next->Lelem.nused++;
  *    end Push_Region;
  */
 #begdef Push_Region()
+EVVal(1, E_PatPush); 
 Stack_Ptr = Stack_Ptr + 2;
 StackCursor(Stack_Ptr) = Stack_Base;
 StackNode(Stack_Ptr)   = (union block *)&CP_R_Remove;
@@ -2661,6 +2665,52 @@ Node_Succeed:
        */
    case  PC_Pred_Func: {
       GetResultFromFuncCall();
+      type_case cresult of {
+      string: {
+	 int LV_Len = StrLen(cresult);
+	 DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
+	 if ((Length - (k_pos - 1) >= LV_Len )
+	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
+	    k_pos += LV_Len;
+	    EVVal(k_pos, e_spos);
+	    goto Node_Succeed;
+	    }
+	 else {
+	    goto Node_Fail;
+	    }
+	 break;
+	 }
+
+      cset: {
+	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
+	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+	    k_pos++;
+	    EVVal(k_pos, e_spos);
+	    goto Node_Succeed;
+	    }
+	 else {
+	    goto Node_Fail;
+	    }
+	 break;
+	 }
+      pattern: {
+	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
+	 StackNode(Stack_Ptr + 1) = Node->pthen;
+	 Push_Region();
+	 if (Stack_Ptr +
+	     ((struct b_pattern *)BlkLoc(cresult))->stck_size >= Stack_Size) {
+	    fatalerr(309, NULL);
+	    }
+	 else {
+	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(cresult))->pe;
+	    goto Match;
+	    }
+	 break;
+	 }
+      default: {
+	 fatalerr(161, NULL);
+	 }
+	 }
       /*
        * If the func failed, call_result would have been NULL and the
        * above macro would have failed.  Otherwise, it succeeded and
@@ -2671,23 +2721,51 @@ Node_Succeed:
 
    case  PC_Pred_MF:{
       GetResultFromMethodCall();
-      if (call_result == 0)
-	 goto Node_Fail;
-      else {
-	 if(is:string(cresult)) {
-	    int LV_Len = StrLen(cresult);
-	    DEBUGF(20,(stdout,"Matching String\n"));
-	    if ((Length - (k_pos - 1) >= LV_Len) &&
-	          !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
-	       k_pos += LV_Len;
-	       EVVal(k_pos, e_spos);
-	       goto Node_Succeed;
-	       }
-            else {
-	       goto Node_Fail;
-	       }
+      type_case cresult of {
+      string: {
+	 int LV_Len = StrLen(cresult);
+	 DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
+	 if ((Length - (k_pos - 1) >= LV_Len )
+	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
+	    k_pos += LV_Len;
+	    EVVal(k_pos, e_spos);
+	    goto Node_Succeed;
 	    }
-	 goto Node_Succeed;
+	 else {
+	    goto Node_Fail;
+	    }
+	 break;
+	 }
+
+      cset: {
+	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
+	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
+	    k_pos++;
+	    EVVal(k_pos, e_spos);
+	    goto Node_Succeed;
+	    }
+	 else {
+	    goto Node_Fail;
+	    }
+	 break;
+	 }
+      pattern: {
+	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
+	 StackNode(Stack_Ptr + 1) = Node->pthen;
+	 Push_Region();
+	 if (Stack_Ptr +
+	     ((struct b_pattern *)BlkLoc(cresult))->stck_size >= Stack_Size) {
+	    fatalerr(309, NULL);
+	    }
+	 else {
+	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(cresult))->pe;
+	    goto Match;
+	    }
+	 break;
+	 }
+      default: {
+	 fatalerr(161, NULL);
+	 }
 	 }
       break;
       }

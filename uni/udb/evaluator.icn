@@ -75,18 +75,11 @@ method startEvaluator()
         E_PatMatch | E_PatFail:{
           Step.pEnd()
           }
-        E_PatVal :{ # unevaluated expression resolved
-          if \Step.curPelem & (Step.curPelem = PC_Rpat | Step.curPelem = PC_Pred_Func | Step.curPelem = PC_Pred_MF) then {
-             if type(Step.evalVal) == "pattern" then { #is pat set up nested env
-                Step.origPat := Step.pat
-                Step.pat := &eventvalue
-                Step.realIndex := keyword("patindex", Monitored)
-                }
-             }
-          }
-        E_Exit:  { handle_Exit()    }
-        E_Error: { handle_Error()   }
-        E_Signal:{ handle_Signals() }
+        E_PatPush | E_PatPop | E_PatVal:{
+                                Step.handle_PatStack() }
+        E_Exit:               { handle_Exit()     }
+        E_Error:              { handle_Error()    }
+        E_Signal:             { handle_Signals()  }
         } # end of case ecode
 
       # Tracing Features 

@@ -1,0 +1,123 @@
+#<p>
+# MessageBox.icn -- display a message and wait for signal to proceed.
+#</p>
+#<p>
+# Resizes the dialog box appropriately.
+#</p>
+#<p>
+# <b>Author:</b> Steve Wampler (<i>sbw@tapestry.tucson.az.us</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#  It was hacked by Jeffery to resemble GUI v2 format, but is untested.
+#  It could easily be replaced by a Notice(), but we should back the size
+#  calculation logic in here into Notice() before deleting/replacing this.
+#</p>
+
+package gui
+
+import util
+
+#<p>
+#  Provide a simple dialog box that allows you to display a message
+#  and wait for acknowlegement.
+#</p>
+class MessageBox : Dialog(okButton, messageArea, mesg, mFont, minArea, maxArea)
+
+   method end_dialog()
+   end
+
+   method init_dialog()
+   end
+
+   method on_OK(ev)
+      dispose()
+   end
+
+   #<p>
+   # <i>Internal use only!</i>
+   #</p>
+   method setup()
+       # self.set_attribs("size=644,399") # or some such
+ 
+       messageArea := TextList()
+       messageArea.attrib(\mFont)
+       messageArea.set_pos("15", "10")
+       messageArea.set_contents(mesg)
+       self.add(messageArea)
+
+       okButton := TextButton()
+       okButton.set_label("Ok")
+       okButton.set_internal_alignment("c")
+       self.add(okButton)
+  
+   end
+
+   #<p>
+   # <i>Internal use only!</i>
+   #</p>
+   method component_setup()
+       local win, sizeMInfo, sizeDInfo
+
+       /minArea := displayAreaSize(50,30)
+       /maxArea := displayAreaSize(500,500)
+
+       self.setup()
+       win := (WOpen ! (["canvas=hidden"] ||| self.attribs |||
+                        ([\mFont] | []))) |
+               fatal("Component setup: couldn't open hidden window")
+       sizeMInfo := textAreaSize(win, mesg)
+       WClose(win)
+
+       sizeMInfo := forceAreaSize(sizeMInfo, minArea, maxArea)
+       sizeDInfo := displayAreaSize(sizeMInfo.width+30, sizeMInfo.height+40)
+
+       messageArea.set_size(sizeMInfo.width, sizeMInfo.height)
+       okButton.set_pos(sizeDInfo.width-32, sizeDInfo.height-25)
+
+       self.set_attribs("size="||sizeDInfo.width||","||sizeDInfo.height)
+   end
+
+   #<p>
+   #   Set the font for the message area.
+   #   <[param font new font]>
+   #</p>
+   method setFont(font)
+       mFont := "font="||font
+   end
+
+   #<p>
+   #   Change the minimum allowable size for the message area.
+   #   <[param width display area width. Defaults to 100 pixels]>
+   #   <[param height display area height. Defaults to 100 pixels]>
+   #</p>
+   method setMinSize(width:100, height:100)
+       minArea := displayAreaSize(width, height)
+   end
+
+   #<p>
+   #   Change the maximum allowable size for the message area.
+   #   <[param width maximum display area width. Defaults to 500 pixels]>
+   #   <[param height maximum display area height. Defaults to 500 pixels]>
+   #</p>
+   method setMaxSize(width:500, height:500)
+       maxArea := displayAreaSize(width, height)
+   end
+
+#<p>
+#   If message is a string, split it vertically on embedded newlines.
+#   Otherwise, message should be a list of lines forming the question.
+#   <[param message displayed message]>
+#</p>
+initially (message)
+   self.Dialog.initially()
+   /message := "This frame unintentionally\nleft blank."
+   if type(message) == "string" then {
+      mesg := stringToList(message)
+      }
+   else {
+      if *message = 0 then
+	 message := ["This frame unintentionally","left blank."]
+      mesg := message
+      }
+end

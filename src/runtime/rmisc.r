@@ -1677,10 +1677,10 @@ int c, q;
 /*
  * Construct a pattern image of pe.  Returns Succeeded or RunError.
  * peCount helps to know whether there is a previous thing on which
- * to concatenate. pe_index aids UDB in identifying current indices. stop_index
- * is the index at which an alternate halts its recursion (to prevent
- * (duplication). prev_index stores the index of the last Arbno_S so we know where to
- * halt the image recursion (avoids infinite loops)
+ * to concatenate. pe_index aids UDB in identifying current indices.
+ * stop_index is the index at which an alternate halts its recursion (to
+ * prevent (duplication). prev_index stores the index of the last Arbno_S
+ * so we know where to halt the image recursion (avoids infinite loops)
  */
 int pattern_image(union block *pe, int prev_index, dptr result, 
                   int peCount, int pe_index, int stop_index)
@@ -2006,11 +2006,22 @@ int pattern_image(union block *pe, int prev_index, dptr result,
              *result = *bi_pat(PI_FPAREN);
 	     break;
              }
+          case PC_EOP: {
+	    *result = emptystr;
+	    break;
+          }
           default: {
-	     syserr("pattern_image: bad pcode");
-	     }
-	     }
-       }
+	    char buf[128];
+	    if (Blk(ep,Pelem)->title != T_Pelem)
+	      sprintf(buf, "pattern_image: bad pattern element, title %ld\n",
+		      Blk(ep,Pelem)->title);
+	    else
+	      sprintf(buf, "pattern_image: bad pattern element code %ld\n",
+		      Blk(ep,Pelem)->pcode);
+	    syserr(buf);
+	    }
+         }
+      }
    else {
       *result = *bi_pat(PI_EMPTY);
       return RunError;

@@ -38,7 +38,7 @@ class Object()
    end
 
    #
-   # Return the class name as a string
+   # Return the class name as a string, e.g. lang__Object
    #
    method get_class_name()
       return lang::get_class_name(self)
@@ -59,10 +59,107 @@ class Object()
    end
 
    #
-   # Succeed if and only if this object is an instance of class with the given name
+   # Succeed if and only if this object is an instance of class with the
+   # given name.
    #
    method is_instance(name)
       return lang::is_instance(self, name)
    end
-end
 
+   # UniLib annexation of 2017.
+
+   # <p>
+   # <[Generates the name of the current class followed by all classes
+   #    that it inherits from.]>
+   # </p>
+   method Type()
+      suspend util::Type(self)
+   end
+
+   # <p>
+   # Is this class a subclass of another one?
+   # <[returns the class if it's an instance of <tt>superClassname</tt>]>
+   # <[fails otherwise]>
+   # </p>
+   method instanceOf(superClassname) # class name to check as superclass
+      return util::instanceof(self, superClassname)
+   end
+
+   # <p>
+   # <[returns the classname for the current class]>
+   #
+   # </p>
+   method className()
+      return Type()
+   end
+
+   # <p>
+   # Invoke a class method by name.
+   # <[returns the outcome of the invocation]>
+   # <[fails if no method exists with that name]>
+   # </p>
+   method invoke(mName,    # Name of method to call
+		 args[])   # Remaining arguments are arguments to call
+      if hasMethod(mName) then {
+	 suspend (self.__m[mName]) ! push(args, self)
+	 }
+   end
+
+   #<p>
+   #   Produce the value of the named field.  Fails if no such field.
+   #   <[returns the value of the <tt>fName</tt> field]>
+   #</p>
+   method getField(fName)    # name of field
+      if hasField(fName) then {
+	 return self[fName]
+	 }
+   end
+
+   #<p>
+   #   Set the value of the named field.
+   #   <[returns <tt>value</tt>]>
+   #   <[fails if no field <tt>fName</tt>]>
+   #</p>
+   method setField(fName,   # name of field
+		   value)   # value to set field to
+      if hasField(fName) then {
+	 return .(self[fName] := value)
+	 }
+   end
+
+   #<p>
+   #   Does this class have a specific field?
+   #   <[returns <tt>fName</tt>]>
+   #   <[fails if no field <tt>fName</tt>]>
+   #</p>
+   method hasField(fName)   # name of possible field
+      return \fName == fieldNames()
+   end
+
+   #<p>
+   #   <[generates the names of all fields]>
+   #</p>
+   method fieldNames()
+      every ::name(self[3 to *self]) ? {
+	 &pos := upto('.')+1
+	 suspend tab(0)
+	 }
+   end
+
+   # <p>
+   # What methods are available for this class?
+   #    <[generates the names of all methods]>
+   # </p>
+   method genMethods()
+      suspend fieldnames(self.__m)
+   end
+
+   # <p>
+   # Does this class have a specific method?
+   #    <[returns <tt>mName</tt>]>
+   #    <[fails if no method <tt>mName</tt> exists]>
+   # </p>
+   method hasMethod(mName) # Method name to check for.
+      return mName == genMethods()
+   end
+end

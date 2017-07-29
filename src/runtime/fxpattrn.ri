@@ -2085,6 +2085,7 @@ Match_Succeed:
 		  f = (struct b_file *)BlkLoc(var);
 		  fwrite(pat_sub + Start, 1, Stop - Start, f->fd.fp);
 		  fputc('\n', f->fd.fp);
+		  fflush(f->fd.fp);
 		  }
 	       else {
 		  EVVar(&varref, e_assign);
@@ -2368,6 +2369,7 @@ Node_Succeed:
 	 fwrite(pat_sub + StackCursor(Stack_Base - 1), 1,
 		(k_pos - 1) - StackCursor(Stack_Base - 1), f->fd.fp);
 	 fputc('\n', f->fd.fp);
+	 fflush(f->fd.fp);
 	 }
       else {
 	 EVVar(&varref, E_Assign);

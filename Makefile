@@ -8,7 +8,7 @@ dest=/must/specify/dest/
 
 default: Makedefs
 	make Unicon
-#	make Uniconc
+	make Uniconc
 
 Makedefs: Makedefs.in configure
 	sh configure

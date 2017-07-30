@@ -167,29 +167,32 @@ end
 # a_Scans a preprocessor directive.
 #
 procedure preproc_scan_directive()
-    local sym,value,new_file,new_filename,new_line,path_list,old
-    preproc_space()
-    preproc_command := preproc_word()
-    if \preproc_if_state then {
-        if match("if",preproc_command) then {
-            preproc_command := "$if"
-        }
-    }
-    preproc_space()
-    case preproc_command of {
-        "define": {
-            if /preproc_if_state then {
-                if sym := preproc_word() &
-                        value := preproc_scan_define_value() then {
-                    if \(old := preproc_sym_table[sym]) ~=== value then {
-                        preproc_error("redefinition of " || sym || " = " ||
-                                old)
-                    } else {
-                        preproc_sym_table[sym] := value
-                    }
-                } else {
-                    preproc_error()
-                }
+   local sym,value,new_file,new_filename,new_line,path_list,old
+   preproc_space()
+   preproc_command := preproc_word()
+   if \preproc_if_state then {
+      if match("if",preproc_command) then {
+	 preproc_command := "$if"
+	 }
+      }
+   preproc_space()
+   case preproc_command of {
+      "define": {
+	 if /preproc_if_state then {
+	    if sym := preproc_word() then {
+	       if value := preproc_scan_define_value() then {
+		  if \(old := preproc_sym_table[sym]) ~=== value then {
+		     preproc_error("redefinition of " || sym || " = " ||
+				   old)
+		     }
+	          else {
+		     preproc_sym_table[sym] := value
+		     }
+		  }
+               }
+	    else {
+	       preproc_error()
+	       }
             }
         }
         "undef": {
@@ -487,14 +490,14 @@ end
 # a_Scans the value of a $define.
 #
 procedure preproc_scan_define_value()
-    local q,interesting_in_quotes
-    static interesting_chars
-    initial interesting_chars := '#"\''
+   local q,interesting_in_quotes
+   static interesting_chars
+   initial interesting_chars := '#"\''
 
-    if ="(" then {
-                    preproc_error("no space before (; args are not supported. ")
-        fail      # "$define name(" is specifically prohibited; needs whitespace
-    }
+   if ="(" then {
+      preproc_error("no space before (; args are not supported.")
+      fail      # "$define name(" is specifically prohibited; needs whitespace
+      }
     preproc_space()
     q := &pos
     (while tab(upto(interesting_chars)) do {
@@ -514,6 +517,7 @@ procedure preproc_scan_define_value()
                             }
                         }
                     }
+		    preproc_error("unterminated string in $define")
                     fail # end of line inside quotes!!
                 }
             }

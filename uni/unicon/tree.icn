@@ -239,7 +239,7 @@ procedure emit_assign_code(node)
 	 if node.label ~== "field" then {
 	    # set yylineno before calling yyerror() to report a
 	    # semantic error.
-	    yylineno := leftmost_lineno(node)
+	    yylineno := leftmost_token(node).line
 	    yyerror("In-pattern assignment must be to field, not a " ||
 		    image(node.label))
 	    return
@@ -278,7 +278,7 @@ end
 
 procedure yyprint(node)
    static lasttok
-   local inode, ln
+   local inode, lm
    repeat			# allows us to suppress tail recursion
    case type(node) of {
       "treenode" : {
@@ -339,15 +339,15 @@ procedure yyprint(node)
          else if node.label == "BPmatch" then {
 	    iconc_fd := 1
 
-	    # Determine the line number of leftmost token.  Use it to emit
+	    # Get the leftmost token.  Use it to emit
 	    # a #line directive if needed.
-	    if ln := leftmost_lineno(node) then {
-	       if outline ~=== ln then {
-		  write(yyout,"\n#line ", leftmost.line-1," \"", leftmost.filename,"\"")
-		  outline := leftmost.line
+	    if lm := leftmost_token(node) then {
+	       if outline ~=== lm.line then {
+		  write(yyout,"\n#line ", lm.line-1," \"", lm.filename,"\"")
+		  outline := lm.line
 		  outcol := 1
-		  if leftmost.column > 1 then writes(yyout, repl(" ",leftmost.column-1))
-		  outfilename := leftmost.filename
+		  if lm.column > 1 then writes(yyout, repl(" ",lm.column-1))
+		  outfilename := lm.filename
 		  }
 	       }
 	    else {
@@ -1450,12 +1450,13 @@ procedure class_from_parts(head, clocals, methods, initiallysection)
 end
 
 #
-# pick out the line number from the leftmost, i.e. first, token in a tree.
-# Conceivably might need to get trickier than this while loop.
+# Pick out the leftmost, i.e. first, token in a tree.
+# Conceivably might need to get trickier than this while loop, e.g. if the
+# tree had a leftmost epsilon production, might want a leftmost actual-token.
 #
-procedure leftmost_lineno(node)
+procedure leftmost_token(node)
    leftmost := node
    while type(leftmost) == ("treenode"|"keyword") do
       leftmost := leftmost.children[1]
-   if type(leftmost) == "token" then return leftmost.line
+   if type(leftmost) == "token" then return leftmost
 end

@@ -5,7 +5,7 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "../../h/config.h"
 #endif
 
 #ifdef STDC_HEADERS

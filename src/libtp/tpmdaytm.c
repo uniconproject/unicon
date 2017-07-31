@@ -3,7 +3,7 @@
  *	 Copyright 2000 by Steve Lumos.  All rights reserved.
  */
 
-#include "config.h"
+#include "../h/config.h"
 #include "tp.h"
 #include "util.h"
 

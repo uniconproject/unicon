@@ -12,7 +12,7 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "../../h/config.h"
 #endif
 
 #include "tp.h"
@@ -205,8 +205,10 @@ int main(int argc, char **argv)
 
   tp = tp_new(puri, TpmHTTP, disc);
   resp = tp_sendreq(tp, &req);
-  while(tp_read(tp, buf, sizeof(buf))) {
-    ; /* Everything is done by the tracing read */
+  if (resp) {
+     while(tp_read(tp, buf, sizeof(buf))) {
+       ; /* Everything is done by the tracing read */
+     }
   }
   tp_free(tp);
 

@@ -8,12 +8,9 @@ http://www.chesterproductions.net.nz/blogs/it/c/an-ssl-client-using-openssl/245/
 
 #define _SSLDISC_C_
 
-#include "config.h"
+#include "../h/config.h"
 
 #ifdef HAVE_LIBSSL
-
-#include "tp.h"
-#include "util.h"
 
 #ifdef STDC_HEADERS
 #include <stdio.h>
@@ -21,10 +18,20 @@ http://www.chesterproductions.net.nz/blogs/it/c/an-ssl-client-using-openssl/245/
 #endif
 
 #include <stdlib.h>
+/* stdlib.h should define getenv_r, but it is missing on some systems??!! */
+int		getenv_r	(const char *name, char *buf, size_t len);
+
+/* openssl thinks we are a VMS system when VMS=0 , see sys.h*/
+#if !VMS
+#undef VMS
+#endif
 
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
+#include "tp.h"
+#include "util.h"
 
 extern int unixexcept(int type, void *obj, Tpdisc_t* tpdisc);
 

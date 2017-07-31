@@ -70,11 +70,11 @@ dist: Makefile distclean
 	$(CMNT)@echo "   [TP] $<"
 	$(SLNT)$(CC) $(CFLAGS) -c $<
 
-tp.o: tp.c config.h tp.h util.h uri/uri.h
-tpdunix.o: tpdunix.c config.h util.h tp.h uri/uri.h tpdunix.h
-tpdssl.o: tpdssl.c config.h util.h tp.h uri/uri.h tpdssl.h
-tpmdaytm.o: tpmdaytm.c config.h tp.h util.h uri/uri.h
-tpmfinge.o: tpmfinge.c config.h tp.h util.h uri/uri.h
-tpmhttp.o: tpmhttp.c config.h tp.h uri/uri.h util.h
-tpmsmtp.o: tpmsmtp.c config.h tp.h uri/uri.h util.h
-util.o: util.c config.h
+tp.o: tp.c ../h/auto.h ../h/auto.h tp.h util.h uri/uri.h
+tpdunix.o: tpdunix.c ../h/auto.h ../h/config.h util.h tp.h uri/uri.h tpdunix.h
+tpdssl.o: tpdssl.c ../h/auto.h ../h/config.h util.h tp.h uri/uri.h tpdssl.h
+tpmdaytm.o: tpmdaytm.c ../h/auto.h ../h/config.h tp.h util.h uri/uri.h
+tpmfinge.o: tpmfinge.c ../h/auto.h ../h/config.h tp.h util.h uri/uri.h
+tpmhttp.o: tpmhttp.c ../h/auto.h ../h/config.h tp.h uri/uri.h util.h
+tpmsmtp.o: tpmsmtp.c ../h/auto.h ../h/config.h tp.h uri/uri.h util.h
+util.o: util.c ../h/auto.h ../h/config.h

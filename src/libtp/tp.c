@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-#include "config.h"
+#include "../h/config.h"
 #include "tp.h"
 #include "util.h"
 

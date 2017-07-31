@@ -9,7 +9,7 @@
  *   can already be appended easily.
  */
 
-#include "config.h"
+#include "../h/config.h"
 
 #ifdef STDC_HEADERS
 #include <stdlib.h>

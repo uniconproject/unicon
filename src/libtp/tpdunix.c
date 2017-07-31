@@ -5,7 +5,7 @@
 
 #define _UNIXDISC_C_
 
-#include "config.h"
+#include "../h/config.h"
 #include "tp.h"
 #include "util.h"
 #include "tpdunix.h"

@@ -11,7 +11,7 @@
 #endif
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "../../h/config.h"
 #endif
 
 #include "tp.h"

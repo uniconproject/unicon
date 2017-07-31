@@ -4,7 +4,7 @@
  *      (c) Copyright 2000 by Steve Lumos.  All rights reserved.
  */
 
-#include "config.h"
+#include "../h/config.h"
 #include "tp.h"
 
 #ifdef STDC_HEADERS

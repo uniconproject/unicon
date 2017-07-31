@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+#  Test-icont -- test the Icon translator and interpreter.
+#
+#  usage:  Test-icont [file...]
+#
+#  If $IC is set to iconc, the compiler will be used instead.
+
+IC=${IC-unicon}
+IC=../../bin/$IC
+
+echo IC is $IC
+
+unset ICONX IPATH LPATH FPATH
+unset BLKSIZE BLOCKSIZE HEAPSIZE STRSIZE
+unset MSTKSIZE COEXPSIZE QLSIZE
+
+#  check that icont and iconx have been built
+ls $IC ../../bin/iconx >/dev/null || exit 0
+
+case `uname` in 
+     *"NT"*) NT=1;; 
+esac;
+
+#  if no files specified, run them all
+if [ $# = 0 ]; then
+   set - stand/*.std
+fi
+L=
+for F in $*; do
+   F=`basename $F .std`
+   F=`basename $F .icn`
+   rm -f local/$F.out
+   echo "Compiling $F"
+   ! $IC -s $F.icn && L=$L$B$F && continue
+   echo "Testing $F"
+   if test -r data/$F.dat
+   then
+      ./$F <data/$F.dat >local/$F.out 2>&1
+   else
+      ./$F </dev/null >local/$F.out 2>&1
+   fi
+
+   # Assume that NT in uname means Windows
+   if [ -n "$NT" ]; then
+       if test -r stand/$F.wstd; then
+	  grep -f stand/$F.wstd local/$F.out
+      else
+	  grep -f stand/$F.std local/$F.out
+      fi	  
+   else
+       grep -f stand/$F.std local/$F.out
+   fi
+
+   # diff returns one if there is a difference
+   if [ $? -eq 1 ]; then
+       # skip the env test since it is expected to be different
+       if [ "$F" != "env" ]; then
+	   L=$L" "$F
+       fi
+   fi
+   
+   rm -f $F $F.c $F.h
+done
+
+echo ""
+echo "===== Test Result ===="
+if [ -n "$L" ]; then
+    echo "Failed Tests:"
+    echo $L
+else
+    echo "          Pass"
+fi
+echo "========================"

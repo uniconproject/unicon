@@ -9,6 +9,8 @@ GREP=${COTST}
 
 # Do the tests
 Test: DoTest
+Uniconc : 
+	UC="../../unicon -C " make Test
 
 ${GREP} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
@@ -22,9 +24,9 @@ ${GREP} : % : %.icn local stand/%.std
 
 include ../Makefile.test
 
-#Icont Test-icont Pattern Pattern-icont:
-#		IC=unicon sh Test-icon $(COTST)
+Icont Test-icont :
+		IC=unicon sh Test-icon $(COTST)
 
-#Iconc Test-iconc Siconc Samples-iconc:
-#		IC="unicon -C " sh Test-icon $(COTST)
+Iconc Test-iconc :
+		IC="unicon -C " sh Test-icon $(COTST)
 

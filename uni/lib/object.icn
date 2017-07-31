@@ -38,7 +38,8 @@ class Object()
    end
 
    #
-   # Return the class name as a string, e.g. lang__Object
+   # Return the class name as a string, e.g. lang__Object.
+   # This method is deprecated. Consider using method className().
    #
    method get_class_name()
       return lang::get_class_name(self)
@@ -61,6 +62,7 @@ class Object()
    #
    # Succeed if and only if this object is an instance of class with the
    # given name.
+   # This method is deprecated. Consider using method instanceOf().
    #
    method is_instance(name)
       return lang::is_instance(self, name)
@@ -73,7 +75,7 @@ class Object()
    #    that it inherits from.]>
    # </p>
    method Type()
-      suspend util::Type(self)
+      suspend lang::Type(self)
    end
 
    # <p>
@@ -82,12 +84,11 @@ class Object()
    # <[fails otherwise]>
    # </p>
    method instanceOf(superClassname) # class name to check as superclass
-      return util::instanceof(self, superClassname)
+      return lang::instanceof(self, superClassname)
    end
 
    # <p>
-   # <[returns the classname for the current class]>
-   #
+   # <[returns the classname for the current class in package::class format]>
    # </p>
    method className()
       return Type()

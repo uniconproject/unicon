@@ -5,11 +5,12 @@ COTST = cobench stressCo stressCollectCo
 #IGNORE=$(COTST)
 # ^ skipped. 
 TARGETS=$(COTST)
+GREP=${COTST}
 
 # Do the tests
 Test: DoTest
 
-${COTST} : % : %.icn local stand/%.std
+${GREP} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $<
 	./$@ | tee local/$@.out

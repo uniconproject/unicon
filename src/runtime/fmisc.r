@@ -525,7 +525,7 @@ function{1} pindex_image(x, i)
    ep = Blk(bp, Pattern)->pe; 
 
    if (pattern_image(ep, -1, &result, 0, i, -1) == RunError) 
-      runerr(0);
+      runerr(166, x);
    else return result;
    }
 end

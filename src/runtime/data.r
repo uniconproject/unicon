@@ -321,6 +321,7 @@ struct errtab errtab[] = {
    163,  "object, method, or method parameter problem in unevaluated expression",
    164,  "unsupported unevaluated expression",
    165,  "null pattern argument where name was expected",
+   166,  "unable to produce pattern image, possible malformed pattern",
 #endif					/* PatternType */
 
 #ifdef PosixFns

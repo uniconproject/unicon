@@ -2134,7 +2134,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
        if((pcode != PT_MF && (le->nslots == 1)) || 
          ((pcode == PT_MF) && (le->nslots == 2))) {
 
-          if (construct_image(bi_pat(PI_EMPTY), result,
+          if (construct_image(result, bi_pat(PI_FPAREN), 
                       bi_pat(PI_BPAREN), result) == RunError)
 	     return RunError;
           return construct_image(bi_pat(PI_BQUOTE), result,
@@ -2761,7 +2761,7 @@ dptr dp1, dp2;
 	 ep = Blk(bp,Pattern)->pe;
 	 
          if (pattern_image(ep, -1, &pimage, 0, -1, -1) == RunError)
-	    return RunError;
+	    ReturnErrVal(166, *dp1, RunError);
          t = alcstr(NULL, StrLen(pimage) + 29);
 	 sprintf(t, "pattern_%ld(%ld) = ", (long)(Blk(bp,Pattern)->id),
 	 	        (long)(Blk(ep,Pelem)->index));

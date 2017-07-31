@@ -1679,7 +1679,7 @@ int c, q;
  * peCount helps to know whether there is a previous thing on which
  * to concatenate. pe_index aids UDB in identifying current indices.
  * stop_index is the index at which an alternate halts its recursion (to
- * prevent (duplication). prev_index stores the index of the last Arbno_S
+ * prevent duplication). prev_index stores the index of the last Arbno_S
  * so we know where to halt the image recursion (avoids infinite loops)
  */
 int pattern_image(union block *pe, int prev_index, dptr result, 
@@ -1698,18 +1698,6 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 
        if(Blk(ep, Pelem)->index == pe_index)
           index_image = 1; 
-
-      /* while(Blk(ep, Pelem) != NULL)
-       {  
-       fprintf(stdout, "Loop Code: %d\n", Blk(ep, Pelem)->pcode);  
-       if(Blk(ep, Pelem)->pcode == PC_Alt)
-          ep = (union block *)BlkLoc(Blk(ep, Pelem)->parameter);
-       else if(Blk(ep, Pelem)->pcode == PC_Arbno_X && flag != 1){
-          ep = (union block *)BlkLoc(Blk(ep, Pelem)->parameter);
-          flag += 1; }
-       else  
-          ep = Blk(ep, Pelem)->pthen;
-       }*/  
 
        switch (Blk(ep,Pelem)->pcode) {
           case PC_Alt: {
@@ -2429,33 +2417,8 @@ int find_cindex(union block *l, union block *r)
    return -1; 
 }
 
-#if !COMPILER
-function{1} pindex_image(x, i)
-   if ! cnv:C_integer(i) then 
-      runerr(101, i);
-
-   abstract {
-      return string
-      }
-   body {
-
-   tended union block * bp;
-   register union block * ep;
-
-   if(! cnv_pattern(&x, &x)) 
-      runerr(127, x);
-
-   bp = BlkLoc(x);
-   ep = Blk(bp, Pattern)->pe; 
-
-   if (pattern_image(ep, -1, &result, 0, i, -1) == RunError) 
-      runerr(0);
-   else return result;
-   }
-end
-#endif                                  /* COMPILER */ 
-
 #endif					/* PatternType */
+
 
 /*
  * getimage(dp1,dp2) - return string image of object dp1 in dp2.

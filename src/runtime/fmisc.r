@@ -504,6 +504,34 @@ function{1} icom(i)
 end
 
 
+#ifdef PatternType
+
+function{1} pindex_image(x, i)
+   if ! cnv:C_integer(i) then 
+      runerr(101, i);
+
+   abstract {
+      return string
+      }
+   body {
+
+   tended union block * bp;
+   register union block * ep;
+
+   if(! cnv_pattern(&x, &x)) 
+      runerr(127, x);
+
+   bp = BlkLoc(x);
+   ep = Blk(bp, Pattern)->pe; 
+
+   if (pattern_image(ep, -1, &result, 0, i, -1) == RunError) 
+      runerr(0);
+   else return result;
+   }
+end
+
+#endif                                  /* PatternType */ 
+
 "image(x) - return string image of object x."
 /*
  *  All the interesting work happens in getimage()

@@ -55,6 +55,8 @@ struct b_pelem	*alcpelem_1	(word);
 #else					/* COMPILER */
 struct b_pelem	*alcpelem_0	(word, word *);
 struct b_pelem	*alcpelem_1	(word, word *);
+int pattern_image(union block *pe, int prev_index, dptr result,
+		  int peCount, int pe_index, int stop_index); 
 #endif					/* COMPILER */
 #endif					/* PatternType */
 #else					/* MultiThread */

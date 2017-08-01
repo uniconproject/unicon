@@ -370,6 +370,9 @@ method handle_pstep_match()
          if curPelem = PC_Unanchored then { ## Match is retrying. Reset State
             msg := "\n   Match has failed with no alternatives,_
                     starting from the beginning..."
+            pat := plevel[*plevel].pat
+            plevel := []
+            push(plevel, patLevel(pat, PC_Unanchored, -1))
             pPos := keyword("pos", Monitored)
             DState.Write(msg)
             }
@@ -410,7 +413,6 @@ end
 method handle_PatStack()
 
    cur_index := keyword("patindex", Monitored)
-
    if /curPelem then {
       DState.State = ERROR
       DState.Write("\n   Error no pattern element currently selected")
@@ -419,17 +421,15 @@ method handle_PatStack()
 
    if &eventcode == E_PatPush then {
       if curPelem ~= PC_Rpat & curPelem ~= PC_Pred_Func & curPelem ~= PC_Pred_MF then {
-         if &eventvalue != 0 then { 
+         if &eventvalue ~= 0 then {
             push(plevel, patLevel(pat, PC_R_Enter, -1))
             curPlevel +:= 1
             }
          }
       }
    else if &eventcode == E_PatPop then {
-      if &eventvalue ~= 0 then {
-         curPlevel -:= 1
-         pat := plevel[(*plevel - curPlevel)].pat
-         }
+        curPlevel -:= 1
+        pat := plevel[(*plevel - curPlevel)].pat
       }
    else{
       if type(&eventvalue) ~== "pattern" then evalVal := &eventvalue
@@ -452,7 +452,7 @@ method getUnderlined()
 
    line_max := image_max + buff_len
 
-   if cur_pos >= (image_max - ellipse) then { ##line exceeds length
+   if cur_pos >= image_max then { ##line exceeds length
       sub ? {
          if pPos < (image_max - ellipse) then { ## pPos is before truncate
             underlined ||:= "..."
@@ -464,6 +464,7 @@ method getUnderlined()
                }
              }
          else {  ##pPos not before truncate. Tab to it and start dotting under
+            write("not before truncate")
             underlined ||:= "   "
             tab(cur_pos - ((image_max - ellipse)/2))
 
@@ -499,7 +500,7 @@ method truncateLine()
 
    if *sub + 1 > image_max then { ## sub exceeds the max_len
       sub ? {
-         if cur_pos >= (image_max - ellipse) then { ##cursor is beyond max_len
+         if cur_pos >= image_max then { ##cursor is beyond max_len
             image := "..."
             tab(cur_pos - ((image_max - ellipse)/2)) #tab halfway behind cursor
             }
@@ -593,7 +594,7 @@ end
 method silentStep()
    if &eventcode == E_PatAttempt then {
       pat := &eventvalue
-      plevel.push(patLevel(&eventvalue, PC_Unanchored))
+      push(plevel, patLevel(&eventvalue, PC_Unanchored))
       step_count -:= 1
       }
    else if &eventcode == E_PelemAttempt then {
@@ -714,6 +715,7 @@ method cmdPrintStack()
    local level := curPlevel
    local cur_index := keyword("patindex", Monitored)
    local space := "    "
+   local count := 0
    msg := ""
 
    while cur_pat.pat ~=== plevel[*plevel].pat do {
@@ -728,9 +730,10 @@ method cmdPrintStack()
 
       if level > 9 then space := "   "
       else if level > 99 then space := "  "
-      msg ||:= "\n"||space|| "#"||level||": "||patElem[1]
+      msg ||:= "\n"||space|| "#"||count||": "||patElem[1]
       msg ||:= "\n"||patElem[2] 
       level -:= 1
+      count := 1
       cur_pat := plevel[*plevel - level]
       cur_index := plevel[*plevel - level].index
       }
@@ -743,7 +746,7 @@ method cmdPrintStack()
       DState.Write("\n   Error in pattern element imaging - UDB")
       return
       }
-   msg ||:= "\n"||space||"#"||level||": "||patElem[1]
+   msg ||:= "\n"||space||"#"||count||": "||patElem[1]
    msg ||:= "\n"||patElem[2] 
 
    DState.Write(msg)

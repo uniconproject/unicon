@@ -1,11 +1,5 @@
-#unicon program load.icn
 #
-#   to pass test:
-#   export UC="../../bin/unicon -s" # or your path to unicon
-#                             # ^ so stderr output does not vary
-#   ./load &> load.out
-#        # ^ use your shell's command to redirect error out also
-#   diff stand/load.std load.out & echo ok
+# load.icn - compile, load, and run a program to verify that load() works
 #
 #   without -s, the name of the temp file will vary.
 #
@@ -13,7 +7,7 @@
 
 procedure main()
     if not (&features == "multiple programs") then
-        stop("This program requires muliple programs.")
+        stop("This program requires multiple programs.")
 
     if find("NT", &features) then remove("a.exe")
     else remove("a")
@@ -30,12 +24,11 @@ procedure main()
     &features ? ( ="Binaries at ", unicon:=tab(0)|| "unicon" )
     stat(unicon) & icont:=unicon   # if wrong, do not use this.
     getenv("UC"|"UNICON")? (find("unicon") , icont:=tab(0))
-    if ss := system(icont||" a.icn") then {
-# use here || " -s a.icn" # ^ to avoid noise or variation
+    if ss := system(icont||" -s a.icn") then {
 	if ss ~= 0 then stop("compile returned ", image(ss))
         }
     else stop("system(icont a.icn) failed")
-    #     ^ do we need to remove a.icn? 
+
     write("loading a")
     if (x := load("a")) then write("loaded ", image(x))
     else stop("couldn't load(a)")

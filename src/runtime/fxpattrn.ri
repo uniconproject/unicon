@@ -2171,28 +2171,32 @@ Node_Succeed:
 #define ExInterp_sp /* noop */
 #define EntInterp_sp /* noop */
 
-      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PT_EVAL,&(mycurpstate->parent->eventval)),/*noop*/);
+      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,-1,PT_EVAL,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
    case PC_Any_VP: case PC_Break_VP: case PC_BreakX_VP: case PC_NotAny_VP:
    case PC_NSpan_VP: case PC_Span_VP: case PC_String_VP: case PC_Pos_NP:
    case PC_Len_NP: case PC_RPos_NP: case PC_RTab_NP: case PC_Tab_NP:
    case PC_Rpat:
       /* if a VP or a NP or an Rpat */
-      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PT_VP,&(mycurpstate->parent->eventval)),/*noop*/);
+      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,-1,PT_VP,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
    case PC_Any_VF: case PC_Break_VF: case PC_BreakX_VF: case PC_NotAny_VF:
-   case PC_NSpan_VF: case PC_Span_VF: case PC_String_VF: case PC_Pos_NF:
-   case PC_Len_NF: case PC_RPos_NF: case PC_RTab_NF: case PC_Tab_NF:
-   case PC_Pred_Func:
+   case PC_NSpan_VF: case PC_Span_VF: case PC_Pos_NF: case PC_Len_NF:
+   case PC_RPos_NF: case PC_RTab_NF: case PC_Tab_NF: case PC_Pred_Func:
       /* if a VF or NF or PC_Pred_Func */
-      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PT_VF,&(mycurpstate->parent->eventval)),/*noop*/);
+      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,-1,PT_VF,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
-   case PC_String_MF: case PC_Pred_MF: case PC_Any_MF: case PC_Break_MF:
-   case PC_BreakX_MF: case PC_NotAny_MF: case PC_NSpan_MF: case PC_Span_MF:
-   case PC_Pos_NMF: case PC_Len_NMF: case PC_RPos_NMF: case PC_RTab_NMF:
-   case PC_Tab_NMF:
+   case PC_String_VF:
+      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PC_String_VF,PT_VF,&(mycurpstate->parent->eventval)),/*noop*/);
+      break;
+   case PC_String_MF: 
+      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PC_String_MF,PT_VF,&(mycurpstate->parent->eventval)),/*noop*/);
+      break;
+   case PC_Pred_MF: case PC_Any_MF: case PC_Break_MF: case PC_BreakX_MF:
+   case PC_NotAny_MF: case PC_NSpan_MF: case PC_Span_MF: case PC_Pos_NMF:
+   case PC_Len_NMF: case PC_RPos_NMF: case PC_RTab_NMF: case PC_Tab_NMF:
       /* if a MF or NMF or PC_Pred_MF */
-      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,PT_MF,&(mycurpstate->parent->eventval)),/*noop*/);
+      EVValDEx(&nulldesc,e_patarg,/*noop*/,arg_image(Node->parameter,-1,PT_MF,&(mycurpstate->parent->eventval)),/*noop*/);
       break;
       }
 #endif					/* e_patarg */
@@ -2667,52 +2671,6 @@ Node_Succeed:
        */
    case  PC_Pred_Func: {
       GetResultFromFuncCall();
-      type_case cresult of {
-      string: {
-	 int LV_Len = StrLen(cresult);
-	 DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
-	 if ((Length - (k_pos - 1) >= LV_Len )
-	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
-	    k_pos += LV_Len;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 break;
-	 }
-
-      cset: {
-	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
-	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    k_pos++;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 break;
-	 }
-      pattern: {
-	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
-	 StackNode(Stack_Ptr + 1) = Node->pthen;
-	 Push_Region();
-	 if (Stack_Ptr +
-	     ((struct b_pattern *)BlkLoc(cresult))->stck_size >= Stack_Size) {
-	    fatalerr(309, NULL);
-	    }
-	 else {
-	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(cresult))->pe;
-	    goto Match;
-	    }
-	 break;
-	 }
-      default: {
-	 fatalerr(161, NULL);
-	 }
-	 }
       /*
        * If the func failed, call_result would have been NULL and the
        * above macro would have failed.  Otherwise, it succeeded and
@@ -2723,55 +2681,27 @@ Node_Succeed:
 
    case  PC_Pred_MF:{
       GetResultFromMethodCall();
-      type_case cresult of {
-      string: {
-	 int LV_Len = StrLen(cresult);
-	 DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
-	 if ((Length - (k_pos - 1) >= LV_Len )
-	     && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
-	    k_pos += LV_Len;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
+      if (call_result == 0)
+         goto Node_Fail;
+      else {
+         if(is:string(cresult)) {
+	    int LV_Len = StrLen(cresult);
+	    DEBUGF(20,(stdout, "Matching unevaluated String variable \n"));
+	    if ((Length - (k_pos - 1) >= LV_Len )
+	        && !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
+	       k_pos += LV_Len;
+	       EVVal(k_pos, e_spos);
+	       goto Node_Succeed;
+	       }
+	    else {
+	       goto Node_Fail;
+	       }
 	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 break;
-	 }
-
-      cset: {
-	 DEBUGF(20,(stdout,"Matching unevaluated cset variable\n"));
-	 if ((k_pos <= Length) && Testb(ToAscii(pat_sub[k_pos - 1]), cresult)) {
-	    k_pos++;
-	    EVVal(k_pos, e_spos);
-	    goto Node_Succeed;
-	    }
-	 else {
-	    goto Node_Fail;
-	    }
-	 break;
-	 }
-      pattern: {
-	 DEBUGF(20,(stdout, "Matching unevaluated pattern variable\n"));
-	 StackNode(Stack_Ptr + 1) = Node->pthen;
-	 Push_Region();
-	 if (Stack_Ptr +
-	     ((struct b_pattern *)BlkLoc(cresult))->stck_size >= Stack_Size) {
-	    fatalerr(309, NULL);
-	    }
-	 else {
-	    Node = (struct b_pelem *) ((struct b_pattern *)BlkLoc(cresult))->pe;
-	    goto Match;
-	    }
-	 break;
-	 }
-      default: {
-	 fatalerr(161, NULL);
-	 }
-	 }
-      break;
+	  goto Node_Succeed; 
+	  }
+      break; 
       }
-
+      
    case PC_Len_Nat: {
       DEBUGF(20,(stdout, "matching Len Nat\n"));
       /* 

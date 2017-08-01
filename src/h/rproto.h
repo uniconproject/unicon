@@ -169,7 +169,8 @@ union block *pelem_make(struct b_pelem * pnext, int pattern_code,
 			int index, struct descrip param);
 
 dptr		bi_pat		(int what);
-int		arg_image	(struct descrip arg, int pcode, dptr result);
+int		arg_image	(struct descrip arg, int pcode, int type,
+				   dptr result);
 int		construct_image	(dptr left, dptr s, dptr r, dptr result);
 
 struct b_pattern * breakx_make(struct b_pelem * B);

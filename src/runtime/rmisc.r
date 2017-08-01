@@ -1863,10 +1863,12 @@ int pattern_image(union block *pe, int prev_index, dptr result,
                 } 
 	     peCount++;
 	     break;
-             }
+             } 
+          case PC_String_VF:
           case PC_Pred_Func: {
+             int pcode = Blk(ep, Pelem)->pcode; 
              arg = Blk(ep,Pelem)->parameter;
-             if ((arg_image(arg, PT_VF, result)) == RunError) {
+             if ((arg_image(arg, pcode, PT_VF, result)) == RunError) {
 		return RunError;
 		}
              if (index_image == 1)
@@ -1875,9 +1877,12 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 	     peCount++;
 	     break;
              }
+          case PC_String_MF:
           case PC_Pred_MF: {
+             int pcode = Blk(ep, Pelem)->pcode; 
              arg = Blk(ep,Pelem)->parameter;
-             if ((arg_image(arg, PT_MF, result)) == RunError) return RunError;
+             if ((arg_image(arg, pcode, PT_MF, result)) == RunError) 
+                return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE),
                                     result) == RunError) return RunError;
@@ -1968,7 +1973,8 @@ int pattern_image(union block *pe, int prev_index, dptr result,
              }
           case PC_Rpat: {
              arg = Blk(ep,Pelem)->parameter;
-             if ((arg_image(arg, PT_VP, result)) == RunError) return RunError;
+             if ((arg_image(arg, -1, PT_VP, result)) == RunError) 
+                return RunError;
              if (index_image == 1)
                 if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)
                                     ,result) == RunError) return RunError;
@@ -2058,13 +2064,13 @@ int pattern_image(union block *pe, int prev_index, dptr result,
 
 /* Construct image for Pattern Function Parameters */ 
 
-int arg_image(struct descrip arg, int pcode, dptr result)
+int arg_image(struct descrip arg, int pcode,  int type, dptr result)
    {
    struct descrip image;
    tended struct descrip param = arg;  
    
    if(!is:list(param)) {
-      if(pcode == PT_EVAL) {   /*Parameter is a string, cset, int */ 
+      if(type == PT_EVAL) {   /*Parameter is a string, cset, int */ 
          type_case param of { /* or unevaluated variable */ 
             string: {
                return construct_image(bi_pat(PI_QUOTE), &param,
@@ -2086,7 +2092,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	 }
       else {
          return construct_image(bi_pat(PI_BQUOTE), &param,  /*uneval var */
-				 bi_pat(PI_BQUOTE), result);
+		         	 bi_pat(PI_BQUOTE), result);
          }
       }
    else {
@@ -2100,7 +2106,7 @@ int arg_image(struct descrip arg, int pcode, dptr result)
       else   
 	 AsgnCStr(*result, StrLoc(le->lslots[le->first]));
 
-      switch(pcode) {
+      switch(type) {
       case PT_VP: { /*Parameter image is unevaluated class member */ 
          do {
             if (construct_image(result, bi_pat(PI_PERIOD),
@@ -2109,8 +2115,8 @@ int arg_image(struct descrip arg, int pcode, dptr result)
             leCurrent++;
 	    }
 	 while (leCurrent != le->nslots);
-	 return construct_image(bi_pat(PI_BQUOTE), result,
-				 bi_pat(PI_BQUOTE), result);
+	 return construct_image(bi_pat(PI_BQUOTE), result, 
+                                bi_pat(PI_BQUOTE), result);
 	 }
        case PT_MF: { /*Parameter image is unevaluated method function */ 
          if (construct_image(result, bi_pat(PI_PERIOD),
@@ -2131,12 +2137,19 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 
 	 /* There are no parameters for this function/method */ 
 
-       if((pcode != PT_MF && (le->nslots == 1)) || 
-         ((pcode == PT_MF) && (le->nslots == 2))) {
+       if((type != PT_MF && (le->nslots == 1)) || 
+         ((type == PT_MF) && (le->nslots == 2))) {
 
           if (construct_image(result, bi_pat(PI_FPAREN), 
                       bi_pat(PI_BPAREN), result) == RunError)
 	     return RunError;
+
+          /* if double back quote */ 
+
+          if (pcode == PC_String_VF || pcode == PC_String_MF) 
+             construct_image(bi_pat(PI_BQUOTE), result,
+                             bi_pat(PI_BQUOTE), result); 
+
           return construct_image(bi_pat(PI_BQUOTE), result,
 				 bi_pat(PI_BQUOTE), result);
 	  }
@@ -2168,8 +2181,8 @@ int arg_image(struct descrip arg, int pcode, dptr result)
 	  /* attach rest of parameters for uneval method/function */ 
 
        leCurrent++;
-       if (((pcode != PT_MF) && (le->nslots != 2)) || 
-           ((pcode == PT_MF) && (le->nslots != 3))) {
+       if (((type != PT_MF) && (le->nslots != 2)) || 
+           ((type == PT_MF) && (le->nslots != 3))) {
           do {
 	     if(is:string(le->lslots[leCurrent]))
                 AsgnCStr(arg, StrLoc(le->lslots[leCurrent]));
@@ -2189,9 +2202,17 @@ int arg_image(struct descrip arg, int pcode, dptr result)
        if (construct_image(bi_pat(PI_EMPTY), result,
 			       bi_pat(PI_BPAREN), result) == RunError)
 	  return RunError;
+
+       /* if double back quote */ 
+
+       if (pcode == PC_String_VF || pcode == PC_String_MF) 
+          construct_image(bi_pat(PI_BQUOTE), result,
+                          bi_pat(PI_BQUOTE), result); 
+
        if (construct_image(bi_pat(PI_BQUOTE), result,
-			       bi_pat(PI_BQUOTE), result) == RunError)
-	   return RunError;
+			   bi_pat(PI_BQUOTE), result) == RunError)
+          return RunError;
+
        return Succeeded;
        }
    }
@@ -2269,7 +2290,7 @@ int construct_image(dptr l, dptr s, dptr r, dptr result)
 static int construct_funcimage(union block *pe, int aicode,
 				int bpcode, dptr result, int index)
 {
-   if (arg_image(Blk(pe,Pelem)->parameter, aicode, result) != Succeeded)
+   if (arg_image(Blk(pe,Pelem)->parameter, -1, aicode, result) != Succeeded)
       return RunError;
 
    switch (bpcode) {

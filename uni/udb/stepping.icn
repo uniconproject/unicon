@@ -580,44 +580,38 @@ method getPatElem(p, index)
 end
 
 method silentStep()
-
    if &eventcode == E_PatAttempt then {
       pat := &eventvalue
       plevel.push(patLevel(&eventvalue, PC_Unanchored))
       step_count -:= 1
       }
    else if &eventcode == E_PelemAttempt then {
-      if &eventvalue = PC_EOP & \ origPat then {
-         pat := origPat
-         origPat := &null
+      if &eventvalue = PC_R_Restore then {
+         curPlevel +:= 1
+         pat := plevel[*plevel - curPlevel].pat
+         }
+      else if &eventvalue = PC_R_Remove then {
+         delete(plevel, *plevel - curPlevel)
+         curPlevel -:= 1
+         pat := plevel[*plevel - curPlevel].pat
          }
       curPelem := &eventvalue
       }
    else {
     case curPelem of {
        PC_Fence_X | PC_R_Enter | PC_EOP |
-       PC_Assign | PC_Arb_X | PC_R_Remove | PC_R_Restore : {
-          return
-          }
+       PC_Assign | PC_Arb_X | PC_R_Remove | PC_R_Restore |
        PC_Assign_Imm | PC_Assign_OnM | PC_Setcur |
        PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
        PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF |
        PC_Arbno_X | PC_Arbno_S | PC_Arb_X : {
-          if PC_Arb_X then
-             if checkPatternState(pat, cur_index - 1) = 0 then return
-          else
-             if checkPatternState(pat, cur_index ) = 0 then return
+          return
           }
        PC_Unanchored: {
           pPos := keyword("pos", Monitored)
-          if \origPat then {   #reset nested pattern unevaluated env
-             pat := origPat
-             origPat := &null 
-             }
           return 
           }
        default: {
-          if checkPatternState(pat, cur_index ) = 0 then return
           step_count -:= 1
           }
        }

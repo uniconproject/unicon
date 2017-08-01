@@ -292,7 +292,7 @@ char get_storepath(Tpdisc_t *tpdisc, char *store_path)
    return 'd';
 }
 
-int sslconnect(char* host, u_short port, Tpdisc_t* tpdisc)
+int sslconnect(char* host, unsigned short port, Tpdisc_t* tpdisc)
 {
    char store_type;
    char store_path[1024];

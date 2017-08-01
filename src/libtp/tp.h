@@ -16,7 +16,7 @@ typedef struct _tp_s        Tp_t;          /* libtp handle */
 typedef struct _tpdisc_s    Tpdisc_t;      /* discipline */
 typedef struct _tpmethod_s  Tpmethod_t;    /* method */
 
-typedef int       (*Tpconnect_f)(char* host, u_short port, Tpdisc_t* disc);
+typedef int       (*Tpconnect_f)(char* host, unsigned short port, Tpdisc_t* disc);
 typedef int       (*Tpclose_f)(Tpdisc_t* disc);
 typedef ssize_t   (*Tpread_f)(void* buf, size_t n, Tpdisc_t* disc);
 typedef ssize_t   (*Tpreadln_f)(void* buf, size_t n, Tpdisc_t* disc);

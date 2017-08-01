@@ -53,7 +53,7 @@
 # define MAXADDRS 35
 #endif
 
-int unixconnect(char* host, u_short port, Tpdisc_t* tpdisc)
+int unixconnect(char* host, unsigned short port, Tpdisc_t* tpdisc)
 {
   Tpunixdisc_t* disc = (Tpunixdisc_t*)tpdisc;
 

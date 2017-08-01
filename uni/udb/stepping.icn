@@ -27,7 +27,7 @@ class Stepping(
    curPelem,    # the current pelem we are on
    pPos,        # stores the previous position of the current total match       
    evalVal,     # stores the value of an unevaluated resolved expression
-   curPlevel        # the current level of nested pattern
+   curPlevel    # the current level of nested pattern
    )	
 	       
 #
@@ -250,14 +250,15 @@ method handle_pstep_fail()
          patElem := getPatElem(pat, cur_index)
          if pat ~=== plevel[*plevel].pat then{
             upElem := getPatElem(plevel[*plevel - (curPlevel - 1)].pat,
-	              plevel[*plevel- (curPlevel - 1)].index)
+				 plevel[*plevel- (curPlevel - 1)].index)
+            if DState.State = ERROR then {
+               DState.Write("\n   Error in pattern element imaging - UDB")
+               return
+               }
             msg ||:= "\n   Pat: "||upElem[1]
             msg ||:= "\n" || upElem[2]
             }
-         if DState.State = ERROR then {
-            DState.Write("\n   Error in pattern element imaging - UDB")
-            return
-            }
+
          msg ||:= "\n   Pat: "||patElem[1]
          msg ||:= "\n"||patElem[2]
          if curPelem = PC_Rpat | curPelem = PC_Pred_Func | curPelem = PC_Pred_MF then
@@ -312,6 +313,11 @@ method handle_pstep_attempt()
          patElem := getPatElem(pat, cur_index - 1) ##PC_Arb_Y is imaged
          }
 
+      if DState.State = ERROR then {
+         DState.Write("\n   Error in pattern element imaging - UDB")
+         return
+         }
+
       msg ||:= "\n   Pat: "||patElem[1]
       msg ||:= "\n" || patElem[2]
 
@@ -348,6 +354,10 @@ method handle_pstep_match()
             msg ||:= keyword("pos", Monitored)
             }
          patElem := getPatElem(pat, cur_index)
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
          msg ||:= "\n   Pat: "||patElem[1]
          msg ||:= "\n" || patElem[2]
          step_count := 1
@@ -378,14 +388,15 @@ method handle_pstep_match()
       patElem := getPatElem(pat, cur_index)
       if pat ~=== plevel[*plevel].pat then{
          upElem := getPatElem(plevel[*plevel - (curPlevel - 1)].pat,
-	            plevel[*plevel- (curPlevel - 1)].index)
+   			      plevel[*plevel- (curPlevel - 1)].index)
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
          msg ||:= "\n   Pat: "||upElem[1]
          msg ||:= "\n" || upElem[2]
          }
-      if DState.State = ERROR then {
-         DState.Write("\n   Error in pattern element imaging - UDB")
-         return
-         }
+
       msg ||:= "\n   Pat: "||patElem[1]
       msg ||:= "\n"||patElem[2] 
       if curPelem = PC_Rpat | curPelem = PC_Pred_Func | curPelem = PC_Pred_MF then
@@ -651,6 +662,10 @@ method cmdPrintPat(option)
 
       if *patImage <= max_len then {  ##patImage is less than full line
          patElem := getPatElem(pat, cur_index)
+         if DState.State = ERROR then {
+            DState.Write("\n   Error in pattern element imaging - UDB")
+            return
+            }
          final_image := "\n   Pat: "||patElem[1]
          final_image ||:= "\n" || patElem[2]
          }
@@ -667,7 +682,7 @@ method cmdPrintPat(option)
                   }
                if &pos = *patImage + 1 then{
                   DState.State := ERROR
-                  msg := "\n Error: No Bracketed Image found before EOP"
+                  msg := "\n   Error: No Bracketed Image found before EOP"
                   DState.Write(msg)
                   }
                final_image ||:= move(1)
@@ -694,37 +709,44 @@ method cmdPrintPat(option)
    DState.Write(msg)
 end
 
-#Use the character by character method to check and see if we are
-#still in the resolved return pattern for unevaluateds. If we origPat
-#is not null and there is no bracketed state we assume that we have
-#backed up in the pattern and reset the pattern state
+method cmdPrintStack()
+   local cur_pat := plevel[*plevel - curPlevel]
+   local level := curPlevel
+   local cur_index := keyword("patindex", Monitored)
+   local space := "    "
+   msg := ""
 
-method checkPatternState(p, index)
-   local patImage := pindex_image(p, -1)
-   local patImageB := pindex_image(p, index)
-   patImage ? {
-      repeat {
-         if (patImage[&pos:&pos+1] ~== patImageB[&pos:&pos+1]) then{
-            elemStart := &pos
-            break
-            }
-         if &pos = *patImage + 1 then{
-            if \origPat then {
-               pat := origPat
-               origPat := &null
-               return 1
-               }
-            else {
-               DState.State := ERROR
-               msg := "\n   No resolved pattern but still no indicated pelem"
-               DState.Write(msg)
-               return 0 
-               }
-           }
-         move(1)
+   while cur_pat.pat ~=== plevel[*plevel].pat do {
+      if curPelem == PC_Arb_X then 
+         patElem := getPatElem(cur_pat.pat, cur_index - 1)
+      else 
+         patElem := getPatElem(cur_pat.pat, cur_index)
+      if DState.State = ERROR then {
+         DState.Write("\n   Error in pattern element imaging - UDB")
+         return
          }
+
+      if level > 9 then space := "   "
+      else if level > 99 then space := "  "
+      msg ||:= "\n"||space|| "#"||level||": "||patElem[1]
+      msg ||:= "\n"||patElem[2] 
+      level -:= 1
+      cur_pat := plevel[*plevel - level]
+      cur_index := plevel[*plevel - level].index
       }
-   return 2
+
+   if curPelem == PC_Arb_X then 
+      patElem := getPatElem(cur_pat.pat, cur_index - 1)
+   else
+      patElem := getPatElem(cur_pat.pat, cur_index)
+   if DState.State = ERROR then {
+      DState.Write("\n   Error in pattern element imaging - UDB")
+      return
+      }
+   msg ||:= "\n"||space||"#"||level||": "||patElem[1]
+   msg ||:= "\n"||patElem[2] 
+
+   DState.Write(msg)
 end
 
 #

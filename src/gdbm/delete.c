@@ -29,7 +29,7 @@
 
 
 /* include system configuration before all else. */
-#include "autoconf.h"
+#include "../h/config.h"
 
 #include "gdbmdefs.h"
 #include "extern.h"

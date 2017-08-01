@@ -26,7 +26,7 @@
  #pragma alloca
 #endif
 
-#include "autoconf.h"
+#include "../h/config.h"
 
 #ifdef __GNUC__
 #define alloca __builtin_alloca

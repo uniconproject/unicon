@@ -28,7 +28,7 @@
 
 
 /* include system configuration before all else. */
-#include "autoconf.h"
+#include "../h/config.h"
 
 #include <stdio.h>
 #if HAVE_STDLIB_H

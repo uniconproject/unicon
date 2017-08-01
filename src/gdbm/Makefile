@@ -78,7 +78,7 @@ HDRS = gdbmdefs.h extern.h gdbmerrno.h systems.h dbm.h ndbm.h gdbmconst.h \
 
 MSCFILES = COPYING ChangeLog Makefile README gdbm.3 gdbm.texinfo \
 	gdbm.info NEWS INSTALL gdbm.proto gdbm.proto2 conv2gdbm.c \
-	alloca.c getopt.c getopt.h samp1.cc autoconf.h
+	alloca.c getopt.c getopt.h samp1.cc
 
 DISTFILES = $(SRCS) $(HDRS) $(MSCFILES)
 
@@ -147,7 +147,7 @@ clean:
 mostlyclean: clean
 
 distclean: clean
-	rm -f Makefile autoconf.h config.status gdbm.h $(TEXI_F) *~
+	rm -f gdbm.h $(TEXI_F) *~
 
 realclean: distclean
 	rm -f TAGS
@@ -167,47 +167,47 @@ dist:
 	rm -rf `cat .fname` .fname
 
 # dbm files
-dbminit.o:	autoconf.h gdbmdefs.h proto.h extern.h gdbmerrno.h
-delete.o:	autoconf.h gdbmdefs.h proto.h extern.h
-fetch.o:	autoconf.h gdbmdefs.h proto.h extern.h
-store.o:	autoconf.h gdbmdefs.h proto.h extern.h
-seq.o:		autoconf.h gdbmdefs.h proto.h extern.h
+dbminit.o:	../h/config.h gdbmdefs.h proto.h extern.h gdbmerrno.h
+delete.o:	../h/config.h gdbmdefs.h proto.h extern.h
+fetch.o:	../h/config.h gdbmdefs.h proto.h extern.h
+store.o:	../h/config.h gdbmdefs.h proto.h extern.h
+seq.o:		../h/config.h gdbmdefs.h proto.h extern.h
 
 # ndbm files
-dbmopen.o:	autoconf.h gdbmdefs.h extern.h gdbmerrno.h
-dbmdelete.o:	autoconf.h gdbmdefs.h extern.h
-dbmfetch.o:	autoconf.h gdbmdefs.h extern.h
-dbmstore.o:	autoconf.h gdbmdefs.h extern.h
-dbmseq.o:	autoconf.h gdbmdefs.h extern.h
-dbmclose.o:	autoconf.h gdbmdefs.h systems.h
-dbmpagfno.o:	autoconf.h gdbmdefs.h extern.h
-dbmdirfno.o:	autoconf.h gdbmdefs.h extern.h
+dbmopen.o:	../h/config.h gdbmdefs.h extern.h gdbmerrno.h
+dbmdelete.o:	../h/config.h gdbmdefs.h extern.h
+dbmfetch.o:	../h/config.h gdbmdefs.h extern.h
+dbmstore.o:	../h/config.h gdbmdefs.h extern.h
+dbmseq.o:	../h/config.h gdbmdefs.h extern.h
+dbmclose.o:	../h/config.h gdbmdefs.h systems.h
+dbmpagfno.o:	../h/config.h gdbmdefs.h extern.h
+dbmdirfno.o:	../h/config.h gdbmdefs.h extern.h
 
 
 # gdbm files
-gdbmclose.o:	autoconf.h gdbmdefs.h 
-gdbmdelete.o:	autoconf.h gdbmdefs.h gdbmerrno.h 
-gdbmfetch.o:	autoconf.h gdbmdefs.h gdbmerrno.h 
-gdbmopen.o:	autoconf.h gdbmdefs.h gdbmerrno.h 
-gdbmreorg.o:	autoconf.h gdbmdefs.h gdbmerrno.h extern.h
-gdbmseq.o:	autoconf.h gdbmdefs.h 
-gdbmstore.o:	autoconf.h gdbmdefs.h gdbmerrno.h 
+gdbmclose.o:	../h/config.h gdbmdefs.h 
+gdbmdelete.o:	../h/config.h gdbmdefs.h gdbmerrno.h 
+gdbmfetch.o:	../h/config.h gdbmdefs.h gdbmerrno.h 
+gdbmopen.o:	../h/config.h gdbmdefs.h gdbmerrno.h 
+gdbmreorg.o:	../h/config.h gdbmdefs.h gdbmerrno.h extern.h
+gdbmseq.o:	../h/config.h gdbmdefs.h 
+gdbmstore.o:	../h/config.h gdbmdefs.h gdbmerrno.h 
 
 # gdbm support files
-bucket.o:	autoconf.h gdbmdefs.h
-falloc.o:	autoconf.h gdbmdefs.h
-findkey.o:	autoconf.h gdbmdefs.h
-global.o:	autoconf.h gdbmdefs.h gdbmerrno.h 
-hash.o:		autoconf.h gdbmdefs.h
-update.o:	autoconf.h gdbmdefs.h
+bucket.o:	../h/config.h gdbmdefs.h
+falloc.o:	../h/config.h gdbmdefs.h
+findkey.o:	../h/config.h gdbmdefs.h
+global.o:	../h/config.h gdbmdefs.h gdbmerrno.h 
+hash.o:		../h/config.h gdbmdefs.h
+update.o:	../h/config.h gdbmdefs.h
 version.o:
 extern.h:
 gdbmdefs.h:	gdbmconst.h systems.h
 	touch gdbmdefs.h
 
 # other programs
-testgdbm.o:	autoconf.h gdbmdefs.h extern.h gdbmerrno.h systems.h
-testdbm.o:	autoconf.h
-testndbm.o:	autoconf.h ndbm.h
-tdbm.o:		autoconf.h
-conv2gdbm.o:	autoconf.h gdbm.h
+testgdbm.o:	../h/config.h gdbmdefs.h extern.h gdbmerrno.h systems.h
+testdbm.o:	../h/config.h
+testndbm.o:	../h/config.h ndbm.h
+tdbm.o:		../h/config.h
+conv2gdbm.o:	../h/config.h gdbm.h

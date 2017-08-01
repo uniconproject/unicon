@@ -26,7 +26,7 @@
        
 *************************************************************************/
 
-#include "autoconf.h"
+#include "../h/config.h"
 
 /* Keep a string with the version number in it! */
 const char * gdbm_version =

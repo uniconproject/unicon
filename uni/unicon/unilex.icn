@@ -13,6 +13,12 @@ global yytext, yyin, yytoken #, debuglex
 
 global O, D, L, H, R, FS, IS, W, idchars
 
+#
+# Global variable to allow context-sensitive lexer switching.
+# This is preparation to improve regular expression lexical rules.
+#
+global yylex2
+
 # E                       [Ee][+-]?{D}+
 #
 
@@ -111,7 +117,10 @@ procedure uni_error(s)
    errors +:= 1
 end
 
-procedure yylex2()
+#
+# This function implements the standard Unicon lexical rules.
+#
+procedure yylex2Normal()
 local new_filename
 static punc_table
 initial {
@@ -625,12 +634,14 @@ procedure yylex_reinit()
 end
 
 procedure yylex(ender)
-  static saved_tok, saved_yytext
-  local rv
-  initial {
+   static saved_tok, saved_yytext
+   local rv
+   initial {
+      yylex2 := yylex2Normal
       if /buffer then
 	  yylex_reinit()
-     }
+      }
+
    if /buffer then {
       if \debuglex then
 	 write("yylex() : 0")

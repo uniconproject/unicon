@@ -51,8 +51,7 @@ deps depends:
 # Clean up the directory.
 #
 Clean clean:
-	@-rm -f *.u
-	@-rm -f *~
+	$(RM) uniclass.dir uniclass.pag UniDoc$(EXE) *.u *~
 
 # List all source files that have been modified since the last build.
 #

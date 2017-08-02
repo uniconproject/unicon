@@ -310,8 +310,8 @@ AC_DEFUN([CHECK_OPENSSL],
 [
 do_arg_with([ssl])
 if test "x$with_ssl" != "xno"; then
-  do_lib_check([ssl], [${ssl_HOME}], [openssl/ssl.h], [SSL_library_init], [HAVE_LIBSSL], [C])
   do_lib_check([crypto], [${ssl_HOME}], [openssl/bio.h], [BIO_read], [HAVE_LIBCRYPTO], [C])
+  do_lib_check([ssl], [${ssl_HOME}], [openssl/ssl.h], [SSL_library_init], [HAVE_LIBSSL], [C])
 fi
 #        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
 ])

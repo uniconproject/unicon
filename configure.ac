@@ -242,6 +242,7 @@ case $unicon_host in
        WINSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+       LIBS="$LIBS -lgdi32 -lws2_32"
         ;;
 esac
 
@@ -327,11 +328,13 @@ if test "x$ovld" = "xyes"; then
 fi
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
+CHECK_ZLIB()
+
 if test "x$graphics" = "xyes"; then
 
   CHECK_XLIB()
   # if we have X11 or if we are running on MS Windows check for graphics libs
-  if test "x$cv_libX11" = xyes -o "x$unicon_os" = "xwindows" ; then
+  if test "x$cv_libX11" = xyes -o "ms$unicon_os" = "mswindows" ; then
 
     CHECK_FREETYPE()
     CHECK_XFT()
@@ -339,7 +342,16 @@ if test "x$graphics" = "xyes"; then
     CHECK_PNG()
 
     if test "x$graphics3d" = "xyes"; then
-       CHECK_OPENGL()
+       # assume we have opengl on windows
+       if test "ms$unicon_os" = "mswindows" ; then
+          cv_libGL=yes
+	  cv_libGLU=yes
+	  cv_opengl=yes
+	  AC_DEFINE([HAVE_LIBGL], [1])
+	  AC_DEFINE([HAVE_LIBGLU], [1])
+       else
+          CHECK_OPENGL()
+       fi
        # A C++ compiler must be present and usable
        if test "x$CXX" = "xg++" -a "x$GXX" = "xyes"; then
          CHECK_FTGL()
@@ -352,9 +364,12 @@ if test "x$graphics" = "xyes"; then
 
     echo "Building with graphics..."
     GRAPHICS=graphics
-    XL="-L../../bin -lXpm \$(XLIBS)"
-    XPM=xpm
-
+    
+    if test "ms$unicon_os" != "mswindows" ; then
+       XL="-L../../bin -lXpm \$(XLIBS)"
+       XPM=xpm
+    fi
+    
     if test "$cv_libftgl" = "yes"; then
         DRAWSTRING=drawstring3d.o
     	COMMONDRAWSTRING=../common/drawstring3d.o
@@ -441,8 +456,6 @@ if test "x$voip" = "xyes"; then
 else
   AC_DEFINE([NoVoip], [1], [No VOIP])
 fi
-
-CHECK_ZLIB()
 
 if test "x$database" = "xyes"; then
    CHECK_ODBC()

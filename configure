@@ -728,6 +728,7 @@ enable_verbosebuild
 enable_thin
 enable_debug
 enable_devmode
+with_zlib
 with_xlib
 with_freetype
 with_Xft
@@ -740,7 +741,6 @@ with_SDL
 with_smpeg
 with_openal
 with_jvoip
-with_zlib
 with_odbc
 with_pthread
 with_ssl
@@ -1403,6 +1403,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-zlib[=DIR]       Use zlib package (DIR: custom library path)
   --with-xlib[=DIR]       Use xlib package (DIR: custom library path)
   --with-freetype[=DIR]   Use freetype package (DIR: custom library path)
   --with-Xft[=DIR]        Use Xft package (DIR: custom library path)
@@ -1415,7 +1416,6 @@ Optional Packages:
   --with-smpeg[=DIR]      Use smpeg package (DIR: custom library path)
   --with-openal[=DIR]     Use openal package (DIR: custom library path)
   --with-jvoip[=DIR]      Use jvoip package (DIR: custom library path)
-  --with-zlib[=DIR]       Use zlib package (DIR: custom library path)
   --with-odbc[=DIR]       Use odbc package (DIR: custom library path)
   --with-pthread[=DIR]    Use pthread package (DIR: custom library path)
   --with-ssl[=DIR]        Use ssl package (DIR: custom library path)
@@ -6768,6 +6768,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
        WINSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
+       LIBS="$LIBS -lgdi32 -lws2_32"
         ;;
 esac
 
@@ -7443,6 +7444,237 @@ $as_echo "#define OVLD 1" >>confdefs.h
 fi
 #AM_CONDITIONAL([GRAPHICS], [test x$graphics = xyes])
 
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if zlib is wanted" >&5
+$as_echo_n "checking if zlib is wanted... " >&6; }
+
+# Check whether --with-zlib was given.
+if test "${with_zlib+set}" = set; then :
+  withval=$with_zlib; if test x$withval != xno ; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      zlib_HOME="$withval"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    fi
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+
+
+  if test "x$with_zlib" != "xno"; then
+
+if test  x${zlib_HOME} != "x"
+then
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${zlib_HOME}/include -I${zlib_HOME}
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${zlib_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	# If we have mulltiple headers, any missing one will set this to no
+	cv_libthislib_h=yes
+        for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ZLIB_H 1
+_ACEOF
+
+else
+  cv_libthislib_h=no
+fi
+
+done
+
+	if test x$cv_libthislib_h != xno ;  then
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing inflateEnd" >&5
+$as_echo_n "checking for library containing inflateEnd... " >&6; }
+if ${ac_cv_search_inflateEnd+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char inflateEnd ();
+int
+main ()
+{
+return inflateEnd ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' z; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_inflateEnd=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_inflateEnd+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_inflateEnd+:} false; then :
+
+else
+  ac_cv_search_inflateEnd=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_inflateEnd" >&5
+$as_echo "$ac_cv_search_inflateEnd" >&6; }
+ac_res=$ac_cv_search_inflateEnd
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  cv_libz=yes
+	      if test -n HAVE_LIBZ ; then
+
+$as_echo "#define HAVE_LIBZ 1" >>confdefs.h
+
+	      fi
+
+else
+  cv_libz=no
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
+$as_echo_n "checking checking lib z in (${zlib_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+
+fi
+
+        else
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
+$as_echo_n "checking checking lib z in (${zlib_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+
+	fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+
+  fi
+
+
 if test "x$graphics" = "xyes"; then
 
 
@@ -7696,7 +7928,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 fi
 
   # if we have X11 or if we are running on MS Windows check for graphics libs
-  if test "x$cv_libX11" = xyes -o "x$unicon_os" = "xwindows" ; then
+  if test "x$cv_libX11" = xyes -o "ms$unicon_os" = "mswindows" ; then
 
 
 
@@ -8651,6 +8883,16 @@ fi
 
 
     if test "x$graphics3d" = "xyes"; then
+       # assume we have opengl on windows
+       if test "ms$unicon_os" = "mswindows" ; then
+          cv_libGL=yes
+	  cv_libGLU=yes
+	  cv_opengl=yes
+	  $as_echo "#define HAVE_LIBGL 1" >>confdefs.h
+
+	  $as_echo "#define HAVE_LIBGLU 1" >>confdefs.h
+
+       else
 
 
 
@@ -9049,6 +9291,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
+       fi
        # A C++ compiler must be present and usable
        if test "x$CXX" = "xg++" -a "x$GXX" = "xyes"; then
 
@@ -9430,8 +9673,11 @@ $as_echo "#define NoGraphics3D 1" >>confdefs.h
 
     echo "Building with graphics..."
     GRAPHICS=graphics
-    XL="-L../../bin -lXpm \$(XLIBS)"
-    XPM=xpm
+
+    if test "ms$unicon_os" != "mswindows" ; then
+       XL="-L../../bin -lXpm \$(XLIBS)"
+       XPM=xpm
+    fi
 
     if test "$cv_libftgl" = "yes"; then
         DRAWSTRING=drawstring3d.o
@@ -11571,237 +11817,6 @@ $as_echo "#define NoVoip 1" >>confdefs.h
 
 fi
 
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if zlib is wanted" >&5
-$as_echo_n "checking if zlib is wanted... " >&6; }
-
-# Check whether --with-zlib was given.
-if test "${with_zlib+set}" = set; then :
-  withval=$with_zlib; if test x$withval != xno ; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      zlib_HOME="$withval"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-else
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-
-
-
-  if test "x$with_zlib" != "xno"; then
-
-if test  x${zlib_HOME} != "x"
-then
-
-	TMP_CPPFLAGS=$CPPFLAGS
- 	TMP_LDFLAGS=$LDFLAGS
- 	TMP_CFLAGS=$CFLAGS
- 	TMP_LIBS=$LIBS
-
-	for part in -I${zlib_HOME}/include -I${zlib_HOME}
-  	do
-		FOUND=
-		for itm in $CPPFLAGS -a -z $FOUND
-    		do
-			if test $itm = $part
-      			then
-				FOUND=1
-      			fi
-    		done
-
-		if test -z $FOUND ; then
-	   	   CPPFLAGS="$CPPFLAGS $part"
-		fi
-	done
-
-  	for part in -L${zlib_HOME}/lib
-  	do
-		FOUND=
-		for itm in $LDFLAGS -a -z $FOUND
-    		do
-			if test $itm = $part
-      			then
-				FOUND=1
-      			fi
-    		done
-
-		if test -z $FOUND ; then
-	   	   LDFLAGS="$LDFLAGS $part"
-		fi
-	done
-
-
-else
-
-	TMP_CPPFLAGS=$CPPFLAGS
- 	TMP_LDFLAGS=$LDFLAGS
- 	TMP_CFLAGS=$CFLAGS
- 	TMP_LIBS=$LIBS
-
-	for part in
-  	do
-		FOUND=
-		for itm in $CPPFLAGS -a -z $FOUND
-    		do
-			if test $itm = $part
-      			then
-				FOUND=1
-      			fi
-    		done
-
-		if test -z $FOUND ; then
-	   	   CPPFLAGS="$CPPFLAGS $part"
-		fi
-	done
-
-  	for part in
-  	do
-		FOUND=
-		for itm in $LDFLAGS -a -z $FOUND
-    		do
-			if test $itm = $part
-      			then
-				FOUND=1
-      			fi
-    		done
-
-		if test -z $FOUND ; then
-	   	   LDFLAGS="$LDFLAGS $part"
-		fi
-	done
-
-
-fi
-        ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-	# If we have mulltiple headers, any missing one will set this to no
-	cv_libthislib_h=yes
-        for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
-
-else
-  cv_libthislib_h=no
-fi
-
-done
-
-	if test x$cv_libthislib_h != xno ;  then
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing inflateEnd" >&5
-$as_echo_n "checking for library containing inflateEnd... " >&6; }
-if ${ac_cv_search_inflateEnd+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char inflateEnd ();
-int
-main ()
-{
-return inflateEnd ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' z; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_inflateEnd=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_inflateEnd+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_inflateEnd+:} false; then :
-
-else
-  ac_cv_search_inflateEnd=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_inflateEnd" >&5
-$as_echo "$ac_cv_search_inflateEnd" >&6; }
-ac_res=$ac_cv_search_inflateEnd
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  cv_libz=yes
-	      if test -n HAVE_LIBZ ; then
-
-$as_echo "#define HAVE_LIBZ 1" >>confdefs.h
-
-	      fi
-
-else
-  cv_libz=no
-
-
-	CFLAGS=$TMP_CFLAGS
-	LDFLAGS=$TMP_LDFLAGS
-	CPPFLAGS=$TMP_CPPFLAGS
- 	LIBS=$TMP_LIBS
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
-$as_echo_n "checking checking lib z in (${zlib_HOME})... " >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-
-fi
-
-        else
-
-
-	CFLAGS=$TMP_CFLAGS
-	LDFLAGS=$TMP_LDFLAGS
-	CPPFLAGS=$TMP_CPPFLAGS
- 	LIBS=$TMP_LIBS
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib z in (${zlib_HOME})" >&5
-$as_echo_n "checking checking lib z in (${zlib_HOME})... " >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-
-	fi
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-
-
-  fi
-
-
 if test "x$database" = "xyes"; then
 
 
@@ -12591,12 +12606,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	# If we have mulltiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
-        for ac_header in openssl/ssl.h
+        for ac_header in openssl/bio.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "openssl/ssl.h" "ac_cv_header_openssl_ssl_h" "$ac_includes_default"
-if test "x$ac_cv_header_openssl_ssl_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "openssl/bio.h" "ac_cv_header_openssl_bio_h" "$ac_includes_default"
+if test "x$ac_cv_header_openssl_bio_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_OPENSSL_SSL_H 1
+#define HAVE_OPENSSL_BIO_H 1
 _ACEOF
 
 else
@@ -12606,9 +12621,9 @@ fi
 done
 
 	if test x$cv_libthislib_h != xno ;  then
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SSL_library_init" >&5
-$as_echo_n "checking for library containing SSL_library_init... " >&6; }
-if ${ac_cv_search_SSL_library_init+:} false; then :
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing BIO_read" >&5
+$as_echo_n "checking for library containing BIO_read... " >&6; }
+if ${ac_cv_search_BIO_read+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -12621,16 +12636,16 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char SSL_library_init ();
+char BIO_read ();
 int
 main ()
 {
-return SSL_library_init ();
+return BIO_read ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' ssl; do
+for ac_lib in '' crypto; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -12638,36 +12653,36 @@ for ac_lib in '' ssl; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_SSL_library_init=$ac_res
+  ac_cv_search_BIO_read=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext
-  if ${ac_cv_search_SSL_library_init+:} false; then :
+  if ${ac_cv_search_BIO_read+:} false; then :
   break
 fi
 done
-if ${ac_cv_search_SSL_library_init+:} false; then :
+if ${ac_cv_search_BIO_read+:} false; then :
 
 else
-  ac_cv_search_SSL_library_init=no
+  ac_cv_search_BIO_read=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_SSL_library_init" >&5
-$as_echo "$ac_cv_search_SSL_library_init" >&6; }
-ac_res=$ac_cv_search_SSL_library_init
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_BIO_read" >&5
+$as_echo "$ac_cv_search_BIO_read" >&6; }
+ac_res=$ac_cv_search_BIO_read
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  cv_libssl=yes
-	      if test -n HAVE_LIBSSL ; then
+  cv_libcrypto=yes
+	      if test -n HAVE_LIBCRYPTO ; then
 
-$as_echo "#define HAVE_LIBSSL 1" >>confdefs.h
+$as_echo "#define HAVE_LIBCRYPTO 1" >>confdefs.h
 
 	      fi
 
 else
-  cv_libssl=no
+  cv_libcrypto=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -12675,8 +12690,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
-$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib crypto in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12690,8 +12705,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
-$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib crypto in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12796,12 +12811,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	# If we have mulltiple headers, any missing one will set this to no
 	cv_libthislib_h=yes
-        for ac_header in openssl/bio.h
+        for ac_header in openssl/ssl.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "openssl/bio.h" "ac_cv_header_openssl_bio_h" "$ac_includes_default"
-if test "x$ac_cv_header_openssl_bio_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "openssl/ssl.h" "ac_cv_header_openssl_ssl_h" "$ac_includes_default"
+if test "x$ac_cv_header_openssl_ssl_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_OPENSSL_BIO_H 1
+#define HAVE_OPENSSL_SSL_H 1
 _ACEOF
 
 else
@@ -12811,9 +12826,9 @@ fi
 done
 
 	if test x$cv_libthislib_h != xno ;  then
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing BIO_read" >&5
-$as_echo_n "checking for library containing BIO_read... " >&6; }
-if ${ac_cv_search_BIO_read+:} false; then :
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing SSL_library_init" >&5
+$as_echo_n "checking for library containing SSL_library_init... " >&6; }
+if ${ac_cv_search_SSL_library_init+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -12826,16 +12841,16 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char BIO_read ();
+char SSL_library_init ();
 int
 main ()
 {
-return BIO_read ();
+return SSL_library_init ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' crypto; do
+for ac_lib in '' ssl; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -12843,36 +12858,36 @@ for ac_lib in '' crypto; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_BIO_read=$ac_res
+  ac_cv_search_SSL_library_init=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext
-  if ${ac_cv_search_BIO_read+:} false; then :
+  if ${ac_cv_search_SSL_library_init+:} false; then :
   break
 fi
 done
-if ${ac_cv_search_BIO_read+:} false; then :
+if ${ac_cv_search_SSL_library_init+:} false; then :
 
 else
-  ac_cv_search_BIO_read=no
+  ac_cv_search_SSL_library_init=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_BIO_read" >&5
-$as_echo "$ac_cv_search_BIO_read" >&6; }
-ac_res=$ac_cv_search_BIO_read
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_SSL_library_init" >&5
+$as_echo "$ac_cv_search_SSL_library_init" >&6; }
+ac_res=$ac_cv_search_SSL_library_init
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  cv_libcrypto=yes
-	      if test -n HAVE_LIBCRYPTO ; then
+  cv_libssl=yes
+	      if test -n HAVE_LIBSSL ; then
 
-$as_echo "#define HAVE_LIBCRYPTO 1" >>confdefs.h
+$as_echo "#define HAVE_LIBSSL 1" >>confdefs.h
 
 	      fi
 
 else
-  cv_libcrypto=no
+  cv_libssl=no
 
 
 	CFLAGS=$TMP_CFLAGS
@@ -12880,8 +12895,8 @@ else
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
-$as_echo_n "checking checking lib crypto in (${ssl_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 
@@ -12895,8 +12910,8 @@ fi
 	CPPFLAGS=$TMP_CPPFLAGS
  	LIBS=$TMP_LIBS
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib crypto in (${ssl_HOME})" >&5
-$as_echo_n "checking checking lib crypto in (${ssl_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
 $as_echo "failed" >&6; }
 

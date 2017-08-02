@@ -3358,25 +3358,21 @@ Node_Succeed:
 
    case PC_String_MF: {
       GetResultFromMethodCall();
-      if (call_result == 0)
-	 goto Node_Fail;
-      else {
-	 if (cnv_str(&cresult,&cresult)){
-	    int LV_Len = StrLen(cresult);
-	    DEBUGF(20,(stdout,"Matching String\n"));
-	    if ((Length - (k_pos - 1) >= LV_Len )
-		&& !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)){
-	       k_pos += LV_Len;
-	       EVVal(k_pos, e_spos);
-	       goto Node_Succeed;
-	       }
-	    else {
-	       goto Node_Fail;
-	       }
+      if (cnv_str(&cresult,&cresult)) {
+	 int LV_Len = StrLen(cresult);
+	 DEBUGF(20,(stdout,"Matching String\n"));
+	 if ((Length - (k_pos - 1) >= LV_Len) &&
+	     !strncmp(pat_sub + (k_pos - 1), StrLoc(cresult), LV_Len)) {
+	    k_pos += LV_Len;
+	    EVVal(k_pos, e_spos);
+	    goto Node_Succeed;
 	    }
-	 goto Node_Succeed;
+	 else {
+	    goto Node_Fail;
+	    }
 	 }
-      break;
+      /* should instead probably be a runtime error */
+      goto Node_Succeed;
       }
 
       /*

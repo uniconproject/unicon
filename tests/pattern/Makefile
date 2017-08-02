@@ -1,6 +1,6 @@
 #  Makefile for testing Icon
 
-PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss nspantst pairss pany parb parbno pimmed plen ppos prem ptab ralternate rasterisk rbasic rcurly rplus rquestion rtab sawss setcur
+PATTERNTST = ABCss assignss balss bigpss breaks expss failss fence fish lenss nspantst pairss pany parb parbno pimmed peval plen ppos prem ptab ralternate rasterisk rbasic rcurly rplus rquestion rtab sawss setcur unevalcharss unevalintss 
 
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 TARGETS=$(PATTERNTST)

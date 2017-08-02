@@ -2,109 +2,139 @@
 ## Paden Rumsey
 ## July 8, 2016
 
-## The scoping rules for class are unique. An object cannot be passed into a metho
-## or function unevaluated from main unless the object is global. It will not register
-## the variable as unknown it will simply tell you "cset or integer required" 
+## Unit Tests for pattern functions that take a character as an argument
+## This tests all the possible (correct) types of input that a
+## function could take
 
 procedure main()
     c := charfunc()
+    count := 1
     x := 'a'
     while s := read() do {
-	p := Any('a')
+
+	if count = 2 then {
+	    c.var := 'b'
+	    x := 'b'
+	    }
+	else if count = 3 then {
+	    c.var := 'c'
+	    x := 'c'
+	    }
+
+	p := Any(x)
 	s ?? p -> out
 	write(out)
-	p := Any(`fcall("one")`)
+	p := Any(`fcall(x)`)
 	s ?? p -> out
 	write(out)
-	p := Any(`c.charreturn("one")`)
+	p := Any(`c.charreturn(x)`)
 	s ?? p -> out
 	write(out)
-	p := Any(`c.a`)
+	p := Any(`c.var`)
 	s ?? p -> out
 	write(out)
 	p := Any(`x`)
 	s ?? p -> out
 	write(out)
 	
-	p := Break('a')
+	p := Break(x)
 	s ?? p -> out
 	write(out)
-	p := Break(`fcall("one")`)
+	p := Break(`fcall(x)`)
 	s ?? p -> out
 	write(out)
-	p := Break(`c.charreturn()`)
+	p := Break(`c.charreturn(x)`)
 	s ?? p -> out
 	write(out)
-	p := Break(`c.a`)
+	p := Break(`c.var`)
 	s ?? p -> out
 	write(out)
 	p := Break(`x`)
 	s ?? p -> out
 	write(out)
 
-	p := Breakx('a')
+	p := Breakx(x)
 	s ?? p -> out
 	write(out)
-	p := Breakx(`fcall("one")`)
+	p := Breakx(`fcall(x)`)
 	s ?? p -> out
 	write(out)
-	p := Breakx(`c.charreturn()`)
+	p := Breakx(`c.charreturn(x)`)
 	s ?? p -> out
 	write(out)
-	p := Breakx(`c.a`)
+	p := Breakx(`c.var`)
 	s ?? p -> out
 	write(out)
         p := Breakx(`x`)
 	s ?? p -> out
 	write(out)
 	
-	p := NotAny('a')
+	p := NotAny(x)
 	s ?? p -> out
 	write(out)
-	p := NotAny(`fcall("one")`)
+	p := NotAny(`fcall(x)`)
 	s ?? p -> out
 	write(out)
-	p := NotAny(`c.charreturn("one")`)
+	p := NotAny(`c.charreturn(x)`)
 	s ?? p -> out
 	write(out)
-	p := NotAny(`c.a`)
+	p := NotAny(`c.var`)
 	s ?? p -> out
 	write(out)
 	p := NotAny(`x`)
 	s ?? p -> out
 	write(out)
 	
-	p := Span('a')
+	p := Span(x)
 	s ?? p -> out
 	write(out)
-	p := Span(`fcall("one")`)
+	p := Span(`fcall(x)`)
 	s ?? p -> out
 	write(out)
-	p := Span(`c.charreturn("one")`)
+	p := Span(`c.charreturn(x)`)
 	s ?? p -> out
 	write(out)
-	p := Span(`c.a`)
+	p := Span(`c.var`)
 	s ?? p -> out
 	write(out)
 	p := Span(`x`)
 	s ?? p -> out
 	write(out)
-	
+
+	p := Nspan(x)
+	s ?? p -> out
+	write(out)
+	p := Nspan(`fcall(x)`)
+	s ?? p -> out
+	write(out)
+	p := Nspan(`c.charreturn(x)`)
+	s ?? p -> out
+	write(out)
+	p := Nspan(`c.var`)
+	s ?? p -> out
+	write(out)
+	p := Nspan(`x`)
+	s ?? p -> out
+	write(out)
+
+	count +:= 1
     }
 end
 
 procedure fcall(param)
-    return 'a'
+    if      param == 'a' then return 'a'
+    else if param == 'b' then return 'b'
+    else if param == 'c' then return 'c' 
 end
 
-class charfunc(a,b,c)
+class charfunc(var)
 
-method charreturn()
-   return 'a'
+method charreturn(param)
+    if      param == 'a' then return 'a'
+    else if param == 'b' then return 'b'
+    else if param == 'c' then return 'c' 
 end
 
 initially()
-   a := 'a'
-   b := 'b'
-   c := 'c'
+   var := 'a'
 end

@@ -853,6 +853,8 @@ text-transform:uppercase'>&nbsp;</span></p>
 
 <p class=MsoToc2><a href="#_Toc232119659"><span style="text-decoration: none">5.4. Stepping and continuing</span><span style="text-decoration: none; color: windowtext; display: none">. 26</span></a></p>
 
+<p class=MsoToc2><a href="#_Toc232119730"><span style="text-decoration: none">5.4. Stepping in Patterns</span><span style="text-decoration: none; color: windowtext; display: none">. 26</span></a></p>
+
 <p class=MsoToc1><a href="#_Toc232119660"><span style="text-decoration: none">6. Examining the Stack</span><span style="text-decoration: none; color: windowtext; display: none">. 27</span></a></p>
 
 <p class=MsoToc2><a href="#_Toc232119661"><span style="text-decoration: none">6.1. Information about a frame</span><span style="text-decoration: none; color: windowtext; display: none">. 27</span></a></p>
@@ -900,6 +902,9 @@ expression</span><span style="text-decoration: none; color: windowtext; display:
 <p class=MsoToc3><a href="#_Toc232119681"><span style="text-decoration: none">7.2.5. Records</span><span style="text-decoration: none; color: windowtext; display: none">. 36</span></a></p>
 
 <p class=MsoToc3><a href="#_Toc232119682"><span style="text-decoration: none">7.2.6. Keywords</span><span style="text-decoration: none; color: windowtext; display: none">. 36</span></a></p>
+
+<p class=MsoToc2><a href="#_Toc232119731"><span style="text-decoration: none">7.3. Analyzing Pattern
+Matches</span><span style="text-decoration: none; color: windowtext; display: none">. 34</span></a></p>
 
 <p class=MsoToc1><a href="#_Toc232119683"><span style="text-decoration: none">8. Object-Oriented Support</span><span style="text-decoration: none; color: windowtext; display: none"> 36</span></a></p>
 
@@ -2823,17 +2828,18 @@ return</span><br>
 back to the caller; it steps on the next statement to be executed after the
 call.</p>
 
-<h2><a name="_Toc232119659">5.4. Stepping in Patterns</a></h2>
+<h2><a name="_Toc232119730">5.4. Stepping in Patterns</a></h2>
 
 <p UDB allows users to utilize a special kind of step to move through and help
 analyze their patterns. A traditional step is triggered when a new line is
 reached. A pattern step occurs when a pattern function or event could potentially
-move the cursor. The pattern functions not included in this function include Pos(),
+move the cursor. The pattern functions not included in this definition include Pos(),
 Rpos and assignment of any kind (for more information about these functions or patterns in general
 consult Unicon Technical Report 18). UDB notifies the user of assignment or position matching
 as a part of a single step. Pattern stepping can be used outside a pattern match
-but will default to a regular UDB step. Using a command like <strong>continue</strong> or
-<strong>next</strong> will exit the pattern environment complete the command. </p>
+but will default to a regular UDB step and message will display saying that a pattern has not been
+found. Using a command like <strong>continue</strong> or <strong>next</strong> will exit the pattern environment
+entirely. </p>
 
 <p During the execution of the pattern match users will be able to see their position in the subject
 string, the current total match and the current pattern element being matched. The string and pattern
@@ -3490,6 +3496,36 @@ valid &amp;<strong>keyword</strong>. The command</p>
 
 <p class=MsoNormal>assigns the keyword <strong>&amp;subject</strong> with the
 literal string value of <strong>“abcdefg”</strong>.</p>
+
+<h1><a name="_Toc232119731">7.3. Analyzing Pattern Matches</a></h1>
+
+<p class=MsoNormal> A special set of print commands have been created to help users
+analyze different aspects of their pattern match. Print <strong>pat</strong> is the
+primary print sequence. To get different aspects the user can apply different flags.</p>
+
+<p class=MsoNormal><span class=MsoIntenseEmphasis>print</span> <strong>pat</strong></p>
+
+<p class=MsoNormal>Allows the user to see the untruncated versions of the pattern that
+  is being matched and the subject that the pattern is attempting to match. If the pattern
+  or string match exceeds the 80 character limit it will be surrounded
+  by --> (pattern element/string match) <-- </p>
+
+<p class=MsoNormal><span class=MsoIntenseEmphasis>print</span> <strong>pat -p</strong></p>
+
+<p class=MsoNormal>Shows the user an untruncated version of the pattern that
+is being matched.</p>
+
+<p class=MsoNormal><span class=MsoIntenseEmphasis>print</span> <strong>pat -s</strong></p>
+
+<p class=MsoNormal>Shows the user an untruncated version of the subject that
+  is being matched.</p>
+
+<p class=MsoNormal><span class=MsoIntenseEmphasis>print</span> <strong>pat -w/where</strong></p>
+
+<p class=MsoNormal>Similiar to the where command, the print <strong>pat -w/where</strong>
+command lists the varying levels of a pattern match. If the user has created a pattern
+that has multiple unevaluated expressions that return patterns as their result, the user can
+see the different pattern layers of the match using this command. </p>
 
 <h1><a name="_Toc232119683">8. Object-Oriented Support</a></h1>
 

@@ -2823,6 +2823,39 @@ return</span><br>
 back to the caller; it steps on the next statement to be executed after the
 call.</p>
 
+<h2><a name="_Toc232119659">5.4. Stepping in Patterns</a></h2>
+
+<p UDB allows users to utilize a special kind of step to move through and help
+analyze their patterns. A traditional step is triggered when a new line is
+reached. A pattern step occurs when a pattern function or event could potentially
+move the cursor. The pattern functions not included in this function include Pos(),
+Rpos and assignment of any kind (for more information about these functions or patterns in general
+consult Unicon Technical Report 18). UDB notifies the user of assignment or position matching
+as a part of a single step. Pattern stepping can be used outside a pattern match
+but will default to a regular UDB step. Using a command like <strong>continue</strong> or
+<strong>next</strong> will exit the pattern environment complete the command. </p>
+
+<p During the execution of the pattern match users will be able to see their position in the subject
+string, the current total match and the current pattern element being matched. The string and pattern
+will be truncated in the event that they go beyond single 80 character line. UDB also shows the user
+where they are in the case of a nested pattern match caused by the resolution of unevaluted expressions
+during pattern match time. These nested patterns are also truncated. If the users wishes to
+see full output of any of these truncated items they can utilize the print commands described in section. </p>
+
+<p class=MsoNormal>The commands</p>
+   
+<p class=MsoNormal><span class=MsoIntenseEmphasis>pstep</span><br>
+<span class=MsoIntenseEmphasis>ps</span></p>
+
+<p class=MsoNormal>steps to the next function that can potentially move the cursor
+
+<p class=MsoNormal align=left style='text-align:left'><span
+class=MsoIntenseEmphasis>pstep</span> <strong>count</strong><br>
+<span class=MsoIntenseEmphasis>ps</span> <strong>count</strong></p>
+
+<p class=MsoNormal>psteps <strong>count</strong> number of functions that could potentially
+  move the cursor. The default value of <strong>count</strong> is one. </p>
+
 <h1><a name="_Toc232119660">6. Examining the Stack</a></h1>
 
 <p class=MsoNormal>When a program performs a procedure call, information about

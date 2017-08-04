@@ -49,7 +49,7 @@ clean Clean:
 	cd unidep; $(MAKE) clean
 	cd util; $(MAKE) clean
 	cd unidoc; $(MAKE) clean
-	cd unidoc/partlett; $(MAKE) clean
-	cd unidoc/partlett/docs; $(MAKE) clean
+	cd unidoc/parlett && $(MAKE) clean
+	cd unidoc/parlett/docs && $(MAKE) clean
 	cd ide; $(MAKE) clean
 	cd 3d; $(MAKE) clean

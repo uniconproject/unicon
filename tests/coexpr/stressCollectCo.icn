@@ -1,7 +1,7 @@
 #unicon program stressCollectCo.icn
 # based on stress.icn
 
-global gsum, str, v, w, usermode
+global gsum, str, v, w, usermode, said
 
 procedure main(argv)
 #   if not (&features == "concurrent threads") then
@@ -44,6 +44,7 @@ procedure main(argv)
   every @(!thrdL)
 
  # print the sum. (x-d*n) is just an error correction when using "odd" # of threads.
+   write()
    write("sum=",gsum+(x-d*n))
    
    if \usermode then
@@ -71,7 +72,8 @@ procedure suma(n, id)
 
   # critical region:  
 gsum +:= sum
-   	write("collecting:")
+   	/said := writes("collecting:") 
+        writes (".")
 	   collect()
    if \usermode then
       write("Coexpr ", id , " is done")

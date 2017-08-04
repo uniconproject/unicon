@@ -1,18 +1,18 @@
 #  Makefile for testing Unicon coexpressions
 
-COTST = cobench stressCo stressCollectCo
+DIFFTST = newmove
+GREPTST = cobench stressCo stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 #IGNORE=$(COTST)
 # ^ skipped. 
-TARGETS=$(COTST)
-GREP=${COTST}
+TARGETS= $(DIFFTST) $(GREPTST) 
 
 # Do the tests
 Test: DoTest
 Uniconc : 
 	UC="../../unicon -C " make Test
 
-${GREP} : % : %.icn local stand/%.std
+${GREPTST} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $<
 	./$@ | tee local/$@.out

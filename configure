@@ -638,6 +638,7 @@ GRAPHICS
 XLIBS
 CXXCPP
 LIBOBJS
+ICONCTARGET
 CFDYN
 RLIBS
 RLINK
@@ -722,8 +723,8 @@ enable_ssl
 enable_audio
 enable_voip
 enable_plugins
-enable_ovld
 enable_iconc
+enable_ovld
 enable_verbosebuild
 enable_thin
 enable_debug
@@ -1391,8 +1392,8 @@ Optional Features:
   --disable-audio         No audio support
   --disable-voip          No VOIP support
   --disable-plugins       No loadfunc or plugins support
+  --disable-iconc         Build Unicon Compiler (Iconc/Uniconc)
   --enable-ovld           enable operator overloading
-  --enable-iconc          Build Unicon Compiler (Iconc/Uniconc)
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
   --enable-thin           Do a minimalist build disabling non critical
                           features
@@ -3025,19 +3026,19 @@ else
 fi
 
 
+# Check whether --enable-iconc was given.
+if test "${enable_iconc+set}" = set; then :
+  enableval=$enable_iconc; iconc=no
+else
+  iconc=yes
+fi
+
+
 # Check whether --enable-ovld was given.
 if test "${enable_ovld+set}" = set; then :
   enableval=$enable_ovld; ovld=yes
 else
   ovld=no
-fi
-
-
-# Check whether --enable-iconc was given.
-if test "${enable_iconc+set}" = set; then :
-  enableval=$enable_iconc; iconc=yes
-else
-  iconc=no
 fi
 
 
@@ -6706,6 +6707,10 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-lnsl -lcrypt "
       CFDYN="-fPIC -shared "
+
+      if test "x$iconc"      = "xyes" ; then
+         ICONCTARGET=Iconc
+      fi
         ;;
      *solaris*)
 	;;
@@ -6775,6 +6780,7 @@ esac
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
 
 
 

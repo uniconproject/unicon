@@ -98,13 +98,13 @@ AC_ARG_ENABLE([plugins],
 	[AS_HELP_STRING([--disable-plugins], [No loadfunc or plugins support])],
 			[plugins=no], [plugins=yes])
 
+AC_ARG_ENABLE([iconc],
+	[AS_HELP_STRING([--disable-iconc], [Build Unicon Compiler (Iconc/Uniconc)])],
+			[iconc=no], [iconc=yes])
+
 AC_ARG_ENABLE([ovld],
 	[AS_HELP_STRING([--enable-ovld], [enable operator overloading])],
 			[ovld=yes], [ovld=no])
-
-AC_ARG_ENABLE([iconc],
-	[AS_HELP_STRING([--enable-iconc], [Build Unicon Compiler (Iconc/Uniconc)])],
-			[iconc=yes], [iconc=no])
 			
 AC_ARG_ENABLE([verbosebuild],
 	[AS_HELP_STRING([--enable-verbosebuild], [Show full CC build lines with all compiler arguments])],
@@ -223,6 +223,10 @@ case $unicon_host in
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-lnsl -lcrypt "
       CFDYN="-fPIC -shared "
+
+      if test "x$iconc"      = "xyes" ; then
+         ICONCTARGET=Iconc
+      fi
         ;;
      *solaris*)
 	;;
@@ -262,6 +266,7 @@ AC_SUBST(CC)
 AC_SUBST(RLINK)
 AC_SUBST(RLIBS)
 AC_SUBST(CFDYN)
+AC_SUBST(ICONCTARGET)
 
 
 # Do we have rdynamic?

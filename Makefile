@@ -6,17 +6,16 @@ VERSION=v940
 name=unspecified
 dest=/must/specify/dest/
 
-default: Makedefs
-	make Unicon
-	make Uniconc
+default: allsrc
+	$(MAKE) -C ipl/lib 
+	$(MAKE) -C uni 
+
 
 Makedefs: Makedefs.in configure
 	sh configure
 
-# If new AC_DEFINE symbols were introduced please run the tool
-# autoconf
-# manually to update src/h/auto.h.in in addition to the configure script
-# itself instead of autoreconf -i
+#
+# if you make any changes to configure.ac or aclocal.m4 run  autoreconf -i
 #
 #configure: configure.ac aclocal.m4
 #	autoreconf -i
@@ -47,6 +46,10 @@ help:
 # Default targets.
 
 All:	Icont Ilib Ibin
+
+allsrc: Makedefs
+	$(MAKE) -C src
+
 
 config/unix/$(name)/status src/h/define.h:
 	:
@@ -160,6 +163,7 @@ Status:
 ##################################################################
 #
 # Compilation and installation.
+
 
 # The OO translator. Add a line for uni/iyacc if you modify the Unicon grammar
 

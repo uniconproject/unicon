@@ -52,7 +52,7 @@ iconx: $(OBJS)
 # Some systems require global symbols to be left in iconx for loadfunc() to work
 # but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
 # so only use -x when it is known to be needed and available (MacOS).
-	strip $(DASHX) ../../bin/iconx; \
+	strip $(DASHX) ../../bin/iconx;
 
 x%.$(O): %.r $(HDRS)
 	$(CMNT)	@echo "   [ICONX RTT] $<"

@@ -4,9 +4,24 @@ include ../Makedefs
 
 # Common components.
 
-Common:
+all: Common Icont Iconx $(ICONCTARGET)
+
+
+Common: libs
 	$(MAKE) -C common
 	$(MAKE) -C rtt
+
+
+libs: gdbm tp $(XPM)
+
+tp:
+	$(MAKE) -C libtp
+
+gdbm:
+	$(MAKE) -C gdbm
+
+xpm:
+	$(MAKE) -C xpm
 
 # The interpreter: icont and iconx.
 
@@ -16,14 +31,14 @@ Icont:	Common Iconx
 Iconx:	Common
 	$(MAKE) -C runtime interp_all
 
-
-Iconc: Common
-	$(MAKE) -C runtime comp_all_uniconc
+# force Iconx to always build first to avoid building part of both at the same time
+Iconc: Common Iconx
+	$(MAKE) -j1 -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 
 .PHONY: Common Icont Iconx Iconc Clean Pure
 
-Clean Pure:
+clean Clean:
 	cd iconc;	rm -f *.o iconc
 	cd common;	rm -f *.o doincl patchstr
 	cd preproc;	rm -f *.o pp
@@ -38,7 +53,7 @@ Clean Pure:
 	cd gdbm;        rm -f *.o *.a
 
 
-Clean Pure:
+Pure: Clean
 	cd iconc;	rm -f *.o iconc
 	cd common;	rm -f *.o doincl patchstr
 	cd preproc;	rm -f *.o pp

@@ -1884,8 +1884,7 @@ int pattern_image(union block *pe, int prev_index, dptr result,
              if ((arg_image(arg, pcode, PT_MF, result)) == RunError) 
                 return RunError;
              if (index_image == 1)
-                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE),
-                                    result) == RunError) return RunError;
+                if (construct_image(bi_pat(PI_FBRACE), result, bi_pat(PI_BBRACE)                                     ,result) == RunError) return RunError;
 	     peCount++;
 	     break;
              }

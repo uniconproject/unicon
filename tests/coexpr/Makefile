@@ -1,6 +1,6 @@
 #  Makefile for testing Unicon coexpressions
 
-DIFFTST = newmove
+DIFFTST = moveco
 GREPTST = cobench stressCo stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 #IGNORE=$(COTST)

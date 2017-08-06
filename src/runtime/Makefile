@@ -30,19 +30,13 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 	xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O) xrwinrsc.$(O) xrposix.$(O) xrmsg.$(O)\
   xraudio.$(O)
 
-COBJS=	../common/long.$(O) ../common/time.$(O) ../common/save.$(O) \
-	../common/redirerr.$(O) ../common/xwindow.$(O) ../common/alloc.$(O)\
-	../common/rswitch.$(O) ../common/filepart.$(O) ../common/mlocal.$(O) $(COMMONDRAWSTRING)
 
-ICOBJS=	long.$(O) time.$(O) save.$(O) rswitch.$(O) redirerr.$(O) xwindow.$(O) alloc.$(O) filepart.$(O) mlocal.$(O) $(DRAWSTRING)
+OBJS=	$(XOBJS)
 
-OBJS=	$(XOBJS) $(COBJS)
-
-interp_all:
-	cd ../common; $(MAKE) $(ICOBJS) $(XPM) $(GDBM) $(LIBTP) $(DRAWSTRING)
+interp_all: 
 	$(MAKE) iconx
 
-iconx: $(OBJS)
+iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP)
 	cp iconx ../../bin
 # Some systems require global symbols to be left in iconx for loadfunc() to work
@@ -97,10 +91,9 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 	rposix.r rmsg.r
 
 comp_all comp_all_uniconc:
-	cd ../common; $(MAKE) $(ICOBJS) dlrgint.o $(XPM) $(GDBM) $(LIBTP)
 	$(MAKE) db_lib
 
-db_lib: rt.db rt.a
+db_lib: rt.db rt.a ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 
 #
 # if rt.db is missing or any header files have been updated, recreate

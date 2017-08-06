@@ -5,10 +5,6 @@ include ../../Makedefs
 
 srcdir=.
 
-MAKEINFO = makeinfo
-TEXI2DVI = texi2dvi
-RANLIB = ranlib
-
 DEFS =
 
 # Where the system [n]dbm routines are...
@@ -37,7 +33,6 @@ manext = 3
 	$(CMNT)@echo "   [GDBM] $<"
 	$(SLNT)$(CC) -c $(CPPFLAGS) $(DEFS) -I. -I$(srcdir) $(CFLAGS) $<
 
-SHELL = /bin/sh
 
 PROGS = libgdbm.a testgdbm testdbm testndbm tndbm tdbm conv2gdbm
 
@@ -87,9 +82,9 @@ all: libgdbm.a
 progs: $(PROGS)
 
 libgdbm.a: $(OBJS) gdbm.h
-	$(RM) -f $@
-	ar q $@ $(OBJS)
-	$(RANLIB) libgdbm.a
+	$(RM) $@
+	$(AR) q $@ $(OBJS)
+	$(RANLIB) $@
 	$(CP) $@ ../../bin/
 
 gdbm.h:	gdbm.proto gdbmerrno.h gdbm.proto2

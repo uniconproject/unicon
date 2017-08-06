@@ -21,7 +21,7 @@ gdbm:
 	$(MAKE) -C gdbm
 
 xpm:
-	$(MAKE) -C xpm
+	$(MAKE) -C xpm/lib
 
 # The interpreter: icont and iconx.
 
@@ -36,7 +36,7 @@ Iconc: Common Iconx
 	$(MAKE) -j1 -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 
-.PHONY: Common Icont Iconx Iconc Clean Pure
+.PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm libs
 
 clean Clean:
 	cd iconc;	rm -f *.o iconc

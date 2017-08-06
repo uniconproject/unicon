@@ -13,28 +13,18 @@ P_DOT_H = $(PP_DIR)preproc.h $(PP_DIR)pproto.h ltoken.h ../h/mproto.h\
 POBJS = pout.o pchars.o  perr.o pmem.o  bldtok.o macro.o preproc.o\
 	evaluate.o files.o gettok.o pinit.o
 
-COBJS = ../common/getopt.o ../common/time.o ../common/filepart.o\
-	  ../common/identify.o ../common/strtbl.o\
-	  ../common/rtdb.o ../common/mlocal.o ../common/literals.o \
-	  ../common/alloc.o
+OBJ = $(ROBJS) $(POBJS)
 
-ICOBJS=	getopt.o time.o filepart.o identify.o strtbl.o rtdb.o\
-	  mlocal.o literals.o alloc.o
-
-OBJ = $(ROBJS) $(POBJS) $(COBJS)
-
-all:
-	cd ../common; $(MAKE) $(ICOBJS)
-	$(MAKE) rtt
+all:	rtt
 
 rtt:	$(OBJ)
-	$(CC) $(LDFLAGS) -o rtt $(OBJ)
-	cp rtt$(EXE) ../../bin/
+	$(CC) $(LDFLAGS) -o rtt $(OBJ) -lucommon
+	$(CP) rtt$(EXE) ../../bin/
 	strip ../../bin/rtt$(EXE)
 
 library:	$(OBJ)
-		rm -rf rtt.a
-		ar qc rtt.a $(OBJ)
+		$(RM) -r rtt.a
+		$(AR) qc rtt.a $(OBJ)
 		-(test -f ../../NoRanlib) || (ranlib rtt.a)
 
 $(ROBJS): rtt.h rtt1.h rttproto.h $(P_DOT_H)

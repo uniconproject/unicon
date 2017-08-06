@@ -1,33 +1,33 @@
 include ../../Makedefs
 
+HDRS= ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
+	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
 
 OBJS=	long.o getopt.o time.o filepart.o identify.o strtbl.o rtdb.o\
 	mlocal.o literals.o rswitch.o alloc.o\
-	save.o rswitch.o redirerr.o xwindow.o dlrgint.o ipp.o
+	save.o rswitch.o redirerr.o xwindow.o dlrgint.o ipp.o drawstring3d.o
 
-common:		doincl.o patchstr.o
-		$(CC) $(LDFLAGS) -o doincl doincl.o
+PROGS= libucommon.a doincl$(EXE) patchstr$(EXE)
+
+all: $(PROGS)
+
+doincl$(EXE):doincl.o
+	$(CC) $(LDFLAGS) -o doincl doincl.o
+	-./doincl -o ../../bin/rt.h ../h/rt.h
+
+patchstr$(EXE): patchstr.o
 		$(CC) $(LDFLAGS) -o patchstr patchstr.o
-		-./doincl -o ../../bin/rt.h ../h/rt.h
-		cp patchstr ../../bin
+		cp patchstr ../../bin/
 
-gdbm:
-	cd ../gdbm; $(MAKE) libgdbm.a
-	cp ../gdbm/libgdbm.a ../../bin
-	-(test -f ../../NoRanlib) || (ranlib ../../bin/libgdbm.a)
 
-libtp:
-	cd ../libtp; $(MAKE)
-	cp ../libtp/libtp.a ../../bin
-	-(test -f ../../NoRanlib) || (ranlib ../../bin/libtp.a)
+libucommon.a: $(OBJS) $(HRDS)
+	$(RM) $@
+	$(AR) q $@ $(OBJS)
+	$(RANLIB) $@
+	$(CP) $@ ../../bin/
 
-xpm:
-	cd ../xpm/lib; $(MAKE) libXpm.a
-	cp ../xpm/lib/libXpm.a ../../bin
-	-(test -f ../../NoRanlib) || (ranlib ../../bin/libXpm.a)
 
-$(OBJS): ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
-	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
+$(OBJS): $(HRDS)
 
 %.o: %.c
 	$(CMNT)@echo "   [COMMON] $<"
@@ -59,6 +59,10 @@ xwindow.o: ../h/graphics.h ../h/xwin.h
 rswitch.o: FORCE
 	$(CC) $(CFLAGS) -c rswitch.[cs]
 FORCE:
+
+clean:
+	$(RM) $(PROGS) *.o core junk*
+
 
 #  The following section is needed if changes are made to the Icon grammar,
 #  but it is not run as part of the normal installation process.  If it is

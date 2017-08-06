@@ -10,24 +10,12 @@ OBJS=		cmain.o clocal.o ctrans.o dbase.o clex.o\
 		typinfer.o lifetime.o incheck.o vtbl.o tv.o wop.o ca.o\
 		util.o yyerror.o
 
-COBJS=		../common/long.o ../common/getopt.o ../common/time.o\
-		  ../common/filepart.o ../common/identify.o ../common/mlocal.o\
-		  ../common/strtbl.o ../common/rtdb.o ../common/literals.o \
-		  ../common/alloc.o ../common/redirerr.o ../common/ipp.o
-
-ICOBJS=		long.o getopt.o time.o filepart.o identify.o\
-		  strtbl.o rtdb.o literals.o alloc.o redirerr.o ipp.o
-
-all:		common iconc
+all:		iconc
 
 
-# common code
-common:
-		cd ../common; $(MAKE) $(ICOBJS) $(XPM)
-
-iconc:		$(OBJS) $(COBJS)
-		$(CC) $(LDFLAGS) -o iconc $(OBJS) $(COBJS)
-		cp iconc ../../bin
+iconc:		$(OBJS) ../../bin/libucommon.a
+		$(CC) $(LDFLAGS) -o iconc  $(OBJS) $(COBJS) -L../../bin/ -lucommon
+		$(CP) iconc ../../bin
 		strip ../../bin/iconc
 
 $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\

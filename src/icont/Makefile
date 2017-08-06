@@ -8,40 +8,29 @@ LINKR= link.$(O) lglob.$(O) lcode.$(O) llex.$(O) lmem.$(O) lsym.$(O) opcode.$(O)
 
 OBJS=  tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
 
-COBJS= ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
-       ../common/filepart.$(O) ../common/strtbl.$(O)\
-       ../common/mlocal.$(O) ../common/ipp.$(O)
-
-ICOBJS=   long.$(O) getopt.$(O) alloc.$(O) filepart.$(O) strtbl.$(O) ipp.$(O) mlocal.$(O)
-
 WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
-
 
 
 PGMS=		icont$(EXE)
 
 all:		icont
 
-common:
-		cd ../common; $(MAKE) $(ICOBJS)
-
-icont :		$(OBJS) common
-		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) $(COBJS) $(LIBS)
+icont :		$(OBJS) ../../bin/libucommon.a
+		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) $(LIBS) -lucommon
 		cp $(PGMS) ../../bin
 		strip ../../bin/$(PGMS)
-
 
 wicont:
 	$(RM) tmain.$(O)
 	$(RM) link.$(O)
 	$(MAKE) wicont2
 
-wicont2: $(OBJS) common
-	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS) $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WINGLIBS)
+wicont2: $(OBJS) ../../bin/libucommon
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS) $(WOBJS) -lwinmm $(LIBS) $(WINGLIBS) -lucommon
 	$(CP) wicont.exe ../../bin
 
-common: $(COBJS) $(DCONSOLE)
+common: $(DCONSOLE)
 
 
 

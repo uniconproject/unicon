@@ -1,8 +1,20 @@
-#  Makefile for testing Icon
+#  Makefile for testing Icon multiple programs 
 
+CON=$(shell ../../bin/unicon -features | grep -o "multiple programs")
 MTTST=level load
-#TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
+
+# make sure we have mulitple programs, otherwise skip...
+ifeq ($(CON),multiple programs)
 TARGETS=$(MTTST)
+else
+skip:
+	@echo "\nMultiple programs are not available in this build"
+	@echo "Skipping multiple programs test...\n"
+
+TARGETS=skip
+endif
+
+
 
 # Do the tests
 Test: DoTest
@@ -25,7 +37,8 @@ clean :  pure
 include ../Makefile.test
 
 Pure :
-	rm -f $(TARGETS) level level_tp *.out load local/*.out
+	rm -f $(TARGETS) $(MTTST) level level_tp *.out load local/*.out
+# still clean if no multiple programs
 
 pure :
-	@rm -f $(TARGETS) level level_tp *.out load local/*.out
+	@rm -f $(TARGETS) $(MTTST) level level_tp *.out load local/*.out

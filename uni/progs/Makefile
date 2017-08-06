@@ -1,8 +1,11 @@
 BASE=../..
 include ../Makedefs
 
-all: ie uprof idxGen umake
-	$(CP) ie uprof umake ../../bin
+BINPROGS=ie uprof  umake
+PROGS= idxGen $(BINPROGS)
+
+all: $(PROGS)
+	$(CP) $(BINPROGS) ../../bin
 
 ie: ie.icn
 	$(UNICON) $(UFLAGS) ie
@@ -18,3 +21,10 @@ umake.u: umake.icn
 
 idxGen: idxGen.icn
 	IPATH=../xml/ LPATH=../xml/ $(UNICON) $(UFLAGS) -u idxGen
+
+Clean: 
+	$(RM) $(PROGS) uniclass.pag uniclass.dir
+
+clean: 
+	@$(RM) $(PROGS) uniclass.pag uniclass.dir
+

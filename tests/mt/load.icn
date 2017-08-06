@@ -1,0 +1,43 @@
+#
+# load.icn - compile, load, and run a program to verify that load() works
+#
+#   without -s, the name of the temp file will vary.
+#
+#   This probably won't work with a space in the path:
+
+procedure main()
+    if not (&features == "multiple programs") then
+        stop("This program requires multiple programs.")
+
+    if find("NT", &features) then remove("a.exe")
+    else remove("a")
+
+    f := open("a.icn","w") | stop("can't write a.icn")
+    write(f, "procedure main()\n_
+	         write(\"hello, world\")\n_
+              end")
+    close(f)
+    write("compiling a.icn")
+#  TODO: when selecticont() is in any lib/, use it
+    icont:= "icont"    
+    getenv("ICONT")? (find("icont") , icont:=tab(0))
+    &features ? ( ="Binaries at ", unicon:=tab(0)|| "unicon" )
+    stat(unicon) & icont:=unicon   # if wrong, do not use this.
+    getenv("UC"|"UNICON")? (find("unicon") , icont:=tab(0))
+    if ss := system(icont||" -s a.icn") then {
+	if ss ~= 0 then stop("compile returned ", image(ss))
+        }
+    else stop("system(icont a.icn) failed")
+
+    write("loading a")
+    if (x := load("a")) then write("loaded ", image(x))
+    else stop("couldn't load(a)")
+
+    write("running a")
+    @x
+    write("returned to parent, goodbye.")
+    remove("a.icn")
+    if find("NT", &features) then remove("a.exe")
+    else remove("a")
+end
+    

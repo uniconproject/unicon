@@ -77,3 +77,4 @@ Clean Pure:
 		-cd mt;		$(MAKE) Clean
 		-cd pattern &&	$(MAKE) Clean
 		-cd thread &&	$(MAKE) Clean
+		-cd coexpr &&	$(MAKE) Clean

@@ -74,3 +74,4 @@ Clean Pure:
 		-cd samples;	$(MAKE) Clean
 		-cd special;	$(MAKE) Clean
 		-cd posix;	$(MAKE) Clean
+		-cd mt;		$(MAKE) Clean

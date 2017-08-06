@@ -21,8 +21,17 @@ Icont Test-icont:
 Samples Sicont Samples-icont:
 		IC=icont sh Test-icon $(SAMPLES)
 
-Iconc Test-iconc:
+Iconc :
 		IC=iconc sh Test-icon
+
+Test-iconc : 
+	./Test-iconc iconc
+	./Test-iconc large -fld
+	./Test-iconc coexpr -fds 
+	./Test-iconc  invoke -fs
+	./Test-iconc  errcnv -fa
+	./Test-iconc  debug -fd
+
 
 Siconc Samples-iconc:
 		IC=iconc sh Test-icon $(SAMPLES)

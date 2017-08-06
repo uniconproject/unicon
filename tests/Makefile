@@ -3,7 +3,7 @@
 E=/bin/echo
 UC=../bin/unicon
 
-TESTS=general posix thread pattern
+TESTS=general posix thread pattern mt
 
 #  The default is to run all tests, using icont.
 

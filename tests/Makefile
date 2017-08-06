@@ -76,3 +76,4 @@ Clean Pure:
 		-cd posix;	$(MAKE) Clean
 		-cd mt;		$(MAKE) Clean
 		-cd pattern &&	$(MAKE) Clean
+		-cd thread &&	$(MAKE) Clean

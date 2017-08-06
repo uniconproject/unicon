@@ -4,15 +4,8 @@
 
 include ../../Makedefs
 
-SHELL = /bin/sh
-
-RM = rm -f
-AR = ar
 SHTOOL = shtool/shtool
 RANLIB=ranlib
-
-CPPFLAGS = 
-LIBS = -lnsl 
 
 INCLUDES = -Iuri
 DEFINES = -DHAVE_CONFIG_H -D_LIBTP_
@@ -43,7 +36,7 @@ libtp.a: $(OBJS) $(LIBURI)
 	$(RM) $@
 	$(SHTOOL) arx -C $(AR) rc $@ $(OBJS) $(LIBURI)
 	$(RANLIB) $@
-	cp $@ ../../bin
+	$(CP) $@ ../../bin/
 
 $(LIBURI) uri:
 	cd uri && $(MAKE)

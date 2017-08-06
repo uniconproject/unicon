@@ -87,12 +87,13 @@ all: libgdbm.a
 progs: $(PROGS)
 
 libgdbm.a: $(OBJS) gdbm.h
-	rm -f libgdbm.a
-	ar q libgdbm.a $(OBJS)
+	$(RM) -f $@
+	ar q $@ $(OBJS)
 	$(RANLIB) libgdbm.a
+	$(CP) $@ ../../bin/
 
 gdbm.h:	gdbm.proto gdbmerrno.h gdbm.proto2
-	rm -f gdbm.h
+	$(RM) gdbm.h
 	cp $(srcdir)/gdbm.proto gdbm.h
 	-chmod +w gdbm.h
 	grep _ $(srcdir)/gdbmerrno.h >> gdbm.h
@@ -142,16 +143,16 @@ gdbm.dvi:
 	$(TEXI2DVI) $(srcdir)/gdbm.texinfo
 
 clean:
-	rm -f $(PROGS) $(TEX_F) *.o core junk*
+	$(RM) $(PROGS) $(TEX_F) *.o core junk*
 
 mostlyclean: clean
 
 distclean: clean
-	rm -f gdbm.h $(TEXI_F) *~
+	$(RM) gdbm.h $(TEXI_F) *~
 
 realclean: distclean
-	rm -f TAGS
-	-rm -f \
+	$(RM) TAGS
+	-$(RM) \
 	  `sed -n 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/gdbm-\1/p' \
 		version.c`.tar.gz
 
@@ -159,12 +160,12 @@ dist:
 	echo \
 	  `sed -n 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/gdbm-\1/p' \
 		version.c` > .fname
-	rm -rf `cat .fname`
+	$(RM) -r `cat .fname`
 	mkdir `cat .fname`
 	ln $(DISTFILES) `cat .fname`
 	tar chf `cat .fname`.tar `cat .fname`
 	gzip `cat .fname`.tar
-	rm -rf `cat .fname` .fname
+	$(RM) -r `cat .fname` .fname
 
 # dbm files
 dbminit.o:	../h/config.h gdbmdefs.h proto.h extern.h gdbmerrno.h

@@ -75,3 +75,4 @@ Clean Pure:
 		-cd special;	$(MAKE) Clean
 		-cd posix;	$(MAKE) Clean
 		-cd mt;		$(MAKE) Clean
+		-cd pattern &&	$(MAKE) Clean

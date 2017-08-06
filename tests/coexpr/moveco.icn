@@ -8,10 +8,33 @@ procedure main()
    move4 := newmove(4)
   s:= "Now is the time for all good men to come to the aid" 
   s ?  while write(move5()) do move4()
-
+  write ( "===")
+  s ?  while write(move5()) do move4() 
+   # does nothing
+  write ( "===")
+  s:= "time for all good men to come to the aid" 
+  s ?  while write(move5()) do move4()
+   # does nothing
+  write ( "===")
+  move5 := ^move5
+  move4 := ^move4
+# refreshed
+  s ? write(1(move5(),move4()), ", &pos=",&pos)
+  write ( "===")
+  s ? { write((move5(),="missing"), ", &pos=",&pos)
+      # nothing
+        write("&pos=",&pos) # no backtrack w. coexpression scanning.
+}
+  write ( "===")
+  s ? write((move5(),move4()), ", &pos=",&pos)
+  write ( "===")
+  s:= "Now is the time for all good men to come to the aid" 
+  s ?  while write(move5()) do move4()
+  write ( "===")
 end
 
 procedure newmove(n)
   return create |(move(n)\1)
 end
 
+ 

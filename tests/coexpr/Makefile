@@ -10,7 +10,7 @@ TARGETS= $(DIFFTST) $(GREPTST)
 # Do the tests
 Test: DoTest
 Uniconc : 
-	UC="../../unicon -C " make Test
+	UC="../../bin/unicon -C -DCOMPILER " make -e Test
 
 ${GREPTST} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "

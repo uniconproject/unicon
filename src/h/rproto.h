@@ -914,7 +914,7 @@ int checkOpenConsole( FILE *w, char *s );
 int StartAudioThread(char filename[]);
 void StopAudioThread(int index);
 int AudioMixer(char * cmd);
-
+void audio_exit();
 struct AudioFile * StartMP3Thread(char filename[]);
 struct AudioFile * StartWAVThread(char filename[]);
 struct AudioFile * StartOggVorbisThread(char filename[]);

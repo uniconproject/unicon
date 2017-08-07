@@ -280,7 +280,7 @@ clean Clean:
 
 distclean Pure:
 		touch Makedefs Makedefs.uni
-		rm -rf icon.* bin/[a-z]* lib/[a-z]*
+		rm -rf icon.* bin/[A-Za-z]* lib/[a-z]*
 		cd uni;		$(MAKE) Clean
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure

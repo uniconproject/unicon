@@ -18,22 +18,24 @@ procedure main(argv)
    every i := !n do put(thrd, create talloc(i))
    every spawn(!thrd, 1M, 100K, 1M)
    # pick up the results from all threads
-   every write( <<@!thrd )
-   #write("tot=", &allocated)
+   write("talloc test: if everything goes well nothing else will be printed")
+   r1:= <<@pop(thrd)
+   every write( r1 ~= (r2 := <<@!thrd))
+
 end
 
 procedure talloc(id)
     y := keyword("tallocated")
 	
-    every i := !16  do {
-       x := list(id * i)
-       x := table(id * i)
+    every i := !4  do {
+       x := list(8)
+       x := table(4)
        }
 
     # get the current thread allocation,
     # i.e &allocated for the current thread
     # queue up the result to be picked by &main
-    ("Thread " || id || " strated with " || y || " bytes and allocated " || keyword("tallocated") || " bytes") @>>
-    delay(100)
+    keyword("tallocated") @>>
+    collect()
 end
     

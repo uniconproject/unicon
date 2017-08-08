@@ -2,26 +2,32 @@
 # talloc.icn -- thread allocation report test
 #
 
-global thrd
-
 procedure main(argv)
    if not (&features == "concurrent threads") then
       stop("This program requires concurrent threads.")
 
-   thrd:=[]
-
    if *argv>0 then
-      n:=integer(argv[1]) | stop ("arg must be integer")
+      n:= 0 < integer(argv[1]) | stop ("arg must be an integer > 0")
     else
        n:=4
    
+   thrd:=[]   
    every i := !n do put(thrd, create talloc(i))
    every spawn(!thrd, 1M, 100K, 1M)
-   # pick up the results from all threads
    write("talloc test: if everything goes well nothing else will be printed")
-   r1:= <<@pop(thrd)
-   every write( r1 ~= (r2 := <<@!thrd))
+   # pick up the results from all threads and sort them
+   # all results should be identical
+   # if this is not the case print the offending values
 
+   L := sort([: <<@!thrd  :])
+   r1:= pop(L)
+   every r2 := !L do {
+      if r1 = 0 then
+         write( "A thread thinks it didn't use any memory!!")
+      if r1 ~= r2 then
+         write( r1, " ~= ",  r2)
+      r1 := r2
+      }
 end
 
 procedure talloc(id)

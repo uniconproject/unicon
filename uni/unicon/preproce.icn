@@ -45,7 +45,7 @@ procedure predefs()
 	    "concurrent threads":"_CONCURRENT"
 	    "console window":"_CONSOLE_WINDOW"
 	    "dynamic loading":"_DYNAMIC_LOADING"
-	    "event montoring":"_EVENT_MONITOR"
+	    "event monitoring":"_EVENT_MONITOR"
 	    "large integers":"_LARGE_INTEGERS"
 	    "multiple programs":"_MULTITASKING"
 	    "pattern type":"_PATTERNS"
@@ -77,9 +77,12 @@ $endif
     # predefine a symbol that can be used to distinguish when iconc is used.
     if \iconc then {
       t["COMPILER"] := "1"
+#      t["_COMPILED"] := "1"  # see test preproc.icn
+#       ^ requires &features to have "compiled" when a prog is compiled
       # at present, iconc implies various features will be absent...
-      every delete(t, "concurrent threads" | "event monitoring" |
-		      "multiple programs")
+      every delete(t, "_CONCURRENT" | "_EVENT_MONITOR" |
+		      "_MULTITASKING")
+      if not member(fset,"l") then  delete(t,"_LARGE_INTEGERS") # no -fl
       }
     return t
 end

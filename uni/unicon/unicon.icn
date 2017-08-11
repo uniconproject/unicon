@@ -30,7 +30,7 @@
 # LISTS  : links = names of external icon code to link to
 #          imports = names of external classes to import
 #
-global parsingErrors, returnErrorsFlag
+global parsingErrors, returnErrorsFlag, dbg, fset
 
 global fin,flog,flogname,fLine,alpha,alphadot,white,nonwhite,nonalpha
 global classes,comp,exec,strict,links,imports,loud,ct,reserved,optimize
@@ -375,8 +375,8 @@ end
 procedure unicon_usage(continue_flag)
    local f, msg
    if \continue_flag then f := iwrite else f := istop
-   msg := "Usage: unicon [-cBCstuEGyZMh] [-Dsym=val] [-f s] [-o ofile]\n   _
-	     [-help] [-version] [-features] [-v i] file... [-x args]"
+   msg := "Usage: unicon [-cBCstuEGyZMh] [-Dsym=val] [-f[adelns]...] [-o ofile]\n   _
+	    [-nofs] [-help] [-version] [-features] [-v i] file... [-x args]"
    f(msg)
 end
 
@@ -451,6 +451,17 @@ procedure unicon(argv)
       EmptyNode, N_Empty, i, thepath, tmp_s, ucodefile,
       cmd, wilog, flog2, locallinks, localimports, k,
       files, n, local_name, v, mw_tmpname, rv, pe
+
+   fset:=''
+# before initialize, set global option vars:
+   every !argv ?
+       case ="-" & move(1) of {
+          "x" : break  # after -x, args are for execution
+          "C" : iconc := parseonly := 1
+          "f" : fset ++:= tab(0)
+          }
+
+
    initialize()
    if *argv = 0 then {
       unicon_usage()
@@ -732,7 +743,7 @@ procedure unicon(argv)
                # get the value associated with this key
                #
                v := iconc_links[k]
-
+               if /v | v=="" then stop ("bad srcfname:v: "||image(v)||" for key k="||k|| " (*.u with -C?) ")
                #
                # mark this linkref as having been processed
                #

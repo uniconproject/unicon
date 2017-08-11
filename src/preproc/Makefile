@@ -18,6 +18,8 @@ common:
 
 pp: pmain.o $(OBJS)
 	$(CC) -o pp pmain.o $(OBJS)
+	$(CP) pp ../../bin
+	-strip ../../bin/pp
 
 %.o: %.c
 	$(CMNT)@echo "   [PREPROC] $<"

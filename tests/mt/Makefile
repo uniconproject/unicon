@@ -1,6 +1,8 @@
 #  Makefile for testing Icon multiple programs 
 
-CON=$(shell ../../bin/unicon -features | grep -o "multiple programs")
+include ../Makedefs
+
+CON=$(shell $(UC) -features | grep -o "multiple programs")
 MTTST=level load
 
 # make sure we have mulitple programs, otherwise skip...
@@ -28,7 +30,7 @@ level : level_tp
 
 level_tp : level_tp.icn 
 	@$(RM) level_tp
-	$(UC) level_tp
+	$(UC) $(UFLAGS) level_tp
 
 Clean :  Pure 
 

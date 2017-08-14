@@ -1,5 +1,6 @@
 #  Makefile for testing Icon
 
+include ../Makedefs
 
 SAMPLES = btrees diffwrds kross meander prefix recogn roman sieve wordcnt
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))

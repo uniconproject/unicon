@@ -1,5 +1,7 @@
 #  Makefile for testing Unicon coexpressions
 
+include ../Makedefs
+
 DIFFTST = moveco
 GREPTST = cobench stressCo stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
@@ -20,7 +22,7 @@ ${GREPTST} : % : %.icn local stand/%.std
 	if [ $$? -eq 0 ] ; then echo "OK"; \
 	else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
 	-@rm $@$(EXE)
-	
+
 
 include ../Makefile.test
 

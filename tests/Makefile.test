@@ -1,24 +1,11 @@
 #SHELL=/bin/bash
-E=/bin/echo
-
-CWD=$(shell pwd)
-TESTNAME=$(shell basename $(CWD))
-
-UC=../../bin/unicon -s
-
-ifeq ($(OS),Windows_NT)
-    TOS := Windows
-    EXE=".exe"
-else
-    TOS := $(shell uname -s)
-endif
 
 # Do the tests
 DoTest: clean TestHdr $(TARGETS)
 	@make -s Summary
 
 %.u: %.icn
-	@$(UC) $<
+	@$(UC) $(UFLAGS) $<
 
 # For a test that does not have a data file
 # or standard output file, the following two
@@ -36,7 +23,7 @@ $(SKIP):
 
 $(IGNORE):
 	-@$E -n "[Testing $@]... "
-	@$(UC) $@
+	@$(UC) $(UFLAGS) $@
 	-@./$@ < data/$@.dat  > local/$@.out 2>&1 || true
 	-echo "Expect/ignore these differences in $@:"
 	-@diff stand/$@.std local/$@.out; \
@@ -63,7 +50,7 @@ endif
 # Compile and test, generate a short diff file if there are differences
 %: %.icn local %.std
 	-@$E -n "[Testing $@]... "
-	@$(UC) $<
+	@$(UC) $(UFLAGS) $<
 	@if [ -f data/$@.dat ] ; then \
 	./$@ < data/$@.dat  > local/$@.out 2>&1; \
 	else ./$@ > local/$@.out 2>&1; fi || true

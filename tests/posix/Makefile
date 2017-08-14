@@ -1,5 +1,5 @@
-SHELL=/bin/sh
-MAKE=make
+
+include ../Makedefs
 
 TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 IGNORE=rusage

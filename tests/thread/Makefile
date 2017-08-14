@@ -2,7 +2,10 @@
 # threads test
 #
 
-CON=$(shell unicon -features | grep -o "concurrent threads")
+
+include ../Makedefs
+
+CON=$(shell $(UC) -features | grep -o "concurrent threads")
 
 # make sure we have concurrent threads, otherwise skip...
 ifeq ($(CON),concurrent threads)

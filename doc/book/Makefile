@@ -15,14 +15,13 @@
 #	  May need to install some weird xfntconfig package.
 #
 # Ubuntu: pdflatex is in texlive-latex-base
-#         supertabular is in texlive-latex-extra but its no longer needed
-#	  Need packages providing:
-# color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
-# textcomp, fontenc, hyperref, pdftex, xtab
+#	  texlive-fonts-recommended is required.
+#         texlive-latex-extra -- not sure
+#	  texlive-fonts-extra -- not sure
 #
 # Fedora 24, RHEL7: install packages texlive-base, texlive-latex,
-# texlive-collection-latex, texlive-collection-latexrecommended,
-# and texlive-xtab.
+#	  texlive-collection-latex, texlive-collection-latexrecommended,
+#	  and texlive-xtab.
 #
 
 SRC=admin.tex advanced.tex assoc.tex cgi.tex classes.tex database.tex diffs.tex genetic.tex graphics.tex gui.tex internet.tex intro.tex ipl.tex langref.tex large.tex lexyacc.tex port.tex preface.tex programs.tex referenc.tex string.tex struct.tex system.tex thread.tex ub.tex ucl.tex usecase.tex install.tex

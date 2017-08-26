@@ -215,6 +215,8 @@ char *filename;
       ppdef("_LARGE_INTEGERS", (char *)NULL);
    ppdef("_MULTITASKING", (char *)NULL);	/* never defined in compiler */
    ppdef("_EVENT_MONITOR", (char *)NULL);
+   ppdef("_CONCURRENT", (char *)NULL);
+   ppdef("_OVLD", (char *)NULL);
    ppdef("_MEMORY_MONITOR", (char *)NULL);
    ppdef("_VISUALIZATION", (char *)NULL);
 

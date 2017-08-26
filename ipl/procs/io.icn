@@ -749,9 +749,11 @@ $endif
    
    path := getenv("FPATH") | "."
    if match("Binaries at ", sfeat := &features) then {
-       path ||:= psep || sfeat[13:0]
+       path || " " || sfeat[13:0]
    }
-   found := pathfind(fname, path)
+# ^ Binaries at can be patched by: 
+# patchstr iconx newpath
+   found := pathfind(fname, path, " ") # pathfind prepends "." 
 
    if /found then
       stop ("cannot find \"", fname, "\" on path \". ", path, "\"")

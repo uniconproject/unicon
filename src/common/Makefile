@@ -1,6 +1,6 @@
 include ../../Makedefs
 
-HDRS= ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
+HDRS= ../h/auto.h ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
 
 OBJS=	long.o getopt.o time.o filepart.o identify.o strtbl.o rtdb.o\
@@ -52,9 +52,9 @@ drawstring3d.o: drawstring3d.cc
 		rm drawstring3d.c ; \
 	fi
 
-dlrgint.o: ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
+dlrgint.o: ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
 
-xwindow.o: ../h/graphics.h ../h/xwin.h
+xwindow.o: ../h/auto.h ../h/graphics.h ../h/xwin.h
 
 rswitch.o: FORCE
 	$(CC) $(CFLAGS) -c rswitch.[cs]

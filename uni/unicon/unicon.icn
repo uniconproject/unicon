@@ -348,7 +348,7 @@ end
 #
 procedure initialize()
   loud     := 1
-  comp     := 0
+#  comp     := 0 # moved to unicon()
   yynerrs  := 0
   errors   := 0
 
@@ -452,13 +452,16 @@ procedure unicon(argv)
       cmd, wilog, flog2, locallinks, localimports, k,
       files, n, local_name, v, mw_tmpname, rv, pe
 
-   fset:=''
+   fset:='s'  # doing -fs by default now 
 # before initialize, set global option vars:
+   comp := 0
    every !argv ?
        case ="-" & move(1) of {
           "x" : break  # after -x, args are for execution
           "C" : iconc := parseonly := 1
+          "c" : comp := -1        # don't make exe
           "f" : fset ++:= tab(0)
+          "n" : ="ofs" & fset --:= "s" # -nofs, remove s
           }
 
 

@@ -44,6 +44,8 @@ iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 # so only use -x when it is known to be needed and available (MacOS).
 	strip $(DASHX) ../../bin/iconx;
 
+
+
 x%.$(O): %.r $(HDRS)
 	$(CMNT)	@echo "   [ICONX RTT] $<"
 	$(SLNT)$(RTT) -x $<
@@ -112,9 +114,15 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
       rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
       rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
       ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)
-	$(RTT) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
+	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
+	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"
 	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
+
+keyword.$(O) : keyword.r $(HDRS) ../h/feature.h
+	$(CMNT)	@echo "   [ICONC RTT] $<  (revision:$(REPO_REV))"
+	$(SLNT)$(RTT) $(DASHS) -DREPO_REVISION=$(REPO_REV) -c -O "$(CFLAGS)" keyword.r
+
 
 %.$(O): %.r $(HDRS)
 	$(CMNT)@echo "   [ICONC RTT] $<"

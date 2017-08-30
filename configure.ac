@@ -403,6 +403,7 @@ if test "x$graphics" = "xyes"; then
   
 else
   echo "Building without graphics..."
+  graphics3d=no
   AC_DEFINE([NoGraphics], [1], [No Graphics])
   AC_DEFINE([NoGraphics3D], [1], [No Graphics3D])   
 fi

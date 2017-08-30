@@ -16,7 +16,7 @@ Uniconc :
 
 ${GREPTST} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
-	@$(UC) $<
+	@$(UC) $(UFLAGS) $<
 	./$@ | tee local/$@.out
 	-@grep -f stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \

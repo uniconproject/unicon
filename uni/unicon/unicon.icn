@@ -375,7 +375,7 @@ end
 procedure unicon_usage(continue_flag)
    local f, msg
    if \continue_flag then f := iwrite else f := istop
-   msg := "Usage: unicon [-cBCstuEGyZMh] [-Dsym=val] [-f[adelns]...] [-o ofile]\n   _
+   msg := "Usage: unicon [-cBCstuEGyZMhK] [-Dsym=val] [-f[adelns]...] [-o ofile]\n   _
 	    [-nofs] [-help] [-version] [-features] [-v i] file... [-x args]"
    f(msg)
 end
@@ -404,6 +404,7 @@ procedure unicon_help()
    "   -x args     : execute immediately",
    "   -y          : parse (syntax check) only, do not compile",
    "   -Z          : compress icode",
+   "   -K           : keep tmpfiles",
    "   -h          : display this information"
    ] )
    istop()
@@ -557,6 +558,7 @@ procedure unicon(argv)
                      }
                   }
                "-y": parseonly := 1
+               "-K": keeptmp := 1
                "-yydbg": parseonly := yydbg := 1
                "-G"|"-B"|"-Z": ilinkopt ||:= argv[i] || " "
                "-v" : {
@@ -663,7 +665,7 @@ procedure unicon(argv)
 		    if flog2 := open(wilog) then {
 			while iwrite(&errout, read(flog2))
 			close(flog2)
-			remove(wilog) | write(&errout, wilog, " - wilog B not removed.")
+			/keeptmp & remove(wilog) | write(&errout, wilog, " - wilog B not removed.")
 			break
 		    }
 		    delay(1000)
@@ -672,7 +674,7 @@ procedure unicon(argv)
 	 }
 
          if /iconc then {
-	    /tmpname | remove(tmpname) |
+            /keeptmp & /tmpname | remove(tmpname) |
 	    iwrite(&errout,"remove ", image(tmpname), " fails")
             }
 	 reinitialize()
@@ -806,9 +808,9 @@ procedure unicon(argv)
 
       # comment out if you want to look at tmp files...
       # maybe add a command line argument to retain these someday.
-      every remove(!tmpfnames || "-iconc")
-      every remove(!tmpfnames)
-      remove(\ mw_tmpname)
+      /keeptmp & every remove(!tmpfnames || "-iconc")
+      /keeptmp & every remove(!tmpfnames)
+      /keeptmp & remove(\ mw_tmpname)
 
       if rv ~=== 0 then
          errors +:= 1
@@ -841,7 +843,7 @@ procedure unicon(argv)
       rv := mysystem(cmd)
       if rv === 0 then {
          # if no errors, and we linked them from source, remove the .u
-	  every remove(!\translateducode)
+	  /keeptmp & every remove(!\translateducode)
       }
       if &features=="MS Windows NT" & &features=="console window" then {
 	 # copy icont log to our console
@@ -849,7 +851,7 @@ procedure unicon(argv)
 	     if flog2 := open(wilog) then {
 		 while iwrite(&errout, read(flog2))
 		 close(flog2)
-		 remove(wilog) | write(&errout, wilog, " wilog not removed.")
+		 /keeptmp & remove(wilog) | write(&errout, wilog, " wilog not removed.")
 		 break
 	     }   
 	     delay(1000)

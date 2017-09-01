@@ -58,7 +58,7 @@ static char *options =
  * End of operating-system specific code.
  */
 
-extern line_cntrl;
+extern int line_cntrl;
 
 /*
  * getopt() variables

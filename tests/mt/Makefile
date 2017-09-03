@@ -3,7 +3,7 @@
 include ../Makedefs
 
 CON=$(shell $(UC) -features | grep -o "multiple programs")
-MTTST=level load
+MTTST=level load loaderr
 
 # make sure we have mulitple programs, otherwise skip...
 ifeq ($(CON),multiple programs)

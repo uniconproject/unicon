@@ -6,6 +6,7 @@
  * External declarations common to the compiler and interpreter.
  */
 
+extern TRuntime_Status rt_status;
 extern struct b_proc *op_tbl;   /* operators available for string invocation */
 extern int op_tbl_sz;           /* number of operators in op_tbl */
 extern int debug_info;		/* flag: debugging information is available */

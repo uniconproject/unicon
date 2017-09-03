@@ -96,13 +96,13 @@ typedef int (*continuation) (void);
       
 #endif					/* COMPILER */
 
-enum TRuntime_Status {
-  RTMODE_NORMAL=0,	/* Normal operation       */
-  RTMODE_GC,		/* Garbage collection     */
-  RTMODE_Signal,	/* Normal Signal Handling */
-  RTMODE_EXIT,		/* Normal Shutdown        */
-  RTMODE_RUNERROR,	/* Runtime Error shutdown */
-  RTMODE_SYSERROR,	/* System Error shutdown  */
-  RTMODE_HARDERROR	/* Hardware Error shutdown, triggered by signals
+typedef enum TRuntime_Status_states {
+  RTSTATUS_NORMAL=0,	/* Normal operation       */
+  RTSTATUS_GC,		/* Garbage collection     */
+  RTSTATUS_SIGNAL,	/* Normal Signal Handling */
+  RTSTATUS_EXIT,	/* Normal Shutdown        */
+  RTSTATUS_RUNERROR,	/* Runtime Error shutdown */
+  RTSTATUS_SYSERROR,	/* System Error shutdown  */
+  RTSTATUS_HARDERROR	/* Hardware Error shutdown, triggered by signals
 			   SIGBUS, SIGFPE, SIGILL, and SIGSEGV */
-  };
+  } TRuntime_Status;

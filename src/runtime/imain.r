@@ -206,7 +206,7 @@ void main(int argc, char **argv)
    struct threadstate *curtstate;
    pthread_key_create(&tstate_key, NULL);
 #endif					/* HAVE_KEYWORD__THREAD */
-
+   rt_status = RTSTATUS_NORMAL;
    init_threads();
    global_curtstate = &roottstate;
 #endif					/* Concurrent */

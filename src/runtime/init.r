@@ -38,6 +38,7 @@ Deliberate Syntax Error
  */
 
 char *prog_name;			/* name of icode file */
+TRuntime_Status rt_status;
 
 #if !COMPILER
 #passthru #define OpDef(p,n,s,u) int Cat(O,p) (dptr cargp);
@@ -1482,7 +1483,8 @@ int i;
     * A loaded program is calling c_exit.  Usually this will be due to a
     * runtime error.  Maybe we should just quit now.
     */
-   if (curpstate != NULL && curpstate->parent != NULL) {
+   if (curpstate != NULL && curpstate->parent != NULL
+       && rt_status == RTSTATUS_NORMAL) {
       struct descrip dummy;
       /*
        * Give parent/EvGet() one cofail; bail if they come back.

@@ -59,12 +59,15 @@ void err_msg(int n, dptr v)
 {
    register struct errtab *p;
    char *lfile = NULL;
-   FILE *logfptr = NULL;
-   
+   FILE *logfptr = NULL;   
+
 #ifdef Messaging
    int saveerrno = errno;
 #endif                                  /* Messaging */
    CURTSTATE_AND_CE();
+
+   if (rt_status == RTSTATUS_NORMAL)
+      rt_status = RTSTATUS_RUNERROR;
 
 #ifdef Concurrent
 #if !ConcurrentCOMPILER

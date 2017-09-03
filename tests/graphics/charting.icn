@@ -1,0 +1,107 @@
+##-
+# Author: Brian Tiffin
+# Dedicated to the public domain
+#
+# Date started: December, 2016
+# Modified: 2017-04-09/07:27-0400 btiffin
+##+
+#
+# charting.icn, chart representative tightloop timings
+#
+link barchart, numbers
+procedure main()
+    win := open("charting", "g", "size=820,340")
+
+    # A half frame
+    DrawLine(win, 0,0, 0,320)
+    DrawLine(win, 0,320, 820,320)
+
+    # from the run time captures in performance.rst
+    timing := [
+        ["Unicon", "Uni", 2.02, "green"],
+        ["Unicon -C", "UCom", 0.55, "green"],
+        ["Unicon load", "ULo", 0.04, "green"],
+        ["Python", "Py", 2.06, "blue"],
+        ["C", "C", 0.05, "red"],
+        ["Ada", "Ada", 0.06, "red"],
+        ["ALGOL", "ALGO", 5.91, "red"],
+        ["Assembler", "Asm", 0.01, "red"],
+        ["BASIC", "BSC", 0.05, "red"],
+        ["COBOL", "CBL", 0.06, "red"],
+        ["D", "D", 0.05, "red"],
+        ["ECMAScript", "ES", 0.83, "blue"],
+        ["Elixir", "Elix", 2.03, "blue"],
+        ["Forth", "Frth", 0.52, "blue"],
+        ["Fortan", "For", 0.06, "red"],
+        ["Genie", "Geni", 0.16, "red"],
+        ["Java", "Java", 0.11, "red"],
+        ["Lua", "Lua", 0.73, "blue"],
+        ["Neko", "Neko", 0.89, "red"],
+        ["Nim", "Nim", 0.31, "red"],
+        ["Perl", "Perl", 1.29, "blue"],
+        ["PHP", "PHP", 0.39, "blue"],
+        ["REBOL", "REBL", 2.22, "blue"],
+        ["REXX", "Rexx", 2.38, "blue"],
+        ["Ruby", "Ruby", 1.16, "blue"],
+        ["Scheme", "Schm", 0.85, "blue"],
+        ["Shell *", "Bash", 281.29, "red"],
+        ["S-Lang", "S-La", 4.92, "blue"],
+        ["SNOBOL", "SNBL", 5.83, "blue"],
+        ["JimTcl", "Jim", 4.59, "blue"],
+        ["Tcl *", "Tcl", 17.69, "red"],
+        ["Vala", "Vala", 0.16, "red"]
+    ]
+    #   barchart(win, x, y, dx, dy, sf, n, l, w, b)
+    #   x,y      position of base of first bar
+    #   dx,dy    distance to base of second bar (one of dx or dy should be 0)
+    #   sf       scaling (pixels per unit of value, + or -, need not be int)
+    #   n        number of bars
+    #   l,w      length (maximum) and width of one bar
+    #   b        logarithmic base, if bars are to be scaled logarithmically
+    dx := 27
+    mx := 560
+    bc := barchart(win, 10, 320, dx, 0, -5, *timing, mx, dx/2+4)
+
+    # draw the bars, different colours won't take, as rebar may redraw
+    Fg(win, "blue")
+    n := 1
+    every e := !timing do {
+        if e[3] < 10 then {
+            setbar(bc, n, e[3] * 100)
+            flush(win)
+            n +:= 1
+        }
+    }
+
+    # labels
+    Fg(win, "black")
+    n := 0
+    every e := !timing do {
+        if e[3] < 10 then {
+            DrawString(win, 10 + n * dx, 335, left(e[2],4))
+            n +:= 1
+        }
+    }
+
+    # info list
+    DrawString(win, 10, 16, "tightloop timings")
+    DrawString(win, 10, 31, "     (in seconds)")
+    DrawString(win, 10, 51, "(*) bar not shown")
+    x := 225; y := 26
+    n := 0; col := 0; coln := 0
+    every e := !timing do {
+        if n > *timing/3 then {n := 0; coln +:= 1; col := 150 * coln}
+        DrawString(win, x + col, y + n * 15, left(e[1], 12) || decipos(e[3], 4, 8))
+        n +:= 1
+    }
+
+    # bragging
+    DrawString(win, 10, 81, "Graphic")
+    ReadImage(win, "../../images/builtwithunicon.png", 20, 86)
+ 
+    # save image for the document
+    WSync(win)
+    WriteImage(win, "../../images/performance-chart.png")
+    until Event(win) == "q"
+    close(win)
+end

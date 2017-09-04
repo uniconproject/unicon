@@ -17,19 +17,14 @@ TARGETS=skip
 endif
 
 
-
 # Do the tests
 Test: DoTest
-
-#test-level: level level_tp
-#	./level > level.out
-#	@diff level.out stand/level.std # && echo $@ === FAILED ===
-
+	rm -f a a.*
 
 level : level_tp 
 
 level_tp : level_tp.icn 
-	@$(RM) level_tp
+	@rm -f level_tp
 	$(UC) $(UFLAGS) level_tp
 
 Clean :  Pure 
@@ -39,8 +34,8 @@ clean :  pure
 include ../Makefile.test
 
 Pure :
-	rm -f $(TARGETS) $(MTTST) level level_tp *.out load local/*.out
+	rm -f *.diff $(TARGETS) $(MTTST) a a.* level level_tp *.out load local/*.out
 # still clean if no multiple programs
 
 pure :
-	@rm -f $(TARGETS) $(MTTST) level level_tp *.out load local/*.out
+	@rm -f *.diff $(TARGETS) $(MTTST) a a.* level level_tp *.out load local/*.out

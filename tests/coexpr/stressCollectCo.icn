@@ -1,7 +1,7 @@
 #unicon program stressCollectCo.icn
 # based on stress.icn
 
-global gsum, str, v, w, usermode, said
+global gsum, str, v, w, usermode, said, a, b, c 
 
 procedure main(argv)
 #   if not (&features == "concurrent threads") then
@@ -38,18 +38,20 @@ procedure main(argv)
    a := create (A())
    b := create B()
    c := create C()
-   
+   @a
    dowork(m, d, x)
-
+   @c
   every @(!thrdL)
 
  # print the sum. (x-d*n) is just an error correction when using "odd" # of threads.
-   write()
+   write(&errout)
    write("sum=",gsum+(x-d*n))
    
-   if \usermode then
+#   if \usermode then
       write("time:", &now-t, " seconds")
-
+   writes("Collections: ")
+   every writes(&collections, ", ")
+   write()
 end
 
 procedure dowork(n, d, x)
@@ -59,7 +61,7 @@ procedure dowork(n, d, x)
       write("The work will be divided equally between them. Please wait... ")
       } 
    every i:=!n do put(thrd, create suma(d, i))
-   B()
+   @^b
    every @(!thrd)
 end
 
@@ -72,8 +74,8 @@ procedure suma(n, id)
 
   # critical region:  
 gsum +:= sum
-   	/said := writes("collecting:") 
-        writes (".")
+   	/said := writes(&errout,"collecting:") 
+        writes (&errout,".")
 	   collect()
    if \usermode then
       write("Coexpr ", id , " is done")
@@ -82,7 +84,7 @@ end
 
 procedure A()
    /str := ""
-   every i:=1 to 100 do {
+   every i:=1 to 1000 do {
      if i%100=1 then { L:=[]; str:="A" }
      put(L, table())
      put(L, list(100))

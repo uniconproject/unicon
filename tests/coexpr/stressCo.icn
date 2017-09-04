@@ -3,7 +3,7 @@
 # based on stress.icn
 # tests coexpression op
 
- global gsum, str, v, w, usermode
+ global gsum, str, v, w, usermode, a, b, c 
 
  procedure main(argv)
    if not (&features == "co-expressions") then
@@ -20,7 +20,7 @@
       usermode := 1
        }
     else
-      n := 10
+      n := 100
 
    x := 10^8
    d := x / n
@@ -38,21 +38,24 @@
    a := create (A())
    b := create B()
    c := create C()
-   
+   @a
    dowork(m, d, x)
-
-   every @(!thrdL)
+   @c
+   every @1(!thrdL,writes(&errout,".")) 
+   write(&errout)
 
  # print the sum. (x-d*n) is just an error correction when using "odd"  # of threads.
    write("sum=",gsum + (x - d*n))
    
    if \usermode then
       write("time:", &now-t, " seconds")
-   write (&now - start)
+#   write (&now - start)
    endt := gettimeofday()
    write ( "elasped: ", (endt[1] - stt[1]) + (endt[2] - stt[2])/1000000.0)
    write ("CPU time: ", &time/1000.0)
-
+   writes("Collections: ")
+   every writes(&collections, ", ")
+   write()
  end # main 
 
  procedure dowork(n, d, x)
@@ -62,8 +65,8 @@
       write("The work will be divided equally between them. Please wait... ")
       } 
    every i:=!n do put(thrd, create suma(d, i))
-   B()
-   every @(!thrd)
+   @^b
+   every @(!thrd) # do writes(&errout,".")
  end
 
  procedure suma(n, id)
@@ -85,7 +88,7 @@
 
  procedure A()
    /str := ""
-   every i:=1 to 100 do {
+   every i:=1 to 1000 do {
      if i%100 = 1 then { L := []; str := "A" } 
      put(L, table())
      put(L, list(100))
@@ -103,7 +106,7 @@
  procedure B()
    /x:=[]
    /str := ""
-   every i := 1 to 1000 do {
+   every i := 1 to 10000 do {
       if i%100 = 1 then{ L := []; str := "B" }
       put(L, T:=table())
       every j := 1 to 100 do T[j] := j

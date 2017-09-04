@@ -11,35 +11,35 @@ procedure main ()
   else 
       write ("No native coswitch")
   every write ("With native coswitch, this test does "|
-"200M coswitches in about 15 seconds on an Intel or AMD CPU at 3Ghz,"|
+"100M coswitches in about 8 seconds on an Intel or AMD CPU at 3Ghz,"|
 "doing about 10-15M per second running iconx."|
 "compiling with unicon -C, it should do 20-40M/s"|
-"Typically another 12 seconds is spent measuring test overhead."|
+"Typically another 6 seconds is spent measuring test overhead."|
 "Debug builds will be slower."|
-"Without native coswitch, only 2M coswitches will be done."
+"Without native coswitch, only 1M coswitches will be done."
   )
 # ^ debug builds are half as fast. 
   n := 0
   x := create 1 to per
-  every  i := 1 to 100 do { 
+  every  i := 1 to 50 do { 
       x := ^x
       every 1 to per do 
           n +:= 1; 
-      writes (".")
+      writes (&errout,".")
   }
-  write()
+  write(&errout)
   write(n / 1000000 || "M")
   t := &time
   write(t / 1000.0, " seconds overhead.")
   n := 0
   x := create 1 to per
-  every  i := 1 to 100 do { 
+  every  i := 1 to 50 do { 
       x := ^x; 
       while @x do 
           n +:= 1; 
-      writes (".")
+      writes (&errout,".")
   }
-  write()
+  write(&errout)
   dt := &time - t
   write(dt / 1000.0, " seconds CPU time,")
   writes(n / 1000000, "M coacts in ")

@@ -2,6 +2,12 @@
 
 include ../Makedefs
 
+TEE=cat - > 
+# 
+# for verbose progress, run as:
+# TEE=tee make -e
+#
+
 DIFFTST = moveco
 GREPTST = cobench stressCo stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
@@ -17,11 +23,11 @@ Uniconc :
 ${GREPTST} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
 	@$(UC) $(UFLAGS) $<
-	./$@ | tee local/$@.out
+	./$@ | $(TEE) local/$@.out
 	-@grep -f stand/$@.std local/$@.out >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo "OK"; \
 	else echo "Failed"; diff -wy stand/$@.std local/$@.out > $@.diff; fi || true
-	-@rm $@$(EXE)
+	-@rm -f $@$(EXE)
 
 
 include ../Makefile.test

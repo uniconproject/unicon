@@ -17,8 +17,12 @@ TARGETS= $(DIFFTST) $(GREPTST)
 
 # Do the tests
 Test: DoTest
+
 Uniconc : 
-	UC="../../bin/unicon -C -DCOMPILER " make -e Test
+	IGNORE=moveco TEE=tee UC="../../bin/unicon -C -DCOMPILER " make -e Test
+
+# ^ moveco does coexpr(), not supported by iconc yet, skip. 
+
 
 ${GREPTST} : % : %.icn local stand/%.std
 	-@$E -n "[Testing $@]... "
@@ -38,3 +42,8 @@ Icont Test-icont :
 Iconc Test-iconc :
 		IC="unicon -C " sh Test-icon $(COTST)
 
+verbose: 
+	TEE=tee $(MAKE) -e
+
+$(IGNORE) : 
+	@echo === skipping $@ === 

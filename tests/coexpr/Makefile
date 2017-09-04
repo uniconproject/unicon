@@ -5,7 +5,9 @@ include ../Makedefs
 TEE=cat - > 
 # 
 # for verbose progress, run as:
-# TEE=tee make -e
+# make verbose
+# or 
+# TEE=tee make -e [target ...]
 #
 
 DIFFTST = moveco
@@ -19,9 +21,8 @@ TARGETS= $(DIFFTST) $(GREPTST)
 Test: DoTest
 
 Uniconc : 
-	IGNORE=moveco TEE=tee UC="../../bin/unicon -C -DCOMPILER " make -e Test
-
-# ^ moveco does coexpr(), not supported by iconc yet, skip. 
+	SKIP=moveco TEE=tee UC="../../bin/unicon -C " make -e Test
+#  moveco does coexpr(), not supported by iconc yet, skip. 
 
 
 ${GREPTST} : % : %.icn local stand/%.std
@@ -45,5 +46,3 @@ Iconc Test-iconc :
 verbose: 
 	TEE=tee $(MAKE) -e
 
-$(IGNORE) : 
-	@echo === skipping $@ === 

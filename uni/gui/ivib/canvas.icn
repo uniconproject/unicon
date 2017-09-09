@@ -691,7 +691,9 @@ class Canvas : Component : SelectiveClassCoding(
    # Called if the canvas has been modified. 
    #
    method set_modified()
+      self.modified === 1 & return
       self.modified := 1
+      set_wTitle()
       self.parent_dialog.set_filename_label()
    end
 
@@ -699,15 +701,26 @@ class Canvas : Component : SelectiveClassCoding(
    # The canvas is no longer modified, ie it has been saved.
    #
    method clear_modified()
+#         self.modified can be &null before this is called, no return.
       self.modified := &null
+      set_wTitle()
       self.parent_dialog.set_filename_label()
    end
 
+   #
+   # Set the Window Title
+   #
+   method set_wTitle()
+      local star := if \self.modified then "*" else ""
+      WAttrib(self.get_parent_win(), "label=Ivib: "||star||(\self.filename|""))
+   end
+   
    #
    # Set the filename.
    #
    method set_filename(s)
       self.filename := s
+      set_wTitle()
       self.parent_dialog.set_filename_label()
    end
    

@@ -20,14 +20,14 @@ patchstr$(EXE): patchstr.o
 		cp patchstr ../../bin/
 
 
-libucommon.a: $(OBJS) $(HRDS)
+libucommon.a: $(OBJS) $(HDRS)
 	$(RM) $@
 	$(AR) q $@ $(OBJS)
 	$(RANLIB) $@
 	$(CP) $@ ../../bin/
 
 
-$(OBJS): $(HRDS)
+$(OBJS): $(HDRS)
 
 %.o: %.c
 	$(CMNT)@echo "   [COMMON] $<"

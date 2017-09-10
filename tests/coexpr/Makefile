@@ -16,13 +16,14 @@ endif
 # Verbose=1 make -e [target ...]
 #
 
-DIFFTST = moveco
-GREPTST = cobench stressCo 
+DIFFTST = moveco co
+GREPTST = cobench 
+GREPODTST = stressCo 
 GREPDIFFTST = stressCollectCo
 #TARGETS=$(patsubst %.icn,%,$(wildcard *.icn))
 #IGNORE=$(COTST)
 # ^ skipped. 
-TARGETS= $(DIFFTST) $(GREPTST) $(GREPDIFFTST)
+TARGETS= $(DIFFTST) $(GREPTST) $(GREPODTST) $(GREPDIFFTST)
 
 # Do the tests
 Test: DoTest
@@ -55,6 +56,18 @@ ${GREPDIFFTST} : % : %.icn local stand/%.std stand/%.grep
 	-@rm -f $@$(EXE)
 # This will pass if all lines of .out with ANY part matching any line in .grep match .std 
 
+${GREPODTST} : % : %.icn local stand/%.std stand/%.grep
+	-@$E -n "[Testing $@]... "
+	@$(UC) $(UFLAGS) $<
+	-./$@ | $(TEE) local/$@.out
+	-@grep -o -f stand/$@.grep local/$@.out | diff stand/$@.std - > /dev/null ; \
+	if [ $$? -eq 0 ] ; then echo "OK"; \
+	else echo "$@ Failed"; \
+	grep -o -f stand/$@.grep local/$@.out | diff -wy stand/$@.std - > $@.diff; \
+	fi || true
+	-@rm -f $@$(EXE)
+# This will pass if all parts of lines of .out  matching any line in .grep match .std 
+
 
 include ../Makefile.test
 
@@ -68,6 +81,6 @@ iconc Iconc :
 	SKIP="moveco stressCollectCo" Verbose=1 UC="$(BIN)/iconc" make -e Test
 #  moveco does coexpr(), not supported by iconc yet, skip. 
 
-verbose: 
+Verbose verbose: 
 	Verbose=1 $(MAKE) -e
 

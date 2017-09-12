@@ -821,7 +821,7 @@ procedure unicon(argv)
 	    if not (any('/\\', cmd) | (cmd[any(&letters,cmd)]==":")) then
 	       cmd := "./" || cmd
 	    every cmd ||:= " " || argv[exec+1 to *argv]
-	    system(cmd)
+	    rv := system(cmd)
 	    }
 	 }
       }
@@ -863,7 +863,7 @@ procedure unicon(argv)
       moveto(flogname, widollog)
       }
    # Produce a non-zero exit code if there were any errors.
-   if errors + yynerrs > 0 then {
+   if (errors + yynerrs > 0) | (\exec & rv~===0) then {
       if (\returnErrorsFlag = 1) then return parsingErrors
       else
 	 exit(1)

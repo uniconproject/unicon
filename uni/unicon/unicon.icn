@@ -862,12 +862,20 @@ procedure unicon(argv)
       close(flog)
       moveto(flogname, widollog)
       }
+
    # Produce a non-zero exit code if there were any errors.
-   if (errors + yynerrs > 0) | (\exec & rv~===0) then {
-      if (\returnErrorsFlag = 1) then return parsingErrors
-      else
-	 exit(1)
-      }
+   if errors + yynerrs > 0 then {
+       if (\returnErrorsFlag = 1) then
+	   return parsingErrors
+       else
+	   return 1
+   }
+
+   # If we run the program then return its exit code
+   if \exec then
+       return rv
+
+   return 0
 end
 #
 # error/warning/message handling

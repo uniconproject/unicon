@@ -2169,7 +2169,11 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	 if (!i_mode) {
 	    int status;
 	    waitpid(pid, &status, 0);
-	    return C_integer status;
+	    if (WIFEXITED(status))
+	       return C_integer WEXITSTATUS(status);
+	    else
+	       return C_integer status;
+	    
 	    }
 	 else {
 	    return C_integer pid;

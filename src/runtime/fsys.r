@@ -911,19 +911,14 @@ Deliberate Syntax Error
             if (strchr(fnamestr, '*') || strchr(fnamestr, '?')) {
 	       char tempbuf[1024];
 #if UNIX
-		/*
-		 * attemped to open a wildcard, produce ls(1) output.
-		 */
-	    	strcpy(tempbuf, "ls -1d ");
-/*
- * Get rid of colored ls output.  On by default.
- */
-#ifndef NoLsExtensions
-	    	strcat(tempbuf, "--indicator-style=none ");
-#endif					/* LsExtensions */
-	    	strcat(tempbuf, fnamestr);
-	    	status |= Fs_Pipe;
-		f = popen(tempbuf, "r");
+	       /*
+		* attempted to open a wildcard. used to use ls(1) output.
+		* Now using shell for-loop and echo in order to avoid bad
+		* answers when no match is found.
+		*/
+	       sprintf(tempbuf, "for i in %s; do if [ \"$i\" != \"%s\" ]; then echo \"$i\"; fi; done", fnamestr, fnamestr);
+	       status |= Fs_Pipe;
+	       f = popen(tempbuf, "r");
 #endif					/* UNIX */
 #if NT
 		/*

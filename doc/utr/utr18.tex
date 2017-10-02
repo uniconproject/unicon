@@ -22,8 +22,8 @@
 \lstset{language=C++}
 
 \title{Pattern Matching in Unicon}
-\author{Clinton Jeffery, Sudarshan Gaikaiwari and John Goettsche}
-\trnumber{18b}
+\author{Clinton Jeffery, Sudarshan Gaikaiwari, John Goettsche and Paden Rumsey}
+\trnumber{18c}
 \date{\today}
 
 \newcommand{\squeezeup}{\vspace{-1em}}
@@ -1272,6 +1272,14 @@ compares the current string in the string scanning environment to see if there i
 
 \textbf{\section*{Pattern Built-In Functions}}
 
+The new built-in functions in this section generally construct and produce
+a pattern as their return value. The resulting pattern may then be
+stored in a variable or composed with others to form more complex
+platterns, or used in the pattern match (??) or string scanning
+operators as described above.
+
+\noindent\rule{16.5cm}{0.1pt}
+
 \noindent\textbf{Abort()} \hfill\textbf{pattern cancel}\\
 causes an immediate failure of the entire pattern match.\\
 \noindent\rule{16.5cm}{0.1pt}
@@ -1374,6 +1382,23 @@ matches any characters from the current cursor or index position up to
 the specified position (back from the end) of the subject string,
 equivalent to using a negative index in \texttt{Tab()}.
 Position \texttt{n} must be to the right of the current position.\\
+\noindent\rule{16.5cm}{0.1pt}
+
+In addition to these new functions, the built-in function
+\texttt{image(x)} produces an interesting string when invoked with a
+pattern argument, including the pattern's serial number and number of
+elements along with an approximation of the pattern's components.
+For example, if p were the pattern
+\begin{verbatim}
+   p := Break(&letters) || Span(&letters) -> word
+   write(image(p))
+\end{verbatim}
+\noindent writes out
+
+\begin{verbatim}
+pattern_3(4) = Break(&letters) || (Span(&letters)) -> word
+\end{verbatim}
+
 
 \section*{APPENDIX B: Monitoring Pattern Matching}
 

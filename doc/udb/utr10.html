@@ -720,7 +720,7 @@ ul
 <div class=Section1>
 
 <p class=MsoNormal align=center style='text-align:center'><b><span
-style='font-size:28.0pt;line-height:125%'>Debugging with UDB 1.5<br>
+style='font-size:28.0pt;line-height:125%'>Debugging with UDB 2.0<br>
 </span></b><b><span style='font-size:20.0pt;line-height:125%'>User’s Guide and
 Reference Manual</span></b></p>
 
@@ -729,9 +729,9 @@ Reference Manual</span></b></p>
 <p class=MsoNormal>&nbsp;</p>
 
 <p class=MsoNormal align=center style='text-align:center'><b><span
-style='font-size:14.0pt;line-height:125%'>Ziad Al-Sharif<br>
-Unicon Technical Report #10<br>
-January 8, 2009</span></b></p>
+style='font-size:14.0pt;line-height:125%'>Ziad Al-Sharif, Paden Rumsey, and Clinton Jeffery<br>
+Unicon Technical Report #10b<br>
+October 2, 2017</span></b></p>
 
 <p class=MsoNormal>&nbsp;</p>
 
@@ -853,7 +853,7 @@ text-transform:uppercase'>&nbsp;</span></p>
 
 <p class=MsoToc2><a href="#_Toc232119659"><span style="text-decoration: none">5.4. Stepping and continuing</span><span style="text-decoration: none; color: windowtext; display: none">. 26</span></a></p>
 
-<p class=MsoToc2><a href="#_Toc232119730"><span style="text-decoration: none">5.4. Stepping in Patterns</span><span style="text-decoration: none; color: windowtext; display: none">. 26</span></a></p>
+<p class=MsoToc2><a href="#_Toc232119730"><span style="text-decoration: none">5.5. Stepping in Patterns</span><span style="text-decoration: none; color: windowtext; display: none">. 26</span></a></p>
 
 <p class=MsoToc1><a href="#_Toc232119660"><span style="text-decoration: none">6. Examining the Stack</span><span style="text-decoration: none; color: windowtext; display: none">. 27</span></a></p>
 
@@ -2828,59 +2828,67 @@ return</span><br>
 back to the caller; it steps on the next statement to be executed after the
 call.</p>
 
-<h2><a name="_Toc232119730">5.4. Stepping in Patterns</a></h2>
+<h2><a name="_Toc232119730">5.5. Stepping in Patterns</a></h2>
 
-<p Going through a pattern match in UDB is as follows. The user breaks at a
-line for the pattern match and use the command pstep to step into a pattern
-match (alternatively they can just use the pstep command prior to the line
-that has the pattern match, but this will be counted as a regular step). A
-regular step will jump right over the match. As the user psteps through the
-match they will be able to see the pattern element that is currently being
-match, the current toal matched string and they can view their position in
-a nested pattern match (due to unevaluted expressions.) When a pattern
-match concludes the user will be notified of the success or fialure of the
-match. Then if any psteps remain these will default to regular UDB steps.
-During the pattern match the user can print out the current subject, the
-subject with the current match, the current pattern element or a stack of
-truncated nested patterns. </p>
+<p> The <code>step</code> command skips over any pattern matches
+  on its way to the next line. In contrast, the "pattern step"
+  command <code>pstep</code>
+  steps into a pattern on the line if there is one; if there is no
+  pattern match on the line, <code>pstep</code> is equivalent to
+  <code>step</code>.
 
-<p UDB allows users to utilize a special kind of step to move through and help
-analyze their patterns. A traditional step is triggered when a new line is
-reached. A pattern step occurs when a pattern function or event could
-potentially move the cursor. The pattern functions not included in this
-definition include Pos(), Rpos and assignment of any kind (for more
-information about these functions or patterns in general consult Unicon
-Technical Report 18). UDB notifies the user of assignment or position
-matching as a part of a single step. Pattern stepping can be used outside
-a pattern match but will default to a regular UDB step and message will
-display saying that a pattern has not been found.
-   
+
+<p>
+
+A pattern step occurs when a pattern element being matched could potentially
+move the cursor. The pattern functions not included in this definition
+include <code>Pos()</code>, <code>Rpos()</code> and assignment of any kind,
+since they do not move the cursor.  UDB notifies the user of assignment or
+position tests as a part of the next pattern step.
+
+</p>
+
+
+<p>
+
+  As the user psteps through the match, they are able to see the
+  pattern element that is currently being matched, the current
+  total matched string and their position in
+a nested pattern match (due to unevaluated expressions). When a pattern
+match concludes, the user is notified of the success or failure of the
+match.
+At each pattern step, the user sees the current subject and position, the
+current pattern element matched and the substring that matched it,
+along with a stack of nested patterns, if any. 
+The string and pattern are truncated in the event that they go beyond a
+  single 80 character line.
+</p>
+
+<p>
+
 Using a command like <strong>continue</strong> or <strong>next</strong>
-   will exit the pattern environment entirely. </p>
+will exit the pattern environment entirely. </p>
 
-<p During the execution of the pattern match users will be able to see
-their position in the subject string, the current total match and the
-current pattern element being matched. The string and pattern will be
-truncated in the event that they go beyond single 80 character line.
-UDB also shows the user where they are in the case of a nested pattern
-match caused by the resolution of unevaluted expressions during pattern
-match time. These nested patterns are also truncated. If the users
-wishes to see full output of any of these truncated items they
-can utilize the print commands described in section. </p>
+<p> 
+  UDB also shows the user where they are in the
+case of a nested pattern match caused by the resolution of unevaluted
+expressions during pattern match time. These nested patterns are also
+truncated. If the users wishes to see full output of any of these truncated
+items they can utilize the print commands described in section. </p>
 
-<p class=MsoNormal>The commands</p>
+<p class=MsoNormal>The command</p>
    
-<p class=MsoNormal><span class=MsoIntenseEmphasis>pstep</span><br>
-<span class=MsoIntenseEmphasis>ps</span></p>
+<p class=MsoNormal><strong>pstep</strong><br>
+<strong>ps</strong></p>
 
-<p class=MsoNormal>steps to the next function that can potentially move
+<p class=MsoNormal>steps to the next pattern element that can potentially move
   the cursor </p>
 
 <p class=MsoNormal align=left style='text-align:left'><span
 class=MsoIntenseEmphasis>pstep</span> <strong>count</strong><br>
 <span class=MsoIntenseEmphasis>ps</span> <strong>count</strong></p>
 
-<p class=MsoNormal>psteps <strong>count</strong> number of functions that
+<p class=MsoNormal>psteps <strong>count</strong> number of pattern steps that
   could potentially move the cursor. The default value of <strong>count</strong> is one. </p>
 
 <h1><a name="_Toc232119660">6. Examining the Stack</a></h1>
@@ -2894,7 +2902,7 @@ need to know where and/or how it got there; UDB commands help you do that.</p>
 
 <p class=MsoNormal>By default, when the program stops, UDB points implicitly to
 the current procedure frame, which is the last frame on the execution stack.
-When the program is stopped, the current farm is fame number <strong>0</strong>,
+When the program is stopped, the current frame is number <strong>0</strong>,
 which is the innermost frame, the oldest frame on the stack has the biggest
 frame number, which is the frame for <span class=MsoIntenseEmphasis>procedure
 main()</span>.  You can explicitly jump to any frame by making the current
@@ -3528,7 +3536,7 @@ aspects the user can apply different flags.</p>
 <p class=MsoNormal><span class=MsoIntenseEmphasis>print</span> <strong>pat</strong></p>
 
 <p class=MsoNormal>Allows the user to see the untruncated versions of the
-pattern thatis being matched and the subject that the pattern is attempting
+pattern that is being matched and the subject that the pattern is attempting
 to match. If the pattern or string match exceeds the 80 character limit it
 will be surrounded by --> (pattern element/string match) <-- </p>
 

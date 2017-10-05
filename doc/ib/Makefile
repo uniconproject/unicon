@@ -22,6 +22,7 @@
 #
 # Ubuntu: pdflatex is in texlive-latex-base
 #         supertabular is in texlive-latex-extra but its no longer needed
+#	  lmodern.sty is in lmodern
 #	  Need packages providing:
 # color, array, hhline, makeidx, amsmath, amsfonts, amssymb,
 # textcomp, fontenc, hyperref, pdftex, xtab

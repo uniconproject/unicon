@@ -4,12 +4,14 @@
 #  configuration parameters
 VERSION=v940
 name=unspecified
-dest=/must/specify/dest/
+destdir=/must/specify/dest/
 
 default: allsrc
 	$(MAKE) -C ipl/lib 
 	$(MAKE) -C uni 
 
+
+.PHONY: plugins
 
 Makedefs: Makedefs.in configure
 	sh configure
@@ -194,6 +196,11 @@ Ilib:		bin/icont
 Ibin:		bin/icont
 		$(MAKE) -C ipl Ibin
 
+# Common components.
+
+plugins:
+		$(MAKE) -C plugins
+
 ##################################################################
 #
 # Installation and packaging.
@@ -201,33 +208,39 @@ Ibin:		bin/icont
 
 # Installation:  "make Install dest=new-parent-directory"
 
-D=$(dest)
+D=$(destdir)
 install Install:
-		test -d $D || mkdir $D
-		test -d $D/bin || mkdir $D/bin
-		test -d $D/ipl || mkdir $D/ipl
-		test -d $D/ipl/lib || mkdir $D/ipl/lib
-		test -d $D/ipl/incl || mkdir $D/ipl/incl
-		test -d $D/ipl/gincl || mkdir $D/ipl/gincl
-		test -d $D/ipl/mincl || mkdir $D/ipl/mincl
-		test -d $D/uni || mkdir $D/uni
-		test -d $D/uni/lib || mkdir $D/uni/lib
-		test -d $D/doc || mkdir $D/doc
-		test -d $D/doc/icon || mkdir $D/doc/icon
-		test -d $D/doc/unicon || mkdir $D/doc/unicon
-		test -d $D/man || mkdir $D/man
-		test -d $D/man/man1 || mkdir $D/man/man1
-		cp README $D
-		cp bin/[a-qs-z]* $D/bin
-		rm -f $D/bin/libXpm*
-		cp ipl/lib/*.* $D/ipl/lib
-		cp ipl/incl/*.* $D/ipl/incl
-		cp ipl/gincl/*.* $D/ipl/gincl
-		cp ipl/mincl/*.* $D/ipl/mincl
-		cp uni/lib/*.* $D/uni/lib
-		cp doc/icon/*.* $D/doc/icon
-		cp doc/unicon/*.* $D/doc/unicon
-		cp doc/icon/icon.1 $D/man/man1
+	mkdir -p $D
+	mkdir -p $D/bin
+	mkdir -p $D/ipl
+	mkdir -p $D/ipl/lib
+	mkdir -p $D/ipl/incl
+	mkdir -p $D/ipl/gincl
+	mkdir -p $D/ipl/mincl
+	mkdir -p $D/uni
+	mkdir -p $D/uni/lib
+	mkdir -p $D/uni/3d
+	mkdir -p $D/uni/gui
+	mkdir -p $D/uni/unidoc
+	mkdir -p $D/uni/parser
+	mkdir -p $D/uni/xml
+	mkdir -p $D/uni/unidep
+	mkdir -p $D/doc
+	mkdir -p $D/doc/icon
+	mkdir -p $D/doc/unicon
+	mkdir -p $D/man
+	mkdir -p $D/man/man1
+	cp README $D
+	cp bin/[a-qs-z]* $D/bin
+	rm -f $D/bin/libXpm*
+	cp ipl/lib/*.* $D/ipl/lib
+	cp ipl/incl/*.* $D/ipl/incl
+	cp ipl/gincl/*.* $D/ipl/gincl
+	cp ipl/mincl/*.* $D/ipl/mincl
+	cp uni/lib/*.* $D/uni/lib
+	cp doc/icon/*.* $D/doc/icon
+	cp doc/unicon/*.* $D/doc/unicon
+	cp doc/icon/icon.1 $D/man/man1
 
 
 # Bundle up for binary distribution.

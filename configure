@@ -626,6 +626,7 @@ ac_subst_vars='LTLIBOBJS
 GL_LDFLAGS
 GL_CFLAGS
 JV_LDFLAGS
+PLUGINS
 DASHX
 DASHS
 SLNT
@@ -4681,6 +4682,50 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 	CFLAGS="$CFLAGS -Wall"
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wall" >&5
 $as_echo_n "checking whether $CC supports -Wall... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+  {
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS -Wno-missing-braces"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -Wno-missing-braces" >&5
+$as_echo_n "checking whether $CC supports -Wno-missing-braces... " >&6; }
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9808,6 +9853,51 @@ $as_echo "#define HAVE_LIBDL 1" >>confdefs.h
 
 fi
 
+
+  if test "x$ac_cv_search_dlopen" != "xno" ; then
+    PLUGINS=upexample
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for lxc_get_version in -llxc" >&5
+$as_echo_n "checking for lxc_get_version in -llxc... " >&6; }
+if ${ac_cv_lib_lxc_lxc_get_version+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-llxc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lxc_get_version ();
+int
+main ()
+{
+return lxc_get_version ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_lxc_lxc_get_version=yes
+else
+  ac_cv_lib_lxc_lxc_get_version=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_lxc_lxc_get_version" >&5
+$as_echo "$ac_cv_lib_lxc_lxc_get_version" >&6; }
+if test "x$ac_cv_lib_lxc_lxc_get_version" = xyes; then :
+  PLUGINS="$PLUGINS lxcunicon"
+fi
+
+
+  fi
 else
 
 $as_echo "#define NoLoadFunc 1" >>confdefs.h
@@ -13296,6 +13386,8 @@ $as_echo "#define HAVE_TZNAME 1" >>confdefs.h
   fi
 fi
 
+ac_config_files="$ac_config_files Makefile:Makefile.in"
+
 ac_config_files="$ac_config_files Makedefs:Makedefs.in"
 
 ac_config_files="$ac_config_files Makedefs.uni:Makedefs.uni.in"
@@ -13993,6 +14085,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile:Makefile.in" ;;
     "Makedefs") CONFIG_FILES="$CONFIG_FILES Makedefs:Makedefs.in" ;;
     "Makedefs.uni") CONFIG_FILES="$CONFIG_FILES Makedefs.uni:Makedefs.uni.in" ;;
     "src/h/auto.h") CONFIG_HEADERS="$CONFIG_HEADERS src/h/auto.h:src/h/auto.in" ;;

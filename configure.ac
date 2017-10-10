@@ -163,6 +163,7 @@ AC_CFLAG([-fno-strict-aliasing])
 
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
+  AC_CFLAG([-Wno-missing-braces]) 
 #  AC_CFLAG([-Wmissing-prototypes])
 #  AC_CFLAG([-Wmissing-declarations])
 fi
@@ -437,6 +438,12 @@ if test "x$plugins" = "xyes"; then
   AC_SEARCH_LIBS([dlopen], [dl dld],
         [AC_DEFINE([HAVE_LIBDL], [1], [define to 1 if you have dlopen])],
 	[])
+
+  if test "x$ac_cv_search_dlopen" != "xno" ; then
+    PLUGINS=upexample
+    AC_CHECK_LIB(lxc,lxc_get_version,[PLUGINS="$PLUGINS lxcunicon"])
+    AC_SUBST(PLUGINS)
+  fi
 else
   AC_DEFINE([NoLoadFunc], [1], [No LoadFunc])
 fi
@@ -482,6 +489,7 @@ AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
 AC_VAR_TIMEZONE_EXTERNALS()
 AC_STRUCT_TIMEZONE()
+AC_CONFIG_FILES([Makefile:Makefile.in],)
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_FILES([Makedefs.uni:Makedefs.uni.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)

@@ -1,0 +1,2371 @@
+\chapter{The Uniconc Optimizing Unicon Compiler}
+
+Author: Michael Wilder
+
+\bigskip
+
+\def\Ut/{Unicon$^\Delta$}
+\def\UT/{UNICON$^\Delta$}
+\def\Ic/{Iconc$^\Delta$}
+\def\IC/{ICONC$^\Delta$}
+\def\Rtl/{RTL$^\Delta$}
+\def\sctn#1{\smallskip\begin{center} {\bf #1}\\ \end{center}\par}
+
+This chapter describes the design and development of a set of
+extensions to the Iconc optimizing compiler and to the Unicon
+translator to support each other. Taken together, these extensions
+form an optimizing compiler for (almost all of) Unicon.  The work was
+originally presented in [Wilder06] and appears here in a revised form
+by permission of the author.
+
+\section{Overview}
+
+The Unicon translator translates Unicon programs into an extended
+dialect of Icon proper. The Icon translator (Icont), executive
+(Iconx), and \mbox{run-time} library have been modified to accommodate
+various extensions that have been made since the Icon language was
+``frozen'' in the 1990's. Unicon programs are interpreted using the
+updated versions of Iconx and the \mbox{run-time} library.
+
+Lexical, syntactic, and semantic analysis of Unicon is described in
+Chapter 27. Selected summary information is presented here to provide
+a context for the description of the modifications made to the Unicon
+translator to support iconc.
+
+In the area of syntax analysis, it is worth noting that the parse tree
+produced by Unicon is a hybrid composed of generic treenodes and nodes
+representing semantically rich units such as classes and
+methods. Actions associated with rules in the Unicon grammar create
+this hybrid parse tree. Many of the transformations required to
+translate Unicon into Icon are performed during this phase.
+
+Semantic analysis of a Unicon unit begins with a parse tree traversal
+to identify and perform name mangling on symbols associated with
+packages and classes. Transitive closure of the superclass graph
+associated with any classes is performed, followed immediately by
+inheritance resolution for classes. The specification of any package
+or classes encountered are then written out to a database for
+subsequent use.  Methods associated with objects inserted into the
+parse tree during syntactic analysis are invoked during semantic
+analysis to accomplish these tasks.
+
+Generating the Icon code for a given Unicon unit is accomplished by a
+traversal of the parse tree for that unit. Methods associated with
+objects inserted into the parse tree during syntactic analysis are
+again used to accomplish code generation. Readability of the final
+product is facilitated by minor formatting calisthenics performed
+during this phase.
+
+% was chapter
+\section{Uniconc Organization}
+
+The organization of the Uniconc compiler is somewhat atypical. The
+organizational peculiarities of Uniconc and the tradeoffs associated
+with these peculiarities are described in the sections contained in
+this chapter.
+
+Uniconc is composed of three subsystems: a modified version of the
+Unicon translator (\Ut/), a modified version of the Iconc optimizing
+compiler (\Ic/), and a modified version of the Unicon \mbox{run-time}
+library (\Rtl/). The purpose of each of these subsystems is largely
+the same as its predecessor, but each has been modified to some degree
+in order to accomplish the compilation of Unicon programs. The \Ut/
+subsystem translates programs presented in the Unicon programming
+language into the Icon programming language. The \Ic/ subsystem
+translates programs presented in the Icon programming language into
+the C programming language. The \Rtl/ serves to provide functionality
+commonly used in Unicon and Icon programs to a program executing on a
+given platform.
+
+The topology of Uniconc as depicted in Figure~\ref{fig:Uniconc Topology}
+reveals that Uniconc shares some similarities with most traditional
+compilers while remaining fairly unique. There are three source
+languages involved in Uniconc. There are effectively four levels of
+intermediate code in Uniconc. There are two distinct phases of
+analysis and two distinct phases of synthesis in Uniconc.
+
+\begin{figure}[h]
+
+\begin{picture}(400,300)
+%
+% Framebox outline for debugging...
+%
+%\put(0,0){\framebox(400,300)[t]{outline}}
+%
+  \put(205,300){\vector(0,-1){20}}
+  \put(210,290){\em Unicon source}
+  \put(5,170){
+     \begin{picture}(390,110)
+       \put(0,0){\dashbox{.5}(385,110)[tl]{ \Ut/}}
+       \put(145,80){\framebox(100,25){syntax analysis}}
+       \put(195,80){\vector(0,-1){10}}
+       \put(145,45){\framebox(100,25){semantic analysis}}
+       \put(195,45){\vector(0,-1){10}}
+       \put(145,10){\framebox(100,25){optimizations}}
+       \put(195,10){\vector(0,-1){40}}
+       \put(200,-15){\em Icon source}
+     \end{picture}
+  }
+
+  \put(5,30) {
+     \begin{picture}(390,110)
+       \put(0,0){\dashbox{.5}(385,110)[tl]{ \Ic/}}
+       \put(145,80){\framebox(100,25){syntax analysis}}
+       \put(195,80){\vector(0,-1){10}}
+       \put(145,45){\framebox(100,25){semantic analysis}}
+       \put(195,45){\vector(0,-1){10}}
+       \put(145,10){\framebox(100,25){optimizations}}
+       \put(195,10){\vector(0,-1){40}}
+       \put(200,-15){\em C source}       
+       \put(280,10){\dashbox{.5}(100,60){ \Rtl/}}
+       \put(246,22.5){\vector(1,0){34}} % arrow from opts -> Rtl
+       \put(246,56.5){\vector(1,0){34}} % arrow from seman -> Rtl
+     \end{picture}
+  
+  }
+  
+\end{picture}
+\caption[Uniconc Topology]{Uniconc Topology}
+\label{fig:Uniconc Topology}
+\end{figure}
+
+\section{Design Considerations}
+
+Uniconc is designed to facilitate experimentation. At the outset of
+this project the decision was made to retain and modify the Unicon
+translator rather than eliminate it by extending the syntax analyzer
+for Iconc to include Unicon constructs. This route was the shortest
+path to achieving the compilation of Unicon programs. More
+importantly, this decision endowed Uniconc with attributes that make
+it a useful tool for conducting code transformation experiments.
+
+Intermediate code is produced by Uniconc at four points during the
+compilation process. Transformations performed in the semantic
+analysis phase of \Ut/ produce intermediate code that is subsequently
+transformed by the optimization phase of \Ut/ to produce Icon code
+acceptable to \Ic/. The Icon code produced by \Ut/ is effectively
+another level of intermediate code. Transformations performed in the
+semantic analysis phase of \Ic/ produce intermediate code that is
+subsequently transformed by the optimization phase of \Ic/ before
+producing C code that is compiled by the host C compiler of a given
+system. The C code produced by \Ic/ is effectively another level of
+intermediate code that is acted upon by the host C compiler. Each of
+these levels of intermediate code provides a waypoint at which the
+overall progress of a code transformation experiment can be
+evaluated. These waypoints also enable the design of code
+transformation experiments that span one or many levels of
+intermediate code. The transparency provided by these waypoints
+decreases the turnaround time for code transformation experiments and
+thereby increases the time that experimenters can devote to the design
+and analysis of transformations.
+
+Early experiments with Iconc revealed many impressive features that
+were clearly of significant value. The decision not to implement a new
+syntax analyzer for \Ic/ also greatly reduced the number of
+modifications that were required to produce \Ic/ from Iconc, and
+thereby reduced the likelihood of introducing errors into a formidable
+tool. This same decision increased the number of modifications that
+were required to produce \Ut/ from Unicon.  Experience has shown,
+however, that the expressivity and pliability of the Unicon
+programming language make \Ut/ a great place to introduce
+modifications.
+
+Time, in its varied disguises, is ever a design consideration. During
+the design of Uniconc, a primary focus was the speed of compiled
+code. Early efforts in compiling Unicon programs during this project
+produced unsatisfactory results in this area. The speedup of code
+compiled by Uniconc was gradually improved byperforming code
+transformation experiments with Uniconc spanning single and multiple
+segments of intermediate code. The time required to complete code
+transformation experiments in Uniconc was itself also gradually
+reduced, but never at the expense of speedup in compiled code. The
+Uniconc compiler presented in this chapter is the result of many code
+transformation experiments conducted with earlier versions of Uniconc.
+
+\section{Translation Model}
+
+Programming language translation is the heart of any compilation
+system. Code transformations must be chosen carefully in order
+accomplish translation that preserves the semantics of programmer
+input while simultaneously producing the best possible mapping to
+target code in terms of space-time constraints. The object-oriented
+Unicon programming language presents many challenges when translating
+into the procedural Icon programming language. Inheritance mechanisms
+in the Unicon programming language present particularly acute
+challenges when translating into the Icon programming
+language. Namespaces added by the Unicon programming language to
+provide encapsulation mechanisms also require particular care to
+ensure that the integrity of a namespace is not violated when
+translating into a procedural programming language such as Icon.  The
+Unicon programming language has always been a VM-based interpreted
+language until the advent of Uniconc. Symbol resolution
+responsibilities that were performed at \mbox{run-time} by the Unicon
+interpreter require \mbox{compile-time} code transformations and
+symbol table manipulations that were not previously performed. The
+goal-directed nature of the Unicon and Icon programming languages
+poses particularly challenging problems when translating into an
+imperative programming language such as C. The intricacies involved in
+translating Icon into C were fortunately solved by the creators of
+Iconc.
+
+The topology of Uniconc predicates a translation environment that differs from
+most compilers. Because the ultimate target language of Uniconc is C,
+traditional code transformational considerations relating to specifics of the
+target architecture are not a primary concern. This is simultaneously an
+advantage and a limitation. The peculiarity of generating intermediate code at
+effectively four places in three forms during the Uniconc compilation process
+places added emphasis on the order of application of code transformations in
+Uniconc, and likewise permits experimentation with transformations that span
+multiple forms (or segments) of intermediate code.
+
+Many of the code transformations that occur during the compilation of a Unicon
+program by Uniconc are {\em simple} transformations that are applied within a
+single segment of intermediate code. Code transformations that are applied
+across multiple segments of intermediate code in Uniconc are referred to as
+{\em compound} or {\em inter-segment} transformations. The cumulative effect of
+an inter-segment transformation in Uniconc depends upon a sequence of
+subtransformations applied at multiple segments. This phenomenon is referred to
+as {\em inter-segment transformational dependency} in Uniconc. Many examples of
+simple code transformations appear throughout the remainder of this chapter. An
+example of a compound code transformation and the particular set of
+inter-segment transformational dependencies it contains is detailed in
+Section~\ref{sect:Representing Objects}.
+
+Inter-segment transformations are inherently risky and require extensive
+experimentation. Care must be taken to ensure that the sequence of
+subtransformations applied by an inter-segment transformation do not produce
+side effects that nullify or otherwise dilute the efficacy of other
+transformations. Analysis of the results produced by an inter-segment
+transformation can be particularly delicate and time consuming because the
+correctness of code is potentially affected at multiple points in the
+translation stream.  
+
+% was chapter
+\section{The \UT/ Subsystem}
+
+The \Ut/ subsystem of Uniconc is composed of three major phases as
+depicted in Figure~\ref{fig:Uniconc Topology}. Each of these phases is
+presented in a separate section in this chapter in order to enumerate
+the major modifications that were necessary to these phases, and to
+illuminate the differences between \Ut/ and Unicon.
+
+\subsection{Syntax Analysis}
+
+A command-line switch (\texttt{-C}) was added that permits the Uniconc
+user to indicate whether the Unicon source code is to be compiled or
+interpreted.  This facility allows Uniconc to generate targets that
+are interpreted by Iconx or targets that run natively on a specific
+platform. The behavior of the \Ut/ syntax analyzer is vastly different
+if the input source is intended to be compiled. This divergence of
+behavior is necessary because symbol resolution responsibilities that
+were performed at \mbox{run-time} by the Unicon interpreter require
+\mbox{compile-time} code transformations and symbol table
+manipulations when producing compiled targets. Semantic actions
+associated with productions in the Unicon grammar were modified to
+provide distinct functionality when Uniconc is used to generate
+compiled targets. Multiple code transformations occur during the \Ut/
+syntax analysis phase in the event that Uniconc is being used to
+produce a compiled result. The remainder of this section describes
+areas where the behavior of the \Ut/ syntax analyzer diverges from
+that of the Unicon syntax analyzer when producing native versus
+VM-hosted targets.
+
+The Icon programming language contains a grammatic construct that allows
+programmers to incorporate library procedures in user-level code. The
+Icon expression
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+\> link strings, graphics
+\end{tabbing}
+}
+\noindent
+directs that the procedures in the \texttt{strings} and \texttt{graphics}
+modules be made available to the Icon source currently being translated. The
+Unicon programming language inherits this construct from Icon, and adds a
+similar grammatic construct known as {\em packages}.  The following Unicon
+expressions
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+\> package lang \\
+\> import gui, cog
+\end{tabbing}
+}
+\noindent
+direct that the classes, declarations, and procedures found in the Unicon source
+currently being translated be made part of the \texttt{lang} package, and that
+the classes, declarations, and procedures found in the \texttt{gui} and
+\texttt{cog} packages be accessible in a syntactically convenient fashion by the
+Unicon source currently being translated. The Unicon expression
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+\> package f00
+\end{tabbing}
+}
+\noindent 
+creates or adds to a namespace \texttt{f00}, whereas the following expression
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+\> import f00
+\end{tabbing}
+}
+\noindent 
+permits access to the symbols previously defined in the \texttt{f00} namespace.  
+The \Ic/ parser was not modified to accommodate these new Unicon constructs.
+Uniconc compensates for these constructs by identifying each \texttt{link} or
+\texttt{import} target in a compilation and parsing it exactly once. Each new
+\texttt{link} or \texttt{import} target encountered in a file that is itself a
+\texttt{link} or \texttt{import} target is also parsed. The resolution and
+parsing of \texttt{link} and \texttt{import} targets continues until all targets
+have been parsed once. This problem is solved by defining three tables in \Ut/
+called \texttt{iconc\_links}, \texttt{iconc\_imports}, and
+\texttt{iconc\_parsed}. Each time that a \texttt{link} or \texttt{import}
+expression is encountered during the parsing of a Unicon source file, Uniconc
+resolves the targets associated with the expression. Each target that is not
+already a member of the \texttt{iconc\_parsed} table is added to the
+\texttt{iconc\_links} or \texttt{iconc\_imports} table. After all input files
+specified on the Uniconc command-line are parsed, all members of the
+\texttt{iconc\_links} and \texttt{iconc\_imports} tables are themselves removed
+from their respective table, parsed, and added to the \texttt{iconc\_parsed}
+table. This continues until there are no members remaining in the
+\texttt{iconc\_links} and \texttt{iconc\_imports} tables.
+%The \texttt{iconc\_links} and \texttt{iconc\_imports} tables are cleared before
+%the start of parsing each new Unicon source file specified on the Uniconc
+%command-line, whereas the contents of the \texttt{iconc\_parsed} table persist
+%for the duration of a Uniconc command-line invocation.
+Handling the \texttt{package} and \texttt{import} constructs introduced by
+Unicon in this fashion permits the \mbox{compile-time} symbol resolution required by \Ic/
+to perform type inferencing without making any modifications to \Ic/.
+
+\label{sect:Invocations}
+Actions associated with productions for invocations in the Unicon grammar have
+been modified in order to perform code transformations as the parse tree for a
+Unicon source file is being populated. Different code transformations are
+performed depending upon the nature of the invocation encountered. The primary
+motivation for performing these code transformations is to reduce complex
+expressions in order to simplify vector table resolution in the \Ic/ subsystem
+at \mbox{compile-time}. Rules for invocations appearing in the Unicon programming language
+grammar are shown in Figure~\ref{fig:Unicon Invocations Grammar}.  The
+\texttt{expr11} nonterminal appearing in
+Figure~\ref{fig:Unicon Invocations Grammar} can produce many grammatic
+constructs, including other invocations. The \texttt{expr11} nonterminal permits
+Unicon programs to contain arbitrarily complex expressions that describe the
+entity containing the procedure or method that is to be invoked. A sampling of
+invocations expressed in the Unicon programming language and the corresponding
+transformations performed by Uniconc on these invocations appears in
+Figure~\ref{fig:Unicon Invocations Samples}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+expr11 : ... \\
+\>| expr11 LPAREN exprlist RPAREN \{\\
+\>\>      \$\$ := SimpleInvocation(\$1,\$2,\$3,\$4);\\
+\>\>      \} ;\\
+\>| expr11 DOLLAR INITIALLY LPAREN exprlist RPAREN \{\\
+\>\>      \$\$ := InvocationNodeShim(\$1,\$2,\$3,\$4,\$5,\$6)\\
+\>\>      \} ;\\
+\>| expr11 DOLLAR IDENT LPAREN exprlist RPAREN \{\\
+\>\>      \$\$ := InvocationNodeShim(\$1,\$2,\$3,\$4,\$5,\$6)\\
+\>\>      \} ;\\
+\>| expr11 DOLLAR IDENT DOT INITIALLY LPAREN exprlist RPAREN \{\\
+\>\>      \$\$ := InvocationNodeShim(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8)\\
+\>\>      \} ;\\
+\>| expr11 DOLLAR IDENT DOT IDENT LPAREN exprlist RPAREN \{\\
+\>\>      \$\$ := InvocationNodeShim(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8)\\
+\>\>      \} ;\\
+\end{tabbing}
+}
+\caption[Invocations in the Unicon Grammar]{Invocations in the Unicon Grammar}
+\label{fig:Unicon Invocations Grammar}
+\end{figure}
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\>   x.peek().uncouple(y) $\mapsto _1$ \\
+\>\> (\_\_1 := x.peek(x)) \& \_\_1.uncouple(\_\_1,y); \\
+\\
+\>   ($\backslash$n).g.k.get(23) $\mapsto _2$ \\
+\>\> ((\_\_5 := (\_\_4 := ($\backslash$n).g) \&  \_\_4.k) \& \_\_5.get(23)); \\
+\\
+\>   self\$buf.initially() $\mapsto _3$ \\
+\>\> (self) \& (buf\_\_oprec.initially(self)); \\
+\\
+\>   ($\backslash$f)\$buf.initially() $\mapsto _4$ \\
+\>\>  $\backslash$(f) \& (buf\_\_oprec.initially(f)); \\
+\\
+\>   every (!a)\$buf.initially() $\mapsto _5$ \\
+\>\> every ((\_\_2:=(!a))) \& (buf\_\_oprec.initially(\_\_2));
+\end{tabbing}
+}
+\caption[Sample Uniconc Invocation Transformations]{Sample Uniconc Invocation Transformations}
+\label{fig:Unicon Invocations Samples}
+\end{figure}
+
+Consideration of Figure~\ref{fig:Unicon Invocations Samples} reveals
+the nature of the transformations performed for invocations.  A
+sequence of transformations are applied to each expression
+corresponding to an \texttt{expr11} until the expression is reduced to
+an \mbox{l-value} held in a temporary Unicon variable.  The types of
+\mbox{l-values} held in temporary variables are examined during the
+semantic analysis phase of \Ic/ to determine whether further
+transformations are required in order to reproduce the semantics of
+the original invocation.  In transformation $\mapsto _2$ depicted in
+Figure~\ref{fig:Unicon Invocations Samples}, the type of the
+\mbox{l-value} \texttt{\_\_5} must be ascertained in order to
+determine whether or not the invocation of \texttt{get} is the
+invocation of a field or a method. If the type of the \mbox{l-value}
+\texttt{\_\_5} is not an instance of a class, no subsequent
+transformations are required to convey the semantics of the original
+invocation.  In the event that the type of the \mbox{l-value}
+\texttt{\_\_5} is an instance of a class, another transformation must
+be applied to the invocation in order to add the implicit ``self''
+parameter when invoking the method \texttt{get} so that proper state
+of the class instance \texttt{\_\_5} will be maintained and semantic
+closure can be attained. If \texttt{\_\_5} is an instance of a class,
+the transformation depicted in Figure~\ref{fig:Unicon Invocations
+Samples} is part of a compound or inter-segment transformation, and
+the insertion of the implicit self argument to attain semantic closure
+satisfies the inter-segment transformational dependency introduced by
+the initial transformation depicted in Figure~\ref{fig:Unicon
+Invocations Samples}.
+
+The remaining transformations depicted in Figure~\ref{fig:Unicon Invocations
+Samples} are simple transformations. In each of these transformations, enough
+information has been gleaned during the syntax analysis phase of \Ut/ to
+unambiguously determine a single transformation that attains semantic closure
+with the original invocation. In the case of the invocation of a superclass
+method, as depicted in transformations $\mapsto _3$, $\mapsto _4$, and $\mapsto
+_5$ of Figure~\ref{fig:Unicon Invocations Samples}, transformations in \Ut/ must
+discard the \texttt{\$} operator because it is an extension of Icon proper.
+Earlier versions of Uniconc deferred method resolution until \mbox{run-time}. As
+experimentation with code transformations in Uniconc progressed, increasing
+subsets of functionality were added to the compiler and this methodology was
+discarded where possible in order to produce more efficient \mbox{run-time} behavior of
+compiled programs. In the rare event that the resolution of a method cannot be
+accomplished unambiguously at \mbox{compile-time}, \Ic/ generates code in the form of a C
+\texttt{switch} statement to achieve resolution of a method at a given code
+point at \mbox{run-time}.
+
+Actions associated with productions for field references in the Unicon
+grammar have been modified in order to perform code transformations as
+the parse tree for a Unicon source file is being populated.  Different
+code transformations are performed depending upon the nature of the
+field reference encountered. Because a field reference in the Unicon
+programming language can be produced by the \texttt{expr11}
+nonterminal in the Unicon grammar, chains of field references are
+reduced to \mbox{l-values} held in temporary Unicon variables.  As is
+the case with method invocations, these \mbox{l-values} are examined
+during the semantic analysis phase of \Ic/ in order to ascertain the
+type of the entity to which a field reference is being made. The
+reductions performed by the code transformations applied to field
+references improve the quality of the code generated by \Ic/ by
+reducing the work necessary to unambiguously determine the parent
+record or class containing a given named field.
+
+The reductions performed by the code transformations applied to field references
+also improve the efficiency of compiled targets by ensuring that field
+references are not unnecessarily evaluated when inserting an implicit ``self''
+argument in an invocation that has a field-reference as a constituent
+\texttt{expr11}. In the following code snippet
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> x := r.o.m(23)
+\end{tabbing}
+}
+\noindent
+the implicit ``self'' argument that should be added to this invocation
+is \texttt{r.o}.  A transformation applied producing this result
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> x := r.o.m(r.o,23)
+\end{tabbing}
+}
+\noindent
+would generate a superfluous second evaluation of \texttt{r.o}.  A
+transformation that reduces the expression to an \mbox{l-value} before
+inserting the implicit argument produces
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> x := ((\_\_1 := r.o) \& \_\_1.m(\_\_1,23));
+\end{tabbing}
+}
+\noindent
+thereby saving the evaluation of a field reference at \mbox{run-time}. A fundamental
+problem solved by expression reduction in this case is revealed when attempting
+to determine the primary nature of \texttt{r.o}. In the example depicted above,
+if \texttt{r.o} is not an instance of a class, no transformation is required to
+achieve semantic closure. Determining whether \texttt{r.o} is an instance of a
+class is occasionally problematic in \Ut/. In such cases, \Ut/ will produce a
+transformation of the form
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> x := ((\_\_1 := r.o) \& \_\_1.m(23));
+\end{tabbing}
+}
+\noindent
+and defer resolution of the type of \texttt{r.o} until after type inferencing is
+performed during the semantic analysis phase of \Ic/. If type inferencing
+reveals that \texttt{\_\_1} (and thereby \texttt{r.o}) is an instance of a
+class, semantic closure of the compound transformation initiated in \Ut/ will be
+achieved by inserting the implicit \texttt{\_\_1} as the first argument in the
+invocation of \texttt{m}.
+
+\subsection{Semantic Analysis}
+The semantic analysis phase of the current version of \Ut/ contains only minor
+modifications to accommodate Uniconc. Earlier versions of Uniconc contained
+extensive modifications to the semantic analysis phase of \Ut/. Most of the
+modifications that were present in the \Ut/ semantic analysis phase of these
+earlier versions of Uniconc were mothballed after a system was devised to
+distinguish between class instances and record instances in \Ic/. Before this
+system was devised, a separate pass over the parse tree during the semantic
+analysis phase of \Ut/ was necessary in order to attempt to disambiguate
+invocations and field references. The results produced by this additional pass
+were not of the same caliber that are currently achieved by deferring
+disambiguation until after type inferencing is performed during the semantic
+analysis phase of \Ic/. The system devised to distinguish between class
+instances and record instances in \Ic/ is described in Section~\ref{sect:Recs v
+Objs}, and is employed in an optimization described in Chapter~\ref{ch:Opts In
+Generated Code}.
+
+During the semantic analysis phase of \Ut/, the parse tree is pruned of all
+nodes corresponding to \texttt{package} and \texttt{import} expressions. This
+pruning is necessary because \Ic/ has no knowledge of these grammatic
+constructs. The parse tree is also pruned of nodes corresponding to
+\texttt{link} expressions because \Ut/ handles all such expressions for compiled
+targets in order to resolve any \texttt{package} or \texttt{import} expressions
+that may be present within a file that is itself the target of a \texttt{link}
+expression. Checks are performed during this pruning to ensure that all
+\texttt{package}, \texttt{import}, and \texttt{link} expressions have been
+correctly resolved.
+
+\subsection{Code Generation}
+
+Minor modifications to the code generation phase of \Ut/ were made in
+order to remove tail recursion from Unicon procedures that are
+recursively invoked while emitting generated Icon code. These
+modifications were made after exhausting space resources during the
+code generation phase of \Ut/ on some computational platforms. These
+modifications are active whether a given target is to be interpreted
+or compiled.
+
+Transformations are applied to Icon code generated by the \Ut/ code
+generation phase in order to produce Icon code that decreases the
+number of field references required to accomplish the invocation of a
+Unicon method. This series of transformations is detailed in Section
+\ref{sect:Representing Objects}. The series of transformations
+performed at this point fundamentally modifies the representation of
+Unicon programming language class instances in Icon code generated by
+\Ut/ and are therefore only performed for targets that are to be
+compiled. These transformations are accomplished in a separate
+post-processing pass over the Icon code generated by \Ut/. This
+additional pass imparts visibility into the transformational mappings
+produced, thereby reducing the amount of time required to analyze the
+results of code transformation experiments performed at this point. As
+experiments with this series of transformations progresses, they may
+become part of the \Ut/ code generator proper and not require a
+separate pass over the Icon code generated by \Ut/.
+
+% was chapter
+\section{The \IC/ Subsystem}
+
+The \Ic/ subsystem of Uniconc is composed of three major phases as
+depicted in Figure~\ref{fig:Uniconc Topology}. Each of these phases is
+presented in a separate section in this chapter in order to enumerate
+the major modifications that were necessary to these phases, and to
+illuminate the differences between \Ic/ and Iconc.
+
+\subsection{Syntax Analysis}
+\label{sect:Recs v Objs}
+Record types are a primary vehicle for data abstraction in the Icon programming
+language. The Unicon programming language extends the notion of a record type by
+permitting users to declare and instantiate classes. Classes in Unicon
+are ultimately represented as Icon records before being
+interpreted or compiled. In certain cases it is very important to be able to
+differentiate between Icon records that represent Unicon classes and Icon
+records that represent Icon records. Invocations, as described in
+Section~\ref{sect:Invocations}, are an example of this necessity. Classes in
+Unicon have fundamentally different semantics than records in Icon. When it is
+impossible to differentiate between records that represent classes and records
+that represent records, information and therefore code transformational leverage
+are lost. In such a case, the designer of code transformations must choose to
+endow records with the same semantic properties as classes, to demote classes to
+the semantic equivalent of records, or to defer differentiation until \mbox{run-time}.
+None of these choices is particularly appealing.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> record class1\_\_state(...) \\
+\> record class1\_\_methods(...) \\
+\> global class1\_\_oprec := class1\_\_methods(...)
+\end{tabbing}
+}
+\caption[Simplified Unicon Class Representation]{Simplified Unicon Class Representation}
+\label{fig:Simple Unicon Class Rep}
+\end{figure}
+
+It was recognized early on during the course of this project that the
+information lost by representing classes as records was information
+that had to be reclaimed. It was also recognized that requiring the
+type inferencing phase of \Ic/ to perform significantly more
+computation or to consume more space as a result of this reclamation
+was not an option. Multiple experiments were performed before settling
+on an approach that balances the performance requirements of compiled
+code with the performance requirements of compiling code.
+
+Each Unicon class is translated into a pair of Icon record
+declarations. These declarations contain a unique signature that can
+be detected at \mbox{compile-time}. A complete example of the Icon
+code produced for a Unicon class is shown in an appendix in
+[Wilder06].  A simplified representation of the Icon code produced
+for a Unicon class is depicted in
+Figure~\ref{fig:Simple Unicon Class Rep}.
+Referring to this simplified representation reveals that a
+Unicon class named \texttt{class1} is translated into a pair of Icon
+record declarations. The record \texttt{class1\_\_state} contains all
+of the data members associated with an instance of any
+\texttt{class1}, and the singleton instance of
+\texttt{class1\_\_methods} called \texttt{class1\_\_oprec} contains
+the operations shared by any \texttt{class1} instances. It should be
+noted that this is a simplification for the sake of discussing the
+method that was devised to distinguish between record instances and
+class instances during the compilation of a Unicon program. The actual
+representation of Unicon classes is transformed extensively by a
+post-processor in order to reduce the time required to perform a
+method invocation in Unicon programs compiled by Uniconc, and to
+reduce the space consumed by a class instance in Unicon programs
+compiled by Uniconc.
+
+During the syntax analysis phase of \Ic/, each record declaration is
+added to a list of record entries of type \texttt{struct rentry}
+detailing the record types that are present in a program. Each global
+entity detected by \Ic/ is ascribed a set of attributes or flags that
+denote the nature of said entity. In the case of a record declaration,
+the flag \texttt{F\_Record} is ascribed. \Ic/ has been modified to add
+another attribute, called \texttt{F\_Object}, that is ascribed in the
+event that a record declaration conforms to the unique signature
+indicating that it is the representation of a class instance. This
+attribute is checked during the semantic analysis and code generation
+phases of \Ic/ in order to perform transformations that increase the
+efficiency of compiled code.
+
+Further modifications to \Ic/ have been made in order to reclaim the
+semantics of classes. During the syntax analysis phase, \Ic/ detects
+operations records (\texttt{xxx\_\_oprec}) instances and creates a
+vector table (vtbl) corresponding to each operation record instance
+encountered. These vtbls are accessed during the semantic analysis and
+code generation phases of \Ic/ in order to reduce the number of field
+references required to perform a method invocation in compiled Unicon
+programs. Vector tables are logical wrappers that encapsulate global
+entries of type \texttt{struct gentry} in \Ic/ and provide an
+interface for membership queries. Each vtbl is a lightweight construct
+requiring the space of two \mbox{compile-time} pointers.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> dbcol := ["col\_1", "col\_2"] \\
+\> ctor := constructor("dbrow", dbcol[1], dbcol[2]) \\
+\> every i := 1 to *dbrows do \{ \\
+\>\> r := ctor(dbrows[i][1], dbrows[i][2]) \\
+\>\> write("row: ", i, " col[1]: ", r.col\_1, "col[2]: ", r.col\_2) \\
+\>\> \} 
+\end{tabbing}
+}
+\caption[Dynamic Records in Unicon]{Dynamic Records in Unicon}
+\label{fig:Dyn Recs}
+\end{figure}
+The Unicon programming language extends the notion of a record type by
+permitting the instantiation of records whose form is not known until
+\mbox{run-time}. This language feature known as {\em dynamic records}
+is illustrated in Figure~\ref{fig:Dyn Recs}.
+
+This language feature is based upon and exploits \mbox{run-time}
+information for which there exists no \mbox{compile-time}
+analog. Uniconc makes a limited effort to determine the number of
+dynamic records that may be instantiated at \mbox{run-time}. It is
+necessary for \Ic/ to know the number of record types that may be
+instantiated at \mbox{run-time} in order to efficiently perform type
+inferencing during the semantic analysis phase. The design of \Ic/
+predicates that the number of types be known and fixed before type
+inferencing is performed. The syntax analysis phase of \Ic/ has been
+modified to detect invocations of the \texttt{constructor} function
+and to create new record entries of the form \texttt{struct
+rentry}. Each \texttt{struct rentry} created contains the type name of
+the record and the name and number of the record fields when it is
+possible to determine this information at \mbox{compile-time}. The
+number of dynamic records encountered during syntax analysis is
+tabulated, and this information is used by \Ic/ to perform type
+inferencing. The starting index of dynamic records is embedded in the
+code generated for a compiled Unicon program. This information
+embedded in the generated code is used to synchronize the \Rtl/ with
+the compiled program in order to ensure that the \Rtl/ does not assign
+record numbers to dynamic records in the \texttt{constructor} function
+that collide with record numbers used for non-dynamic records in a
+given program. The \Rtl/ has been modified in order to permit the
+instantiation of dynamic records at \mbox{run-time} in compiled Unicon
+code.  Empirical evidence suggests that the technique to avoid record
+number collisions at \mbox{run-time} in compiled Unicon programs is
+effective.
+
+\subsection{Semantic Analysis}
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+case N\_Invok: \\
+\> /* \\
+\> * General invocation. \\
+\> */ \\
+\> infer\_nd(Tree1(n));          /* thing being invoked */ \\
+\\
+\> if (Tree1(n)->n\_type == N\_Field \&\& fldref\_is\_class(Tree1(n))) \{ \\
+\>\>  methodinvok\_add\_implicit\_self(n); \\
+\>\>  \} \\
+\\
+\> /* \\
+\> * Perform type inference on all the arguments and copy the \\
+\> *  results into the argument type array. \\
+\> */ \\
+\> sav\_argtyp = arg\_typs; \\
+\> sav\_nargs = num\_args; \\
+\end{tabbing}
+}
+\caption[Examining Invocations in \Ic/]{Examining Invocations in \Ic/}
+\label{fig:Examine Invocations}
+\end{figure}
+
+The semantic analysis phase of \Ic/ has been modified in order to identify and
+complete code transformations initiated in \Ut/. Each parse tree node
+representing an invocation is examined during type inferencing in order to
+identify inter-segment transformational dependencies that remain unsatisfied.
+Invocation nodes that type inferencing indicates are fields that have the
+attribute \texttt{F\_Object} are further examined to determine whether an
+implicit ``self'' argument must be added to the argument list of the invocation
+in order to satisfy an inter-segment transformational dependency. If an
+unsatisfied dependency exists, the parse tree node corresponding to the
+invocation is modified in order to achieve semantic closure. Each modified
+invocation node is marked to prevent superfluous examinations. The parse tree
+transformations performed during the semantic analysis phase of \Ic/ are
+simplified by the parse tree transformations performed during the syntax
+analysis phase of \Ut/. Many fruitless experiments were performed before
+determining an effective method of coordinating inter-segment transformations
+between \Ut/ and \Ic/. The C code to examine invocations during type inferencing
+is depicted in Figure~\ref{fig:Examine Invocations}. The C code to insert an
+implicit self in a method invocation is depicted in
+Figure~\ref{fig:Self_Insertion}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+static \\
+void \\
+methodinvok\_add\_implicit\_self(n) \\
+\> struct node * n; \\
+\{ \\
+\> int i; \\
+\> int nargs; \\
+\> struct node * t; \\
+\> struct node * lhs; \\
+\\
+\> nargs = Val0(n); \\
+\> lhs = Tree0(Tree1(n)); /* lhs of subordinate N\_Field */ \\
+\\
+\> if (nargs > 0 \&\& (n->n\_field[2].n\_ptr->n\_col == 123456789 || \\
+\>\>  (n->n\_field[2].n\_ptr->n\_type == lhs->n\_type \&\& \\
+\>\>  n->n\_field[2].n\_ptr->n\_field[0].n\_ptr ==\\
+\>\> lhs->n\_field[0].n\_ptr))) \{ \\
+\>\>  /* \\
+\>\>   * We have already added the implicit self arg to this \\
+\>\>   * method call in an earlier typinfer iteration, or it \\
+\>\>   * was supplied in the unicon-generated code;  move on. \\
+\>\>   */ \\
+\>\>  return; \\
+\>\>  \} \\
+\> t = dupnode(lhs); \\
+\> t->n\_col = 123456789; /* mark this node as visited */ \\
+\> i = node\_descendants(n); \\
+\> n->n\_field[nargs+2].n\_ptr = NewNode(i); \\
+\> for (i=nargs; i>0; i--) \\
+\>\>  n->n\_field[i+2].n\_ptr = n->n\_field[i+1].n\_ptr; \\
+\> Val0(n) += 1; \\
+\> n->n\_field[2].n\_ptr = t; \\
+\}
+\end{tabbing}
+}
+\caption[Implicit Self Insertion in \Ic/]{Implicit Self Insertion in \Ic/}
+\label{fig:Self_Insertion}
+\end{figure}
+
+The model used by \Ic/ to evaluate subexpressions during type inferencing has
+been modified. The necessity of this modification was exposed during the
+analysis of code transformation experiments that did not provide semantic
+closure for a specific domain of expressive inputs. Expressions of the form
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> e$_1$ := e$_2$
+\end{tabbing}
+}
+\noindent
+were incorrectly evaluated if subexpression \texttt{e$_2$} contained an
+assignment to the same \mbox{l-value} represented by subexpression \texttt{e$_1$}. The
+sequence of types assumed by an Icon variable during a chain of assignments was
+in some cases not being propagated beyond the first subexpression in which an
+assignment was made to said variable. This applicative anomaly was perturbed by
+generating code in \Ut/ that aggressively reused temporary variables. An example
+of code generated by \Ut/ that provoked this behavior is shown in
+Figure~\ref{fig:Cascading Assignment}. In this example, the type held in the
+temporary \texttt{\_\_1} was not propagated to the expression containing the
+ultimate assignment to \texttt{\_\_1}, and the code generated by \Ic/ for the
+entire righthand side of the conjunctive was invalid. A simpler, hand-crafted
+example depicting a scenario where this behavior was present is shown in
+Figure~\ref{fig:Cascading Assignment 2}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+every i := 1 to 5 do \{\\
+\>((\_\_1 := (\_\_1:=\\
+\>   k.nodes\_table[i])) \& \\ 
+\>  (if \_\_1["add\_opening"] then \_\_1.add\_opening() \\
+\>  else (\_\_1.\_\_m.add\_opening(\_\_1)))) ;\\
+\>   \};
+\end{tabbing}
+}
+\caption[Subexpression Propagation Example]{Subexpression Propagation Example}
+\label{fig:Cascading Assignment}
+\end{figure}
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+procedure main(argv) \\
+\>    local n, k; \\
+\\
+\>    k := 3; \\
+\>    n := (n := (2 * k)); \\
+\>    write("n: ", image(n)); \\
+end
+\end{tabbing}
+}
+\caption[Simple Subexpression Propagation Example]{Simple Subexpression
+   Propagation Example}
+\label{fig:Cascading Assignment 2}
+\end{figure}
+
+Investigation revealed that the applicative order of expression evaluation was
+being violated during type inferencing in Iconc. The type information associated
+with the innermost assignment to \texttt{\_\_1} in
+Figure~\ref{fig:Cascading Assignment} was being cleared in order to produce the
+type information pertaining to the ultimate assignment to \texttt{\_\_1}. The
+immediate workaround for this problem was to implement transformations in \Ut/
+that were lax in their use of temporary variables. The semantic analysis phase
+of \Ic/ was eventually modified to perform an additional check during type
+inferencing to ensure that type information associated with a variable is not
+cleared before said information is used to update the type information
+associated with the same variable.
+
+\subsection{Code Generation}
+
+The code generation phase of \Ic/ has been modified to capitalize on
+the modifications introduced in Section~\ref{sect:Recs v Objs} that
+permit \mbox{compile-time} differentiation between records
+representing class instances and records representing records. The
+primary motivation behind these modifications is to increase the
+efficiency of method invocations in compiled Unicon programs.
+
+Logic has been added inside \Ic/ to examine field references during
+code generation. Any detected references to fields within records that
+represent class instances are passed to additional logic that queries
+the vtbl (vector table) of the represented class to perform symbol
+resolution. If a field reference is an invocation and the record
+containing the field represents a class instance, control is passed to
+additional logic that generates an invocation of the resolved
+method. Method invocations are generated using generic Icon
+descriptors so that the \mbox{run-time} reassignment of methods will
+not produce erroneous results. Adversarial programs can be constructed
+that will prevent the current version of Uniconc from correctly
+determining at \mbox{compile-time} whether an invocation is a
+procedure or method. In such a case, the current version of Uniconc
+generates invalid code. Research is currently underway to generate
+code to differentiate between method and procedure invocations at
+\mbox{run-time} in the case where \mbox{compile-time} information is
+insufficient to perform complete disambiguation.
+
+% was chapter
+\section{Optimizations In Compiled Targets}
+
+This section describes optimizations that Uniconc currently performs
+when generating compiled targets. Some of these optimizations are
+specifically tailored for compiled Unicon targets, whereas others are
+applied when generating either compiled Icon or Unicon targets. Each
+proposed optimization is presented in a separate section containing
+appropriate background material, the nature of the optimization, and
+the preliminary results obtained by applying the optimization.
+
+
+\label{ch:Opts In Generated Code}
+\subsection{Representation of Class Instances}
+\label{sect:Representing Objects}
+
+This section describes a proposed Uniconc optimization that fundamentally
+modifies the representation of class instances in compiled Unicon targets. This
+optimization is aggressive and fairly complex. This optimization is primarily
+\mbox{time-directed}, but also decreases the space required to represent a
+Unicon class instance in compiled Unicon targets.
+
+A series of transformations is performed on Unicon source code to produce Icon
+source that is translated by the Icon translator Icont, and subsequently
+executed by the Icon interpreter Iconx.  A sample Unicon program for
+illustrative purposes appears in an appendix of [Wilder06].
+
+Classes are not native to Icont or Iconx. Instead they are translated
+into a collection of procedures and records recognized as
+traditional Icon constructs by Icont and Iconx.  Transformations pertaining to
+inheritance, method resolution, etc., are performed on the Unicon source to
+produce semantically equivalent procedural code acceptable to Icont.
+
+The current code
+generation model produces two record declarations to represent each
+class. For example, the \texttt{record~fifo\_\_methods} contains a field for
+each member method of a \texttt{fifo} class. A single instance of a
+\texttt{fifo\_\_methods} record is created at \mbox{run-time} and shared by all
+\texttt{fifo} objects.  Each \texttt{fifo} instance refers to this methods
+vector through the \texttt{\_\_m} field of its corresponding
+\texttt{record~fifo\_\_state}. One \texttt{fifo\_\_state} record instance is
+created for each \mbox{run-time} \texttt{fifo} object. The \texttt{fifo\_\_state} record
+contains fields for all member variables in a \texttt{fifo} instance, a field
+for the implicit \texttt{self} member specific to object-oriented programming
+languages, and the aforementioned methods vector \texttt{\_\_m}.
+
+
+A code snippet from [Wilder06] illustrating the internal
+representation of a Unicon object in the procedural realm of Icon appears in 
+Figure~\ref{fig:fifo_ctor}.
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+record fifo\_\_state(\_\_s,\_\_m,m\_data)\\
+record fifo\_\_methods(get,peek,put,size,initially,buf)\\
+global fifo\_\_oprec, buf\_\_oprec\\
+procedure fifo()\\
+local self,clone\\
+initial \{\\
+\>  if /fifo\_\_oprec then fifoinitialize()\\
+\>  if /buf\_\_oprec then bufinitialize()\\
+\>  fifo\_\_oprec.buf := buf\_\_oprec\\
+\>  \}\\
+\>  self := fifo\_\_state(\&null,fifo\_\_oprec)\\
+\>  self.\_\_s := self\\
+\>  self.\_\_m.initially(self,) | fail\\
+\>  return self\\
+end\\
+\\
+procedure fifoinitialize()\\
+\>  initial fifo\_\_oprec := fifo\_\_methods(fifo\_get,fifo\_peek,fifo\_put,\\
+\>\>    fifo\_size,fifo\_initially)\\
+end\\
+\end{tabbing}
+}
+\caption{Unicon Object as Procedural Entity}
+\label{fig:fifo_ctor}
+\end{figure} 
+The \texttt{procedure fifo} represents the constructor of a \texttt{fifo}
+object. The first call to this constructor instantiates a
+\texttt{fifo\_\_methods} record named \texttt{fifo\_\_oprec} containing all
+procedures representing the methods contained in the \texttt{fifo} class. The
+\texttt{procedure~fifo} creates an instance of the \texttt{fifo\_\_state}
+record, populates the \texttt{\_\_m} and \texttt{\_\_s} fields with the methods
+vector and self reference, respectively, and invokes the initially procedure
+corresponding to the \texttt{procedure~fifo\_initially} to initialize the
+explicit member variables of this \texttt{fifo} instance.
+
+A variable in the Unicon or Icon programming language may assume many types over
+its lifetime, and
+variables in these languages need not be declared before their use.  This
+flexibility contributes admirably to the rapid development model for which
+these languages are renowned, and is simultaneously a source of consternation
+when attempting to translate down to a high level language with a more rigid
+type system.  Iconc employs a type inferencing system based upon global data
+flow analysis to determine the types that any variable may take during specific
+points of program execution. Empirical data suggests that this type inferencer
+is highly effective
+%particularly because Icon programs contain only three
+%namespaces and therefore typically make extensive use of global variables.
+The code generation model of Unicon uses global variables to represent
+class-wide data shared among Unicon class instances.
+
+Records are used to implement abstract data types in Icon, and Unicon
+classes are themselves represented as Icon records. Because Unicon is
+an object-oriented programming language, it provides mechanisms for
+the encapsulation of data and operations within an object or
+\mbox{l-value}, and permits the access or mutation of objects through
+field references associated with the object to be manipulated. The
+typing system used by the Iconc type inferencer treats records with
+particular rigor. Each Icon record is considered a distinct type, and
+each field within each record is itself a distinct type. This
+treatment of records contributes to the thorough analysis of the flow
+of data among Icon variables and facilitates the generation of
+efficient C code to represent Icon expressions.
+
+When a field reference is encountered during the parsing of Icon code, Iconc
+creates a node in its internal parse tree corresponding to the field reference.
+Iconc instantiates a \texttt{struct~fentry} of the form seen in
+Figure~\ref{fig:struct fentry}
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+struct fentry \{ /* field table entry */ \\
+\>   struct fentry *blink; \>\>\>\>\>\>/*   link for bucket chain */ \\
+\>   char *name;    \>\>\>\>\>\>/*   name of field */ \\
+\>   struct par\_rec *rlist;\>\>\>\>\>\>/*   head of list of records */ \\
+\>   \}; \\
+\end{tabbing}
+}
+\caption{Field Representation in Iconc}
+\label{fig:struct fentry}
+\end{figure} 
+for each field encountered. The declaration of a \texttt{struct~fentry} reveals
+that Iconc associates a list of \texttt{struct~par\_rec} with each field entry.
+The \texttt{struct~par\_rec} list represents all records containing a field of
+a given name. The declaration of \texttt{struct~par\_rec} appears in
+Figure~\ref{fig:struct par_rec}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+struct par\_rec \{  /* list of parent records for a field name */ \\
+\>   struct rentry *rec;\>\>\>\>\> /* parent record */ \\
+\>   int offset;     \>\>\>\>\> /* field's offset within this record */ \\
+\>   int mark;\>\>\>\>\> /* used during code generation */ \\
+\>   struct par\_rec *next; \\
+\>   \};
+\end{tabbing}
+}
+\caption{Parent Record Representation in Iconc}
+\label{fig:struct par_rec}
+\end{figure} 
+
+All \texttt{struct~fentry} instances are hashed using the name of the field as
+the hashing key.  The \texttt{struct~par\_rec} declaration contains the field
+offset for the field of a given name within a particular parent record.
+When a field reference is encountered in the parse tree during type inferencing,
+Iconc infers the types that the record may assume at the location of the field
+reference during program execution. Iconc then uses the name of the field to
+which the code refers to determine the parent records associated with the field
+and the offsets of the field within said parent records. This information is
+used in the event that a lefthand side of a field reference may assume multiple
+types at a given point in program execution. The information regarding the types
+that the field may assume during program execution is stored in a specific
+area of the parse tree node representing the field reference.
+
+If the type of a record can be determined unambiguously at
+\mbox{compile-time}, Iconc generates code that directly accesses a
+referenced field in the record.  The code that Iconc generates in this
+case is of the form seen in Figure~\ref{fig:iconc_direct_fld_assign}.
+\begin{figure}
+\texttt{
+\begin{tabbing}
+ abcd\=abcd\= \kill  
+  \{\\
+  /* lkup undo\_\_UndoableEdit */ \\
+  struct b\_record *r\_rp = (struct b\_record *) \\
+\>  BlkLoc(r\_f.t.d[0] /* self */); \\
+  r\_f.t.d[2].dword = D\_Var + \\
+\>  ((word *)\&r\_rp->fields[8] - (word *)r\_rp); \\
+  VarLoc(r\_f.t.d[2]) = (dptr)r\_rp; \\
+  \}
+\end{tabbing}   
+}
+\caption{Iconc Code Generated for Unambiguous Field Reference}
+\label{fig:iconc_direct_fld_assign}
+\end{figure} 
+In this case, the Iconc type inferencer has determined that the
+lefthand side of the field reference at this code point can only take
+one type during program execution, and Iconc has determined the offset
+of the field to be accessed by examining the \texttt{struct~par\_rec}
+corresponding to the type of the record.
+
+Often the Iconc type inferencer determines that the lefthand side of a
+field reference at a given code point may assume more than one record
+type during program execution.  In this case, Iconc examines all
+records associated with the types that the lefthand side may assume
+and, if only a single record contains a field of the name specified at
+that code point or if the field to be referenced is at the same offset
+within all records containing the field, Iconc is still able to
+generate code that is of the form seen in
+Figure~\ref{fig:iconc_direct_fld_assign}.
+
+In many cases, however, more than one record contains a field of the
+name specified in the field reference, and the offsets for the named
+field within one or more of these records is not the same.  In this
+case, Iconc generates a C switch statement to perform a
+\mbox{run-time} check to determine the type of the record being
+accessed and the offset of the field within that record.  The code
+generated by Iconc in this instance is of the form shown in
+Figure~\ref{fig:iconc_indir_fld_assign}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\= \kill   
+   \{ \\
+   /* lkup MaxChars */ \\
+   struct b\_record *r\_rp = (struct b\_record *)\\
+\>    BlkLoc(glbl\_argp[0] /* self */); \\
+   dptr r\_dp; int fld\_idx; \\
+   switch (r\_rp->recdesc->proc.recnum) \{ \\
+\>      case 127: \\
+\>\>         r\_dp = \&r\_rp->fields[4]; \\
+\>\>         break; \\
+\>      case 285: \\
+\>\>         r\_dp = \&r\_rp->fields[1]; \\
+\>\>         break; \\
+\>      default: \\
+\>\>         if ((fld\_idx = fldlookup(r\_rp, "MaxChars")) < 0) \\
+\>\>\>            err\_msg(207, \&glbl\_argp[0] /* self */); \\
+\>\>         else \\
+\>\>\>            r\_dp = \&r\_rp->fields[fld\_idx]; \\
+\>      \} \\
+   r\_f.t.d[11].dword = D\_Var + ((word *)r\_dp - (word *)r\_rp); \\
+   VarLoc(r\_f.t.d[11]) = (dptr)r\_rp; \\
+   \}
+\end{tabbing}
+}
+\caption{Iconc Code Generated for Ambiguous Field Reference}
+\label{fig:iconc_indir_fld_assign}
+\end{figure} 
+In this case Iconc generates code to examine the record number of the lefthand
+side of the field reference and assigns the correct field offset based upon
+the number (type) of the record being accessed.  This information is gathered
+from the \texttt{struct~fentry} and \texttt{struct~par\_rec} lists at
+\mbox{compile-time}.
+
+\subsubsection{The Proposed Optimization}
+
+This optimization originated as a time-directed optimization during
+the experimentation with and analysis of C code generated for Unicon
+source. Since Unicon is object-oriented, an obvious path to faster
+generated code seemed to be through the tailoring of field
+references. The reader will recall that a method reference in Unicon
+source is actually presented as a pair of field references to Iconc.
+The first reference is to obtain the \texttt{\_\_m} field (methods
+vector) of the object, and the second is to access the desired field
+containing the desired method. The primary goal at the outset of this
+optimization work was to eliminate this extra field reference in
+compiled Unicon targets.
+
+The first step toward eliminating the extra field reference for method
+invocations in compiled Unicon targets was to modify the Unicon code
+generation model. \Ut/ was modified to eliminate all references to
+\texttt{\_\_m} and \texttt{\_\_s} in generated code targeted for
+\Ic/. The translation of a Unicon class into Icon records was modified
+to facilitate the removal of \texttt{\_\_m} and \texttt{\_\_s}.
+
+Comparing the generated code produced by this optimization with previous
+generated code reveals several
+points of interest worthy of discussion. The \texttt{record~fifo\_\_methods}
+declaration and its instance \texttt{global~fifo\_\_oprec} are the same in
+both of these appendices. This is due to the fact that the proposed optimization
+retains the previous behavior of using a single, shared methods vector among
+all instances of a Unicon class. The previous representation of the
+\texttt{fifo} class from an in appendix in [Wilder06] as shown below
+
+% \makesinglespaced
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+\>record fifo\_\_state(\_\_s,\_\_m,m\_data)\\
+\>record fifo\_\_methods(get,peek,put,size,initially,buf)
+\end{tabbing}
+}
+\noindent
+now appears as
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd \kill
+\>record fifo\_\_mdw\_inst\_mdw(m\_data,get,peek,put,size,initially,buf)\\
+\>record fifo\_\_methods(get,peek,put,size,initially,buf)
+\end{tabbing}
+}
+% \makedoublespaced
+\noindent
+in the code generated by \Ut/ as modified for this proposed optimization.
+The reader will immediately note that the \texttt{fifo\_\_mdw\_inst\_mdw}
+declaration, the counterpart to the \texttt{fifo\_\_state} declaration under the
+previous translation model, has more fields than the previous
+\texttt{fifo\_\_state}, and that the \texttt{record~fifo\_\_mdw\_inst\_mdw}
+declaration contains fields that are redundant with those contained in the
+\texttt{record fifo\_\_methods} declaration.  This is intended.
+
+The field redundancy between the \texttt{fifo\_\_methods} and
+\texttt{fifo\_\_mdw\_inst\_mdw} records under the proposed optimization is a
+bit of trickery directed at the \Ic/ parser. This field redundancy leads \Ic/
+to permit the notation
+
+\begin{tabbing}
+abcd\=abcd \kill
+\> \texttt{r.add()} {\em invocation P}
+\end{tabbing}
+\noindent where
+\begin{tabbing}
+abcd\=abcd \kill
+\> \texttt{r.\_\_m.add()} {\em invocation O}
+\end{tabbing}
+
+\noindent
+was previously required. When \Ic/ parses invocation P, it determines that
+invocation P is syntactically correct due to this intentional field redundancy.
+%During the type inferencing phase, \Ic/ infers that the type of record \texttt{r} is
+%either \texttt{struct~fifo\_\_mdw\_inst\_mdw} or \texttt{struct~fifo\_\_methods}
+%because the declarations it has parsed indicate that these records contain the
+%specified field.
+After type inferencing is complete, the redundant fields in
+the \texttt{struct~rentry} of the \texttt{struct~par\_rec} that \Ic/ builds to
+represent the \texttt{struct~fifo\_\_mdw\_inst\_mdw} are removed.
+This removal makes these fields and their offsets inaccessible to the \Ic/
+code generator.  The removal of redundant fields from Iconc records representing
+Unicon class instances is accomplished by the source code depicted in
+Figure~\ref{fig:remove_fields_iconc}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\= \kill   
+static \\
+void \\
+adjust\_class\_recs(recs) \\
+\>   struct rentry * recs; \\
+\{ \\
+\>   int nflds;\\
+\>   char * p, * q;\\
+\>   struct fldname * f;\\
+\>   struct rentry * rinst;\\
+\>   struct rentry * rmeth;\\
+\\
+\>   for (rinst=recs; rinst; rinst=rinst->next) \{\\
+\>\>      if ((p = strstr(rinst->name, "\_\_mdw\_inst\_mdw")) == NULL)\\
+\>\>\>         continue;\\
+\>\>      for (rmeth=rinst->next; rmeth; rmeth=rmeth->next) \{\\
+\>\>\>         if ((q = strstr(rmeth->name, "\_\_methods")) == NULL)\\
+\>\>\>\>            continue;\\
+\>\>\>         if (p - rinst->name != q - rmeth->name)\\
+\>\>\>\>            continue;\\
+\>\>\>         if (strncmp(rinst->name, rmeth->name, p - rinst->name))\\
+\>\>\>\>            continue;\\
+\>\>\>         nflds = rinst->nfields - rmeth->nfields;\\
+\>\>\>         while (rinst->nfields > nflds) \{\\
+\>\>\>\>            f = rinst->fields;\\
+\>\>\>\>            rinst->fields = rinst->fields->next;\\
+\>\>\>\>            free(f);\\
+\>\>\>\>            rinst->nfields--;\\
+\>\>\>\>            \}\\
+\>\>\>         break;\\
+\>\>\>         \}\\
+\>\>      \}\\
+\}
+\end{tabbing}
+}
+\caption[Record Field Removal in \Ic/]{Record Field Removal in \Ic/}
+\label{fig:remove_fields_iconc}
+\end{figure} 
+
+All field references are examined during the code generation phase of \Ic/. If
+a given field reference is an invocation and the type of the field is of one or
+more Unicon class record instances, control is passed to additional logic
+added inside \Ic/ to resolve the particular vector table to which the reference
+is directed.
+
+\subsubsection{Results}
+The reader will recall that the code to add a datum to a \texttt{fifo}
+as it appears in the sample program in an appendix of [Wilder06] is
+\texttt{f.put("1st")} as shown in the \texttt{procedure fifo\_test}.
+A snippet of code generated by Iconc to perform the above invocation using the
+methodology existing prior to this proposed optimization appears in
+Figure~\ref{fig:fldref_old}.
+\begin{figure}
+\texttt{
+\begin{tabbing}   
+abcd\=abcd\=abcd\=abcd\=abcd \kill   
+L30: ; /* is record */ \\
+\>   \{\\
+\>   struct b\_record *r\_rp = (struct b\_record *) \\
+\>\>   BlkLoc(r\_f.t.d[0]/* f */);\\
+\>  /* mdw: collapsed \_\_m switch */ \\
+\>   r\_f.t.d[3].dword = D\_Var + \\
+\>\>   ((word *)\&r\_rp->fields[1] - (word *)r\_rp);\\
+\>   VarLoc(r\_f.t.d[3]) = (dptr)r\_rp;\\
+\>   \}\\
+\>   deref(\&r\_f.t.d[3], \&r\_f.t.d[3]);\\
+\>   if ((r\_f.t.d[3]).dword == D\_Record)\\
+\>\>      goto L31 /* is record */;\\
+\>   err\_msg(107, \&r\_f.t.d[3]);\\
+L31: ; /* is record */\\
+\>   \{\\
+\>   struct b\_record *r\_rp = (struct b\_record *) BlkLoc(r\_f.t.d[3]);\\
+\>   dptr r\_dp; int fld\_idx;\\
+\>   switch (r\_rp->recdesc->proc.recnum) \{\\
+\>\>      case 1:\\
+\>\>      case 3:\\
+\>\>      case 5:\\
+\>\>\>         r\_dp = \&r\_rp->fields[2];\\
+\>\>\>         break;\\
+\>\>      default:\\
+\>\>\>         if ((fld\_idx = fldlookup(r\_rp, "put")) < 0)\\
+\>\>\>\>            err\_msg(207, \&r\_f.t.d[3]);\\
+\>\>\>         else \\
+\>\>\>\>            r\_dp = \&r\_rp->fields[fld\_idx];\\
+\>\>    \}\\
+\>   r\_f.t.d[2].dword = D\_Var + ((word *)r\_dp - (word *)r\_rp);\\
+\>   VarLoc(r\_f.t.d[2]) = (dptr)r\_rp;\\
+\>   \}\\
+\>   r\_f.t.d[3].dword = D\_Var;\\
+\>   r\_f.t.d[3].vword.descptr = \&r\_f.t.d[0] /* f */;\\
+\>   r\_f.t.d[4].vword.sptr = "1st";\\
+\>   r\_f.t.d[4].dword = 3;\\
+\>   invoke(3, \&r\_f.t.d[2], \&r\_f.t.d[5], sig\_28); \\
+L29: ; /* bound */
+\end{tabbing}
+}
+\caption[Sample Method Invocation in Iconc]{Sample Method Invocation in Iconc}
+\label{fig:fldref_old}
+\end{figure} 
+Under this proposed optimization, \Ic/ generates code to perform this same
+invocation as shown in Figure~\ref{fig:fldref_new}.
+\begin{figure}
+\texttt{
+\begin{tabbing}   
+abcd\=abcd\=abcd\=abcd\=abcd \kill   
+L12: ; /* is record */ \\
+\>   \{ \\
+\>   /* mi: lkup put in fifo\_\_oprec */ \\
+\>   struct b\_record *r\_rp = (struct b\_record *)\\
+\>\>   BlkLoc(globals[17]); \\
+\>   r\_f.t.d[2].dword = D\_Var +\\
+\>\>   ((word *)\&r\_rp->fields[2] - (word *)r\_rp); \\
+\>   VarLoc(r\_f.t.d[2]) = (dptr)r\_rp; \\
+\>   \} \\
+\>   r\_f.t.d[3].dword = D\_Var; \\
+\>   r\_f.t.d[3].vword.descptr = \&r\_f.t.d[0] /* f */; \\
+\>   r\_f.t.d[4].vword.sptr = "1st"; \\
+\>   r\_f.t.d[4].dword = 3; \\
+\>   invoke(3, \&r\_f.t.d[2], \&r\_f.t.d[5], sig\_13); \\
+\end{tabbing}
+}
+\caption[Sample Method Invocation in \Ic/]{Sample Method Invocation in \Ic/}
+\label{fig:fldref_new}
+\end{figure} 
+
+Consideration of Figure~\ref{fig:fldref_old} and Figure~\ref{fig:fldref_new}
+reveals that an extra field reference is indeed saved using the proposed
+optimization. The savings in time realized by this optimization will be
+proportional to the number of method invocations executed by a compiled
+Unicon program. Another effect of the proposed optimization is the decrease of
+\mbox{run-time} space required to represent a Unicon object in code generated by \Ic/.
+The space required to represent two descriptors in compiled Unicon targets is
+eliminated for each \mbox{run-time} instance of a Unicon class under the proposed
+optimization because the fields \texttt{\_\_m} and \texttt{\_\_s} are no longer
+used. Measurements verifying the space savings introduced by this optimization
+are described in Section~\ref{sect:SpaceSavingsInCompiledTargets}. This side
+effect will likely prove beneficial in large-scale, object-oriented applications
+where Unicon is typically deployed.
+
+\subsection{Invocations}
+This section describes a proposed Uniconc optimization that modifies numeric
+parameters passed to invocations in compiled Unicon and Icon targets. This
+optimization is primarily time-directed.
+
+\subsubsection{Background}
+The \Rtl/ contains a generalized invocation function called \texttt{invoke}.
+Code generated by Iconc and \Ic/ calls \texttt{invoke} in order to accomplish
+the invocation of a procedure or function represented by a procedure descriptor
+or a string descriptor. The signature of \texttt{invoke} appears in the \Rtl/ as
+shown in Figure~\ref{fig:signature_of_invoke}.  The \texttt{dptr} type shown in
+Figure~\ref{fig:signature_of_invoke} is a pointer to a descriptor. Descriptors
+are used in the \Rtl/ and the Icon VM to generically describe the type and value
+of Icon and Unicon \mbox{run-time} entities. A typical invocation of \texttt{invoke}
+before the proposed optimization is shown in Figure~\ref{fig:Invoke_Before}.
+
+\subsubsection{The Proposed Optimization}
+This optimization adds logic to \Ic/ in order to determine at \mbox{compile-time} the value
+held by the integer descriptor that is declared as the formal argument
+\texttt{nargs} for each invocation of the \texttt{invoke} function. This
+optimization is enabled whenever using Uniconc to produce a compiled target. The
+logic added to \Ic/ by this optimization creates a temporary \mbox{compile-time} descriptor
+which is marked to be accessed as an integer literal containing the value of the
+integer descriptor that would normally be used to accomplish the invocation. 
+This temporary descriptor is used by the \Ic/ code generator to populate the
+codestream with the integer literal itself rather than the sequence of field
+references that are normally used to access the integer literal within the given
+descriptor. Figure~\ref{fig:Invoke_After} depicts the result of this proposed
+optimization. The \texttt{invoke} function being used to accomplish the
+invocation of an Icon procedure in a compiled target shown at the end of
+Figure~\ref{fig:Invoke_After} reveals that the logic added to \Ic/ by this
+proposed optimization indeed inserts an integer literal in the codestream where
+previously there were a sequence of field references. The logic added to \Ic/
+that accomplishes this substitution is shown in Figure~\ref{fig:fn_arg_inline}.
+
+\begin{figure}
+\texttt{
+\begin{tabbing}   
+abcd\=abcd\=abcd\=abcd\=abcd \kill   
+int invoke(nargs, args, rslt, succ\_cont) \\
+\> int nargs; \\
+\> dptr args; \\
+\> dptr rslt; \\
+\> continuation succ\_cont; \\
+\end{tabbing}
+}
+\caption[Signature of \texttt{invoke} Function]{Signature of \texttt{invoke} Function}
+\label{fig:signature_of_invoke}
+\end{figure}
+
+\begin{figure}
+\texttt{
+\begin{tabbing}   
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+\>   r\_f.t.d[6].dword = D\_Integer;\\   
+\>   r\_f.t.d[6].vword.integr = 3;\\   
+\>   r\_f.t.d[3].dword = D\_Var;\\
+\>   r\_f.t.d[3].vword.descptr = \&r\_f.t.d[0] /* f */;\\
+\>   r\_f.t.d[4].vword.sptr = "1st";\\
+\>   r\_f.t.d[4].dword = 3;\\
+\>   invoke(r\_f.t.d[6].vword.integr, \&r\_f.t.d[2], \&r\_f.t.d[5],\\
+\>\> sig\_28); \\
+L29: ; /* bound */
+\end{tabbing}
+}
+\caption[Sample Invocation in Uniconc Before Optimization]{Sample Invocation in Uniconc Before Optimization}
+\label{fig:Invoke_Before}
+\end{figure} 
+
+\begin{figure}
+\texttt{
+\begin{tabbing}   
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+\>   r\_f.t.d[3].dword = D\_Var;\\
+\>   r\_f.t.d[3].vword.descptr = \&r\_f.t.d[0] /* f */;\\
+\>   r\_f.t.d[4].vword.sptr = "1st";\\
+\>   r\_f.t.d[4].dword = 3;\\
+\>   invoke(3, \&r\_f.t.d[2], \&r\_f.t.d[5], sig\_28); \\
+L29: ; /* bound */
+\end{tabbing}
+}
+\caption[Sample Invocation in Uniconc After Optimization]
+   {Sample Invocation in Uniconc After Optimization}
+\label{fig:Invoke_After}
+\end{figure} 
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+static \\
+void \\
+sub\_ilc\_fncall\_explicit\_arg(argilc, protoilc, cd, indx) \\
+\>   struct il\_c * argilc; \\
+\>   struct il\_c * protoilc; \\
+\>   struct code * cd; \\
+\>   int indx; \\
+\{ \\
+\>   int loctype; \\
+\\
+\>   for (; argilc \&\& protoilc; argilc=argilc->next, \\
+\>\>protoilc=protoilc->next) \{ \\
+\>\>      if (argilc->il\_c\_type != ILC\_Ref) \{ \\
+\>\>\>         /* process nonmodifying arg references only */ \\
+\>\>\>         sub\_ilc(argilc, cd, indx); \\
+\>\>\>         continue; \\
+\>\>      \} \\
+\>\>      loctype = cur\_symtab[argilc->n].loc->loc\_type; \\
+\>\>      if (loctype != V\_Temp \&\& loctype != V\_NamedVar) \{ \\
+\>\>\>         /* process args for temp locs only */ \\
+\>\>\>         sub\_ilc(argilc, cd, indx); \\
+\>\>\>         continue; \\
+\>\>      \} \\
+\>\>      if (protoilc->s == NULL || \\
+\>\>\> strncmp("C\_integer", protoilc->s, 9)) \{ \\
+\>\>\>         /* currently process only C\_integer type */ \\
+\>\>\>         sub\_ilc(argilc, cd, indx); \\
+\>\>\>         continue; \\
+\>\>      \} \\
+\>\>      cd->ElemTyp(indx) = A\_ValLoc; \\
+\>\>      cd->ValLoc(indx) = loc\_cpy(cur\_symtab[argilc->n].loc, \\
+\>\>\> M\_CInt); \\
+\>   \} \\
+\}
+\end{tabbing}
+}
+\caption[Inlining Integer Arguments in \Ic/]{Inlining Integer Arguments in \Ic/}
+\label{fig:fn_arg_inline}
+\end{figure}
+
+\subsubsection{Results}
+
+Consideration of Figure~\ref{fig:Invoke_Before} and
+Figure~\ref{fig:Invoke_After} indicates that eleven field references, three
+array subscript operations, and two assignment operations are eliminated at
+\mbox{run-time} for each invocation of \texttt{invoke} acted upon by this
+proposed optimization. This proposed optimization only acts upon those
+invocations that are not already correctly inlined by Iconc, so the
+aforementioned benefit is realized if and only if the previously existing
+Iconc code failed to reduce the descriptor to an integer literal. 
+
+\subsection{Dereferences}
+\label{sect:deref_inlining_opt}
+This section describes a proposed Uniconc optimization that generates in-line C
+code in certain cases where a call to the \texttt{deref} \Rtl/ function would
+normally be generated in compiled Unicon and Icon targets. This optimization is
+primarily time-directed.
+
+\subsubsection{Background}
+
+Variables in Icon and Unicon may assume many types during the lifetime
+of a program. The implementors of the Icon interpreter use the notion
+of a descriptor to generically describe the type and value of a given
+Icon variable. This method of description is also used in the Icon
+\mbox{run-time} library, and was subsequently adopted by Iconc. The
+declaration of a descriptor is shown in Section 4.4.1.  Performance
+analysis of compiled targets using profiling tools indicates that the
+typical Icon or Unicon program spends an appreciable amount of time
+dereferencing descriptors in the \Rtl/ \texttt{deref} function.
+
+\subsubsection{The Proposed Optimization}
+
+When the types of the operands to the \texttt{deref} operation can be
+reliably determined at \mbox{compile-time}, there are situations where
+the functionality provided by the \texttt{deref} function can be
+generated directly in the codestream without entering the \Rtl/. In
+the event that the entity being dereferenced is not a variable, or is
+a ``normal'' variable, the code contained in the \texttt{deref}
+function is simple and should provide an opportunity for inlining.
+
+Iconc has been modified to examine the operands of the \texttt{deref}
+operation and to generate the inline equivalent of a \texttt{deref}
+call where appropriate. This optimization is enabled by the
+\texttt{-wb} Uniconc command-line option. This optimization is
+intended to act only in the case where the dereferenced entity is a
+``simple'' variable, or is not a variable at all.
+  
+\subsubsection{Results}
+A snippet of code generated by \Ic/ without the proposed optimization is shown
+in Figure~\ref{fig:deref_opt_before}. In this snippet, the result of
+\texttt{O114\_subsc} is used as both the source and destination of a
+dereferencing operation via the \Rtl/ \texttt{deref} function.
+
+A snippet of code generated by \Ic/ for the same source with the proposed
+optimization enabled is shown in Figure~\ref{fig:deref_opt_after}. The call to
+\texttt{deref} in Figure~\ref{fig:deref_opt_before} has been replaced with the
+inlined equivalent of a \texttt{deref} call in Figure~\ref{fig:deref_opt_after}.
+It should be noted that \texttt{VarLoc} and \texttt{Offset} are macros in the
+generated code, so no function call is being made by the inlined substitute for
+the call to the \texttt{deref} function in the \Rtl/.
+
+It is likely that the methodology employed by this particular optimization to
+circumvent a call to an \Rtl/ operation can be applied to other \Rtl/ operations
+in a similar fashion. Applying this methodology to other \Rtl/ functions is a
+potential subject of future experimentation. 
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+\>   deref(\&r\_f.t.d[5], \&r\_f.t.d[5]); \\
+\end{tabbing}
+}
+\caption[Code Generated Before \texttt{deref} Optimization]{Code Generated Before \texttt{deref} Optimization}
+\label{fig:deref_opt_before}
+\end{figure}
+
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+\>   r\_f.t.d[5] = *(dptr)((word *)VarLoc(r\_f.t.d[5]) + \\
+\>\> Offset(r\_f.t.d[5])); \\
+\end{tabbing}
+}
+\caption[Code Generated After \texttt{deref} Optimization]{Code Generated After \texttt{deref} Optimization}
+\label{fig:deref_opt_after}
+\end{figure}
+
+
+% was chapter
+\section{Metrics}
+
+Uniconc can produce compiled or interpreted Icon and Unicon targets. The purpose
+of this chapter is to quantify the speedup provided by Uniconc to compiled
+versus interpreted Unicon code. This speedup is compared to the speedup
+provided by Uniconc to compiled versus interpreted Icon code. \Ic/ was used for
+the tests instead of Iconc, initially for the sake of convenience in testing.
+Subsequent attempts to run the Icon test cases with Iconc from the Icon 9.4.3
+distribution failed due to incompatibilities between Iconc and the Icon 9.4.3
+\mbox{run-time} system. These incompatibilities likely exist because Iconc is no longer
+actively supported. The results from \Ic/ for Icon programs depicted in this
+chapter should be comparable to results obtained from Iconc for these same
+Icon programs, although the targets generated by \Ic/ will likely be a few
+percent faster due to the benefits of the dereference inlining optimization
+described in Section~\ref{sect:deref_inlining_opt}.
+
+\subsection{Overview}
+A representative set of programs were chosen to catalogue the important
+functional features of Icon and Unicon while providing a comparative analysis of
+these features. The set of programs contained herein is by no means exhaustive.
+The execution speed of some programs are measured with the linux
+\texttt{time(1)} utility, and others are measured using the Icon \texttt{\&time}
+keyword. The latter method of measuring execution speed was borrowed from
+[Walker91]. All measurements were taken on an AMD64 dual-core dual-processor
+machine running linux (Fedora Core 3). Each processor has a clock speed of
+1790.9 MHz and contains 1MB cache.
+
+\subsection{Invocations}
+Invocations are a cornerstone of any programming language. Difficulties arise
+when attempting to compare invocations in procedural languages to invocations in
+object-oriented languages due to the fact that invocations in object-oriented
+languages are fundamentally different than invocations in procedural languages.
+
+Figure~\ref{fig:bench_invoke_icon} is an Icon program used to measure the speed
+of invocations in compiled and interpreted Icon targets.
+Figure~\ref{fig:bench_invoke_unicon} contains a Unicon program used to measure
+the speed of invocations in compiled and interpreted Unicon targets. All
+targets, compiled and interpreted, were generated by the same version of
+Uniconc.  Each target was invoked with a single command-line argument in order
+to accomplish 10,000,000 invocations.  The measurements depicted are the average
+of three runs of each program.  The results are shown below.
+
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf average time (ms)} \\
+compiled Icon \>703 \\
+interpreted Icon \> 8,560 \\
+\>\>Icon speedup \>{\bf 1,217}\%
+\\
+compiled Unicon \> 1,190 \\
+interpreted Unicon \> 10,150 \\
+\>\>Unicon speedup \>{\bf 853}\%
+\end{tabbing}
+}
+% \makedoublespaced
+\smallskip
+Figure~\ref{fig:bench_tak_icon} is an Icon program using the Takeuchi function
+to measure the speed of recursive invocations in compiled and interpreted Icon
+targets. Figure~\ref{fig:bench_tak_unicon} contains a Unicon program using the
+Takeuchi function to measure the speed of recursive invocations in compiled and
+interpreted Unicon targets. All targets, compiled and interpreted, were
+generated by the same version of Uniconc. Each target was invoked with a single
+command-line argument of the form \hbox{\texttt{tak 27 18 9}}. The measurements
+depicted are the average of three runs of each program taken with the linux
+\texttt{time(1)} utility.  The results are shown below.
+
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf average time (ms)} \\
+compiled Icon \>500 \\
+interpreted Icon \> 11,400 \\
+\>\>Icon speedup \>{\bf 2,280}\%
+\\
+compiled Unicon \> 2,070 \\
+interpreted Unicon \> 13,600 \\
+\>\>Unicon speedup \>{\bf 657}\%
+\end{tabbing}
+}
+% \makedoublespaced
+\smallskip
+It is apparent that the speedup afforded compiled Unicon invocations by Uniconc
+is not on par with the speedup afforded compiled Icon invocations by Uniconc.
+The results are not discouraging, but certainly indicate that further research
+in this area is necessary.
+
+\subsection{Field References}
+Field references are a mainstay of object-oriented programs. The speed at which
+a field reference is accomplished is of paramount concern when evaluating the
+utility of an object-oriented language.
+
+Figure~\ref{fig:bench_fldref_icon} is an Icon program used to measure the speed
+of field references in compiled and interpreted Icon targets.
+Figure~\ref{fig:bench_fldref_unicon} contains a Unicon program used to measure
+the speed of field references in compiled and interpreted Unicon targets. All
+targets, compiled and interpreted, were generated by the same version of
+Uniconc. Each target was invoked with a single command-line argument in order
+to accomplish 10,000,000 field references. The measurements depicted are the
+average of three runs of each program. The results are shown below.
+
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf average time (ms)} \\
+compiled Icon \>760 \\
+interpreted Icon \> 8,500 \\
+\>\>Icon speedup \>{\bf 1118}\%
+\\
+compiled Unicon \> 760 \\
+interpreted Unicon \> 8,610 \\
+\>\>Unicon speedup \>{\bf 1133}\%
+\end{tabbing}
+}
+% \makedoublespaced
+
+The results indicate that the speedup afforded compiled Unicon field references
+by Uniconc is similar to the speedup afforded compiled Icon field references by
+Uniconc.  
+
+\subsection{Space Savings In Compiled Targets}
+\label{sect:SpaceSavingsInCompiledTargets}
+Section~\ref{sect:Representing Objects} describes an optimization for compiled
+targets that reduces the size of class instances in compiled Unicon targets.
+This section verifies the space savings offered by the aforementioned
+optimization.
+
+A sample Unicon program that measures the size of the string and block regions
+used by the program appears in
+Figure~\ref{fig:SpaceSavingsInCompiledTargets}. The \texttt{memlog} procedure
+used in this program is the work of Gregg M. Townsend of the University of
+Arizona. This program merely instantiates a specified number of instances
+of the \texttt{fivemembers} class, and invokes \texttt{memlog} to emit the
+usage of the string and block regions by the program as it progresses. The
+STRSIZE and BLKSIZE environment variables were set to a very large value while
+running the program to ensure that no collections occurred. The invocation of
+\texttt{memlog} could and probably should be moved to the very end of the
+\texttt{main} procedure, but it was left inside the instantiation loop to
+permit measurements using this program when collections are permitted to occur.
+
+When this program was run with command-line arguments necessary to create 500
+instances of the \texttt{fivemembers} class, the following results were
+observed:
+ 
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf usage of regions (bytes)} \\
+compiled Unicon \> str:0/36277125(0) blk:56160/36277125(0) \\
+interpreted Unicon \> str:3/36277125(0) blk:72160/36277125(0) \\
+\>block region savings\>{\bf 16,000} bytes
+\end{tabbing}
+}
+% \makedoublespaced
+
+\noindent
+This result is consistent with the expectation that the space of two Unicon
+descriptors is saved per class instance under the optimization proposed in
+Section~\ref{sect:Representing Objects}. The program was also run with
+command-line arguments necessary to create 1,000 instances of the
+\texttt{fivemembers} class, with the following results: 
+
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf usage of regions (bytes)} \\
+compiled Unicon \> str:0/36277125(0) blk:112160/36277125(0)\\
+interpreted Unicon \>str:4/36277125(0) blk:144160/36277125(0) \\
+\>block region savings \>{\bf 32,000} bytes
+\end{tabbing}
+}
+% \makedoublespaced
+
+\noindent
+This result is also consistent with the expectation that the space of two
+Unicon descriptors is saved per class instance under the optimization proposed
+in Section~\ref{sect:Representing Objects}.
+
+These measurements only verified that the space of two descriptors per class
+instance is saved by the optimization proposed in
+Section~\ref{sect:Representing Objects}.  The impact of this savings realized
+will vary depending upon the nature of the application being compiled by
+Uniconc. It is vacuously true that an increasing number of object instances will
+result in a higher savings of space.
+
+\subsection{General Programs}
+The quicksort algorithm was selected as a benchmark primarily because of its
+ubiquity. It is also recursive, and sorts in place so the number of allocations
+is likely reduced. Figure~\ref{fig:bench_qsort_icon} shows the Icon
+implementation of quicksort used for this measurement, and
+Figure~\ref{fig:bench_qsort_unicon} shows the Unicon implementation of quicksort
+used. All targets, compiled and interpreted, were generated by the same version
+of Uniconc. Each target was invoked with a single command-line argument in order
+to accomplish the sorting of 200,000 pseudorandom values. The measurements
+depicted are the average of three runs of each program taken with the linux
+\texttt{time(1)} utility.  The results are shown below.
+
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf average time (ms)} \\
+compiled Icon \>1,090 \\
+interpreted Icon \> 4,790 \\
+\>\>Icon speedup \>{\bf 440}\%
+\\
+compiled Unicon \> 1,260 \\
+interpreted Unicon \> 6,090 \\
+\>\>Unicon speedup \>{\bf 483}\%
+\end{tabbing}
+}
+% \makedoublespaced
+
+\noindent
+The seed used by the pseudorandom number generation facility in Icon and Unicon
+is the same for each program, and the values being sorted by the programs are
+therefore the same. The results indicate that the speedup afforded compiled
+Unicon by Uniconc for such a sorting program is comparable to the speedup
+afforded compiled Icon by Uniconc.
+
+A pair of appendices in [Wilder06]
+contain the listing for an I/O-intensive
+Unicon program that creates an arbitrary number of Unix resource files
+containing an arbitrary number of topics in each file, followed by
+the listing for the Icon counterpart
+to the aforementioned Unicon program. All targets, compiled and interpreted,
+were generated by the same version of Uniconc. Each target was invoked with
+command-line arguments to accomplish the creation of 50 resource files, with
+each file containing 500 topics. The filesystem was cleared of resource files
+created for a given program run after each run was measured. A new class
+instance (in Unicon) or record instance (in Icon) is created for each resource
+file. The measurements depicted are the average of three runs of each program
+taken with the linux \texttt{time(1)} utility.  The results are shown below.
+
+% \makesinglespaced
+\vbox{
+\begin{tabbing}[h]
+abcdefghabcdefghijkl\=abcdefghabcdefghijkl\=abcdefghabcdefgh\=a\= \kill
+{\bf\sf Target} \> {\bf\sf average time (ms)} \\
+compiled Icon \>1,030 \\
+interpreted Icon \> 4,960 \\
+\>\>Icon speedup \>{\bf 481}\%
+\\
+compiled Unicon \> 1,080 \\
+interpreted Unicon \> 5,060 \\
+\>\>Unicon speedup \>{\bf 468}\%
+\end{tabbing}
+}
+% \makedoublespaced
+
+\noindent
+This particular set of measurements is not very interesting since the results
+are bounded by I/O. The results do indicate, however, that Uniconc performs
+comparably for compiled Icon and Unicon targets that are bound by I/O.
+
+The measurements contained in this section were taken with all optimizations
+enabled in \Ic/.  It should be noted that \Ic/ has been produced from
+modifications to Iconc, so the results obtained on Icon programs with an
+unmodified Iconc will likely be different than those observed herein. The
+full effect of the class instance representation optimization described in
+Section~\ref{sect:Representing Objects} was not measured in this section because
+no appropriate basis point for such a measurement exists. In a general sense,
+the measurements in this section indicate that the speedup provided by Uniconc
+for compiled Unicon targets is about the same as the speedup provided by
+Uniconc for compiled Icon targets.
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+procedure p() \\
+\>   return; \\
+end \\
+\\
+procedure main(argv) \\
+\>   local n, clk; \\
+\\
+\>   n := integer(argv[1]); \\
+\>   clk := \&time; \\
+\>   while (n > 0) do \{ \\
+\>\>      p(); \\
+\>\>      n -:= 1; \\
+\>\>      \} \\
+\>   clk := \&time - clk; \\
+\>   write("time: ", clk); \\
+end
+\end{tabbing}
+}
+\caption[Icon Program Measuring Invocations]{Icon Program Measuring Invocations}
+\label{fig:bench_invoke_icon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+class o() \\
+\>   method p() \\
+\>\>      return; \\
+\>   end \\
+end \\
+\\   
+procedure main(argv) \\
+\>   local n, x, clk; \\
+\\   
+\>   x := o(); \\
+\>   n := integer(argv[1]); \\
+\>   clk := \&time; \\
+\>   while (n > 0) do \{ \\
+\>\>      x.p(); \\
+\>\>      n -:= 1; \\
+\>\>      \} \\
+\>   clk := \&time - clk; \\
+\>   write("time: ", clk); \\
+end
+\end{tabbing}
+}
+\caption[Unicon Program Measuring Invocations]{Unicon Program Measuring
+   Invocations}
+\label{fig:bench_invoke_unicon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+procedure tak(x, y, z) \\
+\>   if not (y < x) then \\
+\>\>      return z \\
+\>   else \\
+\>\>      return tak(tak(x-1, y, z), tak(y-1, z, x), tak(z-1, x, y)); \\
+end \\
+\\
+procedure main(argv) \\
+\>   tak(integer(argv[1]), integer(argv[2]), integer(argv[3])); \\
+end
+\end{tabbing}
+}
+\caption[Icon Takeuchi Function]{Icon Takeuchi Function}
+\label{fig:bench_tak_icon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd\=abcd\=abcd \kill
+class tak() \\
+\>   method comp(x, y, z) \\
+\>\>      if not (y < x) then \\
+\>\>\>         return z \\
+\>\>      else \\
+\>\>\>      return comp(comp(x-1, y, z), comp(y-1, z, x), \\
+\>\>\>\> comp(z-1, x, y)); \\
+\>   end \\
+initially(x, y, z) \\
+\>   comp(x, y, z); \\
+\>   return; \\
+end \\
+\\
+procedure main(argv) \\
+\>   local t; \\
+\>   t := tak(integer(argv[1]), integer(argv[2]), integer(argv[3])); \\
+end
+\end{tabbing}
+}
+\caption[Unicon Takeuchi Function]{Unicon Takeuchi Function}
+\label{fig:bench_tak_unicon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+record rec(x) \\
+\\
+procedure main(argv) \\
+\>   local n, r, clk; \\
+\\
+\>   n := integer(argv[1]); \\
+\>   r := rec(11); \\
+\>   clk := \&time; \\
+\>   while (n > 0) do \{ \\
+\>\>      v := r.x; \\
+\>\>      n -:= 1; \\
+\>\>      \} \\
+\>   clk := \&time - clk; \\
+\>   write("time: ", clk); \\
+end
+\end{tabbing}
+}
+\caption[Icon Program Measuring Field References]{Icon Program Measuring Field
+   References}
+\label{fig:bench_fldref_icon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+class o(m\_x) \\
+\>   method run(n) \\
+\>\>      local v, clk; \\
+\>\>      clk := \&time; \\ 
+\>\>      while (n > 0) do \{ \\
+\>\>\>         v := self.m\_x; \\ 
+\>\>\>         n -:= 1; \\
+\>\>\>         \} \\
+\>\>      clk := \&time - clk; \\
+\>\>      write("time: ", clk); \\
+\>   end \\
+initially(n) \\
+\>   run(n); \\
+end \\
+\\
+procedure main(argv) \\
+\>   local n, r; \\
+\\
+\>   n := integer(argv[1]); \\
+\>   r := o(n); \\
+end \\
+\end{tabbing}
+}
+\caption[Unicon Program Measuring Field References]{Unicon Program Measuring
+   Field References}
+\label{fig:bench_fldref_unicon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+class fivemembers(v, w, x, y, z) \\
+initially(n) \\
+\>   x := $\backslash$n; \\
+end \\
+\\
+procedure memlog(f) \\
+\>   local sused, bused, salloc, balloc, scoll, bcoll \\
+\>   every sused := \&storage $\backslash$ 2 \\
+\>   every bused := \&storage $\backslash$ 3 \\
+\>   every salloc := \&regions $\backslash$ 2 \\
+\>   every balloc := \&regions $\backslash$ 3 \\
+\>   every scoll := \&collections $\backslash$ 3 \\
+\>   every bcoll := \&collections $\backslash$ 4 \\
+\>   write(f, "str:", sused, "/", salloc, "(", scoll, ") ", \\
+\>\>            "blk:", bused, "/", balloc, "(", bcoll, ") ") \\
+\>   return sused + bused \\
+end \\
+\\
+procedure main(argv) \\
+\>   local i, x; \\
+\\
+\>   i := (integer($\backslash$argv[1]) | 500); \\
+\>   while (i > 0) do \{ \\
+\>\>      i -:= 1; \\
+\>\>      x := fivemembers(); \\
+\>\>      memlog(); \\
+\>\>      \} \\
+end
+\end{tabbing}
+}
+\caption[Unicon Program Measuring Class Instance Space Usage]{Unicon Program
+   Measuring Class Instance Space Usage}
+\label{fig:SpaceSavingsInCompiledTargets}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+procedure partition(a, p, r) \\
+\>   local x, i, j;\\
+\\
+\>   x := a[r];\\
+\>   i := p - 1;\\
+\>   every j := p to r-1 do \{\\
+\>\>     if (a[j] <= x) then \{\\
+\>\>\>       i +:= 1;\\
+\>\>\>         a[i] :=: a[j];\\
+\>\>\>         \}\\
+\>\>      \}\\
+\>   a[i+1] :=: a[r];\\
+\>   return i+1;\\
+end\\
+\\
+procedure quicksort(a, p, r)\\
+\>   if (p < r) then \{\\
+\>\>      q := partition(a, p, r);\\
+\>\>      quicksort(a, p, q-1);\\
+\>\>      quicksort(a, q+1, r);\\
+\>\>     \}\\
+end\\
+\\
+procedure main(args)\\
+\>   local a, i, n;\\
+\\
+\>   a := list();\\
+\>   n := (integer($\backslash$args[1]) | 32768);\\
+\>   every i := 1 to n do\\
+\>\>      put(a, ?1048576);\\
+\>   quicksort(a, 1, *a);\\
+end\\
+\end{tabbing}
+}
+\caption[Icon Quicksort Program]{Icon Quicksort Program}
+\label{fig:bench_qsort_icon}
+\end{figure}
+
+\begin{figure}[h]
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+class sorter(m\_a)\\
+\>   method partition(p, r)\\
+\>\>      x := m\_a[r];\\
+\>\>      i := p - 1;\\
+\>\>      every j := p to r-1 do \{\\
+\>\>\>         if (m\_a[j] <= x) then \{\\
+\>\>\>\>            i +:= 1;\\ 
+\>\>\>\>            m\_a[i] :=: m\_a[j];\\
+\>\>\>\>            \}\\ 
+\>\>\>         \}\\
+\>\>     m\_a[i+1] :=: m\_a[r];\\
+\>\>      return i+1;\\
+\>   end\\
+\>   method quicksort(p, r)\\
+\>\>      if (p < r) then \{\\
+\>\>\>         q := partition(p, r);\\
+\>\>\>         quicksort(p, q-1);\\
+\>\>\>         quicksort(q+1, r);\\
+\>\>\>         \}\\
+\>\>      return;\\
+\>   end\\
+initially(n)\\
+\>   m\_a := list();\\
+\>   /n := 32768;\\
+\>   every i := 1 to n do\\
+\>\>      put(m\_a, ?1048576);\\
+\>   quicksort(1, *m\_a);\\
+\>   return;\\
+end\\
+\\
+procedure main(args)\\
+\>   local inst;\\
+\>   inst := sorter(args[1]);\\
+end
+\end{tabbing}
+}
+\caption[Unicon Quicksort Program]{Unicon Quicksort Program}
+\label{fig:bench_qsort_unicon}
+\end{figure}
+
+% was chapter
+\section{Future Work}
+
+Uniconc is an experiment in progress. Limitations exist in the version of
+Uniconc described in this chapter. There are also potential improvements that
+can be made to Uniconc in addition to addressing its limitations. This chapter
+discusses the limitations of the current version of Uniconc, describes some of
+the approaches that are being considered to eliminate or alleviate these
+limitations, and describes potential improvements in generated targets.
+
+\subsection{Limitations}
+
+The version of Uniconc described in this chapter contains limitations pertaining
+to scalability, disambiguation, and introspection. Each of these limitations are
+characterized in this section, and the current approaches being considered to
+address each of these limitations are described.
+
+\subsubsection{Scalability}
+
+Uniconc currently has a scalability issue that prevents the compilation of
+large, class-intensive programs with computational resources available to the
+typical user.  Sources of this scalability issue are:
+
+$\bullet$ The parse tree for an entire program is maintained in memory by \Ic/
+for the duration of compilation. This includes nodes corresponding to
+unreachable control paths in source programs.
+ 
+$\bullet$ The representation of type vectors used by \Ic/ grows very large
+when many distinct types are used within a program.  This is particularly
+evident in Unicon programs where many classes (records) are used.
+
+$\bullet$ The representation of type vectors used by \Ic/ can become
+pathologically sparse when many distinct types are used within a program. This
+is particularly evident in Unicon programs containing many classes.
+
+Experiments to improve the scalability of Uniconc during the course of this
+project have thus far proven unsuccessful. The preliminary underpinnings of
+further Uniconc scalability experiments are currently being planned.
+Three avenues of approach to this problem are currently being entertained.
+These approaches are:
+
+% \makesinglespaced
+\begin{figure}[h]
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+\> {\bf (i)} Pruning the parse tree of unreferenced code prior to performing \\
+\> type inferencing in \Ic/. \\
+\\
+\> {\bf (ii)} Exploiting the redundancy of type vector representation in \Ic/ \\
+\> by caching common type forms and requiring copy-on-write references to \\
+\> these forms where possible. \\
+\\
+\> {\bf (iii)} Permit the separate compilation of Unicon and Icon modules by \\
+\> devising an efficient scheme for incremental type inferencing.
+\end{tabbing}
+\end{figure}
+% \makedoublespaced
+\noindent Approaches i and ii above will unfortunately only provide a transient
+alleviation of the symptoms that characterize the Uniconc scalability problem.
+It is likely that one or more of these approaches will be attempted, however,
+in order to permit the compilation of larger Unicon programs with typically
+available computational resources in the near term.  
+
+Approach iii is currently the only path that may provide a solution to the
+Uniconc scalability problem. It is unknown, however, whether this approach is
+navigable. Multiple gedankenexperiments have to this date been conducted using
+approach iii, and the feasibility of the approach is still in doubt. It is
+possible that separately compiled modules in Uniconc can be modelled after the
+approach currently taken with builtin functions in the \Rtl/. This approach
+might also use the type coercion syntax currently found in the \Rtl/
+implementation language to improve the quality of the code generated for
+Unicon modules. It would be far more desirable, however, to devise a technique
+that supports the separate compilation of Unicon modules without marring the
+syntactic or semantic elegance of Unicon. The Uniconc scalability issue will be
+a primary focus of continuing research.
+
+\subsubsection{Lack of Introspection} 
+
+The Unicon GUI class library uses facilities that examine the members
+of Unicon class instances at \mbox{run-time}. This introspective
+capability is very important for large-scale, dynamic, object-oriented
+programs. Uniconc is not currently able to correctly compile the
+Unicon GUI class library because the introspective capabilities used
+in this library are highly dependent upon the internal representation
+of Unicon classes. The representation of Unicon class instances has
+been fundamentally modified by Uniconc as described in
+Section~\ref{sect:Representing Objects} in order to produce savings in
+space and time. Unfortunately, the modifications directly conflict
+with the current introspective capabilities of the Unicon GUI class
+library. If the optimization proposed in
+Section~\ref{sect:Representing Objects} is adopted, the introspective
+capabilities in the Unicon GUI class library will need to be modified
+to accommodate this change. It is likely that a new function called
+\texttt{methodnames} could be added to the Uniconc \Rtl/ in order to
+satisfy the inherently dynamic requirements of introspection while
+insulating the Unicon GUI class library from a priori knowledge
+regarding the peculiarities of the internal representation of Unicon
+classes. In the event that the introspective behavior of compiled
+Unicon applications can be unambiguously determined by Uniconc at
+\mbox{compile-time}, the functionality provided by a \mbox{run-time}
+call to \texttt{methodnames} can be inlined by \Ic/.
+
+\subsubsection{Disambiguation} 
+
+The \Ic/ code generator currently does not correctly differentiate between
+methods and procedures in the case where the member variable of a class instance
+is reassigned with a procedure. Figure~\ref{fig:unicon_memvar_reassign} depicts
+a situation where the \Ic/ code generator currently fails. In particular, the
+code generated for the invocation of the member variable \texttt{x} in
+\texttt{class f00} shown in Figure~\ref{fig:unicon_memvar_reassign} will be
+invalid. This is because the lefthand side of the generated \texttt{self.x()}
+invocation is a class instance, so an implicit self argument will be added to
+the invocation by the \Ic/ code generator. A potential avenue of approaching
+the solution to this error has been devised, but the experimentation required to
+achieve a solution has not yet been performed.
+ 
+\begin{figure}
+\texttt{
+\begin{tabbing}
+abcd\=abcd\=abcd\=abcd\=abcd \kill
+class f00(x)\\
+\> method reassign\_member\_var(p)\\
+\>\>      x := p;\\
+\>\>      x(); \\
+\> end \\
+end
+\end{tabbing}
+}
+\caption[Unicon Member Variable Reassignment]{Unicon Member Variable
+   Reassignment}
+\label{fig:unicon_memvar_reassign}
+\end{figure}
+
+The disambiguation methodology currently employed by \Ic/ contains a flaw that
+permits the crafting of adversarial Unicon programs that will defeat said 
+disambiguation. A method for identifying these adversarial situations in Unicon
+programs has been devised, and a scheme for generating code to defer
+disambiguation until \mbox{run-time} in these instances will likely be implemented to
+plug this hole in the near term. Research is currently being undertaken to
+refine the disambiguation methodology used by \Ic/ in order to decrease the
+likelihood of requiring \mbox{run-time} disambiguation in adversarial Unicon programs.
+
+\subsection{Potential Improvements}
+
+Uniconc provides a space savings of two descriptors per class instance
+in compiled versus VM-hosted Unicon targets. Greater savings in space
+for compiled Unicon programs may be possible by extending the class
+instance representation optimization described in
+Section~\ref{sect:Representing Objects}.
+
+A speedup of compiled Unicon targets may be possible by reordering the
+fields of a class instance presented to \Ic/ in such a manner that
+methods vectors inherited from the superclasses of a given class are
+ultimately placed in the lower-ordered fields of the \texttt{struct
+rentry} created by \Ic/.  This would increase the likelihood that
+superclass methods vectors shared by class instances would occupy the
+same slot indices, thereby permitting the generation of faster code
+for run-time accesses to said fields.
+
+The speedup provided by Uniconc for compiled targets can potentially
+be improved by extending the \Ic/ code generator to eliminate the use
+of descriptors in generated code where possible. The quality of
+information provided by the \Ic/ type inferencer is a primary enabler
+of this possibility.
+
+Iconc was originally designed to manipulate user programs
+directly. Uniconc uses \Ic/ to manipulate code generated by \Ut/; a
+very different role. It is likely that the set of potential expressive
+inputs to \Ic/ can be reduced by \Ut/, thereby providing a smaller
+mapping domain for code transformations performed in \Ic/. A smaller
+mapping domain in \Ic/ may illuminate further opportunities for
+optimizing the C source generated by \Ic/.
+
+
+
+
+% was chapter
+\section{Conclusion}
+
+Uniconc is a useful tool for conducting code transformation
+experiments. The visibility into code transformation experiments
+imparted by the topology of Uniconc should prove beneficial for
+exploring the optimizational peculiarities of goal-directed and
+goal-directed, object-oriented programming languages.
+
+Preliminary results suggest that compiled targets generated by Uniconc
+are generally at least 400\% faster than VM-hosted targets generated
+by Uniconc.  In some cases the improvement in speed appears much
+larger. This speedup is the direct result of attempting to lower user
+programs toward the target machine.  The speedups observed were not
+obtained at the expense of program readability or flexibility; the
+``orthogonality to the mainstream'' [Griswold78] mantra has thus far
+been preserved.
+
+The speedup provided by Uniconc for compiled Unicon targets is about
+the same as the speedup provided by Uniconc for compiled Icon
+targets. Several optimizations were implemented, primarily to reduce
+the time and space overhead associated with object-oriented
+code. Further research is necessary in the area of speedup improvement
+for invocations in compiled Unicon targets.

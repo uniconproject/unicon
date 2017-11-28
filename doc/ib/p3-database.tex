@@ -1,36 +1,58 @@
 \chapter{ODBC Database Facilities}
 
+Unicon's ODBC facilities were initially implemented by Federico Balbi
+for Microsoft Windows platforms.  Happily, ODBC has been widely ported
+and is one of Microsoft's more open and successful technical contributions.
+
 \section{Organization}
 
-The implementation of the ODBC interface includes changes to several
-files of the Unicon runtime system, as well as the addition of a new
-file for the new functions that were added.
+The seven functions introduced for the ODBC interface are located
+in \texttt{fdb.r}. Over time it was discovered that the only function
+that matters very much is \texttt{sql()}, and the others are somewhat
+vestigial.
 
-\subsection{New files}
+The underlying runtime system support functionality
+is in \texttt{rdb.r}.  Initially, the runtime system support consisted
+primarily of an ODBC-specific error message function, \texttt{odbcerror()},
+along with functions for opening and closing database connections.
+Early uses of the facilities led to the revelation that
+the vast majority of the interface consists of type
+conversion and packaging of the results of SQL queries in Unicon format,
+as records to be produced by calls to \texttt{fetch()}. Consequently,
+the longest and most interesting function in \texttt{rdb.r} turns out to
+be the function \texttt{dbfetch()} that helps the Unicon function
+\texttt{fetch()} to do its job.
 
-    FDB.R: This is the main file of Unicon ODBC. It contains the Unicon ODBC function set implementation. It is written in standard C with RTT extensions.
-    RDB.R: contains the C implementation of odbcerror function that is widely called in FDB.R.
+In addition to the new files \texttt{fdb.r} and \texttt{rdb.r}, which
+together come to around 1000 lines of RTL code, the database facilities
+introduced changes to several existing source files, under
+\texttt{\#ifdef ISQL} directives.
 
-\subsection{Modified files}
-
-    RPROTO.H: contains odbcerror function definition.
-    OMISC.R: "*" operator implementation for ODBC file type.
-    FDEFS.H: ODBC function definitions.
-    DATA.R: runerr error code for ODBC file mismatch.
-    RSTRUCTS.H: ISQLFile definition (ODBC connection type).
-    REXTERNS.H: ISQLEnv extern definition.
-    RMACROS.H: Fs\_ODBC file status flag and ODBC error codes.
-    SYS.H: VisualC++ ODBC header files inclusion (windows.h and sqlext.h).
-    INIT.R: ODBC Environment structure release.
-    DEFINE.H: ISQL symbol definition for conditional compilation.
-    GRTTIN.H: new ODBC types definitions.
-    MAKEFILE.RUN: Runtime system makefile (FDB.R and RDB.R definitions added)
-    ICONX.LNK: Link file (XFDB.OBJ and XRDB.OBJ definitions added)
+\begin{itemize}
+\item \texttt{fdefs.h}: ODBC function definitions.
+\item \texttt{grttin.h}: fake type definitions for ODBC data types.
+\item \texttt{rexterns.h}: ISQLEnv extern definition.
+\item \texttt{rmacros.h}: Fs\_ODBC file status flag and ODBC error codes.
+\item \texttt{rproto.h}: contains odbcerror function definition.
+\item \texttt{rstructs.h}: ISQLFile definition (ODBC connection type).
+\item \texttt{sys.h}: ODBC header files inclusion (windows.h and sqlext.h).
+\item \texttt{fxposix.ri}: contains fetch(), defined also under Dbm
+\item \texttt{init.r}: ODBC Environment structure release.
+\item \texttt{omisc.r}: size operator (unary *) for ODBC file type.
+\item \texttt{data.r}: runerr error code for ODBC file mismatch.
+\end{itemize}
 
 \section{ISQLFile type}
 
-In Unicon an ODBC connection to a database is similar to a file
-operation. Internally this is represented by the following C
+In Unicon an ODBC connection to a database is treated as though similar
+to an open file.  This tired metaphor, borrowed from UNIX and Plan 9 for
+all forms of I/O, is fundamentally flawed, since ODBC connections are not
+byte streams, nor are they text- or line-oriented. However, to the extent
+that the ``file'' abstraction is really a generic reference to all types
+of operating system data sources and sinks that must be opened and
+interacted with via read and write operations, the metaphor is apt.
+
+Internally an OBDBC connection is represented by the following C
 structure:
 
 \begin{iconcode}

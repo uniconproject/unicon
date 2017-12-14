@@ -36,8 +36,9 @@ case $host_os in
         unicon_os="linux"
 
 	# if dist/version are not set, try to guess them
-	if test x$unicon_osdist = x then ;
-	fi
+	#if test x$unicon_osdist = x ; then
+	#  echo ""
+	#fi
 	
 	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;

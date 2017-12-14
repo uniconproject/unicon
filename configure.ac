@@ -28,9 +28,17 @@ case $host_cpu in
         ;;
 esac
 
+unicon_osdist=$OSDIST
+unicon_osver=$OSVER
+
 case $host_os in
      *linux*)
         unicon_os="linux"
+
+	# if dist/version are not set, try to guess them
+	if test x$unicon_osdist = x then ;
+	fi
+	
 	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *solaris*)
@@ -262,6 +270,8 @@ AC_SUBST(DNT)
 AC_SUBST(OBJ)
 AC_SUBST(BITS)
 AC_SUBST(unicon_os)
+AC_SUBST(unicon_osdist)
+AC_SUBST(unicon_osver)
 
 AC_SUBST(CC)
 AC_SUBST(RLINK)
@@ -689,7 +699,7 @@ AC_MSG_RESULT([
            Configuration Summary
 --------------------------------------------------
 *** Build Environment
-Host     :  $host_os  ($unicon_host)
+Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osver
 CC       :  $CC
 CFLAGS   :$CFLAGS
 CPPFLAGS :$CPPFLAGS

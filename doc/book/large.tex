@@ -86,6 +86,35 @@ all uses of inheritance they do require you to read and understand
 multiple bodies of code (the class and all its superclasses) in order
 to use the class effectively.
 
+Although some abstract classes like Button look exactly like regular
+classes and have to be identified as abstract via their supporting
+comments or documentation, Unicon does one language feature that is
+only used within abstract classes. The reserved word
+\texttt{abstract} may be given preceding a method header in lieu of
+providing the actual body of the method. Such an \textit{abstract
+method declaration} implies that subclasses must provide an
+implementation of the method in question, as it will be called by
+other methods in the abstract class or in client code.
+For example, the Unicon GUI Component class is an abstract class
+that is a superclass of all GUI components. It provides many methods
+that components can all inherit and use or override. It also declares
+one abstract method that all subclasses must implement to indicate
+what they do (if anything) in response to the passage of time:
+
+\iconcode{
+abstract method tick()
+}
+
+Class \texttt{Button} is a subclass of \texttt{Component} and
+provides an implementation of method \texttt{tick()}:
+
+\iconcode{
+   method tick() \\
+ \>      if dispatcher.curr\_time\_of\_day() {\textgreater} self.repeat\_delay then \\
+\>\>         fire(BUTTON\_HELD\_EVENT) \\
+   end
+}
+
 \section{Design Patterns}
 
 Class and function libraries provide good mechanisms for \index{code

@@ -1,0 +1,33 @@
+This directory contains customization resources to adapt editors to Unicon.
+Each editor has a brief set of instructions to help with installation.
+
+GNU Emacs: unicon.el
+--------------------
+
+To install the unicon major mode you need to alter your startup file (~/.emacs)
+to tell Emacs that .icn files are handled by unicon.el and where to find the
+file.
+
+You can either leave the file where it is installed by default, or move it to
+your site-lisp directory. Here is a simple example of what to add to your .emacs
+file (for Windows, assuming the Unicon installation is in the default place).
+
+;;; Unicon customisation
+;; The next line is not required if unicon.el is in site-lisp
+(setq load-path (append load-path '("c:\\unicon\\config\\editor")))
+(require 'unicon)
+;; Define the mode for .icn files
+(setq auto-mode-alist (cons '("\\.icn\\'" . unicon-mode) auto-mode-alist))
+
+In the example above the unicon mode is "pre-loaded" by the require function.
+If you choose not to pre-load it, The easiest way to load the unicon major mode
+is to visit a unicon file with the extension .icn.
+
+Once the Unicon major mode is loaded, it may be further customized by
+   M-x customize-mode
+and specifying the unicon in response to the "Mode:" prompt.
+
+Further information about the emacs startup file and how to customize
+it is contained in the emacs manual under "Customization", which is at
+the end of the "Advanced Features" section of the manual.  Use C-h i
+to access the manual.

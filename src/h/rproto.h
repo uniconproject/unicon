@@ -55,8 +55,6 @@ struct b_pelem	*alcpelem_1	(word);
 #else					/* COMPILER */
 struct b_pelem	*alcpelem_0	(word, word *);
 struct b_pelem	*alcpelem_1	(word, word *);
-int pattern_image(union block *pe, int prev_index, dptr result,
-		  int peCount, int pe_index, int stop_index); 
 #endif					/* COMPILER */
 #endif					/* PatternType */
 #else					/* MultiThread */
@@ -174,6 +172,8 @@ int		arg_image	(struct descrip arg, int pcode, int type,
 int		construct_image	(dptr left, dptr s, dptr r, dptr result);
 
 struct b_pattern * breakx_make(struct b_pelem * B);
+int pattern_image(union block *pe, int prev_index, dptr result,
+		  int peCount, int pe_index, int stop_index); 
 #endif					/* PatternType */
 int		co_chng		(struct b_coexpr *ncp, struct descrip *valloc,
 				   struct descrip *rsltloc,

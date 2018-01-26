@@ -26,14 +26,14 @@
 # FLAGS  : comp if we should try to make an executable from args[1]
 #          strict if we should generate paranoic encapsulation protection
 #          loud if we should generate extra console messages
-#          exec if we should run the result after translation
+#          xec if we should run the result after translation
 # LISTS  : links = names of external icon code to link to
 #          imports = names of external classes to import
 #
 global parsingErrors, returnErrorsFlag, dbg, fset
 
 global fin,flog,flogname,fLine,alpha,alphadot,white,nonwhite,nonalpha
-global classes,comp,exec,strict,links,imports,loud,ct,reserved,optimize
+global classes,comp,xec,strict,links,imports,loud,ct,reserved,optimize
 global icontopt,ilinkopt,tempenv,tmpcount, exename,widollog,tmpname,silent
 global yydbg, yyout, linkline, translateducode, imported, imported_classes
 global warnings
@@ -59,11 +59,11 @@ $endif
 
 procedure istop(args[])
    if push(args, \flog) then {
-       write ! args
-       pop(args)
-       close( flog ) # if close(flog) then @ &main
-       moveto(flogname, widollog)
-   }
+      write ! args
+      pop(args)
+      close( flog ) # if close(flog) then @ &main
+      moveto(flogname, widollog)
+      }
    if \loud then stop ! args
    else exit(1)
 end
@@ -113,7 +113,7 @@ procedure iconc_make_exename_opt(args)
       else if arg[1] == "-" then {
 	 i +:= 1
          next
-	 }
+         }
       cmpnts := suffix(arg)
       rslt ||:= cmpnts[1]
       rslt ||:= " "
@@ -213,13 +213,14 @@ procedure iconc_linkref_resolve(srcfname, ref)
    # some .u file on the IPATH, or it is invalid.
    #
    if f := open(fil := ((!lpaths | !ipaths) || sep || ref || ".icn")) then {
-       close(f)
-   } else {
+      close(f)
+      }
+   else {
       #
       # The ref is invalid.
       #
-       return &null
-   }
+      return &null
+      }
 
    #
    # We found a .icn for the ref, so assume that
@@ -278,16 +279,11 @@ procedure iconc_importref_resolve(ref)
          put(rslt, (ipaths[i] || sep || tab(0)))
       }
 
-   # mdw: debug
-   # every i := 1 to *rslt do
-   #    write("iconc-importref-resolve: rslt[" || i || "]: " || rslt[i])
-
    return rslt
 end
 
 procedure iconc_yyparse(fname, tmplist)
    local pe, rv
-   # write("mdw: iconc_yyparse(" || fname || ")...")
    yyfilename := outfilename := fname
    yyin := ""
    every yyin ||:= preprocessor(fname, uni_predefs) do
@@ -317,8 +313,8 @@ procedure iconc_yyparse(fname, tmplist)
       # we got some errors. In the old days they wrote themselves out, but
       # in order be IDE friendly, we now do this after yyparse finishes.
       every pe := !parsingErrors do {
-	 write(&errout, pe.errorMessage)
-	 }
+         write(&errout, pe.errorMessage)
+         }
       }
    if /yydbg then
       close(yyout)
@@ -326,20 +322,20 @@ procedure iconc_yyparse(fname, tmplist)
 end
 
 procedure get_abs_file_name(fname)
-    local pair, cwd, rslt
+   local pair, cwd, rslt
 
-    pair := tail(fname)
-    if pair[1] == "" then
-        pair[1] := "."
-    cwd := chdir()
-    if not (rslt := chdir(pair[1])) then {
-       halt("chdir(", image(pair[1]|fname), ") failed: ", &errortext)
-       }
-    chdir(cwd)
-    if not (rslt[-1] == PATHCHAR) then
-        rslt ||:= PATHCHAR
-    rslt ||:= pair[2]
-    return rslt
+   pair := tail(fname)
+   if pair[1] == "" then
+      pair[1] := "."
+   cwd := chdir()
+   if not (rslt := chdir(pair[1])) then {
+      halt("chdir(", image(pair[1]|fname), ") failed: ", &errortext)
+      }
+   chdir(cwd)
+   if not (rslt[-1] == PATHCHAR) then
+      rslt ||:= PATHCHAR
+   rslt ||:= pair[2]
+   return rslt
 end
 
 
@@ -347,29 +343,29 @@ end
 # initialize global variables
 #
 procedure initialize()
-  loud     := 1
+   loud     := 1
 #  comp     := 0 # moved to unicon()
-  yynerrs  := 0
-  errors   := 0
+   yynerrs  := 0
+   errors   := 0
 
-  returnErrorsFlag := 0
-  parsingErrors := []
+   returnErrorsFlag := 0
+   parsingErrors := []
 
-  merraddress := MERRADDRESS
-  alpha    := &ucase ++ &lcase ++ '_' ++ &digits
-  nonalpha := &cset -- alpha
-  alphadot := alpha ++ '.'
-  white    := ' \t\f\r'
-  nonwhite := &cset -- white
-  reinitialize()
-  ilinkopt := ""
-  linkline := ""
-  tmpcount := 0
-  reserved := " fi neht esle yreve elihw od ot yb "
-  flogname := tempname("uni",,,5)
-  if widollog := getenv("WIDOLLOG") then flog := open(flogname,"w")
-  uni_predefs := predefs()
-  sysinitialize()
+   merraddress := MERRADDRESS
+   alpha    := &ucase ++ &lcase ++ '_' ++ &digits
+   nonalpha := &cset -- alpha
+   alphadot := alpha ++ '.'
+   white    := ' \t\f\r'
+   nonwhite := &cset -- white
+   reinitialize()
+   ilinkopt := ""
+   linkline := ""
+   tmpcount := 0
+   reserved := " fi neht esle yreve elihw od ot yb "
+   flogname := tempname("uni",,,5)
+   if widollog := getenv("WIDOLLOG") then flog := open(flogname,"w")
+   uni_predefs := predefs()
+   sysinitialize()
 end
 
 procedure unicon_usage(continue_flag)
@@ -529,7 +525,7 @@ procedure unicon(argv)
                   every iwrite(&features)
                   return 0
                   }
-               "-x"      : { exec := i; break } # exit the every loop
+               "-x"      : { xec := i; break } # exit the every loop
 	       #
 	       # Really, -e should redirect *our* stderr output, and then
 	       # tell the icont invocation to append its stderr output.
@@ -815,12 +811,12 @@ procedure unicon(argv)
       if rv ~=== 0 then
          errors +:= 1
 
-      if errors = 0 & \exec then {
+      if errors = 0 & \xec then {
 	 if cmd := \exename then {
 	    if match("-o ", cmd) then cmd[1:4] := ""
 	    if not (any('/\\', cmd) | (cmd[any(&letters,cmd)]==":")) then
 	       cmd := "./" || cmd
-	    every cmd ||:= " " || argv[exec+1 to *argv]
+	    every cmd ||:= " " || argv[xec+1 to *argv]
 	    rv := system(cmd)
 	    }
 	 }
@@ -830,34 +826,34 @@ procedure unicon(argv)
    if /parseonly & (comp = errors = yynerrs = 0) &
       (not (*\parsingErrors > 0)) & (not find("-E", icontopt)) then {
       cmd := selecticont()
-       if &features=="MS Windows NT" & &features=="console window" then
-	 cmd ||:= " -l "|| (wilog := tempname("uni",".tmp",,))
+      if &features=="MS Windows NT" & &features=="console window" then
+         cmd ||:= " -l "|| (wilog := tempname("uni",".tmp",,))
       cmd ||:= " "
       if \exename then cmd ||:= exename
       cmd ||:= ilinkopt
       cmd ||:= linkline
-      if \exec then {
-	  every cmd ||:= " " || argv[exec to *argv]
-      }
+      if \xec then {
+         every cmd ||:= " " || argv[xec to *argv]
+         }
 
       rv := mysystem(cmd)
       if rv === 0 then {
          # if no errors, and we linked them from source, remove the .u
-	  /keeptmp & every remove(!\translateducode)
-      }
+         /keeptmp & every remove(!\translateducode)
+         }
       if &features=="MS Windows NT" & &features=="console window" then {
-	 # copy icont log to our console
-	 every j := 1 to 5 do {
-	     if flog2 := open(wilog) then {
-		 while iwrite(&errout, read(flog2))
-		 close(flog2)
-		 /keeptmp & remove(wilog) | write(&errout, wilog, " wilog not removed.")
-		 break
-	     }   
-	     delay(1000)
-	 }
-     }
-   }
+         # copy icont log to our console
+         every j := 1 to 5 do {
+            if flog2 := open(wilog) then {
+               while iwrite(&errout, read(flog2))
+               close(flog2)
+               /keeptmp & remove(wilog) | write(&errout, wilog, " wilog not removed.")
+               break
+               }
+            delay(1000)
+            }
+         }
+      }
    if \flog then {
       close(flog)
       moveto(flogname, widollog)
@@ -865,15 +861,15 @@ procedure unicon(argv)
 
    # Produce a non-zero exit code if there were any errors.
    if errors + yynerrs > 0 then {
-       if (\returnErrorsFlag = 1) then
-	   return parsingErrors
-       else
-	   return 1
-   }
+      if \returnErrorsFlag = 1 then
+         return parsingErrors
+      else
+         return 1
+      }
 
    # If we run the program then return its exit code
    if \exec then
-       return rv
+      return rv
 
    return 0
 end
@@ -920,7 +916,6 @@ $endif
 
    if path[-1] ~== "/" then
       path ||:= "/"
-
    res := ""
    path ? repeat {
       res ||:= tab(upto('/') | 0)
@@ -931,7 +926,7 @@ $endif
          while res[-1] ~== "/" do
             res[-1] := ""
          res[-1] := ""
-         } 
+         }
       else if match("/./") then
          move(2)
       else
@@ -957,28 +952,28 @@ procedure trans(argstr, prefix)
 end
 
 procedure icont(argstr,prefix)
-local myfile, rv
-static trans, logger
-initial {
-   trans := selecticont()
-   logger := mygetenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
-   }
-  if \logger then
-    remove(logger) | write( logger, " - log not removed.")
+   local myfile, rv
+   static trans, logger
+   initial {
+      trans := selecticont()
+      logger := mygetenv("WICONLOG") | (getenv("TEMP")||"\\winicon.log")
+      }
+   if \logger then
+      remove(logger) | write( logger, " - log not removed.")
 
-  rv := mysystem((\prefix|"") || trans || icontopt || argstr)
-  if \flog then {
-     if \logger then {
-        if myfile := open(logger) then {
-	    while write(flog, read(myfile))
-	    close(myfile)
-	    }
-        }
-     }
-  return rv
+   rv := mysystem((\prefix|"") || trans || icontopt || argstr)
+   if \flog then {
+      if \logger then {
+         if myfile := open(logger) then {
+            while write(flog, read(myfile))
+            close(myfile)
+            }
+         }
+      }
+   return rv
 end
 procedure mygetenv(s)
-  return if &features == "environment variables" then getenv(s)
+   return if &features == "environment variables" then getenv(s)
 end
 
 procedure moveto(src, dest)
@@ -1004,24 +999,24 @@ local cmd, dash_s
       #
       cmd := ((&features ? (="Binaries at " & tab(0))) |
               (&progname ? tab(find("unicon"))) | "")
-     
-      if &features=="MS Windows NT" then{
+
+      if &features=="MS Windows NT" then {
 	 if (cmd ~== "") & (not (cmd[-1] == "\\")) then cmd ||:= "\\"
-	  if &features=="console window" then{ 
-	      cmd ||:= "wicont.exe"
-	      dash_s:=1
-	     }
-	  else
-	      cmd ||:= "icont.exe"
+	 if &features=="console window" then {
+            cmd ||:= "wicont.exe"
+            dash_s:=1
+            }
+         else
+            cmd ||:= "icont.exe"
          }
       else {
 	 if (cmd ~== "") & (not (cmd[-1] == "/")) then cmd ||:= "/"
          cmd ||:= "icont"
 	 }
       }
-      
+
    cmd := quotes(cmd)
-   
+
    if not stat(cmd) then
       write("warning: no icont found thought it would be\n\t", cmd)
 
@@ -1031,9 +1026,9 @@ local cmd, dash_s
 end
 
 procedure warn(args[])
-  errsrc()
-  every iwrites(&errout,!args)
-  iwrite(&errout)
+   errsrc()
+   every iwrites(&errout,!args)
+   iwrite(&errout)
 end
 
 procedure warning(s, lineno, filenam, text)

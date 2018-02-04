@@ -290,6 +290,7 @@ clean Clean:
 		rm -rf icon.*
 		cd src;			$(MAKE) Clean
 		cd tests;		$(MAKE) Clean
+		cd plugins;		$(MAKE) Clean
 
 distclean Pure:
 		touch Makedefs Makedefs.uni
@@ -298,6 +299,7 @@ distclean Pure:
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
+		cd plugins;		$(MAKE) Pure
 		rm -f src/common/rswitch.[csS]
 		rm -f Makedefs Makedefs.uni
 

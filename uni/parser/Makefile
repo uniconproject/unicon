@@ -16,7 +16,7 @@ PROGS=showtree$(EXE) showdb$(EXE)
 all: $(UFILES) $(PROGS)
 
 clean:
-	$(RM) $(PROGS) unigram.icn *.u uniclass.dir uniclass.pag 
+	$(RM) $(PROGS) unigram.icn *.u uniclass.dir uniclass.pag uniclass.db
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

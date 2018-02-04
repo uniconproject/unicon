@@ -8,7 +8,7 @@ UFILES = class.u  classvar.u  comment.u  groffoutputter.u  htmloutputter.u  main
 all: unidoc$(EXE)
 
 clean:
-	$(RM) *.u uniclass.dir uniclass.pag unidoc$(EXE)
+	$(RM) *.u uniclass.dir uniclass.pag uniclass.db unidoc$(EXE)
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

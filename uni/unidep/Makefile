@@ -8,7 +8,7 @@ UFILES = filearg.u fileargclass.u main.u symbolinfo.u symboltable.u util.u
 all: unidep$(EXE)
 
 clean:
-	$(RM) unidep$(EXE) *.u uniclass.dir uniclass.pag 
+	$(RM) unidep$(EXE) *.u uniclass.dir uniclass.pag uniclass.db
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

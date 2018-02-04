@@ -74,7 +74,7 @@ canvashsizerui.u  canvassizer.u  canvassizerdialog.u  canvasvsizerui.u
 all: ivib$(EXE)
 
 clean:
-	$(RM) ivib$(EXE) *.u uniclass.dir uniclass.pag 
+	$(RM) ivib$(EXE) *.u uniclass.dir uniclass.pag uniclass.db
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

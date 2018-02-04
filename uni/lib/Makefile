@@ -38,7 +38,7 @@ deps:
 deps.out: ;
 
 clean:
-	$(RM) *.u uniclass.dir uniclass.pag
+	$(RM) *.u uniclass.dir uniclass.pag uniclass.db
 
 tar:
 	tar zcvf guifiles.tgz gui.icn makefile *.icn

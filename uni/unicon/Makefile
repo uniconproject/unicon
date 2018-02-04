@@ -21,6 +21,9 @@ export PATH:=$(BIN):$(PATH)
 
 U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
 
+# Don't delete unigram.u and idol.u, needed for bootstrapping
+UDEL= unicon.u unilex.u tree.u preproce.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
+
 UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn tokens.icn yyerror.icn main.icn cfy.icn ca.icn
 
 # Files from this dir that (for now) we copy into lib/ for use by external
@@ -107,8 +110,8 @@ unix.u: unix.icn
 	$(ICONT) $(UFLAGS) -c unix
 
 #
-# Don't really clean, we need the .u files for bootstrapping.
+# Don't clean everything, we need some .u files for bootstrapping.
 #
 
-Clean:
-	$(RM) unicon$(EXE) uniclass.dir uniclass.pag
+clean Clean:
+	$(RM) unicon$(EXE) uniclass.dir uniclass.pag uniclass.db $(UDEL)

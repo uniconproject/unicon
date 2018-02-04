@@ -19,10 +19,6 @@ SRC= modelobject3d.icn basicanimationobject3d.icn basicobject3d.icn \
 
 all: $(UFILES)
 
-pure:
-	$(MAKE) clean
-	$(MAKE) all
-
 skinnedmodelobject3d.u: skinnedmodelobject3d.icn modelobject3d.u skeleton.u
 
 modelobject3d.u: modelobject3d.icn basicanimationobject3d.u basicobject3d.u mesh.u bone.u xparse.u s3dparse.u
@@ -39,7 +35,7 @@ zip:
 	 zip lib3d.zip makefile *.icn
 
 clean:
-	$(RM) $(UFILES)  uniclass.dir uniclass.pag
+	$(RM) $(UFILES)  uniclass.dir uniclass.pag uniclass.db
 
 
 

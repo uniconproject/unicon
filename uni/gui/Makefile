@@ -22,7 +22,7 @@ UFILES=border.u button.u buttongroup.u checkbox.u checkboxgroup.u \
 all: $(UFILES)
 
 clean:
-	$(RM) *.u uniclass.dir uniclass.pag 
+	$(RM) *.u uniclass.dir uniclass.pag uniclass.db
 
 # additional manual dependencies since unidep is broken at the moment
 printdlg.u : printdlg.icn dialog.u tabset.u tabitem.u table.u tablecolumn.u textbutton.u textfield.u label.u guih.icn

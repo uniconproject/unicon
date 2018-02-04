@@ -17,7 +17,7 @@ PROGS=testhtml$(EXE) testxml$(EXE) testpatterns$(EXE) testvalid$(EXE) \
 all: $(UFILES) $(PROGS)
 
 clean:
-	$(RM) $(PROGS) *.u uniclass.dir uniclass.pag 
+	$(RM) $(PROGS) *.u uniclass.dir uniclass.pag uniclass.db
 
 deps:
 	$(UNIDEP) *.icn -f deps.out -nb

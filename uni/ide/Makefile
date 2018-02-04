@@ -114,5 +114,5 @@ ui.u: ui.icn
 
 ui.exe: ui
 
-clean:
-	$(RM) *.u uniclass.dir uniclass.pag ui$(EXE)
+clean :
+	$(RM) *.u uniclass.dir uniclass.pag uniclass.db ui$(EXE)

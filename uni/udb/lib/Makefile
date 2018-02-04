@@ -87,11 +87,11 @@ counter_syntax.u: counter_syntax.icn listener.u
 	$(UC) $(CFLAGS) counter_syntax.icn
 
 clean:
-	-rm *.u *.pag *.dir *.db *~ *.ps
+	-$(RM) *.u *.pag *.dir *.db *~ *.ps $(Tools)
 
 cleantools:
 	@for i in $(Tools) ; do\
-		(rm ../../../bin/$$i; );\
-		(rm $$i; );\
+		($(RM) ../../../bin/$$i; );\
+		($(RM) $$i; );\
 	done
 

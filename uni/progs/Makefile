@@ -22,9 +22,6 @@ umake.u: umake.icn
 idxGen: idxGen.icn
 	IPATH=../xml/ LPATH=../xml/ $(UNICON) $(UFLAGS) -u idxGen
 
-Clean: 
-	$(RM) $(PROGS) uniclass.pag uniclass.dir
-
-clean: 
-	@$(RM) $(PROGS) uniclass.pag uniclass.dir
+clean Clean:
+	@$(RM) $(PROGS) uniclass.pag uniclass.dir uniclass.db
 

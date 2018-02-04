@@ -1,26 +1,34 @@
+#<p>
+#The <tt>LXC</tt> package includes some routines that
+#   facilitate creating and managing lxc containters.
 #
 #
+# Author 
+#         09/29/2016
 #
 
+#<p>
+# <b>Author:</b> Jafar Al-Gharaibeh (<i>to.jafar@gmail.com</i>)
+#</p>
+#<p>
+#  This file is in the <i>public domain</i>.
+#</p>
 package LXC
 
 global LXC
 
-#
+#<p>
 # This is the main LXC plugin class. It holds references to the C functions
 # And also provides utility functions to be used with lxc containers. 
-#
-# @Author Jafar Al-Gharaibeh
-#         09/29/2016
-
+#<p>
 class LXC : uso::USO (
     # Variables to hold C functions references
-    LXCCreate,
+    LXCCreate, 
     LXCStart,
     LXCAttach,
     LXCReboot,
-    LXCShutdown,# try gracefull shutdown
-    LXCStop, 	# try shutdown first, force stop if necessary
+    LXCShutdown,  # gracefull shutdown
+    LXCStop, 	  # shutdown but force stop if necessary
     LXCDestroy,
     LXCState,
     LXCExist,
@@ -37,7 +45,7 @@ class LXC : uso::USO (
 
    #
    # Check whether a container exists
-   # @param name the name of the container
+   # <[param name the name of the container]>
    #
    method exist(name:string)
       return LXCExist(name)
@@ -45,7 +53,7 @@ class LXC : uso::USO (
 
    #
    # Create a container
-   # @param name the name of the container
+   # <[param name the name of the container
    #
    method container(name:string)
       return LXContainer(name)
@@ -117,12 +125,12 @@ class LXContainer(
 		  )
    #
    # Create an lxc container
-   # @param d the OS distribution of the container
-   # @param r the desired release
-   # @param a the desired architecture
-   # @example
-   # @   c.creat("ubuntu", "trusty", "amd64")
-   # @   c.creat("fedora", "22", "i386")
+   # <[param d the OS distribution of the container]>
+   # <[param r the desired release]>
+   # <[param a the desired architecture]>
+   # Example
+   #    c.creat("ubuntu", "trusty", "amd64")
+   #    c.creat("fedora", "22", "i386")
    #
    method creat(d:string, r:string, a:string)
       dist := \d; release := \r; arch := \a
@@ -147,10 +155,10 @@ class LXContainer(
    #
    # Perform an attach operation on the container and execute the list of  
    # commands in args
-   # @param arg
-   # @param stdi file to use as a standard input
-   # @param stdo file to use as a standard output
-   # @param stde file to use as a standard error
+   # <[param arg command arguments to pass to the container]>
+   # <[param stdi file to use as a standard input]>
+   # <[param stdo file to use as a standard output]>
+   # <[param stde file to use as a standard error]>
    #   
    method attach(arg:string, stdi, stdo, stde)
       string(arg) & (arg || " X")
@@ -175,7 +183,7 @@ class LXContainer(
 
    #
    # Shutdown the container
-   # @param timeout time to wait before forcing a shudtown
+   # <[param timeout time to wait before forcing a shudtown]>
    #
 
    method shutdown(timeout:30)
@@ -184,7 +192,7 @@ class LXContainer(
 
    #
    # Stop the container
-   # @param timeout time to wait before forcing a stop
+   # <[param timeout time to wait before forcing a stop]>
    #
 
    method stop(timeout:30)

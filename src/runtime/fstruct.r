@@ -331,9 +331,23 @@ function{*} key(t)
       record: {
 	 abstract { return string }
 	 inline {
-	    C_integer i, sz = Blk(BlkD(t,Record)->recdesc,Proc)->nfields;
-	    for(i=0; i<sz; i++)
-	       suspend Blk(BlkD(t,Record)->recdesc,Proc)->lnames[i];
+	    C_integer i=0, sz = Blk(BlkD(t,Record)->recdesc,Proc)->nfields;
+	    if (sz > 0) {
+	       struct descrip d;
+	       d = Blk(BlkD(t,Record)->recdesc,Proc)->lnames[0];
+	       if ((StrLen(d) != 3) || strncmp(StrLoc(d),"__s",3))
+		  suspend d;
+	       if (sz > 1) {
+		  d = Blk(BlkD(t,Record)->recdesc,Proc)->lnames[1];
+		  if ((StrLen(d) != 3) || strncmp(StrLoc(d),"__m",3))
+		  suspend Blk(BlkD(t,Record)->recdesc,Proc)->lnames[1];
+		  i = 2;
+		  while(i<sz) {
+		     suspend Blk(BlkD(t,Record)->recdesc,Proc)->lnames[i];
+		     i++;
+		     }
+		  }
+	       }
 	    fail;
 	    }
 	 }

@@ -1144,7 +1144,6 @@ end
 procedure tablelit(lb, cl, rb)
 local tabid, lp, rp, args
    args := node("elst1")
-   write("I am a tablelit, cl is ", image(cl.label))
    while type(cl)=="treenode" & cl.label == "Caselist" do {
       buildtab_from_cclause(cl.children[3], args)
       cl := cl.children[1]

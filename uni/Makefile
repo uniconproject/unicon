@@ -40,7 +40,6 @@ clean Clean Pure:
 	fi
 	cd unicon && $(MAKE) Clean
 	cd udb && $(MAKE) Clean
-	cd ivib && $(MAKE) Clean
 	cd lib && $(MAKE) clean
 	cd gui && $(MAKE) clean
 	cd gui/ivib && $(MAKE) clean

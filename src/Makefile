@@ -39,33 +39,25 @@ Iconc: Common Iconx
 .PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm libs
 
 clean Clean:
-	cd iconc;	rm -f *.o iconc
-	cd common;	rm -f *.o doincl patchstr
-	cd preproc;	rm -f *.o pp
-	cd rtt;		rm -f *.o rtt
-	cd runtime;	rm -f *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx
-	cd icont;	rm -f *.o icont
-	cd xpm;		rm -f *.o *.a
-	cd xpm/lib;	rm -f *.o *.a
-	cd libtp;	rm -f *.o *.a config.cache
-	cd libtp/uri;	rm -f *.o *.a
-	cd libtp/tests;	rm -f *.o *.a
-	cd gdbm;        rm -f *.o *.a
+	cd iconc;	$(RM) *.o iconc
+	cd common;	$(RM) *.o doincl patchstr
+	cd preproc;	$(RM) *.o pp
+	cd rtt;		$(RM) *.o rtt
+	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx
+	cd icont;	$(RM) *.o icont
+	cd xpm;		$(RM) *.o *.a
+	cd xpm/lib;	$(RM) *.o *.a
+	cd libtp;	$(RM) *.o *.a config.cache
+	cd libtp/uri;	$(RM) *.o *.a
+	make -C libtp/tests Pure
+	cd gdbm;        $(RM) *.o *.a
 
 
 Pure: Clean
-	cd iconc;	rm -f *.o iconc
-	cd common;	rm -f *.o doincl patchstr
-	cd preproc;	rm -f *.o pp
-	cd rtt;		rm -f *.o rtt
-	cd runtime;	rm -f *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx
-	cd icont;	rm -f *.o icont
-	cd xpm;		rm -f *.o *.a
-	cd xpm/lib;	rm -f *.o *.a
-	cd libtp;	rm -f *.o *.a config.cache
-	cd libtp/uri;	rm -f *.o *.a
-	cd libtp/tests;	rm -f *.o *.a
-	cd gdbm;        rm -f *.o *.a
+	$(RM) h/auto.h
+	$(RM) common/rswitch.s 
+
+
 # force full runtime system rebuild
 	touch h/define.h
 

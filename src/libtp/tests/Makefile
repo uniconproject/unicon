@@ -27,10 +27,9 @@ all: Makefile $(PROGS)
 	$(SLNT)$(CC) $(CFLAGS) -I.. -I../uri -c $<
 
 clean:
-	$(RM) $(OBJS)
+	$(RM) $(OBJS) $(PROGS)
 
-distclean: clean
-	$(RM) $(PROGS) Makefile
+Pure distclean: clean
 
 daytime: daytime.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"

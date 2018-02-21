@@ -4,6 +4,12 @@
 #  configuration parameters
 VERSION=v940
 name=unspecified
+
+prefix=/usr/local
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+libdir=${exec_prefix}/lib
+
 destdir=/must/specify/dest/
 
 default: allsrc

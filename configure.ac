@@ -515,6 +515,10 @@ AC_SUBST(JV_LDFLAGS)
 AC_SUBST(GL_CFLAGS)
 AC_SUBST(GL_LDFLAGS)
 
+AC_SUBST(prefix)
+AC_SUBST(exec_prefix)
+AC_SUBST(bindir)
+AC_SUBST(libdir)
 
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
@@ -728,6 +732,8 @@ LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
 CXXFLAGS : $CXXFLAGS
+Paths    :  prefix: $prefix   eprefix: $exec_prefix
+DIRs     :  bin: $bindir   lib: $libdir
 Verbose  :  $verbosebuild
 Debug    :  $debug
 Devmode  :  $devmode

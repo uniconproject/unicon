@@ -1,4 +1,5 @@
 include ../Makedefs
+include ../Makedefs.uni
 
 .PHONY: all iyacc unicon lib xml gui
 
@@ -16,15 +17,16 @@ lib: unicon
 xml: lib
 	cd xml; $(MAKE)
 
-nographics: xml
+nographics: xml $(UDBTOOLS)
 	cd udb; $(MAKE)
-	cd udb; $(MAKE) tools
 	cd progs; $(MAKE)
 	cd parser; $(MAKE)
 	cd unidep; $(MAKE)
 	cd util; $(MAKE)
 	cd unidoc; $(MAKE)
 
+udbtools:
+	cd udb; $(MAKE) tools
 
 gui: nographics
 	cd gui; $(MAKE)
@@ -40,6 +42,7 @@ clean Clean Pure:
 	fi
 	cd unicon && $(MAKE) Clean
 	cd udb && $(MAKE) Clean
+	cd udb && $(MAKE) cleantools
 	cd lib && $(MAKE) clean
 	cd gui && $(MAKE) clean
 	cd gui/ivib && $(MAKE) clean

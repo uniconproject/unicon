@@ -124,6 +124,10 @@ AC_ARG_ENABLE([iconc],
 AC_ARG_ENABLE([ovld],
 	[AS_HELP_STRING([--enable-ovld], [enable operator overloading])],
 			[ovld=yes], [ovld=no])
+
+AC_ARG_ENABLE([udbtools],
+	[AS_HELP_STRING([--enable-udbtools], [enable Unicon debugger tools])],
+			[udbtools=yes], [udbtools=no])
 			
 AC_ARG_ENABLE([verbosebuild],
 	[AS_HELP_STRING([--enable-verbosebuild], [Show full CC build lines with all compiler arguments])],
@@ -162,6 +166,10 @@ fi
 
 if test x"$devmode" = x"yes" ; then
   debug=yes
+fi
+
+if test x"$udbtools" = x"yes" ; then
+  UDBTOOLS=udbtools
 fi
 
 # honor custom flags
@@ -289,6 +297,8 @@ AC_SUBST(RLINK)
 AC_SUBST(RLIBS)
 AC_SUBST(CFDYN)
 AC_SUBST(ICONCTARGET)
+
+AC_SUBST(UDBTOOLS)
 
 
 # Do we have rdynamic?

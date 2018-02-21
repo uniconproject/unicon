@@ -639,11 +639,12 @@ GRAPHICS
 XLIBS
 CXXCPP
 LIBOBJS
+UDBTOOLS
 ICONCTARGET
 CFDYN
 RLIBS
 RLINK
-unicon_osver
+unicon_osrel
 unicon_osdist
 unicon_os
 BITS
@@ -728,6 +729,7 @@ enable_voip
 enable_plugins
 enable_iconc
 enable_ovld
+enable_udbtools
 enable_verbosebuild
 enable_thin
 enable_debug
@@ -1397,6 +1399,7 @@ Optional Features:
   --disable-plugins       No loadfunc or plugins support
   --disable-iconc         Build Unicon Compiler (Iconc/Uniconc)
   --enable-ovld           enable operator overloading
+  --enable-udbtools       enable Unicon debugger tools
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
   --enable-thin           Do a minimalist build disabling non critical
                           features
@@ -2902,7 +2905,7 @@ case $host_cpu in
 esac
 
 unicon_osdist=$OSDIST
-unicon_osver=$OSVER
+unicon_osrel=$OSREL
 
 case $host_os in
      *linux*)
@@ -2912,6 +2915,16 @@ case $host_os in
 	#if test x$unicon_osdist = x ; then
 	#  echo ""
 	#fi
+
+	UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
+	case "${UNAME_VERSION}" in
+	    	Debian*)
+		release='-gnu'
+		;;
+		*)
+		release=`echo ${UNAME_RELEASE} | sed -e 's/-_.*//' | cut -d. -f1,2`
+		;;
+	esac
 
 
 $as_echo "#define UNIX 1" >>confdefs.h
@@ -3051,6 +3064,14 @@ if test "${enable_ovld+set}" = set; then :
   enableval=$enable_ovld; ovld=yes
 else
   ovld=no
+fi
+
+
+# Check whether --enable-udbtools was given.
+if test "${enable_udbtools+set}" = set; then :
+  enableval=$enable_udbtools; udbtools=yes
+else
+  udbtools=no
 fi
 
 
@@ -4405,6 +4426,10 @@ fi
 
 if test x"$devmode" = x"yes" ; then
   debug=yes
+fi
+
+if test x"$udbtools" = x"yes" ; then
+  UDBTOOLS=udbtools
 fi
 
 # honor custom flags
@@ -6836,6 +6861,8 @@ esac
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
+
 
 
 
@@ -14878,7 +14905,7 @@ fi
            Configuration Summary
 --------------------------------------------------
 *** Build Environment
-Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osver
+Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osrel
 CC       :  $CC
 CFLAGS   :$CFLAGS
 CPPFLAGS :$CPPFLAGS
@@ -14906,7 +14933,7 @@ $as_echo "
            Configuration Summary
 --------------------------------------------------
 *** Build Environment
-Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osver
+Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osrel
 CC       :  $CC
 CFLAGS   :$CFLAGS
 CPPFLAGS :$CPPFLAGS

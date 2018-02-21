@@ -1616,7 +1616,7 @@ struct addrinfo *inforesult;
                 break;
 
             case AF_INET6:
-#ifdef NT
+#if NT
 
                 /*
 		 * The buffer length is changed by each call to 

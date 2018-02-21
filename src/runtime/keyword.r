@@ -66,7 +66,7 @@ keyword{2} clock
       time(&t);
       ct = localtime(&t);
 
-#if defined(SUN) || defined(NT) || defined(HAVE_TIMEZONE)
+#if defined(SUN) || NT || defined(HAVE_TIMEZONE)
       tz_sec = timezone;
 #else					/* HAVE_TIMEZONE */
       tz_sec = ct->tm_gmtoff;
@@ -80,7 +80,7 @@ keyword{2} clock
       offset_hrs = tz_sec/3600;
       if (ct->tm_isdst) offset_hrs--;
 
-#if defined(SUN) || defined(NT) || defined(HAVE_TZNAME)
+#if defined(SUN) || NT || defined(HAVE_TZNAME)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
 #else if defined(HAVE_STRUCT_TM_TM_ZONE)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);
@@ -202,7 +202,7 @@ keyword{2} dateline
       time(&t);
       ct = localtime(&t);
 
-#if defined(SUN) || defined(NT) || defined(HAVE_TIMEZONE)
+#if defined(SUN) || NT || defined(HAVE_TIMEZONE)
       tz_sec = timezone;
 #else
       tz_sec = ct->tm_gmtoff;
@@ -226,7 +226,7 @@ keyword{2} dateline
 
       offset_hrs = tz_sec/3600;
       if (ct->tm_isdst) offset_hrs--;
-#if defined(SUN) || defined(NT) || defined(HAVE_TZNAME)
+#if defined(SUN) || NT || defined(HAVE_TZNAME)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_isdst?tzname[1]:tzname[0]);
 #else if defined(HAVE_STRUCT_TM_TM_ZONE)
       sprintf(sbuf, "UTC%+d %s", offset_hrs, ct->tm_zone);

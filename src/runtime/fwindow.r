@@ -2487,7 +2487,7 @@ function{0,1} ReadImage(argv[argc])
       else
 #endif					/* Graphics3D */
       {
-#ifdef NT
+#if NT
          imd.format = UCOLOR_BGR;
 #else
          imd.format = UCOLOR_RGB;

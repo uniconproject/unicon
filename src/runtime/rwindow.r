@@ -1343,7 +1343,7 @@ int readBMP(char *filename, int p, struct imgdata *imd)
      else {
         imd->paltbl = NULL;
         imd->data = bmp_data(width, height, 3, rasterdata, imd->is_bottom_up);
-#ifdef NT
+#if NT
 	if (imd->format == UCOLOR_RGB &&  bitcount == 24 ){
 	   unsigned char *byte, t;
  	   for (byte=imd->data; byte<imd->data+width*height*3; byte+=3)
@@ -3799,7 +3799,7 @@ char * abuf;
          break;
          }
       case A_IMAGE: {
-#ifdef NT
+#if NT
          ws->initimage.format = UCOLOR_BGR;
 #else
          ws->initimage.format = UCOLOR_RGB;
@@ -4629,7 +4629,7 @@ void waitkey(FILE *w)
    wgetevent((wbp)w, &answer,-1);
 }
 
-#ifndef NT
+#if !NT
   FILE *flog;
 #endif						/* NT */
 

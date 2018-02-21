@@ -254,7 +254,7 @@ extern word table_ser;
 extern int first_time;
 #endif					/* MultipleRuns */
 
-#ifdef NT
+#if NT
     WSADATA wsaData;
 #endif
 
@@ -264,7 +264,7 @@ int num_cpu_cores;
  * report the number of CPU cores available in hardware, 0 if unknown.
  */
 int get_num_cpu_cores() {
-#ifdef NT
+#if NT
    char sbuf[MaxCvtLen+1];
     if ((getenv_r("NUMBER_OF_PROCESSORS", sbuf, MaxCvtLen) != 0)
      || (*sbuf == '\0'))
@@ -1175,7 +1175,7 @@ Deliberate Syntax Error
    init_helper_thread();
 #endif					/* HELPER_THREAD */
 
-#if defined(NT) && (WINVER>=0x0501)
+#if NT && (WINVER>=0x0501)
 {
     WORD wVersionRequested;
     int err;
@@ -1425,6 +1425,16 @@ char *s1, *s2;
    c_exit(EXIT_FAILURE);
    }
 
+
+/*
+ * syserrn - call syserr, but first call perror(s2)
+ */
+void syserrn(char *s, char *s2)
+{
+   perror(s2);
+   syserr(s);
+}
+
 /*
  * syserr - print s as a system error.
  */
@@ -1612,7 +1622,7 @@ int i;
    while (wstates != NULL) pollevent();
 #endif					/* MSWindows */
 
-#ifdef NT
+#if NT
    if (LstTmpFiles) closetmpfiles();
    if (LOBYTE(wsaData.wVersion) >= 2 || HIBYTE(wsaData.wVersion) >= 2)
       WSACleanup();
@@ -1701,7 +1711,7 @@ word getrandom()
        ((ct->tm_hour % 10)*10+ct->tm_hour/10);
    /* + map &date */
    krandom += (((1900+ct->tm_year)*100+ct->tm_mon)*100)+ct->tm_mday ;
-#ifdef NT
+#if NT
 #define getpid _getpid
 #endif
    krandom += getpid();

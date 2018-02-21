@@ -29,7 +29,7 @@ case $host_cpu in
 esac
 
 unicon_osdist=$OSDIST
-unicon_osver=$OSVER
+unicon_osrel=$OSREL
 
 case $host_os in
      *linux*)
@@ -39,6 +39,16 @@ case $host_os in
 	#if test x$unicon_osdist = x ; then
 	#  echo ""
 	#fi
+
+	UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
+	case "${UNAME_VERSION}" in
+	    	Debian*)
+		release='-gnu'
+		;;
+		*)
+		release=`echo ${UNAME_RELEASE} | sed -e 's/[-_].*//' | cut -d. -f1,2`
+		;;
+	esac
 	
 	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
@@ -272,7 +282,7 @@ AC_SUBST(OBJ)
 AC_SUBST(BITS)
 AC_SUBST(unicon_os)
 AC_SUBST(unicon_osdist)
-AC_SUBST(unicon_osver)
+AC_SUBST(unicon_osrel)
 
 AC_SUBST(CC)
 AC_SUBST(RLINK)
@@ -700,7 +710,7 @@ AC_MSG_RESULT([
            Configuration Summary
 --------------------------------------------------
 *** Build Environment
-Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osver
+Host     :  $host_os  ($unicon_host) $unicon_osdist $unicon_osrel
 CC       :  $CC
 CFLAGS   :$CFLAGS
 CPPFLAGS :$CPPFLAGS

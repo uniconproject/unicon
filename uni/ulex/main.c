@@ -7,11 +7,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 FILE *yyin;
 char *begintext;
 extern int yylineno;
 
+int yyparse();
 char* grab_upto_percents();
 char *yyfilename;
 char *outfilename;

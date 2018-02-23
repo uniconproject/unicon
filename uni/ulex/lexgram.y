@@ -8,6 +8,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
+int yylex();
 #include "tree.h"
 #include "automata.h"
 struct automata* convert(struct tree* tr);
@@ -419,7 +420,7 @@ struct automata* convert(struct tree* tr)
 	tempstring++;
 
 	while (*tempstring != 34) {
-	    getsinglechar = (char *) alc(sizeof(char), "convert");
+	    getsinglechar = (char *) alc(sizeof(char)+1, "convert");
 	    getsinglechar[0] = *tempstring;
 	    getsinglechar[1] = '\0';
 	    newnode2 = alcanode(0);

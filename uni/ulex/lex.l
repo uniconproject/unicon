@@ -10,15 +10,18 @@
 %option yylineno
 
 %{
-
 #include "y.tab.h"
 #include <string.h>
 
 extern YYSTYPE yylval;
-extern yylineno;
+extern int yylineno;
 extern char *yyfilename, *outfilename;
 extern FILE *outfile;
 int whiteflag=0;
+
+void grab_semantic_action();
+int token(int);
+int yyinput(void);
 %}
 
 %%
@@ -103,7 +106,7 @@ int token(int x)
    return x;
 }
 
-int grab_semantic_action()
+void grab_semantic_action()
 {
     int numbrace = 1, quotemode = 0, slash = 0;
     int nextchar;
@@ -140,7 +143,6 @@ int grab_semantic_action()
         temp++;
         *temp = '\0';
     }
-    return 0;
 }
 
 int yywrap()

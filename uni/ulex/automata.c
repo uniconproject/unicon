@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "automata.h"
+void ulexskel(FILE*);
 
 void *alc(int n, char *caller)
 {

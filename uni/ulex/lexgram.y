@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 int yylex();
+int yyerror(char *s);
 #include "tree.h"
 #include "automata.h"
 struct automata* convert(struct tree* tr);

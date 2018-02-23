@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
       }
 
    yyfilename = argv[arg];
-   printf("ulex 0.2 invoked on %s\n", yyfilename);
+   printf("ulex 0.21 invoked on %s\n", yyfilename);
    if (pp) {
       sprintf(ppcmdline, "ulpp < %s", yyfilename);
       if (strcmp(ppcmdline+strlen(ppcmdline)-2, ".l"))
@@ -111,8 +111,10 @@ int main(int argc, char *argv[])
      
    i = yyparse();
 
-   if (i)
-      printf("regex errors in %s\n", yyfilename);
+   if (i) {
+      fprintf(stderr, "errors in %s\n", yyfilename);
+      exit(1);
+      }
    /*
     * copy out remainder, up to EOF, into output file.
     */

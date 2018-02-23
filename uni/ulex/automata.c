@@ -189,8 +189,8 @@ void createicon(struct automata *myautomata)
 	   "procedure init_semantic_actions()\n\n"
 	   "   semantic_action := table()\n");
 
-   action = (int*) alc(maxrulenum+1 * sizeof(int), "calloc");
-
+   action = (int*) alc((maxrulenum+1) * sizeof(int), "calloc");
+   
    for (i = 1; i <= maxrulenum; i++) {
       fprintf(outfile, "   semantic_action[%d] := semantic_action_%d\n", i, i);
       }

@@ -79,7 +79,7 @@ class LXC : uso::USO (
 
    initially(path)
        # Load the shared library and setup the various function references to C
-      /path	   :="../lib/lxcunicon.so"
+      /path	   :="lxcunicon.so"
       ((LXCCreate  := loadfunc(path, "create")),
       (LXCStart    := loadfunc(path, "start")),
       (LXCAttach    := loadfunc(path, "attach")),
@@ -132,7 +132,7 @@ class LXContainer(
    #    c.creat("ubuntu", "trusty", "amd64")
    #    c.creat("fedora", "22", "i386")
    #
-   method creat(d:string, r:string, a:string)
+   method creat(d:string:&null, r:string:&null, a:string:&null)
       dist := \d; release := \r; arch := \a
       return handle := LXC.LXCCreate(name, dist, release, arch)
    end

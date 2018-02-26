@@ -82,7 +82,10 @@ void createicon(struct automata *myautomata)
     */
    ulexskel(outfile);
 
-   fprintf(outfile, "%s\n", begintext);
+   if (begintext) {
+      fprintf(outfile, "%s\n", begintext);
+      }
+
    fprintf(outfile,
 	   "global semantic_action\n\n"
 	   "procedure yylex()\n"

@@ -64,7 +64,7 @@ Samples-iconc:		; cd general; $(MAKE) Samples-iconc
 .PHONY:  clean Clean Test Test-icon Test-icont Test-iconc Samples $(TESTS)
 #  Clean up.
 
-Clean Pure:
+clean Clean Pure:
 		-cd bench;	$(MAKE) Clean
 		-cd calling;	$(MAKE) Clean
 		-cd general;	$(MAKE) Clean

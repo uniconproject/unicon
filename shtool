@@ -2284,9 +2284,9 @@ tarball )
     for src in $srcs; do
         if [ -d $src ]; then
             if [ ".$opt_t" = .yes ]; then
-                echo "(cd $src && $prg_find . -type f -depth -print) | sed -e 's:^\\.\$::' -e 's:^\\./::' | cat $exclude >>$tmpfile.lst" 1>&2
+                echo "(cd $src && $prg_find . -depth -type f -print) | sed -e 's:^\\.\$::' -e 's:^\\./::' | cat $exclude >>$tmpfile.lst" 1>&2
             fi
-            (cd $src && $prg_find . -type f -depth -print) |\
+            (cd $src && $prg_find . -depth -type f -print) |\
             sed -e 's:^\.$::' -e 's:^\./::' | eval cat $exclude >>$tmpfile.lst
         else
             if [ ".$opt_t" = .yes ]; then
@@ -2373,9 +2373,9 @@ tarball )
             echo "$msgprefix:Warning: cannot set group name \`$opt_g' (would require root privileges)"
         fi
         if [ ".$opt_t" = .yes ]; then
-            echo "(cd $tmpdir && $prg_find $tarname -type f -depth -print | sort | xargs $prg_tar cf -) | cat $compress >$tmpfile.out" 1>&2
+            echo "(cd $tmpdir && $prg_find $tarname -depth -type f -print | sort | xargs $prg_tar cf -) | cat $compress >$tmpfile.out" 1>&2
         fi
-        (cd $tmpdir && $prg_find $tarname -type f -depth -print | sort | xargs $prg_tar cf -) |\
+        (cd $tmpdir && $prg_find $tarname -depth -type f -print | sort | xargs $prg_tar cf -) |\
         eval cat $compress >$tmpfile.out
         if [ ".$opt_t" = .yes ]; then
             echo "cp $tmpfile.out $tarfile" 1>&2

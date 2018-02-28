@@ -258,6 +258,13 @@ Package:
 		tar cf - icon.$(VERSION) | gzip -9 >icon.$(VERSION).tgz
 		rm -rf $(DIR)
 
+SHTOOL=./shtool
+
+dist: distclean
+	$(SHTOOL) fixperm -v *; \
+	echo "Building unicon.tar.gz"; \
+	$(SHTOOL) tarball -o unicon.tar.gz -c 'gzip -9' \
+                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', .
 
 ##################################################################
 #

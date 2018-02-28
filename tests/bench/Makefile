@@ -195,3 +195,5 @@ Clean clean:
 	meteor-contest queens rsg concord deal ipxref run-test		\
 	run-shootout run-benchmark run-med generate.out generate
 
+Pure: clean
+	rm *.dat

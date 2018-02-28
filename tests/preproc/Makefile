@@ -4,6 +4,8 @@ MAKE=make
 .SILENT:
 .IGNORE:
 
+.PHONY:  clean Clean
+
 test: cond errif macros errmac include errinc line errlin misc_dir dir_delm\
    gen_line str_cat misc cmd_opts errcmd
 
@@ -147,7 +149,7 @@ errcmd:
 	-./Test-pp errcmd.ou8 -U__RCRS__= dummy.c
 	-./Test-pp errcmd.ou9 dummy.c -Dx
 
-Clean:
+clean Clean:
 		rm -f local/*
 		touch local/.placeholder
 
@@ -155,9 +157,7 @@ Clean:
 #   *** Do not delete the line above; it is used in trimming Makefiles
 #   for distribution ***
 
-Dist-clean:
+Pure distclean: clean
 		rm -f .*K* .emacs*
-		rm -f local/*
-		touch local/.placeholder
 		rm -rf `gcomp Test-pp README Makefile local stand *.[ch] \
 		   dir1 dir2`

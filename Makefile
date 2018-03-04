@@ -237,8 +237,8 @@ install Install:
 	mkdir -p $(ULB)/unidep
 	mkdir -p $(docdir)/unicon
 	mkdir -p $(mandir)
-	$(INST) bin/[a-qs-z]* $(bindir)/bin
-	$(INST) -m 644 ipl/lib/*.u $(UIPL)/lib
+	$(INST) bin/[a-qs-z]* $(bindir)
+	$(INST) -m 644 ipl/lib/*.* $(UIPL)/lib
 	$(INST) -m 644 ipl/incl/*.* $(UIPL)/incl
 	$(INST) -m 644 ipl/gincl/*.* $(UIPL)/gincl
 	$(INST) -m 644 ipl/mincl/*.* $(UIPL)/mincl
@@ -249,7 +249,7 @@ install Install:
 	$(INST) -m 644 uni/unidep/*.* $(ULB)/unidep
 	$(INST) -m 644 uni/unidoc/*.* $(ULB)/unidoc
 	$(INST) -m 644 uni/parser/*.* $(ULB)/parser
-	$(INST) -m 644 doc/unicon/unicon.1 $D/man/man1
+	$(INST) -m 644 doc/unicon/unicon.1 $(mandir)/man1
 	$(INST) -m 644 README $(docdir)/unicon
 #	$(INST) -m 644 doc/unicon/*.* $(docdir)/unicon
 

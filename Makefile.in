@@ -218,48 +218,70 @@ ULB=$(libdir)/unicon/uni
 UIPL=$(libdir)/unicon/ipl
 UPLUGINS=$(libdir)/unicon/plugins/lib
 INST=$(SHTOOL) install -c
+F=*.{u,icn}
+Tbins=unicon icont iconx iconc udb uprof unidep UniDoc
+
+Tdirs=$(ULB) $(UIPL) $(UPLUGINS)
+Udirs=lib 3d gui unidoc unidep xml parser
+IPLdirs=lib incl gincl mincl
+
+uninstall Uninstall:
+#	create all directories first
+	@for d in $(libdir)/unicon $(docdir)/unicon ; do \
+	   echo "Uninstalling dir $$d ..."; \
+	   rm -rf $$d; \
+	done
+#	delete the binaries we installed from  unicon/bin
+	@for f in $(Tbins); do \
+	   echo "Uninstalling $(bindir)/$$f ..."; \
+	   rm -f $(bindir)/$$f; \
+	done
+#	docs and man
+	@echo "Uninstalling $(mandir)/man1/unicon.1 ..."
+	@rm -f $(mandir)/man1/unicon.1
+
 install Install:
-	mkdir -p $(bindir)
-	mkdir -p $(libdir)
-	mkdir -p $(ULB)
-	mkdir -p $(UIPL)
-	mkdir -p $(UPLUGINS)
-	mkdir -p $(UIPL)/lib
-	mkdir -p $(UIPL)/incl
-	mkdir -p $(UIPL)/gincl
-	mkdir -p $(UIPL)/mincl
-	mkdir -p $(ULB)/lib
-	mkdir -p $(ULB)/3d
-	mkdir -p $(ULB)/gui
-	mkdir -p $(ULB)/unidoc
-	mkdir -p $(ULB)/parser
-	mkdir -p $(ULB)/xml
-	mkdir -p $(ULB)/unidep
-	mkdir -p $(docdir)/unicon
-	mkdir -p $(mandir)
-	$(INST) bin/[a-qs-z]* $(bindir)
-	$(INST) -m 644 ipl/lib/*.* $(UIPL)/lib
-	$(INST) -m 644 ipl/incl/*.* $(UIPL)/incl
-	$(INST) -m 644 ipl/gincl/*.* $(UIPL)/gincl
-	$(INST) -m 644 ipl/mincl/*.* $(UIPL)/mincl
-	$(INST) -m 644 uni/lib/*.* $(ULB)/lib
-	$(INST) -m 644 uni/gui/*.* $(ULB)/gui
-	$(INST) -m 644 uni/3d/*.* $(ULB)/3d
-	$(INST) -m 644 uni/xml/*.* $(ULB)/xml
-	$(INST) -m 644 uni/unidep/*.* $(ULB)/unidep
-	$(INST) -m 644 uni/unidoc/*.* $(ULB)/unidoc
-	$(INST) -m 644 uni/parser/*.* $(ULB)/parser
-	$(INST) -m 644 doc/unicon/unicon.1 $(mandir)/man1
-	$(INST) -m 644 README $(docdir)/unicon
-#	$(INST) -m 644 doc/unicon/*.* $(docdir)/unicon
+#	be conservative when deletting directories
+	@for d in $(bindir) $(libdir) $(docdir)/unicon $(mandir) $(Tdirs) ; do \
+	    (echo "Creating dir $$d") && (mkdir -p $$d); \
+	done
+	@for d in $(IPLdirs); do \
+	    (echo "Creating dir $(UIPL)/$$d") && (mkdir -p $(UIPL)/$$d); \
+	done
+	@for d in $(Udirs); do \
+	    (echo "Creating dir $(ULB)/$$d") && (mkdir -p $(ULB)/$$d); \
+	done
+#	uninstall unicon/bin
+	@for f in $(bins); do \
+	  if test -f "bin/$$f"; then \
+	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(bindir)); else \
+	    (echo "No bin/$$f , skipping..."); \
+	  fi; \
+	done
+#	install unicon/ipl
+	@echo "Installing unicon/ipl to $(UIPL) ..."
+	@$(INST) -m 644 ipl/lib/*.u $(UIPL)/lib
+	@$(INST) -m 644 ipl/incl/*.icn $(UIPL)/incl
+	@$(INST) -m 644 ipl/gincl/*.icn $(UIPL)/gincl
+	@$(INST) -m 644 ipl/mincl/*.icn $(UIPL)/mincl
+#	install unicon/uni
+	@for d in $(Udirs); do \
+	  echo "Installing uni/$$d to $(ULB)/$$d ..."; \
+	  $(INST) -m 644 uni/$$d/*.* $(ULB)/$$d; \
+	done
+#	docs and man
+	@echo "Installing $(mandir)/man1/unicon.1 and $(docdir)/unicon ..."
+	@$(INST) -m 644 doc/unicon/unicon.1 $(mandir)/man1
+	@$(INST) -m 644 README $(docdir)/unicon
+#	@$(INST) -m 644 doc/unicon/*.* $(docdir)/unicon
 
 # Bundle up for binary distribution.
 
-DIR=icon.$(VERSION)
+DIR=unicon.$(VERSION)
 Package:
 		rm -rf $(DIR)
 		umask 002; $(MAKE) Install dest=$(DIR)
-		tar cf - icon.$(VERSION) | gzip -9 >icon.$(VERSION).tgz
+		tar cf - unicon.$(VERSION) | gzip -9 >unicon.$(VERSION).tgz
 		rm -rf $(DIR)
 
 SHTOOL=./shtool

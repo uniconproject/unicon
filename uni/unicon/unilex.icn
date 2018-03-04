@@ -210,20 +210,29 @@ procedure do_letters()
 end
 
 procedure do_digits()
-   local c
+  local c, expstr
 	      yytext ||:= tab(many(&digits))
 	      tokflags +:= Beginner+Ender
 	      if yytext ||:= ="." then {
 		  yytext ||:= tab(many(&digits))
 		  if yytext ||:= tab(any('eE')) then {
-		      yytext ||:= ="-"
-		      yytext ||:= tab(many(&digits))
+		      yytext ||:= ="-" # optional; should we also allow + ?
+                      if not (expstr := tab(many(&digits))) then
+                         uni_error("malformed real number")
+                      else if expstr > 308 then
+                         uni_error("real number out of range")
+		      yytext ||:= expstr
 		  }
 		  return REALLIT
 	      }
 	      else if yytext ||:= tab(any('eE')) then {
-		  yytext ||:= ="-"
-		  yytext ||:= tab(many(&digits))
+		  yytext ||:= ="-" # optional; should we also allow + ?
+                  expstr := tab(many(&digits))
+                  if not (expstr := tab(many(&digits))) then
+                     uni_error("malformed real number")
+                  else if expstr > 308 then
+                     uni_error("real number out of range")
+		  yytext ||:= expstr
 		  return REALLIT
 	      }
 	      else {

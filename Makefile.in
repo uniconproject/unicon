@@ -2,15 +2,15 @@
 #
 
 #  configuration parameters
-VERSION=v940
+VERSION=13.1
 name=unspecified
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
 libdir=@libdir@
-
-destdir=/must/specify/dest/
+docdir=@docdir@
+mandir=@mandir@
 
 default: allsrc
 	$(MAKE) -C ipl/lib 
@@ -214,40 +214,44 @@ plugins:
 
 # Installation:  "make Install dest=new-parent-directory"
 
-D=$(destdir)
+ULB=$(libdir)/unicon/uni
+UIPL=$(libdir)/unicon/ipl
+UPLUGINS=$(libdir)/unicon/plugins/lib
+INST=$(SHTOOL) install -c
 install Install:
-	mkdir -p $D
-	mkdir -p $D/bin
-	mkdir -p $D/ipl
-	mkdir -p $D/ipl/lib
-	mkdir -p $D/ipl/incl
-	mkdir -p $D/ipl/gincl
-	mkdir -p $D/ipl/mincl
-	mkdir -p $D/uni
-	mkdir -p $D/uni/lib
-	mkdir -p $D/uni/3d
-	mkdir -p $D/uni/gui
-	mkdir -p $D/uni/unidoc
-	mkdir -p $D/uni/parser
-	mkdir -p $D/uni/xml
-	mkdir -p $D/uni/unidep
-	mkdir -p $D/doc
-	mkdir -p $D/doc/icon
-	mkdir -p $D/doc/unicon
-	mkdir -p $D/man
-	mkdir -p $D/man/man1
-	cp README $D
-	cp bin/[a-qs-z]* $D/bin
-	rm -f $D/bin/libXpm*
-	cp ipl/lib/*.* $D/ipl/lib
-	cp ipl/incl/*.* $D/ipl/incl
-	cp ipl/gincl/*.* $D/ipl/gincl
-	cp ipl/mincl/*.* $D/ipl/mincl
-	cp uni/lib/*.* $D/uni/lib
-	cp doc/icon/*.* $D/doc/icon
-	cp doc/unicon/*.* $D/doc/unicon
-	cp doc/icon/icon.1 $D/man/man1
-
+	mkdir -p $(bindir)
+	mkdir -p $(libdir)
+	mkdir -p $(ULB)
+	mkdir -p $(UIPL)
+	mkdir -p $(UPLUGINS)
+	mkdir -p $(UIPL)/lib
+	mkdir -p $(UIPL)/incl
+	mkdir -p $(UIPL)/gincl
+	mkdir -p $(UIPL)/mincl
+	mkdir -p $(ULB)/lib
+	mkdir -p $(ULB)/3d
+	mkdir -p $(ULB)/gui
+	mkdir -p $(ULB)/unidoc
+	mkdir -p $(ULB)/parser
+	mkdir -p $(ULB)/xml
+	mkdir -p $(ULB)/unidep
+	mkdir -p $(docdir)/unicon
+	mkdir -p $(mandir)
+	$(INST) bin/[a-qs-z]* $(bindir)/bin
+	$(INST) -m 644 ipl/lib/*.u $(UIPL)/lib
+	$(INST) -m 644 ipl/incl/*.* $(UIPL)/incl
+	$(INST) -m 644 ipl/gincl/*.* $(UIPL)/gincl
+	$(INST) -m 644 ipl/mincl/*.* $(UIPL)/mincl
+	$(INST) -m 644 uni/lib/*.* $(ULB)/lib
+	$(INST) -m 644 uni/gui/*.* $(ULB)/gui
+	$(INST) -m 644 uni/3d/*.* $(ULB)/3d
+	$(INST) -m 644 uni/xml/*.* $(ULB)/xml
+	$(INST) -m 644 uni/unidep/*.* $(ULB)/unidep
+	$(INST) -m 644 uni/unidoc/*.* $(ULB)/unidoc
+	$(INST) -m 644 uni/parser/*.* $(ULB)/parser
+	$(INST) -m 644 doc/unicon/unicon.1 $D/man/man1
+	$(INST) -m 644 README $(docdir)/unicon
+#	$(INST) -m 644 doc/unicon/*.* $(docdir)/unicon
 
 # Bundle up for binary distribution.
 

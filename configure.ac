@@ -1,4 +1,4 @@
-AC_INIT([Unicon],[13.0],[jeffery@cs.uidaho.edu], [Unicon], [http://www.unicon.org])
+AC_INIT([Unicon],[13.0],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
 
 AC_CANONICAL_HOST
 
@@ -519,6 +519,8 @@ AC_SUBST(prefix)
 AC_SUBST(exec_prefix)
 AC_SUBST(bindir)
 AC_SUBST(libdir)
+AC_SUBST(docdir)
+AC_SUBST(mandir)
 
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
@@ -732,8 +734,7 @@ LDFLAGS  :$LDFLAGS
 LIBS     : $LIBS
 CXX      :  $CXX  (Required only with FTGL and VOIP)
 CXXFLAGS : $CXXFLAGS
-Paths    :  prefix: $prefix   eprefix: $exec_prefix
-DIRs     :  bin: $bindir   lib: $libdir
+prefix	 : $prefix
 Verbose  :  $verbosebuild
 Debug    :  $debug
 Devmode  :  $devmode

@@ -1093,6 +1093,7 @@ union numeric *result;
 	 return CvtFail;
       while (isdigit(c)) {
 	 exponent = exponent * 10 + (c - '0');
+	 if (exponent > 308) return CvtFail;
          c = (s < end_s) ? *s++ : ' ';
 	 }
       scale += (esign == '+') ? exponent : -exponent;

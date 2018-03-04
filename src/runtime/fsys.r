@@ -1981,6 +1981,7 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	    if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
 	       s[-1] = '\0';
 	       s++;
+	    errout_target:
 	       while (*s == ' ') s++;
 	       StrLoc(d_stdout) = StrLoc(d_stderr) = s;
 	       while (*s) {
@@ -1991,6 +1992,11 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 		  s++;
 	          }
 	       StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
+	       }
+	    else if (s[1] == '&') { /* >& */
+	       *s = '\0';
+	       s += 2;
+	       goto errout_target;
 	       }
 	    else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
 	       s[-1] = '\0';

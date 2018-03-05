@@ -528,7 +528,7 @@ expr1a	: expr1 ;
 expr1	: expr2a ;
 	| expr2a SWAP expr1      { $$ := node("swap", $1,$2,$3) } ;
 	| expr2a ASSIGN expr1    {
-          $$ := parenthesize_assign(node("assign",$1,$2,$3));
+          $$ := parenthesize_assign(node("assign",$1,$2,$3))
           } ;
 	| expr2a REVSWAP expr1   { $$ := node("revswap", $1,$2,$3) } ;
 	| expr2a REVASSIGN expr1 { $$ := node("revasgn", $1,$2,$3) } ;
@@ -571,7 +571,7 @@ expr2	: expr3 ;
 
 expr3	: expr4 ;
         | expr4 PAND expr3 { $$ := node("BPand", $1,$2,$3) };
-	| expr4 BAR expr3  {$$ := node(BAR, $1,$2,$3) } ;
+	| expr4 BAR expr3  { $$ := node(BAR, $1,$2,$3) } ;
 
 expr4	: expr5;
 	| expr4 SEQ expr5 { $$ := node("Bseq", $1,$2,$3) } ;
@@ -689,7 +689,7 @@ expr11	: literal ;
 
 	      $$ := SimpleInvocation(fakeThreadIdent,fakeLParen,
 				     node("create", fakeCreate, $2),
-				     fakeRParen);
+				     fakeRParen)
 	      } ;
 	| CRITICAL expr2a COLON expr { $$ := node("critical", $1,$2,$3,$4) } ;
 	| IDENT ;
@@ -704,7 +704,7 @@ expr11	: literal ;
 	| expr11 LBRACE	RBRACE { $$ := node("Pdco0", $1,$2,$3) } ;
 	| expr11 LBRACE pdcolist RBRACE { $$ := node("Pdco1", $1,$2,$3,$4) } ;
 	| expr11 LPAREN exprlist RPAREN {
-           $$ := SimpleInvocation($1,$2,$3,$4);
+           $$ := SimpleInvocation($1,$2,$3,$4)
       } ;
 	| expr11 DOLLAR INITIALLY LPAREN exprlist RPAREN {
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6)
@@ -719,7 +719,7 @@ expr11	: literal ;
 	   $$ := InvocationNode($1,$2,$3,$4,$5,$6,$7,$8)
 	   } ;
 	| expr11 DOT IDENT {
-           $$ := FieldRef($1,$2,$3);
+           $$ := FieldRef($1,$2,$3)
       } ;
 	| packageref;
 	| expr11 DOT INITIALLY { $$ := Field($1,$2,$3) } ;
@@ -727,7 +727,7 @@ expr11	: literal ;
 	| AND IDENT { $$ := Keyword($1,$2) } ;
 
 while	: WHILE expr {
-	    $$ := node("While0", $1,$2);
+	    $$ := node("While0", $1,$2)
 	    } ;
 	| WHILE expr DO expr {
 	    # warn if a while loop should be an every.
@@ -747,7 +747,7 @@ while	: WHILE expr {
 			$1.line, $1.filename, $1.s
 			)
 	       }
-	    $$ := node("While1", $1,$2,$3,$4);
+	    $$ := node("While1", $1,$2,$3,$4)
 	    } ;
 
 until	: UNTIL expr { $$ := node("until", $1,$2) } ;
@@ -937,7 +937,7 @@ procedure FieldRef(lhs, dot, rhs)
       return node("Paren", "(",
          node("assign", "__" || tmpcount, " := ", lhs, ")", "& "),
          node("invoke", Field("__" || tmpcount, ".", rhs))
-         );
+         )
       }
    return Field(lhs, dot, rhs)
 end

@@ -5,6 +5,8 @@
 VERSION=13.1
 name=unspecified
 
+SHELL=sh
+SHTOOL=./shtool
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
@@ -284,14 +286,30 @@ Package:
 		tar cf - unicon.$(VERSION) | gzip -9 >unicon.$(VERSION).tgz
 		rm -rf $(DIR)
 
-SHTOOL=./shtool
+distclean2: clean
+	@for d in $(SUBDIRS); do \
+	  if test "$$d" != "."; then \
+	    (cd $$d && $(MAKE) $@); \
+	  fi; \
+	done
+	$(RM) Makefile config.status config.cache config.log
+
+#Makefile: Makefile.in config.status
+#	cd $(top_srcdir) && $(SHELL) ./config.status
+
+#config.status: $(srcdir)/configure 
+#	$(SHELL) ./config.status --recheck
+
 
 dist: distclean
 	$(SHTOOL) fixperm -v *; \
 	echo "Building unicon.tar.gz"; \
-	$(SHTOOL) tarball -o unicon.tar.gz -c 'gzip -9' \
+	$(SHTOOL) tarball -o unicon_13.1.0.orig.tar.gz -c 'gzip -9' \
                           -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
+deb: dist
+	mv unicon_13.1.0.orig.tar.gz ../
+	debuild -us -uc --source-option='--include-binaries' -i'(^|/)\.svn'
 ##################################################################
 #
 # Tests.
@@ -334,13 +352,17 @@ clean Clean:
 distclean Pure:
 		touch Makedefs Makedefs.uni
 		rm -rf icon.* bin/[A-Za-z]* lib/[a-z]*
-		cd uni;		$(MAKE) Clean
+		cd uni;			$(MAKE) Pure
 		cd ipl;			$(MAKE) Pure
 		cd src;			$(MAKE) Pure
 		cd tests;		$(MAKE) Pure
 		cd plugins;		$(MAKE) Pure
 		rm -f src/common/rswitch.[csS]
 		rm -f Makedefs Makedefs.uni
+		rm -f \#*# *~ .#*
+		rm -f */#*# */*~ */.#*
+		rm -f */*/#*# */*/*~ */*/.#*
+		rm -f */*/*/#*# */*/*/*~ */*/*/.#*
 
 #  (This is used at Arizona to prepare source distributions.)
 

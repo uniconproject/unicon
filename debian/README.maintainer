@@ -1,0 +1,35 @@
+How to build a .deb
+
+Requirments
+ - devscripts
+ - build-essential
+ - lintian
+
+* Create a source distribution:
+
+  $ make dist
+
+* Move source distribution up to the parent directory
+
+  $ mv unicon-VVV.tar.gz ../
+
+* In the parent directory, copy the source dist into a new name in the
+* form of unicon_VVV.orig.tar.gz where VVV is the version (ex: 13.1.0)
+
+  $ cp unicon-VVV.tar.gz  unicon_VVV.orig.tar.gz
+  
+* Unpack  unicon-VVV.tar.gz  (NOT the .orig)
+
+  $ tar -xf unicon-VVV.tar.gz
+
+* change to the new unpacked directory and modify the changelog in the debian directory.
+* dch will open your favorite editor and fill in some of the needed fields for you
+
+  $ dch
+
+* Build the .deb
+
+$ debuild -us -uc
+
+* The resulting .deb will be in the parent directory
+

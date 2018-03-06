@@ -44,13 +44,13 @@ $(LIBURI) uri:
 clean:
 	$(RM) libtp.a $(OBJS)
 
-distclean: clean
+distclean:
 	@for d in $(SUBDIRS); do \
 	  if test "$$d" != "."; then \
 	    (cd $$d && $(MAKE) $@); \
 	  fi; \
 	done
-	$(RM) Makefile libtp.a
+	$(RM) libtp.a $(OBJS)
 
 dist: Makefile distclean
 	$(SHTOOL) fixperm -v *; \

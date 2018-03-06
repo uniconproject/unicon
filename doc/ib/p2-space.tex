@@ -389,35 +389,35 @@ the raw hash value of a vector when attempting to determine the raw
 hash value for a potentially new type vector.
 
 For example, assume that some type-mutable program point contains a
-reference to the genesis vector V {\textsubscript{G}}. In the event
-that the type inferencer wants to apply transform t{\textsubscript{1}}
-to V{\textsubscript{G}}, it is desirable to determine whether the
-result of this transformation (V{\textsubscript{1}}) is already a
+reference to the genesis vector V {\TextSubscript{G}}. In the event
+that the type inferencer wants to apply transform t{\TextSubscript{1}}
+to V{\TextSubscript{G}}, it is desirable to determine whether the
+result of this transformation (V{\TextSubscript{1}}) is already a
 member of the vector hash table without performing a full hash of
-V{\textsubscript{1}. The Unicon Compiler type inferencer accomplishes
+V{\TextSubscript{1}. The Unicon Compiler type inferencer accomplishes
 this as follows.
 
-The raw hash value of V{\textsubscript{G}} is copied into a temporary
+The raw hash value of V{\TextSubscript{G}} is copied into a temporary
 vector. This raw hash value is then transformed {\textit{in place}}
-based upon the nature of the transform t{\textsubscript{1}} to produce
-the raw hash value of the subject vector V{\textsubscript{1}}. This
+based upon the nature of the transform t{\TextSubscript{1}} to produce
+the raw hash value of the subject vector V{\TextSubscript{1}}. This
 circumvents a call to the top half hashing routine. The type
 inferencer then invokes the bottom half hashing routine to transform
-the raw hash value of V{\textsubscript{1}} into the cooked hash value
-of V{\textsubscript{1}}. If the vector hash table bucket corresponding
-to the cooked hash value of V{\textsubscript{1}} is empty,
-V{\textsubscript{1}} of course does not exist in the hash table.  The
+the raw hash value of V{\TextSubscript{1}} into the cooked hash value
+of V{\TextSubscript{1}}. If the vector hash table bucket corresponding
+to the cooked hash value of V{\TextSubscript{1}} is empty,
+V{\TextSubscript{1}} of course does not exist in the hash table.  The
 temporary vector is populated with the content of the vector
-V{\textsubscript{G}}, the contents of the temporary vector are
-transformed via t{\textsubscript{1}}, and the temporary vector is
+V{\TextSubscript{G}}, the contents of the temporary vector are
+transformed via t{\TextSubscript{1}}, and the temporary vector is
 inserted into the vector hash table to become
-V{\textsubscript{1}}.
+V{\TextSubscript{1}}.
 
 In the event that the vector hash table bucket corresponding to the
-cooked hash value of the subject vector V{\textsubscript{1}} is not
+cooked hash value of the subject vector V{\TextSubscript{1}} is not
 empty, the temporary vector is populated with the characteristics of
-V{\textsubscript{1}} and the hash table bucket is searched for the
-subject vector V{\textsubscript{1}}.
+V{\TextSubscript{1}} and the hash table bucket is searched for the
+subject vector V{\TextSubscript{1}}.
 
 
 \bigskip
@@ -444,10 +444,10 @@ Figure 24-7: Top Half Vector Hashing Routine
 
 \bigskip
 
-It should be noted that if V{\textsubscript{1}} is indeed not a member
+It should be noted that if V{\TextSubscript{1}} is indeed not a member
 of the vector hash table, its raw hash value has already been computed
-and any subsequent transformations of V{\textsubscript{1}} to produce
-some vector V{\textsubscript{2}} can be treated in the same manner as
+and any subsequent transformations of V{\TextSubscript{1}} to produce
+some vector V{\TextSubscript{2}} can be treated in the same manner as
 described above. To convey an idea of the useful nature of this
 technique, there are 12 type vector mutator routines in the Unicon
 Compiler type inferencer. In all of these mutators, type vector
@@ -479,10 +479,10 @@ The nature of the top half hashing routine is of paramount importance
 when performing hash halving. The top half hashing routine must be
 selected such that it contains logic simple enough to facilitate the
 in-place manipulation of the raw hash value of some vector
-V{\textsubscript{n}} to produce the raw hash value of vector
-V{\textsubscript{n+1}} based upon a vector transformation t applied to
-vector V{\textsubscript{n}} with no a priori knowledge of the actual
-content of vector V{\textsubscript{n}}. An implicit requirement in
+V{\TextSubscript{n}} to produce the raw hash value of vector
+V{\TextSubscript{n+1}} based upon a vector transformation t applied to
+vector V{\TextSubscript{n}} with no a priori knowledge of the actual
+content of vector V{\TextSubscript{n}}. An implicit requirement in
 this pursuit is bi-directionality of operation: both the setting and
 clearing of bits in a vector must be computationally expedient.
 

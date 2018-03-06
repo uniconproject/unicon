@@ -7,12 +7,12 @@ name=unspecified
 
 SHELL=sh
 SHTOOL=./shtool
-prefix=/usr/local
-exec_prefix=${prefix}
-bindir=${exec_prefix}/bin
-libdir=${exec_prefix}/lib
-docdir=${prefix}/share/doc/${PACKAGE_TARNAME}
-mandir=${prefix}/share/man
+prefix=$(DESTDIR)/usr/local
+exec_prefix=$(DESTDIR)${prefix}
+bindir=$(DESTDIR)${exec_prefix}/bin
+libdir=$(DESTDIR)${exec_prefix}/lib
+docdir=$(DESTDIR)${prefix}/share/doc/${PACKAGE_TARNAME}
+mandir=$(DESTDIR)${prefix}/share/man
 
 default: allsrc
 	$(MAKE) -C ipl/lib 
@@ -304,16 +304,20 @@ VV=13.1.0
 FV1=unicon-$(VV).tar.gz
 FV2=unicon_$(VV).orig.tar.gz
 dist: distclean
-	$(SHTOOL) fixperm -v *; \
-	echo "Building $(FV1)"; \
-	$(SHTOOL) tarball -o $(FV1) -c 'gzip -9' \
-                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
+#	$(SHTOOL) fixperm -v *;
+	echo "Building $(FV1)"
+	tar -czf ../$(FV1) --exclude-vcs --exclude-backups ../unicon
+#	$(SHTOOL) tarball -o $(FV1) -c 'gzip -9' \
+#                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
+udist=unicondist
 deb: dist
-	mv $(FV1) ../
-	cp ../$(FV1) ../$(FV2)
-	@echo unpacking $(FV1)
-	cd ../ && tar -xf $(FV1)
+	mkdir -p ../$(udist)
+	mv ../$(FV1) ../$(udist)/
+	cp ../$(udist)/$(FV1) ../$(udist)/$(FV2)
+	@echo unpacking ../$(udist)/$(FV1)
+	cd ../$(udist) && tar -xf $(FV1)
+	mv ../$(udist)/unicon ../$(udist)/unicon-$(VV) 
 #	debuild -us -uc --source-option='--include-binaries' -i'(^|/)\.svn'
 ##################################################################
 #
@@ -364,10 +368,10 @@ distclean Pure:
 		cd plugins;		$(MAKE) Pure
 		rm -f src/common/rswitch.[csS]
 		rm -f Makedefs Makedefs.uni
-		rm -f \#*# *~ .#*
-		rm -f */#*# */*~ */.#*
-		rm -f */*/#*# */*/*~ */*/.#*
-		rm -f */*/*/#*# */*/*/*~ */*/*/.#*
+#		rm -f \#*# *~ .#*
+#		rm -f */#*# */*~ */.#*
+#		rm -f */*/#*# */*/*~ */*/.#*
+#		rm -f */*/*/#*# */*/*/*~ */*/*/.#*
 
 #  (This is used at Arizona to prepare source distributions.)
 

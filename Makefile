@@ -300,16 +300,21 @@ distclean2: clean
 #config.status: $(srcdir)/configure 
 #	$(SHELL) ./config.status --recheck
 
-
+VV=13.1.0
+FV1=unicon-$(VV).tar.gz
+FV2=unicon_$(VV).orig.tar.gz
 dist: distclean
 	$(SHTOOL) fixperm -v *; \
-	echo "Building unicon.tar.gz"; \
-	$(SHTOOL) tarball -o unicon_13.1.0.orig.tar.gz -c 'gzip -9' \
+	echo "Building $(FV1)"; \
+	$(SHTOOL) tarball -o $(FV1) -c 'gzip -9' \
                           -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
 deb: dist
-	mv unicon_13.1.0.orig.tar.gz ../
-	debuild -us -uc --source-option='--include-binaries' -i'(^|/)\.svn'
+	mv $(FV1) ../
+	cp ../$(FV1) ../$(FV2)
+	@echo unpacking $(FV1)
+	cd ../ && tar -xf $(FV1)
+#	debuild -us -uc --source-option='--include-binaries' -i'(^|/)\.svn'
 ##################################################################
 #
 # Tests.

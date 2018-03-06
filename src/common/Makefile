@@ -60,8 +60,8 @@ rswitch.o: FORCE
 	$(CC) $(CFLAGS) -c rswitch.[cs]
 FORCE:
 
-clean:
-	$(RM) $(PROGS) *.o core junk*
+distclean clean:
+	$(RM) $(PROGS) *.o core junk* libcommon.a
 
 
 #  The following section is needed if changes are made to the Icon grammar,

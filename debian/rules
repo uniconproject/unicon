@@ -22,16 +22,22 @@ export DH_ALWAYS_EXCLUDE=CVS:.svn
 
 # Override configure to pass autoconf the configuration options that we want
 override_dh_auto_configure:
-	dh_auto_configure -- --prefix= --mandir=/usr/share
+	dh_auto_configure -- --prefix=/usr --mandir=/usr/share
+
+#--disable-graphics
 #--enable-debian 
 
 #override_dh_installinit:
 #	dh_installinit --no-start
 
 # Override install
-override_dh_auto_install:
-	dh_auto_install
+#override_dh_auto_install:
+#	dh_auto_install
 
+
+# for manually installed dependencies
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
 
 # dh_make generated override targets
 # This is example for Cmake (See https://bugs.debian.org/641051 )

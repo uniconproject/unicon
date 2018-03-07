@@ -7,12 +7,12 @@ name=unspecified
 
 SHELL=sh
 SHTOOL=./shtool
-prefix=$(DESTDIR)/usr/local
-exec_prefix=$(DESTDIR)${prefix}
-bindir=$(DESTDIR)${exec_prefix}/bin
-libdir=$(DESTDIR)${exec_prefix}/lib
-docdir=$(DESTDIR)${prefix}/share/doc/${PACKAGE_TARNAME}
-mandir=$(DESTDIR)${prefix}/share/man
+prefix=/usr/local
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+libdir=${exec_prefix}/lib
+docdir=${prefix}/share/doc/${PACKAGE_TARNAME}
+mandir=${prefix}/share/man
 
 default: allsrc
 	$(MAKE) -C ipl/lib 
@@ -216,9 +216,9 @@ plugins:
 
 # Installation:  "make Install dest=new-parent-directory"
 
-ULB=$(libdir)/unicon/uni
-UIPL=$(libdir)/unicon/ipl
-UPLUGINS=$(libdir)/unicon/plugins/lib
+ULB=$(DESTDIR)$(libdir)/unicon/uni
+UIPL=$(DESTDIR)$(libdir)/unicon/ipl
+UPLUGINS=$(DESTDIR)$(libdir)/unicon/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
 Tbins=unicon icont iconx iconc udb uprof unidep UniDoc
@@ -244,7 +244,7 @@ uninstall Uninstall:
 
 install Install:
 #	be conservative when deletting directories
-	@for d in $(bindir) $(libdir) $(docdir)/unicon $(mandir) $(Tdirs) ; do \
+	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
 	done
 	@for d in $(IPLdirs); do \
@@ -254,9 +254,9 @@ install Install:
 	    (echo "Creating dir $(ULB)/$$d") && (mkdir -p $(ULB)/$$d); \
 	done
 #	uninstall unicon/bin
-	@for f in $(bins); do \
+	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
-	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(bindir)); else \
+	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); else \
 	    (echo "No bin/$$f , skipping..."); \
 	  fi; \
 	done
@@ -272,10 +272,10 @@ install Install:
 	  $(INST) -m 644 uni/$$d/*.* $(ULB)/$$d; \
 	done
 #	docs and man
-	@echo "Installing $(mandir)/man1/unicon.1 and $(docdir)/unicon ..."
-	@$(INST) -m 644 doc/unicon/unicon.1 $(mandir)/man1
-	@$(INST) -m 644 README $(docdir)/unicon
-#	@$(INST) -m 644 doc/unicon/*.* $(docdir)/unicon
+	@echo "Installing $(mandir)/man1/unicon.1 and $(DESTDIR)$(docdir)/unicon ..."
+	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
+	@$(INST) -m 644 README $(DESTDIR)$(docdir)/unicon
+#	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
 # Bundle up for binary distribution.
 

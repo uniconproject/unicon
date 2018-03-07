@@ -272,8 +272,8 @@ install Install:
 	  $(INST) -m 644 uni/$$d/*.* $(ULB)/$$d; \
 	done
 #	docs and man
-	@echo "Installing $(mandir)/man1/unicon.1 and $(DESTDIR)$(docdir)/unicon ..."
-	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
+	@echo "Installing $(mandir)/man1/unicon.1 and $(docdir)/unicon ..."
+#	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
 	@$(INST) -m 644 README $(DESTDIR)$(docdir)/unicon
 #	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
@@ -317,8 +317,12 @@ deb: dist
 	cp ../$(udist)/$(FV1) ../$(udist)/$(FV2)
 	@echo unpacking ../$(udist)/$(FV1)
 	cd ../$(udist) && tar -xf $(FV1)
-	mv ../$(udist)/unicon ../$(udist)/unicon-$(VV) 
-#	debuild -us -uc --source-option='--include-binaries' -i'(^|/)\.svn'
+	mv ../$(udist)/unicon ../$(udist)/unicon-$(VV)
+	@echo "To finish building the deb package, do"
+	@echo "   cd ../unicondist/unicon-$(VV)"
+	@echo "Then run:"
+	@echo "	 debuild -us -uc --profile debian"
+
 ##################################################################
 #
 # Tests.
@@ -368,6 +372,8 @@ distclean Pure:
 		cd plugins;		$(MAKE) Pure
 		rm -f src/common/rswitch.[csS]
 		rm -f Makedefs Makedefs.uni
+		$(RM) config.status config.cache config.log
+
 #		rm -f \#*# *~ .#*
 #		rm -f */#*# */*~ */.#*
 #		rm -f */*/#*# */*/*~ */*/.#*

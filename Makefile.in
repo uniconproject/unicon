@@ -327,7 +327,7 @@ deb: dist
 	@echo "To finish building the deb package, do"
 	@echo "   cd ../unicondist/unicon-$(VV)"
 	@echo "Then run:"
-	@echo "	 debuild -us -uc --profile debian"
+	@echo "	 debuild -us -uc"
 
 ##################################################################
 #

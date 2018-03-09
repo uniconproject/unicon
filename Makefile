@@ -316,6 +316,9 @@ dist: distclean update_rev
 #	$(SHTOOL) tarball -o $(FV1) -c 'gzip -9' \
 #                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
+publishdist: dist
+	scp ../$(FV1) web.sf.net:/home/project-web/unicon/htdocs/dist/uniconsrc-nightly.tar.gz
+
 udist=unicondist
 deb: dist
 	mkdir -p ../$(udist)

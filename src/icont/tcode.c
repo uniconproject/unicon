@@ -92,9 +92,12 @@ register nodeptr t;
    static struct creatstk *creatsp;
 
    n = 1;
+   /*
+    *      emit an "any" syntax change directive whenever traverse()
+    *      is called recursively. Commented out pending further study.
+    * setloc(t,NULL);
+    */
    switch (TType(t)) {
-
-      setloc(t,NULL); /* -new- */
 
       case N_Activat:			/* co-expression activation */
 	 if (Val0(Tree0(t)) == AUGAT) {

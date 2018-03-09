@@ -1978,10 +1978,20 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 	  * that we are planning for is >filename 2>&1.
 	  */
 	 while ((s = strstr(s, ">")) != NULL) {
-	    if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
-	       s[-1] = '\0';
-	       s++;
-	    errout_target:
+	    /*
+	     * If &> or >& then redirect both stdout and stderr.
+	     */
+	    if (((s - cmdline > 0) && s[-1] == '&') || (s[1]=='&')) {
+
+	       if ((s - cmdline > 0) && s[-1] == '&') { /* &> */
+		  s[-1] = '\0';
+		  s++;
+		  }
+	       else { /* >& */
+		  *s = '\0';
+		  s += 2;
+		  }
+
 	       while (*s == ' ') s++;
 	       StrLoc(d_stdout) = StrLoc(d_stderr) = s;
 	       while (*s) {
@@ -1992,11 +2002,6 @@ function{0,1} system(argv, d_stdin, d_stdout, d_stderr, mode)
 		  s++;
 	          }
 	       StrLen(d_stdout) = StrLen(d_stderr) = strlen(StrLoc(d_stdout));
-	       }
-	    else if (s[1] == '&') { /* >& */
-	       *s = '\0';
-	       s += 2;
-	       goto errout_target;
 	       }
 	    else if ((s - cmdline > 0) && s[-1] == '2') { /* 2> */
 	       s[-1] = '\0';

@@ -4,6 +4,7 @@
 #  configuration parameters
 VERSION=13.1
 name=unspecified
+REPO_REV="$(shell LC_ALL=C svnversion -cn . | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"
 
 SHELL=sh
 SHTOOL=./shtool
@@ -57,7 +58,7 @@ help:
 
 All:	Icont Ilib Ibin
 
-allsrc: Makedefs
+allsrc: Makedefs update_rev
 	$(MAKE) -C src
 
 
@@ -300,10 +301,15 @@ distclean2: clean
 #config.status: $(srcdir)/configure 
 #	$(SHELL) ./config.status --recheck
 
+update_rev:
+	@if test ! -z $(REPO_REV) ; then \
+	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > src/h/revision.h; \
+	fi
+
 VV=13.1.0
 FV1=unicon-$(VV).tar.gz
 FV2=unicon_$(VV).orig.tar.gz
-dist: distclean
+dist: distclean update_rev
 #	$(SHTOOL) fixperm -v *;
 	echo "Building $(FV1)"
 	tar -czf ../$(FV1) --exclude-vcs --exclude-backups ../unicon

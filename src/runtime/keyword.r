@@ -9,6 +9,8 @@
 #include "../h/kdefs.h"
 #undef KDef
 
+#include "../h/revision.h"
+
 "&allocated - the space used in the storage regions:"
 " total, static, string, and block"
 keyword{4} allocated

@@ -2,7 +2,7 @@
 
 include ../../Makedefs
 
-REPO_REV='"$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"'
+REPO_REV="$(shell LC_ALL=C svnversion -cn ../../ | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"
 
 HDRS = ../h/define.h ../h/config.h ../h/typedefs.h ../h/monitor.h\
 	  ../h/proto.h ../h/cstructs.h ../h/cpuconf.h ../h/grttin.h\
@@ -33,7 +33,7 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 
 OBJS=	$(XOBJS)
 
-interp_all: 
+interp_all: update_rev 
 	$(MAKE) iconx
 
 iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
@@ -58,10 +58,10 @@ xfsys.$(O): fsys.r $(HDRS) $(GRAPHICSHDRS)
 
 xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
-xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h
-	$(CMNT)	@echo "   [ICONX RTT] $<  (revision:$(REPO_REV))"
-	$(SLNT)$(RTT) -DREPO_REVISION=$(REPO_REV) -x keyword.r
-	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -DREPO_REVISION=$(REPO_REV) -c xkeyword.c
+xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h ../h/revision.h
+	$(CMNT)	@echo "   [ICONX RTT] $< "
+	$(SLNT)$(RTT) -x keyword.r
+	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
 xrposix.$(O): rposix.r $(HDRS) ../h/posix.h
@@ -92,7 +92,7 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 	rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
 	rposix.r rmsg.r
 
-comp_all comp_all_uniconc:
+comp_all comp_all_uniconc: update_rev
 	$(MAKE) db_lib
 
 db_lib: rt.db rt.a ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
@@ -119,9 +119,14 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
 	cp rt.a rt.db ../common/dlrgint.$(O) ../../bin
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 
-keyword.$(O) : keyword.r $(HDRS) ../h/feature.h
-	$(CMNT)	@echo "   [ICONC RTT] $<  (revision:$(REPO_REV))"
-	$(SLNT)$(RTT) $(DASHS) -DREPO_REVISION=$(REPO_REV) -c -O "$(CFLAGS)" keyword.r
+update_rev:
+	@if test ! -z $(REPO_REV) ; then \
+	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > ../h/revision.h; \
+	fi
+
+keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
+	$(CMNT)	@echo "   [ICONC RTT] $< "
+	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS)" keyword.r
 
 
 %.$(O): %.r $(HDRS)

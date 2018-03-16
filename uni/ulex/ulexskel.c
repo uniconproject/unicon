@@ -4,8 +4,7 @@ void ulexskel(FILE *f)
 {
 fprintf(f, "%s",
    "#\n"
-   "# ulex skeleton by Katrina Ray\n"
-   "# May, 2003\n"
+   "# ulex skeleton by Katrina Ray. hacked by jeffery.\n"
    "# do not edit by hand, this file is machine-generated\n"
    "#\n\n"
 
@@ -97,7 +96,7 @@ fprintf(f, "%s",
    "#\n"
 
    "procedure simulate(myaut, word)\n"
-   "local first, currstates, acceptcheck, currsymbol, build\n"
+   "local first, currstates, acceptcheck, currsymbol, build, rv\n"
 
    "   currstates := list(0)\n"
    "   put(currstates, myaut.start)\n"
@@ -110,15 +109,15 @@ fprintf(f, "%s",
    "      if *currstates = 0 then\n"
    "         return 0\n"
    "      currsymbol := currsymbol[2:*currsymbol+1]\n"
-   "      }\n"
 
-   "   # add states reachable through epsilon transitions\n"
+   "      # add states reachable through epsilon transitions\n"
 
-   "   build := copy(currstates)\n"
-   "   while *build > 0 do {\n"
-   "      current := pop(build)\n"
-   "      currstates |||:= copy(current.epsilon)\n"
-   "      build |||:= copy(current.epsilon)\n"
+   "      build := copy(currstates)\n"
+   "      while *build > 0 do {\n"
+   "         current := pop(build)\n"
+   "         currstates |||:= copy(current.epsilon)\n"
+   "         build |||:= copy(current.epsilon)\n"
+   "         }\n"
    "      }\n\n"
 	
    "   while *acceptcheck > 0 do {\n"
@@ -128,10 +127,14 @@ fprintf(f, "%s",
    "      while *check2 > 0 do {\n"
    "         value2 := pop(check2)\n"
 
-   "         if value1.label = value2.label then\n"
-   "            return value1.rulenum\n"
+   "         if value1.label = value2.label then {\n"
+   "            if /rv | rv > value1.rulenum then\n"
+   "               rv := value1.rulenum\n"
+   "            }\n"
    "         }\n"
    "      }\n"
+   "   if \\yydebug>0 then write(\"simulate() returns \", image(\\rv)|0)\n"
+   "   return \\rv | 0\n"
    "end\n\n");
 
 fprintf(f, "%s",
@@ -150,15 +153,21 @@ fprintf(f, "%s",
    "      # add states reachable through epsilon transitions\n"
    "      buildresult := copy(currstates)\n"
 
-   "        while *buildresult > 0 do {\n"
-   "          current := pop(buildresult)\n"
-   "	  currstates |||:= copy(current.epsilon)\n"
-   "          buildresult |||:= copy(current.epsilon)\n"
-   "          }\n\n"
+   "      while *buildresult > 0 do {\n"
+   "         current := pop(buildresult)\n"
+   "         currstates |||:= copy(current.epsilon)\n"
+   "         buildresult |||:= copy(current.epsilon)\n"
+   "         }\n\n"
 
    "      buildresult := copy(currstates)\n"
    "      while *buildresult > 0 do\n"
    "          result |||:= reach(pop(buildresult), currsymbol)\n"
+   "      buildresult := copy(result)\n"
+   "      while *buildresult > 0 do {\n"
+   "         current := pop(buildresult)\n"
+   "         result |||:= copy(current.epsilon)\n"
+   "         buildresult |||:= copy(current.epsilon)\n"
+   "         }\n"
    "    }\n"
    "    return result\n"
    "end\n\n");
@@ -179,7 +188,8 @@ fprintf(f, "%s",
    "      curredge := pop(edgeset)\n"
    "      edgesymbol := copy(curredge.symbol)\n"
 
-   "      if edgesymbol[1] == symbol[1] ~== \"[\" then\n"
+   "      if (edgesymbol[1] == symbol[1] ~== \"[\") |\n"
+   "         (edgesymbol == symbol == \"[\") then # sometimes a [ is just a [\n"
    "            answer |||:= curredge.destinations\n"
 
    "      else if edgesymbol[1] == \"[\" then {\n\n"
@@ -232,6 +242,41 @@ fprintf(f, "%s",
 
    "   answer |||:= state.dot\n"
    "   return answer\n"
+   "end\n\n");
+
+fprintf(f, "%s",
+   "procedure printautomaton(a)\n"
+   "   write(\"Automaton:\")\n"
+   "   write(\"start: \", image(a.start.label),\n"
+   "         \" for rulenum \", image(a.start.rulenum))\n"
+   "   write(\"states:\")\n"
+   "   every printstate(!a.states)\n"
+   "   writes(\"accepting: \")\n"
+   "   every writes((!a.accepting).label, \" \")\n"
+   "   write()\n"
+   "end\n\n");
+
+fprintf(f, "%s",
+   "procedure printstate(state)\n"
+   "   write(\"state \", state.label, \" is for rule #\", state.rulenum)\n"
+   "   if (*state.edges)>0 then {\n"
+   "      writes(\"\\tedges: \"); every printedge(!state.edges); write()\n"
+   "      }\n"
+   "   if *state.epsilon>0 then {\n"
+   "      writes(\"\\tepsilon: \")\n"
+   "      every writes((!state.epsilon).label, \" \"); write()\n"
+   "      }\n"
+   "   if (*state.dot)>0 then {\n"
+   "      writes(\"\\tdot: \")\n"
+   "      every writes((!state.dot).label, \" \"); write()\n"
+   "      }\n"
+   "end\n\n");
+
+fprintf(f, "%s",
+   "procedure printedge(edge)\n"
+   "   writes(image(edge.symbol), \" -> \")\n"
+   "   every writes((!edge.destinations).label)\n"
+   "   writes(\"; \")\n"
    "end\n\n");
 
 fprintf(f, "%s",

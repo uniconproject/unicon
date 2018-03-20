@@ -1,16 +1,20 @@
 #####################################################################
 #
-# Unicon Profiler v0.6
+# Unicon Profiler v0.7
 # Author: Leah Wegner
-# Maintainer: Clinton Jeffery
-# May 23st, 2011
+# Maintainer: Clinton Jeffery, Gigi Young
+# March 20, 2018
 #
 # Notes:
-#  The granularity of the timing mechanism on Linux is 10 milliseconds.
-#  This causes inaccurate timing results for procedures that typically run
-#  for less than 10 milliseconds. For such procedures, it
-#  might be more beneficial to look only at procedure counts instead
-#  of run-time.
+#  The granularity of the timing mechanism on classic Linux was 10 milliseconds,
+#  and even after improvements to the code, &time uses 1ms units and can't do better.
+#  This causes inaccurate timing results for procedures that typically complete in
+#  0ms, 1ms, or only a few milliseconds. For such procedures, it might be more
+#  beneficial to look only at procedure counts instead of run-time.
+#
+# To Do:
+#  Check and correct profiling for programs with co-expressions
+#  Design and implement higher-resolution timing mechanisms.
 #
 ####################################################################
 
@@ -40,7 +44,6 @@ procedure main(args)
    local Proc_returns := table(0)
    local Proc_suspends := table(0)
    local Proc_resumes := table(0)
-   local Proc_call_list := table(0)
 
    local Proc_time := table(0)
    local Proc_alone_time := table(0)
@@ -84,137 +87,148 @@ procedure main(args)
 	     last_linetime := linetime
 	 }
 
-      #CALL
+         #CALL
          E_Pcall: {
             push(Proc_stack, val)
             push(Call_time_stack, (keyword("&time", Monitored)))
-            Proc_call_list[val] +:= 1
 	    Proc_calls[val] +:= 1
          }
 
-      #FAIL
+         #FAIL
          E_Pfail: {
-            Proc_fails[val] +:= 1
             Current_proc := pop(Proc_stack)
             proc_start_time := pop(Call_time_stack)
-            Proc_call_list[val] -:= 1
-
-            if Proc_call_list[val] = 0 then{
-               proc_end_time := keyword("&time", Monitored)
-               Proc_time[val] +:=  (proc_end_time - proc_start_time)
-
-               if image(Current_proc) ~== "procedure main" then {
-                  Proc_alone_time[(Proc_stack[1])] -:=
-		     (proc_end_time - proc_start_time)
-               }
-            }
-         }
-
-      #RETURN
-      E_Pret: {
-         Current_proc := pop(Proc_stack)
-         Proc_returns[Current_proc] +:= 1
-         proc_start_time := pop(Call_time_stack)
-         Proc_call_list[Current_proc] -:= 1
-
-         if Proc_call_list[Current_proc] = 0 then {
             proc_end_time := keyword("&time", Monitored)
-            Proc_time[Current_proc] +:=  (proc_end_time - proc_start_time)
 
-            if (image(Current_proc) ~== "procedure main") then {
-               Proc_alone_time[(Proc_stack[1])] -:=
-		   (proc_end_time - proc_start_time)
+            Proc_fails[val] +:= 1
+
+            curr_proc_time := proc_end_time - proc_start_time
+            Proc_time[Current_proc] +:= curr_proc_time
+
+            if *Proc_stack > 0 then {
+                # subtract this proc's runtime from next proc on stack 
+                Proc_time[Proc_stack[1]] -:= curr_proc_time 
             }
          }
-      }
 
-      #SUSPEND
-      E_Psusp: {
-         Current_proc := pop(Proc_stack)
-         Proc_suspends[Current_proc] +:= 1
-         proc_start_time := pop(Call_time_stack)
-         Proc_call_list[Current_proc] -:= 1
-
-         if Proc_call_list[val] = 0 then {
+         #RETURN
+         E_Pret: {
+            Current_proc := pop(Proc_stack)
+            proc_start_time := pop(Call_time_stack)
             proc_end_time := keyword("&time", Monitored)
-            Proc_time[Current_proc] +:=  (proc_end_time - proc_start_time)
 
-            if (image(Current_proc) ~== "procedure main") then {
-               Proc_alone_time[(Proc_stack[1])] -:=
-		  (proc_end_time - proc_start_time)
+            Proc_returns[Current_proc] +:= 1
+
+            curr_proc_time := proc_end_time - proc_start_time
+            Proc_time[Current_proc] +:= curr_proc_time
+
+            if *Proc_stack > 0 then {
+                # subtract this proc's runtime from next proc on stack 
+                Proc_time[Proc_stack[1]] -:= curr_proc_time
             }
          }
-      }
 
-      #RESUME
-      E_Presum: {
-         push(Proc_stack, val)
-         Proc_resumes[val] +:= 1
-         Proc_call_list[val] +:= 1
+         #SUSPEND
+         E_Psusp: {
+            Current_proc := pop(Proc_stack)
+            proc_start_time := pop(Call_time_stack)
+            proc_end_time := keyword("&time", Monitored)
 
-         push(Call_time_stack, (keyword("&time", Monitored)))
-      }
-   }
-   }
+            Proc_suspends[Current_proc] +:= 1
 
-if *Proc_stack > 0 then {
-    write(output, "Execution left ", *Proc_stack, " frames.")
-    while *Proc_stack > 0 do {
-	Current_proc := pop(Proc_stack)
-	proc_start_time := pop(Call_time_stack)
-	Proc_fails[Current_proc] +:= 1
-	Proc_call_list[Current_proc] -:= 1
-	if Proc_call_list[Current_proc] = 0 then {
-	    proc_end_time := keyword("&time", Monitored)
-	    Proc_time[Current_proc] +:= proc_end_time - proc_start_time
-	    if image(Current_proc) ~== "procedure main" then {
-		Proc_alone_time[Proc_stack[1]] -:=
-		    proc_end_time - proc_start_time
-	    }
-	}
-    }
-}
+            curr_proc_time := proc_end_time - proc_start_time
+            Proc_time[Current_proc] +:= curr_proc_time
 
-   #creates the proc alone table, and sets top to main
-   every y := key(Proc_time) do {
-      Proc_alone_time[y] +:= Proc_time[y]
-      if image(y) == "procedure main" then {
-	  top := y
+            if *Proc_stack > 0 then {
+                # subtract this proc's runtime from next proc on stack 
+                Proc_time[Proc_stack[1]] -:= curr_proc_time
+            }
+
+         }
+
+         #RESUME
+         E_Presum: {
+            push(Proc_stack, val)
+            Proc_resumes[val] +:= 1
+
+            push(Call_time_stack, (keyword("&time", Monitored)))
+         }
       }
    }
+
+   if *Proc_stack > 0 then {
+      write(output, "Execution left ", *Proc_stack, " frames.")
+      while *Proc_stack >= 0 do {
+         Current_proc := pop(Proc_stack)
+         proc_start_time := pop(Call_time_stack)
+         Proc_fails[Current_proc] +:= 1
+
+         proc_end_time := keyword("&time", Monitored)
+
+         curr_proc_time := proc_end_time - proc_start_time
+         Proc_time[Current_proc] +:= curr_proc_time 
+         if *Proc_stack > 0 then {
+             # subtract this proc's runtime from next proc on stack 
+             Proc_time[Proc_stack[1]] -:= curr_proc_time 
+         }
+
+      }
+   }
+
+   # calculate total time
+   total := 0
+   every y := key(Proc_time) do total +:= Proc_time[y]
 
    #sort the output
    keys := list()
    every y := key(Proc_time) do {
-       if not member(Proc_time,top) then write("not a member...")
-      x := lkey(y, divimage(Proc_alone_time[y]*100,Proc_time[top]))
+      x := lkey(y, divimage(Proc_time[y]*100,total))
       push(keys, x)
       }
    keys := reverse(sortf(keys, 2))
 
-   mxname := 12
+   mxname := 15
    every mxname <:= *image((!keys).keyval)[10:0]
 
    #output
    write(output)
-   write(output, left("PROCEDURE",mxname-2), left("%TIME", 7), left("TOTAL", 8),
-	 left("TIME ALONE", 12), left("CALLS", 8), left("RETS", 6),
-	 left("FAILS", 6), left("SUSP", 5), left("RESUM",6), "TIME/CALL")
+
+   write(output, 
+         left("PROCEDURE",mxname), 
+         right("%TIME", 6), 
+	 right("TIME", 10), 
+         right("CALLS", 12), 
+         right("RETS", 12),
+	 right("FAILS", 10), 
+         right("SUSP", 10), 
+         right("RESUM",10), 
+         right("TIME/CALL", 12))
+   write(output, 
+         right("",mxname), 
+         right("", 6), 
+	 right("(ms)", 10), 
+         right("", 12), 
+         right("", 12),
+	 right("", 10), 
+         right("", 10), 
+         right("",10), 
+         right("(ms)", 12))
 
    every y := (!keys).keyval do {
-      writes(output,
-	     left((image(y))[10:0], mxname),
-	     left(divimage(Proc_alone_time[y]*100,Proc_time[top]), 6),
-	     left(Proc_time[y], 8),
-	     left(Proc_alone_time[y], 12),
-	     left(Proc_calls[y], 8), left(Proc_returns[y], 6),
-	     left(Proc_fails[y], 6), left(Proc_suspends[y], 6),
-	     left(Proc_resumes[y],6))
       write(output,
-	    printf("%.3r",
-		   divimage(Proc_alone_time[y],
-		       real(Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))))
+	     left((image(y))[10:0], mxname),
+	     right(divimage(Proc_time[y]*100,total), 6),
+	     right(Proc_time[y], 10),
+	     right(Proc_calls[y], 12), 
+             right(Proc_returns[y], 12),
+	     right(Proc_fails[y], 10), 
+             right(Proc_suspends[y], 10),
+	     right(Proc_resumes[y],10),
+             right(sprintf("%.3r",divimage(Proc_time[y],
+		   real(Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))),12))
    }
+
+   write("\nTOTAL RUNTIME: ",sprintf("%.3r",real(total)*0.001),"s\n")
 
    if \lines then {
        write(output)
@@ -233,7 +247,6 @@ if *Proc_stack > 0 then {
 		       divimage(le[2], real(line_count[le[1]]))))
        }
    }
-
 
 end
 

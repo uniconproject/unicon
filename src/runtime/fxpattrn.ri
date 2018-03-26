@@ -259,7 +259,9 @@ struct b_list *ResolveList(struct b_list *lp)
  */
 static struct b_pelem * ResolveReferences(struct b_pelem * P )
 {
-   if (P == NULL) {
+   tended struct b_pelem *tP;
+   tP = P;
+   if (tP == NULL) {
       ReturnErrNum(163, NULL);
       }
    else {
@@ -276,7 +278,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
       Refs = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
       Copy = (struct b_pelem **)alloc(RefLen * sizeof(struct b_pelem *));
 
-      Record_PE(P, Refs);
+      Record_PE(tP, Refs);
 
       /*
        * Now copy all nodes
@@ -375,7 +377,7 @@ static struct b_pelem * ResolveReferences(struct b_pelem * P )
 	    }
 	 }
       }
-   E =  Copy[P->index];
+   E =  Copy[tP->index];
    free(Refs);
    free(Copy);
    return E;
@@ -492,16 +494,27 @@ struct b_pelem * Concat (struct b_pelem * L, struct b_pelem *R, int Incr )
 
 struct b_pelem * ResolvePattern(struct b_pattern *pat)
 {
-   struct descrip key;
+   struct descrip key; /* not tended because its always an int */
+   tended struct b_pattern *tpat;
    tended struct descrip val;    
    int res;
    uword hn;
-   struct b_telem *te;
+   struct b_telem *te; /* not tended because no gc between def and uses */
    tended struct b_pelem *phead;
-   union block **pd;
+   union block **pd;   /* not tended because no gc between def and uses */
 
+   tpat = pat;
+
+if (tpat->title != T_Pattern) {
+   fprintf(stderr, "bad pattern at start of Resolve: %d\n", tpat->title);
+   fflush(stderr);
+   }
+   else {
+   fprintf(stderr, "good pattern at sor\n");
+   fflush(stderr);
+      }
    key.dword = D_Integer;
-   IntVal(key) = pat->id;
+   IntVal(key) = tpat->id;
    hn = hash(&key);
    if (pfp->pattern_cache == NULL) {
       pfp->pattern_cache =  (struct b_table *)hmake(T_Table, (word)0,(word)0);
@@ -519,7 +532,7 @@ struct b_pelem * ResolvePattern(struct b_pattern *pat)
 	 }
       }
    /* if it is not in table, first resolve references */
-   if ((phead = ResolveReferences(&(pat->pe->Pelem))) == NULL) return NULL;
+   if ((phead = ResolveReferences(&(tpat->pe->Pelem))) == NULL) return NULL;
    val.dword = D_Pelem;
    BlkLoc(val) = (union block *)phead;
    /* get table element now because can't tend pb */

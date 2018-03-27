@@ -3,14 +3,14 @@
 # Unicon Profiler v0.7
 # Author: Leah Wegner
 # Maintainer: Clinton Jeffery, Gigi Young
-# March 20, 2018
+# March 26, 2018
 #
 # Notes:
-#  The granularity of the timing mechanism on classic Linux was 10 milliseconds,
-#  and even after improvements to the code, &time uses 1ms units and can't do better.
-#  This causes inaccurate timing results for procedures that typically complete in
-#  0ms, 1ms, or only a few milliseconds. For such procedures, it might be more
-#  beneficial to look only at procedure counts instead of run-time.
+#  The granularity of the timing mechanism on classic Linux was 10 milliseconds.
+#  Even after improvements to the code, &time uses 1ms units and can't do better.
+#  This causes inaccurate timing results for procedures that typically complete
+#  in 0ms, 1ms, or only a few milliseconds. For such procedures, it might
+#  be more beneficial to look only at procedure counts instead of run-time.
 #
 # To Do:
 #  Check and correct profiling for programs with co-expressions
@@ -26,6 +26,17 @@ link options
 link printf
 $include "evdefs.icn"
 
+# Column widths for output formatting
+$define PROC_WIDTH	12	# PROCEDURE
+$define PTIME_WIDTH	5	# %TIME
+$define TIME_WIDTH	7	# TIME
+$define CTIME_WIDTH	10	# TIME/CALL
+$define CALL_WIDTH	10	# CALLS	
+$define RET_WIDTH	10	# RETURNS
+$define SUSP_WIDTH	10	# SUSPENDS
+$define RESUM_WIDTH	10	# RESUMES
+$define FAIL_WIDTH	6	# FAILS
+
 global Proc_stack
 global Call_time_stack
 global keys
@@ -35,9 +46,9 @@ record lkey(keyval, timeval)
 procedure main(args)
    #Declarations
    local opts
-   local output
    local symmap
    local val
+   local outfile, output
 
    local Proc_calls := table(0)
    local Proc_fails := table(0)
@@ -55,14 +66,22 @@ procedure main(args)
    local longest_filename_length := 0
    
    if (*args=0) | (args[1] == ("--help"|"-help")) then
-       stop("usage: uprof [-l] uniconprogram args\n",
-	    "  (the -l option enables line-level time sampling)")
-
-   if args[1] == "-o" then { pop(args); output := pop(args) }
-   else if match("-o", args[1]) then output := pop(args)[3:0]
-   else output := &errout
+       stop("Usage: uprof [-l] [-o outfile] prog args\n",
+	    "\n",
+	    "  -l \t\tEnables line-level time sampling\n",
+	    "  -o outfile \tWwrites output to file 'outfile'\n")
 
    if args[1] == "-l" then { pop(args); lines := 1; mask ++:= E_Line }
+
+   if args[1] == "-o" then { 
+      pop(args)
+      output := pop(args) | stop("no output file specified for -o option")
+      if *args = 0 then
+        stop("*** cannot open program to monitor")
+
+      # create a new file in write mode
+      outfile := open(output, "c") | stop("could not open ",outfile)
+   }
 
    #initializations
    symmap := evsyms()
@@ -157,8 +176,8 @@ procedure main(args)
    }
 
    if *Proc_stack > 0 then {
-      write(output, "Execution left ", *Proc_stack, " frames.")
-      while *Proc_stack >= 0 do {
+      write("Execution left ", *Proc_stack, " frames.")
+      while *Proc_stack > 0 do {
          Current_proc := pop(Proc_stack)
          proc_start_time := pop(Call_time_stack)
          Proc_fails[Current_proc] +:= 1
@@ -171,7 +190,6 @@ procedure main(args)
              # subtract this proc's runtime from next proc on stack 
              Proc_time[Proc_stack[1]] -:= curr_proc_time 
          }
-
       }
    }
 
@@ -187,65 +205,124 @@ procedure main(args)
       }
    keys := reverse(sortf(keys, 2))
 
-   mxname := 15
-   every mxname <:= *image((!keys).keyval)[10:0]
+   #mxname := 15
+   #every mxname <:= *image((!keys).keyval)[10:0]
 
-   #output
-   write(output)
+   if \outfile then {
+      write(outfile, left("PROCEDURE",PROC_WIDTH), 
+            right("%TIME", PTIME_WIDTH), 
+            right("TIME", TIME_WIDTH), 
+            right("TIME/CALL", CTIME_WIDTH),
+            right("CALLS", CALL_WIDTH), 
+            right("RETURNS", RET_WIDTH),
+            right("SUSPENDS", SUSP_WIDTH), 
+            right("RESUMES",RESUM_WIDTH), 
+            right("FAILS", FAIL_WIDTH) 
+           )
+      write(outfile, left("",PROC_WIDTH), 
+            right("", PTIME_WIDTH), 
+            right("(ms)", TIME_WIDTH), 
+            right("(ms)", CTIME_WIDTH),
+            right("", CALL_WIDTH), 
+            right("", RET_WIDTH),
+            right("", SUSP_WIDTH), 
+            right("",RESUM_WIDTH), 
+            right("", FAIL_WIDTH)
+           )
+       write(outfile)
 
-   write(output, 
-         left("PROCEDURE",mxname), 
-         right("%TIME", 6), 
-	 right("TIME", 10), 
-         right("CALLS", 12), 
-         right("RETS", 12),
-	 right("FAILS", 10), 
-         right("SUSP", 10), 
-         right("RESUM",10), 
-         right("TIME/CALL", 12))
-   write(output, 
-         right("",mxname), 
-         right("", 6), 
-	 right("(ms)", 10), 
-         right("", 12), 
-         right("", 12),
-	 right("", 10), 
-         right("", 10), 
-         right("",10), 
-         right("(ms)", 12))
+       every y := (!keys).keyval do {
+         write(outfile, left((image(y))[10:0], PROC_WIDTH),
+               right(divimage(Proc_time[y]*100,total), PTIME_WIDTH),
+               right(Proc_time[y], TIME_WIDTH),
+               right(sprintf("%.3r",
+                          divimage(Proc_time[y],real(
+                          Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))
+                         ),
+                     CTIME_WIDTH),
+               right(Proc_calls[y], CALL_WIDTH), 
+               right(Proc_returns[y], RET_WIDTH),
+               right(Proc_suspends[y], SUSP_WIDTH),
+	       right(Proc_resumes[y], RESUM_WIDTH),
+	       right(Proc_fails[y], FAIL_WIDTH)
+              )
+      }
 
-   every y := (!keys).keyval do {
-      write(output,
-	     left((image(y))[10:0], mxname),
-	     right(divimage(Proc_time[y]*100,total), 6),
-	     right(Proc_time[y], 10),
-	     right(Proc_calls[y], 12), 
-             right(Proc_returns[y], 12),
-	     right(Proc_fails[y], 10), 
-             right(Proc_suspends[y], 10),
-	     right(Proc_resumes[y],10),
-             right(sprintf("%.3r",divimage(Proc_time[y],
-		   real(Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))),12))
+      write(outfile, "\nTOTAL RUNTIME: ",sprintf("%.3r",real(total)*0.001),"s\n")
+
+      if \lines then {
+         write(outfile, sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
+	       "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
+         write(outfile, sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
+	       "    ", "    ", "(ms)", "COUNT", "  (ms) "))
+         L := reverse(sort(line_time,2))
+         every le := !L do {
+            write(outfile, sprintf("%"||(longest_filename_length+1)||"s %8d %8d %8d   %.3r",
+	          le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
+                  le[2], line_count[le[1]],
+                  divimage(le[2], real(line_count[le[1]]))))
+         }
+      }
+      close(outfile)
    }
 
-   write("\nTOTAL RUNTIME: ",sprintf("%.3r",real(total)*0.001),"s\n")
+   # print to stdout
+   else {
 
-   if \lines then {
-       write(output)
-       write(output,
-	     printf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
-		    "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
-       write(output,
-	     printf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
-		    "    ", "    ", "(ms)", "COUNT", "  (ms) "))
-       L := reverse(sort(line_time,2))
-       every le := !L do {
-	  write(output,
-		printf("%"||(longest_filename_length+1)||"s %8d %8d %8d   %.3r",
-		       le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
-		       le[2], line_count[le[1]],
-		       divimage(le[2], real(line_count[le[1]]))))
-       }
+      write(left("PROCEDURE",PROC_WIDTH), 
+            right("%TIME", PTIME_WIDTH), 
+            right("TIME", TIME_WIDTH), 
+            right("TIME/CALL", CTIME_WIDTH),
+            right("CALLS", CALL_WIDTH), 
+            right("RETURNS", RET_WIDTH),
+            right("SUSPENDS", SUSP_WIDTH), 
+            right("RESUMES",RESUM_WIDTH), 
+            right("FAILS", FAIL_WIDTH) 
+           )
+      write(left("",PROC_WIDTH), 
+            right("", PTIME_WIDTH), 
+            right("(ms)", TIME_WIDTH), 
+            right("(ms)", CTIME_WIDTH),
+            right("", CALL_WIDTH), 
+            right("", RET_WIDTH),
+            right("", SUSP_WIDTH), 
+            right("",RESUM_WIDTH), 
+            right("", FAIL_WIDTH)
+           )
+       write()
+
+       every y := (!keys).keyval do {
+         write(left((image(y))[10:0], PROC_WIDTH),
+               right(divimage(Proc_time[y]*100,total), PTIME_WIDTH),
+               right(Proc_time[y], TIME_WIDTH),
+               right(sprintf("%.3r",
+                          divimage(Proc_time[y],real(
+                          Proc_fails[y]+Proc_returns[y]+Proc_suspends[y]))
+                         ),
+                     CTIME_WIDTH),
+               right(Proc_calls[y], CALL_WIDTH), 
+               right(Proc_returns[y], RET_WIDTH),
+               right(Proc_suspends[y], SUSP_WIDTH),
+	       right(Proc_resumes[y], RESUM_WIDTH),
+	       right(Proc_fails[y], FAIL_WIDTH)
+              )
+      }
+
+      write("\nTOTAL RUNTIME: ",sprintf("%.3r",real(total)*0.001),"s\n")
+
+      if \lines then {
+         write(sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
+	       "FILE", "LINE", "TIME", "LINE ", "TIME/LN"))
+         write(sprintf("%"||(longest_filename_length+1)||"s %8s %8s %8s %8s",
+	       "    ", "    ", "(ms)", "COUNT", "  (ms) "))
+         L := reverse(sort(line_time,2))
+         every le := !L do {
+            write(sprintf("%"||(longest_filename_length+1)||"s %8d %8d %8d   %.3r",
+	          le[1][1:find(":",le[1])], le[1][find(":",le[1])+1:0],
+	          le[2], line_count[le[1]],
+	          divimage(le[2], real(line_count[le[1]]))))
+         }
+      }
    }
 
 end

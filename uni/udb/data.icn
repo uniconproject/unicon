@@ -712,14 +712,14 @@ end
 # needs to break it down further.
 #
 method parsePrintExpression(expr)
-    local i := 1, j, x, tokens := []
+   local i := 1, j, x, tokens := []
 
     while i <= *expr do {
        x := expr[i]
 
        # first, split multi-token tokens
        x ? {
-	  if (s := tab(many(&letters++&digits))) & (*s < *x) then {
+	  if (s := tab(many(&letters++&digits++'_'))) & (*s < *x) then {
 	     insert(expr,i+1,x[*s+1:0])
 	     x := expr[i] := s
 	     }

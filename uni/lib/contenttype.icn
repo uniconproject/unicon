@@ -9,21 +9,7 @@ import util
 #
 # This class represents a content type
 #
-class ContentType:Error(type, subtype, parameters)
-   #
-   # Set type type
-   #
-   method set_type(t)
-      self.type := t
-   end
-
-   #
-   # Get the type
-   #
-   method get_type()
-      return type
-   end
-
+class ContentType:ContentDisposition(subtype)
    #
    # Set subtype subtype
    #
@@ -38,39 +24,6 @@ class ContentType:Error(type, subtype, parameters)
       return subtype
    end
 
-   #
-   # Get the parameter for the given key.  If the parameter is quoted, then
-   # the quotes are removed.
-   #
-   # @param key the key
-   method get_unquoted_parameter(key)
-      local s
-      parameters.member(key) | fail
-      s := parameters.get(key)
-      if any('\"', s) then
-	 return s[2:-1]
-      else
-	 return s
-   end
-
-   #
-   # Get the parameter for the given key.
-   #
-   # @param key the key
-   method get_unqouted_parameter(key)
-      if parameters.member(key) then
-	 return parameters.get(key)
-   end
-
-
-   #
-   #
-   # Set the parameter to the given value
-   # @param key the key
-   # @param value the value
-   method set_parameter(key, value)
-      parameters.insert(key, value)
-   end
 
    method parse(s)
       local p := mail::RFC822Parser()
@@ -78,11 +31,11 @@ class ContentType:Error(type, subtype, parameters)
    end   
 
    method to_rfc1521()
-      local e, s := type || "/" || subtype
-      every e := !parameters.sort() do
-	 s ||:= " ; " || e[1] || "=" || e[2]
-      return s
+      return type || "/" || subtype || rfc1521_parameters()
    end
+
+   # can inherit initially() from superclass once initially-w-parameters 
+   # inheritance bug is fixed, i.e. not yet.
 
    initially(a[])
       parameters := ClTable()

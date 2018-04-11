@@ -57,17 +57,19 @@ class ContentDisposition:Error(type, parameters)
    end
 
    method parse(s)
-      local p
-      p := mail::RFC822Parser()
+      local p := mail::RFC822Parser()
       return p.parse_content_disposition(s, self) | error(p)
    end   
 
-   method to_rfc1521()
-      local s, e
-      s := type
+   method rfc1521_parameters()
+      local e, s := ""
       every e := !parameters.sort() do
 	 s ||:= " ; " || e[1] || "=" || e[2]
       return s
+   end
+
+   method to_rfc1521()
+      return type || rfc1521_parameters()
    end
 
    initially(a[])

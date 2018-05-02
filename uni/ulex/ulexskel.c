@@ -87,8 +87,8 @@ fprintf(f, "%s",
 
 fprintf(f, "%s",
    "#\n"
-   "# simulate(automata, word) determines whether or not the \n"
-   "# word would be accepted by the given automata. It gets the possible\n"
+   "# simulate(automata, word) determines whether or not the word\n"
+   "# would be accepted by the given automata. It gets the possible\n"
    "# destinations at each symbol of the string and then adds on wherever it\n"
    "# could also get if we use any epsilon transitions out of those states.\n"
    "# Then the list of accepting states is compared to the reachable set\n"
@@ -98,8 +98,8 @@ fprintf(f, "%s",
    "procedure simulate(myaut, word)\n"
    "local first, currstates, acceptcheck, currsymbol, build, rv\n"
 
-   "   currstates := list(0)\n"
-   "   put(currstates, myaut.start)\n"
+   "   currstates := list(0) # should be set()\n"
+   "   put(currstates, myaut.start) # insert(currstates, myaut.start)\n"
 
    "   acceptcheck := copy(myaut.accepting)\n"
    "   currsymbol := word\n"
@@ -108,7 +108,7 @@ fprintf(f, "%s",
    "      currstates := getdestinations(currstates, currsymbol)\n"
    "      if *currstates = 0 then\n"
    "         return 0\n"
-   "      currsymbol := currsymbol[2:*currsymbol+1]\n"
+   "      currsymbol := currsymbol[2:0]\n"
 
    "      # add states reachable through epsilon transitions\n"
 
@@ -202,10 +202,10 @@ fprintf(f, "%s",
    "	  else {\n"
 
    "         while edgesymbol[1] ~== \"]\" do {\n"
-   "            edgesymbol := edgesymbol[2:*edgesymbol+1]\n\n"
+   "            edgesymbol := edgesymbol[2:0]\n\n"
 
    "            if edgesymbol[1] == \"\\\\\" then {\n"
-   "               edgesymbol := edgesymbol[2:*edgesymbol+1]\n"
+   "               edgesymbol := edgesymbol[2:0]\n"
 
    "               if (edgesymbol[1] == \"n\") & (symbol[1] == \"\\n\") then\n"
    "                  answer |||:= curredge.destinations\n"
@@ -217,7 +217,7 @@ fprintf(f, "%s",
 
    "            else if edgesymbol[2] == \"-\" then {\n"
    "               bound1 := edgesymbol[1]\n"
-   "               edgesymbol := edgesymbol[3:*edgesymbol+1]\n"
+   "               edgesymbol := edgesymbol[3:0]\n"
    "               bound2 := edgesymbol[1]\n"
 
    "               if ord(bound1) <= ord(symbol[1]) <= ord(bound2) then\n"

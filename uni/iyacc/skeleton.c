@@ -577,6 +577,8 @@ char *ibody[] =
     "",
     "",
 */
+    "$define YYACCEPT return 0",
+    "$define YYABORT return 1",
     "################################################################",
     "# procedure: yyparse : parse input and execute indicated items",
     "################################################################",
@@ -712,7 +714,7 @@ char *ibody[] =
     "           yyn, \" (\", yyrule[yyn+1], \")\") ",
 */
     "    yyval := valstk[yym]   # get current semantic value",
-	"    action[yyn]()          # execute the semantic action",
+    "    if arv := action[yyn]() then return arv # execute the semantic action",
 	"",
 /*    "    case yyn of {",
     "########### USER-SUPPLIED ACTIONS ##########", 

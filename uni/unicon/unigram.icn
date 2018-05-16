@@ -2664,7 +2664,7 @@ procedure FieldRef(lhs, dot, rhs)
       return node("Paren", "(",
          node("assign", "__" || tmpcount, " := ", lhs, ")", "& "),
          node("invoke", Field("__" || tmpcount, ".", rhs))
-         );
+         )
       }
    return Field(lhs, dot, rhs)
 end
@@ -2888,6 +2888,8 @@ end
 #
 record ParseError ( lineNumber, errorMessage )
 #line 2894 "unigram.icn"
+$define YYACCEPT return 0
+$define YYABORT return 1
 ################################################################
 # procedure: yyparse : parse input and execute indicated items
 ################################################################
@@ -2898,6 +2900,7 @@ procedure yyparse()
   local yys        # current token string
   local doaction   # set to 1 if there need to execute action
   local token      # current token
+  local arv        # action return value (0=accept; 1=abort; else fail)
 
   if /yytable then init() 
   init_stacks() 
@@ -2920,7 +2923,7 @@ procedure yyparse()
         ##### ERROR CHECK ####
         if yychar < 0 then { # it it didn't work/error
           yychar := 0        # change it to default string (no -1!)
-          if yydebug = 1 then yylexdebug(yystate, yychar) 
+          if \yydebug = 1 then yylexdebug(yystate, yychar) 
           }
         } # yychar < 0
 	  
@@ -2983,7 +2986,7 @@ procedure yyparse()
       else  # discard this token
         {
         if yychar = 0 then return 1  # yyabort
-        if yydebug = 1 then {
+        if \yydebug = 1 then {
           yys := &null 
           if yychar <= YYMAXTOKEN then yys := yyname[yychar+1] 
           if integer(yys) & yys = 0 then yys := "illegal-symbol" 
@@ -3001,7 +3004,7 @@ procedure yyparse()
 
     yym := yylen[yyn+1]    # get count of terminals on rhs
     yyval := valstk[yym]   # get current semantic value
-    action[yyn]()          # execute the semantic action
+    if arv := action[yyn]() then return arv # execute the semantic action
 
     ##### Now let's reduce... ####
     every 1 to yym do pop(statestk)# we just reduced yylen states
@@ -3482,7 +3485,7 @@ end
 procedure action_101()
 #line 529 "unigram.y"
 
-          yyval := parenthesize_assign(node("assign",valstk[3],valstk[2],valstk[1]));
+          yyval := parenthesize_assign(node("assign",valstk[3],valstk[2],valstk[1]))
           
 end
 
@@ -3663,7 +3666,7 @@ end
 
 procedure action_140()
 #line 573 "unigram.y"
-yyval := node(BAR, valstk[3],valstk[2],valstk[1]) 
+ yyval := node(BAR, valstk[3],valstk[2],valstk[1]) 
 end
 
 procedure action_142()
@@ -4059,7 +4062,7 @@ procedure action_233()
 
 	      yyval := SimpleInvocation(fakeThreadIdent,fakeLParen,
 				     node("create", fakeCreate, valstk[1]),
-				     fakeRParen);
+				     fakeRParen)
 	      
 end
 
@@ -4121,7 +4124,7 @@ end
 procedure action_246()
 #line 705 "unigram.y"
 
-           yyval := SimpleInvocation(valstk[4],valstk[3],valstk[2],valstk[1]);
+           yyval := SimpleInvocation(valstk[4],valstk[3],valstk[2],valstk[1])
       
 end
 
@@ -4156,7 +4159,7 @@ end
 procedure action_251()
 #line 720 "unigram.y"
 
-           yyval := FieldRef(valstk[3],valstk[2],valstk[1]);
+           yyval := FieldRef(valstk[3],valstk[2],valstk[1])
       
 end
 
@@ -4178,7 +4181,7 @@ end
 procedure action_256()
 #line 728 "unigram.y"
 
-	    yyval := node("While0", valstk[2],valstk[1]);
+	    yyval := node("While0", valstk[2],valstk[1])
 	    
 end
 
@@ -4202,7 +4205,7 @@ procedure action_257()
 			valstk[4].line, valstk[4].filename, valstk[4].s
 			)
 	       }
-	    yyval := node("While1", valstk[4],valstk[3],valstk[2],valstk[1]);
+	    yyval := node("While1", valstk[4],valstk[3],valstk[2],valstk[1])
 	    
 end
 
@@ -4467,4 +4470,4 @@ procedure action_323()
  yyval := node("error") 
 end
 
-#line 4474 "unigram.icn"
+#line 4477 "unigram.icn"

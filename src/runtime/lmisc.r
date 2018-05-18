@@ -127,6 +127,9 @@ register dptr cargp;
     */
    Arg0.dword = D_Coexpr;
    BlkLoc(Arg0) = (union block *) sblkp;
+
+   EVValD( &Arg0, E_CoCreate );
+
    Return;
 #endif					/* COMPILER */
 #else					/* CoExpr */

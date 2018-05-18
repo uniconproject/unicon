@@ -119,6 +119,13 @@
 #define E_Slots 0
 #endif
 
+#if defined(EventMon) || defined(E_CoCreate)
+#undef E_CoCreate
+#define E_CoCreate	'\177'		/* Co-expression creation */
+#else
+#define E_CoCreate 0
+#endif
+
 #if defined(EventMon) || defined(E_Coexpr)
 #undef E_Coexpr
 #define E_Coexpr	'\170'		/* Co-expression allocation */
@@ -1098,7 +1105,7 @@
 140	142		146		96
 
         162	    165 166
-                            177
+                            
 -------------------------------			blank line for readability
 200 201 202 203 204 205 206 207		128	SPECIAL SECTION. From 128-191
 210 211 212 213 214 215 216 217			RESERVED FOR interp() stuff.

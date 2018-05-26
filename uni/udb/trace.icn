@@ -326,6 +326,13 @@ end
 method printTraceInfo(cmd)
    local name, id, tb
 
+   # cmd = ["trace"]
+   if /cmd then {
+      msg := "\n   Type \"help trace\" for assistance"
+      DState.Write(msg)
+      fail
+   }
+
    if *traceBehavior = 0 then {
       msg :="\n   No tracepoints are available."
       DState.Write(msg)

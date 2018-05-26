@@ -966,11 +966,13 @@ end
 method cmdSource(cmd)
    local op, names
 
-   # src fname
-   if cmd[3] then {
-      Message := DState.srcFile.getSrcCode(cmd[3])
-      DState.Write(Message)
-      return
+   # invalid syntax 
+   if *cmd > 2 then {  
+      msg := "\n   Undefined command:"
+      while msg ||:= " " || pop(cmd)
+      msg ||:= "\n   Type \"help src\" for assistance."
+      DState.Write(msg)
+      fail
       }
 
    op := cmd[2] | ""
@@ -1053,13 +1055,26 @@ method cmdSource(cmd)
           else
             DState.Write("\n   No global records used.")
           }
-      # a detailed summery with some statistics about the binary
+      # a detailed summary with some statistics about the binary
       "-a"|"-all":{
           printSrcSummary(1)
           }
-      # a short summery about the binary
+      # a short summary about the binary
       default:{
-          printSrcSummary()
+          # src
+          if *cmd = 1 then printSrcSummary()
+          # src file
+          else if *cmd = 2 then {
+             if msg := DState.srcFile.getSrcCode(cmd[2] | cmd[2]||".icn") then
+                DState.Write(msg)
+             }
+          # syntax error
+          else { 
+             msg := "\n   Undefined command:"
+             while msg ||:= " " || pop(cmd)
+             msg ||:= "\n   Type \"help src\" for assistance."
+             DState.Write(msg)
+             }
           }
       }
 end

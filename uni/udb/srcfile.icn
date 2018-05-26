@@ -389,12 +389,14 @@ method getSrcCode(fname)
 
    if /fname then fname := keyword("file", Monitored)
 
-   b := srcIndex[fname].fbegin
-   e := srcIndex[fname].fend
-   every i:= b  to e do
-      code ||:= srcText[i]||"\n"
+   if \srcIndex[fname] then {
+      b := srcIndex[fname].fbegin
+      e := srcIndex[fname].fend
+      every i:= b  to e do
+         code ||:= i||"\t"||srcText[i]||"\n"
 
-   return code
+      return code
+      }
 end
 
 #
@@ -598,7 +600,7 @@ initially()
    libFiles    := set()
 
    srcText     := []
-   srcIndex    := table(0)
+   srcIndex    := table()
    foundFiles  := set()
    missingFiles:= []
 

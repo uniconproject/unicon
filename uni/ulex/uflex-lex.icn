@@ -47,7 +47,7 @@ repeat {
          # any thing but ] or \ is a regular cset member
          if yytext ||:= tab(any(&cset -- ']\\')) then { }
          # generalize to handle all escapes legal in flex:
-         else if yytext ||:= (="\\" || tab(any('tn]\\'))) then { }
+         else if yytext ||:= (="\\" || tab(any('tn]\\\"'))) then { }
          else {
             fprintf(&errout,
 		    "%s:%d: broken cset regex '%s', next  chars '%s'\n",
@@ -65,7 +65,7 @@ repeat {
          # any thing but " or \ is a regular string character
          if yytext ||:= tab(any(&cset -- '"\\')) then { }
          # generalize to handle all escapes legal in flex:
-         else if yytext ||:= (="\\" || tab(any('tn'))) then { }
+         else if yytext ||:= (="\\" || tab(any('tn\"\\'))) then { }
          else {
             fprintf(&errout, "%s:%d: lexical error, broken string %s\n",
 		    yyfilename, yylineno, yytext)

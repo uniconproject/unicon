@@ -421,7 +421,7 @@ struct automata* convert(struct tree* tr)
 	tempstring++;
 
 	while (*tempstring != 34) {
-	    getsinglechar = (char *) alc(sizeof(char)+1, "convert");
+	    getsinglechar = (char *) alc(sizeof(char)*2, "convert");
 	    getsinglechar[0] = *tempstring;
 	    getsinglechar[1] = '\0';
 	    newnode2 = alcanode(0);

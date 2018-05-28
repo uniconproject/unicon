@@ -1,0 +1,175 @@
+# uflex main module
+# from a main.c written by Katie Ray
+
+link printf
+
+global yyfilename, outfilename, outfile
+
+procedure main(argv)
+   local ppcmdline, len
+   local i, nextchar, nextchar2, arg := 1, pp := 1
+   rulenumber := 1
+   whiteflag := 0
+   outfilename := "lex.yy.icn"
+
+   if argv[arg] == "-nopp" then {
+      pp := 0
+      arg +:= 1
+      }
+
+   if *argv > arg & match("-o", argv[arg]) then {
+      if *argv[arg]>2 then
+	 outfilename := argv[arg][3:0]
+      else {
+	 arg +:= 1
+	 outfilename := argv[arg]
+	 }
+      arg +:= 1
+      }
+   else {
+      #
+      # Use a flex-style output filenaming convention, e.g. output from
+      # file.l is file.icn instead of lex.yy.icn
+      #
+      len := *argv[arg]
+      ppcmdline := argv[arg]
+      if ppcmdline[-2:0] == ("." ||("l"|"L")) then ppcmdline[-2:0] := ""
+      ppcmdline ||:= ".icn"
+      outfilename := ppcmdline
+      }
+
+   if arg >= argc then {
+      write(&errout, "usage: ulex [-nopp] [-ooutfile] file.l\n")
+      exit(-1)
+      }
+
+   yyfilename := argv[arg]
+   printf("uflex 0.3 invoked on %s\n", yyfilename)
+   if pp ~= 0 then {
+      ppcmdline := sprintf("ulpp < %s", yyfilename)
+      if ppcmdline[-2:0] ~== ".l" then
+	 ppcmdline ||:= ".l"
+      yyin := open(ppcmdline, "p")
+      }
+   else {
+      yyin := open(yyfilename, "r")
+      }
+
+   if yyin === &null then {
+      fprintf(&errout, "Failed to open %s\n", yyfilename)
+      flush(&errout)
+      exit(-1)
+      }
+   else {
+$ifdef NOTDEF
+      printf("ulex: opened %s\n", pp ? ppcmdline : yyfilename)
+$endif
+      }
+
+   # process up to first %%
+
+   if ((not (nextchar := reads(yyin,1))) |
+       (not (nextchar2 := reads(yyin,1)))) then {
+      fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+      exit(-1)
+      }
+   if (nextchar == "\n" | nextchar == "\^m") then
+      yylineno +:= 1
+   if (nextchar2 == "\n" | nextchar2 == "\^m") then
+      yylineno +:= 1
+
+   while (nextchar ~== "%" | (nextchar2 ~== "%" & nextchar2 ~== "{")) do {
+      #
+      # ignore everything until either %% or %{
+      #
+      nextchar := nextchar2
+      if ((nextchar2 := reads(yyin,1)) == EOF) then {
+	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+	 }
+      if (nextchar2 == "\n" | nextchar2 == "\^m") then
+	 yylineno +:= 1
+      }
+
+   if (nextchar2 == "{") then {
+      grab_upto_percents()
+      }
+     
+   i := yyparse()
+
+   if (i) then {
+      fprintf(&errout, "errors in %s\n", yyfilename)
+      exit(1)
+      }
+   #
+   # copy out remainder, up to EOF, into output file.
+   #
+   if ((yyin := fopen("ulex.tmp","r")) == NULL) then {
+      fprintf(&errout, "cannot open ulex.tmp for reading\n")
+      exit(-1)
+      }
+   while ((nextchar := reads(yyin,1)) & (nextchar ~== "%")) do
+      writes(outfile, nextchar)
+   if nextchar == "%" then nextchar := reads(yyin,1)
+   if nextchar == "%" then nextchar := reads(yyin,1)
+
+   while nextchar := reads(yyin,1) do {
+      writes(outfile, nextchar)
+      }
+
+   close(outfile)
+   close(yyin)
+   remove("ulex.tmp")
+   write("No errors")
+   return 0
+end
+
+procedure grab_upto_percents()
+
+   local quotemode := 0, slash := 0, index := 0, size := 20, reset
+   local nextchar, nextchar2
+
+   begintext := ""
+
+   if not (nextchar := reads(yyin,1)) then {
+      fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+      }
+   if (nextchar == "\n" | nextchar == "\^m") then
+      yylineno +:= 1
+
+   if not (nextchar2 := reads(yyin,1)) then {
+      fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+      }
+   if (nextchar2 == "\n" | nextchar2 == "\^m") then
+      yylineno +:= 1
+
+   while (nextchar ~== "%" | nextchar2 ~== "}") do {
+      if (nextchar2 == -1) then {
+	 fprintf(&errout, "error in processing upto first percents")
+	 exit(-1)
+	 }
+
+      if (nextchar == "\"" & slash == 0) then
+	 quotemode := 1 - quotemode
+
+      if (nextchar == "\\") then slash := 1 - slash
+
+      begintext ||:= nextchar
+
+      nextchar := nextchar2
+      if not (nextchar2 := reads(yyin,1)) then {
+	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+	 }
+      if (nextchar2 == "\n" | nextchar2 == "\^m") then
+	 yylineno +:= 1
+      }
+
+   while (nextchar ~== "%" | nextchar2 ~== "%") do {
+      nextchar := nextchar2
+      if not (nextchar2 := reads(yyin,1)) then {
+	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+	 }
+      if nextchar2 == ("\n" | "\^m") then
+	 yylineno +:= 1
+      }
+end
+

@@ -8,6 +8,7 @@ global yyfilename, outfilename, outfile
 procedure main(argv)
    local ppcmdline, len
    local i, nextchar, nextchar2, arg := 1, pp := 1
+   yylineno := 1
    rulenumber := 1
    whiteflag := 0
    outfilename := "lex.yy.icn"
@@ -38,7 +39,7 @@ procedure main(argv)
       outfilename := ppcmdline
       }
 
-   if arg >= argc then {
+   if arg > *argv then {
       write(&errout, "usage: ulex [-nopp] [-ooutfile] file.l\n")
       exit(-1)
       }
@@ -78,25 +79,26 @@ $endif
    if (nextchar2 == "\n" | nextchar2 == "\^m") then
       yylineno +:= 1
 
-   while (nextchar ~== "%" | (nextchar2 ~== "%" & nextchar2 ~== "{")) do {
+   while (nextchar ~== "%") | ((nextchar2 ~== "%") & (nextchar2 ~== "{")) do {
       #
       # ignore everything until either %% or %{
       #
       nextchar := nextchar2
-      if ((nextchar2 := reads(yyin,1)) == EOF) then {
+      if not (nextchar2 := reads(yyin,1)) then {
 	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
+	 stop("ouch!")
 	 }
-      if (nextchar2 == "\n" | nextchar2 == "\^m") then
+      if nextchar2 == ("\n" | "\^m") then
 	 yylineno +:= 1
       }
 
-   if (nextchar2 == "{") then {
+   if nextchar2 == "{" then {
       grab_upto_percents()
       }
      
    i := yyparse()
 
-   if (i) then {
+   if \i ~= 0 then {
       fprintf(&errout, "errors in %s\n", yyfilename)
       exit(1)
       }
@@ -133,25 +135,25 @@ procedure grab_upto_percents()
    if not (nextchar := reads(yyin,1)) then {
       fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
       }
-   if (nextchar == "\n" | nextchar == "\^m") then
+   if nextchar == ("\n" | "\^m") then
       yylineno +:= 1
 
    if not (nextchar2 := reads(yyin,1)) then {
       fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
       }
-   if (nextchar2 == "\n" | nextchar2 == "\^m") then
+   if nextchar2 == ("\n" | "\^m") then
       yylineno +:= 1
 
-   while (nextchar ~== "%" | nextchar2 ~== "}") do {
-      if (nextchar2 == -1) then {
+   while (nextchar ~== "%") | (nextchar2 ~== "}") do {
+      if nextchar2 == -1 then {
 	 fprintf(&errout, "error in processing upto first percents")
 	 exit(-1)
 	 }
 
-      if (nextchar == "\"" & slash == 0) then
+      if (nextchar == "\"") & (slash == 0) then
 	 quotemode := 1 - quotemode
 
-      if (nextchar == "\\") then slash := 1 - slash
+      if nextchar == "\\" then slash := 1 - slash
 
       begintext ||:= nextchar
 
@@ -159,11 +161,11 @@ procedure grab_upto_percents()
       if not (nextchar2 := reads(yyin,1)) then {
 	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
 	 }
-      if (nextchar2 == "\n" | nextchar2 == "\^m") then
+      if nextchar2 == ("\n" | "\^m") then
 	 yylineno +:= 1
       }
 
-   while (nextchar ~== "%" | nextchar2 ~== "%") do {
+   while (nextchar ~== "%") | (nextchar2 ~== "%") do {
       nextchar := nextchar2
       if not (nextchar2 := reads(yyin,1)) then {
 	 fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
@@ -171,5 +173,5 @@ procedure grab_upto_percents()
       if nextchar2 == ("\n" | "\^m") then
 	 yylineno +:= 1
       }
-end
 
+end

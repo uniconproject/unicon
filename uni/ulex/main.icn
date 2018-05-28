@@ -74,9 +74,9 @@ $endif
       fprintf(&errout, "Unexpected EOF in %s\n", yyfilename)
       exit(-1)
       }
-   if (nextchar == "\n" | nextchar == "\^m") then
+   if nextchar == ("\n" | "\^m") then
       yylineno +:= 1
-   if (nextchar2 == "\n" | nextchar2 == "\^m") then
+   if nextchar2 == ("\n" | "\^m") then
       yylineno +:= 1
 
    while (nextchar ~== "%") | ((nextchar2 ~== "%") & (nextchar2 ~== "{")) do {
@@ -95,8 +95,21 @@ $endif
    if nextchar2 == "{" then {
       grab_upto_percents()
       }
-     
-   i := yyparse()
+
+   s := ""; while s ||:= read(yyin,1)
+
+   s ? {
+      if 1 then {
+	 while (i := yylex()) ~= 0 do {
+	    write("yylex(): ", image(i))
+	    }
+	 stop("...that's all folks")
+	 i := 0
+	 }
+      else {
+	 i := yyparse()
+	 }
+      }
 
    if \i ~= 0 then {
       fprintf(&errout, "errors in %s\n", yyfilename)
@@ -118,7 +131,7 @@ $endif
       writes(outfile, nextchar)
       }
 
-   close(outfile)
+   close(\outfile)
    close(yyin)
    remove("ulex.tmp")
    write("No errors")

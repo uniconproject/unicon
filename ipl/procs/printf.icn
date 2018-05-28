@@ -15,6 +15,7 @@
 ############################################################################
 #
 #	Contributors:   Cheyenne Wills, Phillip Lee Thomas, Michael Glass
+#			Clinton Jeffery
 #
 ############################################################################
 #
@@ -36,6 +37,7 @@
 # %o		octal
 # %r		real number. Exponential format if number is larger than int
 # %s		string
+# %c		character. Like %s only it only prints first letter.
 # %x		hexadecimal
 #
 # An hyphen after the percent sign indicates left justification,
@@ -96,6 +98,10 @@ procedure _doprnt(format, args)
 			}
 		    "s": {
 			v := string(v[1:(\prec+1)|0])
+			}
+		    "c": { # treat %c as %s except it only prints first letter
+			v := string(v[1:(\prec+1)|0])
+			v := v[1]
 			}
 		    "x": v := hexstr(v)
 		    "o": v := octstr(v)

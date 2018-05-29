@@ -2,6 +2,7 @@
 # data.icn
 # Handles the print debugging faclities found in debuggers such as GDB
 # Author  : Ziad Al-Sharif
+# Maintainer : Gigi Young
 # Date    : Feb 24, 2008
 # e-mail  : zsharif@gmail.com
 #
@@ -1064,9 +1065,9 @@ method cmdSource(cmd)
           # src
           if *cmd = 1 then printSrcSummary()
           # src file
-          else if *cmd = 2 then {
-             if msg := DState.srcFile.getSrcCode(cmd[2] | cmd[2]||".icn") then
-                DState.Write(msg)
+          else if *cmd = 2 & 
+             msg := DState.srcFile.getSrcCode(cmd[2] | cmd[2]||".icn") then {
+             DState.Write(msg)
              }
           # syntax error
           else { 

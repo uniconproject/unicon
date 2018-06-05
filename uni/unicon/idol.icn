@@ -941,12 +941,17 @@ class argList : idTaque(varg)
          if type(x) == "treenode" then {
 	    if /first := 1 then write(yyout)
 	    v := x.children[1].s
-	    if x.label == ("arg3" | "arg4") then
-	       write(yyout, "/", v, " := ", x.children[-1].s)
-	    else if x.label == ("arg5" | "arg6") then
-	       write(yyout, "/", v, " := &", x.children[-1].children[-1].s)
+	    if x.label == ("arg3" | "arg4") then {
+	       writes(yyout, "/", v, " := ", x.children[-1].s)
+	       yyprint("\n")
+               }
+	    else if x.label == ("arg5" | "arg6") then {
+	       writes(yyout, "/", v, " := &", x.children[-1].children[-1].s)
+	       yyprint("\n")
+               }
 	    else if x.label == ("arg7" | "arg8") then {
-	       write(yyout, "/", v, " := []")
+	       writes(yyout, "/", v, " := []")
+	       yyprint("\n")
 	       }
 	    if x.label == ("arg2" | "arg4" | "arg6") then {
 	      case x.children[3].s of {
@@ -970,9 +975,25 @@ class argList : idTaque(varg)
 		"window": 140
 		default: 123
 	      })
-	      write(yyout,", ", v, ")")
+	      writes(yyout,", ", v, ")")
+              yyprint("\n")
 	      }
 	    }
+   # if any coercions happened, emit a #line directive
+   if \first then {
+      if lm := leftmost_token(\x) then {
+	       if outline ~=== lm.line then {
+		  write(yyout,"\n#line ", lm.line-1," \"", lm.filename,"\"")
+		  outline := lm.line
+		  outcol := 1
+		  if lm.column > 1 then writes(yyout, repl(" ",lm.column-1))
+		  outfilename := lm.filename
+		  }
+         }
+      else {
+         write(yyout, "\n# no leftmost lineno, line directive omitted")
+         }
+      }
   end
   method String()
     return self$idTaque.String() || ((\self.varg & "[]") | "")

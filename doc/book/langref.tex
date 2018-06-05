@@ -367,6 +367,14 @@ logarithms, 2.7182818...
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
+{\bf \&errno : integer? } \hfill {\bf system error code}
+
+\noindent
+\texttt{\&errno} is the platform-specific error code for the previous
+failed system call, if there was one.
+
+\bigskip\hrule\vspace{0.1cm}
+\noindent
 {\bf \&error := integer } \hfill {\bf fail on error}
 
 \noindent
@@ -653,12 +661,13 @@ the program execution began. For wall clock time see \texttt{\&now} or
 {\bf \&trace := integer } \hfill {\bf trace program}
 
 \noindent
-\texttt{\&trace} gives the number of nesting levels to which
+\texttt{\&trace} specifies the number of procedure actions
+(call, return, suspend, resume, or fail) for which
 program execution will be traced. 0 means no \index{tracing}tracing.
-A negative value traces to an infinite depth.
-\texttt{\&trace} is set outside the program using the \texttt{TRACE}
-\index{environment variable!TRACE}environment variable or the
-\texttt{{}-t} compiler option.
+A negative value enables tracing with no limit.
+\texttt{\&trace} can be set outside the program using the \texttt{TRACE}
+\index{environment variable!TRACE}environment variable, or set to -1 via
+the \texttt{{}-t} compiler option.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -684,7 +693,7 @@ are more fully described in [Griswold98].
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf \&col : integer } \hfill {\bf mouse location, text column}
+{\bf \&col := integer } \hfill {\bf mouse location, text column}
 
 \noindent
 \texttt{\&col} is the mouse location in text columns during the most
@@ -792,7 +801,7 @@ event.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf \&row : integer } \hfill {\bf mouse location, text row}
+{\bf \&row := integer } \hfill {\bf mouse location, text row}
 
 \noindent
 \texttt{\&row} is the mouse location in text rows during the most recent
@@ -826,7 +835,7 @@ the time of the most recently processed event, otherwise
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf \&window : window } \hfill {\bf default window}
+{\bf \&window := window } \hfill {\bf default window}
 
 \noindent
 \texttt{\&window} is the default window argument for all window
@@ -835,7 +844,7 @@ window.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf \&x : integer } \hfill {\bf mouse location, horizontal}
+{\bf \&x := integer } \hfill {\bf mouse location, horizontal}
 
 \noindent
 \texttt{\&x} is the horizontal mouse location in pixels during the most
@@ -845,7 +854,7 @@ gets a corresponding text coordinate in the current font on
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
-{\bf \&y : integer } \hfill {\bf mouse location, vertical}
+{\bf \&y := integer } \hfill {\bf mouse location, vertical}
 
 \noindent
 \texttt{\&y} is the vertical mouse location in pixels during the most
@@ -4748,7 +4757,7 @@ error, the keywords \texttt{\&errornumber}, \texttt{\&errortext}, and
 error. When a system function fails, keyword \texttt{\&errno} and
 \texttt{\&errortext} are set to indicate the nature of the
 system call failure; the numbering systems of \texttt{\&errornumber}
-and \texttt{\&errno} are unrelated and \texttt{\&erro} numbers are
+and \texttt{\&errno} are unrelated; \texttt{\&errno} numbers are
 platform dependent.
 
 101 \ \ \ \ \ \ \ integer expected or out of range\\
@@ -4884,7 +4893,7 @@ length\\
 1047 \ \ \ \ \ \ \ invalid protocol name\\
 1048 \ \ \ \ \ \ \ low-level read or select mixed with buffered read\\
 1100 \ \ \ \ \ \ \ ODBC connection expected\\
-1200 \ \ \ \ \ \ \ system error (see errno)\\
+1200 \ \ \ \ \ \ \ system error (see \&errno)\\
 1201 \ \ \ \ \ \ \ malformed URL\\
 1202 \ \ \ \ \ \ \ missing username in URL\\
 1203 \ \ \ \ \ \ \ unknown scheme in URL\\
@@ -4966,7 +4975,7 @@ conflict with existing runtime or system error codes.
 1047 \ \ \ \ \ invalid protocol name\\
 1048 \ \ \ \ \ low-level read or select mixed with buffered read\\
 1100 \ \ \ \ \ ODBC connection expected\\
-1200 \ \ \ \ \ system error (see errno)\\
+1200 \ \ \ \ \ system error (see \&errno)\\
 1201 \ \ \ \ \ malformed URL\\
 1202 \ \ \ \ \ missing username in URL\\
 1203 \ \ \ \ \ unknown scheme in URL\\

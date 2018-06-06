@@ -847,6 +847,35 @@ $endif
    end
 
    #
+   # Override the Component attrib() method to allow "min_size=x,y" attribute.
+   #
+   method attrib(x[])
+   local i, s, wd, ht
+      # handle "min_size=..."; remove it from the list before assigning to
+      # self.attribs
+      i := 1
+      while i <= *x do {
+         if match("min_size=", x[i]) then {
+            # remove x[i]
+            s := x[i]
+            delete(x, i)
+            # get its width and height
+            s ? {
+               tab(find("=")+1)
+               wd := integer(tab(many(&digits))) | fail
+               ="," | fail
+               ht := integer(tab(many(&digits))) | fail
+               }
+            # call set_min_size() with it.
+            set_min_size(wd, ht)
+            }
+         else i +:= 1
+         }
+      return self.attribs |||:= x
+   end
+
+
+   #
    # This method adds an otherwise meaningless event to the window's event
    # queue.  When that event comes to be processed, the given method in the
    # given object is invoked, with the optional parameter.

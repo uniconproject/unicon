@@ -6,7 +6,7 @@
 #
 #	Author:   Clinton L. Jeffery
 #
-#	Date:     November 23, 1997
+#	Date:     November 23, 1997; last updated June 8, 2018
 #
 ############################################################################
 #
@@ -14,34 +14,39 @@
 #
 ############################################################################
 #
-#  This may not be the latest version of this file, despite the date.
-#
-############################################################################
-#
-#  Requires:  Version 9 graphics
+#  Requires:  some functions require Version 9+ graphics
 #
 ############################################################################
 
 #
-# location() - encodes a two-dimensional location in an integer
+# location() - encodes a "location" in an integer. Historically,
+# a location was a two-dimensional row/column. Syntax designators
+# were added by taking 5 bits from the "column" field.
 #
-procedure location(x, y)
-   return ishift(x, 16) + y
+procedure location(x, y, z)
+   /z := 0
+   return ishift(x, 21) + ishift(z,16) + y
 end
 
 #
-# vertical() - returns the y/line/row component of a location
+# vertical() - returns the y/line/row component of a location.
 #
 procedure vertical(Loc)
-#  return iand(Loc, 65535) # 16 least-significant bits (used to be)
-  return iand(Loc,2097151) # 21 least-significant bits
+  return iand(Loc, 65535) # 16 least-significant bits, bits 1-16.
 end
 
 #
 # horizontal - returns the x/column component of a location
 #
 procedure horizontal(Loc)
-  return ishift(Loc, -21) # k-21 most-significant bits
+  return ishift(Loc, -21) # k-21 most-significant bits, bits 22-32
+end
+
+#
+# syntal - returns the syntax component of a location
+#
+procedure syntal(Loc)
+  return iand(ishift(Loc, -16),31) # bits 17-21
 end
 
 #

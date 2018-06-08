@@ -39,7 +39,7 @@ zip:
 	zip -r ub.zip $(SRC) makefile icon.sty ub-img
 
 publish: ub.pdf
-	scp ib.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ub.pdf
+	scp ub.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ub.pdf
 
 nightly: ub.pdf
 	scp ub.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ub-nightly.pdf

@@ -695,7 +695,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -802,7 +801,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1055,15 +1053,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1201,7 +1190,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1354,7 +1343,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -13062,6 +13050,213 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+  if test "x$cv_libssl" != "xyes" ; then
+
+if test  x${ssl_HOME} != "x"
+then
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in -I${ssl_HOME}/include -I${ssl_HOME}
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in -L${ssl_HOME}/lib
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+else
+
+	TMP_CPPFLAGS=$CPPFLAGS
+ 	TMP_LDFLAGS=$LDFLAGS
+ 	TMP_CFLAGS=$CFLAGS
+ 	TMP_LIBS=$LIBS
+
+	for part in
+  	do
+		FOUND=
+		for itm in $CPPFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   CPPFLAGS="$CPPFLAGS $part"
+		fi
+	done
+
+  	for part in
+  	do
+		FOUND=
+		for itm in $LDFLAGS -a -z $FOUND
+    		do
+			if test $itm = $part
+      			then
+				FOUND=1
+      			fi
+    		done
+
+		if test -z $FOUND ; then
+	   	   LDFLAGS="$LDFLAGS $part"
+		fi
+	done
+
+
+fi
+        ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	# If we have mulltiple headers, any missing one will set this to no
+	cv_libthislib_h=yes
+        for ac_header in openssl/ssl.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "openssl/ssl.h" "ac_cv_header_openssl_ssl_h" "$ac_includes_default"
+if test "x$ac_cv_header_openssl_ssl_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_OPENSSL_SSL_H 1
+_ACEOF
+
+else
+  cv_libthislib_h=no
+fi
+
+done
+
+	if test x$cv_libthislib_h != xno ;  then
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing OPENSSL_init_ssl" >&5
+$as_echo_n "checking for library containing OPENSSL_init_ssl... " >&6; }
+if ${ac_cv_search_OPENSSL_init_ssl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char OPENSSL_init_ssl ();
+int
+main ()
+{
+return OPENSSL_init_ssl ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ssl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_OPENSSL_init_ssl=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_OPENSSL_init_ssl+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_OPENSSL_init_ssl+:} false; then :
+
+else
+  ac_cv_search_OPENSSL_init_ssl=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_OPENSSL_init_ssl" >&5
+$as_echo "$ac_cv_search_OPENSSL_init_ssl" >&6; }
+ac_res=$ac_cv_search_OPENSSL_init_ssl
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  cv_libssl=yes
+	      if test -n HAVE_LIBSSL ; then
+
+$as_echo "#define HAVE_LIBSSL 1" >>confdefs.h
+
+	      fi
+
+else
+  cv_libssl=no
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+
+fi
+
+        else
+
+
+	CFLAGS=$TMP_CFLAGS
+	LDFLAGS=$TMP_LDFLAGS
+	CPPFLAGS=$TMP_CPPFLAGS
+ 	LIBS=$TMP_LIBS
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking checking lib ssl in (${ssl_HOME})" >&5
+$as_echo_n "checking checking lib ssl in (${ssl_HOME})... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+
+	fi
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+
+  fi
 fi
 #        AC_CHECK_HEADER(openssl/bio.h, [openssl_cv_bio_h=yes], [openssl_cv_bio_h=no])
 

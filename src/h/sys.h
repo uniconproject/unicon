@@ -395,6 +395,7 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/opensslv.h>
 
 #ifndef VMS
 #define VMS 0

@@ -79,7 +79,11 @@ static int ssl_is_initialized;
  */
 void init_openssl() {
    /* call the standard SSL init functions */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
    SSL_library_init();
+#else
+   OPENSSL_init_ssl(0, NULL);
+#endif
    SSL_load_error_strings();
    /*OPENSSL_config(NULL); */
    ERR_load_BIO_strings();

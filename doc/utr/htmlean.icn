@@ -28,9 +28,10 @@ procedure main(av)
 
     system("cp " || av[1] || " " || av[1] || ".bak")
 
-    f2 := open(av[1],"w")
-    while write(f2, pop(L))
-    close(f2)
+    if f2 := open(av[1],"w") then {
+       while write(f2, pop(L))
+       close(f2)
+       }
 end
 
 procedure maketitle(L)
@@ -47,14 +48,19 @@ procedure maketitle(L)
 
    # table of contents starts near the end, at link for "outline"
    k := j+1
-   while not match("<a name=\"outline\">", L[k]) do k +:= 1
-   L[k] := "<a name=\"outline\"></a><h3>Contents</h3>"
 
-   L := L[1:i] ||| ["<br><br><br><br><br><center><h3>"] |||
+   while L[k] & (not match("<a name=\"outline\">", L[k])) do k +:= 1
+
+   if match("<a name=\"outline\">", L[k]) then {
+      L[k] := "<a name=\"outline\"></a><h3>Contents</h3>"
+
+      L := L[1:i] ||| ["<br><br><br><br><br><center><h3>"] |||
          L[i:ii-2] ||| ["</h3><br><br><br>"] |||         L[ii-2:ii+1] |||
          ["<br><br><br>"] |||L[ii+1:j] |||
          ["</center><br><br><br><br><br>", L[j]] |||
 	 L[k:-2] ||| L[j+1:k] ||| L[-2:0]
+      }
+   else write("no table of contents found, you may want to check it")
 
    L := pumpup_sectionheadings(L)
    L := strip_pagenumbers(L)

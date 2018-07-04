@@ -19,9 +19,10 @@
 #         texlive-latex-extra -- not sure
 #	  texlive-fonts-extra -- not sure
 #
-# Fedora 24, RHEL7: install packages texlive-base, texlive-latex,
+# Fedora 24-27, RHEL7: install packages texlive-base, texlive-latex,
 #	  texlive-collection-latex, texlive-collection-latexrecommended,
-#	  and texlive-xtab.
+#	  and texlive-xtab. "make fedora" will attempt to install those
+#	  packages with the dnf program.
 #
 
 SRC=admin.tex advanced.tex assoc.tex cgi.tex classes.tex database.tex diffs.tex genetic.tex graphics.tex gui.tex internet.tex intro.tex ipl.tex langref.tex large.tex lexyacc.tex port.tex preface.tex programs.tex referenc.tex string.tex struct.tex system.tex thread.tex ub.tex ucl.tex usecase.tex install.tex
@@ -43,3 +44,6 @@ publish: ub.pdf
 
 nightly: ub.pdf
 	scp ub.pdf web.sf.net:/home/project-web/unicon/htdocs/book/ub-nightly.pdf
+
+fedora:
+	sudo dnf install texlive-base texlive-latex texlive-collection-latex texlive-collection-latexrecommended texlive-xtab

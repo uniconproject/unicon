@@ -37,18 +37,18 @@ case $host_os in
 
 	# if dist/version are not set, try to guess them
 	if test x$unicon_osdist = x ; then
-	   if [ -f /etc/os-release ]; then
+	   if test -f /etc/os-release ; then
 	      . /etc/os-release
 	      unicon_osdist=$NAME
 	      unicon_osrel=$VERSION_ID
 	   elif type lsb_release >/dev/null 2>&1; then
 	      unicon_osdist=$(lsb_release -si)
 	      unicon_osrel=$(lsb_release -sr)
-	   elif [ -f /etc/lsb-release ]; then
+	   elif test -f /etc/lsb-release ; then
 	      . /etc/lsb-release
 	      unicon_osdist=$DISTRIB_ID
 	      unicon_osrel=$DISTRIB_RELEASE
-	   elif [ -f /etc/debian_version ]; then
+	   elif test -f /etc/debian_version ; then
 	      unicon_osdist=Debian
 	      unicon_osrel=$(cat /etc/debian_version)
 	   fi

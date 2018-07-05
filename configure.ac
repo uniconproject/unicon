@@ -36,20 +36,14 @@ case $host_os in
         unicon_os="linux"
 
 	# if dist/version are not set, try to guess them
-	#if test x$unicon_osdist = x ; then
-	#  echo ""
-	#fi
+	if test x$unicon_osdist = x ; then
+	   which lsb_release >/dev/null 2>&1
+	   if test x$? = x0 ; then
+	       unicon_osdist=`lsb_release -is`
+	       unicon_osrel=`lsb_release -rs`
+	   fi
+	fi
 
-	UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
-	case "${UNAME_VERSION}" in
-	    	Debian*)
-		release='-gnu'
-		;;
-		*)
-		release=`echo ${UNAME_RELEASE} | sed -e 's/[-_].*//' | cut -d. -f1,2`
-		;;
-	esac
-	
 	AC_DEFINE([UNIX], [1], [Unix platform])
         ;;
      *solaris*)

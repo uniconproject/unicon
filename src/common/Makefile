@@ -42,7 +42,7 @@ literals.o: ../h/esctab.h
 rtdb.o: ../h/version.h icontype.h
 
 drawstring3d.o: drawstring3d.cc
-	if test "`which $(CXX)`" != "" ; then \
+	@if test "`which $(CXX)`" != "" ; then \
 		echo "Got C++, building drawstring3d.o"; \
 		$(CXX) -c $(CPPFLAGS) $(CFLAGS) -I/usr/include/freetype2 -I/opt/X11/include/freetype2 -o drawstring3d.o drawstring3d.cc; \
 	else \

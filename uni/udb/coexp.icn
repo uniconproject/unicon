@@ -1,0 +1,243 @@
+#
+# Author: Gigi Young 
+# Date:   5-31-2018 
+# e-mail: kzyoung93@gmail.com
+#
+
+#
+# class for an individual co-expression
+#
+class Coexp(
+   id,         # string with the number N in "co-expression_N()" 
+   tag,        # a string used "pretty printing" 
+   val,        # the value of the co-expression
+   src_val,    # the value of the calling co-expression (optional?)
+   file,       # optional?
+   line,       # optional?
+   stk_info,   # string containing file:line info for current execution
+   curr_frame  # int containing current frame within stack for frame cmd
+   )
+ 
+   # 
+   # updates the stack frame status
+   # 
+   method update_stk_info()
+      local pname, levels_up := 0 , s := "", paren := "(", temp
+
+      # get proc name at current level, if possible
+      pname := image(proc(val,levels_up))
+      if \pname then {
+         pname := pname[find(" ",pname)+1:0]
+#         write("currently in procedure ",pname)
+         s ||:= pname  
+
+         # get proc parameter info
+         every x := paramnames(val,levels_up) do {
+            n := variable(x,val,levels_up)
+            paren ||:= x || "=" || image(n) || ", "
+            }
+         if *paren > 1 then {
+            # get rid of last comma
+            paren := paren[1:-2] || ")"
+            s ||:= paren || " at "
+            }
+         else if *paren = 1 then {
+            s ||:= "() at " 
+            }
+         }
+
+      # get file and line info
+      if \(temp := keyword("file",val)) then file := temp
+      s ||:= file
+
+      if \(temp := keyword("line",val)) then line := temp
+      s ||:= ":" || line
+
+      return stk_info := s
+   end
+
+initially
+   self.curr_frame := 0
+   self.file := "??"
+   self.line := "??"
+end
+
+
+#
+# Manager class for all co-expressions monitored in TP by udb
+#
+class CoexpState(
+   tp,
+   target,
+   curr,
+   prev,
+   active_list
+   )
+
+   #
+   #
+   #
+   method init(tp)
+      reinit()
+
+      if \tp then {
+         self.tp := self.curr := self.target := Coexp(get_id(tp),get_tag(tp),tp)
+         add_coexp(tp)
+         return
+         }
+   end
+
+   method reinit()
+      self.tp := &null
+      self.target := &null
+      self.curr := &null
+      self.prev := &null
+      self.active_list := []
+   end
+
+   #
+   #
+   #
+   method get_curr()
+      if \curr then return curr.val
+   end
+
+   #
+   # Returns a coexp id (integer string representation of coexp number)
+   # given a coexp value
+   # 
+   method get_id(C)
+      local s
+      image(C) ? { tab(upto(&digits)\1) & s := tab(find("(")\1) }
+      return s
+      #return image(C) ? tab(find("(")\1)
+   end
+   
+   #
+   # Returns a "pretty printing" tag given a coexp value
+   #
+   method get_tag(C)
+      local s
+      image(C) ? { tab(upto(&digits)\1) & s := tab(find("(")\1) }
+      #return "Co-expression " || s
+      return "Coexp #" || s
+   end
+ 
+   #
+   # Returns an instance of class Coexp given that it is an active coexp,
+   # otherwise returns null
+   #
+   method get_coexp(x)
+      local i, c_id 
+      
+      #write("get_coexp() - type of C is: ",type(x))
+      case type(x) of {  
+         "co-expression": { c_id := get_id(x) }
+         #"integer": { c_id := "co-expression_" || image(x) }
+         "integer": { c_id := image(x) }
+         #"string": { c_id := "co-expression_" || x } 
+         "string": { c_id := x } 
+         default: {  return &null }
+         }
+
+      every i := 1 to *active_list do 
+         if c_id == active_list[i].id then {
+            #write("found coexp ",c_id)
+            return active_list[i]
+            }
+      return &null
+   end
+
+   #
+   # Update current state to coexp, C. Target is re-assigned to current
+   #
+   method update_state(C)
+      if \C then {
+         # go to next state
+         prev := curr
+         if /(curr := get_coexp(C)) then 
+            curr := Coexp(get_id(C),get_tag(C),C,keyword("source",C))
+         target := curr
+
+         # reset current frame on each coexp to current frame of execution
+         every i := 1 to *active_list do active_list[i].curr_frame := 0
+         return
+         }
+   end
+
+   #
+   # Change target to coexp n
+   #
+   method update_target(n)
+      if target := get_coexp(n) then return
+#      else write("failed to change coexp target")
+   end
+
+   # 
+   # Adds a coexp to the list of active coexps
+   # 
+   method add_coexp(val,src_val)
+      local coexp
+      if \val then {
+         coexp := Coexp(get_id(val),get_tag(val),val,src_val)
+         put(active_list,coexp) 
+         write("[New co-expression ",coexp.id,"]")
+         #return put(active_list,Coexp(get_id(val),val,keyword("source",val)))
+         }
+   end
+
+   # 
+   # Removes a coexp from the list of active coexps
+   # 
+   method remove_coexp(C)
+      local i, c_id := get_id(C)
+
+      every i:= 1 to *active_list do {
+         if c_id == active_list[i].id then {
+            # found, move to end of list and pull off
+            active_list[i] :=: active_list[-1]
+            return pull(active_list) 
+            }
+         }
+   end
+
+   #
+   # Removes the currently active coexp from the active list
+   #
+   method remove_curr_coexp()
+      local i, c_id := curr.id
+
+      every i:= 1 to *active_list do {
+         if c_id == active_list[i].id then {
+            # found, move to end of list and pull off
+            active_list[i] :=: active_list[-1]
+            return pull(active_list) 
+            }
+         }
+   end
+
+   #
+   # Prints the current state of all active coexps.
+   # * indicates the target coexp
+   # <--- indicates the current active coexp
+   #
+   method print_state()
+      #write("\n****************************************")
+      write()
+      every coexp := !active_list do {
+         if \target & target.id == coexp.id then writes(" *  ")
+         else writes("    ")
+
+         # print [tag stackframe]
+         writes(coexp.tag,"   ",coexp.update_stk_info()," ")
+
+         if curr.id == coexp.id then writes("<---")
+         writes("\n")
+         }
+      #write("****************************************")
+      return
+   end
+
+initially
+   self.active_list := []
+end

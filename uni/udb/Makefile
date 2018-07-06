@@ -20,13 +20,14 @@ SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
             agent.icn internals.icn externals.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
-            evaluator.icn session.icn console.icn defaults.icn help.icn
+            evaluator.icn session.icn console.icn defaults.icn help.icn \
+	    coexp.icn
 
 UFILES    = udb.u icode.u srcfile.u srccode.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
-            evaluator.u session.u console.u help.u
+            evaluator.u session.u console.u help.u coexp.u
 
 LIB       = lib
 LIBRARY   = $(LIB)/listener.u      $(LIB)/memory.u     $(LIB)/structaliases.u \
@@ -109,6 +110,9 @@ internals.u: internals.icn defaults.icn agent.u state.u $(EVD)
 
 externals.u: externals.icn defaults.icn agent.u state.u
 	$(UC) $(cflags) externals
+
+coexp.u: coexp.icn
+	$(UC) $(cflags) coexp
 
 print:
 	enscript -1 -b " " $(SRC) -o udb.ps

@@ -1,6 +1,5 @@
 #
 # icode.icn - code for handling icode files
-# Manages the main Icode Analysis techniques
 # Original Author : Eric Munson
 # Updated and maintained by : Ziad Al-Sharif
 # e-mail                    : zsharif@gmail.com
@@ -252,7 +251,7 @@ end
 # Collect the Source files from the executable Icode
 #
 method getSrcFileNames(exeFile)
-   local fNames, LLL, p1, x, i, j
+   local fNames, fMembers, LLL, p1, x, i, j
 
    openIcodeFile(exeFile)
 
@@ -272,6 +271,7 @@ method getSrcFileNames(exeFile)
 
       LLL := []
       fNames := []
+      fMembers := set()
       while i < hdr.linenums do {
          move(wordSize)
          put(LLL, j := endian(move(wordSize)))
@@ -279,8 +279,13 @@ method getSrcFileNames(exeFile)
          }
       every i := 1 to *LLL do  {
          move(LLL[i] + hdr.Strcons - hdr.linenums) &
-             x := tab(find("\0")\1) &
-             put( fNames, x ) & &fail
+            (x := tab(find("\0")\1)) &
+            &fail
+
+         if not member(fMembers,x) & x ~== "__faux.icn" then {
+            put(fNames,x)
+            insert(fMembers,x)
+            }
          }
       }
    return fNames

@@ -1,9 +1,7 @@
 #
-# help.icn
-# Handles UDB's help system
-# Ziad Al-Sharif
-# zsharif@gmail.com
-# June 2009
+# help.icn:    Handles UDB's help system
+# Author:      Ziad Al-Sharif, zsharif@gmail.com
+# Contributor: Gigi Young
 #
  
 $include "defaults.icn"
@@ -20,12 +18,14 @@ class HELP(
    pauseState,  # information about UDB's PAUSE state applicable commands
    errorState,  # information about UDB's ERROR state applicable commands
    basic,       # information about the basic class of commands
+   coexp,       # information about the coexp class of commands
    breakpoints, # information about the breakpoints class of commands
    watchpoints, # information about the watchpoints class of commands
    tracepoints, # information about the tracepoints class of commands
    stack,       # information about the stack class of commands
    stepping,    # information about the stepping class of commands
    data,        # information about the data class of commands
+   directory,   # information about the directory class of commands
    files,       # information about the files class of commands
    memory,      # information about the memory class of commands
    shell,       # information about the shell class of commands
@@ -64,6 +64,9 @@ method cmdHelp(cmd)
    "basic":{
     Message := basic
     }
+   "coexp" | "coexpression":{
+    Message := coexp || assistance
+    }
    "breakpoints" | "breakpoint":{
     Message := breakpoints || assistance
     }
@@ -81,6 +84,9 @@ method cmdHelp(cmd)
     }
    "data":{
     Message := data || assistance
+    }
+   "directory" | "dir" :{
+    Message := directory || assistance
     }
    "files":{
     Message := files || assistance
@@ -109,12 +115,12 @@ method cmdHelp(cmd)
     \n   step n : Steps (n) lines."
     }
    "pstep":{
-   Message:="_
-   \n    Steps to the next pattern element that moves the cursor._
-   \n    Command defaults to a regular step when outside a pattern match._
-   \n    pstep  : Steps one pattern element._
-   \n    pstep n: Steps (n) pattern elements."
-    }
+    Message:="_
+      \n    Steps to the next pattern element that moves the cursor._
+      \n    Command defaults to a regular step when outside a pattern match._
+      \n    pstep  : Steps one pattern element._
+      \n    pstep n: Steps (n) pattern elements."
+      }
    "run":{
     Message:="_
     \n   Starts (or restarts) program execution._
@@ -263,6 +269,14 @@ method cmdHelp(cmd)
     \n   trace op remove : Traces unwinding of an operator named (op)._
      "
     }
+   "dir":{
+     Message:="_
+    \n   dir       : Resets the source path to its default._
+    \n   dir args  : Prepends a list of directories, (args), to the existing._
+    \n               source path._
+    \n   show dir  : Prints the source path._
+     "
+    }
    default:{
     Message:="\n   Command not found. Type \"help\" for assistance"
     } 
@@ -285,6 +299,8 @@ initially()
     \n   stack       : How to investigate the execution stack._
     \n   stepping    : Execution steps in a paused program._
     \n   data        : Examine and change data in the execution state._
+    \n   coexp       : Commands involving coexpressions._
+    \n   directory   : Allows modification to the source path._
     \n   files       : How to view source code files._
     \n   memory      : View memory usage information._
     \n   shell       : Supported shell commands._
@@ -324,6 +340,7 @@ initially()
     \n   down  : Moves down one or more stack frame._
     \n   print : Prints out the value of a variable in the current frame._
     \n   bt    : Prints out a backtrace of source locations on the current stack._
+    \n   coexp : Lists the program's activated coexpressions._
     \n   break : Sets a breakpoint in the source code._
     \n   clear : Deletes an existing breakpoint._
     \n   trace : Trace some of the program behaviors._
@@ -363,6 +380,39 @@ initially()
     \n   quit          : Quits the current UDB session._
     \n   help          : Shows more info about different commands."
 
+   coexp := "_
+    \n   coexp n     : Changes the viewed coexpression to (coexp n)._
+    \n   coexp       | _ 
+    \n   info coexp  : Lists the currently activated coexpressions of_
+    \n                 the program._
+    \n _
+    \n                     * [Coexp #] [Stacktrace location] <---_
+    \n _
+    \n                 '*' indicates the currently active coexpression_
+    \n                 and '<---' indicates the currently viewed_
+    \n                 coexpression._
+    \n _
+    \n   The following are commands which have affected by coexpressions:_
+    \n _
+    \n   break args [coexp n] : Sets a breakpoint specified by (args) at _
+    \n                          (coexp n). By default, breakpoints are set for_
+    \n                          all possible coexpressions._
+    \n   watch args [coexp n] : Sets a watchpoint specified by (args) at _
+    \n                          (coexp n). By default, watchpoints are set for_
+    \n                          all possible coexpressions._
+    \n   trace args [coexp n] : Sets a tracepoint specified by (args) at _
+    \n                          (coexp n). By default, tracepoints are set for_
+    \n                          all possible coexpressions._
+    \n   print args [coexp n] : Prints a variable specified by (args) at _
+    \n                          (coexp n). By default, print will search within_
+    \n                          the currently viewed coexpression._
+    \n   frame                : Prints the current frame of the currently _
+    \n                          viewed coexpression._
+    \n   bt                   | _
+    \n   where                : Prints the backtrace of the currently viewed_ 
+    \n                          coexpression._
+    "
+
    breakpoints := "_
     \n   These are the most common breakpoint-related commands._
     \n   Square brackets [] in the help text indicate an optional element._
@@ -370,7 +420,9 @@ initially()
     \n                  is stopped, line is within the current file, otherwise,_
     \n                  it is within the file contains procedure main._
     \n   break proc   : Sets a breakpoint at the entry of procedure (proc)._
+    \n   break f:n    | _
     \n   break [f] n  : Sets a breakpoint at line number (n) [in file f]._
+    \n   break C::m   : Sets a breakpoint at method (m) of class (C)._
     \n_
     \n   info break    : Shows a complete list of all breakpoints._
     \n   info break n  : Shows the breakpoint with the id number (n)._
@@ -403,9 +455,9 @@ initially()
     \n   watch [–silent] var: Silently watches (var) whenever assigned._
     \n   watch [n] var  : Watches var's first (n) number of assignments._
     \n   watch [-n] var : Watches var's values and tracks its last n'th value._
-    \n   watch var = val    : Watches (var) whenever assigned with value._
-    \n   watch var > val    : Watches (var) whenever assigned with a value > val._
-    \n   watch –s n var     : Silently watches var's first n assignments._
+    \n   watch var = val  : Watches (var) whenever assigned with value._
+    \n   watch var > val  : Watches (var) whenever assigned with a value > val._
+    \n   watch –s n var   : Silently watches var's first n assignments._
     \n_  
     \n   rwatch [–silent] [count] variable [[=|>|<|<=|>=|~=] value]_
     \n     Sets a watchpoint on variable whenever read. Other arguments are_
@@ -573,6 +625,14 @@ initially()
     \n   info static : Shows all static variable names in the current frame._
     \n   info param  : Shows all parameter variable names in the current frame."
 
+   directory:="_
+    \n   dir       : Resets the source path to its default._
+    \n   dir args  : Prepends a list of directories, (args), to the existing._
+    \n               source path._
+    \n   info dir  | _
+    \n   show dir  : Prints the source path._
+     "
+ 
    files := "_
     \n   list          : Displays ten lines of source code. If execution is_
     \n                   paused,the printed lines are from the current line_

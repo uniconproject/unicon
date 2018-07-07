@@ -1,10 +1,7 @@
 #
-# data.icn
-# Handles the print debugging faclities found in debuggers such as GDB
-# Author  : Ziad Al-Sharif
-# Maintainer : Gigi Young
-# Date    : Feb 24, 2008
-# e-mail  : zsharif@gmail.com
+# data.icn:    handle the print facilities found in debuggers such as GDB
+# Author:      Ziad Al-Sharif, zsharif@gmail.com
+# Contributor: Gigi Young
 #
 
 $include "evdefs.icn"
@@ -25,13 +22,13 @@ class Data(
 # prints all of Global Variables state in some level
 #
 method printGlobals(level)
-   local x, i
+   local x, i, CMonitored := DState.coState.target.val
 
-   /level := DState.cur_Frame # 0 if no up/down involved
+   /level := DState.coState.target.curr_frame 
 
    Message := ""
    every x := !DState.srcCode.vglobals do {
-      i := variable(x, Monitored, level)
+      i := variable(x, CMonitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
       }
    DState.Write(Message)
@@ -41,13 +38,13 @@ end
 # prints all Local Variables for some Level
 #
 method printLocals(level)
-   local x, i
+   local x, i, CMonitored := DState.coState.target.val
 
-   /level := DState.cur_Frame # 0 if no up/down involved
+   /level := DState.coState.target.curr_frame 
 
    Message := ""
-   every x := localnames(Monitored,level) do {
-      i := variable(x, Monitored, level)
+   every x := localnames(CMonitored,level) do {
+      i := variable(x, CMonitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
       }
    DState.Write(Message)
@@ -57,13 +54,13 @@ end
 # prints all Local Variables for some Level
 #
 method printStatics(level)
-   local x, i
+   local x, i, CMonitored := DState.coState.target.val
 
-   /level := DState.cur_Frame # 0 if no up/down involved
+   /level := DState.coState.target.curr_frame 
 
    Message := ""
-   every x := staticnames(Monitored,level) do {
-      i := variable(x, Monitored, level)
+   every x := staticnames(CMonitored,level) do {
+      i := variable(x, CMonitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
       }
    DState.Write(Message)
@@ -73,13 +70,13 @@ end
 # prints all Formal Parameters for some Level
 #
 method printParams(level)
-   local x, i
+   local x, i, CMonitored := DState.coState.target.val
 
-   /level := DState.cur_Frame # 0 if no up/down involved
+   /level := DState.coState.target.curr_frame
 
    Message := ""
-   every x := paramnames(Monitored,level) do {
-      i := variable(x, Monitored, level)
+   every x := paramnames(CMonitored,level) do {
+      i := variable(x, CMonitored, level)
       Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
       }
    DState.Write(Message)
@@ -91,6 +88,9 @@ end
 #
 method getVarValue(Expr, level)
    local Value, x, expr:="", ref, var, Var, index:=[]
+   local CMonitored := DState.coState.target.val
+
+   /level := DState.coState.target.curr_frame
 
    every x := !Expr do expr ||:= x
 
@@ -100,7 +100,7 @@ method getVarValue(Expr, level)
       if *index = 0 then fail
 
       var := get(index)
-      if Var := variable(var, Monitored, level) then {
+      if Var := variable(var, CMonitored, level) then {
          if (ref := getVarReference(Var, index, level)) & *index = 0 then {
             Value := if integer(ref) = ref then integer(ref)
                      else if real(ref) = ref then real(ref)
@@ -131,6 +131,8 @@ end
 #
 method getVarReference(Var, index, level)
    local v, j, i1, i2, x1,x2, x, fld
+   local CMonitored := DState.coState.target.val
+   /level := DState.coState.target.curr_frame
 
    if *index = 0 then return Var
 
@@ -145,7 +147,7 @@ method getVarReference(Var, index, level)
            x1 := get(index)
            x2 := get(index)
            if \x1 & /x2 then {
-              if v := variable(x1, Monitored, level) | integer(x1) then {
+              if v := variable(x1, CMonitored, level) | integer(x1) then {
 		 Var := Var[v]
 		 return Var
 		 }
@@ -157,7 +159,7 @@ method getVarReference(Var, index, level)
               }
            else if \x1 & \x2 then {
 	      if x2 === "][" then {
-                 v := variable(x1, Monitored, level) | integer(x1)
+                 v := variable(x1, CMonitored, level) | integer(x1)
 		 if abs(v) <= *Var then {
 		    Var := Var[v]
 		    return getVarReference(Var, index, level)
@@ -165,8 +167,8 @@ method getVarReference(Var, index, level)
 		 fail
 		 }
 	      else {
-		 i1 := variable(x1, Monitored, level) | integer(x1)
-		 i2 := variable(x2, Monitored, level) | integer(x2)
+		 i1 := variable(x1, CMonitored, level) | integer(x1)
+		 i2 := variable(x2, CMonitored, level) | integer(x2)
 		 Var := Var[i1:i2]
 		 return Var
 		 }
@@ -177,7 +179,7 @@ method getVarReference(Var, index, level)
            x1 := get(index)
            x2 := get(index)
            if \x1 & /x2 then {
-              v := variable(x1, Monitored, level) | integer(x1)
+              v := variable(x1, CMonitored, level) | integer(x1)
               if abs(v) <= *Var then {
                  Var := Var[v]
                  return Var #getVarReference(Var, index, level)
@@ -186,7 +188,7 @@ method getVarReference(Var, index, level)
               }
            else if \x1 & \x2 then {
               if x2 == "][" then {
-                 v := variable(x1, Monitored, level) | integer(x1)
+                 v := variable(x1, CMonitored, level) | integer(x1)
                  if abs(v) <= *Var then {
                     Var := Var[v]
                     return getVarReference(Var, index, level)
@@ -194,7 +196,7 @@ method getVarReference(Var, index, level)
                  else fail
                  }
               else if x1 == "][" then {
-                 v := variable(x2, Monitored, level) | integer(x2)
+                 v := variable(x2, CMonitored, level) | integer(x2)
                  if abs(v) <= *Var then {
                     Var := Var[v]
                     return getVarReference(Var, index, level)
@@ -202,8 +204,8 @@ method getVarReference(Var, index, level)
                  else fail
                  }
               else{
-                 i1 := variable(x1, Monitored, level) | integer(x1)
-                 i2 := variable(x2, Monitored, level) | integer(x2)
+                 i1 := variable(x1, CMonitored, level) | integer(x1)
+                 i2 := variable(x2, CMonitored, level) | integer(x2)
                  if abs(i1) <= *Var & abs(i2) <= *Var then {
                     Var := Var[i1:i2]
                     return getVarReference(Var, index, level)
@@ -215,7 +217,7 @@ method getVarReference(Var, index, level)
            }
       "table":{
            x := get(index)
-           if v := variable(x, Monitored, level, 1) |
+           if v := variable(x, CMonitored, level, 1) |
                                       integer(x) | string(x[2:-1]) then {
               if member(Var, v) then {
                  Var := Var[v]
@@ -251,16 +253,18 @@ end
 #
 method setVarReference(lvar, index, level, value)
    local v, j, i1, i2, x, x1, x2, fld, Var
+   local CMonitored := DState.coState.target.val
+   /level := DState.coState.target.curr_frame
 
    if *index = 0 then {
-      if variable(lvar, Monitored, level) then {
-         variable(lvar, Monitored, level, 1) := value
+      if variable(lvar, CMonitored, level) then {
+         variable(lvar, CMonitored, level, 1) := value
          return
          }
       else fail
       }
 
-   Var := variable(lvar, Monitored, level, 1)
+   Var := variable(lvar, CMonitored, level, 1)
    if \Var then {
       if *index ~= 0 then {
       while *index > 0 do {
@@ -279,15 +283,15 @@ method setVarReference(lvar, index, level, value)
            x1 := x
            x2 := get(index)
            if \x1 & /x2 then {
-              v := variable(x1, Monitored, level) | integer(x1)
-              variable(lvar, Monitored, level, 1) :=
+              v := variable(x1, CMonitored, level) | integer(x1)
+              variable(lvar, CMonitored, level, 1) :=
                        Var[1:v] || string(value) || Var[v+1:0]
               return
               }
            else if \x1 & \x2 then {
-              i1 := variable(x1, Monitored, level) | integer(x1)
-              i2 := variable(x2, Monitored, level) | integer(x2)
-              variable(lvar, Monitored, level, 1) :=
+              i1 := variable(x1, CMonitored, level) | integer(x1)
+              i2 := variable(x2, CMonitored, level) | integer(x2)
+              variable(lvar, CMonitored, level, 1) :=
                        Var[1:i1]|| string(value) ||Var[i2:0]
               return
               }
@@ -295,7 +299,7 @@ method setVarReference(lvar, index, level, value)
            }
         "list":{
            if x ~== "][" then {
-              if v := variable(x, Monitored, level, 1) | integer(x) then {
+              if v := variable(x, CMonitored, level, 1) | integer(x) then {
                  if type(v) == "integer" & member(Var, v) then {
                     if *index = 0 then {
                        Var[v] := value
@@ -309,7 +313,7 @@ method setVarReference(lvar, index, level, value)
               }
            }
         "table":{
-           if v := variable(x, Monitored, level, 1) |
+           if v := variable(x, CMonitored, level, 1) |
                                       integer(x) | string(x[2:-1]) then {
               if member(Var, v) then {
                  if *index = 0 then {
@@ -341,7 +345,7 @@ method setVarReference(lvar, index, level, value)
       }#end while
       }#end if *index ~= 0 then
       else{
-         variable(lvar, Monitored, level, 1) := value
+         variable(lvar, CMonitored, level, 1) := value
          DState.Write("hmmmm!!!!")
          return
          }
@@ -355,6 +359,8 @@ end
 #
 method printVar(Expr, action, level)
    local Var, var, ref, index, x, expr:=""
+   local CMonitored := DState.coState.target.val
+   /level := DState.coState.target.curr_frame
 
    index := parsePrintExpression(Expr)
 
@@ -367,7 +373,7 @@ method printVar(Expr, action, level)
       }
 
    var := get(index)
-   if Var := variable(var, Monitored, level) then
+   if Var := variable(var, CMonitored, level) then
       if (ref := getVarReference(Var, index, level)) & *index = 0 then {
          case action of {
             "*" :{ Message := "\n   *"||expr||" = "||*ref }
@@ -435,6 +441,7 @@ end
 #
 method cmdPrint(cmd)
    local i, j, expr, action, level, cur_level, left, right
+   local CMonitored := DState.coState.target.val
 
    if DState.State ~= PAUSE then {
       DState.State := ERROR
@@ -444,8 +451,9 @@ method cmdPrint(cmd)
       return
       }
 
-   cur_level := keyword("level",Monitored)
-   level     := DState.cur_Frame
+   cur_level := keyword("level", CMonitored)
+   level := DState.coState.target.curr_frame
+
    if level > cur_level then {
       Message   :="\n   Frame #"||level||" is not valid."
       Message ||:="\n   The stack currently has "||cur_level||" frame(s)."

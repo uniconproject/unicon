@@ -1,9 +1,7 @@
 #
-# stepping.icn
-# It handles UDB's stepping and continuing related tasks
-# Author: Ziad Al-Sharif
-# Date:   7-15-2008
-# e-mail: zsharif@gmail.com
+# stack.icn:   handle UDB's model of target program stack
+# Author:      Ziad Al-Sharif, zsharif@gmail.com
+# Contributor: Gigi Young
 #
 
 $include "evdefs.icn"
@@ -16,25 +14,37 @@ class Stack(
    Message     # a string with latest message from this class 
    )
 
+method getLevel(C)
+   local source_new, source_old, CMonitored, levels_up := 0
+
+   source_old := CMonitored := C
+   source_new := keyword("source",source_old)
+   until source_new === source_old do {
+      levels_up +:= 1
+      source_old := source_new
+      source_new := keyword("source",source_new)
+      }
+   return levels_up
+end
+
 #
 # writes down the current frame information, 
 # used by cmdPrint, cmdFrame, cmdUp, cmdDown
 #
 method printFrame(frame, detail:1)
    local x, i, level, p:="(", pname
-   local pfile:="file ", pline:="line ", CMonitored
-   
-   CMonitored := keyword("current",Monitored)
+   local pfile:="", pline:="", CMonitored := DState.coState.target.val
 
+   # something funky is going on with &level I believe...
    level := keyword("level", CMonitored) - 1
 
    if 0 <= frame <= level then {
       Message := "   #"|| frame
-      pname := image(proc(CMonitored, frame))
 
+      # check for proc() failure in lieu of &level being reliable
+      if not (pname := image(proc(CMonitored, frame))) then fail
       pname := pname[find(" ",pname)+1 : 0]
 
-#       pname ? if tab(find(" ")+1) then pname := tab(0)
       Message ||:= ": "|| pname
       every x := paramnames(CMonitored,frame) do {
          if \detail then {
@@ -44,13 +54,15 @@ method printFrame(frame, detail:1)
          else
             p ||:= x||", "
          }
+
       p:= p[1:-2]
       Message ||:= p ||")"
-      # work around that is valid when the source file of the debuggee is 
-      # loaded and the name of the procedure is not any where in another class 
+
+      # work around that is valid when the source file of the debuggee is
+      # loaded and the name of the procedure is not anywhere in another class
       #pfile := keyword("file",Monitored,frame) # ideal solution
       #pline := keyword("line",Monitored,frame) # ideal solution
-      if frame = 0 then{
+      if frame = 0 then {
          pfile ||:= keyword("file", CMonitored)
          pline ||:= keyword("line", CMonitored)
          }
@@ -62,28 +74,35 @@ method printFrame(frame, detail:1)
          }
       Message ||:= " at "|| pfile ||":"||pline
       }
-   else
+   else {
       Message := "\n   The \""||frame ||"\" is not a valid frame number_
                   \n   valid frames are (0 <= frame_num <= "||level||")."
+
+      # in lieu of &level reliability
+      DState.Write(Message)
+      fail
+      }
    DState.Write(Message)
+   return
 end
 
 #
 # writes out a list of information about frames i to j inclusive
 #
 method printFrames(i, j)
-   local f, level
+   local f, level, CMonitored := DState.coState.target.val
    
    # make sure that i < j
    if j < i then i :=: j
    if i < 0 then i := 0
    if j < 0 then j := 0
 
-   level := keyword("level", Monitored) - 1
-   if i<=level & j<=level then{
-      DState.Write("") 
-      every f := i to j do
-          printFrame(f)
+   level := keyword("level", CMonitored) - 1
+   if i<=level & j<=level then {
+      DState.Write("")
+      every f := i to j do {
+         if not printFrame(f) then fail # in lieu of &level reliability
+         }
       if j < level then
          DState.Write("   (More stack frames follow...)")
       }
@@ -103,15 +122,18 @@ end
 # Moves one frame up on the execution stack
 #
 method cmdUp(cmd)
-   local level
+   local level, CMonitored := DState.coState.target.val
 
-   level := keyword("level",Monitored) - 1 
+   level := keyword("level", CMonitored) - 1 
    if DState.State = PAUSE then {
-      if DState.cur_Frame = level then
+      if DState.coState.target.curr_frame = level then
          DState.Write("\n   No more Frames up !!!")
       else {
-         DState.cur_Frame +:= 1
-         printFrame(DState.cur_Frame)
+         DState.coState.target.curr_frame +:= 1 
+         if not printFrame(DState.coState.target.curr_frame) then {
+            DState.Write("\n   No more Frames up !!!")
+            DState.coState.target.curr_frame -:= 1 
+            }
 	 }
       }
    else {
@@ -128,11 +150,11 @@ end
 method cmdDown(cmd)
 
    if DState.State = PAUSE then {
-      if DState.cur_Frame = 0 then
+      if DState.coState.target.curr_frame = 0 then
          DState.Write("\n   No more Frames Down !!!")
       else {
-         DState.cur_Frame -:= 1
-         printFrame(DState.cur_Frame)
+         DState.coState.target.curr_frame -:= 1
+         printFrame(DState.coState.target.curr_frame)
 	 }
       }
    else {
@@ -148,17 +170,18 @@ end
 # It can be used to jump into a specific frame, [f n]
 #
 method cmdFrame(cmd)
-   local frame, level 
+   local frame, level, CMonitored
 
-   if DState.State = PAUSE then{ 
+   if DState.State = PAUSE then {
+      CMonitored := DState.coState.target.val
       if *cmd = 1 then {
-         printFrame(DState.cur_Frame)
+         printFrame(DState.coState.target.curr_frame)
 	 }
-      else{
-         if frame := integer(cmd[2]) then{
-            level := keyword("level",Monitored) -1
-            if 0 <= frame <= level then{
-               DState.cur_Frame := frame
+      else {
+         if frame := integer(cmd[2]) then {
+            level := keyword("level", CMonitored) - 1
+            if 0 <= frame <= level then {
+               DState.coState.target.curr_frame := frame
                printFrame(frame)
                }
             else{
@@ -188,10 +211,11 @@ end
 # other aliases are [bt] [where]
 #
 method cmdBacktrace(cmd)
-   local ans, level, frames
+   local ans, level, frames, CMonitored
 
    if DState.State = PAUSE then {
-      level := keyword("level", Monitored)
+      CMonitored := DState.coState.target.val
+      level := keyword("level", CMonitored) - 1
       if *cmd = 1 then {
          BaseFrame := 0
          while BaseFrame < level do {

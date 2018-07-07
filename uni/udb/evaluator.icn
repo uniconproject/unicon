@@ -1,9 +1,7 @@
 #
-# evaluator.icn
-# Handles the main Runtime Monitoring facilities
-# Author : Ziad Al-Sharif
-# Date   : Feb 24, 2008 
-# e-mail : zsharif@gmail.com
+# evaluator.icn: Handles the main Runtime Monitoring facilities
+# Author:	 Ziad Al-Sharif, zsharif@gmail.com
+# Contributor:	 Gigi Young
 #
 
 $include "evdefs.icn"
@@ -15,6 +13,9 @@ link image
 link ximage
 link getpaths
 link evnames
+
+global ESource
+global es_flag # eventsource flag (OWN | MONITORED)
 
 #
 # Contains the core of the udb debugging facilities 
@@ -37,32 +38,27 @@ class Evaluator(
    )
 
 #
-# This was in the evaltree.icn unicon library, we had to modify 
-# it some how for the need of the udb debugging facilities. 
+# This was adapted from the evaltree.icn unicon library
+# for the needs of the udb debugging facilities. 
 #
 method startEvaluator()
    local obj, eventMask, valueMask
-   eventMask := DState.eventMask
-   valueMask := DState.valueMask
-   while EvGet(eventMask, valueMask) do {
-      #write("----->",evnames(&eventcode), ": ", syntname(&eventvalue))
 
-      # Classical Debugging Tehniques --This is Bad for watchpoints 
-      #if *(\DState.MaskTable[&eventcode]) > 0 then 
-      #   BuiltIns[&eventcode](self) ???????!!! checklater
+   DState.coState.init(Monitored)
+   while EvGet(DState.eventMask, DState.valueMask) do {
 
-      case &eventcode of{
-        E_Line:{
-          if *DState.breakMask > 0  then{ Break.checkBreakpoint() }
-          if DState.RunCode = NEXT  then{ Step.checkNext()        }
-          if DState.RunCode = STEP  then{ Step.checkStep()        }
-          if DState.RunCode = PSTEP then{ Step.checkStep()        }  
+      case &eventcode of {
+        E_Line: {
+          if *DState.breakMask > 0  then { Break.checkBreakpoint() }
+          if DState.RunCode = NEXT  then { Step.checkNext()        }
+          if DState.RunCode = STEP  then { Step.checkStep()        }
+          if DState.RunCode = PSTEP then { Step.checkStep()        }  
           }
-        E_Assign | E_Value :{ 
+        E_Assign | E_Value: {
           # check for Watch point on changed vars & keywords
           if *DState.watchChangeMask > 0  then Watch.checkWatchChange()
           }
-        E_Deref:{
+        E_Deref: {
           # check for Watch point on read vars & keywords
           if *DState.watchReadMask   > 0  then Watch.checkWatchRead()
           }
@@ -77,6 +73,32 @@ method startEvaluator()
           }
         E_PatPush | E_PatPop | E_PatVal:{
                                 Step.handle_PatStack() }
+
+        # Coexp created, add to list of coexps
+        E_CoCreate: { 
+           # parent is current coexp
+           DState.addCoexp(&eventvalue)
+           #DState.coState.add_coexp(&eventvalue,DState.coState.get_curr())
+           #DState.coState.print_state()
+           }
+
+        # Coexp activated, set current coexp to value
+        E_Coact: { 
+           DState.updateCoState(&eventvalue)
+           #DState.coState.print_state()
+           }
+        # Coexp failed to produce result, remove from list of coexps
+        E_Cofail: { 
+           DState.removeCoexp()
+           DState.updateCoState(&eventvalue)
+           #DState.coState.print_state()
+           }
+        # Coexp returned, set current coexp to value
+        E_Coret: { 
+           DState.updateCoState(&eventvalue)
+           #DState.coState.print_state()
+           }
+
         E_Exit:               { handle_Exit()     }
         E_Error:              { handle_Error()    }
         E_Signal:             { handle_Signals()  }
@@ -102,12 +124,11 @@ method startEvaluator()
       # Temporal Assertions
       if *DTA.assertTable > 0 then  DTA.forward()
 
-      if DState.State = PAUSE then{
+      if DState.State = PAUSE then {
          suspend
-         eventMask := DState.eventMask   ##the eventMask may have been updated
          }
       else
-      if DState.State = END   then{ return  }
+      if DState.State = END   then { return  }
       }
 end
 

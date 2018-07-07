@@ -1,9 +1,7 @@
 #
-# breakpoint.icn
-# It handles UDB's breakpoints related tasks
-# Author: Ziad Al-Sharif
-# Date:   7-15-2008
-# e-mail: zsharif@gmail.com
+# breakpoint.icn: handle UDB's breakpoint-related tasks
+# Author:         Ziad Al-Sharif, zsharif@gmail.com
+# Contributor:    Gigi Young
 #
 
 $include "evdefs.icn"
@@ -18,7 +16,9 @@ record breakPt(
    fname, # The file name that has the breakpoint
    line,  # The exact line number where the breakpoint is
    state, # an integer code with (ENABLED | DISABLED | DELETED)
-   code   # a copy of the actual source code of that line
+   code,  # a copy of the actual source code of that line
+   coexp  # instance of class Coexp, holds the value of the coexp that the 
+          # breakpoint is applied to, value is &null if applied to all coexps
    )
 
 class BreakPoint(
@@ -40,16 +40,16 @@ method checkBreakpoint()
       L := breakPoints[cur_file]
       every x := !L do
 	 if cur_line = x.line & x.state = ENABLED &
-	    id := isBreakExist(cur_file,cur_line) then {
+	    (id := isBreakExist(cur_file,cur_line)) &
+            ((\x.coexp & x.coexp.id == DState.coState.curr.id) |
+            /x.coexp) then {
+
 	    DState.State := PAUSE
 	    # this delete will help "next" and "step" operate well
 	    # jut remove the the breakMask set from the valueMask
 	    # table temporarly until the continue command comes on
 	    delete(DState.valueMask,E_Line)
-	    msg   :="\n   Breakpoint #"||id||" at : "||
-	            cur_file||":"||cur_line||"."
-	    msg ||:="\n   "||cur_line||":"|| #???"\nb->"
-	            DState.srcFile.getSrcLine(cur_file, cur_line)
+            msg := constructBpMsg(x, 1) # 1 -> show source code. add a flag?
 	    DState.Write(msg)
 	    return
 	    }
@@ -72,6 +72,27 @@ method getBreakState(state)
 end
 
 #
+# Construct a breakpoint message.
+#
+method constructBpMsg(bp, verbose)
+   local breakpoint := "", coexp := "", src_code := ""
+   
+   if /bp then return "" # null breakpoint?
+   
+   breakpoint ||:= "\n   Breakpoint #"|| bp.id || 
+                   " (" || getBreakState(bp.state) || ") at " ||
+                   bp.fname || ":" || bp.line 
+
+   if \verbose then 
+      src_code ||:= "\n     " || bp.line || ": " || bp.code
+
+   if \bp.coexp then
+      coexp ||:= " coexp " || bp.coexp.id 
+
+   return breakpoint || coexp || src_code
+end
+
+#
 # prints out a list of the existing breakpoints used by cmdBreak
 #
 method printBreakInfo(cmd)
@@ -82,10 +103,9 @@ method printBreakInfo(cmd)
    if /name then {
       every x := key(breakPoints) do {
 	 L := breakPoints[x]
-	 every bp := !L do
-	    msg||:="\n   Breakpoint #"|| bp.id||" at : file "||bp.fname||
-	           ", line "||bp.line||";("||
-	           getBreakState(bp.state)||"). Source code"||": "||bp.code
+	 every bp := !L do {
+            msg ||:= constructBpMsg(bp)
+            }
 	 }
       }
    else {
@@ -94,9 +114,7 @@ method printBreakInfo(cmd)
 	    L := breakPoints[x]
 	    every bp := !L do {
 	       if name = bp.id then {
-	          msg :="\n   Breakpoint #"|| bp.id||" at : file "||bp.fname||
-	                ", line "||bp.line||";("||
-	               getBreakState(bp.state)||"). Source code"||": "||bp.code
+                  msg := constructBpMsg(bp)
 	          break break
 	          }
 	       }
@@ -108,10 +126,7 @@ method printBreakInfo(cmd)
 	 if DState.srcFile.isSrcFile(name) then {
 	    if L:=breakPoints[name] & type(L) == "list" then {
 	       every bp := !L do
-	          msg||:="\n   Breakpoint #"||bp.id||" at : file "||bp.fname||
-	                 ", line "||bp.line ||";(" ||
-	                 getBreakState(bp.state)||"). Source code"||": "||
-	                 bp.code
+                  msg ||:= constructBpMsg(bp)
 	       }
 	    else
 	       msg := "\n   No breakpoints available in "||name
@@ -175,7 +190,7 @@ end
 #
 method cmdBreak(cmd)
    local code, line, fname, cname, pkgname, arg, break_point, i
-
+   local coexp, num_colon, arg_list
    msg := ""
    if not (DState.State = (LOAD | PAUSE)) then {
       DState.State := ERROR
@@ -187,55 +202,121 @@ method cmdBreak(cmd)
    DState.State := SKIP
 
    # if cmd is only "break"; will print all of the preset breakpoints info
-   if *cmd = 1 then {  # i.e. break
+   if *cmd = 1 then {
       printBreakInfo()
       return
       }
 
-   if *cmd = 2 then { # i.e. break line, or break procedure/method
-      if DState.State = PAUSE then
+   # [breakcmd] [coexp N] - get coexpression if this syntax is used
+   if *cmd >= 4 & cmd[-2] == "coexp" then {
+      if /(coexp := DState.coState.get_coexp(cmd[-1])) then {
+	 DState.State := ERROR
+         msg := "\n   "||cmd[-2]||" "||cmd[1]||" does not exist."||
+	        "\n   Use command \"coexp\" to view activated coexpressions."
+         DState.Write(msg)
+         fail
+         }
+      until pull(cmd) == "coexp" # pull [coexp N] off list
+      }
+
+   # "break line" or "break procedure/method"
+   if *cmd = 2 then {
+      if DState.State = PAUSE then {
 	 fname := keyword("file",Monitored)
+         }
       else
 	 fname := DState.srcFile.procMainFile
-      arg   := cmd[2]
-      }
-   else if *cmd = 3 then { # i.e. break file line
-      fname := cmd[2]
-      arg   := cmd[3]
-      }
-   else if *cmd = 4 then { # i.e. break file:line, break class::method,
-	                  #   or break package::procedure
-      if cmd[3] == ":" then {
-	 fname := cmd[2]
-	 arg   := cmd[4]
-	 }
-      else if cmd[3] == "::" then {
-	 pkgname := cname := cmd[2]
-	 arg := cmd[4]
+
+      # parse cmd[2] for word args, :, and ::
+      arg_list := []
+      num_colon := 0
+      s := ""
+
+      cmd[2] ? { 
+         # splits words and colons up to last colon
+         while c := move(1) do {
+            # word arg
+            if c ~== ":" then s ||:= c 
+            # colon arg
+            else { 
+               num_colon +:= 1
+               while c := (move(1) == ":") do {
+                  num_colon +:= 1
+                  if num_colon > 2 then {
+	             DState.State := ERROR
+               	     msg   :="\n   \""||DState.cmdHistory[1]||
+                             "\" is not a known command"||
+	                     "\n   Try \"help\" or \"help break\" for assistance."
+         	     DState.Write(msg)
+                     fail
+                     }
+                  }
+               # append word argument 
+               put(arg_list,s)
+               s := ""
+                # append colon argument 
+               every j := 1 to num_colon do  s ||:= ":"
+               put(arg_list,s)
+               num_colon := 0
+               s := ""
+               }
+            }
+            # append the last word arg (after last colon)
+            put(arg_list,s)
+         }
+
+      # break line | break proc/method
+      if *arg_list = 1 then {
+         arg := cmd[2]
+         }
+      # break file:line 
+      else if *arg_list = 3 & arg_list[2] == ":" then {
+         fname := arg_list[1]
+         arg := arg_list[3] 
+         }
+      # break class::method | break package::procedure 
+      else if *arg_list = 3 & arg_list[2] == "::" then {
+
+	 pkgname := cname := arg_list[1]
+	 arg := arg_list[3]
 	 if DState.srcCode.isMethod(arg, cname)  then {
 	    fname := DState.srcFile.getClassFile(cname)
 	    line  := DState.srcFile.getMethodLine(arg, cname, fname)
 	    }
-	 else if DState.srcCode.isPackage(pkgname) &
-	         DState.srcCode.isProcedure(arg)    then
-	    fname := DState.srcFile.getProcFile(arg)
+         # this currently gives a run-time error
+         else if DState.srcCode.isPkgProc(arg, pkgname) then {
+	    fname := DState.srcFile.getProcFile(arg, pkgname)
+            }
 	 else {
 	    DState.State := ERROR
-	    msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+	    msg := "\n   \""||DState.cmdHistory[1]||"\" is not a known command"
 	    msg ||:="\n   Try \"help\" or \"help break\" for assistance."
 	    DState.Write(msg)
 	    return
 	    }
-	 }
+         }
+      # break package::class::method 
+      else if *arg_list = 5 & arg_list[2] == "::" & arg_list[4] == "::" then {
+
+         pkgname := arg_list[1] 
+         cname := arg_list[3] 
+         arg := arg_list[5] 
+         if DState.srcCode.isPackage(pkgname) &
+   	    DState.srcCode.isMethod(arg, cname) then
+   	    fname := DState.srcFile.getProcFile(arg, pkgname, cname)
+         }
+      # invalid syntax
+      else {
+         DState.State := ERROR
+         msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+         msg ||:="\n   Try \"help\" or \"help break\" for assistance."
+         DState.Write(msg)
+         return
+         }
       }
-   else if *cmd = 6 & cmd[3] == "::" & cmd[5] == "::" then {
-      # i.e. break package::class::method
-      pkgname := cmd[2]
-      cname := cmd[4]
-      arg := cmd[6]
-      if DState.srcCode.isPackage(pkgname) &
-	 DState.srcCode.isMethod(arg, cname) then
-	 fname := DState.srcFile.getProcFile(arg)
+   else if *cmd = 3 then { # break file line 
+      fname := cmd[2]
+      arg   := cmd[3]
       }
    else {
       DState.State := ERROR
@@ -245,8 +326,6 @@ method cmdBreak(cmd)
       return
       }
 
-   #write("fname=", image(fname))
-   #fname := addExtension(fname)
    if \fname then {
       if not find(".icn", fname) then
 	 fname ||:= ".icn"
@@ -259,16 +338,20 @@ method cmdBreak(cmd)
       return
       }
 
+   # have both line and fname from cmd
    if \line & \fname then {
       break_point := breakPt(count +:= 1, fname, line, ENABLED,
-	                     DState.srcFile.getSrcLine(fname, line))
+	                     DState.srcFile.getSrcLine(fname, line), coexp)
       }
+   # fname is a valid src file, parse arg 
    else if DState.srcFile.isSrcFile(fname) then {
       if DState.srcFile.isLoaded(fname) then {
+         # arg is a line no
 	 if line := integer(arg) then {
 	    if DState.srcFile.isInFile(fname, line) then {
-	       if code := DState.srcFile.searchFileLines(fname, line) then
-	          break_point:= breakPt(count +:= 1, fname, line, ENABLED,code)
+	       if code := DState.srcFile.getSrcLine(fname, line) then
+	          break_point:= breakPt(count +:= 1, fname, line, ENABLED,
+                                        code, coexp)
 	       else {
 	          msg:="\n   Line number was not found,_
 	                \n   Please try a different line number"
@@ -283,10 +366,12 @@ method cmdBreak(cmd)
 	       return
 	       }
 	    }
+         # arg is a proc/method - default to procedure
 	 else {
 	    if line := DState.srcFile.searchFileProcs(fname, arg) then
 	       break_point := breakPt(count +:= 1, fname, line, ENABLED,
-	                              DState.srcFile.getSrcLine(fname, line))
+	                              DState.srcFile.getSrcLine(fname, line),
+                                      coexp)
 	    else {
 	       msg:="\n   Procedure not found_
 	             \n   Make sure the procedure/method name is correct!"
@@ -299,10 +384,12 @@ method cmdBreak(cmd)
 	 if DState.srcFile.isMissing(fname) then {
 	    msg:="\n   Source file \""||fname||"\" is not loaded !!!"
 	    if line := integer(arg) then
-	       break_point := breakPt(count +:= 1, fname , line, ENABLED, "?")
+	       break_point := breakPt(count +:= 1, fname , line, ENABLED, "?",
+                                      coexp)
 	    }
 	 }
       }
+   # invalid src file, fname
    else {
       msg := "\n   Source file \""||fname||"\" is not in the binary !!!"
       DState.Write(msg)
@@ -318,9 +405,7 @@ method cmdBreak(cmd)
 	 }
       else {
 	 addBreakPoint(fname, break_point)
-	 msg ||:= "\n   Breakpoint #"||
-	           break_point.id||" at : file "||fname||", line "||line||"."||
-	          "\n   Source code:"||DState.srcFile.getSrcLine(fname, line)
+         msg ||:= constructBpMsg(break_point)
 	 }
       DState.Write(msg)
       return
@@ -364,8 +449,9 @@ method cmdClear(cmd)
       return
       }
    if *cmd = 3 then {
-      if DState.State = PAUSE then
+      if DState.State = PAUSE then {
 	 fname := keyword("file",Monitored)
+         }
       else
 	 fname := DState.srcFile.procMainFile
       arg   := cmd[3]

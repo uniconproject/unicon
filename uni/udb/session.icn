@@ -1,9 +1,7 @@
 #
-# session.icn
-# Handles the main debugging session properties such as initialization
-# Author : Ziad Al-Sharif
-# Date   : Feb 24, 2008 
-# e-mail : zsharif@gmail.com
+# session.icn: main debugging session properties such as initialization
+# Author:      Ziad Al-Sharif, zsharif@gmail.com
+# Contributor: Gigi Young
 #
 
 $include "evdefs.icn"
@@ -42,9 +40,9 @@ method startSession()
       # every udb_evalTree(eventMask, activation_record) do
       #Debug.initEvaluator()
 
-      every Debug.startEvaluator() do{
-         if DState.State = PAUSE then{
-            if DState.RunCode = SIGNAL then{
+      every Debug.startEvaluator() do {
+         if DState.State = PAUSE then {
+            if DState.RunCode = SIGNAL then {
                Message := "\n   "||DState.TP[1]||" program received a signal "||
                           &eventvalue||"."
                DState.Write(Message)
@@ -122,6 +120,11 @@ method parse_Command(cmd)
      "delete" :{  cmdDelete(cmd)                    }
      "enable" :{  cmdEnable(cmd)                    }
      "disable":{  cmdDisable(cmd)                   }
+
+     "coexp"  :{ cmdCoexp(cmd)                      } 
+     "directory"|
+     "dir"    :{ DState.srcFile.cmdDirectory(cmd)   } 
+     "show"   :{ cmdShow(cmd)                       }
      # Temporal Assertions support
      "assert" :{  Debug.DTA.cmdAssert(cmd)          }
      #-cmds that are not in GDB
@@ -178,6 +181,7 @@ method cmdLoad(cmd)
          DState.Write(Message)
          }
       }
+   # load | load args
    else
       DState.initializeState(cmd[2:0])
 end
@@ -188,18 +192,23 @@ end
 method cmdRun(cmd)
    local i, ans, args
      
-   if DState.State = (LOAD | END | PAUSE) then{
-      args := [DState.TP[1]]
-      if *cmd >= 2 then
-          every i:=2 to *cmd do
-             put(args, cmd[i])
+   if DState.State = (LOAD | END | PAUSE) then {
+      # run - use args from 'load' 
+      if *cmd = 1 then {
+         args := DState.TP
+         }
+      # run args - overwrite args from 'load'
+      else if *cmd >= 2 then {
+         args := [DState.TP[1]]
+         every i:=2 to *cmd do put(args, cmd[i])
+         }
       DState.TP := args
  
       if DState.State = PAUSE then{
          Message  :="\n   The program being debugged has been started already."
          Message||:="\n   Start it from the beginning? (Y/n)?: "
          DState.Writes(Message)
-         if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then{
+         if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then {
             Debug.Watch.resetWatchInfo()
             Debug.Trace.resetTraceInfo()
             DState.Update(RERUN)
@@ -234,9 +243,9 @@ method cmdQuit()
    # check whether a program is running or not, Paused, etc??????
    # do not exit directlly if the program is in the running state
    if DState.State = (RUN | PAUSE) then{
-      DState.Writes("\n   The program "|| 
+      DState.Writes("\n   The program \""|| 
                           DState.srcFile.exeName ||
-                          " is running.  Exit anyway (Y/n)?: ")
+                          "\" is running.  Exit anyhow (Y/n)?: ")
       if (not (ans:=read())) | (*ans=0) | (map(ans[1]) == "y") then {
          DState.State := QUIT
 	 }
@@ -429,6 +438,50 @@ else{
 end
 
 #
+# Allows switching between different co-expressions
+#
+method cmdCoexp(cmd)
+   # coexp 
+   if *cmd = 1 then {
+      DState.printCoState()
+      }
+   # coexp N
+   else if *cmd = 2 then {
+      if /(coexp := DState.coState.get_coexp(cmd[2])) then {
+         DState.State := ERROR
+         Message:="\n   "||DState.cmdHistory[1]||" does not exist."||
+                  "\n   Use command \"coexp\" to view activated coexpressions."
+         DState.Write(Message)
+         fail
+         }
+      if DState.updateCoTarget(coexp.id) then DState.printCoState()
+
+      # invalid syntax
+#      if cmd[2] ? upto(~&digits)\1 then {
+#         write("second argument of coexp must be a positive integer")
+#         }
+      # coexp exists 
+#      else {
+#         if DState.updateCoTarget(cmd[2]) then
+#            DState.printCoState()
+#         }
+      }
+end
+
+method cmdInfoCoexp(cmd)
+   # info coexp
+   if *cmd = 2 & cmd[2] == "coexp" then {
+      DState.printCoState()
+      }
+   else {
+      DState.State := ERROR
+      Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                 "\n   Try \"help\" for assistance."
+      DState.Write(Message)
+      }
+end
+
+#
 # Finds out information about some of the debugging commands
 #
 method cmdInfo(cmd)
@@ -437,7 +490,7 @@ method cmdInfo(cmd)
    case cmd[2] of  {
       "b"          |
       "break"      |
-      "breakpoint" |
+      "breakpoint" | # need to change breakpoints to show co-exp
       "breakpoints":{ Debug.Break.printBreakInfo(cmd)        }
       "awatch"     |
       "rwatch"     |
@@ -452,7 +505,8 @@ method cmdInfo(cmd)
       "trace"      |
       "watchpoint" |
       "tracepoints":{ Debug.Trace.printTraceInfo(cmd)        }
-      # The followings are for source code information
+      "coexp"      :{ cmdInfoCoexp(cmd)                     } 
+      # The following are for source code information
       "global"     :{ Debug.Print.cmdPrint(["p","-g"])       }
       "local"      :{ Debug.Print.cmdPrint(["p","-l"])       }
       "static"     :{ Debug.Print.cmdPrint(["p","-s"])       }
@@ -476,8 +530,11 @@ method cmdInfo(cmd)
       "function"   :{ Debug.Print.cmdSource(["src","-func"]) }
        
       "icode"      :{ Debug.Print.cmdSource(["src","-icode"])}
-      
-      # the follwing is to query about agents
+      "dir"        |
+      "directory"  |
+      "directories":{ DState.srcFile.cmdShowDir(cmd) } 
+
+      # the following is to query about agents
       "agent"      |      
       "agents"     :{ Debug.Internal.cmdInfo(name)
                       Debug.External.cmdInfo(name)           }
@@ -494,6 +551,29 @@ method cmdInfo(cmd)
                      "\n   Try \"help\" for assistance."
           DState.Write(Message)
           }
+      }
+end
+
+method cmdShow(cmd) 
+   if *cmd = 2 then {
+      case cmd[2] of {
+         "directories"|
+         "directory"|
+         "dir" : { DState.srcFile.cmdShowDir(cmd) }
+         default: { 
+            DState.State := ERROR
+            Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||
+                       "\""||
+                       "\n   Try \"help\" for assistance."
+            DState.Write(Message)
+            }
+         }
+      }
+   else {
+      DState.State := ERROR
+      Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                 "\n   Try \"help\" for assistance."
+      DState.Write(Message)
       }
 end
 

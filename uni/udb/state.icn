@@ -1,9 +1,7 @@
 #
-# state.icn
-# Handles the main debugging state properties
-# Author : Ziad Al-Sharif
-# Date   : Feb 24, 2008
-# e-mail : zsharif@gmail.com
+# state.icn:   Handles the main debugging state properties
+# Author:      Ziad Al-Sharif, zsharif@gmail.com
+# Contributor: Gigi Young
 #
 
 $include "evdefs.icn"
@@ -40,7 +38,7 @@ class State(
    srcFile,         # an instance of the SourceFile class
    icode,           # an instance of the Icode class
    srcCode,         # an instance of the SourceCode class
-   
+   coState,         # an instance of CoexpState class
    cmdHistory       # list keeps all of the UDB's cmd Session History
    )
 
@@ -89,9 +87,9 @@ method constructEventMask()
    ## write("----> state.icn: re-constructing all of event mask and value mask")
    if *internalMask >0 | *externalMask >0    | 
       *traceMask >0    | *assertEventMask >0 then{
-      eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
-                   cset(E_MXevent) ++
-                   cset(E_Collect || E_EndCollect) ++
+      eventMask := cset(E_CoCreate || E_Coact || E_Cofail || E_Coret ||
+			E_Error || E_Exit || E_Signal || E_MXevent ||
+			E_Collect || E_EndCollect) ++
                    internalMask ++ externalMask ++ traceMask ++ assertEventMask
       if *breakMask > 0 | *assertEventMask > 0 then{
          if member(traceMask,E_Line)    |
@@ -135,14 +133,14 @@ method constructEventMask()
 
       }
    else{ # *internalMask = 0 & *externalMask = 0 & *traceMask = 0
-      eventMask := cset(E_Error || E_Exit || E_Signal) ++ 
-                   cset(E_Collect || E_EndCollect)
-      if *breakMask > 0 then{
+      eventMask := cset(E_Error || E_Exit || E_Signal ||
+			E_CoCreate || E_Coact || E_Cofail || E_Coret ||
+			E_Collect || E_EndCollect)
+      if *breakMask > 0 then {
          eventMask ++:= cset(E_Line)
          valueMask[E_Line] := breakMask
-
          }
-      if *watchChangeMask > 0 then{
+      if *watchChangeMask > 0 then {
          if member(watchChangeMask, "&pos") then
             eventMask ++:= cset(E_Spos)
          if member(watchChangeMask, "&subject") then
@@ -232,19 +230,45 @@ end
 # Initialize the UDB Debugging State
 #
 method initializeState(tp)
-   local x, src, found, missing, plural:=""
+   local x, src, found, missing, plural:="", missing_files
 
    # This is only when the TP is passed at the start of udb, i.e: ./udb test
    # in either case the ErrorCode will be initialized
    State := NONE
-   if tp[1] then{
-      TP := tp
+
+   # load (no program loaded)
+   if *tp = 0 & *TP = 0 then {
+      State := ERROR
+      Message ||:= "\n   A program must be pre-loaded_
+                    \n   Type \"help\" for assistance"
+      RunCode := NONE
+      }
+   # load | load args | udb | udb args 
+   else if *tp > 0 | *TP > 0 then {
+
+      # clear loaded program info
+      #
+      # BUG: If a new program is loaded during another program's execution,
+      #      the first new 'run' command will finish the previous program's
+      #      execution first before starting new loaded program...
+      #
+      # also need a way to clear break/watch/tracepoints from here 
+      if *TP > 0 then {
+         srcFile.reinit()
+         srcCode.reinit()
+         coState.reinit()      
+         }
+      # load new program
+      if *tp > 0 then {
+         TP := tp
+         }
+
       # check if the TP is loadable and accessable.
 $ifndef _UNIX
       if not stat(TP[1]) & stat(TP[1]||".exe") then
          TP[1]||:=".exe"
 $endif
-      if stat(TP[1]) then{
+      if stat(TP[1]) then {
          #--
          EvInit(TP) | stop("cant start evinit on " || TP[1])
          if src := icode.getSrcFileNames(TP[1]) then{
@@ -275,18 +299,12 @@ $endif
                         \n   Type \"help\" for assistance."
             }
          }
-      else{
+      else {
          State := ERROR
          Message ||:= "\n   Could not access \"" || TP[1] ||"\""||
                       "\n   Type \"help\" for assistance."
          State := NONE
          }
-      }
-   else{
-      State := ERROR
-      Message ||:= "\n   A program must be pre-loaded_
-                    \n   Type \"help\" for assistance"
-      RunCode := NONE
       }
    Write(Message)
 end
@@ -311,18 +329,19 @@ end
 #
 method Fresh() 
 
-   #Initilly, eventMask does not contain the E_Line & E_Assign events
-   #If there is a breakpoint, E_Line will be added to the eventMask,
-   #and the breakpoint linenum will be inserted in valueMask[E_Line] set
-   #Also, initially the eventMask will not contain the E_Assign event
-   #If there is a watchpoint then the E_Assign will be added and the 
-   #variable will be added to the watchMask set.
+   # Initially, eventMask does not contain the E_Line & E_Assign events
+   # If there is a breakpoint, E_Line will be added to the eventMask,
+   # and the breakpoint linenum will be inserted in valueMask[E_Line] set
+   # Also, initially the eventMask will not contain the E_Assign event
+   # If there is a watchpoint then the E_Assign will be added and the 
+   # variable will be added to the watchMask set.
  
-   eventMask       := cset(E_Error || E_Exit || E_Signal)
-   internalMask    := cset('')
-   externalMask    := cset('')
-   traceMask       := cset('')
-   assertEventMask := cset('')
+   eventMask       := cset(E_Error || E_Exit || E_Signal ||
+			   E_CoCreate || E_Coact || E_Cofail || E_Coret) 
+   internalMask    :=
+   externalMask    :=
+   traceMask       :=
+   assertEventMask := ''
 
    valueMask       := table() 
    assertVars      := set()
@@ -346,6 +365,38 @@ method Fresh()
 end
 
 #
+# Coexpression wrapper functions
+#
+
+# are these really necessary...? makes it more "OO"
+
+method initCoState(tp)
+   return coState.init(tp)
+end
+
+method updateCoState(C)
+   return coState.update_state(C)
+end
+
+method updateCoTarget(x)
+   if x >= 1 then return coState.update_target(x)
+#   else write("not a valid coexpression number")
+end
+
+method addCoexp(C,srcC)
+   return coState.add_coexp(C,srcC)
+end
+
+method removeCoexp(C)
+   if /C then return coState.remove_curr_coexp()
+   else return coState.remove_coexp(C)
+end
+
+method printCoState()
+    return coState.print_state()
+end
+
+#
 # Initialization
 #
 initially()
@@ -359,5 +410,9 @@ initially()
    srcFile   := SourceFile()
    srcCode   := SourceCode()
 
+   coState   := CoexpState()
+
+   eventMask       := cset(E_Error || E_Exit || E_Signal ||
+			   E_CoCreate || E_Coact || E_Cofail || E_Coret)
    Fresh()
 end

@@ -1,9 +1,7 @@
 #
-# trace.icn
-# Handles the main dynamic tracing facilities supported by UDB
-# Author : Ziad Al-Sharif
-# Date   : Feb 24, 2008
-# e-mail : zsharif@gmail.com
+# trace.icn:   Handles the main dynamic tracing facilities supported by UDB
+# Author:      Ziad Al-Sharif, zsharif@gmail.com
+# Contributor: Gigi Young
 #
 
 $include "evdefs.icn"
@@ -37,7 +35,9 @@ class TraceRec(
    state,      # an integer code tells if the trace is enabled/disabled/deleted 
    silent,     # tells when the trace is silent, not null = silent is on
    traceType,  # a string holds the type of the tracing commaand
-   cmd         # a string with the used command
+   cmd,        # a string with the used command
+   coexp       # instance of class Coexp, determines whether trace is for a
+               # specific coexp if non-null
    )
 
    #
@@ -192,8 +192,12 @@ method checkTraceBehavior()
    local tbnam
 
    if member(DState.traceMask, &eventcode) then {
-      #write("Tracing.......................")
       name := image(&eventvalue)
+
+      # don't bother if it isn't the right coexpression
+      if \traceBehavior[name] & \traceBehavior[name].coexp &
+         traceBehavior[name].coexp.id ~= DState.coState.curr.id then fail
+
       if \ (tbnam := traceBehavior[name]) & tbnam.state = ENABLED &
 	  member(tbnam.eventMask, &eventcode) then {
          if /tbnam.hitMax | tbnam.hitCount < abs(tbnam.hitMax) then {
@@ -218,7 +222,6 @@ method printInfo(name)
 			  keyword("level", Monitored)| "?",
 			  &eventcode)
 
-   write(image(R))
    tbn := traceBehavior[name]
    push(tbn.traceList, R)
    tbn.hitCount +:= 1
@@ -242,9 +245,10 @@ method printInfo(name)
    msg||:="\n   --------------------------------------------------\n"
    msg||:="   Tracepoint #" ||traceBehavior[name].id||" on: "||name||"; "||
           getBehaviorNames(&eventcode) ||", "||
-          R.fname||":"||R.line||"."
-   msg||:="\n   "||R.line||":"||
-                DState.srcFile.getSrcLine(R.fname, R.line)
+          R.fname||":"||R.line||
+          " coexp "||DState.coState.curr.id
+   msg||:=".\n   "||R.line||":"||
+	  DState.srcFile.getSrcLine(R.fname, R.line)
    DState.Write(msg)
 end
 
@@ -269,7 +273,7 @@ method showEndTraceInfo(name)
       }
    else
       msg := ""
-   msg ||:="\n   Do you want to display old Trace Info (Y|n)? : " 
+   msg ||:="\n   Do you want to display old trace info (Y|n)? : "
    DState.Writes(msg)
    if read() == (""|"y"|"Y"|"yes"|"YES") then {
       if traceBehavior[name].hitMax > 0 then { 
@@ -495,7 +499,7 @@ end
 #
 # adds new tracepoint into the traceBehavior record; name is the key
 #
-method addTracepoint(name, cmd)
+method addTracepoint(name, cmd, coexp)
     local op, val
 
     DState.traceMask ++:= ecodeSet
@@ -509,7 +513,7 @@ method addTracepoint(name, cmd)
     #         op, traceValue, traceList, eventMask, cmd)
     traceBehavior[name] := 
        TraceRec(cmd[2], id, hits, 0, 0, op, val, [], ecodeSet, ENABLED,
-                silent, traceType,DState.cmdHistory[1])
+                silent, traceType, DState.cmdHistory[1], coexp)
     # re-construct the traceMask 
     UpdateMask()
 
@@ -526,10 +530,23 @@ end
 # build Variable(s) and/or Behavior(s) tracer  
 #
 method cmdTrace(cmd)
-   local name
+   local name, coexp
 
    if DState.isValidCommand(cmd) then {
       if *cmd >= 2 & resolveTraceInfo(cmd) then {
+
+         # check for [coexp N]
+         if *cmd >= 4 & cmd[-2] == "coexp" then {
+            if /(coexp := DState.coState.get_coexp(cmd[-1])) then {
+	          DState.State := ERROR
+                  msg := "\n   "||cmd[-2]||" "||cmd[1]||" does not exist."||
+      	           "\n   Use command \"coexp\" to view activated coexpressions."
+                  DState.Write(msg)
+                  fail
+               } 
+               until pull(cmd) == "coexp"
+            }
+
          name := traceName || cmd[2]
          if \traceBehavior[name] then {
             msg :="\n   Tracepoint #"||traceBehavior[name].id||
@@ -540,7 +557,7 @@ method cmdTrace(cmd)
             if read() == (""|"y"|"Y"|"yes"|"YES") then {
                msg :="\n   previous command has been replaced."
                DState.Write(msg)
-               addTracepoint(name, cmd)
+               addTracepoint(name, cmd, coexp)
                }
             else {
                msg :="\n   \""||DState.cmdHistory[1]||"\" command is ignored."
@@ -549,7 +566,7 @@ method cmdTrace(cmd)
                }
             }
          else
-            addTracepoint(name, cmd)
+            addTracepoint(name, cmd, coexp)
          }
       else {
          #*cmd = 1 [trace]

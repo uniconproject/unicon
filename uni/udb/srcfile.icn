@@ -1,14 +1,13 @@
 #  
-#  srcfile.icn
-#  Handles the collected Source Files from the Icode
-#  Author : Ziad Al-Sharif
-#  Date   : Feb 24, 2008
-#  e-mail : zsharif@gmail.com
+#  srcfile.icn: Handles the collected Source Files from the Icode
+#  Author:      Ziad Al-Sharif, zsharif@gmail.com
+#  Contributor: Gigi Young
 # 
 
 $include "defaults.icn"
 link bincvt
 link strings
+link paths
 
 #
 # It is used to index the loaded source files in the srcText list
@@ -29,13 +28,17 @@ class SourceFile(
 
    userFiles,    # a set of the loaded user files
    libFiles,     # a set of the loaded library files
+   incFiles,     # a set of the loaded included files
    fileNames,    # List with all source file names that are in the binary
    foundFiles,   # Set with all file names that were found - loaded
    missingFiles, # Set with all file names that were not found - not loaded 
 
    binPath,      # the path of the VM: iconx or wiconx.exe
    srcPath,      # String of paths that will be searched for source files
-   libPath,      # String of paths that will be searched for library files
+   defSrcPath,   # default source path
+   libPath,      # String of paths that will be searched for library files,
+                 # (IPATH, .u)
+   incPath,      # String of include paths (LPATH, .icn)
 
    srcText,      # List holds all source files text
    srcIndex      # Table of our position in the source file; fname is the key
@@ -76,8 +79,9 @@ method loadSourceFiles(fname, src)
    fileNames := src
 
    #start the loading process with the file that has the procedure main() in it
-   if /exeName then
+   if /exeName then {
       exeName := keyword("progname", Monitored)
+      }
 
    procMainFile := getFileName(exeName)
    if i := find(".exe"|".cmd", procMainFile) then
@@ -109,8 +113,9 @@ method loadSourceFiles(fname, src)
             insert(foundFiles, f)
             srcIndex[f] := fileIndex(b,e)
             }
-         else
-            put(missingFiles, fileNames[i]) # keep it as it is
+         else {
+            insert(missingFiles, fileNames[i]) # keep it as it is
+            }
          }
       #else
          #write("File is already found:",f)
@@ -152,10 +157,10 @@ method searchFileProcs(Fname, ProcName)
       while temp := srcText[base + offset] do{
          temp ? {
             tab(many(WhiteSpace))
-            if(temp1 := tab(many(&letters))) == ("procedure"|"method") then{
+            if (temp1 := tab(many(&letters))) == "procedure" then {
               tab(many(WhiteSpace))
               temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
-              if temp1 == ProcName then{
+              if temp1 == ProcName then {
                  return offset
                  }  
               }
@@ -302,13 +307,35 @@ end
 #
 # returns the file name of a procedure 
 #
-method getProcFile(pname)
+method getProcFile(pname, pkgname)
     local fname
 
     every fname := !foundFiles do
-       if searchFileProcs(fname, pname) then
-          return fname
+       if searchFileProcs(fname, pname) then {
+          if /pkgname | isPackageFile(fname, pkgname) then
+             return fname
+          }
     fail
+end
+
+#
+# predicate that tells whether fname is...
+#
+method isPackageFile(fname, pkgname) 
+   local base, offset, file
+
+   if \fname & \pkgname & member(foundFiles, fname) & \srcIndex[fname] then {
+      base := srcIndex[fname].fbegin
+      offset := srcIndex[fname].fend
+      file := srcText[base + offset] 
+      file ? {
+         tab(many(WhiteSpace))
+         if(tab(many(&letters))) == "package" then {
+            tab(many(WhiteSpace))
+            if tab(many(&letters)) == pkgname then return
+            }
+         }
+      }
 end
 
 #
@@ -503,62 +530,91 @@ method getBinPath()
 end
 
 #
-# returns the Unicon's library paths 
+# gdb default srcPath=(current working dir):(compilation dir)?
 #
-method getLibPath()
-   local f
+method getSrcPath()
+   local path
 
-   /binPath := getBinPath()
-   libPath := binPath || ".." || PS || "ipl" || PS || "gdata"  || " " ||
-              binPath || ".." || PS || "ipl" || PS || "gincl"  || " " ||
-              binPath || ".." || PS || "ipl" || PS || "gprocs" || " " ||
-              binPath || ".." || PS || "ipl" || PS || "gprogs" || " " ||
-              binPath || ".." || PS || "ipl" || PS || "incl"   || " " ||
-              binPath || ".." || PS || "ipl" || PS || "lib"    || " " ||
-              binPath || ".." || PS || "ipl" || PS || "mincl"  || " " ||
-              binPath || ".." || PS || "ipl" || PS || "mprocs" || " " ||
-              binPath || ".." || PS || "ipl" || PS || "mprogs" || " " ||
-              binPath || ".." || PS || "ipl" || PS || "procs"  || " " ||
-              binPath || ".." || PS || "ipl" || PS || "progs"  || " " ||
-              binPath || ".." || PS || "uni" || PS || "lib"    || " " ||
-              binPath || ".." || PS || "uni" || PS || "gui" 
+   path := "."
+
+   return path 
 end
 
 #
-# Searchs through the specified source path for the requested file.
-# It looks first in current directory, 
-# then it looks in the surrent direcory neigborhood, if it failed,
-# it looks in the library paths 
+# Returns Unicon's library paths (IPATH) as a space-delimited string
+#
+method getLibPath()
+   local ipath := pathOSCompat(ipaths())
+
+   #
+   # Prepend udb default IPATH
+   #
+   ipath := binPath || ".." || PS || "ipl" || PS || "procs"  || " " ||
+            binPath || ".." || PS || "ipl" || PS || "gprocs" || " " ||
+            binPath || ".." || PS || "ipl" || PS || "mprocs" || " " ||
+            ipath
+
+   return ipath
+end
+
+#
+# Returns Unicon's include paths (LPATH) as a space-delimited string
+#
+method getIncPath()
+   local lpath := pathOSCompat(lpaths())
+
+   return lpath
+end
+
+#
+#
+#
+method pathOSCompat(path)
+   local temp_s
+
+$ifndef _UNIX
+   path ? {
+      if c := move(1) then {
+         if c == "/" then temp_s ||:= "\\"
+         else temp_s ||:= c
+         }
+      }
+   path := temp_s
+$endif
+
+   return path
+end
+
+#
+# Searches through the specified source path for the requested file.
+# It looks first in current directory, lib directories, then inc directories
+#
+# NOTE:
+# Maybe add a feature to find all matches, and if there is more than one,
+# issue a warning, or maybe allow user to decide which to add.
 #
 method dopen(s)
-   local File, spaths, lpaths, path, binpath, f
+   local File, spaths, path, f
 
    if File := open(s) then {
       s := getFileName(s)      
       insert(userFiles, s)
       return File
       }
-   else{
-      spaths := srcPath
-      s := PS || s      # platform-specific
-      spaths ? {
-         while path := tab(find(" ") | 0) do {
-            if File := open(path || s) then {
-               s := getFileName(s)      
-               insert(userFiles, s)
-               return File
-               }
-            tab(many(' ')) | break
+
+   s := PS || s      # platform-specific
+   srcPath ? {
+      while path := tab(find(" ") | 0) do {
+         if File := open(path || s) then {
+            s := getFileName(s)      
+            insert(userFiles, s)
+            return File
             }
+         tab(many(' ')) | break
          }
       }
 
-   # look in the library paths
-   /libPath := getLibPath()
-
-   lpaths := libPath
-   s := PS || s      # platform-specific
-   lpaths ? {
+   libPath ? {
       while path := tab(find(" ") | 0) do {
          if File := open(path || s) then {
             s := getFileName(s)      
@@ -568,32 +624,93 @@ method dopen(s)
          tab(many(' ')) | break
          }
       }
+
+   incPath ? {
+      while path := tab(find(" ") | 0) do {
+         if File := open(path || s) then {
+            s := getFileName(s)      
+            insert(incFiles, s)
+            return File
+            }
+         tab(many(' ')) | break
+         }
+      }
    fail
+end
+
+#
+#
+#
+method cmdDirectory(cmd)
+   local paths := ""
+
+   # dir | directory
+   if *cmd = 1 then {
+      srcPath := defSrcPath
+      }
+
+   # dir | directory args[]
+   else if *cmd > 1 then {
+      every i := 2 to *cmd do {
+         paths ||:= cmd[i] || " "
+         }
+      srcPath := paths || srcPath
+      }
+end
+
+#
+# NOTE: need to add cmd to show dirs.. gdb: show directories | dir
+#
+method cmdShowDir(cmd) 
+   if *cmd = 2 then {
+      write("Source directories: ",srcPath)
+      return
+      }
+   else {
+      DState.State := ERROR
+      Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
+                 "\n   Try \"help\" for assistance."
+      DState.Write(Message)
+      } 
+end
+
+#
+#
+#
+method reinit()
+   exeName     := "?"
+   exeSize     := -1
+
+   srcText     := []
+   srcIndex    := table()
+
+   fileNames   := []
+   userFiles   := set()
+   incFiles    := set()
+   libFiles    := set()
+   foundFiles  := set()
+   missingFiles:= set()
 end
 
 #
 # Initialization
 #
 initially()
-
    exeName     := "?"
    exeSize     := -1
 
-   fileNames   := []
-   userFiles   := set()
-   libFiles    := set()
-
    srcText     := []
    srcIndex    := table()
-   foundFiles  := set()
-   missingFiles:= []
 
-$ifdef _UNIX
-   srcPath   := ". .. ../.."
-$else
-   srcPath   := ". .. ..\.."
-$endif
-   #srcPath||:= " " || getenv( "DPATH" )
-   srcPath ||:= " " || getenv( "LPATH" )
-   srcPath ||:= " " || getenv( "IPATH" )
+   fileNames   := []
+   userFiles   := set()
+   incFiles    := set()
+   libFiles    := set()
+   foundFiles  := set()
+   missingFiles:= set()
+
+   binPath := getBinPath()
+   defSrcPath := srcPath := getSrcPath()
+   libPath := getLibPath()
+   incPath := getIncPath()
 end

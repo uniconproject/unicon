@@ -37,19 +37,21 @@ end
 procedure maketitle(L)
    i := 1
    # title starts after <body> tag
-   while not match("<body bgcolor=", L[i]) do
+   while L[i] & (not match("<body bgcolor=", L[i])) do
       i +:= 1
-   i +:= 1 # skip over "<body>"
+   if match("body bgcolor=", L[i]) then
+      i +:= 1 # skip over "<body>"
    ii := i
-   while not integer(L[ii][-9:-5]) do ii +:= 1
+   while L[ii] & (not integer(L[ii][-9:-5])) do ii +:= 1
    j := ii + 1
    # end of title page is an <hr> by itself
    while L[j] ~== "<hr/>" do j +:= 1
 
    # table of contents starts near the end, at link for "outline"
    k := j+1
-
    while L[k] & (not match("<a name=\"outline\">", L[k])) do k +:= 1
+   if L[k] then
+      L[k] := "<a name=\"outline\"></a><h3>Contents</h3>"
 
    if match("<a name=\"outline\">", L[k]) then {
       L[k] := "<a name=\"outline\"></a><h3>Contents</h3>"

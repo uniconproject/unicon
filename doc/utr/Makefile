@@ -6,6 +6,10 @@
 # Compile/generate PDF and/or HTML version of Unicon TR's.
 # HTML versions may be special-purpose, for Unicon IDE's online help.
 #
+# Under Fedora (e.g. 27 or 28), you may need to install texlive-tabulary,
+# texlive-wrapfig, and texlive-changepage in order to build utr16.pdf
+# and/or utr18.pdf.
+#
 
 all: utr9c.html utr18.pdf
 

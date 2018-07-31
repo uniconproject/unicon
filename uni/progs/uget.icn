@@ -17,12 +17,14 @@ procedure usage()
     write("\t -v : verbose output")
     write("\t -h : show html header only, don't save the file")
     write("\t -p : print the content to the console, don't save to file")
+    write("\t -r : maximum allowed redirects. Default to 3")
+    write("\t -f : filename to save to. Default to the url filename")
     exit(-1)
 end
 
 procedure main(args)
-    local opts, url, web, fname, mode, redirect:=3
-    opts := options(args, "novhpr")
+    local opts, url, web, fname, mode, redirect
+    opts := options(args, "novhpr+f:")
     url := args[1] | usage()
 
     # check whether to verify certificates or not
@@ -31,7 +33,7 @@ procedure main(args)
     else
 	mode := "m"
 
-    redirect := \opts["r"]
+    redirect := \opts["r"] | 3
     
     if ssl := match("https", url) then {
 	if not (&features == "secure sockets layer encryption") then
@@ -40,7 +42,9 @@ procedure main(args)
     else
 	match("http", url) | usage()
 
-    fname := basename(url)
+    fname := \opts["f"] | basename(url)
+    if fname == "" then
+	    fname := basename(url[1:-1]) # drop the trailing slash
 
     # try to open the url, loop to follow redirects if applicable
     repeat {
@@ -73,7 +77,7 @@ procedure main(args)
 	if /opts["p"] then {
 	    write("saving to file ", fname)
 	    if stat(fname) & /opts["o"] then
-		close(web) & stop("file already exists, use -o to overwrite")
+		close(web) & stop("file already exists, use -o to overwrite or -f for a new filename")
 	    fout := open(fname, "w") | stop("open(",image(fname), ") error: ", &errortext)
 	}
 	

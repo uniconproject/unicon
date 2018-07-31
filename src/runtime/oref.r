@@ -863,6 +863,7 @@ operator{0,1} [] subsc(underef x -> dx,y)
 #ifdef Messaging
 	    if (status & Fs_Messaging) {
 	       tended char *c_y;
+	       long int msglen;
 	       struct MFile *mf = BlkD(dx,File)->fd.mf;
 	       if (!cnv:C_string(y, c_y)) {
 		  runerr(103, y);
@@ -879,8 +880,16 @@ operator{0,1} [] subsc(underef x -> dx,y)
 		  }
 	       else if (strcmp(c_y, "Reason-Phrase") == 0 || 
 			strcmp(c_y, "message") == 0) {
-		  if (mf->resp->msg != NULL && strlen(mf->resp->msg) > 0) {
-		     return string(strlen(mf->resp->msg), mf->resp->msg);
+		  if (mf->resp->msg != NULL && (msglen = strlen(mf->resp->msg)) > 0) {
+		     /*
+		      * we could just return string(strlen(mf->resp->msg), mf->resp->msg)
+		      * but mf->resp->msg could be gone by the time the result is accessed
+		      * if the user called close() so, just allocate a string and return it.
+		      */
+		     
+		     StrLen(result) = msglen;
+		     StrLoc(result) = alcstr(mf->resp->msg, msglen);
+		     return result;
 		     }
 		  else {
 		     fail;
@@ -889,7 +898,6 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	       else if (c_y[0] >= '0' && c_y[0] <= '9' && 
 			strcmp(mf->tp->uri.scheme, "pop") == 0) {
 		  Tprequest_t req = { LIST, NULL, 0 };
-		  long int msglen;
 		  char buf[100];
 		  buf[0]='\0';
 

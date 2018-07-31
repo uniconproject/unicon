@@ -40,6 +40,8 @@ procedure main(args)
     else
 	match("http", url) | usage()
 
+    fname := basename(url)
+
     # try to open the url, loop to follow redirects if applicable
     repeat {
 	web := &null
@@ -69,7 +71,6 @@ procedure main(args)
     if /opts["h"] then {
 	# save to file or print to screen
 	if /opts["p"] then {
-	    fname := basename(url)	
 	    write("saving to file ", fname)
 	    if stat(fname) & /opts["o"] then
 		close(web) & stop("file already exists, use -o to overwrite")

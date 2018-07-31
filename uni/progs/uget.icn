@@ -68,8 +68,12 @@ procedure main(args)
     }
 
     # make sure the response was OK
-    if web["Status-Code"] ~= 200 then
-	close(web) & stop("Server response: " || web["Status-Code"])
+    if web["Status-Code"] ~= 200 then {
+	c := web["Status-Code"]
+	p := web["Reason-Phrase"]
+	close(web)
+	stop("Server response: ", c, " ", p)
+    }
 
     # if we are printing headers only then we are done, otherwise save the file
     if /opts["h"] then {

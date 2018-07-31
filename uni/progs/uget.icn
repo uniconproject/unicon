@@ -10,7 +10,14 @@ link basename
 link options
 
 procedure usage()
-    stop("usage: uget URI")
+    write("usage: uget [options] URI")
+    write("options:")
+    write("\t -n : no https certificate verification")
+    write("\t -f : force overwrite existing file")
+    write("\t -v : verbose output")
+    write("\t -h : show html header only, don't save the file")
+    write("\t -p : print the content to the console, don't save to file")
+    exit(-1)
 end
 
 procedure main(args)
@@ -47,19 +54,20 @@ procedure main(args)
 	stop("url status: " || web["Status-Code"])
 
     if /opts["h"] then {
-	fname := basename(url)
+
+	if /opts["p"] then {
+	    fname := basename(url)	
+	    write("saving to ", fname)
+	    if stat(fname) & \opts["f"] then stop("file already exists, use -f to overwrite")
+	    fout := open(fname, "w") | stop("can't open/write ", fname)
+	}
 	
-	write("saving to ", fname)
-
-	if stat(fname) & \opts["f"] then stop("file already exists, use -f to overwrite")
-	fout := open(fname, "w") | stop("can't open/write ", fname)
-
 	size := integer(web["Content-Length"])
 	write("size:", size)
 	t := &time
 	line := reads(web, size) | stop("Can't reads")
 	write(fout, line)
-	close(fout)
+	close(\fout)
 	write("time:", &time-t)
 
     }

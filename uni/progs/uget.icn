@@ -13,7 +13,7 @@ procedure usage()
     write("usage: uget [options] URI")
     write("options:")
     write("\t -n : no https certificate verification")
-    write("\t -f : force overwrite existing file")
+    write("\t -o : overwrite existing file")
     write("\t -v : verbose output")
     write("\t -h : show html header only, don't save the file")
     write("\t -p : print the content to the console, don't save to file")
@@ -21,13 +21,17 @@ procedure usage()
 end
 
 procedure main(args)
-    local opts, url, web, fname, mode
-    opts := options(args, "nfvhp")
+    local opts, url, web, fname, mode, redirect:=3
+    opts := options(args, "novhpr")
     url := args[1] | usage()
+
+    # check whether to verify certificates or not
     if \opts["n"] then
 	mode := "m-" # don't verify https certificates 
     else
 	mode := "m"
+
+    redirect := \opts["r"]
     
     if ssl := match("https", url) then {
 	if not (&features == "secure sockets layer encryption") then
@@ -36,44 +40,56 @@ procedure main(args)
     else
 	match("http", url) | usage()
 
-     repeat {
-	web := open(url, mode) | stop("can't open URL ", url)
+    # try to open the url, loop to follow redirects if applicable
+    repeat {
+	web := &null
+	web := open(url, mode) | stop("open(", image(url), ") error: ", &errortext )
+
+	\web | stop("can't open(", url,")")
+	    
 	if \opts["v"] | \opts["h"] then
 	    showheaders(web)
-
-	if web["Status-Code"] = 301 then {
+	
+	# if this is a redirect then follow it
+	if web["Status-Code"] = 301 & redirect > 0 then {
 	    url := web["Location"]
-	    write(left("Redirect", 16), ": ", image(url))
+	    /opts["v"] | write(left("Redirect", 16), ": ", image(url))
 	    close(web)
+	    redirect-:=1
 	}
 	else
 	    break
     }
 
+    # make sure the response was OK
     if web["Status-Code"] ~= 200 then
-	stop("url status: " || web["Status-Code"])
+	close(web) & stop("Server response: " || web["Status-Code"])
 
+    # if we are printing headers only then we are done, otherwise save the file
     if /opts["h"] then {
-
+	# save to file or print to screen
 	if /opts["p"] then {
 	    fname := basename(url)	
-	    write("saving to ", fname)
-	    if stat(fname) & \opts["f"] then stop("file already exists, use -f to overwrite")
-	    fout := open(fname, "w") | stop("can't open/write ", fname)
+	    write("saving to file ", fname)
+	    if stat(fname) & /opts["o"] then
+		close(web) & stop("file already exists, use -o to overwrite")
+	    fout := open(fname, "w") | stop("open(",image(fname), ") error: ", &errortext)
 	}
 	
 	size := integer(web["Content-Length"])
-	write("size:", size)
+	/opts["v"] | write("file size: ", size, " bytes")
 	t := &time
-	line := reads(web, size) | stop("Can't reads")
+	line := reads(web, size) | stop("reads(",image(web),") error: ", &errortext)
 	write(fout, line)
 	close(\fout)
-	write("time:", &time-t)
+	/opts["v"] | write("time: ", &time-t)
 
     }
     close(web)
 end
 
 procedure showheaders(web)
+    write("---------- Server Response --------------")
     every write(left(k:=key(\web), 16), ": ", web[k])
+    write("-----------------------------------------")
 end

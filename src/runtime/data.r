@@ -446,7 +446,7 @@ struct errtab errtab[] = {
 
    0,	""
    };
-
+
 /*
  * Note:  the following material is here to avoid a bug in the Cray C compiler.
  */

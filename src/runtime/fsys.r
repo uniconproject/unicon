@@ -717,8 +717,10 @@ Deliberate Syntax Error
 			runerr(1212, fname);
 			break;
 		     case TP_ETRUST:
+		     	set_errortext(1214);
+			fail;
 		     case TP_EVERIFY:
-		        set_syserrortext(errno);
+		     	set_errortext(1215);
 		     	fail;
 		     case TP_EMEM:
 		     case TP_EOPEN:

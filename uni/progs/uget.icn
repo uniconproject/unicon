@@ -1,19 +1,71 @@
 #
 # uget.icn - Unicon version of wget.
 #
-# See also: Phillip Thomas has a version that is actually tested.
-# We may want to replace this one with his.
+# Authors: Phillip Thomas and Jafar Al-Gharaibeh
+#
+# Date: July 2018
 #
 
 link basename
-procedure main(av)
-   if av[1] == "-f" then force := pop(av[1])
-   match("http", av[1]) | stop("usage: uget URI")
-   f := open(av[1],"m") | stop("can't open URL ", av[1])
-   b := basename(av[1])
-   write(b)
-   if stat(b) & /f then stop("uget won't overwrite ", b, " without -f option")
-   fout := open(b, "w") | stop("can't open/write ", b)
-   while chunk := reads(f, 10000000) do writes(fout, chunk)
-   close(f); close(fout)
+link options
+
+procedure usage()
+    stop("usage: uget URI")
+end
+
+procedure main(args)
+    local opts, url, web, fname, mode
+    opts := options(args, "nfvhp")
+    url := args[1] | usage()
+    if \opts["n"] then
+	mode := "m-" # don't verify https certificates 
+    else
+	mode := "m"
+    
+    if ssl := match("https", url) then {
+	if not (&features == "secure sockets layer encryption") then
+	    stop("This Unicon build does not support https")  
+    }
+    else
+	match("http", url) | usage()
+
+     repeat {
+	web := open(url, mode) | stop("can't open URL ", url)
+	if \opts["v"] | \opts["h"] then
+	    showheaders(web)
+
+	if web["Status-Code"] = 301 then {
+	    url := web["Location"]
+	    write(left("Redirect", 16), ": ", image(url))
+	    close(web)
+	}
+	else
+	    break
+    }
+
+    if web["Status-Code"] ~= 200 then
+	stop("url status: " || web["Status-Code"])
+
+    if /opts["h"] then {
+	fname := basename(url)
+	
+	write("saving to ", fname)
+
+	if stat(fname) & \opts["f"] then stop("file already exists, use -f to overwrite")
+	fout := open(fname, "w") | stop("can't open/write ", fname)
+
+	size := integer(web["Content-Length"])
+	write("size:", size)
+	t := &time
+	line := reads(web, size) | stop("Can't reads")
+	write(fout, line)
+	close(fout)
+	write("time:", &time-t)
+
+    }
+    close(web)
+end
+
+procedure showheaders(web)
+    every write(left(k:=key(\web), 16), ": ", web[k])
 end

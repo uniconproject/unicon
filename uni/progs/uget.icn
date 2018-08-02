@@ -10,21 +10,27 @@ link basename
 link options
 
 procedure usage()
-    write("usage: uget [options] URI")
-    write("options:")
+    prog := basename(&progname)
+    write("Usage: ", prog, " [options] <URL>\n")
+    write(prog, " is a unicon utility for downlaoding files from the web. It supports")
+    write("HTTP and HTTPS. If the protocol is not specified in the URL it defaults to HTTP,")
+    write("(i,e unicon.org is equivalent to http://unicon.org)\n")
+    write("Options:")
     write("\t -n : no https certificate verification")
     write("\t -o : overwrite existing file")
     write("\t -v : verbose output")
-    write("\t -h : show html header only, don't save the file")
+    write("\t -s : show http server response only, don't save the file")
     write("\t -p : print the content to the console, don't save to file")
     write("\t -r : maximum allowed redirects. Default to 3")
     write("\t -f : filename to save to. Default to the url filename")
+    write("\t -h : show this help\n")
+
     exit(-1)
 end
 
 procedure main(args)
     local opts, url, web, fname, mode, redirect
-    opts := options(args, "novhpr+f:")
+    opts := options(args, "novshpr+f:")
     url := args[1] | usage()
 
     # check whether to verify certificates or not
@@ -34,13 +40,15 @@ procedure main(args)
 	mode := "m"
 
     redirect := \opts["r"] | 3
+
+    url ? proto := map(tab(many(&letters)))
+
+    if not (\proto == ("http" | "https")) then 
+	url := (proto := "http") || "://" || url 
     
-    if ssl := match("https", url) then {
+    if proto == "https" then
 	if not (&features == "secure sockets layer encryption") then
 	    stop("This Unicon build does not support https")  
-    }
-    else
-	match("http", url) | usage()
 
     fname := \opts["f"] | basename(url)
     if fname == "" then
@@ -53,7 +61,7 @@ procedure main(args)
 
 	\web | stop("can't open(", url,")")
 	    
-	if \opts["v"] | \opts["h"] then
+	if \opts["v"] | \opts["s"] then
 	    showheaders(web)
 	
 	# if this is a redirect then follow it
@@ -81,7 +89,8 @@ procedure main(args)
 	if /opts["p"] then {
 	    write("saving to file ", fname)
 	    if stat(fname) & /opts["o"] then
-		close(web) & stop("file already exists, use -o to overwrite or -f for a new filename")
+		close(web) &
+		stop("file already exists, use -o to overwrite or -f for a new filename")
 	    fout := open(fname, "w") | stop("open(",image(fname), ") error: ", &errortext)
 	}
 	

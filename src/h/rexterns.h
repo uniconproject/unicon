@@ -280,6 +280,11 @@ extern struct descrip amperErrno;
    #else				/* MultiThread */
       extern char *code;		/* start of icode */
       extern char *ecode;		/* end of icode */
+      extern char *endcode;		/* end of icode? */
+      extern struct ipc_line *ilines;	/* start of line # table */
+      extern struct ipc_line *elines;	/* end of line # table */
+      extern struct ipc_fname *filenms;	/* start of file name table */
+      extern struct ipc_fname *efilenms;/* end of file name table */
       extern dptr statics;		/* start of static variables */
       extern char *strcons;		/* start of the string constants */
       extern dptr fnames;		/* field names */

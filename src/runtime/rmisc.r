@@ -1390,7 +1390,6 @@ struct b_coexpr *ce;
 /*
  * findline - find the source line number associated with the ipc
  */
-#ifdef SrcColumnInfo
 int findline(ipc_in)
 word *ipc_in;
 {
@@ -1408,21 +1407,11 @@ word *ipc_in;
   return ((findloc(ipc_in) >> 16) & 31);
 }
 
-int findloc(ipc_in)
-#else					/* SrcColumnInfo */
-int findline(ipc_in)
-#endif					/* SrcColumnInfo */
-word *ipc_in;
+int findloc(word *ipc_in)
 {
    uword ipc_offset;
    uword size;
    struct ipc_line *base;
-
-#ifndef MultiThread
-   extern struct ipc_line *ilines, *elines;
-   extern word *records;
-   extern char *endcode;
-#endif					/* MultiThread */
 
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
@@ -1453,10 +1442,6 @@ int line;
 {
    uword size;
    struct ipc_line *base;
-
-#ifndef MultiThread
-   extern struct ipc_line *ilines, *elines;
-#endif					/* MultiThread */
 
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
@@ -1523,12 +1508,6 @@ word *ipc_in;
    uword size;
    struct ipc_line *base;
 
-#ifndef MultiThread
-   extern struct ipc_line *ilines, *elines;
-   extern word *records;
-   extern char *endcode;
-#endif					/* MultiThread */
-
    static int two = 2;	/* some compilers generate bad code for division
 			   by a constant that is a power of two ... */
 
@@ -1559,12 +1538,6 @@ word *ipc_in;
 {
    uword ipc_offset;
    struct ipc_fname *p;
-
-#ifndef MultiThread
-   extern struct ipc_fname *filenms, *efilenms;
-   extern word *records;
-   extern char *endcode;
-#endif					/* MultiThread */
 
    if (!InRange(code,ipc_in,endcode))
       return "?";

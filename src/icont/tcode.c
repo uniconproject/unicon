@@ -1055,35 +1055,15 @@ char *s;
          emits("filen", lastfiln);
          }
 
-#ifdef SrcColumnInfo
    /*
     * if either line or column has changed, emit location information
     */
-#ifdef SrcSyntaxInfo 
    if (((Col(n) << 21) + ((s ? SyntCode(s) : 0) << 16) + Line(n)) != lastlin) {
       lastlin = (Col(n) << 21) + ((s ? SyntCode(s) : 0) << 16) + Line(n);
-#else
-   if (((Col(n) << 21) + Line(n)) != lastlin) {
-      lastlin = (Col(n) << 21) + Line(n);
-#endif                                  /* SrcSyntaxInfo */
       emitn("line",Line(n));
       emitn("colm",Col(n));
       }
-#ifdef SrcSyntaxInfo 
       emits("synt",s ? s : "any");
-#endif                                  /* SrcSyntaxInfo */
-
-#else					/* SrcColumnInfo */
-   /*
-    * if line has changed, emit line information
-    */
-   if (Line(n) != lastlin) {
-      lastlin = Line(n);
-      emitn("line", lastlin);
-      }
-#endif					/* SrcColumnInfo */
-
-
    }
 
 #ifdef MultipleRuns

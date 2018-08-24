@@ -140,7 +140,6 @@ unsigned int n;
 /* 
  * used by the new pesudo Op_Synt and the E_Syntax
  */
-#ifdef SrcSyntaxInfo
 #define MaxSyntax 17
 
 char *Syntax[]={
@@ -172,4 +171,3 @@ char *s;
      } 
     return 0;
 } 
-#endif  /* SrcSyntaxInfo */

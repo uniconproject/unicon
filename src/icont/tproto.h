@@ -124,8 +124,6 @@ void	ldump			(void);
 void	idump			(char *c);
 #endif					/* DeBugLinker */
 
-#ifdef SrcSyntaxInfo
 int	SyntCode(char *);
-#endif					/* SrcSyntaxInfo */
 
 int add_linked_file(char * file);

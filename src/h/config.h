@@ -713,14 +713,6 @@ Deliberate Syntax Error
    #define PPDirectives {"passthru", PpKeep},
 #endif					/* PPDirectives */
 
-#ifndef NoSrcColumnInfo
-   #define SrcColumnInfo
-#endif					/* NoSrcColumnInfo */
-
-#ifndef NoSrcSyntaxInfo
-   #define SrcSyntaxInfo
-#endif					/* NoSrcSyntaxInfo */
-
 #ifndef NoPseudoPty
    #define PseudoPty
 #endif					/* PseudoPty */

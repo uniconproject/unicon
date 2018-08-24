@@ -291,33 +291,9 @@ void gencode()
          case Op_Line:
             /*
              * Line number change.
-             *  All the interesting stuff happens in Op_Colm now.
+             *  All the interesting stuff happens in Op_Synt now.
              */
             lineno = getdec();
-
-#ifndef SrcColumnInfo
-            /*
-             * Enter the value in the line number table
-             *  that is stored in the icode file and used during error
-             *  handling and execution monitoring.  One can generate a VM
-             *  instruction for these changes, but since the numbers are not
-             *  saved and restored during backtracking, it is more accurate
-             *  to check for line number changes in-line in the interpreter.
-             *  Fortunately, the in-line check is about as fast as executing
-             *  Op_Line instructions.  All of this is complicated by the use
-             *  of Op_Line to generate Noop instructions when enabled by the
-             *  LineCodes #define.
-             *
-             * If SrcColumnInfo is required, this code is duplicated,
-             *  with changes, in the Op_Colm case below.
-             */
-            if (lnfree >= &lntable[nsize])
-               lntable  = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
-                  sizeof(struct ipc_line), 1, "line number table");
-            lnfree->ipc_saved = pc;
-            lnfree->line = lineno;
-            lnfree++;
-#endif					/* SrcColumnInfo */
 
             /*
              * Could generate an Op_Line for monitoring, but don't anymore:
@@ -336,25 +312,22 @@ void gencode()
 
             break;
 
-         case Op_Colm:			/* always recognize, maybe ignore */
+         case Op_Colm:
+            /*
+             * Column number change.
+             *  All the interesting stuff happens in Op_Synt now.
+             */
 
             colmno = getdec();
-#ifndef SrcSyntaxInfo
-   #ifdef SrcColumnInfo
-            if (lnfree >= &lntable[nsize])
-               lntable  = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
-                  sizeof(struct ipc_line), 1, "line number table");
-            lnfree->ipc_saved = pc;
-            lnfree->line = (colmno << 21) + lineno ;
-            lnfree++;
-   #endif                               /* SrcColumnInfo */
-#endif					/* SrcSyntaxInfo */
 	    newline();
             break;
 
          case Op_Synt:
+	    /*
+	     * Syntax code change. Adds an entry to the line number table
+	     * for the current <line, column, syntax code> tuple.
+	     */
 
-#ifdef SrcSyntaxInfo
 	    getsynt(&synt);
             if (lnfree >= &lntable[nsize])
                 lntable = (struct ipc_line *)trealloc(lntable, &lnfree, &nsize,
@@ -362,7 +335,6 @@ void gencode()
             lnfree->ipc_saved = pc;
             lnfree->line = (colmno << 21) + (SyntCode(synt) << 16) + lineno;
             lnfree++;
-#endif					/* SrcSyntaxInfo */
             break;
 
          case Op_Mark:

@@ -153,7 +153,6 @@ struct b_file {			/* file block */
    };
 
 #ifdef ISQL
-
   struct ISQLFile {             /* SQL file */
     SQLHDBC hdbc;               /* used by open, close, query, fetch */
     SQLHSTMT hstmt;             /* statement handler */

@@ -250,9 +250,11 @@ void		fatalerr	(int n,dptr v);
 #endif /* __clang__ */
 int		findcol		(word *ipc_in);
 char		*findfile	(word *ipc_in);
+char		*findfile_p	(word *ipc_in, struct progstate *);
 int		findipc		(int line);
 word		* findoldipc	(struct b_coexpr *ce, int level);
 int		findline	(word *ipc_in);
+int		findline_p	(word *ipc_in, struct progstate *);
 int		findloc		(word *ipc_in);
 int		findsyntax	(word *ipc_in);
 int		fldlookup	(struct b_record *rec, const char * const fld);

@@ -1387,6 +1387,7 @@ struct b_coexpr *ce;
 #endif					/* CoExpr */
 
 #if !COMPILER
+
 /*
  * findline - find the source line number associated with the ipc
  */
@@ -1435,10 +1436,45 @@ int findloc(word *ipc_in)
    return (int)(base->line);
 }
 /*
+ * A "loc" (for location) is a generalization of a line; the line number
+ * table is now a table of loc's. At present these are ints containing
+ * bits for <line,column,syntaxcode>.
+ */
+
+int findloc_p(word *ipc_in, struct progstate *prog)
+{
+   uword ipc_offset;
+   uword size;
+   struct ipc_line *base;
+
+   if (!InRange(prog->Code,ipc_in,prog->Ecode))
+      return 0;
+   ipc_offset = DiffPtrs((char *)ipc_in,(char *)prog->Code);
+   base = prog->Ilines;
+   size = DiffPtrs((char *)prog->Elines,(char *)prog->Ilines) / sizeof(struct ipc_line *);
+   while (size > 1) {
+      if (ipc_offset >= base[size / 2].ipc_saved) {
+         base = &base[size / 2];
+         size -= size / 2;
+         }
+      else
+         size = size / 2;
+      }
+   /*
+    * return the line component of the location (column is top 11 bits)
+    */
+   return (int)(base->line);
+}
+int findline_p(word *ipc_in, struct progstate *p)
+{
+  return findloc_p(ipc_in, p) & 65535;
+}
+
+
+/*
  * findipc - find the first ipc associated with a source-code line number.
  */
-int findipc(line)
-int line;
+int findipc(int line)
 {
    uword size;
    struct ipc_line *base;
@@ -1458,6 +1494,7 @@ int line;
       }
    return base->ipc_saved;
 }
+
 
 /*
  * findoldipc - find the first ipc associated with a procedure frame level.
@@ -1533,8 +1570,7 @@ word *ipc_in;
 /*
  * findfile - find source file name associated with the ipc
  */
-char *findfile(ipc_in)
-word *ipc_in;
+char *findfile(word *ipc_in)
 {
    uword ipc_offset;
    struct ipc_fname *p;
@@ -1545,6 +1581,28 @@ word *ipc_in;
    for (p = efilenms - 1; p >= filenms; p--)
       if (ipc_offset >= p->ipc_saved)
          return strcons + p->fname;
+   fprintf(stderr,"bad ipc/file name table\n");
+   fflush(stderr);
+   c_exit(EXIT_FAILURE);
+   /*NOTREACHED*/
+   return 0;  /* avoid compiler warning */
+}
+
+/*
+ * findfile_p - find source file name associated with the ipc, in program prog
+ * rather than in curpstate.
+ */
+char *findfile_p(word *ipc_in, struct progstate *prog)
+{
+   uword ipc_offset;
+   struct ipc_fname *p;
+
+   if (!InRange(prog->Code,ipc_in,prog->Ecode))
+      return "?";
+   ipc_offset = DiffPtrs((char *)ipc_in,(char *)prog->Code);
+   for (p = prog->Efilenms - 1; p >= prog->Filenms; p--)
+      if (ipc_offset >= p->ipc_saved)
+         return prog->Strcons + p->fname;
    fprintf(stderr,"bad ipc/file name table\n");
    fflush(stderr);
    c_exit(EXIT_FAILURE);

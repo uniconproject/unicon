@@ -526,7 +526,7 @@ function{1} pindex_image(x, i)
 
    if (pattern_image(ep, -1, &result, 0, i, -1) == RunError) 
       runerr(166, x);
-   else return result;
+   return result;
    }
 end
 
@@ -2027,6 +2027,12 @@ function{*} globalnames(ce)
       }
 end
 
+
+/*
+ * A procedure p may now be used as an alternative to co-expression
+ * for second argument. Only works for "line" and "file", to report
+ * that procedure's source location.
+ */
 "keyword(kname,ce,i) - produce a keyword in ce's thread"
 function{*} keyword(keyname,ce,i)
    declare {
@@ -2042,6 +2048,36 @@ function{*} keyword(keyname,ce,i)
       }
    else if is:coexpr(ce) then
       inline { d = ce; }
+   else if is:proc(ce) then inline {
+      struct progstate *ptmp;
+      struct b_proc *proc = BlkD(ce,Proc);
+      word *w;
+      if (proc->ndynam < 0) fail; /* no keyword() on built-in funcs */
+      w = (word *)proc->entryp.icode;
+
+      /* set prog to ce's program. */
+      /* try &eventsource if available, then &current, then search */
+      if (!is:null(curpstate->eventsource) &&
+	  (ptmp = BlkD(curpstate->eventsource,Coexpr)->program) &&
+	  InRange(ptmp->Code, w, ptmp->Ecode)) {
+	     d = curpstate->eventsource;
+	     }
+      else if (InRange(curpstate->Code, w, curpstate->Ecode)) {
+             d = k_current;
+	     }
+      else { /* search for program in which (procedure) ce is located */
+	 struct progstate *p;
+	 d = nulldesc;
+	 for (p = &rootpstate; p != NULL; p = p->next) {
+	    if (InRange(p->Code, w, p->Ecode)) {
+	       d.dword = D_Coexpr;
+	       d.vword.bptr = (union block *)p->Mainhead;
+	       break;
+	       }
+	    }
+	 if (is:null(d)) runerr(118, ce);
+	 }
+      }
    else runerr(118, ce)
    inline {
    BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
@@ -2050,21 +2086,24 @@ function{*} keyword(keyname,ce,i)
    if !def:C_integer(i,0) then
       runerr(101,i)
    body {
+      struct progstate *p = BlkD(d,Coexpr)->program;
+      char *kname = kyname;
+      int k;
+
 #if 0
 /*
- * Unfinished: change this gigantic chain of if (strcmp())... into
- * a switch statement that uses the stringint mechanism.
+ * Unfinished: change keyword()'s gigantic chain of if (strcmp())... into
+ * a switch statement that uses the stringint mechanism. Status: about
+ * ready to go, need #define's for keyword int's in switch statement?
  */
 static stringint siKeywords[] = {
    {0, 67},
-#define KDef(p,n) {"p", n},
+#define KDef(p,n) {Lit(p), n},
 #include "../icont/keyword.h"
 #include "../h/kdefs.h"
    };
 #endif
 
-      struct progstate *p = BlkD(d,Coexpr)->program;
-      char *kname = kyname;
 #ifdef Concurrent
       struct threadstate *tstate;
       if (BlkD(d,Coexpr)->tstate)
@@ -2077,6 +2116,28 @@ static stringint siKeywords[] = {
 #endif					/* Concurrent */
 
       if (kname[0] == '&') kname++;
+
+#if 0
+      k = si_s2i(siKeywords, kname);
+
+      /* It will be plug-and-chug to move to this implementation. */
+      switch(k) {
+      case K_ALLOCATED:
+	 fprintf(stderr, "keyword called on &allocated\n");
+	 fflush(stderr);
+	 break;
+      /* ... */
+      case K_LINE:
+	 fprintf(stderr, "keyword called on &line\n");
+	 fflush(stderr);
+	 break;
+      /* ... */
+      default:
+	 fprintf(stderr, "keyword called on ??\n");
+	 fflush(stderr);
+	 }
+#endif
+
       if (strcmp(kname,"allocated") == 0) {
 #ifdef Concurrent
 	 int tot;
@@ -2178,7 +2239,19 @@ static stringint siKeywords[] = {
 	 struct progstate *savedp = curpstate;
 	 struct descrip s;
          word * ipc_opnd;
-         if (i > 0){
+	 if (is:proc(ce)) {
+	    struct b_proc *proc = BlkD(ce,Proc);
+	    StrLoc(s) = findfile_p((word *)proc->entryp.icode, p);
+	    if (!strcmp(StrLoc(s), "?")) {
+	       fail;
+	       }
+	    else {
+	       StrLen(s) = strlen(StrLoc(s));
+	       return s;
+	       }
+	    }
+         else /* remaining cases are keyword("file",ce,...) */
+	 if (i > 0){
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
 	    ENTERPSTATE(p);
 	    StrLoc(s) = findfile(ipc_opnd);
@@ -2203,6 +2276,18 @@ static stringint siKeywords[] = {
 	 struct progstate *savedp = curpstate;
 	 int ln;
          word * ipc_opnd;
+	 if (is:proc(ce)) {
+	    struct b_proc *proc = BlkD(ce,Proc);
+	    int i;
+	    i = findline_p((word *)proc->entryp.icode, p);
+	    if (i == 0) {
+	       fail;
+	       }
+	    else {
+	       return C_integer i;
+	       }
+	    }
+	 else /* remaining cases are keyword("line",ce,...) */
          if (i > 0){
             ipc_opnd = findoldipc(BlkD(d,Coexpr),i);
 	    ENTERPSTATE(p);

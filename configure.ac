@@ -132,7 +132,11 @@ AC_ARG_ENABLE([ovld],
 AC_ARG_ENABLE([udbtools],
 	[AS_HELP_STRING([--enable-udbtools], [enable Unicon debugger tools])],
 			[udbtools=yes], [udbtools=no])
-			
+
+AC_ARG_ENABLE([progs],
+	[AS_HELP_STRING([--enable-progs], [enable Unicon programs])],
+			[progs=yes], [progs=no])
+
 AC_ARG_ENABLE([verbosebuild],
 	[AS_HELP_STRING([--enable-verbosebuild], [Show full CC build lines with all compiler arguments])],
 			[verbosebuild=yes], [verbosebuild=no])
@@ -146,6 +150,7 @@ AC_ARG_ENABLE([debug],
 AC_ARG_ENABLE([devmode],
 	[AS_HELP_STRING([--enable-devmode], [Developper mode: turn on warnings and debugging options])],
 			[devmode=yes], [devmode=no])
+
 			
 # Save flags 
 orig_cflags="${CFLAGS:-}"
@@ -174,6 +179,10 @@ fi
 
 if test x"$udbtools" = x"yes" ; then
   UDBTOOLS=udbtools
+fi
+
+if test x"$progs" = x"yes" ; then
+  UNIPROGS=progs
 fi
 
 # honor custom flags

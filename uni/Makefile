@@ -3,7 +3,7 @@ include ../Makedefs.uni
 
 .PHONY: all iyacc unicon lib xml gui
 
-all: nographics $(GRAPHICS)
+all: nographics $(GRAPHICS)  $(UDBTOOLS) $(UNIPROGS)
 
 iyacc:
 	cd iyacc; $(MAKE)
@@ -17,9 +17,8 @@ lib: unicon
 xml: lib
 	cd xml; $(MAKE)
 
-nographics: xml $(UDBTOOLS)
+nographics: xml
 	cd udb; $(MAKE)
-	cd progs; $(MAKE)
 	cd parser; $(MAKE)
 	cd unidep; $(MAKE)
 	cd util; $(MAKE)
@@ -27,6 +26,9 @@ nographics: xml $(UDBTOOLS)
 
 udbtools:
 	cd udb; $(MAKE) tools
+
+uniprogs:
+	cd progs; $(MAKE)
 
 gui: nographics
 	cd gui; $(MAKE)

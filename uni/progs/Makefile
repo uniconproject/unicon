@@ -1,8 +1,8 @@
 BASE=../..
 include ../Makedefs
 
-BINPROGS=ie uprof  umake
-PROGS= idxGen $(BINPROGS)
+BINPROGS=ie uprof  umake 
+PROGS= idxGen uget $(BINPROGS)
 
 all: $(PROGS)
 	$(CP) $(BINPROGS) ../../bin

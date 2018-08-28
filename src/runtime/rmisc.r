@@ -1435,6 +1435,8 @@ int findloc(word *ipc_in)
     */
    return (int)(base->line);
 }
+
+#ifdef MultiThread
 /*
  * A "loc" (for location) is a generalization of a line; the line number
  * table is now a table of loc's. At present these are ints containing
@@ -1469,7 +1471,7 @@ int findline_p(word *ipc_in, struct progstate *p)
 {
   return findloc_p(ipc_in, p) & 65535;
 }
-
+#endif					/* MultiThread */
 
 /*
  * findipc - find the first ipc associated with a source-code line number.
@@ -1588,6 +1590,7 @@ char *findfile(word *ipc_in)
    return 0;  /* avoid compiler warning */
 }
 
+#ifdef MultiThread
 /*
  * findfile_p - find source file name associated with the ipc, in program prog
  * rather than in curpstate.
@@ -1609,6 +1612,7 @@ char *findfile_p(word *ipc_in, struct progstate *prog)
    /*NOTREACHED*/
    return 0;  /* avoid compiler warning */
 }
+#endif					/* MultiThread */
 #endif					/* !COMPILER */
 
 /*

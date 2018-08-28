@@ -72,9 +72,9 @@ TRuntime_Status rt_status;
 int line_info;				/* flag: line information is available */
 int versioncheck_only;			/* flag: check version and exit */
 char *file_name = NULL;			/* source file for current execution point */
-#ifndef MultiThread
+#ifndef MultiProgram
 int line_num = 0;			/* line number for current execution point */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 struct b_proc *op_tbl;			/* operators available for string invocation */
 
 extern struct errtab errtab[];		/* error numbers and messages */
@@ -84,7 +84,7 @@ word stksize = StackSize;		/* co-expression stack size */
 
 int runtime_status;
 
-#ifndef MultiThread
+#ifndef MultiProgram
 #if !ConcurrentCOMPILER
 int k_level = 0;			/* &level */
 #ifdef PatternType
@@ -92,7 +92,7 @@ int k_patindex = 0;
 #endif                                  /* PatternType */ 
 #endif                                  /* ConcurrentCOMPILER */
 struct descrip k_main;			/* &main */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 int set_up = 0;				/* set-up switch */
 char *currend = NULL;			/* current end of memory region */
@@ -102,10 +102,10 @@ word memcushion = RegionCushion;	/* memory region cushion factor */
 word memgrowth = RegionGrowth;		/* memory region growth factor */
 
 uword stattotal = 0;			/* cumulative total static allocatn. */
-#if !(defined(MultiThread) || ConcurrentCOMPILER)
+#if !(defined(MultiProgram) || ConcurrentCOMPILER)
 uword strtotal = 0;			/* cumulative total string allocatn. */
 uword blktotal = 0;			/* cumulative total block allocation */
-#endif					/* !(MultiThread|ConcurrentCOMPILER) */
+#endif					/* !(MultiProgram|ConcurrentCOMPILER) */
 
 int dodump;				/* if nonzero, core dump on error */
 int noerrbuf;				/* if nonzero, do not buffer stderr */
@@ -115,7 +115,7 @@ struct descrip maps2;			/* second cached argument of map */
 struct descrip maps3;			/* third cached argument of map */
 #endif /* Concurrent */
 
-#if !(defined(MultiThread) || ConcurrentCOMPILER)
+#if !(defined(MultiProgram) || ConcurrentCOMPILER)
 struct descrip k_current;		/* current expression stack pointer */
 int k_errornumber = 0;			/* &errornumber */
 struct descrip k_errortext = {0,(word)""};	/* &errortext */
@@ -124,7 +124,7 @@ int have_errval = 0;			/* &errorvalue has legal value */
 int t_errornumber = 0;			/* tentative k_errornumber value */
 int t_have_val = 0;			/* tentative have_errval flag */
 struct descrip t_errorvalue;		/* tentative k_errorvalue value */
-#endif					/* !(MultiThread|ConcurrentCOMPILER) */
+#endif					/* !(MultiProgram|ConcurrentCOMPILER) */
 
 struct b_coexpr *stklist;	/* base of co-expression block list */
 
@@ -134,7 +134,7 @@ struct tend_desc *tend = NULL;  /* chain of tended descriptors */
 
 struct region rootstring, rootblock;
 
-#ifndef MultiThread
+#ifndef MultiProgram
 #if !ConcurrentCOMPILER
 dptr glbl_argp = NULL;		/* argument pointer */
 #endif                                  /* ConcurrentCOMPILER */
@@ -143,9 +143,9 @@ dptr gnames, egnames;			/* pointer to global variable names */
 dptr estatics;				/* pointer to end of static variables */
 
 struct region *curstring, *curblock;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
-#if defined(MultiThread) || ConcurrentCOMPILER
+#if defined(MultiProgram) || ConcurrentCOMPILER
 
 #ifdef Concurrent
      int is_concurrent = 0;
@@ -161,7 +161,7 @@ struct region *curstring, *curblock;
       struct threadstate roottstate; 
       struct threadstate *curtstate;
 #endif					/* Concurrent */
-#endif					/* MultiThread || ConcurrentCOMPILER */
+#endif					/* MultiProgram || ConcurrentCOMPILER */
 
 #if COMPILER
 #if !ConcurrentCOMPILER
@@ -190,7 +190,7 @@ int op_tbl_sz = (sizeof(init_op_tbl) / sizeof(struct b_proc));
 #endif
 #endif                                  /* COMPILER  */
 
-#if defined(MultiThread) || ConcurrentCOMPILER
+#if defined(MultiProgram) || ConcurrentCOMPILER
 #if ConcurrentCOMPILER
 /*
  * Globals for ConcurrentCOMPILER
@@ -205,9 +205,9 @@ word mutexid_coll;
 struct progstate *curpstate;
 struct progstate rootpstate;
 #endif					/* ConcurrentCOMPILER */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 
 struct b_coexpr *mainhead;		/* &main */
 
@@ -234,7 +234,7 @@ dptr statics;				/* pointer to static variables */
 char *strcons;				/* pointer to string constant table */
 struct ipc_fname *filenms, *efilenms;	/* pointer to ipc/file name table */
 struct ipc_line *ilines, *elines;	/* pointer to ipc/line number table */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef TallyOpt
 word tallybin[16];			/* counters for tallying */
@@ -362,7 +362,7 @@ char *precode;		/* pointer to start of code within filebuffer */
 
 /*
  * Open the icode file and read the header.
- * Used by icon_init() as well as MultiThread's loadicode().
+ * Used by icon_init() as well as MultiProgram's loadicode().
  * Note that if the icode is compressed, the FILE* returned may require gdzread().
  */
 static FILE *readhdr(name,hdr)
@@ -686,7 +686,7 @@ void init_threadstate( struct threadstate *ts)
 #endif 					/* Concurrent */
 }
 
-#ifdef MultiThread
+#ifdef MultiProgram
 void init_progstate(struct progstate *pstate);
 #endif 					/* MutliThread */
 
@@ -724,7 +724,7 @@ char *argv[];
    curblock  = &rootblock;
 #else					/* COMPILER && !Concurrent */
 
-#ifdef MultiThread
+#ifdef MultiProgram
   
    /*
     * initialize root pstate
@@ -732,20 +732,20 @@ char *argv[];
    curpstate = &rootpstate;
    rootpstate.next = NULL;
    init_progstate(curpstate);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
-#if defined(MultiThread) || ConcurrentCOMPILER
+#if defined(MultiProgram) || ConcurrentCOMPILER
    curtstate = &roottstate;
-#ifdef MultiThread
+#ifdef MultiProgram
    rootpstate.tstate = curtstate;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    init_threadstate(curtstate);
 
 #if defined(Concurrent) && !defined(HAVE_KEYWORD__THREAD)
    pthread_setspecific(tstate_key, (void *) curtstate);
 #endif					/* Concurrent && !HAVE_KEYWORD__THREAD */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    StrLen(rootpstate.Kywd_prog) = strlen(prog_name);
    StrLoc(rootpstate.Kywd_prog) = prog_name;
 
@@ -753,7 +753,7 @@ char *argv[];
    rootpstate.Kywd_time_out = 0;
    rootpstate.stringregion = &rootstring;
    rootpstate.blockregion = &rootblock;
-#endif                                 /* MultiThread */
+#endif                                 /* MultiProgram */
 #endif					/* COMPILER && !Concurrent */
 
 #ifdef Concurrent
@@ -789,11 +789,11 @@ MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
 #endif					/* ConcurrentCOMPILER */
 #endif					/* Concurrent */
 
-#ifndef MultiThread
+#ifndef MultiProgram
    curstring = &rootstring;
    curblock  = &rootblock;
    init_sighandlers();
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #if !COMPILER
    op_tbl = (struct b_proc*)init_op_tbl;
@@ -904,11 +904,11 @@ Deliberate Syntax Error
 #if COMPILER
    initalloc();
 #else					/* COMPILER */
-#ifdef MultiThread
+#ifdef MultiProgram
    initalloc(hdr.hsize,&rootpstate);
-#else					/* MultiThread */
+#else					/* MultiProgram */
    initalloc(hdr.hsize);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* COMPILER */
 
 #if !COMPILER
@@ -987,16 +987,16 @@ Deliberate Syntax Error
    mainhead->es_stack = (word *)(mainhead+1);
 #endif					/* StackCheck */
 					/*  This really is a bug. */
-#ifdef MultiThread
+#ifdef MultiProgram
    mainhead->program = &rootpstate;
-#endif					/* MultiThread */
-#if defined(MultiThread) || ConcurrentCOMPILER
+#endif					/* MultiProgram */
+#if defined(MultiProgram) || ConcurrentCOMPILER
    curtstate->c=mainhead;
 #ifdef SoftThreads
    curtstate->owner=mainhead;
    curtstate->c->sthrd_tick = SOFT_THREADS_TSLICE;
 #endif 					/* SoftThreads */ 
-#endif					/* MultiThread || ConcurrentCOMPILER */
+#endif					/* MultiProgram || ConcurrentCOMPILER */
 #if COMPILER
    mainhead->es_pfp = NULL;
    mainhead->file_name = "";
@@ -1080,9 +1080,9 @@ Deliberate Syntax Error
     * Initialize the event monitoring system, if configured.
     */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    EVInit();
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /* this is the end of yonggang's compressed icode else-branch ! */
 
@@ -1102,11 +1102,11 @@ Deliberate Syntax Error
    /*
     * Resolve references from icode to run-time system.
     */
-#ifdef MultiThread
+#ifdef MultiProgram
    resolve(NULL);
-#else					/* MultiThread */
+#else					/* MultiProgram */
    resolve();
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* COMPILER */
 
 #if !COMPILER
@@ -1488,7 +1488,7 @@ int i;
    if (curpstate != NULL)
       EVVal((word)i, E_Exit);
 #endif					/* E_Exit */
-#ifdef MultiThread
+#ifdef MultiProgram
    /*
     * A loaded program is calling c_exit.  Usually this will be due to a
     * runtime error.  Maybe we should just quit now.
@@ -1502,7 +1502,7 @@ int i;
        */
       co_chng(curpstate->parent->Mainhead, NULL, &dummy, A_Cofail, 1);
       }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef Concurrent
        /* 
@@ -1593,11 +1593,11 @@ int i;
    /*
     * free dynamic record types
     */
-#ifdef MultiThread
+#ifdef MultiProgram
    if (curpstate && dr_arrays) {
-#else					/* MultiThread */
+#else					/* MultiProgram */
    if (dr_arrays) {
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       int i, j;
       struct b_proc_list *bpelem, *to_free;
       for(i=0;i<longest_dr;i++) {
@@ -1745,7 +1745,7 @@ void datainit()
     * some compilers).					[[I?]]
     */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    k_errout.title = T_File;
    k_input.title = T_File;
    k_output.title = T_File;
@@ -1756,7 +1756,7 @@ void datainit()
    k_output.mutexid = get_mutex(&rmtx_attr);
 #endif					/* Concurrent */  
 
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef MSWindows
    if (ferredir != NULL)
@@ -1829,7 +1829,7 @@ void datainit()
    StrLoc(ucase) = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
    IntVal(zerodesc) = 0;
 
-#ifdef MultiThread
+#ifdef MultiProgram
    /*
     *  Initialization needed for event monitoring
     */
@@ -1839,7 +1839,7 @@ void datainit()
 #else					/* DescriptorDouble */
    BlkLoc(rzerodesc) = (union block *)&realzero;
 #endif					/* DescriptorDouble */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifndef Concurrent
    maps2 = nulldesc;
@@ -1897,7 +1897,7 @@ void datainit()
 
    }
 
-#ifdef MultiThread
+#ifdef MultiProgram
 
 void init_progstate(struct progstate *pstate){
 
@@ -2252,4 +2252,4 @@ struct progstate *findprogramforblock(union block *p)
    return NULL;
 }
 
-#endif					/* MultiThread */
+#endif					/* MultiProgram */

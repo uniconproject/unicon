@@ -6,14 +6,14 @@
 
 struct b_proc Bnoproc;
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * A procedure block for list construction, used by event monitoring.
  */
 struct b_iproc mt_llist = {
    6, (sizeof(struct b_proc) - sizeof(struct descrip)), Ollist,
    0, -1,  0, 0, {sizeof( "[...]")-1, "[...]"}};
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * External declarations for function blocks.
@@ -168,17 +168,17 @@ struct b_cset k_cset = {T_Cset, 256,
  * Built-in files.
  */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 /* input: is an Fs_Window if consolewindow; not doing that here anymore, add it to OpenConsole() */
 struct b_file  k_errout = {T_File, NULL, Fs_Write};	/* &errout */
 struct b_file  k_input = {T_File, NULL, Fs_Read};	/* &input */
 struct b_file  k_output = {T_File, NULL, Fs_Write};	/* &output */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * Keyword variables.
  */
-#ifndef MultiThread
+#ifndef MultiProgram
 struct descrip kywd_err = {D_Integer};  /* &error */
 struct descrip kywd_prog;		/* &progname */
 struct descrip kywd_trc = {D_Integer};	/* &trace */
@@ -190,7 +190,7 @@ struct descrip k_subject; 		/* &subject */
 struct descrip kywd_ran = {D_Integer};	/* &random */
 struct descrip kywd_pos = {D_Integer};	/* &pos */
 #endif                                  /* ConcurrentCOMPILER */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef FncTrace
 struct descrip kywd_ftrc = {D_Integer};	/* &ftrace */
@@ -215,7 +215,7 @@ struct descrip onedesc = {D_Integer};	/* integer 1 */
 struct descrip ucase;			/* string of uppercase letters */
 struct descrip zerodesc = {D_Integer};	/* integer 0 */
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * Descriptors used by event monitoring.
  */
@@ -230,7 +230,7 @@ struct descrip rzerodesc = {D_Real};
  */
 struct b_real realzero = {T_Real, 0.0};
 #endif					/* DescriptorDouble */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * An array of all characters for use in making one-character strings.

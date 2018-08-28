@@ -13,7 +13,7 @@
  */
 
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * EvSend(x, y, C) -- formerly event(); generate an event at the program level.
  */
@@ -612,6 +612,6 @@ void EVStrAlc_1(word n)
 int t_errornumber, t_have_val;
 struct descrip t_errorvalue;
 
-#else					/* MultiThread */
+#else					/* MultiProgram */
 /* static char xjunk;			/* avoid empty module */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */

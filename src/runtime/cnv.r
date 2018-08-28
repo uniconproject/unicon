@@ -258,12 +258,12 @@ int f(dptr s, dptr d)
   }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cnv_cset_macro(cnv_cset_0,0,0,0,0,0)
 cnv_cset_macro(cnv_cset_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_cset_macro(cnv_cset,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * cnv_ec_int - cnv:(exact)C_integer(*s, *d), convert to an exact C integer
@@ -466,13 +466,13 @@ dptr s, d;
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 #passthru #undef cnv_int
 cnv_int_macro(cnv_int,0,0,0,0,0)
 cnv_int_macro(cnv_int_1,E_Aconv,E_Tconv,E_Nconv,E_Fconv,E_Sconv)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_int_macro(cnv_int,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #begdef cnv_real_macro(f,e_aconv,e_tconv,e_sconv,e_fconv)
 /*
@@ -501,13 +501,13 @@ int f(dptr s, dptr d)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 #passthru #undef cnv_real
 cnv_real_macro(cnv_real,0,0,0,0)
 cnv_real_macro(cnv_real_1,E_Aconv,E_Tconv,E_Sconv,E_Fconv)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_real_macro(cnv_real,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 
 #begdef cnv_str_macro(f, e_aconv, e_tconv, e_nconv, e_sconf, e_fconv)
@@ -557,13 +557,13 @@ int f(dptr s, dptr d)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 #passthru #undef cnv_str
 cnv_str_macro(cnv_str,0,0,0,0,0)
 cnv_str_macro(cnv_str_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_str_macro(cnv_str,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #begdef cnv_tcset_macro(f, e_aconv, e_tconv, e_nconv, e_sconv, e_fconv)
 /*
@@ -610,12 +610,12 @@ int f(struct b_cset *cbuf, dptr s, dptr d)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cnv_tcset_macro(cnv_tcset_0,0,0,0,0,0)
 cnv_tcset_macro(cnv_tcset_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_tcset_macro(cnv_tcset,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #begdef cnv_tstr_macro(f,e_aconv,e_tconv,e_nconv,e_sconv,e_fconv)
 /*
@@ -642,12 +642,12 @@ int f(char *sbuf, dptr s, dptr d)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cnv_tstr_macro(cnv_tstr_0,0,0,0,0,0)
 cnv_tstr_macro(cnv_tstr_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_tstr_macro(cnv_tstr,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #begdef deref_macro(f, e_deref)
 /*
@@ -774,12 +774,12 @@ void f(dptr s, dptr d)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 deref_macro(deref_0,0)
 deref_macro(deref_1,E_Deref)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 deref_macro(deref,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * getdbl - return as a double the value inside a real block.

@@ -92,7 +92,7 @@
             if (!cnv:C_integer(y, i))
                runerr(101, y);
 
-#if defined(MultiThread) || ConcurrentCOMPILER
+#if defined(MultiProgram) || ConcurrentCOMPILER
 	    /*
 	     * Assuming (ahem) that the address of &subject is the next
 	     * descriptor following &pos, which is true in struct threadstate,
@@ -100,9 +100,9 @@
 	     * needing to lookup the curtstate to find the former global.
 	     */
 	    i = cvpos((long)i, StrLen(*(VarLoc(x)+1)));
-#else					/* MultiThread || ConcurrentCOMPILER */
+#else					/* MultiProgram || ConcurrentCOMPILER */
             i = cvpos((long)i, StrLen(k_subject));
-#endif					/* MultiThread || ConcurrentCOMPILER */
+#endif					/* MultiProgram || ConcurrentCOMPILER */
 
             if (i == CvtFail)
                fail;
@@ -119,11 +119,11 @@
          if !cnv:string(y, *VarLoc(x)) then
             runerr(103, y);
          inline {
-#ifdef MultiThread
+#ifdef MultiProgram
 	    IntVal(*(VarLoc(x)-1)) = 1;
-#else					/* MultiThread */
+#else					/* MultiProgram */
             k_pos = 1;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
             EVVal(k_pos, E_Spos);
             }
          }

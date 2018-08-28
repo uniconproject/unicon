@@ -1075,7 +1075,7 @@ static struct il_c *db_ilc()
                            case 'g':
                               db_chstr("$cg", "oto");
                               *nxtp = new_ilc(ILC_CGto);
-#ifdef MultiThread
+#ifdef MultiProgram
    #undef code
 #endif					/* MultiThead */
                               (*nxtp)->code[0] = db_ilc();

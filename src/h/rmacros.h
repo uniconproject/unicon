@@ -913,7 +913,7 @@
     * Miscellaneous macro definitions.
     */
    
-   #ifdef MultiThread
+   #ifdef MultiProgram
       #define handlers  (curpstate->Handlers)
       #define kywd_err  (curpstate->Kywd_err)
       #define kywd_prog  (curpstate->Kywd_prog)
@@ -980,10 +980,10 @@
 #endif					/* PatternType */
       #define set_ser   (curpstate->Set_ser)
       #define table_ser (curpstate->Table_ser)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* COMPILER */
 
-#ifdef MultiThread
+#ifdef MultiProgram
       #define curstring (curpstate->stringregion)
       #define curblock  (curpstate->blockregion)
 
@@ -1001,9 +1001,9 @@
       #define lastop    (curtstate->Lastop)
       #define lastopnd  (curtstate->Lastopnd)
 #endif 					/* Concurrent */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
-#ifdef MultiThread
+#ifdef MultiProgram
       #define field_argp (curtstate->Field_argp)
       #define xargp     (curtstate->Xargp)
       #define xnargs    (curtstate->Xnargs)
@@ -1012,9 +1012,9 @@
       #endif
 
       #define line_num  (curtstate->Line_num)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
-#if defined(MultiThread) || ConcurrentCOMPILER
+#if defined(MultiProgram) || ConcurrentCOMPILER
       #define glbl_argp      (curtstate->Glbl_argp)  
 
       #define kywd_pos       (curtstate->Kywd_pos)
@@ -1123,12 +1123,12 @@
       #define ENTERPSTATE(p) if (((p)!=NULL)) { curpstate = (p); curtstate=p->tstate;}
 #endif					/* Concurrent */
 
-#else					/* MultiThread */
+#else					/* MultiProgram */
  #define ENTERPSTATE(p)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    
-#if COMPILER || !defined(MultiThread)
+#if COMPILER || !defined(MultiProgram)
    #define EVStrAlc(n)
 #endif
 
@@ -1153,9 +1153,9 @@
    #define A_Coact	8	/* co-expression activated */
    #define A_Coret	9	/* co-expression returned */
    #define A_Cofail	10	/* co-expression failed */
-   #ifdef MultiThread
-      #define A_MTEvent	11	/* multithread event */
-   #endif				/* MultiThread */
+   #ifdef MultiProgram
+      #define A_MTEvent	11	/* multiProgram event */
+   #endif				/* MultiProgram */
    #ifdef PosixFns
       #define	A_Trapret	12	/* Return from stub  */
       #define	A_Trapfail	13	/* Fail from stub  */
@@ -1759,10 +1759,10 @@
       #define strtotal		(curtstate->stringtotal)
       #define blktotal		(curtstate->blocktotal)
 #else 					/* Concurrent */
-#ifdef MultiThread
+#ifdef MultiProgram
       #define strtotal  (curpstate->stringtotal)
       #define blktotal  (curpstate->blocktotal)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif 					/* Concurrent */
 
 /*

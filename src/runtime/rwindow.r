@@ -43,7 +43,7 @@ extern HPALETTE palette;
 extern int numColors;
 #endif					/* MSWindows */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 struct descrip amperX = {D_Integer};
 struct descrip amperY = {D_Integer};
 struct descrip amperCol = {D_Integer};
@@ -53,7 +53,7 @@ struct descrip amperPick = {D_Null};
 struct descrip lastEventWin = {D_Null};
 int lastEvFWidth = 0, lastEvLeading = 0, lastEvAscent = 0;
 uword xmod_control, xmod_shift, xmod_meta;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 
 /*
@@ -5049,14 +5049,14 @@ FILE *OpenConsole()
        *  get the message out.
        */
 
-#ifdef MultiThread
+#ifdef MultiProgram
       if (!curpstate) {
          curpstate = &rootpstate;
          rootpstate.eventmask = nulldesc;
          }
       if (!alclist) curpstate->Alclist = alclist_0;
       if (!reserve) curpstate->Reserve = reserve_0;
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 
 
       if (!curblock) {
@@ -5082,11 +5082,11 @@ FILE *OpenConsole()
 #if COMPILER
 	 initalloc();
 #else					/* COMPILER */
-#ifdef MultiThread
+#ifdef MultiProgram
          initalloc(1000, &rootpstate);
-#else					/* MultiThread */
+#else					/* MultiProgram */
          initalloc(1000);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* COMPILER */
 
 #ifdef Concurrent

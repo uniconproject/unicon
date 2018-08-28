@@ -352,7 +352,7 @@ int nargs, *n;
       fatalerr(301, NULL);
       }
 #else					/* StackCheck */
-#ifndef MultiThread
+#ifndef MultiProgram
    /*
     * Make a stab at catching interpreter stack overflow.  This does
     * nothing for invocation in a co-expression other than &main.
@@ -360,7 +360,7 @@ int nargs, *n;
    if (BlkLoc(k_current) == BlkLoc(k_main) &&
       ((char *)sp + PerilDelta) > (char *)stackend) 
          fatalerr(301, NULL);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* StackCheck */
 
    /*

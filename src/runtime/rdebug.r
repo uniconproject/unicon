@@ -277,7 +277,7 @@ int get_name(dptr dp1,dptr dp0)
             syserr("name: unknown integer keyword variable");
             
       kywdevent:
-#ifdef MultiThread
+#ifdef MultiProgram
          if (VarLoc(*dp1) == &curpstate->eventsource) {
             StrLen(*dp0) = 12;
             StrLoc(*dp0) = "&eventsource";
@@ -291,7 +291,7 @@ int get_name(dptr dp1,dptr dp0)
             StrLoc(*dp0) = "&eventcode";
             }
          else
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
             syserr("name: unknown event keyword variable");
             
       kywdwin: {
@@ -393,13 +393,13 @@ int get_name(dptr dp1,dptr dp0)
                       return RunError;
                   break;
                default:		/* none of the above */
-#ifdef MultiThread
+#ifdef MultiProgram
 		  StrLen(*dp0) = 8;
 		  StrLoc(*dp0) = "(struct)";
 		  return Failed;
 #else
                   syserr("name: invalid structure reference");
-#endif                                  /* MultiThread */
+#endif                                  /* MultiProgram */
 
                }
            }
@@ -657,9 +657,9 @@ register int n;
 #include "../h/opdefs.h"
 
 
-#ifndef MultiThread
+#ifndef MultiProgram
 extern struct descrip value_tmp;		/* argument of Op_Apply */
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 extern struct b_proc *opblks[];
 
 

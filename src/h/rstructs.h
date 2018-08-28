@@ -612,7 +612,7 @@ struct threadstate {
 #endif 					/* SoftThreads */ 
 #endif 					/* Concurrent */
 
-#ifdef MultiThread
+#ifdef MultiProgram
   struct progstate *pstate;
 #endif
 
@@ -648,7 +648,7 @@ struct ipc_line {
    int line;		/* line number */
    };
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * Program state encapsulation.  This consists of the VARIABLE parts of
  * many global structures.
@@ -831,7 +831,7 @@ struct progstate {
    struct threadstate *tstate, maintstate;
   
    };
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * Frame markers
@@ -950,9 +950,9 @@ struct b_coexpr {		/* co-expression stack block */
    word *es_stackend;		/*   end of interpreter stack */
    word Lastop;
    
-   #ifdef MultiThread
+   #ifdef MultiProgram
       struct progstate *program;
-   #endif				/* MultiThread */
+   #endif				/* MultiProgram */
 #endif					/* COMPILER */
 
 #ifdef PthreadCoswitch

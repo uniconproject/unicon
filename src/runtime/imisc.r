@@ -16,9 +16,9 @@ LibDcl(field,2,".")
    register dptr dp;
    register union block *bptr;
 
-#ifdef MultiThread
+#ifdef MultiProgram
    struct progstate *thisprog = curpstate, *progtouse = NULL;
-#else					/* MultiThread */
+#else					/* MultiProgram */
    extern int *ftabp;
    #ifdef FieldTableCompression
       extern int *fo;
@@ -27,7 +27,7 @@ LibDcl(field,2,".")
       extern char *bm;
    #endif				/* FieldTableCompression */
    extern word *records;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    /*
     * We may need to modify the argp, if we have to insert a "self" parameter.
@@ -86,7 +86,7 @@ linearsearch:
       }
    else {
 
-#ifdef MultiThread
+#ifdef MultiProgram
       /*
        * If this record type is from another program, we would like to use
        * its field table, not ours.  But, the field # we have is from
@@ -105,7 +105,7 @@ linearsearch:
 
       /* use the correct field table */
       ENTERPSTATE(progtouse);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef FieldTableCompression
 #define FO(i) ((foffwidth==1)?(focp[i]&255L):((foffwidth==2)?(fosp[i]&65535L):fo[i]))
@@ -139,9 +139,9 @@ linearsearch:
       fnum = ftabp[IntVal(Arg2) * *records + Blk(rp->recdesc,Proc)->recnum - 1];
 #endif					/* FieldTableCompression */
 
-#ifdef MultiThread
+#ifdef MultiProgram
       ENTERPSTATE(thisprog);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       }
 
 
@@ -175,14 +175,14 @@ linearsearch:
 	 if (IntVal(Arg2) < 0) {
 	    int nfields = Blk(rd2,Proc)->nfields;
 	    int i;
-#ifdef MultiThread
+#ifdef MultiProgram
 	    if (progtouse)
 	       Arg0 = progtouse->Efnames[IntVal(Arg2)];
 	    else
 	       RunErr(207, &Arg1);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 	    Arg0 = efnames[IntVal(Arg2)];
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 	    for (i=0;i<nfields;i++) {
 	       if ((StrLen(Arg0) == StrLen(rd2->Proc.lnames[i])) &&
 		   !strncmp(StrLoc(Arg0),
@@ -193,7 +193,7 @@ linearsearch:
 	    else fnum = -1;
 	    }
 	 else {
-#ifdef MultiThread
+#ifdef MultiProgram
 	    ENTERPSTATE(progtouse);
 #endif
 #ifdef FieldTableCompression
@@ -222,7 +222,7 @@ linearsearch:
 	    fnum = ftabp[IntVal(Arg2) * *records + rd2->Proc.recnum - 1];
 #endif					/* FieldTableCompression */
 
-#ifdef MultiThread
+#ifdef MultiProgram
 	    ENTERPSTATE(thisprog);
 #endif
 	    }

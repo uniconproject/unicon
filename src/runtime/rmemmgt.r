@@ -24,9 +24,9 @@ static void adjust		(char *source, char *dest);
 static void compact		(char *source);
 static void mvc		(uword n, char *src, char *dest);
 
-#ifdef MultiThread
+#ifdef MultiProgram
 static void markprogram	(struct progstate *pstate);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #ifdef Concurrent
 static void markthreads();
 #endif					/* Concurrent */
@@ -38,12 +38,12 @@ static void sweep_pfps(struct p_frame *fp);
  * Variables
  */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 word coll_stat = 0;             /* collections in static region */
 word coll_str = 0;              /* collections in string region */
 word coll_blk = 0;              /* collections in block region */
 word coll_tot = 0;              /* total collections */
-#endif				/* MultiThread */
+#endif				/* MultiProgram */
 word alcnum = 0;                /* co-expressions allocated since g.c. */
 
 dptr *quallist;                 /* string qualifier list */
@@ -133,11 +133,11 @@ int firstd[] = {
      3*WordSize,              /* T_File (5), file block */
 #endif
 
-#ifdef MultiThread
+#ifdef MultiProgram
      8*WordSize,              /* T_Proc (6), procedure block */
-#else				/* MultiThread */
+#else				/* MultiProgram */
      7*WordSize,              /* T_Proc (6), procedure block */
-#endif				/* MultiThread */
+#endif				/* MultiProgram */
 
 #ifdef Concurrent
      6*WordSize,              /* T_Record (7), record block */
@@ -343,13 +343,13 @@ void initalloc()
    CURTSTATE();
 #endif					/* Concurrent */
 #else					/* COMPILER */
-#ifdef MultiThread
+#ifdef MultiProgram
 void initalloc(word codesize, struct progstate *p)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 void initalloc(word codesize)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    {
-#ifdef MultiThread
+#ifdef MultiProgram
    struct region *ps, *pb;
 #endif
 
@@ -358,9 +358,9 @@ void initalloc(word codesize)
    /*
     * Allocate icode region
     */
-#ifdef MultiThread
+#ifdef MultiProgram
    if (codesize)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    if ((code = (char *)AllocReg(codesize)) == NULL)
       error(NULL,
 	 "insufficient memory, corrupted icode file, or wrong platform");
@@ -374,7 +374,7 @@ void initalloc(word codesize)
     *	Qualifier list
     */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    ps = p->stringregion;
    ps->free = ps->base = (char *)AllocReg(ps->size);
    if (ps->free == NULL)
@@ -392,7 +392,7 @@ void initalloc(word codesize)
          error(NULL, "insufficient memory for qualifier list");
       equallist = (dptr *)((char *)quallist + qualsize);
       }
-#else					/* MultiThread */
+#else					/* MultiProgram */
    {
    uword t1, t2;
 #if ConcurrentCOMPILER
@@ -418,7 +418,7 @@ void initalloc(word codesize)
       error(NULL, "insufficient memory for qualifier list");
    equallist = (dptr *)((char *)quallist + qualsize);
    }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    }
 
 /*
@@ -563,13 +563,13 @@ int region;
    /*
     * Mark the stacks for &main and the current co-expression.
     */
-#ifdef MultiThread
+#ifdef MultiProgram
    markprogram(&rootpstate);
 #else
 #if ConcurrentCOMPILER
    markthreads();
 #endif	                                /* ConcurrentCOMPILER */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    markblock(&k_main);
    markblock(&k_current);
@@ -578,12 +578,12 @@ int region;
    /*
     * Mark &subject and the cached s2 and s3 strings for map.
     */
-#ifndef MultiThread
+#ifndef MultiProgram
 #if !ConcurrentCOMPILER
    postqual(&k_subject);
    postqual(&kywd_prog);
 #endif					/* ConcurrentCOMPILER */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef Concurrent
    /* turn the non-concurrent maps2 and maps3 code into a loop over all threads */
@@ -636,7 +636,7 @@ int region;
     * Mark the globals and the statics.
     */
 
-#ifndef MultiThread
+#ifndef MultiProgram
    { register struct descrip *dp;
    for (dp = globals; dp < eglobals; dp++)
       if (Qual(*dp))
@@ -657,7 +657,7 @@ int region;
    if (is:file(lastEventWin))
       markblock(&(lastEventWin));
 #endif					/* Graphics */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #if COMPILER
    sweep_pfps(pfp);
@@ -703,7 +703,7 @@ int region;
    return 1;
    }
 
-#if defined(MultiThread) || ConcurrentCOMPILER
+#if defined(MultiProgram) || ConcurrentCOMPILER
 /*
  * use  threadstate in order to sync VM registers
  */
@@ -761,9 +761,9 @@ static void markthreads()
 	 }
 }
 #endif					/* Concurrent */
-#endif					/* MultiThread || ConcurrentCOMPILER */
+#endif					/* MultiProgram || ConcurrentCOMPILER */
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * markprogram - traverse pointers out of a program state structure
  */
@@ -826,7 +826,7 @@ struct progstate *pstate;
 #endif					/* Graphics */
 
    }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * postqual - mark a string qualifier.  Strings outside the string space
@@ -977,7 +977,7 @@ dptr dp;
       BlkType(block) = (uword)dp;
       sweep((struct b_coexpr *)block);
 
-#ifdef MultiThread
+#ifdef MultiProgram
       if (((struct b_coexpr *)block)+1 ==
          (struct b_coexpr *)((struct b_coexpr *)block)->program){
          /*
@@ -985,7 +985,7 @@ dptr dp;
           */
          markprogram(((struct b_coexpr *)block)->program);
          }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef CoExpr
       /*
@@ -1322,7 +1322,7 @@ struct b_coexpr *ce;
    s_sp =  ce->es_sp;
    nargs = 0;                           /* Nargs counter is 0 initially. */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    if (fp == 0) {
       if (is:list(* (dptr) (s_sp - 1))) {
 	 /*
@@ -1333,7 +1333,7 @@ struct b_coexpr *ce;
 	    }
 	 }
       }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    while ((fp != 0) || nargs) {         /* Keep going until current fp is
                                             0 and no arguments are left. */
@@ -1459,11 +1459,11 @@ static void cofree()
     * Reset the type for &main.
     */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    rootpstate.Mainhead->title = T_Coexpr;
-#else				/* MultiThread */
+#else				/* MultiProgram */
    BlkLoc(k_main)->Coexpr.title = T_Coexpr;
-#endif				/* MultiThread */
+#endif				/* MultiProgram */
 
    /*
     * The co-expression blocks are linked together through their

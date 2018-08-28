@@ -114,9 +114,9 @@
    Feature(largeints, "_LARGE_INTEGERS", "large integers")
 #endif					/* LargeInts */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    Feature(1, "_MULTITASKING", "multiple programs")
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef PatternType
    Feature(1, "_PATTERNS", "pattern type")

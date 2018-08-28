@@ -186,7 +186,7 @@ int getvar(s,vp)
          }
 #endif					/* Graphics */
 
-#ifdef MultiThread
+#ifdef MultiProgram
       else if (strcmp(s,"&eventvalue") == 0) {
          vp->dword = D_Var;
          VarLoc(*vp) = (dptr)&(curpstate->eventval);
@@ -202,7 +202,7 @@ int getvar(s,vp)
          VarLoc(*vp) = (dptr)&(curpstate->eventcode);
          return Succeeded;
          }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
       else return Failed;
       }
@@ -856,14 +856,14 @@ int noimage;
          }
 
       kywdevent: {
-#ifdef MultiThread
+#ifdef MultiProgram
          if (VarLoc(*dp) == &curpstate->eventsource)
             fprintf(f, "&eventsource = ");
          else if (VarLoc(*dp) == &curpstate->eventcode)
             fprintf(f, "&eventcode = ");
          else if (VarLoc(*dp) == &curpstate->eventval)
             fprintf(f, "&eventval = ");
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
          outimage(f, VarLoc(*dp), noimage);
          }
 
@@ -1207,9 +1207,9 @@ int pushact(struct b_coexpr *ce, struct b_coexpr *actvtr)
    struct astkblk *abp = ce->es_actstk, *nabp;
    struct actrec *arp;
 
-#ifdef MultiThread
+#ifdef MultiProgram
    if (ce->program != actvtr->program) return Succeeded;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    /*
     * If the last activator is the same as this one, just increment
     *  its count.
@@ -1253,7 +1253,7 @@ struct b_coexpr *popact(struct b_coexpr *ce)
    struct actrec *arp;
    struct b_coexpr *actvtr;
 
-#ifdef MultiThread
+#ifdef MultiProgram
    /*
     * If we are trying to pop a different program, we probably shouldn't.
    if (curpstate != ce->program) {
@@ -1270,9 +1270,9 @@ struct b_coexpr *popact(struct b_coexpr *ce)
    if ((abp->nactivators == 0)
 #if !COMPILER
         && (abp->astk_nxt
-#ifdef MultiThread 
+#ifdef MultiProgram 
 	|| !(curpstate->parent)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 	)
 #endif					/* COMPILER */
       ) {
@@ -1282,12 +1282,12 @@ struct b_coexpr *popact(struct b_coexpr *ce)
       }
 
    if (abp == NULL || abp->nactivators == 0) {
-#ifdef MultiThread
+#ifdef MultiProgram
       if (curpstate->parent) {
 	 return BlkD(curpstate->parent->K_main, Coexpr);
 	 }
       else
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       {
 
 #ifdef Concurrent
@@ -1339,17 +1339,17 @@ struct b_coexpr *ce;
    struct astkblk *abp = ce->es_actstk;
    CURTSTATE();
 
-#ifdef MultiThread 
+#ifdef MultiProgram 
    if (ce->program == curtstate->c->program){
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       if (abp->nactivators == 0)
          abp = abp->astk_nxt;
       return abp->arec[abp->nactivators-1].activator;
-#ifdef MultiThread
+#ifdef MultiProgram
        }
     else
        return abp->arec[0].activator;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 }
 
 #ifdef DeBugIconx
@@ -1436,7 +1436,7 @@ int findloc(word *ipc_in)
    return (int)(base->line);
 }
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * A "loc" (for location) is a generalization of a line; the line number
  * table is now a table of loc's. At present these are ints containing
@@ -1471,7 +1471,7 @@ int findline_p(word *ipc_in, struct progstate *p)
 {
   return findloc_p(ipc_in, p) & 65535;
 }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * findipc - find the first ipc associated with a source-code line number.
@@ -1509,7 +1509,7 @@ int level;
    int i;
    CURTSTATE_AND_CE();
 
-#ifdef MultiThread
+#ifdef MultiProgram
    if (BlkLoc(ce->program->tstate->K_current) != BlkLoc(k_current))
       fp = ce->es_pfp;
    else
@@ -1518,7 +1518,7 @@ int level;
    i = ce->program->tstate->K_level;
    if (i<level) 
       return (word*)0;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    /* follow upwards, i levels */
    while (level) {
@@ -1590,7 +1590,7 @@ char *findfile(word *ipc_in)
    return 0;  /* avoid compiler warning */
 }
 
-#ifdef MultiThread
+#ifdef MultiProgram
 /*
  * findfile_p - find source file name associated with the ipc, in program prog
  * rather than in curpstate.
@@ -1612,7 +1612,7 @@ char *findfile_p(word *ipc_in, struct progstate *prog)
    /*NOTREACHED*/
    return 0;  /* avoid compiler warning */
 }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* !COMPILER */
 
 /*

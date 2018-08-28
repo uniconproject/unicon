@@ -730,6 +730,7 @@ enable_plugins
 enable_iconc
 enable_ovld
 enable_udbtools
+enable_progs
 enable_verbosebuild
 enable_thin
 enable_debug
@@ -1400,6 +1401,7 @@ Optional Features:
   --disable-iconc         Build Unicon Compiler (Iconc/Uniconc)
   --enable-ovld           enable operator overloading
   --enable-udbtools       enable Unicon debugger tools
+  --enable-progs          enable Unicon programs
   --enable-verbosebuild   Show full CC build lines with all compiler arguments
   --enable-thin           Do a minimalist build disabling non critical
                           features
@@ -3079,6 +3081,14 @@ else
 fi
 
 
+# Check whether --enable-progs was given.
+if test "${enable_progs+set}" = set; then :
+  enableval=$enable_progs; progs=yes
+else
+  progs=no
+fi
+
+
 # Check whether --enable-verbosebuild was given.
 if test "${enable_verbosebuild+set}" = set; then :
   enableval=$enable_verbosebuild; verbosebuild=yes
@@ -3107,6 +3117,7 @@ if test "${enable_devmode+set}" = set; then :
 else
   devmode=no
 fi
+
 
 
 # Save flags
@@ -4434,6 +4445,10 @@ fi
 
 if test x"$udbtools" = x"yes" ; then
   UDBTOOLS=udbtools
+fi
+
+if test x"$progs" = x"yes" ; then
+  UNIPROGS=progs
 fi
 
 # honor custom flags
@@ -6913,7 +6928,7 @@ database=no
 ssl=no
 
 
-$as_echo "#define NoMultiThread 1" >>confdefs.h
+$as_echo "#define NoMultiProgram 1" >>confdefs.h
 
   # what else we need to disable?
 fi

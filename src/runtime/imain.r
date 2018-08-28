@@ -54,10 +54,10 @@ extern int set_up;
  * A number of important variables follow.
  */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 int n_globals = 0;			/* number of globals */
 int n_statics = 0;			/* number of statics */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * Initial icode sequence. This is used to invoke the main procedure with one
@@ -215,9 +215,9 @@ void main(int argc, char **argv)
    ExpandArgv(&argc, &argv);
 #endif					/* WildCards && NT */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    /*
-    * Look for MultiThread programming environment in which to execute
+    * Look for MultiProgram programming environment in which to execute
     * this program, specified by MTENV environment variable.
     */
    {
@@ -243,7 +243,7 @@ void main(int argc, char **argv)
       argv = new_argv;
       }
    }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifndef Concurrent   
  ipc.opnd = NULL;
@@ -293,12 +293,12 @@ void main(int argc, char **argv)
     */
    icon_init(argv[1], &argc, argv);
    
-#ifdef MultiThread
+#ifdef MultiProgram
    curtstate = &roottstate;
 #ifdef Concurrent   
    curtstate_ce = curtstate->c;
 #endif					/* Concurrent */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef Messaging
    errno = 0;
@@ -693,25 +693,25 @@ int *ip;
  * resolve - perform various fix-ups on the data read from the icode
  *  file.
  */
-#ifdef MultiThread
+#ifdef MultiProgram
    void resolve(pstate)
    struct progstate *pstate;
-#else					/* MultiThread */
+#else					/* MultiProgram */
    void resolve()
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    {
    register word i, j;
    register struct b_proc *pp;
    register dptr dp;
-   #ifdef MultiThread
+   #ifdef MultiProgram
       register struct progstate *savedstate = curpstate;
       CURTSTATE();
       if (pstate){ 
 	curpstate = pstate;
 	curtstate = pstate->tstate;
         }
-   #endif					/* MultiThread */
+   #endif					/* MultiProgram */
 
    /*
     * Relocate the names of the global variables.
@@ -792,10 +792,10 @@ int *ip;
    for (dp = fnames; dp < efnames; dp++)
       StrLoc(*dp) = strcons + (uword)StrLoc(*dp);
 
-#ifdef MultiThread
+#ifdef MultiProgram
    curpstate = savedstate;
    curtstate = curpstate->tstate;
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
    }
 
 /*
@@ -834,14 +834,14 @@ void xmfree()
    if (blkbase)
       free((pointer)blkbase);		/* allocated block region */
    blkbase = NULL;
-#ifndef MultiThread
+#ifndef MultiProgram
    if (curstring != &rootstring)
       free((pointer)curstring);		/* string region */
    curstring = NULL;
    if (curblock != &rootblock)
       free((pointer)curblock);		/* allocated block region */
    curblock = NULL;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    if (quallist)
       free((pointer)quallist);		/* qualifier list */
    quallist = NULL;

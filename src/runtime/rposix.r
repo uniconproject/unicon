@@ -1840,7 +1840,7 @@ dptr calliconproc(struct descrip proc, dptr args, int nargs)
  * Signals and trapping
  */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 /* Systems don't have more than, oh, about 50 signals, eh? */
 static struct descrip handlers[41];
 
@@ -1850,7 +1850,7 @@ void init_sighandlers()
    for(i = 0; i < 41; i++)
       handlers[i] = nulldesc;
 }
-#else					/* MultiThread */
+#else					/* MultiProgram */
 
 void init_sighandlers(pstate)
 struct progstate *pstate;
@@ -1859,7 +1859,7 @@ struct progstate *pstate;
    for(i = 0; i < 41; i++)
       pstate->Handlers[i] = nulldesc;
 }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 struct descrip register_sig(sig, handler)
 int sig;
@@ -1867,9 +1867,9 @@ struct descrip handler;
 {
    struct descrip old;
 
-#ifdef MultiThread
+#ifdef MultiProgram
    curpstate->signal = 0;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    MUTEX_LOCKID(MTX_HANDLERS);
    old = handlers[sig];
    handlers[sig] = handler;
@@ -1884,9 +1884,9 @@ int sig;
    char *p;
 
    proc = handlers[sig];
-#ifdef MultiThread
+#ifdef MultiProgram
    curpstate->signal = 0;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    /*
     * proc is NULL if there is no signal handler for current signal.
@@ -1894,7 +1894,7 @@ int sig;
     * a handler for it?
     */
    if (is:null(proc)) {
-#ifdef MultiThread
+#ifdef MultiProgram
       if ((!is:null(curpstate->eventmask)) &&
 	  Testb((word)ToAscii(E_Signal), curpstate->eventmask)) {
 	 /* if we are in the TP and it has no signal handling 
@@ -1916,7 +1916,7 @@ int sig;
       signal(sig, SIG_DFL);
       raise(sig);
       return;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       }
 
    /* Invoke proc */

@@ -16,7 +16,7 @@ void exit(int);
 struct threadstate roottstate, *curtstate = &roottstate;
 struct threadstate *global_curtstate = &roottstate;
 
-#ifdef MultiThread
+#ifdef MultiProgram
 
 struct progstate rootpstate;
 struct progstate *curpstate = &rootpstate;
@@ -245,7 +245,7 @@ char *alcstr_0(char *s, word len)
  * initalloc - initialization routine to allocate memory regions
  */
 
-#ifdef MultiThread
+#ifdef MultiProgram
 
 void initalloc(word codesize, struct progstate *p)
 

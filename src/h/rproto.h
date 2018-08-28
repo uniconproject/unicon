@@ -10,7 +10,7 @@ int		activate	(dptr val, struct b_coexpr *ncp, dptr result);
 word		add		(word a,word b,int *over_flowp);
 void		addmem 	(struct b_set *ps,struct b_selem *pe, union block **pl);
 struct astkblk	*alcactiv	(void);
-#ifdef MultiThread
+#ifdef MultiProgram
 struct b_cset	*alccset_0	(void);
 struct b_cset	*alccset_1	(void);
 #undef alcfile
@@ -57,7 +57,7 @@ struct b_pelem	*alcpelem_0	(word, word *);
 struct b_pelem	*alcpelem_1	(word, word *);
 #endif					/* COMPILER */
 #endif					/* PatternType */
-#else					/* MultiThread */
+#else					/* MultiProgram */
 struct b_cset	*alccset	(void);
 struct b_file	*alcfile	(FILE *fd,int status,dptr name);
 union block	*alchash	(int tcode);
@@ -78,7 +78,7 @@ struct b_pelem	*alcpelem(word pattern_code);
 struct b_pelem	*alcpelem(word pattern_code, word *origin_ipc);
 #endif					/* COMPILER */
 #endif					/* PatternType */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #ifdef Arrays
 struct b_list   *alclisthdr	(uword size, union block *bptr);
 #endif					/* Arrays */
@@ -114,16 +114,16 @@ int		CmdParamToArgv	(char *s, char ***avp, int dequote);
 int		cnv_c_dbl	(dptr s, double *d);
 int		cnv_c_int	(dptr s, C_integer *d);
 int		cnv_c_str	(dptr s, dptr d);
-#ifdef MultiThread
+#ifdef MultiProgram
 int		cnv_cset_0	(dptr s, dptr d);
 int		cnv_cset_1	(dptr s, dptr d);
 #else
 int		cnv_cset	(dptr s, dptr d);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 int		cnv_ec_int	(dptr s, C_integer *d);
 int		cnv_eint	(dptr s, dptr d);
 int		cnv_list	(dptr s, dptr d);
-#ifdef MultiThread
+#ifdef MultiProgram
 #undef cnv_int
 int		cnv_int		(dptr s, dptr d);
 #define cnv_int (curpstate->Cnvint)
@@ -140,24 +140,24 @@ int		cnv_tcset_0	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tcset_1	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tstr_0	(char *sbuf, dptr s, dptr d);
 int		cnv_tstr_1	(char *sbuf, dptr s, dptr d);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 int		cnv_int		(dptr s, dptr d);
 int		cnv_real	(dptr s, dptr d);
 int		cnv_str		(dptr s, dptr d);
 int		cnv_tcset	(struct b_cset *cbuf, dptr s, dptr d);
 int		cnv_tstr	(char *sbuf, dptr s, dptr d);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #ifdef PatternType
 struct b_pelem * Alternate(struct b_pelem * L,struct b_pelem * R);
 struct b_pelem * Arbno_Simple(struct b_pelem *pe);
 struct b_pelem *Bracket(struct b_pelem *E,struct b_pelem * P,
 			    struct b_pelem * A);
-#ifdef MultiThread
+#ifdef MultiProgram
 int 		cnv_pattern_0(dptr s, dptr p);
 int 		cnv_pattern_1(dptr s, dptr p);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 int 		cnv_pattern(dptr s, dptr p);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 struct b_pelem *Concat 		(struct b_pelem * L, struct b_pelem *R, int Incr );
 struct b_pelem *Copy		(struct b_pelem * P);
 
@@ -184,7 +184,7 @@ void		cofailtrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 void		corettrace	(struct b_coexpr *ccp,struct b_coexpr *ncp);
 int		coswitch	(word *old, word *new, int first);
 int		cphash		(dptr dp1, dptr dp2, word n, int tcode);
-#ifdef MultiThread
+#ifdef MultiProgram
 int		cplist_0	(dptr dp1,dptr dp2,word i,word j);
 int		cplist_1	(dptr dp1,dptr dp2,word i,word j);
 #ifdef Arrays
@@ -199,7 +199,7 @@ int		cptable_0	(dptr dp1,dptr dp2,word size);
 int		cptable_1	(dptr dp1,dptr dp2,word size);
 void		EVStrAlc_0	(word n);
 void		EVStrAlc_1	(word n);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 int		cplist		(dptr dp1,dptr dp2,word i,word j);
 int		cpset		(dptr dp1,dptr dp2,word size);
 int		cptable		(dptr dp1,dptr dp2,word size);
@@ -207,18 +207,18 @@ int		cptable		(dptr dp1,dptr dp2,word size);
 int		cprealarray	(dptr dp1,dptr dp2,word i,word j);
 int		cpintarray	(dptr dp1,dptr dp2,word i,word j);
 #endif					/* Arrays */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 void		cpslots		(dptr dp1,dptr slotptr,word i, word j);
 int		csetcmp		(unsigned int *cs1,unsigned int *cs2);
 int		cssize		(dptr dp);
 word		cvpos		(word pos, word len);
 void		datainit	(void);
-#ifdef MultiThread
+#ifdef MultiProgram
 void		deallocate_0	(union block *bp);
 void		deallocate_1	(union block *bp);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 void		deallocate	(union block *bp);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 int		def_c_dbl	(dptr s, double df, double * d);
 int		def_c_int	(dptr s, C_integer df, C_integer * d);
 int		def_c_str	(dptr s, char * df, dptr d);
@@ -250,15 +250,15 @@ void		fatalerr	(int n,dptr v);
 #endif /* __clang__ */
 int		findcol		(word *ipc_in);
 char		*findfile	(word *ipc_in);
-#ifdef MultiThread
+#ifdef MultiProgram
 char		*findfile_p	(word *ipc_in, struct progstate *);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 int		findipc		(int line);
 word		* findoldipc	(struct b_coexpr *ce, int level);
 int		findline	(word *ipc_in);
-#ifdef MultiThread
+#ifdef MultiProgram
 int		findline_p	(word *ipc_in, struct progstate *);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 int		findloc		(word *ipc_in);
 int		findsyntax	(word *ipc_in);
 int		fldlookup	(struct b_record *rec, const char * const fld);
@@ -281,7 +281,7 @@ union block	*hmake		(int tcode,word nslots,word nelem);
 void		icon_init	(char *name, int *argcp, char *argv[]);
 void		iconhost	(char *hostname);
 int		idelay		(int n);
-#ifdef MultiThread
+#ifdef MultiProgram
 #ifdef TSTATARG
 int		interp_0	(int fsig,dptr cargp, struct threadstate *curtstate);
 int		interp_1	(int fsig,dptr cargp, struct threadstate *curtstate);
@@ -289,11 +289,11 @@ int		interp_1	(int fsig,dptr cargp, struct threadstate *curtstate);
 int		interp_0	(int fsig,dptr cargp);
 int		interp_1	(int fsig,dptr cargp);
 #endif		 	   	  	 /* TSTATARG */
-#else					/* MultiThread */
+#else					/* MultiProgram */
 int		interp		(int fsig,dptr cargp);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #ifdef PatternType
-#ifdef MultiThread
+#ifdef MultiProgram
 int 		internal_match_0(char * pat_sub, int Length, int Pat_S, 
 				 struct descrip op, struct b_pelem * pattern,
 				 int *Start, int *Stop, int initial_cursor,
@@ -302,12 +302,12 @@ int 		internal_match_1(char * pat_sub, int Length, int Pat_S,
 				 struct descrip op, struct b_pelem * pattern,
 				 int *Start, int *Stop, int initial_cursor,
 				 int Anchored_Mode);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 int 		internal_match	(char * pat_sub, int Length, int Pat_S, 
 				 struct descrip op, struct b_pelem * pattern,
 				 int *Start, int *Stop, int initial_cursor,
 				 int Anchored_Mode);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 #endif					/* PatternType */
 void		inttrap		(void);
 void		irunerr		(int n, C_integer v);
@@ -395,12 +395,12 @@ int    		 radix		(int sign, register int r, register char *s,
 #ifdef PatternType
 struct b_pelem 	*ResolvePattern	(struct b_pattern *pat);
 #endif					/* PatternType */
-#ifdef MultiThread
+#ifdef MultiProgram
 char		*reserve_0	(int region, word nbytes);
 char		*reserve_1	(int region, word nbytes);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 char		*reserve	(int region, word nbytes);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 void		retderef		(dptr valp, word *low, word *high);
 #if !NT
 void rusage2rec(struct rusage *usg, struct descrip *dp, struct b_record **rp);
@@ -416,7 +416,7 @@ void		syserr		(char *s);
 #endif /* __clang__ */
 struct b_coexpr	*topact		(struct b_coexpr *ce);
 void		xmfree		(void);
-#ifdef MultiThread
+#ifdef MultiProgram
    void	resolve			(struct progstate *pstate);
    struct progstate *findicode	(word *opnd);
    struct b_coexpr *loadicode	(char *name, struct b_file *theInput,
@@ -427,21 +427,21 @@ void		xmfree		(void);
    int mt_activate   (dptr tvalp, dptr rslt, struct b_coexpr *ncp);
    struct progstate *findprogramforblock(union block *p);
    void EVVariable(dptr dx, int eventcode);
-#else					/* MultiThread */
+#else					/* MultiProgram */
    void	resolve			(void);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef ExternalFunctions
    dptr	extcall			(dptr x, int nargs, int *signal);
 #endif					/* ExternalFunctions */
 
 #ifdef LargeInts
-#ifdef MultiThread
+#ifdef MultiProgram
    struct b_bignum *alcbignum_0	(word n);
    struct b_bignum *alcbignum_1	(word n);
-#else					/* MultiThread */
+#else					/* MultiProgram */
    struct b_bignum *alcbignum	(word n);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    word		bigradix	(int sign, int r, char *s, char *x,
 						   union numeric *result);
    double	bigtoreal	(dptr da);
@@ -931,15 +931,15 @@ struct AudioFile * StartOggVorbisThread(char filename[]);
  */
 
 struct b_external *alcextrnl	(int n);
-#ifdef MultiThread
+#ifdef MultiProgram
 struct b_record *alcrecd_0	(int nflds,union block *recptr);
 struct b_record *alcrecd_1	(int nflds,union block *recptr);
 struct b_tvsubs *alcsubs_0	(word len,word pos,dptr var);
 struct b_tvsubs *alcsubs_1	(word len,word pos,dptr var);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 struct b_record *alcrecd	(int nflds,union block *recptr);
 struct b_tvsubs *alcsubs	(word len,word pos,dptr var);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 int	bfunc		(void);
 dptr	calliconproc	(struct descrip proc, dptr args, int nargs);
 long	ckadd		(long i, long j);
@@ -953,12 +953,12 @@ void coclean(struct b_coexpr *cp);
 #endif
 void	cotrace		(struct b_coexpr *ccp, struct b_coexpr *ncp,
 			   int swtch_typ, dptr valloc);
-#ifdef MultiThread
+#ifdef MultiProgram
 void	deref_0		(dptr dp1, dptr dp2);
 void	deref_1		(dptr dp1, dptr dp2);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 void	deref		(dptr dp1, dptr dp2);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 void	envset		(void);
 int	eq		(dptr dp1,dptr dp2);
 int	fixtrap		(void);
@@ -992,11 +992,11 @@ int	tvcmp4		(struct dpair *dp1,struct dpair *dp2);
 int	tvtbl_asgn	(dptr dest, const dptr src);
 void	varargs		(dptr argp, int nargs, dptr rslt);
 
-#ifdef MultiThread
+#ifdef MultiProgram
    struct b_coexpr *alccoexp (long icodesize, long stacksize);
-#else					/* MultiThread */
+#else					/* MultiProgram */
    struct b_coexpr *alccoexp (void);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 dptr rec_structinate(dptr dp, char *name, int nfields, char *a[]);
 
@@ -1068,12 +1068,12 @@ void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
 
 #else					/* COMPILER */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    struct b_refresh *alcrefresh_0(word *e, int nl, int nt);
    struct b_refresh *alcrefresh_1(word *e, int nl, int nt);
-#else					/* MultiThread */
+#else					/* MultiProgram */
    struct b_refresh *alcrefresh	(word *e, int nl, int nt);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    void	atrace			(dptr dp);
    void	ctrace			(dptr dp, int nargs, dptr arg);
    void	failtrace		(dptr dp);
@@ -1092,11 +1092,11 @@ void post_if_ready		(dptr ldp, dptr f, fd_set *fdsp);
    int	Olimit			(int nargs, Fargs);
    int	Ollist			(int nargs, Fargs);
 
-   #ifdef MultiThread
+   #ifdef MultiProgram
       void	initalloc	(word codesize, struct progstate *p);
-   #else				/* MultiThread */
+   #else				/* MultiProgram */
       void	initalloc	(word codesize);
-   #endif				/* MultiThread */
+   #endif				/* MultiProgram */
 
 #endif					/* COMPILER */
 
@@ -1158,11 +1158,11 @@ struct region *swap2publicheap(struct region * curr_private,
 struct region *newregion(word nbytes,word stdsize);
 
 
-#ifdef MultiThread
+#ifdef MultiProgram
 void init_sighandlers(struct progstate *pstate);
-#else					/* MultiThread */
+#else					/* MultiProgram */
 void init_sighandlers();
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #if UNIX && defined(HAVE_WORKING_VFORK)
 void push_filepid(int pid, FILE *fp, word status);

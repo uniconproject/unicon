@@ -198,13 +198,13 @@ end
 "proc(x,i) - convert x to a procedure if possible; use i to resolve "
 "ambiguous string names."
 
-#ifdef MultiThread
+#ifdef MultiProgram
 function{0,1} proc(x,i,c)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 function{0,1} proc(x,i)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    if is:coexpr(x) then {
       if !def:C_integer(i, 1) then
          runerr(101, i)
@@ -245,7 +245,7 @@ function{0,1} proc(x,i)
 	 return proc(bp);
 	 }
       }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    if is:proc(x) then {
       abstract {
@@ -253,7 +253,7 @@ function{0,1} proc(x,i)
          }
       inline {
 
-#ifdef MultiThread
+#ifdef MultiProgram
 	 if (!is:null(c)) {
 	    struct progstate *p;
 	    if (!is:coexpr(c)) runerr(118,c);
@@ -265,7 +265,7 @@ function{0,1} proc(x,i)
 	    if (! InRange(p, BlkD(x,Proc)->entryp.icode, (char *)p + p->hsize))
 	       fail;
 	    }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
          return x;
          }
       }
@@ -289,7 +289,7 @@ function{0,1} proc(x,i)
       inline {
          struct b_proc *prc;
 
-#ifdef MultiThread
+#ifdef MultiProgram
 	 struct progstate *prog, *savedprog;
 
 	 savedprog = curpstate;
@@ -304,7 +304,7 @@ function{0,1} proc(x,i)
 	    }
 
 	 ENTERPSTATE(prog);
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 
          /*
           * Attempt to convert Arg0 to a procedure descriptor using i to
@@ -317,9 +317,9 @@ function{0,1} proc(x,i)
 	 else
          prc = strprc(&x, i);
 
-#ifdef MultiThread
+#ifdef MultiProgram
 	 ENTERPSTATE(savedprog);
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
          if (prc == NULL)
             fail;
          else

@@ -9,11 +9,11 @@
 
 dptr processFuncCallList(struct b_list *list);
 dptr processMethodCallList(struct b_list *list);
-#ifndef MultiThread
+#ifndef MultiProgram
 int internal_match(char * pat_sub, int Length, int Pat_S, struct descrip op,
 		   struct b_pelem * pattern, int *Start, int *Stop,
 		   int initial_cursor, int Anchored_Mode);
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 struct b_pelem EOP = {T_Pelem, PC_EOP,(union block *)NULL, 0, 0, {D_Null,0}};
 struct b_pattern emptypattern = { T_Pattern, 0, 0, (union block *)&EOP };
@@ -677,12 +677,12 @@ int f(dptr s, dptr p)
 }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cnv_pattern_macro(cnv_pattern_0,0,0,0,0,0,0)
 cnv_pattern_macro(cnv_pattern_1,E_Aconv,E_Tconv,E_Nconv,E_Sconv,E_Fconv,E_PatCode)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cnv_pattern_macro(cnv_pattern,0,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  *
@@ -3428,12 +3428,12 @@ Node_Succeed:
 }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 internal_match_macro(internal_match_0,0,0,0,0,0,0,0,0,0)
 internal_match_macro(internal_match_1,E_PatFail,E_PatMatch,E_PatArg,E_PelemAttempt,E_PelemMatch,E_PelemFail,E_Assign,E_Value,E_Spos)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 internal_match_macro(internal_match,0,0,0,0,0,0,0,0,0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /* keep this at the end so the #undef Fail affects no-one else */
 #undef Fail

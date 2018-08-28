@@ -32,7 +32,7 @@
  *  Other definitions may occur for different configurations. These include:
  *
  *	DeBug		debugging code
- *	MultiThread	support for multiple programs under the interpreter
+ *	MultiProgram	support for multiple programs under the interpreter
  *
  *  Other definitions perform configurations that are common to several
  *  systems. An example is:
@@ -229,9 +229,9 @@
 #ifdef NoCoExpr
    #undef NoNativeCoswitch
    #define NoNativeCoswitch
-   #undef MultiThread
-   #undef NoMultiThread
-   #define NoMultiThread
+   #undef MultiProgram
+   #undef NoMultiProgram
+   #define NoMultiProgram
 #else					/* NoCoExpr */
    #undef CoExpr
    #define CoExpr
@@ -241,33 +241,33 @@
 #endif					/* NoCoExpr */
 
 #if COMPILER
-   #undef MultiThread
-   #undef NoMultiThread
-   #define NoMultiThread
+   #undef MultiProgram
+   #undef NoMultiProgram
+   #define NoMultiProgram
 #endif					/* COMPILER */
 
-#ifdef NoMultiThread
-   #undef MultiThread
+#ifdef NoMultiProgram
+   #undef MultiProgram
    #undef EventMon
    #undef Eve
    #undef NoEventMon
    #define NoEventMon
 #else
-   #undef MultiThread
-   #define MultiThread
-#endif					/* NoMultiThread */
+   #undef MultiProgram
+   #define MultiProgram
+#endif					/* NoMultiProgram */
 
 #ifndef NoEventMon
   #undef  EventMon
   #define EventMon
 #endif
 
-#ifdef MultiThread
+#ifdef MultiProgram
    #if defined(HAVE_LIBPTHREAD) && !defined(NoConcurrent)
       #undef Concurrent
       #define Concurrent 1
    #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef Concurrent
    #define PthreadCoswitch 1
@@ -305,8 +305,8 @@
 #endif					/* NoLargeInts */
 
 #ifdef EventMon
-   #undef MultiThread
-   #define MultiThread
+   #undef MultiProgram
+   #define MultiProgram
 #ifndef NoMonitoredTrappedVar
    #undef MonitoredTrappedVar
    #define MonitoredTrappedVar
@@ -771,7 +771,7 @@ Deliberate Syntax Error
    /*
     * Code for the compiler.
     */
-   #undef MultiThread		/* no way -- interpreter only */
+   #undef MultiProgram		/* no way -- interpreter only */
    #undef EventMon		/* presently not supported in the compiler */
    #undef MonitoredTrappedVar	/* no way */
    #undef ExecImages		/* interpreter only */

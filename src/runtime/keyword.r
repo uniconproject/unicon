@@ -122,12 +122,12 @@ keyword{1} column
       return integer;
       }
    inline {
-#ifdef MultiThread
+#ifdef MultiProgram
       CURTSTATE_AND_CE();
       return C_integer findcol(ipc.opnd);
 #else
       fail;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       }
 end
 #endif					/* !COMPILER */
@@ -851,14 +851,14 @@ keyword{1} time
       return integer
       }
    inline {
-#ifdef MultiThread
+#ifdef MultiProgram
       /*
        * &time in this program = total time - time spent in other programs
        */
       return C_integer millisec() - curpstate->Kywd_time_elsewhere;
-#else					/* MultiThread */
+#else					/* MultiProgram */
       return C_integer millisec();
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       }
 end
 
@@ -913,9 +913,9 @@ keyword{1} errno
 #endif /* PosixFns */
 end
 
-#ifndef MultiThread
+#ifndef MultiProgram
 struct descrip kywd_xwin[2] = {{D_Null}};
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 "&window - variable containing the current graphics rendering context."
 #ifdef Graphics

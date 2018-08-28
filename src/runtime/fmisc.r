@@ -22,11 +22,11 @@ function{0,1} args(x,i)
    else if is:null(i) then {
       abstract { return integer }
       inline {
-#ifdef MultiThread
+#ifdef MultiProgram
 	 return C_integer BlkD(x,Coexpr)->program->tstate->Xnargs;
 #else
 	 fail;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 	 }
       }
    else if !cnv:integer(i) then
@@ -34,13 +34,13 @@ function{0,1} args(x,i)
    else {
       abstract { return any_value }
       inline {
-#ifdef MultiThread
+#ifdef MultiProgram
 	 int c_i = IntVal(i);
 	 if ((c_i <= 0) || (c_i > BlkD(x,Coexpr)->program->tstate->Xnargs)) fail;
 	 return BlkD(x,Coexpr)->program->tstate->Xargp[IntVal(i)];
 #else
 	 fail;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 	 }
       }
 end
@@ -280,7 +280,7 @@ end
 " procedure activations, plus global variables."
 " Output to file f (default &errout)."
 
-#ifdef MultiThread
+#ifdef MultiProgram
 function{1} display(i,f,c)
    declare {
       struct b_coexpr *ce = NULL;
@@ -292,9 +292,9 @@ function{1} display(i,f,c)
        struct b_coexpr *curtstate_ce = curtstate->c;
 #endif					/* Concurrent */
       }
-#else					/* MultiThread */
+#else					/* MultiProgram */
 function{1} display(i,f)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    if !def:C_integer(i,(C_integer)k_level) then
       runerr(101, i)
@@ -307,13 +307,13 @@ function{1} display(i,f)
    else if !is:file(f) then
       runerr(105, f)
 
-#ifdef MultiThread
+#ifdef MultiProgram
    if !is:null(c) then inline {
       if (!is:coexpr(c)) runerr(118,c);
       else if (BlkLoc(c) != BlkLoc(k_current))
          ce = (struct b_coexpr *)BlkLoc(c);
       }
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 
    abstract {
       return null
@@ -358,7 +358,7 @@ function{1} display(i,f)
 	    (long)BlkD(k_current,Coexpr)->size);
 
       fflush(std_f);
-#ifdef MultiThread
+#ifdef MultiProgram
       if (ce) {
          savedprog = curpstate;
 	 if ((ce->es_pfp == NULL) || (ce->es_argp == NULL)) fail;
@@ -367,7 +367,7 @@ function{1} display(i,f)
 	 ENTERPSTATE(savedprog);
        }
       else
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
          r = xdisp(pfp, glbl_argp, (int)i, std_f);
       if (r == Failed)
          runerr(305);
@@ -626,14 +626,14 @@ end
 
 "name(v) - return the name of a variable."
 
-#ifdef MultiThread
+#ifdef MultiProgram
 function{1} name(underef v, c)
    declare {
       struct progstate *prog, *savedprog;
       }
-#else						/* MultiThread */
+#else						/* MultiProgram */
 function{1} name(underef v)
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
    /*
     * v must be a variable
     */
@@ -651,7 +651,7 @@ function{1} name(underef v)
          runerr(402);
 #endif
 
-#ifdef MultiThread
+#ifdef MultiProgram
       savedprog = curpstate;
       if (is:null(c)) {
          prog = curpstate;
@@ -664,12 +664,12 @@ function{1} name(underef v)
          }
 
       ENTERPSTATE(prog);
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
       i = get_name(&v, &result);		/* return val ? #%#% */
 
-#ifdef MultiThread
+#ifdef MultiProgram
       ENTERPSTATE(savedprog);
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 
       if (i == RunError)
          runerr(0);
@@ -1409,21 +1409,21 @@ end
 "variable(s) - find the variable with name s and return a"
 " variable descriptor which points to its value."
 
-#ifdef MultiThread
+#ifdef MultiProgram
 function{0,1} variable(s,c,i,trap_local)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 function{0,1} variable(s)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    if !cnv:C_string(s) then
       runerr(103, s)
 
-#ifdef MultiThread
+#ifdef MultiProgram
    if !def:C_integer(i,0) then
       runerr(101,i)
    if !def:C_integer(trap_local,0) then
       runerr(101,trap_local)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    abstract {
       return variable
@@ -1431,14 +1431,14 @@ function{0,1} variable(s)
 
    body {
       register int rv;
-#ifdef MultiThread
+#ifdef MultiProgram
       struct progstate *prog, *savedprog=NULL;
       struct pf_marker *tmp_pfp;
       dptr tmp_argp;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
       CURTSTATE_AND_CE();
 
-#ifdef MultiThread
+#ifdef MultiProgram
       /*
        * Produce error if i is negative
        */
@@ -1478,11 +1478,11 @@ function{0,1} variable(s)
       if (pfp)
 	 glbl_argp = &((dptr)pfp)[-(pfp->pf_nargs) - 1];
       else glbl_argp = NULL;
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 
       rv = getvar(s, &result);
    
-#ifdef MultiThread
+#ifdef MultiProgram
       if (savedprog)
 	 ENTERPSTATE(savedprog);
       pfp = tmp_pfp;
@@ -1502,7 +1502,7 @@ function{0,1} variable(s)
 		  Deref(result);
 		  }
 	    }
-#endif						/* MultiThread */
+#endif						/* MultiProgram */
 
       if (rv != Failed)
          return result;
@@ -1563,7 +1563,7 @@ function{0,1} cofail(CE)
 end
 
 
-#ifdef MultiThread
+#ifdef MultiProgram
 
 "localnames(ce,i) - produce the names of local variables"
 " in the procedure activation i levels up in ce"
@@ -1956,7 +1956,7 @@ function{1} parent(ce)
       }
 end
 
-#ifdef MultiThread
+#ifdef MultiProgram
 
 "eventmask(ce,cs) - given a ce, get or set that program's event mask"
 
@@ -1990,37 +1990,37 @@ function{1} eventmask(ce,cs,vmask)
          }
       }
 end
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 
 
 "globalnames(ce) - produce the names of identifiers global to ce"
 
 function{*} globalnames(ce)
-#ifdef MultiThread
+#ifdef MultiProgram
    declare {
       struct progstate *ps;
       }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    abstract {
       return string
       }
-#ifdef MultiThread
+#ifdef MultiProgram
    if is:null(ce) then inline { ps = curpstate; }
    else if is:coexpr(ce) then
       inline { ps = BlkD(ce,Coexpr)->program; }
    else runerr(118,ce)
-#else					/* MultiThread */
+#else					/* MultiProgram */
    if not (is:null(ce) || is:coexpr(ce)) runerr(118, ce)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
    body {
       struct descrip *dp;
       CURTSTATVAR();
-#ifdef MultiThread
+#ifdef MultiProgram
       for (dp = ps->Gnames; dp != ps->Egnames; dp++) {
-#else					/* MultiThread */
+#else					/* MultiProgram */
       for (dp = gnames; dp != egnames; dp++) {
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
          suspend *dp;
          }
       fail;
@@ -2448,7 +2448,7 @@ function {*} structure(x)
       word type;
       struct region *theregion, *rp;
 
-#ifdef MultiThread
+#ifdef MultiProgram
       theregion = BlkD(x,Coexpr)->program->blockregion;
 #else
       theregion = curblock;
@@ -2494,7 +2494,7 @@ function {*} structure(x)
 end
 
 
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef Concurrent
 

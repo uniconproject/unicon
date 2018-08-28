@@ -341,7 +341,7 @@ plugins=no
 database=no
 ssl=no
 
-  AC_DEFINE([NoMultiThread], [1], [No MultiThread])
+  AC_DEFINE([NoMultiProgram], [1], [No MultiProgram])
   # what else we need to disable?
 fi
 

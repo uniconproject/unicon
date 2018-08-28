@@ -153,18 +153,18 @@ FncDefV(writes)
    FncDef(open,3)
 #endif					/* Graphics */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    FncDef(display,3)
    FncDef(name,2)
    FncDef(proc,3)
    FncDef(variable,4)
    FncDef(istate,2)
-#else					/* MultiThread */
+#else					/* MultiProgram */
    FncDef(display,2)
    FncDef(name,1)
    FncDef(proc,2)
    FncDef(variable,1)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * Dynamic loading.
@@ -342,9 +342,9 @@ FncDef(fetch,2)
 
    FncDef(fieldnames,1)
 
-#ifdef MultiThread
+#ifdef MultiProgram
    /*
-    * These functions are under MultiThread for no good reason.
+    * These functions are under MultiProgram for no good reason.
     */
    FncDef(globalnames,1)
    FncDef(localnames,2)
@@ -352,7 +352,7 @@ FncDef(fetch,2)
    FncDef(paramnames,2)
    FncDef(structure,1)
    /*
-    * These functions are inherent to MultiThread and multiple Icon programs
+    * These functions are inherent to MultiProgram and multiple Icon programs
     */
    FncDefV(load)
    FncDef(parent,1)
@@ -366,7 +366,7 @@ FncDef(fetch,2)
    FncDef(EvSend,3)
    FncDef(eventmask,2)
 
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /* SQL/ODBC database support */
 #ifdef ISQL

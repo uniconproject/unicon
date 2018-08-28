@@ -210,7 +210,7 @@ int first;
 #endif                                  /* NativeCoswitch */
 
 #if !COMPILER
-#ifdef MultiThread
+#ifdef MultiProgram
    switch(swtch_typ) {
       /*
        * A_MTEvent does not generate an event.
@@ -242,7 +242,7 @@ int first;
 	 TRANSFER_KLEVEL(ncp, ccp);
 	 break;
       }
-#endif        				/* MultiThread */
+#endif        				/* MultiProgram */
 #endif					/* COMPILER */
 
    /*
@@ -332,9 +332,9 @@ int first;
 #endif					/* !COMPILER */
    {
       if (k_trace 
-      #ifdef MultiThread
+      #ifdef MultiProgram
 	 &&  (swtch_typ != A_MTEvent)
-      #endif					/* MultiThread */
+      #endif					/* MultiProgram */
          )
 	 cotrace(ccp, ncp, swtch_typ, valloc);
     }
@@ -414,13 +414,13 @@ int first;
    #endif				/* COMPILER && !ConcurrentCOMPILER */
 #endif					/* Concurrent */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    /*
     * From here on out, A_MTEvent looks like a A_Coact.
     */
    if (swtch_typ == A_MTEvent)
       swtch_typ = A_Coact;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
    ncp->coexp_act = swtch_typ;
 

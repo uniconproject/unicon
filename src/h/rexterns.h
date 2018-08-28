@@ -14,9 +14,9 @@ extern int err_conv;		/* flag: error conversion is supported */
 extern int dodump;		/* termination dump */
 extern int line_info;		/* flag: line information is available */
 extern char *file_name;		/* source file for current execution point */
-#ifndef MultiThread
+#ifndef MultiProgram
 extern int line_num;		/* line number for current execution point */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 extern unsigned char allchars[];/* array for making one-character strings */
 extern char *blkname[];		/* print names for block types. */
@@ -154,9 +154,9 @@ extern struct b_real realzero;		/* real zero block */
    extern struct region rootblock;
 
 /*
- * Externals conditional on multithreading.
+ * Externals conditional on MultiProgram: multi loaded programs.
  */
-#ifndef MultiThread
+#ifndef MultiProgram
    extern struct region *curstring;
    extern struct region *curblock;
 #if !ConcurrentCOMPILER
@@ -217,7 +217,7 @@ extern struct b_real realzero;		/* real zero block */
 #ifdef PosixFns
 extern struct descrip amperErrno;
 #endif					/* PosixFns */
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #ifdef Concurrent
    #ifdef HAVE_KEYWORD__THREAD
@@ -264,20 +264,20 @@ extern struct descrip amperErrno;
    #endif				/* ExecImages */
 #endif					/* !COMPILER || ConcurrentCOMPILER */
 
-   #if defined(MultiThread)
+   #if defined(MultiProgram)
       extern struct progstate *curpstate;
       extern struct progstate rootpstate;
-   #endif					/* MultiThread */
+   #endif					/* MultiProgram */
 
 
 #if !COMPILER
-   #ifdef MultiThread
+   #ifdef MultiProgram
       extern int noMTevents;		/* no MT events during GC */
    #ifdef Concurrent
       extern pthread_mutex_t mutex_noMTevents;
    #endif					/* Concurrent */
 
-   #else				/* MultiThread */
+   #else				/* MultiProgram */
       extern char *code;		/* start of icode */
       extern char *ecode;		/* end of icode */
       extern char *endcode;		/* end of icode? */
@@ -301,7 +301,7 @@ extern struct descrip amperErrno;
       extern dptr field_argp;
       
       extern word lastop;
-   #endif				/* MultiThread */
+   #endif				/* MultiProgram */
 
       extern struct b_proc *stubrec;
    
@@ -336,7 +336,7 @@ extern stringint attribs[], drawops[];
    extern int win_highwater, canvas_serial, context_serial;
    extern clock_t starttime;		/* start time in milliseconds */
 
-   #ifndef MultiThread
+   #ifndef MultiProgram
       extern struct descrip kywd_xwin[];
       extern struct descrip lastEventWin;
       extern int lastEvFWidth, lastEvLeading, lastEvAscent;
@@ -346,7 +346,7 @@ extern stringint attribs[], drawops[];
       extern struct descrip amperY;
       extern struct descrip amperInterval;
       extern uword xmod_control, xmod_shift, xmod_meta;
-   #endif				/* MultiThread */
+   #endif				/* MultiProgram */
 
    #ifdef XWindows
       extern struct _wdisplay * wdsplys;
@@ -380,9 +380,9 @@ extern stringint attribs[], drawops[];
    extern struct descrip gl_matrixmode;
    extern struct descrip gl_texture;
    extern stringint redraw3Dnames[];
-   #ifndef MultiThread
+   #ifndef MultiProgram
          extern struct descrip amperPick;
-   #endif				/* MultiThread */
+   #endif				/* MultiProgram */
 
 extern wfont gfont;
 extern wfont *start_font, *end_font, *curr_font;

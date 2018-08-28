@@ -93,12 +93,12 @@ int f(dptr dp1, dptr dp2, word i, word j)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cplist_macro(cplist_0, 0)
 cplist_macro(cplist_1, E_Lcreate)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cplist_macro(cplist, 0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 
 #begdef cpset_macro(f, e)
@@ -113,12 +113,12 @@ int f(dptr dp1, dptr dp2, word n)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cpset_macro(cpset_0, 0)
 cpset_macro(cpset_1, E_Screate)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cpset_macro(cpset, 0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #begdef cptable_macro(f, e)
 int f(dptr dp1, dptr dp2, word n)
@@ -130,12 +130,12 @@ int f(dptr dp1, dptr dp2, word n)
    }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cptable_macro(cptable_0, 0)
 cptable_macro(cptable_1, E_Tcreate)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cptable_macro(cptable, 0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 int cphash(dp1, dp2, n, tcode)
 dptr dp1, dp2;
@@ -700,10 +700,10 @@ union block **memb(union block *pb, dptr x, uword hn, int *res)
  * to make this smarter someday.
  */
 
-#ifndef MultiThread
+#ifndef MultiProgram
 int longest_dr = 0;
 struct b_proc_list **dr_arrays;
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #if COMPILER
 static word mdw_dynrec_start = 0;
@@ -929,7 +929,7 @@ struct b_proc *dynrecord(dptr s, dptr fields, int n)
    }
 #endif /* COMPILER */
 
-#ifdef MultiThread
+#ifdef MultiProgram
 
 /*
  * Determine whether an event (value) is in a mask for a given event code.
@@ -963,7 +963,7 @@ int invaluemask(struct progstate *p, int evcode, struct descrip *val)
       return Succeeded;
       }
    }
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 /*
  * Insert an array of alternating keys and values into a table.
@@ -1538,11 +1538,11 @@ int f(dptr dp1, dptr dp2, word i, word j)
 }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cprealarray_macro(cprealarray_0, 0)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cprealarray_macro(cprealarray, 0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #begdef cpintarray_macro(f, e)
 /*
@@ -1597,10 +1597,10 @@ int f(dptr dp1, dptr dp2, word i, word j)
 }
 #enddef
 
-#ifdef MultiThread
+#ifdef MultiProgram
 cpintarray_macro(cpintarray_0, 0)
-#else					/* MultiThread */
+#else					/* MultiProgram */
 cpintarray_macro(cpintarray, 0)
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 #endif					/* Arrays */

@@ -38,8 +38,8 @@
 #define Dbm /*wince*/
 /*#undef Dbm
 #define NoDbm*/ /* wince */
-#undef MultiThread
-#define NoMultiThread
+#undef MultiProgram
+#define NoMultiProgram
 /* #define Messaging wince */
 #undef Messaging     /* wince */
 #define NoMessaging  /* wince */

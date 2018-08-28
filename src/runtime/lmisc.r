@@ -47,11 +47,11 @@ register dptr cargp;
     * Get a new co-expression stack and initialize.
     */
 
-#ifdef MultiThread
+#ifdef MultiProgram
    Protect(sblkp = alccoexp(0, 0), err_msg(0, NULL));
-#else					/* MultiThread */
+#else					/* MultiProgram */
    Protect(sblkp = alccoexp(), err_msg(0, NULL));
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
 
    if (!sblkp)

@@ -21,11 +21,11 @@ operator{1} ^ refresh(x)
       /*
        * Get a new co-expression stack and initialize.
        */
-#ifdef MultiThread
+#ifdef MultiProgram
       Protect(sblkp = alccoexp(0, 0), runerr(0));
-#else					/* MultiThread */
+#else					/* MultiProgram */
       Protect(sblkp = alccoexp(), runerr(0));
-#endif					/* MultiThread */
+#endif					/* MultiProgram */
 
       sblkp->freshblk = BlkD(x,Coexpr)->freshblk;
       if (ChkNull(sblkp->freshblk))	/* &main cannot be refreshed */

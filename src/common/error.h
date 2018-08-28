@@ -154,7 +154,7 @@ char *s1, *s2;
    nocode++;
    }
 
-#ifdef Iconc
+
 /*
  * twarn produces s1 and s2 (if nonnull) as translator warning messages.
  *  The location of the error is found in tok_loc.
@@ -169,9 +169,11 @@ char *s1, *s2;
    if (s2)
       fprintf(stderr, "\"%s\": ", s2);
    fprintf(stderr, "%s\n", s1);
+#ifdef Iconc
    twarns++;
+#endif
    }
-#endif					/* Iconc */
+
 
 /*
  * tsyserr is called for fatal errors.  The message s is produced and the

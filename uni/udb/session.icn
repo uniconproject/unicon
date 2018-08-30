@@ -54,6 +54,10 @@ method startSession()
             # The program exit normally
             break
             }
+         if DState.State = RELOAD then {
+            # forcefully quit program to load
+            return
+            }
       }#end every 
    }
    #--- Test
@@ -182,8 +186,14 @@ method cmdLoad(cmd)
          }
       }
    # load | load args
-   else
-      DState.initializeState(cmd[2:0])
+   else {
+      if DState.initializeState(cmd[2:0]) then {
+         # loading/reloading program, clear all stops
+         Debug.Watch.resetWatchInfo()
+         Debug.Trace.resetTraceInfo()
+         Debug.Break.resetBreakInfo()
+         }
+      }
 end
 
 #
@@ -208,6 +218,7 @@ method cmdRun(cmd)
          Message  :="\n   The program being debugged has been started already."
          Message||:="\n   Start it from the beginning? (Y/n)?: "
          DState.Writes(Message)
+         # rerun
          if *(ans:=read())=0 | not(ans[1] == ("n"|"N")) then {
             Debug.Watch.resetWatchInfo()
             Debug.Trace.resetTraceInfo()
@@ -218,6 +229,7 @@ method cmdRun(cmd)
             return
             }
          } 
+      # run (like normal)
       else{
          DState.Update(RUN)
          if DState.RunCount >= 1 then{
@@ -450,21 +462,11 @@ method cmdCoexp(cmd)
       if /(coexp := DState.coState.get_coexp(cmd[2])) then {
          DState.State := ERROR
          Message:="\n   "||DState.cmdHistory[1]||" does not exist."||
-                  "\n   Use command \"coexp\" to view activated coexpressions."
+                  "\n   Use command \"coexp\" to view activated co-expressions."
          DState.Write(Message)
          fail
          }
       if DState.updateCoTarget(coexp.id) then DState.printCoState()
-
-      # invalid syntax
-#      if cmd[2] ? upto(~&digits)\1 then {
-#         write("second argument of coexp must be a positive integer")
-#         }
-      # coexp exists 
-#      else {
-#         if DState.updateCoTarget(cmd[2]) then
-#            DState.printCoState()
-#         }
       }
 end
 

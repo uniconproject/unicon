@@ -79,24 +79,24 @@ method startEvaluator()
            # parent is current coexp
            DState.addCoexp(&eventvalue)
            #DState.coState.add_coexp(&eventvalue,DState.coState.get_curr())
-           #DState.coState.print_state()
            }
 
         # Coexp activated, set current coexp to value
         E_Coact: { 
            DState.updateCoState(&eventvalue)
-           #DState.coState.print_state()
+           write("[Activating co-expression ",DState.coState.curr.id,"]")
            }
         # Coexp failed to produce result, remove from list of coexps
         E_Cofail: { 
+           write("[Co-expression ",DState.coState.curr.id," failed]")
            DState.removeCoexp()
            DState.updateCoState(&eventvalue)
-           #DState.coState.print_state()
+           write("[Returning to co-expression ",DState.coState.curr.id,"]")
            }
         # Coexp returned, set current coexp to value
         E_Coret: { 
            DState.updateCoState(&eventvalue)
-           #DState.coState.print_state()
+           write("[Returning to co-expression ",DState.coState.curr.id,"]")
            }
 
         E_Exit:               { handle_Exit()     }
@@ -124,11 +124,10 @@ method startEvaluator()
       # Temporal Assertions
       if *DTA.assertTable > 0 then  DTA.forward()
 
-      if DState.State = PAUSE then {
+      if DState.State = PAUSE then 
          suspend
-         }
-      else
-      if DState.State = END   then { return  }
+      else if DState.State = END then 
+         return 
       }
 end
 

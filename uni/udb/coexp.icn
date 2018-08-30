@@ -222,8 +222,12 @@ class CoexpState(
    # <--- indicates the current active coexp
    #
    method print_state()
-      #write("\n****************************************")
-      write()
+      if *active_list = 0 then {
+         write("\n   No program is being run. A program must be running",
+               "\n   in order to view activated co-expressions.")
+         return
+         }
+      
       every coexp := !active_list do {
          if \target & target.id == coexp.id then writes(" *  ")
          else writes("    ")
@@ -234,7 +238,6 @@ class CoexpState(
          if curr.id == coexp.id then writes("<---")
          writes("\n")
          }
-      #write("****************************************")
       return
    end
 

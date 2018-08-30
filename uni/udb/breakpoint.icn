@@ -32,24 +32,24 @@ class BreakPoint(
 # Check the Monitored file for a breakpoint
 #
 method checkBreakpoint()
-   local  cur_file, cur_line, L, x, id
+   local  cur_file, cur_line, L, bp, id
 
    cur_file := keyword("file", Monitored)
    if member(breakPoints, cur_file) then {
       cur_line := keyword("line", Monitored)
       L := breakPoints[cur_file]
-      every x := !L do
-	 if cur_line = x.line & x.state = ENABLED &
-	    (id := isBreakExist(cur_file,cur_line)) &
-            ((\x.coexp & x.coexp.id == DState.coState.curr.id) |
-            /x.coexp) then {
-
+      every bp := !L do
+	 if cur_line = bp.line & bp.state = ENABLED &
+	    id := isBreakExist(cur_file,cur_line) &
+            (/bp.coexp | bp.coexp.id == DState.coState.curr.id)
+            then {
+            
 	    DState.State := PAUSE
 	    # this delete will help "next" and "step" operate well
 	    # jut remove the the breakMask set from the valueMask
 	    # table temporarly until the continue command comes on
 	    delete(DState.valueMask,E_Line)
-            msg := constructBpMsg(x, 1) # 1 -> show source code. add a flag?
+            msg := constructBpMsg(bp, 1) # 1 -> shows source code. add a flag?
 	    DState.Write(msg)
 	    return
 	    }
@@ -143,14 +143,45 @@ end
 #
 # check to see whether a breakpoint is pre-exist or not
 #
-method isBreakExist(fname, line)
-   local L, bp
+method isBreakExist(fname, line, breakpoint)
+   local L, bp, coexp
 
    if member(breakPoints, fname) then {
       L := breakPoints[fname]
-      every bp := !L do
-	 if bp.line = line & bp.state ~= DELETED then
+      every bp := !L do {
+	 if bp.line = line & bp.state ~= DELETED then {
+
+            # only when trying to add a breakpoint - check if coexp of
+            # added breakpoint differs from current breakpoint
+            if \breakpoint then {
+               coexp := breakpoint.coexp
+               # coexps differ
+               if (\coexp & (/bp.coexp | bp.coexp.id ~= coexp.id)) |
+                  (/coexp & \bp.coexp) then {
+                  # ask if breakpoint should be replaced
+                  msg := constructBpMsg(bp) || " already exists. "
+                  msg ||:= "\n   Do you really want to replace it (Y/n)?: "
+                  DState.Writes(msg)
+                  if read() == (""|"y"|"Y"|"yes"|"YES") then {
+                     # replace breakpoint id
+                     breakpoint.id := bp.id
+                     count -:= 1
+                     # delete breakpoint
+                     deleteBreakPoint(fname,line)
+                     msg :="\n   Previous breakpoint has been replaced."
+                     fail
+                     }
+                  }
+               # same coexp -> same breakpoint, append to message
+               else {
+	          msg := "\n   The breakpoint already exists._
+	                  \n   Type \"break\" to see all breakpoints"
+                  }
+               }
+            # same breakpoint, return id
 	    return bp.id
+            }
+         }
       }
    fail
 end
@@ -207,12 +238,12 @@ method cmdBreak(cmd)
       return
       }
 
-   # [breakcmd] [coexp N] - get coexpression if this syntax is used
+   # [breakcmd] [coexp N] - get co-expression if this syntax is used
    if *cmd >= 4 & cmd[-2] == "coexp" then {
       if /(coexp := DState.coState.get_coexp(cmd[-1])) then {
 	 DState.State := ERROR
-         msg := "\n   "||cmd[-2]||" "||cmd[1]||" does not exist."||
-	        "\n   Use command \"coexp\" to view activated coexpressions."
+         msg := "\n   "||cmd[-2]||" "||cmd[-1]||" does not exist."||
+	        "\n   Use command \"coexp\" to view activated co-expressions."
          DState.Write(msg)
          fail
          }
@@ -308,7 +339,7 @@ method cmdBreak(cmd)
       # invalid syntax
       else {
          DState.State := ERROR
-         msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+         msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
          msg ||:="\n   Try \"help\" or \"help break\" for assistance."
          DState.Write(msg)
          return
@@ -320,7 +351,7 @@ method cmdBreak(cmd)
       }
    else {
       DState.State := ERROR
-      msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+      msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
       msg ||:="\n   Try \"help\" or \"help break\" for assistance."
       DState.Write(msg)
       return
@@ -332,7 +363,7 @@ method cmdBreak(cmd)
       }
    else {
       DState.State := ERROR
-      msg   :="\n   \""||DState.cmdHistory[1]||"\" is Unknown command"
+      msg   :="\n   \""||DState.cmdHistory[1]||"\" is not a known command"
       msg ||:="\n   Try \"help\" or \"help break\" for assistance."
       DState.Write(msg)
       return
@@ -399,11 +430,7 @@ method cmdBreak(cmd)
    # record breakPt(fname, linenum, code)
    if \break_point & \break_point.line then {
       line := break_point.line
-      if isBreakExist(fname, line) then {
-	 msg ||:= "\n   The breakpoint already exists._
-	           \n   Type \"break\" to see all breakpoints"
-	 }
-      else {
+      if not isBreakExist(fname, line, break_point) then {
 	 addBreakPoint(fname, break_point)
          msg ||:= constructBpMsg(break_point)
 	 }
@@ -429,6 +456,7 @@ method clearAllBreakpoints()
        every x := key(breakPoints) do
 	  delete(breakPoints, x)
        msg := "\n   All breakpoints are cleared; ("||size||" total)."
+       count := 0
        }
     else
        msg := "\n   No breakpoints are available to be cleared."
@@ -674,6 +702,12 @@ method cmdDisable(cmd)
       DState.Write(msg)
       fail
       }
+end
+
+method resetBreakInfo()
+   breakPoints := table(0)
+   count := 0
+   msg :="\n   "
 end
 
 #

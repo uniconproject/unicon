@@ -229,84 +229,116 @@ end
 #
 # Initialize the UDB Debugging State
 #
+# Returns if debugging data needs to be reinitialized, otherwise fails
+#
 method initializeState(tp)
-   local x, src, found, missing, plural:="", missing_files
+   local x, src, found, missing, plural:="", missing_files, reset := 0
 
    # This is only when the TP is passed at the start of udb, i.e: ./udb test
    # in either case the ErrorCode will be initialized
-   State := NONE
+   if State ~= PAUSE then State := NONE
 
    # load (no program loaded)
-   if *tp = 0 & *TP = 0 then {
+   if *(\tp) = 0 & *TP = 0 then {
       State := ERROR
       Message ||:= "\n   A program must be pre-loaded_
                     \n   Type \"help\" for assistance"
       RunCode := NONE
+      Write(Message)
       }
    # load | load args | udb | udb args 
-   else if *tp > 0 | *TP > 0 then {
+   # reload current program or load new program
+   else if *(\tp) > 0 | *TP > 0 then {
+      # if a program is running, check for user input
+      if State = PAUSE then {
+         Message  :="\n   The current program's debugging session is active."
+         Message||:="\n   The session will be terminated in order to load "
+         Message||:="\n   a program. Proceed (Y/n)?: "
+         Writes(Message)
 
-      # clear loaded program info
-      #
-      # BUG: If a new program is loaded during another program's execution,
-      #      the first new 'run' command will finish the previous program's
-      #      execution first before starting new loaded program...
-      #
-      # also need a way to clear break/watch/tracepoints from here 
-      if *TP > 0 then {
-         srcFile.reinit()
-         srcCode.reinit()
-         coState.reinit()      
-         }
-      # load new program
-      if *tp > 0 then {
-         TP := tp
-         }
+         until (ans := read()) == (""|"y"|"n"|"Y"|"N"|"yes"|"no"|"Yes"|"No") do
+            write("\n   Invalid input, please try again (Y/n): ")
 
-      # check if the TP is loadable and accessable.
+         # no, don't load 
+         if ans == ("n"|"N"|"no"|"No") then {
+            State := SKIP
+            fail
+            }
+         # yes, restart session then reinitialize
+         else {
+            # Exit out of this run of startSession()
+            State := RELOAD 
+
+            # renew TP if loading new program
+            if *tp > 0 & *TP > 0 then {
+               TP := tp
+               Fresh() # reloading, refresh state
+               }
+            }
+         }
+      # program not running (in debug session)
+      else { # State ~= PAUSE
+         # a program is already loaded, clear out loaded files
+         if *TP > 0 then {
+            # reinit source info
+            srcFile.reinit()
+            srcCode.reinit()
+            }
+         # load new program, reset TP
+         if *(\tp) > 0 then 
+            TP := tp
+
+         # check if the TP is loadable and accessable.
 $ifndef _UNIX
-      if not stat(TP[1]) & stat(TP[1]||".exe") then
-         TP[1]||:=".exe"
+         if not stat(TP[1]) & stat(TP[1]||".exe") then
+            TP[1]||:=".exe"
 $endif
-      if stat(TP[1]) then {
-         #--
-         EvInit(TP) | stop("cant start evinit on " || TP[1])
-         if src := icode.getSrcFileNames(TP[1]) then{
-            srcFile.loadSourceFiles(TP[1], src)
-            State := LOAD
-            srcCode.analyzeGlobalNames()
-            #-- Automated TEST
+         if stat(TP[1]) then {
+
+            # start loading
+            EvInit(TP) | stop("cant start evinit on " || TP[1])
+            if src := icode.getSrcFileNames(TP[1]) then {
+               State := LOAD
+               srcFile.loadSourceFiles(TP[1], src)
+               srcCode.analyzeGlobalNames()
+               #-- Automated TEST
 $ifdef TEST
-            State := RUN ###### TEST : For the sake of getting the Time right
+               State := RUN ###### TEST : For the sake of getting the Time right
 $endif
-            Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
-                         srcFile.exeSize||" of "||icode.icodeVersion 
-            found := *srcFile.foundFiles
-            if found > 0 then{
-               if found > 1 then plural := "s are " else plural := " is "
-               Message ||:=  "\n   "|| found ||" file"||plural||"found"
+               Message ||:= "\n   "|| srcFile.exeName ||" : loaded "||
+                            srcFile.exeSize||" of "||icode.icodeVersion 
+               found := *srcFile.foundFiles
+               if found > 0 then {
+                  if found > 1 then plural := "s are " else plural := " is "
+                  Message ||:=  "\n   "|| found ||" file"||plural||"found"
+                  }
+               missing := *srcFile.missingFiles
+               if missing > 0 then {
+                  if missing > 1 then plural := "s are " else plural := " is "
+                  Message ||:=  "\n   and "|| missing ||" file"||plural||"missing"
+                  }
+               Message ||:= "\n   Type \"help\" for assistance _
+                                  or \"src\" for file(s) name"
                }
-            missing := *srcFile.missingFiles
-            if missing > 0 then{
-               if missing > 1 then plural := "s are " else plural := " is "
-               Message ||:=  "\n   and "|| missing ||" file"||plural||"missing"
+            else{
+               Message ||:= "\n   Can not get the Source File Names_
+                           \n   Type \"help\" for assistance."
+               Write(Message)
+               State := NONE
+               fail
                }
-            Message ||:= "\n   Type \"help\" for assistance _
-                               or \"src\" for file(s) name"
             }
-         else{
-            Message ||:= "\n   Can not get the Source File Names_
-                        \n   Type \"help\" for assistance."
+         else {
+            Message ||:= "\n   Could not access \"" || TP[1] ||"\""||
+                         "\n   Type \"help\" for assistance."
+            Write(Message)
+            State := NONE
+            fail
             }
          }
-      else {
-         State := ERROR
-         Message ||:= "\n   Could not access \"" || TP[1] ||"\""||
-                      "\n   Type \"help\" for assistance."
-         State := NONE
-         }
+      Write(Message)
+      return
       }
-   Write(Message)
 end
 
 #
@@ -365,7 +397,7 @@ method Fresh()
 end
 
 #
-# Coexpression wrapper functions
+# Co-expression wrapper functions
 #
 
 # are these really necessary...? makes it more "OO"
@@ -380,7 +412,7 @@ end
 
 method updateCoTarget(x)
    if x >= 1 then return coState.update_target(x)
-#   else write("not a valid coexpression number")
+#   else write("not a valid co-expression number")
 end
 
 method addCoexp(C,srcC)

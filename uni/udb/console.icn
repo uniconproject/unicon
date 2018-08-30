@@ -173,6 +173,7 @@ method startConsole(argv)
 
    DState.initializeState(argv)
 
+   # main interface loop
    while DState.State ~= QUIT do {
      case DState.State of {
        RUN: {
@@ -206,12 +207,15 @@ $ifdef TEST
           #Debug.DTA.cmdAssert(cmd)
           #DState.State := RUN
 $endif
-          every startSession() do{
+          # debugging session loop
+          every startSession() do {
              old_State := DState.State
-             while DState.State ~= RUN do{
+             while DState.State ~= RUN do {
                case DState.State of {
+                 RELOAD |
                  END | 
                  QUIT:    { 
+                            DState.coState.reinit() # refresh coexps
 $ifndef TEST
                             break break next
 $else 
@@ -232,6 +236,7 @@ $endif
                             DState.RunCode := NEXT
                             next                       }
                  RERUN:   { DState.State   := RUN
+                            DState.coState.reinit() # refresh coexps
                             break break next           }
                  SKIP:    { DState.State := old_State  }
                  ERROR:   { DState.State := old_State
@@ -241,6 +246,9 @@ $endif
                else                             DState.State := SKIP
              }# end of while
           }#end of every
+          }
+       RELOAD:{
+          DState.initializeState() # load program now that debugging has ended
           }
        END:{
           # if debugging finished OK

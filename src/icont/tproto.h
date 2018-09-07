@@ -102,6 +102,7 @@ void    tsyserr    (char *s) __attribute__ ((noreturn,nothrow));
 #else
 void	tsyserr			(char *s);
 #endif
+void	twarn			(char *s1, char *s2);
 
 void	writecheck		(int rc);
 void	yyerror			(char *s,int state);

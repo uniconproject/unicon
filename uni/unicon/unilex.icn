@@ -253,6 +253,16 @@ procedure do_digits()
 		  else if c := tab(any('pP')) then {
 		     yytext := string(yytext * 1024^5)
 		     }
+                  # e.g. 3D6 for sum of three six-sided dice
+		  else if c := tab(any('dD')) & dsz := tab(many(&digits)) then {
+                     numdie := integer(yytext)
+		     yytext := "("
+                     every !numdie do {
+                        if yytext ~== "(" then yytext ||:= "+"
+                        yytext ||:= "?" || dsz
+                        }
+		     yytext ||:= ")"
+		     }
 		  if \c & any(&letters) then {
 		     uni_error("missing space or malformed token")
 		     }

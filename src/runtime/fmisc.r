@@ -1635,6 +1635,7 @@ end
 function{*} staticnames(ce,i)
    declare {
       tended struct descrip d;
+      struct b_proc *cproc;
       }
    abstract {
       return string
@@ -1644,10 +1645,16 @@ function{*} staticnames(ce,i)
       BlkD(k_current, Coexpr)->es_pfp = pfp; /* sync w/ current value */
       }
    else if is:proc(ce) then inline {
-      int j;
-      struct b_proc *cproc = BlkD(ce, Proc);
+      int j, absnparam, ndynam;
+      cproc = BlkD(ce, Proc);
+   we_have_proc:
+      ndynam = cproc->ndynam;
+      if(ndynam < 0) { /* C function */
+	 runerr(118,ce);
+	 }
+      absnparam = abs((int)cproc->nparam);
       for(j = 0; j < cproc->nstatic; j++) {
-	 result = cproc->lnames[j + cproc->nparam + cproc->ndynam];
+	 result = cproc->lnames[j + absnparam + ndynam];
 	 suspend result;
          }
       fail;
@@ -1663,7 +1670,6 @@ function{*} staticnames(ce,i)
 #if !COMPILER
       int j;
       dptr arg;
-      struct b_proc *cproc;
       struct pf_marker *thePfp = BlkD(d,Coexpr)->es_pfp;
       if (thePfp == NULL) fail;
 
@@ -1682,10 +1688,7 @@ function{*} staticnames(ce,i)
 
       arg = &((dptr)thePfp)[-(thePfp->pf_nargs) - 1];
       cproc = BlkD(arg[0], Proc);
-      for(j=0; j < cproc->nstatic; j++) {
-	 result = cproc->lnames[j + cproc->nparam + cproc->ndynam];
-	 suspend result;
-         }
+      goto we_have_proc;
 #endif					/* !COMPILER */
       fail;
       }
@@ -2033,6 +2036,7 @@ end
  * for second argument. Only works for "line" and "file", to report
  * that procedure's source location.
  */
+
 "keyword(kname,ce,i) - produce a keyword in ce's thread"
 function{*} keyword(keyname,ce,i)
    declare {

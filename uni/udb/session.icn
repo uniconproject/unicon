@@ -189,9 +189,9 @@ method cmdLoad(cmd)
    else {
       if DState.initializeState(cmd[2:0]) then {
          # loading/reloading program, clear all stops
-         Debug.Watch.resetWatchInfo()
-         Debug.Trace.resetTraceInfo()
-         Debug.Break.resetBreakInfo()
+         Debug.Watch.resetWatchpoints()
+         Debug.Trace.resetTracepoints()
+         Debug.Break.resetBreakpoints()
          }
       }
 end
@@ -273,7 +273,9 @@ end
 # Enables some debugging commands
 #
 method cmdPrint(cmd)
-
+#   if not Debug.Print.isAssign(cmd) then 
+#      Debug.Print.isLval(cmd[1])
+   
    if \cmd[2] & cmd[2] == "-internal" then
       Debug.Internal.cmdPrintInfo(cmd[3])
    else if \cmd[2] & cmd[2] == "-trace" then
@@ -505,7 +507,7 @@ method cmdInfo(cmd)
       "otrace"     |
       "ftrace"     |
       "trace"      |
-      "watchpoint" |
+      #"watchpoint" |
       "tracepoints":{ Debug.Trace.printTraceInfo(cmd)        }
       "coexp"      :{ cmdInfoCoexp(cmd)                     } 
       # The following are for source code information

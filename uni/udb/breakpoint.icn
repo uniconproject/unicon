@@ -704,10 +704,17 @@ method cmdDisable(cmd)
       }
 end
 
-method resetBreakInfo()
-   breakPoints := table(0)
-   count := 0
-   msg :="\n   "
+method resetBreakpoints()
+    local x, size := 0
+
+    size := *breakPoints
+    if size > 0 then {
+       DState.breakMask := set()
+       every x := key(breakPoints) do
+	  delete(breakPoints, x)
+       count := 0
+       }
+    return
 end
 
 #

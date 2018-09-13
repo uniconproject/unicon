@@ -630,17 +630,22 @@ end
 # watchType = (WASSIGN | WVALUECHANGE | WTYPECHANGE | WREAD)
 #
 method addWatchpoint(coexp)
+   local old_id
 
    if watchType = WREAD then insert(DState.watchReadMask, var)
    else                      insert(DState.watchChangeMask, var)
 
-   id +:= 1
+   if /varInfo[var] then id +:= 1
+   else { # replacing watchpoint
+      old_id := varInfo[var].id
+      delete(varInfo, var)
+      }
 
    #WatchedVar(name,id,silent,hitMax,hitCount,missCount,state,op,catchValue,
    #           watchType, initValue, oldValue, curValue, traceList, cmd, coexp)
    varInfo[var] := 
-     WatchedVar(vname, id, silent, hits, 0, 0, ENABLED, oper, catchValue,
-                watchType,initValue, initValue, initValue, ,
+     WatchedVar(vname, (\old_id|id), silent, hits, 0, 0, ENABLED, oper, 
+                catchValue,watchType,initValue, initValue, initValue, ,
                 DState.cmdHistory[1], coexp)
 
    if \silent | \hits then
@@ -649,9 +654,10 @@ method addWatchpoint(coexp)
    if \silent then  msg := "\n   Watchpoint(silent) #"
    else             msg := "\n   Watchpoint(normal) #"
 
-   msg ||:= id||" set on: "||var||"; "||getWatchTypeName(varInfo[var])
+   msg ||:= varInfo[var].id||" set on: "||var
    if \coexp then
-      msg ||:= "; coexp " || coexp.id
+      msg ||:= " coexp " || coexp.id
+   msg ||:="; "||getWatchTypeName(varInfo[var])
 
    DState.Write(msg)
 end
@@ -735,11 +741,15 @@ method constructWpMsg(var)
 
    if \varInfo[var].silent then msg||:="\n   Watchpoint(Silent) #"
    else                       msg||:="\n   Watchpoint(normal) #"
-   msg||:=varInfo[var].id||" on: "||var||"; "||
-          getWatchTypeName(varInfo[var])||"("||
-          getWatchState(varInfo[var].state)||")"
+
+   msg||:=varInfo[var].id||" on: "||var
+
    if \varInfo[var].coexp then
       msg ||:= " coexp " || varInfo[var].coexp.id 
+
+   msg||:="; "||
+          getWatchTypeName(varInfo[var])||"("||
+          getWatchState(varInfo[var].state)||")"
 
    return msg 
 end
@@ -1159,6 +1169,21 @@ method resetWatchInfo()
       varInfo[x].hitCount := varInfo[x].missCount := 0
       varInfo[x].curValue := varInfo[x].oldValue  := varInfo[x].initValue
       }
+end
+
+method resetWatchpoints()
+   local x, i := 0
+
+   every x := key(varInfo) do {
+      delete(varInfo, x)
+      delete(DState.watchChangeMask, x)
+      delete(DState.watchReadMask, x)
+      i +:= 1
+      }
+   if i > 0 then {
+      self.id := 0
+      }
+   return 
 end
 
 #

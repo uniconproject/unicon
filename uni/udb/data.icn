@@ -98,8 +98,7 @@ method getVarValue(Expr, level)
    if expr[1] ~== "\"" then {
       index := parsePrintExpression(Expr)
       if *index = 0 then fail
-
-      var := get(index)
+      var := get(index) # variable name
       if Var := variable(var, CMonitored, level) then {
          if (ref := getVarReference(Var, index, level)) & *index = 0 then {
             Value := if integer(ref) = ref then integer(ref)
@@ -109,14 +108,26 @@ method getVarValue(Expr, level)
             }
          else fail
          }
-      else{
+      # var is not a variable, var is a primitive
+      else {
          if *index = 0 then {
             Value := if integer(expr) = expr then integer(expr)
                      else if real(expr) = expr then real(expr)
                      else string(expr)
             return Value
             }
-         else fail
+         # real part still in (index)
+         else if index[1][1] == "." then {
+            value := var
+            while x := get(index) do value ||:= x
+            if Value := real(value) then return Value
+            }
+         else {
+            value := var
+            while value ||:= " " || get(index)
+            Message := "\n   Invalid right-hand expression \""||value||"\"."
+            fail
+            }
          }
       return Value
       }
@@ -146,46 +157,71 @@ method getVarReference(Var, index, level)
       "string":{
            x1 := get(index)
            x2 := get(index)
+           # normal string subscript
            if \x1 & /x2 then {
               if v := variable(x1, CMonitored, level) | integer(x1) then {
-		 Var := Var[v]
-		 return Var
+                 if abs(v) <= *Var then {
+   		    Var := Var[v]
+		    return Var
+		    }
+                 else {
+                    Message := "\n   The string subscript \""||x1||
+                               "\" is out of range."
+                    }
 		 }
 	      else {
-		 write("can't get variable reference ", image(Var),
-		       "[", image(v), "]")
+		 #write("can't get variable reference ", image(Var),
+		 #      "[", image(v), "]")
+                 Message := "\n   The string subscript \""||x1||
+                            "\" is invalid."
 		 fail
 		 }
               }
            else if \x1 & \x2 then {
 	      if x2 === "][" then {
-                 v := variable(x1, CMonitored, level) | integer(x1)
-		 if abs(v) <= *Var then {
-		    Var := Var[v]
-		    return getVarReference(Var, index, level)
-		    }
+                 Message := "\n   Strings cannot have double subscripts."
 		 fail
 		 }
+              # string slice
 	      else {
 		 i1 := variable(x1, CMonitored, level) | integer(x1)
 		 i2 := variable(x2, CMonitored, level) | integer(x2)
+                 if abs(i1) > *Var then {
+                    Message := "\n   The string subscript \""||x1||
+                               "\" is out of range."
+                    fail
+                    }
+                 if abs(i2) > *Var then {
+                    Message := "\n   The string subscript \""||x2||
+                               "\" is out of range."
+                    fail
+                    }
 		 Var := Var[i1:i2]
 		 return Var
 		 }
               }
-           else fail
+           else {
+              Message := "\n   Invalid expression."
+              fail
+              }
            }
       "list":{
            x1 := get(index)
            x2 := get(index)
+           # base case
            if \x1 & /x2 then {
               v := variable(x1, CMonitored, level) | integer(x1)
               if abs(v) <= *Var then {
                  Var := Var[v]
                  return Var #getVarReference(Var, index, level)
                  }
-              else fail
+              else {
+                 Message := "\n   The list subscript \""||x1||
+                            "\" is out of range."
+                 fail
+                 }
               }
+           # multiple subscripts
            else if \x1 & \x2 then {
               if x2 == "][" then {
                  v := variable(x1, CMonitored, level) | integer(x1)
@@ -193,7 +229,11 @@ method getVarReference(Var, index, level)
                     Var := Var[v]
                     return getVarReference(Var, index, level)
                     }
-                 else fail
+                 else { 
+                    Message := "\n   The list subscript \""||x1||
+                               "\" is out of range."
+                    fail 
+                    }
                  }
               else if x1 == "][" then {
                  v := variable(x2, CMonitored, level) | integer(x2)
@@ -201,7 +241,11 @@ method getVarReference(Var, index, level)
                     Var := Var[v]
                     return getVarReference(Var, index, level)
                     }
-                 else fail
+                 else {
+                    Message := "\n   The list subscript \""||x2||
+                               "\" is out of range."
+                    fail 
+                    }
                  }
               else{
                  i1 := variable(x1, CMonitored, level) | integer(x1)
@@ -210,26 +254,30 @@ method getVarReference(Var, index, level)
                     Var := Var[i1:i2]
                     return getVarReference(Var, index, level)
                     }
-                 else fail
+                 else {
+                    Message := "\n   The list subscript slice \""||i1||":"||i2||
+                               "\" is out of range."
+                    fail
+                    }
                  }
               }
-           else   fail
+           else {
+              Message := "\n   Invalid expression."
+              fail
+              }
            }
       "table":{
            x := get(index)
            if v := variable(x, CMonitored, level, 1) |
-                                      integer(x) | string(x[2:-1]) then {
-              if member(Var, v) then {
+                                      integer(x) | string(x[2:-2]) then {
                  Var := Var[v]
                  return getVarReference(Var, index, level)
-                 }
-               }
-           fail
+              }
+           fail # shouldn't get here, tables have default init values
            }
       # "record" & "object" do not have the word "record" in their type
        default:{
-           x := get(index)
-           if x == "." then x := get(index)
+           if (x := get(index)) == "." then x := get(index) # get name of field
 
            if \x then {
               every fld := fieldnames(Var) do {
@@ -238,6 +286,7 @@ method getVarReference(Var, index, level)
                     return getVarReference(Var, index, level)
                     }
                   }
+              Message := "\n   Invalid field name \""||x||"\"."
               fail
               }
            else{
@@ -258,99 +307,122 @@ method setVarReference(lvar, index, level, value)
 
    if *index = 0 then {
       if variable(lvar, CMonitored, level) then {
-         variable(lvar, CMonitored, level, 1) := value
-         return
+         Var := variable(lvar, CMonitored, level, 1) := value
+         return Var
          }
-      else fail
-      }
+      else {
+         Message := "\n   Something went wrong." 
+         fail
+         }
+   }
 
    Var := variable(lvar, CMonitored, level, 1)
    if \Var then {
-      if *index ~= 0 then {
       while *index > 0 do {
-      x := get(index)
-      case type(Var) of{
-        "integer"|"real"|"null"|"cset"|"set"|"file"|"window"|
-        "procedure"|"co-expression"|"external":{
-           if *index = 0 then {
-              #variable(lvar, Monitored, level, 1) := value
-              Var := value
-              return
+         x := get(index)
+         case type(Var) of{
+           "integer"|"real"|"null"|"cset"|"set"|"file"|"window"|
+           "procedure"|"co-expression"|"external":{
+              if *index = 0 then {
+                 #variable(lvar, Monitored, level, 1) := value
+                 Var := value
+                 return Var
+                 }
+              else fail
               }
-           else fail
-           }
-        "string":{
-           x1 := x
-           x2 := get(index)
-           if \x1 & /x2 then {
-              v := variable(x1, CMonitored, level) | integer(x1)
-              variable(lvar, CMonitored, level, 1) :=
-                       Var[1:v] || string(value) || Var[v+1:0]
-              return
+           "string":{
+              x1 := x
+              x2 := get(index)
+              if \x1 & /x2 then {
+                 if v := variable(x1, CMonitored, level) | integer(x1) then {
+                    var_ref := variable(lvar, CMonitored, level, 1) :=
+                          Var[1:v] || string(value) || Var[v+1:0]
+                    return var_ref
+                    }
+                 else {
+                    Message := "\n   The string subscript \""||x1||
+                               "\" is invalid."
+                    fail
+                    }
+                 }
+              else if \x1 & \x2 then {
+                 i1 := variable(x1, CMonitored, level) | integer(x1)
+                 i2 := variable(x2, CMonitored, level) | integer(x2)
+                 var_ref := variable(lvar, CMonitored, level, 1) :=
+                          Var[1:i1]|| string(value) ||Var[i2:0]
+                 return var_ref
+                 }
+              else {
+                 Message := "\n   \""|| lvar ||
+                      "\" is not a valid expression."
+                 fail
+                 }
               }
-           else if \x1 & \x2 then {
-              i1 := variable(x1, CMonitored, level) | integer(x1)
-              i2 := variable(x2, CMonitored, level) | integer(x2)
-              variable(lvar, CMonitored, level, 1) :=
-                       Var[1:i1]|| string(value) ||Var[i2:0]
-              return
+           "list":{
+              if x ~== "][" then {
+                 if v := variable(x, CMonitored, level, 1) | integer(x) then {
+                    if abs(v) <= *Var then {
+                       if *index = 0 then {
+                          var_ref := Var[v] := value
+                          return var_ref
+                          }
+                       else Var := Var[v]
+                       }
+                    else { # subscript not in range
+                       Message := "\n   The list subscript \""||x||
+                                  "\" is out of range."
+                       fail
+                       }
+                    }
+                 else { # invalid subscript, x, not a variable or integer
+                    Message := "\n   Invalid list subscript \""||x||"\"."
+                    fail
+                    }
+                 }
               }
-           else   fail
-           }
-        "list":{
-           if x ~== "][" then {
-              if v := variable(x, CMonitored, level, 1) | integer(x) then {
-                 if type(v) == "integer" & member(Var, v) then {
+           "table":{
+              if v := \variable(x, CMonitored, level, 1) |
+                                         integer(x) | string(x[2:-2]) then {
+                 if member(Var, v) then {
                     if *index = 0 then {
-                       Var[v] := value
-                       return
+                       var_ref := Var[v] := value
+                       return var_ref
                        }
                     else Var := Var[v]
                     }
-                 else fail
+                 else { # not a valid key
+                    Message := "\n   \""||x||"\" is not an existing key to table."
+                    fail
+                    }
                  }
-              else fail
+              else { # not a valid subscript
+                 Message := "\n   Invalid subscript to table \""||x||"\"."
+                 fail
+                 }
               }
-           }
-        "table":{
-           if v := variable(x, CMonitored, level, 1) |
-                                      integer(x) | string(x[2:-1]) then {
-              if member(Var, v) then {
-                 if *index = 0 then {
-                    Var[v] := value
-                    return
+           # "record" & "object" do not have the word "record" in their type
+           default:{
+              every fld := fieldnames(Var) do {
+                 if x === fld then {
+                    if *index = 0 then {
+                       var_ref := Var[string(x)]:= value
+                       return var_ref
+                       }
+                    else{
+                       Var := Var[string(x)]
+                       break
+                       }
                     }
-                 else Var := Var[v]
-                 }
-              else fail
-              }
-           else fail
-           }
-        # "record" & "object" do not have the word "record" in their type
-        default:{
-           every fld := fieldnames(Var) do {
-              if x === fld then {
-                 if *index = 0 then {
-                    Var[string(x)]:= value
-                    return
-                    }
-                 else{
-                    Var := Var[string(x)]
-                    break
-                    }
-                 }
-              }#end every
-           }#end default
-      }#end case
-      }#end while
-      }#end if *index ~= 0 then
-      else{
-         variable(lvar, CMonitored, level, 1) := value
-         DState.Write("hmmmm!!!!")
-         return
-         }
+                 }#end every
+              }#end default
+           }#end case
+         }#end while
+      }# end if \Var
+   else {
+      Message := "\n   The variable \""|| lvar ||
+                   "\" is not within the current frame."
+      fail
       }
-   else fail
 end
 
 #
@@ -373,7 +445,7 @@ method printVar(Expr, action, level)
       }
 
    var := get(index)
-   if Var := variable(var, CMonitored, level) then
+   if Var := variable(var, CMonitored, level) then {
       if (ref := getVarReference(Var, index, level)) & *index = 0 then {
          case action of {
             "*" :{ Message := "\n   *"||expr||" = "||*ref }
@@ -383,7 +455,7 @@ method printVar(Expr, action, level)
                       Message ||:= image(x)||", "
                    Message:=Message[1:-2] || " }"
                  }
-            "?" :{ Message := "OOPS: not implemented yet!!!"  }
+            #"?" :{ Message := "OOPS: not implemented yet!!!"  }
             default: {
                  Message := "\n   "||expr||" = "
                  #DState.Write("---type of ",expr," is : ", type(ref))
@@ -397,9 +469,11 @@ method printVar(Expr, action, level)
                  }
              }
          }
-      else Message :="\n   \""||expr||"\" is an Unknown Expression !!!"
-   else Message := "\n   The variable \""|| var ||
-                   "\" is not within the current frame"
+      }
+   else {
+      Message := "\n   The variable \""|| var ||
+                   "\" is not within the current frame."
+      }
    DState.Write(Message)
 end
 
@@ -422,16 +496,10 @@ method assignVar(Lexpr, Rexpr, level)
    if rvalue := getVarValue(Rexpr, level) then {
       #write("---lhs------->>",ximage(lhs),"--",image(rvalue))
       lvar := get(lhs)
-      if setVarReference(lvar, lhs, level, rvalue) then
-         Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" succeeded."
-      else
-         Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" failed."
+      if (var_ref := setVarReference(lvar, lhs, level, rvalue)) then {
+         Message := "\n   "||lvar||" = "||image(var_ref)
+         }
       }
-   else
-      Message := "\n   The RHS expr \""||rexpr||"\" is unknown."
-
    DState.Write(Message)
 end
 
@@ -441,7 +509,7 @@ end
 #
 method cmdPrint(cmd)
    local i, j, expr, action, level, cur_level, left, right
-   local CMonitored := DState.coState.target.val
+   local CMonitored
 
    if DState.State ~= PAUSE then {
       DState.State := ERROR
@@ -451,9 +519,12 @@ method cmdPrint(cmd)
       return
       }
 
+   CMonitored := DState.coState.target.val
    cur_level := keyword("level", CMonitored)
    level := DState.coState.target.curr_frame
 
+   # this check is probably unnecessary. Frame() ensures that coState frame
+   # is valid
    if level > cur_level then {
       Message   :="\n   Frame #"||level||" is not valid."
       Message ||:="\n   The stack currently has "||cur_level||" frame(s)."
@@ -462,9 +533,12 @@ method cmdPrint(cmd)
       }
 
    if \cmd[1] then {
-      if cmd[1] == ("*"|"!"|"?") then {
-         action := cmd[1]
-         delete(cmd,1)
+      if cmd[1][1] == ("*"|"!"|"?") then {
+         if *(cmd[1]) = 1 then action := pop(cmd[1])
+         else {
+            action := cmd[1][1]
+            cmd[1] := cmd[1][2:0] 
+            }
          }
       every j := 1 to *cmd do {
          if cmd[j] == ("="|":=") then {
@@ -475,8 +549,10 @@ method cmdPrint(cmd)
             }
          }
       if \action & action == ":=" then {
-         if left[1] == "&" then {
-            left := "&"||left[2]
+         # this allows '& keyword'
+         if left[1][1] == "&" then {
+            if *left[1] = 1 then left := "&"||left[2]
+            else left := left[1]
             assignKeyword(left, right, level)
             }
          else
@@ -505,8 +581,10 @@ method cmdPrint(cmd)
             return
             }
          #print &pos or #print *&subject
-         else if expr[1] == "&" then {
-            expr := "&"||expr[2]
+         else if expr[1][1] == "&" then {
+            # this allows '& keyword'
+            if *expr[1] = 1 then expr := "&"||expr[2]
+            else expr := expr[1]
             printKeyword(expr, action, level)
             }
          #print x or #print *s
@@ -530,15 +608,12 @@ method assignKeyword(lexpr, rexpr, level)
    #print &pos:=10
    if isValidKeyword(lexpr) then {
       if data := getVarValue(rexpr,level) then {
-         variable(lexpr, Monitored, 0, 1) := data
-         Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" succeeded."
+         var_ref := variable(lexpr, Monitored, 0, 1) := data
+         Message := "\n   "||lexpr||" = "||image(var_ref)
          DState.Write(Message)
-         return
+         return 
          }
       else{
-         Message :="\n   Assigning \""||lexpr||"\" with \""||
-                    rexpr||"\" failed."
          DState.Write(Message)
          fail
          }
@@ -572,9 +647,7 @@ method printKeyword(expr, action, level)
          if \action == "*" then {
             data := *data
             }
-         else if not (type(data) == ("string"|"integer"|"real")) then
-            data := image(data)
-         Message :="\n   "|| expr ||" = "|| data
+         Message :="\n   "|| expr ||" = "|| image(data)
          DState.Write(Message)
          return
          }
@@ -610,36 +683,37 @@ method isGlobalKeyword(expr)
 
    if member(GlobalKeywords, expr) then {
       case expr of{
-         "&clock":   { return data := &clock       }
-         "&date":    { return data := &date        }
-         "&now":     { return data := &now         }
-         "&dateline":{ return data := &dateline    }
-         "&digits":  { return data := &digits      }
-         "&e":       { return data := &e           }
-         "&fail":    { return data := "&fail"      }
-         "&host":    { return data := &host        }
-         "&lcase":   { return data := &lcase       }
-         "&letters": { return data := &letters     }
-         "&null":    { return data := image(&null) }
-         "&phi":     { return data := &phi         }
-         "&pi":      { return data := &pi          }
-         "&dump":    { return data := &dump        }
-         "&ucase":   { return data := &ucase       }
-         "&version": { return data := &version     }
-         "&lpress":  { return data := &lpress      }
-         "&mpress":  { return data := &mpress      }
-         "&rpress":  { return data := &rpress      }
-         "&lrelease":{ return data := &lrelease    }
-         "&mrelease":{ return data := &mrelease    }
-         "&rrelease":{ return data := &rrelease    }
-         "&ldrag":   { return data := &ldrag       }
-         "&mdrag":   { return data := &mdrag       }
-         "&rdrag":   { return data := &rdrag       }
-         "&resize":  { return data := &resize      }
-         "&ascii":   { return data := &ascii       }
-         "&cset":    { return data := &cset        }
+         "&clock":   { data := &clock       }
+         "&date":    { data := &date        }
+         "&now":     { data := &now         }
+         "&dateline":{ data := &dateline    }
+         "&digits":  { data := &digits      }
+         "&e":       { data := &e           }
+         "&fail":    { data := "&fail"      }
+         "&host":    { data := &host        }
+         "&lcase":   { data := &lcase       }
+         "&letters": { data := &letters     }
+         "&null":    { data := image(&null) }
+         "&phi":     { data := &phi         }
+         "&pi":      { data := &pi          }
+         "&dump":    { data := &dump        }
+         "&ucase":   { data := &ucase       }
+         "&version": { data := &version     }
+         "&lpress":  { data := &lpress      }
+         "&mpress":  { data := &mpress      }
+         "&rpress":  { data := &rpress      }
+         "&lrelease":{ data := &lrelease    }
+         "&mrelease":{ data := &mrelease    }
+         "&rrelease":{ data := &rrelease    }
+         "&ldrag":   { data := &ldrag       }
+         "&mdrag":   { data := &mdrag       }
+         "&rdrag":   { data := &rdrag       }
+         "&resize":  { data := &resize      }
+         "&ascii":   { data := &ascii       }
+         "&cset":    { data := &cset        }
          default:   { fail }
          }
+         return image(data)
       }
    fail
 end
@@ -656,10 +730,10 @@ method isGenKeyword(expr, action)
          "&features":{
              if \action == "!" then {
                 data:=""
-                every x := &features do data ||:="\n      "|| x
+                every x := &features do data ||:="\n      "|| image(x)
                 }
              else if /action then
-                data := &features
+                data := image(&features)
              else
                 fail
              return data
@@ -669,10 +743,10 @@ method isGenKeyword(expr, action)
              every x := keyword("&regions", Monitored) do {
                 put(L,x)
                 }
-             data   := "\n   Total memory    = "||(L[1]+L[2]+L[3])
-             #data||:= "\n   --Static Region = "||L[1]||" Byte"
-             data ||:= "\n   --String Region = "||L[2]||" Byte"
-             data ||:= "\n   --Block  Region = "||L[3]||" Byte"
+             data   := "\n   Total memory    = "||(L[1]+L[2]+L[3])||" Byte(s)"
+             #data||:= "\n   --Static Region = "||L[1]||" Byte(s)"
+             data ||:= "\n   --String Region = "||L[2]||" Byte(s)"
+             data ||:= "\n   --Block  Region = "||L[3]||" Byte(s)"
              return data
              }
          "&storage":{
@@ -680,10 +754,11 @@ method isGenKeyword(expr, action)
              every x := keyword("&storage", Monitored) do {
                 put(L,x)
                 }
-             data   := "\n   Total memory currently in use = "||(L[1]+L[2]+L[3])
-             #data||:= "\n   --Static Region     = "||L[1]||" Byte"
-             data ||:= "\n   --String Region     = "||L[2]||" Byte"
-             data ||:= "\n   --Block  Region     = "||L[3]||" Byte"
+             data   := "\n   Total memory currently in use = "||
+                       (L[1]+L[2]+L[3])||" Byte(s)"
+             #data||:= "\n   --Static Region     = "||L[1]||" Byte(s)"
+             data ||:= "\n   --String Region     = "||L[2]||" Byte(s)"
+             data ||:= "\n   --Block  Region     = "||L[3]||" Byte(s)"
              return data
              }
          "&allocated":{
@@ -691,10 +766,10 @@ method isGenKeyword(expr, action)
              every x := keyword("&allocated", Monitored) do {
                 put(L,x)
                 }
-             data   := "\n   Total Allocations= "||L[1]||" Byte"
-             #data||:= "\n   --Static Region  = "||L[2]||" Byte"
-             data ||:= "\n   --String Region  = "||L[3]||" Byte"
-             data ||:= "\n   --Block  Region  = "||L[4]||" Byte"
+             data   := "\n   Total Allocations= "||L[1]||" Byte(s)"
+             #data||:= "\n   --Static Region  = "||L[2]||" Byte(s)"
+             data ||:= "\n   --String Region  = "||L[3]||" Byte(s)"
+             data ||:= "\n   --Block  Region  = "||L[4]||" Byte(s)"
              return data
              }
          "&collections":{
@@ -702,10 +777,10 @@ method isGenKeyword(expr, action)
              every x := keyword("&collections", Monitored) do {
                 put(L,x)
                 }
-             data   := "\n   Total Garbage Collections  = "||L[1]
-             #data||:= "\n   --Static Region = "||L[2]||" times"
-             data ||:= "\n   --String Region = "||L[3]||" times"
-             data ||:= "\n   --Block  Region = "||L[4]||" times"
+             data   := "\n   Total Garbage Collections  = "||L[1]||" Byte(s)"
+             #data||:= "\n   --Static Region = "||L[2]||" times(s)"
+             data ||:= "\n   --String Region = "||L[3]||" times(s)"
+             data ||:= "\n   --Block  Region = "||L[4]||" times(s)"
              return data
              }
          default:     { fail }
@@ -750,7 +825,8 @@ method parsePrintExpression(expr)
        x := expr[i]
        if not (x == ("["|"]"|","|":")) then {
           if not numeric(x) & j:=find(".", x) then {
-             put(tokens, x[1:j])
+             if *(s := x[1:j]) > 0 then
+                put(tokens, s)
              put(tokens, ".")
              put(tokens, x[j+1:0])
              }

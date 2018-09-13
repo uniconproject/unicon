@@ -13,7 +13,7 @@ $include "defaults.icn"
 class State(
    TP,              # TargetProgram and its arguments
 
-   State,           # Debugging state such RUN, PUSE, etc
+   State,           # Debugging state such RUN, PAUSE, etc
    RunCode,         # It is one of the RUNNING States (RUN|CONTINUE|SPEP|NEXT)
    RunCount,        # integer counts number of runs a program has in a session
 
@@ -272,7 +272,8 @@ method initializeState(tp)
             # renew TP if loading new program
             if *tp > 0 & *TP > 0 then {
                TP := tp
-               Fresh() # reloading, refresh state
+               reinitState()
+               #Fresh() # reloading, refresh state
                }
             }
          }
@@ -281,8 +282,9 @@ method initializeState(tp)
          # a program is already loaded, clear out loaded files
          if *TP > 0 then {
             # reinit source info
-            srcFile.reinit()
-            srcCode.reinit()
+            reinitState()
+            #srcFile.reinit()
+            #srcCode.reinit()
             }
          # load new program, reset TP
          if *(\tp) > 0 then 
@@ -339,6 +341,12 @@ $endif
       Write(Message)
       return
       }
+end
+
+method reinitState()
+   srcFile.reinit()
+   srcCode.reinit()
+   Fresh()
 end
 
 #

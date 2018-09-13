@@ -323,6 +323,20 @@ method printOldTraceInfo(name, max)
    DState.Write(msg)   
 end
 
+method constructTraceMsg(trace)
+   local msg
+   msg :="\n   Tracepoint #" ||trace.id||" on: "||trace.getTraceName()||
+         trace.name
+
+   if \(trace.coexp) then 
+      msg ||:=" coexp "||trace.coexp.id
+
+   msg ||:="; Traced Behaviors: "||getBehaviorNames(trace.eventMask)||
+           "("||trace.getTraceState()||")."
+
+   return msg
+end
+
 #
 # prints the execution behavior tracer info
 # it is used by traceBehavior()
@@ -330,12 +344,13 @@ end
 method printTraceInfo(cmd)
    local name, id, tb
 
-   # cmd = ["trace"]
    if /cmd then {
       msg := "\n   Type \"help trace\" for assistance"
       DState.Write(msg)
       fail
    }
+
+   if cmd[1] == "info" then pop(cmd)
 
    if *traceBehavior = 0 then {
       msg :="\n   No tracepoints are available."
@@ -344,23 +359,17 @@ method printTraceInfo(cmd)
       }
 
    msg := ""
-   if *cmd = 2 then {
-      if cmd[2] == ("trace" | "tracepoints") then {
+   if *cmd = 1 then {
+      if cmd[1] == ("trace" | "tracepoints") then {
          every tb := !traceBehavior do {
-            msg||:="\n   Tracepoint #" ||tb.id||" on: "||
-		tb.getTraceName() || tb.name||"; Traced Behaviors: "||
-		getBehaviorNames(tb.eventMask)||
-		"("||tb.getTraceState()||")."
+            msg ||:= constructTraceMsg(tb)
             }
          }
-      else if cmd[2] == ("ptrace" | "ftrace" | "otrace") then {
-         traceType := cmd[2]
+      else if cmd[1] == ("ptrace" | "ftrace" | "otrace") then {
+         traceType := cmd[1]
          every tb := !traceBehavior do {
             if tb.traceType == traceType then {
-               msg||:="\n   Tracepoint #" ||tb.id||" on: "||
-                      tb.getTraceName() || tb.name||"; Traced Behaviors: "||
-                      getBehaviorNames(tb.eventMask)||
-                      "("||tb.getTraceState()||")."
+               msg ||:= constructTraceMsg(tb)
                DState.Write(msg)
                return
                }
@@ -374,10 +383,7 @@ method printTraceInfo(cmd)
       if id := integer(cmd[3]) then {
          every tb := !traceBehavior do {
             if tb.id == id then {
-               msg||:="\n   Tracepoint #" ||tb.id||" on: "||
-                      tb.getTraceName()|| tb.name||"; Traced Behaviors: "||
-                      getBehaviorNames(tb.eventMask)||
-                      "("||tb.getTraceState()||")."
+               msg ||:= constructTraceMsg(tb)
                DState.Write(msg)
                return
                }
@@ -390,10 +396,7 @@ method printTraceInfo(cmd)
          id := cmd[3]
          every tb := !traceBehavior do {
             if tb.name == id then {
-               msg||:="\n   Tracepoint #" ||tb.id||" on: "||
-                      tb.getTraceName()|| tb.name||"; Traced Behaviors: "||
-                      getBehaviorNames(tb.eventMask)||
-                      "("||tb.getTraceState()||")."
+               msg ||:= constructTraceMsg(tb)
                DState.Write(msg)
                return
                }
@@ -500,30 +503,39 @@ end
 # adds new tracepoint into the traceBehavior record; name is the key
 #
 method addTracepoint(name, cmd, coexp)
-    local op, val
+   local op, val, old_id
 
-    DState.traceMask ++:= ecodeSet
-    id +:= 1
+   DState.traceMask ++:= ecodeSet
+   if /traceBehavior[name] then id +:= 1
+   else { # replace tracepoint
+      old_id := traceBehavior[name].id
+      delete(traceBehavior,name)
+      }
     
-    if *cmd > 4 then {
-       op := cmd[4]
-       val := cmd[5]
-       }
-    #TraceRec(name, id, hitMax, hitCount, missCount
-    #         op, traceValue, traceList, eventMask, cmd)
-    traceBehavior[name] := 
-       TraceRec(cmd[2], id, hits, 0, 0, op, val, [], ecodeSet, ENABLED,
-                silent, traceType, DState.cmdHistory[1], coexp)
-    # re-construct the traceMask 
-    UpdateMask()
+   if *cmd > 4 then {
+      op := cmd[4]
+      val := cmd[5]
+      }
+   #TraceRec(name, id, hitMax, hitCount, missCount
+   #         op, traceValue, traceList, eventMask, cmd, coexp)
+   traceBehavior[name] := 
+      TraceRec(cmd[2], (\old_id|id), hits, 0, 0, op, val, [], ecodeSet, 
+               ENABLED, silent, traceType, DState.cmdHistory[1], coexp)
+   # re-construct the traceMask 
+   UpdateMask()
 
-    msg := "\n   Tracepoint #" ||id||" on: "||
-           traceBehavior[name].getTraceName()||
-           traceBehavior[name].name||"; Traced Behaviors: "||
+   msg := "\n   Tracepoint #" ||id||" on: "||
+          traceBehavior[name].getTraceName()||
+          traceBehavior[name].name
+
+   if \(traceBehavior[name].coexp) then
+      msg ||:= " coexp "||traceBehavior[name].coexp.id
+
+   msg ||:="; Traced Behaviors: "||
            getBehaviorNames(ecodeSet)
-    DState.Write(msg)
-    #write(ximage(traceBehavior))
-    #every x := !ecodeSet do write(evnames(x))
+   DState.Write(msg)
+   #write(ximage(traceBehavior))
+   #every x := !ecodeSet do write(evnames(x))
 end
 
 #
@@ -570,7 +582,7 @@ method cmdTrace(cmd)
          }
       else {
          #*cmd = 1 [trace]
-         printTraceInfo()
+         printTraceInfo(cmd)
          }
       }
    else {
@@ -1054,6 +1066,20 @@ end
 #
 method resetTraceInfo()
    every (!traceBehavior)["hitCount"|"missCount"] := 0
+end
+
+method resetTracepoints()
+   local name, i := 0
+
+   every name := key(traceBehavior) do {
+       delete(traceBehavior, name)
+       i +:= 1
+       }
+   if i > 0 then {
+      # re-construct the traceMask 
+      UpdateMask()
+      }
+   return
 end
 
 #

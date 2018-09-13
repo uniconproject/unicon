@@ -8,22 +8,24 @@
 # The sample program watchme.icn is compiled and run as the subject being
 # "debugged".
 #
+#
 
 UDB=udb -line
+TESTNAME=udb
+INTERNALS=counter_line counter_syntax counter_deref counter_pcall
+PROGS=watchme printme prime
 
-all: basic print watchpoints internals info assert trace
+# need more .stds for testing
+#TESTS=basic print watchpoints $(INTERNALS) info assert trace
+TESTS=basic print watchpoints $(INTERNALS) coexp
 
-basic: watchme
-	$(UDB) watchme <basic.udb &>basic.out
-	-diff basic.std basic.out
+# directories
+OUTPUT=local
+DIFFS=diffs
 
-watchpoints: watchme
-	$(UDB) watchme <watch.udb &>watch.out
-	-diff watch.std watch.out
+all: $(PROGS) TestHdr TestSuite 
 
-print: printme
-	$(UDB) printme <print.udb &>print.out
-	-diff print.std print.out
+debug: TestSuite
 
 watchme: watchme.icn
 	unicon watchme
@@ -31,31 +33,84 @@ watchme: watchme.icn
 printme: printme.icn
 	unicon printme
 
-internals:
-	$(UDB) watchme < counter_line.udb &>counter_line.out
-	-diff counter_line.std counter_line.out
-	$(UDB) watchme < counter_syntax.udb &> counter_syntax.out
-	-diff counter_syntax.std counter_syntax.out
-	$(UDB) watchme < counter_deref.udb &> counter_deref.out
-	-diff counter_deref.std counter_deref.out
-	$(UDB) watchme < counter_pcall.udb &> counter_pcall.out
-	-diff counter_pcall.std counter_pcall.out
-	$(UDB) watchme < failedloop.udb
-	$(UDB) watchme < deadvar.udb
-	$(UDB) watchme < memory.udb
-	$(UDB) watchme < structusage.udb
-	$(UDB) watchme < varprofile.udb
-	$(UDB) watchme < looptime.udb
-	$(UDB) watchme < failedsubscript.udb
-	-$(UDB) watchme < typechange.udb
-	$(UDB) watchme < proctime.udb
-	$(UDB) watchme < procprofile.udb
+prime: foo.icn prime.icn
+	unicon -o $@ foo prime
+
+coexp: prime
+	@./test.sh $< $@
+
+basic: watchme
+	@./test.sh $< $@
+
+watchpoints: watchme
+	@./test.sh $< $@
+
+print: printme
+	@./test.sh $< $@
+
+#internals: watchme
+internals: $(INTERNALS)
+
+counter_line: watchme
+	@./test.sh $< $@
+
+counter_syntax: watchme
+	@./test.sh $< $@
+
+counter_deref: watchme
+	@./test.sh $< $@
+
+counter_pcall: watchme
+	@./test.sh $< $@
+
+#	$(UDB) watchme < counter_line.udb &>counter_line.out
+#	-diff counter_line.std counter_line.out
+#	$(UDB) watchme < counter_syntax.udb &> counter_syntax.out
+#	-diff counter_syntax.std counter_syntax.out
+#	$(UDB) watchme < counter_deref.udb &> counter_deref.out
+#	-diff counter_deref.std counter_deref.out
+#	$(UDB) watchme < counter_pcall.udb &> counter_pcall.out
+#	-diff counter_pcall.std counter_pcall.out
+#	$(UDB) watchme < failedloop.udb
+#	$(UDB) watchme < deadvar.udb
+#	$(UDB) watchme < memory.udb
+#	$(UDB) watchme < structusage.udb
+#	$(UDB) watchme < varprofile.udb
+#	$(UDB) watchme < looptime.udb
+#	$(UDB) watchme < failedsubscript.udb
+#	-$(UDB) watchme < typechange.udb
+#	$(UDB) watchme < proctime.udb
+#	$(UDB) watchme < procprofile.udb
 
 info: watchme
-	$(UDB) watchme < info.udb
+	@./test.sh $< $@
 
 assert: watchme
-	$(UDB) watchme <assert.udb
+	@./test.sh $< $@
 
 trace: watchme
-	$(UDB) watchme <trace.udb
+	@./test.sh $< $@
+
+TestHdr:
+	@echo
+	@echo "========================="
+	@echo "   $(TESTNAME) Test Suite"
+	@echo "========================="	
+	@echo
+
+TestSuite: $(TESTS) 
+	@FF=""; \
+	for x in $^; do \
+	if [ -s diffs/$$x.diff ]; then FF="$$FF $$x"; fi; done; \
+	echo; \
+	echo "========================"; \
+	echo " Test  : $(TESTNAME)"; \
+	if [ "$$FF" = "" ]; then echo " Status: All Good"; \
+	else echo " Failed: $$FF"; fi; \
+	echo "========================"; \
+	echo 
+
+# remove diff and output files
+clean:
+	rm $(DIFFS)/*.diff
+	rm $(OUTPUT)/*.out

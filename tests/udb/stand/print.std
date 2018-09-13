@@ -1,17 +1,17 @@
-   UDB Version 2.0, December 1, 2009.
+   UDB Version 2.1, July 4, 2018.
    
    printme : loaded 9020 of 64-bit Uncompressed Icode
    1 file is found
-   and 1 file is missing
    Type "help" for assistance or "src" for file(s) name
 (udb) 
-   Breakpoint #1 at : file printme.icn, line 29.
-   Source code:    test(1, 2, 3)
+   Breakpoint #1 (enabled) at printme.icn:29
 (udb)    Starting program:  printme
 
+[New co-expression 1]
+[New co-expression 2]
 
-   Breakpoint #1 at : printme.icn:29.
-   29:    test(1, 2, 3)
+   Breakpoint #1 (enabled) at printme.icn:29
+     29:     test(1, 2, 3)
 (udb) 
    The command "print " is incomplete.
    Try "help" or "help print" for assistance.
@@ -41,7 +41,8 @@
    prt8 = &null : null
    prt9 = &null : null
    prt10 = &null : null
-(udb) 
+(udb)    Stepping.
+
    file printme.icn, line 47.
    46:procedure test(one, two, three)
 -->47:    return 0
@@ -51,10 +52,11 @@
    two = 2 : integer
    three = 3 : integer
 (udb) 
-   The variable "T" is not within the current frame
-(udb) 
-   Breakpoint #1 at : printme.icn:29.
-   29:    test(1, 2, 3)
+   The variable "T" is not within the current frame.
+(udb)    Stepping.
+
+   Breakpoint #1 (enabled) at printme.icn:29
+     29:     test(1, 2, 3)
 
    file printme.icn, line 42.
    41:
@@ -63,7 +65,7 @@
 (udb) 
    prt1 = 1
 (udb) 
-   Assigning "prt1" with "10" succeeded.
+   prt1 = 10
 (udb) 
    prt1 = 10
 (udb) 
@@ -83,17 +85,23 @@
 (udb) 
    prt9 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 (udb) 
-   The RHS expr "prt8" is unknown.
+   Invalid right-hand expression "prt 8".
 (udb) 
    prt9 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 (udb) 
+   The string subscript "90" is out of range.
+(udb) 
+   Strings cannot have double subscripts.
+(udb) 
+   prt10 = &null
+(udb) 
    prt10 = "This is the string that I want to print."
 (udb) 
-   The variable "*prt10" is not within the current frame
+   *prt10 = 40
 (udb) 
-   The variable "prt10[1:5]" is not within the current frame
+   prt10[1:5] = "This"
 (udb) 
-   Assigning "prt10[1:5]" with ""insertastring"" failed.
+   prt10 = "insertastring is the string that I want to print."
 (udb) 
    f = file(printfile.tst)
 (udb) 
@@ -110,13 +118,13 @@
    T1["goodbye"] := "goodbye"
    T1["hello"] := "hiya"
 (udb) 
-   The variable "!T" is not within the current frame
+   !T = { "hiya", "goodbye" }
 (udb) 
-   The variable "T["goodbye"]" is not within the current frame
+   T["goodbye"] = "goodbye"
 (udb) 
-   Assigning "T["goodbye"]" with ""First"" failed.
+   T = "First"
 (udb) 
-   The variable "T["None"]" is not within the current frame
+   T["None"] = &null
 (udb) 
    L = L1 := list(4)
    L1[1] := "linux"
@@ -124,11 +132,13 @@
    L1[3] := 'abc'
    L1[4] := pattern_2(2) = Any('a') || Any('a')
 (udb) 
-   The variable "!L" is not within the current frame
+   !L = { "linux", 2.0, 'abc', pattern_2(2) = Any('a') || Any('a') }
 (udb) 
-   The variable "L[1]" is not within the current frame
+   L[1] = "linux"
 (udb) 
-   The variable "L[10]" is not within the current frame
+   The list subscript "10" is out of range.
+(udb) 
+   The list subscript "10" is out of range.
 (udb) 
    a = R_complex_1 := complex()
    R_complex_1.re := 0
@@ -142,14 +152,14 @@
 (udb) 
    b.im = -1
 (udb) 
-   Assigning "b.im" with "4.5" succeeded.
+   b = 4.5
 (udb) 
    S = S1 := set()
    insert(S1,52)
    insert(S1,"rock lobster")
    insert(S1,'B')
 (udb) 
-   The variable "!S" is not within the current frame
+   !S = { 52, "rock lobster", 'B' }
 (udb) 
    p = pattern_19(9) = Pos(1) || Span('a') .> a || Span('b') .> b || Span('c') .> c || Rpos(0) || `test(a, b, c)`
 (udb) 
@@ -172,32 +182,42 @@
 (udb) 
    Sub: aabbcc
         ..^
-(udb) 
+(udb)    Stepping.
+
    file printme.icn, line 46.
    45:
 -->46:procedure test(one, two, three)
    47:    return 0
 (udb) 
-   &pos = 1
+   &pos = 7
 (udb) 
-   &subject = ""
+   &subject = "aabbcc"
 (udb) 
-   The variable "&features" is not within the current frame
+   &features = "UNIX"
 (udb) 
-   The variable "!&features" is not within the current frame
+   &allocated = 
+   Total Allocations= 0 Byte(s)
+   --String Region  = 0 Byte(s)
+   --Block  Region  = 0 Byte(s)
+(udb) 
+   &collections = 
+   Total Garbage Collections  = 0 Byte(s)
+   --String Region = 0 times(s)
+   --Block  Region = 0 times(s)
 (udb) 
    &progname = "printme"
 (udb) 
-   The variable "&file" is not within the current frame
+   &file = "printme.icn"
 (udb) 
-   The variable "&col" is not within the current frame
+   &col = 0
 (udb) 
-   The variable "&row" is not within the current frame
+   &row = 0
 (udb) 
    &eventcode = &null
 (udb) 
    &eventvalue = &null
-(udb) 
-   The program printme is running.  Exit anyway (Y/n)?: 
+(udb) received "quit", quitting
+
+   The program "printme" is running.  Exit anyhow (Y/n)?: 
    Thank you for using UDB.
    Goodbye !!!

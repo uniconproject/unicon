@@ -1,0 +1,72 @@
+import foo
+
+global glob_var, foo
+record bar(a,b,c,d)
+
+class Foo(x,y)
+   method prime(x)
+      s := "I don't do anything!"
+      write(s)
+   end
+   method f(x)
+      write(image(x))
+   end
+end
+
+procedure main()
+    local x := 10
+    rec := bar(1,2,3,4)
+    X := Foo(1,2)
+    X.prime()
+    X.f("hello world")
+#    write(image(glob_var))
+    foo::f()
+
+#    write(variable("foo__Foo"))  # creates run-time error 109
+    C1 := create prime(x)
+    #C2 := create prime(x)
+    C2 := create prime_coexp(x)
+    while write(@C1," ", @C2)
+    #while write(@C1)
+end
+
+procedure foo()
+   write("hello")
+end
+
+procedure prime(x) 
+   local num := 1, num_prime := 0, prime_table := table()
+#   local i
+ 
+   while num_prime < x do {
+      while not check_prime(num,prime_table) do {
+         num +:= 1
+         }
+      num_prime +:= 1
+      prime_table[num_prime] := num
+      #write("primetable[",num_prime,"] := ",num)
+      suspend num
+      num +:= 1
+      }
+
+end
+
+procedure check_prime(num,prime_tab)
+   local num_prime := *prime_tab, j := 1
+   #write("check_prime() *prime_tab is ",num_prime) 
+   if num > 3 then {
+      #every (i := \(prime_tab[2 to num_prime])) < num/2 do {
+      while (j +:= 1) <= num_prime &
+            (i := \prime_tab[j]) <= num/2 do {
+         #write("num: ",num," | i: ",i," | num % i: ",num % i)
+         if num % i = 0 then fail 
+         }
+      }
+   return num
+end
+
+procedure prime_coexp(x)
+   local C, p
+   C := create prime(x)
+   while p := @C do suspend p
+end

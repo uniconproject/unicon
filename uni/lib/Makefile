@@ -10,7 +10,7 @@ UFILES=gui.u file_dlg.u db.u \
  group.u httpclient.u langprocs.u listener.u \
  mailbox.u netclient.u mailmisc.u message.u messagehandler.u method.u \
  money.u msg.u multipart.u multiparthandler.u noophandler.u object.u \
- popclient.u process.u qsort.u quotedprintablehandler.u \
+ popclient.u process.u pushback.u qsort.u quotedprintablehandler.u \
  rfc822parser.u runnable.u \
  selectiveclasscoding.u sem.u setfields.u shm.u smtpclient.u str_util.u \
  stringbuff.u \

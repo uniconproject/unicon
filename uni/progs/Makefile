@@ -2,7 +2,7 @@ BASE=../..
 include ../Makedefs
 
 BINPROGS=ie uprof  umake 
-PROGS= idxGen uget $(BINPROGS)
+PROGS= idxGen uget splitmail $(BINPROGS)
 
 all: $(PROGS)
 	$(CP) $(BINPROGS) ../../bin
@@ -21,6 +21,9 @@ umake.u: umake.icn
 
 idxGen: idxGen.icn
 	IPATH=../xml/ LPATH=../xml/ $(UNICON) $(UFLAGS) -u idxGen
+
+splitmail: splitmail.icn
+	$(UNICON) $(UFLAGS) splitmail
 
 clean Clean:
 	@$(RM) $(PROGS) uniclass.pag uniclass.dir uniclass.db

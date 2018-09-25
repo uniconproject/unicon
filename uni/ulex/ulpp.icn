@@ -1,8 +1,8 @@
 #
 # ulpp.icn -- ulex preprocessor
 #
-# lex regular expression macros are not supported in the C
-# implementation of ulex... this substitute might work for simple cases.
+# lex regular expression macros are not supported in the C implementation
+# of ulex... this substitute might work for simple cases.
 #
 procedure main()
    L := []
@@ -25,10 +25,12 @@ procedure main()
 	       if nam := tab(many(&letters++&digits)) then {
 		  tab(many(' \t'))
 		  if def := tab(0) then {
+                     def := trim(def, ' \t')
 		     macros[nam] := def
 		     line := ""
 		     }
 		  }
+               else if (tab(many(' \t'))|"") & ="#" then line := ""
 	       }
 	    }
 	 }

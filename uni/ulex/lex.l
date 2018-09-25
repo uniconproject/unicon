@@ -151,3 +151,19 @@ int yywrap()
 }
 
 int yyinput(void) { return input(); }
+
+#ifdef MAIN
+YYSTYPE yylval;
+int yylineno;
+char *yyfilename, *outfilename;
+FILE *outfile;
+int main(int argc, char *argv[])
+{
+   char ppcmdline[1024];
+   sprintf(ppcmdline, "./ulpp < %s", argv[1]);
+   if ((yyin = popen(ppcmdline,"r")) != NULL) {
+      while(yylex() > 0) ;
+   }
+   return 0;
+}
+#endif

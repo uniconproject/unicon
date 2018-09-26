@@ -39,7 +39,7 @@ flexgram.icn: flexgram.y
 uflex-lex.u: uflex-lex.icn
 	unicon -c uflex-lex
 
-lex.yy.o: lex.yy.c
+lex.yy.o: lex.yy.c y.tab.h
 	$(CC) $(CFLAGS) lex.yy.c
 
 lex.yy.c: lex.l
@@ -51,10 +51,13 @@ ulexskel.u: ulexskel.icn
 ulexskel.o: ulexskel.c
 	$(CC) $(CFLAGS) ulexskel.c
 
+automata.o: automata.c
+	$(CC) $(CFLAGS) automata.c
+
 y.tab.o: y.tab.c
 	$(CC) $(CFLAGS) y.tab.c
 
-y.tab.c: lexgram.y automata.h tree.h automata.c
+y.tab.c y.tab.h: lexgram.y automata.h tree.h automata.c
 	$(YACC) -d lexgram.y
 
 automata.u: automata.icn
@@ -66,8 +69,17 @@ tree.u: tree.icn
 tree.o: tree.c
 	$(CC) $(CFLAGS) tree.c
 
+#
+# test w/ standalone dummy main() used only for debugging ulex's lexical analyzer.
+#
+lexlex: lex.yy.c y.tab.h
+	$(CC) $(CFLAGS) -DDEBUG -DMAIN lex.yy.c
+	$(CC) -o lexlex lex.yy.o
+	rm lex.yy.o
+
 ulpp: ulpp.icn
 	unicon ulpp
+	cp ulpp ../../bin
 
 clean:
 	rm lex.yy.c y.tab.c y.tab.h *.o ulpp ulex

@@ -109,6 +109,8 @@ int main(int argc, char *argv[])
       grab_upto_percents();
       }
      
+   /* yyparse() calls automata.c::createicon() which opens outfile. */
+
    i = yyparse();
 
    if (i) {
@@ -135,7 +137,8 @@ int main(int argc, char *argv[])
       }
 
    fclose(outfile);
-   fclose(yyin);
+   if (pp) pclose(yyin);
+   else fclose(yyin);
    unlink("ulex.tmp");
    printf("No errors\n");
    return 0;

@@ -1980,11 +1980,12 @@ class.
 
 \noindent
 \index{file!close}\index{close file}\texttt{close(f)} closes file, pipe,
-window, network or message connection, or \index{database}database f
+window, network or message connection, or \index{database}database \texttt{f}
 and returns any resources associated with it to the operating system.
-If f was a window, close(f) causes it to disappear, but the window can
-still be written to and copied from until all open bindings are closed.
-If f was a pipe or network connection, close() returns the integer exit
+If \texttt{f} was a window, \texttt{close(f)} causes it to disappear,
+but the window can still be written to and copied from until all open
+bindings are closed. If \texttt{f} was a pipe or network connection,
+\texttt{close()} returns the integer exit
 status of the connection, otherwise it returns the closed file.
 
 \bigskip
@@ -1995,7 +1996,7 @@ status of the connection, otherwise it returns the closed file.
 
 \noindent
 \index{fail!co-expression}\index{co-expression}\texttt{cofail(ce)} activates
-co-expression ce, transmitting failure instead of a result.
+co-expression \texttt{ce}, transmitting failure instead of a result.
 
 \bigskip
 \hrule\vspace{0.1cm}
@@ -2005,8 +2006,8 @@ co-expression ce, transmitting failure instead of a result.
 
 \noindent
 \index{collect garbage}\texttt{collect(i1,i2)} calls the
-\index{garbage collector}garbage collector to ensure that i2 bytes
-are free in region i1. i1 can be 0 (no region in particular)
+\index{garbage collector}garbage collector to ensure that \texttt{i2} bytes
+are free in region \texttt{i1}. \texttt{i1} can be 0 (no region in particular)
 1 (static region) 2 (string region) or 3 (block region).
 
 \bigskip
@@ -2016,7 +2017,7 @@ are free in region i1. i1 can be 0 (no region in particular)
 {\bf condvar() : condition variable } \hfill {\bf create condition variable}
 
 \noindent
-\index{condition variable}condvar() creates
+\index{condition variable}\texttt{condvar()} creates
 a new condition variable.
 
 \bigskip
@@ -2038,8 +2039,8 @@ record type.
 {\bf copy(any) : any } \hfill {\bf copy value}\WarningNotThreadSafe
 
 \noindent
-\index{copy(x)}\texttt{copy(x)} produces a copy of x. For immutable types
-(numbers, strings, csets, procedures) this is a no-op. For mutable
+\index{copy(x)}\texttt{copy(x)} produces a copy of \texttt{x}. For immutable
+types (numbers, strings, csets, procedures) this is a no-op. For mutable
 types (lists, tables, sets, records, objects) a one-level deep copy of
 the object is made.
 
@@ -2049,7 +2050,7 @@ the object is made.
 {\bf cos(r) : real } \hfill {\bf cosine}
 
 \noindent
-\index{cosine}\texttt{cos(r)} produces the cosine of r. The argument
+\index{cosine}\texttt{cos(r)} produces the cosine of \texttt{r}. The argument
 is given in radians.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2058,8 +2059,8 @@ is given in radians.
 {\bf cset(any) : cset? } \hfill {\bf convert to cset}
 
 \noindent
-\index{convert!to cset}\texttt{cset(x)} converts x to a cset, or fails if the
-conversion cannot be performed.
+\index{convert!to cset}\texttt{cset(x)} converts \texttt{x} to a cset,
+or fails if the conversion cannot be performed.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{ctime}
@@ -2077,9 +2078,12 @@ the local timezone. See also keywords \&clock and \&dateline.
 {\bf dbcolumns(D,s) : list } \hfill {\bf ODBC column information}
 
 \noindent
-\index{column!ODBC}\texttt{dbcolumns(db, tablename)} produces a list of record
-(catalog, schema, tablename, colname, datatype, typename, colsize,
-buflen, decdigits, numprecradix, nullable, remarks) entries. Fields
+\index{column!ODBC}\texttt{dbcolumns(db, tablename)} produces a list
+of record entries with fields:
+\texttt{catalog}, \texttt{schema}, \texttt{tablename},
+\texttt{colname}, \texttt{datatype}, \texttt{typename}, \texttt{colsize},
+\texttt{buflen}, \texttt{decdigits}, \texttt{numprecradix},
+\texttt{nullable}, and \texttt{remarks}.The fields
 \texttt{datatype} and \texttt{typename} are SQL-dependent and data
 source dependent, respectively. Field \texttt{colsize} gives the
 maximum length in characters for SQL\_CHAR or SQL\_VARCHAR columns..
@@ -2096,10 +2100,12 @@ known whether the column accepts null values.
 {\bf dbdriver(D) : record } \hfill {\bf ODBC driver information}
 
 \noindent
-\index{ODBC driver}\texttt{dbdriver(db)} produces a record driver(name, ver,
-odbcver, connections, statements, dsn) that describes the details of
-the \index{ODBC}ODBC driver used to connect to database db. Connections
-and statements are the maximums the driver can support. Fields
+\index{ODBC driver}\texttt{dbdriver(db)} produces a record with fields
+\texttt{name}, \texttt{ver}, \texttt{odbcver}, \texttt{connections},
+\texttt{statements}, and \texttt{dsn} that describes the details of
+the \index{ODBC}ODBC driver used to connect to database \texttt{db}.
+Fields \texttt{connections} and \texttt{statements} are the maximums
+the driver can support. Fields
 \texttt{ver} and \texttt{odbcver} are the driver and ODBC version
 numbers. Fields \texttt{name} and \texttt{dsn} are the driver filename
 and Windows Data Source Name associated with the connection.
@@ -2110,9 +2116,9 @@ and Windows Data Source Name associated with the connection.
 {\bf dbkeys(D,string) : list } \hfill {\bf ODBC key information}
 
 \noindent
-\index{key!ODBC}\texttt{dbkeys(db,tablename)} produces a list of record
-(columnname, sequencenumber) pairs containing information about the
-primary keys in tablename.
+\index{key!ODBC}\texttt{dbkeys(db,tablename)} produces a list of records
+with fields \texttt{columnname}, and \texttt{sequencenumber}
+containing information about the primary keys in \texttt{tablename}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{dblimits}
@@ -2134,8 +2140,9 @@ for many parameters.
 {\bf dbproduct(D) : record } \hfill {\bf database name}
 
 \noindent
-\texttt{dbproduct(db)} produces a record (name, ver) that gives the name and the
-version of the DBMS product containing db.
+\texttt{dbproduct(db)} produces a record with fields \texttt{name}
+and \texttt{ver} that gives the name and the
+version of the DBMS product containing \texttt{db}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{dbtables}
@@ -2143,8 +2150,9 @@ version of the DBMS product containing db.
 {\bf dbtables(D) : list } \hfill {\bf ODBC table information}
 
 \noindent
-\texttt{dbtables(db)} returns a list of record (qualifier, owner, name, type,
-remarks) entries that describe all of the tables in the database
+\texttt{dbtables(db)} returns a list of records with fields
+\texttt{qualifier}, \texttt{owner}, \texttt{name}, \texttt{type}, and
+\texttt{remarks} that describe all of the tables in the database
 associated with db.
 
 \bigskip\hrule\vspace{0.1cm}
@@ -2153,7 +2161,8 @@ associated with db.
 {\bf delay(i) : null } \hfill {\bf delay for i milliseconds}
 
 \noindent
-\index{delay(i)}\texttt{delay(i)} pauses the program for at least i milliseconds.
+\index{delay(i)}\texttt{delay(i)} pauses the program for at least
+\texttt{i} milliseconds.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{delete}
@@ -2163,12 +2172,14 @@ associated with db.
 \noindent
 \index{delete element}\texttt{delete(x1, x2)} deletes elements denoted by the
 2\textsuperscript{nd} and following parameters from set, table, list,
-DBM database, or POP connection x1 if it is there. In any case, it
-returns x1. If x1 is a table or set, elements x\textsubscript{i} denote
-keys of arbitrary type. If x1 is a DBM database, indices must be
-strings. If x1 is a list or a POP messaging connection, elements xi are
-integer indices of the element to be deleted. POP messages are actually
-deleted when the close() operation closes that connection.
+DBM database, or POP connection \texttt{x1} if it is there. In any case, it
+returns \texttt{x1}. If \texttt{x1} is a table or set, elements
+\texttt{x\textsubscript{i}} denote
+keys of arbitrary type. If \texttt{x1} is a DBM database, indices must be
+strings. If \texttt{x1} is a list or a POP messaging connection,
+the elements \texttt{x\textsubscript{i}} are
+integer indices of elements to be deleted. POP messages are actually
+deleted when the \texttt{close()} operation closes that connection.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{detab}
@@ -2216,8 +2227,9 @@ the last two specified tab stops.
 {\bf errorclear() : null } \hfill {\bf clear error condition}
 
 \noindent
-\index{errorclear()}\texttt{errorclear()} resets keywords \&errornumber,
-\&errortext, and \&errorvalue to indicate that no error is present.
+\index{errorclear()}\texttt{errorclear()} resets keywords
+\texttt{\&errornumber}, \texttt{\&errortext}, and
+\texttt{\&errorvalue} to indicate that no error is present.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{eventmask}
@@ -2226,8 +2238,9 @@ the last two specified tab stops.
 
 \noindent
 \index{eventmask(ce)}\texttt{eventmask(ce)} returns the event mask associated
-with the program that created ce, or \&null if there is no event mask.
-eventmask(ce,cs) sets that program's event mask to cs.
+with the program that created \texttt{ce}, or \texttt{\&null} if there
+is no event mask. \texttt{eventmask(ce,cs)} sets that program's event
+mask to \texttt{cs}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{EvGet}
@@ -2265,7 +2278,8 @@ code that indicates normal termination (0 on most systems).
 {\bf exp(r) : real } \hfill {\bf exponential}
 
 \noindent
-\index{exponential, exp(r)}\texttt{exp(r)} produces the result of \&e \^{} r.
+\index{exponential, exp(r)}\texttt{exp(r)} produces the result of
+\texttt{\&e \^{} r}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{fetch}
@@ -2599,8 +2613,8 @@ conventions.
 \noindent
 \index{local}\index{variable}\texttt{localnames(ce,i)} generates the
 names of local variables in co-expression \texttt{ce}, \texttt{i}
-levels up from the current procedure invocation. The default i of 0
-generates names in the currently active procedure in ce.
+levels up from the current procedure invocation. The default \texttt{i} of 0
+generates names in the currently active procedure in \texttt{ce}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{lock}
@@ -2608,8 +2622,8 @@ generates names in the currently active procedure in ce.
 {\bf lock(x) : x } \hfill {\bf lock mutex}
 
 \noindent
-\index{lock}\texttt{lock(x)} locks the mutex {\textit x} or the mutex
-associated with thread-safe object {\textit x}.
+\index{lock}\texttt{lock(x)} locks the mutex \texttt{x} or the mutex
+associated with thread-safe object \texttt{x}.
 Mutexes are recursive (i.e. they may be locked again by the same co-expression
 or thread without blocking) but must be unlocked as many times as they are
 locked. It is an error to unlock a mutex more times than it has been locked.
@@ -2648,7 +2662,7 @@ are replaced by characters at the same position in \texttt{s3}.
 \bigskip\hrule\vspace{0.1cm}
 \index{match}
 \noindent
-{\bf match(s, s:\&subject, i:\&pos, i:0) : integer } \hfill {\bf match string}
+{\bf match(s, s:\&subject, i:\&pos, i:0) : integer? } \hfill {\bf match string}
 
 \noindent
 \index{match string}String scanning function \texttt{match(s1,s2,i1,i2)}
@@ -2683,8 +2697,8 @@ in order to succeed.
 
 \noindent
 \texttt{membernames(x)} produces a list containing the string names of
-the fields of x, where x is either an object or a string name of a
-class.
+the fields of \texttt{x}, where \texttt{x} is either an object or a
+string name of a class.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{methodnames}
@@ -2703,8 +2717,8 @@ object or a string name of a class.
 
 \noindent
 \texttt{methods(x)} produces a list containing the procedure values of
-the methods of x, where x is either an object or a string name of a
-class.
+the methods of \texttt{x}, where \texttt{x} is either an object or a
+string name of a class.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{min}
@@ -2746,10 +2760,10 @@ is resumed.
 
 \noindent
 \index{mutex()}\texttt{mutex()} creates a new mutex. For \texttt{mutex(x)}
-associates the new mutex with structure {\textit x}.
-The call {\texttt mutex(x,y)} associates an existing mutex \textit{y} (or
-mutex associated with protected object \textit{y}) with
-structure {\textit x}.
+associates the new mutex with structure \texttt{x}.
+The call {\texttt mutex(x,y)} associates an existing mutex \texttt{y} (or
+mutex associated with protected object \texttt{y}) with
+structure \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{name}
@@ -2826,10 +2840,10 @@ not both.
 
 When opening a network socket: the first argument \texttt{s1} is the
 name of the socket to connect. If \texttt{s1} is of the form
-"s:i", it is an Internet domain socket on
-host s and port i; otherwise, it is the name of a Unix
+\texttt{"s:i"}, it is an Internet domain socket on
+host \texttt{s} and port \texttt{i}; otherwise, it is the name of a Unix
 domain socket. If the host name is null, it represents the current
-host. Mode "n" allows an optional third parameter,
+host. Mode \texttt{"n"} allows an optional third parameter,
 an integer timeout (in milliseconds) after which \texttt{open()} fails
 if no connection has been established by that time.
 
@@ -2931,8 +2945,8 @@ also function \texttt{filepair()}.
 \noindent
 \index{pop(L)}\texttt{pop(L)} removes an element from the top of the
 \index{stack}stack (\texttt{L[1]}) and returns it. \texttt{pop(M)}
-removes and returns the first message in POP mailbox connection M; the
-actual deletion occurs when the messaging connection is closed.
+removes and returns the first message in POP mailbox connection \texttt{M};
+the actual deletion occurs when the messaging connection is closed.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{pos}
@@ -3218,9 +3232,9 @@ are inserted into the new set, with the exception of lists.
 
 \noindent
 \index{signal}\texttt{signal(x, y)} signals the condition variable
-{\textit x}. If {\textit y} is supplied, the condition variable is
-signaled {\textit y} times. If {\textit y} is 0, a ``broadcast''
-signal is sent waking up all threads waiting on {\textit x}.
+\texttt{x}. If \texttt{y} is supplied, the condition variable is
+signaled \texttt{y} times. If \texttt{y} is 0, a ``broadcast''
+signal is sent waking up all threads waiting on \texttt{x}.
 Condition variables have no memory: signalling a condition variable
 that has no threads waiting on it has no effect.
 
@@ -3266,7 +3280,7 @@ come before those that do have an \texttt{i}'th field.
 {\bf spawn(CE, i, i) : thread } \hfill {\bf launch asynchronous thread}
 
 \noindent
-\index{spawn()}\texttt{spawn(ce)} launches co-expression {\textit ce} as an
+\index{spawn()}\texttt{spawn(ce)} launches co-expression \texttt{ce} as an
 asynchronous thread that will execute concurrently with the current
 co-expression. The two optional integers specify the memory in bytes
 allocated for the thread's block and string regions. The defaults are 10\%
@@ -3346,9 +3360,9 @@ program exit status indicates that an error has occurred.
 {\bf string(x) : string? } \hfill {\bf convert to string}
 
 \noindent
-\index{convert!to string}\index{string(x)}\texttt{string(x)} converts x
-to a string and returns the result, or fails if the value cannot be
-converted.
+\index{convert!to string}\index{string(x)}\texttt{string(x)} converts
+\texttt{x} to a string and returns the result, or fails if the value
+cannot be converted.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{system}
@@ -3472,8 +3486,8 @@ of \texttt{x}.
 {\bf unlock(x) : x } \hfill {\bf unlock mutex}
 
 \noindent
-\index{lock}\texttt{unlock(x)} unlocks the mutex {\textit x} or the mutex
-associated with thread-safe object {\textit x}.
+\index{lock}\texttt{unlock(x)} unlocks the mutex \texttt{x} or the mutex
+associated with thread-safe object \texttt{x}.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{upto}
@@ -3517,9 +3531,9 @@ program that created \texttt{c}.
 {\bf wait(x) : ? } \hfill {\bf wait for thread or condition variable}
 
 \noindent
-\index{wait()}\texttt{wait(x)} waits for {\textit x}. If {\textit x} is
-a thread, {\texttt wait()} waits for it to finish. If {\textit x} is
-is a condition variable {\texttt wait()} waits until that variable is
+\index{wait()}\texttt{wait(x)} waits for \texttt{x}. If \texttt{x} is
+a thread, \texttt{wait()} waits for it to finish. If \texttt{x} is
+is a condition variable \texttt{wait()} waits until that variable is
 subsequently signaled by another thread.
 
 \bigskip\hrule\vspace{0.1cm}

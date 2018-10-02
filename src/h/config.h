@@ -262,12 +262,12 @@
   #define EventMon
 #endif
 
-#ifdef MultiProgram
+//#ifdef MultiProgram
    #if defined(HAVE_LIBPTHREAD) && !defined(NoConcurrent)
       #undef Concurrent
       #define Concurrent 1
    #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
-#endif					/* MultiProgram */
+//#endif					/* MultiProgram */
 
 #ifdef Concurrent
    #define PthreadCoswitch 1

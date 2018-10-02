@@ -41,6 +41,7 @@ ConIconc: Common Iconx
 	$(RM) runtime/*.$(O) runtime/rt.a runtime/rt.db
 	$(RM) iconc/*.$(O)
 	$(RM) ../bin/rt.h
+	$(RM) common/doincl$(EXE)
 	$(MAKE) -j1 -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 	$(MAKE) -C common doincl

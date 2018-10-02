@@ -4,25 +4,25 @@ AC_CANONICAL_HOST
 
 
 # not needed yet
-#AC_CANONICAL_BUILD	
+#AC_CANONICAL_BUILD
 #AC_CANONICAL_TARGET
 
 case $host_cpu in
      *armv7*)
         unicon_cpu="arm_32"
-        ;;	
+        ;;
      *armv6*)
         unicon_cpu="arm_32"
         ;;
      *armv8*)
         unicon_cpu="arm_64"
-        ;;	
+        ;;
      *i386*)
         unicon_cpu="x86_32"
 	;;
      *i686*)
         unicon_cpu="x86_32"
-	;;	
+	;;
      *)
         unicon_cpu="$host_cpu"
         ;;
@@ -124,7 +124,9 @@ AC_ARG_ENABLE([plugins],
 AC_ARG_ENABLE([iconc],
 	[AS_HELP_STRING([--disable-iconc], [Build Unicon Compiler (Iconc/Uniconc)])],
 			[iconc=no], [iconc=yes])
-
+AC_ARG_ENABLE([iconcurrency],
+	[AS_HELP_STRING([--enable-iconcurrency], [enable thread support in Unicon Compiler])],
+			[coniconc=yes], [coniconc=no])
 AC_ARG_ENABLE([ovld],
 	[AS_HELP_STRING([--enable-ovld], [enable operator overloading])],
 			[ovld=yes], [ovld=no])
@@ -266,7 +268,11 @@ case $unicon_host in
       CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
-         ICONCTARGET=Iconc
+	 if test "x$coniconc"      = "xyes" ; then
+	    ICONCTARGET=ConIconc 
+	 else
+	    ICONCTARGET=Iconc
+         fi
       fi
         ;;
      *solaris*)
@@ -774,7 +780,11 @@ else
 fi
 
 if test "x$iconc"      = "xyes" ; then
-  echo " + Compiler "
+  if test "x$coniconc"      = "xyes" ; then
+     echo " + Compiler: with concurrency"
+  else
+     echo " + Compiler: no concurrency"
+  fi
 else
   echo " ! Compiler"
 fi

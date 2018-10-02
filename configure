@@ -728,6 +728,7 @@ enable_audio
 enable_voip
 enable_plugins
 enable_iconc
+enable_iconcurrency
 enable_ovld
 enable_udbtools
 enable_progs
@@ -1399,6 +1400,7 @@ Optional Features:
   --disable-voip          No VOIP support
   --disable-plugins       No loadfunc or plugins support
   --disable-iconc         Build Unicon Compiler (Iconc/Uniconc)
+  --enable-iconcurrency   enable thread support in Unicon Compiler
   --enable-ovld           enable operator overloading
   --enable-udbtools       enable Unicon debugger tools
   --enable-progs          enable Unicon programs
@@ -3064,6 +3066,12 @@ else
   iconc=yes
 fi
 
+# Check whether --enable-iconcurrency was given.
+if test "${enable_iconcurrency+set}" = set; then :
+  enableval=$enable_iconcurrency; coniconc=yes
+else
+  coniconc=no
+fi
 
 # Check whether --enable-ovld was given.
 if test "${enable_ovld+set}" = set; then :
@@ -6809,7 +6817,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
       CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
-         ICONCTARGET=Iconc
+	 if test "x$coniconc"      = "xyes" ; then
+	    ICONCTARGET=ConIconc
+	 else
+	    ICONCTARGET=Iconc
+         fi
       fi
         ;;
      *solaris*)
@@ -15201,7 +15213,11 @@ else
 fi
 
 if test "x$iconc"      = "xyes" ; then
-  echo " + Compiler "
+  if test "x$coniconc"      = "xyes" ; then
+     echo " + Compiler: concurrency "
+  else
+     echo " + Compiler: no concurrency"
+  fi
 else
   echo " ! Compiler"
 fi

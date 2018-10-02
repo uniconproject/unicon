@@ -36,6 +36,15 @@ Iconc: Common Iconx
 	$(MAKE) -j1 -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
 
+# Iconc with concurrent threads 
+ConIconc: Common Iconx
+	$(RM) runtime/*.$(O) runtime/rt.a runtime/rt.db
+	$(RM) iconc/*.$(O)
+	$(RM) ../bin/rt.h
+	$(MAKE) -j1 -C runtime comp_all_uniconc
+	$(MAKE) -C iconc
+	$(MAKE) -C common doincl
+
 .PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm libs
 
 clean Clean:

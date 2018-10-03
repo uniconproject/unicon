@@ -269,20 +269,26 @@
    #endif			/* HAVE_LIBPTHREAD && !NoConcurrent */
 //#endif					/* MultiProgram */
 
+#if defined(Concurrent) && COMPILER
+   #ifdef NoConcurrentCOMPILER
+   #define ConcurrentCOMPILER 0
+   #undef Concurrent
+   #else
+   #define ConcurrentCOMPILER 1
+   #endif
+#else
+   #define ConcurrentCOMPILER 0
+#endif
+
 #ifdef Concurrent
    #define PthreadCoswitch 1
    #define TSLIST 
    /*
     * The default at present does not use __thread.
-    * To use __thread, add "#define HAVE_KEYWORD__THREAD" to your define.h
+    * To use __thread, uncomment the following line 
+    * "#define HAVE_KEYWORD__THREAD"
     */
 #endif				/* Concurrent */
-
-#if defined(Concurrent) && COMPILER
-   #define ConcurrentCOMPILER 1
-#else
-   #define ConcurrentCOMPILER 0
-#endif
 
 #ifndef NoINTMAIN
    #undef INTMAIN

@@ -33,11 +33,14 @@ Iconx:	Common
 
 # force Iconx to always build first to avoid building part of both at the same time
 Iconc: Common Iconx
+	$(RM) iconc/*.$(O)
+	$(RM) common/doincl$(EXE)
 	$(MAKE) -j1 -C runtime comp_all_uniconc
 	$(MAKE) -C iconc
+	$(MAKE) -C common doincl
 
-# Iconc with concurrent threads 
-ConIconc: Common Iconx
+# Force a rebuild of a fresh Iconc  
+FreshIconc:
 	$(RM) runtime/*.$(O) runtime/rt.a runtime/rt.db
 	$(RM) iconc/*.$(O)
 	$(RM) ../bin/rt.h

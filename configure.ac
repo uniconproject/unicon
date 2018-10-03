@@ -268,11 +268,7 @@ case $unicon_host in
       CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
-	 if test "x$coniconc"      = "xyes" ; then
-	    ICONCTARGET=ConIconc 
-	 else
 	    ICONCTARGET=Iconc
-         fi
       fi
         ;;
      *solaris*)
@@ -373,6 +369,10 @@ AC_SEARCH_LIBS([crypt],[crypt],
 
 if test "x$concurrent" = "xno"; then
   AC_DEFINE([NoConcurrent], [1], [No Concurrency])
+fi
+
+if test "x$coniconc" != "xyes"; then
+  AC_DEFINE([NoConcurrentCOMPILER], [1], [No ConcurrentCOMPILER])
 fi
 
 if test "x$pattern" = "xno"; then

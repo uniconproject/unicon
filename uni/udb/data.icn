@@ -22,64 +22,64 @@ class Data(
 # prints all of Global Variables state in some level
 #
 method printGlobals(level)
-   local x, i, CMonitored := DState.coState.target.val
+   local x, i, CMonitored := DState.coState.target.val, output := []
 
    /level := DState.coState.target.curr_frame 
 
-   Message := ""
-   every x := !DState.srcCode.vglobals do {
-      i := variable(x, CMonitored, level)
-      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
+   put(output,"\n   Global variables:")
+   every x := !DState.srcFile.getCurrGlobals() do {
+      i := variable(x, CMonitored, keyword("level",CMonitored))
+         put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       }
-   DState.Write(Message)
+   more(output)
 end
 
 #
 # prints all Local Variables for some Level
 #
 method printLocals(level)
-   local x, i, CMonitored := DState.coState.target.val
+   local x, i, CMonitored := DState.coState.target.val, output := []
 
    /level := DState.coState.target.curr_frame 
 
-   Message := ""
-   every x := localnames(CMonitored,level) do {
+   put(output,"\n   Local variables:")
+   every x := !DState.srcFile.getCurrLocals() do {
       i := variable(x, CMonitored, level)
-      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
+      put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       }
-   DState.Write(Message)
+   more(output)
 end
 
 #
 # prints all Local Variables for some Level
 #
 method printStatics(level)
-   local x, i, CMonitored := DState.coState.target.val
+   local x, i, CMonitored := DState.coState.target.val, output := []
 
    /level := DState.coState.target.curr_frame 
 
-   Message := ""
-   every x := staticnames(CMonitored,level) do {
+   put(output,"\n   Static variables:")
+   every x := !DState.srcFile.getCurrStatics() do {
       i := variable(x, CMonitored, level)
-      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
+      put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       }
-   DState.Write(Message)
+   more(output)
 end
 
 #
 # prints all Formal Parameters for some Level
 #
 method printParams(level)
-   local x, i, CMonitored := DState.coState.target.val
+   local x, i, CMonitored := DState.coState.target.val, output := []
 
    /level := DState.coState.target.curr_frame
 
-   Message := ""
-   every x := paramnames(CMonitored,level) do {
+   put(output,"\n   Parameters:")
+   every x := !DState.srcFile.getCurrParams() do {
       i := variable(x, CMonitored, level)
-      Message ||:= "\n   "||x||" = "||image(i)||" : "|| type(i)
+      put(output,"     "||x||" = "||image(i)||" : "|| type(i))
       }
-   DState.Write(Message)
+   more(output)
 end
 
 #
@@ -108,7 +108,7 @@ method getVarValue(Expr, level)
             }
          else fail
          }
-      # var is not a variable, var is a primitive
+      # var is a primitive or invalid expression
       else {
          if *index = 0 then {
             Value := if integer(expr) = expr then integer(expr)
@@ -134,7 +134,6 @@ method getVarValue(Expr, level)
    else
       return expr[2:-1]
 end
-
 
 #
 # getVarReference is used by printVar and cmdPrint to
@@ -270,8 +269,8 @@ method getVarReference(Var, index, level)
            x := get(index)
            if v := variable(x, CMonitored, level, 1) |
                                       integer(x) | string(x[2:-2]) then {
-                 Var := Var[v]
-                 return getVarReference(Var, index, level)
+              Var := Var[v]
+              return getVarReference(Var, index, level)
               }
            fail # shouldn't get here, tables have default init values
            }
@@ -909,8 +908,8 @@ method cmdList(cmd)
          max_line := DState.srcFile.getFileTotalLines(cur_file)
          }
       else if DState.State = PAUSE then {
-         cur_file := keyword("file", Monitored)
-         cur_line := keyword("line", Monitored)
+         cur_file := keyword("file", MONITORED)
+         cur_line := keyword("line", MONITORED)
          max_line := DState.srcFile.getFileTotalLines(cur_file)
          }
       else{
@@ -990,56 +989,72 @@ method cmdList(cmd)
 end
 
 #
-# used to print source code info, it print 10 at a time
+# used to print source code info with a simplified more
 #
 method printSrcInfo(fnames, ftype)
-   local i:=0, cur:=0, ans, total, plural := ""
-
+   local i:=0, cur:=0, ans, total, plural := "s"
+   names := []
    total := *fnames
-   if total > 1 then plural := "s"
-   Message := "\n   Total of "||total||"-"||ftype||plural||":\n"
-   while *fnames > 0 do {
-     i +:= 1
-     Message ||:= "   "||(cur+:=1)||"# "||get(fnames) ||"\n"
-     if i = 10 & *fnames ~= 0 then {
-        Message ||:="   (["||total-cur||"] More "||ftype||" names follow...)\n"
-        Message ||:="---Type <return> to continue, or q <return> to quit---"
-        DState.Writes(Message)
-        if *(ans:=read())~=0 & ans[1]==("q"|"Q") then break
-        Message := "\n"
-        i := 0
-        }
-     else if *fnames = 0 then
-        DState.Writes(Message)
-     }
+
+   if total = 1 then plural := ""
+   every i := 1 to total do put(names,"   #"||i||"  "||fnames[i])
+   msg := "\n   Total of "||total||" "||ftype||plural||":"
+   more(names, msg)
 end
 
 #
 # used to print a summary of all used files
 #
 method printSrcSummary(detail)
-   local found, missing, ftotal, plural
+   local found, missing, ftotal, plural 
+   local packages, classes, records, procs, globals
+   local pclasses := [], precords := [], pprocs := [], pglobals := []
+
+   packages := DState.srcFile.getPackages()
+   classes := DState.srcFile.getClasses()
+   records := DState.srcFile.getRecords()
+   procs := DState.srcFile.getProcedures()
+   globals := DState.srcFile.getGlobals()
+
+   every pkg := !packages do {
+      pclasses |||:= DState.srcFile.getClasses(pkg) 
+      precords |||:= DState.srcFile.getRecords(pkg) 
+      pprocs |||:= DState.srcFile.getProcedures(pkg) 
+      pglobals |||:= DState.srcFile.getGlobals(pkg) 
+      }
 
    found   := *DState.srcFile.foundFiles
    missing := *DState.srcFile.missingFiles
    ftotal  := found + missing
-   if ftotal > 1 then plural := "s are " else plural := " is "
+   if ftotal ~= 1 then plural := "s are " else plural := " is "
    Message   :="\n   A total of ["||ftotal||"] source file"||plural||"used"
-   if found > 1 then plural := "s are " else plural := " is "
+   if found ~= 1 then plural := "s are " else plural := " is "
    Message ||:="\n   "||left(found,5)  ||"source file"||plural||"found"
-   if missing > 1 then plural := "s are " else plural := " is "
+   if missing ~= 1 then plural := "s are " else plural := " is "
    Message ||:="\n   "||left(missing,5)||"source file"||plural||"missing"
    if \detail then {
       Message ||:="\n   ---------------------------------------"
-      Message ||:="\n   "||left(*DState.srcCode.packages,5)||"packages, with "||
-              DState.srcCode.getTotalPackageClasses() ||" classes, "||
-              DState.srcCode.getTotalPackageProcs()   ||" procedures, and "||
-              DState.srcCode.getTotalPackageVars()    ||" global variables."
-      Message ||:="\n   "||left(*DState.srcCode.classes,5) ||"classes"
-      Message ||:="\n   "||left(*DState.srcCode.records,5) ||"records"
-      Message ||:="\n   "||left(*DState.srcCode.pglobals,5)||"procedures"
-      Message ||:="\n   "||left(*DState.srcCode.fglobals,5)||"functions"
-      Message ||:="\n   "||left(*DState.srcCode.pglobals,5)||"global variables"
+      if *classes = 1 then plural := "" else plural := "es"
+      Message ||:="\n   "||left(*classes,5) ||"class"||plural
+      if *records = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*records,5) ||"record"||plural
+      if *procs = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*procs,5)||"procedure"||plural
+      if *globals = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*globals,5)||"global variable"||plural
+      Message ||:="\n   ---------------------------------------"
+
+       if *packages = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*packages,5)||"package"||plural||", with "
+      if *pclasses = 1 then plural := "" else plural := "es"
+      Message ||:="\n   "||left(*pclasses,5)||"class"||plural
+      if *precords = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*precords,5)||"record"||plural
+      if *pprocs = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*pprocs,5)||"procedure"||plural
+      if *pglobals = 1 then plural := "" else plural := "s"
+      Message ||:="\n   "||left(*pglobals,5)||"global variable"||plural
+      Message ||:="\n   ---------------------------------------"
       }
    Message ||:="\n   Type \"help src\" for assistance.\n"
    DState.Writes(Message)
@@ -1049,119 +1064,188 @@ end
 # prints the found/missing source files
 #
 method cmdSource(cmd)
-   local op, names
+   static pkg
+   local op, names, prefix := "", set_pkg
 
+   if *cmd <= 2 then {
+
+      if (i := find("=",cmd[2])) then {
+         set_pkg := cmd[2][i+1:0]
+         cmd[2] := cmd[2][1:i]
+         }
+
+      op := cmd[2] | ""
+      if op[1] ~=="-" then op :="-"||op
+      case op of{
+         # all loaded source files
+         "-f"|"-found":{
+            if names := DState.srcFile.getFoundFiles() then
+               printSrcInfo(names,"found file")
+            else
+               DState.Write("\n   No found source files.")
+            }
+         # all unable to load source files
+         "-m"|"-missing":{
+            if names := DState.srcFile.getMissingFiles() then
+               printSrcInfo(names,"missing file")
+            else
+               DState.Write("\n   No missing source files.")
+            }
+         # all files (user+library) used in the binary
+         "-file":{
+            if names := DState.srcFile.getSourceFiles() then
+               printSrcInfo(names,"used file")
+            else
+               DState.Write("\n   No source files.")
+            }
+         # all user defined files used in the binary
+         "-u"|"user"|"usr":{
+            if names := DState.srcFile.getUserFiles() then
+               printSrcInfo(names,"user defined file")
+            else
+               DState.Write("\n   No user defined source files.")
+            }
+         # all library files used in the binary
+         "-l"|"-lib"|"-library":{
+            if names := DState.srcFile.getLibFiles() then
+               printSrcInfo(names,"used library file")
+            else
+               DState.Write("\n   No library files.")
+            }
+         # all packages used in the binary
+         "-pkg"|"-pk"|"-package":{
+            if \set_pkg then {
+               if DState.srcFile.isPackage(set_pkg) then pkg := set_pkg
+               else if set_pkg == "" then pkg := &null
+               else {
+                  write("\n   Package \"",set_pkg,"\" was not found.",
+                        "\n   Please try again.") 
+                  fail
+                  }
+               #write("\n   Current package: ",(\pkg | "none"))
+               }
+            else if names := DState.srcFile.getPackages() then {
+               printSrcInfo(names,"package")
+               }
+            else
+               DState.Write("\n   No packages used.")
+            }
+         # all classes used in the binary
+         "-c"|"-cls"|"-class":{
+            if names := DState.srcFile.getClasses(pkg) then
+               printSrcInfo(names,"class")
+            else
+               DState.Write("\n   No classes used.")
+            }
+         # all procedures used in the binary
+         "-p"|"-proc"|"-procedure":{
+            if names := DState.srcFile.getProcedures(pkg) then
+               printSrcInfo(names,"procedure")
+            else
+               DState.Write("\n   No procedures used.")
+            }
+         # all global variable names used in the binary
+         "-g"|"-glb"|"-global":{
+            if names := DState.srcFile.getGlobals(pkg) then
+               printSrcInfo(names,"global variable")
+            else
+               DState.Write("\n   No global variables used.")
+            }
+         # all record names used in the binary
+         "-r"|"-rec"|"-record":{
+            if names := DState.srcFile.getRecords(pkg) then
+               printSrcInfo(names,"record")
+            else
+               DState.Write("\n   No global records used.")
+            }
+         # all built-in functions used in the binary
+         # is this really necessary?
+         "-fun"|"-func"|"-function":{
+            if names := DState.srcFile.getFunctions() then
+               printSrcInfo(names,"used built-in function")
+            else
+               DState.Write("\n   No functions used.")
+            }
+         # a detailed summary with some statistics about the binary
+         # is this really necessary?
+         "-a"|"-all":{
+            printSrcSummary(1)
+            }
+         # a short summary about the binary
+         default:{
+            # src
+            if *cmd = 1 then {
+               write("\n   Current package: ",(\pkg | "none"))
+               printSrcSummary(1)
+               }
+            # src file
+            else if *cmd = 2 then { 
+               if not find(".icn", cmd[2]) then cmd[2] ||:= ".icn"
+               if code := DState.srcFile.getSrcCode(cmd[2]) then {
+                  more(code)
+                  }
+               else {
+                  msg := "\n   Could not find \"" || cmd[2] || "\"." ||
+                         "\n   Please try again."
+                  DState.Write(msg)
+                  }
+               }
+            }
+         }
+      }
+
+   # commands with optional arguments - prints specifics about specified
+   # class or package
+   else if *cmd = 3 then {  
+      op := cmd[2] | ""
+      arg := cmd[3] | ""
+      if op[1] ~=="-" then op :="-"||op
+      case op of {
+         "-c"|"-cls"|"-class": {
+            if names := DState.srcFile.getClasses(pkg,cmd[3]) then {
+               output := []
+               if \pkg then prefix := pkg||"__"
+               if *names = 1 then plural := "" else plural := "s"
+
+               put(output,"\n   Total of "||*names||" field"||plural||
+                          " of class "||prefix||cmd[3]||":")
+               every i := 1 to *names do put(output,"   #"||i||"  "||names[i])
+               more(output)
+               }
+            else 
+               DState.Write("\n   No class fields found.")
+            }
+         "-pkg"|"-pk"|"-package":{
+            if names := DState.srcFile.getPackages(cmd[3]) then {
+               output := []
+               if \pkg then prefix := pkg||"__"
+               if *names = 1 then plural := "" else plural := "s"
+
+               put(output,"\n   Total of "||*names||" global name"||plural||
+                          " in package "||cmd[3]||":")
+               every i := 1 to *names do put(output,"   #"||i||"  "||names[i])
+               more(output)
+               }
+            else 
+               DState.Write("\n   No global names found in package.")
+            }
+         default: {
+            msg := "\n   Undefined command:"
+            while msg ||:= " " || pop(cmd)
+            msg ||:= "\n   Type \"help src\" for assistance."
+            DState.Write(msg)
+            }
+         }
+      }
    # invalid syntax 
-   if *cmd > 2 then {  
+   else {
       msg := "\n   Undefined command:"
       while msg ||:= " " || pop(cmd)
       msg ||:= "\n   Type \"help src\" for assistance."
       DState.Write(msg)
       fail
       }
-
-   op := cmd[2] | ""
-   if op[1] ~=="-" then op :="-"||op
-   case op of{
-      # all loaded source files
-      "-f"|"-found":{
-          if names := DState.srcFile.getFoundFiles() then
-             printSrcInfo(names,"Found File")
-          else
-             DState.Write("\n   No found source file(s).")
-          }
-      # all unable to load source files
-      "-m"|"-missing":{
-          if names := DState.srcFile.getMissingFiles() then
-             printSrcInfo(names,"Missing File")
-          else
-            DState.Write("\n   No missing source file(s).")
-          }
-      # all files (user+library) used in the binary
-      "-file":{
-          if names := DState.srcFile.getSourceFiles() then
-             printSrcInfo(names,"Used file")
-          else
-            DState.Write("\n   No source file(s).")
-          }
-      # all user defined files used in the binary
-      "-u"|"user"|"usr":{
-          if names := DState.srcFile.getUserFiles() then
-             printSrcInfo(names,"User defined file")
-          else
-            DState.Write("\n   No user defined source file(s).")
-          }
-      # all library files used in the binary
-      "-l"|"-lib"|"-library":{
-          if names := DState.srcFile.getLibFiles() then
-             printSrcInfo(names,"Used library file")
-          else
-            DState.Write("\n   No library file(s).")
-          }
-      # all packages used in the binary
-      "-pkg"|"-pk"|"-package":{
-          if names := DState.srcCode.getPackages() then
-             printSrcInfo(names,"Used package")
-          else
-            DState.Write("\n   No packages used.")
-          }
-      # all classes used in the binary
-      "-c"|"-cls"|"-class":{
-          if names := DState.srcCode.getClasses() then
-             printSrcInfo(names,"Used standalone class")
-          else
-            DState.Write("\n   No classes used.")
-          }
-      # all procedures used in the binary
-      "-p"|"-proc"|"-procedure":{
-          if names := DState.srcCode.getProcedures() then
-             printSrcInfo(names,"Used procedure")
-          else
-            DState.Write("\n   No procedures used.")
-          }
-      # all built-in functions used in the binary
-      "-fun"|"-func"|"-function":{
-          if names := DState.srcCode.getFunctions() then
-             printSrcInfo(names,"Used built-in function")
-          else
-            DState.Write("\n   No functions used.")
-          }
-      # all global variable names used in the binary
-      "-g"|"-glb"|"-global":{
-          if names := DState.srcCode.getGlobals() then
-             printSrcInfo(names,"Used global variable")
-          else
-            DState.Write("\n   No global variables used.")
-          }
-      # all record names used in the binary
-      "-r"|"-rec"|"-record":{
-          if names := DState.srcCode.getRecords() then
-             printSrcInfo(names,"Used record")
-          else
-            DState.Write("\n   No global records used.")
-          }
-      # a detailed summary with some statistics about the binary
-      "-a"|"-all":{
-          printSrcSummary(1)
-          }
-      # a short summary about the binary
-      default:{
-          # src
-          if *cmd = 1 then printSrcSummary()
-          # src file
-          else if *cmd = 2 & 
-             msg := DState.srcFile.getSrcCode(cmd[2] | cmd[2]||".icn") then {
-             DState.Write(msg)
-             }
-          # syntax error
-          else { 
-             msg := "\n   Undefined command:"
-             while msg ||:= " " || pop(cmd)
-             msg ||:= "\n   Type \"help src\" for assistance."
-             DState.Write(msg)
-             }
-          }
-      }
+ 
 end
 
 #

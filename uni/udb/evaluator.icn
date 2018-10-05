@@ -44,7 +44,7 @@ class Evaluator(
 method startEvaluator()
    local obj, eventMask, valueMask
 
-   DState.coState.init(Monitored)
+   DState.coState.init(MONITORED)
    while EvGet(DState.eventMask, DState.valueMask) do {
 
       case &eventcode of {
@@ -124,7 +124,7 @@ method startEvaluator()
       # Temporal Assertions
       if *DTA.assertTable > 0 then  DTA.forward()
 
-      if DState.State = PAUSE then 
+      if DState.State = PAUSE then
          suspend
       else if DState.State = END then 
          return 
@@ -155,17 +155,18 @@ method handle_Error()
    local cur_line, cur_file, cur_p, src
 
    DState.State   := PAUSE
+   #DState.State   := END
    DState.RunCode := ERROR
 
-   cur_file := keyword("file", Monitored) | "?"
-   cur_line := keyword("line", Monitored) | "?"
-   #cur_p := "2"#image(image(proc(Monitored, 0 ))) | "OPS!!"
-   Message := "\nRun-time error " ||keyword("errornumber",Monitored)||
+   cur_file := keyword("file", MONITORED) | "?"
+   cur_line := keyword("line", MONITORED) | "?"
+   #cur_p := "2"#image(image(proc(MONITORED, 0 ))) | "OPS!!"
+   Message := "\nRun-time error " ||keyword("errornumber",MONITORED)||
               "\nFile "||cur_file||
-              "; Line "||cur_line||"; Col "||keyword("column",Monitored)
+              "; Line "||cur_line||"; Col "||keyword("column",MONITORED)
    Message ||:="\n"||DState.srcFile.getSrcLine(cur_file, cur_line)
-   Message ||:="\n"||repl("-", keyword("column",Monitored))||"^"
-   Message ||:="\n"||keyword("errortext",Monitored)
+   Message ||:="\n"||repl("-", keyword("column",MONITORED))||"^"
+   Message ||:="\n"||keyword("errortext",MONITORED)
    DState.Write(Message)
 end
 

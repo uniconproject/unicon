@@ -70,19 +70,20 @@ method checkWatchRead()
       varInfo[var].state = ENABLED then {
 
       # static or local and not target coexp
-      if (not DState.srcCode.isGlobal(varInfo[var].name)) & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
          \varInfo[var].coexp & 
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
       if /varInfo[var].hitMax   | varInfo[var].hitMax < 0 |
          (varInfo[var].hitCount < abs(varInfo[var].hitMax)) then{
          varInfo[var].oldValue := varInfo[var].curValue
-         varInfo[var].curValue := variable(varInfo[var].name, Monitored, 0)
+         varInfo[var].curValue := variable(varInfo[var].name, MONITORED, 0)
          if \varInfo[var].catchValue then
-            checkCatchValue(var)
-         else
+            return checkCatchValue(var)
+         else {
             printWatchedVarInfo(var)
-         return
+            return
+            }
          }
       }
    fail
@@ -102,7 +103,7 @@ method checkWatchChange( )
       varInfo[&eventvalue].state = ENABLED then {
       var := &eventvalue
       # static or local and not target coexp
-      if (not DState.srcCode.isGlobal(varInfo[var].name)) & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
          \varInfo[var].coexp & 
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
@@ -126,10 +127,11 @@ method checkWatchChange( )
       varInfo[var].oldValue := varInfo[var].curValue
       varInfo[var].curValue := &eventvalue
       if \varInfo[var].catchValue then
-         checkCatchValue(var)
-      else
+         return checkCatchValue(var)
+      else {
          printWatchedVarInfo(var)
-      return
+         return
+         }
       }
    fail
 end
@@ -145,7 +147,7 @@ method checkWatchScan()
    if &eventcode == E_Spos then {
       var := "&pos"
       # static or local and not target coexp
-      if (not DState.srcCode.isGlobal(varInfo[var].name)) & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
          \varInfo[var].coexp & 
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
@@ -154,17 +156,18 @@ method checkWatchScan()
          varInfo[var].oldValue := varInfo[var].curValue
          varInfo[var].curValue := &eventvalue
          if \varInfo[var].catchValue then
-            checkCatchValue(var)
-         else
+            return checkCatchValue(var)
+         else {
             printWatchedVarInfo(var)
-         return
+            return
+            }
          }
       }
    else if &eventcode == E_Snew then {
       var := "&subject"
 
       # static or local and not target coexp
-      if (not DState.srcCode.isGlobal(varInfo[var].name)) & 
+      if (not DState.srcFile.isGlobal(varInfo[var].name)) & 
          \varInfo[var].coexp & 
          varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
@@ -173,11 +176,12 @@ method checkWatchScan()
          varInfo[var].oldValue := varInfo[var].curValue
          varInfo[var].curValue := &eventvalue
          if \varInfo[var].catchValue then {
-            checkCatchValue(var)
+            return checkCatchValue(var)
             }
-         else
+         else {
             printWatchedVarInfo(var)
-         return
+            return
+            }
          }
       }
    fail
@@ -291,7 +295,7 @@ method printWatchedVarInfo(var)
 
    # this is for global vars that must be updated outside of target coexp
    # current coexp isn't the same as watched coexp, exit 
-   if DState.srcCode.isGlobal(varInfo[var].name) & \varInfo[var].coexp & 
+   if DState.srcFile.isGlobal(varInfo[var].name) & \varInfo[var].coexp & 
       varInfo[var].coexp.id ~= DState.coState.curr.id then fail
 
    if varInfo[var].watchType = (WASSIGN | WSCAN) then {
@@ -321,7 +325,7 @@ end
 method scanSnapshot(p, len)
    local prefix, size, pad, i, subject
 
-   subject := image(keyword("&subject", Monitored))
+   subject := image(keyword("&subject", MONITORED))
    size    := *subject
 
    /len := 40
@@ -358,8 +362,8 @@ method printInfo(var)
    local cur_file, cur_line, i, j, ans, r, trace
 
    varInfo[var].hitCount +:= 1
-   cur_file := keyword("file",Monitored)
-   cur_line := keyword("line",Monitored)
+   cur_file := keyword("file",MONITORED)
+   cur_line := keyword("line",MONITORED)
 
    if \varInfo[var].silent | \varInfo[var].hitMax then {
       trace := oldVarInfo(cur_file, cur_line,varInfo[var].curValue)
@@ -534,8 +538,8 @@ method buildInternalVarName(cmd)
       pname := var[i+1:0]
       chScope := var[i]
       vname := var[1:i]
-      if DState.srcCode.isProcedure(pname) then {
-         if not DState.srcCode.isActiveProc(pname) then {
+      if DState.srcFile.isProcedure(pname) then {
+         if not DState.srcFile.isActiveProc(pname) then {
             msg :="\n   \""||pname||"\" is not active in the current state;"
             DState.Writes(msg)
             }
@@ -549,33 +553,21 @@ method buildInternalVarName(cmd)
       }
    else { #watch var
       if DState.State = PAUSE then {
-         pname := image(proc(Monitored, 0))
-         i := find(" ",pname)+1
-         pname := pname[i:0]
-         #initValue := variable(vname, Monitored, level)
-         if DState.srcCode.isLocal(var) then
-            var ||:= "-" || pname
-         else if DState.srcCode.isParam(var) then
-            var ||:= "^" || pname
-         else if DState.srcCode.isStatic(var) then
-            var ||:= ":" || pname
-         else if DState.srcCode.isGlobal(var) then
-            var ||:="+"
-         else {
-            msg   :="\n   Setting a watchpoint is failed." 
-            msg ||:="\n   \""||var||"\" is not recognized in the current state."
-            DState.Write(msg)
-            fail
-            }
-         }
-      else {
-         if DState.srcCode.isGlobal(var) then
-            var ||:="+"
-         else {
-            msg   :="\n   Setting a watchpoint is failed."
-            msg ||:="\n   \""||vname||"\" is not a global variable."
-            DState.Write(msg)
-            fail
+	 # proc name is the current symbol table (scope) label
+         pname := DState.srcFile.curr_symtab.label
+         if (ntype := DState.srcFile.getNameType(var)) then {
+            case ntype of {
+               "local": { var ||:= "-" || pname } 
+               "param": { var ||:= "^" || pname } 
+               "static": { var ||:= ":" || pname } 
+               "global": { var ||:= "+" } # globals aren't a part of any proc
+               default: { debug("got ",var," ",ntype)
+                  msg   :="\n   Fail to set watchpoint." 
+                  msg ||:="\n   \""||var||"\" not found."
+                  DState.Write(msg)
+                  fail
+                  }
+               }
             }
          }
       }

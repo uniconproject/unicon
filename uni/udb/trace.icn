@@ -202,9 +202,10 @@ method checkTraceBehavior()
 	  member(tbnam.eventMask, &eventcode) then {
          if /tbnam.hitMax | tbnam.hitCount < abs(tbnam.hitMax) then {
             if member(ReturnCode, &eventcode) & \ (tbnam.traceValue) then
-               checkTraceValue(name)
+               return checkTraceValue(name)
             else
                printInfo(name)
+               return
             } 
          }
       else
@@ -217,9 +218,9 @@ end
 # Prints the watched object info whenever it reaches a condition or state
 #
 method printInfo(name)
-   local tbn, R := LocationRec(keyword("file", Monitored) | "?",
-			  keyword("line", Monitored) | "?",
-			  keyword("level", Monitored)| "?",
+   local tbn, R := LocationRec(keyword("file", MONITORED) | "?",
+			  keyword("line", MONITORED) | "?",
+			  keyword("level", MONITORED)| "?",
 			  &eventcode)
 
    tbn := traceBehavior[name]
@@ -611,7 +612,7 @@ method resolveTraceInfo(cmd)
       delete(cmd, 2)
       }
 
-   if DState.srcCode.isProcedure(cmd[2]) then {
+   if DState.srcFile.isProcedure(cmd[2]) then {
       traceName := "procedure "
       traceType := "ptrace"
       if \cmd[3] & member(Behavior, cmd[3]) then
@@ -619,7 +620,7 @@ method resolveTraceInfo(cmd)
       else
          ecodeSet := ProcMask
       }
-   else if DState.srcCode.isFunction(cmd[2]) then {
+   else if DState.srcFile.isFunction(cmd[2]) then {
       traceName := "function "
       traceType := "ftrace"
       if \cmd[3] & member(Behavior, cmd[3]) then

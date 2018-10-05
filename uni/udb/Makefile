@@ -16,18 +16,18 @@ ldflags = -u
 #
 EVD     = ../../ipl/mincl/evdefs.icn
 
-SRC       = udb.icn icode.icn srcfile.icn srccode.icn state.icn \
+SRC       = udb.icn icode.icn srcfile.icn state.icn \
             agent.icn internals.icn externals.icn \
             breakpoint.icn watchpoint.icn stepping.icn stack.icn data.icn \
             trace.icn \
             evaluator.icn session.icn console.icn defaults.icn help.icn \
-	    coexp.icn
+	    coexp.icn symtab.icn system.icn
 
-UFILES    = udb.u icode.u srcfile.u srccode.u state.u \
+UFILES    = udb.u icode.u srcfile.u state.u \
             agent.u internals.u externals.u \
             breakpoint.u watchpoint.u stepping.u stack.u data.u \
             trace.u  \
-            evaluator.u session.u console.u help.u coexp.u
+            evaluator.u session.u console.u help.u coexp.u symtab.u system.u
 
 LIB       = lib
 LIBRARY   = $(LIB)/listener.u      $(LIB)/memory.u     $(LIB)/structaliases.u \
@@ -72,14 +72,11 @@ help.u: help.icn defaults.icn state.u
 evaluator.u: evaluator.icn defaults.icn state.u data.u trace.u internals.u externals.u $(EVD)
 	$(UC) $(cflags) evaluator
 
-state.u: state.icn defaults.icn srcfile.u srccode.u icode.u $(EVD)
+state.u: state.icn defaults.icn srcfile.u icode.u $(EVD)
 	$(UC) $(cflags) state
 
 srcfile.u: srcfile.icn
 	$(UC) $(cflags) srcfile
-
-srccode.u: srccode.icn
-	$(UC) $(cflags) srccode
 
 icode.u: icode.icn
 	$(UC) $(cflags) icode
@@ -113,6 +110,12 @@ externals.u: externals.icn defaults.icn agent.u state.u
 
 coexp.u: coexp.icn
 	$(UC) $(cflags) coexp
+
+symtab.u: symtab.icn 
+	$(UC) $(cflags) symtab
+
+system.u: system.icn
+	$(UC) $(cflags) system
 
 print:
 	enscript -1 -b " " $(SRC) -o udb.ps

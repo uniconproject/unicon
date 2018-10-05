@@ -5,6 +5,7 @@
 # 
 
 $include "defaults.icn"
+
 link bincvt
 link strings
 link paths
@@ -29,9 +30,11 @@ class SourceFile(
    userFiles,    # a set of the loaded user files
    libFiles,     # a set of the loaded library files
    incFiles,     # a set of the loaded included files
-   fileNames,    # List with all source file names that are in the binary
    foundFiles,   # Set with all file names that were found - loaded
    missingFiles, # Set with all file names that were not found - not loaded 
+
+   fileNames,    # List with all source file names that are in the binary
+   fileText,      # Table mapping filenames to lists of their contents by lineno
 
    binPath,      # the path of the VM: iconx or wiconx.exe
    srcPath,      # String of paths that will be searched for source files
@@ -40,9 +43,552 @@ class SourceFile(
                  # (IPATH, .u)
    incPath,      # String of include paths (LPATH, .icn)
 
-   srcText,      # List holds all source files text
-   srcIndex      # Table of our position in the source file; fname is the key
+   symtab,       # global symbol table
+   curr_symtab,  # current symbol table
+
+   functions     # list of functions
    )
+
+#
+# Load the program Source File(s)
+#
+method loadSourceFiles(fname, src)
+   local i, j, s, f, b, e
+
+   exeName := getFileName(fname) | keyword("progname", MONITORED)
+   exeSize := getSourceFileSize(fname)
+   fileNames := src
+
+   # store files in fileText
+   every fname := !fileNames do {
+      if path := findDirectory(fname) then {
+         if not member(foundFiles, fname) then {
+           insert(foundFiles, fname)
+           storeFileText(path||PS||fname)
+           }
+         }
+      else if not member(missingFiles, fname) then insert(missingFiles, fname)
+      }
+
+   # initialize the symbol table
+   functions ++:= symtab.initialize(fileText)
+
+   # initialize starting file/line
+   if not getProcMainInfo() then {
+      procMainFile := keyword("file",MONITORED)
+      procMainLine := 1
+      }
+   return
+end
+
+#
+# Reads the contents of filename to fileText (table mapping filename to a 
+# list of strings)
+#
+method storeFileText(filename)
+   local file, s := getFileName(filename)
+
+   file := open(filename) | fail
+   text := fileText[s] := []
+   while put(text, read(file))
+   close(file)
+   return
+end
+
+#
+# Given source, library and include paths, returns the absolute path name
+# to the file (filename) to be found
+#
+# Searches through the specified source path for the requested file.
+# It looks first in current directory, lib directories, then inc directories
+#
+# NOTE:
+# Maybe add a feature to find all matches, and if there is more than one,
+# issue a warning, or maybe allow user to decide which to add.
+#
+method findDirectory(filename)
+   local path, s, file
+
+   # source 
+   srcPath ? {
+      while path := tab(find(" ") | 0) do {
+         s := path||PS||filename
+         #debug("checking for src '",s,"'")
+         if st := stat(s) then {
+            #debug("\tfound '",s,"'")
+            insert(userFiles,filename)
+            if p := getAbsDirectory(path) then 
+               path := p
+            return path
+            }
+         tab(many(' ')) | break
+         }
+      } 
+
+   # library files 
+   libPath ? {
+      while path := tab(find(" ") | 0) do {
+         s := path||PS||filename
+         #debug("checking for lib '",s,"'")
+         if st := stat(s) then {
+            #debug("\tfound '",s,"'")
+            insert(libFiles,filename)
+            if p := getAbsDirectory(path) then 
+               path := p 
+            return path 
+            }
+         tab(many(' ')) | break
+         }
+      } 
+
+   # includes 
+   incPath ? {
+      while path := tab(find(" ") | 0) do {
+         s := path||PS||filename
+         #debug("checking for inc '",s,"'")
+         if st := stat(s) then {
+            #debug("\tfound '",s,"'")
+            insert(incFiles,filename)
+            if p := getAbsDirectory(path) then 
+               path := p
+            return path
+            }
+         tab(many(' ')) | break
+         }
+      }
+end
+
+#
+# Given a relative path, returns an absolute directory path
+#
+method getAbsDirectory(dir)
+   local abs_dir, cwd := chdir(".")
+
+   if dir[1] == "." then {
+      abs_dir := cwd || dir[2:0]
+      return abs_dir
+      }
+end
+
+# 
+# Updates (curr_symtab) to reflect the execution of the given program
+# This includes changes made by commands 'up', 'down', and 'coexp'
+#
+method updateCurrSymtab(coState) 
+   local filename, line
+
+   # normal program execution 
+   if coState.curr.val === coState.target.val then {
+      filename := keyword("file",coState.curr.val,coState.curr.curr_frame)
+      line := keyword("line",coState.curr.val,coState.curr.curr_frame)
+   }
+   # different target co-expression, get file and line for that coexp
+   else {
+      filename := keyword("file",coState.target.val,coState.target.curr_frame)
+      line := keyword("line",coState.target.val,coState.target.curr_frame)
+   }
+
+   # lookup symbol table scope with file/line
+   if symt := symtab.lookup_fileline(filename, line) then {
+      curr_symtab := symt 
+      #debug("current symbol table: ",curr_symtab.tag," ",curr_symtab.label)
+      return
+      }
+   else {
+      #debug("Woops! Symtab not updating")
+      }
+end
+
+
+#######################
+# Lookup methods
+#######################
+
+#
+# Looks for a procedure named (pname) at the global scope
+#
+method findProc(pname)
+   if symt := symtab.lookup_name(pname) then {
+      if symt.tag == "proc" then 
+         return [symt.filename, symt.start_line, symt.end_line]
+      }
+end
+
+#
+# Looks for a procedure or method (name) at the current scope
+#
+method findProcMethod(name)
+   local x
+
+   if type(x := curr_symtab.lookup_scope_name(name)) == "Symtab__state" &
+      x.tag == ("proc"|"method") then {
+      #debug(image(name),": ",x.tag," ",x.label)
+      return [x.filename, x.start_line, x.end_line] 
+      }
+end
+
+
+#
+# Looks for a method (mthd) of class (cls) at global scope
+#
+method findClassMethod(cls, mthd)
+   local symt
+   if symt := symtab.lookup_name(cls) then {
+      if symt.tag == "class" & (symt := symt.lookup_name(mthd)) then {
+         if symt.tag == "method" then 
+            return [symt.filename, symt.start_line, symt.end_line]
+         } 
+      }
+end
+
+#
+# Looks for a procedure (proc) within package (pkg)
+#
+method findPkgProc(pkg, pname)
+   local symt
+   if symt := symtab.lookup_package(pkg) then {
+      if symt := symt.lookup_name(pname) then {
+         if symt.tag == "proc" then
+            return [symt.filename, symt.start_line, symt.end_line]
+         }
+      }
+end
+ 
+#
+# Looks for a class method (mthd) within package (pkg)
+#
+method findPkgClassMethod(pkg, cls, mthd)
+   local symt
+   if symt := symtab.lookup_package(pkg) then {
+      if symt := symt.lookup_name(cls) then {
+         if symt := symt.lookup_name(mthd) then {
+            if symt.tag == "method" then
+               return [symt.filename, symt.start_line, symt.end_line]
+            }
+         }
+      }
+end
+
+#
+# Checks if (pkg) is a package
+#
+method isPackage(pkg)
+   if \symtab.pkgtab[\pkg] then return pkg
+end
+
+#
+# Determines if (pname) is a procedure. If (pkg) is given, determines whether
+# (pname) is in (pkg)
+#
+method isProcedure(pname, pkg)
+   local symt := symtab
+   if \pkg then {
+      if /(symt := symtab.pkgtab[pkg]) then fail
+      } 
+   if \(x := symt.nametab[pname]) & type(x) == "Symtab__state" then {
+      if x.tag == "proc" & x.label == pname then return pname 
+      }
+end
+
+#
+# Determines if (cls) is a class. If (pkg) is given, determines whether (cls)
+# is in (pkg)
+#
+method isClass(cls, pkg)
+   local symt := symtab
+   if \pkg then {
+      if /(symt := symtab.pkgtab[pkg]) then fail
+      } 
+   if \(x := symt.nametab[cls]) & type(x) == "Symtab__state" then {
+      if x.tag == "class" & x.label == cls then return cls
+      }
+end
+
+#
+# Checks if var is global. If (pkg) is given, checks if var is global in (pkg). 
+#
+method isGlobal(var, pkg)
+   local x, symt := symtab
+  
+   if \pkg then {
+      if /(symt := symtab.pkgtab[pkg]) then fail
+      }
+   # symt.tag == ("global"|"package") - this should be true here
+   if \(x := symt.nametab[var]) & type(x) == "string" then {
+      if x == "local" then return var
+      }
+end
+
+#
+# public method
+# checks if a prcedure is in the stack or not
+#
+method isActiveProc(pname)
+   local level, p, j, i:=0
+
+   level := keyword("level", MONITORED)
+   while i <= level do{
+      p := image(proc(MONITORED, i))
+      if j := find(" ",p)+1 then{
+         p := p[j:0]
+         if p == pname then
+            return i
+         }
+      else fail
+      i +:= 1
+      }
+   fail
+end
+
+#
+# public method:
+# returns a list of all built-in functions used in the loaded program
+#
+method getFunctions()
+   local f, names := [] 
+
+   if *functions > 0 then{
+      every f := !functions do
+         push(names, f)
+      return sortf(names)
+      }
+   else 
+      fail
+end
+
+#
+# public method:
+# This method succeeds if name is a built-in used in this program
+#
+method isFunction(name)
+
+   if member(functions, name) then 
+      return
+   fail
+end
+
+
+#
+# Determines the variable type of a given name within the current scope
+#
+method getNameType(name)
+   local x
+   if type(x := curr_symtab.lookup_scope_name(name)) == "string" then {
+      #debug(image(name),": ",x)
+      return x
+      }
+end
+
+#
+# Checks whether var is local in the current scope
+#
+method isLocal(var)
+   local x
+   if curr_symtab.tag ~== "global" & 
+      \(x := curr_symtab.nametab[var]) & type(x) == "string" then {
+      if x == "local" then return var
+      }
+end
+
+#
+# Checks whether var is static in the current scope
+#
+method isStatic(var)
+   local x 
+   if \(x := curr_symtab.nametab[var]) & type(x) == "string" then {
+      if x == "static" then return var
+      }
+end
+
+#
+# Checks whether var is a param in the current scope
+#
+method isParam(var, pkg)
+   local x
+   if \(x := symtab.nametab[var]) & type(x) == "string" then {
+      if x == "param" then return var
+      }
+end
+
+#
+# Return the innermost global variables from the current scope. If package
+# globals exist, prepend the package name for clarity.
+#
+method getCurrGlobals()
+   local globals := [], symt
+
+   symt := curr_symtab 
+   while symt := \symt.parent do {
+      if symt.tag == "package" then {
+         #debug("found package ",symt.label)
+         pkg := symt.label
+         every x := !symt.locals do
+            put(globals,pkg||"__"||x)
+         return globals
+         }
+      }
+   return symt.locals
+end
+
+
+#
+# Returns the local variables of the current symbol table
+#
+method getCurrLocals()
+   if not (curr_symtab.tag == ("global"|"package")) then
+      return curr_symtab.locals
+end
+
+#
+# Returns the static variables of the current symbol table
+#
+method getCurrStatics()
+   if not (curr_symtab.tag == ("global"|"package")) then
+      return curr_symtab.statics
+end
+
+#
+# Returns the parameters of the current symbol table
+#
+method getCurrParams()
+   if not (curr_symtab.tag == ("global"|"package")) then
+      return curr_symtab.params
+end
+
+#
+# If pkg is null, returns all global variables outside of packages. 
+# If a package is specified, returns global variables from pkg.
+#
+method getGlobals(pkg)
+   local globals := [], symt
+
+   if /pkg then globals |||:= symtab.locals
+   else {
+      if \(symt := symtab.pkgtab[pkg]) then 
+         every x := !symt.locals do put(globals, pkg||"__"||x)
+      } 
+   return globals
+end
+
+#
+# No arguments, returns a list of packages. If package specified,
+# return a list of all global names (variables, records, classes, procs)
+#
+method getPackages(pkg)
+   local globnames := [], prefix := ""
+   if /pkg then 
+      globnames |||:= symtab.packages
+   else {
+      if \(symt := symtab.pkgtab[pkg]) then {
+            prefix := pkg||"__"
+         every x := !symt.globals do put(globnames, prefix||x) 
+         every x := !symt.procs do put(globnames,"procedure "||prefix||x)
+         every x := !symt.records do put(globnames,"record "||prefix||x)
+         every x := !symt.classes do put(globnames,"class "||prefix||x)
+         }
+      }
+   return globnames
+end
+
+#
+# If pkg is null, returns all procedures outside of packages. 
+# If a package is specified, returns procedures from pkg.
+#
+method getProcedures(pkg)
+   local procs := [], symt
+   
+   if /pkg then procs |||:= symtab.procs
+   else {
+      if \(symt := symtab.pkgtab[pkg]) then 
+         every x := !symt.procs do put(procs, pkg||"__"||x)
+      }
+   return procs
+end
+
+#
+# If pkg is null, returns all records outside of packages. 
+# If a package is specified, returns records from pkg.
+#
+method getRecords(pkg)
+   local records := [], symt
+   
+   if /pkg then records |||:= symtab.records
+   else {
+      if \(symt := symtab.pkgtab[pkg]) then 
+         every x := !symt.records do put(records, pkg||"__"||x) 
+      }
+   return records
+end
+
+#
+# If pkg is null, returns all classes outside of packages. If a package is 
+# specified, returns classes from pkg.
+# If cls is specified, then returns all members and methods from that class
+# if it exists (from pkg if specified, or from global scope if not).
+#
+method getClasses(pkg, cls)
+   local classes := [], symt, names := [], prefix := ""
+
+   # returns all fields from class [cls]
+   if \cls then {
+
+      # check for packages
+      if \pkg then {
+         if /(symt := symtab.pkgtab[pkg]) then {
+            write("\n   Could not find package",pkg,". Please try again.")
+            fail
+            }
+         prefix := pkg||"__"
+         }
+      else symt := symtab
+
+      # get class fields
+      if \(symt := symt.nametab[cls]) then {
+         if type(symt) == "Symtab__state" & symt.tag == "class" then {
+            every x := !symt.locals do put(names,x) 
+            every x := !symt.methods do put(names,"method "||x)
+            return names  
+            } 
+         } 
+      else {
+         write("\n   Could not find class",prefix,cls,". Please try again.")
+         fail
+         }
+      }
+   # returns all classes - /cls & /pkg
+   else if /pkg then classes |||:= symtab.classes
+   # returns all classes from package [pkg] - /cls & \pkg
+   else {
+      if \(symt := symtab.pkgtab[pkg]) then 
+         every x := !symt.classes do put(classes, pkg||"__"||x) 
+      }
+   return classes
+end
+
+#######################
+# File related methods
+#######################
+
+#
+# checks whether fname is a source file or not
+#
+method isSrcFile(fname)
+
+  if \fname then{
+     if not find(".icn", fname) then fname ||:= ".icn" 
+     if member(foundFiles, fname) | member(missingFiles, fname) then
+        return
+     }
+  fail
+end
+
+#
+# checks to see whether a line number is in the file limits or not
+#
+method isInFile(fname, line)
+   local lastline
+   if lastline := *(\fileText[fname]) & 0 < line <= lastline then return
+end
 
 #
 # Extracts the file name from its path, it is different from
@@ -69,359 +615,42 @@ method getSourceFileSize(f)
 end
 
 #
-# Load the program Source File(s)
+# Uses symbol table to find the filename and line number of procedure main
 #
-method loadSourceFiles(fname, src)
-   local i, j, s, f, b, e
-
-   exeName := getFileName(fname)
-   exeSize := getSourceFileSize(fname)
-   fileNames := src
-
-   #start the loading process with the file that has the procedure main() in it
-   if /exeName then {
-      exeName := keyword("progname", Monitored)
+method getProcMainInfo()
+   if symt := symtab.lookup_name("main") & symt.tag == "proc" then {
+      procMainFile := symt.filename
+      procMainLine := symt.start_line
+      return
       }
-
-   procMainFile := getFileName(exeName)
-   if i := find(".exe"|".cmd", procMainFile) then
-      procMainFile := procMainFile[1:i]
-   procMainFile ||:= ".icn"
-
-   push(fileNames, procMainFile)
-   if s := dopen(procMainFile) then {
-      b := *srcText
-      while(put(srcText, read(s)))
-      close(s)
-      e := *srcText
-      insert(foundFiles, procMainFile)
-      srcIndex[procMainFile] := fileIndex(b,e)
-      }
-   procMainLine := searchFileProcs(procMainFile,"main") | 1
-
-   # loads the source files that we can find and keep a 
-   # list of the ones that we could not find. Note a source file
-   # can be opened more that once so we need to be careful !!!
-   every i := 1 to *fileNames do{
-      f := getFileName(fileNames[i])
-      if not member(foundFiles, f) then{
-         if s := dopen(fileNames[i]) then {
-            b := *srcText
-            while(put(srcText, read(s)))
-            close(s)
-            e := *srcText
-            insert(foundFiles, f)
-            srcIndex[f] := fileIndex(b,e)
-            }
-         else {
-            insert(missingFiles, fileNames[i]) # keep it as it is
-            }
-         }
-      #else
-         #write("File is already found:",f)
-      }
-   return
-end
-
-#
-# Searchs the fname for a specific linenum, and make sure it is applicable
-# for a breakpoint condition, if it is , it returns that line source code.
-#
-method searchFileLines(fname, linenum)
-   local temp, temp1
-
-   if member(foundFiles, fname) then{
-      temp := srcText[linenum + srcIndex[fname].fbegin]
-      temp ? {
-         tab(many(WhiteSpace))
-         if (temp1 := move(1)) then {
-            if temp1 == "#" then  fail
-            return temp1 ||:= tab(many(ValidSymbol)) #CHARACTER ++ punctuation
-            }
-         else  fail
-         }
-       }
-   else  fail
-end
-
-#
-# Used by cmdBreak
-# Searchs the Fname for a specific ProcName and returns its linenum
-#
-method searchFileProcs(Fname, ProcName)
-   local temp, temp1, offset, base
-
-   if \Fname & \ProcName & member(foundFiles, Fname) then{
-      base := srcIndex[Fname].fbegin
-      offset := 1
-      while temp := srcText[base + offset] do{
-         temp ? {
-            tab(many(WhiteSpace))
-            if (temp1 := tab(many(&letters))) == "procedure" then {
-              tab(many(WhiteSpace))
-              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
-              if temp1 == ProcName then {
-                 return offset
-                 }  
-              }
-            }
-         offset +:= 1
-         }
-      }
-   else{
-      fail
-      }
-end
-
-#
-# Used by cmdBreak
-# Searchs the Fname for a specific ProcName and returns its linenum
-#
-method searchFileClasses(Fname, cname)
-   local temp, temp1, offset, base
-
-   if \Fname & \cname & member(foundFiles, Fname) then{
-      base := srcIndex[Fname].fbegin
-      offset := 1
-      while temp := srcText[base + offset] do{
-         temp ? {
-            tab(many(WhiteSpace))
-            if(temp1 := tab(many(&letters))) == "class" then{
-              tab(many(WhiteSpace))
-              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
-              if temp1 == cname then{
-                 return offset
-                 }  
-              }
-            }
-         offset +:= 1
-         }
-      }
-   else{
-      fail
-      }
-end
-
-#
-# Used by cmdBreak
-# Searchs the Fname for a specific ProcName and returns its linenum
-#
-method searchClassMethods(mthd, cname, fname)
-   local temp, temp1, offset, base, cline
-
-
-   if cline := searchFileClasses(fname, cname) then{
-      base := srcIndex[fname].fbegin + cline
-      offset := 1
-      while temp := srcText[base + offset] do{
-         temp ? {
-            tab(many(WhiteSpace))
-            if(temp1 := tab(many(&letters))) == "method" then{
-              tab(many(WhiteSpace))
-              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
-              if temp1 == mthd then{
-                 return (offset+cline)
-                 }  
-              }
-            }
-         offset +:= 1
-         }
-      }
-   else{
-      fail
-      }
-end
-
-#
-# returns the executable name
-#
-method getExeName()
-   if exeName =="?" then
-      fail
-   return exeName 
-end
-
-#
-# returns the File Name that has the procedure main 
-#
-method getMainFileName()
-   if /procMainFile then
-      fail
-   return procMainFile
 end
 
 #
 # returns the total number of lines in a file.
 #
 method getFileTotalLines(fname)
-   /fname := procMainFile
-
-   if member(foundFiles, fname) then
-      return srcIndex[fname].fend - srcIndex[fname].fbegin #+ 1
-   else
-      fail
-end
-
-#
-# checks whether fname is a source file or not
-#
-method isSrcFile(fname)
-  if \fname then{
-     if not find(".icn", fname) then fname ||:= ".icn" 
-     if member(foundFiles, fname) | member(missingFiles, fname) then
-        return
-     }
-  fail
-end
-
-#
-# checks to see whether a line number is in the file limits or not
-#
-method isInFile(fname, line)
-   local b, e
-   
-   if line > 0 & member(foundFiles, fname) then{
-      b := srcIndex[fname].fbegin
-      e := srcIndex[fname].fend
-      if (b + line <= e) & ( e - line >= b ) then
-         return
-      }
-   fail
+   /fname := keyword("file", MONITORED) | procMainFile
+   if lines := *(\fileText[fname]) then return lines
 end
 
 #
 # returns an image of the current source line
 #
-method getSrcLine(fname, line)
-
-    /fname := keyword("file", Monitored)
-    /line  := keyword("line", Monitored)
-    fname := getFileName(fname)
-
-    if member(foundFiles, fname) then #& isInFile(f, line) then       
-       return srcText[line + srcIndex[fname].fbegin]
-    else
-       fail
-end
-
-#
-# returns the file name of a procedure 
-#
-method getProcFile(pname, pkgname)
-    local fname
-
-    every fname := !foundFiles do
-       if searchFileProcs(fname, pname) then {
-          if /pkgname | isPackageFile(fname, pkgname) then
-             return fname
-          }
-    fail
-end
-
-#
-# predicate that tells whether a file [fname] is the package [pkgname]
-#
-method isPackageFile(fname, pkgname) 
-   local base, offset, file
-
-   if \fname & \pkgname & member(foundFiles, fname) & \srcIndex[fname] then {
-      base := srcIndex[fname].fbegin
-      offset := srcIndex[fname].fend
-      file := srcText[base + offset] 
-      file ? {
-         tab(many(WhiteSpace))
-         if(tab(many(&letters))) == "package" then {
-            tab(many(WhiteSpace))
-            if tab(many(&letters)) == pkgname then return
-            }
-         }
-      }
-end
-
-#
-# returns the line number of a procedure name
-#
-method getProcLine(pname, pfile)
-    local pline
-
-    /pfile := getProcFile(pname)
-    if \pfile then
-       if pline := searchFileProcs(pfile, pname) then
-          return pline
-    fail
-end
-
-#
-# returns the procedure name based on a line number and a file name
-#
-method getProcName(fname, line)
-   local fstart, srcLine, temp, temp1
-
-   if \fname & \line & member(foundFiles, fname) then{
-      fstart  := srcIndex[fname].fbegin
-      srcLine := fstart + line
-      #write("----fstart=",fstart,"   srcLine=",srcLine) 
-      # search backward from the line up until the procedure header
-      while srcLine >= fstart & temp := srcText[srcLine] do{
-         #write("----temp=",temp)
-         temp ? {
-            tab(many(WhiteSpace))
-            if(temp1 := tab(many(&letters))) == ("procedure"|"method") then{
-              tab(many(WhiteSpace))
-              temp1 := tab(many(CHARACTER))#CHARACTER ++ other_char
-              return temp1
-              }
-            }
-         srcLine -:= 1 
-         }
-      }
-   else fail
-end
-
-#
-# returns the file name of a procedure 
-#
-method getClassFile(cname)
-    local fname
-
-    every fname := !foundFiles do
-       if searchFileClasses(fname, cname) then
-          return fname
-    fail
-end
-
-#
-# returns the file name of a procedure 
-#
-method getMethodLine(m_name, c_name, f_name)
-    local fname, line
-
-    if /f_name then{
-       if fname := getClassFile(c_name) then
-          f_name := fname
-       else fail
-       }
-    
-    if line := searchClassMethods(m_name, c_name, f_name) then
-       return line
-    else
-       fail
+method getSrcLine(filename, lineno)
+   if \(code := fileText[\filename][\lineno]) then return code
 end
 
 #
 # prints out the source code
 #
 method getSrcCode(fname)
-   local i, b, e, code:="\n"
+   local text, line, code := []
 
-   if /fname then fname := keyword("file", Monitored)
+   if /fname then fname := keyword("file", MONITORED)
 
-   if \srcIndex[fname] then {
-      b := srcIndex[fname].fbegin
-      e := srcIndex[fname].fend
-      every i:= b  to e do
-         code ||:= i||"\t"||srcText[i]||"\n"
-
+   if \(text := fileText[fname]) then {
+      every line := 1 to *text do 
+         put(code, line||"\t"||text[line])
       return code
       }
 end
@@ -451,6 +680,16 @@ method isLoaded(fname)
 end
 
 #
+# check to see if file is Missing or not
+# missing files are those that are not opend and not placed in srcText
+#
+method isMissing(fname)
+   if member(missingFiles, fname) then
+      return
+   fail
+end
+
+#
 # returns a sorted list of all missing src file names
 #
 method getMissingFiles()
@@ -462,16 +701,6 @@ method getMissingFiles()
       }
    else
       fail
-end
-
-#
-# check to see if file is Missing or not
-# missing files are those that are not opend and not placed in srcText
-#
-method isMissing(fname)
-   if member(missingFiles, fname) then
-      return
-   fail
 end
 
 #
@@ -534,8 +763,8 @@ end
 #
 method getSrcPath()
    local path
-
-   path := "."
+   comp_dir := chdir(".")  
+   path := ". " || comp_dir
 
    return path 
 end
@@ -549,10 +778,11 @@ method getLibPath()
    #
    # Prepend udb default IPATH
    #
-   ipath := binPath || ".." || PS || "ipl" || PS || "procs"  || " " ||
-            binPath || ".." || PS || "ipl" || PS || "gprocs" || " " ||
-            binPath || ".." || PS || "ipl" || PS || "mprocs" || " " ||
-            ipath
+ipath ||:= " " || binPath || ".." || PS || "ipl" || PS || "procs"  || " " ||
+              binPath || ".." || PS || "ipl" || PS || "gprocs" || " " ||
+              binPath || ".." || PS || "ipl" || PS || "mprocs" || " " ||
+              binPath || ".." || PS || "uni" || PS || "unicon" || " " 
+           
 
    return ipath
 end
@@ -562,7 +792,6 @@ end
 #
 method getIncPath()
    local lpath := pathOSCompat(lpaths())
-
    return lpath
 end
 
@@ -586,60 +815,7 @@ $endif
 end
 
 #
-# Searches through the specified source path for the requested file.
-# It looks first in current directory, lib directories, then inc directories
-#
-# NOTE:
-# Maybe add a feature to find all matches, and if there is more than one,
-# issue a warning, or maybe allow user to decide which to add.
-#
-method dopen(s)
-   local File, spaths, path, f
-
-   if File := open(s) then {
-      s := getFileName(s)      
-      insert(userFiles, s)
-      return File
-      }
-
-   s := PS || s      # platform-specific
-   srcPath ? {
-      while path := tab(find(" ") | 0) do {
-         if File := open(path || s) then {
-            s := getFileName(s)      
-            insert(userFiles, s)
-            return File
-            }
-         tab(many(' ')) | break
-         }
-      }
-
-   libPath ? {
-      while path := tab(find(" ") | 0) do {
-         if File := open(path || s) then {
-            s := getFileName(s)      
-            insert(libFiles, s)
-            return File
-            }
-         tab(many(' ')) | break
-         }
-      }
-
-   incPath ? {
-      while path := tab(find(" ") | 0) do {
-         if File := open(path || s) then {
-            s := getFileName(s)      
-            insert(incFiles, s)
-            return File
-            }
-         tab(many(' ')) | break
-         }
-      }
-   fail
-end
-
-#
-#
+# Allows for changing the source path
 #
 method cmdDirectory(cmd)
    local paths := ""
@@ -667,22 +843,17 @@ method cmdShowDir(cmd)
       return
       }
    else {
-      DState.State := ERROR
       Message := "\n   Undefined Command: \""||DState.cmdHistory[1]||"\""||
                  "\n   Try \"help\" for assistance."
-      DState.Write(Message)
+      write(Message)
       } 
 end
 
-#
-#
-#
 method reinit()
    exeName     := "?"
    exeSize     := -1
 
-   srcText     := []
-   srcIndex    := table()
+   fileText    := table()
 
    fileNames   := []
    userFiles   := set()
@@ -690,24 +861,17 @@ method reinit()
    libFiles    := set()
    foundFiles  := set()
    missingFiles:= set()
+
+   curr_symtab :=
+   symtab := Symtab(&null,"global","global")
+   functions := set()
 end
 
 #
 # Initialization
 #
 initially()
-   exeName     := "?"
-   exeSize     := -1
-
-   srcText     := []
-   srcIndex    := table()
-
-   fileNames   := []
-   userFiles   := set()
-   incFiles    := set()
-   libFiles    := set()
-   foundFiles  := set()
-   missingFiles:= set()
+   reinit()
 
    binPath := getBinPath()
    defSrcPath := srcPath := getSrcPath()

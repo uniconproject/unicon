@@ -1,0 +1,291 @@
+#
+# system.icn - Provides output and utility services for udb
+# Author - Gigi Young
+# 
+
+global udb_verbose_flag, udb_debug_flag, udb_no_more_flag
+
+#
+# Print function for verbosity. Not currently used, but will be useful for
+# runtime verbosity levels.
+#
+procedure vwrite(s[])
+   if \udb_verbose_flag then {
+      every i := 1 to *s-1 do writes(s[i])
+      write(s[-1])
+      }
+end
+
+#
+# Print function for debugging
+#
+procedure debug(s[])
+   if \udb_debug_flag then {
+      every i := 1 to *s-1 do writes(&errout,s[i])
+      write(&errout,s[-1])
+      }
+end
+
+#
+# Reads and outputs the text output of system command (cmd) if successful. 
+# Otherwise fails
+#
+procedure read_system_cmd(cmd)
+   local file, s := ""
+
+   file := open(cmd,"p") | fail
+   while s ||:= read(file) 
+   close(file)
+   return s
+end
+
+#
+# Procedure for getting terminal dimensions on windows. Not tested yet
+#
+procedure get_win_term_dims()
+   local s, term_lines, term_cols, ws := ' \t\n'
+
+   s := read_system_cmd("mode")
+   s ? {
+      ws := ' \t\n'
+      if tab(find("Lines:")) & move(6) & tab(many(ws)) then {
+         term_lines := tab(many(&digits))
+         if tab(find("Columns:")) & move(8) & tab(many(ws)) then {
+            term_cols := tab(many(&digits)) 
+            return [term_lines, term_cols]
+            }
+         }
+      } 
+   
+end
+ 
+#
+# Simplified more function for UNIX. Should probably be checked for compatibilty
+#
+# Assigning (udb_no_more_flag) disables more(). Currently, passing -line to udb
+#    'udb -line [args]'
+# disables more. 
+# Think about adding a udb command to disable more.
+#
+# A contender for being added to the Unicon library. Think about this 
+# more later. Heh.
+#
+procedure more(L, msg)
+   local term_cols, term_lines, page_lines, total_lines, output_lines, s
+   local curr_line, prompt
+
+   if \msg then push(L, msg)
+
+   # skip more functionality, just print all lines
+   if \udb_no_more_flag then {
+      every write(!L)
+      return
+      }
+   
+   format_lines(L)
+
+   prompt := "<Press 'b'/'f' to scroll back/forward, 'enter' for next line, " ||
+             "'q' to quit>"
+   total_lines := *L
+   curr_line := 1 
+
+   # get terminal line and column info
+$ifdef _UNIX
+   term_lines := read_system_cmd("tput lines") 
+   term_cols := read_system_cmd("tput cols")
+$else
+   term_lines := 25
+   term_cols := 80
+
+   # This would probably work for Windows. It has not been tested yet
+   #tmp := get_win_term_dims()
+   #term_lines := tmp[1]
+   #term_cols := tmp[2]
+$endif
+
+   page_lines := term_lines - (*prompt/term_cols + 1)
+   output_lines := page_lines
+
+   repeat {
+      every 1 to output_lines do {
+         write(L[curr_line])
+         if (curr_line +:= 1) > total_lines then break break
+         }
+      writes(prompt)
+
+      # get user input
+      while c := getch() do {
+         case c of {
+            # get previous page
+            "b": { 
+               if curr_line - 2*page_lines < 1 then curr_line := 1
+               else curr_line -:= 2*page_lines
+               clear_line(*prompt)
+               write("...back 1 page")
+               break 
+               }
+            # get next page
+            " "|"f": { 
+               output_lines := page_lines
+               clear_line(*prompt)
+               break 
+               }
+            # get next line
+            "\n": {  
+               output_lines := 1
+               clear_line(*prompt)
+               break 
+               }
+            # quit
+            "q": { 
+               clear_line(*prompt)
+               break break 
+               }
+            }
+         }
+      }
+end
+
+#
+# Helper function for more. Handles tabs and line overflow for terminal
+#
+procedure format_lines(L)
+   local term_cols
+   local lines := [], line, i
+
+$ifdef _UNIX
+   term_cols := read_system_cmd("tput cols")
+$else
+   #
+   # Find a better solution for Windows other than using default settings.
+   # Maybe the windows command "mode con"?
+   #
+   term_cols := 80
+
+   # not tested yet. possible solution for windows
+   #tmp := get_win_term_dims()
+   #term_cols := tmp[2]
+$endif
+
+   i := 1
+   while i <= *L do { 
+      L[i] ? {
+         start_pos := 1
+         num_char := 0
+         while c := move(1) do {
+            if c == "\t" then {
+               num_char +:= (8 - num_char % 8) - 1
+               }
+            else num_char +:= 1
+
+            if num_char >= term_cols then {
+               #write("adding: ",L[i][start_pos:&pos - 1])
+               put(lines, L[i][start_pos:&pos - 1])
+               start_pos := &pos - 1
+               num_char := 0 
+               } 
+            }
+         }
+      if *lines > 0 then {
+         #write("adding: ",L[i][start_pos:0])
+         put(lines, L[i][start_pos:0])
+
+         delete(L,i)
+         while line := pop(lines) do {
+            insert(L,i,line)
+            i +:= 1
+            }
+         }
+      else i +:= 1
+      }
+      
+end
+
+#
+# Helper function for more. Clears the current line
+#
+procedure clear_line(len)
+   writes("\r")
+   every 1 to len do writes(" ")
+   writes("\r")
+end
+
+# 
+# Inserts string s into list L in alphabetical order 
+# Assumes that L is sorted already
+# 
+procedure insert_sorted(L, s)
+   local size := *L , i := (size+1)/2, lower := 1, upper := *L, rv
+
+#   write("inserting '",s,"'")
+#   every j := 1 to *L do write("L[",j,"]: ", L[j])
+
+   if size = 0 then put(L, s)
+   else { 
+      while lower <= upper do {
+      #repeat {
+         rv := str_cmp(s, L[i])
+#            write(s," vs ",L[i]," - ",rv)
+#            write(rv,": ",lower," ",i," ",upper)
+         if rv = 0 then { 
+            insert(L, i, s)
+            break
+            }
+         else if rv = -1 then {
+            if i = lower then i -:= 1
+            else {
+               upper := i - 1
+               i := (lower + upper)/2
+               }
+            }
+         else if rv = 1 then {
+            if i = upper then i +:= 1
+            else {
+               lower := i + 1
+               i := (lower + upper)/2
+               }
+            }
+
+         if i < lower then {
+            if lower = 1 then push(L, s)
+            else insert(L, lower, s)
+            break
+            }
+         else if i > upper then {
+            if upper = size then put(L, s)
+            else insert(L, i, s)
+            break
+            }
+         }
+      }
+end
+
+#
+# This probably already exists somewhere. C-like unicon procedure
+# Returns 1 if s2 is lexically greater than s1,
+# returns -1 if s1 is lexically greater than s2,
+# or returns 0 if s1 is lexically equal to s2.
+#
+procedure str_cmp(s1, s2) 
+   local i1 := i2 := 1 
+
+   repeat {
+      if i1 > *s1 then return -1
+      if i2 > *s2 then return 1 
+
+      c1 := ord(s1[i1])
+      c2 := ord(s2[i2])
+      if c1 = c2 then {
+         i1 +:= 1
+         i2 +:= 1
+         }
+      else if c1 < c2 then return -1   
+      else return 1
+      } 
+   c1 := ord(s1[i1])
+   c2 := ord(s2[i2])
+   if c1 = c2 then return 0
+   else if c1 < c2 then return -1   
+   else return 1
+end
+

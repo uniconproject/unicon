@@ -1,0 +1,680 @@
+#
+# symtab.icn - creates a symbol table with filename and line number information 
+# Author - Gigi Young
+#
+
+class Symtab(
+   parent,	# reference to parent symtab, if any
+   tag,		# instance type (global, proc, record, class, method, package)
+   label,	# identifier
+   filename,	# filename that symbol is contained in
+   abs_filename,# absolute filename that symbol is contained in
+   start_line,	# starting line number of symbol
+   end_line,	# endinf line number of symbol
+
+   filetab,	# two-layered table that gives a symbol table for a 
+		# proc, class, or pkg with a filename and line number
+		#
+		# filetab[filename] => table of symtabs associated with 
+		#        [filename] with lineno as keys (lineno_tab)
+		# lineno_tab[line] => symtab of [filename:lineno]
+		#
+
+   nametab,	# table that gives the symbol table for a proc, class
+		# or package with a name
+
+   pkgtab, 	# procedures and globals may share names with a package. 
+		# separate table for packages (key: pkg name, value: pkg symtab
+
+# space vs efficiency - Each time a lookup is called, requires sifting through
+#                       tables to find correct name type, efficiency O(n) where
+#                       n is the size of the table.
+#                       If these additional members are added, sifting is only
+#                       performed once.
+
+   # lists of strings of the corresponding identifiers
+   locals,      # different based on tag of symbol table
+                # "global", "package" - global variable
+                # "proc", "method" - local variable
+                # "class", "record - member variable
+   statics,     # static variables, only for "proc", "method"   
+   params,      # parameters, only for "proc", "method"
+
+   procs,
+   packages,
+   records,
+   classes,
+   methods
+   )
+
+#
+# Uses access functions to build a symbol table. It returns a set of
+# built-in functions used in the source code.
+# This method should be called after EvInit(TP).
+#
+method initialize(fileText)
+   local unmangled_name, cls, pkg
+   local var_name, var_ref, var_type, var_img
+   local skip := 0, classes := set(), packages := set(), symt, pkg_symt
+   local functions := set()
+   local filename, lineno
+
+   #udb_verbose_flag := 1
+   #udb_debug_flag := 1
+
+   every x := globalnames(Monitored) do {
+      if skip > 0 then { skip -:= 1; next }
+      # globalnames() keeps a reference for strings in the icode
+      # This is very bad for multiple loaded programs
+      # So, this image() thing takes care of the problem by
+      # allocating a new string in the string region. 
+      x := image(x)[2:-1]
+
+      if find("__oprec",x) then next # skip oprecs
+
+      # get TP's variable reference 
+      var_ref := variable(x, Monitored) # &null for global vars for some reason
+      var_type := type(var_ref)
+      var_img := image(var_ref)
+
+      # separate variable tag and name, messes up string slice if i = 1
+      every i := find(x,var_img) do
+         if i > 1 then break
+      var_tag := var_img[1:i-1] | &null
+      var_name := var_img[i:0] | x
+
+      #debug("\nglobalname: '",x,"'")
+      #debug("var_type: '",var_type,"'   var_img: '",var_img,"'")
+      #debug("var_tag: '",var_tag,"'   var_name: '", var_name,"'")
+
+      # unmangle name - 
+      # class order - class constructor, record constructor, [methods], oprec,
+      #               constructor, initialize
+      pkg := cls := unmangled_name := &null
+      \var_name ? {
+         # class constructor or package
+         if temp := tab(find("__")) & move(2) then {
+            # class constructor/methods vector
+            if match("state"|"methods"|"oprec") then {
+               cls := temp 
+               }
+            # package
+            else {
+               pkg := temp 
+               # package class constructor
+               if temp := tab(find("__")) & move(2) then {
+                  if match ("state"|"methods"|"oprec") then {
+                     cls := temp
+                     }
+                  }
+               # package class method, proc, record, or "initialize"/constructor
+               else {
+                  # constructor or initialize, skip
+                  if (temp := tab(find("initialize")) & tab(0)=="initialize") |
+                     (temp := tab(0)) & member(classes, pkg||"__"||temp) then {
+                     next
+                     }
+
+                  # check if class method
+                  if temp := tab(find("_")) &  
+                     member(classes, pkg||"__"||temp) & move(1) then {
+                     cls := temp
+                     }
+                  unmangled_name := tab(0)
+                  }
+               }
+            }
+         else {
+            # constructor or initialize, skip
+            if (temp := tab(find("initialize")) & tab(0) == "initialize") |
+               (temp := tab(0)) & member(classes, temp) then {
+               next
+               }
+            # check if class method
+            if temp := tab(find("_")) &  
+               member(classes, temp) & move(1) then {
+               cls := temp
+               }
+            unmangled_name := tab(0)
+            }
+         }  # end unmangling
+
+      #debug("package: '",pkg,"' | class: '", cls,"' | unmangled_name: '", unmangled_name,"'") 
+
+      #
+      # add to packages, classes, and packaged classes to sets 
+      #
+      if \pkg then {
+         if not member(packages, pkg) then {
+            insert(packages, pkg) 
+            new_symt := Symtab(self,"package",pkg)
+            add_symtab(new_symt,var_ref) 
+            }
+         if \cls then {
+            if not member(classes, pkg||"__"||cls) then 
+               insert(classes, pkg||"__"||cls)
+            }
+         }
+      else if \cls then {
+         if not member(classes, cls) then insert(classes, cls)
+         }
+
+      # find target symbol table to add to
+      symt := lookup_package(\pkg) | self
+      # we have a global variable
+      if /var_tag then {
+         symt.add_global(unmangled_name)
+         }
+      # procs/records
+      else if /cls then {
+         if var_tag == "function" then {
+            if not member(functions, unmangled_name) then
+               insert(functions, unmangled_name)
+            }
+         else {
+            if var_tag == "procedure" then
+               new_symt := Symtab(symt,"proc",unmangled_name)
+            else if var_tag == "record constructor" then
+               new_symt := Symtab(symt,"record",unmangled_name)
+            symt.add_symtab(new_symt,var_ref)
+            }
+         }
+      # classes/methods
+      else if \cls then {
+         # __state, __method, or __oprec => add class
+         if /unmangled_name then {
+            new_symt := Symtab(symt,"class",cls)
+            symt.add_symtab(new_symt,var_ref)
+            }
+         # add method
+         else if cls_symt := symt.lookup_class(cls) then {
+            new_symt := Symtab(cls_symt,"method",unmangled_name) 
+            cls_symt.add_symtab(new_symt,var_ref)
+            }
+         }
+      }
+   build_filetab(fileText)
+   print_symtab()
+   return functions
+end
+
+#
+# Populates fileText, a member variable of SrcFile that is a table of
+# lists of strings (filename:file stored line by line).
+#
+# This method can only obtain the start line info for global names and
+# uses string scanning to find the 'end' of procedures and methods. The
+# search algorithm is simplistic currently. It seems unlikely that 'end'
+# will be preceeded by anything by whitespace and followed by anything
+# but whitespace or comments. In the event that this becomes an issue,
+# modify 'method find_end_token'
+#
+method build_filetab(fileText)
+   local filename, start_line, symt
+   local i, j
+   local start_lines := []
+
+   if tag ~== "global" | /fileText then fail
+
+   # build filetab file by file
+   every filename := key(filetab) do {
+      # add errors when file isn't found
+      if /fileText[filename] then {
+         #debug("'",filename,"' not found, debugging info may be inaccurate")
+         next
+         }
+
+      # get entry points in (filename)
+      every start_line := key(filetab[filename]) do {
+         put(start_lines,start_line)
+         #debug(start_line)
+         }
+
+      # check each entry point in (filename)
+      while start_line := pop(start_lines) do {
+         #debug(filename,":",start_line)
+         if /(symt := filetab[filename][start_line]) then {
+            #debug("symtab not found at ",filename,":",start_line)
+            next
+            }
+         # build the filetab if the entry point is for a proc or method
+         if symt.tag == ("proc"|"method") then {
+            i := start_line
+
+            while \(line := fileText[filename][i]) do {
+               # find "end" for proc/method
+               if find_end_token(line) then {
+                  symt.end_line := i
+                  filetab[filename][i] := symt
+                  #debug("[",tag," ",label,"].filetab[",filename,"][",i,"] := [",symt.tag," ",symt.label, "]")
+                  break # break back to checking entry points
+                  }
+
+               if /filetab[filename][i] := symt then {
+                  #debug("[",tag," ",label,"].filetab[",filename,"][",i,"] := [",symt.tag," ",symt.label, "]")
+                  }
+               i +:= 1
+               }
+            }
+         }
+      }
+end
+
+#
+# A simplistic method for find the 'end' reserved word for methods and
+# procedures. This method searches one line of text at a time. Success 
+# indicates that 'end' was found, and failure if not.
+#
+# May need additions/modifications in the future.
+#
+method find_end_token(line)
+   local L := [], end_num, len := *line, num_q_before := num_q_after := 0
+   static ws := ' \t\f'
+
+   line ? {
+      every i := find("end") do {
+         # "end" is at start of line or preceeded by whitespace 
+         if i = (1|many(ws)) & tab(i+3) then {  
+            # "end" is at end of line
+            if tab(0) == "" then return
+
+            # "end" followed by whitespace and or comment
+            else if tab(j := many(ws)) then {
+               # "end" followed by whitespace
+               if tab(0) == "" then return
+               # comment
+               else if move(1) == "#" then return
+               # multi-line literal, fail
+#               else if *tab(0) > 0 {
+#                  while any(ws,move(-1))
+#                  if c := move(-1) == "_" then fail
+#                  } 
+               }
+            }
+         }
+      }
+   
+end
+
+#
+# Helper method for adding new symbol tables to the main symbol table
+#
+method add_symtab(symt, var_ref)
+   local filename, lineno
+
+   #debug("adding to [",tag," ",label,"]")
+   # check for redeclarations  
+   if not add_symtab_name(symt, var_ref) then { fail }
+   
+   # get filename/lineno info
+   symt.filename := keyword("file",var_ref) | &null
+   symt.start_line := keyword("line",var_ref) | &null
+
+   # file/line info needed for method/proc lookups 
+   if symt.tag == ("method"|"proc") then 
+      add_to_filetab(symt)
+
+   # add variables and scopes to bookkeeping fields
+   case symt.tag of {
+      "proc": { 
+         add_locals(symt,var_ref)
+         add_statics(symt,var_ref)
+         add_params(symt,var_ref)
+         insert_sorted(procs, symt.label) 
+         }
+      "method": { 
+         add_locals(symt,var_ref)
+         add_statics(symt,var_ref)
+         add_params(symt,var_ref)
+         insert_sorted(methods, symt.label) 
+         }
+      "class": { 
+         add_params(symt,var_ref)
+         insert_sorted(classes, symt.label) 
+         }
+      "record": { 
+         add_params(symt,var_ref)
+         insert_sorted(records, symt.label) 
+         }
+      "package": { 
+         insert_sorted(packages, symt.label) 
+         }
+      default: { 
+         #debug("add_symtab(): unrecognized tag") 
+         }
+      }
+   return
+end
+
+#
+# Helper method that adds global variables to a symbol table. It fails
+# if it is not a global variable or a redeclaration occurs.
+#
+method add_global(var_name)
+   #debug("adding to [",tag," ",label,"]")
+   if tag == ("global"|"package") & type(var_name) == "string" then { 
+      if /nametab[var_name] then {
+         nametab[var_name] := "local"
+         insert_sorted(locals, var_name) 
+         print_add(var_name) 
+         return
+         }
+      else {
+         #debug("redeclaration of global ",var_name)
+         }
+      } 
+end
+
+#
+# Helper method that adds a symbol table entry to a symbol table. It fails if a 
+# redeclaration occurs. More specifically, it adds the name to the name table.
+#
+method add_symtab_name(symt,var_ref)
+   local name_table, s, filename, start_line
+
+   s := symt.label
+   filename := keyword("file",var_ref) | &null
+   start_line := keyword("line",var_ref) | &null
+
+   # package names get put into (pkgtab) due to namespace conflict
+   if symt.tag == "package" then name_table := pkgtab
+   else name_table := nametab
+
+   # redeclaration
+   if \nametab[s] then {
+      if symt.tag == "package" && filename ~== symt.filename then {
+         }
+      else {
+         #debug("redeclaration of ",symt.tag," ",s)
+         fail
+         }
+      #debug("redeclaration of ",symt.tag," ",s)
+      #fail
+      }      
+ 
+   name_table[s] := symt
+   print_add(symt) 
+
+   return
+end
+
+#
+# Adds a symbol table scope entry to the file table. 
+#
+method add_to_filetab(symt)
+   local filename, i, Self := self
+   filename := symt.filename
+   i := symt.start_line 
+
+   # go to the global symbol table
+   while Self.tag ~== "global" do Self := Self.parent
+
+   /Self.filetab[filename] := table()
+   Self.filetab[filename][i] := symt
+   #debug("[",Self.tag," ",Self.label,"].filetab[",filename,"][",i,"] := [",symt.tag," ",symt.label, "]")
+end
+
+
+#method add_to_procs(symt)
+#   if not member(procs, symt.label) then 
+#     # insert_sorted(procs, symt.label)
+#      insert_sorted(procs, symt.label)
+#end
+
+#
+# Given the reference to (symt), obtain the local variables present in its
+# scope.
+#
+method add_locals(symt,var_ref)
+   every x := localnames(var_ref, Monitored) do {
+      if not (/symt.nametab[x] := "local") then {
+         #debug("redeclation of local ",x," in '",symt.tag," ",symt.label,"'")
+         }
+      #debug("added local ",x," to [",symt.tag," ",symt.label,"]")
+      insert_sorted(symt.locals,x)
+      }
+end
+
+#
+# Given the reference to (symt), obtain the static variables present in its
+# scope.
+#
+method add_statics(symt,var_ref)
+   every x := staticnames(var_ref, Monitored) do {
+      if not (/symt.nametab[x] := "static") then {
+         #debug("redeclation of static ",x," in '",symt.tag," ",symt.label,"'")
+         }
+      #debug("added statics ",x," to [",symt.tag," ",symt.label,"]")
+      insert_sorted(symt.statics,x)
+      }
+end
+
+#
+# Given the reference to (symt), obtain the parameters present in its
+# scope.
+#
+method add_params(symt,var_ref)
+   every x := paramnames(var_ref, Monitored) do {
+      if not (/symt.nametab[x] := "param") then {
+         #debug("redeclation of param ",x," in '",symt.tag," ",symt.label,"'")
+         }
+      #debug("added param ",x," to [",symt.tag," ",symt.label,"]")
+      insert_sorted(symt.params,x)
+      }
+end
+
+#
+# Printing methods for debugging
+#
+method print_symtab(tabs:"")
+   if /udb_debug_flag then fail
+
+   writes(tabs,tag, " ", label) 
+   if \filename then
+      write(" found at ",filename,":",
+             start_line,":",end_line)
+   else writes("\n")
+
+   # find packages
+   every k := key(pkgtab) do {
+      pkgtab[k].print_symtab(tabs||"\t")
+      }
+   # find variables, procs, classes, methods
+   every k := key(nametab) do {
+      # procs, classes, methods
+      if type(nametab[k]) == "Symtab__state" then
+         nametab[k].print_symtab(tabs||"\t")
+      # variables: locals, statics, params, members, globals
+      else
+         write(tabs,"\t",nametab[k],", ",k)
+      }
+end
+
+method print_add(x)
+   if \udb_debug_flag then {
+      case type(x) of {
+         "Symtab__state": {
+            write("added '",x.tag," ",x.label,"' to '",tag," ",
+                  label,"'") 
+            }
+         "string": {
+            write("added global ",x," to '",tag," ",label,"'")
+            }
+         }
+      }
+end
+
+################################
+# SymbolTable interface methods
+################################
+
+#
+# Locates and returns the appropriate scope with a filename and line number. 
+# This search is done via the global symbol table.
+#
+method lookup_fileline(filename, lineno)
+   local symt, temp
+
+   if \filename & \lineno then {
+      line := numeric(lineno)
+
+      # check for packages, package is a single file
+      if \(temp := filetab[filename]) & type(temp) == "Symtab__state" then
+         symt := temp
+      else symt := self
+
+      if \(temp := symt.filetab[filename][line]) then {
+         if type(temp) ~== "Symtab__state" then {
+            #debug(image(temp)," is not a symtab")
+            fail
+            }
+           
+         symt := temp
+
+         # class, search for methods 
+         if symt.tag == "class" then {
+            if \(temp := symt.filetab[filename][line]) then 
+               symt := temp
+            }
+         return symt
+         }
+      else {
+         #debug("could not find symtab at ",filename,":",line)
+         }
+      }
+end
+
+method lookup_name(name) 
+   local x
+   if \name then {
+      if \(x := nametab[name]) then 
+         return x 
+      }
+end
+
+#
+# should be used by current symtab
+#
+# looks up name in name table in the current scope, and looks in parent
+# scopes if not found.
+#
+method lookup_scope_name(name)
+   local symt, temp
+   if \name then {
+      symt := self
+
+      # loop until name is found or fail
+      while /(temp := symt.nametab[name]) do {
+         # if parent exists, do search on parent
+         if \(symt.parent) then symt := symt.parent
+         else fail
+         }
+
+      case type(temp) of {
+         "string": {
+            # check if its a global
+            if symt.tag == ("global"|"package") & temp == "local" then
+               return "global"
+            return temp
+            }
+         "Symtab__state": {
+            return temp
+            }
+         default: {
+            #debug("lookup_scope_name(): unknown object: ",image(temp)," ",type(temp))
+            }
+         }
+      }
+end
+
+
+
+#
+# Used by class Data for printing source information. Returns the symbol
+# table reference for package (pkg) if found. Otherwise fails
+#
+method lookup_package(pkg)
+   if \(symt := pkgtab[pkg]) then {
+      return symt
+      }
+   else {
+      #debug("failed to find package '",pkg,"'")
+      }
+end
+
+#
+# Used by class Data for printing source information. Looks for a class 
+# within the global symbol table, or within a package specified by (pkg),
+# if given.
+#
+method lookup_class(cls, pkg)
+   local symt := self
+   if \cls then {
+      if \pkg then {
+         if not (symt := lookup_package(pkg)) then fail
+         }
+
+      if \(symt := symt.nametab[cls]) then {
+         return symt
+         }
+      }
+end
+
+
+#########################################################
+#
+# Gets the package name from a package-mangled name
+#
+#method get_pkg_name(s)
+#   local pkg_name
+#   pkg_name := tab(find("__",s))
+#   return pkg_name
+#end
+
+#
+# Gets the unmangled name for a variable, proc, or class in a package
+# 
+#method get_unmangled_name(s)
+#   local unmangled_name := s
+#   s ? {
+#      tab(find("__")) | return s
+#      move(2) & unmangled_name := tab(0)
+#      }
+#   return unmangled_name
+#end
+
+#
+# Gets the filename from a relative or absolute path
+#
+#method get_filename(s)
+#   local filename
+#     
+#   s ? {
+#      tab(0)
+#      while (c := move(-1)) ~== "/"
+#      filename := tab(0)
+#      }
+#   return filename
+#end
+
+#
+# init
+#
+initially
+   start_line := 
+   end_line   := "??"
+   filetab := table()
+   nametab := table()
+   pkgtab  := table()
+
+   locals  := []
+   statics := []
+   params  := []
+   globals := []
+   procs   := []
+   packages:= []
+   records := []
+   classes := []
+   methods := []
+   members := []
+end

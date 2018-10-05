@@ -40,7 +40,7 @@ method checkNext()
    local  level
    static once:=0 # To help not coming back to the calling line
 
-   level := keyword("level", Monitored)
+   level := keyword("level", MONITORED)
 
    if level > nex_level & once = 0 then{
       next_count +:=1
@@ -57,6 +57,7 @@ method checkNext()
          DState.State := PAUSE
          DState.RunCode := STEP
          once := 0
+         return
          }
       }
 end
@@ -74,15 +75,16 @@ method cmdNext(cmd)
       else
 	 next_count := 1
 
-      nex_level := keyword("level", Monitored)
+      nex_level := keyword("level", MONITORED)
       DState.Update(NEXT)
       DState.Write("   Nexting.")
       }
    else {
       DState.State := ERROR
-      msg   := "\n   The program is not being run._
-                \n   Try \"run\", or Type \"help\" for assistance"
-      DState.Write(msg)
+      DState.runtimeErrorMsg()      
+#      msg   := "\n   The program is not being run._
+#                \n   Try \"run\", or Type \"help\" for assistance"
+#      DState.Write(msg)
       }
 end
 
@@ -91,15 +93,21 @@ end
 #
 method cmdReturn(cmd) 
 
-   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
-      #if count := integer(cmd[2]) then
-      #   next_count := count
-      #else
-      next_count := 1
+   if DState.State = PAUSE then {
+      if DState.RunCode ~= ERROR then {
+         #if count := integer(cmd[2]) then
+         #   next_count := count
+         #else
+         next_count := 1
 
-      nex_level := keyword("level", Monitored) -1
-      DState.Update(NEXT)
-      DState.Write("   Returning.")
+         nex_level := keyword("level", MONITORED) -1
+         DState.Update(NEXT)
+         DState.Write("   Returning.")
+         }
+      else {
+         DState.State := ERROR
+         DState.runtimeErrorMsg()      
+         }
       }
    else {
       DState.State := ERROR
@@ -115,8 +123,8 @@ end
 method checkStep()
    local cur_line, cur_file
 
-   cur_file := keyword("file", Monitored)
-   cur_line := keyword("line", Monitored)
+   cur_file := keyword("file", MONITORED)
+   cur_line := keyword("line", MONITORED)
 
    if DState.RunCode = PSTEP & step_count = 1 then {
       msg := "\n   No pattern event detected before: " || cur_file ||
@@ -166,14 +174,20 @@ end
 method cmdStep(cmd)
    local count
 
-   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
-      if count := integer(cmd[2]) then
-         step_count := count
-      else
-         step_count := 1
+   if DState.State = PAUSE then {
+      if DState.RunCode ~= ERROR then {
+         if count := integer(cmd[2]) then
+            step_count := count
+         else
+            step_count := 1
 
-      DState.Update(STEP)
-      DState.Write("   Stepping.")
+         DState.Update(STEP)
+         DState.Write("   Stepping.")
+         }
+      else {
+         DState.State := ERROR
+         DState.runtimeErrorMsg()      
+         }
       }
    else {
       DState.State := ERROR
@@ -190,8 +204,8 @@ end
 method checkPStep()
    local cur_line, cur_file
 
-   cur_file := keyword("file", Monitored)
-   cur_line := keyword("line", Monitored)
+   cur_file := keyword("file", MONITORED)
+   cur_line := keyword("line", MONITORED)
  
    if step_count > 1 then {
       silentStep()
@@ -217,7 +231,7 @@ method checkPStep()
          evalVal    := &null
          pat := &eventvalue
          push(plevel, patLevel(&eventvalue, PC_Unanchored, -1, 1))
-         pPos := keyword("pos", Monitored) 
+         pPos := keyword("pos", MONITORED) 
          msg := "\n   Pattern match started"
          msg||:="\n   file "||cur_file||", line "||cur_line||"."
          msg||:="\n   "||cur_line-1||":"||
@@ -225,7 +239,7 @@ method checkPStep()
          msg||:="\n-->"||cur_line||":"||
                 DState.srcFile.getSrcLine(cur_file, cur_line)
          msg||:="\n   "||cur_line+1||":"||
-         DState.srcFile.getSrcLine(cur_file, cur_line+1)
+                DState.srcFile.getSrcLine(cur_file, cur_line+1)
          DState.Write(msg)
          DState.State := PAUSE
          DState.RunCode := PSTEP
@@ -240,15 +254,15 @@ end
 method handle_pstep_fail()
    local cur_line, cur_file, cur_index
 
-   cur_index := keyword("patindex", Monitored)
-   cur_file := keyword("file", Monitored)
-   cur_line := keyword("line", Monitored)
+   cur_index := keyword("patindex", MONITORED)
+   cur_file := keyword("file", MONITORED)
+   cur_line := keyword("line", MONITORED)
 
    case curPelem of {
       PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
       PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF: {
          msg := "\n   "||"Cursor position did not match at pos:"
-         msg ||:= keyword("pos", Monitored)
+         msg ||:= keyword("pos", MONITORED)
          patElem := getPatElem(pat, cur_index)
          if DState.State = ERROR then {
             DState.Write("\n   Error in pattern element imaging - UDB")
@@ -272,8 +286,8 @@ method handle_pstep_fail()
          }
       default :{
          msg := "\n   ?? at "||cur_file||":"||cur_line||", failed to match at "
-         msg ||:= "pos:"||keyword("pos", Monitored)|| " out of string length "
-         msg ||:= *keyword("subject", Monitored)
+         msg ||:= "pos:"||keyword("pos", MONITORED)|| " out of string length "
+         msg ||:= *keyword("subject", MONITORED)
          processed := getSub()
          msg ||:= "\n   Sub: " || processed[1]
          msg ||:= processed[2]
@@ -310,8 +324,8 @@ end
 method handle_pstep_attempt()
    local cur_line, cur_file
 
-   cur_file := keyword("file", Monitored)
-   cur_line := keyword("line", Monitored)
+   cur_file := keyword("file", MONITORED)
+   cur_line := keyword("line", MONITORED)
    curPelem := &eventvalue
    step_count := 1 ## none of these count as "steps"
 
@@ -331,7 +345,7 @@ method handle_pstep_attempt()
       return 
       }
    else if curPelem = PC_Arbno_X | curPelem = PC_Arbno_S | curPelem = PC_Arb_X then {
-      cur_index := keyword("patindex", Monitored)
+      cur_index := keyword("patindex", MONITORED)
       if curPelem = PC_Arbno_X | curPelem = PC_Arbno_S then {
          msg := "\n\n   Placing Arbno on the pattern stack, Continuing... "
          patElem := getPatElem(pat, cur_index)
@@ -359,13 +373,13 @@ method handle_pstep_match()
    local cur_line, cur_file, cur_index, cur_match, assign_match
    local patElem
 
-   cur_index := keyword("patindex", Monitored)
-   cur_file := keyword("file", Monitored)
-   cur_line := keyword("line", Monitored)
+   cur_index := keyword("patindex", MONITORED)
+   cur_file := keyword("file", MONITORED)
+   cur_line := keyword("line", MONITORED)
 
    msg := "\n   ?? at "||cur_file||":"||cur_line||", matched "
-   msg ||:= pPos||":"||keyword("pos", Monitored)|| " out of string length "
-   msg ||:= *keyword("subject", Monitored)
+   msg ||:= pPos||":"||keyword("pos", MONITORED)|| " out of string length "
+   msg ||:= *keyword("subject", MONITORED)
    case curPelem of {
       PC_Pos_Nat | PC_Pos_NF | PC_Pos_NP | PC_Pos_NMF |
       PC_RPos_Nat | PC_RPos_NF | PC_RPos_NP | PC_RPos_NMF |
@@ -375,11 +389,11 @@ method handle_pstep_match()
          else if curPelem = PC_Assign_OnM then 
             msg := "\n   Value assigned on match "
          else if curPelem = PC_Setcur then {
-            msg := "\n   "||"pos:"||keyword("pos", Monitored)||" assigned"
+            msg := "\n   "||"pos:"||keyword("pos", MONITORED)||" assigned"
             }
          else {
             msg := "\n   "||"Cursor position matched at pos:"
-            msg ||:= keyword("pos", Monitored)
+            msg ||:= keyword("pos", MONITORED)
             }
          patElem := getPatElem(pat, cur_index)
          if DState.State = ERROR then {
@@ -396,7 +410,7 @@ method handle_pstep_match()
          }
       PC_Fence_X | PC_R_Enter | PC_Arbno_Y | PC_Unanchored: {
          if curPelem = PC_Unanchored then { ## Match is retrying. Reset State
-            pPos := keyword("pos", Monitored)
+            pPos := keyword("pos", MONITORED)
             msg := "\n   Pattern match failed with no alternatives, starting _
                    at pos:" || pPos || " from beginning"
             pat := plevel[*plevel].pat
@@ -444,7 +458,7 @@ end
 method handle_PatStack()
    if DState.RunCode ~= PSTEP then return
 
-   cur_index := keyword("patindex", Monitored)
+   cur_index := keyword("patindex", MONITORED)
    if /curPelem then {
       return
       }
@@ -487,8 +501,8 @@ method handle_PatStack()
 end
 
 method getSub()
-   local sub := keyword("subject", Monitored)
-   local cur_pos := keyword("pos", Monitored)
+   local sub := keyword("subject", MONITORED)
+   local cur_pos := keyword("pos", MONITORED)
    local images := ["", "\n        "]
    local image_max := 72
    local ellipse := 6
@@ -643,7 +657,7 @@ method silentStep()
           numNodes := 1
           plevel := []
           pat := plevel[*plevel].pat
-          pPos := keyword("pos", Monitored)
+          pPos := keyword("pos", MONITORED)
           push(plevel, patLevel(pat, PC_Unanchored, -1, 1))
           return 
           }
@@ -662,9 +676,9 @@ method cmdPrintPat(option)
    local max_len := 72
    local not_both := 0
 
-   cur_subject := keyword("subject", Monitored)
-   cur_pos := keyword("pos", Monitored)
-   cur_index := keyword("patindex", Monitored)
+   cur_subject := keyword("subject", MONITORED)
+   cur_pos := keyword("pos", MONITORED)
+   cur_index := keyword("patindex", MONITORED)
 
    if option[2] == "-p" | option[2] == "-s" then {not_both := 1}
 
@@ -746,9 +760,9 @@ method cmdPrintStack()
    ##Print the first child. Layer 0
 
    if curPelem == PC_Arb_X then 
-      patElem := getPatElem(cur_pat.pat, keyword("patindex", Monitored) - 1)
+      patElem := getPatElem(cur_pat.pat, keyword("patindex", MONITORED) - 1)
    else
-      patElem := getPatElem(cur_pat.pat, keyword("patindex", Monitored))
+      patElem := getPatElem(cur_pat.pat, keyword("patindex", MONITORED))
    if DState.State = ERROR then {
       DState.Write("\n   Error in pattern element imaging - UDB")
       return
@@ -796,13 +810,19 @@ end
 method cmdPStep(cmd)
    local count
 
-   if DState.State = PAUSE & DState.RunCode ~= ERROR then {
-      if count := integer(cmd[2]) then
-         step_count := count
-      else
-         step_count := 1
+   if DState.State = PAUSE then {
+      if DState.RunCode ~= ERROR then {
+         if count := integer(cmd[2]) then
+            step_count := count
+         else
+            step_count := 1
          DState.Update(PSTEP)
          }
+      else {
+         DState.State := ERROR
+         DState.runtimeErrorMsg()      
+         }
+      }
    else {
       DState.State := ERROR
       msg := "\n   The program is not being run._
@@ -851,11 +871,17 @@ end
 #
 method cmdContinue()
 
-   if DState.State = PAUSE & DState.RunCode ~= ERROR then{
-      DState.Update(CONTINUE)
-      DState.Write("   Continuing.")
+   if DState.State = PAUSE then {
+      if DState.RunCode ~= ERROR then {
+         DState.Update(CONTINUE)
+         DState.Write("   Continuing.")
+	 }
+      else {
+         DState.State := ERROR
+         DState.runtimeErrorMsg()      
+         }
       }
-   else{
+   else {
       DState.State := ERROR
       msg := "\n   The program is not being run._
               \n   Try \"run\", or Type \"help\" for assistance"

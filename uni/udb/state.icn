@@ -37,7 +37,6 @@ class State(
 
    srcFile,         # an instance of the SourceFile class
    icode,           # an instance of the Icode class
-   srcCode,         # an instance of the SourceCode class
    coState,         # an instance of CoexpState class
    cmdHistory       # list keeps all of the UDB's cmd Session History
    )
@@ -283,8 +282,6 @@ method initializeState(tp)
          if *TP > 0 then {
             # reinit source info
             reinitState()
-            #srcFile.reinit()
-            #srcCode.reinit()
             }
          # load new program, reset TP
          if *(\tp) > 0 then 
@@ -300,9 +297,9 @@ $endif
             # start loading
             EvInit(TP) | stop("cant start evinit on " || TP[1])
             if src := icode.getSrcFileNames(TP[1]) then {
+
                State := LOAD
                srcFile.loadSourceFiles(TP[1], src)
-               srcCode.analyzeGlobalNames()
                #-- Automated TEST
 $ifdef TEST
                State := RUN ###### TEST : For the sake of getting the Time right
@@ -345,7 +342,7 @@ end
 
 method reinitState()
    srcFile.reinit()
-   srcCode.reinit()
+   #srcCode.reinit()
    Fresh()
 end
 
@@ -404,6 +401,13 @@ method Fresh()
    Message         := VERSION||"\n   "
 end
 
+method runtimeErrorMsg()
+   local msg
+   msg := "\n   That action cannot be performed right now. " ||
+          "\n   The program has experienced an error."
+   write(msg)
+end
+
 #
 # Co-expression wrapper functions
 #
@@ -448,7 +452,6 @@ initially()
 
    icode     := Icode()
    srcFile   := SourceFile()
-   srcCode   := SourceCode()
 
    coState   := CoexpState()
 

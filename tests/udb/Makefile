@@ -13,11 +13,11 @@
 UDB=udb -line
 TESTNAME=udb
 INTERNALS=counter_line counter_syntax counter_deref counter_pcall
-PROGS=watchme printme prime
+PROGS=watchme printme prime scopes
 
 # need more .stds for testing
 #TESTS=basic print watchpoints $(INTERNALS) info assert trace
-TESTS=basic print watchpoints $(INTERNALS) coexp
+TESTS=basic print breakpoints watchpoints $(INTERNALS) coexp scoping
 
 # directories
 OUTPUT=local
@@ -34,7 +34,10 @@ printme: printme.icn
 	unicon printme
 
 prime: foo.icn prime.icn
-	unicon -o $@ foo prime
+	unicon -o $@ $^
+
+scopes: scopepkg.icn scopes.icn
+	unicon -o $@ $^
 
 coexp: prime
 	@./test.sh $< $@
@@ -45,7 +48,13 @@ basic: watchme
 watchpoints: watchme
 	@./test.sh $< $@
 
+breakpoints: prime
+	@./test.sh $< $@
+
 print: printme
+	@./test.sh $< $@
+
+scoping: scopes
 	@./test.sh $< $@
 
 #internals: watchme

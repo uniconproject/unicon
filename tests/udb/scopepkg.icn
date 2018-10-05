@@ -1,0 +1,37 @@
+package scopepkg
+
+global a, b, c
+
+# can a class and package share a name? e.g. foo
+#class foo(a,b,c,d,e,f)
+class Test(a,b,c)
+   method f1()
+      static i := 0
+      local a,b,c
+      i +:= 1
+      a := 2*self.a
+      b := 2*a
+      c := 2*b
+      write(i)
+      write("scopepkg::Test::f1(): a: ",a)
+      write("scopepkg::Test::f1(): b: ",b)
+      write("scopepkg::Test::f1(): c: ",c)
+      return [a,b,c]
+   end
+initially
+   self.a := \a | 1
+   self.b := \b | "one"
+   self.c := \c | &null
+end
+
+procedure f1()
+#   local a,b,c
+   local msg := "I am procedure f1"
+   a := *msg
+   b := a/2
+   c := a+b
+   write("scopepkg::f1(): a: ",a)
+   write("scopepkg::f1(): b: ",b)
+   write("scopepkg::f1(): c: ",c)
+end
+

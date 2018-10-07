@@ -213,6 +213,74 @@ end
 "x ++ y - union of csets x and y or of sets x and y."
 
 operator{1} ++ union(x,y)
+   if is:table(x) && is:table(y) then {
+      abstract {
+	 return new table(type(x).tbl_key ++ type(y).tbl_key,
+			  type(x).tbl_val ++ type(y).tbl_val,
+			  type(x).tbl_dflt)
+	 }
+      body {
+	 int res;
+	 register int i;
+	 register word slotnum;
+         struct descrip d;
+         tended union block *dstp;
+         tended struct b_slots *seg;
+         tended struct b_telem *ep;
+         tended struct b_telem *np;
+         union block **hook;
+
+         /*
+          * Ensure that x is the larger; if not, swap.
+          */
+         if (BlkD(y,Table)->size > BlkD(x,Table)->size) {
+	    d = x;
+	    x = y;
+	    y = d;
+	    }
+         /*
+          * Copy x and ensure there's room for *x + *y elements.
+          */
+         if (cptable(&x, &result, BlkD(x,Table)->size + BlkD(y,Table)->size)
+            == RunError) {
+            runerr(0);
+            }
+
+         if(!(reserve(Blocks,BlkD(y,Table)->size*(2*sizeof(struct b_telem))))){
+            runerr(0);
+            }
+         /*
+          * Copy each element from y into the result, if not already there.
+	  *
+	  * np always has a new element ready for use.  We get one in
+	  *  advance, and stay one ahead, because hook can't be tended.
+          */
+         dstp = BlkLoc(result);
+         Protect(np = alctelem(), runerr(0));
+         for (i = 0; i < HSegs && (seg = BlkD(y,Table)->hdir[i]) != NULL; i++)
+            for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
+               ep = (struct b_telem *)seg->hslots[slotnum];
+               while (ep != NULL && BlkType(ep) != T_Table) {
+                  hook = memb(dstp, &ep->tref, ep->hashnum, &res);
+                  if (res == 0) {
+		     np->tref = ep->tref;
+		     np->tval = ep->tval;
+		     np->hashnum = ep->hashnum;
+		     /* addmem() looks like it works on tables :-) */
+                     addmem(Blk(dstp,Set), (struct b_selem *)np, hook);
+                     Protect(np = alctelem(), runerr(0));
+                     }
+                  ep = (struct b_telem *)ep->clink;
+                  }
+               }
+	 deallocate((union block *)np);
+         if (TooCrowded(dstp)) {	/* if the union got too big, enlarge */
+            hgrow(dstp);
+            }
+         return result;
+	 }
+      }
+   else
    if is:set(x) && is:set(y) then {
       abstract {
          return new set(store[type(x).set_elem] ++ store[type(y).set_elem])

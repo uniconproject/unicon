@@ -20,7 +20,7 @@ umake.u: umake.icn
 	$(UNICON) $(UFLAGS) -c umake
 
 idxGen: idxGen.icn
-	IPATH=../xml/ LPATH=../xml/ $(UNICON) $(UFLAGS) -u idxGen
+	$(UNICON) $(UFLAGS) -u idxGen
 
 splitmail: splitmail.icn
 	$(UNICON) $(UFLAGS) splitmail

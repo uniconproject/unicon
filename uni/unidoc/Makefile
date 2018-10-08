@@ -32,15 +32,15 @@ help:
 #    commonly used suffixes.
 #
 %.u:	%.icn
-	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) -c $?
+	$(UNICON) $(UFLAGS) -c $?
 
 UniDoc: $(UFILES) UniDoc.icn
-	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) UniDoc
+	$(UNICON) $(UFLAGS) UniDoc
 	$(CP) UniDoc$(EXE) ../../bin/
 	@date >.lastbuild        # remembers when things were last built.
 
 ufiles: $(SRCS)
-	IPATH=../parser/ LPATH=../parser/ unicon $(UFLAGS) -c $?
+	$(UNICON) $(UFLAGS) -c $?
 
 doc docs:	UniDoc
 	./buildDocs.sh

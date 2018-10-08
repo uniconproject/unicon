@@ -198,21 +198,15 @@ operator{1} ** inter(x,y)
          if (dstp == NULL)
             runerr(0);
          /*
-          * Using the smaller of the two tables as the source,
+          * Using the left table as the source,
           *  copy directly into the result each of its elements
           *  that are also members of the other set.
 	  *
 	  * np always has a new element ready for use.  We get one in advance,
 	  *  and stay one ahead, because hook can't be tended.
           */
-         if (BlkD(x,Table)->size <= BlkD(y,Table)->size) {
-            srcp = BlkLoc(x);
-            tstp = BlkLoc(y);
-            }
-         else {
-            srcp = BlkLoc(y);
-            tstp = BlkLoc(x);
-            }
+	 srcp = BlkLoc(x);
+	 tstp = BlkLoc(y);
          Protect(np = alctelem(), runerr(0));
          for (i = 0; i < HSegs && (seg = Blk(srcp,Table)->hdir[i]) != NULL; i++)
             for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {

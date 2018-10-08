@@ -32,9 +32,64 @@ operator{1} ~ compl(x)
 end
 
 
-"x -- y - difference of csets x and y or of sets x and y."
+"x -- y - difference of csets, sets or tables x and y."
 
 operator{1} -- diff(x,y)
+   if is:table(x) && is:table(y) then {
+      abstract {
+	 return type(x)
+	 }
+      body {
+	 int res;
+         register int i;
+         register word slotnum;
+         tended union block *srcp, *tstp, *dstp;
+         tended struct b_slots *seg;
+         tended struct b_telem *ep;
+         struct b_telem *np;
+         union block **hook;
+
+         /*
+          * Make a new set based on the size of x.
+          */
+         dstp = hmake(T_Table, (word)0, BlkD(x,Set)->size);
+         if (dstp == NULL)
+            runerr(0);
+         /*
+          * For each element in table x if it is not in table y
+          *  copy it directly into the result table.
+	  *
+	  * np always has a new element ready for use.  We get one in advance,
+	  *  and stay one ahead, because hook can't be tended.
+          */
+         srcp = BlkLoc(x);
+         tstp = BlkLoc(y);
+         Protect(np = alctelem(), runerr(0));
+
+         for (i = 0; i < HSegs && (seg = Blk(srcp,Table)->hdir[i]) != NULL; i++)
+            for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
+               ep = (struct b_telem *)seg->hslots[slotnum];
+               while ((ep != NULL) && (BlkType(ep) != T_Table)) {
+                  memb(tstp, &ep->tref, ep->hashnum, &res);
+                  if (res == 0) {
+                     hook = memb(dstp, &ep->tref, ep->hashnum, &res);
+		     np->tref = ep->tref;
+		     np->tval = ep->tval;
+		     np->hashnum = ep->hashnum;
+                     addmem(Blk(dstp,Set), (struct b_selem *)np, hook);
+                     Protect(np = alctelem(), runerr(0));
+                     }
+                  ep = (struct b_telem *)ep->clink;
+                  }
+               }
+	 deallocate((union block *)np);
+         if (TooSparse(dstp))
+            hshrink(dstp);
+         Desc_EVValD(dstp, E_Tcreate, D_Table);
+         return table(dstp);
+         }
+      }
+   else
    if is:set(x) && is:set(y) then {
       abstract {
          return type(x)
@@ -116,9 +171,73 @@ operator{1} -- diff(x,y)
 end
 
 
-"x ** y - intersection of csets x and y or of sets x and y."
+"x ** y - intersection of csets, sets or tables x and y."
 
 operator{1} ** inter(x,y)
+   if is:table(x) && is:table(y) then {
+      abstract {
+	 return new table(store[type(x).tbl_key] ** store[type(y).tbl_key],
+			  store[type(x).tbl_val] ** store[type(y).tbl_val],
+			  store[type(x).tbl_dflt])
+         }
+      body {
+	 int res;
+         register int i;
+         register word slotnum;
+         tended union block *srcp, *tstp, *dstp;
+         tended struct b_slots *seg;
+         tended struct b_telem *ep;
+         struct b_telem *np;
+         union block **hook;
+
+         /*
+          * Make a new table the size of the smaller argument table.
+          */
+         dstp = hmake(T_Table, (word)0,
+            Min(BlkD(x,Table)->size, BlkD(y,Table)->size));
+         if (dstp == NULL)
+            runerr(0);
+         /*
+          * Using the smaller of the two tables as the source,
+          *  copy directly into the result each of its elements
+          *  that are also members of the other set.
+	  *
+	  * np always has a new element ready for use.  We get one in advance,
+	  *  and stay one ahead, because hook can't be tended.
+          */
+         if (BlkD(x,Table)->size <= BlkD(y,Table)->size) {
+            srcp = BlkLoc(x);
+            tstp = BlkLoc(y);
+            }
+         else {
+            srcp = BlkLoc(y);
+            tstp = BlkLoc(x);
+            }
+         Protect(np = alctelem(), runerr(0));
+         for (i = 0; i < HSegs && (seg = Blk(srcp,Table)->hdir[i]) != NULL; i++)
+            for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
+               ep = (struct b_telem *)seg->hslots[slotnum];
+               while ((ep != NULL) && (BlkType(ep) != T_Table)) {
+                  memb(tstp, &ep->tref, ep->hashnum, &res);
+                  if (res != 0) {
+                     hook = memb(dstp, &ep->tref, ep->hashnum, &res);
+		     np->tref = ep->tref;
+		     np->tval = ep->tval;
+		     np->hashnum = ep->hashnum;
+                     addmem(Blk(dstp,Set), (struct b_selem *)np, hook);
+                     Protect(np = alctelem(), runerr(0));
+                     }
+                  ep = (struct b_telem *)ep->clink;
+                  }
+               }
+	 deallocate((union block *)np);
+         if (TooSparse(dstp))
+            hshrink(dstp);
+         Desc_EVValD(dstp, E_Tcreate, D_Table);
+         return table(dstp);
+         }
+      }
+   else
    if is:set(x) && is:set(y) then {
       abstract {
          return new set(store[type(x).set_elem] ** store[type(y).set_elem])
@@ -210,14 +329,14 @@ operator{1} ** inter(x,y)
 end
 
 
-"x ++ y - union of csets x and y or of sets x and y."
+"x ++ y - union of csets, sets or tables x and y."
 
 operator{1} ++ union(x,y)
    if is:table(x) && is:table(y) then {
       abstract {
-	 return new table(type(x).tbl_key ++ type(y).tbl_key,
-			  type(x).tbl_val ++ type(y).tbl_val,
-			  type(x).tbl_dflt)
+	 return new table(store[type(x).tbl_key] ++ store[type(y).tbl_key],
+			  store[type(x).tbl_val] ++ store[type(y).tbl_val],
+			  store[type(x).tbl_dflt])
 	 }
       body {
 	 int res;
@@ -231,13 +350,11 @@ operator{1} ++ union(x,y)
          union block **hook;
 
          /*
-          * Ensure that x is the larger; if not, swap.
+	  * Unlike for sets, do not union whichever is smaller into
+	  * whichever is larger. For tables, duplicate keys retain
+	  * the values in the left operand.
           */
-         if (BlkD(y,Table)->size > BlkD(x,Table)->size) {
-	    d = x;
-	    x = y;
-	    y = d;
-	    }
+
          /*
           * Copy x and ensure there's room for *x + *y elements.
           */
@@ -260,7 +377,7 @@ operator{1} ++ union(x,y)
          for (i = 0; i < HSegs && (seg = BlkD(y,Table)->hdir[i]) != NULL; i++)
             for (slotnum = segsize[i] - 1; slotnum >= 0; slotnum--) {
                ep = (struct b_telem *)seg->hslots[slotnum];
-               while (ep != NULL && BlkType(ep) != T_Table) {
+               while ((ep != NULL) && (BlkType(ep) != T_Table)) {
                   hook = memb(dstp, &ep->tref, ep->hashnum, &res);
                   if (res == 0) {
 		     np->tref = ep->tref;

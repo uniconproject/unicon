@@ -1,0 +1,294 @@
+\documentclass[letterpaper,12pt]{article}
+\usepackage{utr}
+
+\title{The Unicon JSON Library}
+\author{Gigi Young, Clinton Jeffery}
+\trnumber{20}
+\date{\today}
+
+\begin{document}
+\abstract{
+This report describes a library for supporting conversion to and from 
+JSON (JavaScript Object Notation) and their equivalent Unicon structures.
+}
+\maketitle
+
+\section{Introduction}
+
+JSON is a widely used lightweight data-interchange format [Crawford]
+that supports nested, sequential and associative data structures.
+This report describes two Unicon library
+functions that allow for convenient data conversion
+between JSON and Unicon.
+
+\section{An Overview of the JSON Grammar}
+
+The JSON grammar is straightforward. A JSON data structure is composed
+of one or more JSON values, which can be either a string, number,
+boolean true, boolean false, null, array, or ``object''. An array contains
+a list of JSON values, while an ``object'' is a set of string-value
+pairs. In other words, an array is a list of values and an object is a
+table (dictionary) that requires keys to be strings.
+Arrays and objects may be arbitrarily nested within each other.
+
+The manner in which the tokens of the JSON grammar are defined allows
+a token's category to be determined from its first character. The JSON
+tokens are string, number, true, false, null, and the operators used
+for array, object, and their productions (\verb {}[]:, ). The
+following table gives the possible first characters of each
+non-operator JSON token.
+
+\begin{center}
+\begin{tabular}{ c | c }
+ possible first characters  & JSON token \\
+ \hline
+ \{                         & object \\
+ \verb [                    & array \\
+ -0123456789                & number \\
+ \verb \"                   & string \\
+ t                          & true \\
+ f                          & false \\
+ n                          & null \\
+
+\end{tabular}
+\end{center}
+
+\pagebreak
+
+\section{The Unicon JSON API}
+
+The JSON library contains two thread-safe functions, {\tt jtou()} and 
+{\tt utoj()}, for converting from JSON to Unicon and Unicon to JSON, 
+respectively. The data equivalencies are as follows: 
+
+\begin{center}
+{\large\bf JSON to Unicon}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ c | c }
+ JSON      & Unicon \\
+ \hline
+ object    & table \\
+ array     & list \\
+ string    & string \\
+ number    & int or real \\
+ true      & string - {\tt "\_\_true\_\_"} \\
+ false     & string - {\tt "\_\_false\_\_"} \\
+ null      & null value - {\tt \&null} \\
+
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+
+\begin{center}
+\center{\large\bf Unicon to JSON}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ c | c }
+ Unicon                   & JSON\\
+ \hline
+ table, record, or class  & object \\
+ list or set              & array  \\
+ string                   & string \\
+ int or real              & number \\
+ string - {\tt "\_\_true\_\_"}  & true   \\
+ string - {\tt "\_\_false\_\_"} & false  \\
+ null value - {\tt \&null}& null   \\
+
+\end{tabular}
+\end{center}
+
+% Horizontal line spanning width of the page
+\noindent\rule{\textwidth}{1pt}
+
+\begin{description}
+
+\item[{\tt\bf jtou(s)}] converts JSON to Unicon.
+  If parameter {\tt s} is a legal JSON string, it is interpreted as such;
+  otherwise, it is treated as a filename and its JSON contents are converted.
+
+\item[{\tt\bf jtou(s,mode)}] forces conversion as a filename (mode {\tt "f"})
+  or a string (mode {\tt "s"}).
+  So for example {\tt jtou("x.json","f")} would read from file {\tt x.json}
+  while {\tt jtou("[1,2,{$\backslash$"three$\backslash$":3}]", "s")} would 
+  convert a string.
+
+\item[{\tt\bf jtou(s,mode,error)}] specifies that in the case of a conversion
+  error, the error is written to a file handle specifed by {\tt error}.
+  This can be done with or without the optional second parameter as 
+  {\tt jtou(s,,file)} or {\tt jtou(fname,"f",file)}, where {\tt file}
+  can be any of the standard output streams or an open file
+  handle.
+
+\vspace{1em}
+
+{\tt jtou()} is a generator that produces Unicon data one-by-one until
+all JSON data is converted or an error occurs. If a JSON data contains 
+one structure,
+then one output will be generated. If a JSON data contains multiple 
+structures, the outputs will appear in the order found in the JSON data.
+To conform with other JSON libraries, {\tt jtou()} allows for single
+trailing commas in JSON arrays and objects.
+
+In the following program, if we convert a JSON data structure which
+consists of an object and an array, the first result produced and
+placed into {\tt u} is a table of size three and the second result
+is a list of size four.
+
+  \begin{verbatim}
+  link json
+  procedure main()
+     u := [: jtou("{\"one\":1, \"two\":2, \"three\":3}_
+         [true, false, null, 1.23e3]") :]
+     x := u[1]
+     y := u[2]
+     write(x["one"])
+     write(x["two"])
+     write(x["three"])
+     every i := 1 to *y do write(y[i])
+  end
+  \end{verbatim}
+
+produces the output:
+
+  \begin{verbatim}
+  1
+  2
+  3
+  __true__
+  __false__
+
+  1230.0
+  \end{verbatim}
+
+
+Another example is 
+
+  \begin{verbatim}
+  link json
+  procedure main()
+     write( jtou("\"this is a string\"") )
+  end
+  \end{verbatim}
+
+for which the output is:
+
+  \begin{verbatim}
+  this is a string
+  \end{verbatim}
+
+\end{description}
+
+\noindent\rule{\textwidth}{1pt}
+\begin{description}
+
+\item[{\tt\bf utoj(u)}] takes a Unicon value, {\tt u}, and returns a 
+  corresponding JSON-formatted string. If no such equivalent structure exists, 
+  then the function fails. 
+
+\item[{\tt\bf utoj(u,error)}] the optional second parameter, {\tt error} 
+  takes a file handle which is written to in case of a conversion error and
+  function failure, e.g. {\tt utoj(u,\&errout)} or {\tt utoj(u,file)}
+
+\vspace{1em}
+
+Here are some examples of primitive data conversions from Unicon to JSON
+
+  \begin{verbatim}
+  link json
+  procedure main()
+     write(utoj("this is a string"))
+     write(utoj(100))
+     write(utoj("__true__"))
+     write(utoj("__false__"))
+     write(utoj(&null))
+  end
+  \end{verbatim}
+
+which produces the output:
+
+  \begin{verbatim}
+  "this is a string"
+  100
+  true
+  false
+  null 
+  \end{verbatim}
+
+More frequently, JSON will come into play when lists or tables are
+involved. Here is an example of converting a Unicon table to a JSON object.
+
+  \begin{verbatim}
+  link json
+  procedure main()
+     T := table()
+     T["one"] := 1
+     T["two"] := 2
+     T["list"] := [1,2,3]
+     T["table"] := table()
+     write("A table: ", utoj(T))
+  end
+  \end{verbatim}
+
+This program writes out:
+
+  \begin{verbatim}
+  A table: {"two":2,"table":{},"one":1,"list":[1,2,3]}
+  \end{verbatim}
+
+The extraction of keys from Unicon tables occurs in a random manner,
+resulting in JSON data that does not follow the order in which the Unicon
+table was constructed. However, lists are sequential in Unicon, so the
+resulting ordering of the JSON array is retained. 
+
+A class conversion is as follows:
+
+  \begin{verbatim}
+  link json
+
+  class Person(name, age, gender)
+     #
+     # some methods here
+     #
+  end
+
+  procedure main()
+     person := Person("Joe", 42, "Male")
+     write("A Person: ", utoj(person))
+  end
+  \end{verbatim}
+
+this outputs:
+
+  \begin{verbatim}
+  {"name":"Joe","age":42,"gender":"Male"}
+  \end{verbatim}
+
+
+\end{description}
+
+\noindent\rule{\textwidth}{1pt}
+
+%\section{Error Handling}
+
+%The Unicon JSON library provides error handling in the form of a global
+%class instance, \verb __jerror . To retrieve the latest error, the
+%programmar may use the
+%method \verb __jerror.get_err() . This returns
+%the last error, if it exists, as a string. If no error has occurred, 
+%\verb __jerror.get_err()  will return the empty string. 
+
+%If the parameter, \verb s , passed to \verb jtou(s)  is a string containing 
+%JSON data, the error message will contain the first error encountered. If
+%\verb s  is a file, then the error message will contain the filename and
+%the line number where the error was detected, followed by the error.
+
+\section*{References}
+
+[Crawford] anonymous, but owing to Douglas Crawford.
+"Introducing JSON", json.org.
+
+\end{document}

@@ -1,0 +1,672 @@
+#
+# json.icn - JSON support library
+#
+# Authors: Gigi Young, Clinton Jeffery
+#
+# This library is intended to support conversion of Unicon values
+# to and from JSON format, suitable for storage or transmission.
+#
+
+#
+# Error handling
+#
+class ErrorHandler(filename, 
+                   lineno, 
+                   error
+                  )
+   method init(filename)
+      self.filename := filename
+      self.lineno := 1
+      self.error := &null
+      return
+   end
+
+   method incr_line()
+      lineno +:= 1
+      return
+   end
+
+   method constr_msg(s)
+      if \filename then 
+         return filename || ":" || lineno || ": " || s
+      else
+         return s
+   end
+
+   # set methods are meant to fail
+   method set_err(s)
+      if /(error) then {
+         error := constr_msg(s)
+         }
+   end
+
+   method get_err() 
+       if \error then return error
+       else return ""
+   end
+initially
+   self.lineno := 1
+end
+
+
+
+#
+# For standalone testing
+#
+$ifdef MAIN
+procedure main(argv)
+   local input
+   if *argv=0 then {
+      write("Enter the name of a JSON file:")
+      x := jtou(input := read())
+      write(utoj(x))
+      }
+   else every i := 1 to *argv do {
+      write(argv[i])
+      x := jtou(argv[i])
+      write(utoj(x))
+      }
+end
+$endif
+
+#
+# For scanner speed testing
+#
+$ifdef SCAN 
+procedure main(argv)
+   local input
+   if *argv=0 then {
+      write("Enter the name of a JSON file:")
+      file := open(input := read())
+      text := ""
+      while text ||:= read(file) || "\n"
+      scanner := create json_scanner(text)
+      while write(@scanner)
+      }
+   else every i := 1 to *argv do {
+      file := open(argv[i])
+      text := ""
+      while text ||:= read(file) || "\n"
+      scanner := create json_scanner(text)
+
+      while write(@scanner)
+      }
+
+end
+$endif
+
+
+#
+# Takes a string s that will be interpreted as JSON data.
+# If the conversion fails, jtou() attempts to use s as a
+# filename. If it fails, then the function fails.
+#
+# The optional second parameter, mode, can be specified to
+# force file conversion ("f") or string conversion ("s").
+#
+# This procedure is a generator. It will return the 
+# corresponding unicon objects, one-by-one, until the
+# conversion is complete.
+#
+# An optional third parameter, error, as a file handle will specify 
+# where to print an error message in the event of a error
+#
+procedure jtou(s,mode,error)
+   local file, j, u, tok_gen, jerror
+   j := ""
+   jerror := ErrorHandler()
+
+   # default semantics
+   if /mode then {
+      # run as string
+      tok_gen := create json_scanner(s,jerror)
+      if u := json_parser(tok_gen,jerror) then {
+         suspend u
+	 while u := json_parser(tok_gen,jerror) do suspend u
+	 fail
+	 }
+      # string conversion failed, run as file
+      else {
+         file := open(s) | fail 
+         while j ||:= read(file) || "\n"
+         close(file)
+         jerror.init(s)
+         }
+      }
+   # mode specified
+   else {
+      case mode of {
+         # file mode
+         "f" : {
+            #file := open(s) | stop("Failed to open ",image(s))
+            file := open(s) | fail 
+            while j ||:= read(file) || "\n"
+            close(file)
+            jerror.init(s)
+            }
+         # string mode
+         "s" : j := s 
+         default: fail
+         }
+      }
+   # parse
+   tok_gen := create json_scanner(j,jerror)
+   while u := json_parser(tok_gen,jerror) do {
+      suspend u
+      }
+
+   if \error then {
+      if *(err_msg := jerror.get_err()) > 0 then
+      write(error,jerror.get_err())
+      }
+end
+
+
+
+
+#
+# It is insane to propose a single function as the primary API for the
+# entire library, so here it is.
+#
+# Given a Unicon structure, produce a JSON equivalent if possible.
+#
+# An optional second parameter, error, as a file handle will specify 
+# where to print an error message in the event of a error
+#
+procedure utoj(x,error)
+   local j;
+   jerror := ErrorHandler()
+    
+   if j := json(x,jerror) then
+      return j
+
+   if \error then {
+      if *(err_msg := jerror.get_err()) > 0 then
+      write(error, jerror.get_err())
+      }
+end
+
+#
+# Given a Unicon structure, produce a JSON equivalent if possible.
+#
+procedure json(u,jerror)
+   case type(u) of {
+      "null": return type(u)
+      "string": {
+         return      if u == "__true__" then "true"
+                else if u == "__false__" then "false"
+	        else image(u)
+         }
+      "integer" | "real": return image(u)
+      "list": {
+         s := "["
+         if *u > 0 then s ||:= json(u[1],jerror)
+         every i := 2 to *u do {
+	    s ||:= ("," || json(u[i],jerror)) | fail
+            }
+         s ||:= "]"
+ 
+#         every i := 1 to *u do {
+#            if i>1 then s ||:= ","
+#	    s ||:= json(u[i]) | fail
+#            }
+#         s ||:= "]"
+         return s
+         }
+      "set": {
+         s := "["; i := 1
+
+         every x := !u do {
+            if i>1 then s ||:= ","
+	    s ||:= json(x,jerror) | fail
+            i +:= 1
+            }
+         s ||:= "]"
+         return s
+         }
+ 
+      "table": {
+         s := "{"
+         #k_list := []
+         #every k := key(u) do put(k_list,k) 
+         #k_list := sortf(k_list)
+         #every k := !k_list do {
+         every k := key(u) do {
+            if type(k) ~== "string" then fail
+	    if s[-1] ~== "{" then s ||:= ","
+            s ||:= image(k)|| ":" || json(u[k]) | fail
+            }
+         s ||:= "}"
+         return s
+         }
+
+
+      default: {
+
+         # class
+         if match("object ", image(u)) then {
+            s := "{"
+            every k := key(u) do {
+               if k == ("__s" | "__m") then next
+               if type(k) ~== "string" then fail
+               if s[-1] ~== "{" then s ||:= ","
+	       s ||:= image(k)|| ":" || json(u[k],jerror) | fail
+               }
+            s ||:= "}"
+            return s
+            }
+         # record
+         else if match("record ", image(u)) then {
+            s := "{"
+            every k := key(u) do {
+               if type(k) ~== "string" then fail
+	       if s[-1] ~== "{" then s ||:= ","
+	       s ||:= image(k)|| ":" || json(u[k],jerror) | fail
+               }
+            s ||:= "}"
+            return s
+            }
+         else {
+            return jerror.set_err(type(u) || " has no JSON equivalent")
+            }
+         }
+      }
+end
+
+#####################
+# SCANNER FUNCTIONS #
+#####################
+
+#
+# A string-scanning generator - takes a JSON-formatted string 
+# and returns single JSON tokens until scanning is complete
+#
+procedure json_scanner(s,jerror)
+   local token
+   local ws, operator, number
+   local end_pos := *s + 1 
+
+   ws := ' \t'
+   operator := '{}[]:,'
+   number := '-0123456789'
+
+   s ? {
+      repeat {
+         # skip whitespace
+         tab(many(ws))
+         c := move(1) | fail
+
+         # operators
+         if any(operator, c) then token := c | fail
+         # numbers
+         else if any(number, c) then token := scan_number(c,jerror) | fail
+         # strings
+         else if c == "\"" then token := scan_string(jerror) | fail
+         # true
+         else if c == "t" then token := scan_true(jerror) | fail
+         # false
+         else if c == "f" then token := scan_false(jerror) | fail
+         # null
+         else if c == "n" then token := scan_null(jerror) | fail
+         # line counter
+         else if c == "\n" then { jerror.incr_line(); next }
+         else {
+            return jerror.set_err("Unrecognized JSON token: " ||
+                   c || tab(upto(ws++operator)\1))
+            }
+         suspend token
+         }
+      }
+end
+
+
+#
+# String scanning helper function to retrieve JSON value 'true'
+#
+procedure scan_true(jerror)
+   if move(3) == "rue" then return "true"
+   else 
+      return jerror.set_err("Expected JSON true: " || 
+             "t"||tab(upto(' \t\n{}[]:,')\1))
+end
+
+#
+# String scanning helper function to retrieve JSON value 'false'
+#
+procedure scan_false(jerror)
+   if move(4) == "alse" then return "false"
+   else 
+      return jerror.set_err("Expected JSON false: " || 
+             "f"||tab(upto(' \t\n{}[]:,')\1))
+end
+
+#
+# String scanning helper function to retrieve JSON value 'null'
+#
+procedure scan_null(jerror)
+   if move(3) == "ull" then return "null" 
+   else 
+      return jerror.set_err("Expected JSON null: " || 
+             "n"||tab(upto(' \t\n{}[]:,')\1))
+end
+
+#
+# String scanning helper function that returns a valid JSON escape character 
+#
+procedure scan_ctrl_char(c,jerror)
+   static ctrl, hex, unicode
+
+   initial {
+      ctrl := '\"\\/bfnrt'
+      hex := '0123456789abcdefABCDEF'
+      unicode := 'u'
+      }
+
+   if c == "\\" then {
+      # ctrl character
+      if any(ctrl,c1 := move(1)) then return c || c1
+      else if any(unicode,c1 := move(1)) &
+              any(hex, u1 := move(1)) &
+              any(hex, u2 := move(1)) &
+              any(hex, u3 := move(1)) &
+              any(hex, u4 := move(1)) then 
+         {
+         return c || c1 || u1 || u2 || u3 || u4
+         }
+      else return jerror.set_err("JSON string invalid escape sequence: " ||
+                  c || tab(upto(' \t\n\"{}[]:,')\1))
+      }
+end
+
+#
+# String scanning helper function that returns a JSON string, 
+# delimited by double quotes
+#
+procedure scan_string(jerror)
+   local str, ctrl, c
+   static j_char := ~'\"'
+   str := ""
+
+   while any(~'\"', c := move(1)) do {
+      if c ~== "\\" then str ||:= c
+
+      else { 
+         if ctrl := scan_ctrl_char(c,jerror) then str ||:= ctrl
+         else fail
+         }
+      }
+   if (c := move(1)) == "\"" then return image(str)
+   else return jerror.set_err(
+               "JSON string missing terminating double-quotes: " || str) 
+end
+
+#
+# String scanning helper function that returns a JSON number as a string
+#
+procedure scan_number(c,jerror)
+   local num_str
+   num_str := ""
+ 
+   # if negative
+   if c == "-" then {
+      num_str ||:= c
+      c := move(1)
+      }
+
+   # integer 
+   if any(&digits,c) then {
+
+      # append
+      num_str ||:= c
+
+      # c is 0
+      if c == "0" then {
+         # number starting with 0 is either 0, frac, or exp
+         if any(&digits,move(1)) then 
+            return jerror.set_err("JSON int cannot have leading zero: " || 
+                   num_str)
+
+         } 
+
+      # c is 1-9, get all sequential digits
+      else num_str ||:= tab(many(&digits)) 
+      }
+   
+   # fraction 
+   if (c := move(1)) == "." then {
+
+      # append .
+      num_str ||:= c
+        
+      # get any/all sequential digits
+      if not (num_str ||:= tab(many(&digits))) then 
+         return jerror.set_err("Expected digits after '.' in JSON frac: " || 
+                num_str)
+      }
+
+   # exponent
+   if any('eE',c := move(1)) then { 
+        
+      # append e|E
+      num_str ||:= c
+
+      # check for -|+
+      if (c := move(1)) == "-" then num_str ||:= c
+      else if (c := move(1)) == "+" then {}
+
+      # check for sequential digits
+      if not (num_str ||:= tab(many(&digits))) then 
+         return jerror.set_err("Expected digits after 'e' in JSON exp: " ||
+                num_str)
+      } 
+   return num_str
+end
+
+
+#########################
+# END SCANNER FUNCTIONS #
+#########################
+
+
+
+####################
+# PARSER FUNCTIONS #
+####################
+
+#
+# Takes a co-expression to generate JSON tokens.
+# Returns a Unicon equivalent JSON structure.
+#
+procedure json_parser(token_gen,jerror)
+   local unicon_struct, struct, token
+   static parse_funcs
+
+   initial {
+      parse_funcs := table()
+
+      parse_funcs["{"] := parse_object 
+      parse_funcs["["] := parse_array 
+      parse_funcs["\""] := parse_string 
+      parse_funcs["-"] := parse_number
+      parse_funcs["0"] := parse_number
+      parse_funcs["1"] := parse_number
+      parse_funcs["2"] := parse_number
+      parse_funcs["3"] := parse_number
+      parse_funcs["4"] := parse_number
+      parse_funcs["5"] := parse_number
+      parse_funcs["6"] := parse_number
+      parse_funcs["7"] := parse_number
+      parse_funcs["8"] := parse_number
+      parse_funcs["9"] := parse_number
+      parse_funcs["t"] := parse_true
+      parse_funcs["f"] := parse_false
+      parse_funcs["n"] := parse_null
+      }
+
+   while token := @token_gen do {
+      if \(func := parse_funcs[token[1]]) then {
+         if struct := func(token, token_gen, parse_funcs,jerror) then
+            suspend struct
+         else fail
+         }
+      else fail
+      }
+end
+
+
+#
+# Helper parsing functions that return the equivalent Unicon data structure
+#
+
+#
+# Returns a string to represent a boolean true
+#
+procedure parse_true(token, token_gen, parse_funcs, jerror)
+   return "__true__"
+end
+
+#
+# Returns a string to represent a boolean false
+#
+procedure parse_false(token, token_gen, parse_funcs, jerror)
+   return "__false__"
+end
+
+#
+# Returns the null value
+#
+procedure parse_null(token, token_gen, parse_funcs, jerror)
+   return &null
+end
+
+#
+# Returns the numeric() of the token
+#
+procedure parse_number(token, token_gen, parse_funcs, jerror)
+   return numeric(token)
+end
+
+#
+# Removes the delimiting double-quotes from the token (type string) 
+#
+procedure parse_string(token, token_gen, parse_funcs, jerror)
+   return token[2:-1]
+end
+
+#
+# Helper parsing function that recognizes the production rules for a
+# JSON object. Returns a Unicon table if proper syntax (success).
+#
+procedure parse_object(token, token_gen, parse_funcs, jerror)
+   local json_object, json_key, json_value, prev_token, tok
+   prev_token := token
+   json_object := table()
+
+   while tok := @token_gen do {
+
+      # end of object, return
+      if tok == "}"  then {
+         # allow for trailing comma, e.g. {... ,}
+         #if prev_token ~== "," then return json_object
+         #else return jerror.set_err("Unexpected comma before: }")
+         return json_object
+         }
+
+      # commas are valid only if the preceeding token is a value (not { or ,)
+      else if tok == "," then {
+         if not (prev_token == ("{"|",")) then prev_token := tok
+         else return jerror.set_err("Unexpected comma in JSON object after: " || tok)
+         }
+
+      # parse pairs: a key is always a string
+      else if tok[1] == "\"" then {
+         if prev_token == ("{"|",") then {
+            # string
+            prev_token := tok
+            json_key := parse_funcs["\""](tok, token_gen, parse_funcs, jerror)
+
+            # check for colon
+            if (tok := @token_gen) == ":" then prev_token := tok 
+            else return jerror.set_err(
+                        "Expected colon in JSON pair before: " || tok)
+            # value 
+            if tok := @token_gen then {
+               if \(func := parse_funcs[tok[1]]) then {
+                  json_value := func(tok, token_gen, parse_funcs, jerror)
+                  #prev_token := json_value 
+                  prev_token := "value"
+                  json_object[json_key] := json_value
+                  }
+               else 
+                  return jerror.set_err("Expected JSON value in JSON pair" ||                        ", got: " || tok)
+               }
+            else 
+               return jerror.set_err("JSON pair missing JSON value")
+            }
+         else return jerror.set_err(
+                     "Expected comma in JSON object before: " || tok)
+         }
+
+      # Invalid object syntax
+      else {
+         if prev_token == (","|"{") then 
+            return jerror.set_err("Expected JSON pair, got: " || tok)
+         else
+            return jerror.set_err("Token violated JSON object syntax: " ||
+                   tok)
+         }
+      }
+   return jerror.set_err("Expected terminating } for JSON object")
+end
+
+#
+# Helper parsing function recognizes the production rules for a JSON array.
+# Returns a Unicon list if the syntax is proper (success).
+#
+procedure parse_array(token, token_gen, parse_funcs, jerror)
+   local json_array, json_value, prev_token, tok
+   prev_token := token
+   json_array := []
+
+   while tok := @token_gen do {
+
+      # end of array, return
+      if tok == "]" then {
+         # allow for a trailing comma, e.g. [... ,]
+         #if prev_token ~== "," then return json_array
+         #else return jerror.set_err("Unexpected comma at end of JSON array")
+         return json_array
+         }
+
+      # comma can only come after a value (not [ or ,)
+      else if tok == "," then {
+         if not any('[,', prev_token) then prev_token := tok
+         else return jerror.set_err("Unexpected comma in JSON array")
+         }
+
+      # value
+      else if \(func := parse_funcs[tok[1]]) then {
+         if prev_token == ("["|",") then { 
+            json_value := func(tok, token_gen, parse_funcs, jerror)
+            prev_token := "value"
+            put(json_array, json_value) 
+            }
+         else return jerror.set_err("Expected comma in JSON array before: " ||
+              tok)
+         }
+        
+      # invalid array syntax
+      else { 
+         if prev_token == ("["|",") then
+            return jerror.set_err("Expected JSON value, got: " || tok)
+         else
+            return jerror.set_err("Token violated JSON array syntax: " || 
+                tok) 
+         }
+      }
+   return jerror.set_err("Expected terminating ] for JSON array")
+end
+
+########################
+# END PARSER FUNCTIONS #
+########################

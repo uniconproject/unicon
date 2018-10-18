@@ -45,7 +45,7 @@ non-operator JSON token.
  \{                         & object \\
  \verb [                    & array \\
  -0123456789                & number \\
- \verb \"                   & string \\
+ $\prime\prime$             & string \\
  t                          & true \\
  f                          & false \\
  n                          & null \\
@@ -109,6 +109,15 @@ respectively. The data equivalencies are as follows:
 \item[{\tt\bf jtou(s)}] converts JSON to Unicon.
   If parameter {\tt s} is a legal JSON string, it is interpreted as such;
   otherwise, it is treated as a filename and its JSON contents are converted.
+
+  It should noted that a JSON-formatted Unicon string must contain escaped
+  double quotes due to the fact that double quotes define a string literal
+  in the language. A sample string is as follows:
+
+  \begin{verbatim}
+    s := "{\"one\":1, \"two\":2, \"three\":3 }"
+  \end{verbatim}
+\vspace{-1em}
 
 \item[{\tt\bf jtou(s,mode)}] forces conversion as a filename (mode {\tt "f"})
   or a string (mode {\tt "s"}).
@@ -186,7 +195,7 @@ for which the output is:
 \begin{description}
 
 \item[{\tt\bf utoj(u)}] takes a Unicon value, {\tt u}, and returns a 
-  corresponding JSON-formatted string. If no such equivalent structure exists, 
+  corresponding JSON-formatted string. If no such equivalent structure exists,
   then the function fails. 
 
 \item[{\tt\bf utoj(u,error)}] the optional second parameter, {\tt error} 

@@ -48,7 +48,10 @@ help:
 	@echo "      MSVC: Run \"nmake NT-Configure\" or \"nmake W-Configure\"."
 	@echo "      GCC : Run \"make NT-Configure-GCC\" or \"make W-Configure-GCC\"."
 	@echo "            For a fully-automated build Run \"make WUnicon\" ."
-	@echo
+	@echo "            Autoconf:"
+	@echo "            sh configure --build=i686-w64-mingw32 when building 32-bit" 
+	@echo "            sh configure --build=x86_64-w64-mingw32 when building 64-bit"
+	@echo ""
 	@echo "All: after configuration, run \"make (or nmake) Unicon\"."
 	@echo
 
@@ -112,6 +115,12 @@ VX-Configure:	config/unix/$(name)/status
 		cd config/unix; $(MAKE) Setup-Graphics name=$(name)
 		sh ./configure CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)
 		@echo Remember to add unicon/bin to your path
+
+WUnicon32:
+	sh configure --host=i686-w64-mingw32
+
+WUnicon64:
+	sh configure --build=x86_64-w64-mingw32
 
 WUnicon:
 	@echo Reloading the Makefile from config/win32/gcc/makefile.top

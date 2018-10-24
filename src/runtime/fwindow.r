@@ -984,7 +984,7 @@ function{1} DrawLine(argv[argc])
 	 }
 
       if (w->context->is_3D){
-	 word num, start=0;
+	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
@@ -995,17 +995,16 @@ function{1} DrawLine(argv[argc])
 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
-	   num= BlkD(argv[warg], List)->size;
-	 else{
-	   num = argc-warg;
-	   start = warg;
-	  }
+	    num = BlkD(argv[warg], List)->size;
+	 else {
+	    num = argc-warg;
+	    }
 	  
 	  /* Check the number of coordinates*/
 	  if (num%w->context->dim != 0 || num<w->context->dim*2)
 	    runerr(146);
 	    
-	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 c_put(&f, &d);
@@ -1084,7 +1083,7 @@ function{1} DrawPoint(argv[argc])
 	 }
   
       if (w->context->is_3D) {
-	 word num, start=0;
+	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
@@ -1096,17 +1095,16 @@ function{1} DrawPoint(argv[argc])
 	 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
-	   num= BlkD(argv[warg], List)->size;
-	 else{
-	   num = argc-warg;
-	   start = warg;
-	 }
+	    num = BlkD(argv[warg], List)->size;
+	 else {
+	    num = argc-warg;
+	    }
 	 
 	 /* Check the number of coordinates*/
 	 if (num%w->context->dim!=0)
 	   runerr(146);
 	 
-	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 c_put(&f, &d);
@@ -1161,7 +1159,7 @@ function{1} DrawPolygon(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-	 word num, start=0;
+	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
@@ -1172,16 +1170,15 @@ function{1} DrawPolygon(argv[argc])
 	 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
-	   num= BlkD(argv[warg], List)->size;
-	 else{
-	   num = argc-warg;
-	   start = warg;
-	  }
+	    num = BlkD(argv[warg], List)->size;
+	 else {
+	    num = argc-warg;
+	    }
 	  /* Check the number of coordinates*/
 	  if (num%w->context->dim!=0 || num<3*w->context->dim)
 	    runerr(146);
 	  
-	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 c_put(&f, &d);
@@ -1330,7 +1327,7 @@ function{1} DrawSegment(argv[argc])
 	 }
 
       if (w->context->is_3D) {
-	 word num, start=0;
+	 word num;
          tended struct descrip f;
 	 tended struct descrip d;
 	 tended struct b_realarray *ap;
@@ -1341,17 +1338,16 @@ function{1} DrawSegment(argv[argc])
 	 
 	 /* check if the argument is a list */
 	 if (is:list(argv[warg]))
-	   num= BlkD(argv[warg], List)->size;
-	 else{
-	   num = argc-warg;
-	   start = warg;
-	  }
+	    num = BlkD(argv[warg], List)->size;
+	 else {
+	    num = argc-warg;
+	    }
 	  
 	  /* Check the number of coordinates*/
 	  if (num%(2*w->context->dim) != 0)
 	    runerr(146);
 	  
-	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	   runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 c_put(&f, &d);
@@ -1786,7 +1782,6 @@ function{1} FillPolygon(argv[argc])
 
 #ifdef Graphics3D
       if (w->context->is_3D) {
-	 word start = 0;
          tended struct descrip f;
          tended struct descrip d;
          tended struct b_realarray *ap;
@@ -1796,18 +1791,18 @@ function{1} FillPolygon(argv[argc])
 	    fail;
 
 	 /* check if the argument is a list */
-	 if (is:list(argv[warg]))
-	    num= BlkD(argv[warg], List)->size;
-	 else{
+	 if (is:list(argv[warg])) {
+	    num = BlkD(argv[warg], List)->size;
+	    }
+	 else {
 	    num = argc-warg;
-	    start = warg;
 	    }
 
 	 /* Check the number of coordinates*/
 	 if (num%w->context->dim != 0 || num<w->context->dim*3)
 	    runerr(146);
 
-	 if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+	 if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	    runerr(305, argv[warg]);
 	 ap = (struct b_realarray *) BlkD(d, List)->listhead;
 	 c_put(&f, &d);
@@ -4635,19 +4630,19 @@ function{1} Texture(argv[argc])
 	 else
 	    i = texwindow2D(w, w2);
 
-	 if (i==Succeeded){
+	 if (i==Succeeded) {
 	    if (wc->curtexture == wc->display->ntextures)
 	       wc->display->ntextures++;
 	    MakeInt(wc->curtexture, &(rp->fields[2]));
 	    c_put(&(w->window->funclist), &f);
 	    return f;
 	    }
-	 else{
+	 else {
 	    wc->curtexture = saved_tex;
 	    fail;
 	    }
 	 }
-      else{
+      else {
 	 /*
 	  * Otherwise it must be a string (probably, a filename).
 	  */
@@ -4673,7 +4668,7 @@ function{1} Texcoord(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, num, start=0;
+      int warg = 0, num;
       tended char* tmp;
       tended struct descrip f, mode;
       tended struct descrip d;
@@ -4697,7 +4692,6 @@ function{1} Texcoord(argv[argc])
 	 num = BlkD(argv[warg], List)->size;
       else {
 	 num = argc-warg;
-	 start=warg;
 
 	 if (num == 1) { /* probably "auto" */
 	    if (!cnv:C_string(argv[warg], tmp))
@@ -4720,7 +4714,7 @@ function{1} Texcoord(argv[argc])
       c_put(&f, &mode);
       wc->autogen = 0;
       wc->numtexcoords = 0;
-      if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+      if (cplist2realarray(&argv[warg], &d, 0, num, 0)!=Succeeded)
 	 runerr(305, argv[warg]);
 #ifdef  Arrays
       ap = (struct b_realarray *) BlkD(d, List)->listhead;
@@ -4749,7 +4743,7 @@ function{1} Normals(argv[argc])
    body {
       wbp w;
       wcp wc;
-      int warg = 0, num, start=0;
+      int warg = 0, num;
       tended struct descrip f;
       tended struct descrip d;
 #ifdef Arrays      
@@ -4769,13 +4763,12 @@ function{1} Normals(argv[argc])
       
       /* check if the argument is a list */
       if (is:list(argv[warg]))
-	num= BlkD(argv[warg], List)->size;
-      else{
+	num = BlkD(argv[warg], List)->size;
+      else {
 	num = argc-warg;
-	start = warg;
 	}
       
-      if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+      if (cplist2realarray(&argv[warg], &d, 0, num, 0) != Succeeded)
 	 runerr(305, argv[warg]);
 #ifdef Arrays
       ap = (struct b_realarray *) BlkD(d, List)->listhead;
@@ -4799,7 +4792,7 @@ function{1} MultMatrix(argv[argc])
    abstract { return list }
    body {
       wbp w;
-      int warg = 0, start=0, num;
+      int warg = 0, num;
       tended struct descrip f;
       tended struct descrip d;
 #ifdef Arrays
@@ -4818,9 +4811,8 @@ function{1} MultMatrix(argv[argc])
       /* check if the argument is a list */
       if (is:list(argv[warg]))
 	num= BlkD(argv[warg], List)->size;
-      else{
+      else {
 	num = argc-warg;
-	start = warg;
 	}
 
       /*
@@ -4829,7 +4821,7 @@ function{1} MultMatrix(argv[argc])
       if (num != 16 )
 	runerr(305);
       
-      if (cplist2realarray(&argv[warg], &d, start, num, 0)!=Succeeded)
+      if (cplist2realarray(&argv[warg], &d, 0, num, 0) != Succeeded)
 	runerr(305, argv[warg]);
 #ifdef Arrays
       ap = (struct b_realarray *) BlkD(d, List)->listhead;

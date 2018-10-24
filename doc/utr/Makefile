@@ -26,3 +26,6 @@ utr18.pdf: utr18.tex
 utr9c.pdf: utr9.tex
 	pdflatex utr9
 	mv utr9.pdf utr9c.pdf
+
+utr20.pdf: utr20.tex
+	pdflatex utr20

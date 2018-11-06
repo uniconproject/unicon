@@ -26,6 +26,9 @@
        
 *************************************************************************/
 
+#ifndef NDBM_H
+#define NDBM_H
+
 /* Parameters to dbm_store for simple insertion or replacement. */
 #define  DBM_INSERT  0
 #define  DBM_REPLACE 1
@@ -69,3 +72,5 @@ extern int	 dbm_dirfno ();
 extern int	 dbm_pagfno ();
 
 extern int	 dbm_rdonly ();
+
+#endif 				/*  NDBM_H */

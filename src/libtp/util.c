@@ -5,6 +5,7 @@
  */
 
 #include "../h/config.h"
+#include "util.h"
 #include "tp.h"
 
 #ifdef STDC_HEADERS
@@ -255,9 +256,7 @@ char* _tptrimnewline(char* s)
  * cannot distinguish between failure and a local broadcast address.
  */
 int
-inet_aton(cp, addr)
-        register const char *cp;
-        struct in_addr *addr;
+inet_aton(const char *cp, struct in_addr *addr)
 {
         register u_long val;
         register int base, n;

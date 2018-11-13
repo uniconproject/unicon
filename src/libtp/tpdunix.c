@@ -6,8 +6,8 @@
 #define _UNIXDISC_C_
 
 #include "../h/config.h"
-#include "tp.h"
 #include "util.h"
+#include "tp.h"
 #include "tpdunix.h"
 
 #ifdef STDC_HEADERS

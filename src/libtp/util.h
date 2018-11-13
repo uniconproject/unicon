@@ -6,6 +6,7 @@
 
 #ifndef _UTIL_H_
 #define _UTIL_H_ 1
+#include "../h/sys.h"
 
 #ifndef HAVE_BZERO
 # ifdef HAVE_MEMSET

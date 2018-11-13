@@ -100,12 +100,17 @@
 
 /*
  * 0x501 => WindowsXP or later
+ * 0x601 => Win7 or later
  */
 
-#if !defined(WINVER) || (WINVER < 0x0501)
+#if !defined(WINVER) || (WINVER < 0x0601)
 #undef WINVER
-#define WINVER 0x0501
-#define HAVE_GETADDRINFO
+#define WINVER 0x0601
+#endif
+
+#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0601)
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0601
 #endif
 
 #define HostStr "Win32 Intel GCC"
@@ -129,7 +134,6 @@
 #define rindex strrchr
 #define strdup _strdup
 #define unlink _unlink
-
 #define MSDOS 1
 #define StandardC
 #define ZERODIVIDE
@@ -149,8 +153,6 @@
 
 #define LoadFunc
 #define FieldTableCompression 1
-#define HAVE_LIBGL 1
-
 
 /* StackCheck seems to cause a crash when exiting through 
  * pressing the [x] close window button, turn it off for now 

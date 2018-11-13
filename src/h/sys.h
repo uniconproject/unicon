@@ -62,7 +62,6 @@
 #ifdef MSVC
    #include <direct.h>
 #endif					/* MSVC */
-
    #ifdef MSWindows
       #define int_PASCAL int PASCAL
       #define LRESULT_CALLBACK LRESULT CALLBACK
@@ -76,6 +75,7 @@
       /* #define boolean bolean */
       #include <winsock2.h>
       /* #undef boolean */
+      #include<ws2tcpip.h>
       #else					/* PosixFns */
       #include <windows.h>
       #endif					/* PosixFns */
@@ -87,7 +87,6 @@
       #define PATH_MAX 512
       #endif					/* PATH_MAX */
       #ifdef PosixFns
-
       /* 
        * Avoid a conflict between rpcndr.h and jmorecfg.h (jpeg) about "boolean"
        * uncomment the "boolean" lines below if you have this issue. 
@@ -95,11 +94,12 @@
       /* #define boolean bolean */
       #include <winsock2.h>
       /* #undef boolean */
+      #include<ws2tcpip.h>
       #else
-#if defined(ISQL) || defined(Audio)
-#include <windows.h>
-#include <mmsystem.h>
-#endif					/* ISQL */
+         #if defined(ISQL) || defined(Audio)
+           #include <windows.h>
+           #include <mmsystem.h>
+         #endif					/* ISQL */
       #endif					/* PosixFns */
       #endif					/* NT */
    #endif				/* MSWindows */

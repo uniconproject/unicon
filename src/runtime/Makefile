@@ -38,11 +38,11 @@ interp_all: update_rev
 
 iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP)
-	cp iconx ../../bin
+	cp iconx$(EXE) ../../bin
 # Some systems require global symbols to be left in iconx for loadfunc() to work
 # but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
 # so only use -x when it is known to be needed and available (MacOS).
-	strip $(DASHX) ../../bin/iconx;
+	strip $(DASHX) ../../bin/iconx$(EXE);
 
 
 

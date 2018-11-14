@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef HAVE_LIBPNG
 #include <setjmp.h>
+#endif					/* HAVE_LIBPNG */
 #endif
 
 #include "tp.h"

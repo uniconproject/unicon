@@ -731,7 +731,7 @@ Reference Manual</span></b></p>
 <p class=MsoNormal align=center style='text-align:center'><b><span
 style='font-size:14.0pt;line-height:125%'>Ziad Al-Sharif, Paden Rumsey, Gigi Young, and Clinton Jeffery<br>
 Unicon Technical Report #10c<br>
-July 12, 2018</span></b></p>
+November 14, 2018</span></b></p>
 
 <p class=MsoNormal>&nbsp;</p>
 
@@ -4296,6 +4296,132 @@ the least possible modifications.
 <br clear=ALL>
 
 </p>
+<p>
+<center>
+<table border>
+<tr><td><pre>
+<font color=blue><b>$include</b></font> <font color=red>"evdefs.icn"</font>
+<font color=blue><b>link</b></font> evinit
+
+<font color=green># A simple monitor that counts the number of method/procedure and built-in function calls</font>
+<font color=blue><b>class</b></font> <b>Example</b>(eventMask, pcalls, fcalls, pcalls_rate, fcalls_rate)
+
+   <font color=green># This method counts the number of method/procedure calls</font>
+   <font color=blue><b>method</b></font> handle_E_Pcall(code, value)
+      pcalls +:= 1
+   <font color=blue><b>end</b></font>
+
+   <font color=green># This method counts the number of built-in function calls</font>
+   <font color=blue><b>method</b></font> handle_E_Fcall(code, value)
+      fcalls +:= 1
+   <font color=blue><b>end</b></font>
+
+   <font color=green># This method do some calculations and analyze the collected information</font>
+   <font color=blue><b>method</b></font> analyze_info()
+      local total
+
+      total := pcalls + fcalls
+      pcalls_rate := pcalls/total * 100
+      fcalls_rate := fcalls/total * 100
+   <font color=blue><b>end</b></font>
+
+   <font color=green># This method prints out some information</font>
+   <font color=blue><b>method</b></font> write_info()
+      write(<font color=red>" # pcalls = "</font>, pcalls, <font color=red>" and its ratio is :"</font>, pcalls_rate)
+      write(<font color=red>" # fcalls = "</font>, fcalls, <font color=red>" and its ratio is :"</font>, fcalls_rate)
+   <font color=blue><b>end</b></font>
+
+<font color=green># Constructor</font>
+<font color=blue><b>initially</b></font>()
+   eventMask := cset(E_Pcall||E_Fcall)
+   pcalls := fcalls := 0
+<font color=blue><b>end</b></font>
+
+<font color=blue><b>procedure</b></font> main(args)
+   local obj
+   EvInit(args)
+   obj := Example()
+   <font color=blue><b>while</b></font> EvGet(obj.eventMask) <font color=blue><b>do</b></font> {
+      <font color=blue><b>case</b></font> &eventcode of{
+         E_Pcall:{
+            obj.handle_E_Pcall(&eventcode, &eventvalue)
+            }
+         E_Fcall:{
+            obj.handle_E_Fcall(&eventcode, &eventvalue)
+            }
+         }
+      }
+   obj.analyze_info()
+   obj.write_info()
+<font color=blue><b>end</b></font>
+</pre>
+</table>
+<br>
+<b>Figure 1. Sample External Debugging Agent</b>
+</center>
+<p>
+<br><br>
+<p>
+
+<center>
+<table border>
+<tr><td><pre>
+<font color=blue>$include</font> <font color=red>“evdefs.icn”</font>
+<font color=gray><del>link evinit</del></font>
+<font color=green># A simple monitor that counts the number of method/procedure and built-in function calls</font>
+<font color=blue>class</font> <b>Example : Listener</b> (eventMask, pcalls, fcalls, pcalls_rate, fcalls_rate)
+
+   <font color=green># This method counts the number of method/procedure calls</font>
+   <font color=blue><b>method</b></font> handle_E_Pcall(code, value)
+      pcalls +:= 1
+   <font color=blue><b>end</b></font>
+
+   <font color=green># This method counts the number of built-in function calls</font>
+   <font color=blue><b>method</b></font> handle_E_Fcall(code, value)
+      fcalls +:= 1
+   <font color=blue><b>end</b></font>
+
+   <font color=green># This method does some calculations and analyze the collected information</font>
+   <font color=blue><b>method</b></font> analyze_info()
+      local total
+      total := pcalls + fcalls
+      pcalls_rate := pcalls/total * 100
+      fcalls_rate := fcalls/total * 100
+   <font color=blue><b>end</b></font>
+
+   <font color=green># This method prints out some information</font>
+   <font color=blue><b>method</b></font> write_info()
+      write(<font color=red>" # pcalls = "</font>, pcalls, <font color=red>" and its ratio is :"</font>, pcalls_rate)
+      write(<font color=red>" # fcalls = "</font>, fcalls, <font color=red>" and its ratio is :"</font>, fcalls_rate)
+   <font color=blue><b>end</b></font>
+
+<font color=green># Constructor</font>
+<b>initially</b>()
+   eventMask := cset(E_Pcall||E_Fcall)
+   pcalls := fcalls := 0
+<font color=blue><b>end</b></font>
+
+<font color=gray><del><b>procedure</b> main(args)
+   <b>local</b> obj
+   <b>EvInit</b>(args)
+   obj := MyMon()
+   <b>while EvGet</b>(obj.eventMask) <b>do</b> {
+      <b>case &eventcode of</b> {
+         <b>E_Pcall</b>:{
+            obj.handle_E_Pcall(&eventcode, &eventvalue)
+            }
+         <b>E_Fcall</b>:{
+            obj.handle_E_Fcall(<b>&eventcode</b>, <b>&eventvalue</b>)
+            }
+         }
+      }
+   obj.analyze_info()
+   obj.write_info()
+<b>end</b></del>
+</pre>
+</table>
+<b>Figure 2. Sample Internal Debugging Agent</b>
+<center>
 
 <h1><a name="_Toc232119711">14. Future Work</a></h1>
 

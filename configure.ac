@@ -290,6 +290,7 @@ case $unicon_host in
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
+
         ;;
 esac
 
@@ -521,7 +522,11 @@ else
 fi
 
 if test "x$database" = "xyes"; then
-   CHECK_ODBC()
+   if test "ms$unicon_os" = "mswindows" ; then
+     CHECK_ODBC32()
+   else
+     CHECK_ODBC()
+   fi  
 else
   AC_DEFINE([NoDatabase], [1], [No Database])
 fi

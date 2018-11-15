@@ -90,8 +90,6 @@ fi
           fail_and_restore([$1 in ($2)])
 	fi
 	AC_LANG_POP([$6])
-
-
 ])
 
 AC_DEFUN([do_arg_with],
@@ -376,12 +374,43 @@ if test "x$with_odbc" != "xno"; then
 
   if test "x$cv_libiodbc" != "xyes" ; then
     do_lib_check([odbc], [${odbc_HOME}], [sqlext.h], [SQLConnect], [HAVE_LIBODBC], [C])
-
-    if test "x$cv_libodbc" != "xyes" ; then
-      do_lib_check([odbc32], [${odbc_HOME}], [sqlext.h], [SQLConnect], [HAVE_LIBODBC], [C])
-    fi
-
   fi
+fi
+])
+
+AC_DEFUN([CHECK_ODBC32],
+[
+do_arg_with([odbc])
+if test "x$with_odbc" != "xno"; then
+
+if test  x${odbc_HOME} != "x"
+then
+	save_flags([-I${odbc_HOME}/include -I${odbc_HOME}], [-L${odbc_HOME}/lib], [])
+else
+	save_flags([], [], [])
+fi
+        AC_LANG_PUSH([C])
+	# If we have mulltiple headers, any missing one will set this to no
+	cv_libodbc32_h=yes
+	AC_CHECK_HEADERS([sqlext.h], [], [cv_libodbc32_h=no],
+        [[
+          #include <windows.h>
+    	  #include <sqlext.h>
+        ]])
+
+	if test x$cv_libodbc32_h != xno ;  then
+	  AC_SEARCH_LIBS([SQLConnect], [odbc32],
+	     [cv_libodbc=yes
+	      AC_DEFINE([HAVE_LIBODBC], [1], [Define to 1 if you lib odbc])
+	     ],
+	     [cv_libodbc=no
+	       fail_and_restore([odbc32 in (${odbc_HOME})])
+	     ],
+	     [])
+        else
+          fail_and_restore([odbc32 in (${odbc_HOME})])
+        fi
+	AC_LANG_POP([C])
 fi
 ])
 

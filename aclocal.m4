@@ -376,6 +376,11 @@ if test "x$with_odbc" != "xno"; then
 
   if test "x$cv_libiodbc" != "xyes" ; then
     do_lib_check([odbc], [${odbc_HOME}], [sqlext.h], [SQLConnect], [HAVE_LIBODBC], [C])
+
+    if test "x$cv_libodbc" != "xyes" ; then
+      do_lib_check([odbc32], [${odbc_HOME}], [sqlext.h], [SQLConnect], [HAVE_LIBODBC], [C])
+    fi
+
   fi
 fi
 ])

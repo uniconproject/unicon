@@ -1,49 +1,45 @@
 \chapter{The Icon Program Library}
 
-The \index{Icon Program Library}Icon Program Library (IPL) includes
-literally hundreds of complete programs ranging from simple
-demonstrations to complex applications. More importantly, it offers
-hundreds of library modules with over a thousand procedures that can
-save you a lot of effort. To use these procedures in your own programs,
-you add \index{link}link declarations. The IPL is generally unpacked in
-its own directory hierarchy. Unicon knows the location of the IPL
-hierarchy relative to the Unicon binaries. If you move these binaries
-or wish to add your own directories of reusable code modules, you must
-set your \index{environment variable!IPATH}IPATH (and often your LPATH)
+The \index{Icon Program Library}Icon Program Library (IPL) contains
+hundreds of complete programs ranging from simple demonstrations to
+complex applications. More importantly, it provides hundreds of
+library modules with thousands of procedures that can save you a lot
+of effort. To use these procedures, add \index{link}\texttt{link}
+declarations to the modules in which they are declared. On standard
+installations, Unicon knows the location of the directory IPL
+hierarchy relative to the Unicon binaries. To move these binaries or
+add your own directories of reusable code modules, you must set the
+\index{environment variable!IPATH}IPATH (and often LPATH)
 \index{environment variable!LPATH}environment variables so they know
 where to find the IPL directories, in addition to any of your own you
 wish to add. Both IPATH and LPATH are space-separated lists of
-directories. The names IPATH and LPATH may be misleading; IPATH
-directories are searched for precompiled u-code modules with .u
-extensions, while LPATH directories are searched for
-\$include'd \index{source code}source code files with
-the .icn extension.
+directories. The names IPATH and LPATH can be confusing; IPATH
+directories are searched for .u code modules to be linked,
+while LPATH directories are searched for .icn
+\index{source code}source code files that you wish to \$include.
 
-The Icon Program Library has 20
-directories of code, data, and supporting documentation. It
-is included in its entirety in the Unicon distributions.
-This reference summary appendix presents details for
-the most useful components of the IPL, emphasizing components
-of potential value to other programmers.
-Many modules were written by Icon creator Ralph Griswold; if he was not
-the author of a given module,
-the initials of authors are included in the module description. A list of
-authors' names appears at the end of the appendix. This
-appendix no doubt overlooks some excellent library modules and programs.
-The entries in this appendix loosely follow this template:
+The Icon Program Library's 20 directories of code, data, and
+supporting documentation is included in Unicon
+distributions. This reference appendix presents
+only the most useful components of the IPL, emphasizing those of
+potential value to other programmers.  Many modules were written by
+Ralph Griswold; if he was not the author of a given
+module, the initials of authors are included in the module
+description. A list of authors' names appears at the end of the
+appendix. This appendix no doubt overlooks some excellent library
+modules and programs.  The entries in this appendix loosely follow
+this template:
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filename}}
 
-Each module has one or more paragraphs of general description, ending
-with the authors' initials in parentheses. After the
-description, if the module consisted of more than a single procedure,
-the external interface of the module is summarized. The external
-interface consists of procedures, record types and global variables.
-The number and type of each procedure's parameters and
-return values are given. Library procedures can be expected to return a
+Each module has a general description, ending
+with the authors' initials in parentheses. For some modules,
+the external interface of the module is then summarized.
+The number and type of procedures' parameters and
+return values are given. Library procedures return a
 null value unless otherwise noted. The filename at the beginning is
-what you \index{link}link in order to use these procedures in your
-programs. After the external interface is summarized, related modules
+\index{link}linked in in order to use these procedures in a
+program. After the external interface, related modules
 are listed.
 
 record types(fields) with summary descriptions\\
@@ -64,21 +60,21 @@ This module processes address lists; addresses are
 represented using a record type \texttt{label}. Procedures for
 extracting the city, state, and ZIP code work for U.S. addresses only.
 
-\texttt{record label(header, text, comments)} holds one address\\
-\texttt{nextadd() : label} produces the next address from standard
-input\\
-\texttt{writeadd(label)} writes an address to standard output\\
-\texttt{get\_country(label) : string} produces the country from an
-address\\
-\texttt{get\_state(label) : string} produces the state,
-or \texttt{"XX"} if no state is found\\
-\texttt{get\_city(label) : string} produces the city from an address\\
-\texttt{get\_zipcode(label) : string} produces the city from an address\\
-\texttt{get\_lastname(label) : string} get last name\\
-\texttt{get\_namepfx(label) : string} get name prefix\\
-\texttt{get\_title(label) : string} get name title\\
-\texttt{format\_country(string) : string} format country name using
-initial capital letters.
+%\texttt{record label(header, text, comments)} holds one address\\
+%\texttt{nextadd() : label} produces the next address from standard
+%input\\
+%\texttt{writeadd(label)} writes an address to standard output\\
+%\texttt{get\_country(label) : string} produces the country from an
+%address\\
+%\texttt{get\_state(label) : string} produces the state,
+%or \texttt{"XX"} if no state is found\\
+%\texttt{get\_city(label) : string} produces the city from an address\\
+%\texttt{get\_zipcode(label) : string} produces the city from an address\\
+%\texttt{get\_lastname(label) : string} get last name\\
+%\texttt{get\_namepfx(label) : string} get name prefix\\
+%\texttt{get\_title(label) : string} get name title\\
+%\texttt{format\_country(string) : string} format country name using
+%initial capital letters.
 
 Links: \texttt{lastname}, \texttt{io}, \texttt{namepfx}, \texttt{title}
 
@@ -168,7 +164,7 @@ are processed individually as if they were spliced into the
 the order and type of values, as follows:
 
 \begin{flushleft}
-\begin{xtabular}{|m{0.2in}|m{2.6in}|m{0.2in}|m{2.6in}|}
+\begin{xtabular}{|m{0.12in}|m{2.69in}|m{0.12in}|m{2.69in}|}
 \hline
 a & ASCII, null padded & A & ASCII, space padded\\
 b & bitstring, low-to-high order & B & bitstring, high-to-low order\\
@@ -338,24 +334,22 @@ by \texttt{bufread()}.
 \texttt{bufclose(f:\&input): file} close file f.
 
 In addition to processing the current line, one may process subsequent
-lines \textbf{before} they are logically read: Example:
+lines \textbf{before} they are logically read. % Example:
 
-\iconcode{
-file := bufopen("name",
-"r") {\textbar} stop('open
-failed") \\
-while line := bufread(file) do \{ \\
-\>   ...process current line... \\
-\>   line := bufnext(file,1) \# return next line \\
-\>   ...process next line... \\
-\>   line := bufnext(file,2) \# return 2nd next line \\
-\>   ...process 2nd next line... ...etc...  \\
-\>   \} \\
-bufclose(file)
-}
+%\begin{flushleft}
+%\begin{xtabular}{|m{3.4in}|m{2.65in}|}
+%\hline
+%\texttt{file := bufopen("name","r"){\textbar}stop("open failed")} & \texttt{line := bufnext(file,2) \# 2nd next line} \\
+%\texttt{while line := bufread(file) do \{} &   ...process 2nd next line... ...etc... \\
+%\ \ \ ...process current line... &  \texttt{\}} \\
+%\ \ \ \texttt{line := bufnext(file,1) \# next line} & \texttt{bufclose(file)} \\
+%\ \ \  ...process next line... & \texttt{\}} \\
+%\hline
+%\end{xtabular}
+%\end{flushleft}
 
-In the code above, calls to \texttt{bufnext()} do not affect subsequent
-\texttt{bufread()}'s.
+%In the code above, calls to \texttt{bufnext()} do not affect subsequent
+%\texttt{bufread()}'s.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{calls}}
 
@@ -501,8 +495,8 @@ generated web page output. If the user application defines this
 function, it should return a table which contains keys
 "background",
 "bgcolor",
-"text", 'link',
-"vlink",
+"text", "link",
+"vlink", and
 "bgproperties" with appropriate values to
 go into the BODY tag and define background color and texture for the
 CGI page. 
@@ -550,24 +544,23 @@ prints the items in as few vertical lines as possible.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{complete}\hfill (RLG)}
 
-\index{complete()}\texttt{complete(s:string,st) : string*} lets you
-supply a partial string, \texttt{s}, and get back those strings in
+\index{complete()}\texttt{complete(s:string,st) : string*} takes
+a partial string, \texttt{s}, and generates those strings in
 \texttt{st} that begin with \texttt{s}. \ \texttt{st} must be a list or
-set of strings. Example:
+set of strings. % Example:
 
-\iconcode{
-commands :=
-["run","stop","quit","save","load","continue"] \\
-while line := read(\&input) do \{ \\
-\>   cmds := [ ] \\
-\>   every put(cmds, complete(line, commands)) \\
-\>   case *cmds of \{ \\
-\>   \ \ \ 0 : input\_error(line) \\
-\>   \ \ \ 1 : do\_command(cmds[1]) \\
-\>   \ \ \ default : display\_possible\_completions(cmds) \\
-\>   \ \ \ \} \\
-\>   \}
-}
+%\iconcode{
+%commands :=
+%["run","stop","quit","save","load","continue"] \\
+%while line := read(\&input) do \{ \\
+%\>   cmds := [: complete(line, commands) :] \\
+%\>   case *cmds of \{ \\
+%\>   \ \ \ 0 : input\_error(line) \\
+%\>   \ \ \ 1 : do\_command(cmds[1]) \\
+%\>   \ \ \ default : display\_possible\_completions(cmds) \\
+%\>   \ \ \ \} \\
+%\>   \}
+%}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{complex}}
 
@@ -590,68 +583,65 @@ representation\\
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{conffile}\hfill (DAG)}
 
-This module parses configuration files into Icon
+This module parses ``configuration files'' into Icon
 structures for easy access. The service is similar to 
 command-line option handling, except that configuration files can
 contain structured data such as lists or tables. A configuration file
 supplies values for a set of named \textit{directives}. The directives
 and their values are read in to a table, usually during program
-initialization. The types of all allowed directives are specified as
-follows, before the configuration file is accessed.
+initialization. The types of all allowed directives are specified
+% as follows,
+before the configuration file is accessed.
 
-\texttt{Directive(classproc,editproc,minargs,maxargs):DirectivesRec}
-produces records (whose field names match the parameter names) that
-populate a table used to control configuration file processing.
-\texttt{classproc} is a procedure that indicates what kind of value is
-associated with a given directive in the configuration file:.
-\texttt{editproc} is an optional type conversion procedure to apply to
-values. \texttt{minargs} and \texttt{maxargs} are the minimum and
-maximum number of arguments to a directive; their defaults depend on
-the \texttt{classproc}.
+%\texttt{Directive(classproc,editproc,minargs,maxargs):DirectivesRec}
+%produces records (whose field names match the parameter names) that
+%populate a table used to control configuration file processing.
+%\texttt{classproc} is a procedure that indicates what kind of value is
+%associated with a given directive in the configuration file:.
+%\texttt{editproc} is an optional type conversion procedure to apply to
+%values. \texttt{minargs} and \texttt{maxargs} are the minimum and
+%maximum number of arguments to a directive; their defaults depend on
+%the \texttt{classproc}.
 
-\begin{xtabular}{m{2.0in} m{0.9in} m{2.0in} m{0.9in}}
-classproc & min, max & classproc & min, max \\
-Directive\_value & 1, 1 & Directive\_list & 1, inf \\
-Directive\_table & 2, inf & Directive\_set & 1, inf\\
-Directive\_table\_of\_sets & 2, inf & Directive\_ignore & 0, inf\\
-Directive\_warning\ \ \ \ 0, inf \\
-\end{xtabular}
+%\begin{xtabular}{m{2.0in} m{0.9in} m{2.0in} m{0.9in}}
+%classproc & min, max & classproc & min, max \\
+%Directive\_value & 1, 1 & Directive\_list & 1, inf \\
+%Directive\_table & 2, inf & Directive\_set & 1, inf\\
+%Directive\_table\_of\_sets & 2, inf & Directive\_ignore & 0, inf\\
+%Directive\_warning\ \ \ \ 0, inf \\
+%\end{xtabular}
 
-The following code creates a table of specifications for a
-case-insensitive label and a list of exactly three color components.
-The default value for tables passed into \texttt{ReadDirectives()}
-should be a \texttt{Directive} for \texttt{Directive\_ignore} or
-\texttt{Directive\_warning}.
+%The following code creates a table of specifications for a
+%case-insensitive label and a list of exactly three color components.
+%The default value for tables passed into \texttt{ReadDirectives()}
+%should be a \texttt{Directive} for \texttt{Directive\_ignore} or
+%\texttt{Directive\_warning}.
 
-\iconcode{
-tos := table(Directive(Directive\_ignore)) \\
-tos["mylabel"] :=
-Directive(Directive\_value, map) \\
-tos["fgrgb"] := Directive(Directive\_list,
-3, 3)
-}
+%\iconcode{
+%tos := table(Directive(Directive\_ignore)) \\
+%tos["mylabel"] := Directive(Directive\_value, map) \\
+%tos["fgrgb"] := Directive(Directive\_list, 3, 3)
+%}
 
-\texttt{ReadDirectives(L:list,T:table,s1:"\#",s2:'-',c1:'{\textbackslash}{\textbackslash}',
-c2:'
-{\textbackslash}b{\textbackslash}t{\textbackslash}v{\textbackslash}f{\textbackslash}r',p)
-: table} returns a table containing directives parsed and extracted
-from a file. \texttt{L} is a list of string filenames or open files;
-the procedure uses the first one that it is able to read. \texttt{T} is
-a table of specifications for parsing and handling directives.
-\texttt{s1} is the comment character. \texttt{s2} is the continuation
-character. \texttt{c1} are escape characters. \texttt{c2} are white
-space. The following code reads directives using the previously-defined
-specification table, and creates a window whose title is taken from the
-specified \texttt{mylabel} directive if it is present. Links: lastc.
+%\texttt{ReadDirectives(L:list,T:table,s1:"\#",s2:'-',c1:'{\textbackslash}{\textbackslash}',
+%c2:'
+%{\textbackslash}b{\textbackslash}t{\textbackslash}v{\textbackslash}f{\textbackslash}r',p)
+%: table} returns a table containing directives parsed and extracted
+%from a file. \texttt{L} is a list of string filenames or open files;
+%the procedure uses the first one that it is able to read. \texttt{T} is
+%a table of specifications for parsing and handling directives.
+%\texttt{s1} is the comment character. \texttt{s2} is the continuation
+%character. \texttt{c1} are escape characters. \texttt{c2} are white
+%space. The following code reads directives using the previously-defined
+%specification table, and creates a window whose title is taken from the
+%specified \texttt{mylabel} directive if it is present. Links: lastc.
 
-\iconcode{
-cfg := ReadDirectives([".mycfg",
-"my.cfg", \&input], tos) \\
-WOpen("label=" {\textbar}{\textbar} (
-{\textbackslash} (cfg["mylabel"])
-{\textbar} "untitled"))
-}
-
+%\iconcode{
+%cfg := ReadDirectives([".mycfg", "my.cfg", \&input], tos) \\
+%WOpen("label=" {\textbar}{\textbar} (
+%{\textbackslash} (cfg["mylabel"])
+%{\textbar} "untitled"))
+%}
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{convert}}
@@ -742,19 +732,17 @@ Miscellaneous date and time operations. See also: \texttt{datefns.icn}.
 functions. An \index{environment variable!DateBaseYear}environment
 variable by the same name overrides the default value.
 
-\texttt{ClockToSec(string) : integer} converts a time in the format of
-\texttt{\&clock} into a number of seconds past midnight.
+\texttt{ClockToSec(string) : integer} converts
+\texttt{\&clock} format to seconds past midnight.
 
-\texttt{DateLineToSec(dateline,hoursFromGmt) : integer} converts a date
-in \&dateline format to seconds since start of DateBaseYear.
-
-\texttt{DateToSec(string) : integer} converts a date string in Icon
+\texttt{DateLineToSec(dateline,hoursFromGmt) : integer} converts
+\texttt{\&dateline} format to seconds past \texttt{DateBaseYear}.
+\texttt{DateToSec(string) : integer} converts
 \texttt{\&date} format (yyyy/mm/dd) to seconds past
 \texttt{DateBaseYear}.
 
 \texttt{SecToClock(integer) : string} converts a number of seconds past
 midnight to a string in the format of \texttt{\&clock}.
-
 \texttt{SecToDate(integer) : string} converts a number of seconds past
 \texttt{DateBaseYear} to a string in Icon \texttt{\&date} format
 (yyyy/mm/dd).
@@ -1031,48 +1019,44 @@ expression}regular expression similar to the ones the Unix
 e\index{grep}grep command uses. A no argument invocation wipes out all
 static structures utilized by \index{findre()}\texttt{findre()}, and
 then forces a \index{garbage collection}garbage collection.
-\texttt{findre()} offers a simple and compact wildcard-based search
-system. If you do many searches through text files, or write programs
-which do searches based on user input, then \texttt{findre()} is a
-utility you might want to look over. \texttt{findre()} leaves the user
-with no easy way to tab past a matched substring, as with \texttt{s ?
-write(tab(find("hello")+5))}. In order to
-remedy this intrinsic deficiency, \texttt{findre()} sets the global
-variable \texttt{\_\_endpoint} to the first position after any given
-match occurs. \texttt{findre()} utilizes the same basic language as
-egrep, but uses intrinsic Icon data structures and escaping conventions
-rather than those of any particular Unix variant. \texttt{findre()}
-takes a shortest-possible-match approach to regular expressions. In
-other words, if you look for \texttt{"a*"},
+%\texttt{findre()} offers a simple and compact wildcard-based search
+%system. If you do many searches through text files, or write programs
+%which do searches based on user input, then \texttt{findre()} is a
+%utility you might want to look over. \texttt{findre()} leaves the user
+%with no easy way to tab past a matched substring, as with \texttt{s ?
+%write(tab(find("hello")+5))}. In order to
+%remedy this intrinsic deficiency, \texttt{findre()} sets the global
+%variable \texttt{\_\_endpoint} to the first position after any given
+%match occurs. \texttt{findre()} utilizes the same basic language as
+%egrep, but uses intrinsic Icon data structures and escaping conventions
+%rather than those of any particular Unix variant.
+\texttt{findre()} takes a shortest-possible-match approach to regular
+expressions. If you look for \texttt{"a*"},
 \texttt{findre()} will not even bother looking for an
 \texttt{"a"}\texttt{.} It will just match
 the empty string.
 
-\texttt{\^{}} - matches if what follows is at the beginning of a line\\
-\texttt{\$} - matches if the preceding pattern is at the end of a line\\
-\texttt{.} - matches any single character\\
-\texttt{+} - matches 1 or more occurrences of the previous
-expression (i.e. \\
- \ \ \ \ \ a character, or set of parenthesized/bracketed
-characters)\\
-\texttt{*} - matches from 0 to any number of occurrences of the previous
-expression\\
-{\textbackslash} \ {}- removes the special meaning of any special
-characters\\
- \ \ \ \ (i.e. if you want to match lines beginning with a
-\texttt{"["}, write
-\texttt{\^{}{\textbackslash}[}, and not \texttt{\^{}[})\\
-\texttt{{\textbar}} - matches either the pattern before it, or the one
-after it\\
-\texttt{[]} - matches any member of the enclosed character set, or, if
-\texttt{\^{}} is the first character,\\
- \ \ \ \ \ \ \ any nonmember of the enclosed character set \\
-\texttt{()} - used for grouping (e.g. \texttt{\^{}(abc{\textbar}cde)\$} matches
-lines consisting of either \texttt{"abc"}
-or \texttt{"cde",}\\
- \ \ \ \ \ \ while \texttt{\^{}abc{\textbar}cde}\$ matches lines either
-beginning with \texttt{"abc"} or ending in
-\texttt{"cde"})
+%\texttt{\^{}} - matches if what follows is at the beginning of a line\\
+%\texttt{\$} - matches if the preceding pattern is at the end of a line\\
+%\texttt{.} - matches any single character\\
+%\texttt{+} - matches 1 or more occurrences of the previous expression (i.e. \\
+% \ \ \ \ \ a character, or set of parenthesized/bracketed characters)\\
+%\texttt{*} - matches from 0 to any number of occurrences of the previous
+%expression\\
+%{\textbackslash} \ {}- removes the special meaning of any special characters\\
+% \ \ \ \ (i.e. if you want to match lines beginning with a
+%\texttt{"["}, write
+%\texttt{\^{}{\textbackslash}[}, and not \texttt{\^{}[})\\
+%\texttt{{\textbar}} - matches either the pattern before it, or the one
+%after it\\
+%\texttt{[]} - matches any member of the enclosed character set, or, if
+%\texttt{\^{}} is the first character,\\
+% \ \ \ \ \ \ \ any nonmember of the enclosed character set \\
+%\texttt{()} - used for grouping (e.g. \texttt{\^{}(abc{\textbar}cde)\$} matches
+%lines consisting of either \texttt{"abc"} or \texttt{"cde",}\\
+% \ \ \ \ \ \ while \texttt{\^{}abc{\textbar}cde}\$ matches lines either
+%beginning with \texttt{"abc"} or ending in
+%\texttt{"cde"})
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{gauss} \hfill (SBW)}
 
@@ -1191,20 +1175,21 @@ two-way lookup table. The nodes in turn are sets of
 \index{pointer}pointers to other nodes. The two-way table maps a node
 to its name and vice-versa. Graph specifications are given in files in
 which the first line is a white-space separated list of node names and
-subsequent lines give the arcs, as in
+subsequent lines give the arcs, with \texttt{-\textgreater} between
+source and destination. %, as in
 
-Tucson Phoenix Bisbee Douglas Flagstaff\\
-Tucson-{\textgreater}Phoenix\\
-Tucson-{\textgreater}Bisbee\\
-Bisbee-{\textgreater}Bisbee\\
-Bisbee-{\textgreater}Douglas\\
-Douglas-{\textgreater}Phoenix\\
-Douglas-{\textgreater}Tucson
+%Tucson Phoenix Bisbee Douglas Flagstaff\\
+%Tucson-{\textgreater}Phoenix\\
+%Tucson-{\textgreater}Bisbee\\
+%Bisbee-{\textgreater}Bisbee\\
+%Bisbee-{\textgreater}Douglas\\
+%Douglas-{\textgreater}Phoenix\\
+%Douglas-{\textgreater}Tucson
 
-record graph(nodes:list, lookup:table) represents a graph\\
-read\_graph(f:file) : graph reads a graph from a file\\
-write\_graph(g:graph, f:file) : null writes a graph to a file\\
-closure(node) : set computes the transitive closure of a node.
+\texttt{record graph(nodes:list, lookup:table)} represents a graph\\
+\texttt{read\_graph(f:file) : graph} reads a graph from a file\\
+\texttt{write\_graph(g:graph, f:file) : null} writes a graph to a file\\
+\texttt{closure(node) : set} computes the transitive closure of a node.
 \ \ \ \ \ \ 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{hexcvt}\hfill (RJA)}
@@ -1212,9 +1197,9 @@ closure(node) : set computes the transitive closure of a node.
 \texttt{hex(s) : integer} converts a string of hex digits into an
 integer.\\
 \texttt{hexstring(i,n,lc) : string} produces the
-\index{hexadecimal}hexadecimal representation of the argument. If n is
-supplied, a minimum of n digits appears in the result; otherwise there
-is no minimum, and negative values are indicated by a minus sign. If lc
+\index{hexadecimal}hexadecimal representation of the argument. If \texttt{n} is
+supplied, a minimum of \texttt{n} digits appears in the result; otherwise there
+is no minimum, and negative values are indicated by a minus sign. If \texttt{lc}
 is non-null, lowercase characters are used instead of uppercase.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{html}\hfill (GMT)}
@@ -1244,18 +1229,20 @@ of a base URL.
 context free grammars (it has a cubic worst-case time factor). Chart
 parsers are flexible enough to handle a variety of natural language
 constructs, and lack many of the troubles associated with empty and
-left-recursive derivations. To obtain a parse, create a \index{BNF}BNF
-file, obtain a line of input, and then invoke parse\_sentence(sentence,
-bnf\_filename, start-symbol). Parse\_sentence() suspends successive
-edge structures corresponding to possible parses of the input sentence.
-BNF grammars are specified using the same notation used in Griswold \&
-Griswold, and as described in the IPL program
-"pargen.icn" later in this appendix with
-the following difference: All metacharacters (space, tab, vertical
-slash, right/left parentheses, brackets and angle brackets) are
-converted to literals by prepending a backslash. Comments can be
-included along with BNF rules using the same notation as for Icon code
-(i.e. \#-sign).
+left-recursive derivations.
+% To obtain a parse, create a \index{BNF}BNF
+%file, obtain a line of input, and then invoke
+%\texttt{parse\_sentence(sentence,
+%bnf\_filename, start-symbol)}. \texttt{parse\_sentence()} suspends successive
+%edge structures corresponding to possible parses of the input sentence.
+%BNF grammars are specified using the same notation used in Griswold \&
+%Griswold, and as described in the IPL program
+%"pargen.icn" later in this appendix with
+%the following difference: All metacharacters (space, tab, vertical
+%slash, right/left parentheses, brackets and angle brackets) are
+%converted to literals by prepending a backslash. %Comments can be
+%included along with BNF rules using the same notation as for Icon code
+%(i.e. \#-sign).
 
 Links: \texttt{trees, rewrap, scan, strip, stripcom, strings}. Requires:
 co-expressions.
@@ -1263,7 +1250,7 @@ co-expressions.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iftrace}\hfill (SBW, REG)}
 
 These procedures \index{trace}trace Icon functions by using procedure
-wrappers to call the functions. iftrace(fncs[]) sets tracing for a list
+wrappers to call the functions. \texttt{iftrace(fncs[])} sets tracing for a list
 of function names. Links: \texttt{ifncs}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{image}\hfill (MG, REG, DY)}
@@ -1277,12 +1264,11 @@ whole image on one line. Style 4 is like style 3, with structures
 expanded breadthfirst instead of depthfirst as for other styles.
 
 Structures are identified by a letter identifying the type followed by
-an integer. The tag letters are "L" for
-lists, "R" for records,
-"S" for sets, and
-"T" for tables. The first time a structure
-is encountered, it is imaged as the tag followed by a colon, followed
-by a representation of the structure. If the same structure is
+an integer. The tag letters are \texttt{"L"} for lists,
+\texttt{"R"} for records, \texttt{"S"} for sets, and
+\texttt{"T"} for tables. The first time a structure
+is seen, it is imaged as the tag followed by a colon, followed
+by a representation of the structure. If the structure is
 encountered again, only the tag is given.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{inbits}\hfill (RLG)}
@@ -1433,40 +1419,35 @@ e.g. TERM=ansi-color. The TERMCAP variable
 gives the location of the termcap database file, as provided on your
 UNIX system.
 
-Some useful termcap codes are "cl" (clear
-screen), "ce" (clear to end of line),
-"ho" (go to the top left square on the
-screen), "so" (begin standout mode), and
-"se" (end standout mode). The termcap
-database holds both string- and numeric-valued sequences. The value
-of "li" tells how many
-lines the terminal has; "co" tells how
-many columns. To go to the beginning of the second-to-last line on the
-screen: iputs(igoto(getval("cm"), 1,
-getval("li")-1)). The
-"cm" capability is a special capability,
-and needs to be output via igoto(cm,x,y), where cm is the sequence
-telling your computer to move the cursor to a specified spot, x is the
-column, and y is the row.
+%Some useful termcap codes are "cl" (clear screen), "ce" (clear to end of line),
+%"ho" (go to the top left square on the screen), "so" (begin standout mode), and
+%"se" (end standout mode). The termcap
+%database holds both string- and numeric-valued sequences. The value
+%of "li" tells how many lines the terminal has; "co" tells how
+%many columns. To go to the beginning of the second-to-last line on the
+%screen: iputs(igoto(getval("cm"), 1, getval("li")-1)). The
+%"cm" capability is a special capability,
+%and needs to be output via igoto(cm,x,y), where cm is the sequence
+%telling your computer to move the cursor to a specified spot, x is the
+%column, and y is the row.
 
-\texttt{setname(term)} initializes the terminal. Overrides
-TERM environment variable.
+%\texttt{setname(term)} initializes the terminal. Overrides
+%TERM environment variable.
 
-\texttt{getval(id)} returns the terminal code for the capability named
-id. Integer valued capabilities are returned as integers, strings as
-strings, and flags as records (if a flag is set, then
-\texttt{type(flag)} will return
-\texttt{"true"}). Absence of a capability
-is signaled by failure.
+%\texttt{getval(id)} returns the terminal code for the capability named
+%id. Integer valued capabilities are returned as integers, strings as
+%strings, and flags as records (if a flag is set, then
+%\texttt{type(flag)} will return \texttt{"true"}). Absence of a capability
+%is signaled by failure.
 
-\texttt{igoto(cm,column,row)} returns a terminal code string that causes
-the cursor to move to the designated column and row. cm is the cursor
-movement command for the current terminal, as obtained via
-getval("cm"). column and row count down and
-to the right starting from the location (1,1).
+%\texttt{igoto(cm,column,row)} returns a terminal code string that causes
+%the cursor to move to the designated column and row. cm is the cursor
+%movement command for the current terminal, as obtained via
+%getval("cm"). column and row count down and
+%to the right starting from the location (1,1).
 
-\texttt{puts(s)} sends s out to the console. For example, to clear the
-screen, \texttt{iputs(getval("cl"))}
+%\texttt{iputs(s)} sends s out to the console. For example, to clear the
+%screen, \texttt{iputs(getval("cl"))}
 
 Requires: UNIX, co-expressions. See also: iscreen.icn.
 
@@ -1542,14 +1523,14 @@ Links: \texttt{scan}. Requires: co-expressions.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ivalue}}
 
 \texttt{ivalue(s):any} turns a string from \texttt{image()} into the
-corresponding Icon value. It can handle integers, real numbers,
+corresponding Icon value. It handles integers, real numbers,
 strings, csets, keywords, structures, and procedures. For the image of
 a structure, it produces a result of the correct type and size, but
 values in the structure are not correct, since they are not encoded in
 the image. For procedures, the procedure must be present in the
 environment in which \texttt{ivalue()} is evaluated. This generally is
 true for built-in procedures (functions). All keywords are supported.
-The values produced for non-constant keywords are, of course, the
+The values produced for non-constant keywords are the
 values they have in the environment in which \texttt{ivalue()} is
 evaluated. \texttt{ivalue()} handles non-local variables
 (\texttt{image()} does not produce these), but they must be present in
@@ -1635,19 +1616,18 @@ its front (left) side.\\
 \texttt{L2} and \texttt{L3}, similar to the\\
  \ \ \ \ string-mapping function \texttt{map(s1, s2,s3)}. Elements in
 \texttt{L1} that are the same as\\
- \ \ \ \  elements in \texttt{L2} are mapped into the corresponding elements of \texttt{L3}. For
-example,\\
- \ \ \ \ given the lists\\
- \ \ \ \ \ \ \ \texttt{L1 := [1,2,3,4]; L2 := [4,3,2,1]; L3 :=
-["a","b","c","d"]}\\
- \ \ \ \ \texttt{lmap(L1, L2,L3)} produces a new list
-\texttt{["d","c","b","a"]}.
-The lists can have any\\
- \ \ \ \ kinds of elements. The operation \texttt{x === y} is used to
-determine if elements \texttt{x}\\
- \ \ \ \ and \texttt{y} are equivalent. No defaults are provided for omitted arguments.\\
- \ \ \ \ As
-with \texttt{map(), lmap()}, can be used for transposition as well as substitution.\\
+ \ \ \ \  elements in \texttt{L2} are mapped into the corresponding
+ elements of \texttt{L3}.  % For example,\\
+The lists can \\
+% \ \ \ \ given the lists\\
+% \ \ \ \ \ \ \ \texttt{L1 := [1,2,3,4]; L2 := [4,3,2,1]; L3 :=
+%["a","b","c","d"]}\\
+% \ \ \ \ \texttt{lmap(L1, L2,L3)} produces a new list
+%\texttt{["d","c","b","a"]}.
+ \ \ \ \  have any kinds of elements. The operation \texttt{x === y} is used to\\
+ \ \ \ \  determine if elements \texttt{x} and \texttt{y} are equivalent.\\
+ \ \ \ \  No defaults are provided for omitted arguments. As with\\
+ \ \ \ \ \texttt{map(), lmap()}, can be used for transposition as well as substitution.\\
  \ \ \ \ \textbf{Warning: }If \texttt{lmap()} is called with
  the same lists \texttt{L2} and \texttt{L3} as in the
 immedi-\\

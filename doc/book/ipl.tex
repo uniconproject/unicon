@@ -1588,18 +1588,17 @@ See also: tab2list, tab2rec, rec2tab.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{lists}\hfill (REG, RLG)}
 
-Many of these procedures implement \index{list functions}list functions
+These procedures implement \index{list functions}list functions
 similar to string functions, including an implementation of
-\index{scanning!list}list scanning, similar to Icon's
+\index{scanning!list}list scanning, similar to the
 string scanning functions.
 
 \texttt{lcomb(L,i):L*} produces all sublist combinations of \texttt{L}
 that have \texttt{i} elements.\\
 \texttt{ldelete(L,spec:string):L} deletes values of \texttt{L} at
 indices given in \texttt{spec}; see \texttt{indices}.\\
-\texttt{lequiv(L1,L2):L?} tests if \texttt{L1} and \texttt{L2} are
+\texttt{lequiv(L1,L2):L?} tests if acyclic lists \texttt{L1} and \texttt{L2} are
 structurally equivalent.\\
- \ \ \ \ lequiv() does not detect cycles.\\
 \texttt{lextend(L,i,x):L} extends \texttt{L} to at least size
 \texttt{i}, using initial value \texttt{x}.\\
 \texttt{limage(L):string} list image function that shows
@@ -1613,43 +1612,42 @@ its front (left) side.\\
 \texttt{lltrim(L,S):L} produces a copy of \texttt{L} with elements of
 \texttt{S} trimmed on the left.\\
 \texttt{lmap(L1,L2,L3):L} maps elements of \texttt{L1} according to
-\texttt{L2} and \texttt{L3}, similar to the\\
- \ \ \ \ string-mapping function \texttt{map(s1, s2,s3)}. Elements in
-\texttt{L1} that are the same as\\
- \ \ \ \  elements in \texttt{L2} are mapped into the corresponding
- elements of \texttt{L3}.  % For example,\\
-The lists can \\
+\texttt{L2} and \texttt{L3}, similar to function\\
+ \ \ \ \ \texttt{map(s1, s2,s3)}.
+%Elements in \texttt{L1} that are the same as
+% \ \ \ \  elements in \texttt{L2} are mapped into the corresponding
+% elements of \texttt{L3}.  % For example,\\
+%The lists can \\
 % \ \ \ \ given the lists\\
 % \ \ \ \ \ \ \ \texttt{L1 := [1,2,3,4]; L2 := [4,3,2,1]; L3 :=
 %["a","b","c","d"]}\\
 % \ \ \ \ \texttt{lmap(L1, L2,L3)} produces a new list
 %\texttt{["d","c","b","a"]}.
- \ \ \ \  have any kinds of elements. The operation \texttt{x === y} is used to\\
- \ \ \ \  determine if elements \texttt{x} and \texttt{y} are equivalent.\\
- \ \ \ \  No defaults are provided for omitted arguments. As with\\
- \ \ \ \ \texttt{map(), lmap()}, can be used for transposition as well as substitution.\\
- \ \ \ \ \textbf{Warning: }If \texttt{lmap()} is called with
- the same lists \texttt{L2} and \texttt{L3} as in the
-immedi-\\
- \ \ \ \ ately preceding call, the same mapping is performed, even if
- the values in \texttt{L2} \\
- \ \ \ \ and \texttt{L3} have been changed. This improves performance,
- but it may cause \\
- \ \ \ \ unexpected effects. \\
+%have any kinds of elements.
+The operation \texttt{x === y} is used to determine if elements\\
+ \ \ \ \  \texttt{x} and \texttt{y} are equivalent.
+No defaults are provided for omitted arguments. \\ % As with\\
+% \ \ \ \ \texttt{map(), lmap()}, can be used for transposition as well as substitution.\\
+% \ \ \ \ \textbf{Warning: }If \texttt{lmap()} is called with
+% the same lists \texttt{L2} and \texttt{L3} as in the
+%immedi-\\
+% \ \ \ \ ately preceding call, the same mapping is performed, even if
+% the values in \texttt{L2} \\
+% \ \ \ \ and \texttt{L3} have been changed. This improves performance,
+% but it may cause \\
+% \ \ \ \ unexpected effects. \\
 \texttt{lpalin(L):L} produces a list palindrome of \texttt{L}
 concatenated with its reverse.\\
 \texttt{lpermute(L):L*} produces all the permutations of list
 \texttt{L}.\\
 \texttt{lreflect(L,i:0):L} returns \texttt{L} concatenated with its
-reversal to produce a\\
- \ \ \ \ palindrome. The values of \texttt{i} determine
-"end conditions" for the reversal:\\
- \ \ \ \ 0 = omit first and last elements. 1 = omit first element, 2 =
-omit last element,\\
- \ \ \ \ 3 = don't omit element.\\
-\texttt{lremvals(L, x1, x2, ...) : list} produces a copy of L, without
-those\\
- \ \ \ \ elements that are === x1, x2?\\
+reversal to produce a palindrome.\\
+ \ \ \ \ Parameter \texttt{i} specifies
+end conditions: 0 = omit first and last elements,\\
+ \ \ \ \ 1 = omit first element, 2 = omit last element,
+ 3 = don't omit element.\\
+\texttt{lremvals(L, x1, x2, ...) : list} produces a copy of L with
+x1, x2, ... removed\\
 \texttt{lrepl(L,i):L} \index{replicate list}\index{replicate list}replicates L i
 times.\\
 \texttt{lrotate(L,i):L} produces a list with the elements of L, rotated i
@@ -1662,41 +1660,37 @@ changing L.\\
 elements.\\
 \texttt{lunique(L):L} produces a list containing only unique list elements.
 
-\paragraph{List Scanning}
+\subsection*{List Scanning}
+
+List scanning depends on the following underlying state mechanisms.
+
 \texttt{global l\_POS, l\_SUBJ} are the current list scanning
 environment\\
 \texttt{record l\_ScanEnvir(subject,pos)} represents (nested) list
 scanning environments\\
 \texttt{l\_Bscan(e1) : l\_ScanEnvir} enter (possibly nested) list
 scanning environment\\
-\texttt{l\_Escan(l\_OuterEnvir, e2) : any} exit list scanning
-environment
+\texttt{l\_Escan(l\_OuterEnvir, e2) : any} exit list scanning environment \\
 
-\begin{xtabular}{m{3in} m{2in}}
-List Scanning Function & String Scanning Equivalent \\
+\noindent Within a list scanning environment, the following procedures
+are equivalent to their string scanning counterparts.
 
-\texttt{l\_any(l1, l2,i,j) : integer?} & any()\\
-\texttt{l\_bal(l1,l2,l3,l,i,j) : integer*} & bal()\\
-\texttt{l\_find(l1,l2,i,j) : integer*} & find()\\
-\texttt{l\_many(l1,l2,i,j) : integer?} &  many()\\
-\texttt{l\_match(l1,l2,i,j) : integer?} &  match()\\
-\texttt{l\_move(i) : list} & move()\\
-\texttt{l\_pos(i) : integer} & pos()\\
-\texttt{l\_tab(i) : list} & tab()\\
-\texttt{l\_upto(l1,l2,i,j) : integer?} & upto()\\
-\end{xtabular}
+\begin{tabular}{m{3in}m{3in}}
+\texttt{l\_any(L1, L2,i,j) : integer?} & \texttt{l\_move(i) : list}\\
+\texttt{l\_bal(L1,L2,L3,l,i,j) : integer*} & \texttt{l\_pos(i) : integer}\\
+\texttt{l\_find(L1,L2,i,j) : integer*} & \texttt{l\_tab(i) : list}\\
+\texttt{l\_many(L1,L2,i,j) : integer?} &  \texttt{l\_upto(L1,L2,i,j) : integer}\\
+\texttt{l\_match(L1,L2,i,j) : integer?} & \ \\
+\end{tabular}
 
-This set of functions implements operations for analyzing lists of
-tokens similar to string scanning. \texttt{l\_find()} and
-\texttt{l\_match()} accept lists as their first argument.
-\texttt{l\_any()}, \texttt{l\_many()}, and \texttt{l\_upto()} take
+\noindent \texttt{l\_any()}, \texttt{l\_many()}, and \texttt{l\_upto()} take
 either sets of lists or lists of lists. \texttt{l\_bal()} has no
-defaults for the first four arguments, since there is no precise list
+defaults for the first four arguments, since there is no list
 analogue to \texttt{\&cset}, etc. List scanning environments are not
-maintained as elegantly as for string scanning. You must use a set of
+maintained implicitly as for string scanning. You must use a set of
 nested procedure calls \texttt{l\_Bscan()} and \texttt{l\_Escan()}, as
-explained in the \textit{Icon Analyst} 1:6 (June, 1991), p. 1-2. In
-particular, you cannot suspend, return, or otherwise break out of the
+explained in the \textit{Icon Analyst} 1:6 (June, 1991), p. 1-2.
+You cannot suspend, return, or otherwise break out of the
 nested procedure calls; they can only be exited via failure. Here is an
 example of how list scanning might be invoked:
 
@@ -1709,31 +1703,31 @@ suspend l\_Escan(l\_Bscan(some\_list\_or\_other), \{ \\
 \>   \})
 }
 
-List scanning environments may be nested, and may be used to generate a
-series of results as well. Here's an example of nested
-list scanning:
+%List scanning environments may be nested, and may be used to generate a
+%series of results as well. Here's an example of nested
+%list scanning:
 
-\iconcode{
-procedure main() \\
-\ \ \ l :=
-["h","e","l","l","o"," ","t","t","t","h","e","r","e"] \\
-\>   l\_Escan(l\_Bscan(l), \{ \\
-\>   \ \ \ hello\_list :=
-l\_tab(l\_match(["h","e","l","l","o"])) \\
-\>   \ \ \ every writes(!hello\_list) \\
-\>   \ \ \ write() \# Note the nested list-scanning expressions. \\
-\>   \ \ \ l\_Escan(l\_Bscan(l\_tab(0)), \{ \\
-\>   \ \ \ \ \ \ l\_tab(l\_many([[" "],["t"]]) - 1) \\
-\>   \ \ \ \ \ \ every writes(!l\_tab(0)) \\
-\>   \ \ \ \ \ \ write() \\
-\>   \ \ \ \ \ \ \}) \\
-\>   \ \ \ \}) \\
-end
-}
+%\iconcode{
+%procedure main() \\
+%\ \ \ l :=
+%["h","e","l","l","o"," ","t","t","t","h","e","r","e"] \\
+%\>   l\_Escan(l\_Bscan(l), \{ \\
+%\>   \ \ \ hello\_list :=
+%l\_tab(l\_match(["h","e","l","l","o"])) \\
+%\>   \ \ \ every writes(!hello\_list) \\
+%\>   \ \ \ write() \# Note the nested list-scanning expressions. \\
+%\>   \ \ \ l\_Escan(l\_Bscan(l\_tab(0)), \{ \\
+%\>   \ \ \ \ \ \ l\_tab(l\_many([[" "],["t"]]) - 1) \\
+%\>   \ \ \ \ \ \ every writes(!l\_tab(0)) \\
+%\>   \ \ \ \ \ \ write() \\
+%\>   \ \ \ \ \ \ \}) \\
+%\>   \ \ \ \}) \\
+%end
+%}
 
-\noindent This program writes "hello" and
-"there" on successive lines to the standard
-output.
+%\noindent This program writes "hello" and
+%"there" on successive lines to the standard
+%output.
 
 The functions compare lists, not strings, so
 \texttt{l\_find("h", l)}, for instance,
@@ -1758,6 +1752,8 @@ needed for the expression. \texttt{loadfile()} returns a procedure that
 generates the results.
 Requires: \texttt{system()}, pipes, \texttt{/tmp}. Links:
 \texttt{io}. 
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{longstr}\hfill
  (JN,SBW,KW,RJA,RLG)}
@@ -1790,19 +1786,19 @@ invert matrices. \texttt{lu\_decomp()} fails if the matrix is singular.
 \texttt{lu\_decomp()}. \texttt{I} is the index vector produced by
 \texttt{lu\_decomp()}. \texttt{B} is the right-hand side vector and
 return with the solution vector. \texttt{M} and \texttt{I} are not
-modified by \texttt{lu\_back\_sub()} and can be used in successive
+modified and can be used in successive
 calls of \texttt{lu\_back\_sub()} with different \texttt{B}s.
-Acknowledgement: These procedures are based on algorithms given in
-"Numerical Recipes; The Art of Scientific
-Computing"; W. H. Press, B. P. Flannery, S. A.
-Teukolsky, and W. T. Vetterling; Cambridge University Press, 1986.
+These procedures are based on algorithms given in
+``Numerical Recipes; The Art of Scientific
+Computing'' by Press, Flannery,
+Teukolsky, and Vetterling; Cambridge University Press, 1986.
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mapbit}}
 
 \texttt{mapbit(s:string) : string} produces a string of zeros and ones
 corresponding to the bit patterns for the characters of \texttt{s}.
-For example, \texttt{mapbit("Axe")} produces \linebreak
+For example, \texttt{mapbit("Axe")} produces the string \linebreak
 \texttt{"010000010111100001100101"}. Links:
 \texttt{strings}. 
 
@@ -1860,10 +1856,9 @@ lists of lists. Links: \texttt{lu}.
 \texttt{matrix\_height(M) : integer} produces the number of rows in a
 matrix.\\
 \texttt{write\_matrix(file, M, x)} outputs a matrix to a file, one row
-per line. If \texttt{x} is\\
- \ \ \ \ \ nonnull, elements are comma-separated and rows are enclosed
-in square\\
- \ \ \ \ \ brackets, like list literals.\\
+per line. If \texttt{x} is nonnull,\\
+ \ \ \ \ \ elements are comma-separated and rows are enclosed
+in square brackets.\\
 \texttt{copy\_matrix(M) : list} produces a copy of a matrix.\\
 \texttt{create\_matrix(n,m,x) : list} creates an \texttt{n} by
 \texttt{m} matrix with initial value \texttt{x}.\\
@@ -1881,18 +1876,16 @@ of \texttt{M1} and \texttt{M2.}\\
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{memlog}\hfill (GMT)}
 
 \texttt{memlog(f:\&output) : integer} writes a message to file
-\texttt{f} recording the current memory usage in the string and block
-regions. For each, three figures are written: amount in use, amount
-reserved, and number of collections. \texttt{memlog()} does not perturb
-the figures: it requires no allocation itself. \texttt{memlog()}
-returns the total current usage.
+\texttt{f} recording the current memory amount in use, amount
+reserved, and number of collections in the string and block regions.
+%\texttt{memlog()} does not perturb the figures: it allocates nothing itself.
+\texttt{memlog()} returns the total current usage.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{morse}\hfill (REG, RM)}
 
 \texttt{morse(s:string) : string} converts \texttt{s} to its
-\index{Morse code}Morse code equivalent. The version used is known both
-as International Morse Code and as Continental Code, and is used by
-radio amateurs (hams).
+\index{Morse code}International Morse Code (a.k.a. Continental Code)
+equivalent, as used by radio amateurs (hams).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mset}\hfill (JPR)}
 
@@ -1905,7 +1898,7 @@ its structural equivalent) is in \texttt{S}.\\
 \texttt{delete2(S:set, el) : set} deletes \texttt{el} (or its structural
 equivalent) from \texttt{S}.
 
-The mset module implements set operations in which no two identical
+This module implements set operations in which no two identical
 (structurally equivalent) values can be present in a set.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{namepfx}}
@@ -1915,18 +1908,18 @@ prefix" from a name in standard form -{}- omitting any
 title, but picking up the first name and any initials.
 \texttt{namepfx()} only knows how to omit common titles found in module
 \texttt{titleset}. Obviously, it can't always produce
-the "correct" result. Links:
+the ``correct'' result. Links:
 \texttt{lastname}, \texttt{titleset}. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ngrams}}
 
 \texttt{ngrams(file,n,c:\&letters,t) : string*} generates a tabulation
 of the n-grams in the specified file. If \texttt{c} is non-null, it is
-used as the set of characters from which \index{n-grams}n-grams are
+the set of characters from which \index{n-grams}n-grams are
 taken (other characters break n-grams). If \texttt{t} is non-null, the
 tabulation is given in order of frequency; otherwise in alphabetical
-order of n-grams. Note: This procedure is unsuitable if there are very
-many different n-grams. 
+order of n-grams. % Note: This procedure is unsuitable if there are very
+%many different n-grams. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{numbers}\hfill (REG, RJA, RLG, TK)}
 
@@ -1994,8 +1987,8 @@ possibility that some files are not always being closed.
 
 \texttt{options(args:list, opt:string, err:stop) : table} separates,
 interprets, and removes UNIX-style \index{options, command-line}command
-options from the argument list of a \texttt{main()} procedure,
-returning a table of option values. On the command line, options are
+options from a list of strings,
+returning a table of option values. Options are
 introduced by a \texttt{"-"} character. An
 option name is either a single printable character, as in
 \texttt{"-n"} or
@@ -2004,23 +1997,18 @@ in \texttt{"-geometry"}. Valueless
 single-character options may be combined, for example as
 \texttt{"-qtv"}. Some options require
 values. Generally, the option name is one argument and the value
-appears as the next argument, for example
+appears as the next argument, for example: {\ttfamily "-F file.txt"}
 
-{\ttfamily
-"-F file.txt"}
-
-However, with a single-character argument name (as in that example), the
-value may be concatenated:
-\texttt{"-Ffile.txt"} is accepted as
-equivalent. Options may be freely interspersed with non-option
+\noindent With a single-character argument name,
+the value may be concatenated, as in
+\texttt{"-Ffile.txt"}.
+Options may be interspersed with non-option
 arguments. An argument of \texttt{"-"} is
 treated as a non-option. The special argument
 \texttt{"-{}-"} terminates option
-processing. Non-option arguments are returned in the original argument
-list for interpretation by the caller. An argument of the form
-\texttt{@filename} (a "@" immediately
-followed by a file name) causes \texttt{options()} to replace that
-argument with arguments retrieved from the file
+processing. Non-option arguments are left in \texttt{args}
+for use by the caller. \texttt{options()} replaces arguments of the form
+\texttt{@filename} with arguments retrieved from the file
 "filename". Each line of the file is taken
 as a separate argument, exactly as it appears in the file.
 
@@ -2028,50 +2016,48 @@ The options string is a concatenation, with optional spaces between, of
 one or more option specs of the form
 \texttt{{}-}\texttt{\textit{name}}\texttt{\%} where \texttt{{}-}
 introduces the option.
-
 \texttt{\textit{name}} is either a string of letters or any single
 printable character
-
 \texttt{\%} is one of the following flag characters:
 
-\texttt{!}\ \ No value is required or allowed\\
-\texttt{:}\ \ A string value is required\\
-\texttt{+}\ \ An integer value is required\\
-\texttt{.}\ \ A real value is required
+\begin{tabular}{m{0.15in}m{2.85in}m{0.15in}m{2.85in}}
+\texttt{!} & No value is required or allowed &
+\texttt{:} & A string value is required\\
+\texttt{+} & An integer value is required &
+\texttt{.} & A real value is required
+\end{tabular}
 
 The leading \texttt{"-"} may be omitted for
 a single-character option. The \texttt{"!"}
 flag may be omitted except when needed to terminate a multi-character
-name. Thus, the following optstrings are equivalent:
-\texttt{"-n+ -t -v -q -F: -geometry:
--silent"}
-\texttt{"n+tvqF:-geometry:-silent"}\\
-\texttt{"-silent!n+tvqF:-geometry"}. If the
-options string is omitted, any single letter is assumed to be valid and
+name. % Thus, the optstring
+%\texttt{"-n+ -t -v -q -F: -geometry: -silent"} is equivalent to
+%\texttt{"n+tvqF:-geometry:-silent"} or
+%\texttt{"-silent!n+tvqF:-geometry"}.
+If the options string is omitted, any single letter is assumed to be valid and
 require no data.
 
 The \texttt{err} procedure will be called if an error is detected in the
 command line options. The procedure is called with one argument: a
 string describing the error that occurred. After \texttt{err()} is
 called, \texttt{options()} immediately returns the outcome of
-\texttt{errproc()}, without processing further arguments. Already
-processed arguments will have been removed from args.
+\texttt{errproc()}, without processing further arguments.
+Processed arguments will have been removed from args.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{outbits}\hfill (RLG)}
 
-\texttt{outbits(i:integer, len:integer) string*} fits variable and/or
-non-byte-sized blocks into standard 8-bit bytes. \texttt{outbits()}
-will suspend byte-sized chunks of \texttt{i} converted to characters
+\texttt{outbits(i:integer, len:integer) string*} fits variable,
+non-byte-sized blocks into 8-bit bytes,
+suspending byte-sized chunks of \texttt{i} converted to characters
 (most significant bits first) until there is not enough left of
-\texttt{i} to fill up an 8-bit character. The remaining portion is
+\texttt{i} to fill up an 8-bit character. The remainder is
 stored in a buffer until \texttt{outbits()} is called again, at which
-point the buffer is combined with the new \texttt{i} and then output in
+point the buffer is combined with the new \texttt{i} and output in
 the same manner as before. The buffer is flushed by calling
-\texttt{outbits()} with a null \texttt{i} argument. Note that
-\texttt{len} gives the number of bits there are in \texttt{i} (or at
-least the number of bits you want preserved; those that are discarded
-are the most significant ones). A trivial example of how
-\texttt{outbits()} might be used:
+\texttt{outbits()} with a null \texttt{i} argument. 
+\texttt{len} gives the number of bits in \texttt{i} to preserve;
+bits that are discarded are the most significant ones. A trivial
+example of how \texttt{outbits()} might be used:
 
 \iconcode{
 outtext :=
@@ -2081,7 +2067,7 @@ every writes(outtext, outbits(!L,3)) \\
 writes(outtext, outbits(\&null,3)) \# flush buffer
 }
 
-List L may be reconstructed with \texttt{inbits()}:
+\noindent List L may be reconstructed with \texttt{inbits()}:
 
 \iconcode{
 intext := open("some.file.name") \\
@@ -2089,7 +2075,7 @@ L := [] \\
 while put(L, inbits(intext, 3))
 }
 
-Note that \texttt{outbits()} is a \index{generator}generator, while
+\noindent Note that \texttt{outbits()} is a \index{generator}generator, while
 \texttt{inbits()} is not.
 See also: \texttt{inbits.icn}.
 
@@ -2126,63 +2112,64 @@ Links: \texttt{fastfncs}, \texttt{numbers}.
 
 This module provides string scanning procedure equivalents for most
 \index{SNOBOL4}SNOBOL4 \index{patterns, SNOBOL4}patterns and some
-extensions. Procedures and their pattern equivalents are:
+extensions. % Procedures and their pattern equivalents are:
+It is largely subsumed by Unicon's pattern type.
 
-\begin{xtabular}{m{1.2in} m{1.7in} m{1.2in} m{1.7in}}
+%\begin{xtabular}{m{1.2in} m{1.7in} m{1.2in} m{1.7in}}
 
-Procedure & Equivalent SNOBOL & Procedure & Equivalent SNOBOL \\
+%Procedure & Equivalent SNOBOL & Procedure & Equivalent SNOBOL \\
 
-\texttt{Any(s)} & ANY(S) & \texttt{Arb()} & ARB\\
-\texttt{Arbno(p)} & ARBNO(P) & \texttt{Arbx(i)} & ARB(I)\\
-\texttt{Bal()} & BAL & \texttt{Break(s)} & BREAK(S)\\
-\texttt{Breakx(s)} & BREAKX(S) & \texttt{Cat(p1,p2)} & P1 P2\\
-\texttt{Discard(p)} & /P & \texttt{Exog(s)} & {\textbackslash}S\\
-\texttt{Find(s)} & FIND(S) & \texttt{Len(i)} & LEN(I)\\
-\texttt{Limit(p,i)} & P {\textbackslash} I & \texttt{Locate(p)} & LOCATE(P)\\
-\texttt{Marb()} & longest-first ARB & \texttt{Notany(s)} & NOTANY(S)\\
-\texttt{Pos(i)} & POS(I) & \texttt{Replace(p,s)} & P = S\\
-\texttt{Rpos(i)} & RPOS(I) & \texttt{Rtab(i)} & RTAB(I)\\
-\texttt{Span(s)} & SPAN(S) & \texttt{String(s)} & S\\
-\texttt{Succeed()} & SUCCEED & \texttt{Tab(i)} & TAB(I)\\
-\texttt{Xform(f,p)} & F(P) \\
-\end{xtabular}
+%\texttt{Any(s)} & ANY(S) & \texttt{Arb()} & ARB\\
+%\texttt{Arbno(p)} & ARBNO(P) & \texttt{Arbx(i)} & ARB(I)\\
+%\texttt{Bal()} & BAL & \texttt{Break(s)} & BREAK(S)\\
+%\texttt{Breakx(s)} & BREAKX(S) & \texttt{Cat(p1,p2)} & P1 P2\\
+%\texttt{Discard(p)} & /P & \texttt{Exog(s)} & {\textbackslash}S\\
+%\texttt{Find(s)} & FIND(S) & \texttt{Len(i)} & LEN(I)\\
+%\texttt{Limit(p,i)} & P {\textbackslash} I & \texttt{Locate(p)} & LOCATE(P)\\
+%\texttt{Marb()} & longest-first ARB & \texttt{Notany(s)} & NOTANY(S)\\
+%\texttt{Pos(i)} & POS(I) & \texttt{Replace(p,s)} & P = S\\
+%\texttt{Rpos(i)} & RPOS(I) & \texttt{Rtab(i)} & RTAB(I)\\
+%\texttt{Span(s)} & SPAN(S) & \texttt{String(s)} & S\\
+%\texttt{Succeed()} & SUCCEED & \texttt{Tab(i)} & TAB(I)\\
+%\texttt{Xform(f,p)} & F(P) \\
+%\end{xtabular}
 
-The following procedures relate to the application and control of
-\index{pattern matching}pattern matching:
+%The following procedures relate to the application and control of
+%\index{pattern matching}pattern matching:
 
-\texttt{Apply(s,p)}\ \ S ? P\\
-\texttt{Mode()}\ \ anchored or unanchored matching (see Anchor() and
-\texttt{Float()})\\
-\texttt{Anchor()}\ \ \&ANCHOR = 1 if Mode := Anchor\\
-\texttt{Float()}\ \ \ \ \&ANCHOR = 0 if Mode := Float
+%\texttt{Apply(s,p)}\ \ S ? P\\
+%\texttt{Mode()}\ \ anchored or unanchored matching (see Anchor() and
+%\texttt{Float()})\\
+%\texttt{Anchor()}\ \ \&ANCHOR = 1 if Mode := Anchor\\
+%\texttt{Float()}\ \ \ \ \&ANCHOR = 0 if Mode := Float
 
-In addition to the procedures above, the following expressions can be
-used:
+%In addition to the procedures above, the following expressions can be
+%used:
 
-\texttt{p1() {\textbar} p2()}\ \ \ P1 {\textbar} P2\\
-\texttt{v {\textless}- p()}\ \ \ \ \ \ P . V (approximate)\\
-\texttt{v := p()}\ \ \ \ \ \ P . V (approximate)\\
-\texttt{fail}\ \ \ \ \ \ \ \ \ \ \ \ FAIL\\
-\texttt{=s}\ \ \ \ \ \ \ \ \ \ \ \ \ S (in place of String(s))\\
-\texttt{p1() {\textbar}{\textbar} p2()}\ \ \ \ \ \ P1 P2 (in place of Cat(p1,p2))
+%\texttt{p1() {\textbar} p2()}\ \ \ P1 {\textbar} P2\\
+%\texttt{v {\textless}- p()}\ \ \ \ \ \ P . V (approximate)\\
+%\texttt{v := p()}\ \ \ \ \ \ P . V (approximate)\\
+%\texttt{fail}\ \ \ \ \ \ \ \ \ \ \ \ FAIL\\
+%\texttt{=s}\ \ \ \ \ \ \ \ \ \ \ \ \ S (in place of String(s))\\
+%\texttt{p1() {\textbar}{\textbar} p2()}\ \ \ \ \ \ P1 P2 (in place of Cat(p1,p2))
 
-Using this system, most SNOBOL4 patterns can be satisfactorily
-transliterated into Icon procedures and expressions. For example, the
-pattern
+%Using this system, most SNOBOL4 patterns can be satisfactorily
+%transliterated into Icon procedures and expressions. For example, the
+%pattern
 
-\iconcode{
-SPAN("0123456789") . N
-"H" LEN(*N) . LIT}
+%\iconcode{
+%SPAN("0123456789") . N
+%"H" LEN(*N) . LIT}
 
-can be transliterated into
+%can be transliterated into
 
-\iconcode{
-(n {\textless}- Span('0123456789'))
-{\textbar}{\textbar} ="H"
-{\textbar}{\textbar} (lit {\textless}- Len(n))}
+%\iconcode{
+%(n {\textless}- Span('0123456789'))
+%{\textbar}{\textbar} ="H"
+%{\textbar}{\textbar} (lit {\textless}- Len(n))}
 
-Concatenation of components is necessary to preserve the
-pattern-matching properties of SNOBOL4. 
+%Concatenation of components is necessary to preserve the
+%pattern-matching properties of SNOBOL4. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{patword}\hfill (KW)}
 
@@ -2234,48 +2221,48 @@ an entire polynomial.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printcol}\hfill (RJA)}
 
-printcol(items, fields, title:"",
-pagelength:30000, linelength:80, auxdata) deals with the problem of
+\texttt{printcol(items, fields, title:"",
+pagelength:30000, linelength:80, auxdata)} deals with the problem of
 printing tabular data where the total width of items to be printed is
 wider than the page. Simply allowing the data to wrap to additional
 lines often produces marginally readable output. This procedure
 facilitates printing such groups of data as vertical columns down the
 page length, instead of as horizontal rows across the page. That way
-many, many fields can be printed neatly. The programming of such a
-transformation can be a nuisance. This procedure does much of the work
-for you, like deciding how many items can fit across the page width and
-ensuring that entire items will be printed on the same page without
-page breaks (if that service is requested).
+many, many fields can be printed neatly.% The programming of such a
+transformation can be a nuisance.% This procedure does much of the work
+%for you, like deciding how many items can fit across the page width and
+%ensuring that entire items will be printed on the same page without
+%page breaks (if that service is requested).
 
-For example, suppose you have a list of records to print. The record is
-defined as:\\
-\texttt{record rec(item1,item2,item3,...)} Also suppose that lines such
-as
+%For example, suppose you have a list of records to print. The record is
+%defined as:\\
+%\texttt{record rec(item1,item2,item3,...)} Also suppose that lines such
+%as
 
-\iconcode{
-Field 1 Field 2 Field 3 ... \\
-{}-{}-{}-{}-{}-{}-{}- -{}-{}-{}-{}-{}-{}- -{}-{}-{}-{}-{}-{}- -{}-{}- \\
-Record 1 item1 item2 item3 ... \\
-Record 2 item1 item2 item3 ...
-}
+%\iconcode{
+%Field 1 Field 2 Field 3 ... \\
+%{}-{}-{}-{}-{}-{}-{}- -{}-{}-{}-{}-{}-{}- -{}-{}-{}-{}-{}-{}- -{}-{}- \\
+%Record 1 item1 item2 item3 ... \\
+%Record 2 item1 item2 item3 ...
+%}
 
-are too long to print across the page. This procedure will print them
-as:
+%are too long to print across the page. This procedure will print them
+%as:
 
-\iconcode{
-TITLE \\
-===== \\
-Record 1 Record 2 ... \\
-{}-{}-{}-{}-{}-{}-{}-{}- -{}-{}-{}-{}-{}-{}-{}- -{}-{}- \\
-Field 1 item1 item1 ... \\
-Field 2 item2 item2 ... \\
-Field 3 item3 item3 ...
-}
+%\iconcode{
+%TITLE \\
+%===== \\
+%Record 1 Record 2 ... \\
+%{}-{}-{}-{}-{}-{}-{}-{}- -{}-{}-{}-{}-{}-{}-{}- -{}-{}- \\
+%Field 1 item1 item1 ... \\
+%Field 2 item2 item2 ... \\
+%Field 3 item3 item3 ...
+%}
 
 The arguments are:
 
 \texttt{items}: a co-expression that produces a sequence of items
-(usually structured data objects, but not necessarily) for which data
+(usually structured data, but not necessarily) for which data
 is to be printed.
 
 \texttt{fields}: a list of procedures to produce the
@@ -2296,13 +2283,13 @@ The second argument is arbitrary data from the procedures with each
 invocation. The data returned by the first function on the list is used
 as a column heading (the item name).
 
-\texttt{auxdata}: arbitrary auxiliary data to be passed to the field
-procedures -{}- see ``fields'', above.
+\texttt{auxdata}: arbitrary auxiliary data to be passed to the \texttt{fields}
+procedures (see above).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{printf}\hfill (WHM, CW, PLT)}
 
-This module provides a family of formatted output functions
-modeled on those found in the C language.
+This module provides formatted output functions
+modeled on those in the C language.
 
 \texttt{printf(fmt:string, args[])} formats and writes arguments to
 \texttt{\&output}.\\
@@ -2313,21 +2300,19 @@ produces a string result.
 
 The format string \texttt{fmt} is modified by substituting arguments
 in place of the ``format specifiers'' within it, consisting of a
-percent sign followed by a specifier code.  Specifier codes include
+percent sign followed by a specifier code:
 
-\begin{center}
-\begin{xtabular}{m{0.5in} m{4.5in}}
-specifier & argument is printed in the form of \\ \hline
-   \%d    & decimal integer \\
-   \%e    & scientific (exponential) notation \\
-   \%i    & image \\
-   \%o    & octal \\
-   \%r    & real number. Scientific notation if number too large for an int \\
-   \%s    & string \\
-   \%x    & hexadecimal
+\begin{xtabular}{m{0.5in} m{2.55in}m{0.5in}m{2.55in}}
+code & argument printed in the form &
+code & argument printed in the form \\
+ \texttt{\%d}  & decimal integer        & \texttt{\%r}    & real number \\
+ \texttt{\%e}  & scientific (exponential) notation & \texttt{\%s}    & string \\
+ \texttt{\%i}  & image &          \texttt{\%x}    & hexadecimal \\
+ \texttt{\%o}  & octal &           & \\
 \end{xtabular}
-\end{center}
 
+Specifier code \texttt{\%r} uses scientific notation if the integer
+portion is inexact.
 An hyphen after the percent sign indicates left justification,
 otherwise right justification is used. A number of digits after the
 percent sign may specify the minimum width of the field to use, or after
@@ -2335,6 +2320,8 @@ a period they specify a number of digits of precision. For example,
 \texttt{printf("\%-5.2r", x)} specifies that real number x be
 formatted as a string of at least 5 characters, left justified,
 with two digits after the decimal point.
+
+\pagebreak
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{prockind}}
@@ -2362,13 +2349,14 @@ result is put in a form that resembles an Icon expression.
 
 \texttt{epsheader(f, x, y, w, h, flags)} writes an Encapsulated
 PostScript file header and initializes the PostScript coordinate
-system. This file contains a procedure for writing PostScript output
-explicitly, as contrasted with the procedures in psrecord.icn that
-write PostScript as a side effect of normal graphics calls. An EPS file
-can either be incorporated as part of a larger document or sent
-directly to a PostScript printer. \texttt{epsheader()} writes the first
-portion of the PostScript output to file \texttt{f}. The calling
-program then generates the rest. It is the caller's
+system. This procedure is for writing PostScript output
+explicitly.
+% An EPS file can either be incorporated as part of a larger document or sent
+%directly to a PostScript printer.
+% \texttt{epsheader()} writes the first
+%portion of the PostScript output to file \texttt{f}.
+% The calling program then generates the rest.
+ It is the caller's
 responsibility to ensure that the rest of the file conforms to the
 requirements for EPS files as documented in the PostScript Reference
 Manual, second edition. (x,y,w,h) specify the range of coordinates that
@@ -2392,24 +2380,27 @@ write(f,x1, " ", y1, " moveto ", x2, " ", y2,
 "showpage")
 }
 
+See also: \texttt{psrecord.icn} contains procedures that
+write PostScript as a side effect of normal graphics calls.
+
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{random}\hfill (REG, GMT)}
 
 This file contains procedures related to pseudo-random numbers.
 
 \texttt{rand\_num() : integer} is a linear congruential pseudo-random
-number \index{generator}generator. Each time it is called, it produces
-another number in the sequence and also assigns it to the global
+number \index{generator}generator. Each call produces
+another number in the sequence and assigns it to the global
 variable \texttt{random}. With no arguments, \texttt{rand\_num()}
-produces the same sequence(s) as Icon's built-in
+produces the same sequence(s) as the built-in
 random-number \index{generator, random number}generator. Arguments can
 be used to get different sequences. The global variable \texttt{random}
-serves the same role that \texttt{\&random} does for
-Icon's built-in \index{random!number generator}random
+plays the same role that \texttt{\&random} does for
+the built-in \index{random!number generator}random
 number generator.
 
 \texttt{rand\_int(i) : integer} produces a random integer in the range 1
 to i.\\
-\index{randomize()}\texttt{randomize()} sets \&random, based on the
+\index{randomize()}\texttt{randomize()} sets \texttt{\&random}, based on the
 date and time of day. \\
 \texttt{randrange(min, max) : integer} produces a random number from
 \texttt{min {\textless}= i {\textless}= max}.\\
@@ -2505,42 +2496,44 @@ is generated.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{reduce}}
 
 \index{reduce()}\texttt{reduce(op, init, args[])} applies the binary
-operation \texttt{op} to all the values in \texttt{args}, using
+operation \texttt{op} to the values in \texttt{args}, using
 \texttt{init} as the initial value. For example,
-\texttt{reduce("+", 1, args[])} produces
-the sum of the values in args. 
+\texttt{reduce("+", 1, ...)} produces
+the sum of the values in \texttt{...}
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{regexp}\hfill (RJA)}
 
 This module implements UNIX-like \index{regular expression}regular
-expression patterns. These procedures are interesting partly because of
-the "recursive suspension" (or
-"suspensive \index{recursion}recursion":)
-technique used to simulate conjunction of an arbitrary number of
-computed expressions. String scanning function
-default conventions are followed.
+expression patterns. % These procedures are interesting partly because of
+%the "recursive suspension" (or
+%"suspensive \index{recursion}recursion":)
+%technique used to simulate conjunction of an arbitrary number of
+%computed expressions.
+String scanning function default conventions are followed.
 
 \texttt{ReMatch(pattern,s,i1,i2) : integer*} produces the sequence of
 positions in \texttt{s} past a substring starting at \texttt{i1} that
 matches \texttt{pattern}, but fails if there is no such position.
-Similar to \texttt{match()}, but is capable of generating multiple
-positions.
+%Similar to \texttt{match()}, but is capable of generating multiple
+%positions.
 
 \texttt{ReFind(pattern,s,i1,i2) : integer*} produces the sequence of
 positions in \texttt{s} where substrings begin that match
-\texttt{pattern}, but fails if there is no such position. Similar to
-\texttt{find()}. Each position is produced only once, even if several
-possible matches are possible at that position. \texttt{pattern} can be
+\texttt{pattern}, but fails if there is no such position.
+% Similar to \texttt{find()}.
+Each position is produced only once. %, even if several
+%possible matches are possible at that position.
+\texttt{pattern} can be
 either a string or a pattern list -{}- see \texttt{RePat()}.
 
-\texttt{RePat(s) : list?} creates a pattern element list from pattern
+\texttt{RePat(s) : list?} creates a ``pattern element list'' from pattern
 string \texttt{s}, but fails if the pattern string is not syntactically
 correct. \texttt{ReMatch()} and \texttt{ReFind()} will automatically
 convert a pattern string to a pattern list, but it is faster to do the
 conversion explicitly if multiple operations are done using the same
-pattern. An additional advantage to compiling the pattern separately is
-avoiding ambiguity of failure caused by an incorrect pattern and
-failure to match a correct pattern.
+pattern. % An additional advantage to compiling the pattern separately is
+%avoiding ambiguity of failure caused by an incorrect pattern and
+%failure to match a correct pattern.
 
 \texttt{ReCaseIndependent() : null, ReCaseDependent() : null} set the
 mode for case-independent or case-dependent matching. The initial mode
@@ -2549,69 +2542,70 @@ is case-dependent.
 \paragraph{Accessible Global Variables}
 After a match, the strings matched by parenthesized regular expressions
 are left in list \texttt{Re\_ParenGroups}, and can be accessed by
-subscripting it using the same number as the {\textbackslash}N
-construct. If it is desired that regular expression format be similar
-to UNIX filename generation patterns but still retain the power of full
-regular expressions, make the following assignments prior to compiling
-the pattern string:
+subscript.
+% using the same number as the {\textbackslash}N construct.
+%If it is desired that regular expression format be similar
+%to UNIX filename generation patterns but still retain the power of full
+%regular expressions, make the following assignments prior to compiling
+%the pattern string:
 
-\iconcode{
-\>   Re\_ArbString := "*" \# Defaults to
-".*" }
+%\iconcode{
+%\>   Re\_ArbString := "*" \# Defaults to
+%".*" }
 
-The csets that define a word, digits, and white
-space can be modified. The following assignments can be made before
-compiling the pattern string. The character sets are captured when the
-pattern is compiled, so changing them after pattern compilation will
-not alter the behavior of matches unless the pattern string is
-recompiled.
+%The csets that define a word, digits, and white space can be modified.
+% The following assignments can be made before
+%compiling the pattern string. The character sets are captured when the
+%pattern is compiled, so changing them after pattern compilation will
+%not alter the behavior of matches unless the pattern string is
+%recompiled.
 
-\iconcode{
-\>   Re\_WordChars := 'whatever' \#
-default: \&letters++\&digits++'\_' \\
-\>   Re\_Digits := \&digits ++
-'ABCDEFabcdef' \# Defaults to
-\&digits \\
-\>   Re\_Space := 'whatever' \#
-Defaults to '
-{\textbackslash}t{\textbackslash}v{\textbackslash}n{\textbackslash}r{\textbackslash}f'
-}
+%\iconcode{
+%\>   Re\_WordChars := 'whatever' \#
+%default: \&letters++\&digits++'\_' \\
+%\>   Re\_Digits := \&digits ++
+%'ABCDEFabcdef' \# Defaults to
+%\&digits \\
+%\>   Re\_Space := 'whatever' \#
+%Defaults to '
+%{\textbackslash}t{\textbackslash}v{\textbackslash}n{\textbackslash}r{\textbackslash}f'
+%}
 
-These globals are initialized in the first call to \texttt{RePat()} if
-they are null. They can be explicitly initialized to their defaults (if
-they are null) by calling \texttt{Re\_Default()}.
+%These globals are initialized in the first call to \texttt{RePat()} if
+%they are null. They can be explicitly initialized to their defaults (if
+%they are null) by calling \texttt{Re\_Default()}.
 
-Characters compiled into patterns can be passed through a user-supplied
-filter procedure, provided in global variable \texttt{Re\_Filter}.
-Filtering is done as the pattern is compiled, before the characters are
-bound into the pattern. The filter is passed one argument, the string
-to filter, and it must return the filtered string as its result. If the
-filter procedure fails, the string will be used unfiltered. The filter
-is called with an argument of either type string (for characters in the
-pattern) or cset (for character classes [...]). By default, individual
-pattern elements are matched in a "leftmost-
-longest-first" sequence, which is the order observed by
-\index{Perl}Perl, e\index{grep}grep, and most other regular expression
-matchers. The following global variable setting causes the matcher to
-operate in leftmost-shortest- first order.
+%Characters compiled into patterns can be passed through a user-supplied
+%filter procedure, provided in global variable \texttt{Re\_Filter}.
+%Filtering is done as the pattern is compiled, before the characters are
+%bound into the pattern. The filter is passed one argument, the string
+%to filter, and it must return the filtered string as its result. If the
+%filter procedure fails, the string will be used unfiltered. The filter
+%is called with an argument of either type string (for characters in the
+%pattern) or cset (for character classes [...]). By default, individual
+%pattern elements are matched in a "leftmost-
+%longest-first" sequence, which is the order observed by
+%\index{Perl}Perl, e\index{grep}grep, and most other regular expression
+%matchers. %The following global variable setting causes the matcher to
+%operate in leftmost-shortest- first order.
 
-\iconcode{
-\>   Re\_LeftmostShortest := 1}
+%\iconcode{
+%\>   Re\_LeftmostShortest := 1}
 
-In the case of patterns containing alternation, \texttt{ReFind()} will
-generally not produce positions in increasing order, but will produce
-all positions from the first term of the alternation (in increasing
-order) followed by all positions from the second (in increasing order).
-If it is necessary that the positions be generated in strictly
-increasing order, with no duplicates, assign a non-null value to
-\texttt{Re\_Ordered}:
+%In the case of patterns containing alternation, \texttt{ReFind()} will
+%generally not produce positions in increasing order, but will produce
+%all positions from the first term of the alternation (in increasing
+%order) followed by all positions from the second (in increasing order).
+%If it is necessary that the positions be generated in strictly
+%increasing order, with no duplicates, assign a non-null value to
+%\texttt{Re\_Ordered}:
 
-\iconcode{
-\>   Re\_Ordered := 1}
+%\iconcode{
+%\>   Re\_Ordered := 1}
 
-The \texttt{Re\_Ordered} option imposes a small performance penalty in
-some cases, and the co-expression facility is required in your Icon
-implementation.
+%The \texttt{Re\_Ordered} option imposes a small performance penalty in
+%some cases, and the co-expression facility is required in your Icon
+%implementation.
 
 \paragraph{Regular Expression Characters and Features Supported}
 The regular expression format supported by procedures in this file model
@@ -2625,22 +2619,23 @@ expressions. The abbreviation RE means regular expression.
 discussed below) is a one-character RE that matches that character.
 
 \texttt{{\textbackslash}c} A backslash followed by any special character
-is a one-character RE that matches the special character itself. Note
-that backslash escape sequences representing non-graphic characters are
-not supported directly by these procedures. Of course, strings coded in
-an Icon program will have such escapes handled by the Icon translator.
-If such escapes must be supported in strings read from the run-time
-environment (e.g. files), they will have to be converted by other
-means, such as the Icon Program Library procedure \texttt{escape()}.
+is a one-character RE that matches the special character itself. % Note
+%that backslash escape sequences representing non-graphic characters are
+%not supported directly by these procedures. Of course, strings coded in
+%an Icon program will have such escapes handled by the Icon translator.
+%If such escapes must be supported in strings read from the run-time
+%environment (e.g. files), they will have to be converted by other
+%means, such as the Icon Program Library procedure \texttt{escape()}.
 
 \texttt{.} A period is a one-character RE that matches any character.
 
-\texttt{[string]} A non-empty string enclosed in square brackets is a
-one-character RE that matches any one character in that string. If the
+\texttt{[string]} A non-empty string enclosed in square brackets
+%is a one-character RE that
+matches any one character in that string. If the
 first character is \texttt{"\^{}"}
-(circumflex), the RE matches any character not in the remaining
-characters of the string. The \texttt{"-"}
-(minus), when between two other characters, may be used to indicate a
+(circumflex), any character {\em not\/} in the remaining
+characters of the string is matched. The \texttt{"-"}
+(minus), when between two other characters, indicates a
 range of consecutive \index{ASCII}ASCII characters (e.g. \texttt{[0-9]}
 is equivalent to \texttt{[0123456789]}). Other special characters stand
 for themselves in a bracketed string.
@@ -2712,6 +2707,8 @@ range of values that repeat in a list. For example, if L := [1, 2, 3,
 1, 2, 3, 1, 2, 3] , \texttt{repetit(L)} returns \texttt{3}. If there is
 no repetition, \texttt{repetit()} returns the length of the list. 
 
+\pagebreak
+
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{re\index{wrap}wrap}
 \hfill (RLG)}
 
@@ -2731,51 +2728,50 @@ procedure main() \\
 end
 }
 
-Naturally, in practice you would want to do things like check for
+\noindent Naturally, in practice you would want to do things like check for
 indentation or blank lines in order to wrap only on a paragraph by
-paragraph basis, as in
+paragraph basis. %, as in
 
-\iconcode{
-procedure main() \\
-\>   while line := read(\&input) do \{ \\
-\>   \ \ \ if line == "" then \{ \\
-\>   \ \ \ \ \ \ write("" \~{}==rewrap()) \\
-\>   \ \ \ \ \ \ write(line) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ else \{ \\
-\>   \ \ \ \ \ \ if
-match("{\textbackslash}t", line) then \{ \\
-\>   \ \ \ \ \ \ \ \ \ write(rewrap()) \\
-\>   \ \ \ \ \ \ \ \ \ write(rewrap(line)) \\
-\>   \ \ \ \ \ \ \ \ \ \} \\
-\>   \ \ \ \ \ \ else \\
-\>   \ \ \ \ \ \ \ \ \ write(rewrap(line)) \\
-\>   \ \ \ \ \ \ \} \\
-\>   \ \ \ \} \\
-end
-}
+%\iconcode{
+%procedure main() \\
+%\>   while line := read(\&input) do \{ \\
+%\>   \ \ \ if line == "" then \{ \\
+%\>   \ \ \ \ \ \ write("" \~{}==rewrap()) \\
+%\>   \ \ \ \ \ \ write(line) \\
+%\>   \ \ \ \ \ \ \} \\
+%\>   \ \ \ else \{ \\
+%\>   \ \ \ \ \ \ if match("{\textbackslash}t", line) then \{ \\
+%\>   \ \ \ \ \ \ \ \ \ write(rewrap()) \\
+%\>   \ \ \ \ \ \ \ \ \ write(rewrap(line)) \\
+%\>   \ \ \ \ \ \ \ \ \ \} \\
+%\>   \ \ \ \ \ \ else \\
+%\>   \ \ \ \ \ \ \ \ \ write(rewrap(line)) \\
+%\>   \ \ \ \ \ \ \} \\
+%\>   \ \ \ \} \\
+%end
+%}
 
-\noindent Fill-prefixes can be implemented simply by prepending them
-to the output of rewrap:
+%\noindent Fill-prefixes can be implemented simply by prepending them
+%to the output of rewrap:
 
-\iconcode{
-i := 70; fill\_prefix := " {\textgreater} " \\
-while line := read(input\_file) do \{ \\
-\>   line ?:= (f\_bit := tab(many('{\textgreater}
-')) {\textbar} "",
-tab(0)) \\
-\>   write(fill\_prefix {\textbar}{\textbar} f\_bit
-{\textbar}{\textbar} rewrap(line, i - *fill\_prefix)) \\
-\>   etc.
-}
+%\iconcode{
+%i := 70; fill\_prefix := " {\textgreater} " \\
+%while line := read(input\_file) do \{ \\
+%\>   line ?:= (f\_bit := tab(many('{\textgreater}')) {\textbar} "",
+%tab(0)) \\
+%\>   write(fill\_prefix {\textbar}{\textbar} f\_bit
+%{\textbar}{\textbar} rewrap(line, i - *fill\_prefix)) \\
+%\>   etc.
+%}
 
-Obviously, these examples are fairly simplistic. Putting them to actual
-use would certainly require a few environment-specific modifications
-and/or extensions. Still, they offer some indication of the kinds of
-applications \texttt{rewrap()} might be used in. Note: If you want
+%Obviously, these examples are fairly simplistic. Putting them to actual
+%use would certainly require a few environment-specific modifications
+%and/or extensions. Still, they offer some indication of the kinds of
+%applications \texttt{rewrap()} might be used in.
+Note: If you want
 leading and trailing tabs removed, map them to spaces first.
 \texttt{rewrap()} only fools with spaces, leaving tabs intact. This can
-be changed easily enough, by running its input through the Icon
+be changed easily enough, by running its input through the
 \texttt{detab()} function.
 See also: \texttt{wrap.icn}.
 
@@ -2813,37 +2809,37 @@ fails
 
 \texttt{snapshot(title:string, len:integer)} writes a snapshot of the
 state of string scanning, showing the value of \texttt{\&subject} and
-\texttt{\&pos} Two optional arguments specify a title written at the
+\texttt{\&pos}. Two optional arguments specify a title written at the
 top of the snapshot, and a width (in characters) at which to wrap
-output. For example,
+output. % For example,
 
-\iconcode{
-"((a+b)-delta)/(c*d))" ?
-\{tab(bal('+-/*'));
-snapshot("example")\}}
+%\iconcode{
+%"((a+b)-delta)/(c*d))" ?
+%\{tab(bal('+-/*'));
+%snapshot("example")\}}
 
-\noindent produces
+%\noindent produces
 
-\iconcode{
-{}-{}-{}-example-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-\\
-{\textbar}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
-\\
-{\textbar}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
-\\
-{\textbar} \&subject =
-"((a+b)-delta)/(c*d))" {\textbar}
-\\
-{\textbar} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
-\ \ \ \ \ \ \ {\textbar}
-\\
-{\textbar}
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
-\\
-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
+%\iconcode{
+%{}-{}-{}-example-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-\\
+%{\textbar}
+%\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+%\\
+%{\textbar}
+%\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+%\\
+%{\textbar} \&subject =
+%"((a+b)-delta)/(c*d))" {\textbar}
+%\\
+%{\textbar} \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+%\ \ \ \ \ \ \ {\textbar}
+%\\
+%{\textbar}
+%\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\textbar}
+%\\
+%{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-{}-}
 
-Note that the bar showing \texttt{\&pos} is positioned under the
+A bar showing \texttt{\&pos} is positioned under the
 \texttt{\&pos'}th character (actual positions are
 between characters). If \texttt{\&pos} is at the end of
 \texttt{\&subject}, the bar is positioned under the quotation mark
@@ -2855,8 +2851,8 @@ delimiting the subject. Escape sequences are handled properly.
 
 \texttt{scan\_setup(s, i1, i2) : scan\_setup\_result?} sets things up
 for user-written string-scanning procedures that are in the spirit of
-Icon's built-ins. The values passed are the last three
-arguments to all Icon scanning functions (such as
+the built-ins. The values passed are the last three
+arguments to all scanning functions (such as
 \texttt{upto(c,s,i1,i2)}). \texttt{scan\_setup()} supplies any
 appropriate defaults and returns needed values. The value returned is a
 \texttt{record scan\_setup\_result(ss, offset)}
@@ -2873,8 +2869,7 @@ separated by spaces:
 
 \iconcode{
 procedure two\_words(s,i1,i2) \\
-\>   local x,p \\
-\>   x := scan\_setup(s,i1,i2) {\textbar} fail \# fail if out of range \\
+\>   local p, x := scan\_setup(s,i1,i2) {\textbar} fail \# fail if out of range \\
 \>   x.ss ? suspend \{ \\
 \>   \ \ \ tab(upto(\&letters)) \& \\
 \>   \ \ \ pos(1) {\textbar} (move(-1) \& tab(any(\~{}\&letters))) \& \\
@@ -2887,11 +2882,11 @@ procedure two\_words(s,i1,i2) \\
 end
 }
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{segment}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{segment}\hfill (WHM)}
 
 These procedures segment a string \texttt{s} into consecutive substrings
 consisting of characters that respectively do/do not occur in
-\texttt{c}. (WHM)
+\texttt{c}.
 
 \index{segment(s,c)}\texttt{segment(s,c)}\texttt{ : string*} generates
 the substrings, while \texttt{seglist(s,c) : list} produces a list of
@@ -2910,9 +2905,9 @@ sentence.",\&letters)} produces a list of size six:
 
 Two alternative modules provide a function \texttt{sentence(f) :string*}
 that \index{generate sentences}generates sentences from file
-\texttt{f}. A lot of grammatical and stylistic analysis programs are
-predicated on the notion of a sentence. For instance, some programs
-count the number of words in each sentence. Others count the number and
+\texttt{f}. Many grammatical and stylistic analysis programs are
+predicated on the notion of a sentence. Some programs
+count the number of words in each sentence; others count the number and
 length of clauses. Still others pedantically check for sentence-final
 particles and prepositions. Neither module's
 definition of a sentence will handle all possible inputs properly; you
@@ -2922,6 +2917,8 @@ inputs.
 Module \texttt{sentence} requires co-expressions, while module
 \texttt{senten1} does not. Module \texttt{senten1} uses a definition of
 a "sentence" detailed in the source code.
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{seqimage}}
 
@@ -2979,13 +2976,10 @@ individual characters in \texttt{c}.\\
 function defined by \texttt{T}.
 
 \texttt{inverse(T:table, x) : table} returns the inverse of the function
-defined by \texttt{T}.\\
- \ \ \ \ \ If \texttt{x} is null, it's the functional
-inverse. If \texttt{x} is an empty list, it's the
-relational\\
- \ \ \ \ \ inverse. If \texttt{x} is an empty set, it the relational inverse, but
-with each table\\
- \ \ \ \ \ member as a set instead of a list.
+defined by \texttt{T}. \texttt{x} values\\
+ \ \ \ \ \ specify: \texttt{\&null} (functional inverse), empty list
+ (relational inverse), empty set:\\
+ \ \ \ \ \ (relational inverse, but with each table member as a set instead of a list).
 
 \texttt{pairset(T:table) : set} converts \texttt{T} to an equivalent set
 of ordered pairs.
@@ -3003,7 +2997,7 @@ of sets \texttt{S1} and \texttt{S2}.
 
 \texttt{showtbl(title:"", T, mode, limit,
 order, posit, w1:10, w2:10, gutter:3, f1:left, f2:right)} displays
-table T according to the arguments given. The remaining arguments are:
+table \texttt{T} according to the arguments given. The remaining arguments are:
 
 \texttt{mode} indicates the type of sorting, one of:
 \texttt{"ref"{\textbar}"val"}
@@ -3023,13 +3017,13 @@ any\\
 column\\
 \texttt{f2} supplies the formatting function used on the 2nd column
 
-\texttt{showtbl()} returns a record with the first element being a count
+\noindent \texttt{showtbl()} returns a record with the first element being a count
 of the size of the table and the second element the number of lines
 written. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{shquote} \hfill (RJA)}
 
-This module is useful for writing Icon programs that generate
+This module is useful for writing programs that generate
 \index{shell commands}shell commands. Certain characters cannot appear
 in the open in strings that are to be interpreted as
 "words" by command shells. This family of
@@ -3059,8 +3053,7 @@ required by the shell.
 
 \texttt{signed(s) : integer} puts raw bits of characters of string
 \texttt{s} into an integer. The value is taken as signed. This
-procedure is normally used for processing of binary data read from a
-file.
+procedure is used for processing of binary data read from a file.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sort}\hfill (RJA,RLG,REG)}
 
@@ -3069,14 +3062,12 @@ file.
 field}field arguments. \texttt{sortgen(T, m) : any*} generates sorted
 output in a manner given by \texttt{m}:
 
-\texttt{"k+"} sort by key in ascending
-order\\
-\texttt{"k-"} sort by key in descending
-order\\
-\texttt{"v+"} sort by value in ascending
-order\\
-\texttt{"v-"} sort by value in descending
-order
+\begin{tabular}{m{0.3in}m{2.5in}m{0.3in}m{2.7in}}
+\texttt{"k+"} & sort by key in ascending order &
+\texttt{"k-"} & sort by key in descending order\\
+\texttt{"v+"} & sort by value in ascending order &
+\texttt{"v-"} & sort by value in descending order
+\end{tabular}
 
 \index{sortt}\texttt{sortt}\texttt{(T, i)} is like \texttt{sort(T, i)}
 but produces a list of two-element records instead of a list of
@@ -3091,14 +3082,14 @@ of Computer Programming, Vol.3.
 Module \texttt{soundex1} employs an approach proposed by M. K.
 Odell and R. C. Russell.
 
+\pagebreak
+
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{statemap}}
 
 \texttt{statemap() : table} produces a
-"two-way" table to map \index{state names,
+``two-way'' table to map \index{state names,
 U.S.}state names (in the postal sense) to their postal abbreviations
-and vice-versa. The list is done in two parts with auxiliary procedures
-so that this procedure can be used with the default constant-table size
-for the translator and linker. 
+and vice-versa.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{str2toks}\hfill (RLG)}
 
@@ -3128,19 +3119,16 @@ These procedures perform operations on \index{string}strings.
 \texttt{cat(s1, s2,...) : string} concatenates an arbitrary number of
 strings.\\
 \texttt{charcnt(s, c) : integer} returns the number of instances of
-characters in c in s.
+characters in \texttt{c} in \texttt{s}.
 
 \texttt{collate(s1, s2) : string} \index{collate}collates the characters
-of s1 and s2. For example,\\
- \ \ \ \ \ \texttt{collate("abc",
-"def")} produces
-\texttt{"adbecf"}.
+of \texttt{s1} and \texttt{s2}. For example,\\
+ \ \ \ \ \ \texttt{collate("abc", "def")} produces \texttt{"adbecf"}.
 
 \texttt{comb(s, i) : string*} generates \index{combinations,
-string}combinations of characters of s taken i at a time.\\
-\texttt{compress(s, c:\&cset) : string} compresses consecutive
-occurrences of members of\\
- \ \ \ \ \ c in s.
+string}combinations of characters of \texttt{s} taken \texttt{i} at a time.\\
+\texttt{compress(s, c:\&cset) : string} collapses consecutive
+occurrences of members of \texttt{c} in \texttt{s}.
 
 \texttt{csort(s) : string} produces the characters of \texttt{s} in
 lexical order.\\
@@ -3189,12 +3177,12 @@ string \texttt{s}.\\
 \texttt{pretrim(s, c:' ') : string}
 trims characters from beginning of \texttt{s}.\\
 \texttt{reflect(s1, i, s2:"") : string}
-returns \texttt{s1} concatenated with \texttt{s2} and the\\
- \ \ \ \ \ reversal of \texttt{s1} to produce a partial palindrome. The
-values of \texttt{i} determine "end\\
- \ \ \ \ \ conditions" for the reversal: 0 = omit first
-and last characters,\\
- \ \ \ \ \ 1 = omit first character, 2 = omit last character, 3 =
+returns \texttt{s1} concatenated with \texttt{s2} and the reversal of \texttt{s1} to\\
+ \ \ \ \ \ produce a partial palindrome. The
+values of \texttt{i} determine end conditions for the\\
+ \ \ \ \ \ reversal: 0 = omit first
+and last characters, 1 = omit first character,\\
+ \ \ \ \ \ 2 = omit last character, 3 =
 don't omit character.
 
 \texttt{replace(s1, s2, s3) : string} replaces all occurrences of
@@ -3228,12 +3216,12 @@ label \texttt{s2} and transposition \texttt{s3}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripcom}\hfill (RLG)}
 
-\texttt{stripcom(s) : string?} strips the commented-out portion of a
+\texttt{stripcom(s) : string?} strips comments from a
 line of code. Fails on lines which, either stripped or otherwise,
 come out as an empty string. \texttt{stripcom()} can't
 handle lines ending in an underscore as part of a broken string
 literal, since \texttt{stripcom()} is not intended to be used on
-sequentially read files. It simply removes \index{comment}comments from
+sequentially-read files. It just removes \index{comment}comments from
 individual lines.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{stripunb}\hfill (RLG)}
@@ -3398,7 +3386,7 @@ produced for windows.
 
 \texttt{unsigned(s) : integer} puts raw bits of characters of string
 \texttt{s} into an integer. The value is taken as unsigned. This
-procedure is normally used for processing of binary data read from a
+procedure is used for processing of binary data read from a
 file.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{usage}}
@@ -3451,26 +3439,24 @@ u\_crd\_idx(i)} create VRML coordinate index for 0 through i - 1\\
 vrml2(x)} produces VRML 2.0 file for node \texttt{x\\
 vrml\_color(s)} converts Icon color specification to vrml form
 
-Notes: Not all node types have been tested. Where field values are
+Not all node types have been tested. Where field values are
 complex, as in vectors, these must be built separately as strings to go
 in the appropriate fields. There is no error checking. Fields must be
 given in the order they appear in the node record declarations and
-field values must be of the correct type and form. The introduction of
-record types other than for nodes will cause bogus output. A structural
-loop will produce output until the evaluation \index{stack}stack
-overflows.
+field values must be of the correct type and form.% The introduction of
+%record types other than for nodes will cause bogus output. A structural
+%loop will produce output until the evaluation \index{stack}stack
+%overflows.
 
-\texttt{vrml1lib.icn} contains record declarations for VRML 1.0 nodes.
-Note: Although VRML 1.0 allows node fields to be given in any order,
-they must be specified in the order given in the record declarations
-that follow. Omitted (null-valued) fields are ignored on output. Group
-nodes require list arguments for lists of nodes.
-
-\texttt{vrml2lib.icn} contains record declarations for VRML 2.0 nodes.
-Note: Although VRML 2.0 allows node fields to be given in any order,
-they must be specified in the order given in the record declarations
-that follow. Group nodes require list arguments for lists of nodes. 
-Links: \texttt{records}. Requires: Version 9 graphics for color
+\texttt{vrml1lib.icn} contains declarations for VRML 1.0 nodes;
+\texttt{vrml2lib.icn} is for VRML 2.0 nodes.
+Although VRML 1.0 and 2.0 allow node fields to be given in any order,
+these modules require that
+they be specified in the order given in the record declarations.
+In VRML 1.0, omitted (null-valued) fields are ignored on
+output; group nodes require list arguments for lists of nodes.
+In VRML 2.0, group nodes require list arguments for lists of nodes. 
+Links: \texttt{records}. Requires: graphics facilities, for color
 conversion. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wdiag}}

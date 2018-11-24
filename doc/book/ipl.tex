@@ -3528,9 +3528,9 @@ Links: \texttt{scanset}.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{wrap}\hfill (RJA)}
 
 \index{wrap}\texttt{wrap}\texttt{(s:"",i:0)
-: string?} facilitates accumulation of small strings into longer output
-strings, outputting when the accumulated string would exceed a
-specified length (e.g. outputting items in multiple columns).
+: string?} accumulates small strings into longer ones,
+writing when the accumulated string would exceed a
+specified length.
 \texttt{s} is the string to accumulate, \texttt{i} is the width of
 desired output string. \texttt{wrap()} fails if the string \texttt{s}
 did not necessitate output of the buffered output string; otherwise the
@@ -3556,9 +3556,9 @@ returned.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xcodes}\hfill (RJA, REG)}
 
-This module provides procedures to save and restore Icon structures to
-disk. Module \index{xcodes}\texttt{xcodes} handles the encoding of
-records using canonical names: record0, record1, ... This allows
+The \index{xcodes}\texttt{xcodes} module provides procedures to save
+and restore structures to disk. Records are encoded
+using canonical names: record0, record1, ... This allows
 programs to decode files by providing declarations for these names when
 the original declarations are not available. \texttt{xcodes} also
 provides for procedures and files present in the encoded file that are
@@ -3567,39 +3567,30 @@ not in the decoding program.
 \texttt{xencode(x,f)} stores \texttt{x} in file
 \texttt{f} such that it can be converted back to \texttt{x} by
 \texttt{xdecode(f)}. The procedures handle most kinds of values,
-including structures of arbitrary complexity and even loops. The
+including structures of arbitrary complexity including cycles. The
 following sequence will output \texttt{x} and recreate it as
 \texttt{y}:
 
-\iconcode{
-\>   \ f :=
-open("xstore","w") \\
-\>   \ xencode(x,f) \\
-\>   \ close(f) \\
-\>   \ f := open("xstore") \\
-\>   \ y := xdecode(f) \\
-\>   \ close(f)
-}
+\begin{tabular}{m{3.0in}m{3.0in}}
+\texttt{f := open("xstore","w")} & \texttt{f := open("xstore")} \\
+\texttt{xencode(x,f)}            & \texttt{y := xdecode(f)} \\
+\texttt{close(f)}                & \texttt{close(f)} \\
+\end{tabular}
 
-\noindent For "scalar" types null, integer,
-real, cset, and string, this sequence will result in the relationship
-\texttt{x === y}. For structured types (list, set, table, record and object)
-\texttt{y} is not identical to \texttt{x}, but it has the same
-"shape" and its elements bear the same
+\noindent For scalar types (null, integer,
+real, cset, and string), this sequence results in the relationship
+\texttt{x === y}. For structured types (list, set, table, record and object),
+\texttt{y} has the same
+shape as \texttt{x} and its elements bear the same
 relation to the original as if they were encoded and decoded
 individually. Files, co-expressions, and windows are not handled;
-they are restored as empty
-lists so that (1) they will be unique objects and (2) will likely
-generate \index{run-time error}run-time errors if they are (probably
-erroneously) used in computation. However, the special files
-\texttt{\&input}, \texttt{\&output}, and \texttt{\&errout} are
-restored. Not much can be done with functions and procedures, except to
-preserve type and identification. The encoding of strings and csets
-handles all characters in a way that it is safe to write the encoding
-to a file and read it back. \texttt{xdecode()} fails if given a file
-that is not in xcode format or it the encoded file contains a record
+they decode as empty lists, with the exception of the special files
+\texttt{\&input}, \texttt{\&output}, and \texttt{\&errout}.
+Functions and procedures only
+preserve type and identification. \texttt{xdecode()} fails if given a file
+that is not in xcode format or if the encoded file contains a record
 for which there is no declaration in the program in which the decoding
-is done. Of course, if a record is declared differently in the encoding
+is done. If a record is declared differently in the encoding
 and decoding programs, the decoding may be bogus.
 
 \texttt{xencoden()} and \texttt{xdecoden()} perform the same operations,
@@ -3611,32 +3602,28 @@ name. If the encoded decoded value is not of that type, they fail.
 \texttt{xencodet()} does not take an opt argument. 
 
 \texttt{xencode(x, f:\&output, p:write) : f} encodes \texttt{x} writing
-to file \texttt{f} using procedure \texttt{p} that writes a line on
-\texttt{f} using the same interface as \texttt{write()} (the first
+to file \texttt{f} using procedure \texttt{p}. \texttt{p} uses
+the same interface as \texttt{write()} (the first
 parameter is always the value passed as \texttt{f}).
 
-\texttt{xencode(f:\&input, p:read) : x} returns the restored object
+\texttt{xdecode(f:\&input, p:read) : x} returns the restored object
 where \texttt{f} is the file to read, and \texttt{p} is a procedure
-that reads a line from f using the same interface as read() (the
-parameter is always the value passed as \texttt{f}). The \texttt{p}
-parameter is not normally used for storage in text files, but it
-provides the flexibility to store the data in other ways, such as a
-string in memory. If \texttt{p} is provided, then \texttt{f} can be any
+that reads a line from f using the same interface as \texttt{read()}.
+
+If \texttt{p} is provided to \texttt{xencode()}, then \texttt{f} can be any
 arbitrary data object -{}- it need not be a file. For example, to
-"write" \texttt{x} to an Icon string:
+``write'' \texttt{x} to a string:
 
 \iconcode{
 record StringFile(s) \\
 procedure main() ... \\
-\>   encodeString :=
-xencode(x,StringFile(""),WriteString).s \\
+\>   encodeString := xencode(x,StringFile(""),WriteString).s \\
 \>   ... \\
 end \\
 procedure WriteString(f,s[]) \\
-\>   \ every f.s {\textbar}{\textbar}:= !s \\
-\>   \ f.s {\textbar}{\textbar}:=
-"{\textbackslash}n" \\
-\>   \ return \\
+\>   (every f.s {\textbar}{\textbar}:= !s);
+       f.s {\textbar}{\textbar}:= "{\textbackslash}n" \\
+\>   return \\
 end
 }
 
@@ -3672,37 +3659,35 @@ that it is easy to visualize the data's structure.
 Note that the additional arguments in the \texttt{ximage()} procedure
 declaration are used for passing data among recursive levels. 
 
-\texttt{xdump(x1,x2,...,xn) : xn} uses \texttt{ximage()} to successively
-write the images of x1, x2, ..., xn to \texttt{\&errout}. For example,
-the code
+\texttt{xdump(x1,x2,...,xn) : xn} uses \texttt{ximage()} to
+write \texttt{x1, x2, ..., xn} to \texttt{\&errout}.
+% For example, the code
 
-\iconcode{
-\>   t := table() ; t["one"] := 1 ;
-t["two"] := 2 \\
-\>   xdump("A table",t) \\
-\>   xdump("A
-list",[3,1,3,[2,4,6],3,4,3,5])
-}
+%\iconcode{
+%\>   t := table() ; t["one"] := 1 ; t["two"] := 2 \\
+%\>   xdump("A table",t) \\
+%\>   xdump("A list",[3,1,3,[2,4,6],3,4,3,5])
+%}
 
-\noindent
-writes the following output (note that \texttt{ximage()} infers the
-predominant list element value and avoids excessive output):
+%\noindent
+%writes the following output (note that \texttt{ximage()} infers the
+%predominant list element value and avoids excessive output):
 
-\iconcode{
-"A table" \\
-T18 := table(\&null) \\
-T18["one"] := 1 \\
-T18["two"] := 2 \\
-"A list" \\
-L25 := list(8,3) \\
-L25[2] := 1 \\
-L25[4] := L24 := list(3) \\
-L24[1] := 2 \\
-L24[2] := 4 \\
-L24[3] := 6 \\
-L25[6] := 4 \\
-L25[8] := 5
-}
+%\iconcode{
+%"A table" \\
+%T18 := table(\&null) \\
+%T18["one"] := 1 \\
+%T18["two"] := 2 \\
+%"A list" \\
+%L25 := list(8,3) \\
+%L25[2] := 1 \\
+%L25[4] := L24 := list(3) \\
+%L24[1] := 2 \\
+%L24[2] := 4 \\
+%L24[3] := 6 \\
+%L25[6] := 4 \\
+%L25[8] := 5
+%}
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xrotate}}
@@ -3710,42 +3695,24 @@ L25[8] := 5
 \texttt{xrotate(X, i)} rotates the values in \texttt{X} right by one
 position. It works for lists and records. This procedure is mainly
 interesting as a recursive version of\\
- \ \ \ \ \ \texttt{x1 :=: x2 :=: x3 :=: ... xn\\
-}since a better method for lists is \texttt{push(L, pull(L))}. 
+ \ \ \ \ \ \texttt{x1 :=: x2 :=: x3 :=: ... xn}\\
+\noindent since a better method for lists is \texttt{push(L, pull(L))}. 
 
 
 \section{Application Programs, Examples, and Tools}
 
 The Icon Program Library \texttt{progs} directory contains 200+ programs that
-are useful for demonstration, entertainment, and/or practical utility. When it
-is available, usage information is presented with [optional] and repeated*
+are useful for demonstration, entertainment, and/or practical utility.
+Highlights of usage information is presented with [optional] and repeated*
 command-line arguments.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{adlcheck, adlcount, adlfilter, adlfirst, adllist,
-adlsort}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{adlcheck,
+ adlcount, adlfilter, adlfirst, adllist, adlsort}
 
-\texttt{adlcheck} checks address lists for correctness.
-
-\texttt{adlcount} counts all the entries in an address list file. If an
-argument is given, it counts only those that have designators with
-characters in the argument.
-
-\texttt{adlfilter} filters address lists, allowing through only those
-entries with specified selectors. The option \texttt{{}-s arg} selects
-entries with characters in args (default is all). Option \texttt{{}-x}
-inverts the logic, selecting characters not in args
-
-\texttt{adlfirst} writes all the first lines of entries in an address
-list file. If an argument is given, it counts only those that have
-designators with characters in the argument.
-
-\texttt{adllist} lists entries in address lists.
-
-\texttt{adlsort} sorts entries in address lists.
-
-Read the source for a description of these programs' many command line options.
-
-See also: address.doc, labels.icn.
+This suite of address-list tools works on ``address list files'' and
+includes a correctness checker, a counter, a filterer, a lister, and
+a sorter.  Read the source code for a description of these programs'
+many command line options. See also: address.doc, labels.icn.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{animal \hfill (RJA)}}
 
@@ -3761,6 +3728,8 @@ other commands too.
 
 \texttt{banner} is a utility that outputs enlarged letters (5x6 matrix) in
 portrait mode.
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{bj \hfill (CT, RLG)}}
 
@@ -3833,6 +3802,8 @@ n (default 72), after which \texttt{concord} starts a new line. Option
 \texttt{{}-w n} sets the maximum width for word to \texttt{n}
 (default 15), after which words are truncated.
 
+\pagebreak
+
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{conman \hfill (WED)}}
 
 \texttt{conman} responds to queries like "? Volume of the
@@ -3853,9 +3824,9 @@ decreasing count and within each count, alphabetically. Option
 \texttt{cross} takes a list of words and tries to arrange them in
 crossword format so that they intersect. Uppercase letters are mapped
 into lowercase letters on input. The program objects if the input
-contains a nonalphabetic character. It produces only one possible
-intersection and it does not attempt to produce the most compact
-result. 
+contains a nonalphabetic character. It produces only one % possible
+intersection.
+%and it does not attempt to produce the most compact result. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{crypt \ \ \textrm{\textmd{[key] {\textless}infile
 {\textgreater}outfile \hfill (PB, PLT)}}}}
@@ -3867,17 +3838,16 @@ introduction to the field.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{csgen}}
 
-\texttt{csgen} accepts a context-sensitive production grammar and
-generates randomly selected sentences from the corresponding language.
-Uppercase letters stand for nonterminal symbols and
+\texttt{csgen} takes a context-sensitive production grammar and
+generates random sentences from the corresponding language.
+Uppercase letters are nonterminal symbols and
 \texttt{{}-{\textgreater}} indicates the left-hand side can be
 rewritten by the right-hand side. Other characters are considered to be
-terminal symbols. Lines beginning with \texttt{\#} are comments and are
-ignored. A line consisting of a nonterminal symbol followed by a colon
-and a nonnegative integer i is a generation specification for i
-instances of sentences for the language defined by the nonterminal
-(goal) symbol. See the program source code for example inputs and output,
-additional options, and usage explanation.
+terminal symbols. Lines beginning with \texttt{\#} are
+ignored. A line with a nonterminal symbol \texttt{S} followed by a colon
+and an integer \texttt{i} specifies generation of \texttt{i}
+sentences for the language with start symbol \texttt{S}.
+See the source code for details and explanation.
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{cstrings \hfill (RJA)}
@@ -3895,8 +3865,9 @@ August 12 can be specified as "August 12", "Aug 12", "12 August", or
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{deal}}
 
-\texttt{deal} shuffles, deals, and displays hands in the game of bridge.
-Option \texttt{{}-h n} produces n hands. The default is 1.
+\texttt{deal [-h n:1]} shuffles, deals, and displays \texttt{n}
+hands in the game of bridge.
+
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{declchck}}
 
@@ -3909,6 +3880,8 @@ that may conflict with function names. Requires: UNIX.
 according to the separator characters specified by the string following
 the -t option (default: tab). All output files contain the same number
 of lines as the input file.
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{detex \hfill (CLJ)}
 
@@ -3994,17 +3967,19 @@ programming language, is noted for his creative use of the English
 language. Hence the terms "farberisms" and
 "to farberate". This program produces a randomly selected farberism.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filecnvt \ \textrm{\textmd{[-i s1] [-o s2] infile
-outfile}} \hfill (BW)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{filecnvt \ \textrm{\textmd{[\texttt{-i} s1] [\texttt{-o} s2]}} infile
+outfile \hfill (BW)}}
 
 \texttt{filecnvt} copies a text file, converting line terminators.
-Option \texttt{{}-i s1} indicates the system for
-which the input file has line termination (default \texttt{"u"}. Option
+Option \texttt{{}-i s1} indicates the
+input file line termination system (default \texttt{"u"}). Option
 \texttt{{}-o s2} directs output to use line terminators for
 system \texttt{s2} (default \texttt{"u"}).
-The designations are: {\tt d} for DOS/Windows
-("{\textbackslash}n{\textbackslash}r"), {\tt m} for Macintosh
-("{\textbackslash}r"), and {\tt u} UNIX ("{\textbackslash}n").
+The designations are {\tt d} (DOS/Windows
+\texttt{"{\textbackslash}n{\textbackslash}r"}), {\tt m} (Macintosh
+\texttt{"{\textbackslash}r"}), and {\tt u} (UNIX \text{"{\textbackslash}n"}).
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fileprnt}}
 
@@ -4050,8 +4025,8 @@ modifying the file in place. Each null-terminated occurrence of
 \texttt{oldpath} is replaced by \texttt{newpath}. If the new path is
 longer than the old one, a warning is given and the old path is
 extended by null characters, which must be matched in the file for
-replacement to take place. This is dangerous in general but allows
-repairing an errant fixpath command. 
+replacement to take place. % This is dangerous in general but allows
+% repairing an errant fixpath command. 
 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{format \hfill (RJA)}
@@ -4059,7 +4034,7 @@ repairing an errant fixpath command.
 \texttt{format} is a filter program that word-\index{wrap}wraps a range
 of text. Options include full justification.
 All lines that have the same indentation as the first line (or same
-comment leading character format if -c option) are wrapped. Other lines
+comment leading character format if \texttt{-c} option) are wrapped. Other lines
 are left as is. This program is useful in conjunction with editors that
 can invoke filters on a range of selected text.
 
@@ -4074,8 +4049,8 @@ greater than the number given on the command line (default 80).
 number. The option \texttt{{}-n r} specifies the real number to be
 approximated, default .6180339887498948482. Option
 \texttt{{}-l i} gives the limit on number of approximations, default 100.
-This program was based on a calculator algorithm posted by: Joseph D.
-Rudmin, Duke Univ. Physics Dept., 1987.
+%This program was based on a calculator algorithm posted by: Joseph D.
+%Rudmin, Duke Univ. Physics Dept., 1987.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{fuzz \hfill (AC)}
 
@@ -4089,7 +4064,7 @@ may be weighted differently.
 
 \texttt{gcomp} produces a list of the files in the current directory that do not
 appear among the arguments. For example, \texttt{gcomp *.c} produces a list of
-files in the current directory that do not end in .c. Requires: UNIX.
+files in the current directory that do not end in \texttt{.c}. Requires: UNIX.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{genqueen \hfill (PAB)}
 
@@ -4148,6 +4123,8 @@ year, +1990 or 1990AD or 1990CE or -1990 or 1990BC or 1990BCE for a
 civil year. \ Requires: \index{keyboard}keyboard functions,
 \texttt{hebcalen.dat}, \texttt{hebcalen.hlp}.
 
+\pagebreak
+
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{hr \hfill (CT)}
 
 \texttt{hr} implements a horse-race game.
@@ -4167,9 +4144,9 @@ you're confused.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{icalc \hfill (SBW)}
 
 \texttt{icalc} is an infix calculator with control structures and
-compound statements. It illustrates a technique that can
-greatly reduce the performance cost of
-recursive-descent parsing with \index{backtracking}backtracking.
+compound statements.
+% It illustrates a technique that can greatly reduce the performance cost of
+%recursive-descent parsing with \index{backtracking}backtracking.
 Features include: integer and real value arithmetic; variables;
 function calls to built-in functions; strings allowed as function arguments;
 unary operators + (absolute value) and - (negation); assignment := ;
@@ -4248,9 +4225,9 @@ calls {\tt right(line, "10", "0")} for each line of foo.
 \texttt{i}\index{grep}\texttt{grep} emulates UNIX egrep using the
 enhanced regular expressions supported by \texttt{regexp.icn}. Options
 are nearly identical to those supported by egrep (no -b:
-print disk block number). The option -E allows Icon-type
+print disk block number). The option \texttt{-E} allows Icon-type
 (hence C-type) string escape sequences in the pattern string. Beware:
-when -E is used, backslashes that are meant to be processed in the
+when \texttt{-E} is used, backslashes that are meant to be processed in the
 regular expression context must be doubled.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iheader}}
@@ -4304,26 +4281,28 @@ their image type to standard output. It relies on a procedure
 \texttt{imagetyp(s)} that attempts to determine the type of image file
 named \texttt{s}. Corrupted or fake files
 easily fool it. Examples of some image file types were not
-available for testing. The types presently recognized are:
+available for testing. % The types presently recognized are:
 
-\vspace{0.15in}
-\begin{xtabular}{m{0.5in} m{1.2in} m{0.9in} m{3.1in}}
-Value & Image file type & Value & Image file type\\
-xpm &  XPM image & ps & \index{PostScript}PostScript document\\
-pgm &  PGM image & cgm char & Computer Graphics Metafil, character\\
+%\vspace{0.15in}
+%\begin{xtabular}{m{0.5in} m{1.2in} m{0.9in} m{3.1in}}
+%Value & Image file type & Value & Image file type\\
+%xpm &  XPM image & ps & \index{PostScript}PostScript document\\
+%pgm &  PGM image & cgm char & Computer Graphics Metafil, character\\
 
- ?  & unknown & cgm text & Computer Graphics Metafil, text \\
-iris &  Iris image &
-sundraw & SunDraw document \\
+% ?  & unknown & cgm text & Computer Graphics Metafil, text \\
+%iris &  Iris image &
+%sundraw & SunDraw document \\
 
-pbm &  PBM image &
-cgm binary & Computer Graphics Metafil, binary \\
-ppm &  PPM image & xwd &  X Window dump \\
-bmp &  BMP image & gif &  Compuserv GIF image \\
-xmp &  XMP image & ras & UNIX raster image \\
-pcx &  PCX image &rle &  UNIX RLE image \\
-tiff &  TIFF image & iff &  IFF/ILBM image \\
-\end{xtabular}
+%pbm &  PBM image &
+%cgm binary & Computer Graphics Metafil, binary \\
+%ppm &  PPM image & xwd &  X Window dump \\
+%bmp &  BMP image & gif &  Compuserv GIF image \\
+%xmp &  XMP image & ras & UNIX raster image \\
+%pcx &  PCX image &rle &  UNIX RLE image \\
+%tiff &  TIFF image & iff &  IFF/ILBM image \\
+%\end{xtabular}
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ineeds \hfill (RJA)}}
 
@@ -4338,16 +4317,14 @@ Compiler.
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{interpe, interpp\hfill (REG, JN)}}
 
 \texttt{interpe} is a crude but effective interpreter for Icon
-expressions. Each line entered from standard input must be an Icon
-expression. If
-the expression is a \index{generator}generator, all its results are
-produced. If option -e is given, the expression is echoed.
+expressions.
+% Each line entered from standard input must be an Icon expression.
+If the expression is a \index{generator}generator, all its results are
+produced. If option \texttt{-e} is given, the expression is echoed.
 
-\texttt{interpp} accepts Icon
-expressions prefixed with line numbers. You can resequence them,
-list them, and execute the lines in order.
-Retype a line to change it. There is a "?" help command
-that lists the other commands. 
+\texttt{interpp} takes expressions prefixed with line numbers.
+You can resequence, list, and execute lines in order.
+Retype a line to change it. Use "?" to list the other commands. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipatch \ \textrm{\textmd{file
 path\hfill }(GMT)}}}
@@ -4429,15 +4406,16 @@ link, and record declarations are written to that file. Otherwise they
 are written in the file for the procedure that immediately follows
 them.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipxref \hfill (AJA)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ipxref [file] \hfill (AJA)}}
 
 \texttt{ipxref} \index{cross-reference}cross-references Icon programs.
 It lists the occurrences of each variable by line number. Variables are
-listed by procedure or separately as globals. The options specify the
-formatting of the output and whether or not to cross-reference quoted
-strings and non-alphanumerics. Variables that are followed by a left
+listed by procedure or separately as globals. % The options specify the
+%formatting of the output and whether or not to cross-reference quoted
+%strings and non-alphanumerics.
+Variables that are followed by a left
 parenthesis are listed with an asterisk following the name. If a file
-is not specified, then standard input is cross-referenced. The
+is not specified, then standard input is used. The
 following options change the defaults:\\
 \ \ \texttt{{}-c n}\ \ The column width (default:4) per line
 number.\\
@@ -4449,9 +4427,9 @@ output line.\\
 it:\\
 \ \ \texttt{{}-q}\ \ Include quoted strings.\\
 \ \ \texttt{{}-x}\ \ Include all non-alphanumerics.\\
-\noindent This program assumes the subject file is a valid Icon program. For
-example, it expects quotes be matched. Bugs: In some situations, the
-output is not properly formatted.
+\noindent This program assumes the subject file is a valid Icon program.
+% For example, it expects quotes be matched.
+%Bugs: In some situations, the output is not properly formatted.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{isrcline}}
 
@@ -4487,8 +4465,8 @@ are:\\
 file name on which each is\\
 \ \ \ \ defined, as well as the text of that line and prints this on the
 standard output.\\
-\ \ \ \ This simple index can be printed out as an off-line readable
-function index.\\
+%\ \ \ \ This simple index can be printed out as an off-line readable
+%function index.\\
 \ \ \texttt{{}-t}\ \ create tags for records.\\
 \ \ \texttt{{}-v}\ \ produce on the standard output an index of the form
 expected by vgrind(1).\\
@@ -4496,10 +4474,11 @@ expected by vgrind(1).\\
 (assuming\\
 \ \ \ \ 64 line pages). Since the output will be sorted into lexicographic
 order,\\
-\ \ \ \ it may be desired to run the output through sort -f. Sample use:\\
-\ \ \ \  \ \ \ \texttt{itags -v files {\textbar} sort -f {\textgreater}
-index vgrind -x index}\texttt{\\
-\ \ {}-w}\ \ suppress warning diagnostics.
+\ \ \ \ it may be desired to run the output through \texttt{sort -f}. \\
+% Sample use:\\
+%\ \ \ \  \ \ \ \texttt{itags -v files {\textbar} sort -f {\textgreater}
+%index vgrind -x index}\texttt{\\
+\ \ \texttt{{}-w}\ \ suppress warning diagnostics.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itrbksum}}
 
@@ -4507,36 +4486,36 @@ index vgrind -x index}\texttt{\\
 termination by filtering out the bulk of the procedure traceback
 information.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itrcfltr}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itrcfltr [procs]}}
 
-\texttt{itrcfilter} filters trace output. If there are command-line
-arguments, they are taken as procedure names, and only those lines with
-those names are written. If there are no command-line arguments, all
-lines are written. The names of procedures to pass through can be given
+\texttt{itrcfilter} filters trace output. Command-line
+arguments are procedure names, and only lines with
+those names are written.
+The names of procedures to pass through can be given
 in a "response" file as accepted by
 \texttt{options()}, as in\\
 \ \ \texttt{itrcfltr @names {\textless}trace\_file}\\
 \noindent
 where \texttt{names} is a file containing the names to be passed
-through. The following option is supported: \texttt{{}-a} list all
-trace messages; overrides any procedure names given.
+through. The option \texttt{{}-a} lists all
+trace messages; it overrides any procedure names given.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{itrcsum}}
 
 \texttt{itrcsum} provides a summary of Icon trace output.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iundecl\hfill (RJA, REG)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iundecl [files]\hfill (RJA, REG)}}
 
 \texttt{iundecl} invokes {\tt icont} to find undeclared variables in an Icon
-source program. The output is in the form of a
-"local" declaration, preceded by a comment
-line that identifies that procedure and file name from whence it arose.
-Beware that undeclared variables aren't necessarily
-local, so any which are intended to be global must be removed from the
-generated list. Multiple files can be specified as arguments, and are
-processed in sequence. The program works only if procedures are formatted
-such that the keywords "procedure" and "end" are the first words on their
-respective lines. Requires: pipe support.
+program. The output is in the form of a
+\texttt{local} declaration, preceded by a comment
+line that identifies the procedure and file name from whence it arose.
+Undeclared variables aren't necessarily
+local; any intended to be global must be removed from the
+generated list.
+The program works only if
+the reserved words \texttt{procedure} and \texttt{end} are the first
+words on their respective lines.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{iwriter}}
 
@@ -4556,11 +4535,11 @@ standard input with any sequence of random numbers.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{krieg\hfill (DJS)}}
 
-Kriegspiel (German: "war game") implements a variation of the game of chess
+Kriegspiel ("war game") implements a variation of chess
 which has the same rules and goal as ordinary chess except that neither
-player sees the other's moves or pieces. Kriegspiel combines the
-intricacies and flavor of chess with elements of uncertainty that
-characterize games of imperfect information such as bridge or poker.
+player sees the other's moves or pieces. %Kriegspiel combines the
+%intricacies and flavor of chess with elements of uncertainty that
+%characterize games of imperfect information such as bridge or poker.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{kross\hfill}}
 
@@ -4569,10 +4548,10 @@ all the intersections of the two strings in a common character.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{kwic, kwicprep\hfill (SBW, REG)}}
 
-\texttt{kwic} is a simple keyword-in-context (\index{KWIC}KWIC) program. The
+\texttt{kwic} is a simple keyword-in-context \index{KWIC} program. The
 "key" words are aligned in column 40, with
-the text shifted as necessary. Text shifted left is truncated at the
-left. Tabs and other characters whose "print
+the text shifted as necessary. Text shifted left is truncated.
+Tabs and other characters whose "print
 width" is less than one may not be handled properly. If
 an integer is given on the command line, it overrides the default 40.
 Some noise words are omitted (see "exceptions" in the program text). If a
@@ -4602,14 +4581,15 @@ the concatenated file lines. Each command line argument is placed in
 the output line at the point that it appears in the argument list. For
 example, lines from file1 and file2 can be laminated with a colon
 between each line from file1 and the corresponding line from file2 by
-\texttt{lam file1 -: file2}. File names and strings may appear in
-any order in the argument list. If a file is named more than once, its
-lines will be duplicated on the output line, but if standard
-input is named more than once, its lines will be read alternately. For
-example, each pair of lines from standard input can be joined onto one
-line with a space between them by the command \texttt{lam - "-" -}
-while \texttt{lam file1 "- " file1} replicates each line from
-\texttt{file1}.
+\texttt{lam file1 -: file2}.
+% File names and strings may appear in any order in the argument list.
+If a file is named more than once, its
+lines are duplicated on the output, but if standard
+input is named more than once, its lines will be read alternately.
+% For example, pairs of lines from standard input can be joined onto one
+%line with a space between them by the command \texttt{lam - "-" -}
+%while \texttt{lam file1 "- " file1} replicates each line from
+%\texttt{file1}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{latexidx\hfill (DSC)}}
 
@@ -4645,34 +4625,27 @@ takes the name of the Lisp program as a command-line argument. The
 syntax and semantics are based on EV-LISP, as described in L.
 Siklossy's "Let's Talk
 LISP" (Prentice-Hall, 1976). Functions that have been
-predefined match those described in Chapters 1-4 of the book. No
-attempt at improving efficiency has been made; this is rather an
-example of how a simple Lisp interpreter might be implemented in Icon.
-The language implemented is case-insensitive. It only reads enough
-input lines at one time to produce at least one lisp-expression, but
-continues to read input until a valid lisp-expression is found. Errors:
-Fails on EOF; fails with error message if current input cannot be made
-into a valid lisp-expression (i.e. more right than left parentheses). 
+predefined match those described in Chapters 1-4 of the book.
+The language is case-insensitive. % It only reads enough
+%input lines at one time to produce at least one lisp-expression, but
+%continues to read input until a valid lisp-expression is found.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{literat\hfill (MH)}}
 
-\texttt{literat} is a \index{database}database system to manage
+\texttt{literat} manages
 information concerning \index{literature}literature. The program uses
 files \texttt{literat.fil}, \texttt{literat2.fil} and
-\texttt{adress.fil} to store its data on the disk. It has a predefined
-structure of the items and field labels to make it easy to
-use and to cut down the source code length. Requires: ANSI terminal
-support.
+\texttt{adress.fil} to store its data. It has a predefined
+structure of the items and field labels. Requires: ANSI terminal support.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{loadmap\hfill (SBW)}
 
-\texttt{loadmap} produces a formatted listing of selected symbol classes
+\texttt{loadmap} produces a listing of selected symbol classes
 from a compiled object file. The listing is by class, and gives the name,
-starting address, and length of the region associated with each symbol.
-\noindent If the address of
-a symbol cannot be determined, ???? is given in its place. The size of
-the last region in a symbol class is suspect and is usually given as
-rem. Output is not particularly exciting on a stripped file.
+starting address, and length of the region for each symbol.
+%If the address of
+%a symbol cannot be determined, ???? is given in its place.
+The size of the last region in a symbol class is suspect
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{longest}}
 
@@ -4740,11 +4713,10 @@ arguments are Morse code and converted to a string.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{mr \ \textrm{\textmd{[recipient] [-u user] [-f spool]}}\hfill(RF)}}
 
-With no arguments, \texttt{mr} reads the default \index{mail spool}mail
+With no arguments, \texttt{mr} reads the default UNIX \index{mail spool}mail
 spool. Another user, a spool file, or the recipient for outgoing mail
-can be given as a command line argument. Help, including the symbols
-used to indicate the status of mail, is available with the H command.
-The program is oriented towards UNIX Internet mail processing.
+can be given as a command line argument. Help is available with the H
+command.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{newicon\hfill}}
 
@@ -4762,29 +4734,30 @@ are:\\
 program\\
 \ \ \texttt{{}-o}\ \ provide program skeleton with
 \texttt{options()}\\
-The files \texttt{skeleton.icn}, \texttt{skelproc.icn}, and
+\noindent The files \texttt{skeleton.icn}, \texttt{skelproc.icn}, and
 \texttt{skelopt.icn} must be accessible via \texttt{dopen()}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{newsrc\hfill (ADC)}}
 
 \index{news}\texttt{news}\texttt{rc} takes the \texttt{.newsrc} file,
 moves active groups to the beginning, and then appends inactive groups
-with the numbers omitted, followed by anything else. The groups are
-alphabetized. The user may retain a set of groups at the top of the
-file by specifying how many groups on the command line. If not
-specified, it will be prompted for. The new file is called newnewsrc.
-The user can replace .newsrc with it if it is satisfactory. 
+with the numbers omitted, % followed by anything else.% The groups are
+%alphabetized. The user may retain a set of groups at the top of the
+%file by specifying how many groups on the command line. If not
+%specified, it will be prompted for.
+and writes out a new file called \texttt{newnewsrc}.
+%The user can replace .newsrc with it if it is satisfactory. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{nim} show{\textbar}save \hfill \texttt{(JN)}}
 
 The game of \texttt{nim} is played with a pile of 15 sticks. Each player can
 select 1, 2, or 3 sticks from the pile on
 their turn. The player to pick up the last
-stick(s) wins. The loser of the previous game always gets to go first.
+stick(s) wins. % The loser of the previous game always gets to go first.
 There are two versions of nim here. The default version uses
 an algorithm that will never lose if it gets the first
-turn. The second version learns from each game. After a while it will
-also never lose if it gets the first turn, if you know how to play.
+turn. The second version learns from each game. % After a while it will
+% also never lose if it gets the first turn, if you know how to play.
 To invoke the learning version, pass an argument to the program.
 \texttt{show} displays the
 program's game memory after each game.
@@ -4794,6 +4767,8 @@ with a dump of the program's game memory when you
 quit. When the game is played in learn mode it will initialize its game
 memory from the dump. You can run this program with both
 \texttt{show} and \texttt{save} at the same time.
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{oldicon}}
 
@@ -4844,22 +4819,22 @@ the LHS and RHS of the production. Vertical bars separate
 alternatives. Other characters are considered to be terminal
 symbols. The nonterminal on the first line is the goal.
 
-Parentheses can be used for grouping symbols, as in
-\texttt{{\textless}term{\textgreater}::={\textless}element{\textgreater}({\textbar}*{\textless}term{\textgreater})
-}Note that an empty alternative is allowable. The right-hand side
-metacharacters \texttt{{\textless}}, \texttt{{\textgreater}},
+Parentheses group symbols, as in
+\texttt{{\textless}term{\textgreater}::={\textless}element{\textgreater}({\textbar}*{\textless}term{\textgreater})}
+Empty alternatives are allowable. The terminals
+\texttt{{\textless}}, \texttt{{\textgreater}},
 \texttt{(}, \texttt{)}, and \texttt{{\textbar}} are accessible through
 the built-in symbols \texttt{{\textless}lb{\textgreater}},
 \texttt{{\textless}rb{\textgreater}},
 \texttt{{\textless}lp{\textgreater}},
 \texttt{{\textless}rp{\textgreater}}, and
-\texttt{{\textless}vb{\textgreater}}, respectively. There are two other
-build-in symbols, \texttt{{\textless}empty{\textgreater}} and
-\texttt{{\textless}nl{\textgreater}} that match the empty string and a
+\texttt{{\textless}vb{\textgreater}}, respectively. Two other
+built-in symbols, \texttt{{\textless}empty{\textgreater}} and
+\texttt{{\textless}nl{\textgreater}} match the empty string and a
 newline, respectively.
-Lines beginning with an = are passed through unchanged,
+Lines beginning with \texttt{=} are passed through unchanged,
 allowing Icon declarations to be placed in the parser. Lines beginning
-with a \# are \index{comment}comments and are ignored.
+with a \# are ignored.
 If the name of a ucode file is given on the command line, a
 \index{link}link declaration for it is provided in the output.
 Limitations:
@@ -4869,11 +4844,11 @@ and \texttt{parscond.icn}.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{parse, parsex\hfill (KW, CW)}}
 
-\index{parse}\texttt{parse} parses simple statements. It provides an
-interesting example of the use of co-expressions. \texttt{parsex} is
+\index{parse}\texttt{parse} parses simple statements.
+%It provides an interesting example of the use of co-expressions.
+\texttt{parsex} is
 another expression parser, adapted from C code written by Allen I.
-Holub (Dr. Dobb's Journal, Feb 1987). This
-general-purpose expression analyzer can evaluate any expression
+Holub (Dr. Dobb's Journal, Feb 1987). This program can evaluate any expression
 consisting of numbers and the following operators (listed according to
 precedence level):\\
 \texttt{\ \ () - !
@@ -4903,16 +4878,16 @@ input.
 \texttt{polydemo} demonstrates the \texttt{polystuf}
 module. The user can create, output,
 delete, or operate up to 26 polynomials, indexed by letter.
-Available commands: (R)ead - allows input of a polynomial by giving
-pairs of coefficients and exponents. For example, entering 5, 6, 2, and
-3 will create 5x\^{}6 + 2x\^{}3. This polynomial will be stored by an
-index that is a lower-case letter. (W)rite - outputs to the screen a
-chosen polynomial. (A)dd - adds two polynomials and defines the sum as
-a third (S)ubtract - subtracts two polynomials and defines the
-difference as a third. (M)ultiply - multiplies two polynomials and
-defines the product as a third. (E)valuate - gives the result of
-setting x in a polynomial to a value (C)lear - deletes one polynomial
-(H)elp - lists all commands (Q)uit - end the demonstration.
+%Available commands: (R)ead - allows input of a polynomial by giving
+%pairs of coefficients and exponents. For example, entering 5, 6, 2, and
+%3 will create 5x\^{}6 + 2x\^{}3. This polynomial will be stored by an
+%index that is a lower-case letter. (W)rite - outputs to the screen a
+%chosen polynomial. (A)dd - adds two polynomials and defines the sum as
+%a third (S)ubtract - subtracts two polynomials and defines the
+%difference as a third. (M)ultiply - multiplies two polynomials and
+%defines the product as a third. (E)valuate - gives the result of
+%setting x in a polynomial to a value (C)lear - deletes one polynomial
+%(H)elp - lists all commands (Q)uit - end the demonstration.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{
 post \ \textrm{\textmd{[-n groups] [-s subj] [-d dist] [-f followup] [-p
@@ -4932,9 +4907,9 @@ sorted.
 
 \texttt{press} is a file archiving utility that  contains
 extensive \index{tracing}tracing facilities that illustrate the LZW
-compression process
-in detail. Compression can be turned off if faster archiving is
-desired. The LZW compression procedures in this program are general
+compression process in detail.
+% Compression can be turned off if faster archiving is desired.
+The LZW compression procedures in this program are general
 purpose and suitable for reuse in other programs.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{procprep}}
@@ -4950,7 +4925,7 @@ minimal procedure declarations for them. For example, the input line
 wrapper produces: \\
 \texttt{\ \ \ procedure wrapper() \\
 \ \ \ end} \\
-This program is useful when you have a lot of procedures to write. 
+\noindent This program is useful when you have a lot of procedures to write. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{psrsplit
 \ \textrm{\textmd{file}}\hfill (GMT)}}
@@ -4972,18 +4947,18 @@ processing anything else is small.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{qei\hfill (WHM, REG)}}
 
-\texttt{qei} takes expressions entered at the command line and evaluates
-them. A semicolon is required to complete an expression. If one is not
-provided, the subsequent line is added to what already has been
-entered. It is important to know that \texttt{qei} accumulates
+\texttt{qei} evaluates expressions interactively.
+A semicolon is required to complete an expression; without one
+the subsequent line is added to what already has been
+entered. \texttt{qei} accumulates
 expressions and evaluates all previously entered expressions before it
 evaluates a new one. A line beginning with a colon is a command. The
 commands are: {\tt :clear} clears the accumulated expressions;
 {\tt :every} generates all the results from the expression, otherwise,
 at most one is produced; {\tt :exit} or {\tt quit} terminates the session;
 {\tt :list} lists the accumulated expressions; and
-{\tt :type} toggles the switch that displays the type of the result
-(default: on).
+{\tt :type} toggles the switch that displays the type of the result.
+%(default: on).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{qt
 \ \textrm{\textmd{[-a]}}\hfill (RJA)}}
@@ -5001,31 +4976,32 @@ placed on an n-by-n chessboard so that no queen can attack another. An
 integer command line argument specifies the
 number of queens (default: 6). For example, \texttt{queens -n8} displays the
 solutions for 8 queens on an 8-by-8 chessboard.
-This program is worth reading for its programming techniques.
+% This program is worth reading for its programming techniques.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ranstars\hfill (SBW)}}
 
 \texttt{ranstars} displays a random field of
 "stars" on an ANSI terminal
 at randomly chosen positions on the \index{screen}screen until
-the specified maximum number is reached. It then extinguishes existing
-stars and creates new ones for the specified steady-state time, after
-which the stars are extinguished, one by one. The programming technique
-is worth noting.
+a specified maximum number is reached. It then extinguishes existing
+stars and creates new ones for a specified steady-state time.
+% , after which the stars disappear, one by one.
+% The programming technique is worth noting.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{reply \ \texttt{\textmd{[prefix] {\textless}
 }}\texttt{\textmd{\textit{news-article}}}\texttt{\textmd{ or
 }}\texttt{\textmd{\textit{mail-item}}} \hfill (RF)}}
 
 \texttt{reply} creates the appropriate headers and attribution, quotes a
-news or mail message, and uses \texttt{system()} calls to put the user
-in an \index{editor}editor and then to mail the reply. The default
-prefix for quoted text is \texttt{{\textquotedblleft}{\textgreater}
-{\textquotedblleft}}. If a smarthost is defined, Internet addresses are
-converted to bang paths (\texttt{name@site.domain} becomes
-\texttt{site.domain!name}). The mail is routed to a domained smarthost
-as \texttt{address@smarthost.domain}, otherwise to
-\texttt{smarthost!address}. The default editor can be overridden with
+news or mail message, and uses \texttt{system()} to put the user
+in an \index{editor}editor and then mails the reply. The default
+quote prefix is \texttt{{\textquotedblleft}{\textgreater}
+{\textquotedblleft}}. % If a smarthost is defined, Internet addresses are
+% converted to bang paths (\texttt{name@site.domain} becomes
+% \texttt{site.domain!name}). The mail is routed to a domained smarthost
+% as \texttt{address@smarthost.domain}, otherwise to
+% \texttt{smarthost!address}.
+The editor can be specified with
 the EDITOR \index{environment variable!EDITOR}environment variable. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{repro\hfill (KW)}}
@@ -5047,16 +5023,16 @@ definitions are not recognized.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{rsg}}
 
-\texttt{rsg} generates randomly selected strings ("sentences") from a
+\texttt{rsg} generates random strings from a
 grammar. Grammars are context-free 
-extended BNF similar to that used in \texttt{pargen}.
-The program works
-interactively, allowing the user to build, test, modify, and save
-grammars. Input to \texttt{rsg} consists of various
+extended BNF similar to that of \texttt{pargen}.
+This interactive program allows the user to build, test, modify, and save
+grammars. Input consists of various
 specifications, which can be intermixed: Productions define nonterminal
-symbols in syntax similar to the rewriting rules of BNF with various
-alternatives consisting of the concatenation of nonterminal and
-terminal symbols. Generation specifications cause the generation of a
+symbols in syntax similar to BNF % with various
+%alternatives consisting of the concatenation of nonterminal and
+%terminal symbols.
+Generation specifications cause the generation of a
 specified number of sentences from the language defined by a given
 nonterminal symbol. Grammar output specifications cause the definition
 of a specified nonterminal or the entire current grammar to be written
@@ -5064,7 +5040,7 @@ to a given file. Source specifications cause subsequent input to be
 read from a specified file. Any line beginning with = causes the
 rest of that line to be used as a prompt to the user
 whenever \texttt{rsg} is ready for input (there normally is no prompt).
-A line consisting of a single = stops prompting.
+A line with a single = stops prompting.
 
 Specifying a new production for
 a nonterminal symbol changes its definition. There are a number of
@@ -5085,19 +5061,19 @@ character between the quotation marks. For example,
 equivalent to x{\textbar}y{\textbar}z
 
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ruler\hfill (RJA)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{ruler [length:80]
+[\#lines]\hfill (RJA)}}
 
-\texttt{ruler} writes a character ruler to standard output. The first
-optional argument is the length of the ruler in characters (default
-80). The second is a number of lines to write, with a line number on
-each line.
+\texttt{ruler} writes a character ruler to standard output. Arguments give
+the length of the ruler in characters and
+the number of lines to write, with a line number on each line.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{scramble\hfill (CT)}}
 
 \texttt{scramble} takes a document and re-outputs it in a cleverly
 scrambled fashion. It uses the next two most likely words to follow.
-The concept was found in a recent Scientific American and Icon seemed
-to offer the best implementation.
+% The concept was found in a recent Scientific American and Icon seemed
+% to offer the best implementation.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{setmerge \ \texttt{\textmd{file [[op]
 file]...}} \hfill (GMT)}}
@@ -5126,22 +5102,21 @@ shuffled.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{sing \hfill (FJL)}}
 
-\texttt{sing} is an Icon adaptation of a SNOBOL program by Mike Shapiro
-in (Griswold71). The procedure \texttt{sing()} writes the lyrics to the
+\texttt{sing} is an adaptation of a SNOBOL program by Mike Shapiro
+in (Griswold71). It writes the lyrics to the
 song, "The Twelve Days of Christmas" to a
-parameter that can be any file open for output. It would be especially
-nice to send the lyrics to a speech synthesizer (perhaps via a pipe).
-The algorithm used can be adapted to other popular songs, such as
-"Old McDonald had a Farm".
+parameter that can be any file open for output. % It would be especially
+% nice to send the lyrics to a speech synthesizer (perhaps via a pipe).
+The algorithm used can be adapted to other popular songs.
+%, such as "Old McDonald had a Farm".
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{snake
-\ \texttt{\textmd{[character]}} \hfill (RLG)}}
+\ \texttt{\textmd{[character:o]}} \hfill (RLG)}}
 
 While away the idle moments watching the snake eat blank squares on your
-screen. \texttt{character} represents a single character to be used in
-drawing the snake. The default is an
-\texttt{"o"}. To run
-\texttt{snake}, your terminal must have cursor movement and
+screen. % \texttt{character} represents a single character to be used in
+%drawing the snake.
+To run \texttt{snake}, your terminal must have cursor movement and
 able to do reverse video.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{solit} \hfill (JN, PLT, REG)}}
@@ -5183,21 +5158,20 @@ delimiter is \texttt{{\textgreater}}. If no translation file is
 specified, the program strips material
 between the delimiters. The format of the translation file is: \\
 \texttt{\ \ \ code\ \ \ \ initialization\ \ completion}\\
-A tab or colon separates the fields. If you want to use a tab or colon
+\noindent A tab or colon separates the fields. If you want to use a tab or colon
 as part of the text (and not as a separator), place a backslash before
 it. The completion field is optional.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tablc}}
 
 \texttt{tablc} tabulates characters and lists each character and the
-number of times it occurs. Characters are written using escapes.
+number of times it occurs. % Characters are written using escapes.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{tablw}}
 
 \texttt{tablw} tabulates words and lists number of times each word
-occurs. A word is defined to be a string of consecutive upper- and
-lowercase letters with at most one interior occurrence of a dash or
-apostrophe.
+occurs. A word is a string of consecutive letters with at most one
+interior occurrence of a dash or apostrophe.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{textcnt}}
 
@@ -5238,17 +5212,17 @@ The default for n is 80.
 machine}Turing machine. The machine starts in
 state 1 with an empty tape. A description of the Turing machine is read
 from the file given as a command-line argument, or from standard input
-if none is specified. Comment lines beginning with
-'\#' are allowed, as are empty lines.
-The program states must be numbered from 1 and must appear in order.
-Each appears on a single line in this form: \\
-\texttt{\ \ \ sss. wdnnn wdnnn}\\
-\noindent
-\texttt{sss} is the state number in decimal. The \texttt{wdnnn} fields
-specify the action to be taken on reading a 0 or 1 respectively:
-\texttt{w} is the digit to write (0 or 1), \texttt{d} is the direction
-to move (L/l/R/r, or H/h to halt), \texttt{nnn} is the next state
-number (0 if halting).
+if none is specified.
+% Comment lines beginning with '\#' are allowed, as are empty lines.
+% The program states must be numbered from 1 and must appear in order.
+% Each appears on a single line in this form: \\
+%\texttt{\ \ \ sss. wdnnn wdnnn}\\
+%\noindent
+%\texttt{sss} is the state number in decimal. The \texttt{wdnnn} fields
+%specify the action to be taken on reading a 0 or 1 respectively:
+%\texttt{w} is the digit to write (0 or 1), \texttt{d} is the direction
+%to move (L/l/R/r, or H/h to halt), \texttt{nnn} is the next state
+%number (0 if halting).
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{unique\hfill (AVH, RJA)}}
 
@@ -5265,12 +5239,13 @@ program for limitations.
 \texttt{upper} maps the names of all files in the current directory to
 uppercase.
 
-\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{verse\hfill (CT)}}
+\vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{verse
+[vocabularyfile:verse.dat \hfill (CT)}}
 
-This \index{verse}verse maker was initially published in an early 1980s
-Byte magazine in TRS80 Basic. It fetches the vocabulary from a
-vocabulary file specified on the command line; it looks for
-\texttt{verse.dat} by default. See that file for examples of form. 
+This \index{verse}verse maker was initially published in a 1980s
+Byte magazine in TRS80 Basic. % It fetches the vocabulary from a
+%vocabulary file specified on the command line; it looks for
+%\texttt{verse.dat} by default. See that file for examples of form. 
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{versum}}
 
@@ -5296,11 +5271,12 @@ conventions.
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{when\hfill (CT)}}
 
-\texttt{when} is like a date based \texttt{ls} command. UNIX
-\texttt{find} can do the same things, but \texttt{find} is a bit
+\texttt{when} is a date based \texttt{ls} command. UNIX \texttt{find} is a bit
 arcane, so \texttt{when} provides a simpler alternative.
-Many options and clauses are supported. Look at the code for clues. This
-one only works in the current directory. Requires: UNIX.
+%Many options and clauses are supported. Look at the code for clues.
+This program only works in the current directory. Requires: UNIX.
+
+\pagebreak
 
 \vspace{0.25cm}\hrule\vspace{0.1cm}{\noindent\texttt{xtable\hfill (RJA, AB)}}
 
@@ -5315,21 +5291,21 @@ A classic "dice poker" game.
 
 \texttt{zipsort} sorts labels produced by {\tt labels} in ascending order
 of their postal zip codes. Option \texttt{{}-d n} sets the
-number of lines per label to n (default 9). This value must agree
-with that used to format the labels. The zip code must
-be the last nonblank string at the end of the label. It must consist of
-digits but may have an embedded dash. See also: \texttt{labels.icn}.
+number of lines per label to n (default 9). % This value must agree
+% with that used to format the labels. The zip code must
+% be the last nonblank string at the end of the label. It must consist of
+% digits but may have an embedded dash.
+See also: \texttt{labels.icn}.
 
 \section{Selected IPL Authors and Contributors}
 
 This Appendix presents the work of the following authors and contributors of
-Icon Program Library modules and programs. Ralph Griswold deserves primary
-credit for initiating and maintaining the collection. To a great extent, the
+Icon Program Library modules and programs. Ralph Griswold
+initiated and maintained the collection. The
 various authors' code is described in their own words, from the
-public domain documentation they have written about it. We would like to
-acknowledge their contribution to the Icon community and to this book. Any
-errors that remain in this Appendix are solely our responsibility, and we
-apologize for them.
+public domain documentation they have written about it. We
+acknowledge their contribution to the Icon community and to this book.
+Errors in this Appendix are solely our responsibility.
 
 \begin{xtabular}{m{1.8in} m{1.8in} m{1.8in}}
 

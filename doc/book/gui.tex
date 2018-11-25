@@ -7,13 +7,12 @@ excellent for drawing to the \index{screen}screen,
 the standard elements of \index{graphical user interface}graphical
 user interfaces are not built-in to the language.
 
-This chapter presents a user interface class library originally
-developed by the incomparable Robert Parlett, who wrote the first
-version of this chapter. Object-oriented design is employed to reduce
-complexity, resulting in an elegant, extensible library that is
-accessed by importing the package \texttt{gui}.  Although this book
-describes the components provided by the GUI toolkit, you may need the
-book \textit{Graphics Programming in Icon} [Griswold98] to develop
+This chapter presents a user interface class library developed by
+Robert Parlett. Object-oriented design is used to reduce
+complexity, resulting in an elegant, extensible library
+accessed by importing the package \texttt{gui}.  Although this chapter
+describes the components provided by the GUI toolkit, you may need to
+consult \underline{Graphics Programming in Icon} [Griswold98] to create
 advanced custom user interfaces with application-specific graphics.
 
 The GUI classes are supported by a tool named \texttt{ivib} that
@@ -104,6 +103,8 @@ indicates that \texttt{TestDialog} is a \index{subclass}subclass of the
 class \texttt{Dialog} that is defined in the toolkit. This subclass
 relationship is true of all dialog windows. 
 
+\subsection*{Adding Components and Attaching Listeners}
+
 The remainder of the class's code is contained in a single method,
 \texttt{component\_setup().} This method is invoked by the toolkit; it
 is a convenient place to setup the dialog's content.
@@ -158,7 +159,7 @@ simply creates an instance of the dialog and invokes the method
 This call displays the dialog window and goes into the
 toolkit's event handling loop. 
 
-\section{Positioning Objects}
+\subsection*{Positioning Objects}
 
 The button and label were positioned above using
 percentages of the window size. An object can also be
@@ -255,11 +256,7 @@ import gui \\
 \$include "guih.icn" \\
 
 class SecondTest : Dialog( \\
-\>   \# Class variables representing objects in the dialog. \\
-\>   text\_list, table, list, text\_field, \\
-\>    \\
-\>   
-\>   oses, languages, shares \ \ \ \ \# Some data variables. \\
+\>   text\_list, table, list, text\_field, oses, languages, shares\\
 \>   ) \\
 \ \\
 \>   \# \\
@@ -317,17 +314,15 @@ is trading at " {\textbar}{\textbar} shares[i][2]) \\
 \>   \ \ \ put\_line("Clicked on column
 1") \\
 \>   end \\
-\ \\
 \>   method handle\_table\_column\_2(ev) \\
 \>   \ \ \ put\_line("Clicked on column
 2") \\
 \>   end
 \ \\
 \>   \# \\
-\>   \# This method is invoked for a component which may potentially want \\
-\>   \# to handle an event (by firing an event to its listeners for\\
-\>   \# example). \ A dialog is just another custom component, and so it can\\
-\>   \# override this method to do any custom processing. \\
+\>   \# Invoked for components that may potentially want to handle an event\\
+\>   \# (by firing an event to its listeners for example). A dialog is just\\
+\>   \# another component. It can override this method to do any custom processing. \\
 \>   \# \\
 \>   method handle\_event(ev) \\
 \>   \ \ \ put\_line("Icon event "
@@ -377,9 +372,7 @@ gray","label=Second example",
 \>   \ \ \ menu.add(quit\_menu\_item) \\
 \>   \ \ \ text\_menu\_item\_2 :=
 TextMenuItem("label=Message") \\
-\>   \ \ \ text\_menu\_item\_2.connect(self,
-"handle\_text\_menu\_item\_2",\\
-\>\>\>\>\>ACTION\_EVENT) \\
+\>   \ \ \ text\_menu\_item\_2.connect(self,"handle\_text\_menu\_item\_2",ACTION\_EVENT) \\
 \>   \ \ \ menu.add(text\_menu\_item\_2) \\
 \>   \ \ \ menu\_bar.add(menu) \\
 \>   \ \ \ add(menu\_bar) \\
@@ -516,30 +509,30 @@ end
 
 \bigskip
 
-Start examining this program with the \texttt{component\_setup()}
-method at the end. This method initializes some data and
-sets attributes. This includes several Icon graphics attributes,
+\subsection*{Constructing Component Hierarchies}
+
+Examine this program's the \texttt{component\_setup()}
+method at the end; it initializes some data and
+sets attributes. This includes built-in graphics attributes,
 as well as the minimum size, which is an attribute of the
 \texttt{Dialog} class.
-
 The next part creates a \index{menu bar}menu bar structure.
-Menu structures are presented in detail later in this chapter, but for
-now observe that this code creates two textual menu items within a
+Menus are presented in detail later in this chapter, but notice
+that this code creates two text menu items within a
 \texttt{Menu} object, which is itself within a \texttt{MenuBar} object,
 which is added to the dialog. \ Both menu items are connected to event
 handler methods.
 
 The next section sets up three \index{check boxes}check boxes,
-placed together with the label "Favorite OS" in a \texttt{Panel} object,
-which serves as a container for other objects that logically are treated
+placed with the label "Favorite OS" in a \texttt{Panel},
+a container that allows objects to be treated
 as a whole. Objects within a \texttt{Panel} have their size and
 position computed relative
-to the \texttt{Panel} rather than the window. So, for example, the
+to the \texttt{Panel} rather than the window. For example, the
 first \texttt{Label} object is positioned with
 \texttt{"pos=0,0"}. This places it at the
-top left-hand corner of the \texttt{Panel}, not the top left of the
-window. Percentage specifications similarly relate to the enclosing
-\texttt{Panel}.
+top left-hand corner of the \texttt{Panel}.
+Percentage specifications relate to the enclosing \texttt{Panel}.
 
 Each \texttt{CheckBox} is a separate object. To make the three check
 boxes behave as a group so that when one is checked
@@ -595,12 +588,12 @@ prints out the Icon event code for the particular event. This method
 also checks for the Alt-q keyboard combination, which closes the
 dialog.
 
-\section{More About Event Handling}
+\subsection*{More About Event Handling}
 
-As shown above, components generate event notifications when
+As shown above, components generate events when
 something of interest happens. For example, a button generates an
 \texttt{ACTION\_EVENT} when it is pressed. Different components
-generate different events, but there are some basic events generated by
+generate different events, but some basic events are generated by
 all components:
 
 \vspace{0.15in}
@@ -941,7 +934,14 @@ appears in Figure 18-4.\\
 {\sffamily\bfseries Figure 18-4:}
 {\sffamily Menus}
 
-\section{Trees}
+\section{Other Components}
+
+This section gives examples of some components that have not yet been
+encountered. For full details of how to use these classes, and the
+available methods and options, please see the GUI class library
+reference in Appendix C.
+
+\subsection{Trees}
 
 The toolkit contains a tree component, which can be used to represent
 hierarchical data. \ To use it, it is necessary to create a tree-like
@@ -1171,14 +1171,8 @@ procedure main() \\
 end
 }
 
-\section{Other Components}
 
-This section gives examples of some components that have not yet been
-encountered. For full details of how to use these classes, and the
-available methods and options, please see the GUI class library
-reference in Appendix C.
-
-\subsection*{Borders}
+\subsection{Borders}
 
 This class provides decorative borders. Optionally, a single other
 component can be the title of the \texttt{Border}. This would normally
@@ -1200,7 +1194,7 @@ border with a label as its title:
 The \texttt{Border} class acts as a container (like a \texttt{Panel}),
 and so objects may be placed within it in the same way.
 
-\subsection*{Images and icons}
+\subsection{Images and icons}
 
 The toolkit supports both images loaded from files and
 bitmap icons defined by strings. Images stored in files are manipulated
@@ -1214,7 +1208,7 @@ using the \texttt{set\_img()} method; again a border can be used if
 desired. Finally, the \texttt{IconButton} class lets icons serve as
 buttons, producing events when they are clicked.
 
-\subsection*{Scroll bars}
+\subsection{Scroll bars}
 
 Horizontal and vertical scroll bars are available with the
 \texttt{ScrollBar} class. Scroll bars can be used either in the
@@ -1222,7 +1216,7 @@ conventional way, in which the button in the bar represents a page
 size, and the whole bar represents a total, or as a slider in which
 case the button simply moves over a specified range of numbers.
 
-\section{Custom Components}
+\subsection{Custom Components}
 
 This section looks at how you can create customized components that can
 be added to dialogs. You might want to do this to have circular rather
@@ -1230,7 +1224,7 @@ than rectangular buttons in your dialog, for example. Or perhaps you
 might want to add a substantial new component type in an application,
 such as the main grid area in a spreadsheet program.
 
-\subsection*{Creating new components}
+\subsubsection*{Creating new components}
 
 Every component is a \index{subclass}subclass of the \texttt{Component}
 class. This class contains several methods and variables that can be
@@ -1522,7 +1516,7 @@ set\_selection\_list(val) \\
 end
 }
 
-\subsection*{Customized menu components}
+\subsubsection*{Customized menu components}
 
 Listing 18-8 contains a custom menu component. The class hierarchy for
 menu structures is different to other components, and so this component
@@ -1737,7 +1731,7 @@ Figure 18-8.
 {\sffamily\bfseries Figure 18-8:}
 {\sffamily TestPalette window}
 
-\subsection*{Tickers}
+\subsection{Tickers}
 
 GUI programs spend most of their time waiting for user input
 events. The toolkit allows this spare time to be exploited by user
@@ -1992,7 +1986,7 @@ some advanced features to these components, such as right-click popup
 menus, multi-selection and drag and drop, and this is explained in this
 section.
 
-\subsection*{Selection}
+\subsection{Selection}
 
 Selection handling is straightforward. First, configure the component
 so that it allows selection of no, one, or many rows using the methods
@@ -2017,7 +2011,7 @@ row's data), and for a \texttt{Tree}, a list of
 There are corresponding setter methods for setting the selection dynamically.
 
 
-\subsection*{Popups}
+\subsection{Popups}
 
 Adding popup menus is also easy. First create a \texttt{Popup}
 component, ready to be shown. Then, listen for a
@@ -2026,7 +2020,7 @@ that is a right mouse release, and that the object is in the state you
 want. If it is, just activate the popup via its \texttt{popup()}
 method.
 
-\subsection*{Drag and drop}
+\subsection{Drag and drop}
 
 The toolkit supports a limited form of drag and drop, which works only between
 components within the same window.

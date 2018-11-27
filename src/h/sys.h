@@ -254,9 +254,9 @@
  * Feature-dependent includes.
  */
 #ifndef HostStr
-   #if !VMS
+   #if !VMS && !Windows
       #include <sys/utsname.h>
-   #endif				/* !VMS */
+   #endif				/* !VMS && !Windows*/
 #endif					/* HostStr */
 
 #ifdef LoadFunc

@@ -41,6 +41,8 @@
  *
  */
 
+#ifndef UNICON_CONFIG_H
+#define UNICON_CONFIG_H
 
 /*
  * If define.h does not specify NoAuto, supplement config info with
@@ -142,7 +144,6 @@
 /* #define Eve */
 #define PosixFns
 #define KeyboardFncs
-#define ISQL
 #define NoCrypt
 #define Dbm
 #define Messaging 1
@@ -974,3 +975,5 @@ Deliberate Syntax Error
 #define Wsizeof(x)	((sizeof(x) + sizeof(word) - 1) / sizeof(word))
 #define Vwsizeof(x)	((sizeof(x) - sizeof(struct descrip) +\
 			   sizeof(word) - 1) / sizeof(word))
+
+#endif					/* UNICON_CONFIG_H */

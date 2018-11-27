@@ -147,8 +147,9 @@ function{1} close(f)
 
 #if NT
 #ifndef NTGCC
-#define pclose _pclose
-#define popen _popen
+// FIXME: the following two lines are no longer needed with recent APIs 
+//#define pclose _pclose
+//#define popen _popen
 #endif					/* NTGCC */
 #endif					/* NT */
 

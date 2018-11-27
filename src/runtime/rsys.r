@@ -1060,7 +1060,8 @@ FILE *mstmpfile()
 }
 #endif					/* NT */
 
-#ifdef NTGCC
+// FIXME: This is no longer needed on Windows with recent APIs 
+#ifdef DROPNTGCC
 /* libc replacement functions for win32.
 
 Copyright (C) 1992, 93 Free Software Foundation, Inc.

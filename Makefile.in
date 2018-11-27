@@ -117,10 +117,10 @@ VX-Configure:	config/unix/$(name)/status
 		@echo Remember to add unicon/bin to your path
 
 WUnicon32:
-	sh configure --host=i686-w64-mingw32
+	sh configure --host=i686-w64-mingw32 --disable-iconc
 
 WUnicon64:
-	sh configure --build=x86_64-w64-mingw32
+	sh configure --build=x86_64-w64-mingw32 --disable-iconc
 
 WUnicon:
 	@echo Reloading the Makefile from config/win32/gcc/makefile.top

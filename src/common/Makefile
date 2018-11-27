@@ -3,21 +3,26 @@ include ../../Makedefs
 HDRS= ../h/auto.h ../h/define.h ../h/config.h ../h/cstructs.h ../h/mproto.h \
 	  ../h/typedefs.h ../h/proto.h ../h/cpuconf.h
 
-OBJS=	long.o getopt.o time.o filepart.o identify.o strtbl.o rtdb.o\
-	mlocal.o literals.o rswitch.o alloc.o\
-	save.o rswitch.o redirerr.o xwindow.o dlrgint.o ipp.o drawstring3d.o
+OBJS=   long.$(O) getopt.$(O) time.$(O) filepart.$(O) identify.$(O) strtbl.$(O) rtdb.$(O)\
+	mlocal.$(O) literals.$(O) rswitch.$(O) alloc.$(O) \
+	save.$(O) redirerr.$(O) xwindow.$(O) dlrgint.$(O) ipp.$(O) drawstring3d.$(O)
 
 PROGS= libucommon.a doincl$(EXE) patchstr$(EXE)
 
 all: $(PROGS)
 
-doincl$(EXE):doincl.o
-	$(CC) $(LDFLAGS) -o doincl doincl.o
+doincl$(EXE):doincl.$(O)
+	$(CC) $(LDFLAGS) -o doincl doincl.$(O)
 	-./doincl -o ../../bin/rt.h ../h/rt.h
 
-patchstr$(EXE): patchstr.o
-		$(CC) $(LDFLAGS) -o patchstr patchstr.o
-		cp patchstr ../../bin/
+# TODO: if the above rule doesn't work on windows we have to make switch to the rule below
+TMPdoincl.exe:     doincl.$(O)
+	$(CC) $(LDFLAGS) -o doincl.exe doincl.$(O) -Llibc -Lkernel64 -Lntdll -Luser64 -Lgdi64 -Lwinspool -Lcomdlg64 -LVERSION
+
+
+patchstr$(EXE): patchstr.$(O)
+		$(CC) $(LDFLAGS) -o patchstr patchstr.$(O)
+		$(CP) patchstr$(EXE) ../../bin/
 
 
 libucommon.a: $(OBJS) $(HDRS)
@@ -29,19 +34,20 @@ libucommon.a: $(OBJS) $(HDRS)
 
 $(OBJS): $(HDRS)
 
-%.o: %.c
+%.$(O): %.c
 	$(CMNT)@echo "   [COMMON] $<"
 	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
-identify.o: ../h/version.h
+identify.$(O): ../h/version.h
 
-ipp.o: ../h/feature.h
+ipp.$(O): ../h/feature.h
 
-literals.o: ../h/esctab.h
+literals.$(O): ../h/esctab.h
 
-rtdb.o: ../h/version.h icontype.h
+rtdb.$(O): ../h/version.h icontype.h
 
-drawstring3d.o: drawstring3d.cc
+#FIX: we are using $(O) everywhere but the string below is hradcoded to .o
+drawstring3d.$(O): drawstring3d.cc
 	@if test "`which $(CXX)`" != "" ; then \
 		echo "Got C++, building drawstring3d.o"; \
 		$(CXX) -c $(CPPFLAGS) $(CFLAGS) -I/usr/include/freetype2 -I/opt/X11/include/freetype2 -o drawstring3d.o drawstring3d.cc; \
@@ -52,11 +58,11 @@ drawstring3d.o: drawstring3d.cc
 		rm drawstring3d.c ; \
 	fi
 
-dlrgint.o: ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
+dlrgint.$(O): ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstructs.h
 
-xwindow.o: ../h/auto.h ../h/graphics.h ../h/xwin.h
+xwindow.$(O): ../h/auto.h ../h/graphics.h ../h/xwin.h
 
-rswitch.o: FORCE
+rswitch.$(O): FORCE
 	$(CC) $(CFLAGS) -c rswitch.[cs]
 FORCE:
 

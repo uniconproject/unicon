@@ -15,8 +15,8 @@ all:		iconc
 
 iconc:		$(OBJS) ../../bin/libucommon.a
 		$(CC) $(LDFLAGS) -o iconc  $(OBJS) $(COBJS) -L../../bin/ -lucommon
-		$(CP) iconc ../../bin
-		strip ../../bin/iconc
+		$(CP) iconc$(EXE) ../../bin
+		strip ../../bin/iconc$(EXE)
 
 $(OBJS):	../h/config.h ../h/cpuconf.h ../h/cstructs.h ../h/define.h\
 		../h/proto.h ../h/mproto.h ../h/typedefs.h ../h/gsupport.h \

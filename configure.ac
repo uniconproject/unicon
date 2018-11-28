@@ -291,9 +291,9 @@ case $unicon_host in
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
 
-       WSTKLDFLAG="$(TMPWSTKLDFLAG)"
-       WGLIBS="$(TMPWGLIBS)"
-       WSUBSYS="$(TMPWSUBSYS)"
+       WSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
+       WGLIBS="-lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinmm"
+       WSUBSYS="-Wl,--subsystem,console"
 
         ;;
 esac

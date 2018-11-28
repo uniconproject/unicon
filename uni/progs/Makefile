@@ -13,6 +13,9 @@ ie: ie.icn
 uprof: uprof.icn
 	$(UNICON) $(UFLAGS) uprof
 
+uget: uget.icn
+	$(UNICON) $(UFLAGS) uget
+
 umake: umake.icn
 	$(UNICON) $(UFLAGS) -DMAIN umake
 

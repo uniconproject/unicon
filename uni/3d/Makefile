@@ -1,7 +1,7 @@
 # makefile for the package graphics3d
 
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs
 
 UC=$(UNICON)
 

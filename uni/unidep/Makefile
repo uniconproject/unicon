@@ -1,5 +1,5 @@
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs.uni
 
 UFILES = filearg.u fileargclass.u main.u symbolinfo.u symboltable.u util.u
 

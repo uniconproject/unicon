@@ -1,7 +1,5 @@
-SHELL=/bin/sh
-
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs.uni
 
 ########################################################
 # Manage the construction of the UniDoc program        #

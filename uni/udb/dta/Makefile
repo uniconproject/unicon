@@ -5,7 +5,7 @@
 # June 2009
 #
 BASE=../../..
-include ../../Makedefs
+include $(BASE)/Makedefs.uni
 
 CFLAGS     = $(UFLAGS) -c
 

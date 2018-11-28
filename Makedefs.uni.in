@@ -1,7 +1,7 @@
 # Makedefs for language level source code
 OS=@unicon_os@
 OSDIST=@unicon_osdist@
-OSVER=@unicon_osver@
+OSREL=@unicon_osrel@
 
 EXE=@EXE@
 GRAPHICS=@GRAPHICS@
@@ -12,8 +12,31 @@ UDBTOOLS=@UDBTOOLS@
 UNIPROGS=@UNIPROGS@
 
 SHELL = /bin/sh
-RM = rm -f
-CP = cp
+
+UNI=$(BASE)/uni
+BIN=$(BASE)/bin
+RM=rm -f
+RMDIR=rm -rf
+MKDIR=mkdir
+CP=cp
+UNICON=$(BIN)/unicon
+UC=$(UNICON)
+UNIDEP=$(UNI)/unidep/unidep
+UNIDOC=$(UNI)/unidoc/unidoc
+ICON_IPL=$(BASE)/ipl
+export IPATH:=$(UNI)/lib $(UNI)/gui $(UNI)/parser $(UNI)/xml $(ICON_IPL)/lib
+export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
+export PATH:=$(BIN):$(PATH)
+
+UFLAGS=-s
+
+%$(EXE): %.u
+	$(UNICON) $<
+
+%.u: %.icn
+	$(UNICON) $(UFLAGS) -c $<
+
+.NOTPARALLEL:
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@

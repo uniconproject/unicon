@@ -5,7 +5,8 @@
 # e-mail: zsharif@gmail.com
 #
 BASE=../../..
-include ../../Makedefs
+include $(BASE)/Makedefs.uni
+
 CFLAGS     = $(UFLAGS) -c
 LDFLAGS    = -u
 STANDALONE = -DStandAlone

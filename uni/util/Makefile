@@ -1,5 +1,5 @@
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs.uni
 
 all:	ivibmigrate$(EXE)
 

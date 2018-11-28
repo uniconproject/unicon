@@ -1,5 +1,5 @@
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs.uni
 
 BINPROGS=ie uprof  umake 
 PROGS= idxGen uget splitmail $(BINPROGS)

@@ -1,8 +1,5 @@
-#
-# Makefile
-#
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs.uni
 
 EXEs    = udb
 DEL     = -rm

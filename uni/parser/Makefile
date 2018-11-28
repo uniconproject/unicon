@@ -1,5 +1,5 @@
 BASE=../..
-include ../Makedefs
+include $(BASE)/Makedefs.uni
 
 IYACC=$(UNI)/iyacc/iyacc
 

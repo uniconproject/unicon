@@ -1,5 +1,5 @@
 BASE=../../..
-include ../../Makedefs
+include $(BASE)/Makedefs.uni
 
 test: 		calc.out 
 		diff calc.out calc.correct

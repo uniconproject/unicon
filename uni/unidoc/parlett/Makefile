@@ -1,5 +1,5 @@
 BASE=../../..
-include ../../Makedefs
+include $(BASE)/Makedefs.uni
 
 UFILES = class.u  classvar.u  comment.u  groffoutputter.u  htmloutputter.u  main.u  method.u  other.u  package.u  packageset.u file.u filepos.u
 

@@ -1,5 +1,5 @@
 BASE=../../../..
-include ../../../Makedefs
+include $(BASE)/Makedefs.uni
 
 .PHONY: all html library.out
 

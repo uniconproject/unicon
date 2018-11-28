@@ -264,7 +264,7 @@ case $unicon_host in
       AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
-      RLIBS="-lnsl -lcrypt "
+      RLIBS="-ldl -lnsl -lcrypt "
       CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
@@ -281,15 +281,19 @@ case $unicon_host in
        AC_CFLAG([-Wno-parentheses-equality])
        CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
        DASHX=-x
+       RLIBS="-ldl "
 	;;
      *windows*)
        EXE=".exe"
        NT="NT"
        DNT="-DNT"
-       WINSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
+
+       WSTKLDFLAG="$(TMPWSTKLDFLAG)"
+       WGLIBS="$(TMPWGLIBS)"
+       WSUBSYS="$(TMPWSUBSYS)"
 
         ;;
 esac
@@ -299,7 +303,9 @@ if test "x$orig_cflags" != "x" ; then
 fi
 
 AC_SUBST(EXE)
-AC_SUBST(WINSTKLDFLAG)
+AC_SUBST(WSTKLDFLAG)
+AC_SUBST(WGLIBS)
+AC_SUBST(WSUBSYS)
 AC_SUBST(NT)
 AC_SUBST(DNT)
 AC_SUBST(OBJ)

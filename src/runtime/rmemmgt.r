@@ -664,7 +664,7 @@ int region;
 #endif					/* COMPILER */
 
 #if NT
-   markptr(&LstTmpFiles);
+   markptr((union block **) &LstTmpFiles);
 #endif					/* NT */
 
    reclaim();

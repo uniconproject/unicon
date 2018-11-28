@@ -28,7 +28,7 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 	xomisc.$(O) xoref.$(O) xoset.$(O) xovalue.$(O) xralc.$(O) xrcoexpr.$(O) xrcomp.$(O) xrdb.$(O)\
 	xrdebug.$(O) xrlocal.$(O) xrlrgint.$(O) xrmemmgt.$(O) xrmisc.$(O) xrstruct.$(O) xrsys.$(O)\
 	xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O) xrwinrsc.$(O) xrposix.$(O) xrmsg.$(O)\
-  xraudio.$(O)
+	xraudio.$(O)
 
 
 OBJS=	$(XOBJS)
@@ -36,14 +36,14 @@ OBJS=	$(XOBJS)
 interp_all: update_rev 
 	$(MAKE) iconx
 
-iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
-	$(CC) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP)
-	cp iconx$(EXE) ../../bin
 # Some systems require global symbols to be left in iconx for loadfunc() to work
 # but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
-# so only use -x when it is known to be needed and available (MacOS).
-	strip $(DASHX) ../../bin/iconx$(EXE);
+# so only use strip -x when it is known to be needed and available (MacOS).
 
+iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
+	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS)
+	cp iconx$(EXE) ../../bin
+	strip $(DASHX) ../../bin/iconx$(EXE);
 
 
 x%.$(O): %.r $(HDRS)

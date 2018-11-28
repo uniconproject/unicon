@@ -652,7 +652,9 @@ BITS
 OBJ
 DNT
 NT
-WINSTKLDFLAG
+WSUBSYS
+WGLIBS
+WSTKLDFLAG
 EXE
 ALLOCA
 RANLIB
@@ -6814,7 +6816,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 	}
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
-      RLIBS="-lnsl -lcrypt "
+      RLIBS="-ldl -lnsl -lcrypt "
       CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
@@ -6874,15 +6876,19 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 	}
        CFDYN="-Xlinker -dylib -Xlinker -undefined -Xlinker dynamic_lookup -fpic"
        DASHX=-x
+       RLIBS="-ldl "
 	;;
      *windows*)
        EXE=".exe"
        NT="NT"
        DNT="-DNT"
-       WINSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
+
+       WSTKLDFLAG="$(TMPWSTKLDFLAG)"
+       WGLIBS="$(TMPWGLIBS)"
+       WSUBSYS="$(TMPWSUBSYS)"
 
         ;;
 esac
@@ -6890,6 +6896,8 @@ esac
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
+
 
 
 

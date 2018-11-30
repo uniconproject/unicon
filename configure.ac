@@ -294,7 +294,10 @@ case $unicon_host in
        WSTKLDFLAG="-Xlinker --stack -Xlinker 8192000"
        WGLIBS="-lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinmm"
        WSUBSYS="-Wl,--subsystem,console"
-
+       NTCONDEP="NTCON"
+       WICONXTARGET="wiconx"
+       WICONTTARGET="wicont"
+       WUNICONTARGET="wunicon"
         ;;
 esac
 
@@ -308,6 +311,11 @@ AC_SUBST(WGLIBS)
 AC_SUBST(WSUBSYS)
 AC_SUBST(NT)
 AC_SUBST(DNT)
+AC_SUBST(NTCONDEP)
+AC_SUBST(WICONXTARGET)
+AC_SUBST(WICONTTARGET)
+AC_SUBST(WUNICONTARGET)
+
 AC_SUBST(OBJ)
 AC_SUBST(BITS)
 AC_SUBST(unicon_os)

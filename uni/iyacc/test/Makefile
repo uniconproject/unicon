@@ -2,7 +2,7 @@ BASE=../../..
 include $(BASE)/Makedefs.uni
 
 test: 		calc.out 
-		diff calc.out calc.correct
+		diff -w  calc.out calc.correct
 
 calc.out: 	calc.in calc
 		./calc < calc.in > calc.out

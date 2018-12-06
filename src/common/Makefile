@@ -31,8 +31,14 @@ libucommon.a: $(OBJS) $(HDRS)
 	$(RANLIB) $@
 	$(CP) $@ ../../bin/
 
+common:         doincl.exe patchstr.exe
+		./doincl -o ../../bin/rt.h ../h/rt.h
 
 $(OBJS): $(HDRS)
+
+dconsole.$(O): dconsole.c
+	$(CMNT)@echo "   [COMMON] $<"
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DMSWindows -c $<
 
 %.$(O): %.c
 	$(CMNT)@echo "   [COMMON] $<"

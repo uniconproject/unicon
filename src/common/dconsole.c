@@ -60,10 +60,18 @@ struct descrip nullptr =
    {F_Ptr | F_Nqual};	                /* descriptor with null block pointer */
 struct descrip emptystr; 		/* zero-length empty string */
 
+int CmdParamToArgv(char *s, char ***avp, int dequote)
+{
+  return 0;
+}
+
+void iconx(int argc, char **argv)
+{
+}
 
 #ifdef Concurrent
 #undef tend
-
+int is_concurrent;
 pthread_mutex_t **mutexes;
 struct threadstate *get_tstate()
 {
@@ -276,8 +284,7 @@ void initalloc(word codesize)
       	 curtblock = curblock;
 	 curtstring = curstring;
          {
-	   int i;
-
+	   int i; 
 	   int maxmutexes = 1024;
 	   mutexes=malloc(maxmutexes * sizeof(pthread_mutex_t *));
 	   if (mutexes==NULL) syserr("init_threads(): out of memory for mutexes!");

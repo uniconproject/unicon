@@ -13,7 +13,7 @@
  */
 #define VersionNumber "13.0"
 
-#define VersionDate "August 10, 2017"
+#define VersionDate "December 6, 2018"
 
 /*
  * Version number to insure format of data base matches version of iconc

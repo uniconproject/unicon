@@ -4,7 +4,7 @@ include ../Makedefs
 
 # Common components.
 
-all: Common Icont Iconx $(ICONCTARGET)
+all: Common Icont Iconx $(WICONTTARGET) $(WICONXTARGET) $(ICONCTARGET)
 
 
 Common: libs
@@ -30,6 +30,12 @@ Icont:	Common Iconx
 
 Iconx:	Common
 	$(MAKE) -C runtime interp_all
+
+#force wiconx and wicont to be built at the end
+wiconx Wiconx:	Icont
+	$(MAKE) -C runtime wiconx
+wicont Wicont: Wiconx
+	$(MAKE) -C icont wicont
 
 # force Iconx to always build first to avoid building part of both at the same time
 Iconc: Common Iconx

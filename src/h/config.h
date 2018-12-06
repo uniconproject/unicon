@@ -390,23 +390,24 @@
 #define Audio
 #endif
 
-#ifdef MSWindows
-   #undef Graphics
-   #define Graphics 1
-   #ifndef NTConsole
-      #define ConsoleWindow 1
-   #endif				/* NTConsole */
-#endif					/* MSWindows */
-
-#ifdef MacGraph
-   #undef Graphics
-   #define Graphics 1
-#endif					/* MacGraph */
-
-#if !defined(NoGraphics) && !defined(MSWindows) && !defined(MacGraph)
+#if !defined(NoGraphics)
    #if HAVE_LIBX11
    #define Graphics 1
    #endif
+
+#if defined(MSWindows) || defined(WICONT)
+   #undef Graphics
+   #define Graphics 1
+   #define FAttrib 1
+   #ifndef NTConsole
+      #define ConsoleWindow 1
+   #endif				/* NTConsole */
+   #endif					/* MSWindows */
+
+   #ifdef MacGraph
+   #undef Graphics
+   #define Graphics 1
+   #endif					/* MacGraph */
 #endif
 
 
@@ -440,7 +441,7 @@
       #define ICONC_XLIB "-L/usr/X11R6/lib -lX11"
    #endif				/* ICONC_XLIB */
 
-#if defined(ConsoleWindow) || (NT && !defined(Rttx) && !defined(NTConsole))
+   #if defined(ConsoleWindow) || (NT && !defined(Rttx) && !defined(NTConsole))
       /*
        * Knock out fprintf and putc; these are here so that consoles
        * may be used in icont and rtt, not just iconx.
@@ -453,9 +454,10 @@
       #define fflush Consolefflush
       #undef printf
       #define printf Consoleprintf
-#endif
-/* not sure whether this one should always be in effect. Maybe it should */
-#ifdef ConsoleWindow
+   #endif
+
+   /* not sure whether this one should always be in effect. Maybe it should */
+   #ifdef ConsoleWindow
       #undef exit
       #define exit c_exit
    #endif				/* Console Window */

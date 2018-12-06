@@ -11,6 +11,9 @@ OBJS=  tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
 WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
 
+COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
+		../common/filepart.$(O) ../common/strtbl.$(O)\
+		../common/mlocal.$(O) ../common/ipp.$(O)
 
 PGMS=		icont$(EXE)
 
@@ -26,13 +29,21 @@ wicont:
 	$(RM) link.$(O)
 	$(MAKE) wicont2
 
-wicont2: $(OBJS) ../../bin/libucommon
-	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS) $(WOBJS) -lwinmm $(LIBS) $(WINGLIBS) -lucommon
+wicont2: $(OBJS) ../../bin/libucommon.a common
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS)  $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WGLIBS) -lucommon
 	$(CP) wicont.exe ../../bin
 
-common: $(DCONSOLE)
 
+# set NTConsole for wiconx
+WNTCON: 
+	@echo set CONSOLE=  DCONSOLE=..
+	$(eval NTCONSOLE=-DMSWindows )
 
+common: $(COBJS) ../common/dconsole.$(O)
+#	cd ../common && $(MAKE) $(ICOBJS) CONSOLE=$(CONSOLE) DCONSOLE=../common/dconsole.o
+
+../common/dconsole.$(O):
+	$(MAKE) -C ../common dconsole.$(O)
 
 $(OBJS):   ../h/define.h ../h/config.h ../h/cpuconf.h ../h/gsupport.h \
 		   ../h/proto.h ../h/mproto.h ../h/auto.h \

@@ -30,6 +30,8 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 	xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O) xrwinrsc.$(O) xrposix.$(O) xrmsg.$(O)\
 	xraudio.$(O)
 
+# These files are affected by NTConsole on Windows
+CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwinsys.$(O)
 
 OBJS=	$(XOBJS)
 
@@ -40,16 +42,41 @@ interp_all: update_rev
 # but some versions of strip don't have the -x flag (e.g. strict POSIX compliance),
 # so only use strip -x when it is known to be needed and available (MacOS).
 
-iconx: $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
+# NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
+iconx: $(NTCONDEP) $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS)
 	cp iconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/iconx$(EXE);
 
+# on windows, always add WNTCON depemdency to set NTCONSOLE accordingly
+wiconx: WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
+	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS)
+	cp wiconx$(EXE) ../../bin
+	strip $(DASHX) ../../bin/wiconx$(EXE);
+
+#
+# The following three rules are needed on windows
+#
+
+#iconx needs NTConsole to be defined/set, make this a dependency for iconx to set it
+NTCON: CONSOLE
+	@echo set NTCONSOLE=-DNTConsole -DMSWindows
+	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
+
+# set NTConsole for wiconx
+WNTCON: CONSOLE
+	@echo set NTCONSOLE=-DMSWindows
+	$(eval NTCONSOLE=-DMSWindows )
+
+# make sure to clean the files affected by NTConsole to force rebuild them
+CONSOLE:
+	$(RM) $(CONSOLEOBJS)	
+
 
 x%.$(O): %.r $(HDRS)
 	$(CMNT)	@echo "   [ICONX RTT] $<"
-	$(SLNT)$(RTT) -x $<
-	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c x$*.c
+	$(SLNT)$(RTT) $(NTCONSOLE) -x $<
+	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c x$*.c
 	$(SLNT)$(RM) x$*.c
 
 xdata.$(O): data.r $(HDRS) ../h/kdefs.h ../h/fdefs.h ../h/odefs.h
@@ -60,8 +87,8 @@ xfwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 xkeyword.$(O): keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONX RTT] $< "
-	$(SLNT)$(RTT) -x keyword.r
-	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
+	$(SLNT)$(RTT) $(NTCONSOLE) -x keyword.r
+	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c xkeyword.c
 	$(SLNT)$(RM) xkeyword.c
 
 xrposix.$(O): rposix.r $(HDRS) ../h/posix.h
@@ -128,10 +155,9 @@ keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "
 	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS)" keyword.r
 
-
 %.$(O): %.r $(HDRS)
 	$(CMNT)@echo "   [ICONC RTT] $<"
-	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS)" $<
+	$(SLNT)$(RTT) $(DASHS) $(WCONSOLE) -c -O "$(CFLAGS)"  $<
 
 fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 

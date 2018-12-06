@@ -38,7 +38,7 @@ $(OBJS): $(HDRS)
 
 dconsole.$(O): dconsole.c
 	$(CMNT)@echo "   [COMMON] $<"
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DMSWindows -c $<
+	$(SLNT) $(CC) $(CPPFLAGS) $(CFLAGS) -DMSWindows -c $<
 
 %.$(O): %.c
 	$(CMNT)@echo "   [COMMON] $<"
@@ -69,7 +69,7 @@ dlrgint.$(O): ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstr
 xwindow.$(O): ../h/auto.h ../h/graphics.h ../h/xwin.h
 
 rswitch.$(O): FORCE
-	$(CC) $(CFLAGS) -c rswitch.[cs]
+	$(SLNT) $(CC) $(CFLAGS) -c rswitch.[cs]
 FORCE:
 
 distclean clean:

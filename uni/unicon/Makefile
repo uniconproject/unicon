@@ -1,22 +1,6 @@
-ICONT=../../bin/icont
-CP=cp
-RM=rm -f
-TOUCH=touch
-BIN=../../bin
-UNICON=../unicon/unicon
-ARC=zip
-ARCEXT=zip
-IYACC=../iyacc/iyacc
-UFLAGS=-s
-ifeq ($(findstring WindowsNT, $(shell uname)),WindowsNT)
-	EXE=.exe
-else
-	ifeq ($(findstring CYGWIN, $(shell uname)),)
-		EXE=
-	else
-		EXE=.exe
-	endif
-endif
+BASE=../..
+include $(BASE)/Makedefs.uni
+
 export PATH:=$(BIN):$(PATH)
 
 U= unicon.u unigram.u unilex.u tree.u preproce.u idol.u unix.u tokens.u yyerror.u main.u cfy.u ca.u
@@ -30,15 +14,14 @@ UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn
 # programs.  Long term, need to reconcile with or replace by stuff in parser/
 LIBFILES= ../lib/unilex.u ../lib/tree.u
 
+all: unicon $(WUNICONTARGET)
 unicon: $(U) $(LIBFILES)
 	$(ICONT) $(U)
 	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
-wunicon$(EXE): wunicon
-
 wunicon: $(U)
-	$(ICONT) -G -o wunicon.exe $(U)
+	$(ICONT) -G -o wunicon$(EXE) $(U)
 	$(CP) wunicon$(EXE) $(BIN)
 
 %.u: %.icn
@@ -114,4 +97,4 @@ unix.u: unix.icn
 #
 
 clean Clean:
-	$(RM) unicon$(EXE) uniclass.dir uniclass.pag uniclass.db $(UDEL)
+	$(RM) unicon$(EXE) wunicon$(EXE) uniclass.dir uniclass.pag uniclass.db $(UDEL)

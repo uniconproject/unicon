@@ -8,7 +8,6 @@ export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
 
 # nothing to configure here yet
 
-WUC=$(UC) -G
 UFLAGS=-s -c -u
 UFLAGS2=-s -c
 
@@ -26,11 +25,7 @@ OBJ=ui.u ide.u hfiledialog.u buffertextlist.u buffertabset.u buffertabitem.u \
 
 
 ui:	$(OBJ)
-ifdef EXE
-	$(WUC) -o ui $(OBJ)
-else
-	$(UC) -o ui $(OBJ)
-endif
+	$(UC) $(DASHG) -o ui $(OBJ)
 	$(CP) ui$(EXE) ../../bin
 
 funclookup.u: funclookup.icn

@@ -287,6 +287,8 @@ case $unicon_host in
        EXE=".exe"
        NT="NT"
        DNT="-DNT"
+
+       DASHG="-G"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        LIBS="$LIBS -lgdi32 -lws2_32"
@@ -485,6 +487,7 @@ fi
   AC_SUBST(SLNT)
   AC_SUBST(DASHS)
   AC_SUBST(DASHX)
+  AC_SUBST(DASHG)
 
 if test -f src/asm/$unicon_host-rswitch.s; then
     echo "Native coswitch detected"

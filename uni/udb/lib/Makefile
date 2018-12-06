@@ -88,7 +88,7 @@ counter_syntax.u: counter_syntax.icn listener.u
 	$(UC) $(CFLAGS) counter_syntax.icn
 
 clean:
-	-$(RM) *.u *.pag *.dir *.db *~ *.ps $(Tools)
+	-$(RM) *.u *.pag *.dir *.db *~ *.ps *.exe $(Tools)
 
 cleantools:
 	@for i in $(Tools) ; do\

@@ -58,12 +58,12 @@ FreshIconc:
 .PHONY: Common Icont Iconx Iconc Clean Pure tp gdbm xpm libs
 
 clean Clean:
-	cd iconc;	$(RM) *.o iconc
-	cd common;	$(RM) *.o doincl patchstr
-	cd preproc;	$(RM) *.o pp
-	cd rtt;		$(RM) *.o rtt
-	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx
-	cd icont;	$(RM) *.o icont
+	cd iconc;	$(RM) *.o iconc$(EXE)
+	cd common;	$(RM) *.o doincl$(EXE) patchstr$(EXE)
+	cd preproc;	$(RM) *.o pp$(EXE)
+	cd rtt;		$(RM) *.o rtt$(EXE)
+	cd runtime;	$(RM) *.o *.c rt.db rt.a rttcur.lst rttfull.lst iconx$(EXE) wiconx$(EXE)
+	cd icont;	$(RM) *.o icont$(EXE) wicont$(EXE)
 	cd xpm;		$(RM) *.o *.a
 	cd xpm/lib;	$(RM) *.o *.a
 	cd libtp;	$(RM) *.o *.a config.cache

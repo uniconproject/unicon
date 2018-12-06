@@ -29,5 +29,5 @@ splitmail: splitmail.icn
 	$(UNICON) $(UFLAGS) splitmail
 
 clean Clean:
-	@$(RM) $(PROGS) uniclass.pag uniclass.dir uniclass.db
+	@$(RM) $(PROGS) *.exe uniclass.pag uniclass.dir uniclass.db
 

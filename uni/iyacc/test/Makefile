@@ -14,6 +14,6 @@ calc.icn: 	calc.y
 		$(BIN)/iyacc -i calc.y
 
 clean:		
-		@$(RM) -f *.icn *.out calc *~ iyacc$(EXE)
+		@$(RM) -f *.icn *.out calc$(EXE) *~ iyacc$(EXE)
 
 

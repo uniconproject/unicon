@@ -16,7 +16,7 @@ DEFINES = -DHAVE_CONFIG_H
 
 LDLIBS = ../libtp.a $(LIBS)
 
-PROGS = daytime fing hhead pop testuri wtrace
+PROGS = daytime$(EXE) fing$(EXE) hhead$(EXE) pop$(EXE) testuri$(EXE) wtrace$(EXE)
 OBJS = daytime.o fing.o hhead.o pop.o testuri.o wtrace.o
 SRCS = daytime.c fing.c hhead.c pop.c testuri.c wtrace.c
 
@@ -31,26 +31,26 @@ clean:
 
 Pure distclean: clean
 
-daytime: daytime.o ../libtp.a
+daytime$(EXE): daytime.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"
 	$(SLNT)$(CC) -o daytime daytime.o $(LDFLAGS) $(LDLIBS)
 
-fing: fing.o ../libtp.a
+fing$(EXE): fing.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"
 	$(SLNT)$(CC) -o fing fing.o $(LDFLAGS) $(LDLIBS)
 
-hhead: hhead.o ../libtp.a
+hhead$(EXE): hhead.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"
 	$(SLNT)$(CC) -o hhead hhead.o $(LDFLAGS) $(LDLIBS)
 
-pop: pop.o ../libtp.a
+pop$(EXE): pop.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"
 	$(SLNT)$(CC) -o pop pop.o $(LDFLAGS) $(LDLIBS)
 
-testuri: testuri.o ../libtp.a
+testuri$(EXE): testuri.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"
 	$(SLNT)$(CC) -o testuri testuri.o $(LDFLAGS) $(LDLIBS)
 
-wtrace: wtrace.o ../libtp.a
+wtrace$(EXE): wtrace.o ../libtp.a
 	$(CMNT)@echo "   [TP TESTS] $<"
 	$(SLNT)$(CC) -o wtrace wtrace.o $(LDFLAGS) $(LDLIBS)

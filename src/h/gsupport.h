@@ -9,7 +9,7 @@
    #include <io.h>
 #endif					/* CSet/2 ver 2 */
 
-#if !VMS && !UNIX	 /* don't need path.h */
+#if !VMS && !UNIX && !Windows	 /* don't need path.h */
    #include "../h/path.h"
 #endif					/* !VMS && !UNIX */
 

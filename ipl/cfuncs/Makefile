@@ -25,7 +25,13 @@ CSRC = bitcount.c files.c fpoll.c internal.c lgconv.c osf.c \
 	pack.c ppm.c process.c tconnect.c
 
 
-default:	cfunc.u $(FUNCLIB)
+
+default: $(CFUNCTARGET)
+
+cfun:	cfunc.u $(FUNCLIB)
+
+windows:
+	echo cfuncs are not supported on Windows builds yet
 
 # library
 $(FUNCLIB):	$(FUNCS) mklib.sh

@@ -257,7 +257,7 @@ case $ac_cv_sizeof_int_p in
 esac
 
 OBJ=o
-
+CFUNCTARGET="cfun"
 # OS specific flags go here
 case $unicon_host in
      *linux*)
@@ -300,6 +300,7 @@ case $unicon_host in
        WICONXTARGET="wiconx"
        WICONTTARGET="wicont"
        WUNICONTARGET="wunicon"
+       CFUNCTARGET="windows"
         ;;
 esac
 
@@ -317,6 +318,7 @@ AC_SUBST(NTCONDEP)
 AC_SUBST(WICONXTARGET)
 AC_SUBST(WICONTTARGET)
 AC_SUBST(WUNICONTARGET)
+AC_SUBST(CFUNCTARGET)
 
 AC_SUBST(OBJ)
 AC_SUBST(BITS)

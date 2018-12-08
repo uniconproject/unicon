@@ -85,6 +85,10 @@ case $host_os in
         unicon_os="windows"
 	AC_DEFINE([Windows], [1], [Windows platform])	
         ;;
+     *msys*)
+        unicon_os="windows"
+	AC_DEFINE([Windows], [1], [Windows platform])	
+        ;;	
 esac
 
 unicon_host="$unicon_cpu"_"$unicon_os"

@@ -13,7 +13,8 @@ DEFINES = -DHAVE_CONFIG_H -D_LIBTP_
 DEBUG = 
 WARNINGS = 
 
-SUBDIRS = uri . tests
+#SUBDIRS = uri . tests
+SUBDIRS = uri .
 
 OBJS = tp.o util.o tpdunix.o tpdssl.o tpmdaytm.o tpmfinge.o tpmhttp.o  \
        tpmpop.o tpmsmtp.o
@@ -61,7 +62,7 @@ dist: Makefile distclean
 
 %.o: %.c
 	$(CMNT)@echo "   [TP] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 
 tp.o: tp.c ../h/auto.h ../h/auto.h tp.h util.h uri/uri.h
 tpdunix.o: tpdunix.c ../h/auto.h ../h/config.h util.h tp.h uri/uri.h tpdunix.h

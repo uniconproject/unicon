@@ -1312,6 +1312,9 @@ function{0,1} pull(x,n)
       register struct b_list *hp;
       register struct b_lelem *bp;
 
+      if (n <= 0)
+      	 fail;
+	 
 #ifdef Arrays
       if (BlkD(x,List)->listtail==NULL) 
 	 if (arraytolist(&x)!=Succeeded) fail;

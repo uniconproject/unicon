@@ -209,6 +209,8 @@ function{0,1} get_or_pop(x,i)
 	 body {
 	    int j;
 	    tended struct b_list *hp;
+      	    if (i <= 0)
+      	    fail;
 	    
 	    EVValD(&x, E_Lget);
 #ifdef Arrays

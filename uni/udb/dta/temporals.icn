@@ -134,12 +134,12 @@ end
 method cmdAssert(cmd)
    local obj, loc, ans
 
-   if not isValidLocation(cmd) then{
+   if not isValidLocation(cmd) then {
       fail
       }
-   else if *body = 0 then{
+   else if *body = 0 then {
       DState.State := ERROR
-      msg   :="\n   \""||DState.cmdHistory[1]||"\" Bad assertion syntax !!!"
+      msg   :="\n   \""||DState.cmdHistory[1]||"\" Wrong assertion syntax."
       msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
       DState.Write(msg)
       fail
@@ -162,8 +162,10 @@ method cmdAssert(cmd)
      "sometime": { obj := Sometime(DState,pname,fname,line,code,body,count) }
      default:{
         DState.State := ERROR
-        msg :="\n   \""||DState.cmdHistory[1]||"\" Bad assertion syntax !!!"
-        msg ||:="\n   Try \"help\" or \"help assert\" for assistance."
+
+        msg := "\n   \""||DState.cmdHistory[1]||"\" Bad assertion syntax.\n" ||
+	       image(body[1]) || " is not a known command." ||
+	       "\n   Try \"help\" or \"help assert\" for assistance."
         DState.Write(msg)
         count -:= 1
         fail

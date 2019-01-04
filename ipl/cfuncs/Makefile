@@ -30,6 +30,9 @@ default: $(CFUNCTARGET)
 
 cfun:	cfunc.u $(FUNCLIB)
 
+disabled:
+	echo plugins/cfuncs are disabled in this build
+
 windows:
 	echo cfuncs are not supported on Windows builds yet
 

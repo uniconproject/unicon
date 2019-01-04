@@ -521,6 +521,7 @@ if test "x$plugins" = "xyes"; then
   fi
 else
   AC_DEFINE([NoLoadFunc], [1], [No LoadFunc])
+  CFUNCTARGET="disabled"
 fi
 #AC_CHECK_FUNC(dlopen,
 #	[AC_DEFINE([HAVE_DLOPEN], [1], [dlopen for shared object via c functions])])

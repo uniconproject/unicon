@@ -76,8 +76,7 @@ procedure findfile(dir, pattern) \\
          stop("Invalid pattern ", image(pattern)) \\
 \>\>    \} \\
 \>   d := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't access ", dir, " ",
-	sys\_errstr(\&errno)) \\
+\>   \ \ \ write(\&errout, "Couldn't access ", dir, " ", \&errortext) \\
 \>   \ \ \ return \\
 \>   \ \ \ \}
 }
@@ -100,9 +99,7 @@ directories, not on links.
 \>   \ \ \ f := dir {\textbar}{\textbar}
 "/" {\textbar}{\textbar} name \\
 \>   \ \ \ s := stat(f) {\textbar} \{ \\
-\>   \ \ \ \ \ \ write(\&errout, "Couldn't stat ", f, \\
-\>   \ \ \ \ \ \ \ \ \ \ \ \ " ",
-sys\_errstr(\&errno)) \\
+\>   \ \ \ \ \ \ write(\&errout, "Couldn't stat ", f, " ", \&errortext) \\
 \>   \ \ \ \ \ \ next \\
 \>   \ \ \ \ \ \ \}
 }
@@ -162,7 +159,7 @@ natural structure is a list. This leads to the following code:
 \iconcode{
 procedure scan(dir) \\
 \>   f := open(dir) {\textbar} \{ \\
-\>\>    write(\&errout, "Couldn't access ", dir, " ", sys\_errstr(\&errno)) \\
+\>\>    write(\&errout, "Couldn't access ", dir, " ", \&errortext) \\
 \>\>    return \\
 \>\>    \} \\
 \>   while name := read(f) do \{ \\
@@ -397,16 +394,14 @@ end \\
 \# the global table "lengths" \\
 procedure scan(dir) \\
 \>   f := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't 
-open ", dir, "; ", sys\_errstr(\&errno)) \\
+\>   \ \ \ write(\&errout, "Couldn't open ", dir, "; ", \&errortext) \\
 \>   \ \ \ fail \\
 \>   \ \ \ \} \\
 \>   while name := read(f) do \{ \\
 \>   \ \ \ filename := dir {\textbar}{\textbar}
 "/" {\textbar}{\textbar} name \\
 \>   \ \ \ r := stat(filename) {\textbar} \{ \\
-\>   \ \ \ \ \ \ write(\&errout, "Couldn't stat ",
-filename, "; ", sys\_errstr(\&errno)) \\
+\>   \ \ \ \ \ \ write(\&errout, "Couldn't stat ", filename, "; ", \&errortext) \\
 \>   \ \ \ \ \ \ next \\
 \>   \ \ \ \ \ \ \} \\
 \ \\
@@ -467,14 +462,12 @@ procedure compare(file1, file2) \\
 \ \\
 \>   \# are f1 and f2 identical? \\
 \>   f1 := open(file1) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't
-open ", file1, "; ", sys\_errstr(\&errno)) \\
+\>   \ \ \ write(\&errout, "Couldn't open ", file1, "; ", \&errortext) \\
 \>   \ \ \ fail \\
 \>   \ \ \ \} \\
 \>   f2 := open(file2) {\textbar} \{ \\
 \>   \ \ \ close(f1) \\
-\>   \ \ \ write(\&errout, "Couldn't
-open ", file2, "; ", sys\_errstr(\&errno)) \\
+\>   \ \ \ write(\&errout, "Couldn't open ", file2, "; ", &errortext) \\
 \>   \ \ \ fail \\
 \>   \ \ \ \} \\
 \>   while l1 := reads(f1, maxline) do \{ \\
@@ -901,8 +894,7 @@ and closes the file, after resetting the parameters of the input to
 turn echoing back on. 
 
 \iconcode{
-\>   (\&errno = 0) {\textbar} write(\&errout, "Unexpected
-error: ", sys\_errstr(\&errno)) \\
+\>   (\&errno = 0) {\textbar} write(\&errout, "Unexpected error: ", \&errortext) \\
 \>   system("stty cooked echo") \\
 \>   close(f) \\
 end
@@ -1022,18 +1014,16 @@ procedure traverse(dir) \\
 \>   \# Read all the files; for any non-special files, copy them \\
 \>   \# over to the output dir, creating directories as necessary \\
 \>   d := open(dir) {\textbar} \{ \\
-\>   \ \ \ write(\&errout, "Couldn't stat ", dir, " ", 
-		sys\_errstr(\&errno)) \\
+\>   \ \ \ write(\&errout, "Couldn't stat ", dir, " ", \&errortext) \\
 \>   \ \ \ return \\
 \>   \ \ \ \} \\
 \>   if dir[-1] \~{}== "/" then dir
 {\textbar}{\textbar}:= "/" \\
 \>   while name := read(d) do \{ \\
-\>   \ \ \ if name == ("." {\textbar}
-"..") then next \\
+\>   \ \ \ if name == ("." {\textbar} "..") then next \\
 \>   \ \ \ s := stat(dir {\textbar}{\textbar} name) {\textbar} \{ \\
 \>   \ \ \ \ \ \ write(\&errout,
-"Couldn't stat ", dir{\textbar}{\textbar}name, " ", sys\_errstr(\&errno)) \\
+"Couldn't stat ", dir{\textbar}{\textbar}name, " ", \&errortext) \\
 \>   \ \ \ \ \ \ next \\
 \>   \ \ \ \} \\
 \>   \ \ \ if s.mode[1] == "d" then traverse(dir {\textbar}{\textbar} name) \\

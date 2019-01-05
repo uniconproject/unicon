@@ -339,8 +339,7 @@ procedure yyprint(node)
          else if node.label == "BPmatch" then {
 	    iconc_fd := 1
 
-	    # Get the leftmost token.  Use it to emit
-	    # a #line directive if needed.
+	    # Get the leftmost token. Use it to emit a #line directive if needed.
 	    if lm := leftmost_token(node) then {
 	       if outline ~=== lm.line then {
 		  write(yyout,"\n#line ", lm.line-1," \"", lm.filename,"\"")
@@ -438,11 +437,11 @@ procedure yyprint(node)
 	    if exists_statlists(node.children[3]) then {
 	       ini := node.children[4]
 	       yyprint("\ninitial {")
-               if ini ~=== &null then { # append into existing initial
-		  yyprint(ini.children[2])
-		  yyprint(";\n")
-	          }
 	       yystalists(node.children[3])
+               if ini ~=== &null then { # existing initial
+		  yyprint(";\n")
+		  yyprint(ini.children[2])
+	          }
 	       yyprint("\n}\n")
 	       }
 	    else
@@ -1179,7 +1178,9 @@ procedure constant_folder(n)
     }
 end
 
+#
 # build a parse tree for the pattern that matches this regexp
+#
 procedure regexp(n)
    case type(n) of {
       "token": {

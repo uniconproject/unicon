@@ -29,7 +29,7 @@ extern int errno;
 
 "close(f) - close file f."
 
-function{1} close(f)
+function{0,1} close(f)
 
    if !is:file(f) then
       runerr(105, f)
@@ -159,12 +159,20 @@ function{1} close(f)
        * should we consider treating Fs_BPipe in the same way?!
        */
       if ((BlkD(f,File)->status & Fs_Pipe) /*|| (BlkD(f,File)->status & Fs_BPipe)*/) {
+	 int rv;
 	 BlkLoc(f)->File.status = 0;
-	 return C_integer((pclose(fp) >> 8) & 0377);
+	 if ((rv = pclose(fp)) == -1) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	    }
+	 return C_integer((rv >> 8) & 0377);
 	 }
       else
 #endif					/* UNIX || ... */
-         fclose(fp);
+         if (fclose(fp) != 0) {
+	    IntVal(amperErrno) = errno;
+	    fail;
+	    }
 
       BlkLoc(f)->File.status = 0;
 

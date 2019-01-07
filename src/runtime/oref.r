@@ -1017,8 +1017,9 @@ operator{0,1} [] subsc(underef x -> dx,y)
 	    }
 	    else if (BlkType(bp)==T_Realarray)
 		  return  struct_var(&((struct b_realarray *)(bp))->a[i-1], bp);
-	    else  /* if (BlkType(bp)==T_Intarray)     assumed to be int array*/
+	    else { /* if (BlkType(bp)==T_Intarray)     assumed to be int array*/
 	       return  struct_var(&((struct b_intarray *)(bp))->a[i-1], bp);
+	       }
 #endif					/* Arrays */	    
             }
          }

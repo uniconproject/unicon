@@ -415,7 +415,7 @@ int interp_x(int fsig,dptr cargp)
 
 #if e_intcall
    EVVal(fsig, e_intcall);
-#endif
+#endif					/* e_intcall */
 #if e_cstack
 #ifdef StackCheck
    EVVal(DiffPtrs(sp, BlkD(k_current,Coexpr)->es_stack), e_cstack);
@@ -809,7 +809,7 @@ L_areal:
 #ifdef Concurrent
 	    MUTEX_LOCKID(MTX_OP_ASTR);
             if (ipc.op[-1] == Op_Astr) {
-	      MUTEX_UNLOCKID(MTX_OP_ASTR); goto L_astr; }
+	       MUTEX_UNLOCKID(MTX_OP_ASTR); goto L_astr; }
 #else					/*Concurrent*/
 	    PutOp(Op_Astr);
 #endif					/*Concurrent*/

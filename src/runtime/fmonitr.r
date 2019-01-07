@@ -160,7 +160,9 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
       }
 
 #ifdef PatternType
-   /* internal_match. A mini "monster" case. */
+   /* internal_match. A mini "monster" case.
+    * We should replace ~10 membership tests with a cset intersection.
+    */
    if (Testb((word)ToAscii(E_PatAttempt), cs) ||
        Testb((word)ToAscii(E_PatFail), cs) ||
        Testb((word)ToAscii(E_PatMatch), cs) ||
@@ -179,11 +181,15 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
 
    /*
     * interp() is the monster case:
-    * We should replace 30 membership tests with a cset intersection.
-    * Heck, we should redo the event codes so any bit in one
-    * particular word means: "use the instrumented interp".
+    * the event codes were redone so under WordBits==64, any bit in one
+    * particular word means: "use the instrumented interp". Probably
+    * deserves more testing.
     */
-   if (Testb((word)ToAscii(E_Intcall), cs) ||
+   if (
+#if WordBits == 64
+       *(((unsigned long *)cs.vword.bptr->Cset.bits)+2)
+#else
+       Testb((word)ToAscii(E_Intcall), cs) ||
        Testb((word)ToAscii(E_Stack), cs) ||
        Testb((word)ToAscii(E_Fsusp), cs) ||
        Testb((word)ToAscii(E_Osusp), cs) ||
@@ -212,11 +218,18 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
        Testb((word)ToAscii(E_Frem), cs) ||
        Testb((word)ToAscii(E_Orem), cs) ||
        Testb((word)ToAscii(E_Fret), cs) ||
-       Testb((word)ToAscii(E_Oret), cs)
-       )
+       Testb((word)ToAscii(E_Oret), cs) ||
+       Testb((word)ToAscii(E_Literal), cs) ||
+       Testb((word)ToAscii(E_Operand), cs) ||
+       Testb((word)ToAscii(E_Syntax), cs) ||
+       Testb((word)ToAscii(E_Cstack), cs)
+#endif
+       ) {
       p->Interp = interp_1;
-   else
+      }
+   else {
       p->Interp = interp_0;
+      }
 }
 
 /*

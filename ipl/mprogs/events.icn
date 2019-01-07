@@ -41,6 +41,8 @@ link evnames
 link evsyms
 link evutils
 link options
+link patnames
+$include "patdefs.icn"
 $include "evdefs.icn"
 
 procedure main(args)
@@ -56,6 +58,10 @@ procedure main(args)
    while EvGet() do {
       val := &eventvalue
       case &eventcode of {
+	 E_PatCode   |
+	 E_PelemFail |
+	 E_PelemMatch |
+	 E_PelemAttempt: val := patnames(val)
 	 E_Opcode: val := opnames(val)
 	 E_Loc: val := vertical(val) || ":" || horizontal(val)
 	 }

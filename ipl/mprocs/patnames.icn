@@ -16,13 +16,13 @@
 
 link tables
 
-$include "evdefs.icn"
+$include "patdefs.icn"
 
-procedure patnames()
+procedure patnames(patcode)
     static pfuncmap
 
     initial {
-	pfuncmap := table("????")
+	pfuncmap := table("unknown patcode")
       
 	pfuncmap[PF_Any] := "All Any Functions"
 	pfuncmap[PF_Arbno] := "All Arbno Functions"
@@ -109,5 +109,7 @@ procedure patnames()
 	pfuncmap[PC_Concat] := " || "
 	pfuncmap[PI_CONCAT] := " || or && "
     }
-    return pfuncmap
+    rv := pfuncmap[patcode]
+    if rv == "unknown patcode" then rv ||:= " " || patcode
+    return rv
 end

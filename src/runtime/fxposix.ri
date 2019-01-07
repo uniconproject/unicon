@@ -37,19 +37,22 @@ extern int errno;
 } while (0)
 
 /*
- * alc_strerror - return a (usually heap-allocated) error string.
+ * alc_strerror - return a error string corresponding to an errno.
  * Dynamically allocated, arbitrarily sized, thread-safe (where available)
  * and localized (where available).
  *
- * TODO: save a pool of results, so we don't keep allocating these?
- * Consider moving to rposix.r
+ * TODO: 1. save a pool of results, so we don't keep allocating these?
+ *          A) need to measure, determine if it is worth it.
+ *          B) thread safety: pre-populate during initialization?
+ *       2. consider moving to rposix.r.
+ *
  * Possible failures: EINVAL
  */
 char *alc_strerror(int n)
 {
    int rv=0;
    char *s = NULL;
-   size_t size = 256; /* localization == 3x, max message ~50 */
+   size_t size = 150; /* localization == 3x, max message ~50 */
    CURTSTATE();
    if (n==0) return "Success";
 

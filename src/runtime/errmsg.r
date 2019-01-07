@@ -24,13 +24,15 @@ void set_errortext(int i)
 
 /*
  * set &errno and &errortext based on a system call failure that set errno.
+ * TODO: avoid allocations in most cases.
  */
 void set_syserrortext(int ern)
 {
    CURTSTATE();
    IntVal(amperErrno) = ern;
-   if ((StrLoc(k_errortext) = alc_strerror(ern)) != NULL)
+   if ((StrLoc(k_errortext) = alc_strerror(ern)) != NULL) {
       StrLen(k_errortext) = strlen(StrLoc(k_errortext));
+      }
 }
 
 #if HAVE_LIBZ

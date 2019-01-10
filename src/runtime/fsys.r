@@ -44,9 +44,8 @@ function{0,1} close(f)
 #endif					/* HAVE_VOICE */
       FILE *fp = BlkD(f,File)->fd.fp;
       int status = BlkD(f,File)->status;
-#ifdef Graphics
       CURTSTATE();
-#endif					/* Graphics */
+
       if ((status & (Fs_Read|Fs_Write)) == 0) return f;
 
       /*

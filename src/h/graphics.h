@@ -505,6 +505,7 @@ typedef struct childcontrol {
 #define TEXTURE_WINDOW   2
 
 /*
+ * This is the "canvas": it is also called a window state.
  * "Window state" includes the actual X window and references to a large
  * number of resources allocated on a per-window basis.  Windows are
  * allocated out of a global array in rwinrsrc.c.  Windows remember the

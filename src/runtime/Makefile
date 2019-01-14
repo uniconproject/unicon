@@ -33,7 +33,7 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwinsys.$(O)
 
-OBJS=	$(XOBJS) $(EXEICON)
+OBJS=	$(XOBJS) $(EXEICONTARGET)
 
 interp_all: update_rev 
 	$(MAKE) iconx
@@ -55,13 +55,9 @@ wiconx: WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libt
 	strip $(DASHX) ../../bin/wiconx$(EXE);
 
 # prepare the icon for the executables
-# 32 bit build:
-# WINRESFLAG=-F pe-i386
-# 64 bit build:
-# WINRESFLAG=-F pe-x86-64
 icon.$(O):
 	cp -u ../../config/win32/gcc/icon.rc .
-	windres $(WINRESFLAG) icon.rc icon.$(O)
+	windres $(RCFLAGS) icon.rc icon.$(O)
 #	cp -u ../../config/win32/gcc/unicon.ico .
 
 #

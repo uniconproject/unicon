@@ -651,6 +651,8 @@ unicon_osdist
 unicon_os
 BITS
 OBJ
+RCFLAGS
+EXEICONTARGET
 CFUNCTARGET
 WUNICONTARGET
 WICONTTARGET
@@ -6771,9 +6773,13 @@ case $ac_cv_sizeof_int_p in
      ;;
      *4)
      BITS=32
+     # RCFLAGS used on Windows only at the moment
+     RCFLAGS="--target=pe-i386"
      ;;
      *8)
      BITS=64
+     # RCFLAGS used on Windows only at the moment
+     RCFLAGS="--target=pe-x86-64"
      ;;
 esac
 
@@ -6908,12 +6914,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
        WICONTTARGET="wicont"
        WUNICONTARGET="wunicon"
        CFUNCTARGET="windows"
+       EXEICONTARGET=icon.$OBJ
         ;;
 esac
 
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
+
 
 
 

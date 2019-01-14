@@ -254,9 +254,13 @@ case $ac_cv_sizeof_int_p in
      ;;
      *4)
      BITS=32
+     # RCFLAGS used on Windows only at the moment     
+     RCFLAGS="--target=pe-i386"
      ;;
      *8)
      BITS=64
+     # RCFLAGS used on Windows only at the moment
+     RCFLAGS="--target=pe-x86-64"
      ;;
 esac
 
@@ -305,6 +309,7 @@ case $unicon_host in
        WICONTTARGET="wicont"
        WUNICONTARGET="wunicon"
        CFUNCTARGET="windows"
+       EXEICONTARGET=icon.$OBJ
         ;;
 esac
 
@@ -323,6 +328,8 @@ AC_SUBST(WICONXTARGET)
 AC_SUBST(WICONTTARGET)
 AC_SUBST(WUNICONTARGET)
 AC_SUBST(CFUNCTARGET)
+AC_SUBST(EXEICONTARGET)
+AC_SUBST(RCFLAGS)
 
 AC_SUBST(OBJ)
 AC_SUBST(BITS)

@@ -12,7 +12,7 @@ AppUpdatesURL=http://unicon.org
 DefaultDirName=C:\Unicon
 DefaultGroupName=Unicon
 AllowNoIcons=yes
-OutputBaseFilename=setup-unicon_13.0(64-bit)_rev5080
+OutputBaseFilename=setup-unicon_13.0(64-bit)_rev5884
 Compression=lzma
 SolidCompression=true
 Uninstallable=yes
@@ -81,28 +81,28 @@ Source: "\unicon\ipl\mdocs\*.*"; DestDir: "{app}\ipl\mdocs"; Flags: ignoreversio
 Source: "\unicon\ipl\lib\*.*"; DestDir: "{app}\ipl\lib"; Flags: ignoreversion
 
 ; uni misc
-Source: "\unicon\uni\makedefs"; DestDir: "{app}\uni\"; Flags: ignoreversion
+Source: "\unicon\Makedefs.uni"; DestDir: "{app}\uni\"; Flags: ignoreversion
 Source: "\unicon\uni\lib\*.*"; DestDir: "{app}\uni\lib"; Flags: ignoreversion
 Source: "\unicon\uni\xml\*.icn"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
 Source: "\unicon\uni\xml\*.u"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
-Source: "\unicon\uni\xml\makefile"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
+Source: "\unicon\uni\xml\Makefile"; DestDir: "{app}\uni\xml"; Flags: ignoreversion
 Source: "\unicon\uni\util\*.icn"; DestDir: "{app}\uni\util"; Flags: ignoreversion
-Source: "\unicon\uni\util\makefile"; DestDir: "{app}\uni\util"; Flags: ignoreversion
-Source: "\unicon\uni\progs\makefile"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
+Source: "\unicon\uni\util\Makefile"; DestDir: "{app}\uni\util"; Flags: ignoreversion
+Source: "\unicon\uni\progs\Makefile"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
 Source: "\unicon\uni\progs\*.icn"; DestDir: "{app}\uni\progs"; Flags: ignoreversion
 
 ; GUI library
 Source: "\unicon\uni\gui\*.icn"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "\unicon\uni\gui\*.u"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 Source: "\unicon\uni\gui\uniclass.*"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
-Source: "\unicon\uni\gui\makefile"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
+Source: "\unicon\uni\gui\Makefile"; DestDir: "{app}\uni\gui"; Flags: ignoreversion
 
 Source: "\unicon\uni\gui\guidemos\*.icn"; DestDir: "{app}\uni\gui\guidemos"; Flags: ignoreversion
-Source: "\unicon\uni\gui\guidemos\makefile"; DestDir: "{app}\uni\gui\guidemos"; Flags: ignoreversion
+Source: "\unicon\uni\gui\guidemos\Makefile"; DestDir: "{app}\uni\gui\guidemos"; Flags: ignoreversion
 
 ; IVIB
 Source: "\unicon\uni\gui\ivib\*.icn"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
-Source: "\unicon\uni\gui\ivib\makefile"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
+Source: "\unicon\uni\gui\ivib\Makefile"; DestDir: "{app}\uni\gui\ivib"; Flags: ignoreversion
 Source: "\unicon\uni\gui\ivib\icon\*.icon"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
 Source: "\unicon\uni\gui\ivib\icon\*.xpm"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
 Source: "\unicon\uni\gui\ivib\icon\icon.gif"; DestDir: "{app}\uni\gui\ivib\icon"; Flags: ignoreversion
@@ -112,14 +112,14 @@ Source: "\unicon\uni\gui\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\gui\ivib\i
 ; NOTE: The old ivib was dropped from sources in early 2014.
 Source: "\unicon\uni\ivib\README"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
 ;Source: "\unicon\uni\ivib\*.icn"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
-;Source: "\unicon\uni\ivib\makefile"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
+;Source: "\unicon\uni\ivib\Makefile"; DestDir: "{app}\uni\ivib"; Flags: ignoreversion
 ;Source: "\unicon\uni\ivib\icon\*.ico"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
 ;Source: "\unicon\uni\ivib\icon\*.xpm"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
 ;Source: "\unicon\uni\ivib\icon\xpmtoims.icn"; DestDir: "{app}\uni\ivib\icon"; Flags: ignoreversion
 
 ; IDE
 Source: "\unicon\uni\ide\*.icn"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
-Source: "\unicon\uni\ide\makefile"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
+Source: "\unicon\uni\ide\Makefile"; DestDir: "{app}\uni\ide"; Flags: ignoreversion
 
 ; UDB
 Source: "\unicon\uni\udb\*.icn"; DestDir: "{app}\uni\udb"; Flags: ignoreversion
@@ -134,38 +134,38 @@ Source: "\unicon\uni\udb\lib\Makefile"; DestDir: "{app}\uni\udb\lib"; Flags: ign
 Source: "\unicon\uni\unicon\*.icn"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 Source: "\unicon\uni\unicon\idol.u"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 Source: "\unicon\uni\unicon\unigram.u"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
-Source: "\unicon\uni\unicon\makefile"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
+Source: "\unicon\uni\unicon\Makefile"; DestDir: "{app}\uni\unicon"; Flags: ignoreversion
 
 ; 3D Library
 Source: "\unicon\uni\3d\*.icn"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "\unicon\uni\3d\*.u"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "\unicon\uni\3d\uniclass.*"; DestDir: "{app}\uni\3d"; Flags: ignoreversion
 Source: "\unicon\uni\3d\viewer\*.icn"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
-Source: "\unicon\uni\3d\viewer\makefile"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
+Source: "\unicon\uni\3d\viewer\Makefile"; DestDir: "{app}\uni\3d\viewer"; Flags: ignoreversion
 Source: "\unicon\uni\3d\models\*.*"; DestDir: "{app}\uni\3d\models"; Flags: ignoreversion
 
 ; tests
-Source: "\unicon\tests\makefile"; DestDir: "{app}\tests"; Flags: ignoreversion
-Source: "\unicon\tests\makefile.test"; DestDir: "{app}\tests"; Flags: ignoreversion
+Source: "\unicon\tests\Makefile"; DestDir: "{app}\tests"; Flags: ignoreversion
+Source: "\unicon\tests\Makefile.test"; DestDir: "{app}\tests"; Flags: ignoreversion
 
 ; general tests
 Source: "\unicon\tests\general\*.icn"; DestDir: "{app}\tests\general"; Flags: ignoreversion
 Source: "\unicon\tests\general\foo.baz"; DestDir: "{app}\tests\general"; Flags: ignoreversion
 Source: "\unicon\tests\general\stand\*.std"; DestDir: "{app}\tests\general"; Flags: ignoreversion
 Source: "\unicon\tests\general\README"; DestDir: "{app}\tests\general"; Flags: ignoreversion
-Source: "\unicon\tests\general\makefile"; DestDir: "{app}\tests\general"; Flags: ignoreversion
+Source: "\unicon\tests\general\Makefile"; DestDir: "{app}\tests\general"; Flags: ignoreversion
 
 ; posix tests
 Source: "\unicon\tests\posix\*.icn"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
 Source: "\unicon\tests\posix\stand\*.std"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
-Source: "\unicon\tests\posix\makefile"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
+Source: "\unicon\tests\posix\Makefile"; DestDir: "{app}\tests\posix"; Flags: ignoreversion
 
 
 ; Thread tests
 Source: "\unicon\tests\thread\*.icn"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 Source: "\unicon\tests\thread\stand\*.std"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 Source: "\unicon\tests\thread\README"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
-Source: "\unicon\tests\thread\makefile"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
+Source: "\unicon\tests\thread\Makefile"; DestDir: "{app}\tests\thread"; Flags: ignoreversion
 
 ; Bench
 Source: "\unicon\tests\bench\*.icn"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
@@ -173,7 +173,7 @@ Source: "\unicon\tests\bench\*.dat"; DestDir: "{app}\tests\bench"; Flags: ignore
 Source: "\unicon\tests\bench\*.c"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
 Source: "\unicon\tests\bench\*.test"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
 Source: "\unicon\tests\bench\README"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
-Source: "\unicon\tests\bench\makefile"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
+Source: "\unicon\tests\bench\Makefile"; DestDir: "{app}\tests\bench"; Flags: ignoreversion
 Source: "\unicon\tests\bench\icon\*.*"; DestDir: "{app}\tests\bench\icon"; Flags: ignoreversion
 
 

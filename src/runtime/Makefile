@@ -54,17 +54,23 @@ wiconx: WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libt
 	cp wiconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/wiconx$(EXE);
 
+# prepare the icon for the executables
+icon.$(O):
+	cp -u ../../config/win32/gcc/icon.rc .
+	windres $(WINRESFLAG) icon.rc icon.$(O)
+#	cp -u ../../config/win32/gcc/unicon.ico .
+
 #
 # The following three rules are needed on windows
 #
 
 #iconx needs NTConsole to be defined/set, make this a dependency for iconx to set it
-NTCON: CONSOLE
+NTCON: CONSOLE icon.$(O)
 	@echo set NTCONSOLE=-DNTConsole -DMSWindows
 	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
 
 # set NTConsole for wiconx
-WNTCON: CONSOLE
+WNTCON: CONSOLE icon.$(O)
 	@echo set NTCONSOLE=-DMSWindows
 	$(eval NTCONSOLE=-DMSWindows )
 

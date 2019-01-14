@@ -12,16 +12,16 @@ PROGS= libucommon.a doincl$(EXE) patchstr$(EXE)
 all: $(PROGS)
 
 doincl$(EXE):doincl.$(O)
-	$(CC) $(LDFLAGS) -o doincl doincl.$(O)
+	$(CC) $(CPPFLAGS) $(LDFLAGS) -o doincl doincl.$(O)
 	-./doincl -o ../../bin/rt.h ../h/rt.h
 
 # TODO: if the above rule doesn't work on windows we have to make switch to the rule below
 TMPdoincl.exe:     doincl.$(O)
-	$(CC) $(LDFLAGS) -o doincl.exe doincl.$(O) -Llibc -Lkernel64 -Lntdll -Luser64 -Lgdi64 -Lwinspool -Lcomdlg64 -LVERSION
+	$(CC) $(CPPFLAGS) $(LDFLAGS) -o doincl.exe doincl.$(O) -Llibc -Lkernel64 -Lntdll -Luser64 -Lgdi64 -Lwinspool -Lcomdlg64 -LVERSION
 
 
 patchstr$(EXE): patchstr.$(O)
-		$(CC) $(LDFLAGS) -o patchstr patchstr.$(O)
+		$(CC) $(CPPFLAGS) $(LDFLAGS) -o patchstr patchstr.$(O)
 		$(CP) patchstr$(EXE) ../../bin/
 
 
@@ -31,7 +31,7 @@ libucommon.a: $(OBJS) $(HDRS)
 	$(RANLIB) $@
 	$(CP) $@ ../../bin/
 
-common:         doincl.exe patchstr.exe
+common:         doincl$(EXE) patchstr$(EXE)
 		./doincl -o ../../bin/rt.h ../h/rt.h
 
 $(OBJS): $(HDRS)
@@ -69,7 +69,7 @@ dlrgint.$(O): ../h/auto.h ../h/rproto.h ../h/rexterns.h ../h/rmacros.h ../h/rstr
 xwindow.$(O): ../h/auto.h ../h/graphics.h ../h/xwin.h
 
 rswitch.$(O): FORCE
-	$(SLNT) $(CC) $(CFLAGS) -c rswitch.[cs]
+	$(SLNT) $(CC) $(CPPFLAGS) $(CFLAGS) -c rswitch.[cs]
 FORCE:
 
 distclean clean:

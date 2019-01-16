@@ -60,15 +60,6 @@ struct descrip nullptr =
    {F_Ptr | F_Nqual};	                /* descriptor with null block pointer */
 struct descrip emptystr; 		/* zero-length empty string */
 
-int CmdParamToArgv(char *s, char ***avp, int dequote)
-{
-  return 0;
-}
-
-void iconx(int argc, char **argv)
-{
-}
-
 #ifdef Concurrent
 #undef tend
 int is_concurrent;

@@ -11,6 +11,9 @@ OBJS=  tmain.$(O) util.$(O) tlocal.$(O) $(TRANS) $(LINKR)
 WOBJS=  ../runtime/xrwindow.$(O) ../runtime/xrwinsys.$(O) \
 	../runtime/xrwinrsc.$(O) ../common/dconsole.$(O)
 
+# These files are affected by NTConsole on Windows
+CONSOLEOBJS=  lcode.$(O) lglob.$(O) link.$(O) tcode.$(O) tmain.$(O)
+
 COBJS=          ../common/long.$(O) ../common/getopt.$(O) ../common/alloc.$(O)\
 		../common/filepart.$(O) ../common/strtbl.$(O)\
 		../common/mlocal.$(O) ../common/ipp.$(O)
@@ -19,25 +22,28 @@ PGMS=		icont$(EXE)
 
 all:		icont
 
-icont :		$(OBJS) ../../bin/libucommon.a
+icont :		 $(NTCONDEP) $(OBJS) ../../bin/libucommon.a
 		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) $(LIBS) -lucommon
 		cp $(PGMS) ../../bin
 		strip ../../bin/$(PGMS)
 
-wicont:
-	$(RM) tmain.$(O)
-	$(RM) link.$(O)
-	$(MAKE) wicont2
-
-wicont2: $(OBJS) ../../bin/libucommon.a common
+wicont: WNTCON $(OBJS) ../../bin/libucommon.a common
 	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS)  $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WGLIBS) -lucommon
 	$(CP) wicont.exe ../../bin
 
 
 # set NTConsole for wiconx
-WNTCON: 
-	@echo set CONSOLE=  DCONSOLE=..
+NTCON: CONSOLE
+	@echo set NTCONSOLE=-DNTConsole -DMSWindows
+	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
+
+WNTCON: CONSOLE
+	@echo set NTCONSOLE=-DMSWindows
 	$(eval NTCONSOLE=-DMSWindows )
+
+# make sure to clean the files affected by NTConsole to force rebuild them
+CONSOLE:
+	$(RM) $(CONSOLEOBJS)
 
 common: $(COBJS) ../common/dconsole.$(O)
 #	cd ../common && $(MAKE) $(ICOBJS) CONSOLE=$(CONSOLE) DCONSOLE=../common/dconsole.o
@@ -53,7 +59,7 @@ $(COBJS):	../h/mproto.h
 
 %.o: %.c
 	$(CMNT)@echo "   [ICONT] $<"
-	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(SLNT)$(CC)  $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c $<
 
 tmain.o:	tglobals.h ../h/version.h
 tglobals.o:	tglobals.h

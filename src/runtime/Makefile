@@ -57,8 +57,8 @@ wiconx: WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libt
 # prepare the icon for the executables
 icon.$(O):
 	cp -u ../../config/win32/gcc/icon.rc .
+	cp -u ../../config/win32/gcc/unicon.ico .
 	windres $(RCFLAGS) icon.rc icon.$(O)
-#	cp -u ../../config/win32/gcc/unicon.ico .
 
 #
 # The following three rules are needed on windows

@@ -3,8 +3,8 @@
 BASE=../..
 include $(BASE)/Makedefs.uni
 
-export IPATH:=$(UNI)/lib $(UNI)/unicon $(UNI)/gui $(UNI)/xml $(ICON_IPL)/lib
-export LPATH:=$(UNI)/gui $(ICON_IPL)/incl $(ICON_IPL)/gincl  $(ICON_IPL)/mincl
+# needed to link idol.u
+export IPATH:=$(UNI)/unicon
 
 # nothing to configure here yet
 

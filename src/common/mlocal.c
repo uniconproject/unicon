@@ -351,8 +351,13 @@ char *libpath(char *prog, char *envname) {
    strcat(buf, " ");
    quotestrcat(buf, relfile(prog, "/../../uni/gui"));
    strcat(buf, " ");
+   quotestrcat(buf, relfile(prog, "/../../uni/xml"));
+   strcat(buf, " ");
+   quotestrcat(buf, relfile(prog, "/../../uni/parser"));
+   strcat(buf, " ");
+   quotestrcat(buf, relfile(prog, "/../../uni/3d"));
+   strcat(buf, " ");
    quotestrcat(buf, relfile(prog, "/../../plugins/lib"));
-
    return salloc(buf);
    }
 

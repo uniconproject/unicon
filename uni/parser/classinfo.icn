@@ -169,12 +169,17 @@ end
 # Split a space-separated string into its constituent elements.
 #
 procedure split_path_string(s)
+   local x, sep
    s ? {
+       if find(";") then
+	   sep := ';'
+       else
+	   sep := ' '
       repeat {
          tab(many(' '))
          if pos(0) then
             break
-         x := tab(upto(' ') | 0)
+         x := (tab(upto(sep) | 0)
          suspend x
       }
    }

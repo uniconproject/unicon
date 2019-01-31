@@ -295,6 +295,24 @@ int pathFind(char target[], char buf[], int n)
 
    if ((path = getenv("PATH")) == 0)
       path = "";
+#if NT
+   else if (strlen(path)==0) {
+      /*
+       * PATH was not NULL, but is the empty string, on some  versions of
+       * Windows the PATH was too long. Try and read it via a pipe from cmd.exe.
+       */
+      FILE *fpath;
+      char buf[32768];
+      if ((fpath = popen("cmd /C set PATH", "r")) != NULL) {
+	 if (fgets(buf, 32768, fpath) != NULL) {
+	    if (strncasecmp("path=", buf, 5) == 0) {
+	       path = strdup(buf+5);
+	       }
+	    }
+	 pclose(fpath);
+         }
+      }
+#endif					/* NT */
 
    if (!getcwd(buf, n)) {		/* get current working directory */
       *buf = 0;		/* may be better to do something nicer if we can't */
@@ -352,7 +370,6 @@ int pathOpenHandle(char *fname, char *mode)
    {
    char buf[260 + 1];
    int i, use = 1;
-
 
    /*
     * Find out if a path has been given in the file name.

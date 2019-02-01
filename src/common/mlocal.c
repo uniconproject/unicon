@@ -29,6 +29,36 @@ char *findonpath(char *name, char *buf, size_t len);
 static char *followsym(char *name, char *buf, size_t len);
 static char *canonize(char *path);
 
+int
+getenv_r(const char *name, char *buf, size_t len);
+
+char *
+getenv_var(const char *name)
+{
+  char *buf, *buf2;
+  int rv, len = 512;
+  buf = malloc(len);
+  if (buf == NULL)
+    return NULL;
+
+  while (1) {
+    rv = getenv_r(name, buf, len-1);
+    if (rv == 0)
+      return buf;
+    else if (rv == ERANGE) {
+      len = len * 2;
+      buf2 = realloc(buf, len);
+      if (buf2 == NULL ) {
+	free(buf);
+	return NULL;
+	}
+      buf = buf2;
+    }
+    else
+      return NULL;
+  }
+}
+
 /*
  *  relfile(prog, mod) -- find related file.
  *

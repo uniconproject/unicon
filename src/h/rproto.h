@@ -1173,3 +1173,5 @@ int bigaddi      (dptr da, word i, dptr dx);
 int bigsubi      (dptr da, word i, dptr dx);
 int checkTypeInt (dptr da1, dptr da2, word n );
 #endif					/* DescripAmpAllocated */
+
+char * getenv_var(const char *name);

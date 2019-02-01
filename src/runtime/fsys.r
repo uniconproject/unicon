@@ -233,12 +233,13 @@ function{0,1} getenv(s)
       }
 
    inline {
-      char *p, sbuf[4096];
+      char *p, *sbuf;
       long l;
-
-      if (getenv_r(s,sbuf,4095) == 0) {
+      
+      if ( (sbuf = getenv_var(s)) != NULL) {
 	 l = strlen(sbuf);
 	 Protect(p = alcstr(sbuf,l),runerr(0));
+	 free(sbuf);
 	 return string(l,p);
 	 }
       else {				/* fail if not in environment */

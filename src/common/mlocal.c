@@ -40,12 +40,12 @@ getenv_var(const char *name)
   buf = malloc(len);
   if (buf == NULL)
     return NULL;
-
+  
   while (1) {
     rv = getenv_r(name, buf, len-1);
     if (rv == 0)
       return buf;
-    else if (rv == ERANGE) {
+    else if (errno == ERANGE) {
       len = len * 2;
       buf2 = realloc(buf, len);
       if (buf2 == NULL ) {
@@ -54,8 +54,10 @@ getenv_var(const char *name)
 	}
       buf = buf2;
     }
-    else
+    else {
+      free(buf);
       return NULL;
+    }
   }
 }
 

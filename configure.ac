@@ -310,6 +310,14 @@ case $unicon_host in
        WUNICONTARGET="wunicon"
        CFUNCTARGET="windows"
        EXEICONTARGET=icon.$OBJ
+
+       ICONXEXE=iconx.exe
+       WICONXEXE=wiconx.exe
+       ICONTEXE=icont.exe
+       WICONTEXE=wicont.exe
+       UNICONEXE=unicon.exe
+       WUNICONEXE=wunicon.exe
+       ICONCEXE=iconc.exe
         ;;
 esac
 
@@ -330,6 +338,13 @@ AC_SUBST(WUNICONTARGET)
 AC_SUBST(CFUNCTARGET)
 AC_SUBST(EXEICONTARGET)
 AC_SUBST(RCFLAGS)
+AC_SUBST(ICONXEXE)
+AC_SUBST(WICONXEXE)
+AC_SUBST(ICONTEXE)
+AC_SUBST(WICONTEXE)
+AC_SUBST(UNICONEXE)
+AC_SUBST(WUNICONEXE)
+AC_SUBST(ICONCEXE)
 
 AC_SUBST(OBJ)
 AC_SUBST(BITS)

@@ -43,13 +43,13 @@ interp_all: update_rev
 # so only use strip -x when it is known to be needed and available (MacOS).
 
 # NTCONDEP is set to NTCON on windows only to add a dependency that sets NTCONSOLE
-iconx: $(NTCONDEP) $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
+iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 	$(CC) $(LDFLAGS) $(WSUBSYS) $(WSTKLDFLAG) $(RLINK) -o iconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS)
 	cp iconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/iconx$(EXE);
 
 # on windows, always add WNTCON depemdency to set NTCONSOLE accordingly
-wiconx: WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
+wiconx $(WICONEXE): WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
 	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS)
 	cp wiconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/wiconx$(EXE);

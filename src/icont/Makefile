@@ -22,12 +22,12 @@ PGMS=		icont$(EXE)
 
 all:		icont
 
-icont :		 $(NTCONDEP) $(OBJS) ../../bin/libucommon.a
+icont $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../bin/libucommon.a
 		$(CC) $(CFLAGS) $(LDFLAGS) -o icont $(OBJS) $(LIBS) -lucommon
 		cp $(PGMS) ../../bin
 		strip ../../bin/$(PGMS)
 
-wicont: WNTCON $(OBJS) ../../bin/libucommon.a common
+wicont $(WICONTEXE): WNTCON $(OBJS) ../../bin/libucommon.a common
 	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS)  $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WGLIBS) -lucommon
 	$(CP) wicont.exe ../../bin
 

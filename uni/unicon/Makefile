@@ -15,12 +15,12 @@ UCFILES= unicon.icn unigram.icn unilex.icn tree.icn preproce.icn idol.u unix.icn
 LIBFILES= ../lib/unilex.u ../lib/tree.u
 
 all: unicon $(WUNICONTARGET)
-unicon: $(U) $(LIBFILES)
+unicon $(UNICONEXE): $(U) $(LIBFILES)
 	$(ICONT) $(U)
 	$(CP) unicon$(EXE) $(BIN)
 
 # A windows-specific build option
-wunicon: $(U)
+wunicon $(WUNICONEXE): $(U)
 	$(ICONT) -G -o wunicon$(EXE) $(U)
 	$(CP) wunicon$(EXE) $(BIN)
 

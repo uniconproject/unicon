@@ -8,11 +8,13 @@
 #
 
 #
-# Error handling
+# Error handling object
 #
 class ErrorHandler(filename, 
                    lineno, 
-                   error
+                   error,
+                   errout,
+                   tag
                   )
    method init(filename)
       self.filename := filename
@@ -28,24 +30,39 @@ class ErrorHandler(filename,
 
    method constr_msg(s)
       if \filename then 
-         return filename || ":" || lineno || ": " || s
+         return tag || " " || filename || ":" || lineno || ": " || s
       else
-         return s
+         return tag || " " ||  s
    end
 
-   # set methods are meant to fail
+   #
+   # Sets (error) using constr_msg()
+   #
    method set_err(s)
       if /(error) then {
          error := constr_msg(s)
          }
    end
 
-   method get_err() 
-       if \error then return error
-       else return ""
+   #
+   # Writes error (s) to file descriptor specified by errout.
+   #
+   method write_err(s)
+      write(errout,tag||" "||s)
    end
-initially
+
+   #
+   # Write out (error), if it exists, to (errout)
+   #
+   method get_err() 
+       if \error then {
+          write(errout, error)
+          }
+   end
+initially(errout)
+   self.errout := \errout | &errout
    self.lineno := 1
+   self.tag := "[json]"
 end
 
 
@@ -112,9 +129,9 @@ $endif
 # where to print an error message in the event of a error
 #
 procedure jtou(s,mode,error)
-   local file, j, u, tok_gen, jerror
+   local file, j, u, tok_gen, jerror, errout
    j := ""
-   jerror := ErrorHandler()
+   jerror := ErrorHandler(error)
 
    # default semantics
    if /mode then {
@@ -127,7 +144,9 @@ procedure jtou(s,mode,error)
 	 }
       # string conversion failed, run as file
       else {
-         file := open(s) | fail 
+         if not (file := open(s)) then {
+            return jerror.write_err("Unable to open file "||image(s))
+            }
          while j ||:= read(file) || "\n"
          close(file)
          jerror.init(s)
@@ -139,14 +158,16 @@ procedure jtou(s,mode,error)
          # file mode
          "f" : {
             #file := open(s) | stop("Failed to open ",image(s))
-            file := open(s) | fail 
+            if not (file := open(s)) then {
+               return jerror.write_err("Unable to open file "||image(s))
+               }
             while j ||:= read(file) || "\n"
             close(file)
             jerror.init(s)
             }
          # string mode
          "s" : j := s 
-         default: fail
+         default: return jerror.write_err("Invalid mode "||image(mode)) 
          }
       }
    # parse
@@ -154,11 +175,7 @@ procedure jtou(s,mode,error)
    while u := json_parser(tok_gen,jerror) do {
       suspend u
       }
-
-   if \error then {
-      if *(err_msg := jerror.get_err()) > 0 then
-      write(error,jerror.get_err())
-      }
+   jerror.get_err()
 end
 
 
@@ -175,19 +192,18 @@ end
 #
 procedure utoj(x,error)
    local j;
-   jerror := ErrorHandler()
+   jerror := ErrorHandler(error)
     
    if j := json(x,jerror) then
       return j
 
-   if \error then {
-      if *(err_msg := jerror.get_err()) > 0 then
-      write(error, jerror.get_err())
-      }
+   jerror.get_err()
 end
 
 #
 # Given a Unicon structure, produce a JSON equivalent if possible.
+#
+# TODO: Check for fails that need error messages
 #
 procedure json(u,jerror)
    case type(u) of {
@@ -232,9 +248,14 @@ procedure json(u,jerror)
          #k_list := sortf(k_list)
          #every k := !k_list do {
          every k := key(u) do {
-            if type(k) ~== "string" then fail
 	    if s[-1] ~== "{" then s ||:= ","
-            s ||:= image(k)|| ":" || json(u[k]) | fail
+            #
+            # TODO: write function to escape strings to JSON strings
+            #
+            if type(k) == "string" then 
+               s ||:= image(k)|| ":" || json(u[k]) | fail
+            else
+               s ||:= "\""||image(k)||"\""||":"||json(u[k]) | fail
             }
          s ||:= "}"
          return s
@@ -297,7 +318,7 @@ procedure json_scanner(s,jerror)
          c := move(1) | fail
 
          # operators
-         if any(operator, c) then token := c | fail
+         if any(operator, c) then token := c
          # numbers
          else if any(number, c) then token := scan_number(c,jerror) | fail
          # strings

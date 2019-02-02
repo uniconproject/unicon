@@ -125,12 +125,14 @@ respectively. The data equivalencies are as follows:
   while {\tt jtou("[1,2,{$\backslash$"three$\backslash$":3}]", "s")} would 
   convert a string.
 
-\item[{\tt\bf jtou(s,mode,error)}] specifies that in the case of a conversion
-  error, the error is written to a file handle specifed by {\tt error}.
+\item[{\tt\bf jtou(s,mode,error:&errout)}] specifies that in the case of a 
+  conversion error, the error is written to a file handle specifed by 
+  {\tt error}.
   This can be done with or without the optional second parameter as 
   {\tt jtou(s,,file)} or {\tt jtou(fname,"f",file)}, where {\tt file}
   can be any of the standard output streams or an open file
-  handle.
+  handle. If {\tt error} is not given, then {\tt error} defaults to standard
+  error.
 
 \vspace{1em}
 
@@ -141,6 +143,25 @@ then one output will be generated. If a JSON data contains multiple
 structures, the outputs will appear in the order found in the JSON data.
 To conform with other JSON libraries, {\tt jtou()} allows for single
 trailing commas in JSON arrays and objects.
+
+\vspace{1em}
+
+%A simple toy program is as follows
+%
+%  \begin{verbatim}
+%  link json
+%  procedure main()
+%     write( jtou("\"this is a string\"") )
+%  end
+%  \end{verbatim}
+%\vspace{-1em}
+%
+%for which the output is:
+%
+%  \begin{verbatim}
+%  this is a string
+%  \end{verbatim}
+%\vspace{-1em}
 
 In the following program, if we convert a JSON data structure which
 consists of an object and an array, the first result produced and
@@ -160,7 +181,9 @@ is a list of size four.
      every i := 1 to *y do write(y[i])
   end
   \end{verbatim}
+\vspace{-1em}
 
+\newpage
 produces the output:
 
   \begin{verbatim}
@@ -172,6 +195,7 @@ produces the output:
 
   1230.0
   \end{verbatim}
+\vspace{-1em}
 
 
 Another example is 
@@ -182,12 +206,15 @@ Another example is
      write( jtou("\"this is a string\"") )
   end
   \end{verbatim}
+\vspace{-1em}
+
 
 for which the output is:
 
   \begin{verbatim}
   this is a string
   \end{verbatim}
+\vspace{-1em}
 
 \end{description}
 
@@ -198,14 +225,16 @@ for which the output is:
   corresponding JSON-formatted string. If no such equivalent structure exists,
   then the function fails. 
 
-\item[{\tt\bf utoj(u,error)}] the optional second parameter, {\tt error} 
+\item[{\tt\bf utoj(u,error:&errout)}] the optional second parameter, {\tt error}
   takes a file handle which is written to in case of a conversion error and
-  function failure, e.g. {\tt utoj(u,\&errout)} or {\tt utoj(u,file)}
+  function failure, e.g. {\tt utoj(u,\&errout)} or {\tt utoj(u,file)}. If not
+  given, {\tt error} defaults to standard error.
 
 \vspace{1em}
 
-Here are some examples of primitive data conversions from Unicon to JSON
+The following page shows some examples of primitive data conversions from Unicon to JSON.
 
+\newpage
   \begin{verbatim}
   link json
   procedure main()
@@ -216,6 +245,7 @@ Here are some examples of primitive data conversions from Unicon to JSON
      write(utoj(&null))
   end
   \end{verbatim}
+\vspace{-1em}
 
 which produces the output:
 
@@ -226,6 +256,7 @@ which produces the output:
   false
   null 
   \end{verbatim}
+\vspace{-1em}
 
 More frequently, JSON will come into play when lists or tables are
 involved. Here is an example of converting a Unicon table to a JSON object.
@@ -241,12 +272,16 @@ involved. Here is an example of converting a Unicon table to a JSON object.
      write("A table: ", utoj(T))
   end
   \end{verbatim}
+\vspace{-1em}
+
 
 This program writes out:
 
   \begin{verbatim}
   A table: {"two":2,"table":{},"one":1,"list":[1,2,3]}
   \end{verbatim}
+\vspace{-1em}
+
 
 The extraction of keys from Unicon tables occurs in a random manner,
 resulting in JSON data that does not follow the order in which the Unicon
@@ -269,13 +304,14 @@ A class conversion is as follows:
      write("A Person: ", utoj(person))
   end
   \end{verbatim}
+\vspace{-1em}
 
 This outputs:
 
   \begin{verbatim}
   A Person: {"name":"Joe","age":42,"gender":"Male"}
   \end{verbatim}
-
+\vspace{-1em}
 
 \end{description}
 

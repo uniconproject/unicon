@@ -29,14 +29,18 @@ char *findonpath(char *name, char *buf, size_t len);
 static char *followsym(char *name, char *buf, size_t len);
 static char *canonize(char *path);
 
+#if HAVE_GETENV_R
 int
 getenv_r(const char *name, char *buf, size_t len);
+#endif					/* HAVE_GETENV_R */
 
 char *
 getenv_var(const char *name)
 {
   char *buf, *buf2;
   int rv, len = 512;
+
+#if HAVE_GETENV_R
   buf = malloc(len);
   if (buf == NULL)
     return NULL;
@@ -59,6 +63,12 @@ getenv_var(const char *name)
       return NULL;
     }
   }
+#else 					/* HAVE_GETENV_R */
+  if ((buf = getenv(name)) != NULL)
+    return strdup(buf);
+  else
+    return NULL;
+#endif 					/* HAVE_GETENV_R */
 }
 
 /*

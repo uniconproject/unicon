@@ -397,7 +397,7 @@ fi
 AC_CHECK_FUNCS([socket bcopy bzero memcpy memset inet_aton inet_pton \
 	       snprintf vsprintf rename ftruncate flock fsync \
 	       getrlimit setrlimit strerror vfork \
-	       getrusage sysconf profil])
+	       getrusage sysconf profil getenv_r])
 
 AC_FUNC_STRERROR_R()
 

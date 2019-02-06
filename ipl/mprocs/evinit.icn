@@ -30,12 +30,19 @@ procedure EvInit(f,input,output,error)
    return
 end
 
-procedure EvTerm(win)
-  if &eventsource === (Monitored | EventSource) then {
+#
+# Wait for a terminating user event, but only if we are standalone.
+# EvGet() sets &eventsource to null when execution is finished, but
+# EvTerm() wants to use &eventsource to decide if it
+# should wait for a user click or not. Hence EventSource.
+#
+procedure EvTerm(win:&window)
+  if Monitored === EventSource then {
     if type(win) == "window" then
       Event(win)
-    }
+  }
 end
+
 #
 # MultiProgram EventMon support, from file mtsupport.icn
 #

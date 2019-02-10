@@ -2988,6 +2988,11 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
 #endif
    static char *full_name = NULL;
    FILE *f = 0;
+#if NT
+   struct _stat sb;
+#else					/* NT */
+   struct stat sb;
+#endif					/* NT */
 
    int len_full_name=0, len_path=0, len_font;
 
@@ -3012,14 +3017,13 @@ int drawstrng3d(wbp w, double x, double y, double z, char *s)
    strcpy(p, full_name);
    strcat(p,path);
    strcat(p,curr_font->name);
-   f = fopen(p, "r");
-   if (!f) {
-      fprintf(stderr, "can't open font file %s\n", p);
+
+   if (stat(p, &sb) == -1) {
+      fprintf(stderr, "can't stat font file %s\n", p);
       fflush(stderr);
       free(p);
       return Failed;
       }
-   else fclose(f);
 
    xx=cpp_drawstring3d(x*64,y*64,z*64,s,p,curr_font->type, curr_font->size,
 		       &(curr_font->fonts));

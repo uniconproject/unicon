@@ -22,8 +22,8 @@ ALIGN=bottom>
   <B>Abstract</b>
 <p>
 
-Unicon Version 13 features a more fully automatic configuration and build
-mechanism. The new model has fewer manual steps, and configuration parameters
+Unicon Version 13 features a fully automatic configuration and build
+mechanism based on GNU autoconf. The new model has fewer manual steps, and configuration parameters
 selected via command line options instead of preprocessor #define's. This
 report describes the configuration system.
 
@@ -77,7 +77,7 @@ There presently are implementations of Unicon only for platforms that
 host UNIX-compatible shell scripting and configuration tools such as
 autoconf. This includes most versions of UNIX such as Linux, *BSD and MacOS,
 as well as Microsoft Windows 10 via its Ubuntu shell or
-MSYS and the Mingw64 gcc compiler.
+MSYS and MinGW development environment.
 
 <p>
 
@@ -87,11 +87,12 @@ platform-dependent code. Appropriate values for these constants are
 determined automatically by a <code>configure</code> shell script, as is
 common on UNIX-based software. The  <code>configure</code> script is run
 automatically the first time a build is performed, or when any configuration
-files may have been changed. A number of features in a Unicon build are
-optional, selected by command line arguments to the <code>configure</code>
-script. Consequently, installing Unicon on a new platform is largely a
-matter of selecting configuration options (usually the defaults are
-adequate), and typing <code>make</code>.
+files may have been changed. The <code>configure</code> script can also be run
+manually by typing <code>./configure</code> or on windows <code> sh configure </code>
+A number of features in a Unicon build are optional, selected by command line
+arguments to the <code>configure</code> script. Consequently, installing Unicon
+on a new platform is largely a matter of selecting configuration options
+(usually the defaults are adequate), and typing <code>make</code>.
 
 <p>
 
@@ -121,11 +122,13 @@ Unicon places the following requirements on C data sizes:
 <LI><code>int</code> must be 32 or 64 bits.
 <LI><code>long</code> and pointers must be 32 or 64 bits. 
 <LI>All pointers must be the same length. 
-<LI><code>long</code> and pointers must be the same length. 
+<LI><code>long</code> and pointers should be the same length. 
 </UL>
 
 If your C data sizes do not meet these requirements, do not expect
-Unicon to build.
+Unicon to build. If <code>long</code> and pointers are not the
+same length, such as the case on Windows, new data type definitions
+might be needed to ensurethe runtime uses the correct data type sizes.
 
 <H4>The C Compiler</H4>
 
@@ -248,13 +251,27 @@ Historically, the defined constants and macros needed for a specific platform
 were placed manually in <CODE>src/h/define.h</CODE>. On reasonable modern
 platforms, this has all been done away with and corresponding defines are
 automatically determined by the <code>configure</code> script and placed in
-<code>src/h/auto.h</code>.
+<code>src/h/auto.h</code> using the placeholder and input file
+<code>src/h/auto.h.in</code>.
+
+In addition to the C language definitions placed in <code>src/h/auto.h</code>
+the <code>configure</code> script also generates symbols and environment
+varible definitions which used during the build process or in some cases
+controls the behavior of the build itself. These additional files are all
+placed in the top level directory and include <BR>:
+<PRE>
+  Makefile     - (updated from Makefile.in
+  Makedefs     - (gnerated from Makedefs.in) holds paraneters and symbols used
+                 with the C language compiler)
+  Makedefs.uni - (gnerated from Makedefs.uni.in, holds parameters symbols
+                 used with the Unicon language translator and compiler)
+</PRE>
 <p>
 
 In the unfortunate event that you need to build Unicon on a system where the
 <code>configure</code> script does not run, <code>src/h/define.h</code> can
-still be used and you can still manually copy in makefiles and such, however
-this should be considered a last resort.
+still be used and you can still manually copy in or tweak makefiles or the
+Makedefs files and such, however this should be considered a last resort.
 An example <code>src/h/define.h</code> for a &quot;vanilla&quot; 32-bit platform
 is: 
 <BLOCKQUOTE>
@@ -281,7 +298,7 @@ configure+build sequence is:
 
 <pre>
   ./configure
-  make Unicon
+  make
 </pre>
 
 <p>
@@ -296,11 +313,12 @@ in order for Unicon to provide those features.
 <h4>5.1 Configure Arguments </h4>
 
 The Unicon configure script will enable many features that it finds libraries
-and header files for, by default. Some experimental features are not part of
-the Unicon language canon and not turned on by default, but can be turned on
-from the configure script. Disabling unwanted features, or enabling non-canon
-features, is accomplished by command line arguments to <code>configure</code>.
-The command
+and header files for, by default. A summary of the enabled and diabled
+features is given at the end of the configuration script. Some experimental
+features are not part of the Unicon language canon and not turned on by default,
+but can be turned on from the configure script. Disabling unwanted features,
+or enabling non-canon features, is accomplished by command line arguments to
+<code>configure</code>. The command
 <pre>./configure --help</pre>
 lists these available arguments.  An assortment of them are given below for
 illustrative purposes:
@@ -391,18 +409,18 @@ below is retained it is needed on some non-UNIX build at some point.
 
 If a platform requires an additional pseudo-terminal library and a
 BSD-compatibility package in order to link X applications, you would
-add an <CODE>xiconx.mak</CODE> file with the line
-
+edit the <code>Makedefs</code> top level files and change the XLIB line
+to include the new <code>-lbsd</code> library as follows:
 <PRE>     XLIB= -L../../bin -lX11 -lpt -lbsd</PRE>
 
-and a corresponding <CODE>xiconc.def</CODE> file with the line 
-
+FIXME: what about iconc?
+ and a corresponding <CODE>xiconc.def</CODE> file with the line 
 <PRE>     #define ICONC XLIB &quot;-lX11 -lpt -lbsd&quot;</PRE>
 
-The former file gets prepended to the <CODE>Makefile</CODE> that builds
-<CODE>iconx</CODE>, while the latter file gets included and compiled into
-<CODE>iconc</CODE> when X is configured. Then proceed to the <CODE>make
-X-Configure</CODE> build step.<BR>
+The former line gets prepended to the flags passed to the C compiler/linker
+wjen building  <CODE>iconx</CODE>, while the latter file gets included and
+compiled into <CODE>iconc</CODE> when X is configured. Then proceed to
+the <CODE>make /CODE> build step.<BR>
 <BR>
 In order to build Unicon with X support, some platforms also will have to
 specify the location of the X header files. Normally they are in <CODE>/usr/include/X11</CODE>;

@@ -66,6 +66,26 @@ static char *tryfile	(char *buf, char *dir, char *name, char *extn);
    #define PathSep " "
 #endif					/* PathSep */
 
+static char *last_vetted_path;
+static char *vetted_PathSep;
+void vet_the_PathSep(char *s)
+{
+   vetted_PathSep = NULL;
+   /*
+    * if there exists a non-space char in PathSep, and if s contains an
+    * instance of that character, search only using that non-space char.
+    */
+   if (strlen(PathSep)>1) {
+      if (PathSep[0] == ' ') vetted_PathSep = PathSep+1;
+      else if ((vetted_PathSep = malloc(2)) != NULL) {
+	 vetted_PathSep[0] = PathSep[0]; vetted_PathSep[1] = '\0';
+	 }
+      if (!strchr(s, vetted_PathSep[0])) vetted_PathSep = PathSep;
+      }
+   if (vetted_PathSep == NULL) vetted_PathSep = PathSep;
+}
+
+
 /*
  * pathfind(buf,path,name,extn) -- find file in path and return name.
  *
@@ -91,6 +111,12 @@ char *buf, *path, *name, *extn;
       path = DefPath;
    s = path;
 
+   if ((last_vetted_path == NULL) || strcmp(last_vetted_path, path)) {
+      vet_the_PathSep(path);
+      if (last_vetted_path != NULL) free(last_vetted_path);
+      last_vetted_path = strdup(path);
+      }
+
    while ((s = pathelem(s, pbuf)) != 0) {	/* for each path element */
       if (tryfile(buf, pbuf, name, extn))	/* look for file */
          return buf;
@@ -108,7 +134,7 @@ char *s, *buf;
    {
    char c;
 
-   while ((c = *s) != '\0' && strchr(PathSep, c))
+   while ((c = *s) != '\0' && strchr(vetted_PathSep, c))
       s++;
    if (!*s)
       return NULL;
@@ -122,7 +148,7 @@ char *s, *buf;
      s++;
    }
    else {
-     while ((c = *s) != '\0' && !strchr(PathSep, c)) {
+     while ((c = *s) != '\0' && !strchr(vetted_PathSep, c)) {
        *buf++ = c;
        s++;
      }

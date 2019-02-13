@@ -655,7 +655,7 @@ int interp_x(int fsig,dptr cargp)
 	    }
 	}
       }
-#else
+#else					/* E_Line || E_Loc */
 #ifdef MultiProgram
       /*
        * We are uninstrumented code, but the program should be instrumented.

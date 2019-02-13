@@ -186,7 +186,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
     * deserves more testing.
     */
    if (
-#if WordBits == 64
+#if (WordBits == 64) && !NT
        *(((unsigned long *)cs.vword.bptr->Cset.bits)+2)
 #else
        Testb((word)ToAscii(E_Intcall), cs) ||

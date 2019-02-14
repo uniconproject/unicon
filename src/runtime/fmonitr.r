@@ -186,9 +186,9 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
     * deserves more testing.
     */
    if (
-#if (WordBits == 64) && !NT
-       *(((unsigned long *)cs.vword.bptr->Cset.bits)+2)
-#else
+#if WordBits == 64
+       *(((uword *)cs.vword.bptr->Cset.bits)+2)
+#else					/* WordBits == 64 */
        Testb((word)ToAscii(E_Intcall), cs) ||
        Testb((word)ToAscii(E_Stack), cs) ||
        Testb((word)ToAscii(E_Fsusp), cs) ||
@@ -223,7 +223,7 @@ void assign_event_functions(struct progstate *p, struct descrip cs)
        Testb((word)ToAscii(E_Operand), cs) ||
        Testb((word)ToAscii(E_Syntax), cs) ||
        Testb((word)ToAscii(E_Cstack), cs)
-#endif
+#endif					/* WordBits == 64 */
        ) {
       p->Interp = interp_1;
       }

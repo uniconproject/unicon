@@ -2908,21 +2908,27 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 case $host_cpu in
      *armv7*)
         unicon_cpu="arm_32"
+	ARCHBITS="32"
         ;;
      *armv6*)
         unicon_cpu="arm_32"
+	ARCHBITS="32"
         ;;
      *armv8*)
         unicon_cpu="arm_64"
+	ARCHBITS="64"
         ;;
      *i386*)
         unicon_cpu="x86_32"
+	ARCHBITS="32"
 	;;
      *i686*)
         unicon_cpu="x86_32"
+	ARCHBITS="32"
 	;;
      *)
         unicon_cpu="$host_cpu"
+	ARCHBITS="64"
         ;;
 esac
 
@@ -4450,6 +4456,60 @@ else
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 			CC="$ac_cc"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	}
+
+# try to add -m32 or -m64
+ARCHFLAG="-m$ARCHBITS"
+{
+	ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS $ARCHFLAG"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports $ARCHFLAG" >&5
+$as_echo_n "checking whether $CC supports $ARCHFLAG... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+				CFLAGS="$ac_c_flag_save"
+
+			 CPPFLAGS="$CPPFLAGS -m32"
+			 LDFLAGS="$LDFLAGS -m32"
+			 ASFLAGS="$ASFLAGS -m32"
+
+
+
+else
+
+			CFLAGS="$ac_c_flag_save"
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext

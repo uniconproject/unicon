@@ -30,7 +30,7 @@ distclean: clean
 
 %.o: %.c
 	$(CMNT)@echo "   [TP URI] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 
 uri.o: uri.c uri.h uri_schm.h
 uri_file.o: uri_file.c uri.h uri_schm.h

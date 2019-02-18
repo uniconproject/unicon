@@ -10,21 +10,27 @@ AC_CANONICAL_HOST
 case $host_cpu in
      *armv7*)
         unicon_cpu="arm_32"
+	ARCHBITS="32"
         ;;
      *armv6*)
         unicon_cpu="arm_32"
+	ARCHBITS="32"
         ;;
      *armv8*)
         unicon_cpu="arm_64"
+	ARCHBITS="64"
         ;;
      *i386*)
         unicon_cpu="x86_32"
+	ARCHBITS="32"
 	;;
      *i686*)
         unicon_cpu="x86_32"
+	ARCHBITS="32"
 	;;
      *)
         unicon_cpu="$host_cpu"
+	ARCHBITS="64"
         ;;
 esac
 
@@ -168,6 +174,14 @@ ac_cc="$CC"
 CC="${CC% -std=c99}"
 
 AC_CFLAG([-std=gnu11], [CC="$ac_cc"], [CC="$CC -std=gnu11"])
+
+# try to add -m32 or -m64
+ARCHFLAG="-m$ARCHBITS"
+AC_CFLAG([$ARCHFLAG],[], [
+			 CPPFLAGS="$CPPFLAGS -m32"
+			 LDFLAGS="$LDFLAGS -m32"
+			 ASFLAGS="$ASFLAGS -m32"
+			 ] )
 
 if test x"$verbosebuild" = x"yes" ; then
   CMNT="#"

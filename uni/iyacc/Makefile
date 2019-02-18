@@ -47,10 +47,10 @@ $(PROGRAM):     $(OBJS) $(LIBS)
 		@cd test; $(MAKE)
 		@echo "done"
 
-Clean:;		@rm -f $(OBJS) $(PROGRAM)
+Clean clean:;	$(RM) -f $(OBJS) $(PROGRAM)
 		@cd test; $(MAKE) clean
 
-clobber:;	@rm -f $(OBJS) $(PROGRAM)
+clobber:;	$(RM)rm -f $(OBJS) $(PROGRAM)
 
 depend:;	@mkmf -f $(MAKEFILE) PROGRAM=$(PROGRAM) DEST=$(DEST)
 
@@ -74,7 +74,7 @@ test:		$(PROGRAM)
 ###
 %.o: %.c
 	$(CMNT)@echo "   [IYACC] $<"
-	$(SLNT)$(CC) $(CFLAGS) $(DNT) -c $<
+	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) $(DNT) -c $<
 
 closure.o: defs.h
 error.o: defs.h

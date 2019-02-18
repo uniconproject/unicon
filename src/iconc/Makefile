@@ -26,10 +26,10 @@ $(COBJS):	../h/mproto.h
 
 %.o: %.c
 	$(CMNT)@echo "   [ICONC] $<"
-	$(SLNT)$(CC) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 
 ccomp.o:	ccomp.c
-		$(CC) $(CFLAGS) -DICONC_LIB="\"$(LIBS)\"" -c ccomp.c
+		$(CC) $(CFLAGS) $(CPPFLAGS) -DICONC_LIB="\"$(LIBS)\"" -c ccomp.c
 
 ccode.o:	../h/lexdef.h ctoken.h
 chkinv.o:	ctoken.h
@@ -45,7 +45,8 @@ lifetime.o:	../h/lexdef.h ctoken.h
 typinfer.o:	../h/lexdef.h ctoken.h
 types.o:	../h/lexdef.h ctoken.h
 
-
+Pure Clean clean:
+	$(RM) $(OBJS) iconc$(EXE)
 
 #  The following sections are commented out because they do not need to
 #  be performed unless changes are made to cgrammar.c, ../h/grammar.h,

@@ -159,11 +159,11 @@ update_rev:
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h
 	$(CMNT)	@echo "   [ICONC RTT] $< "
-	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS)" keyword.r
+	$(SLNT)$(RTT) $(DASHS) -c -O "$(CFLAGS) $(CPPFLAGS)" keyword.r
 
 %.$(O): %.r $(HDRS)
 	$(CMNT)@echo "   [ICONC RTT] $<"
-	$(SLNT)$(RTT) $(DASHS) $(WCONSOLE) -c -O "$(CFLAGS)"  $<
+	$(SLNT)$(RTT) $(DASHS) $(WCONSOLE) -c -O "$(CFLAGS) $(CPPFLAGS)"  $<
 
 fwindow.$(O): fwindow.r $(HDRS) $(GRAPHICSHDRS)
 
@@ -185,3 +185,6 @@ rwindow.$(O): rwindow.r $(HDRS) $(GRAPHICSHDRS)
 
 ../common/drawstring3d.o: ../common/drawstring3d.cc
 	cd ../common; $(MAKE) drawstring3d.o
+
+Pure Clean clean:
+	$(RM) *.$(O)

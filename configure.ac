@@ -178,9 +178,9 @@ AC_CFLAG([-std=gnu11], [CC="$ac_cc"], [CC="$CC -std=gnu11"])
 # try to add -m32 or -m64
 ARCHFLAG="-m$ARCHBITS"
 AC_CFLAG([$ARCHFLAG],[], [
-			 CPPFLAGS="$CPPFLAGS -m32"
-			 LDFLAGS="$LDFLAGS -m32"
-			 ASFLAGS="$ASFLAGS -m32"
+			 CPPFLAGS="$CPPFLAGS $ARCHFLAG"
+			 LDFLAGS="$LDFLAGS $ARCHFLAG"
+			 ASFLAGS="$ASFLAGS $ARCHFLAG"
 			 ] )
 
 if test x"$verbosebuild" = x"yes" ; then

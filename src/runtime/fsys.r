@@ -1123,8 +1123,10 @@ function{0,1} read(f)
        */
       fp = BlkD(f,File)->fd.fp;
       status = BlkLoc(f)->File.status;
-      if ((status & Fs_Read) == 0)
+      if ((status & Fs_Read) == 0) {
+         if (status & Fs_Pipe) fail;
 	 runerr(212, f);
+	 }
 
 /*
  * Should probably move these cases into getstrg() in rsys.r, where

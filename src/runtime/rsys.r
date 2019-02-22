@@ -129,7 +129,7 @@ struct b_file *fbp;
    if (fbp->status & Fs_Pipe) {
       if (feof(fd) || (fgets(buf, maxi, fd) == NULL)) {
          pclose(fd);
-	 fbp->status = 0;
+	 fbp->status = Fs_Pipe;
          return -1;
          }
       l = strlen(buf);

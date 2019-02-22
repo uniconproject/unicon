@@ -805,6 +805,7 @@ Deliberate Syntax Error
 	 /*
 	  * fnamestr is a program command line.  Extract its first
 	  * argument (the command) and expand that with a path search.
+	  * FIXME: Windows and DOS, etc. should check current dir (.) FIRST.
 	  */
 	 Protect(reserve(Strings, (fnamestrlen<<1)+PATH_MAX+2), runerr(0));
 	 sbuf = alcstr(fnamestr, fnamestrlen+1);
@@ -812,12 +813,25 @@ Deliberate Syntax Error
 	 /* what if it was a tab, instead of a space character? */
 	 if ((my_s = strchr(sbuf, ' ')) != NULL) *my_s = '\0';
 	 if (!strchr(sbuf,'\\') && !strchr(sbuf, '/')) {
-	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen); /* +1? */
+	    sbuf2 = alcstr(NULL, PATH_MAX+fnamestrlen+3);
 	    if (findonpath(sbuf, sbuf2, PATH_MAX) == NULL) {
 	       set_errortext(1050);
 	       fail;
 	       }
 	    fnamestr = sbuf2;
+#if NT
+            /*
+	     * if the path search came up with a space in the command name,
+	     * double quote the command. Maybe relevant for Macs, etc.
+	     */
+	    if (strchr(fnamestr, ' ')) {
+	       char *q = strdup(fnamestr);
+	       strcpy(fnamestr, "\"");
+	       strcat(fnamestr, q);
+	       strcat(fnamestr, "\"");
+	       free(q);
+	       }
+#endif					/* NT */
 	    if (my_s) {
 	       strcat(fnamestr, " ");
 	       strcat(fnamestr, my_s+1);

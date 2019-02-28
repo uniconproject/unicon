@@ -9,7 +9,7 @@
 <h4><p align="center">
 Susie Jeffery and Clinton Jeffery<br>
 Unicon Technical Report #6c<br>
-May 31, 2015
+February 28, 2019
 
 </p></h4>
 
@@ -60,22 +60,22 @@ Information Services ORISE grant.
 <tr><td> <A href="#hello">Hello IVIB</A>   <td><td> 3
 <tr><td> <A href="#eventdriven">Ivib and Event-driven Programming</A><td><td> 5
 <tr><td> <A href="#menubar">Menu Bar</A>   <td><td>	7
-<tr><td> Buttons and Labels		   <td><td> 10
-<tr><td> The About Box			   <td><td> 11
+<tr><td> <A href="#buttonslabels">Buttons and Labels</code>		   <td><td> 10
+<tr><td> <A href="#about">The About Box</A>			   <td><td> 11
 <tr><td> <A href="#help">The Help Screen</A> <td><td> 12
-<tr><td> Adding The Code		   <td><td> 13
-<tr><td> Makefile			   <td><td> 14
-<tr><td> Running The Program		   <td><td> 15
+<tr><td> <A href="#addingcode">Adding the Code</A>		   <td><td> 13
+<tr><td> <A href="#makefile">Makefile</A>			   <td><td> 14
+<tr><td> <A href="#running">Running the Program</A>		   <td><td> 15
 <tr><td>&nbsp;
 <tr><td> <b>Part  II</b> &nbsp;&nbsp;&nbsp; Another Simple IVIB Application
-<tr><td> Modeless Dialogs		   <td><td> 18
-<tr><td> Tables and Tab Sets		   <td><td> 25
-<tr><td> Capturing Events, Click Counts and GoTo <td><td> 28
-<tr><td> Overlays and Hour Glasses	   <td><td> 30
-<tr><td> Copy, Cut, Paste, Undo, Redo	   <td><td>	32
-<tr><td> Tab Jumps, Compound Undo and Redo <td><td>	37
-<tr><td> Table Column Events		   <td><td> 40
-<tr><td> Conclusions and Future work	   <td><td>	42
+<tr><td> <A href="#modeless">Modeless Dialogs</A>		   <td><td> 18
+<tr><td> <A href="#tables">Tables and Tab Sets</A>		   <td><td> 25
+<tr><td> <A href="#capturingevents">Capturing Events, Click Counts and GoTo</A> <td><td> 28
+<tr><td> <A href="#overlays">Overlays and Hour Glasses</A>	   <td><td> 30
+<tr><td> <A href="#undo">Copy, Cut, Paste, Undo, Redo</A>	   <td><td>	32
+<tr><td> <A href="#tabjumps">Tab Jumps and Compound Undo/Redo</A> <td><td>	37
+<tr><td> <A href="#columnevents">Table Column Events</A>		   <td><td> 40
+<tr><td> <A href="#conclusions">Conclusions and Future work</A>	   <td><td>	42
 </table>
 </center>
 
@@ -103,11 +103,11 @@ in Icon Project Document 271, but are very limited.
 <p>
 
 This report describes how to use Unicon's new GUI toolkit and its interface
-builder program, IVIB. This package was written by Robert Parlett with minor
-improvements by the authors. Compared with the existing Icon-based tools,
+builder program, IVIB. This package was written by Robert Parlett, with minor
+improvements by the authors and other contributors. Compared with the Icon-based tools,
 Mr. Parlett's toolkit is elegant, feature-rich, extensible, and deep. Unless
 you are familiar with similar class libraries, IVIB and its GUI toolkit may
-seem daunting in its complexity. This report demystifies typical uses of
+seem daunting in its complexity. This report demystifies some typical uses of
 IVIB Version 2. We hope you come to enjoy it as much as we have. A great
 deal of additional documentation on these tools can be found in the book
 "Programming with Unicon" [Jeff01].
@@ -120,7 +120,7 @@ Before we delve into a real application, let us create a rhetorical program
 with a single button that executes a procedure when we click on it. For the
 sake of tradition, let's suppose our procedure <code>p()</code> is as follows.
 Go ahead and type this procedure in using the ui program or your favorite text
-editor, and save it to a file named p.icn.
+editor, and save it to a file named <code>p.icn</code>.
 
 <pre>
 procedure p()
@@ -187,8 +187,8 @@ object and sent to the interface object being manipulated (the button,
 scrollbar, or other widget that was "clicked"). In Ivib, the object's dialog
 has an Events... tab that allows the programmer to associate a different
 handler method with code to handle each kind of event. To sum up: an
-interface has a corresponding Dialog class. For each widget foo you can
-optionally ask for a class variable foo that holds the actual widget object
+interface has a corresponding Dialog class. For each widget <em>foo</em> you can
+optionally ask for a class variable <code>foo</code> that holds the actual widget object
 reference, and can write methods that are called when an event occurs on
 that widget.
 
@@ -196,7 +196,7 @@ that widget.
 
 In order for our button to call our procedure <code>p()</code>, we need to
 find out (or assign) the button's variable name. To do this, select the
-button, right click on it, and open its Dialog. The Name tab contains a Name
+button, right click on it, and open its Dialog. The Name tab contains a <code>Name</code>
 field that determines the variable name for this widget. Change the name
 from <code>text_button_1</code> to <code>go</code>. Your dialog should look
 something like this:
@@ -218,9 +218,9 @@ go.icn.
 
 At this point, you can compile go.icn as a standalone program that does
 nothing (unicon go). But it might be more interesting to tell the dialog
-what code to execute (namely, a call to the procedure p() mentioned earlier)
+what code to execute (namely, a call to the procedure <code>p()</code> mentioned earlier)
 when the "go" button is clicked. Go over to the Events tab, click on Add,
-and associate a method on_go() with ACTION_EVENT by clicking the Apply
+and associate a method <code>on_go()</code> with <code>ACTION_EVENT</code> by clicking the Apply
 button.
 
 <p>
@@ -428,7 +428,7 @@ Okay. The tree will now look something like this:
 
 Hit Okay.
 
-<h3>Buttons and Labels </h3>
+<h3><A name="buttonslabels">Buttons and Labels</code></h3>
 
 <b>Add a Button to the canvas</b>, by clicking on the Button Component from the
 Ivib Menu Bar. Move the Button to somewhere near the left side of the
@@ -516,7 +516,7 @@ From Ivib, go to the File menu and save the file.
 
 Make sure you save them in the directory you made for this application
 
-<h3>The About  Box</h3>
+<h3><A name="about">The About Box</A></h3>
 
 We want to create a small canvas for our About box. The About box will
 contain one Text List containing application information. From Ivib, go to
@@ -539,8 +539,10 @@ Dialog prefs... item from the Canvas menu.
 
 <p>
 
-On the <b>Attribs</b> tab, Add an
-attribute label. Enter Attrib Value label About Ivib Primer Click Apply.
+On the <b>Attribs</b> tab, click Add.  A pair of text input boxes will appear for the
+attribute you want added; the attribute name field says "Edit" and the attribute
+value says "me". Replace the "Edit" with attribute name "label" and replace the
+attribute value "me" with a the value "About Ivib Primer". Click Apply.
 
 <p>
 
@@ -628,12 +630,14 @@ check box so that there will be a border. Click Okay.
 
 <p>
 
-<b>Add the canvas attributes</b>. Select the Ivib Canvas menu's
-<b>Dialog prefs...</b> item. On the <b>Attribs</b> tab, add the
-attribute label with value Ivib
-Primer Help. On the <b>Methods</b> tab, <b>un</b>-click the
-<code>Generate main() procedure</code>
-button so the box is not checked. We do not want a main() procedure in this
+<b>Add the canvas attributes</b>.
+
+Select the Ivib Canvas menu's <b>Dialog prefs...</b> item. On the <b>Attribs</b> tab,
+Press Add to add an attribute. Change the attribute name from <code>Edit</code>
+to <code>label</code> and change the value <code>me</code> to
+<code>Ivib Primer Help</code>. On the <b>Methods</b> tab,
+<b>un</b>-click the <code>Generate main() procedure</code>
+button so the box is not checked. We do not want a <code>main()</code> procedure in this
 file.
 
 <p>
@@ -654,7 +658,7 @@ Make sure you save the file in the directory you made for this application.
 
 You can exit out of Ivib now with the File menu's Quit item.
 
-<h3>Adding the code</h3>
+<h3><A name="addingcode">Adding the code</A></h3>
 
 The code is now done for the GUI components. It is in the files
 main.icn, about.icn, and help.icn.
@@ -752,7 +756,7 @@ end
 Save this file as main.icn. Make sure you save it in the directory you made
 for this application.
 
-<h3>Makefile</h3>
+<h3><A name="makefile">Makefile</A></h3>
 
 The following instructions mainly apply to Linux/UNIX users. Now we need to
 create a makefile to compile and link all our code together.
@@ -791,7 +795,7 @@ At the shell/command-line prompt enter:
 
 Hopefully, there are not any errors at this point.
 
-<h3>Running the Program</h3>
+<h3><A name="running">Running the Program</A></h3>
 
 Note: On Windows if you are lucky you might have a similar command
 "nmake". If no make or nmake is available you can enter at the shell/command
@@ -959,7 +963,7 @@ paste, undo, and redo features. This example will illustrate:
 <li>Tab Jumps to components
 </ol>
   
-<h3>Modeless Dialogs</h3>
+<h3><A name="modeless">Modeless Dialogs</A></h3>
 
 We are going to create a main dialog that contains a table of games. After
 you select one of the games from the table, a modeless dialog will be
@@ -1459,7 +1463,7 @@ right top corner.
 Save the file. Compile and run the program. You will get only one edit
 dialog no matter how many times you hit the modeless button.
 
-<h3>Tables and Tabs Sets</h3>
+<h3><A name="tables">Tables and Tabs Sets</A></h3>
 
 <b>Do not be confused!</b> Tables with a capital T are GUI components that
 arrange elements into rows and columns; they are not the same thing as the
@@ -1670,7 +1674,7 @@ displayed first. We can change this by setting the <b>Which</b> back to
 <code>tab_item_btn</code> in Ivib if we want the button tab to show initially.
 
 
-<h3>Capturing Events, Click Counts and GoTo</h3>
+<h3><A name="capturingevents">Capturing Events, Click Counts and GoTo</A></h3>
 
 We are now going to add code so that an edit dialog box will come up every
 time we double click on one of the games in the table. We will add a global
@@ -1849,7 +1853,7 @@ the last game. This program also writes to standard output the values of
 ev.source, ev.type, and ev.param every time the mouse is released on the
 table.
 
-<h3>Overlays, and Hour Glasses</h3>
+<h3><A name="overlays">Overlays, and Hour Glasses</A></h3>
 
 Open up edit.icn using Ivib. Add an Overlay to the edit.icn canvas, by
 clicking on the Overlay Component from the Ivib Tool Bar. It is the second
@@ -1961,7 +1965,7 @@ to change the which. At the bottom in the OverlaySet Setup panel, Click on
 <b>overlay_item_blank</b> so it is highlighted, then hit the <b>which</b>
 button. Now <b>overlay_item_blank</b> should have the star. Hit Okay.
 
-<h3>Copy, Cut, Paste, Undo and Redo</h3>
+<h3><A name="undo">Copy, Cut, Paste, Undo and Redo</A></h3>
 
 <b>Add 6 Buttons</b>.  Move the buttons to the left of the overlay set (see
 figure 7 of edit.icn).  Right Click on each the Buttons to add some
@@ -2357,7 +2361,7 @@ unicon -o demo -G main edit myeditabletextlist
 Now, when you run demo you should be able to cut, copy, paste from other
 documents into the instructions edit box (editable_text_list_instruct).
 
-<h3>Tab Jumps, Compound Undo/Redos and Table column events</h3>
+<h3><A name="tabjumps">Tab Jumps and Compound Undo/Redos</A></h3>
 
 There are a few more things we will add to the demonstration:
 
@@ -2509,7 +2513,7 @@ unicon -o demo -G main edit  myeditabletextlist  myundomanager
 
 Run the demo again to test the single undos/redos.
 
-<h3>Tables Column Events</h3>
+<h3><A name="columnevents">Table Column Events</A></h3>
 
 So far we have just been using the table on the main screen to select the
 games (rows). We may also want to use the Name column or the #Players
@@ -2611,7 +2615,7 @@ Compile and run. When you click on the table columns, they should sort by
 Name or number of players. This demonstrates the use of table columns.
 
 
-<h3>Conclusions and Future Work</h3>
+<h3><A name="conclusions">Conclusions and Future Work</A></h3>
 
 Using IVIB is easy, but becoming proficient with it requires some
 familiarization and a certain comfort level with object-oriented

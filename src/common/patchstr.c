@@ -1,12 +1,20 @@
 /*
  * patchstr.c -- install a string at preconfigured points in an executable
  *
+ *  Original
  *  Usage:  patchstr filename newstring		-- to patch a file
  *          patchstr filename			-- to report existing values
+ *
+ *  Extended Usage:
+ *          patchstr -DPATCHSTRING filename newstring -- to patch
+ *          patchstr -DPATCHSTRING filename           -- to report value
  *
  *  Patchstr installs or changes strings in an executable file.  It replaces
  *  null-terminated strings of up to 500 characters that are immediately
  *  preceded by the eighteen (unterminated) characters "%PatchStringHere->".
+ *  -D option, if given, is preceded by % and suffixed by ->.
+ *  Recommended -D values would be things like -DPatchUnilibHere,
+ *  resulting in patch patterns like "%PatchUnilibHere->".
  *
  *  If the new string is shorter than the old string, it is null-padded.
  *  If the old string is shorter, it must have suffient null padding to
@@ -40,6 +48,8 @@ int exitcode = 0;		/* exit code; nonzero if any problems */
 int nfound = 0;			/* number of strings found */
 int nchanged = 0;		/* number of strings changed */
 
+char *thepattern = PATTERN;
+
 #ifndef NOMAIN
 
 /*
@@ -50,6 +60,21 @@ int argc;
 char *argv[];
    {
    char *fname, *newstr;
+
+   if ((argc > 1) && (argv[1][0]=='-') && (argv[1][1]=='D')) {
+      /* handle -D */
+      int i;
+      thepattern = malloc(strlen(argv[1])+2);
+      strcpy(thepattern, "%");
+      strcat(thepattern, argv[1]+2);
+      strcat(thepattern, "->");
+      fprintf(stderr, "patch pattern set to %s\n", thepattern);
+      for (i = 1; i+1 < argc; i++) {
+	 argv[i] = argv[i+1];
+      }
+      argv[i] = NULL;
+      argc--;
+   }
 
    if (argc < 2 || argc > 3) {
       fprintf(stderr, "usage: %s filename [newstring]\n", argv[0]);
@@ -159,13 +184,13 @@ FILE *f;
    int c;
    char *p;
 
-   p = PATTERN;			/* p points to next char we're looking for */
+   p = thepattern;			/* p points to next char we're looking for */
    for (;;) {
       c = getc(f);		/* get next char from file */
       if (c == EOF)
          return 0;		/* if EOF, give up */
       if (c != *p) {
-         p = PATTERN;		/* if mismatch, start over */
+         p = thepattern;		/* if mismatch, start over */
          if (c == *p)		/* (but see if matched pattern start) */
             p++;
          continue;

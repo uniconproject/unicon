@@ -239,11 +239,13 @@ do { argv->dword = n; argv->vword.sptr = alcstr(s,n); return 0; } while (0)
 #define Error(n) return n
 #define ArgError(i,n) return (argv[0] = argv[i], n)
 
-#ifdef WIN32
+
 typedef struct rtentrypts
  {
   int (*Cnv_int) (descriptor *, descriptor *);
 } rtentryvector;
+
+#ifdef WIN32
 #define cnv_int (bitcount_rtev.Cnv_int)
 #define RTEP rtentryvector *rtev,
 #define RTEX __declspec(dllexport)

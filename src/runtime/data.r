@@ -447,6 +447,9 @@ struct errtab errtab[] = {
    0,	""
    };
 
+char patchpath[MaxPath+18] = "%PatchStringHere->";
+char uniroot[MaxPath+18] = "%PatchUnirotHere->";
+
 /*
  * Note:  the following material is here to avoid a bug in the Cray C compiler.
  */

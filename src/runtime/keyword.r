@@ -363,13 +363,13 @@ keyword{0,1} eventvalue
       }
 end
 
+
 "&features - generate strings identifying features in this version of Icon"
 keyword{1,*} features
    abstract {
       return string
       }
    body {
-      static char patchpath[MaxPath+18] = "%PatchStringHere->";
 #ifdef RefPath
       char *refpath = RefPath;
 #else					/* RefPath */
@@ -509,6 +509,15 @@ deliberate syntax error
 	 strcat(s, refpath);
 	 suspend C_string s;
 	 }
+
+      if ((int)strlen(uniroot) > 18) {
+	 char *s;
+	 s = alcstr(NULL, strlen(uniroot+18) + strlen("Libraries at ") + 1);
+	 strcpy(s, "Libraries at ");
+	 strcat(s, uniroot+18);
+         suspend C_string s;
+	 }
+
       fail;
       }
 end

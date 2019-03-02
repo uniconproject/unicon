@@ -117,6 +117,29 @@ function{0,1} loadfunc(filename,funcname)
 #endif					/* UNIX */
 
       /*
+       * if handle has an "init" function, call it.
+       * if not, we cannot run on Windows, but *NIX is OK.
+       */
+      func = (int (*)())dlsym(handle, "init");
+      if (func) {
+        int i;
+
+	/*
+	 * Windows .dll's have to be informed of the addresses for functions
+	 * that are called from icall.h macros. FIXME: modify progstate to
+	 * provide a discrete struct of functions pointers so that Windows
+	 * .dll's can just be passed a pointer to those functions.
+	 */
+	 struct rtentrypts {
+	    int (*Cnv_int)(dptr, dptr);
+	    } rtentryvector;
+#undef cnv_int_0
+       	 rtentryvector.Cnv_int = cnv_int;
+
+	 i = (*func)(&rtentryvector);
+         }
+
+      /*
        * Load the function.  Diagnose both library and function errors here.
        */
       if (handle) {
@@ -206,12 +229,6 @@ continuation succ_cont;
    struct b_proc *blk;
    struct descrip r;
    tended struct descrip p;
-#if NT
-struct rtentrypts {
-  int (*cnv_int)(dptr, dptr);
-} rtentryvector;
-rtentryvector.cnv_int = cnv_int;
-#endif
 
    dargv--;				/* reset pointer to proc entry */
    for (i = 0; i <= argc; i++)
@@ -223,11 +240,7 @@ rtentryvector.cnv_int = cnv_int;
    p = dargv[0];			/* save proc for traceback */
    dargv[0] = nulldesc;			/* set default return value */
 
-#if NT
-   status = (*func)(&rtentryvector, argc, dargv);	/* call func */
-#else
    status = (*func)(argc, dargv);	/* call func */
-#endif
 
    if (status == 0) {
       *rslt = dargv[0];
@@ -255,25 +268,13 @@ dptr dargv;
    struct descrip r;
    tended struct descrip p;
 
-#if NT
-struct rtentrypts {
-  int (*Cnv_int)(dptr, dptr);
-} rtentryvector;
-#undef cnv_int_0
-rtentryvector.Cnv_int = cnv_int;
-#endif
-
    blk = (struct b_proc *)dargv[0].vword.bptr;	/* proc block address */
    func = (int (*)())blk->lnames[0].vword.sptr;	/* entry point address */
 
    p = dargv[0];			/* save proc for traceback */
    dargv[0] = nulldesc;			/* set default return value */
 
-#if NT
-   status = (*func)(&rtentryvector, argc, dargv);	/* call func */
-#else
    status = (*func)(argc, dargv);	/* call func */
-#endif
 
    if (status == 0)
       Return;				/* success */

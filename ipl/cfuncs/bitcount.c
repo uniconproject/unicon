@@ -23,11 +23,33 @@
 #  Requires:  Dynamic loading
 #
 ############################################################################
+#
+#  How to build on Windows with Mingw64 GCC 8.1:
+#     gcc -shared -o bitcount.dll -fPIC bitcount.c
+#
+############################################################################
 */
 
 #include "icall.h"
 
-int bitcount(int argc, descriptor *argv) /*: count bits in an integer */
+int is_inited;
+
+static rtentryvector bitcount_rtev;
+
+RTEX int init(rtentryvector *rtev)
+{
+  if(!is_inited) {
+    is_inited = 1;
+    bitcount_rtev = *rtev;
+    return 1;
+    }
+  return 0;
+}
+RTEX int destroy()
+{
+}
+
+RTEX int bitcount(int argc, descriptor *argv) /*: count bits in an integer */
    {
    unsigned long v;
    int n;

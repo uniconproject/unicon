@@ -401,6 +401,10 @@ extern dptr timeval_constr;
 extern int M_open_timeout;
 #endif					/* Messaging */
 
+/* patchable globals */
+extern char patchpath[];
+extern char uniroot[];
+
 extern char *lognam;
 extern FILE *flog;
 

@@ -24,7 +24,8 @@
 #endif					/* !NTGCC */
 #endif					/* MSDOS */
 
-extern char uniroot[];
+char patchpath[MaxPath+18] = "%PatchStringHere->";
+char uniroot[MaxPath+18] = "%PatchUnirotHere->";
 
 static char *findexe(char *name, char *buf, size_t len);
 char *findonpath(char *name, char *buf, size_t len);

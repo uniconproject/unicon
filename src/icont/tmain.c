@@ -73,9 +73,6 @@ char *libpath (char *prog, char *envname);
 char *pofile = NULL;			/* piped input file name */
 int bundleiconx = 0;
 
-char patchpath[MaxPath+18] = "%PatchStringHere->";
-char uniroot[MaxPath+18] = "%PatchUnirotHere->";
-
 /*
  * getopt() variables
  */

@@ -456,11 +456,6 @@
       #define printf Consoleprintf
    #endif
 
-   /* not sure whether this one should always be in effect. Maybe it should */
-   #ifdef ConsoleWindow
-      #undef exit
-      #define exit c_exit
-   #endif				/* Console Window */
 
 #endif					/* Graphics */
 

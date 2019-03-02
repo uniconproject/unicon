@@ -18,6 +18,13 @@
 #include <string.h>
 #include <time.h>
 
+   /* not sure whether this one should always be in effect. Maybe it should.
+    * moved from config.h so that it does not knock out exit's prototype.
+    */
+   #ifdef ConsoleWindow
+      #undef exit
+      #define exit c_exit
+   #endif				/* Console Window */
 
 /*
  * Operating-system-dependent includes.

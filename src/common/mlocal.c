@@ -24,6 +24,8 @@
 #endif					/* !NTGCC */
 #endif					/* MSDOS */
 
+extern char uniroot[];
+
 static char *findexe(char *name, char *buf, size_t len);
 char *findonpath(char *name, char *buf, size_t len);
 static char *followsym(char *name, char *buf, size_t len);
@@ -107,6 +109,30 @@ char *relfile(char *prog, char *mod) {
       sprintf(buf+strlen(buf), "%c", FILESEP);/* append to result */
    return salloc(buf);			/* return allocated string */
    }
+
+/*
+ *  unirootfile(prog, mod) -- find related file.
+ *
+ * relfile(), overridden to find unicon libraries from the unicon root.
+ * Look at patch location if present, and compute relative to that. If
+ * no patch location, then do it relative to prog like before.
+ */
+char *unirootfile(char *prog, char *mod) {
+  char *rv;
+  if (strlen(uniroot)>18) {
+    /*
+     * use mod, but relative to uniroot location, which is above
+     * mod's reference two levels down into bin/prog.  Remove /../..
+     * from mod.
+     */
+    mod += 6;
+    rv = malloc(strlen(uniroot+18) + strlen(mod) + 1);
+    strcpy(rv, uniroot+18);
+    strcat(rv, mod);
+    return rv;
+  }
+  else return relfile(prog, mod);
+}
 
 /*
  *  findexe(prog, buf, len) -- find absolute executable path, given argv[0]
@@ -367,9 +393,10 @@ void quotestrcat(char *buf, char *s)
 
 /*
  * Return path after appending lib directories.
+ * FIXME: replace localbuf+salloc with precalculated malloc.
  */
 char *libpath(char *prog, char *envname) {
-   char buf[1000], *s;
+   char buf[2000], *s;
 
    s = getenv(envname);
    if (s != NULL)
@@ -378,28 +405,28 @@ char *libpath(char *prog, char *envname) {
       strcpy(buf, ".");
    if (!strcmp(envname, "IPATH")) {
       strcat(buf, " ");
-      quotestrcat(buf, relfile(prog, "/../../ipl/lib"));
+      quotestrcat(buf, unirootfile(prog, "/../../ipl/lib"));
      }
    else if (!strcmp(envname, "LPATH")) {
       strcat(buf, " ");
-      quotestrcat(buf, relfile(prog, "/../../ipl/mincl"));
+      quotestrcat(buf, unirootfile(prog, "/../../ipl/mincl"));
       strcat(buf, " ");
-      quotestrcat(buf, relfile(prog, "/../../ipl/gincl"));
+      quotestrcat(buf, unirootfile(prog, "/../../ipl/gincl"));
       strcat(buf, " ");
-      quotestrcat(buf, relfile(prog, "/../../ipl/incl"));
+      quotestrcat(buf, unirootfile(prog, "/../../ipl/incl"));
       }
    strcat(buf, " ");
-   quotestrcat(buf, relfile(prog, "/../../uni/lib"));
+   quotestrcat(buf, unirootfile(prog, "/../../uni/lib"));
    strcat(buf, " ");
-   quotestrcat(buf, relfile(prog, "/../../uni/gui"));
+   quotestrcat(buf, unirootfile(prog, "/../../uni/gui"));
    strcat(buf, " ");
-   quotestrcat(buf, relfile(prog, "/../../uni/xml"));
+   quotestrcat(buf, unirootfile(prog, "/../../uni/xml"));
    strcat(buf, " ");
-   quotestrcat(buf, relfile(prog, "/../../uni/parser"));
+   quotestrcat(buf, unirootfile(prog, "/../../uni/parser"));
    strcat(buf, " ");
-   quotestrcat(buf, relfile(prog, "/../../uni/3d"));
+   quotestrcat(buf, unirootfile(prog, "/../../uni/3d"));
    strcat(buf, " ");
-   quotestrcat(buf, relfile(prog, "/../../plugins/lib"));
+   quotestrcat(buf, unirootfile(prog, "/../../plugins/lib"));
    return salloc(buf);
    }
 

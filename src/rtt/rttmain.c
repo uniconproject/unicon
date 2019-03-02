@@ -18,7 +18,7 @@ extern int __merr_errors;
  *  run-time system. If patchpath has been patched in the binary of rtt,
  *  the string that was patched in is used for refpath.
  */
-char patchpath[MaxPath+18] = "%PatchStringHere->";
+extern char patchpath[];
 
 #ifdef RefPath
 char *refpath = RefPath;

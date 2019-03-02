@@ -49,6 +49,7 @@
    #include <sys/stat.h>
    #include <fcntl.h>
 #ifdef NTGCC
+   #include <sys/time.h>
    /* Mingw GCC 4.8.1 idiotically #define's stat. We need that name intact. */
 #ifdef stat
    #undef stat

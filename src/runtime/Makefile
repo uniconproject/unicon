@@ -48,7 +48,7 @@ iconx $(ICONXEXE): $(NTCONDEP) $(OBJS) ../../bin/libucommon.a ../../bin/libucons
 	cp iconx$(EXE) ../../bin
 	strip $(DASHX) ../../bin/iconx$(EXE);
 
-# on windows, always add WNTCON depemdency to set NTCONSOLE accordingly
+# on windows, always add WNTCON dependency to set NTCONSOLE accordingly
 wiconx $(WICONEXE): WNTCON $(OBJS) ../../bin/libucommon.a ../../bin/libwuconsole.a ../../bin/libgdbm.a ../../bin/libtp.a
 	$(CC) $(LDFLAGS) -Wl,--subsystem,windows $(WSTKLDFLAG) $(RLINK) -o wiconx  $(OBJS) $(XLIBS) $(RLIBS) $(XL) $(LIBSTDCPP) $(WGLIBS) ../../bin/libwuconsole.a
 	cp wiconx$(EXE) ../../bin

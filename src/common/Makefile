@@ -24,7 +24,8 @@ patchstr$(EXE): patchstr.$(O)
 		$(CC) $(CPPFLAGS) $(LDFLAGS) -o patchstr patchstr.$(O)
 		$(CP) patchstr$(EXE) ../../bin/
 
-#iconx needs NTConsole to be defined/set, make this a dependency for iconx to set it
+# iconx needs NTConsole to be defined/set,
+# make this a dependency for iconx to set it
 NTCON:
 	$(RM) uconsole.$(O)
 	@echo set NTCONSOLE=-DNTConsole -DMSWindows

@@ -1,5 +1,5 @@
 /*
- * rconsole.r -- pseudo console versions of stdio functions
+ * uconsole.c -- pseudo console versions of stdio functions
  *
  * Historically, macros redefined printf to Consoleprintf, etc.
  * The problem with this is that all modules had to be recompiled
@@ -10,7 +10,7 @@
  */
 #include "../h/gsupport.h"
 
-#ifdef ConsoleWindow
+#if NT && defined(ConsoleWindow)
 /*
  *  getch() -- return char from window, without echoing
  */
@@ -344,4 +344,5 @@ int Consolefflush(FILE *f)
    extern int fflush(FILE *);
    return fflush(f);
 }
+
 #endif					/* ConsoleWindow */

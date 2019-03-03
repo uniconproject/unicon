@@ -23,7 +23,7 @@
 #undef HAVE_GETADDRINFO
 #endif 
 
-#ifdef ConsoleWindow
+#if NT && defined(ConsoleWindow)
    #include "../h/rmacros.h"
    #include "../h/rstructs.h"
    #include "../h/graphics.h"

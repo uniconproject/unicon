@@ -7,9 +7,9 @@ OBJS=   long.$(O) getopt.$(O) time.$(O) filepart.$(O) identify.$(O) strtbl.$(O) 
 	mlocal.$(O) literals.$(O) rswitch.$(O) alloc.$(O) \
 	save.$(O) redirerr.$(O) xwindow.$(O) dlrgint.$(O) ipp.$(O) drawstring3d.$(O)
 
-PROGS= libucommon.a doincl$(EXE) patchstr$(EXE)
+PROGS= libucommon.a doincl$(EXE) patchstr$(EXE) libuconsole.a libwuconsole.a
 
-all: $(PROGS)
+all: $(PROGS) 
 
 doincl$(EXE):doincl.$(O)
 	$(CC) $(CPPFLAGS) $(LDFLAGS) -o doincl doincl.$(O)
@@ -24,10 +24,33 @@ patchstr$(EXE): patchstr.$(O)
 		$(CC) $(CPPFLAGS) $(LDFLAGS) -o patchstr patchstr.$(O)
 		$(CP) patchstr$(EXE) ../../bin/
 
+#iconx needs NTConsole to be defined/set, make this a dependency for iconx to set it
+NTCON:
+	$(RM) uconsole.$(O)
+	@echo set NTCONSOLE=-DNTConsole -DMSWindows
+	$(eval NTCONSOLE=-DNTConsole -DMSWindows)
+
+# set NTConsole for wiconx
+WNTCON:
+	$(RM) uconsole.$(O)
+	@echo set NTCONSOLE=-DMSWindows
+	$(eval NTCONSOLE=-DMSWindows )
 
 libucommon.a: $(OBJS) $(HDRS)
 	$(RM) $@
 	$(AR) q $@ $(OBJS)
+	$(RANLIB) $@
+	$(CP) $@ ../../bin/
+
+libuconsole.a: NTCON uconsole.$(O)
+	$(RM) $@
+	$(AR) q $@ uconsole.$(O)
+	$(RANLIB) $@
+	$(CP) $@ ../../bin/
+
+libwuconsole.a: WNTCON wuconsole.$(O)
+	$(RM) $@
+	$(AR) q $@ wuconsole.$(O)
 	$(RANLIB) $@
 	$(CP) $@ ../../bin/
 
@@ -42,7 +65,11 @@ dconsole.$(O): dconsole.c
 
 %.$(O): %.c
 	$(CMNT)@echo "   [COMMON] $<"
-	$(SLNT)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c $<
+
+wuconsole.$(O): uconsole.c
+	$(CMNT)@echo "   [COMMON] $<"
+	$(SLNT)$(CC) $(NTCONSOLE) $(CPPFLAGS) $(CFLAGS) -c -o wuconsole.o uconsole.c
 
 identify.$(O): ../h/version.h
 

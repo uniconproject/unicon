@@ -664,6 +664,7 @@ CFUNCTARGET
 WUNICONTARGET
 WICONTTARGET
 WICONXTARGET
+LIBWUCONSOLE
 NTCONDEP
 DNT
 NT
@@ -6977,6 +6978,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
        WGLIBS="-lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinmm"
        WSUBSYS="-Wl,--subsystem,console"
        NTCONDEP="NTCON"
+       LIBWUCONSOLE="libwuconsole.a"
        WICONXTARGET="wiconx"
        WICONTTARGET="wicont"
        WUNICONTARGET="wunicon"
@@ -6996,6 +6998,7 @@ esac
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
 
 
 
@@ -13640,6 +13643,38 @@ fi
 
 
 
+
+
+cat >>confdefs.h <<_ACEOF
+#define config_prefix "${prefix}"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define config_exec_prefix "${exec_prefix}"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define config_bindir "${bindir}"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define config_libdir "${libdir}"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define config_docdir "${docdir}"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define config_man "${mandir}"
+_ACEOF
+
+
 for ac_global in sys_nerr
 do
    ac_tr_global=HAVE_`echo $ac_global | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
@@ -14001,6 +14036,8 @@ ac_config_files="$ac_config_files Makedefs:Makedefs.in"
 ac_config_files="$ac_config_files Makedefs.uni:Makedefs.uni.in"
 
 ac_config_headers="$ac_config_headers src/h/auto.h:src/h/auto.in"
+
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

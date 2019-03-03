@@ -7,7 +7,7 @@ OBJS=   long.$(O) getopt.$(O) time.$(O) filepart.$(O) identify.$(O) strtbl.$(O) 
 	mlocal.$(O) literals.$(O) rswitch.$(O) alloc.$(O) \
 	save.$(O) redirerr.$(O) xwindow.$(O) dlrgint.$(O) ipp.$(O) drawstring3d.$(O)
 
-PROGS= libucommon.a doincl$(EXE) patchstr$(EXE) libuconsole.a libwuconsole.a
+PROGS= libucommon.a doincl$(EXE) patchstr$(EXE) libuconsole.a $(LIBWUCONSOLE)
 
 all: $(PROGS) 
 
@@ -43,7 +43,7 @@ libucommon.a: $(OBJS) $(HDRS)
 	$(RANLIB) $@
 	$(CP) $@ ../../bin/
 
-libuconsole.a: NTCON uconsole.$(O)
+libuconsole.a: $(NTCONDEP) uconsole.$(O)
 	$(RM) $@
 	$(AR) q $@ uconsole.$(O)
 	$(RANLIB) $@
@@ -101,7 +101,7 @@ rswitch.$(O): FORCE
 FORCE:
 
 distclean clean:
-	$(RM) $(PROGS) *.o core junk* libcommon.a
+	$(RM) $(PROGS) *.o core junk*
 
 
 #  The following section is needed if changes are made to the Icon grammar,

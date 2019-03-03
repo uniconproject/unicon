@@ -389,7 +389,7 @@ distclean Pure:
 		cd tests;		$(MAKE) Pure
 		cd plugins;		$(MAKE) Pure
 		rm -f src/common/rswitch.[csS]
-		rm -f Makedefs Makedefs.uni
+#		rm -f Makedefs Makedefs.uni
 		$(RM) config.status config.cache config.log
 
 #		rm -f \#*# *~ .#*

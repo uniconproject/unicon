@@ -28,7 +28,7 @@ char *toolstr = "${TOOLS}";
 #endif					/* ExpTools */
 
 char *refpath;
-char patchpath[MaxPath+18] = "%PatchStringHere->";
+extern char patchpath[];
 
 #define Global
 #define Init(v) = v

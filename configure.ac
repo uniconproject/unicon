@@ -319,6 +319,7 @@ case $unicon_host in
        WGLIBS="-lopengl32 -lglu32 -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinmm"
        WSUBSYS="-Wl,--subsystem,console"
        NTCONDEP="NTCON"
+       LIBWUCONSOLE="libwuconsole.a"
        WICONXTARGET="wiconx"
        WICONTTARGET="wicont"
        WUNICONTARGET="wunicon"
@@ -346,6 +347,7 @@ AC_SUBST(WSUBSYS)
 AC_SUBST(NT)
 AC_SUBST(DNT)
 AC_SUBST(NTCONDEP)
+AC_SUBST(LIBWUCONSOLE)
 AC_SUBST(WICONXTARGET)
 AC_SUBST(WICONTTARGET)
 AC_SUBST(WUNICONTARGET)
@@ -600,12 +602,20 @@ AC_SUBST(JV_LDFLAGS)
 AC_SUBST(GL_CFLAGS)
 AC_SUBST(GL_LDFLAGS)
 
+
 AC_SUBST(prefix)
 AC_SUBST(exec_prefix)
 AC_SUBST(bindir)
 AC_SUBST(libdir)
 AC_SUBST(docdir)
 AC_SUBST(mandir)
+
+AC_DEFINE_UNQUOTED([config_prefix],      ["${prefix}"], [prefix])
+AC_DEFINE_UNQUOTED([config_exec_prefix], ["${exec_prefix}"], [exec_prefix])
+AC_DEFINE_UNQUOTED([config_bindir],      ["${bindir}"], [bindir])
+AC_DEFINE_UNQUOTED([config_libdir],      ["${libdir}"], [libdir])
+AC_DEFINE_UNQUOTED([config_docdir],      ["${docdir}"], [docdir])
+AC_DEFINE_UNQUOTED([config_man],         ["${mandir}"], [mandir])
 
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)
@@ -615,6 +625,8 @@ AC_CONFIG_FILES([Makefile:Makefile.in],)
 AC_CONFIG_FILES([Makedefs:Makedefs.in],)
 AC_CONFIG_FILES([Makedefs.uni:Makedefs.uni.in],)
 AC_CONFIG_HEADERS([src/h/auto.h:src/h/auto.in],)
+
+
 AC_OUTPUT
 
 

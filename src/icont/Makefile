@@ -28,7 +28,7 @@ icont $(ICONTEXE):		 $(NTCONDEP) $(OBJS) ../../bin/libucommon.a
 		strip ../../bin/$(PGMS)
 
 wicont $(WICONTEXE): WNTCON $(OBJS) ../../bin/libucommon.a common
-	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS)  $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WGLIBS) -lucommon
+	$(CC) -Wl,--subsystem,windows $(LDFLAGS) -o wicont.exe -mwindows $(OBJS)  $(COBJS) $(WOBJS) -lwinmm $(LIBS) $(WGLIBS) -lucommon -lwuconsole
 	$(CP) wicont.exe ../../bin
 
 

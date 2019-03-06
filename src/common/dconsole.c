@@ -8,6 +8,8 @@ void exit(int);
  *  (namely, icont and rtt).
  */
 #include "../h/rt.h"
+void tfatal(char *, char *);
+void wattr(FILE *, char *, int);
 
 #ifdef ConsoleWindow
 
@@ -391,7 +393,7 @@ struct descrip *val;
 {
    register word i=0;
    register struct b_lelem *bp;  /* does not need to be tended */
-   static two = 2;		/* some compilers generate bad code for
+   static int two = 2;		/* some compilers generate bad code for
 				   division by a constant that's a power of 2*/
 
    /*

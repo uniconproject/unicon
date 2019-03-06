@@ -294,6 +294,16 @@ int Consolefflush(FILE *f)
   return fflush(f);
 }
 
+/*
+ * This version of wattrib() is only used for dconsole.c, when building
+ * ConsoleWindow versions of compilers, e.g. wicont, wrtt.
+ */
+void wattr(FILE *w, char *s, int len)
+{
+   struct descrip answer;
+   wattrib((wbp)w, s, len, &answer, s);
+}
+
 #else					/* ConsoleWindow */
 
 /*

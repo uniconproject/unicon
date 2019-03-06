@@ -101,8 +101,7 @@ nodeptr val;
  * tfatal produces the translator error messages s1 and s2 (if nonnull).  The
  *  location of the error is found in tok_loc.
  */
-void tfatal(s1, s2)
-char *s1, *s2;
+void tfatal(char *s1, char *s2)
    {
 
 #ifdef ConsoleWindow

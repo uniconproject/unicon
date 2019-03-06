@@ -161,7 +161,8 @@ resulting screen might look something like this:
 <p>
 
 At this point, you have created a graphical interface with a button on
-it. When you save this as go.icn, Ivib will generate the Unicon source code
+it. When you save this as
+<code>go.icn</code>, Ivib will generate the Unicon source code
 for the graphical interface, with the Ivib representation of that graphical
 interface encoded as a strange looking comment at the end of the file. If
 you compile it, you can produce a working program, but it won't do anything
@@ -196,7 +197,8 @@ that widget.
 
 In order for our button to call our procedure <code>p()</code>, we need to
 find out (or assign) the button's variable name. To do this, select the
-button, right click on it, and open its Dialog. The Name tab contains a <code>Name</code>
+button, right click on it, and open its Dialog. The Name tab contains a
+<code>Name</code>
 field that determines the variable name for this widget. Change the name
 from <code>text_button_1</code> to <code>go</code>. Your dialog should look
 something like this:
@@ -218,10 +220,11 @@ go.icn.
 
 At this point, you can compile go.icn as a standalone program that does
 nothing (unicon go). But it might be more interesting to tell the dialog
-what code to execute (namely, a call to the procedure <code>p()</code> mentioned earlier)
+what code to execute (namely, a call to the procedure <code>p()</code>
+mentioned earlier)
 when the "go" button is clicked. Go over to the Events tab, click on Add,
-and associate a method <code>on_go()</code> with <code>ACTION_EVENT</code> by clicking the Apply
-button.
+and associate a method <code>on_go()</code> with <code>ACTION_EVENT</code>
+by clicking the Apply button.
 
 <p>
 
@@ -233,8 +236,8 @@ Figure 3: TextButton Setup Event Tab
 
 <p>
 
-Click OK, and then save your file. At this point if you go into file go.icn
-and look at the code, the dialog has an empty method
+Click OK, and then save your file. At this point if you go into file
+<code>go.icn</code> and look at the code, the dialog has an empty method
 
 <p>
 
@@ -302,9 +305,15 @@ to an About box and a Help command.
 <h3> <A name="menubar">Menu  Bar</A> </h3>
 
 <b>Add a Menu Bar</b> by clicking on the Menu component from the Ivib
-Menu. A Menu Bar with an Edit me item will be added to the canvas. Right
-click on it and select the dialog option. The MenuBar setup in the bottom
-box of the dialog will look like this:
+Menu. A Menu Bar with an Edit me item will be added to the canvas.
+(Although Menu Bars have an associated variable name just like you saw
+in the Button example, you generally won't have to edit or use the name of
+a Menu Bar, since event handling code is not attached to Menu Bars, but
+instead to the menu objects placed inside those menu bars.)
+<p>
+
+Right click on the Menu Bar and select the dialog option. The MenuBar setup
+in the bottom box of the dialog will look like this:
 
 <pre>
 |
@@ -315,8 +324,9 @@ box of the dialog will look like this:
 |
 </pre>
 
-<b>Add the File menu</b>. Select Edit me, hit the edit button, and change the Label
-field to File. Click Okay.  The tree will now look something like this:
+<b>Add the File menu</b>. Select <code>Edit me</code>, hit the edit button,
+and change the <code>Label</code> field to File. Click Okay.
+The tree will now look something like this:
 
 <pre>
 |
@@ -331,7 +341,7 @@ position shown above. The Add label button will become available; click on
 it. A new branch labeled Edit me will be added to the branch. Edit this
 branch by clicking on the Edit button, change the Label field to say Exit,
 and switch to the Code tab. Change the object name to exit and then click
-the Event handler checkbox to create an <code>on_exit()</code> handler
+the Event handler checkbox to create an <code>on_exit</code> handler
 method. Before you click OK the screen should look like:
 
 <p>
@@ -385,7 +395,7 @@ position shown above. The Add label button will become available; click on
 it. A new branch labeled <code>Edit me</code> will be added to the
 branch. Edit this branch by clicking on the Edit button, change the Label to
 <code>About...</code> and select the Code tab. Change the object name to
-about and then click the event handler to create an <code>on_about()</code>
+about and then click the event handler to create an <code>on_about</code>
 handler method. Click Okay.  The tree should now look something like this:
 
 <pre>
@@ -408,8 +418,8 @@ position shown above. The Add label button will become available; click on
 it. A new branch labeled Edit me will be added to the branch. Edit this
 branch by clicking on the Edit button, change the label to Help, and switch
 to the Code tab. Change the object name to help, and then click the Event
-handler checkbox to create an on_help() event handler method. Click
-Okay. The tree will now look something like this:
+handler checkbox to create an <code>on_help</code> event handler method.
+Click Okay. The tree will now look something like this:
 
 <pre>
 |
@@ -758,9 +768,13 @@ for this application.
 
 <h3><A name="makefile">Makefile</A></h3>
 
-The following instructions mainly apply to Linux/UNIX users. Now we need to
-create a makefile to compile and link all our code together.
-
+The following instructions mainly apply to Linux/UNIX users.
+An ASCII file called a makefile (and often named makefile or Makefile)
+is written to compile and link all our code together
+using the <code>make</code> program.  On Windows, if you obtain
+a version of the make program such as <code>make.exe</code> or
+<code>nmake.exe</code>, you can follow these instructions; in the makefile
+the executable (main) may need to be modified to say <code>main.exe</code>.
 <p>
 
 Create another file named makefile and enter the following. Be careful to
@@ -776,8 +790,8 @@ real programmer's editor, will preserve your tab characters.
 # makefile
 #
 CFLAGS=-c
-main.exe: main.u about.u help.u  
-        unicon -G -o main.exe main.u about.u help.u 
+main: main.u about.u help.u  
+        unicon -G -o main main.u about.u help.u 
 about.u: about.icn
         unicon $(CFLAGS) about
 help.u: help.icn
@@ -793,17 +807,18 @@ At the shell/command-line prompt enter:
 ...%        make
 </pre>
 
-Hopefully, there are not any errors at this point.
+If everything went well, there will not be any errors at this point.
+<p>
 
-<h3><A name="running">Running the Program</A></h3>
-
-Note: On Windows if you are lucky you might have a similar command
-"nmake". If no make or nmake is available you can enter at the shell/command
+Note: if no make or nmake is available you can enter at the shell/command
 prompt:
 
 <pre>
 ...% unicon -G main.icn about.icn help.icn 
 </pre>
+
+
+<h3><A name="running">Running the Program</A></h3>
 
 At the shell/command prompt enter:
 
@@ -921,18 +936,32 @@ the selected file in a message box. First we need to link in the FileDialog
 class from the Unicon class library. Add the link statement before the
 maindialog class declaration as follows:
 
+<p>
+
 <pre>
 import gui
 $include "guih.icn"
+
 link filedialog         # this the line you add
-Add the following code to the on_ListBtn() method. The file dialog will be displayed when the List button is pressed and the selected file will be displayed in the MsgBox. 
+</pre>
+
+<p>
+
+Add the following code to the <code>on_ListBtn()</code> method.
+The file dialog
+will be displayed when the List button is pressed and the selected
+file will be displayed in the MsgBox.
+
+<p>
+
+<pre>
 method on_ListBtn(ev)
    local s, fd
       fd := FileDialog()
       fd.set_attribs("label=Select file demonstration")
       fd.show_modal(self)
       s := fd.get_result() | fail
-      if /s | s=="" | s[-1]=="\\" then {
+      if /s | s == "" | s[-1] == "\\" then {
          MsgBox.set_label("Select a file")
          return
          }   

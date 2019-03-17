@@ -1,0 +1,80 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+name: unicon
+
+file_extensions:
+  - icn
+scope: source.icn
+
+contexts:
+  # The prototype context is prepended to all contexts but those setting
+  # meta_include_prototype: false.
+  prototype:
+    - include: comments
+
+  main:
+    # The main context is the initial starting point of our syntax.
+    # Include other contexts from here (or specify them directly).
+    - include: reserved
+    - include: keywords
+    - include: preprocessor
+    - include: numbers
+    - include: strings
+    - include: operators
+
+  reserved:
+    # Keywords are if, else for and while.
+    # Note that blackslashes don't need to be escaped within single quoted
+    # strings in YAML. When using single quoted strings, only single quotes
+    # need to be escaped: this is done by using two single quotes next to each
+    # other.
+    - match: '\b(abstract|all|break|by|case|class|create|critical|default|do|else|end|every|fail|global|if|import|initial|initially|invocable|link|local|method|next|not|of|package|procedure|record|repeat|return|static|suspend|then|thread|to|type||until|while|write)\b'
+      scope: keyword.control.unicon
+
+  keywords:
+    - match: '\b&allocated|&ascii|&clock|&col|&collections|&column|&control|&cset|&current|&date|&dateline|&digits|&dump|&e|&errno|&error|&errornumber|&errortext|&errorvalue|&errout|&eventcode|&eventsource|&eventvalue|&fail|&features|&file|&host|&input|&interval|&lcase|&ldrag|&letters|&level|&line|&lpress|&lrelease|&main|&mdrag|&meta|&mpress|&mrelease|&now|&null|&output|&phi|&pi|&pick|&pos|&progname|&random|&rdrag|&regions|&resize|&row|&rpress|&rrelease|&shift|&source|&storage|&subject|&time|&trace|&ucase|&version|&window|&x|&y\b'
+      scope: keyword.control.unicon
+
+  preprocessor:
+    - match: '\$'
+      scope: punctuation.definition.comment.unicon
+      push:
+        # This is an anonymous context push for brevity.
+        - meta_scope: comment.line.double-slash.unicon
+        - match: $\n?
+          pop: true
+
+  operators:
+    - match: '\b::|\:\=|\?\?|\?|!|\*|\\|\/|\.|=|\|\?|@|\|\|\||\?\?|\$\b'
+      scope: keyword.control.unicon
+
+  numbers:
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric.unicon
+
+  strings:
+    # Strings begin and end with quotes, and use backslashes as an escape
+    # character.
+    - match: '"'
+      scope: punctuation.definition.string.begin.unicon
+      push: inside_string
+
+  inside_string:
+    - meta_include_prototype: false
+    - meta_scope: string.quoted.double.unicon
+    - match: '\.'
+      scope: constant.character.escape.unicon
+    - match: '"'
+      scope: punctuation.definition.string.end.unicon
+      pop: true
+
+  comments:
+    # Comments begin with a '#' and finish at the end of the line.
+    - match: '#'
+      scope: punctuation.definition.comment.unicon
+      push:
+        # This is an anonymous context push for brevity.
+        - meta_scope: comment.line.double-slash.unicon
+        - match: $\n?
+          pop: true

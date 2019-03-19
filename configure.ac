@@ -597,6 +597,9 @@ fi
 CHECK_PTHREAD()
 CHECK_OPENSSL()
 
+# autoconf does this too late, so just do it now...
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
 AC_SUBST(JV_LDFLAGS)
 AC_SUBST(GL_CFLAGS)
@@ -610,12 +613,30 @@ AC_SUBST(libdir)
 AC_SUBST(docdir)
 AC_SUBST(mandir)
 
-AC_DEFINE_UNQUOTED([config_prefix],      ["${prefix}"], [prefix])
-AC_DEFINE_UNQUOTED([config_exec_prefix], ["${exec_prefix}"], [exec_prefix])
-AC_DEFINE_UNQUOTED([config_bindir],      ["${bindir}"], [bindir])
-AC_DEFINE_UNQUOTED([config_libdir],      ["${libdir}"], [libdir])
-AC_DEFINE_UNQUOTED([config_docdir],      ["${docdir}"], [docdir])
-AC_DEFINE_UNQUOTED([config_man],         ["${mandir}"], [mandir])
+    cprefix="$prefix"
+    cexec_prefix="$exec_prefix"
+    cbindir="$bindir"
+    clibdir="$libdir"
+    cdocdir="$docdir"
+    cmandir="$mandir"
+    
+for I in 1 2 3 4 5 6 7 8 9 10; do
+    eval cprefix="\"$cprefix\""
+    eval cexec_prefix="\"$cexec_prefix\""
+    eval cbindir="\"$cbindir\""
+    eval clibdir="\"$clibdir\""
+    eval cdocdir="\"$cdocdir\""
+    eval cmandir="\"$cmandir\""
+	
+done
+
+
+AC_DEFINE_UNQUOTED([config_prefix],      ["${cprefix}"], [prefix])
+AC_DEFINE_UNQUOTED([config_exec_prefix], ["${cexec_prefix}"], [exec_prefix])
+AC_DEFINE_UNQUOTED([config_bindir],      ["${cbindir}"], [bindir])
+AC_DEFINE_UNQUOTED([config_libdir],      ["${clibdir}"], [libdir])
+AC_DEFINE_UNQUOTED([config_docdir],      ["${cdocdir}"], [docdir])
+AC_DEFINE_UNQUOTED([config_man],         ["${cmandir}"], [mandir])
 
 AC_CHECK_GLOBAL(sys_nerr)
 AC_CHECK_GLOBAL(sys_errlist)

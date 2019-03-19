@@ -149,7 +149,7 @@ void usage(void)
      "      [-s java_semantic_type] [-f class_name] filename\n", myname);
 */
     fprintf(stderr,
-     "usage:\n %s [-dlrtv] [-b file_prefix]  [-p symbol_prefix] filename\n", myname);
+     "usage:\n %s [-dilrtv] [-b file_prefix]  [-p symbol_prefix] filename\n", myname);
     
     exit(1);
 }

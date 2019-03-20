@@ -15,6 +15,8 @@ libdir=${exec_prefix}/lib
 docdir=${prefix}/share/doc/${PACKAGE_TARNAME}
 mandir=${prefix}/share/man
 
+PATCHSTR=./bin/patchstr
+
 default: allsrc
 	$(MAKE) -C ipl/lib 
 	$(MAKE) -C uni 
@@ -37,8 +39,6 @@ config: configure
 help:
 	@echo
 	@echo Unicon Build Instructions:
-	@echo
-	@echo Start by adding the Unicon bin directory to your path.
 	@echo
 	@echo Platform
 	@echo "  UNIX:" 
@@ -225,13 +225,13 @@ plugins:
 
 
 # Installation:  "make Install dest=new-parent-directory"
-
-ULB=$(DESTDIR)$(libdir)/unicon/uni
-UIPL=$(DESTDIR)$(libdir)/unicon/ipl
-UPLUGINS=$(DESTDIR)$(libdir)/unicon/plugins/lib
+ULROT=$(DESTDIR)$(libdir)/unicon
+ULB=$(ULROT)/uni
+UIPL=$(ULROT)/ipl
+UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc udb uprof unidep UniDoc
+Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib
 
 Tdirs=$(ULB) $(UIPL) $(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
@@ -239,7 +239,7 @@ IPLdirs=lib incl gincl mincl
 
 uninstall Uninstall:
 #	create all directories first
-	@for d in $(libdir)/unicon $(docdir)/unicon ; do \
+	@for d in $(ULROT) $(docdir)/unicon ; do \
 	   echo "Uninstalling dir $$d ..."; \
 	   rm -rf $$d; \
 	done
@@ -266,7 +266,10 @@ install Install:
 #	uninstall unicon/bin
 	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
-	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); else \
+	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
+            $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir); \
+            $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT);  \
+            else \
 	    (echo "No bin/$$f , skipping..."); \
 	  fi; \
 	done

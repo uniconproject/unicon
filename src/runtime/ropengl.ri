@@ -3769,7 +3769,12 @@ int texwindow2D(wbp w, wbp w2d)
 {
    int r;
    wsp ws = w2d->window;
-   GLubyte *tex = (GLubyte *)malloc(ws->height * ws->width * 3);
+   /*
+    * Allocate one extra row of memory so as to avoid invalid memory reads
+    * past the end of the source texture in gluScaleImage().
+    * Per https://bugs.freedesktop.org/show_bug.cgi?id=2510
+    */
+   GLubyte *tex = (GLubyte *)malloc((ws->height+1) * ws->width * 3);
    wcp wc = w->context;
    makecurrent(w);
 

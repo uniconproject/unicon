@@ -185,7 +185,7 @@ union block {
      struct b_external Extern;
 };
 
-int cnv_int(descriptor *, descriptor *);
+extern int cnv_int(descriptor *, descriptor *);
 int cnv_str(descriptor *, descriptor *);
 int cnv_real(descriptor *, descriptor *);
 int cnv_c_str(descriptor *, descriptor *);
@@ -242,16 +242,29 @@ do { argv->dword = n; argv->vword.sptr = alcstr(s,n); return 0; } while (0)
 
 typedef struct rtentrypts
  {
-  int (*Cnv_int) (descriptor *, descriptor *);
+   int (*Cnvint)(dptr,dptr);
+   int (*Cnvreal)(dptr,dptr);
+   int (*Cnvstr)(dptr,dptr);
+   int (*Cnvtstr)(char *,dptr,dptr);
+   int (*Cnvcset)(dptr,dptr);
+   void (*Deref)(dptr,dptr);
 } rtentryvector;
 
+extern rtentryvector rtfuncs;
 #ifdef WIN32
-#define cnv_int (bitcount_rtev.Cnv_int)
-#define RTEP rtentryvector *rtev,
+#define cnv_int (rtfuncs.Cnvint)
+#define cnv_real (rtfuncs.Cnvreal)
+#define cnv_str (rtfuncs.Cnvstr)
+#define cnv_tstr (rtfuncs.Cnvtstr)
+#define cnv_cset (rtfuncs.Cnvcset)
+#define deref (rtfuncs.Deref)
+
 #define RTEX __declspec(dllexport)
+#define RTIM __declspec( dllimport )
 #else
 #define RTEP
 #define RTEX
+#define RTIM
 #endif
 
 /*

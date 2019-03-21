@@ -32,22 +32,6 @@
 
 #include "icall.h"
 
-int is_inited;
-
-static rtentryvector bitcount_rtev;
-
-RTEX int init(rtentryvector *rtev)
-{
-  if(!is_inited) {
-    is_inited = 1;
-    bitcount_rtev = *rtev;
-    return 1;
-    }
-  return 0;
-}
-RTEX int destroy()
-{
-}
 
 RTEX int bitcount(int argc, descriptor *argv) /*: count bits in an integer */
    {

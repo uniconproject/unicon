@@ -1039,16 +1039,8 @@ end
 # find a class specification, along the IPATH if necessary
 #
 procedure fetchspec(name)
-   static white, nonwhite
+   static ipath
    local basedir := "."
-   if &features == "MS Windows NT" then {
-      white := '\t;'
-      nonwhite := &cset -- '\t;'
-      }
-   else {
-      white := ' \t'
-      nonwhite := &cset -- ' \t'
-      }
    name ? {
       while basedir ||:= tab(upto('\\/')) do {
 	 basedir ||:= move(1)
@@ -1077,29 +1069,17 @@ procedure fetchspec(name)
 
    if basedir ~== "." then fail # if it gave a path, don't search IPATH
 
-   ipath := ipaths()
-
+   /ipath := ipaths_get()
    if \ipath then {
-      ipath ? {
-         dir := ""
-	 tab(many(white))
-	 while dir ||:= tab(many(nonwhite)) do {
-	    if *dir>0 & dir[1]=="\"" & dir[-1] ~== "\"" then {
-		dir ||:= tab(many(white)) | { fail }
-	       }
-	    else {
-		if dir[1]==dir[-1]=="\"" then dir := dir[2:-1]
-		if f := open(dir || "/" || env, "dr") then {
-		    if s := fetch(f, name) then {
-			close(f); return db_entry(dir, s) }
-		    close(f)
-		}
-		tab(many(white))
-		dir := ""
-	    }
-	}
-     }
-  }
+      every dir := !ipath do {
+         if dir[1]==dir[-1]=="\"" then dir := dir[2:-1]
+         if f := open(dir || "/" || env, "dr") then {
+            if s := fetch(f, name) then {
+               close(f); return db_entry(dir, s) }
+            close(f)
+            }
+         }
+      }
 end
 
 #

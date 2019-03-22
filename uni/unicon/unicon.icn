@@ -124,14 +124,11 @@ procedure iconc_make_exename_opt(args)
 end
 
 procedure calc_posix_loc()
-   local bpath, f
-   if (bpath := (&features ? (="Binaries at " & tab(0)))) |
-      ((f := open((bpath := getpaths()) ||
-      ("iconx"|"iconx.exe"|"wiconx.exe")))) then {
-         close(\f)
-         iconc_posixloc := (bpath || "../ipl/procs/posix.icn")
-         }
-   else istop("cannot calculate location of posix.icn relative to iconx")
+   local prefix
+   if \(prefix := ulibprefix()) then
+      iconc_posixloc := (prefix || "/ipl/procs/posix.icn")
+   else
+       istop("cannot calculate location of posix.icn relative to iconx")
 end
 
 procedure iconc_linkref_resolve(srcfname, ref)

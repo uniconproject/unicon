@@ -723,8 +723,12 @@ procedure include()
     error("Missing or invalid include file name")
 end
 
+procedure pathsep()
+   return getenv("PATHSEP") | ";"
+end
+
 procedure init(arg_list)
-  local s
+  local s, sep
 
   TRUE := 1
   Defs := table()
@@ -750,8 +754,9 @@ procedure init(arg_list)
     }
   else {
     Std_include_paths := []
-    (getenv("IPATH") || " ") ?
-       while put(Std_include_paths, tab(find(" "))) do move(1)
+    sep := pathsep()
+    (getenv("IPATH") || sep) ?
+       while put(Std_include_paths, tab(find(sep))) do move(1)
     Path_list := [""] ||| Std_include_paths
     }
 

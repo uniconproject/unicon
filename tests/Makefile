@@ -64,6 +64,23 @@ Samples-iconc:		; cd general; $(MAKE) Samples-iconc
 .PHONY:  clean Clean Test Test-icon Test-icont Test-iconc Samples $(TESTS)
 #  Clean up.
 
+distclean:
+		-cd bench;	$(MAKE) disclean
+		-cd calling;	$(MAKE) disclean
+		-cd general;	$(MAKE) disclean
+		-cd graphics;	$(MAKE) disclean
+		-cd ipl;	$(MAKE) disclean
+		-cd preproc;	$(MAKE) disclean
+		-cd samples;	$(MAKE) disclean
+		-cd special;	$(MAKE) disclean
+		-cd posix;	$(MAKE) disclean
+		-cd mt;		$(MAKE) disclean
+		-cd pattern &&	$(MAKE) disclean
+		-cd thread &&	$(MAKE) disclean
+		-cd coexpr &&	$(MAKE) disclean
+		-rm -f posix/x.icn
+		-rm -f posix/1
+
 clean Clean Pure:
 		-cd bench;	$(MAKE) Clean
 		-cd calling;	$(MAKE) Clean

@@ -131,10 +131,20 @@ function{0,1} loadfunc(filename,funcname)
 	 * .dll's can just be passed a pointer to those functions.
 	 */
 	 struct rtentrypts {
-	    int (*Cnv_int)(dptr, dptr);
+   	    int (*Cnvint)(dptr,dptr);
+   	    int (*Cnvreal)(dptr,dptr);
+   	    int (*Cnvstr)(dptr,dptr);
+   	    int (*Cnvtstr)(char *,dptr,dptr);
+	    int (*Cnvcset)(dptr,dptr);
+   	    void (*Deref)(dptr,dptr);
 	    } rtentryvector;
 #undef cnv_int_0
-       	 rtentryvector.Cnv_int = cnv_int;
+       	 rtentryvector.Cnvint = cnv_int;
+         rtentryvector.Cnvreal = cnv_real;
+	 rtentryvector.Cnvstr = cnv_str;
+	 rtentryvector.Cnvtstr = cnv_tstr;
+	 rtentryvector.Cnvcset = cnv_cset;
+	 rtentryvector.Deref = deref;
 
 	 i = (*func)(&rtentryvector);
          }

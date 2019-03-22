@@ -231,14 +231,14 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib
+Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr
 
 Tdirs=$(ULB) $(UIPL) $(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
 IPLdirs=lib incl gincl mincl
 
 uninstall Uninstall:
-#	create all directories first
+#	be conservative when deleting directories
 	@for d in $(ULROT) $(docdir)/unicon ; do \
 	   echo "Uninstalling dir $$d ..."; \
 	   rm -rf $$d; \
@@ -253,7 +253,7 @@ uninstall Uninstall:
 	@rm -f $(mandir)/man1/unicon.1
 
 install Install:
-#	be conservative when deletting directories
+#	create all directories first
 	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
 	done
@@ -263,14 +263,14 @@ install Install:
 	@for d in $(Udirs); do \
 	    (echo "Creating dir $(ULB)/$$d") && (mkdir -p $(ULB)/$$d); \
 	done
-#	uninstall unicon/bin
+#	install unicon/bin
 	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
 	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
-            $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir); \
-            $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT);  \
-            else \
-	    (echo "No bin/$$f , skipping..."); \
+	    if test "$$f" != "patchstr" ; then \
+              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir) || true; \
+              $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
+            fi; \
 	  fi; \
 	done
 #	install unicon/ipl
@@ -343,6 +343,10 @@ deb: dist
 	@echo "   cd ../unicondist/unicon-$(VV)"
 	@echo "Then run:"
 	@echo "	 debuild -us -uc"
+
+debauto: deb
+	cd ../unicondist/unicon-$(VV) && debuild -us -uc
+	@echo "  Did we get : ../unicondist/unicon-$(VV).deb"
 
 ##################################################################
 #

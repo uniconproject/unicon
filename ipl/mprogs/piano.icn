@@ -44,7 +44,11 @@ procedure main(av)
    local line_change_increment, t, position, wrap, connected, LinenoMask,
        mymask, lastline, ww, wg, wb, wall, x, base, lastx, lasty, maxline,
        value, scale, oldY, theY, step, e, sl
-   if *av=0 then stop("usage: piano [opts] prog [args...]")
+
+   if *av=0 then EvInit()
+   else EvInit(av)			 # direct MT monitor
+   if /Monitored then stop("Usage: piano [opts] prog [args...]")
+
    line_change_increment := 1
    stoplines := set()
    t := options(av,"P:w!c!t!")
@@ -54,9 +58,6 @@ procedure main(av)
    connected := t["c"]
    if \ (tick_accrue := t["t"]) then alreadyDrawn := set()
 
-   if *av=0 then EvInit()
-   else EvInit(av)			 # direct MT monitor
-  
    LinenoMask := cset(E_Loc || E_Tick || E_MXevent)
    mymask := LinenoMask
 
@@ -64,7 +65,9 @@ procedure main(av)
    Visualization := open("Pianoroll","g","resize=on",
 			 "geometry=1024x1000","pos="||position) |
       stop("can't open window")
+
    &window := Visualization
+
    ww   := Clone(&window,"fg=white")
    wr   := Clone(&window,"fg=red")
    wg   := Clone(&window,"fg=green")
@@ -76,7 +79,7 @@ procedure main(av)
    lastx   := -1
    lasty   := -1
    width   := WAttrib("width")
-   height  :=  WAttrib("height")
+   height  := WAttrib("height")
    maxline := 0
 
    while EvGet(mymask) do {

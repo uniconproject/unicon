@@ -20,6 +20,5 @@ unidoc$(EXE): $(UFILES)
 	$(CP) unidoc$(EXE) $(BIN)
 
 %.u: %.icn
-	IPATH="../../parser/;LPATH=../../parser/" $(UNICON) $(UFLAGS) -c $<
-
+	$(UNICON) $(UFLAGS) -c $<
 include deps.out

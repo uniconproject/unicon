@@ -123,7 +123,7 @@ procedure mainLoop()
       # Forward the event to those EM's that want it.
       #
       every monitor := !EventCodeTable[&eventcode] do
-	 if C := event( , , monitor.prog) then {
+	 if C := EvSend( , , monitor.prog) then {
 	    if C ~=== monitor.mask then {
 	       while type(C) ~== "cset" do {
 		  if C === "abort" then fail
@@ -132,7 +132,7 @@ procedure mainLoop()
 		  # return to the client to get his next event request.
 		  #
 		  broadcast(C, monitor)
-		  if not (C := event( , , monitor.prog)) then {
+		  if not (C := EvSend( , , monitor.prog)) then {
 		     unschedule(monitor)
 		     break next
 		     }
@@ -424,7 +424,7 @@ procedure readConfig(s, all)
    local fin, line, candidates
    candidates := []
    if \s then fin := open(s) | stop("can't open ", s)
-   else if not (fin := open(getenv("HOME") || "/.eve")) then {
+   else if not (fin := open(getenv("HOME"|"HOMEPATH") || "/.eve")) then {
       fin := &input
       write("Enter a list of client command lines.  A blank line terminates")
       }
@@ -570,7 +570,7 @@ procedure enableChange(vidget, val)
    every monitor := !clients do {
       if monitor.eveRow === i then {
 	 monitor.enabled := val
-	 (C := event(val, , monitor.prog)) | (write("failing") & fail)
+	 (C := EvSend(val, , monitor.prog)) | (write("failing") & fail)
 	 if monitor.mask ~===:= C then
 	    computeUnionMask()
 	 }
@@ -627,7 +627,7 @@ procedure flush_broadcast_queue()
       except := pop(EveBroadcastQueue) | stop("malformed broadcast queue")
       if x === "quit" then eveQuit()
       every monitor := (except ~=== !clients) do
-	 if C := event( , , monitor.prog) then {
+	 if C := EvSend( , , monitor.prog) then {
 	    if C ~=== monitor.mask then {
 	       while type(C) ~== "cset" do {
 		  #
@@ -636,7 +636,7 @@ procedure flush_broadcast_queue()
 		  #
 		  put(EveBroadcastQueue, C)
 		  put(EveBroadcastQueue, monitor)
-		  if not (C := event( , , monitor.prog)) then {
+		  if not (C := EvSend( , , monitor.prog)) then {
 		     unschedule(monitor)
 		     if \verbose then
 			write("Eve warning: broadcast of ",

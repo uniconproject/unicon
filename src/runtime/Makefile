@@ -155,6 +155,8 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
 update_rev:
 	@if test ! -z $(REPO_REV) ; then \
 	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > ../h/revision.h; \
+	elif test ! -f ../h/revision.h ; then \
+	   echo "#define REPO_REVISION \"0\"" > ../h/revision.h; \
 	fi
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h

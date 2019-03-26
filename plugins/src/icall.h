@@ -5,10 +5,10 @@
 #
 #	Subject:  Definitions for external C functions
 #
-#	Authors:   Gregg M. Townsend, Kostas Oikonomou,
-#                  Clinton Jeffery, Jafar Al-Gharaibeh
+#	Authors:  Gregg M. Townsend, Kostas Oikonomou,
+#                 Clinton Jeffery, Jafar Al-Gharaibeh
 #
-#	Date:     February 7, 2017
+#	Date:     March 25, 2019
 #
 ############################################################################
 #
@@ -186,7 +186,7 @@ union block {
      struct b_external Extern;
 };
 
-int cnv_int(descriptor *, descriptor *);
+extern int cnv_int(descriptor *, descriptor *);
 int cnv_str(descriptor *, descriptor *);
 int cnv_real(descriptor *, descriptor *);
 int cnv_c_str(descriptor *, descriptor *);
@@ -202,7 +202,9 @@ void cpslots(descriptor *, descriptor *, word, word);
 
 extern descriptor nulldesc;		/* null descriptor */
 
+
 #define UARGS int argc, descriptor argv[]
+
 /*
  * Pointer to block.
  */
@@ -241,17 +243,32 @@ do { argv->dword = n; argv->vword.sptr = alcstr(s,n); return 0; } while (0)
 #define Error(n) return n
 #define ArgError(i,n) return (argv[0] = argv[i], n)
 
-#ifdef WIN32
+
 typedef struct rtentrypts
  {
-  int (*cnv_int) (descriptor *, descriptor *);
+   int (*Cnvint)(dptr,dptr);
+   int (*Cnvreal)(dptr,dptr);
+   int (*Cnvstr)(dptr,dptr);
+   int (*Cnvtstr)(char *,dptr,dptr);
+   int (*Cnvcset)(dptr,dptr);
+   void (*Deref)(dptr,dptr);
 } rtentryvector;
-#define cnv_int (rtev->cnv_int)
-#define RTEP rtentryvector *rtev,
+
+extern rtentryvector rtfuncs;
+#ifdef WIN32
+#define cnv_int (rtfuncs.Cnvint)
+#define cnv_real (rtfuncs.Cnvreal)
+#define cnv_str (rtfuncs.Cnvstr)
+#define cnv_tstr (rtfuncs.Cnvtstr)
+#define cnv_cset (rtfuncs.Cnvcset)
+#define deref (rtfuncs.Deref)
+
 #define RTEX __declspec(dllexport)
+#define RTIM __declspec( dllimport )
 #else
 #define RTEP
 #define RTEX
+#define RTIM
 #endif
 
 /*

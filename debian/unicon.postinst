@@ -2,6 +2,10 @@
 
 #DEBHELPER#
 
-patchstr  -DPatchUnirotHere /usr/bin/iconx /usr/lib/unicon
-patchstr  -DPatchUnirotHere /usr/bin/icont /usr/lib/unicon
-patchstr  -DPatchUnirotHere /usr/bin/iconc /usr/lib/unicon
+DEB_HOST_MULTIARCH=`dpkg-architecture -qDEB_HOST_MULTIARCH`
+
+echo "patchstr libs location: /usr/lib/$DEB_HOST_MULTIARCH/unicon"
+
+patchstr  -DPatchUnirotHere /usr/bin/iconx /usr/lib/${DEB_HOST_MULTIARCH}/unicon
+patchstr  -DPatchUnirotHere /usr/bin/icont /usr/lib/${DEB_HOST_MULTIARCH}/unicon
+patchstr  -DPatchUnirotHere /usr/bin/iconc /usr/lib/${DEB_HOST_MULTIARCH}/unicon

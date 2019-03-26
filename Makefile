@@ -268,7 +268,13 @@ install Install:
 	@for f in $(Tbins); do \
 	  if test -f "bin/$$f"; then \
 	    (echo "Installing bin/$$f") && ($(INST) bin/$$f $(DESTDIR)$(bindir)); \
-	    if test "$$f" != "patchstr" ; then \
+	    if test "$$f" = "icont" ; then \
+              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/iconx || true; \
+              $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
+	    elif test "$$f" = "wicont" ; then \
+              $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir)/wiconx || true; \
+              $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
+	    elif test "$$f" != "patchstr" ; then \
               $(PATCHSTR) -DPatchStringHere $(DESTDIR)$(bindir)/$$f $(bindir) || true; \
               $(PATCHSTR) -DPatchUnirotHere $(DESTDIR)$(bindir)/$$f $(ULROT) || true;  \
             fi; \
@@ -285,6 +291,8 @@ install Install:
 	  echo "Installing uni/$$d to $(ULB)/$$d ..."; \
 	  $(INST) -m 644 uni/$$d/*.* $(ULB)/$$d; \
 	done
+#       plugins
+	@$(INST) -m 644 plugins/lib/*.* $(UPLUGINS)/ || true
 #	docs and man
 	@echo "Installing $(mandir)/man1/unicon.1 and $(docdir)/unicon ..."
 #	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
@@ -319,7 +327,8 @@ update_rev:
 	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > src/h/revision.h; \
 	fi
 
-VV=13.1.0
+MV=2
+VV=13.1.$(MV)
 FV1=unicon-$(VV).tar.gz
 FV2=unicon_$(VV).orig.tar.gz
 dist: distclean update_rev
@@ -333,7 +342,8 @@ publishdist: dist
 	scp ../$(FV1) web.sf.net:/home/project-web/unicon/htdocs/dist/uniconsrc-nightly.tar.gz
 
 udist=unicondist
-SIGNKEYID=12345678
+SIGNKEYID=AB194DBF
+SIGNOPT=-k$(SIGNKEYID)
 
 deb: dist
 	mkdir -p ../$(udist)
@@ -347,16 +357,19 @@ deb: dist
 	@echo "Then run:"
 	@echo "	 debuild -us -uc"
 
-debauto: deb
-	cd ../$(udist)/unicon-$(VV) && debuild -us -uc
+debin: deb
+	cd ../$(udist)/unicon-$(VV) && debuild -us -uc $(SIGNOPT) --lintian-opts --profile debian
 	@echo "  Did we get : ../$(udist)/unicon-$(VV).deb"
 
+debsrc: deb
+	cd ../$(udist)/unicon-$(VV) && debuild -S $(SIGNOPT) --lintian-opts --profile debian
+	@echo "  Did we get : ../$(udist)/unicon-$(VV).deb"
 
 debsign:
-	cd ../$(udist) && debsign unicon_$(VV)-1_amd64.changes  -k$(SIGNKEYID)
+	cd ../$(udist) && debsign unicon_$(VV)-1_amd64.changes  $(SIGNOPT)
 
 launchpad:
-	cd ../$(udist) && dput unicon-ppa unicon_$(VV)-1_amd64.changes
+	cd ../$(udist) && dput unicon-ppa unicon_$(VV)-1_source.changes
 
 ##################################################################
 #

@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
-# See debhelper(7) (uncomment to enable)
+
 # output every command that modifies files on the build system.
-#export DH_VERBOSE = 1
+export DH_VERBOSE = 1
+export DH_OPTIONS = -v
 
 # Don't deal with any files in the .svn directory
 export DH_ALWAYS_EXCLUDE=CVS:.svn
-
 
 # see FEATURE AREAS in dpkg-buildflags(1)
 #export DEB_BUILD_MAINT_OPTIONS = hardening=+all
@@ -16,16 +16,20 @@ export DH_ALWAYS_EXCLUDE=CVS:.svn
 # package maintainers to append LDFLAGS
 #export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+DEB_CONFIGURE_EXTRA_FLAGS += --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)
+
 
 %:
 	dh $@  --with autoreconf --with autotools-dev
 
 # Override configure to pass autoconf the configuration options that we want
 override_dh_auto_configure:
-	dh_auto_configure -- --prefix=/usr --mandir=/usr/share/man
+	dh_auto_configure -- --prefix=/usr --mandir=/usr/share/man --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) --enable-verbosebuild
 
-#--disable-graphics
-#--enable-debian 
+#--enable-verbosebuild
+
 
 #override_dh_installinit:
 #	dh_installinit --no-start

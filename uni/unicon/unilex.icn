@@ -121,7 +121,7 @@ end
 # This function implements the standard Unicon lexical rules.
 #
 procedure yylex2Normal()
-local new_filename
+local new_filename, rv
 static punc_table
 initial {
    init_csets()
@@ -203,14 +203,15 @@ initial {
 end
 
 procedure do_letters()
-	  yytext ||:= tab(many(idchars))
-	  x := reswords[yytext]
-	  tokflags +:= x[1]
-	  return x[2]
+   local x
+   yytext ||:= tab(many(idchars))
+   x := reswords[yytext]
+   tokflags +:= x[1]
+   return x[2]
 end
 
 procedure do_digits()
-  local c, expstr
+  local c, expstr, dsz, numdie
 	      yytext ||:= tab(many(&digits))
 	      tokflags +:= Beginner+Ender
 	      if yytext ||:= ="." then {
@@ -566,6 +567,7 @@ procedure do_bang()
 end
 
 procedure do_literal()
+   local eat, s
 	      until yytext ||:= =(yytext[1]) do {
 		  if yytext ||:= ="\\" then {
 		     # need more logic here to eat escape chars
@@ -608,6 +610,7 @@ end
 
 # PUNEVAL == Pattern unevaluated. Needs much stronger parsing/checking.
 procedure do_backquote()
+   static unallowedchars
    unallowedchars := &ascii --( &letters ++ '()`., "_' ++ &digits)
    if yytext ||:= ="`" then {
       until yytext ||:= ="``" do {

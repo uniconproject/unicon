@@ -26,7 +26,7 @@ global preproc_sym_table,preproc_if_stack,preproc_file_stack,preproc_if_state,
         preproc_err_count, preproc_dollar_or_pound
 
 procedure predefs()
-    local t
+    local s, t
 
     t := table()
 
@@ -193,6 +193,7 @@ end
 #
 procedure preproc_scan_directive()
    local sym,value,new_file,new_filename,new_line,path_list,old
+   local cincludes, line, Cend, stub
    preproc_space()
    preproc_command := preproc_word()
    if \preproc_if_state then {
@@ -578,7 +579,7 @@ end
 # Outputs an error message.
 #
 procedure preproc_error(msg)
-    local filename
+    local filename, outTxt
     static non_shell_word_chars
     initial non_shell_word_chars := ~(&letters ++ &digits ++ '_.-')
     /msg := "syntax error"

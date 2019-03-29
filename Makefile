@@ -226,7 +226,7 @@ plugins:
 
 
 # Installation:  "make Install dest=new-parent-directory"
-ULROT=$(DESTDIR)$(libdir)/unicon
+ULROT=$(libdir)/unicon
 ULB=$(ULROT)/uni
 UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
@@ -234,7 +234,7 @@ INST=$(SHTOOL) install -c
 F=*.{u,icn}
 Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr
 
-Tdirs=$(ULB) $(UIPL) $(UPLUGINS)
+Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
 IPLdirs=lib incl gincl mincl
 
@@ -255,14 +255,14 @@ uninstall Uninstall:
 
 install Install:
 #	create all directories first
-	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
+	@for d in $(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
 	done
 	@for d in $(IPLdirs); do \
-	    (echo "Creating dir $(UIPL)/$$d") && (mkdir -p $(UIPL)/$$d); \
+	    (echo "Creating dir $(DESTDIR)$(UIPL)/$$d") && (mkdir -p $(DESTDIR)$(UIPL)/$$d); \
 	done
 	@for d in $(Udirs); do \
-	    (echo "Creating dir $(ULB)/$$d") && (mkdir -p $(ULB)/$$d); \
+	    (echo "Creating dir $(DESTDIR)$(ULB)/$$d") && (mkdir -p $(DESTDIR)$(ULB)/$$d); \
 	done
 #	install unicon/bin
 	@for f in $(Tbins); do \
@@ -281,23 +281,23 @@ install Install:
 	  fi; \
 	done
 #	install unicon/ipl
-	@echo "Installing unicon/ipl to $(UIPL) ..."
-	@$(INST) -m 644 ipl/lib/*.u $(UIPL)/lib
-	@$(INST) -m 644 ipl/incl/*.icn $(UIPL)/incl
-	@$(INST) -m 644 ipl/gincl/*.icn $(UIPL)/gincl
-	@$(INST) -m 644 ipl/mincl/*.icn $(UIPL)/mincl
+	@echo "Installing unicon/ipl to $(DESTDIR)$(UIPL) ..."
+	@$(INST) -m 644 ipl/lib/*.u $(DESTDIR)$(UIPL)/lib
+	@$(INST) -m 644 ipl/incl/*.icn $(DESTDIR)$(UIPL)/incl
+	@$(INST) -m 644 ipl/gincl/*.icn $(DESTDIR)$(UIPL)/gincl
+	@$(INST) -m 644 ipl/mincl/*.icn $(DESTDIR)$(UIPL)/mincl
 #	install unicon/uni
 	@for d in $(Udirs); do \
-	  echo "Installing uni/$$d to $(ULB)/$$d ..."; \
-	  $(INST) -m 644 uni/$$d/*.* $(ULB)/$$d; \
+	  echo "Installing uni/$$d to $(DESTDIR)$(ULB)/$$d ..."; \
+	  $(INST) -m 644 uni/$$d/*.* $(DESTDIR)$(ULB)/$$d; \
 	done
 #       plugins
-	@$(INST) -m 644 plugins/lib/*.* $(UPLUGINS)/ || true
+	@$(INST) -m 644 plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
 #	docs and man
-	@echo "Installing $(mandir)/man1/unicon.1 and $(docdir)/unicon ..."
-#	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
+	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 and $(DESTDIR)$(docdir)/unicon ..."
+	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
 	@$(INST) -m 644 README $(DESTDIR)$(docdir)/unicon
-#	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
+	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
 # Bundle up for binary distribution.
 
@@ -329,28 +329,32 @@ update_rev:
 
 MV=2
 VV=13.1.$(MV)
-FV1=unicon-$(VV).tar.gz
-FV2=unicon_$(VV).orig.tar.gz
+UTAR=unicon-$(VV).tar.gz
+UTARORIG=unicon_$(VV).orig.tar.gz
+# get the current unicon dir name
+unicwd=`basename \`pwd\``
+
 dist: distclean update_rev
 #	$(SHTOOL) fixperm -v *;
-	echo "Building $(FV1)"
-	tar -czf ../$(FV1) --exclude-vcs --exclude-backups ../unicon
-#	$(SHTOOL) tarball -o $(FV1) -c 'gzip -9' \
+	echo "Building $(UTAR)"
+	tar -czf ../$(UTAR) --exclude-vcs --exclude-backups ../$(unicwd)
+#	$(SHTOOL) tarball -o $(UTAR) -c 'gzip -9' \
 #                          -e '\.svn,\.[oau]$$,\.core$$,~$$,^\.#,#*#,*~', . uni/unicon/unigram.u uni/unicon/idol.u
 
 publishdist: dist
-	scp ../$(FV1) web.sf.net:/home/project-web/unicon/htdocs/dist/uniconsrc-nightly.tar.gz
+	scp ../$(UTAR) web.sf.net:/home/project-web/unicon/htdocs/dist/uniconsrc-nightly.tar.gz
 
+# Deb Section
 udist=unicondist
 SIGNKEYID=AB194DBF
 SIGNOPT=-k$(SIGNKEYID)
 
 deb: dist
 	mkdir -p ../$(udist)
-	mv ../$(FV1) ../$(udist)/
-	cp ../$(udist)/$(FV1) ../$(udist)/$(FV2)
-	@echo unpacking ../$(udist)/$(FV1)
-	cd ../$(udist) && tar -xf $(FV1)
+	mv ../$(UTAR) ../$(udist)/
+	cp ../$(udist)/$(UTAR) ../$(udist)/$(UTARORIG)
+	@echo unpacking ../$(udist)/$(UTAR)
+	cd ../$(udist) && tar -xf $(UTAR)
 	mv ../$(udist)/unicon ../$(udist)/unicon-$(VV)
 	@echo "To finish building the deb package, do"
 	@echo "   cd ../$(udist)/unicon-$(VV)"
@@ -370,6 +374,36 @@ debsign:
 
 launchpad:
 	cd ../$(udist) && dput unicon-ppa unicon_$(VV)-1_source.changes
+
+
+# RPM section
+rpmdir=uniconrpm
+
+rpm: dist
+	mkdir -p ../$(rpmdir)/SOURCES
+	mkdir -p ../$(rpmdir)/SPECS
+	cp rpm/unicon.spec 
+	mv ../$(UTAR) ../$(rpmdir)/SOURCES
+	@echo "To finish building the rpm package, do"
+	@echo "   cd ../$(rpmdir)"
+	@echo "Then run:"
+	@echo "	 rpmbuild -ba unicon.spec"
+
+rpmbin: rpm
+	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
+	@ls ../$(rpmdir)/RPMS/
+	@echo "  Did we get : ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm"
+
+rpmresume: rpm
+	cd ../$(rpmdir)/SPECS &&  rpmbuild -bi --short-circuit unicon.spec
+	@ls ../$(rpmdir)/RPMS/
+	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*rpm"
+
+rpmsrc:
+	cd ../$(rpmdir)/SPECS &&  rpmbuild -bs unicon.spec
+	@ls ../$(rpmdir)/SRPMS/
+	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*.src.rpm"
+
 
 ##################################################################
 #

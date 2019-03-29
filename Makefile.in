@@ -18,9 +18,15 @@ datarootdir = @datarootdir@
 
 PATCHSTR=./bin/patchstr
 
+# get the current unicon dir name
+unicwd=`basename \`pwd\``
+
+
 default: allsrc
 	$(MAKE) -C ipl/lib 
-	$(MAKE) -C uni 
+	$(MAKE) -C uni
+	$(MAKE) -C plugins
+	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 
 .PHONY: plugins
@@ -232,7 +238,7 @@ UIPL=$(ULROT)/ipl
 UPLUGINS=$(ULROT)/plugins/lib
 INST=$(SHTOOL) install -c
 F=*.{u,icn}
-Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr
+Tbins=unicon icont iconx iconc udb uprof unidep UniDoc ui ivib patchstr iyacc
 
 Tdirs=$(DESTDIR)$(ULB) $(DESTDIR)$(UIPL) $(DESTDIR)$(UPLUGINS)
 Udirs=lib 3d gui unidoc unidep xml parser
@@ -255,7 +261,7 @@ uninstall Uninstall:
 
 install Install:
 #	create all directories first
-	@for d in $(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
+	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
 	done
 	@for d in $(IPLdirs); do \
@@ -294,9 +300,10 @@ install Install:
 #       plugins
 	@$(INST) -m 644 plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
 #	docs and man
-	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 and $(DESTDIR)$(docdir)/unicon ..."
+	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 ..."
 	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
 	@$(INST) -m 644 README $(DESTDIR)$(docdir)/unicon
+	@echo "Installing $(DESTDIR)$(docdir)/unicon ..."
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon
 
 # Bundle up for binary distribution.
@@ -331,8 +338,6 @@ MV=2
 VV=13.1.$(MV)
 UTAR=unicon-$(VV).tar.gz
 UTARORIG=unicon_$(VV).orig.tar.gz
-# get the current unicon dir name
-unicwd=`basename \`pwd\``
 
 dist: distclean update_rev
 #	$(SHTOOL) fixperm -v *;

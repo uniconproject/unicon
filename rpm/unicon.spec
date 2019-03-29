@@ -50,3 +50,51 @@ rm -rf $RPM_BUILD_ROOT
 %{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconc /usr/lib/unicon
 
 #rm -f %{buildroot}/%{_infodir}/dir
+
+%post
+#%{_bindir}/patchstr  -DPatchUnirotHere /usr/bin/iconx /usr/lib/unicon                                                                                                                   
+#%{_bindir}/patchstr  -DPatchUnirotHere /usr/bin/icont /usr/lib/unicon                                                                                                                   
+#%{_bindir}/patchstr  -DPatchUnirotHere /usr/bin/iconc /usr/lib/unicon                                                                                                                   
+
+
+#/sbin/install-info %{_infodir}/%{name}.info %{_infodir}/dir || :                                                                                                                        
+
+%preun
+#if [ $1 = 0 ] ; then                                                                                                                                                                    
+#/sbin/install-info --delete %{_infodir}/%{name}.info %{_infodir}/dir || :                                                                                                               
+#fi                                                                                                                                                                                      
+
+%files
+#{_mandir}/man1/unicon.1                                                                                                                                                                 
+%{_docdir}/unicon/README
+%{_bindir}/iconx
+%{_bindir}/icont
+%{_bindir}/iconc
+%{_bindir}/unicon
+%{_bindir}/UniDoc
+%{_bindir}/udb
+%{_bindir}/unidep
+%{_bindir}/uprof
+%{_bindir}/iyacc
+%{_bindir}/patchstr
+%{_libdir}/unicon/ipl/lib/*.u
+%{_libdir}/unicon/ipl/incl/*.icn
+%{_libdir}/unicon/ipl/gincl/*.icn
+%{_libdir}/unicon/ipl/mincl/*.icn
+%{_libdir}/unicon/uni/lib/*.*
+%{_libdir}/unicon/uni/3d/*.*
+%{_libdir}/unicon/uni/gui/*.*
+%{_libdir}/unicon/uni/unidoc/*.*
+%{_libdir}/unicon/uni/unidep/*.*
+%{_libdir}/unicon/uni/parser/*.*
+%{_libdir}/unicon/uni/xml/*.*
+
+
+
+#%doc AUTHORS ChangeLog NEWS README THANKS TODO                                                                                                                                          
+%license COPYING
+
+%changelog
+* Fri Mar 29 2019 Jafar Al-Gharaibeh <to.Jafar@gmail.com> 13.1.0-1
+- Initial version of the package
+

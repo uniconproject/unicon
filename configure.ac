@@ -901,4 +901,5 @@ else
 fi
 
 echo "" 
-echo "Remember to add unicon/bin to your path"
+echo "do make to continue the build"
+echo "or make -j8 for parallel and faster build"

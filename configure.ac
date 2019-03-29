@@ -286,7 +286,7 @@ case $unicon_host in
       AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
-      RLIBS="-ldl -lnsl -lcrypt "
+      RLIBS="-ldl -lcrypt "
       CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then

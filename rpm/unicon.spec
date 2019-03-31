@@ -38,7 +38,7 @@ Interpreter and tools for Unicon, a high-level programming language
 
 
 %build
-./configure --prefix=/usr --bindir=%{_bindir} --mandir=%{_mandir} --docdir=%{_docdir}
+./configure --prefix=/usr --bindir=%{_bindir} --libdir=%{_libdir} --mandir=%{_mandir} --docdir=%{_docdir}
 make -j8
 
 %install
@@ -71,6 +71,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/icont
 %{_bindir}/iconc
 %{_bindir}/unicon
+%{_bindir}/ivib
+%{_bindir}/ui
 %{_bindir}/UniDoc
 %{_bindir}/udb
 %{_bindir}/unidep
@@ -88,7 +90,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/unicon/uni/unidep/*.*
 %{_libdir}/unicon/uni/parser/*.*
 %{_libdir}/unicon/uni/xml/*.*
-
+%{_libdir}/unicon/plugins/lib/*.*
+%{_docdir}/unicon/*.*
+%{_mandir}/man1/unicon.1.gz
 
 
 #%doc AUTHORS ChangeLog NEWS README THANKS TODO                                                                                                                                          

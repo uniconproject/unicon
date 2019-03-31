@@ -382,12 +382,12 @@ launchpad:
 
 
 # RPM section
-rpmdir=uniconrpm
+rpmdir=rpmbuild
 
 rpm: dist
 	mkdir -p ../$(rpmdir)/SOURCES
 	mkdir -p ../$(rpmdir)/SPECS
-	cp rpm/unicon.spec 
+	cp rpm/unicon.spec ../$(rpmdir) 
 	mv ../$(UTAR) ../$(rpmdir)/SOURCES
 	@echo "To finish building the rpm package, do"
 	@echo "   cd ../$(rpmdir)"
@@ -395,17 +395,17 @@ rpm: dist
 	@echo "	 rpmbuild -ba unicon.spec"
 
 rpmbin: rpm
-	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
+	cd ../$(rpmdir) &&  rpmbuild -ba unicon.spec
 	@ls ../$(rpmdir)/RPMS/
 	@echo "  Did we get : ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm"
 
 rpmresume: rpm
-	cd ../$(rpmdir)/SPECS &&  rpmbuild -bi --short-circuit unicon.spec
+	cd ../$(rpmdir) &&  rpmbuild -bi --short-circuit unicon.spec
 	@ls ../$(rpmdir)/RPMS/
 	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*rpm"
 
 rpmsrc:
-	cd ../$(rpmdir)/SPECS &&  rpmbuild -bs unicon.spec
+	cd ../$(rpmdir) &&  rpmbuild -bs unicon.spec
 	@ls ../$(rpmdir)/SRPMS/
 	@echo "  Did we get : ../$(rpmdir)/SRPMS/unicon-$(VV)-*.*.src.rpm"
 

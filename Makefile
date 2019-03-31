@@ -246,22 +246,22 @@ IPLdirs=lib incl gincl mincl
 
 uninstall Uninstall:
 #	be conservative when deleting directories
-	@for d in $(ULROT) $(docdir)/unicon ; do \
+	@for d in $(DESTDIR)$(ULROT) $(DESTDIR)$(docdir)/unicon ; do \
 	   echo "Uninstalling dir $$d ..."; \
 	   rm -rf $$d; \
 	done
 #	delete the binaries we installed from  unicon/bin
 	@for f in $(Tbins); do \
-	   echo "Uninstalling $(bindir)/$$f ..."; \
-	   rm -f $(bindir)/$$f; \
+	   echo "Uninstalling $(DESTDIR)$(bindir)/$$f ..."; \
+	   rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
 #	docs and man
-	@echo "Uninstalling $(mandir)/man1/unicon.1 ..."
-	@rm -f $(mandir)/man1/unicon.1
+	@echo "Uninstalling $(DESTDIR)$(mandir)/man1/unicon.1 ..."
+	@rm -f $(DESTDIR)$(mandir)/man1/unicon.1
 
 install Install:
 #	create all directories first
-	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir) $(Tdirs) ; do \
+	@for d in $(DESTDIR)$(bindir) $(DESTDIR)$(libdir) $(DESTDIR)$(docdir)/unicon $(DESTDIR)$(mandir)/man1 $(Tdirs) ; do \
 	    (echo "Creating dir $$d") && (mkdir -p $$d); \
 	done
 	@for d in $(IPLdirs); do \
@@ -301,7 +301,7 @@ install Install:
 	@$(INST) -m 644 plugins/lib/*.* $(DESTDIR)$(UPLUGINS)/ || true
 #	docs and man
 	@echo "Installing $(DESTDIR)$(mandir)/man1/unicon.1 ..."
-	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1
+	@$(INST) -m 644 doc/unicon/unicon.1 $(DESTDIR)$(mandir)/man1/
 	@$(INST) -m 644 README $(DESTDIR)$(docdir)/unicon
 	@echo "Installing $(DESTDIR)$(docdir)/unicon ..."
 	@$(INST) -m 644 doc/unicon/*.* $(DESTDIR)$(docdir)/unicon

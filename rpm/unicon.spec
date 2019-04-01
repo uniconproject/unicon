@@ -6,18 +6,18 @@ Summary: The Unicon Programming Language
 License: GPLv2+
 Source0: unicon-13.1.2.tar.gz
 
-BuildRequires: libjpeg-devel, libpng-devel, libX11-devel
+BuildRequires: libjpeg-turbo-devel, libpng-devel, libX11-devel
 BuildRequires: mesa-libGL-devel, mesa-libGLU-devel
 BuildRequires: openal-devel, freealut-devel, libogg-devel, libvorbis-devel
 BuildRequires: openssl-devel, unixODBC-devel
 BuildRequires: libXft-devel, freetype-devel
 
 
-Requires: libjpeg.so, libpng.so, libX11.so, libz.so
-Requires: libGL.so, libGLU.so
-Requires: libopenal.so, libalut.so, libogg.so, libvorbis.so
-Requires: openssl.so, libcrypto.so, libodbc.so
-Requires: libXft.so, libfreetype.so
+Requires: libjpeg-turbo, libpng, libX11
+Requires: mesa-libGL, mesa-libGLU
+Requires: openal, freealut, libogg, libvorbis
+Requires: openssl, unixODBC
+Requires: libXft, freetype
 
 
 Requires(post): info
@@ -45,28 +45,15 @@ make -j8
 rm -rf $RPM_BUILD_ROOT
 %make_install
 
-%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconx %{_libdir}/unicon
-%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/icont %{_libdir}/unicon
-%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconc /usr/lib/unicon
-
-#rm -f %{buildroot}/%{_infodir}/dir
+#%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconx %{_libdir}/unicon
+#%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/icont %{_libdir}/unicon
+#%{buildroot}/%{_bindir}/patchstr  -DPatchUnirotHere %{buildroot}/%{_bindir}/iconc %{_libdir}/unicon
 
 %post
-#%{_bindir}/patchstr  -DPatchUnirotHere /usr/bin/iconx /usr/lib/unicon                                                                                                                   
-#%{_bindir}/patchstr  -DPatchUnirotHere /usr/bin/icont /usr/lib/unicon                                                                                                                   
-#%{_bindir}/patchstr  -DPatchUnirotHere /usr/bin/iconc /usr/lib/unicon                                                                                                                   
-
-
-#/sbin/install-info %{_infodir}/%{name}.info %{_infodir}/dir || :                                                                                                                        
 
 %preun
-#if [ $1 = 0 ] ; then                                                                                                                                                                    
-#/sbin/install-info --delete %{_infodir}/%{name}.info %{_infodir}/dir || :                                                                                                               
-#fi                                                                                                                                                                                      
 
 %files
-#{_mandir}/man1/unicon.1                                                                                                                                                                 
-%{_docdir}/unicon/README
 %{_bindir}/iconx
 %{_bindir}/icont
 %{_bindir}/iconc
@@ -94,11 +81,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_docdir}/unicon/*.*
 %{_mandir}/man1/unicon.1.gz
 
+%doc README
 
-#%doc AUTHORS ChangeLog NEWS README THANKS TODO                                                                                                                                          
 %license COPYING
 
 %changelog
-* Fri Mar 29 2019 Jafar Al-Gharaibeh <to.Jafar@gmail.com> 13.1.0-1
+* Fri Mar 29 2019 Jafar Al-Gharaibeh <to.Jafar@gmail.com> 13.1.2-1
 - Initial version of the package
 

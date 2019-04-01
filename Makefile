@@ -387,15 +387,15 @@ rpmdir=rpmbuild
 rpm: dist
 	mkdir -p ../$(rpmdir)/SOURCES
 	mkdir -p ../$(rpmdir)/SPECS
-	cp rpm/unicon.spec ../$(rpmdir) 
+	cp rpm/unicon.spec ../$(rpmdir)/SPECS
 	mv ../$(UTAR) ../$(rpmdir)/SOURCES
 	@echo "To finish building the rpm package, do"
-	@echo "   cd ../$(rpmdir)"
+	@echo "   cd ../$(rpmdir)/SPECS"
 	@echo "Then run:"
 	@echo "	 rpmbuild -ba unicon.spec"
 
 rpmbin: rpm
-	cd ../$(rpmdir) &&  rpmbuild -ba unicon.spec
+	cd ../$(rpmdir)/SPECS &&  rpmbuild -ba unicon.spec
 	@ls ../$(rpmdir)/RPMS/
 	@echo "  Did we get : ../$(rpmdir)/RPMS/unicon-$(VV)-*.*.rpm"
 

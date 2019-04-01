@@ -24,9 +24,13 @@ PMOS=
 
 .PHONY: clean zip $(PCMN) $(PWIN) $(PNIX) $(PMOS) windows linux macos
 
-default:   $(LIBD)/uso.u $(PCMN)
+default:   icall.$(O) $(LIBD)/uso.u $(PCMN)
 
-all: uso.u
+all: uso.u icall.$(O)
+
+icall.$(O): icall.h icall.c
+	$(CC) -c icall.c
+	cp icall.o ../lib/
 
 windows: $(PCMN) $(PWIN)
 

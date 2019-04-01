@@ -15,7 +15,7 @@ UFLAGS=-s -u -c
 SO=so
 CFDYN2= $(CFDYN) $(CFLAGS) $(CPPFLAGS) -D_GNU_SOURCE -std=c11
 
-.SUFFIXES: .c .o
+.SUFFIXES: .c .$(O)
 
 all:	   default
 
@@ -29,7 +29,7 @@ $(LNAME): $(TLIB) $(LIBD)/$(LNAME).u
 	cp  $(TLIB) $(LIBD)/
 
 $(TLIB): $(COBJ)
-	$(CC) $(CFDYN2) -o $(TLIB) $(COBJ) $(MYLIBS)
+	$(CC) $(CFDYN2) -o $(TLIB) $(COBJ) ../../lib/icall.$(O) $(MYLIBS) $(XLIBS)
 	cp $(TLIB) $(LIBD)
 	
 # Unicon interface

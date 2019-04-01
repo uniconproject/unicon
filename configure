@@ -643,6 +643,7 @@ LIBOBJS
 UNIPROGS
 UDBTOOLS
 ICONCTARGET
+SO
 CFDYN
 RLIBS
 RLINK
@@ -6853,6 +6854,8 @@ esac
 
 OBJ=o
 CFUNCTARGET="cfun"
+CFDYN="-fPIC -shared -O2 -fno-omit-frame-pointer "
+SO=so
 # OS specific flags go here
 case $unicon_host in
      *linux*)
@@ -6903,7 +6906,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
-      CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
 	    ICONCTARGET=Iconc
@@ -6968,7 +6970,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
        EXE=".exe"
        NT="NT"
        DNT="-DNT"
-
+       SO=dll
        DASHG="-G"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
@@ -6998,6 +7000,7 @@ esac
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"
 fi
+
 
 
 

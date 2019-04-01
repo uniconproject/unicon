@@ -280,6 +280,8 @@ esac
 
 OBJ=o
 CFUNCTARGET="cfun"
+CFDYN="-fPIC -shared -O2 -fno-omit-frame-pointer "
+SO=so 
 # OS specific flags go here
 case $unicon_host in
      *linux*)
@@ -287,7 +289,6 @@ case $unicon_host in
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
-      CFDYN="-fPIC -shared "
 
       if test "x$iconc"      = "xyes" ; then
 	    ICONCTARGET=Iconc
@@ -309,7 +310,7 @@ case $unicon_host in
        EXE=".exe"
        NT="NT"
        DNT="-DNT"
-
+       SO=dll
        DASHG="-G"
        LDFLAGS="$LDFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
        CPPFLAGS="$CPPFLAGS --static -m$BITS -mnop-fun-dllimport -mwin32 -DPTW32_STATIC_LIB "
@@ -372,6 +373,7 @@ AC_SUBST(CC)
 AC_SUBST(RLINK)
 AC_SUBST(RLIBS)
 AC_SUBST(CFDYN)
+AC_SUBST(SO)
 AC_SUBST(ICONCTARGET)
 
 AC_SUBST(UDBTOOLS)

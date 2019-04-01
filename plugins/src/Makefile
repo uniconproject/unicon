@@ -8,7 +8,9 @@ UC=$(BASE)/bin/unicon
 WUC=$(BASE)/bin/unicon -G
 
 UFLAGS=-s -u -c
-SO=so
+#SO=so
+
+CFDYN2= $(CFDYN)
 
 # plaform independent  plugins
 PCMN=upexample
@@ -29,8 +31,8 @@ default:   icall.$(O) $(LIBD)/uso.u $(PCMN)
 all: uso.u icall.$(O)
 
 icall.$(O): icall.h icall.c
-	$(CC) -c icall.c
-	cp icall.o ../lib/
+	$(CC) $(CFDYN2) -c icall.c
+	$(CP) icall.$(O) ../lib/
 
 windows: $(PCMN) $(PWIN)
 

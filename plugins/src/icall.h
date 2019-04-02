@@ -252,6 +252,10 @@ typedef struct rtentrypts
    int (*Cnvtstr)(char *,dptr,dptr);
    int (*Cnvcset)(dptr,dptr);
    void (*Deref)(dptr,dptr);
+
+   char * (*Alcstr)(char *, word);
+   struct b_real * (*Alcreal) (double);
+   double (*Getdbl) (dptr);
 } rtentryvector;
 
 extern rtentryvector rtfuncs;
@@ -262,6 +266,9 @@ extern rtentryvector rtfuncs;
 #define cnv_tstr (rtfuncs.Cnvtstr)
 #define cnv_cset (rtfuncs.Cnvcset)
 #define deref (rtfuncs.Deref)
+#define alcstr (rtfuncs.Alcstr)
+#define alcreal (rtfuncs.Alcreal)
+#define getdbl (rtfuncs.Getdbl)
 
 #define RTEX __declspec(dllexport)
 #define RTIM __declspec( dllimport )

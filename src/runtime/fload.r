@@ -137,6 +137,10 @@ function{0,1} loadfunc(filename,funcname)
    	    int (*Cnvtstr)(char *,dptr,dptr);
 	    int (*Cnvcset)(dptr,dptr);
    	    void (*Deref)(dptr,dptr);
+
+	    char * (*Alcstr)(char *, word);
+	    struct b_real * (*Alcreal) (double);
+	    double (*Getdbl) (dptr);
 	    } rtentryvector;
 #undef cnv_int_0
        	 rtentryvector.Cnvint = cnv_int;
@@ -145,6 +149,8 @@ function{0,1} loadfunc(filename,funcname)
 	 rtentryvector.Cnvtstr = cnv_tstr;
 	 rtentryvector.Cnvcset = cnv_cset;
 	 rtentryvector.Deref = deref;
+ 	 rtentryvector.Alcstr = alcstr;
+ 	 rtentryvector.Getdbl = getdbl;
 
 	 i = (*func)(&rtentryvector);
          }

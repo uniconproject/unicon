@@ -20,6 +20,7 @@
 
 #include "upexample.h"
 
+RTEX
 int bitcount(UARGS) /*: count bits in an integer */
    {
    unsigned long v;
@@ -58,6 +59,7 @@ static void *memrev(void *s1, void *s2, size_t n);
 /*
  * pack(value, flags, width)
  */
+RTEX
 int pack(UARGS)	/*: pack integer into bytes */
    {
    int f, i, n, x;
@@ -140,6 +142,7 @@ int pack(UARGS)	/*: pack integer into bytes */
 /*
  *  unpack(string, flags)
  */
+RTEX
 int unpack(UARGS)	/*: unpack integer from bytes */
    {
    int f, i, n, x;

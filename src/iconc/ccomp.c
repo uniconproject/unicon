@@ -265,6 +265,11 @@ Deliberate Syntax Error
    buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/xpm");
 #endif					/* NTGCC */
 #endif					/* Graphics */
+#if NTGCC
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "..\\src\\common");
+#else					/* NTGCC */
+   buf = growcat(buf, &buflen, 3, " -I", refpath, "../src/common");
+#endif					/* NTGCC */
    buf = growcat(buf, &buflen, 6, " ", ExeFlag, " ", exename, " ", srcname);
 
 #if 0
@@ -293,6 +298,7 @@ Deliberate Syntax Error
 #endif					/* Graphics3D */
 #endif					/* Graphics */
 
+   buf = growcat(buf, &buflen, 1, " -luconsole");
    buf = growcat(buf, &buflen, 2, " ", ICONC_LIB);
 
 #if HAVE_LIBZ

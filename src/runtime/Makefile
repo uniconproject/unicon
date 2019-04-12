@@ -128,7 +128,7 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 comp_all comp_all_uniconc: update_rev
 	$(MAKE) db_lib
 
-db_lib: rt.db rt.a ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a
+db_lib: rt.db rt.a ../../bin/libucommon.a ../../bin/libgdbm.a ../../bin/libtp.a ../../bin/libuconsole.a
 
 #
 # if rt.db is missing or any header files have been updated, recreate

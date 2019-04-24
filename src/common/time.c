@@ -21,7 +21,6 @@
  * seems to report user time only, not system time(?).
  *
  * TODO:
- *    test Windows code given below.
  *    investigate mach_absolute_time() on OS X.
  *    do performance checks on timer functions to see if that is an issue.
  */
@@ -89,76 +88,29 @@ long millisec()
    }
 #endif					/* UNIX */
 
-#if 0 /* NT */
+#if NT && defined(HAVE_CLOCK_GETTIME)
 /*
- * The following Windows code is presumed to be public domain and is not
- * covered by Unicon's GPL - it came from Carl Staelin's post at
- * http://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
- * It is as-yet untested.
+ * Newer Windows Mingw64 has clock_gettime(), but not times(), so devise a version
+ * of millisec() that does not depend on the latter.  At the moment, that means we
+ * measure user time, but do not measure system time.
  */
-
-LARGE_INTEGER
-getFILETIMEoffset()
-{
-    SYSTEMTIME s;
-    FILETIME f;
-    LARGE_INTEGER t;
-
-    s.wYear = 1970;
-    s.wMonth = 1;
-    s.wDay = 1;
-    s.wHour = 0;
-    s.wMinute = 0;
-    s.wSecond = 0;
-    s.wMilliseconds = 0;
-    SystemTimeToFileTime(&s, &f);
-    t.QuadPart = f.dwHighDateTime;
-    t.QuadPart <<= 32;
-    t.QuadPart |= f.dwLowDateTime;
-    return (t);
-}
-
-int
-clock_gettime(int X, struct timeval *tv)
-{
-    LARGE_INTEGER           t;
-    FILETIME            f;
-    double                  microseconds;
-    static LARGE_INTEGER    offset;
-    static double           frequencyToMicroseconds;
-    static int              initialized = 0;
-    static BOOL             usePerformanceCounter = 0;
-
-    if (!initialized) {
-        LARGE_INTEGER performanceFrequency;
-        initialized = 1;
-        usePerformanceCounter = QueryPerformanceFrequency(&performanceFrequency);
-        if (usePerformanceCounter) {
-            QueryPerformanceCounter(&offset);
-            frequencyToMicroseconds = (double)performanceFrequency.QuadPart / 1000000.;
-        } else {
-            offset = getFILETIMEoffset();
-            frequencyToMicroseconds = 10.;
-        }
-    }
-    if (usePerformanceCounter) QueryPerformanceCounter(&t);
-    else {
-        GetSystemTimeAsFileTime(&f);
-        t.QuadPart = f.dwHighDateTime;
-        t.QuadPart <<= 32;
-        t.QuadPart |= f.dwLowDateTime;
-    }
-
-    t.QuadPart -= offset.QuadPart;
-    microseconds = (double)t.QuadPart / frequencyToMicroseconds;
-    t.QuadPart = microseconds;
-    tv->tv_sec = t.QuadPart / 1000000;
-    tv->tv_usec = t.QuadPart % 1000000;
-    return (0);
-}
+long millisec()
+   {
+   struct timespec ts;
+   static long system_millisec = -2;
+   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+   if (system_millisec == -2)
+      system_millisec = ts.tv_sec * 1000 + ts.tv_nsec/1000000;
+   return ts.tv_sec * 1000 + ts.tv_nsec/1000000 - system_millisec;
+   }
 #endif
 
-#if !UNIX /* && !NT */
+/*
+ * An untested Windows implementation of clock_gettime from stackoverflow that was here
+ * has been removed, as newer versions of Mingw64 GCC have a clock_gettime().
+ */
+
+#if !UNIX && (!NT || !defined(HAVE_CLOCK_GETTIME))
 
 /*
  * On anything other than UNIX, just use the ANSI C clock() function.

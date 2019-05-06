@@ -22,7 +22,7 @@ char rflag;
 char tflag;
 char vflag;
 char jflag;/*rwj -- for Java!*/
-char iflag;
+char iflag=1;
 char threadflag;/*rwj -- for Java!*/
 char *java_semantic_type;/*rwj -- for Java!*/
 
@@ -145,15 +145,34 @@ void usage(void)
 {
 /*
     fprintf(stderr,
-     "usage:\n %s [-dlrtvjxf] [-b file_prefix]  [-p symbol_prefix] \n"
+     "usage:\n %s [--help] [-dlrtvjxf] [-b file_prefix]  [-p symbol_prefix] \n"
      "      [-s java_semantic_type] [-f class_name] filename\n", myname);
 */
     fprintf(stderr,
-     "usage:\n %s [-dilrtv] [-b file_prefix]  [-p symbol_prefix] filename\n", myname);
+     "usage: %s [--help] [-dilrtv] [-p symbol_prefix] filename\n", myname);
     
     exit(1);
 }
 
+/*
+ * Give a longer, chatty help message
+ */
+void help(void)
+{
+   fprintf(stderr, "This is iyacc son of jyacc son of byacc. Tremble before me! Usage:\n");
+   fprintf(stderr,
+	   "\n   %s [-dilrtv] [-p symbol_prefix] filename\n", myname);
+   fprintf(stderr, "\ntakes in a filename.y grammar and writes a filename.icn parser\n");
+   fprintf(stderr, "\nOptions:\n\n");
+   fprintf(stderr, "   -d                write a filename_tab.icn include file w/ token $define's\n");
+   fprintf(stderr, "   -i                generate Icon/Unicon (default)\n");
+   fprintf(stderr, "   -l                suppress line directives\n");
+   fprintf(stderr, "   -p symbol_prefix  use symbol_prefix instead of yy\n");
+   fprintf(stderr, "   -r                write separate files for code and tables\n");
+   fprintf(stderr, "   -t                enable debugging\n");
+   fprintf(stderr, "   -v                write verbose output to y.output\n");
+   exit(1);
+}
 
 void getargs(int argc,char **argv)
 {
@@ -174,6 +193,11 @@ void getargs(int argc,char **argv)
 
 	case '-':
 	    ++i;
+	    if (!strcmp(s, "-help")) {
+	       help();
+	       break;
+	       }
+	    fprintf(stderr, "user says no more options\n");
 	    goto no_more_options;
 
 	case 'b':
@@ -216,6 +240,7 @@ void getargs(int argc,char **argv)
 
 	case 'j':     /* rwj -- for Java!  */
 	    jflag = 1;
+	    iflag = 0;
 	    break;
 
 	case 'i':

@@ -113,6 +113,7 @@ end
 procedure uni_error(s)
    /errors := 0
    /s := "token not recognized"
+write("uni_error calls yyerror ", image(s))
    yyerror(s)
    errors +:= 1
 end
@@ -212,14 +213,17 @@ end
 
 procedure do_digits()
   local c, expstr, dsz, numdie
+
 	      yytext ||:= tab(many(&digits))
 	      tokflags +:= Beginner+Ender
 	      if yytext ||:= ="." then {
 		  yytext ||:= tab(many(&digits))
 		  if yytext ||:= tab(any('eE')) then {
-		      yytext ||:= ="-" # optional; should we also allow + ?
-                      if not (expstr := tab(many(&digits))) then
+		      yytext ||:= tab(any('+-')) # optional + or -
+                      if not (expstr := tab(many(&digits))) then {
+                         expstr := ""
                          uni_error("malformed real number")
+                         }
                       else if expstr > 308 then
                          uni_error("real number out of range")
 		      yytext ||:= expstr

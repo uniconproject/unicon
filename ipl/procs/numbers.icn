@@ -17,6 +17,8 @@
 #	Contributors:  Robert J. Alexander, Richard Goerwitz
 #	   Tim Korb, and Gregg M. Townsend
 #
+#       May 08, 2019: add mfloor() and mceil() functions
+#
 ############################################################################
 #
 #	These procedures deal with numbers in various ways:
@@ -28,6 +30,8 @@
 #	amean ! L	returns arithmetic mean of numbers in L.
 #
 #	ceil(r)		returns nearest integer to r away from 0.
+#
+#	mceil(r)	returns the least integer greater than or equal to r.
 #
 #	commas(s)	inserts commas in s to separate digits into groups of
 #			three.
@@ -66,6 +70,8 @@
 #			be formatted.
 #
 # 	floor(r)	nearest integer to r toward 0.
+#
+# 	mfloor(r)	returns the greatest integer less than or equal to r.
 #
 #	frn(r, w, d)    format real number r into a string with d digits
 #			after the decimal point; a result narrower than w
@@ -171,6 +177,14 @@ procedure ceil(r)		#: ceiling
    if integer(r) = r then return integer(r)
 
    if r > 0 then return integer(r) + 1 else return -(integer(-r) + 1)
+
+end
+
+procedure mceil(r)		#: mceiling
+
+   if integer(r) = r then return integer(r)
+
+   if r > 0 then return integer(r) + 1 else return -integer(-r)
 
 end
 
@@ -359,6 +373,13 @@ end
 procedure floor(r)		#: floor
 
    if r > 0 then return integer(r) else return -integer(-r)
+
+end
+
+procedure mfloor(r)		#: mfloor
+   if integer(r) = r then return integer(r)
+
+   if r > 0 then return integer(r) else return -(integer(-r) + 1)
 
 end
 

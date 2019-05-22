@@ -883,8 +883,8 @@ int redraw3D(wbp w)
       }
    else {	/* GL_SELECT mode  */
       GLint viewport[4];
-      GLuint        selectionbuf[256];        /* selection buffer */
-      GLuint        selectionhits=0;          /* number of hits   */
+      GLuint        selectionbuf[1024];        /* selection buffer */
+      GLint        selectionhits=0;           /* number of hits   */
       GLuint *bufp = selectionbuf;
       unsigned int j;
 
@@ -912,11 +912,12 @@ int redraw3D(wbp w)
 
       /* switch to GL_SELECT render mode  */
 
-      glSelectBuffer(256, selectionbuf);
+      glSelectBuffer(1024, selectionbuf);
       glRenderMode(GL_SELECT);
       glInitNames();
 
-      if (w->window->funclist.vword.bptr != NULL) {  /* render the scene in GL_SELECT render mode */
+      if (w->window->funclist.vword.bptr != NULL) {
+	 /* render the scene in GL_SELECT render mode */
          if (traversefunctionlist(w) == Failed)
              return Failed;
       }
@@ -925,8 +926,13 @@ int redraw3D(wbp w)
       /*glFlush(); */
       selectionhits = glRenderMode(GL_RENDER);
 
-      if (selectionhits){
-         GLuint name, numnames, z1, z_buf[128];
+      if (selectionhits < 0)
+	 return Failed;
+      else if (selectionhits > 256) { /* too many hits? maybe nonsense then. */
+	 return Failed;
+	 }
+      else if (selectionhits != 0) { /* > 0, hits were found */ 
+         GLuint name, numnames, z1, z_buf[256];
          tended struct b_list *namelist;
          tended struct descrip selectednameslist;
          GLuint savedhits=0;
@@ -938,10 +944,15 @@ int redraw3D(wbp w)
          selectednameslist.vword.bptr = (union block*) namelist;
 
 	 /*
-	  * first pass over the selection buffer to collect and sort z values
+	  * First pass over the selection buffer to collect and sort z values.
 	  */
          bufp = selectionbuf;
          for(j = 0; j < selectionhits; j++){
+	    if (bufp - selectionbuf > 1024 - 4) {
+	       /* Reading this would go past the end of the selection buffer. */
+	       selectionhits = j;
+	       break;
+	       }
        	    numnames = *bufp++;
  	    z_buf[j] = *bufp++;
 	    bufp++;           /* skip z2 */

@@ -281,6 +281,9 @@
 #ifdef NTGCC
 /* avoid INT32 compile error in jmorecfg.h by pretending we used Xmd.h! */
 #define XMD_H
+
+/* avoid warnings over duplicate definition of HAVE_STDLIB_H in jpeglib.h */
+#undef HAVE_STDLIB_H
 #endif					/* NTGCC */
 
 #include "jpeglib.h"

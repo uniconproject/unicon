@@ -15,6 +15,7 @@
 
 extern YYSTYPE yylval;
 extern int yylineno;
+extern int debugtoken;
 extern char *yyfilename, *outfilename;
 extern FILE *outfile;
 int whiteflag=0;
@@ -100,9 +101,8 @@ int yyinput(void);
 %%
 int token(int x)
 {
-#if DEBUG
-   printf("\ttoken: %d '%s'\n", x, yytext);
-#endif
+   if (debugtoken)
+      printf("\ttoken: %d '%s'\n", x, yytext);
    return x;
 }
 

@@ -18,6 +18,7 @@ char* grab_upto_percents();
 char *yyfilename;
 char *outfilename;
 FILE *outfile;
+int debugtoken;
 
 int main(int argc, char *argv[])
 {
@@ -27,6 +28,10 @@ int main(int argc, char *argv[])
 
    if (argc > arg && !strcmp(argv[arg], "-nopp")) {
       pp = 0;
+      arg++;
+      }
+   if (argc > arg && !strcmp(argv[arg], "-token")) {
+      debugtoken = 1;
       arg++;
       }
 

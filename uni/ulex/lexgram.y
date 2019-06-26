@@ -8,12 +8,14 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 int yylex();
 int yyerror(char *s);
 #include "tree.h"
 #include "automata.h"
 struct automata* convert(struct tree* tr);
 int rulenumber = 1;
+extern int debugtree;
 %}
 
 %union {
@@ -230,6 +232,8 @@ int yyerror(char *s)
    return 0;
 }
 
+struct tree *root;
+
 /*
  * convert() takes the tree as input and converts it into an automata.
  */ 
@@ -241,6 +245,15 @@ struct automata* convert(struct tree* tr)
    struct edgelist *elistptr;
    char *tempstring, *getsinglechar;
    int t1, t2, i;
+
+   if (root == NULL) {
+      root = tr;
+      if (debugtree) {
+      	 printf("this is where we would print the tree\n");
+	 treeprint(tr);
+         exit(0);
+         }
+      }
 
    /*
     * Conversion is accomplished by breaking it down into separate cases and

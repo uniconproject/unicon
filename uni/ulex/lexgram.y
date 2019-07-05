@@ -249,7 +249,6 @@ struct automata* convert(struct tree* tr)
    if (root == NULL) {
       root = tr;
       if (debugtree) {
-      	 printf("this is where we would print the tree\n");
 	 treeprint(tr);
          exit(0);
          }

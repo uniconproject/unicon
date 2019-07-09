@@ -10,6 +10,8 @@
 #include "automata.h"
 void ulexskel(FILE*);
 
+extern int debugautomaton;
+
 void *alc(int n, char *caller)
 {
    void *rv = calloc(1, n);
@@ -63,6 +65,33 @@ void labelaut(struct automata* aut)
       }
 }
 
+void printautomata(struct automata *myautomata)
+{
+   struct anodelist *states, *states2;
+   struct edgelist *edges;
+
+   states = myautomata->states;
+   while (states != NULL) {
+      printf("state %d rule %d %s\n",
+	     states->current->label, states->current->rulenum,
+	     (member(states->current->label, myautomata->accepting)?"acc":""));
+
+      edges = states->current->edges;
+      while (edges != NULL) {
+	 printf("   %s -> ",
+		strcmp(edges->current->symbol,"\n")?edges->current->symbol:"\\n");
+	 states2 = edges->current->destinations;
+	 while (states2 != NULL) {
+	    printf("%d ", states2->current->label);
+	    states2 = states2->next;
+	    }
+	 printf("\n");
+	 edges = edges->next;
+	 }
+      states = states->next;
+      }
+}
+
 extern FILE *outfile;
 extern char *outfilename;
 
@@ -71,6 +100,11 @@ void createicon(struct automata *myautomata)
    struct anodelist *states, *states2;
    struct edgelist *edges;
    int maxrulenum = 0, i, *action;
+
+   if (debugautomaton) {
+      printautomata(myautomata);
+      exit(0);
+      }
 
    if ((outfile = fopen(outfilename, "w")) == NULL) {
       fprintf(stderr, "Unable to open output file %s\n", outfilename);
@@ -121,7 +155,7 @@ void createicon(struct automata *myautomata)
 	      "   put(myautomata.states, currstate)\n\n"
 	      "   while currstate.label ~= %d do {\n"
 	      "      currstate := pop(myautomata.states)\n"
-	      "      put(myautomata.states, currstate)\n   }\n"
+	      "      put(myautomata.states, currstate)\n      }\n"
 	      "   state2 := currstate\n\n",
 	      states->current->label);
 
@@ -132,7 +166,7 @@ void createicon(struct automata *myautomata)
 		 "   put(myautomata.states, currstate)\n\n"
 		 "   while currstate.label ~= %d do {\n"
 		 "      currstate := pop(myautomata.states)\n"
-		 "      put(myautomata.states, currstate)\n   }\n"
+		 "      put(myautomata.states, currstate)\n      }\n"
 		 "   put(state2.epsilon, currstate)\n\n",
 		 states2->current->label);
 	 states2 = states2->next;
@@ -145,7 +179,7 @@ void createicon(struct automata *myautomata)
 		 "   put(myautomata.states, currstate)\n\n"
 		 "   while currstate.label ~= %d do {\n"
 		 "      currstate := pop(myautomata.states)\n"
-		 "      put(myautomata.states, currstate)\n   }\n"
+		 "      put(myautomata.states, currstate)\n      }\n"
 		 "   put(state2.dot, currstate)\n\n",
 		 states2->current->label);
 	 states2 = states2->next;
@@ -171,7 +205,7 @@ void createicon(struct automata *myautomata)
 		    "   put(myautomata.states, currstate)\n\n"
 		    "   while currstate.label ~= %d do {\n"
 		    "      currstate := pop(myautomata.states)\n"
-		    "      put(myautomata.states, currstate)\n   }\n"
+		    "      put(myautomata.states, currstate)\n      }\n"
 		    "   put(tempedge.destinations, currstate)\n\n"
 		    "   put(state2.edges, tempedge)\n",
 		    states2->current->label);

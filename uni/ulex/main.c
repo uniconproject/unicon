@@ -18,7 +18,7 @@ char* grab_upto_percents();
 char *yyfilename;
 char *outfilename;
 FILE *outfile;
-int debugtoken, debugtree;
+int debugtoken, debugtree, debugautomaton;
 
 int main(int argc, char *argv[])
 {
@@ -36,6 +36,10 @@ int main(int argc, char *argv[])
       }
    if (argc > arg && !strcmp(argv[arg], "-tree")) {
       debugtree = 1;
+      arg++;
+      }
+   if (argc > arg && !strcmp(argv[arg], "-automaton")) {
+      debugautomaton = 1;
       arg++;
       }
 

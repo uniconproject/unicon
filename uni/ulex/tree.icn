@@ -1,0 +1,74 @@
+#
+# derived from tree.c by Katie Ray, Project: ulex, March 15, 2003
+# contains the functions used by tree structures
+#
+
+$include "flexgram_tab.icn"
+
+link printf
+
+record tree(label, text, children)
+
+# allocate an internal node. generally with kids not text
+procedure alcnode(lab,kids[])
+   return tree(lab, ,kids)
+end
+
+# allocate a leaf. generally with text not kids
+procedure alcleaf(lab,s)
+   return tree(lab, s)
+end
+
+procedure labelstr(label)
+
+   case label of {
+    OR: return "OR"
+    BACKSLASH: return "BACKSLASH"
+    SQUAREBRACKETS: return "SQUAREBRACKETS"
+    DOT: return "DOT"
+    CSET: return "CSET"
+    QUOTES: return "QUOTES"
+    LINEBEGIN: return "LINEBEGIN"
+    LINEEND: return "LINEEND"
+    OPTIONAL: return "OPTIONAL"
+    ZEROORMORE: return "ZEROORMORE"
+    ONEORMORE: return "ONEORMORE"
+    PARENTHESES: return "PARENTHESES"
+    FORWARDSLASH: return "FORWARDSLASH"
+    CURLBRACKETS: return "CURLBRACKETS"
+    OCCURRENCES: return "OCCURRENCES"
+    CLOSEPARENTHESES: return "CLOSEPARENTHESES"
+    PERCENTS: return "PERCENTS"
+    CHARACTER: return "CHARACTER"
+    COMMENT: return "COMMENT"
+    ACTION: return "ACTION"
+    BEGINNING: return "BEGINNING"
+    ENDING: return "ENDING"
+    QUESTION: return "QUESTION"
+    STAR: return "STAR"
+    PLUS: return "PLUS"
+    OREXPR: return "OREXPR"
+    PARENTHETIC: return "PARENTHETIC"
+    FORSLASH: return "FORSLASH"
+    EXPRESSION: return "EXPRESSION"
+    EXPRTREE: return "EXPRTREE"
+    NEWLINE: return "NEWLINE"
+    CONCATEXPR: return "CONCATEXPR"
+    CONCAT: return "CONCAT"
+   default: return "undefined"
+   }
+end
+
+procedure treeprint(t, level:0)
+   local i
+   if /t then stop("what are we calling on a null tree for?")
+   every i := 1 to level do writes(" ")
+   printf("[ %s ]", labelstr(t.label))
+   if \(t.text) then printf(" %s", t.text)
+   printf("\n")
+   if \(t.children) then {
+      treeprint(\(t.children[1]), level+1)
+      treeprint(\(t.children[2]), level+1)
+      treeprint(\(t.children[3]), level+1)
+   }
+end

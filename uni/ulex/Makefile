@@ -14,7 +14,7 @@ CFLAGS= -c -g
 LEX=flex
 YACC=yacc
 
-all: ulex ulpp
+all: ulex ulpp uflex
 
 uflex: ulpp flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u
 	unicon -o uflex flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u
@@ -33,8 +33,8 @@ main.o: main.c
 flexgram.u: flexgram.icn
 	unicon -c flexgram
 
-flexgram.icn: flexgram.y
-	iyacc -i flexgram.y
+flexgram.icn flexgram_tab.icn: flexgram.y
+	iyacc -i -d flexgram.y
 
 uflex-lex.u: uflex-lex.icn
 	unicon -c uflex-lex

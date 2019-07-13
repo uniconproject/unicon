@@ -1079,9 +1079,9 @@ function{0,1} filepair()
       StrLoc(fname) = "filepair";
       StrLen(fname) = 8;
       for(i = 0; i < 2; i++) {
-	 fps[i] = fdopen(fds[i], "r");
-	 Protect(fl = alcfile(fps[i], Fs_Write|Fs_Read|Fs_Socket, &fname),
+	 Protect(fl = alcfile(0, Fs_Write|Fs_Read|Fs_Socket, &fname),
 		 runerr(0));
+	 fl->fd.fd = fds[i];
 	 Blk(ep,Lelem)->lslots[i].dword = D_File;
 	 ep->Lelem.lslots[i].vword.bptr = (union block*)fl;
 	 }

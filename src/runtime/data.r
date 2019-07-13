@@ -333,7 +333,7 @@ struct errtab errtab[] = {
    171, "UDP socket expected",
    172, "signal handler procedure must take one argument",
    173, "cannot open directory for writing",
-   174, "invalid file operation on directory or database",
+   174, "invalid file operation",
    175, "network connection expected",
 #endif					/* PosixFns */
 

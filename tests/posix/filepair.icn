@@ -29,18 +29,22 @@ procedure parent(in)
 
    i := 0
    str := ""
+   tries := 0
    while i < count do {
 #       write("parent ", i)
-       i +:= 1
+      tries +:= 1
       if s := read(in) then {
 	 j := (s ? integer(tab(many(&digits)))) | -1
 	 if j ~= i then {
-	    write("failed - expected ", i)
+	    write("failed - expected ", i, " got ", j, " from ", image(s))
 	    break
 	 }
+         i +:= 1
       }
-      else
+      else {
 	 delay(1)
+         if tries > 10 then stop("too many tries for i ", i)
+         }
    }
    write("parent ending")
 end

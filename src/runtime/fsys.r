@@ -349,7 +349,7 @@ Deliberate Syntax Error
 	 }
 
       /*
-       * Preliminary tilde $HOME support. Need to extend to Windows,
+       * TODO: Preliminary tilde $HOME support. Need to extend to Windows,
        * and flesh out support for tilde-based syntax.  Need to think
        * about whether further is needed for multi-arg fnamestr e.g. mode "p"
        */
@@ -1522,7 +1522,7 @@ function{0,1} reads(f,i)
 	    return s;
 	}
 
-        /* This is a hack to fix things for the release. The solution to be
+        /* FIXME: This is a hack to fix things for the release. The solution to be
 	 * implemented after release: all I/O is low-level, no stdio. This
 	 * makes the Fs_Buff/Fs_Unbuf go away and select will work -- 
 	 * correctly. */
@@ -1576,8 +1576,9 @@ function{0,1} reads(f,i)
 
       /*
        * For ordinary files, reads -1 means the whole file.
+       * In all cases, Ignore the 'translation' bit
        */
-      if ((i == -1) && (status == (Fs_Read|Fs_Buff))) {
+      if ((i == -1) && ((status & ~Fs_Untrans) == (Fs_Read|Fs_Buff))) {
 	 if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
 	 if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
 	 i = statbuf.st_size;
@@ -1585,7 +1586,7 @@ function{0,1} reads(f,i)
       /*
        * For suspiciously large reads on normal files, cap at file size.
        */
-      else if ((i >= 65535) && (status == (Fs_Read|Fs_Buff))) {
+      else if ((i >= 65535) && ((status & ~Fs_Untrans) == (Fs_Read|Fs_Buff))) {
 	 if ((fd = fileno(fp)) == -1) { set_syserrortext(errno); fail; }
 	 if ((kk = fstat(fd, &statbuf)) == -1) { set_syserrortext(errno); fail;}
 	 if (i > statbuf.st_size) i = statbuf.st_size;

@@ -3,8 +3,8 @@
 # Project: uflex
 # May 15, 2018
 #
-# Phase 1:  replace ulex C implementation with ulex .icn implementation.
-#	1a: get the ulex .icn implementation to where it is producing tokens
+# Phase 1:  replace ulex C implementation with ulex .icn implementation. (done)
+#       1a: clean up
 # Phase 2:  convert NFA->DFA
 #
 # Based on Katie Ray's Project: ulex, March 15, 2003, makefile 
@@ -16,8 +16,8 @@ YACC=yacc
 
 all: ulex ulpp uflex
 
-uflex: ulpp flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u
-	unicon -o uflex flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u
+uflex: ulpp flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u
+	unicon -o uflex flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u
 	cp uflex ulpp ../../bin
 
 ulex: ulpp y.tab.o main.o lex.yy.o ulexskel.o automata.o tree.o
@@ -54,14 +54,14 @@ ulexskel.o: ulexskel.c
 automata.o: automata.c
 	$(CC) $(CFLAGS) automata.c
 
+automata.u: automata.icn
+	unicon -c automata
+
 y.tab.o: y.tab.c
 	$(CC) $(CFLAGS) y.tab.c
 
 y.tab.c y.tab.h: lexgram.y automata.h tree.h automata.c
 	$(YACC) -d lexgram.y
-
-automata.u: automata.icn
-	unicon -c automata
 
 tree.u: tree.icn
 	unicon -c tree
@@ -69,8 +69,11 @@ tree.u: tree.icn
 tree.o: tree.c
 	$(CC) $(CFLAGS) tree.c
 
+convert.u: convert.icn
+	unicon -c convert
+
 #
-# test w/ standalone dummy main() used only for debugging ulex's lexical analyzer.
+# test w/ dummy main() used only for debugging ulex's lexical analyzer.
 #
 lexlex: lex.yy.c y.tab.h
 	$(CC) $(CFLAGS) -DDEBUG -DMAIN lex.yy.c

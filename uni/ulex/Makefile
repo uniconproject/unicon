@@ -20,8 +20,8 @@ uflex: ulpp flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u
 	unicon -o uflex flexgram.u main.u uflex-lex.u ulexskel.u automata.u tree.u convert.u
 	cp uflex ulpp ../../bin
 
-ulex: ulpp y.tab.o main.o lex.yy.o ulexskel.o automata.o tree.o
-	$(CC) -o ulex main.o lex.yy.o y.tab.o ulexskel.o automata.o tree.o
+ulex: ulpp y.tab.o main.o lex.yy.o ulexskel.o automata.o tree.o convert.o
+	$(CC) -o ulex main.o lex.yy.o y.tab.o ulexskel.o automata.o tree.o convert.o
 	cp ulex ulpp ../../bin
 
 main.u: main.icn
@@ -68,6 +68,9 @@ tree.u: tree.icn
 
 tree.o: tree.c
 	$(CC) $(CFLAGS) tree.c
+
+convert.o: convert.c
+	$(CC) $(CFLAGS) convert.c
 
 convert.u: convert.icn
 	unicon -c convert

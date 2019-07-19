@@ -51,7 +51,7 @@ ulexskel.u: ulexskel.icn
 ulexskel.o: ulexskel.c
 	$(CC) $(CFLAGS) ulexskel.c
 
-automata.o: automata.c
+automata.o: automata.c automata.h
 	$(CC) $(CFLAGS) automata.c
 
 automata.u: automata.icn
@@ -66,10 +66,10 @@ y.tab.c y.tab.h: lexgram.y automata.h tree.h automata.c
 tree.u: tree.icn
 	unicon -c tree
 
-tree.o: tree.c
+tree.o: tree.c tree.h y.tab.h
 	$(CC) $(CFLAGS) tree.c
 
-convert.o: convert.c
+convert.o: convert.c y.tab.h tree.h automata.h
 	$(CC) $(CFLAGS) convert.c
 
 convert.u: convert.icn

@@ -615,7 +615,7 @@ end
 # PUNEVAL == Pattern unevaluated. Needs much stronger parsing/checking.
 procedure do_backquote()
    static unallowedchars
-   unallowedchars := &ascii --( &letters ++ '()`., "_' ++ &digits)
+   /unallowedchars := &ascii --( &letters ++ '()`., "_' ++ &digits)
    if yytext ||:= ="`" then {
       until yytext ||:= ="``" do {
 	 if not (yytext ||:= move(1)) then {
@@ -634,7 +634,7 @@ procedure do_backquote()
       }
    yytext ? {
       if tab(upto(unallowedchars)) then
-	 uni_error(": character "||move(1)|| " not supported in ` ` expresssion")
+	 uni_error(": character "||move(1)|| " not supported in ` ` expression")
 #			if *yytext = bal() then {}
 #			else uni_error(yytext)
       }

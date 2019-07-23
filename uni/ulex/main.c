@@ -223,4 +223,4 @@ char* grab_upto_percents()
       if (nextchar2 == 10 || nextchar2 == 13)
 	 yylineno++;
       }
-   }
+}

@@ -129,6 +129,6 @@ procedure yyerror(s)
    # Eventually want to use merr for better error messaging.
    #
 
-   fprintf(stderr, "%s on line %d\n", s, yylineno)
+   write(&errout, s, " on line ", yylineno)
    return 0
 end

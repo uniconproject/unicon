@@ -72,7 +72,7 @@ tree.o: tree.c tree.h y.tab.h
 convert.o: convert.c y.tab.h tree.h automata.h
 	$(CC) $(CFLAGS) convert.c
 
-convert.u: convert.icn
+convert.u: convert.icn flexgram_tab.icn
 	unicon -c convert
 
 #

@@ -61,6 +61,8 @@ function{0,1} close(f)
 #ifdef PosixFns
       if (BlkD(f,File)->status & Fs_Socket) {
 	 BlkLoc(f)->File.status = 0;
+	 StrLoc(BlkLoc(f)->File.fname) = "closed socket";
+	 StrLen(BlkLoc(f)->File.fname) = 13;
 #if NT
 	 return C_integer closesocket((SOCKET)BlkLoc(f)->File.fd.fd);
 #else					/* NT */

@@ -1,0 +1,102 @@
+\chapter{Mutex Use in the Runtime System}
+
+This appendix collects together the various mutexes used in the
+runtime system and provides a brief explanation of their use.
+
+\bigskip
+
+\begin{xtabular}{|>{\texttt\bgroup}m{1.8in}<{\egroup}%
+    |m{4.5in}|%
+  }
+\hline
+Mutex & Definition \\
+\hline
+MTX\_OP\_ASTR		&
+Used to serialize the self modification of \texttt{str} to \texttt{Astr}.
+See section \ref{Self-Modifying-Ops} on page \pageref{Self-Modifying-Ops}.\\
+MTX\_OP\_AREAL		&
+Serialize the self modification of \texttt{real} to \texttt{Areal}.\\
+MTX\_OP\_ACSET		&
+Serialize the self modification of \texttt{cset} to \texttt{Acset}.\\
+MTX\_OP\_ASTATIC	& 
+Serialize the self modification of \texttt{static} to \texttt{Astatic}.\\
+MTX\_OP\_AGLOBAL	& 
+Serialize the self modification of \texttt{global} to \texttt{Aglobal}.\\
+MTX\_OP\_AMARK		& 
+Serialize the self modification of \texttt{mark} to \texttt{Amark}.\\
+MTX\_OP\_AGOTO		& 
+Serialize the self modification of \texttt{goto} to \texttt{Agoto}.\\
+MTX\_LIST\_SER		&
+Used to ensure that each list header block has a unique identification number.
+See section \ref{Block-Id-Definition} on page \pageref{Block-Id-Definition}.\\
+MTX\_COEXP\_SER	    &
+Ensure that each coexpression stack block has a unique id.\\
+MTX\_SET\_SER		&
+Ensure that each set header block has a unique id.\\
+MTX\_TABLE\_SER	    & 
+Ensure that each table header block has a unique id.\\
+MTX\_PAT\_SER		&
+Ensure that each pattern header block has a unique id.\\
+MTX\_RECID		    &
+Ensure that each record header block has a unique id.\\
+MTX\_STRHEAP		&
+Used to serialize access to the string regions when creating a new thread
+and when reporting the sizes with \texttt{\&regions}.
+See section \ref{Multiple-Regions} on page \pageref{Multiple-Regions}\\
+MTX\_BLKHEAP		&
+Serialize access to the block regions when creating a new thread and
+reporting sizes.\\
+MTX\_TLS\_CHAIN	    &
+Used to protect the global list of thread states (thread local storage).\\
+MTX\_CURFILE\_HANDLE	&
+Used to serialize the dynamic loading of C functions in \texttt{loadfunc}.\\
+MTX\_SEGVTRAP\_N	&
+Protect the handler of run-time error 302 on segmentation faults.\\
+MTX\_DR\_TBL		&
+Protect access to the dynamic record global table list \texttt{dr\_tbl}.\\
+MTX\_SOCK\_MAP		&
+Protect access to the socket map global list \texttt{sock\_map}.\\
+MTX\_THREADCONTROL	&
+Used during the suspension and resumption of threads in (for example) Garbage Collection. 
+See section \ref{GC-Mutex} on page \pageref{GC-Mutex}.\\
+MTX\_NARTHREADS	    &
+Used to protect the count of running threads. See page \pageref{GC-Mutex}.\\
+MTX\_COND\_TC		&
+Used with the condition variable during the suspension and resumption of threads.\\
+MTX\_HANDLERS		&
+Used to serialize the registration of signal handlers.\\
+MTX\_ALCNUM		    &
+Serialize access to the count of allocated coexpressions since the
+last garbage collection (used to force a new GC if over a predefined maximum).\\
+MTX\_PUBLICSTRHEAP	&
+Used when swapping public and private heaps. See page \pageref{Multiple-Regions}.\\
+MTX\_PUBLICBLKHEAP	&
+Used when swapping public and private heaps. See page \pageref{Multiple-Regions}.\\
+MTX\_GC\_QUEUE		&
+Not currently in use.\\
+MTX\_QUALSIZE		& 
+Not currently in use.\\
+MTX\_STKLIST		& 
+Serialize access to the chain of co-expression blocks. See page \pageref{Coexpr-Block}.\\
+MTX\_POLLEVENT	    &
+Used to serialize access to open windows event queues.\\
+MTX\_NOMTEVENTS	    &
+Serialize access to the count of monitoring events.\\
+MTX\_MUTEXES		&
+Used to serialize the creation of mutexes for the application program.\\
+MTX\_CONDVARS		&
+Used to serialize the creation of condition variables for the application program.\\
+MTX\_STRINGTOTAL	&
+Serialize access to the variable holding the number of bytes allocated in
+string regions through the lifetime of program execution.\\
+MTX\_BLOCKTOTAL	    &
+Serialize access to the variable holding the number of bytes allocated in
+block regions through the lifetime of program execution.\\
+MTX\_COLL		    &
+Not currently in use.\\
+MTX\_PATIMG\_FUNCARR&
+Protect the initialization of the list of strings of built-in pattern functions and operators.\\
+MTX\_INITIAL		&
+Protect the language level initial block, which has an opcode of \texttt{Op\_Agoto}.\\
+\hline
+\end{xtabular}

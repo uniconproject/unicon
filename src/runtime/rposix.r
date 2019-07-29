@@ -1267,7 +1267,14 @@ int sock_name(int s, char* addr, char* addrbuf, int bufsize)
 
    len = snprintf(addrbuf, bufsize, "%s:%s:%d", addr,
                   inet_ntoa(conn.sin_addr), (int) ntohs(conn.sin_port));
-
+   if (len>=bufsize) {
+      /*
+       * Truncation occurred in snprintf, and this is catastrophic, LOL.
+       * But let's not be crazy about it. Output string is really only bufsize.
+       * Caller can avoid this by passing a (reasonable) C string in addr.
+       */
+      len = bufsize-1;
+      }
    return len;
 }
 

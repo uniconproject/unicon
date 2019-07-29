@@ -926,7 +926,12 @@ Deliberate Syntax Error
 	       fail;
 	       }
 
-	    StrLen(filename) = strlen(fnamestr);
+	    /*
+	     * Although filename is a unicon value, it is used by
+	     * image, which in the case of a socket means sock_name, which
+	     * assumes it is a C string. Preserve its C string-ness.
+	     */
+	    StrLen(filename) = strlen(fnamestr)+1;
 	    StrLoc(filename) = fnamestr;
 	    Protect(fl = alcfile(0, status, &filename), runerr(0));
 	    fl->fd.fd = fd;

@@ -5,18 +5,12 @@ global root
 # convert() takes the tree as input and converts it into an automata.
 #
 procedure convert(tr)
-   local returnvalue, aut1, aut2
-   local newnode1, newnode2
-   local listptr, listptr2
-   local elistptr
-   local tempstring, getsinglechar
-   local t1, t2, i
+   local returnvalue, aut1, aut2, newnode1, newnode2
+   local tempstring, getsinglechar, t1, t2, i, listptr, listptr2, elistptr
 
-   if /root := tr then {
-      if \debugtree then {
-      	 treeprint(tr)
-	 exit(0)
-         }
+   if (/root := tr) & \debugtree then {
+      treeprint(tr)
+      exit(0)
       }
 
    #
@@ -204,10 +198,9 @@ procedure convert(tr)
 	    listptr._next := alcnodelist()
 	    listptr._next.current := newnode2
 
-	    newnode1.edges := alcedgelist()
-	    newnode1.edges.current := alcedge(getsinglechar)
-	    newnode1.edges.current.destinations := alcnodelist()
-	    newnode1.edges.current.destinations.current := newnode2
+	    newnode1.edges := [ alcedge(getsinglechar) ]
+	    newnode1.edges[1].destinations := alcnodelist()
+	    newnode1.edges[1].destinations.current := newnode2
 
 	    newnode1 := newnode2
 	    listptr := listptr._next
@@ -235,19 +228,17 @@ procedure convert(tr)
 	listptr._next := alcnodelist()
 	listptr._next.current := newnode2
 
-	elistptr := alcedgelist()
 	tr.text := tr.text[2:0] # skip over \
 
-	if tr.text == 'n' then tr.text := "\n"
-     
-	else if tr.text == 't' then tr.text := "\t"
+	if tr.text[1] == "n" then tr.text[1] := "\n"
+	else if tr.text[1] == "t" then tr.text[1] := "\t"
 
-	elistptr.current := alcedge(tr.text)
+	elistptr := [ alcedge(tr.text) ]
 	
 	listptr2 := alcnodelist()
 	listptr2.current := newnode2
 
-	elistptr.current.destinations := listptr2
+	elistptr[1].destinations := listptr2
 
 	newnode1.edges := elistptr
 
@@ -278,10 +269,9 @@ procedure convert(tr)
 	returnvalue.states._next := alcnodelist()
 	returnvalue.states._next.current := returnvalue.accepting.current
 
-	returnvalue.start.edges := alcedgelist()
-	returnvalue.start.edges.current := alcedge(tr.text)
-	returnvalue.start.edges.current.destinations := alcnodelist()
-	returnvalue.start.edges.current.destinations.current :=
+	returnvalue.start.edges := [ alcedge(tr.text) ]
+	returnvalue.start.edges[1].destinations := alcnodelist()
+	returnvalue.start.edges[1].destinations.current :=
 	  returnvalue.accepting.current
 
 	return returnvalue
@@ -300,10 +290,9 @@ procedure convert(tr)
 	newnode2 := alcanode(0)
 	elistptr := newnode1.edges
 
-	newnode1.edges := alcedgelist()
-	newnode1.edges.current := alcedge(tr.text)
-	newnode1.edges.current.destinations := alcnodelist()
-	newnode1.edges.current.destinations.current := newnode2
+	newnode1.edges := [ alcedge(tr.text) ]
+	newnode1.edges[1].destinations := alcnodelist()
+	newnode1.edges[1].destinations.current := newnode2
 
 	returnvalue.start := newnode1
 
@@ -593,24 +582,22 @@ procedure convert(tr)
 		    listptr := listptr._next
 		  }
 
+                # append aut1.accepting onto returnvalue.accepting
 		listptr := returnvalue.accepting
-
 		while \ (listptr._next) do
 		  listptr := listptr._next
-
 		listptr._next := aut1.accepting
 
+                # append aut1.states onto returnvalue.states
 		listptr := returnvalue.states
 		while \ (listptr._next) do
 		  listptr := listptr._next
-
 		listptr._next := aut1.states
 	      }
 	  }
 	return returnvalue
       }
     }
-   stop("failing off the end of convert: ", image(tr),
-        " label ", image(tr.label), " text ", image(tr.text),
-	" kids ",image(tr.children))
+   stop("failing off the end of convert: ",image(tr), " label ",image(tr.label),
+        " text ", image(tr.text), " kids ",image(tr.children))
 end

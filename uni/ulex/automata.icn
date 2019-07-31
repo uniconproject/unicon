@@ -4,17 +4,13 @@
 #
 
 record edge(symbol, destinations)
-record edgelist(current, _next)
+# record edgelist(current, _next)
 record anode(label, rulenum, edges, epsilon, dot, semaction)
 record anodelist(current, _next)
 record automata(start, states, accepting)
 
 procedure alcedge(sym)
    return edge(sym)
-end
-
-procedure alcedgelist()
-   return edgelist()
 end
 
 procedure alcanode(lab)
@@ -38,6 +34,8 @@ procedure labelaut(aut)
    local statelist := aut.states
    local lab := 0
 
+#   every i := 1 to *statelist do {
+#      statelist[i].label := lab
    while \statelist do {
       statelist.current.label := lab
       statelist := statelist._next
@@ -46,33 +44,32 @@ procedure labelaut(aut)
 end
 
 procedure printautomata(myautomata)
-   local states, states2, edges
+   local state, states, states2, edges, edge
 
    states := myautomata.states
    while \states do {
+      state := states.current
       printf("state %d rule %d %s\n",
-	     states.current.label, states.current.rulenum,
-	     (if nodemember(states.current.label, myautomata.accepting) then "acc" else ""))
-      edges := states.current.edges
-      while \edges do {
-	 writes("   ",
-	     if edges.current.symbol~=="\n"then edges.current.symbol else "\\n",
+	     state.label, state.rulenum,
+	     (if nodemember(state.label, myautomata.accepting) then "acc" else ""))
+      edges := state.edges
+      every edge := !\edges do {
+	 writes("   ", if edge.symbol~=="\n"then edge.symbol else "\\n",
                 " -> ")
 
-	 states2 := edges.current.destinations
+	 states2 := edge.destinations
 	 while \states2 do {
 	    writes( states2.current.label, " ")
             states2 := states2._next
 	    }
 	 write()
-         edges := edges._next
 	 }
       states := states._next
       }
 end
 
 procedure createicon(myautomata)
-   local states, states2, edges, maxrulenum := 0, i, action
+   local state, states, states2, edges, edge, maxrulenum := 0, i, action
 
    if \debugautomaton then {
       printautomata(myautomata)
@@ -104,17 +101,18 @@ procedure createicon(myautomata)
 
    states := myautomata.states
    while \states do {
+      state := states.current
       fprintf(outfile,
 	 "   put(myautomata.states, currstate := anode(%d, %d, [], [], []))\n",
 	      states.current.label, states.current.rulenum)
 
-      if states.current.label == myautomata.start.label then
+      if state.label == myautomata.start.label then
         fprintf(outfile, "   myautomata.start := currstate\n")
 
-      if nodemember(states.current.label, myautomata.accepting) then {
+      if nodemember(state.label, myautomata.accepting) then {
 	 fprintf(outfile, "   put(myautomata.accepting, currstate)\n")
-	 if states.current.rulenum > maxrulenum then
-	    maxrulenum := states.current.rulenum
+	 if state.rulenum > maxrulenum then
+	    maxrulenum := state.rulenum
 	 }
 
       fprintf(outfile, "\n")
@@ -123,6 +121,7 @@ procedure createicon(myautomata)
 
    states := myautomata.states
    while \states do {
+      state := states.current
       fprintf(outfile,
 	      "   currstate := pop(myautomata.states)\n_
 	      \   put(myautomata.states, currstate)\n\n_
@@ -130,9 +129,9 @@ procedure createicon(myautomata)
 	      \      currstate := pop(myautomata.states)\n_
 	      \      put(myautomata.states, currstate)\n      }\n_
 	      \   state2 := currstate\n\n",
-	      states.current.label)
+	      state.label)
 
-      states2 := states.current.epsilon
+      states2 := state.epsilon
       while \states2 do {
 	 fprintf(outfile,
 		 "   currstate := pop(myautomata.states)\n_
@@ -145,7 +144,7 @@ procedure createicon(myautomata)
 	 states2 := states2._next
 	 }
 
-      states2 := states.current.dot
+      states2 := state.dot
       while \states2 do {
 	 fprintf(outfile,
 		 "   currstate := pop(myautomata.states)\n_
@@ -158,20 +157,20 @@ procedure createicon(myautomata)
 	 states2 := states2._next
 	 }
 
-      edges := states.current.edges
-      while \edges do {
+      edges := state.edges
+      every edge := !\edges do {
 	 fprintf(outfile, "   tempedge := edge()\n")
 
-	 if edges.current.symbol == "\n" then
+	 if edge.symbol == "\n" then
 	    fprintf(outfile, "   tempedge.symbol := \"\\n\"\n")
 	 else {
 	    fprintf(outfile, "   tempedge.symbol := \"%s\"\n",
-		    edges.current.symbol)
+		    edge.symbol)
 	    }
 
 	 fprintf(outfile, "   tempedge.destinations := []\n")
 
-	 states2 := edges.current.destinations
+	 states2 := edge.destinations
 	 while \states2 do {
 	    fprintf(outfile, "   currstate := pop(myautomata.states)\n_
 		    \   put(myautomata.states, currstate)\n\n_
@@ -183,8 +182,6 @@ procedure createicon(myautomata)
 		    states2.current.label)
 	    states2 := states2._next
 	    }
-
-	 edges := edges._next
 	 }
 
       states := states._next
@@ -204,17 +201,18 @@ procedure createicon(myautomata)
       }
 
    fprintf(outfile, "\nend\n\n")
-   states := myautomata.accepting
 
+   states := myautomata.accepting
    while \states do {
-      if action[states.current.rulenum] == 0 then {
+      state := states.current
+      if action[state.rulenum] == 0 then {
 	 fprintf(outfile,
 		 "procedure semantic_action_%d()\n_
 		 \   %s\n_
 		 end\n\n",
-		 states.current.rulenum,
-		 states.current.semaction)
-	 action[states.current.rulenum] := 1
+		 state.rulenum,
+		 state.semaction)
+	 action[state.rulenum] := 1
 	 }
       states := states._next
       }

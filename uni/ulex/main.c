@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	 }
       arg++;
       }
-   else {
+   else if (arg < argc) {
       /*
        * Use a flex-style output filenaming convention, e.g. output from
        * file.l is file.icn instead of lex.yy.icn

@@ -1,0 +1,17 @@
+name: Build Test
+# This workflow is triggered on pushes to the repository.
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macOS-10.14, windows-2016, windows-2019, ubuntu-16.04, ubuntu-18.04]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: configure
+      run: sh configure
+    - name: make
+      run: make

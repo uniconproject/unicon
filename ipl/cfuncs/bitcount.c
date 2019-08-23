@@ -32,8 +32,8 @@
 
 #include "icall.h"
 
-
-RTEX int bitcount(int argc, descriptor *argv) /*: count bits in an integer */
+RTEX
+int bitcount(int argc, descriptor *argv) /*: count bits in an integer */
    {
    unsigned long v;
    int n;

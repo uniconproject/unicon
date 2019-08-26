@@ -195,8 +195,22 @@ function{1} copy(x)
             /*
              * Pass the buck to cplist to copy a list.
              */
-            if (cplist(&x, &result, (word)1, BlkD(x,List)->size + 1) ==RunError)
+#ifdef Arrays
+	 if (BlkD(x,List)->listtail!=NULL){
+#endif					/* Arrays */
+            if (cplist(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
 	       runerr(0);
+#ifdef Arrays
+	       }
+	 else if ( BlkType(BlkD(x,List)->listhead)==T_Realarray){
+	    if (cprealarray(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
+	       runerr(0);
+	    }
+	 else /*if ( BlkType(BlkD(x,List)->listhead)==T_Intarray)*/{
+	    if (cpintarray(&x, &result, (word)1, BlkD(x,List)->size + 1) == RunError)
+	       runerr(0);
+	    }
+#endif					/* Arrays */
             return result;
             }
       table: {

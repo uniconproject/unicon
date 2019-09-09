@@ -615,6 +615,10 @@
 
 #ifdef Concurrent
 
+   #define CE_INBOX_SIZE        1024
+   #define CE_OUTBOX_SIZE       1024
+   #define CE_CEQUEUE_SIZE      64
+
    /* used in fmath.r, log() */
    #define lastbase	     	(curtstate->Lastbase)
    #define divisor		(curtstate->Divisor)

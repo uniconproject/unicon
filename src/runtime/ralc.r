@@ -164,7 +164,7 @@ int alcce_queues(struct b_coexpr *ep){
    if (!reserve(Blocks, (word)(
 		sizeof(struct b_list) * 3 + 
 		sizeof(struct b_lelem) * 3 +
-		(1024+1024+64) * sizeof(struct descrip)))
+		(CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip)))
 		)
        		return Failed;
 

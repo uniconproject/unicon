@@ -47,6 +47,29 @@ register dptr cargp;
     * Get a new co-expression stack and initialize.
     */
 
+#ifdef Concurrent
+   /*
+    * Make sure we have enough space for the coexpression refresh block and
+    * queues before we begin to prevent GC from happening somewhere in the
+    * middle before we initialize all bits
+    * see ralc.r:alccoexp() and ralc.r:alcrefresh() for information on
+    * how much memory to reserve.
+    */
+   if (!reserve(Blocks, (word)(
+		sizeof(struct b_list) * 3 +
+		sizeof(struct b_lelem) * 3 +
+		(CE_INBOX_SIZE + CE_OUTBOX_SIZE + CE_CEQUEUE_SIZE) * sizeof(struct descrip) +
+		sizeof(struct b_refresh) +
+		(nl - 1) * sizeof(struct descrip)))
+		)
+#if COMPILER
+               return NULL;
+#else					/* COMPILER */
+               Fail;
+#endif					/* COMPILER */
+
+#endif					/* Concurrent */
+
 #ifdef MultiProgram
    Protect(sblkp = alccoexp(0, 0), err_msg(0, NULL));
 #else					/* MultiProgram */

@@ -861,6 +861,7 @@ char *name;
  * to be stored in the descriptor. This is wrong, wrong, wrong. We need to
  * add another type which appears to be an Icon file but instead of storing
  * a FILE* it stores an int.
+ * FIXME: see above paragraph
  */
 
 static int sock_get (char *);
@@ -908,8 +909,11 @@ int sock_connect(char *fn, int is_udp, int timeout)
 
       int port = atoi(p+1);
       char hostname[MAXHOSTNAMELEN];
-      struct hostent *hp;
-      *p = 0;    
+      char tmp[1024];
+      struct hostent hostbuf, *hp;
+      int herr, hres;
+
+      *p = 0;
 
       if (port == 0) {
 	 errno = ENXIO;
@@ -921,15 +925,17 @@ int sock_connect(char *fn, int is_udp, int timeout)
 #endif					/*NT*/
 
       if (*host == 0) {
-         /* localhost - should we use gethostname() or "localhost"? SPM */
-/*          gethostname(hostname, sizeof(hostname));*/
-	 strncpy(hostname, "localhost", sizeof(hostname));
+         strncpy(hostname, "localhost", sizeof(hostname));
          host = hostname;
          }
 
-      if ((hp = gethostbyname(host)) == NULL) {
+      if ((hres = gethostbyname_r(host, &hostbuf,
+                                  tmp, 1023, &hp, &herr)) != 0 ) {
 	 return 0;
 	 }
+      if (hp == NULL)
+         return 0;
+
 
       /* Restore the argument just in case */
       *p = ':';

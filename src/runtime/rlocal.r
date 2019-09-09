@@ -93,12 +93,19 @@ void push_filepid(int pid, FILE *fp, word status){
    temp->f = fp;
    temp->pid = pid;
    temp->status = status;
+   MUTEX_LOCKID(MTX_ROOT_FILEPIDS);
    temp->next = root_of_all_filepids;
    root_of_all_filepids = temp;
+   MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
 }
 
 void clear_all_filepids(){
-   struct filepid *temp = root_of_all_filepids, *temp2;
+   struct filepid *temp, *temp2;
+   MUTEX_LOCKID(MTX_ROOT_FILEPIDS);
+   temp = root_of_all_filepids;
+   root_of_all_filepids = NULL;
+   MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
+
    while (temp) {
       if (temp->status == Fs_BPipe)
       	 kill(temp->pid, SIGPIPE);
@@ -109,7 +116,6 @@ void clear_all_filepids(){
       temp = temp->next;
       free(temp2);
       }
-   root_of_all_filepids = NULL;
 }
 
 FILE *popen (const char *command, const char *mode)
@@ -159,12 +165,14 @@ FILE *popen (const char *command, const char *mode)
 
 int pclose(FILE *fd)
 {
-   struct filepid *temp = root_of_all_filepids, *temp2, *tail = NULL;
+   struct filepid *temp, *temp2, *tail = NULL;
    int pid;
 	int waitstat;
 	if (fclose(fd) != 0) {
 		return EOF;
 	}
+        MUTEX_LOCKID(MTX_ROOT_FILEPIDS);
+	temp = root_of_all_filepids;
 	while (temp) {
 	   if (temp->f == fd) {
 	      pid = temp->pid;
@@ -185,12 +193,14 @@ int pclose(FILE *fd)
 		    tail->next = temp->next;
 		    free(temp);
 		    }
+	         MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
 		 return waitstat;
 		 }
 	      }
 	   tail = temp;
 	   temp = temp->next;
 	   }
+        MUTEX_UNLOCKID(MTX_ROOT_FILEPIDS);
 	wait(&waitstat );
 	return waitstat;
 }

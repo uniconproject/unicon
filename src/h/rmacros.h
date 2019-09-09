@@ -1328,9 +1328,9 @@
    #define MTX_PUBLICSTRHEAP	24
    #define MTX_PUBLICBLKHEAP	25
    
-   #define MTX_GC_QUEUE		26
-   
-   #define MTX_QUALSIZE		27
+   #define MTX_ROOT_FILEPIDS	26
+
+   #define MTX_PATIMG_FUNCARR   27
    
    #define MTX_STKLIST		28
    #define MTX_POLLEVENT	29
@@ -1345,14 +1345,13 @@
    #define MTX_BLOCKTOTAL	35
    #define MTX_COLL		36
 
-   #define MTX_PATIMG_FUNCARR   37
 
    /* This should be the last mutex, becasue it has special initialization*/
-   #define MTX_INITIAL		38
+   #define MTX_INITIAL		37
 
   
    /* total is:  */
-   #define NUM_STATIC_MUTEXES	39
+   #define NUM_STATIC_MUTEXES	38
 
    /* used by wait4GC function*/
 

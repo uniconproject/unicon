@@ -218,6 +218,7 @@ word getint(j,wp)
    double result = 0;
    word lresult = 0;
    double radix;
+   long iradix;
 
    ++j;   /* incase we need to add a '\0' and make it into a string */
    if (lsfree + j >= stsize)
@@ -236,6 +237,7 @@ word getint(j,wp)
    if (c == 'r' || c == 'R') {
       lsspace[indx++] = c;
       radix = result;
+      iradix = (long)result;
       lresult = 0;
       result = 0;
       while ((c = getc(infile)) != 0) {
@@ -245,7 +247,7 @@ word getint(j,wp)
          else
             break;
          result = result * radix + c;
-         lresult = lresult * radix + c;
+         lresult = lresult * iradix + c;
          if (result <= MinLong || result >= MaxLong) {
             over = 1;			/* flag overflow */
             result = 0;			/* reset to avoid fp exception */

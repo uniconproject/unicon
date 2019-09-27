@@ -2731,62 +2731,41 @@ function{0,1} gethost(h, f)
       string: {
 	 body {
 	    tended char* name;
-	    cnv:C_string(h, name);
-
-#ifdef HAVE_GETADDRINFO
-{
-	    int family;
 	    tended char* fstr;
-    	    int s;
-    	    struct addrinfo hints, *inforesult;
+	    int rc, family;
+	    struct addrinfo hints, *res0;
+
+
+	    cnv:C_string(h, name);
 
 	    if (is:null(f)){
 	       family = AF_INET;
 	    } else {
 	       if (!cnv:C_string(f, fstr))
 		  runerr(103, f);
+	       if (strcmp(fstr, "ipv4")==0)
+	          family = AF_INET;
 	       if (strcmp(fstr, "ipv6")==0)
 	          family = AF_INET6;
-	       else
+	       else if (strcmp(fstr, "ip")==0)
+	          family = AF_UNSPEC;
+	       else // FIXME: maybe we should make this an error
 	          family = AF_INET;
 	    }
 
-    	    memset(&hints, 0, sizeof(struct addrinfo));
-	    /* IPv4 or IPv6 for now */
-    	    hints.ai_family = family;
-    	    /* 0=>Any socket */
-    	    hints.ai_socktype = SOCK_DGRAM;
-    	    /* For wildcard IP address, and interested in canonical name */
-    	    hints.ai_flags = AI_PASSIVE | AI_CANONNAME;
-    	    /* 0=>Any protocol */
-    	    hints.ai_protocol = 0;
-    	    hints.ai_canonname = NULL;
-    	    hints.ai_addr = NULL;
-    	    hints.ai_next = NULL;
+	    {
+	      INIT_ADDRINFO_HINTS(hints, family, SOCK_DGRAM, AI_CANONNAME, 0);
 
-    	    s = getaddrinfo(name, NULL, &hints, &inforesult);
-    	    if (s != 0) {
-	       int buflen;
-	       char buf[512];
-               sprintf(buf, "%s", gai_strerror(s));
-	       buflen = strlen(buf);
-	       k_errornumber = s;
-	       Protect(StrLoc(k_errortext) = alcstr(buf, buflen), runerr(0));
-	       StrLen(k_errortext) = buflen;
-               fail;
-    	       }
+	      if ( (rc = getaddrinfo(name, NULL, &hints, &res0)) != 0) {
+		set_gaierrortext(rc);
+		fail;
+	      }
 
-    	    if (make_host_from_addrinfo(name, inforesult, &result) == 0)
-      	       syserr("failed to create posix record constructor");
-}
-#else				/* HAVE_GETADDRINFO */
+	      if (make_host_from_addrinfo(name, res0, &result) == 0)
+		syserr("failed to create posix record constructor");
 
-	    if ((hs = gethostbyname(name)) == NULL)
-	       fail;
-	    if (make_host(hs, &result) == 0)
-	       syserr("failed to create posix record constructor");
-
-#endif				/* HAVE_GETADDRINFO */
+	      freeaddrinfo(res0);
+	    }
 	    return result;
 	 }
       }

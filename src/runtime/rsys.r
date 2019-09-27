@@ -525,7 +525,7 @@ int n;
  * host, port, and path.
 */
 
-void parse_url(char *url, char *scheme, char *host, int *port, char *path)
+void parse_url(char *url, char *scheme, char *host, char *port, char *path)
 {
    char *slash, *colon;
    char *delim;
@@ -588,16 +588,17 @@ void parse_url(char *url, char *scheme, char *host, int *port, char *path)
    /* Check if the hostname includes ":portnumber" at the end */
 
    if ( NOHOST == 0 ) {
-      if ((colon = strchr(host, ':')) == NULL) 
-	 *port = 80;	/* HTTP standard */
+      if ((colon = strchr(host, ':')) == NULL)
+	 strcpy(port, "http");
       else {
 	 *colon = '\0';
-	 if (isdigit(colon[1])) *port = atoi(colon + 1);
+	 if (isdigit(colon[1]))
+	   strcpy(port, colon + 1);
 	 else {
 	    /*
 	     * : with no number following (site:/file) denotes the default port
 	     */
-	    *port = 80;
+	    strcpy(scheme, "http");
 	    }
       }
    }
@@ -621,11 +622,10 @@ int urlopen(char *url, int flag, struct netfd *retval)
    char request[MAXPATHLEN + 35];
    char scheme[50], host[MAXPATHLEN], path[MAXPATHLEN];
    char *proxy, proxybuf[256];
-   int port;
-   struct hostent *nameinfo;
+   char* port[MAXPATHLEN];
    int s, rv;
-   struct sockaddr_in addr;
    int file_flag = 0;
+   struct addrinfo *res0, *res;
 
    if ( strncasecmp(url, "file:", 5) == 0 )
       file_flag = 1;
@@ -635,12 +635,12 @@ int urlopen(char *url, int flag, struct netfd *retval)
       proxy=NULL;
 
    if (proxy == NULL || file_flag ) {
-      parse_url(url, scheme, host, &port, path);
+      parse_url(url, scheme, host, port, path);
 
 #ifdef DEBUG
       fprintf(stderr, "URL scheme = %s\n", scheme);
       fprintf(stderr, "URL host = %s\n", host); 
-      fprintf(stderr, "URL port = %d\n", port);
+      fprintf(stderr, "URL port = %s\n", port);
       fprintf(stderr, "URL path = %s\n", path);
 #endif
 
@@ -650,37 +650,38 @@ int urlopen(char *url, int flag, struct netfd *retval)
       }
    } 
    else {
-      parse_url(proxy, scheme, host, &port, path);
+      parse_url(proxy, scheme, host, port, path);
    }
 
    if ( strcasecmp(scheme, "file") != 0 ) {
       /* Find out the IP address */
+      res0 = uni_getaddrinfo(host, port, SOCK_STREAM, AF_INET);
+      if (!res0)
+	return NULL;
 
-      if ((nameinfo = gethostbyname(host)) == NULL) {
-         addr.sin_addr.s_addr = inet_addr(host);
-	 if ((int)addr.sin_addr.s_addr == -1) {
-            fprintf(stderr, "Unknown host %s\n", host);
-	    return -2;
-	 }
-      } 
-      else 
-         memcpy((char *)&addr.sin_addr.s_addr, nameinfo->h_addr, nameinfo->h_length);
-
-      /* Create socket and connect */
-  
-      if ((s = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
-	 perror("httpget: socket()");
-	 return -3; 
+      s = -1;
+      for (res = res0; res; res = res->ai_next) {
+	s = socket(res->ai_family, res->ai_socktype,
+		   res->ai_protocol);
+	if (s >= 0)
+	  break;  /* okay we got one */
       }
-      addr.sin_family = AF_INET;
-      addr.sin_port = htons(port);
+
+      if (s < 0) {
+	// failed to create a socket to any of the resloved names
+	freeaddrinfo(res0);
+	set_syserrortext(errno);
+	return -3;
+      }
   
       signal(SIGALRM, myhandler);
       alarm(5);
-      if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+      if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
          alarm(0);
 	 if (errno != EINTR) { /* if not just a timeout, print an error */
-	    perror("httpget: connect()");
+	    freeaddrinfo(res0);
+	    set_syserrortext(errno);
+	    //perror("httpget: connect()");
 	    }
 	 close(s);
 	 s = -1;
@@ -748,13 +749,11 @@ FILE * netopen(char *url, char *type)
 FILE *socketopen(char *url, char *type)
 {
    FILE *fp;
-   char *host, *colon;
-   int port;
+   char *host, *colon, *port;
    char turl[MAXPATHLEN];
-   struct hostent *nameinfo;
    int s;
-   struct sockaddr_in addr;
- 
+   struct addrinfo *res0, *res;
+
    strcpy(turl, url);
  
 /* parsing the url to get host name and port number */
@@ -770,38 +769,39 @@ FILE *socketopen(char *url, char *type)
 
    if ( (colon = strchr(host, ':')) != NULL ) {
       *colon = '\0';
-      port = atoi(colon + 1);
+      port = colon + 1;
    }
    else 
-      port = 80;
+      port = "http";
 
-/* Find out the IP address */
+   /* Find out the IP address */
+   res0 = uni_getaddrinfo(host, port, SOCK_STREAM, AF_INET);
+   if (!res0)
+     return NULL;
 
-   if ((nameinfo = gethostbyname(host)) == NULL) {
-      addr.sin_addr.s_addr = inet_addr(host);
-      if ((int)addr.sin_addr.s_addr == -1) {
-         fprintf(stderr, "Unknown host %s\n", host);
-         return NULL; 
-      }
+   s = -1;
+   for (res = res0; res; res = res->ai_next) {
+     s = socket(res->ai_family, res->ai_socktype,
+		res->ai_protocol);
+     if (s >= 0)
+       break;  /* okay we got one */
    }
-   else 
-      memcpy((char *)&addr.sin_addr.s_addr, nameinfo->h_addr, nameinfo->h_length);
+
+   if (s < 0) {
+     // failed to create a socket to any of the resloved names
+     freeaddrinfo(res0);
+     set_syserrortext(errno);
+     return NULL;
+   }
+
  
- 
-/* Create socket and connect */
- 
-   if ((s = socket(PF_INET, SOCK_STREAM, 0)) == -1) {
-      perror("httpget: socket()");
+   if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
+      freeaddrinfo(res0);
+      set_syserrortext(errno);
       return NULL; 
    }
-   addr.sin_family = AF_INET;
-   addr.sin_port = htons(port);
- 
-   if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-      perror("socketopen: connect()");
-      return NULL; 
-   }
- 
+
+   freeaddrinfo(res0);
    fp = fdopen(s, "r+");
         
    return (fp);

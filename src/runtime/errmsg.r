@@ -22,6 +22,25 @@ void set_errortext(int i)
          }
 }
 
+#ifdef HAVE_GETADDRINFO
+/*
+ * set &errornumber and &errortext based on error values from getaddrinfo() and getnameinfo().
+ */
+void set_gaierrortext(int i)
+{
+   int buflen;
+   char buf[512];
+   CURTSTATE();
+   k_errornumber = i;
+   snprintf(buf, 511, "%s", gai_strerror(i));
+   buf[511] = 0;
+   buflen = strlen(buf);
+   if ((StrLoc(k_errortext) = alcstr(buf, buflen)) != NULL) {
+     StrLen(k_errortext) = buflen;
+   }
+}
+#endif				/* HAVE_GETADDRINFO */
+
 /*
  * set &errno and &errortext based on a system call failure that set errno.
  * TODO: avoid allocations in most cases.

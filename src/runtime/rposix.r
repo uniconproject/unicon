@@ -874,11 +874,110 @@ static void sock_put (char *, int);
  * All because for UDP connect/send doesn't do what sendto does. (At least
  * on Linux 2.0.36)
  */
-struct sockaddr_in *saddrs;
+
+struct addrinfo **saddrs;
 
 #if !defined(MAXHOSTNAMELEN)
 #define MAXHOSTNAMELEN 32
 #endif					/* MAXHOSTNAMELEN */
+
+/*
+ * debugging function to dump addrinfo struct
+ */
+int dump_addrinfo(struct addrinfo *ai)
+{
+	struct addrinfo *runp;
+	char hostbuf[50], portbuf[10];
+	int e;
+	for (runp = ai; runp != NULL; runp = runp->ai_next) {
+		printf("family: %d, socktype: %d, protocol: %d, ",
+		       runp->ai_family, runp->ai_socktype, runp->ai_protocol);
+		e = getnameinfo(
+			runp->ai_addr, runp->ai_addrlen,
+			hostbuf, sizeof(hostbuf),
+			portbuf, sizeof(portbuf),
+			NI_NUMERICHOST | NI_NUMERICSERV
+		);
+		printf("host: %s, port: %s\n", hostbuf, portbuf);
+	}
+	return 0;
+}
+
+char* print_sockaddr(struct sockaddr* sa, char* buf, int buflen ) {
+  switch(sa->sa_family) {
+  case AF_INET: {
+    struct sockaddr_in *addr_in = (struct sockaddr_in *)sa;
+    return (char *) inet_ntop(AF_INET, &(addr_in->sin_addr), buf, buflen);
+    break;
+  }
+  case AF_INET6: {
+    struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)sa;
+    return (char *)  inet_ntop(AF_INET6, &(addr_in6->sin6_addr), buf, buflen);
+    break;
+  }
+  default:
+    break;
+  }
+  return NULL;
+}
+
+/*
+ * get port, IPv4 or IPv6:
+ */
+short get_sa_port(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return (((struct sockaddr_in*)sa)->sin_port);
+    }
+
+    return (((struct sockaddr_in6*)sa)->sin6_port);
+}
+
+char* print_sockaddrport(struct sockaddr* sa, char* buf, int buflen ) {
+  switch(sa->sa_family) {
+  case AF_INET: {
+    struct sockaddr_in *addr_in = (struct sockaddr_in *)sa;
+    if ((inet_ntop(AF_INET, &(addr_in->sin_addr), buf, buflen)) == NULL)
+      return NULL;
+    break;
+  }
+  case AF_INET6: {
+    struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)sa;
+    if ((inet_ntop(AF_INET6, &(addr_in6->sin6_addr), buf, buflen)) == NULL)
+      return NULL;
+
+    break;
+  }
+  default:
+    break;
+  }
+  return NULL;
+}
+
+struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
+  int port = atoi(p);
+  int nohost = 0, rc;
+  struct addrinfo hints, *res0, *res;
+
+  if (port == 0) {
+    errno = ENXIO;
+    return NULL;
+  }
+
+  if (addr == NULL || addr[0] == '\0')
+    nohost = 1;
+#if NT
+  if (!StartupWinSocket()) return 0;
+#endif					/*NT*/
+
+  INIT_ADDRINFO_HINTS(hints, family, (is_udp? SOCK_DGRAM : SOCK_STREAM),
+		      (nohost?AI_PASSIVE:0), (is_udp?IPPROTO_UDP:IPPROTO_TCP));
+  if ( (rc = getaddrinfo((nohost?NULL:addr), p, &hints, &res0)) != 0) {
+    set_gaierrortext(rc);
+    return NULL;
+  }
+  return res0;
+ }
 
 /*
  * Empty handler for connection alarm signals (used for timeouts).
@@ -890,11 +989,11 @@ struct sockaddr_in *saddrs;
 
 int sock_connect(char *fn, int is_udp, int timeout)
 {
-   int saveflags, rc, s, len;
+  int saveflags, rc, s, len, family=AF_INET;
    struct sockaddr *sa;
    char *p, fname[BUFSIZ];
-   struct sockaddr_in saddr_in;
    char *host = fname;
+   struct addrinfo *res, *res0, *saddrinfo;
 
 #if UNIX
    struct sockaddr_un saddr_un;
@@ -902,60 +1001,66 @@ int sock_connect(char *fn, int is_udp, int timeout)
 #endif					/* UNIX */
 
    errno = 0;
-   memset(&saddr_in, 0, sizeof(saddr_in));
    strncpy(fname, fn, sizeof(fname));
-   if ((p = strchr(fname, ':')) != 0) {
-      /* inet domain socket */
-
-      int port = atoi(p+1);
-      char hostname[MAXHOSTNAMELEN];
-      char tmp[1024];
-      struct hostent hostbuf, *hp;
-      int herr, hres;
-
+   /*
+    * find the last colon and get the port.
+    */
+   if (((p = strrchr(fname, ':')) != 0) ) {
       *p = 0;
-
-      if (port == 0) {
-	 errno = ENXIO;
-	 return 0;
-         }
-
-#if NT
-      if (!StartupWinSocket()) return 0;
-#endif					/*NT*/
-
-      if (*host == 0) {
-         strncpy(hostname, "localhost", sizeof(hostname));
-         host = hostname;
-         }
-
-      if ((hres = gethostbyname_r(host, &hostbuf,
-                                  tmp, 1023, &hp, &herr)) != 0 ) {
-	 return 0;
-	 }
-      if (hp == NULL)
-         return 0;
-
-
+      res0 = uni_getaddrinfo(fname, p+1, is_udp, family);
       /* Restore the argument just in case */
       *p = ':';
-      
-      if (is_udp) {
-	 if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0) return 0;
-      } else {
-	 if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0) return 0;
+
+      if (!res0)
+	return 0;
+
+      s = -1;
+      for (res = res0; res; res = res->ai_next) {
+	s = socket(res->ai_family, res->ai_socktype,
+		   res->ai_protocol);
+	if (s < 0) {
+	  continue;
+	}
+
+	/*
+	if (connect(s, res->ai_addr, res->ai_addrlen) < 0) {
+	  close(s);
+	  s = -1;
+	  continue;
+	}
+	*/
+
+	break;  /* okay we got one */
       }
 
-      len = sizeof(struct sockaddr_in);
-#ifdef BSD_4_4_LITE
-      saddr_in.sin_len = len;
-#endif
-      saddr_in.sin_family = AF_INET;
-      saddr_in.sin_port = htons((u_short)port);
-      memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
-      sa = (struct sockaddr *) &saddr_in;
+      if (s < 0) {
+	// failed to create a socket to any of the resloved names
+	freeaddrinfo(res0);
+	return 0;
       }
 
+      // This is the node we care about, free all other nodes before and after it
+      saddrinfo = res;
+      sa = saddrinfo->ai_addr;
+      len = saddrinfo->ai_addrlen;
+      if (saddrinfo == res0){
+	if (saddrinfo->ai_next != NULL){
+	  freeaddrinfo(saddrinfo->ai_next);
+	  saddrinfo->ai_next = NULL;
+	  }
+      }
+      else {
+	for (res = res0; res->ai_next != saddrinfo; res = res->ai_next);
+	res->ai_next = NULL;
+	freeaddrinfo(res0);
+
+	res = saddrinfo->ai_next;
+	if (res){
+	  saddrinfo->ai_next = NULL;
+	  freeaddrinfo(res);
+	}
+      }
+   }
    else {
       /* UNIX domain socket */
 #if NT
@@ -969,7 +1074,7 @@ int sock_connect(char *fn, int is_udp, int timeout)
       /* NUL-terminate just in case.... */
       saddr_un.sun_path[pathbuf_len - 1] = 0;
       len = sizeof(saddr_un.sun_family) + strlen(saddr_un.sun_path);
-#ifdef BSD_4_4_LITE
+#ifdef SIN6_LEN  /* BSD_4_4_LITE */
       len += sizeof(saddr_un.sun_len);
       saddr_un.sun_len = len;
 #endif
@@ -980,12 +1085,12 @@ int sock_connect(char *fn, int is_udp, int timeout)
    /* We don't connect UDP sockets but always use sendto(2). */
    if (is_udp) {
       /* save the sockaddr struct */
-      saddrs = realloc(saddrs, (s+1) * (sizeof(struct sockaddr_in)));
+      saddrs = realloc(saddrs, (s+1) * (sizeof(struct addrinfo *)));
       if (saddrs == NULL) {
 	 close(s);
 	 return 0;
 	 }
-      saddrs[s] = saddr_in;
+      saddrs[s] = saddrinfo;
       return s;
       }
 
@@ -1008,7 +1113,7 @@ int sock_connect(char *fn, int is_udp, int timeout)
       /* Turn on non-blocking flag so connect will return immediately. */
       unsigned long imode = 1;
       if (ioctlsocket(s, FIONBIO, &imode) < 0) {
-         errno = WSAGetLastError();      
+         errno = WSAGetLastError();
          closesocket(s);
          return 0;
       }
@@ -1138,18 +1243,13 @@ int sock_listen(addr, is_udp_or_listener)
 char *addr;
 int is_udp_or_listener;
 {
-   int fd, s, len;
-   unsigned int fromlen;
-   struct sockaddr *sa;
-   struct sockaddr_in saddr_in, from;
-#if UNIX
-   struct sockaddr_un saddr_un;
-#endif					/* UNIX */
-
+  int fd, s, len;
    char hostname[MAXHOSTNAMELEN];
    struct hostent *hp;
+   int family = AF_UNSPEC;
+   struct addrinfo *res0, *res;
+   struct sockaddr *sa;
 
-   memset(&saddr_in, 0, sizeof(saddr_in));
    if ((s = sock_get(addr)) < 0) {
      char *p;
 
@@ -1159,50 +1259,37 @@ int is_udp_or_listener;
       * empty, it means on any interface.
       */
 
-      if ((p=strchr(addr, ':')) != NULL) {
+      if ((p=strrchr(addr, ':')) != NULL) {
+	 *p = 0;
+	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener, AF_INET);
+	 *p = ':';
 
-#if NT
-	 if (!StartupWinSocket()) return 0;
-#endif					/*NT*/
+	 if (!res0)
+	    return 0;
 
-        if (*addr == ':')
-            saddr_in.sin_addr.s_addr = INADDR_ANY;
-        else {
-            /* XXX this part is still broken */
- 
-            /* Get the interface to listen on */
-            *p = 0;
-            strncpy(hostname, addr, sizeof(hostname)-1);
-            *p = ':';
+	 s = -1;
+	 for (res = res0; res; res = res->ai_next) {
+	   s = socket(res->ai_family, res->ai_socktype,
+		      res->ai_protocol);
+	   if (s < 0) {
+	     continue;
+	   }
 
-            /* Remember, gethostbyname(2) takes names as well as IPv4 & IPv6 */
-            if ((hp = gethostbyname(hostname)) == NULL)
-                return 0;
- 
-            memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
-            }
+	   if (bind(s, res->ai_addr, res->ai_addrlen) < 0) {
+	     close(s);
+	     s = -1;
+	     continue;
+	   }
 
-        len = sizeof(struct sockaddr_in);
-#ifdef BSD_4_4_LITE
-        saddr_in.sin_len = len;
-#endif
-        saddr_in.sin_family = AF_INET;
-        saddr_in.sin_port = htons((u_short)atoi(p+1));
-        if (saddr_in.sin_port == 0) {
-           errno = ENXIO;
-           return 0;
-           }
+	   break;  /* okay we got one */
+	 }
 
-        if (is_udp_or_listener == 1) {
-            if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
-                return 0;
-           }
-	else {
-            if ((s = socket(PF_INET, SOCK_STREAM, 0)) < 0)
-                return 0;
-	    }
+	 if (res0)
+	   freeaddrinfo(res0);
+	 if (s < 0) {
+	   return 0;  // failed to bind to any address
+	 }
 
-        sa = (struct sockaddr*) &saddr_in;
       }
       else {
          /* unix domain socket */
@@ -1210,7 +1297,9 @@ int is_udp_or_listener;
          return 0;
 #endif
 #if UNIX
+	 struct sockaddr_un saddr_un;
          int pathbuf_len;
+
 	 if ((is_udp_or_listener==1) ||
 	     (s = socket(PF_UNIX, SOCK_STREAM, 0)) < 0)
 	    return 0;
@@ -1227,22 +1316,27 @@ int is_udp_or_listener;
 	 (void) unlink(saddr_un.sun_path);
 	 sa = (struct sockaddr*) &saddr_un;
 #endif					/* UNIX */
-      }
-      if (bind(s, sa, len) < 0) {
-	 return 0;
+	 if (bind(s, sa, len) < 0) {
+	   return 0;
 	 }
-      if (is_udp_or_listener!=1 && listen(s, SOMAXCONN) < 0)
-	 return 0;
+      }
+
+      if (is_udp_or_listener)
+	return s;
+
+      if (listen(s, SOMAXCONN) < 0)
+	return 0;
       /* Save s for future calls to listen */
       sock_put(addr, s);
    }
     
-   if (is_udp_or_listener)
-      return s;
-
-   fromlen = sizeof(from);
-   if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
-      return 0;
+   {
+     unsigned int fromlen;
+     struct sockaddr_storage from;
+     fromlen = sizeof(from);
+     if ((fd = accept(s, (struct sockaddr*) &from, &fromlen)) < 0)
+       return 0;
+   }
 
    return fd;
 }
@@ -1254,8 +1348,10 @@ int is_udp_or_listener;
 int sock_name(int s, char* addr, char* addrbuf, int bufsize)
 {
    int len;
-   struct sockaddr_in conn;
+   struct sockaddr_storage conn;
+   struct sockaddr* sa = (struct sockaddr*) &conn;
    unsigned int addrlen = sizeof(conn);
+   char buf[INET6_ADDRSTRLEN]; // enough for ipv4/ipv6
 
    /*
     * We used to check sock_get(addr) to decide if this socket was someone
@@ -1266,13 +1362,19 @@ int sock_name(int s, char* addr, char* addrbuf, int bufsize)
     */
 
    /* Otherwise we can construct a name for it and put in the string */
-   if (getpeername(s, (struct sockaddr*) &conn, &addrlen) < 0)
-       return 0;
-   if (addrlen != sizeof(conn))
-      return 0;
+   if (getpeername(s, sa, &addrlen) < 0)
+     return 0;
 
-   len = snprintf(addrbuf, bufsize, "%s:%s:%d", addr,
-                  inet_ntoa(conn.sin_addr), (int) ntohs(conn.sin_port));
+   // FIXME, this check is wrong (not needed?) if we want to support v4/6
+   //if (addrlen != sizeof(conn))
+   //   return 0;
+
+   if ((print_sockaddr(sa, buf, INET6_ADDRSTRLEN)) == NULL) {
+     set_syserrortext(errno);
+     return 0;
+   }
+
+   len = snprintf(addrbuf, bufsize, "%s:%s:%d", addr, buf, get_sa_port(sa));
    if (len>=bufsize) {
       /*
        * Truncation occurred in snprintf, and this is catastrophic, LOL.
@@ -1280,6 +1382,7 @@ int sock_name(int s, char* addr, char* addrbuf, int bufsize)
        * Caller can avoid this by passing a (reasonable) C string in addr.
        */
       len = bufsize-1;
+      addrbuf[len] = '\0';
       }
    return len;
 }
@@ -1291,17 +1394,24 @@ int sock_name(int s, char* addr, char* addrbuf, int bufsize)
 int sock_me(int s, char* addrbuf, int bufsize)
 {
    int len;
-   struct sockaddr_in local;
-   unsigned int addrlen = sizeof(local);
+   struct sockaddr_storage conn;
+   struct sockaddr* sa = (struct sockaddr*) &conn;
+   unsigned int addrlen = sizeof(conn);
+   char buf[INET6_ADDRSTRLEN]; // enough for ipv4/ipv6
 
-   /* Otherwise we can construct a name for it and put in the string */
-   if (getsockname(s, (struct sockaddr*) &local, &addrlen) < 0)
+   if (getsockname(s, sa, &addrlen) < 0)
        return 0;
-   if (addrlen != sizeof(local))
-      return 0;
-   len = snprintf(addrbuf, bufsize, "%s:%d",
-                  inet_ntoa(local.sin_addr), (int) ntohs(local.sin_port));
 
+   if ((print_sockaddr(sa, buf, INET6_ADDRSTRLEN)) == NULL) {
+     set_syserrortext(errno);
+     return 0;
+   }
+
+   len = snprintf(addrbuf, bufsize, "%s:%d", buf, get_sa_port(sa));
+   if (len>=bufsize) {
+      len = bufsize-1;
+      addrbuf[len] = '\0';
+      }
    return len;
 }
 
@@ -1309,55 +1419,48 @@ int sock_me(int s, char* addrbuf, int bufsize)
 /* Used by function send(): in other words, create a socket, send, close it */
 int sock_send(char *adr, char *msg, int msglen)
 {
-   struct sockaddr_in saddr_in;
-   struct hostent *hp;
    char *host, *p, hostname[MAXHOSTNAMELEN], addr[BUFSIZ];
-   int s, port, len;
+   int s, port, rc;
+   struct addrinfo *res0, *res;
 
-   memset(&saddr_in, 0, sizeof(saddr_in));
    strncpy(addr, adr, sizeof(addr));
    if (!(p = strchr(addr, ':')))
       return 0;
 
    host = addr;
-   port = atoi(p+1);
    *p = 0;
-      
-#if NT
-   if (!StartupWinSocket()) return 0;
-#endif					/* NT */
 
    if (*host == 0) {
-      /* localhost */
-      /* localhost - should we use gethostname() or "localhost"? SPM */
-/*          gethostname(hostname, sizeof(hostname));*/
       strncpy(hostname, "localhost", sizeof(hostname));
       host = hostname;
    }
-   if ((hp = gethostbyname(host)) == NULL)
-      return 0;
 
-   /* Restore the argument just in case */
+   res0 = uni_getaddrinfo(host, p+1, 1, AF_INET);
    *p = ':';
-      
-   if ((s = socket(PF_INET, SOCK_DGRAM, 0)) < 0)
-      return 0;
 
-   len = sizeof(saddr_in);
-#ifdef BSD_4_4_LITE
-   saddr_in.sin_len = len;
-#endif
-   saddr_in.sin_family = AF_INET;
-   saddr_in.sin_port = htons((u_short)port);
-   memcpy(&saddr_in.sin_addr, hp->h_addr, hp->h_length);
-   len = sizeof(saddr_in);
+   if (!res0)
+     return 0;
 
-   if (sendto(s, msg, msglen, 0, (struct sockaddr *)&saddr_in, len) < 0)
-      return 0;
+   s = -1;
+   for (res = res0; res; res = res->ai_next) {
+     s = socket(res->ai_family, res->ai_socktype,
+		res->ai_protocol);
+     if (s >= 0)
+       break;  /* okay we got one */
+   }
 
-   close(s);
+   if (s > 0) {
+     rc =sendto(s, msg, msglen, 0, res->ai_addr, res->ai_addrlen);
+     close(s);
+     freeaddrinfo(res0);
+     if (rc >= 0)
+       return 1 ;
+   }
+   else {
+       freeaddrinfo(res0);
+   }
 
-   return 1;
+   return 0;
 }
 
 /*
@@ -1367,13 +1470,16 @@ int sock_send(char *adr, char *msg, int msglen)
 int sock_recv(int s, struct b_record **rp)
 {
    int s_type;
-   struct sockaddr_in saddr_in;
    struct hostent *hp;
-   char buf[1024];
-   int BUFSIZE = 1024, msglen;
-   unsigned int len;
-   
-   memset(&saddr_in, 0, sizeof(saddr_in));
+   char buf[2048];
+   int bufsize = 2048, msglen;
+
+   struct addrinfo *res0, *res;
+   struct sockaddr_storage conn;
+   struct sockaddr* sa = (struct sockaddr*) &conn;
+   unsigned int len, addrlen = sizeof(conn);
+   char host[NI_MAXHOST], serv[NI_MAXSERV], addrbuf[INET6_ADDRSTRLEN];
+
    len = sizeof(s_type);
 
 #if NT
@@ -1385,27 +1491,26 @@ int sock_recv(int s, struct b_record **rp)
    if (s_type != SOCK_DGRAM)
       return -1;
 
-   len = sizeof(saddr_in);
-   if ((msglen = recvfrom(s, buf, BUFSIZE, 0, (struct sockaddr *)&saddr_in,
-	 &len)) < 0)
+   if ((msglen = recvfrom(s, buf, bufsize, 0, sa, &addrlen)) < 0)
       return 0;
 
    StrLen((*rp)->fields[1]) = msglen;
    StrLoc((*rp)->fields[1]) = alcstr(buf, msglen);
 
-   hp = gethostbyaddr((char *)&saddr_in.sin_addr,
-	 sizeof(saddr_in.sin_addr), saddr_in.sin_family);
-   if (hp != NULL){
-      if ((snprintf(buf, BUFSIZE,"%s:%d", hp->h_name, ntohs(saddr_in.sin_port)))>=BUFSIZE)
-         ;// TODO: handle buffer too small
-      }
-   else { /* Note: does not work for IPv6 addresses */
-      unsigned int addr = ntohl(saddr_in.sin_addr.s_addr);
-      sprintf(buf, "%d.%d.%d.%d:%d",
-	     (addr & 0xff000000) >> 24, (addr & 0xff0000)   >> 16,
-	     (addr & 0xff00)     >>  8, (addr & 0xff),
-	     ntohs(saddr_in.sin_port));
-      }
+   s = getnameinfo(sa, addrlen, host,
+                                NI_MAXHOST,
+                               serv, NI_MAXSERV, NI_NUMERICSERV);
+   if (s == 0) {
+     if ((snprintf(buf, bufsize,"%s:%s", host, serv )) >= bufsize )
+       ;// TODO: handle buffer too small
+   }
+   else {
+     if ((print_sockaddr(sa, addrbuf, INET6_ADDRSTRLEN)) == NULL) {
+       set_syserrortext(errno);
+       return 0;
+     }
+     snprintf(buf, bufsize, "%s:%d", addrbuf, get_sa_port(sa));
+   }
 
    String((*rp)->fields[0], buf);
 
@@ -1422,9 +1527,10 @@ int sock_write(int f, char *msg, int n)
    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&s_type, &len) < 0)
       return 0;
 
-   if (s_type == SOCK_DGRAM)
+   if (s_type == SOCK_DGRAM){
       rv = sendto(fd, msg, n, 0,
-		  (struct sockaddr *)&saddrs[fd], sizeof(struct sockaddr_in));
+		  saddrs[fd]->ai_addr, saddrs[fd]->ai_addrlen);
+   }
    else
       rv = send(fd, msg, n, 0);
    return rv;
@@ -1572,18 +1678,18 @@ dptr result;
 
 #ifdef HAVE_GETADDRINFO
 
-dptr make_host_from_addrinfo(name, inforesult, result)
+dptr make_host_from_addrinfo(name, res0, result)
 char *name;
-struct addrinfo *inforesult;
+struct addrinfo *res0;
  dptr result;
 {
    struct b_record *rp;
    dptr constr;
    int nfields;
-   int nmem = 0, n;
+   int len = 0, n;
    char *p;
 
-   struct addrinfo *ptr;
+   struct addrinfo *res;
    CURTSTATE();
 
    if (!(constr = rec_structor("posix_hostent")))
@@ -1595,8 +1701,8 @@ struct addrinfo *inforesult;
    result->dword = D_Record;
    result->vword.bptr = (union block *)rp;
 
-   if (inforesult->ai_canonname)
-      String(rp->fields[0], inforesult->ai_canonname);
+   if (res0->ai_canonname)
+      String(rp->fields[0], res0->ai_canonname);
    else
       String(rp->fields[0], name);
       
@@ -1604,24 +1710,20 @@ struct addrinfo *inforesult;
 
    /* Retrieve each address and print out the hex bytes */
 
-   for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
-     nmem++;
+   for(res = res0; res != NULL ; res = res->ai_next) {
+       len += res->ai_addrlen;
    }
    
-   if (inforesult->ai_family == AF_INET6)
-     StrLoc(rp->fields[2]) = p = alcstr(NULL, nmem*46);
-   else
-     StrLoc(rp->fields[2]) = p = alcstr(NULL, nmem*16);
+   StrLoc(rp->fields[2]) = p = alcstr(NULL, len);
 
-
-   for(ptr=inforesult; ptr != NULL ;ptr=ptr->ai_next) {
+   for(res = res0; res != NULL ; res = res->ai_next) {
       char ipstrbuf[64];
       int ipbuflen = 64;
       int a;
 
-    switch (ptr->ai_family) {
+    switch (res->ai_family) {
             case AF_INET:
-		a = ntohl(((struct sockaddr_in *) ptr->ai_addr)->sin_addr.s_addr);
+		a = ntohl(((struct sockaddr_in *) res->ai_addr)->sin_addr.s_addr);
       		sprintf(p, "%u.%u.%u.%u,", (a & 0xff000000) >> 24,
 	      		(a & 0xff0000) >> 16, (a & 0xff00)>>8, a & 0xff);
 
@@ -1638,13 +1740,13 @@ struct addrinfo *inforesult;
 		 */
 
                 ipbuflen = 46;
-                if (WSAAddressToString(((LPSOCKADDR) ptr->ai_addr), 
-		    (DWORD) ptr->ai_addrlen, NULL, 
+                if (WSAAddressToString(((LPSOCKADDR) res->ai_addr),
+		    (DWORD) res->ai_addrlen, NULL,
                     ipstrbuf, (LPDWORD) &ipbuflen)!=0)
 		    ipstrbuf[0]='\0';
 #else
 		if (inet_ntop(AF_INET6, (void *)
-		   &(((struct sockaddr_in6 *) ptr->ai_addr)->sin6_addr.s6_addr),
+		   &(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr.s6_addr),
 	           ipstrbuf, ipbuflen) == NULL)
 		   ipstrbuf[0]='\0';
 #endif
@@ -1655,14 +1757,14 @@ struct addrinfo *inforesult;
                 break;
 
             default:
-                /*printf("Other %ld\n", ptr->ai_family);*/
+                /*printf("Other %ld\n", res->ai_family);*/
                 break;
         }
 /*
  *   Not Yet used! left here for possible expansions in the future.
  * 
         printf("\tSocket type: ");
-        switch (ptr->ai_socktype) {
+        switch (res->ai_socktype) {
             case 0:
                 printf("Unspecified\n");
                 break;
@@ -1682,11 +1784,11 @@ struct addrinfo *inforesult;
                 printf("SOCK_SEQPACKET (pseudo-stream packet)\n");
                 break;
             default:
-                printf("Other %ld\n", ptr->ai_socktype);
+                printf("Other %ld\n", res->ai_socktype);
                 break;
         }
         printf("\tProtocol: ");
-        switch (ptr->ai_protocol) {
+        switch (res->ai_protocol) {
             case 0:
                 printf("Unspecified\n");
                 break;
@@ -1697,13 +1799,11 @@ struct addrinfo *inforesult;
                 printf("IPPROTO_UDP (UDP) \n");
                 break;
             default:
-                printf("Other %ld\n", ptr->ai_protocol);
+                printf("Other %ld\n", res->ai_protocol);
                 break;
         }
 */
      }
-
-   freeaddrinfo(inforesult);
 
    *--p = 0;
    StrLen(rp->fields[2]) = DiffPtrs(p,StrLoc(rp->fields[2]));

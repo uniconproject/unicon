@@ -1016,7 +1016,10 @@ int StartupWinSocket(void);
 void stat2rec			(struct _stat *st, dptr dp, struct b_record **rp);
 #else					/* NT */
 void stat2rec			(struct stat *st, dptr dp, struct b_record **rp);
+dptr make_pwd			(struct passwd *pw, dptr result);
+dptr make_group			(struct group *pw, dptr result);
 #endif					/* NT */
+
 dptr rec_structor		(char *s);
 dptr rec_structor3d		(char *s);
 int sock_connect		(char *s, int udp, int timeout);
@@ -1025,15 +1028,12 @@ int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
 int get_uid			(char *name);
 int get_gid			(char *name);
-#if !NT
-dptr make_pwd			(struct passwd *pw, dptr result);
-dptr make_group			(struct group *pw, dptr result);
-#endif					/* NT */
+
 dptr make_host			(struct hostent *pw, dptr result);
 
-#ifdef HAVE_GETADDRINFO
 dptr make_host_from_addrinfo(char *name, struct addrinfo *inforesult, dptr result);
-#endif
+struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family);
+void 		set_gaierrortext(int i);
 
 dptr make_serv			(struct servent *pw, dptr result);
 int sock_listen		(char *s, int udp);

@@ -2036,10 +2036,11 @@ end
 
 "send() - send a UDP datagram."
 
-function{0,1} send(addr, msg, timeout)
+  function{0,1} send(addr, msg, timeout, fam)
 #ifdef Concurrent
   if !def:C_integer(timeout, 0) then
      runerr(101, timeout)
+
   if is:coexpr(addr) then {
      abstract { return integer }
      body {
@@ -2066,9 +2067,25 @@ function{0,1} send(addr, msg, timeout)
       runerr(103, msg)
    abstract { return null }
    body {
+     tended char* fstr;
+     int af_fam;
       CURTSTATE();
+      if (is:null(fam)){
+	af_fam = AF_INET;
+      } else {
+	if (!cnv:C_string(fam, fstr))
+	  runerr(103, fam);
+	if (strcmp(fstr, "ipv4")==0)
+	  af_fam = AF_INET;
+	if (strcmp(fstr, "ipv6")==0)
+	  af_fam = AF_INET6;
+	else if (strcmp(fstr, "ip")==0)
+	  af_fam = AF_UNSPEC;
+	else // FIXME: maybe we should make this an error
+	  af_fam = AF_INET;
+      }
       IntVal(amperErrno) = 0;
-      if (!sock_send(addr, StrLoc(msg), StrLen(msg))) {
+      if (!sock_send(addr, StrLoc(msg), StrLen(msg), af_fam)) {
 	 IntVal(amperErrno) = errno;
 	 fail;
 	 }
@@ -2732,29 +2749,28 @@ function{0,1} gethost(h, f)
 	 body {
 	    tended char* name;
 	    tended char* fstr;
-	    int rc, family;
+	    int rc, af_fam;
 	    struct addrinfo hints, *res0;
-
 
 	    cnv:C_string(h, name);
 
 	    if (is:null(f)){
-	       family = AF_INET;
+	       af_fam = AF_INET;
 	    } else {
 	       if (!cnv:C_string(f, fstr))
 		  runerr(103, f);
 	       if (strcmp(fstr, "ipv4")==0)
-	          family = AF_INET;
+	          af_fam = AF_INET;
 	       if (strcmp(fstr, "ipv6")==0)
-	          family = AF_INET6;
+	          af_fam = AF_INET6;
 	       else if (strcmp(fstr, "ip")==0)
-	          family = AF_UNSPEC;
+	          af_fam = AF_UNSPEC;
 	       else // FIXME: maybe we should make this an error
-	          family = AF_INET;
+	          af_fam = AF_INET;
 	    }
 
 	    {
-	      INIT_ADDRINFO_HINTS(hints, family, SOCK_DGRAM, AI_CANONNAME, 0);
+	      INIT_ADDRINFO_HINTS(hints, af_fam, SOCK_DGRAM, AI_CANONNAME, 0);
 
 	      if ( (rc = getaddrinfo(name, NULL, &hints, &res0)) != 0) {
 		set_gaierrortext(rc);

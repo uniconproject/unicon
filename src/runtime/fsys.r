@@ -323,6 +323,9 @@ Deliberate Syntax Error
 
 #ifdef PosixFns
       int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
+      int is_ipv4 = 0;
+      int is_ipv6 = 0;
+      int af_fam;
 #endif					/* PosixFns */
 
 #if UNIX || VMS || NT
@@ -411,6 +414,17 @@ Deliberate Syntax Error
 	    case 'T':
 	       status &= ~Fs_Untrans;
 	       continue;
+
+	    case '6':
+#ifdef PosixFns
+	      is_ipv6 = 1;
+	      continue;
+#endif					/* PosixFns */
+	    case '4':
+#ifdef PosixFns
+	      is_ipv4 = 1;
+	      continue;
+#endif					/* PosixFns */
 
 	    case 'u':
 	    case 'U':
@@ -888,13 +902,20 @@ Deliberate Syntax Error
 #ifdef PosixFns
       {
 	 if (status & Fs_Socket) {
+	    if (is_ipv4 && is_ipv6)
+	       af_fam = AF_UNSPEC;
+	    else if (is_ipv6)
+	       af_fam = AF_INET6;
+	    else
+	       af_fam = AF_INET;
+
 	    /* The only allowed values for flags are "n" and "na" */
 	    if (status & ~(Fs_Read|Fs_Write|Fs_Socket|Fs_Append|Fs_Unbuf|Fs_Listen))
 	       runerr(209, spec);
 	    if (status & Fs_Append) {
 	       /* "na" => listen for connections */
       	       DEC_NARTHREADS;
-	       fd = sock_listen(fnamestr, is_udp_or_listener);
+	       fd = sock_listen(fnamestr, is_udp_or_listener, af_fam);
       	       INC_NARTHREADS_CONTROLLED;
 	       }
 	    else {
@@ -907,7 +928,7 @@ Deliberate Syntax Error
 #endif					/* Graphics || Messaging || ISQL */
 	       /* connect to a port */
       	       DEC_NARTHREADS;
-	       fd = sock_connect(fnamestr, is_udp_or_listener, timeout);
+	       fd = sock_connect(fnamestr, is_udp_or_listener, timeout, af_fam);
       	       INC_NARTHREADS_CONTROLLED;
 	    }
 	    /*

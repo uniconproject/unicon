@@ -976,6 +976,8 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
     set_gaierrortext(rc);
     return NULL;
   }
+
+  dump_addrinfo(res0);
   return res0;
  }
 
@@ -987,9 +989,9 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
 }
 */
 
-int sock_connect(char *fn, int is_udp, int timeout)
+int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
 {
-  int saveflags, rc, s, len, family=AF_INET;
+  int saveflags, rc, s, len;
    struct sockaddr *sa;
    char *p, fname[BUFSIZ];
    char *host = fname;
@@ -1007,7 +1009,7 @@ int sock_connect(char *fn, int is_udp, int timeout)
     */
    if (((p = strrchr(fname, ':')) != 0) ) {
       *p = 0;
-      res0 = uni_getaddrinfo(fname, p+1, is_udp, family);
+      res0 = uni_getaddrinfo(fname, p+1, is_udp, af_fam);
       /* Restore the argument just in case */
       *p = ':';
 
@@ -1239,14 +1241,10 @@ int sock_connect(char *fn, int is_udp, int timeout)
  * including UDP sockets and non-blocking "listener" sockets on which a
  * later select() may turn up an accept.
  */
-int sock_listen(addr, is_udp_or_listener)
-char *addr;
-int is_udp_or_listener;
+int sock_listen(char *addr, int is_udp_or_listener, int af_fam)
 {
-  int fd, s, len;
+   int fd, s, len;
    char hostname[MAXHOSTNAMELEN];
-   struct hostent *hp;
-   int family = AF_UNSPEC;
    struct addrinfo *res0, *res;
    struct sockaddr *sa;
 
@@ -1261,7 +1259,7 @@ int is_udp_or_listener;
 
       if ((p=strrchr(addr, ':')) != NULL) {
 	 *p = 0;
-	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener, AF_INET);
+	 res0 = uni_getaddrinfo(addr, p+1, is_udp_or_listener, af_fam);
 	 *p = ':';
 
 	 if (!res0)
@@ -1417,7 +1415,7 @@ int sock_me(int s, char* addrbuf, int bufsize)
 
 
 /* Used by function send(): in other words, create a socket, send, close it */
-int sock_send(char *adr, char *msg, int msglen)
+int sock_send(char *adr, char *msg, int msglen, int af_fam)
 {
    char *host, *p, hostname[MAXHOSTNAMELEN], addr[BUFSIZ];
    int s, port, rc;
@@ -1435,7 +1433,7 @@ int sock_send(char *adr, char *msg, int msglen)
       host = hostname;
    }
 
-   res0 = uni_getaddrinfo(host, p+1, 1, AF_INET);
+   res0 = uni_getaddrinfo(host, p+1, 1, af_fam);
    *p = ':';
 
    if (!res0)

@@ -1022,7 +1022,7 @@ dptr make_group			(struct group *pw, dptr result);
 
 dptr rec_structor		(char *s);
 dptr rec_structor3d		(char *s);
-int sock_connect		(char *s, int udp, int timeout);
+int sock_connect		(char *s, int udp, int timeout, int af_fam);
 int sock_getstrg		(char *buf, int maxi, SOCKET fd);
 int getmodefd			(int fd, char *mode);
 int getmodenam			(char *path, char *mode);
@@ -1036,10 +1036,10 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family);
 void 		set_gaierrortext(int i);
 
 dptr make_serv			(struct servent *pw, dptr result);
-int sock_listen		(char *s, int udp);
+int sock_listen			(char *s, int udp, int af_fam);
 int sock_name			(int sock, char* addr, char* addrbuf, int bufsize);
 int sock_me			(int sock, char* addrbuf, int bufsize);
-int sock_send			(char* addr, char* msg, int msglen);
+int sock_send			(char* addr, char* msg, int msglen, int af_fam);
 int sock_recv			(int f, struct b_record **rp);
 int sock_write			(int f, char *s, int n);
 struct descrip register_sig	(int sig, struct descrip handler);

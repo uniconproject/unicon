@@ -977,7 +977,7 @@ struct addrinfo *uni_getaddrinfo(char* addr, char* p, int is_udp, int family){
     return NULL;
   }
 
-  dump_addrinfo(res0);
+  //dump_addrinfo(res0);
   return res0;
  }
 

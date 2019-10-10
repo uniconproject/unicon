@@ -100,6 +100,7 @@ PURI _pop_parse(char *uri, PURI puri)
     puri->host[0] = '\0';
     strncat(puri->host, at + 1, colon - at - 1);
     puri->port = atoi(colon+1);
+    puri->sport = strdup(colon + 1);
   }
   else {
     /* only host */

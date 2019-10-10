@@ -17,7 +17,7 @@ int daytimebegin(Tp_t* tp, Tprequest_t* req)
   Tpdisc_t* disc = tp->disc;
 
   if (!TPSTATE(tp, CONNECTED)) {
-    if (disc->connectf(tp->uri.host, tp->uri.port, disc) < 0) {
+    if (disc->connectf(&tp->uri, disc) < 0) {
       return (-1);
     }
     else {

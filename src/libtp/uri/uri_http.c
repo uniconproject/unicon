@@ -56,7 +56,10 @@ PURI _http_parse(char *uri, PURI puri)
   slash = strchr(uri, '/');
   if (colon) {
     /* With port specified */
+    /*FIXME: what if there is nothing after the colon  */
     puri->port = atoi(colon+1);
+    puri->sport = strdup(colon + 1);
+
     puri->host = (char *)malloc(colon - uri + 1);
     if (!puri->host) {
       puri->status = URI_ECHECKERRNO;

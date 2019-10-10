@@ -53,74 +53,66 @@
 # define MAXADDRS 35
 #endif
 
-int unixconnect(char* host, unsigned short port, Tpdisc_t* tpdisc)
+void set_gaierrortext(int rc);
+
+int unixconnect(PURI puri, Tpdisc_t* tpdisc)
 {
   Tpunixdisc_t* disc = (Tpunixdisc_t*)tpdisc;
+  int rc;
+  struct addrinfo hints, *res0, *res;
 
-  struct in_addr inaddrs[MAXADDRS + 1];
-  struct sockaddr_in servaddr;
-  int i;
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = puri->af_family;
+  hints.ai_socktype =  SOCK_STREAM;
+  hints.ai_flags = 0;
+  hints.ai_protocol = IPPROTO_TCP;
+  hints.ai_canonname = NULL;
+  hints.ai_addr = NULL;
+  hints.ai_next = NULL;
 
-  /* Convert IP address or lookup hostname */
-  bzero(inaddrs, sizeof(inaddrs));
-  if (inet_pton(AF_INET, host, inaddrs) <= 0) {
-    int tries = 1;
-    while (tries <= MAX_NAME_LOOKUPS) {
-      struct hostent *hep;
-      hep = gethostbyname(host);
-      if (hep == NULL) {
-	int action = tpdisc->exceptf(TP_EHOST, NULL, tpdisc);
-	if (action > 0) {
-	  continue;
-	}
-	else {
-	  return (-1);
-	}
-      }
-      
-      memcpy(inaddrs, *(hep->h_addr_list), MAXADDRS);
-      break;
-    }
+  if ( (rc = getaddrinfo(puri->host, puri->sport?puri->sport:puri->scheme,
+			 &hints, &res0)) != 0) {
+    set_gaierrortext(rc);
+    tpdisc->exceptf(TP_EHOST, NULL, tpdisc);
+    return -1;
   }
 
-  while (1) {
-    if ((disc->fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  disc->fd = -1;
+  for (res = res0; res; res = res->ai_next) {
+    if ((disc->fd = socket(res->ai_family, res->ai_socktype,
+			   res->ai_protocol)) < 0) {
       if (tpdisc->exceptf(TP_ESOCKET, NULL, tpdisc) > 0) {
 	continue;
       }
       else {
+	freeaddrinfo(res0);
 	return (-1);
       }
     }
-    else {
-      break;
-    }
-  }
 
-  /* Try all addresses before giving up */
-  bzero(&servaddr, sizeof(servaddr));
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_port = htons(port);
-  
-  for (i=0; inaddrs[i].s_addr != 0; i++) {
-    servaddr.sin_addr = inaddrs[i];
-    if (connect(disc->fd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
-    {
+    if (connect(disc->fd,res->ai_addr, res->ai_addrlen) < 0 ) {
       if (tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc) >= 0) {
 	continue;
       }
       else {
+	// TODO: we need to close(desc->fd);
+	freeaddrinfo(res0);
 	return (-1);
       }
     }
-    else {
-      return 1;
-    }
   }
 
-  /* If we get here, it's an error */
-  tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);
-  return (-1);
+  freeaddrinfo(res0);
+  if (disc->fd < 0) {
+    /*
+     * failed to create a socket to any of the resloved names or connect
+     * If we get here, it's an error
+     */
+    tpdisc->exceptf(TP_ECONNECT, NULL, tpdisc);
+    return -1;
+  }
+
+  return 1;
 }
 
 int unixclose(Tpdisc_t* tpdisc)

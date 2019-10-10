@@ -91,6 +91,7 @@ PURI _ftp_parse(char *uri, PURI puri)
   if (colon) {
     /* With port specified */
     puri->port = atoi(colon+1);
+    puri->sport = strdup(colon + 1);
     puri->host = (char *)malloc(colon - uri + 1);
     if (!puri->host) {
       puri->status = URI_ECHECKERRNO;

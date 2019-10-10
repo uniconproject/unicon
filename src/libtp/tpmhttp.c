@@ -42,7 +42,7 @@ int httpbegin(Tp_t* tp, Tprequest_t* req)
      *      we'll get EOF, which is fine. */
     case GET: case HEAD:
       if (!TPSTATE(tp, CONNECTED)) {
-        disc->connectf(tp->uri.host, tp->uri.port, disc);
+        disc->connectf(&tp->uri, disc);
       }
       snprintf(buf, sizeof(buf), "%s %s HTTP/%s\r\n", 
                (req->type == GET) ? "GET" : "HEAD",
@@ -57,7 +57,7 @@ int httpbegin(Tp_t* tp, Tprequest_t* req)
 
     case POST:
       if (!TPSTATE(tp, CONNECTED)) {
-        disc->connectf(tp->uri.host, tp->uri.port, disc);
+        disc->connectf(&tp->uri, disc);
       }
       snprintf(buf, sizeof(buf), "POST %s HTTP/%s\r\n", tp->uri.path, 
                HTTP_VERSION);
@@ -71,7 +71,7 @@ int httpbegin(Tp_t* tp, Tprequest_t* req)
 
     case PUT:
       if (!TPSTATE(tp, CONNECTED)) {
-        disc->connectf(tp->uri.host, tp->uri.port, disc);
+        disc->connectf(&tp->uri, disc);
       }
       snprintf(buf, sizeof(buf), "PUT %s HTTP/%s\r\n", tp->uri.path,
                HTTP_VERSION);

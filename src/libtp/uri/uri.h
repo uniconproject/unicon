@@ -25,12 +25,14 @@ typedef struct _uri {
   char  *user;    /* Username for authentication */
   char  *pass;    /* Password for authentication */
   char  *host;    /* Server hostname */
+  char  *sport;   /* Service port string */
+  int   af_family;         /* AF_UNSPEC, AF_INET6 or AF_INET */
   unsigned short port;     /* Service port number */
   char  is_explicit_port;  /* Whether an explicit port was set */
   char  *path;    /* Pathname (file, email address, etc) */
 } URI, *PURI;
 
-PURI uri_parse(char *uri);
+PURI uri_parse(char *uri, int af_fam);
 PURI uri_new(void);
 void uri_free(PURI puri);
 

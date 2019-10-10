@@ -26,7 +26,7 @@ const char* const _uri_errlist[] = {
   "System error (see errno)"  /* 4 - URI_ECHECKERRNO */
 };
 
-PURI uri_parse(char *uri)
+PURI uri_parse(char *uri, int af_fam)
 {
   char *colon;
   PURI puri;
@@ -35,6 +35,8 @@ PURI uri_parse(char *uri)
   if (puri == NULL) {
     return puri;
   }
+
+  puri->af_family = af_fam;
 
   /* Get the scheme */
   colon = strchr(uri, ':');
@@ -54,7 +56,7 @@ PURI uri_parse(char *uri)
   /* Check for optional "URL:" */
   if (strcmp(puri->scheme, "URL") == 0) {
     uri_free(puri);
-    return uri_parse(colon+1);
+    return uri_parse(colon+1, af_fam);
   }
   else {
     /* Call the parse function for this scheme */
@@ -87,6 +89,7 @@ PURI uri_new(void)
   puri->user = NULL;
   puri->pass = NULL;
   puri->host = NULL;
+  puri->sport = NULL;
   puri->port = 0;
   puri->is_explicit_port = 0;
   puri->path = NULL;
@@ -112,6 +115,9 @@ void uri_free(PURI puri)
     free(puri->host);
   }
 
+  if (puri->sport != NULL) {
+    free(puri->sport);
+  }
   /* (port is not a pointer) */
 
   if (puri->path != NULL) {

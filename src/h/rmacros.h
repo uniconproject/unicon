@@ -1979,15 +1979,15 @@
       do {								\
 	memset(&_hints, 0, sizeof(struct addrinfo));			\
 	/* IPv4 or IPv6 or IP */					\
-	hints.ai_family = _fam;						\
+	_hints.ai_family = _fam;					\
 	/* 0=>Any socket */						\
-	hints.ai_socktype = _sock;					\
+	_hints.ai_socktype = _sock;					\
 	/* wildcard IP +  canonical name */				\
-	hints.ai_flags = _flags;					\
+	_hints.ai_flags = _flags;					\
 	/* 0=>Any protocol */						\
-	hints.ai_protocol = _proto;					\
-	hints.ai_canonname = NULL;					\
-	hints.ai_addr = NULL;						\
-	hints.ai_next = NULL;						\
+	_hints.ai_protocol = _proto;					\
+	_hints.ai_canonname = NULL;					\
+	_hints.ai_addr = NULL;						\
+	_hints.ai_next = NULL;						\
       } while (0)
 

@@ -323,10 +323,12 @@ Deliberate Syntax Error
 
 #ifdef PosixFns
       int is_udp_or_listener = 0;	/* UDP = 1, listener = 2 */
+#endif					/* PosixFns */
+#if defined(PosixFns) || defined(Messaging)
       int is_ipv4 = 0;
       int is_ipv6 = 0;
       int af_fam;
-#endif					/* PosixFns */
+#endif					/* PosixFns || Messaging */
 
 #if UNIX || VMS || NT
       extern FILE *popen();
@@ -416,15 +418,15 @@ Deliberate Syntax Error
 	       continue;
 
 	    case '6':
-#ifdef PosixFns
+#if defined(PosixFns) || defined(Messaging)
 	      is_ipv6 = 1;
 	      continue;
-#endif					/* PosixFns */
+#endif					/* PosixFns || Messaging */
 	    case '4':
-#ifdef PosixFns
+#if defined(PosixFns) || defined(Messaging)
 	      is_ipv4 = 1;
 	      continue;
-#endif					/* PosixFns */
+#endif					/* PosixFns || Messaging */
 
 	    case 'u':
 	    case 'U':
@@ -701,8 +703,15 @@ Deliberate Syntax Error
 #endif                                  /* MDEBUG */		     
 		     }
 
-		  /* Try to parse the filename as a URL */
-		  puri = uri_parse(fnamestr);
+		  if (is_ipv4 && is_ipv6)
+		    af_fam = AF_UNSPEC;
+		  else if (is_ipv6)
+		    af_fam = AF_INET6;
+		  else
+		    af_fam = AF_INET;
+
+		  /* Try to parse the filename as a URL and set the protocol family */
+		  puri = uri_parse(fnamestr, af_fam);
 		  switch (puri->status) {
 		     case URI_OK:
 			break;

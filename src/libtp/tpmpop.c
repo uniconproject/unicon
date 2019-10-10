@@ -42,7 +42,7 @@ int popbegin(Tp_t* tp, Tprequest_t* req)
   }
 
   if (!TPIN(tp, CONNECTED)) {
-    disc->connectf(tp->uri.host, tp->uri.port, disc);
+    disc->connectf(&tp->uri, disc);
     disc->readlnf(buf, sizeof(buf), disc);
     if (strncasecmp(buf, "+OK", 3) != 0) {
       popclose(tp);

@@ -33,6 +33,7 @@ void tp_free(Tp_t* tp)
   if (tp->uri.user)   disc->freef(tp->uri.user, disc);
   if (tp->uri.pass)   disc->freef(tp->uri.pass, disc);
   if (tp->uri.host)   disc->freef(tp->uri.host, disc);
+  if (tp->uri.sport)  disc->freef(tp->uri.sport, disc);
   if (tp->uri.path)   disc->freef(tp->uri.path, disc);
 
   disc->freef(tp, disc);
@@ -62,6 +63,8 @@ Tp_t* tp_new(URI* puri, Tpmethod_t* meth, Tpdisc_t* disc)
   tp->uri.user   = _tpastrcpy(puri->user, disc);
   tp->uri.pass   = _tpastrcpy(puri->pass, disc);
   tp->uri.host   = _tpastrcpy(puri->host, disc);
+  tp->uri.sport  = _tpastrcpy(puri->sport, disc);
+  tp->uri.af_family   = puri->af_family;
   tp->uri.port   = puri->port;
   tp->uri.is_explicit_port = puri->is_explicit_port;
   tp->uri.path   = _tpastrcpy(puri->path, disc);

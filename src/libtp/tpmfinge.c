@@ -20,7 +20,7 @@ int fingerbegin(Tp_t* tp, Tprequest_t* req)
   Tpdisc_t* disc = tp->disc;
 
   if (!TPSTATE(tp, CONNECTED)) {
-    disc->connectf(tp->uri.host, tp->uri.port, disc);
+    disc->connectf(&tp->uri, disc);
     TPSET(tp, CONNECTED);
   }
 

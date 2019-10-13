@@ -373,17 +373,23 @@ static char *canonize(char *path) {
    return path;			/* return result */
 }
 
-#if !MSDOS
 FILE *pathOpen(char *fname, char *mode)
 {
    char tmp[256];
    char *s = findexe(fname, tmp, 255);
    if (s) {
-      return fopen(tmp, mode);
+#if MSDOS
+     int pathOpenHandle(char *fname, char *mode);
+     int handle = pathOpenHandle(s, mode);
+     if (handle == -1) return NULL;
+     return fdopen(handle, mode);
+#else
+     return fopen(tmp, mode);
+#endif
       }
    return NULL;
 }
-#endif
+
 
 void quotestrcat(char *buf, char *s)
 {

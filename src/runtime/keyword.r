@@ -380,6 +380,22 @@ keyword{1,*} features
 
       if ((int)strlen(patchpath) > 18) refpath = patchpath+18;
       else if (strlen(refpath)==0) {
+          struct stat buffer;
+	  char *iconx, *iconxname;
+#if NT
+          iconx = relfile(StrLoc(kywd_prog), "/../iconx.exe");
+	  iconxname = "iconx.exe";
+#else					/* NT */
+          iconx = relfile(StrLoc(kywd_prog), "/../iconx");
+	  iconxname = "iconx";
+#endif					/* NT */
+          // check if we have iconx on a path relative to us
+          if ((stat(iconx,&buffer)) == 0)
+	     refpath = patchpath+18;
+	     strcpy(refpath, iconx);
+	     patchpath[strlen(patchpath)-strlen(iconxname)] = '\0';
+	     }
+	  else {
 #if MSDOS
 	 if (pathFind("iconx.exe", patchpath+18, MaxPath)) {
 	    refpath = patchpath+18;

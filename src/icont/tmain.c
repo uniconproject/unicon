@@ -295,14 +295,17 @@ void iconx(int argc, char** argv){
 
    if ((int)strlen(patchpath) > 18)
       iconxloc = patchpath+18;	/* use stated iconx path if patched */
-   else
-      iconxloc = relfile(argv[0],
-#if defined(MSVC) && defined(MSWindows)
-			 "/../wiconx"
-#else					/* MSWindows */
-			 "/../iconx"
-#endif					/* MSVC && MSWindows */
-			 );
+   else {
+#if NT
+   #ifdef NTConsole
+     iconxloc = relfile(argv[0], "/../iconx.exe");
+   #else				/* NTConsole */
+     iconxloc = relfile(argv[0], "/../wiconx.exe");
+   #endif				/* NTConsole */
+#else					/* NT */
+     iconxloc = relfile(argv[0], "/../iconx");
+#endif					/* NT */
+   }
 
 #ifdef ConsoleWindow
    expand_proj(&argc, &argv);
@@ -622,25 +625,53 @@ void iconx(int argc, char** argv){
     */
    if (!errors && bundleiconx) {
       FILE *f, *f2;
-      char tmp[MaxPath], *iconx, mesg[MaxPath+80];
+      char tmp[MaxPath], *iconx, *iconx2, mesg[MaxPath+80];
+      char tmp2[MaxPath + 80];
       strcpy(tmp, ofile);
       strcpy(tmp+strlen(tmp)-4, ".bat");
       rename(ofile, tmp);
+      // try to use patched or relative iconx first
+      iconx = iconxloc;
 
-#if UNIX
-      iconx = "iconx";
-#endif
-#if NT
-      if (Gflag) iconx="wiconx.exe";
-      else
-         iconx = "iconx.exe";
-#endif					/* NT */
+#if NT && defined(NTConsole)
+      /*
+       * if we have Gflag but we are icont switch to wiconx
+       * i.e, wicont already has wiconx
+       */
+      if (Gflag) {
+	char *p;
+	strncpy(tmp2, iconxloc, MaxPath);
+	if (((p = strrchr(tmp2, '\\')) != 0)) {
+	  p++;
+	  *p = '\0';
+	  strcat(tmp2, "wiconx.exe");
+	  iconx = tmp2;
+	}
+      }
+#endif					/* NT && NTConsole */
+
       if ((f = pathOpen(iconx, ReadBinary)) == NULL) {
-	 sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx);
-	 report(mesg);
-	 errors++;
-	 }
-      else {
+#if NT
+	if (Gflag) {
+	  iconx2 = "wiconx.exe";
+	}
+	else {
+	  iconx2 = "iconx.exe";
+	}
+#else					/* NT */
+	iconx2 = "iconx";
+#endif					/* NT */
+      /*
+       * Try to find iconx on the PATH or the current working directory
+       */
+	if ((f = pathOpen(iconx2, ReadBinary)) == NULL) {
+	  sprintf(mesg,"Tried to read %s to build .exe, but couldn't\n",iconx);
+	  report(mesg);
+	  errors++;
+	}
+      }
+
+      if (f != NULL ){
 	 if ((f2 = fopen(ofile, WriteBinary)) == NULL) {
 	    sprintf(mesg,"Could not write to %s to build .exe\n",
 		    ofile);

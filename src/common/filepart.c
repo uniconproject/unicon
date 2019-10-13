@@ -420,13 +420,6 @@ int pathOpenHandle(char *fname, char *mode)
      return open(buf, mode[0]=='r' ? O_RDONLY : O_WRONLY);
    }
 
-FILE *pathOpen(char *fname, char *mode)
-{
-   int handle = pathOpenHandle(fname, mode);
-   if (handle == -1) return NULL;
-   return fdopen(handle, mode);
-}
-
 #endif					/* MSDOS */
 
 /*

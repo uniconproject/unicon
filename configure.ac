@@ -195,6 +195,7 @@ fi
 
 if test x"$devmode" = x"yes" ; then
   debug=yes
+  AC_DEFINE([DEVMODE], [1], [Developer Mode])
 fi
 
 if test x"$udbtools" = x"yes" ; then

@@ -2769,42 +2769,56 @@ function{0,1} gethost(h, f)
 	          af_fam = AF_INET;
 	    }
 
-	    {
-	      INIT_ADDRINFO_HINTS(hints, af_fam, SOCK_DGRAM, AI_CANONNAME, 0);
+	    INIT_ADDRINFO_HINTS(hints, af_fam, SOCK_DGRAM, AI_CANONNAME, 0);
 
-	      if ( (rc = getaddrinfo(name, NULL, &hints, &res0)) != 0) {
-		set_gaierrortext(rc);
-		fail;
-	      }
-
-	      if (make_host_from_addrinfo(name, res0, &result) == 0)
-		syserr("failed to create posix record constructor");
-
-	      freeaddrinfo(res0);
+	    if ( (rc = getaddrinfo(name, NULL, &hints, &res0)) != 0) {
+	      set_gaierrortext(rc);
+	      fail;
 	    }
+
+	    if (make_host_from_addrinfo(name, res0, &result) == 0)
+	      syserr("failed to create posix record constructor");
+
+	    freeaddrinfo(res0);
 	    return result;
 	 }
       }
       null: {
 	 body {
 #if NT
-	    static struct hostent *hs2;
-	    if (hs2 != NULL) {
-	       hs2 = NULL;
-	       fail;
-	       }
-	    else {
-	       char name[256];
-	       gethostname(name, 256);
-	       if ((hs2 = gethostbyname(name)) == NULL)
-		  fail;
-	       if (make_host(hs2, &result) == 0)
-		  syserr("failed to create posix record constructor");
-	       return result;
-	       }
+	    char name[256];
+	    tended char* fstr;
+	    int rc, af_fam;
+	    struct addrinfo hints, *res0;
+	    if (is:null(f)){
+	      af_fam = AF_INET;
+	    } else {
+	      if (!cnv:C_string(f, fstr))
+		  runerr(103, f);
+	       if (strcmp(fstr, "ipv4")==0)
+	          af_fam = AF_INET;
+	       if (strcmp(fstr, "ipv6")==0)
+	          af_fam = AF_INET6;
+	       else if (strcmp(fstr, "ip")==0)
+	          af_fam = AF_UNSPEC;
+	       else // FIXME: maybe we should make this an error
+	          af_fam = AF_INET;
+	    }
+	    gethostname(name, 256);
+	    INIT_ADDRINFO_HINTS(hints, af_fam, 0, 0, 0);
+
+	    if ( (rc = getaddrinfo(name, NULL, &hints, &res0)) != 0) {
+	      set_gaierrortext(rc);
+	      fail;
+	    }
+	    if (make_host_from_addrinfo(name, res0, &result) == 0)
+	      syserr("failed to create posix record constructor");
+
+	    freeaddrinfo(res0);
+	    return result;
 #else					/* NT */
 	    if ((hs = gethostent()) == NULL)
-	       fail;
+	      fail;
 
 	    if (make_host(hs, &result) == 0)
 	       syserr("failed to create posix record constructor");

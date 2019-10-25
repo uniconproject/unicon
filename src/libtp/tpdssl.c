@@ -296,12 +296,12 @@ char get_storepath(Tpdisc_t *tpdisc, char *store_path)
    return 'd';
 }
 
-int sslconnect(char* host, unsigned short port, Tpdisc_t* tpdisc)
+int sslconnect(PURI puri, Tpdisc_t* tpdisc)
 {
    char store_type;
    char store_path[1024];
-   char *host_and_port = malloc(strlen(host)+7);
-   sprintf(host_and_port, "%s:%d", host, port);
+   char *host_and_port = malloc(strlen(puri->host) + 7);
+   sprintf(host_and_port, "%s:%d", puri->host, puri->port);
 
    if ((store_type = get_storepath(tpdisc, store_path)) == 0) return -1;
 

@@ -1,36 +1,70 @@
 #  mkkwd.icn
 #
-#  reads:   standard input  (typically ../runtime/keywords.r) 
+#  reads:   standard input  (typically ../runtime/keyword.r)
+#           and ./keyword.h (if it exists, values are preserved)
 #
-#  writes:  keyword.c
-#	    keyword.h
-#	    kdefs.h
+#  writes:
+#       ./keyword.h
+#       ../h/kdefs.h
+
 
 procedure main()
    local kywds, klist, line, f, k, i
- 
-   # load keywords
+   local hfile, lfile
+   local n2v, maxk, kname
+
+   n2v := table(0)              # A map from keyword name to value
+   maxk := 0                    # Highest keyword value
+
+   # Load existing keywords and values from keywords.h
+   # This code assumes keyword names are all lower case.
+   if f := open("keyword.h", "r") then {
+      while line := read(f) do {
+         line ? {
+            if ="#define" then {
+               tab(many(' \t')); move(2) # skip over " K_"
+               kname := map(tab(many(&letters)))
+               tab(many(' \t'))
+               n2v[kname] := 0 - (k := integer(tab(0)))
+               if maxk < k then maxk := k
+            }
+         }
+      }
+      close(f)
+   }
+   
+   # Load keywords from stdin
    kywds := set()
    while line := read() do {
       line ? {
- 	if ="keyword" then {
- 	   tab(find("}")+1)
- 	   tab(many(' \t'))
- 	   insert(kywds,tab(0))
- 	}
+         if ="keyword" then {
+            tab(find("}")+1)
+            tab(many(' \t'))
+            insert(kywds,kname := tab(0))
+            n2v[kname] := abs(n2v[kname]) # either 0 or +ve
+         }
       }
    }
+
+   # At this point, n2v[name] is defined for both new and old keywords
+   #    -ve:   keyword "name" has been deleted
+   #    0  :   keyword "name" is new
+   #    +ve:   the previously allocated value for keyword "name"
+
    klist := sort(kywds)
 
    # write defined constants to keyword.h
    hfile := wopen("keyword.h", "Keyword manifest constants")
    lfile := wopen("../h/kdefs.h", "Keyword list")
-   i := 0
    every k := !klist do {
       kname := "K_" || map(k,&lcase,&ucase)
-      write(hfile, "#define ", left(kname,13), right(i+:=1,3))
-      write(lfile, "KDef(", k, ",", kname, ")")
+      if (i:=n2v[k]) > 0 then { # Preserve existing value
+         write(hfile, "#define ", left(kname,13), right(i,3))
+      } else if i = 0 then {    # make a new value after all the others
+         write(hfile, "#define ", left(kname,13), right(maxk+:=1,3))
       }
+      if i >= 0 then write(lfile, "KDef(", k, ",", kname, ")")
+   }
 end
 
 

@@ -1,0 +1,19 @@
+language: c
+
+arch:
+  - amd64
+  - arm64
+
+compiler:
+  - gcc
+
+install: skip
+
+script:
+  - ./configure
+  - make
+
+build_command_prepend: ./configure
+build_command: make
+
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make ; fi

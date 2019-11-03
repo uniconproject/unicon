@@ -34,7 +34,7 @@ XOBJS=	xcnv.$(O) xdata.$(O) xdef.$(O) xerrmsg.$(O) xextcall.$(O) xfconv.$(O) xfl
 	xomisc.$(O) xoref.$(O) xoset.$(O) xovalue.$(O) xralc.$(O) xrcoexpr.$(O) xrcomp.$(O) xrdb.$(O)\
 	xrdebug.$(O) xrlocal.$(O) xrlrgint.$(O) xrmemmgt.$(O) xrmisc.$(O) xrstruct.$(O) xrsys.$(O)\
 	xrgfxsys.$(O) xrwinsys.$(O) xrwindow.$(O) xfxtra.$(O) xrwinrsc.$(O) xrposix.$(O) xrmsg.$(O)\
-	xraudio.$(O)
+	xraudio.$(O) xdevmode.$(O)
 
 # These files are affected by NTConsole on Windows
 CONSOLEOBJS=  xrwindow.$(O) xrsys.$(O) xinit.$(O) xfwindow.$(O) xfsys.$(O) xrwinsys.$(O) xkeyword.$(O)
@@ -129,7 +129,7 @@ RTLSRC= cnv.r data.r def.r errmsg.r fconv.r fdb.r fload.r fmath.r\
 	oref.r oset.r ovalue.r ralc.r rcoexpr.r rcomp.r\
 	rdb.r rdebug.r rlrgint.r rlocal.r rmemmgt.r rmisc.r rstruct.r\
 	rsys.r rwinrsc.r rgfxsys.r rwinsys.r rwindow.r fxtra.r raudio.r\
-	rposix.r rmsg.r
+	rposix.r rmsg.r devmode.r
 
 comp_all comp_all_uniconc: update_rev
 	$(MAKE) db_lib
@@ -151,7 +151,7 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
       keyword.$(O) lmisc.$(O) oarith.$(O) oasgn.$(O) ocat.$(O) ocomp.$(O) omisc.$(O) oref.$(O) oset.$(O)\
       ovalue.$(O) ralc.$(O) rcoexpr.$(O) rcomp.$(O) rdebug.$(O) rlrgint.$(O) rlocal.$(O) rmemmgt.$(O)\
       rmisc.$(O) rstruct.$(O) rsys.$(O) rwinrsc.$(O) rgfxsys.$(O) rwinsys.$(O) fxtra.$(O) raudio.$(O)\
-      rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O)\
+      rmsg.$(O) rposix.$(O) rwindow.$(O) rdb.$(O) devmode.$(O)\
       ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)
 	$(CMNT) @echo [ICONC RTT] "-A -O ... # rt.a: "
 	$(RTT) $(DASHS) -A -O "../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/mlocal.$(O) ../common/xwindow.$(O) ../common/alloc.$(O) $(COMMONDRAWSTRING)"

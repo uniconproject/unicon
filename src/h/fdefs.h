@@ -31,6 +31,9 @@ FncDefV(constructor)
 FncDef(copy,1)
 FncDef(cos,1)
 FncDef(cset,1)
+#ifdef DEVMODE
+FncDef(dbgbrk,0)
+#endif					/* DEVMODE */
 FncDef(delay,1)
 FncDefV(delete)
 FncDefV(detab)

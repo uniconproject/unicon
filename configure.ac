@@ -8,27 +8,17 @@ AC_CANONICAL_HOST
 #AC_CANONICAL_TARGET
 
 case $host_cpu in
-     *armv7*)
+     *armv7* | *armv6* | *aarch32*)
         unicon_cpu="arm_32"
 	ARCHBITS="32"
 	AC_DEFINE([ARM], [1], [ARM platform])
         ;;
-     *armv6*)
-        unicon_cpu="arm_32"
-	ARCHBITS="32"
-	AC_DEFINE([ARM], [1], [ARM platform])
-        ;;
-     *armv8*)
+     *armv8* | *aarch64*)
         unicon_cpu="arm_64"
 	ARCHBITS="64"
 	AC_DEFINE([ARM], [1], [ARM platform])
         ;;
-     *i386*)
-        unicon_cpu="x86_32"
-	ARCHBITS="32"
-	AC_DEFINE([X86], [1], [X86 platform])
-	;;
-     *i686*)
+     *i386* | *i686*)
         unicon_cpu="x86_32"
 	ARCHBITS="32"
 	AC_DEFINE([X86], [1], [X86 platform])
@@ -88,15 +78,7 @@ case $host_os in
 	AC_DEFINE([UNIX], [1], [Unix platform])
 	AC_DEFINE([MacOS], [1], [Mac OS])
         ;;
-     *cygwin*)
-        unicon_os="windows"
-	AC_DEFINE([Windows], [1], [Windows platform])
-        ;;
-     *mingw*)
-        unicon_os="windows"
-	AC_DEFINE([Windows], [1], [Windows platform])	
-        ;;
-     *msys*)
+     *cygwin* | *mingw* | *msys*)
         unicon_os="windows"
 	AC_DEFINE([Windows], [1], [Windows platform])	
         ;;	
@@ -223,9 +205,12 @@ if test "z$orig_cflags" = "z"; then
   fi
 fi
 
-# We always want these CFLAGS
+# We always want these CFLAGS if available, the second one is neseccary for a stable runtime
 AC_CFLAG([-fno-omit-frame-pointer])
+
 AC_CFLAG([-fno-strict-aliasing])
+
+AC_CFLAG([-fno-unit-at-a-time])
 
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
@@ -286,12 +271,11 @@ esac
 
 OBJ=o
 CFUNCTARGET="cfun"
-CFDYN="-fPIC -shared -O2 -fno-omit-frame-pointer "
+CFDYN="-fPIC -shared -O2 $OMIT"
 SO=so 
 # OS specific flags go here
 case $unicon_host in
      *linux*)
-      AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
@@ -303,7 +287,7 @@ case $unicon_host in
      *solaris*)
 	;;
      *aix*)
-        ;;
+       ;;
      *bsd*)
         ;;
      *macos*)

@@ -522,6 +522,10 @@
    #ifndef OLD_NTGCC
       #define Double
    #endif				/* OLD_NTGCC */
+#else
+    #ifdef ARM
+      #define Double
+   #endif				/* ARM */  
 #endif
 
 #ifndef SourceSuffix

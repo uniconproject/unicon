@@ -190,3 +190,7 @@
 #ifdef OVLD
    Feature(1, "_OVLD", "operator overloading")
 #endif					/* OVLD */
+
+#ifdef DEVMODE
+   Feature(1, "_DEVMODE", "developer mode")
+#endif					/* DEVMODE */

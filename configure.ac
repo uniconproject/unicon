@@ -1,4 +1,4 @@
-AC_INIT([Unicon],[13.0],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
+AC_INIT([Unicon],[13.1],[jeffery@cs.uidaho.edu], [unicon], [http://www.unicon.org])
 
 AC_CANONICAL_HOST
 
@@ -11,22 +11,27 @@ case $host_cpu in
      *armv7*)
         unicon_cpu="arm_32"
 	ARCHBITS="32"
+	AC_DEFINE([ARM], [1], [ARM platform])
         ;;
      *armv6*)
         unicon_cpu="arm_32"
 	ARCHBITS="32"
+	AC_DEFINE([ARM], [1], [ARM platform])
         ;;
      *armv8*)
         unicon_cpu="arm_64"
 	ARCHBITS="64"
+	AC_DEFINE([ARM], [1], [ARM platform])
         ;;
      *i386*)
         unicon_cpu="x86_32"
 	ARCHBITS="32"
+	AC_DEFINE([X86], [1], [X86 platform])
 	;;
      *i686*)
         unicon_cpu="x86_32"
 	ARCHBITS="32"
+	AC_DEFINE([X86], [1], [X86 platform])
 	;;
      *)
         unicon_cpu="$host_cpu"

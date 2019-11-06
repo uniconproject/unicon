@@ -23,7 +23,7 @@ The latest sources are available from Unicon's git repository. To get them, do:
 ```
 git clone git://git.code.sf.net/p/unicon/unicon
 ```
-Source disribution is also available for download on unicon.org.
+Source distribution is also available for download on unicon.org.
 
 Build Instructions
 -----------------

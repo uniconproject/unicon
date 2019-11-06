@@ -4,14 +4,16 @@ Unicon 13.x
 This is the Unicon distribution.  Please tell us
 where it compiles, and when and how it doesn't.
 
+
 | Recently Supported Platforms  |  Mostly (or Formerly) Supported Platforms  |
-|-------------------------------+--------------------------------------------|
+| ----------------------------- | ------------------------------------------ |
 | x86_32_linux, x86_64_linux    |  other UNIX                                |
 | x86_64_macos                  |  (ppc_macos, x86_32_macos)                 |
 | x86_64_freebsd                |                                            |
 | arm_32_linux, arm_64_linux    |                                            |
 | MS Windows Vista, 7, 8, 10    |  MS Windows XP, (MS Windows95/98/Me/NT/2K) |
 |                               |  (VMS)                                     |
+
 
 Download
 --------

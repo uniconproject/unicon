@@ -4,7 +4,9 @@
 #  configuration parameters
 VERSION=13.1
 name=unspecified
-REPO_REV="$(shell LC_ALL=C svnversion -cn . | sed -e "s/.*://" -e "s/\([0-9]*\).*/\1/" | grep "[0-9]" )"
+REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --count HEAD )"
+REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
+REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
 
 SHELL=sh
 SHTOOL=./shtool
@@ -26,9 +28,9 @@ default: allsrc
 	$(MAKE) -C ipl/lib 
 	$(MAKE) -C uni
 	$(MAKE) -C plugins
-	@echo === Build Summary ===
+	@echo ========== Build Summary ==========
 	bin/unicon -features
-	@echo =====================
+	@echo ===================================
 	@echo "add $(unicwd)/bin to your path or do \"make install\" to install Unicon on your system"
 
 

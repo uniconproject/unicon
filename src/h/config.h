@@ -495,7 +495,11 @@
 #endif					/* MaxHdr */
 
 #ifndef MaxPath
-   #define MaxPath 200
+   #ifdef PATH_MAX
+      #define MaxPath PATH_MAX
+   #else
+      #define MaxPath 256
+   #endif
 #endif					/* MaxPath */
 
 #ifndef StackAlign
@@ -705,7 +709,7 @@ Deliberate Syntax Error
    #define AllocReg(n) malloc((msize)n)
 #endif					/* AllocReg */
 
-#define MaxFileName 256
+#define MaxFileName MaxPath
 
 #ifndef RttSuffix
    #define RttSuffix ".r"

@@ -1991,3 +1991,8 @@
 	_hints.ai_next = NULL;						\
       } while (0)
 
+#define SAFE_strncpy(_dst, _src, _bufsize)	\
+      do {					\
+	strncpy(_dst, _src, _bufsize - 1);	\
+	_dst[_bufsize - 1] = '0';		\
+      } while (0)

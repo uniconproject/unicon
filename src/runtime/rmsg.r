@@ -415,6 +415,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
  #endif /* HAVE_GETHOSTNAME */
  
    if(getenv_r("UNICON_USERADDRESS", tmpbuf, 255)==0) {
+      tmpbuf[255] = '\0';
       strncat(useraddr, tmpbuf, sizeof(useraddr)-1);
       useraddr[sizeof(useraddr)-1] = '\0';
       }

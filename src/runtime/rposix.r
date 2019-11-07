@@ -1003,7 +1003,8 @@ int sock_connect(char *fn, int is_udp, int timeout, int af_fam)
 #endif					/* UNIX */
 
    errno = 0;
-   strncpy(fname, fn, sizeof(fname));
+   SAFE_strncpy(fname, fn, sizeof(fname));
+
    /*
     * find the last colon and get the port.
     */
@@ -1421,7 +1422,8 @@ int sock_send(char *adr, char *msg, int msglen, int af_fam)
    int s, port, rc;
    struct addrinfo *res0, *res;
 
-   strncpy(addr, adr, sizeof(addr));
+   SAFE_strncpy(addr, adr, sizeof(addr));
+
    if (!(p = strchr(addr, ':')))
       return 0;
 

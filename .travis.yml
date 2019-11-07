@@ -1,5 +1,10 @@
 language: c
 
+env:
+  global:
+      # COVERITY_SCAN_TOKEN
+      - secure: "tOMa2ZoEk/ITg8hcHf/94k22d1qOy2ve4yCVAKM1bv4PztcDV1DPAEflp9yykP+eY+VoQ8PZ5CqibIcbclDFsanuUex63az8Zaf6L2I2d84+it9Rso2rXS/T1n28ZI4tN5DdotN7XTecYGyKsgz1RZ7IYzZOtxJzajaJppXtxITCBd08TgSOuBnhWMb2FbuPSSwsVo415t+jn7yKsLeNtW/LyWl8yOu3pMnIWlF1HmXsYHKzH32yI9dPTQSDlVYjd26zUUjXRTyemJTBF6/AEdBHih+RkA3cEKW9QA7cAqRm+P6BlvsKs+GM8yRjfc3UC3nfMLvXa1CtvwEMEQy+t3Ikg+DXbTW5S4z1CS+StR01Nn/OB10eH6VDhidkWD5wlhzWgUEHJHzx2dIhGsRyr+LTQNuu7LrkQTgKnadWV5itTLYfr+zRhrYuTvoLxkeQIvPiuuVF10dBJgVJbF/b3thdKXmwG5VBGQ9F7q/0Q8qrx55/GkJnjrESqeTEDfoPbXxGCQtuZiTRKaOmAr4PmH6PDp0rOWBlZ3nB8XO/aVPPSiTBpSVB3mZQkRZZ3fA3zmK/MW0Wo+/R53cITPtbz9hyYfJ4X3xjawG2As3E7XzAphaLILfXzUprac5X7c93qqbKAbCwr0P92Hrk5n9fDaFtLKut9pR+Ed5qQVfPHM8="
+
 arch:
   - amd64
   - arm64
@@ -13,7 +18,19 @@ script:
   - ./configure
   - make
 
-build_command_prepend: ./configure
-build_command: make
-
 script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make ; fi
+
+addons:
+  coverity_scan:
+    project:
+      name: Unicon
+      version: 13.1
+      description: Unicon Programming Language
+
+    notification_email: to.jafar@gmail.com
+
+    build_command_prepend: ./configure
+
+    build_command: make
+
+    branch_pattern: coverity_scan

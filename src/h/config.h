@@ -487,7 +487,7 @@
 #endif					/* DeBug */
 
 #ifndef AllocType
-   #define AllocType unsigned int
+   #define AllocType uword
 #endif					/* AllocType */
 
 #ifndef MaxHdr

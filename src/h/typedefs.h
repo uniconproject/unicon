@@ -2,7 +2,6 @@
  * typdefs for the run-time system.
  */
 
-typedef AllocType msize;
 typedef int ALIGN;		/* pick most stringent type for alignment */
 typedef unsigned int DIGIT;
 
@@ -29,6 +28,7 @@ typedef unsigned int DIGIT;
 #endif					/* IntBits != WordBits */
 
    typedef void *pointer;
+   typedef AllocType msize;
 
 /*
  * Typedefs to make some things easier.

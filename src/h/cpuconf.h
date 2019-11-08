@@ -35,7 +35,7 @@
       #define MaxLong  ((word)0x7fffffffffffffff) /* largest long integer */
    #endif
    
-   #define MaxStrLen 017777777777L		/* maximum string length */
+   #define MaxStrLen 0777777777777777777777L	/* maximum string length */
    
    #ifndef MaxNegInt
       #define MaxNegInt "-9223372036854775808"
@@ -70,7 +70,7 @@
    
    #define MaxNegInt "-2147483648"
    
-   #define MaxStrLen 0777777777		/* maximum string length */
+   #define MaxStrLen 017777777777		/* maximum string length */
    
    #define F_Nqual	0x80000000	/* set if NOT string qualifier */
    #define F_Var	0x40000000	/* set if variable */

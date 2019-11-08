@@ -1275,8 +1275,8 @@ char *f(int region, word nbytes)
     * to 200, meaning "double each time"), so divide by 100.
     */
    newsize = (curr_private->size / 100) * memgrowth;
-   if (newsize < nbytes)
-      newsize = nbytes;
+   if (newsize < (nbytes + memcushion))
+      newsize = nbytes + memcushion;
    if (newsize < MinAbrSize)
       newsize = MinAbrSize;
      

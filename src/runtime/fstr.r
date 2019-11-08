@@ -628,7 +628,7 @@ function{1} repl(s,n)
        */
       size = n * slen;
       if (size > MaxStrLen) {
-         irunerr(205,n);
+         irunerr(306,n);
          errorfail;
          }
 

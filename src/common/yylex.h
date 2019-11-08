@@ -429,8 +429,10 @@ int *cc;
             *cc = c;			/* anything else is just a dot */
 	    lex_sbuf.endimage--;	/* remove dot (undo AppChar) */
 	    n = getopr((int)'.', &dummy);
-	    yylval = OpNode(n);
-	    return &(optab[n].tok);
+	    if ( n >= 0) {
+	       yylval = OpNode(n);
+	       return &(optab[n].tok);
+	       }
          }
       break;
       }

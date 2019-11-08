@@ -16,4 +16,5 @@ RTEX int init(rtentryvector *rtev)
 }
 RTEX int destroy()
 {
+  return 0;
 }

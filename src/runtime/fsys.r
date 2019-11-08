@@ -736,8 +736,10 @@ Deliberate Syntax Error
 
 		  f = (FILE *)Mopen(puri, &attr[timeout_set], n-timeout_set, is_shortreq, status);
 		  if (Merror > 1200) {
+		    uri_free(puri);
 		    runerr(Merror, fname);
 		  }
+		  uri_free(puri);
 		  switch (Merror) {
 		     case 0:
 			break;

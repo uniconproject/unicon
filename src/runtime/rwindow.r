@@ -2631,8 +2631,10 @@ static int jpegwrite(wbp w, char *filename, int x, int y, int width,int height)
    if (!(imgBuf = (unsigned char*)malloc( height * row_stride * sizeof(unsigned char))))
       return RunError;
 
-   if (!getimstr24(w, x, y, width, height, imgBuf))
+   if (!getimstr24(w, x, y, width, height, imgBuf)) {
+      free(imgBuf);
       return RunError;
+   }
 
    while (cinfo.next_scanline < cinfo.image_height) {
       row_pointer[0] = &imgBuf[cinfo.next_scanline*row_stride];

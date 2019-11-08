@@ -495,7 +495,7 @@ void Msmtp(struct MFile* mf, dptr attr, int nattr)
       case 421:
 	 Mclose(mf);
 	 Mexcept(1212, NULL, NULL);
-	 break;
+	 return;
 
       default:
 	 fprintf(stderr, "Msmtp: unrecognized response to MAIL: %d\n", 

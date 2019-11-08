@@ -104,7 +104,7 @@ PURI _pop_parse(char *uri, PURI puri)
   }
   else {
     /* only host */
-    puri->host = (char *)malloc(strlen(at + 1) + 1);
+    puri->host = (char *)malloc(strlen(at) + 1);
     if (!puri->host) {
       puri->status = URI_ECHECKERRNO;
       return puri;

@@ -370,7 +370,7 @@ char *name;
 struct header *hdr;
    {
    int n;
-   char tname[256];
+   char tname[MaxPath];
    int fdname = -1;
 
    tname[0] = '\0';
@@ -404,8 +404,8 @@ struct header *hdr;
 #endif					/* MSDOS */
 
    if ((n <= 4) || (strcmp(IcodeSuffix, name + n - 4) != 0)) {
-      if ((int)strlen(name) + 5 > 100)
-	 error(name, "icode file name too long");
+     if ((int)strlen(name) + 5 > sizeof(tname))
+        error(name, "icode file name too long");
       strcpy(tname,name);
       strcat(tname,IcodeSuffix);
 

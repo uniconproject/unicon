@@ -498,7 +498,7 @@
    #ifdef PATH_MAX
       #define MaxPath PATH_MAX
    #else
-      #define MaxPath 256
+      #define MaxPath 1024
    #endif
 #endif					/* MaxPath */
 

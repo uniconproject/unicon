@@ -1,13 +1,19 @@
-name: Build Test
-# This workflow is triggered on pushes to the repository.
-on: [push, pull_request]
+name: Build
+on:
+  push:
+    paths-ignore:
+    - 'docs/**'
+
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macOS-10.14, windows-2016, windows-2019, ubuntu-16.04, ubuntu-18.04]
+        os: [macOS-latest, windows-latest, ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v1
@@ -15,3 +21,7 @@ jobs:
       run: sh configure
     - name: make
       run: make
+    - name: test
+      run: make Test
+
+

@@ -39,7 +39,7 @@ only for immutable types. A literal value evaluates to itself.
 
 \subsection*{Integer}
 
-Integers are of arbitrary precision. Decimal \index{integer}integer
+Integers may have an arbitrary magnitude. Decimal \index{integer}integer
 literals are contiguous sequences of the digits 0 through 9, optionally
 preceded by a + or - sign.  Suffixes K, M, G, T, or P multiply
 a literal by 1024, 1024\^{}2, 1024\^{}3, 1024\^{}4, and
@@ -52,6 +52,40 @@ numerals in the supplied radix. After values 0-9, the letters A-Z are
 used for values 10-35. Radix literals are case insensitive, unlike the
 rest of the language, so the R may be upper or lower case, as may the
 following alphabetic digits.
+
+\subsubsection{Large Integers}
+Unicon automatically converts an integer value into a ``large
+integer'' value when its magnitude exceeds the limits of the
+underlying hardware's native integer representation. Large integers
+are interchangeable with native integers in most circumstances, but
+there are a few places where only a native integer (here denoted by
+\texttt{i}, \texttt{j} and \texttt{k}) is acceptable.
+\begin{description}
+\item[--] \texttt{i to j by k} and, by implication, \texttt{!i}
+\item[--] \texttt{seq(i,j)}
+\item[--] Assignment to integer valued keywords
+\item[--] \textit{expr}~\verb+\+~\texttt{i}
+\item[--] \texttt{exit(i)}\\
+  A number of other standard functions will cause a runtime error ---
+  or fail, depending on the value of \texttt{\&error} --- if given a
+  large integer as a parameter (for example, \texttt{delay} or the
+  second parameter of \texttt{get}), but it is difficult to envisage a
+  situation where a large integer value makes sense in most of these
+  contexts. Perhaps, as the capabilities of computers increase, this
+  view will come to be seen as a failure of imagination.
+\end{description}
+
+The penalty paid for supporting large integers if they are not used is
+very small so, although the support for large integers can be removed
+via a build option, almost all implementations provide it (and it is
+enabled by default).
+
+Note that large integer literals in a program are converted to actual
+large integers when evaluated during program execution. Consequently,
+such literals should not be placed in loops or other places in which
+they are evaluated frequently.  Arithmetic operations on native
+integers are considerably faster than using large integers so, if they
+can avoided without major effort, it is probably worth doing so.
 
 \subsection*{Real}
 
@@ -1213,6 +1247,7 @@ a concurrent thread to evaluate \textit{expr}.
 \noindent
 \index{to, generator}The \texttt{to} expression produces the integer
 sequence from \textit{expr1} to \textit{expr2}.
+Neither \textit{expr1} nor \textit{expr2} may be a large integer.
 
 \bigskip\hrule\vspace{0.1cm}
 \noindent
@@ -2168,7 +2203,8 @@ associated with db.
 
 \noindent
 \index{delay(i)}\texttt{delay(i)} pauses the program for at least
-\texttt{i} milliseconds.
+\texttt{i} milliseconds. Runtime error 101 occurs if \texttt{i}
+is a large integer.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{delete}
@@ -2277,6 +2313,7 @@ co-expression \texttt{C}.
 \index{exit(i)}\texttt{exit(i)} terminates the current program execution,
 returning status code \texttt{i}. The default is the platform-dependent exit
 code that indicates normal termination (0 on most systems).
+Runtime error 101 occurs if \texttt{i} is a large integer.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{exp}
@@ -3198,8 +3235,10 @@ address \texttt{s1} (in host:port format) with the contents
 
 \noindent
 \index{sequence, generate numeric}\texttt{seq(i, j)} generates the
-infinite sequence \texttt{i}, \texttt{i+j}, \texttt{i+2*j}, ... .
-\texttt{j} may not be 0.
+progression \texttt{i}, \texttt{i+j}, \texttt{i+2*j}, ... .
+\texttt{j} may not be 0.  Runtime error 101 occurs if either
+\texttt{i} or \texttt{j} is a large integer.  Runtime error 203
+occurs if the value to be generated is a large integer.
 
 \bigskip\hrule\vspace{0.1cm}
 \index{serial}
@@ -4701,7 +4740,7 @@ These character combinations were introduced for legacy keyboards that
 were missing certain bracket characters.
 
 \iconcode{
-{\textbf \$ for \ \{ } \\
+{\textbf \$( for \{ } \\
 {\textbf \$) for \} } \\
 {\textbf \${\textless}\ for $[$ } \\
 {\textbf \${\textgreater} for $]$ }

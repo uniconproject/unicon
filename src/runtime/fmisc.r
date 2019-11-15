@@ -2158,39 +2158,33 @@ static stringint siKeywords[] = {
 
       if (strcmp(kname,"allocated") == 0) {
 #ifdef Concurrent
-	 int tot;
+        int tot, strtot, blktot;
 #if ConcurrentCOMPILER
-	 int mtxstr = mutexid_stringtotal;
-	 int mtxblk = mutexid_blocktotal;
+        int mtxstr = mutexid_stringtotal;
+        int mtxblk = mutexid_blocktotal;
 #else                                    /* ConcurrentCOMPILER */
-	 int mtxstr = p->mutexid_stringtotal;
-	 int mtxblk = p->mutexid_blocktotal;
+        int mtxstr = p->mutexid_stringtotal;
+        int mtxblk = p->mutexid_blocktotal;
 #endif                                    /* ConcurrentCOMPILER */
 
-	 MUTEX_LOCKID(mtxstr);
-	 MUTEX_LOCKID(mtxblk);
-	 tot =  stattotal + p->stringtotal + p->blocktotal;
-	 MUTEX_UNLOCKID(mtxblk);
-	 MUTEX_UNLOCKID(mtxstr);
-	 suspend C_integer tot;
-	 suspend C_integer stattotal;
-
-	 MUTEX_LOCKID(mtxstr);
-	 tot =  p->stringtotal;
-	 MUTEX_UNLOCKID(mtxstr);
-	 suspend C_integer tot;
-
-	 MUTEX_LOCKID(mtxblk);
-	 tot =  p->blocktotal;
-	 MUTEX_UNLOCKID(mtxblk);
-	 return C_integer tot;
-#else					/* Concurrent */
-	 suspend C_integer stattotal + p->stringtotal + p->blocktotal;
-	 suspend C_integer stattotal;
-	 suspend C_integer p->stringtotal;
-	 return  C_integer p->blocktotal;
-#endif					/* Concurrent */
-	 }
+        MUTEX_LOCKID(mtxstr);
+        MUTEX_LOCKID(mtxblk);
+        strtot = p->stringtotal;
+        blktot = p->blocktotal;
+        tot =  stattotal + strtot + blktot;
+        MUTEX_UNLOCKID(mtxblk);
+        MUTEX_UNLOCKID(mtxstr);
+        suspend C_integer tot;
+        suspend C_integer stattotal;
+        suspend C_integer strtot;
+        return C_integer blktot;
+#else                   /* Concurrent */
+        suspend C_integer stattotal + p->stringtotal + p->blocktotal;
+        suspend C_integer stattotal;
+        suspend C_integer p->stringtotal;
+        return  C_integer p->blocktotal;
+#endif                  /* Concurrent */
+      }
       else if (strcmp(kname,"tallocated") == 0) {
 #ifdef Concurrent
 	 /*

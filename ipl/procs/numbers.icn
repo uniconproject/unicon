@@ -18,6 +18,7 @@
 #	   Tim Korb, and Gregg M. Townsend
 #
 #       May 08, 2019: add mfloor() and mceil() functions
+#       Nov 15, 2019: add thread-safe large() function
 #
 ############################################################################
 #
@@ -466,6 +467,7 @@ procedure hmean(L[])		#: harmonic mean
 
 end
 
+$ifndef _CONCURRENT
 #
 #  At the source-language level, "native" integers and "large"
 #  integers have the same type, "integer".  The creation of a large
@@ -481,6 +483,29 @@ procedure large(i)		#: detect large integers
    else fail
 
 end
+
+$else
+
+# 
+# The procedure above isn't thread safe because, if another thread
+# makes a storage allocation between the two uses of &allocate,
+# it might report that a small integer is a large integer.
+# 
+procedure large(i)		#: detect large integers
+   static m,e
+   initial { m := mutex(); e := -1 }
+
+   if type(i) == "integer" then {
+      lock(m); &error :=: e
+      if seq(i) then {
+         &error :=: e; unlock(m); fail
+      } else { # seq() failed, so i must be a large integer
+         &error :=: e; unlock(m); return 		# Success
+      }
+   }
+end
+
+$endif							# _CONCURRENT
 
 procedure lcm(i, j)		#: least common multiple
 

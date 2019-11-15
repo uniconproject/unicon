@@ -1225,3 +1225,36 @@ void heaperr(char *msg, union block *p, int t)
    syserr(buf);
 }
 #endif					/* DebugHeap */
+
+
+#ifdef DEVMODE
+/*----------------------------------------------------------------------
+ * This is a home for code that is only intended to be present when
+ * the --enable-devmode option has been supplied to configure.
+ *
+ * If any function is thought to be useful enough to be present in the
+ * standard (non-developer) configuration, we'll probably change its
+ * name and move it somewhere else.
+ *----------------------------------------------------------------------
+ */
+
+
+/* This function may be used in test code where the criterion for a
+ * break point is complex (it may be easier easier to write C code and
+ * call dbgbrkpoint() with a break on the function than construct a
+ * complicated debugger expression).
+ */
+int dbgbrkpoint()
+{
+  return 0;
+}
+
+"dbgbrk() - allow a convenient debugger break point called from Unicon code"
+function{1} dbgbrk()
+abstract {  return null }
+body {
+  return nulldesc;  /* Set a break point on this line or use "-n Zdbgbrk" */
+}
+end
+
+#endif					/* DEVMODE */

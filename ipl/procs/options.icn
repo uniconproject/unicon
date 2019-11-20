@@ -7,6 +7,7 @@
 #	Authors:  Robert J. Alexander and Gregg M. Townsend
 #
 #	Date:     May 5, 2000
+#             Nov 20 2019   Don Ward    Add --options-with-dashes
 #
 ############################################################################
 #
@@ -26,6 +27,9 @@
 #  the main program argument list.  Option names and values are removed
 #  from the argument list and returned in a table.
 #
+# -----------------------------------------------------------------------
+# [Pre Nov 2019 version description: see additional comments at the end]
+# 
 #     On the command line, options are introduced by a "-" character.  An
 #  option name is either a single printable character, as in "-n" or "-?",
 #  or a string of letters, numbers, and underscores, as in "-geometry".
@@ -97,14 +101,58 @@
 #  data values following the options converted to the specified type.
 #  A value of 1 is stored for options that accept no values.
 #  The table's default value is &null.
+# 
 #
 #     Upon return, the option arguments are removed from arg, leaving
 #  only the non-option arguments.
+# 
+# ---------------------------------------------------------------------------
+# [Nov 2019 enhancements]
+# 
+#   Options may begin with "--" and, if they do, may contain "-" characters.  
+# So options like --dry-run will be parsed correctly and will result in an
+# entry in the options table with a key of "-dry-run" (note the leading
+# minus in the key).
+# 
+#   To remove the leading minus from such keys, make the first character
+# of the option string an equals character: then, a supplied argument of
+# either --opt or -opt would result in a key of "opt" in the table. When the
+# first character is an equals character, the procedure ensures that only
+# one of "--opt" or "-opt" may be specified in the option string. The only
+# way to allow (for example) both --run and -run as options is to miss out
+# the leading equals and to treat option["-run"] and option["run"]
+# separately in the calling program.
+# e.g.
+#   "-bish-bash-bosh--bash"   is ok.
+#   "=-bish-bash-bosh--bash"  results in a "duplicate option --bash" error.
 #  
+#   "=-bish-bash-bosh--bish-bash-bosh" is also ok because, in this case,
+#   the options are
+#          -bish -bash -bosh and  --bish-bash-bosh
+# Because the -- options can swallow succeeding minus characters, it's
+# probably better to use spaces to separate arguments, even when not
+# needed. In the preceding example, it's much clearer to write
+#    "= -bish -bash -bosh --bish-bash-bosh"
+# 
+#   This version will also accept parameters with an equal sign in them. e.g.
+# instead of
+#     progname -time 45
+# you can write
+#     progname -time=45
+# A similar extension is available in the @ file. You can now write
+#     time 45
+# or
+#     time = 45
+# instead of two lines
+#     time
+#     45
+# as previously.
+# 
 ############################################################################
 
 procedure options(arg,optstring,errproc)
    local f,fList,fileArg,fn,ignore,optname,opttable,opttype,p,x,option,optcs
+   local minusoptcs, stripm
    #
    #  Initialize.
    #
@@ -114,67 +162,93 @@ procedure options(arg,optstring,errproc)
    fList := []
    opttable := table()
    optcs := &letters ++ &digits ++ '_'
+   minusoptcs := optcs ++ '-'
    #
    #  Scan the option specification string.
    #
    optstring ? {
-      while optname := move(1) do {
-	 if optname == " " then next
-	 if optname == "-" then
-	    optname := tab(many(optcs)) | move(1) | break
-	 opttype := tab(any('!:+.')) | "!"
-	 opttable[optname] := opttype
-	 }
+      stripm := ="="
+      until pos(0) do {
+         tab(many(' '))
+         if ="--" then {
+            if any(optcs) then {
+               optname := ( "-" || tab(many(minusoptcs)) | break)
+               if \stripm & \opttable[optname[2:0]] then {
+                  return errproc("duplicate option -" || optname)
+               }
+            }
+         } else if ="-" then {
+            if any(optcs) then {
+               optname := (tab(many(optcs)) | break)
+               if \stripm & \opttable["-" || optname] then {
+                  return errproc("duplicate option -" || optname)
+               }               
+            }
+         } else { optname := move(1) }
+
+         tab(many(' '))
+         opttype := tab(any('!:+.')) | "!"
+         opttable[optname] := opttype
       }
+   }
+
    #
    #  Iterate over program invocation argument words.
    #
    while x := get(arg) do {
       if /x then ignore := &null     # if end of args from file, stop ignoring
       else x ? {
-	 if ="-" & not pos(0) & /ignore then {
-	    if ="-" & pos(0) then ignore := 1	# ignore following args if --
-	    else {
-	       tab(0) ? until pos(0) do {
-		  if opttype := \opttable[
-			optname := ((pos(1),tab(0)) | move(1))] then {
-		     option[optname] :=
-			if any(':+.',opttype) then {
-			   p := "" ~== tab(0) | get(arg) |
-			      return errproc(
-				    "No parameter following -" || optname)
-			   case opttype of {
-			      ":": p
-			      "+": integer(p) |
-				 return errproc("-" || optname ||
-				       " needs numeric parameter")
-			      ".": real(p) |
-				 return errproc("-" || optname ||
-				       " needs numeric parameter")
-			      }
-			   }
-			else 1
-		     }
-		  else return errproc("Unrecognized option: -" || optname)
-		  }
-	       }
-	    }
-	 #
-	 #  If the argument begins with the character "@", fetch option
-	 #  words from lines of a text file.
-	 #
-	 else if ="@" & not pos(0) & /ignore then {
-	    f := open(fn := tab(0)) |
-	       return errproc("Can't open " || fn)
-	    fileArg := []
-	    while put(fileArg,read(f))
-	    close(f)
-	    push(arg)	# push null to signal end of args from file
-	    while push(arg,pull(fileArg))
-	    }
-	 else put(fList,x)
-	 }
+         if pos(-2) & ="--"
+         then { ignore := 1 }  # ignore following args if --
+         else if ="-" & not pos(0) & /ignore then {
+            tab(0) ? until pos(0) do {
+               if opttype := \opttable[optname := ((pos(1),(tab(upto(' \t=')|0) )) | move(1))]
+               then {
+                  option[optname] :=
+                     if any(':+.',opttype) then {
+                        tab(many(' \t')); tab(any('=')); tab(many(' \t'));
+                        p := "" ~== tab(0) | get(arg) |
+                           return errproc("No parameter following -" || optname)
+                        case opttype of {
+                           ":": p
+                           "+": integer(p) |
+                              return errproc("-" || optname ||
+                                             " needs numeric parameter")
+                           ".": real(p) |
+                              return errproc("-" || optname ||
+                                             " needs numeric parameter")
+                        }
+                     }
+                     else 1
+               }
+               else return errproc("Unrecognized option: -" || optname)
+            }
+         } else if ="@" & not pos(0) & /ignore then {
+            #
+            #  The argument begins with the character "@", fetch option
+            #  words from lines of a text file.
+            #
+            f := open(fn := tab(0)) | return errproc("Can't open " || fn)
+            fileArg := []
+            while put(fileArg,read(f))
+            close(f)
+            push(arg)   # push null to signal end of args from file
+            while push(arg,pull(fileArg))
+         } else put(fList,x)
       }
-   while push(arg,pull(fList))
+   }
+
+   while push(arg,pull(fList))  # restore unprocessed arguments
+
+   if \stripm then { # replace option["-opt"] with option["opt"]
+      every x := key(option) do {
+         if "-"  == x[1] then {
+            option[x[2:0]] := option[x]
+            push(fList,x)       # reuse fList for options to be removed
+         }
+      }
+      every delete(option, !fList)
+   }
+   
    return option
 end

@@ -210,8 +210,6 @@ AC_CFLAG([-fno-omit-frame-pointer])
 
 AC_CFLAG([-fno-strict-aliasing])
 
-AC_CFLAG([-fno-unit-at-a-time])
-
 if test x"$devmode" = x"yes" ; then
   AC_CFLAG([-Wall])
   AC_CFLAG([-Wno-missing-braces]) 
@@ -276,6 +274,7 @@ SO=so
 # OS specific flags go here
 case $unicon_host in
      *linux*)
+      AC_CFLAG([-fno-unit-at-a-time])
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
@@ -421,7 +420,7 @@ AC_SEARCH_LIBS([clock_gettime],[rt],
 AC_SEARCH_LIBS([crypt],[crypt],
 	[AC_DEFINE([HAVE_CRYPT], [1], [crypt])])
 
-if test "x$concurrent" = "xno"; then
+if test "x$concurrency" = "xno"; then
   AC_DEFINE([NoConcurrent], [1], [No Concurrency])
 fi
 

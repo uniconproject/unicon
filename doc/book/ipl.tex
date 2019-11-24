@@ -1997,12 +1997,14 @@ possibility that some files are not always being closed.
 interprets, and removes UNIX-style \index{options, command-line}command
 options from a list of strings,
 returning a table of option values. Options are
-introduced by a \texttt{"-"} character. An
+introduced by a \texttt{"-"} character or \texttt{-{}-} characters. An
 option name is either a single printable character, as in
 \texttt{"-n"} or
 \texttt{"-?"}, or a string of letters, as
-in \texttt{"-geometry"}. Valueless
-single-character options may be combined, for example as
+in \texttt{"-geometry"}.
+Options that begin with \texttt{-{}-} may have single \texttt{-} characters
+in their names, as in \texttt{-{}-non-Euclidean-geometry}.
+Valueless single-character options may be combined, for example as
 \texttt{"-qtv"}. Some options require
 values. Generally, the option name is one argument and the value
 appears as the next argument, for example: {\ttfamily "-F file.txt"}
@@ -2010,6 +2012,9 @@ appears as the next argument, for example: {\ttfamily "-F file.txt"}
 \noindent With a single-character argument name,
 the value may be concatenated, as in
 \texttt{"-Ffile.txt"}.
+With multi-character arguments, the value may also be concatenated by using
+\texttt{=}, as in \texttt{"-File=file.txt"} (\texttt{=} also works with single
+character arguments).
 Options may be interspersed with non-option
 arguments. An argument of \texttt{"-"} is
 treated as a non-option. The special argument
@@ -2019,10 +2024,13 @@ for use by the caller. \texttt{options()} replaces arguments of the form
 \texttt{@filename} with arguments retrieved from the file
 "filename". Each line of the file is taken
 as a separate argument, exactly as it appears in the file.
+An argument and its value may also be on the same line separated by an
+equals sign or spaces.
 
 The options string is a concatenation, with optional spaces between, of
 one or more option specs of the form
 \texttt{{}-}\texttt{\textit{name}}\texttt{\%} where \texttt{{}-}
+(or \texttt{-{}-})
 introduces the option.
 \texttt{\textit{name}} is either a string of letters or any single
 printable character
@@ -2044,6 +2052,14 @@ name. % Thus, the optstring
 %\texttt{"-silent!n+tvqF:-geometry"}.
 If the options string is omitted, any single letter is assumed to be valid and
 require no data.
+
+Options appear as keys in the table with the leading \texttt{-} character
+removed, so options like \texttt{-{}-name} have \texttt{"-name"} as their
+key. To remove the \texttt{-} character from the key, make the {\em first}
+character of the option string a \texttt{=} character. In this sitation, the
+procedure will reject \texttt{-opt} and \texttt{-{}-opt} as duplicates;
+without the \texttt{=}, they are both allowed (and result in \texttt{"opt"}
+and \texttt{"-opt"} keys, respectively, in the table).
 
 The \texttt{err} procedure will be called if an error is detected in the
 command line options. The procedure is called with one argument: a

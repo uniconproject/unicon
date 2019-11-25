@@ -583,6 +583,7 @@ void coclean(struct b_coexpr *cp) {
         * If the thread is cleaning itself, exit, what about tls chain? 
         */
          cp->have_thread = 0;
+		 if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
          pthread_exit(0);
          }
 #endif					/* Concurrent */
@@ -591,8 +592,10 @@ void coclean(struct b_coexpr *cp) {
          THREAD_JOIN(cp->thread, NULL);	/* wait for thread to exit */
          cp->alive = -2;			/* mark it as joined */
          }
-      if (!IS_TS_THREAD(cp->status))
-	  return;
+      if (!IS_TS_THREAD(cp->status)) {
+		if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
+		return;
+	  }
        
       }
    else if (cp->alive==1) { /* the current thread is done, called this to exit */
@@ -614,12 +617,15 @@ void coclean(struct b_coexpr *cp) {
 
       DEC_NARTHREADS;	
       cp->alive = -1;
+	  if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
       pthread_exit(NULL);
       }
 
 
-   SEM_CLOSE(cp->semp);	/* close/destroy associated semaphore */
-
+   if (cp->semp) {
+	 SEM_CLOSE(cp->semp);	/* close/destroy associated semaphore */
+	 cp->semp = NULL;
+   }
 #ifdef Concurrent
    /*
     * Give up the heaps owned by the old thread, 

@@ -565,85 +565,85 @@ int pthreadcoswitch(struct b_coexpr *old, struct b_coexpr *new, word ostat, word
  * coclean(old) -- clean up co-expression state before freeing.
  */
 void coclean(struct b_coexpr *cp) {
-   struct region *strregion=NULL, *blkregion=NULL;
+  struct region *strregion=NULL, *blkregion=NULL;
 
 #ifdef Concurrent
-   if (cp->tstate){
-      strregion = cp->tstate->Curstring;
-      blkregion = cp->tstate->Curblock;
-      }
-#endif					/* Concurrent */
-
-   if (!IS_TS_THREAD(cp->status) || cp->alive==-1){
-      CURTSTATE();
-      cp->alive = -1;			/* signal thread to exit */
-#ifdef Concurrent
-      if (cp->id==curtstate->c->id){
-       /* 
-        * If the thread is cleaning itself, exit, what about tls chain? 
-        */
-         cp->have_thread = 0;
-		 if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-         pthread_exit(0);
-         }
-#endif					/* Concurrent */
-      if (cp->have_thread){
-         sem_post(cp->semp);		/* unblock it */
-         THREAD_JOIN(cp->thread, NULL);	/* wait for thread to exit */
-         cp->alive = -2;			/* mark it as joined */
-         }
-      if (!IS_TS_THREAD(cp->status)) {
-		if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-		return;
-	  }
-       
-      }
-   else if (cp->alive==1) { /* the current thread is done, called this to exit */
-      /* give up the heaps owned by the thread */
-#ifdef Concurrent
-      if (blkregion){
-         MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
-         swap2publicheap(blkregion, NULL,  &public_blockregion);
-         MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
-
-         MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
-         swap2publicheap(strregion, NULL,  &public_stringregion);
-         MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-         }	
-#endif					/* Concurrent */
-      cp->alive = -8;
-      CV_SIGNAL_EMPTYBLK(BlkD(cp->outbox, List));
-      CV_SIGNAL_FULLBLK(BlkD(cp->inbox, List));
-
-      DEC_NARTHREADS;	
-      cp->alive = -1;
-	  if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-      pthread_exit(NULL);
-      }
-
-
-   if (cp->semp) {
-	 SEM_CLOSE(cp->semp);	/* close/destroy associated semaphore */
-	 cp->semp = NULL;
-   }
-#ifdef Concurrent
-   /*
-    * Give up the heaps owned by the old thread, 
-    * only GC thread is running, no need to lock 
-    */
-   if (CHECK_FLAG(cp->status, Ts_Posix) && blkregion){
-       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
-       swap2publicheap(blkregion, NULL,  &public_blockregion);
-       MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
-       MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
-       swap2publicheap(strregion, NULL,  &public_stringregion);
-       MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
-       }
-    tlschain_remove(cp->tstate);
-#endif					/* ConcurrentCOMPILER */
-
-    return;
+  if (cp->tstate){
+    strregion = cp->tstate->Curstring;
+    blkregion = cp->tstate->Curblock;
   }
+#endif                  /* Concurrent */
+
+  if (!IS_TS_THREAD(cp->status) || cp->alive==-1){
+    CURTSTATE();
+    cp->alive = -1;         /* signal thread to exit */
+#ifdef Concurrent
+    if (cp->id==curtstate->c->id){
+      /* 
+       * If the thread is cleaning itself, exit, what about tls chain? 
+       */
+      cp->have_thread = 0;
+      if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
+      pthread_exit(0);
+    }
+#endif                  /* Concurrent */
+    if (cp->have_thread){
+      sem_post(cp->semp);       /* unblock it */
+      THREAD_JOIN(cp->thread, NULL);    /* wait for thread to exit */
+      cp->alive = -2;           /* mark it as joined */
+    }
+    if (!IS_TS_THREAD(cp->status)) {
+      if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
+      return;
+    }
+       
+  }
+  else if (cp->alive==1) { /* the current thread is done, called this to exit */
+    /* give up the heaps owned by the thread */
+#ifdef Concurrent
+    if (blkregion){
+      MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
+      swap2publicheap(blkregion, NULL,  &public_blockregion);
+      MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
+
+      MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
+      swap2publicheap(strregion, NULL,  &public_stringregion);
+      MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
+    }   
+#endif                  /* Concurrent */
+    cp->alive = -8;
+    CV_SIGNAL_EMPTYBLK(BlkD(cp->outbox, List));
+    CV_SIGNAL_FULLBLK(BlkD(cp->inbox, List));
+
+    DEC_NARTHREADS; 
+    cp->alive = -1;
+    if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
+    pthread_exit(NULL);
+  }
+
+
+  if (cp->semp) {
+    SEM_CLOSE(cp->semp);    /* close/destroy associated semaphore */
+    cp->semp = NULL;
+  }
+#ifdef Concurrent
+  /*
+   * Give up the heaps owned by the old thread, 
+   * only GC thread is running, no need to lock 
+   */
+  if (CHECK_FLAG(cp->status, Ts_Posix) && blkregion){
+    MUTEX_LOCKID_CONTROLLED(MTX_PUBLICBLKHEAP);
+    swap2publicheap(blkregion, NULL,  &public_blockregion);
+    MUTEX_UNLOCKID(MTX_PUBLICBLKHEAP);
+    MUTEX_LOCKID_CONTROLLED(MTX_PUBLICSTRHEAP);
+    swap2publicheap(strregion, NULL,  &public_stringregion);
+    MUTEX_UNLOCKID(MTX_PUBLICSTRHEAP);
+  }
+  tlschain_remove(cp->tstate);
+#endif                  /* Concurrent */
+
+  return;
+}
 
 /*
  * makesem(cp) -- initialize semaphore in co-expression.

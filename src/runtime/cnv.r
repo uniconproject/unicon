@@ -1336,8 +1336,7 @@ int cnv_list(dptr s, dptr d)
    if (!is:set(*s)) return 0;
    /*
     * Create a list the size of the set, copy each element into
-    * the list, and then sort the list using qsort as in list
-    * sorting and return the sorted list.
+    * the list, and return the unsorted list.
     */
    size = BlkD(*s,Set)->size;
 

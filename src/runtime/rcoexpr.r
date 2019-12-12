@@ -583,9 +583,9 @@ void coclean(struct b_coexpr *cp) {
        * If the thread is cleaning itself, exit, what about tls chain? 
        */
       cp->have_thread = 0;
-#ifndef DEFEAT_COEXPR_SEMAPHORE_FIX
+#ifndef NO_COEXPR_SEMAPHORE_FIX
       if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-#endif                  /* DEFEAT_COEXPR_SEMAPHORE_FIX */
+#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
       pthread_exit(0);
     }
 #endif                  /* Concurrent */
@@ -595,9 +595,9 @@ void coclean(struct b_coexpr *cp) {
       cp->alive = -2;           /* mark it as joined */
     }
     if (!IS_TS_THREAD(cp->status)) {
-#ifndef DEFEAT_COEXPR_SEMAPHORE_FIX
+#ifndef NO_COEXPR_SEMAPHORE_FIX
       if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-#endif                  /* DEFEAT_COEXPR_SEMAPHORE_FIX */
+#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
       return;
     }
        
@@ -621,21 +621,21 @@ void coclean(struct b_coexpr *cp) {
 
     DEC_NARTHREADS; 
     cp->alive = -1;
-#ifndef DEFEAT_COEXPR_SEMAPHORE_FIX
+#ifndef NO_COEXPR_SEMAPHORE_FIX
     if (cp->semp) {SEM_CLOSE(cp->semp); cp->semp = NULL;}
-#endif                  /* DEFEAT_COEXPR_SEMAPHORE_FIX */
+#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
     pthread_exit(NULL);
   }
 
 
-#ifndef DEFEAT_COEXPR_SEMAPHORE_FIX
+#ifndef NO_COEXPR_SEMAPHORE_FIX
   if (cp->semp) {
     SEM_CLOSE(cp->semp);    /* close/destroy associated semaphore */
     cp->semp = NULL;
   }
 #else
   SEM_CLOSE(cp->semp);    /* close/destroy associated semaphore */
-#endif                  /* DEFEAT_COEXPR_SEMAPHORE_FIX */
+#endif                  /* NO_COEXPR_SEMAPHORE_FIX */
 #ifdef Concurrent
   /*
    * Give up the heaps owned by the old thread, 

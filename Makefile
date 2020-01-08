@@ -349,7 +349,7 @@ update_rev:
 	            $(REPO_REV_COUNT) "+ 4," \
 	            \"$(REPO_REV_HASH)\" ");" >> plus4.c; \
 	   echo "}" >> plus4.c; \
-	   $(CC) plus4.c -o plus4; \
+	   gcc plus4.c -o plus4; \
 	   ./plus4 > src/h/revision.h; \
 	   rm plus4 plus4.c;\
 	fi

@@ -1,0 +1,162 @@
+package testing
+
+#----------------------------------------------------------------------
+# Simple testing class
+
+class tester(id, 				# Name of test
+             quiet, 			# noise level
+                 # quiet = 0: Not quiet        -- PASSED & FAILED messages
+                 # quiet = 1: quiet (default)  -- FAILED messages only
+                 # quiet = 2: very quiet       -- no messages
+             passes,            # count of tests that pass
+             fails, 			# count of tests that fail
+             mtx, 				# mutex for concurrent testing
+             opf, 				# file for output
+             banner				# Flag controlling start/finish output
+             )
+
+   # ----------------------------------------
+   method reset(q, testName: &null)
+      critical mtx: passes := fails := 0
+      id := \testName
+      if 0 <= q <= 2 then {
+         quiet := q 
+      } else {
+         write(opf, id, " Initialisation FAILED")
+         quiet := 0
+         critical mtx: fails +:= 1
+      }
+      banner := &null			# No start banner has been written (yet)
+   end
+
+   # ----------------------------------------
+   # Note verify { ... } not verify( ... )
+   # call t.verify { test_label, test_condition }
+   method verify(args)
+      if *args = 2 then {
+         if @args[2] then {
+            critical mtx: passes +:= 1
+            if quiet < 1 then write(opf, id, " ", @args[1], " PASSED")
+            return	# success
+         } else {
+            critical mtx: fails +:= 1
+            if quiet < 2 then write(opf, id, " ", @args[1], " FAILED")
+            fail
+         }
+      } else {
+         stop("verify() must have two arguments")
+      }
+   end
+
+   # ----------------------------------------
+   # As verify, but failure is expected (so counts as success)
+   method expectFail(args)
+      if *args = 2 then {
+         if not @args[2] then {
+            critical mtx: passes +:= 1
+            if quiet < 1 then write(opf, id, " ", @args[1], " Expected FAILURE")
+            return	# success
+         } else {
+            critical mtx: fails +:= 1
+            if quiet < 2 then write(opf, id, " ", @args[1], " Unexpected PASS")
+            fail
+         }
+      } else {
+         stop("expectedFail() must have two arguments")
+      }
+   end
+
+   # ----------------------------------------
+   # write a "start test" banner once
+   method start(q: &null, testName: &null)
+      local bannerMaker := &null
+      critical mtx: {
+         quiet := \q
+         id := \testName
+         if /banner then {
+            bannerMaker := banner := 1
+            if quiet < 2 & (*id > 0) then {
+               write(opf, repl("-",50))
+               write(opf, repl(" ", 10), id, " Start")
+ #             write(opf, repl("-",50))
+            }
+         }
+      }
+      if \bannerMaker then return # success
+      # otherwise fail
+   end
+
+   # ----------------------------------------
+   # write the results once
+   method finish()
+      critical mtx: {
+         if (*id > 0) & \banner then {
+            if (quiet < 2) | (fails > 0) then {
+  #            write(opf, repl("-",50))
+               write(opf, repl(" ", 10), id, 
+                     " Passed = ", passes,
+                     " Failed = ", fails)
+               write(opf, repl("-",50))
+            }
+         }
+         banner := &null
+      }
+      if fails = 0 then return 	# success
+      # otherwise fail
+   end
+
+   # ----------------------------------------
+   # 1st param no. of repetitions
+   # other params, coexprs to execute in sequence
+   method microSecs (args)
+      static perCallOverhead, t_reps, crtn
+      local start, stop, reps, n
+      local minO, maxO, GTO
+      local uS
+      initial { # try to calculate the overhead of the timing loop
+         every !50 do gettimeofday()
+         start := gettimeofday()
+         every !199 do stop := gettimeofday()
+         # overhead of gettimeofday()
+         GTO :=  (100 + ((stop.sec - start.sec)*1000000 + (stop.usec - start.usec)))/200
+#         write(GTO)
+
+         t_reps := 200
+         crtn := create 1
+
+         minO := 100000000
+         maxO := 0
+         every !100 do {
+            start := gettimeofday()
+            every 1 to t_reps/2 do {every 1 to 2 do @^crtn}
+            stop := gettimeofday()
+
+            perCallOverhead := ((stop.sec - start.sec)*1000000 + (stop.usec - start.usec))-GTO
+ 
+            minO >:= perCallOverhead
+            maxO <:= perCallOverhead
+         }
+
+         perCallOverhead := minO # (minO+maxO)/2  didn't work quite so well.
+#         write(minO, " <= PCO <= ", maxO)
+#         write("PCO = ", perCallOverhead, "(" , perCallOverhead/t_reps, ")")
+      }
+
+      reps := @args[1]
+      start := gettimeofday()
+      every 1 to reps do { every n := 2 to *args do {@^crtn; @^args[n]} }
+      stop := gettimeofday()
+      uS := ((stop.sec - start.sec)*1000000) + (stop.usec - start.usec)
+#      write("reps ", reps, " = ",
+#            stop.sec-start.sec, "s + ", stop.usec - start.usec, "uS = ", uS,
+#            " - [", (reps * perCallOverhead)/t_reps, "]")
+      return max(0, (uS - (reps * perCallOverhead)/t_reps))
+   end
+
+
+   # ----------------------------------------
+   initially(name: "", q: 1, f: &errout)
+      mtx := mutex()
+      opf := f
+      reset(q, name)
+end

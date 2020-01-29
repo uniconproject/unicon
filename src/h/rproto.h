@@ -192,6 +192,7 @@ int		cprealarray_0	(dptr dp1,dptr dp2,word i,word j);
 int		cpintarray_0	(dptr dp1,dptr dp2,word i,word j);
 int		cprealarray_1	(dptr dp1,dptr dp2,word i,word j);
 int		cpintarray_1	(dptr dp1,dptr dp2,word i,word j);
+struct descrip listtoarray(dptr l);
 #endif					/* Arrays */
 int		cpset_0		(dptr dp1,dptr dp2,word size);
 int		cpset_1		(dptr dp1,dptr dp2,word size);

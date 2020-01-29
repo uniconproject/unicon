@@ -1,7 +1,7 @@
 /*
  * File: rstruct.r
  *  Contents: addmem, cpslots, cplist, cpset, hmake, hchain, hfirst, hnext,
- *  hgrow, hshrink, memb
+ *  hgrow, hshrink, listtoarray memb
  */
 
 /*
@@ -1602,5 +1602,134 @@ cpintarray_macro(cpintarray_0, 0)
 #else					/* MultiProgram */
 cpintarray_macro(cpintarray, 0)
 #endif					/* MultiProgram */
+
+
+/*
+ * Convert a list to an array. If not possible, return the original list
+ */
+struct descrip listtoarray(dptr l)
+{
+  struct b_list *hp;
+  struct descrip *first;
+  struct b_lelem *bp;
+  struct descrip ans;
+  int bsize, num;
+  double *rp;
+  word *ip;
+
+  hp = BlkD(*l, List);
+  MUTEX_LOCKBLK_CONTROLLED(hp, "listtoarray() lock list");
+  if ((num = hp->size) <= 0) {
+    MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+    return *l; /* An empty array is not very useful - return the original list */
+  }
+
+  /* Point bp at the first list block.  */
+  bp = (struct b_lelem *) hp->listhead;
+  /* Is it an array already? */
+  if ((bp->title == T_Intarray) || (bp->title == T_Realarray)) {
+    MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+    return *l;
+  }
+
+  /*
+   * Decide whether to create a real array or an integer array (or neither)
+   * based on the type of the first element in the list
+   */
+
+  /* If the first block has no elements in use, point bp at the next list block.*/
+  if (bp->nused <= 0) {
+    bp = (struct b_lelem *) bp->listnext;
+    hp->listhead = (union block *) bp;
+    bp->listprev = (union block *) hp;
+  }
+
+   /* Locate first element    */
+   first = &bp->lslots[bp->first];
+
+   type_case *first of {
+     integer: {
+       /* Make a single dimensional integer array */
+       bsize = sizeof(struct b_intarray) + (num - 1)*sizeof(word);
+       if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) {
+         MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+         return *l;
+       }
+
+       ans.vword.bptr =  (union block *) alclisthdr(num,(union block *)alcintarray(num));
+       ans.dword = D_List;
+       rp = NULL;
+       ip = &ans.vword.bptr->List.listhead->Intarray.a[0];
+     }
+
+     real: {
+       /* Make a single dimensional real array */
+       bsize = sizeof(struct b_realarray) + (num - 1)*sizeof(double);
+       if (!reserve(Blocks, (word)(sizeof(struct b_list) + bsize))) {
+         MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+         return *l;
+       }
+
+       ans.vword.bptr =  (union block *) alclisthdr(num,(union block *)alcrealarray(num));
+       ans.dword = D_List;
+       ip = NULL;
+       rp = &ans.vword.bptr->List.listhead->Realarray.a[0];
+     }
+
+     default: { /* Cannot convert to an array */
+       MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+       return *l;
+     }
+   }
+
+   /* Go through the list copying the list values into the array elements.  */
+   /* If any value cannot be assigned, give up and return the original list.*/
+   /* The list traversal code has been "liberated" from the max function.   */
+   {
+     union block *bp = l->vword.bptr;
+     int i,j;
+
+     for (bp = Blk(bp,List)->listhead; BlkType(bp) == T_Lelem;
+          bp = Blk(bp,Lelem)->listnext) {
+       for (i = 0; i < Blk(bp,Lelem)->nused; i++) {
+         j = bp->Lelem.first + i;
+         if (j >= bp->Lelem.nslots)
+           j -= bp->Lelem.nslots;
+
+         type_case bp->Lelem.lslots[j] of {
+         integer: {
+             if (ip == NULL) {  /* Wrong type for the target array */
+               MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+               return *l;
+             } else {
+               *ip++ = bp->Lelem.lslots[j].vword.integr;
+             }
+           }
+
+         real: {
+             if (rp == NULL) {  /* Wrong type for the target array */
+               MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+               return *l;
+             } else {
+#ifdef DescriptorDouble
+               *rp++ = bp->Lelem.lslots[j].vword.realval;
+#else
+               *rp++ = (struct b_real *)(bp->Lelem.lslots[j].vword.bptr)->realval;
+#endif /* DescriptorDouble */
+             }
+           }
+
+           default: { /* Wrong type for the target array */
+             MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+             return *l;
+           }
+         } /* type_case per list element */
+       } /* per slot */
+     } /* per list element block */
+   }
+
+   MUTEX_UNLOCKBLK(hp, "listtoarray(): unlock list");
+   return ans;
+}
 
 #endif					/* Arrays */

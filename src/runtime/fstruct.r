@@ -1133,9 +1133,15 @@ function{1} list(n, x)
          cnv_list(&n, &d); /* can't fail, already know n is a set */
 	 return d;
 	 }
-      }
-   else {
-      if !def:C_integer(n, 0L) then
+   }
+#ifdef Arrays
+   if is:list(n) then {
+     abstract { return type(n) }
+     inline { return listtoarray(&n); }
+    }
+#endif  /* Arrays */
+
+   if !def:C_integer(n, 0L) then
 	 runerr(101, n)
 
    abstract {
@@ -1181,7 +1187,6 @@ function{1} list(n, x)
        * Return the new list.
        */
       return list(hp);
-      }
    }
 end
 

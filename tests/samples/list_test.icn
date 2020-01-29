@@ -1,0 +1,303 @@
+# ----------------------------------------------------------------------
+# Test cases for the new functionality of list()
+#     List(L) will return an array, if it can.
+# 
+# N.B. Some tests will require modification when the functionality
+#      of list(n, x) changes to produce an array.
+# 
+import testing
+
+# Many tests are sequences of verify { } calls. Since the coexpr takes
+# it's own copy of local variables, values that must last longer than
+# a single verify {} instance are stored in global variables.
+global L,  A,  S				# A list, an array, and a set
+global L1, A1, S1				# and again
+global L2, A2, S2
+
+#------------------------------------------------------------
+procedure main(args)
+   # See testing::tester class for definition of the quiet level
+   local level := \args[1] | 1
+   &error := -1
+
+   test_empty(level)
+   test_array(level)
+   test_set(level)
+   test_recursive_list(level)
+   # The output from the timing test will be machine dependent and vary
+   # from run to run, so only do it on special request (by adding
+   # an arbitrary 2nd parameter to the program args).
+   if *args > 1 then test_timing(level)
+end
+
+#------------------------------------------------------------
+# (re)set globals to starting values
+procedure nullify()
+   L  := A  := S  := &null
+   L1 := A1 := S1 := &null
+   L2 := A2 := S2 := &null
+end
+
+#------------------------------------------------------------
+# Tests on empty lists
+procedure test_empty(level: 1)
+   local t
+   local s1,s2
+
+   t := tester("Empty List:", level)
+
+   nullify()
+   t.start()
+
+   t.verify{"Create empty list",          L := [] }
+   t.verify{"Appears to be a list",       type(L) == "list" }
+   t.verify{"No members",                 *L = 0 }
+   t.verify{"Conversion to array",        A := list(L) }
+   t.expectFail{"Different structures",   \A ~=== \L }
+
+   t.expectFail{"Pop from empty list",    pop(L) }
+
+   # If we add something to a list, its id does not change
+   L2 := L
+   s1 := serial(L)
+   t.verify{"Push(L,0)",                  push(L,0) }
+   t.verify{"List has one element",       *L = 1 }
+   s2 := serial(L)
+   t.verify{"Structure Id unaltered",     s1 =s2 }
+   t.verify{"Same object after push",     L2 === L }
+
+   # If we add something to an array, its id does not change
+   # (it's just an optimisation of a list with exactly the
+   #  same semantics)
+   t.verify {"Conversion to array (1)",   A:= list(L) }
+   t.verify {"Different structures (1)",  \A ~=== \L }
+
+   s1 := serial(A); A1 := A
+   t.verify{"Push(A,0)",                  push(A,0) }
+   t.verify{"Two elements",               *A = 2 }
+   t.verify{"Same object after push(1)",  \A1 === \A }
+   t.verify {"Original list unchanged",   *L = 1 }
+
+   t.verify{"Pop(A)",                     pop(A) }
+   t.verify{"One element",                *A=1 }
+   t.verify{"Structure Id unaltered(1)",  s1=serial(A) }
+
+   t.finish()
+
+end
+
+#------------------------------------------------------------
+# Tests on the conversion of sets to lists
+procedure test_set(level: 1)
+   local total
+   local t
+
+   t:= tester("Set to List:", level)
+
+   nullify()
+   t.start()
+   t.verify{"Create empty set",        S := set() }
+   t.verify{"Appears to be a set",     type(S) == "set" }
+   t.verify{"No members",              *S = 0 }
+   t.verify{"List conversion of set()",L := list(S) }
+   t.verify{"Different structures",    L ~=== S }
+   t.verify{"Appears to be a list",    type(L) == "list" }
+   t.verify{"No elements",             *L = 0 }
+
+   nullify()
+   t.verify{"Make a set with 1 .. 10", S := set([: 1 to 10 :]) }
+   t.verify{"Appears to be a set",     type(S) == "set" }
+   t.verify{"Has ten members",         *S = 10 }
+   t.verify{"List conversion",         L := list(S) }
+   t.verify{"Different structures",    L ~=== S }
+   t.verify{"Appears to be a list",    type(L) == "list" }
+   t.verify{"Ten elements",            *L = 10 }
+   t.verify{"total = 55",    
+               {total := 0; every total +:= !L; total = 55} }
+   t.finish()
+end
+
+#------------------------------------------------------------
+procedure test_recursive_list(level: 1)
+   local t
+   t:= tester("Recursive list:", level)
+
+   nullify()
+   t.start()
+   t.verify{"Create empty list",          L := [] }
+   t.verify{"Insert list inside itself",  push(L,L) }
+   t.verify{"List has one member",        *L=1 }
+   t.verify{"List member is itself",      L === L[1] }
+   t.verify{"And so on (1)",              L === L[1,1] }
+   t.verify{"And so on (2)",              L === L[1,1][1] }
+   t.verify{"And so on (3)",              L === L[1,1,1,1] }
+
+   t.verify{"Removing L from itself",     L1 := pop(L) }
+   t.verify{"List returned itself",       L1 === L }
+   t.verify{"List is empty",              *L = 0 }
+    
+   t.finish()
+end
+
+#------------------------------------------------------------
+procedure test_array(level: 1)
+   local t
+
+   t:= tester("Array:", level)
+   nullify()
+   t.start()
+   t.verify {"Create list with three integers", L := [25,1,1951] }
+   t.verify {"List has three members",          *L = 3 }
+   t.verify {"Create array (1)",                A := list(L) }
+   t.verify {"Different Structures",            \A ~=== L }
+   t.verify {"Array has three elements",        *A = 3 }
+   t.verify {"Same contents",
+               ( A[1] = L[1]) & ( A[2] = L[2]) & ( A[3] = L[3])
+          }
+
+   t.verify {"Create list with four reals",     L1 := [25.0,1.0,19.0,51.0] }
+   t.verify {"List has four members (2)",       *L1 = 4 }     
+   t.verify {"Create array (2)",                A1 := list(L1) }
+   t.verify {"Different Structures(2)",         \A1 ~=== L1 }
+   t.verify {"Array has four elements (2)",     *A1 = 4 }
+   t.verify {"Same contents (2)",
+               ( A1[1] = L1[1]) & ( A1[2] = L1[2]) & 
+               ( A1[3] = L1[3]) & A1[4] = L1[4]
+          }
+
+   # Mixed list - wrong element at the start
+   t.verify {"Make a mixed int/real list",      push(L, 99.0) }
+   t.verify {"List has four members (3)",       *L = 4 } 
+   t.verify {"Create mixed array",              A := list(L) }
+   t.expectFail {"Different structure (3)",     \A ~=== L } # i.e. not really an array
+
+   # Mixed list - wrong element at the end
+   t.verify {"Mixed list",                      {pop(L); put(L,L1)} }
+   t.verify {"List has four members (4)",       *L = 4 } 
+   t.verify {"Create mixed array (4)",          A := list(L) }
+   t.expectFail{"Different structure (4)",      \A ~=== L } # i.e. not really an array
+  
+   # Mixed list - wrong element in the middle
+   L2 := []
+   every put(L2, 1 to 500)
+   put(L2, &pi)
+   every put(L2, 500 to 1 by -1)
+   t.verify {"List has 1001 members",           *L2 = 1001 }
+   t.expectFail{"Different Structure (5)",      (A2 := list(L2)) ~=== L2 }
+   t.verify {"Remove rogue element",            delete(L2, 501) }
+   # now it should work
+   t.verify {"Different Structure (6)",         (A2 := list(L2)) ~=== L2 }
+   t.verify {"Element type is integer",         type(A2[501]) == "integer" }
+
+   # As above, but a rogue integer in the middle of some reals
+   nullify()
+   L2 := [: (|&pi)\1001 :]
+   L2[99] := 42
+   t.expectFail{"Different Structure (7)",      (A2 := list(L2)) ~=== L2 }
+   t.verify {"Remove rogue element (2)",        delete(L2, 99) }
+   t.verify {"Different Structure (6)",         (A2 := list(L2)) ~=== L2 }
+   t.verify {"Array has 1000 elements",         *A2 = 1000 }
+   t.verify {"Element type is real",            type(A2[99]) == "real" }
+   t.finish()
+end
+
+#------------------------------------------------------------
+# timing test routine
+procedure test_timing(level)
+   local t, n
+
+   t:= tester("timing:", level)
+   t.start()
+   if level = 0 then {
+      write(repl("-",20), " Delay tests ", repl("-",20))
+      write("delay 12   = ",  t.microSecs{1, delay(12) })
+      write("delay 2*6  = ",  t.microSecs{2, delay(6) })
+      write("delay 3*4  = ",  t.microSecs{3, delay(4) })
+      write("delay 4*3  = ",  t.microSecs{4, delay(3) })
+      write("delay 6*2  = ",  t.microSecs{6, delay(2) })
+      write("delay 12*1 = ",  t.microSecs{12, delay(1) })
+      
+      write("delay 24 = ", t.microSecs{1, delay(12), delay(12) })
+
+      write(repl("-",20), " Push tests ", repl("-",20))
+      nullify(); write(left("1", 10),     t.microSecs{ 1,     push(L,0) })
+      nullify(); write(left("10",10),     t.microSecs{ 10,    push(L,0) })
+      nullify(); write(left("100",10),    t.microSecs{ 100,   push(L,0) })
+      nullify(); write(left("1000",10),   t.microSecs{ 1000,  push(L,0) })
+      nullify(); write(left("10000",10),  t.microSecs{ 10000, push(L,0) })
+      nullify(); write(left("20000",10),  t.microSecs{ 20000, push(L,0) })
+      nullify(); write(left("10000*2",10),t.microSecs{ 10000, push(L,0), push(L,0) })
+      nullify(); write(left("10000*3",10),
+                       t.microSecs{ 10000, push(L,0), push(L,0), push(L,0) })
+   }
+
+   nullify()
+   L := [: 1 to 50000 :]
+   A := list(L)
+   A1 := array(50000, 1)
+   t.verify {"50000 members each",         *L = *A = *A1 = 50000 }
+   t.verify {"Different structures",      \L ~=== \A }
+   t.verify {"Same totals",               sum(L) = sum(A) }
+   A[477] +:= 1
+   t.verify {"Different totals",          sum(L) + 1 = sum(A) }
+   write("Sum(List) = ",     t.microSecs{100, sum(L)}) 
+   write("Sum(Array) = ",    t.microSecs{100, sum(A)}) 
+   write("Sum(array) = ",    t.microSecs{100, sum(A1)}) 
+   write("Sum1toN(List) = ", t.microSecs{100, sum1toN(L)}) 
+   write("Sum1toN(Array) = ",t.microSecs{100, sum1toN(A)})
+   write("Sum1toN(array) = ",t.microSecs{100, sum1toN(A1)})
+   L2 := []
+   every n := 1 to 50000 do put(L2,n)
+   write("Sum(L2) = ",       t.microSecs{100, sum(L2)}) 
+   write("Sum1toN(L2) = ",   t.microSecs{100, sum1toN(L2)})
+
+   write("SumBE(List) = ",   t.microSecs{100, sumBothEnds(L)}) 
+   write("SumBE(Array) = ",  t.microSecs{100, sumBothEnds(A)}) 
+
+   write("array by [: :] = ",t.microSecs{1, makeArray1to50000byComprehension() })
+   write("array by loop = ", t.microSecs{1, makeArray1to5000byLoop() })
+   write("list by loop = ",  t.microSecs{1, makeList1to5000byLoop() })
+
+   write("make array by list = ",  t.microSecs{1, A := list(list(50000,0)) })
+   t.verify{"has 50000 elements", *A=50000 }
+   write("make array by list pt 1= ",  t.microSecs{1, A := list(50000,0) })
+   write("make array by list pt 2= ",  t.microSecs{1, A := list(A) })
+   write("make array by array = ", t.microSecs{1, A1 = array(50000,0)})
+   t.finish()
+end
+
+procedure sum(l)
+   local total := 0
+   every total +:= !l
+   return total
+end
+
+procedure sum1toN(l)
+   local n, total := 0
+   every n := 1 to *l do total +:= l[n]
+   return total
+end
+
+procedure sumBothEnds(l)
+   local n, total := 0
+   every n:= 1 to *l/2 do total +:= l[n] + l[*l - n + 1]
+end
+
+procedure makeArray1to50000byComprehension()
+   return list([: 1 to 50000 :])
+end
+
+procedure makeArray1to5000byLoop()
+   local a
+   a := array(50000,0)
+   every n:= 1 to 50000 do a[n] := n
+   return a
+end
+
+procedure makeList1to5000byLoop()
+   local a
+   a := list(50000,0)
+   every n:= 1 to 50000 do a[n] := n
+   return a
+end
+

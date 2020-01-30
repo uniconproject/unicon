@@ -14,6 +14,7 @@ its results can be used in different locations throughout the program
 \item Defining your own \index{control structure}control structures
 \item Evaluating several generator expressions in parallel
 \item Permuting strings using sophisticated mappings
+\item Using a more efficent list representation
 \end{itemize}
 
 \section{Limiting or Negating an Expression}
@@ -691,6 +692,42 @@ initial ballcounts := table(0) \\
 end
 }
 
+\section{Arrays}
+\index{array}
+Unicon uses two different representations for a list: one of them, an
+{\em array}, is optimized for fast access to the list-elements or for
+interfacing with another language that expects a contiguous vector of
+values. The size of an array is fixed when it is first created and
+consists entirely of integer elements (or entirely of reals). If any
+of the array elements is assigned a value of a different type, or the
+size of the array changes (e.g. by using \texttt{delete} or
+\texttt{push} etc.), the array is automatically converted into the
+other form --- the more general representation of a list.
+
+To create an array, call \texttt{list(n, x)}, where \texttt{x} is an
+integer or real value and \texttt{n > 0}. If you want to create a more
+general list, rather than an array (perhaps you know the list will
+change its size in the future and you wish to avoid the cost of
+converting the array when it does) then use list comprehension:
+i.e. instead of
+\iconcode{
+  l := list(20000, 0)
+}
+\noindent use
+\iconcode{
+  l := [: (| 0) {\textbackslash} 20000 :]
+}
+\noindent list comprehension never produces an array.
+
+Although the conversion from the array form to the more general
+representation is automatic, when it is required, the conversion in the
+other direction is not. To convert a general list into an array it may
+be supplied as the only parameter to the \texttt{list} function. If
+the list meets the requirements (either all the elements are integers
+or all of them are reals) the function will return a new array that
+consists of the values in the list. If the list does not meet the
+requirements, the function returns the list parameter unchanged.
+
 \section*{Summary}
 
 Unicon is particularly powerful when language features are
@@ -698,6 +735,6 @@ combined. The ability to combine features in interesting ways is the
 result of its novel expression semantics. Co-expressions add
 substantial value to the concept of \index{generator}generators,
 although most programs use them only sparingly. They fit well into a
-philosophy that says that simple things should be easy to do...and
+philosophy that says that simple things should be easy to do \ldots and
 complex things should be easy to do as well.
 

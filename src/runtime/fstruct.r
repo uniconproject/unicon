@@ -1166,6 +1166,40 @@ function{1} list(n, x)
          }
       if (nslots == 0)
          nslots = MinListSlots;
+#ifdef Arrays
+      else { /* Check to see if making an array is feasible */
+        type_case x of {
+        integer: {
+            word *ip;
+            Protect(hp = alclisthdr(size,(union block *)alcintarray(size)), runerr(0));
+            /* initialize all elements to x */
+            ip = &((union block *)hp)->List.listhead->Intarray.a[0];
+            i = x.vword.integr;
+            while (size-- > 0) {*ip++ = i;}
+
+            return list(hp);    /* return the new array of integer values */
+          }
+
+        real: {
+            double *rp, rval;
+            Protect(hp = alclisthdr(size,(union block *)alcrealarray(size)), runerr(0));
+            /* initialize all elements to x */
+            rp = &((union block *)hp)->List.listhead->Realarray.a[0];
+#ifdef DescriptorDouble
+            rval = x.vword.realval;
+#else                     /* DescriptorDouble */
+            rval = x.vword.bptr->Real.realval;
+#endif                    /* DescriptorDouble */
+            while (size-- > 0) {*rp++ = rval;}
+
+            return list(hp);    /* return the new array of real values */
+          }
+
+        /* If the type of x is neither integer nor real, drop through */
+        default: {}
+        } /* type_case x */
+      }
+#endif  /* Arrays */
 
       /*
        * Allocate the list-header block and a list-element block.

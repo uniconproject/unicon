@@ -1,34 +1,97 @@
 # ----------------------------------------------------------------------
 # Test cases for the new functionality of list()
-#     List(L) will return an array, if it can.
-# 
-# N.B. Some tests will require modification when the functionality
-#      of list(n, x) changes to produce an array.
-# 
+#     list(L)   will return an array, if it can.
+#     list(n,x) will return an array if n> 0 and type(x) is real or integer.
+#
+#     list(S)   will return a list consisting of the members of the set in
+#               an unspecified order (this isn't new functionality, but has
+#               only recently been documented).
+#
+#  Don Ward
+#  February  2020
+#
+# ----------------------------------------------------------------------
 import testing
+link options
+
+global opt                      # Program options
 
 # Many tests are sequences of verify { } calls. Since the coexpr takes
 # it's own copy of local variables, values that must last longer than
 # a single verify {} instance are stored in global variables.
-global L,  A,  S				# A list, an array, and a set
-global L1, A1, S1				# and again
-global L2, A2, S2
+global L,  A,  S                # A list, an array, and a set
+global L1, A1, S1               # and again
+global L2, A2, S2               # and some more
+
+# There is no isArray() standard function, which makes testing whether an
+# array or a general list has been produced slightly tricky. We achieve
+# this by observing the side effects on storage allocation, which are
+# different for arrays and general lists.
+#
+# Storage (bytes) used by the list and array headers plus per element costs.
+global ListOverhead, perLi, perLr, perLs
+global I_ArrayOverhead, R_ArrayOverhead, perI, perR
 
 #------------------------------------------------------------
 procedure main(args)
-   # See testing::tester class for definition of the quiet level
-   local level := \args[1] | 1
+   opt := options(args, "-timing! -h? --help! -help! -level+ -q -fail!", usage)
+
+   if \opt["h"] | \opt["?"] | \opt["help"] | \opt["-help"] then usage() # No return
+
+   # See testing::tester class (or usage() )for definition of the quiet level
+   if \opt["q"] then {
+      if (\opt["level"] ~= 2) then usage("incompatible -level and -q")
+      opt["level"] := 2
+   } else {
+      /opt["level"] := 1        # default value
+   }
+   if not (0 <= opt["level"] <= 2) then usage("0 <= level <= 2")
+
    &error := -1
 
-   test_empty(level)
-   test_array(level)
-   test_set(level)
-   test_recursive_list(level)
-   # The output from the timing test will be machine dependent and vary
-   # from run to run, so only do it on special request (by adding
-   # an arbitrary 2nd parameter to the program args).
-   if *args > 1 then test_timing(level)
+   measure_allocation()    # set up ListOverhead .. perR
+
+   test_empty()
+   test_array()
+   test_set()
+   test_recursive_list()
+
+   # The output from the timing test will be machine dependent and vary from
+   # run to run, so no point in including it in the standard test output:
+   # only do it on special request (by adding a -timing option).
+   if \opt["timing"] then test_timing()
+
+   # Demonstrate what happens when tests fail.
+   if \opt["fail"] then test_Failure()
 end
+
+#------------------------------------------------------------
+procedure usage(s)
+   local cmd := "list_test [-h? -help] [-level=n -q] [-timing] [-fail]"
+
+   if \s then { # print the error message
+      write(&errout, s, " ... type \"list_test -?\" for full instructions. Briefly")
+      write(&errout, "  ", cmd)
+   } else { # give full instructions
+      every write(&errout, ![
+         "Test the new (Feb 2020) functionality of list(L) and list(i,n)",
+         "",
+         cmd,
+         "",
+         "-h -? -help   Print these instructions.",
+         "-level=n      Set \"quiet level\" to n",
+         "    0            Verbose: print all output",
+         "    1            Normal:  print test start and finish messages",
+         "                          plus any failures.  (default).",
+         "    2            Quiet:   print only a summary of any test that fails.",
+          "-q           equivalent to -level=2",
+         "-timing       Run the optional timing test.",
+         "-fail         Run the optional failure test."
+      ])
+   }
+   exit()
+end
+
 
 #------------------------------------------------------------
 # (re)set globals to starting values
@@ -40,11 +103,11 @@ end
 
 #------------------------------------------------------------
 # Tests on empty lists
-procedure test_empty(level: 1)
+procedure test_empty()
    local t
    local s1,s2
 
-   t := tester("Empty List:", level)
+   t := tester("Empty List:", opt["level"])
 
    nullify()
    t.start()
@@ -88,11 +151,11 @@ end
 
 #------------------------------------------------------------
 # Tests on the conversion of sets to lists
-procedure test_set(level: 1)
+procedure test_set()
    local total
    local t
 
-   t:= tester("Set to List:", level)
+   t:= tester("Set to List:", opt["level"])
 
    nullify()
    t.start()
@@ -112,15 +175,15 @@ procedure test_set(level: 1)
    t.verify{"Different structures",    L ~=== S }
    t.verify{"Appears to be a list",    type(L) == "list" }
    t.verify{"Ten elements",            *L = 10 }
-   t.verify{"total = 55",    
+   t.verify{"total = 55",
                {total := 0; every total +:= !L; total = 55} }
    t.finish()
 end
 
 #------------------------------------------------------------
-procedure test_recursive_list(level: 1)
+procedure test_recursive_list()
    local t
-   t:= tester("Recursive list:", level)
+   t:= tester("Recursive list:", opt["level"])
 
    nullify()
    t.start()
@@ -135,17 +198,77 @@ procedure test_recursive_list(level: 1)
    t.verify{"Removing L from itself",     L1 := pop(L) }
    t.verify{"List returned itself",       L1 === L }
    t.verify{"List is empty",              *L = 0 }
-    
+
    t.finish()
 end
 
 #------------------------------------------------------------
-procedure test_array(level: 1)
+# Demonstrate what happens when tests fail
+procedure test_Failure()
    local t
+   t:= tester("FailureTest:", opt["level"])
+   t.start()
+   t.verify {"Deliberate Fail", 0 = 1 }
+   t.expectFail {"Deliberate Success", 0 = 0 }
+   t.finish()
+end
 
-   t:= tester("Array:", level)
+#------------------------------------------------------------
+procedure test_array()
+   local t, a0, a1
+
+   t:= tester("Array:", opt["level"])
    nullify()
    t.start()
+   # test that list(n, 0) really does produce an array and not a list
+   # by measuring the storage allocated
+   nullify()
+   a0 := blockbytes()
+   A := list(1000,0)
+   a1 := blockbytes()
+   t.verify {"Array allocation (1)",    (a1 - a0) = I_ArrayOverhead + (1000*perI)}
+   t.verify {"Not list allocation (1)", (a1 - a0) ~= ListOverhead + (1000*perLi)}
+
+   a0 := blockbytes()
+   A := list(1000,0.5)
+   a1 := blockbytes()
+   t.verify {"Array allocation (2)",    (a1 - a0) = R_ArrayOverhead + (1000*perR)}
+   t.verify {"Not list allocation (2)", (a1 - a0) ~= ListOverhead + (1000*perLr)}
+
+   L := [: 1 to 100 :]
+   a0 := blockbytes()
+   A := list(L)
+   a1 := blockbytes()
+   t.verify {"Array allocation (3)",    (a1 - a0) = I_ArrayOverhead + (100*perI)}
+   t.verify {"New structure (1)",       \A ~=== L }
+
+   L := [: 1.0 to 100.0 :]
+   t.verify {"100 elements ", *L = 100 }
+   a0 := blockbytes()
+   A := list(L)
+   a1 := blockbytes()
+   t.verify {"Array allocation (4)",    (a1 - a0) = R_ArrayOverhead + (100*perR)}
+   t.verify {"New structure (2)",       \A ~=== L }
+
+   # test structures that will not produce an array
+   nullify()
+   L1 := []
+   a0 := blockbytes()
+   L := list(20, L1)
+   a1 := blockbytes()
+   t.verify {"List allocation (1)", (a1 - a0) = ListOverhead + (20*perLs) }
+
+   a0 := blockbytes()
+   L := list(30, &letters)
+   a1 := blockbytes()
+   t.verify {"List allocation (2)", (a1 - a0) = ListOverhead + (30*perLs) }
+
+   a0 := blockbytes()
+   L := list(40, "Frobnicate")
+   a1 := blockbytes()
+   t.verify {"List allocation (3)", (a1 - a0) = ListOverhead + (40*perLs) }
+
+   # Some tests that create arrays
    t.verify {"Create list with three integers", L := [25,1,1951] }
    t.verify {"List has three members",          *L = 3 }
    t.verify {"Create array (1)",                A := list(L) }
@@ -156,27 +279,27 @@ procedure test_array(level: 1)
           }
 
    t.verify {"Create list with four reals",     L1 := [25.0,1.0,19.0,51.0] }
-   t.verify {"List has four members (2)",       *L1 = 4 }     
+   t.verify {"List has four members (2)",       *L1 = 4 }
    t.verify {"Create array (2)",                A1 := list(L1) }
    t.verify {"Different Structures(2)",         \A1 ~=== L1 }
    t.verify {"Array has four elements (2)",     *A1 = 4 }
    t.verify {"Same contents (2)",
-               ( A1[1] = L1[1]) & ( A1[2] = L1[2]) & 
+               ( A1[1] = L1[1]) & ( A1[2] = L1[2]) &
                ( A1[3] = L1[3]) & A1[4] = L1[4]
           }
 
    # Mixed list - wrong element at the start
    t.verify {"Make a mixed int/real list",      push(L, 99.0) }
-   t.verify {"List has four members (3)",       *L = 4 } 
+   t.verify {"List has four members (3)",       *L = 4 }
    t.verify {"Create mixed array",              A := list(L) }
    t.expectFail {"Different structure (3)",     \A ~=== L } # i.e. not really an array
 
    # Mixed list - wrong element at the end
    t.verify {"Mixed list",                      {pop(L); put(L,L1)} }
-   t.verify {"List has four members (4)",       *L = 4 } 
+   t.verify {"List has four members (4)",       *L = 4 }
    t.verify {"Create mixed array (4)",          A := list(L) }
    t.expectFail{"Different structure (4)",      \A ~=== L } # i.e. not really an array
-  
+
    # Mixed list - wrong element in the middle
    L2 := []
    every put(L2, 1 to 500)
@@ -186,7 +309,11 @@ procedure test_array(level: 1)
    t.expectFail{"Different Structure (5)",      (A2 := list(L2)) ~=== L2 }
    t.verify {"Remove rogue element",            delete(L2, 501) }
    # now it should work
-   t.verify {"Different Structure (6)",         (A2 := list(L2)) ~=== L2 }
+   a0 := blockbytes()
+   A2 := list(L2)
+   a1 := blockbytes()
+   t.verify {"Integer array produced",          (a1 - a0) = I_ArrayOverhead + (1000*perI)}
+   t.verify {"Different Structure (6)",         \A2 ~=== L2 }
    t.verify {"Element type is integer",         type(A2[501]) == "integer" }
 
    # As above, but a rogue integer in the middle of some reals
@@ -195,16 +322,137 @@ procedure test_array(level: 1)
    L2[99] := 42
    t.expectFail{"Different Structure (7)",      (A2 := list(L2)) ~=== L2 }
    t.verify {"Remove rogue element (2)",        delete(L2, 99) }
-   t.verify {"Different Structure (6)",         (A2 := list(L2)) ~=== L2 }
+   a0 := blockbytes()
+   A2 := list(L2)
+   a1 := blockbytes()
+   t.verify {"Real array produced",             (a1 - a0) = R_ArrayOverhead + (1000*perR)}
+   t.verify {"Different Structure (8)",         \A2 ~=== L2 }
    t.verify {"Array has 1000 elements",         *A2 = 1000 }
    t.verify {"Element type is real",            type(A2[99]) == "real" }
+
    t.finish()
 end
 
 #------------------------------------------------------------
+# return the total number of bytes allocated in the block region
+#
+procedure blockbytes()
+   local bytes
+
+   every bytes := &allocated    # total then static then string then block
+   return bytes
+end
+
+#------------------------------------------------------------
+# Measure the storage allocated by arrays and lists
+# Use array(), rather than list() because we don't want to rely
+# on the characteristics of the list() routine; we want to verify
+# that list() has the same storage demand as array().
+#
+# This must be run before any of the other tests.
+procedure measure_allocation()
+   local a0,a1,a2,a3,a4,a5,a6,a7,a8,a9
+   local l0,l1,l2,l3,l4,l5,l6,l7,l8,l9
+   local t, level := opt["level"]
+
+   a0 := blockbytes()
+   t := tester("Alloc:",level)
+   a1 := blockbytes()
+   t.start()
+   a2 := blockbytes()
+   t.verify {"Trivial test", a2 >= a1 }
+   a3 := blockbytes()
+
+   # Measure characteristics of real arrays
+   A:= array(1, 1.0)
+   a4 := blockbytes()
+   A1 := array(11,1.0)
+   a5 := blockbytes()
+   perR := ((a5 - a4) - (a4 - a3))/10
+   R_ArrayOverhead := a4 - a3 - perR
+
+   # Measure characteristics of integer arrays
+   A := array(1, 0)
+   a6 := blockbytes()
+   A1 := array(11, 0)
+   a7 := blockbytes()
+   perI := ((a7 - a6) - (a6 -a5))/10
+   I_ArrayOverhead := (a6 - a5) - perI
+
+   a8 := blockbytes()
+   a9 := blockbytes()
+   t.verify {"blockbytes() does not allocate", a9 = a8 }
+
+   # Measure characteristics of integer lists
+   l0 := blockbytes()
+   L := [1]
+   l1 := blockbytes()
+   L1 := [1,2,3,4,5,6,7,8,9,10,11]
+   l2 := blockbytes()
+   perLi := ((l2 - l1) - (l1 - l0))/10
+   ListOverhead := l1 - l0 - perLi
+
+   # measure characteristics of real lists
+   L := [1.0]
+   l3 := blockbytes()
+   L1 := [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0]
+   l4 := blockbytes()
+   perLr := ((l4 - l3) - (l3 - l2))/10
+   t.verify {"List Overhead ", (l3 - l2 - perLr) = ListOverhead }
+
+   # measure characteristics of mutable lists
+   L2 := []
+   l5 := blockbytes()
+   L := [L2]
+   l6 := blockbytes()
+   L1 := [L2,L2,L2,L2,L2,L2,L2,L2,L2,L2,L2]
+   l7 := blockbytes()
+   perLs := ((l7 - l6) - (l6 - l5))/10
+   t.verify {"List overhead(1)", (l6 - l5 - perLs) = ListOverhead }
+   l7 := blockbytes()
+   l8 := blockbytes()
+   t.finish()
+   l9 := blockbytes()
+
+   if level < 1 then {
+      write(left(a0,10), "\n",
+            left(a1,10), " (", left((a1 - a0),6), ,") ",
+            left(a2,10), " (", left((a2 - a1),6), ,") ",
+            left(a3,10), " (", left((a3 - a2),6), ,")\n",
+            left(a4,10), " (", left((a4 - a3),6), ,") ",
+            left(a5,10), " (", left((a5 - a4),6), ,") ",
+            left(a6,10), " (", left((a6 - a5),6), ,")\n",
+            left(a7,10), " (", left((a7 - a6),6), ,") ",
+            left(a8,10), " (", left((a8 - a7),6), ,") ",
+            left(a9,10), " (", left((a9 - a8),6), ,") "
+            )
+
+      write(left(l0,10), "\n",
+            left(l1,10), " (", left((l1 - l0),6), ,") ",
+            left(l2,10), " (", left((l2 - l1),6), ,") ",
+            left(l3,10), " (", left((l3 - l2),6), ,")\n",
+            left(l4,10), " (", left((l4 - l3),6), ,") ",
+            left(l5,10), " (", left((l5 - l4),6), ,") ",
+            left(l6,10), " (", left((l6 - l5),6), ,")\n",
+            left(l7,10), " (", left((l7 - l6),6), ,") ",
+            left(l8,10), " (", left((l8 - l7),6), ,") ",
+            left(l9,10), " (", left((l9 - l8),6), ,") "
+            )
+
+      write("Instantiation of tester class = ", a1 - a0)
+      write("Call of verify {} = ", a3 - a2)
+      write("Real Array    = ", R_ArrayOverhead, " + ", perR, " per element")
+      write("Integer Array = ", I_ArrayOverhead, " + ", perI, " per element")
+      write("Real List     = ", ListOverhead, " + ", perLr, " per element")
+      write("Integer List  = ", ListOverhead, " + ", perLi, " per element")
+      write("Mutable List  = ", ListOverhead, " + ", perLs, " per element")
+   }
+end
+
+#------------------------------------------------------------
 # timing test routine
-procedure test_timing(level)
-   local t, n
+procedure test_timing()
+   local t, n, level := opt["level"]
 
    t:= tester("timing:", level)
    t.start()
@@ -216,7 +464,7 @@ procedure test_timing(level)
       write("delay 4*3  = ",  t.microSecs{4, delay(3) })
       write("delay 6*2  = ",  t.microSecs{6, delay(2) })
       write("delay 12*1 = ",  t.microSecs{12, delay(1) })
-      
+
       write("delay 24 = ", t.microSecs{1, delay(12), delay(12) })
 
       write(repl("-",20), " Push tests ", repl("-",20))
@@ -235,69 +483,85 @@ procedure test_timing(level)
    L := [: 1 to 50000 :]
    A := list(L)
    A1 := array(50000, 1)
-   t.verify {"50000 members each",         *L = *A = *A1 = 50000 }
+   A2 := list(50000, 1)
+   t.verify {"50000 members each",         *L = *A = *A1 = *A2 = 50000 }
    t.verify {"Different structures",      \L ~=== \A }
    t.verify {"Same totals",               sum(L) = sum(A) }
    A[477] +:= 1
    t.verify {"Different totals",          sum(L) + 1 = sum(A) }
-   write("Sum(List) = ",     t.microSecs{100, sum(L)}) 
-   write("Sum(Array) = ",    t.microSecs{100, sum(A)}) 
-   write("Sum(array) = ",    t.microSecs{100, sum(A1)}) 
-   write("Sum1toN(List) = ", t.microSecs{100, sum1toN(L)}) 
-   write("Sum1toN(Array) = ",t.microSecs{100, sum1toN(A)})
-   write("Sum1toN(array) = ",t.microSecs{100, sum1toN(A1)})
+   write("Sum(List) =        ", t.microSecs{100, sum(L)})
+   write("Sum(Array) =       ", t.microSecs{100, sum(A)})
+   write("Sum(array 1) =     ", t.microSecs{100, sum(A1)})
+   write("Sum(array 2) =     ", t.microSecs{100, sum(A2)})
+   write("Sum1toN(List) =    ", t.microSecs{100, sum1toN(L)})
+   write("Sum1toN(Array) =   ", t.microSecs{100, sum1toN(A)})
+   write("Sum1toN(array 1) = ", t.microSecs{100, sum1toN(A1)})
+   write("Sum1toN(array 2) = ", t.microSecs{100, sum1toN(A2)})
    L2 := []
    every n := 1 to 50000 do put(L2,n)
-   write("Sum(L2) = ",       t.microSecs{100, sum(L2)}) 
-   write("Sum1toN(L2) = ",   t.microSecs{100, sum1toN(L2)})
+   write("Sum(L2) =          ", t.microSecs{100, sum(L2)})
+   write("Sum1toN(L2) =      ", t.microSecs{100, sum1toN(L2)})
 
-   write("SumBE(List) = ",   t.microSecs{100, sumBothEnds(L)}) 
-   write("SumBE(Array) = ",  t.microSecs{100, sumBothEnds(A)}) 
+   write("SumBE(List) =      ", t.microSecs{100, sumBothEnds(L)})
+   write("SumBE(Array) =     ", t.microSecs{100, sumBothEnds(A)})
 
-   write("array by [: :] = ",t.microSecs{1, makeArray1to50000byComprehension() })
-   write("array by loop = ", t.microSecs{1, makeArray1to5000byLoop() })
-   write("list by loop = ",  t.microSecs{1, makeList1to5000byLoop() })
+   collect(0, 50000*8)
+   write("array by [: :] =   ", t.microSecs{20, makeArray1to50000byComprehension() })
+   collect(0, 50000*8)
+   write("array by loop =    ", t.microSecs{20, makeArray1to50000byLoop() })
+   collect(0, 50000*8)
+   write("list by loop =     ",  t.microSecs{20, makeList1to50000byLoop() })
 
-   write("make array by list = ",  t.microSecs{1, A := list(list(50000,0)) })
-   t.verify{"has 50000 elements", *A=50000 }
-   write("make array by list pt 1= ",  t.microSecs{1, A := list(50000,0) })
-   write("make array by list pt 2= ",  t.microSecs{1, A := list(A) })
-   write("make array by array = ", t.microSecs{1, A1 = array(50000,0)})
+   collect(0, 50000*8)
+   write("make array by array =    ", t.microSecs{20, A = array(50000,0)})
+   t.verify{"has 50000 elements (1)", *A=50000 }
+   collect(0, 50000*8)
+   write("convert list(array) (1)= ", t.microSecs{20, A := list(A) })
+   t.verify{"has 50000 elements (3)", *A=50000 }
+   collect(0, 50000*8)
+   write("make array by list =     ", t.microSecs{20, A := list(50000,0) })
+   write("convert list(array) (2)= ", t.microSecs{20, A := list(A) })
+   t.verify{"has 50000 elements (4)", *A=50000 }
    t.finish()
 end
 
+#------------------------------------------------------------
 procedure sum(l)
    local total := 0
    every total +:= !l
    return total
 end
 
+#------------------------------------------------------------
 procedure sum1toN(l)
    local n, total := 0
    every n := 1 to *l do total +:= l[n]
    return total
 end
 
+#------------------------------------------------------------
 procedure sumBothEnds(l)
    local n, total := 0
    every n:= 1 to *l/2 do total +:= l[n] + l[*l - n + 1]
 end
 
+#------------------------------------------------------------
 procedure makeArray1to50000byComprehension()
    return list([: 1 to 50000 :])
 end
 
-procedure makeArray1to5000byLoop()
+#------------------------------------------------------------
+procedure makeArray1to50000byLoop()
    local a
    a := array(50000,0)
    every n:= 1 to 50000 do a[n] := n
    return a
 end
 
-procedure makeList1to5000byLoop()
+#------------------------------------------------------------
+procedure makeList1to50000byLoop()
    local a
    a := list(50000,0)
    every n:= 1 to 50000 do a[n] := n
    return a
 end
-

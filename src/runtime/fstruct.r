@@ -1127,22 +1127,23 @@ function{1} list(n, x)
    if is:set(n) then {
       abstract {
          return new list(store[type(n).set_elem])
-      	 }
+         }
       body {
          struct descrip d;
          cnv_list(&n, &d); /* can't fail, already know n is a set */
-	 return d;
-	 }
+     return d;
+     }
    }
 #ifdef Arrays
-   if is:list(n) then {
+   else if is:list(n) then {
      abstract { return type(n) }
      inline { return listtoarray(&n); }
     }
 #endif  /* Arrays */
+   else {
 
    if !def:C_integer(n, 0L) then
-	 runerr(101, n)
+     runerr(101, n)
 
    abstract {
       return new list(type(x))
@@ -1221,6 +1222,7 @@ function{1} list(n, x)
        * Return the new list.
        */
       return list(hp);
+      }
    }
 end
 

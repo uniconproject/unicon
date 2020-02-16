@@ -1609,7 +1609,7 @@ cpintarray_macro(cpintarray, 0)
  */
 struct descrip listtoarray(dptr l)
 {
-  struct b_list *hp;
+  tended struct b_list *hp;
   struct descrip *first;
   struct b_lelem *bp;
   struct descrip ans;

@@ -207,6 +207,7 @@ int		cptable		(dptr dp1,dptr dp2,word size);
 #ifdef Arrays
 int		cprealarray	(dptr dp1,dptr dp2,word i,word j);
 int		cpintarray	(dptr dp1,dptr dp2,word i,word j);
+struct descrip listtoarray(dptr l);
 #endif					/* Arrays */
 #endif					/* MultiProgram */
 void		cpslots		(dptr dp1,dptr slotptr,word i, word j);

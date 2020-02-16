@@ -458,25 +458,32 @@ procedure test_timing()
    t.start()
    if level = 0 then {
       write(repl("-",20), " Delay tests ", repl("-",20))
-      write("delay 12   = ",  t.microSecs{1, delay(12) })
-      write("delay 2*6  = ",  t.microSecs{2, delay(6) })
-      write("delay 3*4  = ",  t.microSecs{3, delay(4) })
-      write("delay 4*3  = ",  t.microSecs{4, delay(3) })
-      write("delay 6*2  = ",  t.microSecs{6, delay(2) })
-      write("delay 12*1 = ",  t.microSecs{12, delay(1) })
+      t._0uS(); every 1 to 1 do delay(12); write("delay 12 = ", t.uS())
+      t._0uS(); every 1 to 2 do delay(6);  write("delay 2*6 = ", t.uS())
+      t._0uS(); every 1 to 3 do delay(4);  write("delay 3*4 = ", t.uS())
+      t._0uS(); every 1 to 4 do delay(3);  write("delay 4*3 = ", t.uS())
+      t._0uS(); every 1 to 6 do delay(2);  write("delay 6*2 = ", t.uS())
+      t._0uS(); every 1 to 12 do delay(1); write("delay 12*1 = ", t.uS())
 
-      write("delay 24 = ", t.microSecs{1, delay(12), delay(12) })
+      t._0uS(); delay(12); delay(12); write("delay 24 = ", t.uS())
 
       write(repl("-",20), " Push tests ", repl("-",20))
-      nullify(); write(left("1", 10),     t.microSecs{ 1,     push(L,0) })
-      nullify(); write(left("10",10),     t.microSecs{ 10,    push(L,0) })
-      nullify(); write(left("100",10),    t.microSecs{ 100,   push(L,0) })
-      nullify(); write(left("1000",10),   t.microSecs{ 1000,  push(L,0) })
-      nullify(); write(left("10000",10),  t.microSecs{ 10000, push(L,0) })
-      nullify(); write(left("20000",10),  t.microSecs{ 20000, push(L,0) })
-      nullify(); write(left("10000*2",10),t.microSecs{ 10000, push(L,0), push(L,0) })
-      nullify(); write(left("10000*3",10),
-                       t.microSecs{ 10000, push(L,0), push(L,0), push(L,0) })
+      nullify(); t._0uS(); every 1 to 1 do push(L,0)
+      write(left("1", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 10 do push(L,0)
+      write(left("10", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 100 do push(L,0)
+      write(left("100", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 1000 do push(L,0)
+      write(left("1000", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 10000 do push(L,0)
+      write(left("10000", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 20000 do push(L,0)
+      write(left("20000", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 10000 do {push(L,0); push(L,0)}
+      write(left("10000*2", 10), t.uS())
+      nullify(); t._0uS(); every 1 to 10000 do {push(L,0); push(L,0); push(L,0)}
+      write(left("10000*3", 10), t.uS())
    }
 
    nullify()
@@ -489,39 +496,48 @@ procedure test_timing()
    t.verify {"Same totals",               sum(L) = sum(A) }
    A[477] +:= 1
    t.verify {"Different totals",          sum(L) + 1 = sum(A) }
-   write("Sum(List) =        ", t.microSecs{100, sum(L)})
-   write("Sum(Array) =       ", t.microSecs{100, sum(A)})
-   write("Sum(array 1) =     ", t.microSecs{100, sum(A1)})
-   write("Sum(array 2) =     ", t.microSecs{100, sum(A2)})
-   write("Sum1toN(List) =    ", t.microSecs{100, sum1toN(L)})
-   write("Sum1toN(Array) =   ", t.microSecs{100, sum1toN(A)})
-   write("Sum1toN(array 1) = ", t.microSecs{100, sum1toN(A1)})
-   write("Sum1toN(array 2) = ", t.microSecs{100, sum1toN(A2)})
+
+   t._0uS(); every 1 to 100 do sum(L);      write("Sum(List) =        ", t.uS())
+   t._0uS(); every 1 to 100 do sum(A);      write("Sum(Array) =       ", t.uS())
+   t._0uS(); every 1 to 100 do sum(A1);     write("Sum(array 1) =     ", t.uS())
+   t._0uS(); every 1 to 100 do sum(A2);     write("Sum(array 2) =     ", t.uS())
+   t._0uS(); every 1 to 100 do sum1toN(L);  write("Sum1toN(List) =    ", t.uS())
+   t._0uS(); every 1 to 100 do sum1toN(A);  write("Sum1toN(Array) =   ", t.uS())
+   t._0uS(); every 1 to 100 do sum1toN(A1); write("Sum1toN(array 1) = ", t.uS())
+   t._0uS(); every 1 to 100 do sum1toN(A2); write("Sum1toN(array 2) = ", t.uS())
+
    L2 := []
    every n := 1 to 50000 do put(L2,n)
-   write("Sum(L2) =          ", t.microSecs{100, sum(L2)})
-   write("Sum1toN(L2) =      ", t.microSecs{100, sum1toN(L2)})
+   t._0uS(); every 1 to 100 do sum(L2);        write("Sum(L2) =          ", t.uS())
+   t._0uS(); every 1 to 100 do sum1toN(L2);    write("Sum1toN(L2) =      ", t.uS())
+   t._0uS(); every 1 to 100 do sumBothEnds(L); write("SumBE(List) =      ", t.uS())
+   t._0uS(); every 1 to 100 do sumBothEnds(A); write("SumBE(Array) =     ", t.uS())
 
-   write("SumBE(List) =      ", t.microSecs{100, sumBothEnds(L)})
-   write("SumBE(Array) =     ", t.microSecs{100, sumBothEnds(A)})
+   t._0uS(); every 1 to 20 do makeArray1to50000byComprehension()
+   write("array by [: :] =   ", t.uS())
+ 
+   t._0uS(); every 1 to 20 do makeArray1to50000byLoop()
+   write("array by loop =    ", t.uS())
 
-   collect(0, 50000*8)
-   write("array by [: :] =   ", t.microSecs{20, makeArray1to50000byComprehension() })
-   collect(0, 50000*8)
-   write("array by loop =    ", t.microSecs{20, makeArray1to50000byLoop() })
-   collect(0, 50000*8)
-   write("list by loop =     ",  t.microSecs{20, makeList1to50000byLoop() })
+   t._0uS(); every 1 to 20 do makeList1to50000byLoop()
+   write("list by loop =     ",  t.uS())
 
-   collect(0, 50000*8)
-   write("make array by array =    ", t.microSecs{20, A = array(50000,0)})
+   t._0uS(); every 1 to 20 do A = array(50000,0)
+   write("make array by array =    ", t.uS())
    t.verify{"has 50000 elements (1)", *A=50000 }
-   collect(0, 50000*8)
-   write("convert list(array) (1)= ", t.microSecs{20, A := list(A) })
+
+   t._0uS(); every 1 to 20 do A1 := list(A)
+   write("convert list(array) (1)= ", t.uS())
+   t.verify{"has 50000 elements (2)", *A1=50000 }
+
+   t._0uS(); every 1 to 20 do A := list(50000,0)
+   write("make array by list =     ", t.uS())
    t.verify{"has 50000 elements (3)", *A=50000 }
-   collect(0, 50000*8)
-   write("make array by list =     ", t.microSecs{20, A := list(50000,0) })
-   write("convert list(array) (2)= ", t.microSecs{20, A := list(A) })
-   t.verify{"has 50000 elements (4)", *A=50000 }
+   
+   t._0uS(); every 1 to 20 do A1 := list(A)
+   write("convert list(array) (2)= ", t.uS())
+   t.verify{"has 50000 elements (4)", *A1=50000 }
+
    t.finish()
 end
 

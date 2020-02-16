@@ -3,7 +3,7 @@ package testing
 #----------------------------------------------------------------------
 # Simple testing class
 
-class tester(id, 				# Name of test
+class tester(id,    			# Name of test
              quiet, 			# noise level
                  # quiet = 0: Not quiet        -- PASSED & FAILED messages
                  # quiet = 1: quiet (default)  -- FAILED messages only
@@ -12,7 +12,8 @@ class tester(id, 				# Name of test
              fails, 			# count of tests that fail
              mtx, 				# mutex for concurrent testing
              opf, 				# file for output
-             banner				# Flag controlling start/finish output
+             banner,			# Flag controlling start/finish output
+             t0					# Start time for timing test
              )
 
    # ----------------------------------------
@@ -106,53 +107,17 @@ class tester(id, 				# Name of test
    end
 
    # ----------------------------------------
-   # 1st param no. of repetitions
-   # other params, coexprs to execute in sequence
-   method microSecs (args)
-      static perCallOverhead, t_reps, crtn
-      local start, stop, reps, n
-      local minO, maxO, GTO
-      local uS
-      initial { # try to calculate the overhead of the timing loop
-         every !50 do gettimeofday()
-         start := gettimeofday()
-         every !199 do stop := gettimeofday()
-         # overhead of gettimeofday()
-         GTO :=  (100 + ((stop.sec - start.sec)*1000000 + (stop.usec - start.usec)))/200
-#         write(GTO)
-
-         t_reps := 200
-         crtn := create 1
-
-         minO := 100000000
-         maxO := 0
-         every !100 do {
-            start := gettimeofday()
-            every 1 to t_reps/2 do {every 1 to 2 do @^crtn}
-            stop := gettimeofday()
-
-            perCallOverhead := ((stop.sec - start.sec)*1000000 + (stop.usec - start.usec))-GTO
- 
-            minO >:= perCallOverhead
-            maxO <:= perCallOverhead
-         }
-
-         perCallOverhead := minO # (minO+maxO)/2  didn't work quite so well.
-#         write(minO, " <= PCO <= ", maxO)
-#         write("PCO = ", perCallOverhead, "(" , perCallOverhead/t_reps, ")")
-      }
-
-      reps := @args[1]
-      start := gettimeofday()
-      every 1 to reps do { every n := 2 to *args do {@^crtn; @^args[n]} }
-      stop := gettimeofday()
-      uS := ((stop.sec - start.sec)*1000000) + (stop.usec - start.usec)
-#      write("reps ", reps, " = ",
-#            stop.sec-start.sec, "s + ", stop.usec - start.usec, "uS = ", uS,
-#            " - [", (reps * perCallOverhead)/t_reps, "]")
-      return max(0, (uS - (reps * perCallOverhead)/t_reps))
+   # Store start time
+   method _0uS()
+      t0 := gettimeofday()
    end
 
+   # ----------------------------------------
+   # Cumulative uS since timer was started
+   method uS()
+      local t1 := gettimeofday()
+      return (t1.sec - t0.sec) *1000000 + t1.usec - t0.usec
+   end
 
    # ----------------------------------------
    initially(name: "", q: 1, f: &errout)

@@ -121,23 +121,77 @@ The header file \texttt{graphics.h} defines a collection of C
 structures that contain pointers to other C structures from
 \texttt{graphics.h} as well as pointers into the window system library
 structures. \ The internals for the simplest Unicon window structure
-under X11 are depicted in Figure 1. The picture is slightly simpler
+under X11 are depicted in Figure~\ref{fig:UniconWindowValue}.
+The picture is slightly simpler
 under MS Windows, with no display state or related color or font
 management; on the other hand MS Windows maps the Unicon context onto
 a large set of resources, including pens, brushes, fonts and bitmaps.
 
+%This figure is redrawn from utr5 figure 1.
+\noindent
+\begin{center}
+\begin{figure}[h]
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    elps/.style={ellipse,ellipse,draw,minimum width=1.5cm, minimum height=1.25cm},
+]`
+  %\draw[help lines] (0,0) grid (16,11);
 
-\bigskip
+% draw the ellipses above the line (Iconx) solid
+  \node(binding)[elps]  at (8,10.5)   {Binding};
+  \node(Wstate)[elps]   at (4,9)      {Window State};
+  \node(context)[elps]  at (12,9)     {Context};
+  \node(Dstate)[elps]   at (8,7.5)    {Display State};
+  \node(colours)[elps]  at (6,5.5)    {Colors};
+  \node(fonts)[elps]    at (10,5.5)   {Fonts};
+% join up with solid lines
+  \draw (binding) -- (Wstate);
+  \draw (binding) -- (context);
+  \draw (Wstate)  -- (Dstate);
+  \draw (context) -- (Dstate);
+  \draw (Dstate)  -- (colours);
+  \draw (Dstate)  -- (fonts);
+
+% draw the ellipses below the line (Xlib) dashed
+  \begin{scope}[style=dashed]
+    \node(pixmap)[elps]   at (2,3)      {Pixmap};
+    \node(display)[elps]  at (8,3)      {Display};
+    \node(Gcontext)[elps] at (13.5,2.5) {Graphics Context};
+    \node(window)[elps]   at (4,1)      {Window};
+    \node(xfs)[elps]      at (11,1)     {XFontStruct *};
+    \node(long)[elps]     at (5.5,2.5)  {long};
+    % join up with dashed lines
+    \draw (Wstate)   -- (pixmap);
+    \draw (Wstate)   -- (window);
+    \draw (colours)  -- (long);
+    \draw (Dstate)   -- (display);
+    \draw (fonts)    -- (xfs);
+    \draw (context)  -- (Gcontext);
+  \end{scope}
+
+%labels and thick line
+  \node at (15,5) {Iconx};
+  \node at (15,4) {Xlib};
+  \draw[line width = 0.1cm] (0,4.5) -- (16,4.5);
+% make something at (0,0) to give a bit more space between the picture and the caption
+  \node at (0,0) {};
+
+\end{tikzpicture}
+\caption{Internal Structure of an Unicon Window Value}
+\label{fig:UniconWindowValue}
+\end{figure}
+\end{center}
+
+%% \bigskip
 
 
-\bigskip
-\begin{center}{\color{red} Missing figure}\end{center}
+%% \bigskip
+%% \begin{center}{\color{red} Missing figure}\end{center}
 
 
-\bigskip
+%% \bigskip
 
 
-\ \  \ \ \ \ \ \ \ \ \ \ Figure 1: Internal Structure of an Unicon Window Value
+%%\ \  \ \ \ \ \ \ \ \ \ \ Figure 1: Internal Structure of an Unicon Window Value
 
 
 At the top, Unicon level, there is a simple structure called a

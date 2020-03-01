@@ -612,9 +612,49 @@ direct invocation optimization that is usually performed on
 invocations. Each node in the graph is given a numeric label. These
 labels increase in value in forward execution order.
 
-{\centering\selectlanguage{english}
-\includegraphics[width=3.0in,height=3.0in]{kw/figure8-1.png}
-\par}
+% define a TeX macro for the box label (a LaTeX newcommand doesn't work)
+\def\tmpLabel#1#2{\shortstack{#1\\ \\{\scriptsize\em #2}}}
+%define a TeX macro for the basic tree diagram (which is used several times)
+\def\tmpTree#1{
+  \node(f1)[rbx] at (#1) {\tmpLabel{f1()}{6}}
+  child {
+    node(f2)[rbx] {\tmpLabel{f2()}{4}}
+    child {
+      node(f3)[rbx] {\tmpLabel{f3()}{3}}
+      child { node(x)[rbx] {\tmpLabel{x}{1}}}
+      child { node(f4)[rbx] {\tmpLabel{f4()}{2}}}
+      }
+  }
+  child { node(y)[rbx] {\tmpLabel{y}{5}}};
+}
+% a slanted F
+\def\F{{\sl F\/}}
+% annotation at top right of a node
+\def\TR#1#2{\node[anchor=north west] at (#1.north east) {#2}}
+% annotation at bottom right of a node
+\def\BR#1#2{\node[anchor=south west] at (#1.south east) {#2}}
+% status boxes
+\def\stBox#1#2#3#4#5{%
+  \coordinate (o) at (#1);
+  \foreach \x in {0,1,2,3}
+  {
+    \draw (o) rectangle ($ (o) + (0.5,0.5) + 0.5*(\x,0)$);
+    \draw ($ (o) + (0.25,-0.3) + 0.5*(\x,0)$) node {\x};
+  }
+  \draw ($ (o) + (0.25,0.25)$)  node{{\sl #2}};
+  \draw ($ (o) + (0.75,0.25)$)  node{{\sl #3}};
+  \draw ($ (o) + (1.25,0.25)$)  node{{\sl #4}};
+  \draw ($ (o) + (1.75,0.25)$)  node{{\sl #5}};
+}
+
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    rbx/.style={rectangle,draw,rounded corners=0.3cm,minimum size=1.25cm},
+    level distance=2cm, sibling distance=3cm
+]
+  \tmpTree{4,7}
+\end{tikzpicture}
+\end{center}
 
 The following figure shows the operations in forward execution order
 with lines on the left side of the diagram showing the lifetime of
@@ -624,10 +664,28 @@ analysis phase of the compiler. Because \texttt{f4} can be resumed by
 that extends to the invocation of \texttt{f1}. The extended portion of
 the lifetime is indicated with a dotted line.
 
-{\centering\selectlanguage{english}
-\includegraphics[width=1.3in,height=1.6in]{kw/figure8-2.png}
-\par}
-
+\begin{center}
+\begin{tikzpicture}[draw,font=\small\tt, very thick]
+%  \draw[help lines] (0,0) grid (16,5);
+  \foreach \y in {4.2,3.4,2.6,1.8,1}
+  {
+    \draw (2,\y) -- ($ (1,\y) - 0.2*(\y ,0) + (0.84,0)$) -- ++(0,-0.8);
+  }
+  \node(x)[anchor=west]  at (2,4.2) {x};
+  \draw ($ (x.west) - (1,1.6)$) -- ++(0,0.8);
+  \draw[loosely dotted] ($ (x.west) - (1.0,1.7) $) -- (1,0.2);
+  
+  \node(f4)[anchor=west] at (2,3.4) {f4()};
+  \node(f3)[anchor=west] at (2,2.6) {f3()};
+  
+  \node(f2)[anchor=west] at (2,1.8) {f2()};
+  \draw ($ (f2.west) - (0.52,1.6)$) -- ++(0,0.8);
+  
+  \node(y)[anchor=west] at  (2,1.0) {y};
+  \node(f1)[anchor=west] at (2,0.2) {f1()};
+    
+\end{tikzpicture}
+\end{center}
 
 The following series of diagrams illustrate the process of allocating
 intermediate values. Each diagram includes an annotated syntax tree
@@ -665,9 +723,55 @@ variable 0, but not the allocation of variable 1. Therefore, variable
 1 is allocated to node \textit{3} and the deallocation list for node
 \textit{4} is updated. This is illustrated in the tree on the right:
 
-{\centering\selectlanguage{english}
-\includegraphics[width=6.0in,height=4.2in]{kw/figure8-3.png}
-\par}
+\makebox[0.25in]{~}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    rbx/.style={rectangle,draw,rounded corners=0.3cm,minimum size=1.25cm},
+    level distance=2cm, sibling distance=3cm
+]
+  \tmpTree{4,9}
+  \stBox{3,1}{4}{5}{F}{F};
+  % annotate the nodes
+  \TR{f1}{\{0:\F, 1:\F\}};
+
+  \TR{f2}{\{~\}};
+  \BR{f2}{0};
+
+  \TR{y}{\{~\}};
+  \BR{y}{1};
+
+  \TR{f3}{\{~\}};
+  \TR{x}{\{~\}};
+  \TR{f4}{\{~\}};
+
+  \coordinate (arrow) at ($ (f1.north west) - (0.3,0.4)$);
+  \draw[-Latex] (arrow) -- ($ (arrow) - (0,0.75)$);
+\end{tikzpicture}
+\makebox[0.75in]{~}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    rbx/.style={rectangle,draw,rounded corners=0.3cm,minimum size=1.25cm},
+    level distance=2cm, sibling distance=3cm
+]
+  \tmpTree{4,9}
+  \stBox{3,1}{4}{3}{F}{F};
+  
+  % annotate the nodes
+  \TR{f1}{\{0:\F, 1:\F\}};
+
+  \TR{f2}{\{1:{\sl 5\/}\}};
+  \BR{f2}{0};
+
+  \TR{y}{\{~\}};
+  \BR{y}{1};
+
+  \TR{f3}{\{~\}};
+  \BR{f3}{1};
+  \TR{x}{\{~\}};
+  \TR{f4}{\{~\}};
+
+  \coordinate (arrow) at ($ (f2.north west) - (0.3,0.4)$);
+  \draw[-Latex] (arrow) -- ($ (arrow) - (0,0.75)$);
+\end{tikzpicture}
+
 
 The final allocation requires a contiguous pair of variables for nodes
 \textit{1} and \textit{2}. The value from node \textit{1} has a
@@ -677,9 +781,36 @@ allocations for variables 0 and 1 conflict with the lifetime of the
 intermediate value of node \textit{1}, so the variables 2 and 3 are
 used in this allocation. This is illustrated in the tree:
 
-{\centering\selectlanguage{english}
-\includegraphics[width=3.6in,height=5.0in]{kw/figure8-5.png}
-\par}
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    rbx/.style={rectangle,draw,rounded corners=0.3cm,minimum size=1.25cm},
+    level distance=2cm, sibling distance=3cm
+]
+  \tmpTree{4,9}
+  \stBox{3,1}{4}{3}{1}{2};
+
+  % annotate the nodes
+  \TR{f1}{\{0:\F, 1:\F, 2:\F\}};
+
+  \TR{f2}{\{1:{\sl 5\/}\}};
+  \BR{f2}{0};
+
+  \TR{y}{\{~\}};
+  \BR{y}{1};
+
+  \TR{f3}{\{3:\F\}};
+  \BR{f3}{1};
+
+  \TR{x}{\{~\}};
+  \BR{x}{2};
+  
+  \TR{f4}{\{~\}};
+  \BR{f4}{3};
+  
+  \coordinate (arrow) at ($ (f3.north west) - (0.3,0.4)$);
+  \draw[-Latex] (arrow) -- ($ (arrow) - (0,0.75)$);
+\end{tikzpicture}
+\end{center}
 
 
 The remaining actions of the allocator in this example mark temporary
@@ -690,18 +821,58 @@ following diagram. The annotations on the graph do not change. Only
 the node of interest is shown for each step. These steps are performed
 in node-number order.
 
-{\centering\selectlanguage{english}
- \includegraphics[width=6.0in,height=3.3in]{kw/figure8-6.png}  
-\par}
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    rbx/.style={rectangle,draw,rounded corners=0.3cm,minimum size=1.25cm}
+]
+%  \draw[help lines] (0,0) grid (16,8);
+  \node(x)[rbx] at (1,7) {\tmpLabel{x}{1}};
+  \TR{x}{\{~\}};
+  \BR{x}{2};
+  \stBox{0,5}{4}{3}{I}{2};
+  \draw[-Latex] ($ (x.south west) - (0.3, -0.2)$) -- ++(0,0.8);
 
+  \node(f4)[rbx] at (6,7) {\tmpLabel{f4()}{2}};
+  \TR{f4}{\{~\}};
+  \BR{f4}{3};
+  \stBox{5,5}{4}{3}{I}{I};
+  \draw[-Latex] ($ (f4.south west) - (0.3, -0.2)$) -- ++(0,0.8);
+
+  \node(f3)[rbx] at (11,7) {\tmpLabel{f3()}{3}};
+  \TR{f3}{\{3:\F\}};
+  \BR{f3}{1};
+  \stBox{10,5}{4}{I}{I}{F};
+  \draw[-Latex] ($ (f3.south west) - (0.3, -0.2)$) -- ++(0,0.8);
+
+  \node(f2)[rbx] at (1,3) {\tmpLabel{f2}{4}};
+  \TR{f2}{\{1:5\}};
+  \BR{f2}{0};
+  \stBox{0,1}{I}{5}{I}{F};
+  \draw[-Latex] ($ (f2.south west) - (0.3, -0.2)$) -- ++(0,0.8);
+
+  \node(y)[rbx] at (6,3) {\tmpLabel{y}{5}};
+  \TR{y}{\{~\}};
+  \BR{y}{1};
+  \stBox{5,1}{I}{I}{I}{F};
+  \draw[-Latex] ($ (y.south west) - (0.3, -0.2)$) -- ++(0,0.8);
+
+  \node(f1)[rbx] at (11,3) {\tmpLabel{f1()}{6}};
+  \TR{f1}{\{0:\F, 1:\F, 2:\F\}};
+  \stBox{10,1}{F}{F}{F}{F};
+  \draw[-Latex] ($ (f1.south west) - (0.3, -0.2)$) -- ++(0,0.8);
+
+\end{tikzpicture}
+\end{center}
 
 In general, the tree walk will alternate up and down the syntax
 tree. For example, if node \textit{5} had children, the allocation
 status after the deallocation associated with node \textit{4},
 
-{\centering\selectlanguage{english}
- \includegraphics[width=1.2in,height=0.6in]{kw/figure8-6-5.png}  
-\par}
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt]
+  \stBox{0,1}{I}{5}{I}{F};
+\end{tikzpicture}
+\end{center}
 
 \noindent is used to allocate temporary variables to those
 children. If this requires more than four temporary variables, the
@@ -711,10 +882,21 @@ This allocation algorithm is not guaranteed to produce an allocation
 that uses a minimal number of temporary variables.  Indeed, a smaller
 allocation for the previous example is illustrated in the tree:
 
-{\centering\selectlanguage{english}
-\includegraphics[width=3.3in,height=3.7in]{kw/figure8-7.png}  
-\par}
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    rbx/.style={rectangle,draw,rounded corners=0.3cm,minimum size=1.25cm},
+    level distance=2cm, sibling distance=3cm
+]
+  \tmpTree{4,9}
 
+  % annotate the nodes
+  \BR{f2}{1};
+  \BR{y}{2};
+  \BR{f3}{2};
+  \BR{x}{0};
+  \BR{f4}{1};
+\end{tikzpicture}
+\end{center}
 
 While the non-optimality of this algorithm is unlikely to have a
 measurable effect on the performance of any practical program, the

@@ -1,7 +1,7 @@
 \chapter{Concurrency and Thread-Safety}
 
 \label{Unicon-Concurrency-Thread_Safety}
-A {\em thread\/} is a fundamental build-ing block of an executing
+A {\em thread\/} is a fundamental building block of an executing
 program, consisting of a set of registers (including a program counter
 indicating what instruction it is executing) and a stack with which
 to evaluate intermediate results, place parameters and perform
@@ -114,26 +114,6 @@ expr\\
 unlock(mtx)\\
 \end{iconcode}
 
-The \texttt{initial} clause is thread-safe. It can be thought of as a
-built-in critical region that is run only once. No thread is allowed to
-enter the procedure if there is a thread currently still executing in the
-\texttt{initial} block. This can be useful specifically in a concurrent
-environment to do critical initialization such as creating a new mutex
-object instead of declaring a mutex variable to be global and initializing
-it somewhere else or passing it from one function to another where it will
-be actually used. A concurrent version of \texttt{seq()} would look like
-this:
-
-\begin{iconcode}
-procedure seq()\\
-\>local n\\
-\>static i, region\\
-\>initial \{i:=0; region:=mutex()\}\\
-\>critical region: n := i := i+1\\
-\>return n\\
-end \\
-\end{iconcode}
-
 Mutexes do not exist solely as independent objects, they are also used as
 attributes of other objects, namely attributes of the mutable data
 types. Any data structure in Unicon that can be used in a thread unsafe
@@ -151,6 +131,7 @@ passing it to the function \texttt{mutex()} as follows:
 
 \iconline{mutex(L)}
 
+\noindent
 From this point on, any puts to the list or gets from \texttt{L} are
 protected by an implicit mutex locking mechanism. This helps make
 concurrent programming almost as easy as writing a sequential program.  The
@@ -209,6 +190,55 @@ critical syntax like the following:
 
 \iconline{critical L: L[1] := L[1] + 1}
 
+\subsection{Initial clause}
+\label{Unicon-Initial-Clause}
+A procedure in a Unicon (or Icon) program can have an initialization clause
+at the top of the procedure.  This gets executed only once the first time
+the procedure is entered.  The initial clause provides a very convenient
+way to have local static variables and their initialization in the same
+procedure instead of relying on global variables and having to initialize
+them somewhere else.  An Icon procedure that produces a sequence of numbers one
+at each call can be written as:
+
+\begin{iconcode}
+procedure seq()\\
+\>static i\\
+\>initial i:=0\\
+\>i := i+1\\
+\>return i\\
+end\\
+\end{iconcode}
+
+In Unicon the \texttt{initial} clause must be thread-safe. It can be
+thought of as a built-in critical region that is run only once. No thread
+is allowed to enter the procedure if there is a thread currently still
+executing in the \texttt{initial} block. This can be useful specifically in
+a concurrent environment to do critical initialization such as creating a
+new mutex object instead of declaring a mutex variable to be global and
+initializing it somewhere else or passing it from one function to another
+where it will be actually used. The procedure above is correct for Icon but
+in a concurrent Unicon program it is not thread-safe, even with the
+\texttt{initial clause}.  A correct concurrent version of \texttt{seq()}
+would look like this:
+
+\begin{iconcode}
+procedure seq()\\
+\>local n\\
+\>static i, region\\
+\>initial \{i:=0; region:=mutex()\}\\
+\>critical region: n := i := i+1\\
+\>return n\\
+end \\
+\end{iconcode}
+
+Note the use of the local variable \texttt{n} to temporarily hold the value
+of the counter \texttt{i} while still in the critical region. That is
+because once the thread leaves the critical region, there is no guarantee
+that the value of \texttt{i} would remain the same before returning the
+value of \texttt{i}.  Using the variable \texttt{n} guarantees that the
+value returned is correct even if the value of \texttt{i} is changed by
+another thread.
+
 \subsection{Condition Variables}
 Mutexes protect shared data in critical regions, and block threads if more
 than one thread tries to enter the critical region. Condition variables
@@ -257,7 +287,8 @@ waiting on \texttt{cv}:
 \iconline{signal(cv, CV\_BROADCAST)}
 
 \section{Thread Communication}
-Co-expressions, as explained in {\color{red} Chapter 3}, have a simple form
+Co-expressions, as explained in \ref{Overview-CoExpressions}
+(page \pageref{Overview-CoExpressions}), have a simple form
 of communication influenced by their synchronous execution. Threads on the
 other hand, run in parallel, creating a dynamic environment for
 communication. In many cases, a running thread must send a value to another
@@ -277,7 +308,69 @@ with the thread. When a thread sends a message with an explicit destination, the
 is queued in the destination's inbox. Otherwise it is queued into the sender's outbox.
 A thread can receive messages from another thread by dequeuing messages from the source's
 outbox if there is an explicit source, otherwise it dequeues messages from its own inbox.
-{\color{red} Figure 6.1} presents two threads with the inboxes and outboxes. 
+Figure \ref{msg-queues} presents two threads with the inboxes and outboxes.
+
+% [DonW] The order in which things are drawn in this picture is important
+%        because some parts of an object must be concealed and other parts
+%        must overlay other objects. The conventional TikZ way of dealing
+%        with this (using a background layer) doesn't work in this situation:
+%        we must draw the objects on a single path and use "behind path".
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,
+    % general 3D effect with light coming from the top, and a shadow
+    3D/.style={text=white,draw=#1!50!white,
+       preaction={drop shadow={shadow scale=1.05,shadow xshift=0.75mm,shadow yshift=-0.75mm}},
+       top color=#1!5,bottom color=#1!80!black, minimum width=2.2cm},
+    % A Thread box
+    Thread/.style={3D=#1,shape=rectangle,rounded corners=1.6ex, minimum size=3cm},
+    % A message box with arrow
+    MA/.style={3D=#1, shape=arrow box, arrow box arrows={east:6mm},minimum height=5mm},
+    % A message
+    M/.style={3D=#1, shape=ellipse, text=black, shadow scale=0.1}
+]
+%  \draw[help lines] (0,0) grid (16,8);
+  \draw (1,5) node[MA=cyan!90!black] (InA)  {~~~inbox};
+
+  \node[Thread=red, anchor=north west](A) at ($(InA.east) + (0,5mm) $)  {Thread A};
+  % We want an ellipse with an arrow coming out of it. TikZ doesn't have one of those,
+  % so we fake it with an ellipse and an arrow box behind it (so only the arrow shows).
+  \draw node[M=green!60!yellow, name=c1] at ($ (A) + (0,1) $) {~x~@>~B~}
+        node[MA=green!60!yellow,minimum width=1mm,
+             behind path,arrow box arrows={east:3cm},name=c2] at (c1) {};
+  % Similar fakery to produce an inbox connected to another thread with
+  % with an extra black arrow coming out of the inbox
+  \node[MA=cyan!90!black,anchor=west,name=InB] at (c2.east) {~~~inbox}
+        node[Thread=orange,anchor=north west, behind path](B)
+             at ($(InB.east) + (0,5mm) $)  {Thread B}
+        node[MA=black,draw=black,
+             top color=black,bottom color=black,minimum height=1mm, minimum width=1mm,
+             arrow box shaft width=0.4,
+             arrow box arrows={east:19.5mm},behind path] at (InB) {};
+
+  % We want an outbox with an extra black arrow
+  \draw node[MA=red!40!blue,anchor=west, name=OA]
+             at ($ (A.south east) + (0,5mm) $) {~~~~outbox}
+        node[MA=black,draw=black,
+             top color=black,bottom color=black,minimum height=1mm, minimum width=1mm,
+             arrow box shaft width=0.4,
+             arrow box arrows={east:35.5mm},behind path] at (OA) {};
+
+  \node[MA=red!40!blue,anchor=west, name= OB]
+        at ($ (B.south east) + (0,5mm) $) {~~~outbox};
+  \node[M=green!60!yellow,anchor=west,minimum width=1mm] at (c2.east) {x};
+  \draw node[M=green!60!yellow, name=c3] at ($ (A) - (0,1) $) {~y~@>~}
+        node[MA=green!60!yellow,minimum height=1mm, minimum width=1mm,
+             arrow box arrows={east:13mm},
+             behind path,name=c4] at (c3) {};
+
+  \node[M=green!60!yellow,anchor=west,minimum width=1mm] at (c4.east) {y};
+  \node[M=white!80!black,name=c5] at ($ (B) + (0,1) $) {~~~<@~~~};
+  \node[M=white!80!black,name=c6] at ($ (B) - (0,1) $) {~~~<@A~~};
+\end{tikzpicture}
+\end{center}
+\caption{\label{msg-queues}Threads messaging queues}
+\end{figure}
 
 \subsection{Send and Receive Operators}
 The first two operators are \texttt{@>} (send) and \texttt{<@}
@@ -334,14 +427,14 @@ quickly by default and also to have an implicit
 communication/synchronization as explained later in this section.
 
 Each thread has exactly one inbox and one outbox, and each operator call is
-mapped to only one of these inboxes or outboxes as seen in {\color{red}
-Figure 1}. All messages from all threads coming to thread B in the figure
+mapped to only one of these inboxes or outboxes as seen in Figure \ref{msg-queues}.
+All messages from all threads coming to thread B in the figure
 end up in its inbox. All threads trying to receive messages from A compete
 on its outbox. Both the inbox and the outbox queues are public
 communications channels, and it is impossible to distinguish the source of
 a message if there are several threads sending messages to the same thread
 at the same time. Furthermore, if \texttt{<@} has an explicit source like A in
-{\color{red} Figure 6.1} it only looks in A's outbox, and does not see messages from A
+Figure \ref{msg-queues} it only looks in A's outbox, and does not see messages from A
 coming directly to the inbox. Applications that require the sender's
 address can attach that information to messages by building them as records
 with two fields, one field for data and the other containing the sender's
@@ -351,7 +444,7 @@ of private communication channels discussed later in this chapter.
 
 \subsection{Inbox/Outbox and the Attrib() Function}
 
-As seen in previous subsections, communications between threads is done though
+As seen in previous subsections, communications between threads is done through
 inbox/outbox queues which are governed by size limits. The size limit (defaults to 1024)
 and the actual size dictate how synchronization is melted with the communication.
 The size operator \texttt{*} can be used with a thread to query its actual outbox size
@@ -382,18 +475,19 @@ presented earlier), the code is:
 
 \iconline{outbox\_size := Attrib(T, OUTBOX\_SIZE)}
 
-\noindent similarly, 
+\noindent similarly,
 
 \iconline{inbox\_size := Attrib(T, INBOX\_SIZE)}
 
-\noindent gets the current size  of the inbox. On the other hand, 
+\noindent gets the current size  of the inbox. On the other hand,
 
 \iconline{Attrib(T, INBOX\_LIMIT, 64, OUTBOX\_LIMIT, 32)}
 
 \noindent sets the inbox and outbox size limits to 64 and 32
-respectively. Table 6.1 summarizes all of the available attributes and
+respectively. Table \ref{Q-attributes} summarizes all of the available attributes and
 their meanings.
 
+\begin{table}[h]
 \begin{tabular}{>{\texttt\bgroup}l<{\egroup}ll}
 {{\textnormal{Attribute}}} & Meaning & Read/Write\\
 INBOX\_SIZE   & Number of items in the inbox & Read Only\\
@@ -401,8 +495,8 @@ OUTBOX\_SIZE  & Number of items in the outbox& Read Only\\
 INBOX\_LIMIT  & The maximum number of items allowed in the inbox & Read/Write\\
 OUTBOX\_LIMIT & The maximum number of items allowed in the outbox & Read/Write\\
 \end{tabular}
-
-{\color{red} Table 6.1} Thread's communication queues attributes
+\caption{\label{Q-attributes}Thread's communication queues attributes}
+\end{table}
 
 \subsection{Blocking Send and Receive}
 In many situations, senders and receivers generate and consume messages at
@@ -429,79 +523,114 @@ to impose a limit on how long to wait for a result before giving up. Here is how
 \texttt{<{}<@ }would look like in this case:
 
 \iconline{result := timeout <{}<@\ \ \ \ \#  get from the current thread inbox}
-\noindent or 
+\noindent or
 \iconline{result := timeout <{}<@ T\ \ \ \# get from T's outbox}
-  
+
 The timeout operand is a non-negative integer denoting the maximum time to
 wait in milliseconds. Negative integers are treated as a null value, an
 indefinite blocking receive. A 0 operand indicates no waiting time, making
-the end behavior effectively similar to a non-blocking receive. Table 6.2
+the end behavior effectively similar to a non-blocking receive. Table \ref{comsOpTab}
 summarizes the different forms of the send and receive operators and their
 operands:
-  
-Table 6.2 Summary of the new communication operators
-Operator
-Operands
-Behavior
 
-@> 
+\begin{table}[h]
+\begin{tabular}{|cc@{\hspace*{5mm}}l|}
+  \hline
+  Operator & Operands & \multicolumn{1}{c|}{Behavior}\\
+  \hline
+  \multirow{2}{*}{\shortstack{\texttt{@>}\\(send)}}
+      & \texttt{msg@>} &
+      Place \texttt{msg} in the current thread's outbox, fail if the outbox is full\\
+      \cline{2-3}
+      & \texttt{msg@>T}
+      & Place \texttt{msg} in \texttt{T}'s inbox, fail if \texttt{T}'s inbox is full\\
+  \hline
+  \multirow{2}{*}{\shortstack{<@\\(receive)}}
+      & \texttt{<@}
+      & Get a message from the current thread's inbox, fail if it is empty\\
+      \cline{2-3}
+      & \texttt{<@T}
+      & Get a message from \texttt{T}'s outbox, fail if \texttt{T}'s outbox is empty\\
+  \hline
+  \multirow{2}{*}{\shortstack{@>{}>\\(blocking send)}}
+      & \texttt{msg@>{}>}
+      & Place msg in the current thread's outbox, block if the outbox is full\\
+      \cline{2-3}
+      & \texttt{msg@>{}>T}
+      &Place msg in \texttt{T}'s inbox, block if the \texttt{T}'s inbox is full\\
+  \hline
+  \multirow{4}{*}{\shortstack{<{}<@\\(blocking\\receive)}}
+      & \texttt{<{}<@}
+      & Get a message from the current thread's inbox, block if it is empty\\
+      \cline{2-3}
+      & \texttt{<{}<@T}
+      & Get a message from \texttt{T}'s outbox, block if \texttt{T}'s outbox is empty\\
+      \cline{2-3}
+      & \texttt{n{<}<@}
+      & \multicolumn{1}{p{100mm}|}{
+        Get a message from the current thread's inbox, block up to n milliseconds
+        if the inbox is empty waiting for new messages}\\
+      \cline{2-3}
+      & \texttt{n<{}<@T}
+      & \multicolumn{1}{p{110mm}|}{
+        Get a message from \texttt{T}'s outbox, block up to n milliseconds
+        if \texttt{T}'s outbox is empty, waiting for new messages to become available}\\
+   \hline
+\end{tabular}
+\caption{\label{comsOpTab} Summary of the new communication operators}
+\end{table}
 
-(send)
+\subsection{Private Communication Channels}
+Inbox and outbox communication queues are visible by all threads all the
+time. In some scenarios two or more threads need to communicate with each
+other without worrying about other threads sending and receiving messages
+using the same shared queues. While it is possible to build a protocol at
+the application level on top of the inbox and outbox queues to achieve such
+behavior, it is simpler and more efficient to have the threads communicate
+privately.  This kind of communication can be done by sharing a list
+between two threads and protecting it by an explicit mutex, or using a
+thread-safe list. A more formal way for such communication is to use the
+\texttt{channel()} function.
 
-msg@>
+Starting a private communication is similar to a network connection, except
+that this connection is taking place between two threads in the same
+process instead of two different processes that may be on different
+machines.  A private communication channel between two threads and can be
+created using the function \texttt{channel()}. \texttt{channel()} is part
+of the \texttt{threads} package (which was added to Unicon's class
+library) and takes one parameter, which is the thread with which the
+connection will be initiated.  If \texttt{channel()} succeeds, it returns a
+list representing a communication channel between the two threads.
+Representing a bidirectional channel that can be used by the two threads,
+given that each thread calls the function \texttt{channel()} with the other
+thread as an argument. Here is an example.
 
-Place msg in the current thread's outbox, fail if the outbox is full
+\noindent
+In thread A:
+\begin{iconcode}
+  chB:= channel(B) | stop("failed to open a channel with B")
+\end{iconcode}
+In thread B:
+\begin{iconcode}
+  chA:= channel(A) | stop("failed to open a channel with A")
+\end{iconcode}
 
-msg@>T
-
-Place msg in T's inbox, fail if T's inbox is full
-
-<@
-
-(receive)
-
-<@
-
-Get a message from the current thread's inbox, fail if it is empty
-
-<@T
-
-Get a message from T's outbox, fail if T's outbox is empty
-
-@>>
-
-(blocking send)
-
-msg@>>
-
-Place msg in the current thread's outbox, block if the outbox is full
-
-msg@>>T
-
-Place msg in T's inbox, block if the T's inbox is full
-
-<<@
-
-(blocking receive)
-
-<<@
-
-Get a message from the current thread's inbox, block if it is empty
-
-<<@T
-
-Get a message from T's outbox, block if T's outbox is empty
-
-n<<@
-
-Get a message from the current thread's inbox, block up to n milliseconds if
-the inbox is empty waiting for new messages
-
-n<<@T
-
-Get a message from T's outbox, block up to n milliseconds if T's outbox is empty
-waiting for new messages to become available
-
+\noindent
+This channel is a {\em directional} communication channel.  One thread
+should use it as an outbox, and the other should use it as an inbox.  That
+means only one thread will send messages over the channel while the other
+receives them from the other end. For many problems, one thread produces
+results while one or more threads consume these results, making the
+directional nature of the channel suitable for such problems.  In cases
+where the communication is needed in both directions, the two communicating
+threads can open two channels to send messages in both directions. The
+provided channels can be used with the communication operators (all four of
+them) with the same semantics as before.  The only difference in this case
+is that the right operand is a communication channel instead of a
+thread. The \texttt{channel()} function also accepts a second parameter as
+an identifier for the channel so that the two ends of the channel find each
+other easily without depending on the order in which the \texttt{channel()}
+function is called.
 
 \section{Virtual Machine Changes}
 The Unicon virtual machine is the Icon virtual machine, extended to better
@@ -556,7 +685,7 @@ subsequent executions.
 This implementation introduces a race condition when multiple threads
 execute the self-modifying instruction at the same time. The problem was
 solved by adding a mutex for each self-modifying instruction
-opcode. {\color{red} Figure 6.2} shows an example self-modifying
+opcode. Figure \ref{selfMod-mutex} shows an example self-modifying
 instruction code protected with a mutex. Mutex contention could be reduced
 further by allocating a separate mutex for each instance of each opcode
 (requiring a number of mutexes proportional to the size of the program)
@@ -564,7 +693,7 @@ instead of using just seven mutexes for the seven self-modifying opcodes;
 it is unlikely that this would be worth implementing, since the number of
 instances is large and each instance of a self-modifying instruction uses
 its mutex only once when it replaces itself.  To provide a thread safe
-\texttt{initial} clause (discussed in {\color{red} 6.1.2}) at the language
+\texttt{initial} clause (discussed in \ref{Unicon-Initial-Clause}) at the language
 level, a similar technique used for self-modifying instructions was
 utilized, unlike self-modifying instructions, where locking and unlocking
 take place at the same instructions, with initial clause, the locking
@@ -576,19 +705,76 @@ calls to the function containing the initial clause made by any thread to
 skip over the clause.  This mechanism effectively eliminates the need to do
 any locking/unlocking after it is initialized.
 
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[font=\small\tt]
+  %\draw[help lines] (0,0) grid (16,12);
+  \def\vsp{0.5cm}
+  \def\hsp{1cm}
+  %
+  % draw the program text
+  \begin{scope}[anchor=west]
+    \draw
+    (0,11)        node[name=L1] {case Op\_Real: ~~~~~~~~~/* real, offset address */}
+    ++(0.5,-\vsp) node[name=L2]   {MUTEX\_LOCKID(MTX\_OP\_AREAL);}
+    ++(0,-\vsp)   node {}
+    ++(0,-\vsp)   node[name=L3]   {if (ipc.op[-1] == Op\_Areal) \{}
+    ++(.5,-\vsp)  node[name=L4]      {MUTEX\_UNLOCKID(MTX\_OP\_AREAL);}
+    ++(0,-\vsp)   node[name=L5]      {goto L\_areal;}
+    ++(-0.5,-\vsp)node[name=L6]   {\}}
+    ++(0,-\vsp)   node[name=L7]   {PushVal(D\_Real);}
+    ++(0,-\vsp)   node[name=L8]   {opnd = GetWord;}
+    ++(0,-\vsp)   node[name=L9]   {opnd += (word)ipc.opnd;}
+    ++(0,-0.25)   node {}
+    ++(0,-\vsp)   node[name=L10]  {PushAVal(opnd);}
+    ++(0,-\vsp)   node[name=L11]  {PutInstr(Op\_Areal, opnd, 1);}
+    ++(0,-\vsp)   node[name=L12]  {InterpEVValD((dptr)(rsp-1), e\_literal);}
+    ++(0,-\vsp)   node[name=L13]  {MUTEX\_UNLOCKID(MTX\_OP\_AREAL);}
+    ++(0,-\vsp)   node[name=L14]  {break;}
+    ++(0,-\vsp)   node[name=L15]  {}
+    ++(-0.5,-\vsp)node[name=L16] {case Op\_Areal:~~~~~~~~/* real, absolute address */}
+    ++(-0.5,-\vsp)node[name=L17]{L\_areal:}
+    ++(1,-\vsp)   node[name=L18]  {PushVal(D\_Real);}
+    ++(0,-\vsp)   node[name=L19]  {PushAVal(GetWord);}
+    ++(0,-\vsp)   node[name=L20]  {InterpEVValD((dptr)(rsp-1), e\_literal);}
+    ++(0,-\vsp)   node[name=L21]  {break;};
+  \end{scope}
+  %
+  % annotate the program
+  \begin{scope}[every node/.style={single arrow, draw, thin, align=left,
+                                   anchor=west,shape border rotate=180},
+                color=black!75!white, font=\it ]
+    \draw
+      (L2.east)+(\hsp,0)     node[text width=6.2cm] {Lock the mutex}
+      (L4.east)+(\hsp,0)     node[text width=4.8cm]
+        {Check if another thread has done this already}
+      (L7.east)+(\hsp,0)     node [text width=9.5cm]
+        {Calculate the absolute address using the offset}
+      (L11.east)+(3*\hsp,0)  node[text width=5.1cm]
+        {Store the absolute address back in the instruction,\break
+         replacing the offset}
+      (L19.east)+(3*\hsp,0)  node[text width=6.4cm]
+        {All of the subsequent references go at full speed;
+         no locking or address recalculation is required};
+  \end{scope}
+
+\end{tikzpicture}
+\end{center}
+\caption{\label{selfMod-mutex}Self modifying instruction preceded by a mutex}
+\end{figure}
 
 \subsection{Runtime System Support}
 Achieving thread-safety in the implementation without a global interpreter
 lock required extensive modifications to the runtime system to provide a
-thread-safe environment.  This includes safe use of the IO subsystem and
-the underlying libraries, but most importantly heap management in term of
+thread-safe environment.  This includes safe use of the IO subsystem,
+the underlying libraries and, most importantly, heap management in terms of
 allocation and garbage collection.
 
 \subsubsection{Input/Output Sub-system}
 The Unicon input output sub-system includes very high-level facilities for
 accessing files, networks and messaging, 2D and 3D graphics, databases,
 pipes and pseudo-ttys. The underlying C library functions implementing
-these capabilities are often thread- safe [96]. However, Unicon
+these capabilities are often thread- safe {\color{red} [96]}. However, Unicon
 language-level IO operations usually involve several underlying library
 calls that must be atomic with respect to threads. Each IO handle is
 assigned a mutex when it is opened.  Any IO operation that uses this handle
@@ -640,9 +826,68 @@ private heaps. This happens when a thread requests more memory and that
 request can only be granted by allocating a new private heap. A program
 starts with no public heaps, and with one private heap for the main
 thread. A new private heap is allocated for each new thread if none of the
-public heap is sufficient. {\color {red} Figure 6.3} shows the heap layout
+public heap is sufficient. Figure \ref{ThreadHeaps} shows the heap layout
 with regards to threads. when a thread finishes, its heap goes back to the
 pool of public heaps.
+
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[draw,very thick,font=\small\tt,>=Latex,
+    Heap/.style={text=black,draw=red,
+      shading=radial, inner color=orange!50!white, outer color=skyblue!70!white,
+      shape=rectangle, minimum width=3.5cm, minimum height=9mm},
+    Thread/.style={text=black,draw=skyblue,
+      shading=radial, inner color=blue!40!white, outer color=orange!50!white,
+      shape=rectangle, minimum width=2.5cm, minimum height=8mm, rounded corners=2mm}
+  ]
+  \definecolor{skyblue}{rgb}{0.53, 0.81, 0.92}
+  \definecolor{teagreen}{rgb}{0.82, 0.94, 0.75}
+  %\draw[help lines] (0,0) grid (16,10);
+
+  % draw the thread heaps
+  \foreach \n/\y in {1/9, 2/7.5, 3/6, n/3}
+    {
+      \path (3.5,\y) node[rectangle,rounded corners=4mm,fill=teagreen!70!white,
+                          minimum width=8cm, minimum height=12mm, name=back-\n] {};
+      \path (1,\y) node[Thread,name=Th\n] {Thread \n};
+      \path (5,\y) node[Heap,name=Thh\n] {~Thread \n ~heap};
+      \draw[red]
+        ($(Thh\n.north west)+(0,-1.5mm)$) -- ($(Thh\n.north east)+(0,-1.5mm)$)
+        ($(Thh\n.north west)+(5mm,0)$)    -- ($(Thh\n.south west)+(5mm,0)$);
+      \draw[->] (Th\n) -- (Thh\n);
+    }
+    \draw[dotted] ($(back-n.north)+(-2cm,0)$) -- ($(back-3.south)+(-2cm,0)$);
+    \node (label) at (3.8,4.5) {Private heaps};
+    \draw[->,out=60,in=-120] (label) to (Thh3.south);
+    \draw[->,out=-60,in=120] (label) to (Thhn.north);
+
+  % draw the public heaps
+  \path (11,6) node[rectangle,rounded corners=8mm,fill=skyblue!30!white,
+                          minimum width=4.5cm, minimum height=7.5cm] (P) {};
+  \node at ($ (P) + (0,3.2cm) $) {Pool of Public Heaps};
+
+  \foreach \n/\y in {1/2, 2/0.5, m/-2.5}
+    {
+      \path ($ (P) +(0,\y) $)node[Heap,name=Ph\n] {~Public heap \n};
+      \draw[red]
+        ($(Ph\n.north west)+(0,-1.5mm)$) -- ($(Ph\n.north east)+(0,-1.5mm) $)
+        ($(Ph\n.north west)+(5mm,0)$)    -- ($(Ph\n.south west)+(5mm,0) $);
+    }
+  \draw[dotted] ($(Ph2.south)+(1,0)$) -- ($(Phm.north)+(1,0)$);
+
+  %connect up the public heaps
+  \begin{scope}[<->,arrows={Circle[length=1.5mm,sep]-Latex}]
+    \draw[dotted] (Ph2.west)+(1.5mm,0) -- ($(Phm.north west)+(1.5mm,-1mm)$);
+    \draw[dotted] (Phm.west)+(3.5mm,0) -- ($(Ph2.south west)+(3.5mm,0)$);
+    \draw         (Ph1.west)+(1.5mm,0) -- ($(Ph2.north west)+(1.5mm,-1mm)$);
+    \draw         (Ph2.west)+(3.5mm,0) -- ($(Ph1.south west)+(3.5mm,0)$);
+  \end{scope}
+
+\end{tikzpicture}
+\end{center}
+\caption{\label{ThreadHeaps}Threads, private heaps and public heaps}
+\end{figure}
+
 
 All heaps (public and private) are visible to all threads, so any thread can access variables
 and data structures in any heap at any time. The accesses can be controlled or protected at the
@@ -673,6 +918,46 @@ threads except the thread which triggered it, referred to as the GC
 thread. The GC thread performs a conventional garbage collection, during
 which the program runs sequentially.
 
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[font=\small\tt]
+  %\draw[help lines] (0,0) grid (16,8);
+  \def\vsp{0.5cm}
+  %
+  % draw the program text
+  \begin{scope}[anchor=west]
+    \draw
+    (0,7)        node[name=L1]   {MUTEX\_LOCKID(MTX\_NARTHREADS); }
+    ++(0,-\vsp)   node[name=L2]   {NARthreads--; }
+    ++(0,-\vsp)   node[name=L3]   {MUTEX\_UNLOCKID(MTX\_NARTHREADS); }
+    ++(0,2*-\vsp)   node {}
+    ++(0,-\vsp)   node[name=L4]   {THREAD\_JOIN(thread); }
+    ++(0,2*-\vsp)   node {}
+    ++(0,-\vsp)   node[name=L5]   {MUTEX\_LOCKID(MTX\_THREADCONTROL); }
+    ++(0,-\vsp)   node[name=L6]   {MUTEX\_LOCKID(MTX\_NARTHREADS); }
+    ++(0,-\vsp)   node[name=L7]   {NARthreads++; }
+    ++(0,-\vsp)   node[name=L8]   {MUTEX\_UNLOCKID(MTX\_NARTHREADS); }
+    ++(0,-\vsp)   node[name=L9]   {MUTEX\_UNLOCKID(MTX\_THREADCONTROL };
+  \end{scope}
+  %
+  % annotate the program
+  \begin{scope}[every node/.style={single arrow, draw, thin, align=left,
+                                   anchor=west,shape border rotate=180},
+                color=black!75!white, font=\it ]
+    \draw
+    (L2.east) +(5,0)    node[text width=6.3cm]
+        {Decrement the counter (Number of Asynchronous Running Threads)}
+    (L4.east) +(1.8,0)   node[text width=7.5cm]
+        {Do a blocking operation (join in this case),
+          a system call (long IO for example) or a delay, etc.}
+    (L7.east) +(5,0)    node [text width=6.1cm]
+        {Wait for GC to finish, if there is one. Increment the counter.};
+  \end{scope}
+
+\end{tikzpicture}
+\end{center}
+\caption{\label{trackThreads}Tracking the number of running threads in the system}
+\end{figure}
 
 \label{GC-Mutex}
 The GC thread first locks the garbage collection mutex
@@ -686,7 +971,7 @@ system keeps track of how many threads are running using a global counter
 depending on their state: before a thread blocks on a mutex it decrements
 the counter, and increments it after unblocking. The counter itself is
 protected by a mutex and can be incremented only if there is no garbage
-collection request pending or taking place ({\color{red} Figure 6.4}).
+collection request pending or taking place (Figure \ref{trackThreads}).
 
 After a call for garbage collection causes a thread to enter the
 \texttt{thread\_control} function, the thread decrements the running
@@ -736,6 +1021,128 @@ collection instead of going to sleep on the \texttt{gc} condition variable.
 This technique forces several garbage collections that might be separated
 by very short periods of time to cluster together, requiring only a single
 suspension for all of the threads to do the several garbage
-collections. {\color{red} Figure 6.5} shows an abstract overview of garbage
+collections. Figure \ref{GC-Overview} shows an abstract overview of garbage
 collection and concurrency control.
 
+\begin{figure}[h]
+\begin{center}
+\begin{tikzpicture}[draw=black,very thick,font=\small\tt,>=Latex,
+    Thread/.style={text=black,draw=skyblue,
+        shading=radial, inner color=blue!40!white, outer color=orange!50!white,
+        shape=rectangle, minimum width=2.5cm, minimum height=8mm, rounded corners=2mm},
+    % Queue Release Circle and resumption action
+    QRC/.style={draw=#1,shape=circle,radius=2.5mm,anchor=north},
+    QRes/.style={draw=#1,shape=arrow box,arrow box arrows={south:5mm},
+                 arrow box shaft width=4mm,
+                 anchor=north,align=center},
+    % Thread Queue
+    TQ/.style={draw=#1,shape=rectangle, rounded corners=4mm,
+                 minimum width=3cm, minimum height=2cm},
+    % Action
+    Act/.style={draw=#1,shape=rectangle, rounded corners=1.5mm,anchor=north,
+                 minimum width=3cm, minimum height=0.7cm,align=center},
+    % Branch
+    Br/.style={draw=#1,shape=diamond,align=center,inner sep=0,
+                 minimum size=2cm,anchor=north}
+  ]
+  \definecolor{skyblue}{rgb}{0.53, 0.81, 0.92}
+  \definecolor{teagreen}{rgb}{0.82, 0.94, 0.75}
+  %\draw[help lines] (0,0) grid (16,20);
+
+  % draw the GC queue
+  \draw (2,9) node[TQ=black,name=GCQ,anchor=north, text depth=3.75cm] {GC Queue};
+  \foreach \n/\y in {1/1.5,2/3.5}
+           {\node[Thread,name=gqt\n] at ($(GCQ.north)+(0,-\y)$) {Thread};}
+  \draw[dotted] (gqt1) -- (gqt2);
+  \draw (GCQ.south)     node[QRC=black,name=GCQ-Out]{};
+  \draw (GCQ-Out.south) node[QRes=black,name=GCQ-Res] {Resume one\\thread};
+  \draw (GCQ-Res.south east)+(-0.5,-1)
+        node[Act=black,name=GCQ-Act, anchor=west] {NARthreads++};
+  \draw[->] (GCQ-Res.south) |- (GCQ-Act.west);
+
+  % draw the suspended threads queue
+  \draw (14,9) node[TQ=black,name=SusQ,anchor=north, text depth=5.25cm] {Suspended};
+  \foreach \n/\y in {1/1.5,2/3,3/5}
+           {\node[Thread,name=gqt\n] at ($(SusQ.north)+(0,-\y)$) {Thread};}
+  \draw[dotted] (gqt2) -- (gqt3);
+  \draw (SusQ.south)     node[QRC=black,name=SusQ-Out]{};
+  \draw (SusQ-Out.south) node[QRes=black,name=SusQ-Res] {Resume all\\threads};
+  \draw (SusQ-Res.south) node[Act=black,name=SusQ-Act]  {NARthreads++};
+  \draw (SusQ-Act)+(0,-1) node[QRC=black,name=SusQ-C1]{};
+  \draw[->] (SusQ-Act) -- (SusQ-C1);
+
+  %draw the GC actions
+  \draw (7.5,13) node[Act=black,name=Setf] {Set the thread\\call flag};
+  \draw (Setf.south)+(0,-0.75) node[Br=black,name=NARq,aspect=4] {NARthreads = 1?};
+  \draw (NARq.south)+(0,-0.5) node[Act=black,name=GC] {Perform GC};
+  \draw (GC.south)+(0,-0.5)   node[Br=black,name=Emptyq,aspect=2] {GC queue\\empty?};
+  \draw[->] (Setf) -- (NARq);
+  \draw[->] (NARq) -- (GC);
+  \draw[->] (GC)   -- (Emptyq);
+  \draw[->] (Emptyq)  |- (SusQ-C1);
+  \draw[->] (GCQ-Act) |- (GC);
+  \draw[->] (NARq) -- +(3,0) -- +(3,1.5) -- +(0,1.5);
+
+  %draw the GC request actions
+  \draw (2,15.75) node[ellipse,draw=red,fill=black!30!white,name=GCReq] {GC request};
+  \draw (GCReq.south)+(0,-0.5) node[Br=black,name=Firstq] {first?};
+  \draw (Firstq.south)+(0,-1)  node[Act=black,name=GCQ-in] {NARthreads $- -$};
+  \draw[->] (GCReq) -- (Firstq);
+  \draw[->] (Firstq) -- (GCQ-in);
+  \draw[->] (GCQ-in) -- (GCQ);
+  \draw[->] (Firstq) -| (Setf);
+
+  %draw the thread call actions
+  \draw (14,16) node[Br=black,name=Callq,aspect=2] {Thread\\call?};
+  \draw (Callq.south)+(0,-0.75) node[Br=black,name=Fullq,aspect=2] {Near full\\heap?};
+  \draw (Fullq.south)+(0,-0.75) node[Act=black,name=SusQ-in] {NARthreads $- -$};
+  \draw[->] (Callq) -- (Fullq);
+  \draw[->] (Fullq) -- (SusQ-in);
+  \draw[->] (SusQ-in) -- (SusQ);
+
+  \draw[->] (Emptyq) -- +(4,0) |- (SusQ-in);
+  \draw[->] (Fullq) -- +(-3.5,0) |- (GCReq);
+
+  %draw the running threads
+  \draw (8,19) node[rectangle,rounded corners=6mm,fill=teagreen!70!white,
+                    minimum height=3cm,minimum width=16cm,name=Ground] {};
+  \foreach \n/\x in {1/2, 2/6, n/14}
+           { \path (Ground.south west)+(\x,1) node[Thread,name=RTh\n] {Thread \n};}
+  \path (Ground.south west)+(10,2) node[Thread,name=RThk] {Thread k};
+  \draw (Ground.north west)+(0.25,-0.5) node[font=\Large\tt,anchor=north west]
+            {Running threads \dots};
+  \draw[dotted] (RTh2) -- (RThn);
+
+  %draw some extra connectors, now all the nodes are defined
+  \draw[->] (RThk) -- +(0,-2.5) -| (GCReq);
+  \draw[->] (RThn) -- (Callq);
+  \draw[->] (SusQ-C1) -| (Ground.south east) +(0,0.4);
+  \draw[->] (Callq.west) -- ++(-1,0) -- ++(0,2.9);
+
+  %label the branch decisions
+  \draw (Callq.west) node[anchor=south east]{No};
+  \draw (Callq.south) node[anchor=north west]{Yes};
+  \draw (Fullq.west) node[anchor=south east]{Yes};
+  \draw (Fullq.south) node[anchor=north west]{No};
+  \draw (Firstq.east) node[anchor=south west]{Yes};
+  \draw (Firstq.south) node[anchor=north west]{No};
+  \draw (Emptyq.east) node[anchor=south west]{No};
+  \draw (Emptyq.south) node[anchor=north west]{Yes};
+  \draw (NARq.east) node[anchor=south west]{No};
+  \draw (NARq.south) node[anchor=north west]{Yes};
+
+  %draw the signalling paths
+  \begin{scope}[<->,dashed,arrows={Triangle[open,reversed,length=3mm,width=4mm]-Latex},auto]
+    % could use the intersection library here but, since it's the only case (so far)
+    % in the entire book, just use let to pick out the x,y coordinates.
+    \draw let \p1 = (SusQ-Out) in let \p2 = (Emptyq) in
+       (\x2,\y1) to node{"Wake up all"} node[swap]{signal} (SusQ-Out);
+    \draw ($(Emptyq)+(2.5,0)$) |- node[near end]{signal}
+                                node[swap,near end]{"Wake up one"} (GCQ-Out);
+  \end{scope}
+
+\end{tikzpicture}
+\end{center}
+\caption{\label{GC-Overview}
+  A high level view of the dynamics of suspending/resuming threads for GC}
+\end{figure}

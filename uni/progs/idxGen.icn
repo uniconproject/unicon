@@ -6,6 +6,7 @@
 #
 #   Don Ward   March 2017
 #           10 March 2020  Do all index hits in a para, not just the first.
+#                          Float index references to the top of iconline{}.
 #
 #-------------------------------------------------------------------------------
 # The big picture is the program analyses the files one paragraph at a time. For
@@ -463,17 +464,19 @@ end
 # The consumed text is removed from the source string.
 # The data is returned to the caller inside the paragraph structure.
 procedure nextParagraph(p: paragraph)
-	local line, word, lineNumber, wordNumber, notWord
-	static lineSpace, notEOL, texWord
+	local line, word, lineNumber, wordNumber, notWord, squiggly
+	static lineSpace, notEOL, texWord, otherChars
 	initial {
 		lineSpace := cset("\n \t")
 		notEOL := cset(&cset -- "\n")
 		texWord := &letters ++ &digits ++ cset("'\\_-&")
+        otherChars := &ascii -- texWord
 	}
 	if *p.sourceText = 0 then {
 		return fail     # end of text
 	}
 
+    squiggly := &null
 	# Split the text up into lines up to the next paragraph boundary
 	# Note that none of this causes new string space to be created:
 	# We essentially have a list of pointers into the original mega-string.
@@ -514,12 +517,34 @@ procedure nextParagraph(p: paragraph)
 				next    # ignore any indexing line 
 			}
 
-			while notWord := tab(upto(texWord)) do {
+ 			while notWord := if /squiggly then tab(upto(texWord)) else tab(many(otherChars)) | tab(upto(texWord)) do {
+               if \squiggly then { # count { } because we are inside \iconline { .. }
+                  notWord ? {
+                     while &pos <= *notWord do {
+                        if not tab(match("\\{" | "\\}")) then {
+                           if ="{" then { squiggly+:=1 }
+                           if ="}" then {
+                              if 0 = (squiggly -:= 1) then {
+                                 # insert an artificial "end of iconline"
+                                 wordNumber +:= 1 
+                                 word := "%enilnoci"
+                                 /p.words[word] := []
+                                 put(p.words[word], occurrence(lineNumber, wordNumber))
+                                 squiggly := &null
+                                 break # assume we don't need to process any more on this line
+                              }
+                           } else {
+                              move(1)
+                           }
+                        }
+                     }
+                  }
+               }
 				notWord := cset(notWord)
-				if member(notWord, "%") then break  # rest of line is a comment
 				if (*notWord > 0) & (*(notWord -- whitespace) > 0) then wordNumber +:= 1
+				if member(notWord, "%") then break  # rest of line is a comment
 
-				word := tab(many(texWord))
+				word := tab(many(texWord)) | ""
 				# check for an edge case: if the last character is \ and the next is a %
 				# it isn't actually a comment, its a quoted percent char
 				if word[-1] == "\\" & match("%") then word ||:= move(1)
@@ -535,6 +560,9 @@ procedure nextParagraph(p: paragraph)
 				}
 				
 				if (word ~== "") then {
+                  if word == "\\iconline" then { # start counting { }
+                     squiggly := if many(otherChars) then 0 else 1
+                  }
 					wordNumber +:= 1
 					/(p.words[word]) := []
 					put(p.words[word], occurrence(lineNumber, wordNumber))
@@ -563,6 +591,8 @@ procedure postIndex(filename: string, waiter)
 	local o1,o2,o3,o4,o5
 	local diff1,diff2,diff3,diff4
 	local sL
+	local diags := &null
+    local sicl, eicl			# start/end of \iconline
 	
 	critical stats: {stats["files"] +:= 1 }
 	if \perFileidx[basename] then Log("Using specific index terms for ", filename)
@@ -586,6 +616,7 @@ procedure postIndex(filename: string, waiter)
 		if \para.words["%dump"] then {   # Output debugging info for this paragraph
 			delete(para.words, "%dump")  # note that %dump never normally occurs.
 			Log(ximage(para.words))
+            diags := 1
 		}
 		
 		opList := table() # A map from line number to set of index terms
@@ -716,6 +747,35 @@ procedure postIndex(filename: string, waiter)
 			}
 		} 
 
+        if \diags then {
+           write("para.lines ", ximage(para.lines))
+           write("opList ", ximage(opList))
+        }
+
+        # Float any index hits inside an iconline declaration to just before it.
+        # makeindex really doesn't like "\protect\index{ ... }" inside a verbatim
+        # environment and spits out lots of "rejected" error messages.
+        if "\\iconline" == key(para.words) then {
+           if *para.words["\\iconline"] = *para.words["%enilnoci"] then {
+              if \diags then write("Floating ...")
+
+              every n := 1 to *para.words["\\iconline"] do {
+                 sicl := para.words["\\iconline"][n].line
+                 eicl := para.words["%enilnoci"][n].line
+                 every lineno := (sicl + 1) to eicl do {
+                    /opList[sicl] := set()
+                    opList[sicl] ++:= \opList[lineno]
+                    \opList[lineno] := set()
+                 }
+              }
+           } else {
+              stop("iconline analysis error") # option - could just carry on?
+           }
+           if \diags then {
+              write("opList After float", ximage(opList))
+           }
+        }
+
 		# write the paragraph, one line at a time with any index terms that match
 		# before the line containing the first matching word
 		lineno := 0
@@ -735,6 +795,7 @@ procedure postIndex(filename: string, waiter)
 		# Clear the line and word info, ready for the next paragraph
 		para.lines := list()
 		para.words := table()
+        diags := &null
 	} # End of per-paragraph processing
 
 	if *para.inProgress > 0 then {

@@ -98,4 +98,4 @@ CLEAN:
 
 # Temporary development aid: Just run idxGen with maximum output
 indexrun:
-	../../uni/progs/idxGen -V -Dir idxtmp/ib -wait 10 *.tex
+	../../uni/progs/idxGen -V -Dir idxtmp/ib -wait 30 *.tex

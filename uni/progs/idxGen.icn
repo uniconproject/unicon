@@ -5,12 +5,13 @@
 #            either new files are produced, or output is made to &output
 #
 #   Don Ward   March 2017
+#           10 March 2020  Do all index hits in a para, not just the first.
 #
 #-------------------------------------------------------------------------------
 # The big picture is the program analyses the files one paragraph at a time. For
 # each paragraph, it makes a table of all the words together with where they occur
 # (line number and ordinal position). It then places index hits before the line
-# where they occur. An index term in, its full glory, can be something like
+# where they occur. An index term, in its full glory, can be something like
 #
 #      (V|v)irtual( |-)machine(|s)+3+performance:Virtual Machine!Performance
 #
@@ -640,7 +641,7 @@ procedure postIndex(filename: string, waiter)
 						# write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words")
 						# See if any of the positions in the paragraph of word 2 is within the
 						# required distance of any of the positions of word 1.
-						if 0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1 then {
+						every 0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1 do {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
 							if o2.line > o1.line then {
@@ -655,8 +656,8 @@ procedure postIndex(filename: string, waiter)
 						diff1 := sL[2]; diff2 := sL[4]
 						# write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words and")
 						# write(&errout, "Looking for ", w2, " and ", w3, " within ", diff2, " words")
-						if (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
-						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) then {
+						every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
+						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) do {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
 							if o3.line > o1.line then {
@@ -672,9 +673,9 @@ procedure postIndex(filename: string, waiter)
 						# write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words and")
 						# write(&errout, "            ", w2, " and ", w3, " within ", diff2, " words and")
 						# write(&errout, "            ", w3, " and ", w4, " within ", diff3, " words")
-						if (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
+						every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
 						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) &
-						   (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) then {
+						   (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) do {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
 							if o4.line > o1.line then {
@@ -688,10 +689,10 @@ procedure postIndex(filename: string, waiter)
 						w1 := sL[1]; w2 := sL[3]; w3 := sL[5]; w4 := sL[7]; w5 := sL[9]
 						diff1 := sL[2]; diff2 := sL[4]; diff3 := sL[6]; diff4 := sL[8]
 
-						if (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
+						every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
 						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) &
 						   (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) &
-						   (0 < ( ((o5 <- !(para.words[w5])).wpos) - (o4.wpos) ) <= diff4) then {
+						   (0 < ( ((o5 <- !(para.words[w5])).wpos) - (o4.wpos) ) <= diff4) do {
 							/(opList[o1.line]) := set()
 							insert(opList[o1.line], indexTerm)
 							if o5.line > o1.line then {

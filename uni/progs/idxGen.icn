@@ -17,9 +17,9 @@
 #      (V|v)irtual( |-)machine(|s)+3+performance:Virtual Machine!Performance
 #
 # which will place an "\index{Virtual Machine!Performance}" command before the
-# first line in which any of the words 
+# first line in which any of the words
 #      Virtual-machine, virtual-machine, Virtual-machines, virtual-machines
-# or the two word phrases 
+# or the two word phrases
 #     Virtual machine, virtual machine, Virtual machines, virtual machines
 # occur three words or fewer before the word "performance". In each case the
 # index command will be placed on the line before the first word of the match.
@@ -61,7 +61,7 @@ global maxPlus           # The highest number of leading "+" chars seen in a sea
 # inProgress is a set of index terms that are being defined by
 # \PrimaryIndexBegin{term} ... \PrimaryIndexEnd{term}. Normal index hits for
 # term are suppressed in between the PrimaryIndexBegin ... End lines.
-# 
+#
 record paragraph (sourceText, lines, words, inProgress)
 record occurrence (line, wpos)
 
@@ -73,88 +73,86 @@ record multiIndex (indexTerm, searchList)
 
 #--------------------------------------------------------------------------------
 procedure main(args)
-	local totalms := Timer()
-	local opt := options(args,
-						 "-sequential -Dir: -idxOnly! -idxFile: -v -V -wait+ -? -help",
-						 usage)
-	local n, k, perFileTerms
-	local p, totalTerms
-	local timeoutSecs
+   local totalms := Timer()
+   local opt := options(args,
+                        "-sequential -Dir: -idxOnly! -idxFile: -v -V -wait+ -? -help",
+                        usage)
+   local n, k, perFileTerms
+   local p, totalTerms
+   local timeoutSecs
 
-#-------------------- Initialisation & option processing
-	whitespace := ' \t'
-	hits := 0
-	maxPlus := 0
-	stats := mutex(table(0))
-	idxTerms := mutex(set())
-	idxCandidates := set()
+   #-------------------- Initialisation & option processing
+   whitespace := ' \t'
+   hits := 0
+   maxPlus := 0
+   stats := mutex(table(0))
+   idxTerms := mutex(set())
+   idxCandidates := set()
 
-	logging := \opt["v"] | \opt["V"]
-	if \opt["help"] | \opt["?"] then usage()
+   logging := \opt["v"] | \opt["V"]
+   if \opt["help"] | \opt["?"] then usage()
 
-	\opt["idxOnly"] | writeNewFile := 1
-	idxDir := \opt["Dir"]
+   \opt["idxOnly"] | writeNewFile := 1
+   idxDir := \opt["Dir"]
 
-#-------------------- Read in the index terms
-	totalTerms := getIndexTerms(\opt["idxFile"] | "idxterms.xml")
-	if /totalTerms | (totalTerms = 0) | (*idxCandidates = 0)
-	then stop("Stopping because no index terms have been defined")
-#	write(ximage(idx))
-#	write(ximage(idx_ex))
+   #-------------------- Read in the index terms
+   totalTerms := getIndexTerms(\opt["idxFile"] | "idxterms.xml")
+   if /totalTerms | (totalTerms = 0) | (*idxCandidates = 0)
+   then stop("Stopping because no index terms have been defined")
 
-#-------------------- Index the files
-    # If writing several new files, do them in parallel. Unless
-	# explicitly asked to do them sequentially, or we want console output
-	# or we're not running on a multi-processor, or there are too few to bother.
-	if \opt["sequential"] | /writeNewFile | cores() = 1 | *args < 5 then
-		every postIndex(!args)
-	else {
-		MakePool()
-		every Dispatch(postIndex, !args, &main)
+   #-------------------- Index the files
+   # If writing several new files, do them in parallel. Unless
+   # explicitly asked to do them sequentially, or we want console output
+   # or we're not running on a multi-processor, or there are too few to bother.
+   if \opt["sequential"] | /writeNewFile | cores() = 1 | *args < 5 then
+      every postIndex(!args)
+   else {
+      MakePool()
+      every Dispatch(postIndex, !args, &main)
 
-		# If no guidance (-wait n) has been given, guess that each file takes no
-		# more than a second (elapsed) and we do them in parallel as much as
-		# possible. Add a couple of seconds for luck.
+      # If no guidance (-wait n) has been given, guess that each file takes no
+      # more than a second (elapsed) and we do them in parallel as much as
+      # possible. Add a couple of seconds for luck.
 
-		timeoutSecs := \opt["wait"] |  (2 + ((*args) / cores()))
-		Log("Allowing ", timeoutSecs, " seconds for indexing")
-		if not waitFor(*args,  timeoutSecs) then
-			write(&errout, "Timed out!")
-	}
- 
-#-------------------- Post-run statistics (optional)
-	if \logging then {# print some post-run statistics
-		Log(stats["files"], " files processed, ",
-			stats["hits"], " index entries inserted")
+      timeoutSecs := \opt["wait"] |  (2 + ((*args) / cores()))
+      Log("Allowing ", timeoutSecs, " seconds for indexing")
+      if not waitFor(*args,  timeoutSecs) then
+         write(&errout, "Timed out!")
+   }
 
-		n := *idxCandidates - *idxTerms - *noComplaints
-		
-		if n > 0 then {
-			Log(n, " index terms were not placed (-V for list)")
+   #-------------------- Post-run statistics (optional)
+   if \logging then {# print some post-run statistics
+      Log(stats["files"], " files processed, ",
+          stats["hits"], " index entries inserted")
 
-			# -V (as opposed to -v) generates details of non matching terms
-			if \opt["V"] then {
-				every Log(!(idxCandidates -- idxTerms -- noComplaints))
-			}
-		}
+      n := *idxCandidates - *idxTerms - *noComplaints
 
-		Log("Total CPU time ", Timer(totalms), " mS")
-	}
+      if n > 0 then {
+         Log(n, " index terms were not placed (-V for list)")
 
+         # -V (as opposed to -v) generates details of non matching terms
+         if \opt["V"] then {
+            every Log(!(idxCandidates -- idxTerms -- noComplaints))
+         }
+      }
+
+      Log("Total CPU time ", Timer(totalms), " mS")
+   }
+   return  # success
 end
 
 #--------------------------------------------------------------------------------
 #   Return the number of cores reported by &features
 procedure cores()
-	static nCores
-	initial {
-		nCores := 1
-		if (&features ? {="concurrent threads"}) then {
-			nCores := integer(&features ? {="CPU cores " & tab(0) })
-		}
-	}
+   static nCores
+   initial {
+      nCores := 1
+      if (&features ? {="concurrent threads"}) then {
+         nCores := integer(&features ? {="CPU cores " & tab(0) })
+      }
+   }
 
-	return nCores
+   return nCores
 end
 
 #--------------------------------------------------------------------------------
@@ -162,211 +160,211 @@ end
 #   Fail if fewer than n messages are received before the timeout.
 
 procedure waitFor(nMess, secs)
-	local endTime, now
-	local n := 0
+   local endTime, now
+   local n := 0
 
-	# It might be better if we had a millisecond based timeout, but there is
-	# nothing available with this resolution. &time isn't really suitable: it
-	# measures CPU time in millisconds (but when multithreading, it increases by
-	# more than 1 every millisecond, depending on how many cores are active).
-	# So, for now (sic), we'll stick with seconds and &now.
-	endTime := secs + (now := &now)
-	if \endTime then {
-		while n < nMess do {
-			(1000 * (endTime - now)) <<@ 
-			if nMess < (n +:= 1) then return # we got the required number of messages
-			if 0 >= (endTime - (now := &now)) then return &fail  # timeout
-		}
-	} else { # No timeout: just wait
-		while n < nMess do { <<@ ; n +:= 1 }
-	}
-	return #success
+   # It might be better if we had a millisecond based timeout, but there is
+   # nothing available with this resolution. &time isn't really suitable: it
+   # measures CPU time in millisconds (but when multithreading, it increases by
+   # more than 1 every millisecond, depending on how many cores are active).
+   # So, for now (sic), we'll stick with seconds and &now.
+   endTime := secs + (now := &now)
+   if \endTime then {
+      while n < nMess do {
+         (1000 * (endTime - now)) <<@
+            if nMess < (n +:= 1) then return # we got the required number of messages
+         if 0 >= (endTime - (now := &now)) then return &fail  # timeout
+      }
+   } else { # No timeout: just wait
+      while n < nMess do { <<@ ; n +:= 1 }
+   }
+   return #success
 end
 
 #--------------------------------------------------------------------------------
 procedure Log(p[])
-	if \logging then {push(p, &errout); write ! p}
+   if \logging then {push(p, &errout); write ! p}
 end
 
 #--------------------------------------------------------------------------------
 procedure Timer(t)
-	return if /t then &time else &time - t
+   return if /t then &time else &time - t
 end
 
 #--------------------------------------------------------------------------------
 # analyse the XML index configuration file
 procedure getIndexTerms(filename: string)
-	local ms := /logging | Timer()
-	local line, searchTerm, indexTerm, multiTerm, searchList, searchLine
-	local prs, d, root
-	local x_terms, x_idx, x_ApplyTo, x_NotFound
-	local files, specialFiles, totalTerms
+   local ms := /logging | Timer()
+   local line, searchTerm, indexTerm, multiTerm, searchList, searchLine
+   local prs, d, root
+   local x_terms, x_idx, x_ApplyTo, x_NotFound
+   local files, specialFiles, totalTerms
 
-	totalTerms := 0
-	idx := table()
-	idx_ex := table()
-	noComplaints := set()
-	suppressed := table()        # suppressed is a table of sets
-	perFileidx := table()        # perFileidx is a table of tables
-	perFileidx_ex := table()     # perFileidx_ex is a table of tables
+   totalTerms := 0
+   idx := table()
+   idx_ex := table()
+   noComplaints := set()
+   suppressed := table()        # suppressed is a table of sets
+   perFileidx := table()        # perFileidx is a table of tables
+   perFileidx_ex := table()     # perFileidx_ex is a table of tables
 
-#----------------------------------------------------------------------
-# For reference: this is the structure of the configuration xml file; it's
-# basically a sequence of Terms that can have File and idx elements inside them.
-# <!DOCTYPE LaTeX_Index
-# [
-#   <!ELEMENT LaTeX_Index (Terms*)>
-#   <!ELEMENT Terms (File*,idx*)>
-#   <!ATTLIST Terms ApplyTo (All|NamedFiles|AllBut|None) "All"  NotFound (Error|Suppress) "Error">
-#   <!ELEMENT idx (#PCDATA)>
-#   <!ELEMENT File (#PCDATA)>
-# ]>
-#----------------------------------------------------------------------
-	prs := XmlParser()
-	if d := prs.parse(entireFile(filename)) then {
-		root := d.get_root_element()
-		every x_terms := root.search_children("Terms") do {
-			x_ApplyTo := x_terms.get_attribute("ApplyTo")
-			x_NotFound := x_terms.get_attribute("NotFound")
-			if x_ApplyTo ~== "None" then {
-				# Slurp any File terms and warn about possible problems
-				files := [:x_terms.search_children("File").get_string_content():] | []
-				if *files > 0 then {
-					if x_ApplyTo == "All" then {
-						Warn("<File> has no effect when ApplyTo = \"All\"")
-					} 
-				} else if (x_ApplyTo == ("NamedFiles" | "AllBut")) & (*files = 0) then {
-					Warn("<File> should be defined when ApplyTo = \"",x_ApplyTo, "\"")
-				}
+   #----------------------------------------------------------------------
+   # For reference: this is the structure of the configuration xml file; it's
+   # basically a sequence of Terms that can have File and idx elements inside them.
+   # <!DOCTYPE LaTeX_Index
+   # [
+   #   <!ELEMENT LaTeX_Index (Terms*)>
+   #   <!ELEMENT Terms (File*,idx*)>
+   #   <!ATTLIST Terms ApplyTo (All|NamedFiles|AllBut|None) "All"  NotFound (Error|Suppress) "Error">
+   #   <!ELEMENT idx (#PCDATA)>
+   #   <!ELEMENT File (#PCDATA)>
+   # ]>
+   #----------------------------------------------------------------------
+   prs := XmlParser()
+   if d := prs.parse(entireFile(filename)) then {
+      root := d.get_root_element()
+      every x_terms := root.search_children("Terms") do {
+         x_ApplyTo := x_terms.get_attribute("ApplyTo")
+         x_NotFound := x_terms.get_attribute("NotFound")
+         if x_ApplyTo ~== "None" then {
+            # Slurp any File terms and warn about possible problems
+            files := [:x_terms.search_children("File").get_string_content():] | []
+            if *files > 0 then {
+               if x_ApplyTo == "All" then {
+                  Warn("<File> has no effect when ApplyTo = \"All\"")
+               }
+            } else if (x_ApplyTo == ("NamedFiles" | "AllBut")) & (*files = 0) then {
+               Warn("<File> should be defined when ApplyTo = \"",x_ApplyTo, "\"")
+            }
 
-				# Add each idx item to the appropriate search structure based on the 
-				# ApplyTo and NotFound attributes of the enclosing Term.
-				every x_idx := x_terms.search_children("idx") do {
-					searchLine := x_idx.get_string_content()
+            # Add each idx item to the appropriate search structure based on the
+            # ApplyTo and NotFound attributes of the enclosing Term.
+            every x_idx := x_terms.search_children("idx") do {
+               searchLine := x_idx.get_string_content()
 
-					# Generate every alternative search term
-					every line := Alt(searchLine) do {
-						if find("???", line) then {
-							Warn("Problem analysing \"", searchLine, "\",\n",
-								 "    returned value is \"", line, "\"")
-							break next # skip every alternative: go to next idx term
-						}
-						multiTerm := searchTerm := indexTerm := &null
-						if extendedSearch(line) then { # multiple word search
-							line ? {
-								tab(many(whitespace))
-								maxPlus <:= (many("+") - 1)
-								if multiTerm := tab(upto(':')) then {
-									move(1); indexTerm := tab(0)
-									searchList := multiSearch(deSpace(multiTerm))
-								} else {
-									multiTerm := tab(0)
-									indexTerm := multiTerm
-									searchList := multiSearch(deSpace(multiTerm))
-								}
-							}
-						} else { # single word search
-							line ? {
-								tab(many(whitespace))
-								maxPlus <:= (many("+") - 1)
-								if = "%" then next	# Skip commented lines
+               # Generate every alternative search term
+               every line := Alt(searchLine) do {
+                  if find("???", line) then {
+                     Warn("Problem analysing \"", searchLine, "\",\n",
+                          "    returned value is \"", line, "\"")
+                     break next # skip every alternative: go to next idx term
+                     }
+                  multiTerm := searchTerm := indexTerm := &null
+                  if extendedSearch(line) then { # multiple word search
+                     line ? {
+                        tab(many(whitespace))
+                        maxPlus <:= (many("+") - 1)
+                        if multiTerm := tab(upto(':')) then {
+                           move(1); indexTerm := tab(0)
+                           searchList := multiSearch(deSpace(multiTerm))
+                        } else {
+                           multiTerm := tab(0)
+                           indexTerm := multiTerm
+                           searchList := multiSearch(deSpace(multiTerm))
+                        }
+                     }
+                  } else { # single word search
+                     line ? {
+                        tab(many(whitespace))
+                        maxPlus <:= (many("+") - 1)
+                        if = "%" then next  # Skip commented lines
 
-								# An index item is either searchTerm:indexTerm
-								# or searchTerm (which means indexTerm = searchTerm)
-								if searchTerm := tab(upto(":")) then {
-									move(1); indexTerm := tab(0)
-								} else {
-									searchTerm:= indexTerm := line
-								}
-							}
-						}
+                           # An index item is either searchTerm:indexTerm
+                           # or searchTerm (which means indexTerm = searchTerm)
+                           if searchTerm := tab(upto(":")) then {
+                              move(1); indexTerm := tab(0)
+                           } else {
+                              searchTerm:= indexTerm := line
+                           }
+                     }
+                  }
 
-						# At this point, indexTerm is not null and either searchTerm or multiTerm
-						# (but not both) is defined
+                  # At this point, indexTerm is not null and either searchTerm or multiTerm
+                  # (but not both) is defined
 
-						if /indexTerm | ( /searchTerm & /multiTerm) then {
-							write(&errout, "Failure (1) when analysing \"", line, "\"")
-							next
-						}
+                  if /indexTerm | ( /searchTerm & /multiTerm) then {
+                     write(&errout, "Failure (1) when analysing \"", line, "\"")
+                     next
+                     }
 
-						if \searchTerm & \multiTerm then {
-							write(&errout, "Failure (2) when analysing \"", line, "\"")
-							next
-						}
+                  if \searchTerm & \multiTerm then {
+                     write(&errout, "Failure (2) when analysing \"", line, "\"")
+                     next
+                     }
 
-						totalTerms +:= 1
-						insert(idxCandidates, indexTerm)
-						# apply the new search term to the appropriate structures
-						if x_NotFound == "Suppress" then insert(noComplaints, indexTerm)
-						if \searchTerm & \idx[searchTerm] then {
-							Warn(searchTerm, " is already defined")
-						}
-						if \multiTerm & \idx_ex[multiTerm] then {
-							Warn(multiTerm, " is already defined")
-						}
-						
-						case x_ApplyTo of {
-							"All": { # Apply search to every file
-								idx[\searchTerm] := indexTerm
-								idx_ex[\multiTerm] := multiIndex(indexTerm, searchList)
-							}
-							"AllBut": { # Apply search to every file except the specified files
-								idx[\searchTerm] := indexTerm
-								idx_ex[\multiTerm] := multiIndex(indexTerm, searchList)
-								every /suppressed[!files] := set() # create a set, if required, for each file
-								every insert(suppressed[!files], \searchTerm)
-								every insert(suppressed[!files], \multiTerm)
-							}
-							"NamedFiles": { # Apply search only to the named files
-								every /perFileidx[!files] := table() # create a table, if required, for each file
-								every /perFileidx_ex[!files] := table() # create a table, if required, for each file
-								every perFileidx[!files][\searchTerm]:=indexTerm
-								every perFileidx_ex[!files][\multiTerm]:=multiIndex(indexTerm, searchList)
-							}
-						}
-					}
-				}
-			}
-		}
-	} else {
-		write(&errout, "Parsing ", filename, " failed: ", prs.get_reason())
-	}
+                  totalTerms +:= 1
+                  insert(idxCandidates, indexTerm)
+                  # apply the new search term to the appropriate structures
+                  if x_NotFound == "Suppress" then insert(noComplaints, indexTerm)
+                  if \searchTerm & \idx[searchTerm] then {
+                     Warn(searchTerm, " is already defined")
+                  }
+                  if \multiTerm & \idx_ex[multiTerm] then {
+                     Warn(multiTerm, " is already defined")
+                  }
 
-	# List any files that have special treatment
-	if \logging & (*perFileidx + *perFileidx_ex + *suppressed) > 0 then {
-		specialFiles := set()
-		every insert(specialFiles, key(suppressed) | key(perFileidx) | key(perFileidx_ex))
+                  case x_ApplyTo of {
+                     "All": { # Apply search to every file
+                        idx[\searchTerm] := indexTerm
+                        idx_ex[\multiTerm] := multiIndex(indexTerm, searchList)
+                     }
+                     "AllBut": { # Apply search to every file except the specified files
+                        idx[\searchTerm] := indexTerm
+                        idx_ex[\multiTerm] := multiIndex(indexTerm, searchList)
+                        every /suppressed[!files] := set() # create a set, if required, for each file
+                        every insert(suppressed[!files], \searchTerm)
+                        every insert(suppressed[!files], \multiTerm)
+                     }
+                     "NamedFiles": { # Apply search only to the named files
+                        every /perFileidx[!files] := table() # create a table, if required, for each file
+                        every /perFileidx_ex[!files] := table() # create a table, if required, for each file
+                        every perFileidx[!files][\searchTerm]:=indexTerm
+                        every perFileidx_ex[!files][\multiTerm]:=multiIndex(indexTerm, searchList)
+                     }
+                  }
+               }
+            }
+         }
+      }
+   } else {
+      write(&errout, "Parsing ", filename, " failed: ", prs.get_reason())
+   }
 
-		Log(*specialFiles, " Files treated specially")
-		every Log("   ", !specialFiles)
-	}
-	
-	Log(*idxCandidates, " index terms (",totalTerms , " search terms) acquired in ", Timer(\ms), " mS")
-	return totalTerms
+   # List any files that have special treatment
+   if \logging & (*perFileidx + *perFileidx_ex + *suppressed) > 0 then {
+      specialFiles := set()
+      every insert(specialFiles, key(suppressed) | key(perFileidx) | key(perFileidx_ex))
+
+      Log(*specialFiles, " Files treated specially")
+      every Log("   ", !specialFiles)
+   }
+
+   Log(*idxCandidates, " index terms (",totalTerms , " search terms) acquired in ", Timer(\ms), " mS")
+   return totalTerms
 end
 
 #--------------------------------------------------------------------------------
 # return s stripped of leading "+" chars
 procedure nonplus(s)
-	s ? { tab(many("+")); return tab(0)}
+   s ? { tab(many("+")); return tab(0)}
 end
 
 #--------------------------------------------------------------------------------
 # Remove whitespace and replace it by a single plus sign
 procedure deSpace(s)
-	local ans := ""
-	static notSpace
-	initial {
-		notSpace := &ascii -- ' \t'
-	}
-	
-	s ? {
-		tab(many(' \t')) # remove leading whitespace
-		while ans ||:= tab(many(notSpace)) do {
-			if tab(many(' \t')) then ans ||:= "+"
-		}
-	}
-	return ans
+   local ans := ""
+   static notSpace
+   initial {
+      notSpace := &ascii -- ' \t'
+   }
+
+   s ? {
+      tab(many(' \t')) # remove leading whitespace
+      while ans ||:= tab(many(notSpace)) do {
+         if tab(many(' \t')) then ans ||:= "+"
+      }
+   }
+   return ans
 end
 
 #--------------------------------------------------------------------------------
@@ -378,33 +376,33 @@ end
 # etc.
 #   A malformed line results in "???"
 procedure Alt(s)
-	local prefix, alt, suffix
-	if /s then return "?"
-	s ? {
-		if = "(" then {
-			alt := tab(upto(")")) | "???" ; move(1); suffix := tab(0) | "???"
-			if find("|",alt) then {
-				every suspend Alt(alt) || Alt(suffix)
-			} else { # no alternatives, re-enclose alt in brackets and treat as a prefix
-				every suspend "(" || alt || ")" || Alt(suffix)
-			}
-		} else if (prefix := tab(upto("("))) then {
-			suffix := tab(0) | "???"
-			every suspend prefix || Alt(suffix)
-		} else 	if find("|") then {
-			repeat {
-				alt := tab(upto('|)')) | "???"
-				if = "|" then {
-					/alt := ""
-					suspend alt
-				} else {
-					return tab(0)
-				}
-			} 
-		} else {
-			return s
-		}
-	}
+   local prefix, alt, suffix
+   if /s then return "?"
+   s ? {
+      if = "(" then {
+         alt := tab(upto(")")) | "???" ; move(1); suffix := tab(0) | "???"
+         if find("|",alt) then {
+            every suspend Alt(alt) || Alt(suffix)
+         } else { # no alternatives, re-enclose alt in brackets and treat as a prefix
+            every suspend "(" || alt || ")" || Alt(suffix)
+         }
+      } else if (prefix := tab(upto("("))) then {
+         suffix := tab(0) | "???"
+         every suspend prefix || Alt(suffix)
+      } else  if find("|") then {
+         repeat {
+            alt := tab(upto('|)')) | "???"
+            if = "|" then {
+               /alt := ""
+               suspend alt
+            } else {
+               return tab(0)
+            }
+         }
+      } else {
+         return s
+      }
+   }
 end
 
 #--------------------------------------------------------------------------------
@@ -412,50 +410,50 @@ end
 # has a plus sign before the end of the string or before a colon char)
 # Also, if it has a space (which will get turned into a plus sign).
 procedure extendedSearch(s)
-	local colon
-	s ? {
-		tab(many(whitespace))
-		if = "%" then return fail  # a comment is not an extended search
-		tab(many("+"))    # strip leading plus signs
-		colon := find(":") | *s
-		return upto('+ \t') < colon
-	}
-	#fail
+   local colon
+   s ? {
+      tab(many(whitespace))
+      if = "%" then return fail  # a comment is not an extended search
+      tab(many("+"))    # strip leading plus signs
+      colon := find(":") | *s
+      return upto('+ \t') < colon
+   }
+   #fail
 end
 
 #--------------------------------------------------------------------------------
 # analyse "aaa+bbb+ccc ..."    or  "a+4+bbb..." and produce a list
 #  ["aaa",1,"bbb",1,"ccc" ...] or  ["a", 4, "bbb" ...}
 procedure multiSearch(s)
-	local sl := list()
-	local word, number, line
+   local sl := list()
+   local word, number, line
 
-	s ? {
-		tab(many(' +')) # do not put leading spaces or plus chars into the search list
-		while &pos <= *s do {
-			if put(sl, word := tab(upto('+'))) then {
-				if ="+" then {
-					number := tab(many(&digits)) | ""
-					if number == "" then { # No number supplied
-						put(sl, 1)
-					} else {
-						put(sl, integer(number))
-						# eat trailing "+"
-						if not tab(match("+")) then
-							Warn("\"",s,"\" is missing a trailing plus sign")
-					}
-				} else {
-					write(&errout, "failed to analyse \"", line, "\"")
-					return &fail
-				}
-			} else { # write the last word
-				put(sl, tab(0))
-				return sl
-			}
-		}
-	}
+   s ? {
+      tab(many(' +')) # do not put leading spaces or plus chars into the search list
+      while &pos <= *s do {
+         if put(sl, word := tab(upto('+'))) then {
+            if ="+" then {
+               number := tab(many(&digits)) | ""
+               if number == "" then { # No number supplied
+                  put(sl, 1)
+               } else {
+                  put(sl, integer(number))
+                  # eat trailing "+"
+                  if not tab(match("+")) then
+                     Warn("\"",s,"\" is missing a trailing plus sign")
+               }
+            } else {
+               write(&errout, "failed to analyse \"", line, "\"")
+               return &fail
+            }
+         } else { # write the last word
+            put(sl, tab(0))
+            return sl
+         }
+      }
+   }
 
-	#fail
+   #fail
 end
 
 #--------------------------------------------------------------------------------
@@ -464,450 +462,448 @@ end
 # The consumed text is removed from the source string.
 # The data is returned to the caller inside the paragraph structure.
 procedure nextParagraph(p: paragraph)
-	local line, word, lineNumber, wordNumber, notWord, squiggly
-	static lineSpace, notEOL, texWord, otherChars
-	initial {
-		lineSpace := cset("\n \t")
-		notEOL := cset(&cset -- "\n")
-		texWord := &letters ++ &digits ++ cset("'\\_-&")
-        otherChars := &ascii -- texWord
-	}
-	if *p.sourceText = 0 then {
-		return fail     # end of text
-	}
+   local line, word, lineNumber, wordNumber, notWord, squiggly
+   static lineSpace, notEOL, texWord, otherChars
+   initial {
+      lineSpace := cset("\n \t")
+      notEOL := cset(&cset -- "\n")
+      texWord := &letters ++ &digits ++ cset("'\\_-&")
+      otherChars := &ascii -- texWord
+   }
+   if *p.sourceText = 0 then {
+      return fail     # end of text
+   }
 
-    squiggly := &null
-	# Split the text up into lines up to the next paragraph boundary
-	# Note that none of this causes new string space to be created:
-	# We essentially have a list of pointers into the original mega-string.
-	p.sourceText ? {
-		while line := tab(many(notEOL)) do {
-			put(p.lines, line)
-			move(1)
-		}
-		tab(many(lineSpace)) # Eat line terminator and any other whitespace between paragraphs
-		p.sourceText := p.sourceText[&pos:0]    # adjust source text to start of next para.
-	}
+   squiggly := &null
+   # Split the text up into lines up to the next paragraph boundary
+   # Note that none of this causes new string space to be created:
+   # We essentially have a list of pointers into the original mega-string.
+   p.sourceText ? {
+      while line := tab(many(notEOL)) do {
+         put(p.lines, line)
+         move(1)
+      }
+      tab(many(lineSpace)) # Eat line terminator and any other whitespace between paragraphs
+      p.sourceText := p.sourceText[&pos:0]    # adjust source text to start of next para.
+   }
 
-	# Store each word, with its occurrences in the paragraph, in p.words.
-	# Treat inter-word stuff that is not whitespace as a word (for the
-	# purpose of calculating ordinal word positions within the paragraph).
-	lineNumber := wordNumber := 0
-	every line := !(p.lines) do {
-		lineNumber +:= 1
+   # Store each word, with its occurrences in the paragraph, in p.words.
+   # Treat inter-word stuff that is not whitespace as a word (for the
+   # purpose of calculating ordinal word positions within the paragraph).
+   lineNumber := wordNumber := 0
+   every line := !(p.lines) do {
+      lineNumber +:= 1
 
-		# Should really take this out, but it might come in handy to debug matching terms.
-		# note that %dump can never occur normally as a word.
-		if line == "%-%-%idxGen:dump" then {
-			p.words["%dump"] := []                 # signal that we want debugging output
-			put(p.words["%dump"], occurrence(0,0)) # for this paragraph.
-		}
-		
-		if filtered(line) then next   # Note that filtering works across paragraphs
-		
-		line ? {
-			tab(many(whitespace))
-			if ="\\PrimaryIndexBegin{" then { # suppress normal indexing for this term
-				insert(p.inProgress, tab(upto("}")))
-				next
-			} else if ="\\PrimaryIndexEnd{" then { # re-enable normal indexing
-				delete(p.inProgress, tab(upto("}")))
-				next
-			} else if ="\\index" | ="\\protect\\index" | ="\\PrimaryIndex" then {
-				next    # ignore any indexing line 
-			}
+      # Should really take this out, but it might come in handy to debug matching terms.
+      # note that %dump can never occur normally as a word.
+      if line == "%-%-%idxGen:dump" then {
+         p.words["%dump"] := []                 # signal that we want debugging output
+         put(p.words["%dump"], occurrence(0,0)) # for this paragraph.
+      }
 
- 			while notWord := if /squiggly then tab(upto(texWord)) else tab(many(otherChars)) | tab(upto(texWord)) do {
-               if \squiggly then { # count { } because we are inside \iconline { .. }
-                  notWord ? {
-                     while &pos <= *notWord do {
-                        if not tab(match("\\{" | "\\}")) then {
-                           if ="{" then { squiggly+:=1 }
-                           if ="}" then {
-                              if 0 = (squiggly -:= 1) then {
-                                 # insert an artificial "end of iconline"
-                                 wordNumber +:= 1 
-                                 word := "%enilnoci"
-                                 /p.words[word] := []
-                                 put(p.words[word], occurrence(lineNumber, wordNumber))
-                                 squiggly := &null
-                                 break # assume we don't need to process any more on this line
+      if filtered(line) then next # Note that filtering works across paragraphs
+
+      line ? {
+         tab(many(whitespace))
+         if ="\\PrimaryIndexBegin{" then { # suppress normal indexing for this term
+            insert(p.inProgress, tab(upto("}")))
+            next
+            } else if ="\\PrimaryIndexEnd{" then { # re-enable normal indexing
+               delete(p.inProgress, tab(upto("}")))
+               next
+               } else if ="\\index" | ="\\protect\\index" | ="\\PrimaryIndex" then {
+                  next    # ignore any indexing line
+               }
+
+         while notWord := if /squiggly then tab(upto(texWord)) else tab(many(otherChars)) | tab(upto(texWord)) do {
+            if \squiggly then { # count { and } because we are inside \iconline { .. }
+               notWord ? {
+                  while &pos <= *notWord do {
+                     if not tab(match("\\{" | "\\}")) then {
+                        if ="{" then { squiggly+:=1 }
+                        if ="}" then {
+                           if 0 = (squiggly -:= 1) then {# insert an artificial "end of iconline"
+                              wordNumber +:= 1
+                              word := "%enilnoci"
+                              /p.words[word] := []
+                              put(p.words[word], occurrence(lineNumber, wordNumber))
+                              squiggly := &null
+                              break # assume we don't need to process any more on this line
                               }
-                           } else {
-                              move(1)
-                           }
+                        } else {
+                           move(1)
                         }
                      }
                   }
                }
-				notWord := cset(notWord)
-				if (*notWord > 0) & (*(notWord -- whitespace) > 0) then wordNumber +:= 1
-				if member(notWord, "%") then break  # rest of line is a comment
+            }
+            notWord := cset(notWord)
+            if (*notWord > 0) & (*(notWord -- whitespace) > 0) then wordNumber +:= 1
+            if member(notWord, "%") then break  # rest of line is a comment
 
-				word := tab(many(texWord)) | ""
-				# check for an edge case: if the last character is \ and the next is a %
-				# it isn't actually a comment, its a quoted percent char
-				if word[-1] == "\\" & match("%") then word ||:= move(1)
-				# another edge case: if the last two characters are single quotes, it's
-				# a LaTex close quote, not part of a word
-				if word[-1] == "'" & word[-2] == "'" then {
-					word := word[1:-2]
-				}
-				# yet another: if the last two characters are "\\" it's a line break
-				# not part of the word
-				if word[-1] == "\\" & word[-2] == "\\" then {
-					word := word[1:-2]
-				}
-				
-				if (word ~== "") then {
-                  if word == "\\iconline" then { # start counting { }
-                     squiggly := if many(otherChars) then 0 else 1
-                  }
-					wordNumber +:= 1
-					/(p.words[word]) := []
-					put(p.words[word], occurrence(lineNumber, wordNumber))
-				}
-			}
-		}
-	}
-			
-	return # success
+               word := tab(many(texWord)) | ""
+            # check for an edge case: if the last character is \ and the next is a %
+            # it isn't actually a comment, its a quoted percent char
+            if word[-1] == "\\" & match("%") then word ||:= move(1)
+            # another edge case: if the last two characters are single quotes, it's
+            # a LaTex close quote, not part of a word
+            if word[-1] == "'" & word[-2] == "'" then {
+               word := word[1:-2]
+            }
+            # yet another: if the last two characters are "\\" it's a line break
+            # not part of the word
+            if word[-1] == "\\" & word[-2] == "\\" then {
+               word := word[1:-2]
+            }
+
+            if (word ~== "") then {
+               if word == "\\iconline" then { # start counting { and }
+                  squiggly := if many(otherChars) then 0 else 1
+               }
+               wordNumber +:= 1
+               /(p.words[word]) := []
+               put(p.words[word], occurrence(lineNumber, wordNumber))
+            }
+         }
+      }
+   }
+
+   return # success
 end
 
 #--------------------------------------------------------------------------------
 # index a file by looking for index terms and placing \index commands beforehand
 procedure postIndex(filename: string, waiter)
-	# waiter (if non null) is the id of the thread that is waiting for everyone
-	# to finish, if the index is being produced in parallel.
+   # waiter (if non null) is the id of the thread that is waiting for everyone
+   # to finish, if the index is being produced in parallel.
 
-	local basename := noPath(filename)
-	local outf, line, lineno := 0
-	local indexTerm, n, word, plusWord
-	local filehits := 0
-	local fileTerms := set()
-	local para
-	local opList, occurs, search
-	local w1,w2,w3,w4,w5
-	local o1,o2,o3,o4,o5
-	local diff1,diff2,diff3,diff4
-	local sL
-	local diags := &null
-    local sicl, eicl			# start/end of \iconline
-	
-	critical stats: {stats["files"] +:= 1 }
-	if \perFileidx[basename] then Log("Using specific index terms for ", filename)
+   local basename := noPath(filename)
+   local outf, line, lineno := 0
+   local indexTerm, n, word, plusWord
+   local filehits := 0
+   local fileTerms := set()
+   local para
+   local opList, occurs, search
+   local w1,w2,w3,w4,w5
+   local o1,o2,o3,o4,o5
+   local diff1,diff2,diff3,diff4
+   local sL
+   local diags := &null
+   local sicl, eicl            # start/end of \iconline
 
-	# choose where the output goes
-	if \writeNewFile then {
-		if \idxDir then {
-			outf := open(idxDir || "/" || basename, "c")
-			if /outf then stop("Cannot open ", idxDir, "/", basename)
-		} else outf := &output
-	} else {
-		# We are writing index terms only: Announce the file
-		outf := &output
-		write(outf, "Index terms for ", filename)
-	}
+   critical stats: {stats["files"] +:= 1 }
+   if \perFileidx[basename] then Log("Using specific index terms for ", filename)
 
-	para := paragraph(entireFile(filename), list(), table(), set())
+   # choose where the output goes
+   if \writeNewFile then {
+      if \idxDir then {
+         outf := open(idxDir || "/" || basename, "c")
+         if /outf then stop("Cannot open ", idxDir, "/", basename)
+      } else outf := &output
+   } else {
+      # We are writing index terms only: Announce the file
+      outf := &output
+      write(outf, "Index terms for ", filename)
+   }
 
-	# analyse the file one paragraph at a time, placing index commands before each matching line
-	while nextParagraph(para) do {
-		if \para.words["%dump"] then {   # Output debugging info for this paragraph
-			delete(para.words, "%dump")  # note that %dump never normally occurs.
-			Log(ximage(para.words))
-            diags := 1
-		}
-		
-		opList := table() # A map from line number to set of index terms
-		if \writeNewFile then {
-			# Look for terms applicable to all (ApplyTo="All")
-			# or most (ApplyTo="AllBut) files
-            # or file-specific terms
+   para := paragraph(entireFile(filename), list(), table(), set())
 
-			# For each word in the paragraph, if it is an index hit insert the lines
-			# where it occurs (plus the indexing term) into the output list.
-			every plusWord:= word := key(para.words) do {
-				every 0 to maxPlus do {# look for "word", "+word", "++word" ...
-					indexTerm := (\idx[plusWord]) |
-						(\perFileidx[basename] & \perFileidx[basename][plusWord]) |
-						&null
-					if \indexTerm & not member(\suppressed[basename], plusWord) then {
-						every occurs := !(para.words[word]) do {
-							/(opList[occurs.line]) := set()
-							insert(opList[occurs.line], indexTerm)
-							filehits +:= 1
-						}
-					}
-					plusWord := "+" || plusWord #prepend a plus and try again
-				}
-			}
+   # analyse the file one paragraph at a time, placing index commands before each matching line
+   while nextParagraph(para) do {
+      if \para.words["%dump"] then {   # Output debugging info for this paragraph
+         delete(para.words, "%dump")  # note that %dump never normally occurs.
+         Log(ximage(para.words))
+         diags := 1
+      }
 
-			# For each search in the extended search tables, see if
-			#   a) All the needed words are in the paragraph.
-			#   b) They are within the required distances of each other.
-			every search := key(idx_ex) | key(\perFileidx_ex[basename]) do {
-				if member(\suppressed[basename], search) then next
+      opList := table() # A map from line number to set of index terms
+      if \writeNewFile then {
+         # Look for terms applicable to all (ApplyTo="All")
+         # or most (ApplyTo="AllBut) files
+         # or file-specific terms
 
-				# Before checking the distances between the words, make sure that
-				# all the needed words are actually in the paragraph.
-				sL := (\idx_ex[search]).searchList |
-					(\perFileidx_ex[basename][search]).searchList
-				every n := 1 to *sL by 2 do {
-					if /(para.words[sL[n]]) then break next    # No luck: try next search term
-				}
-				
-				indexTerm := (\idx_ex[search]).indexTerm | (\perFileidx_ex[basename][search]).indexTerm
-				if /indexTerm then stop("error: null index term")
-				if type(indexTerm) ~== "string" then {
-					write(&errout, ximage(indexTerm))
-					stop("IndexTerm not a string")
-				}
-			
-				case *sL of {
-					3: { # two words:   word1 distance word2
-						w1 := sL[1]; w2 := sL[3]
-						diff1 := sL[2]
+         # For each word in the paragraph, if it is an index hit insert the lines
+         # where it occurs (plus the indexing term) into the output list.
+         every plusWord:= word := key(para.words) do {
+            every 0 to maxPlus do {# look for "word", "+word", "++word" ...
+               indexTerm := (\idx[plusWord]) |
+                             (\perFileidx[basename] & \perFileidx[basename][plusWord]) |
+                             &null
+               if \indexTerm & not member(\suppressed[basename], plusWord) then {
+                  every occurs := !(para.words[word]) do {
+                     /(opList[occurs.line]) := set()
+                     insert(opList[occurs.line], indexTerm)
+                     filehits +:= 1
+                  }
+               }
+               plusWord := "+" || plusWord #prepend a plus and try again
+            }
+         }
 
-						# write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words")
-						# See if any of the positions in the paragraph of word 2 is within the
-						# required distance of any of the positions of word 1.
-						every 0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1 do {
-							/(opList[o1.line]) := set()
-							insert(opList[o1.line], indexTerm)
-							if o2.line > o1.line then {
-								/(opList[o2.line]) := set()
-								insert(opList[o2.line], indexTerm)
-							}	
-						}
-					}
-					
-					5: { # three words: w1 d1 w2 d2 w3
-						w1 := sL[1]; w2 := sL[3]; w3 := sL[5]
-						diff1 := sL[2]; diff2 := sL[4]
-						# write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words and")
-						# write(&errout, "Looking for ", w2, " and ", w3, " within ", diff2, " words")
-						every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
-						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) do {
-							/(opList[o1.line]) := set()
-							insert(opList[o1.line], indexTerm)
-							if o3.line > o1.line then {
-								/(opList[o3.line]) := set()
-								insert(opList[o3.line], indexTerm)
-							}
-						}							   
-					}
+         # For each search in the extended search tables, see if
+         #   a) All the needed words are in the paragraph.
+         #   b) They are within the required distances of each other.
+         every search := key(idx_ex) | key(\perFileidx_ex[basename]) do {
+            if member(\suppressed[basename], search) then next
 
-					7: { # four words
-						w1 := sL[1]; w2 := sL[3]; w3 := sL[5]; w4 := sL[7]
-						diff1 := sL[2]; diff2 := sL[4]; diff3 := sL[6]
-						# write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words and")
-						# write(&errout, "            ", w2, " and ", w3, " within ", diff2, " words and")
-						# write(&errout, "            ", w3, " and ", w4, " within ", diff3, " words")
-						every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
-						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) &
-						   (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) do {
-							/(opList[o1.line]) := set()
-							insert(opList[o1.line], indexTerm)
-							if o4.line > o1.line then {
-								/(opList[o4.line]) := set()
-								insert(opList[o4.line], indexTerm)
-							}
-						}							   
-					}
+               # Before checking the distances between the words, make sure that
+               # all the needed words are actually in the paragraph.
+               sL := (\idx_ex[search]).searchList |
+                  (\perFileidx_ex[basename][search]).searchList
+            every n := 1 to *sL by 2 do {
+               if /(para.words[sL[n]]) then break next    # No luck: try next search term
+               }
 
-					9: { # five words
-						w1 := sL[1]; w2 := sL[3]; w3 := sL[5]; w4 := sL[7]; w5 := sL[9]
-						diff1 := sL[2]; diff2 := sL[4]; diff3 := sL[6]; diff4 := sL[8]
+            indexTerm := (\idx_ex[search]).indexTerm | (\perFileidx_ex[basename][search]).indexTerm
+            if /indexTerm then stop("error: null index term")
+            if type(indexTerm) ~== "string" then {
+               write(&errout, ximage(indexTerm))
+               stop("IndexTerm not a string")
+            }
 
-						every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
-						   (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) &
-						   (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) &
-						   (0 < ( ((o5 <- !(para.words[w5])).wpos) - (o4.wpos) ) <= diff4) do {
-							/(opList[o1.line]) := set()
-							insert(opList[o1.line], indexTerm)
-							if o5.line > o1.line then {
-								/(opList[o5.line]) := set()
-								insert(opList[o5.line], indexTerm)
-							}
-						}							   
-					}
+            case *sL of {
+               3: { # two words:   word1 distance word2
+                  w1 := sL[1]; w2 := sL[3]
+                  diff1 := sL[2]
 
-					2|4|6|8: {
-						stop("Program error: search term = ", search)
-					}
+                  # write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words")
+                  # See if any of the positions in the paragraph of word 2 is within the
+                  # required distance of any of the positions of word 1.
+                  every 0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1 do {
+                     /(opList[o1.line]) := set()
+                     insert(opList[o1.line], indexTerm)
+                     if o2.line > o1.line then {
+                        /(opList[o2.line]) := set()
+                        insert(opList[o2.line], indexTerm)
+                     }
+                  }
+               }
 
-					# We'll have to modify the program If someone comes up with a pressing
-					# need for a six word (or greater) index expression.
-					default: {
-						stop("Search expression \"", search, "\" has too many words")
-					}
-				}
-				
-			}
-		} 
+               5: { # three words: w1 d1 w2 d2 w3
+                  w1 := sL[1]; w2 := sL[3]; w3 := sL[5]
+                  diff1 := sL[2]; diff2 := sL[4]
+                  # write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words and")
+                  # write(&errout, "Looking for ", w2, " and ", w3, " within ", diff2, " words")
+                  every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
+                        (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) do {
+                        /(opList[o1.line]) := set()
+                        insert(opList[o1.line], indexTerm)
+                        if o3.line > o1.line then {
+                           /(opList[o3.line]) := set()
+                           insert(opList[o3.line], indexTerm)
+                        }
+                     }
+               }
 
-        if \diags then {
-           write("para.lines ", ximage(para.lines))
-           write("opList ", ximage(opList))
-        }
+               7: { # four words
+                  w1 := sL[1]; w2 := sL[3]; w3 := sL[5]; w4 := sL[7]
+                  diff1 := sL[2]; diff2 := sL[4]; diff3 := sL[6]
+                  # write(&errout, "Looking for ", w1, " and ", w2, " within ", diff1, " words and")
+                  # write(&errout, "            ", w2, " and ", w3, " within ", diff2, " words and")
+                  # write(&errout, "            ", w3, " and ", w4, " within ", diff3, " words")
+                  every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
+                        (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) &
+                        (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) do {
+                        /(opList[o1.line]) := set()
+                        insert(opList[o1.line], indexTerm)
+                        if o4.line > o1.line then {
+                           /(opList[o4.line]) := set()
+                           insert(opList[o4.line], indexTerm)
+                        }
+                     }
+               }
 
-        # Float any index hits inside an iconline declaration to just before it.
-        # makeindex really doesn't like "\protect\index{ ... }" inside a verbatim
-        # environment and spits out lots of "rejected" error messages.
-        if "\\iconline" == key(para.words) then {
-           if *para.words["\\iconline"] = *para.words["%enilnoci"] then {
-              if \diags then write("Floating ...")
+               9: { # five words
+                  w1 := sL[1]; w2 := sL[3]; w3 := sL[5]; w4 := sL[7]; w5 := sL[9]
+                  diff1 := sL[2]; diff2 := sL[4]; diff3 := sL[6]; diff4 := sL[8]
 
-              every n := 1 to *para.words["\\iconline"] do {
-                 sicl := para.words["\\iconline"][n].line
-                 eicl := para.words["%enilnoci"][n].line
-                 every lineno := (sicl + 1) to eicl do {
-                    /opList[sicl] := set()
-                    opList[sicl] ++:= \opList[lineno]
-                    \opList[lineno] := set()
-                 }
-              }
-           } else {
-              stop("iconline analysis error") # option - could just carry on?
-           }
-           if \diags then {
-              write("opList After float", ximage(opList))
-           }
-        }
+                  every (0 < ( ((o2 <- !(para.words[w2])).wpos) - ((o1 <- !(para.words[w1])).wpos) ) <= diff1) &
+                        (0 < ( ((o3 <- !(para.words[w3])).wpos) - (o2.wpos) ) <= diff2) &
+                        (0 < ( ((o4 <- !(para.words[w4])).wpos) - (o3.wpos) ) <= diff3) &
+                        (0 < ( ((o5 <- !(para.words[w5])).wpos) - (o4.wpos) ) <= diff4) do {
+                        /(opList[o1.line]) := set()
+                        insert(opList[o1.line], indexTerm)
+                        if o5.line > o1.line then {
+                           /(opList[o5.line]) := set()
+                           insert(opList[o5.line], indexTerm)
+                        }
+                     }
+               }
 
-		# write the paragraph, one line at a time with any index terms that match
-		# before the line containing the first matching word
-		lineno := 0
-		every line := !para.lines do {
-			lineno +:= 1
-			every indexTerm := !\opList[lineno] do {
-				filehits +:= 1
-				insert(fileTerms,indexTerm)
-				if not member(para.inProgress, indexTerm) then {
-					write(outf, "\\protect\\index{", indexTerm, "}%")
-				}
-			}
-			if \writeNewFile then write(outf, line); 
-		}
-		write(outf) # paragraph separator
+               2|4|6|8: {
+                  stop("Program error: search term = ", search)
+               }
 
-		# Clear the line and word info, ready for the next paragraph
-		para.lines := list()
-		para.words := table()
-        diags := &null
-	} # End of per-paragraph processing
+               # We'll have to modify the program If someone comes up with a pressing
+               # need for a six word (or greater) index expression.
+               default: {
+                  stop("Search expression \"", search, "\" has too many words")
+               }
+            }
 
-	if *para.inProgress > 0 then {
-			Warn(filename, ": These primary index terms should not still be active:")
-			every Warn(filename, ": ", !(para.inProgress))
-		}
+         }
+      }
 
-	if 0 < filehits then {
-		critical stats: {
-			stats["hits"] +:= filehits
-		}
-		# insert the terms that resulted in an index command (to display
-		# the terms that resulted in no hits at the end of the run)
-		critical idxTerms: {
-			every insert(idxTerms, !fileTerms)
-#			idxTerms ++:= fileTerms
-		}
-	}
+      if \diags then {
+         write("para.lines ", ximage(para.lines))
+         write("opList ", ximage(opList))
+      }
 
-	@> \waiter   # If someone is waiting, tell them a file has been finished
+      # Float any index hits inside an iconline declaration to just before it.
+      # makeindex really doesn't like "\protect\index{ ... }" inside a verbatim
+      # environment and spits out lots of "rejected" error messages.
+      if "\\iconline" == key(para.words) then {
+         if *para.words["\\iconline"] = *para.words["%enilnoci"] then {
+            if \diags then write("Floating ...")
+
+            every n := 1 to *para.words["\\iconline"] do {
+               sicl := para.words["\\iconline"][n].line
+               eicl := para.words["%enilnoci"][n].line
+               every lineno := (sicl + 1) to eicl do {
+                  /opList[sicl] := set()
+                  opList[sicl] ++:= \opList[lineno]
+                  \opList[lineno] := set()
+               }
+            }
+         } else {
+            stop("iconline analysis error") # option - could just carry on?
+         }
+         if \diags then {
+            write("opList After float", ximage(opList))
+         }
+      }
+
+      # write the paragraph, one line at a time with any index terms that match
+      # before the line containing the first matching word
+      lineno := 0
+      every line := !para.lines do {
+         lineno +:= 1
+         every indexTerm := !\opList[lineno] do {
+            filehits +:= 1
+            insert(fileTerms,indexTerm)
+            if not member(para.inProgress, indexTerm) then {
+               write(outf, "\\protect\\index{", indexTerm, "}%")
+            }
+         }
+         if \writeNewFile then write(outf, line);
+      }
+      write(outf) # paragraph separator
+
+      # Clear the line and word info, ready for the next paragraph
+      para.lines := list()
+      para.words := table()
+      diags := &null
+   } # End of per-paragraph processing
+
+   if *para.inProgress > 0 then {
+      Warn(filename, ": These primary index terms should not still be active:")
+      every Warn(filename, ": ", !(para.inProgress))
+   }
+
+   if 0 < filehits then {
+      critical stats: {
+         stats["hits"] +:= filehits
+      }
+      # insert the terms that resulted in an index command (to display
+      # the terms that resulted in no hits at the end of the run)
+      critical idxTerms: {
+         every insert(idxTerms, !fileTerms)
+         #           idxTerms ++:= fileTerms
+      }
+   }
+
+   @> \waiter   # If someone is waiting, tell them a file has been finished
 end
 
 #--------------------------------------------------------------------------------
 # Succeed if the line should not be analysed
 procedure filtered(line :string)
-	static begstr, endstr, nesting
-	initial {
-		nesting := table(&null)       # Use a table indexed by thread-id so we are thread-safe.
-		begstr := set("\\begin{noIndex}", "\\begin{iconcode}", "\\begin{picture}", "\\begin{tikzpicture}")
-		endstr := set("\\end{noIndex}", "\\end{iconcode}", "\\end{picture}", "\\end{tikzpicture}")
-	}
+   static begstr, endstr, nesting
+   initial {
+      nesting := table(&null)       # Use a table indexed by thread-id so we are thread-safe.
+      begstr := set("\\begin{noIndex}", "\\begin{iconcode}", "\\begin{picture}", "\\begin{tikzpicture}")
+      endstr := set("\\end{noIndex}", "\\end{iconcode}", "\\end{picture}", "\\end{tikzpicture}")
+   }
 
-	if \nesting[&current] then { # Ignore everything until after the correct number of matching lines
-		line ? {
-			tab(many(whitespace))
-			if match(!begstr) then nesting[&current] +:=1
-			else if match(!endstr) then {
-				if 0 = (nesting[&current] -:= 1) then {nesting[&current] := &null}
-			}
-		}
-		return #success
-	}
+   if \nesting[&current] then { # Ignore everything until after the correct number of matching lines
+      line ? {
+         tab(many(whitespace))
+         if match(!begstr) then nesting[&current] +:=1
+         else if match(!endstr) then {
+            if 0 = (nesting[&current] -:= 1) then {nesting[&current] := &null}
+         }
+      }
+      return #success
+   }
 
-	# Not currently ignoring things
-	line ? {
-		tab(many(whitespace))
-		if match("%") then return # success
-#		if match("\\index" | "\\iconline") then return # success
- 		if match(!begstr) then {(\nesting[&current] +:= 1) | (nesting[&current] := 1)}
-		if \nesting[&current] then return  # success
-	}
+   # Not currently ignoring things
+   line ? {
+      tab(many(whitespace))
+      if match("%") then return # success
+      if match(!begstr) then {(\nesting[&current] +:= 1) | (nesting[&current] := 1)}
+      if \nesting[&current] then return  # success
+   }
 
-	fail
+   fail
 end
 
 #--------------------------------------------------------------------------------
 procedure noPath(path)
-	local n
-	path ? {
-		every n := upto('/\\:') # last file separator (if any)
-		tab (integer(n) + 1)
-		return tab(0)
-	}
+   local n
+   path ? {
+      every n := upto('/\\:') # last file separator (if any)
+      tab (integer(n) + 1)
+      return tab(0)
+   }
 end
 
 #--------------------------------------------------------------------------------
-#	Return a string containing the entire contents of a file
+#   Return a string containing the entire contents of a file
 procedure entireFile(name)
-	local f := open(name) | stop("Cannot open ", string(name))
-	local fds := stat(f) | stop("Cannot stat ", string(name))
-	local s := reads(f, fds.size + 50)
-	close(f)
-	return s
+   local f := open(name) | stop("Cannot open ", string(name))
+   local fds := stat(f) | stop("Cannot stat ", string(name))
+   local s := reads(f, fds.size + 50)
+   close(f)
+   return s
 end
 
 #--------------------------------------------------------------------------------
 procedure Warn(m[])
-	push (m, "Warning: ", &errout)
-	return write ! m
+   push (m, "Warning: ", &errout)
+   return write ! m
 end
 
 #--------------------------------------------------------------------------------
 procedure usage(s)
-	local cmd := "idxGen [-v] [-Dir d] [-idxFile f] [idxOnly] [-?] [-help] files..."
+   local cmd := "idxGen [-v] [-Dir d] [-idxFile f] [idxOnly] [-?] [-help] files..."
 
-	if \s then {
-        write(&errout, s, " ... type \"idxGen -?\" for full instructions. Briefly")
-        write(&errout, "  ", cmd)
-    } else {
-        every write(&errout,
-		![
-		  cmd,
-		  "",
-		  "Read in a file of index terms and annotate the files with",
-		  " \\index{ ...} commands before the lines that contain the terms.",
-		  "",
-		  "   -Dir d      Place the indexed files in directory d.",
-		  "   -idxFile f  f is an xml file containing the indexing terms, one term per line.",
-		  "               The default file (idxTerms.xml) contains a detailed explanation.",
-		  "",
-		  "   -idxOnly    Just produce the index terms annotated with their location.",
-		  "",
-		  "   -sequential Process the files sequentially, one after another, in a single thread.",
-		  "               (Five files (or more) will usually be processed in parallel, if possible)",
-		  "",
-		  "   -v          Verbose: produce progress info and details of the run.",
-		  "",
-		  "   -wait n     Wait n seconds for the parallel indexing to finish before timing out",
-		  "",
-		  "   -? -help    Produce this output",
-		  ""
-		  ])
-	}
-	exit()
+   if \s then {
+      write(&errout, s, " ... type \"idxGen -?\" for full instructions. Briefly")
+      write(&errout, "  ", cmd)
+   } else {
+      every write(&errout,
+      ![
+         cmd,
+         "",
+         "Read in a file of index terms and annotate the files with",
+         " \\index{ ...} commands before the lines that contain the terms.",
+         "",
+         "   -Dir d      Place the indexed files in directory d.",
+         "   -idxFile f  f is an xml file containing the indexing terms, one term per line.",
+         "               The default file (idxTerms.xml) contains a detailed explanation.",
+         "",
+         "   -idxOnly    Just produce the index terms annotated with their location.",
+         "",
+         "   -sequential Process the files sequentially, one after another, in a single thread.",
+         "               (Five files (or more) will usually be processed in parallel, if possible)",
+         "",
+         "   -v          Verbose: produce progress info and details of the run.",
+         "",
+         "   -wait n     Wait n seconds for the parallel indexing to finish before timing out",
+         "",
+         "   -? -help    Produce this output",
+         ""
+     ])
+   }
+   exit()
 end

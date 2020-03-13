@@ -53,6 +53,7 @@ global idxTerms          # index terms that were placed in the index
 global idxCandidates     # All possible index terms
 global noComplaints      # Suppress "not found" for these index terms
 global maxPlus           # The highest number of leading "+" chars seen in a search term
+global floatIdxHits      # Float index hits to outside iconline etc.
 #--------------------------------------------------------------------------------
 
 # A paragraph record holds the remaining text of the whole file, together with
@@ -75,12 +76,13 @@ record multiIndex (indexTerm, searchList)
 procedure main(args)
    local totalms := Timer()
    local opt := options(args,
-                        "-sequential -Dir: -idxOnly! -idxFile: -v -V -wait+ -? -help",
+                        "-sequential -Dir: -float! -idxOnly! -idxFile: -v -V -wait+ -? -help",
                         usage)
    local n, k, perFileTerms
    local p, totalTerms
    local timeoutSecs
 
+   &dump := 1
    #-------------------- Initialisation & option processing
    whitespace := ' \t'
    hits := 0
@@ -94,6 +96,8 @@ procedure main(args)
 
    \opt["idxOnly"] | writeNewFile := 1
    idxDir := \opt["Dir"]
+
+   floatIdxHits := opt["float"]
 
    #-------------------- Read in the index terms
    totalTerms := getIndexTerms(\opt["idxFile"] | "idxterms.xml")
@@ -138,6 +142,7 @@ procedure main(args)
 
       Log("Total CPU time ", Timer(totalms), " mS")
    }
+   &dump := 0
    return  # success
 end
 
@@ -462,7 +467,9 @@ end
 # The consumed text is removed from the source string.
 # The data is returned to the caller inside the paragraph structure.
 procedure nextParagraph(p: paragraph)
-   local line, word, lineNumber, wordNumber, notWord, squiggly
+   local line, word, lineNumber, wordNumber, notWord, squiggly, float
+   local diags
+   local floatstack
    static lineSpace, notEOL, texWord, otherChars
    initial {
       lineSpace := cset("\n \t")
@@ -474,6 +481,8 @@ procedure nextParagraph(p: paragraph)
       return fail     # end of text
    }
 
+   floatstack := []
+   diags := &null
    squiggly := &null
    # Split the text up into lines up to the next paragraph boundary
    # Note that none of this causes new string space to be created:
@@ -499,6 +508,7 @@ procedure nextParagraph(p: paragraph)
       if line == "%-%-%idxGen:dump" then {
          p.words["%dump"] := []                 # signal that we want debugging output
          put(p.words["%dump"], occurrence(0,0)) # for this paragraph.
+         diags := 1
       }
 
       if filtered(line) then next # Note that filtering works across paragraphs
@@ -515,21 +525,33 @@ procedure nextParagraph(p: paragraph)
                   next    # ignore any indexing line
                }
 
-         while notWord := if /squiggly then tab(upto(texWord)) else tab(many(otherChars)) | tab(upto(texWord)) do {
-            if \squiggly then { # count { and } because we are inside \iconline { .. }
+         while notWord := (if /squiggly
+                           then tab(upto(texWord))
+                           else tab(many(otherChars)) | tab(upto(texWord)))
+         do {
+            if \squiggly then {
+               # count { and } because we are inside \iconline { .. } or \textit {}
                notWord ? {
                   while &pos <= *notWord do {
                      if not tab(match("\\{" | "\\}")) then {
                         if ="{" then { squiggly+:=1 }
                         if ="}" then {
-                           if 0 = (squiggly -:= 1) then {# insert an artificial "end of iconline"
+                           if 0 = (squiggly -:= 1) then {
+                              # insert an artificial "end of iconline/textit etc."
                               wordNumber +:= 1
-                              word := "%enilnoci"
+                              word := "%end-" || float
                               /p.words[word] := []
-                              put(p.words[word], occurrence(lineNumber, wordNumber))
-                              squiggly := &null
-                              break # assume we don't need to process any more on this line
+                              if \diags then {
+                                 write("Inserting ", word ," at ", wordNumber)
                               }
+                              put(p.words[word], occurrence(lineNumber, wordNumber))
+                              if *floatstack > 0 then {
+                                 float := pop(floatstack)
+                                 squiggly := pop(floatstack)
+                              } else {
+                                 squiggly := &null; break
+                              }
+                           }
                         } else {
                            move(1)
                         }
@@ -537,11 +559,12 @@ procedure nextParagraph(p: paragraph)
                   }
                }
             }
+
             notWord := cset(notWord)
             if (*notWord > 0) & (*(notWord -- whitespace) > 0) then wordNumber +:= 1
             if member(notWord, "%") then break  # rest of line is a comment
 
-               word := tab(many(texWord)) | ""
+            word := tab(many(texWord)) | ""
             # check for an edge case: if the last character is \ and the next is a %
             # it isn't actually a comment, its a quoted percent char
             if word[-1] == "\\" & match("%") then word ||:= move(1)
@@ -557,8 +580,20 @@ procedure nextParagraph(p: paragraph)
             }
 
             if (word ~== "") then {
-               if word == "\\iconline" then { # start counting { and }
-                  squiggly := if many(otherChars) then 0 else 1
+               if \floatIdxHits then {
+                  if word == ("\\iconline" | "\\textit") then { # start counting { and }
+                     if \squiggly then { # nested search
+                        push(floatstack, squiggly)
+                        push(floatstack,float)
+                     }
+                     float := word
+                     squiggly := if many(otherChars) then 0 else 1
+                     if \diags then {
+                        write("starting ",
+                              (if *floatstack > 0 then "nested " else ""),
+                              "search for ", word, " count = ", squiggly)
+                     }
+                  }
                }
                wordNumber +:= 1
                /(p.words[word]) := []
@@ -589,7 +624,7 @@ procedure postIndex(filename: string, waiter)
    local diff1,diff2,diff3,diff4
    local sL
    local diags := &null
-   local sicl, eicl            # start/end of \iconline
+   local float, endfloat, sflt, eflt # start/end of \iconline \textit etc.
 
    critical stats: {stats["files"] +:= 1 }
    if \perFileidx[basename] then Log("Using specific index terms for ", filename)
@@ -608,10 +643,11 @@ procedure postIndex(filename: string, waiter)
 
    para := paragraph(entireFile(filename), list(), table(), set())
 
-   # analyse the file one paragraph at a time, placing index commands before each matching line
+   # analyse the file one paragraph at a time, placing index commands
+   # before each matching line
    while nextParagraph(para) do {
-      if \para.words["%dump"] then {   # Output debugging info for this paragraph
-         delete(para.words, "%dump")  # note that %dump never normally occurs.
+      if \para.words["%dump"] then { # Output debugging info for this paragraph
+         delete(para.words, "%dump") # note that %dump never occurs normally.
          Log(ximage(para.words))
          diags := 1
       }
@@ -749,27 +785,32 @@ procedure postIndex(filename: string, waiter)
          write("opList ", ximage(opList))
       }
 
-      # Float any index hits inside an iconline declaration to just before it.
-      # makeindex really doesn't like "\protect\index{ ... }" inside a verbatim
-      # environment and spits out lots of "rejected" error messages.
-      if "\\iconline" == key(para.words) then {
-         if *para.words["\\iconline"] = *para.words["%enilnoci"] then {
-            if \diags then write("Floating ...")
+      if \floatIdxHits & *opList > 0 then {
+         # Float any index hits inside an iconline or textit declaration
+         # to just before it.
+         every float := !["\\iconline", "\\textit"] do {
+            if float == key(para.words) then {
+               endfloat := "%end-" || float
+               if *\para.words[float] = *\para.words[endfloat] then {
+                  if \diags then write("Floating ... ", float)
 
-            every n := 1 to *para.words["\\iconline"] do {
-               sicl := para.words["\\iconline"][n].line
-               eicl := para.words["%enilnoci"][n].line
-               every lineno := (sicl + 1) to eicl do {
-                  /opList[sicl] := set()
-                  opList[sicl] ++:= \opList[lineno]
-                  \opList[lineno] := set()
+                  every n := 1 to *para.words[float] do {
+                     sflt := para.words[float][n].line
+                     eflt := para.words[endfloat][n].line
+                     every lineno := (sflt + 1) to eflt do {
+                        /opList[sflt] := set()
+                        opList[sflt] ++:= \opList[lineno]
+                        \opList[lineno] := set()
+                     }
+                  }
+               } else {
+                  write(&errout, ximage(para))
+                  stop("iconline analysis error") # option - could just carry on?
+               }
+               if \diags then {
+                  write("opList After float ", float, " ", ximage(opList))
                }
             }
-         } else {
-            stop("iconline analysis error") # option - could just carry on?
-         }
-         if \diags then {
-            write("opList After float", ximage(opList))
          }
       }
 
@@ -821,8 +862,10 @@ procedure filtered(line :string)
    static begstr, endstr, nesting
    initial {
       nesting := table(&null)       # Use a table indexed by thread-id so we are thread-safe.
-      begstr := set("\\begin{noIndex}", "\\begin{iconcode}", "\\begin{picture}", "\\begin{tikzpicture}")
-      endstr := set("\\end{noIndex}", "\\end{iconcode}", "\\end{picture}", "\\end{tikzpicture}")
+      begstr := set("\\begin{noIndex}", "\\begin{iconcode}", "\\begin{figure}",
+                    "\\begin{picture}", "\\begin{tikzpicture}")
+      endstr := set("\\end{noIndex}", "\\end{iconcode}", "\\end{figure}",
+                    "\\end{picture}", "\\end{tikzpicture}")
    }
 
    if \nesting[&current] then { # Ignore everything until after the correct number of matching lines
@@ -875,7 +918,7 @@ end
 
 #--------------------------------------------------------------------------------
 procedure usage(s)
-   local cmd := "idxGen [-v] [-Dir d] [-idxFile f] [idxOnly] [-?] [-help] files..."
+   local cmd := "idxGen [-v] [-Dir d] [-idxFile f] [idxOnly] [-sequential] [-float] [-?] [-help] files..."
 
    if \s then {
       write(&errout, s, " ... type \"idxGen -?\" for full instructions. Briefly")
@@ -896,6 +939,9 @@ procedure usage(s)
          "",
          "   -sequential Process the files sequentially, one after another, in a single thread.",
          "               (Five files (or more) will usually be processed in parallel, if possible)",
+         "",
+         "   -float      Move index hits inside an \\iconline{ } or \\textit{ } declaration to",
+         "               just before it.",
          "",
          "   -v          Verbose: produce progress info and details of the run.",
          "",

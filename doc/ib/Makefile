@@ -77,7 +77,7 @@ nightly: ib.pdf
 index: ib.ind
 
 ib.ind: idxtmp $(SRC)
-	../../uni/progs/idxGen -Dir idxtmp/ib -wait 60 *.tex
+	../../uni/progs/idxGen -Dir idxtmp/ib -wait 60 -float *.tex
 # Suppress the output from the two pdflatex commands in idxtmp
 # Also ignore errors (because the error messages are also swallowed).
 # Any errors will be seen when the final pdflatex command (above) is executed.
@@ -98,4 +98,4 @@ CLEAN:
 
 # Temporary development aid: Just run idxGen with maximum output
 indexrun:
-	../../uni/progs/idxGen -V -Dir idxtmp/ib -wait 30 *.tex
+	../../uni/progs/idxGen -V -Dir idxtmp/ib -wait 30  -float *.tex

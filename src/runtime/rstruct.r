@@ -1714,7 +1714,7 @@ struct descrip listtoarray(dptr l)
 #ifdef DescriptorDouble
                *rp++ = bp->Lelem.lslots[j].vword.realval;
 #else
-               *rp++ = (struct b_real *)(bp->Lelem.lslots[j].vword.bptr)->realval;
+               *rp++ = ((struct b_real *)(bp->Lelem.lslots[j].vword.bptr))->realval;
 #endif /* DescriptorDouble */
              }
            }

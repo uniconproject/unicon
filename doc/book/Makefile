@@ -47,3 +47,7 @@ nightly: ub.pdf
 
 fedora:
 	sudo dnf install texlive-base texlive-latex texlive-collection-latex texlive-collection-latexrecommended texlive-xtab
+
+CLEAN:
+	rm -f *.aux ub.idx ub.ilg ub.ind ub.log ub.out ub.pdf ub.toc
+

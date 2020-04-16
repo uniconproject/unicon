@@ -5013,8 +5013,432 @@ conflict with existing runtime or system error codes.
 1212 \ \ \ \ \ server error\\
 1213 \ \ \ \ \ POP messaging file expected\\
 
+\newpage
 \section{Syntax}
+%definitions for the "Railroad" syntax diagrams
+\newcommand{\sep}{0.5mm}%        Extra separation before and after nodes.
+\newcommand{\rad}{3.5mm}%      The space allowed for a bend.
+\newcommand{\guillemets}[1]{\guillemotleft#1\guillemotright}
+% Styles are named systematically with a combination of
+%     d down   u up    x forwards (to the right)   -x backwards (to the left)
+% So d-xu is a loop going down, then backwards then up
+%    uxd  goes up then forwards then down
+%    ux   goes up then forwards
+%    u-x  goes up then backwards
+%    -xu  goes backwards then up
+% etc.
+%
+% Styles that go up and then down again (or vice versa) have a parameter
+% specifying how far up or down to go.
+% Note that 2*\rad is added to the parameter to make space for the bends.
+%
+\tikzset{
+  d-xu/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}= (\tikztotarget) in
+      -| ++(\sep+\rad,-\rad) |- ++(-\rad,-#1-\rad)
+      -| ++(\x{fn}-\x{st}-\rad-\sep-\sep,\rad) |- ++(\rad+\sep,#1+\rad)}},
+  u-xd/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}= (\tikztotarget) in
+      -| ++(\sep+\rad,\rad) |- ++(-\rad,#1+\rad)
+      -| ++(\x{fn}-\x{st}-\rad-\sep-\sep,-\rad) |- ++(\rad+\sep,-#1-\rad)}},
+  d-xd/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}= (\tikztotarget) in
+      -| ++(\sep+\rad,-\rad) |- ++(-\rad, -\rad)
+      -| ++(\x{fn}-\x{st}-\rad-\sep-\sep,-\rad) |- ++(\rad+\sep,-\rad)}},
+  uxd/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\sep+\rad,\rad) |- ++(\rad,#1+\rad)
+      -| ++(\x{fn}-\x{st}-3*\rad-\sep-\sep,-\rad) |- ++(\rad+\sep,-#1-\rad)}},
+  dxu/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}= (\tikztotarget) in
+      -| ++(\sep+\rad,-\rad) |- ++(\rad,-#1-\rad)
+      -| ++(\x{fn}-\x{st}-3*\rad-\sep-\sep,\rad) |- ++(\rad+\sep,#1+\rad)}},
+  ux/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\sep+\rad,\rad) |- ++(\rad,\y{fn}-\y{st}-\rad)}},
+  xu/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\x{fn}-\x{st}-\rad-\sep,\rad) |- ++(\rad+\sep,\y{fn}-\y{st}-\rad)}},
+  dx/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\sep+\rad,-\rad) |- ++(\rad,\y{fn}-\y{st}+\rad) -- (\tikztotarget)}},
+  xd/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\x{fn}-\x{st}-\rad-\sep,-\rad) |- ++(\rad,\y{fn}-\y{st}+\rad) -- (\tikztotarget) }},
+  d-x/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\sep+\rad,-\rad) |- ++(-\rad,\y{fn}-\y{st}+\rad) -- (\tikztotarget)}},
+  u-x/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\sep+\rad,\rad) |- ++(-\rad,\y{fn}-\y{st}-\rad) -- (\tikztotarget)}},
+  -xu/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\x{fn}-\x{st}-\rad-\sep,\rad) |- ++(\rad+\sep,\y{fn}-\y{st}-\rad)}},
+  -xd/.style= {to path={let \p{st}=(\tikztostart) in let \p{fn}=(\tikztotarget) in
+      -| ++(\x{fn}-\x{st}-\rad-\sep,-\rad) |- ++(\rad+\sep,\y{fn}-\y{st}+\rad)}},
+%styles for the symbols
+  In/.style={{arrows={Triangle[open,reversed]-}}},
+  Out/.style={{arrows={-Triangle[open]}}},
+  T/.style = {% Terminal symbol
+    rounded rectangle, minimum size=6mm, very thick, draw=black!50, top color=white,
+    bottom color=black!20, font=\ttfamily, text height=1.5ex, text depth=.25ex},
+  NT/.style= {% Non Terminal symbol
+           rectangle, minimum size=6mm, very thick, draw=red!50!black!50, top color=white,
+           bottom color=red!50!black!20, font=\itshape, text height=1.5ex,text depth=.25ex},
+  GATE/.style={% Gate symbol, denoting a restriction
+    signal, minimum size=6mm, very thick, font=\ttfamily,
+    signal from=west, signal to=east,draw=red!50!black!50,
+    top color=white,bottom color=black!20,
+    text height=1.5ex,text depth=.25ex},
+}
 
+The Unicon syntax is described here using ``Railroad diagrams''. Note
+that a newline may be substituted for the semicolon symbol (i.e.
+\raisebox{-1.3mm}{\tikz \node[scale=0.75,T]{;};}
+) wherever it appears in the diagrams. Some non-terminal symbols, which could be
+further expanded using another diagram, are represented by a single
+terminal symbol with the name enclosed in {\em guillemets}, for example
+\raisebox{-1.3mm}{\tikz \node[scale=0.75,T]{\guillemets{infix-operator}};}.
+\vfill
+
+\noindent
+\begin{tikzpicture}% ----- Program
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={4.3*\rad}]{
+  Program[NT],
+  / --[In] entry -!-
+  {
+    gl0 -- gl1/global[T] -- gl2/"\guillemets{name}"[T] -- gl3/","[T] -!- glx,
+    lk0 -- lk1/link[T] -- lk2/"\guillemets{file name}"[T] -- lk3/","[T] -!- lkx,
+    iva0 -- iva1/invocable[T] -- iva2/all[T] -- ivax,
+    iv0 -- iv1/invocable[T] --  iv2/\"[T] -- iv3/"\guillemets{name}"[T]-- iv4/\"[T]
+        -- iv5/","[T] -!- ivx,
+    pr0 -- pr1/"procedure declaration"[NT] -- prx,
+    cl0 -- cl1/"class declaration"[NT] -- clx,
+    rc0 -- rc1/record[T] --  rc2/"("[T] --/-- rc3/"\guillemets{name}"[T]
+        -- rc4/","[T] -!- rc5 -- rc6/")"[T] -- rcx,
+    pk0 -- pk1/"0:1"[GATE] -- pk2/package[T]
+        -- pk3/"\guillemets{name} or \guillemets{file name}"[T] -- pkx,
+    im0 -- im1/import[T] -- im2/"\guillemets{name}"[T] -- im3/","[T] -!- imx,
+  }
+  -!- exit --/--[Out] /;
+  entry -- gl0; glx -- exit;
+  exit --[u-xd=2mm] entry;
+  %
+  gl2.east --[uxd=0] glx; gl3.east --[d-xu=0] gl2.west;
+  lk2.east --[uxd=0] lkx; lk3.east --[d-xu=0] lk2.west;
+  iv4.east --[uxd=0] ivx; iv5.east --[d-xu=0] iv2.west;
+  rc2.east --[uxd=0] rc5; % yes, a null record is allowed.
+  rc3.east --[uxd=0] rc5; rc4.east --[d-xu=0] rc3.west;
+  im2.east --[uxd=0] imx; im3.east --[d-xu=0] im2.west;
+  \foreach \in / \out in
+           {lk0/lkx, iva0/ivax, iv0/ivx, pr0/prx, cl0/clx, rc0/rcx, pk0/pkx, im0/imx}
+           {entry --[xd] \in; \out --[xu] exit};
+};
+\end{tikzpicture}
+
+\vfill
+The \raisebox{-1.3mm}{\tikz \node[scale=0.75,GATE]{n:m};}
+symbol is an extension to the usual railway syntax and denotes that a
+path may be taken between \verb/n/ and \verb/m/ times.
+\raisebox{-1.3mm}{\tikz \node[scale=0.75,GATE]{1};}
+is an abbreviation for \raisebox{-1.3mm}{\tikz \node[scale=0.75,GATE]{1:1};}
+meaning the path is compulsory and must appear exactly once.
+
+\vspace{0.5cm}
+\noindent
+\begin{tikzpicture}% ----- Procedure Declaration
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={3*\rad}]{
+  "procedure declararation"[NT],
+  / --[In] entry --
+  {
+    pr1/procedure[T] -- pr2/"proc header"[NT] -- pr3/";"[T]
+    -- pr4/"proc body"[NT] -- pr5/";"[T] -- pr6/end[T]
+  }
+  -- exit --[Out] /;
+  %
+  pr3.east --[d-xu=0] pr3.west; pr5.east--[d-xu=0] pr5.west;
+};
+\end{tikzpicture}
+
+\vspace{0.5cm}
+\noindent
+\begin{tikzpicture}% ----- Procedure Header
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={3*\rad}]{
+  "proc header"[NT],
+  / --[In] entry -!-
+  {
+    ph2/"("[T] -- / -- ph3/parameter[NT] -- ph4/","[T] -- /
+    -- ph5/"\guillemets{name}"[T] -- ph6/"["[T] -- ph7/"]"[T] -- ph8/")"[T]
+  }
+  -- exit --[Out] /;
+  %
+  ph2.east --[uxd=0] ph8.west; ph3.east --[uxd=0] ph8.west;
+  ph2.east --[dxu=\rad] ph5.west;
+  ph4.east --[d-xu=0] ph3.west;
+  entry -- ph2.west;
+};
+\end{tikzpicture}
+
+\noindent
+\begin{tikzpicture}% ----- Procedure parameter
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=7mm,simple, branch down={3*\rad}]{
+  parameter[NT],
+  / --[In] entry -!-
+  {
+    pa1/"\guillemets{name}"[T] -- pa2/":"[T] -- pa3/"\guillemets{name}"[T]
+    -!-/-!- pa4/":"[T] -- pa5/"\guillemets{string or number or cset value}"[T]
+  }
+  -- exit --[Out] /;
+  %
+  pa1.east --[uxd=0] exit; pa3.east --[uxd=0] pa4.west; pa3.east --[uxd=0] exit;
+  entry -- pa1.west;
+};
+\end{tikzpicture}
+
+\noindent
+\begin{tikzpicture}% ----- Procedure body
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=5.6mm,simple, branch down={4*\rad}]{
+  "proc body"[NT],
+  / --[In] / -- entry -!-
+  {
+    {pb1/local[T],pb2/static[T]} -!-/-- pb3/"\guillemets{name}"[T] -- pb4/","[T]
+    -!-/-!- pb5/";"[T] -- pb6/initial[T] -- pb7/expr[NT] -- /
+    -- pb8/";"[T] -- pb9/expr[NT] --/-- pbx,
+  }
+  -- exit --[Out] /;
+  %
+  entry -- pb1.west; pb1.east -- pb3.west;
+  entry --[dx] pb2.west; pb2.east --[ux]pb3.west;
+  pb4.east --[u-xd=0] pb3.west;
+  entry --[dxu=4*\rad] exit;
+  pb3.east --[dxu=4*\rad] pb5.west;
+  pb3.east --[dxu=4*\rad] pb8.west;
+  pb5.east --[u-xd=0.5*\rad] entry;
+  pb7.east --[uxd=0.5*\rad] exit;
+  pb8.east --[u-xd=0] pb8.west;
+  pb9.east --[u-xd=0] pb8.west;
+};
+\end{tikzpicture}
+
+\vspace{0.5cm}
+\noindent
+\begin{tikzpicture}% ----- Class Declaration
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={3.5*\rad}]{
+  "class declararation"[NT],
+  / --[In] entry -!-
+  {
+    cl1/class[T] -- cl2/"\guillemets{name}"[T] -- cl3/":"[T] -!- {cl4/"("[T], join}
+      -!- cl5/"\guillemets{name}"[T] -- cl6/","[T] -!- cl7/")"[T],
+    / -!-/-!- md1/";"[T] -- md2/"method declaration"[NT] --/-- md3/";"[T] --mdx,
+    / -!-/-!- in1/";"[T] -- cl9/initially[T] -- cl10/"proc header"[NT]
+    -- cl11/";"[T] -- cl12/"proc body"[NT] -- cl13/";"[T],
+  }
+  -!- exit/"end"[T] --[Out] /;
+  entry -- cl1.west;
+  cl3.east --[u-xd=0] cl2.west; cl2.east --[dxu=0] cl4.west;
+  cl6.east --[u-xd=0] cl5.west; cl5.east --[dxu=0] cl7.west;
+  cl4.east --[dxu=0] cl7.west; cl4.east -- cl5.west;
+  cl7.east --[d-x] join; join --[-xd] md1.west;  join --[-xd] in1.west;
+  md2.east --[u-x] join;
+  cl7.east -- exit.west;
+  cl13.east --[xu] exit.west; mdx --[xu] exit.west;
+  %
+};
+\end{tikzpicture}
+
+\vspace{0.5cm}
+\noindent
+\begin{tikzpicture}% ----- Method Declaration
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={3*\rad}]{
+  "method declararation"[NT],
+  / --[In] entry --
+  {
+    md1/method[T] -- md2/"proc header"[NT] -- md3/";"[T]
+    -- md4/"proc body"[NT] -- md5/";"[T] -- md6/end[T]
+  }
+  -- exit --[Out] /;
+  %
+  md3.east --[d-xu=0] md3.west; md5.east--[d-xu=0] md5.west;
+};
+\end{tikzpicture}
+
+\noindent
+\begin{tikzpicture}% ----- Expression
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=7mm,simple, branch down={3.9*\rad}]{
+  expr[NT],
+  / --[In] entry -!-
+  {
+    id0  -!- id1 -!- id2/expr[NT] -!- id3 --/-- id4/"."[T]
+         -- id5/"\guillemets{name}"[T] --/-- idx,
+    qn0 --/-- qn1--/--  qn2/"::"[T] -- qn3/"\guillemets{name}"[T] -- qnx,
+    lit0 -- / -- li1/"\guillemets{string or number or cset value}"[T] -- litx,
+    pe0  -- / -- pe1/"\guillemets{prefix-operator}"[T] -- pe2/expr[NT] -- pex,
+    ie0  -- / -- ie1/expr[NT] -- ie2/"\guillemets{infix-operator}"[T]
+         -- ie3/expr[NT] -- iex,
+    ky0  -- / -- ky1/"\&keyword"[T] -- kyx,
+    tob0 -- / --tob1/expr[NT] -- tob2/to[T] -- tob3/expr[NT] -- tob4/by[T]
+         -- tob5/expr[NT] -- tobx,
+    inv0 -- inv1 -- inv2/"meth-expr"[NT] -- inv3/"("[T] --/-- inv4/expr[NT]
+         -!-/-!- inv5/","[T] --/-- inv6/")"[T] -- invx,
+    ce0 -- / -- ce1/"control expr"[NT] -- cex,
+    pc0 -- pc1 -- pc2/expr[NT] -- pc3/"\{"[T] --/-- pc4/expr[NT]
+        -!-/-!- pc5/","[T] --/-- pc6/"\}"[T] -- pcx,
+    ex0 -- / -- ex1/"[:"[T] -- ex2/expr[NT] -- ex3/":]"[T] -- exx,
+    seq0 -- / -- seq1/"\{"[T] --/-- seq2/expr[NT] -!-/-!- seq3/";"[T]
+         --/-- seq4/"\}"[T] -- seqx,
+    ir0 -- / -- ir1/expr[NT] -- ir3/"["[T] -- ir4/expr[NT] -- ir5/": or +: or -:"[T]
+        -- ir6/expr[NT] -- ir7/"]"[T] -- irx,
+    ind0 -- ind1 -- ind2/expr[NT] -- ind2a -- ind3/"["[T] --/-- ind4/expr[NT]
+         -!-/-!- ind5/","[T] --/-- ind6/"]"[T] -- indx,
+  }
+  -!- exit --[Out] /;
+%
+  id0 -- id2 -- id3;
+  qn1 --[uxd=0] qn3.west; qn3.east--[d-xu=0] qn2.west;
+  id5.east --[d-xu=0] id4.west; id3 --[uxd=0] idx;
+  tob3.east --[uxd=0] tobx;
+  inv1 --[uxd=0] inv3.west;  inv5.east --[d-xu=0] inv4.west;
+  inv5.east --[d-xu=0] inv5.west; inv3.east --[uxd=0] inv5.west;
+  inv3.east --[uxd=0] inv6.west; inv4.east --[uxd=0] inv6.west;
+  pc1 --[uxd=0] pc3.west;  pc5.east --[d-xu=0] pc4.west;pc5.east --[d-xu=0] pc5.west;
+  pc3.east --[uxd=0] pc5.west;  pc3.east --[uxd=0] pc6.west; pc4.east --[uxd=0] pc6.west;
+  seq1.east --[uxd=0] seq3.west; seq1.east --[uxd=0] seq4.west; seq2.east --[uxd=0] seq4.west;
+  seq3.east --[d-xu=0] seq2.west;seq3.east --[d-xu=0] seq3.west;
+  ind1 --[uxd=0] ind3.west;  ind5.east --[d-xu=0] ind4.west; ind5.east --[d-xu=0] ind5.west;
+  ind3.east --[uxd=0] ind5.west; ind3.east --[uxd=0] ind6.west; ind4.east --[uxd=0] ind6.west;
+  ind6.east --[d-xu=\rad] ind2a.west;
+%
+  entry -- id0; idx -- exit;
+  \foreach \in / \out in
+           { qn0/qnx, lit0/litx, ky0/kyx, pe0/pex, ie0/iex, inv0/invx, tob0/tobx,
+             ce0/cex, pc0/pcx, ex0/exx, seq0/seqx,ir0/irx, ind0/indx}
+           {entry --[dx] \in; \out --[xu] exit};
+};
+\end{tikzpicture}
+
+\noindent
+\begin{tikzpicture}% ----- Method or expression
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=7mm,simple, branch down={3.5*\rad}]{
+  "meth-expr"[NT],
+  / --[In] entry -!-
+  {
+    e0 -- e1/expr[NT] -- ex,
+    m0 -- m1/expr[NT] -- m2/"\$"[T] -- m3/"\guillemets{name}"[T]
+       --/-- m4/"."[T] -- m5/"\guillemets{name}"[T] --/-- mx,
+    i0 -- i1/expr[NT] -- i2/"\$"[T] -- / -- i3/"\guillemets{name}"[T]
+       -- i4/"."[T] -- / --  i5/initially[T] -- ix,
+  }
+  -!- exit --[Out] /;
+%
+  m5.east --[d-xu=0] m4.west; m3.east --[uxd=0] mx;
+  i4.east --[d-xu=0] i3.west; i2.east --[dxu=\rad] i5.west;
+%
+  entry -- e0; ex -- exit;
+  \foreach \in / \out in
+           {m0/mx, i0/ix}
+           {entry --[dx] \in; \out --[xu] exit};
+};
+\end{tikzpicture}
+
+\noindent
+\begin{tikzpicture}% ----- Control Expr
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={4*\rad}]{
+  "control expr"[NT],
+  / --[In] entry -!-
+  {
+    if0/if[T] -- if1/expr[NT] -- if2/then[T] -- if3/expr[NT]
+         -- if4/else[T] -- if5/expr[NT] -- ifx,
+    iter0 --  / -- "loop expr"[NT] -- iterx,
+    br0 --  / -- break[T] -- br1/expr[NT] -- brx,
+    nx0 -- / --  next[T] -- nxx,
+    crt0 -- / -- critical[T] -- crt1/expr[NT] -- crt2/":"[T] -- crt3/expr[NT] -- crtx,
+    cs0  -- / -- case[T] -- cs1/expr[NT] -- of[T] -- cs2/"\{"[T],
+    / -!- cs4/";"[T] -- cs5 -!- {[branch down=10mm] cs9a/"0:1"[GATE]
+      -- cs9b/default[T], / -!- cs10/expr[NT]}
+      -!- / -!- / -!- / -!- / -!- / -!- cs6/":"[T] -- cs7/expr[NT]
+      -- cs8/"\}"[T] -- csx, /,
+    cr0 -- / --  create[T] -- cr1/expr[NT] -- crx,
+    th0 -- / --  thread[T] -- th1/expr[NT] -- thx,
+    ret0 -- / -- return[T] -- ret1/expr[NT] -- retx,
+    fl0 -- / --  fail[T] -- flx,
+  }
+  -!- exit --[Out] /;
+%
+  if3.east --[uxd=0] ifx;
+  break.east --[uxd=0] brx;
+  return.east --[uxd=0] retx;
+  cs7.east --[d-xu=2.5*\rad] cs4.west;
+  cs2.east --[d-xd] cs5.west;
+  cs5 -- cs9a.west; cs9b.east -- cs6;
+  cs5 --[dx] cs10 --[xu] cs6.west;
+  %
+  entry -- if0; ifx -- exit;
+  \foreach \in / \out in
+           {iter0/iterx, br0/brx,ret0/retx, crt0/crtx, cs0/csx,
+            cr0/crx, th0/thx, fl0/flx, nx0/nxx}
+           {entry --[dx] \in; \out --[xu] exit};
+};
+\end{tikzpicture}
+
+\noindent
+\begin{tikzpicture}% ----- Loop Expr
+[
+  draw=black,very thick,shape=coordinate,
+  graphs/every graph/.style = {edges={rounded corners=0.5*\rad}}
+]
+\graph [ grow right sep=8mm,simple, branch down={4*\rad}]{
+  "loop expr"[NT],
+  /--[In] entry -!-
+  {
+    ev0 --  / -- every[T] -- ev1/expr[NT] -- ev2/do[T] -- ev3/expr[NT] -- evx,
+    wh0 --  / -- while[T] -- wh1/expr[NT] -- wh2/do[T] -- wh3/expr[NT] -- whx,
+    un0 --  / -- until[T] -- un1/expr[NT] -- un2/do[T] -- un3/expr[NT] -- unx,
+    sus0 -- / -- suspend[T] -- sus1/expr[NT] -- sus2/do[T]
+         -- sus3/expr[NT] -- susx,
+    rpt0 -- / -- repeat[T] -- rpt1/expr[NT] -- rptx,
+  }
+  -!- exit --[Out] /;
+  \foreach \fr / \to in
+           {ev1/evx, wh1/whx, un1/unx, sus1/susx}
+           {\fr.east --[uxd=0]\to};
+  suspend.east --[uxd=0] susx;
+  %
+  entry -- ev0; evx -- exit;
+  \foreach \in / \out in
+           {wh0/whx, un0/unx, sus0/susx, rpt0/rptx}
+           {entry --[dx] \in; \out --[xu] exit};
+};
+\end{tikzpicture}
+
+\vspace{0.5cm}
 \subsection*{Operator precedence and associativity}
 Except where mentioned, infix operators are left--associative.
 The operators are listed in two columns and grouped from highest precedence
@@ -5043,7 +5467,7 @@ column an operator is placed in, is not significant).
 \tablefirsthead{\hline \multicolumn{2}{c}{\textbf{Operator Precedence}}\\}
 \tablehead{\multicolumn{2}{c}{{\textbf{Operator Precedence}} (continued)}\\}
 \tabletail{\multicolumn{2}{r}{\small continued \ldots}\\}
-\tablelasttail{\hline}
+%\tablelasttail{\hline}
 % the default value (of 0.1) gives very short pages: this works better for this table.
 \xentrystretch{-0.1}
 %
@@ -5148,7 +5572,7 @@ not \e{}        &     {\textbar} \e{}\\
 \mc{critical \e1 : \e2}
 \mc{thread \e{}}
 \separator
-\e1 ; \e2 &\\ 
+\e1 ; \e2 &\\
 \end{xtabular}
 \end{center}
 %
@@ -5159,6 +5583,7 @@ not \e{}        &     {\textbar} \e{}\\
 \tablehead{}
 \tabletail{}
 \tablelasttail{}
+\xentrystretch{0.1}
 %
 \subsubsection*{Augmented operators}
 \label{AugOps}

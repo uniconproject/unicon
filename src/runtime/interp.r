@@ -2054,7 +2054,7 @@ L_agoto:
 
 	 case Op_Init:		/* initial */
 #ifdef Concurrent
-	    MUTEX_LOCKID_ALWAYS(MTX_INITIAL);
+	    MUTEX_LOCKID_CONTROLLED_ALWAYS(MTX_INITIAL);
             if (ipc.op[-1] == Op_Agoto) {
 	       MUTEX_UNLOCKID_ALWAYS(MTX_INITIAL);
 	       goto L_agoto; 

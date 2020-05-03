@@ -547,9 +547,9 @@ union block *bp;
    newslots = ps->mask + 1;
    EVVal((word)newslots, E_HashSlots);
    Protect(newseg = alcsegment(newslots), return);
-   if (BlkType(bp) == T_Table) {
+   if (BlkType(ps) == T_Table) {
       int j;
-      for(j=0; j<newslots; j++) newseg->hslots[j] = bp;
+      for(j=0; j<newslots; j++) newseg->hslots[j] = ps;
       }
 
    curslot = newseg->hslots;
@@ -569,8 +569,8 @@ union block *bp;
                tp1 = &(ep->Selem.clink);
                }
             }
-         if ( BlkType(bp) == T_Table ) 
-	    *tp0 = *tp1 = bp;
+         if ( BlkType(ps) == T_Table ) 
+	    *tp0 = *tp1 = ps;
          else
             *tp0 = *tp1 = NULL;
          }

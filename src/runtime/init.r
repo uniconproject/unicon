@@ -1244,6 +1244,10 @@ void envset()
    env_int("IXCUSHION", &memcushion, 1, (uword)100);	/* max 100 % */
    env_int("IXGROWTH", &memgrowth, 1, (uword)10000);	/* max 100x growth */
 
+#ifdef VerifyHeap
+   env_int("VRFY", &vrfy, 0, (uword)0); /* Bit significant verify flags */
+#endif                  /* VerifyHeap */
+
 /*
  * The following code is operating-system dependent [@init.04].  Check any
  *  system-dependent environment variables.

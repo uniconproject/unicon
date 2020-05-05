@@ -34,6 +34,20 @@ static void markthreads();
 static void sweep_pfps(struct p_frame *fp);
 #endif					/* COMPILER */
 
+#ifdef VerifyHeap
+static void vrfyCrash(const char *fmt, ...);
+static void vrfyCheckPhase(int expected);
+static void vrfySetPhase(int expected, int new);
+static void vrfyStart();
+static void vrfyEnd();
+static void vrfyRegion(int expected);
+static void vrfy_Set(struct b_set *b);
+static void vrfy_Table(struct b_table *b);
+static void vrfy_Selem(struct b_selem *b);
+static void vrfy_Telem(struct b_telem *b);
+static void vrfy_Slots(struct b_slots *b);
+#endif                  /* VerifyHeap */
+
 /*
  * Variables
  */
@@ -440,6 +454,10 @@ int region;
    curstring = curtstring;
 #endif					/* Concurrent */
 
+#ifdef VerifyHeap
+   vrfyStart();
+#endif                  /* VerifyHeap */
+
 #if defined(HAVE_GETRLIMIT) && defined(HAVE_SETRLIMIT)
    /*
     * A user can enable an informative message regarding setrlimit()
@@ -501,6 +519,9 @@ int region;
 
 #if !COMPILER
    if (sp == NULL){
+#ifdef VerifyHeap
+     vrfyEnd();
+#endif                  /* VerifyHeap */
       return 0;
       }
 #endif					/* !COMPILER */
@@ -699,6 +720,10 @@ int region;
       }
 #endif					/* instrument allocation events */
 #endif					/* Concurrent */
+
+#ifdef VerifyHeap
+   vrfyEnd();
+#endif                  /* VerifyHeap */
 
    return 1;
    }
@@ -1919,3 +1944,635 @@ unsigned long physicalmemorysize()
 {
 return memorysize(0);
 }
+
+
+#ifdef VerifyHeap
+
+/*
+ * ---------------------------------------------------------------------
+ * Heap verification
+ */
+
+#define ELEMENTS(A) (sizeof((A))/sizeof((A)[0]))
+#define HIGHEST(A)  (ELEMENTS((A))-1)
+
+/*
+ * A circular buffer of messages
+ */
+typedef char vlogmessage[64];
+static vlogmessage vlog[2000];
+static int vlogNext;
+
+/* Insert a (formatted) message into the log buffer with parameters */
+void vrfyLog(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  (void) vsnprintf((char *)&vlog[vlogNext], sizeof(vlogmessage), fmt, args);
+  va_end(args);
+  if (++vlogNext > HIGHEST(vlog)) {vlogNext = 0;}
+}
+
+/* May be called from the debugger to output the log
+ * (Using lldb) expr vrfyPrintLog(0)  --- print the entire log
+ * (Using gdb)  p vrfyPrintLog(10)    --- print the last 10 messages
+ */
+void vrfyPrintLog(int nmess)
+{
+  int m, n;
+
+  if (nmess == 0) { /* Print the lot */
+    nmess = ELEMENTS(vlog);
+    m = vlogNext;
+  } else { /* print the latest */
+    if (nmess < 0 ) nmess = -nmess;
+    m = vlogNext - nmess;
+    if (m < 0) m += ELEMENTS(vlog);
+  }
+
+  for (n = 1; n <= nmess; ++n) {
+    if (vlog[m][0] != '\0') fprintf(stdout, "[%6d] %s\n", m, vlog[m]);
+    if (++m > HIGHEST(vlog)) {m = 0;}
+  }
+}
+
+/* Use this when continuing is not an option */
+static void vrfyCrash(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  (void) vsnprintf((char *)&vlog[vlogNext], sizeof(vlogmessage), fmt, args);
+  va_end(args);
+  if (++vlogNext > HIGHEST(vlog)) {vlogNext = 0;}
+
+  /* gcc and clang define __GNUC__ */
+#if defined(__GNUC__)
+  do { __builtin_trap(); } while (1);
+#else
+  /*
+   * put something here that your compiler will accept
+   * (surrounded by appropriate #ifdefs) to force a program crash.
+   */
+  do { __builtin_trap(); } while (1);
+#endif
+}
+
+#define PRE_GC  0
+#define IN_GC   1
+#define POST_GC 2
+
+/* An arbitrary check for an implausible (but non zero) pointer */
+#define BAD_PTR(p) ((p) && (10000 > (long)(p)))
+
+static int vrfyPhase = PRE_GC;
+/*
+ * Bit significant verification flags. May be set by the debugger
+ * or by the environment variable VRFY
+ *   Set to -1 to enable all verification checks
+ *   Set to -2 to enable all checks but suppress some logging
+ *   For other values, (for example) if ( 1 << T_Table) is set, then
+ *      tables will be verified; if (1 << T_Set) is clear then
+ *      sets will not be verified; and so on.
+ */
+long vrfy = 0;
+
+long vrfyStarts = 0;
+long vrfyEnds = 0;
+
+static void vrfyCheckPhase(int expected)
+{
+  if (vrfyPhase != expected) {
+    vrfyCrash("GC phase is %ld, should be %ld", vrfyPhase, expected);
+  }
+}
+
+static void vrfySetPhase(int expected, int new)
+{
+  vrfyCheckPhase(expected);
+  vrfyPhase = new;
+  vrfyLog("GC Phase = %ld", vrfyPhase);
+}
+
+static void vrfyStart()
+{
+  if (vrfy == 0) return;
+  ++vrfyStarts;
+  vrfyRegion(PRE_GC);
+  vrfySetPhase(PRE_GC, IN_GC);
+}
+
+static void vrfyEnd()
+{
+  if (vrfy == 0) return;
+  vrfySetPhase(IN_GC, POST_GC);
+  vrfyRegion(POST_GC);
+  vrfySetPhase(POST_GC, PRE_GC); /* Set things up for next time around */
+  ++vrfyEnds;
+}
+
+/* May be called from the debugger to get a listing of where the heaps are */
+void vrfyPrintRegions()
+{
+  CURTSTATE_AND_CE();
+  /* Summarise the regions, provided we are not still initialising */
+  if (sp != NULL)
+    {
+      struct region *br = curblock;
+      struct region *pbr;
+
+      fprintf(stdout, "Current region (%p): base %p free %p end %p size %ld\n",
+              br, br->base, br->free, br->end, br->size);
+
+      pbr = curblock; br = pbr->prev;
+      if (br) {
+        fprintf(stdout, "prev chain\n");
+        while (br) {
+          if BAD_PTR(br) {
+              fprintf(stdout, "Bad Pointer = %p -> %p\n", pbr, br);
+              break;
+            }
+          fprintf(stdout, "region %p: base %p free %p end %p size %ld\n",
+                  br, br->base, br->free, br->end, br->size);
+          pbr = br; br = br->prev;
+        }
+      }
+
+      pbr = curblock; br = pbr->next;
+      if (br) {
+        fprintf(stdout, "next chain\n");
+        while (br) {
+          if BAD_PTR(br) {
+              fprintf(stdout, "Bad Pointer = %p -> %p\n", pbr, br);
+              break;
+            }
+          fprintf(stdout, "region %p: base %p free %p end %p size %ld\n",
+                  br, br->base, br->free, br->end, br->size);
+          pbr = br; br = br->next;
+        }
+      }
+
+#ifdef Concurrent
+      pbr = curblock; br = pbr->Tprev;
+      if (br) {
+        fprintf(stdout, "Tprev chain\n");
+        while (br) {
+          if BAD_PTR(br) {
+              fprintf(stdout, "Bad Pointer = %p -> %p", pbr, br);
+              break;
+            }
+          fprintf(stdout, "region %p: base %p free %p end %p size %ld\n",
+                  br, br->base, br->free, br->end, br->size);
+          pbr = br; br = br->Tprev;
+        }
+      }
+
+      pbr = curblock; br = pbr->Tnext;
+      if (br) {
+        fprintf(stdout, "Tnext chain\n");
+        while (br) {
+          if BAD_PTR(br) {
+              fprintf(stdout, "Bad Pointer = %p -> %p\n", pbr, br);
+              break;
+            }
+          fprintf(stdout, "region %p: base %p free %p end %p size %ld\n",
+                  br, br->base, br->free, br->end, br->size);
+          pbr = br; br = br->Tnext;
+        }
+      }
+
+
+#endif                /* Concurrent */
+      pbr = curblock; br = pbr->Gprev;
+      if (br) {
+        fprintf(stdout, "Gprev chain\n");
+        while (br) {
+          if BAD_PTR(br) {
+              fprintf(stdout, "Bad Pointer = %p -> %p\n", pbr, br);
+              break;
+            }
+          fprintf(stdout, "region %p: base %p free %p end %p size %ld\n",
+                  br, br->base, br->free, br->end, br->size);
+          pbr = br; br = br->Gprev;
+        }
+      }
+
+      pbr = curblock; br = pbr->Gnext;
+      if (br) {
+        fprintf(stdout, "Gnext chain\n");
+        while (br) {
+          if BAD_PTR(br) {
+              fprintf(stdout, "Bad Pointer = %p -> %p\n", pbr, br);
+              break;
+            }
+          fprintf(stdout, "region %p: base %p free %p end %p size %ld\n",
+                  br, br->base, br->free, br->end, br->size);
+          pbr = br; br = br->Gnext;
+        }
+      }
+    } else {
+    fprintf(stdout, "Still initialising\n");
+  }
+}
+
+/* Pure lazyness -- print file and line number (in the debugger) */
+void vrfyFL()
+{
+  CURTSTATE();
+  fprintf(stdout, "File: %s Line: %d\n",
+          findfile(curtstate->c->es_ipc.opnd),
+          findline(curtstate->c->es_ipc.opnd));
+}
+
+static void vrfyRegion(int expected)
+{
+  vrfyCheckPhase(expected);
+
+  /* It's impractical to check the region during a garbage collection */
+  if (vrfyPhase != IN_GC) {
+    CURTSTATE_AND_CE();
+    /* check the region, provided we are not still initialising */
+    if (sp != NULL)
+      {
+        struct region *br = curblock;
+
+        if ((br->base + br->size) != br->end
+            ||(br->free < br->base)
+            ||(br->free > br->end)) {
+          vrfyCrash("Current region is corrupted");
+        }
+
+        /* Check the chains to other regions for plausibility */
+        if (br->prev) {
+          vrfyLog("Checking region prev chain");
+          while (br->prev) {
+            if BAD_PTR(br->prev) {
+                vrfyCrash("Bad Pointer = %p -> %p", br, br->prev);
+              }
+            br = br->prev;
+          }
+        }
+
+        br = curblock;
+        if (br->next) {
+          vrfyLog("Checking region next chain");
+          while (br->next) {
+            if BAD_PTR(br->next) {
+                vrfyCrash("Bad Pointer = %p -> %p", br, br->next);
+              }
+            br = br->next;
+          }
+        }
+#ifdef Concurrent
+        br = curblock;
+        if (br->Tprev) {
+          vrfyLog("Checking region Tprev chain");
+          while (br->Tprev) {
+            if BAD_PTR(br->Tprev) {
+                vrfyCrash("Bad Pointer = %p -> %p", br, br->Tprev);
+              }
+            br = br->Tprev;
+          }
+        }
+        br = curblock;
+        if (br->Tnext) {
+          vrfyLog("Checking region Tnext chain");
+          while (br->Tnext) {
+            if BAD_PTR(br->Tnext) {
+                vrfyCrash("Bad Pointer = %p -> %p", br, br->Tnext);
+              }
+            br = br->Tnext;
+          }
+        }
+#endif                /* Concurrent */
+        br = curblock;
+        if (br->Gprev) {
+          vrfyLog("Checking region Gprev chain");
+          while (br->Gprev) {
+            if BAD_PTR(br->Gprev) {
+                vrfyCrash("Bad Pointer = %p -> %p", br, br->Gprev);
+              }
+            br = br->Gprev;
+          }
+        }
+        br = curblock;
+        if (br->Gnext) {
+          vrfyLog("Checking region Gnext chain");
+          while (br->Gnext) {
+            if BAD_PTR(br->Gnext) {
+                vrfyCrash("Bad Pointer = %p -> %p", br, br->Gnext);
+              }
+            br = br->Gnext;
+          }
+        }
+      } /* End of pointer chain checking */
+
+    /*
+     * Check all the blocks in the current region
+     *
+     * If POST_GC all checks are safe, but PRE_GC only the contents of the
+     * current heap may be relied on: what might happen is a non-live block
+     * might point to (non-live) data in another heap and that space might have
+     * already been reused (invalidating its contents). Because the block in
+     * _this_ heap isn't live, the GC for the other heap won't have adjusted
+     * the pointer in this heap.
+     */
+    {
+      char *blk = curblock->base;
+
+      while (blk < curblock->free)
+        {
+          union block *b = (union block *)blk;
+
+          /*
+           * If environment var $VRFY = -1 all checks are enabled (and so is this
+           * log entry). But it generates a *lot* of entries, sometimes making it
+           * difficult to see what has been going on. To suppress this entry,
+           * but keep all the checks enabled, set $VRFY to -2
+           */
+          if (vrfy & 0x01) {
+            vrfyLog("Block Addr = %p type = %ld", b, BlkType(b));
+          }
+          switch(BlkType(b)) {
+          default:
+            vrfyCrash("Bad block type");
+
+          case T_Null:          /* null value */
+            vrfyCrash("Null object?");
+          case T_Integer:   /* integer */
+            vrfyCrash("Integer?");
+#ifdef LargeInts
+          case T_Lrgint: break; /* long integer */
+#endif                  /* LargeInts */
+          case T_Real: break;   /* real number */
+          case T_Cset: break;   /* cset */
+          case T_File: break;   /* file */
+
+          case T_Proc: break;   /* procedure */
+          case T_Record: break; /* record */
+          case T_List: break;    /* list header */
+          case T_Lelem: break;   /* list element */
+          case T_Set: {          /* set header */
+            vrfy_Set(&b->Set); break;
+          }
+          case T_Selem: {       /* set element */
+            vrfy_Selem(&b->Selem); break;
+          }
+          case T_Table: {        /* table header */
+            vrfy_Table(&b->Table); break;
+          }
+          case T_Telem: {       /* table element */
+            vrfy_Telem(&b->Telem); break;
+          }
+          case T_Tvtbl: break;  /* table element trapped variable */
+          case T_Slots: {       /* set/table hash slots */
+            vrfy_Slots(&b->Slots); break;
+          }
+          case T_Tvsubs: break; /* substring trapped variable */
+          case T_Refresh: break; /* refresh block */
+          case T_Coexpr: break;  /* co-expression */
+          case T_External: break; /* external block */
+          case T_Kywdint: break;  /* integer keyword */
+          case T_Kywdpos: break;  /* keyword &pos */
+          case T_Kywdsubj: break; /* keyword &subject */
+          case T_Kywdwin:         /* keyword &window */
+            vrfyCrash("&window?");
+          case T_Kywdstr:       /* string keyword */
+            vrfyCrash("string keyword?");
+          case T_Kywdevent:     /* keyword &eventsource, etc. */
+              vrfyCrash("&eventsource?");
+#ifdef PatternType
+          case T_Pattern: break; /* pattern header */
+          case T_Pelem: break;    /* pattern element */
+#endif                  /* PatternType */
+          case T_Tvmonitored: break; /* Monitored trapped variable */
+          case T_Intarray: break;     /* integer array */
+          case T_Realarray: break;    /* real array */
+          case T_Cons: break;         /* generic link list element */
+          }
+
+          blk += BlkSize(blk);
+        }
+    }
+  }
+}
+
+static void vrfy_Set(struct b_set *b)
+{
+
+  if ((vrfy & (1<<T_Set)) == 0) { return;}
+  else {
+    int seg;
+    CURTSTATE();
+
+    for (seg = 0; seg < ELEMENTS(b->hdir); ++seg) {
+      struct b_slots *slots = b->hdir[seg];
+      int seg1;
+
+      if (slots != NULL) {
+        if (BAD_PTR(slots)) {
+          vrfyCrash("Set at %p: bad slots ptr (%ld)", b, seg);
+        }
+        if ((vrfyPhase == POST_GC) || InRange(blkbase,slots,blkfree)) {
+          if (BlkType(slots) != T_Slots) {
+            vrfyCrash("Set at %p: hdir[%ld] not slots", b, seg);
+          }
+        }
+        for (seg1 = seg+1; seg1 < ELEMENTS(b->hdir); ++seg1) {
+          if (slots == b->hdir[seg1]) {
+            vrfyCrash("Set at %p: hdir[%ld] = hdir[%ld]", b, seg, seg1);
+          }
+        }
+      }
+    }
+  }
+}
+
+static void vrfy_Table(struct b_table *b)
+{
+  if ((vrfy & (1<<T_Table)) == 0) { return; }
+  else {
+    int seg;
+    CURTSTATE();
+
+    for (seg = 0; seg < ELEMENTS(b->hdir); ++seg) {
+      struct b_slots *slots = b->hdir[seg];
+      int seg1;
+
+      if (slots != NULL) {
+        if (BAD_PTR(slots)) {
+          vrfyCrash("Table at %p: bad slots ptr (%ld)", b, seg);
+        }
+        if ((vrfyPhase == POST_GC) || InRange(blkbase,slots,blkfree)) {
+          if (BlkType(slots) != T_Slots) {
+            vrfyCrash("Table at %p: hdir[%ld] not slots", b, seg);
+          }
+        }
+        for (seg1 = seg+1; seg1 < ELEMENTS(b->hdir); ++seg1) {
+          if (slots == b->hdir[seg1]) {
+            vrfyCrash("Table at %p: hdir[%ld] = hdir[%ld]", b, seg, seg1);
+          }
+        }
+      }
+    }
+
+    if (vrfyPhase == POST_GC) {
+      /* After a GC, this table is potentially live (otherwise it would have
+       * been 'collected'), so every hash chain must be terminated by a pointer
+       * back to this table header. If not, bad things might happen.
+       */
+      long members = b->size;
+      for (seg = 0; seg < ELEMENTS(b->hdir); ++seg) {
+        struct b_slots *slots = b->hdir[seg];
+        uword n;
+
+        if (slots != NULL) {
+          for (n = 0; n < segsize[seg]; ++n) {
+            struct b_telem *te = &slots->hslots[n]->Telem;
+            while ((struct b_table *)te != b) {
+              if ((te == NULL) || BAD_PTR(te)) {
+                vrfyCrash("Table at %p, Bad chain (seg %ld slot %u)",
+                          b, seg, n);
+              }
+              if (BlkType(te) != T_Telem) {
+                vrfyCrash("Table at %p, Bad element (seg %ld slot %u)",
+                          b, seg, n);
+              }
+              if (--members < 0) { /* Perhaps a loop in the chain */
+                vrfyCrash("Table at %p: hash chain loop? (at [%ld,%u])",
+                          b, seg, n);
+              }
+              te = &te->clink->Telem;
+            } /* end of chain for this slot */
+          }
+        }/* end of slots for this bucket */
+      } /* end of hash buckets */
+      if (members > 0) {
+        vrfyCrash("Table at %p: %ld unaccounted members", b, members);
+      }
+      vrfyLog("Table at %p (%ld) verified", b, b->id);
+    }
+
+  }
+}
+
+/* Only call this version of vrfy_Table if you *know* the table is live */
+void vrfy_Live_Table(struct b_table *b)
+{
+  if ((vrfy & (1<<T_Table)) == 0) { return; }
+  else {
+    int seg;
+    long members = b->size;
+
+    for (seg = 0; seg < ELEMENTS(b->hdir); ++seg) {
+      struct b_slots *slots = b->hdir[seg];
+      int seg1;
+
+      if (slots != NULL) {
+        if (BAD_PTR(slots)) {
+          vrfyCrash("Table at %p: bad slots ptr (%ld)", b, seg);
+        }
+        if (BlkType(slots) != T_Slots) {
+          vrfyCrash("Table at %p: hdir[%ld] not slots", b, seg);
+        }
+        for (seg1 = seg+1; seg1 < ELEMENTS(b->hdir); ++seg1) {
+          if (slots == b->hdir[seg1]) {
+            vrfyCrash("Table at %p: hdir[%ld] = hdir[%ld]", b, seg, seg1);
+          }
+        }
+      }
+    }
+
+    for (seg = 0; seg < ELEMENTS(b->hdir); ++seg) {
+      struct b_slots *slots = b->hdir[seg];
+      uword n;
+
+      if (slots != NULL) {
+        for (n = 0; n < segsize[seg]; ++n) {
+          struct b_telem *te = &slots->hslots[n]->Telem;
+          while ((struct b_table *)te != b) {
+            if ((te == NULL) || BAD_PTR(te)) {
+              vrfyCrash("Table at %p, Bad chain (seg %ld slot %u)",
+                        b, seg, n);
+            }
+            if (BlkType(te) != T_Telem) {
+              vrfyCrash("Table at %p, Bad element (seg %ld slot %u)",
+                        b, seg, n);
+            }
+            if (--members < 0) { /* Perhaps a loop in the chain */
+              vrfyCrash("Table at %p: hash chain loop? (at [%ld,%u])",
+                        b, seg, n);
+            }
+            te = &te->clink->Telem;
+          } /* end of chain for this slot */
+        }
+      }/* end of slots for this bucket */
+    } /* end of hash buckets */
+    if (members > 0) {
+      vrfyCrash("Table at %p (%ld): %ld unaccounted members", b, b->id, members);
+    }
+    vrfyLog("Table at %p (%ld) verified", b, b->id);
+  }
+
+
+}
+
+static void vrfy_Selem(struct b_selem *b)
+{
+  if ((vrfy & (1<<T_Selem)) == 0) return;
+
+  if (BAD_PTR(b->clink)) {
+    vrfyCrash("Bad Hash chain %p -> %p", b, b->clink);
+  }
+}
+
+static void vrfy_Telem(struct b_telem *b)
+{
+  if ((vrfy & (1<<T_Telem)) == 0) return;
+
+  if (BAD_PTR(b->clink)) {
+    vrfyCrash("Bad Hash chain %p -> %p", b, b->clink);
+  }
+}
+
+static void vrfy_Slots(struct b_slots *b)
+{
+  if ((vrfy & (1<<T_Slots)) == 0) { return;}
+  else {
+    int nslots = HSlots + (b->blksize - (sizeof(struct b_slots)))/sizeof(b->hslots[0]);
+    int slot;
+    CURTSTATE();
+
+    for (slot = 0; slot < nslots; ++slot) {
+      union block *el = b->hslots[slot];
+      int slot1;
+
+      if (el != NULL) {
+        if (BAD_PTR(el)) {
+          vrfyCrash("Slots at %p: bad element ptr (%ld)", b, slot);
+        } else {  /* Check contents if after GC */
+          if (vrfyPhase == POST_GC) {
+            word bt = BlkType(el);
+            if (!((bt==T_Table) || (bt==T_Telem) || (bt==T_Selem))) {
+              vrfyCrash("Slots at %p: hslots[%ld] bad element type (0x%lx)", b, slot, bt);
+            }
+
+            /* Todo: follow clink chain */
+          }
+        }
+
+        /* Check for duplicate slots */
+        for (slot1 = slot+1; slot1 < nslots; ++slot1) {
+          if (el == b->hslots[slot1]) {
+            if ((vrfyPhase == POST_GC) || InRange(blkbase,el,blkfree)) {
+              if (BlkType(el) != T_Table) {
+                vrfyCrash("Bad Slots at %p: hslots[%ld] = hslots[%ld]", b, slot, slot1);
+              }
+            }
+          }
+        } /* End of checking for duplicate slots */
+      } /* el != NULL */
+    }
+  }
+}
+
+#endif                  /* VerifyHeap */

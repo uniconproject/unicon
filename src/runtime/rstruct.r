@@ -544,6 +544,9 @@ union block *bp;
 #endif
    if (ps->hdir[HSegs-1] != NULL)
       return;				/* can't split further */
+#ifdef VerifyHeap
+   vrfyLog("Growing Set/Table at %p (id %ld)", ps, ps->id);
+#endif                  /* VerifyHeap */
    newslots = ps->mask + 1;
    EVVal((word)newslots, E_HashSlots);
    Protect(newseg = alcsegment(newslots), return);
@@ -576,6 +579,12 @@ union block *bp;
          }
    ps->hdir[segnum] = newseg;
    ps->mask = (ps->mask << 1) | 1;
+#ifdef VerifyHeap
+   if ( BlkType(ps) == T_Table ) {
+     vrfy_Live_Table((struct b_table *)ps);
+   }
+#endif                  /* VerifyHeap */
+   
    }
 
 /*
@@ -600,6 +609,9 @@ union block *bp;
    if ((ps->title != T_Set) && (ps->title != T_Table))
       heaperr("invalid title not set/table", (union block *)ps, T_Set);
 #endif
+#ifdef VerifyHeap
+   vrfyLog("Shrinking Set/Table at %p (id %ld)", ps, ps->id);
+#endif                  /* VerifyHeap */
    topseg = 0;
    for (topseg = 1; topseg < HSegs && ps->hdir[topseg] != NULL; topseg++)
       ;
@@ -637,6 +649,12 @@ union block *bp;
             }
       ps->mask >>= 1;
       }
+#ifdef VerifyHeap
+   if ( BlkType(bp) == T_Table ) {
+	 vrfy_Live_Table(&bp->Table);
+   }
+#endif                  /* VerifyHeap */
+
    }
 
 /*

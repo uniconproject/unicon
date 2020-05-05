@@ -419,3 +419,9 @@ extern struct  b_cons *LstTmpFiles;
 #ifdef Audio
 extern int isPlaying;
 #endif					/* Audio */
+
+#ifdef VerifyHeap
+extern long vrfy;
+extern void vrfyLog(const char *fmt, ...);
+extern void vrfy_Live_Table(struct b_table *b);
+#endif                  /* VerifyHeap */

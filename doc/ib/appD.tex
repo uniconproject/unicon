@@ -1304,12 +1304,12 @@ an error. When adding diagnostic output use
 \iconline{fprintf(stderr, " \ldots ",\ \ldots );}
 \noindent
 instead of the corresponding \texttt{printf}. On some systems it may be useful
-to follow such calls by \texttt{fflush(stderr)} to ensure that the diagnostoc
+to follow such calls by \texttt{fflush(stderr)} to ensure that the diagnostic
 output appears as soon as it is produced.
 
 Icon normally traps floating-point exception and illegal addressing
 (segmentation violations) since these errors can result from source-language
-progarmming errors, such as division by real zero and excessive recursion
+programming errors, such as division by real zero and excessive recursion
 resulting in C stack overflow. For example, Icon normally produces
 \texttt{Error 302 ("C stack overflow")} in case of a segmentation violation.
 This method of handling such an error is appropriate if Icon itself is free of
@@ -1323,6 +1323,65 @@ a value, a core dump is produced if an Icon program terminates as a result of
 \texttt{runerr} or \texttt{syserr}.  It is therefore good practice to set
 \texttt{ICONCORE} when making modifications to Icon. For an extended debugging
 session, it may be convenient to set \texttt{dodump} in \textfn{runtime/init.r} to 1.
+
+\subsection{Heap Verification (Unicon)}
+Icon may be built with optional extra heap checking code that is enabled by
+defining \texttt{DebugHeap} in \textfn{h/define.h}. The extra checking is
+defined in \textfn{h/rmacros.h} and may be summarized by
+\begin{iconcode}
+/* Debug Heap macros.  These add runtime checks to catch (most)\\
+ * illegal block references resulting from untended pointers.\\
+ * Use during new code development, when gdb and valgrind fail to help.\\
+ */
+\end{iconcode}
+If the use of these macros fails to pinpoint a suspected heap problem, Unicon
+has an extra level of checking that is enabled by defining \texttt{VerifyHeap}
+in \textfn{h/define.h}. Most of the extra verification is performed inside
+the \texttt{collect} function, just before and just after garbage collection
+takes place, although some more limited checks are also made during the normal
+running of the program.
+
+The philosophy of the heap verification code is to ``crash early'', as soon as a
+problem is detected, in the hope that the sooner the debugger is involved after
+a problem is found, the easier it will be to establish the cause. In the worst
+case, this ``crash early'' approach can lead to the Unicon compilation system
+itself crashing (which makes it a bit harder to fix any problems). To mitigate
+this, the heap verification code is controlled by an environment
+variable \texttt{VRFY}. The variable is bit-significant, and the bits control
+which verifications are undertaken. A value of zero means that no verifications
+are made at all. In general, if the bit corresponding to the typecode of a
+structure is set, that block type will be verified (e.g. if bit \texttt{(1 <{}<
+T\_Table)} is set then table header blocks will be verified). The bit test is made
+on each verification so, in principle, the verification flags could be changed
+during the execution of the program.
+
+The verifier contains a circular log buffer where messages placed by the
+verification code are stored. The buffer may be displayed in the debugger by
+calling the routine \texttt{vrfyPrintLog}. If \texttt{VRFY} is set to -1, all
+checks are enabled, which can lead to a lot of logging output. It may be better
+to set \texttt{VRFY} to -2 in some cases: this suppresses the most common log
+message, which can overwrite useful evidence in the (limited capacity) circular
+log.
+
+The verification checks are made by making a pass over the current heap in a
+similar fashion to the location phase of garbage collection (see
+section \ref{GC-Location-Phase}). Each block between \texttt{blkbase}
+and \texttt{blkfree} is examined. In the checking that takes place {\em before}
+garbage collection, it is unknown whether the block being checked is live or
+whether it will be collected. Thus pre-GC checking must necessarily be more
+conservative because it cannot be guaranteed that other blocks pointed to by the
+present one contain valid information -- they may have already been reused.
+After the collection has been made it is guaranteed that all the blocks in the
+current heap are live, or potentially so, and therefore a more extensive set of
+checks may be performed. For example, after GC it is possible to verify the
+entire structure of a table -- all the buckets point to valid slots; all the
+slots point to valid table elements; there are no duplicate elements etc.:
+before GC, none of these checks is safe because the components of the table (and
+even the table header block itself) may not be valid.
+
+The checking enabled by \texttt{DebugHeap} and \texttt{VerifyHeap} are
+independent: each may be active without the other although, in practice, it is
+likely they will be enabled together.
 
 \section{Adding new types to the compiler}
 \newcommand{\toklbra}{\texttt{~~(~~}}%

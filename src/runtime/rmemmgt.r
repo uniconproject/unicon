@@ -2070,6 +2070,7 @@ static void vrfyEnd()
   ++vrfyEnds;
 }
 
+#if !COMPILER
 /* May be called from the debugger to get a listing of where the heaps are */
 void vrfyPrintRegions()
 {
@@ -2182,6 +2183,7 @@ void vrfyFL()
           findfile(curtstate->c->es_ipc.opnd),
           findline(curtstate->c->es_ipc.opnd));
 }
+#endif                     /* !COMPILER */
 
 static void vrfyRegion(int expected)
 {
@@ -2190,8 +2192,10 @@ static void vrfyRegion(int expected)
   /* It's impractical to check the region during a garbage collection */
   if (vrfyPhase != IN_GC) {
     CURTSTATE_AND_CE();
+#if !COMPILER
     /* check the region, provided we are not still initialising */
     if (sp != NULL)
+#endif                    /* !COMPILER */
       {
         struct region *br = curblock;
 

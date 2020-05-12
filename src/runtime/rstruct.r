@@ -552,7 +552,7 @@ union block *bp;
    Protect(newseg = alcsegment(newslots), return);
    if (BlkType(ps) == T_Table) {
       int j;
-      for(j=0; j<newslots; j++) newseg->hslots[j] = ps;
+      for(j=0; j<newslots; j++) newseg->hslots[j] = (union block *) ps;
       }
 
    curslot = newseg->hslots;
@@ -573,7 +573,7 @@ union block *bp;
                }
             }
          if ( BlkType(ps) == T_Table ) 
-	    *tp0 = *tp1 = ps;
+	    *tp0 = *tp1 = (union block *) ps;
          else
             *tp0 = *tp1 = NULL;
          }

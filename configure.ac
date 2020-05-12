@@ -278,10 +278,6 @@ case $unicon_host in
       LDFLAGS="$LDFLAGS -rdynamic "
       RLINK="-rdynamic -Wl,-E "
       RLIBS="-ldl -lcrypt "
-
-      if test "x$iconc"      = "xyes" ; then
-	    ICONCTARGET=Iconc
-      fi
         ;;
      *solaris*)
 	;;
@@ -325,6 +321,11 @@ case $unicon_host in
        ICONCEXE=iconc.exe
         ;;
 esac
+
+if test "x$iconc"      = "xyes" ; then
+       ICONCTARGET=Iconc
+fi
+
 
 if test "x$orig_cflags" != "x" ; then
   CFLAGS="$CFLAGS $orig_cflags"

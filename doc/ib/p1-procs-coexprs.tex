@@ -85,7 +85,7 @@ source-language type distinction between them.
 by the linker, using information provided by the translator. Such
 blocks are read in as part of the icode file when an Icon program is
 executed. The block for a procedure contains the usual title and size
-words, followed by six words that characterize the procedure:
+words, followed by five words that characterize the procedure:
 
 \liststyleLxi
 \begin{enumerate}
@@ -100,9 +100,10 @@ The icode location of the first virtual machine instruction for the procedure.
 \item 
 The index in the static identifier array of the first
 static identifier in the procedure.
-\item 
-A C string for the name of the file in which the procedure
-declaration occurred.
+%% This vanished long ago.
+%% \item 
+%% A C string for the name of the file in which the procedure
+%% declaration occurred.
 \end{enumerate}
 
 The remainder of the procedure block contains qualifiers: one for the
@@ -122,15 +123,15 @@ For example, the procedure declaration
 
 \noindent has the following procedure block:
 
-\begin{picture}(300,340)
-\begin{picture}(0,0)(-100,-192)
-\put(0,0){\blkboxptr{0}{40}{file name}}
+\begin{picture}(300,324)
+\begin{picture}(0,0)(-100,-176)
+\put(0,16){\wordbox{0}{}}
 \put(0,0){\trboxlabel{index of first static identifier}}
 \put(0,32){\blkbox{1}{2}}
 \put(0,32){\rightboxlabels{number of local identifiers}{number of static identifiers}}
 \put(0,64){\wordbox{2}{}}
 \put(0,64){\brboxlabel{number of arguments}}
-\put(0,80){\blkboxptr{80}{40}{initial ipc}}
+\put(0,80){\blkboxptr{76}{40}{initial ipc}}
 \put(0,80){\trboxlabel{size of block}}
 \put(0,112){\wordbox{proc}{}}
 \end{picture}
@@ -157,17 +158,15 @@ point is the entry point of the C routine for the function. The
 procedure block for \texttt{repl} is typical:
 
 
-\begin{picture}(300,170)
+\begin{picture}(300,154)
 \begin{picture}(0,0)(-100,-32)
 \put(0,0){\blkbox{0}{0}}
 \put(0,0){\rightboxlabels{not used}{not used}}
-\put(0,32){\blkbox{-1}{0}}
-\put(0,32){\rightboxlabels{function indicator}{not used}}
-\put(0,64){\wordbox{2}{}}
-\put(0,64){\brboxlabel{number of arguments}}
-\put(0,80){\blkboxptr{40}{40}{C entry point}}
-\put(0,80){\trboxlabel{size of block}}
-\put(0,112){\wordbox{proc}{}}
+\put(0,32){\blkbox{2}{-1}}
+\put(0,32){\rightboxlabels{number of arguments}{function indicator}}
+\put(0,64){\blkboxptr{36}{40}{C entry point}}
+\put(0,64){\trboxlabel{size of block}}
+\put(0,96){\wordbox{proc}{}}
 \end{picture}
 \put(100,0){\dvboxptr{4}{}{40}{"repl"}}
 \end{picture}
@@ -179,17 +178,16 @@ arguments. This is indicated by the value -1 in place of the number of
 arguments:
 
 
-\begin{picture}(300,170)
+\begin{picture}(300,154)
 \begin{picture}(0,0)(-100,-32)
 \put(0,0){\blkbox{0}{0}}
 \put(0,0){\rightboxlabels{not used}{not used}}
-\put(0,32){\blkbox{-1}{0}}
-\put(0,32){\rightboxlabels{function indicator}{not used}}
-\put(0,64){\wordbox{-1}{}}
-\put(0,64){\brboxlabel{indicator of a variable number of arguments}}
-\put(0,80){\blkboxptr{40}{40}{C entry point}}
-\put(0,80){\trboxlabel{size of block}}
-\put(0,112){\wordbox{proc}{}}
+\put(0,32){\blkbox{-1}{-1}}
+\put(0,32){\rightboxlabels%
+{indicator of a variable number of arguments}{function indicator}}
+\put(0,64){\blkboxptr{36}{40}{C entry point}}
+\put(0,64){\trboxlabel{size of block}}
+\put(0,96){\wordbox{proc}{}}
 \end{picture}
 \put(100,0){\dvboxptr{5}{}{40}{"write"}}
 \end{picture}

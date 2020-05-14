@@ -502,16 +502,22 @@ file. For example, the block for \texttt{\&output} is
 \end{picture}
 
 
-The file status values are
+\noindent
+The common file status values are
 
-\begin{tabular}{l@{\hspace{1cm}}l}
-0 & closed\\
-1 & open for reading\\
-2 & open for writing\\
-4 & open to create\\
-8 & open to append\\
-16 & open as a pipe\\
+\begin{tabular}{l@{\hspace{1cm}}l@{\hspace{4cm}}l@{\hspace{1cm}}l}
+0 & closed &&\\
+1 & open for reading & 64  & last operation was read\\
+2 & open for writing & 128  & last operation was write\\
+4 & open to create   & 256  & I/O on a window (graphics) \\
+8 & open to append   & 512  & untranslated mode\\
+16 & open as a pipe  & 1024 & reading a directory\\
 \end{tabular}
+
+\noindent
+{\color{blue} Depending on how it was built, Unicon defines other file
+  status values -- see the file \textfn{src/h/rmacros.h} for details.
+}
 
 \subsection{Trapped Variables}
 

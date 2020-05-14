@@ -1480,8 +1480,11 @@ function{0,1} setpgrp()
 end
 
 "crypt() - the password encryption function."
-
-function{0,1} crypt(key, salt)
+#if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
+function{0, 1} crypt(key, salt)
+#else					/* defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) */
+function{0} crypt(key, salt)
+#endif					/* defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) */
    if !cnv:C_string(key) then
       runerr(103, key)
    if !cnv:C_string(salt) then
@@ -1490,6 +1493,7 @@ function{0,1} crypt(key, salt)
       return string
       }
    inline {
+#if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
       char *s;
 #ifdef HAVE_CRYPT_R
       struct crypt_data localdata;
@@ -1504,19 +1508,17 @@ function{0,1} crypt(key, salt)
       CURTSTATE();
       IntVal(amperErrno) = 0;
       s = crypt(key, salt);
-#else					/* HAVE_CRYPT */
-      fail;
-#endif					/* HAVE_CRYPT */
 #endif					/* HAVE_CRYPT_R */
-
-#if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) 
+#endif					/* HAVE_CRYPT */
       if (s == NULL) {
 	 IntVal(amperErrno) = errno;
 	 fail;
       } 
       String(result, alcstr(s, strlen(s)));
       return result;
-#endif 			/* defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) */ 
+#else 			/* defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) */
+      fail;
+#endif 			/* defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT) */
    }
 end
 
@@ -1823,7 +1825,11 @@ end
 
 "getrusage() - get resource usage."
 
+#if NT
+function{0} getrusage(who)
+#else					/* NT */
 function{0,1} getrusage(who)
+#endif					/* NT */
    if !def:C_string(who, "self") then runerr(103, who)
    abstract {
       return record
@@ -1835,7 +1841,7 @@ function{0,1} getrusage(who)
 
 #if NT
       fail; /* for now */
-#else
+#else					/* NT */
       struct rusage usage;
       IntVal(amperErrno) = 0;
       if ((*who == '\0') || (!strcmp(who, "self"))) iwho = RUSAGE_SELF;
@@ -1861,7 +1867,7 @@ function{0,1} getrusage(who)
       Protect(rp = alcrecd(nfields, BlkLoc(*constr)), runerr(0));
       rusage2rec(&usage, &result, &rp);
       return result;
-#endif
+#endif 					/* NT */
       }
 end
 

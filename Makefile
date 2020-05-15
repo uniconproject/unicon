@@ -345,13 +345,13 @@ update_rev:
 	   echo "#include <stdio.h>" > plus4.c; \
 	   echo "int main(void)" >> plus4.c; \
 	   echo "{" >> plus4.c; \
-	   echo "   printf(\"#define REPO_REVISION \\\"%d-%s\\\"\"," \
+	   echo "   printf(\"#define REPO_REVISION \\\"%d-%s\\\"\\\n\"," \
 	            $(REPO_REV_COUNT) "+ 4," \
 	            \"$(REPO_REV_HASH)\" ");" >> plus4.c; \
 	   echo "}" >> plus4.c; \
 	   gcc plus4.c -o plus4; \
 	   ./plus4 > src/h/revision.h; \
-	   rm plus4 plus4.c;\
+	   rm plus4 plus4.c; \
 	fi
 
 MV=2

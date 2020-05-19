@@ -159,11 +159,10 @@ rt.a: ../common/rswitch.$(O) ../common/long.$(O) ../common/time.$(O) ../common/m
 	-(test -f ../../NoRanlib) || (ranlib ../../bin/rt.a)
 
 update_rev:
-	@if test ! -f ../h/revision.h ; then \
-		if test ! -z $(REPO_REV); then \
-	        echo "#define REPO_REVISION \"$(REPO_REV)\"" > ../h/revision.h; else \
-	        echo "#define REPO_REVISION \"0\"" > ../h/revision.h; \
-	    fi \
+	@if test ! -z $(REPO_REV) ; then \
+	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > ../h/revision.h; \
+	elif test ! -f ../h/revision.h ; then \
+	   echo "#define REPO_REVISION \"0\"" > ../h/revision.h; \
 	fi
 
 keyword.$(O) : keyword.r $(HDRS) ../h/feature.h ../h/revision.h

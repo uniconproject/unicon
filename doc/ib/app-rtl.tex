@@ -801,6 +801,33 @@ automatically included by rtt.
 {\ttfamily\mdseries
 \ \ \ end}
 
+\subsection{Preprocessor interactions}
+
+As mentioned above, rtt has a built-in C preprocessor based on the ANSI C
+Standard that is used before the C compiler's preprocessor. Within its own
+preprocessor, rtt defines \texttt{COMPILER} to 0 or 1 depending on whether
+interpreter or compiler code is being generated. It also places a
+\texttt{\#define} directive for \texttt{COMPILER} at the beginning of every
+output file. It produces an \texttt{\#include} directive for \textfn{rt.h} after
+the \texttt{\#define} directive. The preprocessor directives in rtt's output are
+used by the C compiler.
+
+Arbitrary text may be passed through rtt using the \texttt{\#passthru}
+directive. The contents of a \texttt{\#passthru} directive are written to the
+output after each sequence of white space within the contents is replaced by a
+single space character. \texttt{\#passthru} is useful in those rare circumstances
+where something needed by the C compiler must be hidden from rtt.
+
+\texttt{\#passthru} {\em only works correctly at the global level\/}; if it is
+used within functions or declarations, the result is not put in the correct
+location in the output.
+
+Perhaps the most common use of \texttt{\#passthru} is to protect conditional
+code that is dependent on a particular compiler -- and is protected by (for
+example) \texttt{\#ifdef \_\_GCC\_\_}. Without \texttt{\#passthru}, the
+\texttt{\#ifdef} is processed by rtt's preprocessor, which is almost certainly
+not what is wanted.
+
 \subsection{Error Reporting}
 {\ttfamily\mdseries
 runerr( \textit{msg\_number} [ , descriptor ] ) [ ; ]}

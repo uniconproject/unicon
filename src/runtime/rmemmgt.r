@@ -2032,7 +2032,7 @@ void vrfyPrintLog(int nmess)
 #define POST_GC 2
 
 /* An arbitrary check for an implausible (but non zero) pointer */
-#define BAD_PTR(p) ((p) && (10000 > (long)(p)))
+#define BAD_PTR(p) ((p) && (10000 > (intptr_t)(p)))
 
 static int vrfyPhase = PRE_GC;
 /*
@@ -2430,8 +2430,8 @@ static void vrfy_Realarray(struct b_realarray *b)
       } else {
         struct b_list *hdr = &(b->listp->List);
         if (&(hdr->listhead->Realarray) != b) {
-        vrfyCrash("Realarray at %p: hdr (%p) bad head ptr (%p)",
-                  b, b->listp, hdr->listhead);
+          vrfyCrash("Realarray at %p: hdr (%p) bad head ptr (%p)",
+                    b, b->listp, hdr->listhead);
         }
         if (b->blksize != (hdr->size*sizeof(b->a[0]))) {
           vrfyCrash("Realarray at %p: wrong size (%ld) should be %ld",

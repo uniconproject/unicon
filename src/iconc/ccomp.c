@@ -328,8 +328,13 @@ Deliberate Syntax Error
 #endif					/* NTGCC */
 
 #if UNIX
+#ifdef MacOS
+   /* needs to be more precise, add a HAVE_LIBDL or some such */
+   buf = growcat(buf, &buflen, 1, " -ldl -Wl,-export_dynamic ");
+#else
    /* needs to be more precise, add a HAVE_LIBDL or some such */
    buf = growcat(buf, &buflen, 1, " -ldl -export-dynamic ");
+#endif					/* MacOS */
 #endif					/* UNIX */
 
 #endif					/* UNIX || NTGCC */

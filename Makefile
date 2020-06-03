@@ -4,7 +4,8 @@
 #  configuration parameters
 VERSION=13.1
 name=unspecified
-REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --count HEAD )"
+
+REPO_REV_COUNT="$(shell LC_ALL=C git rev-list --first-parent --count HEAD )"
 REPO_REV_HASH="$(shell LC_ALL=C git rev-parse --short HEAD)"
 REPO_REV="$(REPO_REV_COUNT)-$(REPO_REV_HASH)"
 
@@ -337,6 +338,8 @@ distclean2: clean
 update_rev:
 	@if test ! -z $(REPO_REV) ; then \
 	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > src/h/revision.h; \
+	elif test ! -f ../h/revision.h ; then \
+	   echo "#define REPO_REVISION \"0\"" > src/h/revision.h; \
 	fi
 
 MV=2

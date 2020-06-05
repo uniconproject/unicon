@@ -338,7 +338,7 @@ distclean2: clean
 update_rev:
 	@if test ! -z $(REPO_REV) ; then \
 	   echo "#define REPO_REVISION \"$(REPO_REV)\"" > src/h/revision.h; \
-	elif test ! -f ../h/revision.h ; then \
+	elif test ! -f src/h/revision.h ; then \
 	   echo "#define REPO_REVISION \"0\"" > src/h/revision.h; \
 	fi
 

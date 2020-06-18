@@ -1362,15 +1362,15 @@ void ptclose(struct ptstruct *ptStruct)
       return;  /* structure is NULL, nothing to do */
 
 #if NT
-   CloseHandle(ptStruct->master_read);
-   CloseHandle(ptStruct->master_write);
+   CloseHandle(ptStruct->main_read);
+   CloseHandle(ptStruct->main_write);
 #else					/* NT */
-   /* close the master and slave file descriptors */
-   close(ptStruct->master_fd);
-   close(ptStruct->slave_fd);
+   /* close the main and secondary file descriptors */
+   close(ptStruct->main_fd);
+   close(ptStruct->secondary_fd);
    /* terminate the child process */
-   waitpid(ptStruct->slave_pid,&status,WNOHANG);
-   kill(ptStruct->slave_pid,SIGKILL);
+   waitpid(ptStruct->secondary_pid,&status,WNOHANG);
+   kill(ptStruct->secondary_pid,SIGKILL);
 #endif					/* NT */
    /* free the space allocated for the structure */
    free(ptStruct);
@@ -1401,7 +1401,7 @@ struct ptstruct *ptopen(char *command)
    if (newPtStruct == NULL) {
       EXITERROR(newPtStruct);
       }
-   strcpy(newPtStruct->slave_command, command);
+   strcpy(newPtStruct->secondary_command, command);
   
    CmdParamToArgv(command, &av, 0);
    /*
@@ -1416,11 +1416,11 @@ struct ptstruct *ptopen(char *command)
    sa.bInheritHandle = TRUE;
 
    /* Create the child output pipe */
-   if(!CreatePipe(&newPtStruct->master_read,&hOutputWrite,&sa,0)) {
+   if(!CreatePipe(&newPtStruct->main_read,&hOutputWrite,&sa,0)) {
       EXITERROR(newPtStruct);
       }
 
-   if (!CreatePipe(&hInputRead,&newPtStruct->master_write,&sa,0)) {
+   if (!CreatePipe(&hInputRead,&newPtStruct->main_write,&sa,0)) {
       EXITERROR(newPtStruct);
       }
 
@@ -1433,84 +1433,84 @@ struct ptstruct *ptopen(char *command)
    si.hStdError  = hOutputWrite;
 
    /* Launch the process that you want to redirect */
-   if (!CreateProcess(NULL,newPtStruct->slave_command,NULL,NULL,TRUE,
+   if (!CreateProcess(NULL,newPtStruct->secondary_command,NULL,NULL,TRUE,
 		      CREATE_NEW_CONSOLE,NULL,NULL,&si,&pi)) {
       EXITERROR(newPtStruct);
       }
 
    /* Set global child process handle to cause threads to exit. */
-   newPtStruct->slave_pid = pi.hProcess;
+   newPtStruct->secondary_pid = pi.hProcess;
 
 #else					/* NT */
 
-  /* open master pty file descriptor */
+  /* open main pty file descriptor */
 #ifdef SUN
-   if((newPtStruct->master_fd=open("/dev/ptmx",O_RDWR|O_NONBLOCK)) == -1) {
+   if((newPtStruct->main_fd=open("/dev/ptmx",O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
 #else					/* SUN */
-   if((newPtStruct->master_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
+   if((newPtStruct->main_fd=posix_openpt(O_RDWR|O_NONBLOCK)) == -1) {
       EXITERROR(newPtStruct);
       }
 #endif					/* SUN */
 
-   /* change permissions of slave pty to correspond with the master pty */
-   if(grantpt(newPtStruct->master_fd) == -1) {
+   /* change permissions of secondary pty to correspond with the main pty */
+   if(grantpt(newPtStruct->main_fd) == -1) {
       EXITERROR(newPtStruct);
       }
 
-   /* unlock the slave pty file descriptor before opening it */
-   if(unlockpt(newPtStruct->master_fd) == -1) {
+   /* unlock the secondary pty file descriptor before opening it */
+   if(unlockpt(newPtStruct->main_fd) == -1) {
       EXITERROR(newPtStruct);
       }
 
    /*
-    * determine the filename of the slave pty associated with
-    * the already opened master pty
+    * determine the filename of the secondary pty associated with
+    * the already opened main pty
     */
 #ifdef SUN
-   if(ttyname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
-	              sizeof(newPtStruct->slave_filename)) != 0) {
+   if(ttyname_r(newPtStruct->main_fd,newPtStruct->secondary_filename,
+	              sizeof(newPtStruct->secondary_filename)) != 0) {
 #else					/* SUN */
 #if defined(MacOS) || defined(FreeBSD)
-   if (((tmps = ptsname(newPtStruct->master_fd)) == NULL) ||
-      (strlen(tmps) > sizeof(newPtStruct->slave_filename)-1) ||
-      (!strcpy(newPtStruct->slave_filename, tmps))){
+   if (((tmps = ptsname(newPtStruct->main_fd)) == NULL) ||
+      (strlen(tmps) > sizeof(newPtStruct->secondary_filename)-1) ||
+      (!strcpy(newPtStruct->secondary_filename, tmps))){
 #else					/* MacOS || FreeBSD */
-   if(ptsname_r(newPtStruct->master_fd,newPtStruct->slave_filename,
-		sizeof(newPtStruct->slave_filename)) != 0) {
+   if(ptsname_r(newPtStruct->main_fd,newPtStruct->secondary_filename,
+		sizeof(newPtStruct->secondary_filename)) != 0) {
 #endif					/* MacOS || FreeBSD */
 #endif					/* SUN */
       EXITERROR(newPtStruct);
       }
 
-   /* finally open the slave pty file descriptor */
-   if((newPtStruct->slave_fd=open(newPtStruct->slave_filename,
+   /* finally open the secondary pty file descriptor */
+   if((newPtStruct->secondary_fd=open(newPtStruct->secondary_filename,
 				  O_RDWR)) == -1) {
       EXITERROR(newPtStruct);
       }
 
-   /* try forking the slave process ... */
-   if ((newPtStruct->slave_pid = fork()) == -1) {
+   /* try forking the secondary process ... */
+   if ((newPtStruct->secondary_pid = fork()) == -1) {
       EXITERROR(newPtStruct);
       }
-   else if(newPtStruct->slave_pid == 0) {
+   else if(newPtStruct->secondary_pid == 0) {
       /* create a session id and make this process the process group leader */
       if(setsid() == -1) /* was setpgid */
 	 EXITERROR(newPtStruct);
       /*
        * dup standard file descriptors to be associated with pseudo terminal */
-      if(dup2(newPtStruct->slave_fd,0) == -1) {
+      if(dup2(newPtStruct->secondary_fd,0) == -1) {
 	 EXITERROR(newPtStruct);
 	 }
-      if(dup2(newPtStruct->slave_fd,1) == -1) {
+      if(dup2(newPtStruct->secondary_fd,1) == -1) {
 	 EXITERROR(newPtStruct);
 	 }
-      if(dup2(newPtStruct->slave_fd,2) == -1) {
+      if(dup2(newPtStruct->secondary_fd,2) == -1) {
 	 EXITERROR(newPtStruct);
 	 }
 
-      /* attempt to execute the command slave process */
+      /* attempt to execute the command secondary process */
       if(execve(av[0], av, NULL) == -1) {
          EXITERROR(newPtStruct);
          }
@@ -1526,7 +1526,7 @@ struct ptstruct *ptopen(char *command)
  * ptgetstrt() - pseudo-pty getstr with timeout.  Actually, read() does not
  * have a timeout, not sure this should either. I guess timeout is optional.
  * Returns -1 for various (unfortunate) errors: bad parameters, bad
- * master file descriptor, no bytes read ...  probably needs finer-grained
+ * main file descriptor, no bytes read ...  probably needs finer-grained
  * error reporting.
  */
 int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
@@ -1557,12 +1557,12 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
       }
 
    /* set the wait file descriptor for use with select */
-   wait_fd = ptStruct->master_fd+1;
+   wait_fd = ptStruct->main_fd+1;
   
    /* set file descriptor sets for reading with select */
    FD_ZERO(&rd_set);
-   if (ptStruct->master_fd > -1) {
-      FD_SET(ptStruct->master_fd,&rd_set);
+   if (ptStruct->main_fd > -1) {
+      FD_SET(ptStruct->main_fd,&rd_set);
       }
    else {
       return -1;
@@ -1577,11 +1577,11 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 #if NT
    /* clear the buffer */
    ZeroMemory(buffer,bufsiz);
-   if(WaitForSingleObject(ptStruct->master_read,waittime) != WAIT_FAILED) {
+   if(WaitForSingleObject(ptStruct->main_read,waittime) != WAIT_FAILED) {
 #else					/* NT */
 
    if((ret=select(wait_fd,&rd_set,NULL,NULL,timeoutp)) > 0
-      && FD_ISSET(ptStruct->master_fd,&rd_set) ) {
+      && FD_ISSET(ptStruct->main_fd,&rd_set) ) {
 
 #endif					/* NT */
 
@@ -1592,10 +1592,10 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 	  * be rewritten to try for multiple bytes.
 	  */
 #if NT
-	 if ((ret=ReadFile(ptStruct->master_read,&buffer[i],1,
+	 if ((ret=ReadFile(ptStruct->main_read,&buffer[i],1,
 			  &bytes_read,NULL)) != 0) {
 #else					/* NT */
-	 if ((bytes_read=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+	 if ((bytes_read=read(ptStruct->main_fd,&buffer[i],1)) > 0) {
 #endif					/* NT */
 
 	     if(!longread && buffer[i] == '\n') {
@@ -1610,7 +1610,7 @@ int ptgetstrt(char *buffer, const int bufsiz, struct ptstruct *ptStruct,
 #if NT
 #else					/* NT */
 	     FD_ZERO(&rd_set);
-	     FD_SET(ptStruct->master_fd,&rd_set);
+	     FD_SET(ptStruct->main_fd,&rd_set);
 #endif					/* NT */
 
 	     } /* if bytes read */
@@ -1671,31 +1671,31 @@ int ptgetstr(char *buffer, const int bufsiz, struct ptstruct *ptStruct, struct t
     return -1;
   
   /* set the wait file descriptor for use with select */
-  wait_fd = ptStruct->master_fd+1;
+  wait_fd = ptStruct->main_fd+1;
  
   /* clear the buffer */
   memset(buffer,0,sizeof(buffer));
   
   /* set file descriptor sets for reading with select */
   FD_ZERO(&rd_set);
-  if(ptStruct->master_fd > -1)
-    FD_SET(ptStruct->master_fd,&rd_set);
+  if(ptStruct->main_fd > -1)
+    FD_SET(ptStruct->main_fd,&rd_set);
   else
     return -1;
   /* if select returns without any errors then ... */
   /* if the characters are availabe to read from input ... */
   while((sel_ret=select(wait_fd,&rd_set,NULL,NULL,timeout)) > 0
-	&& FD_ISSET(ptStruct->master_fd,&rd_set)
+	&& FD_ISSET(ptStruct->main_fd,&rd_set)
 	&& bytes_read < bufsiz 
-	&& (ret=read(ptStruct->master_fd,&buffer[i],1)) > 0) {
+	&& (ret=read(ptStruct->main_fd,&buffer[i],1)) > 0) {
 	bytes_read += ret;
 	i++;
 	FD_ZERO(&rd_set);
-	FD_SET(ptStruct->master_fd,&rd_set);
+	FD_SET(ptStruct->main_fd,&rd_set);
   } 
   if(bytes_read > 0) {
     return bytes_read;
-  } else if(bytes_read == 0 && !FD_ISSET(ptStruct->master_fd,&rd_set)) {
+  } else if(bytes_read == 0 && !FD_ISSET(ptStruct->main_fd,&rd_set)) {
     return -1;
   }
   return sel_ret;
@@ -1715,31 +1715,31 @@ int ptlongread(char *buffer, const int nelem, struct ptstruct *ptStruct)
     return -1;
   
   /* set the wait file descriptor for use with select */
-  wait_fd = ptStruct->master_fd+1;
+  wait_fd = ptStruct->main_fd+1;
 
   /* clear the buffer */
   memset(buffer,0,sizeof(buffer));
   
   /* set file descriptor sets for reading with select */
   FD_ZERO(&rd_set);
-  if(ptStruct->master_fd > -1) 
-    FD_SET(ptStruct->master_fd,&rd_set);
+  if(ptStruct->main_fd > -1) 
+    FD_SET(ptStruct->main_fd,&rd_set);
    
   /* if select returns without any errors then ... */
   if(select(wait_fd,&rd_set,NULL,NULL,NULL) > 0) {
     /* if the characters are availabe to read from input ... */
-    if(FD_ISSET(ptStruct->master_fd,&rd_set)) {
+    if(FD_ISSET(ptStruct->main_fd,&rd_set)) {
       /* read all the characters until  */
       /* 1) none are available */
       /* 2) the maximum buffer size has been reached */
       /* 3) a newline has been read */
-      while((ret=read(ptStruct->master_fd,&buffer[i],1)) > 0 
+      while((ret=read(ptStruct->main_fd,&buffer[i],1)) > 0 
 	    && (bytes_read+=ret) < nelem) 
 	i++;
 
       /* if there was an error then return an error code */
       if( ret < 0)
-	ret = -1; /* -1 indicates error reading from slave */
+	ret = -1; /* -1 indicates error reading from secondary */
       else 
 	ret = bytes_read;
     } else {
@@ -1761,8 +1761,8 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
       return -1;
 
 #if NT
-   if ( (WaitForSingleObject(ptStruct->master_write,0) == WAIT_FAILED) ||
-       (!WriteFile(ptStruct->master_write,buffer,bufsize,&bytes_written,NULL)))
+   if ( (WaitForSingleObject(ptStruct->main_write,0) == WAIT_FAILED) ||
+       (!WriteFile(ptStruct->main_write,buffer,bufsize,&bytes_written,NULL)))
       ret = -1;
    else 
       ret = bytes_written;
@@ -1777,15 +1777,15 @@ int ptputstr(struct ptstruct *ptStruct, char *buffer, int bufsize)
   
    /* set file descriptors for writing with select */
    FD_ZERO(&wd_set);
-   if(ptStruct->master_fd > -1) 
-      FD_SET(ptStruct->master_fd,&wd_set);
+   if(ptStruct->main_fd > -1) 
+      FD_SET(ptStruct->main_fd,&wd_set);
    else
       return -3; /* invalid output file descriptor - return error */
 
-   if ((sel_ret=select(ptStruct->master_fd+1,NULL,&wd_set,NULL,&timeout)) > 0){
+   if ((sel_ret=select(ptStruct->main_fd+1,NULL,&wd_set,NULL,&timeout)) > 0){
       /* if the file descriptor is ready to write to ... */
-      if(FD_ISSET(ptStruct->master_fd,&wd_set)) {
-	 if((bytes_written=write(ptStruct->master_fd,buffer,bufsize)) < 0) 
+      if(FD_ISSET(ptStruct->main_fd,&wd_set)) {
+	 if((bytes_written=write(ptStruct->main_fd,buffer,bufsize)) < 0) 
 	    ret = -1; /* -1 indicates error writing to file descriptor */
 	 else 
 	    ret=bytes_written;
@@ -1815,12 +1815,12 @@ int ptflush(struct ptstruct *ptStruct)
    /* not implemented; not sure if this gobbledy gook does anything */
   fd_set rd_set;
   char temp_read;
-  int wait_fd = ptStruct->slave_fd+1;
+  int wait_fd = ptStruct->secondary_fd+1;
   FD_ZERO(&rd_set);
-  FD_SET(ptStruct->slave_fd,&rd_set);
+  FD_SET(ptStruct->secondary_fd,&rd_set);
   if(select(wait_fd,&rd_set,NULL,NULL,NULL) > 0) {
-    if(FD_ISSET(ptStruct->slave_fd,&rd_set)) {
-      while(read(ptStruct->slave_fd,&temp_read,sizeof(temp_read)) > 0);
+    if(FD_ISSET(ptStruct->secondary_fd,&rd_set)) {
+      while(read(ptStruct->secondary_fd,&temp_read,sizeof(temp_read)) > 0);
       return 0;
     } else {
       return -2;

@@ -1039,14 +1039,14 @@ union block {			/* general block */
 #ifdef PseudoPty
 struct ptstruct {
 #if NT
-   HANDLE master_read, master_write;
-   HANDLE slave_pid;
+   HANDLE main_read, main_write;
+   HANDLE secondary_pid;
 #else					/* WIN32 */
-   int master_fd, slave_fd;		/* master, slave pty file descriptor */
-   pid_t slave_pid;			/* process id of slave  */
+   int main_fd, secondary_fd;		/* main, secondary pty file descriptor */
+   pid_t secondary_pid;			/* process id of secondary  */
 #endif					/* WIN32 */
      
-   char slave_filename[256];/* pty slave filename associated with master pty */
-   char slave_command[256]; /* name of executable associated with slave */
+   char secondary_filename[256];/* pty secondary filename associated with main pty */
+   char secondary_command[256]; /* name of executable associated with secondary */
 };
 #endif					/* PseudoPty */

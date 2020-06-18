@@ -906,7 +906,7 @@ int action;
    static int tc_queue=0;        /* how many threads are waiting for TC */
    static int action_in_progress=TC_NONE;
    // Keep track of the thread who is in control
-   static word master_thread = 0;
+   static word main_thread = 0;
 #ifdef GC_TIMING_TUNING
 /* timing for GC, for testing and performance tuning */
    struct timeval    tp; 
@@ -1034,7 +1034,7 @@ int action;
         first_thread=0;
 #endif
 
-         master_thread = 0;
+         main_thread = 0;
 
          /* broadcast a wakeup call to all threads waiting on cond_tc */
          pthread_cond_broadcast(&cond_tc);
@@ -1050,7 +1050,7 @@ int action;
 	 * a segfault in the middle of an ongoing GC.
 	 * If this is the case, we can safely return.
 	 */
-	if (master_thread == curtstate->c->id)
+	if (main_thread == curtstate->c->id)
 	  return;
 
          /*
@@ -1130,7 +1130,7 @@ int action;
           * Now it is safe to proceed with TC with only the current thread running
           */
          tc_queue--;
-	 master_thread = curtstate->c->id;
+	 main_thread = curtstate->c->id;
          return;
          }
       case TC_KILLALLTHREADS:{
@@ -1143,7 +1143,7 @@ int action;
 	    }
 
          /*action_in_progress = TC_NONE;*/
-	 master_thread = curtstate->c->id;
+	 main_thread = curtstate->c->id;
 	 return;
          }
       default:{

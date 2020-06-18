@@ -3061,16 +3061,16 @@ function{0, 1} ready(f, i)
          struct ptstruct *pt = BlkD(f,File)->fd.pt;
 #if NT
          DWORD tb;
-	 if ((PeekNamedPipe(pt->master_read, NULL, 0, NULL, &tb, NULL) != 0)
+	 if ((PeekNamedPipe(pt->main_read, NULL, 0, NULL, &tb, NULL) != 0)
 		&& (tb>0)) {
 #else
 	 int tb;
 	 fd_set readset;
 	 struct timeval tv;
 	 FD_ZERO(&readset);
-	 FD_SET(pt->master_fd, &readset);
+	 FD_SET(pt->main_fd, &readset);
 	 tv.tv_sec = tv.tv_usec = 0;
-	 if (select(pt->master_fd+1, &readset, NULL, NULL, &tv) > 0) {
+	 if (select(pt->main_fd+1, &readset, NULL, NULL, &tv) > 0) {
 	    /* performance bug: how many bytes are really available? */
 	    tb = 1;
 #endif
@@ -3078,9 +3078,9 @@ function{0, 1} ready(f, i)
             else if (tb < i) i = tb;
             Protect(sbuf = alcstr(NULL, i), runerr(0));
 #if NT
-            status = ReadFile(pt->master_read, sbuf, i, &tb, NULL);
+            status = ReadFile(pt->main_read, sbuf, i, &tb, NULL);
 #else
-	tb = read(pt->master_fd, sbuf, i);
+	tb = read(pt->main_fd, sbuf, i);
         status = (tb != -1);
 #endif
 	    if (!status) fail;

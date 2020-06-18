@@ -257,7 +257,7 @@ int get_fd(struct descrip file, unsigned int errmask)
 #if NT
       return -1;
 #else					/* NT */
-      return BlkD(file,File)->fd.pt->master_fd;
+      return BlkD(file,File)->fd.pt->main_fd;
 #endif					/* NT */
       }
 #endif					/* PseudoPty */

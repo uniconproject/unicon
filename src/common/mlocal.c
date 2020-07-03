@@ -404,6 +404,7 @@ void quotestrcat(char *buf, char *s)
  */
 char *libpath(char *prog, char *envname) {
    char buf[2000], *s;
+   char *sep = ";";
 
    s = getenv(envname);
    if (s != NULL)
@@ -411,29 +412,30 @@ char *libpath(char *prog, char *envname) {
    else
       strcpy(buf, ".");
    if (!strcmp(envname, "IPATH")) {
-      strcat(buf, " ");
+      strcat(buf, sep);
       quotestrcat(buf, unirootfile(prog, "/../../ipl/lib"));
      }
    else if (!strcmp(envname, "LPATH")) {
-      strcat(buf, " ");
+      strcat(buf, sep);
       quotestrcat(buf, unirootfile(prog, "/../../ipl/mincl"));
-      strcat(buf, " ");
+      strcat(buf, sep);
       quotestrcat(buf, unirootfile(prog, "/../../ipl/gincl"));
-      strcat(buf, " ");
+      strcat(buf, sep);
       quotestrcat(buf, unirootfile(prog, "/../../ipl/incl"));
       }
-   strcat(buf, " ");
+   strcat(buf, sep);
    quotestrcat(buf, unirootfile(prog, "/../../uni/lib"));
-   strcat(buf, " ");
+   strcat(buf, sep);
    quotestrcat(buf, unirootfile(prog, "/../../uni/gui"));
-   strcat(buf, " ");
+   strcat(buf, sep);
    quotestrcat(buf, unirootfile(prog, "/../../uni/xml"));
-   strcat(buf, " ");
+   strcat(buf, sep);
    quotestrcat(buf, unirootfile(prog, "/../../uni/parser"));
-   strcat(buf, " ");
+   strcat(buf, sep);
    quotestrcat(buf, unirootfile(prog, "/../../uni/3d"));
-   strcat(buf, " ");
+   strcat(buf, sep);
    quotestrcat(buf, unirootfile(prog, "/../../plugins/lib"));
+
    return salloc(buf);
    }
 

@@ -12,7 +12,7 @@ import lang
 #<p>
 #  A complex number representation that supports overloading the
 #  basic numeric operators ("<tt>+</tt>","<tt>-</tt>",
-#  "<tt>*</tt>","<tt>/<tt>") to work with complex numbers.
+#  "<tt>*</tt>","<tt>/</tt>") to work with complex numbers.
 #  Note that Unicon's operator overloading implementation requires
 #  that the <i>left</i> operand be of the overloaded type.
 #  That is, <tt>Complex(1,2)+3</tt> works but <tt>3+Complex(1,2)</tt>
@@ -23,28 +23,28 @@ import lang
 #</p>
 class Complex:Object(r:0,i:0)
 
-    #<p>Add a scaler or Complex to this complex number.
+    #<p>Add a scalar or Complex to this complex number.
     #   Fails if right operator cannot be converted to Complex.
     #</p>
     method add(x)
        if x := convert(x) then return Complex(r+x.r,i+x.i)
     end
 
-    #<p>Subtract a scaler or Complex from this complex number.
+    #<p>Subtract a scalar or Complex from this complex number.
     #   Fails if right operator cannot be converted to Complex.
     #</p>
     method minus(x)
        if x := convert(x) then return Complex(r-x.r,i-x.i)
     end
 
-    #<p>Multiply this complex number by a scaler or Complex.
+    #<p>Multiply this complex number by a scalar or Complex.
     #   Fails if right operator cannot be converted to Complex.
     #</p>
     method mult(x)
        if x := convert(x) then return Complex(r*x.r-i*x.i, r*x.i+i*x.r)
     end
 
-    #<p>Divide this complex number by a scaler or Complex.
+    #<p>Divide this complex number by a scalar or Complex.
     #   In the result, both the real and imaginary parts are
     #   represented as floating point values.
     #   Fails if right operator cannot be converted to Complex.
@@ -98,7 +98,8 @@ class Complex:Object(r:0,i:0)
 
     #<p>
     #  Produce the additive inverse of this complex number.
-    #  <i>Note: no support for operator overloading for this operation.</i>
+    #  <i>Note: no support for operator overloading for this operation
+    #  because there is no such operator in Unicon.</i>
     #</p>
     method addInverse()
        return Complex(-r, -i)
@@ -106,7 +107,8 @@ class Complex:Object(r:0,i:0)
 
     #<p>
     #  Produce the multiplicative inverse of this complex number.
-    #  <i>Note: no support for operator overloading for this operation.</i>
+    #  <i>Note: no support for operator overloading for this operatio
+    #  because there is no such operator in Unicon.</i>
     #</p>
     method multInverse()
        n := conjugate()

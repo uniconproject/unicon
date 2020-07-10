@@ -55,7 +55,7 @@ end
 procedure ipaths()
     static pathstr
     initial
-       pathstr :=  ulibpaths() || (semicolonpath("IPATH") | ".")
+       pathstr :=  (semicolonpath("IPATH") | ".") || pathsep() || ulibpaths()
     return pathstr
 end
 
@@ -79,7 +79,7 @@ local sep, prefix
             prefix || "/ipl/gprocs" || sep ||
             prefix || "/ipl/gprogs" || sep
 
-      pathstr ||:= (semicolonpath("LPATH") | ".")
+      pathstr := (semicolonpath("LPATH") | ".") || sep || pathstr
       }
    return pathstr
 end

@@ -62,10 +62,13 @@ end
 #<p>
 # Is className an ancestor of class x?
 #   Any class is considered as an ancestor of itself.
+#   <[param x -- class to test]>
+#   <[param className -- name of potential ancestor or actual potential ancestor.
+#        For example, <tt>instanceof(X,"lang::Object")</tt> and
+#        <tt>instanceof(X,Object())</tt> are equivalent.]>
 #   <[returns <tt>x</tt> if <tt>x</tt> is an instance of <tt>className</tt>]>
 #</p>
-procedure instanceof(x,         # Object to examine
-                     className) # Classname to check against
+procedure instanceof(x, className)
    # The call to isClass is just to ensure x is a class, since
    #   istype(...) doesn't care.
    return (isClass(x) & istype(x, className))
@@ -73,19 +76,27 @@ end
 
 #<p>
 # Is the type of x s?  Works even if s is "class" or "record".
-#   Also, will accept s as "numeric" to check if x is either
+# Also works if s is an actual class instead of a string, as in:
+# </p>
+# <pre>
+#   if istype(x,Object())
+# </pre>
+#<p>
+#   Will accept s as "numeric" to check if x is either
 #      a real or an integer.
 #   <[returns <tt>x</tt> if it's of type <tt>s</tt>]>
 #   <[fails if <tt>x</tt> is not of type <tt>s</tt>]>
 #</p>
 procedure istype(x,         # Object to examine
-                 s)          # Type to check against
+                 s)         # Type to check against
    case string(s) of {
       "class"  : return isClass(x)
       "record" : return isRecord(x)
       "numeric": return 2(numeric(x), x)
       default  : return 2(string(s) == Type(x), x )
       }
+   # Last gasp, maybe s is really a class instead of a classname
+   return 2(Type(s)\1 == Type(x), x )
 end
 
 #<p>

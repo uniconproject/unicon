@@ -4,7 +4,7 @@ include $(BASE)/Makedefs.uni
 .PHONY: all clean deps
 
 UFILES=gui.u file_dlg.u db.u \
- address.u args.u base64handler.u basicclasscoding.u blockread.u class.u classcoding.u \
+ address.u base64handler.u basicclasscoding.u class.u classcoding.u \
  cltable.u comparator.u complex.u compoundedit.u contentdisposition.u contenttype.u \
  cvsuser.u cvsutil.u decode.u encode.u encodinghandler.u error.u exception.u \
  fcn_util.u format.u \
@@ -12,7 +12,7 @@ UFILES=gui.u file_dlg.u db.u \
  mailbox.u mailmisc.u mapbytes.u message.u messagehandler.u method.u \
  money.u msg.u multipart.u multiparthandler.u netclient.u noophandler.u object.u \
  popclient.u predicat.u process.u property.u pushback.u qsort.u quotedprintablehandler.u \
- rfc822parser.u runnable.u \
+ rfc822parser.u runnable.u args.u blockread.u \
  selectiveclasscoding.u sem.u setfields.u shm.u smtpclient.u str_util.u \
  stringbuff.u \
  texthandler.u time.u timezone.u typehandler.u \

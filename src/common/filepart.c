@@ -427,6 +427,7 @@ int pathOpenHandle(char *fname, char *mode)
  */
 char *lognam;
 FILE *flog;
+char tmplognam[128];
 
 void openlog(char *p)
 {

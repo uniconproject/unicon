@@ -963,8 +963,8 @@ unsigned long ConsoleFlags = 0;	*/
 extern int ConsolePause;
 extern FILE *flog;
 
-char *lognam;
-char tmplognam[128];
+extern char *lognam;
+extern char tmplognam[128];
 
 void closelogfile()
 {

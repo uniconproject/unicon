@@ -82,7 +82,7 @@ extern pthread_mutex_t **mutexes;
 extern word nmutexes;
 extern word maxmutexes;
 
-pthread_mutexattr_t rmtx_attr;
+extern pthread_mutexattr_t rmtx_attr;
 
 extern pthread_t GCthread;
 extern int thread_call;

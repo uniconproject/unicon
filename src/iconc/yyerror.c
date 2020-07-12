@@ -335,7 +335,7 @@ void yyerror_init()
    errtab[220].u.msg = "invalid argument";
 }
 
-int __merr_errors;
+extern int __merr_errors;
 extern int yychar;
 extern int yylineno;
 

@@ -29,8 +29,8 @@ int incol;			/* current input column number */
 int peekc;			/* one-character look ahead */
 struct srcfile *srclst = NULL;	/* list of source files to translate */
 
-char *lpath;			/* LPATH value */
-
+extern char *lpath;			/* LPATH value */
+
 
 /*
  * This routine walks through rec_lst looking for object instance records,

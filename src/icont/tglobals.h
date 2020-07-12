@@ -68,7 +68,7 @@ Global int Dflag	Init(0);	/* -L: linker debug (write .ux file) */
 /*
  * Files and related globals.
  */
-Global char *lpath;			/* search path for $include */
+extern char *lpath;			/* search path for $include */
 Global char *ipath;			/* search path for linking */
 extern char patchpath[];
 extern char uniroot[];
@@ -94,6 +94,6 @@ Global int Zflag	Init(1);	/* -Z disables icode-gz compression */
 Global int OVLDflag;   /* defaults to overloaded (so can make idol.u & unigram.u exceptions */
 #endif
 
-Global char *lognam;		/* name of a logfile, from -l logname */
-Global FILE *flog;		/* log file */
+extern  char *lognam;		/* name of a logfile, from -l logname */
+extern FILE *flog;		/* log file */
 

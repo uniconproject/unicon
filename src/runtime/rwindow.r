@@ -4624,7 +4624,7 @@ void waitkey(FILE *w)
 }
 
 #if !NT
-  FILE *flog;
+  extern FILE *flog;
 #endif						/* NT */
 
 

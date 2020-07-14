@@ -11,7 +11,7 @@ UFILES=gui.u file_dlg.u db.u \
  mailbox.u mailmisc.u mapbytes.u message.u messagehandler.u method.u \
  money.u msg.u multipart.u multiparthandler.u netclient.u noophandler.u object.u \
  popclient.u predicat.u process.u property.u pushback.u qsort.u quotedprintablehandler.u \
- rfc822parser.u runnable.u args.u blockread.u \
+ rfc822parser.u runnable.u args.u blockread.u notifier.u \
  selectiveclasscoding.u sem.u setfields.u shm.u smtpclient.u str_util.u \
  stringbuff.u \
  texthandler.u time.u timezone.u typehandler.u \

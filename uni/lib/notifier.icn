@@ -1,0 +1,228 @@
+package util
+
+import lang
+
+invocable all
+
+# <p>
+# <tt>Events</tt> is a class object that is capable of sending events to
+# listeners that want to be informed when something of interest happens.
+# <tt>Events</tt> informs its listeners of an event via one of the notification
+# methods: <tt>notify()</tt> or <tt>notifyAll()</tt>.
+# Listeners can be class instances, procedures, or co-expressions.
+# If the listener is a class object then the name of the method to invoke
+# can be provided or left to default to <tt>"callback"</tt>
+# Each listener is passed the name of the Notifier subclass sending the
+# event, the event type (an arbitrary string), and a message.
+# If omitted, the event type defaults to <tt>"default</tt>.
+# </p>
+# <p>
+# Some of the internal code here is, uh, adapted from the
+# <tt>Connectable</tt> class.  There are differences in the behavior
+# between <tt>Notifier</tt> and <tt>Connectable</tt>, however.
+# In particular:
+# <br>
+#  -- Notifier enforces a default event type.
+# <br>
+#  -- Connectable accepts a null event type whose listeners are <i>always</i>
+#     notified on <i>any</i> event.  Notifier doesn't.
+# <br>
+#  -- listeners are passed the name of the source Notifier that invokes them.
+# <br>
+#  -- Connectable only accepts class instance listeners at this time while
+#     Notifier additionally accepts procedure and co-expression listeners.
+# </p>
+class Notifier:Object(listeners)
+
+   #<p>
+   #  Notifies all callbacks with the given type.
+   #  Passes the name of the calling class (a subclass of <tt>Notifier</tt>)
+   #  If a callback is a procedure (or a string) it is called with
+   #        <name>(self_name, type, message).
+   #  If a callback is a co-expression it is called with
+   #        [self_name, type, message] @ <name>,
+   #  If a callback is a class, then an attempt is made to invoke the
+   #        callback method as <name>.<method>(self_name, type, message).
+   #  <[param typ event type (defaults to <tt>"default"</tt>)]>
+   #  <[param message message to pass to callback (defaults to empty string)]>
+   #</p>
+   method notify(typ:"default", message:"")
+      every l := genListeners(typ) do notify1(l, message)
+   end
+
+   #<p>
+   #  Behaves like notify, but notifies all listeners, regardless
+   #     of their type.
+   #  <[param message message to pass to each callback]>
+   #</p>
+   method notifyAll(message)
+      every notify1(genAllListeners(), message)
+   end
+
+   #<p>
+   #  Adds a listener to this class, can be called with one, two, or three
+   #     arguments.
+   # <[param listener class, callback procedure, or co-expression]>
+   # <[param typ type (string) of event to respond to (defaults to "default")]>
+   # <[param methodname if listener is a class then name of method to invoke
+   #       (defaults to "callback")]>
+   # <[fails if listener cannot be added]>
+   #</p>
+   method addListener(listener, typ:"default", methodname:"callback")
+      if lang::isClass(listener) then connect(listener, methodname, typ)
+      else if type(listener) == ("procedure"|"co-expression"|"string") then {
+         l := Subscription(listener,&null,typ)
+         addToListeners(l)
+         }
+      else {
+         write(&errout, "Not ready to handle ",lang::Type(listener),
+              " listeners yet.")
+         fail
+         }
+      return
+   end
+
+   #<p>
+   # Remove a listener.  Removes all occurences of typ/listener/methodname.
+   # <[param listener class, callback procedure, or co-expression]>
+   # <[param typ type (string) of event to respond to (defaults to "default")]>
+   # <[param methodname if listener is a class then name of method to invoke
+   #       (defaults to "callback")]>
+   # <[fails if typ/listener/methodname not present]>
+   #</p>
+   method removeListener(listener, typ:"default", methodname:"callback")
+      every l := genListeners(typ) do {
+         if lang::Type(l.obj)\1 == "string" then {   # Special case
+            if proc(l.obj) === listener then disconnect(l)
+            }
+	 else if (l.obj === listener) then {
+            if lang::isClass(listener) &
+	       (l.meth === lang::find_method(listener, methodname)) then {
+	       disconnect(l)
+               }
+            else {
+               disconnect(l)
+               }
+            }
+         }
+   end
+
+   #<p>
+   #  Removes all listeners with the specified event type
+   #  <[param typ event type (defaults to "default")]>
+   #</p>
+   method removeListeners(typ:"default")
+      delete(listeners, typ)
+   end
+
+   #<p>
+   #  Remove all listeners regardless of their typ
+   #</p>
+   method removeAllListeners()
+      listeners := &null
+   end
+
+   #<p>
+   #  Generate all listeners of a given event type.
+   #  <[param typ -- event type of interest.  (Defaults to <tt>"default"</tt>).
+   #</p>
+   method genListeners(typ:"default")
+      suspend !\(listeners[typ])
+   end
+
+   #<p>
+   #  Generate all listeners regardless of their event type.
+   #</p>
+   method genAllListeners()
+      suspend !!listeners
+   end
+
+   # The remaining methods are helper methods used internally.
+
+   #<p>
+   #  Create and connect a Subscription to this object.
+   #  <b>Internal use only!</b>
+   #  <[@return the Subscription created and added.]>
+   #</p>
+   method connect(obj, meth_name:"callback", typ:"default")
+      local l, p, sum
+
+      p := lang::find_method(obj,meth_name) | {
+          write(&errout, "Connect: No such method '",meth_name,"'")
+          fail
+          }
+      # omit duplicate requests
+      every l := genListeners(typ) do
+	 if (l.obj === obj) & (l.meth === p) then
+	    fail
+
+      l := Subscription(obj, p, typ)
+      addToListeners(l)
+      return l
+   end
+
+   #<p>
+   #  Add a listener.
+   #  <b>Internal use only!</b>
+   #  <[l Subscription object to add]>
+   #</p>
+   method addToListeners(l)
+      /listeners[l.type] := []
+      put(listeners[l.type], l)
+
+      return l
+   end
+
+   #<p>
+   #  Remove a Subscription object
+   #  <b>Internal use only!</b>
+   #  <[l Subscription object to remove]>
+   #</p>
+   method disconnect(l)
+      local k := l.type, t
+
+      t := []
+      every put(t, l ~=== !listeners[k])
+      listeners[k] := t
+   end
+
+   #<p>
+   #  Notify a specific listener.
+   #  <b>Internal use only!</b>
+   #  <[param l listener to notify]>
+   #  <[param message message to pass to listener's callback]>
+   #</p>
+   method notify1(l, message)
+      case type(l.obj) of {
+	 "procedure" | "string" : l.obj(lang::Type(self)\1, l.type, message)
+	 "co-expression" : [lang::Type(self)\1, l.type , message] @ l.obj
+	 # list invocation here uses substitution rules per future UniLib
+	 # integration.  This probably won't work well until that happens.
+	 "list": {
+             a := copy(l.obj)
+	     fcn := pop(a)
+	     args := [lang::Type(self)\1, l.type, param]
+	     every i := 1 to *a do if a[i] === Arg then a[i] := pop(args)
+	     suspend fcn ! a
+	     }
+	 default: if lang::isClass(l.obj) then notifyClass(l, message)
+	 }
+   end
+
+   #<p>
+   #  Invoke a callback method from a Listener subclass.
+   #  <b>Internal use only!</b>
+   # <br>
+   # <b>This method is intended for internal use, but can be
+   #  overridden by subclasses that want to invoke callback
+   #  Listener subclasses with different arguments.</b>
+   #  <[param lRec listener class to notify.]>
+   #  <[param message message to pass to callback.]>
+   #</p>
+   method notifyClass(lRec, message)
+      lRec.meth ! [lRec.obj, lang::Type(self)\1, lRec.type, message]
+   end
+
+initially
+   listeners := table()
+end

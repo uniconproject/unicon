@@ -1834,7 +1834,7 @@ word i;
    if (i > 0) {
       /* scan bits left to right.  skip leading 1. */
       while (--n >= 0)
-         if (i & ((word)1 << n))
+         if (i & ((uword)1 << n))
 	    break;
       /* then, for each zero, square the partial result;
          for each one, square it and multiply it by a */
@@ -1842,7 +1842,7 @@ word i;
       while (--n >= 0) {
          if (bigmul(dx, dx, dx) == RunError)
 	    return RunError;
-         if (i & ((word)1 << n))
+         if (i & ((uword)1 << n))
             if (bigmul(dx, da, dx) == RunError)
 	       return RunError;
          }
@@ -1892,7 +1892,7 @@ dptr dx;
 
       /* scan bits left to right.  skip leading 1. */
       while (--n >= 0)
-         if (i & ((word)1 << n))
+         if (i & ((uword)1 << n))
 	    break;
       /* then, for each zero, square the partial result;
          for each one, square it and multiply it by a */
@@ -1913,7 +1913,7 @@ dptr dx;
                isbig = (Type(*dx) == T_Lrgint);
                } 
             }
-         if (i & ((word)1 << n)) {
+         if (i & ((uword)1 << n)) {
             if (isbig) {
                if (bigmuli(dx, a, dx) == RunError)
 		  return RunError;
